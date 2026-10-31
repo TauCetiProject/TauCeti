@@ -140,7 +140,9 @@ theorem weilDifferentialCotrace_weilDifferentialOfSeparating [FiniteDimensional 
     {x : F} (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] :
     letI := finiteDimensional_of_constantCompositum_eq_top (k := k) h
     letI := isSeparable_of_constantCompositum_eq_top (k := k) h
-    letI := isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top (k := k) (x := x) h
+    letI : Algebra.IsSeparable k'⟮algebraMap F F' x⟯ F' := by
+      have hsep := isSeparable_adjoin_image_of_constantCompositum_eq_top (k := k) (S := {x}) h
+      rwa [Set.image_singleton] at hsep
     weilDifferentialCotrace k' F' hF (hF.of_constantCompositum_eq_top h)
         (weilDifferentialOfSeparating hF hx) =
       weilDifferentialOfSeparating (hF.of_constantCompositum_eq_top h)
@@ -148,7 +150,9 @@ theorem weilDifferentialCotrace_weilDifferentialOfSeparating [FiniteDimensional 
           k') := by
   let := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   let := isSeparable_of_constantCompositum_eq_top (k := k) h
-  let := isSeparable_adjoin_algebraMap_of_constantCompositum_eq_top (k := k) (x := x) h
+  have : Algebra.IsSeparable k'⟮algebraMap F F' x⟯ F' := by
+    have hsep := isSeparable_adjoin_image_of_constantCompositum_eq_top (k := k) (S := {x}) h
+    rwa [Set.image_singleton] at hsep
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
   have hx' : Transcendental k' (algebraMap F F' x) :=
     ((transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx).extendScalars k'
@@ -167,13 +171,12 @@ theorem weilDifferentialCotrace_weilDifferentialOfSeparating [FiniteDimensional 
   let _ := ratFuncAlgebraOfTranscendental hX
   let _ := isScalarTower_ratFuncAlgebraOfTranscendental hX
   have hXX := algebraMap_ratFuncAlgebraOfTranscendental_X hX
-  -- `k(X)` acts on `F'` through `F`; the two routes through `F` and through `k'(X)` agree, as
-  -- both are `k`-algebra maps sending `X` to `x`.
-  let _ : Algebra (RatFunc k) F' := ((algebraMap F F').comp (algebraMap (RatFunc k) F)).toAlgebra
-  let _ : IsScalarTower (RatFunc k) F F' := .of_algebraMap_eq fun _ ↦ rfl
-  let _ : IsScalarTower k (RatFunc k) F' := .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply (RatFunc k) F F', ← IsScalarTower.algebraMap_apply k,
-      ← IsScalarTower.algebraMap_apply k F F']
+  -- `k(X)` acts on `F'` with `X` acting as `x`, compatibly with `F → F'`; the two routes through
+  -- `F` and through `k'(X)` agree, as both are `k`-algebra maps sending `X` to `x`.
+  have hxk := (transcendental_algebraMap_iff (algebraMap F F').injective).mpr hx
+  let _ := ratFuncAlgebraOfTranscendental hxk
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hxk
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental_algebraMap (F' := F') hx
   let _ : IsScalarTower (RatFunc k) (RatFunc k') F' := .of_algebraMap_eq fun r ↦ by
     -- Both ring maps `k(X) → F'` are determined by their values on `k[X]`.
     refine RingHom.congr_fun (IsLocalization.ringHom_ext (nonZeroDivisors (Polynomial k))
@@ -188,7 +191,6 @@ theorem weilDifferentialCotrace_weilDifferentialOfSeparating [FiniteDimensional 
         ← IsScalarTower.algebraMap_apply k k' F']
     · simp only [RingHom.comp_apply, RatFunc.algebraMap_X]
       rw [hXX, algebraMap_ratFuncAlgebraOfTranscendental_X,
-        IsScalarTower.algebraMap_apply (RatFunc k) F F',
         algebraMap_ratFuncAlgebraOfTranscendental_X]
   have hcomp := constantCompositum_ratFunc_eq_top (k := k) (k' := k') hXX
   let _ := finiteDimensional_of_constantCompositum_eq_top (k := k) hcomp

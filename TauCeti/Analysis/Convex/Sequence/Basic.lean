@@ -421,6 +421,55 @@ theorem update_of_le {n : ℕ} {y : ℝ}
 
 end IsConvexSeq
 
+/-- Splice two convex sequences where their heights agree, taking the prefix from the
+sequence lying higher on that prefix. This comparison ensures convexity across the join;
+no finiteness assumption on the joining height is needed. -/
+theorem IsConvexSeq.ite_le_of_le_of_eq {g h : ℕ → WithTop ℝ}
+    (hg : IsConvexSeq g) (hh : IsConvexSeq h) {p : ℕ} (hle : ∀ n ≤ p, h n ≤ g n)
+    (heq : g p = h p) : IsConvexSeq (fun n => if n ≤ p then g n else h n) := by
+  have hfinite {n : ℕ} (hn : (if n ≤ p then g n else h n) ≠ ⊤) : h n ≠ ⊤ := by
+    split_ifs at hn with hnp
+    · exact ne_top_of_le_ne_top hn (hle n hnp)
+    · exact hn
+  refine isConvexSeq_iff_two_mul_le.mpr ⟨⟨fun i hi k hk j hj => ?_⟩, fun n hn hn₂ => ?_⟩
+  · simp only [Set.mem_ofPred_eq] at hi hk ⊢
+    by_cases hjp : j ≤ p
+    · rw [ite_eq_left hjp]
+      have hip : i ≤ p := hj.1.trans hjp
+      rw [ite_eq_left hip] at hi
+      by_cases hkp : k ≤ p
+      · rw [ite_eq_left hkp] at hk
+        exact hg.ne_top_of_le_of_le hi hk hj.1 hj.2
+      · have hp : g p ≠ ⊤ := by
+          rw [heq]
+          exact hh.ne_top_of_le_of_le (ne_top_of_le_ne_top hi (hle i hip)) (hfinite hk)
+            hip (by omega)
+        exact hg.ne_top_of_le_of_le hi hp hj.1 hjp
+    · rw [ite_eq_right hjp]
+      exact hh.ne_top_of_le_of_le (hfinite hi) (hfinite hk) hj.1 hj.2
+  · by_cases hnp : n + 2 ≤ p
+    · simpa only [ite_eq_left (by omega : n ≤ p),
+        ite_eq_left (by omega : n + 1 ≤ p), ite_eq_left hnp] using
+        (isConvexSeq_iff_two_mul_le.mp hg).2 n
+          (by simpa only [ite_eq_left (by omega : n ≤ p)] using hn)
+          (by simpa only [ite_eq_left hnp] using hn₂)
+    · by_cases hpn : p ≤ n
+      · have hsame (k : ℕ) (hk : p ≤ k) : (if k ≤ p then g k else h k) = h k := by
+          rcases eq_or_lt_of_le hk with rfl | hk
+          · simp [heq]
+          · simp [not_le.mpr hk]
+        simpa only [hsame n hpn, hsame (n + 1) (by omega), hsame (n + 2) (by omega)] using
+          (isConvexSeq_iff_two_mul_le.mp hh).2 n (hfinite hn) (hfinite hn₂)
+      · have hmid : n + 1 = p := by omega
+        have hnf : g n ≠ ⊤ := by simpa [(by omega : n ≤ p)] using hn
+        have hnh : h n ≠ ⊤ := hfinite hn
+        have hcomp := WithTop.untop₀_le_untop₀ hnf (hle n (by omega))
+        have hconv := (isConvexSeq_iff_two_mul_le.mp hh).2 n hnh (hfinite hn₂)
+        simp only [ite_eq_left (by omega : n ≤ p), ite_eq_right hnp, hmid, heq,
+          ite_self]
+        rw [hmid] at hconv
+        linarith
+
 /-- A height sequence admits a convex minorant exactly when it is admissible, that
 is, when it admits a real affine lower bound. No nonempty-support hypothesis is
 needed. -/

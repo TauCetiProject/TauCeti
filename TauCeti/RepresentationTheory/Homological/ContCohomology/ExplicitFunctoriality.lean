@@ -36,9 +36,10 @@ The constructions
 `explicitCoeff2Equiv` upgrade a continuous equivariant additive equivalence of coefficient modules
 to additive equivalences on explicit `H¹` and `H²`, and `explicitCoeff1_bijective` and
 `explicitCoeff2_bijective` record that a bijective equivariant homomorphism of discrete coefficient
-modules induces bijections. The lemmas `explicitCoeff1_eq_nsmul` and `explicitCoeff2_eq_nsmul`
-identify coefficient maps given by multiplication by a natural number, while
-`explicitCoeff2_eq_card_nsmul` records that the norm of a finite normal subgroup `N`, as a
+modules induces bijections, and `explicitCoeff1_explicitCoeff1_eq_zero` that coefficient maps
+with zero composite compose to zero on `H¹`. The lemmas `explicitCoeff1_eq_nsmul` and
+`explicitCoeff2_eq_nsmul` identify coefficient maps given by multiplication by a natural number,
+while `explicitCoeff2_eq_card_nsmul` records that the norm of a finite normal subgroup `N`, as a
 coefficient map, acts on `H²` as multiplication by `#N`.
 
 This is functoriality of the *explicit* model: the carriers are the quotients `Z¹/B¹` and `Z²/B²`
@@ -777,6 +778,50 @@ theorem explicitCoeff1_eq_nsmul (f : M →+[G] M) (hf : Continuous f) {k : ℕ}
     exact congrArg (fun z : Z1 G M ↦ (z : H1 G M))
       (Subtype.ext (funext fun g ↦ (cocyclesMap1_apply _ _ _ _ _ _ _ _ c g).trans (hk _)))
 
+section Additive
+
+variable {N : Type uN} [AddCommGroup N] [TopologicalSpace N] [IsTopologicalAddGroup N]
+  [DistribMulAction G N] [ContinuousSMul G N]
+
+/-- A coefficient map which is the pointwise sum of two coefficient maps induces the sum of their
+maps on explicit `H¹`. -/
+theorem explicitCoeff1_eq_add (f g h : M →+[G] N) (hf : Continuous f) (hg : Continuous g)
+    (hh : Continuous h) (hfg : ∀ m, h m = f m + g m) :
+    explicitCoeff1 G M h hh = explicitCoeff1 G M f hf + explicitCoeff1 G M g hg := by
+  refine AddMonoidHom.ext fun x ↦ ?_
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [AddMonoidHom.add_apply, explicitCoeff1_mk, explicitCoeff1_mk, explicitCoeff1_mk,
+      ← QuotientAddGroup.mk_add]
+    congr 1
+    ext g
+    exact hfg _
+
+/-- A coefficient map which is the pointwise negation of a coefficient map induces the negation
+of its map on explicit `H¹`. -/
+theorem explicitCoeff1_eq_neg (f g : M →+[G] N) (hf : Continuous f) (hg : Continuous g)
+    (hfg : ∀ m, g m = -f m) : explicitCoeff1 G M g hg = -explicitCoeff1 G M f hf := by
+  refine AddMonoidHom.ext fun x ↦ ?_
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [AddMonoidHom.neg_apply, explicitCoeff1_mk, explicitCoeff1_mk, ← QuotientAddGroup.mk_neg]
+    congr 1
+    ext g
+    exact hfg _
+
+/-- A coefficient map which vanishes pointwise induces zero on explicit `H¹`. -/
+theorem explicitCoeff1_eq_zero (f : M →+[G] N) (hf : Continuous f) (hf₀ : ∀ m, f m = 0) :
+    explicitCoeff1 G M f hf = 0 := by
+  refine AddMonoidHom.ext fun x ↦ ?_
+  induction x using QuotientAddGroup.induction_on with
+  | _ c =>
+    rw [AddMonoidHom.zero_apply, explicitCoeff1_mk, ← QuotientAddGroup.mk_zero]
+    congr 1
+    ext g
+    exact hf₀ _
+
+end Additive
+
 /-- Coefficient maps on explicit `H¹` respect composition. -/
 theorem explicitCoeff1_comp {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     [IsTopologicalAddGroup N] [DistribMulAction G N] [ContinuousSMul G N]
@@ -791,6 +836,18 @@ theorem explicitCoeff1_comp {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
     (fun g m => f.map_smul g m) G P (ContinuousMonoidHom.id G) q hq
     (fun g n => q.map_smul g n) (fun g m => (q.comp f).map_smul g m) using 1 <;>
     ext <;> rfl
+
+/-- **Coefficient maps with zero composite compose to zero on explicit `H¹`**: if `q ∘ f = 0`
+on coefficients, then the map `explicitCoeff1 q` kills the image of `explicitCoeff1 f`. -/
+theorem explicitCoeff1_explicitCoeff1_eq_zero {N : Type uN} [AddCommGroup N] [TopologicalSpace N]
+    [IsTopologicalAddGroup N] [DistribMulAction G N] [ContinuousSMul G N]
+    {P : Type uP} [AddCommGroup P] [TopologicalSpace P] [IsTopologicalAddGroup P]
+    [DistribMulAction G P] [ContinuousSMul G P]
+    (f : M →+[G] N) (q : N →+[G] P) (hf : Continuous f) (hq : Continuous q)
+    (hqf : ∀ m, q (f m) = 0) (x : H1 G M) :
+    explicitCoeff1 G N q hq (explicitCoeff1 G M f hf x) = 0 := by
+  rw [← AddMonoidHom.comp_apply, ← explicitCoeff1_comp]
+  exact DFunLike.congr_fun (explicitCoeff1_eq_zero G M _ _ hqf) x
 
 /-- An equivariant additive equivalence of topological coefficient modules induces an additive
 equivalence on explicit first continuous cohomology. Both directions are required to be

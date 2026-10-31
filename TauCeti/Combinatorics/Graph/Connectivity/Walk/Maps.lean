@@ -15,7 +15,8 @@ This file transports an edge-labelled multigraph walk along a graph inclusion an
 walk to a subgraph containing all its traversed edges. Since the ambient vertex and edge types do
 not change, both operations preserve the support and edge list. In particular, they preserve
 paths, trails, cycles, and reachability. In particular, reachability after deleting a set of edges
-is witnessed exactly by walks avoiding those edges.
+is witnessed exactly by walks avoiding those edges, and reachability after deleting a set of
+vertices is witnessed by walks whose support avoids those vertices.
 
 The single-edge deletion results describe the original component as the union of the endpoint
 components after deletion (`Graph.IsLink.reachable_iff_reachable_deleteEdges_or`) and show that
@@ -309,6 +310,30 @@ theorem reachable_deleteEdges_iff_exists_walk {α : Type u} {β : Type v} {G : G
     refine (p.transfer deleteEdges_le fun e he ↦ ?_).reachable (by simpa using hx)
     rw [edgeSet_deleteEdges]
     exact ⟨p.edges_subset_edgeSet he, hp e he⟩
+
+/-- Two points are reachable after deleting a set of vertices exactly when some walk between them
+avoids all the deleted vertices. -/
+theorem reachable_deleteVerts_iff_exists_walk {α : Type u} {β : Type v} {G : Graph α β}
+    {S : Set α} {x y : α} :
+    (G.deleteVerts S).Reachable x y ↔
+      ∃ p : G.Walk x y, x ∈ V(G) ∧ ∀ z ∈ p.support, z ∉ S := by
+  constructor
+  · intro h
+    obtain ⟨hx, ⟨p⟩⟩ := reachable_def.mp h
+    refine ⟨p.mapLe deleteVerts_le, deleteVerts_le.vertexSet_mono hx, ?_⟩
+    intro z hz
+    rw [Walk.support_mapLe_eq_support] at hz
+    have hz' := p.support_subset_vertexSet hx z hz
+    rw [vertexSet_deleteVerts] at hz'
+    exact hz'.2
+  · rintro ⟨p, hx, hp⟩
+    refine (p.transfer deleteVerts_le fun e he ↦ ?_).reachable ?_
+    · obtain ⟨a, b, hab⟩ := exists_isLink_of_mem_edgeSet (p.edges_subset_edgeSet he)
+      rw [edgeSet_deleteVerts]
+      exact ⟨a, b, hab, hp a (p.mem_support_of_isLink_of_mem_edges hab he),
+        hp b (p.mem_support_of_isLink_of_mem_edges hab.symm he)⟩
+    · rw [vertexSet_deleteVerts]
+      exact ⟨hx, hp x p.start_mem_support⟩
 
 section DeleteOneEdge
 

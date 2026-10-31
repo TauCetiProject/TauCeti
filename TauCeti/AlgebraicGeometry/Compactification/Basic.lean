@@ -81,6 +81,28 @@ abbrev ofHom {Y : Scheme.{u}} (j : X ⟶ Y) (p : Y ⟶ S)
   ⟨⟨Y, j, p, fac⟩, (compactificationProperty_iff f _).mpr
     ⟨inferInstance, inferInstance, inferInstance⟩⟩
 
+section LocalizationAway
+
+variable {R : CommRingCat.{u}}
+
+/-- The tautological compactification of a principal affine open, over its ambient spectrum. -/
+noncomputable abbrev localizationAway (r : R) :
+    Compactification (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away r)))) :=
+  ofHom (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away r))))
+    (𝟙 _) (by simp)
+
+/-- Localizing at a non-zero-divisor gives a schematically dense interior; the ring need
+not be reduced. -/
+theorem isSchemeTheoreticallyDominant_localizationAway (r : R) (hr : IsRegular r) :
+    IsSchemeTheoreticallyDominant (localizationAway r).j := by
+  apply (isSchemeTheoreticallyDominant_SpecMap_iff _).mpr
+  apply (IsLocalization.injective_iff_isRegular (S := Localization.Away r)
+    (Submonoid.powers r)).mpr
+  rintro ⟨_, n, rfl⟩
+  exact hr.pow n
+
+end LocalizationAway
+
 /-- A morphism of compactifications fixes the source and lies over the base. -/
 abbrev Hom (C D : Compactification f) : Type _ := C ⟶ D
 
@@ -151,6 +173,15 @@ def denseCompactificationProperty : ObjectProperty (Compactification f) :=
 theorem denseCompactificationProperty_iff (C : Compactification f) :
     denseCompactificationProperty f C ↔ IsSchemeTheoreticallyDominant C.j :=
   (Iff.rfl)
+
+/-- Schematic density of the interior is invariant under isomorphism of compactifications. -/
+instance : (denseCompactificationProperty f).IsClosedUnderIsomorphisms where
+  of_iso {C D} e hC := by
+    rw [denseCompactificationProperty_iff] at hC ⊢
+    have := hC
+    have h : C.j ≫ e.hom.hom.h = D.j := e.hom.hom.ι_h
+    rw [← h]
+    infer_instance
 
 /-- The full subcategory of compactifications with scheme-theoretically dense interior. -/
 abbrev DenseCompactification := (denseCompactificationProperty f).FullSubcategory

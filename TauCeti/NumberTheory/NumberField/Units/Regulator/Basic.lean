@@ -38,6 +38,11 @@ regulator of `K` as its regulator exactly when it generates the units modulo tor
 twice its logarithmic height, so these bounds are the input to the upper bound of the regulator
 by the heights of a fundamental system (Bugeaud–Győry, Lemma 1).
 
+For a family `u` of maximal rank, the exponents of `x = ζ * ∏ j, u j ^ e j` with `ζ` a root of
+unity are the coordinates of the logarithmic embedding of `x` on the basis `basisOfIsMaxRank`
+(`TauCeti.NumberField.Units.basisOfIsMaxRank_repr_logEmbedding`). This extends Mathlib's
+`NumberField.Units.fun_eq_repr` from the fundamental system to any family of maximal rank.
+
 ## References
 
 * H. Cohen, *A Course in Computational Algebraic Number Theory*, §5.7.
@@ -206,6 +211,19 @@ theorem regOfFamily_eq_regulator_iff {u : Fin (rank K) → (𝓞 K)ˣ} :
     regOfFamily u = regulator K ↔ Subgroup.closure (Set.range u) ⊔ torsion K = ⊤ := by
   rw [← Subgroup.index_eq_one, ← Nat.cast_inj (R := ℝ), ← regOfFamily_div_regulator,
     Nat.cast_one, div_eq_one_iff_eq (regulator_ne_zero K)]
+
+open scoped Classical in
+/-- If `u` has maximal rank and `x = ζ * ∏ j, u j ^ e j` with `ζ` a root of unity, then the
+exponents `e j` are the coordinates of the logarithmic embedding of `x` on the basis
+`basisOfIsMaxRank`. -/
+theorem basisOfIsMaxRank_repr_logEmbedding {u : Fin (rank K) → (𝓞 K)ˣ} (hu : IsMaxRank u)
+    {x ζ : (𝓞 K)ˣ} (hζ : ζ ∈ torsion K) {e : Fin (rank K) → ℤ}
+    (hx : x = ζ * ∏ j, u j ^ e j) (j : Fin (rank K)) :
+    (basisOfIsMaxRank hu).repr (logEmbedding K (Additive.ofMul x)) j = e j := by
+  have h : logEmbedding K (Additive.ofMul x) = ∑ i, (e i : ℝ) • basisOfIsMaxRank hu i := by
+    simp [hx, dirichletUnitTheorem.logEmbedding_eq_zero_iff.mpr hζ, ofMul_zpow, map_zsmul,
+      Int.cast_smul_eq_zsmul]
+  rw [h, Module.Basis.repr_sum_self]
 
 open scoped Classical in
 /-- **Hadamard's bound for the regulator of a family.** The regulator of a family of units is at

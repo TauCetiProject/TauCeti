@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Geometry.Manifold.Riemannian.Pullback
-import TauCeti.Geometry.Manifold.VectorBundle.Cotangent
+import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar

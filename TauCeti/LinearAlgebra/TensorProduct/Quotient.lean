@@ -10,6 +10,9 @@ public import Mathlib.LinearAlgebra.TensorProduct.Quotient
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.Algebra.CharP.Defs
+public import Mathlib.Algebra.Module.Projective
+public import Mathlib.LinearAlgebra.TensorProduct.Lift
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
@@ -56,6 +59,8 @@ relations, for instance the rationalisation of a module over an integral group r
 * `LinearMap.exact_lTensor_quotient_span_singleton`: if `a : M → N` and `b : N → M` compose in
   both orders to multiplication by `r`, and `r` is regular on `M`, then the reductions of `b` and
   `a` modulo `r` form an exact pair.
+* `LinearMap.exact_comp_baseChange_quotient_span_singleton`: under the same hypotheses, with `r`
+  regular on `R` and `N` projective, the `R ⧸ (r)`-duals of these reductions form an exact pair.
 * `TensorProduct.AlgebraTensorModule.ker_rTensor_mkQ`: the kernel of the tensored
   quotient map `mkQ ⊗ 𝟙 N` is the range of `f ⊗ 𝟙 N`.
 * `TensorProduct.AlgebraTensorModule.rTensor_mkQ_surjective`: the tensored quotient map
@@ -121,6 +126,58 @@ theorem exact_lTensor_quotient_span_singleton {R M N : Type*} [CommRing R] [AddC
     refine ⟨n - a m, ?_⟩
     rw [smul_sub, ← map_smul, hm, map_sub, ← LinearMap.comp_apply, hab]
     simp
+
+/-- **Reductions of a factorization of a regular scalar are dually exact.** Let `a : M → N` and
+`b : N → M` satisfy `a ∘ b = r • id` and `b ∘ a = r • id`, with `r` regular on `R` and `N`
+projective. Then the `R ⧸ (r)`-duals of the reductions of `a` and `b` modulo `r` form an exact
+pair: a functional on `(R ⧸ (r)) ⊗ N` vanishing on the image of the reduction of `a` factors
+through the reduction of `b`. Together with `LinearMap.exact_lTensor_quotient_span_singleton`,
+this says that reducing a matrix factorization modulo a non-zero-divisor gives a totally acyclic
+periodic complex. -/
+theorem exact_comp_baseChange_quotient_span_singleton {R M N : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Module.Projective R N] {r : R}
+    (a : M →ₗ[R] N) (b : N →ₗ[R] M) (hab : a ∘ₗ b = r • LinearMap.id)
+    (hba : b ∘ₗ a = r • LinearMap.id) (hr : IsSMulRegular R r) :
+    Function.Exact
+      (fun ψ : (R ⧸ Ideal.span {r}) ⊗[R] M →ₗ[R ⧸ Ideal.span {r}] R ⧸ Ideal.span {r} ↦
+        ψ ∘ₗ b.baseChange (R ⧸ Ideal.span {r}))
+      (fun φ ↦ φ ∘ₗ a.baseChange (R ⧸ Ideal.span {r})) := by
+  intro φ
+  constructor
+  · intro hφ
+    -- Lift `n ↦ φ (1 ⊗ n)` to `ϕ : N → R` using projectivity of `N`.
+    obtain ⟨ϕ, hϕ⟩ := Module.projective_lifting_property (Ideal.span {r}).mkQ
+      (φ.restrictScalars R ∘ₗ TensorProduct.mk R (R ⧸ Ideal.span {r}) N 1)
+      (Submodule.mkQ_surjective _)
+    have hϕ' (n : N) : Ideal.Quotient.mk _ (ϕ n) = φ (1 ⊗ₜ n) := congr($hϕ n)
+    -- Since `φ` kills the image of `a`, the map `ϕ ∘ a` takes values in `rR`, so it is `r` times
+    -- a map `χ : M → R`, which is linear because `r` is regular.
+    have hc (x : M) : ∃ c : R, ϕ (a x) = r * c := by
+      refine Ideal.mem_span_singleton.1 ?_
+      rw [← Ideal.Quotient.eq_zero_iff_mem, hϕ']
+      simpa using congr($hφ (1 ⊗ₜ x))
+    choose c hc using hc
+    let χ : M →ₗ[R] R :=
+      { toFun := c
+        map_add' x y := hr (by simp only [smul_eq_mul, mul_add, ← hc, map_add])
+        map_smul' s x := hr (by
+          simp only [smul_eq_mul, RingHom.id_apply, ← hc, map_smul]
+          rw [hc]
+          ring) }
+    -- From `a ∘ b = r • id`, `r • χ (b n) = ϕ (a (b n)) = r • ϕ n`, so `χ ∘ b = ϕ`.
+    have hχ (n : N) : χ (b n) = ϕ n := hr (by
+      simp only [smul_eq_mul]
+      rw [show r * χ (b n) = ϕ (a (b n)) from (hc _).symm, ← LinearMap.comp_apply a b, hab]
+      simp)
+    refine ⟨((Ideal.span {r}).mkQ ∘ₗ χ).liftBaseChange _, ?_⟩
+    refine TensorProduct.AlgebraTensorModule.ext fun s n ↦ ?_
+    rw [← mul_one s, ← smul_eq_mul, ← smul_tmul', map_smul, map_smul]
+    congr 1
+    simp [hχ, ← hϕ']
+  · rintro ⟨ψ, rfl⟩
+    refine TensorProduct.AlgebraTensorModule.ext fun s x ↦ ?_
+    have hx : b (a x) = r • x := by simpa using LinearMap.congr_fun hba x
+    simp [hx, Algebra.smul_def]
 
 end LinearMap
 

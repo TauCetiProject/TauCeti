@@ -182,39 +182,26 @@ theorem conjugate_parts_sort {n : ℕ} (μ : n.Partition) :
   rw [← YoungDiagram.rowLens_ofPartition_eq_sort_parts μ.conjugate,
     YoungDiagram.ofPartition_conjugate]
 
-end Nat.Partition
-
-namespace TauCeti
-
 /-- **Conjugation of partitions reverses dominance.** If `μ` dominates `ν`, then the conjugate
 of `ν` dominates the conjugate of `μ`. -/
-protected theorem Dominates.conjugate {n : ℕ} {μ ν : n.Partition} (h : Dominates μ ν) :
-    Dominates ν.conjugate μ.conjugate := by
+protected theorem Dominates.conjugate {n : ℕ} {μ ν : n.Partition} (h : μ.Dominates ν) :
+    ν.conjugate.Dominates μ.conjugate := by
   rw [dominates_iff]
   intro k
-  rw [Nat.Partition.conjugate_parts_sort, Nat.Partition.conjugate_parts_sort,
-    sum_take_transpose_rowLens, sum_take_transpose_rowLens,
+  rw [conjugate_parts_sort, conjugate_parts_sort,
+    TauCeti.sum_take_transpose_rowLens, TauCeti.sum_take_transpose_rowLens,
     YoungDiagram.rowLens_ofPartition_eq_sort_parts,
     YoungDiagram.rowLens_ofPartition_eq_sort_parts]
-  apply sum_map_min_le_of_prefix_sum_le
+  apply TauCeti.sum_map_min_le_of_prefix_sum_le
   · exact (Multiset.pairwise_sort ν.parts (· ≥ ·)).sortedGE
-  · calc
-      (μ.parts.sort (· ≥ ·)).sum =
-          (↑(μ.parts.sort (· ≥ ·)) : Multiset ℕ).sum :=
-        (Multiset.sum_coe _).symm
-      _ = μ.parts.sum := congrArg Multiset.sum (Multiset.sort_eq μ.parts (· ≥ ·))
-      _ = n := μ.parts_sum
-      _ = ν.parts.sum := ν.parts_sum.symm
-      _ = (↑(ν.parts.sort (· ≥ ·)) : Multiset ℕ).sum :=
-        congrArg Multiset.sum (Multiset.sort_eq ν.parts (· ≥ ·)).symm
-      _ = (ν.parts.sort (· ≥ ·)).sum := Multiset.sum_coe _
+  · rw [sum_sort_parts, sum_sort_parts]
   · exact dominates_iff.mp h
 
 /-- Conjugation of partitions reverses dominance: the conjugate of `μ` dominates the conjugate
 of `ν` exactly when `ν` dominates `μ`. -/
 @[simp]
 theorem conjugate_dominates_conjugate_iff {n : ℕ} {μ ν : n.Partition} :
-    Dominates μ.conjugate ν.conjugate ↔ Dominates ν μ :=
+    μ.conjugate.Dominates ν.conjugate ↔ ν.Dominates μ :=
   ⟨fun h => by simpa using h.conjugate, fun h => h.conjugate⟩
 
-end TauCeti
+end Nat.Partition

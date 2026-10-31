@@ -80,7 +80,14 @@ def IsRestrictedFamily (c : σ → ℝ) (a : (σ →₀ ℕ) → E) : Prop :=
 /-- Restrictedness is decay of the weighted coefficient norms along the cofinite filter. -/
 theorem isRestrictedFamily_iff {a : (σ →₀ ℕ) → E} :
     IsRestrictedFamily c a ↔
-      Tendsto (fun t ↦ ‖a t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0) := Iff.rfl
+      Tendsto (fun t : σ →₀ ℕ ↦ ‖a t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0) :=
+  Iff.rfl
+
+/-- At unit polyradius, restricted families are exactly the null coefficient families. -/
+theorem isRestrictedFamily_one_iff {a : (σ →₀ ℕ) → E} :
+    IsRestrictedFamily (fun _ ↦ 1) a ↔ Tendsto a cofinite (𝓝 0) := by
+  simpa [isRestrictedFamily_iff] using
+    (tendsto_zero_iff_norm_tendsto_zero (f := a) (a := cofinite)).symm
 
 /-- For coefficients in a normed ring, a family is restricted exactly when the power series with
 these coefficients is restricted in Mathlib's sense. -/
@@ -143,6 +150,35 @@ theorem IsRestrictedFamily.smul [SeminormedRing R] [Module R E] [IsBoundedSMul R
   ha.of_norm_le fun t ↦ norm_smul_le r (a t)
 
 end Predicate
+
+section Pi
+
+variable {ι : Type*} [Fintype ι] {E : ι → Type*} [∀ i, SeminormedAddCommGroup (E i)]
+  {c : σ → ℝ}
+
+/-- At any polyradius, a family with coefficients in a finite product is restricted exactly
+when each coordinate family is restricted. The product has its maximum seminorm. -/
+@[simp]
+theorem isRestrictedFamily_pi_iff {a : (σ →₀ ℕ) → ∀ i, E i} :
+    IsRestrictedFamily c a ↔ ∀ i, IsRestrictedFamily c (fun t ↦ a t i) := by
+  constructor
+  · intro ha i
+    exact ha.of_norm_le (C := 1) fun t ↦ by simpa using norm_le_pi_norm (a t) i
+  · intro ha
+    have hi (i : ι) := (isRestrictedFamily_abs_iff c (fun t ↦ a t i)).mpr (ha i)
+    unfold IsRestrictedFamily at hi
+    have hsum := tendsto_finsetSum Finset.univ (fun i _ ↦ hi i)
+    simp only [Finset.sum_const_zero] at hsum
+    rw [← isRestrictedFamily_abs_iff, IsRestrictedFamily]
+    refine tendsto_const_nhds.squeeze hsum
+      (fun t ↦ mul_nonneg (norm_nonneg _) (prod_abs_pow_nonneg t)) fun t ↦ ?_
+    rw [← Finset.sum_mul]
+    exact mul_le_mul_of_nonneg_right
+      ((pi_norm_le_iff_of_nonneg (Finset.sum_nonneg fun i _ ↦ norm_nonneg (a t i))).mpr
+        fun i ↦ Finset.single_le_sum (fun j _ ↦ norm_nonneg (a t j)) (Finset.mem_univ i))
+      (prod_abs_pow_nonneg t)
+
+end Pi
 
 section Submodule
 

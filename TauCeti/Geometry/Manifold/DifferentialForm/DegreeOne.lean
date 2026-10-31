@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
+import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 
 /-!
 # Degree-one forms as sections of the bundle of fibrewise linear maps
@@ -34,6 +35,8 @@ derivative applies.
   statements for fixed-coefficient forms. For `F = ℝ` the bundle of fibrewise linear maps is
   `TauCeti.CotangentBundle I M`, so these identify smooth real one-forms with smooth sections of
   the cotangent bundle.
+* `ContMDiff.contMDiff_totalSpaceMk_mvfderiv`: the differential of a `C^(n+1)` function is a
+  `C^n` section of the bundle of linear maps, through the exterior derivative of its `0`-form.
 -/
 
 public section
@@ -127,6 +130,22 @@ theorem isSmoothForm_ofSubsingleton_iff {n : WithTop ℕ∞}
   rw [isSmoothForm_def, ← isSmoothBundleForm_def]
   exact isSmoothBundleForm_ofSubsingleton_iff
 
+/-- **The differential of a `C^(n+1)` function is a `C^n` covector field**: `x ↦ df_x` is a `C^n`
+section of the bundle of linear maps `TangentSpace I x →L[ℝ] F`, which is the cotangent bundle
+when `F = ℝ`. -/
+theorem _root_.ContMDiff.contMDiff_totalSpaceMk_mvfderiv [IsManifold I 2 M] {n : WithTop ℕ∞}
+    {f : M → F} (hf : ContMDiff I 𝓘(ℝ, F) (n + 1) f) :
+    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (E →L[ℝ] F)
+      (E := fun x : M ↦ TangentSpace I x →L[ℝ] F) x (mvfderiv I f x)) := by
+  rw [← isSmoothForm_ofSubsingleton_iff]
+  -- `df`, read as an alternating map of one vector, is the exterior derivative of `f`.
+  have hd : (fun x ↦ ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) F (0 : Fin 1)
+      (mvfderiv I f x)) = mextDeriv (RoughForm.ofFunction I f) :=
+    funext fun x ↦ (mextDeriv_ofFunction f x).symm
+  rw [hd, isSmoothForm_def, ← isSmoothBundleForm_def]
+  exact isSmoothBundleForm_mextDeriv _
+    ((isSmoothBundleForm_def _ _).mpr (isSmoothForm_ofFunction_iff.mpr hf).contMDiff) le_rfl
+
 namespace SmoothForm
 
 /-- Smooth `F`-valued one-forms are smooth sections of the bundle of linear maps
@@ -136,15 +155,19 @@ namespace SmoothForm
 def degreeOneEquiv :
     SmoothForm I M F 1 ≃ₗ[ℝ]
       ContMDiffSection I (E →L[ℝ] F) ∞ (fun x : M ↦ TangentSpace I x →L[ℝ] F) :=
-  (LinearEquiv.ofEq _ _ <| Submodule.ext fun _ ↦
-    mem_smoothForms.trans mem_smoothBundleForms.symm).trans
-    (SmoothBundleForm.degreeOneEquiv (V := Bundle.Trivial M F))
+  SmoothBundleForm.degreeOneEquiv (V := Bundle.Trivial M F)
 
 /-- The section of a smooth one-form evaluates a tangent vector as the form does. -/
 @[simp]
 theorem degreeOneEquiv_apply_apply (φ : SmoothForm I M F 1) (x : M) (v : TangentSpace I x) :
     degreeOneEquiv φ x v = φ.1 x (fun _ ↦ v) :=
   (rfl)
+
+/-- The section of a smooth one-form, read as a linear map, evaluates a tangent vector `v` as the
+form evaluates the one-element family `![v]`. -/
+theorem degreeOneEquiv_coe_apply (φ : SmoothForm I M F 1) (x : M) (v : TangentSpace I x) :
+    (degreeOneEquiv φ x : TangentSpace I x →ₗ[ℝ] F) v = φ.1 x ![v] := by
+  rw [ContinuousLinearMap.coe_coe, degreeOneEquiv_apply_apply, Matrix.vec_single_eq_const]
 
 /-- The one-form of a smooth section evaluates a single tangent vector as the section does. -/
 @[simp]

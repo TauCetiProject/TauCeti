@@ -33,6 +33,8 @@ from the opens contained in `Y` along `V ↦ Y ∩ V`, which preserves intersect
 
 ## Main results
 
+* `TauCeti.CategoryTheory.cechComplexFunctor_map_comp_cechComplexCompIso_hom`: this isomorphism is
+  natural in the presheaf.
 * `TauCeti.CategoryTheory.cechAugmentation_comp_cechComplexCompIso_hom`: this isomorphism is
   compatible with the augmentations.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_op_comp_iff`: the augmented Čech complex of
@@ -83,6 +85,16 @@ private lemma cechComplexFunctor_obj_d_comp_cechXIso_hom_π (U : ι → C) (P : 
   -- `cechXIso` is the identity
   (_ ≫= Category.id_comp _).trans <| (cechComplexFunctor_obj_d_comp_π U P n k).trans <|
     Finset.sum_congr rfl fun _ _ ↦ congrArg _ (Category.id_comp _).symm
+
+/-- `cechComplexFunctor_map_f_π`, stated through `cechXIso`. -/
+@[reassoc]
+private lemma cechComplexFunctor_map_f_comp_cechXIso_hom_π (V : ι → C) {P P' : Cᵒᵖ ⥤ A}
+    (α : P ⟶ P') (n : ℕ) (a : Fin (n + 1) → ι) :
+    ((cechComplexFunctor V).map α).f n ≫ (cechXIso V P' n).hom ≫ Pi.π _ a =
+      (cechXIso V P n).hom ≫ Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ V (a j))) :=
+  -- `cechXIso` is the identity
+  (_ ≫= Category.id_comp _).trans <|
+    (cechComplexFunctor_map_f_π V P α n a).trans (Category.id_comp _).symm
 
 variable {D : Type u''} [Category.{v''} D] [HasFiniteProducts D] [Quiver.IsThin D]
   (G : C ⥤ D) (U : ι → C) (Q : Dᵒᵖ ⥤ A)
@@ -145,6 +157,23 @@ theorem cechComplexCompIso_hom_f_π (n : ℕ) (a : Fin (n + 1) → ι) :
       Pi.π _ a ≫ Q.map (Pi.lift fun j ↦ G.map (Pi.π (fun j ↦ U (a j)) j)).op :=
   -- `cechXIso` is the identity
   (_ ≫= (Category.id_comp _).symm).trans <| (compXIso_hom_π G U Q hG n a).trans (Category.id_comp _)
+
+/-- The isomorphism of Čech complexes `cechComplexCompIso` is natural in the presheaf `Q`. -/
+@[reassoc]
+theorem cechComplexFunctor_map_comp_cechComplexCompIso_hom {Q' : Dᵒᵖ ⥤ A} (β : Q ⟶ Q') :
+    (cechComplexFunctor (fun i ↦ G.obj (U i))).map β ≫ (cechComplexCompIso G U Q' hG).hom =
+      (cechComplexCompIso G U Q hG).hom ≫
+        (cechComplexFunctor U).map (Functor.whiskerLeft G.op β) := by
+  ext n : 1
+  rw [← cancel_mono (cechXIso U (G.op ⋙ Q') n).hom]
+  refine Pi.hom_ext _ _ fun a ↦ ?_
+  simp only [HomologicalComplex.comp_f, cechComplexCompIso,
+    HomologicalComplex.Hom.isoOfComponents_hom_f, Category.assoc]
+  rw [compXIso_hom_π, cechComplexFunctor_map_f_comp_cechXIso_hom_π_assoc,
+    cechComplexFunctor_map_f_comp_cechXIso_hom_π]
+  conv_rhs =>
+    rw [← Category.assoc (cechXIso U (G.op ⋙ Q) n).hom, ← Category.assoc, compXIso_hom_π]
+  simp
 
 variable [HasZeroObject A] {T : C} (hT : IsTerminal T) (hGT : IsTerminal (G.obj T))
 
