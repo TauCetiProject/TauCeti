@@ -35,6 +35,10 @@ hypothesis of the compression lemma for CW complexes.
 
 ## Main declarations
 
+* `TauCeti.ballRadialDen`, `TauCeti.ballRadialProjection`: the shared radial denominator and
+  projection in ambient coordinates, also used for the bottom-and-sides deformation of cubes.
+* `TauCeti.ballRadialProjection_spec`, `TauCeti.ballRadialProjection_eq_self`: the projection
+  lands on the bottom and sides and fixes that subspace.
 * `TauCeti.hasHomotopyExtensionProperty_sphere_closedBall`: **the unit sphere has the homotopy
   extension property inside the closed unit ball.**
 * `ContinuousMap.nullhomotopic_iff_exists_extension_closedBall`: a map out of the unit sphere is
@@ -62,20 +66,33 @@ universe u
 
 variable {E : Type u} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- Radial projection of the cylinder over the closed unit ball away from the point at height `2`
-on its axis, written in the ambient coordinates `ℝ × E`. The scale factor is the smaller of the
-factors needed to reach the bottom face and the side of the cylinder. Taking the maximum in the
-denominator gives a single continuous formula, including at the cylinder axis. -/
-private def ballRadialProjection (p : I × closedBall (0 : E) 1) : ℝ × E :=
-  let d := max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖)
-  (2 - 2 * (2 - (p.1 : ℝ)) / d, (2 / d) • (p.2 : E))
+/-- The denominator for radial projection from height two onto the bottom and sides of the
+unit-ball cylinder. It is shared with the radial deformation of finite cubes. -/
+def ballRadialDen (p : I × closedBall (0 : E) 1) : ℝ :=
+  max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖)
+
+omit [NormedSpace ℝ E] in
+theorem ballRadialDen_def (p : I × closedBall (0 : E) 1) :
+    ballRadialDen p = max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) := (rfl)
 
 omit [NormedSpace ℝ E] in
 private lemma ballRadialProjection_den_pos (p : I × closedBall (0 : E) 1) :
     0 < max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) :=
   lt_of_lt_of_le (by have := p.1.2.2; linarith) (le_max_left _ _)
 
-private lemma continuous_ballRadialProjection : Continuous (ballRadialProjection (E := E)) := by
+/-- Radial projection of the cylinder over the closed unit ball away from the point at height `2`
+on its axis, written in the ambient coordinates `ℝ × E`. The scale factor is the smaller of the
+factors needed to reach the bottom face and the side of the cylinder. Taking the maximum in the
+denominator gives a single continuous formula, including at the cylinder axis. -/
+def ballRadialProjection (p : I × closedBall (0 : E) 1) : ℝ × E :=
+  (2 - 2 * (2 - (p.1 : ℝ)) / ballRadialDen p, (2 / ballRadialDen p) • (p.2 : E))
+
+theorem ballRadialProjection_def (p : I × closedBall (0 : E) 1) :
+    ballRadialProjection p =
+      (2 - 2 * (2 - (p.1 : ℝ)) / ballRadialDen p,
+        (2 / ballRadialDen p) • (p.2 : E)) := (rfl)
+
+theorem continuous_ballRadialProjection : Continuous (ballRadialProjection (E := E)) := by
   have hd : Continuous fun p : I × closedBall (0 : E) 1 =>
       max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) := by fun_prop
   have hne p := (ballRadialProjection_den_pos (E := E) p).ne'
@@ -85,7 +102,7 @@ private lemma continuous_ballRadialProjection : Continuous (ballRadialProjection
 
 /-- The radial projection lands in the cylinder, and in the union of its bottom face with the
 part of the cylinder lying over the sphere. -/
-private lemma ballRadialProjection_spec (p : I × closedBall (0 : E) 1) :
+theorem ballRadialProjection_spec (p : I × closedBall (0 : E) 1) :
     (ballRadialProjection p).1 ∈ I ∧ (ballRadialProjection p).2 ∈ closedBall (0 : E) 1 ∧
       ((ballRadialProjection p).1 = 0 ∨ (ballRadialProjection p).2 ∈ sphere (0 : E) 1) := by
   have ht0 := p.1.2.1
@@ -98,10 +115,10 @@ private lemma ballRadialProjection_spec (p : I × closedBall (0 : E) 1) :
     max_le (by linarith) (by linarith)
   have hnorm : ‖(ballRadialProjection p).2‖ =
       2 * ‖(p.2 : E)‖ / max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) := by
-    simp [ballRadialProjection, norm_smul, Real.norm_eq_abs, abs_of_pos hd,
+    simp [ballRadialProjection, ballRadialDen, norm_smul, Real.norm_eq_abs, abs_of_pos hd,
       div_mul_eq_mul_div]
   refine ⟨?_, ?_, ?_⟩
-  · dsimp [ballRadialProjection]
+  · dsimp [ballRadialProjection, ballRadialDen]
     constructor
     · rw [sub_nonneg, div_le_iff₀ hd]
       linarith
@@ -111,7 +128,7 @@ private lemma ballRadialProjection_spec (p : I × closedBall (0 : E) 1) :
     exact hd2
   · rcases le_total (2 * ‖(p.2 : E)‖) (2 - (p.1 : ℝ)) with h | h
     · left
-      simp [ballRadialProjection, max_eq_left h,
+      simp [ballRadialProjection, ballRadialDen, max_eq_left h,
         ne_of_gt (by linarith : 0 < 2 - (p.1 : ℝ))]
     · right
       rw [mem_sphere_zero_iff_norm, hnorm, max_eq_right h, div_self]
@@ -119,7 +136,7 @@ private lemma ballRadialProjection_spec (p : I × closedBall (0 : E) 1) :
 
 /-- The radial projection fixes the bottom face of the cylinder and the part of the cylinder
 lying over the sphere. -/
-private lemma ballRadialProjection_eq_self (p : I × closedBall (0 : E) 1)
+theorem ballRadialProjection_eq_self (p : I × closedBall (0 : E) 1)
     (hp : p ∈ cylinderExtensionDomain (Subtype.val ⁻¹' sphere (0 : E) 1)) :
     ballRadialProjection p = ((p.1 : ℝ), (p.2 : E)) := by
   have hd : max (2 - (p.1 : ℝ)) (2 * ‖(p.2 : E)‖) = 2 := by
@@ -130,7 +147,8 @@ private lemma ballRadialProjection_eq_self (p : I × closedBall (0 : E) 1)
       exact max_eq_left (by linarith)
     · rw [mem_sphere_zero_iff_norm.1 hs, mul_one]
       exact max_eq_right (by have := p.1.2.1; linarith)
-  simp only [ballRadialProjection, hd, div_self (by norm_num : (2 : ℝ) ≠ 0), one_smul]
+  simp only [ballRadialProjection, ballRadialDen, hd,
+    div_self (by norm_num : (2 : ℝ) ≠ 0), one_smul]
   congr 1
   ring
 
