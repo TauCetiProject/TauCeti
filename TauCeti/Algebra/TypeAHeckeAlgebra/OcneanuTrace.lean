@@ -167,8 +167,8 @@ private theorem extend_incl_mul_lastT_mul_incl (hφ : ∀ x y, φ (x * y) = φ (
   refine Finset.sum_congr rfl fun m _ ↦ ?_
   have hm : incl q (n + 1) a * lastT q n * incl q (n + 1) (incl q n (c m) * rep q n m) =
       incl q (n + 1) (a * incl q n (c m)) * rep q (n + 1) m := by
-    rw [← lastT_mul_rep (Nat.lt_succ_iff.1 m.2), map_mul, map_mul, ← mul_assoc,
-      mul_assoc _ (lastT q n), (commute_lastT (c m)).eq, ← mul_assoc, mul_assoc]
+    rw [← lastT_mul_rep (Nat.lt_succ_iff.1 m.2)]
+    simp only [map_mul, mul_assoc, (commute_lastT (c m)).left_comm]
   rw [hm, extend_incl_mul_rep, ← mul_assoc, hφ]
   simp only [mul_assoc]
 
@@ -189,9 +189,14 @@ private theorem extend_incl_mul_lastT_mul_lastT (hφ : ∀ x y, φ (x * y) = φ 
     (b : stage R q (n + 1)) :
     extend z φ (incl q (n + 1) b * lastT q n * lastT q n) =
       (((q : R) - ↑q⁻¹) * z + 1) * φ b := by
-  rw [mul_assoc, lastT_mul_lastT, mul_add, mul_smul_comm, mul_one, map_add, map_smul,
-    extend_incl_mul_lastT z hφ, extend_incl, smul_eq_mul]
-  ring
+  calc extend z φ (incl q (n + 1) b * lastT q n * lastT q n)
+      = ((q : R) - ↑q⁻¹) * extend z φ (incl q (n + 1) b * lastT q n) +
+          extend z φ (incl q (n + 1) b) := by
+        rw [mul_assoc, lastT_mul_lastT]
+        simp only [mul_add, mul_smul_comm, mul_one, map_add, map_smul, smul_eq_mul]
+    _ = (((q : R) - ↑q⁻¹) * z + 1) * φ b := by
+        rw [extend_incl_mul_lastT z hφ, extend_incl]
+        ring
 
 /-- The extension of a trace is tracial against the stage `n + 1`. -/
 private theorem extend_incl_mul_comm (hφ : ∀ x y, φ (x * y) = φ (y * x))
@@ -199,8 +204,15 @@ private theorem extend_incl_mul_comm (hφ : ∀ x y, φ (x * y) = φ (y * x))
     extend z φ (incl q (n + 1) b * x) = extend z φ (x * incl q (n + 1) b) := by
   refine stage_map_mul_comm (fun c ↦ ?_) (fun a c ↦ ?_) x
   · rw [← map_mul, ← map_mul, extend_incl, extend_incl, hφ]
-  · rw [← mul_assoc, ← mul_assoc, ← map_mul, mul_assoc _ _ (incl q (n + 1) b), ← map_mul,
-      extend_incl_mul_lastT_mul_incl z hφ, extend_incl_mul_lastT_mul_incl z hφ, mul_assoc]
+  · calc extend z φ (incl q (n + 1) b * (incl q (n + 1) a * lastT q n * incl q (n + 1) c))
+        = extend z φ (incl q (n + 1) (b * a) * lastT q n * incl q (n + 1) c) := by
+          simp only [map_mul, mul_assoc]
+      _ = z * φ (c * (b * a)) := extend_incl_mul_lastT_mul_incl z hφ _ _
+      _ = z * φ (c * b * a) := by rw [mul_assoc]
+      _ = extend z φ (incl q (n + 1) a * lastT q n * incl q (n + 1) (c * b)) :=
+          (extend_incl_mul_lastT_mul_incl z hφ _ _).symm
+      _ = extend z φ (incl q (n + 1) a * lastT q n * incl q (n + 1) c * incl q (n + 1) b) := by
+          simp only [map_mul, mul_assoc]
 
 /-- `T n * T n * b ↦ ((q - q⁻¹) * z + 1) * φ b`. -/
 private theorem extend_lastT_mul_lastT_mul_incl (hφ : ∀ x y, φ (x * y) = φ (y * x))
@@ -232,13 +244,15 @@ private theorem extend_extend_lastT_mul_incl_mul_lastT (hφ : ∀ x y, φ (x * y
     rw [(commute_lastT c).eq, extend_incl_mul_lastT_mul_lastT z hφ']
   · simp only [LinearMap.comp_apply, LinearMap.mulRight_apply, LinearMap.mulLeft_apply,
       AlgHom.toLinearMap_apply, LinearMap.smul_apply, smul_eq_mul]
-    have h₂ : lastT q m * incl q (m + 1) d * (incl q (m + 1) c * lastT q m) =
-        lastT q m * incl q (m + 1) (d * c) * lastT q m := by
-      simp only [map_mul, mul_assoc]
-    rw [lastT_mul_incl_mul_lastT, extend_incl_mul_lastT_mul_incl z hφ', h₂, hφ',
-      extend_lastT_mul_lastT_mul_incl z hφ,
-      extend_incl_mul_lastT_mul_incl z hφ]
-    ring
+    calc _ = z * extend z φ (lastT q m * incl q (m + 1) (d * c) * lastT q m) := by
+          rw [lastT_mul_incl_mul_lastT, extend_incl_mul_lastT_mul_incl z hφ']
+          simp only [map_mul, mul_assoc]
+      _ = z * extend z φ (lastT q m * (lastT q m * incl q (m + 1) (d * c))) := by rw [hφ']
+      _ = z * ((((q : R) - ↑q⁻¹) * z + 1) * φ (d * c)) := by
+          rw [extend_lastT_mul_lastT_mul_incl z hφ]
+      _ = _ := by
+          rw [extend_incl_mul_lastT_mul_incl z hφ]
+          ring
 
 /-- The value of `a * T * b * T` for `a = c' * T' * d'` and `b = c * T' * d`, where `T'` and `T`
 are the last two generators. -/
@@ -263,8 +277,16 @@ private theorem extend_extend_mul_lastT_mul_mul_lastT
       lastT q m * (incl q (m + 1) (d * c') * lastT q m * incl q (m + 1) (d' * c)) *
         lastT q m := by
     simp only [map_mul, mul_assoc]
-  rw [h₁, extend_incl_mul_lastT_mul_incl z hφ', h₂, hφ', lastT_mul_lastT_mul, map_add, map_smul,
-    extend_incl_mul_lastT_mul_incl z hφ, smul_eq_mul]
+  calc _ = z * extend z φ (lastT q m * (incl q (m + 1) (d * c') * lastT q m *
+          incl q (m + 1) (d' * c)) * lastT q m) := by
+        rw [h₁, extend_incl_mul_lastT_mul_incl z hφ', h₂]
+    _ = z * extend z φ (lastT q m * (lastT q m * (incl q (m + 1) (d * c') * lastT q m *
+          incl q (m + 1) (d' * c)))) := by rw [hφ']
+    _ = z * (((q : R) - ↑q⁻¹) * extend z φ (lastT q m * (incl q (m + 1) (d * c') * lastT q m *
+          incl q (m + 1) (d' * c))) +
+          extend z φ (incl q (m + 1) (d * c') * lastT q m * incl q (m + 1) (d' * c))) := by
+        rw [lastT_mul_lastT_mul, map_add, map_smul, smul_eq_mul]
+    _ = _ := by rw [extend_incl_mul_lastT_mul_incl z hφ]
 
 /-- The pairing `(a, b) ↦ ψ (a * T * b * T)` on the stage `m + 2`, where `ψ` is the second
 extension of `φ` and `T` the last generator, is symmetric. -/
@@ -308,11 +330,18 @@ private theorem extend_extend_mul_lastT_mul_mul_lastT_comm (hφ : ∀ x y, φ (x
       G (incl q (m + 1) c * lastT q m * incl q (m + 1) d)
         (incl q (m + 1) c' * lastT q m * incl q (m + 1) d') := by
     intro c d c' d'
-    have e : ∀ x y : stage R q (m + 2),
-        lastT q m * (x * lastT q m * y) = lastT q m * x * (lastT q m * y) :=
-      fun _ _ ↦ by simp only [mul_assoc]
+    -- `T' * (u * T' * v)` and `T' * (v * T' * u)` are cyclic rotations of each other.
+    have e : ∀ u v : stage R q (m + 1),
+        extend z φ (lastT q m * (incl q (m + 1) u * lastT q m * incl q (m + 1) v)) =
+          extend z φ (lastT q m * (incl q (m + 1) v * lastT q m * incl q (m + 1) u)) := by
+      intro u v
+      calc _ = extend z φ (lastT q m * incl q (m + 1) u * (lastT q m * incl q (m + 1) v)) := by
+            simp only [mul_assoc]
+        _ = extend z φ (lastT q m * incl q (m + 1) v * (lastT q m * incl q (m + 1) u)) :=
+            hφ' _ _
+        _ = _ := by simp only [mul_assoc]
     rw [hG, hG, extend_extend_mul_lastT_mul_mul_lastT z hφ' hφ,
-      extend_extend_mul_lastT_mul_mul_lastT z hφ' hφ, e, e, hφ', hφ (d' * c)]
+      extend_extend_mul_lastT_mul_mul_lastT z hφ' hφ, e, hφ (d' * c)]
   -- Hence it is symmetric, by the decomposition of the stage `m + 2` in both arguments.
   have hC : ∀ c d, G.flip (incl q (m + 1) c * lastT q m * incl q (m + 1) d) =
       G (incl q (m + 1) c * lastT q m * incl q (m + 1) d) := fun c d ↦
