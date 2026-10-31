@@ -121,9 +121,11 @@ theorem volume_closedBall_eq_div_mul {k : ℕ} (x : EuclideanSpace ℝ (Fin k)) 
     (hr : 0 ≤ r) :
     volume (closedBall x r) = volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1) / 2 ^ k *
       ENNReal.ofReal (2 * r) ^ (k : ℝ) := by
-  rw [Measure.addHaar_closedBall _ _ hr, finrank_euclideanSpace_fin, ENNReal.rpow_natCast,
-    ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat, ENNReal.ofReal_pow hr, mul_pow,
-    ← mul_assoc, ENNReal.div_mul_cancel (by simp) (by simp), mul_comm]
+  rw [Measure.addHaar_closedBall _ _ hr, finrank_euclideanSpace_fin]
+  -- `ofReal (2 r) ^ k = 2 ^ k * ofReal r ^ k`; the factor `2 ^ k` cancels the division.
+  simp only [ENNReal.rpow_natCast, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat,
+    ENNReal.ofReal_pow hr, mul_pow]
+  rw [← mul_assoc, ENNReal.div_mul_cancel (by simp) (by simp), mul_comm]
 
 /-- On `EuclideanSpace ℝ (Fin k)`, volume is `(ω_k / 2 ^ k) • μH[k]`, where `ω_k` is the volume
 of the unit ball: the density comparison gives one inequality and the isodiametric inequality the
