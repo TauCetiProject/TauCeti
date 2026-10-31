@@ -33,6 +33,7 @@ at `0` are its nonnegative Fourier coefficients.
 * `TauCeti.CircleSobolev.supported s E S`: the closed subspace of `H^s` of elements with Fourier
   coefficients supported in `S`.
 * `TauCeti.CircleSobolev.indicator S`: the frequency projection onto `supported s E S`.
+* `TauCeti.CircleSobolev.indicatorProj S`: the same projection, as a map to `supported s E S`.
 * `TauCeti.CircleSobolev.diskFunction a`: the function `w ↦ ∑_{n ≥ 0} a.coeff n w ^ n`.
 
 ## Main statements
@@ -154,6 +155,21 @@ theorem indicator_eq_zero_iff : indicator S a = 0 ↔ a ∈ supported s E Sᶜ :
   rw [mem_supported', CircleSobolev.ext_iff, coeff_indicator, coeff_zero, funext_iff]
   refine forall_congr' fun n ↦ ?_
   by_cases hn : n ∈ S <;> simp [hn]
+
+/-- The frequency projection `indicator S`, as a map onto its range `supported s E S`. -/
+def indicatorProj (S : Set ℤ) : CircleSobolev s E →L[ℂ] supported s E S :=
+  (indicator S).codRestrict _ (indicator_mem_supported S)
+
+@[simp]
+theorem coe_indicatorProj (S : Set ℤ) (a : CircleSobolev s E) :
+    (indicatorProj S a : CircleSobolev s E) = indicator S a :=
+  (rfl)
+
+/-- The projection `indicatorProj S` restricts to the identity on `supported s E S`. -/
+@[simp]
+theorem indicatorProj_coe (S : Set ℤ) (a : supported s E S) :
+    indicatorProj S (a : CircleSobolev s E) = a :=
+  Subtype.ext (indicator_eq_self_iff.2 a.2)
 
 @[simp]
 theorem indicator_indicator (S S' : Set ℤ) (a : CircleSobolev s E) :

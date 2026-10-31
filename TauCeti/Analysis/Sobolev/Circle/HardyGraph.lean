@@ -99,62 +99,6 @@ section HardyGraph
 
 variable [hs : Fact (1 / 2 < s)]
 
-/-- The projection of `H^s` onto its nonnegative Laurent subspace. -/
-private def nonnegPart : CircleSobolev s ℂ →L[ℂ] supported s ℂ (Set.Ici 0) :=
-  (indicator (Set.Ici 0)).codRestrict _ (indicator_mem_supported (Set.Ici 0))
-
-private theorem coe_nonnegPart (u : CircleSobolev s ℂ) :
-    (nonnegPart u : CircleSobolev s ℂ) = indicator (Set.Ici 0) u :=
-  ContinuousLinearMap.coe_codRestrict_apply _ _ _ u
-
-private theorem nonnegPart_sub_neckTransfer (a : ℂ) (P : supported s ℂ (Set.Ici 0))
-    (u : CircleSobolev s ℂ) : nonnegPart ((P : CircleSobolev s ℂ) - neckTransfer a u) = P := by
-  ext1
-  rw [coe_nonnegPart, map_sub, indicator_eq_self_iff.2 P.2,
-    indicator_eq_zero_iff.2 (by rw [Set.compl_Ici]; exact neckTransfer_mem_supported a u),
-    sub_zero]
-
-omit hs in
-private theorem indicator_Ici_one : indicator (Set.Ici 0) (1 : CircleSobolev s ℂ) = 1 :=
-  indicator_eq_self_iff.2 (single_mem_supported (Set.mem_Ici.2 le_rfl) _)
-
-/-- The element of the neck graph with nonnegative parts `PQ`. -/
-private def neckPoint (a : ℂ) (PQ : supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0)) :
-    CircleSobolev s ℂ × CircleSobolev s ℂ :=
-  ((PQ.1 : CircleSobolev s ℂ) - neckTransfer a PQ.2,
-    (PQ.2 : CircleSobolev s ℂ) - neckTransfer a PQ.1)
-
-omit hs in
-private theorem neckPoint_mem_neckGraph {a : ℂ} (ha : ‖a‖ ≤ 1)
-    (PQ : supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0)) :
-    neckPoint a PQ ∈ neckGraph s ℂ a :=
-  sub_neckTransfer_mem_neckGraph ha PQ.1.2 PQ.2.2
-
-private theorem neckPoint_nonnegPart {a : ℂ} (ha : ‖a‖ ≤ 1)
-    {p : CircleSobolev s ℂ × CircleSobolev s ℂ} (hp : p ∈ neckGraph s ℂ a) :
-    neckPoint a (nonnegPart p.1, nonnegPart p.2) = p := by
-  simpa only [neckPoint, coe_nonnegPart, neckTransfer_indicator Set.Ioi_subset_Ici_self] using
-    (eq_of_mem_neckGraph ha hp).symm
-
-omit hs in
-private theorem analyticAt_neckPoint {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X]
-    {g : X → ℂ} {h : X → supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0)} {x : X}
-    (hg : AnalyticAt ℂ g x) (hgx : ‖g x‖ < 1) (hh : AnalyticAt ℂ h x) :
-    AnalyticAt ℂ (fun y ↦ neckPoint (g y) (h y)) x := by
-  have hT : AnalyticAt ℂ (fun y ↦ (neckTransfer (g y) : CircleSobolev s ℂ →L[ℂ] _)) x :=
-    (analyticOnNhd_neckTransfer (g x) (mem_ball_zero_iff.2 hgx)).comp hg
-  have hι (k : X → supported s ℂ (Set.Ici 0)) (hk : AnalyticAt ℂ k x) :
-      AnalyticAt ℂ (fun y ↦ (k y : CircleSobolev s ℂ)) x :=
-    ((supported s ℂ (Set.Ici 0)).subtypeL.analyticAt _).comp hk
-  have happ (k : X → supported s ℂ (Set.Ici 0)) (hk : AnalyticAt ℂ k x) :
-      AnalyticAt ℂ (fun y ↦ neckTransfer (g y) (k y : CircleSobolev s ℂ)) x := by
-    simpa [Function.comp_def] using
-      ((ContinuousLinearMap.apply ℂ (CircleSobolev s ℂ)).analyticAt_bilinear _).comp
-        ((hι k hk).prod hT)
-  have h₁ : AnalyticAt ℂ (fun y ↦ (h y).1) x := analyticAt_fst.comp hh
-  have h₂ : AnalyticAt ℂ (fun y ↦ (h y).2) x := analyticAt_snd.comp hh
-  exact ((hι _ h₁).sub (happ _ h₂)).prod ((hι _ h₂).sub (happ _ h₁))
-
 variable (s) in
 /-- The nonlinear Hardy equation of the plumbing node, in the variables
 `z = ((a, p, q), (P, Q))`: the difference between `(1 + p, 1 + q)` and the nonnegative parts of
@@ -164,8 +108,8 @@ private def hardyEquation
     (z : (ℂ × (supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0))) ×
       (supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0))) :
     supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0) :=
-  (nonnegPart (nemytskii exp (neckPoint z.1.1 z.2).1) - z.1.2.1,
-    nonnegPart (nemytskii exp (neckPoint z.1.1 z.2).2) - z.1.2.2)
+  (indicatorProj (Set.Ici 0) (nemytskii exp (neckPoint z.1.1 z.2).1) - z.1.2.1,
+    indicatorProj (Set.Ici 0) (nemytskii exp (neckPoint z.1.1 z.2).2) - z.1.2.2)
 
 private theorem analyticAt_nemytskii_exp (u : CircleSobolev s ℂ) :
     AnalyticAt ℂ (nemytskii exp) u := by
@@ -177,40 +121,38 @@ private theorem analyticAt_hardyEquation : AnalyticAt ℂ (hardyEquation s) 0 :=
   have hN : AnalyticAt ℂ (fun z : (ℂ × (supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0))) ×
       (supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0)) ↦ neckPoint z.1.1 z.2) 0 :=
     analyticAt_neckPoint (analyticAt_fst.comp analyticAt_fst) (by simp) analyticAt_snd
-  exact (((nonnegPart.analyticAt _).comp ((analyticAt_nemytskii_exp _).comp
+  exact ((((indicatorProj (Set.Ici 0)).analyticAt _).comp ((analyticAt_nemytskii_exp _).comp
       (analyticAt_fst.comp hN))).sub
         (analyticAt_fst.comp (analyticAt_snd.comp analyticAt_fst))).prod
-    (((nonnegPart.analyticAt _).comp ((analyticAt_nemytskii_exp _).comp
+    ((((indicatorProj (Set.Ici 0)).analyticAt _).comp ((analyticAt_nemytskii_exp _).comp
       (analyticAt_snd.comp hN))).sub
         (analyticAt_snd.comp (analyticAt_snd.comp analyticAt_fst)))
 
 /-- The derivative of `F ↦ e^F` at `0`, followed by the nonnegative projection, is the identity on
 the nonnegative Laurent subspace. -/
-private theorem hasFDerivAt_nonnegPart_nemytskii_exp :
+private theorem hasFDerivAt_indicatorProj_nemytskii_exp :
     HasFDerivAt
-      (fun P : supported s ℂ (Set.Ici 0) ↦ nonnegPart (nemytskii exp (P : CircleSobolev s ℂ)))
+      (fun P : supported s ℂ (Set.Ici 0) ↦
+        indicatorProj (Set.Ici 0) (nemytskii exp (P : CircleSobolev s ℂ)))
       (ContinuousLinearMap.id ℂ _) 0 := by
   have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
   have hN := hasFDerivAt_nemytskii 1 isOpen_univ differentiable_exp.differentiableOn
     (u := (supported s ℂ (Set.Ici 0)).subtypeL 0) fun _ ↦ Set.mem_univ _
-  have h := nonnegPart.hasFDerivAt.comp (0 : supported s ℂ (Set.Ici 0))
+  have h := (indicatorProj (Set.Ici 0)).hasFDerivAt.comp (0 : supported s ℂ (Set.Ici 0))
     (hN.comp (0 : supported s ℂ (Set.Ici 0)) (supported s ℂ (Set.Ici 0)).subtypeL.hasFDerivAt)
   refine h.congr_fderiv (ContinuousLinearMap.ext fun P ↦ ?_)
-  rw [ContinuousLinearMap.id_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    map_zero, Submodule.subtypeL_apply, Complex.deriv_exp, nemytskii_zero, exp_zero, ← one_def,
-    ← mul_def, one_mul]
-  exact Subtype.ext (indicator_eq_self_iff.2 P.2)
+  simp [← one_def, ← mul_def]
 
 private theorem hasFDerivAt_hardyEquation_zero :
     HasFDerivAt (fun PQ ↦ hardyEquation s ((0 : ℂ × (supported s ℂ (Set.Ici 0) ×
       supported s ℂ (Set.Ici 0))), PQ)) (ContinuousLinearMap.id ℂ _) 0 := by
   have h := (HasFDerivAt.comp (f := Prod.fst) (0 : supported s ℂ (Set.Ici 0) ×
-      supported s ℂ (Set.Ici 0)) hasFDerivAt_nonnegPart_nemytskii_exp hasFDerivAt_fst).prodMk
+      supported s ℂ (Set.Ici 0)) hasFDerivAt_indicatorProj_nemytskii_exp hasFDerivAt_fst).prodMk
     (HasFDerivAt.comp (f := Prod.snd) (0 : supported s ℂ (Set.Ici 0) ×
-      supported s ℂ (Set.Ici 0)) hasFDerivAt_nonnegPart_nemytskii_exp hasFDerivAt_snd)
+      supported s ℂ (Set.Ici 0)) hasFDerivAt_indicatorProj_nemytskii_exp hasFDerivAt_snd)
   convert h using 1
   · funext PQ
-    simp [hardyEquation, neckPoint, neckTransfer_zero]
+    simp [hardyEquation, neckTransfer_zero]
   · ext <;> simp
 
 private theorem isInvertible_fderiv_hardyEquation :
@@ -231,10 +173,12 @@ private theorem hardyEquation_eq_iff
     hardyEquation s (y, PQ) = hardyEquation s 0 ↔
       indicator (Set.Ici 0) (nemytskii exp (neckPoint y.1 PQ).1) = 1 + y.2.1 ∧
         indicator (Set.Ici 0) (nemytskii exp (neckPoint y.1 PQ).2) = 1 + y.2.2 := by
-  have h0 : neckPoint (s := s) 0 0 = 0 := by simp [neckPoint]
+  have h0 : neckPoint (s := s) (E := ℂ) 0 0 = 0 := by ext <;> simp
+  have h1 : indicator (Set.Ici 0) (1 : CircleSobolev s ℂ) = 1 := by
+    simp [one_def]
   simp only [hardyEquation, Prod.fst_zero, Prod.snd_zero, h0, nemytskii_zero, exp_zero, ← one_def,
-    sub_zero, Prod.ext_iff, Subtype.ext_iff, sub_eq_iff_eq_add, Submodule.coe_add, coe_nonnegPart,
-    indicator_Ici_one]
+    sub_zero, Prod.ext_iff, Subtype.ext_iff, sub_eq_iff_eq_add, Submodule.coe_add,
+    coe_indicatorProj, h1]
 
 /-- **The nonlinear Hardy graph theorem at a plumbing node.** For `s > 1/2` there are a
 neighbourhood `W` of `0` in `H^s × H^s` and a map `ψ`, analytic at the origin with `ψ 0 = 0`, such
@@ -273,27 +217,30 @@ theorem exists_analyticAt_hardyGraph :
     rw [← nhds_prod_eq]
     exact huniq
   obtain ⟨pa, hpa, pb, hpb, hab⟩ := Filter.eventually_prod_iff.1 huniq'
-  have hW : (fun p : CircleSobolev s ℂ × CircleSobolev s ℂ ↦ (nonnegPart p.1, nonnegPart p.2)) ⁻¹'
-      {x | pb x} ∈ 𝓝 0 :=
-    ((nonnegPart.continuous.comp continuous_fst).prodMk
-      (nonnegPart.continuous.comp continuous_snd)).tendsto' 0 0 (by simp) hpb
+  have hW : (fun p : CircleSobolev s ℂ × CircleSobolev s ℂ ↦
+      (indicatorProj (Set.Ici 0) p.1, indicatorProj (Set.Ici 0) p.2)) ⁻¹' {x | pb x} ∈ 𝓝 0 :=
+    (((indicatorProj (Set.Ici 0)).continuous.comp continuous_fst).prodMk
+      ((indicatorProj (Set.Ici 0)).continuous.comp continuous_snd)).tendsto' 0 0 (by simp) hpb
   have hpb' : ∀ᶠ y in 𝓝 0, pb (ψ₀ y) := hψ₀.continuousAt.eventually (h₀ ▸ hpb)
   have hlt : ∀ᶠ y : ℂ × (supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0)) in 𝓝 0,
       ‖y.1‖ < 1 :=
     continuous_fst.norm.continuousAt.eventually_lt continuousAt_const (by simp)
-  refine ⟨fun y ↦ neckPoint y.1 (ψ₀ y), by simp [h₀, neckPoint],
+  refine ⟨fun y ↦ neckPoint y.1 (ψ₀ y), by ext <;> simp [h₀],
     analyticAt_neckPoint analyticAt_fst (by simp) hψ₀, _, hW, ?_⟩
   filter_upwards [hpa, hsol, hpb', hlt] with y hya hys hyb hy1
   have hnn (PQ : supported s ℂ (Set.Ici 0) × supported s ℂ (Set.Ici 0)) :
-      (nonnegPart (neckPoint y.1 PQ).1, nonnegPart (neckPoint y.1 PQ).2) = PQ :=
-    Prod.ext (nonnegPart_sub_neckTransfer _ _ _) (nonnegPart_sub_neckTransfer _ _ _)
+      (indicatorProj (Set.Ici 0) (neckPoint y.1 PQ).1,
+        indicatorProj (Set.Ici 0) (neckPoint y.1 PQ).2) = PQ :=
+    Prod.ext (by simp) (by simp)
   refine ⟨by simpa only [Set.mem_preimage, Set.mem_ofPred_eq, hnn] using hyb,
     fun p hp ↦ ⟨?_, ?_⟩⟩
   · rintro ⟨hpg, h₁, h₂⟩
-    have he := neckPoint_nonnegPart hy1.le hpg
-    have hf : hardyEquation s (y, (nonnegPart p.1, nonnegPart p.2)) = hardyEquation s 0 :=
+    have he := neckPoint_indicatorProj hy1.le hpg
+    have hf : hardyEquation s (y, (indicatorProj (Set.Ici 0) p.1, indicatorProj (Set.Ici 0) p.2)) =
+        hardyEquation s 0 :=
       (hardyEquation_eq_iff y _).2 (by rw [he]; exact ⟨h₁, h₂⟩)
-    have hψ : ψ₀ y = (nonnegPart p.1, nonnegPart p.2) := (hab hya hp).1 hf
+    have hψ : ψ₀ y = (indicatorProj (Set.Ici 0) p.1, indicatorProj (Set.Ici 0) p.2) :=
+      (hab hya hp).1 hf
     simp only [hψ, he]
   · rintro rfl
     exact ⟨neckPoint_mem_neckGraph hy1.le _, (hardyEquation_eq_iff y _).1 hys⟩
