@@ -429,6 +429,10 @@ cylinder over `K₁`, for which `S x = (K₁ z, t)`. -/
 private def collarParam (S : KnotCobordism K₀ K₁) (x : S.carrier) : Circle × ℝ :=
   (Function.invFun K₁ (S.toFun x).1, (S.toFun x).2)
 
+/-- From height `a` on, the embedded surface of `S` is the cylinder over `K₁`. -/
+private def IsCylinderFrom (S : KnotCobordism K₀ K₁) (a : ℝ) : Prop :=
+  ∀ p : sphere (0 : E) 1 × ℝ, a ≤ p.2 → (p ∈ range S.toFun ↔ p.1 ∈ range K₁)
+
 variable {S : KnotCobordism K₀ K₁}
 
 private theorem prodMap_collarParam {x : S.carrier} (hx : (S.toFun x).1 ∈ range K₁) :
@@ -436,8 +440,7 @@ private theorem prodMap_collarParam {x : S.carrier} (hx : (S.toFun x).1 ∈ rang
   Prod.ext (Function.invFun_eq hx) rfl
 
 private theorem fst_mem_range_of_le
-    (hS : ∀ p : sphere (0 : E) 1 × ℝ, 1 - 2 * c ≤ p.2 →
-      (p ∈ range S.toFun ↔ p.1 ∈ range K₁)) {x : S.carrier}
+    (hS : IsCylinderFrom S (1 - 2 * c)) {x : S.carrier}
     (hx : 1 - 2 * c ≤ (S.toFun x).2) : (S.toFun x).1 ∈ range K₁ :=
   (hS (S.toFun x) hx).1 (mem_range_self x)
 
@@ -449,8 +452,7 @@ private theorem isOpen_lt_snd_toFun (a : ℝ) : IsOpen {y : S.carrier | a < (S.t
 /-- Near a point of `S` above height `1 - 2 c`, `S` is recovered from the parameters of its
 points. -/
 private theorem eventuallyEq_prodMap_collarParam
-    (hS : ∀ p : sphere (0 : E) 1 × ℝ, 1 - 2 * c ≤ p.2 →
-      (p ∈ range S.toFun ↔ p.1 ∈ range K₁)) {x : S.carrier}
+    (hS : IsCylinderFrom S (1 - 2 * c)) {x : S.carrier}
     (hx : 1 - 2 * c < (S.toFun x).2) :
     Prod.map K₁ id ∘ collarParam S =ᶠ[𝓝 x] S.toFun :=
   eventuallyEq_of_mem ((isOpen_lt_snd_toFun S _).mem_nhds hx) fun _ hy ↦
@@ -459,8 +461,7 @@ private theorem eventuallyEq_prodMap_collarParam
 /-- On the cylinder over `K₁`, the parameters of a point depend smoothly on it: the point is
 `K₁ z` in its first coordinate, and `K₁` is an immersion and a topological embedding. -/
 private theorem contMDiffAt_collarParam
-    (hS : ∀ p : sphere (0 : E) 1 × ℝ, 1 - 2 * c ≤ p.2 →
-      (p ∈ range S.toFun ↔ p.1 ∈ range K₁)) {x : S.carrier}
+    (hS : IsCylinderFrom S (1 - 2 * c)) {x : S.carrier}
     (hx : 1 - 2 * c < (S.toFun x).2) :
     ContMDiffAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ (collarParam S) x := by
   have hΦ := S.isSmoothEmbedding.isImmersion.contMDiff
@@ -477,8 +478,7 @@ private theorem contMDiffAt_collarParam
 /-- On the cylinder over `K₁`, the manifold derivative of the parameters is injective, since
 composing it with the derivative of `K₁ × id` gives that of the embedding of the surface. -/
 private theorem injective_mfderiv_collarParam
-    (hS : ∀ p : sphere (0 : E) 1 × ℝ, 1 - 2 * c ≤ p.2 →
-      (p ∈ range S.toFun ↔ p.1 ∈ range K₁)) {x : S.carrier}
+    (hS : IsCylinderFrom S (1 - 2 * c)) {x : S.carrier}
     (hx : 1 - 2 * c < (S.toFun x).2) :
     Function.Injective (mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) (collarParam S) x) := by
   have hev := eventuallyEq_prodMap_collarParam hS hx
@@ -503,8 +503,7 @@ private theorem glueFun_of_le (hc : 0 < c) {x : S.carrier} (hx : (S.toFun x).2 �
   simp only [glueFun, hx, ↓reduceIte]
 
 private theorem glueFun_of_le_snd (hc : 0 < c)
-    (hS : ∀ p : sphere (0 : E) 1 × ℝ, 1 - 2 * c ≤ p.2 →
-      (p ∈ range S.toFun ↔ p.1 ∈ range K₁)) {x : S.carrier}
+    (hS : IsCylinderFrom S (1 - 2 * c)) {x : S.carrier}
     (hx : 1 - 2 * c ≤ (S.toFun x).2) : glueFun C S hc x = rescale C hc (collarParam S x) := by
   rw [glueFun]
   split_ifs with h
@@ -515,8 +514,7 @@ private theorem glueFun_of_le_snd (hc : 0 < c)
 /-- On the cylinder over `K₁` above height `1 - 2 c`, the glued map is the rescaled
 concordance. -/
 private theorem glueFun_of_eq (hc : 0 < c)
-    (hS : ∀ p : sphere (0 : E) 1 × ℝ, 1 - 2 * c ≤ p.2 →
-      (p ∈ range S.toFun ↔ p.1 ∈ range K₁)) {x : S.carrier} {z : Circle} {t : ℝ}
+    (hS : IsCylinderFrom S (1 - 2 * c)) {x : S.carrier} {z : Circle} {t : ℝ}
     (hx : S.toFun x = (K₁ z, t)) (ht : 1 - 2 * c ≤ t) :
     glueFun C S hc x =
       ((C (z, (t - (1 - c)) / c)).1, 1 - c + c * (C (z, (t - (1 - c)) / c)).2) := by
@@ -527,8 +525,7 @@ private theorem glueFun_of_eq (hc : 0 < c)
 
 /-- The rescaled annulus of `C` over the times `s > 0` lies on the glued surface. -/
 private theorem mem_range_glueFun_of_pos (hc : 0 < c)
-    (hS : ∀ p : sphere (0 : E) 1 × ℝ, 1 - 2 * c ≤ p.2 →
-      (p ∈ range S.toFun ↔ p.1 ∈ range K₁)) (z : Circle) {s : ℝ} (hs : 0 < s) :
+    (hS : IsCylinderFrom S (1 - 2 * c)) (z : Circle) {s : ℝ} (hs : 0 < s) :
     ((C (z, s)).1, 1 - c + c * (C (z, s)).2) ∈ range (glueFun C S hc) := by
   obtain ⟨x, hx⟩ := (hS (K₁ z, 1 - c + c * s) (by dsimp only; nlinarith)).2 (mem_range_self z)
   have ht : (1 - c + c * s - (1 - c)) / c = s := by field_simp; ring
@@ -537,16 +534,14 @@ private theorem mem_range_glueFun_of_pos (hc : 0 < c)
 /-- Gluing in the concordance keeps the heights above `1 - c` above `1 - c`, and those below it
 below it. -/
 private theorem lt_snd_glueFun_iff (hc : 0 < c)
-    (hS : ∀ p : sphere (0 : E) 1 × ℝ, 1 - 2 * c ≤ p.2 →
-      (p ∈ range S.toFun ↔ p.1 ∈ range K₁)) (x : S.carrier) :
+    (hS : IsCylinderFrom S (1 - 2 * c)) (x : S.carrier) :
     1 - c < (glueFun C S hc x).2 ↔ 1 - c < (S.toFun x).2 := by
   by_cases hx : (S.toFun x).2 ≤ 1 - c
   · rw [glueFun_of_le C hc hx]
   · rw [glueFun_of_le_snd C hc hS (by linarith), collarParam, lt_snd_rescale_iff]
 
 private theorem isImmersionAt_glueFun (hc : 0 < c)
-    (hS : ∀ p : sphere (0 : E) 1 × ℝ, 1 - 2 * c ≤ p.2 →
-      (p ∈ range S.toFun ↔ p.1 ∈ range K₁)) (x : S.carrier) :
+    (hS : IsCylinderFrom S (1 - 2 * c)) (x : S.carrier) :
     IsImmersionAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞ (glueFun C S hc) x := by
   have hΦ := S.isSmoothEmbedding.isImmersion
   have hcont : Continuous fun y ↦ (S.toFun y).2 := continuous_snd.comp hΦ.contMDiff.continuous
@@ -573,12 +568,9 @@ private theorem isImmersionAt_glueFun (hc : 0 < c)
 `1 - 2 c` cover `Sⁿ × ℝ`, and over them it is the embedding of `S`, respectively the rescaled
 concordance composed with the parameters of the cylinder over `K₁`. -/
 private theorem isEmbedding_glueFun (hc : 0 < c)
-    (hS : ∀ p : sphere (0 : E) 1 × ℝ, 1 - 2 * c ≤ p.2 →
-      (p ∈ range S.toFun ↔ p.1 ∈ range K₁)) :
+    (hS : IsCylinderFrom S (1 - 2 * c)) :
     IsEmbedding (glueFun C S hc) := by
   have hΦ := S.isSmoothEmbedding
-  have hcont : Continuous fun y ↦ (S.toFun y).2 :=
-    continuous_snd.comp hΦ.isImmersion.contMDiff.continuous
   have hglue : Continuous (glueFun C S hc) := continuous_iff_continuousAt.2 fun x ↦
     (isImmersionAt_glueFun C hc hS x).continuousAt
   let U : Bool → TopologicalSpace.Opens (sphere (0 : E) 1 × ℝ) := fun b ↦ bif b
@@ -633,8 +625,7 @@ private theorem isEmbedding_glueFun (hc : 0 < c)
 /-- The composite of `S` and `C` for a width `c ∈ (0, 1/2]` such that the top of `S` is the
 cylinder over `K₁` from height `1 - 2 c` on. -/
 private def transConcordanceOfWidth (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
-    (hS : ∀ p : sphere (0 : E) 1 × ℝ, 1 - 2 * c ≤ p.2 →
-      (p ∈ range S.toFun ↔ p.1 ∈ range K₁)) :
+    (hS : IsCylinderFrom S (1 - 2 * c)) :
     KnotCobordism K₀ K₂ where
   carrier := S.carrier
   toFun := glueFun C S hc
