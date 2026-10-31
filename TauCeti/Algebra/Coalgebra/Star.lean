@@ -57,7 +57,6 @@ variable {R A : Type*} [CommSemiring R] [StarRing R] [AddCommMonoid A] [StarAddM
 
 /-- Starring both legs of a representation `Δ a = ∑ xᵢ ⊗ yᵢ` gives the representation
 `Δ (a*) = ∑ xᵢ* ⊗ yᵢ*`. -/
-@[expose, simps]
 def Coalgebra.Repr.star [CoalgebraStruct R A] [TauCeti.StarCoalgebra R A] {a : A} {ι : Type*}
     (𝓡 : Coalgebra.Repr R a ι) : Coalgebra.Repr R (Star.star a) ι where
   index := 𝓡.index
@@ -66,6 +65,22 @@ def Coalgebra.Repr.star [CoalgebraStruct R A] [TauCeti.StarCoalgebra R A] {a : A
   eq := by
     rw [TauCeti.StarCoalgebra.comul_star, ← 𝓡.eq, star_sum]
     simp
+
+section
+
+variable [CoalgebraStruct R A] [TauCeti.StarCoalgebra R A] {a : A} {ι : Type*}
+  (𝓡 : Coalgebra.Repr R a ι)
+
+@[simp]
+theorem Coalgebra.Repr.star_index : 𝓡.star.index = 𝓡.index := (rfl)
+
+@[simp]
+theorem Coalgebra.Repr.star_left (i : ι) : 𝓡.star.left i = Star.star (𝓡.left i) := (rfl)
+
+@[simp]
+theorem Coalgebra.Repr.star_right (i : ι) : 𝓡.star.right i = Star.star (𝓡.right i) := (rfl)
+
+end
 
 namespace TauCeti.StarCoalgebra
 
