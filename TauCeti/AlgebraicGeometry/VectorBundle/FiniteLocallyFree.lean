@@ -144,7 +144,10 @@ instance : HasBinaryBiproducts (FiniteLocallyFreeSheaf X) :=
 
 variable (X)
 
+-- Exposed so that the underlying sheaf is definitionally Mathlib's free sheaf, whose basis
+-- inclusions `SheafOfModules.ιFree` are morphisms into it.
 /-- The free sheaf on a finite type, as a finite locally free sheaf. -/
+@[expose]
 def free (I : Type u) [Finite I] : FiniteLocallyFreeSheaf X :=
   ⟨_root_.SheafOfModules.free (R := X.ringCatSheaf) I, inferInstance,
     SheafOfModules.isFinitePresentation_free I⟩
