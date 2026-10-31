@@ -114,7 +114,7 @@ theorem ker_aeval_sum_elim (f : ι → MvPolynomial σ R) :
     | inr j => simpa using (hrel j).symm
   refine le_antisymm ?_ (Ideal.span_le.mpr ?_)
   · intro p hp
-    have hp0 : aeval (Sum.elim X f) p = 0 := hp
+    have hp0 : aeval (Sum.elim X f) p = 0 := RingHom.mem_ker.mp hp
     have := DFunLike.congr_fun hcomp p
     simpa [hp0, q, Ideal.Quotient.eq_zero_iff_mem] using this.symm
   · rintro _ ⟨i, rfl⟩
