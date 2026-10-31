@@ -60,7 +60,7 @@ namespace TauCeti.PointTopology
 
 section Valuative
 
-variable {E A : Type*} [CommRing E] [ValuativeRel E] [CommRing A] [Algebra 𝒪[E] A]
+variable {E A : Type*} [CommRing E] [ValuativeRel E] [Semiring A] [Algebra 𝒪[E] A]
 
 /-- The structure map of the valuation ring `𝒪[E]` into `E` is its inclusion. -/
 private theorem coe_ofId_integer : ⇑(Algebra.ofId 𝒪[E] E) = Subtype.val :=
