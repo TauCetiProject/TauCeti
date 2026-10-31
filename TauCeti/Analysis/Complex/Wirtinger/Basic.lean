@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Calculus.FDeriv.OfReal
 import TauCeti.LinearAlgebra.Complex.Module
 
@@ -38,6 +39,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
   `TauCeti.coe_conjWirtingerDeriv_eq_complexAntilinearPart`: the Wirtinger derivatives are the
   complex-linear and complex-antilinear parts of the real derivative.
 * `TauCeti.conjWirtingerDeriv_ofReal_comp_apply`: for real-valued `f`, `\bar∂f = conj ∂f`.
+* `TauCeti.conjWirtingerDeriv_smul_apply`: the product rule `\bar∂(c g) = c \bar∂g + (\bar∂c) g`
+  for a complex-valued factor `c`.
 * `DifferentiableAt.conjWirtingerDeriv_eq_zero`, `DifferentiableAt.wirtingerDeriv_eq_fderiv`:
   for complex differentiable `g`, `\bar∂g = 0` and `∂g` is the complex derivative.
 
@@ -153,6 +156,16 @@ theorem conjWirtingerDeriv_ofReal_comp_apply (f : V → ℝ) (x v : V) :
   simp [conjWirtingerDeriv_apply, wirtingerDeriv_apply]
 
 end Wirtinger
+
+/-- **The product rule for the conjugate Wirtinger derivative**: for a complex-valued factor `c`,
+`\bar∂(c g) = c \bar∂g + (\bar∂c) g`. -/
+theorem conjWirtingerDeriv_smul_apply {c : V → ℂ} {g : V → W} {x : V}
+    (hc : DifferentiableAt ℝ c x) (hg : DifferentiableAt ℝ g x) (v : V) :
+    conjWirtingerDeriv (fun y ↦ c y • g y) x v =
+      c x • conjWirtingerDeriv g x v + conjWirtingerDeriv c x v • g x := by
+  simp only [conjWirtingerDeriv_apply, fderiv_fun_smul hc hg, add_apply, FunLike.coe_smul,
+    Pi.smul_apply, ContinuousLinearMap.smulRight_apply]
+  module
 
 /-- In one variable the Wirtinger derivative is determined by its value at `1`. -/
 theorem wirtingerDeriv_apply_eq_smul_apply_one {f : ℂ → W} (x v : ℂ) :
