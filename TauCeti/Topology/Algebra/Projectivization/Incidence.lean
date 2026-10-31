@@ -96,7 +96,7 @@ theorem isProperMap_fst (hc : Continuous c) :
     IsProperMap fun x : complexProjectiveFamily c ↦ x.1.1 :=
   isProperMap_fst_of_compactSpace.restrict (isClosed c hc)
 
-/-- A projective family over a compact parameter space has compact total space. -/
+/-- A continuous projective family over a compact parameter space has compact total space. -/
 theorem isCompact_univ [CompactSpace B] (hc : Continuous c) :
     IsCompact (Set.univ : Set (complexProjectiveFamily c)) := by
   simpa using (isProperMap_fst c hc).isCompact_preimage
