@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-import Mathlib.FieldTheory.SplittingField.Construction
+import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
 /-!
@@ -27,15 +27,16 @@ including rings with zero divisors, where no factorisation of `χ_A` is availabl
 
 The proof is by universality. If `f = c ∏ (X - βⱼ)` splits over a field, then
 `f(A) = c ∏ (A - βⱼ)`, and `det (A - β) = (-1) ^ n χ_A(β)` gives `c ^ n ∏ ±χ_A(βⱼ)`, which is the
-resultant. Both sides commute with ring homomorphisms, so the identity transfers from a splitting
-field of `f` to any integral domain, and from the integral domain `MvPolynomial R ℤ` to its
-quotient `R`.
+resultant. Both sides commute with ring homomorphisms, so the identity transfers along injective
+ring homomorphisms and surjective covers. Mathlib's universality principle for resultants,
+`Polynomial.induction_of_Splits_of_injective_of_surjective`, then extends it from split
+polynomials over fields to every commutative ring.
 
 ## Main results
 
 * `Matrix.det_aeval_eq_resultant`: `det f(A) = Res(χ_A, f)`.
+* `Matrix.charmatrix_aeval`: the characteristic matrix of `f(A)` is `T - f` evaluated at `A`.
 * `Matrix.charpoly_aeval_eq_resultant`: `χ_{f(A)}(T) = Res_X(χ_A(X), T - f(X))`.
-* `Matrix.aeval_map`: evaluating polynomials in a matrix commutes with ring homomorphisms.
 -/
 
 public section
@@ -45,17 +46,6 @@ namespace Matrix
 open Polynomial
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-- Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the
-coefficients of the polynomial and to the entries of the matrix. -/
-@[simp]
-theorem aeval_map {R S : Type*} [CommSemiring R] [CommSemiring S] (φ : R →+* S)
-    (A : Matrix ι ι R) (f : R[X]) :
-    aeval (A.map φ) (f.map φ) = (aeval A f).map φ := by
-  refine (map_aeval_eq_aeval_map (S := Matrix ι ι R) (U := Matrix ι ι S) (φ := φ)
-    (ψ := φ.mapMatrix) (RingHom.ext fun r ↦ ?_) f A).symm
-  ext i j
-  by_cases h : i = j <;> simp [algebraMap_matrix_apply, h]
 
 variable {R S : Type*} [CommRing R] [CommRing S]
 
@@ -78,9 +68,16 @@ private theorem det_aeval_eq_resultant_of_splits {K : Type*} [Field K] (A : Matr
       Multiset.prod_replicate, ← pow_mul, hf.natDegree_eq_card_roots, mul_comm (Fintype.card ι)]
     simp [detAeval, Algebra.algebraMap_eq_smul_one]
   have hχ := charpoly_natDegree_eq_dim A
-  rw [hdet, ← hχ, (charpoly_monic A).resultant_of_le hm,
-    ← (charpoly_monic A).resultant_of_le le_rfl, hχ, resultant_comm,
-    resultant_eq_prod_eval _ _ _ hχ.le hf]
+  -- The resultant does not depend on the degree bound for `f`, so read it with `f.natDegree`.
+  have hbound : A.charpoly.resultant f (Fintype.card ι) m =
+      A.charpoly.resultant f (Fintype.card ι) f.natDegree := by
+    rw [← hχ, (charpoly_monic A).resultant_of_le hm, (charpoly_monic A).resultant_of_le le_rfl]
+  -- Swapping the arguments, the resultant is the product of `χ_A` over the roots of `f`.
+  have hprod : A.charpoly.resultant f (Fintype.card ι) f.natDegree =
+      (-1) ^ (Fintype.card ι * f.natDegree) *
+        (f.leadingCoeff ^ Fintype.card ι * (f.roots.map A.charpoly.eval).prod) := by
+    rw [resultant_comm, resultant_eq_prod_eval _ _ _ hχ.le hf]
+  rw [hdet, hbound, hprod]
   ring
 
 /-- Both sides of `det f(A) = Res(χ_A, f)` commute with ring homomorphisms. -/
@@ -91,35 +88,29 @@ private theorem map_det_aeval_eq_resultant_iff (φ : R →+* S) (A : Matrix ι �
         (A.map φ).charpoly.resultant (f.map φ) (Fintype.card ι) m := by
   rw [aeval_map, RingHom.map_det, RingHom.mapMatrix_apply, ← resultant_map_map, charpoly_map]
 
-/-- The identity `det f(A) = Res(χ_A, f)` over an integral domain, obtained from a splitting
-field of `f` over the fraction field. -/
-private theorem det_aeval_eq_resultant_of_isDomain [IsDomain R] (A : Matrix ι ι R) (f : R[X])
-    {m : ℕ} (hm : f.natDegree ≤ m) :
-    (aeval A f).det = A.charpoly.resultant f (Fintype.card ι) m := by
-  let K := FractionRing R
-  let L := SplittingField (f.map (algebraMap R K))
-  have hφ : Function.Injective ((algebraMap K L).comp (algebraMap R K)) :=
-    (algebraMap K L).injective.comp (IsFractionRing.injective R K)
-  have hf : (f.map ((algebraMap K L).comp (algebraMap R K))).Splits := by
-    rw [← Polynomial.map_map]
-    exact SplittingField.splits _
-  exact hφ ((map_det_aeval_eq_resultant_iff _ A f m).2
-    (det_aeval_eq_resultant_of_splits _ hf (natDegree_map_le.trans hm)))
-
 /-- **Determinants of polynomials in a matrix are resultants.** For a square matrix `A` of size
 `n` and a polynomial `f` of degree at most `m`, `det f(A) = Res(χ_A, f)`, the resultant of the
 characteristic polynomial of `A` and `f` with degree bounds `n` and `m`. If `χ_A = ∏ (X - αᵢ)`,
 the right-hand side is `∏ f(αᵢ)`. -/
 theorem det_aeval_eq_resultant (A : Matrix ι ι R) (f : R[X]) {m : ℕ} (hm : f.natDegree ≤ m) :
     (aeval A f).det = A.charpoly.resultant f (Fintype.card ι) m := by
-  -- Lift `A` and `f` to the integral domain `MvPolynomial R ℤ`, which surjects onto `R`.
-  let ψ : MvPolynomial R ℤ →+* R := MvPolynomial.eval₂Hom (Int.castRingHom R) id
-  have hψ : Function.Surjective ψ := fun r ↦ ⟨.X r, by simp [ψ]⟩
-  obtain ⟨f', rfl, hf'⟩ := exists_natDegree_eq_of_mem_lifts (map_surjective ψ hψ f)
-  have hA : (A.map MvPolynomial.X).map ψ = A := by ext; simp [ψ]
-  have := (map_det_aeval_eq_resultant_iff ψ (A.map MvPolynomial.X) f' m).1 <|
-    congrArg ψ (det_aeval_eq_resultant_of_isDomain _ f' (hf'.trans_le hm))
-  rwa [hA] at this
+  induction f using induction_of_Splits_of_injective_of_surjective generalizing m with
+  | Splits K f hf => exact det_aeval_eq_resultant_of_splits A hf hm
+  | injective R S φ hφ f IH =>
+    exact hφ ((map_det_aeval_eq_resultant_iff φ A f m).2 (IH _ (natDegree_map_le.trans hm)))
+  | surjective R S φ hφ f IH =>
+    -- Lift the entries of `A` and the coefficients of `f`, keeping the degree of `f`.
+    obtain ⟨f', rfl, hf'⟩ := exists_natDegree_eq_of_mem_lifts (map_surjective φ hφ f)
+    have hA : (A.map (Function.surjInv hφ)).map φ = A := by
+      ext; simp [Function.surjInv_eq hφ]
+    rw [← hA]
+    exact (map_det_aeval_eq_resultant_iff φ _ f' m).1
+      (congrArg φ (IH f' _ (hf'.trans_le hm)))
+
+/-- The characteristic matrix of `f(A)` is `T - f` evaluated at `A`, read over `R[T]`. -/
+theorem charmatrix_aeval (A : Matrix ι ι R) (f : R[X]) :
+    (aeval A f).charmatrix = aeval (A.map C) (C X - f.map C) := by
+  simp [charmatrix, aeval_map, algebraMap_eq_diagonal, Pi.algebraMap_def, scalar_apply]
 
 /-- **The characteristic polynomial of a polynomial in a matrix.** For a square matrix `A` of size
 `n` and a polynomial `f` of degree at most `m`, `χ_{f(A)}(T) = Res_X(χ_A(X), T - f(X))`, the
@@ -130,8 +121,6 @@ theorem charpoly_aeval_eq_resultant (A : Matrix ι ι R) (f : R[X]) {m : ℕ}
     (aeval A f).charpoly = (A.charpoly.map C).resultant (C X - f.map C) (Fintype.card ι) m := by
   have hdeg : (C X - f.map C).natDegree ≤ m :=
     (natDegree_sub_le _ _).trans (max_le (by simp) (natDegree_map_le.trans hm))
-  rw [← charpoly_map, ← det_aeval_eq_resultant _ _ hdeg, charpoly, charmatrix, map_sub,
-    aeval_C, aeval_map, algebraMap_eq_diagonal, Pi.algebraMap_def, scalar_apply,
-    RingHom.mapMatrix_apply, Algebra.algebraMap_self, RingHom.id_apply]
+  rw [← charpoly_map, ← det_aeval_eq_resultant _ _ hdeg, charpoly, charmatrix_aeval]
 
 end Matrix
