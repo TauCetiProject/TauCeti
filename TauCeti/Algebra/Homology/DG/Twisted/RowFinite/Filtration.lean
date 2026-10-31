@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Basic
--- Inspect the finite-row sum privately to prove that the twisting term lowers filtration.
-import all TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Basic
 public import Mathlib.LinearAlgebra.Finsupp.Supported
 public import Mathlib.LinearAlgebra.Isomorphisms
 
@@ -90,7 +88,9 @@ theorem rowFiniteIndexProjection_surjective (p : ℤ) :
   intro f
   let g := (Finsupp.supportedEquivFinsupp (R := R) {x | ind x = p}).symm f
   refine ⟨⟨g.val, Finsupp.supported_mono (fun _ hx ↦ le_of_eq hx) g.property⟩, ?_⟩
-  exact (Finsupp.supportedEquivFinsupp (R := R) {x | ind x = p}).apply_symm_apply f
+  ext x
+  classical
+  simp [g, Finsupp.supportedEquivFinsupp_symm_apply_coe, x.property]
 
 /-- The projection kills exactly the preceding filtration stage. -/
 theorem ker_rowFiniteIndexProjection (p : ℤ) :
@@ -149,9 +149,8 @@ noncomputable def rowFiniteIndexQuotientDifferential (d : A →ₗ[R] A) (p : �
     Module.End R (rowFiniteIndexFiltration (R := R) (A := A) ind p ⧸
       (rowFiniteIndexFiltration (R := R) (A := A) ind (p - 1)).comap
         (rowFiniteIndexFiltration (R := R) (A := A) ind p).subtype) :=
-  (rowFiniteIndexQuotientEquiv (R := R) (A := A) ind p).symm.toLinearMap.comp
-    ((Finsupp.mapRange.linearMap d).comp
-      (rowFiniteIndexQuotientEquiv (R := R) (A := A) ind p).toLinearMap)
+  (rowFiniteIndexQuotientEquiv (R := R) (A := A) ind p).symm.conjRingEquiv
+    (Finsupp.mapRange.linearMap d)
 
 @[simp]
 theorem rowFiniteIndexQuotientEquiv_differential (d : A →ₗ[R] A) (p : ℤ) (z) :
@@ -164,10 +163,16 @@ theorem rowFiniteIndexQuotientDifferential_sq_zero (d : A →ₗ[R] A)
     (hd : ∀ a, d (d a) = 0) (p : ℤ) (z) :
     rowFiniteIndexQuotientDifferential ind d p
       (rowFiniteIndexQuotientDifferential ind d p z) = 0 := by
-  apply (rowFiniteIndexQuotientEquiv ind p).injective
-  simp only [rowFiniteIndexQuotientEquiv_differential, map_zero]
-  ext x
-  exact hd _
+  have hcomp : (Finsupp.mapRange.linearMap d : Module.End R ({x // ind x = p} →₀ A)) *
+      (Finsupp.mapRange.linearMap d) = 0 := by
+    ext f x
+    exact hd _
+  -- Express nested evaluation as multiplication in Module.End so that map_mul applies.
+  change (((rowFiniteIndexQuotientEquiv ind p).symm.conjRingEquiv
+    (Finsupp.mapRange.linearMap d)) *
+    ((rowFiniteIndexQuotientEquiv ind p).symm.conjRingEquiv
+      (Finsupp.mapRange.linearMap d))) z = 0
+  rw [← map_mul, hcomp, map_zero, LinearMap.zero_apply]
 
 end Quotient
 
@@ -186,8 +191,7 @@ theorem rowFiniteTwistedDifferential_sub_mem_indexFiltration {p : ℤ} {f : P �
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f -
       Finsupp.mapRange.linearMap d f ∈ rowFiniteIndexFiltration (R := R) ind (p - 1) := by
   classical
-  rw [rowFiniteTwistedDifferential, LinearMap.add_apply, add_sub_cancel_left,
-    Finsupp.lsum_apply, Finsupp.sum]
+  rw [rowFiniteTwistedDifferential_apply, add_sub_cancel_left, Finsupp.sum]
   refine Submodule.sum_mem _ fun x hx ↦ ?_
   have hxp : ind x ≤ p := by
     by_contra h
@@ -198,8 +202,7 @@ theorem rowFiniteTwistedDifferential_sub_mem_indexFiltration {p : ℤ} {f : P �
     intro y hy
     exact hm x y (by simp only [Set.mem_ofPred_eq, not_le] at hy; omega)
   exact (Finsupp.mem_supported' R _).mpr fun y hy ↦ by
-    simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply,
-      LinearMap.toSpanSingleton_apply, Finsupp.smul_apply, smul_eq_mul]
+    simp only [Finsupp.smul_apply, smul_eq_mul]
     rw [(Finsupp.mem_supported' A _).mp hrow y hy, mul_zero]
 
 /-- The full differential preserves every cell-filtration stage. -/
@@ -208,10 +211,9 @@ theorem rowFiniteTwistedDifferential_mem_indexFiltration {p : ℤ} {f : P →₀
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f ∈
       rowFiniteIndexFiltration (R := R) ind p := by
   have hcoeff : Finsupp.mapRange.linearMap d f ∈ rowFiniteIndexFiltration (R := R) ind p := by
-    simp only [mem_rowFiniteIndexFiltration_iff, Finsupp.mapRange.linearMap_apply,
-      Finsupp.mapRange_apply]
-    intro x hx
-    rw [(mem_rowFiniteIndexFiltration_iff ind).mp hf x hx, map_zero]
+    rw [Finsupp.mapRange.linearMap_apply]
+    exact (Finsupp.mem_supported R _).2
+      ((Finset.coe_subset.mpr Finsupp.support_mapRange).trans ((Finsupp.mem_supported R _).1 hf))
   have h := rowFiniteIndexFiltration_mono (R := R) (A := A) ind (by omega : p - 1 ≤ p)
     (rowFiniteTwistedDifferential_sub_mem_indexFiltration (𝒜 := 𝒜) (d := d) m hm hf)
   simpa only [sub_add_cancel] using (rowFiniteIndexFiltration (R := R) ind p).add_mem h hcoeff
