@@ -54,9 +54,9 @@ transporting `TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos` from matrices thro
   with left-separating bilinear form is invertible.
 * `ContinuousLinearMap.isInvertible_of_pos`: in finite dimensions, a map into the dual that is
   positive on nonzero diagonal vectors is invertible.
-* `ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq`: in finite dimensions, a continuous
-  bilinear form negative on the nonzero vectors of a subspace is bounded there by a negative
-  multiple of the squared norm.
+* `ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq`: a continuous bilinear form negative on
+  the nonzero vectors of a finite-dimensional subspace is bounded there by a negative multiple of
+  the squared norm.
 * `TauCeti.isInvertible_toContinuousBilinearMap_iff_separatingLeft`:
   contraction with a bilinear form is invertible exactly when it is left-separating in
   finite dimensions, identifying covectors with vectors for local contraction equations.
@@ -166,11 +166,12 @@ theorem _root_.ContinuousLinearMap.isInvertible_of_pos
     by_contra hv0
     exact (hpos v hv0).ne' (hv v)
 
-/-- In finite dimensions, a continuous bilinear form that is negative on the nonzero vectors of a
+/-- A continuous bilinear form that is negative on the nonzero vectors of a finite-dimensional
 subspace is uniformly negative there: it is bounded by a negative multiple of the squared norm. -/
 theorem _root_.ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    (L : E →L[ℝ] E →L[ℝ] ℝ) (N : Submodule ℝ E) (hN : ∀ x ∈ N, x ≠ 0 → L x x < 0) :
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (L : E →L[ℝ] E →L[ℝ] ℝ) (N : Submodule ℝ E) [FiniteDimensional ℝ N]
+    (hN : ∀ x ∈ N, x ≠ 0 → L x x < 0) :
     ∃ c > 0, ∀ x ∈ N, L x x ≤ -(c * ‖x‖ ^ 2) := by
   set Q := L.toBilinForm.toQuadraticMap.restrict N
   have hQ : Q.Anisotropic := fun x hx ↦ by
