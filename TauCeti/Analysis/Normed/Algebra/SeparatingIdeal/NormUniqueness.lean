@@ -23,6 +23,10 @@ map between the copies is a surjective algebra homomorphism onto a semisimple Ba
 it is continuous by Johnson's automatic-continuity theorem. Applying this in both directions
 gives the two norm bounds.
 
+The norm-indexed copy of `A` follows the construction of `AlgebraNorm.copy` in Mathlib's
+`Mathlib.Analysis.Normed.Unbundled.IsPowMulUnique`, where a norm is placed on a type synonym and
+the identity map between two such copies is bounded to compare the norms.
+
 ## Main results
 
 * `RingNorm.exists_le_mul_and_le_mul_of_nonUnitalJacobson_eq_bot`: two complete
