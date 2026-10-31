@@ -29,12 +29,20 @@ Hence `S*M` is a hypersurface of restricted contact type in `(T*M, ω)`, with pr
 hypersurfaces of contact type in cotangent bundles whose closed characteristics are produced from
 almost existence.
 
+Consequently the restriction `α_b = -λ|S*M` of the primitive to `S*M` is a contact form
+(`TauCeti.CotangentBundle.isContactForm_mpullback_neg_liouvilleForm_cosphereBundle`), and so is
+its negative `α_g = λ|S*M`, which defines the opposite coorientation of the same contact
+distribution (`TauCeti.CotangentBundle.isContactForm_mpullback_liouvilleForm_cosphereBundle`).
+
 ## Main results
 
 * `TauCeti.CotangentBundle.isTransverseAlong_vectorBundleEulerField_cosphereBundle`: `p ∂_p` is
   transverse to `S*M`.
 * `TauCeti.CotangentBundle.isRestrictedContactType_cosphereBundle`: `S*M` is of restricted contact
   type, with primitive `-λ` and Liouville field `p ∂_p`.
+* `TauCeti.CotangentBundle.isContactForm_mpullback_neg_liouvilleForm_cosphereBundle`,
+  `TauCeti.CotangentBundle.isContactForm_mpullback_liouvilleForm_cosphereBundle`: `-λ|S*M` and
+  `λ|S*M` are contact forms.
 
 ## References
 
@@ -83,6 +91,33 @@ theorem isRestrictedContactType_cosphereBundle :
     ⟨by rw [mextDeriv_neg, ← symplecticForm_eq_neg_mextDeriv], vectorBundleEulerField I,
       contMDiff_vectorBundleEulerField, symplecticForm_interior_vectorBundleEulerField,
       isTransverseAlong_vectorBundleEulerField_cosphereBundle⟩
+
+/-- **The unit cosphere bundle is a contact manifold.** The restriction `α_b = -λ|S*M` of the
+primitive `-λ` of the canonical symplectic form `ω = -dλ` to the unit cosphere bundle `S*M` is a
+contact form. -/
+theorem isContactForm_mpullback_neg_liouvilleForm_cosphereBundle :
+    (SmoothForm.mpullback (Subtype.val : cosphereBundle I M → CotangentBundle I M)
+      (isSmoothEmbedding_coe_cosphereBundle (I := I) (M := M)).contMDiff
+      (-liouvilleForm I M)).IsContactForm := by
+  rcases isEmpty_or_nonempty (cosphereBundle I M) with hS | hS
+  · exact SmoothForm.isContactForm_def.2 fun s ↦ isEmptyElim s
+  obtain ⟨z⟩ := hS
+  -- A unit covector exists, so the dimension of `T*M` is positive.
+  have : Nontrivial (E →L[ℝ] ℝ) := ⟨⟨z.1.2, 0, snd_ne_zero_of_mem_cosphereBundle z.2⟩⟩
+  exact isRestrictedContactType_cosphereBundle.isContactType.isContactForm_mpullback
+    (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate _
+    (isSmoothEmbedding_coe_cosphereBundle.isImmersion.mfderiv_injective (by simp))
+    (by rw [Module.finrank_fin_fun]; exact Nat.sub_add_cancel Module.finrank_pos)
+
+/-- The restriction `α_g = λ|S*M` of the Liouville form to the unit cosphere bundle, which
+defines the opposite coorientation of the contact distribution of `α_b = -λ|S*M`, is a contact
+form. -/
+theorem isContactForm_mpullback_liouvilleForm_cosphereBundle :
+    (SmoothForm.mpullback (Subtype.val : cosphereBundle I M → CotangentBundle I M)
+      (isSmoothEmbedding_coe_cosphereBundle (I := I) (M := M)).contMDiff
+      (liouvilleForm I M)).IsContactForm := by
+  rw [← SmoothForm.isContactForm_neg_iff, ← map_neg]
+  exact isContactForm_mpullback_neg_liouvilleForm_cosphereBundle
 
 end CotangentBundle
 
