@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Spectrum.Prime.Topology
+public import TauCeti.RingTheory.Spectrum.Prime.Topology
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # The underlying space of the formal spectrum
@@ -83,7 +85,7 @@ variable {I J : Ideal A}
 `I`. -/
 theorem mem_carrier_iff_le (hI : IsAdic I) {p : PrimeSpectrum A} :
     p ∈ carrier A ↔ I ≤ p.asIdeal :=
-  hI.isOpen_iff_le_of_isPrime
+  hI.isOpen_iff_le_of_isRadical p.isPrime.isRadical
 
 /-- If `I` defines the topology of `A`, the underlying set of `Spf A` is the zero locus `V(I)`.
 In particular it is the same for all ideals of definition. -/
@@ -132,16 +134,7 @@ applies to every power `J = I ^ (n + 1)`, by `is_ideal_adic_pow`. The inverse se
 `A ⧸ J` to its preimage in `A`. -/
 noncomputable def homeomorphSpecQuotient (hJ : IsAdic J) :
     carrier A ≃ₜ PrimeSpectrum (A ⧸ J) :=
-  have hcarrier : Set.range (PrimeSpectrum.comap (Ideal.Quotient.mk J)) = carrier A := by
-    rw [range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective, Ideal.mk_ker,
-      carrier_eq_zeroLocus hJ]
-  have hmem (q : PrimeSpectrum (A ⧸ J)) : PrimeSpectrum.comap (Ideal.Quotient.mk J) q ∈ carrier A :=
-    hcarrier ▸ Set.mem_range_self q
-  Homeomorph.symm <| IsEmbedding.toHomeomorphOfSurjective
-    ((isEmbedding_comap_of_surjective _ _ Ideal.Quotient.mk_surjective).codRestrict _ hmem)
-    (show Function.Surjective _ from fun p ↦ by
-      obtain ⟨q, hq⟩ := (Set.ext_iff.mp hcarrier p).mpr p.2
-      exact ⟨q, Subtype.ext hq⟩)
+  (Homeomorph.setCongr (carrier_eq_zeroLocus hJ)).trans (quotientHomeomorphZeroLocus J).symm
 
 /-- The inverse of `homeomorphSpecQuotient` sends a prime of `A ⧸ J` to its preimage in `A`. -/
 @[simp]

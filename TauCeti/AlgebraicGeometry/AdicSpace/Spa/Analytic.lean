@@ -119,7 +119,7 @@ contain `I`. -/
 theorem isAnalyticPoint_iff_not_le_supp_of_isAdic {I : Ideal A} (hI : IsAdic I) (v : Spv A) :
     IsAnalyticPoint v ↔ ¬ I ≤ v.supp := by
   rw [isAnalyticPoint_def, not_iff_not]
-  exact hI.isOpen_iff_le_of_isPrime
+  exact hI.isOpen_iff_le_of_isRadical (Ideal.IsPrime.isRadical inferInstance)
 
 /-- **Analytic points pull back along adic homomorphisms**: if `φ : A → B` is adic and `w` is an
 analytic point of `Spv B`, then its pullback to `Spv A` is analytic. -/
