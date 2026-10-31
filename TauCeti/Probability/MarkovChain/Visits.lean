@@ -50,7 +50,7 @@ in `ℝ≥0∞`. In particular `y` satisfies `ρ_y = 1` exactly when `∑ n, (κ
 * `MeasureTheory.Measure.markovChainLaw_setOf_successiveVisit_ne_top`: the geometric tail
   `ℙ_ν(visit k exists) = ℙ_ν(H_y < ∞) · ρ_y ^ k`.
 * `MeasureTheory.Measure.ae_infinite_setOf_eq_of_hittingAfter_ne_top` and
-  `MeasureTheory.Measure.ae_infinite_setOf_eq_markovChainLaw_dirac`: if `ρ_y = 1`, a path that
+  `ProbabilityTheory.Kernel.ae_infinite_setOf_eq_markovChainLaw_dirac`: if `ρ_y = 1`, a path that
   reaches `y` visits it infinitely often almost surely.
 * `MeasureTheory.Measure.markovChainLaw_setOf_infinite_setOf_eq_eq_zero`: if `ρ_y < 1`, the chain
   visits `y` infinitely often with probability zero.
@@ -145,14 +145,6 @@ private theorem markovChainLaw_dirac_setOf_hittingAfter_zero_ne_top (y : α) :
   rw [measure_congr (ae_eq_univ.mpr (mem_ae_iff.mp
     (ae_hittingAfter_zero_ne_top_markovChainLaw_dirac κ y))), measure_univ]
 
-/-- Started at `y`, the visit to `y` indexed by `k` (visit zero being time zero) exists with
-probability `ρ_y ^ k`. -/
-theorem markovChainLaw_dirac_setOf_successiveVisit_ne_top (y : α) (k : ℕ) :
-    markovChainLaw (dirac y) κ {x | successiveVisit (fun n x => x n) y k x ≠ ⊤} =
-      markovChainLaw (dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} ^ k := by
-  rw [markovChainLaw_setOf_successiveVisit_ne_top,
-    markovChainLaw_dirac_setOf_hittingAfter_zero_ne_top, one_mul]
-
 /-- **A state that is returned to almost surely is visited infinitely often.** If the chain started
 at `y` returns to `y` almost surely, then for every finite initial measure, almost every path that
 reaches `y` visits it infinitely often. -/
@@ -179,16 +171,6 @@ theorem ae_infinite_setOf_eq_of_hittingAfter_ne_top [IsFiniteMeasure ν] {y : α
     exact (iff_of_eq hx).2 hH
   filter_upwards [ae_all_iff.mpr hk] with x hx hH
   exact forall_successiveVisit_lt_top_iff.mp fun k => lt_top_iff_ne_top.mpr (hx k hH)
-
-/-- **A chain started at a state it returns to almost surely returns infinitely often.** This is
-the hypothesis of the excursion decomposition
-`TauCeti.Probability.markovChainLaw_eq_map_pathOfExcursions`. -/
-theorem ae_infinite_setOf_eq_markovChainLaw_dirac {y : α}
-    (hy : markovChainLaw (dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} = 1) :
-    ∀ᵐ x ∂markovChainLaw (dirac y) κ, {n | x n = y}.Infinite := by
-  filter_upwards [ae_infinite_setOf_eq_of_hittingAfter_ne_top (dirac y) κ hy,
-    ae_hittingAfter_zero_ne_top_markovChainLaw_dirac κ y] with x hx h0
-  exact hx h0
 
 /-- **A state that is not returned to almost surely is visited finitely often.** If the return
 probability of `y` is less than one, then for every finite initial measure the chain visits `y`
@@ -254,6 +236,24 @@ open MeasureTheory
 
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] (κ : Kernel α α)
   [IsMarkovKernel κ]
+
+/-- Started at `y`, the visit to `y` indexed by `k` (visit zero being time zero) exists with
+probability `ρ_y ^ k`. -/
+theorem markovChainLaw_dirac_setOf_successiveVisit_ne_top (y : α) (k : ℕ) :
+    markovChainLaw (Measure.dirac y) κ {x | successiveVisit (fun n x => x n) y k x ≠ ⊤} =
+      markovChainLaw (Measure.dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} ^ k := by
+  rw [Measure.markovChainLaw_setOf_successiveVisit_ne_top,
+    Measure.markovChainLaw_dirac_setOf_hittingAfter_zero_ne_top, one_mul]
+
+/-- **A chain started at a state it returns to almost surely returns infinitely often.** This is
+the hypothesis of the excursion decomposition
+`TauCeti.Probability.markovChainLaw_eq_map_pathOfExcursions`. -/
+theorem ae_infinite_setOf_eq_markovChainLaw_dirac {y : α}
+    (hy : markovChainLaw (Measure.dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} = 1) :
+    ∀ᵐ x ∂markovChainLaw (Measure.dirac y) κ, {n | x n = y}.Infinite := by
+  filter_upwards [Measure.ae_infinite_setOf_eq_of_hittingAfter_ne_top (Measure.dirac y) κ hy,
+    Measure.ae_hittingAfter_zero_ne_top_markovChainLaw_dirac κ y] with x hx h0
+  exact hx h0
 
 /-- **The Green function at the diagonal.** The mean number of visits to `y` of the chain started
 at `y`, `∑ n, (κ ^ n) y {y}`, is `(1 - ρ_y)⁻¹`, where `ρ_y = ℙ_y(T_y⁺ < ∞)` is the return
