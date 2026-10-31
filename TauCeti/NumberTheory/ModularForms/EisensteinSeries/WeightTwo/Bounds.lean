@@ -20,8 +20,8 @@ multiples of `t`, bounded by `σ₁(n)`. For every `ε > 0` these coefficients a
 levels of a fixed level `N`, and on the span in `M₂(Γ₁(N))` of the weight-two Eisenstein series
 of all indices `(ψ, φ, t)` (`TauCeti.EisensteinSeries.CharIndex.weightTwoForm`). Since the
 latter series span a complement of the cusp forms, these estimates give the bound `O(n^(1+ε))`
-for the coefficients of every form of weight two on `Γ₁(N)`, and hence the abscissa of absolute
-convergence `2` of its coefficient L-series, the weight-two case of Diamond–Shurman,
+for the coefficients of every form of weight two on `Γ₁(N)`, and hence an abscissa of absolute
+convergence at most `2` for its coefficient L-series, the weight-two case of Diamond–Shurman,
 Proposition 5.9.1 (`TauCeti.ModularFormClass.abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le`).
 
 The ε-family avoids asserting the false bound `σ₁(n) = O(n)`. The span of the corrected series
