@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Groebner.Basic
+public import TauCeti.RingTheory.MvPolynomial.MonomialOrder
 public import TauCeti.Data.Finsupp.MapDomain
 
 /-!
@@ -21,22 +22,19 @@ Suppose the monomial order `m` on `σ` is an *elimination order* for `τ`: every
 monomial in the variables `e τ` is again a monomial in those variables. If `G` is a Gröbner basis
 of `I` for `m`, then the members of `G` which only involve the variables `e τ` form a Gröbner
 basis of the elimination ideal, for any monomial order `m'` on `τ` which `e` carries to `m`. In
-particular, when the leading coefficients are units, they generate the elimination ideal, so a
+particular, when their leading coefficients are units, they generate the elimination ideal, so a
 single Gröbner basis of `I` computes the elimination ideal.
 
 The lexicographic order is an elimination order for every upper set of variables: with the
-antitone variable convention, the variables of an upper set are the smallest ones.
+antitone variable convention, the variables of an upper set are the smallest ones. The transport
+of leading data along a relabeling and this property of the lexicographic order are in
+`TauCeti.RingTheory.MvPolynomial.MonomialOrder`.
 
 ## Main results
 
-* `MonomialOrder.degree_rename`, `MonomialOrder.leadingCoeff_rename` and
-  `MonomialOrder.leadingTerm_rename`: renaming the variables along an embedding of monomial
-  orders commutes with leading monomials, coefficients and terms.
 * `MonomialOrder.IsGroebnerBasis.comap_rename`: **the elimination theorem**, the members of a
   Gröbner basis in the variables `e τ` form a Gröbner basis of the elimination ideal.
 * `MonomialOrder.IsGroebnerBasis.comap_rename_eq_span`: they generate the elimination ideal.
-* `MonomialOrder.coe_support_subset_of_lex_le`: monomials supported in an upper set of variables
-  form a lower set for the lexicographic order.
 * `MonomialOrder.IsGroebnerBasis.comap_rename_lex`: the elimination theorem for the
   lexicographic order and a strictly monotone embedding onto an upper set of variables.
 
@@ -56,50 +54,6 @@ open MvPolynomial
 
 variable {σ τ R : Type*} [CommSemiring R] {m : MonomialOrder σ} {m' : MonomialOrder τ}
   {e : τ → σ}
-
-section Rename
-
-/-- A relabeling of variables which carries the monomial order `m'` to `m` is injective. -/
-private theorem injective_of_forall_toSyn_le_iff
-    (hm : ∀ a b : τ →₀ ℕ, a ≼[m'] b ↔ a.mapDomain e ≼[m] b.mapDomain e) :
-    Function.Injective e := by
-  intro i j hij
-  -- The two variables `X i`, `X j` are renamed to the same variable, so neither exceeds the other.
-  have hsingle : m.toSyn ((Finsupp.single i 1).mapDomain e) =
-      m.toSyn ((Finsupp.single j 1).mapDomain e) := by
-    simp [hij]
-  have h := m'.toSyn.injective <| le_antisymm ((hm _ _).2 hsingle.le) ((hm _ _).2 hsingle.ge)
-  simpa [Finsupp.single_left_inj] using h
-
-/-- Renaming the variables along a relabeling which carries the monomial order `m'` to `m` renames
-the leading monomial. -/
-theorem degree_rename (hm : ∀ a b : τ →₀ ℕ, a ≼[m'] b ↔ a.mapDomain e ≼[m] b.mapDomain e)
-    (p : MvPolynomial τ R) : m.degree (rename e p) = (m'.degree p).mapDomain e := by
-  classical
-  have he := injective_of_forall_toSyn_le_iff hm
-  rcases eq_or_ne p 0 with rfl | hp
-  · simp
-  refine m.toSyn.injective (le_antisymm (m.degree_le_iff.2 fun c hc ↦ ?_) (m.le_degree ?_))
-  · rw [support_rename_of_injective he, Finset.mem_image] at hc
-    obtain ⟨a, ha, rfl⟩ := hc
-    exact (hm _ _).1 (m'.le_degree ha)
-  · rw [support_rename_of_injective he]
-    exact Finset.mem_image_of_mem _ (m'.degree_mem_support hp)
-
-/-- Renaming the variables along a relabeling which carries the monomial order `m'` to `m`
-preserves the leading coefficient. -/
-theorem leadingCoeff_rename (hm : ∀ a b : τ →₀ ℕ, a ≼[m'] b ↔ a.mapDomain e ≼[m] b.mapDomain e)
-    (p : MvPolynomial τ R) : m.leadingCoeff (rename e p) = m'.leadingCoeff p := by
-  rw [leadingCoeff, degree_rename hm,
-    coeff_rename_mapDomain _ (injective_of_forall_toSyn_le_iff hm), leadingCoeff]
-
-/-- Renaming the variables along a relabeling which carries the monomial order `m'` to `m`
-renames the leading term. -/
-theorem leadingTerm_rename (hm : ∀ a b : τ →₀ ℕ, a ≼[m'] b ↔ a.mapDomain e ≼[m] b.mapDomain e)
-    (p : MvPolynomial τ R) : m.leadingTerm (rename e p) = rename e (m'.leadingTerm p) := by
-  rw [leadingTerm, leadingTerm, degree_rename hm, leadingCoeff_rename hm, rename_monomial]
-
-end Rename
 
 section Elimination
 
@@ -150,41 +104,23 @@ theorem IsGroebnerBasis.comap_rename (h : m.IsGroebnerBasis G I)
   have := hkill (Ideal.mem_map_of_mem _ hmem)
   rwa [leadingTerm_rename hm, killCompl_rename_app] at this
 
-/-- In the elimination theorem, if the nonzero members of the Gröbner basis have unit leading
-coefficients (for instance over a field), then the members in the variables `e τ` generate the
-elimination ideal. -/
+/-- In the elimination theorem, if the nonzero members of the Gröbner basis in the variables `e τ`
+have unit leading coefficients (for instance over a field), then they generate the elimination
+ideal. The members involving other variables are unconstrained. -/
 theorem IsGroebnerBasis.comap_rename_eq_span {R : Type*} [CommRing R] {G : Set (MvPolynomial σ R)}
     {I : Ideal (MvPolynomial σ R)} (h : m.IsGroebnerBasis G I)
-    (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g))
+    (hG : ∀ g ∈ G, g ∈ Set.range (rename e) → g ≠ 0 → IsUnit (m.leadingCoeff g))
     (hm : ∀ a b : τ →₀ ℕ, a ≼[m'] b ↔ a.mapDomain e ≼[m] b.mapDomain e)
     (helim : ∀ a b : σ →₀ ℕ, a ≼[m] b → ↑b.support ⊆ Set.range e → ↑a.support ⊆ Set.range e) :
     I.comap (rename e) = Ideal.span (rename e ⁻¹' G) := by
   refine (h.comap_rename hm helim).ideal_eq_span fun g hg hg0 ↦ ?_
   rw [← leadingCoeff_rename hm]
-  exact hG _ hg <| by
+  exact hG _ hg ⟨g, rfl⟩ <| by
     rwa [Ne, map_eq_zero_iff _ (rename_injective _ (injective_of_forall_toSyn_le_iff hm))]
 
 end Elimination
 
 section Lex
-
-/-- For the lexicographic order, the monomials supported in an upper set of variables form a
-lower set: with the antitone variable convention these are the smallest variables. -/
-theorem coe_support_subset_of_lex_le [LinearOrder σ] [WellFoundedGT σ] {s : Set σ}
-    (hs : IsUpperSet s) {a b : σ →₀ ℕ} (hab : a ≼[lex] b) (hb : ↑b.support ⊆ s) :
-    ↑a.support ⊆ s := by
-  intro j hj
-  by_contra hjs
-  rcases eq_or_ne a b with rfl | hne
-  · exact hjs (hb hj)
-  -- `a < b` first differs from `b` at some `i` with `0 ≤ a i < b i`, so `i ∈ s`; since `j ∉ s`,
-  -- `j < i`, and then `a j = b j = 0`.
-  obtain ⟨i, hi, hlt⟩ := Finsupp.Lex.lt_iff.1 <| lex_lt_iff.1 <|
-    lt_of_le_of_ne hab (lex.toSyn.injective.ne hne)
-  have hbi : i ∈ s := hb (Finsupp.mem_support_iff.2 (Nat.zero_lt_of_lt hlt).ne')
-  have hji : j < i := lt_of_not_ge fun hij ↦ hjs (hs hij hbi)
-  have hbj : b j = 0 := Finsupp.notMem_support_iff.1 fun h ↦ hjs (hb h)
-  exact (Finsupp.mem_support_iff.1 hj) ((hi j hji).trans hbj)
 
 /-- **The elimination theorem for the lexicographic order.** If `e : τ → σ` is strictly monotone
 with image an upper set of variables, then the members of a lexicographic Gröbner basis of `I` in

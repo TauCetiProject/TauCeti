@@ -13,7 +13,8 @@ public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
 
 This file collects facts about leading monomials of multivariate polynomials for a monomial order
 `m` on `σ →₀ ℕ`: the degree of a monomial multiple, the cancellation of leading terms by an
-S-polynomial, and algebraic independence from leading monomials.
+S-polynomial, leading data of renamed polynomials, elimination orders among lexicographic orders,
+and algebraic independence from leading monomials.
 
 The product `X^a * b`, normalized to leading coefficient one when `b` has a unit leading
 coefficient, differs from another such product of the same degree by a monomial multiple of
@@ -35,6 +36,12 @@ the images of the generators of the Lazard ring in a polynomial ring.
   leading coefficient, then `X^a * b` minus `lc b` times the product of `b₀` of the same degree
   normalized to leading coefficient one is a monomial multiple of the S-polynomial
   `m.sPolynomial b b₀`.
+* `MonomialOrder.degree_rename`, `MonomialOrder.leadingCoeff_rename` and
+  `MonomialOrder.leadingTerm_rename`: renaming the variables along a relabeling which carries one
+  monomial order to another commutes with leading monomials, coefficients and terms; such a
+  relabeling is injective by `MonomialOrder.injective_of_forall_toSyn_le_iff`.
+* `MonomialOrder.coe_support_subset_of_lex_le`: monomials supported in an upper set of variables
+  form a lower set for the lexicographic order.
 * `MonomialOrder.algebraicIndependent_of_degree_eq_single`: polynomials `yᵢ` whose leading
   monomial is `Xᵢ` are algebraically independent.
 -/
@@ -76,6 +83,74 @@ theorem monomial_one_mul_sub_smul_eq_monomial_mul_sPolynomial [CommRing R] {a : 
   have hc : ((u₀⁻¹ : Rˣ) : R) * m.leadingCoeff b₀ = 1 := by rw [← hu₀, Units.inv_mul]
   simp only [sPolynomial_def, mul_sub, ← mul_assoc, monomial_mul_monomial, smul_eq_C_mul,
     C_mul_monomial, e₁, e₂, hc, mul_comm (m.leadingCoeff b)]
+
+section Rename
+
+variable {τ : Type*} [CommSemiring R] {m} {m' : MonomialOrder τ} {e : τ → σ}
+
+/-- A relabeling of variables which carries the monomial order `m'` to `m` is injective. -/
+theorem injective_of_forall_toSyn_le_iff
+    (hm : ∀ a b : τ →₀ ℕ, a ≼[m'] b ↔ a.mapDomain e ≼[m] b.mapDomain e) :
+    Function.Injective e := by
+  intro i j hij
+  -- The two variables `X i`, `X j` are renamed to the same variable, so neither exceeds the other.
+  have hsingle : m.toSyn ((Finsupp.single i 1).mapDomain e) =
+      m.toSyn ((Finsupp.single j 1).mapDomain e) := by
+    simp [hij]
+  have h := m'.toSyn.injective <| le_antisymm ((hm _ _).2 hsingle.le) ((hm _ _).2 hsingle.ge)
+  simpa [Finsupp.single_left_inj] using h
+
+/-- Renaming the variables along a relabeling which carries the monomial order `m'` to `m` renames
+the leading monomial. -/
+theorem degree_rename (hm : ∀ a b : τ →₀ ℕ, a ≼[m'] b ↔ a.mapDomain e ≼[m] b.mapDomain e)
+    (p : MvPolynomial τ R) : m.degree (rename e p) = (m'.degree p).mapDomain e := by
+  classical
+  have he := injective_of_forall_toSyn_le_iff hm
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp
+  refine m.toSyn.injective (le_antisymm (m.degree_le_iff.2 fun c hc ↦ ?_) (m.le_degree ?_))
+  · rw [support_rename_of_injective he, Finset.mem_image] at hc
+    obtain ⟨a, ha, rfl⟩ := hc
+    exact (hm _ _).1 (m'.le_degree ha)
+  · rw [support_rename_of_injective he]
+    exact Finset.mem_image_of_mem _ (m'.degree_mem_support hp)
+
+/-- Renaming the variables along a relabeling which carries the monomial order `m'` to `m`
+preserves the leading coefficient. -/
+theorem leadingCoeff_rename (hm : ∀ a b : τ →₀ ℕ, a ≼[m'] b ↔ a.mapDomain e ≼[m] b.mapDomain e)
+    (p : MvPolynomial τ R) : m.leadingCoeff (rename e p) = m'.leadingCoeff p := by
+  rw [leadingCoeff, degree_rename hm,
+    coeff_rename_mapDomain _ (injective_of_forall_toSyn_le_iff hm), leadingCoeff]
+
+/-- Renaming the variables along a relabeling which carries the monomial order `m'` to `m`
+renames the leading term. -/
+theorem leadingTerm_rename (hm : ∀ a b : τ →₀ ℕ, a ≼[m'] b ↔ a.mapDomain e ≼[m] b.mapDomain e)
+    (p : MvPolynomial τ R) : m.leadingTerm (rename e p) = rename e (m'.leadingTerm p) := by
+  rw [leadingTerm, leadingTerm, degree_rename hm, leadingCoeff_rename hm, rename_monomial]
+
+end Rename
+
+section Lex
+
+/-- For the lexicographic order, the monomials supported in an upper set of variables form a
+lower set: with the antitone variable convention these are the smallest variables. -/
+theorem coe_support_subset_of_lex_le [LinearOrder σ] [WellFoundedGT σ] {s : Set σ}
+    (hs : IsUpperSet s) {a b : σ →₀ ℕ} (hab : a ≼[lex] b) (hb : ↑b.support ⊆ s) :
+    ↑a.support ⊆ s := by
+  intro j hj
+  by_contra hjs
+  rcases eq_or_ne a b with rfl | hne
+  · exact hjs (hb hj)
+  -- `a < b` first differs from `b` at some `i` with `0 ≤ a i < b i`, so `i ∈ s`; since `j ∉ s`,
+  -- `j < i`, and then `a j = b j = 0`.
+  obtain ⟨i, hi, hlt⟩ := Finsupp.Lex.lt_iff.1 <| lex_lt_iff.1 <|
+    lt_of_le_of_ne hab (lex.toSyn.injective.ne hne)
+  have hbi : i ∈ s := hb (Finsupp.mem_support_iff.2 (Nat.zero_lt_of_lt hlt).ne')
+  have hji : j < i := lt_of_not_ge fun hij ↦ hjs (hs hij hbi)
+  have hbj : b j = 0 := Finsupp.notMem_support_iff.1 fun h ↦ hjs (hb h)
+  exact (Finsupp.mem_support_iff.1 hj) ((hi j hji).trans hbj)
+
+end Lex
 
 variable [CommRing R] [NoZeroDivisors R]
 
