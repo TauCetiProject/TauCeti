@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.ExteriorPower.Invertible
+public import TauCeti.LinearAlgebra.ExteriorPower.Localization
 public import TauCeti.RingTheory.Norm.Projective
+import Mathlib.LinearAlgebra.ExteriorPower.Basis
+import TauCeti.LinearAlgebra.TensorProduct.Hom
 
 /-!
 # Norms of invertible modules along finite projective algebras
@@ -34,6 +37,21 @@ invertible modules the construction recovers the norm of the algebra. A `B`-line
 `L ≃ L'` induces an isomorphism of norms which is compatible with the norm maps
 (`TauCeti.ModuleNorm.congr_normMap`).
 
+The formation of the norm commutes with base change
+(`TauCeti.ModuleNorm.baseChangeEquiv`). Let `A → A'` be a ring map, `B' = A' ⊗[A] B` (in the
+form `Algebra.IsPushout A A' B B'`), and let `f : L → L'` be an `A`-linear map which exhibits `L'`
+as the base change of `L` to `A'`. Then
+
+`A' ⊗[A] Norm_{B/A}(L) ≃ Norm_{B'/A'}(L')`.
+
+If `L'` is a `B'`-module and `f (b • s) = b • f s` for `b : B`, this is compatible with the norm
+maps: `a ⊗ normMap s ↦ a • normMap (f s)` (`TauCeti.ModuleNorm.baseChangeEquiv_tmul_normMap`).
+Neither the rank nor the invertibility of `L` is needed for this. Exterior powers commute with base
+change (`IsBaseChange.exteriorPower`), and so do modules of linear maps out of the finite
+projective module `⋀^d B` (`IsBaseChange.linearMapLeftRight_of_projective`). Since
+`f` is only required to be a base change, this applies in particular to localizations of `A`,
+which is how the norms over the affine opens of a base are compared.
+
 These are the local trivialisations of the norm of an invertible sheaf along a finite locally free
 morphism: over an affine open of the base on which the morphism has constant rank, a local
 generator `s` of the sheaf gives the local generator `normMap s` of its norm, and two local
@@ -44,6 +62,8 @@ generators differ by a unit of `B` whose norm is the transition function.
 * `TauCeti.ModuleNorm A B d L`: the norm `Hom_A(⋀^d B, ⋀^d L)` of a `B`-module `L`.
 * `TauCeti.ModuleNorm.normMap A B d`: the norm `L → Norm_{B/A}(L)`.
 * `TauCeti.ModuleNorm.congr`: the isomorphism of norms induced by a `B`-linear isomorphism.
+* `TauCeti.ModuleNorm.baseChangeEquiv`: the isomorphism `A' ⊗[A] Norm_{B/A}(L) ≃ Norm_{B'/A'}(L')`
+  for a base change `A → A'`.
 
 ## Main results
 
@@ -51,6 +71,8 @@ generators differ by a unit of `B` whose norm is the transition function.
 * `TauCeti.ModuleNorm.normMap_smul`: the norm map is multiplicative for `Algebra.projectiveNorm`.
 * `TauCeti.ModuleNorm.span_normMap_eq_top_of_span_eq_top`: the norm of a generator is a generator.
 * `TauCeti.ModuleNorm.toHom_normMap_self`: for `L = B` the norm map is the norm of the algebra.
+* `TauCeti.ModuleNorm.baseChangeEquiv_tmul_normMap`: the base change isomorphism is compatible
+  with the norm maps.
 
 ## References
 
@@ -214,6 +236,77 @@ theorem congr_trans (e : L ≃ₗ[B] L') (e' : L' ≃ₗ[B] L'') :
   congr 2
 
 end Congr
+
+section BaseChange
+
+open scoped TensorProduct
+
+variable {A' B' : Type*} [CommRing A'] [CommRing B'] [Algebra A A'] [Algebra A' B'] [Algebra A B']
+  [Algebra B B'] [IsScalarTower A A' B'] [IsScalarTower A B B'] [Algebra.IsPushout A A' B B']
+  {L' : Type*} [AddCommGroup L'] [Module A' L'] [Module A L'] [IsScalarTower A A' L']
+  [Module.Finite A B] [Module.Projective A B] {f : L →ₗ[A] L'}
+
+omit [Module B L] [IsScalarTower A B L] in
+-- `Hom_{A'}(⋀^d B', ⋀^d L')` is the base change of `Norm_{B/A}(L) = Hom_A(⋀^d B, ⋀^d L)`: both
+-- exterior powers commute with base change, and `⋀^d B` is finite projective.
+private theorem isBaseChange_toHom (hf : IsBaseChange A' f) :
+    IsBaseChange A' (((Algebra.IsPushout.out (R := A) (S := A') (R' := B)
+      (S' := B')).exteriorPower d).linearMapLeftRightHom
+        ((hf.exteriorPowerEquiv d).toLinearMap.restrictScalars A ∘ₗ TensorProduct.mk A A' _ 1) ∘ₗ
+          (toHom A B d L).toLinearMap) :=
+  ((Algebra.IsPushout.out.exteriorPower d).linearMapLeftRight_of_projective
+      (hf.exteriorPower d)).comp_equiv _ _
+
+variable (d) in
+/-- **The norm commutes with base change.** Let `B' = A' ⊗[A] B` be the base change of `B` along
+`A → A'`, and let the `A`-linear map `f : L → L'` exhibit `L'` as the base change of `L` to `A'`.
+Then `A' ⊗[A] Norm_{B/A}(L) ≃ Norm_{B'/A'}(L')`: a map `ψ : ⋀^d B → ⋀^d L` is sent to its
+`A'`-linear extension `⋀^d B' → ⋀^d L'` (`toHom_baseChangeEquiv_tmul_apply`). When `L'` is a
+`B'`-module and `f` is compatible with `B → B'`, it sends `a ⊗ normMap s` to `a • normMap (f s)`
+(`baseChangeEquiv_tmul_normMap`). -/
+noncomputable def baseChangeEquiv (hf : IsBaseChange A' f) :
+    A' ⊗[A] ModuleNorm A B d L ≃ₗ[A'] ModuleNorm A' B' d L' :=
+  (isBaseChange_toHom hf).equiv ≪≫ₗ (toHom A' B' d L').symm
+
+omit [Module B L] [IsScalarTower A B L] in
+/-- The base change isomorphism sends `a ⊗ ψ` to the `A'`-linear map `⋀^d B' → ⋀^d L'` which
+extends `a • ψ` along the comparisons `⋀^d B → ⋀^d B'` and `⋀^d L → ⋀^d L'` of exterior powers
+with their base changes. -/
+theorem toHom_baseChangeEquiv_tmul_apply (hf : IsBaseChange A' f) (a : A')
+    (ψ : ModuleNorm A B d L) (x : ⋀[A]^d B) :
+    toHom A' B' d L' (baseChangeEquiv d hf (a ⊗ₜ ψ))
+        ((Algebra.IsPushout.out (R := A) (S := A') (R' := B) (S' := B')).exteriorPowerEquiv d
+          (1 ⊗ₜ x)) =
+      a • hf.exteriorPowerEquiv d (1 ⊗ₜ toHom A B d L ψ x) := by
+  simp only [baseChangeEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
+    IsBaseChange.equiv_tmul, LinearMap.smul_apply, LinearMap.comp_apply]
+  -- `x ↦ 1 ⊗ x` is the base change map `⋀^d B → ⋀^d B'` along which the extension is taken.
+  exact congrArg (a • ·) (IsBaseChange.linearMapLeftRightHom_comp_apply _ _ _ x)
+
+/-- The base change isomorphism of norms is compatible with the norm maps: if `L'` is a
+`B'`-module and `f (b • s) = b • f s` for `b : B`, it sends `a ⊗ normMap s` to
+`a • normMap (f s)`. -/
+@[simp]
+theorem baseChangeEquiv_tmul_normMap [Module B' L'] [IsScalarTower A' B' L']
+    (hf : IsBaseChange A' f) (hfB : ∀ (b : B) (s : L), f (b • s) = algebraMap B B' b • f s)
+    (a : A') (s : L) :
+    baseChangeEquiv d hf (a ⊗ₜ normMap A B d s) = a • normMap A' B' d (f s) := by
+  apply (toHom A' B' d L').injective
+  have hB : IsBaseChange A' (IsScalarTower.toAlgHom A B B').toLinearMap := Algebra.IsPushout.out
+  refine (hB.exteriorPower d).algHom_ext _ _ fun x ↦ ?_
+  -- `b ↦ b • f s` extends `b ↦ b • s` along `B → B'` and `f`.
+  have h : ((LinearMap.toSpanSingleton B' L' (f s)).restrictScalars A').restrictScalars A ∘ₗ
+      (IsScalarTower.toAlgHom A B B').toLinearMap =
+        f ∘ₗ (LinearMap.toSpanSingleton B L s).restrictScalars A := by
+    ext b
+    simp [hfB]
+  have := LinearMap.congr_fun (hB.exteriorPowerEquiv_naturality hf d _ _ h) (1 ⊗ₜ x)
+  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, TensorProduct.mk_apply,
+    LinearEquiv.coe_coe, LinearMap.baseChange_tmul] at this ⊢
+  rw [toHom_baseChangeEquiv_tmul_apply, map_smul, toHom_normMap, toHom_normMap,
+    LinearMap.smul_apply, ← this]
+
+end BaseChange
 
 end ModuleNorm
 
