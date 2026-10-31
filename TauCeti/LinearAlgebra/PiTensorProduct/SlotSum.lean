@@ -86,10 +86,11 @@ representing cocycle in the tensor-induced resolution.
   additive inverse, the slot homotopy contracts the tensor power, `D H + H D = 1 - e ⊗ ⋯ ⊗ e`.
 * `TauCeti.PiTensorProduct.slotSum_comp_map` and `TauCeti.PiTensorProduct.slotSum_comp_reindex`:
   the slot sum commutes with factorwise maps and with reindexing.
-* `TauCeti.PiTensorProduct.subsingletonEquiv_slotSum` and
+* `TauCeti.PiTensorProduct.exists_eq_tprod_of_subsingleton`,
+  `TauCeti.PiTensorProduct.subsingletonEquiv_slotSum` and
   `TauCeti.PiTensorProduct.isHomogeneous_subsingletonEquiv`: on a tensor product with a single
-  factor, the slot sum is the endomorphism of that factor, and identifying the tensor product with
-  that factor preserves the degree.
+  factor, every element of a tensor power is a pure tensor, the slot sum is the endomorphism of
+  that factor, and identifying the tensor product with that factor preserves the degree.
 * `TauCeti.PiTensorProduct.isHomogeneous_slotSum`, `TauCeti.PiTensorProduct.isHomogeneous_map`,
   `TauCeti.PiTensorProduct.isHomogeneous_map_update`,
   `TauCeti.PiTensorProduct.isHomogeneous_reindex` and
@@ -125,6 +126,13 @@ variable {ι : Type uι} {κ : Type uκ} {R : Type uR} {A : Type uA} {M : Type u
 section Semiring
 
 variable [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+
+/-- Over a single index `i₀`, every element of a tensor power of `M` is a pure tensor
+`tprod R fun _ ↦ y`. -/
+theorem exists_eq_tprod_of_subsingleton [Subsingleton ι] (i₀ : ι) (x : ⨂[R] _ : ι, M) :
+    ∃ y, x = PiTensorProduct.tprod R fun _ ↦ y :=
+  ⟨_, ((PiTensorProduct.subsingletonEquiv i₀).symm_apply_apply x).symm.trans
+    (PiTensorProduct.subsingletonEquiv_symm_apply' _ _)⟩
 
 section SlotSum
 

@@ -124,9 +124,7 @@ private theorem subsingletonEquiv_ρ (u : U.toSubgroup) (x : (inducedResolution 
         (PiTensorProduct.subsingletonEquiv (R := ℤ)
           (s := fun _ : G ⧸ U.toSubgroup ↦ (resolutionRep (U := U)).V) (QuotientGroup.mk 1) x) := by
   have := subsingleton_quotient hU
-  obtain ⟨y, rfl⟩ : ∃ y, x = PiTensorProduct.tprod ℤ fun _ : G ⧸ U.toSubgroup ↦ y :=
-    ⟨_, ((PiTensorProduct.subsingletonEquiv (QuotientGroup.mk 1)).symm_apply_apply x).symm.trans
-      (PiTensorProduct.subsingletonEquiv_symm_apply' _ _)⟩
+  obtain ⟨y, rfl⟩ := PiTensorProduct.exists_eq_tprod_of_subsingleton (QuotientGroup.mk 1) x
   have hword : (U.toSubgroup.monomialHom (oneTransversal hU) (u : G)).left (QuotientGroup.mk 1) =
       u := Subtype.ext (monomialHom_oneTransversal_left hU _ _)
   refine (congrArg (PiTensorProduct.subsingletonEquiv (QuotientGroup.mk 1))
@@ -168,26 +166,66 @@ private theorem indexOneProj_apply (x : (inducedResolution hU).V) :
         (s := fun _ : G ⧸ U.toSubgroup ↦ (resolutionRep (U := U)).V) (QuotientGroup.mk 1) x :=
   (rfl)
 
-omit [U.toSubgroup.FiniteIndex] in
-/-- The class of a homogeneous cocycle, included in the total resolution, transported to an equal
-degree. -/
-private theorem gradedCohomologyClass_eq_degreeCast_cochainClass {n k : ℕ} (hk : n = k)
-    (z : (TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).X n)
-    (hz : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d n (n + 1)).hom z = 0)
-    (y : (trivialF2 U.toSubgroup).gradedResolutionTopRep.V)
-    (hy : y = (trivialF2 U.toSubgroup).cochainToGradedResolution n z) (hy' hinv hdy) :
-    (TopRep.gradedResolutionContraction
-      (isSmoothDiscrete_trivialF2 U.toSubgroup)).gradedCohomologyClass (n := k) y hy' hinv hdy =
-      (ContinuousCohomology.degreeCast (trivialF2 U.toSubgroup) hk).hom
-        ((trivialF2 U.toSubgroup).cochainClass n z hz) := by
-  subst hk
-  rw [TopRep.cochainToGradedResolution_apply] at hy
-  subst hy
-  rw [ContinuousCohomology.degreeCast_rfl, Iso.refl_hom, ConcreteCategory.id_apply]
-  exact TopRep.gradedCohomologyClass_gradedResolutionContraction
-    (isSmoothDiscrete_trivialF2 U.toSubgroup) z (congrArg Subtype.val hz)
-
 variable [Fintype (G ⧸ U.toSubgroup)]
+
+/-- Reading off the single factor commutes with the differentials: on one factor, the slot sum
+of the total differential is that differential. -/
+private theorem indexOneProj_comp_differential :
+    (TopRep.resFunctor ((ContinuousMonoidHom.subgroupSubtype U.toSubgroup : U.toSubgroup →ₜ* G) :
+        U.toSubgroup →* G)).map
+        (smoothTensorInducedGradedResolutionDifferential U.toSubgroup U.isOpen' (oneTransversal hU)
+          (coeffs (U := U))).hom ≫ indexOneProj hU =
+      indexOneProj hU ≫ (trivialF2 U.toSubgroup).gradedResolutionTopRepDifferential := by
+  classical
+  -- Instance search would pick `AddCommGroup.toIntModule` on the target carrier, which is not
+  -- the module structure of the topological representation.
+  let : Module ℤ (trivialF2 U.toSubgroup).gradedResolutionTopRep.V := TopRep.hV2 _
+  have := subsingleton_quotient hU
+  refine TopRep.hom_ext (ContIntertwiningMap.ext (ContinuousLinearMap.ext fun x ↦ ?_))
+  change (indexOneProj hU).hom
+      ((smoothTensorInducedGradedResolutionDifferential U.toSubgroup U.isOpen' (oneTransversal hU)
+        (coeffs (U := U))).hom.hom x) =
+    (trivialF2 U.toSubgroup).gradedResolutionTopRepDifferential.hom ((indexOneProj hU).hom x)
+  rw [indexOneProj_apply, indexOneProj_apply, smoothTensorInducedGradedResolutionDifferential_apply]
+  exact (PiTensorProduct.subsingletonEquiv_slotSum (QuotientGroup.mk 1)
+    (fun _ ↦ (coeffs (U := U)).obj.gradedResolutionDifferential) x).trans
+    (TopRep.gradedResolutionTopRepDifferential_apply _ _).symm
+
+/-- Reading off the single factor lies over the identification of the tensor-induced
+coefficients with the coefficients: both multiply out a single factor. -/
+private theorem indexOneProj_ι_apply [LinearOrder (G ⧸ U.toSubgroup)] : ∀ x,
+    (indexOneProj hU).hom
+        ((smoothTensorInducedGradedResolutionContraction U.toSubgroup U.isOpen' (oneTransversal hU)
+          (coeffs (U := U)) (fun a ↦ by
+            simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero U.toSubgroup a)).ι.hom x).1 =
+      ((TopRep.gradedResolutionContraction (isSmoothDiscrete_trivialF2 U.toSubgroup)).ι.hom
+        (((TopRep.resFunctor (U.toSubgroup.subtype)).map
+          (smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen' (oneTransversal hU)).hom.hom ≫
+          eqToHom (res_trivialF2_hom _)).hom x)).1 := by
+  let : Module ℤ (DiscreteRep.trivialF2 U.toSubgroup).V :=
+    (DiscreteRep.trivialF2 U.toSubgroup).module
+  let : Module ℤ (coeffs (U := U)).obj.V := TopRep.hV2 _
+  have := subsingleton_quotient hU
+  intro x
+  obtain ⟨a, rfl⟩ := PiTensorProduct.exists_eq_tprod_of_subsingleton (QuotientGroup.mk 1) x
+  rw [indexOneProj_apply]
+  -- The carriers here agree only up to unfolding, so `rw` cannot see through them: the steps
+  -- are chained as equations instead. On a pure tensor, the augmentation of the tensor-induced
+  -- resolution is the augmentation of the single factor.
+  refine (congrArg (PiTensorProduct.subsingletonEquiv _)
+    ((smoothTensorInducedGradedResolutionContraction_ι_apply _ _ _ _ _ _).trans
+      (PiTensorProduct.map_tprod _ _))).trans <|
+    (PiTensorProduct.subsingletonEquiv_apply_tprod _ _).trans <|
+    (congrArg _ ?_).trans (TopRep.gradedResolutionContraction_ι_apply _ _).symm
+  -- The identification of the coefficients multiplies out the single factor.
+  apply (trivialF2Equiv U.toSubgroup).injective
+  refine Eq.symm ((congrArg (trivialF2Equiv U.toSubgroup)
+    (TopRep.eqToHom_hom_apply (res_trivialF2_hom _) _)).trans
+      ((trivialF2Equiv_cast _ _ _).trans ?_))
+  refine (smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_tprod G _ _ _ _).trans ?_
+  -- The product is over the `Fintype` instance of the coefficient identification.
+  convert Fintype.prod_subsingleton (fun _ ↦ trivialF2Equiv U.toSubgroup a)
+    (QuotientGroup.mk 1 : G ⧸ U.toSubgroup)
 
 /-- **The Evens norm at index one, after restriction**: for a compact open subgroup `U` of index
 one, restricting the norm `N_U^G x ∈ H^{1 · n}(G, 𝔽₂)` back to `U` gives `x`. -/
@@ -217,44 +255,10 @@ theorem trivialF2ResMap_evensNorm_of_index_eq_one {n : ℕ}
   -- Reading off the single factor carries the diagonal tensor to the cocycle itself.
   refine (TopRep.ResolutionContraction.map_gradedCohomologyClass _ _
     (TopRep.gradedResolutionContraction (isSmoothDiscrete_trivialF2 U.toSubgroup)) _
-    (indexOneProj hU) ?_ ?_ ?_ _ _ _).trans
-    (gradedCohomologyClass_eq_degreeCast_cochainClass _ z hz _ ?_ _ _ _)
+    (indexOneProj hU) ?_ (indexOneProj_comp_differential hU) (indexOneProj_ι_apply hU) _ _ _).trans
+    (TopRep.gradedCohomologyClass_eq_degreeCast_cochainClass _ _ z hz _ ?_ _ _ _)
   · exact PiTensorProduct.isHomogeneous_subsingletonEquiv (QuotientGroup.mk 1)
-  · classical
-    -- Instance search would pick `AddCommGroup.toIntModule` on the target carrier, which is not
-    -- the module structure of the topological representation.
-    let : Module ℤ (trivialF2 U.toSubgroup).gradedResolutionTopRep.V := TopRep.hV2 _
-    refine TopRep.hom_ext (ContIntertwiningMap.ext (ContinuousLinearMap.ext fun x ↦ ?_))
-    -- On a single factor, the slot sum of the total differential is that differential.
-    exact (indexOneProj_apply hU _).trans
-      ((congrArg _ (smoothTensorInducedGradedResolutionDifferential_apply _ _ _ _ x)).trans
-        ((PiTensorProduct.subsingletonEquiv_slotSum (QuotientGroup.mk 1)
-          (fun _ ↦ (coeffs (U := U)).obj.gradedResolutionDifferential) x).trans
-          (TopRep.gradedResolutionTopRepDifferential_apply _ _).symm))
-  swap
   · exact (indexOneProj_apply hU _).trans (PiTensorProduct.subsingletonEquiv_apply_tprod _ _)
-  -- It lies over the identification of the coefficients: both multiply out a single factor.
-  let : Module ℤ (DiscreteRep.trivialF2 U.toSubgroup).V :=
-    (DiscreteRep.trivialF2 U.toSubgroup).module
-  let : Module ℤ (coeffs (U := U)).obj.V := TopRep.hV2 _
-  intro x
-  obtain ⟨a, rfl⟩ : ∃ a, x = PiTensorProduct.tprod ℤ fun _ : G ⧸ U.toSubgroup ↦ a :=
-    ⟨_, ((PiTensorProduct.subsingletonEquiv (QuotientGroup.mk 1)).symm_apply_apply x).symm.trans
-      (PiTensorProduct.subsingletonEquiv_symm_apply' _ _)⟩
-  rw [indexOneProj_apply]
-  refine (congrArg (PiTensorProduct.subsingletonEquiv _)
-    ((smoothTensorInducedGradedResolutionContraction_ι_apply _ _ _ _ _ _).trans
-      (PiTensorProduct.map_tprod _ _))).trans <|
-    (PiTensorProduct.subsingletonEquiv_apply_tprod _ _).trans <|
-    (congrArg _ ?_).trans (TopRep.gradedResolutionContraction_ι_apply _ _).symm
-  apply (trivialF2Equiv U.toSubgroup).injective
-  refine Eq.symm ((congrArg (trivialF2Equiv U.toSubgroup)
-    (TopRep.eqToHom_hom_apply (res_trivialF2_hom _) _)).trans
-      ((trivialF2Equiv_cast _ _ _).trans ?_))
-  refine (smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_tprod G _ _ _ _).trans ?_
-  -- The product is over the `Fintype` instance of the coefficient identification.
-  convert Fintype.prod_subsingleton (fun _ ↦ trivialF2Equiv U.toSubgroup a)
-    (QuotientGroup.mk 1 : G ⧸ U.toSubgroup)
 
 omit [CompactSpace U.toSubgroup] [U.toSubgroup.FiniteIndex] [Fintype (G ⧸ U.toSubgroup)] in
 include hU in
@@ -271,15 +275,6 @@ private theorem trivialF2ResMap_injective (n : ℕ) :
   rw [← trivialF2Map_subgroupSubtype, ← ConcreteCategory.comp_apply, ← trivialF2Map_comp, hι,
     trivialF2Map_id, ConcreteCategory.id_apply]
 
-omit [CompactSpace U.toSubgroup] [U.toSubgroup.FiniteIndex] [Fintype (G ⧸ U.toSubgroup)] in
-private theorem trivialF2ResMap_degreeCast {n k : ℕ} (h : n = k)
-    (y : continuousCohomology n (trivialF2 G)) :
-    trivialF2ResMap G U.toSubgroup k ((ContinuousCohomology.degreeCast (trivialF2 G) h).hom y) =
-      (ContinuousCohomology.degreeCast (trivialF2 U.toSubgroup) h).hom
-        (trivialF2ResMap G U.toSubgroup n y) := by
-  subst h
-  simp
-
 /-- **The Evens norm at index one**: for a compact open subgroup `U` of index one, the norm of
 the restriction to `U` of a class `y ∈ Hⁿ(G, 𝔽₂)` is `y`, in degree `1 · n = n`. -/
 theorem evensNorm_trivialF2ResMap_of_index_eq_one {n : ℕ}
@@ -288,6 +283,9 @@ theorem evensNorm_trivialF2ResMap_of_index_eq_one {n : ℕ}
       (ContinuousCohomology.degreeCast (trivialF2 G)
         (by rw [card_quotient_eq_one hU, one_mul])).hom y := by
   apply trivialF2ResMap_injective hU
-  rw [trivialF2ResMap_evensNorm_of_index_eq_one hU, trivialF2ResMap_degreeCast]
+  rw [trivialF2ResMap_evensNorm_of_index_eq_one hU]
+  rw [← ConcreteCategory.comp_apply,
+    ContinuousCohomology.degreeCast_naturality (trivialF2ResMap G U.toSubgroup),
+    ConcreteCategory.comp_apply]
 
 end OpenSubgroup
