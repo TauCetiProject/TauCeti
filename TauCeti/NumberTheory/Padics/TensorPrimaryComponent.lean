@@ -9,6 +9,8 @@ public import Mathlib.GroupTheory.Exponent
 public import Mathlib.GroupTheory.Torsion
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
+public import Mathlib.NumberTheory.Padics.RingHoms
+import TauCeti.Algebra.Group.Primary.Decomposition
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 
@@ -38,6 +40,10 @@ of its localization at `p`.
   group of finite exponent is additively equivalent to its scalar extension to `ℤ_p`.
 * `TauCeti.AddCommGroup.primaryComponentEquivPadicIntTensor_apply`: the equivalence is
   `x ↦ 1 ⊗ x`.
+* `TauCeti.AddCommGroup.tmul_eq_zero_of_nsmul_eq_zero`: an element killed by an integer prime to
+  `p` vanishes in `ℤ_p ⊗[ℤ] A`.
+* `TauCeti.AddCommGroup.tmul_eq_one_tmul_appr`: on an element killed by `p ^ N`, a `p`-adic
+  scalar acts through its truncation modulo `p ^ N`.
 
 This is the case of finite `ℤ`-modules of the comparison `Â ⊗ M ≅ M̂` between scalar extension
 to a completion and completion, since the `p`-adic completion of `A` is its `p`-primary component.
@@ -54,24 +60,6 @@ open TensorProduct
 namespace TauCeti.AddCommGroup
 
 variable {p : ℕ} [hp : Fact p.Prime] {A : Type*} [AddCommGroup A]
-
-/-- A `p`-primary element of a group killed by `p ^ N * m`, with `p ∤ m`, is killed by
-`p ^ N`. -/
-private theorem pow_nsmul_eq_zero_of_mem_primaryComponent {N m : ℕ} (hm : ¬p ∣ m)
-    (hA : ∀ x : A, (p ^ N * m) • x = 0) {x : A}
-    (hx : x ∈ AddCommGroup.primaryComponent A p) : p ^ N • x = 0 := by
-  obtain ⟨k, hk⟩ := AddCommGroup.mem_primaryComponent.mp hx
-  have hcop : (addOrderOf x).Coprime m :=
-    Nat.Coprime.coprime_dvd_left (addOrderOf_dvd_of_nsmul_eq_zero hk)
-      (((Nat.Prime.coprime_iff_not_dvd hp.out).mpr hm).pow_left k)
-  exact addOrderOf_dvd_iff_nsmul_eq_zero.mp
-    (hcop.dvd_of_dvd_mul_right (addOrderOf_dvd_of_nsmul_eq_zero (hA x)))
-
-/-- Two integers congruent modulo `n` act in the same way on an element killed by `n`. -/
-private theorem zsmul_eq_zsmul_of_dvd_sub {n : ℤ} {a b : ℤ} (h : n ∣ b - a) {x : A}
-    (hx : n • x = 0) : a • x = b • x :=
-  zsmul_eq_zsmul_iff_modEq.mpr
-    (Int.modEq_iff_dvd.mpr ((addOrderOf_dvd_iff_zsmul_eq_zero.mpr hx).trans h))
 
 /-- The decomposition data of an exponent: `p ^ N * m` with `p ∤ m`, and an integer `c` that is
 `1` modulo `p ^ N` and divisible by `m`. -/
@@ -90,17 +78,17 @@ private theorem exists_idempotent_data (hA : AddMonoid.ExponentExists A) :
 
 /-- An element killed by a natural number prime to `p` vanishes after scalar extension to
 `ℤ_p`, because that number is a unit of `ℤ_p`. -/
-private theorem tmul_eq_zero_of_nsmul_eq_zero {m : ℕ} (hm : ¬p ∣ m) {y : A} (hy : m • y = 0)
+theorem tmul_eq_zero_of_nsmul_eq_zero {m : ℕ} (hm : ¬p ∣ m) {y : A} (hy : m • y = 0)
     (a : ℤ_[p]) : a ⊗ₜ[ℤ] y = 0 := by
   obtain ⟨u, hu⟩ :=
     PadicInt.isUnit_natCast_of_coprime ((Nat.Prime.coprime_iff_not_dvd hp.out).mpr hm)
-  rw [show a = (m : ℤ) • (a * ↑u⁻¹) by
-    rw [zsmul_eq_mul, Int.cast_natCast, ← hu, mul_left_comm, Units.mul_inv, mul_one],
-    smul_tmul, natCast_zsmul, hy, tmul_zero]
+  have ha : a = (m : ℤ) • (a * ↑u⁻¹) := by
+    rw [zsmul_eq_mul, Int.cast_natCast, ← hu, mul_left_comm, Units.mul_inv, mul_one]
+  rw [ha, smul_tmul, natCast_zsmul, hy, tmul_zero]
 
 /-- On an element killed by `p ^ N`, a `p`-adic scalar acts through its truncation modulo
 `p ^ N`. -/
-private theorem tmul_eq_one_tmul_appr {N : ℕ} {y : A} (hy : ((p : ℤ) ^ N) • y = 0) (a : ℤ_[p]) :
+theorem tmul_eq_one_tmul_appr {N : ℕ} {y : A} (hy : ((p : ℤ) ^ N) • y = 0) (a : ℤ_[p]) :
     a ⊗ₜ[ℤ] y = 1 ⊗ₜ[ℤ] ((a.appr N : ℤ) • y) := by
   obtain ⟨t, ht⟩ := PadicInt.dvd_sub_appr a N
   have ha : a = (a.appr N : ℤ) • (1 : ℤ_[p]) + ((p : ℤ) ^ N) • t := by
@@ -123,8 +111,10 @@ omit hp in
 private theorem mul_zsmul_eq_zero {k : ℤ} (hk : (p : ℤ) ^ N ∣ k) (x : A) : (k * c) • x = 0 := by
   obtain ⟨j, rfl⟩ := hk
   obtain ⟨l, rfl⟩ := hmc
-  rw [show (p : ℤ) ^ N * j * (m * l) = (j * l) * ((p ^ N * m : ℕ) : ℤ) by push_cast; ring,
-    mul_zsmul, natCast_zsmul, hA, zsmul_zero]
+  have hk : (p : ℤ) ^ N * j * (m * l) = (j * l) * ((p ^ N * m : ℕ) : ℤ) := by
+    push_cast
+    ring
+  rw [hk, mul_zsmul, natCast_zsmul, hA, zsmul_zero]
 
 omit hp in
 /-- `c • x` is killed by `p ^ N`. -/
@@ -163,14 +153,17 @@ include hm hc
 private theorem tensorRetraction_one_tmul {x : A} (hx : x ∈ AddCommGroup.primaryComponent A p) :
     tensorRetraction hA hmc ((1 : ℤ_[p]) ⊗ₜ x) = x := by
   have hpow : ((p : ℤ) ^ N) • x = 0 := by
-    rw [show (p : ℤ) ^ N = ((p ^ N : ℕ) : ℤ) by push_cast; rfl, natCast_zsmul]
+    rw [← Nat.cast_pow, natCast_zsmul]
     exact pow_nsmul_eq_zero_of_mem_primaryComponent hm hA hx
+  -- Mathlib's `zsmul_eq_zsmul_iff_modEq`: congruent integers act alike on `x`.
+  have hcong {a b : ℤ} (h : (p : ℤ) ^ N ∣ b - a) : a • x = b • x :=
+    zsmul_eq_zsmul_iff_modEq.mpr
+      (Int.modEq_iff_dvd.mpr ((addOrderOf_dvd_iff_zsmul_eq_zero.mpr hpow).trans h))
   have h1 : (1 : ℤ_[p]).appr N = 1 % p ^ N := by
     simpa using PadicInt.appr_natCast (p := p) 1 N
-  rw [tensorRetraction_tmul, mul_zsmul, zsmul_eq_zsmul_of_dvd_sub (dvd_sub_comm.mp hc) hpow,
-    one_zsmul, h1]
+  rw [tensorRetraction_tmul, mul_zsmul, hcong (dvd_sub_comm.mp hc), one_zsmul, h1]
   nth_rw 2 [← one_zsmul x]
-  exact zsmul_eq_zsmul_of_dvd_sub (by exact_mod_cast (Nat.mod_modEq 1 (p ^ N)).dvd) hpow
+  exact hcong (by exact_mod_cast (Nat.mod_modEq 1 (p ^ N)).dvd)
 
 /-- Every element of `ℤ_p ⊗[ℤ] A` is `1 ⊗ x` for a `p`-primary `x`. -/
 private theorem exists_mem_primaryComponent_one_tmul_eq (t : ℤ_[p] ⊗[ℤ] A) :
@@ -189,7 +182,8 @@ private theorem exists_mem_primaryComponent_one_tmul_eq (t : ℤ_[p] ⊗[ℤ] A)
       refine tmul_eq_zero_of_nsmul_eq_zero hm ?_ a
       obtain ⟨j, hj⟩ := hc
       have hA' : ((p : ℤ) ^ N * m) • x = 0 := by exact_mod_cast hA x
-      rw [← natCast_zsmul, show c = (p : ℤ) ^ N * j + 1 by linear_combination hj]
+      have hc' : c = (p : ℤ) ^ N * j + 1 := by linear_combination hj
+      rw [← natCast_zsmul, hc']
       linear_combination (norm := module) (-j) • hA'
     rw [← tmul_eq_one_tmul_appr hpow, ← add_zero (a ⊗ₜ[ℤ] (c • x)), ← hrest, ← tmul_add,
       add_sub_cancel]
