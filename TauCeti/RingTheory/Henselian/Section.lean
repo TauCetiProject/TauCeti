@@ -8,9 +8,9 @@ module
 public import Mathlib.RingTheory.Etale.StandardEtale
 public import Mathlib.RingTheory.Henselian
 import Mathlib.RingTheory.Smooth.Flat
-import Mathlib.RingTheory.TensorProduct.Quotient
 import Mathlib.RingTheory.Unramified.LocalStructure
 import TauCeti.RingTheory.Henselization.Section
+import TauCeti.RingTheory.TensorProduct.LiftEquiv
 import TauCeti.RingTheory.Unramified.Diagonal
 import TauCeti.RingTheory.Unramified.Section.Idempotent
 
@@ -49,7 +49,8 @@ finite étale algebras over `S` with finite étale algebras over `S ⧸ J`.
 Existence of lifts over a general pair reduces to étale neighbourhoods, whose sections are
 `TauCeti.Henselization.nonempty_algHom_of_bijective_reducedMap`. Over `S ⧸ J`, a section of the
 étale algebra `(S ⧸ J) ⊗[S] A` is localization at an idempotent `e`; inverting a lift `g ∈ A` of
-`e` gives an étale `S`-algebra `A[1/g]` with `A[1/g] ⧸ J A[1/g] ≅ S ⧸ J`. Uniqueness holds because
+`e` (`TauCeti.Algebra.FormallyUnramified.exists_mul_mem_map_of_eq_zero`) gives an étale
+`S`-algebra `A[1/g]` with `A[1/g] ⧸ J A[1/g] ≅ S ⧸ J`. Uniqueness holds because
 `J` lies in the Jacobson radical (`TauCeti.Algebra.FormallyUnramified.ext_of_quotient_eq`).
 
 ## References
@@ -74,30 +75,6 @@ section Absolute
 variable {S : Type u} [CommRing S] (J : Ideal S)
   {A : Type v} [CommRing A] [Algebra S A] [Algebra.Etale S A]
 
-/-- For an `S`-algebra map `ψ : A → S ⧸ J` out of an étale `S`-algebra, there is `g ∈ A` with
-`ψ g = 1` and `g a ∈ JA` for every `a` in the kernel of `ψ`. Base changed to `S ⧸ J`, the section
-`ψ` is localization at an idempotent, and `g` lifts that idempotent. -/
-private theorem exists_mul_mem_map_of_eq_zero (ψ : A →ₐ[S] S ⧸ J) :
-    ∃ g : A, ψ g = 1 ∧ ∀ a, ψ a = 0 → g * a ∈ J.map (algebraMap S A) := by
-  let σ : (S ⧸ J) ⊗[S] A →ₐ[S ⧸ J] S ⧸ J :=
-    Algebra.TensorProduct.lift (AlgHom.id _ _) ψ fun _ _ ↦ .all _ _
-  obtain ⟨e, he, hσe, hker⟩ :=
-    Algebra.FormallyUnramified.exists_isIdempotentElem_ker_eq_span (S ⧸ J) _ σ
-  obtain ⟨g, rfl⟩ :=
-    Algebra.TensorProduct.includeRight_surjective A Ideal.Quotient.mk_surjective e
-  refine ⟨g, by simpa [σ] using hσe, fun a ha ↦ ?_⟩
-  -- `1 ⊗ a` is a multiple of `1 - e`, so `e (1 ⊗ a) = 1 ⊗ g a` vanishes.
-  obtain ⟨c, hc⟩ : ∃ c, c * (1 - Algebra.TensorProduct.includeRight g) =
-      (1 : S ⧸ J) ⊗ₜ[S] a := by
-    rw [← Ideal.mem_span_singleton', ← hker, RingHom.mem_ker]
-    simpa [σ] using ha
-  rw [← Ideal.Quotient.eq_zero_iff_mem,
-    ← (Algebra.TensorProduct.quotIdealMapEquivQuotTensor A J).injective.eq_iff, map_zero,
-    Algebra.TensorProduct.quotIdealMapEquivQuotTensor_mk]
-  calc (1 : S ⧸ J) ⊗ₜ[S] (g * a)
-      = Algebra.TensorProduct.includeRight g * ((1 : S ⧸ J) ⊗ₜ[S] a) := by simp
-    _ = 0 := by rw [← hc, mul_left_comm, he.mul_one_sub_self, mul_zero]
-
 variable [HenselianRing S J]
 
 /-- **Sections of étale algebras over a Henselian pair.** Over a Henselian pair `(S, J)`,
@@ -109,11 +86,11 @@ theorem comp_bijective :
   refine ⟨fun _ _ h ↦ Algebra.FormallyUnramified.ext_of_quotient_eq S A J HenselianRing.jac h,
     fun ψ ↦ ?_⟩
   -- Invert some `g` with `ψ g = 1` that kills the kernel of `ψ` modulo `JA`.
-  obtain ⟨g, hψg, hg⟩ := exists_mul_mem_map_of_eq_zero J ψ
+  obtain ⟨g, hψg, hg⟩ := Algebra.FormallyUnramified.exists_mul_mem_map_of_eq_zero J ψ
   let C := Localization.Away g
-  let ψC : C →ₐ[S] S ⧸ J := IsLocalization.liftAlgHom (M := .powers g) (f := ψ)
-    fun ⟨_, n, hn⟩ ↦ hn ▸ by simp [hψg]
-  have hψC (a : A) : ψC (algebraMap A C a) = ψ a := IsLocalization.lift_eq _ a
+  let ψC : C →ₐ[S] S ⧸ J := IsLocalization.Away.liftAlgHom g (f := ψ) (by simp [hψg])
+  have hψC (a : A) : ψC (algebraMap A C a) = ψ a := by
+    simp [ψC, IsLocalization.Away.lift_eq]
   have hJC : J.map (algebraMap S C) = (J.map (algebraMap S A)).map (algebraMap A C) := by
     rw [Ideal.map_map, ← IsScalarTower.algebraMap_eq]
   -- The kernel of `ψC` is `J C`.
@@ -162,16 +139,10 @@ and an étale `R`-algebra `A`, reduction modulo `J` is a bijection from `R`-alge
 `R`-algebra maps `A → S ⧸ J`. The base is arbitrary; `comp_bijective` is the case `R = S`. -/
 @[stacks 09XI "(1) ⇒ (2), relative form over an arbitrary base"]
 theorem comp_bijective_of_algebra :
-    Function.Bijective ((Ideal.Quotient.mkₐ R J).comp : (A →ₐ[R] S) → A →ₐ[R] S ⧸ J) := by
+    Function.Bijective ((Ideal.Quotient.mkₐ R J).comp : (A →ₐ[R] S) → A →ₐ[R] S ⧸ J) :=
   -- Base change `A` to the étale `S`-algebra `S ⊗[R] A` and apply `comp_bijective` over `S`.
-  have hcomp : ((Ideal.Quotient.mkₐ R J).comp : (A →ₐ[R] S) → A →ₐ[R] S ⧸ J) =
-      (AlgHom.liftEquiv R S A (S ⧸ J)).symm ∘
-        (Ideal.Quotient.mkₐ S J).comp ∘ AlgHom.liftEquiv R S A S := by
-    ext f a
-    simp
-  rw [hcomp]
-  exact (AlgHom.liftEquiv R S A (S ⧸ J)).symm.bijective.comp
-    ((comp_bijective J (A := S ⊗[R] A)).comp (AlgHom.liftEquiv R S A S).bijective)
+  (AlgHom.restrictScalars_comp_bijective_iff R A (Ideal.Quotient.mkₐ S J)).mpr
+    (comp_bijective J)
 
 end Relative
 
@@ -191,8 +162,7 @@ theorem henselianRing_iff_forall_comp_surjective {R : Type u} [CommRing R] {I : 
       simp [Ideal.Quotient.eq_zero_iff_mem.mpr (I.mul_mem_right y hx)]
     have := Algebra.Etale.of_isLocalizationAway (A := Localization.Away (x * y + 1)) (x * y + 1)
     obtain ⟨φ, -⟩ := h (Localization.Away (x * y + 1))
-      (IsLocalization.liftAlgHom (M := .powers (x * y + 1)) (f := Algebra.ofId R (R ⧸ I))
-        fun ⟨_, n, hn⟩ ↦ hn ▸ by simp [hu])
+      (IsLocalization.Away.liftAlgHom (x * y + 1) (f := Algebra.ofId R (R ⧸ I)) (by simp [hu]))
     simpa using (IsLocalization.Away.algebraMap_isUnit (x * y + 1)).map φ
   · -- A simple root modulo `I` of a monic `f` is a section modulo `I` of `R[X]_{f'} ⧸ (f)`.
     intro f hf a₀ hfa₀ hf'a₀
