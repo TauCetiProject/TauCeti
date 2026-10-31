@@ -71,7 +71,12 @@ theorem integral_fun_smul_of_smul_left [NormedDivisionRing 𝕜] [Module 𝕜 E]
   exact setToFun_smul _ (fun c s x => by simp [transpose_eq_cbmApplyMeasure, hB]) c f
 
 /-- The vector-measure integral is homogeneous for scalars of a normed field `𝕜` acting on the
-measure, when the pairing is `𝕜`-linear in its second argument. -/
+measure, when the pairing is `𝕜`-linear in its second argument.
+
+This generalizes Mathlib's `MeasureTheory.VectorMeasure.integral_smul_vectorMeasure` (real
+scalars). The case split on completeness of `G` and the comparison of variations through
+`variation_smul` in the non-integrable branch are adapted from its proof; the integrable branch
+uses `map_integral_comp_eq_integral_mapRangeL` instead. -/
 theorem integral_smul_vectorMeasure_of_smul_right [NormedField 𝕜] [NormedAlgebra ℝ 𝕜]
     [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G]
     {μ : VectorMeasure X F} {B : E →L[ℝ] F →L[ℝ] G}
