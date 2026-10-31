@@ -232,16 +232,17 @@ end Subst
 
 section Polynomial
 
-variable {σ τ R : Type*} [CommRing R] [Finite σ]
+variable {σ τ R : Type*} [Finite σ]
 
 /-- The degree-`n` homogeneous component of a power series in finitely many variables, as a
 polynomial. -/
-noncomputable def homogeneousComponentPolynomial (n : ℕ) (f : MvPowerSeries σ R) :
+noncomputable def homogeneousComponentPolynomial [CommSemiring R] (n : ℕ)
+    (f : MvPowerSeries σ R) :
     MvPolynomial σ R :=
   MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f)
 
 @[simp]
-theorem coe_homogeneousComponentPolynomial (n : ℕ) (f : MvPowerSeries σ R) :
+theorem coe_homogeneousComponentPolynomial [CommSemiring R] (n : ℕ) (f : MvPowerSeries σ R) :
     (homogeneousComponentPolynomial n f : MvPowerSeries σ R) = homogeneousComponent n f := by
   ext d
   rw [MvPolynomial.coeff_coe, homogeneousComponentPolynomial,
@@ -250,14 +251,15 @@ theorem coe_homogeneousComponentPolynomial (n : ℕ) (f : MvPowerSeries σ R) :
   · exact coeff_truncTotal _ (by omega)
   · rfl
 
-theorem isHomogeneous_homogeneousComponentPolynomial (n : ℕ) (f : MvPowerSeries σ R) :
+theorem isHomogeneous_homogeneousComponentPolynomial [CommSemiring R] (n : ℕ)
+    (f : MvPowerSeries σ R) :
     (homogeneousComponentPolynomial n f).IsHomogeneous n :=
   MvPolynomial.homogeneousComponent_isHomogeneous _ _
 
 /-- If `f` vanishes below degree `n` and the series `a i` have no constant term, the degree-`n`
 part of `f(a)` is the polynomial degree-`n` part of `f` evaluated at polynomials `l i` equal to the
 linear parts of the `a i`. -/
-theorem homogeneousComponent_subst_eq_coe_aeval {n : ℕ} {f : MvPowerSeries σ R}
+theorem homogeneousComponent_subst_eq_coe_aeval [CommRing R] {n : ℕ} {f : MvPowerSeries σ R}
     (hn : n ≤ f.order) {a : σ → MvPowerSeries τ R} (ha : HasSubst a)
     (ha₀ : ∀ i, constantCoeff (a i) = 0) {l : σ → MvPolynomial τ R}
     (hl : ∀ i, homogeneousComponent 1 (a i) = l i) :
