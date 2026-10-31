@@ -39,8 +39,8 @@ countable partners in every universe.
 
 * `TauCeti.StabilizesCompletely.bfEquiv_of_le`: external stabilization propagates to all later
   levels.
-* `TauCeti.SelfStabilizesCompletely.bfEquiv_add_one_of_isSuccLimit`: internal stabilization at
-  `α` gives external stabilization, against every structure, at every limit above `α`.
+* `TauCeti.SelfStabilizesCompletely.stabilizesCompletely_of_isSuccLimit`: internal stabilization
+  at `α` gives external stabilization at every limit above `α`.
 * `TauCeti.scottHeight_le_internalScottRank_add_omega0` and `TauCeti.scottHeight_lt_omega_one`.
 * `FirstOrder.Language.Equiv.scottHeight_eq`: the Scott height is an isomorphism invariant.
 * `TauCeti.nonempty_equiv_of_bfEquiv_of_scottHeight_le` and
@@ -70,43 +70,6 @@ open scoped Ordinal
 
 variable {L : Language.{u, v}} [L.IsRelational]
 variable {M : Type w} [L.Structure M]
-
-namespace SelfStabilizesCompletely
-
-variable {N : Type w'} [L.Structure N] {α : Ordinal.{o}}
-
-/-- In a structure stabilizing internally at `α`, a tuple `α`-equivalent to an outside tuple `v`
-is equivalent to `v` at every level `δ ≥ α` at which some tuple of the structure is. -/
-theorem bfEquiv_of_bfEquiv_of_le (h : SelfStabilizesCompletely (L := L) M α) {n : ℕ}
-    {u w : Fin n → M} {v : Fin n → N} {δ : Ordinal.{o}} (hαδ : α ≤ δ)
-    (huv : BFEquiv (L := L) α n u v) (hwv : BFEquiv (L := L) δ n w v) :
-    BFEquiv (L := L) δ n u v :=
-  (h.bfEquiv_of_le hαδ (huv.trans (hwv.mono hαδ).symm)).trans hwv
-
-/-- **Internal stabilization gives external stabilization at limits.** If `M` stabilizes
-internally at `α`, then at every limit level `β > α`, back-and-forth equivalence at `β` between
-a tuple of `M` and a tuple of any structure `N` upgrades to `β + 1`. -/
-theorem bfEquiv_add_one_of_isSuccLimit (h : SelfStabilizesCompletely (L := L) M α)
-    {β : Ordinal.{o}} (hβ : Order.IsSuccLimit β) (hαβ : α < β) {n : ℕ} {a : Fin n → M}
-    {b : Fin n → N} (hab : BFEquiv (L := L) β n a b) : BFEquiv (L := L) (β + 1) n a b := by
-  have hlt : ∀ γ < β, BFEquiv (L := L) (γ + 1) n a b :=
-    fun γ hγ => hab.mono (hβ.add_one_lt hγ).le
-  -- An extension pair matched at level `α` is matched at every level below `β`: compare it,
-  -- inside `M`, with an extension matched at that level.
-  have key : ∀ x y, BFEquiv (L := L) α (n + 1) (snoc a x) (snoc b y) →
-      BFEquiv (L := L) β (n + 1) (snoc a x) (snoc b y) := by
-    intro x y hxy
-    refine (BFEquiv.limit hβ _ _).mpr fun γ hγ => ?_
-    obtain ⟨x', hx'⟩ := ((BFEquiv.add_one _ a b).mp (hlt (max γ α) (max_lt hγ hαβ))).2.2 y
-    exact (h.bfEquiv_of_bfEquiv_of_le (le_max_right γ α) hxy hx').mono (le_max_left γ α)
-  obtain ⟨-, hforth, hback⟩ := (BFEquiv.add_one α a b).mp (hlt α hαβ)
-  refine (BFEquiv.add_one β a b).mpr ⟨hab, fun x => ?_, fun y => ?_⟩
-  · obtain ⟨y, hy⟩ := hforth x
-    exact ⟨y, key x y hy⟩
-  · obtain ⟨x, hx⟩ := hback y
-    exact ⟨x, key x y hx⟩
-
-end SelfStabilizesCompletely
 
 variable (M) in
 /-- `M` stabilizes completely at `α`: for every countable structure `N` in `Type` and tuples of
