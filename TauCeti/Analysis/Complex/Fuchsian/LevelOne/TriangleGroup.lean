@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Basic
 public import TauCeti.Analysis.Complex.Fuchsian.TriangleOrder.Group
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
+import TauCeti.Analysis.Complex.UpperHalfPlane.Rho
 
 /-!
 # The level-one modular group as the triangle group `Δ(3, 2, ∞)`
@@ -73,18 +74,14 @@ private theorem ρ_ne_infty : (.inl ρ : ℍ ⊕ OnePoint ℝ) ≠ .inr ∞ := S
 
 private theorem I_ne_infty : (.inl I : ℍ ⊕ OnePoint ℝ) ≠ .inr ∞ := Sum.inl_ne_inr
 
-private theorem ρ_ne_I : (.inl ρ : ℍ ⊕ OnePoint ℝ) ≠ .inl I := by
-  intro h
-  have := congrArg (fun p ↦ (toComplex p).re) h
-  simp [UpperHalfPlane.ρ, UpperHalfPlane.I] at this
+private theorem ρ_ne_I : (.inl ρ : ℍ ⊕ OnePoint ℝ) ≠ .inl I :=
+  fun h ↦ I_ne_ρ (Sum.inl_injective h).symm
 
 private theorem re_ρ_lt_re_I : (toComplex (.inl ρ)).re < (toComplex (.inl I)).re := by
   norm_num [UpperHalfPlane.ρ, UpperHalfPlane.I]
 
 private theorem normSq_ρ : Complex.normSq (toComplex (.inl ρ) - ((0 : ℝ) : ℂ)) = 1 ^ 2 := by
-  rw [toComplex_inl, Complex.ofReal_zero, sub_zero, Complex.normSq_apply]
-  simp only [UpperHalfPlane.ρ, UpperHalfPlane.coe_mk]
-  linear_combination Real.sq_sqrt (show (0 : ℝ) ≤ 3 by norm_num) / 4
+  rw [toComplex_inl, Complex.ofReal_zero, sub_zero, Complex.normSq_eq_norm_sq, norm_ρ]
 
 private theorem normSq_I : Complex.normSq (toComplex (.inl I) - ((0 : ℝ) : ℂ)) = 1 ^ 2 := by
   simp [UpperHalfPlane.I]
@@ -170,6 +167,13 @@ private theorem conjJ_unitCircleMatrix_mul_inv :
     norm_num [Matrix.SpecialLinearGroup.coe_inv, Matrix.adjugate_fin_two, Matrix.mul_apply,
       coe_unitCircleMatrix, _root_.ModularGroup.coe_S]
 
+/-- In `PSL(2, ℝ)`, conjugating `unitCircleMatrix` by `J` and dividing by it gives `S`. -/
+private theorem pslConjJ_unitCircleMatrix_mul_inv :
+    pslConjJ (unitCircleMatrix : PSL(2, ℝ)) * (unitCircleMatrix : PSL(2, ℝ))⁻¹ =
+      psl2zToPSL2R (_root_.ModularGroup.S : PSL(2, ℤ)) := by
+  rw [pslConjJ_mk, ← QuotientGroup.mk_inv, ← QuotientGroup.mk_mul, conjJ_unitCircleMatrix_mul_inv]
+  simp
+
 /-- The unit semicircle is the geodesic line of `unitCircleMatrix`. -/
 private theorem mem_range_geodesicLine_unitCircleMatrix {z : ℍ} (hz : Complex.normSq z = 1) :
     z ∈ Set.range (geodesicLine (unitCircleMatrix : PSL(2, ℝ))) := by
@@ -218,9 +222,7 @@ theorem vertexReflectionComp_triangle_one :
   rcases exists_eq_mul_dilation_or_eq_mul_pslS_mul_dilation_of_range_eq
     range_geodesicLine_sideGeodesic_zero with ⟨t, ht⟩ | ⟨t, ht⟩ <;>
   · simp only [ht, geodesicReflectionComp_mul_dilation_right, geodesicReflectionComp_mul_pslS_right]
-    rw [geodesicReflectionComp_def, one_mul, inv_one, one_mul, pslConjJ_mk, ← QuotientGroup.mk_inv,
-      ← QuotientGroup.mk_mul, conjJ_unitCircleMatrix_mul_inv,
-      Matrix.ProjectiveSpecialLinearGroup.mk_neg, psl2zToPSL2R_mk, sl2zToPSL2R_apply]
+    simpa [geodesicReflectionComp_def] using pslConjJ_unitCircleMatrix_mul_inv
 
 /-- The transformation of the modular triangle at `∞` is `T⁻¹ : z ↦ z - 1`. -/
 @[simp]
@@ -231,8 +233,8 @@ theorem vertexReflectionComp_triangle_two :
   rw [ConvexPolygon.vertexReflectionComp_two, hs, ht, geodesicReflectionComp_mul_dilation_left,
     geodesicReflectionComp_mul_dilation_right, geodesicReflectionComp_mul_pslS_left,
     ← AddChar.map_zero_eq_one upperRightHom, geodesicReflectionComp_upperRightHom, map_inv,
-    psl2zToPSL2R_T, ← AddChar.map_neg_eq_inv]
-  norm_num
+    psl2zToPSL2R_T]
+  norm_num [← AddChar.map_neg_eq_inv]
 
 /-- The transformation of the modular triangle at `ρ` is `S T : z ↦ -1 / (z + 1)`. -/
 @[simp]

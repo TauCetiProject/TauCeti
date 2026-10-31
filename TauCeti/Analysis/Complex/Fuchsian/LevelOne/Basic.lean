@@ -42,7 +42,6 @@ subgroup into congruence conditions on the bottom row of `γ`.
 * `TauCeti.ModularGroup.isFundamentalDomain_fdo_psl2zToPSL2RRange`: the standard open modular
   domain is a fundamental domain for the projective image in `PSL(2, ℝ)`.
 * `TauCeti.ModularGroup.isCofinite_psl2zToPSL2RRange`: that image is a cofinite Fuchsian group.
-* `TauCeti.ModularGroup.psl2zToPSL2R_T`: the image of `T` is the translation `z ↦ z + 1`.
 * `TauCeti.ModularGroup.card_stabilizer_psl2zToPSL2RRange_I` and
   `TauCeti.ModularGroup.card_stabilizer_psl2zToPSL2RRange_ρ`: the elliptic orders `2` and `3`.
 * `TauCeti.ModularGroup.quotientMk_psl2zToPSL2RRange_eq_iff_quotientMk_sl_eq`: the orbits of the
@@ -86,16 +85,6 @@ theorem isFundamentalDomain_fdo_psl2zToPSL2RRange :
       fun g τ ↦ by
         simp only [id_eq, MonoidHom.ofInjective_apply, Subgroup.smul_def,
           UpperHalfPlane.psl2zToPSL2R_smul]
-
-/-- The image of `T` in `PSL(2, ℝ)` is the translation `z ↦ z + 1`. -/
-theorem psl2zToPSL2R_T :
-    psl2zToPSL2R (_root_.ModularGroup.T : PSL(2, ℤ)) =
-      Matrix.ProjectiveSpecialLinearGroup.upperRightHom 1 := by
-  rw [psl2zToPSL2R_mk, sl2zToPSL2R_apply, Matrix.ProjectiveSpecialLinearGroup.upperRightHom_apply]
-  congr 1
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [_root_.ModularGroup.coe_T, Matrix.SpecialLinearGroup.transvection_coe]
 
 /-- The image of `PSL(2, ℤ)` in `PSL(2, ℝ)` is a cofinite Fuchsian group. -/
 theorem isCofinite_psl2zToPSL2RRange : psl2zToPSL2R.range.IsCofinite := by
