@@ -81,6 +81,12 @@ theorem norm_toConv (f : C_c(G, A)) :
     ‖(toConv f : ConvolutionAlgebra α μ)‖ = ∫ s, ‖f s‖ ∂μ :=
   norm_eq_integral_norm _
 
+/-- The `L¹` norm of an elementary function is `(∫ |φ|) * ‖e‖`. -/
+@[simp]
+theorem norm_smulRight (φ : C_c(G, ℝ)) (e : A) :
+    ‖(smulRight φ e : ConvolutionAlgebra α μ)‖ = (∫ s, |φ s| ∂μ) * ‖e‖ := by
+  simp [norm_eq_integral_norm, norm_smul, integral_mul_const]
+
 variable (α μ) in
 /-- The linear isometry from the convolution algebra with its L¹ seminorm to Bochner L¹. -/
 def toL1LI : ConvolutionAlgebra α μ →ₗᵢ[ℂ] Lp A 1 μ where
