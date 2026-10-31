@@ -12,6 +12,10 @@ public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Data.Finsupp.MonomialOrder
+public import Mathlib.RingTheory.Finiteness.Defs
+import Mathlib.LinearAlgebra.Dimension.Finite
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
+import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.SetTheory.Cardinal.Order
 import TauCeti.RingTheory.MvPowerSeries.Rename
 
@@ -70,6 +74,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   `NormedAlgebra` over `K`.
 * `TauCeti.MvPowerSeries.polynomialToRestricted`: the inclusion of polynomials as an algebra
   homomorphism into restricted series.
+* `TauCeti.MvPowerSeries.not_finite_isRestrictedSubring`: over a nontrivial ring, restricted
+  series in at least one variable do not form a finitely generated module.
 
 ## References
 
@@ -704,6 +710,17 @@ theorem polynomialToRestricted_X (i : σ) :
     polynomialToRestricted c (MvPolynomial.X i) =
       ⟨X i, isRestricted_monomial c (Finsupp.single i 1) (1 : R)⟩ :=
   Subtype.ext (MvPolynomial.coe_X i)
+
+variable (c) in
+/-- Over a nontrivial ring, restricted series in at least one variable do not form a finitely
+generated module: the restricted monomials are linearly independent and infinite in number. -/
+theorem not_finite_isRestrictedSubring [Nontrivial R] [Nonempty σ] :
+    ¬Module.Finite R (IsRestricted.subring (R := R) c) := fun _ ↦
+  Module.Finite.not_linearIndependent_of_infinite _
+    ((MvPolynomial.basisMonomials σ R).linearIndependent.map'
+      (polynomialToRestricted c).toLinearMap
+      (LinearMap.ker_eq_bot.2 fun _ _ h ↦
+        MvPolynomial.coe_injective σ R (by simpa using congrArg Subtype.val h)))
 
 end Algebra
 
