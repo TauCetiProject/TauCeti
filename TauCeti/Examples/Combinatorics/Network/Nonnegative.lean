@@ -20,7 +20,7 @@ also include zero-capacity loops and reverse arrows.
 namespace TauCeti
 
 open Finset
-open scoped NNRat NNReal
+open scoped _root_.NNRat _root_.NNReal
 
 -- Natural capacities return natural arrow values while terminal excess stays integer-valued.
 example :
@@ -54,7 +54,7 @@ example :
       excessAt_sink_nonneg := by norm_num [excessAt_def, cap, Assignment.map] }
   refine ⟨f, f.toNNRat_eq_iff.mpr rfl, f.toNNRat_le, ?_, ?_⟩
   · norm_num [f, BoundedFlow.val_def, excessAt_def, cap, Assignment.map]
-  · rw [nnratCast_arrowSum]
+  · rw [NNRat.coe_arrowSum]
     norm_num [f, BoundedFlow.val_def, excessAt_def, arrowSum_def, cap,
       Assignment.map]
 
@@ -73,7 +73,7 @@ example :
       excessAt_sink_nonneg := by norm_num [excessAt_def, cap, Assignment.map] }
   refine ⟨f, f.toNNReal_eq_iff.mpr rfl, f.toNNReal_le, ?_, ?_⟩
   · norm_num [f, BoundedFlow.val_def, excessAt_def, cap, Assignment.map]
-  · rw [nnrealCast_arrowSum]
+  · rw [NNReal.coe_arrowSum]
     norm_num [f, BoundedFlow.val_def, excessAt_def, arrowSum_def, cap,
       Assignment.map]
 
