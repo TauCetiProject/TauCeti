@@ -151,6 +151,7 @@ theorem parts_rotate_symm (π : NoncrossingPartition (univ : Finset (Fin n))) :
 
 /-- Two positions lie in a common part of the rotation `rotate n π` exactly when the positions
 before them lie in a common part of `π`. -/
+@[simp]
 theorem mem_part_rotate (π : NoncrossingPartition (univ : Finset (Fin n))) {x y : Fin n} :
     y ∈ (rotate n π).1.part x ↔ (finRotate n).symm y ∈ π.1.part ((finRotate n).symm x) := by
   simp only [Finpartition.mem_part_iff_exists, parts_rotate, mem_image, exists_exists_and_eq_and,
@@ -158,6 +159,7 @@ theorem mem_part_rotate (π : NoncrossingPartition (univ : Finset (Fin n))) {x y
 
 /-- Two positions lie in a common part of the inverse rotation `(rotate n).symm π` exactly when
 the positions after them lie in a common part of `π`. -/
+@[simp]
 theorem mem_part_rotate_symm (π : NoncrossingPartition (univ : Finset (Fin n))) {x y : Fin n} :
     y ∈ ((rotate n).symm π).1.part x ↔ finRotate n y ∈ π.1.part (finRotate n x) := by
   simp only [Finpartition.mem_part_iff_exists, parts_rotate_symm, mem_image,

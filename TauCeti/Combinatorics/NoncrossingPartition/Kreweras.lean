@@ -364,6 +364,7 @@ private theorem rotate_symm_le_kreweras_kreweras
 
 /-- The square of the Kreweras complement on `NC(n)` is the inverse rotation: the parts of
 `K(K(π))` are the parts of `π` moved along `i ↦ i - 1`, with `0` going to the last position. -/
+@[simp]
 theorem kreweras_kreweras (π : NoncrossingPartition (univ : Finset (Fin n))) :
     kreweras (kreweras π) = (rotate n).symm π := by
   rcases n.eq_zero_or_pos with rfl | hn
@@ -388,7 +389,7 @@ theorem kreweras_rotate (π : NoncrossingPartition (univ : Finset (Fin n))) :
 @[simp]
 theorem kreweras_le_kreweras_iff {π σ : NoncrossingPartition (univ : Finset (Fin n))} :
     kreweras π ≤ kreweras σ ↔ σ ≤ π :=
-  ⟨fun h => by simpa [kreweras_kreweras] using kreweras_antitone h, fun h => kreweras_antitone h⟩
+  ⟨fun h => by simpa using kreweras_antitone h, fun h => kreweras_antitone h⟩
 
 /-- The Kreweras complement is a bijection of `NC(n)`; its inverse is `σ ↦ rotate n (K(σ))`. -/
 theorem kreweras_bijective :
@@ -411,8 +412,8 @@ noncomputable def krewerasOrderIso :
     where
   toFun π := OrderDual.toDual (kreweras π)
   invFun σ := rotate n (kreweras (OrderDual.ofDual σ))
-  left_inv π := by simp [kreweras_kreweras]
-  right_inv σ := by simp [kreweras_rotate, kreweras_kreweras]
+  left_inv π := by simp
+  right_inv σ := by simp [kreweras_rotate]
   map_rel_iff' := by simp
 
 /-- The order isomorphism `krewerasOrderIso n` sends `π` to its Kreweras complement. -/
