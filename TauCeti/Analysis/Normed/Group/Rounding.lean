@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Seminorm
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.MulAction
+public import TauCeti.Analysis.Normed.Group.CompatibleNorm
 public import TauCeti.Analysis.SpecialFunctions.Log.Base
 
 /-!
@@ -33,6 +33,12 @@ one whose norm takes values in the value group of the ring. Strict inequalities 
 of `c` then become non-strict ones (`zpowCeil_lt_zpow_iff`), which is what makes the open unit
 ball of the rounded norm a principal multiple of the closed unit ball. This is the input to
 Serre's reduction of orthonormalisability to freeness of a residue module.
+
+`zpowCeilNormedAddCommGroup` installs this rounded norm while retaining the original uniformity
+and topology definitionally. Thus completeness and continuous linear maps are unchanged.
+Ultrametricity and contractive scalar actions with discrete scalar norms can be installed
+explicitly using `isUltrametricDist_zpowCeilNormedAddCommGroup` and
+`isBoundedSMul_zpowCeilNormedAddCommGroup`.
 
 ## Main definitions
 
@@ -293,6 +299,43 @@ noncomputable def zpowCeilAddGroupNorm (M : Type*) [NormedAddGroup M] [IsUltrame
 @[simp]
 theorem zpowCeilAddGroupNorm_apply {M : Type*} [NormedAddGroup M] [IsUltrametricDist M]
     (m : M) : zpowCeilAddGroupNorm hc₀ hc₁ M m = zpowCeil c ‖m‖ := (rfl)
+
+section CompatibleNorm
+
+open scoped Uniformity
+
+variable {M : Type*} [NormedAddCommGroup M] [IsUltrametricDist M]
+
+/-- The rounded norm with the original uniformity and topology retained definitionally.
+In particular, completeness and continuity are unchanged. -/
+noncomputable abbrev zpowCeilNormedAddCommGroup : NormedAddCommGroup M :=
+  (zpowCeilAddGroupNorm hc₀ hc₁ M).toNormedAddCommGroupOfUniformity <|
+    (zpowCeilAddGroupNorm hc₀ hc₁ M).uniformity_eq_of_le
+      (C := .mk c⁻¹ (inv_nonneg.mpr hc₀.le)) (D := 1)
+      (fun x ↦ by simpa only [zpowCeilAddGroupNorm_apply, NNReal.coe_mk] using
+        (le_inv_mul_iff₀ hc₀).2 (mul_zpowCeil_le hc₀ hc₁ (norm_nonneg x)))
+      (fun x ↦ by simpa using le_zpowCeil hc₀ hc₁ ‖x‖)
+
+/-- The compatible rounded norm is ultrametric. -/
+theorem isUltrametricDist_zpowCeilNormedAddCommGroup :
+    letI := zpowCeilNormedAddCommGroup (M := M) hc₀ hc₁
+    IsUltrametricDist M := by
+  have hadd := zpowCeil_norm_add_le_max (M := M) hc₀ hc₁
+  let := zpowCeilNormedAddCommGroup (M := M) hc₀ hc₁
+  exact IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm hadd
+
+/-- Rounding preserves a contractive scalar action when the scalar norms already lie in
+`c ^ ℤ ∪ {0}`. Without this hypothesis the original scalar norm need not act contractively. -/
+theorem isBoundedSMul_zpowCeilNormedAddCommGroup {R : Type*} [SeminormedRing R]
+    [Module R M] [IsBoundedSMul R M] (hR : ∀ a : R, zpowCeil c ‖a‖ = ‖a‖) :
+    letI := zpowCeilNormedAddCommGroup (M := M) hc₀ hc₁
+    IsBoundedSMul R M := by
+  have hs (a : R) (m : M) : zpowCeil c ‖a • m‖ ≤ ‖a‖ * zpowCeil c ‖m‖ := by
+    simpa only [hR] using zpowCeil_norm_smul_le hc₀ hc₁ a m
+  let := zpowCeilNormedAddCommGroup (M := M) hc₀ hc₁
+  exact IsBoundedSMul.of_norm_smul_le (α := R) (β := M) hs
+
+end CompatibleNorm
 
 end BaseLtOne
 

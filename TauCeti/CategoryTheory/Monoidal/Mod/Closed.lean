@@ -89,16 +89,6 @@ noncomputable def tensorHomEquiv (M K N : Mod C A) :
       (isModHom_ihomHomEquiv_iff M K N f).1 (by
         simpa only [f, Equiv.apply_symm_apply] using g.isModHom)
     exact Hom.mk' (tensorDesc f.hom hf) (by
-      have : Epi (A ◁ tensorπ M K) := by
-        -- The bimodule comparison identifies this quotient with the native coequalizer.
-        have h := tensorπ_toBimodTensorObjIso_inv_hom M K
-        have : Epi (A ◁ (tensorπ M K ≫ (toBimodTensorObjIso M K).inv.hom)) := by
-          rw [h]
-          exact inferInstanceAs (Epi ((MonoidalCategory.tensorLeft A).map _))
-        rw [whiskerLeft_comp] at this
-        have : IsIso (toBimodTensorObjIso M K).inv.hom :=
-          inferInstanceAs (IsIso ((Bimod.forget _).map (toBimodTensorObjIso M K).inv))
-        exact (epi_comp_iff_of_isIso _ (A ◁ (toBimodTensorObjIso M K).inv.hom)).1 ‹Epi _›
       apply (cancel_epi (A ◁ tensorπ M K)).1
       simp only [selfLeftAction_actionHomRight, whiskerLeft_tensorπ_smul_assoc,
         ← whiskerLeft_comp_assoc, tensorπ_tensorDesc]

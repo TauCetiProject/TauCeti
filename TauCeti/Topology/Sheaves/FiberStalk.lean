@@ -19,6 +19,12 @@ coordinate at `x` is Mathlib's pushforward stalk map `TopCat.Presheaf.stalkPushf
 sends the germ at `y` of a section of `F` over `f⁻¹(V)` to the family of its germs at the points of
 the fiber (`TopCat.Presheaf.germ_fiberStalkMap_π`). The map needs no hypothesis on `f`.
 
+For the identity map the fiber over `x` is `{x}` and the map is an isomorphism onto the product
+of the single stalk `F_x`. For a composite `f ≫ g` the fiber over `z` is the disjoint union of the
+fibers of `f` over the points of the fiber of `g` over `z`, and the map for `f ≫ g` is the map for
+`g` (applied to `f_* F`), followed by the product of the maps for `f`, followed by the reindexing of
+the iterated product `∏_{g y = z} ∏_{f x = y} F_x` as the product over the fiber of `f ≫ g`.
+
 For a sheaf `F` valued in a concrete category with the usual stalk hypotheses (for example sheaves
 of modules or of abelian groups):
 
@@ -40,6 +46,10 @@ the real line and the constant sheaf, the map at `0` is the diagonal `ℤ ⟶ �
 * `TopCat.Presheaf.fiberStalkMap C f F y`: the canonical map `(f_* F)_y ⟶ ∏_{f x = y} F_x`.
 * `TopCat.Presheaf.germ_fiberStalkMap_π`: its coordinates on germs.
 * `TopCat.Presheaf.fiberStalkMap_naturality`: naturality in the presheaf.
+* `TopCat.Presheaf.fiberStalkMap_id_π`, `TopCat.Presheaf.isIso_fiberStalkMap_id`,
+  `TopCat.Presheaf.inv_fiberStalkMap_id`: the map for the identity.
+* `TopCat.Presheaf.fiberStalkMap_comp_π`, `TopCat.Presheaf.fiberStalkMap_comp`: the map for a
+  composite, coordinatewise and as a factorization through the iterated product.
 * `TopCat.Presheaf.fiberStalkMap_injective`: injectivity for closed maps.
 * `TopCat.Presheaf.fiberStalkMap_surjective`: surjectivity for closed maps from a Hausdorff space
   at points with finite fibers.
@@ -65,7 +75,7 @@ noncomputable section
 namespace TopCat.Presheaf
 
 variable (C : Type u) [Category.{v} C] [HasColimits.{v} C] [HasProducts.{v} C]
-  {X Y : TopCat.{v}}
+  {X Y Z : TopCat.{v}}
 
 /-- The canonical map from the stalk at `y` of the direct image `f_* F` to the product of the
 stalks of `F` at the points of the fiber of `f` over `y`. Its coordinate at `x` is the pushforward
@@ -112,6 +122,66 @@ theorem fiberStalkMap_naturality (f : X ⟶ Y) {F G : X.Presheaf C} (α : F ⟶ 
   exact ((Category.assoc _ _ _).trans ((congrArg _
     (Pi.map_π (fun x' : { x' : X // f x' = f x } ↦ (stalkFunctor C x'.1).map α) ⟨x, rfl⟩)).trans
     ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ (stalkFunctor C x).map α) hF)))).symm
+
+/-- For the identity map, the coordinate of `fiberStalkMap` at the unique point `x` of the fiber
+over `x` is the identity of the stalk `F_x`. -/
+@[reassoc]
+theorem fiberStalkMap_id_π (F : X.Presheaf C) (x : X) :
+    fiberStalkMap C (𝟙 X) F x ≫ Pi.π _ ⟨x, rfl⟩ = 𝟙 (F.stalk x) := by
+  rw [fiberStalkMap_π, stalkPushforward.id]
+  -- `𝟙 X _* F` is `F` and `(𝟙 X) x` is `x` only up to unfolding, so the remaining identity
+  -- morphisms are cancelled as terms.
+  exact (Category.id_comp _).trans ((stalkFunctor C x).map_id _)
+
+/-- For the identity map, `fiberStalkMap` is an isomorphism: the fiber over `x` is `{x}`. -/
+instance isIso_fiberStalkMap_id (F : X.Presheaf C) (x : X) :
+    IsIso (fiberStalkMap C (𝟙 X) F x) := by
+  let : Unique { x' : X // (𝟙 X) x' = x } := ⟨⟨⟨x, rfl⟩⟩, fun x' ↦ Subtype.ext x'.2⟩
+  have h : fiberStalkMap C (𝟙 X) F x ≫ (productUniqueIso _).hom = 𝟙 _ := by
+    rw [productUniqueIso_hom]; exact fiberStalkMap_id_π F x
+  have : IsIso (fiberStalkMap C (𝟙 X) F x ≫ (productUniqueIso _).hom) := h ▸ IsIso.id _
+  exact IsIso.of_isIso_comp_right _ (productUniqueIso _).hom
+
+/-- For the identity map, the inverse of `fiberStalkMap` is the projection to the stalk at the
+unique point `x` of the fiber over `x`. -/
+@[simp]
+theorem inv_fiberStalkMap_id (F : X.Presheaf C) (x : X) :
+    inv (fiberStalkMap C (𝟙 X) F x) =
+      Pi.π (fun x' : { x' : X // (𝟙 X) x' = x } ↦ F.stalk x'.1) ⟨x, rfl⟩ :=
+  IsIso.inv_eq_of_hom_inv_id (fiberStalkMap_id_π F x)
+
+/-- The coordinate of `fiberStalkMap` for a composite `f ≫ g` at a point `x` of the fiber over `z`
+is the coordinate at `x` of the map for `f` over `f x`, after the coordinate at `f x` of the map
+for `g` applied to `f_* F`. -/
+@[reassoc]
+theorem fiberStalkMap_comp_π (f : X ⟶ Y) (g : Y ⟶ Z) (F : X.Presheaf C) (z : Z)
+    (x : { x : X // (f ≫ g) x = z }) :
+    fiberStalkMap C (f ≫ g) F z ≫ Pi.π _ x =
+      fiberStalkMap C g (f _* F) z ≫ Pi.π _ ⟨f x.1, x.2⟩ ≫ fiberStalkMap C f F (f x.1) ≫
+        Pi.π _ ⟨x.1, rfl⟩ := by
+  obtain ⟨x, rfl⟩ := x
+  rw [fiberStalkMap_π, fiberStalkMap_π_assoc, fiberStalkMap_π]
+  simp only [hom_comp, ContinuousMap.comp_apply, eqToHom_refl, stalkPushforward.comp,
+    Category.id_comp]
+  -- `(f ≫ g) _* F` is `g _* (f _* F)` only up to unfolding, so the identity of the stalk of the
+  -- former is cancelled against a composite starting at the stalk of the latter as a term.
+  exact Category.id_comp _
+
+/-- `fiberStalkMap` for a composite `f ≫ g` factors as the map for `g` applied to `f_* F`, then the
+product over the fiber of `g` of the maps for `f`, then the reindexing of the iterated product
+`∏_{g y = z} ∏_{f x = y} F_x` as the product over the fiber of `f ≫ g`, which sends the
+coordinate `(f x, x)` to the coordinate `x`. -/
+theorem fiberStalkMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) (F : X.Presheaf C) (z : Z) :
+    fiberStalkMap C (f ≫ g) F z =
+      fiberStalkMap C g (f _* F) z ≫
+        Limits.Pi.map (fun y : { y : Y // g y = z } ↦ fiberStalkMap C f F y.1) ≫
+          Pi.map' (fun x : { x : X // (f ≫ g) x = z } ↦ (⟨f x.1, x.2⟩ : { y : Y // g y = z }))
+            fun x ↦ Pi.π (fun x' : { x' : X // f x' = f x.1 } ↦ F.stalk x'.1) ⟨x.1, rfl⟩ :=
+  -- The two sides start at the stalks of `(f ≫ g) _* F` and of `g _* (f _* F)`, which agree only up
+  -- to unfolding; extensionality is taken at the latter, so that the right side can be rewritten.
+  Pi.hom_ext (X := (g _* (f _* F)).stalk z) _ _ fun x ↦ by
+    rw [Category.assoc, Category.assoc, Pi.map'_comp_π, Limits.Pi.map_π_assoc]
+    exact fiberStalkMap_comp_π f g F z x
 
 section Concrete
 

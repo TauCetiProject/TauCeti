@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Spectra.SmashPow
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Module
 public import TauCeti.CategoryTheory.Monoidal.Mod.Closed
+public import TauCeti.CategoryTheory.Monoidal.Mod.Symmetric
 
 /-!
 # The sphere symmetric sequence and symmetric spectra
@@ -44,7 +45,10 @@ product over the sphere: the coequalizer of the two actions of `S` on the Day co
 with `S` acting through `X`. This is the generic monoidal structure
 `CategoryTheory.Mod.monoidalCategory` on modules over a commutative monoid object, with quotient
 map `CategoryTheory.Mod.tensorπ : X ⊗ Y ⟶ X ∧ Y`. Its unit is the sphere spectrum
-`Mod.regular SymmetricSequence.sphere`. This is the point-set smash product; deriving it requires
+`Mod.regular SymmetricSequence.sphere`. As symmetric sequences form a symmetric monoidal category,
+the smash product is symmetric monoidal (`CategoryTheory.Mod.symmetricCategory`), with the twist
+`X ∧ Y ≅ Y ∧ X` induced by the symmetry of the Day convolution; commutative monoids for it are
+commutative symmetric ring spectra. This is the point-set smash product; deriving it requires
 a model structure. It is monoidal closed: `Mod.internalHomAdjunction X` identifies spectrum
 maps `X ∧ Y ⟶ Z` with spectrum maps `Y ⟶ Hom_S(X, Z)`. Its counit evaluates function spectra
 on representatives of the balanced smash product.
@@ -108,6 +112,9 @@ noncomputable example : MonoidalClosed SymmetricSpectrum := inferInstance
 
 /- The unit of the smash product is the sphere spectrum. -/
 example : 𝟙_ SymmetricSpectrum = Mod.regular SymmetricSequence.sphere := rfl
+
+/- The smash product of symmetric spectra is symmetric monoidal. -/
+noncomputable example : SymmetricCategory SymmetricSpectrum := inferInstance
 
 /- The native bimodule adapter applies to the actual sphere-module carrier. -/
 noncomputable example :
