@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.PermutationTriple.LMFDB.PassportRecord.Examples
+public import TauCeti.Combinatorics.PermutationTriple.LMFDB.PassportRecord.Basic
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.String
--- The concrete record checks reduce decimal rendering in the kernel.
-import all Init.Data.ToString.Basic
-import all Init.Data.Repr
+import Std.Data.String.ToNat
 
 /-!
 # Recognizing the group component of a passport record
@@ -20,9 +18,8 @@ recognizing this string returns an index whose reference subgroup is conjugate t
 group of the reference triple.
 The recognition theorem therefore supplies the group certificate, not just a numerical match.
 
-The nonabelian degree-three and Euclidean degree-four records exercise both the index shift and
-the conjugacy certificate. This file does not interpret the partitions or trailing orbit letter
-of a full passport or map label.
+This file does not interpret the partitions or trailing orbit letter of a full passport or map
+label.
 
 ## References
 
@@ -44,6 +41,15 @@ def groupString (r : PassportRecord n) : String :=
 theorem groupString_def (r : PassportRecord n) :
     r.groupString = toString r.deg ++ "T" ++ toString r.group := (rfl)
 
+/-- When the stored degree agrees with the record's index, recognition returns exactly the
+zero-based form of the stored group number, without requiring a validity certificate. -/
+theorem parse_groupString_eq_some_iff {r : PassportRecord n} (hdeg : r.deg = n)
+    (j : TransitiveGroupIndex n) :
+    parseTransitiveGroupLabel n r.groupString = some j ↔ j.val + 1 = r.group := by
+  rw [parseTransitiveGroupLabel_eq_some_iff]
+  simp only [groupString_def, hdeg, transitiveGroupLabelString_def, String.append_right_inj,
+    Nat.toString_eq_repr, Nat.repr_inj, eq_comm]
+
 namespace IsValidAt
 
 variable {r : PassportRecord n} {t : ConnectedTriple n}
@@ -57,17 +63,6 @@ theorem exists_parse_groupString (h : r.IsValidAt t) :
   refine ⟨j, parseTransitiveGroupLabel_eq_some_iff.mpr ?_, hlabel⟩
   simp only [groupString_def, h.deg_eq, ← hj, transitiveGroupLabelString_def]
 
-/-- For a valid record, the recognized index is exactly the zero-based form of the stored
-group number. -/
-theorem parse_groupString_eq_some_iff (h : r.IsValidAt t) (j : TransitiveGroupIndex n) :
-    parseTransitiveGroupLabel n r.groupString = some j ↔ j.val + 1 = r.group := by
-  obtain ⟨l, hl, _⟩ := h.exists_transitiveGroupLabel
-  have hparse : parseTransitiveGroupLabel n r.groupString = some l := by
-    apply parseTransitiveGroupLabel_eq_some_iff.mpr
-    simp only [groupString_def, h.deg_eq, ← hl, transitiveGroupLabelString_def]
-  rw [hparse, Option.some.injEq, Fin.ext_iff]
-  omega
-
 /-- Recognizing the group component of a valid record certifies conjugacy of its monodromy
 group with the returned reference subgroup. -/
 theorem transitiveGroupLabel_of_parse_groupString (h : r.IsValidAt t)
@@ -78,28 +73,5 @@ theorem transitiveGroupLabel_of_parse_groupString (h : r.IsValidAt t)
   exact hkj ▸ hlabel
 
 end IsValidAt
-
-/-- The nonabelian degree-three example is displayed as `3T2`, not `3T1`. -/
-@[simp] theorem groupString_s3PassportRecord : s3PassportRecord.groupString = "3T2" := by
-  decide +kernel
-
-/-- The torus example is displayed as `4T1`, despite its positive genus. -/
-@[simp] theorem groupString_torusPassportRecord : torusPassportRecord.groupString = "4T1" := by
-  decide +kernel
-
--- These clients use the parser output as a certificate of the actual monodromy group.
-example : TransitiveGroupLabel (⟨1, by simp⟩ : TransitiveGroupIndex 3)
-    s3Triple.monodromyGroup :=
-  isValidAt_s3PassportRecord.transitiveGroupLabel_of_parse_groupString (by
-    rw [parseTransitiveGroupLabel_eq_some_iff, groupString_s3PassportRecord,
-      transitiveGroupLabelString_def]
-    decide)
-
-example : TransitiveGroupLabel (⟨0, by simp⟩ : TransitiveGroupIndex 4)
-    torusTriple.monodromyGroup :=
-  isValidAt_torusPassportRecord.transitiveGroupLabel_of_parse_groupString (by
-    rw [parseTransitiveGroupLabel_eq_some_iff, groupString_torusPassportRecord,
-      transitiveGroupLabelString_def]
-    decide)
 
 end TauCeti.PermutationTriple.LMFDB.PassportRecord

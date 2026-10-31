@@ -47,7 +47,7 @@ theorem transitiveGroupLabelString_injective (n : ℕ) :
   have hn : n ≤ 5 := by
     by_contra hn
     have hj := j.isLt
-    have hz := numTransitiveGroups_eq_zero_of_five_lt (show 5 < n by omega)
+    have hz := numTransitiveGroups_eq_zero_of_five_lt (n := n) (by omega)
     omega
   interval_cases n
   all_goals
