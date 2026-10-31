@@ -7,12 +7,11 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Probability.Distributions.IrwinHall.Cdf
--- Proof-only: the exponential-moment bound, the bound on `(1 - exp (-l)) / l`, `∫ exp` on an
--- interval, and the cdf of the order-zero Irwin–Hall law.
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+-- Proof-only: the Irwin–Hall mgf, the bound on `(1 - exp (-l)) / l`, and the cdf of the
+-- order-zero Irwin–Hall law.
 import TauCeti.Probability.Distributions.Dirac
+import TauCeti.Probability.Distributions.IrwinHall.Transforms
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
-import TauCeti.MeasureTheory.Integral.Pi
 
 /-!
 # The volume of a simplex cut from the unit cube
@@ -32,8 +31,8 @@ The main estimate is the **tail bound** `TauCeti.simplexVolume_le_exp_neg`: for 
 `V_m((1 / 2 - ε) m) ≤ exp (-6 m ε ^ 2)`, so the volume concentrates around the centre `m / 2` of
 the cube (Bombieri–Gubler, Lemma 6.3.5, without the restriction `ε ≤ 1 / 2`). It comes from the
 exponential-moment bound `TauCeti.simplexVolume_le_exp_mul_pow`,
-`V_m(s) ≤ exp (l s) ((1 - exp (-l)) / l) ^ m` for `0 < l`, an instance of
-`TauCeti.setIntegral_prod_le_exp_mul_pow` at the indicator of `[0, 1]`, together with
+`V_m(s) ≤ exp (l s) ((1 - exp (-l)) / l) ^ m` for `0 < l`, the Chernoff bound
+`ProbabilityTheory.measure_le_le_exp_mul_mgf` for the Irwin–Hall law at `-l`, together with
 `Real.one_sub_exp_neg_div_le_exp` at `l = 12 ε`.
 
 ## Main declarations
@@ -126,40 +125,16 @@ theorem simplexVolume_one {t : ℝ} (ht : 0 ≤ t) : simplexVolume 1 t = min 1 t
 
 /-- **The exponential-moment bound.** For `0 < l`,
 `V_m(s) ≤ exp (l s) ((1 - exp (-l)) / l) ^ m`, where `(1 - exp (-l)) / l` is the integral of
-`exp (-l x)` over `[0, 1]`. -/
+`exp (-l x)` over `[0, 1]`, so that its `m`-th power is the Irwin–Hall mgf at `-l`. -/
 theorem simplexVolume_le_exp_mul_pow (m : ℕ) {l : ℝ} (hl : 0 < l) (s : ℝ) :
     simplexVolume m s ≤ Real.exp (l * s) * ((1 - Real.exp (-l)) / l) ^ m := by
-  -- `exp (-(l * x))` times the indicator of `[0, 1]` is the indicator of `exp (-(l * x))`.
-  have hind : (fun x ↦ Real.exp (-(l * x)) * (Icc (0 : ℝ) 1).indicator (1 : ℝ → ℝ) x) =
-      (Icc (0 : ℝ) 1).indicator fun x ↦ Real.exp (-(l * x)) := by
-    simp_rw [← indicator_mul_right _ (fun x ↦ Real.exp (-(l * x))), Pi.one_apply, mul_one]
-  have hint :
-      Integrable fun x ↦ Real.exp (-(l * x)) * (Icc (0 : ℝ) 1).indicator (1 : ℝ → ℝ) x := by
-    rw [hind]
-    exact (integrable_indicator_iff measurableSet_Icc).2
-      (by fun_prop : Continuous fun x ↦ Real.exp (-(l * x))).integrableOn_Icc
-  -- `∫₀¹ exp (-(l * x)) dx = (1 - exp (-l)) / l`.
-  have hmgf : ∫ x, Real.exp (-(l * x)) * (Icc (0 : ℝ) 1).indicator (1 : ℝ → ℝ) x =
-      (1 - Real.exp (-l)) / l := by
-    rw [hind, integral_indicator measurableSet_Icc, integral_Icc_eq_integral_Ioc,
-      ← intervalIntegral.integral_of_le zero_le_one]
-    simp_rw [← neg_mul]
-    rw [intervalIntegral.integral_comp_mul_left Real.exp (neg_ne_zero.2 hl.ne'), integral_exp]
-    simp only [mul_one, mul_zero, Real.exp_zero, smul_eq_mul]
-    field_simp
-    ring
-  have h := setIntegral_prod_le_exp_mul_pow (ι := Fin m) (g := (Icc (0 : ℝ) 1).indicator 1)
-    (fun x ↦ indicator_nonneg (fun _ _ ↦ zero_le_one) x) hl.le hint s
-  -- The product of the indicators of `[0, 1]` at the coordinates is the indicator of the cube.
-  have hprod (x : Fin m → ℝ) : ∏ j, (Icc (0 : ℝ) 1).indicator (1 : ℝ → ℝ) (x j) =
-      (Icc (0 : Fin m → ℝ) 1).indicator (1 : (Fin m → ℝ) → ℝ) x := by
-    rw [← pi_univ_Icc, ← Finset.coe_univ, indicator_pi_one_apply]
-    simp only [Pi.zero_apply, Pi.one_apply]
-  simp_rw [hprod] at h
-  rw [simplexVolume_def]
-  rwa [integral_indicator_one measurableSet_Icc,
-    measureReal_restrict_apply measurableSet_Icc, hmgf,
-    Fintype.card_fin] at h
+  -- The Chernoff bound for the Irwin–Hall law at `-l`, whose mgf is `((exp (-l) - 1) / -l) ^ m`.
+  have h := measure_le_le_exp_mul_mgf (μ := Probability.irwinHallMeasure m) (X := id) s
+    (neg_nonpos.2 hl.le) (integrable_of_mem_integrableExpSet (by simp))
+  rw [Probability.mgf_id_irwinHallMeasure m (neg_ne_zero.2 hl.ne'), neg_neg, div_neg,
+    ← neg_div, neg_sub] at h
+  rw [simplexVolume_eq_cdf_irwinHallMeasure, cdf_eq_real]
+  exact h
 
 /-- **The tail bound.** For `0 ≤ ε`, `V_m((1 / 2 - ε) m) ≤ exp (-6 m ε ^ 2)`: the part of the
 unit cube of `ℝ ^ m` where the coordinates sum to at most `(1 / 2 - ε) m` has volume at most
