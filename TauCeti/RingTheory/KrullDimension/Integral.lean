@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.IntegralClosure.GoingDown
 public import Mathlib.RingTheory.KrullDimension.Basic
 public import Mathlib.RingTheory.Localization.Integral
 public import TauCeti.RingTheory.IntegralClosure.GoingDown
+import TauCeti.RingTheory.KrullDimension.Quotient
 
 /-!
 # Krull dimension along integral extensions
@@ -38,6 +39,9 @@ ring through Noether normalization.
   integral extension.
 * `Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown`: an integral extension with
   going down preserves the heights of prime ideals.
+* `Ideal.exists_isMaximal_height_add_one_le_of_ringEquiv_quotient`: a maximal ideal containing a
+  non-zero-divisor `g` has height at least one more than some maximal ideal of `R`, when the
+  quotient by `g` is an integral `R`-algebra with going down.
 * `Ideal.height_eq_height_of_isIntegral_of_isIntegrallyClosed`: along an integral extension of
   domains, a prime `Q` over `p` has the height of `p` as soon as `R_p` is integrally closed.
 
@@ -77,6 +81,26 @@ theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown
         Ideal.exists_ideal_lt_liesOver_of_lt (p := b.asIdeal) a.asIdeal hb
       exact ⟨⟨Q, hQp⟩, hQ, PrimeSpectrum.ext hQo.over.symm⟩) ⟨P, ‹_›⟩
   rwa [← height_eq_orderHeight, ← height_eq_orderHeight] at h
+
+open scoped nonZeroDivisors in
+/-- Let `g` be a non-zero-divisor in a maximal ideal `N` of a ring `T`, and suppose that `T ⧸ (g)`
+is isomorphic to an integral `R`-algebra `S` with going down. Then the image of `N` in `S` lies
+over a maximal ideal `p` of `R` of the same height, and quotienting by `g` lowers heights, so
+`p.height + 1 ≤ N.height`. This is the inductive step bounding heights of maximal ideals of
+algebras of power series below by the number of variables. -/
+theorem _root_.Ideal.exists_isMaximal_height_add_one_le_of_ringEquiv_quotient
+    [Algebra.IsIntegral R S] [Algebra.HasGoingDown R S] {T : Type*} [CommRing T]
+    (N : Ideal T) [N.IsMaximal] {g : T} (hgN : g ∈ N) (hg : g ∈ T⁰)
+    (e : S ≃+* T ⧸ Ideal.span {g}) :
+    ∃ p : Ideal R, p.IsMaximal ∧ p.height + 1 ≤ N.height := by
+  let Nq : Ideal (T ⧸ Ideal.span {g}) := N.map (Ideal.Quotient.mk _)
+  have : Nq.IsMaximal := Ideal.IsMaximal.map_of_surjective_of_ker_le Ideal.Quotient.mk_surjective
+    (by simpa [Ideal.mk_ker, Ideal.span_singleton_le_iff_mem] using hgN)
+  let Nb : Ideal S := Nq.comap e
+  have : Nb.IsMaximal := Ideal.comap_isMaximal_of_surjective e e.surjective
+  refine ⟨Nb.under R, Ideal.isMaximal_under_of_isIntegral_of_isMaximal Nb, ?_⟩
+  rw [← Nb.height_eq_height_under_of_isIntegral_of_hasGoingDown, RingEquiv.height_comap]
+  exact Ideal.height_map_quotientMk_span_singleton_add_one_le hg N hgN
 
 /-- Let `S` be an integral `R`-algebra which is a domain containing `R`, and let `Q` be a prime of
 `S` over a prime `p` of `R` such that `R_p` is integrally closed. Then `Q` and `p` have the same
