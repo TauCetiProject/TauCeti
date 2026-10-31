@@ -8,25 +8,34 @@ module
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Topology.Bornology.Basic
 import Mathlib.Analysis.Normed.Field.Lemmas
+import Mathlib.Topology.Bornology.BoundedOperation
 import Mathlib.Topology.MetricSpace.Bounded
 
 /-!
 # Inversion of a set in a normed division ring
 
+In any division ring, `w ↦ q + w⁻¹` inverts the inversion `z ↦ (z - q)⁻¹` about `q`.
+
 For a closed bounded set `K` and a centre `q` in a normed division ring, the inversion
 `z ↦ (z - q)⁻¹` maps `K \ {q}` onto the closed set `{w | w ≠ 0 ∧ q + w⁻¹ ∈ K}`: the image stays
 away from `0`, and away from `0` it is the preimage of `K` under the continuous map
-`w ↦ q + w⁻¹`. Conversely, inverting a set about a point of its closure that it does not contain
-gives an unbounded set. Completing the inversion of a set by `0`, the image of infinity, commutes
-with closures, and turns an open set with bounded complement into an open set.
+`w ↦ q + w⁻¹`. Inverting a set about a point outside its closure gives a bounded set; conversely,
+inverting a set about a point of its closure that it does not contain gives an unbounded set, and
+inverting an unbounded set adds `0`, the image of infinity, to the closure. Completing the
+inversion of a set by `0` commutes with closures, and turns an open set with bounded complement
+into an open set.
 
 ## Main results
 
+* `TauCeti.bijOn_add_inv_image_inv_sub`: `w ↦ q + w⁻¹` inverts the inversion about `q`.
 * `TauCeti.isClosed_setOf_ne_zero_and_add_inv_mem`: the inversion of a closed bounded set about
   any centre, with the centre removed, is closed.
+* `TauCeti.isBounded_image_inv_sub`: the inversion of a set about a point outside its closure is
+  bounded.
 * `TauCeti.not_isBounded_image_sub_inv_of_mem_closure`: the inversion of a set about a point of
   its closure outside the set is unbounded.
-* `TauCeti.bijOn_add_inv_image_inv_sub`: `w ↦ q + w⁻¹` inverts the inversion about `q`.
+* `TauCeti.closure_image_inv_sub`: the closure of the inversion of an unbounded set is the
+  inverted closure together with `0`.
 * `TauCeti.isOpen_insert_zero_image_inv_sub`, `TauCeti.closure_insert_zero_image_inv_sub` and
   `TauCeti.frontier_insert_zero_image_inv_sub`: an open set with bounded complement, inverted about
   a point outside its closure and completed by `0`, is open; the completed inversion of any set has
@@ -37,7 +46,27 @@ public section
 
 namespace TauCeti
 
-open Bornology Metric Set
+open Bornology Filter Metric Set Topology
+
+section DivisionRing
+
+variable {𝕜 : Type*} [DivisionRing 𝕜] {q : 𝕜}
+
+/-- The map `w ↦ q + w⁻¹` inverts the inversion `z ↦ (z - q)⁻¹`: it is a bijection from the
+inverted image of any set `S` back onto `S`. -/
+theorem bijOn_add_inv_image_inv_sub (S : Set 𝕜) :
+    BijOn (fun w : 𝕜 => q + w⁻¹) ((fun z : 𝕜 => (z - q)⁻¹) '' S) S :=
+  BijOn.symm ⟨fun _ _ => by simp, fun _ _ => by simp⟩
+    (inv_injective.comp (sub_left_injective (b := q))).injOn.bijOn_image
+
+/-- The inversion `z ↦ (z - q)⁻¹` is a bijection of `𝕜` (sending `q` to `0⁻¹ = 0`) with inverse
+`w ↦ q + w⁻¹`, so it maps any set onto the preimage of that set under `w ↦ q + w⁻¹`. -/
+private theorem image_inv_sub_eq_preimage_add_inv (S : Set 𝕜) :
+    (fun z : 𝕜 => (z - q)⁻¹) '' S = (fun w : 𝕜 => q + w⁻¹) ⁻¹' S :=
+  congrFun (image_eq_preimage_of_inverse (f := fun z : 𝕜 => (z - q)⁻¹)
+    (g := fun w : 𝕜 => q + w⁻¹) (fun _ => by simp) fun _ => by simp) S
+
+end DivisionRing
 
 variable {𝕜 : Type*} [NormedDivisionRing 𝕜] {K : Set 𝕜}
 
@@ -94,19 +123,18 @@ section Completion
 
 variable {q : 𝕜} {U : Set 𝕜}
 
-/-- The map `w ↦ q + w⁻¹` inverts the inversion `z ↦ (z - q)⁻¹`: it is a bijection from the
-inverted image of any set `S` back onto `S`. -/
-theorem bijOn_add_inv_image_inv_sub (S : Set 𝕜) :
-    BijOn (fun w : 𝕜 => q + w⁻¹) ((fun z : 𝕜 => (z - q)⁻¹) '' S) S :=
-  BijOn.symm ⟨fun _ _ => by simp, fun _ _ => by simp⟩
-    (inv_injective.comp (sub_left_injective (b := q))).injOn.bijOn_image
-
-/-- The inversion `z ↦ (z - q)⁻¹` is a bijection of `𝕜` (sending `q` to `0⁻¹ = 0`) with inverse
-`w ↦ q + w⁻¹`, so it maps any set onto the preimage of that set under `w ↦ q + w⁻¹`. -/
-private theorem image_inv_sub_eq_preimage_add_inv (S : Set 𝕜) :
-    (fun z : 𝕜 => (z - q)⁻¹) '' S = (fun w : 𝕜 => q + w⁻¹) ⁻¹' S :=
-  congrFun (image_eq_preimage_of_inverse (f := fun z : 𝕜 => (z - q)⁻¹)
-    (g := fun w : 𝕜 => q + w⁻¹) (fun _ => by simp) fun _ => by simp) S
+/-- Inverting a set `U` about a point `q` outside its closure gives a bounded set. -/
+theorem isBounded_image_inv_sub (hq : q ∉ closure U) :
+    IsBounded ((fun z : 𝕜 => (z - q)⁻¹) '' U) := by
+  -- a ball about `q` misses `U`, so the inversion is bounded by the inverse of its radius
+  obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.mp isClosed_closure.isOpen_compl q hq
+  refine isBounded_iff_forall_norm_le.mpr ⟨r⁻¹, ?_⟩
+  rintro _ ⟨z, hz, rfl⟩
+  have hrz : r ≤ ‖z - q‖ := by
+    rw [← dist_eq_norm, dist_comm]
+    exact not_lt.mp fun h => hrU (mem_ball'.mpr h) (subset_closure hz)
+  rw [norm_inv]
+  exact inv_anti₀ hr hrz
 
 /-- Inverting an open set `U` with bounded complement about a point `q` outside it, and adding `0`,
 the image of infinity, gives an open set: `U` contains a neighbourhood of infinity, which the
@@ -153,6 +181,21 @@ theorem closure_insert_zero_image_inv_sub :
     · simp
     exact mem_insert_of_mem _ (mem_closure_image
       ((continuousAt_id.sub continuousAt_const).inv₀ (sub_ne_zero.mpr hzq)) hz)
+
+/-- Inverting an unbounded set `U` about any point `q`, the closure of the image is the image of the
+closure together with `0`, the image of infinity. -/
+theorem closure_image_inv_sub (hUb : ¬IsBounded U) :
+    closure ((fun z : 𝕜 => (z - q)⁻¹) '' U) = insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' closure U) := by
+  -- `U` reaches infinity, where the inversion tends to `0`
+  have h0 : (0 : 𝕜) ∈ closure ((fun z : 𝕜 => (z - q)⁻¹) '' U) := by
+    have : NeBot (cobounded 𝕜 ⊓ 𝓟 U) := by
+      rw [neBot_iff, Ne, inf_principal_eq_bot, ← isBounded_def]
+      exact hUb
+    exact mem_closure_of_tendsto
+      ((tendsto_inv₀_cobounded.comp (tendsto_sub_const_cobounded q)).mono_left inf_le_left)
+      (mem_inf_of_right (mem_principal.mpr fun z hz => mem_image_of_mem _ hz))
+  rw [← closure_insert_zero_image_inv_sub, insert_eq, closure_union, closure_singleton,
+    ← insert_eq, insert_eq_of_mem h0]
 
 /-- Inverting an open set `U` with bounded complement about a point `q` outside its closure, and
 adding `0`, the image of infinity, the frontier of the resulting open set is the inverted frontier

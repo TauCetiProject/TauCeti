@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.Jordan.Domain
 import TauCeti.Analysis.Complex.Conformal.Jordan.Approach
-import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Analysis.Normed.Module.FilledHull
@@ -30,17 +29,15 @@ closure of the outside, the unit circle going onto `C` in both cases.
   `(filledHull C \ C)ᶜ`, the closure of the outside, by a map that is holomorphic off the closed
   disc and tends to infinity at infinity. Inverting the outside about a point `p` of the inside,
   `z ↦ (z - p)⁻¹`, and adding `0`, the image of infinity, gives a bounded Jordan domain bounded by
-  the inverted curve; the exterior map is read back from its Riemann map normalized at `0`.
+  the inverted curve
+  (`TauCeti.IsJordanCurve.isJordanDomain_insert_zero_image_inv_sub_compl_filledHull`); the
+  exterior map is read back from its Riemann map normalized at `0`.
 
 ## Main results
 
 * `TauCeti.IsJordanCurve.exists_homeomorph_closedBall_filledHull` — the inside of a Jordan curve
   is the image of the disc under a holomorphic bijection that extends to a homeomorphism of the
   closed disc onto `filledHull C`, carrying the circle onto `C`.
-* `TauCeti.IsJordanCurve.isJordanDomain_insert_zero_image_inv_sub_compl_filledHull` and
-  `TauCeti.IsJordanCurve.frontier_insert_zero_image_inv_sub_compl_filledHull` — the outside,
-  inverted about a point of the inside and completed by `0`, is a Jordan domain bounded by the
-  inverted curve.
 * `TauCeti.IsJordanCurve.exists_homeomorph_compl_ball_compl_filledHull_sdiff` — the outside of a
   Jordan curve is the image of the exterior of the disc under a holomorphic bijection that tends to
   infinity at infinity and extends to a homeomorphism of the closed exterior onto the complement
@@ -87,59 +84,6 @@ theorem IsJordanCurve.exists_homeomorph_closedBall_filledHull (hC : IsJordanCurv
       hC.frontier_filledHull_sdiff]
   exact ⟨g, hgc, hgd, hgbij, himg ▸ (hgi.mono sphere_subset_closedBall).bijOn_image, hg0,
     e.trans (Homeomorph.setCongr hC.closure_filledHull_sdiff), he⟩
-
-/-! ## The outside, inverted about a point of the inside -/
-
-/-- A point of the inside of a Jordan curve lies off the closure of its outside. -/
-private theorem IsJordanCurve.notMem_closure_compl_filledHull (hC : IsJordanCurve C)
-    (hp : p ∈ filledHull C \ C) : p ∉ closure (filledHull C)ᶜ := by
-  rw [hC.closure_compl_filledHull]
-  exact not_not_intro hp
-
-/-- The complement of the outside of a Jordan curve, its filled hull, is bounded. -/
-private theorem IsJordanCurve.isBounded_compl_compl_filledHull (hC : IsJordanCurve C) :
-    IsBounded (filledHull C)ᶜᶜ := by
-  rw [compl_compl]
-  exact isBounded_filledHull.mpr hC.isCompact.isBounded
-
-/-- **The inverted outside of a Jordan curve is bounded by the inverted curve.** Inverting the
-outside `(filledHull C)ᶜ` of a Jordan curve `C ⊆ ℂ` about a point `p` of its inside and adding `0`,
-the image of infinity, gives an open set whose frontier is the image of `C`. -/
-theorem IsJordanCurve.frontier_insert_zero_image_inv_sub_compl_filledHull (hC : IsJordanCurve C)
-    (hp : p ∈ filledHull C \ C) :
-    frontier (insert 0 ((fun z : ℂ => (z - p)⁻¹) '' (filledHull C)ᶜ)) =
-      (fun z : ℂ => (z - p)⁻¹) '' C := by
-  rw [frontier_insert_zero_image_inv_sub hC.isClosed.isClosed_filledHull.isOpen_compl
-    (hC.notMem_closure_compl_filledHull hp) hC.isBounded_compl_compl_filledHull, frontier_compl,
-    hC.frontier_filledHull]
-
-/-- **The inverted outside of a Jordan curve is a Jordan domain.** Inverting the outside
-`(filledHull C)ᶜ` of a Jordan curve `C ⊆ ℂ` about a point `p` of its inside and adding `0`, the
-image of infinity, gives a bounded domain whose frontier, the image of `C`, is a Jordan curve. -/
-theorem IsJordanCurve.isJordanDomain_insert_zero_image_inv_sub_compl_filledHull
-    (hC : IsJordanCurve C) (hp : p ∈ filledHull C \ C) :
-    IsJordanDomain (insert 0 ((fun z : ℂ => (z - p)⁻¹) '' (filledHull C)ᶜ)) := by
-  have hpU := hC.notMem_closure_compl_filledHull hp
-  have hUc := hC.isBounded_compl_compl_filledHull
-  have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
-    rw [Complex.rank_real_complex]
-    exact Cardinal.one_lt_two
-  have hUb : ¬IsBounded (filledHull C)ᶜ := fun h =>
-    NormedSpace.unbounded_univ ℝ ℂ (by simpa using h.union hUc)
-  refine ⟨isOpen_insert_zero_image_inv_sub hC.isClosed.isClosed_filledHull.isOpen_compl
-    (not_not_intro hp.1) hUc, ?_, (isBounded_image_inv_sub hpU).insert 0, ?_⟩
-  · -- the inverted outside is connected, and `0`, the image of infinity, lies in its closure
-    have hcont : ContinuousOn (fun z : ℂ => (z - p)⁻¹) (filledHull C)ᶜ :=
-      ContinuousOn.inv₀ (by fun_prop) fun z hz =>
-        sub_ne_zero.mpr fun h => hpU (h ▸ subset_closure hz)
-    refine ((isConnected_compl_filledHull hrank hC.isCompact.isBounded).image _
-      hcont).subset_closure (subset_insert _ _) (insert_subset ?_ subset_closure)
-    rw [closure_image_inv_sub hpU hUb]
-    exact mem_insert _ _
-  · rw [hC.frontier_insert_zero_image_inv_sub_compl_filledHull hp]
-    exact hC.image
-      (ContinuousOn.inv₀ (by fun_prop) fun z hz => sub_ne_zero.mpr fun h => hp.2 (h ▸ hz))
-      (inv_injective.comp (sub_left_injective (b := p))).injOn
 
 /-! ## The outside -/
 
