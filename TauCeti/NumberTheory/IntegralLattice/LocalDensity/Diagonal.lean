@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.NumberTheory.IntegralLattice.LocalDensity.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.NumberTheory.IntegralLattice.LocalDensity.FromBlocks
 
 /-!
@@ -167,11 +168,7 @@ theorem localDensity_toMatrix_of_iIsOrtho (hp : p ≠ 2) {ι : Type*} [Fintype �
       (p : ℚ) ^ (∑ j ∈ Finset.range (univ.sup k), (#{i | j < k i} + 1).choose 2) *
         ∏ j ∈ univ.image k, (diagonal fun i : {i // k i = j} => (u i : ℤ_[p])).localDensity := by
   have hdiag : toMatrix b₀ B = diagonal fun i => (u i : ℤ_[p]) * (p : ℤ_[p]) ^ k i := by
-    ext i j
-    rw [toMatrix_apply]
-    obtain rfl | hij := eq_or_ne i j
-    · rw [hu, diagonal_apply_eq]
-    · rw [diagonal_apply_ne _ hij, iIsOrtho_def.mp hb₀ i j hij]
+    simpa only [hu] using hb₀.toMatrix_eq_diagonal
   set e := b₀.indexEquiv b
   have hb : toMatrix (b.reindex e.symm) B = reindex e.symm e.symm (toMatrix b B) := by
     ext i j
