@@ -34,6 +34,7 @@ is a principal logarithm.
 * `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
+* `TauCeti.exists_norm_inv_ofReal_add_le` -- `(t + p)⁻¹ = O((1 + t)⁻¹)` for `p ∈ slitPlane`
 -/
 
 public section
@@ -158,6 +159,17 @@ theorem exists_pos_forall_mem_ball_mul_one_add_le_norm_add {z : ℂ} (hz : z ∈
       ‖z + ((x : ℝ) : ℂ)‖ = ‖(w + ((x : ℝ) : ℂ)) + (z - w)‖ := by congr 1; ring
       _ ≤ ‖w + ((x : ℝ) : ℂ)‖ + ‖z - w‖ := norm_add_le _ _
   nlinarith [hzc x x.coe_nonneg, x.coe_nonneg]
+
+/-- For `p ∈ slitPlane`, the reciprocal `(t + p)⁻¹` is `O((1 + t)⁻¹)` uniformly in `t ≥ 0`. -/
+theorem exists_norm_inv_ofReal_add_le {p : ℂ} (hp : p ∈ slitPlane) :
+    ∃ C, 0 < C ∧ ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + p)⁻¹‖ ≤ C * (1 + t)⁻¹ := by
+  obtain ⟨c, hc, h⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hp
+  refine ⟨c⁻¹, inv_pos.mpr hc, fun t ht => ?_⟩
+  have h1 : c * (1 + t) ≤ ‖(t : ℂ) + p‖ := by
+    rw [add_comm (t : ℂ)]
+    exact h p (Metric.mem_ball_self hc) ⟨t, ht⟩
+  rw [norm_inv, ← mul_inv]
+  exact inv_anti₀ (by positivity) h1
 
 end TauCeti
 

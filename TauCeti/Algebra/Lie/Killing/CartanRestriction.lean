@@ -29,8 +29,9 @@ functions from `L` to `H` is then the algebra map `S(L) → S(H)` induced by `π
 `TauCeti.lieCartanRestriction H : S(L) →ₐ[K] S(H)`.
 
 This is the map that Chevalley's restriction theorem is about: restricted to the invariants
-`S(L)^L`, it is an isomorphism onto the Weyl invariants `S(H)^W` (not proved here), and through
-the PBW symbols of central elements it is compared with the Harish-Chandra projection.
+`S(L)^L`, it is an isomorphism onto the Weyl invariants `S(H)^W`
+(`LieSubalgebra.lieChevalleyRestrictionIso`), and through the PBW symbols of central elements it
+is compared with the Harish-Chandra projection.
 
 Read on the dual side, with `S(L)` as the polynomial functions on `L*` and `S(H)` as the polynomial
 functions on the weights `H*`, the restriction evaluates a polynomial on `L*` at the extension

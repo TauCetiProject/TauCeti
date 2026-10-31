@@ -225,7 +225,7 @@ section CoprimeIntegrality
 
 /-- A determinant-one rational matrix whose entries clear coprime denominators `pa` and `pb`
 is integral, hence lies in `SL_n(ℤ)`. -/
-private lemma mem_SLnZ_of_coprime_scaling (C : GL (Fin n) ℚ)
+lemma mem_SLnZ_of_coprime_scaling (C : GL (Fin n) ℚ)
     (pa pb : ℕ) (hcop : Nat.Coprime pa pb) (h_det : (↑C : Matrix (Fin n) (Fin n) ℚ).det = 1)
     (h_a : ∀ i j, ∃ z : ℤ, (pa : ℚ) * (↑C : Matrix (Fin n) (Fin n) ℚ) i j = z)
     (h_b : ∀ i j, ∃ z : ℤ, (pb : ℚ) * (↑C : Matrix (Fin n) (Fin n) ℚ) i j = z) :

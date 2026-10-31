@@ -44,11 +44,9 @@ generator.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.3,
-"The complexes and `∂² = 0`": the count of rectangles between two states is the finiteness fact
-underlying the differential. The statement that exactly two rectangles connect two states
-differing by a transposition follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
-Links*, Chapter 4.
+The count of rectangles between two states is the finiteness fact underlying the grid
+differential. The statement that exactly two rectangles connect two states differing by a
+transposition follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and Links*, Chapter 4.
 -/
 
 public section

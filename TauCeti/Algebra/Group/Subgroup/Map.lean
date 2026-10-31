@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.Subgroup.Center
+import Mathlib.Tactic.Group
 
 /-!
 # Maps of subgroups
@@ -43,6 +44,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `TauCeti.Subgroup.map_commutator_eq_commutator`: a surjective homomorphism carries the derived
   subgroup onto the derived subgroup.
 * `Subgroup.map_inf_comap`: the image of `H ⊓ f⁻¹(K)` is `f(H) ⊓ K`.
+* `Subgroup.normalCore_comap_of_forall_exists_mul_eq`: the normal core of `f⁻¹(B)` is the preimage
+  of the normal core of `B` when every element is `f x * b` with `b ∈ B`.
 * `Subgroup.map_conj_map_conj`: successive conjugations of a subgroup compose to one
   conjugation.
 * `Subgroup.map_map_conj`: the image of a conjugate subgroup is the conjugate of the image.
@@ -331,6 +334,21 @@ theorem _root_.Subgroup.map_inf_comap {G N : Type*} [Group G] [Group N]
   apply SetLike.coe_injective
   simp only [Subgroup.coe_map, Subgroup.coe_inf, Subgroup.coe_comap]
   exact Set.image_inter_preimage f H K
+
+/-- The normal core of `f⁻¹(B)` is the preimage of the normal core of `B` as soon as every element
+of the target is `f x * b` with `b ∈ B`: conjugating by `f x * b` is conjugating by `f x` and
+then by `b`, and `b` normalizes `B`. -/
+theorem _root_.Subgroup.normalCore_comap_of_forall_exists_mul_eq (f : G →* H) {B : Subgroup H}
+    (hf : ∀ g, ∃ x, ∃ b ∈ B, f x * b = g) :
+    (B.comap f).normalCore = B.normalCore.comap f := by
+  refine le_antisymm (fun x hx g ↦ ?_) fun x hx y ↦ by simpa using hx (f y)
+  -- Write `g⁻¹ = f y * b`, so that `g (f x) g⁻¹ = b⁻¹ f (y⁻¹ x y) b`.
+  obtain ⟨y, b, hb, hyb⟩ := hf g⁻¹
+  have hconj : g * f x * g⁻¹ = b⁻¹ * f (y⁻¹ * x * y⁻¹⁻¹) * b⁻¹⁻¹ := by
+    rw [← inv_inv g, ← hyb, map_mul, map_mul, map_inv, inv_inv]
+    group
+  rw [hconj]
+  exact mul_mem (mul_mem (inv_mem hb) (hx y⁻¹)) (inv_mem (inv_mem hb))
 
 /-- The image of a conjugate subgroup `gRg⁻¹` under a homomorphism `f` is the conjugate of `f(R)`
 by `f g`.

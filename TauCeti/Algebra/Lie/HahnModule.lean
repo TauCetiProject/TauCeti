@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Basic
-public import TauCeti.RingTheory.HahnSeries.Multiplication
+public import TauCeti.RingTheory.HahnSeries.Bilinear
 -- Proof-only: reindexing double sums over antidiagonals.
 import TauCeti.Data.Finset.MulAntidiagonal
 
@@ -27,7 +27,9 @@ coefficientwise action of `R`, and also for the convolution action of the Hahn s
 
 ## Main definitions and results
 
-* `HahnModule.instBracket`: the coefficient convolution bracket.
+* `HahnModule.instBracket`: the coefficient convolution bracket, the coefficientwise extension
+  `HahnModule.convolutionAddMonoidHom` of the bracket of `L`.
+* `HahnModule.of_symm_lie`: the bracket is the coefficientwise extension of the bracket of `L`.
 * `HahnModule.coeff_lie`: the coefficient formula for the bracket.
 * `HahnModule.support_lie_subset`: the support of a bracket lies in the sum of the supports.
 * `HahnModule.orderTop_add_le_lie`: over a linearly ordered `Γ`, the order of a bracket is at
@@ -60,24 +62,24 @@ section LieRing
 variable [SMul R L] [LieRing L]
 
 /-- The coefficient convolution bracket `⁅x, y⁆_c = ∑_{a + b = c} ⁅x_a, y_b⁆` of Hahn series
-with coefficients in a Lie ring. -/
+with coefficients in a Lie ring: the coefficientwise extension `convolutionAddMonoidHom` of the
+biadditive bracket of `L`. -/
 instance instBracket : Bracket (HahnModule Γ R L) (HahnModule Γ R L) where
-  bracket x y := of R
-    { coeff c := ∑ ij ∈ antidiagonal ((of R).symm x).isPWO_support
-          ((of R).symm y).isPWO_support c,
-        ⁅((of R).symm x).coeff ij.1, ((of R).symm y).coeff ij.2⁆
-      isPWO_support' := (((of R).symm x).isPWO_support.add
-          ((of R).symm y).isPWO_support).mono fun c hc ↦ by
-        obtain ⟨ij, hij, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero hc
-        rw [mem_antidiagonal] at hij
-        exact ⟨ij.1, hij.1, ij.2, hij.2.1, hij.2.2⟩ }
+  bracket x y := of R (convolutionAddMonoidHom Γ R (LieRingModule.toEnd L L) x y)
+
+/-- Read through `HahnModule.of`, the bracket is the coefficientwise extension
+`convolutionAddMonoidHom` of the bracket of `L`. -/
+theorem of_symm_lie (x y : HahnModule Γ R L) :
+    (of R).symm ⁅x, y⁆ = convolutionAddMonoidHom Γ R (LieRingModule.toEnd L L) x y :=
+  rfl
 
 /-- The coefficient formula `⁅x, y⁆_c = ∑_{a + b = c} ⁅x_a, y_b⁆`. -/
 theorem coeff_lie (x y : HahnModule Γ R L) (c : Γ) :
     ((of R).symm ⁅x, y⁆).coeff c =
       ∑ ij ∈ antidiagonal ((of R).symm x).isPWO_support ((of R).symm y).isPWO_support c,
-        ⁅((of R).symm x).coeff ij.1, ((of R).symm y).coeff ij.2⁆ :=
-  rfl
+        ⁅((of R).symm x).coeff ij.1, ((of R).symm y).coeff ij.2⁆ := by
+  rw [of_symm_lie, coeff_convolutionAddMonoidHom]
+  simp only [LieRingModule.toEnd_apply_apply]
 
 /-- The coefficients of a bracket may be computed over any partially well-ordered set containing
 the support of the first argument. -/
@@ -86,12 +88,8 @@ theorem coeff_lie_left' {x y : HahnModule Γ R L} {c : Γ} {s : Set Γ} (hs : s.
     ((of R).symm ⁅x, y⁆).coeff c =
       ∑ ij ∈ antidiagonal hs ((of R).symm y).isPWO_support c,
         ⁅((of R).symm x).coeff ij.1, ((of R).symm y).coeff ij.2⁆ := by
-  rw [coeff_lie]
-  refine sum_subset (antidiagonal_mono_left hxs) fun ij hij hij' ↦ ?_
-  rw [mem_antidiagonal] at hij
-  by_cases h : ((of R).symm x).coeff ij.1 = 0
-  · rw [h, zero_lie]
-  · exact (hij' (mem_antidiagonal.2 ⟨h, hij.2⟩)).elim
+  rw [of_symm_lie, coeff_convolutionAddMonoidHom_left' hs hxs]
+  simp only [LieRingModule.toEnd_apply_apply]
 
 /-- The coefficients of a bracket may be computed over any partially well-ordered set containing
 the support of the second argument. -/
@@ -100,45 +98,23 @@ theorem coeff_lie_right' {x y : HahnModule Γ R L} {c : Γ} {s : Set Γ} (hs : s
     ((of R).symm ⁅x, y⁆).coeff c =
       ∑ ij ∈ antidiagonal ((of R).symm x).isPWO_support hs c,
         ⁅((of R).symm x).coeff ij.1, ((of R).symm y).coeff ij.2⁆ := by
-  rw [coeff_lie]
-  refine sum_subset (antidiagonal_mono_right hys) fun ij hij hij' ↦ ?_
-  rw [mem_antidiagonal] at hij
-  by_cases h : ((of R).symm y).coeff ij.2 = 0
-  · rw [h, lie_zero]
-  · exact (hij' (mem_antidiagonal.2 ⟨hij.1, h, hij.2.2⟩)).elim
+  rw [of_symm_lie, coeff_convolutionAddMonoidHom_right' hs hys]
+  simp only [LieRingModule.toEnd_apply_apply]
 
 /-- The support of a bracket lies in the sum of the supports. -/
 theorem support_lie_subset (x y : HahnModule Γ R L) :
     ((of R).symm ⁅x, y⁆).support ⊆
-      ((of R).symm x).support + ((of R).symm y).support := fun c hc ↦ by
-  obtain ⟨ij, hij, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero hc
-  rw [mem_antidiagonal] at hij
-  exact ⟨ij.1, hij.1, ij.2, hij.2.1, hij.2.2⟩
+      ((of R).symm x).support + ((of R).symm y).support := by
+  rw [of_symm_lie]
+  exact support_convolutionAddMonoidHom_subset _ x y
 
 /-- The bracket of two monomials: `⁅x t ^ a, y t ^ b⁆ = ⁅x, y⁆ t ^ (a + b)`. -/
 @[simp]
 theorem single_lie_single (a b : Γ) (x y : L) :
     ⁅of R (HahnSeries.single a x), of R (HahnSeries.single b y)⁆ =
       of R (HahnSeries.single (a + b) ⁅x, y⁆) := by
-  ext c
-  simp only [coeff_lie, Equiv.symm_apply_apply]
-  by_cases hc : c = a + b
-  · subst hc
-    rw [HahnSeries.coeff_single_same, sum_eq_single (a, b)]
-    · simp only [HahnSeries.coeff_single_same]
-    · rintro ⟨i, j⟩ hij hne
-      rw [mem_antidiagonal] at hij
-      exact (hne (Prod.ext (HahnSeries.eq_of_mem_support_single hij.1)
-        (HahnSeries.eq_of_mem_support_single hij.2.1))).elim
-    · intro h
-      simp only [mem_antidiagonal, HahnSeries.mem_support, HahnSeries.coeff_single_same,
-        and_true, not_and_or, not_not] at h
-      obtain h | h := h <;> simp [h]
-  · rw [HahnSeries.coeff_single_of_ne hc, sum_eq_zero]
-    rintro ⟨i, j⟩ hij
-    obtain ⟨hi, hj, rfl⟩ := mem_antidiagonal.1 hij
-    rw [HahnSeries.eq_of_mem_support_single hi, HahnSeries.eq_of_mem_support_single hj] at hc
-    exact (hc rfl).elim
+  rw [← (of R).symm_apply_eq, of_symm_lie, convolutionAddMonoidHom_single_single,
+    LieRingModule.toEnd_apply_apply]
 
 /-- The coefficients of a right-nested bracket, as a sum over pairs of antidiagonals. -/
 private theorem coeff_lie_lie (x y z : HahnModule Γ R L) (d : Γ) :
@@ -155,22 +131,10 @@ private theorem coeff_lie_lie (x y z : HahnModule Γ R L) (d : Γ) :
 
 /-- Hahn series with coefficients in a Lie ring form a Lie ring under the convolution bracket. -/
 instance instLieRing : LieRing (HahnModule Γ R L) where
-  add_lie x y z := by
-    ext c
-    have hs := ((of R).symm x).isPWO_support.union ((of R).symm y).isPWO_support
-    rw [of_symm_add, HahnSeries.coeff_add,
-      coeff_lie_left' hs (by rw [of_symm_add]; exact HahnSeries.support_add_subset _ _),
-      coeff_lie_left' hs Set.subset_union_left, coeff_lie_left' hs Set.subset_union_right,
-      ← sum_add_distrib]
-    simp only [of_symm_add, HahnSeries.coeff_add, add_lie]
-  lie_add x y z := by
-    ext c
-    have hs := ((of R).symm y).isPWO_support.union ((of R).symm z).isPWO_support
-    rw [of_symm_add, HahnSeries.coeff_add,
-      coeff_lie_right' hs (by rw [of_symm_add]; exact HahnSeries.support_add_subset _ _),
-      coeff_lie_right' hs Set.subset_union_left, coeff_lie_right' hs Set.subset_union_right,
-      ← sum_add_distrib]
-    simp only [of_symm_add, HahnSeries.coeff_add, lie_add]
+  add_lie x y z := (of R).symm.injective <| by
+    simp only [of_symm_add, of_symm_lie, map_add, AddMonoidHom.add_apply]
+  lie_add x y z := (of R).symm.injective <| by
+    simp only [of_symm_add, of_symm_lie, map_add]
   lie_self x := by
     ext c
     rw [coeff_lie, of_symm_zero, HahnSeries.coeff_zero]

@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Module.FinitePresentation
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.RingTheory.Localization.Module
+public import Mathlib.RingTheory.QuotSMulTop
+import Mathlib.Algebra.Module.LocalizedModule.Submodule
+import Mathlib.RingTheory.Localization.Ideal
 
 /-!
 # Localized linear maps
@@ -25,6 +28,10 @@ submonoid `S`:
   map `M → M**` becomes bijective after localizing at `S` exactly when the localization `Mₛ` is
   reflexive over `Rₛ`. Taking duals commutes with localization for finitely presented modules,
   so `(M**)ₛ` is the double dual of `Mₛ` over `Rₛ`.
+
+We also record that localization commutes with dividing by an element:
+
+* `TauCeti.localizedQuotSMulTopEquiv`: localizing `M ⧸ a M` gives `M_S ⧸ a M_S`.
 -/
 
 public section
@@ -121,3 +128,42 @@ theorem bijective_map_dual_eval_iff (f : M →ₗ[R] M') [IsLocalizedModule S f]
     LinearMap.coe_restrictScalars]
 
 end LocalizedModule
+
+namespace TauCeti
+
+universe u v
+
+variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
+
+variable (M) in
+/-- Localization commutes with dividing a module by an element: for `a : R` and a submonoid `S`,
+the localization of `M ⧸ a M` at `S` is `M_S ⧸ a M_S`, linearly over `R_S`. -/
+noncomputable def localizedQuotSMulTopEquiv (a : R) (S : Submonoid R) :
+    LocalizedModule S (QuotSMulTop a M) ≃ₗ[Localization S]
+      QuotSMulTop (algebraMap R (Localization S) a) (LocalizedModule S M) :=
+  (localizedQuotientEquiv _ _).symm ≪≫ₗ Submodule.quotEquivOfEq _ _ (by
+    rw [Submodule.localized, ← Submodule.ideal_span_singleton_smul,
+      Submodule.localized'_smul, Ideal.localized'_eq_map, Submodule.localized'_top,
+      Ideal.map_span, Set.image_singleton, Submodule.ideal_span_singleton_smul])
+
+/-- `TauCeti.localizedQuotSMulTopEquiv` sends `(m mod a M) / s` to `(m / s) mod a M_S`. -/
+@[simp]
+theorem localizedQuotSMulTopEquiv_mk (a : R) (S : Submonoid R) (m : M) (s : S) :
+    localizedQuotSMulTopEquiv M a S (LocalizedModule.mk (Submodule.Quotient.mk m) s) =
+      Submodule.Quotient.mk (LocalizedModule.mk m s) := by
+  have h1 : localizedQuotSMulTopEquiv M a S
+      (LocalizedModule.mkLinearMap S (QuotSMulTop a M) (Submodule.Quotient.mk m)) =
+        Submodule.Quotient.mk (LocalizedModule.mkLinearMap S M m) := by
+    rw [localizedQuotSMulTopEquiv, LinearEquiv.trans_apply]
+    -- `localizedQuotientEquiv` is `IsLocalizedModule.linearEquiv` with scalars restricted.
+    exact (congrArg _ (IsLocalizedModule.linearEquiv_symm_apply S
+      (Submodule.toLocalizedQuotient S _) (LocalizedModule.mkLinearMap S _)
+      (Submodule.Quotient.mk m))).trans (Submodule.quotEquivOfEq_mk _ _ _ _)
+  -- Divide by `s` using `Localization S`-linearity.
+  have hs {N : Type v} [AddCommGroup N] [Module R N] (x : N) :
+      LocalizedModule.mk x s = Localization.mk (1 : R) s • LocalizedModule.mk x 1 := by
+    rw [LocalizedModule.mk_smul_mk, one_smul, mul_one]
+  rw [hs, map_smul, ← LocalizedModule.mkLinearMap_apply, h1, LocalizedModule.mkLinearMap_apply,
+    ← Submodule.Quotient.mk_smul, hs]
+
+end TauCeti

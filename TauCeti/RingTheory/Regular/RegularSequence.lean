@@ -36,6 +36,8 @@ extend sections of `M~` across `V(I)` (Stacks, Lemma 31.5.11 (0E9I)).
   sequence `a, b`, the power `bʲ` is regular on `M ⧸ aⁿ M`.
 * `Ideal.exists_mem_isSMulRegular_iff`: `I` contains an `M`-regular element if and only if it lies
   in no associated prime of `M`.
+* `IsLocalRing.exists_isSMulRegular_of_depth_ne_zero`: over a Noetherian local ring, a finite
+  module of nonzero depth has a regular element in the maximal ideal.
 * `TauCeti.exists_isWeaklyRegular_of_le_depth_localizedModule`: if `depth M_p ≥ n` at every prime
   `p ⊇ I`, then `I` contains a weakly `M`-regular sequence of length `n`.
 
@@ -116,6 +118,15 @@ theorem Ideal.exists_mem_isSMulRegular_iff (I : Ideal R) :
         simp_rw [id, hzd]
         exact hreg
     exact h p hp hle
+
+/-- Over a Noetherian local ring, a finite module of nonzero depth has a regular element in the
+maximal ideal. -/
+theorem IsLocalRing.exists_isSMulRegular_of_depth_ne_zero [IsLocalRing R] [Small.{v} R]
+    (h : depth (ModuleCat.of R M) ≠ 0) : ∃ a ∈ maximalIdeal R, IsSMulRegular M a := by
+  refine (maximalIdeal R).exists_mem_isSMulRegular_iff.2 fun p hp hle ↦ h ?_
+  rw [depth_eq_zero_iff_maximalIdeal_mem_associatedPrimes,
+    (maximalIdeal.isMaximal R).eq_of_le hp.isPrime.ne_top hle]
+  exact hp
 
 namespace TauCeti
 

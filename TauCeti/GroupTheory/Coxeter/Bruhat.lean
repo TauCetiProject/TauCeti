@@ -74,6 +74,8 @@ comparisons change when both endpoints are multiplied by the same simple reflect
   coset of a standard parabolic subgroup is the Bruhat-least element of that coset.
 * `CoxeterSystem.IsMinimalCosetRep.bruhatLE_of_bruhatLE_mul`: the projection to minimal coset
   representatives is monotone.
+* `CoxeterSystem.MinimalCosetRepChain.bruhatLE_of_le`: a saturated chain of `W / W_J` descends in
+  the Bruhat order.
 * `CoxeterSystem.MinimalCosetRepCovBy.exists_isReflection`: a cover of a parabolic quotient is the
   projection of a Bruhat edge `t * x < x`; `CoxeterSystem.minimalCosetRepCovBy_one_simple` is the
   cover of the identity by a simple reflection.
@@ -590,7 +592,7 @@ structure MinimalCosetRepCovBy (J : Set B) (y x : W) : Prop where
 order of the parabolic quotient. -/
 theorem minimalCosetRepCovBy_one_simple {J : Set B} {i : B} (hi : cs.simple i ∉ cs.parabolic J) :
     cs.MinimalCosetRepCovBy J 1 (cs.simple i) where
-  isMinimalCosetRep_left := cs.isMinimalCosetRep_iff.mpr fun j _ ↦ cs.not_isRightDescent_one j
+  isMinimalCosetRep_left := cs.isMinimalCosetRep_one J
   isMinimalCosetRep_right := cs.isMinimalCosetRep_iff.mpr fun j hj hdesc ↦ hi <| by
     -- A right descent `s j` of `s i` satisfies `s i * s j = 1`, so `s i = s j` is parabolic.
     have hlen := cs.isRightDescent_iff.mp hdesc
@@ -645,5 +647,23 @@ theorem MinimalCosetRepChain.minimalCosetRepCovBy {cs : CoxeterSystem M W} {J : 
     (C : cs.MinimalCosetRepChain J) (i : Fin C.length) :
     cs.MinimalCosetRepCovBy J (C i.succ) (C i.castSucc) :=
   C.step i
+
+/-- In a saturated chain `x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` of `W / W_J`, a later element lies below an earlier
+one in the Bruhat order. -/
+theorem MinimalCosetRepChain.bruhatLE_of_le {cs : CoxeterSystem M W} {J : Set B}
+    (C : cs.MinimalCosetRepChain J) {i j : Fin (C.length + 1)} (hij : i ≤ j) :
+    cs.BruhatLE (C j) (C i) := by
+  induction j using Fin.induction with
+  | zero => obtain rfl := Fin.le_zero_iff.mp hij; exact cs.bruhatLE_refl _
+  | succ j ih =>
+    rcases hij.lt_or_eq with hij | rfl
+    · exact (C.minimalCosetRepCovBy j).bruhatLE.trans (ih (Fin.le_castSucc_iff.mpr hij))
+    · exact cs.bruhatLE_refl _
+
+/-- The last element of a saturated chain of `W / W_J` lies below its first element in the Bruhat
+order. -/
+theorem MinimalCosetRepChain.bruhatLE_last_head {cs : CoxeterSystem M W} {J : Set B}
+    (C : cs.MinimalCosetRepChain J) : cs.BruhatLE C.last C.head :=
+  C.bruhatLE_of_le (Fin.zero_le _)
 
 end CoxeterSystem
