@@ -29,13 +29,6 @@ statement be accompanied by the natural equivalence and conformality API.
 * `TauCeti.riemannMapping_homeomorph` — the resulting homeomorphism
   `Ω ≃ₜ Complex.UnitDisc`.
 
-## Coordination with upstream Mathlib
-
-The Riemann mapping theorem is being formalized upstream in
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505). This L3 theorem is
-an explicitly temporary shim: delete it and refactor consumers to the public human-curated
-Mathlib theorem and packaging once those land.
-
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Ch. 6 §1.
