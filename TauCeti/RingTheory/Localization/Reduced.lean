@@ -7,25 +7,21 @@ module
 
 public import Mathlib.RingTheory.HopkinsLevitzki
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
-public import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 public import Mathlib.RingTheory.LocalProperties.Reduced
+public import TauCeti.RingTheory.Ideal.MinimalPrime.Finite
 
 /-!
 # Localizations and total quotient rings of reduced rings
 
 Every localization of a reduced ring is reduced (`IsLocalization.isReduced`).
 
-In a reduced ring every zero divisor lies in a minimal prime, and a Noetherian ring has only
-finitely many minimal primes. By prime avoidance, a prime ideal of a reduced Noetherian ring
-consists of zero divisors exactly when it is minimal
-(`Ideal.mem_minimalPrimes_iff_disjoint_nonZeroDivisors`).
-
-Consequently the total quotient ring `K` of a reduced Noetherian ring `A` has Krull dimension
-zero. Being Noetherian too, `K` is Artinian (`IsFractionRing.isArtinianRing_of_isReduced`), and
-it is reduced. Mathlib's `IsArtinianRing.equivPi` then decomposes
-`K` as the finite product of its residue fields `K ⧸ m` over its maximal ideals `m`. When every
-positive integer is a non-zero-divisor of `A`, these residue fields have characteristic zero
-(`IsFractionRing.charZero_quotient`).
+A prime ideal of a reduced Noetherian ring consists of zero divisors exactly when it is minimal
+(`Ideal.mem_minimalPrimes_iff_disjoint_nonZeroDivisors`). Consequently the total quotient ring
+`K` of a reduced Noetherian ring `A` has Krull dimension zero. Being Noetherian too, `K` is
+Artinian (`IsFractionRing.isArtinianRing_of_isReduced`), and it is reduced. Mathlib's
+`IsArtinianRing.equivPi` then decomposes `K` as the finite product of its residue fields `K ⧸ m`
+over its maximal ideals `m`. When every positive integer is a non-zero-divisor of `A`, these
+residue fields have characteristic zero (`IsFractionRing.charZero_quotient`).
 
 ## References
 
@@ -43,26 +39,6 @@ theorem IsLocalization.isReduced [IsReduced A] (M : Submonoid A) (S : Type*) [Co
     [Algebra A S] [IsLocalization M S] : IsReduced S :=
   let e := IsLocalization.algEquiv M S (Localization M)
   isReduced_of_injective e e.injective
-
-/-- In a reduced Noetherian ring, a prime ideal is minimal if and only if it consists of zero
-divisors. -/
-theorem Ideal.mem_minimalPrimes_iff_disjoint_nonZeroDivisors [IsNoetherianRing A] [IsReduced A]
-    {p : Ideal A} [p.IsPrime] :
-    p ∈ minimalPrimes A ↔ Disjoint (p : Set A) A⁰ := by
-  refine ⟨Ideal.disjoint_nonZeroDivisors_of_mem_minimalPrimes, fun h ↦ ?_⟩
-  -- Every zero divisor of the reduced ring `A` lies in a minimal prime.
-  have hsub : (p : Set A) ⊆ ⋃ q ∈ minimalPrimes A, (q : Set A) := by
-    intro x hx
-    have hx' : x ∉ A⁰ := Set.disjoint_left.mp h hx
-    rw [mem_nonZeroDivisors_iff_right] at hx'
-    push Not at hx'
-    obtain ⟨y, hxy, hy⟩ := hx'
-    rw [minimalPrimes, Ideal.iUnion_minimalPrimes, Ideal.radical_bot_of_isReduced]
-    exact ⟨y, hy, by rw [mul_comm, hxy]; exact Ideal.zero_mem ⊥⟩
-  obtain ⟨q, hq, hpq⟩ := (Ideal.subset_union_prime_finite
-    (minimalPrimes.finite_of_isNoetherianRing A) (f := id) 0 0
-    fun q hq _ _ ↦ hq.isPrime).mp hsub
-  rwa [le_antisymm hpq (hq.2 ⟨‹_›, bot_le⟩ hpq)]
 
 namespace IsFractionRing
 

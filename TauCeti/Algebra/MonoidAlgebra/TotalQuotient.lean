@@ -126,6 +126,24 @@ theorem AddMonoidAlgebra.algEquivPiField_apply
     AddMonoidAlgebra.algEquivPiField K H x I = Ideal.Quotient.mk I.asIdeal x :=
   IsArtinianRing.equivPi_apply _ x I
 
+section CharZero
+
+variable (R M K : Type*) [CommRing R] [IsFormallyReal R] [CommMonoid M]
+  [CommRing K] [Algebra (MonoidAlgebra R M) K] [IsFractionRing (MonoidAlgebra R M) K]
+
+include R M in
+/-- Every quotient of the total quotient ring of a monoid ring over a formally real ring by a proper
+ideal has characteristic zero. -/
+@[to_additive (dont_translate := R K)
+/-- Every quotient of the total quotient ring of an additive monoid ring over a formally real ring
+by a proper ideal has characteristic zero. -/]
+theorem MonoidAlgebra.charZero_quotient_of_isFractionRing {I : Ideal K} (hI : I ≠ ⊤) :
+    CharZero (K ⧸ I) :=
+  IsFractionRing.charZero_quotient (MonoidAlgebra R M) K
+    (fun _ hn ↦ MonoidAlgebra.natCast_mem_nonZeroDivisors hn) hI
+
+end CharZero
+
 section FG
 
 open scoped nonZeroDivisors
@@ -146,17 +164,6 @@ theorem MonoidAlgebra.isArtinianRing_of_isFractionRing [IsNoetherianRing R] [Gro
   have : IsNoetherianRing (MonoidAlgebra R G) :=
     Algebra.FiniteType.isNoetherianRing R (MonoidAlgebra R G)
   IsFractionRing.isArtinianRing_of_isReduced (MonoidAlgebra R G) K
-
-include R G in
-/-- Every quotient of the total quotient ring of a monoid ring over a formally real ring by a proper
-ideal has characteristic zero. -/
-@[to_additive (dont_translate := R K)
-/-- Every quotient of the total quotient ring of an additive monoid ring over a formally real ring
-by a proper ideal has characteristic zero. -/]
-theorem MonoidAlgebra.charZero_quotient_of_isFractionRing {I : Ideal K} (hI : I ≠ ⊤) :
-    CharZero (K ⧸ I) :=
-  IsFractionRing.charZero_quotient (MonoidAlgebra R G) K
-    (fun _ hn ↦ MonoidAlgebra.natCast_mem_nonZeroDivisors hn) hI
 
 /-- The total quotient ring of the group ring of a finitely generated commutative group over a
 formally real Noetherian ring is a finite product of fields of characteristic zero. -/
