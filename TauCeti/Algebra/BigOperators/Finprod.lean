@@ -20,6 +20,8 @@ arbitrary map is also available, without finiteness assumptions on the fibers, a
 finitely supported factor whose product is `1`. Shifting the index of an alternating product over
 `ℤ` by one inverts it, so multiplying each factor `f j` by `δ (j + 1) * δ j` does not change the
 product; this is how changes of boundary bases cancel in Reidemeister torsion.
+A sum weighted by a finitely supported family of scalars, such as the translates of a cutoff
+function, is a finite sum over the support of the weights.
 Finally, a product over a finset is compared with the `finprod` of a finitely supported family
 whose factors off the finset are all at least `1`, or all at most `1`.
 
@@ -38,6 +40,10 @@ whose factors off the finset are all at least `1`, or all at most `1`.
 * `TauCeti.finprod_mul_mul_add_one_zpow_negOnePow`: multiplying each factor `f j` of
   `∏ᶠ j, f j ^ (-1) ^ j` by `δ (j + 1) * δ j`, for a finitely supported family `δ` of nonzero
   elements, does not change the product.
+* `TauCeti.finsum_smul_eq_sum`: a sum weighted by a finitely supported family of scalars is a
+  finite sum over the support of the weights.
+* `TauCeti.finsum_smul_inv_smul`: translating the point of a sum weighted by the translates of a
+  function translates the summation variable.
 * `Finset.prod_le_finprod_of_one_le₀` and `Finset.finprod_le_prod_of_le_one₀`: a product over a
   finset is at most, respectively at least, the `finprod` when the factors off the finset are at
   least, respectively at most, `1`.
@@ -164,6 +170,25 @@ theorem finprod_mul_mul_add_one_zpow_negOnePow {G : Type*} [CommGroupWithZero G]
     (finprod_mul_eq_right_of_finprod_eq_one ((h₁.union h₀).subset (mulSupport_mul _ _)) ?_)
   rw [finprod_mul_distrib h₁ h₀, finprod_zpow_negOnePow_add_one,
     inv_mul_cancel₀ (finprod_ne_zero fun j ↦ zpow_ne_zero _ (hδ₀ j))]
+
+section WeightedSum
+
+/-- A sum weighted by a finitely supported family of scalars is the finite sum over the support
+of the weights. -/
+theorem finsum_smul_eq_sum {ι R V : Type*} [Zero R] [AddCommMonoid V] [SMulWithZero R V]
+    {w : ι → R} (hw : HasFiniteSupport w) (v : ι → V) :
+    ∑ᶠ i, w i • v i = ∑ i ∈ hw.toFinset, w i • v i :=
+  finsum_eq_sum_of_support_subset _ fun i hi ↦ hw.mem_toFinset.2 fun h ↦ hi (by simp [h])
+
+/-- Translating the point `x` of a sum over a group weighted by `g ↦ c (g • x)` by `a⁻¹`
+translates the summation variable by `a`. -/
+theorem finsum_smul_inv_smul {G X R V : Type*} [Group G] [MulAction G X] [AddCommMonoid V]
+    [SMul R V] (c : X → R) (a : G) (x : X) (v : G → V) :
+    ∑ᶠ g : G, c (g • a⁻¹ • x) • v g = ∑ᶠ g : G, c (g • x) • v (g * a) := by
+  rw [← finsum_comp_equiv (Equiv.mulRight a)]
+  simp [mul_smul]
+
+end WeightedSum
 
 end TauCeti
 

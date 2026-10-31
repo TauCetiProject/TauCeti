@@ -8,8 +8,12 @@ module
 public import Mathlib.Algebra.Homology.Homotopy
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Basic
 public import TauCeti.RepresentationTheory.FunLeft
+public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Contraction
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.FiniteSupport.Basic
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.Algebra.BigOperators.Finprod
+import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
@@ -35,7 +39,9 @@ degree `n + 1 → n`, the identity of the cochain complex is homotopic to the ch
 cutoff average `Representation.cutoffAverage` in degree `0` and zero in positive degrees, the
 projection onto the invariant functions placed in degree `0`. In particular every positive-degree
 cocycle has an explicit primitive, and the positive-degree group cohomology with coefficients in
-`X → A` vanishes.
+`X → A` vanishes. As for averaging, the homotopy and the primitives are assembled from the two
+identities of `h` with the differential by `TauCeti.groupCohomology.homotopyOfDCompEq` and
+`TauCeti.inhomogeneousCochains.d_smul_of_d_comp_eq`.
 
 For a finite group and the constant function `|G|⁻¹`, `h` averages over the inserted label, as in
 `TauCeti.inhomogeneousCochains.averageLast`. The operator is natural for pullback along
@@ -78,47 +84,6 @@ open _root_.inhomogeneousCochains
 variable {k G A X : Type u} [CommRing k] [Group G] [AddCommGroup A] [Module k A] [MulAction G X]
 variable (ρ : Representation k G A) {c : X → k} (hc : ∀ x, ∑ᶠ g : G, c (g • x) = 1)
 
-include hc in
-/-- A sum weighted by the translates of `c` is a finite sum over the support of `c (· • x)`. -/
-private theorem finsum_smul_eq_sum {V : Type*} [AddCommGroup V] [Module k V] (x : X)
-    (v : G → V) :
-    ∑ᶠ g : G, c (g • x) • v g =
-      ∑ g ∈ (hasFiniteSupport_of_finsum_eq_one (hc x)).toFinset, c (g • x) • v g :=
-  finsum_eq_sum_of_support_subset _ fun _ hg ↦
-    (Set.Finite.mem_toFinset _).2 (support_smul_subset_left (fun g ↦ c (g • x)) v hg)
-
-include hc in
-private theorem sum_eq_one (x : X) :
-    ∑ g ∈ (hasFiniteSupport_of_finsum_eq_one (hc x)).toFinset, c (g • x) = 1 :=
-  (finsum_eq_sum _ _).symm.trans (hc x)
-
-/-- Translating the point of a weighted sum translates the summation variable. -/
-private theorem finsum_smul_inv_smul {V : Type*} [AddCommGroup V] [Module k V] (a : G) (x : X)
-    (v : G → V) : ∑ᶠ g : G, c (g • a⁻¹ • x) • v g = ∑ᶠ g : G, c (g • x) • v (g * a) := by
-  rw [← finsum_comp_equiv (Equiv.mulRight a)]
-  simp [mul_smul]
-
-private theorem partialProd_last_eq_mul_tail {n : ℕ} (y : Fin (n + 1) → G) :
-    Fin.partialProd y (Fin.last (n + 1)) = y 0 * Fin.partialProd (fun i ↦ y i.succ) (Fin.last n) :=
-  by rw [← Fin.succ_last, Fin.partialProd_succ']; rfl
-
-private theorem partialProd_last_eq_init_mul {n : ℕ} (y : Fin (n + 1) → G) :
-    Fin.partialProd y (Fin.last (n + 1)) =
-      Fin.partialProd (Fin.init y) (Fin.last n) * y (Fin.last n) := by
-  rw [← Fin.succ_last, Fin.partialProd_succ, Fin.partialProd_init]
-
-private theorem apply_last_mul_inv_mul_partialProd_last {n : ℕ} (y : Fin (n + 1) → G) (g : G) :
-    y (Fin.last n) * (g * Fin.partialProd y (Fin.last (n + 1)))⁻¹ =
-      (g * Fin.partialProd (Fin.init y) (Fin.last n))⁻¹ := by
-  rw [partialProd_last_eq_init_mul]
-  group
-
-private theorem partialProd_contractNth_castSucc {n : ℕ} (j : Fin n) (y : Fin (n + 1) → G) :
-    Fin.partialProd (Fin.contractNth j.castSucc (· * ·) y) (Fin.last n) =
-      Fin.partialProd y (Fin.last (n + 1)) := by
-  rw [Fin.partialProd_contractNth, comp_apply, Fin.succAbove_of_le_castSucc, Fin.succ_last]
-  simp [Fin.le_def]
-
 /-- The insertion `x ↦ ∑ᶠ g, c (g • x) • f (y, (g * y₀ ⋯ yₙ₋₁)⁻¹) x` of a last arrow into an
 `(n + 1)`-cochain `f` with coefficients in `X → A`, weighted by `c`, an `n`-cochain. -/
 def cutoffLast (n : ℕ) :
@@ -128,12 +93,14 @@ def cutoffLast (n : ℕ) :
   { toFun f y x := ∑ᶠ g : G, c (g • x) • f (Fin.snoc y (g * Fin.partialProd y (Fin.last n))⁻¹) x
     map_add' f f' := by
       ext y x
-      simp only [finsum_smul_eq_sum hc]
-      simp [smul_add, Finset.sum_add_distrib]
+      have hfin : HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc x)
+      simp only [Pi.add_apply, smul_add]
+      exact finsum_add_distrib (hfin.fun_smul_left _) (hfin.fun_smul_left _)
     map_smul' r f := by
       ext y x
-      simp only [finsum_smul_eq_sum hc]
-      simp [Finset.smul_sum, smul_comm r] }
+      have hfin : HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc x)
+      simp only [Pi.smul_apply, RingHom.id_apply, smul_comm _ r]
+      exact (smul_finsum' r (hfin.fun_smul_left _)).symm }
 
 /-- The value of the weighted insertion of a last arrow. -/
 @[simp]
@@ -161,16 +128,18 @@ theorem d_comp_cutoffLast (n : ℕ) :
   simp only [Fin.snoc_apply_zero, htail, Fin.sum_univ_castSucc (n := n + 1),
     Fin.sum_univ_castSucc (n := n), Fin.contractNth_castSucc_castSucc_snoc,
     Fin.contractNth_castSucc_last_snoc, Fin.contractNth_last, Fin.init_snoc,
-    partialProd_contractNth_castSucc, apply_last_mul_inv_mul_partialProd_last,
-    finsum_smul_inv_smul, mul_assoc, ← partialProd_last_eq_mul_tail, Fin.val_castSucc,
+    Fin.partialProd_contractNth_castSucc, Fin.apply_last_mul_inv_mul_partialProd_last,
+    finsum_smul_inv_smul, mul_assoc, ← Fin.partialProd_last_eq_mul_tail, Fin.val_castSucc,
     Fin.val_last]
   -- Every sum is now weighted by `c (· • x)`: write them as finite sums over its support, and
   -- sum the constant last face against the weights.
+  have hfin : HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc x)
+  have hsum : ∑ g ∈ hfin.toFinset, c (g • x) = 1 := (finsum_eq_sum _ hfin).symm.trans (hc x)
   have hlast : ∑ g ∈ (hasFiniteSupport_of_finsum_eq_one (hc x)).toFinset,
       (-1 : k) ^ (n + 1 + 1) • c (g • x) • f y x = (-1 : k) ^ n • f y x := by
-    rw [← Finset.smul_sum, ← Finset.sum_smul, sum_eq_one hc, one_smul, pow_succ, pow_succ,
+    rw [← Finset.smul_sum, ← Finset.sum_smul, hsum, one_smul, pow_succ, pow_succ,
       mul_assoc, neg_one_mul, neg_neg, mul_one]
-  simp only [finsum_smul_eq_sum hc x]
+  simp only [finsum_smul_eq_sum hfin]
   simp only [map_sum, map_smul, smul_add, Finset.sum_add_distrib, Finset.smul_sum,
     smul_comm _ ((-1 : k) ^ _), hlast, Finset.sum_comm (γ := G)]
   abel
@@ -190,10 +159,12 @@ theorem d_zero_comp_cutoffLast :
   have hsnoc (u : G) : (Fin.snoc y u : Fin 1 → G) 0 = u := Fin.snoc_last (α := fun _ ↦ G) u y
   have hprod : Fin.partialProd y (Fin.last 0) = 1 := Fin.partialProd_zero y
   have hsign : ∑ i : Fin 1, (-1 : k) ^ ((i : ℕ) + 1) = -1 := by simp
+  have hfin : HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc x)
+  have hsum : ∑ g ∈ hfin.toFinset, c (g • x) = 1 := (finsum_eq_sum _ hfin).symm.trans (hc x)
   simp only [hsnoc, hprod, mul_one, inv_inv]
-  rw [finsum_smul_eq_sum hc, finsum_smul_eq_sum hc]
+  rw [finsum_smul_eq_sum hfin, finsum_smul_eq_sum hfin]
   simp only [hsign, neg_one_smul, smul_add, smul_neg, Finset.sum_add_distrib,
-    Finset.sum_neg_distrib, ← Finset.sum_smul, sum_eq_one hc, one_smul, sub_eq_add_neg]
+    Finset.sum_neg_distrib, ← Finset.sum_smul, hsum, one_smul, sub_eq_add_neg]
 
 /-- **Naturality of the weighted insertion for pullback.** Pulling a cochain back along an
 equivariant map `π : Y → X` commutes with the weighted insertion of a last arrow, for the
@@ -210,16 +181,8 @@ coboundary of `(-1)^(n+1)` times its weighted insertion of a last arrow. -/
 theorem d_smul_cutoffLast_of_d_eq_zero {n : ℕ}
     {f : ModuleCat.of k ((Fin (n + 1) → G) → Rep.of (ρ.funLeft X))}
     (hf : (d (Rep.of (ρ.funLeft X)) (n + 1)).hom f = 0) :
-    (d (Rep.of (ρ.funLeft X)) n).hom ((-1 : k) ^ (n + 1) • (cutoffLast ρ hc n).hom f) = f := by
-  have h := congr($(d_comp_cutoffLast ρ hc n).hom f)
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, hf, map_zero, ModuleCat.hom_add,
-    ModuleCat.hom_smul, LinearMap.add_apply, LinearMap.smul_apply, ModuleCat.hom_id,
-    LinearMap.id_apply] at h
-  have hsign : (-1 : k) ^ (n + 1) * (-1) ^ n = -1 := by
-    rw [← pow_add]
-    exact Odd.neg_one_pow ⟨n, by ring⟩
-  rw [map_smul, eq_neg_of_add_eq_zero_left h.symm, smul_neg, smul_smul, hsign, neg_one_smul,
-    neg_neg]
+    (d (Rep.of (ρ.funLeft X)) n).hom ((-1 : k) ^ (n + 1) • (cutoffLast ρ hc n).hom f) = f :=
+  d_smul_of_d_comp_eq (d_comp_cutoffLast ρ hc n) hf
 
 end TauCeti.inhomogeneousCochains
 
@@ -234,65 +197,20 @@ variable (ρ : Representation k G A) {c : X → k} (hc : ∀ x, ∑ᶠ g : G, c 
 the complex of inhomogeneous cochains with coefficients in `X → A`: it is
 `Representation.cutoffAverage` on `0`-cochains and zero in positive degrees. -/
 def cutoffCochainMap :
-    inhomogeneousCochains (Rep.of (ρ.funLeft X)) ⟶ inhomogeneousCochains (Rep.of (ρ.funLeft X))
-    where
-  f
-    | 0 => ModuleCat.ofHom ((ρ.cutoffAverage hc).compLeft (Fin 0 → G))
-    | _ + 1 => 0
-  comm' i j hij := by
-    obtain rfl : i + 1 = j := hij
-    rcases i with _ | i
-    · rw [inhomogeneousCochains.d_def]
-      refine ModuleCat.hom_ext (LinearMap.ext fun f ↦ funext fun g ↦ ?_)
-      have hf (z : Fin 0 → G) : f z = f (Fin.contractNth 0 (· * ·) g) :=
-        congrArg f (by subsingleton)
-      have hinv := (ρ.isProj_cutoffAverage hc).map_mem (f (Fin.contractNth 0 (· * ·) g))
-      rw [Representation.mem_invariants] at hinv
-      simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom, d_hom_apply,
-        LinearMap.compLeft_apply, comp_apply, hf, hinv]
-      simp [Pi.zero_apply (M := fun _ ↦ X → A)]
-    · simp
+    inhomogeneousCochains (Rep.of (ρ.funLeft X)) ⟶ inhomogeneousCochains (Rep.of (ρ.funLeft X)) :=
+  ofDegreeZero (ModuleCat.ofHom ((ρ.cutoffAverage hc).compLeft (Fin 0 → G)))
+    (comp_d_zero_eq_zero (d_comp_cutoffLast ρ hc) (d_zero_comp_cutoffLast ρ hc))
 
 /-- In degree `0`, `TauCeti.groupCohomology.cutoffCochainMap` is the cutoff average. -/
 @[simp]
 theorem cutoffCochainMap_f_zero :
     (cutoffCochainMap ρ hc).f 0 = ModuleCat.ofHom ((ρ.cutoffAverage hc).compLeft (Fin 0 → G)) :=
-  (rfl)
+  ofDegreeZero_f_zero _
 
 /-- In positive degrees, `TauCeti.groupCohomology.cutoffCochainMap` is zero. -/
 @[simp]
 theorem cutoffCochainMap_f_succ (n : ℕ) : (cutoffCochainMap ρ hc).f (n + 1) = 0 :=
-  (rfl)
-
-/-- The components `(-1)^(j+1) • cutoffLast ρ hc j` of the cutoff homotopy, from degree `j + 1` to
-degree `j`. -/
-private def cutoffHomotopyHom (i j : ℕ) (hji : (ComplexShape.up ℕ).Rel j i) :
-    (inhomogeneousCochains (Rep.of (ρ.funLeft X))).X i ⟶
-      (inhomogeneousCochains (Rep.of (ρ.funLeft X))).X j :=
-  ((inhomogeneousCochains (Rep.of (ρ.funLeft X))).XIsoOfEq hji.symm).hom ≫
-    ((-1 : k) ^ (j + 1) • cutoffLast ρ hc j)
-
-private theorem sub_cutoffCochainMap_eq_nullHomotopicMap' :
-    𝟙 _ - cutoffCochainMap ρ hc = Homotopy.nullHomotopicMap' (cutoffHomotopyHom ρ hc) := by
-  ext n : 1
-  rcases n with _ | n
-  · rw [Homotopy.nullHomotopicMap'_f_of_not_rel_right
-      (show (ComplexShape.up ℕ).Rel 0 (0 + 1) from rfl) (fun l ↦ by simp),
-      inhomogeneousCochains.d_def]
-    simp [cutoffHomotopyHom, d_zero_comp_cutoffLast]
-  · rw [Homotopy.nullHomotopicMap'_f (show (ComplexShape.up ℕ).Rel n (n + 1) from rfl)
-      (show (ComplexShape.up ℕ).Rel (n + 1) (n + 1 + 1) from rfl),
-      inhomogeneousCochains.d_def, inhomogeneousCochains.d_def]
-    have hsign : (-1 : k) ^ (n + 1 + 1) * (-1) ^ n = 1 := by
-      rw [← pow_add]
-      exact Even.neg_one_pow ⟨n + 1, by ring⟩
-    have hneg : (-1 : k) ^ (n + 1 + 1) = -(-1) ^ (n + 1) := by rw [pow_succ, mul_neg_one]
-    simp only [cutoffHomotopyHom, HomologicalComplex.XIsoOfEq_rfl, Iso.refl_hom,
-      Category.id_comp, Linear.smul_comp, Linear.comp_smul, d_comp_cutoffLast, smul_add,
-      smul_smul, hsign, one_smul, HomologicalComplex.id_f, HomologicalComplex.sub_f_apply,
-      cutoffCochainMap_f_succ, sub_zero]
-    rw [hneg, neg_smul]
-    abel
+  ofDegreeZero_f_succ _ n
 
 /-- **The cutoff contraction.** The identity of the complex of inhomogeneous cochains with
 coefficients in `X → A` is homotopic to the cutoff average onto the invariant functions placed in
@@ -301,17 +219,14 @@ degree `0`, through the homotopy whose component from degree `n + 1` to degree `
 (`TauCeti.groupCohomology.cutoffHomotopy_hom_succ`). -/
 def cutoffHomotopy : Homotopy (𝟙 (inhomogeneousCochains (Rep.of (ρ.funLeft X))))
     (cutoffCochainMap ρ hc) :=
-  Homotopy.equivSubZero.symm <|
-    (Homotopy.ofEq (sub_cutoffCochainMap_eq_nullHomotopicMap' ρ hc)).trans
-      (Homotopy.nullHomotopy' _)
+  homotopyOfDCompEq (d_comp_cutoffLast ρ hc) (d_zero_comp_cutoffLast ρ hc)
 
 /-- The component of `TauCeti.groupCohomology.cutoffHomotopy` from degree `n + 1` to degree `n` is
 `(-1)^(n+1)` times the weighted insertion of a last arrow. -/
 @[simp]
 theorem cutoffHomotopy_hom_succ (n : ℕ) :
-    (cutoffHomotopy ρ hc).hom (n + 1) n = (-1 : k) ^ (n + 1) • cutoffLast ρ hc n := by
-  simp [cutoffHomotopy, Homotopy.equivSubZero, Homotopy.trans_hom, Homotopy.ofEq_hom,
-    Homotopy.nullHomotopy'_hom, cutoffHomotopyHom]
+    (cutoffHomotopy ρ hc).hom (n + 1) n = (-1 : k) ^ (n + 1) • cutoffLast ρ hc n :=
+  homotopyOfDCompEq_hom_succ _ _ n
 
 include hc in
 /-- **Vanishing of positive-degree cohomology.** If `c : X → k` has translates summing to one,

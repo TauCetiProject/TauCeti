@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RepresentationTheory.Invariants
+import Mathlib.Algebra.FiniteSupport.Basic
 
 /-!
 # Representations on functions and averaging with a cutoff function
@@ -55,7 +56,9 @@ open Function
 
 namespace Representation
 
-variable {k G A : Type*} [CommRing k] [Group G] [AddCommGroup A] [Module k A]
+section Semiring
+
+variable {k G A : Type*} [CommSemiring k] [Group G] [AddCommMonoid A] [Module k A]
 variable (ρ : Representation k G A)
 
 section FunLeft
@@ -86,25 +89,11 @@ variable {X}
 theorem funLeft_apply (g : G) (φ : X → A) (x : X) : ρ.funLeft X g φ x = ρ g (φ (g⁻¹ • x)) :=
   (rfl)
 
-/-- A function `φ : X → A` is invariant under `Representation.funLeft ρ X` exactly when it is
-equivariant, `φ (g • x) = ρ g (φ x)`. -/
-theorem mem_invariants_funLeft_iff {φ : X → A} :
-    φ ∈ (ρ.funLeft X).invariants ↔ ∀ (g : G) (x : X), φ (g • x) = ρ g (φ x) := by
-  simp only [mem_invariants, funext_iff, funLeft_apply]
-  refine ⟨fun h g x ↦ ?_, fun h g x ↦ ?_⟩
-  · simpa using (h g (g • x)).symm
-  · rw [← h, smul_inv_smul]
-
 end FunLeft
 
 section CutoffAverage
 
 variable {X : Type*} [MulAction G X] {c : X → k}
-
-/-- The terms of a sum weighted by a function whose translates sum to one have finite support. -/
-private theorem hasFiniteSupport_smul (hc : ∀ x, ∑ᶠ g : G, c (g • x) = 1) (x : X) (v : G → A) :
-    HasFiniteSupport fun g ↦ c (g • x) • v g :=
-  (hasFiniteSupport_of_finsum_eq_one (hc x)).subset (support_smul_subset_left _ v)
 
 /-- The average `x ↦ ∑ᶠ g, c (g • x) • ρ g⁻¹ (φ (g • x))` of a function `φ : X → A` against a
 function `c` whose translates sum to one. It is a projection onto the invariants of
@@ -114,33 +103,18 @@ def cutoffAverage (hc : ∀ x, ∑ᶠ g : G, c (g • x) = 1) : (X → A) →ₗ
   map_add' φ ψ := by
     ext x
     simp only [Pi.add_apply, map_add, smul_add]
-    exact finsum_add_distrib (hasFiniteSupport_smul hc x _) (hasFiniteSupport_smul hc x _)
+    have hfin : HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc x)
+    exact finsum_add_distrib (hfin.fun_smul_left _) (hfin.fun_smul_left _)
   map_smul' r φ := by
     ext x
     simp only [Pi.smul_apply, map_smul, RingHom.id_apply, smul_comm _ r]
-    exact (smul_finsum' r (hasFiniteSupport_smul hc x _)).symm
+    have hfin : HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc x)
+    exact (smul_finsum' r (hfin.fun_smul_left _)).symm
 
 @[simp]
 theorem cutoffAverage_apply (hc : ∀ x, ∑ᶠ g : G, c (g • x) = 1) (φ : X → A) (x : X) :
     ρ.cutoffAverage hc φ x = ∑ᶠ g : G, c (g • x) • ρ g⁻¹ (φ (g • x)) :=
   (rfl)
-
-/-- **The cutoff average is a projection onto the invariants.** Its values are invariant
-functions, and it fixes every invariant function. -/
-theorem isProj_cutoffAverage (hc : ∀ x, ∑ᶠ g : G, c (g • x) = 1) :
-    LinearMap.IsProj (ρ.funLeft X).invariants (ρ.cutoffAverage hc) where
-  map_mem φ := by
-    rw [mem_invariants_funLeft_iff]
-    intro h x
-    -- Reindex the sum at `h • x` by `g ↦ g * h⁻¹`.
-    rw [cutoffAverage_apply, cutoffAverage_apply, map_finsum _ (hasFiniteSupport_smul hc x _),
-      ← finsum_comp_equiv (Equiv.mulRight h⁻¹)]
-    simp [mul_smul]
-  map_id φ hφ := by
-    rw [mem_invariants_funLeft_iff] at hφ
-    ext x
-    simp only [cutoffAverage_apply, hφ, inv_self_apply]
-    rw [← finsum_smul' (hasFiniteSupport_of_finsum_eq_one (hc x)), hc, one_smul]
 
 /-- **Naturality of the cutoff average for pullback.** Pulling a function back along an
 equivariant map `π : Y → X` commutes with the cutoff average, for the pulled-back weight
@@ -152,5 +126,41 @@ theorem cutoffAverage_comp {Y : Type*} [MulAction G Y] (hc : ∀ x, ∑ᶠ g : G
   simp [map_smul]
 
 end CutoffAverage
+
+end Semiring
+
+section Ring
+
+variable {k G A : Type*} [CommRing k] [Group G] [AddCommGroup A] [Module k A]
+variable (ρ : Representation k G A) {X : Type*} [MulAction G X]
+
+/-- A function `φ : X → A` is invariant under `Representation.funLeft ρ X` exactly when it is
+equivariant, `φ (g • x) = ρ g (φ x)`. -/
+theorem mem_invariants_funLeft_iff {φ : X → A} :
+    φ ∈ (ρ.funLeft X).invariants ↔ ∀ (g : G) (x : X), φ (g • x) = ρ g (φ x) := by
+  simp only [mem_invariants, funext_iff, funLeft_apply]
+  refine ⟨fun h g x ↦ ?_, fun h g x ↦ ?_⟩
+  · simpa using (h g (g • x)).symm
+  · rw [← h, smul_inv_smul]
+
+/-- **The cutoff average is a projection onto the invariants.** Its values are invariant
+functions, and it fixes every invariant function. -/
+theorem isProj_cutoffAverage {c : X → k} (hc : ∀ x, ∑ᶠ g : G, c (g • x) = 1) :
+    LinearMap.IsProj (ρ.funLeft X).invariants (ρ.cutoffAverage hc) where
+  map_mem φ := by
+    rw [mem_invariants_funLeft_iff]
+    intro h x
+    have hfin : HasFiniteSupport _ := hasFiniteSupport_of_finsum_eq_one (hc x)
+    -- Reindex the sum at `h • x` by `g ↦ g * h⁻¹`.
+    rw [cutoffAverage_apply, cutoffAverage_apply, map_finsum _ (hfin.fun_smul_left _),
+      ← finsum_comp_equiv (Equiv.mulRight h⁻¹)]
+    simp [mul_smul]
+  map_id φ hφ := by
+    rw [mem_invariants_funLeft_iff] at hφ
+    ext x
+    simp only [cutoffAverage_apply, hφ, inv_self_apply]
+    rw [← finsum_smul' (hasFiniteSupport_of_finsum_eq_one (hc x)), hc, one_smul]
+
+end Ring
 
 end Representation
