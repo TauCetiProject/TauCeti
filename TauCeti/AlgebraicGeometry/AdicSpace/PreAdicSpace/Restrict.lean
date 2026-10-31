@@ -175,6 +175,13 @@ theorem ofRestrict_toHom : (X.ofRestrict h).toHom = X.toPresheafedSpace.ofRestri
 theorem ofRestrict_base : (X.ofRestrict h).base = f := by
   rfl
 
+/-- The points of `X` in the image of the restriction of `X` to an open `V` are the points
+of `V`. -/
+theorem range_ofRestrict_base (V : Opens X) :
+    Set.range (X.ofRestrict V.isOpenEmbedding).base = V := by
+  rw [ofRestrict_base]
+  exact Opens.set_range_inclusion' V
+
 /-- The inverse of the stalk identification is the stalk map of `X.ofRestrict h`. -/
 theorem restrictStalkIso_inv_eq_ofRestrict (x : X.restrict h) :
     (X.restrictStalkIso h x).inv = (X.ofRestrict h).stalkMap x := by

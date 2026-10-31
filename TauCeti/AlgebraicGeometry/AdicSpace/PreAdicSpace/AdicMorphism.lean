@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Analytic
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyOfFiniteType.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.AdicHom
 import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Comap
+import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyOfFiniteType.OpenImmersion
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Adic
 
 /-!
@@ -51,19 +52,25 @@ the identification of the analytic points of `Spa(A, A⁺)` with its analytic lo
   points to analytic points.
 * `TauCeti.PreAdicSpace.isAdicHom_of_mapsTo_analyticPoints_of_fac`: for a morphism mapping
   analytic points to analytic points, the ring map of every affinoid chart is adic.
+* `TauCeti.PreAdicSpace.isAdicMorphism_of_mapsTo_analyticPoints`: a morphism from an adic space
+  which maps analytic points to analytic points, and every point to a point with an open affinoid
+  neighbourhood, is adic.
 * `TauCeti.PreAdicSpace.isAdicMorphism_iff_mapsTo_analyticPoints`: a morphism from an adic space
   to a locally affinoid pre-adic space is adic exactly when it maps analytic points to analytic
   points.
 * `TauCeti.ValuationSpectrum.isAdicMorphism_presentationLimitPreAdicSpaceComap_iff`: the morphism
   of adic spectra induced by `φ` is adic exactly when `φ` is.
-* `TauCeti.PreAdicSpace.isAdicMorphism_id`, `TauCeti.PreAdicSpace.IsAdicMorphism.comp`,
-  `TauCeti.PreAdicSpace.IsAdicMorphism.of_comp`: identities and composites of adic morphisms are
-  adic, and `f` is adic when `f ≫ g` is.
-* `TauCeti.PreAdicSpace.isAdicMorphism_of_isOpenImmersion`: open immersions are adic.
-* `TauCeti.PreAdicSpace.isAdicMorphism_of_analyticPoints_eq_univ`: every morphism into an
-  analytic space is adic.
 * `TauCeti.PreAdicSpace.LocallyOfFiniteType.isAdicMorphism`: morphisms locally of finite type
   are adic.
+* `TauCeti.PreAdicSpace.isAdicMorphism_id`: the identity of an adic space is adic.
+* `TauCeti.PreAdicSpace.IsAdicMorphism.comp`: composites of adic morphisms with an adic source
+  are adic.
+* `TauCeti.PreAdicSpace.IsAdicMorphism.of_comp`: for an adic source and a locally affinoid middle
+  space, `f` is adic when `f ≫ g` is.
+* `TauCeti.PreAdicSpace.isAdicMorphism_of_isOpenImmersion`: open immersions with an adic source
+  are adic.
+* `TauCeti.PreAdicSpace.isAdicMorphism_of_analyticPoints_eq_univ`: every morphism from an adic
+  space to a locally affinoid pre-adic space all of whose points are analytic is adic.
 
 ## References
 
@@ -104,19 +111,22 @@ theorem isAdicHom_iff_mapsTo_analyticPoints (φ : A →+* B) (hφ : Continuous �
       (presentationLimitPreAdicSpaceComap φ hφ hplus hAplus hBplus hP hP' hsheaf).base
       (presentationLimitPreAdicSpace P' Bplus hBplus hP').analyticPoints
       (presentationLimitPreAdicSpace P Aplus hAplus hP).analyticPoints := by
-  rw [isAdicHom_iff_forall_isAnalyticPoint_comap hφ
-      fun _ hb ↦ mem_powerBoundedSubring.mpr (hBplus hb),
-    analyticPoints_presentationLimitPreAdicSpace, analyticPoints_presentationLimitPreAdicSpace]
+  rw [analyticPoints_presentationLimitPreAdicSpace, analyticPoints_presentationLimitPreAdicSpace]
   -- on points, the induced morphism is pullback of valuations along `φ`
   have hbase (x : presentationLimitPreAdicSpace P' Bplus hBplus hP') :
       ((presentationLimitPreAdicSpaceComap φ hφ hplus hAplus hBplus hP hP' hsheaf).base x).1 =
         comap φ x.1 := by
     rw [presentationLimitPreAdicSpaceComap_toHom, presentationLimitPresheafedSpaceComap_base]
     exact spaComap_val _ _ _ _ _ x
-  refine ⟨fun h x hx ↦ ?_, fun h v hv ↦ ?_⟩
-  · exact (mem_spaAnalytic_iff _ _).mpr ⟨Subtype.property _, hbase x ▸ h _ hx⟩
+  refine ⟨fun h x hx ↦ ?_, fun h ↦
+    isAdicHom_of_mapsTo_spaAnalytic (Aplus := Aplus) hφ
+      (fun _ hb ↦ mem_powerBoundedSubring.mpr (hBplus hb))
+      fun v hv ↦ ?_⟩
+  · have hφx := h.mapsTo_spaAnalytic hplus hx
+    rw [← hbase] at hφx
+    exact hφx
   · exact hbase ⟨v, spaAnalytic_subset_spa Bplus hv⟩ ▸
-      ((mem_spaAnalytic_iff _ _).mp (h (x := ⟨v, spaAnalytic_subset_spa Bplus hv⟩) hv)).2
+      h (x := ⟨v, spaAnalytic_subset_spa Bplus hv⟩) hv
 
 end ValuationSpectrum
 
@@ -191,24 +201,19 @@ theorem mapsTo_analyticPoints_iff_of_fac {X' Y' : PreAdicSpace.{u}} {f : X ⟶ Y
       (Y.ofRestrict _).base (eV.inv.base (g.base (eU.hom.base p))) := by
     simpa only [comp_base, ConcreteCategory.comp_apply] using congrArg (fun k ↦ k.base p) hfac
   refine ⟨fun hg x hxU hx ↦ ?_, fun hf y hy ↦ ?_⟩
-  · -- `x` is the image of the point `p = ⟨x, hxU⟩` of the restriction of `X` to `U`
-    let p : X.restrict U.isOpenEmbedding := (⟨x, hxU⟩ : U)
-    have hp : (X.ofRestrict _).base p = x := by
-      rw [ofRestrict_base]
-      rfl
-    rw [← hp, hpt p, mem_analyticPoints_iff_of_isOpenImmersion,
+  · -- `x` is the image of a point `p` of the restriction of `X` to `U`
+    obtain ⟨p, rfl⟩ : x ∈ Set.range (X.ofRestrict U.isOpenEmbedding).base := by
+      rwa [range_ofRestrict_base]
+    rw [hpt p, mem_analyticPoints_iff_of_isOpenImmersion,
       mem_analyticPoints_iff_of_isOpenImmersion eV.inv]
     exact hg ((mem_analyticPoints_iff_of_isOpenImmersion eU.hom).mpr
-      ((mem_analyticPoints_iff_of_isOpenImmersion (X.ofRestrict _)).mp (hp ▸ hx)))
+      ((mem_analyticPoints_iff_of_isOpenImmersion (X.ofRestrict _)).mp hx))
   · -- `y` is the image of the point `p = eU⁻¹(y)` of the restriction of `X` to `U`
-    set p := eU.inv.base y with hp
-    have hyp : eU.hom.base p = y := by
-      rw [hp, ← ConcreteCategory.comp_apply, ← comp_base, eU.inv_hom_id]
-      rfl
+    set p := eU.inv.base y
+    have hyp : eU.hom.base p = y := (forgetToTop.mapIso eU).inv_hom_id_apply y
     have hpU : (X.ofRestrict _).base p ∈ U := by
-      rw [ofRestrict_base]
-      -- the points of the restriction of `X` to `U` are the points of `U`
-      exact (show U from p).2
+      rw [← SetLike.mem_coe, ← range_ofRestrict_base]
+      exact ⟨p, rfl⟩
     have hfp := hf _ hpU ((mem_analyticPoints_iff_of_isOpenImmersion _).mpr
       ((mem_analyticPoints_iff_of_isOpenImmersion eU.hom).mp (hyp ▸ hy)))
     rw [hpt p, hyp, mem_analyticPoints_iff_of_isOpenImmersion,
@@ -253,16 +258,17 @@ theorem isAdicHom_of_mapsTo_analyticPoints_of_fac {f : X ⟶ Y}
     ((mapsTo_analyticPoints_iff_of_fac eU eV _ hfac).mpr fun _ _ hx ↦ hf hx)
 
 /-- **Huber 1994, Proposition 3.2(ii)** (Wedhorn, Proposition 8.39), the converse direction: a
-morphism from an adic space to a locally affinoid pre-adic space which maps analytic points to
-analytic points is adic. Its charts are any open affinoid `V` around the image of a point and any
-open affinoid `U ⊆ f⁻¹(V)` around the point, presented by complete Hausdorff Huber pairs. -/
-theorem isAdicMorphism_of_mapsTo_analyticPoints (hX : isAdic X) (hY : isLocallyAffinoid Y)
-    {f : X ⟶ Y} (hf : Set.MapsTo f.base X.analyticPoints Y.analyticPoints) :
+morphism from an adic space which maps analytic points to analytic points, and every point into
+an open affinoid of the target, is adic. Its charts are any open affinoid `V` around the image of
+a point and any open affinoid `U ⊆ f⁻¹(V)` around the point, presented by complete Hausdorff
+Huber pairs. -/
+theorem isAdicMorphism_of_mapsTo_analyticPoints (hX : isAdic X) {f : X ⟶ Y}
+    (hY : ∀ x : X, ∃ V ∈ Y.affinoidOpens, f.base x ∈ V)
+    (hf : Set.MapsTo f.base X.analyticPoints Y.analyticPoints) :
     IsAdicMorphism f := by
   intro x
   -- an open affinoid `V` around `f x`, and an open affinoid `U ⊆ f⁻¹(V)` around `x`
-  obtain ⟨V, hV, hxV, -⟩ :=
-    Opens.isBasis_iff_nbhd.mp (isBasis_affinoidOpens hY) (Opens.mem_top (f.base x))
+  obtain ⟨V, hV, hxV⟩ := hY x
   obtain ⟨U, hU, hxU, hUV⟩ := Opens.isBasis_iff_nbhd.mp
     (isBasis_affinoidOpens hX.isLocallyAffinoid) (U := (Opens.map f.base).obj V) hxV
   obtain ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨eV⟩⟩ := (isAffinoid_iff_exists_complete _).mp hV
@@ -274,20 +280,18 @@ theorem isAdicMorphism_of_mapsTo_analyticPoints (hX : isAdic X) (hY : isLocallyA
   have hrange : Set.range (X.ofRestrict U.isOpenEmbedding ≫ f).base ⊆
       Set.range (Y.ofRestrict V.isOpenEmbedding).base := by
     rintro _ ⟨p, rfl⟩
-    exact ⟨⟨_, hUV p.2⟩, rfl⟩
+    rw [range_ofRestrict_base, comp_base, ConcreteCategory.comp_apply]
+    exact hUV ((X.range_ofRestrict_base U).subset ⟨p, rfl⟩)
   let fUV := IsOpenImmersion.lift (Y.ofRestrict V.isOpenEmbedding) _ hrange
   let g := eU.inv ≫ fUV ≫ eV.hom
   -- the morphism of Huber pairs recovered from `g` on global sections
-  have hplus : ∀ a ∈ S.plus, presentationLimitHomRingHom P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP P' T.plus
-      T.isRingOfIntegralElements.isPowerBounded_of_mem hP' g a ∈ T.plus := by
-    simpa using (presentationLimitHomPairHom P P' S T hP hP' g).map_mem_plus
-  let φ : Pair.Hom S T := ⟨_, continuous_presentationLimitHomRingHom P _ _ hP P' _ _ hP' g, hplus⟩
+  let φ := presentationLimitHomPairHom P P' S T hP hP' g
   have hg : presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom φ.map_mem_plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem
       T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf = g :=
-    presentationLimitPreAdicSpaceComap_presentationLimitHomRingHom P _ _ hP P' _ _ hP' hsheaf g
-      φ.map_mem_plus
+    presentationLimitPreAdicSpace_hom_ext P _ _ hP P' _ _ hP' hsheaf <| by
+      rw [presentationLimitHomRingHom_presentationLimitPreAdicSpaceComap]
+      exact presentationLimitHomPairHom_toRingHom P P' S T hP hP' g
   have hfac : X.ofRestrict _ ≫ f = eU.hom ≫ presentationLimitPreAdicSpaceComap φ.toRingHom
       φ.continuous_toRingHom φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
       T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫ eV.inv ≫
@@ -305,37 +309,8 @@ points. -/
 theorem isAdicMorphism_iff_mapsTo_analyticPoints (hX : isAdic X) (hY : isLocallyAffinoid Y)
     (f : X ⟶ Y) :
     IsAdicMorphism f ↔ Set.MapsTo f.base X.analyticPoints Y.analyticPoints :=
-  ⟨IsAdicMorphism.mapsTo_analyticPoints, isAdicMorphism_of_mapsTo_analyticPoints hX hY⟩
-
-/-- The identity of an adic space is adic. -/
-theorem isAdicMorphism_id (hX : isAdic X) : IsAdicMorphism (𝟙 X) :=
-  isAdicMorphism_of_mapsTo_analyticPoints hX hX.isLocallyAffinoid (Set.mapsTo_id _)
-
-/-- **Composites of adic morphisms are adic**, for an adic source and a locally affinoid target. -/
-theorem IsAdicMorphism.comp (hX : isAdic X) (hZ : isLocallyAffinoid Z) {f : X ⟶ Y} {g : Y ⟶ Z}
-    (hf : IsAdicMorphism f) (hg : IsAdicMorphism g) : IsAdicMorphism (f ≫ g) :=
-  isAdicMorphism_of_mapsTo_analyticPoints hX hZ <| by
-    simpa [comp_base] using hg.mapsTo_analyticPoints.comp hf.mapsTo_analyticPoints
-
-/-- **Cancellation**: if `f ≫ g` is adic, then so is `f`, for an adic source and a locally affinoid
-middle space. A point of `Y` over an analytic point of `Z` is analytic. -/
-theorem IsAdicMorphism.of_comp (hX : isAdic X) (hY : isLocallyAffinoid Y) {f : X ⟶ Y}
-    {g : Y ⟶ Z} (h : IsAdicMorphism (f ≫ g)) : IsAdicMorphism f :=
-  isAdicMorphism_of_mapsTo_analyticPoints hX hY fun x hx ↦
-    preimage_analyticPoints_subset g (by simpa [comp_base] using h.mapsTo_analyticPoints hx)
-
-/-- **Open immersions are adic**, for an adic source and a locally affinoid target: an open
-immersion preserves analytic points. -/
-theorem isAdicMorphism_of_isOpenImmersion (hX : isAdic X) (hY : isLocallyAffinoid Y) (f : X ⟶ Y)
-    [IsOpenImmersion f] : IsAdicMorphism f :=
-  isAdicMorphism_of_mapsTo_analyticPoints hX hY fun _ hx ↦
-    (mem_analyticPoints_iff_of_isOpenImmersion f).mpr hx
-
-/-- **Every morphism into an analytic space is adic** (Huber 1994, Proposition 3.2): if every
-point of `Y` is analytic, every morphism from an adic space to `Y` is adic. -/
-theorem isAdicMorphism_of_analyticPoints_eq_univ (hX : isAdic X) (hY : isLocallyAffinoid Y)
-    (hYa : Y.analyticPoints = Set.univ) (f : X ⟶ Y) : IsAdicMorphism f :=
-  isAdicMorphism_of_mapsTo_analyticPoints hX hY (hYa ▸ Set.mapsTo_univ _ _)
+  ⟨IsAdicMorphism.mapsTo_analyticPoints,
+    isAdicMorphism_of_mapsTo_analyticPoints hX fun x ↦ hY (f.base x)⟩
 
 /-- **Morphisms locally of finite type are adic**: a morphism of Huber pairs topologically of
 finite type into a complete Hausdorff pair is adic (Huber 1994, Lemma 3.3(ii)), so the charts of a
@@ -349,6 +324,40 @@ theorem LocallyOfFiniteType.isAdicMorphism {f : X ⟶ Y} (hf : LocallyOfFiniteTy
     B, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, T, P', hP', φ, hφ.isTopologicallyFiniteType_toRingHom.isAdicHom, hsheaf, eU,
     eV, hfac⟩
+
+/-- The identity of an adic space is adic: it is locally of finite type. -/
+theorem isAdicMorphism_id (hX : isAdic X) : IsAdicMorphism (𝟙 X) :=
+  (locallyOfFiniteType_id hX).isAdicMorphism
+
+/-- **Composites of adic morphisms are adic**, for an adic source. The target charts of `g`
+supply open affinoid neighbourhoods of the images of points. -/
+theorem IsAdicMorphism.comp (hX : isAdic X) {f : X ⟶ Y} {g : Y ⟶ Z}
+    (hf : IsAdicMorphism f) (hg : IsAdicMorphism g) : IsAdicMorphism (f ≫ g) := by
+  refine isAdicMorphism_of_mapsTo_analyticPoints hX (fun x ↦ ?_) ?_
+  · obtain ⟨_, hxU, V, hUV, _, _, _, _, _, S, P, hP, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+      eV, _⟩ := hg (f.base x)
+    exact ⟨V, ObjectProperty.prop_of_iso isAffinoid eV.symm
+      (isAffinoid_presentationLimitPreAdicSpace S P hP), hUV hxU⟩
+  · simpa [comp_base] using hg.mapsTo_analyticPoints.comp hf.mapsTo_analyticPoints
+
+/-- **Cancellation**: if `f ≫ g` is adic, then so is `f`, for an adic source and a locally affinoid
+middle space. A point of `Y` over an analytic point of `Z` is analytic. -/
+theorem IsAdicMorphism.of_comp (hX : isAdic X) (hY : isLocallyAffinoid Y) {f : X ⟶ Y}
+    {g : Y ⟶ Z} (h : IsAdicMorphism (f ≫ g)) : IsAdicMorphism f :=
+  isAdicMorphism_of_mapsTo_analyticPoints hX (fun x ↦ hY (f.base x)) fun x hx ↦
+    preimage_analyticPoints_subset g (by simpa [comp_base] using h.mapsTo_analyticPoints hx)
+
+/-- **Open immersions are adic**, for an adic source: an open immersion is locally of finite
+type. -/
+theorem isAdicMorphism_of_isOpenImmersion (hX : isAdic X) (f : X ⟶ Y) [IsOpenImmersion f] :
+    IsAdicMorphism f :=
+  (locallyOfFiniteType_of_isOpenImmersion f hX).isAdicMorphism
+
+/-- **Morphisms into analytic spaces are adic** (Huber 1994, Proposition 3.2): every morphism from
+an adic space to a locally affinoid pre-adic space all of whose points are analytic is adic. -/
+theorem isAdicMorphism_of_analyticPoints_eq_univ (hX : isAdic X) (hY : isLocallyAffinoid Y)
+    (hYa : Y.analyticPoints = Set.univ) (f : X ⟶ Y) : IsAdicMorphism f :=
+  isAdicMorphism_of_mapsTo_analyticPoints hX (fun x ↦ hY (f.base x)) (hYa ▸ Set.mapsTo_univ _ _)
 
 end PreAdicSpace
 

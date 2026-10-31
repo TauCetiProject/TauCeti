@@ -162,9 +162,7 @@ theorem mem_analyticPoints_iff_of_isOpenImmersion (f : Y ⟶ X) [IsOpenImmersion
   -- `f` is an isomorphism `e` onto the restriction of `X` to the image of `f`, followed by the
   -- inclusion of that open subspace
   set e := IsOpenImmersion.isoRestrict f
-  have hy : e.inv.base (e.hom.base y) = y := by
-    rw [← ConcreteCategory.comp_apply, ← comp_base, e.hom_inv_id]
-    rfl
+  have hy : e.inv.base (e.hom.base y) = y := (forgetToTop.mapIso e).hom_inv_id_apply y
   have he : e.hom.base y ∈ (X.restrict f.isOpenEmbedding).analyticPoints :=
     preimage_analyticPoints_subset e.inv (by rwa [Set.mem_preimage, hy])
   have hf := congrArg (fun k ↦ k.base y) (IsOpenImmersion.isoRestrict_hom_ofRestrict f)
