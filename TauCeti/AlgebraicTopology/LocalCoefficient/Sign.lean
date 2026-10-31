@@ -128,6 +128,21 @@ theorem signFiberEquiv_fiberMap {x : X} (e : p ⁻¹' {x}) (f : signFiber R σ h
     signFiberEquiv hfix hfib (Function.fiberMap σ hσ x e) f = -signFiberEquiv hfix hfib e f := by
   simp [mem_signFiber_iff.1 f.2]
 
+/-- The function changing sign under `σ` with value `r` at `e`, evaluated at `e`. -/
+@[simp]
+theorem signFiberEquiv_symm_apply_self {x : X} (e : p ⁻¹' {x}) (r : R) :
+    ((signFiberEquiv (hσ := hσ) hfix hfib e).symm r : p ⁻¹' {x} → R) e = r :=
+  (signFiberEquiv_apply hfix hfib e _).symm.trans (LinearEquiv.apply_symm_apply _ r)
+
+/-- The function changing sign under `σ` with value `r` at `e`, evaluated at the other point of
+the fibre. -/
+@[simp]
+theorem signFiberEquiv_symm_apply_fiberMap {x : X} (e : p ⁻¹' {x}) (r : R) :
+    ((signFiberEquiv (hσ := hσ) hfix hfib e).symm r : p ⁻¹' {x} → R)
+      (Function.fiberMap σ hσ x e) = -r := by
+  rw [mem_signFiber_iff.1 ((signFiberEquiv (hσ := hσ) hfix hfib e).symm r).2,
+    signFiberEquiv_symm_apply_self]
+
 end DoubleCover
 
 end TauCeti
@@ -213,6 +228,26 @@ theorem signLocalSystemIsoOfSection_hom_app_apply (x : FundamentalGroupoid X)
         ((hp.signLocalSystemIsoOfSection hfix hfib s hs).hom.app x)) f =
       ULift.up ((hp.signLocalSystemObjEquiv σ hσ x f : p ⁻¹' {x.as} → R) ⟨s x.as, hs x.as⟩) :=
   (rfl)
+
+/-- The inverse of the trivialization sends `r` to the function changing sign under `σ` with value
+`r` at `s x`. -/
+@[simp]
+theorem signLocalSystemIsoOfSection_inv_app_apply (x : FundamentalGroupoid X) (r : R) :
+    (hp.signLocalSystemObjEquiv σ hσ x
+        (ModuleCat.Hom.hom (A := ModuleCat.of R (ULift.{w} R))
+          ((hp.signLocalSystemIsoOfSection hfix hfib s hs).inv.app x) (ULift.up r)) :
+        p ⁻¹' {x.as} → R) ⟨s x.as, hs x.as⟩ = r :=
+  TauCeti.signFiberEquiv_symm_apply_self hfix hfib _ r
+
+/-- The inverse of the trivialization sends `r` to a function whose value at the other point of
+the fibre over `x` is `-r`. -/
+@[simp]
+theorem signLocalSystemIsoOfSection_inv_app_apply_fiberMap (x : FundamentalGroupoid X) (r : R) :
+    (hp.signLocalSystemObjEquiv σ hσ x
+        (ModuleCat.Hom.hom (A := ModuleCat.of R (ULift.{w} R))
+          ((hp.signLocalSystemIsoOfSection hfix hfib s hs).inv.app x) (ULift.up r)) :
+        p ⁻¹' {x.as} → R) (Function.fiberMap σ hσ x.as ⟨s x.as, hs x.as⟩) = -r :=
+  TauCeti.signFiberEquiv_symm_apply_fiberMap hfix hfib _ r
 
 end DoubleCover
 

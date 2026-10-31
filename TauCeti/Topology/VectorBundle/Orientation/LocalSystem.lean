@@ -155,6 +155,20 @@ theorem signLocalSystemIso_hom_app_apply (o : VectorBundleOrientation F E ι) (b
     (fun _ _ h ↦ VectorBundleOrientationCover.eq_or_eq_deck hι h)
     ⟨fun b ↦ ⟨b, o b⟩, o.continuous_mk_cover hι⟩ (fun _ ↦ rfl) (FundamentalGroupoid.mk b) f
 
+/-- The inverse of the trivialization given by `o` sends `r` over `b` to the element of the fibre
+whose evaluation at the orientation `o b` is `r`. -/
+@[simp]
+theorem signLocalSystemIso_inv_app_apply (o : VectorBundleOrientation F E ι) (b : B) (r : R) :
+    (ModuleCat.Hom.hom (A := ModuleCat.of R (ULift.{max uB uE uι} R))
+        ((signLocalSystemIso (R := R) hι o).inv.app (FundamentalGroupoid.mk b))) (ULift.up r) =
+      (VectorBundleOrientationCover.signLocalSystemFiberEquiv hι (o b)).symm r := by
+  apply (VectorBundleOrientationCover.signLocalSystemFiberEquiv hι (o b)).injective
+  rw [LinearEquiv.apply_symm_apply, VectorBundleOrientationCover.signLocalSystemFiberEquiv_apply]
+  exact IsCoveringMap.signLocalSystemIsoOfSection_inv_app_apply (X := TopCat.of B) _
+    (hσ := VectorBundleOrientationCover.proj_comp_deck) VectorBundleOrientationCover.deck_ne_self
+    (fun _ _ h ↦ VectorBundleOrientationCover.eq_or_eq_deck hι h)
+    ⟨fun b ↦ ⟨b, o b⟩, o.continuous_mk_cover hι⟩ (fun _ ↦ rfl) (FundamentalGroupoid.mk b) r
+
 /-- The trivialization of the orientation local system given by the opposite orientation is the
 negative of the one given by `o`. -/
 theorem signLocalSystemIso_neg_hom (o : VectorBundleOrientation F E ι) :
@@ -169,6 +183,12 @@ theorem signLocalSystemIso_neg_hom (o : VectorBundleOrientation F E ι) :
   -- system at reducible transparency.
   exact (signLocalSystemIso_hom_app_apply hι (-o) b f).trans ((congrArg ULift.up h).trans
     (congrArg Neg.neg (signLocalSystemIso_hom_app_apply hι o b f)).symm)
+
+/-- The inverse of the trivialization given by the opposite orientation is the negative of the
+inverse of the one given by `o`. -/
+theorem signLocalSystemIso_neg_inv (o : VectorBundleOrientation F E ι) :
+    (signLocalSystemIso (R := R) hι (-o)).inv = -(signLocalSystemIso hι o).inv :=
+  Iso.inv_ext (by rw [signLocalSystemIso_neg_hom, Preadditive.neg_comp_neg, Iso.hom_inv_id])
 
 end VectorBundleOrientation
 
