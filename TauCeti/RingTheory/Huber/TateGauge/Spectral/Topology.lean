@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Topology.Algebra.Nonarchimedean.Bases
 public import TauCeti.RingTheory.Huber.TateGauge.Spectral.Seminorm
+public import TauCeti.RingTheory.Huber.Pair
 public import TauCeti.RingTheory.Huber.Uniform
+public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # The spectral topology of a Tate ring
@@ -28,7 +30,11 @@ the subgroups `u • A°°`, one for every pseudouniformiser `u`, which involves
 * `SpectralTop A` is a Tate ring with the same topologically nilpotent elements as `A`;
 * the power-bounded elements of `SpectralTop A` are those with `|x|_sp ≤ 1`, and they form a
   bounded set, so `SpectralTop A` is uniform;
-* continuous homomorphisms of Tate rings are continuous for the spectral topologies.
+* continuous homomorphisms of Tate rings are continuous for the spectral topologies, and
+  continuous homomorphisms into uniform rings are continuous on `SpectralTop A`;
+* the identity `A → SpectralTop A` is a homeomorphism exactly when `A` is uniform;
+* a ring of integral elements of `A` is one of `SpectralTop A`, giving a Huber pair
+  `(SpectralTop A, A⁺)`.
 
 The separated completion of `SpectralTop A` is the ring of the uniformization of `A`
 (Kedlaya–Liu, Definition 2.8.13); this is what the uniform structure below is for.
@@ -40,6 +46,8 @@ The separated completion of `SpectralTop A` is the ring of the uniformization of
   `SpectralTop A`.
 * `TauCeti.Huber.SpectralTop.map`: the homomorphism of spectral topologies induced by a ring
   homomorphism.
+* `TauCeti.Huber.SpectralTop.pair`: the Huber pair `(SpectralTop A, A⁺)` of a Huber pair
+  `(A, A⁺)`, and `TauCeti.Huber.SpectralTop.pairHom` the morphism `(A, A⁺) → (SpectralTop A, A⁺)`.
 
 ## Main results
 
@@ -58,6 +66,10 @@ The separated completion of `SpectralTop A` is the ring of the uniformization of
   `SpectralTop A` are those of spectral seminorm at most one.
 * `TauCeti.Huber.SpectralTop.isUniform`: `SpectralTop A` is uniform.
 * `TauCeti.Huber.SpectralTop.continuous_map`: functoriality for continuous homomorphisms.
+* `TauCeti.Huber.SpectralTop.continuous_comp_toSpectralTop_symm`: a continuous homomorphism into
+  a uniform ring is continuous for the spectral topology of its source.
+* `TauCeti.Huber.SpectralTop.isHomeomorph_toSpectralTop_iff`: the identity `A → SpectralTop A` is
+  a homeomorphism if and only if `A` is uniform.
 
 ## References
 
@@ -412,7 +424,83 @@ theorem continuous_map {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologi
   rintro _ ⟨_, ⟨a, ha, rfl⟩, rfl⟩
   exact ⟨_, ⟨φ a, ha.map hφ, rfl⟩, by simp⟩
 
+/-- **Continuous homomorphisms into uniform rings are continuous for the spectral topology.** If
+`φ : A →+* B` is continuous and `B` is uniform, then `φ` is continuous on `SpectralTop A`: some
+power of `φ ϖ` multiplies the bounded set `B°` into any neighbourhood of zero, and `φ` carries
+`ϖ ^ n • A°°` into `φ ϖ ^ n • B°`. -/
+theorem continuous_comp_toSpectralTop_symm {B : Type*} [CommRing B] [TopologicalSpace B]
+    [IsTopologicalRing B] [IsUniform B] {φ : A →+* B} (hφ : Continuous φ) :
+    Continuous (φ ∘ (toSpectralTop A).symm) := by
+  obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+  let ψ : SpectralTop A →+* B := φ.comp ((toSpectralTop A).symm : SpectralTop A →+* A)
+  refine continuous_of_tendsto_nhds_zero ψ ((hasBasis_nhds_zero hϖ).tendsto_left_iff.mpr ?_)
+  intro U hU
+  obtain ⟨n, hn⟩ := (isUniform_iff.mp ‹IsUniform B›).exists_pow_mul_subset
+    (hϖ.isTopologicallyNilpotent.map hφ) hU
+  refine ⟨n, trivial, ?_⟩
+  rintro _ ⟨_, ⟨a, ha, rfl⟩, rfl⟩
+  refine hn ⟨_, rfl, φ a, IsPowerBounded.of_isTopologicallyNilpotent (ha.map hφ), ?_⟩
+  simp [ψ]
+
+/-- **The spectral topology is the topology of `A` exactly when `A` is uniform**
+(Hansen–Kedlaya, Remark 2.11). -/
+theorem isHomeomorph_toSpectralTop_iff : IsHomeomorph (toSpectralTop A) ↔ IsUniform A := by
+  refine ⟨fun h ↦ IsUniform.of_ringEquiv (toSpectralTop A).symm ?_ continuous_toSpectralTop,
+    fun _ ↦ ?_⟩
+  · exact (h.homeomorph _).symm.continuous.congr fun x ↦
+      (h.homeomorph _).symm_apply_eq.mpr (by simp)
+  · exact (Homeomorph.mk (toSpectralTop A).toEquiv continuous_toSpectralTop
+      (continuous_comp_toSpectralTop_symm (φ := RingHom.id A) continuous_id)).isHomeomorph
+
 end Topology
+
+section Pair
+
+variable {A} [TopologicalSpace A] [IsTopologicalRing A] [IsTateRing A]
+
+/-- **The Huber pair `(SpectralTop A, A⁺)`**: a ring of integral elements `A⁺` of a Tate ring `A`
+is also one for the spectral topology. It is open because it contains `A°°`, and its elements have
+spectral seminorm at most one. -/
+noncomputable def pair (S : Pair A) : Pair (SpectralTop A) where
+  plus := S.plus.comap ((toSpectralTop A).symm : SpectralTop A →+* A)
+  isRingOfIntegralElements := by
+    have := S.isRingOfIntegralElements.isIntegrallyClosedIn
+    refine ⟨?_, inferInstance, fun x hx ↦ ?_⟩
+    · -- `A⁺` contains the neighbourhood `A°°` of zero.
+      obtain ⟨ϖ, hϖ⟩ := IsTateRing.exists_isPseudoUniformizer (A := A)
+      refine AddSubgroup.isOpen_of_mem_nhds
+        (S.plus.comap ((toSpectralTop A).symm : SpectralTop A →+* A)).toAddSubgroup
+        (Filter.mem_of_superset ((hasBasis_nhds_zero hϖ).mem_of_mem (i := 0) trivial) ?_)
+      rintro _ ⟨a, ha, rfl⟩
+      simp only [SetLike.mem_coe, Subring.mem_toAddSubgroup, Subring.mem_comap,
+        RingEquiv.coe_toRingHom, RingEquiv.symm_apply_apply]
+      exact S.isRingOfIntegralElements.mem_of_isTopologicallyNilpotent (by simpa using ha)
+    · -- Power-bounded elements of `A` have spectral seminorm at most one.
+      obtain ⟨d⟩ := (inferInstance : Nonempty (TateNormDatum A))
+      obtain ⟨x, rfl⟩ := (toSpectralTop A).surjective x
+      refine mem_powerBoundedSubring.mpr ((isPowerBounded_toSpectralTop_iff d).mpr ?_)
+      exact spectralSeminorm_le_one_of_isPowerBounded d
+        (S.isRingOfIntegralElements.isPowerBounded_of_mem (by simpa using hx))
+
+/-- Membership in the plus ring of `SpectralTop.pair S` is membership in `A⁺`. -/
+@[simp]
+theorem mem_pair_plus {S : Pair A} {x : SpectralTop A} :
+    x ∈ (pair S).plus ↔ (toSpectralTop A).symm x ∈ S.plus :=
+  Iff.rfl
+
+/-- **The morphism of Huber pairs `(A, A⁺) → (SpectralTop A, A⁺)`**, whose underlying map is the
+continuous identity `toSpectralTop`. -/
+noncomputable def pairHom (S : Pair A) : Pair.Hom S (pair S) where
+  toRingHom := toSpectralTop A
+  continuous_toRingHom := continuous_toSpectralTop
+  map_mem_plus a ha := by simpa using ha
+
+/-- The underlying ring homomorphism of `SpectralTop.pairHom S` is `toSpectralTop`. -/
+@[simp]
+theorem toRingHom_pairHom (S : Pair A) : (pairHom S).toRingHom = toSpectralTop A :=
+  (rfl)
+
+end Pair
 
 end SpectralTop
 
