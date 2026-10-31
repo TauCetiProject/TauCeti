@@ -43,8 +43,8 @@ involutions.
 
 ## Main results
 
-* `CoxeterSystem.commute_simple_of_not_adj`: simple reflections whose indices are not adjacent in
-  the Coxeter graph commute.
+* `CoxeterSystem.pairwise_commute_simple_colorClass`: the simple reflections of one colour class
+  pairwise commute, by `CoxeterSystem.commute_simple_of_not_adj`.
 * `CoxeterSystem.colorClassProd_mul_self`: the product over a colour class is an involution.
 * `CoxeterSystem.wordProd_eq_colorClassProd`: every word listing a colour class once spells its
   product.
@@ -70,20 +70,6 @@ namespace CoxeterSystem
 
 variable {B W : Type*} [Group W] {M : CoxeterMatrix B} (cs : CoxeterSystem M W)
 
-/-- Two simple reflections commute when their entry of the Coxeter matrix is `2`. -/
-theorem commute_simple_of_eq_two {i i' : B} (h : M i i' = 2) :
-    Commute (cs.simple i) (cs.simple i') := by
-  have h2 := cs.simple_mul_simple_pow i i'
-  rw [h, pow_two, ← eq_inv_iff_mul_eq_one, mul_inv_rev, inv_simple, inv_simple] at h2
-  exact h2
-
-/-- Two simple reflections commute when their indices are not adjacent in the Coxeter graph. -/
-theorem commute_simple_of_not_adj {i i' : B} (h : ¬M.graph.Adj i i') :
-    Commute (cs.simple i) (cs.simple i') := by
-  rcases eq_or_ne i i' with rfl | hii'
-  · exact Commute.refl _
-  · exact cs.commute_simple_of_eq_two (not_not.mp fun h' ↦ h (M.graph_adj.mpr ⟨hii', h'⟩))
-
 variable (c : M.graph.Coloring Bool)
 
 /-- The simple reflections of one colour class pairwise commute. -/
@@ -98,6 +84,13 @@ commute, so the product does not depend on their order. -/
 noncomputable def colorClassProd (x : Bool) : W :=
   (Finset.univ.filter fun i ↦ c i = x).noncommProd cs.simple
     ((cs.pairwise_commute_simple_colorClass c x).mono fun _ hi ↦ (Finset.mem_filter.mp hi).2)
+
+/-- The product over a colour class is the noncommutative product of the simple reflections over
+the indices of that colour. -/
+theorem colorClassProd_def (x : Bool) :
+    cs.colorClassProd c x = (Finset.univ.filter fun i ↦ c i = x).noncommProd cs.simple
+      ((cs.pairwise_commute_simple_colorClass c x).mono fun _ hi ↦ (Finset.mem_filter.mp hi).2) :=
+  (rfl)
 
 /-- Every word listing the indices of colour `x` once each, in any order, spells the product of
 the corresponding simple reflections. -/

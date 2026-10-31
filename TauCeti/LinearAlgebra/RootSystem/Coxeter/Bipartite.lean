@@ -15,7 +15,7 @@ public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 The Coxeter matrix of a base `b` of a finite crystallographic root pairing has entry `2` at a pair
 of simple roots exactly when they are orthogonal, that is, when their Cartan entries vanish. Its
 Coxeter graph is therefore the Dynkin diagram of `b` with edge multiplicities forgotten
-(`TauCeti.graph_coxeterMatrixOfBase`). For a root system this diagram is a forest, because the
+(`RootPairing.graph_coxeterMatrixOfBase`). For a root system this diagram is a forest, because the
 Cartan matrix is of finite type, so it admits a two-colouring by `Bool`; for an irreducible
 reduced root system it is a tree, so the two-colouring is unique up to exchanging the colours.
 
@@ -24,16 +24,16 @@ system `TauCeti.weylCoxeterSystem` of the Weyl group is available for every colo
 Dynkin diagram, and for an irreducible reduced root system the bipartite Coxeter elements of the
 two colourings are mutually inverse and conjugate
 (`CoxeterSystem.isConj_bipartiteCoxeterElement` with
-`TauCeti.preconnected_graph_coxeterMatrixOfBase`).
+`RootPairing.preconnected_graph_coxeterMatrixOfBase`).
 
 ## Main results
 
-* `TauCeti.graph_coxeterMatrixOfBase`: the Coxeter graph of a base is its Dynkin diagram.
-* `TauCeti.isAcyclic_graph_coxeterMatrixOfBase` and
-  `TauCeti.nonempty_coloring_graph_coxeterMatrixOfBase`: for a root system it is a forest, and so
-  has a two-colouring.
-* `TauCeti.preconnected_graph_coxeterMatrixOfBase`: for an irreducible reduced root pairing it is
-  connected.
+* `RootPairing.graph_coxeterMatrixOfBase`: the Coxeter graph of a base is its Dynkin diagram.
+* `RootPairing.isAcyclic_graph_coxeterMatrixOfBase` and
+  `RootPairing.nonempty_coloring_graph_coxeterMatrixOfBase`: for a root system it is a forest, and
+  so has a two-colouring.
+* `RootPairing.preconnected_graph_coxeterMatrixOfBase`: for an irreducible reduced root pairing it
+  is connected.
 
 ## References
 
@@ -42,7 +42,9 @@ two colourings are mutually inverse and conjugate
 
 public section
 
-namespace TauCeti
+namespace RootPairing
+
+open TauCeti
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   (P : RootPairing ι R M N) [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic]
@@ -76,4 +78,4 @@ theorem preconnected_graph_coxeterMatrixOfBase [P.IsReduced] [P.IsIrreducible] :
   rw [graph_coxeterMatrixOfBase]
   exact preconnected_diagramGraph_cartanMatrix b
 
-end TauCeti
+end RootPairing

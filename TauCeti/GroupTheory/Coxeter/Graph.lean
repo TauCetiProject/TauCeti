@@ -22,7 +22,8 @@ Conversely, a Coxeter matrix `M` determines its *Coxeter graph* `CoxeterMatrix.g
 distinct indices exactly when their entry is not `2`, that is, when the corresponding simple
 reflections do not commute. Entries `0`, which encode infinite order, are edges too. This forgets
 the edge labels, and on simply laced matrices it inverts the first construction
-(`SimpleGraph.graph_coxeterMatrix`).
+(`SimpleGraph.graph_coxeterMatrix`). Simple reflections whose indices are not adjacent in the
+Coxeter graph commute (`CoxeterSystem.commute_simple_of_not_adj`).
 -/
 
 public section
@@ -127,3 +128,16 @@ theorem SimpleGraph.graph_coxeterMatrix {V : Type*} (G : SimpleGraph V) :
   by_cases hij : i = j
   · simp [hij]
   · by_cases h : G.Adj i j <;> simp [hij, h]
+
+namespace CoxeterSystem
+
+variable {B W : Type*} [Group W] {M : CoxeterMatrix B} (cs : CoxeterSystem M W)
+
+/-- Two simple reflections commute when their indices are not adjacent in the Coxeter graph. -/
+theorem commute_simple_of_not_adj {i i' : B} (h : ¬M.graph.Adj i i') :
+    Commute (cs.simple i) (cs.simple i') := by
+  rcases eq_or_ne i i' with rfl | hii'
+  · exact Commute.refl _
+  · exact cs.commute_simple_of_eq_two (not_not.mp fun h' ↦ h (M.graph_adj.mpr ⟨hii', h'⟩))
+
+end CoxeterSystem
