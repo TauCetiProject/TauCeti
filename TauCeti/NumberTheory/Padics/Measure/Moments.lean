@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.Padics.MahlerBasis
 public import TauCeti.NumberTheory.Padics.Measure.Weight
 public import TauCeti.RingTheory.PowerSeries.MahlerDerivation
 import Mathlib.RingTheory.Polynomial.Tower
+import TauCeti.Topology.ContinuousMap.Polynomial
 
 /-!
 # Moments of measures on `ℤ_p` and the Amice transform
@@ -188,16 +189,6 @@ theorem ordinaryMoment_eq_factorial_coeff (μ : D(ℤ_[p], ℤ_[p])) (k : ℕ) :
 
 section PositiveMoments
 
-/-- A `ℤ_p`-polynomial function, pushed into `R`, is the same polynomial evaluated at the
-coordinate function `x_R`. -/
-private theorem toContinuousMap_smul_one_eq_aeval (P : ℤ_[p][X]) :
-    P.toContinuousMap • (1 : C(ℤ_[p], R)) =
-      Polynomial.aeval (ContinuousMap.id ℤ_[p] • 1 : C(ℤ_[p], R)) P := by
-  rw [← Polynomial.aeval_map_algebraMap R]
-  refine ContinuousMap.ext fun x => ?_
-  rw [Polynomial.aeval_continuousMap_apply]
-  simp [← Algebra.algebraMap_eq_smul_one, Polynomial.aeval_algebraMap_apply_eq_algebraMap_eval]
-
 /-- A measure on `ℤ_p` whose positive moments `μ (x ^ k)`, `k > 0`, all vanish kills every
 polynomial in the coordinate function without constant term. -/
 theorem polynomial_apply_eq_zero_of_positive_moments (μ : D(ℤ_[p], R))
@@ -220,7 +211,7 @@ theorem coeff_amiceTransform_eq_zero_of_positive_moments [IsAddTorsionFree R] (�
   -- `n ! • (x choose n)` is the descending Pochhammer polynomial, which has no constant term.
   have hpoch : n.factorial • ((mahler n : C(ℤ_[p], ℤ_[p])) • (1 : C(ℤ_[p], R))) =
       Polynomial.aeval (ContinuousMap.id ℤ_[p] • 1 : C(ℤ_[p], R)) (descPochhammer R n) := by
-    rw [← smul_assoc, TauCeti.factorial_smul_mahler, toContinuousMap_smul_one_eq_aeval,
+    rw [← smul_assoc, TauCeti.factorial_smul_mahler, Polynomial.toContinuousMap_smul_one_eq_aeval,
       ← descPochhammer_map (algebraMap ℤ_[p] R), Polynomial.aeval_map_algebraMap]
   rw [coeff_amiceTransform]
   refine (nsmul_eq_zero_iff_right (Nat.factorial_ne_zero n)).mp ?_
