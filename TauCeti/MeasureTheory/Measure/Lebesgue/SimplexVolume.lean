@@ -55,18 +55,15 @@ noncomputable def simplexVolume (m : ℕ) (t : ℝ) : ℝ :=
 theorem simplexVolume_def (m : ℕ) (t : ℝ) :
     simplexVolume m t = volume.real (Icc (0 : Fin m → ℝ) 1 ∩ {x | ∑ j, x j ≤ t}) := (rfl)
 
-/-- The unit cube of `ℝ ^ m` has volume `1`. -/
-private theorem measureReal_Icc_zero_one (m : ℕ) : volume.real (Icc (0 : Fin m → ℝ) 1) = 1 := by
-  simp [measureReal_def, Real.volume_Icc_pi]
-
 /-- `V_m(t)` is nonnegative. -/
 theorem simplexVolume_nonneg (m : ℕ) (t : ℝ) : 0 ≤ simplexVolume m t :=
   measureReal_nonneg
 
 /-- `V_m(t) ≤ 1`: the region lies in the unit cube. -/
 theorem simplexVolume_le_one (m : ℕ) (t : ℝ) : simplexVolume m t ≤ 1 := by
-  rw [simplexVolume_def, ← measureReal_Icc_zero_one m]
-  exact measureReal_mono inter_subset_left isCompact_Icc.measure_ne_top
+  rw [simplexVolume_def]
+  exact (measureReal_mono inter_subset_left isCompact_Icc.measure_ne_top).trans_eq
+    (by simp [measureReal_def])
 
 /-- `V_m(t)` is monotone in `t`. -/
 theorem simplexVolume_mono (m : ℕ) : Monotone (simplexVolume m) := fun s _ hst ↦
@@ -74,6 +71,7 @@ theorem simplexVolume_mono (m : ℕ) : Monotone (simplexVolume m) := fun s _ hst
     (measure_ne_top_of_subset inter_subset_left isCompact_Icc.measure_ne_top)
 
 /-- `V_m(t) = 0` for `t < 0`: the coordinates of a point of the cube have a nonnegative sum. -/
+@[simp]
 theorem simplexVolume_eq_zero_of_neg (m : ℕ) {t : ℝ} (ht : t < 0) : simplexVolume m t = 0 := by
   have h : Icc (0 : Fin m → ℝ) 1 ∩ {x | ∑ j, x j ≤ t} = ∅ :=
     eq_empty_of_forall_notMem fun x ⟨hx, (hxt : _ ≤ t)⟩ ↦
@@ -81,8 +79,10 @@ theorem simplexVolume_eq_zero_of_neg (m : ℕ) {t : ℝ} (ht : t < 0) : simplexV
   rw [simplexVolume_def, h, measureReal_empty]
 
 /-- `V_m(t) = 1` for `m ≤ t`: the coordinates of a point of the cube sum to at most `m`. -/
+@[simp]
 theorem simplexVolume_eq_one_of_le {m : ℕ} {t : ℝ} (ht : m ≤ t) : simplexVolume m t = 1 := by
-  rw [simplexVolume_def, inter_eq_left.2 fun x hx ↦ ?_, measureReal_Icc_zero_one]
+  rw [simplexVolume_def, inter_eq_left.2 fun x hx ↦ ?_]
+  · simp [measureReal_def]
   calc ∑ j, x j ≤ ∑ _j : Fin m, (1 : ℝ) := Finset.sum_le_sum fun j _ ↦ hx.2 j
     _ = m := by simp
     _ ≤ t := ht
@@ -107,6 +107,7 @@ theorem simplexVolume_pos (m : ℕ) {t : ℝ} (ht : 0 < t) : 0 < simplexVolume m
 
 /-- `V_1(t) = min 1 t` for `0 ≤ t`, which pins the normalization: in one variable the region
 is the interval `[0, min 1 t]`. -/
+@[simp]
 theorem simplexVolume_one {t : ℝ} (ht : 0 ≤ t) : simplexVolume 1 t = min 1 t := by
   have hset : Icc (0 : Fin 1 → ℝ) 1 ∩ {x | ∑ j, x j ≤ t} =
       MeasurableEquiv.funUnique (Fin 1) ℝ ⁻¹' Icc 0 (min 1 t) := by
@@ -119,40 +120,30 @@ theorem simplexVolume_one {t : ℝ} (ht : 0 ≤ t) : simplexVolume 1 t = min 1 t
           measurableSet_Icc.nullMeasurableSet
     _ = min 1 t := by rw [Real.volume_real_Icc_of_le (le_min zero_le_one ht), sub_zero]
 
-/-- `exp (-(l * x))` times the indicator of `[0, 1]` is the indicator of `x ↦ exp (-(l * x))`. -/
-private theorem exp_neg_mul_mul_indicator_Icc (l : ℝ) :
-    (fun x ↦ Real.exp (-(l * x)) * (Icc (0 : ℝ) 1).indicator (1 : ℝ → ℝ) x) =
-      (Icc (0 : ℝ) 1).indicator fun x ↦ Real.exp (-(l * x)) := by
-  ext x
-  by_cases hx : x ∈ Icc (0 : ℝ) 1 <;> simp [hx]
-
-/-- `∫₀¹ exp (-(l * x)) dx = (1 - exp (-l)) / l` for `l ≠ 0`. -/
-private theorem integral_exp_neg_mul_indicator {l : ℝ} (hl : l ≠ 0) :
-    ∫ x, Real.exp (-(l * x)) * (Icc (0 : ℝ) 1).indicator (1 : ℝ → ℝ) x =
-      (1 - Real.exp (-l)) / l := by
-  have hderiv : ∀ x, HasDerivAt (fun x ↦ -Real.exp (-(l * x)) / l) (Real.exp (-(l * x))) x :=
-    fun x ↦ by
-      have h : HasDerivAt (fun y ↦ -(l * y)) (-l) x := by
-        simpa using (hasDerivAt_id' x).const_mul (-l)
-      convert h.exp.neg.div_const l using 1
-      field_simp
-  rw [exp_neg_mul_mul_indicator_Icc, integral_indicator measurableSet_Icc,
-    integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
-    intervalIntegral.integral_eq_sub_of_hasDerivAt (fun x _ ↦ hderiv x)
-      ((by fun_prop : Continuous fun x ↦ Real.exp (-(l * x))).intervalIntegrable _ _)]
-  simp only [mul_one, mul_zero, neg_zero, Real.exp_zero]
-  ring
-
 /-- **The exponential-moment bound.** For `0 < l`,
 `V_m(s) ≤ exp (l s) ((1 - exp (-l)) / l) ^ m`, where `(1 - exp (-l)) / l` is the integral of
 `exp (-l x)` over `[0, 1]`. -/
 theorem simplexVolume_le_exp_mul_pow (m : ℕ) {l : ℝ} (hl : 0 < l) (s : ℝ) :
     simplexVolume m s ≤ Real.exp (l * s) * ((1 - Real.exp (-l)) / l) ^ m := by
+  -- `exp (-(l * x))` times the indicator of `[0, 1]` is the indicator of `exp (-(l * x))`.
+  have hind : (fun x ↦ Real.exp (-(l * x)) * (Icc (0 : ℝ) 1).indicator (1 : ℝ → ℝ) x) =
+      (Icc (0 : ℝ) 1).indicator fun x ↦ Real.exp (-(l * x)) := by
+    simp_rw [← indicator_mul_right _ (fun x ↦ Real.exp (-(l * x))), Pi.one_apply, mul_one]
   have hint :
       Integrable fun x ↦ Real.exp (-(l * x)) * (Icc (0 : ℝ) 1).indicator (1 : ℝ → ℝ) x := by
-    rw [exp_neg_mul_mul_indicator_Icc]
+    rw [hind]
     exact (integrable_indicator_iff measurableSet_Icc).2
       (by fun_prop : Continuous fun x ↦ Real.exp (-(l * x))).integrableOn_Icc
+  -- `∫₀¹ exp (-(l * x)) dx = (1 - exp (-l)) / l`.
+  have hmgf : ∫ x, Real.exp (-(l * x)) * (Icc (0 : ℝ) 1).indicator (1 : ℝ → ℝ) x =
+      (1 - Real.exp (-l)) / l := by
+    rw [hind, integral_indicator measurableSet_Icc, integral_Icc_eq_integral_Ioc,
+      ← intervalIntegral.integral_of_le zero_le_one]
+    simp_rw [← neg_mul]
+    rw [intervalIntegral.integral_comp_mul_left Real.exp (neg_ne_zero.2 hl.ne'), integral_exp]
+    simp only [mul_one, mul_zero, Real.exp_zero, smul_eq_mul]
+    field_simp
+    ring
   have h := setIntegral_prod_le_exp_mul_pow (ι := Fin m) (g := (Icc (0 : ℝ) 1).indicator 1)
     (fun x ↦ indicator_nonneg (fun _ _ ↦ zero_le_one) x) hl.le hint s
   -- The product of the indicators of `[0, 1]` at the coordinates is the indicator of the cube.
@@ -163,21 +154,8 @@ theorem simplexVolume_le_exp_mul_pow (m : ℕ) {l : ℝ} (hl : 0 < l) (s : ℝ) 
   simp_rw [hprod] at h
   rw [simplexVolume_def]
   rwa [integral_indicator_one measurableSet_Icc,
-    measureReal_restrict_apply measurableSet_Icc, integral_exp_neg_mul_indicator hl.ne',
+    measureReal_restrict_apply measurableSet_Icc, hmgf,
     Fintype.card_fin] at h
-
-/-- `(1 - exp (-l)) / l ≤ exp (-(l / 2) + l ^ 2 / 24)` for `0 < l`: the left side is
-`exp (-(l / 2)) * (sinh (l / 2) / (l / 2))`. -/
-private theorem one_sub_exp_neg_div_le {l : ℝ} (hl : 0 < l) :
-    (1 - Real.exp (-l)) / l ≤ Real.exp (-(l / 2) + l ^ 2 / 24) := by
-  have h1 : 1 - Real.exp (-l) = Real.exp (-(l / 2)) * (2 * Real.sinh (l / 2)) := by
-    rw [Real.sinh_eq, mul_div_cancel₀ _ two_ne_zero, mul_sub, ← Real.exp_add, ← Real.exp_add,
-      show -(l / 2) + l / 2 = 0 by ring, show -(l / 2) + -(l / 2) = -l by ring, Real.exp_zero]
-  have h2 := Real.sinh_le_mul_exp_sq_div_six (half_pos hl).le
-  rw [h1, Real.exp_add, div_le_iff₀ hl, mul_assoc]
-  refine mul_le_mul_of_nonneg_left ?_ (Real.exp_pos _).le
-  calc 2 * Real.sinh (l / 2) ≤ 2 * (l / 2 * Real.exp ((l / 2) ^ 2 / 6)) := by gcongr
-    _ = Real.exp (l ^ 2 / 24) * l := by ring_nf
 
 /-- **The tail bound.** For `0 ≤ ε`, `V_m((1 / 2 - ε) m) ≤ exp (-6 m ε ^ 2)`: the part of the
 unit cube of `ℝ ^ m` where the coordinates sum to at most `(1 / 2 - ε) m` has volume at most
@@ -186,6 +164,16 @@ theorem simplexVolume_le_exp_neg (m : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
     simplexVolume m ((1 / 2 - ε) * m) ≤ Real.exp (-(6 * m * ε ^ 2)) := by
   rcases hε.eq_or_lt with rfl | hε
   · simpa using simplexVolume_le_one m _
+  -- `(1 - exp (-l)) / l = exp (-(l / 2)) * (sinh (l / 2) / (l / 2)) ≤ exp (-(l / 2) + l ^ 2 / 24)`.
+  have hsinh {l : ℝ} (hl : 0 < l) : (1 - Real.exp (-l)) / l ≤ Real.exp (-(l / 2) + l ^ 2 / 24) := by
+    have h1 : 1 - Real.exp (-l) = Real.exp (-(l / 2)) * (2 * Real.sinh (l / 2)) := by
+      rw [Real.sinh_eq, mul_div_cancel₀ _ two_ne_zero, mul_sub, ← Real.exp_add, ← Real.exp_add,
+        neg_add_cancel, Real.exp_zero, ← neg_add, add_halves]
+    have h2 := Real.sinh_le_mul_exp_sq_div_six (half_pos hl).le
+    rw [h1, Real.exp_add, div_le_iff₀ hl, mul_assoc]
+    refine mul_le_mul_of_nonneg_left ?_ (Real.exp_pos _).le
+    calc 2 * Real.sinh (l / 2) ≤ 2 * (l / 2 * Real.exp ((l / 2) ^ 2 / 6)) := by gcongr
+      _ = Real.exp (l ^ 2 / 24) * l := by ring_nf
   have hl : 0 < 12 * ε := by positivity
   calc simplexVolume m ((1 / 2 - ε) * m)
       ≤ Real.exp (12 * ε * ((1 / 2 - ε) * m)) * ((1 - Real.exp (-(12 * ε))) / (12 * ε)) ^ m :=
@@ -194,7 +182,7 @@ theorem simplexVolume_le_exp_neg (m : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
           Real.exp (-(12 * ε / 2) + (12 * ε) ^ 2 / 24) ^ m := by
         gcongr
         · exact div_nonneg (sub_nonneg.2 (Real.exp_le_one_iff.2 (by linarith))) hl.le
-        · exact one_sub_exp_neg_div_le hl
+        · exact hsinh hl
     _ = Real.exp (-(6 * m * ε ^ 2)) := by
         rw [← Real.exp_nat_mul, ← Real.exp_add]
         ring_nf

@@ -45,13 +45,14 @@ theorem six_pow_mul_factorial_le_factorial_two_mul_add_one (n : ℕ) :
   induction n with
   | zero => simp
   | succ n ih =>
-    have h : 6 * (n + 1) ≤ (2 * n + 1 + 1 + 1) * (2 * n + 1 + 1) := by
-      rw [show 6 * (n + 1) = 3 * (2 * n + 1 + 1) by omega]
-      exact Nat.mul_le_mul_right _ (by omega)
-    rw [show 2 * (n + 1) + 1 = 2 * n + 1 + 1 + 1 by omega, factorial_succ (2 * n + 1 + 1),
-      factorial_succ (2 * n + 1), ← Nat.mul_assoc, Nat.pow_succ, factorial_succ n,
-      show 6 ^ n * 6 * ((n + 1) * n !) = 6 * (n + 1) * (6 ^ n * n !) by
-        simp only [Nat.mul_comm, Nat.mul_left_comm, Nat.mul_assoc]]
-    exact Nat.mul_le_mul h ih
+    -- The last term `(2 * n + 1 + 1 + 1)!` is `(2 * (n + 1) + 1)!` by unfolding.
+    calc 6 ^ (n + 1) * (n + 1)! = 6 * (n + 1) * (6 ^ n * n !) := by
+          rw [Nat.pow_succ, factorial_succ]; ac_rfl
+      _ ≤ (2 * n + 1 + 1 + 1) * (2 * n + 1 + 1) * (2 * n + 1)! := by
+          refine Nat.mul_le_mul ?_ ih
+          calc 6 * (n + 1) = 3 * (2 * n + 1 + 1) := by omega
+            _ ≤ (2 * n + 1 + 1 + 1) * (2 * n + 1 + 1) := Nat.mul_le_mul_right _ (by omega)
+      _ = (2 * n + 1 + 1 + 1)! := by
+          rw [factorial_succ (2 * n + 1 + 1), factorial_succ (2 * n + 1), Nat.mul_assoc]
 
 end Nat
