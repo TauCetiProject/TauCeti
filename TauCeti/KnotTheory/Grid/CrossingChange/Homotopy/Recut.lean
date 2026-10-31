@@ -109,20 +109,6 @@ private theorem crossingCoveredSquares_eq_sdiff_union
       crossingCutSquares, crossingAddedSquares, Sum.elim_inr, toGridRectangleBetween_inr,
       Finset.mem_union, Finset.mem_sdiff, Finset.mem_product, Finset.mem_singleton]
 
-/-- The squares a crossing-change hexagon cuts away lie in its cut column. -/
-private theorem fst_eq_cutColumn_of_mem_crossingCutSquares
-    (P : GridCommutationHexagonBetween a s s' x y) {p : Fin n × Fin n}
-    (hp : p ∈ P.crossingCutSquares) : p.1 = P.cutColumn := by
-  cases P with
-  | inl P =>
-    simp only [crossingCutSquares, Sum.elim_inl, Finset.mem_product, Finset.mem_singleton] at hp
-    rw [cutColumn_inl]
-    exact hp.1
-  | inr P =>
-    simp only [crossingCutSquares, Sum.elim_inr, Finset.mem_product, Finset.mem_singleton] at hp
-    rw [cutColumn_inr]
-    exact hp.1
-
 /-- The squares a crossing-change hexagon cuts away lie in its underlying rectangle. -/
 private theorem crossingCutSquares_subset (P : GridCommutationHexagonBetween a s s' x y) :
     P.crossingCutSquares ⊆ P.toGridRectangleBetween.toGridRectangle.coveredSquares := by
@@ -210,26 +196,17 @@ theorem XSet_inter_coveredSquares_of_mem_crossingChangeCommutationHexagons
       {(P.cutColumn, G.X P.cutColumn)} := by
   have hK := ((G.mem_crossingChangeCommutationHexagons C t P).mp hP).2
   have hst := P.ne
-  ext p
-  rw [Finset.mem_inter, Finset.mem_singleton]
-  constructor
-  · rintro ⟨hpX, hpr⟩
-    -- Outside the cut-away squares, the rectangle's squares are covered by the hexagon.
-    have hcut : p ∈ P.crossingCutSquares := by
-      by_contra hcut
-      refine Finset.disjoint_left.mp hK ?_ hpX
-      rw [GridCommutationHexagonBetween.crossingCoveredSquares_eq_sdiff_union]
-      exact Finset.mem_union_left _ (Finset.mem_sdiff.mpr ⟨hpr, hcut⟩)
-    have h1 := P.fst_eq_cutColumn_of_mem_crossingCutSquares hcut
-    rw [mem_XSet, h1] at hpX
-    exact Prod.ext h1 hpX.symm
-  · rintro rfl
-    refine ⟨(G.mk_mem_XSet _ _).mpr rfl, P.crossingCutSquares_subset ?_⟩
-    cases P with
-    | inl P =>
-      simpa [GridCommutationHexagonBetween.crossingCutSquares] using X_column_mem_insert_cIco hst hX
-    | inr P =>
-      simpa [GridCommutationHexagonBetween.crossingCutSquares] using X_next_mem_insert_cIco hst hX
+  cases P with
+  | inl P =>
+    rw [GridCommutationHexagonBetween.crossingCoveredSquares_inl] at hK
+    rw [GridCommutationHexagonBetween.toGridRectangleBetween_inl,
+      GridCommutationHexagonBetween.cutColumn_inl]
+    exact XSet_inter_eq_of_hexagon (X_column_mem_insert_cIco hst hX) hK
+  | inr P =>
+    rw [GridCommutationHexagonBetween.crossingCoveredSquares_inr] at hK
+    rw [GridCommutationHexagonBetween.toGridRectangleBetween_inr,
+      GridCommutationHexagonBetween.cutColumn_inr]
+    exact XSet_inter_eq_of_initialHexagon (X_next_mem_insert_cIco hst hX) hK
 
 end Markings
 
