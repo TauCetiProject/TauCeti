@@ -18,7 +18,8 @@ For a potential `F : S → ℝ`, `NovikovModule R F` consists of coefficient fun
 with finite support above every potential threshold. It is a submodule of `S → R`, with the
 usual pointwise addition and ground-ring scalar multiplication. Finite combinations embed by
 `NovikovModule.ofFinsupp`, and `NovikovModule.trunc C a` is the finite combination keeping the
-coefficients of `a` at generators of potential `> C`.
+coefficients of `a` at generators of potential `> C`. These two constructions adapt the
+approach of the unmerged TauCeti PR https://github.com/TauCetiProject/TauCeti/pull/20410.
 
 Suppose `S` is a finite disjoint union of torsors `P i` under an additive group `H`, and
 `F (h +ᵥ p) = F p - N h`. Choosing one lift in each torsor identifies this completion with
@@ -117,6 +118,7 @@ def trunc (C : ℝ) (a : NovikovModule R F) : S →₀ R :=
     rw [Set.support_indicator]
     exact (finite_gt a C).subset fun _ hs => ⟨hs.2, hs.1⟩
 
+@[simp]
 theorem trunc_apply (C : ℝ) (a : NovikovModule R F) (s : S) :
     trunc C a s = if C < F s then a.val s else 0 := by
   simp [trunc, Finsupp.ofSupportFinite_coe, Set.indicator_apply]
@@ -128,6 +130,40 @@ theorem trunc_apply_of_lt {C : ℝ} {a : NovikovModule R F} {s : S} (hs : C < F 
 theorem trunc_apply_of_le {C : ℝ} {a : NovikovModule R F} {s : S} (hs : F s ≤ C) :
     trunc C a s = 0 := by
   simp [trunc_apply, hs.not_gt]
+
+@[simp]
+theorem trunc_zero (C : ℝ) : trunc C (0 : NovikovModule R F) = 0 := by
+  ext s
+  simp
+
+@[simp]
+theorem trunc_add (C : ℝ) (a b : NovikovModule R F) :
+    trunc C (a + b) = trunc C a + trunc C b := by
+  ext s
+  by_cases hs : C < F s <;> simp [hs]
+
+@[simp]
+theorem trunc_smul (C : ℝ) (c : R) (a : NovikovModule R F) :
+    trunc C (c • a) = c • trunc C a := by
+  ext s
+  by_cases hs : C < F s <;> simp [hs]
+
+section Ring
+
+variable {R : Type*} [Ring R]
+
+@[simp]
+theorem trunc_neg (C : ℝ) (a : NovikovModule R F) : trunc C (-a) = -trunc C a := by
+  ext s
+  by_cases hs : C < F s <;> simp [hs]
+
+@[simp]
+theorem trunc_sub (C : ℝ) (a b : NovikovModule R F) :
+    trunc C (a - b) = trunc C a - trunc C b := by
+  ext s
+  by_cases hs : C < F s <;> simp [hs]
+
+end Ring
 
 section Coordinates
 
