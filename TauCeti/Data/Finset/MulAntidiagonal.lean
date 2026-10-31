@@ -14,14 +14,17 @@ public import Mathlib.Data.Finset.SMulAntidiagonal
 
 For partially well-ordered sets `s`, `t`, `u` in an ordered cancellative commutative monoid, a
 product over the triples `(a, b, c)` with `a * b * c = d` can be computed by first splitting `d`
-as `a * (b * c)` or as `(a * b) * c`, and also by splitting off `b` first instead of `a`. These
-reindexings underlie associativity-type identities for convolution products of Hahn series.
+as `a * (b * c)` or as `(a * b) * c`, and also by splitting off `b` first instead of `a`. A
+product over the pairs `(a, b)` with `a * b = d` can be indexed with the two factors exchanged.
+These reindexings underlie associativity-type identities for convolution products of Hahn series.
 
 ## Main results
 
 * `Finset.smulAntidiagonal_eq_mulAntidiagonal`, `Finset.vaddAntidiagonal_eq_antidiagonal`:
   for a monoid acting on itself, the scalar (vector) antidiagonal is the multiplication (addition)
   antidiagonal.
+* `Finset.prod_mulAntidiagonal_swap`, `Finset.sum_antidiagonal_swap`: exchanging the two
+  factors of a product (sum) over an antidiagonal.
 * `Finset.prod_sigma_mulAntidiagonal_assoc`, `Finset.sum_sigma_antidiagonal_assoc`:
   reassociating a double product (sum) over antidiagonals.
 * `Finset.prod_sigma_mulAntidiagonal_left_comm`, `Finset.sum_sigma_antidiagonal_left_comm`:
@@ -49,6 +52,14 @@ theorem smulAntidiagonal_eq_mulAntidiagonal (hs : s.IsPWO) (ht : t.IsPWO) (a : �
       mulAntidiagonal hs ht a := by
   ext
   simp
+
+/-- A product over a multiplication antidiagonal may be indexed with the two factors
+exchanged. -/
+@[to_additive /-- A sum over an addition antidiagonal may be indexed with the two summands
+exchanged. -/]
+theorem prod_mulAntidiagonal_swap (hs : s.IsPWO) (ht : t.IsPWO) (a : α) (f : α → α → M) :
+    ∏ ij ∈ mulAntidiagonal hs ht a, f ij.1 ij.2 = ∏ ij ∈ mulAntidiagonal ht hs a, f ij.2 ij.1 :=
+  prod_equiv (Equiv.prodComm α α) (fun _ ↦ swap_mem_mulAntidiagonal.symm) fun _ _ ↦ rfl
 
 /-- Reassociating a double product over antidiagonals: the products indexed by `(a, (b, c))` and
 by `((a, b), c)`, with `a * b * c = d`, agree. -/

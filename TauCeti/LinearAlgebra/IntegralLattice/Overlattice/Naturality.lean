@@ -28,7 +28,9 @@ generic finite-bilinear-module API applied to the induced discriminant bilinear 
 
 The ambient equivalence also restricts to an isometry between the lattice carried by an integral
 intermediate carrier and the lattice carried by its transport, which is what lets the discriminant
-constructions of the overlattices themselves be compared.
+constructions of the overlattices themselves be compared. In particular, isotropic gluing is
+natural: an isometry whose discriminant equivalence carries an isotropic subgroup `H` onto `H'`
+restricts to an isometry between the lattices glued along `H` and along `H'`.
 
 For an orthogonal direct sum, a pair of intermediate carriers assembles into the intermediate
 carrier `P₁ ⊕ P₂` of `L ⊥ M`, order-embedding the pairs into the carriers of the sum. Its
@@ -54,6 +56,9 @@ even, exactly when both components are.
   restricted to integral and even intermediate carriers.
 * `TauCeti.IntegralLattice.Isometry.toIntegralLatticeIsometry`: the induced isometry between
   the integral lattices carried by an integral intermediate carrier and by its transport.
+* `TauCeti.IntegralLattice.Isometry.ofIsotropicSubgroups`: an isometry carrying one isotropic
+  discriminant subgroup onto another induces an isometry of the glued lattices
+  `TauCeti.IntegralLattice.ofIsotropicSubgroup`.
 * `TauCeti.IntegralLattice.orthogonalSumIntermediateCarrier`: the intermediate carrier of an
   orthogonal sum assembled from a pair of intermediate carriers.
 * `TauCeti.IntegralLattice.map_discriminantSubgroup_orthogonalSumIntermediateCarrier` and
@@ -439,6 +444,45 @@ theorem toIntegralLatticeIsometry_symm_apply (e : Isometry L M) {P : L.Intermedi
         ((e.toIntegralLatticeIsometry hP).symm y)) := by
       rw [toIntegralLatticeIsometry_apply]
     _ = e.symm y := by rw [Isometry.apply_symm_apply]
+
+/-- **Isotropic gluing is natural under isometries.** An isometry `e : L ≃ M` of even
+nondegenerate lattices whose induced discriminant equivalence carries the isotropic subgroup
+`H ≤ A_L` onto `H' ≤ A_M` restricts to an isometry between the lattices glued along `H` and
+along `H'`, acting by the same ambient equivalence. -/
+noncomputable def ofIsotropicSubgroups (e : Isometry L M) (hL : L.IsEven) (hM : M.IsEven)
+    {H : AddSubgroup L.DiscriminantGroup} (hH : (L.discriminantQuadraticModule hL).IsIsotropic H)
+    {H' : AddSubgroup M.DiscriminantGroup}
+    (hH' : (M.discriminantQuadraticModule hM).IsIsotropic H')
+    (h : H.map e.discriminantGroupEquiv.toAddEquiv = H') :
+    Isometry (L.ofIsotropicSubgroup hL H hH) (M.ofIsotropicSubgroup hM H' hH') :=
+  have hP := ((L.isEven_intermediateCarrierOfDiscriminantSubgroup_iff hL H).mpr hH).isIntegral
+  (ofEq (IntegralLattice.ext (by simp) (by simp))).trans
+    ((e.toIntegralLatticeIsometry hP).trans (ofEq (IntegralLattice.ext
+      (by rw [IntermediateCarrier.IsIntegral.toIntegralLattice_carrier,
+        ofIsotropicSubgroup_carrier,
+        intermediateCarrierEquiv_intermediateCarrierOfDiscriminantSubgroup, h])
+      (by simp))))
+
+/-- The isometry of glued lattices induced by `e` acts by `e`. -/
+@[simp]
+theorem ofIsotropicSubgroups_apply (e : Isometry L M) (hL : L.IsEven) (hM : M.IsEven)
+    {H : AddSubgroup L.DiscriminantGroup} (hH : (L.discriminantQuadraticModule hL).IsIsotropic H)
+    {H' : AddSubgroup M.DiscriminantGroup}
+    (hH' : (M.discriminantQuadraticModule hM).IsIsotropic H')
+    (h : H.map e.discriminantGroupEquiv.toAddEquiv = H') (x : V) :
+    e.ofIsotropicSubgroups hL hM hH hH' h x = e x := by
+  simp [ofIsotropicSubgroups]
+
+/-- The inverse of the isometry of glued lattices induced by `e` acts by the inverse of `e`. -/
+@[simp]
+theorem ofIsotropicSubgroups_symm_apply (e : Isometry L M) (hL : L.IsEven) (hM : M.IsEven)
+    {H : AddSubgroup L.DiscriminantGroup} (hH : (L.discriminantQuadraticModule hL).IsIsotropic H)
+    {H' : AddSubgroup M.DiscriminantGroup}
+    (hH' : (M.discriminantQuadraticModule hM).IsIsotropic H')
+    (h : H.map e.discriminantGroupEquiv.toAddEquiv = H') (y : W) :
+    (e.ofIsotropicSubgroups hL hM hH hH' h).symm y = e.symm y := by
+  conv_rhs => rw [← (e.ofIsotropicSubgroups hL hM hH hH' h).apply_symm_apply y]
+  rw [ofIsotropicSubgroups_apply, symm_apply_apply]
 
 end Nondegenerate
 

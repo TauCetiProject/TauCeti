@@ -30,6 +30,12 @@ Repeated cells, empty hosts, and patterns with fewer than two vertices are allow
 The actual bound uses `PairColorSystem.card_le_pairColorDensity_mul_prod`; no pair-counting
 argument is repeated here.
 
+For a regular lower skeleton, `abs_lowerRouteCountAt_sub_expectedLowerRouteCountAt_le` compares
+the actual lower-route count at a transversal placement with its prediction, for every route: it
+is the counting lemma for prescribed pair colors
+(`PairSkeleton3.IsPairColorRegular.abs_card_filter_colorOfPair_sub_prod_le`) applied to the box of
+assigned cells.
+
 ## References
 
 * B. Nagle, V. Rödl and M. Schacht, *The counting lemma for regular k-uniform hypergraphs*,
@@ -96,6 +102,36 @@ theorem expectedLowerRouteCountAt_nonneg (φ : PatternPlacement3 C F)
   rw [expectedLowerRouteCountAt_def]
   exact mul_nonneg (prod_nonneg fun _ _ ↦ Nat.cast_nonneg _)
     (prod_nonneg fun _ _ ↦ by exact_mod_cast pairColorDensity_nonneg _ _ _ _)
+
+/-- The maps realizing a lower route are the maps into the box of assigned cells realizing its
+pair colors: realizing a pair color forces distinct values, so these maps are injective. -/
+private theorem lowerRouteMaps_eq_filter_piFinset (φ : PatternPlacement3 C F)
+    (ψ : PairColorPlacement3 φ) :
+    lowerRouteMaps φ ψ = {g ∈ Fintype.piFinset φ.vertexCell |
+      ∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
+        C.skeleton.pairColors.colorOfPair (g p.1.1) (g p.1.2) = some (ψ.pairColor p)} := by
+  ext g
+  simp only [mem_lowerRouteMaps, mem_filter, Fintype.mem_piFinset]
+  refine ⟨fun ⟨_, hcell, hcolor⟩ ↦ ⟨hcell, hcolor⟩, fun ⟨hcell, hcolor⟩ ↦ ⟨?_, hcell, hcolor⟩⟩
+  intro i j hij
+  by_contra hne
+  rcases lt_or_gt_of_ne hne with h | h
+  · simpa [hij] using hcolor ⟨(i, j), h⟩
+  · simpa [hij] using hcolor ⟨(j, i), h⟩
+
+/-- **Lower-route counting.** At a transversal placement of a pattern on `k` vertices into an
+`ε`-regular lower skeleton, the number of injective maps realizing a route differs from its
+prediction, the cell-size product times the pair-color densities of the route, by at most
+`(k choose 2) * ε` times the cell-size product. No lower bound on the densities is needed. -/
+theorem abs_lowerRouteCountAt_sub_expectedLowerRouteCountAt_le {φ : PatternPlacement3 C F}
+    (hφ : φ.Transversal) (ψ : PairColorPlacement3 φ) {ε : ℝ}
+    (h : C.skeleton.IsPairColorRegular ε) :
+    |(lowerRouteCountAt φ ψ : ℝ) - expectedLowerRouteCountAt φ ψ| ≤
+      F.k.choose 2 * ε * ∏ i, (#(φ.vertexCell i) : ℝ) := by
+  simpa [lowerRouteCountAt_def, lowerRouteMaps_eq_filter_piFinset,
+    expectedLowerRouteCountAt_def] using
+    h.abs_card_filter_colorOfPair_sub_prod_le φ.vertexCell φ.vertexCell_mem
+      (φ.transversal_iff.1 hφ) ψ.pairColor
 
 namespace PairColorPlacement3
 

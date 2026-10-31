@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.DividedPowerAlgebra.UniversalLaw
 public import TauCeti.RingTheory.PolynomialLaw.Coeff
+public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
+import TauCeti.Algebra.MvPolynomial.Monomial
 import TauCeti.Data.Finsupp.Multiset
 import TauCeti.Data.Multiset.Fintype
 
@@ -32,6 +34,8 @@ Chambert-Loir and María Inés de Frutos-Fernández.
 * `DividedPowerAlgebra.homogeneousLawMap`: the linear comparison to homogeneous laws.
 * `DividedPowerAlgebra.lid_rTensor_lcoeff_homogeneousLawMap`: recovery by mixed coefficients.
 * `DividedPowerAlgebra.homogeneousLawMap_injective`: uniqueness of a representing linear map.
+* `DividedPowerAlgebra.bilinMap_ext_gamma`: bilinear maps on `Γ^d_R(M)` are determined by their
+  scalar extensions on generic values of `γ_d`.
 * `DividedPowerAlgebra.homogeneousLawMap_surjective`: existence of a representing linear map.
 * `DividedPowerAlgebra.homogeneousLawEquiv`: Roby's theorem, the linear equivalence between
   linear maps `Γ^d_R(M) → N` and homogeneous laws `M → N` of degree `d`.
@@ -141,20 +145,44 @@ scalar algebras. -/
 theorem homogeneousLawMap_injective (d : ℕ) :
     Function.Injective (homogeneousLawMap R M N d) := by
   intro f g hfg
-  have hprod {ι : Type} [Fintype ι] (m : ι → M) (k : ι →₀ ℕ)
-      (hk : ∑ j, k j = d) :
-      f ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩ =
-      g ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq m k hk⟩ := by
-    rw [← lid_rTensor_lcoeff_homogeneousLawMap d f m k hk,
-      ← lid_rTensor_lcoeff_homogeneousLawMap d g m k hk, hfg]
-  apply homogeneousSubmodule_ext
-  intro l hl
-  let k : Fin l.length →₀ ℕ := Finsupp.equivFunOnFinite.symm fun j ↦ l[j.1].1
-  have hk : ∑ j, k j = d := by
-    simpa [k] using hl
-  have hp := Fin.prod_univ_fun_getElem l (fun nm : ℕ × M ↦ dp R nm.1 nm.2)
-  simpa only [k, Finsupp.coe_equivFunOnFinite_symm, hp] using
-    hprod (fun j : Fin l.length ↦ l[j.1].2) k hk
+  refine homogeneousSubmodule_ext_prod_dp fun n m k hk ↦ ?_
+  have hf := lid_rTensor_lcoeff_homogeneousLawMap d f m (Finsupp.equivFunOnFinite.symm k) hk
+  have hg := lid_rTensor_lcoeff_homogeneousLawMap d g m (Finsupp.equivFunOnFinite.symm k) hk
+  rw [hfg] at hf
+  simpa only [Finsupp.coe_equivFunOnFinite_symm] using hf.symm.trans hg
+
+open MvPolynomial in
+/-- Bilinear maps on `Γ^d_R(M)` are determined by their scalar extensions evaluated at
+`γ_d(u)` and `γ_d(v)`, for generic combinations `u` and `v` in two disjoint groups of
+variables. -/
+theorem bilinMap_ext_gamma (d : ℕ)
+    {β β' : LinearMap.BilinMap R (homogeneousSubmodule (R := R) (M := M) d) P}
+    (h : ∀ (p q : ℕ) (m : Fin p → M) (n : Fin q → M),
+      LinearMap.BilinMap.baseChange (MvPolynomial (Fin p ⊕ Fin q) R) β
+          ((gamma R M d).toFun _ (∑ i, X (Sum.inl i) ⊗ₜ[R] m i))
+          ((gamma R M d).toFun _ (∑ j, X (Sum.inr j) ⊗ₜ[R] n j)) =
+        LinearMap.BilinMap.baseChange (MvPolynomial (Fin p ⊕ Fin q) R) β'
+          ((gamma R M d).toFun _ (∑ i, X (Sum.inl i) ⊗ₜ[R] m i))
+          ((gamma R M d).toFun _ (∑ j, X (Sum.inr j) ⊗ₜ[R] n j))) :
+    β = β' := by
+  classical
+  refine homogeneousSubmodule_ext_prod_dp fun p m a ha ↦
+    homogeneousSubmodule_ext_prod_dp fun q n b hb ↦ ?_
+  have key := congrArg (fun z ↦ TensorProduct.lid R P ((lcoeff R (Finsupp.sumElim
+    (Finsupp.equivFunOnFinite.symm a) (Finsupp.equivFunOnFinite.symm b))).rTensor P z))
+    (h p q m n)
+  have hca (a' : Fin p →₀ ℕ) : (∀ i, a' i = (Finsupp.sumElim (Finsupp.equivFunOnFinite.symm a)
+      (Finsupp.equivFunOnFinite.symm b)) (Sum.inl i)) ↔ a' = Finsupp.equivFunOnFinite.symm a := by
+    simp [Finsupp.ext_iff]
+  have hcb (b' : Fin q →₀ ℕ) : (∀ j, b' j = (Finsupp.sumElim (Finsupp.equivFunOnFinite.symm a)
+      (Finsupp.equivFunOnFinite.symm b)) (Sum.inr j)) ↔ b' = Finsupp.equivFunOnFinite.symm b := by
+    simp [Finsupp.ext_iff]
+  simp only [gamma_toFun_sum_tmul, map_sum, LinearMap.sum_apply,
+    LinearMap.BilinMap.baseChange_tmul, LinearMap.rTensor_tmul, lcoeff_apply,
+    TensorProduct.lid_tmul, coeff_prod_X_pow_mul_prod_X_pow, hca, hcb, ite_and, ite_smul,
+    one_smul, zero_smul, Finset.sum_ite_eq', Finset.mem_finsuppAntidiag,
+    Finsupp.coe_equivFunOnFinite_symm, ha, hb, Finset.subset_univ, and_self, ite_true] at key
+  rwa [decompose_prod_dp m a ha, decompose_prod_dp n b hb] at key
 
 /-- Postcomposition of the representing linear map agrees with postcomposition of its law. -/
 theorem homogeneousLawMap_comp (d : ℕ)
