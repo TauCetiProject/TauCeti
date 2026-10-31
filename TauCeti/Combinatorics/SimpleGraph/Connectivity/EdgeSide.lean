@@ -69,6 +69,16 @@ theorem coe_edgeSide :
 theorem self_mem_edgeSide (G : SimpleGraph V) (u v : V) : u ∈ G.edgeSide u v :=
   mem_edgeSide.mpr .rfl
 
+/-- A vertex whose only neighbour is `v` is alone on its side of the edge to `v`. -/
+theorem edgeSide_eq_singleton (h : ∀ y, G.Adj u y → y = v) : G.edgeSide u v = {u} := by
+  refine Finset.eq_singleton_iff_unique_mem.mpr ⟨self_mem_edgeSide G u v, fun x hx ↦ ?_⟩
+  obtain ⟨p⟩ := mem_edgeSide.mp hx
+  cases p with
+  | nil => rfl
+  | cons hadj _ =>
+    obtain ⟨hadj, hne⟩ := deleteEdges_adj.mp hadj
+    exact (hne (by rw [h _ hadj]; exact Set.mem_singleton _)).elim
+
 /-- The far end of an edge is off the near side exactly when the edge is a bridge. -/
 theorem notMem_edgeSide_iff : v ∉ G.edgeSide u v ↔ G.IsBridge s(u, v) := by
   rw [mem_edgeSide, isBridge_iff]

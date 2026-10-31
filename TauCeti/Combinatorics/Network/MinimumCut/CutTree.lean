@@ -215,17 +215,6 @@ private theorem isFlowEquivalentTree_balanced {T : SimpleGraph (Fin 4)} (hT : T.
       (by rw [Ne, Walk.edges_eq_nil]; exact Walk.not_nil_of_ne hst)
     exact ⟨e, he, (pairMinimumValue_balanced hst).symm⟩
 
-/-- A vertex whose only neighbour is `v` is alone on its side of the edge to `v`. -/
-private theorem edgeSide_eq_singleton {V : Type*} [Fintype V] {G : SimpleGraph V} {u v : V}
-    (h : ∀ y, G.Adj u y → y = v) : G.edgeSide u v = {u} := by
-  refine eq_singleton_iff_unique_mem.mpr ⟨self_mem_edgeSide G u v, fun x hx ↦ ?_⟩
-  obtain ⟨p⟩ := mem_edgeSide.mp hx
-  cases p with
-  | nil => rfl
-  | cons hadj _ =>
-    obtain ⟨hadj, hne⟩ := deleteEdges_adj.mp hadj
-    exact (hne (by rw [h _ hadj]; exact Set.mem_singleton _)).elim
-
 /-- The unit-weight star is a cut tree for the balanced cut function. -/
 example : IsCutTree balanced (starGraph 0) fun _ ↦ 1 := by
   refine ⟨isFlowEquivalentTree_balanced (isTree_starGraph 0), fun u v huv ↦ ?_⟩
