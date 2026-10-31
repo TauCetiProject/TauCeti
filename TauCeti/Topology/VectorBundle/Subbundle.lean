@@ -228,8 +228,16 @@ variable [Fintype ι]
 variable (𝕜 F X) in
 /-- The frame `X` near `y`, read in the trivialization of `E` at `y₀`, as an operator from
 coordinates to the model fibre. -/
-@[expose] def trivOperator (y₀ y : B) : (ι → 𝕜) →L[𝕜] F :=
+def trivOperator (y₀ y : B) : (ι → 𝕜) →L[𝕜] F :=
   ∑ i, (ContinuousLinearMap.proj i).smulRight (trivializationAt F E y₀ ⟨y, X i y⟩).2
+
+omit [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)] [VectorBundle 𝕜 F E] in
+/-- The operator `trivOperator 𝕜 F X y₀ y` is the finite sum over the frame of the frame vectors
+read in the trivialization of `E` at `y₀`, each scaled by its coordinate. -/
+theorem trivOperator_eq_sum (y₀ y : B) :
+    trivOperator 𝕜 F X y₀ y =
+      ∑ i, (ContinuousLinearMap.proj i).smulRight (trivializationAt F E y₀ ⟨y, X i y⟩).2 := by
+  rw [trivOperator]
 
 /-- Over the base set of the trivialization at `y₀`, the operator `trivOperator 𝕜 F X y₀ y` sends
 coordinates to the corresponding combination of the frame, read in that trivialization. -/

@@ -97,7 +97,7 @@ private theorem mdifferentiableAt_trivOperator (hX : IsDistributionFrameOn I n D
       (ContinuousLinearMap.proj i)).differentiableAt).comp_mdifferentiableAt (h i)
   convert hsum using 1
   funext y
-  simp [IsSubbundleFrameOn.trivOperator]
+  simp [IsSubbundleFrameOn.trivOperator_eq_sum]
 
 /-- **Coefficients in a frame are differentiable.** Let `X` be a `C^n` local frame of `D`, with
 `1 ≤ n`, on a neighbourhood of `x`, and let `V` be a vector field, differentiable at `x`, which is
