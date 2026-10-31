@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.Topology.Algebra.Ring.Subring
 
 import TauCeti.RingTheory.Huber.RingOfDefinition
+import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
 # Huber pairs
@@ -33,6 +34,8 @@ explicit.
 
 * `TauCeti.Huber.IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent`: `A°° ⊆ A⁺` for
   every ring of integral elements.
+* `TauCeti.Huber.IsRingOfIntegralElements.mem_of_pow_mem`: `A⁺` contains every element some
+  positive power of which lies in `A⁺`.
 * `TauCeti.Huber.IsRingOfIntegralElements.map`: an isomorphism of topological rings carries a
   ring of integral elements onto a ring of integral elements.
 * `TauCeti.Huber.Pair.powerBounded`: `A⁺ = A°` is a ring of integral elements, the largest one.
@@ -113,6 +116,14 @@ theorem IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent [Nonarchimedean
     (ha : IsTopologicallyNilpotent a) : a ∈ Aplus :=
   have := h.isIntegrallyClosedIn
   mem_of_isTopologicallyNilpotent_of_isIntegrallyClosedIn h.isOpen ha
+
+/-- A ring of integral elements `A⁺` contains every element some positive power of which lies in
+`A⁺`. -/
+theorem IsRingOfIntegralElements.mem_of_pow_mem [NonarchimedeanRing A] {Aplus : Subring A}
+    (h : IsRingOfIntegralElements Aplus) {a : A} {n : ℕ} (hn : 0 < n) (ha : a ^ n ∈ Aplus) :
+    a ∈ Aplus :=
+  have := h.isIntegrallyClosedIn
+  Subring.mem_of_pow_mem_of_isIntegrallyClosedIn hn ha
 
 /-- An isomorphism of topological rings carries a ring of integral elements onto a ring of
 integral elements. -/

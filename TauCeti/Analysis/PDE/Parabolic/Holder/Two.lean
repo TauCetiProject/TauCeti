@@ -94,6 +94,13 @@ theorem timeExtension_of_mem (hab : a ≤ b) (f : slab (E := E) a b → F)
     (x : E) (t : Icc a b) : timeExtension hab f x t = f (slabMk x t) := by
   simp [timeExtension, projIcc_of_mem hab t.2]
 
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- A slab map is recovered from its total time slices. -/
+theorem timeExtension_space_slabTime (hab : a ≤ b) (f : slab (E := E) a b → F) :
+    (fun p : slab (E := E) a b ↦
+      timeExtension hab f (p : ParabolicSpaceTime E).space (slabTime p)) = f :=
+  funext fun p ↦ by rw [timeExtension_of_mem, slabMk_space_slabTime]
+
 private def IsJetGraph (hab : a < b) (J : Jet α E F a b) : Prop :=
   (∀ (t : Icc a b) (x : E), HasFDerivAt (fun y ↦ valueJetL J (slabMk y t))
     (spatialJetL J (slabMk x t)) x) ∧
@@ -211,6 +218,16 @@ theorem add_apply (f g : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a
     (f + g) p = f p + g p := by
   simpa only [valueL_apply, BoundedContinuousFunction.add_apply] using
     congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_add f g)
+
+theorem neg_apply (f : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
+    (-f) p = -f p := by
+  simpa only [valueL_apply, BoundedContinuousFunction.neg_apply] using
+    congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_neg f)
+
+theorem sub_apply (f g : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
+    (f - g) p = f p - g p := by
+  simpa only [valueL_apply, BoundedContinuousFunction.sub_apply] using
+    congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_sub f g)
 
 theorem smul_apply (c : ℝ) (f : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
     (c • f) p = c • f p := by
@@ -366,6 +383,31 @@ theorem norm_def (f : ParabolicC2HolderSpace α E F hab) :
         nnHolderNorm α ((timeDerivL f).toBoundedContinuousFunction : _ → _)) := by
   rw [norm_eq, HolderSpace.norm_def, HolderSpace.norm_def]
   ring
+
+/-- The supremum norm of the value is bounded by the reduced parabolic norm. -/
+theorem norm_valueL_le (f : ParabolicC2HolderSpace α E F hab) : ‖valueL f‖ ≤ ‖f‖ := by
+  rw [norm_eq]
+  linarith [norm_nonneg (spatialFDerivL f), norm_nonneg (spatialSecondFDerivL f),
+    norm_nonneg (timeDerivL f)]
+
+/-- The Hölder norm of the Hessian field is bounded by the reduced parabolic norm. -/
+theorem norm_spatialSecondFDerivL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖spatialSecondFDerivL f‖ ≤ ‖f‖ := by
+  rw [norm_eq]
+  linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f), norm_nonneg (timeDerivL f)]
+
+/-- The Hölder norm of the time-derivative field is bounded by the reduced parabolic norm. -/
+theorem norm_timeDerivL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖timeDerivL f‖ ≤ ‖f‖ := by
+  rw [norm_eq]
+  linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f),
+    norm_nonneg (spatialSecondFDerivL f)]
+
+/-- The time-derivative projection has operator norm at most one. -/
+theorem norm_timeDerivL_le_one :
+    ‖timeDerivL (α := α) (E := E) (F := F) (hab := hab)‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
+    simpa using norm_timeDerivL_le f
 
 /-- The Hessian field gives the native second iterated Fréchet derivative of each slice. -/
 theorem iteratedFDeriv_two_apply (f : ParabolicC2HolderSpace α E F hab)

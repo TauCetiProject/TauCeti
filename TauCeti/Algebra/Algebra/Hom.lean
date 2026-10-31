@@ -44,6 +44,8 @@ several do.
 * `RingHom.toIntAlgHom_id`, `RingHom.toIntAlgHom_comp`: `RingHom.toIntAlgHom` is functorial.
 * `RingHom.toIntAlgHom_toRingHom`, `AlgHom.toRingHom_toIntAlgHom`: it is inverse to
   `AlgHom.toRingHom` in both directions.
+* `AlgHom.units_map_units_map_algebraMap`: an algebra homomorphism fixes the image of a unit of
+  the base ring.
 * `AlgHom.kernelIsMaximal`: the kernel of an augmentation `H →ₐ[k] k` to a field is a maximal
   ideal, for any (not necessarily commutative) `k`-algebra `H`.
 * `AlgHom.algEquivOfFinrankEq`: an algebra homomorphism from a finite-dimensional division algebra
@@ -134,6 +136,17 @@ theorem AlgHom.toRingHom_toIntAlgHom (φ : R →ₐ[ℤ] S) : ((φ : R →+* S))
   AlgHom.ext fun _ ↦ rfl
 
 end ToIntAlgHom
+
+/-! ### Images of units of the base ring -/
+
+/-- An `R`-algebra homomorphism fixes the image of a unit of `R`. It is stated through the ring
+homomorphism coercion, the form in which `Units.map` of an algebra homomorphism arises from
+constructions over ring homomorphisms. -/
+theorem AlgHom.units_map_units_map_algebraMap {R A B : Type*} [CommSemiring R] [Semiring A]
+    [Semiring B] [Algebra R A] [Algebra R B] (f : A →ₐ[R] B) (q : Rˣ) :
+    Units.map ((f : A →+* B) : A →* B) (Units.map (algebraMap R A : R →* A) q) =
+      Units.map (algebraMap R B : R →* B) q :=
+  Units.ext (f.commutes q)
 
 /-! ### The kernel of an augmentation -/
 

@@ -25,7 +25,8 @@ This file proves supporting-line and chord inequalities, including existence of
 affine minorants through finite heights and separation at infinite heights. It
 recovers heights from an anchor and consecutive increments, and characterises convexity by second
 differences. A sequence is admissible when it has a real affine lower bound,
-which is equivalent to having a convex minorant. Convexity and admissibility are
+which is equivalent to having a convex minorant; a pointwise minimum is admissible exactly when
+both sequences are. Convexity and admissibility are
 invariant under adding a real affine function, that is, under height translation
 and shear, and under translating the indices. Reflecting the indices in `N` preserves
 convexity; it discards the heights beyond `N`. These results provide the discrete
@@ -167,6 +168,22 @@ theorem IsAdmissible.mono {a b : ℕ → WithTop ℝ} (hb : IsAdmissible b) (hba
   let ⟨c, m, hcm⟩ := hb
   ⟨c, m, fun n => (hcm n).trans (hba n)⟩
 
+/-- The pointwise minimum of two admissible sequences is admissible: on `ℕ`, the smaller
+intercept and the smaller slope give a common real affine lower bound. -/
+theorem IsAdmissible.inf {a b : ℕ → WithTop ℝ} (ha : IsAdmissible a) (hb : IsAdmissible b) :
+    IsAdmissible (a ⊓ b) := by
+  obtain ⟨c, m, hcm⟩ := ha
+  obtain ⟨d, k, hdk⟩ := hb
+  refine ⟨min c d, min m k, fun n => le_inf ((WithTop.coe_le_coe.mpr ?_).trans (hcm n))
+    ((WithTop.coe_le_coe.mpr ?_).trans (hdk n))⟩ <;> gcongr
+  exacts [min_le_left _ _, min_le_left _ _, min_le_right _ _, min_le_right _ _]
+
+/-- A pointwise minimum is admissible exactly when both sequences are. -/
+@[simp]
+theorem isAdmissible_inf_iff {a b : ℕ → WithTop ℝ} :
+    IsAdmissible (a ⊓ b) ↔ IsAdmissible a ∧ IsAdmissible b :=
+  ⟨fun h => ⟨h.mono inf_le_left, h.mono inf_le_right⟩, fun h => h.1.inf h.2⟩
+
 /-- A sequence whose heights are infinite after some index is admissible: a constant below
 its finitely many finite heights bounds it from below. -/
 theorem isAdmissible_of_forall_gt {a : ℕ → WithTop ℝ} {p : ℕ} (hp : ∀ n, p < n → a n = ⊤) :
@@ -258,6 +275,26 @@ theorem chord_inequality {i j k : ℕ} (hi : h i ≠ ⊤) (hk : h k ≠ ⊤)
   have hright' := mul_le_mul_of_nonneg_left hright
     (sub_nonneg.mpr (Nat.cast_le.mpr hij) : (0 : ℝ) ≤ j - i)
   nlinarith
+
+/-- If a convex height sequence passes through two points of a real affine line, then at
+every intermediate index where it lies on or above that line it lies on the line. -/
+theorem eq_affine_of_affine_le {i j k : ℕ} {c m : ℝ} (hi : h i = ((c + m * i : ℝ) : WithTop ℝ))
+    (hk : h k = ((c + m * k : ℝ) : WithTop ℝ)) (hij : i ≤ j) (hjk : j ≤ k)
+    (hj : ((c + m * j : ℝ) : WithTop ℝ) ≤ h j) : h j = ((c + m * j : ℝ) : WithTop ℝ) := by
+  have hi' : h i ≠ ⊤ := hi ▸ WithTop.coe_ne_top
+  have hk' : h k ≠ ⊤ := hk ▸ WithTop.coe_ne_top
+  have hj' := hh.ne_top_of_le_of_le hi' hk' hij hjk
+  rw [← WithTop.coe_untop₀_of_ne_top hj'] at hj ⊢
+  rw [WithTop.coe_le_coe] at hj
+  rw [WithTop.coe_eq_coe]
+  rcases eq_or_lt_of_le (hij.trans hjk) with hik | hik
+  · obtain rfl : j = i := le_antisymm (hik ▸ hjk) hij
+    rw [hi, WithTop.untop₀_coe]
+  have hc := hh.chord_inequality hi' hk' hij hjk
+  rw [hi, hk, WithTop.untop₀_coe, WithTop.untop₀_coe] at hc
+  have hik' : (0 : ℝ) < k - i := sub_pos.mpr (Nat.cast_lt.mpr hik)
+  refine le_antisymm (le_of_mul_le_mul_left ?_ hik') hj
+  linarith
 
 /-- Moving two indices one step towards each other does not increase the sum of their
 heights: for `i ≤ k`, the inner pair `i + 1, k + 1` has sum at most that of the outer pair

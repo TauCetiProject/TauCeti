@@ -63,6 +63,8 @@ layer deferred above.
   are the exported interface, as for `spa_def`/`mem_spa_iff`.
 * `TauCeti.ValuationSpectrum.rationalSubset_subset_spa` : every rational subset is contained
   in the adic spectrum.
+* `TauCeti.ValuationSpectrum.trivialSection_mem_rationalSubset_iff` : the trivial valuation of a
+  prime `𝔭` lies in `R(T/s)` exactly when `𝔭` is open and `s ∉ 𝔭`.
 * `TauCeti.ValuationSpectrum.rationalSubset_subset_rationalSubset_of_subset` : the rational
   subset is antitone in its numerator set.
 * `TauCeti.ValuationSpectrum.rationalSubset_mul_subset_rationalSubset` : refining a
@@ -163,6 +165,18 @@ theorem mem_rationalSubset_iff (Aplus : Subring A) (T : Finset A) (s : A) (v : S
 theorem rationalSubset_subset_spa (Aplus : Subring A) (T : Finset A) (s : A) :
     rationalSubset Aplus T s ⊆ spa Aplus :=
   rationalSubset_def Aplus T s ▸ Set.inter_subset_left
+
+/-- The trivial valuation of a prime `𝔭` lies in the rational subset `R(T/s)` exactly when `𝔭` is
+open and `s ∉ 𝔭`. Its values are `0` and `1`, so the numerator conditions `v(t) ≤ v(s)` hold as
+soon as `v(s) = 1`. High priority so that `simp` uses this rather than unfolding membership with
+`mem_rationalSubset_iff`. -/
+@[simp high]
+theorem trivialSection_mem_rationalSubset_iff (Aplus : Subring A) (T : Finset A) (s : A)
+    (p : PrimeSpectrum A) :
+    trivialSection p ∈ rationalSubset Aplus T s ↔ IsOpen (p.asIdeal : Set A) ∧ s ∉ p.asIdeal := by
+  simp only [mem_rationalSubset_iff, trivialSection_mem_spa_iff, trivialSection_vle_iff,
+    p.asIdeal.zero_mem, not_true_eq_false, or_false]
+  tauto
 
 /-- **The containment criterion for rational subsets.** One rational subset is contained in
 another exactly when, at every point of the smaller, the larger one's numerators are dominated

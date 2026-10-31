@@ -14,9 +14,10 @@ public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 
 This file defines the additive convolution powers of a measure on a measurable additive monoid.
 It records their algebraic, measure-theoretic, measurability, and integration properties, the
-distributivity of convolution over countable sums (`conv_sum`), the compatibility of mixtures of
-a convolution-additive family with convolution (`bind_conv_bind`),
-and the characteristic function of a convolution power (`charFun_convolutionPower`).
+distributivity of convolution over countable sums (`conv_sum`), the bound of the mass of `Iic t`
+under a convolution in a canonically ordered monoid (`conv_Iic_le`), the compatibility of
+mixtures of a convolution-additive family with convolution (`bind_conv_bind`), and the
+characteristic function of a convolution power (`charFun_convolutionPower`).
 -/
 
 public section
@@ -147,6 +148,17 @@ theorem lintegral_convolutionPower_succ (μ : Measure α) [SFinite μ] (n : ℕ)
 theorem conv_sum {ι : Type*} [Countable ι] (μ : Measure α) (ν : ι → Measure α)
     [∀ i, SFinite (ν i)] : μ ∗ Measure.sum ν = Measure.sum fun i ↦ μ ∗ ν i := by
   simp only [Measure.conv, prod_sum_right, map_sum measurable_add.aemeasurable]
+
+/-- In a canonically ordered additive monoid, the convolution of two measures gives `Iic t` at most
+the product of their masses of `Iic t`, since `x + y ≤ t` forces `x ≤ t` and `y ≤ t`. -/
+theorem conv_Iic_le {M : Type*} [MeasurableSpace M] [AddCommMonoid M] [PartialOrder M]
+    [CanonicallyOrderedAdd M] [MeasurableAdd₂ M] [TopologicalSpace M] [OrderClosedTopology M]
+    [OpensMeasurableSpace M] (μ ν : Measure M) [SFinite ν] (t : M) :
+    (μ ∗ ν) (Set.Iic t) ≤ μ (Set.Iic t) * ν (Set.Iic t) := by
+  rw [conv, map_apply measurable_add measurableSet_Iic, ← prod_prod]
+  refine measure_mono fun p hp ↦ ?_
+  simp only [Set.mem_preimage, Set.mem_prod, Set.mem_Iic] at hp ⊢
+  exact ⟨le_self_add.trans hp, le_add_self.trans hp⟩
 
 /-- Mixing a family of measures indexed by `ℕ` that turns addition into convolution commutes
 with convolution: `(ρ.bind K) ∗ (σ.bind K) = (ρ ∗ σ).bind K` when

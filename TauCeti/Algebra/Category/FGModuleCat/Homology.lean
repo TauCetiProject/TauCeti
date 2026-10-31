@@ -32,24 +32,24 @@ universe u v
 
 namespace HomologicalComplex
 
-variable {k : Type u} [DivisionRing k]
+variable {R : Type u} [Ring R] [IsNoetherianRing R]
 
 /-- The comparison between homology after forgetting an `FGModuleCat` cochain complex and the
 underlying module of its homology. -/
-noncomputable def homologyForgetIso (K : CochainComplex (FGModuleCat.{v} k) ℤ) (n : ℤ) :
-    (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K).homology n ≅
-      (forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).obj (K.homology n) := by
+noncomputable def homologyForgetIso (K : CochainComplex (FGModuleCat.{v} R) ℤ) (n : ℤ) :
+    (((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex _).obj K).homology n ≅
+      (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).obj (K.homology n) := by
   let i := n - 1
   let j := n
   let l := n + 1
   have hij : i + 1 = j := by dsimp [i, j]; omega
   have hjl : j + 1 = l := by dsimp [j, l]
   exact HomologicalComplex.homologyIsoSc'
-      (((forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapHomologicalComplex _).obj K) i j l
+      (((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex _).obj K) i j l
       ((ComplexShape.up ℤ).prev_eq' hij) ((ComplexShape.up ℤ).next_eq' hjl) ≪≫
     (K.sc' i j l).mapHomologyIso
-      (forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)) ≪≫
-    (forget₂ (FGModuleCat.{v} k) (ModuleCat.{v} k)).mapIso
+      (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)) ≪≫
+    (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapIso
       (K.homologyIsoSc' i j l
         ((ComplexShape.up ℤ).prev_eq' hij) ((ComplexShape.up ℤ).next_eq' hjl)).symm
 

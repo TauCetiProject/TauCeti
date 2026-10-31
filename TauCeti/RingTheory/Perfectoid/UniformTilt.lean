@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Perfection
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.Huber.Uniform
 import Mathlib.Algebra.CharP.Lemmas
+import Mathlib.LinearAlgebra.SModEq.Pow
 
 /-!
 # The tilt of a complete uniform Tate ring
@@ -19,8 +20,9 @@ topologically nilpotent; `B` is not assumed perfectoid. Its *tilt* is the multip
 `Perfection B p`), with coordinatewise multiplication and the *limit addition*
 `(x + y)⁽ⁱ⁾ = lim_{m → ∞} (x⁽ⁱ⁺ᵐ⁾ + y⁽ⁱ⁺ᵐ⁾) ^ p ^ m`.
 This file constructs that addition and shows that it makes `B♭` a perfect commutative ring of
-characteristic `p` (when `B ≠ 0`). Coordinatewise addition is not the ring structure, as it does
-not in general preserve compatible systems; when `p = 0` in `B` the two additions agree.
+characteristic `p` (when `B ≠ 0`), functorial in continuous ring homomorphisms `g : B → C`.
+Coordinatewise addition is not the ring structure, as it does not in general preserve compatible
+systems; when `p = 0` in `B` the two additions agree.
 
 The type synonym `TauCeti.Perfectoid.uniformTilt p B` carries the ring structure, so that it does
 not clash with Mathlib's coordinatewise ring structure on `Perfection B p` when `B` has
@@ -50,21 +52,27 @@ this sense have the same limit.
   `uniformTilt.instCommRing`), with the multiplication of `Perfection B p` and the limit addition.
 * `TauCeti.Perfectoid.uniformTilt.coeff n : uniformTilt p B →* B`: the `n`-th coordinate.
 * `TauCeti.Perfectoid.uniformTilt.mk`: the element with a given compatible system of coordinates.
+* `TauCeti.Perfectoid.uniformTilt.map g hg : uniformTilt p B →+* uniformTilt p C`: the ring
+  homomorphism `g♭`, `(x⁽ⁿ⁾)ₙ ↦ (g x⁽ⁿ⁾)ₙ`, induced by a continuous ring homomorphism `g : B → C`.
 
 ## Main results
 
 * `TauCeti.Perfectoid.uniformTilt.coeff_add`: the limit formula for the coordinates of a sum.
 * `TauCeti.Perfectoid.uniformTilt.coeff_add_sub_mem`: for `x, y` with power-bounded zeroth
   coordinates, `(x + y)⁽ⁱ⁾ - x⁽ⁱ⁾ - y⁽ⁱ⁾ ∈ p • B°`.
+* `TauCeti.Perfectoid.uniformTilt.coeff_add_sub_mem_of_forall_mem`: for a closed subring
+  `A ⊆ B°` and `x, y` with all coordinates in `A`, `(x + y)⁽ⁱ⁾ - x⁽ⁱ⁾ - y⁽ⁱ⁾ ∈ p • A`.
 * `TauCeti.Perfectoid.uniformTilt.coeff_add_of_charP`: in characteristic `p` the addition is
   coordinatewise.
 * `TauCeti.Perfectoid.uniformTilt.perfectRing` and `TauCeti.Perfectoid.uniformTilt.charP`: the tilt
   is perfect, and of characteristic `p` when `B` is nonzero.
+* `TauCeti.Perfectoid.uniformTilt.coeff_map`, `TauCeti.Perfectoid.uniformTilt.map_id` and
+  `TauCeti.Perfectoid.uniformTilt.map_comp`: `g♭` acts coordinatewise, and tilting is a functor.
 
 ## References
 
 * K. S. Kedlaya, *Nonarchimedean geometry of Witt vectors and the tilting equivalence*, in
-  *Perfectoid Spaces: Lectures from the 2017 Arizona Winter School*, Lemma 2.7.1(a).
+  *Perfectoid Spaces: Lectures from the 2017 Arizona Winter School*, Lemma 2.7.1(a) and (d).
 * P. Scholze, *Étale cohomology of diamonds*, Definition 3.9 and Lemma 3.10.
 * P. Scholze, *Perfectoid spaces*, Lemma 3.4 and Proposition 5.17.
 -/
@@ -625,6 +633,53 @@ theorem coeff_add_sub_mem {x y : uniformTilt p B} (hx : coeff p B 0 x ∈ powerB
   simp only [coeff_apply]
   linear_combination he
 
+/-- **The coordinates are additive modulo `p` on a closed subring of `B°`**: if all coordinates of
+`x` and `y` lie in a closed subring `A ⊆ B°`, then `(x + y)⁽ⁱ⁾ - x⁽ⁱ⁾ - y⁽ⁱ⁾ ∈ p • A`. -/
+theorem coeff_add_sub_mem_of_forall_mem {A : Subring B} (hA : IsClosed (A : Set B))
+    (hAB : A ≤ powerBoundedSubring B) {x y : uniformTilt p B} (hx : ∀ n, coeff p B n x ∈ A)
+    (hy : ∀ n, coeff p B n y ∈ A) (i : ℕ) :
+    coeff p B i (x + y) - coeff p B i x - coeff p B i y ∈ (p : B) • (A : Set B) := by
+  set s : ℕ → B := fun m ↦ (coeff p B (i + m) x + coeff p B (i + m) y) ^ p ^ m with hs
+  -- consecutive terms of the defining sequence differ by `p ^ (m + 1) * d m` with `d m ∈ A`:
+  -- in `A`, `(a + b) ^ p ≡ a ^ p + b ^ p` modulo `p`, hence `(a + b) ^ p ^ (m + 1)` and
+  -- `(a ^ p + b ^ p) ^ p ^ m` are congruent modulo `p ^ (m + 1)`
+  have hd : ∀ m, ∃ d : A, s (m + 1) - s m = (p : B) ^ (m + 1) * d := fun m ↦ by
+    set a : A := ⟨_, hx (i + m + 1)⟩
+    set b : A := ⟨_, hy (i + m + 1)⟩
+    obtain ⟨r, hr⟩ := exists_add_pow_prime_eq hp.out a b
+    have hmod : (a + b) ^ p ≡ a ^ p + b ^ p [SMOD Ideal.span {(p : A)}] := by
+      rw [SModEq.sub_mem, hr, Ideal.mem_span_singleton]
+      exact ⟨a * b * r, by ring⟩
+    have h := SModEq.pow_pow_add_one (Ideal.subset_span rfl) hmod m
+    rw [SModEq.sub_mem, Ideal.span_singleton_pow, Ideal.mem_span_singleton, ← pow_mul,
+      ← pow_succ'] at h
+    obtain ⟨d, hd⟩ := h
+    refine ⟨d, ?_⟩
+    simpa [hs, a, b, ← add_assoc] using congrArg Subtype.val hd
+  choose d hd using hd
+  set f : ℕ → B := fun m ↦ (p : B) ^ m * d m with hf_def
+  have hf : ∀ m, f m ∈ A := fun m ↦ mul_mem (pow_mem (natCast_mem _ p) m) (d m).2
+  have hfs : Summable f := NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <| by
+    rw [Nat.cofinite_eq_atTop]
+    exact IsUniform.isBounded_powerBoundedSubring.tendsto_mul hpn.out
+      (Eventually.of_forall fun m ↦ hAB (d m).2)
+  -- telescoping: `s m = s 0 + p * ∑_{j < m} f j`
+  have htel : ∀ m, s m = s 0 + p * ∑ j ∈ Finset.range m, f j := fun m ↦ by
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      rw [Finset.sum_range_succ]
+      simp only [hf_def]
+      linear_combination hd m + ih
+  have hlim : coeff p B i (x + y) = s 0 + p * ∑' m, f m :=
+    tendsto_nhds_unique (coeff_add x y i) <| (tendsto_const_nhds.add
+      (hfs.hasSum.tendsto_sum_nat.const_mul _)).congr fun m ↦ (htel m).symm
+  refine Set.mem_smul_set.mpr ⟨∑' m, f m, hA.mem_of_tendsto hfs.hasSum.tendsto_sum_nat
+    (Eventually.of_forall fun n ↦ A.sum_mem fun m _ ↦ hf m), ?_⟩
+  rw [smul_eq_mul, hlim]
+  simp only [hs, add_zero, pow_zero, pow_one]
+  ring
+
 /-- **In characteristic `p` the addition is coordinatewise.** -/
 @[simp]
 theorem coeff_add_of_charP [CharP B p] (x y : uniformTilt p B) (n : ℕ) :
@@ -691,6 +746,55 @@ instance charP [Nontrivial B] : CharP (uniformTilt p B) p := by
   rw [coeff_apply, h]
   exact tendsto_nhds_unique (tendsto_tiltLim isUnit_one hconst N)
     (hpn.out.comp (tendsto_atTop_mono (fun m ↦ (Nat.lt_pow_self hp.out.one_lt).le) tendsto_id))
+
+section Map
+
+variable {C D : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C]
+  [IsTateRing C] [CompleteSpace C] [T2Space C] [IsUniform C]
+  [Fact (IsTopologicallyNilpotent (p : C))]
+  [CommRing D] [UniformSpace D] [IsUniformAddGroup D] [IsTopologicalRing D]
+  [IsTateRing D] [CompleteSpace D] [T2Space D] [IsUniform D]
+  [Fact (IsTopologicallyNilpotent (p : D))]
+
+/-- **Functoriality of the tilt**: a continuous ring homomorphism `g : B → C` induces the ring
+homomorphism `g♭ : B♭ → C♭`, `(x⁽ⁿ⁾)ₙ ↦ (g x⁽ⁿ⁾)ₙ` (Kedlaya, *Arizona Winter School notes*,
+Lemma 2.7.1(d)). Continuity of `g` is what makes `g♭` additive for the limit addition. -/
+noncomputable def map (g : B →+* C) (hg : Continuous g) : uniformTilt p B →+* uniformTilt p C :=
+  { (Perfection.mapMonoidHom p g.toMonoidHom : uniformTilt p B →* uniformTilt p C) with
+    map_zero' := ext fun n ↦
+      (Perfection.coeffMonoidHom_mapMonoidHom p g.toMonoidHom (0 : uniformTilt p B) n).trans
+        (map_zero g)
+    map_add' := fun x y ↦ ext fun n ↦ by
+      -- both sides are the limit of `(g x⁽ⁿ⁺ᵐ⁾ + g y⁽ⁿ⁺ᵐ⁾) ^ p ^ m`
+      refine tendsto_nhds_unique ((hg.tendsto _).comp (coeff_add x y n))
+        ((coeff_add _ _ n).congr fun m ↦ ?_)
+      simp only [Function.comp_apply, map_pow, map_add]
+      rfl }
+
+/-- The coordinates of `g♭ x` are the images under `g` of the coordinates of `x`; for `n = 0` this
+is `(g♭ x)♯ = g x♯`. -/
+@[simp]
+theorem coeff_map (g : B →+* C) (hg : Continuous g) (x : uniformTilt p B) (n : ℕ) :
+    coeff p C n (map g hg x) = g (coeff p B n x) :=
+  Perfection.coeffMonoidHom_mapMonoidHom p g.toMonoidHom x n
+
+/-- The identity of `B` induces the identity of the tilt. -/
+@[simp]
+theorem map_id : map (RingHom.id B) continuous_id = RingHom.id (uniformTilt p B) :=
+  RingHom.ext fun _ ↦ ext fun _ ↦ by simp
+
+/-- Tilting is functorial: `(g₂ ∘ g₁)♭ = g₂♭ ∘ g₁♭`. -/
+theorem map_comp (g₁ : B →+* C) (hg₁ : Continuous g₁) (g₂ : C →+* D) (hg₂ : Continuous g₂) :
+    map (g₂.comp g₁) (hg₂.comp hg₁) = (map g₂ hg₂).comp (map (p := p) g₁ hg₁) :=
+  RingHom.ext fun _ ↦ ext fun _ ↦ by simp
+
+/-- Pointwise form of `uniformTilt.map_comp`. -/
+@[simp]
+theorem map_map (g₁ : B →+* C) (hg₁ : Continuous g₁) (g₂ : C →+* D) (hg₂ : Continuous g₂)
+    (x : uniformTilt p B) : map g₂ hg₂ (map g₁ hg₁ x) = map (g₂.comp g₁) (hg₂.comp hg₁) x :=
+  ext fun _ ↦ by simp
+
+end Map
 
 end uniformTilt
 

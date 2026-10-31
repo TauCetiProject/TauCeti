@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.ZLattice.Covolume
 public import TauCeti.Algebra.Module.ZLattice.SuccessiveMinima
 import TauCeti.LinearAlgebra.Basis.Flag
+import TauCeti.MeasureTheory.Measure.Lebesgue.Weighted.Box
+import TauCeti.MeasureTheory.Measure.Lebesgue.Weighted.Crosspolytope
 
 /-!
 # The successive minima of weighted boxes and cross-polytopes
@@ -25,13 +28,16 @@ lie in `a i • K`, because they lie in the dilated cross-polytope; conversely, 
 dilate `t • K` with `t < a i` lies in the dilated box, so its coordinates from the `i`-th on are
 integers of absolute value less than `1`, hence zero, and such vectors span at most `i` dimensions.
 
-These are the equality cases of Minkowski's second theorem: with these minima, the box is an
-equality case of the upper bound `(∏ i, λ_i) * μ K ≤ 2 ^ d * covolume L μ`
-(`ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume`), and the cross-polytope,
-whose volume is `OrthonormalBasis.volume_weighted_crosspolytope`, of the lower bound
+These are the equality cases of Minkowski's second theorem, for every additive Haar measure `μ`
+on `E`. The box has measure `2 ^ d / ∏ i, a i` times the covolume of `L`
+(`Module.Basis.addHaar_weighted_box`), so it attains the upper bound
+`(∏ i, λ_i) * μ K ≤ 2 ^ d * covolume L μ`
+(`ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume`). The cross-polytope has
+measure `2 ^ d / d! / ∏ i, a i` times the covolume of `L`
+(`Module.Basis.addHaar_weighted_crosspolytope`), so it attains the lower bound
 `2 ^ d / d! * covolume L μ ≤ (∏ i, λ_i) * μ K`
-(`ZLattice.two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measure`). This file
-computes the minima only.
+(`ZLattice.two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measureReal`). Neither
+constant `2 ^ d` nor `2 ^ d / d!` can therefore be improved.
 
 ## Main results
 
@@ -39,6 +45,12 @@ computes the minima only.
   weighted cross-polytope and the weighted box has the weights as its successive minima.
 * `ZLattice.successiveMin_box`: the successive minima of the weighted box.
 * `ZLattice.successiveMin_crosspolytope`: the successive minima of the weighted cross-polytope.
+* `ZLattice.successiveMin_pi_box`, `ZLattice.successiveMin_pi_crosspolytope`: the same for the
+  standard lattice `ℤⁿ ⊆ ℝⁿ` in coordinates, without a choice of basis.
+* `ZLattice.prod_successiveMin_mul_measureReal_box`: the weighted box attains the upper bound of
+  Minkowski's second theorem.
+* `ZLattice.prod_successiveMin_mul_measureReal_crosspolytope`: the weighted cross-polytope attains
+  the lower bound of Minkowski's second theorem.
 
 ## References
 
@@ -48,7 +60,7 @@ computes the minima only.
 
 public section
 
-open Module Submodule
+open MeasureTheory Module Submodule
 open scoped Pointwise
 
 namespace ZLattice
@@ -109,11 +121,6 @@ theorem successiveMin_eq_of_crosspolytope_subset_of_subset_box (ha : ∀ j, 0 < 
   rw [finrank_span_eq_card hv, Fintype.card_fin, Basis.finrank_flag, Fin.val_castSucc] at hle
   omega
 
-/-- With nonnegative weights, the weighted cross-polytope lies in the weighted box. -/
-private lemma crosspolytope_subset_box (ha : ∀ j, 0 ≤ a j) :
-    {x | ∑ j, a j * |b.repr x j| ≤ 1} ⊆ {x | ∀ j, a j * |b.repr x j| ≤ 1} := fun _ hx j ↦
-  (Finset.single_le_sum (fun k _ ↦ mul_nonneg (ha k) (abs_nonneg _)) (Finset.mem_univ j)).trans hx
-
 /-- **The successive minima of a weighted box.** Let `b` be a basis of `E` and `a` positive
 nondecreasing weights. The successive minima of the lattice `span ℤ (range b)` with respect to the
 weighted box `K = {x | ∀ j, a j * |b.repr x j| ≤ 1}` are the weights `a i`. -/
@@ -121,7 +128,8 @@ theorem successiveMin_box (ha : ∀ j, 0 < a j) (hmono : Monotone a)
     (hK : (K : Set E) = {x | ∀ j, a j * |b.repr x j| ≤ 1}) (i : Fin (finrank ℝ E)) :
     successiveMin (span ℤ (Set.range b)) K i = a i :=
   successiveMin_eq_of_crosspolytope_subset_of_subset_box ha hmono
-    ((crosspolytope_subset_box fun j ↦ (ha j).le).trans hK.ge) hK.le i
+    ((TauCeti.weighted_crosspolytope_subset_weighted_box (fun j ↦ (ha j).le) fun x ↦
+      b.repr x).trans hK.ge) hK.le i
 
 /-- **The successive minima of a weighted cross-polytope.** Let `b` be a basis of `E` and `a`
 positive nondecreasing weights. The successive minima of the lattice `span ℤ (range b)` with
@@ -131,6 +139,107 @@ theorem successiveMin_crosspolytope (ha : ∀ j, 0 < a j) (hmono : Monotone a)
     (hK : (K : Set E) = {x | ∑ j, a j * |b.repr x j| ≤ 1}) (i : Fin (finrank ℝ E)) :
     successiveMin (span ℤ (Set.range b)) K i = a i :=
   successiveMin_eq_of_crosspolytope_subset_of_subset_box ha hmono hK.ge
-    (hK.le.trans (crosspolytope_subset_box fun j ↦ (ha j).le)) i
+    (hK.le.trans (TauCeti.weighted_crosspolytope_subset_weighted_box (fun j ↦ (ha j).le) fun x ↦
+      b.repr x)) i
+
+/-! ### The standard lattice `ℤⁿ ⊆ ℝⁿ`
+
+The statements above, in the coordinates of `Fin n → ℝ`. The successive minima are indexed by
+`Fin (finrank ℝ (Fin n → ℝ))`, which is `Fin n` only up to `Module.finrank_fin_fun`, so the weight
+attached to the `i`-th minimum is `w (i.cast (finrank_fin_fun ℝ))`. -/
+
+section Pi
+
+variable {n : ℕ} {w : Fin n → ℝ} {C : ConvexBody (Fin n → ℝ)}
+
+/-- **The successive minima of `ℤⁿ` with respect to a body between a weighted cross-polytope and a
+weighted box.** If the convex body `C ⊆ ℝⁿ` contains `{x | ∑ j, w j * |x j| ≤ 1}` and is contained
+in `{x | ∀ j, w j * |x j| ≤ 1}` for positive nondecreasing weights `w`, then the successive
+minima of the standard lattice `ℤⁿ` with respect to `C` are the weights. -/
+theorem successiveMin_pi_eq_of_crosspolytope_subset_of_subset_box (hw : ∀ j, 0 < w j)
+    (hmono : Monotone w) (hcross : {x | ∑ j, w j * |x j| ≤ 1} ⊆ (C : Set (Fin n → ℝ)))
+    (hbox : (C : Set (Fin n → ℝ)) ⊆ {x | ∀ j, w j * |x j| ≤ 1})
+    (i : Fin (finrank ℝ (Fin n → ℝ))) :
+    successiveMin (span ℤ (Set.range (Pi.basisFun ℝ (Fin n)))) C i =
+      w (i.cast (finrank_fin_fun ℝ)) := by
+  -- Apply the basis form to the standard basis, reindexed by `Fin (finrank ℝ (Fin n → ℝ))`.
+  set e : Fin (finrank ℝ (Fin n → ℝ)) ≃ Fin n := finCongr (finrank_fin_fun ℝ)
+  have hrepr (x : Fin n → ℝ) (j) : ((Pi.basisFun ℝ (Fin n)).reindex e.symm).repr x j = x (e j) := by
+    simp
+  have h := successiveMin_eq_of_crosspolytope_subset_of_subset_box
+    (b := (Pi.basisFun ℝ (Fin n)).reindex e.symm) (a := w ∘ e) (K := C) (fun j ↦ hw _)
+    (hmono.comp fun _ _ ↦ by simp [e]) (fun x hx ↦ hcross ?_) (fun x hx ↦ ?_) i
+  · rwa [Basis.range_reindex] at h
+  · simpa [hrepr, e.sum_comp fun j ↦ w j * |x j|] using hx
+  · simpa [hrepr, e.forall_congr_left] using hbox hx
+
+/-- **The successive minima of `ℤⁿ` with respect to a weighted box.** For positive nondecreasing
+weights `w`, the successive minima of the standard lattice `ℤⁿ` with respect to the box
+`C = {x | ∀ j, w j * |x j| ≤ 1}` are the weights. -/
+theorem successiveMin_pi_box (hw : ∀ j, 0 < w j) (hmono : Monotone w)
+    (hC : (C : Set (Fin n → ℝ)) = {x | ∀ j, w j * |x j| ≤ 1}) (i : Fin (finrank ℝ (Fin n → ℝ))) :
+    successiveMin (span ℤ (Set.range (Pi.basisFun ℝ (Fin n)))) C i =
+      w (i.cast (finrank_fin_fun ℝ)) :=
+  successiveMin_pi_eq_of_crosspolytope_subset_of_subset_box hw hmono
+    ((TauCeti.weighted_crosspolytope_subset_weighted_box (fun j ↦ (hw j).le) id).trans hC.ge)
+    hC.le i
+
+/-- **The successive minima of `ℤⁿ` with respect to a weighted cross-polytope.** For positive
+nondecreasing weights `w`, the successive minima of the standard lattice `ℤⁿ` with respect to the
+cross-polytope `C = {x | ∑ j, w j * |x j| ≤ 1}` are the weights. -/
+theorem successiveMin_pi_crosspolytope (hw : ∀ j, 0 < w j) (hmono : Monotone w)
+    (hC : (C : Set (Fin n → ℝ)) = {x | ∑ j, w j * |x j| ≤ 1})
+    (i : Fin (finrank ℝ (Fin n → ℝ))) :
+    successiveMin (span ℤ (Set.range (Pi.basisFun ℝ (Fin n)))) C i =
+      w (i.cast (finrank_fin_fun ℝ)) :=
+  successiveMin_pi_eq_of_crosspolytope_subset_of_subset_box hw hmono hC.ge
+    (hC.le.trans (TauCeti.weighted_crosspolytope_subset_weighted_box (fun j ↦ (hw j).le) id))
+    i
+
+end Pi
+
+section Measure
+
+variable [MeasurableSpace E] [BorelSpace E]
+
+/-- **Equality in the upper bound of Minkowski's second theorem.** Let `b` be a basis of `E`, `a`
+positive nondecreasing weights and `μ` an additive Haar measure on `E`. The weighted box
+`K = {x | ∀ j, a j * |b.repr x j| ≤ 1}` satisfies `(∏ i, λ_i) * μ K = 2 ^ d * covolume L μ` for the
+lattice `L = span ℤ (range b)`, so the constant `2 ^ d` of
+`ZLattice.prod_successiveMin_mul_measureReal_le_two_pow_mul_covolume` is attained. -/
+theorem prod_successiveMin_mul_measureReal_box (ha : ∀ j, 0 < a j) (hmono : Monotone a)
+    (hK : (K : Set E) = {x | ∀ j, a j * |b.repr x j| ≤ 1}) (μ : Measure E := by volume_tac)
+    [μ.IsAddHaarMeasure] :
+    (∏ i, successiveMin (span ℤ (Set.range b)) K i) * μ.real K =
+      2 ^ finrank ℝ E * covolume (span ℤ (Set.range b)) μ := by
+  have := Module.Finite.of_basis b
+  have hprod : 0 < ∏ i, a i := Finset.prod_pos fun i _ ↦ ha i
+  rw [covolume_eq_measure_fundamentalDomain _ μ (ZSpan.isAddFundamentalDomain b μ),
+    Finset.prod_congr rfl fun i _ ↦ successiveMin_box ha hmono hK i, measureReal_def, hK,
+    b.addHaar_weighted_box μ ha, ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity),
+    Fintype.card_fin, ← measureReal_def]
+  field_simp
+
+/-- **Equality in the lower bound of Minkowski's second theorem.** Let `b` be a basis of `E`, `a`
+positive nondecreasing weights and `μ` an additive Haar measure on `E`. The weighted
+cross-polytope `K = {x | ∑ j, a j * |b.repr x j| ≤ 1}` satisfies
+`(∏ i, λ_i) * μ K = 2 ^ d / d! * covolume L μ` for the lattice `L = span ℤ (range b)`, so the
+constant `2 ^ d / d!` of
+`ZLattice.two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measureReal` is
+attained. -/
+theorem prod_successiveMin_mul_measureReal_crosspolytope (ha : ∀ j, 0 < a j)
+    (hmono : Monotone a) (hK : (K : Set E) = {x | ∑ j, a j * |b.repr x j| ≤ 1})
+    (μ : Measure E := by volume_tac) [μ.IsAddHaarMeasure] :
+    (∏ i, successiveMin (span ℤ (Set.range b)) K i) * μ.real K =
+      2 ^ finrank ℝ E / (finrank ℝ E).factorial * covolume (span ℤ (Set.range b)) μ := by
+  have := Module.Finite.of_basis b
+  have hprod : 0 < ∏ i, a i := Finset.prod_pos fun i _ ↦ ha i
+  rw [covolume_eq_measure_fundamentalDomain _ μ (ZSpan.isAddFundamentalDomain b μ),
+    Finset.prod_congr rfl fun i _ ↦ successiveMin_crosspolytope ha hmono hK i, measureReal_def,
+    hK, b.addHaar_weighted_crosspolytope μ ha, ENNReal.toReal_mul,
+    ENNReal.toReal_ofReal (by positivity), Fintype.card_fin, ← measureReal_def]
+  field_simp
+
+end Measure
 
 end ZLattice

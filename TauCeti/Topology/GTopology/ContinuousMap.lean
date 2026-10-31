@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Category.TopCat.Opens
-public import Mathlib.CategoryTheory.Sites.CoverPreserving
 public import TauCeti.Topology.GTopology.Basic
 
 /-!
@@ -103,6 +102,27 @@ theorem monotone_comap (f : G.ContinuousMap G') : Monotone f.comap := fun V W hV
   rw [← ι.le_iff_le, coe_comap, coe_comap]
   exact Set.preimage_mono (ι'.le_iff_le.mpr hVW)
 
+section SameSpace
+
+variable {B₂ : Type*} [SemilatticeInf B₂] [OrderTop B₂] {ι₂ : B₂ ↪o Set X} {G₂ : GTopology ι₂}
+  {f : G.ContinuousMap G₂} (hf : ∀ x, f x = x)
+
+include hf in
+/-- A continuous map of G-topologies on the same space whose underlying function is the identity
+sends each admissible open to an admissible open with the same underlying set. -/
+theorem coe_comap_of_forall_eq (V : B₂) : ι (f.comap V) = ι₂ V := by
+  rw [coe_comap]
+  ext x
+  simp [hf]
+
+include hf in
+/-- A continuous map of G-topologies on the same space whose underlying function is the identity
+preserves and reflects inclusions of admissible opens. -/
+theorem comap_le_comap_iff_of_forall_eq {V W : B₂} : f.comap V ≤ f.comap W ↔ V ≤ W := by
+  rw [← ι.le_iff_le, ← ι₂.le_iff_le, coe_comap_of_forall_eq hf, coe_comap_of_forall_eq hf]
+
+end SameSpace
+
 /-- The preimage map on admissible opens, as a map preserving finite meets. -/
 def comapInfTopHom (f : G.ContinuousMap G') : InfTopHom B' B where
   toFun := f.comap
@@ -181,14 +201,8 @@ instance representablyFlat_comapFunctor (f : G.ContinuousMap G') :
 /-- A continuous map sends covering sieves of admissible opens to covering sieves of their
 preimages. -/
 theorem coverPreserving_comapFunctor (f : G.ContinuousMap G') :
-    CoverPreserving G'.grothendieckTopology G.grothendieckTopology f.comapFunctor where
-  cover_preserve {V R} hR := by
-    obtain ⟨S, hS, hSR⟩ := (mem_grothendieckTopology_iff G').mp hR
-    refine (mem_grothendieckTopology_iff G).mpr ⟨_, f.covers_comap hS, ?_⟩
-    intro _ g hg
-    obtain ⟨W, hW, rfl⟩ := (coverPresieve_apply _ g).mp hg
-    exact ⟨W, homOfLE (G'.subset hS W hW), 𝟙 _, hSR _ _ ((coverPresieve_apply _ _).mpr hW),
-      Subsingleton.elim _ _⟩
+    CoverPreserving G'.grothendieckTopology G.grothendieckTopology f.comapFunctor :=
+  coverPreserving_functor (OrderHom.ofClass f.comapInfTopHom).monotone f.covers_comap
 
 /-- The preimage functor of a continuous map of G-topologies is a continuous functor of sites,
 so it induces the direct image `Functor.sheafPushforwardContinuous` of sheaves. -/

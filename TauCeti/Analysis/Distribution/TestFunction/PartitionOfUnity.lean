@@ -7,23 +7,26 @@ module
 
 public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
 # Finite localization of test functions
 
 A test function can be written as a finite sum of tests subordinate to any open cover of its
 support. Consequently, an additive map on test functions which vanishes locally vanishes globally;
-continuity of the additive map is not required.
+continuity of the additive map is not required. Every compact subset of the domain also has a
+cutoff test function equal to one on a neighbourhood of it.
 
 The decomposition uses Mathlib's `SmoothPartitionOfUnity.exists_isSubordinate`, applied to the
-compact support. This is the partition-of-unity localization of distributions described in
-Hörmander, *The Analysis of Linear Partial Differential Operators I*, §2.2 (Localization).
+compact support, and the cutoff packages `IsCompact.exists_contDiff_cutoff` as a test function.
+This is the partition-of-unity localization of distributions described in Hörmander, *The Analysis
+of Linear Partial Differential Operators I*, §2.2 (Localization).
 -/
 
 public section
 
-open Set TopologicalSpace
-open scoped Distributions ContDiff Manifold
+open Set TopologicalSpace Filter
+open scoped Distributions ContDiff Manifold Topology
 
 namespace TestFunction
 
@@ -62,6 +65,14 @@ theorem exists_sum_subordinate (φ : 𝓓^{n}(Ω, F)) {ι : Type*} (U : ι → S
   · -- Each summand is `ρ i • φ` with `0 ≤ ρ i ≤ 1`.
     simpa [ψ, norm_smul, abs_of_nonneg (ρ.nonneg i x)] using
       mul_le_of_le_one_left (norm_nonneg (φ x)) (ρ.le_one i x)
+
+/-- Every compact subset of the domain has a test function with values in `[0, 1]` that is equal
+to one on a neighbourhood of it. -/
+theorem exists_eventually_eq_one {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ χ : 𝓓^{n}(Ω, ℝ), (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ ∀ x, χ x ∈ Icc 0 1 := by
+  obtain ⟨χ, hχ, hχ01, hχ1, hχc, hχΩ⟩ := hK.exists_contDiff_cutoff Ω.isOpen hKΩ
+  exact ⟨⟨χ, hχ.of_le (by simp), hχc, hχΩ⟩,
+    subset_interior_iff_mem_nhdsSet.1 hχ1, fun x ↦ hχ01 ⟨x, rfl⟩⟩
 
 end TestFunction
 

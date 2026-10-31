@@ -19,7 +19,8 @@ over every commutative ring, including in characteristic two.
 For the last pair in the standard positive system, this is the type-D diagram involution.
 It exchanges the raising and lowering generators at the two terminal nodes and fixes the
 other generators. The result supplies the native Lie automorphism needed to twist the two
-half-spin representations; it does not construct an intertwiner between them.
+half-spin representations; the intertwiner between them, which needs the spinor module, is
+`TauCeti.SpinPolarizationData.typeDGraphHalfSpinLieModuleEquiv`.
 -/
 
 public section

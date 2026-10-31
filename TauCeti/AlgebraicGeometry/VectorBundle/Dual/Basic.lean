@@ -32,6 +32,8 @@ quasicoherent sheaf whose underlying module is finite locally free has the left 
   swap, between the underlying sheaves of modules;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rigidCategory`: finite locally free sheaves
   form a rigid category;
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.freeIsoDual`: the free sheaf on a finite type
+  is isomorphic to its dual;
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_of_isFiniteLocallyFree`: a
   finite locally free quasicoherent sheaf is dualizable in `QuasicoherentSheaf X`.
 -/
@@ -123,6 +125,23 @@ theorem coevaluation_leftDual_hom (E : FiniteLocallyFreeSheaf X) :
   change (η_ (dual E) E).hom = _
   rw [ObjectProperty.exactPairingFullSubcategory_coevaluation_hom]
   exact exactPairingOfIsIsoDualTensorIhom_coevaluation
+
+variable (X) in
+/-- The free sheaf `𝒪_X^I` on a finite type is isomorphic to its dual `𝓗om(𝒪_X^I, 𝒪_X)`: the
+inverse of `TauCeti.SheafOfModules.dualFreeIso`, which sends the basis sections of `𝒪_X^I` to the
+dual basis sections `TauCeti.SheafOfModules.dualFreeι`. -/
+def freeIsoDual (I : Type u) [Finite I] : free X I ≅ dual (free X I) :=
+  ObjectProperty.isoMk _ (eqToIso (free_obj X I) ≪≫
+    (SheafOfModules.dualFreeIso (R := X.sheaf) I).symm ≪≫ eqToIso (by rw [dual_obj, free_obj]; rfl))
+
+/-- The underlying map of `freeIsoDual X I` is the inverse of
+`TauCeti.SheafOfModules.dualFreeIso`, up to the identification `free_obj` of the underlying sheaf
+of `free X I` with the free sheaf of modules. -/
+theorem freeIsoDual_hom_hom (I : Type u) [Finite I] :
+    (freeIsoDual X I).hom.hom =
+      eqToHom (free_obj X I) ≫ (SheafOfModules.dualFreeIso (R := X.sheaf) I).inv ≫
+        eqToHom (by rw [dual_obj, free_obj]; rfl) :=
+  (rfl)
 
 end FiniteLocallyFreeSheaf
 
