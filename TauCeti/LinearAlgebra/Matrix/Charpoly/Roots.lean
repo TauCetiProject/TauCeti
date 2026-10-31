@@ -67,13 +67,9 @@ theorem charpoly_roots_filter_ne_zero_mul_eq (A : Matrix m n K) (B : Matrix n m 
       Polynomial.roots_X_pow, Polynomial.roots_X_pow] at hroots
   have hroots_nonzero :=
     congrArg (Multiset.filter (fun z : K => z ≠ 0)) hroots
-  have hzero_roots (d : ℕ) :
-      Multiset.filter (fun z : K => z ≠ 0) (d • ({0} : Multiset K)) = 0 := by
-    induction d with
-    | zero => simp
-    | succ d ih => simp [succ_nsmul, ih]
-  simp only [Multiset.filter_add, hzero_roots, zero_add] at hroots_nonzero
-  exact hroots_nonzero
+  simpa only [Multiset.filter_add, Multiset.filter_nsmul, Multiset.filter_singleton,
+    ne_eq, not_true_eq_false, ite_false, Multiset.empty_eq_zero, nsmul_zero, zero_add] using
+    hroots_nonzero
 
 end RectangularProducts
 /-- If `det (p(A)) ≠ 0` for a square matrix `A` over a field, then `p` does not vanish at any
