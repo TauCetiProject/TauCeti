@@ -32,6 +32,8 @@ an order-zero bound on the tests supported in each compact subset of `Ω`.
 * `Distribution.enorm_apply_le_localMass_mul`: for linear `T`,
   `‖T φ‖ₑ ≤ localMass T U * ‖φ‖_∞` when `φ` is supported in `U`.
 * `Distribution.mass_eq_zero_iff`: a linear map has mass zero exactly when it vanishes.
+* `Distribution.localMass_add_localMass_le`: for a real-valued linear map, the local masses on
+  disjoint sets add up to at most the local mass on their union.
 * `Distribution.mass_add_le`, `Distribution.mass_smul`: the triangle inequality and homogeneity.
 * `Distribution.lowerSemicontinuous_mass`: mass is lower semicontinuous for pointwise
   (weak) convergence; `Distribution.mass_le_liminf` is the corresponding `liminf` bound.
@@ -177,6 +179,13 @@ theorem enorm_apply_le_localMass_mul (T : 𝓕) (hφU : tsupport φ ⊆ U) :
     _ = localMass T U * ‖(φ : E →ᵇ F)‖ₑ := by
         rw [mul_comm, Real.enorm_of_nonneg hb.le, ← ofReal_norm]
 
+/-- The mass bound for a test bounded pointwise by `c` and supported in `U`. -/
+theorem enorm_apply_le_localMass_mul_of_forall_enorm_le (T : 𝓕) (hφU : tsupport φ ⊆ U)
+    (hφc : ∀ x, ‖φ x‖ₑ ≤ c) : ‖T φ‖ₑ ≤ localMass T U * c := by
+  refine (enorm_apply_le_localMass_mul T hφU).trans (mul_le_mul_right ?_ _)
+  rw [BoundedContinuousFunction.enorm_eq_iSup_enorm]
+  exact iSup_le hφc
+
 theorem enorm_apply_le_mass_mul (T : 𝓕) (φ : 𝓓^{n}(Ω, F)) :
     ‖T φ‖ₑ ≤ mass T * ‖(φ : E →ᵇ F)‖ₑ := by
   simpa using enorm_apply_le_localMass_mul T (subset_univ (tsupport φ))
@@ -187,6 +196,47 @@ theorem mass_eq_zero_iff (T : 𝓕) : mass T = 0 ↔ ⇑T = 0 := by
   simpa [h] using enorm_apply_le_mass_mul T φ
 
 end Linear
+
+section Real
+
+variable {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F) ℝ] [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, F) ℝ]
+
+/-- On disjoint sets, the local masses of a real-valued linear map add up to at most the local
+mass on the union. -/
+theorem localMass_add_localMass_le (T : 𝓕) (h : Disjoint U U') :
+    localMass T U + localMass T U' ≤ localMass T (U ∪ U') := by
+  -- Tests on `U` and on `U'`, multiplied by the signs of their values, add up to a test on
+  -- `U ∪ U'` which is still bounded by one, since their supports are disjoint.
+  have key (φ : 𝓓^{n}(Ω, F)) (hφ : tsupport φ ⊆ U ∧ ∀ x, ‖φ x‖ ≤ 1) (ψ : 𝓓^{n}(Ω, F))
+      (hψ : tsupport ψ ⊆ U' ∧ ∀ x, ‖ψ x‖ ≤ 1) : ‖T φ‖ₑ + ‖T ψ‖ₑ ≤ localMass T (U ∪ U') := by
+    have hsign (r : ℝ) : ‖(SignType.sign r : ℝ)‖ ≤ 1 := by
+      rcases lt_trichotomy r 0 with hr | rfl | hr <;> simp [*]
+    set χ := (SignType.sign (T φ) : ℝ) • φ + (SignType.sign (T ψ) : ℝ) • ψ
+    have hχU : tsupport χ ⊆ U ∪ U' := (tsupport_add _ _).trans <| union_subset_union
+      ((tsupport_smul_subset_right _ _).trans hφ.1) ((tsupport_smul_subset_right _ _).trans hψ.1)
+    have hχ (x : E) : ‖χ x‖ ≤ 1 := by
+      by_cases hx : x ∈ tsupport φ
+      · have hψx : ψ x = 0 := image_eq_zero_of_notMem_tsupport fun hx' =>
+          h.ne_of_mem (hφ.1 hx) (hψ.1 hx') rfl
+        simpa [χ, hψx, norm_smul] using
+          (mul_le_of_le_one_left (norm_nonneg _) (hsign _)).trans (hφ.2 x)
+      · simpa [χ, image_eq_zero_of_notMem_tsupport hx, norm_smul] using
+          (mul_le_of_le_one_left (norm_nonneg _) (hsign _)).trans (hψ.2 x)
+    have hTχ : T χ = |T φ| + |T ψ| := by simp [χ]
+    calc ‖T φ‖ₑ + ‖T ψ‖ₑ = ‖T χ‖ₑ := by
+          rw [hTχ, Real.enorm_of_nonneg (add_nonneg (abs_nonneg (T φ)) (abs_nonneg (T ψ))),
+            ENNReal.ofReal_add (abs_nonneg _) (abs_nonneg _), Real.enorm_eq_ofReal_abs,
+            Real.enorm_eq_ofReal_abs]
+      _ ≤ localMass T (U ∪ U') := enorm_le_localMass hχU hχ
+  calc localMass T U + localMass T U'
+      ≤ (⨆ (φ : 𝓓^{n}(Ω, F)) (_ : tsupport φ ⊆ U ∧ ∀ x, ‖φ x‖ ≤ 1), ‖T φ‖ₑ) +
+          ⨆ (ψ : 𝓓^{n}(Ω, F)) (_ : tsupport ψ ⊆ U' ∧ ∀ x, ‖ψ x‖ ≤ 1), ‖T ψ‖ₑ :=
+        add_le_add (localMass_le_iff.2 fun φ h₁ h₂ => le_iSup₂_of_le φ ⟨h₁, h₂⟩ le_rfl)
+          (localMass_le_iff.2 fun φ h₁ h₂ => le_iSup₂_of_le φ ⟨h₁, h₂⟩ le_rfl)
+    _ ≤ localMass T (U ∪ U') := ENNReal.biSup_add_biSup_le' ⟨0, by simp, by simp⟩
+        ⟨0, by simp, by simp⟩ key
+
+end Real
 
 section Semicontinuity
 
