@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.CategoryTheory.EqToHom
 public import Mathlib.Data.Finset.Grade
 public import TauCeti.CategoryTheory.Category.Preorder
