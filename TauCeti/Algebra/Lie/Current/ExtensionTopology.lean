@@ -83,7 +83,7 @@ variable {Φ Ψ : LinearMap.BilinForm R L} (hΦ : Φ.lieInvariant L) (hΦs : Φ.
 theorem continuous_levelHom {r : R} (h : Ψ = r • Φ) :
     Continuous (levelHom hΦ hΦs hΨ hΨs h) := by
   refine ofTwoCocycle.continuous_iff.mpr ⟨?_, ?_⟩
-  · simpa using (ofTwoCocycle.continuous_iff.mp continuous_id').1
+  · simpa using ofTwoCocycle.continuous_ofProd_symm_fst _
   · simpa [Function.comp_def] using (ofTwoCocycle.isLocallyConstant_snd _).comp (r • ·)
 
 /-- For a unit `u`, the level isomorphism `K ↦ u • K` is continuous. -/
@@ -101,7 +101,7 @@ theorem continuous_levelEquiv_symm {u : Rˣ} (h : Ψ = (u : R) • Φ) :
     obtain ⟨⟨a, b⟩, rfl⟩ := (ofProd _).surjective w
     simp
   refine ofTwoCocycle.continuous_iff.mpr ⟨?_, ?_⟩
-  · simpa [hv] using (ofTwoCocycle.continuous_iff.mp continuous_id').1
+  · simpa [hv] using ofTwoCocycle.continuous_ofProd_symm_fst _
   · simpa [hv, Function.comp_def] using (ofTwoCocycle.isLocallyConstant_snd _).comp (u⁻¹ • ·)
 
 end Level
@@ -145,7 +145,7 @@ theorem continuous_coordinateExtensionLieEquiv (σ : K⟦X⟧ ≃ₐ[K] K⟦X⟧
     Continuous (coordinateExtensionLieEquiv Φ hΦ hΦs σ) := by
   refine ofTwoCocycle.continuous_iff.mpr ⟨?_, ?_⟩
   · simpa [Function.comp_def] using
-      (continuous_substLieEquiv _).comp (ofTwoCocycle.continuous_iff.mp continuous_id').1
+      (continuous_substLieEquiv _).comp (ofTwoCocycle.continuous_ofProd_symm_fst _)
   · simpa using ofTwoCocycle.isLocallyConstant_snd _
 
 /-- The inverse of the lift of a formal coordinate change is continuous. -/

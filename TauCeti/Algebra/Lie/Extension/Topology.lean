@@ -107,9 +107,13 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → ofTwoCocycle 
 
 variable (c)
 
+/-- The `L`-coordinate is continuous. -/
+theorem continuous_ofProd_symm_fst : Continuous fun v : ofTwoCocycle c ↦ ((ofProd c).symm v).1 :=
+  (continuous_iff.mp continuous_id').1
+
 /-- The projection onto `L` is continuous. -/
 theorem continuous_proj : Continuous (proj c) := by
-  simpa only [funext (proj_apply c)] using (continuous_iff.mp continuous_id').1
+  simpa only [funext (proj_apply c)] using continuous_ofProd_symm_fst c
 
 /-- The coefficient coordinate is locally constant. -/
 theorem isLocallyConstant_snd : IsLocallyConstant fun v : ofTwoCocycle c ↦ ((ofProd c).symm v).2 :=
@@ -282,10 +286,10 @@ theorem continuous_ofCoboundary_iff (c' : twoCocycle R L M) (f : oneCochain R L 
     Continuous (LieEquiv.ofCoboundary c c' f h) ↔ f ∈ continuousOneCochain R L M := by
   let : TopologicalSpace M := ⊥
   have : DiscreteTopology M := ⟨rfl⟩
-  have hp : Continuous fun v : ofTwoCocycle c ↦ ((ofProd c).symm v).1 :=
-    (continuous_iff.mp continuous_id').1
+  have hp := continuous_ofProd_symm_fst c
   have hv (v : ofTwoCocycle c) : (ofProd c').symm (LieEquiv.ofCoboundary c c' f h v) =
-      (((ofProd c).symm v).1, ((ofProd c).symm v).2 - f ((ofProd c).symm v).1) := rfl
+      (((ofProd c).symm v).1, ((ofProd c).symm v).2 - f ((ofProd c).symm v).1) := by
+    simp
   simp only [mem_continuousOneCochain_iff_continuous, continuous_iff, hv,
     IsLocallyConstant.iff_continuous]
   refine ⟨fun ⟨_, hf⟩ ↦ ?_, fun hf ↦ ⟨hp, (isLocallyConstant_snd c).continuous.sub (hf.comp hp)⟩⟩
@@ -299,10 +303,11 @@ theorem continuous_ofCoboundary_symm (c' : twoCocycle R L M) {f : oneCochain R L
     Continuous (LieEquiv.ofCoboundary c c' f h).symm := by
   let : TopologicalSpace M := ⊥
   have : DiscreteTopology M := ⟨rfl⟩
-  have hp : Continuous fun v : ofTwoCocycle c' ↦ ((ofProd c').symm v).1 :=
-    (continuous_iff.mp continuous_id').1
+  have hp := continuous_ofProd_symm_fst c'
   have hv (v : ofTwoCocycle c') : (ofProd c).symm ((LieEquiv.ofCoboundary c c' f h).symm v) =
-      (((ofProd c').symm v).1, ((ofProd c').symm v).2 + f ((ofProd c').symm v).1) := rfl
+      (((ofProd c').symm v).1, ((ofProd c').symm v).2 + f ((ofProd c').symm v).1) := by
+    rw [Equiv.symm_apply_eq, LieEquiv.symm_apply_eq]
+    simp
   rw [mem_continuousOneCochain_iff_continuous] at hf
   simp only [continuous_iff, hv, IsLocallyConstant.iff_continuous]
   exact ⟨hp, (isLocallyConstant_snd c').continuous.add (hf.comp hp)⟩
