@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Basic
+public import TauCeti.Combinatorics.Graph.Delete
 
 /-!
 # The bridge forest of a multigraph
@@ -33,14 +34,16 @@ The bridge forest records how the bridgeless pieces of `G` are held together:
   those of its bridge forest, so the two graphs have the same number of components and the
   bridge forest is a tree exactly when `G` is connected (`Graph.connected_bridgeForest_iff`).
 * `Graph.BridgeComponent.not_isBridge`: every bridge component is a connected graph without
-  bridges.
+  bridges, since deleting all bridges leaves none (`Graph.not_isBridge_deleteEdges_bridgeSet`).
 
 No statement here assumes finiteness.  Loops, parallel edges, disconnected graphs and the empty
 graph are all allowed; the empty graph has the empty bridge forest.
 
-The construction is the edge analogue of the block graph of R. Diestel, *Graph Theory*, 5th ed.,
-Graduate Texts in Mathematics 173, Springer, 2017, Section 3.1, which contracts the blocks of a
-graph instead of its bridgeless pieces.  The choice of the bridge components as vertices, and
+The construction is an edge analogue of the block graph of R. Diestel, *Graph Theory*, 5th ed.,
+Graduate Texts in Mathematics 173, Springer, 2017, Section 3.1.  That graph is the bipartite
+forest whose vertices are the blocks and cut vertices of a graph, each block joined to the cut
+vertices it contains; blocks may share cut vertices, whereas bridge components are disjoint and
+are joined directly by the bridges.  The choice of the bridge components as vertices, and
 the names `Graph.bridgeSet`, `Graph.BridgeComponent` and `Graph.bridgeComponentOf`, follow an
 earlier Tau Ceti attempt at this construction, https://github.com/TauCetiProject/TauCeti/pull/20726
 by @fzaiser.
@@ -57,12 +60,6 @@ namespace Graph
 variable {α : Type u} {β : Type v} {G : Graph α β} {e : β} {x y : α}
 
 /-! ### Bridge components -/
-
-/-- The ends of an edge that is not a bridge remain reachable from each other after deleting
-all bridges. -/
-theorem IsLink.reachable_deleteEdges_bridgeSet (h : G.IsLink e x y) (he : ¬ G.IsBridge e) :
-    (G.deleteEdges G.bridgeSet).Reachable x y :=
-  IsLink.reachable (e := e) ((deleteEdges_isLink ..).mpr ⟨h, he⟩)
 
 /-- The **bridge components** of `G` are the connected components left after deleting every
 bridge of `G`; they are the vertices of the bridge forest. -/
@@ -119,19 +116,6 @@ theorem IsBridge.bridgeComponentOf_ne (he : G.IsBridge e) (h : G.IsLink e x y) :
   rw [Ne, bridgeComponentOf_eq_bridgeComponentOf_iff]
   exact fun hxy ↦ he.not_reachable_deleteEdges h
     (hxy.mono (G.deleteEdges_anti_right (singleton_subset_iff.mpr he)))
-
-/-- Deleting all bridges leaves a graph without bridges. -/
-theorem not_isBridge_deleteEdges_bridgeSet (G : Graph α β) (e : β) :
-    ¬ (G.deleteEdges G.bridgeSet).IsBridge e := by
-  intro he
-  obtain ⟨heG, hnb⟩ : e ∈ E(G) ∧ ¬ G.IsBridge e := by simpa using he.mem_edgeSet
-  -- A non-bridge lies on a cycle of `G`, which uses no bridge and so survives the deletion.
-  obtain ⟨u, p, hp, hep⟩ : ∃ u, ∃ p : G.Walk u u, p.IsCycle ∧ e ∈ p.edges := by
-    simpa [isBridge_iff_forall_cycle_notMem heG] using hnb
-  have hpD : ∀ f ∈ p.edges, f ∈ E(G.deleteEdges G.bridgeSet) := fun f hf ↦ by
-    simpa using ⟨p.edges_subset_edgeSet hf, fun hfb ↦ hfb.notMem_edges_of_isCycle hp hf⟩
-  exact he.notMem_edges_of_isCycle ((Walk.isCycle_transfer deleteEdges_le p hpD).mpr hp)
-    (by simpa using hep)
 
 /-- Every bridge component is a graph without bridges. -/
 theorem BridgeComponent.not_isBridge (C : G.BridgeComponent) (e : β) : ¬ C.1.IsBridge e :=
