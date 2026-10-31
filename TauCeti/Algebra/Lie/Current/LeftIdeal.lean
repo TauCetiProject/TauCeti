@@ -189,6 +189,14 @@ theorem exists_forall_mul_mem_orderLeftIdeal (b : UK) (N : ℤ) :
     obtain ⟨M, h⟩ := hb M₁
     exact ⟨M, fun x hx ↦ mul_assoc x b c ▸ h₁ _ (h x hx)⟩
 
+variable (Φ hΦ hΦs a) in
+/-- The right-shift estimate for the left ideals `I_n` of natural orders: for every `b` and `n`
+there is a natural `m` with `I_m b ⊆ I_n`. -/
+theorem exists_forall_mul_mem_orderLeftIdeal_natCast (b : UK) (n : ℕ) :
+    ∃ m : ℕ, ∀ x ∈ orderLeftIdeal Φ hΦ hΦs a m, x * b ∈ orderLeftIdeal Φ hΦ hΦs a n := by
+  obtain ⟨M, hM⟩ := exists_forall_mul_mem_orderLeftIdeal Φ hΦ hΦs a b n
+  exact ⟨M.toNat, fun x hx ↦ hM x (orderLeftIdeal_antitone Φ hΦ hΦs a (Int.self_le_toNat M) hx)⟩
+
 /-- **Smoothness for `I_N` is smoothness of the current action.** A module over
 `U(ĝ) / (ι K - a)` is smooth for the family of left ideals `I_N` exactly when every vector is
 killed by all currents of some order. -/
