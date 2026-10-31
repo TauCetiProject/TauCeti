@@ -71,8 +71,9 @@ theorem MvPolynomial.monomial_mem_iff_monomial_one_mem {σ R : Type*} [CommSemir
     {a : σ →₀ ℕ} {c : R} (C : Subalgebra R (MvPolynomial σ R)) (hc : IsUnit c) :
     monomial a c ∈ C ↔ monomial a 1 ∈ C := by
   obtain ⟨u, rfl⟩ := hc
-  rw [← mul_one (u : R), ← smul_eq_mul, ← smul_monomial, ← Units.smul_def,
-    ← Subalgebra.mem_toSubmodule, Submodule.smul_mem_iff', Subalgebra.mem_toSubmodule]
+  have h : monomial a (u : R) = u • monomial a 1 := by simp [Units.smul_def, smul_monomial]
+  rw [h]
+  exact Submodule.smul_mem_iff' (p := Subalgebra.toSubmodule C) u
 
 namespace MonomialOrder
 
