@@ -357,6 +357,25 @@ theorem variance_id_chiSquaredMeasure (hk : 0 ≤ k) :
       variance_id_gammaMeasure (by positivity) one_half_pos]
     ring
 
+/-- A real power is integrable under a positive-degree chi-squared law exactly when its exponent
+is greater than minus half the number of degrees of freedom. -/
+@[simp]
+theorem integrable_rpow_chiSquaredMeasure_iff (hk : 0 < k) (q : ℝ) :
+    Integrable (fun x : ℝ ↦ x ^ q) (chiSquaredMeasure k) ↔ -(k / 2) < q := by
+  rw [chiSquaredMeasure_eq_gammaMeasure hk,
+    integrable_rpow_gammaMeasure_iff (half_pos hk) one_half_pos]
+
+/-- The real-power moment of a positive-degree chi-squared law, on its exact integrability
+domain. -/
+theorem integral_rpow_chiSquaredMeasure (hk : 0 < k) (hq : -(k / 2) < q) :
+    ∫ x : ℝ, x ^ q ∂chiSquaredMeasure k =
+      2 ^ q * Real.Gamma (k / 2 + q) / Real.Gamma (k / 2) := by
+  rw [chiSquaredMeasure_eq_gammaMeasure hk,
+    integral_rpow_gammaMeasure (half_pos hk) one_half_pos hq]
+  congr 2
+  rw [Real.div_rpow zero_le_one (by norm_num), Real.one_rpow, one_div,
+    Real.rpow_neg (by norm_num : (0 : ℝ) ≤ 2), inv_inv]
+
 /-! ### Exponential moments and transforms -/
 
 /-- The exponential moments of a chi-squared law with positive degrees of freedom are exactly
