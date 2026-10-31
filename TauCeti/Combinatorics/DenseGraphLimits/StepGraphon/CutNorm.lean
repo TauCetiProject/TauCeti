@@ -100,7 +100,7 @@ private theorem rectIntegral_stepGraphonAvg_sub_eq_testIntegral
   set D := W.toSymmKernel - W'.toSymmKernel
   rw [SymmKernel.rectIntegral_def, SymmKernel.testIntegral_def,
     Finpartition.setIntegral_prod_eq_sum_parts μ P hP hS hT
-      (SymmKernel.integrable_uncurry μ _).integrableOn,
+      (SymmKernel.integrable_uncurry _).integrableOn,
     Finpartition.integral_eq_sum_parts μ P hP
       (D.integrable_testIntegrand μ (measurable_partProportion P hP S)
         (measurable_partProportion P hP T) (partProportion_mem_Icc_neg_one_one P S)

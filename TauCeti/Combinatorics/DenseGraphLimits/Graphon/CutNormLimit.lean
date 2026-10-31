@@ -200,7 +200,7 @@ private theorem martingale_limitStep
     Martingale (fun n (z : Ω × Ω) ↦ limitStep V n z.1 z.2)
       (TauCeti.MeasureTheory.countableSquareFiltration Ω) (μ.prod μ) := by
   refine martingale_nat (fun n ↦ stronglyMeasurable_limitStep V n)
-    (fun n ↦ (limitStep V n).toSymmKernel.integrable_uncurry μ) fun n ↦ ?_
+    (fun n ↦ (limitStep V n).toSymmKernel.integrable_uncurry) fun n ↦ ?_
   rw [TauCeti.MeasureTheory.countableSquareFiltration_eq_comap]
   have h := stepGraphonAvg_ae_eq_condExp (Finpartition.countablePartition Ω n)
     (fun _ hp ↦ Finpartition.measurableSet_of_mem_countablePartition Ω n hp)
