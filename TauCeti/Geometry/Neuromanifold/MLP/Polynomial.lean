@@ -135,21 +135,32 @@ hidden polynomial `q` when `i + 1 < L`, and `X` on the affine output layer. -/
 def layerPolynomial (q : Fin (L - 1) → Polynomial K) (i : Fin L) : Polynomial K :=
   if h : i.val + 1 < L then q ⟨i.val, by omega⟩ else Polynomial.X
 
+/-- A layer below the output has its hidden activation polynomial. -/
+theorem layerPolynomial_of_lt (q : Fin (L - 1) → Polynomial K) (i : Fin L)
+    (h : i.val + 1 < L) : layerPolynomial q i = q ⟨i.val, by omega⟩ := by
+  simp [layerPolynomial, h]
+
+/-- The output layer has activation polynomial `X`. -/
+theorem layerPolynomial_of_val_add_one_eq (q : Fin (L - 1) → Polynomial K) (i : Fin L)
+    (h : i.val + 1 = L) : layerPolynomial q i = Polynomial.X := by
+  simp [layerPolynomial, h]
+
 /-- In depth `L + 1`, the layer at `i : Fin L` is hidden and has activation polynomial `q i`. -/
 @[simp] theorem layerPolynomial_castSucc (q : Fin L → Polynomial K) (i : Fin L) :
-    layerPolynomial (L := L + 1) q i.castSucc = q i := by
-  simp [layerPolynomial]
+    layerPolynomial (L := L + 1) q i.castSucc = q i :=
+  layerPolynomial_of_lt (L := L + 1) q i.castSucc (by simp)
 
 /-- In depth `L + 1`, the output layer has activation polynomial `X`. -/
 @[simp] theorem layerPolynomial_last (q : Fin L → Polynomial K) :
-    layerPolynomial (L := L + 1) q (Fin.last L) = Polynomial.X := by
-  simp [layerPolynomial]
+    layerPolynomial (L := L + 1) q (Fin.last L) = Polynomial.X :=
+  layerPolynomial_of_val_add_one_eq (L := L + 1) q (Fin.last L) (by simp)
 
 /-- Identity hidden activation polynomials give `X` on every layer. -/
 @[simp] theorem layerPolynomial_X (i : Fin L) :
     layerPolynomial (fun _ => (Polynomial.X : Polynomial K)) i = Polynomial.X := by
-  unfold layerPolynomial
-  split <;> rfl
+  by_cases h : i.val + 1 < L
+  · exact layerPolynomial_of_lt _ i h
+  · exact layerPolynomial_of_val_add_one_eq _ i (by omega)
 
 /-- If the hidden activations of `A` evaluate the polynomials `q`, then every layer of `A`
 evaluates its activation polynomial. -/
@@ -157,8 +168,9 @@ theorem layerActivation_eq_eval_layerPolynomial (A : MLPSpec K L)
     {q : Fin (L - 1) → Polynomial K} (hq : ∀ j t, A.activation j t = (q j).eval t) (i : Fin L)
     (t : K) : A.layerActivation i t = (layerPolynomial q i).eval t := by
   by_cases h : i.val + 1 < L
-  · simp [A.layerActivation_of_lt i h, hq, layerPolynomial, h]
-  · simp [A.layerActivation_of_val_add_one_eq i (by omega), layerPolynomial, h]
+  · simp [A.layerActivation_of_lt i h, layerPolynomial_of_lt q i h, hq]
+  · simp [A.layerActivation_of_val_add_one_eq i (by omega),
+      layerPolynomial_of_val_add_one_eq q i (by omega)]
 
 /-- The prefix polynomials of `A` with hidden activation polynomials `q`, in the affine parameter
 coordinates and the input variables: `h₀ = x` and `hᵢ₊₁ = pᵢ (Wᵢ₊₁ hᵢ + bᵢ₊₁)`
@@ -194,10 +206,7 @@ theorem eval_polynomialPrefix (A : MLPSpec K L) {q : Fin (L - 1) → Polynomial 
   induction i using Fin.induction with
   | zero => simp
   | succ i ih =>
-    simp only [polynomialPrefix_succ, evalPrefix_succ]
-    rw [← aeval_eq_eval, ← Polynomial.aeval_algHom_apply, Polynomial.coe_aeval_eq_eval,
-      A.layerActivation_eq_eval_layerPolynomial hq]
-    simp [aeval_eq_eval, ih, Matrix.mulVec, dotProduct]
+    simp [A.layerActivation_eq_eval_layerPolynomial hq, ih, Matrix.mulVec, dotProduct]
 
 /-- The jointly polynomial tuple of `A` with hidden activation polynomials `q`: the output-layer
 prefix polynomials, in the affine parameter coordinates and the input variables. -/
