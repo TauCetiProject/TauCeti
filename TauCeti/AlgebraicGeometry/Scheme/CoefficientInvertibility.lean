@@ -39,21 +39,21 @@ namespace AlgebraicGeometry.Scheme
 variable (X : Scheme.{u}) (n : ℕ)
 
 /-- A natural number is invertible on a scheme if it is a unit in every local ring. -/
-def IsInvertibleOn : Prop :=
+def IsUnitNatCast : Prop :=
   ∀ x : X, IsUnit (n : X.presheaf.stalk x)
 
 /-- Invertibility of an order is equivalent to its being a unit in every stalk. -/
-theorem isInvertibleOn_iff_forall_isUnit_stalk :
-    X.IsInvertibleOn n ↔ ∀ x : X, IsUnit (n : X.presheaf.stalk x) :=
+theorem isUnitNatCast_iff_forall_isUnit_stalk :
+    X.IsUnitNatCast n ↔ ∀ x : X, IsUnit (n : X.presheaf.stalk x) :=
   Iff.rfl
 
 /-- An invertible order is a unit in the stalk at every point. -/
-theorem IsInvertibleOn.isUnit_stalk {X : Scheme.{u}} {n : ℕ} (h : X.IsInvertibleOn n)
+theorem IsUnitNatCast.isUnit_stalk {X : Scheme.{u}} {n : ℕ} (h : X.IsUnitNatCast n)
     (x : X) : IsUnit (n : X.presheaf.stalk x) :=
-  (X.isInvertibleOn_iff_forall_isUnit_stalk n).mp h x
+  (X.isUnitNatCast_iff_forall_isUnit_stalk n).mp h x
 
 /-- Invertibility of an order is equivalent to its being a unit in global sections. -/
-theorem isInvertibleOn_iff_isUnit : X.IsInvertibleOn n ↔ IsUnit (n : Γ(X, ⊤)) := by
+theorem isUnitNatCast_iff_isUnit : X.IsUnitNatCast n ↔ IsUnit (n : Γ(X, ⊤)) := by
   constructor
   · intro h
     apply X.toRingedSpace.isUnit_of_isUnit_germ ⊤ n
@@ -63,14 +63,14 @@ theorem isInvertibleOn_iff_isUnit : X.IsInvertibleOn n ↔ IsUnit (n : Γ(X, ⊤
     simpa using h.map (X.presheaf.germ ⊤ x trivial).hom
 
 /-- An invertible order is a unit in the sections over every open. -/
-theorem IsInvertibleOn.isUnit {X : Scheme.{u}} {n : ℕ} (h : X.IsInvertibleOn n)
+theorem IsUnitNatCast.isUnit {X : Scheme.{u}} {n : ℕ} (h : X.IsUnitNatCast n)
     (U : X.Opens) : IsUnit (n : Γ(X, U)) := by
-  simpa using ((X.isInvertibleOn_iff_isUnit n).mp h).map
+  simpa using ((X.isUnitNatCast_iff_isUnit n).mp h).map
     (X.presheaf.map (homOfLE le_top : U ⟶ ⊤).op).hom
 
 /-- It suffices to test invertibility on the rings of sections of affine opens. -/
-theorem isInvertibleOn_iff_forall_affineOpens :
-    X.IsInvertibleOn n ↔ ∀ U : X.affineOpens, IsUnit (n : Γ(X, U.1)) := by
+theorem isUnitNatCast_iff_forall_isUnit_affineOpens :
+    X.IsUnitNatCast n ↔ ∀ U : X.affineOpens, IsUnit (n : Γ(X, U.1)) := by
   constructor
   · exact fun h U ↦ h.isUnit U.1
   · intro h x
@@ -79,9 +79,9 @@ theorem isInvertibleOn_iff_forall_affineOpens :
 
 /-- Residue fields detect whether an order is invertible, including in residue characteristic
 zero. -/
-theorem isInvertibleOn_iff_forall_residueField_ne_zero :
-    X.IsInvertibleOn n ↔ ∀ x : X, (n : X.residueField x) ≠ 0 := by
-  unfold IsInvertibleOn
+theorem isUnitNatCast_iff_forall_residueField_ne_zero :
+    X.IsUnitNatCast n ↔ ∀ x : X, (n : X.residueField x) ≠ 0 := by
+  unfold IsUnitNatCast
   apply forall_congr'
   intro x
   simpa only [map_natCast] using
@@ -90,29 +90,29 @@ theorem isInvertibleOn_iff_forall_residueField_ne_zero :
 
 /-- The residue characteristic must not divide the order. For characteristic zero this
 condition says precisely that the order is nonzero. -/
-theorem isInvertibleOn_iff_forall_ringChar_not_dvd :
-    X.IsInvertibleOn n ↔ ∀ x : X, ¬ringChar (X.residueField x) ∣ n := by
-  simp only [isInvertibleOn_iff_forall_residueField_ne_zero, ne_eq, ringChar.spec]
+theorem isUnitNatCast_iff_forall_ringChar_not_dvd :
+    X.IsUnitNatCast n ↔ ∀ x : X, ¬ringChar (X.residueField x) ∣ n := by
+  simp only [isUnitNatCast_iff_forall_residueField_ne_zero, ne_eq, ringChar.spec]
 
 /-- On an affine spectrum, invertibility is the usual ring-theoretic condition. -/
 @[simp]
-theorem isInvertibleOn_Spec_iff (R : CommRingCat.{u}) :
-    (Spec R).IsInvertibleOn n ↔ IsUnit (n : R) := by
-  rw [isInvertibleOn_iff_isUnit]
+theorem isUnitNatCast_Spec_iff (R : CommRingCat.{u}) :
+    (Spec R).IsUnitNatCast n ↔ IsUnit (n : R) := by
+  rw [isUnitNatCast_iff_isUnit]
   exact ⟨fun h ↦ by simpa using h.map (ΓSpecIso R).hom.hom,
     fun h ↦ by simpa using h.map (ΓSpecIso R).inv.hom⟩
 
 variable {X n}
 
 /-- Invertibility of an order is preserved by arbitrary scheme pullback. -/
-theorem IsInvertibleOn.comap {Y : Scheme.{u}} (h : X.IsInvertibleOn n) (f : Y ⟶ X) :
-    Y.IsInvertibleOn n := by
+theorem IsUnitNatCast.comap {Y : Scheme.{u}} (h : X.IsUnitNatCast n) (f : Y ⟶ X) :
+    Y.IsUnitNatCast n := by
   intro y
   simpa using (h (f y)).map (f.stalkMap y).hom
 
 /-- A surjective morphism detects invertibility of an order; no flatness is needed. -/
-theorem isInvertibleOn_iff_of_surjective {Y : Scheme.{u}} (f : Y ⟶ X)
-    (hf : Function.Surjective f) : Y.IsInvertibleOn n ↔ X.IsInvertibleOn n := by
+theorem isUnitNatCast_iff_of_surjective {Y : Scheme.{u}} (f : Y ⟶ X)
+    (hf : Function.Surjective f) : Y.IsUnitNatCast n ↔ X.IsUnitNatCast n := by
   constructor
   · intro h x
     obtain ⟨y, rfl⟩ := hf x
@@ -120,32 +120,32 @@ theorem isInvertibleOn_iff_of_surjective {Y : Scheme.{u}} (f : Y ⟶ X)
   · exact fun h ↦ h.comap f
 
 /-- Every divisor of an invertible order is invertible. -/
-theorem IsInvertibleOn.of_dvd {m : ℕ} (h : X.IsInvertibleOn n) (hmn : m ∣ n) :
-    X.IsInvertibleOn m := by
+theorem IsUnitNatCast.of_dvd {m : ℕ} (h : X.IsUnitNatCast n) (hmn : m ∣ n) :
+    X.IsUnitNatCast m := by
   intro x
   exact isUnit_of_dvd_unit (map_dvd (Nat.castRingHom _) hmn) (h x)
 
 /-- A product of orders is invertible exactly when both factors are. -/
 @[simp]
-theorem isInvertibleOn_mul_iff (m n : ℕ) :
-    X.IsInvertibleOn (m * n) ↔ X.IsInvertibleOn m ∧ X.IsInvertibleOn n := by
-  simp only [isInvertibleOn_iff_isUnit, Nat.cast_mul, IsUnit.mul_iff]
+theorem isUnitNatCast_mul_iff (m n : ℕ) :
+    X.IsUnitNatCast (m * n) ↔ X.IsUnitNatCast m ∧ X.IsUnitNatCast n := by
+  simp only [isUnitNatCast_iff_isUnit, Nat.cast_mul, IsUnit.mul_iff]
 
 /-- The order one is invertible on every scheme, including the empty scheme. -/
 @[simp]
-theorem isInvertibleOn_one : X.IsInvertibleOn 1 := by
+theorem isUnitNatCast_one : X.IsUnitNatCast 1 := by
   intro x
   simp
 
 variable (X n)
 
 /-- The canonical morphism to `Spec ℤ[1/n]` when `n` is invertible on `X`. -/
-noncomputable def toSpecIntLocalization (h : X.IsInvertibleOn n) :
+noncomputable def toSpecIntLocalization (h : X.IsUnitNatCast n) :
     X ⟶ Spec (.of (Localization.Away (n : ULift.{u} ℤ))) :=
   X.toSpecΓ ≫ Spec.map (CommRingCat.ofHom <|
     IsLocalization.Away.lift (n : ULift.{u} ℤ)
       (g := (Int.castRingHom Γ(X, ⊤)).comp ULift.ringEquiv.toRingHom)
-      (by simpa using (X.isInvertibleOn_iff_isUnit n).mp h))
+      (by simpa using (X.isUnitNatCast_iff_isUnit n).mp h))
 
 /-- There is at most one morphism to `Spec ℤ[1/n]`. -/
 instance subsingleton_hom_Spec_intLocalization :
@@ -159,14 +159,14 @@ instance subsingleton_hom_Spec_intLocalization :
 
 /-- An order is invertible exactly when the scheme admits its unique structure morphism
 to `Spec ℤ[1/n]`; its composite to `Spec ℤ` is necessarily the structure morphism. -/
-theorem isInvertibleOn_iff_nonempty_hom_Spec_intLocalization :
-    X.IsInvertibleOn n ↔
+theorem isUnitNatCast_iff_nonempty_hom_Spec_intLocalization :
+    X.IsUnitNatCast n ↔
       Nonempty (X ⟶ Spec (.of (Localization.Away (n : ULift.{u} ℤ)))) := by
   constructor
   · exact fun h ↦ ⟨X.toSpecIntLocalization n h⟩
   · rintro ⟨f⟩
-    apply IsInvertibleOn.comap (f := f)
-    rw [isInvertibleOn_Spec_iff]
+    apply IsUnitNatCast.comap (f := f)
+    rw [isUnitNatCast_Spec_iff]
     simpa using IsLocalization.Away.algebraMap_isUnit (S := Localization.Away
       (n : ULift.{u} ℤ)) (n : ULift.{u} ℤ)
 
