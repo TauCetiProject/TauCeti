@@ -10,6 +10,7 @@ public import TauCeti.Combinatorics.Hypergraph.Colored.Counting
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Density
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Density
 public import TauCeti.Data.Fintype.CardEmbedding
+import Mathlib.Data.Rat.BigOperators
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 
@@ -64,6 +65,8 @@ count which an induced counting lemma compares with `H.inducedCopyCount F`.
 * `TauCeti.Colored3Graph.expectedInducedCountAt_nonneg`,
   `TauCeti.Colored3Graph.expectedInducedCountAt_le_placementInjectionCount`: the local prediction
   lies between zero and the injection count.
+* `TauCeti.Colored3Graph.sum_expectedInducedCountAt_le_placementInjectionCount`: the predictions
+  over the routes of a placement add up to at most its injection count.
 
 ## References
 
@@ -367,6 +370,41 @@ theorem expectedInducedCountAt_le_placementInjectionCount (φ : PatternPlacement
   · exact_mod_cast pairColorDensity_le_one _ _ _ _
   · exact_mod_cast H.relativeDensity_nonneg _ _
   · exact_mod_cast H.relativeDensity_le_one _ _
+
+/-- The local predictions over all routes of a placement add up to at most the injection count of
+the placement: the pair-color densities of the routes multiply out to a product of palette sums,
+each at most one. -/
+theorem sum_expectedInducedCountAt_le_placementInjectionCount (φ : PatternPlacement3 C F) :
+    ∑ ψ : PairColorPlacement3 φ, H.expectedInducedCountAt φ ψ ≤ placementInjectionCount φ := by
+  classical
+  set d : {p : Fin F.k × Fin F.k // p.1 < p.2} → Fin C.pairColorCount → ℝ := fun p c ↦
+    (pairColorDensity C.skeleton.pairColors c (φ.vertexCell p.1.1) (φ.vertexCell p.1.2) : ℝ)
+  have hd (p c) : 0 ≤ d p c := Rat.cast_nonneg.2 (pairColorDensity_nonneg _ _ _ _)
+  have hinj : 0 ≤ (placementInjectionCount φ : ℝ) := Nat.cast_nonneg _
+  calc ∑ ψ : PairColorPlacement3 φ, H.expectedInducedCountAt φ ψ
+      ≤ ∑ ψ : PairColorPlacement3 φ,
+          (placementInjectionCount φ : ℝ) * ∏ p, d p (ψ.pairColor p) := by
+        refine sum_le_sum fun ψ _ ↦ ?_
+        -- The relative densities of the pattern triples are at most one.
+        rw [expectedInducedCountAt_def]
+        refine mul_le_of_le_one_right (mul_nonneg hinj (prod_nonneg fun p _ ↦ hd _ _))
+          (prod_le_one₀ (fun t _ ↦ ?_) fun t _ ↦ ?_)
+        · exact_mod_cast H.relativeDensity_nonneg _ _
+        · exact_mod_cast H.relativeDensity_le_one _ _
+    _ ≤ ∑ c : {p : Fin F.k × Fin F.k // p.1 < p.2} → Fin C.pairColorCount,
+          (placementInjectionCount φ : ℝ) * ∏ p, d p (c p) :=
+        -- A route is determined by its pair colors.
+        sum_le_sum_of_injOn PairColorPlacement3.pairColor
+          (fun _ _ _ _ h ↦ PairColorPlacement3.ext h) (subset_univ _) (fun _ _ ↦ le_rfl)
+          fun _ _ _ ↦ mul_nonneg hinj (prod_nonneg fun p _ ↦ hd _ _)
+    _ = (placementInjectionCount φ : ℝ) * ∏ p, ∑ c, d p c := by
+        rw [← mul_sum, Fintype.prod_sum]
+    _ ≤ placementInjectionCount φ := by
+        refine mul_le_of_le_one_right hinj
+          (prod_le_one₀ (fun p _ ↦ sum_nonneg fun c _ ↦ hd p c) fun p _ ↦ ?_)
+        calc ∑ c, d p c = ((∑ c, pairColorDensity C.skeleton.pairColors c
+              (φ.vertexCell p.1.1) (φ.vertexCell p.1.2) : ℚ) : ℝ) := (Rat.cast_sum _ _).symm
+          _ ≤ 1 := by exact_mod_cast sum_pairColorDensity_le_one C.skeleton.pairColors _ _
 
 variable (C F) in
 /-- The predicted number of induced copies of `F` in `H` over the triadic complex `C`: the sum of
