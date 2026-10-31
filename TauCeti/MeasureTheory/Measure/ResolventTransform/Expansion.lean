@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.ResolventTransform
+public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 /-!
@@ -49,11 +49,6 @@ open scoped Topology
 namespace MeasureTheory
 
 variable {μ : Measure ℝ}
-
-/-- Off the real axis, the real resolvent kernel is integrable against every finite measure. -/
-theorem integrable_resolvent_of_im_ne_zero [IsFiniteMeasure μ] {z : ℂ} (hz : z.im ≠ 0) :
-    Integrable (resolvent (R := ℝ) z) μ :=
-  integrable_resolvent fun ⟨x, _, hx⟩ ↦ hz (by simpa using (congrArg Complex.im hx).symm)
 
 /-- The geometric expansion of the real resolvent kernel in powers of `z⁻¹`. -/
 private lemma resolvent_add_sum_eq {z : ℂ} (hz : z.im ≠ 0) (x : ℝ) (r : ℕ) :
