@@ -97,7 +97,7 @@ theorem geckGroupScheme_eq_kostantGeneratedGroupScheme :
 
 /-- The canonical comparison from the root-generated Kostant carrier to the Geck toral carrier is
 an isomorphism. -/
-theorem isIso_kostantGeneratedToToral_geck :
+instance isIso_kostantGeneratedToToral_geck :
     IsIso (kostantGeneratedToToral
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
       (t.geckCoordinateLattice ht).toAddSubgroup
