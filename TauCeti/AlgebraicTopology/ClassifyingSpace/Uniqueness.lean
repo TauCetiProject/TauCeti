@@ -75,7 +75,7 @@ theorem IsAspherical.exists_homotopyEquiv {X Y : Type u} [TopologicalSpace X]
     (hY : IsAspherical Y y) (φ : FundamentalGroup X x ≃* FundamentalGroup Y y) :
     ∃ (e : X ≃ₕ Y) (γ : Path (e.toFun x) y),
       ∀ a, fundamentalGroupMulEquivOfPath γ (map e.toFun x a) = φ a := by
-  obtain ⟨R, hC⟩ :=
+  obtain ⟨R, -, -, hC⟩ :=
     exists_isEilenbergMacLaneSpaceOne_cellularClassifyingSpace (FundamentalGroup X x)
   obtain ⟨ψ⟩ := hC.nonempty_fundamentalGroupMulEquiv
   have : PathConnectedSpace (cellularClassifyingSpace R) := hC.isAspherical.pathConnectedSpace

@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Meromorphic.Divisor
-public import TauCeti.Analysis.Complex.ZeroCount
+public import TauCeti.Analysis.Analytic.ZeroCount
 public import TauCeti.Analysis.Contour.Argument.Cycle
+public import TauCeti.Analysis.Contour.Argument.Divisor
 import Mathlib.Analysis.Calculus.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.MeasureTheory.Integral.CircleIntegral
+import TauCeti.Analysis.Meromorphic.Divisor
 
 /-!
 # Rouché's theorem
@@ -69,10 +71,10 @@ curve — no single ambient open set, no finite `S`, no null-homology — becaus
 slit-plane integral already holds there.
 
 That same observation is what makes the count *detect* zeros rather than merely count them:
-`TauCeti.finsum_analyticOrderNatAt_ball_eq_zero_iff`, from `TauCeti.Analysis.Complex.ZeroCount`,
-says the count vanishes exactly when the function has no zero in the open disc, so Rouché transfers
-the *existence* of a zero from one function to the other. That transfer, not the numerical
-equality, is how Rouché is normally used.
+`AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff`, from
+`TauCeti.Analysis.Analytic.ZeroCount`, says the count vanishes exactly when the function has no
+zero in the open disc, so Rouché transfers the *existence* of a zero from one function to the
+other. That transfer, not the numerical equality, is how Rouché is normally used.
 
 ## Main results
 
@@ -99,17 +101,6 @@ equality, is how Rouché is normally used.
   `TauCeti.rouche_add_windingNumber_comp` — the "dog on a leash" form, in the same three phrasings:
   under the symmetric, the classical, respectively the additive hypothesis along the curve, the
   image curves wind equally often about the origin.
-
-## Coordination with upstream Mathlib
-
-Mathlib has no Rouché theorem. However, per the *Coordination with upstream Mathlib* section of
-`ConformalMapping/README.md`, this layer overlaps
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which proves L0-level material (an argument
-principle, Hurwitz) internally as private lemmas. **This file is therefore a temporary shim**: once
-the corresponding Mathlib lemmas land, this statement should be backed by them — or deleted and its
-consumers refactored — rather than maintained as an independent re-proof. What Tau Ceti adds at L0
-is named, discoverable API, not first proof.
 
 ## References
 
@@ -239,7 +230,7 @@ private lemma finsum_divisor_cast {h : ℂ → ℂ} (hh : AnalyticOnNhd ℂ h (c
     obtain ⟨hzb, hzs⟩ := hz
     simp only [Function.mem_support, ne_eq] at hzs
     have hd : MeromorphicOn.divisor h (ball c R) z ≠ 0 := by
-      rw [Contour.divisor_eq_analyticOrderNatAt (hh.mono ball_subset_closedBall).meromorphicOn
+      rw [(hh.mono ball_subset_closedBall).meromorphicOn.divisor_eq_analyticOrderNatAt
         (hh _ (ball_subset_closedBall hzb)) hzb]
       exact_mod_cast hzs
     simpa [hS, Set.Finite.mem_toFinset] using hd
@@ -247,7 +238,7 @@ private lemma finsum_divisor_cast {h : ℂ → ℂ} (hh : AnalyticOnNhd ℂ h (c
   push_cast
   refine Finset.sum_congr rfl (fun z hz => ?_)
   have hzb' := hsub (by simpa [hS] using hz)
-  rw [Contour.divisor_eq_analyticOrderNatAt (hh.mono ball_subset_closedBall).meromorphicOn
+  rw [(hh.mono ball_subset_closedBall).meromorphicOn.divisor_eq_analyticOrderNatAt
     (hh _ (ball_subset_closedBall hzb')) hzb']
   push_cast
   ring
@@ -320,16 +311,16 @@ theorem rouche_add (hR : 0 < R)
 ## Detecting zeros
 
 Rouché is usually applied not to compare two counts but to transfer the *existence* of a zero. The
-bridge is `TauCeti.finsum_analyticOrderNatAt_ball_eq_zero_iff`: the count vanishes exactly when
-there is no zero, provided the function is nonzero somewhere on the closed disc. The Rouché
+bridge is `AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff`: the count vanishes exactly
+when there is no zero, provided the function is nonzero somewhere on the closed disc. The Rouché
 hypothesis supplies that witness on the bounding circle.
 -/
 
 /-- A function that is zero-free on the bounding circle of a disc does not vanish identically on
 the closed disc — the boundary point `c + R` witnesses it. The radius may be `0`, where both discs
 degenerate to `{c}`. This is the shape in which
-`TauCeti.finsum_analyticOrderNatAt_ball_eq_zero_iff` wants the Rouché hypothesis, and it is the
-same shape every zero-detection argument on a disc needs. -/
+`AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff` wants the Rouché hypothesis, and it is
+the same shape every zero-detection argument on a disc needs. -/
 theorem exists_mem_closedBall_ne_zero_of_forall_mem_sphere_ne_zero (hR : 0 ≤ R)
     (hs : ∀ z ∈ sphere c R, f z ≠ 0) :
     ∃ z ∈ closedBall c R, f z ≠ 0 := by
@@ -348,9 +339,9 @@ theorem rouche_symm_exists_eq_zero_iff (hR : 0 < R)
   have hnef : ∀ z ∈ sphere c R, f z ≠ 0 := fun z hz => ne_zero_left (hs z hz)
   have hneg : ∀ z ∈ sphere c R, g z ≠ 0 := fun z hz => ne_zero_right (hs z hz)
   have hcount := rouche_symm hR hf hg hs
-  have hef := finsum_analyticOrderNatAt_ball_eq_zero_iff hf
+  have hef := hf.finsum_analyticOrderNatAt_ball_eq_zero_iff
     (exists_mem_closedBall_ne_zero_of_forall_mem_sphere_ne_zero hR.le hnef)
-  have heg := finsum_analyticOrderNatAt_ball_eq_zero_iff hg
+  have heg := hg.finsum_analyticOrderNatAt_ball_eq_zero_iff
     (exists_mem_closedBall_ne_zero_of_forall_mem_sphere_ne_zero hR.le hneg)
   constructor
   · rintro ⟨z, hz, h0⟩
@@ -422,12 +413,12 @@ the cycle form has nothing to say.
 Unlike on a circle there is no zero-*detection* corollary here, and that is not an omission: what
 fails for a general cycle is the *equivalence*, not detection outright. With winding numbers of
 both signs the weighted counts can cancel, so a vanishing count no longer means the function is
-zero-free — `TauCeti.finsum_analyticOrderNatAt_ball_eq_zero_iff`, which the disc forms use, has no
-cycle analogue. The converse direction survives and needs no corollary: if the weighted count of
-`f` is nonzero then by the theorem so is that of `g`, so some `z ∈ S` has nonzero winding number
-and `analyticOrderNatAt g z ≠ 0`; null-homology places such a `z` in `U`, where a nonzero order
-means `g z = 0`. It is the `iff` that requires a sign hypothesis on the cycle, which the disc case
-supplies by winding once.
+zero-free — `AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff`, which the disc forms use,
+has no cycle analogue. The converse direction survives and needs no corollary: if the weighted
+count of `f` is nonzero then by the theorem so is that of `g`, so some `z ∈ S` has nonzero winding
+number and `analyticOrderNatAt g z ≠ 0`; null-homology places such a `z` in `U`, where a nonzero
+order means `g z = 0`. It is the `iff` that requires a sign hypothesis on the cycle, which the disc
+case supplies by winding once.
 -/
 
 section Cycle

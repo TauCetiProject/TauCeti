@@ -79,15 +79,6 @@ chord bound never uses `dist ζ c = r`. The radius `ρ` of that circle is unrest
 three estimates on `ball c r ∩ sphere ζ ρ` asking nothing of it: `sphere ζ ρ` is empty for `ρ < 0`
 and the single point `ζ` for `ρ = 0`, so both degenerate cases hold for want of a second point.
 
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself, and
-Mathlib has no boundary correspondence for conformal maps. So this file is new Lean formalization
-rather than a temporary shim; it consumes no L0–L3 shim, its analytic inputs being the length–area
-estimates of `Conformal/LengthArea.lean` and the area formula they rest on.
-
 ## References
 
 * Ch. Pommerenke, *Boundary Behaviour of Conformal Maps*, §2.2 (the length–area method, Wolff's

@@ -8,9 +8,12 @@ module
 public import Mathlib.Algebra.Homology.Embedding.StupidTrunc
 public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
+public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+public import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
+import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
 
 /-!
-# Splitting off the top term of a bounded cochain complex
+# Brutal truncations of cochain complexes
 
 For a cochain complex `K` over a category with zero morphisms and a zero object, the brutal
 truncation `K.stupidTrunc (ComplexShape.embeddingUpIntLE n)` keeps the terms of `K` in degrees
@@ -31,6 +34,12 @@ exact sequences of complexes give distinguished triangles in the homotopy catego
 step of an induction on the length of a bounded complex: it expresses a bounded complex as an
 extension of a shorter one by a complex concentrated in a single degree.
 
+In an abelian category, the kernel of `K ⟶ σ^{≤ n} K` is the brutal truncation `σ^{≥ n + 1} K`,
+the subcomplex of the terms of `K` in degrees `> n`. These subcomplexes exhaust `K`: the
+sequence `σ^{≥ 0} K ⟶ σ^{≥ -1} K ⟶ σ^{≥ -2} K ⟶ ⋯` has colimit `K`, because in each degree its
+inclusions into `K` are eventually isomorphisms. This writes a complex which is bounded above as a
+sequential colimit of bounded complexes.
+
 ## Main definitions
 
 * `CochainComplex.πStupidTruncLE K n`: the projection of `K` onto its brutal truncation in
@@ -39,6 +48,9 @@ extension of a shorter one by a complex concentrated in a single degree.
   `> n`.
 * `CochainComplex.topShortComplex K n` and `CochainComplex.topShortComplexSplitting K n`: the
   degreewise split short complex splitting off the top term.
+* `CochainComplex.stupidTruncGESequence K`: the sequence of brutal truncations `σ^{≥ -m} K`,
+  realized as the kernels of the projections `K ⟶ σ^{≤ -m-1} K`.
+* `CochainComplex.isColimitStupidTruncGESequenceCocone K`: `K` is the colimit of this sequence.
 -/
 
 public section
@@ -204,5 +216,96 @@ noncomputable def topShortComplexSplitting (i : ℤ) :
         (K.isZero_stupidTrunc_embeddingUpIntLE_X n (by omega)).isoZero
 
 end Preadditive
+
+section Abelian
+
+variable [Abelian C] (K : CochainComplex C ℤ) (n : ℤ)
+
+/-- In degrees `≤ n`, the inclusion of the kernel of `K ⟶ σ^{≤ n} K` vanishes. -/
+@[simp]
+lemma kernel_ι_πStupidTruncLE_f_eq_zero {i : ℤ} (hi : i ≤ n) :
+    (kernel.ι (K.πStupidTruncLE n)).f i = 0 := by
+  have := K.isIso_πStupidTruncLE_f n hi
+  rw [← cancel_mono ((K.πStupidTruncLE n).f i), zero_comp, ← comp_f, kernel.condition, zero_f]
+
+/-- The kernel of `K ⟶ σ^{≤ n} K` vanishes in degrees `≤ n`. -/
+lemma isZero_kernel_πStupidTruncLE_X {i : ℤ} (hi : i ≤ n) :
+    IsZero ((kernel (K.πStupidTruncLE n)).X i) := by
+  rw [IsZero.iff_id_eq_zero, ← cancel_mono ((kernel.ι (K.πStupidTruncLE n)).f i),
+    K.kernel_ι_πStupidTruncLE_f_eq_zero n hi, comp_zero, zero_comp]
+
+/-- In degrees `> n`, the kernel of `K ⟶ σ^{≤ n} K` is the term of `K`. -/
+lemma isIso_kernel_ι_πStupidTruncLE_f {i : ℤ} (hi : n < i) :
+    IsIso ((kernel.ι (K.πStupidTruncLE n)).f i) :=
+  KernelFork.IsLimit.isIso_ι _ (KernelFork.mapIsLimit _ (kernelIsKernel _) (eval C (.up ℤ) i))
+    (K.πStupidTruncLE_f_of_lt n hi)
+
+/-- The kernel of `K ⟶ σ^{≤ n} K` is a subcomplex of `K`, so it vanishes wherever `K` does. -/
+instance (b : ℤ) [K.IsStrictlyLE b] : (kernel (K.πStupidTruncLE n)).IsStrictlyLE b :=
+  (isStrictlyLE_iff _ _).2 fun i hi ↦ by
+    rw [IsZero.iff_id_eq_zero, ← cancel_mono ((kernel.ι (K.πStupidTruncLE n)).f i)]
+    exact (K.isZero_of_isStrictlyLE b i hi).eq_of_tgt _ _
+
+/-- The sequence `σ^{≥ 0} K ⟶ σ^{≥ -1} K ⟶ ⋯` of brutal truncations of `K`. Its `m`-th term is
+the kernel of `K ⟶ σ^{≤ -m-1} K`, the subcomplex of the terms of `K` in degrees `≥ -m`. -/
+@[simps obj]
+noncomputable abbrev stupidTruncGESequence : ℕ ⥤ CochainComplex C ℤ where
+  obj m := kernel (K.πStupidTruncLE (-(m : ℤ) - 1))
+  map {m m'} φ := kernel.lift _ (kernel.ι _) <| by
+    ext i
+    rw [comp_f, zero_f]
+    by_cases hi : i ≤ -(m : ℤ) - 1
+    · rw [K.kernel_ι_πStupidTruncLE_f_eq_zero _ hi, zero_comp]
+    · have := leOfHom φ
+      rw [K.πStupidTruncLE_f_of_lt _ (by omega), comp_zero]
+  map_id m := by
+    rw [← cancel_mono (kernel.ι _), kernel.lift_ι, Category.id_comp]
+  map_comp φ ψ := by
+    rw [← cancel_mono (kernel.ι _), kernel.lift_ι, Category.assoc, kernel.lift_ι, kernel.lift_ι]
+
+/-- The transition maps of the sequence of brutal truncations are compatible with the
+inclusions into `K`. -/
+@[reassoc]
+lemma stupidTruncGESequence_map_comp_ι {m m' : ℕ} (φ : m ⟶ m') :
+    K.stupidTruncGESequence.map φ ≫ kernel.ι (K.πStupidTruncLE (-(m' : ℤ) - 1)) =
+      kernel.ι (K.πStupidTruncLE (-(m : ℤ) - 1)) :=
+  kernel.lift_ι _ _ _
+
+/-- The inclusions `σ^{≥ -m} K ⟶ K` form a cocone over the sequence of brutal truncations. -/
+@[simps pt]
+noncomputable abbrev stupidTruncGESequenceCocone : Cocone K.stupidTruncGESequence where
+  pt := K
+  ι :=
+    { app m := kernel.ι (K.πStupidTruncLE (-(m : ℤ) - 1))
+      naturality _ _ φ := (K.stupidTruncGESequence_map_comp_ι φ).trans (Category.comp_id _).symm }
+
+/-- The legs of the cocone of brutal truncations are the inclusions into `K`. -/
+@[simp]
+lemma stupidTruncGESequenceCocone_ι_app (m : ℕ) :
+    K.stupidTruncGESequenceCocone.ι.app m = kernel.ι (K.πStupidTruncLE (-(m : ℤ) - 1)) := (rfl)
+
+/-- A cochain complex is the colimit of its brutal truncations `σ^{≥ -m} K`: in degree `i` the
+inclusions are isomorphisms as soon as `-m ≤ i`. -/
+noncomputable def isColimitStupidTruncGESequenceCocone :
+    IsColimit K.stupidTruncGESequenceCocone :=
+  isColimitOfEval _ _ fun i ↦ by
+    have hι (m : ℕ) (hm : i.natAbs ≤ m) :
+        IsIso ((kernel.ι (K.πStupidTruncLE (-(m : ℤ) - 1))).f i) :=
+      K.isIso_kernel_ι_πStupidTruncLE_f _ (by omega)
+    -- from degree `|i|` on, the sequence is constant in degree `i`
+    have h : (K.stupidTruncGESequence ⋙ eval C _ i).IsEventuallyConstantFrom i.natAbs :=
+      fun m φ ↦ by
+        have := hι _ le_rfl
+        have := hι m (leOfHom φ)
+        have w : (K.stupidTruncGESequence.map φ).f i ≫
+            (kernel.ι (K.πStupidTruncLE (-(m : ℤ) - 1))).f i =
+              (kernel.ι (K.πStupidTruncLE (-(i.natAbs : ℤ) - 1))).f i := by
+          rw [← comp_f, stupidTruncGESequence_map_comp_ι]
+        exact IsIso.of_isIso_fac_right w
+    have : IsIso (((eval C _ i).mapCocone K.stupidTruncGESequenceCocone).ι.app i.natAbs) :=
+      hι _ le_rfl
+    exact h.isColimitOfIsIso _
+
+end Abelian
 
 end CochainComplex

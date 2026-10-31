@@ -35,7 +35,9 @@ cokernel of `Zₙ₊₁ ⟶ Kₙ₊₁`, so `Zₙ₊₁` splits off `Kₙ₊₁`
 `Z₀ = K₀`, induction on `n` shows that every `Zₙ` is projective and splits off
 (`ChainComplex.isSplitMono_iCycles_of_projective_homology`).  This is what makes the Künneth and
 universal coefficient theorems collapse over an arbitrary commutative ring for singular chains with
-projective homology.
+projective homology.  The induction up to degree `n` only uses projectivity of the homology below
+`n` (`ChainComplex.isSplitMono_iCycles_of_projective_homology_lt`), so it applies for instance to a
+complex which is exact below `n`.
 
 When only the cycles split off, the projection `r ≫ π` onto the complex `K.homologyComplex` of
 homology objects (`HomologicalComplex.toHomologyComplex`) is still a chain map inducing
@@ -66,9 +68,12 @@ inverts the differential on the complement of the cycles.  Precomposing it with 
   `HomologicalComplex.isSplitMono_iCycles_of_projective_kernel_homologyπ`: the boundaries are
   projective when the cycles and the homology are, and the cycles `Zᵢ` split off `Kᵢ` when the
   boundaries `Bⱼ` of the next degree are projective.
-* `ChainComplex.projective_cycles_of_projective_homology` and
-  `ChainComplex.isSplitMono_iCycles_of_projective_homology`: for a chain complex indexed by `ℕ`
-  with projective terms and projective homology, the cycles are projective and split off.
+* `ChainComplex.projective_cycles_of_projective_homology_lt` and
+  `ChainComplex.isSplitMono_iCycles_of_projective_homology_lt`: for a chain complex indexed by `ℕ`
+  with projective terms whose homology is projective below degree `n`, the cycles in degree `n`
+  are projective and split off; `ChainComplex.projective_cycles_of_projective_homology` and
+  `ChainComplex.isSplitMono_iCycles_of_projective_homology` are the case of projective homology in
+  every degree.
 * `HomologicalComplex.homologyComplex`, `HomologicalComplex.toHomologyComplex` and
   `HomologicalComplex.isIso_homologyMap_toHomologyComplex`: the complex of homology objects, and
   the projection onto it when the cycles split off, a quasi-isomorphism.
@@ -367,12 +372,12 @@ namespace ChainComplex
 
 /-! ### Chain complexes of projective objects with projective homology -/
 
-variable {C : Type*} [Category* C] [Abelian C] (K : ChainComplex C ℕ)
-  [∀ n, Projective (K.X n)] [∀ n, Projective (K.homology n)]
+variable {C : Type*} [Category* C] [Abelian C] (K : ChainComplex C ℕ) [∀ n, Projective (K.X n)]
 
-/-- In a chain complex indexed by `ℕ` whose terms and homology objects are all projective, the
-cycles are projective in every degree. -/
-theorem projective_cycles_of_projective_homology (n : ℕ) : Projective (K.cycles n) := by
+/-- In a chain complex indexed by `ℕ` with projective terms, the cycles in degree `n` are
+projective when the homology objects below degree `n` are projective. -/
+theorem projective_cycles_of_projective_homology_lt (n : ℕ)
+    (h : ∀ j < n, Projective (K.homology j)) : Projective (K.cycles n) := by
   induction n with
   | zero =>
     -- no differential leaves degree `0`, so all of `K₀` is cycles
@@ -380,20 +385,36 @@ theorem projective_cycles_of_projective_homology (n : ℕ) : Projective (K.cycle
   | succ n ih =>
     -- by the induction hypothesis `ih`, the boundaries `Bₙ` are a retract of the projective `Zₙ`,
     -- so `0 ⟶ Zₙ₊₁ ⟶ Kₙ₊₁ ⟶ Bₙ ⟶ 0` splits and `Zₙ₊₁` is a retract of `Kₙ₊₁`
+    have := ih fun j hj ↦ h j (Nat.lt_succ_of_lt hj)
+    have := h n (Nat.lt_succ_self n)
     have := K.projective_kernel_homologyπ n
     have := K.isSplitMono_iCycles_of_projective_kernel_homologyπ (i := n + 1) (j := n) rfl
     exact K.projective_cycles_of_isSplitMono (n + 1)
+
+/-- In a chain complex indexed by `ℕ` with projective terms, the cycles in degree `n` split off
+the term when the homology objects below degree `n` are projective. -/
+theorem isSplitMono_iCycles_of_projective_homology_lt (n : ℕ)
+    (h : ∀ j < n, Projective (K.homology j)) : IsSplitMono (K.iCycles n) := by
+  cases n with
+  | zero => exact IsSplitMono.of_iso _
+  | succ n =>
+    have := K.projective_cycles_of_projective_homology_lt n fun j hj ↦ h j (Nat.lt_succ_of_lt hj)
+    have := h n (Nat.lt_succ_self n)
+    have := K.projective_kernel_homologyπ n
+    exact K.isSplitMono_iCycles_of_projective_kernel_homologyπ (j := n) rfl
+
+variable [∀ n, Projective (K.homology n)]
+
+/-- In a chain complex indexed by `ℕ` whose terms and homology objects are all projective, the
+cycles are projective in every degree. -/
+theorem projective_cycles_of_projective_homology (n : ℕ) : Projective (K.cycles n) :=
+  K.projective_cycles_of_projective_homology_lt n fun _ _ ↦ inferInstance
 
 /-- In a chain complex indexed by `ℕ` whose terms and homology objects are all projective, the
 cycles split off the terms in every degree.  Since the homology then also splits off the cycles
 (`HomologicalComplex.isSplitEpi_homologyπ_of_projective`), such a complex is homotopy equivalent
 to its homology with zero differentials (`HomologicalComplex.exists_homotopyEquiv_d_eq_zero`). -/
-theorem isSplitMono_iCycles_of_projective_homology (n : ℕ) : IsSplitMono (K.iCycles n) := by
-  cases n with
-  | zero => exact IsSplitMono.of_iso _
-  | succ n =>
-    have := K.projective_cycles_of_projective_homology n
-    have := K.projective_kernel_homologyπ n
-    exact K.isSplitMono_iCycles_of_projective_kernel_homologyπ (j := n) rfl
+theorem isSplitMono_iCycles_of_projective_homology (n : ℕ) : IsSplitMono (K.iCycles n) :=
+  K.isSplitMono_iCycles_of_projective_homology_lt n fun _ _ ↦ inferInstance
 
 end ChainComplex
