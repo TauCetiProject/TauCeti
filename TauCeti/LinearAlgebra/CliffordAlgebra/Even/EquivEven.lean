@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.LinearAlgebra.CliffordAlgebra.EvenEquiv
 public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
-public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
+public import TauCeti.LinearAlgebra.TensorProduct.Prod
 
 /-!
 # The generator dictionary of the dimension-raising equivalence
@@ -190,16 +190,6 @@ theorem Q'_ofLp_eq_neg_norm_sq (hQ : ∀ v, Q v = -‖v‖ ^ 2) (x : WithLp 2 (V
     Real.norm_eq_abs, sq_abs]
   ring
 
-/-- The linear equivalence `ℂ ⊗ (V ⊕ ℝ) ≃ (ℂ ⊗ V) × ℂ`, `z ⊗ (m, r) ↦ (z ⊗ m, r z)`. -/
-private def complexProdEquiv : ℂ ⊗[ℝ] WithLp 2 (V × ℝ) ≃ₗ[ℂ] (ℂ ⊗[ℝ] V) × ℂ :=
-  (WithLp.linearEquiv 2 ℝ (V × ℝ)).baseChange ℝ ℂ _ _ ≪≫ₗ
-    TensorProduct.prodRight ℝ ℂ ℂ V ℝ ≪≫ₗ
-    (LinearEquiv.refl ℂ _).prodCongr (TensorProduct.AlgebraTensorModule.rid ℝ ℂ ℂ)
-
-private theorem complexProdEquiv_tmul (z : ℂ) (x : WithLp 2 (V × ℝ)) :
-    complexProdEquiv (z ⊗ₜ x) = (z ⊗ₜ (WithLp.ofLp x).1, (WithLp.ofLp x).2 • z) := by
-  simp [complexProdEquiv]
-
 variable (hQ₁ : ∀ x, Q₁ x = Q' Q (WithLp.ofLp x))
 include hQ₁
 
@@ -237,19 +227,23 @@ theorem isOrthoᵢ_associated_prod_singleton {ι : Type*} [Fintype ι]
 /-- **The complexification of `V ⊕ ℝ`**: when `Q₁` is the form `Q₁ (m, r) = Q m - r²` on the
 `L²` product `V ⊕ ℝ`, the map `z ⊗ (m, r) ↦ (z ⊗ m, r z)` is a quadratic isometry from
 `ℂ ⊗ (V ⊕ ℝ)` with `Q₁_ℂ` onto `(ℂ ⊗ V) × ℂ` with `Q'(Q_ℂ)`, the form Mathlib's
-`CliffordAlgebra.toEven` uses for `Q_ℂ`. -/
-def complexProdIsometryEquiv : (Q₁.baseChange ℂ).IsometryEquiv (Q' (Q.baseChange ℂ)) where
-  toLinearEquiv := complexProdEquiv
-  map_app' := by
-    have h : (Q' (Q.baseChange ℂ)).comp complexProdEquiv.toLinearMap = Q₁.baseChange ℂ := by
-      ext x
-      simp [complexProdEquiv_tmul, hQ₁, Algebra.smul_def]
-    exact fun x ↦ congr($h x)
+`CliffordAlgebra.toEven` uses for `Q_ℂ`. The underlying linear equivalence is
+`TensorProduct.prodRightRid` after the base change of `WithLp.linearEquiv`. -/
+def complexProdIsometryEquiv : (Q₁.baseChange ℂ).IsometryEquiv (Q' (Q.baseChange ℂ)) :=
+  let e := (WithLp.linearEquiv 2 ℝ (V × ℝ)).baseChange ℝ ℂ _ _ ≪≫ₗ
+    TensorProduct.prodRightRid ℝ ℂ ℂ V
+  { toLinearEquiv := e
+    map_app' := by
+      have h : (Q' (Q.baseChange ℂ)).comp e.toLinearMap = Q₁.baseChange ℂ := by
+        ext x
+        simp [e, hQ₁, Algebra.smul_def]
+      exact fun x ↦ congr($h x) }
 
 @[simp]
 theorem complexProdIsometryEquiv_tmul (z : ℂ) (x : WithLp 2 (V × ℝ)) :
-    complexProdIsometryEquiv hQ₁ (z ⊗ₜ x) = (z ⊗ₜ (WithLp.ofLp x).1, (WithLp.ofLp x).2 • z) :=
-  complexProdEquiv_tmul z x
+    complexProdIsometryEquiv hQ₁ (z ⊗ₜ x) = (z ⊗ₜ (WithLp.ofLp x).1, (WithLp.ofLp x).2 • z) := by
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+  simp [complexProdIsometryEquiv]
 
 /-- The Clifford algebra equivalence induced by `complexProdIsometryEquiv` sends `v(z ⊗ m)`, the
 generator of `(z ⊗ m, 0)`, to the generator of `z ⊗ (m, 0)`. This is not a `simp` lemma, because
