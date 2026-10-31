@@ -103,9 +103,15 @@ def gradedFiniteProjectiveModulesForgetK0Equiv :
       ≃ₗ[ℤ] ExactK0.{max u v} (finiteProjectiveModulesExactStructure (pathAlgebra k Q)) :=
   let _ := integerGradedAlgebra k Q
   let _ := Fintype.ofFinite Q
-  gradedIdempotentProjectiveForgetK0Equiv (completeOrthogonalIdempotents_vertexIdempotent k Q)
-    (vertexIdempotent_mem_integerGrade_zero k Q) (fun _ => integerGrade_eq_bot_of_neg k Q)
-    (integerGrade_zero_eq_span_range_vertexIdempotent k Q).le vertexIdempotent_ne_zero
+  have he₀ := vertexIdempotent_mem_integerGrade_zero k Q
+  have ho := (completeOrthogonalIdempotents_vertexIdempotent k Q).toOrthogonalIdempotents
+  have hneg : ∀ p < 0, integerGrade k Q p = ⊥ := fun _ => integerGrade_eq_bot_of_neg k Q
+  have hspan := (integerGrade_zero_eq_span_range_vertexIdempotent k Q).le
+  gradedIdempotentProjectiveForgetK0Equiv (completeOrthogonalIdempotents_vertexIdempotent k Q) he₀
+    (fun i => isPrimitiveIdempotent_of_gradeZero_le_span he₀ ho hneg hspan i
+      (vertexIdempotent_ne_zero i))
+    (fun i _ hij => isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span he₀ ho hneg hspan hij
+      (vertexIdempotent_ne_zero i))
 
 /-- The forward map of the projective comparison equivalence is the map induced by forgetting
 grading. -/
@@ -115,7 +121,7 @@ theorem gradedFiniteProjectiveModulesForgetK0Equiv_toLinearMap :
       gradedFiniteProjectiveModulesForgetK0 (integerGrade k Q) :=
   let _ := integerGradedAlgebra k Q
   let _ := Fintype.ofFinite Q
-  gradedIdempotentProjectiveForgetK0Equiv_toLinearMap _ _ _ _ _
+  gradedIdempotentProjectiveForgetK0Equiv_toLinearMap _ _ _ _
 
 /-- Forgetting the path-length grading is bijective on projective `K₀` after specialization at
 `q = 1`. -/

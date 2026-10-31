@@ -342,6 +342,13 @@ theorem contract_expand {A : Type*} [CommSemiring A] (d : ℕ+) (g : A⸨X⸩) (
     contract d (expand A d g) r = if r = 0 then g else 0 := by
   simpa using contract_expand_mul d g 1 r
 
+/-- Multiplication by `X ^ r`, for `r < d`, moves the residue-zero component to component `r`. -/
+@[simp]
+theorem contract_single_mul_self {A : Type*} [Semiring A] (d : ℕ+) (f : A⸨X⸩) (r : Fin d) :
+    contract d (single (r : ℤ) 1 * f) r = contract d f 0 := by
+  ext k
+  simp [coeff_single_mul]
+
 /-! ### Ramified levels in rational exponents -/
 
 /-- Division by a positive integer as an order embedding `ℤ ↪o ℚ`. -/

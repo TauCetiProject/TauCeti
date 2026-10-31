@@ -23,6 +23,9 @@ product in elementary symmetric polynomials.
 
 ## Main results
 
+* `Multiset.esymm_cons`: adjoining an element `a` to a multiset gives
+  `e_{n+1}(a, s) = e_{n+1}(s) + a eₙ(s)`.
+* `Multiset.esymm_cons_zero`: adjoining a zero gives `e_{n+1}(0, s) = e_{n+1}(s)`.
 * `TauCeti.esymmInt`: the elementary symmetric polynomial `e_m` of an integer degree `m`, which
   is `0` for `m < 0`.
 * `TauCeti.coeff_prod_one_add_C_mul_X`: the coefficient of `tⁿ` in `∏ᵢ (1 + xᵢ t)`, as a sum
@@ -42,6 +45,18 @@ product in elementary symmetric polynomials.
 public section
 
 open Finset
+
+/-- Adjoining an element `a` to a multiset `s`: `e_{n+1}(a, s) = e_{n+1}(s) + a eₙ(s)`. -/
+theorem Multiset.esymm_cons {R : Type*} [CommSemiring R] (a : R) (s : Multiset R) (n : ℕ) :
+    (a ::ₘ s).esymm (n + 1) = s.esymm (n + 1) + a * s.esymm n := by
+  simp [Multiset.esymm, Multiset.powersetCard_cons, Multiset.sum_map_mul_left]
+
+/-- Adjoining a zero to a multiset `s` does not change its positive-degree elementary symmetric
+values: `e_{n+1}(0, s) = e_{n+1}(s)`. -/
+@[simp]
+theorem Multiset.esymm_cons_zero {R : Type*} [CommSemiring R] (s : Multiset R) (n : ℕ) :
+    (0 ::ₘ s).esymm (n + 1) = s.esymm (n + 1) := by
+  simp [Multiset.esymm_cons]
 
 namespace TauCeti
 

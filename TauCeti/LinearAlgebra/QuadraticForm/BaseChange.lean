@@ -229,6 +229,13 @@ theorem baseChange_one_tmul (Q : QuadraticForm R M) (v : M) :
     Q.baseChange A (1 ⊗ₜ v) = algebraMap R A (Q v) := by
   rw [baseChange_tmul, mul_one, Algebra.smul_def, mul_one]
 
+/-- Extending scalars evaluates a quadratic form at the base change `1 ⊗ₜ b i` of a basis vector
+by applying the algebra map to its value at `b i`. -/
+theorem baseChange_apply_basis_baseChange (Q : QuadraticForm R M) {ι : Type*}
+    (b : Module.Basis ι R M) (i : ι) :
+    Q.baseChange A (b.baseChange A i) = algebraMap R A (Q (b i)) := by
+  rw [Module.Basis.baseChange_apply, baseChange_one_tmul]
+
 /-- Polarization after base change, evaluated on pure tensors. -/
 @[simp]
 theorem polar_baseChange_tmul (Q : _root_.QuadraticForm R M) (a b : A) (x y : M) :
@@ -238,6 +245,15 @@ theorem polar_baseChange_tmul (Q : _root_.QuadraticForm R M) (a b : A) (x y : M)
     (map_ofNat _ _).symm
   rw [← QuadraticMap.polarBilin_apply_apply, _root_.QuadraticForm.polarBilin_baseChange,
     LinearMap.BilinForm.baseChange_tmul, QuadraticMap.polarBilin_apply_apply]
+
+/-- Extending scalars carries a basis orthogonal for a quadratic form to a basis orthogonal for
+the extended form. -/
+theorem isOrthoᵢ_associated_baseChange [Invertible (2 : A)] {Q : _root_.QuadraticForm R M}
+    {ι : Type*} {b : Module.Basis ι R M} (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) :
+    (QuadraticMap.associated (Q.baseChange A)).IsOrthoᵢ (b.baseChange A) := by
+  intro i j hij
+  simp only [Function.onFun, associated_baseChange, Module.Basis.baseChange_apply,
+    LinearMap.BilinForm.baseChange_tmul, hb hij, zero_smul]
 
 section Diagonal
 

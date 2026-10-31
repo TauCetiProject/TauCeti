@@ -1049,6 +1049,21 @@ theorem tangentSpaceProdEquiv_symmL_trivializationAt [IsManifold I 1 M] [IsManif
     ⟨by simpa [extChartAt_source] using hq, by simp⟩
   exact congrArg (fun L : E × F →L[𝕜] E × F ↦ L v) h
 
+/-- On a product `M × F` with a normed space `F`, the inverse of the canonical tangent-bundle
+trivialization at `p`, over a point `q` of the domain of the chart at `p`, depends neither on the
+`F`-coordinate of `p` nor on that of `q`. -/
+theorem symmL_trivializationAt_prod_model_space [IsManifold I 1 M] {p q : M × F}
+    (hq : q.1 ∈ (chartAt H p.1).source) (s s' : F) (v : E × F) :
+    (trivializationAt (E × F) (TangentSpace (I.prod 𝓘(𝕜, F))) p).symmL 𝕜 q v =
+      (trivializationAt (E × F) (TangentSpace (I.prod 𝓘(𝕜, F))) (p.1, s)).symmL 𝕜 (q.1, s') v := by
+  have hq₁ : q ∈ (chartAt (ModelProd H F) p).source := by simpa using hq
+  have hq₂ : (q.1, s') ∈ (chartAt (ModelProd H F) (p.1, s)).source := by simpa using hq
+  have h₁ := tangentSpaceProdEquiv_symmL_trivializationAt (I := I) (J := 𝓘(𝕜, F)) hq₁ v
+  have h₂ := tangentSpaceProdEquiv_symmL_trivializationAt (I := I) (J := 𝓘(𝕜, F)) hq₂ v
+  rw [tangentSpaceProdEquiv_apply] at h₁ h₂
+  simp only [TangentBundle.symmL_model_space] at h₁ h₂
+  exact h₁.trans h₂.symm
+
 end Prod
 
 section Sum
