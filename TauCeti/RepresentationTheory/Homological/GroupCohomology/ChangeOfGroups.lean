@@ -17,7 +17,8 @@ Let `f : G →* H` be a group homomorphism and `φ : Res(f)(A) ⟶ B` a compatib
 representations. A chain map `α : P ⟶ Res(f)(Q)` from a complex of `G`-representations to the
 restriction of a complex of `H`-representations induces the cochain map
 `MonoidHom.linearYonedaObjMap f φ α : Hom_H(Q, A) ⟶ Hom_G(P, B)`, which sends `g : Q ⟶ A` to
-`φ ∘ g ∘ α`.
+`φ ∘ g ∘ α`. This cochain map and its composition and homotopy lemmas only need `G` and `H` to be
+monoids.
 
 When `P` and `Q` are projective resolutions of the trivial representations and `α` lies over the
 identity of `k`, Mathlib's identifications `groupCohomologyIso` of group cohomology with the
@@ -68,10 +69,10 @@ universe u
 
 namespace MonoidHom
 
-variable {k G H : Type u} [CommRing k] [Group G] [Group H] {A : Rep.{u} k H} {B : Rep.{u} k G}
-  (f : G →* H) (φ : res f A ⟶ B)
-
 section CochainMap
+
+variable {k G H : Type u} [CommRing k] [Monoid G] [Monoid H] {A : Rep.{u} k H} {B : Rep.{u} k G}
+  (f : G →* H) (φ : res f A ⟶ B)
 
 /-- **Change of groups on morphism complexes.** For `f : G →* H`, a compatible coefficient map
 `φ : Res(f)(A) ⟶ B` and a chain map `α : P ⟶ Res(f)(Q)`, this is the cochain map
@@ -143,6 +144,9 @@ theorem homologyMap_linearYonedaObjMap_eq_of_homotopy
       (congrArg (HomologicalComplex.homologyMap · n) hβ)
 
 end CochainMap
+
+variable {k G H : Type u} [CommRing k] [Group G] [Group H] {A : Rep.{u} k H} {B : Rep.{u} k G}
+  (f : G →* H) (φ : res f A ⟶ B)
 
 section Bar
 
