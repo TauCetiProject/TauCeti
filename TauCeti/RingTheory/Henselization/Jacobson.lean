@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Henselization.Algebra
 public import Mathlib.RingTheory.Jacobson.Ideal
+import TauCeti.RingTheory.Henselization.Residue
 
 /-!
 # The Jacobson radical of the henselization
@@ -16,6 +17,10 @@ that an element of an étale neighbourhood which is invertible modulo the extend
 becomes invertible in the henselization: localizing that neighbourhood at the element is
 another neighbourhood. This supplies the radical condition in the definition of a henselian
 pair, without assuming that the original ideal lies in the Jacobson radical.
+
+As a consequence, the henselization is the zero ring exactly when the ideal is the unit ideal:
+along `⊤` the extended ideal is everything, and otherwise the henselization keeps the nonzero
+quotient `R ⧸ I`.
 
 ## References
 
@@ -63,5 +68,22 @@ theorem extended_le_jacobson (I : Ideal R) :
       (isUnit_one : IsUnit (1 : B.obj ⧸ I.map (algebraMap R B.obj)))
   simpa only [map_add, map_mul, map_one, AlgHom.commutes] using
     isUnit_stage_of_isUnit_quotient I B hu
+
+/-- The henselization of `(R, I)` is the zero ring exactly when `I` is the unit ideal. -/
+theorem subsingleton_iff (I : Ideal R) : Subsingleton (algebra I) ↔ I = ⊤ := by
+  refine ⟨fun _ ↦ Ideal.Quotient.subsingleton_iff.mp (quotient_bijective I).1.subsingleton, ?_⟩
+  rintro rfl
+  have h := extended_le_jacobson (⊤ : Ideal R)
+  rw [extended, Ideal.map_top, top_le_iff, Ideal.jacobson_eq_top_iff,
+    subsingleton_iff_bot_eq_top, Submodule.subsingleton_iff] at h
+  exact h
+
+/-- The henselization of `(R, I)` is a nonzero ring exactly when `I` is a proper ideal. -/
+theorem nontrivial_iff (I : Ideal R) : Nontrivial (algebra I) ↔ I ≠ ⊤ :=
+  not_subsingleton_iff_nontrivial.symm.trans (subsingleton_iff I).not
+
+-- The henselization along the unit ideal is the zero ring.
+example : Subsingleton (algebra (⊤ : Ideal R)) :=
+  (subsingleton_iff ⊤).mpr rfl
 
 end TauCeti.Henselization

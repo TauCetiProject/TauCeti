@@ -90,6 +90,15 @@ theorem toFractionalIdeal_toFiniteIdele_ofAdicCompletion (v : HeightOneSpectrum 
   intro w hw
   simp only [hother w hw, zpow_zero]
 
+/-- The fractional ideal of an idele concentrated at one finite place, with a coordinate of
+valuation `exp (-1)` there (a uniformizer), is the prime of that place. -/
+theorem toFractionalIdeal_toFiniteIdele_ofAdicCompletion_of_eq_exp_neg_one
+    (v : HeightOneSpectrum R) {u : (v.adicCompletion K)ˣ}
+    (hu : Valued.v (u : v.adicCompletion K) = WithZero.exp (-1)) :
+    toFractionalIdeal (IdeleGroup.toFiniteIdele R K (IdeleGroup.ofAdicCompletion R K v u)) =
+      v.unitOfPrime K := by
+  rw [toFractionalIdeal_toFiniteIdele_ofAdicCompletion, hu, WithZero.log_exp, neg_neg, zpow_one]
+
 end IsDedekindDomain.HeightOneSpectrum
 
 namespace ClassGroup

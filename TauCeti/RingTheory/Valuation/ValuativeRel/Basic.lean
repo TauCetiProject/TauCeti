@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Valuation.Integers
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 public import Mathlib.RingTheory.Valuation.ValuativeRel.Basic
+public import TauCeti.Algebra.CharP.LocalRing
+import Mathlib.Algebra.CharP.Algebra
 
 /-!
 # Basic facts about valuative relations
@@ -29,6 +31,9 @@ General lemmas about `ValuativeRel` that Mathlib does not yet provide.
   less than one cannot equal `-1`.
 * `TauCeti.valuation_lt_one_iff_mem_image_maximalIdeal`: in a field, the elements of valuation
   less than one are the image of the maximal ideal of the ring of integers.
+* `TauCeti.natCast_eq_zero_iff_ringChar_eq_ringChar_residueField_and_dvd`: a positive integer
+  vanishes in a field exactly when the field has the characteristic `p` of its residue field and
+  `p` divides the integer.
 
 ## References
 
@@ -113,5 +118,24 @@ theorem valuation_lt_one_iff_mem_image_maximalIdeal {K : Type*} [Field K] [Valua
     (valuation K).mem_maximalIdeal_iff.2 hx, rfl⟩, ?_⟩
   rintro ⟨c, hc, rfl⟩
   exact (valuation K).mem_maximalIdeal_iff.1 hc
+
+/-- A positive integer `n` vanishes in a field `K` with a valuative relation exactly when `K` has
+equal characteristic `p`, the characteristic of its residue field, and `p ∣ n`. -/
+theorem natCast_eq_zero_iff_ringChar_eq_ringChar_residueField_and_dvd {K : Type*} [Field K]
+    [ValuativeRel K] {n : ℕ} (hn : 0 < n) :
+    (n : K) = 0 ↔ ringChar K = ringChar (IsLocalRing.ResidueField (valuation K).integer) ∧
+      ringChar (IsLocalRing.ResidueField (valuation K).integer) ∣ n := by
+  refine ⟨fun h ↦ ?_, fun ⟨h, hdvd⟩ ↦ (ringChar.spec K n).2 (h ▸ hdvd)⟩
+  have hdvd := (ringChar.spec K n).1 h
+  have hK : ringChar K ≠ 0 := by
+    rintro hK
+    rw [hK, zero_dvd_iff] at hdvd
+    omega
+  -- The ring of integers embeds in `K`, so it has the same characteristic.
+  have : CharP (valuation K).integer (ringChar K) :=
+    (Subring.subtype _).charP Subtype.val_injective _
+  have hO : ringChar (valuation K).integer = ringChar K := ringChar.eq _ _
+  rw [IsLocalRing.ringChar_residueField_of_ringChar_ne_zero (hO ▸ hK), hO]
+  exact ⟨rfl, hdvd⟩
 
 end TauCeti

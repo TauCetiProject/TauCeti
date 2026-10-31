@@ -136,7 +136,7 @@ theorem IsPwC1ImmersionOn.hasCauchyPVAt_pow_inv {γ : ℝ → ℂ} {a b : ℝ} {
         c * (-(↑(k - 1) : ℂ)⁻¹ * ((γ a - s) ^ (k - 1))⁻¹)) := by
   classical
   rcases hab.eq_or_lt with rfl | hab
-  · simpa using HasCauchyPVAt.of_eq γ rfl (fun z => c / (z - s) ^ k) s
+  · simpa using HasCauchyPVAt.refl γ a (fun z => c / (z - s) ^ k) s
   set T : Finset ℝ := (h_imm.finite_crossings (z₀ := s)).toFinset with hT_def
   have hT_mem : ∀ {t : ℝ}, t ∈ T ↔ t ∈ Icc a b ∧ γ t = s := fun {_} => by
     rw [hT_def, h_imm.mem_toFinset_finite_crossings_of_le hab.le]

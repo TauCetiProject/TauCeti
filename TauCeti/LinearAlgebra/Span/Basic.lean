@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Span.Basic
-public import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Module.Torsion.Field
 
@@ -14,9 +13,8 @@ import Mathlib.Algebra.Module.Torsion.Field
 # Finite spans and singleton spans
 
 A generator with a unit coefficient in a linear combination can be replaced by that combination
-without changing the span; likewise a generator with a unit coefficient in a relation can be
-dropped from a generating family. Over a division semiring, a nonzero vector in a singleton span
-can be used to recover the generator's membership in any submodule. Acting on a line gives the line
+without changing the span. Over a division semiring, a nonzero vector in a singleton span can be
+used to recover the generator's membership in any submodule. Acting on a line gives the line
 through the image of its generator, so a group element stabilizes the line through a vector
 exactly when it sends that vector to a multiple of itself.
 -/
@@ -44,22 +42,6 @@ theorem span_insert_erase_eq_span_of_isUnit [DecidableEq M] {s : Finset M} {i x 
     _ = _root_.Submodule.span A (insert x (s : Set M)) := by
       rw [Set.insert_comm, ← Finset.coe_insert, Finset.insert_erase hi]
     _ = _ := Submodule.span_insert_eq_span hx
-
-/-- If `v₀, …, vₘ` span `M` and some relation `∑ cᵢ vᵢ = 0` has a unit coefficient `cⱼ`, then the
-family with `vⱼ` removed still spans `M`. -/
-theorem span_range_comp_succAbove_eq_top {m : ℕ} {v : Fin (m + 1) → M}
-    (hv : _root_.Submodule.span A (Set.range v) = ⊤) {c : Fin (m + 1) → A}
-    (hc : ∑ i, c i • v i = 0) {j : Fin (m + 1)} (hj : IsUnit (c j)) :
-    _root_.Submodule.span A (Set.range (v ∘ j.succAbove)) = ⊤ := by
-  rw [eq_top_iff, ← hv, Submodule.span_le]
-  rintro _ ⟨i, rfl⟩
-  rcases eq_or_ne i j with rfl | hij
-  · rw [Fin.sum_univ_succAbove _ i] at hc
-    rw [SetLike.mem_coe, ← Submodule.smul_mem_iff_of_isUnit _ hj, eq_neg_of_add_eq_zero_left hc]
-    exact neg_mem (Submodule.sum_mem _ fun k _ ↦
-      Submodule.smul_mem _ _ (Submodule.subset_span ⟨k, rfl⟩))
-  · obtain ⟨k, rfl⟩ := Fin.exists_succAbove_eq hij
-    exact Submodule.subset_span ⟨k, rfl⟩
 
 end TauCeti.Submodule
 

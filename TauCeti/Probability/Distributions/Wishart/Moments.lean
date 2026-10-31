@@ -235,8 +235,8 @@ theorem variance_trace_mul_of_mgf_trace_mul_eq_det_rpow (hS : S.PosSemidef)
   rw [hfirst] at hsecond
   simp only [zero_mul, Real.exp_zero, mul_one, mgf_zero, div_one] at hsecond
   have hsq : ∑ j, hB.eigenvalues j ^ 2 = (B * B).trace := by
-    simpa only [RCLike.ofReal_real_eq_id, id_eq]
-      using hB.trace_mul_self_eq_sum_eigenvalues_sq.symm
+    simpa only [RCLike.ofReal_real_eq_id, id_eq, pow_two]
+      using (hB.trace_pow_eq_sum_eigenvalues_pow 2).symm
   rw [← hsecond, hcumulant, hsq, hS.trace_sqrt_mul_mul_sqrt_mul_self]
 
 end TraceStatistic

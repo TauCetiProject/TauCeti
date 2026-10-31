@@ -82,8 +82,16 @@ private theorem depth_add_eq_of_projectiveDimension_eq (p : ℕ) (M : Type v) [A
     have : Module.Free R M := Module.free_of_flat_of_isLocalRing
     simpa using depth_eq_depth_self_of_free M
   | succ p ih =>
-    obtain ⟨n, g, hg, hker⟩ :=
-      TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul (R := R) M
+    -- A minimal free presentation, with free module transported to the universe of `M`.
+    obtain ⟨n, g, hg, hker⟩ : ∃ (n : ℕ) (g : (Fin n → Shrink.{v} R) →ₗ[R] M),
+        Function.Surjective g ∧ LinearMap.ker g ≤ maximalIdeal R • ⊤ := by
+      obtain ⟨f, hf, hfker⟩ := TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul R M
+      let e : (Fin _ → Shrink.{v} R) ≃ₗ[R] (Fin _ → R) :=
+        LinearEquiv.piCongrRight fun _ ↦ Shrink.linearEquiv R R
+      refine ⟨_, f ∘ₗ e.toLinearMap, hf.comp e.surjective, ?_⟩
+      rw [LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm]
+      refine (Submodule.map_mono hfker).trans ?_
+      rw [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range]
     have hM : ¬ Module.Projective R M := fun h ↦ by
       have := Projective.projectiveDimension_le_zero (ModuleCat.of R M)
       rw [hp] at this
