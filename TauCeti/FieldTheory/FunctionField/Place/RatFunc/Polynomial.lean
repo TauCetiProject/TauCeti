@@ -49,26 +49,14 @@ theorem mem_integers_of_restrict_ne_infty (hq : algebraMap (RatFunc k) F RatFunc
     {P' : Place k F} (hP : P'.restrict k (RatFunc k) ≠ infty k) : x ∈ P'.integers := by
   have hX : (RatFunc.X : RatFunc k) ∈ (P'.restrict k (RatFunc k)).integers :=
     not_not.mp (X_notMem_integers_iff_eq_infty.not.mpr hP)
-  -- `t` is regular at `P'`, so `x` is a root of `q(X) - t`, a polynomial over the valuation ring
-  -- of `P'` whose leading coefficient is the nonzero constant `lc(q)`.
-  set a := algebraMap (RatFunc k) F RatFunc.X
-  have ha : a ∈ P'.integers := (mem_integers_restrict_iff k (RatFunc k) P' _).mp hX
+  -- If `x` had a pole at `P'`, then `t = q(x)` would have a pole of order `deg q` there.
+  have ha := (mem_integers_restrict_iff k (RatFunc k) P' _).mp hX
   have hdeg := natDegree_pos_of_aeval_eq hq
-  have hq0 : q ≠ 0 := ne_zero_of_natDegree_gt hdeg
-  let p : P'.integers[X] := q.map (algebraMap k P'.integers) - C ⟨a, ha⟩
-  have hp : aeval x p = 0 := by
-    simp [p, aeval_map_algebraMap, a, hq]
-  have hlc : p.leadingCoeff = algebraMap k P'.integers q.leadingCoeff := by
-    rw [leadingCoeff_sub_of_degree_lt, leadingCoeff_map]
-    rw [degree_map_eq_of_injective (algebraMap k P'.integers).injective, degree_eq_natDegree hq0]
-    exact degree_C_le.trans_lt (mod_cast hdeg)
-  have hint := isIntegral_leadingCoeff_smul p x hp
-  rw [hlc, algebraMap_smul] at hint
-  refine P'.mem_integers_of_isIntegral (R := P'.integers) (fun r ↦ r.2) ?_
-  convert (isIntegral_algebraMap (R := P'.integers) (x := algebraMap k P'.integers
-    q.leadingCoeff⁻¹)).mul hint using 1
-  rw [← IsScalarTower.algebraMap_apply, Algebra.smul_def, ← mul_assoc, ← map_mul,
-    inv_mul_cancel₀ (leadingCoeff_ne_zero.mpr hq0), map_one, one_mul]
+  rw [mem_integers_iff] at ha ⊢
+  by_contra! hlt
+  rw [hq, valuation_aeval_eq_valuation_X_pow_natDegree_of_one_lt_valuation_X x hlt
+    (ne_zero_of_natDegree_gt hdeg)] at ha
+  exact ha.not_gt (one_lt_pow₀ hlt hdeg.ne')
 
 /-- **The place of `k(t)` under a place where `q(x)` takes the value `c`**: if `t = q(x)` for a
 polynomial `q`, and `x` is regular at a place `P'` of `F` with `q(x(P')) = c`, then `P'` lies over

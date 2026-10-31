@@ -153,9 +153,8 @@ theorem IsFunctionField.exists_polynomial_isAlgebraicBelyiPair [Algebra.IsAlgebr
   by_cases hxP : x ∈ P.integers
   · have hξ : aeval (ξ P) q ∈ ({0, 1} : Set (AlgebraicClosure k)) :=
       hqS _ (Finset.mem_image_of_mem _ (hB.mem_toFinset.mpr hPB))
-    rw [show ξ P = φ P (IsLocalRing.residue P.integers ⟨x, hxP⟩) by
-        simp only [ξ, hxP, ↓reduceDIte],
-      ← aeval_map_algebraMap k, aeval_algHom_apply] at hξ
+    simp only [ξ, hxP, ↓reduceDIte] at hξ
+    rw [← aeval_map_algebraMap k, aeval_algHom_apply] at hξ
     obtain ⟨c, hc, hcξ⟩ : ∃ c : k, (c = 0 ∨ c = 1) ∧ aeval (IsLocalRing.residue P.integers
         ⟨x, hxP⟩) (q.map (algebraMap ℚ k)) = algebraMap k P.ResidueField c := by
       rcases hξ with h | h
