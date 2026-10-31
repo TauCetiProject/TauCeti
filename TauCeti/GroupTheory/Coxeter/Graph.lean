@@ -17,6 +17,13 @@ elements satisfying the graph's commuting and length-three braid relations
 extends to its Artin group by the existing Artin-Tits universal property.
 
 The rank-two entries specify the two types of alternating-word relators.
+
+Conversely, a Coxeter matrix `M` determines its *Coxeter graph* `CoxeterMatrix.graph`, joining two
+distinct indices exactly when their entry is not `2`, that is, when the corresponding simple
+reflections do not commute. Entries `0`, which encode infinite order, are edges too. This forgets
+the edge labels, and on simply laced matrices it inverts the first construction
+(`SimpleGraph.graph_coxeterMatrix`). Simple reflections whose indices are not adjacent in the
+Coxeter graph commute (`CoxeterSystem.commute_simple_of_not_adj`).
 -/
 
 public section
@@ -94,3 +101,43 @@ theorem artinGroupLift_gen (f : V → H) (commute braid) (i : V) :
   simp only [artinGroupLift, ArtinGroup.lift_gen]
 
 end SimpleGraph
+
+namespace CoxeterMatrix
+
+variable {B : Type*} (M : CoxeterMatrix B)
+
+/-- The **Coxeter graph** of a Coxeter matrix: two distinct indices are adjacent exactly when their
+entry is not `2`, so that nonadjacent simple reflections commute. The edge labels `M i j` are
+forgotten. -/
+def graph : SimpleGraph B where
+  Adj i j := i ≠ j ∧ M i j ≠ 2
+  symm := ⟨fun i j h ↦ ⟨h.1.symm, M.symmetric i j ▸ h.2⟩⟩
+  loopless := ⟨fun _ h ↦ h.1 rfl⟩
+
+@[simp]
+theorem graph_adj {i j : B} : M.graph.Adj i j ↔ i ≠ j ∧ M i j ≠ 2 := Iff.rfl
+
+end CoxeterMatrix
+
+/-- The Coxeter graph of the simply laced Coxeter matrix of a graph is the graph itself. -/
+@[simp]
+theorem SimpleGraph.graph_coxeterMatrix {V : Type*} (G : SimpleGraph V) :
+    G.coxeterMatrix.graph = G := by
+  ext i j
+  rw [CoxeterMatrix.graph_adj]
+  by_cases hij : i = j
+  · simp [hij]
+  · by_cases h : G.Adj i j <;> simp [hij, h]
+
+namespace CoxeterSystem
+
+variable {B W : Type*} [Group W] {M : CoxeterMatrix B} (cs : CoxeterSystem M W)
+
+/-- Two simple reflections commute when their indices are not adjacent in the Coxeter graph. -/
+theorem commute_simple_of_not_adj {i i' : B} (h : ¬M.graph.Adj i i') :
+    Commute (cs.simple i) (cs.simple i') := by
+  rcases eq_or_ne i i' with rfl | hii'
+  · exact Commute.refl _
+  · exact cs.commute_simple_of_eq_two (not_not.mp fun h' ↦ h (M.graph_adj.mpr ⟨hii', h'⟩))
+
+end CoxeterSystem

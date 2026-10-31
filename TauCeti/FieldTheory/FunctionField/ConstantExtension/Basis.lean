@@ -49,6 +49,8 @@ subextension.  This is how an inseparable constant field extension is compared w
 * `TauCeti.constantBasis`: the `F`-basis of `F' = F · k'` given by a `k`-basis of `k'`.
 * `TauCeti.constantBasis_repr_algebraMap`: the coordinates of a constant in a basis of constants
   are the images of its coordinates over `k`.
+* `TauCeti.constantBasisOfFinrankEq`: the same basis of constants when `[F · k' : F] = [k' : k]`,
+  with no exactness or separability hypothesis.
 * `IsIntegrallyClosedIn.of_constantCompositum_eq_top`: `k'` is the exact constant field
   of `F · k'` (Stichtenoth, Proposition 3.6.1(a)), with no perfectness hypothesis.
 * `TauCeti.trace_algebraMap_of_constantCompositum_eq_top`: the trace of a constant is the image
@@ -158,6 +160,47 @@ theorem linearDisjoint_fieldRange_of_forall_finrank_constantCompositum_eq
     (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F :=
   linearDisjoint_fieldRange_of_forall_finiteDimensional fun M _ ↦
     linearDisjoint_fieldRange_of_finrank_constantCompositum_eq (h M ‹_›)
+
+section FinrankEq
+
+variable [FiniteDimensional k k'] (h : constantCompositum F k' F' = ⊤)
+  (hn : finrank F F' = finrank k k')
+
+/-- **A basis of constants from the degree form of linear disjointness**: if
+`[F · k' : F] = [k' : k]`, the image of a `k`-basis of `k'` is an `F`-basis of `F' = F · k'`,
+since it spans `F'` and has `[F' : F]` elements. Unlike `TauCeti.constantBasis`, this needs
+neither exactness of `k` in `F` nor separability of `k' / k`, so it applies to inseparable
+constant field extensions. -/
+noncomputable def constantBasisOfFinrankEq {ι : Type*} [Fintype ι] (b : Basis ι k k') :
+    Basis ι F F' :=
+  haveI := finiteDimensional_of_constantCompositum_eq_top (k := k) h
+  Basis.mk (linearIndependent_of_top_le_span_of_card_eq_finrank
+    (span_range_algebraMap_comp_of_constantCompositum_eq_top h b).ge
+    (by rw [hn, finrank_eq_card_basis b]))
+    (span_range_algebraMap_comp_of_constantCompositum_eq_top h b).ge
+
+@[simp]
+theorem constantBasisOfFinrankEq_apply {ι : Type*} [Fintype ι] (b : Basis ι k k') (i : ι) :
+    constantBasisOfFinrankEq h hn b i = algebraMap k' F' (b i) :=
+  Basis.mk_apply _ _ i
+
+/-- The coordinates of a constant in a basis of constants are the images of its coordinates
+over `k`. -/
+@[simp]
+theorem constantBasisOfFinrankEq_repr_algebraMap {ι : Type*} [Fintype ι] (b : Basis ι k k')
+    (c : k') (i : ι) :
+    (constantBasisOfFinrankEq h hn b).repr (algebraMap k' F' c) i =
+      algebraMap k F (b.repr c i) := by
+  have hc : algebraMap k' F' c =
+      ∑ j, algebraMap k F (b.repr c j) • constantBasisOfFinrankEq h hn b j := by
+    conv_lhs => rw [← b.sum_repr c]
+    rw [map_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [constantBasisOfFinrankEq_apply, Algebra.smul_def, Algebra.smul_def, map_mul,
+      ← IsScalarTower.algebraMap_apply k k' F', ← IsScalarTower.algebraMap_apply k F F']
+  rw [hc, Basis.repr_sum_self]
+
+end FinrankEq
 
 /-! ### Exact constants over finite subextensions -/
 

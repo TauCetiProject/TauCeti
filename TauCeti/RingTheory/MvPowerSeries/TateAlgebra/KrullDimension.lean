@@ -155,29 +155,17 @@ private theorem natCard_add_one_le_height_option {σ : Type*} [Finite σ]
   let g : S := E f
   let N : Ideal S := M.comap E.symm
   have hgN : g ∈ N := by simpa [N, g] using hfM
-  -- `S ⧸ (g)` is finite free over `R`, so going down bounds the height of the image of `N`
-  -- below by the height of its contraction to `R`, a maximal ideal.
+  -- `S ⧸ (g)` is finite free over `R`, so it is integral with going down; as `g` is a
+  -- non-zero-divisor, `N` has height at least one more than some maximal ideal of `R`.
   let B := S ⧸ Ideal.span {g}
   have : Module.Free R B := hd.free_quotient zero_lt_one hu
   have : Module.Finite R B := hd.finite_quotient zero_lt_one hu
-  have : IsNoetherianRing R := isNoetherianRing_isRestricted_subring
-  have : IsNoetherianRing B := IsNoetherianRing.of_finite R B
   have : Algebra.IsIntegral R B := Algebra.IsIntegral.of_finite R B
-  let Nb : Ideal B := N.map (Ideal.Quotient.mk _)
-  have : Nb.IsMaximal := Ideal.IsMaximal.map_of_surjective_of_ker_le Ideal.Quotient.mk_surjective
-    (by simpa [Ideal.mk_ker, Ideal.span_singleton_le_iff_mem] using hgN)
-  let p := Nb.under R
-  have : p.IsMaximal := Ideal.isMaximal_under_of_isIntegral_of_isMaximal Nb
-  have hNb : p.height ≤ Nb.height := by
-    rw [Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown p Nb]
-    exact le_self_add
-  -- Quotienting by the non-zero-divisor `g` lowers the height of `N` by one.
   have hg : g ∈ S⁰ := mem_nonZeroDivisors_of_ne_zero (by simpa [g] using hf)
-  rw [← RingEquiv.height_comap E.symm M]
-  refine le_trans ?_ (Ideal.height_map_quotientMk_span_singleton_add_one_le hg N hgN)
-  rw [Finite.card_option, Nat.cast_add, Nat.cast_one]
-  gcongr
-  exact (IH p).trans hNb
+  obtain ⟨p, _, hp⟩ :=
+    N.exists_isMaximal_height_add_one_le_of_ringEquiv_quotient (R := R) hgN hg (RingEquiv.refl B)
+  rw [← RingEquiv.height_comap E.symm M, Finite.card_option, Nat.cast_add, Nat.cast_one]
+  exact le_trans (by gcongr; exact IH p) hp
 
 /-- **Heights of maximal ideals of Tate algebras.** Over a complete nonarchimedean field, every
 maximal ideal of the Tate algebra `K⟨X₁, …, Xₙ⟩` has height `n`, its Krull dimension. -/

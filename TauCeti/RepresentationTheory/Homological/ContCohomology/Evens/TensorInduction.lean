@@ -366,15 +366,9 @@ private theorem tensorRead_tprod
         ((trivialF2 U.toSubgroup).gradedResolutionProjection (x i)) := by
   unfold tensorRead
   rw [smoothTensorInducedGradedResolutionProjection_tprod]
-  refine (congrArg (fun z ↦ trivialF2Equiv G
-    ((smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen'
-      (twoTransversal U hU s hs)).hom.hom.hom z))
-        (smoothTensorInducedTrivialF2Tprod_eq G U.toSubgroup U.isOpen'
-          (twoTransversal U hU s hs)
-          (fun i ↦ (trivialF2 U.toSubgroup).gradedResolutionProjection (x i)))).symm.trans
-    ((smoothTensorInducedTrivialF2Iso_hom_apply_tprod G U.toSubgroup U.isOpen'
-      (twoTransversal U hU s hs)
-      (fun i ↦ (trivialF2 U.toSubgroup).gradedResolutionProjection (x i))).trans ?_)
+  refine (smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_tprod G U.toSubgroup
+    U.isOpen' (twoTransversal U hU s hs)
+    (fun i ↦ (trivialF2 U.toSubgroup).gradedResolutionProjection (x i))).trans ?_
   apply Finset.prod_congr
   · ext i
     simp
@@ -467,7 +461,7 @@ variable [CompactSpace U.toSubgroup]
 private noncomputable abbrev tensorContraction [LinearOrder (G ⧸ U.toSubgroup)] :=
   smoothTensorInducedGradedResolutionContraction U.toSubgroup U.isOpen'
     (twoTransversal U hU s hs) (characterCoeff U)
-    (fun a ↦ by simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero U.toSubgroup a)
+    (trivialF2_add_self U.toSubgroup)
 
 attribute [local instance] TopRep.distribMulAction
 
@@ -569,7 +563,7 @@ theorem smoothTensorInducedDiagonalClass_eq_graphClass
       (smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen' t).hom.hom
         (Fintype.card (G ⧸ U.toSubgroup) * 1)
       (smoothTensorInducedDiagonalClass U.toSubgroup U.isOpen' t A
-        (fun a ↦ by simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero U.toSubgroup a)
+        (trivialF2_add_self U.toSubgroup)
         z hz hinv hdz) =
       (eqToHom (congrArg (fun n ↦ continuousCohomology n (trivialF2 G))
         (by simpa only [Subgroup.index_eq_card, Nat.card_eq_fintype_card, mul_one]

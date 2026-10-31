@@ -135,6 +135,19 @@ theorem relativePBWBasis_apply
   simp only [pbwMonomial_def, List.map_map, Function.comp_def, adaptedBasis_inl, adaptedBasis_inr,
     LieSubalgebra.coe_incl]
 
+/-- **The relative PBW basis is adapted to the PBW filtration.** An element has filtration degree
+at most `k` exactly when its relative PBW coordinates are supported on pairs of exponent vectors
+of total degree at most `k`. -/
+theorem mem_pbwFiltration_iff_relativePBWBasis_repr {k : ℕ} {a : U} :
+    a ∈ pbwFiltration R L k ↔
+      ∀ p ∈ ((relativePBWBasis B hA bA bB).repr a).support, p.1.degree + p.2.degree ≤ k := by
+  have hdeg (p : (ιA →₀ ℕ) × (ιB →₀ ℕ)) :
+      (sumExponentEquiv p).degree = p.1.degree + p.2.degree := by
+    rw [sumExponentEquiv_apply, map_add, Finsupp.degree_mapDomain, Finsupp.degree_mapDomain]
+  rw [(adaptedBasis B hA bA bB).mem_pbwFiltration_iff_pbwBasis_repr,
+    ← sumExponentEquiv.forall_congr_right]
+  simp [relativePBWBasis, hdeg]
+
 end Adapted
 
 section Subalgebras

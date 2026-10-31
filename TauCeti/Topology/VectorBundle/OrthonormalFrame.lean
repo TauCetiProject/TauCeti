@@ -52,6 +52,9 @@ of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
 
 * `TauCeti.OrthonormalFrameBundle F E V`: the orthonormal frames of the fibres of `E` modelled
   on `V`, with the right action of `unitary (V →L[ℝ] V)`.
+* `TauCeti.OrthonormalFrameBundle.coord`: a frame read in a linear trivialization, as a linear map
+  `V →L[ℝ] F`; over the base set of the trivialization these form a continuous family
+  (`TauCeti.OrthonormalFrameBundle.continuousOn_coord`).
 * `Bundle.Trivialization.orthonormalFrame`: the Gram–Schmidt orthonormal frame over the base set
   of a linear trivialization.
 * `Bundle.Trivialization.orthonormalFrameBundle`: the induced trivialization of the frame bundle.
@@ -236,13 +239,17 @@ theorem continuous_proj : Continuous (proj : OrthonormalFrameBundle F E V → B)
 
 variable [NormedSpace ℝ F] [VectorBundle ℝ F E]
 
-/-- The frame at `p`, read as a linear map `V →L[ℝ] F` in the linear trivialization `e`. -/
-private def coord (e : Trivialization F (π F E)) [e.IsLinear ℝ]
+/-- The frame at `p`, read as a linear map `V →L[ℝ] F` in the linear trivialization `e`. Over
+`e.baseSet` this is the composite of the frame with the linear equivalence `E p.proj ≃ F` given
+by `e`. -/
+def coord (e : Trivialization F (π F E)) [e.IsLinear ℝ]
     (p : OrthonormalFrameBundle F E V) : V →L[ℝ] F :=
   (e.continuousLinearMapAt ℝ p.proj).comp (p.frame.toContinuousLinearEquiv : V →L[ℝ] E p.proj)
 
 omit [VectorBundle ℝ F E] in
-private theorem coord_apply {e : Trivialization F (π F E)} [e.IsLinear ℝ]
+/-- Over the base set of `e`, the frame read in `e` sends `v` to the coordinates in `e` of the
+frame applied to `v`. -/
+theorem coord_apply {e : Trivialization F (π F E)} [e.IsLinear ℝ]
     {p : OrthonormalFrameBundle F E V} (hp : p.proj ∈ e.baseSet) (v : V) :
     coord e p v = (e ⟨p.proj, p.frame v⟩).2 := by
   simp only [coord, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
@@ -250,7 +257,9 @@ private theorem coord_apply {e : Trivialization F (π F E)} [e.IsLinear ℝ]
   exact e.continuousLinearMapAt_apply_of_mem (R := ℝ) hp _
 
 omit [VectorBundle ℝ F E] in
-private theorem continuousOn_coord [FiniteDimensional ℝ V] (e : Trivialization F (π F E))
+/-- The frames read in a linear trivialization `e` form a continuous family of linear maps over
+the base set of `e`. -/
+theorem continuousOn_coord [FiniteDimensional ℝ V] (e : Trivialization F (π F E))
     [e.IsLinear ℝ] :
     ContinuousOn (coord e) (proj ⁻¹' e.baseSet : Set (OrthonormalFrameBundle F E V)) := by
   refine continuousOn_clm_apply.2 fun v ↦ ?_

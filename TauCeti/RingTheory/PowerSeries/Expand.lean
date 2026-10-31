@@ -25,6 +25,7 @@ bound, the infinite product converges in the coefficientwise topology
 ## Main declarations
 
 * `PowerSeries.expand_injective`: expansion `f ↦ f (X ^ p)` is injective.
+* `PowerSeries.rescale_expand`: rescaling `f (X ^ p)` by `a` rescales `f` by `a ^ p`.
 * `PowerSeries.subst_expand`: substituting into `f(X ^ p)` substitutes the `p`-th power.
 * `PowerSeries.toMvPowerSeries_expand`: embedding in one coordinate commutes with expansion.
 * `Finset.weightedFinsuppAntidiag s m n`: the assignments `l : ι →₀ ℕ` supported in `s` with
@@ -97,6 +98,17 @@ theorem expand_injective (p : ℕ) (hp : p ≠ 0) :
     Function.Injective (expand p hp : R⟦X⟧ → R⟦X⟧) := fun f g h ↦ by
   ext m
   rw [← coeff_expand_mul p hp f, h, coeff_expand_mul]
+
+/-- Rescaling an expanded series by `a` is expanding the series rescaled by `a ^ p`:
+`f ((a X) ^ p) = (f (a ^ p X)) (X ^ p)`. -/
+theorem rescale_expand (p : ℕ) (hp : p ≠ 0) (a : R) (f : R⟦X⟧) :
+    rescale a (expand p hp f) = expand p hp (rescale (a ^ p) f) := by
+  ext n
+  rw [coeff_rescale, coeff_expand, coeff_expand]
+  split_ifs with h
+  · obtain ⟨m, rfl⟩ := h
+    rw [coeff_rescale, Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hp), pow_mul]
+  · rw [mul_zero]
 
 /-- Substituting into an expanded series raises the substituted series to the expansion
 power. -/

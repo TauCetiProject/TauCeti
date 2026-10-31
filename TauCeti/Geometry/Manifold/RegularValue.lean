@@ -50,10 +50,12 @@ to manifolds, including manifolds with boundary or corners.
   `TauCeti.IsRegularPoint.range_mfderiv_eq_ker_mfderiv`: at a regular point the kernel of the
   derivative has codimension the dimension of the target, and it is the tangent image of every
   immersion into the level from a manifold of that dimension.
-* `TauCeti.IsRegularPoint.surjective_fderiv_comp_extChartAt_symm` and
+* `TauCeti.IsRegularPoint.surjective_fderiv_comp_extChartAt_symm`,
+  `TauCeti.IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm_add_finrank` and
   `TauCeti.IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, at
   a regular point of a map into a normed space the derivative in the preferred extended chart is
-  surjective, with kernel of codimension one for scalar functions.
+  surjective, with kernel of codimension the dimension of the target, so of codimension one for
+  scalar functions.
 
 ## References
 
@@ -259,19 +261,25 @@ theorem IsRegularPoint.surjective_fderiv_comp_extChartAt_symm {g : M → E'}
     obtain ⟨u, hu⟩ := h v
     exact ⟨0, by rw [map_zero]; exact hu⟩
 
+/-- At a regular point of a map into a normed space on a boundaryless manifold, the kernel of the
+preferred-chart derivative has codimension the dimension of the target. -/
+theorem IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm_add_finrank
+    [FiniteDimensional 𝕜 E] {g : M → E'} (h : IsRegularPoint I 𝓘(𝕜, E') g x) :
+    Module.finrank 𝕜 (fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x x)).ker +
+      Module.finrank 𝕜 E' = Module.finrank 𝕜 E := by
+  have := LinearMap.finrank_range_add_finrank_ker
+    (fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x x) : E →ₗ[𝕜] E')
+  rw [LinearMap.range_eq_top.2 h.surjective_fderiv_comp_extChartAt_symm, finrank_top] at this
+  omega
+
 /-- At a regular point of a scalar function on a boundaryless manifold, the kernel of the
 preferred-chart derivative has codimension one. -/
 theorem IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm [FiniteDimensional 𝕜 E]
     {g : M → 𝕜} (h : IsRegularPoint I 𝓘(𝕜) g x) :
     Module.finrank 𝕜 (fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x x)).ker =
       Module.finrank 𝕜 E - 1 := by
-  have hne : (fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x x) : E →ₗ[𝕜] 𝕜) ≠ 0 := by
-    intro h0
-    obtain ⟨v, hv⟩ := h.surjective_fderiv_comp_extChartAt_symm 1
-    have hv' := LinearMap.congr_fun h0 v
-    rw [ContinuousLinearMap.coe_coe, hv, LinearMap.zero_apply] at hv'
-    exact one_ne_zero hv'
-  have := Module.Dual.finrank_ker_add_one_of_ne_zero hne
+  have := h.finrank_ker_fderiv_comp_extChartAt_symm_add_finrank
+  rw [Module.finrank_self] at this
   omega
 
 end Boundaryless
