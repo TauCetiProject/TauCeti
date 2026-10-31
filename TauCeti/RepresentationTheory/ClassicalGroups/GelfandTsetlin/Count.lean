@@ -176,7 +176,7 @@ private theorem sigma_mk_topWeight_eq {l : DominantWeight (n + 1)} {Q Q' : GTPat
 Deleting the top row identifies them with the patterns with one row fewer whose top weight
 interlaces `λ`. This is `TauCeti.GTPattern.truncateSigmaEquiv` indexed by the dominant weights
 `TauCeti.interlacingWeights λ`, the index set of the branching `GL (n + 1) ↓ GL n`. -/
-@[expose] def truncateTopWeightSigmaEquiv (l : DominantWeight (n + 1)) :
+def truncateTopWeightSigmaEquiv (l : DominantWeight (n + 1)) :
     {P : GTPattern (n + 1) // P.topWeight = l} ≃
       Σ m : interlacingWeights l, {Q : GTPattern n // Q.topWeight = m} where
   toFun P := ⟨⟨P.1.truncate.topWeight, by
@@ -194,6 +194,14 @@ interlaces `λ`. This is `TauCeti.GTPattern.truncateSigmaEquiv` indexed by the d
     rintro ⟨⟨m, hm⟩, ⟨Q, hQ⟩⟩
     obtain rfl : Q.topWeight = m := hQ
     exact sigma_mk_topWeight_eq (truncate_extend _ _ _) _ _
+
+/-- `TauCeti.GTPattern.truncateTopWeightSigmaEquiv` sends a pattern to its truncation, indexed by
+the top weight of the truncation. -/
+theorem truncateTopWeightSigmaEquiv_apply (l : DominantWeight (n + 1))
+    (P : {P : GTPattern (n + 1) // P.topWeight = l})
+    (hm : P.1.truncate.topWeight ∈ interlacingWeights l) :
+    truncateTopWeightSigmaEquiv l P = ⟨⟨P.1.truncate.topWeight, hm⟩, ⟨P.1.truncate, rfl⟩⟩ :=
+  (rfl)
 
 @[simp]
 theorem truncateTopWeightSigmaEquiv_apply_fst_coe (l : DominantWeight (n + 1))

@@ -187,7 +187,12 @@ theorem isInternal_gtLine : ∀ {n : ℕ} (l : DominantWeight n), DirectSum.IsIn
     have hline : gtLine l = (fun x ↦ (gtLine (x.1 : DominantWeight n) x.2).map
         (e.symm.toLinearEquiv.toLinearMap ∘ₗ DirectSum.lof ℂ _ _ x.1)) ∘
           GTPattern.truncateTopWeightSigmaEquiv l :=
-      funext fun P ↦ gtLine_succ l P (ι (GTPattern.truncateTopWeightSigmaEquiv l P).1) (hι _)
+      funext fun P ↦ by
+        have hm : P.1.truncate.topWeight ∈ interlacingWeights l := by
+          have h := P.1.topWeight_truncate_mem_interlacingWeights
+          rwa [P.2] at h
+        rw [Function.comp_apply, GTPattern.truncateTopWeightSigmaEquiv_apply l P hm]
+        exact gtLine_succ l P (ι ⟨_, hm⟩) (hι _)
     rw [hline]
     exact DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top (R := ℂ)
       (M := (weylModuleOfShape ℂ (n + 1) l.detShiftShape).toSubmodule)
