@@ -9,9 +9,10 @@ public import TauCeti.GroupTheory.Amenable.Basic
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
 public import TauCeti.MeasureTheory.Function.Lp.Restriction
 public import TauCeti.RepresentationTheory.Compact.Haar
+public import TauCeti.Topology.Algebra.Group.UCB.Discrete
 
 /-!
-# Invariant means on `L∞` restrict to invariant means on `UCB`
+# Invariant means on `L∞` and invariant means on `UCB`
 
 Let `μ` be a left-invariant measure on the Borel sets of a topological group `G`, for instance
 a left Haar measure. Taking almost-everywhere classes, `f ↦ [f]`, is a positive linear map
@@ -26,6 +27,15 @@ So a topological group is amenable as soon as `L∞` of some left-invariant meas
 left-invariant mean; this is one implication of the characterization of amenable locally compact
 groups by invariant means on Haar `L∞`.
 
+On a discrete group, conversely, every mean on `UCB G` arises in this way, from exactly one
+functional (`TauCeti.Mean.lpTopEquiv`), whenever `μ` charges every point (`μ.IsOpenPosMeasure`):
+then every essentially bounded function is bounded, so taking classes identifies `UCB G`, which
+is all bounded functions, with `L∞(G, μ)` (`BoundedContinuousFunction.toLpTopLinearIsometryEquiv`).
+The correspondence preserves left invariance. Hence a discrete group is amenable exactly when
+`L∞` of a Haar measure, or of any left-invariant measure charging every point, carries a
+left-invariant mean (`TauCeti.amenable_iff_exists_lpTop`). This is the characterization of
+amenable locally compact groups by invariant means on Haar `L∞`, in the discrete case.
+
 For a compact group, integration against the normalized Haar measure `TauCeti.haarProb G` is
 such a mean on `L∞`, by left invariance of Haar measure. Hence every compact topological group
 is amenable, for its given topology.
@@ -34,6 +44,8 @@ is amenable, for its given topology.
 
 * `TauCeti.Mean.ofLpTop M hM`: the restriction `f ↦ M [f]` of a normalized positive functional
   on `L∞` to a mean on `UCB G`.
+* `TauCeti.Mean.lpTopEquiv μ`: on a discrete group, the bijection between means on `UCB G` and
+  normalized positive functionals on `L∞(G, μ)`, inverse to `TauCeti.Mean.ofLpTop`.
 
 ## Main results
 
@@ -41,6 +53,10 @@ is amenable, for its given topology.
   left-invariant mean.
 * `TauCeti.Amenable.of_lpTop`: a topological group with a left-invariant normalized positive
   functional on `L∞` of a left-invariant measure is amenable.
+* `TauCeti.Mean.isLeftInvariant_iff_lpTopEquiv`: on a discrete group, a mean is left invariant
+  exactly when the corresponding functional on `L∞` is.
+* `TauCeti.amenable_iff_exists_lpTop`: a discrete group is amenable exactly when `L∞` of a
+  left-invariant measure charging every point carries a left-invariant mean.
 * `TauCeti.Amenable.of_compactSpace`: every compact topological group is amenable.
 
 ## References
@@ -92,6 +108,89 @@ translation. -/
 theorem Amenable.of_lpTop [μ.IsMulLeftInvariant] (M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ) (hM : M linftyOne = 1)
     (h : ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) : Amenable G :=
   (amenable_iff G).2 ⟨Mean.ofLpTop M hM, Mean.isLeftInvariant_ofLpTop hM h⟩
+
+section Discrete
+
+variable [DiscreteTopology G] [μ.IsOpenPosMeasure]
+
+namespace Mean
+
+variable (μ) in
+/-- The functional `[f] ↦ m f` on `L∞(G, μ)` induced by a mean `m` on a discrete group. -/
+private def lpTopFunctional (m : Mean G) : Lp ℝ ∞ μ →ₚ[ℝ] ℝ where
+  toLinearMap := m.toPositiveLinearMap.toLinearMap ∘ₗ
+    (UCB.discreteAlgEquiv G).symm.toLinearMap ∘ₗ
+    (toLpTopLinearIsometryEquiv μ ℝ).symm.toLinearEquiv.toLinearMap
+  monotone' _ _ h := OrderHomClass.mono m
+    (UCB.discreteAlgEquiv_symm_le_discreteAlgEquiv_symm_iff.2
+      ((toLpTopLinearIsometryEquiv_symm_le_symm_iff μ).2 h))
+
+private theorem lpTopFunctional_apply (m : Mean G) (φ : Lp ℝ ∞ μ) :
+    lpTopFunctional μ m φ =
+      m ((UCB.discreteAlgEquiv G).symm ((toLpTopLinearIsometryEquiv μ ℝ).symm φ)) :=
+  rfl
+
+variable (μ) in
+/-- On a discrete group, means on `UCB G` correspond to positive linear functionals `M` on
+`L∞(G, μ)` with `M 1 = 1`, for any measure `μ` charging every point. A mean `m` corresponds to
+`[f] ↦ m f`, and the inverse is the restriction `TauCeti.Mean.ofLpTop`. -/
+def lpTopEquiv : Mean G ≃ {M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ // M linftyOne = 1} where
+  toFun m := ⟨lpTopFunctional μ m, by
+    have h₁ : (toLpTopLinearIsometryEquiv μ ℝ).symm linftyOne = 1 := by
+      rw [LinearIsometryEquiv.symm_apply_eq, coe_toLpTopLinearIsometryEquiv, toLpTop_one]
+    simp [lpTopFunctional_apply, h₁]⟩
+  invFun M := ofLpTop M.1 M.2
+  left_inv m := ext fun f => by
+    rw [ofLpTop_apply, lpTopFunctional_apply, toLpTopLinearIsometryEquiv_symm_toLpTop,
+      ← UCB.discreteAlgEquiv_apply, AlgEquiv.symm_apply_apply]
+  right_inv M := Subtype.ext (PositiveLinearMap.ext fun φ => by simp [lpTopFunctional_apply])
+
+/-- The functional corresponding to a mean `m` evaluates `m` on the bounded function
+representing a class in `L∞`. -/
+theorem lpTopEquiv_apply (m : Mean G) (φ : Lp ℝ ∞ μ) :
+    (lpTopEquiv μ m).1 φ =
+      m ((UCB.discreteAlgEquiv G).symm ((toLpTopLinearIsometryEquiv μ ℝ).symm φ)) :=
+  lpTopFunctional_apply m φ
+
+/-- The functional corresponding to a mean `m` takes the value `m f` at the class of `f`. -/
+@[simp]
+theorem lpTopEquiv_apply_toLpTop (m : Mean G) (f : G →ᵇ ℝ) :
+    (lpTopEquiv μ m).1 (toLpTop μ ℝ f) = m ((UCB.discreteAlgEquiv G).symm f) := by
+  rw [lpTopEquiv_apply, toLpTopLinearIsometryEquiv_symm_toLpTop]
+
+/-- The mean corresponding to a normalized positive functional on `L∞` is its restriction. -/
+@[simp]
+theorem lpTopEquiv_symm_apply (M : {M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ // M linftyOne = 1}) :
+    (lpTopEquiv μ).symm M = ofLpTop M.1 M.2 :=
+  (rfl)
+
+/-- The correspondence between means on a discrete group and normalized positive functionals on
+`L∞(G, μ)` preserves and reflects left invariance. -/
+theorem isLeftInvariant_iff_lpTopEquiv [μ.IsMulLeftInvariant] {m : Mean G} :
+    m.IsLeftInvariant ↔
+      ∀ g φ, (lpTopEquiv μ m).1 (Lp.leftTranslation μ ∞ ℝ g φ) = (lpTopEquiv μ m).1 φ := by
+  refine ⟨fun hm g φ => ?_, fun h => ?_⟩
+  · obtain ⟨f, rfl⟩ := toLpTop_surjective μ (𝕜 := ℝ) φ
+    rw [Lp.leftTranslation_toLpTop, lpTopEquiv_apply_toLpTop, lpTopEquiv_apply_toLpTop,
+      UCB.discreteAlgEquiv_symm_compContinuous_mulLeft, hm.apply_leftTranslation]
+  · rw [← (lpTopEquiv μ).symm_apply_apply m, lpTopEquiv_symm_apply]
+    exact isLeftInvariant_ofLpTop _ h
+
+end Mean
+
+variable (μ) in
+/-- A discrete group is amenable exactly when, for a left-invariant measure `μ` charging every
+point (for instance a Haar measure), `L∞(G, μ)` carries a left-invariant positive linear
+functional `M` with `M 1 = 1`. -/
+theorem amenable_iff_exists_lpTop [μ.IsMulLeftInvariant] :
+    Amenable G ↔ ∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M linftyOne = 1 ∧
+      ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ := by
+  refine ⟨fun h => ?_, fun ⟨M, hM, h⟩ => Amenable.of_lpTop M hM h⟩
+  obtain ⟨m, hm⟩ := (amenable_iff G).1 h
+  exact ⟨(Mean.lpTopEquiv μ m).1, (Mean.lpTopEquiv μ m).2,
+    Mean.isLeftInvariant_iff_lpTopEquiv.1 hm⟩
+
+end Discrete
 
 end TauCeti
 
