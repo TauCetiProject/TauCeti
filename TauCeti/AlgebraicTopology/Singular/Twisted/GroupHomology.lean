@@ -412,8 +412,7 @@ theorem twistedHomologyIsoGroupHomology_hom_naturality [ContractibleSpace E] (f 
         HomologicalComplex.homologyMap ((NatTrans.mapHomologicalComplex
           ((Rep.coinvariantsTensor k G).map f) _).app (singularChainsResolution k E G).complex) n ≫
           (groupHomologyIso A' n (singularChainsResolution k E G)).inv :=
-    (Iso.inv_comp_eq _).2 (((Iso.eq_comp_inv _).2
-      (groupHomology.groupHomologyIso_hom_naturality f n _)).trans (Category.assoc _ _ _))
+    (groupHomology.groupHomologyIso_inv_naturality f n _).symm
   have h₂ : (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).inv ≫
       (NatTrans.mapHomologicalComplex ((Rep.coinvariantsTensor k G).map f) _).app
         (singularChainsRep k E G) =

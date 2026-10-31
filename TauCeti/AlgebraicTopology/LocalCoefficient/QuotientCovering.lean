@@ -176,7 +176,7 @@ theorem associatedLocalSystemMap_id : hG.associatedLocalSystemMap k (𝟙 A) = �
   NatTrans.ext <| funext fun _ ↦ NatTrans.congr_app ((Rep.coinvariantsTensor k G).map_id A) _
 
 /-- The morphism of associated local systems induced by a composite is the composite. -/
-@[reassoc]
+@[simp, reassoc]
 theorem associatedLocalSystemMap_comp (f : A ⟶ A') (f' : A' ⟶ A'') :
     hG.associatedLocalSystemMap k (f ≫ f') =
       hG.associatedLocalSystemMap k f ≫ hG.associatedLocalSystemMap k f' :=
