@@ -23,8 +23,12 @@ separation hypothesis on `H` or `R` is needed.
 
 This is the topology on rational points used for groups of points over local fields and adeles:
 for an affine group `G` over a nonarchimedean local field `E`, the group `G(E)` is a topological
-group in this way, as is `𝒢(O)` for an affine group `𝒢` over the valuation ring `O` of `E`. These
-topological groups carry the Haar measures and the open subgroups of local representation theory.
+group in this way, as is `𝒢(O)` for an affine group `𝒢` over the valuation ring `O` of `E`. When
+`G` is of finite type over `E`, the points are locally compact
+(`TauCeti.PointTopology.locallyCompactSpace_of_finiteType`), so these topological groups carry
+the Haar measures and the open subgroups of local representation theory. Without a finiteness
+hypothesis the points need not be locally compact: for a polynomial ring in infinitely many
+variables they form an infinite product of copies of `E`.
 
 The group of points is functorial in both variables, and the induced maps are continuous: a
 bialgebra map `H₁ → H₂` induces the continuous homomorphism `BialgHom.mapDomain` from the points of
@@ -72,8 +76,8 @@ instance instContinuousMulWithConv : ContinuousMul (WithConv (H →ₐ[k] R)) wh
       simp
     simp_rw [hsum]
     refine continuous_finsetSum _ fun i _ ↦ .mul ?_ ?_
-    · exact (continuous_eval _).comp (isHomeomorph_ofConv.continuous.comp continuous_fst)
-    · exact (continuous_eval _).comp (isHomeomorph_ofConv.continuous.comp continuous_snd)
+    · exact (continuous_eval_ofConv _).comp continuous_fst
+    · exact (continuous_eval_ofConv _).comp continuous_snd
 
 end Bialgebra
 
@@ -86,7 +90,7 @@ point topology, for every topology on the coefficients. -/
 instance instContinuousInvWithConv : ContinuousInv (WithConv (H →ₐ[k] R)) where
   continuous_inv := continuous_withConv_iff.2 fun h ↦ by
     simp_rw [WithConv.algHom_inv_apply]
-    exact (continuous_eval _).comp isHomeomorph_ofConv.continuous
+    exact continuous_eval_ofConv _
 
 /-- The points `WithConv (H →ₐ[k] R)` of a Hopf algebra, with the convolution group structure and
 the point topology, form a topological group when the coefficients form a topological semiring. -/
@@ -107,18 +111,20 @@ open TauCeti.PointTopology
 
 /-- Precomposition with a bialgebra map `φ : H₁ → H₂` is a continuous homomorphism from the points
 of `H₂` to those of `H₁`. -/
+@[continuity, fun_prop]
 theorem BialgHom.continuous_mapDomain (φ : H₁ →ₐc[k] H₂) :
     Continuous (mapDomain (A := R) φ) :=
   continuous_withConv_iff.2 fun h ↦ by
     simp only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply]
-    exact (continuous_eval _).comp isHomeomorph_ofConv.continuous
+    exact continuous_eval_ofConv _
 
 /-- Postcomposition with a continuous algebra map `ψ : R → R'` of coefficients is a continuous
 homomorphism from the points with values in `R` to those with values in `R'`. -/
+@[fun_prop]
 theorem AlgHom.continuous_mapValue {ψ : R →ₐ[k] R'} (hψ : Continuous ψ) :
     Continuous (mapValue (H := H₁) ψ) :=
   continuous_withConv_iff.2 fun h ↦ by
     simp only [AlgHom.mapValue_apply, ofConv_toConv, AlgHom.comp_apply]
-    exact hψ.comp ((continuous_eval _).comp isHomeomorph_ofConv.continuous)
+    exact hψ.comp (continuous_eval_ofConv _)
 
 end Functoriality
