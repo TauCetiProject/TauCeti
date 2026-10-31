@@ -32,7 +32,7 @@ saturation of a sentence under the levels) be applied to level classes.
 refined by isomorphism, and therefore has at most as many classes as isomorphism has on
 `modelsOf φ`: the projection of isomorphism classes onto level classes is surjective. Below `ω₁`,
 on a countable carrier in a vocabulary with countably many relation symbols of each arity, it has
-Borel graph in the standard Borel space `modelsOf φ`. These are the hypotheses under which
+Borel graph in `modelsOf φ`. These are the hypotheses under which
 dichotomies for Borel equivalence relations, such as Silver's theorem, are applied level by level
 when counting the countable models of `φ`.
 
