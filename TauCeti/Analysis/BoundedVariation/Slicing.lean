@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
-import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.BoundedVariation.Approximation
 
 /-!
@@ -40,8 +39,9 @@ For a `C¹` function `w` the line variations are computed exactly: they integrat
 `∫_E ‖Dw‖ = |Dw|(E)`. The general inequality follows by strict approximation
 (`MeasureTheory.Integrable.exists_contDiff_hasCompactSupport_strict_approximation`). Along a
 subsequence with summable `L¹` errors, Tonelli's theorem in orthogonal line coordinates makes the
-restrictions converge in `L¹` on almost every line. Lower semicontinuity of the variation on each
-such line (`TauCeti.totalVariationOn_le_liminf`) and Fatou's lemma conclude.
+restrictions converge in `L¹` on almost every line
+(`TauCeti.exists_strictMono_ae_tendsto_lintegral_line`). Lower semicontinuity of the variation
+on each such line (`TauCeti.totalVariationOn_le_liminf`) and Fatou's lemma conclude.
 
 ## Main results
 
@@ -113,33 +113,6 @@ private theorem lintegral_totalVariationOn_line_le_of_contDiff {w : E → ℝ} (
   exact lintegral_mono fun x => enorm_le_iff_norm_le.mpr <| by
     simpa [he] using (fderiv ℝ w x).le_opNorm e
 
-/-- If `f n → u` in `L¹`, then along a subsequence the restrictions to almost every line parallel
-to `e` converge in `L¹` on the line. -/
-private theorem exists_strictMono_ae_tendsto_lintegral_line {f : ℕ → E → ℝ} {u : E → ℝ}
-    (hf : ∀ n, AEStronglyMeasurable (f n)) (hu : AEStronglyMeasurable u)
-    (h : Tendsto (fun n => ∫⁻ x, ‖f n x - u x‖ₑ) atTop (𝓝 0)) (e : E) (he : ‖e‖ = 1) :
-    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ᵐ y : (ℝ ∙ e)ᗮ, Tendsto
-      (fun j => ∫⁻ t : ℝ, ‖f (φ j) ((y : E) + t • e) - u ((y : E) + t • e)‖ₑ) atTop (𝓝 0) := by
-  -- Pass to a subsequence whose `L¹` errors are summable.
-  have hev (j : ℕ) : ∀ᶠ n in atTop, ∫⁻ x, ‖f n x - u x‖ₑ ≤ 2⁻¹ ^ j :=
-    (h.eventually (gt_mem_nhds (ENNReal.pow_pos (ENNReal.inv_pos.2 ENNReal.ofNat_ne_top) j))).mono
-      fun _ h => h.le
-  obtain ⟨φ, hφ, hφle⟩ := extraction_forall_of_eventually hev
-  have hdiff (n : ℕ) : AEMeasurable (fun x => ‖f n x - u x‖ₑ) volume := ((hf n).sub hu).enorm
-  -- By Tonelli's theorem the line errors are then summable for almost every `y`.
-  have hFm (j : ℕ) : AEMeasurable (fun y : (ℝ ∙ e)ᗮ =>
-      ∫⁻ t : ℝ, ‖f (φ j) ((y : E) + t • e) - u ((y : E) + t • e)‖ₑ) :=
-    aemeasurable_lintegral_line e he (hdiff _)
-  have hsum : ∫⁻ y : (ℝ ∙ e)ᗮ, ∑' j,
-      ∫⁻ t : ℝ, ‖f (φ j) ((y : E) + t • e) - u ((y : E) + t • e)‖ₑ ≠ ∞ := by
-    rw [lintegral_tsum hFm]
-    refine ne_top_of_le_ne_top (b := ∑' j : ℕ, (2⁻¹ : ℝ≥0∞) ^ j) (by simp)
-      (ENNReal.tsum_le_tsum fun j => ?_)
-    exact (lintegral_eq_lintegral_lintegral_line e he (hdiff _)).symm.trans_le (hφle j)
-  refine ⟨φ, hφ, ?_⟩
-  filter_upwards [ae_lt_top' (AEMeasurable.tsum hFm) hsum] with y hy
-  exact ENNReal.tendsto_atTop_zero_of_tsum_ne_top hy.ne
-
 /-- The line variations of an integrable function are bounded almost everywhere by an a.e.
 measurable function whose integral is at most the total variation. -/
 private theorem exists_aemeasurable_totalVariationOn_line_le {u : E → ℝ} (hu : Integrable u)
@@ -150,8 +123,8 @@ private theorem exists_aemeasurable_totalVariationOn_line_le {u : E → ℝ} (hu
   obtain ⟨w, hw, hL1, hTV⟩ :=
     hu.exists_contDiff_hasCompactSupport_strict_approximation (μ := volume)
   have hw1 (n : ℕ) : ContDiff ℝ 1 (w n) := (hw n).1.of_le (by simp)
-  obtain ⟨φ, hφ, hFlim⟩ := exists_strictMono_ae_tendsto_lintegral_line
-    (fun n => (hw n).1.continuous.aestronglyMeasurable) hu.aestronglyMeasurable hL1 e he
+  obtain ⟨φ, hφ, hFlim⟩ := exists_strictMono_ae_tendsto_lintegral_line e he
+    (fun n => ((hw n).1.continuous.aestronglyMeasurable.sub hu.aestronglyMeasurable).enorm) hL1
   -- Almost every line restriction of `u` is integrable, by Fubini's theorem.
   have hline : ∀ᵐ y : (ℝ ∙ e)ᗮ, Integrable (fun t : ℝ => u ((y : E) + t • e)) := by
     simpa only [Function.comp_def, orthogonalLineEquiv_apply] using
