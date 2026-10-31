@@ -89,22 +89,23 @@ theorem isIso_SpecMap_residueFieldMap_iff {R S : Type u} [CommRing R] [CommRing 
     IsIso ((Spec.map (CommRingCat.ofHom φ)).residueFieldMap x) ↔
       Function.Bijective (Ideal.ResidueField.map p x.asIdeal φ hp) := by
   have := x.isPrime
-  -- The stalk isomorphisms of `Spec R` are indexed by the image point, not by `x.asIdeal.comap φ`.
-  have hp' : p = ((Spec.map (CommRingCat.ofHom φ)) x).asIdeal := hp
+  -- The residue field isomorphisms of `Spec R` are indexed by the image point, which is
+  -- `x.asIdeal.comap φ` by `Spec.map_apply`.
+  have hp' : p = ((Spec.map (CommRingCat.ofHom φ)) x).asIdeal :=
+    hp.trans (congrArg PrimeSpectrum.asIdeal (Spec.map_apply (CommRingCat.ofHom φ) x)).symm
   subst hp'
-  let e₁ := (Spec.stalkIso (.of R) ((Spec.map (CommRingCat.ofHom φ)) x)).commRingCatIsoToRingEquiv
-  let e₂ := (Spec.stalkIso (.of S) x).commRingCatIsoToRingEquiv
-  -- Up to the stalk isomorphisms, the stalk map is `Localization.localRingHom`.
-  have key : ⇑((Spec.map (CommRingCat.ofHom φ)).residueFieldMap x) =
-      IsLocalRing.ResidueField.mapEquiv e₂.symm ∘ Ideal.ResidueField.map _ x.asIdeal φ hp ∘
-        IsLocalRing.ResidueField.mapEquiv e₁ := by
-    funext y
+  -- Up to the residue field isomorphisms, the residue field map is `Ideal.ResidueField.map`.
+  have key : (Spec.map (CommRingCat.ofHom φ)).residueFieldMap x =
+      (Scheme.Spec.residueFieldIso (.of R) _).hom ≫
+        CommRingCat.ofHom (Ideal.ResidueField.map _ x.asIdeal φ hp) ≫
+        (Scheme.Spec.residueFieldIso (.of S) x).inv := by
+    ext y
     obtain ⟨a, rfl⟩ := (Spec (.of R)).residue_surjective _ y
     have h := congr($(Scheme.residue_residueFieldMap (Spec.map (CommRingCat.ofHom φ)) x) a)
     rw [CommRingCat.comp_apply, CommRingCat.comp_apply] at h
     exact h.trans (congrArg (IsLocalRing.residue _)
       (Scheme.localRingHom_comp_stalkIso_apply (CommRingCat.ofHom φ) x a).symm)
-  rw [ConcreteCategory.isIso_iff_bijective, key]
-  exact (EquivLike.comp_bijective _ _).trans (EquivLike.bijective_comp _ _)
+  rw [key, isIso_comp_left_iff, isIso_comp_right_iff, ConcreteCategory.isIso_iff_bijective]
+  rfl
 
 end AlgebraicGeometry

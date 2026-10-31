@@ -55,12 +55,77 @@ namespace AlgebraicGeometry
 
 universe u
 
+/-- For affine opens `V ⊆ f⁻¹ U` and a `Γ(S, U)`-algebra `R`, the chart
+`Spec (R ⊗[Γ(S, U)] Γ(X, V))` is an open of `X ×[S] Spec R`, with the evident projections, and
+the image of `D(e)` is finite over `Spec R` whenever `R → (R ⊗[Γ(S, U)] Γ(X, V))[1/e]` is finite.
+This is the chart in which Stacks 00UJ is applied below. -/
+private lemma exists_isOpenImmersion_tensor_isFinite {X S : Scheme.{u}} (f : X ⟶ S)
+    {U : S.Opens} (hU : IsAffineOpen U) {V : X.Opens} (hV : IsAffineOpen V) (hUV : V ≤ f ⁻¹ᵁ U)
+    (R : Type u) [CommRing R] [Algebra Γ(S, U) R] :
+    letI := (f.appLE U V hUV).hom.toAlgebra
+    ∃ g : Spec ↧(R ⊗[Γ(S, U)] Γ(X, V)) ⟶
+        pullback f (Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R)) ≫ hU.fromSpec),
+      ∃ _ : IsOpenImmersion g, g ≫ pullback.fst _ _ =
+        Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom) ≫ hV.fromSpec ∧
+      g ≫ pullback.snd _ _ = Spec.map (CommRingCat.ofHom (algebraMap R (R ⊗[Γ(S, U)] Γ(X, V)))) ∧
+      ∀ e : R ⊗[Γ(S, U)] Γ(X, V), (algebraMap R (Localization.Away e)).Finite →
+        IsFinite ((g ''ᵁ PrimeSpectrum.basicOpen e).ι ≫ pullback.snd _ _) := by
+  algebraize [(f.appLE U V hUV).hom]
+  let φ : Γ(S, U) ⟶ ↧R := CommRingCat.ofHom <| algebraMap Γ(S, U) R
+  let e₁ : Spec ↧(R ⊗ Γ(X, V)) ≅ pullback (Spec.map (f.appLE U V hUV)) (Spec.map φ) :=
+    (pullbackSpecIso _ _ _).symm ≪≫ pullbackSymmetry _ _
+  have he₁ : e₁.hom ≫ pullback.fst _ _ =
+      Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom) := by
+    dsimp [e₁, RingHom.algebraMap_toAlgebra]
+    rw [Category.assoc, pullbackSymmetry_hom_comp_fst]
+    exact pullbackSpecIso_inv_snd ..
+  have he₂ : e₁.hom ≫ pullback.snd _ _ =
+      Spec.map (CommRingCat.ofHom (algebraMap R (R ⊗[Γ(S, U)] Γ(X, V)))) := by
+    dsimp [e₁, RingHom.algebraMap_toAlgebra]
+    rw [Category.assoc, pullbackSymmetry_hom_comp_snd]
+    exact pullbackSpecIso_inv_fst' ..
+  let g : Spec ↧(R ⊗[Γ(S, U)] Γ(X, V)) ⟶ pullback f (Spec.map φ ≫ hU.fromSpec) :=
+    e₁.hom ≫ pullback.map _ _ _ _ hV.fromSpec (𝟙 _) hU.fromSpec
+      (IsAffineOpen.SpecMap_appLE_fromSpec ..) (by simp)
+  have : IsOpenImmersion g := by
+    have := Scheme.pullback_map_isOpenImmersion (Spec.map (f.appLE U V hUV)) (Spec.map φ) f
+      (Spec.map φ ≫ hU.fromSpec) hV.fromSpec (𝟙 _) hU.fromSpec
+      (IsAffineOpen.SpecMap_appLE_fromSpec ..) (by simp)
+    exact IsOpenImmersion.comp _ _
+  have hgfst : g ≫ pullback.fst _ _ =
+      Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom) ≫ hV.fromSpec := by
+    simp [g, reassoc_of% he₁]
+  have hgsnd : g ≫ pullback.snd _ _ =
+      Spec.map (CommRingCat.ofHom (algebraMap R (R ⊗[Γ(S, U)] Γ(X, V)))) := by
+    simp [g, he₂]
+  refine ⟨g, inferInstance, hgfst, hgsnd, fun e he ↦ ?_⟩
+  -- The open `g(D(e))` is the image of `Spec (R ⊗ Γ(X, V))[1/e]`, which is finite over `Spec R`.
+  let ι : Spec ↧(Localization.Away e) ⟶ pullback f (Spec.map φ ≫ hU.fromSpec) :=
+    Spec.map (CommRingCat.ofHom <| algebraMap _ _) ≫ g
+  have hrange : ι.opensRange = g ''ᵁ PrimeSpectrum.basicOpen e := by
+    simp only [Scheme.Hom.opensRange_comp, ι]
+    congr 1
+    exact TopologicalSpace.Opens.ext <| PrimeSpectrum.localization_away_comap_range _ _
+  have hι : ι ≫ pullback.snd _ _ =
+      Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away e))) := by
+    rw [Category.assoc, hgsnd, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
+      ← IsScalarTower.algebraMap_eq]
+  have : MorphismProperty.RespectsIso @IsFinite.{u} :=
+    MorphismProperty.IsStableUnderBaseChange.respectsIso
+  rw [← hrange, ← MorphismProperty.cancel_left_of_respectsIso @IsFinite
+    (Scheme.Hom.isoOpensRange _).hom, Scheme.Hom.isoOpensRange_hom_ι_assoc, hι,
+    IsFinite.SpecMap_iff]
+  exact he
+
 /-- **Elementary étale localization of a quasi-finite point** (Stacks, Lemma 37.41.1 (02LK)).
 Let `f : X ⟶ S` be locally of finite type and quasi-finite at `x` (so `x` is isolated in its
 fibre). Then there are an étale `φ : U ⟶ S` and `u : U` with `φ u = f x` and `κ(f x) ≅ κ(u)`, and
 an open `V` of `X ×[S] U`, finite over `U`, containing a point `v` over `x` and `u` with
-`κ(x) ≅ κ(v)`, which is the only point of `V` over `u`. -/
-@[stacks 02LK]
+`κ(x) ≅ κ(v)`, which is the only point of `V` over `u`.
+
+The persistence clause of 02LK, that the conclusion survives further elementary étale
+neighbourhoods of `(U, u)`, is not included. -/
+@[stacks 02LK "without the persistence clause"]
 theorem Scheme.Hom.exists_elementaryEtale_finite_of_isolated {X S : Scheme.{u}} (f : X ⟶ S)
     [LocallyOfFiniteType f] {x : X} (hx : f.QuasiFiniteAt x) :
     ∃ (U : Scheme.{u}) (φ : U ⟶ S) (u : U), Etale φ ∧ φ u = f x ∧ IsIso (φ.residueFieldMap u) ∧
@@ -88,55 +153,15 @@ theorem Scheme.Hom.exists_elementaryEtale_finite_of_isolated {X S : Scheme.{u}} 
     Algebra.exists_etale_isIdempotentElem_forall_liesOver_eq
     (hU.primeIdealOf ⟨f x, hxU⟩).asIdeal (hV.primeIdealOf ⟨x, hxV⟩).asIdeal
   -- Step 2: the étale neighbourhood `Spec R ⟶ S` and the open immersion
-  -- `g : Spec (R ⊗ Γ(X, V)) ⟶ X ×[S] Spec R`, with its two projections.
-  have : (algebraMap R (Localization.Away e)).Finite := RingHom.finite_algebraMap.mpr ‹_›
+  -- `g : Spec (R ⊗ Γ(X, V)) ⟶ X ×[S] Spec R`, with its two projections. The open
+  -- `W₁ = g(D(e))` is `Spec (R ⊗ Γ(X, V))[1/e]`, which is finite over `Spec R`.
   let φ : Γ(S, U) ⟶ ↧R := CommRingCat.ofHom <| algebraMap Γ(S, U) R
   have hφ : φ.hom.Etale := RingHom.etale_algebraMap.mpr ‹_›
   have : Etale (Spec.map φ) := HasRingHomProperty.Spec_iff.mpr hφ
-  let e₁ : Spec ↧(R ⊗ Γ(X, V)) ≅ pullback (Spec.map (f.appLE U V hUV)) (Spec.map φ) :=
-    (pullbackSpecIso _ _ _).symm ≪≫ pullbackSymmetry _ _
-  have he₁ : e₁.hom ≫ pullback.fst _ _ =
-      Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom) := by
-    dsimp [e₁, RingHom.algebraMap_toAlgebra]
-    rw [Category.assoc, pullbackSymmetry_hom_comp_fst]
-    exact pullbackSpecIso_inv_snd ..
-  have he₂ : e₁.hom ≫ pullback.snd _ _ =
-      Spec.map (CommRingCat.ofHom (algebraMap R (R ⊗[Γ(S, U)] Γ(X, V)))) := by
-    dsimp [e₁, RingHom.algebraMap_toAlgebra]
-    rw [Category.assoc, pullbackSymmetry_hom_comp_snd]
-    exact pullbackSpecIso_inv_fst' ..
-  let g : Spec ↧(R ⊗[Γ(S, U)] Γ(X, V)) ⟶ pullback f (Spec.map φ ≫ hU.fromSpec) :=
-    e₁.hom ≫ pullback.map _ _ _ _ hV.fromSpec (𝟙 _) hU.fromSpec
-      (IsAffineOpen.SpecMap_appLE_fromSpec ..) (by simp)
-  have : IsOpenImmersion g := by
-    have := Scheme.pullback_map_isOpenImmersion (Spec.map (f.appLE U V hUV)) (Spec.map φ) f
-      (Spec.map φ ≫ hU.fromSpec) hV.fromSpec (𝟙 _) hU.fromSpec
-      (IsAffineOpen.SpecMap_appLE_fromSpec ..) (by simp)
-    exact IsOpenImmersion.comp _ _
-  have hgfst : g ≫ pullback.fst _ _ =
-      Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom) ≫ hV.fromSpec := by
-    simp [g, reassoc_of% he₁]
-  have hgsnd : g ≫ pullback.snd _ _ =
-      Spec.map (CommRingCat.ofHom (algebraMap R (R ⊗[Γ(S, U)] Γ(X, V)))) := by
-    simp [g, he₂]
-  -- Step 3: the open `W₁ = g(D(e))` is `Spec (R ⊗ Γ(X, V))[1/e]`, which is finite over `Spec R`.
+  obtain ⟨g, _, hgfst, hgsnd, hfin⟩ := exists_isOpenImmersion_tensor_isFinite f hU hV hUV R
   let W₁ := g ''ᵁ PrimeSpectrum.basicOpen e
-  have : IsFinite (W₁.ι ≫ pullback.snd f _) := by
-    let ι : Spec ↧(Localization.Away e) ⟶ pullback f (Spec.map φ ≫ hU.fromSpec) :=
-      Spec.map (CommRingCat.ofHom <| algebraMap _ _) ≫ g
-    have hrange : ι.opensRange = W₁ := by
-      simp only [Scheme.Hom.opensRange_comp, ι, W₁]
-      congr 1
-      exact TopologicalSpace.Opens.ext <| PrimeSpectrum.localization_away_comap_range _ _
-    have : MorphismProperty.RespectsIso @IsFinite.{u} :=
-      MorphismProperty.IsStableUnderBaseChange.respectsIso
-    rw [← hrange, ← MorphismProperty.cancel_left_of_respectsIso @IsFinite
-      (Scheme.Hom.isoOpensRange _).hom]
-    have H : (pullbackSpecIso _ R _).inv ≫ pullback.fst _ (Spec.map (f.appLE U V hUV)) = _ :=
-      pullbackSpecIso_inv_fst ..
-    simpa [Scheme.Hom.isoOpensRange, ι, g, e₁, RingHom.algebraMap_toAlgebra, φ, H,
-      ← Spec.map_comp, IsFinite.SpecMap_iff]
-  -- Step 4: the points `u = P` and `v = g P'`. They are introduced as points of the spectra, not
+  have : IsFinite (W₁.ι ≫ pullback.snd f _) := hfin e (RingHom.finite_algebraMap.mpr ‹_›)
+  -- Step 3: the points `u = P` and `v = g P'`. They are introduced as points of the spectra, not
   -- as primes, so that rewriting with morphisms of schemes applied to them is type correct.
   obtain ⟨u, rfl⟩ : ∃ u : Spec ↧R, u.asIdeal = P := ⟨⟨P, ‹_›⟩, rfl⟩
   obtain ⟨v, rfl⟩ : ∃ v : Spec ↧(R ⊗[Γ(S, U)] Γ(X, V)), v.asIdeal = P' := ⟨⟨P', ‹_›⟩, rfl⟩
@@ -144,7 +169,8 @@ theorem Scheme.Hom.exists_elementaryEtale_finite_of_isolated {X S : Scheme.{u}} 
     rw [Scheme.Hom.comp_apply]
     refine Eq.trans ?_ (hU.fromSpec_primeIdealOf ⟨f x, hxU⟩)
     congr 1
-    exact PrimeSpectrum.ext (Ideal.over_def u.asIdeal _).symm
+    exact PrimeSpectrum.ext <| (congrArg PrimeSpectrum.asIdeal (Spec.map_apply φ u)).trans
+      (Ideal.over_def u.asIdeal _).symm
   refine ⟨Spec ↧R, Spec.map φ ≫ hU.fromSpec, u, inferInstance, hu, ?_, W₁,
     ⟨g v, v, heP', rfl⟩, ‹_›, ?_, ?_, ?_, ?_⟩
   · -- `κ(f x) ≅ κ(u)`: the residue field map of the open immersion `hU.fromSpec`, then 00UJ.
@@ -156,9 +182,10 @@ theorem Scheme.Hom.exists_elementaryEtale_finite_of_isolated {X S : Scheme.{u}} 
   · rw [← Scheme.Hom.comp_apply, hgfst, Scheme.Hom.comp_apply]
     refine Eq.trans ?_ (hV.fromSpec_primeIdealOf ⟨x, hxV⟩)
     congr 1
-    exact PrimeSpectrum.ext hP'
+    exact PrimeSpectrum.ext <| (congrArg PrimeSpectrum.asIdeal (Spec.map_apply _ v)).trans hP'
   · rw [← Scheme.Hom.comp_apply, hgsnd]
-    exact PrimeSpectrum.ext (Ideal.over_def v.asIdeal u.asIdeal).symm
+    exact PrimeSpectrum.ext <| (congrArg PrimeSpectrum.asIdeal (Spec.map_apply _ v)).trans
+      (Ideal.over_def v.asIdeal u.asIdeal).symm
   · -- `κ(x) ≅ κ(v)`: compute the residue field map of `g ≫ pullback.fst` along `hgfst`, and
     -- cancel that of the open immersion `g`.
     have hb := Ideal.ResidueField.bijective_map_includeRight
@@ -182,7 +209,8 @@ theorem Scheme.Hom.exists_elementaryEtale_finite_of_isolated {X S : Scheme.{u}} 
     have hzu : Spec.map (CommRingCat.ofHom (algebraMap R (R ⊗[Γ(S, U)] Γ(X, V)))) z = u := by
       rw [← hgsnd, Scheme.Hom.comp_apply]
       exact hzw.symm ▸ hw
-    have : z.asIdeal.LiesOver u.asIdeal := ⟨congr(($hzu).asIdeal).symm⟩
+    have : z.asIdeal.LiesOver u.asIdeal :=
+      ⟨congr(($hzu).asIdeal).symm.trans (congrArg PrimeSpectrum.asIdeal (Spec.map_apply _ z))⟩
     obtain rfl : z = v := PrimeSpectrum.ext (huniq z.asIdeal z.isPrime this hz)
     exact Subtype.ext hzw.symm
 
