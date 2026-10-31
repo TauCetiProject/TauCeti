@@ -128,12 +128,16 @@ instance : (limFunctor.{v} R).Additive where
 
 /-- The inclusion `lim A → ∏ₙ Aₙ`, as a natural transformation from the limit functor to the
 product functor. -/
-@[expose, simps]
 def limι : limFunctor.{v} R ⟶ productFunctor.{v} R where
   app F := ModuleCat.ofHom F.lim.subtype
   naturality _ _ f := by
     ext x : 2
     exact coe_limMap_apply f x
+
+@[simp]
+theorem limι_app (F : ModuleTower.{v} R) :
+    (limι R).app F = ModuleCat.ofHom F.lim.subtype :=
+  (rfl)
 
 /-- The inclusion of the limit followed by the shift vanishes: `lim A` is the kernel of `δ`. -/
 @[reassoc]
