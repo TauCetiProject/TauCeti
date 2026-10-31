@@ -85,8 +85,12 @@ theorem integral_pow_generalizedGammaMeasure
 /-- The mean exists exactly when the first shifted shape is positive. -/
 @[simp]
 theorem integrable_id_generalizedGammaMeasure_iff
-    (ha : 0 < a) (hc : c ≠ 0) (hs : 0 < s) :
+    (ha : 0 < a) (hs : 0 < s) :
     Integrable id (generalizedGammaMeasure a c s) ↔ 0 < a + c⁻¹ := by
+  by_cases hc : c = 0
+  · subst c
+    rw [generalizedGammaMeasure_of_not_valid (c := 0) (by simp)]
+    simp [ha]
   simpa only [Function.id_def, pow_one, Nat.cast_one, one_div] using
     integrable_pow_generalizedGammaMeasure_iff ha hc hs 1
 
