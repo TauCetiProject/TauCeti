@@ -17,6 +17,7 @@ This file records small generic additions to Mathlib's `Setoid` API.
 * `TauCeti.Setoid.map_of_le_mk`: the quotient map induced by a setoid inequality sends a
   representative to the same representative in the larger quotient.
 * `Setoid.ofPred_rel_eq_iff`: two elements have the same class exactly when they are related.
+* `Setoid.map_of_le_surjective`: the quotient map induced by a setoid inequality is surjective.
 -/
 
 public section
@@ -44,5 +45,11 @@ theorem ofPred_rel_eq_iff {α : Type*} {r : Setoid α} {x y : α} :
     {z | r z x} = {z | r z y} ↔ r x y :=
   ⟨fun h => (Set.ext_iff.mp h x).mp (r.refl' x), fun h =>
     Set.ext fun _ => ⟨fun hx => r.trans' hx h, fun hy => r.trans' hy (r.symm' h)⟩⟩
+
+/-- The quotient map induced by a setoid inequality is surjective: every class of the coarser
+setoid is the image of the class of any of its representatives. -/
+theorem map_of_le_surjective {α : Type*} {s t : Setoid α} (h : s ≤ t) :
+    Function.Surjective (map_of_le h) :=
+  Quotient.map_surjective _ Function.surjective_id
 
 end Setoid
