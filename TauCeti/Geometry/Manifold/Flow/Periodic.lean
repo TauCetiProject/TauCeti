@@ -263,12 +263,12 @@ theorem finite_periodicSolutions [FiniteDimensional ℝ E] [CompactSpace M] [T2S
     (h : ∀ γ ∈ periodicSolutions X T,
       IsNondegenerateFixedPt I (timeDependentFlowOf X s (s + T)) (γ s)) :
     (periodicSolutions X T).Finite := by
-  -- On a compact manifold the flow is defined everywhere, so the return map is `C¹`.
+  -- On a compact manifold the flow is defined everywhere, so the return map is continuous.
   have hcomplete := isCompleteVectorField_timeDependentSuspensionField hX isCompact_univ
     (fun _ _ hy ↦ (hy (mem_univ _)).elim)
-  have hφ : MDifferentiable I I (timeDependentFlowOf X s (s + T)) :=
+  have hφ : Continuous (timeDependentFlowOf X s (s + T)) :=
     ((contMDiff_timeDependentFlowOf hcomplete le_rfl hX).comp
-      ((contMDiff_const (c := (s, s + T))).prodMk contMDiff_id)).mdifferentiable one_ne_zero
+      ((contMDiff_const (c := (s, s + T))).prodMk contMDiff_id)).continuous
   set e := periodicSolutionsEquivFixedPoints hX hT hT0 s
   -- Every fixed point of the return map is the initial point of a periodic solution.
   have hfin := finite_fixedPoints_of_isNondegenerateFixedPt hφ fun x hx ↦ by

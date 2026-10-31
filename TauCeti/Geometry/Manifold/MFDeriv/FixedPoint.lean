@@ -16,31 +16,32 @@ import Mathlib.Topology.DiscreteSubset
 # Nondegenerate fixed points of maps of manifolds
 
 A fixed point `x` of a map `f : M → M` is **nondegenerate** (`TauCeti.IsNondegenerateFixedPt`)
-when `1` is not an eigenvalue of its differential `df_x : T_x M → T_x M`: the only tangent vector
-fixed by `df_x` is zero. In finite dimensions this says that `df_x - 1` is invertible, or that the
-graph of `f` meets the diagonal of `M × M` transversally at `(x, x)`. For the time-one map of a
+when `f` is differentiable at `x` and `1` is not an eigenvalue of its differential
+`df_x : T_x M → T_x M`: the only tangent vector fixed by `df_x` is zero. In finite dimensions this
+says that `df_x - 1` is invertible, or that the graph of `f` meets the diagonal of `M × M`
+transversally at `(x, x)`. For the time-one map of a
 time-dependent Hamiltonian this is the nondegeneracy of a 1-periodic orbit, the hypothesis under
 which the orbits generate the Hamiltonian Floer complex.
 
-A nondegenerate fixed point of a map differentiable there is isolated among the fixed points
+A nondegenerate fixed point is isolated among the fixed points
 (`TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`): in a chart at `x` the coordinate
 expression `g` of `f` has `g - id` with injective derivative at `x`, so `g z ≠ z` for `z ≠ x` close
 to `x`. The argument is carried out within the range of the model with corners, so it also applies
-at boundary points. Consequently a differentiable self-map of a compact manifold all of whose fixed
+at boundary points. Consequently a continuous self-map of a compact manifold all of whose fixed
 points are nondegenerate has only finitely many fixed points
 (`TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`): its fixed-point set is closed, hence
 compact, and discrete.
 
 ## Main definitions
 
-* `TauCeti.IsNondegenerateFixedPt I f x`: `x` is a fixed point of `f` and `df_x` fixes no nonzero
-  tangent vector.
+* `TauCeti.IsNondegenerateFixedPt I f x`: `x` is a fixed point of `f`, `f` is differentiable at
+  `x`, and `df_x` fixes no nonzero tangent vector.
 
 ## Main results
 
 * `TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`: nondegenerate fixed points are
   isolated.
-* `TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`: on a compact manifold, a differentiable
+* `TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`: on a compact manifold, a continuous
   map whose fixed points are all nondegenerate has finitely many fixed points.
 
 ## References
@@ -63,16 +64,17 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup
   [ChartedSpace H M] {f : M → M} {x : M}
 
 variable (I) in
-/-- A **nondegenerate fixed point** of `f : M → M` is a fixed point `x` at which `1` is not an
-eigenvalue of the differential: `df_x v = v` only for `v = 0`. In finite dimensions this says
-that `df_x - 1` is invertible. -/
+/-- A **nondegenerate fixed point** of `f : M → M` is a fixed point `x` at which `f` is
+differentiable and `1` is not an eigenvalue of the differential: `df_x v = v` only for `v = 0`.
+In finite dimensions this says that `df_x - 1` is invertible. -/
 def IsNondegenerateFixedPt (f : M → M) (x : M) : Prop :=
-  IsFixedPt f x ∧ ∀ v : TangentSpace I x, mfderiv I I f x v = v → v = 0
+  IsFixedPt f x ∧ MDifferentiableAt I I f x ∧ ∀ v : TangentSpace I x, mfderiv I I f x v = v → v = 0
 
 /-- The defining characterization of a nondegenerate fixed point. -/
 theorem isNondegenerateFixedPt_iff :
     IsNondegenerateFixedPt I f x ↔
-      IsFixedPt f x ∧ ∀ v : TangentSpace I x, mfderiv I I f x v = v → v = 0 :=
+      IsFixedPt f x ∧ MDifferentiableAt I I f x ∧
+        ∀ v : TangentSpace I x, mfderiv I I f x v = v → v = 0 :=
   Iff.rfl
 
 namespace IsNondegenerateFixedPt
@@ -81,18 +83,22 @@ namespace IsNondegenerateFixedPt
 theorem isFixedPt (h : IsNondegenerateFixedPt I f x) : IsFixedPt f x :=
   h.1
 
+/-- A map is differentiable at each of its nondegenerate fixed points. -/
+theorem mdifferentiableAt (h : IsNondegenerateFixedPt I f x) : MDifferentiableAt I I f x :=
+  h.2.1
+
 /-- At a nondegenerate fixed point, the only tangent vector fixed by the differential is zero. -/
 theorem eq_zero_of_mfderiv_apply_eq (h : IsNondegenerateFixedPt I f x) {v : TangentSpace I x}
     (hv : mfderiv I I f x v = v) : v = 0 :=
-  h.2 v hv
+  h.2.2 v hv
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
 
-/-- **Nondegenerate fixed points are isolated.** If `x` is a nondegenerate fixed point of `f` and
-`f` is differentiable at `x`, then no point `y ≠ x` close to `x` is fixed by `f`. The manifold may
-have boundary or corners. -/
-theorem eventually_not_isFixedPt (h : IsNondegenerateFixedPt I f x)
-    (hf : MDifferentiableAt I I f x) : ∀ᶠ y in 𝓝[≠] x, ¬IsFixedPt f y := by
+/-- **Nondegenerate fixed points are isolated.** If `x` is a nondegenerate fixed point of `f`,
+then no point `y ≠ x` close to `x` is fixed by `f`. The manifold may have boundary or corners. -/
+theorem eventually_not_isFixedPt (h : IsNondegenerateFixedPt I f x) :
+    ∀ᶠ y in 𝓝[≠] x, ¬IsFixedPt f y := by
+  have hf := h.mdifferentiableAt
   set φ := extChartAt I x
   have hfx : f x = x := h.isFixedPt
   have hφ : extChartAt I (f x) = φ := by rw [hfx]
@@ -129,13 +135,13 @@ theorem eventually_not_isFixedPt (h : IsNondegenerateFixedPt I f x)
 
 end IsNondegenerateFixedPt
 
-/-- **Finiteness of nondegenerate fixed points.** A differentiable self-map of a compact manifold,
+/-- **Finiteness of nondegenerate fixed points.** A continuous self-map of a compact manifold,
 modelled on a finite-dimensional space, all of whose fixed points are nondegenerate has only
 finitely many fixed points. -/
 theorem finite_fixedPoints_of_isNondegenerateFixedPt [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
-    [CompactSpace M] [T2Space M] (hf : MDifferentiable I I f)
+    [CompactSpace M] [T2Space M] (hf : Continuous f)
     (h : ∀ x ∈ fixedPoints f, IsNondegenerateFixedPt I f x) : (fixedPoints f).Finite :=
-  (isClosed_fixedPoints hf.continuous).isCompact.finite <| isDiscrete_iff_nhdsNE.2 fun x hx ↦
-    inf_principal_eq_bot.2 ((h x hx).eventually_not_isFixedPt (hf x))
+  (isClosed_fixedPoints hf).isCompact.finite <| isDiscrete_iff_nhdsNE.2 fun x hx ↦
+    inf_principal_eq_bot.2 (h x hx).eventually_not_isFixedPt
 
 end TauCeti
