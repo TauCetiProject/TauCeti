@@ -150,31 +150,6 @@ theorem map_norm_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
   simpa only [Function.comp_def, hnorm, hnormPi, map_norm_pi_gaussianReal hvpos,
     Fintype.card_fin, Nat.cast_ofNat, hv] using h
 
-/-- The squared modulus of a centered complex Gaussian coordinate is integrable, including
-zero and invalid covariance parameters. -/
-theorem integrable_norm_sq_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
-    (C : Matrix ι ι ℂ) (i : ι) :
-    Integrable (fun z ↦ ‖z i - m i‖ ^ 2) (properComplexGaussianMeasure m C) := by
-  by_cases hC : C.PosSemidef
-  · apply (HasLaw.mk (by fun_prop : Measurable (fun z : ι → ℂ ↦ ‖z i - m i‖ ^ 2)).aemeasurable
-      (map_norm_sq_sub_eval_properComplexGaussianMeasure m hC i)).integrable
-    rw [integrable_map_measure (by fun_prop) (by fun_prop)]
-    simpa only [Function.comp_def, id_eq, pow_one] using
-      (integrable_pow_expMeasure zero_lt_one 1).const_mul (C i i).re
-  · rw [properComplexGaussianMeasure_of_not_posSemidef m hC]
-    exact integrable_dirac (by simp)
-
-/-- The mean squared modulus of a centered proper complex Gaussian coordinate is its
-complex variance. In particular, it is one for a standard coordinate. -/
-@[simp]
-theorem integral_norm_sq_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
-    {C : Matrix ι ι ℂ} (hC : C.PosSemidef) (i : ι) :
-    ∫ z, ‖z i - m i‖ ^ 2 ∂properComplexGaussianMeasure m C = (C i i).re := by
-  have hlaw := HasLaw.mk (by fun_prop : Measurable (fun z : ι → ℂ ↦ ‖z i - m i‖ ^ 2)).aemeasurable
-    (map_norm_sq_sub_eval_properComplexGaussianMeasure m hC i)
-  rw [hlaw.integral_eq, integral_map (by fun_prop) (by fun_prop)]
-  rw [integral_const_mul, integral_id_expMeasure zero_lt_one, inv_one, mul_one]
-
 end TauCeti.Probability
 
 namespace ProbabilityTheory
