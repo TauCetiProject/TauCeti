@@ -192,6 +192,7 @@ theorem isZero_groupCohomology_one_res_padicCompletionUnits (S : Subgroup (L ≃
   have := (groupCohomology_res_padicCompletionUnits p K L S).1
   ModuleCat.isZero_of_subsingleton _
 
+omit [CharZero K] [CharZero L] [FiniteDimensional K L] in
 /-- **`H²` of `A(L)` on a subgroup is cyclic of order the `p`-part of the subgroup** (NSW (3.6.4),
 read through local reciprocity): for every subgroup `S` of `Gal(L/K)`, some class `u` generates
 `H²(S, A(L))`, and this group has order `p ^ v_p(#S)`. -/
@@ -202,8 +203,11 @@ theorem exists_zmultiples_eq_top_groupCohomology_two_res_padicCompletionUnits
       AddSubgroup.zmultiples u = ⊤ ∧
         Nat.card (groupCohomology
           (Rep.res S.subtype (Rep.of (padicCompletionUnitsRepresentation p L K))) 2) =
-          p ^ padicValNat p (Nat.card S) :=
-  (groupCohomology_res_padicCompletionUnits p K L S).2
+          p ^ padicValNat p (Nat.card S) := by
+  have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
+  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ_[p] L).injective
+  have : FiniteDimensional K L := Module.Finite.of_restrictScalars_finite ℚ_[p] K L
+  exact (groupCohomology_res_padicCompletionUnits p K L S).2
 
 /-- **One class of `A(L)` generates after every restriction** (NSW (3.6.4)). Unlike choosing
 separate generators for the subgroups, this supplies the compatible class required by the
@@ -221,6 +225,7 @@ theorem exists_zmultiples_eq_top_restriction_groupCohomology_two_padicCompletion
     (quotientGaloisSubgroupEquiv K L ι).toMulEquiv (classModuleAddEquiv p K L ι)
     (classModuleAddEquiv_smul p K L ι)
 
+omit [CharZero K] [CharZero L] in
 /-- **`H²` of `A(L)` on a `p`-subgroup has the order of the subgroup** (NSW (3.6.4), read through
 local reciprocity): `#H²(S, A(L)) = #S` for every `p`-subgroup `S` of `Gal(L/K)`. -/
 theorem natCard_groupCohomology_two_res_padicCompletionUnits
