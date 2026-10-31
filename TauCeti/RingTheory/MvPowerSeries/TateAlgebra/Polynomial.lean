@@ -24,8 +24,9 @@ Consequently the polynomials are dense in `R{X/c}`. Restricting the Gauss norm o
 the Gauss norm on polynomials, with uniform structure
 `TauCeti.MvPowerSeries.polynomialGaussUniformSpace`. Over a complete coefficient ring, `R{X/c}` is
 the completion of the polynomial algebra for this norm
-(`TauCeti.MvPowerSeries.polynomialCompletionPkg`), so every map out of the polynomials that is
-uniformly continuous for the Gauss norm extends uniquely to `R{X/c}`. The completion map is the
+(`TauCeti.MvPowerSeries.polynomialCompletionPkg`), so every map from the polynomials to a complete
+Hausdorff uniform space that is uniformly continuous for the Gauss norm has a unique uniformly
+continuous extension to `R{X/c}`. The completion map is the
 inclusion `TauCeti.MvPowerSeries.polynomialToRestricted`, which sends constants and variables to
 constants and variables, and commutes with bounded coefficient maps by
 `MvPowerSeries.restrictedMap_polynomialToRestricted`.
