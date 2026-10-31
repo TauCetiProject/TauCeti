@@ -16,8 +16,8 @@ public import TauCeti.Topology.CWComplex.Abstract.Hausdorff
 A Dehn filling of a knot exterior `E` along a slope `s` (`TauCeti.DehnFilling h s Y`) is recorded
 inside the filled space `Y`. This file constructs such a space for every slope, and likewise for
 the exteriors of links with finitely many components (`TauCeti.LinkDehnFilling`). So every Dehn
-surgery on a knot or a link, such as the rational surgeries on links in `S³`
-(`TauCeti.IsSolidTorusLinkNeighborhood.surgerySlope`), exists.
+surgery on a knot, or on a link with finitely many components (such as the rational surgeries
+on links in `S³`, `TauCeti.IsSolidTorusLinkNeighborhood.surgerySlope`), exists.
 
 The filled space is the space obtained from the exterior by attaching solid tori `V = D² × S¹`
 along homeomorphisms `g` of their boundary tori: the pushout in `TopCat` of the boundary
@@ -399,7 +399,7 @@ theorem linkDehnFillingOfGluing_gluing (h : IsSolidTorusLinkNeighborhood f Φ)
 /-- **Existence of Dehn fillings of link exteriors.** The exterior of a link with finitely many
 components has a Dehn filling along every family of slopes, one on each boundary torus, with
 gluings induced by invertible integral matrices. In particular every rational surgery on a link in
-`S³` (`TauCeti.IsSolidTorusLinkNeighborhood.surgerySlope`) exists. -/
+`S³` with finitely many components (`TauCeti.IsSolidTorusLinkNeighborhood.surgerySlope`) exists. -/
 theorem exists_linkDehnFilling (h : IsSolidTorusLinkNeighborhood f Φ)
     (s : ∀ i, Slope (h.neighborhood i).framedBoundaryTorus.H) :
     ∃ A : ι → GL (Fin 2) ℤ,
