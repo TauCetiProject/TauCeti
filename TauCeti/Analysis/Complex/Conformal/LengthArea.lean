@@ -288,15 +288,14 @@ theorem liminf_circleImageLength_nhdsGT_eq_zero (f : ℂ → ℂ) (hs : Measurab
 
 /-- **The chord bound along a `C¹` curve.** If `γ` is `C¹` on `Icc a b` and maps it into an open
 set on which `f` is holomorphic, the images under `f` of the endpoints of `γ` are at distance at
-most `∫⁻ t in Ioc a b, ‖deriv γ t‖ₑ * ‖deriv f (γ t)‖ₑ`, the length of the curve `f ∘ γ`.
-
-The analytic step is Mathlib's `MeasureTheory.enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc`,
-applied to `f ∘ γ`, which is `C¹` on `Icc a b` because `f` is analytic on `U`. The chain rule
-identifies the derivative of the composite at the interior parameters; the endpoints are null. -/
+most `∫⁻ t in Ioc a b, ‖deriv γ t‖ₑ * ‖deriv f (γ t)‖ₑ`, the length of the curve `f ∘ γ`. -/
 theorem edist_comp_le_lintegral_Ioc (hUo : IsOpen U) (hf : DifferentiableOn ℂ f U) {γ : ℝ → ℂ}
     {a b : ℝ} (hγ : ContDiffOn ℝ 1 γ (Icc a b)) (hab : a ≤ b)
     (hmemU : ∀ t ∈ Icc a b, γ t ∈ U) :
     edist (f (γ a)) (f (γ b)) ≤ ∫⁻ t in Ioc a b, ‖deriv γ t‖ₑ * ‖deriv f (γ t)‖ₑ := by
+  -- Apply the fundamental theorem of calculus to `f ∘ γ`, which is `C¹` on `Icc a b` because `f`
+  -- is analytic on `U`. The chain rule identifies the derivative of the composite at the interior
+  -- parameters; the endpoints are null.
   have hcd : ContDiffOn ℝ 1 (fun t => f (γ t)) (Icc a b) := fun t ht =>
     ContDiffAt.comp_contDiffWithinAt t
       ((hf.analyticAt (hUo.mem_nhds (hmemU t ht))).contDiffAt.restrict_scalars ℝ) (hγ t ht)
