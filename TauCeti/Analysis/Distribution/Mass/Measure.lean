@@ -194,6 +194,7 @@ private theorem massMeasure_eq (hT : HasLocallyFiniteMass T) :
     massMeasure T = (massContent hT).measure := by
   simp [massMeasure, hT]
 
+@[simp]
 theorem massMeasure_of_not_hasLocallyFiniteMass (hT : ¬HasLocallyFiniteMass T) :
     massMeasure T = 0 := by
   simp [massMeasure, hT]
@@ -220,6 +221,7 @@ theorem massMeasure_preimage_coe (hT : HasLocallyFiniteMass T) {U : Set E} (hU :
     (le_opensInf fun V hφV _ => enorm_le_localMass (hK.symm.subset.trans hφV) hφ)
 
 /-- The total mass of the mass measure is the mass. -/
+@[simp]
 theorem massMeasure_univ (hT : HasLocallyFiniteMass T) : massMeasure T univ = mass T := by
   simpa using massMeasure_preimage_coe hT isOpen_univ
 
