@@ -246,14 +246,19 @@ the Weyl group exactly as `ρ` would. -/
 
 variable [IsDomain R] [P.IsCrystallographic] [P.IsReduced]
 
+/-- If `⟨d, αᵢ^∨⟩ = 1` for a simple root `αᵢ`, then `αᵢ^∨` kills `2d - 2ρ`. -/
+theorem coroot'_two_smul_sub_twoWeylVector_eq_zero {d : M} {i : ι} (hi : i ∈ b.support)
+    (hd : P.coroot' i d = 1) :
+    P.coroot' i ((2 : R) • d - twoWeylVector P b) = 0 := by
+  rw [map_sub, map_smul, hd, coroot'_twoWeylVector P b hi, smul_eq_mul, mul_one, sub_self]
+
 /-- **A weight pairing to `1` with every simple coroot differs from `ρ` by a Weyl-invariant
 weight**: if `⟨d, αᵢ^∨⟩ = 1` for every simple root, then `2d - 2ρ` is fixed by the Weyl group. -/
 theorem smul_two_smul_sub_twoWeylVector_of_forall_coroot'_eq_one {d : M}
     (hd : ∀ i ∈ b.support, P.coroot' i d = 1) (w : P.weylGroup) :
     w • ((2 : R) • d - twoWeylVector P b) = (2 : R) • d - twoWeylVector P b :=
-  smul_eq_self_of_forall_coroot'_eq_zero b (fun i hi ↦ by
-    rw [map_sub, map_smul, hd i hi, coroot'_twoWeylVector P b hi, smul_eq_mul, mul_one,
-      sub_self]) w
+  smul_eq_self_of_forall_coroot'_eq_zero b
+    (fun i hi ↦ coroot'_two_smul_sub_twoWeylVector_eq_zero P b hi (hd i hi)) w
 
 /-- **A weight pairing to `1` with every simple coroot moves as the Weyl vector does**: if
 `⟨d, αᵢ^∨⟩ = 1` for every simple root and `2` is a non-zero-divisor on `M`, then

@@ -184,10 +184,7 @@ theorem diagonalRootDatum_coroot'_apply {n : ℕ} (p : DiagonalRootIndex.{u} n)
     (x : ULift.{u} (Fin n) →₀ ℤ) :
     (diagonalRootDatum n : RootDatum _ (ULift.{u} (Fin n) →₀ ℤ) _).coroot' p x =
       x p.1.1 - x p.1.2 := by
-  classical
-  rw [RootPairing.coroot', LinearMap.flip_apply, diagonalRootDatum_coroot,
-    diagonalRootDatum_toLinearMap, SplitTorus.dotPairing_apply, x.sum_fintype _ (by simp)]
-  simp [diagonalCoroot_apply, mul_sub, mul_ite]
+  rw [diagonalRootDatum, SplitTorus.coordinateRootDatum_coroot'_apply]
 
 /-- The index of the root obtained by applying the reflection in the root indexed by `p` to the
 root indexed by `q`: both entries of `q` are transposed by `Equiv.swap p.1.1 p.1.2`. -/

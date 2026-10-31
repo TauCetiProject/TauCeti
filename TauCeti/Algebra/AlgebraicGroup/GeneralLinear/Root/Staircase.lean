@@ -128,9 +128,8 @@ private theorem two_smul_diagonalStaircase_sub_twoWeylVector_apply (n : ℕ)
   set z := (2 : ℤ) • diagonalStaircase n -
       twoWeylVector (diagonalRootDatum.{u} (n + 1)) (diagonalRootBase n)
   have hz : ∀ p ∈ (diagonalRootBase.{u} n).support,
-      (diagonalRootDatum (n + 1)).coroot' p z = 0 := fun p hp ↦ by
-    rw [map_sub, map_smul, coroot'_diagonalStaircase n hp, coroot'_twoWeylVector _ _ hp,
-      smul_eq_mul, mul_one, sub_self]
+      (diagonalRootDatum (n + 1)).coroot' p z = 0 := fun _ hp ↦
+    coroot'_two_smul_sub_twoWeylVector_eq_zero _ _ hp (coroot'_diagonalStaircase n hp)
   have hconst := apply_eq_apply_zero_of_forall_coroot'_eq_zero n hz
   have hsum : ∑ b, z b = (n + 1) * z (ULift.up 0) := by
     rw [Finset.sum_congr rfl fun b _ ↦ hconst b, Finset.sum_const, Finset.card_univ,
