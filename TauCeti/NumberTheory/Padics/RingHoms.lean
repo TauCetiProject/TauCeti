@@ -42,7 +42,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   two `p`-adic integers truncate to the same residue exactly when `p ^ n` divides their
   difference; `PadicInt.eight_dvd_sub_iff_toZModPow_three_eq` is its case `p ^ n = 8`.
 * `PadicInt.isUnit_iff_toZModPow_three_mul_self`: the units of `ℤ_[2]` are exactly the elements
-  whose residue modulo `8` squares to `1`.
+  whose residue modulo `8` squares to `1`; `PadicInt.eight_dvd_sq_sub_one_of_isUnit`: so the
+  square of a unit is `1` modulo `8`.
 * `PadicInt.not_isSquare_neg_three`: `-3` is not a square in `ℤ_[2]`.
 * `PadicInt.two_dvd_sq_sub_self`: every `2`-adic integer satisfies `x ^ 2 ≡ x` modulo `2`.
 * `PadicInt.toZModPow_eq_one_of_norm_sub_one_le`: a norm bound forcing a `p`-adic integer to
@@ -184,6 +185,11 @@ theorem isUnit_iff_toZModPow_three_mul_self {z : ℤ_[2]} :
     obtain ⟨w, rfl⟩ := not_isUnit_iff_dvd.mp h
     have key : ∀ a : ZMod (2 ^ 3), 2 * a * (2 * a) ≠ 1 := by decide
     exact key (toZModPow 3 w) (by simpa [map_ofNat] using hz)
+
+/-- The square of a unit of `ℤ_[2]` is `1` modulo `8`. -/
+theorem eight_dvd_sq_sub_one_of_isUnit {z : ℤ_[2]} (hz : IsUnit z) : (8 : ℤ_[2]) ∣ z ^ 2 - 1 := by
+  rw [eight_dvd_sub_iff_toZModPow_three_eq, map_one, map_pow, sq,
+    isUnit_iff_toZModPow_three_mul_self.mp hz]
 
 /-- `-3` is not a square in `ℤ_[2]`, since it is not a square modulo `8`. -/
 theorem not_isSquare_neg_three : ¬IsSquare (-3 : ℤ_[2]) := by
