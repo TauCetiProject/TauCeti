@@ -42,9 +42,10 @@ and to `U a ∩ ⋃_{i ∈ s} U i` have a member containing everything; the rest
 `⋃_{i ∈ s} U i` is compared with the smaller cover by the `U i`, `i ∈ s`, which is acyclic by
 induction (`TauCeti.CategoryTheory.quasiIso_cechAugmentation_iff_of_quasiIso_prod`).
 
-For an arbitrary sheaf of abelian groups and any open cover of `X`, the sheaf condition alone
-identifies the degree `0` Čech cohomology with the global sections, and hence with the degree `0`
-sheaf cohomology `H⁰(X, F)`.
+For an arbitrary sheaf, with values in any category with the required products and homology, and
+any open cover of `X`, the sheaf condition alone identifies the degree `0` Čech cohomology with the
+global sections; for a sheaf of abelian groups, hence with the degree `0` sheaf cohomology
+`H⁰(X, F)`.
 
 ## Main results
 
@@ -209,8 +210,8 @@ include hU
 
 /-- A sheaf on `X` satisfies the sheaf condition for a family of opens covering `X`, in the form
 used by the augmentation of the Čech complex. -/
-theorem isSheafFor_ofArrows_of_iSup_eq_top
-    (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) (E : AddCommGrpCat.{u}ᵒᵖ) :
+theorem isSheafFor_ofArrows_of_iSup_eq_top {A : Type*} [Category* A]
+    (F : Sheaf (Opens.grothendieckTopology X) A) (E : Aᵒᵖ) :
     (Presieve.ofArrows U fun i ↦ isTerminalTop.from (U i)).IsSheafFor
       (F.obj ⋙ coyoneda.obj E) := by
   rw [Presieve.isSheafFor_iff_generate]
@@ -221,8 +222,9 @@ theorem isSheafFor_ofArrows_of_iSup_eq_top
 /-- For a sheaf on `X` and a family of opens covering `X`, the augmentation of the Čech complex
 is a quasi-isomorphism in degree `0`: the degree `0` Čech cohomology is the group of global
 sections. -/
-theorem quasiIsoAt_cechAugmentation_zero_of_iSup_eq_top
-    (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
+theorem quasiIsoAt_cechAugmentation_zero_of_iSup_eq_top {A : Type*} [Category* A] [Preadditive A]
+    [HasProducts.{u} A] [HasZeroObject A] [CategoryWithHomology A]
+    (F : Sheaf (Opens.grothendieckTopology X) A) :
     QuasiIsoAt (cechAugmentation U isTerminalTop F.obj) 0 :=
   (quasiIsoAt_cechAugmentation_zero_iff U isTerminalTop F.obj).2
     (isSheafFor_ofArrows_of_iSup_eq_top U hU F)
