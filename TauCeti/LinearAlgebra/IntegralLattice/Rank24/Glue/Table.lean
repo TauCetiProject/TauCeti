@@ -235,21 +235,6 @@ theorem mem_glueWords_of_mem_expand {r : RootfulNiemeierType} {p : GluePattern}
 
 /-! ### The glue subgroup -/
 
-/-- The ADE components of a row as a family indexed by their positions. -/
-@[expose] def componentType (r : RootfulNiemeierType) (i : Fin r.components.length) :
-    DynkinType :=
-  r.components[i].1
-
-/-- The components of a row are simply laced. -/
-theorem isSimplyLaced_componentType (r : RootfulNiemeierType) (i : Fin r.components.length) :
-    (r.componentType i).IsSimplyLaced :=
-  r.components[i].2.2
-
-/-- The components of a row are valid Dynkin types. -/
-theorem valid_componentType (r : RootfulNiemeierType) (i : Fin r.components.length) :
-    (r.componentType i).Valid :=
-  r.components[i].2.1
-
 /-- The module of glue words of a row, with one label per component; it is the discriminant
 quadratic module of the orthogonal sum of the component root lattices through
 `TauCeti.DynkinType.glueWordIsometry`. -/
