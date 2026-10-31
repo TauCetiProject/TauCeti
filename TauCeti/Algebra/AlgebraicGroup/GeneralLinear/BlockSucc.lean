@@ -82,7 +82,7 @@ theorem map_genericMatrix_blockSuccCoordinateMap :
   map_genericMatrix_coordinateBialgHomOfMultiplicative ..
 
 /-- The comorphism of the block inclusion on a generic coordinate of `GLₙ₊₁`. -/
-theorem blockSuccCoordinateMap_genericMatrix (a b : Fin (n + 1)) :
+theorem blockSuccCoordinateMap_genericMatrix_apply (a b : Fin (n + 1)) :
     blockSuccCoordinateMap R n (genericMatrix R (n + 1) a b) =
       Matrix.blockSucc (genericMatrix R n) a b := by
   rw [← map_genericMatrix_blockSuccCoordinateMap, Matrix.map_apply]
@@ -105,7 +105,7 @@ theorem mapDomain_blockSuccCoordinateMap_generalLinearToPoint {A : Type w} [Comm
       pointToGeneralLinear_generalLinearToPoint]
   rw [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply, generalLinearToPoint_apply,
     coe_glBlockSucc, ← genericMatrix_apply, BialgHom.coe_toAlgHom,
-    blockSuccCoordinateMap_genericMatrix, ← hg,
+    blockSuccCoordinateMap_genericMatrix_apply, ← hg,
     ← Matrix.blockSucc_map _ _ (map_zero _) (map_one _), Matrix.map_apply]
 
 variable {B : Type v} [CommRing B] [Algebra R B]
@@ -120,7 +120,7 @@ theorem tangentMatrix_derivationComp_blockSuccCoordinateMap
       glEmbedding B Fin.castSuccEmb (tangentMatrix n d) := by
   ext a b
   rw [tangentMatrix_apply, algEquivSelf_derivationComp_apply, ← genericMatrix_apply,
-    BialgHom.coe_toAlgHom, blockSuccCoordinateMap_genericMatrix]
+    BialgHom.coe_toAlgHom, blockSuccCoordinateMap_genericMatrix_apply]
   induction a using Fin.lastCases with
   | last =>
     rw [glEmbedding_apply_apply_eq_zero _ _ (Or.inl (by simp))]

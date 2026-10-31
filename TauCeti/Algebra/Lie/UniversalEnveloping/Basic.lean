@@ -24,6 +24,8 @@ additional structures such as filtrations, bialgebras, or antipodes.
   of finite type over the base ring as soon as the Lie algebra is finite as a module.
 * `TauCeti.UniversalEnvelopingAlgebra.representation`: the algebra homomorphism `U(L) → End M`
   attached to a Lie module `M`, in particular the adjoint action of `U(L)` on `L` at `M = L`.
+* `TauCeti.UniversalEnvelopingAlgebra.representation_eq_lift`: the representation of `U(L)` on a
+  Lie module whose action is given by a representation `φ` of `L` is the extension `lift φ`.
 * `TauCeti.UniversalEnvelopingAlgebra.representation_lie_of_mem_center`: a central element of
   `U(L)` acts on a Lie module by a map commuting with the Lie action.
 * `TauCeti.UniversalEnvelopingAlgebra.mem_center_iff_forall_lie_ι`: centrality in `U(L)` is
@@ -146,6 +148,17 @@ acts by the Lie bracket. -/
 theorem representation_ι_apply (x : L) (m : M) :
     representation R L M (_root_.UniversalEnvelopingAlgebra.ι R x) m = ⁅x, m⁆ := by
   rw [representation_ι, LieModule.toEnd_apply_apply]
+
+variable {R L M} in
+/-- **The representation of `U(L)` on a Lie module is the extension of its action map.** If `L`
+acts on `M` through a representation `φ : L →ₗ⁅R⁆ End M`, as for a module structure built with
+`LieModule.compLieHom`, then the representation of `U(L)` on `M` is the extension `lift φ`. -/
+theorem representation_eq_lift {φ : L →ₗ⁅R⁆ Module.End R M} (h : ∀ x m, ⁅x, m⁆ = φ x m) :
+    representation R L M = _root_.UniversalEnvelopingAlgebra.lift R φ := by
+  apply _root_.UniversalEnvelopingAlgebra.hom_ext
+  refine LieHom.ext fun x ↦ LinearMap.ext fun m ↦ ?_
+  rw [LieHom.comp_apply, LieHom.comp_apply, AlgHom.coe_toLieHom, AlgHom.coe_toLieHom,
+    representation_ι_apply, _root_.UniversalEnvelopingAlgebra.lift_ι_apply, h]
 
 /-- **A central element of `U(L)` acts on a Lie module by a map commuting with the Lie action.**
 Equivalently, `TauCeti.UniversalEnvelopingAlgebra.representation R L M u` is `L`-equivariant, that
