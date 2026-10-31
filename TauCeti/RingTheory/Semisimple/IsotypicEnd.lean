@@ -59,7 +59,7 @@ variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
 
 The ring `R` is arbitrary: only the module is asked to be semisimple, isotypic and finite.  Over a
 simple Artinian ring every module is isotypic, which is the specialization
-`TauCeti.IsSimpleRing.moduleEnd`. -/
+`IsSimpleRing.moduleEnd`. -/
 theorem IsIsotypic.isSimpleRing_moduleEnd [IsSemisimpleModule R M] [Module.Finite R M]
     [Nontrivial M] (h : IsIsotypic R M) : IsSimpleRing (Module.End R M) := by
   obtain ⟨n, _, S, _, ⟨e⟩⟩ := h.linearEquiv_fun
