@@ -343,8 +343,9 @@ theorem ladderValley_mem_commutatorSubmodule_of_u_eq_zero
     have hrot := mul_sub_mul_mem_commutatorSubmodule k A
       (ladderValley u d 0 0 s) (ladderValley u d 0 s 0)
     rw [ladderValley_zero_mul_ladderValley, ladderValley_mul_ladderValley_zero_eq_pow hud] at hrot
-    simpa using
-      add_mem hrot (neg_one_pow_mul_mem k (pow_d_mul_u_mem_commutatorSubmodule k hud hN hs) _)
+    have h := add_mem hrot
+      (neg_one_pow_mul_mem k (pow_d_mul_u_mem_commutatorSubmodule k hud hN hs) (s.choose 2))
+    rwa [sub_add_cancel] at h
   induction m using Nat.strong_induction_on generalizing s with
   | _ m ih =>
     rcases le_or_gt s m with hsm | hms
@@ -353,7 +354,8 @@ theorem ladderValley_mem_commutatorSubmodule_of_u_eq_zero
         (ladderValley u d m 0 s) (ladderValley u d m s 0)
       rw [ladderValley_zero_mul_ladderValley, ladderValley_mul_ladderValley hud rfl hsm,
         zero_add, add_zero] at hrot
-      simpa using add_mem hrot (neg_one_pow_mul_mem k (ih (m - s) (by omega) hs hzero) _)
+      have h := add_mem hrot (neg_one_pow_mul_mem k (ih (m - s) (by omega) hs hzero) (s * s))
+      rwa [sub_add_cancel] at h
     · -- Rotating the last `m` steps of the descent gives the closed valley word with bottom `0`.
       -- Two descents concatenate: down to rung `m`, then on to rung `0`.
       have hsplit : ladderValley u d m (s - m) 0 * ladderValley u d s m 0 =
@@ -380,7 +382,8 @@ theorem ladderValley_mem_commutatorSubmodule_of_u_eq_zero
       have hrot := mul_sub_mul_mem_commutatorSubmodule k A
         (ladderValley u d m 0 s * ladderValley u d m (s - m) 0) (ladderValley u d s m 0)
       rw [hAB, hBA] at hrot
-      simpa using add_mem hrot (neg_one_pow_mul_mem k hzero _)
+      have h := add_mem hrot (neg_one_pow_mul_mem k hzero (m * s))
+      rwa [sub_add_cancel] at h
 
 /-- **Closed valley words are sums of commutators.** If the turns at every rung cancel, including
 the single turn `d 0 * u 0` at the bottom rung, then the valley word descending `s > 0` rungs to
