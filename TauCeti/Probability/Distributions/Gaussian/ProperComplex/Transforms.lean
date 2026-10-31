@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Transforms
-public import TauCeti.Analysis.Matrix.PosSemidef.Basic
+public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # Real projections of proper complex Gaussian laws
