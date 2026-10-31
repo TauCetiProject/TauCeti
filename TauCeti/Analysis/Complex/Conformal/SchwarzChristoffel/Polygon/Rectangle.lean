@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Mapping
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.SideLength
-import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.ClosingSide
 import Mathlib.Analysis.Complex.Convex
 
 /-!
