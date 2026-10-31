@@ -38,8 +38,8 @@ the images of the generators of the Lazard ring in a polynomial ring.
   coefficient of `X^(deg f)`, then `f - q` has smaller degree than `f`.
 * `MvPolynomial.monomial_mem_iff_monomial_one_mem`: a subalgebra contains `c X^a` for a unit `c`
   if and only if it contains `X^a`.
-* `MonomialOrder.leadingTerm_mem_iff`: over a field, a subalgebra contains the leading term of a
-  nonzero polynomial if and only if it contains its leading monomial.
+* `MonomialOrder.leadingTerm_mem_iff`: a subalgebra contains the leading term of a polynomial
+  with unit leading coefficient if and only if it contains its leading monomial.
 * `MonomialOrder.toSyn_degree_monomial_mul_le`: `c X^a * b` has degree at most `a + deg b`.
 * `MonomialOrder.monomial_one_mul_sub_smul_eq_monomial_mul_sPolynomial`: if `b₀` has a unit
   leading coefficient, then `X^a * b` minus `lc b` times the product of `b₀` of the same degree
@@ -106,17 +106,12 @@ theorem toSyn_degree_monomial_mul_le [CommSemiring R] (a : σ →₀ ℕ) (c : R
   rw [map_add]
   exact m.toSyn_degree_mul_le.trans (by gcongr; exact m.degree_monomial_le c)
 
-/-- The leading term of `f` is its leading coefficient times the monomial `X^(deg f)`. -/
-theorem leadingTerm_eq_leadingCoeff_smul_monomial_one [CommSemiring R] (f : MvPolynomial σ R) :
-    m.leadingTerm f = m.leadingCoeff f • monomial (m.degree f) (1 : R) := by
-  simp [leadingTerm, smul_monomial]
-
-/-- Over a field, a subalgebra contains the leading term of a nonzero polynomial if and only if it
-contains its leading monomial. -/
-theorem leadingTerm_mem_iff {k : Type*} [Field k] {f : MvPolynomial σ k}
-    (C : Subalgebra k (MvPolynomial σ k)) (hf : f ≠ 0) :
+/-- A subalgebra contains the leading term of a polynomial with unit leading coefficient if and
+only if it contains its leading monomial. -/
+theorem leadingTerm_mem_iff [CommSemiring R] {f : MvPolynomial σ R}
+    (C : Subalgebra R (MvPolynomial σ R)) (hf : IsUnit (m.leadingCoeff f)) :
     m.leadingTerm f ∈ C ↔ monomial (m.degree f) 1 ∈ C := by
-  rw [leadingTerm, monomial_mem_iff_monomial_one_mem C (m.leadingCoeff_ne_zero_iff.2 hf).isUnit]
+  rw [leadingTerm, monomial_mem_iff_monomial_one_mem C hf]
 
 /-- **Cancellation of leading terms by an S-polynomial.** If `b₀` has unit leading coefficient
 `u₀` and `deg b₀ ≤ a + deg b`, the difference between `X^a * b` and `lc b` times the normalized

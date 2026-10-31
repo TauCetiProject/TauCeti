@@ -238,9 +238,11 @@ theorem monomial_one_mem_adjoin_leadingTerm_iff :
     · rintro _ ⟨f, hf, rfl⟩
       rcases eq_or_ne f 0 with rfl | hf0
       · simp
-      · exact (m.leadingTerm_mem_iff _ hf0).2 (Algebra.subset_adjoin ⟨_, ⟨f, ⟨hf, hf0⟩, rfl⟩, rfl⟩)
+      · exact (m.leadingTerm_mem_iff _ (m.leadingCoeff_ne_zero_iff.2 hf0).isUnit).2
+          (Algebra.subset_adjoin ⟨_, ⟨f, ⟨hf, hf0⟩, rfl⟩, rfl⟩)
     · rintro _ ⟨_, ⟨f, ⟨hf, hf0⟩, rfl⟩, rfl⟩
-      exact (m.leadingTerm_mem_iff _ hf0).1 (Algebra.subset_adjoin ⟨f, hf, rfl⟩)
+      exact (m.leadingTerm_mem_iff _ (m.leadingCoeff_ne_zero_iff.2 hf0).isUnit).1
+        (Algebra.subset_adjoin ⟨f, hf, rfl⟩)
   -- `AddMonoidAlgebra.mem_closure_of_mem_span_closure` is stated for `AddMonoidAlgebra`. We apply
   -- it to `MvPolynomial σ k`, which is by definition `AddMonoidAlgebra k (σ →₀ ℕ)`; `hof` matches
   -- `AddMonoidAlgebra.of'` with `monomial · 1` via `single_eq_monomial`.
@@ -260,7 +262,8 @@ if and only if its leading exponent is a sum of leading exponents of nonzero ele
 theorem leadingTerm_mem_adjoin_leadingTerm_iff (hf : f ≠ 0) :
     m.leadingTerm f ∈ Algebra.adjoin k (m.leadingTerm '' B) ↔
       m.degree f ∈ AddSubmonoid.closure (m.degree '' (B \ {0})) := by
-  rw [m.leadingTerm_mem_iff _ hf, monomial_one_mem_adjoin_leadingTerm_iff]
+  rw [m.leadingTerm_mem_iff _ (m.leadingCoeff_ne_zero_iff.2 hf).isUnit,
+    monomial_one_mem_adjoin_leadingTerm_iff]
 
 /-- Over a field, a monomial lies in the initial algebra of `A` if and only if its exponent is a
 leading exponent of `A` or its coefficient vanishes. -/
