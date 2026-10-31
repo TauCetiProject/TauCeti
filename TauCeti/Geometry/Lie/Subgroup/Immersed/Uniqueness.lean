@@ -49,14 +49,8 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 here is algebraic subgroup generation. -/
 theorem eq_closure_lieExp_image (d : ImmersedLieSubgroupData I K) :
     K = Subgroup.closure (lieExp '' (d.lieMapToHom.range : Set (LeftInvariantDerivation I G))) := by
-  have hhom : d.toContMDiffMonoidMorphism.toMonoidHom = d.toHom := by
-    ext x
-    exact d.toContMDiffMonoidMorphism_apply x
-  have hlie : lieMap d.toContMDiffMonoidMorphism = d.lieMapToHom := by
-    apply LieHom.ext
-    intro X
-    exact (d.lieMapToHom_apply X).symm
-  simpa only [hhom, hlie, d.range_eq] using
+  simpa only [toContMDiffMonoidMorphism_toMonoidHom, lieMap_toContMDiffMonoidMorphism,
+    d.range_eq] using
     d.toContMDiffMonoidMorphism.range_eq_closure_lieExp_image
 
 /-- Two connected immersed subgroup presentations with the same differential range have the
