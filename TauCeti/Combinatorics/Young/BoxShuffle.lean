@@ -127,11 +127,13 @@ noncomputable def boxShufflePerm (hm : μ.colLen 0 ≤ m) (hn : μ.rowLen 0 ≤ 
       · exact boxShuffle_ne_boxShuffle μ m hm h hab'.symm
       · exact boxShuffle_ne_boxShuffle μ m hm h hab'
 
+@[simp]
 theorem boxShufflePerm_apply_val (hm : μ.colLen 0 ≤ m) (hn : μ.rowLen 0 ≤ n)
     (k : Fin (m + n)) : (boxShufflePerm hm hn k : ℕ) = μ.boxShuffle m k :=
   (rfl)
 
 /-- The box shuffle has one inversion for each cell of the diagram. -/
+@[simp]
 theorem card_inversions_boxShufflePerm (hm : μ.colLen 0 ≤ m) (hn : μ.rowLen 0 ≤ n) :
     #(univ.inversions (boxShufflePerm hm hn)) = μ.card := by
   refine card_nbij (fun p ↦ (m - ((p.1 : ℕ) + 1), (p.2 : ℕ) - m)) ?_ ?_ ?_
@@ -162,6 +164,7 @@ theorem card_inversions_boxShufflePerm (hm : μ.colLen 0 ≤ m) (hn : μ.rowLen 
       omega
 
 /-- The sign of the box shuffle is `(-1)` to the number of cells of the diagram. -/
+@[simp]
 theorem sign_boxShufflePerm (hm : μ.colLen 0 ≤ m) (hn : μ.rowLen 0 ≤ n) :
     Equiv.Perm.sign (boxShufflePerm hm hn) = (-1) ^ μ.card := by
   rw [TauCeti.sign_eq_neg_one_pow_card_inversion, card_inversions_boxShufflePerm]
