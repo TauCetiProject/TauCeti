@@ -38,7 +38,6 @@ gives `s cᵢ = t cᵢ`.
 ## Main definitions
 
 * `RingHom.IsSpecEquivRel.basis`: the basis of `A` over the ring of invariants.
-* `RingHom.IsSpecEquivRel.tensorProductMap`: the map `A ⊗[C] A → B`, `x ⊗ y ↦ s x * t y`.
 * `RingHom.IsSpecEquivRel.tensorProductEquiv`: the isomorphism `A ⊗[C] A ≃ₐ[A] B`.
 
 ## Main results
@@ -63,22 +62,6 @@ namespace RingHom.IsSpecEquivRel
 variable {A B : Type u} [CommRing A] [CommRing B] [Algebra A B] {t : A →+* B}
   (h : (algebraMap A B).IsSpecEquivRel t) {ι : Type*} (b : Module.Basis ι A B) {a : ι → A}
   (hb : ∀ i, b i = t (a i))
-
-variable (t) in
-/-- The map `A ⊗[C] A → B`, `x ⊗ y ↦ s x * t y`, of `A`-algebras, where `C = {a : s a = t a}` is the
-ring of invariants. When `t` defines an equivalence relation with a basis coming from `A`, it is
-the isomorphism `RingHom.IsSpecEquivRel.tensorProductEquiv`. -/
-noncomputable def tensorProductMap : A ⊗[(algebraMap A B).eqLocus t] A →ₐ[A] B :=
-  Algebra.TensorProduct.lift (Algebra.ofId A B)
-    (AlgHom.mk t fun c ↦ by
-      simpa [IsScalarTower.algebraMap_apply _ A B, Algebra.algebraMap_ofSubsemiring_apply] using
-        (mem_eqLocus.mp c.2).symm) fun _ _ ↦ .all _ _
-
-/-- The map `A ⊗[C] A → B` sends `x ⊗ y` to `s x * t y`. -/
-@[simp]
-theorem tensorProductMap_tmul (x y : A) :
-    tensorProductMap t (x ⊗ₜ y) = algebraMap A B x * t y := by
-  simp [tensorProductMap]
 
 -- a ring homomorphism out of `B` applied to the expansion of `y` in the basis `b`
 private theorem map_eq_sum_repr {T : Type*} [CommRing T] (φ : B →+* T) (y : B) :
