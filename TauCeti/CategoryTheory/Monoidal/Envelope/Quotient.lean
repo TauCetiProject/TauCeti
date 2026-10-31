@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Basic
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 public import Mathlib.CategoryTheory.Monoidal.Linear
+public import Mathlib.CategoryTheory.Monoidal.NaturalTransformation
 
 /-!
 # Quotients of monoidal preadditive categories by tensor ideals
@@ -50,6 +51,11 @@ of `TauCeti.MorphismIdeal.Quotient`, which `TauCeti.MonoidalQuotient` abbreviate
 * the instance `(TauCeti.toMonoidalQuotient I).Monoidal`: the quotient functor is strong
   monoidal, with identity structure morphisms (`TauCeti.MonoidalQuotient.μ_eq` and its
   companions);
+* the universal property: for a strong monoidal additive functor `F` killing `I`, the instance
+  `(I.toMorphismIdeal.lift F hF).Monoidal`, whose structure morphisms are those of `F`
+  (`TauCeti.MonoidalQuotient.lift_μ` and its companions), and the instance saying that
+  `CategoryTheory.Quotient.lift.isLift`, identifying the composite with the quotient functor
+  with `F`, is a monoidal natural isomorphism;
 * the instances `MonoidalPreadditive (TauCeti.MonoidalQuotient I)` and
   `MonoidalLinear S (TauCeti.MonoidalQuotient I)`.
 
@@ -64,7 +70,7 @@ of `TauCeti.MorphismIdeal.Quotient`, which `TauCeti.MonoidalQuotient` abbreviate
 
 public section
 
-universe v u
+universe v u v' u'
 
 namespace TauCeti
 
@@ -141,23 +147,26 @@ namespace MonoidalQuotient
 variable [MonoidalPreadditive C] (I : MonoidalIdeal C)
 
 /-- The monoidal data descended to the quotient by a tensor ideal: tensor products, whiskerings,
-associator and unitors are the classes of those of `C`. The whiskerings are well defined by
-`TauCeti.MonoidalIdeal.rel_whiskerLeft` and `TauCeti.MonoidalIdeal.rel_whiskerRight`. -/
+associator and unitors are the classes of those of `C`. Whiskering by the class of `W` is the
+factorization `TauCeti.MorphismIdeal.lift` of `tensorLeft W` or `tensorRight W` followed by the
+quotient functor, which kill the ideal. -/
 noncomputable instance : MonoidalCategoryStruct (MonoidalQuotient I) where
   tensorObj X Y := (toMonoidalQuotient I).obj (X.as ⊗ Y.as)
   whiskerLeft X _ _ f :=
-    (CategoryTheory.Quotient.lift I.rel (tensorLeft X.as ⋙ toMonoidalQuotient I)
-      fun _ _ _ _ h ↦ CategoryTheory.Quotient.sound _ (I.rel_whiskerLeft X.as h)).map f
+    (I.toMorphismIdeal.lift (tensorLeft X.as ⋙ toMonoidalQuotient I) fun _ _ _ hf ↦
+      (Functor.mem_kerIdeal_hom _).2
+        ((MorphismIdeal.quotientFunctor_map_eq_zero_iff _).2 (I.whiskerLeft_mem X.as hf))).map f
   whiskerRight f Y :=
-    (CategoryTheory.Quotient.lift I.rel (tensorRight Y.as ⋙ toMonoidalQuotient I)
-      fun _ _ _ _ h ↦ CategoryTheory.Quotient.sound _ (I.rel_whiskerRight h Y.as)).map f
+    (I.toMorphismIdeal.lift (tensorRight Y.as ⋙ toMonoidalQuotient I) fun _ _ _ hf ↦
+      (Functor.mem_kerIdeal_hom _).2
+        ((MorphismIdeal.quotientFunctor_map_eq_zero_iff _).2 (I.whiskerRight_mem Y.as hf))).map f
   tensorUnit := (toMonoidalQuotient I).obj (𝟙_ C)
   associator X Y Z := (toMonoidalQuotient I).mapIso (α_ X.as Y.as Z.as)
   leftUnitor X := (toMonoidalQuotient I).mapIso (λ_ X.as)
   rightUnitor X := (toMonoidalQuotient I).mapIso (ρ_ X.as)
 
-/-- The monoidal category structure on the quotient by a tensor ideal. Every axiom is the image
-under the quotient functor of the corresponding axiom of `C`. -/
+/-- The monoidal category structure on the quotient by a tensor ideal, descended from that of
+`C`. -/
 -- Each structure morphism of the quotient is, by construction, the class of the corresponding
 -- morphism of `C`, and composition of classes is the class of the composite; so once the objects
 -- and morphisms are written as classes, each axiom is definitionally the image of the axiom of `C`
@@ -315,44 +324,89 @@ theorem μ_eq (X Y : C) : Functor.LaxMonoidal.μ (toMonoidalQuotient I) X Y = �
 theorem δ_eq (X Y : C) : Functor.OplaxMonoidal.δ (toMonoidalQuotient I) X Y = 𝟙 _ :=
   (rfl)
 
+/-! ### Monoidal factorization through the quotient -/
+
+section lift
+
+variable {D : Type u'} [Category.{v'} D] [Preadditive D] [MonoidalCategory D] (F : C ⥤ D)
+  [F.Additive] [F.Monoidal] (hF : I.toMorphismIdeal ≤ F.kerIdeal)
+
+/-- The factorization `TauCeti.MorphismIdeal.lift` through the quotient by a tensor ideal of a
+strong monoidal additive functor killing the ideal is strong monoidal, with the structure
+isomorphisms of `F`. -/
+noncomputable instance : (I.toMorphismIdeal.lift F hF).Monoidal :=
+  Functor.CoreMonoidal.toMonoidal
+    { εIso := Functor.Monoidal.εIso F
+      μIso X Y := Functor.Monoidal.μIso F X.as Y.as
+      μIso_hom_natural_left f Z := by
+        obtain ⟨f, rfl⟩ := (toMonoidalQuotient I).map_surjective f
+        exact Functor.LaxMonoidal.μ_natural_left F f Z.as
+      μIso_hom_natural_right Z f := by
+        obtain ⟨f, rfl⟩ := (toMonoidalQuotient I).map_surjective f
+        exact Functor.LaxMonoidal.μ_natural_right F Z.as f
+      associativity X Y Z := Functor.LaxMonoidal.associativity F X.as Y.as Z.as
+      left_unitality X := Functor.LaxMonoidal.left_unitality F X.as
+      right_unitality X := Functor.LaxMonoidal.right_unitality F X.as }
+
+/-- The unit morphism of the factorization of `F` is that of `F`. -/
+@[simp]
+theorem lift_ε :
+    Functor.LaxMonoidal.ε (I.toMorphismIdeal.lift F hF) = Functor.LaxMonoidal.ε F :=
+  (rfl)
+
+/-- The counit morphism of the factorization of `F` is that of `F`. -/
+@[simp]
+theorem lift_η :
+    Functor.OplaxMonoidal.η (I.toMorphismIdeal.lift F hF) = Functor.OplaxMonoidal.η F :=
+  (rfl)
+
+/-- On classes, the tensorator of the factorization of `F` is that of `F`. -/
+@[simp]
+theorem lift_μ (X Y : C) :
+    Functor.LaxMonoidal.μ (I.toMorphismIdeal.lift F hF) ((toMonoidalQuotient I).obj X)
+      ((toMonoidalQuotient I).obj Y) = Functor.LaxMonoidal.μ F X Y :=
+  (rfl)
+
+/-- On classes, the inverse tensorator of the factorization of `F` is that of `F`. -/
+@[simp]
+theorem lift_δ (X Y : C) :
+    Functor.OplaxMonoidal.δ (I.toMorphismIdeal.lift F hF) ((toMonoidalQuotient I).obj X)
+      ((toMonoidalQuotient I).obj Y) = Functor.OplaxMonoidal.δ F X Y :=
+  (rfl)
+
+/-- The identification `CategoryTheory.Quotient.lift.isLift` of the quotient functor followed by
+the factorization of `F` with `F` is a monoidal natural isomorphism. -/
+instance : (Iso.hom (X := toMonoidalQuotient I ⋙ I.toMorphismIdeal.lift F hF) (Y := F)
+    (CategoryTheory.Quotient.lift.isLift I.rel F _)).IsMonoidal where
+  unit := by
+    simp only [Functor.comp_obj, Functor.LaxMonoidal.comp_ε, lift_ε, ε_eq,
+      CategoryTheory.Functor.map_id, Category.comp_id, CategoryTheory.Quotient.lift.isLift_hom]
+    exact Category.comp_id _
+  tensor X Y := by
+    simp only [Functor.comp_obj, Functor.LaxMonoidal.comp_μ, lift_μ, μ_eq,
+      CategoryTheory.Functor.map_id, Category.comp_id, CategoryTheory.Quotient.lift.isLift_hom]
+    exact (Category.comp_id _).trans
+      ((congrArg (· ≫ _) (id_tensorHom_id _ _)).trans (Category.id_comp _)).symm
+
+end lift
+
 /-! ### Additive and linear structure -/
 
--- As for the monoidal axioms, whiskering the class of a morphism by an arbitrary object `X` of the
--- quotient is definitionally the class of the whiskering by `X.as`, and sums, zero morphisms and
--- scalar multiples of classes are the classes of the corresponding morphisms of `C`.
+-- The whiskerings of the quotient are factorizations `TauCeti.MorphismIdeal.lift` of additive
+-- (and, for `C` linear, linear) functors, so they inherit additivity and linearity.
 
 /-- The quotient of a monoidal preadditive category by a tensor ideal is monoidal preadditive. -/
 instance : MonoidalPreadditive (MonoidalQuotient I) where
-  whiskerLeft_zero {X Y Z} :=
-    (congrArg (toMonoidalQuotient I).map
-      (MonoidalPreadditive.whiskerLeft_zero (X := X.as) (Y := Y.as) (Z := Z.as))).trans
-      ((toMonoidalQuotient I).map_zero _ _)
-  zero_whiskerRight {X Y Z} :=
-    (congrArg (toMonoidalQuotient I).map
-      (MonoidalPreadditive.zero_whiskerRight (X := X.as) (Y := Y.as) (Z := Z.as))).trans
-      ((toMonoidalQuotient I).map_zero _ _)
-  whiskerLeft_add {X Y Z} f g := by
-    obtain ⟨f, rfl⟩ := (toMonoidalQuotient I).map_surjective f
-    obtain ⟨g, rfl⟩ := (toMonoidalQuotient I).map_surjective g
-    exact (congrArg (toMonoidalQuotient I).map
-      (MonoidalPreadditive.whiskerLeft_add (X := X.as) f g)).trans (toMonoidalQuotient I).map_add
-  add_whiskerRight {X Y Z} f g := by
-    obtain ⟨f, rfl⟩ := (toMonoidalQuotient I).map_surjective f
-    obtain ⟨g, rfl⟩ := (toMonoidalQuotient I).map_surjective g
-    exact (congrArg (toMonoidalQuotient I).map
-      (MonoidalPreadditive.add_whiskerRight (X := X.as) f g)).trans (toMonoidalQuotient I).map_add
+  whiskerLeft_zero := Functor.map_zero _ _ _
+  zero_whiskerRight := Functor.map_zero _ _ _
+  whiskerLeft_add _ _ := Functor.map_add _
+  add_whiskerRight _ _ := Functor.map_add _
 
 /-- The quotient of a monoidal `S`-linear category by a tensor ideal is monoidal `S`-linear. -/
 instance (S : Type*) [Semiring S] [Linear S C] [MonoidalLinear S C] :
     MonoidalLinear S (MonoidalQuotient I) where
-  whiskerLeft_smul X {Y Z} r f := by
-    obtain ⟨f, rfl⟩ := (toMonoidalQuotient I).map_surjective f
-    exact (congrArg (toMonoidalQuotient I).map (MonoidalLinear.whiskerLeft_smul X.as r f)).trans
-      ((toMonoidalQuotient I).map_smul _ _)
-  smul_whiskerRight r {Y Z} f X := by
-    obtain ⟨f, rfl⟩ := (toMonoidalQuotient I).map_surjective f
-    exact (congrArg (toMonoidalQuotient I).map (MonoidalLinear.smul_whiskerRight r f X.as)).trans
-      ((toMonoidalQuotient I).map_smul _ _)
+  whiskerLeft_smul _ _ _ _ _ := Functor.map_smul _ _ _
+  smul_whiskerRight _ _ _ _ _ := Functor.map_smul _ _ _
 
 end MonoidalQuotient
 
