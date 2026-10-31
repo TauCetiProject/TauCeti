@@ -43,17 +43,11 @@ which is then a symmetric additive 2-cocycle, hence a multiple of `C_n` by the s
 lemma `TauCeti.exists_eq_smul_lazardCocycle`; its value in degree `pᵏ` comes from the identity
 `∑_{j < p} C_{pᵏ}(j, 1) = -1` in characteristic `p`.
 
-## Main definitions
-
-* `FormalGroup.homDefect`: the homomorphism defect `f(F(X, Y)) - G(f(X), f(Y))`.
-* `TauCeti.FormalGroupHom.ofHomDefectEqZero`: a series without constant term whose homomorphism
-  defect vanishes, as a homomorphism of formal group laws.
+The homomorphism defect itself and its basic API are in
+`TauCeti.RingTheory.FormalGroup.Hom`.
 
 ## Main results
 
-* `TauCeti.FormalGroupHom.homDefect_toPowerSeries`: homomorphisms have zero defect.
-* `FormalGroup.homDefect_𝔾ₐ`: the defect towards the additive formal group law is
-  `f(F(X, Y)) - f(X) - f(Y)`.
 * `FormalGroup.exists_homogeneousComponent_eq_smul_lazardCocycle`: the leading term of a symmetric
   series satisfying the 2-cocycle identity along a formal group law up to higher-order terms is a
   multiple of the Lazard cocycle.
@@ -154,38 +148,7 @@ end Cocycle
 
 section Defect
 
-variable (F G : FormalGroup R)
-
-/-- The **homomorphism defect** `f(F(X, Y)) - G(f(X), f(Y))` of a power series `f` with respect to
-formal group laws `F` and `G`. It vanishes exactly when `f` satisfies the homomorphism equation
-(`FormalGroup.homDefect_eq_zero_iff`), and its order measures to which degree `f` is a
-homomorphism from `F` to `G`. -/
-noncomputable def homDefect (f : PowerSeries R) : MvPowerSeries (Fin 2) R :=
-  PowerSeries.subst F.toPowerSeries f - subst (fun i ↦ f.toMvPowerSeries i) G.toPowerSeries
-
-/-- Unfold the homomorphism defect. -/
-theorem homDefect_def (f : PowerSeries R) :
-    F.homDefect G f =
-      PowerSeries.subst F.toPowerSeries f - subst (fun i ↦ f.toMvPowerSeries i) G.toPowerSeries :=
-  (rfl)
-
-/-- The homomorphism defect vanishes exactly when `f` satisfies the homomorphism equation. -/
-theorem homDefect_eq_zero_iff {f : PowerSeries R} :
-    F.homDefect G f = 0 ↔
-      PowerSeries.subst F.toPowerSeries f = subst (fun i ↦ f.toMvPowerSeries i) G.toPowerSeries :=
-  sub_eq_zero
-
-/-- The homomorphism defect towards the additive formal group law is the additivity defect
-`f(F(X, Y)) - f(X) - f(Y)`. -/
-theorem homDefect_𝔾ₐ {f : PowerSeries R} (hf : PowerSeries.constantCoeff f = 0) :
-    F.homDefect 𝔾ₐ f = PowerSeries.subst F.toPowerSeries f - PowerSeries.subst (X 0) f -
-      PowerSeries.subst (X 1) f := by
-  have hE := HasSubst.toMvPowerSeries (σ := Fin 2) hf
-  rw [homDefect_def, 𝔾ₐ_toPowerSeries, subst_add hE, subst_X hE, subst_X hE]
-  simp only [PowerSeries.toMvPowerSeries_eq_subst]
-  ring
-
-variable {F G} {f : PowerSeries R} {σ : Type*}
+variable {F G : FormalGroup R} {f : PowerSeries R} {σ : Type*}
 
 /-- The point `f(x)` of `G`, for a series `f` without constant term and a point `x` of `F`. -/
 private noncomputable def evalPoint (G : FormalGroup R) (hf : PowerSeries.constantCoeff f = 0)
@@ -284,7 +247,7 @@ values at the coordinate points of the point `f(X +_F Y)` and the sum `f(X) +_G 
 private theorem homDefect_eq_val_sub (hf : PowerSeries.constantCoeff f = 0) :
     F.homDefect G f = (evalPoint G hf (coordPoint F (0 : Fin 2) + coordPoint F 1)).val -
       (evalPoint G hf (coordPoint F (0 : Fin 2)) + evalPoint G hf (coordPoint F 1)).val := by
-  simp only [homDefect, val_evalPoint, add_apply, val_coordPoint]
+  simp only [homDefect_def, val_evalPoint, add_apply, val_coordPoint]
   congr 1
   · rw [finTwo_X_eq_X, subst_self, id]
   · congr 1
@@ -485,29 +448,3 @@ theorem homogeneousComponent_homDefect_eq_smul_lazardCocycle
 end Obstruction
 
 end FormalGroup
-
-namespace TauCeti.FormalGroupHom
-
-open FormalGroup
-
-variable {R : Type*} [CommRing R] {F G : FormalGroup R}
-
-/-- A homomorphism of formal group laws has zero homomorphism defect. -/
-@[simp]
-theorem homDefect_toPowerSeries (f : FormalGroupHom F G) : F.homDefect G f.toPowerSeries = 0 :=
-  (homDefect_eq_zero_iff F G).mpr f.hom
-
-/-- A power series without constant term whose homomorphism defect vanishes, as a homomorphism of
-formal group laws. -/
-def ofHomDefectEqZero {f : PowerSeries R} (hf : PowerSeries.constantCoeff f = 0)
-    (h : F.homDefect G f = 0) : FormalGroupHom F G where
-  toPowerSeries := f
-  zero_constantCoeff := hf
-  hom := (homDefect_eq_zero_iff F G).mp h
-
-@[simp]
-theorem ofHomDefectEqZero_toPowerSeries {f : PowerSeries R}
-    (hf : PowerSeries.constantCoeff f = 0) (h : F.homDefect G f = 0) :
-    (ofHomDefectEqZero hf h).toPowerSeries = f := (rfl)
-
-end TauCeti.FormalGroupHom

@@ -18,6 +18,10 @@ another. Composition is substitution. An isomorphism carries a specified inverse
 it is strict when its linear coefficient is one. These maps act on the native power-series
 points, including points with nilpotent, not necessarily zero, constant coefficient.
 
+The homomorphism defect `f(F(X, Y)) - G(f(X), f(Y))` (`FormalGroup.homDefect`) of a power series
+`f` measures how far `f` is from a homomorphism: it vanishes exactly for homomorphisms
+(`TauCeti.FormalGroupHom.homDefect_toPowerSeries`, `TauCeti.FormalGroupHom.ofHomDefectEqZero`).
+
 The bundles `TauCeti.FormalGroupHom`, `TauCeti.FormalGroupIso`, and
 `TauCeti.FormalGroupIso.IsStrict` are adapted from Wenrong Zou's Mathlib PR #38213
 (https://github.com/leanprover-community/mathlib4/pull/38213). The action on points here uses
@@ -27,9 +31,44 @@ arbitrary topological algebra.
 
 public section
 
-namespace TauCeti
-
 open MvPowerSeries
+
+namespace FormalGroup
+
+variable {R : Type*} [CommRing R] (F G : FormalGroup R)
+
+/-- The **homomorphism defect** `f(F(X, Y)) - G(f(X), f(Y))` of a power series `f` with respect to
+formal group laws `F` and `G`. It vanishes exactly when `f` satisfies the homomorphism equation
+(`FormalGroup.homDefect_eq_zero_iff`), and its order measures to which degree `f` is a
+homomorphism from `F` to `G`. -/
+noncomputable def homDefect (f : PowerSeries R) : MvPowerSeries (Fin 2) R :=
+  PowerSeries.subst F.toPowerSeries f - subst (fun i ↦ f.toMvPowerSeries i) G.toPowerSeries
+
+/-- Unfold the homomorphism defect. -/
+theorem homDefect_def (f : PowerSeries R) :
+    F.homDefect G f =
+      PowerSeries.subst F.toPowerSeries f - subst (fun i ↦ f.toMvPowerSeries i) G.toPowerSeries :=
+  (rfl)
+
+/-- The homomorphism defect vanishes exactly when `f` satisfies the homomorphism equation. -/
+theorem homDefect_eq_zero_iff {f : PowerSeries R} :
+    F.homDefect G f = 0 ↔
+      PowerSeries.subst F.toPowerSeries f = subst (fun i ↦ f.toMvPowerSeries i) G.toPowerSeries :=
+  sub_eq_zero
+
+/-- The homomorphism defect towards the additive formal group law is the additivity defect
+`f(F(X, Y)) - f(X) - f(Y)`. -/
+theorem homDefect_𝔾ₐ {f : PowerSeries R} (hf : PowerSeries.constantCoeff f = 0) :
+    F.homDefect 𝔾ₐ f = PowerSeries.subst F.toPowerSeries f - PowerSeries.subst (X 0) f -
+      PowerSeries.subst (X 1) f := by
+  have hE := HasSubst.toMvPowerSeries (σ := Fin 2) hf
+  rw [homDefect_def, 𝔾ₐ_toPowerSeries, subst_add hE, subst_X hE, subst_X hE]
+  simp only [PowerSeries.toMvPowerSeries_eq_subst]
+  ring
+
+end FormalGroup
+
+namespace TauCeti
 
 variable {R : Type*} [CommRing R] {F G H K : FormalGroup R}
 
@@ -80,6 +119,24 @@ theorem hom_additive_iff {g : PowerSeries R} (hg : g.constantCoeff = 0) :
   rw [FormalGroup.𝔾ₐ_toPowerSeries, subst_add (.toMvPowerSeries hg),
     subst_X (.toMvPowerSeries hg), subst_X (.toMvPowerSeries hg)]
   simp only [PowerSeries.toMvPowerSeries_eq_subst]
+
+/-- A homomorphism of formal group laws has zero homomorphism defect. -/
+@[simp]
+theorem homDefect_toPowerSeries (f : FormalGroupHom F G) : F.homDefect G f.toPowerSeries = 0 :=
+  (FormalGroup.homDefect_eq_zero_iff F G).mpr f.hom
+
+/-- A power series without constant term whose homomorphism defect vanishes, as a homomorphism of
+formal group laws. -/
+def ofHomDefectEqZero {f : PowerSeries R} (hf : PowerSeries.constantCoeff f = 0)
+    (h : F.homDefect G f = 0) : FormalGroupHom F G where
+  toPowerSeries := f
+  zero_constantCoeff := hf
+  hom := (FormalGroup.homDefect_eq_zero_iff F G).mp h
+
+@[simp]
+theorem ofHomDefectEqZero_toPowerSeries {f : PowerSeries R}
+    (hf : PowerSeries.constantCoeff f = 0) (h : F.homDefect G f = 0) :
+    (ofHomDefectEqZero hf h).toPowerSeries = f := (rfl)
 
 /-- A substitution inverse of a formal group homomorphism is a homomorphism. -/
 noncomputable def ofInverse (f : FormalGroupHom F G) (g : PowerSeries R)
