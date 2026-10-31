@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Invertible
-public import Mathlib.Algebra.Group.Action.Hom
+public import Mathlib.Algebra.Module.Basic
 public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.Basic.Real.Basic
 
@@ -20,8 +20,10 @@ instance, together with the rewrite rule identifying its inverse with the real s
 
 ## Main definitions
 
-* `TauCeti.invertibleTwoModuleEnd`: for an `R`-module `N` carrying a commuting action of a
-  semiring `S` in which `2` is invertible, doubling is invertible on the `R`-endomorphisms of `N`.
+* `TauCeti.invertibleTwoModuleEnd`: for an `R`-module `N` that is also a module over a semiring
+  `S` in which `2` is invertible, doubling is invertible on the `R`-endomorphisms of `N`. No
+  compatibility between the two actions is assumed: halving by `⅟(2 : S)` is automatically
+  `R`-linear, since it inverts the additive map `x ↦ x + x`.
 
 ## Main results
 
@@ -71,41 +73,47 @@ section General
 
 variable {R N : Type*} [Semiring R] [AddCommMonoid N] [Module R N]
 
-/-- **Doubling is invertible on the `R`-endomorphisms of a module that also carries a commuting
-action of a semiring `S` in which `2` is invertible.** The halving scalar comes from the
-`S`-module structure rather than from `R`. -/
+/-- **Doubling is invertible on the `R`-endomorphisms of a module that also carries an action of a
+semiring `S` in which `2` is invertible.** The inverse is halving by `⅟(2 : S)`, which is
+automatically `R`-linear: no compatibility between the `R`- and `S`-actions is needed. -/
 -- A `def`, not an `instance`: `S` occurs nowhere in the conclusion, so instance search could never
 -- infer it. Instances are registered for the scalar rings that are wanted, `ℝ` below.
 @[instance_reducible]
 noncomputable def invertibleTwoModuleEnd (S : Type*) [Semiring S] [Module S N]
-    [SMulCommClass R S N] [Invertible (2 : S)] : Invertible (2 : Module.End R N) :=
-  -- Doubling is the image of `2 : S` under `x ↦ x • 1`, which is multiplicative, so
-  -- `Invertible.map` transports invertibility along it; only the numerals need reconciling.
-  (Invertible.map (MonoidHom.smulOneHom (M := S) (N := Module.End R N)) 2).copy 2 <|
-    -- `ofNat_smul_eq_nsmul` is the bridge: the `2 •` that `Module.End`'s numeral produces is an
-    -- `nsmul`, and it has to be matched against the `S`-action before the scalars can cancel.
-    by ext x; simp [← ofNat_smul_eq_nsmul S]
+    [Invertible (2 : S)] : Invertible (2 : Module.End R N) :=
+  -- Halving by `⅟(2 : S)` undoes the additive doubling `x ↦ x + x`.
+  have half_double (x : N) : ⅟(2 : S) • (x + x) = x := by
+    rw [smul_add, invOf_two_smul_add_invOf_two_smul]
+  { invOf :=
+      { toFun x := ⅟(2 : S) • x
+        map_add' := smul_add _
+        -- `R`-linearity needs no `SMulCommClass R S N`: writing `x = y + y` with
+        -- `y = ⅟(2 : S) • x`, both sides equal `r • y`, using only additivity of the actions.
+        map_smul' r x := by
+          conv_lhs => rw [← invOf_two_smul_add_invOf_two_smul S x, smul_add, half_double]
+          rfl }
+    invOf_mul_self := by ext x; simp [two_smul, half_double]
+    mul_invOf_self := by ext x; simp [two_smul] }
 
 /-- **The inverse of doubling is halving by the scalar**, for whichever
 `Invertible (2 : Module.End R N)` instance is in scope. -/
--- Instance-independent because an inverse in a monoid is unique: `invOf_eq_right_inv` derives
--- `⅟` from the equation, so the proof never unfolds `invertibleTwoModuleEnd` and the
--- definition needs no `@[expose]`.
-theorem invOf_two_moduleEnd_apply (S : Type*) [Semiring S] [Module S N] [SMulCommClass R S N]
-    [Invertible (2 : S)] [Invertible (2 : Module.End R N)] (x : N) :
+-- Instance-independent because the inverse `y` of doubling satisfies `y x + y x = x`, and halving
+-- by `⅟(2 : S)` recovers `y x` from that sum; the proof never unfolds `invertibleTwoModuleEnd`,
+-- so the definition needs no `@[expose]`.
+theorem invOf_two_moduleEnd_apply (S : Type*) [Semiring S] [Module S N] [Invertible (2 : S)]
+    [Invertible (2 : Module.End R N)] (x : N) :
     ⅟(2 : Module.End R N) x = ⅟(2 : S) • x := by
-  rw [invOf_eq_right_inv (b := ⅟(2 : S) • (1 : Module.End R N))
-    (by ext y; simp [← ofNat_smul_eq_nsmul S, smul_smul])]
-  simp
+  have h := congr($(mul_invOf_self (2 : Module.End R N)) x)
+  rw [Module.End.mul_apply, Module.End.ofNat_apply, two_nsmul, Module.End.one_apply] at h
+  conv_rhs => rw [← h, smul_add, invOf_two_smul_add_invOf_two_smul]
 
 /-- The inverse of doubling acts as the real scalar `(2 : ℝ)⁻¹`, for whichever
 `Invertible (2 : Module.End R N)` instance is in scope. -/
 -- Stated with function application rather than `•`, because `simp` normalises a `Module.End`
 -- action to application (`Module.End.smul_def`).
 @[simp]
-theorem half_moduleEnd_apply_eq_inv_two_smul [Module ℝ N] [SMulCommClass R ℝ N]
-    [Invertible (2 : Module.End R N)] (x : N) :
-    ⅟(2 : Module.End R N) x = (2 : ℝ)⁻¹ • x := by
+theorem half_moduleEnd_apply_eq_inv_two_smul [Module ℝ N] [Invertible (2 : Module.End R N)]
+    (x : N) : ⅟(2 : Module.End R N) x = (2 : ℝ)⁻¹ • x := by
   rw [invOf_two_moduleEnd_apply ℝ, invOf_eq_inv]
 
 end General
