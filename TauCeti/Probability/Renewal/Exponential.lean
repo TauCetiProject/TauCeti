@@ -60,37 +60,6 @@ namespace TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → ℝ≥0} {r : ℝ≥0}
 
-/-- Increments with a common law on `ℝ`, read through the coercion from `ℝ≥0`, are identically
-distributed as `ℝ≥0`-valued variables. -/
-private lemma identDistrib_of_hasLaw_coe {μ : Measure ℝ} (hT : ∀ n, Measurable (T n))
-    (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) μ P) (n : ℕ) :
-    IdentDistrib (T n) (T 0) P P where
-  aemeasurable_fst := (hT n).aemeasurable
-  aemeasurable_snd := (hT 0).aemeasurable
-  map_eq := by
-    have he : MeasurableEmbedding ((↑) : ℝ≥0 → ℝ) :=
-      MeasurableEmbedding.subtype_coe measurableSet_Ici
-    refine he.map_injective ?_
-    rw [Measure.map_map he.measurable (hT n), Measure.map_map he.measurable (hT 0)]
-    exact (hlaw n).map_eq.trans (hlaw 0).map_eq.symm
-
-/-- An exponential increment vanishes with probability zero. -/
-private lemma measure_eq_zero_of_hasLaw_expMeasure
-    (hlaw : HasLaw (fun ω ↦ (T 0 ω : ℝ)) (expMeasure r) P) :
-    P {ω | T 0 ω = 0} = 0 := by
-  have hsub : {ω | T 0 ω = 0} ⊆ {ω | (T 0 ω : ℝ) ≤ 0} := fun ω hω ↦ by simp_all
-  refine measure_mono_null hsub ?_
-  rw [hlaw.measure_eq (p := fun x : ℝ ↦ x ≤ 0) measurableSet_Iic]
-  simpa only [not_lt] using ae_iff.1 (ae_pos_expMeasure (r : ℝ))
-
-/-- The rate of an exponential law of a random variable on a probability space is positive,
-because `expMeasure r` is the zero measure for `r ≤ 0`. -/
-private lemma pos_of_hasLaw_expMeasure [IsProbabilityMeasure P]
-    (hlaw : HasLaw (fun ω ↦ (T 0 ω : ℝ)) (expMeasure r) P) : 0 < r := by
-  by_contra! hr
-  obtain ⟨h⟩ := hlaw.isProbabilityMeasure_iff.1 ‹_›
-  simp [expMeasure_of_nonpos (by exact_mod_cast hr : (r : ℝ) ≤ 0)] at h
-
 /-- **Nonexplosion with exponential increments.** For independent exponential increments,
 almost surely the arrival times tend to infinity. -/
 theorem ae_tendsto_arrival_atTop_of_expMeasure (hT : ∀ n, Measurable (T n))
@@ -98,9 +67,11 @@ theorem ae_tendsto_arrival_atTop_of_expMeasure (hT : ∀ n, Measurable (T n))
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
     ∀ᵐ ω ∂P, Tendsto (fun n ↦ arrival T n ω) atTop atTop := by
   have := hindep.isProbabilityMeasure
-  refine ae_tendsto_arrival_atTop hT hindep (identDistrib_of_hasLaw_coe hT hlaw) ?_
-  rw [measure_eq_zero_of_hasLaw_expMeasure (hlaw 0)]
-  exact zero_lt_one
+  refine ae_tendsto_arrival_atTop hT hindep (fun n ↦ ?_) ?_
+  · simpa [Function.comp_def] using ((hlaw n).identDistrib (hlaw 0)).comp measurable_real_toNNReal
+  · refine (measure_mono_null (fun ω hω ↦ ?_)
+      (ae_iff.1 (ae_pos_of_hasLaw_expMeasure (hlaw 0)))).trans_lt zero_lt_one
+    simp_all
 
 /-- **Erlang arrival times.** For independent exponential increments of rate `r`, the `n`-th
 arrival time has the gamma law of shape `n` and rate `r` whenever `n ≠ 0`. -/

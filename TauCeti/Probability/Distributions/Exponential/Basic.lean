@@ -42,6 +42,8 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `integrable_expMeasure_iff`, `integral_expMeasure_eq`,
   `integrable_expMeasure_iff_integrableOn_Ioi`, `integral_expMeasure_eq_integral_Ioi` —
   integrability and integration against the exponential law, transferred to the real density;
+* `ae_pos_of_hasLaw_expMeasure`, `pos_of_hasLaw_expMeasure` — an exponential random variable is
+  almost surely positive, and on a probability space its rate is positive;
 * `integrable_pow_expMeasure` — every moment is integrable, for `0 < r`;
 * `integral_pow_expMeasure` — the `n`-th moment, `n ! / r ^ n`, for `0 < r`;
 * `integrable_rpow_expMeasure_iff`, `integral_rpow_expMeasure` — the exact real-power moment
@@ -128,6 +130,19 @@ zero and the statement holds trivially. -/
 theorem ae_pos_expMeasure (r : ℝ) : ∀ᵐ x ∂expMeasure r, 0 < x := by
   rw [expMeasure]
   exact ae_pos_gammaMeasure 1 r
+
+/-- A random variable with an exponential law is almost surely positive. -/
+theorem ae_pos_of_hasLaw_expMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    {X : Ω → ℝ} (hX : HasLaw X (expMeasure r) P) : ∀ᵐ ω ∂P, 0 < X ω :=
+  (hX.ae_iff measurableSet_Ioi.mem).2 (ae_pos_expMeasure r)
+
+/-- The rate of an exponential law of a random variable on a probability space is positive,
+because `expMeasure r` is the zero measure for `r ≤ 0`. -/
+theorem pos_of_hasLaw_expMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    [IsProbabilityMeasure P] {X : Ω → ℝ} (hX : HasLaw X (expMeasure r) P) : 0 < r := by
+  by_contra! hr
+  obtain ⟨h⟩ := hX.isProbabilityMeasure_iff.1 ‹_›
+  simp [expMeasure_of_nonpos hr] at h
 
 /-- Scaling an exponential variable by a positive constant divides its rate by that constant. -/
 @[simp]
