@@ -133,6 +133,11 @@ theorem totalDegree_inputPolynomial_le (P : J → MvPolynomial (W ⊕ X) K) (j :
     (inputPolynomial P j).totalDegree ≤ polynomialInputDegree P :=
   Finset.le_sup (f := fun j => (inputPolynomial P j).totalDegree) (Finset.mem_univ j)
 
+/-- A bound on every output's collected input degree bounds the uniform input degree. -/
+theorem polynomialInputDegree_le (P : J → MvPolynomial (W ⊕ X) K) {d : ℕ}
+    (h : ∀ j, (inputPolynomial P j).totalDegree ≤ d) : polynomialInputDegree P ≤ d :=
+  Finset.sup_le fun j _ => h j
+
 /-- Every input monomial in the reconstruction has degree at most the uniform bound. -/
 theorem inputPolynomial_support_degree_le (P : J → MvPolynomial (W ⊕ X) K)
     (j : J) {a : X →₀ ℕ} (ha : a ∈ (inputPolynomial P j).support) :

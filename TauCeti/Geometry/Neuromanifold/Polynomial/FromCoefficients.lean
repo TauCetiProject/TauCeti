@@ -66,6 +66,12 @@ theorem totalDegree_inputPolynomial_polynomialFromCoefficients_le
   exact (mem_restrictTotalDegree X d _).mp
     ((boundedCoefficientEquiv X (MvPolynomial W K) J d).symm Q j).property
 
+/-- The assembled model's uniform input-degree bound is at most the supplied bound. -/
+theorem polynomialInputDegree_polynomialFromCoefficients_le [Fintype J]
+    (Q : J × {a : X →₀ ℕ // a.degree ≤ d} → MvPolynomial W K) :
+    polynomialInputDegree (polynomialFromCoefficients Q) ≤ d :=
+  polynomialInputDegree_le _ (totalDegree_inputPolynomial_polynomialFromCoefficients_le Q)
+
 /-- Specializing the collected coefficients gives the bounded-degree tuple with coordinates
 obtained by evaluating the supplied coordinate polynomials at the parameters. -/
 theorem map_inputPolynomial_polynomialFromCoefficients
@@ -78,17 +84,12 @@ theorem map_inputPolynomial_polynomialFromCoefficients
   · rw [coeff_map, inputPolynomial_polynomialFromCoefficients,
       coeff_boundedCoefficientEquiv_symm_apply _ j ⟨a, ha⟩,
       coeff_boundedCoefficientEquiv_symm_apply _ j ⟨a, ha⟩]
-  · rw [coeff_map]
-    have hleft : (inputPolynomial (polynomialFromCoefficients Q) j).coeff a = 0 :=
-      coeff_eq_zero_of_totalDegree_lt (by
-        rw [← Finsupp.degree_apply]
-        exact (totalDegree_inputPolynomial_polynomialFromCoefficients_le Q j).trans_lt
-          (not_le.mp ha))
-    have hright := ((mem_restrictTotalDegree X d _).mp
-      ((boundedCoefficientEquiv X K J d).symm (fun i => eval w (Q i)) j).property)
-    rw [hleft, map_zero, coeff_eq_zero_of_totalDegree_lt (by
-      rw [← Finsupp.degree_apply]
-      exact hright.trans_lt (not_le.mp ha))]
+  · rw [coeff_map, inputPolynomial_polynomialFromCoefficients,
+      coeff_eq_zero_of_mem_restrictTotalDegree
+        ((boundedCoefficientEquiv X (MvPolynomial W K) J d).symm Q j).property (not_le.mp ha),
+      coeff_eq_zero_of_mem_restrictTotalDegree
+        ((boundedCoefficientEquiv X K J d).symm (fun i => eval w (Q i)) j).property
+        (not_le.mp ha), map_zero]
 
 /-- The assembled joint model realizes evaluation of the supplied polynomial coefficient map. -/
 theorem polynomialRealization_polynomialFromCoefficients
