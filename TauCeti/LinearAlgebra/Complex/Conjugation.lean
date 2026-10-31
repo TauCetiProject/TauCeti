@@ -417,6 +417,32 @@ theorem one_tmul_add_I_tmul_inj {w₁ w₂ w₁' w₂' : W} :
   rintro ⟨rfl, rfl⟩
   rfl
 
+/-- Multiplication by a complex scalar `c` in the real coordinates of a complexification:
+`c • (1 ⊗ₜ v + I ⊗ₜ w) = 1 ⊗ₜ (re c • v - im c • w) + I ⊗ₜ (re c • w + im c • v)`. -/
+theorem smul_one_tmul_add_I_tmul (c : ℂ) (v w : W) :
+    c • (1 ⊗ₜ[ℝ] v + Complex.I ⊗ₜ[ℝ] w) =
+      1 ⊗ₜ[ℝ] (c.re • v - c.im • w) + Complex.I ⊗ₜ[ℝ] (c.re • w + c.im • v) := by
+  conv_lhs => rw [← one_tmul_realPart_add_I_tmul_imaginaryPart W (c • _)]
+  simp [TensorProduct.smul_tmul', sub_eq_add_neg, add_comm]
+
+/-- `I • (1 ⊗ₜ v + I ⊗ₜ w) = 1 ⊗ₜ (-w) + I ⊗ₜ v` in a complexification. -/
+theorem I_smul_one_tmul_add_I_tmul (v w : W) :
+    Complex.I • (1 ⊗ₜ[ℝ] v + Complex.I ⊗ₜ[ℝ] w) = 1 ⊗ₜ[ℝ] (-w) + Complex.I ⊗ₜ[ℝ] v := by
+  rw [smul_one_tmul_add_I_tmul]
+  simp
+
+/-- The real part of `c • u` is `re c • realPart W u - im c • imaginaryPart W u`. -/
+theorem realPart_smul (c : ℂ) (u : ℂ ⊗[ℝ] W) :
+    realPart W (c • u) = c.re • realPart W u - c.im • imaginaryPart W u := by
+  obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u
+  simp [TensorProduct.smul_tmul', sub_eq_add_neg]
+
+/-- The imaginary part of `c • u` is `re c • imaginaryPart W u + im c • realPart W u`. -/
+theorem imaginaryPart_smul (c : ℂ) (u : ℂ ⊗[ℝ] W) :
+    imaginaryPart W (c • u) = c.re • imaginaryPart W u + c.im • realPart W u := by
+  obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u
+  simp [TensorProduct.smul_tmul', add_comm]
+
 end Complexification
 
 /-- **The conjugation of a complexification commutes with every base-changed map**, because

@@ -8,6 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 
+import Mathlib.Tactic.Module
+
 /-!
 # Complex vector fields and involutive complex distributions
 
@@ -36,6 +38,8 @@ is the integrability condition of the Newlander–Nirenberg theorem.
   `X' + i Y'` is `([X, X'] - [Y, Y']) + i ([X, Y'] + [Y, X'])`.
 * `TauCeti.complexMlieBracket_one_tmul`: on real vector fields it is the Lie bracket.
 * `TauCeti.complexMlieBracket_swap`: it is antisymmetric.
+* `TauCeti.complexMlieBracket_add_left` and `TauCeti.complexMlieBracket_const_smul_left`, with
+  their right-hand forms: it is complex-bilinear on differentiable complex vector fields.
 * `TauCeti.complexMlieBracket_congr`: its value at a point depends only on the germs of
   the complex vector fields there.
 
@@ -103,8 +107,8 @@ theorem complexMlieBracket_one_tmul (X X' : Π x : M, TangentSpace I x) (x : M) 
     mlieBracket_zero_right, sub_zero] at h
   exact h
 
-/-- The complex Lie bracket is antisymmetric. -/
-theorem complexMlieBracket_swap (Z W : Π x : M, ℂ ⊗[ℝ] TangentSpace I x) (x : M) :
+/-- The complex Lie bracket is antisymmetric, pointwise. -/
+theorem complexMlieBracket_swap_apply (Z W : Π x : M, ℂ ⊗[ℝ] TangentSpace I x) (x : M) :
     complexMlieBracket I Z W x = -complexMlieBracket I W Z x := by
   simp only [complexMlieBracket]
   rw [mlieBracket_swap_apply (V := fun y ↦ realPart (TangentSpace I y) (Z y)),
@@ -116,6 +120,11 @@ theorem complexMlieBracket_swap (Z W : Π x : M, ℂ ⊗[ℝ] TangentSpace I x) 
       (W := fun y ↦ realPart (TangentSpace I y) (W y))]
   simp only [TensorProduct.tmul_sub, TensorProduct.tmul_add, TensorProduct.tmul_neg]
   abel
+
+/-- The complex Lie bracket is antisymmetric. -/
+theorem complexMlieBracket_swap (Z W : Π x : M, ℂ ⊗[ℝ] TangentSpace I x) :
+    complexMlieBracket I Z W = -complexMlieBracket I W Z :=
+  funext (complexMlieBracket_swap_apply Z W)
 
 /-- The complex Lie bracket at `x` depends only on the germs at `x` of the complex vector
 fields. -/
@@ -133,6 +142,74 @@ theorem complexMlieBracket_congr {Z₁ Z W₁ W : Π x : M, ℂ ⊗[ℝ] Tangent
   simp only [complexMlieBracket, (hre hZ).mlieBracket_vectorField_eq (hre hW),
     (him hZ).mlieBracket_vectorField_eq (him hW), (hre hZ).mlieBracket_vectorField_eq (him hW),
     (him hZ).mlieBracket_vectorField_eq (hre hW)]
+
+section Linearity
+
+variable [IsManifold I 2 M] [CompleteSpace E] {Z Z₁ W W₁ : Π x : M, ℂ ⊗[ℝ] TangentSpace I x}
+  {x : M}
+
+/-- The complex Lie bracket is additive in its first argument, at a point where the real and
+imaginary parts of both summands are differentiable. -/
+theorem complexMlieBracket_add_left
+    (hZre : MDiffAt (T% fun y ↦ realPart (TangentSpace I y) (Z y)) x)
+    (hZim : MDiffAt (T% fun y ↦ imaginaryPart (TangentSpace I y) (Z y)) x)
+    (hZ₁re : MDiffAt (T% fun y ↦ realPart (TangentSpace I y) (Z₁ y)) x)
+    (hZ₁im : MDiffAt (T% fun y ↦ imaginaryPart (TangentSpace I y) (Z₁ y)) x) :
+    complexMlieBracket I (Z + Z₁) W x =
+      complexMlieBracket I Z W x + complexMlieBracket I Z₁ W x := by
+  have hre : (fun y ↦ realPart (TangentSpace I y) ((Z + Z₁) y)) =
+      (fun y ↦ realPart (TangentSpace I y) (Z y)) + fun y ↦ realPart (TangentSpace I y) (Z₁ y) :=
+    funext fun y ↦ map_add _ _ _
+  have him : (fun y ↦ imaginaryPart (TangentSpace I y) ((Z + Z₁) y)) =
+      (fun y ↦ imaginaryPart (TangentSpace I y) (Z y)) +
+        fun y ↦ imaginaryPart (TangentSpace I y) (Z₁ y) :=
+    funext fun y ↦ map_add _ _ _
+  simp only [complexMlieBracket, hre, him, mlieBracket_add_left hZre hZ₁re,
+    mlieBracket_add_left hZim hZ₁im, TensorProduct.tmul_add, TensorProduct.tmul_sub]
+  abel
+
+/-- The complex Lie bracket is additive in its second argument, at a point where the real and
+imaginary parts of both summands are differentiable. -/
+theorem complexMlieBracket_add_right
+    (hWre : MDiffAt (T% fun y ↦ realPart (TangentSpace I y) (W y)) x)
+    (hWim : MDiffAt (T% fun y ↦ imaginaryPart (TangentSpace I y) (W y)) x)
+    (hW₁re : MDiffAt (T% fun y ↦ realPart (TangentSpace I y) (W₁ y)) x)
+    (hW₁im : MDiffAt (T% fun y ↦ imaginaryPart (TangentSpace I y) (W₁ y)) x) :
+    complexMlieBracket I Z (W + W₁) x =
+      complexMlieBracket I Z W x + complexMlieBracket I Z W₁ x := by
+  rw [complexMlieBracket_swap_apply, complexMlieBracket_add_left hWre hWim hW₁re hW₁im, neg_add,
+    ← complexMlieBracket_swap_apply, ← complexMlieBracket_swap_apply]
+
+/-- The complex Lie bracket is complex-linear in its first argument, at a point where the real and
+imaginary parts of that argument are differentiable. -/
+theorem complexMlieBracket_const_smul_left (c : ℂ)
+    (hZre : MDiffAt (T% fun y ↦ realPart (TangentSpace I y) (Z y)) x)
+    (hZim : MDiffAt (T% fun y ↦ imaginaryPart (TangentSpace I y) (Z y)) x) :
+    complexMlieBracket I (c • Z) W x = c • complexMlieBracket I Z W x := by
+  have hre : (fun y ↦ realPart (TangentSpace I y) ((c • Z) y)) =
+      c.re • (fun y ↦ realPart (TangentSpace I y) (Z y)) +
+        (-c.im) • fun y ↦ imaginaryPart (TangentSpace I y) (Z y) :=
+    funext fun y ↦ by simp [realPart_smul, sub_eq_add_neg]
+  have him : (fun y ↦ imaginaryPart (TangentSpace I y) ((c • Z) y)) =
+      c.re • (fun y ↦ imaginaryPart (TangentSpace I y) (Z y)) +
+        c.im • fun y ↦ realPart (TangentSpace I y) (Z y) :=
+    funext fun y ↦ by simp [imaginaryPart_smul]
+  simp only [complexMlieBracket, hre, him,
+    mlieBracket_add_left hZre.smul_const_section hZim.smul_const_section,
+    mlieBracket_add_left hZim.smul_const_section hZre.smul_const_section,
+    mlieBracket_const_smul_left hZre, mlieBracket_const_smul_left hZim, smul_one_tmul_add_I_tmul]
+  congr 2 <;> module
+
+/-- The complex Lie bracket is complex-linear in its second argument, at a point where the real
+and imaginary parts of that argument are differentiable. -/
+theorem complexMlieBracket_const_smul_right (c : ℂ)
+    (hWre : MDiffAt (T% fun y ↦ realPart (TangentSpace I y) (W y)) x)
+    (hWim : MDiffAt (T% fun y ↦ imaginaryPart (TangentSpace I y) (W y)) x) :
+    complexMlieBracket I Z (c • W) x = c • complexMlieBracket I Z W x := by
+  rw [complexMlieBracket_swap_apply, complexMlieBracket_const_smul_left c hWre hWim, ← smul_neg,
+    ← complexMlieBracket_swap_apply]
+
+end Linearity
 
 variable [IsManifold I 1 M] {D : Π x : M, Submodule ℂ (ℂ ⊗[ℝ] TangentSpace I x)}
 
