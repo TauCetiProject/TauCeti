@@ -232,6 +232,16 @@ theorem liftOfIsClosedImmersion_hom_h_comp {C D : Compactification f} (φ : D �
     (liftOfIsClosedImmersion φ E h).hom.h ≫ φ.hom.h = h.hom.h :=
   IsClosedImmersion.lift_fac _ _ _
 
+/-- Over a schematically dense interior, a section of the base vanishes on the ambient
+scheme exactly when it vanishes on the source. In particular nilpotent sections pulled back
+from the base are not lost. -/
+theorem app_p_eq_zero_iff (C : Compactification f) [IsSchemeTheoreticallyDominant C.j]
+    {U : S.Opens} (s : Γ(S, U)) : C.p.app U s = 0 ↔ f.app U s = 0 := by
+  rw [← map_eq_zero_iff _ (C.j.app_injective (C.p ⁻¹ᵁ U)), ← CommRingCat.comp_apply,
+    ← Scheme.Hom.comp_app, Scheme.Hom.congr_app C.obj.ι_π U]
+  exact map_eq_zero_iff (X.presheaf.map _).hom
+    (ConcreteCategory.injective_of_mono_of_preservesPullback _)
+
 end Compactification
 
 end TauCeti
