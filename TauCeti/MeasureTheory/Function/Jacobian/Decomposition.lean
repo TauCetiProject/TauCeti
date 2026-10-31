@@ -53,6 +53,33 @@ theorem one_sub_mul_norm_sub_le_norm_sub
   rw [norm_sub_rev (A x - A y)] at this
   linarith
 
+/-- A map within relative error `δ` of a linear map `A` on `p` satisfies
+`‖f x - f y‖ ≤ (1 + δ) ‖A x - A y‖` there. -/
+theorem norm_sub_le_one_add_mul_norm_sub
+    (happ : ∀ x ∈ p, ∀ y ∈ p, ‖f x - f y - A (x - y)‖ ≤ δ * ‖A (x - y)‖) {x y : U} (hx : x ∈ p)
+    (hy : y ∈ p) : ‖f x - f y‖ ≤ (1 + δ) * ‖A x - A y‖ := by
+  have h := happ x hx y hy
+  rw [map_sub] at h
+  have := norm_sub_norm_le (f x - f y) (A x - A y)
+  linarith
+
+/-- A map `f` within relative error `ε < 1` of an injective linear map `A` on `p`, read through
+`A`, is `(1 + ε)`-Lipschitz on `A '' p` with `(1 - ε)⁻¹`-Lipschitz inverse. -/
+theorem lipschitzOnWith_and_antilipschitzWith_of_approx {ε : ℝ≥0} (hA : Injective A)
+    (hε : ε < 1) (happ : ∀ x ∈ p, ∀ y ∈ p, ‖f x - f y - A (x - y)‖ ≤ ε * ‖A (x - y)‖) :
+    LipschitzOnWith (1 + ε) (f ∘ invFun A) (A '' p) ∧
+      AntilipschitzWith (1 - ε)⁻¹ ((A '' p).domRestrict (f ∘ invFun A)) := by
+  have hinv (x : U) : invFun A (A x) = x := leftInverse_invFun hA x
+  have hε' : (0 : ℝ) < ((1 - ε : ℝ≥0) : ℝ) := NNReal.coe_pos.2 (tsub_pos_of_lt hε)
+  refine ⟨LipschitzOnWith.of_dist_le_mul ?_, AntilipschitzWith.of_le_mul_dist ?_⟩
+  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+    simp only [comp_apply, hinv, dist_eq_norm, NNReal.coe_add, NNReal.coe_one]
+    exact norm_sub_le_one_add_mul_norm_sub happ hx hy
+  · rintro ⟨_, x, hx, rfl⟩ ⟨_, y, hy, rfl⟩
+    simp only [Subtype.dist_eq, domRestrict_apply, comp_apply, hinv, dist_eq_norm, NNReal.coe_inv]
+    rw [le_inv_mul_iff₀ hε', NNReal.coe_sub hε.le, NNReal.coe_one]
+    exact one_sub_mul_norm_sub_le_norm_sub happ hx hy
+
 /-- A map within relative error `δ < 1` of an injective linear map on `p` has a Lipschitz inverse
 on `p`. -/
 theorem exists_antilipschitzWith_domRestrict_of_approx [FiniteDimensional ℝ U]
@@ -141,10 +168,10 @@ theorem exists_partition_lipschitz_antilipschitz_of_hasFDerivWithinAt
     ⟨LipschitzWith.of_dist_le_mul fun x y ↦ ?_, hK n⟩⟩
   simp only [Subtype.dist_eq, domRestrict_apply, dist_eq_norm, NNReal.coe_mul, NNReal.coe_ofNat,
     coe_nnnorm]
-  calc ‖f x - f y‖ = ‖(f x - f y - A n (x - y)) + A n (x - y)‖ := by rw [sub_add_cancel]
-    _ ≤ 2⁻¹ * ‖A n (x - y)‖ + ‖A n (x - y)‖ := norm_add_le_of_le (happ n x x.2 y y.2) le_rfl
-    _ ≤ 2 * ‖A n (x - y)‖ := by linarith [norm_nonneg (A n (x - y))]
-    _ ≤ 2 * (‖A n‖ * ‖(x : U) - y‖) := by gcongr; exact (A n).le_opNorm _
+  calc ‖f x - f y‖ ≤ (1 + 2⁻¹) * ‖A n x - A n y‖ :=
+        norm_sub_le_one_add_mul_norm_sub (happ n) x.2 y.2
+    _ ≤ 2 * ‖A n x - A n y‖ := by linarith [norm_nonneg (A n x - A n y)]
+    _ ≤ 2 * (‖A n‖ * ‖(x : U) - y‖) := by rw [← map_sub]; gcongr; exact (A n).le_opNorm _
     _ = 2 * ‖A n‖ * ‖(x : U) - y‖ := by ring
 
 end TauCeti

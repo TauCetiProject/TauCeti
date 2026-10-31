@@ -17,15 +17,18 @@ import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 
 The `k`-dimensional density of a set `S` in a metric space at a point `x` compares
 `μHE[k] (S ∩ closedBall x r)` with `ω_k r ^ k`, the volume of a ball of radius `r` in
-`EuclideanSpace ℝ (Fin k)`. This file proves two general facts about these densities, neither of
-which involves rectifiability:
+`EuclideanSpace ℝ (Fin k)`. This file proves general facts about these densities, none of which
+involves rectifiability:
 
 * a map that is `b`-Lipschitz on `G` with `a`-Lipschitz inverse moves a point of density one of `G`
   to a point of `ψ '' G` whose upper and lower densities lie between `(a b) ^ (-k)` and
   `(a b) ^ k`;
 * **Lebesgue's density theorem in a `k`-plane**: every subset of an isometric copy of
   `EuclideanSpace ℝ (Fin k)` has density one at almost every one of its points. This is
-  transported from Mathlib's `Besicovitch.ae_tendsto_measure_inter_div`.
+  transported from Mathlib's `Besicovitch.ae_tendsto_measure_inter_div`;
+* combining the two, every subset of a bi-Lipschitz image of a subset of a `k`-plane has its
+  densities between `(a b) ^ (-k)` and `(a b) ^ k` almost everywhere;
+* removing a part of density zero from a set does not lower its upper density.
 
 Together with the zero-density theorem
 `TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`, these are the ingredients of
@@ -38,6 +41,10 @@ the density theorem for rectifiable sets.
   bi-Lipschitz maps.
 * `Isometry.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`: Lebesgue's density theorem
   for subsets of an isometric copy of `k`-dimensional Euclidean space.
+* `Isometry.ae_limsup_le_and_le_liminf_euclideanHausdorffMeasure_inter_closedBall_div`: density
+  bounds almost everywhere on a bi-Lipschitz image of a subset of a `k`-plane.
+* `TauCeti.limsup_measure_inter_div_le_of_tendsto_diff`: a part of a set with density zero does not
+  contribute to the upper density.
 
 ## References
 
@@ -67,6 +74,23 @@ private lemma div_volume_closedBall_eq_mul (k : ℕ) (m : ℝ≥0∞) {c : ℝ�
   rw [volume_closedBall_mul k c.coe_nonneg hr, ENNReal.ofReal_coe_nnreal, ← mul_div_assoc,
     ENNReal.mul_div_mul_left _ _ (pow_ne_zero _ (ENNReal.coe_ne_zero.2 hc.ne'))
       (ENNReal.pow_ne_top ENNReal.coe_ne_top)]
+
+/-- Discarding a part of `E` whose density quotients tend to zero does not lower the upper
+density: if `μ (E \ S ∩ t r) / d r → 0`, then the limsup of `μ (E ∩ t r) / d r` is at most that of
+`μ (E ∩ S ∩ t r) / d r`. -/
+theorem limsup_measure_inter_div_le_of_tendsto_diff {α X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {E S : Set X} {t : α → Set X} {d : α → ℝ≥0∞} {l : Filter α}
+    (h : Tendsto (fun r => μ (E \ S ∩ t r) / d r) l (𝓝 0)) :
+    limsup (fun r => μ (E ∩ t r) / d r) l ≤ limsup (fun r => μ (E ∩ S ∩ t r) / d r) l :=
+  calc limsup (fun r => μ (E ∩ t r) / d r) l
+      ≤ limsup (fun r => μ (E ∩ S ∩ t r) / d r + μ (E \ S ∩ t r) / d r) l := by
+        refine limsup_le_limsup (Eventually.of_forall fun r => ?_)
+        rw [← ENNReal.add_div]
+        gcongr
+        refine (measure_mono fun z hz => ?_).trans (measure_union_le _ _)
+        by_cases hzS : z ∈ S
+        exacts [Or.inl ⟨⟨hz.1, hzS⟩, hz.2⟩, Or.inr ⟨⟨hz.1, hzS⟩, hz.2⟩]
+    _ = _ := ENNReal.limsup_add_of_right_tendsto_zero h _
 
 end TauCeti
 
@@ -203,5 +227,49 @@ theorem ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div
   obtain ⟨z, rfl⟩ := hS hy.1
   refine ⟨z, ⟨fun h => hy.2 (h.congr fun r => ?_), hy.1⟩, rfl⟩
   rw [key, addHaar_closedBall_center volume z r]
+
+variable {Y : Type*} [MetricSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+
+/-- **Densities of a bi-Lipschitz image of a subset of a `k`-plane.** Let `ι` be an isometry from
+`k`-dimensional Euclidean space into `X`, and let `ψ` be `b`-Lipschitz on a subset `G` of its range
+with `a`-Lipschitz inverse. Then every subset `T` of `ψ '' G` has upper density at most `(a b) ^ k`
+and lower density at least `(a b) ^ (-k)` at `μHE[k]`-almost every point of `T`. -/
+theorem ae_limsup_le_and_le_liminf_euclideanHausdorffMeasure_inter_closedBall_div
+    {ι : EuclideanSpace ℝ (Fin k) → X} (hι : Isometry ι) {G : Set X} (hGι : G ⊆ range ι)
+    {ψ : X → Y} {a b : ℝ≥0} (hψ : LipschitzOnWith b ψ G)
+    (hψ' : AntilipschitzWith a (G.domRestrict ψ)) (ha : 0 < a) (hb : 0 < b) {T : Set Y}
+    (hT : T ⊆ ψ '' G) :
+    ∀ᵐ y ∂μHE[k], y ∈ T →
+      limsup (fun r => μHE[k] (T ∩ closedBall y r) /
+        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) ≤
+          ((a * b : ℝ≥0) : ℝ≥0∞) ^ k ∧
+      (((a * b : ℝ≥0) : ℝ≥0∞) ^ k)⁻¹ ≤ liminf (fun r => μHE[k] (T ∩ closedBall y r) /
+        volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) := by
+  -- `T` is the image of the part `G'` of `G` that `ψ` maps into `T`.
+  obtain ⟨G', hG'G, rfl⟩ : ∃ G' ⊆ G, ψ '' G' = T := by
+    refine ⟨G ∩ ψ ⁻¹' T, inter_subset_left, Subset.antisymm ?_ fun y hy => ?_⟩
+    · rintro _ ⟨x, ⟨-, hx⟩, rfl⟩
+      exact hx
+    · obtain ⟨x, hx, rfl⟩ := hT hy
+      exact ⟨x, ⟨hx, hy⟩, rfl⟩
+  have hψ₁ := hψ.mono hG'G
+  have hψ₁' : AntilipschitzWith a (G'.domRestrict ψ) :=
+    AntilipschitzWith.of_le_mul_dist fun x y => by
+      simpa only [Subtype.dist_eq, domRestrict_apply] using
+        hψ'.le_mul_dist ⟨x, hG'G x.2⟩ ⟨y, hG'G y.2⟩
+  have hdens := ae_iff.1 (hι.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div
+    (hG'G.trans hGι))
+  -- The image of the points of `G'` where `G'` does not have density one is null.
+  have himg (N : Set X) (hN : N ⊆ G') (h0 : μHE[k] N = 0) : μHE[k] (ψ '' N) = 0 :=
+    nonpos_iff_eq_zero.1 (((hψ₁.mono hN).euclideanHausdorffMeasure_image_le k).trans_eq
+      (by rw [h0, mul_zero]))
+  rw [ae_iff]
+  refine measure_mono_null ?_
+    (himg _ inter_subset_right (measure_mono_null inter_subset_left hdens))
+  intro y hy
+  obtain ⟨⟨x, hx, rfl⟩, hy⟩ := not_imp.1 hy
+  exact ⟨x, ⟨fun h => hy ⟨hψ₁.limsup_euclideanHausdorffMeasure_image_inter_closedBall_div_le
+    hψ₁' ha hx (h hx), hψ₁.le_liminf_euclideanHausdorffMeasure_image_inter_closedBall_div
+      hψ₁' ha hb hx (h hx)⟩, hx⟩, rfl⟩
 
 end Isometry
