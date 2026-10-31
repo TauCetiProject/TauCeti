@@ -7,10 +7,11 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 public import TauCeti.RepresentationTheory.FDRep.Basic
+public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Differential
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
+public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rationality
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Weight.Basic
 import TauCeti.RepresentationTheory.ClassicalGroups.Weight.HighestWeight
-import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rationality
 
 /-!
 # The highest weight determines a Weyl module
@@ -49,6 +50,8 @@ of irreducible representations, `TauCeti.SimpleFDRepClasses k (GL n k)`
 * `TauCeti.rationalWeylRep_apply_transvectionUnit_eq_self`: over `ℂ`, the vectors of weight `λ`
   in `V_λ` are fixed by every transvection `xᵢⱼ(c)` with `i < j`, so they are highest weight
   vectors.
+* `TauCeti.lift_differential_rationalWeylRep_gelfandInvariant_apply`: hence the Gelfand invariant
+  `Cᵣ` of `U(𝔤𝔩ₙ)` acts on `V_λ`, through its differential, by `gelfandEigenvalue λ r`.
 * `TauCeti.nonempty_equiv_rationalWeylRep_iff` and `TauCeti.nonempty_iso_rationalWeylFDRep_iff`:
   **rational Weyl modules of distinct dominant weights are not isomorphic.**
 * `TauCeti.rationalWeylFDRepClass` and `TauCeti.rationalWeylFDRepClass_injective`: the
@@ -128,6 +131,26 @@ theorem rationalWeylRep_apply_transvectionUnit_eq_self (l : DominantWeight n)
     ite_false] at h
   rw [nsmul_zero, sub_zero, Int.nsmul_eq_mul, mul_one] at h
   omega
+
+section GelfandInvariant
+
+-- The matrix Lie algebra `𝔤𝔩ₙ(ℂ)` and the endomorphisms of `V_λ` carry the commutator Lie ring.
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- **The Gelfand invariants act on a rational Weyl module by the eigenvalues of its weight.** The
+Gelfand invariant `Cᵣ` of `U(𝔤𝔩ₙ)` acts on `V_λ`, through the differential of the rational Weyl
+representation, by the scalar `gelfandEigenvalue λ r`. -/
+theorem lift_differential_rationalWeylRep_gelfandInvariant_apply (l : DominantWeight n) (r : ℕ)
+    (x : (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule) :
+    UniversalEnvelopingAlgebra.lift ℂ (isRationalRep_rationalWeylRep n l).differential
+        (gelfandInvariant ℂ (Fin n) r) x =
+      gelfandEigenvalue (fun i ↦ ((l : Fin n → ℤ) i : ℂ)) r • x := by
+  obtain ⟨v, hvl, hv0⟩ :=
+    Submodule.exists_mem_ne_zero_of_ne_bot (weightSpace_rationalWeylRep_self_ne_bot ℂ l)
+  exact (isRationalRep_rationalWeylRep n l).lift_differential_gelfandInvariant_apply hv0 hvl
+    (fun _ _ hij ↦ rationalWeylRep_apply_transvectionUnit_eq_self l hij hvl) r x
+
+end GelfandInvariant
 
 section Field
 
