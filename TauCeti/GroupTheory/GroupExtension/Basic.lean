@@ -24,7 +24,8 @@ This file provides operations on an existing group extension.
 * `GroupExtension.surjective_of_comp_inl_eq`: a homomorphism of extensions over the identity of
   the quotient group is surjective as soon as it is surjective on the kernel terms.
 
-The constructions are mirrored for additive groups by `to_additive`.
+The relabelling and homomorphism constructions are mirrored for additive groups by `to_additive`.
+Central extensions also admit character twists, preserved by equivalences of extensions.
 -/
 
 public section
@@ -200,5 +201,75 @@ theorem surjective_of_comp_inl_eq (f : N →* N') (hf : Function.Surjective f) (
   rw [map_mul, ← MonoidHom.comp_apply φ S.inl, hinl, MonoidHom.comp_apply, hn, mul_inv_cancel_left]
 
 end Hom
+
+section Central
+
+variable (S : GroupExtension N E G) (hcentral : S.inl.range ≤ Subgroup.center E)
+
+/-- The automorphism obtained by multiplying each element by its character value. -/
+def twist (χ : G →* N) : MulAut E where
+  toFun e := S.inl (χ (S.rightHom e)) * e
+  invFun e := S.inl (χ (S.rightHom e))⁻¹ * e
+  left_inv e := by simp
+  right_inv e := by simp
+  map_mul' e f := by
+    simp only [map_mul]
+    exact (show Commute (S.inl (χ (S.rightHom f))) e from
+      (Subgroup.mem_center_iff.mp (hcentral ⟨_, rfl⟩) e).symm).mul_mul_mul_comm _ _
+
+@[simp]
+theorem twist_apply (χ : G →* N) (e : E) :
+    twist S hcentral χ e = S.inl (χ (S.rightHom e)) * e :=
+  (rfl)
+
+@[simp]
+theorem twist_symm_apply (χ : G →* N) (e : E) :
+    (twist S hcentral χ).symm e = S.inl (χ (S.rightHom e))⁻¹ * e :=
+  (rfl)
+
+theorem twist_inl (χ : G →* N) (n : N) :
+    twist S hcentral χ (S.inl n) = S.inl n := by
+  simp
+
+theorem rightHom_twist (χ : G →* N) (e : E) :
+    S.rightHom (twist S hcentral χ e) = S.rightHom e := by
+  simp
+
+end Central
+
+namespace Equiv
+
+variable {E' : Type*} [Group E'] {S : GroupExtension N E G} {S' : GroupExtension N E' G}
+
+/-- An equivalence of extensions preserves centrality of the included kernel. -/
+@[to_additive
+  /-- An equivalence of additive extensions preserves centrality of the included kernel. -/]
+theorem inl_range_le_center (F : S.Equiv S') (hcentral : S.inl.range ≤ Subgroup.center E) :
+    S'.inl.range ≤ Subgroup.center E' := by
+  rintro _ ⟨n, rfl⟩
+  rw [← F.map_inl]
+  exact MulEquivClass.apply_mem_center F (hcentral ⟨n, rfl⟩)
+
+@[to_additive (attr := simp)]
+theorem symm_apply_apply (F : S.Equiv S') (e : E) : F.symm (F e) = e :=
+  F.toMulEquiv.symm_apply_apply e
+
+@[to_additive (attr := simp)]
+theorem apply_symm_apply (F : S.Equiv S') (e : E') : F (F.symm e) = e :=
+  F.toMulEquiv.apply_symm_apply e
+
+@[to_additive (attr := simp)]
+theorem symm_symm (F : S.Equiv S') : F.symm.symm = F :=
+  rfl
+
+/-- Transport through an extension equivalence preserves each character twist. -/
+theorem mulAutCongr_twist (F : S.Equiv S') (hcentral : S.inl.range ≤ Subgroup.center E)
+    (χ : G →* N) :
+    MulAut.congr F.toMulEquiv (twist S hcentral χ) =
+      twist S' (F.inl_range_le_center hcentral) χ := by
+  ext e
+  simp [MulAut.congr_apply, MulEquiv.trans_apply]
+
+end Equiv
 
 end GroupExtension
