@@ -27,7 +27,7 @@ The proof passes to the universal cover `Y` of `X`, which exists because `X` is 
 path-connected and semilocally simply connected. The CW structure of `X` lifts to `Y`, cell by
 cell (`TauCeti.cwComplexPreimage`), so `Y` is again a CW complex with no cells of dimension at
 least `2`. Its singular homology therefore vanishes in every degree at least `2`
-(`TauCeti.isZero_singularHomology_complexBasePair_of_isEmpty_cell`), and since `Y` is simply
+(`TauCeti.isZero_singularHomology_of_isEmpty_cell`), and since `Y` is simply
 connected, the Hurewicz theorem shows that all of its homotopy groups vanish
 (`TauCeti.subsingleton_homotopyGroup_of_isZero_homology_singularChains`). A covering map is an
 isomorphism on homotopy groups in dimensions at least `2`, so those of `X` vanish too. This is a
@@ -44,6 +44,8 @@ circles satisfies (`TauCeti.WedgeSum.instSemilocallySimplyConnectedSpaceCircle`)
   CW complex with no cells of dimension at least `2` is aspherical.
 * `TauCeti.WedgeSum.isEilenbergMacLaneSpaceOne_circle`: a wedge of circles is a `K(F, 1)` for the
   free group on its circles.
+* `TauCeti.WedgeSum.isZero_singularHomology_circle`: the singular homology of a wedge of circles
+  vanishes in every degree at least `2`.
 
 ## References
 
@@ -78,12 +80,10 @@ theorem isAspherical_of_forall_isEmpty_cell {X : Type} [TopologicalSpace X] [T2S
       exact hcell m⟩⟩
   have hH (n : ℕ) :
       IsZero (((singularChains ℤ).obj (TopCat.of (UniversalCover x))).homology (n + 2)) := by
-    -- The homology of the lifted CW complex relative to the empty set vanishes in degree `n + 2`,
-    -- and it is the homology of the universal cover.
-    have hC := (isZero_singularHomology_complexBasePair_of_isEmpty_cell
-      (UniversalCover.proj (x₀ := x) ⁻¹' (univ : Set X)) (ModuleCat.of ℤ ℤ) (n + 2)).of_iso
-      (asIso ((complexBasePair (UniversalCover.proj (x₀ := x) ⁻¹' (univ : Set X))).singularHomologyπ
-        (ModuleCat.of ℤ ℤ) (n + 2)))
+    -- The homology of the lifted CW complex vanishes in degree `n + 2`, and it is the homology
+    -- of the universal cover.
+    have hC := isZero_singularHomology_of_isEmpty_cell
+      (UniversalCover.proj (x₀ := x) ⁻¹' (univ : Set X)) (ModuleCat.of ℤ ℤ) (n + 2)
     exact hC.of_iso (((AlgebraicTopology.singularHomologyFunctor _ (n + 2)).obj _).mapIso
       (TopCat.isoOfHomeo ((Homeomorph.setCongr preimage_univ).trans
         (Homeomorph.Set.univ _)))).symm
@@ -104,6 +104,16 @@ theorem isEilenbergMacLaneSpaceOne_circle (S : Type) :
       (base fun _ : S ↦ (1 : Circle)) :=
   .mk (isAspherical_of_forall_isEmpty_cell (fun _ ↦ isEmpty_cell_circleCWComplex (by lia)) _)
     ⟨circleFundamentalGroupMulEquiv S⟩
+
+/-- The singular homology of a wedge of circles vanishes in every degree at least `2`, with
+coefficients in any ring: its CW structure has no cells there. -/
+theorem isZero_singularHomology_circle (S : Type) (k : Type) [Ring k] {n : ℕ} (hn : 2 ≤ n) :
+    IsZero (((singularChains k).obj (TopCat.of (WedgeSum fun _ : S ↦ (1 : Circle)))).homology n) :=
+  have := isEmpty_cell_circleCWComplex (S := S) hn
+  (isZero_singularHomology_of_isEmpty_cell (univ : Set (WedgeSum fun _ : S ↦ (1 : Circle)))
+    (ModuleCat.of k k) n).of_iso
+      (((AlgebraicTopology.singularHomologyFunctor _ n).obj _).mapIso
+        (TopCat.isoOfHomeo (Homeomorph.Set.univ _))).symm
 
 end WedgeSum
 
