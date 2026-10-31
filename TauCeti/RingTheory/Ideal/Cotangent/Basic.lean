@@ -46,26 +46,11 @@ variable {R : Type*} [CommRing R] {I : Ideal R} {ι : Type*}
 theorem span_range_toCotangent_eq_top {f : ι → I}
     (hf : Ideal.span (Set.range fun i ↦ (f i : R)) = I) :
     Submodule.span (R ⧸ I) (Set.range fun i ↦ I.toCotangent (f i)) = ⊤ := by
-  refine eq_top_iff.mpr fun x _ ↦ ?_
-  obtain ⟨⟨y, hy⟩, rfl⟩ := I.toCotangent_surjective x
-  -- Induct on membership in the span of the generators, transported to `I` along `hf`.
-  suffices key : ∀ y (hy' : y ∈ Ideal.span (Set.range fun i ↦ (f i : R))),
-      I.toCotangent ⟨y, hf.le hy'⟩ ∈ Submodule.span (R ⧸ I) (Set.range fun i ↦ I.toCotangent (f i))
-    from key y (hf.ge hy)
-  intro y hy'
-  induction hy' using Submodule.span_induction with
-  | mem y h =>
-    obtain ⟨i, rfl⟩ := h
-    exact Submodule.subset_span ⟨i, rfl⟩
-  | zero =>
-    rw [show (⟨0, _⟩ : I) = 0 from rfl, map_zero]
-    exact zero_mem _
-  | add a b _ _ iha ihb =>
-    have := add_mem iha ihb
-    rwa [← map_add] at this
-  | smul a y _ ih =>
-    have := Submodule.smul_of_tower_mem _ a ih
-    rwa [← map_smul] at this
+  have hspan : Submodule.span R (Set.range f) = ⊤ :=
+    (Submodule.span_range_subtype_eq_top_iff I fun i ↦ (f i).2).mpr hf
+  refine Submodule.span_eq_top_of_span_eq_top (S := R ⧸ I) R _ ?_
+  rw [Set.range_comp' I.toCotangent f, ← Submodule.map_span, hspan, Submodule.map_top,
+    I.toCotangent_range]
 
 end
 

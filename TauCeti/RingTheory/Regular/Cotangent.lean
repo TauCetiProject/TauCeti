@@ -9,25 +9,18 @@ public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.RingTheory.Ideal.Cotangent
 public import Mathlib.RingTheory.Regular.RegularSequence
 import TauCeti.RingTheory.Ideal.Cotangent.Basic
-import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # The conormal module of a weakly regular sequence
 
-Let `f₁, …, f_r` be a weakly regular sequence on an `R`-module `M`, generating the ideal `I`. Every
-relation `∑ fᵢ mᵢ = 0` with `mᵢ ∈ M` has all its coefficients in `I M`. Dividing the last element
-out first, `f_r m_r ∈ (f₁, …, f_{r-1}) M` forces `m_r = ∑_{i<r} fᵢ nᵢ`, and the relation
-`∑_{i<r} fᵢ (mᵢ + f_r nᵢ) = 0` among the first `r - 1` elements finishes the induction.
-
-For `M = R` this computes the conormal module `I ⧸ I²` (Mathlib's `Ideal.Cotangent`): it is free
-over `R ⧸ I` with basis the classes of `f₁, …, f_r`. A relation `∑ aᵢ fᵢ ∈ I²` can be rewritten as
-`∑ (aᵢ - bᵢ) fᵢ = 0` with `bᵢ ∈ I`, so every `aᵢ` lies in `I`.
+Let `f₁, …, f_r` be a weakly regular sequence on `R`, generating the ideal `I`. The conormal module
+`I ⧸ I²` (Mathlib's `Ideal.Cotangent`) is free over `R ⧸ I` with basis the classes of
+`f₁, …, f_r`. A relation `∑ aᵢ fᵢ ∈ I²` can be rewritten as `∑ (aᵢ - bᵢ) fᵢ = 0` with `bᵢ ∈ I`, so
+every `aᵢ` lies in `I` by `RingTheory.Sequence.IsWeaklyRegular.mem_ofList_smul_top_of_sum_eq_zero`.
 
 ## Main results
 
-* `RingTheory.Sequence.IsWeaklyRegular.mem_ofList_smul_top_of_sum_eq_zero`: the coefficients of a
-  relation among a weakly `M`-regular sequence lie in `(f₁, …, f_r) M`.
 * `RingTheory.Sequence.IsWeaklyRegular.cotangentBasis`: for a weakly regular sequence on `R`, the
   basis of `I ⧸ I²` over `R ⧸ I` given by the classes of the elements of the sequence.
 
@@ -40,51 +33,9 @@ public section
 
 open RingTheory.Sequence
 
-variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
+variable {R : Type*} [CommRing R]
 
 namespace RingTheory.Sequence.IsWeaklyRegular
-
-/-- The relation statement for a sequence indexed by `Fin n`, by induction on `n`. -/
-private theorem mem_smul_top_of_sum_eq_zero_aux :
-    ∀ {n : ℕ} {rs : Fin n → R}, IsWeaklyRegular M (List.ofFn rs) → ∀ {m : Fin n → M},
-      ∑ i, rs i • m i = 0 → ∀ i, m i ∈ Ideal.span (Set.range rs) • (⊤ : Submodule R M) := by
-  intro n
-  induction n with
-  | zero => exact fun _ _ _ i ↦ i.elim0
-  | succ n ih =>
-    intro rs h m hm
-    rw [List.ofFn_succ', List.concat_eq_append, isWeaklyRegular_append_iff,
-      isWeaklyRegular_singleton_iff, Ideal.ofList_ofFn] at h
-    obtain ⟨h₁, h₂⟩ := h
-    set I' := Ideal.span (Set.range fun i : Fin n ↦ rs i.castSucc)
-    rw [Fin.sum_univ_castSucc] at hm
-    -- The last element is regular modulo `I' M`, so its coefficient lies in `I' M`.
-    have hlast : m (Fin.last n) ∈ I' • (⊤ : Submodule R M) := by
-      have : rs (Fin.last n) • m (Fin.last n) ∈ I' • (⊤ : Submodule R M) := by
-        rw [eq_neg_of_add_eq_zero_right hm]
-        exact neg_mem (sum_mem fun i _ ↦ Submodule.smul_mem_smul (Ideal.subset_span ⟨i, rfl⟩)
-          Submodule.mem_top)
-      rw [← Submodule.Quotient.mk_eq_zero, Submodule.Quotient.mk_smul] at this
-      rw [← Submodule.Quotient.mk_eq_zero]
-      exact h₂.right_eq_zero_of_smul this
-    -- Writing it as `∑ rsᵢ cᵢ` gives a relation among the first `n` elements.
-    obtain ⟨c, hc⟩ := Submodule.mem_span_range_smul_top_iff_exists_fun.mp hlast
-    have hrel := ih h₁ (m := fun i ↦ m i.castSucc + rs (Fin.last n) • c i) (by
-      simpa [smul_add, Finset.sum_add_distrib, smul_comm (rs _) (rs (Fin.last n)),
-        ← Finset.smul_sum, hc] using hm)
-    have hle : I' ≤ Ideal.span (Set.range rs) :=
-      Ideal.span_mono (Set.range_comp_subset_range Fin.castSucc rs)
-    refine Fin.lastCases (Submodule.smul_mono_left hle hlast) fun i ↦ ?_
-    simpa using sub_mem (Submodule.smul_mono_left hle (hrel i)) (Submodule.smul_mem_smul
-      (Ideal.subset_span ⟨Fin.last n, rfl⟩) (Submodule.mem_top (x := c i)))
-
-/-- **Relations among a weakly regular sequence have coefficients in the ideal it generates.** If
-`rs` is weakly regular on `M` and `∑ rsᵢ • mᵢ = 0`, then every `mᵢ` lies in `(rs) M`. -/
-theorem mem_ofList_smul_top_of_sum_eq_zero {rs : List R} (h : IsWeaklyRegular M rs)
-    {m : Fin rs.length → M} (hm : ∑ i, rs[i] • m i = 0) (i : Fin rs.length) :
-    m i ∈ Ideal.ofList rs • (⊤ : Submodule R M) := by
-  rw [← List.ofFn_getElem (xs := rs)] at h
-  exact Ideal.ofList_eq_span_range_getElem rs ▸ mem_smul_top_of_sum_eq_zero_aux h hm i
 
 section Cotangent
 
