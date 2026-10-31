@@ -36,8 +36,6 @@ of cross-commutations and commutations.
   `(2, q + 1)` torus links differ by one crossing change.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_one_two_mul_le`: the `(2, 2k + 1)`
   torus knot has unknotting number at most `k`.
-* `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_one_two_le_one`: the trefoil has
-  unknotting number at most one.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_two_three_le_three`: the `(3, 4)` torus
   knot has unknotting number at most three.
 
@@ -234,13 +232,6 @@ theorem unknottingNumber_toGridLink_torusLink_one_two_mul_le (k : ℕ) :
     rw [Nat.mul_succ, Nat.cast_succ]
     exact (isCrossingChange_toGridLink_torusLink_one_add_two _).unknottingNumber_le.trans
       (by gcongr)
-
-/-- The trefoil, presented by the standard `5 × 5` grid of the `(2, 3)` torus knot, has unknotting
-number at most one: this is the case `k = 1` of
-`unknottingNumber_toGridLink_torusLink_one_two_mul_le`. -/
-theorem unknottingNumber_toGridLink_torusLink_one_two_le_one :
-    (GridDiagram.torusLink 1 2).toGridLink.unknottingNumber ≤ 1 := by
-  simpa using unknottingNumber_toGridLink_torusLink_one_two_mul_le 1
 
 /-- The standard `7 × 7` grid of the `(3, 4)` torus knot with its markings made explicit. -/
 private def torusTwoThreeGrid : GridDiagram 7 where
