@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
-public import TauCeti.Geometry.Symplectic.Manifold.Energy
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 
 /-!
@@ -19,9 +18,10 @@ area density satisfies
 `ω(du - X_K) = ω(du) + d(K(u)) - R_K(u)`.
 
 Here `R_K = ∂s Kt - ∂t Ks - {Ks, Kt}` uses the intrinsic Hamiltonian vector fields,
-with convention `ι_(X_H) ω = dH`. The identity holds for differentiable maps and jointly
-differentiable Hamiltonians on the domain times the manifold. Neither closedness of the
-two-form nor the Floer equation is needed for this pointwise identity. For solutions of
+with convention `ι_(X_H) ω = dH`. For a nondegenerate two-form on a finite-dimensional
+model, the identity holds for differentiable maps and jointly differentiable Hamiltonians
+on the domain times the manifold. Neither closedness of the two-form nor the Floer equation
+is needed for this pointwise identity. For solutions of
 the equation the density is nonnegative under tameness, and is half the standard quadratic
 energy density. The almost complex structure may be chosen independently at each domain
 point, as is needed for domain-dependent perturbations.
@@ -95,6 +95,26 @@ theorem perturbedMFDeriv_apply_stdComplexLineImag (ω : SmoothTwoForm I M)
       mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z) := by
   simp [perturbedMFDeriv_apply]
 
+/-- The perturbed derivative is complex linear exactly when the coordinate Floer equation
+`∂s u - X_(Ks) + J (∂t u - X_(Kt)) = 0` holds in the target tangent fiber. -/
+theorem isComplexLinearMap_perturbedMFDeriv_iff (ω : SmoothTwoForm I M)
+    (Ks Kt : ℝ × ℝ → M → ℝ) (u : ℝ × ℝ → M) (z : ℝ × ℝ)
+    (J : AlmostComplexStructure (TangentSpace I (u z))) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+        (ω.perturbedMFDeriv Ks Kt u z).toLinearMap ↔
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal - ω.hamiltonianVectorField (Ks z) (u z) +
+        J (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+          ω.hamiltonianVectorField (Kt z) (u z)) = 0 := by
+  rw [isComplexLinearMap_stdComplexLine_iff]
+  simp only [ContinuousLinearMap.coe_coe, perturbedMFDeriv_apply_stdComplexLineReal,
+    perturbedMFDeriv_apply_stdComplexLineImag]
+  constructor
+  · intro h
+    rw [h, AlmostComplexStructure.apply_apply, add_neg_cancel]
+  · intro h
+    rw [add_eq_zero_iff_eq_neg] at h
+    rw [h, map_neg, AlmostComplexStructure.apply_apply, neg_neg]
+
 /-- The symplectic area density of `du - X_K` for a manifold target. -/
 def floerEnergyDensity (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
     (u : ℝ × ℝ → M) (z : ℝ × ℝ) : ℝ :=
@@ -124,29 +144,10 @@ theorem IsNondegenerate.floerEnergyDensity_eq [FiniteDimensional ℝ E]
       (fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
         fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag) -
       ω.hamiltonianCurvature Ks Kt z (u z) := by
-  -- Apply the manifold chain rule along the graph, then split the total derivative
-  -- into its domain and target slices using Mathlib's product derivative formula.
-  have hgraph (K : ℝ × ℝ → M → ℝ)
-      (hK : MDifferentiableAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (uncurry K) (z, u z))
-      (v : ℝ × ℝ) :
-      fderiv ℝ (fun w ↦ K w (u w)) z v =
-        fderiv ℝ (fun w ↦ K w (u z)) z v +
-          mvfderiv I (K z) (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z v) := by
-    have hc := mvfderiv_comp_apply z hK (mdifferentiableAt_id.prodMk hu)
-      ((NormedSpace.fromTangentSpace z).symm v)
-    rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at hc
-    -- `erw` allows the model-space tangent normed instances to be identified
-    -- while computing the differential of the graph.
-    erw [mfderiv_prodMk mdifferentiableAt_id hu, mfderiv_id] at hc
-    erw [mvfderiv_apply_eq_mfderiv_apply, mfderiv_prod_eq_add_apply hK,
-      mfderiv_eq_fderiv] at hc
-    -- The remaining model tangent identifications and product evaluations preserve
-    -- the underlying vectors definitionally.
-    exact hc
   rw [floerEnergyDensity_def, hamiltonianCurvature_def, poissonBracket_def,
     perturbedMFDeriv_apply_stdComplexLineReal, perturbedMFDeriv_apply_stdComplexLineImag,
-    hgraph Kt hKt, hgraph Ks hKs]
+    fderiv_comp_graph_apply_of_mdifferentiableAt hu hKt,
+    fderiv_comp_graph_apply_of_mdifferentiableAt hu hKs]
   -- The Hamiltonian contractions are precisely the target terms of the chain rule.
   have hs := hω.eval₂_hamiltonianVectorField (Ks z) (u z)
     (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)

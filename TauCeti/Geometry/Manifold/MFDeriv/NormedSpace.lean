@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 
 /-!
 # Vanishing of the derivative of a vector-valued function
@@ -19,6 +20,8 @@ with `F`, so one vanishes exactly when the other does.
 
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
   between normed spaces.
+* `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
+  manifold-valued map on a normed space.
 * `TauCeti.mvfderiv_apply`: the derivative of a component of a function into a finite product is
   the component of its derivative.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
@@ -79,6 +82,26 @@ theorem mvfderiv_comp_apply_of_differentiableAt {g : M → F} {φ : F → F'} {x
   rw [mvfderiv_comp_apply x hφ.mdifferentiableAt hg, mvfderiv_eq_fderiv,
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     NormedSpace.fromTangentSpace_apply, mvfderiv_apply_eq_mfderiv_apply]
+
+/-- The chain rule along the graph of a manifold-valued map on a normed space, splitting the
+result into the derivative in the domain variable and the derivative in the manifold variable. -/
+theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M → F'} {x : F}
+    (hu : MDifferentiableAt 𝓘(𝕜, F) I u x)
+    (hf : MDifferentiableAt (𝓘(𝕜, F).prod I) 𝓘(𝕜, F') (Function.uncurry f) (x, u x)) (v : F) :
+    fderiv 𝕜 (fun y ↦ f y (u y)) x v =
+      fderiv 𝕜 (fun y ↦ f y (u x)) x v +
+        mvfderiv I (f x) (u x) (mfderiv 𝓘(𝕜, F) I u x v) := by
+  have hc := mvfderiv_comp_apply x hf (mdifferentiableAt_id.prodMk hu)
+    ((NormedSpace.fromTangentSpace x).symm v)
+  rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at hc
+  -- `erw` identifies the model-space tangent normed instances when differentiating the graph.
+  erw [mfderiv_prodMk mdifferentiableAt_id hu, mfderiv_id] at hc
+  erw [mvfderiv_apply_eq_mfderiv_apply, mfderiv_prod_eq_add_apply hf,
+    mfderiv_eq_fderiv] at hc
+  -- The remaining model tangent identifications and product evaluations preserve the
+  -- underlying vectors definitionally.
+  exact hc
 
 /-- The derivative of a vector-valued function, read in the target space, commutes with
 multiplication by a constant scalar acting continuously on the target, such as a complex scalar on
