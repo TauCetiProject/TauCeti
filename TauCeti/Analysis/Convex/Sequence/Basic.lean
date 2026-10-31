@@ -25,7 +25,8 @@ This file proves supporting-line and chord inequalities, including existence of
 affine minorants through finite heights and separation at infinite heights. It
 recovers heights from an anchor and consecutive increments, and characterises convexity by second
 differences. A sequence is admissible when it has a real affine lower bound,
-which is equivalent to having a convex minorant. Convexity and admissibility are
+which is equivalent to having a convex minorant; a pointwise minimum is admissible exactly when
+both sequences are. Convexity and admissibility are
 invariant under adding a real affine function, that is, under height translation
 and shear, and under translating the indices. Reflecting the indices in `N` preserves
 convexity; it discards the heights beyond `N`. These results provide the discrete
@@ -166,6 +167,22 @@ theorem IsAdmissible.mono {a b : ℕ → WithTop ℝ} (hb : IsAdmissible b) (hba
     IsAdmissible a :=
   let ⟨c, m, hcm⟩ := hb
   ⟨c, m, fun n => (hcm n).trans (hba n)⟩
+
+/-- The pointwise minimum of two admissible sequences is admissible: on `ℕ`, the smaller
+intercept and the smaller slope give a common real affine lower bound. -/
+theorem IsAdmissible.inf {a b : ℕ → WithTop ℝ} (ha : IsAdmissible a) (hb : IsAdmissible b) :
+    IsAdmissible (a ⊓ b) := by
+  obtain ⟨c, m, hcm⟩ := ha
+  obtain ⟨d, k, hdk⟩ := hb
+  refine ⟨min c d, min m k, fun n => le_inf ((WithTop.coe_le_coe.mpr ?_).trans (hcm n))
+    ((WithTop.coe_le_coe.mpr ?_).trans (hdk n))⟩ <;> gcongr
+  exacts [min_le_left _ _, min_le_left _ _, min_le_right _ _, min_le_right _ _]
+
+/-- A pointwise minimum is admissible exactly when both sequences are. -/
+@[simp]
+theorem isAdmissible_inf_iff {a b : ℕ → WithTop ℝ} :
+    IsAdmissible (a ⊓ b) ↔ IsAdmissible a ∧ IsAdmissible b :=
+  ⟨fun h => ⟨h.mono inf_le_left, h.mono inf_le_right⟩, fun h => h.1.inf h.2⟩
 
 /-- A sequence whose heights are infinite after some index is admissible: a constant below
 its finitely many finite heights bounds it from below. -/

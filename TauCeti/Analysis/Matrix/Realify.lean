@@ -50,4 +50,33 @@ theorem posSemidef_realify_iff [Finite n] {A : Matrix n n 𝕜} :
       ← conjTranspose_eq_transpose_of_trivial]
     exact posSemidef_conjTranspose_mul_self _
 
+/-- Realification preserves and reflects positive definiteness. -/
+@[simp]
+theorem posDef_realify_iff [Finite n] {A : Matrix n n 𝕜} :
+    A.realify.PosDef ↔ A.PosDef := by
+  classical
+  let _ := Fintype.ofFinite n
+  constructor
+  · intro hR
+    have hA : A.PosSemidef := posSemidef_realify_iff.mp hR.posSemidef
+    refine PosDef.of_dotProduct_mulVec_pos hA.isHermitian fun z hz ↦ ?_
+    rw [RCLike.pos_iff]
+    refine ⟨?_, RCLike.conj_eq_iff_im.mp (hA.isHermitian.star_dotProduct_mulVec_comm z z)⟩
+    let y : n ⊕ n → ℝ :=
+      Sum.elim (fun i ↦ RCLike.re (z i)) (fun i ↦ RCLike.im (z i))
+    have hy : y ≠ 0 := by
+      intro hy
+      apply hz
+      funext i
+      apply RCLike.ext
+      · simpa [y] using congr_fun hy (Sum.inl i)
+      · simpa [y] using congr_fun hy (Sum.inr i)
+    rw [← dotProduct_realify_mulVec]
+    exact hR.dotProduct_mulVec_pos hy
+  · intro hA
+    have hR : A.realify.PosSemidef := posSemidef_realify_iff.mpr hA.posSemidef
+    exact hR.posDef_iff_isUnit.mpr
+      ((isUnit_iff_isUnit_det A.realify).mpr
+        (isUnit_det_realify ((isUnit_iff_isUnit_det A).mp hA.isUnit)))
+
 end Matrix

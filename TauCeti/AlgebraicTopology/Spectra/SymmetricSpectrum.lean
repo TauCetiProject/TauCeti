@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Spectra.SmashPow
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Module
 public import TauCeti.CategoryTheory.Monoidal.Mod.InternalHom
-public import TauCeti.CategoryTheory.Monoidal.Mod.Bimodule
+public import TauCeti.CategoryTheory.Monoidal.Mod.Tensor
 
 /-!
 # The sphere symmetric sequence and symmetric spectra
@@ -39,6 +39,14 @@ convolution of `X` with a symmetric sequence `K` are the maps of symmetric seque
 The commutative sphere action also gives a native sphere bimodule via
 `CategoryTheory.Mod.toBimod`: the right action is obtained by swapping the sphere and
 spectrum factors before applying the left action. This adapter is fully faithful.
+
+Through this adapter, symmetric spectra carry the smash product `X ∧ Y`, the balanced tensor
+product over the sphere: the coequalizer of the two actions of `S` on the Day convolution `X ⊗ Y`,
+with `S` acting through `X`. This is the generic monoidal structure
+`CategoryTheory.Mod.monoidalCategory` on modules over a commutative monoid object, with quotient
+map `CategoryTheory.Mod.tensorπ : X ⊗ Y ⟶ X ∧ Y`. Its unit is the sphere spectrum
+`Mod.regular SymmetricSequence.sphere`. This is the point-set smash product; deriving it requires
+a model structure.
 
 ## Main definitions
 
@@ -84,6 +92,14 @@ noncomputable example (X Y : SymmetricSpectrum) : SymmetricSpectrum := (Mod.inte
 /- Spectrum maps `X ⊗ K ⟶ Y` are the maps of symmetric sequences `K ⟶ Hom_S(X, Y)`. -/
 noncomputable example (X : SymmetricSpectrum) : Mod.tensorLeft X ⊣ Mod.ihom X :=
   Mod.ihomAdjunction X
+
+/- Symmetric spectra form a monoidal category under the smash product over the sphere. Day
+convolution of symmetric sequences preserves colimits on both sides, so the balanced coequalizer
+exists and is preserved by smashing. -/
+noncomputable example : MonoidalCategory SymmetricSpectrum := inferInstance
+
+/- The unit of the smash product is the sphere spectrum. -/
+example : 𝟙_ SymmetricSpectrum = Mod.regular SymmetricSequence.sphere := rfl
 
 /- The native bimodule adapter applies to the actual sphere-module carrier. -/
 noncomputable example :

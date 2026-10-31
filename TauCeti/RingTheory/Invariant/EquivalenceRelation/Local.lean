@@ -15,7 +15,6 @@ public import Mathlib.RingTheory.Spectrum.Maximal.Defs
 public import TauCeti.Algebra.Module.Submodule.Union
 public import TauCeti.RingTheory.Invariant.EquivalenceRelation.BaseChange
 public import TauCeti.RingTheory.Invariant.EquivalenceRelation.Basis
-public import TauCeti.RingTheory.IsTensorProduct.EqLocus
 public import TauCeti.RingTheory.LocalRing.InfiniteResidueField
 
 /-!
@@ -47,10 +46,11 @@ In general, base change along a faithfully flat local map `C → C'` with infini
 (`IsLocalRing.exists_faithfullyFlat_infinite_residueField`) gives the relation
 `Spec (A' ⊗[A] B) ⇉ Spec A'` with `A' = C' ⊗[C] A`, which is again finite free, and whose ring of
 invariants is `C'` because invariants commute with flat base change
-(`RingHom.eqLocus_eq_range_of_isPushout`). By the first case `A'` is finite free over `C'` of rank
-`rank_A B`, so `A` is finite and flat over `C` by faithfully flat descent, hence free of the same
-rank over the local ring `C`. Then the images `t aᵢ` of a basis `aᵢ` of `A` over `C` span `B` over
-`A`, and so form a basis because there are `rank_A B` of them.
+(`RingHom.eqLocus_eq_range_of_isPushout`,
+`RingHom.IsSpecEquivRel.exists_baseChange_ringEquiv_eqLocus`). By the first case `A'` is finite
+free over `C'` of rank `rank_A B`, so `A` is finite and flat over `C` by faithfully flat descent,
+hence free of the same rank over the local ring `C`. Then the images `t aᵢ` of a basis `aᵢ` of
+`A` over `C` span `B` over `A`, and so form a basis because there are `rank_A B` of them.
 
 ## Main results
 
@@ -58,9 +58,10 @@ rank over the local ring `C`. Then the images `t aᵢ` of a basis `aᵢ` of `A` 
   finitely many maximal ideals.
 * `RingHom.IsSpecEquivRel.exists_basis_eq_apply`: if the ring of invariants is local, some basis of
   `B` over `A` consists of elements `t aᵢ`.
-* `RingHom.IsSpecEquivRel.free_of_isLocalRing`, `RingHom.IsSpecEquivRel.finite_of_isLocalRing` and
-  `RingHom.IsSpecEquivRel.exists_tensorProductEquiv_of_isLocalRing`: then `A` is finite free over
-  the ring of invariants `C`, and `A ⊗[C] A ≅ B`.
+* `RingHom.IsSpecEquivRel.free_of_isLocalRing`: then `A` is free over the ring of invariants `C`.
+
+The finiteness of `A` over `C` and the isomorphism `A ⊗[C] A ≅ B` hold without assuming that `C`
+is local; they are proved in `TauCeti.RingTheory.Invariant.EquivalenceRelation.Quotient`.
 
 ## References
 
@@ -221,37 +222,12 @@ private theorem free_finite_finrank_of_isLocalRing [Module.Finite A B] [Module.F
   obtain ⟨C', _, _, _, _, _⟩ := exists_faithfullyFlat_infinite_residueField C
   let A' := C' ⊗[C] A
   let B' := A' ⊗[A] B
-  -- the base change `t' : A' → B'` of `t`
-  have hct : ((algebraMap B B').comp t).comp (algebraMap C A) =
-      ((algebraMap A' B').comp (algebraMap C' A')).comp (algebraMap C C') := by
-    ext c
-    have hc : t (algebraMap C A c) = algebraMap A B (algebraMap C A c) := (mem_eqLocus.mp c.2).symm
-    simp only [RingHom.comp_apply, hc]
-    rw [← IsScalarTower.algebraMap_apply A B B', IsScalarTower.algebraMap_apply A A' B',
-      ← IsScalarTower.algebraMap_apply C A A', IsScalarTower.algebraMap_apply C C' A']
-  let t' : A' →+* B' := Algebra.IsPushout.liftRingHom A' _ _ hct
-  have ht₁ : t'.comp (algebraMap A A') = (algebraMap B B').comp t := by
-    ext; simp [t']
-  have ht₂ : t'.comp (algebraMap C' A') = (algebraMap A' B').comp (algebraMap C' A') := by
-    ext; simp [t']
-  have h' : (algebraMap A' B').IsSpecEquivRel t' := h.of_isPushout C ht₁ ht₂
-  have hR' := eqLocus_eq_range_of_isPushout (R := C) (R' := C') (A := A) (B := B) (A' := A')
-    (B' := B') C.range_subtype.symm ht₁ ht₂
-  -- the invariants of `A'` are a copy of `C'`
-  have hinj : Function.Injective (algebraMap C' A') :=
-    Algebra.TensorProduct.includeLeft_injective (S := C') Subtype.val_injective
-  let e : C' ≃+* (algebraMap A' B').eqLocus t' :=
-    (RingEquiv.ofBijective (algebraMap C' A').rangeRestrict ⟨fun x y hxy ↦
-      hinj (congrArg Subtype.val hxy), (algebraMap C' A').rangeRestrict_surjective⟩).trans
-      (RingEquiv.subringCongr hR'.symm)
-  have : IsLocalRing ((algebraMap A' B').eqLocus t') := by
-    have : Nontrivial ((algebraMap A' B').eqLocus t') := e.symm.toEquiv.nontrivial
-    exact .of_surjective' e.toRingHom e.surjective
+  obtain ⟨t', e, h', -, -, he⟩ := h.exists_baseChange_ringEquiv_eqLocus C'
+  have : Nontrivial ((algebraMap A' B').eqLocus t') := e.symm.toEquiv.nontrivial
+  have : IsLocalRing ((algebraMap A' B').eqLocus t') := .of_surjective' e.toRingHom e.surjective
   have : Infinite (ResidueField ((algebraMap A' B').eqLocus t')) :=
     .of_injective _ (ResidueField.mapEquiv e).injective
   obtain ⟨b', a', hb'⟩ := h'.exists_basis_eq_apply_of_infinite
-  -- `e` is the corestriction of `algebraMap C' A'` to its range
-  have he (y : C') : (e y : A') = algebraMap C' A' y := rfl
   let bA' : Module.Basis _ C' A' := (h'.basis b' hb').mapCoeffs e.symm fun c x ↦ by
     rw [Algebra.smul_def, Subring.smul_def, smul_eq_mul, ← he, e.apply_symm_apply]
   have : Module.Free C' A' := .of_basis bA'
@@ -261,7 +237,8 @@ private theorem free_finite_finrank_of_isLocalRing [Module.Finite A B] [Module.F
   have : Module.Free C A := Module.free_of_flat_of_isLocalRing
   refine ⟨inferInstance, inferInstance, ?_⟩
   rw [← Module.finrank_baseChange (R := C'), Module.finrank_eq_card_basis bA', Fintype.card_fin]
-  have : Nontrivial A' := hinj.nontrivial
+  have : Nontrivial A' := Function.Injective.nontrivial
+    (f := ((↑) : (algebraMap A' B').eqLocus t' → A')) Subtype.val_injective
   have : Nontrivial A := (Subtype.val_injective : Function.Injective ((↑) : C → A)).nontrivial
   exact Module.finrank_baseChange
 
@@ -292,20 +269,5 @@ local, then `A` is a free `C`-module. -/
 theorem free_of_isLocalRing : Module.Free ((algebraMap A B).eqLocus t) A :=
   have ⟨b, _, hb⟩ := h.exists_basis_eq_apply
   .of_basis (h.basis b hb)
-
-/-- **The quotient map is finite.** If `B` is finite free over `A` and the ring of invariants `C`
-is local, then `A` is a finite `C`-module. -/
-theorem finite_of_isLocalRing : Module.Finite ((algebraMap A B).eqLocus t) A :=
-  have ⟨b, _, hb⟩ := h.exists_basis_eq_apply
-  .of_basis (h.basis b hb)
-
-/-- **The relation is the kernel pair of the quotient map.** If `B` is finite free over `A` and
-the ring of invariants `C` is local, then `x ⊗ y ↦ s x * t y` is an isomorphism of `A`-algebras
-`A ⊗[C] A ≃ₐ[A] B`. -/
-theorem exists_tensorProductEquiv_of_isLocalRing :
-    ∃ e : A ⊗[(algebraMap A B).eqLocus t] A ≃ₐ[A] B,
-      ∀ x y, e (x ⊗ₜ y) = algebraMap A B x * t y :=
-  have ⟨b, _, hb⟩ := h.exists_basis_eq_apply
-  ⟨h.tensorProductEquiv b hb, h.tensorProductEquiv_tmul b hb⟩
 
 end RingHom.IsSpecEquivRel

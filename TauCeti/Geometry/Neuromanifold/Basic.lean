@@ -37,6 +37,13 @@ parameter `w` is identifiable modulo `s` (`IdentifiableAt`) when its whole reali
 its `s`-class. When the `s`-classes lie in realization fibres, this is injectivity at the class
 of `w` of the parametrization induced on `Quotient s`.
 
+A presentation of `f` is a coefficient map `c : W → V` with an evaluation `E : V → X → Y`
+satisfying `E (c w) = f w`. When `E` is injective (faithful), the realized functions are the
+evaluations of the coefficient image, two parameters realize the same function exactly when they
+have the same coefficients, and the coefficient image is equivalent to the realized-function
+type. These comparisons only use injectivity of `E`, so they apply to every faithful presentation,
+linear or not.
+
 The definitions follow Marchetti–Shahverdi–Mereta–Trager–Kohn,
 *Algebra Unveils Deep Learning — An Invitation to Neuroalgebraic Geometry*,
 [arXiv:2501.18915v2](https://arxiv.org/abs/2501.18915v2), Definition 3.1 and §4.3.
@@ -223,5 +230,51 @@ theorem forall_identifiableAt_iff_injective {f : W → X → Y} {s : Setoid W}
   refine ⟨fun hid q q' hqq' => ?_, fun hinj w q hq => hinj hq⟩
   induction q' using Quotient.inductionOn with
   | h w => exact hid w q hqq'
+
+/-! ### Faithful presentations -/
+
+section Faithful
+
+variable {V : Type*} {f : W → X → Y} {E : V → X → Y} {c : W → V}
+
+/-- The functions realized by `f` are the evaluations of the coefficient image of any
+presentation `E (c w) = f w`. -/
+theorem realizedFunctions_eq_image_range (h : ∀ w, E (c w) = f w) :
+    realizedFunctions f = E '' Set.range c := by
+  rw [realizedFunctions_def, ← Set.range_comp]
+  exact congrArg Set.range (funext fun w => (h w).symm)
+
+/-- For a faithful presentation, parameters realize the same function exactly when they have
+the same coefficients. -/
+theorem apply_eq_apply_iff_of_injective (hE : Function.Injective E) (h : ∀ w, E (c w) = f w)
+    {w v : W} : c w = c v ↔ f w = f v := by
+  rw [← h, ← h, hE.eq_iff]
+
+/-- For a faithful presentation, parameter equivalence is equality of coefficients. -/
+theorem parameterSetoid_eq_ker (hE : Function.Injective E) (h : ∀ w, E (c w) = f w) :
+    parameterSetoid f = Setoid.ker c := by
+  ext w v
+  rw [parameterSetoid_iff, Setoid.ker_def, apply_eq_apply_iff_of_injective hE h]
+
+/-- For a faithful presentation, the realization fibre over the evaluation of `v` is the set of
+parameters with coefficients `v`. -/
+theorem fiber_apply_eq_preimage (hE : Function.Injective E) (h : ∀ w, E (c w) = f w) (v : V) :
+    fiber f (E v) = c ⁻¹' {v} := by
+  ext w
+  rw [mem_fiber, Set.mem_preimage, Set.mem_singleton_iff, ← h, hE.eq_iff]
+
+/-- For a faithful presentation, evaluation identifies the coefficient image with the realized
+functions. -/
+noncomputable def rangeEquivRealizedFunctions (hE : Function.Injective E)
+    (h : ∀ w, E (c w) = f w) :
+    Set.range c ≃ realizedFunctions f :=
+  (Equiv.Set.image E _ hE).trans (Set.equivOfEq (realizedFunctions_eq_image_range h).symm)
+
+/-- The identification of the coefficient image with the realized functions is evaluation. -/
+@[simp] theorem coe_rangeEquivRealizedFunctions_apply (hE : Function.Injective E)
+    (h : ∀ w, E (c w) = f w) (z : Set.range c) :
+    (rangeEquivRealizedFunctions hE h z : X → Y) = E z := (rfl)
+
+end Faithful
 
 end TauCeti.Neuromanifold

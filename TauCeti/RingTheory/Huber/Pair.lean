@@ -38,7 +38,8 @@ explicit.
   positive power of which lies in `A⁺`.
 * `TauCeti.Huber.IsRingOfIntegralElements.map`: an isomorphism of topological rings carries a
   ring of integral elements onto a ring of integral elements.
-* `TauCeti.Huber.Pair.powerBounded`: `A⁺ = A°` is a ring of integral elements, the largest one.
+* `TauCeti.Huber.isRingOfIntegralElements_powerBoundedSubring`, `TauCeti.Huber.Pair.powerBounded`:
+  `A⁺ = A°` is a ring of integral elements, the largest one.
 * `TauCeti.Huber.Pair.discrete`: a discrete ring is a Huber pair with `A⁺ = A`, so the
   definitions above are not vacuous.
 * `TauCeti.Huber.Pair.Hom.id`, `TauCeti.Huber.Pair.Hom.comp`: morphisms of Huber pairs compose,
@@ -238,16 +239,23 @@ def discrete [DiscreteTopology A] : Pair A where
 theorem discrete_plus [DiscreteTopology A] : (discrete A).plus = ⊤ := (rfl)
 
 variable (A) in
-/-- The Huber pair with `A⁺ = A°`. This is a ring of integral elements because `A°` is open
+/-- In a Huber ring, `A°` is a ring of integral elements: it is open
 (`TauCeti.Huber.isOpen_powerBoundedSubring`) and integrally closed in `A`
 (`TauCeti.Huber.isPowerBounded_of_isIntegral`, Wedhorn Proposition 5.30(4)). Since every ring of
-integral elements is contained in `A°`, this is the largest one. -/
+integral elements is contained in `A°`, it is the largest one. -/
+theorem _root_.TauCeti.Huber.isRingOfIntegralElements_powerBoundedSubring :
+    IsRingOfIntegralElements (powerBoundedSubring A) where
+  isOpen := isOpen_powerBoundedSubring A
+  isIntegrallyClosedIn := inferInstance
+  le_powerBoundedSubring := le_rfl
+
+variable (A) in
+/-- The Huber pair with `A⁺ = A°`, a ring of integral elements by
+`TauCeti.Huber.isRingOfIntegralElements_powerBoundedSubring`. Since every ring of integral
+elements is contained in `A°`, this is the largest one. -/
 def powerBounded : Pair A where
   plus := powerBoundedSubring A
-  isRingOfIntegralElements :=
-    { isOpen := isOpen_powerBoundedSubring A
-      isIntegrallyClosedIn := inferInstance
-      le_powerBoundedSubring := le_rfl }
+  isRingOfIntegralElements := isRingOfIntegralElements_powerBoundedSubring A
 
 /-- The ring of integral elements of the largest Huber pair is `A°`. -/
 @[simp]

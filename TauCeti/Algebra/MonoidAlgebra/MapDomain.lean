@@ -28,6 +28,9 @@ of the composite `F ∘ φ`.
 * `MonoidAlgebra.mapDomain_commute_single`: the image of `mapDomain f` commutes with `single n r`
   when the values of `f` commute with `n` and `r` is central.
 * `MonoidAlgebra.lift_mapDomain`: `lift F ∘ mapDomain φ = lift (F ∘ φ)`.
+* `MonoidAlgebra.coeff_mul_mapDomainRingEquiv_inv_one`: for a commutative group `G`, the
+  coefficient of the identity in `x * σ x` is the sum of the squares of the coefficients of `x`,
+  where `σ` is the involution of `R[G]` induced by inversion.
 -/
 
 public section
@@ -73,5 +76,21 @@ theorem lift_mapDomain {k A : Type*} [CommSemiring k] [Monoid M] [Monoid N] [Sem
   | zero => simp
   | add x y hx hy => rw [mapDomain_add, map_add, map_add, hx, hy]
   | single m r => simp [lift_single]
+
+section Group
+
+variable {R G : Type*} [CommSemiring R] [CommGroup G]
+
+/-- The coefficient of the identity in `x * σ x`, where `σ x` is the image of `x` under the
+involution induced by inversion, is the sum of the squares of the coefficients of `x`. -/
+@[to_additive (dont_translate := R) coeff_mul_mapDomainRingEquiv_neg_zero
+/-- The coefficient of zero in `x * σ x`, where `σ x` is the image of `x` under the involution
+induced by negation, is the sum of the squares of the coefficients of `x`. -/]
+theorem coeff_mul_mapDomainRingEquiv_inv_one (x : MonoidAlgebra R G) :
+    (x * mapDomainRingEquiv R (MulEquiv.inv G) x).coeff 1 =
+      ∑ g ∈ x.coeff.support, x.coeff g * x.coeff g := by
+  simp [coeff_mul_apply_left, Finsupp.sum]
+
+end Group
 
 end MonoidAlgebra

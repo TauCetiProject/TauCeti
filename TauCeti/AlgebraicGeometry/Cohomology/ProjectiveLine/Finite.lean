@@ -38,19 +38,6 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.Modules
 
-/-- A quasicoherent sheaf on a scheme affine over the projective line has no cohomology in
-degrees at least two. -/
-theorem subsingleton_cohomology_of_two_le_of_isAffineHom_to_projectiveLine
-    (R : Type u) [CommRing R] {X : Scheme.{u}}
-    (f : X ⟶ projectiveLine R) [IsAffineHom f]
-    (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) :
-    Subsingleton (Cohomology M n) := by
-  have hU := projectiveLine.isAffineOpen_basicOpen_coord R 0
-  have hV := projectiveLine.isAffineOpen_basicOpen_coord R 1
-  exact subsingleton_cohomology_of_two_le_of_isAffineOpen M (hU.preimage f) (hV.preimage f)
-    (by rw [← f.preimage_inf]; exact (hU.inf hV).preimage f)
-    (f.preimage_sup_eq_top (projectiveLine.basicOpen_coord_sup_eq_top R)) n hn
-
 variable (R : Type u) [CommRing R] [IsNoetherianRing R]
   {X : Scheme.{u}} [X.Over (Spec (.of R))]
   (f : X ⟶ projectiveLine R) [IsFinite f] [f.IsOver (Spec (.of R))]
@@ -76,8 +63,8 @@ theorem finite_cohomology_of_isFinite_to_projectiveLine (M : X.Modules)
         (projectiveLine.isAffineOpen_basicOpen_coord R 1)
         (projectiveLine.basicOpen_coord_sup_eq_top R)).mp inferInstance
     | succ n =>
-      have := subsingleton_cohomology_of_two_le_of_isAffineHom_to_projectiveLine R f M (n + 2)
-        (by omega)
+      have := f.subsingleton_cohomology_of_card_le_of_isAffineHom_to_projSymmetricAlgebra
+        (Pi.basisFun R (Fin 2)) (Pi.basisFun R (Fin 2)).span_eq M (n + 2) (by simp)
       infer_instance
 
 end AlgebraicGeometry.Scheme.Modules
