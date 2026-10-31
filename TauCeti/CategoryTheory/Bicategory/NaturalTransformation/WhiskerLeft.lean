@@ -48,6 +48,10 @@ namespace CategoryTheory.Pseudofunctor
 open Bicategory
 open scoped Pseudofunctor.StrongTrans
 
+/-! `whiskerLeft` and `whiskerLeftMap` are exposed: the statements of the strict functoriality
+lemmas below, and the types of restricted modifications downstream, only typecheck by unfolding
+them. -/
+
 variable {A : Type u₁} [Bicategory.{w₁, v₁} A] {B : Type u₂} [Bicategory.{w₂, v₂} B]
   {C : Type u₃} [Bicategory.{w₃, v₃} C] (P : A ⥤ᵖ B) {F G H I : B ⥤ᵖ C}
 

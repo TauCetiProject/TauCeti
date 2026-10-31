@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import Mathlib.CategoryTheory.Bicategory.Strict.Pseudofunctor
 public import Mathlib.CategoryTheory.Products.Basic
 public import Mathlib.CategoryTheory.SingleObj
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.WhiskerLeft
 
 /-!
 # Equivariant groupoid lifts of categorical group actions
@@ -46,6 +47,10 @@ product `b * a`, so the commuting isomorphisms compare the two factorizations
 
 ## Main declarations
 
+* `CategoryTheory.Pseudofunctor.restrictFiber`,
+  `CategoryTheory.Pseudofunctor.StrongTrans.restrictFiber`,
+  `CategoryTheory.Pseudofunctor.StrongTrans.restrictFiberMap`: the restriction of pseudofunctors,
+  strong transformations and modifications to the fiber `{p} × SingleObj H`;
 * `TauCeti.EquivariantGroupoidLift`: the type of coherent equivariant lifts of a family of
   categorical actions along `Γ`;
 * `TauCeti.EquivariantGroupoidLift.transport`: the transport functor `E_g` between prescribed
@@ -94,6 +99,25 @@ at the unique object is `F.obj ⟨(p, ⋆)⟩` and its value at `a : H` is `F.ma
 abbrev restrictFiber {B : Type*} [Bicategory B] (F : LocallyDiscrete (Γ × SingleObj H) ⥤ᵖ B)
     (p : Γ) : LocallyDiscrete (SingleObj H) ⥤ᵖ B :=
   (Prod.sectR p (SingleObj H)).toPseudofunctor.comp F
+
+section StrongTrans
+
+open scoped Pseudofunctor.StrongTrans
+
+variable {B : Type*} [Bicategory B] {F G : LocallyDiscrete (Γ × SingleObj H) ⥤ᵖ B}
+
+/-- The restriction of a strong transformation between pseudofunctors out of
+`LocallyDiscrete (Γ × SingleObj H)` to the fiber `{p} × SingleObj H`, that is, its precomposite
+with `Prod.sectR p (SingleObj H)`. -/
+abbrev StrongTrans.restrictFiber (η : F ⟶ G) (p : Γ) : F.restrictFiber p ⟶ G.restrictFiber p :=
+  Pseudofunctor.whiskerLeft (Prod.sectR p (SingleObj H)).toPseudofunctor η
+
+/-- The restriction of a modification to the fiber `{p} × SingleObj H`. -/
+abbrev StrongTrans.restrictFiberMap {η θ : F ⟶ G} (m : η ⟶ θ) (p : Γ) :
+    StrongTrans.restrictFiber η p ⟶ StrongTrans.restrictFiber θ p :=
+  Pseudofunctor.whiskerLeftMap (Prod.sectR p (SingleObj H)).toPseudofunctor m
+
+end StrongTrans
 
 end CategoryTheory.Pseudofunctor
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Basic
-public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.WhiskerLeft
 
 /-!
 # The bicategory of equivariant groupoid lifts
@@ -31,9 +30,6 @@ coherence axioms are inherited from that bicategory.
 
 ## Main declarations
 
-* `CategoryTheory.Pseudofunctor.StrongTrans.restrictFiber`,
-  `CategoryTheory.Pseudofunctor.StrongTrans.restrictFiberMap`: the restriction of strong
-  transformations and modifications to the fiber `{p} × SingleObj H`;
 * `TauCeti.EquivariantGroupoidLift.Hom`: 1-morphisms of lifts, with identities `Hom.id` and
   composites `Hom.comp`;
 * `TauCeti.EquivariantGroupoidLift.Hom₂`: 2-morphisms of lifts;
@@ -47,6 +43,13 @@ coherence axioms are inherited from that bicategory.
 
 * Niles Johnson and Donald Yau, *2-Dimensional Categories*, Oxford University Press (2021):
   the bicategory of pseudofunctors, strong transformations and modifications.
+* Mathlib's bicategory of pseudofunctors and strong transformations,
+  `Mathlib/CategoryTheory/Bicategory/FunctorBicategory/Pseudo.lean`: the identities,
+  composites, whiskerings, associators and unitors of lifts are its operations on the joint
+  pseudofunctors, and its coherence axioms are inherited here.
+* Mathlib's bicategory of adjunctions, `Mathlib/CategoryTheory/Bicategory/Adjunction/Adj.lean`:
+  the pattern of a `Hom₂` structure of 2-morphisms carrying a compatibility condition, with a
+  bicategory structure whose axioms are checked on the underlying 2-morphisms.
 * Edward Frenkel,
   [Langlands Correspondence for Loop Groups](https://math.berkeley.edu/~frenkel/loop.pdf),
   Cambridge Studies in Advanced Mathematics 103 (2007): families of local categories over the
@@ -56,27 +59,6 @@ coherence axioms are inherited from that bicategory.
 public section
 
 universe w v u₂ v₁ u₁
-
-namespace CategoryTheory.Pseudofunctor
-
-open Bicategory
-open scoped Pseudofunctor.StrongTrans
-
-variable {Γ : Type u₁} [Category.{v₁} Γ] {H : Type u₂} [Monoid H] {B : Type*} [Bicategory B]
-  {F G : LocallyDiscrete (Γ × SingleObj H) ⥤ᵖ B}
-
-/-- The restriction of a strong transformation between pseudofunctors out of
-`LocallyDiscrete (Γ × SingleObj H)` to the fiber `{p} × SingleObj H`, that is, its precomposite
-with `Prod.sectR p (SingleObj H)`. -/
-abbrev StrongTrans.restrictFiber (η : F ⟶ G) (p : Γ) : F.restrictFiber p ⟶ G.restrictFiber p :=
-  Pseudofunctor.whiskerLeft (Prod.sectR p (SingleObj H)).toPseudofunctor η
-
-/-- The restriction of a modification to the fiber `{p} × SingleObj H`. -/
-abbrev StrongTrans.restrictFiberMap {η θ : F ⟶ G} (m : η ⟶ θ) (p : Γ) :
-    StrongTrans.restrictFiber η p ⟶ StrongTrans.restrictFiber θ p :=
-  Pseudofunctor.whiskerLeftMap (Prod.sectR p (SingleObj H)).toPseudofunctor m
-
-end CategoryTheory.Pseudofunctor
 
 namespace TauCeti.EquivariantGroupoidLift
 
@@ -115,6 +97,10 @@ namespace Hom
 
 variable {L L' L'' : EquivariantGroupoidLift Γ actions}
 
+/-! `Hom.id` and `Hom.comp` are exposed: the types of 2-morphisms between composites, and the
+statements of the characterizing lemmas such as `whiskerLeft_joint`, only typecheck by unfolding
+`(φ ≫ ψ).joint` to `φ.joint ≫ ψ.joint`. -/
+
 variable (L) in
 /-- The identity 1-morphism of a lift: the identity strong transformation, with the left unitors
 as comparison isomorphisms. -/
@@ -143,11 +129,11 @@ variable {L L' : EquivariantGroupoidLift Γ actions} {φ ψ χ : Hom L L'}
 
 variable (φ) in
 /-- The identity 2-morphism. -/
-@[expose] def id : Hom₂ φ φ where
+def id : Hom₂ φ φ where
   joint := 𝟙 φ.joint
 
 /-- The vertical composite of 2-morphisms. -/
-@[expose] def vcomp (Θ : Hom₂ φ ψ) (Ξ : Hom₂ ψ χ) : Hom₂ φ χ where
+def vcomp (Θ : Hom₂ φ ψ) (Ξ : Hom₂ ψ χ) : Hom₂ φ χ where
   joint := Θ.joint ≫ Ξ.joint
   comm p := by simp
 
@@ -158,9 +144,9 @@ instance homCategory (L L' : EquivariantGroupoidLift Γ actions) : Category (Hom
   Hom := Hom₂
   id := Hom₂.id
   comp := Hom₂.vcomp
-  id_comp Θ := Hom₂.ext (Category.id_comp Θ.joint)
-  comp_id Θ := Hom₂.ext (Category.comp_id Θ.joint)
-  assoc Θ Ξ Ψ := Hom₂.ext (Category.assoc Θ.joint Ξ.joint Ψ.joint)
+  id_comp Θ := Hom₂.ext (by exact Category.id_comp Θ.joint)
+  comp_id Θ := Hom₂.ext (by exact Category.comp_id Θ.joint)
+  assoc Θ Ξ Ψ := Hom₂.ext (by exact Category.assoc Θ.joint Ξ.joint Ψ.joint)
 
 namespace Hom₂
 
@@ -169,7 +155,6 @@ variable {L L' : EquivariantGroupoidLift Γ actions} {φ ψ χ : Hom L L'}
 /-- An isomorphism of 1-morphisms of lifts from an isomorphism of their strong transformations
 of joint pseudofunctors whose forward modification is compatible with the comparison
 isomorphisms. -/
-@[expose, simps! hom_joint inv_joint]
 def isoMk (e : φ.joint ≅ ψ.joint)
     (comm : ∀ p, restrictFiberMap e.hom p ▷ L'.comparison p ≫ (ψ.comparisonIso p).hom =
       (φ.comparisonIso p).hom) : φ ≅ ψ where
@@ -182,6 +167,18 @@ def isoMk (e : φ.joint ≅ ψ.joint)
           Pseudofunctor.whiskerLeftMap_id, id_whiskerRight, Category.id_comp] }
   hom_inv_id := Hom₂.ext e.hom_inv_id
   inv_hom_id := Hom₂.ext e.inv_hom_id
+
+@[simp]
+lemma isoMk_hom_joint (e : φ.joint ≅ ψ.joint)
+    (comm : ∀ p, restrictFiberMap e.hom p ▷ L'.comparison p ≫ (ψ.comparisonIso p).hom =
+      (φ.comparisonIso p).hom) : (isoMk e comm).hom.joint = e.hom :=
+  (rfl)
+
+@[simp]
+lemma isoMk_inv_joint (e : φ.joint ≅ ψ.joint)
+    (comm : ∀ p, restrictFiberMap e.hom p ▷ L'.comparison p ≫ (ψ.comparisonIso p).hom =
+      (φ.comparisonIso p).hom) : (isoMk e comm).inv.joint = e.inv :=
+  (rfl)
 
 end Hom₂
 
@@ -200,7 +197,7 @@ with the instances of the scoped bicategory of pseudofunctors at reducible trans
 variable {L L' L'' L''' : EquivariantGroupoidLift Γ actions}
 
 /-- Left whiskering of a 2-morphism of lifts by a 1-morphism. -/
-@[expose] def whiskerLeft (φ : Hom L L') {ψ ψ' : Hom L' L''} (Θ : ψ ⟶ ψ') :
+def whiskerLeft (φ : Hom L L') {ψ ψ' : Hom L' L''} (Θ : ψ ⟶ ψ') :
     Hom.comp φ ψ ⟶ Hom.comp φ ψ' where
   joint := φ.joint ◁ Θ.joint
   comm p := calc
@@ -215,7 +212,7 @@ variable {L L' L'' L''' : EquivariantGroupoidLift Γ actions}
         Θ.comm]
 
 /-- Right whiskering of a 2-morphism of lifts by a 1-morphism. -/
-@[expose] def whiskerRight {φ φ' : Hom L L'} (Θ : φ ⟶ φ') (ψ : Hom L' L'') :
+def whiskerRight {φ φ' : Hom L L'} (Θ : φ ⟶ φ') (ψ : Hom L' L'') :
     Hom.comp φ ψ ⟶ Hom.comp φ' ψ where
   joint := Θ.joint ▷ ψ.joint
   comm p := calc
@@ -229,7 +226,7 @@ variable {L L' L'' L''' : EquivariantGroupoidLift Γ actions}
 
 /-- The associator of 1-morphisms of lifts, whose underlying modification is the associator of
 strong transformations. -/
-@[expose] def associator (φ : Hom L L') (ψ : Hom L' L'') (χ : Hom L'' L''') :
+def associator (φ : Hom L L') (ψ : Hom L' L'') (χ : Hom L'' L''') :
     Hom.comp (Hom.comp φ ψ) χ ≅ Hom.comp φ (Hom.comp ψ χ) :=
   Hom₂.isoMk (α_ φ.joint ψ.joint χ.joint) fun p => calc
     _ = (α_ (restrictFiber φ.joint p) (restrictFiber ψ.joint p)
@@ -252,7 +249,7 @@ strong transformations. -/
 
 /-- The left unitor of a 1-morphism of lifts, whose underlying modification is the left unitor of
 strong transformations. -/
-@[expose] def leftUnitor (φ : Hom L L') : Hom.comp (Hom.id L) φ ≅ φ :=
+def leftUnitor (φ : Hom L L') : Hom.comp (Hom.id L) φ ≅ φ :=
   Hom₂.isoMk (λ_ φ.joint) fun p => by
     have h : (λ_ (restrictFiber φ.joint p)).hom ▷ L'.comparison p ≫ (φ.comparisonIso p).hom =
         (α_ (𝟙 (L.joint.restrictFiber p)) (restrictFiber φ.joint p) (L'.comparison p)).hom ≫
@@ -264,7 +261,7 @@ strong transformations. -/
 
 /-- The right unitor of a 1-morphism of lifts, whose underlying modification is the right unitor
 of strong transformations. -/
-@[expose] def rightUnitor (φ : Hom L L') : Hom.comp φ (Hom.id L') ≅ φ :=
+def rightUnitor (φ : Hom L L') : Hom.comp φ (Hom.id L') ≅ φ :=
   Hom₂.isoMk (ρ_ φ.joint) fun p => by
     have h : (ρ_ (restrictFiber φ.joint p)).hom ▷ L'.comparison p ≫ (φ.comparisonIso p).hom =
         (α_ (restrictFiber φ.joint p) (𝟙 (L'.joint.restrictFiber p)) (L'.comparison p)).hom ≫
@@ -290,18 +287,22 @@ instance instBicategory : Bicategory (EquivariantGroupoidLift Γ actions) where
   associator := associator
   leftUnitor := leftUnitor
   rightUnitor := rightUnitor
-  whiskerLeft_id φ ψ := Hom₂.ext (Bicategory.whiskerLeft_id φ.joint ψ.joint)
-  whiskerLeft_comp φ _ _ _ Θ Ξ := Hom₂.ext (Bicategory.whiskerLeft_comp φ.joint Θ.joint Ξ.joint)
-  id_whiskerLeft Θ := Hom₂.ext (Bicategory.id_whiskerLeft Θ.joint)
-  comp_whiskerLeft φ ψ _ _ Θ := Hom₂.ext (Bicategory.comp_whiskerLeft φ.joint ψ.joint Θ.joint)
-  id_whiskerRight φ ψ := Hom₂.ext (Bicategory.id_whiskerRight φ.joint ψ.joint)
-  comp_whiskerRight Θ Ξ χ := Hom₂.ext (Bicategory.comp_whiskerRight Θ.joint Ξ.joint χ.joint)
-  whiskerRight_id Θ := Hom₂.ext (Bicategory.whiskerRight_id Θ.joint)
-  whiskerRight_comp Θ ψ χ := Hom₂.ext (Bicategory.whiskerRight_comp Θ.joint ψ.joint χ.joint)
-  whisker_assoc φ _ _ Θ χ := Hom₂.ext (Bicategory.whisker_assoc φ.joint Θ.joint χ.joint)
-  whisker_exchange Θ Ξ := Hom₂.ext (Bicategory.whisker_exchange Θ.joint Ξ.joint)
-  pentagon φ ψ χ ω := Hom₂.ext (Bicategory.pentagon φ.joint ψ.joint χ.joint ω.joint)
-  triangle φ ψ := Hom₂.ext (Bicategory.triangle φ.joint ψ.joint)
+  whiskerLeft_id φ ψ := Hom₂.ext (by exact Bicategory.whiskerLeft_id φ.joint ψ.joint)
+  whiskerLeft_comp φ _ _ _ Θ Ξ :=
+    Hom₂.ext (by exact Bicategory.whiskerLeft_comp φ.joint Θ.joint Ξ.joint)
+  id_whiskerLeft Θ := Hom₂.ext (by exact Bicategory.id_whiskerLeft Θ.joint)
+  comp_whiskerLeft φ ψ _ _ Θ :=
+    Hom₂.ext (by exact Bicategory.comp_whiskerLeft φ.joint ψ.joint Θ.joint)
+  id_whiskerRight φ ψ := Hom₂.ext (by exact Bicategory.id_whiskerRight φ.joint ψ.joint)
+  comp_whiskerRight Θ Ξ χ :=
+    Hom₂.ext (by exact Bicategory.comp_whiskerRight Θ.joint Ξ.joint χ.joint)
+  whiskerRight_id Θ := Hom₂.ext (by exact Bicategory.whiskerRight_id Θ.joint)
+  whiskerRight_comp Θ ψ χ :=
+    Hom₂.ext (by exact Bicategory.whiskerRight_comp Θ.joint ψ.joint χ.joint)
+  whisker_assoc φ _ _ Θ χ := Hom₂.ext (by exact Bicategory.whisker_assoc φ.joint Θ.joint χ.joint)
+  whisker_exchange Θ Ξ := Hom₂.ext (by exact Bicategory.whisker_exchange Θ.joint Ξ.joint)
+  pentagon φ ψ χ ω := Hom₂.ext (by exact Bicategory.pentagon φ.joint ψ.joint χ.joint ω.joint)
+  triangle φ ψ := Hom₂.ext (by exact Bicategory.triangle φ.joint ψ.joint)
 
 section API
 
@@ -314,20 +315,20 @@ lemma Hom₂.hom_ext {φ ψ : L ⟶ L'} {Θ Ξ : φ ⟶ ψ} (h : Θ.joint = Ξ.j
 
 @[simp]
 lemma Hom₂.id_joint (φ : L ⟶ L') : Hom₂.joint (𝟙 φ) = 𝟙 φ.joint :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma Hom₂.comp_joint {φ ψ χ : L ⟶ L'} (Θ : φ ⟶ ψ) (Ξ : ψ ⟶ χ) :
     (Θ ≫ Ξ).joint = Θ.joint ≫ Ξ.joint :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma id_joint (L : EquivariantGroupoidLift Γ actions) : Hom.joint (𝟙 L) = 𝟙 L.joint :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma comp_joint (φ : L ⟶ L') (ψ : L' ⟶ L'') : (φ ≫ ψ).joint = φ.joint ≫ ψ.joint :=
-  rfl
+  (rfl)
 
 /-- The comparison isomorphisms of the identity 1-morphism are the left unitors. -/
 lemma id_comparisonIso (L : EquivariantGroupoidLift Γ actions) (p : Γ) :
@@ -346,38 +347,38 @@ lemma comp_comparisonIso (φ : L ⟶ L') (ψ : L' ⟶ L'') (p : Γ) :
 @[simp]
 lemma whiskerLeft_joint (φ : L ⟶ L') {ψ ψ' : L' ⟶ L''} (Θ : ψ ⟶ ψ') :
     (φ ◁ Θ).joint = φ.joint ◁ Θ.joint :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma whiskerRight_joint {φ φ' : L ⟶ L'} (Θ : φ ⟶ φ') (ψ : L' ⟶ L'') :
     (Θ ▷ ψ).joint = Θ.joint ▷ ψ.joint :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma associator_hom_joint (φ : L ⟶ L') (ψ : L' ⟶ L'') (χ : L'' ⟶ L''') :
     (α_ φ ψ χ).hom.joint = (α_ φ.joint ψ.joint χ.joint).hom :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma associator_inv_joint (φ : L ⟶ L') (ψ : L' ⟶ L'') (χ : L'' ⟶ L''') :
     (α_ φ ψ χ).inv.joint = (α_ φ.joint ψ.joint χ.joint).inv :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma leftUnitor_hom_joint (φ : L ⟶ L') : (λ_ φ).hom.joint = (λ_ φ.joint).hom :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma leftUnitor_inv_joint (φ : L ⟶ L') : (λ_ φ).inv.joint = (λ_ φ.joint).inv :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma rightUnitor_hom_joint (φ : L ⟶ L') : (ρ_ φ).hom.joint = (ρ_ φ.joint).hom :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma rightUnitor_inv_joint (φ : L ⟶ L') : (ρ_ φ).inv.joint = (ρ_ φ.joint).inv :=
-  rfl
+  (rfl)
 
 end API
 
