@@ -73,23 +73,11 @@ theorem existsUnique_map_eq_iff_galoisEquivariant
     -- therefore identifies the base change of the restriction with the original pullback.
     have hmap : p.map (algebraMap F K) = φ.pullback := by
       apply CoordinateRing.algHom_ext
-      · rw [CoordinatePullback.map_of_X]
-        -- Evaluate the restricted composite on the coordinate-ring image of `X`.
-        change Affine.FunctionField.map W₁.toAffine (algebraMap F K)
-            (f (algebraMap W₂.toAffine.CoordinateRing W₂.toAffine.FunctionField
-              (AdjoinRoot.of W₂.toAffine.polynomial Polynomial.X))) =
-          φ.pullback (AdjoinRoot.of (W₂⁄K).toAffine.polynomial Polynomial.X)
-        rw [hf, Affine.FunctionField.map_algebraMap_coordinateRing,
-          CoordinateRing.map_of_X]
+      · rw [CoordinatePullback.map_of_X, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
+          hf, Affine.FunctionField.map_algebraMap_coordinateRing, CoordinateRing.map_of_X]
         exact φ.fieldPullback_algebraMap _
-      · rw [CoordinatePullback.map_root]
-        -- Evaluate the restricted composite on the coordinate-ring image of `Y`.
-        change Affine.FunctionField.map W₁.toAffine (algebraMap F K)
-            (f (algebraMap W₂.toAffine.CoordinateRing W₂.toAffine.FunctionField
-              (AdjoinRoot.root W₂.toAffine.polynomial))) =
-          φ.pullback (AdjoinRoot.root (W₂⁄K).toAffine.polynomial)
-        rw [hf, Affine.FunctionField.map_algebraMap_coordinateRing,
-          CoordinateRing.map_root]
+      · rw [CoordinatePullback.map_root, AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
+          hf, Affine.FunctionField.map_algebraMap_coordinateRing, CoordinateRing.map_root]
         exact φ.fieldPullback_algebraMap _
     -- Reflection of pointedness is available before packaging the restriction as an isogeny.
     have hp : p.MapsInfinity := (CoordinatePullback.mapsInfinity_map_iff p _).mp

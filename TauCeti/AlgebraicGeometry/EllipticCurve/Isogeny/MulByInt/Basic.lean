@@ -193,31 +193,22 @@ through `Function.comp_apply` and `map_ψ` before these could fire, and `simpNF`
 private theorem smulEval_genericPoint_Z (n : ℤ) :
   smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n 2 =
       psiFunctionField W n := by
-  dsimp only [smulEval, Function.comp_def]
-  -- `W⁄W.FunctionField` abbreviates the mapped curve; expose that spelling for `map_ψ`.
-  change ((W.map (algebraMap F W.FunctionField)).ψ n).evalEval W.genericX W.genericY = _
-  rw [map_ψ, psiFunctionField]
-  exact Affine.evalEval_genericX_genericY W (W.ψ n)
+  rw [smulEval, baseChange, map_ψ, psiFunctionField]
+  exact Affine.evalEval_genericX_genericY W _
 
 /-- The `X`-coordinate of the Jacobian triple of `[n]` at the generic point is `φₙ`. -/
 private theorem smulEval_genericPoint_X (n : ℤ) :
     smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n 0 =
       phiFunctionField W n := by
-  dsimp only [smulEval, Function.comp_def]
-  -- `W⁄W.FunctionField` abbreviates the mapped curve; expose that spelling for `map_φ`.
-  change ((W.map (algebraMap F W.FunctionField)).φ n).evalEval W.genericX W.genericY = _
-  rw [map_φ, phiFunctionField]
-  exact Affine.evalEval_genericX_genericY W (W.φ n)
+  rw [smulEval, baseChange, map_φ, phiFunctionField]
+  exact Affine.evalEval_genericX_genericY W _
 
 /-- The `Y`-coordinate of the Jacobian triple of `[n]` at the generic point is `ωₙ`. -/
 private theorem smulEval_genericPoint_Y (n : ℤ) :
     smulEval (W⁄W.FunctionField).toAffine W.genericX W.genericY n 1 =
       omegaFunctionField W n := by
-  dsimp only [smulEval, Function.comp_def]
-  -- `W⁄W.FunctionField` abbreviates the mapped curve; expose that spelling for `map_ω`.
-  change ((W.map (algebraMap F W.FunctionField)).ω n).evalEval W.genericX W.genericY = _
-  rw [map_ω, omegaFunctionField]
-  exact Affine.evalEval_genericX_genericY W (W.ω n)
+  rw [smulEval, baseChange, map_ω, omegaFunctionField]
+  exact Affine.evalEval_genericX_genericY W _
 
 /-- `ψₙ² = ΨSqₙ` in the function field: the division polynomial's square is the univariate
 `ΨSq`, already known in the coordinate ring as `mk_ψ` followed by `mk_Ψ_sq`. -/
