@@ -78,16 +78,19 @@ theorem exists_forall_finitePlace_apply_add_le_one (S : Finset (FinitePlace K))
       simp only [hw, ite_false]
       exact zero_mem _)
   have ha (w : HeightOneSpectrum (𝓞 K)) : a w = if FinitePlace.mk w ∈ S then
-      algebraMap K (w.adicCompletion K) (-γ (FinitePlace.mk w)) else 0 := rfl
+      algebraMap K (w.adicCompletion K) (-γ (FinitePlace.mk w)) else 0 :=
+    RestrictedProduct.mk_apply (i := w) ..
   obtain ⟨x, hx⟩ := FiniteAdeleRing.exists_forall_sub_algebraMap_mem_adicCompletionIntegers a
   refine ⟨x, fun v hv ↦ ?_, fun v hv ↦ ?_⟩
   all_goals
     rw [← FinitePlace.mk_maximalIdeal v] at hv ⊢
     have h := hx v.maximalIdeal
-  · simpa only [ha, hv, ite_false, zero_sub, neg_mem_iff,
-      ← FinitePlace.mk_apply_le_one_iff_algebraMap_mem] using h
-  · simpa only [ha, hv, ite_true, ← map_sub, ← neg_add',
-      ← FinitePlace.mk_apply_le_one_iff_algebraMap_mem, map_neg_eq_map, add_comm] using h
+  · rw [ha, ite_eq_right hv, zero_sub, neg_mem_iff,
+      ← FinitePlace.mk_apply_le_one_iff_algebraMap_mem] at h
+    exact h
+  · rw [ha, ite_eq_left hv, ← map_sub, ← FinitePlace.mk_apply_le_one_iff_algebraMap_mem,
+      neg_sub_left, map_neg_eq_map] at h
+    exact h
 
 open scoped Classical in
 /-- **Approximation at the infinite places by an algebraic integer.** For targets `γ v ∈ K` at
