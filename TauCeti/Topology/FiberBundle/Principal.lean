@@ -232,7 +232,7 @@ instance PrincipalBundle.trivial (B G : Type*) [TopologicalSpace B] [Group G] [T
     PrincipalBundle G (Bundle.Trivial B G) where
   isEquivariant_trivialization' e _ := by
     rw [Trivial.eq_trivialization B G e]
-    exact ⟨fun _ _ p g ↦ op_smul_eq_mul g p⟩
+    exact ⟨fun _ _ p g ↦ by simp only [Trivial.trivialization_apply, op_smul_eq_mul]⟩
 
 /-- On the trivial principal bundle the division map is `(p, q) ↦ p⁻¹ * q`. -/
 @[simp]
@@ -276,17 +276,23 @@ theorem ContinuousWithinAt.totalSpaceMk_smul [ContinuousMul G]
   refine (hsymm.comp_continuousWithinAt (x := x₀) he).congr_of_eventuallyEq ?_ (heq hx₀).symm
   filter_upwards [hf (e.open_baseSet.mem_nhds hx₀)] with x hx using (heq hx).symm
 
+/-- The right action of a principal bundle is continuous at a point: `x ↦ ⟨f x, p x • g x⟩` is
+continuous at `x₀` when `x ↦ ⟨f x, p x⟩` and `g` are. -/
 theorem ContinuousAt.totalSpaceMk_smul [ContinuousMul G]
     (hp : ContinuousAt (fun x ↦ TotalSpace.mk' G (f x) (p x)) x₀) (hg : ContinuousAt g x₀) :
     ContinuousAt (fun x ↦ TotalSpace.mk' G (f x) (op (g x) • p x)) x₀ :=
   (continuousWithinAt_univ _ _).1 <|
     hp.continuousWithinAt.totalSpaceMk_smul (s := univ) hg.continuousWithinAt
 
+/-- The right action of a principal bundle is continuous on a set: `x ↦ ⟨f x, p x • g x⟩` is
+continuous on `s` when `x ↦ ⟨f x, p x⟩` and `g` are. -/
 theorem ContinuousOn.totalSpaceMk_smul [ContinuousMul G]
     (hp : ContinuousOn (fun x ↦ TotalSpace.mk' G (f x) (p x)) s) (hg : ContinuousOn g s) :
     ContinuousOn (fun x ↦ TotalSpace.mk' G (f x) (op (g x) • p x)) s :=
   fun x hx ↦ (hp x hx).totalSpaceMk_smul (hg x hx)
 
+/-- The right action of a principal bundle is continuous: `x ↦ ⟨f x, p x • g x⟩` is continuous
+when `x ↦ ⟨f x, p x⟩` and `g` are. -/
 theorem Continuous.totalSpaceMk_smul [ContinuousMul G]
     (hp : Continuous fun x ↦ TotalSpace.mk' G (f x) (p x)) (hg : Continuous g) :
     Continuous fun x ↦ TotalSpace.mk' G (f x) (op (g x) • p x) :=
@@ -310,6 +316,8 @@ theorem ContinuousWithinAt.division [IsTopologicalGroup G]
   filter_upwards [hf (e.open_baseSet.mem_nhds hx₀)] with x hx
   exact division_eq_of_mem_baseSet hx _ _
 
+/-- The division map of a principal bundle is continuous at a point: `x ↦ division G (p x) (q x)`
+is continuous at `x₀` when `x ↦ ⟨f x, p x⟩` and `x ↦ ⟨f x, q x⟩` are. -/
 theorem ContinuousAt.division [IsTopologicalGroup G]
     (hp : ContinuousAt (fun x ↦ TotalSpace.mk' G (f x) (p x)) x₀)
     (hq : ContinuousAt (fun x ↦ TotalSpace.mk' G (f x) (q x)) x₀) :
@@ -317,12 +325,16 @@ theorem ContinuousAt.division [IsTopologicalGroup G]
   (continuousWithinAt_univ _ _).1 <|
     hp.continuousWithinAt.division (s := univ) hq.continuousWithinAt
 
+/-- The division map of a principal bundle is continuous on a set: `x ↦ division G (p x) (q x)`
+is continuous on `s` when `x ↦ ⟨f x, p x⟩` and `x ↦ ⟨f x, q x⟩` are. -/
 theorem ContinuousOn.division [IsTopologicalGroup G]
     (hp : ContinuousOn (fun x ↦ TotalSpace.mk' G (f x) (p x)) s)
     (hq : ContinuousOn (fun x ↦ TotalSpace.mk' G (f x) (q x)) s) :
     ContinuousOn (fun x ↦ division G (p x) (q x)) s :=
   fun x hx ↦ (hp x hx).division (hq x hx)
 
+/-- The division map of a principal bundle is continuous: `x ↦ division G (p x) (q x)` is
+continuous when `x ↦ ⟨f x, p x⟩` and `x ↦ ⟨f x, q x⟩` are. -/
 theorem Continuous.division [IsTopologicalGroup G]
     (hp : Continuous fun x ↦ TotalSpace.mk' G (f x) (p x))
     (hq : Continuous fun x ↦ TotalSpace.mk' G (f x) (q x)) :
