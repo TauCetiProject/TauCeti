@@ -215,15 +215,17 @@ theorem mapContMDiffMap_id :
   let := D.chartedSpace H
   apply D.contMDiffMap_ext
   intro i x
+  -- Both bundled identity maps and the identity index map evaluate to their arguments.
   exact h.mapContMDiffMap_ι hm h _ _ _ i x
 
 variable {D'' : TopCat.GlueData.{u}} [∀ i, ChartedSpace H'' (D''.U i)]
   [∀ ij, ChartedSpace H'' (D''.V ij)] [∀ i, IsManifold I'' n (D''.U i)]
 
-include hm h' in
-omit [∀ ij, ChartedSpace H (D.V ij)] [∀ i, IsManifold I n (D.U i)] in
+omit [∀ ij, ChartedSpace H (D.V ij)] [∀ i, IsManifold I n (D.U i)]
+  [∀ ij, ChartedSpace H' (D'.V ij)] [∀ i, IsManifold I' n (D'.U i)]
+  [∀ ij, ChartedSpace H'' (D''.V ij)] [∀ i, IsManifold I'' n (D''.U i)] in
 /-- Composing two families of piece maps preserves agreement of their images on overlaps. -/
-theorem mapContMDiffMap_comp_compatible (h'' : D''.IsCompatible I'' n)
+theorem mapContMDiffMap_comp_compatible
     (a : D.J → D'.J) (b : D'.J → D''.J)
     (f : ∀ i, C^m⟮I, D.U i; I', D'.U (a i)⟯)
     (g : ∀ j, C^m⟮I', D'.U j; I'', D''.U (b j)⟯)
@@ -236,10 +238,10 @@ theorem mapContMDiffMap_comp_compatible (h'' : D''.IsCompatible I'' n)
     (i j : D.J) (x : D.V (i, j)) :
     D''.toGlueData.ι (b (a i)) (g (a i) (f i (D.f i j x))) =
       D''.toGlueData.ι (b (a j)) (g (a j) (f j (D.f j i (D.t i j x)))) := by
-  let := D'.chartedSpace H'
-  let := D''.chartedSpace H''
-  have heq := congrArg (h'.mapContMDiffMap hm h'' b g hg) (hf i j x)
-  simpa only [mapContMDiffMap_ι] using heq
+  obtain ⟨y, hyi, hyj⟩ := (D'.ι_eq_iff_rel _ _ _ _).mp (hf i j x)
+  dsimp only at hyi hyj
+  rw [← hyi, ← hyj]
+  exact hg _ _ y
 
 /-- Composition of piece maps induces composition on the glued manifolds. The overlap
 condition on the composite follows from those of the two families. -/
@@ -259,14 +261,14 @@ theorem mapContMDiffMap_comp (h'' : D''.IsCompatible I'' n)
     letI := D''.chartedSpace H''
     (h'.mapContMDiffMap hm h'' b g hg).comp (h.mapContMDiffMap hm h' a f hf) =
       h.mapContMDiffMap hm h'' (b ∘ a) (fun i ↦ (g (a i)).comp (f i))
-        (mapContMDiffMap_comp_compatible hm h' h'' a b f g hf hg) := by
+        (mapContMDiffMap_comp_compatible a b f g hf hg) := by
   let := D.chartedSpace H
   let := D'.chartedSpace H'
   let := D''.chartedSpace H''
   apply D.contMDiffMap_ext
   intro i x
   rw [h.mapContMDiffMap_ι hm h'' (b ∘ a) (fun i ↦ (g (a i)).comp (f i))
-    (mapContMDiffMap_comp_compatible hm h' h'' a b f g hf hg) i x]
+    (mapContMDiffMap_comp_compatible a b f g hf hg) i x]
   simp only [ContMDiffMap.comp_apply, mapContMDiffMap_ι, Function.comp_apply]
 
 end Maps
