@@ -96,9 +96,12 @@ theorem mem_rightMappingSpace_iff {n : ℕ} (σ : X _⦋n + 1⦌) :
     σ ∈ (X.rightMappingSpace x y).obj (op ⦋n⦌) ↔
       X.δ (Fin.last (n + 1)) σ = X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op x ∧
         X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ (Fin.last _)).op σ = y := by
-  change X.map (joinVertexInl ⦋n⦌).op σ = _ ∧ X.map (joinVertexInr ⦋n⦌).op σ = y ↔ _
-  rw [joinVertexInl_mk, joinVertexInr_mk]
-  rfl
+  simp only [rightMappingSpace, unop_op, joinVertexInl_mk, joinVertexInr_mk, SimplicialObject.δ]
+  -- `σ` is an element of `(joinVertex.op ⋙ X) _⦋n⦌` only through the definitional equality of
+  -- this type with `X _⦋n + 1⦌`, so `Set.mem_ofPred_eq` cannot be rewritten across the membership
+  -- (its `Membership` instance does not typecheck at `X _⦋n + 1⦌`); membership in the unfolded
+  -- set-builder set is the defining predicate, closed by `Iff.rfl`.
+  exact Iff.rfl
 
 namespace rightMappingSpace
 
