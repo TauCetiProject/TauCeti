@@ -51,6 +51,14 @@ instance faithfulSMul (Q : QuadraticForm R M) [Invertible (2 : R)] :
     FaithfulSMul R (CliffordAlgebra Q) :=
   (faithfulSMul_iff_algebraMap_injective R (CliffordAlgebra Q)).2 (algebraMap_injective Q)
 
+/-- **`2` is nonzero in a Clifford algebra** over a nontrivial coefficient ring in which `2` is
+invertible, because the scalars are a faithful copy of `R`. As an instance this makes `two_ne_zero`
+and the rest of Mathlib's `NeZero (2 : _)` API available inside the Clifford algebra. -/
+instance neZeroTwo (Q : QuadraticForm R M) [Nontrivial R] [Invertible (2 : R)] :
+    NeZero (2 : CliffordAlgebra Q) :=
+  ⟨fun h ↦ Invertible.ne_zero (2 : R) (algebraMap_injective Q
+    (((map_ofNat (algebraMap R (CliffordAlgebra Q)) 2).trans h).trans (map_zero _).symm))⟩
+
 /-- Moving a vector `m` past `ι Q v` replaces it by `r • v - m`, where `r * Q v` is the polar
 pairing. This description is unchanged when `Q` is replaced by `-Q`. -/
 theorem ι_mul_ι_eq_ι_smul_sub_mul_ι {Q : QuadraticForm R M} (v m : M) {r : R}
