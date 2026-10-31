@@ -33,12 +33,19 @@ on `T` involved. This is the form needed when `T` already carries an `R`-algebra
 `x` and `y` do not respect, for instance when `T` is itself a tensor product over `R` and `x`
 twists the first factor by a ring automorphism.
 
+Mathlib's `LinearMap.tensorProduct` and `LinearMap.tensorProductEnd` send `a ⊗ f` to `a` times the
+base change of `f`, but their generated computation lemmas unfold to `TensorProduct.liftAux`; this
+file records their values on pure tensors as `simp` lemmas of higher priority than the generated
+ones, so the public `LinearMap.baseChange` API applies.
+
 ## Main declarations
 
 * `AlgHom.lTensor_toLinearMap_apply`: `f.toLinearMap.lTensor S` is
   `Algebra.TensorProduct.map (AlgHom.id R S) f`.
 * `AlgHom.rTensor_toLinearMap_apply`: `f.toLinearMap.rTensor S` is
   `Algebra.TensorProduct.map f (AlgHom.id R S)`.
+* `LinearMap.tensorProduct_tmul`, `LinearMap.tensorProductEnd_tmul`: the extension of linear maps
+  and of endomorphisms sends `a ⊗ f` to `a • f.baseChange A`.
 * `Algebra.TensorProduct.mulLeft`, `Algebra.TensorProduct.mulRight`: the
   multiplication maps `s ⊗ b ↦ s • b` and `b ⊗ t ↦ b * t`.
 * `Algebra.TensorProduct.liftRingHom x y h`: the ring homomorphism `a ⊗ b ↦ x a * y b`.
@@ -85,6 +92,24 @@ theorem AlgHom.rTensor_toLinearMap_apply {R B C : Type*} (S : Type*) [CommSemiri
   induction x using TensorProduct.inductionOn with
   | tmul b s => simp
   | add x y hx hy => simp [hx, hy]
+
+/-- The natural map `A ⊗[R] (M →ₗ[R] N) → (A ⊗[R] M →ₗ[A] A ⊗[R] N)` sends `a ⊗ f` to
+`a • f.baseChange A`, so that `LinearMap.baseChange_tmul` computes its values on pure tensors. -/
+@[simp high]
+theorem LinearMap.tensorProduct_tmul {R A M N : Type*} [CommSemiring R] [CommSemiring A]
+    [Algebra R A] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] (a : A)
+    (f : M →ₗ[R] N) : LinearMap.tensorProduct R A M N (a ⊗ₜ f) = a • f.baseChange A := by
+  simp only [LinearMap.tensorProduct_apply, TensorProduct.liftAux_tmul,
+    LinearMap.coe_restrictScalars, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.smul_apply,
+    LinearMap.baseChangeHom_apply]
+
+/-- The natural algebra map `A ⊗[R] Module.End R M → Module.End A (A ⊗[R] M)` sends `a ⊗ f` to
+`a • f.baseChange A`. -/
+@[simp high]
+theorem LinearMap.tensorProductEnd_tmul {R A M : Type*} [CommSemiring R] [CommSemiring A]
+    [Algebra R A] [AddCommMonoid M] [Module R M] (a : A) (f : Module.End R M) :
+    LinearMap.tensorProductEnd R A M (a ⊗ₜ f) = a • f.baseChange A :=
+  LinearMap.tensorProduct_tmul a f
 
 namespace Algebra.TensorProduct
 

@@ -249,4 +249,15 @@ lemma agmIntegral_pos {a b : ℝ} (ha : 0 < a) (hb : 0 < b) : 0 < agmIntegral a 
     _ = agmIntegral a b :=
       (agmIntegral_eq_pi_div_two_div_agm (a := ⟨a, ha.le⟩) (b := ⟨b, hb.le⟩)).symm
 
+/-- The AGM integral is homogeneous of degree `-1`: scaling both axes by `c` divides it by `|c|`.
+For `c = 0` both sides take the totalized value zero. -/
+theorem agmIntegral_mul_left (c a b : ℝ) : agmIntegral (c * a) (c * b) = agmIntegral a b / |c| := by
+  have key (x y z : ℝ≥0) : agmIntegral (z * x) (z * y) = agmIntegral x y / z := by
+    rw [← NNReal.coe_mul, ← NNReal.coe_mul, agmIntegral_eq_pi_div_two_div_agm,
+      agmIntegral_eq_pi_div_two_div_agm, agm_mul_distrib, NNReal.coe_mul]
+    ring
+  have habs (x y : ℝ) : agmIntegral |x| |y| = agmIntegral x y := by simp [agmIntegral_def]
+  rw [← habs, abs_mul, abs_mul, ← habs a b]
+  exact key ⟨|a|, abs_nonneg a⟩ ⟨|b|, abs_nonneg b⟩ ⟨|c|, abs_nonneg c⟩
+
 end TauCeti

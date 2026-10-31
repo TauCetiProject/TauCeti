@@ -96,6 +96,14 @@ theorem d_word {n : ℕ} (x : Unitization k A) (a : Fin n → A) :
 theorem word_zero {n : ℕ} (a : Fin n → A) : word k A 0 a = 0 :=
   TensorProduct.zero_tmul _ _
 
+/-- A word splits along the decomposition `x = x.fst • 1 + x.snd` of its coefficient in `A⁺`:
+`x da₁ ⋯ daₙ = x.fst • (1 da₁ ⋯ daₙ) + x.snd da₁ ⋯ daₙ`. -/
+theorem word_eq_smul_one_add {n : ℕ} (x : Unitization k A) (a : Fin n → A) :
+    word k A x a = x.fst • word k A 1 a + word k A (x.snd : Unitization k A) a := by
+  rw [word_def, word_def, word_def, TensorProduct.smul_tmul', ← TensorProduct.add_tmul,
+    ← Unitization.inl_one, ← Unitization.inl_smul, smul_eq_mul, _root_.mul_one,
+    Unitization.inl_fst_add_inr_snd_eq]
+
 /-- A word with a zero differential letter vanishes. -/
 theorem word_eq_zero_of_eq_zero {n : ℕ} (x : Unitization k A) (a : Fin n → A)
     (i : Fin n) (hi : a i = 0) : word k A x a = 0 := by

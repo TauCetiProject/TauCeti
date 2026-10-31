@@ -93,7 +93,7 @@ private def tautologicalTangentOrientation :
   toFun p := _root_.Orientation.map _ (projDerivEquiv p).symm.toLinearEquiv p.orientation
   eventually_mapOrientation_eq' p := by
     apply Orientation.eventually_mapOrientation_map_symm_eq (contMDiff_proj (n := 1) p)
-      projDerivEquiv projDerivEquiv_coe (Fintype.card_fin _) (fun q ↦ q.orientation)
+      projDerivEquiv (.of_forall projDerivEquiv_coe) (Fintype.card_fin _) (fun q ↦ q.orientation)
     have hp := FiberBundle.mem_baseSet_trivializationAt' (F := E) (E := TangentSpace I) p.proj
     have hs : p ∈ VectorBundleOrientationCover.sheet
         (trivializationAt E (TangentSpace I) p.proj)
