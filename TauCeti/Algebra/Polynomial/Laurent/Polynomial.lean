@@ -18,6 +18,9 @@ its extension over the origin is unique because `Polynomial.toLaurent` is inject
 The range criterion specializes `Finsupp.mem_range_mapDomain_iff` along the natural-number
 inclusion into the integers. The algebra-homomorphism extension uses `AlgEquiv.ofInjective`
 and `AlgHom.codRestrict` to factor through the polynomial subalgebra.
+
+The instance `LaurentPolynomial.isScalarTower_polynomial` records the scalar tower
+`R → R[X] → R[T;T⁻¹]` along `Polynomial.toLaurent`.
 -/
 
 public section
@@ -71,3 +74,14 @@ theorem exists_algHom_toLaurent_comp_eq_iff {f : H →ₐ[R] LaurentPolynomial A
     exact congrArg Subtype.val (e.apply_symm_apply (f.codRestrict i.range _ h))
 
 end TauCeti
+
+namespace LaurentPolynomial
+
+open Polynomial
+
+/-- The scalar tower `R → R[X] → R[T;T⁻¹]`, along `Polynomial.toLaurent`. -/
+instance isScalarTower_polynomial (R : Type*) [CommSemiring R] :
+    IsScalarTower R R[X] R[T;T⁻¹] :=
+  .of_algebraMap_eq fun r ↦ by simp [← C_eq_algebraMap]
+
+end LaurentPolynomial

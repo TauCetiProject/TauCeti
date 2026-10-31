@@ -11,7 +11,7 @@ import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Jet
 
 /-!
-# Scalar curvature in the chart C² topology on metrics
+# Scalar curvature in the chart C² and C∞ topologies on metrics
 
 Equip the smooth Riemannian metrics on a finite-dimensional manifold without boundary with the
 chart C² topology `Bundle.ContMDiffRiemannianMetric.chartC2Topology`, in which convergence is
@@ -26,6 +26,9 @@ positive scalar curvature form an open set. Moreover, a compact set of metrics o
 curvature, such as the image of a continuous path of such metrics, has a common positive lower
 bound for its scalar curvature.
 
+The chart C∞ topology `Bundle.ContMDiffRiemannianMetric.chartCInftyTopology` is finer than the
+chart C² topology, so the same three statements hold for it.
+
 ## Main results
 
 * `Bundle.ContMDiffRiemannianMetric.continuous_scalarCurvature_chartC2`: `(g, x) ↦ Scal(g)(x)` is
@@ -35,6 +38,10 @@ bound for its scalar curvature.
 * `IsCompact.exists_pos_forall_le_scalarCurvature_chartC2`: on a compact manifold, the metrics in a
   C²-compact set of metrics of positive scalar curvature have scalar curvature bounded below by a
   common positive constant.
+* `Bundle.ContMDiffRiemannianMetric.continuous_scalarCurvature_chartCInfty`,
+  `Bundle.ContMDiffRiemannianMetric.isOpen_setOf_hasPositiveScalarCurvature_chartCInfty` and
+  `IsCompact.exists_pos_forall_le_scalarCurvature_chartCInfty`: the same statements for the chart
+  C∞ topology.
 
 ## References
 
@@ -43,7 +50,7 @@ bound for its scalar curvature.
 -/
 
 open Bundle Filter Set TauCeti.Manifold
-open scoped ContDiff Manifold Topology TauCeti.MetricC2
+open scoped ContDiff Manifold Topology
 
 public section
 
@@ -66,6 +73,10 @@ private local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] ℝ) :=
 private local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) :=
   ContinuousLinearMap.toNormedSpace
 
+section ChartC2
+
+open scoped TauCeti.MetricC2
+
 /-- **Scalar curvature is continuous in the chart C² topology.** The scalar curvature `Scal(g)(x)`
 of a smooth Riemannian metric `g` at a point `x` depends jointly continuously on `g`, in the chart
 C² topology, and on `x`. -/
@@ -77,12 +88,12 @@ theorem continuous_scalarCurvature_chartC2 :
   have hz₀ := mem_extChartAt_target (I := I) y₀
   -- Each entry of a chart derivative of order at most two, evaluated on basis vectors, varies
   -- continuously.
-  have hJ (n : ℕ) (hn : n < 3) (v : Fin n → E) (i j : Fin (Module.finrank ℝ E)) :
+  have hJ (n : ℕ) (hn : (n : ℕ∞) ≤ 2) (v : Fin n → E) (i j : Fin (Module.finrank ℝ E)) :
       ContinuousAt (fun q : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) × E ↦
         iteratedFDeriv ℝ n (q.1.toNondegenerateMetric.chartMetric y₀) q.2 v (b i) (b j))
         (g₀, extChartAt I y₀ y₀) :=
     (((continuous_eval_const v).continuousAt.comp
-      (continuousAt_iteratedFDeriv_chartMetric y₀ ⟨n, hn⟩ g₀ hz₀)).clm_apply
+      (continuousAt_iteratedFDeriv_chartMetric 2 y₀ hn g₀ hz₀)).clm_apply
         continuousAt_const).clm_apply continuousAt_const
   -- Near `(g₀, extChartAt I y₀ y₀)` the chart point stays in the open chart target, where each
   -- chart metric is smooth.
@@ -137,8 +148,37 @@ theorem isOpen_setOf_hasPositiveScalarCurvature_chartC2 [CompactSpace M] :
       ((hasPositiveScalarCurvature_iff _).1 hg₀ x)] with g hg
   exact (hasPositiveScalarCurvature_iff _).2 fun x ↦ hg x (mem_univ x)
 
+end ChartC2
+
+section ChartCInfty
+
+open scoped TauCeti.MetricCInfty
+
+/-- **Scalar curvature is continuous in the chart C∞ topology.** The scalar curvature `Scal(g)(x)`
+depends jointly continuously on the metric `g`, in the chart C∞ topology, and on `x`. -/
+theorem continuous_scalarCurvature_chartCInfty :
+    Continuous (fun q : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) × M ↦
+      q.1.scalarCurvature q.2) :=
+  -- Precompose the chart C² statement with the identity, continuous from the finer chart C∞
+  -- topology; the two topologies on the metric factor are passed explicitly.
+  @Continuous.comp _ _ _ (@instTopologicalSpaceProd _ _ chartCInftyTopology _)
+    (@instTopologicalSpaceProd _ _ chartC2Topology _) _ _ _
+    continuous_scalarCurvature_chartC2
+    (@Continuous.prodMap _ _ _ _ chartC2Topology _ chartCInftyTopology _ _ _
+      (continuous_id_of_le chartCInftyTopology_le_chartC2Topology) continuous_id)
+
+/-- **Positive scalar curvature is C∞-open.** On a compact manifold without boundary, the smooth
+Riemannian metrics of positive scalar curvature form an open set in the chart C∞ topology. -/
+theorem isOpen_setOf_hasPositiveScalarCurvature_chartCInfty [CompactSpace M] :
+    IsOpen {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) |
+      g.HasPositiveScalarCurvature} :=
+  isOpen_setOf_hasPositiveScalarCurvature_chartC2.mono chartCInftyTopology_le_chartC2Topology
+
+end ChartCInfty
+
 end Bundle.ContMDiffRiemannianMetric
 
+open scoped TauCeti.MetricC2 in
 /-- **A uniform scalar gap on C²-compact sets of metrics.** On a compact manifold without boundary,
 let `K` be a set of smooth Riemannian metrics of positive scalar curvature that is compact in the
 chart C² topology, such as the image of a continuous path of such metrics. Then the scalar
@@ -151,3 +191,14 @@ theorem IsCompact.exists_pos_forall_le_scalarCurvature_chartC2 [CompactSpace M]
     ContMDiffRiemannianMetric.continuous_scalarCurvature_chartC2.continuousOn
     fun q hq ↦ (ContMDiffRiemannianMetric.hasPositiveScalarCurvature_iff _).1 (hpos q.1 hq.1) q.2
   exact ⟨ε, hε, fun g hg x ↦ hle (g, x) ⟨hg, mem_univ x⟩⟩
+
+open scoped TauCeti.MetricCInfty in
+/-- **A uniform scalar gap on C∞-compact sets of metrics.** On a compact manifold without
+boundary, the scalar curvatures of the metrics in a set of metrics of positive scalar curvature
+that is compact in the chart C∞ topology are bounded below by a common positive constant. -/
+theorem IsCompact.exists_pos_forall_le_scalarCurvature_chartCInfty [CompactSpace M]
+    {K : Set (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))} (hK : IsCompact K)
+    (hpos : ∀ g ∈ K, g.HasPositiveScalarCurvature) :
+    ∃ ε : ℝ, 0 < ε ∧ ∀ g ∈ K, ∀ x, ε ≤ g.scalarCurvature x :=
+  -- `K` is also compact in the coarser chart C² topology.
+  (hK.chartCk_of_le (k := 2) le_top).exists_pos_forall_le_scalarCurvature_chartC2 hpos
