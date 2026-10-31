@@ -264,13 +264,8 @@ theorem sum_crossingChangeHexagonCompositeWeight_filter_not_hasDisjointSides
         ∑ D ∈ (G.crossingChangeRectangleHexagonDecompositions C t x z).filter
           (fun D => ¬D.toRectangleDecomposition.HasDisjointSides),
           G.crossingChangeRectangleHexagonWeight C t R D := by
-  have hdecomp : G.crossingChangeHexagonCompositeDecompositions C t x z =
-      (G.crossingChangeHexagonRectangleDecompositions C t x z).disjSum
-        (G.crossingChangeRectangleHexagonDecompositions C t x z) := by
-    ext D
-    cases D <;> simp
-  simp only [Finset.sum_filter, hdecomp, Finset.sum_disjSum,
-    GridHexagonCompositeDecomposition.toRectangleDecomposition_inl,
+  simp only [Finset.sum_filter, crossingChangeHexagonCompositeDecompositions_def,
+    Finset.sum_disjSum, GridHexagonCompositeDecomposition.toRectangleDecomposition_inl,
     GridHexagonCompositeDecomposition.toRectangleDecomposition_inr,
     crossingChangeHexagonCompositeWeight_inl, crossingChangeHexagonCompositeWeight_inr]
 
@@ -317,7 +312,7 @@ private theorem XSet_inter_and_weight_of_mem
         XSet_inter_coveredSquares_of_mem_crossingChangeCommutationHexagons hX hP,
         Finset.disjoint_iff_inter_eq_empty.mp (G.disjoint_XSet_of_mem_unblockedRectangles hr).symm,
         Finset.union_empty]
-      rfl
+      simp only [compositeCutColumn, Sum.elim_inl]
     · rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl]
       simp only [crossingChangeHexagonCompositeWeight_inl, crossingChangeHexagonRectangleWeight_def,
         compositeCutSquares, compositeAddedSquares, Sum.elim_inl]
@@ -331,7 +326,7 @@ private theorem XSet_inter_and_weight_of_mem
         XSet_inter_coveredSquares_of_mem_crossingChangeCommutationHexagons hX hP,
         Finset.disjoint_iff_inter_eq_empty.mp (G.disjoint_XSet_of_mem_unblockedRectangles hr).symm,
         Finset.empty_union]
-      rfl
+      simp only [compositeCutColumn, Sum.elim_inr]
     · rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr]
       simp only [crossingChangeHexagonCompositeWeight_inr, crossingChangeRectangleHexagonWeight_def,
         compositeCutSquares, compositeAddedSquares, Sum.elim_inr]

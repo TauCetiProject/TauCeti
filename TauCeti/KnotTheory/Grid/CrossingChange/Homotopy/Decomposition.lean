@@ -276,6 +276,13 @@ noncomputable def crossingChangeHexagonCompositeDecompositions (x z : GridState 
   (G.crossingChangeHexagonRectangleDecompositions C t x z).disjSum
     (G.crossingChangeRectangleHexagonDecompositions C t x z)
 
+/-- The counted composites are the disjoint union of the counted hexagon--rectangle and
+rectangle--hexagon decompositions. -/
+theorem crossingChangeHexagonCompositeDecompositions_def (x z : GridState n) :
+    G.crossingChangeHexagonCompositeDecompositions C t x z =
+      (G.crossingChangeHexagonRectangleDecompositions C t x z).disjSum
+        (G.crossingChangeRectangleHexagonDecompositions C t x z) := (rfl)
+
 /-- A hexagon followed by a rectangle is a counted composite exactly when it is counted as a
 hexagon--rectangle decomposition. -/
 @[simp]
