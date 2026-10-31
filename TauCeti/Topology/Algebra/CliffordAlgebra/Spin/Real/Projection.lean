@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Closed
+public import Mathlib.Topology.Covering.Basic
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
+import Mathlib.Topology.Covering.Quotient
 
 /-!
 # The real Spin projection on closed unit-group carriers
@@ -25,6 +28,11 @@ definite, so its Spin action surjects onto the special orthogonal group. Consequ
 closed carriers are given their Lie-group structures, automatic smoothness makes this map available
 to the Lie functor without changing either carrier.
 
+In positive dimension the carrier homomorphism is again the Spin double cover: its kernel consists
+of the units `1` and `-1`, and it is a covering map. The source carrier is compact and the target
+is Hausdorff, so the surjection is a quotient map with finite kernel. This transports the compact
+real Spin covering to the unit-group carriers that serve as frame structure groups.
+
 ## Main results
 
 * `TauCeti.CliffordAlgebra.realCliffordSpinContinuousMulEquivUnitsRange` identifies the usual
@@ -36,6 +44,10 @@ to the Lie functor without changing either carrier.
   specializes the formula to the canonical representative of a Spin element.
 * `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalRange_surjective` proves that the
   carrier homomorphism is onto.
+* `TauCeti.CliffordAlgebra.realCliffordSpinToSpecialOrthogonalRange_eq_one_iff` identifies its
+  kernel with the units `1` and `-1`.
+* `TauCeti.CliffordAlgebra.isCoveringMap_realCliffordSpinToSpecialOrthogonalRange` proves that it
+  is a covering map in positive dimension.
 
 ## References
 
@@ -179,6 +191,41 @@ theorem realCliffordSpinToSpecialOrthogonalRange_surjective (n : ℕ) :
     (realCliffordForm n 0) (posDef_realCliffordForm_zero n) y
   exact ⟨⟨spinGroup.toUnits x, ⟨x, rfl⟩⟩,
     realCliffordSpinToSpecialOrthogonalRange_apply_toUnits n x⟩
+
+/-- In positive dimension, a point of the Spin carrier lies over the identity exactly when it is
+the unit `1` or the unit `-1`. -/
+theorem realCliffordSpinToSpecialOrthogonalRange_eq_one_iff (n : ℕ) [NeZero n]
+    (x : MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) :
+    realCliffordSpinToSpecialOrthogonalRange n x = 1 ↔
+      (x : (CliffordAlgebra (realCliffordForm n 0))ˣ) = 1 ∨
+        (x : (CliffordAlgebra (realCliffordForm n 0))ˣ) = -1 := by
+  obtain ⟨_, y, rfl⟩ := x
+  have : Nontrivial (Fin (n + 0) → ℝ) := inferInstanceAs (Nontrivial (Fin n → ℝ))
+  rw [realCliffordSpinToSpecialOrthogonalRange_apply_toUnits, Subtype.ext_iff,
+    OneMemClass.coe_one,
+    map_eq_one_iff _ (QuadraticMap.specialOrthogonalToGeneralLinear_injective _),
+    ← MonoidHom.mem_ker,
+    mem_ker_spinToSpecialOrthogonal_iff _ (nondegenerate_realCliffordForm n 0)]
+  refine or_congr ?_ ?_
+  · rw [← map_one spinGroup.toUnits, spinGroup.toUnits_injective.eq_iff]
+  · rw [Subtype.ext_iff, spinGroup.coe_negOne, Units.ext_iff, spinGroup.val_toUnits_apply,
+      Units.val_neg, Units.val_one]
+
+/-- In positive dimension, the projection between the closed real Spin and special-orthogonal
+carriers is a covering map. -/
+theorem isCoveringMap_realCliffordSpinToSpecialOrthogonalRange (n : ℕ) [NeZero n] :
+    IsCoveringMap (realCliffordSpinToSpecialOrthogonalRange n) := by
+  let f := realCliffordSpinToSpecialOrthogonalRange n
+  have : CompactSpace (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) :=
+    (realCliffordSpinContinuousMulEquivUnitsRange n).toHomeomorph.compactSpace
+  have hquot : Topology.IsQuotientMap f :=
+    .of_surjective_continuous (realCliffordSpinToSpecialOrthogonalRange_surjective n) f.continuous
+  have hfin : (SetLike.coe f.toMonoidHom.ker).Finite := by
+    refine (Set.Finite.preimage Subtype.val_injective.injOn (Set.toFinite {1, -1})).subset ?_
+    intro x hx
+    simpa using (realCliffordSpinToSpecialOrthogonalRange_eq_one_iff n x).mp hx
+  exact (hquot.isQuotientCoveringMap_of_isDiscrete_ker_monoidHom
+    (f := f.toMonoidHom) hfin.isDiscrete).isCoveringMap
 
 end
 

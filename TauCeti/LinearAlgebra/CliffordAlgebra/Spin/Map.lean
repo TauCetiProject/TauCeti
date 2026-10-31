@@ -35,6 +35,8 @@ action.
   vector action with conjugation.
 * `spinGroup.spinGroupEquiv_vectorAction` identifies its induced Spin automorphism with
   `MulAut.conj`.
+* `QuadraticMap.IsometryEquiv.spinGroupEquiv_eq_conj` restates this for an arbitrary isometric
+  automorphism that agrees with the vector action of a Spin element.
 * `QuadraticMap.Isometry.spinGroupMap_injective_of_leftInverse` proves injectivity when the
   isometry has an isometric left inverse.
 * `QuadraticMap.Isometry.spinGroupMap_spinVectorAction` proves naturality of the Spin vector
@@ -228,6 +230,25 @@ theorem spinGroupEquiv_vectorAction (g : spinGroup Q) :
   simp [MulAut.conj_apply, ← spinGroup.star_eq_inv]
 
 end spinGroup
+
+namespace QuadraticMap.IsometryEquiv
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [Invertible (2 : R)] {Q : QuadraticForm R M}
+
+/-- An isometric automorphism that agrees with the vector action of a Spin element `g` induces
+conjugation by `g` on the Spin group. -/
+theorem spinGroupEquiv_eq_conj (e : Q.IsometryEquiv Q) (g : spinGroup Q)
+    (h : ∀ m, CliffordAlgebra.spinVectorAction Q g m = e m) :
+    e.spinGroupEquiv = MulAut.conj g := by
+  have he : e = TauCeti.QuadraticMap.orthogonalGroupEquivIsometryEquiv Q
+      (CliffordAlgebra.spinToOrthogonal Q g) :=
+    DFunLike.ext _ _ fun m ↦ by
+      rw [TauCeti.QuadraticMap.coe_orthogonalGroupEquivIsometryEquiv,
+        CliffordAlgebra.coe_spinToOrthogonal_apply, h]
+  rw [he, spinGroup.spinGroupEquiv_vectorAction]
+
+end QuadraticMap.IsometryEquiv
 
 
 namespace QuadraticMap.Isometry
