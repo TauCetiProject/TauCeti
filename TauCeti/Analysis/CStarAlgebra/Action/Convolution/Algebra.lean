@@ -228,6 +228,16 @@ theorem linearEquiv_apply (f : ConvolutionAlgebra α μ) : linearEquiv α μ f =
 theorem linearEquiv_symm_apply (f : C_c(G, A)) : (linearEquiv α μ).symm f = toConv f :=
   (rfl)
 
+/-- The elementary function `s ↦ φ s • e` of a real compactly supported function `φ` and a
+coefficient `e`, as an element of the convolution algebra. -/
+def smulRight (φ : C_c(G, ℝ)) (e : A) : ConvolutionAlgebra α μ :=
+  toConv (φ.compLeft (ContinuousLinearMap.toSpanSingleton ℝ e))
+
+@[simp]
+theorem ofConv_smulRight_apply (φ : C_c(G, ℝ)) (e : A) (s : G) :
+    (smulRight φ e : ConvolutionAlgebra α μ).ofConv s = φ s • e := by
+  simp [smulRight, CompactlySupportedContinuousMap.compLeft_apply]
+
 /-! ### Convolution product -/
 
 section Mul

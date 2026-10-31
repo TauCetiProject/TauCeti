@@ -45,12 +45,10 @@ for its completions, such as the `L¹` completion and the crossed products.
 The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2, where these
 functions form the approximate identity of `C_c(G, A)` used to construct the crossed product.
 
-## Main definitions
-
-* `TauCeti.CStarAction.ConvolutionAlgebra.smulRight`: the elementary function `s ↦ φ s • e`.
-
 ## Main statements
 
+* `TauCeti.CStarAction.ConvolutionAlgebra.ofConv_mul_smulRight_apply`: the formula for
+  `f ⋆ (φ ⊗ e)` after the substitution `r = s * t⁻¹`.
 * `TauCeti.CStarAction.ConvolutionAlgebra.tendsto_smulRight_mul`: `(φ ⊗ e) ⋆ f → f`.
 * `TauCeti.CStarAction.ConvolutionAlgebra.tendsto_mul_smulRight`: `f ⋆ (φ ⊗ e) → f`.
 * `TauCeti.CStarAction.ConvolutionAlgebra.isApproximateUnit_map_smulRight`: the elementary
@@ -72,21 +70,6 @@ variable {G A : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
   [MeasurableSpace G] {α : CStarAction G A} {μ : Measure G}
 
 /-! ### Elementary functions -/
-
-/-- The elementary function `s ↦ φ s • e` of a real compactly supported function `φ` and a
-coefficient `e`, as an element of the convolution algebra. -/
-def smulRight (φ : C_c(G, ℝ)) (e : A) : ConvolutionAlgebra α μ :=
-  toConv (φ.compLeft (ContinuousLinearMap.toSpanSingleton ℝ e))
-
-@[simp]
-theorem ofConv_smulRight_apply (φ : C_c(G, ℝ)) (e : A) (s : G) :
-    (smulRight φ e : ConvolutionAlgebra α μ).ofConv s = φ s • e := by
-  simp [smulRight, CompactlySupportedContinuousMap.compLeft_apply]
-
-/-- The `L¹` norm of an elementary function is `(∫ |φ|) * ‖e‖`. -/
-theorem norm_smulRight [OpensMeasurableSpace G] [IsFiniteMeasureOnCompacts μ] (φ : C_c(G, ℝ))
-    (e : A) : ‖(smulRight φ e : ConvolutionAlgebra α μ)‖ = (∫ s, |φ s| ∂μ) * ‖e‖ := by
-  simp [norm_eq_integral_norm, norm_smul, integral_mul_const]
 
 /-- The elementary functions `φ i ⊗ e` of nonnegative functions of unit integral and of an
 increasing approximate unit eventually lie in the closed unit ball of the convolution algebra. -/
@@ -147,7 +130,7 @@ private theorem three_mul_mul_lt {ε m : ℝ} (hε : 0 < ε) (hm : 0 ≤ m) :
 
 /-- The right product with an elementary function, after substituting `r = s * t⁻¹`:
 `(f ⋆ (φ ⊗ e)) s = ∫ t, φ t • c(t) • (f (s * t⁻¹) * α (s * t⁻¹) e) ∂μ`. -/
-private theorem ofConv_mul_smulRight_apply [IsTopologicalGroup G] [LocallyCompactSpace G]
+theorem ofConv_mul_smulRight_apply [IsTopologicalGroup G] [LocallyCompactSpace G]
     [BorelSpace G] [μ.IsHaarMeasure] (f : ConvolutionAlgebra α μ)
     (φ : C_c(G, ℝ)) (e : A) (s : G) :
     (f * smulRight φ e).ofConv s = ∫ t, φ t • (Measure.modularCharacter t : ℝ) •
@@ -198,7 +181,9 @@ theorem tendsto_smulRight_mul [IsFiniteMeasureOnCompacts μ] {ι : Type*} {l : F
   rw [nhdsWithin_univ] at hV
   have hunif (r : G) (hr : r ∈ V ∩ V₀) (s : G) : ‖α r (g (r⁻¹ * s)) - g s‖ ≤ δ := by
     by_cases hs : s ∈ C
-    · simpa [dist_eq_norm] using (show dist _ _ < δ from hVδ r hr.1 s hs).le
+    · -- Membership in the entourage `{p | dist p.1 p.2 < δ}` unfolds to a distance bound.
+      have h : dist (α r (g (r⁻¹ * s))) (α 1 (g (1⁻¹ * s))) < δ := hVδ r hr.1 s hs
+      simpa [dist_eq_norm] using h.le
     · simp [hgC s hs r hr.2, hgC' s hs, hδ.le]
   -- Eventually `e * g s` is uniformly close to `g s`.
   have he := Metric.tendstoUniformlyOn_iff.1
@@ -228,8 +213,6 @@ theorem tendsto_smulRight_mul [IsFiniteMeasureOnCompacts μ] {ι : Type*} {l : F
           rw [mul_sub, sub_add_sub_cancel]
       _ ≤ δ + δ := (norm_add_le _ _).trans (add_le_add h1 h2)
       _ = 2 * δ := by ring
-
-variable [StarOrderedRing A]
 
 /-- **Right approximation.** Let `φ i` be eventually nonnegative real functions of unit integral
 whose supports shrink to the identity, and let `lA` be an increasing approximate unit of `A`.
@@ -261,7 +244,9 @@ theorem tendsto_mul_smulRight [BorelSpace G] [μ.IsHaarMeasure] {ι : Type*} {l 
   rw [nhdsWithin_univ] at hV
   have hunif (t : G) (ht : t ∈ V ∩ V₀) (s : G) : ‖c t • g (s * t⁻¹) - g s‖ ≤ δ := by
     by_cases hs : s ∈ C
-    · simpa [c, dist_eq_norm] using (show dist _ _ < δ from hVδ t ht.1 s hs).le
+    · -- Membership in the entourage `{p | dist p.1 p.2 < δ}` unfolds to a distance bound.
+      have h : dist (c t • g (s * t⁻¹)) (c 1 • g (s * 1⁻¹)) < δ := hVδ t ht.1 s hs
+      simpa [c, dist_eq_norm] using h.le
     · simp [hgC s hs t ht.2, hgC' s hs, hδ.le]
   have hc2 : ∀ᶠ t in 𝓝 (1 : G), c t < 2 :=
     (hc.tendsto 1).eventually (eventually_lt_nhds (by norm_num [c]))
@@ -326,7 +311,8 @@ variable (α μ) in
 /-- **The twisted convolution algebra has a bounded approximate unit.** For a Haar measure, the
 convolution algebra has an approximate unit contained in its closed unit ball, made of elementary
 functions `φ ⊗ e` with `e` in the canonical approximate unit of `A`. -/
-theorem exists_isApproximateUnit_norm_le_one [BorelSpace G] [μ.IsHaarMeasure] :
+theorem exists_isApproximateUnit_norm_le_one [StarOrderedRing A] [BorelSpace G]
+    [μ.IsHaarMeasure] :
     ∃ l : Filter (ConvolutionAlgebra α μ), l.IsApproximateUnit ∧ ∀ᶠ u in l, ‖u‖ ≤ 1 := by
   -- One normalized bump inside each neighbourhood of `1`, indexed as a net shrinking to `1`.
   choose φ hφ using fun U : {U : Set G // U ∈ 𝓝 (1 : G)} =>

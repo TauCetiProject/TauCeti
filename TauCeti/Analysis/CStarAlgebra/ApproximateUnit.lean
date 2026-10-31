@@ -61,16 +61,28 @@ theorem tendstoUniformlyOn_mul_right {l : Filter A} (hl : l.IsIncreasingApproxim
     _ = ε := by ring
 
 /-- Along an increasing approximate unit, `a * e → a` uniformly for `a` in a compact set. -/
-theorem tendstoUniformlyOn_mul_left [StarOrderedRing A] {l : Filter A}
-    (hl : l.IsIncreasingApproximateUnit) {K : Set A} (hK : IsCompact K) :
-    TendstoUniformlyOn (fun e a => a * e) id l K := by
-  -- Eventually `e` is self-adjoint, so `a * e - a` is the adjoint of `e * a⋆ - a⋆`.
+theorem tendstoUniformlyOn_mul_left {l : Filter A} (hl : l.IsIncreasingApproximateUnit)
+    {K : Set A} (hK : IsCompact K) : TendstoUniformlyOn (fun e a => a * e) id l K := by
   rw [Metric.tendstoUniformlyOn_iff]
   intro ε hε
-  filter_upwards [Metric.tendstoUniformlyOn_iff.1
-      (hl.tendstoUniformlyOn_mul_right (hK.image continuous_star)) ε hε,
-    hl.eventually_star_eq] with e he hse a ha
-  simpa [dist_eq_norm, ← norm_star (a - a * e), hse] using he (star a) (Set.mem_image_of_mem _ ha)
+  -- Cover `K` by finitely many balls of radius `ε / 3`, and use the eventual bound `‖e‖ ≤ 1`.
+  obtain ⟨t, -, ht, hKt⟩ := hK.finite_cover_balls (e := ε / 3) (by positivity)
+  have hconv : ∀ᶠ e in l, ∀ c ∈ t, dist c (c * e) < ε / 3 := (eventually_all_finite ht).2
+    fun c _ => (Metric.tendsto_nhds.1 (hl.tendsto_mul_left c) (ε / 3) (by positivity)).mono
+      fun _ h => by rwa [dist_comm]
+  filter_upwards [hl.eventually_norm, hconv] with e he hc a ha
+  obtain ⟨c, hct, hac⟩ := Set.mem_iUnion₂.1 (hKt ha)
+  have hmul : dist (c * e) (a * e) ≤ dist c a := by
+    rw [dist_eq_norm, dist_eq_norm, ← sub_mul]
+    exact (norm_mul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) he)
+  calc dist (id a) (a * e) ≤ dist a c + dist c (c * e) + dist (c * e) (a * e) :=
+        dist_triangle4 _ _ _ _
+    _ < ε / 3 + ε / 3 + ε / 3 := by
+        gcongr
+        · exact Metric.mem_ball.1 hac
+        · exact hc c hct
+        · exact hmul.trans_lt (by rw [dist_comm]; exact Metric.mem_ball.1 hac)
+    _ = ε := by ring
 
 end Uniform
 
