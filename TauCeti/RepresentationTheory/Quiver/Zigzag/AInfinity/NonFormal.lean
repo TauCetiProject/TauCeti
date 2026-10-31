@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Obstruction.Invariance
+public import TauCeti.Combinatorics.SimpleGraph.Degree
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.HochschildClass
 
 /-!
@@ -210,14 +211,6 @@ theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degre
     (hvw : v ≠ w) (hr : G.Reachable v w) (hv : 3 ≤ G.degree v) (hw : 3 ≤ G.degree w) :
     ¬(𝒵).IsIntrinsicallyFormal := by
   classical
-  -- A vertex of degree at least three has two distinct neighbours other than any given vertex.
-  have two_adj (x : V) [Fintype (G.neighborSet x)] (hx : 3 ≤ G.degree x) (u : V) :
-      ∃ a b, G.Adj a x ∧ G.Adj b x ∧ a ≠ b ∧ a ≠ u ∧ b ≠ u := by
-    obtain ⟨a, ha, b, hb, hab⟩ := Finset.one_lt_card.mp <|
-      (Finset.pred_card_le_card_erase (s := G.neighborFinset x) (a := u)).trans_lt'
-        (by rw [SimpleGraph.card_neighborFinset_eq_degree]; omega)
-    simp only [Finset.mem_erase, SimpleGraph.mem_neighborFinset] at ha hb
-    exact ⟨a, b, ha.2.symm, hb.2.symm, hab, ha.1, hb.1⟩
   -- The darts `f 0, …, f n` of a path `p` from `v` to `w`; the vertices of `p` are distinct.
   obtain ⟨p, hp⟩ := hr.exists_isPath
   obtain ⟨n, hn⟩ : ∃ n, p.length = n + 1 :=
@@ -227,13 +220,15 @@ theorem not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degre
       (by simp only [Set.mem_ofPred_eq]; omega) h
   let f : Fin (n + 1) → G.Dart := fun t ↦
     ⟨(p.getVert t, p.getVert (t + 1)), p.adj_getVert_succ (by omega)⟩
-  obtain ⟨a, b, ha, hb, hab, hau, hbu⟩ := two_adj v hv (p.getVert 1)
-  obtain ⟨a', b', ha', hb', hab', hau', hbu'⟩ := two_adj w hw (p.getVert n)
-  have hd : (⟨(a, v), ha⟩ : G.Dart).snd = p.getVert 0 := p.getVert_zero.symm
+  obtain ⟨a, b, ha, hb, hab, hau, hbu⟩ := G.exists_adj_adj_ne_of_three_le_degree hv (p.getVert 1)
+  obtain ⟨a', b', ha', hb', hab', hau', hbu'⟩ :=
+    G.exists_adj_adj_ne_of_three_le_degree hw (p.getVert n)
+  have hd : (⟨(a, v), ha.symm⟩ : G.Dart).snd = p.getVert 0 := p.getVert_zero.symm
   -- Distinct darts are told apart by their tails. The vertices `(f 0).snd` and `(f n).fst` unfold
   -- to `p.getVert 1` and `p.getVert n`, and consecutive darts of `f` are adjacent by definition.
   refine not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_walk (f := f)
-    (d := ⟨(a, v), ha⟩) (e := ⟨(b, v), hb⟩) (d' := ⟨(a', w), ha'⟩) (e' := ⟨(b', w), hb'⟩)
+    (d := ⟨(a, v), ha.symm⟩) (e := ⟨(b, v), hb.symm⟩) (d' := ⟨(a', w), ha'.symm⟩)
+    (e' := ⟨(b', w), hb'.symm⟩)
     (fun h ↦ hab (congrArg (·.fst) h)) rfl ?_ (fun h ↦ hau (congrArg (·.fst) h))
     (fun h ↦ hbu (congrArg (·.fst) h)) (fun _ ↦ rfl) (fun t h ↦ ?_) (fun t h ↦ ?_)
     (fun h ↦ hab' (congrArg (·.fst) h)) ?_ ?_ (fun h ↦ hau' (congrArg (·.fst) h))
