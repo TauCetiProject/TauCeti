@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
-public import TauCeti.RingTheory.Huber.TateGauge.SpectralSeminorm
+public import TauCeti.RingTheory.Huber.TateGauge.Spectral.Seminorm
 public import TauCeti.RingTheory.Huber.Uniform
 public import TauCeti.RingTheory.Perfectoid.PseudoUniformizerRoots.Basic
 
