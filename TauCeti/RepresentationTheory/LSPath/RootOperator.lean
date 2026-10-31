@@ -257,6 +257,14 @@ theorem minHeight_def (p : PLPath 𝕜 V) : p.minHeight f = listMinHeight f p.se
 theorem minHeight_ofSegments (l : List V) : (ofSegments 𝕜 l).minHeight f = listMinHeight f l := by
   rw [minHeight_def, segments_ofSegments, listMinHeight_normalize]
 
+/-- Minimum height is natural under arbitrary linear maps. -/
+@[simp]
+theorem minHeight_map {W : Type*} [AddCommGroup W] [Module 𝕜 W]
+    (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) (f' : Dual 𝕜 W) :
+    (p.map g).minHeight f' = p.minHeight (f'.comp g) := by
+  obtain ⟨l, rfl⟩ := ofSegments_surjective p
+  simp only [map_ofSegments, minHeight_ofSegments, listMinHeight_map]
+
 @[simp]
 theorem minHeight_one : (1 : PLPath 𝕜 V).minHeight f = 0 := by
   rw [minHeight_def, segments_one, listMinHeight_nil]

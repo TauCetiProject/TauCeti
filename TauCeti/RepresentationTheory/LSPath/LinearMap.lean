@@ -12,7 +12,7 @@ public import TauCeti.RepresentationTheory.LSPath.RootOperator
 
 The linear-image construction `TauCeti.PLPath.map` is defined in
 `TauCeti.RepresentationTheory.LSPath.PLPath`, including for noninjective maps and collapsed
-segments. This file proves naturality of minimum heights and root operators.
+segments. This file proves naturality of root operators.
 
 The operators `lower` and `raise` commute with a linear map `g` when the target coroot form
 pulls back to the source form and the target root is the image of the source root. The equality
@@ -37,13 +37,6 @@ variable {𝕜 V W : Type*} [Field 𝕜]
 section Heights
 
 variable [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] {g : V →ₗ[𝕜] W} {f : Dual 𝕜 V} {f' : Dual 𝕜 W}
-
-/-- Minimum height is natural under arbitrary linear maps. -/
-@[simp]
-theorem minHeight_map (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) (f' : Dual 𝕜 W) :
-    (p.map g).minHeight f' = p.minHeight (f'.comp g) := by
-  obtain ⟨l, rfl⟩ := ofSegments_surjective p
-  simp only [map_ofSegments, minHeight_ofSegments, listMinHeight_map]
 
 omit [IsStrictOrderedRing 𝕜] in
 /-- Capped record reflection commutes with a linear map preserving the height form.
