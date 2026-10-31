@@ -28,7 +28,8 @@ intersection to contraction: multiply the first family by `X none` and the secon
 `1 - X none`, then contract along `rename some`. Similarly, the saturation of an ideal `I` by a
 polynomial `f`, the set of `g` with `f ^ n * g ∈ I` for some `n`, is the contraction along
 `rename some` of `I + (f X_none - 1)`; it is also the contraction of `I` from the localization
-away from `f`. These formulas need no monomial order.
+away from `f`. Likewise, the relations of a polynomial parametrization are the contraction of
+its graph equations `Y i - f i`. These formulas need no monomial order.
 
 ## Main results
 
@@ -38,6 +39,10 @@ away from `f`. These formulas need no monomial order.
 * `MvPolynomial.coeff_mul_of_mem_pow_idealOfVars`: for `p ∈ J ^ k` and a monomial `e` of total
   degree at most `k`, the coefficient of `e` in `p * q` is the coefficient of `e` in `p` times the
   constant coefficient of `q`.
+* `MvPolynomial.ker_aeval_sum_elim`: the graph equations generate the kernel of substitution
+  which keeps the original variables.
+* `MvPolynomial.ker_aeval_eq_comap_graph`: the relations among a family of polynomials are
+  obtained by eliminating the original variables from its graph ideal.
 * `Ideal.span_inf_span_eq_comap_rename_some`: an intersection of generated ideals is the
   contraction of an ideal in one more variable.
 * `Ideal.mem_comap_rename_some_map_rename_some_sup_span_iff` and
@@ -47,8 +52,8 @@ away from `f`. These formulas need no monomial order.
 ## References
 
 * D. Cox, J. Little, D. O'Shea, *Ideals, Varieties, and Algorithms*, Chapter 4, §3,
-  computing intersections by elimination, and Chapter 4, §4, computing saturations by
-  elimination.
+  computing intersections by elimination; Chapter 4, §4, computing saturations by
+  elimination; Chapter 3, §3, implicitization by elimination.
 -/
 
 public section
@@ -88,6 +93,44 @@ theorem coeff_mul_of_mem_pow_idealOfVars (p : MvPolynomial σ R) {k : ℕ}
     have hdeg : degree a + degree b = degree e := by rw [← map_add, hab]
     rw [(mem_pow_idealOfVars_iff' k p).mp hp a (by omega), zero_mul]
   · exact fun h ↦ absurd (Finset.mem_antidiagonal.mpr (add_zero e)) h
+
+section Graph
+
+variable {ι : Type*} {R : Type*} [CommRing R]
+
+/-- The graph of a family of polynomials is cut out by the equations
+`Y i - f i`: their ideal is the kernel of substitution, keeping the original variables. -/
+theorem ker_aeval_sum_elim (f : ι → MvPolynomial σ R) :
+    RingHom.ker (aeval (Sum.elim X f)) =
+      Ideal.span (Set.range fun i ↦ X (Sum.inr i) - rename Sum.inl (f i)) := by
+  let J := Ideal.span (Set.range fun i ↦ X (Sum.inr i) - rename Sum.inl (f i))
+  let q := Ideal.Quotient.mkₐ R J
+  have hrel (i : ι) : q (X (Sum.inr i)) = q (rename Sum.inl (f i)) :=
+    Ideal.Quotient.eq.mpr (Ideal.subset_span (Set.mem_range_self i))
+  have hcomp : (q.comp (rename Sum.inl)).comp (aeval (Sum.elim X f)) = q := by
+    ext i
+    cases i with
+    | inl j => simp
+    | inr j => simpa using (hrel j).symm
+  refine le_antisymm ?_ (Ideal.span_le.mpr ?_)
+  · intro p hp
+    have hp0 : aeval (Sum.elim X f) p = 0 := RingHom.mem_ker.mp hp
+    have := DFunLike.congr_fun hcomp p
+    simpa [hp0, q, Ideal.Quotient.eq_zero_iff_mem] using this.symm
+  · rintro _ ⟨i, rfl⟩
+    simp [RingHom.mem_ker, aeval_rename, aeval_X_left_apply]
+
+/-- The relations among a family of polynomials are obtained by eliminating the original
+variables from its graph equations. No finiteness or field hypothesis is needed. -/
+theorem ker_aeval_eq_comap_graph (f : ι → MvPolynomial σ R) :
+    RingHom.ker (aeval f) =
+      (Ideal.span (Set.range fun i ↦ X (Sum.inr i) - rename Sum.inl (f i))).comap
+        (rename (R := R) Sum.inr) := by
+  rw [← ker_aeval_sum_elim]
+  ext p
+  simp [RingHom.mem_ker, aeval_rename]
+
+end Graph
 
 end MvPolynomial
 
