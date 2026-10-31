@@ -157,14 +157,9 @@ theorem exists_paths_edgeSeparator_card_eq [Finite V(G)] [Finite E(G)] (hst : s 
     exact he (by simpa [A] using ⟨hv, hw⟩)
   · -- Different arrows leaving `S` come from different edges.
     rw [card_image_of_injOn, ← Nat.cast_inj (R := ℤ), hk, hgval, hval, arrowSum_one]
-    rintro ⟨x, y, e, hxy⟩ ha ⟨x', y', e', hxy'⟩ ha' (rfl : e = e')
+    rintro a ha a' ha' he
     simp only [A, coe_filter, mem_univ, true_and, mem_compl, Set.mem_ofPred_eq] at ha ha'
-    rcases hxy.eq_and_eq_or_eq_and_eq hxy' with ⟨h₁, h₂⟩ | ⟨h₁, -⟩
-    · obtain rfl : x = x' := Subtype.ext h₁
-      obtain rfl : y = y' := Subtype.ext h₂
-      rfl
-    · obtain rfl : x = y' := Subtype.ext h₁
-      exact absurd ha.1 ha'.2
+    exact bidirectedHom_edge_injOn_cut (G := G) (S : Set V(G)) ha ha' he
 
 /-- **Menger's theorem for edge-disjoint paths in a multigraph, predicate form.** For an actual
 vertex `s` of a multigraph with finitely many actual vertices and edges, `s` and `t` stay reachable
