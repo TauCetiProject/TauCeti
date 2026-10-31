@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
+public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
@@ -25,6 +26,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
   binomial expansion `TauCeti.cos_pow_mul_cexp` of `cosᵏ θ exp (n θ i)` into characters.
+* `TauCeti.integral_sin_pow_even_eq_ascPochhammer`: the Wallis integral
+  `∫ x in 0..π/2, sin²ⁿ x = (π/2) (1/2)ₙ / n!`, with the rising factorial `(1/2)ₙ`.
 * `TauCeti.integral_pow_mul_sub`: `∫ x in p..r, xⁿ (x - p)` as a binomial sum in powers of `r - p`.
 * `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
@@ -114,6 +117,37 @@ theorem integral_cos_pow_mul_cexp (k : ℕ) (n : ℤ) :
       Complex.exp (((2 * m - k + n : ℤ) : ℂ) * θ * Complex.I)).intervalIntegrable _ _]
   refine Finset.sum_congr rfl fun m _ => ?_
   rw [intervalIntegral.integral_const_mul, integral_cexp_intCast_mul_mul_I]
+
+/-- The Wallis integral over a quarter period: `∫ x in 0..π/2, sin²ⁿ x = (π/2) (1/2)ₙ / n!`, where
+`(1/2)ₙ = (1/2)(3/2)⋯(n - 1/2)` is the rising factorial. This is the form in which it enters
+hypergeometric series. -/
+theorem integral_sin_pow_even_eq_ascPochhammer (n : ℕ) :
+    ∫ x in (0 : ℝ)..Real.pi / 2, Real.sin x ^ (2 * n) =
+      Real.pi / 2 * ((ascPochhammer ℝ n).eval (1 / 2) / n !) := by
+  have hprod : ∏ i ∈ Finset.range n, (2 * (i : ℝ) + 1) / (2 * i + 2) =
+      (ascPochhammer ℝ n).eval (1 / 2) / n ! := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      rw [Finset.prod_range_succ, ih, ascPochhammer_succ_eval, Nat.factorial_succ]
+      push_cast
+      field_simp
+      ring
+  -- the substitution `x ↦ π - x` shows that both halves of `[0, π]` contribute equally
+  have hsymm : ∫ x in Real.pi / 2..Real.pi, Real.sin x ^ (2 * n) =
+      ∫ x in (0 : ℝ)..Real.pi / 2, Real.sin x ^ (2 * n) := by
+    have := intervalIntegral.integral_comp_sub_left (fun x => Real.sin x ^ (2 * n)) Real.pi
+      (a := 0) (b := Real.pi / 2)
+    simp only [Real.sin_pi_sub, sub_zero] at this
+    rw [this]
+    ring_nf
+  have hint (u v : ℝ) :
+      IntervalIntegrable (fun x => Real.sin x ^ (2 * n)) MeasureTheory.volume u v :=
+    (Real.continuous_sin.pow _).intervalIntegrable u v
+  have hadd := intervalIntegral.integral_add_adjacent_intervals (hint 0 (Real.pi / 2))
+    (hint (Real.pi / 2) Real.pi)
+  rw [hsymm, integral_sin_pow_even, hprod] at hadd
+  linarith
 
 /-- The integral of `x ^ n` against the linear weight `x - p` vanishing at `p`, over `[p, r]`, as
 a binomial sum. -/
