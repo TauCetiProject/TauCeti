@@ -24,6 +24,14 @@ the positive ladder module is a scalar multiple of this one (`eq_smul_invariantF
 
 The diagonal form uses Mathlib's `Matrix.toLinearMapₛₗ₂` in the ladder basis. The compact
 real-form convention is `E* = KF`, not `E* = F`.
+
+## References
+
+* A. Klimyk and K. Schmüdgen, *Quantum Groups and Their Representations*, Chapter 3, for the
+  compact real form of `U_q(sl₂)` and the invariant inner products on its finite-dimensional
+  representations.
+* C. Kassel, *Quantum Groups*, Graduate Texts in Mathematics 155, Section VI.3, for the
+  finite-dimensional ladder modules and their weight bases.
 -/
 
 public noncomputable section
@@ -303,7 +311,7 @@ private theorem quantumInteger_mul_zpow_mul_innerWeight_succ
   have hne : quantumInteger (q : ℂ) (j + 1) * (q : ℂ) ^ ((m : ℤ) - 2 * (j + 1)) ≠ 0 :=
     mul_ne_zero (quantumInteger_ne_zero hq (by omega)) (zpow_ne_zero _ hq.ne_zero)
   have hc (r : ℤ) : ((quantumInteger q r : ℝ) : ℂ) = quantumInteger (q : ℂ) r :=
-    map_quantumInteger Complex.ofRealHom q r
+    Complex.ofRealHom.map_quantumInteger q r
   rw [innerWeight_succ]
   push_cast [hc]
   rw [mul_div_assoc', mul_div_assoc', mul_div_cancel_left₀ _ hne, mul_comm]
@@ -335,16 +343,15 @@ theorem eq_smul_invariantForm (hq : IsGenericQuantumParameter (q : ℂ))
   have hstar (z : ℝ) : star (z : ℂ) = z := Complex.conj_ofReal z
   have hqI (r : ℤ) : star (quantumInteger (q : ℂ) r) = quantumInteger (q : ℂ) r := by
     have hc : ((quantumInteger q r : ℝ) : ℂ) = quantumInteger (q : ℂ) r :=
-      map_quantumInteger Complex.ofRealHom q r
+      Complex.ofRealHom.map_quantumInteger q r
     rw [← hc]
     exact hstar _
   -- Invariance under `K` makes `B` diagonal in the ladder basis.
   have hdiag : ∀ i j : ℤ, i ≠ j → B (vec (q : ℂ) m 1 i) (vec (q : ℂ) m 1 j) = 0 := by
     intro i j hij
     have h := hB (k (q : ℂ)) (vec (q : ℂ) m 1 i) (vec (q : ℂ) m 1 j)
-    rw [star_k, k_smul_vec, k_smul_vec, LinearMap.map_smulₛₗ₂, map_smul, starRingEnd_apply,
-      star_mul', star_zpow₀, hstar, smul_eq_mul, smul_eq_mul] at h
-    simp only [Units.val_one, Int.cast_one, star_one, one_mul] at h
+    simp only [star_k, k_smul_vec, LinearMap.map_smulₛₗ₂, map_smul, smul_eq_mul] at h
+    simp only [Units.val_one, Int.cast_one, one_mul, starRingEnd_apply, star_zpow₀, hstar] at h
     by_contra hne
     have h' : B (vec (q : ℂ) m 1 i) (vec (q : ℂ) m 1 j) *
         ((q : ℂ) ^ ((m : ℤ) - 2 * i) - (q : ℂ) ^ ((m : ℤ) - 2 * j)) = 0 := by
@@ -357,10 +364,11 @@ theorem eq_smul_invariantForm (hq : IsGenericQuantumParameter (q : ℂ))
       d (j + 1) = quantumInteger (q : ℂ) (m - j) * d j := by
     intro j
     have h := hB (e (q : ℂ)) (vec (q : ℂ) m 1 (j + 1)) (vec (q : ℂ) m 1 j)
-    rw [star_e, mul_smul, f_smul_vec, smul_comm, k_smul_vec, e_smul_vec, LinearMap.map_smulₛₗ₂,
-      map_smul, map_smul, starRingEnd_apply, star_mul', hqI, smul_eq_mul, smul_eq_mul,
-      smul_eq_mul, add_sub_cancel_right, show (m : ℤ) - (j + 1) + 1 = m - j by ring] at h
-    simp only [Units.val_one, Int.cast_one, star_one, one_mul] at h
+    simp only [star_e, mul_smul, f_smul_vec, e_smul_vec, k_smul_vec,
+      smul_algebra_smul_comm (A := UqSl2 (q : ℂ)), LinearMap.map_smulₛₗ₂, map_smul, smul_eq_mul,
+      add_sub_cancel_right] at h
+    simp only [Units.val_one, Int.cast_one, one_mul, starRingEnd_apply, star_one, hqI,
+      show (m : ℤ) - (j + 1) + 1 = m - j by ring] at h
     simp only [hd_def, Nat.cast_add_one]
     linear_combination -h
   have hd := eq_mul_innerWeight hq hrec

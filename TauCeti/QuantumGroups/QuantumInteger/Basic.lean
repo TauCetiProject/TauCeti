@@ -155,11 +155,6 @@ theorem quantumInteger_def (q : K) (r : ℤ) :
     quantumInteger q r = (q ^ r - q ^ (-r)) / (q - q⁻¹) := by
   rw [quantumInteger]
 
-/-- Ring homomorphisms between fields commute with the quantum integers. -/
-theorem map_quantumInteger {L : Type*} [Field L] (φ : K →+* L) (q : K) (r : ℤ) :
-    φ (quantumInteger q r) = quantumInteger (φ q) r := by
-  simp [quantumInteger_def]
-
 /-- `(q - q⁻¹) [n]_q = q^n - q^(-n)` for natural `n`. -/
 theorem sub_inv_mul_quantumInteger_natCast {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) :
     (q - q⁻¹) * quantumInteger q n = q ^ n - q⁻¹ ^ n := by
@@ -276,3 +271,17 @@ theorem quantumInteger_ne_zero {q : K} (hq : IsGenericQuantumParameter q) {r : �
   rw [zpow_sub₀ hq.ne_zero, sub_eq_zero.mp h, div_self (zpow_ne_zero _ hq.ne_zero)]
 
 end TauCeti
+
+namespace RingHom
+
+open TauCeti
+
+variable {K L : Type*} [Field K] [Field L]
+
+/-- Ring homomorphisms between fields commute with the quantum integers. -/
+@[simp]
+theorem map_quantumInteger (φ : K →+* L) (q : K) (r : ℤ) :
+    φ (quantumInteger q r) = quantumInteger (φ q) r := by
+  simp [quantumInteger_def]
+
+end RingHom
