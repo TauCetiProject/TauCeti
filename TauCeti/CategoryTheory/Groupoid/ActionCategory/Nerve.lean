@@ -21,7 +21,7 @@ labels along a string behind this description, and the resulting bijection
 label is retained, including labels acting trivially.
 
 For a group action, all points of a string lie in one orbit
-(`TauCeti.ActionGroupoid.quotient_mk_back_obj`).
+(`CategoryTheory.ComposableArrows.quotient_mk_back_obj`).
 
 ## References
 
@@ -33,11 +33,11 @@ public noncomputable section
 
 open CategoryTheory CategoryTheory.ActionCategory
 
-namespace TauCeti.ActionGroupoid
-
 section Monoid
 
 variable {G X : Type*} [Monoid G] [MulAction G X] {n : ℕ}
+
+namespace CategoryTheory.ComposableArrows
 
 /-- In a string of composable arrows of an action category, the arrow from the `i`-th object to
 itself has label `1`. -/
@@ -62,7 +62,7 @@ theorem back_obj_eq_smul (F : ComposableArrows (ActionCategory G X) n) (i : Fin 
 
 /-- Two strings of composable arrows of an action category with the same first point and the
 same consecutive labels are equal. -/
-theorem nerve_ext {F F' : ComposableArrows (ActionCategory G X) n}
+theorem ext_of_back_obj_zero_of_hom_map {F F' : ComposableArrows (ActionCategory G X) n}
     (h₀ : (F.obj 0).back = (F'.obj 0).back)
     (h : ∀ k : Fin n, (F.map (homOfLE k.castSucc_le_succ)).hom =
       ((F'.map (homOfLE k.castSucc_le_succ)).hom : G)) : F = F' := by
@@ -86,6 +86,10 @@ theorem hom_map_mkOfObjOfMapSucc (obj : Fin (n + 1) → ActionCategory G X)
   congrArg (fun f ↦ Functor.Elements.Hom.hom f)
     (ComposableArrows.mkOfObjOfMapSucc_map_succ obj mapSucc k.1 k.2)
 
+end CategoryTheory.ComposableArrows
+
+namespace TauCeti.ActionGroupoid
+
 variable (G X n) in
 /-- The `n`-simplices of the nerve of an action category correspond to `X × Gⁿ`, by recording the
 first point and the labels of the consecutive arrows of a string. The string with first point `x`
@@ -100,11 +104,12 @@ def nerveEquiv : ComposableArrows (ActionCategory G X) n ≃ X × (Fin n → G) 
       (show p.2 k • ((Fin.partialProd (fun k ↦ MulOpposite.op (p.2 k)) k.castSucc).unop • p.1) =
           (Fin.partialProd (fun k ↦ MulOpposite.op (p.2 k)) k.succ).unop • p.1 by
         rw [Fin.partialProd_succ, MulOpposite.unop_mul, MulOpposite.unop_op, mul_smul])
-  left_inv F := nerve_ext (by simp [ComposableArrows.mkOfObjOfMapSucc_obj]) fun k ↦ by
-    rw [hom_map_mkOfObjOfMapSucc]
+  left_inv F := ComposableArrows.ext_of_back_obj_zero_of_hom_map
+    (by simp [ComposableArrows.mkOfObjOfMapSucc_obj]) fun k ↦ by
+      rw [ComposableArrows.hom_map_mkOfObjOfMapSucc]
   right_inv p := Prod.ext (by simp [ComposableArrows.mkOfObjOfMapSucc_obj]) <| funext fun k ↦ by
     dsimp only
-    rw [hom_map_mkOfObjOfMapSucc]
+    rw [ComposableArrows.hom_map_mkOfObjOfMapSucc]
 
 @[simp]
 theorem nerveEquiv_apply (F : ComposableArrows (ActionCategory G X) n) :
@@ -125,17 +130,21 @@ theorem label_nerveEquiv_symm (p : X × (Fin n → G)) (k : Fin n) :
     ((((nerveEquiv G X n).symm p).map (homOfLE k.castSucc_le_succ)).hom : G) = p.2 k :=
   congrFun (congrArg Prod.snd ((nerveEquiv G X n).apply_symm_apply p)) k
 
+end TauCeti.ActionGroupoid
+
 end Monoid
 
 section Group
 
 variable {G X : Type*} [Group G] [MulAction G X] {n : ℕ}
 
+namespace CategoryTheory.ComposableArrows
+
 /-- All points of a string of composable arrows of an action groupoid lie in one orbit. -/
 theorem quotient_mk_back_obj (F : ComposableArrows (ActionCategory G X) n) (i : Fin (n + 1)) :
     (⟦(F.obj i).back⟧ : MulAction.orbitRel.Quotient G X) = ⟦(F.obj 0).back⟧ := by
   rw [back_obj_eq_smul F i, MulAction.orbitRel.Quotient.quotient_smul_eq]
 
-end Group
+end CategoryTheory.ComposableArrows
 
-end TauCeti.ActionGroupoid
+end Group

@@ -75,13 +75,13 @@ theorem continuous_nerve_iff {Y : Type*} [TopologicalSpace Y]
   have hlabel : ∀ i j (hij : i ≤ j),
       Continuous fun y ↦ (((f y).map (homOfLE hij)).hom : G) :=
     Fin.le_induction_castSucc
-      (fun i ↦ continuous_const.congr fun y ↦ (hom_map_homOfLE_refl (f y) i).symm)
-      fun i k hik ih ↦ ((h k).mul ih).congr fun y ↦ (hom_map_homOfLE_succ (f y) hik).symm
+      (fun i ↦ continuous_const.congr fun y ↦ ((f y).hom_map_homOfLE_refl i).symm)
+      fun i k hik ih ↦ ((h k).mul ih).congr fun y ↦ ((f y).hom_map_homOfLE_succ hik).symm
   refine ComposableArrows.continuous_iff.2 fun i j hij ↦
     (arrowHomeomorph G X).isInducing.continuous_iff.2 <|
       ((hlabel i j hij).prodMk ((hlabel 0 i (Fin.zero_le i)).smul h₀)).congr fun y ↦ ?_
   simp only [Function.comp_apply, ComposableArrows.totalArrow_def, arrowHomeomorph_apply]
-  rw [back_obj_eq_smul (f y) i, Pi.smul_apply']
+  rw [(f y).back_obj_eq_smul i, Pi.smul_apply']
 
 /-- The inverse of `nerveEquiv`, which builds the string with given first point and consecutive
 labels, is continuous. -/
@@ -137,7 +137,7 @@ variable {G X : Type u} [Group G] [MulAction G X] [TopologicalSpace G] [Topologi
 variable (G X) in
 /-- The augmentation of the topological nerve of an action groupoid, with degeneracies forgotten,
 over the orbit space: a string of composable arrows goes to the orbit of its first point, which is
-the orbit of each of its points (`quotient_mk_back_obj`). -/
+the orbit of each of its points (`ComposableArrows.quotient_mk_back_obj`). -/
 def coarseAugmentation :
     SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve (ActionCategory G X) ⟶
       (Functor.const _).obj (TopCat.of (MulAction.orbitRel.Quotient G X)) where
@@ -147,7 +147,7 @@ def coarseAugmentation :
     -- By definition of `topologicalNerve.map` (whiskering by the simplicial operator of `f`) and of
     -- the constant functor, the goal says that the orbit of the vertex of `F` at the image of `0`
     -- under that operator is the orbit of the first vertex of `F`.
-    exact quotient_mk_back_obj F
+    exact F.quotient_mk_back_obj
       ((SimplexCategory.toCat.map (SemiSimplexCategory.toSimplexCategory.map f.unop)).toFunctor.obj
         (0 : Fin (_ + 1)))
 
@@ -171,7 +171,7 @@ theorem coarseMap_ι (m : SemiSimplexCategory)
     (F : ComposableArrows (ActionCategory G X) (SemiSimplexCategory.toSimplexCategory.obj m).len)
     (t : SemiSimplexCategory.toTop.obj m) (i : Fin (_ + 1)) :
     coarseMap G X (fatRealization.ι _ m (F, t)) = ⟦(F.obj i).back⟧ :=
-  (fatRealization.augment_ι (coarseAugmentation G X) m F t).trans (quotient_mk_back_obj F i).symm
+  (fatRealization.augment_ι (coarseAugmentation G X) m F t).trans (F.quotient_mk_back_obj i).symm
 
 /-- The coarse map is surjective: each orbit is the image of the vertex of a `0`-simplex. -/
 theorem coarseMap_surjective : Function.Surjective (coarseMap G X) := by
