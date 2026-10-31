@@ -20,9 +20,13 @@ projection onto the lowest eigenspace, `Matrix.IsHermitian.toEuclideanLin_cfc_in
 As the inverse temperature `β` tends to `+∞`, the Gibbs functionals of `K` converge pointwise:
 `Tr (exp (-βK) x) / Tr (exp (-βK)) → Tr (P₀ x) / Tr P₀`.
 
-This is the trace instance of the general limit `TauCeti.tendsto_apply_exp_neg_smul_mul_div`
-for self-adjoint elements with finite spectrum; the only matrix-specific input is that
-`Tr P₀ = Tr (P₀ᴴ P₀)` is nonzero.
+This spectral and Gibbs-state reading assumes `Nonempty m`, so that `K` has a least eigenvalue.
+The theorem holds without that assumption: for empty `m` every trace is zero, so both sides are
+the constant quotient `0 / 0 = 0`.
+
+For nonempty `m`, this is the trace instance of the general limit
+`TauCeti.tendsto_apply_exp_neg_smul_mul_div` for self-adjoint elements with finite spectrum;
+the only matrix-specific input is that `Tr P₀ = Tr (P₀ᴴ P₀)` is nonzero.
 
 ## Main results
 
@@ -52,7 +56,10 @@ variable {m : Type*} [Fintype m] [DecidableEq m] {K : Matrix m m ℂ}
 spectral projection of `K` at its least eigenvalue, the orthogonal projection onto the lowest
 eigenspace. As `β → +∞`, the Gibbs functionals
 `x ↦ Tr (exp (-(β • K)) x) / Tr (exp (-(β • K)))` converge pointwise to
-`x ↦ Tr (P₀ x) / Tr P₀`. -/
+`x ↦ Tr (P₀ x) / Tr P₀`.
+
+This reading assumes `Nonempty m`; for empty `m` there is no eigenvalue or normalized state, and
+the statement holds trivially since every trace is zero and both sides are `0 / 0 = 0`. -/
 theorem IsHermitian.tendsto_trace_exp_neg_smul_mul_div (hK : K.IsHermitian) (x : Matrix m m ℂ) :
     Tendsto (fun β : ℝ ↦ (exp (-(β • K)) * x).trace / (exp (-(β • K))).trace) atTop
       (𝓝 ((cfc (Set.indicator {sInf (spectrum ℝ K)} 1) K * x).trace /
