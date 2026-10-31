@@ -46,8 +46,8 @@ convergence of the cutoffs therefore transports in both directions with this exp
 * `Nat.tendsto_prod_primesLE_comp_iff`: the same along cutoffs passing every prime one at a time.
 * `Nat.tendsto_prod_primesLE_nth_iff`: the same along the cutoffs `nth Nat.Prime k`.
 * `Nat.eventually_subset_primesLE`: a finite set of primes eventually lies in `Nat.primesLE B`.
-* `Nat.prod_primesLE_filter_notMem_mul_prod`: the exact finite correction.
-* `Nat.tendsto_prod_primesLE_filter_notMem_iff`: the corresponding equivalence of limits.
+* `Nat.tendsto_prod_primesLE_filter_notMem_iff`: deleting the factors at a finite set of primes
+  transports convergence of the ordered products, with the explicit finite correction.
 -/
 
 public section
@@ -138,13 +138,6 @@ theorem eventually_subset_primesLE (hS : ∀ p ∈ S, p.Prime) : ∀ᶠ B in atT
   filter_upwards [eventually_ge_atTop (S.sup id)] with B hB p hp
   exact mem_primesLE.mpr ⟨(le_sup (f := id) hp).trans hB, hS p hp⟩
 
-/-- Once the primes `p ≤ B` contain a finite set `S`, the product over the primes `p ≤ B` outside
-`S`, times the product over `S`, is the product over all primes `p ≤ B`. -/
-theorem prod_primesLE_filter_notMem_mul_prod {M : Type*} [CommMonoid M] (f : ℕ → M) {B : ℕ}
-    (hSB : S ⊆ primesLE B) :
-    (∏ p ∈ primesLE B with p ∉ S, f p) * ∏ p ∈ S, f p = ∏ p ∈ primesLE B, f p := by
-  rw [← sdiff_eq_filter, prod_sdiff hSB]
-
 /-- **Deleting finitely many factors from ordered prime products.** Let `S` be a finite set of
 primes at which no factor `f p` vanishes. The products of `f` over all primes `p ≤ B` converge to
 `L * ∏ p ∈ S, f p` if and only if the products over the primes `p ≤ B` outside `S` converge to
@@ -157,7 +150,7 @@ theorem tendsto_prod_primesLE_filter_notMem_iff {G₀ : Type*} [CommGroupWithZer
   have heq : (fun B : ℕ ↦ ∏ p ∈ primesLE B, f p) =ᶠ[atTop]
       fun B ↦ (∏ p ∈ primesLE B with p ∉ S, f p) * ∏ p ∈ S, f p := by
     filter_upwards [eventually_subset_primesLE hS] with B hB
-    exact (prod_primesLE_filter_notMem_mul_prod f hB).symm
+    rw [← sdiff_eq_filter, prod_sdiff hB]
   rw [tendsto_congr' heq]
   exact ((Homeomorph.mulRight₀ _ (prod_ne_zero_iff.mpr hf)).isInducing.tendsto_nhds_iff).symm
 
