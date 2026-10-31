@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.ModelTheory.Quotients
 public import TauCeti.ModelTheory.ModelExistence.ConsistencyProperty
 
 /-!
@@ -240,17 +241,26 @@ private theorem name_mem (t : L[[ℕ]].Term (Empty ⊕ Fin 0)) :
     (equal (L.con (hS.name t)).term t : L[[ℕ]].Sentenceω) ∈ S :=
   (hS.eq_name t).choose_spec
 
-/-- The constant term of a representative of a class in the term model. -/
-private noncomputable def repr (x : hS.TermModel) : L[[ℕ]].Term (Empty ⊕ Fin 0) :=
-  (L.con (Quotient.out (s := hS.setoid) x)).term
-
-/-- The `L[[ℕ]]`-structure of the term model: a function symbol applied to classes is the class
-of the constant naming the closed term built from representatives, and a relation holds of
-classes when `S` contains the relational sentence built from representatives. -/
+/-- The `L[[ℕ]]`-structure on Henkin constants underlying the term model: a function symbol applied
+to constants is the constant naming the corresponding closed term, and a relation holds of
+constants when `S` contains the corresponding relational sentence. Both respect the equalities
+asserted in `S`. -/
 @[instance_reducible]
-noncomputable def termModelStructure : L[[ℕ]].Structure hS.TermModel where
-  funMap f xs := hS.cls (hS.name (func f fun i => hS.repr (xs i)))
-  RelMap R xs := (rel R fun i => hS.repr (xs i) : L[[ℕ]].Sentenceω) ∈ S
+private noncomputable def prestructure : L[[ℕ]].Prestructure hS.setoid where
+  toStructure :=
+    { funMap := fun f c => hS.name (func f fun i => (L.con (c i)).term)
+      RelMap := fun R c => (rel R fun i => (L.con (c i)).term : L[[ℕ]].Sentenceω) ∈ S }
+  fun_equiv _ _ h :=
+    hS.eq_trans (hS.eq_func_mem h (hS.name_mem _)) (hS.eq_symm (hS.name_mem _))
+  rel_equiv _ _ h :=
+    propext ⟨hS.rel_mem_of_eq h, hS.rel_mem_of_eq fun i => hS.eq_symm (h i)⟩
+
+/-- The `L[[ℕ]]`-structure of the term model: a function symbol applied to classes of constants is
+the class of the constant naming the corresponding closed term, and a relation holds of classes of
+constants when `S` contains the corresponding relational sentence. -/
+@[instance_reducible]
+noncomputable def termModelStructure : L[[ℕ]].Structure hS.TermModel :=
+  quotientStructure (ps := hS.prestructure)
 
 noncomputable instance : L[[ℕ]].Structure hS.TermModel :=
   hS.termModelStructure
@@ -262,18 +272,15 @@ private theorem cls_eq_cls_iff {c d : ℕ} :
 private theorem cls_surjective : Function.Surjective hS.cls :=
   Quotient.mk_surjective (s := hS.setoid)
 
-/-- The representative of the class of `c` is asserted equal to `c`. -/
-private theorem repr_cls_mem (c : ℕ) :
-    (equal (hS.repr (hS.cls c)) (L.con c).term : L[[ℕ]].Sentenceω) ∈ S :=
-  Quotient.mk_out (s := hS.setoid) c
+private theorem funMap_cls {l : ℕ} (f : L[[ℕ]].Functions l) (c : Fin l → ℕ) :
+    Structure.funMap f (fun i => hS.cls (c i)) =
+      hS.cls (hS.name (func f fun i => (L.con (c i)).term)) :=
+  funMap_quotient_mk' (ps := hS.prestructure) hS.setoid f c
 
-private theorem funMap_def {l : ℕ} (f : L[[ℕ]].Functions l) (xs : Fin l → hS.TermModel) :
-    Structure.funMap f xs = hS.cls (hS.name (func f fun i => hS.repr (xs i))) :=
-  (rfl)
-
-private theorem relMap_def {l : ℕ} (R : L[[ℕ]].Relations l) (xs : Fin l → hS.TermModel) :
-    Structure.RelMap R xs ↔ (rel R fun i => hS.repr (xs i) : L[[ℕ]].Sentenceω) ∈ S :=
-  Iff.rfl
+private theorem relMap_cls {l : ℕ} (R : L[[ℕ]].Relations l) (c : Fin l → ℕ) :
+    Structure.RelMap R (fun i => hS.cls (c i)) ↔
+      (rel R fun i => (L.con (c i)).term : L[[ℕ]].Sentenceω) ∈ S :=
+  relMap_quotient_mk' (ps := hS.prestructure) hS.setoid R c
 
 /-- Evaluation in the term model, stated with the classes of constants. -/
 private theorem realize_eq_cls_of_mem {t : L[[ℕ]].Term (Empty ⊕ Fin 0)} {c : ℕ}
@@ -287,11 +294,10 @@ private theorem realize_eq_cls_of_mem {t : L[[ℕ]].Term (Empty ⊕ Fin 0)} {c :
   | func f ts ih =>
     have hts (i) : (ts i).realize v = hS.cls (hS.name (ts i)) :=
       ih i (hS.name_mem (ts i))
-    rw [realize_func, funMap_def]
-    simp only [hts]
-    refine (hS.cls_eq_cls_iff).2 (hS.eq_trans ?_ (hS.eq_symm h))
-    exact hS.eq_func_mem (fun i => hS.eq_trans (hS.repr_cls_mem _) (hS.name_mem (ts i)))
-      (hS.name_mem _)
+    rw [realize_func]
+    simp only [hts, funMap_cls]
+    exact (hS.cls_eq_cls_iff).2
+      (hS.eq_trans (hS.eq_func_mem (fun i => hS.name_mem (ts i)) (hS.name_mem _)) (hS.eq_symm h))
 
 /-- A Henkin constant denotes its own class in the term model. -/
 private theorem con_eq_cls (c : ℕ) : (L.con c : hS.TermModel) = hS.cls c :=
@@ -336,10 +342,9 @@ theorem realize_iff_mem_of_isAtomic {φ : L[[ℕ]].Sentenceω} (hφ : φ.IsAtomi
       fun h => hS.eq_trans (hS.name_mem t₁) (hS.eq_trans h (hS.eq_symm (hS.name_mem t₂)))⟩
   | rel R ts =>
     simp only [SentenceInf.realize_def, FormulaInf.realize_def, realize_rel,
-      fun i => hS.realize_eq_cls_of_mem (hS.name_mem (ts i)), relMap_def]
-    have hts (i) : (equal (hS.repr (hS.cls (hS.name (ts i)))) (ts i) : L[[ℕ]].Sentenceω) ∈ S :=
-      hS.eq_trans (hS.repr_cls_mem _) (hS.name_mem (ts i))
-    exact ⟨hS.rel_mem_of_eq hts, hS.rel_mem_of_eq fun i => hS.eq_symm (hts i)⟩
+      fun i => hS.realize_eq_cls_of_mem (hS.name_mem (ts i)), relMap_cls]
+    exact ⟨hS.rel_mem_of_eq fun i => hS.name_mem (ts i),
+      hS.rel_mem_of_eq fun i => hS.eq_symm (hS.name_mem (ts i))⟩
 
 /-! ### The truth lemma -/
 
