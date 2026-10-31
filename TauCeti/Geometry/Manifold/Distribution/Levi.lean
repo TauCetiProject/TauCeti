@@ -126,7 +126,8 @@ theorem mlieBracket_mem_of_apply_eq_zero [Finite ι] (hX : IsDistributionFrameOn
     | insert a s has ih =>
       rw [Finset.sum_insert has, mlieBracket_add_left ((hc a).smul_section (hXd a)) (hsum s),
         mlieBracket_smul_left (hc a) (hXd a), hc0 a, zero_smul, add_zero]
-      exact (D x).add_mem ((D x).smul_mem _ (hX.apply_mem a (mem_of_mem_nhds hU))) ih
+      exact (D x).add_mem
+        ((D x).smul_mem _ (hX.isSubbundleFrameOn.apply_mem a (mem_of_mem_nhds hU))) ih
   have hVc' : V =ᶠ[𝓝 x] ∑ i, c i • X i := hVc.mono fun y hy ↦
     hy.trans (Finset.sum_apply y Finset.univ fun i ↦ c i • X i).symm
   rw [hVc'.mlieBracket_vectorField_eq (EventuallyEq.refl _ W)]

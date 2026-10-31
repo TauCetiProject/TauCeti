@@ -57,9 +57,8 @@ theorem isValidGlueWord_iff (l : List ℕ) :
         ∀ i : Fin n, l[i.val]'(by omega) < (t i).glueLabelCount := (Iff.rfl)
 
 /-- Glue-word validity is decidable by checking length and label ranges. -/
-instance (l : List ℕ) : Decidable (IsValidGlueWord t l) := by
-  rw [isValidGlueWord_iff]
-  infer_instance
+instance (l : List ℕ) : Decidable (IsValidGlueWord t l) :=
+  decidable_of_iff _ (isValidGlueWord_iff t l).symm
 
 /-- Encode a word in the component glue alphabets by its Conway--Sloane digit labels. -/
 def encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) : List ℕ :=

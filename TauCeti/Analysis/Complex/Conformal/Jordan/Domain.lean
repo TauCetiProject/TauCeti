@@ -14,6 +14,7 @@ import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.Complex.Conformal.Biholomorph
 import TauCeti.Analysis.Complex.Conformal.SimplyConnected
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
+import TauCeti.Analysis.Normed.Field.Inversion
 
 /-!
 # Jordan domains, and the domains a conformal map takes onto a disc
@@ -58,6 +59,8 @@ are.
   and the one Carathéodory's theorem compares every other Jordan domain to.
 * `TauCeti.IsJordanCurve.isJordanDomain_filledHull_sdiff` — the inside of a Jordan curve is a
   Jordan domain.
+* `TauCeti.IsJordanCurve.isJordanDomain_insert_zero_image_inv_sub_compl_filledHull` — the outside
+  of a Jordan curve, inverted about a point of the inside and completed by `0`, is a Jordan domain.
 * `TauCeti.IsJordanDomain.isSimplyConnected` — a Jordan domain is simply connected, its frontier
   being connected; so it satisfies the hypotheses of the Riemann mapping theorem.
 * `TauCeti.IsJordanDomain.locallyConnectedSpace_frontier` — the boundary of a Jordan domain is
@@ -148,6 +151,38 @@ theorem IsJordanCurve.isJordanDomain_filledHull_sdiff {C : Set ℂ} (hC : IsJord
   isConnected := hC.isConnected_filledHull_sdiff
   isBounded := (isBounded_filledHull.mpr hC.isCompact.isBounded).subset sdiff_subset
   isJordanCurve_frontier := hC.frontier_filledHull_sdiff.symm ▸ hC
+
+/-- **The inverted outside of a Jordan curve is a Jordan domain.** Inverting the outside
+`(filledHull C)ᶜ` of a Jordan curve `C ⊆ ℂ` about a point `p` of its inside and adding `0`, the
+image of infinity, gives a bounded domain whose frontier, the image of `C`
+(`TauCeti.IsJordanCurve.frontier_insert_zero_image_inv_sub_compl_filledHull`), is a Jordan
+curve. -/
+theorem IsJordanCurve.isJordanDomain_insert_zero_image_inv_sub_compl_filledHull {C : Set ℂ}
+    (hC : IsJordanCurve C) {p : ℂ} (hp : p ∈ filledHull C \ C) :
+    IsJordanDomain (insert 0 ((fun z : ℂ => (z - p)⁻¹) '' (filledHull C)ᶜ)) := by
+  have hpU := hC.notMem_closure_compl_filledHull hp
+  have hUc : Bornology.IsBounded (filledHull C)ᶜᶜ := by
+    rw [compl_compl]
+    exact isBounded_filledHull.mpr hC.isCompact.isBounded
+  have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
+    rw [Complex.rank_real_complex]
+    exact Cardinal.one_lt_two
+  have hUb : ¬Bornology.IsBounded (filledHull C)ᶜ := fun h =>
+    NormedSpace.unbounded_univ ℝ ℂ (by simpa using h.union hUc)
+  refine ⟨isOpen_insert_zero_image_inv_sub hC.isClosed.isClosed_filledHull.isOpen_compl hUc,
+    ?_, (isBounded_image_inv_sub hpU).insert 0, ?_⟩
+  · -- the inverted outside is connected, and `0`, the image of infinity, lies in its closure
+    have hcont : ContinuousOn (fun z : ℂ => (z - p)⁻¹) (filledHull C)ᶜ :=
+      ContinuousOn.inv₀ (by fun_prop) fun z hz =>
+        sub_ne_zero.mpr fun h => hpU (h ▸ subset_closure hz)
+    refine ((isConnected_compl_filledHull hrank hC.isCompact.isBounded).image _
+      hcont).subset_closure (subset_insert _ _) (insert_subset ?_ subset_closure)
+    rw [closure_image_inv_sub hUb]
+    exact mem_insert _ _
+  · rw [hC.frontier_insert_zero_image_inv_sub_compl_filledHull hp]
+    exact hC.image
+      (ContinuousOn.inv₀ (by fun_prop) fun z hz => sub_ne_zero.mpr fun h => hp.2 (h ▸ hz))
+      (inv_injective.comp (sub_left_injective (b := p))).injOn
 
 /-! ## Elementary consequences of being a Jordan domain -/
 

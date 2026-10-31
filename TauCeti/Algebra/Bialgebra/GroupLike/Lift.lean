@@ -61,7 +61,7 @@ theorem liftBialgHom_apply_val (f : GroupLike R A →* GroupLike R B)
 
 /-- Restricting the extension to group-like elements recovers the given homomorphism. -/
 @[simp]
-theorem groupLikeMap_liftBialgHom (f : GroupLike R A →* GroupLike R B)
+theorem mapGroupLike_liftBialgHom (f : GroupLike R A →* GroupLike R B)
     (hlinear : LinearIndependent R (GroupLike.val (R := R) (A := A)))
     (hA : Submodule.span R (Set.range (GroupLike.val (R := R) (A := A))) = ⊤) :
     (f.liftBialgHom hlinear hA).mapGroupLike = f := by
