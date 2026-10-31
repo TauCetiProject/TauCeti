@@ -151,11 +151,8 @@ theorem continuous_comp [ContinuousMul G] :
         Quiver.Total (ActionCategory G X) // p.1.right = p.2.left} =>
       (⟨p.1.1.left, p.1.2.right,
         p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total (ActionCategory G X))) := by
-  have hlabel : ∀ (a b : ActionCategory G X) (h : a = b), (eqToHom h).hom = (1 : G) := by
-    rintro a _ rfl
-    rfl
   apply (arrowHomeomorph G X).isInducing.continuous_iff.mpr
-  simpa only [Function.comp_def, arrowHomeomorph_apply, ActionCategory.comp_hom, hlabel,
+  simpa only [Function.comp_def, arrowHomeomorph_apply, ActionCategory.comp_hom, eqToHom_hom,
     one_mul, mul_one, Pi.mul_apply, objectHomeomorph_apply] using
     (((continuous_label G X).comp (continuous_snd.comp continuous_subtype_val)).mul
       ((continuous_label G X).comp (continuous_fst.comp continuous_subtype_val))).prodMk
