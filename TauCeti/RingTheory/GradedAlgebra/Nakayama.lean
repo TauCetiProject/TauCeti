@@ -37,6 +37,8 @@ homogeneous elements to a computation of the indecomposables.
   consists of scalars, such generators generate the graded algebra as an `R`-algebra.
 * `TauCeti.GradedAlgebra.surjective_aeval_of_irrelevant_le`: in that case, evaluation of
   polynomials at such a family of generators is surjective.
+* `TauCeti.GradedAlgebra.exists_sub_algebraMap_mem_irrelevant`: in a connected graded algebra
+  every element is a scalar plus an element of the irrelevant ideal.
 
 ## References
 
@@ -144,5 +146,22 @@ theorem surjective_aeval_of_irrelevant_le (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ 
   exact adjoin_eq_top_of_irrelevant_le_of_mem_bot 𝒜 h𝒜 (Set.forall_mem_range.2 hf) h
 
 end GradedAlgebra
+
+section Connected
+
+open HomogeneousIdeal
+
+/-- In a connected graded algebra, whose degree-zero part consists of the scalars, every element
+is a scalar plus an element of the irrelevant ideal. -/
+theorem exists_sub_algebraMap_mem_irrelevant {R A : Type*} [CommSemiring R] [CommRing A]
+    [Algebra R A] (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜]
+    (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra R A)) (a : A) :
+    ∃ c : R, a - algebraMap R A c ∈ irrelevant 𝒜 := by
+  obtain ⟨c, hc⟩ := Algebra.mem_bot.1 (h𝒜 _ (decompose 𝒜 a 0).2)
+  refine ⟨c, ?_⟩
+  rw [mem_irrelevant_iff, map_sub, hc, GradedRing.proj_apply,
+    GradedRing.proj_apply, decompose_of_mem_same 𝒜 (decompose 𝒜 a 0).2, sub_self]
+
+end Connected
 
 end TauCeti.GradedAlgebra
