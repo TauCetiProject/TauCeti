@@ -27,6 +27,7 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.smul_top_eq_top_of_pi`: an ideal that expands the whole of a product of modules expands
   the whole of every factor.
 * `Ideal.smul_top_eq_comap_mul`: the action on an ideal identifies its product submodule.
+* `Ideal.smul_top_eq_top_of_isIdempotentElem`: an idempotent ideal `I` satisfies `I • I = I`.
 * `Ideal.span_range_fin_two_eq_top_iff`: a pair generates the unit ideal exactly when its entries
   are coprime.
 * `LinearMap.apply_mem_of_mem_smul_top`: a linear functional carries `I • M` into `I`.
@@ -96,6 +97,13 @@ theorem smul_top_eq_comap_mul (I J : Ideal R) :
   ext x
   simp only [Submodule.mem_smul_top_iff, Submodule.mem_comap, Submodule.coe_subtype,
     Ideal.smul_eq_mul, mul_comm J I]
+
+/-- If `I * I = I`, then `I • I = I`: every element of `I` is a sum of products of two elements
+of `I`. -/
+theorem smul_top_eq_top_of_isIdempotentElem {I : Ideal R} (hI : IsIdempotentElem I) :
+    I • (⊤ : Submodule R I) = ⊤ := by
+  apply Submodule.map_injective_of_injective I.injective_subtype
+  rw [Submodule.map_smul'', Submodule.map_top, Submodule.range_subtype, Ideal.smul_eq_mul, hI.eq]
 
 /-- The two entries of a pair generate the unit ideal exactly when they are coprime. -/
 theorem span_range_fin_two_eq_top_iff (v : Fin 2 → R) :

@@ -8,9 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
-public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.LinearAlgebra.TensorProduct.Submodule
-public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.RingTheory.Ideal.TensorProduct

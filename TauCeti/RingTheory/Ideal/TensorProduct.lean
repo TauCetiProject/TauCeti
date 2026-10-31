@@ -12,6 +12,8 @@ public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 public import TauCeti.LinearAlgebra.TensorProduct.Torsion
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 
+import TauCeti.RingTheory.Ideal.Operations
+
 /-!
 # Extended ideals and annihilators under scalar extension
 
@@ -193,13 +195,6 @@ theorem isTorsionBySet_ker_liftBaseChange_idealMap :
     Submodule.coe_zero]
 
 variable {I}
-
-/-- If `I * I = I`, then `I • I = I`: every element of `I` is a sum of products of two elements
-of `I`. -/
-theorem smul_top_eq_top_of_isIdempotentElem (hI : IsIdempotentElem I) :
-    I • (⊤ : Submodule R I) = ⊤ := by
-  apply Submodule.map_injective_of_injective I.injective_subtype
-  rw [Submodule.map_smul'', Submodule.map_top, Submodule.range_subtype, Ideal.smul_eq_mul, hI.eq]
 
 /-- For an idempotent ideal `I`, `I S • (S ⊗[R] I) = S ⊗[R] I`. -/
 private theorem smul_top_baseChange_eq_top (hI : IsIdempotentElem I) :
