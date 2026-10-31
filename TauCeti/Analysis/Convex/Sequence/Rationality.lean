@@ -57,8 +57,8 @@ theorem IsLowerConvexEnvelope.exists_rat_eq_and_den_dvd_of_isFiniteFace
     (hint : ∀ n, a n ≠ ⊤ → ∃ z : ℤ, a n = ((z : ℝ) : WithTop ℝ))
     {σ : ℝ} {l u : ℕ} (hf : IsFiniteFace h σ l u) (hlu : l < u) :
     ∃ q : ℚ, (q : ℝ) = σ ∧ q.den ∣ u - l := by
-  have hl := hh.eq_left_of_isFiniteFace hf hlu
-  have hu := hh.eq_right_of_isFiniteFace hf hlu
+  have hl := hh.eq_left_of_isFiniteFace hf
+  have hu := hh.eq_right_of_isFiniteFace hf
   apply hf.exists_rat_eq_and_den_dvd hlu
   · rw [hl]
     exact hint l (hl ▸ hf.left_ne_top)

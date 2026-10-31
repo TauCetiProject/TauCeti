@@ -15,7 +15,7 @@ adjacent finite unit slopes. For a lower convex envelope, every such vertex is
 an original point of the sequence. Equivalently, at a noncontact interior index
 the two adjacent slopes agree. Thus subdividing a straight segment does not
 introduce geometric vertices, and a missing coefficient cannot be a vertex. The endpoints
-of every finite face of positive width are original points as well, whether they are
+of every finite face, including a singleton, are original points as well, whether they are
 interior vertices or boundaries of the finite domain.
 
 The stronger local characterization `IsLowerConvexEnvelope.eq_min_of_finite_neighbors`
@@ -96,18 +96,26 @@ theorem unitSlope_eq_of_lt (hh : IsLowerConvexEnvelope a h) {n : ℕ}
     (mem_finiteEdges.mpr ⟨hn, hn₁⟩) (mem_finiteEdges.mpr ⟨hn₁, hn₂⟩) (by omega)
   exact hmono.eq_of_not_lt fun hs => (ne_of_lt ha) (hh.eq_of_unitSlope_lt hn hn₂ hs)
 
-/-- The left endpoint of a finite face of positive width is an original point.
+/-- The left endpoint of a finite face, including a singleton, is an original point.
 The finite domain of the envelope need not be bounded. -/
 theorem eq_left_of_isFiniteFace (hh : IsLowerConvexEnvelope a h) {σ : ℝ} {l u : ℕ}
-    (hf : IsFiniteFace h σ l u) (hlu : l < u) : h l = a l := by
+    (hf : IsFiniteFace h σ l u) : h l = a l := by
   have hl := hf.left_ne_top
-  have hl' := hh.isConvexSeq.ne_top_of_le_of_le hl hf.right_ne_top
-    (Nat.le_succ l) hlu
+  by_cases hnext : h (l + 1) = ⊤
+  · have hlast : ∀ k, l < k → a k = ⊤ := by
+      intro k hlk
+      by_contra hk
+      have hk' := ne_top_of_le_ne_top hk (hh.le k)
+      exact (hh.isConvexSeq.ne_top_of_le_of_le (j := l + 1) hl hk'
+        (by omega) (by omega)) hnext
+    rw [hh.eq_lowerConvexEnvelope]
+    exact lowerConvexEnvelope_eq_of_forall_gt hlast
   by_cases hprev : ∃ i, i + 1 = l ∧ h i ≠ ⊤
   · obtain ⟨i, rfl, hi⟩ := hprev
     have hs := hf.unitSlope_lt hh.isConvexSeq (mem_finiteEdges.mpr ⟨hi, hl⟩) (Nat.lt_succ_self i)
-    have heq := hf.unitSlope_eq le_rfl hlu
-    exact hh.eq_of_unitSlope_lt hi hl' (by simpa only [heq] using hs)
+    have hbound := ((hh.isConvexSeq.isSupportingLine_iff_unitSlope hl σ).mp
+      (hf.isSupportingLine_untop₀_sub ⟨le_rfl, hf.left_le_right⟩)).2 hnext
+    exact hh.eq_of_unitSlope_lt hi hnext (hs.trans_le hbound)
   · have hfirst : ∀ k < l, a k = ⊤ := by
       intro k hkl
       by_contra hk
@@ -118,10 +126,12 @@ theorem eq_left_of_isFiniteFace (hh : IsLowerConvexEnvelope a h) {σ : ℝ} {l u
     rw [hh.eq_lowerConvexEnvelope]
     exact lowerConvexEnvelope_eq_of_forall_lt hh.isAdmissible hfirst
 
-/-- The right endpoint of a finite face of positive width is an original point.
+/-- The right endpoint of a finite face, including a singleton, is an original point.
 An unbounded terminal ray is excluded by the finite-face hypothesis. -/
 theorem eq_right_of_isFiniteFace (hh : IsLowerConvexEnvelope a h) {σ : ℝ} {l u : ℕ}
-    (hf : IsFiniteFace h σ l u) (hlu : l < u) : h u = a u := by
+    (hf : IsFiniteFace h σ l u) : h u = a u := by
+  rcases eq_or_lt_of_le hf.left_le_right with rfl | hlu
+  · exact hh.eq_left_of_isFiniteFace hf
   have hu := hf.right_ne_top
   obtain ⟨i, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : u ≠ 0)
   have hi := hh.isConvexSeq.ne_top_of_le_of_le (j := i) hf.left_ne_top hu (by omega) (by omega)
