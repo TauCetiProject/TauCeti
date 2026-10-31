@@ -81,21 +81,7 @@ theorem gtLine_zero (l : DominantWeight 0) (P : {P : GTPattern 0 // P.topWeight 
     gtLine l P = ⊤ := by
   rw [gtLine]
 
-/-- There is exactly one pattern for `GL 0`, and it has every dominant weight of `GL 0` as top
-weight. -/
-private instance (l : DominantWeight 0) : Unique {P : GTPattern 0 // P.topWeight = l} where
-  default := ⟨default, Subsingleton.elim _ _⟩
-  uniq _ := Subtype.ext (Subsingleton.elim _ _)
-
 variable {n : ℕ}
-
-/-- The second row of a pattern with top weight `λ` interlaces `λ`. -/
-private theorem topWeight_truncate_mem_interlacingWeights {l : DominantWeight (n + 1)}
-    (P : {P : GTPattern (n + 1) // P.topWeight = l}) :
-    P.1.truncate.topWeight ∈ interlacingWeights l := by
-  obtain ⟨P, rfl⟩ := P
-  rw [mem_interlacingWeights, GTPattern.topWeight_coe, GTPattern.topWeight_coe]
-  exact P.interlaces_topRow_truncate
 
 /-- An interlacing weight `μ` has a nonzero intertwiner from `V_μ` to the restriction of `V_λ`. -/
 private theorem exists_intertwiningMap_ne_zero {l : DominantWeight (n + 1)}
@@ -139,7 +125,9 @@ theorem gtLine_succ (l : DominantWeight (n + 1)) (P : {P : GTPattern (n + 1) // 
     (f : IntertwiningMap (rationalWeylRep ℂ n P.1.truncate.topWeight)
       ((rationalWeylRep ℂ (n + 1) l).comp (glBlockSucc ℂ n))) (hf : f ≠ 0) :
     gtLine l P = (gtLine P.1.truncate.topWeight ⟨P.1.truncate, rfl⟩).map f.toLinearMap := by
-  have hm := topWeight_truncate_mem_interlacingWeights P
+  have hm : P.1.truncate.topWeight ∈ interlacingWeights l := by
+    have h := P.1.topWeight_truncate_mem_interlacingWeights
+    rwa [P.2] at h
   rw [gtLine]
   exact map_eq_map_of_ne_zero hm (Classical.epsilon_spec (exists_intertwiningMap_ne_zero hm))
     hf _
@@ -153,44 +141,16 @@ theorem finrank_gtLine : ∀ {n : ℕ} (l : DominantWeight n)
     exact (finrank_rationalWeylFDRep ℂ 0 l).trans
       ((GTPattern.card_topWeight_eq_weylDimension l).symm.trans Nat.card_unique)
   | n + 1, l, P => by
-    obtain ⟨f, hf⟩ :=
-      exists_intertwiningMap_ne_zero (topWeight_truncate_mem_interlacingWeights P)
+    have hm : P.1.truncate.topWeight ∈ interlacingWeights l := by
+      have h := P.1.topWeight_truncate_mem_interlacingWeights
+      rwa [P.2] at h
+    obtain ⟨f, hf⟩ := exists_intertwiningMap_ne_zero hm
     have hinj : Function.Injective f :=
       (IsIrreducible.injective_or_eq_zero
         (V := ↥(weylModuleOfShape ℂ n P.1.truncate.topWeight.detShiftShape).toSubmodule)
         (W := ↥(weylModuleOfShape ℂ (n + 1) l.detShiftShape).toSubmodule) f).resolve_right hf
     rw [gtLine_succ l P f hf, ← (Submodule.equivMapOfInjective _ hinj _).finrank_eq]
     exact finrank_gtLine _ _
-
-/-- Two sigma-type points built from equal patterns are equal. -/
-private theorem sigma_mk_topWeight_eq {l : DominantWeight (n + 1)} {Q Q' : GTPattern n}
-    (h : Q' = Q) (h' : Q'.topWeight ∈ interlacingWeights l)
-    (hQ : Q.topWeight ∈ interlacingWeights l) :
-    (⟨⟨Q'.topWeight, h'⟩, ⟨Q', rfl⟩⟩ :
-      Σ m : interlacingWeights l, {Q : GTPattern n // Q.topWeight = m}) =
-        ⟨⟨Q.topWeight, hQ⟩, ⟨Q, rfl⟩⟩ := by
-  subst h
-  rfl
-
-/-- The patterns with top weight `λ`, sorted by the dominant weight of their second row: deleting
-the top row identifies them with the patterns with one row fewer whose top weight interlaces
-`λ`. -/
-private def truncateTopWeightSigmaEquiv (l : DominantWeight (n + 1)) :
-    {P : GTPattern (n + 1) // P.topWeight = l} ≃
-      Σ m : interlacingWeights l, {Q : GTPattern n // Q.topWeight = m} where
-  toFun P := ⟨⟨P.1.truncate.topWeight, topWeight_truncate_mem_interlacingWeights P⟩,
-    ⟨P.1.truncate, rfl⟩⟩
-  invFun x := ⟨x.2.1.extend l.1 (by
-      rw [← GTPattern.topWeight_coe, x.2.2]
-      exact mem_interlacingWeights.mp x.1.2),
-    Subtype.ext (by rw [GTPattern.topWeight_coe, GTPattern.topRow_extend])⟩
-  left_inv P := by
-    obtain ⟨P, rfl⟩ := P
-    exact Subtype.ext (by simp only [GTPattern.topWeight_coe, GTPattern.extend_truncate])
-  right_inv := by
-    rintro ⟨⟨m, hm⟩, ⟨Q, hQ⟩⟩
-    obtain rfl : Q.topWeight = m := hQ
-    exact sigma_mk_topWeight_eq (GTPattern.truncate_extend _ _ _) _ _
 
 open scoped Classical in
 /-- **The Gelfand–Tsetlin decomposition.** The rational Weyl module `V_λ` of `GL n ℂ` is the
@@ -222,16 +182,16 @@ theorem isInternal_gtLine : ∀ {n : ℕ} (l : DominantWeight n), DirectSum.IsIn
         ↥(weylModuleOfShape ℂ n (m : DominantWeight n).detShiftShape).toSubmodule) m
         (e.symm.injective ?_))
       simpa [ι, DirectSum.lof_eq_of] using congrArg (fun f ↦ f v) h
-    have hsigma := TauCeti.DirectSum.isInternal_sigma_map e.symm.toLinearEquiv
+    have hsigma := e.symm.toLinearEquiv.isInternal_sigma_map
       (B := fun m Q ↦ gtLine (m : DominantWeight n) Q) fun m ↦ isInternal_gtLine _
     have hline : gtLine l = (fun x ↦ (gtLine (x.1 : DominantWeight n) x.2).map
         (e.symm.toLinearEquiv.toLinearMap ∘ₗ DirectSum.lof ℂ _ _ x.1)) ∘
-          truncateTopWeightSigmaEquiv l :=
-      funext fun P ↦ gtLine_succ l P (ι ⟨_, topWeight_truncate_mem_interlacingWeights P⟩) (hι _)
+          GTPattern.truncateTopWeightSigmaEquiv l :=
+      funext fun P ↦ gtLine_succ l P (ι (GTPattern.truncateTopWeightSigmaEquiv l P).1) (hι _)
     rw [hline]
     exact DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top (R := ℂ)
       (M := (weylModuleOfShape ℂ (n + 1) l.detShiftShape).toSubmodule)
-      (hsigma.submodule_iSupIndep.comp (truncateTopWeightSigmaEquiv l).injective)
-      ((truncateTopWeightSigmaEquiv l).iSup_comp.trans hsigma.submodule_iSup_eq_top)
+      (hsigma.submodule_iSupIndep.comp (GTPattern.truncateTopWeightSigmaEquiv l).injective)
+      ((GTPattern.truncateTopWeightSigmaEquiv l).iSup_comp.trans hsigma.submodule_iSup_eq_top)
 
 end TauCeti

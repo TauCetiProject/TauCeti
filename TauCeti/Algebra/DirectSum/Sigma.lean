@@ -18,20 +18,18 @@ link at a time.
 
 ## Main results
 
-* `TauCeti.DirectSum.isInternal_sigma_map`: the images of the `B i j` form an internal direct sum.
+* `LinearEquiv.isInternal_sigma_map`: the images of the `B i j` form an internal direct sum.
 -/
 
 public section
 
 open scoped DirectSum
 
-namespace TauCeti
-
 /-- **Refining a decomposition by decompositions of its summands.** If `E` identifies the
 external direct sum `⨁ i, N i` with `M`, and each `N i` is the internal direct sum of a family
 `B i`, then `M` is the internal direct sum of the images of all the `B i j` in `M`, indexed by the
 pairs `⟨i, j⟩`. -/
-theorem DirectSum.isInternal_sigma_map {R ι M : Type*} [Semiring R] [DecidableEq ι]
+theorem LinearEquiv.isInternal_sigma_map {R ι M : Type*} [Semiring R] [DecidableEq ι]
     [AddCommMonoid M] [Module R M] {N : ι → Type*} [∀ i, AddCommMonoid (N i)]
     [∀ i, Module R (N i)] {κ : ι → Type*} [∀ i, DecidableEq (κ i)]
     (E : (⨁ i, N i) ≃ₗ[R] M) {B : ∀ i, κ i → Submodule R (N i)}
@@ -51,5 +49,3 @@ theorem DirectSum.isInternal_sigma_map {R ι M : Type*} [Semiring R] [DecidableE
   rw [h, DirectSum.coe_congrLinearEquiv, DirectSum.lmap_lof]
   exact congrArg (fun z ↦ E (DirectSum.lof R ι N x.1 z))
     (DirectSum.coeLinearMap_lof (B x.1) x.2 y)
-
-end TauCeti
