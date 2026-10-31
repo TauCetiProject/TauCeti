@@ -41,6 +41,8 @@ vector and `w` is the geometric vector `(1, t, …, t ^ n)`.
 * `Matrix.det_eq_mul_det_submatrix_castSucc_of_row` and
   `Matrix.det_eq_mul_det_submatrix_castSucc_of_col`: the determinant of a matrix whose last row,
   or whose last column, vanishes off the diagonal is the corner entry times the corner minor.
+* `Matrix.det_eq_det_submatrix_castSucc_of_apply_last`: the determinant of a matrix whose last
+  row is that of the identity is its corner minor.
 * `Matrix.det_updateCol_last_single`: replacing the last column by the last standard basis vector
   turns the determinant into the corner minor.
 * `Matrix.submatrix_mul_of_mulVec_single`: deleting the last row and column commutes with a
@@ -227,6 +229,13 @@ theorem det_eq_mul_det_submatrix_castSucc_of_col (A : Matrix (Fin (n + 1)) (Fin 
     A.det = A (Fin.last n) (Fin.last n) * (A.submatrix Fin.castSucc Fin.castSucc).det := by
   rw [← Matrix.det_transpose A, det_eq_mul_det_submatrix_castSucc_of_row Aᵀ h,
     Matrix.transpose_apply, ← Matrix.transpose_submatrix, Matrix.det_transpose]
+
+/-- The determinant of a matrix whose last row is that of the identity is its corner minor. -/
+theorem det_eq_det_submatrix_castSucc_of_apply_last {A : Matrix (Fin (n + 1)) (Fin (n + 1)) R}
+    (h : A (Fin.last n) = (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) R) (Fin.last n)) :
+    A.det = (A.submatrix Fin.castSucc Fin.castSucc).det := by
+  rw [det_eq_mul_det_submatrix_castSucc_of_row A fun j hj ↦ by rw [h, one_apply_ne' hj], h,
+    one_apply_eq, one_mul]
 
 /-- Replacing the last column of a matrix by the last standard basis vector turns its determinant
 into its corner minor. -/

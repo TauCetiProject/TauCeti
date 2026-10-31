@@ -11,9 +11,10 @@ public import TauCeti.RingTheory.Idempotents.Primitive.Basic
 /-!
 # Homomorphisms from an idempotent-generated left ideal
 
-Let `A` be an algebra over a commutative semiring `k`, let `e` be an idempotent of `A`, and let
-`f` be arbitrary. This file identifies the homomorphisms between the principal left ideals
-`Ae` and `Af`:
+Let `A` be an algebra over a commutative semiring `k` and let `e` be an idempotent of `A`.
+Evaluation at `e` identifies `Hom_A(Ae, M)` with the subspace `eM` of any module `M`.
+For an arbitrary `f : A`, it also identifies the homomorphisms between the principal left ideals
+`Ae` and `Af` with the corner:
 
 `Hom_A(Ae, Af) ≃ₗ[k] eAf`, by `φ ↦ φ e`.
 
@@ -34,6 +35,7 @@ distinguished family of idempotents, since the corner inherits the grading of `A
 
 ## Main definitions
 
+* `IsIdempotentElem.spanSingletonHomEquivSMulTop`: evaluation gives `Hom_A(Ae, M) ≃ₗ[k] eM`.
 * `TauCeti.cornerToSpanSingletonHom`: right multiplication by an element of `eAf`, as a
   homomorphism `Ae → Af`.
 
@@ -50,6 +52,57 @@ Algebras, Vol. 1*, Section I.4.
 -/
 
 public section
+
+open scoped Pointwise
+
+namespace IsIdempotentElem
+
+open TauCeti
+
+universe u v
+
+variable {k : Type v} [CommSemiring k] {A : Type u} [Semiring A] [Algebra k A] {e : A}
+
+/-- Evaluation at `e` identifies maps from `Ae` into any module with the subspace `eM`.
+The inverse sends a vector `m` fixed by `e` to the map `a ↦ a • m`. -/
+def spanSingletonHomEquivSMulTop {M : Type*} [AddCommMonoid M] [Module k M] [Module A M]
+    [IsScalarTower k A M] (he : IsIdempotentElem e) :
+    ((Ideal.span {e} : Ideal A) →ₗ[A] M) ≃ₗ[k] ↥(e • (⊤ : Submodule k M)) where
+  toFun φ := ⟨φ (spanSingletonGenerator e), by
+    rw [← smul_spanSingletonGenerator he (spanSingletonGenerator e), map_smul,
+      coe_spanSingletonGenerator]
+    exact Submodule.smul_mem_pointwise_smul _ e (⊤ : Submodule k M) (Submodule.mem_top)⟩
+  map_add' φ ψ := Subtype.ext (by simp)
+  map_smul' c φ := Subtype.ext (by simp)
+  invFun m := (LinearMap.toSpanSingleton A M (m : M)).comp (Ideal.span {e} : Ideal A).subtype
+  left_inv φ := by
+    ext a
+    simp only [LinearMap.comp_apply, Submodule.subtype_apply, LinearMap.toSpanSingleton_apply,
+      ← map_smul, smul_spanSingletonGenerator he]
+  right_inv m := by
+    apply Subtype.ext
+    obtain ⟨n, _, hn⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 m.property
+    simp only [LinearMap.comp_apply, Submodule.subtype_apply, LinearMap.toSpanSingleton_apply,
+      coe_spanSingletonGenerator]
+    rw [← hn, smul_smul, he.eq]
+
+/-- The evaluation equivalence sends a homomorphism to its value at the idempotent. -/
+@[simp]
+theorem coe_spanSingletonHomEquivSMulTop_apply {M : Type*} [AddCommMonoid M] [Module k M]
+    [Module A M] [IsScalarTower k A M] (he : IsIdempotentElem e)
+    (φ : (Ideal.span {e} : Ideal A) →ₗ[A] M) :
+    (spanSingletonHomEquivSMulTop (k := k) he φ : M) = φ (spanSingletonGenerator e) :=
+  (rfl)
+
+/-- The inverse evaluation equivalence is scalar action by an element of `Ae`. -/
+@[simp]
+theorem spanSingletonHomEquivSMulTop_symm_apply {M : Type*} [AddCommMonoid M] [Module k M]
+    [Module A M] [IsScalarTower k A M] (he : IsIdempotentElem e)
+    (m : ↥(e • (⊤ : Submodule k M))) (a : (Ideal.span {e} : Ideal A)) :
+    (spanSingletonHomEquivSMulTop (k := k) he).symm m a = (a : A) • (m : M) :=
+  (rfl)
+
+end IsIdempotentElem
 
 namespace TauCeti
 

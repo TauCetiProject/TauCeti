@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.ModularForms.Cusps.ConstantTerm
 public import TauCeti.NumberTheory.ModularForms.SturmBound
 public import Mathlib.LinearAlgebra.FreeModule.PID
 
+import TauCeti.NumberTheory.ModularForms.Cusps.Basic
+
 /-!
 # Modular forms with integral `q`-expansions at every cusp
 
@@ -32,6 +34,9 @@ into the expansion at another, and so preserves the submodule; in Deligne–Serr
 
 ## Main results
 
+* `TauCeti.ModularForm.mem_integralAtCusps_iff_qExpansion_coeff_mem`: on a group containing
+  `Γ(N)`, integrality can be tested on the expansions of all the translates `f ∣ γ` at the
+  single common period `N`.
 * `TauCeti.ModularForm.smul_mem_integralAtCusps`: the submodule is stable under scaling by `R`.
 * `TauCeti.ModularForm.mul_mem_integralAtCusps`: products of integral forms are integral.
 * `TauCeti.ModularForm.instFiniteIntegralAtCusps`, `TauCeti.ModularForm.instFreeIntegralAtCusps`:
@@ -82,6 +87,24 @@ theorem qExpansion_coeff_mem_of_mem_integralAtCusps {f : ModularForm Γ k}
     (hf : f ∈ integralAtCusps R Γ k) (n : ℕ) :
     (qExpansion Γ.strictWidthInfty f).coeff n ∈ R := by
   simpa only [qExpansionAt_one] using hf 1 n
+
+/-- **Integrality at a common period.** If `Γ` contains `Γ(N)`, a form is integral at every
+cusp exactly when every translate `f ∣ γ` has its expansion at period `N` in `R`: at each cusp
+that expansion is `qExpansionAt γ f` in a power of `q`. -/
+theorem mem_integralAtCusps_iff_qExpansion_coeff_mem {N : ℕ} [NeZero N]
+    (hΓ : (Γ(N) : Subgroup (GL (Fin 2) ℝ)) ≤ Γ) {f : ModularForm Γ k} :
+    f ∈ integralAtCusps R Γ k ↔
+      ∀ (γ : SL(2, ℤ)) (n : ℕ), (qExpansion N (translate f (mapGL ℝ γ))).coeff n ∈ R := by
+  refine forall_congr' fun γ ↦ ?_
+  obtain ⟨m, hm, he⟩ := exists_qExpansion_translate_eq_expand_qExpansionAt
+    (Nat.pos_of_ne_zero (NeZero.ne N)) (natCast_mem_strictPeriods_conjAct_of_Gamma_le hΓ γ) f
+  rw [he]
+  refine ⟨fun h n ↦ ?_, fun h n ↦ ?_⟩
+  · rw [PowerSeries.coeff_expand]
+    split_ifs
+    · exact h _
+    · exact R.zero_mem
+  · simpa [PowerSeries.coeff_expand_mul] using h (m * n)
 
 /-- The integral forms are stable under scaling by elements of `R`. -/
 theorem smul_mem_integralAtCusps {r : ℂ} (hr : r ∈ R) {f : ModularForm Γ k}

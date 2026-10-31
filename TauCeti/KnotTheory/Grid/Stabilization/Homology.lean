@@ -107,14 +107,6 @@ private noncomputable abbrev stabilizeXSourceComplex :
     rw [← Functor.map_comp, ← ModuleCat.ofHom_comp, unblockedDifferential_comp_self_eq_zero,
       ModuleCat.ofHom_zero, Functor.map_zero]
 
-/-- `GC⁻(G)` with its object and differential spelled out. -/
-private noncomputable abbrev stabilizeXTargetComplex :
-    HomologicalComplex (ModuleCat A) (ComplexShape.refl Unit) where
-  X _ := ModuleCat.of A (GridChainMinus R n)
-  d _ _ := ModuleCat.ofHom (G.unblockedDifferential R)
-  d_comp_d' _ _ _ _ _ := by
-    rw [← ModuleCat.ofHom_comp, unblockedDifferential_comp_self_eq_zero, ModuleCat.ofHom_zero]
-
 /-- The source of `stabilizeXMap` is isomorphic to its spelled-out form. -/
 private noncomputable def stabilizeXSourceComplexIso :
     ((ModuleCat.restrictScalars
@@ -128,18 +120,11 @@ private noncomputable def stabilizeXSourceComplexIso :
     rintro ⟨⟩ ⟨⟩ -
     simp [← Functor.map_comp])
 
-/-- The target of `stabilizeXMap` is isomorphic to its spelled-out form. -/
-private noncomputable def stabilizeXTargetComplexIso :
-    G.unblockedComplex R ≅ G.stabilizeXTargetComplex R :=
-  HomologicalComplex.Hom.isoOfComponents (fun _ ↦ eqToIso (G.unblockedComplex_X R ())) (by
-    rintro ⟨⟩ ⟨⟩ -
-    simp)
-
 /-- `stabilizeXMap` between the spelled-out complexes. -/
 private noncomputable def stabilizeXMap' :
-    G.stabilizeXSourceComplex s R ⟶ G.stabilizeXTargetComplex R :=
+    G.stabilizeXSourceComplex s R ⟶ G.unblockedComplex' R :=
   (G.stabilizeXSourceComplexIso s R).inv ≫ G.stabilizeXMap s R ≫
-    (G.stabilizeXTargetComplexIso R).hom
+    (G.unblockedComplexIso R).hom
 
 private instance quasiIso_stabilizeXMap' : QuasiIso (G.stabilizeXMap' s R) := by
   rw [stabilizeXMap']
@@ -149,7 +134,7 @@ private instance quasiIso_stabilizeXMap' : QuasiIso (G.stabilizeXMap' s R) := by
 private theorem stabilizeXMap'_f_apply (c : GridChainMinus R (n + 1)) :
     ((G.stabilizeXMap' s R).f ()).hom c = G.stabilizeXChainMap s R c := by
   rw [stabilizeXChainMap_apply, ← stabilizeXMap_f_apply]
-  simp [stabilizeXMap', stabilizeXSourceComplexIso, stabilizeXTargetComplexIso]
+  simp [stabilizeXMap', stabilizeXSourceComplexIso]
 
 /-- **`stabilizeXChainMap` is a chain map**: it intertwines the unblocked differentials of `G'`
 and `G`. -/

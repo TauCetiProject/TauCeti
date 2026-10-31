@@ -109,9 +109,9 @@ private theorem differentiable_dixonFunction_of_windingNumber_zero_near (hU : Is
     filter_upwards [hU.mem_nhds hw] with w' hw' using dixonFunction_eq_dixonH1 hw'
   · have hoff : ∀ t ∈ uIcc a b, γ t ≠ w := fun t ht heq ↦ hw (heq ▸ hγU t ht)
     obtain ⟨ε, hε_pos, h_ball⟩ := h_local w hw
-    refine (differentiableAt_dixonH2 hγ_cont hoff
+    refine (hasDerivAt_dixonH2 hγ_cont hoff
       (cauchy_integrand_intervalIntegrable hf.continuousOn hγ_cont hγU hderiv_int
-        hoff)).congr_of_eventuallyEq ?_
+        hoff)).differentiableAt.congr_of_eventuallyEq ?_
     filter_upwards [Metric.ball_mem_nhds w hε_pos] with w' hw'
     obtain ⟨hoff', hwz'⟩ := h_ball w' hw'
     exact dixonFunction_eq_dixonH2_of_windingNumber_zero hγ_cont hderiv_int

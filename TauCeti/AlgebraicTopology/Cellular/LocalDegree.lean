@@ -196,7 +196,59 @@ section Generation
 
 open Metric Set unitInterval
 
-variable {n : ℕ} (x : skeletonObj C (n + 1))
+variable {n : ℕ}
+
+/-- The boundary sphere of the disk, in sup-norm coordinates. -/
+private def diskSphere (n : ℕ) : Set (TopCat.disk.{w} n) :=
+  {z | ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ = 1}
+
+/-- The disk pair `(Dⁿ, Sⁿ⁻¹)` is the disk relative to `diskSphere n`. -/
+private def diskBoundaryPairToDiskSphere (n : ℕ) :
+    diskBoundaryPair.{w} n ⟶ TopPair.ofSubset (diskSphere.{w} n) :=
+  TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun s ↦ ⟨TopCat.diskBoundaryInclusion n s,
+    (norm_diskHomeomorphClosedBall_eq_one_iff _).2 ⟨s, rfl⟩⟩,
+    (TopCat.diskBoundaryInclusion n).hom.continuous.subtype_mk _⟩) rfl
+
+private lemma isIso_diskBoundaryPairToDiskSphere (n : ℕ) :
+    IsIso (diskBoundaryPairToDiskSphere.{w} n) := by
+  have : IsIso (TopPair.Hom.fst (diskBoundaryPairToDiskSphere.{w} n)) := IsIso.id _
+  refine TopPair.isIso_of_isIso_fst_of_surjective_snd _ fun z ↦ ?_
+  obtain ⟨s, hs⟩ := (norm_diskHomeomorphClosedBall_eq_one_iff z.1).1 z.2
+  exact ⟨s, Subtype.ext hs⟩
+
+/-- The interior of the disk, in sup-norm coordinates. -/
+private def diskInterior (n : ℕ) : Set (TopCat.disk.{w} n) :=
+  {z | ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ < 1}
+
+private lemma isOpen_diskInterior : IsOpen (diskInterior.{w} n) :=
+  isOpen_lt (continuous_norm.comp (continuous_subtype_val.comp
+    (diskHomeomorphClosedBall n).continuous)) continuous_const
+
+/-- The radial deformation `TauCeti.radialPush r` of the disk, in sup-norm coordinates. -/
+private def diskRadialPush {r : ℝ} (hr : 0 ≤ r) :
+    C(I × TopCat.disk.{w} n, TopCat.disk.{w} n) where
+  toFun q := (diskHomeomorphClosedBall n).symm
+    ⟨radialPush r q.1 (diskHomeomorphClosedBall n q.2 : Fin n → ℝ), mem_closedBall_zero_iff.2
+      (norm_radialPush_le_one hr q.1
+        (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n q.2).2))⟩
+  continuous_toFun := (diskHomeomorphClosedBall n).symm.continuous.comp
+    (Continuous.subtype_mk ((continuous_radialPush hr).comp (continuous_fst.prodMk
+      (continuous_subtype_val.comp ((diskHomeomorphClosedBall n).continuous.comp
+        continuous_snd)))) _)
+
+private lemma coe_diskHomeomorphClosedBall_diskRadialPush {r : ℝ} (hr : 0 ≤ r)
+    (q : I × TopCat.disk.{w} n) :
+    (diskHomeomorphClosedBall n (diskRadialPush hr q) : Fin n → ℝ) =
+      radialPush r q.1 (diskHomeomorphClosedBall n q.2 : Fin n → ℝ) := by
+  rw [diskRadialPush, ContinuousMap.coe_mk, Homeomorph.apply_symm_apply]
+
+/-- The radial deformation of the disk, from the identity to the rescaled radial retraction. -/
+private def diskRadialHomotopy {r : ℝ} (hr : 0 ≤ r) :
+    (ContinuousMap.id (TopCat.disk.{w} n)).Homotopy ((diskRadialPush hr).curry 1) where
+  toContinuousMap := diskRadialPush hr
+  map_zero_left z := (diskHomeomorphClosedBall n).injective <| Subtype.ext <|
+    (coe_diskHomeomorphClosedBall_diskRadialPush hr (0, z)).trans (radialPush_zero _ _)
+  map_one_left _ := rfl
 
 /-- The inverse characteristic map of `i`, as a chart of the `n`-skeleton valued in the lifted
 space `ULift (Fin n → ℝ)`, so that it lies in the universe of the skeleton. -/
@@ -219,35 +271,60 @@ private lemma mem_cellChart_target_iff (i : cell C n) (u : ULift.{w} (Fin n → 
   rw [cellChart, OpenPartialHomeomorph.transHomeomorph_target, openCellChart_target]
   exact mem_ball_zero_iff
 
+/-- On the interior of the disk, the characteristic map is an embedding into the skeleton. -/
+private lemma isEmbedding_cellDiskHom_restrict (i : cell C n) :
+    IsEmbedding ((diskInterior n).domRestrict (cellDiskHom i)) := by
+  -- Read the interior of the disk as the open ball through `diskHomeomorphClosedBall`, then
+  -- apply the homeomorphism of the open ball onto the open cell.
+  have he₁ : IsEmbedding fun z : diskInterior.{w} n ↦
+      (⟨(diskHomeomorphClosedBall n z : Fin n → ℝ), mem_ball_zero_iff.2 z.2⟩ :
+        ball (0 : Fin n → ℝ) 1) :=
+    (IsEmbedding.subtypeVal.comp ((diskHomeomorphClosedBall n).isEmbedding.comp
+      IsEmbedding.subtypeVal)).codRestrict _ _
+  have hsub : openCell n i ⊆ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) := by
+    exact_mod_cast openCell_subset_skeletonLT n i
+  have he₂ := (IsEmbedding.inclusion hsub).comp (openCellHomeomorph n i).isEmbedding
+  convert he₂.comp he₁ using 1
+  funext z
+  exact Subtype.ext ((coe_cellDiskHom_apply i z.1).trans (openCellHomeomorph_apply n i
+    ⟨(diskHomeomorphClosedBall n z : Fin n → ℝ), mem_ball_zero_iff.2 z.2⟩).symm)
+
+variable (x : skeletonObj C (n + 1))
+
 /-- The radius of the closed ball in the cell `i` which is removed from the skeleton: halfway
 between the coordinate of `x` and the unit sphere. -/
 private def cellRadius (i : cell C n) : ℝ := (1 + ‖(map n i).symm x‖) / 2
-
-variable {i : cell C n} (hx : (x : X) ∈ openCell n i)
-
-include hx in
-private lemma norm_map_symm_lt_cellRadius : ‖(map n i).symm x‖ < cellRadius C x i := by
-  have := mem_ball_zero_iff.1 (map_symm_mem_ball n hx)
-  rw [cellRadius]
-  linarith
-
-include hx in
-private lemma cellRadius_lt_one : cellRadius C x i < 1 := by
-  have := mem_ball_zero_iff.1 (map_symm_mem_ball n hx)
-  rw [cellRadius]
-  linarith
 
 /-- The image in the skeleton of the closed ball of radius `cellRadius C x i` in the open cell. -/
 private def cellBall (i : cell C n) : Set (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) :=
   (cellChart C i).symm '' closedBall 0 (cellRadius C x i)
 
-include hx in
+/-- The closed ball of radius `cellRadius C x i` in the disk, in sup-norm coordinates. -/
+private def diskCore (i : cell C n) : Set (TopCat.disk.{w} n) :=
+  {z | ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ ≤ cellRadius C x i}
+
+private lemma isClosed_diskCore (i : cell C n) : IsClosed (diskCore C x i) :=
+  isClosed_le (continuous_norm.comp (continuous_subtype_val.comp
+    (diskHomeomorphClosedBall n).continuous)) continuous_const
+
+variable {i : cell C n} (hx : (x : X) ∈ openCell n i)
+include hx
+
+private lemma norm_map_symm_lt_cellRadius : ‖(map n i).symm x‖ < cellRadius C x i := by
+  have := mem_ball_zero_iff.1 (map_symm_mem_ball n hx)
+  rw [cellRadius]
+  linarith
+
+private lemma cellRadius_lt_one : cellRadius C x i < 1 := by
+  have := mem_ball_zero_iff.1 (map_symm_mem_ball n hx)
+  rw [cellRadius]
+  linarith
+
 private lemma closedBall_subset_target_cellChart :
     closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i) ⊆ (cellChart C i).target :=
   fun u hu ↦ (mem_cellChart_target_iff C i u).2
     ((mem_closedBall_zero_iff.1 hu).trans_lt (cellRadius_lt_one C x hx))
 
-include hx in
 private lemma mem_cellBall_iff (m : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)) :
     m ∈ cellBall C x i ↔ (m : X) ∈ openCell n i ∧ ‖(map n i).symm m‖ ≤ cellRadius C x i := by
   rw [cellBall, (cellChart C i).symm_image_eq_source_inter_preimage
@@ -255,7 +332,6 @@ private lemma mem_cellBall_iff (m : (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set
   rw [cellChart_source, mem_inter_iff, mem_preimage, mem_preimage, mem_closedBall_zero_iff,
     cellChart_apply, ULift.norm_up]
 
-include hx in
 private lemma isClosed_cellBall : IsClosed (cellBall C x i) := by
   have hK : IsCompact (closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i)) := by
     have h : closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i) =
@@ -268,29 +344,18 @@ private lemma isClosed_cellBall : IsClosed (cellBall C x i) := by
   exact (hK.image_of_continuousOn ((cellChart C i).continuousOn_symm.mono
     (closedBall_subset_target_cellChart C x hx))).isClosed
 
-include hx in
 private lemma cellChart_mem_closedBall :
     cellChart C i x ∈ closedBall (0 : ULift.{w} (Fin n → ℝ)) (cellRadius C x i) :=
   mem_closedBall_zero_iff.2 (by
     rw [cellChart_apply, ULift.norm_up]
     exact (norm_map_symm_lt_cellRadius C x hx).le)
 
-/-- The closed ball of radius `cellRadius C x i` in the disk, in sup-norm coordinates. -/
-private def diskCore (i : cell C n) : Set (TopCat.disk.{w} n) :=
-  {z | ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ ≤ cellRadius C x i}
-
-/-- The boundary sphere of the disk, in sup-norm coordinates. -/
-private def diskSphere (n : ℕ) : Set (TopCat.disk.{w} n) :=
-  {z | ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ = 1}
-
-include hx in
 private lemma mapsTo_diskSphere_compl_diskCore :
     MapsTo (𝟙 (TopCat.disk.{w} n)) (diskSphere n) (diskCore C x i)ᶜ := by
   intro z (hz : _ = _) (hz' : _ ≤ _)
   rw [ConcreteCategory.id_apply, hz] at hz'
   exact (cellRadius_lt_one C x hx).not_ge hz'
 
-include hx in
 /-- The characteristic map sends the disk minus `diskCore` into the skeleton minus `cellBall`. -/
 private lemma mapsTo_cellDiskHom_compl :
     MapsTo (cellDiskHom i) (diskCore C x i)ᶜ (cellBall C x i)ᶜ := by
@@ -310,7 +375,10 @@ private lemma mapsTo_cellDiskHom_compl :
     exact notMem_skeletonLT_of_mem_openCell n hop (cellFrontier_subset_skeletonLT n i
       ⟨_, mem_sphere_zero_iff_norm.2 heq, rfl⟩)
 
-include hx in
+private lemma diskCore_subset_diskInterior : diskCore C x i ⊆ diskInterior n :=
+  fun z (hz : ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ ≤ cellRadius C x i) ↦
+    hz.trans_lt (cellRadius_lt_one C x hx)
+
 private lemma isIso_singularHomologyMap_compl_cellBall (k : ℕ) :
     IsIso (TopPair.singularHomologyMap (TopPair.ofSubsetMap
       (𝟙 (TopCat.of (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X)))
@@ -322,43 +390,6 @@ private lemma isIso_singularHomologyMap_compl_cellBall (k : ℕ) :
     (cellChart_mem_closedBall C x hx) isBounded_closedBall isClosed_closedBall
     (isClosed_cellBall C x hx) (closedBall_subset_target_cellChart C x hx) k
 
-/-- The interior of the disk, in sup-norm coordinates. -/
-private def diskInterior (n : ℕ) : Set (TopCat.disk.{w} n) :=
-  {z | ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ < 1}
-
-private lemma isOpen_diskInterior : IsOpen (diskInterior.{w} n) :=
-  isOpen_lt (continuous_norm.comp (continuous_subtype_val.comp
-    (diskHomeomorphClosedBall n).continuous)) continuous_const
-
-private lemma isClosed_diskCore (i : cell C n) : IsClosed (diskCore C x i) :=
-  isClosed_le (continuous_norm.comp (continuous_subtype_val.comp
-    (diskHomeomorphClosedBall n).continuous)) continuous_const
-
-include hx in
-private lemma diskCore_subset_diskInterior : diskCore C x i ⊆ diskInterior n :=
-  fun z (hz : ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ ≤ cellRadius C x i) ↦
-    hz.trans_lt (cellRadius_lt_one C x hx)
-
-/-- On the interior of the disk, the characteristic map is an embedding into the skeleton. -/
-private lemma isEmbedding_cellDiskHom_restrict (i : cell C n) :
-    IsEmbedding ((diskInterior n).domRestrict (cellDiskHom i)) := by
-  -- Read the interior of the disk as the open ball through `diskHomeomorphClosedBall`, then
-  -- apply the homeomorphism of the open ball onto the open cell.
-  have he₁ : IsEmbedding fun z : diskInterior.{w} n ↦
-      (⟨(diskHomeomorphClosedBall n z : Fin n → ℝ), mem_ball_zero_iff.2 z.2⟩ :
-        ball (0 : Fin n → ℝ) 1) :=
-    (IsEmbedding.subtypeVal.comp ((diskHomeomorphClosedBall n).isEmbedding.comp
-      IsEmbedding.subtypeVal)).codRestrict _ _
-  have hsub : openCell n i ⊆ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) := by
-    exact_mod_cast openCell_subset_skeletonLT n i
-  have he₂ := (IsEmbedding.inclusion hsub).comp (openCellHomeomorph n i).isEmbedding
-  convert he₂.comp he₁ using 1
-  funext z
-  exact Subtype.ext ((coe_cellDiskHom_apply i z.1).trans (openCellHomeomorph_apply n i
-    ⟨(diskHomeomorphClosedBall n z : Fin n → ℝ), mem_ball_zero_iff.2 z.2⟩).symm)
-
-
-include hx in
 /-- **Excision onto the open cell.** The characteristic map induces isomorphisms from the
 homology of the disk relative to the complement of `diskCore` to that of the skeleton relative
 to the complement of `cellBall`. -/
@@ -422,33 +453,6 @@ private lemma isIso_singularHomologyMap_cellDiskHom (k : ℕ) :
           Homeomorph.apply_symm_apply]
         exact map_map_symm n hm
 
-/-- The radial deformation `TauCeti.radialPush r` of the disk, in sup-norm coordinates. -/
-private def diskRadialPush {r : ℝ} (hr : 0 ≤ r) :
-    C(I × TopCat.disk.{w} n, TopCat.disk.{w} n) where
-  toFun q := (diskHomeomorphClosedBall n).symm
-    ⟨radialPush r q.1 (diskHomeomorphClosedBall n q.2 : Fin n → ℝ), mem_closedBall_zero_iff.2
-      (norm_radialPush_le_one hr q.1
-        (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n q.2).2))⟩
-  continuous_toFun := (diskHomeomorphClosedBall n).symm.continuous.comp
-    (Continuous.subtype_mk ((continuous_radialPush hr).comp (continuous_fst.prodMk
-      (continuous_subtype_val.comp ((diskHomeomorphClosedBall n).continuous.comp
-        continuous_snd)))) _)
-
-private lemma coe_diskHomeomorphClosedBall_diskRadialPush {r : ℝ} (hr : 0 ≤ r)
-    (q : I × TopCat.disk.{w} n) :
-    (diskHomeomorphClosedBall n (diskRadialPush hr q) : Fin n → ℝ) =
-      radialPush r q.1 (diskHomeomorphClosedBall n q.2 : Fin n → ℝ) := by
-  rw [diskRadialPush, ContinuousMap.coe_mk, Homeomorph.apply_symm_apply]
-
-/-- The radial deformation of the disk, from the identity to the rescaled radial retraction. -/
-private def diskRadialHomotopy {r : ℝ} (hr : 0 ≤ r) :
-    (ContinuousMap.id (TopCat.disk.{w} n)).Homotopy ((diskRadialPush hr).curry 1) where
-  toContinuousMap := diskRadialPush hr
-  map_zero_left z := (diskHomeomorphClosedBall n).injective <| Subtype.ext <|
-    (coe_diskHomeomorphClosedBall_diskRadialPush hr (0, z)).trans (radialPush_zero _ _)
-  map_one_left _ := rfl
-
-include hx in
 /-- **The radial deformation.** The inclusion of the boundary sphere of the disk into the
 complement of `diskCore` induces isomorphisms on relative homology. -/
 private lemma isIso_singularHomologyMap_diskSphere (k : ℕ) :
@@ -494,21 +498,6 @@ private lemma isIso_singularHomologyMap_diskSphere (k : ℕ) :
     exact (norm_le_norm_radialPush hr hr1 _
       (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n z).2)).trans hle'
 
-/-- The disk pair `(Dⁿ, Sⁿ⁻¹)` is the disk relative to `diskSphere n`. -/
-private def diskBoundaryPairToDiskSphere (n : ℕ) :
-    diskBoundaryPair.{w} n ⟶ TopPair.ofSubset (diskSphere.{w} n) :=
-  TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun s ↦ ⟨TopCat.diskBoundaryInclusion n s,
-    (norm_diskHomeomorphClosedBall_eq_one_iff _).2 ⟨s, rfl⟩⟩,
-    (TopCat.diskBoundaryInclusion n).hom.continuous.subtype_mk _⟩) rfl
-
-private lemma isIso_diskBoundaryPairToDiskSphere (n : ℕ) :
-    IsIso (diskBoundaryPairToDiskSphere.{w} n) := by
-  have : IsIso (TopPair.Hom.fst (diskBoundaryPairToDiskSphere.{w} n)) := IsIso.id _
-  refine TopPair.isIso_of_isIso_fst_of_surjective_snd _ fun z ↦ ?_
-  obtain ⟨s, hs⟩ := (norm_diskHomeomorphClosedBall_eq_one_iff z.1).1 z.2
-  exact ⟨s, Subtype.ext hs⟩
-
-include hx in
 /-- **The characteristic map of a cell computes the local homology at a point of the open cell.**
 For a point `x` of the open `n`-cell `i`, the characteristic map of `i`, as a map of pairs
 `(Dⁿ, Sⁿ⁻¹) ⟶ (Xⁿ, Xⁿ ∖ {x})`, induces isomorphisms on relative singular homology in every

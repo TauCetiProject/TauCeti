@@ -7,6 +7,8 @@ module
 
 -- `Matrix.submatrix` and `Matrix.submatrix_submatrix` occur in the statements and proofs below.
 public import Mathlib.LinearAlgebra.Matrix.Defs
+-- `Matrix.submatrix_mul` is used by `Matrix.submatrix_one_mul_submatrix_one`.
+public import Mathlib.Data.Matrix.Mul
 -- `Subgroup` and the group structure on `Equiv.Perm` are used by `TauCeti.matrixSymmetryGroup`.
 public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.GroupTheory.Perm.Basic
@@ -19,7 +21,8 @@ A permutation `σ` of the index set of a square matrix `M` *preserves* `M` when
 `TauCeti.submatrix_perm_refl`, `TauCeti.submatrix_perm_trans` and `TauCeti.submatrix_perm_symm`,
 and packages them as the subgroup `TauCeti.matrixSymmetryGroup` of `Equiv.Perm`. It also reads
 off the entries of a reindexed matrix: `A.reindex eₘ eₙ = A'` gives `A' (eₘ a) (eₙ b) = A a b`
-(`Matrix.apply_apply_of_reindex_eq`).
+(`Matrix.apply_apply_of_reindex_eq`), and shows that the `n × m` matrix of an injection
+`f : m ↪ n` has a left inverse, its transpose (`Matrix.submatrix_one_mul_submatrix_one`).
 
 For the Cartan matrix of a Dynkin diagram these permutations are the diagram symmetries.
 
@@ -78,5 +81,12 @@ theorem apply_apply_of_reindex_eq {l m n o α : Type*} {A : Matrix m n α} {A' :
     A' (eₘ a) (eₙ b) = A a b := by
   subst h
   simp
+
+/-- The `n × m` matrix of an injection `f : m ↪ n` and its transpose compose to the identity of
+`m`: the columns of the first are distinct standard basis vectors. -/
+theorem submatrix_one_mul_submatrix_one {m n α : Type*} [Fintype n] [DecidableEq m]
+    [DecidableEq n] [NonAssocSemiring α] (f : m ↪ n) :
+    (1 : Matrix n n α).submatrix f id * (1 : Matrix n n α).submatrix id f = 1 := by
+  rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, Matrix.one_mul, submatrix_one_embedding]
 
 end Matrix

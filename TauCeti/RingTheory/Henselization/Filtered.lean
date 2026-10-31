@@ -44,7 +44,7 @@ theorem parallel_equalization {B C : Neighbourhood.{u, v} I} (f g : B ⟶ C) :
   obtain ⟨e, he, hker⟩ :=
     TauCeti.Algebra.FormallyUnramified.exists_isIdempotentElem_ker_lmul_eq_span R B.obj
   have hde : d e ∈ J :=
-    TauCeti.Algebra.FormallyUnramified.productMap_mem_of_comp_eq
+    Algebra.TensorProduct.productMap_mem_of_comp_eq
       (RingHom.mem_ker.mp (hker ▸ Ideal.mem_span_singleton_self e)) J (by
         ext b
         exact quotient_mk_eq_of_reducedMap_surjective I

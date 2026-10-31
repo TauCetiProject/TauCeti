@@ -76,7 +76,7 @@ private theorem spanFinrank_le_natCard_option {σ : Type*} [Finite σ]
   let R := Tate σ
   let S := PowerSeries.IsRestricted.subring (R := R) 1
   let E : Tate (Option σ) ≃+* S :=
-    (e : Tate (Option σ) ≃+* Tate (Option σ)).trans restrictedOptionEquiv
+    (e : Tate (Option σ) ≃+* Tate (Option σ)).trans restrictedOptionEquiv.toRingEquiv
   let g : S := E f
   rw [← Ideal.spanFinrank_map_eq_of_ringEquiv E M]
   set N : Ideal S := M.map E

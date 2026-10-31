@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.SubstInv
 
 /-!
 # Homomorphisms and isomorphisms of formal group laws
@@ -45,6 +46,16 @@ structure FormalGroupHom (F G : FormalGroup R) where
     subst (fun i => toPowerSeries.toMvPowerSeries i) G.toPowerSeries
 
 namespace FormalGroupHom
+
+/-- Transport a homomorphism along an equality of source formal groups. -/
+def ofSourceEq {F' : FormalGroup R} (e : F = F') (f : FormalGroupHom F G) :
+    FormalGroupHom F' G := e ▸ f
+
+@[simp]
+theorem ofSourceEq_toPowerSeries {F' : FormalGroup R} (e : F = F')
+    (f : FormalGroupHom F G) : (ofSourceEq e f).toPowerSeries = f.toPowerSeries := by
+  subst F'
+  rfl
 
 /-- The series of a formal group homomorphism can be substituted. -/
 theorem hasSubst (f : FormalGroupHom F G) : PowerSeries.HasSubst f.toPowerSeries :=
@@ -277,6 +288,19 @@ theorem subst_toHom_invHom (f : FormalGroupIso F G) :
   have h := congrFun f.right_inv PowerSeries.X
   simpa [PowerSeries.subst_X f.invHom.hasSubst] using h
 
+/-- The linear coefficient of a formal group isomorphism is a unit. -/
+theorem isUnit_coeff_one (f : FormalGroupIso F G) :
+    IsUnit (PowerSeries.coeff 1 f.toHom.toPowerSeries) :=
+  PowerSeries.isUnit_coeff_one_of_subst_eq_X f.toHom.hasSubst f.subst_toHom_invHom
+
+/-- Over a nontrivial ring, the forward series of an isomorphism is nonzero: its linear
+coefficient is invertible. -/
+theorem toHom_toPowerSeries_ne_zero [Nontrivial R] (f : FormalGroupIso F G) :
+    f.toHom.toPowerSeries ≠ 0 := by
+  intro h0
+  have h := congrArg (PowerSeries.coeff 1) f.subst_invHom_toHom
+  simp [h0] at h
+
 /-- A formal group isomorphism is determined by its forward homomorphism. -/
 @[ext]
 theorem ext {f g : FormalGroupIso F G} (h : f.toHom = g.toHom) : f = g := by
@@ -437,5 +461,29 @@ theorem toAddEquiv_symm (f : FormalGroupIso F G) (σ : Type*) :
     f.symm.toAddEquiv σ = (f.toAddEquiv σ).symm := (rfl)
 
 end FormalGroupIso
+
+namespace FormalGroupHom
+
+/-- A homomorphism with invertible linear coefficient is a formal group isomorphism. -/
+noncomputable def toIso (f : FormalGroupHom F G)
+    (hf : IsUnit (PowerSeries.coeff 1 f.toPowerSeries)) : FormalGroupIso F G :=
+  .ofSubstEqX f
+    (f.ofInverse (f.toPowerSeries.substInvOfIsUnit hf)
+      (PowerSeries.constantCoeff_substInvOfIsUnit _ _)
+      (PowerSeries.subst_substInvOfIsUnit_right _ f.zero_constantCoeff _)
+      (PowerSeries.subst_substInvOfIsUnit_left _ f.zero_constantCoeff _))
+    (PowerSeries.subst_substInvOfIsUnit_right _ f.zero_constantCoeff _)
+    (PowerSeries.subst_substInvOfIsUnit_left _ f.zero_constantCoeff _)
+
+@[simp]
+theorem toIso_toHom (f : FormalGroupHom F G)
+    (hf : IsUnit (PowerSeries.coeff 1 f.toPowerSeries)) : (f.toIso hf).toHom = f := (rfl)
+
+@[simp]
+theorem toIso_invHom_toPowerSeries (f : FormalGroupHom F G)
+    (hf : IsUnit (PowerSeries.coeff 1 f.toPowerSeries)) :
+    (f.toIso hf).invHom.toPowerSeries = f.toPowerSeries.substInvOfIsUnit hf := (rfl)
+
+end FormalGroupHom
 
 end TauCeti

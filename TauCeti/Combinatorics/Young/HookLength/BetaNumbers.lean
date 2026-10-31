@@ -79,8 +79,6 @@ when `(j, c) ∉ μ`. Disjointness plus a count of both sides then forces the un
   formula to the hook-length formula.
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I, Section
   1, Example 1, for the description of a row of hook lengths by beta-numbers.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 5: the multiplicative hook-length formula.
 -/
 
 public section

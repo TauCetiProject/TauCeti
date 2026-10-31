@@ -88,7 +88,6 @@ def negativeHypergeometricWeight (N K r k : ℕ) : ℝ≥0∞ :=
   else 0
 
 /-- The negative hypergeometric weight agrees with its defining ratio when `k ≤ N - K`. -/
-@[simp]
 theorem negativeHypergeometricWeight_of_le {k : ℕ} (hk : k ≤ N - K) :
     negativeHypergeometricWeight N K r k =
       ((k + r - 1).choose k : ℝ≥0∞) * ((N - r - k).choose (K - r) : ℝ≥0∞) /
@@ -176,6 +175,16 @@ theorem isProbabilityMeasure_negativeHypergeometricMeasure (hr : r ≤ K) (hK : 
   rw [isProbabilityMeasure_iff, negativeHypergeometricMeasure_eq_sum_dirac hr hK]
   simpa [Measure.finsetSum_apply] using sum_negativeHypergeometricWeight hr hK
 
+/-- Every negative hypergeometric law is finite, including the zero measure outside the valid
+parameter range. -/
+instance isFiniteMeasure_negativeHypergeometricMeasure (N K r : ℕ) :
+    IsFiniteMeasure (negativeHypergeometricMeasure N K r) := by
+  by_cases h : r ≤ K ∧ K ≤ N
+  · have := isProbabilityMeasure_negativeHypergeometricMeasure h.1 h.2
+    infer_instance
+  · rw [negativeHypergeometricMeasure_eq_zero_of_invalid h]
+    infer_instance
+
 /-! ## Masses and support -/
 
 /-- The singleton mass of a valid negative hypergeometric law is its defining weight. -/
@@ -235,6 +244,7 @@ theorem negativeHypergeometricMeasure_zero_successes (hK : K ≤ N) :
 
 /-- Every function is integrable against a negative hypergeometric measure, since the measure has
 finite support. -/
+@[fun_prop]
 theorem integrable_negativeHypergeometricMeasure {E : Type*} [SeminormedAddGroup E]
     (f : ℕ → E) (N K r : ℕ) : Integrable f (negativeHypergeometricMeasure N K r) := by
   rw [negativeHypergeometricMeasure]
@@ -245,7 +255,7 @@ theorem integrable_negativeHypergeometricMeasure {E : Type*} [SeminormedAddGroup
 
 /-- Every function on `ℝ` is integrable against the real-valued cast of a negative
 hypergeometric law. -/
-@[simp]
+@[simp, fun_prop]
 theorem integrable_map_cast_negativeHypergeometricMeasure {E : Type*} [SeminormedAddGroup E]
     (f : ℝ → E) (N K r : ℕ) :
     Integrable f ((negativeHypergeometricMeasure N K r).map (Nat.cast : ℕ → ℝ)) := by

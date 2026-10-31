@@ -156,22 +156,18 @@ private theorem ne_of_step (hc : IsUnit c) (hstep : x (b s : V) = c • (b r : V
 
 end RootStepAux
 
+variable {L : Type u} [LieRing L] [LieAlgebra ℚ L] {ι : Type w} {κ : Type*}
+
 section Coordinates
 
-variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
-variable {ι : Type w} {κ : Type*}
-variable {V : Type v} [AddCommGroup V] [Module ℚ V]
-variable (e : ι → L) (h : κ → L)
-variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
-variable (M : AddSubgroup V)
-variable (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M)
-variable (i : ι)
-variable (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-variable {η : Type*} (b : Module.Basis η ℤ M)
+variable {V : Type v} [AddCommGroup V] [Module ℚ V] (e : ι → L) (h : κ → L)
+  (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V) (M : AddSubgroup V)
+  (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M) (i : ι)
+  (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+  {η : Type*} (b : Module.Basis η ℤ M)
 
 /-- The integral matrix of a represented root generator in an invariant lattice basis. -/
-@[expose] noncomputable def kostantRootGeneratorIntMatrix (i : ι)
-    (b : Module.Basis η ℤ M) : Matrix η η ℤ :=
+@[expose] noncomputable def kostantRootGeneratorIntMatrix : Matrix η η ℤ :=
   b.toMatrix fun s ↦
     ⟨ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s),
       hM _ (rootVector_mem_kostantForm e h i) _ (b s).2⟩
@@ -201,7 +197,7 @@ theorem kostantRootGeneratorIntMatrix_eq_of_action [Fintype η] (X : Matrix η �
   exact congrFun (b.repr_sum_self (fun r => X r s)) r
 
 /-- A represented root generator acts on each lattice basis vector by its integral matrix column. -/
-theorem rep_rootGenerator_basis_eq_sum [Fintype η] (i : ι) (b : Module.Basis η ℤ M) (s : η) :
+theorem rep_rootGenerator_basis_eq_sum [Fintype η] (s : η) :
     ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V) =
       ∑ r, kostantRootGeneratorIntMatrix e h ρ M hM i b r s • (b r : V) := by
   have hexp := congrArg Subtype.val ((b.sum_toMatrix_smul_self
@@ -212,8 +208,7 @@ theorem rep_rootGenerator_basis_eq_sum [Fintype η] (i : ι) (b : Module.Basis �
 
 /-- If a root generator takes the lattice basis vector `b a` to `c • b a'`, then the `a`-th
 column of its integral matrix is supported at `a'`, with entry `c` there. -/
-theorem kostantRootGeneratorIntMatrix_apply_of_eq [DecidableEq η]
-    (i : ι) (b : Module.Basis η ℤ M) {a a' : η} {c : ℤ}
+theorem kostantRootGeneratorIntMatrix_apply_of_eq [DecidableEq η] {a a' : η} {c : ℤ}
     (hstep : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b a : V) = c • (b a' : V))
     (r : η) :
     kostantRootGeneratorIntMatrix e h ρ M hM i b r a = if r = a' then c else 0 := by
@@ -245,13 +240,14 @@ theorem repr_kostantRootSubgroupPoints_baseChange {A : Type*} [CommRing A]
   refine Finset.sum_congr rfl fun k _ => ?_
   rw [Module.Basis.baseChange_repr_tmul, mul_one]
 
-variable {r s : η} {c : ℤ}
-variable (hc : IsUnit c)
-variable (hstep : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V) = c • (b r : V))
-variable (hsq : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))
-  (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V)) = 0)
+section IsRootStep
 
-include hnil hc hstep hsq in
+variable {r s : η} {c : ℤ} (hc : IsUnit c)
+  (hstep : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V) = c • (b r : V))
+  (hsq : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))
+    (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V)) = 0)
+include hc hstep hsq
+
 /-- **The pinning coordinate of a root subgroup.** At a root step, the `r`-th coordinate of
 `xᵢ(t) (1 ⊗ b s)` is the parameter itself, scaled by the unit `c`. Every higher divided power
 vanishes on this basis vector, so no higher power of the parameter appears, and the zeroth one
@@ -274,7 +270,6 @@ theorem repr_kostantRootSubgroupPoints_of_isRootStep {A : Type*} [CommRing A]
     rw [integralDividedPower_apply_eq_zero_of_two_le _ hsq (by omega)]
     simp
 
-include hnil hc hstep hsq in
 /-- **The root subgroup is a faithful copy of `𝔾ₐ`.** Distinct parameters give distinct
 automorphisms of the base-changed lattice. -/
 theorem kostantRootSubgroupPoints_injective {A : Type*} [CommRing A] :
@@ -290,23 +285,20 @@ theorem kostantRootSubgroupPoints_injective {A : Type*} [CommRing A] :
   · simpa using hcoord
   · simpa using hcoord
 
-variable [Fintype η] [DecidableEq η]
-
-include hnil hc hstep hsq in
 /-- At a root step, the `(r, s)` entry of the root-subgroup matrix is the parameter, scaled by
 the unit `c`. -/
-theorem kostantRootSubgroupMatrix_apply_of_isRootStep {A : Type*} [CommRing A]
-    (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
+theorem kostantRootSubgroupMatrix_apply_of_isRootStep [Fintype η] [DecidableEq η]
+    {A : Type*} [CommRing A] (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
     kostantRootSubgroupMatrix e h ρ M hM i hnil b f r s =
       c • Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) := by
   rw [kostantRootSubgroupMatrix_apply,
     repr_kostantRootSubgroupPoints_of_isRootStep e h ρ M hM i hnil b hc hstep hsq]
 
-omit [Fintype η] in
-include hnil in
+end IsRootStep
+
 /-- A class-two root operator with one nonzero basis column acts by adding the parameter times
 that column after base change. -/
-theorem kostantRootSubgroupPoints_apply_baseChange_basis_of_action
+theorem kostantRootSubgroupPoints_apply_baseChange_basis_of_action [DecidableEq η]
     {A : Type*} [CommRing A] (source target : η)
     (hclass : nilpotencyClass
       (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) = 2)
@@ -327,7 +319,22 @@ theorem kostantRootSubgroupPoints_apply_baseChange_basis_of_action
     Finset.sum_range_succ, Finset.sum_range_one, integralDividedPower_zero, hone]
   split <;> simp [smul_tmul']
 
-include hnil in
+/-- A divided power has the prescribed matrix in an integral lattice basis. -/
+theorem integralDividedPower_basis_eq_sum [Fintype η] (k : ℕ) (X : Matrix η η ℤ)
+    (haction : ∀ s, Associative.dividedPower k
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) (b s : V) =
+      ∑ r, X r s • (b r : V)) (s : η) :
+    integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
+        (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i k hv) (b s) =
+      ∑ r, X r s • b r := by
+  classical
+  apply Subtype.ext
+  rw [coe_integralDividedPower_apply, Module.End.smul_def, haction]
+  push_cast
+  simp
+
+variable [Fintype η] [DecidableEq η]
+
 /-- A class-two root operator that sends one basis vector to another and kills all remaining
 basis vectors exponentiates to the corresponding elementary transvection. -/
 theorem kostantRootSubgroupMatrix_eq_transvectionUnit_of_action
@@ -353,124 +360,6 @@ theorem kostantRootSubgroupMatrix_eq_transvectionUnit_of_action
     simp [Module.Basis.repr_self, Finsupp.single_apply, eq_comm]
   · simp [hcol, Ne.symm hcol, eq_comm]
 
-end Coordinates
-
-section Scheme
-
-variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
-variable {I : Type w} {κ : Type*}
-variable {V : Type} [AddCommGroup V] [Module ℚ V]
-variable (e : I → L) (h : κ → L)
-variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
-variable (M : AddSubgroup V)
-variable (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M)
-variable (i : I)
-variable (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
-variable {r s : Fin n} {c : ℤ}
-variable (hc : IsUnit c)
-variable (hstep : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V) = c • (b r : V))
-variable (hsq : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))
-  (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V)) = 0)
-
-include hc hstep hsq in
-/-- At a root step, the coordinate morphism of the root subgroup sends the `(r, s)` generic matrix
-coordinate to the polynomial generator, scaled by the unit `c`. -/
-theorem kostantRootSubgroupCoordinateMap_X_of_isRootStep :
-    (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom
-        (GeneralLinear.coordinateHopfAlgebraAlgEquiv ℤ n
-          (GeneralLinear.coordinateRingMap ℤ n (MvPolynomial.X (r, s)))) =
-      c • SymmetricAlgebra.ι ℤ ℤ 1 := by
-  have key := pointsMulEquiv_kostantRootSubgroupCoordinateMap_apply e h ρ M hM i hnil b
-    (SymmetricAlgebra ℤ ℤ) (toConv (AlgHom.id ℤ (SymmetricAlgebra ℤ ℤ))) r s
-  rw [GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointToGeneralLinear_apply] at key
-  -- The identity point composes trivially, so `key` already computes the coordinate morphism.
-  have key' : (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom
-      (GeneralLinear.coordinateHopfAlgebraAlgEquiv ℤ n
-        (GeneralLinear.coordinateRingMap ℤ n (MvPolynomial.X (r, s)))) =
-      (b.baseChange (SymmetricAlgebra ℤ ℤ)).repr
-        ((kostantRootSubgroupPoints e h ρ M hM i hnil
-          (toConv (AlgHom.id ℤ (SymmetricAlgebra ℤ ℤ)))).val
-          (b.baseChange (SymmetricAlgebra ℤ ℤ) s)) r := key
-  have hval := repr_kostantRootSubgroupPoints_of_isRootStep e h ρ M hM i hnil b hc hstep hsq
-    (A := SymmetricAlgebra ℤ ℤ) (toConv (AlgHom.id ℤ (SymmetricAlgebra ℤ ℤ)))
-  refine (key'.trans hval).trans ?_
-  congr 1
-  rw [AdditiveGroup.toAdd_gaPointsMulEquiv, WithConv.ofConv_toConv]
-  rfl
-
-include hc hstep hsq in
-/-- **The coordinate morphism of a root subgroup is surjective.** Its image is a subalgebra of
-the polynomial coordinate algebra of `𝔾ₐ` containing the generator, hence everything. -/
-theorem kostantRootSubgroupCoordinateMap_surjective :
-    Function.Surjective (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom := by
-  have hgen : SymmetricAlgebra.ι ℤ ℤ 1 ∈
-      (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom.toAlgHom.range := by
-    obtain ⟨u, hu⟩ := id hc
-    refine (AlgHom.mem_range _).2
-      ⟨((u⁻¹ : ℤˣ) : ℤ) • GeneralLinear.coordinateHopfAlgebraAlgEquiv ℤ n
-        (GeneralLinear.coordinateRingMap ℤ n (MvPolynomial.X (r, s))), ?_⟩
-    rw [BialgHom.coe_toAlgHom, map_zsmul,
-      kostantRootSubgroupCoordinateMap_X_of_isRootStep e h ρ M hM i hnil b hc hstep hsq,
-      smul_smul, ← hu, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_smul]
-  exact (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom.toAlgHom
-    |>.surjective_of_ι_one_mem_range hgen
-
-include hc hstep hsq in
-/-- **A Kostant root subgroup is a closed immersion.** The one-parameter subgroup
-`xᵢ : 𝔾ₐ → GLₙ` identifies `𝔾ₐ` with a closed subscheme of `GLₙ` over `ℤ`. -/
-theorem isClosedImmersion_kostantRootSubgroup :
-    IsClosedImmersion (kostantRootSubgroup e h ρ M hM i hnil b).hom.hom.left := by
-  rw [kostantRootSubgroup_def]
-  exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff
-    (AdditiveGroup.groupScheme_def ℤ) (GeneralLinear.groupScheme_def ℤ n) _).2
-    (kostantRootSubgroupCoordinateMap_surjective e h ρ M hM i hnil b hc hstep hsq)
-
-include hc hstep hsq in
-/-- A root subgroup is a monomorphism of group schemes over `ℤ`. -/
-theorem mono_kostantRootSubgroup : Mono (kostantRootSubgroup e h ρ M hM i hnil b) :=
-  have := isClosedImmersion_kostantRootSubgroup e h ρ M hM i hnil b hc hstep hsq
-  Grp.mono_of_mono_left (kostantRootSubgroup e h ρ M hM i hnil b)
-
-/-- **The root subgroup as a closed subgroup scheme of `GLₙ`.** This is the subgroup `U_αᵢ` that a
-pinning carries: a closed subgroup scheme which the root-subgroup morphism identifies with `𝔾ₐ`. -/
-noncomputable def kostantRootSubgroupClosedSubgroup
-    (hc : IsUnit c)
-    (hstep : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V) = c • (b r : V))
-    (hsq : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V)) = 0) :
-    ClosedSubgroupScheme (GeneralLinear.groupScheme ℤ n) :=
-  haveI := isClosedImmersion_kostantRootSubgroup e h ρ M hM i hnil b hc hstep hsq
-  ClosedSubgroupScheme.mk (kostantRootSubgroup e h ρ M hM i hnil b)
-
-include hc hstep hsq in
-/-- **The root subgroup presents its own closed subgroup.** The subobject underlying
-`kostantRootSubgroupClosedSubgroup` is the one represented by `kostantRootSubgroup` itself, so a
-consumer never has to unfold the bundled definition; the inclusion arrow agrees with
-`kostantRootSubgroup` up to `CategoryTheory.Subobject.underlyingIso`. -/
-@[simp]
-theorem coe_kostantRootSubgroupClosedSubgroup :
-    (kostantRootSubgroupClosedSubgroup e h ρ M hM i hnil b hc hstep hsq).1 =
-      letI := mono_kostantRootSubgroup e h ρ M hM i hnil b hc hstep hsq
-      Subobject.mk (kostantRootSubgroup e h ρ M hM i hnil b) :=
-  haveI := isClosedImmersion_kostantRootSubgroup e h ρ M hM i hnil b hc hstep hsq
-  ClosedSubgroupScheme.coe_mk _
-
-end Scheme
-
-section ClassTwo
-
-variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
-variable {ι : Type w} {κ : Type*}
-variable {V : Type v} [AddCommGroup V] [Module ℚ V]
-variable (e : ι → L) (h : κ → L)
-variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
-variable (M : AddSubgroup V)
-variable (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M)
-variable (i : ι)
-variable (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-variable {η : Type*} [Fintype η] [DecidableEq η] (b : Module.Basis η ℤ M)
-
 /-- The zeroth divided power has the identity matrix in an integral lattice basis. -/
 theorem integralDividedPower_zero_basis_eq_sum (s : η) :
     integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M 0
@@ -488,22 +377,6 @@ theorem integralDividedPower_zero_basis_eq_sum (s : η) :
     simp
   · simp [hrs]
 
-omit [DecidableEq η] in
-/-- A divided power has the prescribed matrix in an integral lattice basis. -/
-theorem integralDividedPower_basis_eq_sum (k : ℕ) (X : Matrix η η ℤ)
-    (haction : ∀ s, Associative.dividedPower k
-      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) (b s : V) =
-      ∑ r, X r s • (b r : V)) (s : η) :
-    integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
-        (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i k hv) (b s) =
-      ∑ r, X r s • b r := by
-  classical
-  apply Subtype.ext
-  rw [coe_integralDividedPower_apply, Module.End.smul_def, haction]
-  push_cast
-  simp
-
-include hnil in
 /-- **A nilpotent root-subgroup matrix is the finite divided-power sum.** If `X k` is the
 integral matrix of the `k`th divided power for every `k < d`, and the nilpotency class is at most
 `d`, then evaluation at `t` is `∑ k < d, t ^ k • X k`. -/
@@ -546,7 +419,6 @@ theorem kostantRootSubgroupMatrix_eq_sum {A : Type*} [CommRing A]
   rw [Finset.sum_ite_eq' Finset.univ r fun x => X k x s]
   simp [mul_comm]
 
-include hnil in
 /-- **The matrix of a square-zero root subgroup is `1 + t X`.** When the root operator squares to
 zero its divided-power exponential stops after the linear term, so the root-subgroup matrix at
 parameter `t` is the identity plus `t` times the integral matrix `X` of the operator itself.
@@ -575,72 +447,149 @@ theorem kostantRootSubgroupMatrix_eq_one_add_smul {A : Type*} [CommRing A]
     · exact integralDividedPower_zero_basis_eq_sum e h ρ M hM i b s
     · simpa using hone s
 
-end ClassTwo
+end Coordinates
 
-section GenericMatrix
+section Scheme
 
-variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
-variable {ι : Type w} {κ : Type*}
-variable {V : Type} [AddCommGroup V] [Module ℚ V]
-variable (e : ι → L) (h : κ → L)
-variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
-variable (M : AddSubgroup V)
-variable (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M)
-variable (i : ι)
-variable (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-variable {N : ℕ} (bb : Module.Basis (Fin N) ℤ M)
+variable {V : Type} [AddCommGroup V] [Module ℚ V] (e : ι → L) (h : κ → L)
+  (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V) (M : AddSubgroup V)
+  (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M) (i : ι)
+  (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+  {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
 
-include hnil in
+section IsRootStep
+
+variable {r s : Fin n} {c : ℤ} (hc : IsUnit c)
+  (hstep : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V) = c • (b r : V))
+  (hsq : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))
+    (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V)) = 0)
+include hc hstep hsq
+
+/-- At a root step, the coordinate morphism of the root subgroup sends the `(r, s)` generic matrix
+coordinate to the polynomial generator, scaled by the unit `c`. -/
+theorem kostantRootSubgroupCoordinateMap_X_of_isRootStep :
+    (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom
+        (GeneralLinear.coordinateHopfAlgebraAlgEquiv ℤ n
+          (GeneralLinear.coordinateRingMap ℤ n (MvPolynomial.X (r, s)))) =
+      c • SymmetricAlgebra.ι ℤ ℤ 1 := by
+  have key := pointsMulEquiv_kostantRootSubgroupCoordinateMap_apply e h ρ M hM i hnil b
+    (SymmetricAlgebra ℤ ℤ) (toConv (AlgHom.id ℤ (SymmetricAlgebra ℤ ℤ))) r s
+  rw [GeneralLinear.pointsMulEquiv_apply, GeneralLinear.pointToGeneralLinear_apply] at key
+  -- The identity point composes trivially, so `key` already computes the coordinate morphism.
+  have key' : (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom
+      (GeneralLinear.coordinateHopfAlgebraAlgEquiv ℤ n
+        (GeneralLinear.coordinateRingMap ℤ n (MvPolynomial.X (r, s)))) =
+      (b.baseChange (SymmetricAlgebra ℤ ℤ)).repr
+        ((kostantRootSubgroupPoints e h ρ M hM i hnil
+          (toConv (AlgHom.id ℤ (SymmetricAlgebra ℤ ℤ)))).val
+          (b.baseChange (SymmetricAlgebra ℤ ℤ) s)) r := key
+  have hval := repr_kostantRootSubgroupPoints_of_isRootStep e h ρ M hM i hnil b hc hstep hsq
+    (A := SymmetricAlgebra ℤ ℤ) (toConv (AlgHom.id ℤ (SymmetricAlgebra ℤ ℤ)))
+  refine (key'.trans hval).trans ?_
+  congr 1
+  rw [AdditiveGroup.toAdd_gaPointsMulEquiv, WithConv.ofConv_toConv]
+  rfl
+
+/-- **The coordinate morphism of a root subgroup is surjective.** Its image is a subalgebra of
+the polynomial coordinate algebra of `𝔾ₐ` containing the generator, hence everything. -/
+theorem kostantRootSubgroupCoordinateMap_surjective :
+    Function.Surjective (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom := by
+  have hgen : SymmetricAlgebra.ι ℤ ℤ 1 ∈
+      (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom.toAlgHom.range := by
+    obtain ⟨u, hu⟩ := id hc
+    refine (AlgHom.mem_range _).2
+      ⟨((u⁻¹ : ℤˣ) : ℤ) • GeneralLinear.coordinateHopfAlgebraAlgEquiv ℤ n
+        (GeneralLinear.coordinateRingMap ℤ n (MvPolynomial.X (r, s))), ?_⟩
+    rw [BialgHom.coe_toAlgHom, map_zsmul,
+      kostantRootSubgroupCoordinateMap_X_of_isRootStep e h ρ M hM i hnil b hc hstep hsq,
+      smul_smul, ← hu, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_smul]
+  exact (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom.toAlgHom
+    |>.surjective_of_ι_one_mem_range hgen
+
+/-- **A Kostant root subgroup is a closed immersion.** The one-parameter subgroup
+`xᵢ : 𝔾ₐ → GLₙ` identifies `𝔾ₐ` with a closed subscheme of `GLₙ` over `ℤ`. -/
+theorem isClosedImmersion_kostantRootSubgroup :
+    IsClosedImmersion (kostantRootSubgroup e h ρ M hM i hnil b).hom.hom.left := by
+  rw [kostantRootSubgroup_def]
+  exact (CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff
+    (AdditiveGroup.groupScheme_def ℤ) (GeneralLinear.groupScheme_def ℤ n) _).2
+    (kostantRootSubgroupCoordinateMap_surjective e h ρ M hM i hnil b hc hstep hsq)
+
+/-- A root subgroup is a monomorphism of group schemes over `ℤ`. -/
+theorem mono_kostantRootSubgroup : Mono (kostantRootSubgroup e h ρ M hM i hnil b) :=
+  have := isClosedImmersion_kostantRootSubgroup e h ρ M hM i hnil b hc hstep hsq
+  Grp.mono_of_mono_left (kostantRootSubgroup e h ρ M hM i hnil b)
+
+/-- **The root subgroup as a closed subgroup scheme of `GLₙ`.** This is the subgroup `U_αᵢ` that a
+pinning carries: a closed subgroup scheme which the root-subgroup morphism identifies with `𝔾ₐ`. -/
+noncomputable def kostantRootSubgroupClosedSubgroup :
+    ClosedSubgroupScheme (GeneralLinear.groupScheme ℤ n) :=
+  haveI := isClosedImmersion_kostantRootSubgroup e h ρ M hM i hnil b hc hstep hsq
+  ClosedSubgroupScheme.mk (kostantRootSubgroup e h ρ M hM i hnil b)
+
+/-- **The root subgroup presents its own closed subgroup.** The subobject underlying
+`kostantRootSubgroupClosedSubgroup` is the one represented by `kostantRootSubgroup` itself, so a
+consumer never has to unfold the bundled definition; the inclusion arrow agrees with
+`kostantRootSubgroup` up to `CategoryTheory.Subobject.underlyingIso`. -/
+@[simp]
+theorem coe_kostantRootSubgroupClosedSubgroup :
+    (kostantRootSubgroupClosedSubgroup e h ρ M hM i hnil b hc hstep hsq).1 =
+      letI := mono_kostantRootSubgroup e h ρ M hM i hnil b hc hstep hsq
+      Subobject.mk (kostantRootSubgroup e h ρ M hM i hnil b) :=
+  haveI := isClosedImmersion_kostantRootSubgroup e h ρ M hM i hnil b hc hstep hsq
+  ClosedSubgroupScheme.coe_mk _
+
+end IsRootStep
+
 /-- **The generic matrix of a root subgroup is its matrix at the universal point of `𝔾ₐ`.** The
 identity of the additive coordinate algebra is a point of `𝔾ₐ` over that algebra, and the
-root-subgroup matrix there is the image of the generic matrix of `GL N` under the root-subgroup
+root-subgroup matrix there is the image of the generic matrix of `GL n` under the root-subgroup
 coordinate morphism. A matrix formula proved at every algebra-valued point is read on the
 coordinate morphism through this equation, which is the only place the universal point is
 handled. -/
 theorem map_genericMatrix_eq_kostantRootSubgroupMatrix :
-    (GeneralLinear.genericMatrix ℤ N).map
-        (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil bb).hom.toAlgHom =
-      (kostantRootSubgroupMatrix e h ρ M hM i hnil bb
+    (GeneralLinear.genericMatrix ℤ n).map
+        (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom.toAlgHom =
+      (kostantRootSubgroupMatrix e h ρ M hM i hnil b
         (toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)))).val := by
-  let f := kostantRootSubgroupCoordinateMap e h ρ M hM i hnil bb
-  have hpoint : GeneralLinear.pointToGeneralLinear N
+  let f := kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b
+  have hpoint : GeneralLinear.pointToGeneralLinear n
       (toConv ((toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))).ofConv.comp
         f.hom.toAlgHom)) =
-      kostantRootSubgroupMatrix e h ρ M hM i hnil bb
+      kostantRootSubgroupMatrix e h ρ M hM i hnil b
         (toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))) :=
-    pointsMulEquiv_kostantRootSubgroupCoordinateMap e h ρ M hM i hnil bb
+    pointsMulEquiv_kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b
       (AdditiveGroup.coordinateHopfAlgebra ℤ)
       (toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)))
-  have hpoint' : GeneralLinear.pointToGeneralLinear N (toConv f.hom.toAlgHom) =
-      kostantRootSubgroupMatrix e h ρ M hM i hnil bb
+  have hpoint' : GeneralLinear.pointToGeneralLinear n (toConv f.hom.toAlgHom) =
+      kostantRootSubgroupMatrix e h ρ M hM i hnil b
         (toConv (AlgHom.id ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ))) := by
     simpa only [AlgHom.id_comp, WithConv.ofConv_toConv] using hpoint
   rw [GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
   simpa only [f] using congrArg
-    (fun g : Matrix.GeneralLinearGroup (Fin N) (AdditiveGroup.coordinateHopfAlgebra ℤ) => g.1)
+    (fun g : Matrix.GeneralLinearGroup (Fin n) (AdditiveGroup.coordinateHopfAlgebra ℤ) => g.1)
     hpoint'
 
-include hnil in
 /-- **The generic matrix of a square-zero root subgroup is `1 + t X`.** This is
 `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_one_add_smul` read on the
-coordinate morphism rather than on a point: the entries of the generic matrix of `GL N` are carried
+coordinate morphism rather than on a point: the entries of the generic matrix of `GL n` are carried
 to those of `1 + t X` for the parameter `t` of the universal point of `𝔾ₐ`. A consumer that has to
 check a matrix equation on every algebra-valued point at once evaluates it here instead. -/
 theorem map_genericMatrix_kostantRootSubgroupCoordinateMap_eq_one_add_smul
-    (X : Matrix (Fin N) (Fin N) ℤ)
+    (X : Matrix (Fin n) (Fin n) ℤ)
     (hclass : nilpotencyClass
       (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) ≤ 2)
-    (haction : ∀ s, ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (bb s : V) =
-      ∑ r, X r s • (bb r : V)) :
-    (GeneralLinear.genericMatrix ℤ N).map
-        (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil bb).hom.toAlgHom =
+    (haction : ∀ s, ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) (b s : V) =
+      ∑ r, X r s • (b r : V)) :
+    (GeneralLinear.genericMatrix ℤ n).map
+        (kostantRootSubgroupCoordinateMap e h ρ M hM i hnil b).hom.toAlgHom =
       1 + SymmetricAlgebra.ι ℤ ℤ 1 •
         X.map (Int.cast : ℤ → AdditiveGroup.coordinateHopfAlgebra ℤ) := by
-  rw [map_genericMatrix_eq_kostantRootSubgroupMatrix e h ρ M hM i hnil bb,
-    kostantRootSubgroupMatrix_eq_one_add_smul e h ρ M hM i hnil bb X hclass haction,
+  rw [map_genericMatrix_eq_kostantRootSubgroupMatrix e h ρ M hM i hnil b,
+    kostantRootSubgroupMatrix_eq_one_add_smul e h ρ M hM i hnil b X hclass haction,
     AdditiveGroup.toAdd_gaPointsMulEquiv, WithConv.ofConv_toConv]
   rfl
 
-end GenericMatrix
+end Scheme
 
 end TauCeti.UniversalEnvelopingAlgebra

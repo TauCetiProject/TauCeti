@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Basic
+import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
@@ -34,6 +35,8 @@ zero ideal, which has no prime factors, is the trivial character.
   `Ideal.powerResidueSymbol`.
 * `Ideal.powerResidueSymbolIdeal_mul_right`: `(α / 𝔞 𝔟)_n = (α / 𝔞)_n (α / 𝔟)_n` for nonzero
   `𝔞` and `𝔟`.
+* `Ideal.powerResidueSymbolIdeal_mul_right_intCast`: the same for a rational integer `m`, read in
+  each quotient.
 * `Ideal.powerResidueSymbolIdeal_pow_right`: `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k`.
 * `Ideal.powerResidueSymbolIdeal_top`: `(α / 𝓞 K)_n = 1`.
 * `Ideal.powerResidueSymbolIdeal_bot`: the symbol at the zero ideal is the trivial character.
@@ -42,10 +45,12 @@ zero ideal, which has no prime factors, is the trivial character.
 * `Ideal.powerResidueSymbolIdeal_pow_eq_one`: on units the symbol is an `n`-th root of unity.
 * `Ideal.powerResidueSymbolIdeal_mk_of_pow_eq_one`: `(ζ / 𝔞)_n = ζ ^ ((N 𝔞 - 1) / n)` for an
   `n`-th root of unity `ζ` of `𝓞 K`, when `N 𝔞` is prime to `n`.
+* `Ideal.map_powerResidueSymbolIdeal`: Galois equivariance, `σ ((α / 𝔞)_n) = (σ α / σ 𝔞)_n` for a
+  ring isomorphism `σ : 𝓞 K ≃+* 𝓞 L`.
 
 ## References
 
-* S. D. Adhikari, *The early reciprocity laws: from Gauss to Eisenstein*, §4.
+* S. D. Adhikari, *The early reciprocity laws: from Gauss to Eisenstein*, §4, Proposition 4.1.
 * P. Shastri, *Reciprocity laws: Artin–Hilbert*, §9.
 -/
 
@@ -152,6 +157,13 @@ theorem powerResidueSymbolIdeal_mul_right (h𝔞 : 𝔞 ≠ ⊥) (h𝔟 : 𝔟 �
     · rw [powerResidueSymbolIdeal_mk_eq_zero_iff.mpr h, zero_mul]
     · rw [powerResidueSymbolIdeal_mk_eq_zero_iff.mpr h, mul_zero]
 
+/-- **Multiplicativity in the ideal for a rational integer.** `(m / 𝔞 𝔟)_n = (m / 𝔞)_n (m / 𝔟)_n`
+for nonzero ideals `𝔞` and `𝔟`, with `m` cast directly into each quotient. -/
+theorem powerResidueSymbolIdeal_mul_right_intCast (h𝔞 : 𝔞 ≠ ⊥) (h𝔟 : 𝔟 ≠ ⊥) (m : ℤ) :
+    powerResidueSymbolIdeal (𝔞 * 𝔟) n (m : 𝓞 K ⧸ 𝔞 * 𝔟) =
+      powerResidueSymbolIdeal 𝔞 n (m : 𝓞 K ⧸ 𝔞) * powerResidueSymbolIdeal 𝔟 n (m : 𝓞 K ⧸ 𝔟) := by
+  simpa using powerResidueSymbolIdeal_mul_right (n := n) h𝔞 h𝔟 (m : 𝓞 K)
+
 /-- `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k`. -/
 theorem powerResidueSymbolIdeal_pow_right (𝔞 : Ideal (𝓞 K)) (α : 𝓞 K) (k : ℕ) :
     powerResidueSymbolIdeal (𝔞 ^ k) n (Quotient.mk (𝔞 ^ k) α) =
@@ -216,6 +228,33 @@ theorem powerResidueSymbolIdeal_mk_of_pow_eq_one (h𝔞 : (absNorm 𝔞).Coprime
       exact Nat.sub_eq_of_eq_add (by ring)
     rw [hu, hv, hmul]
     simp [NeZero.pos n, pow_add, pow_mul, hζ]
+
+/-- **Galois equivariance of the power residue symbol at an ideal.** A ring isomorphism
+`σ : 𝓞 K ≃+* 𝓞 L` carries the symbol at `𝔞` to the symbol at `σ 𝔞`:
+`σ ((α / 𝔞)_n) = (σ α / σ 𝔞)_n`. Taking `L = K`, this applies to every ring automorphism of
+`𝓞 K`. No hypothesis on `𝔞` is needed; in particular `𝔞` may be zero or not prime to `n`. -/
+theorem map_powerResidueSymbolIdeal {L : Type*} [Field L] [NumberField L]
+    [HasEnoughRootsOfUnity (𝓞 L) n] (𝔞 : Ideal (𝓞 K)) (σ : 𝓞 K ≃+* 𝓞 L) (α : 𝓞 K) :
+    σ (powerResidueSymbolIdeal 𝔞 n (Quotient.mk 𝔞 α)) =
+      powerResidueSymbolIdeal (𝔞.map σ) n (Quotient.mk (𝔞.map σ) (σ α)) := by
+  induction 𝔞 using UniqueFactorizationMonoid.induction_on_prime generalizing α with
+  | h₁ =>
+    -- At the zero ideal both symbols are the trivial character.
+    let τ := quotientEquiv (⊥ : Ideal (𝓞 K)) ⊥ σ map_bot.symm
+    rw [zero_eq_bot, map_bot, powerResidueSymbolIdeal_bot, powerResidueSymbolIdeal_bot,
+      ← quotientEquiv_mk (⊥ : Ideal (𝓞 K)) ⊥ σ map_bot.symm, MulChar.map_one_apply σ τ]
+  | h₂ 𝔞 h𝔞 =>
+    rw [isUnit_iff.mp h𝔞, map_top, powerResidueSymbolIdeal_top, powerResidueSymbolIdeal_top,
+      map_one]
+  | h₃ 𝔞 P h𝔞 hP ih =>
+    have hP₀ : P ≠ ⊥ := hP.ne_zero
+    have : P.IsMaximal := (isPrime_of_prime hP).isMaximal hP₀
+    have hσ {𝔟 : Ideal (𝓞 K)} (h𝔟 : 𝔟 ≠ ⊥) : 𝔟.map σ ≠ ⊥ :=
+      (map_eq_bot_iff_of_injective σ.injective).not.mpr h𝔟
+    rw [Ideal.map_mul, powerResidueSymbolIdeal_mul_right hP₀ h𝔞,
+      powerResidueSymbolIdeal_mul_right (hσ hP₀) (hσ h𝔞), map_mul, ih,
+      powerResidueSymbolIdeal_of_isMaximal P, powerResidueSymbolIdeal_of_isMaximal (P.map σ),
+      map_powerResidueSymbol P σ]
 
 /-- For `n = 2`, a quadratic nonresidue modulo `P` has symbol `1` at `P ^ 2`, although it is not
 a square modulo `P ^ 2`: the value `1` does not detect residues at composite ideals. -/

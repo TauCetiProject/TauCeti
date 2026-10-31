@@ -561,6 +561,14 @@ lemma ιTwistedChainComplex_twistedChainComplexCoefficientMap_f (η : L ⟶ K) (
       η.app (initialVertex σ) ≫ ιTwistedChainComplex K k σ :=
   ιTwistedChains_twistedChainsCoefficientMap_app η _ σ
 
+/-- A morphism of local coefficient systems acts on the summand of a simplex through its component
+at the initial vertex, evaluated at an element. -/
+lemma twistedChainComplexCoefficientMap_f_ι_apply (η : L ⟶ K) (k : ℕ)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) (v : L.obj (initialVertex σ)) :
+    ((twistedChainComplexCoefficientMap η).f k).hom ((ιTwistedChainComplex L k σ).hom v) =
+      (ιTwistedChainComplex K k σ).hom ((η.app (initialVertex σ)).hom v) :=
+  congrArg (fun f ↦ f.hom v) (ιTwistedChainComplex_twistedChainComplexCoefficientMap_f η k σ)
+
 /-- The identity morphism of a coefficient system induces the identity of twisted chain
 complexes. -/
 @[simp]
@@ -881,6 +889,22 @@ def _root_.CategoryTheory.SimplicialObject.Homotopy.toTwistedChainComplexHomotop
     Homotopy (twistedChainComplexMap f L)
       (twistedChainComplexCoefficientMap η ≫ twistedChainComplexMap g L) :=
   h.toChainHomotopy.trans (.ofEq ((AlgebraicTopology.alternatingFaceMapComplex _).map_comp _ _))
+
+variable {f L} in
+/-- The operator of the twisted chain homotopy is the simplicial prism operator, transported
+through the canonical identifications of the terms with the twisted chain coproducts. -/
+lemma _root_.CategoryTheory.SimplicialObject.Homotopy.toTwistedChainComplexHomotopy_hom
+    {g : X ⟶ Y} {η : (pullback f.hom).obj L ⟶ (pullback g.hom).obj L}
+    (h : SimplicialObject.Homotopy (twistedChainsMap f L)
+      (twistedChainsCoefficientMap η ≫ twistedChainsMap g L)) (i j : ℕ) :
+    h.toTwistedChainComplexHomotopy.hom i j =
+      (twistedChainComplexIsoAlternatingFaceMapComplex _).hom.f i ≫
+        h.toChainHomotopy.hom i j ≫
+          (twistedChainComplexIsoAlternatingFaceMapComplex L).inv.f j := by
+  simp only [SimplicialObject.Homotopy.toTwistedChainComplexHomotopy,
+    Homotopy.trans, Homotopy.ofEq, add_zero, twistedChainComplexIsoAlternatingFaceMapComplex,
+    Iso.refl_hom, Iso.refl_inv, HomologicalComplex.id_f]
+  exact ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 end Map
 

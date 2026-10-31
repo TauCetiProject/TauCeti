@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.Basic
-import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.Algebra.Polynomial.Depressed
 import TauCeti.RingTheory.LaurentSeries.SlopeNormalization
 import TauCeti.RingTheory.PowerSeries.Hensel
 
@@ -24,7 +24,7 @@ The proof is the classical Newton–Puiseux algorithm, by induction on the degre
 which may be assumed monic.
 
 1. Translating the variable by `-a / m`, where `a` is the coefficient of `Y ^ (m - 1)`, removes
-   that coefficient (`Polynomial.nextCoeff_taylor`).
+   that coefficient (`Polynomial.nextCoeff_taylor_neg_div_eq_zero`).
 2. If the translated polynomial is `Y ^ m`, then `0` is a root. Otherwise choose the smallest
    slope `ord (P.coeff j) / (m - j)` over the nonzero coefficients with `j < m`, attained at
    `j₀`, and put `q = m - j₀` and `v = ord (P.coeff j₀)`. Ramifying `X ↦ X ^ q` and rescaling
@@ -94,13 +94,11 @@ private theorem exists_isRoot_map_expand_of_monic (m : ℕ) :
   have : CharZero K⸨X⸩ := charZero_of_injective_algebraMap (algebraMap K K⸨X⸩).injective
   have hm' : (m : K⸨X⸩) ≠ 0 := Nat.cast_ne_zero.2 hm.ne'
   -- Translate the variable to remove the term of degree `m - 1`.
-  set c := -(P.nextCoeff / m)
+  set c := -P.nextCoeff / (P.natDegree * P.leadingCoeff)
   set P₁ := taylor c P
   have hP₁ : P₁.Monic := by rw [Monic, leadingCoeff_taylor, hP.leadingCoeff]
   have hP₁m : P₁.natDegree = m := by rw [natDegree_taylor, hPm]
-  have hnext : P₁.nextCoeff = 0 := by
-    rw [nextCoeff_taylor, hPm, hP.leadingCoeff, mul_one, mul_neg, mul_div_cancel₀ _ hm',
-      add_neg_cancel]
+  have hnext : P₁.nextCoeff = 0 := nextCoeff_taylor_neg_div_eq_zero (hPm ▸ hm')
   suffices ∃ (n : ℕ+) (y : K⸨X⸩), (P₁.map (expand K n)).IsRoot y by
     obtain ⟨n, y, hy⟩ := this
     refine ⟨n, y + expand K n c, ?_⟩
