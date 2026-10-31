@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
-public import Mathlib.CategoryTheory.Monoidal.Limits.Preserves
 public import Mathlib.Topology.Category.TopCat.Monoidal
 public import Mathlib.Topology.CompactOpen
 
@@ -32,14 +31,14 @@ not preserve the pushout defining `X`.
 
 ## Main declarations
 
-* `TauCeti.TopCat.mappingSpace Y`: the functor `X ↦ C(Y, X)` on `TopCat`.
-* `TauCeti.TopCat.curryEquiv`: for locally compact `Y`, the bijection between maps `Y ⊗ X ⟶ Z`
+* `TopCat.mappingSpace Y`: the functor `X ↦ C(Y, X)` on `TopCat`.
+* `TopCat.curryEquiv`: for locally compact `Y`, the bijection between maps `Y ⊗ X ⟶ Z`
   and maps `X ⟶ C(Y, Z)`.
-* `TauCeti.TopCat.closed`: a locally compact space is a closed object of `TopCat`, with internal
-  hom `TauCeti.TopCat.mappingSpace Y`, so that `tensorLeft Y` preserves colimits.
-* `TauCeti.TopCat.preservesColimitsOfSize_tensorRight`: for locally compact `Y`, the functor
+* `TopCat.closed`: a locally compact space is a closed object of `TopCat`, with internal
+  hom `TopCat.mappingSpace Y`, so that `tensorLeft Y` preserves colimits.
+* `TopCat.preservesColimitsOfSize_tensorRight`: for locally compact `Y`, the functor
   `- ⊗ Y` preserves colimits.
-* `TauCeti.TopCat.continuous_iff_of_isColimit_prod`: a map out of `c.pt × Y` is continuous if and
+* `TopCat.continuous_iff_of_isColimit_prod`: a map out of `c.pt × Y` is continuous if and
   only if its restrictions to all `F.obj j × Y` are.
 
 ## References
@@ -61,7 +60,7 @@ open CategoryTheory Limits MonoidalCategory
 
 universe w w' u v
 
-namespace TauCeti.TopCat
+namespace TopCat
 
 /-- The mapping space functor `X ↦ C(Y, X)` on `TopCat`, where `C(Y, X)` carries the
 compact-open topology and a map acts by postcomposition. -/
@@ -102,12 +101,12 @@ def tensorLeftAdjunction : tensorLeft Y ⊣ mappingSpace Y :=
       homEquiv_naturality_left_symm _ _ := rfl
       homEquiv_naturality_right _ _ := rfl }
 
-/-- The hom-set bijection of `TauCeti.TopCat.tensorLeftAdjunction` is currying. -/
+/-- The hom-set bijection of `TopCat.tensorLeftAdjunction` is currying. -/
 theorem tensorLeftAdjunction_homEquiv_apply {X Z : TopCat.{u}} (f : Y ⊗ X ⟶ Z) :
     (tensorLeftAdjunction Y).homEquiv X Z f = curryEquiv Y X Z f :=
   (rfl)
 
-/-- The inverse hom-set bijection of `TauCeti.TopCat.tensorLeftAdjunction` is uncurrying. -/
+/-- The inverse hom-set bijection of `TopCat.tensorLeftAdjunction` is uncurrying. -/
 theorem tensorLeftAdjunction_homEquiv_symm_apply {X Z : TopCat.{u}}
     (g : X ⟶ (mappingSpace Y).obj Z) :
     ((tensorLeftAdjunction Y).homEquiv X Z).symm g = (curryEquiv Y X Z).symm g :=
@@ -119,7 +118,7 @@ instance closed : Closed Y :=
   ⟨mappingSpace Y, tensorLeftAdjunction Y⟩
 
 /-- For a locally compact space `Y`, the functor `- ⊗ Y` on `TopCat` preserves colimits. Mathlib
-obtains the corresponding instance for `Y ⊗ -` from `TauCeti.TopCat.closed`. -/
+obtains the corresponding instance for `Y ⊗ -` from `TopCat.closed`. -/
 instance preservesColimitsOfSize_tensorRight : PreservesColimitsOfSize.{w, w'} (tensorRight Y) :=
   preservesColimits_of_natIso (BraidedCategory.tensorLeftIsoTensorRight Y)
 
@@ -132,4 +131,4 @@ theorem continuous_iff_of_isColimit_prod (hc : IsColimit c) {Z : Type v} [Topolo
     Continuous f ↔ ∀ j, Continuous fun p : F.obj j × Y ↦ f (c.ι.app j p.1, p.2) :=
   TopCat.continuous_iff_of_isColimit _ (isColimitOfPreserves (tensorRight Y) hc) f
 
-end TauCeti.TopCat
+end TopCat
