@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
+public import Mathlib.RingTheory.Localization.Ideal
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -13,12 +14,16 @@ import Mathlib.Tactic.LinearCombination
 
 Let `B → A` be a surjective ring map whose kernel is annihilated by some `b ∈ B`. Inverting `b`
 kills the kernel, so a localization of `A` away from the image of `b` is already a localization
-of `B` away from `b`.
+of `B` away from `b`. In the other direction, localization away from an element commutes with
+quotients: if `S` is a localization of `R` away from `r`, then `S ⧸ I S` is a localization of
+`R ⧸ I` away from the image of `r`.
 
 ## Main results
 
 * `IsLocalization.Away.of_surjective_of_mul_eq_zero`: a localization of `A` away from the image
   of `b` is a localization of `B` away from `b`.
+* `IsLocalization.Away.quotient`: `S ⧸ I S` is a localization of `R ⧸ I` away from the image
+  of `r`.
 -/
 
 public section
@@ -41,3 +46,11 @@ theorem IsLocalization.Away.of_surjective_of_mul_eq_zero {B A T : Type*} [CommRi
     refine ⟨n + 1, ?_⟩
     have := hb (b ^ n * (x - y)) (by simp [mul_sub, hn])
     linear_combination this
+
+/-- If `S` is a localization of `R` away from `r`, then `S ⧸ I S` is a localization of `R ⧸ I`
+away from the image of `r`. -/
+instance IsLocalization.Away.quotient {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    (r : R) [IsLocalization.Away r S] (I : Ideal R) :
+    IsLocalization.Away (Ideal.Quotient.mk I r) (S ⧸ I.map (algebraMap R S)) := by
+  simpa using (inferInstance : IsLocalization (Algebra.algebraMapSubmonoid (R ⧸ I)
+    (Submonoid.powers r)) (S ⧸ I.map (algebraMap R S)))

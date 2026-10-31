@@ -16,7 +16,7 @@ records the case `n = 1` (`AdicCompletion.ker_evalOneₐ_eq_map`); the general c
 the `I R̂`-adic filtration of `R̂` with the kernels of the projections. Consequently the
 canonical map `R → R̂` identifies `I ^ n` with the preimage of `I ^ n R̂`, and every element of
 `R̂` is congruent modulo `I ^ n R̂` to the image of an element of `R`, so the image of `R` is
-dense modulo every `I ^ n R̂`.
+dense modulo every `I ^ n R̂`, and `R̂ ⧸ I ^ n R̂` is `R ⧸ I ^ n`.
 
 ## Main results
 
@@ -25,6 +25,7 @@ dense modulo every `I ^ n R̂`.
   only if `x ∈ I ^ n`.
 * `AdicCompletion.exists_sub_algebraMap_mem_map_pow`: every element of `R̂` is congruent
   modulo `I ^ n R̂` to the image of an element of `R`.
+* `AdicCompletion.quotientMapPowAlgEquiv`: the isomorphism `R̂ ⧸ I ^ n R̂ ≃ₐ[R] R ⧸ I ^ n`.
 
 ## References
 
@@ -66,5 +67,18 @@ theorem exists_sub_algebraMap_mem_map_pow (fg : I.FG) (n : ℕ) (x : AdicComplet
   refine ⟨y, ?_⟩
   rw [← ker_evalₐ_eq_map_pow fg, RingHom.mem_ker, map_sub, ← hy]
   exact sub_eq_zero.mpr (evalₐ_of I n y).symm
+
+/-- For a finitely generated ideal `I`, the quotient of the adic completion `R̂` by the extension
+of `I ^ n` is `R ⧸ I ^ n`, through the projection `R̂ → R ⧸ I ^ n`. -/
+noncomputable def quotientMapPowAlgEquiv (fg : I.FG) (n : ℕ) :
+    (AdicCompletion I R ⧸ (I ^ n).map (algebraMap R (AdicCompletion I R))) ≃ₐ[R] R ⧸ I ^ n :=
+  (Ideal.quotientEquivAlgOfEq R (ker_evalₐ_eq_map_pow fg n).symm).trans
+    (Ideal.quotientKerAlgEquivOfSurjective (surjective_evalₐ I n))
+
+/-- The isomorphism `R̂ ⧸ I ^ n R̂ ≃ₐ[R] R ⧸ I ^ n` sends the class of `x` to its projection. -/
+@[simp]
+theorem quotientMapPowAlgEquiv_mk (fg : I.FG) (n : ℕ) (x : AdicCompletion I R) :
+    quotientMapPowAlgEquiv fg n (Ideal.Quotient.mk _ x) = evalₐ I n x := by
+  simp [quotientMapPowAlgEquiv]
 
 end AdicCompletion
