@@ -38,6 +38,11 @@ result (`Martingale/AntitoneLimit.lean`) all feed into `tendsto_ae_condExp_iInf`
   `f ∈ Lᵖ` with `p < ∞`, `μ[f | ℱ n]` converges in `Lᵖ` to `μ[f | ⨆ n, ℱ n]`, upgrading Mathlib's
   `L¹` form `MeasureTheory.tendsto_eLpNorm_condExp`. Both `Lᵖ` forms reduce to the almost
   everywhere and `L¹` forms by approximating `f` with simple functions.
+- `MemLp.tendsto_eLpNorm_condExp_of_tendsto`: this common reduction, for any sequence of
+  sub-σ-algebras `𝔽 n` and limit `m` — if `μ[g | 𝔽 n] → μ[g | m]` almost everywhere and in `L¹`
+  for every real `g`, then `μ[f | 𝔽 n] → μ[f | m]` in `Lᵖ` for `f ∈ Lᵖ` with `p < ∞`. Its
+  bounded step `tendsto_eLpNorm_condExp_of_ae_bdd` upgrades almost-everywhere convergence to
+  `Lᵖ` convergence, for `1 ≤ p < ∞`, for an essentially bounded function.
 - `measure_inter_eq_mul_of_forall_zero_or_one_iInf`: factorization along a decreasing filtration
   with `μ`-trivial intersection — if `B' n` is `𝔽 n`-measurable with `μ (B' n)` and `μ (A ∩ B' n)`
   independent of `n`, then `μ (A ∩ B) = μ A * μ B`.
@@ -191,7 +196,7 @@ theorem tendsto_eLpNorm_condExp_iInf [IsFiniteMeasure μ] {𝔽 : ℕ → Measur
 
 /-- `Lᵖ` convergence of the conditional expectations of an essentially bounded function, for
 `1 ≤ p < ∞`, given their almost-everywhere convergence. -/
-private lemma tendsto_eLpNorm_condExp_of_ae_bdd [IsFiniteMeasure μ]
+theorem tendsto_eLpNorm_condExp_of_ae_bdd [IsFiniteMeasure μ]
     {𝔽 : ℕ → MeasurableSpace Ω} {m : MeasurableSpace Ω} {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞)
     {g : Ω → ℝ} {R : ℝ} (hR : ∀ᵐ ω ∂μ, |g ω| ≤ R)
     (h_ae : ∀ᵐ ω ∂μ, Tendsto (fun n => μ[g | 𝔽 n] ω) atTop (𝓝 (μ[g | m] ω))) :
@@ -216,7 +221,7 @@ private lemma tendsto_eLpNorm_condExp_of_ae_bdd [IsFiniteMeasure μ]
 in `L¹`: if, for every real function `g`, `μ[g | 𝔽 n]` converges to `μ[g | m]` both almost
 everywhere and in `L¹`, then for a finite exponent `p` and `f ∈ Lᵖ` the convergence holds in
 `Lᵖ`. This is the common step of Lévy's upward and downward theorems in `Lᵖ`. -/
-private lemma MemLp.tendsto_eLpNorm_condExp_of_tendsto [IsFiniteMeasure μ]
+theorem MemLp.tendsto_eLpNorm_condExp_of_tendsto [IsFiniteMeasure μ]
     {𝔽 : ℕ → MeasurableSpace Ω} {m : MeasurableSpace Ω}
     (h_ae : ∀ g : Ω → ℝ, ∀ᵐ ω ∂μ, Tendsto (fun n => μ[g | 𝔽 n] ω) atTop (𝓝 (μ[g | m] ω)))
     (h_L1 : ∀ g : Ω → ℝ, Tendsto (fun n => eLpNorm (μ[g | 𝔽 n] - μ[g | m]) 1 μ) atTop (𝓝 0))
