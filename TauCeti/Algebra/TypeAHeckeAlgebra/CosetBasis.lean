@@ -275,6 +275,7 @@ theorem cosetEquiv_symm_inclusion {n : ℕ} (b : stage R q n) :
 
 /-- The product of an element `b` of the stage `n` with the representative `cosetRep q n m` has
 coefficient `b` at `m`, and no other coefficients. -/
+@[simp]
 theorem cosetEquiv_symm_inclusion_mul_cosetRep {n : ℕ} (m : Fin (n + 1)) (b : stage R q n) :
     (cosetEquiv R q n).symm (Subalgebra.inclusion (stage_mono n.le_succ) b *
       ⟨cosetRep q n m, cosetRep_mem_stage n m⟩) = Pi.single m b := by
