@@ -49,6 +49,8 @@ Since `1 - e^{-α}` is not a zero divisor in `ℤ[M]`, the localization identity
 * `RootPairing.one_sub_single_neg_root_mul_demazureOperator`: the localization identity, and
   `RootPairing.demazureOperator_eq_iff`: it characterizes `Dᵢ`, because multiplication by
   `1 - e^{-αᵢ}` is injective (`RootPairing.isLeftRegular_one_sub_single_neg_root`).
+* `RootPairing.coeff_reflection_demazureOperator`: the coefficients of `Dᵢ f` are constant along
+  `sᵢ`.
 * `RootPairing.demazureOperator_eq_self_iff`: `Dᵢ f = f` exactly when `sᵢ f = f`.
 * `RootPairing.demazureOperator_demazureOperator`: `Dᵢ² = Dᵢ`.
 * `RootPairing.demazureOperator_mul_of_reflection_eq`: `Dᵢ` is linear over `sᵢ`-invariants.
@@ -209,6 +211,15 @@ theorem mapDomainRingEquiv_reflection_demazureOperator (f : AddMonoidAlgebra ℤ
   refine ((P.demazureOperator_eq_iff i).mpr ?_).symm
   linear_combination -key -
     (mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv (P.demazureOperator i f) - f) * hα
+
+/-- The coefficients of the image of the Demazure operator are constant along the reflection `sᵢ`:
+the coefficient form of `RootPairing.mapDomainRingEquiv_reflection_demazureOperator`. -/
+theorem coeff_reflection_demazureOperator (f : AddMonoidAlgebra ℤ M) (x : M) :
+    (P.demazureOperator i f).coeff (P.reflection i x) = (P.demazureOperator i f).coeff x := by
+  have h := congr(($(P.mapDomainRingEquiv_reflection_demazureOperator i f)).coeff x)
+  rw [coeff_mapDomainRingEquiv, Finsupp.equivMapDomain_apply] at h
+  rw [← h]
+  rfl
 
 /-- The Demazure operator fixes `f` exactly when `f` is fixed by the reflection `sᵢ`. -/
 theorem demazureOperator_eq_self_iff {f : AddMonoidAlgebra ℤ M} :

@@ -23,9 +23,11 @@ proves **Demazure's formula**
 
 where `Δ = ∏_{α > 0} (1 - e^{-α})` is the Weyl denominator and the right-hand side is the dot
 alternatization `J(f)` of `TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.Integral`. For
-`f = e^λ` the right-hand side is `∑_w sgn(w) e^{w ⬝ λ}`, so `D_{w₀}(e^λ)` is Weyl's quotient: for
-dominant `λ` this is the Weyl character formula, the longest-word case of the Demazure character
-formula `char H⁰(X(w), L_λ) = D_w(e^λ)` on the full flag variety.
+`f = e^λ` the right-hand side is `∑_w sgn(w) e^{w ⬝ λ}`, so `D_{w₀}(e^λ)` is Weyl's quotient
+`∑_w sgn(w) e^{w ⬝ λ} / Δ`. This is the combinatorial side of the Weyl character formula and of
+the longest-word case of the Demazure character formula; identifying `D_{w₀}(e^λ)` with a formal
+character (of a module, or of the sections of a line bundle on the flag variety) is not done
+here.
 
 ## The argument
 
@@ -101,9 +103,7 @@ theorem isWeylInvariant_prod_map_demazureOperator {ω : List b.support}
   have heq := prod_map_demazureOperator_eq_of_wordProd_eq P b hω hred
     (by rw [cs.wordProd_cons, ← hw', cs.simple_mul_simple_cancel_left])
   rw [heq, List.map_cons, List.prod_cons, Module.End.mul_apply]
-  nth_rewrite 2 [← P.mapDomainRingEquiv_reflection_demazureOperator i]
-  rw [coeff_mapDomainRingEquiv, Finsupp.equivMapDomain_apply]
-  simp [← LinearEquiv.coe_inv]
+  exact P.coeff_reflection_demazureOperator i _ x
 
 variable [Fintype P.weylGroup]
 
@@ -153,8 +153,8 @@ theorem weylDenominator_mul_prod_map_demazureOperator {ω : List b.support}
     mul_comm, ← dotAlternatization_mul_of_isWeylInvariant P b
       (isWeylInvariant_prod_map_demazureOperator P b hω hdesc f), mul_one]
 
-/-- **The Weyl character formula in Demazure's form**: for a reduced word `ω` of the longest element
-`w₀` and a weight `λ`,
+/-- **Demazure's formula on a basis element**: `D_{w₀}(e^λ)` is Weyl's quotient. For a reduced word
+`ω` of the longest element `w₀` and a weight `λ`,
 
 `Δ · D_{w₀}(e^λ) = ∑_{w ∈ W} sgn(w) e^{w λ - (ρ - w ρ)}`,
 

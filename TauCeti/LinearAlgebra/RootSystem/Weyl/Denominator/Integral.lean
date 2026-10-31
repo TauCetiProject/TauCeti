@@ -40,16 +40,17 @@ The identity here is the form needed for the integral Demazure operators of
 
 ## The argument
 
-Write `T_w(f) = e^{-(ρ - w ρ)} w(f)`. Since `ρ - v w ρ = (ρ - v ρ) + v(ρ - w ρ)`, the `T_w` compose
-like the group, `T_v T_w = T_{v w}`, and so `T_v J = sgn(v) J`; also `T_w Δ = sgn(w) Δ`. Hence
+Write `T_w(f) = e^{-(ρ - w ρ)} w(f)`, the twisted reindexing `TauCeti.twistedWeylReindex`. Since
+`ρ - v w ρ = (ρ - v ρ) + v(ρ - w ρ)`, the `T_w` compose like the group, `T_v T_w = T_{v w}`, and so
+`T_v J = sgn(v) J`; also `T_w Δ = sgn(w) Δ`. Hence
 `J(1) - Δ` is alternating for the twisted action. Such an element is determined by its coefficients
 on the dominant chamber: every weight `x` has a Weyl translate `w ⬝ x` with `2(w ⬝ x) + 2ρ = w(2x +
 2ρ)` dominant, and if `w ⬝ x` is not itself dominant it pairs to `-1` with some simple coroot, so
 the twisted simple reflection fixes it and changes the sign of its coefficient. Only `2ρ`, which is
 always a weight, enters. On the dominant chamber both `J(1)` and `Δ` have only the constant term
-`1`: a weight `-(ρ - w ρ)` is dominant only for `w = 1`, because `2ρ` is strictly dominant, and a
-dominant weight `-ν` with `ν` a sum of positive roots is `0`, because the sum `2ρ^∨` of the positive
-coroots is nonnegative on the dominant chamber and positive on the positive roots.
+`1`: a weight `-(ρ - w ρ)` is dominant only for `w = 1`, because `2ρ` is strictly dominant
+(`TauCeti.twoWeylVector_mem_openDominantChamber`), and the Weyl denominator has only its constant
+term there (`TauCeti.coeff_weylDenominator_of_mem_dominantChamber`).
 
 ## Main definitions
 
@@ -122,76 +123,28 @@ private lemma two_smul_smul_sub_rhoShift_add (w : P.weylGroup) (x : M) :
   module
 
 omit [Finite ι] in
-/-- The reindexing of `ℤ[M]` along a Weyl-group element, as a ring homomorphism, is
-`AddMonoidAlgebra.mapDomain` along its action. -/
-private lemma mapDomainRingHom_toAddMonoidHom (w : P.weylGroup) (f : AddMonoidAlgebra ℤ M) :
-    mapDomainRingHom ℤ (DistribSMul.toAddMonoidHom M w) f = mapDomain (w • ·) f := by
-  -- The coercion of `DistribSMul.toAddMonoidHom M w` is `(w • ·)` by definition.
-  rw [mapDomainRingHom_apply]
-  rfl
-
-omit [Finite ι] in
-/-- The reindexing of `ℤ[M]` along a Weyl-group element composes like the group. -/
-private lemma mapDomainRingHom_mul (v w : P.weylGroup) (f : AddMonoidAlgebra ℤ M) :
-    mapDomainRingHom ℤ (DistribSMul.toAddMonoidHom M (v * w)) f =
-      mapDomainRingHom ℤ (DistribSMul.toAddMonoidHom M v)
-        (mapDomainRingHom ℤ (DistribSMul.toAddMonoidHom M w) f) := by
-  have h : DistribSMul.toAddMonoidHom M (v * w) =
-      (DistribSMul.toAddMonoidHom M v).comp (DistribSMul.toAddMonoidHom M w) :=
-    AddMonoidHom.ext fun x ↦ mul_smul v w x
-  rw [h, mapDomainRingHom_comp, RingHom.comp_apply]
-
-omit [Finite ι] in
 /-- The reindexing of `ℤ[M]` along a simple reflection, in the form used by the Demazure
 operators. -/
-private lemma mapDomainRingHom_ofIdx (i : ι) (f : AddMonoidAlgebra ℤ M) :
-    mapDomainRingHom ℤ (DistribSMul.toAddMonoidHom M (weylGroup.ofIdx P i)) f =
-      mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv f := by
+private lemma weylReindex_ofIdx (i : ι) (f : AddMonoidAlgebra ℤ M) :
+    weylReindex P (weylGroup.ofIdx P i) f = mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv f := by
   induction f using AddMonoidAlgebra.induction_linear with
   | zero => simp
   | add f g hf hg => simp only [map_add, hf, hg]
   | single x c => simp
 
-omit [Finite ι] in
-/-- The reindexing of `ℤ[M]` along a Weyl-group element fixes the Weyl-invariant elements. -/
-private lemma mapDomainRingHom_of_isWeylInvariant {g : AddMonoidAlgebra ℤ M}
-    (hg : IsWeylInvariant P g) (w : P.weylGroup) :
-    mapDomainRingHom ℤ (DistribSMul.toAddMonoidHom M w) g = g := by
-  refine AddMonoidAlgebra.ext (Finsupp.ext fun x ↦ ?_)
-  obtain ⟨y, rfl⟩ : ∃ y, w • y = x := ⟨w⁻¹ • x, smul_inv_smul w x⟩
-  have hinj : Function.Injective (DistribSMul.toAddMonoidHom M w) := MulAction.injective w
-  rw [mapDomainRingHom_apply, AddMonoidAlgebra.mapDomain, AddMonoidAlgebra.coeff_ofCoeff]
-  exact (Finsupp.mapDomain_apply_of_injective hinj g.coeff y).trans (hg.coeff_smul w y).symm
-
 /-- The twisted reindexing `T_w(f) = e^{-(ρ - w ρ)} w(f)`, under which `e^x ↦ e^{w ⬝ x}`. -/
-private def dotReindex (w : P.weylGroup) : AddMonoidAlgebra ℤ M →ₗ[ℤ] AddMonoidAlgebra ℤ M :=
-  LinearMap.mulLeft ℤ (single (-rhoShift P b w) 1) ∘ₗ
-    (mapDomainRingHom ℤ (DistribSMul.toAddMonoidHom M w)).toIntAlgHom.toLinearMap
-
-private lemma dotReindex_apply (w : P.weylGroup) (f : AddMonoidAlgebra ℤ M) :
-    dotReindex P b w f =
-      single (-rhoShift P b w) 1 * mapDomainRingHom ℤ (DistribSMul.toAddMonoidHom M w) f :=
-  (rfl)
-
-private lemma dotReindex_mul (w : P.weylGroup) (f g : AddMonoidAlgebra ℤ M) :
-    dotReindex P b w (f * g) =
-      dotReindex P b w f * mapDomainRingHom ℤ (DistribSMul.toAddMonoidHom M w) g := by
-  simp only [dotReindex_apply, map_mul, mul_assoc]
+private abbrev dotReindex (w : P.weylGroup) : AddMonoidAlgebra ℤ M →ₗ[ℤ] AddMonoidAlgebra ℤ M :=
+  twistedWeylReindex P (-rhoShift P b w) w
 
 private lemma dotReindex_dotReindex (v w : P.weylGroup) (f : AddMonoidAlgebra ℤ M) :
     dotReindex P b v (dotReindex P b w f) = dotReindex P b (v * w) f := by
-  simp only [dotReindex_apply, map_mul, mapDomainRingHom_mul, ← mul_assoc, rhoShift_mul]
-  congr 1
-  simp only [mapDomainRingHom_apply, mapDomain_single, single_mul_single, mul_one,
-    DistribSMul.toAddMonoidHom_apply, smul_neg, neg_add]
+  simp only [twistedWeylReindex_apply, map_mul, weylReindex_mul, ← mul_assoc, rhoShift_mul,
+    weylReindex_single, single_mul_single, mul_one, smul_neg, neg_add]
 
 /-- The coefficient of `T_w(f)` at `w ⬝ x` is the coefficient of `f` at `x`. -/
 private lemma coeff_dotReindex (w : P.weylGroup) (f : AddMonoidAlgebra ℤ M) (x : M) :
     (dotReindex P b w f).coeff (w • x - rhoShift P b w) = f.coeff x := by
-  have hinj : Function.Injective (DistribSMul.toAddMonoidHom M w) := MulAction.injective w
-  rw [dotReindex_apply, sub_eq_neg_add, coeff_single_mul_add, one_mul, mapDomainRingHom_apply,
-    AddMonoidAlgebra.mapDomain, AddMonoidAlgebra.coeff_ofCoeff]
-  exact Finsupp.mapDomain_apply_of_injective hinj f.coeff x
+  rw [coeff_twistedWeylReindex, sub_neg_eq_add, sub_add_cancel, inv_smul_smul]
 
 variable [P.IsReduced]
 
@@ -202,16 +155,19 @@ private lemma rhoShift_ofIdx {i : ι} (hi : i ∈ b.support) :
 private lemma dotReindex_ofIdx {i : ι} (hi : i ∈ b.support) (f : AddMonoidAlgebra ℤ M) :
     dotReindex P b (weylGroup.ofIdx P i) f =
       single (-P.root i) 1 * mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv f := by
-  rw [dotReindex_apply, rhoShift_ofIdx P b hi, mapDomainRingHom_ofIdx]
+  rw [twistedWeylReindex_apply, rhoShift_ofIdx P b hi, weylReindex_ofIdx]
 
 /-- The Weyl denominator is alternating for the twisted action: `T_w Δ = sgn(w) Δ`. -/
 private lemma dotReindex_weylDenominator (w : P.weylGroup) :
     dotReindex P b w (weylDenominator P b) = (weylSign P b w : ℤ) • weylDenominator P b := by
-  rw [dotReindex_apply, mapDomainRingHom_toAddMonoidHom, mapDomain_smul_weylDenominator,
-    ← mul_assoc, single_mul_single, neg_add_cancel, one_mul, ← mul_one ((-1 : ℤ) ^ _),
-    ← smul_single', ← one_def, smul_mul_assoc, one_mul, card_inversionsFinset,
-    ncard_inversions_inv, weylSign_apply]
-  simp
+  have hcancel : single (-rhoShift P b w) (1 : ℤ) * single (rhoShift P b w) 1 = 1 := by
+    rw [single_mul_single, neg_add_cancel, mul_one, one_def]
+  have hsign : single (rhoShift P b w) ((-1 : ℤ) ^ (inversionsFinset P b w⁻¹).card) =
+      (weylSign P b w : ℤ) • single (rhoShift P b w) 1 := by
+    rw [smul_single', mul_one, card_inversionsFinset, ncard_inversions_inv, weylSign_apply]
+    simp
+  rw [twistedWeylReindex_apply, weylReindex_apply, mapDomain_smul_weylDenominator, hsign,
+    smul_mul_assoc, mul_smul_comm, ← mul_assoc, hcancel, one_mul]
 
 /-- The coefficient form of alternation for the twisted action. -/
 private lemma coeff_smul_sub_rhoShift {f : AddMonoidAlgebra ℤ M}
@@ -219,8 +175,7 @@ private lemma coeff_smul_sub_rhoShift {f : AddMonoidAlgebra ℤ M}
     f.coeff (w • x - rhoShift P b w) = (weylSign P b w : ℤ) * f.coeff x := by
   have h := coeff_dotReindex P b w f x
   rw [hf w, AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul] at h
-  rw [← h, ← mul_assoc]
-  rcases Int.units_eq_one_or (weylSign P b w) with hw | hw <;> simp [hw]
+  rw [← h, ← mul_assoc, Int.units_coe_mul_self, one_mul]
 
 /-- An element alternating for the twisted action and vanishing on the dominant chamber is `0`. -/
 private lemma eq_zero_of_coeff_dominantChamber {f : AddMonoidAlgebra ℤ M}
@@ -233,7 +188,8 @@ private lemma eq_zero_of_coeff_dominantChamber {f : AddMonoidAlgebra ℤ M}
   rw [← two_smul_smul_sub_rhoShift_add] at hw
   have hcoeff := coeff_smul_sub_rhoShift P b hf w x
   suffices hy : f.coeff (w • x - rhoShift P b w) = 0 by
-    rcases Int.units_eq_one_or (weylSign P b w) with h' | h' <;> simp_all
+    rw [hy, eq_comm, mul_eq_zero] at hcoeff
+    exact hcoeff.resolve_left (Units.ne_zero _)
   set y := w • x - rhoShift P b w
   by_cases hdom : y ∈ dominantChamber P b
   · exact h y hdom
@@ -251,46 +207,6 @@ private lemma eq_zero_of_coeff_dominantChamber {f : AddMonoidAlgebra ℤ M}
   rw [hfix, weylSign_ofIdx] at hsign
   simp only [Units.val_neg, Units.val_one, neg_mul, one_mul] at hsign
   omega
-
-/-- A dominant weight `y` with `-y` a sum of positive roots is `0`. The sum `2ρ^∨` of the positive
-coroots pairs to `2` with every simple root and nonnegatively with every dominant weight. -/
-private lemma eq_zero_of_mem_dominantChamber_of_neg_mem_posRootCone {y : M}
-    (hy : y ∈ dominantChamber P b) (hcone : -y ∈ posRootCone P b) : y = 0 := by
-  have : Module.IsReflexive ℤ M := .of_isPerfPair P.toLinearMap
-  have : Module.IsReflexive ℤ N := .of_isPerfPair P.flip.toLinearMap
-  obtain ⟨c, hc⟩ := (mem_posRootCone P b).mp hcone
-  have hsimple (j : ι) (hj : j ∈ b.support) :
-      P.toLinearMap (P.root j) (twoWeylVector P.flip b.flip) = 2 :=
-    coroot'_twoWeylVector P.flip b.flip hj
-  have hnonneg : 0 ≤ P.toLinearMap y (twoWeylVector P.flip b.flip) := by
-    rw [twoWeylVector_def, map_sum]
-    refine Finset.sum_nonneg fun β hβ ↦ coroot'_nonneg_of_mem_posRoots P b hy ?_
-    rw [mem_posRootsFinset, mem_posRoots, Base.isPos_flip_iff] at hβ
-    exact (mem_posRoots P b β).mpr hβ
-  have hval : P.toLinearMap (-y) (twoWeylVector P.flip b.flip) =
-      2 * ∑ j ∈ b.support, (c j : ℤ) := by
-    rw [hc, map_sum, LinearMap.sum_apply, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j hj ↦ ?_
-    rw [map_nsmul, LinearMap.smul_apply, hsimple j hj, nsmul_eq_mul, mul_comm]
-  have hsum : ∑ j ∈ b.support, (c j : ℤ) = 0 := by
-    rw [map_neg, LinearMap.neg_apply] at hval
-    have : 0 ≤ ∑ j ∈ b.support, (c j : ℤ) := Finset.sum_nonneg fun _ _ ↦ by positivity
-    linarith
-  have hc0 := (Finset.sum_eq_zero_iff_of_nonneg fun _ _ ↦ Nat.cast_nonneg _).mp hsum
-  rw [← neg_neg y, hc, Finset.sum_eq_zero fun j hj ↦ by simp [Nat.cast_eq_zero.mp (hc0 j hj)],
-    neg_zero]
-
-/-- On the dominant chamber the Weyl denominator has only its constant term `1`. -/
-private lemma coeff_weylDenominator_of_mem_dominantChamber {y : M}
-    (hy : y ∈ dominantChamber P b) :
-    (weylDenominator P b).coeff y = (1 : AddMonoidAlgebra ℤ M).coeff y := by
-  by_cases h : (weylDenominator P b).coeff y = 0
-  · rw [h, one_def, AddMonoidAlgebra.coeff_single, Finsupp.single_eq_of_ne]
-    rintro rfl
-    simp at h
-  · obtain rfl := eq_zero_of_mem_dominantChamber_of_neg_mem_posRootCone P b hy
-      (neg_mem_posRootCone_of_coeff_weylDenominator_ne_zero P b h)
-    simp [one_def]
 
 /-! ### The dot alternatization -/
 
@@ -311,7 +227,7 @@ private lemma dotAlternatization_eq_sum (f : AddMonoidAlgebra ℤ M) :
 theorem dotAlternatization_apply (f : AddMonoidAlgebra ℤ M) :
     dotAlternatization P b f = ∑ w : P.weylGroup, (weylSign P b w : ℤ) •
       (single (-∑ i ∈ inversionsFinset P b w⁻¹, P.root i) 1 * mapDomain (w • ·) f) := by
-  simp only [dotAlternatization_eq_sum, dotReindex_apply, mapDomainRingHom_toAddMonoidHom]
+  simp only [dotAlternatization_eq_sum, twistedWeylReindex_apply, weylReindex_apply]
 
 /-- The dot alternatization of a basis element `e^x` is `∑_w sgn(w) e^{w x - (ρ - w ρ)}`, the
 alternating sum over the dot orbit of `x`. -/
@@ -327,9 +243,7 @@ private lemma dotAlternatization_dotReindex (v : P.weylGroup) (f : AddMonoidAlge
       (weylSign P b v : ℤ) • dotAlternatization P b f := by
   simp only [dotAlternatization_eq_sum, dotReindex_dotReindex, Finset.smul_sum, smul_smul]
   refine Fintype.sum_equiv (Equiv.mulRight v) _ _ fun w ↦ ?_
-  simp only [Equiv.coe_mulRight, map_mul, Units.val_mul]
-  congr 1
-  rcases Int.units_eq_one_or (weylSign P b v) with h | h <;> simp [h]
+  rw [Equiv.coe_mulRight, map_mul, Units.val_mul, mul_left_comm, Int.units_coe_mul_self, mul_one]
 
 private lemma dotReindex_dotAlternatization (v : P.weylGroup) (f : AddMonoidAlgebra ℤ M) :
     dotReindex P b v (dotAlternatization P b f) =
@@ -337,17 +251,13 @@ private lemma dotReindex_dotAlternatization (v : P.weylGroup) (f : AddMonoidAlge
   simp only [dotAlternatization_eq_sum, map_sum, map_zsmul, dotReindex_dotReindex,
     Finset.smul_sum, smul_smul]
   refine Fintype.sum_equiv (Equiv.mulLeft v) _ _ fun w ↦ ?_
-  simp only [Equiv.coe_mulLeft, map_mul, Units.val_mul]
-  congr 1
-  rcases Int.units_eq_one_or (weylSign P b v) with h | h <;> simp [h]
+  rw [Equiv.coe_mulLeft, map_mul, Units.val_mul, ← mul_assoc, Int.units_coe_mul_self, one_mul]
 
 /-- **The dot alternatization is linear over the Weyl-invariant elements**: `J(g f) = g J(f)`. -/
 theorem dotAlternatization_mul_of_isWeylInvariant {g : AddMonoidAlgebra ℤ M}
     (hg : IsWeylInvariant P g) (f : AddMonoidAlgebra ℤ M) :
     dotAlternatization P b (g * f) = g * dotAlternatization P b f := by
-  simp only [dotAlternatization_eq_sum, Finset.mul_sum, mul_smul_comm]
-  refine Finset.sum_congr rfl fun w _ ↦ ?_
-  rw [mul_comm g, dotReindex_mul, mapDomainRingHom_of_isWeylInvariant P hg, mul_comm]
+  simp only [dotAlternatization_eq_sum, Finset.mul_sum, mul_smul_comm, hg.twistedWeylReindex_mul]
 
 /-- **The dot alternatization is antisymmetric for a twisted simple reflection**:
 `J(e^{-αᵢ} sᵢ(f)) = -J(f)`. -/
@@ -365,16 +275,14 @@ private lemma coeff_dotAlternatization_one {y : M} (hy : y ∈ dominantChamber P
     (dotAlternatization P b 1).coeff y = (1 : AddMonoidAlgebra ℤ M).coeff y := by
   have : Module.IsReflexive ℤ M := .of_isPerfPair P.toLinearMap
   have : Module.IsReflexive ℤ N := .of_isPerfPair P.flip.toLinearMap
-  have hρ : twoWeylVector P b ∈ openDominantChamber P b :=
-    (mem_openDominantChamber P b _).mpr fun i hi ↦ by rw [coroot'_twoWeylVector P b hi]; norm_num
-  simp only [dotAlternatization_eq_sum, dotReindex_apply, map_one, mul_one,
+  simp only [dotAlternatization_eq_sum, twistedWeylReindex_apply, map_one, mul_one,
     AddMonoidAlgebra.coeff_sum, Finsupp.finsetSum_apply, AddMonoidAlgebra.coeff_smul_apply]
   rw [Fintype.sum_eq_single 1 fun w hw ↦ ?_]
   · simp [rhoShift_one, one_def]
   rw [AddMonoidAlgebra.coeff_single, Finsupp.single_eq_of_ne, smul_zero]
   rintro rfl
-  refine hw (eq_one_of_smul_mem_dominantChamber P b w hρ ((mem_dominantChamber P b _).mpr
-    fun i hi ↦ ?_))
+  refine hw (eq_one_of_smul_mem_dominantChamber P b w (twoWeylVector_mem_openDominantChamber P b)
+    ((mem_dominantChamber P b _).mpr fun i hi ↦ ?_))
   rw [smul_twoWeylVector_eq, map_sub, map_zsmul, coroot'_twoWeylVector P b hi, smul_eq_mul]
   have := (mem_dominantChamber P b _).mp hy i hi
   rw [map_neg] at this
@@ -386,7 +294,10 @@ private lemma coeff_dotAlternatization_one {y : M} (hy : y ∈ dominantChamber P
 
 where `ρ - w ρ = ∑_{β > 0, w⁻¹ β < 0} β`. Unlike `TauCeti.weylDenominator_eq_weylNumerator_zero`,
 this needs neither `ρ` to be a weight nor the roots to span. -/
+@[simp]
 theorem dotAlternatization_one : dotAlternatization P b 1 = weylDenominator P b := by
+  have : Module.IsReflexive ℤ M := .of_isPerfPair P.toLinearMap
+  have : Module.IsReflexive ℤ N := .of_isPerfPair P.flip.toLinearMap
   rw [← sub_eq_zero]
   refine eq_zero_of_coeff_dominantChamber P b (fun w ↦ ?_) fun y hy ↦ ?_
   · rw [map_sub, dotReindex_dotAlternatization, dotReindex_weylDenominator, smul_sub]
