@@ -77,6 +77,9 @@ morphisms.
 * `TauCeti.AInfinityHom.reducedTransformationDifferential_compRight` and
   `TauCeti.AInfinityHom.reducedTransformationDifferential_compLeft`: composition with a morphism
   commutes with the differential.
+* `TauCeti.AInfinityHom.Homotopy.equivCochains_compRight` and
+  `TauCeti.AInfinityHom.Homotopy.equivCochains_compLeft`: the identification of homotopies with
+  transformations is compatible with composition with a morphism.
 
 ## References
 
@@ -168,6 +171,25 @@ theorem taylor_def (D : reducedTransformationCochains f g p) :
       ReducedTensorWords.letter R B ∘ₗ (D : ReducedTensorWords R A →ₗ[R] ReducedTensorWords R B) :=
   (rfl)
 
+/-- The zero transformation has zero Taylor components. -/
+@[simp]
+theorem taylor_zero : taylor (0 : reducedTransformationCochains f g p) = 0 :=
+  LinearMap.comp_zero _
+
+/-- The Taylor components of a sum of transformations are the sums of their Taylor
+components. -/
+@[simp]
+theorem taylor_add (D D' : reducedTransformationCochains f g p) :
+    taylor (D + D') = taylor D + taylor D' :=
+  LinearMap.comp_add _ _ _
+
+/-- The Taylor components of a scalar multiple of a transformation are the scalar multiples of
+its Taylor components. -/
+@[simp]
+theorem taylor_smul (r : R) (D : reducedTransformationCochains f g p) :
+    taylor (r • D) = r • taylor D :=
+  LinearMap.comp_smul _ _ _
+
 /-- The Taylor components of a transformation of degree `p` have degree `p` for the suspended
 gradings. -/
 theorem isHomogeneous_taylor (D : reducedTransformationCochains f g p) :
@@ -200,9 +222,12 @@ theorem sub_negOnePow_smul_mem_reducedTransformationCochains {p : ℤ}
     BB.barDifferential ∘ₗ D - p.negOnePow • (D ∘ₗ AA.barDifferential) ∈
       reducedTransformationCochains f g (p + 1) := by
   rw [Units.smul_def, ← Int.cast_smul_eq_zsmul R]
-  refine ⟨hD.1.comp_sub_negOnePow_smul_comp hD.2 AA.isGradedCoderivation_barDifferential
-    AA.isHomogeneous_barDifferential BB.isGradedCoderivation_barDifferential
-    f.isHomogeneous_barMap f.barDifferential_comp_barMap g.barDifferential_comp_barMap, ?_⟩
+  have hδ := hD.1.comp_sub_negOnePow_smul_comp hD.2 AA.isGradedCoderivation_barDifferential
+    AA.isHomogeneous_barDifferential (by rw [mul_one, one_mul])
+    BB.isGradedCoderivation_barDifferential f.isHomogeneous_barMap f.barDifferential_comp_barMap
+    g.barDifferential_comp_barMap
+  rw [one_mul] at hδ
+  refine ⟨hδ, ?_⟩
   have h₁ : LinearMap.IsHomogeneous (BB.barDifferential ∘ₗ D)
       (ReducedTensorWords.gradedPiece (AA.grading.shift 1))
       (ReducedTensorWords.gradedPiece (BB.grading.shift 1)) (p + 1) :=
@@ -471,6 +496,26 @@ theorem reducedTransformationDifferential_compLeft (k : AInfinityHom CC AA) {p :
   simp only [coe_reducedTransformationDifferential, reducedTransformationCochains.coe_compLeft,
     LinearMap.sub_comp, LinearMap.smul_comp, LinearMap.comp_assoc,
     k.barDifferential_comp_barMap]
+
+namespace Homotopy
+
+/-- The transformation of a homotopy followed by an `A∞` morphism is the transformation of the
+homotopy followed by that morphism. -/
+@[simp]
+theorem equivCochains_compRight (h : Homotopy f g) (k : AInfinityHom BB CC) :
+    (equivCochains (h.compRight k) : reducedTransformationCochains (k.comp f) (k.comp g) (-1)) =
+      reducedTransformationCochains.compRight k (-1) (equivCochains h) :=
+  Subtype.ext (barHomotopy_compRight h k)
+
+/-- The transformation of an `A∞` morphism followed by a homotopy is that morphism followed by
+the transformation of the homotopy. -/
+@[simp]
+theorem equivCochains_compLeft (h : Homotopy f g) (k : AInfinityHom CC AA) :
+    (equivCochains (h.compLeft k) : reducedTransformationCochains (f.comp k) (g.comp k) (-1)) =
+      reducedTransformationCochains.compLeft k (-1) (equivCochains h) :=
+  Subtype.ext (barHomotopy_compLeft h k)
+
+end Homotopy
 
 end AInfinityHom
 
