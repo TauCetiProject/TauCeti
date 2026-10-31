@@ -99,61 +99,76 @@ private lemma isLeftRegular_one_sub_map (σ : AddMonoidAlgebra ℤ M ≃+* AddMo
   simp only [map_mul, map_sub, map_one, ← hc, RingEquiv.symm_apply_apply] at h'
   exact σ.symm.injective (P.isLeftRegular_one_sub_single_neg_root k h')
 
-/-- The reindexings `sᵢ`, `sⱼ` of `ℤ[M]` satisfy the braid relation of length `2`. -/
+/-- The reindexings `sᵢ`, `sⱼ` of `ℤ[M]` satisfy the braid relation of length `2`: orthogonal
+reflections commute (`RootPairing.isOrthogonal_comm`). -/
 private lemma map_braid_A1A1 (hij : P.pairing i j = 0) (hji : P.pairing j i = 0)
     {S T : AddMonoidAlgebra ℤ M ≃+* AddMonoidAlgebra ℤ M}
     (hS : mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv = S)
     (hT : mapDomainRingEquiv ℤ (P.reflection j).toAddEquiv = T) (f : AddMonoidAlgebra ℤ M) :
     S (T f) = T (S f) := by
+  have g := (P.isOrthogonal_comm i j ⟨hij, hji⟩).eq
   subst hS hT
   simp only [← RingEquiv.trans_apply, ← mapDomainRingEquiv_trans]
   congr 2
   ext x
-  simp only [AddEquiv.trans_apply, LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
-    reflection_apply P _ x, reflection_apply_root, map_sub, map_smul, hij, hji]
-  module
+  simpa using congr($g x)
 
-/-- The reindexings `sᵢ`, `sⱼ` of `ℤ[M]` satisfy the braid relation of length `3`. -/
+/-- The reindexings `sᵢ`, `sⱼ` of `ℤ[M]` satisfy the braid relation of length `3`, transported from
+the Weyl group (`RootPairing.weylGroup.pow_three_ofIdx_mul_ofIdx_eq_one`). -/
 private lemma map_braid_A2 (hij : P.pairing i j = -1) (hji : P.pairing j i = -1)
     {S T : AddMonoidAlgebra ℤ M ≃+* AddMonoidAlgebra ℤ M}
     (hS : mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv = S)
     (hT : mapDomainRingEquiv ℤ (P.reflection j).toAddEquiv = T) (f : AddMonoidAlgebra ℤ M) :
     S (T (S f)) = T (S (T f)) := by
+  have g : weylGroup.ofIdx P i * weylGroup.ofIdx P j * weylGroup.ofIdx P i =
+      weylGroup.ofIdx P j * weylGroup.ofIdx P i * weylGroup.ofIdx P j := by
+    rw [← mul_inv_eq_one]
+    simpa [mul_assoc, pow_succ] using
+      weylGroup.pow_three_ofIdx_mul_ofIdx_eq_one P i j (by rw [hij, hji]; norm_num)
   subst hS hT
   simp only [← RingEquiv.trans_apply, ← mapDomainRingEquiv_trans]
   congr 2
   ext x
-  simp only [AddEquiv.trans_apply, LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
-    reflection_apply P _ x, reflection_apply_root, map_sub, map_smul, hij, hji, pairing_same]
-  module
+  simpa [mul_smul] using congr($g • x)
 
-/-- The reindexings `sᵢ`, `sⱼ` of `ℤ[M]` satisfy the braid relation of length `4`. -/
+/-- The reindexings `sᵢ`, `sⱼ` of `ℤ[M]` satisfy the braid relation of length `4`, transported from
+the Weyl group (`RootPairing.weylGroup.pow_four_ofIdx_mul_ofIdx_eq_one`). -/
 private lemma map_braid_B2 (hij : P.pairing i j = -1) (hji : P.pairing j i = -2)
     {S T : AddMonoidAlgebra ℤ M ≃+* AddMonoidAlgebra ℤ M}
     (hS : mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv = S)
     (hT : mapDomainRingEquiv ℤ (P.reflection j).toAddEquiv = T) (f : AddMonoidAlgebra ℤ M) :
     S (T (S (T f))) = T (S (T (S f))) := by
+  have g : weylGroup.ofIdx P i * weylGroup.ofIdx P j * weylGroup.ofIdx P i *
+      weylGroup.ofIdx P j = weylGroup.ofIdx P j * weylGroup.ofIdx P i * weylGroup.ofIdx P j *
+      weylGroup.ofIdx P i := by
+    rw [← mul_inv_eq_one]
+    simpa [mul_assoc, pow_succ] using
+      weylGroup.pow_four_ofIdx_mul_ofIdx_eq_one P i j (by rw [hij, hji]; norm_num)
   subst hS hT
   simp only [← RingEquiv.trans_apply, ← mapDomainRingEquiv_trans]
   congr 2
   ext x
-  simp only [AddEquiv.trans_apply, LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
-    reflection_apply P _ x, reflection_apply_root, map_sub, map_smul, hij, hji, pairing_same]
-  module
+  simpa [mul_smul] using congr($g • x)
 
-/-- The reindexings `sᵢ`, `sⱼ` of `ℤ[M]` satisfy the braid relation of length `6`. -/
+/-- The reindexings `sᵢ`, `sⱼ` of `ℤ[M]` satisfy the braid relation of length `6`, transported from
+the Weyl group (`RootPairing.weylGroup.pow_six_ofIdx_mul_ofIdx_eq_one`). -/
 private lemma map_braid_G2 (hij : P.pairing i j = -1) (hji : P.pairing j i = -3)
     {S T : AddMonoidAlgebra ℤ M ≃+* AddMonoidAlgebra ℤ M}
     (hS : mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv = S)
     (hT : mapDomainRingEquiv ℤ (P.reflection j).toAddEquiv = T) (f : AddMonoidAlgebra ℤ M) :
     S (T (S (T (S (T f))))) = T (S (T (S (T (S f))))) := by
+  have g : weylGroup.ofIdx P i * weylGroup.ofIdx P j * weylGroup.ofIdx P i *
+      weylGroup.ofIdx P j * weylGroup.ofIdx P i * weylGroup.ofIdx P j =
+      weylGroup.ofIdx P j * weylGroup.ofIdx P i * weylGroup.ofIdx P j * weylGroup.ofIdx P i *
+      weylGroup.ofIdx P j * weylGroup.ofIdx P i := by
+    rw [← mul_inv_eq_one]
+    simpa [mul_assoc, pow_succ] using
+      weylGroup.pow_six_ofIdx_mul_ofIdx_eq_one P i j (by rw [hij, hji]; norm_num)
   subst hS hT
   simp only [← RingEquiv.trans_apply, ← mapDomainRingEquiv_trans]
   congr 2
   ext x
-  simp only [AddEquiv.trans_apply, LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
-    reflection_apply P _ x, reflection_apply_root, map_sub, map_smul, hij, hji, pairing_same]
-  module
+  simpa [mul_smul] using congr($g • x)
 
 /-! ### Demazure's formula for the longest element of a rank-two subsystem
 
@@ -191,7 +206,8 @@ private lemma mul_demazureOperator_ij_A1A1 (hji : P.pairing j i = 0) {a b : AddM
   linear_combination (1 - b) * h1 + h2 + (-a) * h3
 
 /-- The expansion of `Dⱼ Dᵢ` in type `A₁ × A₁`, cleared of the denominators
-`1 - e^{-β}` for the positive roots `β` of the rank-two subsystem. -/
+`1 - e^{-β}` for the positive roots `β` of the rank-two subsystem: the expansion of `Dᵢ Dⱼ` with
+the two roots exchanged. -/
 private lemma mul_demazureOperator_ji_A1A1 (hij : P.pairing i j = 0) {a b : AddMonoidAlgebra ℤ M}
     (ha : single (-P.root i) 1 = a) (hb : single (-P.root j) 1 = b)
     {S T : AddMonoidAlgebra ℤ M ≃+* AddMonoidAlgebra ℤ M}
@@ -199,19 +215,7 @@ private lemma mul_demazureOperator_ji_A1A1 (hij : P.pairing i j = 0) {a b : AddM
     (hT : mapDomainRingEquiv ℤ (P.reflection j).toAddEquiv = T) (f : AddMonoidAlgebra ℤ M) :
     (1 - b) * (1 - a) * P.demazureOperator j (P.demazureOperator i f) =
       f - a * S f - b * T f + a * b * T (S f) := by
-  have iS (Y) : S (P.demazureOperator i Y) = P.demazureOperator i Y :=
-    hS ▸ P.mapDomainRingEquiv_reflection_demazureOperator i Y
-  have iT (Y) : T (P.demazureOperator j Y) = P.demazureOperator j Y :=
-    hT ▸ P.mapDomainRingEquiv_reflection_demazureOperator j Y
-  have h1 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hT
-      (P.demazureOperator i f) (c := b)
-    (by subst ha hb hS hT; simp)
-  have h2 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hS f (c := a)
-    (by subst ha hb hS hT; simp)
-  have h3 := P.one_sub_mul_map_demazureOperator T hS f (c := a)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hij])
-  simp only [RingEquiv.refl_apply, iS, iT] at *
-  linear_combination (1 - a) * h1 + h2 + (-b) * h3
+  linear_combination P.mul_demazureOperator_ij_A1A1 (i := j) (j := i) hij hb ha hT hS f
 
 /-- The expansion of `Dᵢ Dⱼ Dᵢ` in type `A₂`, cleared of the denominators
 `1 - e^{-β}` for the positive roots `β` of the rank-two subsystem. -/
@@ -247,7 +251,8 @@ private lemma mul_demazureOperator_ij_A2 (hij : P.pairing i j = -1) (hji : P.pai
     (-b) * h5 + (a ^ 2 * b) * h6
 
 /-- The expansion of `Dⱼ Dᵢ Dⱼ` in type `A₂`, cleared of the denominators
-`1 - e^{-β}` for the positive roots `β` of the rank-two subsystem. -/
+`1 - e^{-β}` for the positive roots `β` of the rank-two subsystem: the expansion of `Dᵢ Dⱼ Dᵢ` with
+the two roots exchanged. -/
 private lemma mul_demazureOperator_ji_A2 (hij : P.pairing i j = -1) (hji : P.pairing j i = -1)
     {a b : AddMonoidAlgebra ℤ M} (ha : single (-P.root i) 1 = a)
     (hb : single (-P.root j) 1 = b) {S T : AddMonoidAlgebra ℤ M ≃+* AddMonoidAlgebra ℤ M}
@@ -257,27 +262,7 @@ private lemma mul_demazureOperator_ji_A2 (hij : P.pairing i j = -1) (hji : P.pai
       (P.demazureOperator j f)) =
       f - a * S f - b * T f + a ^ 2 * b * S (T f) + a * b ^ 2 * T (S f)
         - a ^ 2 * b ^ 2 * T (S (T f)) := by
-  have iS (Y) : S (P.demazureOperator i Y) = P.demazureOperator i Y :=
-    hS ▸ P.mapDomainRingEquiv_reflection_demazureOperator i Y
-  have iT (Y) : T (P.demazureOperator j Y) = P.demazureOperator j Y :=
-    hT ▸ P.mapDomainRingEquiv_reflection_demazureOperator j Y
-  have h1 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hT (P.demazureOperator i
-      (P.demazureOperator j f)) (c := b)
-    (by subst ha hb hS hT; simp)
-  have h2 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hS
-      (P.demazureOperator j f) (c := a)
-    (by subst ha hb hS hT; simp)
-  have h3 := P.one_sub_mul_map_demazureOperator T hS (P.demazureOperator j f) (c := a * b)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hij]; congr 1; module)
-  have h4 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hT f (c := b)
-    (by subst ha hb hS hT; simp)
-  have h5 := P.one_sub_mul_map_demazureOperator S hT f (c := a * b)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hji])
-  have h6 := P.one_sub_mul_map_demazureOperator (S.trans T) hT f (c := a)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji])
-  simp only [RingEquiv.refl_apply, RingEquiv.trans_apply, iS, iT] at *
-  linear_combination ((1 - a) * (1 - a * b)) * h1 + (1 - a * b) * h2 + (-b * (1 - a)) * h3 + h4 +
-    (-a) * h5 + (a * b ^ 2) * h6
+  linear_combination P.mul_demazureOperator_ij_A2 (i := j) (j := i) hji hij hb ha hT hS f
 
 /-- The expansion of `Dᵢ Dⱼ Dᵢ Dⱼ` in type `B₂`, cleared of the denominators
 `1 - e^{-β}` for the positive roots `β` of the rank-two subsystem. -/
