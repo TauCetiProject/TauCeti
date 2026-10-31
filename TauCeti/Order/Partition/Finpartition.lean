@@ -559,11 +559,13 @@ theorem parts_splitPartition (hsC : (s \ C).Nonempty) :
   rw [splitPartition, extend_parts, parts_top hsC.ne_empty]
 
 /-- The part of `splitPartition s C` through a point of `C` is `C`. -/
+@[simp]
 theorem part_splitPartition_of_mem {z : α} (hz : z ∈ C) :
     (splitPartition s C hC hCs).part z = C :=
   part_eq_of_mem _ (by simp [splitPartition]) hz
 
 /-- The part of `splitPartition s C` through a point of `s` outside `C` is `s \ C`. -/
+@[simp]
 theorem part_splitPartition_of_notMem {z : α} (hz : z ∈ s) (hzC : z ∉ C) :
     (splitPartition s C hC hCs).part z = s \ C := by
   have hzsC : z ∈ s \ C := mem_sdiff.2 ⟨hz, hzC⟩
