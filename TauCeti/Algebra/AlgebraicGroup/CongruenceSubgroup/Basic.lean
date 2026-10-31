@@ -11,15 +11,17 @@ public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 /-!
 # Principal congruence subgroups of the points of a Hopf algebra
 
-Let `H` be a Hopf algebra over `k`, so that `G(R) = WithConv (H →ₐ[k] R)` is the group of
-`R`-points of the affine group `G = Spec H` for every commutative `k`-algebra `R`. For an ideal
-`I` of `R`, the **principal congruence subgroup** of level `I` is the kernel
+Let `H` be a Hopf algebra over `k`, not necessarily commutative. The convolution groups
+`G(R) = WithConv (H →ₐ[k] R)`, for commutative `k`-algebras `R`, form a group-valued functor `G`
+of `R`; when `H` is commutative, `G(R)` is the group of `R`-points of the affine group scheme
+`Spec H`. For an ideal `I` of `R`, the **principal congruence subgroup** of level `I` is the kernel
 
   `G(R)_I = ker (G(R) → G(R ⧸ I))`
 
-of reduction modulo `I`. Taking for `R = k = O` the valuation ring of a nonarchimedean local field
-with maximal ideal `m` and `I = m ^ n`, these are the congruence subgroups `𝒢(O)ₙ` of an integral
-model `𝒢 = Spec H`, the level subgroups of the smooth representation theory of `p`-adic groups.
+of reduction modulo `I`. When `H` is commutative and `R = k = O` is the valuation ring of a
+nonarchimedean local field with maximal ideal `m` and `I = m ^ n`, these are the congruence
+subgroups `𝒢(O)ₙ` of the integral model `𝒢 = Spec H`, the level subgroups of the smooth
+representation theory of `p`-adic groups.
 
 ## Main declarations
 
