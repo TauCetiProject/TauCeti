@@ -168,8 +168,7 @@ theorem norm_apply_bounds_of_net (T : V →L[𝕜] F) {t : Set V} {δ : ℝ}
   rcases eq_or_ne v 0 with rfl | hv
   · simp
   have hTv : ‖T v‖ = ‖v‖ * ‖T ((‖v‖⁻¹ : 𝕜) • v)‖ := by
-    rw [map_smul, norm_smul, norm_inv, RCLike.norm_ofReal, abs_norm,
-      mul_inv_cancel_left₀ (norm_ne_zero_iff.2 hv)]
+    simp [norm_smul, hv]
   rw [hTv, mul_comm]
   exact mul_le_mul_of_nonneg_left (hsphere _ (norm_smul_inv_norm hv)) (norm_nonneg v)
 

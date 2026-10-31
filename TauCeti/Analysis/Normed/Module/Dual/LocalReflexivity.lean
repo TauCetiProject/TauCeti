@@ -12,6 +12,7 @@ import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Normed.Module.Annihilator
 import TauCeti.Analysis.Normed.Module.Dual.Helly
 import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.LinearAlgebra.Projection
 
 /-!
 # The principle of local reflexivity
@@ -69,42 +70,28 @@ section Seminormed
 
 variable [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
-/-- Helly's lemma, coordinatewise: a functional `f` of norm at most one on a finite product
-`κ → E` pairs bidual vectors `zᵢ` of norm at most one with its coordinate functionals to a value
-of norm at most one. -/
-private theorem norm_sum_apply_comp_single_le {κ : Type*} [Fintype κ] [DecidableEq κ]
-    (f : StrongDual 𝕜 (κ → E)) (hf : ‖f‖ ≤ 1) (z : κ → StrongDual 𝕜 (StrongDual 𝕜 E))
-    (hz : ∀ i, ‖z i‖ ≤ 1) :
-    ‖∑ i, z i (f.comp (.single 𝕜 (fun _ ↦ E) i))‖ ≤ 1 := by
-  refine le_of_forall_pos_le_add fun η hη ↦ ?_
-  have he : ∀ i, ∃ e : E, ‖e‖ < 1 + η ∧
-      f.comp (.single 𝕜 (fun _ ↦ E) i) e = z i (f.comp (.single 𝕜 (fun _ ↦ E) i)) := by
-    intro i
-    obtain ⟨e, he, hhe⟩ := StrongDual.exists_norm_lt_and_forall_apply_eq
-      (z i) (fun _ : Unit ↦ f.comp (.single 𝕜 (fun _ ↦ E) i)) hη
-    exact ⟨e, he.trans_le (by simpa using hz i), hhe ()⟩
-  choose e he hhe using he
-  calc ‖∑ i, z i (f.comp (.single 𝕜 (fun _ ↦ E) i))‖ = ‖f e‖ := by
-        rw [← ContinuousLinearMap.sum_comp_single (L := f) (v := e)]
-        simp only [hhe]
-    _ ≤ ‖f‖ * ‖e‖ := f.le_opNorm e
-    _ ≤ 1 * (1 + η) := by
-        gcongr
-        exact (pi_norm_le_iff_of_nonneg (by positivity)).2 fun i ↦ (he i).le
-    _ = 1 + η := one_mul _
-
 variable {V : Type*} [AddCommGroup V] [Module 𝕜 V]
 
-/-- A linear map vanishing on `F₀` is computed from its values on a basis `b` of a complement
-`F₁` of `F₀`, through the coordinates of the projection onto `F₁`. -/
-private theorem apply_eq_sum_repr_projectionOnto {M ι' : Type*} [AddCommGroup M] [Module 𝕜 M]
-    [Fintype ι'] {F₀ F₁ : Submodule 𝕜 V} (hF : IsCompl F₀ F₁) (b : Module.Basis ι' 𝕜 F₁)
-    (D : V →ₗ[𝕜] M) (hD : ∀ φ : F₀, D φ = 0) (v : V) :
-    D v = ∑ j, b.repr (F₁.projectionOnto F₀ hF.symm v) j • D (b j) := by
-  have hpq : ((F₀.projectionOnto F₁ hF v : F₀) : V) + (F₁.projectionOnto F₀ hF.symm v : V) = v := by
-    simpa using LinearMap.congr_fun (Submodule.subtype_comp_projectionOnto_add_eq_id hF) v
-  conv_lhs => rw [← hpq, map_add, hD, zero_add, ← b.sum_repr (F₁.projectionOnto F₀ hF.symm v)]
-  simp only [Submodule.coe_sum, Submodule.coe_smul, map_sum, map_smul]
+/-- A functional `f` on `κ → E` that vanishes at the values `(S uᵢ)ᵢ` of every correction `S`
+(a linear map vanishing on `F₀` with values in the preannihilator of `G`) acts on corrections
+only through `G`: for each vector of a basis of a complement `F₁` of `F₀`, the matching
+combination of the coordinate functionals of `f` lies in `G`. -/
+private theorem sum_repr_smul_comp_single_mem
+    (G : Submodule 𝕜 (StrongDual 𝕜 E)) [FiniteDimensional 𝕜 G] {F₀ F₁ : Submodule 𝕜 V}
+    (hF : IsCompl F₀ F₁) {ι' : Type*} (b : Module.Basis ι' 𝕜 F₁)
+    {κ : Type*} [Fintype κ] [DecidableEq κ] (u : κ → V) (f : StrongDual 𝕜 (κ → E))
+    (hf : ∀ S : V →ₗ[𝕜] E, (∀ φ : F₀, S φ = 0) → (∀ v, ∀ g ∈ G, g (S v) = 0) →
+      f (fun i ↦ S (u i)) = 0) (j : ι') :
+    ∑ i, b.repr (F₁.projectionOnto F₀ hF.symm (u i)) j • f.comp (.single 𝕜 (fun _ ↦ E) i) ∈
+      G := by
+  rw [← Submodule.orthogonalBilin_orthogonalBilin_topDualPairing_flip_eq_of_finiteDimensional G]
+  simp only [Submodule.mem_orthogonalBilin, LinearMap.flip_apply, topDualPairing_apply]
+  intro e he
+  let S : V →ₗ[𝕜] E := ((b.coord j : F₁ →ₗ[𝕜] 𝕜) ∘ₗ F₁.projectionOnto F₀ hF.symm).smulRight e
+  have := hf S (fun φ ↦ by simp [S, Submodule.projectionOnto_apply_right])
+    fun v g hg ↦ by simp [S, he g hg]
+  rw [← ContinuousLinearMap.sum_comp_single (L := f)] at this
+  simpa [S, mul_comm] using this
 
 variable [FiniteDimensional 𝕜 V]
 
@@ -139,7 +126,7 @@ private theorem exists_linearMap_extend_apply_eq
   simp only [LinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.coe_coe,
     Submodule.coe_subtype, ContinuousLinearMap.apply_apply] at hgz hy' hz'
   have hAy : inclusionInDoubleDual 𝕜 E (A ⟨y, hy⟩) = ι y := hA ⟨y, hy⟩
-  rw [map_add, map_add, map_add, hy', hz', hgz, ← hAy, add_apply, dual_def]
+  simp only [map_add, add_apply, hy', hz', hgz, ← hAy, dual_def]
 
 /-- The finite-system core of local reflexivity. Let `ι : V → E**` be linear on a
 finite-dimensional space, let `G ≤ E*` be finite-dimensional, let `A` lift `ι` into `E` on a
@@ -167,7 +154,7 @@ private theorem exists_linearMap_norm_apply_lt
       (h : E →ₗ[𝕜] 𝕜) ∘ₗ T₀
   have hd : ∀ h v, d h v = ∑ j, b.repr (q v) j * (ι (b j) h - h (T₀ (b j))) := by
     intro h v
-    rw [apply_eq_sum_repr_projectionOnto hF b (d h)
+    rw [Submodule.apply_eq_sum_repr_projectionOnto hF b (d h)
       (fun φ ↦ by simp [d, hT₀A, ← hA, dual_def]) v]
     simp [d, q]
   -- Measure a linear map by its values at the points `u i`.
@@ -188,19 +175,9 @@ private theorem exists_linearMap_norm_apply_lt
   have hf : ∀ z : κ → E, f z = ∑ i, h i (z i) := fun z ↦
     (ContinuousLinearMap.sum_comp_single (L := f) (v := z)).symm
   -- The functional acts on the corrections only through `G`.
-  have hψ : ∀ j, ∑ i, b.repr (q (u i)) j • h i ∈ G := by
-    intro j
-    rw [← Submodule.orthogonalBilin_orthogonalBilin_topDualPairing_flip_eq_of_finiteDimensional G]
-    simp only [Submodule.mem_orthogonalBilin, LinearMap.flip_apply, topDualPairing_apply]
-    intro e he
-    let S : V →ₗ[𝕜] E := ((b.coord j : F₁ →ₗ[𝕜] 𝕜) ∘ₗ q).smulRight e
-    have hS : S ∈ K := by
-      refine ⟨fun φ ↦ ?_, fun v g hg ↦ ?_⟩
-      · simp [S, q, Submodule.projectionOnto_apply_right]
-      · simp [S, he g hg]
-    have := hfW (N S) (Submodule.mem_map_of_mem hS)
-    rw [hf] at this
-    simpa [S, hN, mul_comm] using this
+  have hψ : ∀ j, ∑ i, b.repr (q (u i)) j • h i ∈ G :=
+    sum_repr_smul_comp_single_mem G hF b u f fun S hS₀ hSG ↦
+      hfW (N S) (Submodule.mem_map_of_mem ⟨hS₀, hSG⟩)
   -- Hence `f (N T₀)` is the value of the bidual vector `(ι (u i))ᵢ` at `f`.
   have hfu : f (N T₀) = ∑ i, ι (u i) (h i) := by
     have hsum : ∑ i, d (h i) (u i) = 0 := by
@@ -217,7 +194,8 @@ private theorem exists_linearMap_norm_apply_lt
     exact (sub_eq_zero.1 this).symm
   -- Helly's lemma, coordinatewise, bounds this value by one.
   have hle : infDist (N T₀) (W : Set (κ → E)) ≤ 1 := by
-    have := norm_sum_apply_comp_single_le f hf1 (fun i ↦ ι (u i)) hu
+    have := StrongDual.norm_sum_apply_comp_single_le f hf1 (fun i ↦ ι (u i)) hu
+    -- Fold the coordinate functionals `f.comp (single i)` into their local name `h i`.
     change ‖∑ i, ι (u i) (h i)‖ ≤ 1 at this
     rwa [← hfu, hfT, RCLike.norm_ofReal, abs_of_nonneg infDist_nonneg] at this
   -- Correct `T₀` by a nearly closest correction.
@@ -288,7 +266,7 @@ theorem exists_continuousLinearMap_of_doubleDual [FiniteDimensional 𝕜 V]
     (fun v : t ↦ (v : V))
     (fun v ↦ le_of_eq (by rw [LinearIsometry.coe_toLinearMap, ι.norm_map, hnorm v])) hδ
   let T : V →L[𝕜] E := LinearMap.toContinuousLinearMap T'
-  have hT : ∀ v, T v = T' v := fun _ ↦ rfl
+  have hT : ∀ v, T v = T' v := fun v ↦ by simp [T]
   -- Every unit vector is within `δ` of a net point.
   have hnear : ∀ w : V, ‖w‖ = 1 → ∃ v ∈ t, ‖w - v‖ < δ := by
     intro w hw
@@ -342,13 +320,8 @@ variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 theorem finitelyRepresentable_doubleDual :
     FinitelyRepresentable 𝕜 (StrongDual 𝕜 (StrongDual 𝕜 E)) E :=
   finitelyRepresentable_iff.2 fun S _ ε hε ↦ by
-    -- The inclusion of `S`, elaborated against the norm structure of the main theorem.
     obtain ⟨T, hT, -, -⟩ := LinearIsometry.exists_continuousLinearMap_of_doubleDual
-      (𝕜 := 𝕜) (E := E) (V := S)
-      { toFun := fun v ↦ (v : StrongDual 𝕜 (StrongDual 𝕜 E))
-        map_add' := fun _ _ ↦ rfl
-        map_smul' := fun _ _ ↦ rfl
-        norm_map' := fun _ ↦ rfl } ⊥ hε
+      (𝕜 := 𝕜) (E := E) (V := S) S.subtypeₗᵢ ⊥ hε
     exact ⟨T, hT⟩
 
 end TauCeti

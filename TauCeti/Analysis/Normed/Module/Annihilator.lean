@@ -82,6 +82,7 @@ theorem orthogonalBilin_topologicalClosure_topDualPairing_flip (S : Submodule �
 
 /-- A finite-dimensional subspace of the strong dual is the continuous annihilator of its
 preannihilator: the continuous form of `Subspace.dualCoannihilator_dualAnnihilator_eq`. -/
+@[simp]
 theorem orthogonalBilin_orthogonalBilin_topDualPairing_flip_eq_of_finiteDimensional
     (G : Submodule 𝕜 (StrongDual 𝕜 E)) [FiniteDimensional 𝕜 G] :
     (G.orthogonalBilin (topDualPairing 𝕜 E)).orthogonalBilin (topDualPairing 𝕜 E).flip = G := by
