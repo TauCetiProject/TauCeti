@@ -42,6 +42,8 @@ the pullback of the chart over `U`.
 
 * `CategoryTheory.CommMon.isPullback_proj_restrictGradedSections`: over an inclusion of a basic open
   `D(f)` into an affine open `U`, the chart over `D(f)` is the base change of the chart over `U`.
+* `CategoryTheory.CommMon.proj_map_restrictGradedSections_preimage_basicOpen_eq_top`: the chart over
+  `D(f)` maps into the locus of the chart over `U` where `f` is invertible.
 * `CategoryTheory.CommMon.isPullback_relativeProjCover`: over an affine open `U` of `X`, the
   relative `Proj` is `Proj (⨁ n, Γ(Aₙ, U))`.
 
@@ -103,6 +105,23 @@ theorem _root_.CategoryTheory.CommMon.isPullback_proj_restrictGradedSections
   let := A.algebraGradedSectionsBasicOpen f
   -- the algebra structure of `Γ(X, D(f))` over `Γ(X, U)` is restriction of functions
   exact Proj.isPullback_map_of_isBaseChange _ _ _ (A.isBaseChange_restrictGradedSections f hU)
+
+/-- The chart `Proj (⨁ n, Γ(Aₙ, D(f)))` of the relative `Proj` maps into the locus of the chart
+`Proj (⨁ n, Γ(Aₙ, U))` where the image of `f` in degree zero is invertible. -/
+theorem _root_.CategoryTheory.CommMon.proj_map_restrictGradedSections_preimage_basicOpen_eq_top
+    (i : X.basicOpen f ⟶ U) :
+    Proj.map _ (A.irrelevant_le_map_restrictGradedSectionsGradedHom f hU i) ⁻¹ᵁ
+      Proj.basicOpen _ (algebraMap Γ(X, U) (⨁ n, Γ(A.X n, U)) f) = ⊤ := by
+  have := Subsingleton.elim i (homOfLE (X.basicOpen_le f))
+  subst this
+  -- the restriction of `f` to `D(f)` is a unit, so it lies in no homogeneous prime
+  have hunit : IsUnit (A.restrictGradedSectionsGradedHom (homOfLE (X.basicOpen_le f))
+      (algebraMap Γ(X, U) (⨁ n, Γ(A.X n, U)) f)) := by
+    rw [CommMon.restrictGradedSectionsGradedHom_apply, CommMon.restrictGradedSections_algebraMap]
+    exact (X.toRingedSpace.isUnit_res_basicOpen f).map _
+  rw [Proj.map_preimage_basicOpen, eq_top_iff]
+  exact fun y _ ↦ (Proj.mem_basicOpen _ _ _).mpr fun h ↦
+    y.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ h hunit)
 
 end BasicOpen
 

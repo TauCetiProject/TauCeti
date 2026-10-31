@@ -35,6 +35,8 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 - `lintegral_enorm_condExp_rpow_le`: Jensen's inequality for the conditional expectation as an
   inequality of `lintegral`s, `∫⁻ ‖μ[f | m]‖ₑ ^ p ≤ ∫⁻ ‖f‖ₑ ^ p` for `1 ≤ p`, with no
   integrability hypothesis.
+- `lintegral_ofReal_posPart_condExp_sub_le`: the positive part of `μ[f | m] - a` integrates to at
+  most `‖f‖₁ + ‖a‖ₑ · μ univ`, uniformly in the σ-algebra `m`.
 
 All are generic conditional-expectation facts (no exchangeability/tail/directing-measure
 hypotheses), each the bridge for a downstream construction.
@@ -42,7 +44,8 @@ hypotheses), each the bridge for a downstream construction.
 The first two are adapted from `cameronfreer/exchangeability` (`Probability/CondExp.lean` and
 `Probability/Martingale/Convergence.lean`, pin `e0532e59ceff23edab44dda9ab0655debbc9cc22`); the
 third from `Graphon/LevyDownward.lean` in `cameronfreer/graphon` (Apache 2.0) at commit
-`175911f9d2e053f2a33d966658dfce0e4ae2811d`.
+`175911f9d2e053f2a33d966658dfce0e4ae2811d`. `lintegral_ofReal_posPart_condExp_sub_le` is adapted
+from `cameronfreer/exchangeability` (`Probability/Martingale/Crossings/Bounds.lean`, same pin).
 -/
 
 public section
@@ -269,6 +272,24 @@ theorem lintegral_enorm_condExp_rpow_le {Ω E : Type*} [NormedAddCommGroup E] [N
   have h := eLpNorm_condExp_le_eLpNorm (μ := μ) (m := m) f (p := .ofReal p) (by simpa using hp)
   simpa [eLpNorm_eq_lintegral_rpow_enorm_toReal, hp₀, hp₀.le, integrable_condExp.1, hf,
     ENNReal.rpow_le_rpow_iff] using h
+
+/-- **Positive-part bound for the conditional expectation**: for a real level `a`, the positive
+part of `μ[f | m] - a` integrates to at most `‖f‖₁ + ‖a‖ₑ · μ univ`. The bound is uniform in the
+σ-algebra `m`, which is what makes it useful along a whole filtration, e.g. to feed Doob's
+upcrossing inequality. No integrability or measurability hypothesis is needed. -/
+theorem lintegral_ofReal_posPart_condExp_sub_le {Ω : Type*} {m m₀ : MeasurableSpace Ω}
+    {μ : Measure Ω} (f : Ω → ℝ) (a : ℝ) :
+    ∫⁻ ω, ENNReal.ofReal ((μ[f | m] ω - a)⁺) ∂μ ≤ eLpNorm f 1 μ + ‖a‖ₑ * μ Set.univ := by
+  -- Pointwise `(x - a)⁺ ≤ |x - a|`, then the triangle inequality and the L¹ contraction.
+  calc ∫⁻ ω, ENNReal.ofReal ((μ[f | m] ω - a)⁺) ∂μ
+      ≤ ∫⁻ ω, (‖μ[f | m] ω‖ₑ + ‖a‖ₑ) ∂μ := lintegral_mono fun ω => by
+        grw [← enorm_sub_le, Real.enorm_eq_ofReal_abs]
+        exact ENNReal.ofReal_le_ofReal (sup_le (le_abs_self _) (abs_nonneg _))
+    _ = eLpNorm (μ[f | m]) 1 μ + ‖a‖ₑ * μ Set.univ := by
+        rw [lintegral_add_right _ measurable_const, lintegral_const,
+          eLpNorm_one_eq_lintegral_enorm integrable_condExp.aestronglyMeasurable]
+    _ ≤ eLpNorm f 1 μ + ‖a‖ₑ * μ Set.univ := by
+        grw [eLpNorm_condExp_le_eLpNorm f le_rfl]
 
 end MeasureTheory
 

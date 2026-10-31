@@ -195,10 +195,6 @@ private def degreeIso (n : ℕ) :
     ext x : 2
     exact toKoszul_fromKoszul φ ψ n x
 
-private theorem koszulComplex_d_apply (φ : Module.Dual R M) (n : ℕ) (x : ⋀[R]^(n + 1) M) :
-    ((koszulComplex φ).d (n + 1) n).hom x = koszulDifferential φ n x :=
-  congr($(koszulComplex_d φ n).hom x)
-
 private theorem whiskerRight_d_tmul (r q : ℕ) (a : ⋀[R]^(r + 1) M) (b : ⋀[R]^q N) :
     ((koszulComplex φ).d (r + 1) r ▷ (koszulComplex ψ).X q).hom
         (a ⊗ₜ b : ⋀[R]^(r + 1) M ⊗[R] ⋀[R]^q N) =

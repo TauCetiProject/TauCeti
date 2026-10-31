@@ -91,9 +91,9 @@ noncomputable def characterGroupMapOfLinearMap (f : (sigma → ℤ) →ₗ[ℤ] 
 
 /-- The underlying monoid homomorphism of `characterGroupMapOfLinearMap`. -/
 @[simp]
-theorem toMonoidHom_characterGroupMapOfLinearMap
+theorem hom_hom_characterGroupMapOfLinearMap
     (f : (sigma → ℤ) →ₗ[ℤ] (tau → ℤ)) :
-    FGCommGrpCat.toMonoidHom (characterGroupMapOfLinearMap f) =
+    (characterGroupMapOfLinearMap f).hom.hom =
       characterMapOfLinearMap f := by
   rfl
 
@@ -106,10 +106,10 @@ theorem characterGroupMapOfLinearMap_comp
     characterGroupMapOfLinearMap f ≫ characterGroupMapOfLinearMap g =
       characterGroupMapOfLinearMap (g ∘ₗ f) := by
   apply FGCommGrpCat.hom_ext
-  rw [FGCommGrpCat.toMonoidHom_comp,
-    toMonoidHom_characterGroupMapOfLinearMap,
-    toMonoidHom_characterGroupMapOfLinearMap,
-    toMonoidHom_characterGroupMapOfLinearMap,
+  rw [FGCommGrpCat.hom_hom_comp,
+    hom_hom_characterGroupMapOfLinearMap,
+    hom_hom_characterGroupMapOfLinearMap,
+    hom_hom_characterGroupMapOfLinearMap,
     characterMapOfLinearMap_comp]
 
 /-- The identity linear map induces the identity character-group morphism. -/
@@ -157,7 +157,7 @@ theorem schemePointsMulEquiv_ofLinearMap
         fun j n ↦ schemePointsMulEquiv (R := R) (A := A) p j ^ n := by
   rw [schemePointsMulEquiv_eq_freeAbelianCharEquiv, freeAbelianCharEquiv_apply,
     ofLinearMap, DiagonalizableGroup.schemePointsMulEquiv_groupSchemeMap,
-    MonoidHom.comp_apply, toMonoidHom_characterGroupMapOfLinearMap,
+    MonoidHom.comp_apply, hom_hom_characterGroupMapOfLinearMap,
     characterMapOfLinearMap_ofAdd]
   let chi := DiagonalizableGroup.schemePointsMulEquiv
     (R := R) (A := A) (characterGroup tau) p

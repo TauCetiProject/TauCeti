@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.MvPowerSeries.Restricted
 public import Mathlib.RingTheory.MvPowerSeries.GaussNorm
+public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Data.Finsupp.MonomialOrder
@@ -40,6 +41,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 * `Finsupp.prod_pow_le_prod_pow_mul`: shrinking a polyradius from `c` to `c'` divides the
   monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
+* `TauCeti.MvPowerSeries.norm_le_mul_of_norm_coeff_le`: a coefficientwise norm bound gives
+  the same Gauss-norm bound, even across different coefficient rings.
 * `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
 * `MvPowerSeries.norm_coeff_le_norm` and `MvPowerSeries.exists_norm_coeff_eq_norm`: at unit
   polyradius the norm is the largest coefficient norm, and it is attained.
@@ -74,6 +77,12 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 -/
 
 public section
+
+/-- Restricted series over a normed domain form a domain at any polyradius. -/
+instance TauCeti.instIsDomainIsRestrictedSubring {σ R : Type*}
+    [NormedRing R] [IsUltrametricDist R] [IsDomain R] (c : σ → ℝ) :
+    IsDomain (MvPowerSeries.IsRestricted.subring (R := R) c) :=
+  NoZeroDivisors.to_isDomain _
 
 namespace MvPowerSeries
 
@@ -577,6 +586,11 @@ theorem norm_algebraMap_isRestrictedSubring (r : R) :
     Subtype.ext (coe_algebraMap_isRestrictedSubring r)
   rw [h, norm_C]
 
+/-- The constant-series embedding is an isometry. -/
+theorem isometry_algebraMap_isRestrictedSubring :
+    Isometry (algebraMap R (IsRestricted.subring (R := R) c)) :=
+  AddMonoidHomClass.isometry_of_norm _ norm_algebraMap_isRestrictedSubring
+
 end NormedCommRing
 
 section Rename
@@ -697,5 +711,23 @@ noncomputable instance instNormedAlgebraIsRestrictedSubring :
       _ ≤ ‖r‖ * ‖f‖ := mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le f t) (norm_nonneg r)
 
 end NormedField
+
+/-- A coefficientwise norm bound gives the same Gauss-norm bound for restricted series over
+possibly different coefficient rings, at the same positive polyradii. -/
+theorem norm_le_mul_of_norm_coeff_le {σ R S : Type*}
+    [NormedRing R] [IsUltrametricDist R] [NormedRing S] [IsUltrametricDist S]
+    {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+    {f : IsRestricted.subring (R := R) c} {g : IsRestricted.subring (R := S) c}
+    {K : ℝ} (hK : 0 ≤ K)
+    (h : ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ ≤ K * ‖coeff t (g : MvPowerSeries σ S)‖) :
+    ‖f‖ ≤ K * ‖g‖ := by
+  refine (norm_le_iff (mul_nonneg hK (norm_nonneg g))).mpr fun t ↦ ?_
+  calc
+    ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
+        K * ‖coeff t (g : MvPowerSeries σ S)‖ * t.prod (c · ^ ·) :=
+      mul_le_mul_of_nonneg_right (h t) (prod_pow_pos t).le
+    _ ≤ K * ‖g‖ := by
+      rw [mul_assoc]
+      exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le g t) hK
 
 end TauCeti.MvPowerSeries

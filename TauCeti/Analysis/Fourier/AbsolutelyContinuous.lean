@@ -8,13 +8,16 @@ module
 public import Mathlib.Analysis.Fourier.AddCircle
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.Analysis.Calculus.ContDiff.Basic
+import TauCeti.Analysis.Fourier.FourierCoeffOn
 
 /-!
 # Fourier coefficients of absolutely continuous functions
 
 For an absolutely continuous function into a finite-dimensional complex normed space on a
 compact interval, integration by parts identifies the Fourier coefficients of its almost-everywhere
-derivative, including the endpoint contribution. For a closed curve the endpoint term vanishes.
+derivative, including the endpoint contribution. For a closed curve the endpoint term vanishes;
+for a complex-valued closed curve `f` and real `k`, the coefficients of `f' - i k f` are therefore
+`i (2πn / (b - a) - k)` times those of `f` (`TauCeti.fourierCoeffOn_sub_mul_I_mul`).
 For complex-valued curves, Parseval gives an exact expression for the derivative energy as a
 frequency-weighted sum of squared coefficients.
 These identities allow sharp periodic inequalities to be proved directly at absolutely
@@ -102,6 +105,19 @@ theorem fourierCoeffOn_ae_derivative_of_eq_endpoints (hab : a < b)
 end VectorValued
 
 variable {f f' : ℝ → ℂ}
+
+/-- For an absolutely continuous closed complex curve and any real `k`, the Fourier coefficients
+of `f' - i k f` are `i (2πn / (b - a) - k)` times those of `f`, at the same frequency `n`:
+differentiation multiplies the `n`-th coefficient by `2πin / (b - a)`. -/
+theorem fourierCoeffOn_sub_mul_I_mul (hab : a < b) (hf : AbsolutelyContinuousOnInterval f a b)
+    (hff' : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt f (f' t) t) (hfab : f a = f b) (k : ℝ) (n : ℤ) :
+    fourierCoeffOn hab (fun t ↦ f' t - (k * I) * f t) n =
+      ((2 * π * n / (b - a) - k : ℝ) : ℂ) * I * fourierCoeffOn hab f n := by
+  rw [fourierCoeffOn_sub hab (hf.intervalIntegrable_of_ae_hasDerivAt hff')
+    (hf.continuousOn.intervalIntegrable.const_mul _), fourierCoeffOn.const_mul,
+    fourierCoeffOn_ae_derivative_of_eq_endpoints hab hf hff' hfab, smul_eq_mul]
+  push_cast
+  ring
 
 /-- **Parseval's energy identity** for an absolutely continuous closed complex curve with
 square-integrable derivative. Each frequency contributes its squared frequency times the

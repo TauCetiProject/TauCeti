@@ -502,7 +502,7 @@ noncomputable def baseChangePointsEquiv (X : EllObj B) (T : Over X.base) :
     (𝟙_ (Over (X.baseChangeFunctor.obj T).base) ⟶
       Over.mk (X.baseChangeFunctor.obj T).curve.structureMap) ≃*
       (T ⟶ Over.mk X.curve.structureMap) :=
-  EllipticCurveGeom.pointsEquivOfIsPullback (X.baseChangeFunctorHom T).isPullback
+  EllipticCurveGeom.pointsBaseChangeEquiv (X.baseChangeFunctorHom T).isPullback
     (X.baseChangeFunctorHom T).zero_total
 
 @[simp]
@@ -510,7 +510,7 @@ theorem baseChangePointsEquiv_apply_left {X : EllObj B} {T : Over X.base}
     (P : 𝟙_ (Over (X.baseChangeFunctor.obj T).base) ⟶
       Over.mk (X.baseChangeFunctor.obj T).curve.structureMap) :
     (X.baseChangePointsEquiv T P).left = P.left ≫ (X.baseChangeFunctorHom T).total :=
-  EllipticCurveGeom.pointsEquivOfIsPullback_apply_left _ _ P
+  EllipticCurveGeom.pointsBaseChangeEquiv_left _ _ P
 
 /-- **Points of base changes are natural.** Along a morphism `k : T' ⟶ T` of schemes over the base
 of `X`, the base change to `E_{T'}` of a `T`-point of `E_T` corresponds to the point of `E` with

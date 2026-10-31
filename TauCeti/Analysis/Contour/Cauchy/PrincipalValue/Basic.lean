@@ -30,7 +30,7 @@ non-integrable, since a Bochner interval integral of a non-integrable function i
 This keeps the principal value honest and separate from ordinary integrability of `f` (which fails
 at the on-curve singularity), never silently identifying the two.
 
-This is the single-point companion of the roadmap's `HasCauchyPV` predicate: `HasCauchyPVAt`
+This is the single-point companion of the `HasCauchyPV` predicate: `HasCauchyPVAt`
 symmetrically excises one prescribed point `z₀`, the case that defines the generalized winding
 number `n_{z₀}(γ) = (2πi)⁻¹ · PV ∮_γ dz/(z − z₀)` and that feeds the on-curve residue theory
 (Hungerbühler–Wasem, arXiv:1808.00997). The naming mirrors Mathlib's `MeromorphicAt` (at a point)
@@ -57,6 +57,8 @@ versus `MeromorphicOn` (on a set).
   `M · ‖deriv γ‖` from a bound off the ball. `intervalIntegrable_pow_inv_mul_deriv_truncated`
   applies both to the order-`k` polar integrand `c / (z - z₀) ^ k`, and
   `intervalIntegrable_inv_sub_truncated` is its simple-pole case `c = 1`, `k = 1`.
+* `ae_logDeriv_sub_eq_truncated` — where the curve stays more than `ε` from `z₀`, the truncated
+  simple-pole integrand is the logarithmic derivative of `t ↦ γ t - z₀`.
 * `HasCauchyPVAt.intro` — build the predicate from its two clauses; `HasCauchyPVAt.tendsto`,
   `HasCauchyPVAt.eventually_intervalIntegrable` — the clauses as named accessors;
   `HasCauchyPVAt.cauchyPVAt_eq`, `HasCauchyPVAt.unique` — the value and its uniqueness;
@@ -94,8 +96,8 @@ versus `MeromorphicOn` (on a set).
 ## Provenance
 
 Migrated and adapted from the AINTLIB `LeanModularForms` project, file
-`ForMathlib/ClassicalCPV.lean`, specialised to the raw-function (`γ : ℝ → ℂ` on `[a, b]`) design of
-the contour-integration roadmap, and strengthened with the truncated-integrability clause.
+`ForMathlib/ClassicalCPV.lean`, specialised to the raw-function (`γ : ℝ → ℂ` on `[a, b]`) design
+used here, and strengthened with the truncated-integrability clause.
 `intervalIntegrable_pow_inv_mul_deriv_truncated` comes instead from the same development's
 `cpvIntegrand_higherOrder_intervalIntegrable`, in
 `ForMathlib/HungerbuhlerWasem/MultiCrossingCPV.lean`, and its simple-pole case
@@ -181,12 +183,12 @@ measurability: the truncation is the indicator of `{t | ε < ‖γ t - z₀‖}`
 null-measurable as soon as `γ` is.
 
 The hypothesis on `γ` is a.e.-measurability rather than continuity, which is all the statement
-needs and is what lets the continuous-curve and merely-measurable-curve callers share it. -/
-theorem aestronglyMeasurable_truncated {γ F : ℝ → ℂ} {z₀ : ℂ} {a b ε : ℝ}
-    (hγ : AEMeasurable γ (MeasureTheory.volume.restrict (Set.uIoc a b)))
-    (hF : MeasureTheory.AEStronglyMeasurable F (MeasureTheory.volume.restrict (Set.uIoc a b))) :
-    MeasureTheory.AEStronglyMeasurable (fun t => if ‖γ t - z₀‖ > ε then F t else 0)
-      (MeasureTheory.volume.restrict (Set.uIoc a b)) := by
+needs and is what lets the continuous-curve and merely-measurable-curve callers share it. Nothing
+about the integration interval is used, so the statement is for an arbitrary measure. -/
+theorem aestronglyMeasurable_truncated {α E : Type*} [MeasurableSpace α] [TopologicalSpace E]
+    [Zero E] {μ : MeasureTheory.Measure α} {γ : α → ℂ} {F : α → E} {z₀ : ℂ} {ε : ℝ}
+    (hγ : AEMeasurable γ μ) (hF : MeasureTheory.AEStronglyMeasurable F μ) :
+    MeasureTheory.AEStronglyMeasurable (fun t => if ‖γ t - z₀‖ > ε then F t else 0) μ := by
   have h : (fun t => if ‖γ t - z₀‖ > ε then F t else 0)
       = {t | ε < ‖γ t - z₀‖}.indicator F := by
     funext t
@@ -205,16 +207,12 @@ theorem intervalIntegrable_truncated_mul_deriv {γ : ℝ → ℂ} {f : ℂ → �
     (h_bd : ∀ t : ℝ, ε < ‖γ t - z₀‖ → ‖f (γ t)‖ ≤ M) :
     IntervalIntegrable (fun t => if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0)
       MeasureTheory.volume a b := by
-  refine (hderiv_int.norm.const_mul M).mono_fun h_aesm
-    (Filter.Eventually.of_forall fun t => ?_)
-  -- β-reduce the two sides of the a.e. bound
-  change ‖if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0‖ ≤ ‖M * ‖deriv γ t‖‖
-  by_cases h_far : ‖γ t - z₀‖ > ε
-  · rw [ite_eq_left h_far, norm_mul]
-    calc ‖f (γ t)‖ * ‖deriv γ t‖
-        ≤ M * ‖deriv γ t‖ := mul_le_mul_of_nonneg_right (h_bd t h_far) (norm_nonneg _)
-      _ ≤ ‖M * ‖deriv γ t‖‖ := le_abs_self _
-  · rw [ite_eq_right h_far, norm_zero]
+  refine (hderiv_int.norm.const_mul M).mono_fun h_aesm (.of_forall fun t => ?_)
+  dsimp only
+  split_ifs with h_far
+  · rw [norm_mul, Real.norm_eq_abs]
+    exact (mul_le_mul_of_nonneg_right (h_bd t h_far) (norm_nonneg _)).trans (le_abs_self _)
+  · rw [norm_zero]
     positivity
 
 /-- The `ε`-truncated order-`k` polar integrand is interval-integrable: off the `ε`-ball it is
@@ -228,15 +226,11 @@ theorem intervalIntegrable_pow_inv_mul_deriv_truncated {γ : ℝ → ℂ} {z₀ 
       MeasureTheory.volume a b := by
   have hγ_aem : AEMeasurable γ (MeasureTheory.volume.restrict (Set.uIoc a b)) :=
     (hγ_cont.mono Set.uIoc_subset_uIcc).aemeasurable measurableSet_uIoc
-  have h_polar_aem : AEMeasurable (fun t => c / (γ t - z₀) ^ k)
-      (MeasureTheory.volume.restrict (Set.uIoc a b)) :=
-    (((hγ_aem.sub_const z₀).pow_const k).inv.const_mul c).congr
-      (Eventually.of_forall fun t => (div_eq_mul_inv c _).symm)
   refine intervalIntegrable_truncated_mul_deriv (f := fun z => c / (z - z₀) ^ k)
     (M := ‖c‖ / ε ^ k) hderiv_int
-    (aestronglyMeasurable_truncated hγ_aem ((h_polar_aem.mul
-      (intervalIntegrable_iff.mp hderiv_int).aestronglyMeasurable.aemeasurable
-      ).aestronglyMeasurable)) fun t h_far => ?_
+    (aestronglyMeasurable_truncated hγ_aem
+      ((((hγ_aem.sub_const z₀).pow_const k).const_div c).aestronglyMeasurable.mul
+        hderiv_int.def'.aestronglyMeasurable)) fun t h_far => ?_
   rw [norm_div, norm_pow]
   gcongr
 
@@ -263,25 +257,21 @@ theorem ae_logDeriv_sub_eq_truncated {γ : ℝ → ℂ} {z₀ : ℂ} {a b ε : �
     ∀ᵐ s ∂MeasureTheory.volume, s ∈ Set.uIoc a b →
       deriv (fun r ↦ γ r - z₀) s / (γ s - z₀) =
         (if ε < ‖γ s - z₀‖ then (γ s - z₀)⁻¹ * deriv γ s else 0) := by
-  have hb_ae : ({b} : Set ℝ)ᶜ ∈ MeasureTheory.ae MeasureTheory.volume := by
-    simp [MeasureTheory.mem_ae_iff]
-  filter_upwards [hb_ae] with s hs_ne hmem
+  filter_upwards [MeasureTheory.volume.ae_ne b] with s hs_ne hmem
   rw [Set.uIoc_of_le hab] at hmem
-  rw [ite_eq_left
-      (hfar s ⟨hmem.1, lt_of_le_of_ne hmem.2 fun h ↦ hs_ne (Set.mem_singleton_iff.mpr h)⟩),
-    deriv_sub_const, inv_mul_eq_div]
+  rw [ite_eq_left (hfar s ⟨hmem.1, hmem.2.lt_of_ne hs_ne⟩), deriv_sub_const, inv_mul_eq_div]
 
 /-- **Inside the truncation the integrand vanishes.** Where the curve stays within `ε` of the
 centre `z₀`, the `ε`-truncated integrand is almost everywhere `0`, so it is integrable and
 integrates to `0`.
 
 Nothing is used but the falsity of the truncation condition, so the nonzero branch is an
-arbitrary `g : ℝ → ℂ`, and the hypothesis is imposed only on `Set.uIoc a b` — the oriented
+arbitrary `g : ℝ → E`, and the hypothesis is imposed only on `Set.uIoc a b` — the oriented
 half-open interval that interval integration actually sees — and only almost everywhere on it.
 This is the excised corner window: the truncation is exactly what removes the corner's
 contribution, and the whole content is that nothing survives it. -/
-theorem intervalIntegrable_truncated_and_integral_truncated_eq_zero_of_norm_le {γ : ℝ → ℂ}
-    {g : ℝ → ℂ} {z₀ : ℂ} {a b ε : ℝ}
+theorem intervalIntegrable_truncated_and_integral_truncated_eq_zero_of_norm_le {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {γ : ℝ → ℂ} {g : ℝ → E} {z₀ : ℂ} {a b ε : ℝ}
     (hnear : ∀ᵐ s ∂MeasureTheory.volume, s ∈ Set.uIoc a b → ‖γ s - z₀‖ ≤ ε) :
     IntervalIntegrable (fun s => if ε < ‖γ s - z₀‖ then g s else 0)
         MeasureTheory.volume a b ∧
@@ -289,10 +279,9 @@ theorem intervalIntegrable_truncated_and_integral_truncated_eq_zero_of_norm_le {
   have hae : ∀ᵐ s ∂MeasureTheory.volume, s ∈ Set.uIoc a b →
       (if ε < ‖γ s - z₀‖ then g s else 0) = 0 := by
     filter_upwards [hnear] with s hs hmem using ite_eq_right (not_lt.mpr (hs hmem))
-  refine ⟨(intervalIntegrable_const (c := (0 : ℂ))).congr_ae ?_,
+  exact ⟨intervalIntegrable_const.congr_ae
+      (((MeasureTheory.ae_restrict_iff' measurableSet_uIoc).mpr hae).mono fun _ hs => hs.symm),
     intervalIntegral.integral_zero_ae hae⟩
-  filter_upwards [(MeasureTheory.ae_restrict_iff' measurableSet_uIoc).mpr hae] with s hs
-    using hs.symm
 
 /-- Constructor for `HasCauchyPVAt` from its two clauses — eventual integrability of the excised
 integrand and convergence of the excised integrals — without unfolding the definition. -/
@@ -378,18 +367,6 @@ theorem cauchyPVAt_congr_along_curve {γ : ℝ → ℂ} {a b : ℝ} {f g : ℂ �
   refine intervalIntegral.integral_congr_uIoo fun t ht => ?_
   simp only [h_eq t ht]
 
-/-- `EqOn` on the open interval gives almost-everywhere equality on the half-open integration
-interval: the two differ only at the right endpoint, which is null. -/
-private theorem aeEq_restrict_uIoc_of_eqOn_uIoo {u v : ℝ → ℂ} {a b : ℝ}
-    (h : Set.EqOn u v (Set.uIoo a b)) :
-    u =ᵐ[MeasureTheory.volume.restrict (Set.uIoc a b)] v := by
-  -- `uIoc` and `uIoo` differ only at the right endpoint, so they restrict the measure equally.
-  have hrestrict : MeasureTheory.volume.restrict (Set.uIoc a b)
-      = MeasureTheory.volume.restrict (Set.uIoo a b) :=
-    MeasureTheory.restrict_Ioo_eq_restrict_Ioc.symm
-  rw [hrestrict]
-  exact h.aeEq_restrict measurableSet_Ioo
-
 /-- The `ε`-truncated integrands of two curves that agree almost everywhere — with derivatives
 agreeing almost everywhere off `z₀` — are themselves equal almost everywhere, for every positive
 `ε`. Positivity is what makes the derivative hypothesis enough: at a point with `γ₁ t = z₀` the
@@ -430,6 +407,15 @@ theorem HasCauchyPVAt.congr_curve_ae {γ₁ γ₂ : ℝ → ℂ} {a b : ℝ} {f 
     exact intervalIntegral.integral_congr_ae_restrict
       (truncated_integrand_congr_ae h_eq h_deriv (Set.mem_Ioi.mp hε))
 
+/-- Two curves agreeing on the open interval between `a` and `b` have equal `ε`-truncated
+integrands there: an open set is a neighbourhood of each of its points, so the derivatives agree
+there too (`Set.EqOn.deriv`). -/
+private theorem truncated_integrand_eqOn_uIoo {γ₁ γ₂ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
+    (h_eq : Set.EqOn γ₁ γ₂ (Set.uIoo a b)) (ε : ℝ) :
+    Set.EqOn (fun t => if ‖γ₁ t - z₀‖ > ε then f (γ₁ t) * deriv γ₁ t else 0)
+      (fun t => if ‖γ₂ t - z₀‖ > ε then f (γ₂ t) * deriv γ₂ t else 0) (Set.uIoo a b) :=
+  fun _ ht => by simp only [h_eq ht, h_eq.deriv isOpen_Ioo ht]
+
 /-- The principal value depends on the **curve** only through its values on the open interval
 between `a` and `b`. Agreement on the *open* interval is enough even though the integrand involves
 `deriv γ`, because an open set is a neighbourhood of each of its points (`Set.EqOn.deriv`), and
@@ -437,8 +423,8 @@ the endpoints are invisible to the interval integral. -/
 theorem HasCauchyPVAt.congr_curve {γ₁ γ₂ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ} {L : ℂ}
     (h : HasCauchyPVAt γ₁ a b f z₀ L) (h_eq : Set.EqOn γ₁ γ₂ (Set.uIoo a b)) :
     HasCauchyPVAt γ₂ a b f z₀ L :=
-  h.congr_curve_ae (aeEq_restrict_uIoc_of_eqOn_uIoo h_eq)
-    ((aeEq_restrict_uIoc_of_eqOn_uIoo (h_eq.deriv isOpen_Ioo)).mono fun _ ht _ => ht)
+  ⟨h.1.mono fun ε hε => hε.congr_uIoo (truncated_integrand_eqOn_uIoo h_eq ε),
+    h.2.congr fun ε => intervalIntegral.integral_congr_uIoo (truncated_integrand_eqOn_uIoo h_eq ε)⟩
 
 /-- Existence form of `HasCauchyPVAt.congr_curve_ae`. -/
 theorem CauchyPVExistsAt.congr_curve_ae {γ₁ γ₂ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
@@ -478,22 +464,22 @@ theorem cauchyPVAt_congr_curve_ae {γ₁ γ₂ : ℝ → ℂ} {a b : ℝ} {f : �
 /-- Value form of `HasCauchyPVAt.congr_curve`. -/
 theorem cauchyPVAt_congr_curve {γ₁ γ₂ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
     (h_eq : Set.EqOn γ₁ γ₂ (Set.uIoo a b)) :
-    cauchyPVAt γ₁ a b f z₀ = cauchyPVAt γ₂ a b f z₀ :=
-  cauchyPVAt_congr_curve_ae (aeEq_restrict_uIoc_of_eqOn_uIoo h_eq)
-    ((aeEq_restrict_uIoc_of_eqOn_uIoo (h_eq.deriv isOpen_Ioo)).mono fun _ ht _ => ht)
+    cauchyPVAt γ₁ a b f z₀ = cauchyPVAt γ₂ a b f z₀ := by
+  unfold cauchyPVAt
+  congr 1
+  ext ε
+  exact intervalIntegral.integral_congr_uIoo (truncated_integrand_eqOn_uIoo h_eq ε)
 
-/-- Scalar multiplication: if the principal value of `f` is `L`, that of `c • f` is `c • L`. -/
+/-- Scalar multiplication: if the principal value of `f` is `L`, that of `fun z => c * f z` is
+`c * L`. -/
 theorem HasCauchyPVAt.const_mul {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ} {L : ℂ}
     (h : HasCauchyPVAt γ a b f z₀ L) (c : ℂ) :
     HasCauchyPVAt γ a b (fun z => c * f z) z₀ (c * L) := by
   refine ⟨?_, ?_⟩
   · filter_upwards [h.1] with ε hε
-    exact (intervalIntegrable_congr (g := fun t => c * if ‖γ t - z₀‖ > ε
-      then f (γ t) * deriv γ t else 0) fun t _ => by
-        simp only []; split_ifs <;> ring).mpr (hε.const_mul c)
-  · refine Filter.Tendsto.congr (fun ε => ?_) (h.2.const_mul c)
-    rw [← intervalIntegral.integral_const_mul]
-    exact intervalIntegral.integral_congr fun t _ => by simp only []; split_ifs <;> ring
+    simpa only [mul_ite, mul_zero, mul_assoc] using hε.const_mul c
+  · simpa only [← intervalIntegral.integral_const_mul, mul_ite, mul_zero, mul_assoc] using
+      h.2.const_mul c
 
 /-- Additivity: the principal values of `f` and `g` add to that of `f + g`. Together with
 `HasCauchyPVAt.const_mul` this is the `ℂ`-linearity of the principal value in the integrand. -/
@@ -502,15 +488,10 @@ theorem HasCauchyPVAt.add {γ : ℝ → ℂ} {a b : ℝ} {f g : ℂ → ℂ} {z�
     HasCauchyPVAt γ a b (fun z => f z + g z) z₀ (L₁ + L₂) := by
   refine ⟨?_, ?_⟩
   · filter_upwards [hf.1, hg.1] with ε hfi hgi
-    refine (intervalIntegrable_congr (g := fun t =>
-      (if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0)
-        + if ‖γ t - z₀‖ > ε then g (γ t) * deriv γ t else 0) fun t _ => ?_).mpr (hfi.add hgi)
-    simp only [gt_iff_lt]
-    split_ifs <;> simp [add_mul]
-  · refine Filter.Tendsto.congr' ?_ (hf.2.add hg.2)
+    simpa only [ite_add_ite, add_zero, add_mul] using hfi.add hgi
+  · refine (hf.2.add hg.2).congr' ?_
     filter_upwards [hf.1, hg.1] with ε hfi hgi
-    rw [← intervalIntegral.integral_add hfi hgi]
-    exact intervalIntegral.integral_congr fun t _ => by split_ifs <;> ring
+    simp only [← intervalIntegral.integral_add hfi hgi, ite_add_ite, add_zero, add_mul]
 
 /-- The principal value of the zero integrand is `0` — the additive identity for
 `HasCauchyPVAt.add`. -/
@@ -535,22 +516,11 @@ theorem HasCauchyPVAt.refl (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) (z₀ 
     exact IntervalIntegrable.refl
   · simpa only [intervalIntegral.integral_same] using tendsto_const_nhds (x := (0 : ℂ))
 
-/-- If the two endpoints are equal, the single-point Cauchy principal value is `0`. -/
-theorem HasCauchyPVAt.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : ℂ → ℂ) (z₀ : ℂ) :
-    HasCauchyPVAt γ a b f z₀ 0 := by
-  subst b
-  exact HasCauchyPVAt.refl γ a f z₀
-
 /-- Existence form of `HasCauchyPVAt.refl`: a zero-length interval always has a single-point
 Cauchy principal value. -/
 theorem CauchyPVExistsAt.refl (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) (z₀ : ℂ) :
     CauchyPVExistsAt γ a a f z₀ :=
   CauchyPVExistsAt.intro (HasCauchyPVAt.refl γ a f z₀)
-
-/-- Existence form of `HasCauchyPVAt.of_eq`. -/
-theorem CauchyPVExistsAt.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : ℂ → ℂ) (z₀ : ℂ) :
-    CauchyPVExistsAt γ a b f z₀ :=
-  CauchyPVExistsAt.intro (HasCauchyPVAt.of_eq γ hab f z₀)
 
 /-- Value form of `HasCauchyPVAt.refl`: the single-point Cauchy principal value on `[a, a]` is
 `0`. -/
@@ -558,11 +528,6 @@ theorem CauchyPVExistsAt.of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f :
 theorem cauchyPVAt_same (γ : ℝ → ℂ) (a : ℝ) (f : ℂ → ℂ) (z₀ : ℂ) :
     cauchyPVAt γ a a f z₀ = 0 :=
   (HasCauchyPVAt.refl γ a f z₀).cauchyPVAt_eq
-
-/-- Value form of `HasCauchyPVAt.of_eq`. -/
-theorem cauchyPVAt_eq_zero_of_eq (γ : ℝ → ℂ) {a b : ℝ} (hab : a = b) (f : ℂ → ℂ) (z₀ : ℂ) :
-    cauchyPVAt γ a b f z₀ = 0 :=
-  (HasCauchyPVAt.of_eq γ hab f z₀).cauchyPVAt_eq
 
 /-- **Finite additivity.** The principal value of a finite sum of integrands is the sum of their
 principal values. With `HasCauchyPVAt.zero` and `HasCauchyPVAt.add` this extends the `ℂ`-linearity
@@ -587,15 +552,10 @@ theorem HasCauchyPVAt.of_avoidance {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → �
   obtain ⟨t₀, ht₀, ht₀_min⟩ := isCompact_uIcc.exists_isMinOn
     Set.nonempty_uIcc (h_cont.sub continuousOn_const).norm
   have hpos : 0 < ‖γ t₀ - z₀‖ := norm_pos_iff.mpr (sub_ne_zero.mpr (h_avoid t₀ ht₀))
-  refine ⟨?_, ?_⟩
-  · filter_upwards [Ioo_mem_nhdsGT hpos] with ε hε
-    refine (intervalIntegrable_congr fun t ht => ?_).mpr hf_int
-    exact ite_eq_left (lt_of_lt_of_le hε.2 (ht₀_min (Set.uIoc_subset_uIcc ht)))
-  · apply Filter.Tendsto.congr' _ tendsto_const_nhds
-    rw [Filter.EventuallyEq, Filter.eventually_iff_exists_mem]
-    refine ⟨Set.Ioo 0 ‖γ t₀ - z₀‖, Ioo_mem_nhdsGT hpos, fun ε hε => ?_⟩
-    exact intervalIntegral.integral_congr fun t ht =>
-      (ite_eq_left (lt_of_lt_of_le hε.2 (ht₀_min ht))).symm
+  refine .of_dist_lower_bound hpos (fun t ht => ht₀_min ht) ?_
+  filter_upwards [Ioo_mem_nhdsGT hpos] with ε hε
+  refine (intervalIntegrable_congr fun t ht => ?_).mpr hf_int
+  exact ite_eq_left (hε.2.trans_le (ht₀_min (Set.uIoc_subset_uIcc ht)))
 
 /-- **Concatenation.** The principal values along adjacent subcurves `[a, b]` and `[b, c]` add to
 the principal value along `[a, c]`. The integrability of the excised integrand across `[a, c]` and
@@ -665,14 +625,8 @@ theorem CauchyPVExistsAt.zero {γ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ} :
 sum of integrands. -/
 theorem CauchyPVExistsAt.sum {ι : Type*} {γ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ} {f : ι → ℂ → ℂ}
     {s : Finset ι} (h : ∀ i ∈ s, CauchyPVExistsAt γ a b (f i) z₀) :
-    CauchyPVExistsAt γ a b (fun z => ∑ i ∈ s, f i z) z₀ := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => exact ⟨0, by simpa using HasCauchyPVAt.zero⟩
-  | @insert j s hj ih =>
-    obtain ⟨Lj, hLj⟩ := h j (Finset.mem_insert_self j s)
-    obtain ⟨Ls, hLs⟩ := ih fun i hi => h i (Finset.mem_insert_of_mem hi)
-    exact ⟨Lj + Ls, by simpa only [Finset.sum_insert hj] using hLj.add hLs⟩
+    CauchyPVExistsAt γ a b (fun z => ∑ i ∈ s, f i z) z₀ :=
+  ⟨_, HasCauchyPVAt.sum fun i hi => (h i hi).hasCauchyPVAt_cauchyPVAt⟩
 
 /-- Simultaneously translating the curve and the excision point preserves a single-point Cauchy
 principal value, provided the integrand is translated back by the same amount. -/
@@ -681,11 +635,8 @@ theorem HasCauchyPVAt.translate {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ}
     HasCauchyPVAt (fun t => γ t + c) a b (fun z => f (z - c)) (z₀ + c) L := by
   refine HasCauchyPVAt.intro ?_ ?_
   · filter_upwards [h.eventually_intervalIntegrable] with ε hε
-    refine (intervalIntegrable_congr fun t _ => ?_).mpr hε
-    simp [add_sub_add_right_eq_sub, add_sub_cancel_right, deriv_add_const]
-  · refine h.tendsto.congr fun ε => ?_
-    refine intervalIntegral.integral_congr fun t _ => ?_
-    simp [add_sub_add_right_eq_sub, add_sub_cancel_right, deriv_add_const]
+    simpa using hε
+  · simpa using h.tendsto
 
 /-- Existence form of `HasCauchyPVAt.translate`: simultaneous translation preserves existence of a
 single-point Cauchy principal value. -/
@@ -700,11 +651,7 @@ Cauchy principal value. -/
 theorem cauchyPVAt_translate {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ} (c : ℂ) :
     cauchyPVAt (fun t => γ t + c) a b (fun z => f (z - c)) (z₀ + c)
       = cauchyPVAt γ a b f z₀ := by
-  unfold cauchyPVAt
-  congr 1
-  ext ε
-  refine intervalIntegral.integral_congr fun t _ => ?_
-  simp [add_sub_add_right_eq_sub, add_sub_cancel_right, deriv_add_const]
+  simp [cauchyPVAt]
 
 /-- Pointwise identity behind the scaling lemmas: multiplying the curve and excision point by a
 nonzero `c` and rescaling the integrand by `z ↦ c⁻¹ * f (c⁻¹ * z)` turns the scaled truncated
@@ -715,22 +662,10 @@ private theorem truncated_const_mul_curve_eq {γ : ℝ → ℂ} {f : ℂ → ℂ
     (ε t : ℝ) : (if ‖c * γ t - c * z₀‖ > ε then
         (fun z => c⁻¹ * f (c⁻¹ * z)) (c * γ t) * deriv (fun t => c * γ t) t else 0)
       = if ‖γ t - z₀‖ > ε / ‖c‖ then f (γ t) * deriv γ t else 0 := by
-  by_cases hεt : ‖γ t - z₀‖ > ε / ‖c‖
-  · have hscaled : ‖c * γ t - c * z₀‖ > ε := by
-      rw [← mul_sub, norm_mul]
-      have hmul := mul_lt_mul_of_pos_right hεt (norm_pos_iff.mpr hc)
-      have hmul' : ε < ‖γ t - z₀‖ * ‖c‖ := by
-        simpa [div_mul_cancel₀ _ (norm_ne_zero_iff.mpr hc)] using hmul
-      simpa [mul_comm] using hmul'
-    rw [ite_eq_left hscaled, ite_eq_left hεt, deriv_const_mul_field]
-    simp only [inv_mul_cancel_left₀ hc]
-    rw [mul_mul_mul_comm, inv_mul_cancel₀ hc, one_mul]
-  · have hscaled : ¬ ‖c * γ t - c * z₀‖ > ε := by
-      rw [← mul_sub, norm_mul, not_lt]
-      rw [not_lt] at hεt
-      have hmul := mul_le_mul_of_nonneg_right hεt (norm_nonneg c)
-      rwa [div_mul_cancel₀ _ (norm_ne_zero_iff.mpr hc), mul_comm] at hmul
-    rw [ite_eq_right hscaled, ite_eq_right hεt]
+  have hiff : ‖c * γ t - c * z₀‖ > ε ↔ ‖γ t - z₀‖ > ε / ‖c‖ := by
+    rw [← mul_sub, norm_mul, gt_iff_lt, gt_iff_lt, div_lt_iff₀' (norm_pos_iff.mpr hc)]
+  simp only [hiff, deriv_const_mul_field', inv_mul_cancel_left₀ hc]
+  split_ifs <;> field_simp
 
 /-- Simultaneously scaling the curve and the excision point by a nonzero complex number `c`
 preserves a single-point Cauchy principal value, provided the integrand is rescaled by
@@ -758,15 +693,6 @@ theorem CauchyPVExistsAt.const_mul_curve {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ
   let ⟨_, hL⟩ := cauchyPVExistsAt_iff.mp h
   CauchyPVExistsAt.intro (hL.const_mul_curve hc)
 
-/-- Reindexing a `limUnder` by a self-map of the source filter that fixes it leaves the value
-unchanged: if `Filter.map φ F = F`, then `limUnder F (g ∘ φ) = limUnder F g`, even when the limit
-does not exist. -/
-private theorem limUnder_comp_of_map_eq {α : Type*} {β : Type*} [TopologicalSpace β] [Nonempty β]
-    {F : Filter α} {φ : α → α} (hφ : Filter.map φ F = F) (g : α → β) :
-    Filter.limUnder F (g ∘ φ) = Filter.limUnder F g := by
-  unfold Filter.limUnder
-  rw [← Filter.map_map, hφ]
-
 /-- Value form of `HasCauchyPVAt.const_mul_curve`: simultaneous nonzero scaling of the curve and the
 excision point preserves the raw single-point Cauchy principal *value*, with no existence
 hypothesis. Scaling only reindexes the excision radius by the order-isomorphism `ε ↦ ε / ‖c‖`, which
@@ -775,29 +701,14 @@ converge. -/
 theorem cauchyPVAt_const_mul_curve {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ c : ℂ} (hc : c ≠ 0) :
     cauchyPVAt (fun t => c * γ t) a b (fun z => c⁻¹ * f (c⁻¹ * z)) (c * z₀)
       = cauchyPVAt γ a b f z₀ := by
-  have hmap : Filter.map (fun ε : ℝ => ε / ‖c‖) (𝓝[>] (0 : ℝ)) = 𝓝[>] (0 : ℝ) := by
-    have hx : (0 : ℝ) < ‖c‖⁻¹ := inv_pos.mpr (norm_pos_iff.mpr hc)
-    have hcne : ‖c‖ ≠ 0 := norm_ne_zero_iff.mpr hc
-    have hsurj : Function.Surjective (fun x : ℝ => ‖c‖⁻¹ * x) := fun y =>
-      ⟨‖c‖ * y, by simpa using inv_mul_cancel_left₀ hcne y⟩
-    have hfun : (fun ε : ℝ => ε / ‖c‖) = fun ε => ‖c‖⁻¹ * ε := funext fun ε => div_eq_inv_mul ε ‖c‖
-    rw [hfun]
-    conv_lhs => rw [← comap_mulLeft_nhdsGT_zero hx]
-    exact Filter.map_comap_of_surjective hsurj _
-  have hbodyeq : (fun ε : ℝ => ∫ t in a..b, if ‖c * γ t - c * z₀‖ > ε then
-        (fun z => c⁻¹ * f (c⁻¹ * z)) (c * γ t) * deriv (fun t => c * γ t) t else 0)
-      = (fun ε' : ℝ => ∫ t in a..b, if ‖γ t - z₀‖ > ε' then f (γ t) * deriv γ t else 0)
-          ∘ (fun ε => ε / ‖c‖) :=
-    funext fun ε =>
-      intervalIntegral.integral_congr fun t _ => truncated_const_mul_curve_eq hc ε t
-  calc cauchyPVAt (fun t => c * γ t) a b (fun z => c⁻¹ * f (c⁻¹ * z)) (c * z₀)
-      = Filter.limUnder (𝓝[>] (0 : ℝ))
-          ((fun ε' : ℝ => ∫ t in a..b, if ‖γ t - z₀‖ > ε' then f (γ t) * deriv γ t else 0)
-            ∘ (fun ε => ε / ‖c‖)) := congrArg (Filter.limUnder (𝓝[>] (0 : ℝ))) hbodyeq
-    _ = Filter.limUnder (𝓝[>] (0 : ℝ))
-          (fun ε' : ℝ => ∫ t in a..b, if ‖γ t - z₀‖ > ε' then f (γ t) * deriv γ t else 0) :=
-        limUnder_comp_of_map_eq hmap _
-    _ = cauchyPVAt γ a b f z₀ := rfl
+  have hpos : 0 < ‖c‖ := norm_pos_iff.mpr hc
+  have hmap : map (fun ε : ℝ => ε / ‖c‖) (𝓝[>] 0) = 𝓝[>] 0 := by
+    simpa [div_eq_inv_mul, Set.image_mul_left_Ioi (inv_pos.2 hpos)] using
+      (Homeomorph.mulLeft₀ _ (inv_ne_zero hpos.ne')).isEmbedding.map_nhdsWithin_eq (Set.Ioi 0) 0
+  unfold cauchyPVAt limUnder
+  conv_rhs => rw [← hmap, map_map]
+  congr 3 with ε
+  exact intervalIntegral.integral_congr fun t _ => truncated_const_mul_curve_eq hc ε t
 
 /-- Reversing the interval orientation negates a single-point Cauchy principal value. -/
 theorem HasCauchyPVAt.symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ L : ℂ}
