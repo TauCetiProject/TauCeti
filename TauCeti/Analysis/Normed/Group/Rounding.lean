@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Seminorm
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.MulAction
+public import TauCeti.Analysis.Normed.Group.CompatibleNorm
 public import TauCeti.Analysis.SpecialFunctions.Log.Base
 
 /-!
@@ -306,49 +306,15 @@ open scoped Uniformity
 
 variable {M : Type*} [NormedAddCommGroup M] [IsUltrametricDist M]
 
-/-- Rounding an ultrametric norm preserves its uniformity. -/
-theorem zpowCeilAddGroupNorm_uniformity :
-    𝓤 M = @uniformity M (zpowCeilAddGroupNorm hc₀ hc₁ M).toNormedAddCommGroup.toUniformSpace := by
-  let g := ‹NormedAddCommGroup M›
-  let n := (zpowCeilAddGroupNorm hc₀ hc₁ M).toNormedAddCommGroup
-  -- Keep the original norm implicit and name the second metric explicitly.
-  let := g
-  have hd (x y : M) : @dist M n.toDist x y = zpowCeil c ‖-x + y‖ :=
-    zpowCeilAddGroupNorm_apply hc₀ hc₁ _
-  have hupper (x : M) : zpowCeil c ‖x‖ ≤ c⁻¹ * ‖x‖ := by
-    exact (le_inv_mul_iff₀ hc₀).2 (mul_zpowCeil_le hc₀ hc₁ (norm_nonneg x))
-  have hf : @UniformContinuous M M g.toUniformSpace n.toUniformSpace id := by
-    apply @LipschitzWith.uniformContinuous M M g.toPseudoEMetricSpace n.toPseudoEMetricSpace
-      ⟨c⁻¹, inv_nonneg.mpr hc₀.le⟩ id
-    apply @LipschitzWith.of_dist_le_mul M M g.toPseudoMetricSpace n.toPseudoMetricSpace
-      ⟨c⁻¹, inv_nonneg.mpr hc₀.le⟩ id
-    intro x y
-    rw [id_eq, hd, dist_eq_norm_neg_add]
-    exact hupper (-x + y)
-  have hg : @UniformContinuous M M n.toUniformSpace g.toUniformSpace id := by
-    apply @LipschitzWith.uniformContinuous M M n.toPseudoEMetricSpace g.toPseudoEMetricSpace 1 id
-    apply @LipschitzWith.of_dist_le_mul M M n.toPseudoMetricSpace g.toPseudoMetricSpace 1 id
-    intro x y
-    simpa only [id_eq, hd, NNReal.coe_one, one_mul, dist_eq_norm_neg_add] using
-      le_zpowCeil hc₀ hc₁ ‖-x + y‖
-  apply le_antisymm
-  · intro s hs
-    exact @uniformContinuous_def M M g.toUniformSpace n.toUniformSpace id |>.mp hf s hs
-  · intro s hs
-    exact @uniformContinuous_def M M n.toUniformSpace g.toUniformSpace id |>.mp hg s hs
-
 /-- The rounded norm with the original uniformity and topology retained definitionally.
 In particular, completeness and continuity are unchanged. -/
 noncomputable abbrev zpowCeilNormedAddCommGroup : NormedAddCommGroup M :=
-  { (zpowCeilAddGroupNorm hc₀ hc₁ M).toNormedAddCommGroup with
-    toMetricSpace :=
-      (zpowCeilAddGroupNorm hc₀ hc₁ M).toNormedAddCommGroup.toMetricSpace.replaceUniformity
-        (zpowCeilAddGroupNorm_uniformity hc₀ hc₁) }
-
-/-- The norm in the rounded structure is the rounding of the original norm. -/
-@[simp]
-theorem norm_zpowCeilNormedAddCommGroup (m : M) :
-    @norm M (zpowCeilNormedAddCommGroup hc₀ hc₁).toNorm m = zpowCeil c ‖m‖ := (rfl)
+  (zpowCeilAddGroupNorm hc₀ hc₁ M).toNormedAddCommGroupOfUniformity <|
+    (zpowCeilAddGroupNorm hc₀ hc₁ M).uniformity_eq_of_le
+      (C := .mk c⁻¹ (inv_nonneg.mpr hc₀.le)) (D := 1)
+      (fun x ↦ by simpa only [zpowCeilAddGroupNorm_apply, NNReal.coe_mk] using
+        (le_inv_mul_iff₀ hc₀).2 (mul_zpowCeil_le hc₀ hc₁ (norm_nonneg x)))
+      (fun x ↦ by simpa using le_zpowCeil hc₀ hc₁ ‖x‖)
 
 /-- The compatible rounded norm is ultrametric. -/
 theorem isUltrametricDist_zpowCeilNormedAddCommGroup :
