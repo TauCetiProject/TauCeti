@@ -241,7 +241,7 @@ theorem isQuasiFullyFaithful_ofAInfinityHom_iff {F : C → D}
     rw [AInfinityStrictHom.linearPart_toAInfinityHom,
       AInfinityCategory.inducedInclusion_toLinearMap]
     exact ⟨InducedQuiver.totalHomMap_injective hF.1, InducedQuiver.totalHomMap_surjective hF.2⟩
-  have e := congrArg AInfinityHom.IsQuasiIso (inducedInclusion_comp_ofAInfinityHom f hF.1 hf)
+  have e := congrArg AInfinityHom.IsQuasiIso (f.inducedInclusion_comp_liftInduced hF.1 hf)
   rw [isQuasiFullyFaithful_iff_isQuasiIso_toAInfinityHom]
   exact ⟨fun h ↦ e.mp (hs.comp h), fun h ↦ hs.of_postcomp (e.mpr h)⟩
 

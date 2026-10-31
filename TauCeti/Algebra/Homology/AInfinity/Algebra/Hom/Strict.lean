@@ -271,6 +271,7 @@ theorem isHomogeneous_barMap (f : AInfinityStrictHom AA BB) :
 
 /-- The Taylor map of the target after the reduced-bar map is the strict morphism after the Taylor
 map of the source: a strict morphism commutes with every suspended operation. -/
+@[simp]
 theorem taylor_comp_barMap (f : AInfinityStrictHom AA BB) :
     BB.taylor ∘ₗ f.barMap = f.toLinearMap ∘ₗ AA.taylor := by
   apply ReducedTensorWords.linearMap_ext
