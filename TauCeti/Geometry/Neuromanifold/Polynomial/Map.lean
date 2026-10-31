@@ -30,13 +30,15 @@ the structure attached to `P`:
   with polynomial activations transported by `Polynomial.map`.
 
 For an injective `φ`, two parameters over `K` realizing the same function over `L` realize the
-same function over `K` (`polynomialRealization_eq_of_map_eq`). Over an infinite integral domain
-the converse holds as well (`polynomialRealization_map_eq_iff`), since a function then determines
-its coefficient polynomials. Thus the fibre of the model over `K` is the preimage of the fibre of
-the transported model (`preimage_fiber_polynomialRealization_map`). This does not identify the
-two fibres, nor the two neuromanifolds: the transported model has parameters and inputs outside
-the image of `K`. The case of `Complex.ofRealHom : ℝ →+* ℂ` is spelled out in
-`polynomialRealization_map_ofReal` and `polynomialRealization_map_ofReal_eq_iff`.
+same function over `K` (`polynomialRealization_eq_of_map_eq`). When `K` is an infinite integral
+domain the converse holds along any `φ` (`polynomialRealization_map_eq_of_eq`), since a function
+then determines its coefficient polynomials (`polynomialRealization_eq_iff`); for injective `φ`
+both directions combine into `polynomialRealization_map_eq_iff`. Thus the fibre of the model over
+`K` is the preimage of the fibre of the transported model
+(`preimage_fiber_polynomialRealization_map`). This does not identify the two fibres, nor the two
+neuromanifolds: the transported model has parameters and inputs outside the image of `K`. The
+case of `Complex.ofRealHom : ℝ →+* ℂ` is spelled out in `polynomialRealization_map_ofReal` and
+`polynomialRealization_map_ofReal_eq_iff`.
 
 The jointly polynomial setting and its real and complex instantiations follow
 Marchetti–Shahverdi–Mereta–Trager–Kohn,
@@ -88,8 +90,9 @@ theorem map_eval_inputPolynomial_map (P : J → MvPolynomial (W ⊕ I) K) (w : W
 theorem polynomialInputDegree_map_le [Fintype J] (P : J → MvPolynomial (W ⊕ I) K) :
     polynomialInputDegree (map φ ∘ P) ≤ polynomialInputDegree P := by
   refine (polynomialInputDegree_le_iff _).2 fun j => ?_
-  rw [inputPolynomial_map]
-  exact (Finset.sup_mono (support_map_subset _ _)).trans (totalDegree_inputPolynomial_le P j)
+  refine le_trans ?_ (totalDegree_inputPolynomial_le P j)
+  rw [inputPolynomial_map, totalDegree_eq, totalDegree_eq]
+  exact Finset.sup_mono (support_map_subset _ _)
 
 /-- Transport along an injective ring homomorphism preserves the uniform input-degree bound. -/
 theorem polynomialInputDegree_map [Fintype J] {φ : K →+* L} (hφ : Function.Injective φ)
@@ -98,7 +101,8 @@ theorem polynomialInputDegree_map [Fintype J] {φ : K →+* L} (hφ : Function.I
   refine le_antisymm (polynomialInputDegree_map_le φ P)
     ((polynomialInputDegree_le_iff _).2 fun j => ?_)
   have h := totalDegree_inputPolynomial_le (map φ ∘ P) j
-  rwa [inputPolynomial_map, totalDegree, support_map_of_injective _ (map_injective φ hφ)] at h
+  rwa [inputPolynomial_map, totalDegree_eq, support_map_of_injective _ (map_injective φ hφ),
+    ← totalDegree_eq] at h
 
 /-- The coefficient presentation of a transported model at mapped parameters is the mapped
 coefficient presentation of the original model, after forgetting the degree bounds. -/
@@ -189,16 +193,17 @@ end CommSemiring
 
 section Fibres
 
-variable [CommRing K] [IsDomain K] [Infinite K] [CommRing L] [IsDomain L]
+variable [CommRing K] [IsDomain K] [Infinite K] [CommSemiring L]
 
-/-- Over an infinite integral domain, a polynomial model realizes the same function at two
-parameters exactly when it has the same specialized coefficients at both. -/
-private theorem polynomialRealization_eq_iff (P : J → MvPolynomial (W ⊕ I) K) (w v : W → K) :
-    polynomialRealization P w = polynomialRealization P v ↔
-      ∀ j, map (eval w) (inputPolynomial P j) = map (eval v) (inputPolynomial P j) := by
-  refine ⟨fun h j => MvPolynomial.funext fun x => ?_, fun h => funext fun x => funext fun j => ?_⟩
-  · simpa [eval_map] using congrFun (congrFun h x) j
-  · simpa [eval_map] using congrArg (eval x) (h j)
+/-- Over an infinite integral domain, two parameters realizing the same function also realize the
+same function for the model transported along any ring homomorphism. -/
+theorem polynomialRealization_map_eq_of_eq (φ : K →+* L) (P : J → MvPolynomial (W ⊕ I) K)
+    {w v : W → K} (h : polynomialRealization P w = polynomialRealization P v) :
+    polynomialRealization (map φ ∘ P) (φ ∘ w) = polynomialRealization (map φ ∘ P) (φ ∘ v) := by
+  funext x j
+  rw [← eval₂_inputPolynomial, ← eval₂_inputPolynomial, ← eval_map, ← eval_map,
+    map_eval_inputPolynomial_map, map_eval_inputPolynomial_map,
+    (polynomialRealization_eq_iff P w v).1 h j]
 
 /-- Over an infinite integral domain and along an injective ring homomorphism, two parameters
 realize the same function exactly when their images realize the same function for the
@@ -206,10 +211,8 @@ transported model. -/
 theorem polynomialRealization_map_eq_iff {φ : K →+* L} (hφ : Function.Injective φ)
     (P : J → MvPolynomial (W ⊕ I) K) (w v : W → K) :
     polynomialRealization (map φ ∘ P) (φ ∘ w) = polynomialRealization (map φ ∘ P) (φ ∘ v) ↔
-      polynomialRealization P w = polynomialRealization P v := by
-  have : Infinite L := Infinite.of_injective φ hφ
-  simp only [polynomialRealization_eq_iff, map_eval_inputPolynomial_map,
-    (map_injective φ hφ).eq_iff]
+      polynomialRealization P w = polynomialRealization P v :=
+  ⟨polynomialRealization_eq_of_map_eq hφ, polynomialRealization_map_eq_of_eq φ P⟩
 
 /-- Over an infinite integral domain and along an injective ring homomorphism, the fibre of a
 polynomial model through `w` consists of the parameters whose images lie in the fibre of the

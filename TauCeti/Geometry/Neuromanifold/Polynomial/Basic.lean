@@ -31,6 +31,8 @@ over an infinite integral domain, and
 `boundedEvaluation_comp_polynomialCoefficientMap` recovers the realization map from the
 coefficient presentation. Composing with the coordinates gives
 `polynomialCoefficientCoordinates P`, whose coordinates are polynomial in the parameters.
+Over an infinite integral domain, two parameters realize the same function exactly when they
+give the same specialized coefficients (`polynomialRealization_eq_iff`).
 
 The jointly polynomial setting and the coefficient/function viewpoint follow
 Marchetti–Shahverdi–Mereta–Trager–Kohn,
@@ -207,5 +209,20 @@ polynomial in the parameters. -/
   simp [polynomialCoefficientCoordinates, coeff_map]
 
 end Coordinates
+
+section Fibres
+
+variable {R : Type*} [CommRing R] [IsDomain R] [Infinite R]
+
+/-- Over an infinite integral domain, a polynomial model realizes the same function at two
+parameters exactly when it has the same specialized coefficients at both. -/
+theorem polynomialRealization_eq_iff (P : J → MvPolynomial (W ⊕ X) R) (w v : W → R) :
+    polynomialRealization P w = polynomialRealization P v ↔
+      ∀ j, map (eval w) (inputPolynomial P j) = map (eval v) (inputPolynomial P j) := by
+  refine ⟨fun h j => MvPolynomial.funext fun x => ?_, fun h => funext fun x => funext fun j => ?_⟩
+  · simpa [eval_map] using congrFun (congrFun h x) j
+  · simpa [eval_map] using congrArg (eval x) (h j)
+
+end Fibres
 
 end TauCeti.Neuromanifold
