@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SymplecticVectorField
 import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
-import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
