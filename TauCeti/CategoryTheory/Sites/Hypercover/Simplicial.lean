@@ -74,6 +74,19 @@ def preOneHypercover (S : C) : PreOneHypercover.{max u v w} S where
   p₂ _ _ j := j.2.1.2.1
   w _ _ j := j.2.2.1
 
+/-- A section of `F ⨯ G` over `W` with prescribed projections `a` and `b`. -/
+private lemma exists_fst_eq_snd_eq {F G : Sheaf J (Type w)} {W : C} (a : F.obj.obj (op W))
+    (b : G.obj.obj (op W)) : ∃ e : (F ⨯ G).obj.obj (op W),
+      (prod.fst : F ⨯ G ⟶ F).hom.app (op W) e = a ∧
+        (prod.snd : F ⨯ G ⟶ G).hom.app (op W) e = b := by
+  let E := sheafToPresheaf J (Type w) ⋙ (evaluation Cᵒᵖ (Type w)).obj (op W)
+  let e₀ := (Types.binaryProductIso _ _).inv (a, b)
+  refine ⟨(PreservesLimitPair.iso E F G).inv e₀, ?_, ?_⟩
+  · exact (ConcreteCategory.congr_hom (PreservesLimitPair.iso_inv_fst E F G) e₀).trans
+      (Types.binaryProductIso_inv_comp_fst_apply _ _ _)
+  · exact (ConcreteCategory.congr_hom (PreservesLimitPair.iso_inv_snd E F G) e₀).trans
+      (Types.binaryProductIso_inv_comp_snd_apply _ _ _)
+
 variable [HasSheafify J (Type w)] [U.IsHypercover]
 
 /-- The objects of `C` over which `U _⦋0⦌` has a section cover the terminal object. -/
@@ -100,29 +113,13 @@ theorem IsHypercover.locally_exists_δ_eq {W : C} (a b : (U _⦋0⦌).obj.obj (o
   have : Sheaf.IsLocallySurjective φ := by
     rw [Sheaf.isLocallySurjective_iff_epi, ← epi_matchingMap_zero_iff]
     infer_instance
-  -- The pair `(a, b)` as a section of `U _⦋0⦌ ⨯ U _⦋0⦌` over `W`.
-  let G := sheafToPresheaf J (Type w) ⋙ (evaluation Cᵒᵖ (Type w)).obj (op W)
-  let e : G.obj (U _⦋0⦌ ⨯ U _⦋0⦌) :=
-    (PreservesLimitPair.iso G _ _).inv ((Types.binaryProductIso _ _).inv (a, b))
-  have he₁ : (prod.fst : U _⦋0⦌ ⨯ U _⦋0⦌ ⟶ _).hom.app (op W) e = a := by
-    have := ConcreteCategory.congr_hom (PreservesLimitPair.iso_inv_fst G (U _⦋0⦌) (U _⦋0⦌))
-      ((Types.binaryProductIso _ _).inv (a, b))
-    rw [ConcreteCategory.comp_apply] at this
-    exact this.trans (Types.binaryProductIso_inv_comp_fst_apply _ _ _)
-  have he₂ : (prod.snd : U _⦋0⦌ ⨯ U _⦋0⦌ ⟶ _).hom.app (op W) e = b := by
-    have := ConcreteCategory.congr_hom (PreservesLimitPair.iso_inv_snd G (U _⦋0⦌) (U _⦋0⦌))
-      ((Types.binaryProductIso _ _).inv (a, b))
-    rw [ConcreteCategory.comp_apply] at this
-    exact this.trans (Types.binaryProductIso_inv_comp_snd_apply _ _ _)
-  refine ⟨_, Presheaf.imageSieve_mem J φ.hom e, fun Z g ⟨y, hy⟩ ↦ ⟨y, ?_, ?_⟩⟩
-  · have h := congrArg ((prod.fst : U _⦋0⦌ ⨯ U _⦋0⦌ ⟶ _).hom.app (op Z)) hy
-    rw [← ConcreteCategory.comp_apply, ← NatTrans.comp_app,
-      ← ObjectProperty.FullSubcategory.comp_hom, prod.lift_fst] at h
-    simpa [he₁] using h
-  · have h := congrArg ((prod.snd : U _⦋0⦌ ⨯ U _⦋0⦌ ⟶ _).hom.app (op Z)) hy
-    rw [← ConcreteCategory.comp_apply, ← NatTrans.comp_app,
-      ← ObjectProperty.FullSubcategory.comp_hom, prod.lift_snd] at h
-    simpa [he₂] using h
+  obtain ⟨e, he₁, he₂⟩ := exists_fst_eq_snd_eq a b
+  refine ⟨_, Presheaf.imageSieve_mem J φ.hom e, fun Z g ⟨y, hy⟩ ↦ ?_⟩
+  -- Composing `φ` with a map out of `U _⦋0⦌ ⨯ U _⦋0⦌` transports `hy`.
+  have h (f : U _⦋0⦌ ⨯ U _⦋0⦌ ⟶ U _⦋0⦌) :
+      (φ ≫ f).hom.app (op Z) y = (U _⦋0⦌).obj.map g.op (f.hom.app (op W) e) := by
+    simp [hy, NatTrans.naturality_apply]
+  exact ⟨y, by simpa [φ, he₁] using h prod.fst, by simpa [φ, he₂] using h prod.snd⟩
 
 /-- The `1`-hypercover of `S : C` given by the sections in degrees `0` and `1` of a hypercover `U`
 of the terminal sheaf, with underlying pre-`1`-hypercover `U.preOneHypercover S`. -/
