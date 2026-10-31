@@ -20,7 +20,8 @@ For submodules `p` and `q`, every element of `(p ⊔ q) ⊗[R] M` is the sum of 
 `p ⊗[R] M` and `q ⊗[R] M` under the maps induced by the inclusions
 (`Submodule.exists_eq_rTensor_inclusion_add`). For an ideal `I` and a submodule `J`, the image of
 `M ⊗[R] (I • J)` in `M ⊗[R] J` is contained in `I • (M ⊗[R] J)`
-(`LinearMap.range_lTensor_inclusion_smul_le`).
+(`LinearMap.range_lTensor_inclusion_smul_le`), and likewise on the right
+(`LinearMap.range_rTensor_inclusion_smul_le`).
 
 Multiplication of tensor products of submodules is compatible with multiplication in each
 factor (`Submodule.map₂_tmul_mul_le`).
@@ -116,6 +117,25 @@ theorem _root_.LinearMap.range_lTensor_inclusion_smul_le (I : Ideal R) (J : Subm
     have hz' : inclusion Submodule.smul_le_right y = z := Subtype.ext hzy.symm
     rw [LinearMap.lTensor_tmul, hz']
     have := mem_map_of_mem (f := TensorProduct.mk R M J m) hz
+    rw [map_smul''] at this
+    exact smul_mono le_rfl le_top this
+
+/-- The image of `(I • J) ⊗[R] M` in `J ⊗[R] M` is contained in `I • (J ⊗[R] M)`. -/
+theorem _root_.LinearMap.range_rTensor_inclusion_smul_le (I : Ideal R) (J : Submodule R N) :
+    LinearMap.range ((inclusion (Submodule.smul_le_right : I • J ≤ J)).rTensor M) ≤
+      (I • ⊤ : Submodule R (J ⊗[R] M)) := by
+  rintro _ ⟨u, rfl⟩
+  induction u using TensorProduct.inductionOn with
+  | add u v hu hv => rw [map_add]; exact add_mem hu hv
+  | tmul y m =>
+    -- In `J`, the element `y` of `I • J` lies in `I • ⊤`, since `I • J` is the image of `I • ⊤`.
+    have hy : (y : N) ∈ (I • ⊤ : Submodule R J).map J.subtype := by
+      rw [map_smul'', map_top, range_subtype]
+      exact y.2
+    obtain ⟨z, hz, hzy⟩ := hy
+    have hz' : inclusion Submodule.smul_le_right y = z := Subtype.ext hzy.symm
+    rw [LinearMap.rTensor_tmul, hz']
+    have := mem_map_of_mem (f := (TensorProduct.mk R J M).flip m) hz
     rw [map_smul''] at this
     exact smul_mono le_rfl le_top this
 
