@@ -35,6 +35,12 @@ is an isomorphism onto the dual. This is the pointwise contact flat map `X ↦ �
 contact form. The preimage of `a` itself is characterized by the Reeb equations: `B r + a(r) a = a`
 exactly when `a r = 1` and `B r = 0` (`Module.Dual.IsContact.add_smulRight_apply_eq_self_iff`).
 
+For a nondegenerate alternating `B` and a hyperplane `W` of a finite-dimensional space, every
+vector `z` outside `W` gives a contact covector `w ↦ B z w` on `W`, for the restriction of `B`
+(`LinearMap.BilinForm.IsAlt.isContact_comp_compl₁₂`, stated for an injective map onto `W`). The
+proof uses that `W` contains its `B`-orthogonal line. This is the pointwise reason why a
+hypersurface transverse to a Liouville vector field `Z` carries the contact form `ι_Z ω`.
+
 ## Main declarations
 
 * `Module.Dual.IsContact`: `a ≠ 0` and `B` is nondegenerate on `ker a`.
@@ -48,6 +54,8 @@ exactly when `a r = 1` and `B r = 0` (`Module.Dual.IsContact.add_smulRight_apply
 * `Module.Dual.IsContact.separatingLeft_add_smulRight`: `B + a ⊗ a` is left-separating.
 * `Module.Dual.IsContact.add_smulRight_apply_eq_self_iff`: the preimage of `a` under
   `v ↦ B v + a(v) a`.
+* `LinearMap.BilinForm.IsAlt.isContact_comp_compl₁₂`: a vector transverse to a hyperplane gives
+  a contact covector on it.
 
 ## References
 
@@ -168,3 +176,66 @@ theorem IsContact.add_smulRight_apply_eq_self_iff (hB : B.IsAlt) (h : a.IsContac
   exact ⟨h₁, LinearMap.ext fun w ↦ by simpa [h₁] using hr' w⟩
 
 end Module.Dual
+
+/-! ### Hyperplanes transverse to a vector -/
+
+namespace LinearMap.BilinForm
+
+variable {K V U : Type*} [Field K] [AddCommGroup V] [Module K V] [AddCommGroup U] [Module K U]
+  {B : LinearMap.BilinForm K V}
+
+/-- **Transverse hyperplanes carry contact covectors.** Let `B` be a nondegenerate alternating
+form on a finite-dimensional space `V`, let `f : U → V` be injective with image a hyperplane, and
+let `z` be a vector outside that hyperplane. Then the covector `u ↦ B z (f u)` is contact for the
+pulled back form `(u, u') ↦ B (f u) (f u')`. This is the linear algebra behind the contact form
+induced on a hypersurface transverse to a Liouville vector field. -/
+theorem IsAlt.isContact_comp_compl₁₂ [FiniteDimensional K V] (hB : B.IsAlt)
+    (hB' : B.SeparatingLeft) {f : U →ₗ[K] V} (hf : Function.Injective f)
+    (hdim : finrank K U + 1 = finrank K V) {z : V} (hz : z ∉ LinearMap.range f) :
+    Module.Dual.IsContact ((B z).comp f) (B.compl₁₂ f f) := by
+  set W := LinearMap.range f
+  have hrefl := hB.isRefl
+  have hW : finrank K W = finrank K U := LinearMap.finrank_range_of_inj hf
+  -- `W` and any vector outside it span `V`, so a vector orthogonal to both is zero.
+  have key (x y : V) (hy : y ∉ W) (hxW : ∀ w ∈ W, B x w = 0) (hxy : B x y = 0) : x = 0 := by
+    have hq : finrank K (V ⧸ W) = 1 := by
+      have := W.finrank_quotient_add_finrank
+      omega
+    refine hB' x fun v ↦ ?_
+    have hv : v ∈ W ⊔ K ∙ y := by
+      rw [(Submodule.sup_span_singleton_eq_top_iff hy).2 hq]
+      exact Submodule.mem_top
+    obtain ⟨w, hw, t, ht, rfl⟩ := Submodule.mem_sup.1 hv
+    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 ht
+    simp [hxW w hw, hxy]
+  -- The hyperplane `W` contains its `B`-orthogonal, a line spanned by some `f u₀ ≠ 0`.
+  obtain ⟨u, hu, hu0⟩ : ∃ u ∈ B.orthogonal W, u ≠ 0 := by
+    refine Submodule.exists_mem_ne_zero_of_ne_bot fun h ↦ ?_
+    have := finrank_orthogonal ((hrefl.nondegenerate_iff_separatingLeft).2 hB') W
+    rw [h, finrank_bot] at this
+    omega
+  have huW (w : V) (hw : w ∈ W) : B u w = 0 := hrefl _ _ (hu w hw)
+  obtain ⟨u₀, rfl⟩ : u ∈ W := by
+    by_contra h
+    exact hu0 (key u u h huW (hB u))
+  have hzu : B z (f u₀) ≠ 0 := fun h ↦ hu0 (key _ z hz huW (hrefl _ _ h))
+  have hrefl' : (B.compl₁₂ f f).IsRefl := fun x y h ↦ hrefl (f x) (f y) h
+  rw [Module.Dual.isContact_iff_of_isRefl hrefl']
+  refine ⟨fun h0 ↦ hz ?_, fun v hv hvw ↦ hf ?_⟩
+  · -- If `B z` vanished on `W`, then `z` would be orthogonal to everything.
+    have hz0 : z = 0 := key z z hz (by
+      rintro _ ⟨w, rfl⟩
+      simpa using LinearMap.congr_fun h0 w) (hB z)
+    rw [hz0]
+    exact W.zero_mem
+  · -- `f v` is orthogonal to `z`, and to `W` after correcting by a multiple of `f u₀`.
+    simp only [LinearMap.comp_apply, LinearMap.compl₁₂_apply] at hv hvw
+    rw [map_zero]
+    refine key (f v) z hz ?_ (hrefl _ _ hv)
+    rintro _ ⟨w, rfl⟩
+    have h := hvw (w - (B z (f w) / B z (f u₀)) • u₀) (by
+      simp [div_mul_cancel₀ _ hzu])
+    have hvu : B (f v) (f u₀) = 0 := hu _ ⟨v, rfl⟩
+    simpa [hvu] using h
+
+end LinearMap.BilinForm

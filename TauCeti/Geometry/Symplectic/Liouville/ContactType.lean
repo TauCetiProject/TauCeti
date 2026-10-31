@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Contact.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Manifold.VectorField.Transverse
 public import TauCeti.Geometry.Symplectic.Liouville.VectorField
+public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 
 /-!
 # Hypersurfaces of contact type
@@ -39,6 +42,15 @@ McDuff and Salamon. The basic example is the unit cosphere bundle of a Riemannia
 the primitive `-λ` of the canonical symplectic form of the cotangent bundle
 (`TauCeti.CotangentBundle.isRestrictedContactType_cosphereBundle`).
 
+A hypersurface of contact type inherits a contact form: if `ι` is an immersion of codimension one
+and `ω` is nondegenerate, then `ι^* α` is a contact form on `S`
+(`TauCeti.IsContactType.isContactForm_mpullback`). At a point `s`, the pulled back form is
+`v ↦ ω(Z, dι v)` and its exterior derivative is `ι^* ω`, so this is the linear statement that a
+covector `ω(z, ·)` is contact on a hyperplane `W` not containing `z`
+(`LinearMap.BilinForm.IsAlt.isContact_comp_compl₁₂`); its pointwise form is
+`TauCeti.isContactFormAt_mpullback_of_interior_eq`. Neither closedness of `ω` nor compactness of
+`S` is needed.
+
 ## Main definitions
 
 * `TauCeti.IsContactType`: contact type, with an explicit primitive near the hypersurface.
@@ -49,6 +61,10 @@ the primitive `-λ` of the canonical symplectic form of the cotangent bundle
 * `TauCeti.IsRestrictedContactType.isContactType`: restricted contact type implies contact type.
 * `TauCeti.exists_isRestrictedContactType_iff`: the characterization by transverse Liouville vector
   fields.
+* `TauCeti.isContactFormAt_mpullback_of_interior_eq`: the pointwise contact condition for the form
+  induced on a hypersurface transverse to a Liouville field.
+* `TauCeti.IsContactType.isContactForm_mpullback`: a hypersurface of contact type carries the
+  contact form `ι^* α`.
 
 ## References
 
@@ -60,7 +76,7 @@ the primitive `-λ` of the canonical symplectic form of the cotangent bundle
 
 public section
 
-open Bundle Set
+open Bundle Module Set
 open scoped Manifold
 
 namespace TauCeti
@@ -139,5 +155,80 @@ theorem exists_isRestrictedContactType_iff (hω : IsSmoothForm I 1 ω) (hdω : m
     exact ⟨ω.interior Z,
       (isLiouvilleVectorField_iff_mextDeriv_interior_eq hω' (hZ.mdifferentiable (by simp))
         hdω).1 hZω, Z, hZ, rfl, hZι⟩
+
+/-! ### The contact form of a hypersurface of contact type -/
+
+section ContactForm
+
+variable [FiniteDimensional ℝ E] {Z : (x : M) → TangentSpace I x} {s : S}
+
+/-- **The contact form of a hypersurface transverse to a Liouville field, pointwise.** Let `ω` be
+nondegenerate at `ι s`, let `α` be a `C¹` primitive of `ω` there, and let `Z` satisfy
+`ι_Z ω = α` at `ι s`. If `ι` is an immersion at `s` onto a hyperplane not containing `Z (ι s)`,
+then `ι^* α` is a contact form at `s`. -/
+theorem isContactFormAt_mpullback_of_interior_eq [IsManifold I 2 M] [IsManifold J 2 S]
+    (hω : ∀ v : TangentSpace I (ι s), (∀ w, ω (ι s) ![v, w] = 0) → v = 0)
+    (hdα : mextDeriv α (ι s) = ω (ι s)) (hZ : ω.interior Z (ι s) = α (ι s))
+    (hι : ContMDiffAt J I 2 ι s)
+    (hα : ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ)) 1
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) (ι s))
+    (hinj : Function.Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E)
+    (hZι : Z (ι s) ∉ (mfderiv J I ι s).range) :
+    IsContactFormAt (mpullback J I ι α) s := by
+  set B : LinearMap.BilinForm ℝ (TangentSpace I (ι s)) :=
+    MultilinearMap.toBilinMap (ω (ι s)).toMultilinearMap
+  have hBapply (v w : TangentSpace I (ι s)) : B v w = ω (ι s) ![v, w] :=
+    MultilinearMap.toBilinMap_apply _ v w
+  have hB : B.IsAlt := MultilinearMap.isAlt_toBilinMap fun v ↦
+    (ω (ι s)).map_eq_zero_of_eq _ (by simp) Fin.zero_ne_one
+  have hB' : B.SeparatingLeft := fun v hv ↦ hω v fun w ↦ by rw [← hBapply]; exact hv w
+  have hc := Module.Dual.isContact_iff_of_isRefl
+    (fun v w h ↦ hB.isRefl _ _ h : (B.compl₁₂ (mfderiv J I ι s : TangentSpace J s →ₗ[ℝ] _)
+      (mfderiv J I ι s : TangentSpace J s →ₗ[ℝ] _)).IsRefl) |>.1
+    (hB.isContact_comp_compl₁₂ hB' (f := (mfderiv J I ι s : TangentSpace J s →ₗ[ℝ] _)) hinj
+      hdim hZι)
+  simp only [LinearMap.comp_apply, LinearMap.compl₁₂_apply, ContinuousLinearMap.coe_coe,
+    hBapply] at hc
+  -- The pulled back form is `v ↦ ω(Z, dι v)`, and its exterior derivative is `ι^* ω`.
+  have hpull (v : TangentSpace J s) :
+      mpullback J I ι α s ![v] = ω (ι s) ![Z (ι s), mfderiv J I ι s v] := by
+    rw [mpullback_apply, ← hZ, RoughForm.interior_apply]
+    congr 1
+    ext i
+    fin_cases i <;> rfl
+  have hdpull (v w : TangentSpace J s) :
+      mextDeriv (mpullback J I ι α) s ![v, w] =
+        ω (ι s) ![mfderiv J I ι s v, mfderiv J I ι s w] := by
+    rw [← mpullback_mextDeriv_at hι hα, mpullback_apply, hdα]
+    congr 1
+    ext i
+    fin_cases i <;> rfl
+  refine ⟨fun h0 ↦ hc.1 (LinearMap.ext fun v ↦ ?_), fun v hv hvw ↦ ?_⟩
+  · simp [hBapply, ← hpull, h0]
+  · rw [RoughForm.mem_ker, hpull] at hv
+    refine hc.2 v hv fun w hw ↦ ?_
+    rw [← hdpull]
+    exact hvw w (by rw [RoughForm.mem_ker, hpull]; exact hw)
+
+/-- **Hypersurfaces of contact type carry contact forms.** If `ι : S → M` is a smooth immersion
+of codimension one which is of contact type for a nondegenerate two-form `ω` with primitive `α`,
+then `ι^* α` is a contact form on `S`. In particular a hypersurface transverse to a Liouville
+vector field `Z` of a symplectic form `ω` carries the contact form `ι^* (ι_Z ω)`. -/
+theorem IsContactType.isContactForm_mpullback [IsManifold I (⊤ : ℕ∞) M] [IsManifold J (⊤ : ℕ∞) S]
+    {ω : SmoothTwoForm I M} {α : SmoothForm I M ℝ 1} (hω : ω.IsNondegenerate)
+    (h : IsContactType J ω.1 α.1 ι) (hι : ContMDiff J I (⊤ : ℕ∞) ι)
+    (hinj : ∀ s, Function.Injective (mfderiv J I ι s)) (hdim : finrank ℝ E' + 1 = finrank ℝ E) :
+    (SmoothForm.mpullback ι hι α).IsContactForm := by
+  obtain ⟨U, -, hιU, hdα, Z, -, hZα, hZι⟩ := h
+  rw [SmoothForm.isContactForm_iff_forall_isContactFormAt]
+  intro s
+  rw [SmoothForm.coe_mpullback]
+  exact isContactFormAt_mpullback_of_interior_eq
+    (fun v hv ↦ SmoothTwoForm.isNondegenerate_iff_separatingLeft.1 hω _ v fun w ↦ by
+      simpa [SmoothBundleForm.eval₂_apply] using hv w)
+    (hdα _ (hιU ⟨s, rfl⟩)) (hZα _ (hιU ⟨s, rfl⟩)) (hι.contMDiffAt.of_le (by simp))
+    ((α.contMDiff (ι s)).of_le (by simp)) (hinj s) hdim (isTransverseAlong_iff.1 hZι s)
+
+end ContactForm
 
 end TauCeti
