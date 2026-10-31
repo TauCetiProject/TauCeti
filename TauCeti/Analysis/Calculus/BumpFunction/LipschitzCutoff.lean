@@ -24,7 +24,9 @@ When `E` is nontrivial, a function equal to one on `closedBall x₀ r` and vanis
 `ball x₀ R` has Lipschitz constant at least `1 / (R - r)`, and the piecewise affine radial profile
 attains this bound but is not smooth. This file shows that every larger constant is attained by a
 smooth cutoff (`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith`), so for nontrivial `E`
-the bound `1 / (R - r)` is the infimum of the Lipschitz constants of smooth cutoffs.
+the bound `1 / (R - r)` is the infimum of the Lipschitz constants of smooth cutoffs. For shells
+of width `h` this gives cutoffs with constant `t / h` for every `t > 1`
+(`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv`).
 
 Cutoffs with a universal but non-optimal constant `c / (R - r)` suffice for iteration arguments.
 Limits in which the width `R - r` of the transition shell shrinks to zero need the sharp constant
@@ -133,6 +135,18 @@ theorem exists_contDiff_cutoff_closedBall_lipschitzWith (x₀ : E) {r R : ℝ} (
     refine LipschitzWith.of_dist_le_mul fun x y => ?_
     rw [dist_sub_left]
     simpa only [comp_apply, dist_eq_norm] using h.dist_le_mul x y
+
+/-- **Smooth cutoffs on thin shells.** For a radius `r ≥ 0`, a width `h > 0` and a factor
+`t > 1`, there is a smooth `ψ` with values in `[0, 1]`, equal to one on `closedBall x₀ r`,
+vanishing off `ball x₀ (r + h)`, and `t / h`-Lipschitz. This is the form of
+`TauCeti.exists_contDiff_cutoff_closedBall_lipschitzWith` used when the width `h` tends to zero. -/
+theorem exists_contDiff_cutoff_closedBall_lipschitzWith_mul_inv (x₀ : E) {r h : ℝ} (hr : 0 ≤ r)
+    (hh : 0 < h) {t : ℝ≥0} (ht : 1 < t) :
+    ∃ ψ : E → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧ EqOn ψ 1 (closedBall x₀ r) ∧
+      support ψ ⊆ ball x₀ (r + h) ∧ LipschitzWith (t * h.toNNReal⁻¹) ψ := by
+  refine exists_contDiff_cutoff_closedBall_lipschitzWith x₀ hr (by linarith) ?_
+  rw [add_sub_cancel_left, NNReal.coe_mul, NNReal.coe_inv, Real.coe_toNNReal _ hh.le]
+  exact (lt_mul_iff_one_lt_left (inv_pos.2 hh)).2 (by exact_mod_cast ht)
 
 /-- The derivative of a function with values in `[0, 1]`, equal to one on `closedBall x₀ r` and
 vanishing off `ball x₀ R`, is supported in the shell `ball x₀ R \ ball x₀ r`: elsewhere the
