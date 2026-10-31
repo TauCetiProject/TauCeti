@@ -135,6 +135,21 @@ theorem HasMFDerivWithinAt.of_restrictScalars
   simp only [HasMFDerivWithinAt, mfld_simps]
   exact ⟨h.1, hf.of_restrictScalars 𝕜 hg⟩
 
+/-- If `g'` is a derivative of `f` at a point for the models over `𝕜`, and `f'` is a `𝕜'`-linear map
+between the tangent spaces over `𝕜'` which agrees with `g'` once both are read in the model spaces,
+then `f'` is a derivative of `f` at that point for the models over `𝕜'`. This is the converse of
+`HasMFDerivAt.restrictScalars`. -/
+theorem HasMFDerivAt.of_restrictScalars
+    {f' : TangentSpace 𝓘(𝕜', E) x →L[𝕜'] TangentSpace 𝓘(𝕜', E') (f x)}
+    {g' : TangentSpace 𝓘(𝕜, E) x →L[𝕜] TangentSpace 𝓘(𝕜, E') (f x)}
+    (h : HasMFDerivAt 𝓘(𝕜, E) 𝓘(𝕜, E') f x g')
+    (hg : ((tangentSpaceCastModel 𝓘(𝕜', E') (f x) : _ →L[𝕜'] E') ∘L f' ∘L
+        ((tangentSpaceCastModel 𝓘(𝕜', E) x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 =
+      (tangentSpaceCastModel 𝓘(𝕜, E') (f x) : _ →L[𝕜] E') ∘L g' ∘L
+        ((tangentSpaceCastModel 𝓘(𝕜, E) x).symm : E →L[𝕜] _)) :
+    HasMFDerivAt 𝓘(𝕜', E) 𝓘(𝕜', E') f x f' :=
+  hasMFDerivWithinAt_univ.mp (h.hasMFDerivWithinAt.of_restrictScalars 𝕜 hg)
+
 /-- At a point where `f` is differentiable within a set for the models over `𝕜'`, and where the set
 has unique derivatives over the smaller field `𝕜`, the derivative of `f` within the set over `𝕜` is
 its derivative over `𝕜'` with scalars restricted to `𝕜`, both read in the model spaces. -/

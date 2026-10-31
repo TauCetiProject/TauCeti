@@ -91,7 +91,7 @@ namespace LinearMap
 
 /-- A real-linear map between complex modules that commutes with multiplication by `I`, as a
 complex-linear map. -/
-@[expose] def complexOfMapISmul (u : V →ₗ[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
+def complexOfMapISmul (u : V →ₗ[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
     V →ₗ[ℂ] W where
   toFun := u
   map_add' := u.map_add
@@ -103,13 +103,13 @@ complex-linear map. -/
 @[simp]
 theorem coe_complexOfMapISmul (u : V →ₗ[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
     ⇑(u.complexOfMapISmul h) = u :=
-  rfl
+  funext fun _ ↦ rfl
 
 @[simp]
 theorem restrictScalars_complexOfMapISmul (u : V →ₗ[ℝ] W)
     (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
     (u.complexOfMapISmul h).restrictScalars ℝ = u :=
-  rfl
+  LinearMap.ext fun _ ↦ rfl
 
 end LinearMap
 
@@ -119,20 +119,20 @@ variable [TopologicalSpace V] [TopologicalSpace W]
 
 /-- A continuous real-linear map between complex modules that commutes with multiplication by
 `I`, as a continuous complex-linear map. -/
-@[expose] def complexOfMapISmul (u : V →L[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
+def complexOfMapISmul (u : V →L[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
     V →L[ℂ] W :=
   ⟨u.toLinearMap.complexOfMapISmul h, u.cont⟩
 
 @[simp]
 theorem coe_complexOfMapISmul (u : V →L[ℝ] W) (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
     ⇑(u.complexOfMapISmul h) = u :=
-  rfl
+  funext fun _ ↦ rfl
 
 @[simp]
 theorem restrictScalars_complexOfMapISmul (u : V →L[ℝ] W)
     (h : ∀ v, u (Complex.I • v) = Complex.I • u v) :
     (u.complexOfMapISmul h).restrictScalars ℝ = u :=
-  rfl
+  ContinuousLinearMap.ext fun _ ↦ rfl
 
 end ContinuousLinearMap
 
