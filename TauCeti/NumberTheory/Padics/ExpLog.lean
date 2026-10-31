@@ -49,23 +49,6 @@ namespace Padic
 
 variable {p : ℕ} [hp : Fact p.Prime]
 
-/-- On `ℚ_[p]` the valuation of the valuative relation and the norm induce the same order. -/
-private theorem valuation_le_valuation_iff_norm_le {x y : ℚ_[p]} :
-    ValuativeRel.valuation ℚ_[p] x ≤ ValuativeRel.valuation ℚ_[p] y ↔ ‖x‖ ≤ ‖y‖ := by
-  rw [(isEquiv (ValuativeRel.valuation ℚ_[p]) Padic.mulValuation) x y, ← not_lt, ← not_lt,
-    Padic.norm_lt_norm_iff_mulValuation_lt]
-
-private theorem valuation_eq_valuation_iff_norm_eq {x y : ℚ_[p]} :
-    ValuativeRel.valuation ℚ_[p] x = ValuativeRel.valuation ℚ_[p] y ↔ ‖x‖ = ‖y‖ := by
-  simp only [le_antisymm_iff, valuation_le_valuation_iff_norm_le]
-
-private theorem valuation_le_valuation_natCast_pow_iff {x : ℚ_[p]} {i : ℕ} :
-    ValuativeRel.valuation ℚ_[p] x ≤
-        ValuativeRel.valuation ℚ_[p] (((p : 𝒪[ℚ_[p]]) : ℚ_[p])) ^ i ↔
-      ‖x‖ ≤ (p : ℝ) ^ (-(i : ℤ)) := by
-  rw [← map_pow, valuation_le_valuation_iff_norm_le]
-  simp
-
 private theorem absoluteRamificationIndex_lt {i : ℕ} (hi : 1 < (p - 1) * i) :
     TauCeti.absoluteRamificationIndex ℚ_[p] p < (p - 1) * i := by
   rwa [TauCeti.absoluteRamificationIndex_padic]
@@ -83,9 +66,7 @@ private noncomputable def toMaximalIdealPow {i : ℕ} {x : ℚ_[p]}
     rw [Valuation.mem_integer_iff, ← map_one (ValuativeRel.valuation ℚ_[p]),
       valuation_le_valuation_iff_norm_le, norm_one]
     exact hx.trans (zpow_le_one_of_nonpos₀ (by exact_mod_cast hp.out.one_lt.le) (by simp))⟩,
-    (Set.ext_iff.mp ((TauCeti.Padic.irreducible_natCast_self p)
-      |>.maximalIdeal_pow_eq_setOfPred_le_v_coe_pow (ValuativeRel.valuation ℚ_[p]) i) _).mpr
-        (valuation_le_valuation_natCast_pow_iff.mpr hx)⟩
+    TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le.mpr hx⟩
 
 /-- A unit of `ℚ_[p]` lies in the unit filtration `U(ℚ_p,i)`, `i ≥ 1`, exactly when
 `‖x - 1‖ ≤ p ^ (-i)`. -/

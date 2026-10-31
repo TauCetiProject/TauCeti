@@ -8,7 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.Normed.Algebra.Logarithm
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
-import TauCeti.NumberTheory.LocalField.Logarithm
+import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
+import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
 import TauCeti.NumberTheory.Padics.DyadicUnits
 import TauCeti.NumberTheory.Padics.ExpLog
 import TauCeti.NumberTheory.Padics.UnitsDecomposition.Basic
@@ -61,7 +62,7 @@ At `p = 2` the modulus `q = 4` cannot be lowered to `2`: `-1` has order two, so
 
 public section
 
-open NormedSpace
+open NormedSpace ValuativeRel
 
 namespace TauCeti
 
@@ -130,101 +131,108 @@ private theorem norm_q_mul_le (s : ℤ_[p]) :
 
 /-! ### The logarithm on `1 + qℤ_p` -/
 
-/-- `log u / q` for `u ∈ 1 + qℤ_p`, as an element of `ℤ_[p]`. -/
-private noncomputable def logDivQ (u : unitsPrincipal p (padicUnitsDepth p)) : ℤ_[p] :=
-  ⟨log ((u : ℤ_[p]ˣ) : ℚ_[p]) / (p : ℚ_[p]) ^ padicUnitsDepth p, by
-    rw [PadicInt.mem_subring_iff, norm_div,
-      Padic.norm_log one_lt_sub_one_mul_padicUnitsDepth (norm_coe_sub_one_le u), norm_q,
-      div_le_one (zpow_pos (by exact_mod_cast hp.out.pos) _)]
-    exact norm_coe_sub_one_le u⟩
-
-private theorem coe_logDivQ (u : unitsPrincipal p (padicUnitsDepth p)) :
-    (logDivQ u : ℚ_[p]) = log ((u : ℤ_[p]ˣ) : ℚ_[p]) / (p : ℚ_[p]) ^ padicUnitsDepth p :=
-  rfl
-
-/-- `exp (q s)` for `s ∈ ℤ_[p]`, as an element of `1 + qℤ_p`. -/
-private noncomputable def expMulQ (s : ℤ_[p]) : unitsPrincipal p (padicUnitsDepth p) :=
-  have hle : ‖exp ((p : ℚ_[p]) ^ padicUnitsDepth p * s) - 1‖ ≤
-      (p : ℝ) ^ (-(padicUnitsDepth p : ℤ)) :=
-    (Padic.norm_exp_sub_one one_lt_sub_one_mul_padicUnitsDepth (norm_q_mul_le s)).trans_le
-      (norm_q_mul_le s)
-  have hlt : ‖exp ((p : ℚ_[p]) ^ padicUnitsDepth p * s) - 1‖ < ‖(1 : ℚ_[p])‖ := by
-    rw [norm_one]
-    exact hle.trans_lt (zpow_lt_one_of_neg₀ (by exact_mod_cast hp.out.one_lt)
-      (by simpa using padicUnitsDepth_pos p))
-  have hnorm : ‖exp ((p : ℚ_[p]) ^ padicUnitsDepth p * s)‖ = 1 :=
-    (Padic.norm_eq_of_norm_sub_lt_right hlt).trans norm_one
-  let z : ℤ_[p] := ⟨_, (PadicInt.mem_subring_iff p).mpr hnorm.le⟩
-  ⟨(PadicInt.isUnit_iff.mpr (PadicInt.norm_def.trans hnorm : ‖z‖ = 1)).unit, by
-    rw [mem_unitsPrincipal_iff_norm, ← norm_coe_sub_one]
-    exact hle⟩
-
-private theorem coe_expMulQ (s : ℤ_[p]) :
-    (((expMulQ s : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) = exp ((p : ℚ_[p]) ^ padicUnitsDepth p * s) :=
-  rfl
-
-private theorem expMulQ_logDivQ (u : unitsPrincipal p (padicUnitsDepth p)) :
-    expMulQ (logDivQ u) = u := by
-  refine Subtype.ext (Units.ext (PadicInt.ext ?_))
-  rw [coe_expMulQ, coe_logDivQ, mul_div_cancel₀ _ q_ne_zero,
-    Padic.exp_log one_lt_sub_one_mul_padicUnitsDepth (norm_coe_sub_one_le u)]
-
-private theorem logDivQ_expMulQ (s : ℤ_[p]) : logDivQ (expMulQ s) = s := by
-  refine PadicInt.ext ?_
-  rw [coe_logDivQ, coe_expMulQ,
-    Padic.log_exp one_lt_sub_one_mul_padicUnitsDepth (norm_q_mul_le s),
-    mul_div_cancel_left₀ _ q_ne_zero]
-
-private theorem logDivQ_mul (u v : unitsPrincipal p (padicUnitsDepth p)) :
-    logDivQ (u * v) = logDivQ u + logDivQ v := by
-  refine PadicInt.ext ?_
-  simp only [coe_logDivQ, Subgroup.coe_mul, Units.val_mul, PadicInt.coe_mul, PadicInt.coe_add,
-    Padic.log_mul one_lt_sub_one_mul_padicUnitsDepth (norm_coe_sub_one_le u)
-      (norm_coe_sub_one_le v), add_div]
-
-private theorem continuous_logDivQ : Continuous (logDivQ (p := p)) := by
-  let ι : ℤ_[p]ˣ →* ℚ_[p]ˣ := Units.map PadicInt.Coe.ringHom.toMonoidHom
-  have hι : Continuous ι := Continuous.units_map _ continuous_subtype_val
-  have hmem (u : unitsPrincipal p (padicUnitsDepth p)) :
-      ι u ∈ unitFiltration ℚ_[p] (padicUnitsDepth p) :=
-    (Padic.mem_unitFiltration_iff_norm_sub_one_le (padicUnitsDepth_pos p).ne').mpr
-      (norm_coe_sub_one_le u)
-  exact Continuous.subtype_mk (((continuous_log_unitFiltration p (K := ℚ_[p])
-    (padicUnitsDepth_pos p)).comp ((hι.comp continuous_subtype_val).subtype_mk hmem)).div_const _)
-    _
+/-- An element within `p ^ (-k)` of `1` has norm `1`. -/
+private theorem norm_eq_one_of_norm_sub_one_le {x : ℚ_[p]}
+    (hx : ‖x - 1‖ ≤ (p : ℝ) ^ (-(padicUnitsDepth p : ℤ))) : ‖x‖ = 1 := by
+  refine (Padic.norm_eq_of_norm_sub_lt_right (hx.trans_lt ?_)).trans norm_one
+  rw [norm_one]
+  exact zpow_lt_one_of_neg₀ (by exact_mod_cast hp.out.one_lt)
+    (by simpa using padicUnitsDepth_pos p)
 
 variable (p) in
-/-- The logarithm on `1 + qℤ_p`, as a multiplicative equivalence. -/
-private noncomputable def unitsPrincipalLogMulEquiv :
-    unitsPrincipal p (padicUnitsDepth p) ≃* Multiplicative ℤ_[p] where
-  toFun u := .ofAdd (logDivQ u)
-  invFun s := expMulQ s.toAdd
-  left_inv := expMulQ_logDivQ
-  right_inv s := by simp only [logDivQ_expMulQ, ofAdd_toAdd]
-  map_mul' u v := by simp only [logDivQ_mul, ofAdd_add]
+/-- The principal units `1 + qℤ_p` are the unit filtration `U(ℚ_p,k)`, `q = p ^ k`. -/
+private noncomputable def unitsPrincipalEquivUnitFiltration :
+    unitsPrincipal p (padicUnitsDepth p) ≃ₜ* unitFiltration ℚ_[p] (padicUnitsDepth p) :=
+  have hmem (x : unitFiltration ℚ_[p] (padicUnitsDepth p)) :
+      ‖((x : ℚ_[p]ˣ) : ℚ_[p]) - 1‖ ≤ (p : ℝ) ^ (-(padicUnitsDepth p : ℤ)) :=
+    (Padic.mem_unitFiltration_iff_norm_sub_one_le (padicUnitsDepth_pos p).ne').mp x.2
+  let e : unitsPrincipal p (padicUnitsDepth p) ≃* unitFiltration ℚ_[p] (padicUnitsDepth p) :=
+    { toFun u := ⟨Units.map PadicInt.Coe.ringHom.toMonoidHom u,
+        (Padic.mem_unitFiltration_iff_norm_sub_one_le (padicUnitsDepth_pos p).ne').mpr
+          (norm_coe_sub_one_le u)⟩
+      invFun x := ⟨PadicInt.mkUnits (norm_eq_one_of_norm_sub_one_le (hmem x)), by
+        rw [mem_unitsPrincipal_iff_norm, ← norm_coe_sub_one]
+        exact hmem x⟩
+      left_inv _ := Subtype.ext (Units.ext rfl)
+      right_inv _ := Subtype.ext (Units.ext rfl)
+      map_mul' _ _ := rfl }
+  have he : Continuous e :=
+    ((Continuous.units_map _ continuous_subtype_val).comp continuous_subtype_val).subtype_mk _
+  -- A continuous bijection from a compact space to a Hausdorff space is a homeomorphism.
+  ContinuousMulEquiv.mk e he (he.continuous_symm_of_equiv_compact_to_t2 (f := e.toEquiv))
+
+/-- `x / q` for `x ∈ 𝓂 ^ k`, as an element of `ℤ_[p]`. -/
+private noncomputable def divQ (x : (𝓂[ℚ_[p]] ^ padicUnitsDepth p : Ideal 𝒪[ℚ_[p]])) : ℤ_[p] :=
+  ⟨((x : 𝒪[ℚ_[p]]) : ℚ_[p]) / (p : ℚ_[p]) ^ padicUnitsDepth p, by
+    rw [PadicInt.mem_subring_iff, norm_div, norm_q,
+      div_le_one (zpow_pos (by exact_mod_cast hp.out.pos) _)]
+    exact TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le.mp x.2⟩
+
+private theorem coe_divQ (x : (𝓂[ℚ_[p]] ^ padicUnitsDepth p : Ideal 𝒪[ℚ_[p]])) :
+    (divQ x : ℚ_[p]) = ((x : 𝒪[ℚ_[p]]) : ℚ_[p]) / (p : ℚ_[p]) ^ padicUnitsDepth p :=
+  rfl
+
+/-- `q s` for `s ∈ ℤ_[p]`, as an element of `𝓂 ^ k`. -/
+private noncomputable def mulQ (s : ℤ_[p]) : (𝓂[ℚ_[p]] ^ padicUnitsDepth p : Ideal 𝒪[ℚ_[p]]) :=
+  ⟨⟨(p : ℚ_[p]) ^ padicUnitsDepth p * s, by
+    rw [Padic.integerRing_eq_subring, PadicInt.mem_subring_iff]
+    exact (norm_q_mul_le s).trans
+      (zpow_le_one_of_nonpos₀ (by exact_mod_cast hp.out.one_lt.le) (by simp))⟩,
+    TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le.mpr (norm_q_mul_le s)⟩
+
+private theorem coe_mulQ (s : ℤ_[p]) :
+    ((mulQ s : 𝒪[ℚ_[p]]) : ℚ_[p]) = (p : ℚ_[p]) ^ padicUnitsDepth p * s :=
+  rfl
+
+variable (p) in
+/-- Division by `q = p ^ k` identifies the additive group `𝓂 ^ k` of `ℚ_[p]` with `ℤ_p`. -/
+private noncomputable def maximalIdealPowEquiv :
+    Multiplicative (𝓂[ℚ_[p]] ^ padicUnitsDepth p : Ideal 𝒪[ℚ_[p]]) ≃ₜ*
+      Multiplicative ℤ_[p] where
+  toFun x := .ofAdd (divQ x.toAdd)
+  invFun s := .ofAdd (mulQ s.toAdd)
+  left_inv x := by
+    refine Multiplicative.toAdd.injective (Subtype.ext (Subtype.ext ?_))
+    rw [toAdd_ofAdd, coe_mulQ, toAdd_ofAdd, coe_divQ, mul_div_cancel₀ _ q_ne_zero]
+  right_inv s := by
+    refine Multiplicative.toAdd.injective (PadicInt.ext ?_)
+    rw [toAdd_ofAdd, coe_divQ, toAdd_ofAdd, coe_mulQ, mul_div_cancel_left₀ _ q_ne_zero]
+  map_mul' x y := by
+    refine Multiplicative.toAdd.injective (PadicInt.ext ?_)
+    simp only [toAdd_mul, toAdd_ofAdd, PadicInt.coe_add, coe_divQ, Submodule.coe_add,
+      Subring.coe_add, add_div]
+  continuous_toFun := continuous_ofAdd.comp <| Continuous.subtype_mk
+    ((continuous_subtype_val.comp (continuous_subtype_val.comp continuous_toAdd)).div_const _) _
+  continuous_invFun := by
+    refine continuous_ofAdd.comp (Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _)
+    exact continuous_const.mul
+      ((continuous_subtype_val : Continuous ((↑) : ℤ_[p] → ℚ_[p])).comp continuous_toAdd)
 
 variable (p) in
 /-- **The `p`-adic logarithm on `1 + qℤ_p`.** The logarithm identifies the principal units
 `1 + qℤ_p`, `q = p ^ padicUnitsDepth p`, with `ℤ_p` as topological groups by `u ↦ log u / q`;
-the inverse is `s ↦ exp (q s)`. -/
+the inverse is `s ↦ exp (q s)`. It is the deep-unit logarithm `TauCeti.deepUnitExpLogEquiv`
+on `U(ℚ_p,k)`, followed by division by `q`. -/
 noncomputable def unitsPrincipalLogEquiv :
     unitsPrincipal p (padicUnitsDepth p) ≃ₜ* Multiplicative ℤ_[p] :=
-  have he : Continuous (unitsPrincipalLogMulEquiv p) := continuous_ofAdd.comp continuous_logDivQ
-  -- A continuous bijection from a compact space to a Hausdorff space is a homeomorphism.
-  ContinuousMulEquiv.mk (unitsPrincipalLogMulEquiv p) he
-    (he.continuous_symm_of_equiv_compact_to_t2 (f := (unitsPrincipalLogMulEquiv p).toEquiv))
+  ((unitsPrincipalEquivUnitFiltration p).trans (deepUnitExpLogEquiv ℚ_[p]
+    (by rw [absoluteRamificationIndex_padic]; exact one_lt_sub_one_mul_padicUnitsDepth))).trans
+    (maximalIdealPowEquiv p)
 
 @[simp]
 theorem coe_unitsPrincipalLogEquiv_apply (u : unitsPrincipal p (padicUnitsDepth p)) :
     ((unitsPrincipalLogEquiv p u).toAdd : ℚ_[p]) =
-      log (((u : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) / (p : ℚ_[p]) ^ padicUnitsDepth p :=
-  (rfl)
+      log (((u : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) / (p : ℚ_[p]) ^ padicUnitsDepth p := by
+  rw [unitsPrincipalLogEquiv, ContinuousMulEquiv.trans_apply, ContinuousMulEquiv.trans_apply]
+  exact congrArg (· / (p : ℚ_[p]) ^ padicUnitsDepth p) (coe_deepUnitExpLogEquiv_apply _ _)
 
 @[simp]
 theorem coe_unitsPrincipalLogEquiv_symm_apply (s : Multiplicative ℤ_[p]) :
     ((((unitsPrincipalLogEquiv p).symm s : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) =
-      exp ((p : ℚ_[p]) ^ padicUnitsDepth p * s.toAdd) :=
-  (rfl)
+      exp ((p : ℚ_[p]) ^ padicUnitsDepth p * s.toAdd) := by
+  rw [unitsPrincipalLogEquiv, ContinuousMulEquiv.symm_trans_apply,
+    ContinuousMulEquiv.symm_trans_apply]
+  exact coe_deepUnitExpLogEquiv_symm_apply _ _
 
 /-! ### The generator `γ = exp q` -/
 
@@ -393,7 +401,7 @@ theorem coe_padicIntUnitsEquivZModUnitsProd_apply_snd (x : ℤ_[p]ˣ) :
     ((padicIntUnitsEquivZModUnitsProd p x).2.toAdd : ℚ_[p]) =
       log ((((padicUnitsSection p (PadicInt.unitsToZModPow (padicUnitsDepth p) x))⁻¹ * x :
         ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) / (p : ℚ_[p]) ^ padicUnitsDepth p :=
-  (rfl)
+  coe_unitsPrincipalLogEquiv_apply _
 
 @[simp]
 theorem padicIntUnitsEquivZModUnitsProd_symm_apply
