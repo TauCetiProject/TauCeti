@@ -41,6 +41,10 @@ how Lazard's lifting theorem passes valuation-invariance from the base to the cy
   at `α`, followed by the root multiplicity of `β` in the Lazard evaluation of `g` at `α`.
 * `MvPolynomial.lazardEval_snoc`: the Lazard evaluation of `f` at `(α, β)` is the trailing
   coefficient of the Taylor expansion at `β` of the Lazard evaluation of `g` at `α`.
+* `MvPolynomial.lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_map`,
+  `MvPolynomial.lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_map_iff`: the Lazard
+  evaluation over `α` is the ordinary fibre of `f` over `α` exactly when that fibre is nonzero or
+  `f = 0`.
 * `MvPolynomial.coeff_lazardEval_optionEquivRight_rename_finSuccEquivLast`: the coefficients of
   the Lazard evaluation of `g` at `α` are Taylor coefficients of `f` at `(α, 0)`.
 * `MvPolynomial.lazardValuation_map_constantCoeff_eq_iff`: `0` is not a root of the Lazard
@@ -100,6 +104,29 @@ theorem lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_zero_iff (α : Fi
       f = 0 := by
   rw [lazardEval_eq_zero_iff, EmbeddingLike.map_eq_zero_iff,
     rename_eq_zero_iff_of_injective _ finSuccEquivLast.injective]
+
+/-- **Agreement with ordinary specialization over a base point.** Where the ordinary fibre of `f`
+over `α`, the univariate polynomial `t ↦ f (Fin.snoc α t)`, is nonzero, the Lazard evaluation of
+`f` over `α` is that fibre. -/
+theorem lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_map {α : Fin n → R}
+    (h : (optionEquivLeft R (Fin n) (rename finSuccEquivLast f)).map (eval α) ≠ 0) :
+    (optionEquivRight R (Fin n) (rename finSuccEquivLast f)).lazardEval (Polynomial.C ∘ α) =
+      (optionEquivLeft R (Fin n) (rename finSuccEquivLast f)).map (eval α) := by
+  rw [← eval_optionEquivRight] at h ⊢
+  exact lazardEval_eq_eval h
+
+/-- The Lazard evaluation of `f` over a base point `α` is the ordinary fibre of `f` over `α`
+exactly when that fibre is nonzero or `f` is zero. A nonzero `f` whose fibre over `α` vanishes
+identically has a nonzero Lazard evaluation there. -/
+theorem lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_map_iff {α : Fin n → R} :
+    (optionEquivRight R (Fin n) (rename finSuccEquivLast f)).lazardEval (Polynomial.C ∘ α) =
+        (optionEquivLeft R (Fin n) (rename finSuccEquivLast f)).map (eval α) ↔
+      (optionEquivLeft R (Fin n) (rename finSuccEquivLast f)).map (eval α) ≠ 0 ∨ f = 0 := by
+  refine ⟨fun h ↦ (ne_or_eq _ 0).imp_right fun h0 ↦ ?_, fun h ↦ ?_⟩
+  · rwa [h0, lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_zero_iff] at h
+  · obtain h | rfl := h
+    · exact lazardEval_optionEquivRight_rename_finSuccEquivLast_eq_map h
+    · simp
 
 /-- **Lazard evaluation at a point over a base point.** The exponents removed by Lazard
 evaluation of `f` at `Fin.snoc α β` are those removed over the base point `α`, after moving the
