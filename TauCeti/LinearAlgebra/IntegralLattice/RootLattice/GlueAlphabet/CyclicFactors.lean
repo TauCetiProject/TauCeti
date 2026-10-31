@@ -92,13 +92,6 @@ theorem glueCyclicFactors_E7 : E7.glueCyclicFactors = [2] :=
 theorem glueCyclicFactors_E8 : E8.glueCyclicFactors = [] :=
   (rfl)
 
-/-- Prepending a cyclic factor: a product of cyclic groups with orders `a :: l` splits off its
-first factor. -/
-private noncomputable def zmodPiConsAddEquiv (a : ℕ) (l : List ℕ) :
-    ZMod a × ((i : Fin l.length) → ZMod l[i]) ≃+
-      ((i : Fin (a :: l).length) → ZMod (a :: l)[i]) :=
-  (Fin.consLinearEquiv ℤ fun i : Fin (l.length + 1) ↦ ZMod (a :: l)[i]).toAddEquiv
-
 /-- The glue alphabet of a component, placed in front of a product of cyclic groups with orders
 `L`, is the product of cyclic groups with orders `t.glueCyclicFactors ++ L`.  The tail `L` lets
 families of components be treated by induction, and the free list `F` lets the factors of `Dₙ` be
@@ -107,22 +100,25 @@ private theorem nonempty_addEquiv_glueAlphabet_prod (t : DynkinType) (ht : t.IsS
     (L F : List ℕ) (hF : t.glueCyclicFactors ++ L = F) :
     Nonempty (t.glueAlphabet ht × ((i : Fin L.length) → ZMod L[i]) ≃+
       ((i : Fin F.length) → ZMod F[i])) := by
+  -- Prepending a cyclic factor of order `a` to a product of cyclic groups with orders `l`.
+  have cons (a : ℕ) (l : List ℕ) : ZMod a × ((i : Fin l.length) → ZMod l[i]) ≃+
+      ((i : Fin (a :: l).length) → ZMod (a :: l)[i]) :=
+    (Fin.consLinearEquiv ℤ fun i : Fin (l.length + 1) ↦ ZMod (a :: l)[i]).toAddEquiv
   cases t with
-  | A n => subst hF; exact ⟨zmodPiConsAddEquiv (n + 1) L⟩
+  | A n => subst hF; exact ⟨cons (n + 1) L⟩
   | D n =>
     rcases Nat.even_or_odd n with hn | hn
     · rw [glueCyclicFactors_D_of_even hn] at hF
       subst hF
       rw [glueAlphabet_D_of_even n ht hn]
       exact ⟨AddEquiv.prodAssoc.trans
-        (((AddEquiv.refl (ZMod 2)).prodCongr (zmodPiConsAddEquiv 2 L)).trans
-          (zmodPiConsAddEquiv 2 (2 :: L)))⟩
+        (((AddEquiv.refl (ZMod 2)).prodCongr (cons 2 L)).trans (cons 2 (2 :: L)))⟩
     · rw [glueCyclicFactors_D_of_odd hn] at hF
       subst hF
       rw [glueAlphabet_D_of_odd n ht hn]
-      exact ⟨zmodPiConsAddEquiv 4 L⟩
-  | E6 => subst hF; exact ⟨zmodPiConsAddEquiv 3 L⟩
-  | E7 => subst hF; exact ⟨zmodPiConsAddEquiv 2 L⟩
+      exact ⟨cons 4 L⟩
+  | E6 => subst hF; exact ⟨cons 3 L⟩
+  | E7 => subst hF; exact ⟨cons 2 L⟩
   | E8 =>
     subst hF
     have : Unique (E8.glueAlphabet ht) := inferInstanceAs (Unique (ZMod 1))
