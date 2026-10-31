@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.Algebra.Polynomial.Degree.Operations
 import TauCeti.Algebra.Polynomial.Reverse
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Resultant
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
@@ -21,10 +24,11 @@ Let `R` be a commutative ring, `P B : R[X]` with `P.coeff 0 = 1`, `P.natDegree �
 
 a resultant over `R[T]` with the degree bounds `n` and `m` (`Polynomial.colemanDBounded`).
 If `P = ∏ (1 - αᵢ T)` is a product of `n` linear factors, then `reflect n P = ∏ (X - αᵢ)` and
-`D_(n,m)(B, P) = ∏ (1 - B(αᵢ) T)` (`Polynomial.colemanDBounded_prod_one_sub_C_mul_X`). Thus, for
-`P = det (1 - T A)` with `A` an `n × n` matrix, the transform is meant to compute
-`det (1 - T B(A))` from `P` alone, without access to `A` or to its eigenvalues. This is the
-polynomial form of the spectral mapping for Fredholm determinants of compact operators.
+`D_(n,m)(B, P) = ∏ (1 - B(αᵢ) T)` (`Polynomial.colemanDBounded_prod_one_sub_C_mul_X`). For
+`P = det (1 - T A)` with `A` an `n × n` matrix over any commutative ring, the transform computes
+`det (1 - T B(A))` from `P` alone, without access to `A` or to its eigenvalues
+(`Matrix.colemanDBounded_charpolyRev`). This is the polynomial form of the spectral mapping
+for Fredholm determinants of compact operators.
 
 The rank is part of the data. The reversal is taken in the specified degree `n`, not in the
 actual degree of `P`, so that zero eigenvalues are kept: raising the rank by one multiplies by
@@ -44,6 +48,8 @@ degree of `B` (`Polynomial.colemanDBounded_of_natDegree_le`).
   of rank `n` has degree at most `n` and constant coefficient one.
 * `Polynomial.colemanDBounded_prod_one_sub_C_mul_X`: the transform of a product of linear
   factors.
+* `Matrix.colemanDBounded_charpolyRev`: finite matrix spectral mapping,
+  `D_(n,m)(B, det (1 - T A)) = det (1 - T B(A))` for an `n × n` matrix `A`.
 * `Polynomial.colemanDBounded_X_left`, `Polynomial.colemanDBounded_zero_left`,
   `Polynomial.colemanDBounded_one_right`: the values `D(T, P) = P`, `D(0, P) = 1` and
   `D(B, 1) = (1 - B(0) T) ^ n`.
@@ -246,3 +252,22 @@ theorem colemanDBounded_prod_one_sub_C_mul_X {ι : Type*} (s : Finset ι) (α : 
       (by simpa using Finset.sum_le_sum fun i _ ↦ natDegree_one_sub_C_mul_X_le (α i))
 
 end Polynomial
+
+namespace Matrix
+
+open Polynomial
+
+/-- **Finite matrix spectral mapping.** For an `n × n` matrix `A` and `B` of degree at most `m`,
+Coleman's transform of rank `n` of `det (1 - T A)` is `det (1 - T B(A))`. The rank must be the
+dimension: a zero eigenvalue of `A` contributes the factor `1 - B(0) T` on the right even though it
+is invisible in `det (1 - T A)`. -/
+theorem colemanDBounded_charpolyRev {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    (A : Matrix ι ι R) {B : R[X]} {m : ℕ} (hB : B.natDegree ≤ m) :
+    colemanDBounded B A.charpolyRev (Fintype.card ι) m = (aeval A B).charpolyRev := by
+  -- The matrix in `det (1 - T B(A))` is `1 - T B(X)` evaluated at `A`, read over `R[T]`.
+  have hmat : aeval (A.map C) (1 - C X * B.map C) = 1 - (X : R[X]) • (aeval A B).map C := by
+    simp [aeval_map, Algebra.smul_def]
+  rw [colemanDBounded, charpolyRev_eq_reflect, reflect_reflect, ← charpoly_map,
+    ← det_aeval_eq_resultant _ _ (natDegree_one_sub_C_X_mul_map_le hB), hmat, charpolyRev]
+
+end Matrix

@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Weighted
 public import Mathlib.NumberTheory.ModularForms.QExpansion
+public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.E2.Defs
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.SpecialFunctions.Exp.Summable
+import TauCeti.Analysis.SpecialFunctions.Exp.LatticeSum
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.ModularForms.Basic
@@ -54,12 +56,19 @@ as in weight `k ≥ 3`, minus the regularization, `2 ζ(2)` being the value at `
 slash action this gives the value at `i∞` of every `SL(2, ℤ)`-translate, hence the constant terms
 of `G₂^W` at all cusps.
 
+The rows `∑_{d ∈ ℤ} W(c, d) (c z + d)⁻²` of the formal series decay exponentially in `|c|`, since
+grouped by the residue of `d` they are values of `P(w) = ∑_n (w + n)⁻²` at points with imaginary
+part `c Im z / N`. Their sum is `G₂^W` plus the regularization `N⁻² (∑_a W(a)) G₂`
+(`TauCeti.EisensteinSeries.tsum_weightedG2Row`), where `G₂` is summed along the same rows. This is
+how `G₂^W` is compared with series built from Mathlib's `EisensteinSeries.G2`.
+
 ## Main definitions
 
 * `TauCeti.EisensteinSeries.weightedG2`: the weight-two series weighted by `W`.
 * `TauCeti.EisensteinSeries.weightedG2MF`: it is a modular form of weight two and level `Γ(N)`.
 * `TauCeti.EisensteinSeries.weightedG2MFₗ`: the same, as a linear map in the weight.
 * `TauCeti.EisensteinSeries.weightedG2ₗ`: the series as a linear map to functions on `ℍ`.
+* `TauCeti.EisensteinSeries.weightedG2Row`: the row `∑_d W(c, d) (c z + d)⁻²` of the series.
 
 ## Main results
 
@@ -85,6 +94,11 @@ of `G₂^W` at all cusps.
   values of `℘` at the same division point.
 * `TauCeti.EisensteinSeries.weightedG2_eq_sum_single`: the series as a combination of
   single-residue series.
+* `TauCeti.EisensteinSeries.summable_weightedG2Row`: the rows form a summable family.
+* `TauCeti.EisensteinSeries.hasSum_weightedG2Row`: for a weight of total mass zero, `G₂^W` is the
+  sum of its rows.
+* `TauCeti.EisensteinSeries.tsum_weightedG2Row`: for every weight, the rows sum to
+  `G₂^W + N⁻² (∑_a W(a)) G₂`.
 
 ## References
 
@@ -849,5 +863,193 @@ theorem weightedG2_eq_sum_single (W : (Fin 2 → ZMod N) → ℂ) :
     weightedG2 W = ∑ a, W a • weightedG2 (Pi.single a (1 : ℂ)) := by
   conv_lhs => rw [pi_eq_sum_univ' W, ← weightedG2ₗ_apply, map_sum]
   simp only [map_smul, weightedG2ₗ_apply]
+
+/-! ### The series along rows -/
+
+/-- The row `c` of the weight-two series weighted by `W`: `∑_{d ∈ ℤ} W(c, d) (c z + d)⁻²`. -/
+def weightedG2Row (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) (c : ℤ) : ℂ :=
+  ∑' d : ℤ, W ((↑) ∘ ![c, d]) * eisSummand 2 ![c, d] z
+
+omit [NeZero N] in
+/-- The defining series of a row. -/
+lemma weightedG2Row_def (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) (c : ℤ) :
+    weightedG2Row W z c = ∑' d : ℤ, W ((↑) ∘ ![c, d]) * eisSummand 2 ![c, d] z :=
+  (rfl)
+
+/-- Each row converges absolutely: the terms `W(c, d) (c z + d)⁻²` of the row `c` are summable. -/
+theorem summable_weightedG2Row_terms (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) (c : ℤ) :
+    Summable fun d : ℤ ↦ W ((↑) ∘ ![c, d]) * eisSummand 2 ![c, d] z := by
+  have h2 : Summable fun d : ℤ ↦ ‖eisSummand 2 ![c, d] z‖ :=
+    summable_norm_iff.mpr <| (linear_right_summable (z : ℂ) c (k := 2) le_rfl).congr
+      fun d ↦ by simp [eisSummand, _root_.zpow_neg]
+  refine (h2.mul_left (∑ b, ‖W b‖)).of_norm_bounded fun d ↦ ?_
+  rw [norm_mul]
+  gcongr
+  exact Finset.single_le_sum (f := fun b ↦ ‖W b‖) (fun _ _ ↦ norm_nonneg _) (Finset.mem_univ _)
+
+omit [NeZero N] in
+/-- The rows are linear in the weight: the zero weight. -/
+@[simp]
+lemma weightedG2Row_zero : weightedG2Row (0 : (Fin 2 → ZMod N) → ℂ) = 0 := by
+  ext z c
+  simp [weightedG2Row]
+
+/-- The rows are linear in the weight: sums. -/
+lemma weightedG2Row_add (W W' : (Fin 2 → ZMod N) → ℂ) :
+    weightedG2Row (W + W') = weightedG2Row W + weightedG2Row W' := by
+  ext z c
+  simp only [weightedG2Row, Pi.add_apply, add_mul]
+  exact (summable_weightedG2Row_terms W z c).tsum_add (summable_weightedG2Row_terms W' z c)
+
+omit [NeZero N] in
+/-- The rows are linear in the weight: scalar multiples. -/
+@[simp]
+lemma weightedG2Row_smul (a : ℂ) (W : (Fin 2 → ZMod N) → ℂ) :
+    weightedG2Row (a • W) = a • weightedG2Row W := by
+  ext z c
+  simp [weightedG2Row, ← tsum_mul_left, mul_assoc]
+
+/-- A row grouped by the residue of `d` modulo `N`:
+`∑_d W(c, d) (c z + d)⁻² = N⁻² ∑_{b mod N} W(c, b) P((c z + b) / N)`. -/
+private lemma weightedG2Row_eq_sum_rowSum (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) (c : ℤ) :
+    weightedG2Row W z c = ((N : ℂ) ^ 2)⁻¹ *
+      ∑ b : ZMod N, W ((↑) ∘ ![c, (b.val : ℤ)]) * rowSum ((c * z + b.val) / N) := by
+  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  refine ((summable_weightedG2Row_terms W z c).hasSum.sum_zmod_val_sub N).unique ?_
+  rw [Finset.mul_sum]
+  refine hasSum_sum fun b _ ↦ ?_
+  have h := ((Equiv.neg ℤ).hasSum_iff.mpr (hasSum_rowSum ((c * z + b.val) / N))).mul_left
+    (((N : ℂ) ^ 2)⁻¹ * W ((↑) ∘ ![c, (b.val : ℤ)]))
+  convert h using 1
+  · ext y
+    have hW : W ((↑) ∘ ![c, (b.val : ℤ) - N * y]) = W ((↑) ∘ ![c, (b.val : ℤ)]) := by
+      congr 1
+      ext i
+      fin_cases i <;> simp
+    simp only [Function.comp_apply, Equiv.neg_apply, hW, eisSummand, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val_fin_one, Int.cast_neg, Int.cast_sub, Int.cast_mul,
+      Int.cast_natCast]
+    rw [_root_.zpow_neg, zpow_ofNat]
+    field_simp
+    ring
+  · ring
+
+/-- Away from `c = 0` the rows decay exponentially in `|c|`: the points `(c z + b) / N` have
+imaginary part `c Im z / N`. -/
+private lemma norm_weightedG2Row_le (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) {c : ℤ} (hc : c ≠ 0) :
+    ‖weightedG2Row W z c‖ ≤ ‖((N : ℂ) ^ 2)⁻¹‖ * (N * ((∑ a, ‖W a‖) *
+      (4 * π ^ 2 / (1 - Real.exp (-2 * π * (z.im / N))) ^ 2))) *
+        Real.exp (-(2 * π * (z.im / N) * |(c : ℝ)|)) := by
+  have hN : (0 : ℝ) < N := Nat.cast_pos.mpr (NeZero.pos N)
+  have hτ : 0 < z.im / N := div_pos z.im_pos hN
+  have him (b : ZMod N) : |(((c : ℂ) * z + b.val) / N).im| = |(c : ℝ)| * (z.im / N) := by
+    have h : (((c : ℂ) * z + b.val) / N).im = c * (z.im / N) := by
+      simp only [Complex.div_natCast_im, Complex.add_im, Complex.mul_im, Complex.intCast_re,
+        Complex.intCast_im, Complex.natCast_im, UpperHalfPlane.coe_im, zero_mul, add_zero]
+      ring
+    rw [h, abs_mul, abs_of_pos hτ]
+  have hrow (b : ZMod N) : ‖rowSum ((c * z + b.val) / N)‖ ≤
+      4 * π ^ 2 / (1 - Real.exp (-2 * π * (z.im / N))) ^ 2 *
+        Real.exp (-(2 * π * (z.im / N) * |(c : ℝ)|)) := by
+    have h1 : z.im / N ≤ |(((c : ℂ) * z + b.val) / N).im| := by
+      rw [him]
+      exact le_mul_of_one_le_left hτ.le (by exact_mod_cast Int.one_le_abs hc)
+    refine (norm_rowSum_le_of_le_abs_im hτ h1).trans (le_of_eq ?_)
+    rw [him]
+    ring_nf
+  rw [weightedG2Row_eq_sum_rowSum, norm_mul, mul_assoc]
+  gcongr
+  refine (norm_sum_le _ _).trans ?_
+  calc ∑ b : ZMod N, ‖W ((↑) ∘ ![c, (b.val : ℤ)]) * rowSum ((c * z + b.val) / N)‖
+      ≤ ∑ _b : ZMod N, (∑ a, ‖W a‖) * (4 * π ^ 2 / (1 - Real.exp (-2 * π * (z.im / N))) ^ 2 *
+          Real.exp (-(2 * π * (z.im / N) * |(c : ℝ)|))) := by
+        refine Finset.sum_le_sum fun b _ ↦ ?_
+        rw [norm_mul]
+        gcongr
+        · exact Finset.single_le_sum (f := fun a ↦ ‖W a‖) (fun _ _ ↦ norm_nonneg _)
+            (Finset.mem_univ _)
+        · exact hrow b
+    _ = _ := by
+        rw [Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul]
+        ring
+
+/-- **The rows of a weighted weight-two series are summable**, for every weight: away from
+`c = 0` they decay like `e^(-2π |c| Im z / N)`. -/
+theorem summable_weightedG2Row (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) :
+    Summable (weightedG2Row W z) := by
+  have hτ : 0 < 2 * π * (z.im / N) := by
+    have : (0 : ℝ) < N := Nat.cast_pos.mpr (NeZero.pos N)
+    positivity
+  refine ((summable_exp_neg_mul_abs_int hτ).mul_left (‖((N : ℂ) ^ 2)⁻¹‖ * (N * ((∑ a, ‖W a‖) *
+    (4 * π ^ 2 / (1 - Real.exp (-2 * π * (z.im / N))) ^ 2))))).of_norm_bounded_eventually ?_
+  filter_upwards [eventually_cofinite_ne 0] with c hc
+  exact norm_weightedG2Row_le W z hc
+
+/-- **A weighted weight-two series of total mass zero along rows**:
+`G₂^W(z) = ∑_{c ∈ ℤ} ∑_{d ∈ ℤ} W(c, d) (c z + d)⁻²`, the rows forming a summable family. -/
+theorem hasSum_weightedG2Row {W : (Fin 2 → ZMod N) → ℂ} (hW : ∑ a, W a = 0) (z : ℍ) :
+    HasSum (weightedG2Row W z) (weightedG2 W z) := by
+  have hR := summable_weightedG2Row W z
+  -- the sums over the boxes, grouped by the first coordinate, are finite sums of rows
+  have hbox := hasSum_weightedG2_of_sum_eq_zero hW z
+  rw [← (finTwoArrowEquiv ℤ).symm.hasSum_iff] at hbox
+  have hfib : HasSum (fun y : ℤ ↦ ∑ a : ZMod N, weightedG2Row W z ((a.val : ℤ) - N * y))
+      (weightedG2 W z) := by
+    refine hbox.prod_fiberwise fun y₀ ↦ ?_
+    refine (hasSum_sum fun a₀ _ ↦
+      (summable_weightedG2Row_terms W z _).hasSum.sum_zmod_val_sub N).congr_fun fun y₁ ↦ ?_
+    rw [Function.comp_apply, ← (finTwoArrowEquiv (ZMod N)).symm.sum_comp, Fintype.sum_prod_type]
+    refine Finset.sum_congr rfl fun a₀ _ ↦ Finset.sum_congr rfl fun a₁ _ ↦ ?_
+    have hfun : (fun i ↦ (((finTwoArrowEquiv (ZMod N)).symm (a₀, a₁) i).val : ℤ)) -
+        N • (finTwoArrowEquiv ℤ).symm (y₀, y₁) =
+          ![(a₀.val : ℤ) - N * y₀, (a₁.val : ℤ) - N * y₁] := by
+      ext i
+      fin_cases i <;> simp
+    have hW' : W ((finTwoArrowEquiv (ZMod N)).symm (a₀, a₁)) =
+        W ((↑) ∘ ![(a₀.val : ℤ) - N * y₀, (a₁.val : ℤ) - N * y₁]) := by
+      congr 1
+      ext i
+      fin_cases i <;> simp
+    rw [hfun, hW']
+  exact (hR.hasSum.sum_zmod_val_sub N).unique hfib ▸ hR.hasSum
+
+/-- **A weighted weight-two series along rows**, for every weight: the rows sum to
+`G₂^W(z) + N⁻² (∑_a W(a)) G₂(z)`, the regularization by Mathlib's `EisensteinSeries.G2` being
+undone. -/
+theorem tsum_weightedG2Row (W : (Fin 2 → ZMod N) → ℂ) (z : ℍ) :
+    ∑' c, weightedG2Row W z c = weightedG2 W z + ((N : ℂ) ^ 2)⁻¹ * (∑ a, W a) * G2 z := by
+  set m : ℂ := ((N : ℂ) ^ 2)⁻¹ * ∑ a, W a
+  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  have hmass : ∑ a, (W a - m) = 0 := by
+    rw [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fun, ZMod.card,
+      Fintype.card_fin, nsmul_eq_mul]
+    push_cast
+    simp only [m]
+    field_simp
+    ring
+  -- split off a constant weight, whose series vanishes and whose rows are those of `G₂`
+  have hconst : weightedG2 (fun _ : Fin 2 → ZMod N ↦ m) = 0 :=
+    weightedG2_eq_zero_of_forall_vecMul_eq fun _ _ ↦ rfl
+  have hG : weightedG2 (fun a ↦ W a - m) = weightedG2 W := by
+    have h := weightedG2_add (fun a ↦ W a - m) fun _ ↦ m
+    rw [hconst, add_zero] at h
+    rw [← h]
+    congr 1
+    ext a
+    simp
+  have h1 (c : ℤ) : weightedG2Row (1 : (Fin 2 → ZMod N) → ℂ) z c = e2Summand c z := by
+    simp [weightedG2Row_def, e2Summand]
+  have he2 : Summable fun c ↦ e2Summand c z := (summable_weightedG2Row 1 z).congr h1
+  have hsplit (c : ℤ) : weightedG2Row W z c =
+      weightedG2Row (fun a ↦ W a - m) z c + m * e2Summand c z := by
+    have hW : W = (fun a ↦ W a - m) + m • 1 := by
+      ext a
+      simp
+    conv_lhs => rw [hW]
+    rw [weightedG2Row_add, weightedG2Row_smul, Pi.add_apply, Pi.add_apply, Pi.smul_apply,
+      Pi.smul_apply, smul_eq_mul, h1]
+  rw [tsum_congr hsplit, (summable_weightedG2Row _ z).tsum_add (he2.mul_left m), tsum_mul_left,
+    (hasSum_weightedG2Row hmass z).tsum_eq, hG, G2,
+    tsum_eq_of_summable_unconditional (L := SummationFilter.symmetricIcc ℤ) he2]
 
 end TauCeti.EisensteinSeries

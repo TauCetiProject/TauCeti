@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Groupoid.ActionCategory
+public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Basic
 public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import Mathlib.Topology.IsLocalHomeomorph
 

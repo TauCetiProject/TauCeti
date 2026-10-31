@@ -130,8 +130,7 @@ Why `TauCeti.densityLength`, and not Mathlib's `ℝ≥0∞`-valued `Manifold.pat
 `Mathlib/Geometry/Manifold/Riemannian/PathELength.lean`, is the notion being instantiated is
 argued in `TauCeti/Analysis/Calculus/DensityLength.lean`. Should the Poincaré disc later be given
 a Riemannian structure, `TauCeti.isLeast_hyperbolicLength` is precisely the input needed to
-identify `hyperbolicDist` with `Manifold.riemannianEDist`, and this file should be refactored onto
-that API at that point.
+identify `hyperbolicDist` with `Manifold.riemannianEDist`.
 
 ## Main declarations
 

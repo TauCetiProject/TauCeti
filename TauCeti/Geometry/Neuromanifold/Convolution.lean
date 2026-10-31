@@ -20,7 +20,8 @@ is its sparse matrix: row `i` places `w j` in column `s * i + j`.
 These are realization maps, so the `realizedFunctions`, `parametrization`, `fiber`, and
 `parameterSetoid` APIs from `TauCeti.Geometry.Neuromanifold.Basic` apply directly.
 The bias-free parameters are exactly `Fin k → K`; the affine parameters are
-`(Fin k → K) × K`.
+`(Fin k → K) × K`; `affineConvolutionParameterEquiv` identifies these with
+`Fin k ⊕ Unit → K`, one parameter per filter position and one for the shared bias.
 
 The convention follows Vahid Shahverdi, *Algebraic Complexity and Neurovariety of
 Linear Convolutional Networks*, [arXiv:2401.16613v1](https://arxiv.org/abs/2401.16613v1),
@@ -86,6 +87,29 @@ theorem convolutionMatrix_apply_eq_zero (h : n = s * (m - 1) + k)
   simp [convolutionMatrix, ha]
 
 end Matrix
+
+/-- The parameters of an affine convolution, indexed by filter positions and one shared bias,
+form its filter and bias. -/
+def affineConvolutionParameterEquiv (K : Type*) (k : ℕ) :
+    (Fin k ⊕ Unit → K) ≃ (Fin k → K) × K :=
+  (Equiv.sumArrowEquivProdArrow (Fin k) Unit K).trans
+    ((Equiv.refl _).prodCongr (Equiv.funUnique Unit K))
+
+/-- The filter read off from affine-convolution parameters. -/
+@[simp] theorem affineConvolutionParameterEquiv_apply_fst (p : Fin k ⊕ Unit → K) (j : Fin k) :
+    (affineConvolutionParameterEquiv K k p).1 j = p (Sum.inl j) := (rfl)
+
+/-- The shared bias read off from affine-convolution parameters. -/
+@[simp] theorem affineConvolutionParameterEquiv_apply_snd (p : Fin k ⊕ Unit → K) :
+    (affineConvolutionParameterEquiv K k p).2 = p (Sum.inr ()) := (rfl)
+
+/-- Affine-convolution parameters at a filter position are the corresponding weight. -/
+@[simp] theorem affineConvolutionParameterEquiv_symm_apply_inl (p : (Fin k → K) × K)
+    (j : Fin k) : (affineConvolutionParameterEquiv K k).symm p (Sum.inl j) = p.1 j := (rfl)
+
+/-- The shared-bias parameter of an affine convolution is its bias. -/
+@[simp] theorem affineConvolutionParameterEquiv_symm_apply_inr (p : (Fin k → K) × K)
+    (u : Unit) : (affineConvolutionParameterEquiv K k).symm p (Sum.inr u) = p.2 := (rfl)
 
 variable [NonUnitalNonAssocSemiring K]
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomologySequenceLemmas
+public import TauCeti.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.Relative
 
@@ -29,9 +29,14 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
 
 ## Main declarations
 
+* `SSetPair.cochainComplexMap`: the map of relative cochain complexes induced by a map of pairs of
+  simplicial sets, a quasi-isomorphism when it is one on both components
+  (`SSetPair.quasiIso_cochainComplexMap`).
 * `TopPair.singularCochainComplex`, `TopPair.singularCohomology`, and the maps
   `TopPair.singularCochainComplexMap` and `TopPair.singularCohomologyMap` induced by maps of
-  pairs, with `TopPair.singularCohomologyFunctor` the functor `TopPairᵒᵖ ⥤ ModuleCat k`.
+  pairs, with `TopPair.singularCohomologyFunctor` the functor `TopPairᵒᵖ ⥤ ModuleCat k`;
+  `TopPair.singularCohomologyMap_eq` identifies `TopPair.singularCohomologyMap f` with the map
+  induced by `SSetPair.cochainComplexMap` on cohomology.
 * `TopPair.shortExact_singularCochainComplexShortComplex`: the cochain sequence of a pair is short
   exact.
 * `TopPair.singularCohomologyδ`: the connecting morphism `Hⁿ(A) ⟶ Hᵐ(X, A)` for `n + 1 = m`, with
@@ -55,6 +60,54 @@ noncomputable section
 open CategoryTheory Limits Opposite
 
 universe w v u
+
+namespace SSetPair
+
+open TauCeti.ChainComplex
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C}
+  {k : Type*} [Ring k] [Linear k C] {M : C}
+
+/-- The map of relative cochain complexes `Hom(C(Q; R), M) ⟶ Hom(C(P; R), M)` induced by a map
+`f : P ⟶ Q` of pairs of simplicial sets: precomposition with the relative chain map of `f`. -/
+abbrev cochainComplexMap {P Q : SSetPair.{w}} (f : P ⟶ Q) :
+    (Q.chainComplex R).linearYonedaObj k M ⟶ (P.chainComplex R).linearYonedaObj k M :=
+  (linearYonedaFunctor k M).map (chainComplexMap f R).op
+
+@[simp]
+lemma cochainComplexMap_id (P : SSetPair.{w}) :
+    cochainComplexMap (R := R) (k := k) (M := M) (𝟙 P) = 𝟙 _ := by
+  simp [cochainComplexMap]
+
+@[reassoc]
+lemma cochainComplexMap_comp {P Q S : SSetPair.{w}} (f : P ⟶ Q) (g : Q ⟶ S) :
+    cochainComplexMap (R := R) (k := k) (M := M) (f ≫ g) =
+      cochainComplexMap g ≫ cochainComplexMap f := by
+  simp [cochainComplexMap]
+
+/-- A map of pairs of simplicial sets which induces quasi-isomorphisms on the cochains of the
+subobjects and of the ambient simplicial sets induces a quasi-isomorphism on relative cochains. -/
+lemma quasiIso_cochainComplexMap {P Q : SSetPair.{w}} (f : P ⟶ Q)
+    [QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) f.left)]
+    [QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) f.right)] :
+    QuasiIso (cochainComplexMap (R := R) (k := k) (M := M) f) := by
+  -- `Hom(-, M)` carries the morphism of chain sequences `C(X) ⟶ C(Y) ⟶ C(Y, X)` induced by `f` to
+  -- a morphism between the short exact cochain sequences of `Q` and of `P`, whose first component
+  -- is the relative cochain map and whose other two are the cochain maps of the components.
+  have h := HomologicalComplex.HomologySequence.quasiIso_τ₁
+    ((linearYonedaFunctor k M).mapShortComplex.map
+      (ShortComplex.opMap (chainComplexShortComplexMap f R)))
+    (shortExact_map_linearYonedaFunctor k M (Q.shortExact_chainComplexShortComplex R))
+    (shortExact_map_linearYonedaFunctor k M (P.shortExact_chainComplexShortComplex R))
+    (by
+      rw [Functor.mapShortComplex_map_τ₂, ShortComplex.opMap_τ₂, chainComplexShortComplexMap_τ₂]
+      exact ‹QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) f.right)›)
+    (by
+      rw [Functor.mapShortComplex_map_τ₃, ShortComplex.opMap_τ₃, chainComplexShortComplexMap_τ₁]
+      exact ‹QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) f.left)›)
+  rwa [Functor.mapShortComplex_map_τ₁, ShortComplex.opMap_τ₁, chainComplexShortComplexMap_τ₃] at h
+
+end SSetPair
 
 namespace TopPair
 
@@ -132,6 +185,13 @@ lemma singularCohomologyMap_comp {P P' P'' : TopPair.{w}} (f : P ⟶ P') (g : P'
       TopPair.singularCohomologyMap g n ≫ TopPair.singularCohomologyMap f n := by
   simp [TopPair.singularCohomologyMap, singularCochainComplexMap_comp,
     HomologicalComplex.homologyMap_comp]
+
+/-- The map induced on relative singular cohomology by a map of topological pairs is the one
+induced on the relative cochains of the associated map of pairs of simplicial sets. -/
+lemma singularCohomologyMap_eq {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ) :
+    TopPair.singularCohomologyMap (R := R) (k := k) (M := M) f n =
+      HomologicalComplex.homologyMap (SSetPair.cochainComplexMap (toSSetPair.map f)) n :=
+  congrArg (HomologicalComplex.homologyMap · n) (singularCochainComplexMap_eq f)
 
 variable (R k M)
 

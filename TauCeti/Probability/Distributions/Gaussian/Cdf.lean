@@ -239,6 +239,15 @@ theorem measureReal_Ioi_gaussianReal_eq_cdf (m : ℝ) {v : ℝ≥0} (hv : v ≠ 
     Real.erfc_def]
   ring
 
+/-- Over a right half-line, a Gaussian density of nonzero variance integrates to a value of the
+standard Gaussian cumulative distribution function:
+`∫ t in Ioi x, N(m, v)(t) = Φ ((m - x) / √v)`. -/
+theorem integral_Ioi_gaussianPDFReal_eq_cdf (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : ℝ) :
+    ∫ t in Ioi x, gaussianPDFReal m v t = cdf (gaussianReal 0 1) ((m - x) / √(v : ℝ)) := by
+  rw [← measureReal_Ioi_gaussianReal_eq_cdf m hv, measureReal_def,
+    gaussianReal_apply_eq_integral m hv, ENNReal.toReal_ofReal
+      (setIntegral_nonneg measurableSet_Ioi fun t _ => gaussianPDFReal_nonneg m v t)]
+
 /-- A random variable with a Gaussian law of nonzero variance has the error-function cumulative
 distribution function. -/
 theorem measureReal_le_of_hasLaw_gaussianReal {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}

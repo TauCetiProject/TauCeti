@@ -280,7 +280,8 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_me
       (fun d _ hd ↦ taylor_splice_of_ne x p d _ (by omega)) (by simp),
     Finset.sum_range_succ', Finset.sum_range_succ',
     Finset.sum_eq_zero fun p _ ↦ by rw [splice_eq_zero_of_block_lt_add k x _ (by omega), map_zero],
-    zero_add, zero_add, splice_init_eq_of_tprod, splice_tail_eq_of_tprod, taylor_of_tprod_two,
+    zero_add, zero_add, splice_collapse_init_eq k (n := n + 1) (by omega),
+    splice_collapse_tail_eq k (n := n + 1) (by omega), taylor_of_tprod_two,
     taylor_of_tprod_two]
   -- In `φ{m}` only the collapses of two letters survive.
   rw [Finset.sum_congr rfl fun p _ ↦ Finset.sum_eq_single 2
@@ -627,8 +628,8 @@ private theorem trace_obstruction_ofArrow (c : (Fin 4 → G.Dart) →₀ k)
       rw [zigzagLoopAInfinityAlgebra_grading_piece]
       exact zigzagMk_ofArrow_mem_zigzagIntegerGrade_one k G _)]
     fin_cases i <;> norm_num
-  rw [htw, MultilinearMap.map_smul_univ, zigzagLoopAInfinityAlgebra_m_four_ofArrow,
-    Fin.prod_univ_four]
+  rw [htw, MultilinearMap.map_smul_univ,
+    zigzagLoopAInfinityAlgebra_m_ofArrow (n := 4) _ _ (by norm_num), Fin.prod_univ_four]
   simp
 
 /-- **The backtrack pairing of a quartic loop operation.** On the obstruction of the loop
