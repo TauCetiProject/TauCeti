@@ -26,7 +26,8 @@ and its characters take values in `μ_{p-1} ⊂ ℤ_p`.
 
 The element `e_χ` is `(#H)⁻¹` times the character sum `TauCeti.subgroupCharSum` of `χ⁻¹` over the
 whole group, so left or right multiplication by a group element `h` scales it by `χ(h)`, and it
-squares to itself once `#H` is a unit. Over a domain the character idempotents of distinct
+squares to itself: when `#H` is a unit by the character sum identity, and otherwise because
+`e_χ = 0`. Over a domain the character idempotents of distinct
 characters are orthogonal, by row orthogonality of characters (`sum_hom_units_eq_zero`); this part
 does not need `#H` to be a unit. For a finite commutative group with enough roots of unity in the
 domain `O`, column orthogonality (`CommGroup.sum_monoidHom_apply_eq_ite`) shows that the character
@@ -53,7 +54,7 @@ algebraic closure, only a domain, because the characters here are one-dimensiona
 
 * `TauCeti.single_mul_charIdempotent`, `TauCeti.charIdempotent_mul_single`: a group element `h`
   acts on `e_χ` by the scalar `χ(h)` from either side.
-* `TauCeti.isIdempotentElem_charIdempotent`: `e_χ` is idempotent when `#H` is a unit.
+* `TauCeti.isIdempotentElem_charIdempotent`: `e_χ` is idempotent.
 * `TauCeti.charIdempotent_mul_charIdempotent_of_ne`: over a domain, `e_χ e_ψ = 0` for `χ ≠ ψ`.
 * `TauCeti.charIdempotent_mul`: `e_χ e_ψ = δ_{χψ} e_χ`.
 * `TauCeti.sum_charIdempotent`: for a finite commutative group with enough roots of unity, the
@@ -86,7 +87,7 @@ variable [Group H] [Fintype H]
 open scoped Classical in
 /-- The **character idempotent** `e_χ = (#H)⁻¹ ∑_{a ∈ H} χ(a)⁻¹ a` of a character `χ : H →* Oˣ` of a
 finite group, an element of the group algebra `O[H]`. The factor `(#H)⁻¹` is `Ring.inverse (#H)`,
-so `e_χ` is `0` unless `#H` is a unit of `O`, and is idempotent in that intended case
+so `e_χ` is `0` unless `#H` is a unit of `O`. It is always idempotent
 (`TauCeti.isIdempotentElem_charIdempotent`).
 
 It is `(#H)⁻¹` times the character sum `TauCeti.subgroupCharSum` of `χ⁻¹` over the whole group;
@@ -127,10 +128,15 @@ theorem charIdempotent_mul_single (χ : H →* Oˣ) (h : H) :
     subgroupCharSum_mul_single _ ⊤ ⟨h, Subgroup.mem_top h⟩, smul_comm]
   simp
 
-/-- **A character idempotent is idempotent** once the order of the group is a unit. -/
-theorem isIdempotentElem_charIdempotent (hH : IsUnit (Nat.card H : O)) (χ : H →* Oˣ) :
+/-- **A character idempotent is idempotent.** When the order of the group is not a unit, the
+character idempotent is `0`. -/
+theorem isIdempotentElem_charIdempotent (χ : H →* Oˣ) :
     IsIdempotentElem (charIdempotent χ) := by
   classical
+  by_cases hH : IsUnit (Nat.card H : O)
+  swap
+  · rw [charIdempotent, Ring.inverse_non_unit _ hH, zero_smul]
+    exact .zero
   rw [IsIdempotentElem, charIdempotent, smul_mul_smul_comm, subgroupCharSum_mul_self]
   simp only [Subgroup.card_top, ← Nat.cast_smul_eq_nsmul O, smul_smul, mul_assoc,
     Ring.inverse_mul_cancel _ hH, mul_one]
@@ -147,21 +153,20 @@ theorem charIdempotent_mul_charIdempotent_of_ne [IsDomain O] {χ ψ : H →* Oˣ
   simp only [of_apply, mul_smul_comm, charIdempotent_mul_single, smul_smul, ← Finset.sum_smul]
   simp [mul_comm (((ψ _)⁻¹ : Oˣ) : O), hsum]
 
-/-- **Multiplication table of the character idempotents** over a domain in which `#H` is a unit:
+/-- **Multiplication table of the character idempotents** over a domain:
 `e_χ e_ψ = δ_{χψ} e_χ`. -/
-theorem charIdempotent_mul [IsDomain O] [DecidableEq (H →* Oˣ)] (hH : IsUnit (Nat.card H : O))
-    (χ ψ : H →* Oˣ) :
+theorem charIdempotent_mul [IsDomain O] [DecidableEq (H →* Oˣ)] (χ ψ : H →* Oˣ) :
     charIdempotent χ * charIdempotent ψ = if χ = ψ then charIdempotent χ else 0 := by
   split_ifs with hχψ
   · subst hχψ
-    exact isIdempotentElem_charIdempotent hH χ
+    exact isIdempotentElem_charIdempotent χ
   · exact charIdempotent_mul_charIdempotent_of_ne hχψ
 
-/-- Over a domain in which `#H` is a unit, the character idempotents form an orthogonal family of
-idempotents of `O[H]`, indexed by the characters. -/
-theorem orthogonalIdempotents_charIdempotent [IsDomain O] (hH : IsUnit (Nat.card H : O)) :
+/-- Over a domain, the character idempotents form an orthogonal family of idempotents of `O[H]`,
+indexed by the characters. -/
+theorem orthogonalIdempotents_charIdempotent [IsDomain O] :
     OrthogonalIdempotents (charIdempotent : (H →* Oˣ) → MonoidAlgebra O H) :=
-  ⟨isIdempotentElem_charIdempotent hH, fun _ _ h ↦ charIdempotent_mul_charIdempotent_of_ne h⟩
+  ⟨isIdempotentElem_charIdempotent, fun _ _ h ↦ charIdempotent_mul_charIdempotent_of_ne h⟩
 
 /-- The character idempotent of the trivial character is Mathlib's averaging idempotent
 `GroupAlgebra.average`. -/
@@ -187,7 +192,7 @@ theorem mem_charIdempotent_smul_top_iff (hH : IsUnit (Nat.card H : O)) (χ : H �
     obtain ⟨n, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hm
     rw [smul_smul, single_mul_charIdempotent, smul_assoc]
   · intro hm
-    rw [(isIdempotentElem_charIdempotent hH χ).mem_smul_top_iff_smul_eq_self,
+    rw [(isIdempotentElem_charIdempotent χ).mem_smul_top_iff_smul_eq_self,
       charIdempotent_eq_sum, smul_assoc, Finset.sum_smul]
     simp only [smul_assoc, of_apply, hm, smul_smul, Units.inv_mul, one_smul, Finset.sum_const,
       Finset.card_univ, ← Nat.card_eq_fintype_card, ← Nat.cast_smul_eq_nsmul O,
@@ -221,7 +226,7 @@ for a finite commutative group `H` and a domain `O` with enough roots of unity i
 unit. -/
 theorem completeOrthogonalIdempotents_charIdempotent (hH : IsUnit (Nat.card H : O)) :
     CompleteOrthogonalIdempotents (charIdempotent : (H →* Oˣ) → MonoidAlgebra O H) :=
-  ⟨orthogonalIdempotents_charIdempotent hH, sum_charIdempotent hH⟩
+  ⟨orthogonalIdempotents_charIdempotent, sum_charIdempotent hH⟩
 
 /-- **The isotypic decomposition**: for a finite commutative group `H` and a domain `O` with enough
 roots of unity in which `#H` is a unit, every `O[H]`-module is the internal direct sum of its
