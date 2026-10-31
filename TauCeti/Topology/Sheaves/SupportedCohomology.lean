@@ -9,6 +9,8 @@ public import Mathlib.Topology.Sets.Closeds
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Relative
 public import TauCeti.Topology.Sheaves.Flasque.Basic
 
+import TauCeti.Algebra.Homology.Ext.AcyclicResolution
+
 /-!
 # Sheaf cohomology with closed supports
 
@@ -454,11 +456,9 @@ theorem extClass_postcomp_bijective_of_isFlasque
     (hT : T.ShortExact) [TopCat.Presheaf.IsFlasque T.X₂.obj] {U V : Opens X} (i : U ⟶ V)
     (n : ℕ) :
     Function.Bijective (hT.extClass.postcomp _ (rfl : n + 1 + 1 = n + 2) :
-      T.X₃.relativeH' i (n + 1) →+ T.X₁.relativeH' i (n + 2)) := by
-  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun x ↦ ?_⟩
-  · obtain ⟨z, rfl⟩ := Abelian.Ext.covariant_sequence_exact₃ _ hT x rfl hx
-    rw [Subsingleton.elim z 0, Abelian.Ext.zero_comp]
-  · exact Abelian.Ext.covariant_sequence_exact₁ _ hT x (Subsingleton.elim _ _) rfl
+      T.X₃.relativeH' i (n + 1) →+ T.X₁.relativeH' i (n + 2)) :=
+  hT.extClass_postcomp_bijective _ rfl (subsingleton_succ_of_isFlasque T.X₂ i n)
+    (subsingleton_succ_of_isFlasque T.X₂ i (n + 1))
 
 /-- If `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0` is a short exact sequence of sheaves with `F₁` flasque, the map
 `Hⁿ⁺¹(V, U; F₂) ⟶ Hⁿ⁺¹(V, U; F₃)` induced by `F₂ ⟶ F₃` is bijective. -/

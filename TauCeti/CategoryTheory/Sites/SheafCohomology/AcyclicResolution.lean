@@ -5,30 +5,41 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.ShortComplex.Ab
-public import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
-import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+public import TauCeti.Algebra.Homology.Ext.AcyclicResolution
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 
 /-!
-# Vanishing cohomology and sections of acyclic resolutions
+# Sections of acyclic resolutions compute sheaf cohomology
 
 Let `0 ⟶ F ⟶ K⁰ ⟶ K¹ ⟶ ⋯` be a resolution of a sheaf of abelian groups `F` on a site, and let
 `V` be an object of the site over which every term `Kʲ` has no cohomology in positive degrees,
 for instance because each `Kʲ` is injective, or flasque on a topological space. Then the complex
-of sections `K⁰(V) ⟶ K¹(V) ⟶ ⋯` computes the cohomology `Hⁿ(V, F)`. This file proves the half of
-this statement that is used to show that derived functors vanish: if `Hⁿ⁺¹(V, F) = 0`, then the
-complex of sections is exact in degree `n + 1`
-(`CategoryTheory.Sheaf.H'.exists_d_hom_app_eq_of_resolution`).
+of sections `K⁰(V) ⟶ K¹(V) ⟶ ⋯` computes the cohomology `Hⁿ(V, F)`: every section `s` of `Kⁿ`
+over `V` killed by the differential has a class `[s]` in `Hⁿ(V, F)`, additive in `s`
+(`CategoryTheory.Sheaf.H'.resolutionClass_add`), every class is of this form
+(`CategoryTheory.Sheaf.H'.resolutionClass_surjective`), and `[s] = 0` exactly when `s` is the
+image of a section of `Kⁿ⁻¹` over `V`, respectively when `s = 0` in degree `0`
+(`CategoryTheory.Sheaf.H'.resolutionClass_succ_eq_zero_iff` and
+`CategoryTheory.Sheaf.H'.resolutionClass_zero_eq_zero_iff`).
 
-The proof is the classical dimension shift. Write `Zʲ` for the cycles of `K` in degree `j`. The
-resolution splits into short exact sequences `0 ⟶ F ⟶ K⁰ ⟶ Z¹ ⟶ 0` and
-`0 ⟶ Zʲ ⟶ Kʲ ⟶ Zʲ⁺¹ ⟶ 0`, and the long exact cohomology sequences over `V` give
-`Hᵏ(V, Zʲ⁺¹) = 0` whenever `Hᵏ⁺¹(V, Zʲ) = 0` and `k ≥ 1`. Starting from `Hⁿ⁺¹(V, F) = 0`, this
-gives `H¹(V, Zⁿ) = 0`, so that `Kⁿ(V) ⟶ Zⁿ⁺¹(V)` is surjective: every cycle of `K(V)` in degree
-`n + 1` is a boundary.
+Here `Hⁿ(V, F)` is Mathlib's `CategoryTheory.Sheaf.H'`, the group `Extⁿ(ℤ_V, F)` out of the free
+abelian sheaf `ℤ_V` on `V`, and morphisms `ℤ_V ⟶ G` are the sections of `G` over `V`
+(`TauCeti.CategoryTheory.freeYonedaSheafSectionsEquiv`). So the complex of sections is the complex
+`Hom(ℤ_V, K)`, and the statement is the case `P = ℤ_V` of `CochainComplex.extMk`, which computes
+`Extⁿ(P, F)` from a resolution of `F` acyclic for `Hom(P, -)` by dimension shifting along the short
+exact sequences `0 ⟶ Zʲ ⟶ Kʲ ⟶ Zʲ⁺¹ ⟶ 0` of cycles. In particular, if `Hⁿ⁺¹(V, F) = 0`, then the
+complex of sections is exact in degree `n + 1`
+(`CategoryTheory.Sheaf.H'.exists_d_hom_app_eq_of_resolution`), which is how derived functors are
+shown to vanish.
 
 ## Main declarations
 
+* `CategoryTheory.Sheaf.H'.resolutionClass`: the class in `Hⁿ(V, F)` of a section of `Kⁿ` over `V`
+  killed by the differential.
+* `CategoryTheory.Sheaf.H'.resolutionClass_surjective`,
+  `CategoryTheory.Sheaf.H'.resolutionClass_zero_eq_zero_iff` and
+  `CategoryTheory.Sheaf.H'.resolutionClass_succ_eq_zero_iff`: the classes of sections exhaust
+  `Hⁿ(V, F)`, and the sections with zero class are exactly the boundaries.
 * `CategoryTheory.Sheaf.H'.exists_d_hom_app_eq_of_resolution`: if `Hⁿ⁺¹(V, F) = 0` and the terms
   of a resolution `K` of `F` are acyclic over `V`, then every cycle of `K(V)` in degree `n + 1` is
   a boundary.
@@ -36,11 +47,12 @@ gives `H¹(V, Zⁿ) = 0`, so that `Kⁿ(V) ⟶ Zⁿ⁺¹(V)` is surjective: ever
 ## References
 
 * R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Proposition III.1.2A.
+* The Stacks Project, Cohomology of Sheaves, Lemma 20.12.3 (tag 09SY), for flasque resolutions.
 -/
 
 public section
 
-open CategoryTheory Limits Opposite Abelian
+open CategoryTheory Limits Opposite Abelian TauCeti.CategoryTheory
 
 universe w v u
 
@@ -58,21 +70,74 @@ variable [HasExt.{w} (Sheaf J AddCommGrpCat.{v})] (ι : F ⟶ K.X 0) [Mono ι] (
   (hι' : (ShortComplex.mk ι (K.d 0 1) hι).Exact) (hK : ∀ j, K.ExactAt (j + 1)) (V : C)
   (hKV : ∀ j k, Subsingleton ((K.X j).H' (k + 1) V))
 
-include hι' hK hKV in
-/-- Dimension shifting along the resolution: `Hᵏ⁺¹(V, Zʲ⁺¹)` vanishes when
-`Hʲ⁺ᵏ⁺²(V, F)` does. -/
-private lemma subsingleton_H'_cycles (j k : ℕ) (hF : Subsingleton (F.H' (j + k + 2) V)) :
-    Subsingleton ((K.cycles (j + 1)).H' (k + 1) V) := by
-  induction j generalizing k with
-  | zero =>
-    rw [zero_add] at hF
-    exact subsingleton_X₃ (K.shortExact_toCycles ι hι hι' (by simp) (hK 0)) V (k + 1)
-      (hKV 0 k) hF
-  | succ j ih =>
-    have hS := K.cyclesShortComplex_shortExact (j + 1) (j + 2) (by simp) (hK (j + 1))
-    rw [HomologicalComplex.cyclesShortComplex_def] at hS
-    exact subsingleton_X₃ hS V (k + 1) (hKV (j + 1) k)
-      (ih (k + 1) (by rwa [show j + (k + 1) + 2 = j + 1 + k + 2 by omega]))
+omit [HasExt (Sheaf J AddCommGrpCat)] in
+/-- A section of `Kⁿ` over `V` is killed by the differential exactly when the corresponding
+morphism from the free abelian sheaf on `V` is. -/
+private lemma symm_comp_d_eq_zero_iff {n m : ℕ} (s : (K.X n).obj.obj (op V)) :
+    (freeYonedaSheafSectionsEquiv J V (K.X n)).symm s ≫ K.d n m = 0 ↔
+      (K.d n m).hom.app (op V) s = 0 := by
+  rw [← (freeYonedaSheafSectionsEquiv J V (K.X m)).injective.eq_iff,
+    freeYonedaSheafSectionsEquiv_naturality_right, AddEquiv.apply_symm_apply, map_zero]
+
+/-- The class `[s]` in `Hⁿ(V, F)` of a section `s` of `Kⁿ` over `V` killed by the differential,
+for a resolution `0 ⟶ F ⟶ K⁰ ⟶ K¹ ⟶ ⋯`. It is `CochainComplex.extMk` applied to the morphism
+from the free abelian sheaf on `V` corresponding to `s`. -/
+noncomputable def resolutionClass {n : ℕ} (s : (K.X n).obj.obj (op V))
+    (hs : (K.d n (n + 1)).hom.app (op V) s = 0) :
+    Ext.{w} ((freeYonedaSheafFunctor J).obj V) F n :=
+  K.extMk ι hι hι' hK ((freeYonedaSheafSectionsEquiv J V (K.X n)).symm s)
+    ((symm_comp_d_eq_zero_iff V s).2 hs)
+
+/-- The class of a sum of sections is the sum of their classes. -/
+theorem resolutionClass_add {n : ℕ} (s t : (K.X n).obj.obj (op V))
+    (hs : (K.d n (n + 1)).hom.app (op V) s = 0) (ht : (K.d n (n + 1)).hom.app (op V) t = 0) :
+    resolutionClass ι hι hι' hK V (s + t) (by rw [map_add, hs, ht, add_zero]) =
+      resolutionClass ι hι hι' hK V s hs + resolutionClass ι hι hι' hK V t ht := by
+  rw [resolutionClass, resolutionClass, resolutionClass, ← K.extMk_add]
+  congr 1
+  exact map_add _ s t
+
+include hKV in
+/-- **Every class in `Hⁿ(V, F)` is the class of a section** of `Kⁿ` over `V` killed by the
+differential, when the terms of the resolution `K` of `F` have no cohomology over `V` in positive
+degrees. -/
+theorem resolutionClass_surjective {n : ℕ}
+    (x : Ext.{w} ((freeYonedaSheafFunctor J).obj V) F n) :
+    ∃ (s : (K.X n).obj.obj (op V)) (hs : (K.d n (n + 1)).hom.app (op V) s = 0),
+      resolutionClass ι hι hι' hK V s hs = x := by
+  obtain ⟨f, hf, rfl⟩ := K.extMk_surjective ι hι hι' hK
+    (by simpa only [sheafH'_eq] using hKV) x
+  refine ⟨freeYonedaSheafSectionsEquiv J V (K.X n) f,
+    (symm_comp_d_eq_zero_iff V _).1 (by rwa [AddEquiv.symm_apply_apply]), ?_⟩
+  rw [resolutionClass]
+  congr 1
+  exact AddEquiv.symm_apply_apply _ f
+
+/-- In degree `0` a section of `K⁰` over `V` killed by the differential has zero class only if it
+is zero. -/
+theorem resolutionClass_zero_eq_zero_iff (s : (K.X 0).obj.obj (op V))
+    (hs : (K.d 0 (0 + 1)).hom.app (op V) s = 0) :
+    resolutionClass ι hι hι' hK V s hs = 0 ↔ s = 0 := by
+  rw [resolutionClass, CochainComplex.extMk_zero_eq_zero_iff, ← map_eq_zero_iff _
+    (freeYonedaSheafSectionsEquiv J V (K.X 0)).injective, AddEquiv.apply_symm_apply]
+
+include hKV in
+/-- **A section has zero class exactly when it is a boundary**: for a resolution `K` of `F`
+whose terms have no cohomology over `V` in positive degrees, the class in `Hⁿ⁺¹(V, F)` of a
+section `s` of `Kⁿ⁺¹` over `V` killed by the differential vanishes exactly when `s` is the image of
+a section of `Kⁿ` over `V`. -/
+theorem resolutionClass_succ_eq_zero_iff {n : ℕ} (s : (K.X (n + 1)).obj.obj (op V))
+    (hs : (K.d (n + 1) (n + 1 + 1)).hom.app (op V) s = 0) :
+    resolutionClass ι hι hι' hK V s hs = 0 ↔
+      ∃ t : (K.X n).obj.obj (op V), (K.d n (n + 1)).hom.app (op V) t = s := by
+  rw [resolutionClass, K.extMk_succ_eq_zero_iff ι hι hι' hK
+    (by simpa only [sheafH'_eq] using hKV)]
+  refine ⟨fun ⟨g, hg⟩ ↦ ⟨freeYonedaSheafSectionsEquiv J V (K.X n) g, ?_⟩,
+    fun ⟨t, ht⟩ ↦ ⟨(freeYonedaSheafSectionsEquiv J V (K.X n)).symm t, ?_⟩⟩
+  · rw [← freeYonedaSheafSectionsEquiv_naturality_right, hg, AddEquiv.apply_symm_apply]
+  · rw [← (freeYonedaSheafSectionsEquiv J V (K.X (n + 1))).injective.eq_iff,
+      freeYonedaSheafSectionsEquiv_naturality_right, AddEquiv.apply_symm_apply,
+      AddEquiv.apply_symm_apply, ht]
 
 include hι' hK hKV in
 /-- **Exactness of sections of an acyclic resolution**, in the form used to show that derived
@@ -82,28 +147,10 @@ whose terms have no cohomology in positive degrees over an object `V` of the sit
 of a section of `Kⁿ` over `V`: the complex of sections `K(V)` is exact in degree `n + 1`. -/
 theorem exists_d_hom_app_eq_of_resolution (n : ℕ) (hF : Subsingleton (F.H' (n + 1) V))
     (s : (K.X (n + 1)).obj.obj (op V)) (hs : (K.d (n + 1) (n + 2)).hom.app (op V) s = 0) :
-    ∃ t : (K.X n).obj.obj (op V), (K.d n (n + 1)).hom.app (op V) t = s := by
-  -- `s` is a section of the cycles `Zⁿ⁺¹`, the kernel of the differential
-  have hZ : (ShortComplex.mk (K.iCycles (n + 1)) (K.d (n + 1) (n + 2))
-      (K.iCycles_d _ _)).Exact :=
-    ShortComplex.exact_of_f_is_kernel _ (K.cyclesIsKernel (n + 1) (n + 2) (by simp))
-  obtain ⟨z, rfl⟩ := (ShortComplex.ab_exact_iff _).1
-    (hZ.map_of_mono_of_preservesKernel (sheafToPresheaf J AddCommGrpCat.{v} ⋙
-      (evaluation Cᵒᵖ AddCommGrpCat.{v}).obj (op V)) inferInstance inferInstance) s hs
-  -- `Kⁿ(V) ⟶ Zⁿ⁺¹(V)` is onto, since `H¹(V, F) = 0` for `n = 0` and `H¹(V, Zⁿ) = 0` otherwise
-  obtain ⟨t, rfl⟩ : ∃ t, (K.toCycles n (n + 1)).hom.app (op V) t = z := by
-    cases n with
-    | zero =>
-      exact g_hom_app_surjective (K.shortExact_toCycles ι hι hι' (by simp) (hK 0)) V hF z
-    | succ n =>
-      have hS := K.cyclesShortComplex_shortExact (n + 1) (n + 2) (by simp) (hK (n + 1))
-      rw [HomologicalComplex.cyclesShortComplex_def] at hS
-      exact g_hom_app_surjective hS V
-        (subsingleton_H'_cycles ι hι hι' hK V hKV n 0 hF) z
-  refine ⟨t, ?_⟩
-  -- the mapped inclusion of cycles is by definition the component of `iCycles` at `V`
-  rw [← K.toCycles_i n (n + 1)]
-  rfl
+    ∃ t : (K.X n).obj.obj (op V), (K.d n (n + 1)).hom.app (op V) t = s :=
+  have : Subsingleton (Ext.{w} ((freeYonedaSheafFunctor J).obj V) F (n + 1)) := by
+    simpa only [sheafH'_eq] using hF
+  (resolutionClass_succ_eq_zero_iff ι hι hι' hK V hKV s hs).1 (Subsingleton.elim _ _)
 
 end H'
 
