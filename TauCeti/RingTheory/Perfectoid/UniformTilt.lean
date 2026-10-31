@@ -82,6 +82,8 @@ coordinates of a Cauchy filter then form a compatible system, its limit in `B♭
   is perfect, and of characteristic `p` when `B` is nonzero.
 * `TauCeti.Perfectoid.uniformTilt.coeff_map`, `TauCeti.Perfectoid.uniformTilt.map_id` and
   `TauCeti.Perfectoid.uniformTilt.map_comp`: `g♭` acts coordinatewise, and tilting is a functor.
+* `TauCeti.Perfectoid.uniformTilt.isEmbedding_coeff`: the coordinates embed the tilt into
+  `ℕ → B`.
 * `TauCeti.Perfectoid.uniformTilt.tendsto_nhds_iff` and
   `TauCeti.Perfectoid.uniformTilt.continuous_iff`: convergence and continuity are coordinatewise.
 * `TauCeti.Perfectoid.uniformTilt.instIsTopologicalRing`,
@@ -337,17 +339,32 @@ private theorem isClosed_boundSubgroup (N : ℕ) : IsClosed (boundSubgroup p c N
   ((powerBoundedSubring B).toAddSubgroup.isClosed_of_isOpen
     (isOpen_powerBoundedSubring B)).preimage (continuous_const.mul (continuous_pow _))
 
+omit hp in
+/-- For a unit `c ∈ B°`, the set `c⁻¹ B° = {z | c * z ∈ B°}` is bounded: every neighbourhood `U`
+of zero contains `V * c⁻¹ B°` for some neighbourhood `V` of zero, and `V` contains `p ^ (m + 1)`
+for large `m` since `p` is topologically nilpotent. -/
+private theorem exists_mem_nhds_mul_mem [IsUniform B]
+    [hpn : Fact (IsTopologicallyNilpotent (p : B))] (hc : IsUnit (c : B)) {U : Set B}
+    (hU : U ∈ 𝓝 0) : ∃ V ∈ 𝓝 (0 : B),
+      (∀ v ∈ V, ∀ z, (c : B) * z ∈ powerBoundedSubring B → v * z ∈ U) ∧
+        ∀ᶠ m in atTop, (p : B) ^ (m + 1) ∈ V := by
+  obtain ⟨V, hV, hVU⟩ := isBounded_iff.mp ((isBounded_singleton ((hc.unit⁻¹ : Bˣ) : B)).mul
+    IsUniform.isBounded_powerBoundedSubring) U hU
+  exact ⟨V, hV, fun v hv z hz ↦
+    hVU (Set.mul_mem_mul hv (Set.mem_mul.mpr ⟨_, rfl, _, hz, hc.unit.inv_mul_cancel_left z⟩)),
+    (tendsto_add_atTop_iff_nat 1).mpr hpn.out hV⟩
+
 /-- For a unit `c ∈ B°` and `γ m ∈ W(c, 0)`, the multiples `p ^ m * γ m` tend to zero: `W(c, 0)`
 is contained in the bounded set `c⁻¹ B°` and `p` is topologically nilpotent. -/
 private theorem tendsto_pow_mul [IsUniform B] [hpn : Fact (IsTopologicallyNilpotent (p : B))]
     (hc : IsUnit (c : B)) {γ : ℕ → B}
     (hγ : ∀ m, γ m ∈ boundSubgroup p c 0) :
-    Tendsto (fun m ↦ (p : B) ^ m * γ m) atTop (𝓝 0) := by
-  refine (((isBounded_singleton ((hc.unit⁻¹ : Bˣ) : B)).mul
-    IsUniform.isBounded_powerBoundedSubring)).tendsto_mul hpn.out (Eventually.of_forall fun m ↦ ?_)
+    Tendsto (fun m ↦ (p : B) ^ m * γ m) atTop (𝓝 0) := fun U hU ↦ mem_map.mpr <| by
+  obtain ⟨V, hV, hVU, -⟩ := exists_mem_nhds_mul_mem (p := p) hc hU
+  filter_upwards [hpn.out.eventually_mem hV] with m hm
   have h := hγ m
   rw [mem_boundSubgroup, pow_zero, pow_one] at h
-  exact Set.mem_mul.mpr ⟨_, rfl, _, h, hc.unit.inv_mul_cancel_left (γ m)⟩
+  exact hVU _ hm _ h
 
 end Huber
 
@@ -790,16 +807,21 @@ instance charP [Nontrivial B] : CharP (uniformTilt p B) p := by
 
 section Topology
 
+/-- The coordinates `x ↦ (x⁽ⁿ⁾)ₙ` embed the tilt, with its inverse-limit topology, into the
+product `ℕ → B`. -/
+theorem isEmbedding_coeff : IsEmbedding fun (x : uniformTilt p B) n ↦ coeff p B n x :=
+  isEmbedding_val
+
 /-- A sequence converges in the tilt exactly when each of its coordinates converges. -/
 theorem tendsto_nhds_iff {ι : Type*} {l : Filter ι} {f : ι → uniformTilt p B}
     {x : uniformTilt p B} :
     Tendsto f l (𝓝 x) ↔ ∀ n, Tendsto (fun i ↦ coeff p B n (f i)) l (𝓝 (coeff p B n x)) :=
-  isEmbedding_val.isInducing.tendsto_nhds_iff.trans tendsto_pi_nhds
+  isEmbedding_coeff.isInducing.tendsto_nhds_iff.trans tendsto_pi_nhds
 
 /-- A map into the tilt is continuous exactly when each of its coordinates is. -/
 theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → uniformTilt p B} :
     Continuous f ↔ ∀ n, Continuous fun a ↦ coeff p B n (f a) :=
-  isEmbedding_val.isInducing.continuous_iff.trans continuous_pi_iff
+  isEmbedding_coeff.isInducing.continuous_iff.trans continuous_pi_iff
 
 /-- Each coordinate `x ↦ x⁽ⁿ⁾` of the tilt is continuous; for `n = 0` this is continuity of the
 sharp map `x ↦ x♯`. -/
@@ -826,10 +848,12 @@ private theorem coeff_add_sub_pow_mem {c : powerBoundedSubring B} (hc : IsUnit (
   have hγ0 := antitone_boundSubgroup (Nat.zero_le i) hγ
   rw [mem_boundSubgroup, pow_zero, pow_one] at hγ0
   refine ⟨-γ, by rw [mul_neg]; exact neg_mem hγ0, ?_⟩
-  rw [← coeff_pow_p_pow (x + y) i m, coeff_add_eq, ← add_sub_cancel _ (tiltLim p _ (i + m)), ← he,
-    add_comm m 1, mul_neg, he']
-  simp only [Pi.add_apply, coeff_apply]
-  ring
+  have ht : coeff p B (i + m) (x + y) = (x.1 + y.1) (i + m) + (p : B) ^ 1 * δ := by
+    rw [coeff_add_eq]
+    linear_combination -he
+  rw [← coeff_pow_p_pow (x + y) i m, ht]
+  simp only [Pi.add_apply, coeff_apply] at he' ⊢
+  linear_combination he'
 
 /-- **Addition on the tilt is continuous**: each coordinate `(x + y)⁽ⁱ⁾` is the locally uniform
 limit of the continuous functions `(x⁽ⁱ⁺ᵐ⁾ + y⁽ⁱ⁺ᵐ⁾) ^ p ^ m`. Multiplication is coordinatewise,
@@ -848,15 +872,13 @@ private theorem continuous_add' :
   have hopen (f : uniformTilt p B × uniformTilt p B → uniformTilt p B) (hf : Continuous f) :
       IsOpen {q | (c : B) * coeff p B 0 (f q) ∈ powerBoundedSubring B} :=
     (isOpen_powerBoundedSubring B).preimage (by fun_prop)
-  obtain ⟨V, hV, hVU⟩ := isBounded_iff.mp ((isBounded_singleton ((hc.unit⁻¹ : Bˣ) : B)).mul
-    IsUniform.isBounded_powerBoundedSubring) U hU
+  obtain ⟨V, -, hVU, hpV⟩ := exists_mem_nhds_mul_mem (p := p) hc hU
   refine ⟨_, ((hopen _ continuous_fst).inter (hopen _ continuous_snd)).mem_nhds
     ⟨h _ (by simp), h _ (by simp)⟩, ?_⟩
-  filter_upwards [(tendsto_add_atTop_iff_nat 1).mpr hpn.out hV] with m hm q hq
+  filter_upwards [hpV] with m hm q hq
   obtain ⟨δ, hδ, he⟩ := coeff_add_sub_pow_mem hc hq.1 hq.2 i m
   rw [he]
-  exact hVU (Set.mul_mem_mul hm
-    (Set.mem_mul.mpr ⟨_, rfl, _, hδ, hc.unit.inv_mul_cancel_left δ⟩))
+  exact hVU _ hm _ hδ
 
 /-- **The tilt is a topological ring** for the inverse-limit topology (Kedlaya, *Arizona Winter
 School notes*, Lemma 2.7.1(a)). -/
@@ -891,11 +913,8 @@ private theorem exists_coeff_add_sub_mem {c : powerBoundedSubring B} (hc : IsUni
       (c : B) * coeff p B 0 x ∈ powerBoundedSubring B → d ∈ W →
         coeff p B n (x + d) - coeff p B n x ∈ U := by
   obtain ⟨U₁, hU₁⟩ := NonarchimedeanAddGroup.is_nonarchimedean U hU
-  obtain ⟨V, hV, hVU⟩ := isBounded_iff.mp ((isBounded_singleton ((hc.unit⁻¹ : Bˣ) : B)).mul
-    IsUniform.isBounded_powerBoundedSubring) U₁ (U₁.isOpen.mem_nhds U₁.zero_mem)
-  have hS : ∀ v ∈ V, ∀ z, (c : B) * z ∈ powerBoundedSubring B → v * z ∈ U₁ := fun v hv z hz ↦
-    hVU (Set.mul_mem_mul hv (Set.mem_mul.mpr ⟨_, rfl, _, hz, hc.unit.inv_mul_cancel_left z⟩))
-  obtain ⟨m, hm⟩ := (((tendsto_add_atTop_iff_nat 1).mpr hpn.out).eventually_mem hV).exists
+  obtain ⟨V, hV, hS, hpV⟩ := exists_mem_nhds_mul_mem (p := p) hc (U₁.isOpen.mem_nhds U₁.zero_mem)
+  obtain ⟨m, hm⟩ := hpV.exists
   have hB : (powerBoundedSubring B : Set B) ∈ 𝓝 0 :=
     (isOpen_powerBoundedSubring B).mem_nhds (zero_mem _)
   have hnhds (k : ℕ) {T : Set B} (hT : T ∈ 𝓝 0) : {d | coeff p B k d ∈ T} ∈ 𝓝 0 :=
