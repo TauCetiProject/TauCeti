@@ -111,6 +111,20 @@ theorem of_isDiscriminatedBy {C K H : Type*} [Group C] [Group K] [Group H] (hH :
     let ⟨φ, hφ⟩ := (TauCeti.GroupAlgGeom.isDiscriminatedBy_def ιK ιH).1 h s hs
     ⟨φ, hφ⟩
 
+/-- The big powers property for a list with a common exponent: if `l` is a nonempty list of
+nonidentity elements in which consecutive entries do not commute, then the product of the `k`-th
+powers of its entries is nontrivial for all large `k`. -/
+theorem exists_prod_map_pow_ne_one (hG : IsBP G) {l : List G} (hl : l ≠ [])
+    (h1 : ∀ x ∈ l, x ≠ 1) (hc : l.IsChain fun x y => ¬Commute x y) :
+    ∃ N : ℕ, ∀ k, N ≤ k → (l.map (· ^ k)).prod ≠ 1 := by
+  obtain ⟨a, l, rfl⟩ := List.exists_cons_of_ne_nil hl
+  obtain ⟨N, hN⟩ := hG (k := l.length) (fun i => (a :: l)[(i : ℕ)])
+    (fun i => h1 _ (List.getElem_mem _))
+    (fun i => List.isChain_iff_getElem.1 hc i (by simp))
+  refine ⟨N, fun k hk => ?_⟩
+  rw [← List.ofFn_getElem_eq_map]
+  exact hN (fun _ => k) (fun _ => hk)
+
 /-- A BP group is torsion-free: the condition for a singleton tuple `(g)` says that the powers
 `g ^ e` are nontrivial for all large `e`. -/
 theorem isMulTorsionFree (hG : IsBP G) : IsMulTorsionFree G := by
