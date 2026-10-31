@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Translate
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Nondegenerate
 
 /-!
@@ -18,9 +17,10 @@ the convolution algebra into the operators of the pair:
 
 `(π ⋊ U)(a • f) = π(a) (π ⋊ U)(f)` and `(π ⋊ U)(r • f) = U_r (π ⋊ U)(f)`,
 
-where `(a • f) s = a * f s` and `(r • f) s = α r (f (r⁻¹ * s))` is `CStarAction.translate`.
-When `π` is nondegenerate the vectors `(π ⋊ U)(f) v` span a dense subspace, so these formulas
-determine `π(a)` and `U_r` from the integrated form. Consequently:
+where `(a • f) s = a * f s` and `(r • f) s = α r (f (r⁻¹ * s))` is `CStarAction.translate`;
+these are `integratedOperator_smul` and `integratedOperator_translate`. When `π` is
+nondegenerate the vectors `(π ⋊ U)(f) v` span a dense subspace, so these formulas determine
+`π(a)` and `U_r` from the integrated form. Consequently:
 
 * a covariant pair with nondegenerate coefficient representation is determined by its integrated
   form, `CovariantRepresentation.ext_integratedOperator`;
@@ -57,20 +57,6 @@ variable {G A H K : Type*} [Group G] [TopologicalSpace G] [MeasurableSpace G]
   [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K]
   {α : CStarAction G A} (P : CovariantRepresentation α H) (μ : Measure G)
   [IsFiniteMeasureOnCompacts μ]
-
-/-- The integrated form turns the twisted left translation into the group representation:
-`(π ⋊ U)(r • f) = U_r (π ⋊ U)(f)`. -/
-@[simp]
-theorem integratedOperator_translate [IsTopologicalGroup G] [MeasurableMul G]
-    [μ.IsMulLeftInvariant] (r : G) (f : C_c(G, A)) :
-    P.integratedOperator μ (α.translate r f) = P.group r * P.integratedOperator μ f := by
-  ext v
-  rw [mul_apply_eq_comp, integratedOperator_apply, integratedOperator_apply,
-    ← ContinuousLinearMap.integral_comp_comm _ (P.integrable_integrand μ f v),
-    ← integral_mul_left_eq_self _ r]
-  -- After substituting `s ↦ r * s`, the integrands agree by covariance.
-  congr 1 with s
-  simp [P.covariance, map_mul]
 
 variable {P} {Q : CovariantRepresentation α K}
 

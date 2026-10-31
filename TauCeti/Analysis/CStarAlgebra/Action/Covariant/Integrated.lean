@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Basic
+public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Translate
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Basic
 public import TauCeti.RepresentationTheory.Continuous.Integrated.Basic
 public import Mathlib.MeasureTheory.Integral.CompactlySupported
@@ -27,8 +27,10 @@ construction agrees with `ContRepresentation.integratedOperatorL1`, after pullin
 representation back along `MulEquiv.multiplicativeAdditive`.
 
 For a left-invariant measure the integrated form is multiplicative for twisted convolution,
-`(π ⋊ U) (f ⋆ g) = (π ⋊ U) f * (π ⋊ U) g`. The order of integration is exchanged by Fubini's
-theorem for compactly supported continuous functions, so σ-finiteness is still not needed.
+`(π ⋊ U) (f ⋆ g) = (π ⋊ U) f * (π ⋊ U) g`, and turns the twisted left translation
+`CStarAction.translate` into the group representation, `(π ⋊ U)(r • f) = U_r (π ⋊ U)(f)`. The
+order of integration is exchanged by Fubini's theorem for compactly supported continuous
+functions, so σ-finiteness is still not needed.
 Extension to coefficient-valued L¹ and the involution identity require additional arguments.
 
 The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2.
@@ -185,6 +187,19 @@ theorem integratedOperator_convolution (f g : C_c(G, A)) :
         simp [Ψ, map_mul, P.covariance]
     _ = (P.integratedOperator μ f * P.integratedOperator μ g) v := by
         simp [integratedOperator_apply]
+
+/-- The integrated form turns the twisted left translation into the group representation:
+`(π ⋊ U)(r • f) = U_r (π ⋊ U)(f)`. -/
+@[simp]
+theorem integratedOperator_translate (r : G) (f : C_c(G, A)) :
+    P.integratedOperator μ (α.translate r f) = P.group r * P.integratedOperator μ f := by
+  ext v
+  rw [mul_apply_eq_comp, integratedOperator_apply, integratedOperator_apply,
+    ← ContinuousLinearMap.integral_comp_comm _ (P.integrable_integrand μ f v),
+    ← integral_mul_left_eq_self _ r]
+  -- After substituting `s ↦ r * s`, the integrands agree by covariance.
+  congr 1 with s
+  simp [P.covariance, map_mul]
 
 end Convolution
 
