@@ -40,6 +40,9 @@ fixed tuples of model vectors (`TauCeti.contMDiffAt_continuousAlternatingMap_app
 * `TauCeti.RoughForm.wedge_hodgeStar_apply`: `α ∧ ⋆β = ⟨α, β⟩ vol`, and its smooth-form version
   `TauCeti.SmoothForm.inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar`.
 * `TauCeti.RoughForm.hodgeStar_hodgeStar`: `⋆⋆α = (-1) ^ (k l) α`.
+* `TauCeti.RoughForm.hodgeStar_hodgeStar_of_even`,
+  `TauCeti.RoughForm.alternatingFormInner_hodgeStar_left`: in an even middle degree the star is
+  an involution and is pointwise self-adjoint.
 
 ## References
 
@@ -102,6 +105,22 @@ theorem hodgeStar_hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k + l 
   funext x
   let := o.fact_finrank_tangentSpace x
   rw [hodgeStar_apply, hodgeStar_apply, Orientation.formHodgeStar_formHodgeStar, Pi.smul_apply]
+
+/-- In an even middle degree the Hodge star of forms is an involution, `⋆⋆α = α`. -/
+@[simp]
+theorem hodgeStar_hodgeStar_of_even (o : Manifold.Orientation I M (Fin (k + k))) (hk : Even k)
+    (α : RoughForm I M ℝ k) : hodgeStar o rfl (hodgeStar o rfl α) = α := by
+  rw [hodgeStar_hodgeStar, (hk.mul_right k).neg_one_pow, one_smul]
+
+/-- In an even middle degree the Hodge star of forms is pointwise self-adjoint:
+`⟨⋆α, β⟩ = ⟨α, ⋆β⟩` at every point. -/
+theorem alternatingFormInner_hodgeStar_left (o : Manifold.Orientation I M (Fin (k + k)))
+    (hk : Even k) (α β : RoughForm I M ℝ k) (x : M) :
+    alternatingFormInner (TangentSpace I x) k (hodgeStar o rfl α x) (β x) =
+      alternatingFormInner (TangentSpace I x) k (α x) (hodgeStar o rfl β x) := by
+  let := o.fact_finrank_tangentSpace x
+  rw [hodgeStar_apply, hodgeStar_apply]
+  exact (o.orientationAt x).alternatingFormInner_formHodgeStar_left hk _ (α x) (β x)
 
 /-- Reversing the orientation negates the Hodge star. -/
 @[simp]

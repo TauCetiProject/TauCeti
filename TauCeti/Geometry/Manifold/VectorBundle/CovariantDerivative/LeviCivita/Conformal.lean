@@ -12,7 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 
 /-!
 # The Levi-Civita connection under a conformal change of metric

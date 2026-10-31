@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Topology.CWComplex.Classical.Finite
 public import TauCeti.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Geometry.Manifold.Morse.CellAttachment
+public import TauCeti.Geometry.Manifold.Morse.Cell.Attachment
+public import TauCeti.Geometry.Manifold.Morse.Cell.Map
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellMap
 
 /-!
@@ -21,14 +22,14 @@ each critical point of the level `c`: in a normalized Morse chart `φ` of index 
 shows that these discs are the cells of a relative CW complex over `M_{c-ε}`, so that `M_{c+ε}` has
 the homotopy type of `M_{c-ε}` with one `λ`-cell attached at each critical point of index `λ`.
 
-The characteristic map of the cell of a chart `φ` is `TauCeti.morseCell`: on the Euclidean unit
-disc of `ℝ^λ` it sends `w` to the point of chart coordinates `(√ε • w, 0)`, with `w` in the first
-`λ` coordinates. On the boundary sphere `f = c - ε`, so the attaching map lands in `M_{c-ε}`,
-while `f > c - ε` on the open disc, which is therefore disjoint from `M_{c-ε}`. Mathlib's
+The characteristic map of the cell of a chart `φ` is `OpenPartialHomeomorph.morseCellMap`: on the
+Euclidean unit disc of `ℝ^λ` it sends `w` to the point of chart coordinates `(√ε • w, 0)`, with `w`
+in the first `λ` coordinates. On the boundary sphere `f = c - ε`, so the attaching map lands in
+`M_{c-ε}`, while `f > c - ε` on the open disc, which is therefore disjoint from `M_{c-ε}`. Mathlib's
 classical `Topology.RelCWComplex` takes characteristic maps on the closed unit ball of the sup
 norm, which is carried onto the Euclidean disc by the radial homeomorphism
 `ContinuousLinearEquiv.unitBallHomeomorph`; read back on the Euclidean disc `𝔻 λ` through
-`TauCeti.cellDiskHom`, the characteristic map is again `TauCeti.morseCell`
+`TauCeti.cellDiskHom`, the characteristic map is again `OpenPartialHomeomorph.morseCellMap`
 (`TauCeti.coe_cellDiskHom_morseRelCWComplex`).
 
 The construction is purely topological: it uses only charts `φ i` that are open partial
@@ -37,15 +38,11 @@ them, and the containment of the closed ball of radius `√ε` in their targets.
 
 ## Main definitions
 
-* `TauCeti.morseCell`: the characteristic map of the negative disc of a Morse chart.
 * `TauCeti.morseRelCWComplex`: the finite relative CW complex `M_{c-ε} ∪ ⋃ cells` over
   `M_{c-ε}`, with one `k i`-cell for each chart `φ i`.
 
 ## Main results
 
-* `TauCeti.image_morseCell_closedBall`: the image of the closed unit disc under `morseCell` is
-  the disc `{‖y‖² ≤ ε, yⱼ = 0 for j ≥ λ}` of the chart.
-* `TauCeti.apply_morseCell`: the value of `f` on the cell is `c - ε‖w‖²`.
 * `TauCeti.finite_morseRelCWComplex`: the relative CW complex `TauCeti.morseRelCWComplex` is
   finite.
 * `TauCeti.IsMorse.exists_relCWComplex_sublevel_deformation`: **Milnor's cell attachment theorem
@@ -75,20 +72,6 @@ section MorseCell
 variable {M : Type u} [TopologicalSpace M] {n m : ℕ}
   {φ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} {ε : ℝ}
 
-variable (φ ε) in
-/-- The **characteristic map of the negative disc of a Morse chart** `φ`: for `m ≤ n`, the point
-of `M` whose chart coordinates are `(√ε • w, 0)`, with `w : ℝᵐ` in the first `m` coordinates.
-When `f = c - Σ_{j < m} yⱼ² + Σ_{j ≥ m} yⱼ²` in the chart, it carries the closed unit disc onto the
-cell `{‖y‖² ≤ ε, yⱼ = 0 for j ≥ m}` (`TauCeti.image_morseCell_closedBall`), on which
-`f = c - ε‖w‖²` (`TauCeti.apply_morseCell`). -/
-def morseCell (hm : m ≤ n) (w : EuclideanSpace ℝ (Fin m)) : M :=
-  φ.symm (√ε • LinearIsometry.piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hm) w)
-
-theorem morseCell_apply (hm : m ≤ n) (w : EuclideanSpace ℝ (Fin m)) :
-    morseCell φ ε hm w =
-      φ.symm (√ε • LinearIsometry.piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hm) w) :=
-  (rfl)
-
 /-- The radial homeomorphism from the sup norm to the Euclidean norm keeps the closed unit ball. -/
 private theorem norm_unitBallHomeomorph_symm_le_one {x : Fin m → ℝ} (hx : x ∈ closedBall 0 1) :
     ‖(EuclideanSpace.equiv (Fin m) ℝ).unitBallHomeomorph.symm x‖ ≤ 1 :=
@@ -110,154 +93,82 @@ private theorem norm_unitBallHomeomorph_symm_eq_one {x : Fin m → ℝ} (hx : x 
 variable (hball : closedBall 0 √ε ⊆ φ.target)
 include hball
 
-private theorem smul_extendByZero_mem_target (hm : m ≤ n) {w : EuclideanSpace ℝ (Fin m)}
-    (hw : ‖w‖ ≤ 1) :
-    √ε • LinearIsometry.piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hm) w ∈ φ.target := by
-  refine hball (mem_closedBall_zero_iff.2 ?_)
-  rw [norm_smul, LinearIsometry.norm_map, Real.norm_of_nonneg (Real.sqrt_nonneg _)]
-  exact mul_le_of_le_one_right (Real.sqrt_nonneg _) hw
-
-/-- The chart coordinates of the point of the cell of disc coordinate `w` are `(√ε • w, 0)`. -/
-theorem apply_morseCell_eq (hm : m ≤ n) {w : EuclideanSpace ℝ (Fin m)} (hw : ‖w‖ ≤ 1) :
-    φ (morseCell φ ε hm w) = √ε • LinearIsometry.piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hm) w :=
-  φ.right_inv (smul_extendByZero_mem_target hball hm hw)
-
-/-- The cell of a Morse chart lies in the source of the chart. -/
-theorem morseCell_mem_source (hm : m ≤ n) {w : EuclideanSpace ℝ (Fin m)} (hw : ‖w‖ ≤ 1) :
-    morseCell φ ε hm w ∈ φ.source :=
-  φ.map_target (smul_extendByZero_mem_target hball hm hw)
-
-/-- The chart coordinates of a point of the cell vanish beyond the first `m`. -/
-theorem apply_morseCell_apply_eq_zero (hm : m ≤ n) {w : EuclideanSpace ℝ (Fin m)}
-    (hw : ‖w‖ ≤ 1) {j : Fin n} (hj : m ≤ j.val) : φ (morseCell φ ε hm w) j = 0 := by
-  rw [apply_morseCell_eq hball hm hw, PiLp.smul_apply,
-    EuclideanSpace.piLpExtendByZero_castLEEmb_apply_of_le hm w hj, smul_zero]
-
-/-- The squared norm of the chart coordinates of the point of the cell of disc coordinate `w` is
-`ε‖w‖²`. -/
-theorem norm_apply_morseCell_sq (hε : 0 ≤ ε) (hm : m ≤ n) {w : EuclideanSpace ℝ (Fin m)}
-    (hw : ‖w‖ ≤ 1) : ‖φ (morseCell φ ε hm w)‖ ^ 2 = ε * ‖w‖ ^ 2 := by
-  rw [apply_morseCell_eq hball hm hw, norm_smul, LinearIsometry.norm_map,
-    Real.norm_of_nonneg (Real.sqrt_nonneg _), mul_pow, Real.sq_sqrt hε]
-
 /-- Undoing the scaling and the zero extension recovers the disc coordinate of a cell point. -/
-private theorem inv_smul_take_apply_morseCell (hε : 0 < ε) (hm : m ≤ n)
+private theorem inv_smul_take_apply_morseCellMap (hε : 0 < ε) (hm : m ≤ n)
     {w : EuclideanSpace ℝ (Fin m)} (hw : ‖w‖ ≤ 1) :
-    (√ε)⁻¹ • EuclideanSpace.take hm (φ (morseCell φ ε hm w)) = w := by
-  rw [apply_morseCell_eq hball hm hw, ← map_smul (LinearIsometry.piLpExtendByZero 2 ℝ ℝ _),
+    (√ε)⁻¹ • EuclideanSpace.take hm (φ (φ.morseCellMap hm ε w)) = w := by
+  rw [OpenPartialHomeomorph.apply_morseCellMap hball hm hw,
+    ← map_smul (LinearIsometry.piLpExtendByZero 2 ℝ ℝ _),
     EuclideanSpace.take_piLpExtendByZero_castLEEmb, inv_smul_smul₀ (Real.sqrt_pos.2 hε).ne']
 
-/-- The characteristic map of a Morse cell is continuous on the closed unit disc. -/
-theorem continuousOn_morseCell (hm : m ≤ n) : ContinuousOn (morseCell φ ε hm) (closedBall 0 1) :=
-  φ.continuousOn_symm.comp (((LinearIsometry.piLpExtendByZero 2 ℝ ℝ
-    (Fin.castLEEmb hm)).continuous.const_smul √ε).continuousOn) fun _ hw ↦
-      smul_extendByZero_mem_target hball hm (mem_closedBall_zero_iff.1 hw)
-
-/-- **The cell of a Morse chart.** The closed unit disc of `ℝᵐ` is carried by `morseCell` onto
-the points of the chart whose coordinates satisfy `‖y‖² ≤ ε` and `yⱼ = 0` for `j ≥ m`. -/
-theorem image_morseCell_closedBall (hε : 0 < ε) (hm : m ≤ n) :
-    morseCell φ ε hm '' closedBall 0 1 =
-      φ.source ∩ φ ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, m ≤ j.val → y j = 0} := by
-  ext x
-  refine ⟨?_, fun ⟨hx, hxε, hx0⟩ ↦ ?_⟩
-  · rintro ⟨w, hw, rfl⟩
-    rw [mem_closedBall_zero_iff] at hw
-    refine ⟨morseCell_mem_source hball hm hw, ?_, fun j hj ↦
-      apply_morseCell_apply_eq_zero hball hm hw hj⟩
-    rw [norm_apply_morseCell_sq hball hε.le hm hw]
-    exact mul_le_of_le_one_right hε.le (pow_le_one₀ (norm_nonneg _) hw)
-  · have hsq := Real.sqrt_pos.2 hε
-    have hz : ‖φ x‖ ≤ √ε := (abs_of_nonneg (norm_nonneg _)).symm.trans_le (Real.abs_le_sqrt hxε)
-    refine ⟨(√ε)⁻¹ • EuclideanSpace.take hm (φ x), mem_closedBall_zero_iff.2 ?_, ?_⟩
-    · rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hsq.le), ← LinearIsometry.norm_map
-        (LinearIsometry.piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hm)),
-        EuclideanSpace.piLpExtendByZero_castLEEmb_take hm hx0]
-      exact (inv_mul_le_one₀ hsq).2 hz
-    · rw [morseCell_apply, map_smul, smul_inv_smul₀ hsq.ne',
-        EuclideanSpace.piLpExtendByZero_castLEEmb_take hm hx0, φ.left_inv hx]
-
-variable {c : ℝ} {f : M → ℝ}
-
-/-- The value of `f` on the cell of a Morse chart in which `f` has the normal form
-`c - Σ_{j < m} yⱼ² + Σ_{j ≥ m} yⱼ²`: at the point of disc coordinate `w` it is `c - ε‖w‖²`. -/
-theorem apply_morseCell (hε : 0 ≤ ε) (hm : m ≤ n)
-    (hf : ∀ y ∈ φ.source, f y = c + ∑ j, (if j.val < m then -1 else 1) * φ y j ^ 2)
-    {w : EuclideanSpace ℝ (Fin m)} (hw : ‖w‖ ≤ 1) : f (morseCell φ ε hm w) = c - ε * ‖w‖ ^ 2 := by
-  set p : Fin n → Prop := fun j ↦ j.val < m
-  have h2 : (EuclideanSpace.sumComplEquivProd ℝ p (φ (morseCell φ ε hm w))).2 = 0 :=
-    EuclideanSpace.snd_sumComplEquivProd_eq_zero_iff.2 fun j hj ↦
-      apply_morseCell_apply_eq_zero hball hm hw (not_lt.1 hj)
-  have h1 := EuclideanSpace.norm_fst_sumComplEquivProd_sq_add_norm_snd_sq (p := p)
-    (φ (morseCell φ ε hm w))
-  rw [h2, norm_zero, norm_apply_morseCell_sq hball hε hm hw] at h1
-  rw [hf _ (morseCell_mem_source hball hm hw), EuclideanSpace.sum_ite_neg_one_mul_sq_eq (p := p),
-    h2, norm_zero]
-  linarith
-
 /-- The disc coordinate of a cell point, read back through the sup-norm ball. -/
-private theorem unitBallHomeomorph_inv_smul_take_apply_morseCell (hε : 0 < ε) (hm : m ≤ n)
+private theorem unitBallHomeomorph_inv_smul_take_apply_morseCellMap (hε : 0 < ε) (hm : m ≤ n)
     {x : Fin m → ℝ} (hx : x ∈ closedBall 0 1) :
     (EuclideanSpace.equiv (Fin m) ℝ).unitBallHomeomorph ((√ε)⁻¹ • EuclideanSpace.take hm
-      (φ (morseCell φ ε hm ((EuclideanSpace.equiv (Fin m) ℝ).unitBallHomeomorph.symm x)))) = x := by
-  rw [inv_smul_take_apply_morseCell hball hε hm (norm_unitBallHomeomorph_symm_le_one hx),
+      (φ (φ.morseCellMap hm ε ((EuclideanSpace.equiv (Fin m) ℝ).unitBallHomeomorph.symm x)))) =
+      x := by
+  rw [inv_smul_take_apply_morseCellMap hball hε hm (norm_unitBallHomeomorph_symm_le_one hx),
     Homeomorph.apply_symm_apply]
 
 variable (φ) in
 /-- The characteristic map of the cell of `φ` on the closed unit ball of the sup norm on `ℝᵐ`, the
-domain of characteristic maps of a classical CW complex: `TauCeti.morseCell` precomposed with the
-radial homeomorphism onto the Euclidean disc. -/
-private def morseCellMap (hε : 0 < ε) (hm : m ≤ n) : PartialEquiv (Fin m → ℝ) M where
-  toFun x := morseCell φ ε hm ((EuclideanSpace.equiv (Fin m) ℝ).unitBallHomeomorph.symm x)
+domain of characteristic maps of a classical CW complex: `OpenPartialHomeomorph.morseCellMap`
+precomposed with the radial homeomorphism onto the Euclidean disc. -/
+private def morseCellPartialEquiv (hε : 0 < ε) (hm : m ≤ n) : PartialEquiv (Fin m → ℝ) M where
+  toFun x := φ.morseCellMap hm ε ((EuclideanSpace.equiv (Fin m) ℝ).unitBallHomeomorph.symm x)
   invFun y :=
     (EuclideanSpace.equiv (Fin m) ℝ).unitBallHomeomorph ((√ε)⁻¹ • EuclideanSpace.take hm (φ y))
   source := ball 0 1
-  target := (fun x ↦ morseCell φ ε hm ((EuclideanSpace.equiv (Fin m) ℝ).unitBallHomeomorph.symm x))
-    '' ball 0 1
+  target :=
+    (fun x ↦ φ.morseCellMap hm ε ((EuclideanSpace.equiv (Fin m) ℝ).unitBallHomeomorph.symm x)) ''
+      ball 0 1
   map_source' _ hx := mem_image_of_mem _ hx
   map_target' := by
     rintro _ ⟨x, hx, rfl⟩
-    rwa [unitBallHomeomorph_inv_smul_take_apply_morseCell hball hε hm
+    rwa [unitBallHomeomorph_inv_smul_take_apply_morseCellMap hball hε hm
       (ball_subset_closedBall hx)]
   left_inv' x hx :=
-    unitBallHomeomorph_inv_smul_take_apply_morseCell hball hε hm (ball_subset_closedBall hx)
+    unitBallHomeomorph_inv_smul_take_apply_morseCellMap hball hε hm (ball_subset_closedBall hx)
   right_inv' := by
     rintro _ ⟨x, hx, rfl⟩
-    rw [unitBallHomeomorph_inv_smul_take_apply_morseCell hball hε hm
+    rw [unitBallHomeomorph_inv_smul_take_apply_morseCellMap hball hε hm
       (ball_subset_closedBall hx)]
 
-private theorem coe_morseCellMap (hε : 0 < ε) (hm : m ≤ n) :
-    ⇑(morseCellMap φ hball hε hm) =
-      morseCell φ ε hm ∘ (EuclideanSpace.equiv (Fin m) ℝ).unitBallHomeomorph.symm :=
+private theorem coe_morseCellPartialEquiv (hε : 0 < ε) (hm : m ≤ n) :
+    ⇑(morseCellPartialEquiv φ hball hε hm) =
+      φ.morseCellMap hm ε ∘ (EuclideanSpace.equiv (Fin m) ℝ).unitBallHomeomorph.symm :=
   rfl
 
-private theorem continuousOn_morseCellMap (hε : 0 < ε) (hm : m ≤ n) :
-    ContinuousOn (morseCellMap φ hball hε hm) (closedBall 0 1) := by
-  rw [coe_morseCellMap]
-  exact (continuousOn_morseCell hball hm).comp (Homeomorph.continuous _).continuousOn
-    fun _ hx ↦ mem_closedBall_zero_iff.2 (norm_unitBallHomeomorph_symm_le_one hx)
+private theorem continuousOn_morseCellPartialEquiv (hε : 0 < ε) (hm : m ≤ n) :
+    ContinuousOn (morseCellPartialEquiv φ hball hε hm) (closedBall 0 1) := by
+  rw [coe_morseCellPartialEquiv]
+  exact (OpenPartialHomeomorph.continuousOn_morseCellMap hball hm).comp
+    (Homeomorph.continuous _).continuousOn fun _ hx ↦
+      mem_closedBall_zero_iff.2 (norm_unitBallHomeomorph_symm_le_one hx)
 
-private theorem continuousOn_morseCellMap_symm (hε : 0 < ε) (hm : m ≤ n) :
-    ContinuousOn (morseCellMap φ hball hε hm).symm (morseCellMap φ hball hε hm).target := by
+private theorem continuousOn_morseCellPartialEquiv_symm (hε : 0 < ε) (hm : m ≤ n) :
+    ContinuousOn (morseCellPartialEquiv φ hball hε hm).symm
+      (morseCellPartialEquiv φ hball hε hm).target := by
   refine ((Homeomorph.continuous _).comp_continuousOn
     (((EuclideanSpace.continuous_take hm).comp_continuousOn φ.continuousOn).const_smul
       (√ε)⁻¹)).mono ?_
   rintro _ ⟨x, hx, rfl⟩
-  exact morseCell_mem_source hball hm
+  exact OpenPartialHomeomorph.morseCellMap_mem_source hball hm
     (norm_unitBallHomeomorph_symm_le_one (ball_subset_closedBall hx))
 
-private theorem image_morseCellMap_closedBall (hε : 0 < ε) (hm : m ≤ n) :
-    morseCellMap φ hball hε hm '' closedBall 0 1 =
+private theorem image_morseCellPartialEquiv_closedBall (hε : 0 < ε) (hm : m ≤ n) :
+    morseCellPartialEquiv φ hball hε hm '' closedBall 0 1 =
       φ.source ∩ φ ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, m ≤ j.val → y j = 0} := by
-  rw [coe_morseCellMap, image_comp, Homeomorph.image_symm,
-    ← image_morseCell_closedBall hball hε hm]
+  rw [coe_morseCellPartialEquiv, image_comp, Homeomorph.image_symm,
+    ← OpenPartialHomeomorph.morseCellMap_image_closedBall hball hm hε]
   congr 1
   ext x
   simp
 
-private theorem image_morseCellMap_ball_subset_source (hε : 0 < ε) (hm : m ≤ n) :
-    morseCellMap φ hball hε hm '' ball 0 1 ⊆ φ.source :=
+private theorem image_morseCellPartialEquiv_ball_subset_source (hε : 0 < ε) (hm : m ≤ n) :
+    morseCellPartialEquiv φ hball hε hm '' ball 0 1 ⊆ φ.source :=
   ((image_mono ball_subset_closedBall).trans
-    (image_morseCellMap_closedBall hball hε hm).subset).trans inter_subset_left
+    (image_morseCellPartialEquiv_closedBall hball hε hm).subset).trans inter_subset_left
 
 end MorseCell
 
@@ -270,8 +181,8 @@ variable {M : Type u} [TopologicalSpace M] {n : ℕ} {ι : Type u} [Finite ι] {
 in which a continuous `f` has the normal form `c - Σ_{j < k i} yⱼ² + Σ_{j ≥ k i} yⱼ²`. Then the
 lower sublevel `{f ≤ c - ε}` with the discs `{‖y‖² ≤ ε, yⱼ = 0 for j ≥ k i}` of the charts
 attached is a finite CW complex relative to `{f ≤ c - ε}`, with one `k i`-cell for each `i`
-(`TauCeti.morseRelCWComplexCellEquiv`), whose characteristic map is `TauCeti.morseCell`
-(`TauCeti.coe_map_morseRelCWComplex`). -/
+(`TauCeti.morseRelCWComplexCellEquiv`), whose characteristic map is
+`OpenPartialHomeomorph.morseCellMap` (`TauCeti.coe_map_morseRelCWComplex`). -/
 @[instance_reducible]
 def morseRelCWComplex (hfc : Continuous f)
     (φ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
@@ -282,32 +193,34 @@ def morseRelCWComplex (hfc : Continuous f)
       ⋃ i, (φ i).source ∩ φ i ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧ ∀ j : Fin n, k i ≤ j.val → y j = 0})
       {x | f x ≤ c - ε} :=
   RelCWComplex.mkFinite _ _ (fun m ↦ {i // k i = m})
-    (fun _ i ↦ morseCellMap (φ i) (hball i) hε (i.2 ▸ hk i))
+    (fun _ i ↦ morseCellPartialEquiv (φ i) (hball i) hε (i.2 ▸ hk i))
     (eventually_atTop.2 ⟨n + 1, fun m hm ↦ ⟨fun i ↦ by have := hk i; have := i.2; omega⟩⟩)
     (fun _ ↦ inferInstance) (fun _ _ ↦ rfl)
-    (fun _ i ↦ continuousOn_morseCellMap (hball i) hε _)
-    (fun _ i ↦ continuousOn_morseCellMap_symm (hball i) hε _)
+    (fun _ i ↦ continuousOn_morseCellPartialEquiv (hball i) hε _)
+    (fun _ i ↦ continuousOn_morseCellPartialEquiv_symm (hball i) hε _)
     (by
       rintro ⟨m, i, hi⟩ - ⟨m', i', hi'⟩ - hne
       obtain rfl | hii' := eq_or_ne i i'
       · subst hi hi'
         exact absurd rfl hne
-      exact (hφ hii').mono (image_morseCellMap_ball_subset_source _ _ _)
-        (image_morseCellMap_ball_subset_source _ _ _))
+      exact (hφ hii').mono (image_morseCellPartialEquiv_ball_subset_source _ _ _)
+        (image_morseCellPartialEquiv_ball_subset_source _ _ _))
     (by
       rintro _ ⟨i, rfl⟩
       refine disjoint_left.2 ?_
       rintro _ ⟨x, hx, rfl⟩ hxD
       have hw := norm_unitBallHomeomorph_symm_lt_one hx
-      rw [mem_ofPred_eq, coe_morseCellMap, comp_apply,
-        apply_morseCell (hball i) hε.le _ (hf i) hw.le] at hxD
+      rw [mem_ofPred_eq, coe_morseCellPartialEquiv, comp_apply,
+        OpenPartialHomeomorph.apply_morseCellMap_eq_sub_mul_norm_sq (hball i) (hf i) _ hε.le
+          hw.le] at hxD
       have := mul_lt_mul_of_pos_left (pow_lt_one₀ (norm_nonneg _) hw two_ne_zero) hε
       linarith)
     (by
       rintro _ ⟨i, rfl⟩ x hx
       refine Or.inl ?_
-      rw [mem_ofPred_eq, coe_morseCellMap, comp_apply, apply_morseCell (hball i) hε.le _ (hf i)
-        (norm_unitBallHomeomorph_symm_eq_one hx).le, norm_unitBallHomeomorph_symm_eq_one hx]
+      rw [mem_ofPred_eq, coe_morseCellPartialEquiv, comp_apply,
+        OpenPartialHomeomorph.apply_morseCellMap_eq_sub_mul_norm_sq (hball i) (hf i) _ hε.le
+          (norm_unitBallHomeomorph_symm_eq_one hx).le, norm_unitBallHomeomorph_symm_eq_one hx]
       linarith)
     (isClosed_le hfc continuous_const)
     (by
@@ -316,9 +229,9 @@ def morseRelCWComplex (hfc : Continuous f)
       simp only [mem_iUnion]
       constructor
       · rintro ⟨_, ⟨i, rfl⟩, hx⟩
-        exact ⟨i, image_morseCellMap_closedBall (hball i) hε _ ▸ hx⟩
+        exact ⟨i, image_morseCellPartialEquiv_closedBall (hball i) hε _ ▸ hx⟩
       · rintro ⟨i, hx⟩
-        exact ⟨k i, ⟨i, rfl⟩, (image_morseCellMap_closedBall (hball i) hε _).symm ▸ hx⟩)
+        exact ⟨k i, ⟨i, rfl⟩, (image_morseCellPartialEquiv_closedBall (hball i) hε _).symm ▸ hx⟩)
 
 variable (hfc : Continuous f) (φ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
   (hφ : Pairwise (Disjoint on fun i ↦ (φ i).source)) (k : ι → ℕ) (hk : ∀ i, k i ≤ n)
@@ -341,25 +254,28 @@ instance finite_morseRelCWComplex :
     finite_cell := fun m ↦ inferInstanceAs (Finite {i // k i = m}) }
 
 /-- The characteristic map of the `m`-cell of `TauCeti.morseRelCWComplex` at the chart `φ i` is
-`TauCeti.morseCell` precomposed with the radial homeomorphism from the closed unit ball of the sup
-norm onto the Euclidean disc. -/
+`OpenPartialHomeomorph.morseCellMap` precomposed with the radial homeomorphism from the closed
+unit ball of the sup norm onto the Euclidean disc. -/
 @[simp]
 theorem coe_map_morseRelCWComplex (m : ℕ)
     (j : @cell M _ _ _ (morseRelCWComplex hfc φ hφ k hk hε hball hf) m) :
     ⇑(@map M _ _ _ (morseRelCWComplex hfc φ hφ k hk hε hball hf) m j) =
-      morseCell (φ (morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).1) ε
-          ((morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).2 ▸ hk _) ∘
+      OpenPartialHomeomorph.morseCellMap
+          (φ (morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).1)
+          ((morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).2 ▸ hk _) ε ∘
         (EuclideanSpace.equiv (Fin m) ℝ).unitBallHomeomorph.symm :=
   (rfl)
 
 /-- Read on the Euclidean disc `𝔻 m` through `TauCeti.cellDiskHom`, the characteristic map of the
-`m`-cell of `TauCeti.morseRelCWComplex` at the chart `φ i` is `TauCeti.morseCell`: it sends `w` to
-the point of chart coordinates `(√ε • w, 0)`. -/
+`m`-cell of `TauCeti.morseRelCWComplex` at the chart `φ i` is
+`OpenPartialHomeomorph.morseCellMap`: it sends `w` to the point of chart coordinates
+`(√ε • w, 0)`. -/
 theorem coe_cellDiskHom_morseRelCWComplex [T2Space M] (m : ℕ)
     (j : @cell M _ _ _ (morseRelCWComplex hfc φ hφ k hk hε hball hf) m) (z : TopCat.disk.{u} m) :
     (@cellDiskHom M _ _ _ _ (morseRelCWComplex hfc φ hφ k hk hε hball hf) m j z : M) =
-      morseCell (φ (morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).1) ε
-        ((morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).2 ▸ hk _)
+      OpenPartialHomeomorph.morseCellMap
+        (φ (morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).1)
+        ((morseRelCWComplexCellEquiv hfc φ hφ k hk hε hball hf m j).2 ▸ hk _) ε
         (z : ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin m)) 1)).down := by
   let := morseRelCWComplex hfc φ hφ k hk hε hball hf
   rw [coe_cellDiskHom_apply, coe_map_morseRelCWComplex, comp_apply,
@@ -405,12 +321,12 @@ theorem IsMorse.exists_relCWComplex_sublevel_deformation (hf : IsMorse I f) (hδ
     · rw [mem_ofPred_eq] at hx ⊢
       linarith
     obtain ⟨p, hx⟩ := mem_iUnion.1 hx
-    have hx' : x ∈ morseCell (ψ p).toOpenPartialHomeomorph ε (hk p) '' closedBall 0 1 := by
-      rw [image_morseCell_closedBall (hball p) hε (hk p)]
+    have hx' : x ∈ (ψ p).toOpenPartialHomeomorph.morseCellMap (hk p) ε '' closedBall 0 1 := by
+      rw [OpenPartialHomeomorph.morseCellMap_image_closedBall (hball p) (hk p) hε]
       exact hx
     obtain ⟨w, hw, rfl⟩ := hx'
-    rw [mem_ofPred_eq, apply_morseCell (f := f) (hball p) hε.le (hk p) (hψp p).2.2.2
-      (mem_closedBall_zero_iff.1 hw)]
+    rw [mem_ofPred_eq, OpenPartialHomeomorph.apply_morseCellMap_eq_sub_mul_norm_sq (f := f)
+      (hball p) (hψp p).2.2.2 (hk p) hε.le (mem_closedBall_zero_iff.1 hw)]
     nlinarith [sq_nonneg ‖w‖]
   refine ⟨ε, hε, hεδ, _, morseRelCWComplex hf.contMDiff.continuous
     (fun p ↦ (ψ p).toOpenPartialHomeomorph) hψ (manifoldMorseIndex I f ·) hk hε hball

@@ -36,6 +36,11 @@ measure and the renewal function are the objects of the renewal limit theorems a
 
 ## Main results
 
+* `MeasureTheory.Measure.convolutionPower_le_renewalMeasure`,
+  `MeasureTheory.Measure.summable_convolutionPower_real` — each `F^{∗n}` is dominated by `U`, and
+  the masses `F^{∗n} s` are summable when `U s` is finite.
+* `MeasureTheory.Measure.isLocallyFiniteMeasure_of_renewalMeasure` — `F` is locally finite when
+  `U` is.
 * `MeasureTheory.Measure.renewalMeasure_eq_dirac_add_conv` — the renewal equation
   `U = δ₀ + F ∗ U`.
 * `MeasureTheory.Measure.renewalFunction_eq_tsum` — `m t = ∑_{n ≥ 1} F^{∗n} [0, t]`.
@@ -80,6 +85,28 @@ theorem renewalMeasure_def (μ : Measure α) :
 theorem renewalMeasure_apply (μ : Measure α) {s : Set α} (hs : MeasurableSet s) :
     μ.renewalMeasure s = ∑' n, μ.convolutionPower n s := by
   rw [renewalMeasure_def, sum_apply _ hs]
+
+/-- Each convolution power is dominated by the renewal measure. -/
+theorem convolutionPower_le_renewalMeasure (μ : Measure α) (n : ℕ) :
+    μ.convolutionPower n ≤ μ.renewalMeasure :=
+  le_sum _ n
+
+/-- An s-finite measure is dominated by its renewal measure, of which it is the term `μ^{∗1}`. -/
+theorem le_renewalMeasure [MeasurableAdd₂ α] (μ : Measure α) [SFinite μ] :
+    μ ≤ μ.renewalMeasure :=
+  (convolutionPower_one μ).ge.trans (convolutionPower_le_renewalMeasure μ 1)
+
+/-- An s-finite measure whose renewal measure is locally finite is itself locally finite. -/
+theorem isLocallyFiniteMeasure_of_renewalMeasure [MeasurableAdd₂ α] [TopologicalSpace α]
+    (μ : Measure α) [SFinite μ] [IsLocallyFiniteMeasure μ.renewalMeasure] :
+    IsLocallyFiniteMeasure μ :=
+  isLocallyFiniteMeasure_of_le (le_renewalMeasure μ)
+
+/-- The masses of a set `s` under the convolution powers are summable when the renewal measure
+gives `s` finite mass. No measurability of `s` is needed. -/
+theorem summable_convolutionPower_real {μ : Measure α} {s : Set α}
+    (hU : μ.renewalMeasure s ≠ ∞) : Summable fun n ↦ (μ.convolutionPower n).real s :=
+  ENNReal.summable_toReal (ne_top_of_le_ne_top hU (le_sum_apply _ s))
 
 /-- The renewal measure of an s-finite measure is s-finite. -/
 instance sfinite_renewalMeasure (μ : Measure α) [SFinite μ] : SFinite μ.renewalMeasure := by

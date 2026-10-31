@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.PowerSeries.Binomial
 public import TauCeti.NumberTheory.Padics.MahlerBasis
 public import TauCeti.NumberTheory.Padics.Measure.Weight
 public import TauCeti.RingTheory.PowerSeries.MahlerDerivation
+import Mathlib.RingTheory.Polynomial.Tower
+import TauCeti.Topology.ContinuousMap.Polynomial
 
 /-!
 # Moments of measures on `ℤ_p` and the Amice transform
@@ -25,6 +27,11 @@ Mahler derivation `∂ = (1 + T) d/dT`. Iterating, the moment `μ (x ^ k)` is th
 coefficient of `∂ ^ k A_μ`, and over `ℚ_p` it is `k !` times the `k`-th coefficient of
 `A_μ (exp T - 1)`. This is how the values of a p-adic L-function at negative integers are read
 off from the power series of its measure.
+
+Conversely, `n ! * (x choose n)` is the descending Pochhammer polynomial `x (x - 1) ⋯ (x - n + 1)`,
+which has no constant term for `n > 0`. So over coefficients without additive torsion, a measure
+whose positive moments `μ (x ^ k)`, `k > 0`, all vanish has constant Amice transform. This is the
+step by which positive moments determine measures on the units `ℤ_pˣ`.
 
 The statements are made for a measure with values in any topological `ℤ_p`-algebra `R`, where the
 coordinate function is `x_R = ContinuousMap.id ℤ_[p] • 1 : C(ℤ_[p], R)`, following the convention
@@ -43,6 +50,10 @@ coordinate function is `x_R = ContinuousMap.id ℤ_[p] • 1 : C(ℤ_[p], R)`, f
 * `AbstractMeasure.amiceTransform_weight_id`, `AbstractMeasure.ordinaryMoment_eq_constantCoeff`
   and `AbstractMeasure.ordinaryMoment_eq_factorial_coeff`: the forms for `ℤ_p`-valued measures,
   the last with its moments compared in `ℚ_p`.
+* `AbstractMeasure.polynomial_apply_eq_zero_of_positive_moments`: a measure whose positive moments
+  vanish kills every polynomial in `x_R` without constant term.
+* `AbstractMeasure.amiceTransform_eq_C_iff`: over coefficients without additive torsion, the
+  positive moments of `μ` vanish if and only if `A_μ` is the constant `μ 1`.
 
 ## References
 
@@ -53,7 +64,7 @@ coordinate function is `x_R = ContinuousMap.id ℤ_[p] • 1 : C(ℤ_[p], R)`, f
 
 public noncomputable section
 
-open scoped AbstractMeasure PowerSeries
+open scoped AbstractMeasure PowerSeries Polynomial
 
 variable {p : ℕ} [Fact p.Prime]
 
@@ -173,6 +184,57 @@ theorem ordinaryMoment_eq_factorial_coeff (μ : D(ℤ_[p], ℤ_[p])) (k : ℕ) :
         ((PowerSeries.map (algebraMap ℤ_[p] ℚ_[p]) μ.amiceTransform).subst
           (PowerSeries.exp ℚ_[p] - 1)) := by
       rw [PowerSeries.constantCoeff_iterate_mahlerDerivation]
+
+/-! ### Measures with vanishing positive moments -/
+
+section PositiveMoments
+
+/-- A measure on `ℤ_p` whose positive moments `μ (x ^ k)`, `k > 0`, all vanish kills every
+polynomial in the coordinate function without constant term. -/
+theorem polynomial_apply_eq_zero_of_positive_moments (μ : D(ℤ_[p], R))
+    (hμ : ∀ k, 0 < k → μ ((ContinuousMap.id ℤ_[p] • 1 : C(ℤ_[p], R)) ^ k) = 0) {P : R[X]}
+    (hP : P.coeff 0 = 0) :
+    μ (Polynomial.aeval (ContinuousMap.id ℤ_[p] • 1 : C(ℤ_[p], R)) P) = 0 := by
+  rw [Polynomial.aeval_eq_sum_range, map_sum]
+  refine Finset.sum_eq_zero fun k _ => ?_
+  rw [map_smul, smul_eq_mul]
+  rcases k.eq_zero_or_pos with rfl | hk
+  · rw [hP, zero_mul]
+  · rw [hμ k hk, mul_zero]
+
+/-- Over coefficients without additive torsion, a measure on `ℤ_p` whose positive moments all
+vanish kills every Mahler function `x choose n` of positive index: the coefficients of its Amice
+transform in positive degree vanish. -/
+theorem coeff_amiceTransform_eq_zero_of_positive_moments [IsAddTorsionFree R] (μ : D(ℤ_[p], R))
+    (hμ : ∀ k, 0 < k → μ ((ContinuousMap.id ℤ_[p] • 1 : C(ℤ_[p], R)) ^ k) = 0) {n : ℕ}
+    (hn : n ≠ 0) : PowerSeries.coeff n μ.amiceTransform = 0 := by
+  -- `n ! • (x choose n)` is the descending Pochhammer polynomial, which has no constant term.
+  have hpoch : n.factorial • ((mahler n : C(ℤ_[p], ℤ_[p])) • (1 : C(ℤ_[p], R))) =
+      Polynomial.aeval (ContinuousMap.id ℤ_[p] • 1 : C(ℤ_[p], R)) (descPochhammer R n) := by
+    rw [← smul_assoc, TauCeti.factorial_smul_mahler, Polynomial.toContinuousMap_smul_one_eq_aeval,
+      ← descPochhammer_map (algebraMap ℤ_[p] R), Polynomial.aeval_map_algebraMap]
+  rw [coeff_amiceTransform]
+  refine (nsmul_eq_zero_iff_right (Nat.factorial_ne_zero n)).mp ?_
+  rw [← map_nsmul, hpoch]
+  refine polynomial_apply_eq_zero_of_positive_moments μ hμ ?_
+  rw [Polynomial.coeff_zero_eq_eval_zero, descPochhammer_ne_zero_eval_zero R hn]
+
+/-- Over coefficients without additive torsion, a measure on `ℤ_p` has constant Amice transform,
+necessarily equal to its total mass, if and only if all of its positive moments vanish. -/
+theorem amiceTransform_eq_C_iff [IsAddTorsionFree R] (μ : D(ℤ_[p], R)) :
+    μ.amiceTransform = PowerSeries.C (μ 1) ↔
+      ∀ k, 0 < k → μ ((ContinuousMap.id ℤ_[p] • 1 : C(ℤ_[p], R)) ^ k) = 0 := by
+  refine ⟨fun h k hk => ?_, fun hμ => ?_⟩
+  · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
+    rw [ordinaryMoment_smul_one_eq_constantCoeff, h, Function.iterate_succ_apply,
+      PowerSeries.mahlerDerivation_C, iterate_map_zero, map_zero]
+  · ext n
+    rcases eq_or_ne n 0 with rfl | hn
+    · rw [PowerSeries.coeff_zero_eq_constantCoeff_apply, constantCoeff_amiceTransform,
+        PowerSeries.coeff_zero_C]
+    · simp [coeff_amiceTransform_eq_zero_of_positive_moments μ hμ hn, PowerSeries.coeff_C, hn]
+
+end PositiveMoments
 
 -- Weighting by `x` is not injective: it kills `δ₀`.
 example : weight (ContinuousMap.id ℤ_[3]) (dirac ℤ_[3] 0) = 0 ∧ dirac ℤ_[3] 0 ≠ 0 := by

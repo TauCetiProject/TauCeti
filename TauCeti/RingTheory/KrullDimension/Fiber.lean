@@ -49,6 +49,10 @@ set-theoretic fibre of `Spec S → Spec R` over `p`. Mathlib's
 * `TauCeti.ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq`: a flat local homomorphism whose
   closed fibre is a field, such as the completion of a Noetherian local ring, preserves the Krull
   dimension.
+* `TauCeti.ringKrullDim_le_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal`: for a local
+  homomorphism of Noetherian local rings, `dim S ≤ dim R + dim S ⧸ 𝔪_R S`.
+* `TauCeti.ringKrullDim_quotient_map_maximalIdeal_quotient`: dividing the base by an ideal `J`
+  with `R ⧸ J` local does not change the closed fibre.
 
 ## References
 
@@ -204,5 +208,40 @@ theorem ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq [IsLocalRing R] [IsLocalR
   rw [← maximalIdeal_height_eq_ringKrullDim, ← maximalIdeal_height_eq_ringKrullDim,
     Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown (maximalIdeal R) (maximalIdeal S), h,
     Ideal.map_quotient_self, Ideal.height_bot, add_zero]
+
+open IsLocalRing in
+/-- For a local homomorphism of Noetherian local rings `R → S`, the Krull dimension of `S` is at
+most the Krull dimension of `R` plus that of the closed fibre `S ⧸ 𝔪_R S`. -/
+@[stacks 00OM "for the maximal ideals"]
+theorem ringKrullDim_le_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal [IsLocalRing R]
+    [IsLocalRing S] [IsNoetherianRing R] [IsNoetherianRing S] [IsLocalHom (algebraMap R S)] :
+    ringKrullDim S ≤ ringKrullDim R + ringKrullDim (S ⧸ (maximalIdeal R).map (algebraMap R S)) := by
+  have h := WithBot.coe_le_coe.mpr
+    (Ideal.height_le_height_add_of_liesOver (maximalIdeal R) (maximalIdeal S))
+  rw [maximalIdeal_height_eq_ringKrullDim, WithBot.coe_add,
+    maximalIdeal_height_eq_ringKrullDim] at h
+  refine h.trans (add_le_add_right (Ideal.height_le_ringKrullDim_of_ne_top ?_) _)
+  have hle : (maximalIdeal R).map (algebraMap R S) ≤ maximalIdeal S :=
+    Ideal.map_le_iff_le_comap.mpr (maximalIdeal_comap (algebraMap R S)).ge
+  exact (Ideal.isPrime_map_quotientMk_of_isPrime hle).ne_top
+
+open IsLocalRing in
+/-- Dividing the base of a local `R`-algebra `S` by an ideal `J`, with `R ⧸ J` local, does not
+change the closed fibre: the closed fibre of `R ⧸ J → S ⧸ J S` has the Krull dimension of the
+closed fibre `S ⧸ 𝔪_R S` of `R → S`. -/
+theorem ringKrullDim_quotient_map_maximalIdeal_quotient [IsLocalRing R] (J : Ideal R)
+    [IsLocalRing (R ⧸ J)] :
+    ringKrullDim ((S ⧸ J.map (algebraMap R S)) ⧸
+        (maximalIdeal (R ⧸ J)).map (algebraMap (R ⧸ J) (S ⧸ J.map (algebraMap R S)))) =
+      ringKrullDim (S ⧸ (maximalIdeal R).map (algebraMap R S)) := by
+  have hJ : J ≤ maximalIdeal R := le_maximalIdeal fun h ↦ by
+    subst h
+    exact not_nontrivial (R ⧸ (⊤ : Ideal R)) inferInstance
+  have hcomp : (algebraMap (R ⧸ J) (S ⧸ J.map (algebraMap R S))).comp (Ideal.Quotient.mk J) =
+      (Ideal.Quotient.mk _).comp (algebraMap R S) :=
+    RingHom.ext Ideal.Quotient.algebraMap_quotient_map_quotient
+  rw [← map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective, Ideal.map_map, hcomp,
+    ← Ideal.map_map]
+  exact ringKrullDim_eq_of_ringEquiv (DoubleQuot.quotQuotEquivQuotOfLE (Ideal.map_mono hJ))
 
 end TauCeti

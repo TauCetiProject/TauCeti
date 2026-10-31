@@ -56,6 +56,15 @@ by the class-group interface and the multiplicative value can be read off from o
   height one prime contains an element of order of vanishing `1`.
 * `IsDedekindDomain.HeightOneSpectrum.exp_neg_one_le_intValuation_of_squarefree`: in a principal
   ideal domain, a squarefree element vanishes to order at most `1` at every height one prime.
+* `IsDedekindDomain.HeightOneSpectrum.ne_zero_of_span_singleton_eq_pow`: a generator of a power
+  of a height one prime is nonzero.
+* `IsDedekindDomain.HeightOneSpectrum.intValuation_eq_exp_neg_of_span_singleton_eq_pow` and
+  `IsDedekindDomain.HeightOneSpectrum.intValuation_eq_one_of_span_singleton_eq_pow`: a generator
+  of `w ^ n` vanishes to order `n` at `w` and to order `0` at every other height one prime.
+* `IsDedekindDomain.HeightOneSpectrum.intValuation_prod_pow_of_span_singleton_eq_pow`: the
+  valuation of a product `∏ w ∈ P, π w ^ k w` of powers of generators of `w ^ h`.
+* `IsDedekindDomain.dvd_iff_forall_intValuation_le`: a nonzero `a` divides `b` exactly when
+  `b` vanishes to at least the order of `a` at every height one prime.
 
 ## Implementation notes
 
@@ -315,4 +324,72 @@ theorem exp_neg_one_le_intValuation_of_squarefree [IsPrincipalIdealRing R] {r : 
   exact ((squarefree_iff_emultiplicity_le_one _).mp hsf v.asIdeal).resolve_right
     fun h ↦ v.isPrime.ne_top (Ideal.isUnit_iff.mp h)
 
+/-- **A generator of a power of a height one prime is nonzero**, since that power is not `⊥`. -/
+theorem ne_zero_of_span_singleton_eq_pow {r : R} {n : ℕ} (h : Ideal.span {r} = v.asIdeal ^ n) :
+    r ≠ 0 := fun hr ↦
+  pow_ne_zero n v.ne_bot (h ▸ Ideal.span_singleton_eq_bot.mpr hr)
+
+/-- **A generator of `v ^ n` vanishes to order exactly `n` at `v`.** -/
+theorem intValuation_eq_exp_neg_of_span_singleton_eq_pow {r : R} {n : ℕ}
+    (h : Ideal.span {r} = v.asIdeal ^ n) : v.intValuation r = WithZero.exp (-(n : ℤ)) := by
+  refine le_antisymm ((v.intValuation_le_pow_iff_dvd r n).mpr (h ▸ dvd_rfl)) ?_
+  rw [v.exp_le_intValuation_iff_emultiplicity_le, h, emultiplicity_pow_self_of_prime v.prime]
+
+/-- **A generator of a power of a height one prime `w` is a unit at every other height one
+prime `v`.** -/
+theorem intValuation_eq_one_of_span_singleton_eq_pow {w : HeightOneSpectrum R} (hvw : v ≠ w)
+    {r : R} {n : ℕ} (h : Ideal.span {r} = w.asIdeal ^ n) : v.intValuation r = 1 := by
+  rw [intValuation_eq_one_iff]
+  intro hr
+  have hle : w.asIdeal ^ n ≤ v.asIdeal := h ▸ (Ideal.span_singleton_le_iff_mem _).mpr hr
+  exact hvw (HeightOneSpectrum.ext
+    (w.isMaximal.eq_of_le v.isPrime.ne_top (v.isPrime.le_of_pow_le hle)).symm)
+
+open Classical in
+/-- **The valuation of a product of generators of prime powers.** If `π w` generates `w ^ h` for
+each `w` in a finite set `P` of height one primes, then `∏ w ∈ P, π w ^ k w` vanishes to order
+`h * k v` at `v ∈ P` and to order `0` at every `v ∉ P`. -/
+theorem intValuation_prod_pow_of_span_singleton_eq_pow {P : Finset (HeightOneSpectrum R)} {h : ℕ}
+    {π : HeightOneSpectrum R → R} (hπ : ∀ w ∈ P, Ideal.span {π w} = w.asIdeal ^ h)
+    (k : HeightOneSpectrum R → ℕ) :
+    v.intValuation (∏ w ∈ P, π w ^ k w) =
+      if v ∈ P then WithZero.exp (-(h * k v : ℤ)) else 1 := by
+  rw [map_prod]
+  split_ifs with hv
+  · rw [Finset.prod_eq_single_of_mem v hv fun w hw hwv ↦ by
+      rw [map_pow, v.intValuation_eq_one_of_span_singleton_eq_pow (Ne.symm hwv) (hπ w hw),
+        one_pow]]
+    rw [map_pow, v.intValuation_eq_exp_neg_of_span_singleton_eq_pow (hπ v hv),
+      ← WithZero.exp_nsmul]
+    congr 1
+    simp only [smul_neg, nsmul_eq_mul]
+    ring
+  · refine Finset.prod_eq_one fun w hw ↦ ?_
+    rw [map_pow, v.intValuation_eq_one_of_span_singleton_eq_pow (by rintro rfl; exact hv hw)
+      (hπ w hw), one_pow]
+
 end IsDedekindDomain.HeightOneSpectrum
+
+namespace IsDedekindDomain
+
+variable {R : Type*} [CommRing R] [IsDedekindDomain R]
+
+/-- **Divisibility is read off from the adic valuations**: a nonzero `a` divides `b` exactly when
+`b` vanishes to at least the order of `a` at every height one prime. -/
+theorem dvd_iff_forall_intValuation_le {a b : R} (ha : a ≠ 0) :
+    a ∣ b ↔ ∀ v : HeightOneSpectrum R, v.intValuation b ≤ v.intValuation a := by
+  refine ⟨fun ⟨c, hc⟩ v ↦ ?_, fun h ↦ ?_⟩
+  · rw [hc, map_mul]
+    exact mul_le_of_le_one_right' (v.intValuation_le_one c)
+  · let K := FractionRing R
+    have ha' : algebraMap R K a ≠ 0 :=
+      (map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr ha
+    obtain ⟨c, hc⟩ := HeightOneSpectrum.mem_integers_of_valuation_le_one K
+      (algebraMap R K b / algebraMap R K a) fun v ↦ by
+        rw [map_div₀, HeightOneSpectrum.valuation_of_algebraMap,
+          HeightOneSpectrum.valuation_of_algebraMap]
+        exact div_le_one_of_le₀ (h v) zero_le
+    refine ⟨c, IsFractionRing.injective R K ?_⟩
+    rw [map_mul, hc, mul_div_cancel₀ _ ha']
+
+end IsDedekindDomain

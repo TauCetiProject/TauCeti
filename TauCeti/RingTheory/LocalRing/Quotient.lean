@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.RingTheory.Ideal.Cotangent
+public import Mathlib.RingTheory.Ideal.Over
 
 /-!
 # The maximal ideal and the cotangent space of a quotient of a local ring
@@ -16,6 +17,10 @@ an element of `Q` maps into `𝔪_A²` exactly when it lies in `ker π + 𝔪_Q�
 lifts to `Q` of a basis of the cotangent space `𝔪_A / 𝔪_A²` span `𝔪_Q` modulo `ker π + 𝔪_Q²`,
 and they are linearly independent modulo it.
 
+For a local homomorphism `R → S` with `S` local and an ideal `J` of `R`, the induced map
+`R ⧸ J → S ⧸ J S` is again local. Dividing both sides of a local homomorphism by an ideal of the
+base, as in inductions on the dimension of the base, therefore stays among local homomorphisms.
+
 ## Main results
 
 * `TauCeti.IsLocalRing.apply_mem_maximalIdeal_sq_iff`: `π a ∈ 𝔪_A²` if and only if
@@ -24,6 +29,8 @@ and they are linearly independent modulo it.
   of the `yⱼ` generate the maximal ideal of `Q ⧸ J`.
 * `TauCeti.IsLocalRing.exists_lift_finBasis_cotangentSpace`: lifts to `Q` of a basis of the
   cotangent space of `A`.
+* `Ideal.Quotient.isLocalHom_algebraMap_quotient_map_quotient`: `R ⧸ J → S ⧸ J S` is a local
+  homomorphism when `R → S` is one and `S` is local.
 -/
 
 public section
@@ -114,3 +121,30 @@ theorem exists_lift_finBasis_cotangentSpace (hfg : (maximalIdeal Q).FG) {π : Q 
   exact ⟨y, hy𝔪, fun a ha ↦ hcov a ha, hind⟩
 
 end TauCeti.IsLocalRing
+
+namespace Ideal.Quotient
+
+open _root_.IsLocalRing
+
+variable {R S : Type*} [CommRing R] [CommRing S] [IsLocalRing S] [Algebra R S]
+  [IsLocalHom (algebraMap R S)]
+
+/-- For a local homomorphism `R → S` to a local ring and an ideal `J` of `R`, the induced
+homomorphism `R ⧸ J → S ⧸ J S` is local. The ring `R` need not be local. -/
+instance isLocalHom_algebraMap_quotient_map_quotient (J : Ideal R) :
+    IsLocalHom (algebraMap (R ⧸ J) (S ⧸ J.map (algebraMap R S))) := by
+  refine ⟨fun a ha ↦ ?_⟩
+  obtain ⟨r, rfl⟩ := mk_surjective a
+  rw [algebraMap_quotient_map_quotient] at ha
+  by_cases hJ : J = ⊤
+  · subst hJ
+    exact isUnit_of_subsingleton _
+  -- A proper `J` consists of nonunits, so `J S` lies in the maximal ideal of `S`.
+  have hJS : J.map (algebraMap R S) ≤ maximalIdeal S := map_le_iff_le_comap.mpr fun j hj ↦
+    (mem_maximalIdeal _).mpr fun h ↦ hJ (J.eq_top_of_isUnit_mem hj (isUnit_of_map_unit _ j h))
+  have : Nontrivial (S ⧸ J.map (algebraMap R S)) :=
+    Ideal.Quotient.nontrivial_iff.mpr (ne_top_of_le_ne_top IsPrime.ne_top' hJS)
+  have := IsLocalHom.of_surjective (mk (J.map (algebraMap R S))) mk_surjective
+  exact (isUnit_of_map_unit (algebraMap R S) r (isUnit_of_map_unit (mk _) _ ha)).map _
+
+end Ideal.Quotient

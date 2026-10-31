@@ -14,7 +14,9 @@ public import TauCeti.MeasureTheory.Function.LpSeminorm.Multiplier
 
 A *Laurent operator* is multiplication by an essentially bounded symbol on `L²` of the circle;
 in the Fourier basis `e_n = exp (2πinx/T)` it has the bi-infinite Toeplitz matrix of the Fourier
-coefficients of its symbol. This file characterizes Laurent operators in two ways.
+coefficients of its symbol. Concretely, `⟪e_m, e_n b⟫ = b̂(m - n)` for every `b ∈ L²`
+(`TauCeti.inner_fourierBasis_multiplicationOperator_fourierLp`). This file characterizes Laurent
+operators in two ways.
 
 * `TauCeti.eLpNorm_top_le_of_forall_mem_span_fourier`: the **multiplier criterion**. If a
   measurable function `a` satisfies `‖a q‖_p ≤ C ‖q‖_p` for every trigonometric polynomial `q`,
@@ -39,7 +41,7 @@ A. Böttcher and B. Silbermann, *Analysis of Toeplitz Operators*, second edition
 public section
 
 open MeasureTheory AddCircle Set Submodule
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 namespace TauCeti
 
@@ -69,6 +71,15 @@ theorem eLpNorm_top_le_of_forall_mem_span_fourier {p : ℝ≥0∞} [Fact (1 ≤ 
   rw [ContinuousLinearMap.coe_coe, eLpNorm_congr_ae hae,
     eLpNorm_congr_ae (Filter.EventuallyEq.rfl.mul hae)]
   exact h q hq
+
+/-- The matrix coefficient `⟪e_m, e_n b⟫` of multiplication by the Fourier monomial `e_n` is the
+Fourier coefficient `b̂(m - n)`. -/
+theorem inner_fourierBasis_multiplicationOperator_fourierLp (b : Lp ℂ 2 (haarAddCircle (T := T)))
+    (m n : ℤ) :
+    ⟪fourierBasis (T := T) m, Lp.multiplicationOperator (fourierLp (T := T) ∞ n) b⟫_ℂ =
+      fourierCoeff b (m - n) := by
+  rw [← HilbertBasis.repr_apply_apply, fourierBasis_repr, Lp.multiplicationOperator_apply,
+    fourierCoeff_fourierLp_smul]
 
 /-- An operator on circle `L²` commuting with the bilateral shift, multiplication by `e_1`, sends
 each Fourier mode `e_n` to `e_n b`, where `b = W e_0`. -/

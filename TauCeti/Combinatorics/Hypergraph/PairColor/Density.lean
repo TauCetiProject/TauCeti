@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Hypergraph.PairColor.Basic
 public import Mathlib.Data.Finset.Prod
 public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.Algebra.Order.Field.Rat
+import TauCeti.Data.Finset.Basic
 import Mathlib.Tactic.Positivity
 
 /-!
@@ -148,10 +149,6 @@ theorem pairColorDensity_swap (S : PairColorSystem κ V) (c : κ) (s t : Finset 
     apply card_equiv (Equiv.prodComm V V)
     intro p
     simp [and_comm, ← S.colorOfPair_swap_eq_some_iff p.2 p.1 c]
-  have hsupport : #((t ×ˢ s).filter fun p => p.1 ≠ p.2) =
-      #((s ×ˢ t).filter fun p => p.1 ≠ p.2) := by
-    apply card_equiv (Equiv.prodComm V V)
-    simp [and_comm, ne_comm]
-  simp only [pairColorDensity_def, hcolor, hsupport]
+  simp only [pairColorDensity_def, hcolor, card_filter_ne_product_comm t s]
 
 end TauCeti

@@ -61,9 +61,10 @@ every power of `T = !![1, 1; 0, 1]` lies in `Γ₁(N)`.
 
 ## Main results
 
-* `HeckeRing.GL2.natDiagGL_one_mem_Delta0`, `HeckeRing.GL2.coe_natDiagGL_one`, and
-  `HeckeRing.GL2.coe_map_natDiagGL_one`: `diag(1, p)` lies in `Δ₀(N)` at every level, and its
-  matrix over `ℚ` and `ℝ`.
+* `HeckeRing.GL2.natDiagGL_one_mem_Delta0`, `HeckeRing.GL2.coe_natDiagGL_one`,
+  `HeckeRing.GL2.coe_natDiagGL_one_eq_map`, and `HeckeRing.GL2.coe_map_natDiagGL_one`:
+  `diag(1, p)` lies in `Δ₀(N)` at every level, and its matrix over `ℚ` (also as the image of an
+  integer matrix) and `ℝ`.
 * `HeckeRing.GL2.natDiagGL_mul_mapGL_T_zpow`: `diag(1, p) · Tᵇ = !![1, b; 0, p]`, the
   reverse inclusion in one line.
 * `HeckeRing.GL2.exists_mem_Gamma1_natDiagGL_mul_of_dvd`: the factorisation
@@ -119,6 +120,15 @@ lemma natDiagGL_one_mem_Delta0 (N p : ℕ) : natDiagGL 2 ![1, p] ∈ Delta0 N :=
 lemma coe_natDiagGL_one (hp : 0 < p) :
     (↑(natDiagGL 2 ![1, p]) : Matrix (Fin 2) (Fin 2) ℚ) = !![1, 0; 0, (p : ℚ)] := by
   rw [natDiagGL_coe 2 ![1, p] fun i ↦ by fin_cases i <;> simp [hp]]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
+
+/-- The matrix of `diag(1, p)` as the image of an integer matrix, for `0 < p`: the shape the
+integral-witness API (`HeckeRing.GLn.mapGL_mul_coe_eq_intMatrix`) consumes. -/
+lemma coe_natDiagGL_one_eq_map (hp : 0 < p) :
+    (↑(natDiagGL 2 ![1, p]) : Matrix (Fin 2) (Fin 2) ℚ) =
+      (!![1, 0; 0, (p : ℤ)]).map (Int.cast : ℤ → ℚ) := by
+  rw [coe_natDiagGL_one hp]
   ext i j
   fin_cases i <;> fin_cases j <;> simp
 

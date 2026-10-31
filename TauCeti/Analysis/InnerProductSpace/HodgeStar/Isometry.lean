@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.ExteriorPower
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
+import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
 import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
@@ -16,10 +18,17 @@ The Hodge star preserves the inner product and hence defines a linear isometric 
 between complementary exterior powers. Combined with the defining identity
 `⟪⋆x, y⟫ = vol (x ∧ y)`, this gives the wedge characterization `α ∧ ⋆β = ⟪α, β⟫ vol`.
 On the top exterior power the inner product is the product of the volumes,
-`⟪x, y⟫ = vol x * vol y`, since `⋆1` is a unit vector representing the volume.
+`⟪x, y⟫ = vol x * vol y`, since `⋆1` is a unit vector representing the volume. In an even
+middle degree the Hodge star is an isometric involution, hence symmetric.
 Reversing the orientation negates the Hodge star, and transporting the orientation along a
 linear isometric equivalence commutes with it. These statements hold also in dimension zero, for
 either orientation.
+
+In dimension four, the Hodge star of a wedge of two vectors pairs with another such wedge to the
+volume of the four vectors, `⟪⋆(a ∧ b), u ∧ w⟫ = vol(a, b, u, w)`
+(`Orientation.inner_hodgeStar_ιMulti_two`), and the derivation action
+`D_A (u ∧ w) = A u ∧ w + u ∧ A w` of a skew-adjoint endomorphism `A` commutes with the Hodge star
+on two-forms (`Orientation.hodgeStar_lieMap_two`).
 
 ## References
 
@@ -92,6 +101,13 @@ theorem inner_hodgeStar_hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V)
     (x y : ⋀[ℝ]^k V) : ⟪o.hodgeStar hkl x, o.hodgeStar hkl y⟫ = ⟪x, y⟫ := by
   simpa only [← o.hodgeStarIsometry_toLinearEquiv hkl, LinearIsometryEquiv.coe_toLinearEquiv]
     using (o.hodgeStarIsometry hkl).inner_map_map x y
+
+/-- In an even middle degree, `k + k = finrank ℝ V` with `k` even, the Hodge star is symmetric,
+`⟪⋆x, y⟫ = ⟪x, ⋆y⟫`, being an isometric involution. This covers two-forms in dimension four. -/
+theorem isSymmetric_hodgeStar_of_even {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V) :
+    (o.hodgeStar hkk : ⋀[ℝ]^k V →ₗ[ℝ] ⋀[ℝ]^k V).IsSymmetric := fun x y ↦ by
+  conv_lhs => rw [← o.hodgeStar_hodgeStar_of_even hk hkk y]
+  exact o.inner_hodgeStar_hodgeStar hkk x (o.hodgeStar hkk y)
 
 /-- **The wedge characterization of the Hodge star**: `α ∧ ⋆β = ⟪α, β⟫ vol`, that is, the
 volume of `α ∧ ⋆β` is the inner product of `α` and `β`, for `α β ∈ ⋀ᵏ V`. -/
@@ -166,5 +182,69 @@ theorem hodgeStar_map (φ : V ≃ₗᵢ[ℝ] W) {k l : ℕ}
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
   rw [hb, hodgeStar_orthonormalBasis, hodgeStar_orthonormalBasis, hvol,
     map_smul, map_zsmul_unit, hb]
+
+end Orientation
+
+/-! ### Two-forms in dimension four -/
+
+namespace Orientation
+
+variable [Fact (finrank ℝ V = 4)] (o : Orientation ℝ V (Fin 4))
+
+/-- In dimension four, the Hodge star of a wedge of two vectors pairs with another such wedge to
+the volume of the four vectors: `⟪⋆(a ∧ b), u ∧ w⟫ = vol(a, b, u, w)`. -/
+theorem inner_hodgeStar_ιMulti_two (hkl : 2 + 2 = finrank ℝ V) (a b u w : V) :
+    ⟪o.hodgeStar hkl (ιMulti ℝ 2 ![a, b]), ιMulti ℝ 2 ![u, w]⟫ = o.volumeForm ![a, b, u, w] := by
+  -- Read the wedge of the four vectors in the degree `finrank ℝ V`.
+  have key : ∀ {d : ℕ} (hd : d = 4) (f : Fin 4 → V),
+      ExteriorAlgebra.ιMulti ℝ d (f ∘ finCongr hd) = ExteriorAlgebra.ιMulti ℝ 4 f := by
+    rintro d rfl f
+    rfl
+  rw [inner_hodgeStar_apply, wedgePairing_apply_eq_of_coe_mul_eq _ hkl _ _
+    (ιMulti ℝ _ (![a, b, u, w] ∘ finCongr (Fact.out : finrank ℝ V = 4))), volumeEquiv_ιMulti]
+  · congr 1
+  · simp only [ιMulti_apply_coe, key, ExteriorAlgebra.ιMulti_mul_ιMulti]
+    congr 1
+    ext i
+    fin_cases i <;> rfl
+
+/-- **Skew-adjoint endomorphisms commute with the Hodge star on two-forms** in dimension four:
+`⋆ (D_A x) = D_A (⋆ x)` for the derivation action `D_A` of a skew-adjoint `A`. This is the
+infinitesimal form of the invariance of `⋆` under rotations; it holds because `D_A` acts on
+`⋀⁴ V` by `tr A = 0`. -/
+theorem hodgeStar_lieMap_two (hkl : 2 + 2 = finrank ℝ V) {A : V →ₗ[ℝ] V}
+    (hA : ∀ u w, ⟪A u, w⟫ = -⟪u, A w⟫) (x : ⋀[ℝ]^2 V) :
+    o.hodgeStar hkl (exteriorPower.lieMap 2 A x) =
+      exteriorPower.lieMap 2 A (o.hodgeStar hkl x) := by
+  set e := (stdOrthonormalBasis ℝ V).reindex (finCongr (Fact.out : finrank ℝ V = 4))
+    |>.adjustToOrientation o
+  have he : e.toBasis.orientation = o := OrthonormalBasis.orientation_adjustToOrientation _ _
+  -- The coordinates of `A v` in terms of the six entries `⟪eᵢ, A eⱼ⟫`, `i < j`, of its matrix.
+  have hm (i j : Fin 4) : ⟪e i, A (e j)⟫ = -⟪e j, A (e i)⟫ := by
+    rw [← hA, real_inner_comm]
+  have hd (i : Fin 4) : ⟪e i, A (e i)⟫ = 0 := by linarith [hm i i]
+  have hAe (v : V) (i : Fin 4) : e.repr (A v) i =
+      ![⟪e 0, A (e 1)⟫ * e.repr v 1 + ⟪e 0, A (e 2)⟫ * e.repr v 2 + ⟪e 0, A (e 3)⟫ * e.repr v 3,
+        -⟪e 0, A (e 1)⟫ * e.repr v 0 + ⟪e 1, A (e 2)⟫ * e.repr v 2 + ⟪e 1, A (e 3)⟫ * e.repr v 3,
+        -⟪e 0, A (e 2)⟫ * e.repr v 0 - ⟪e 1, A (e 2)⟫ * e.repr v 1 + ⟪e 2, A (e 3)⟫ * e.repr v 3,
+        -⟪e 0, A (e 3)⟫ * e.repr v 0 - ⟪e 1, A (e 3)⟫ * e.repr v 1 -
+          ⟪e 2, A (e 3)⟫ * e.repr v 2] i := by
+    have hv : e.repr (A v) i = ∑ j, e.repr v j * ⟪e i, A (e j)⟫ := by
+      conv_lhs => rw [← e.sum_repr v]
+      simp [OrthonormalBasis.repr_apply_apply]
+    rw [hv, Fin.sum_univ_four]
+    fin_cases i <;>
+      simp [hd, hm 1 0, hm 2 0, hm 3 0, hm 2 1, hm 3 1, hm 3 2] <;> ring
+  refine LinearMap.congr_fun (linearMap_ext_inner_ιMulti_two (f := (o.hodgeStar hkl).toLinearMap ∘ₗ
+    exteriorPower.lieMap 2 A) (g := exteriorPower.lieMap 2 A ∘ₗ
+    (o.hodgeStar hkl).toLinearMap) fun a b u w ↦ ?_) x
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, inner_lieMap_two_left hA,
+    exteriorPower.lieMap_two_apply_ιMulti, map_add, inner_add_left, inner_add_right,
+    o.inner_hodgeStar_ιMulti_two hkl, o.volumeForm_robust e he, Basis.det_apply,
+    Matrix.det_fin_four]
+  simp only [Basis.toMatrix_apply, OrthonormalBasis.coe_toBasis_repr_apply, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
+    Matrix.tail_cons, hAe]
+  ring
 
 end Orientation

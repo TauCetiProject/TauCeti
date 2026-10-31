@@ -366,15 +366,9 @@ private theorem tensorRead_tprod
         ((trivialF2 U.toSubgroup).gradedResolutionProjection (x i)) := by
   unfold tensorRead
   rw [smoothTensorInducedGradedResolutionProjection_tprod]
-  refine (congrArg (fun z ↦ trivialF2Equiv G
-    ((smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen'
-      (twoTransversal U hU s hs)).hom.hom.hom z))
-        (smoothTensorInducedTrivialF2Tprod_eq G U.toSubgroup U.isOpen'
-          (twoTransversal U hU s hs)
-          (fun i ↦ (trivialF2 U.toSubgroup).gradedResolutionProjection (x i)))).symm.trans
-    ((smoothTensorInducedTrivialF2Iso_hom_apply_tprod G U.toSubgroup U.isOpen'
-      (twoTransversal U hU s hs)
-      (fun i ↦ (trivialF2 U.toSubgroup).gradedResolutionProjection (x i))).trans ?_)
+  refine (smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_tprod G U.toSubgroup
+    U.isOpen' (twoTransversal U hU s hs)
+    (fun i ↦ (trivialF2 U.toSubgroup).gradedResolutionProjection (x i))).trans ?_
   apply Finset.prod_congr
   · ext i
     simp

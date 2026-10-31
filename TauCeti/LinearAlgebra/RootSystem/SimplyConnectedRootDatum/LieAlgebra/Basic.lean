@@ -66,10 +66,15 @@ and `f` are nilpotent as matrices. Their generation of the whole Lie algebra is 
   relations that mention the Cartan matrix, read against the pinned numbering.
 * `TauCeti.DynkinType.lieSpan_lieBasis_e_union_f_eq_top`: the raising and lowering generators
   span the pinned Lie algebra.
+* `TauCeti.DynkinType.lieHom_ext` and `TauCeti.DynkinType.lieEquiv_ext`: Lie homomorphisms and
+  equivalences out of the pinned Lie algebra agreeing on the raising and lowering generators are
+  equal.
 * `TauCeti.DynkinType.isNilpotent_coe_lieBasis_e` and
   `TauCeti.DynkinType.isNilpotent_coe_lieBasis_f`: the raising and lowering generators are
   nilpotent matrices.
 * `TauCeti.DynkinType.finrank_cartanSubalgebra`: the Cartan subalgebra has dimension `t.rank`.
+* `TauCeti.DynkinType.coe_geckLieEquiv` and `TauCeti.DynkinType.coe_geckLieEquiv_symm`: the
+  identification with Geck's carrier does not move the underlying matrix.
 * `TauCeti.DynkinType.geckLieEquiv_chevalleyInvolution`: the involution is Geck's, read through
   that identification.
 * `TauCeti.DynkinType.chevalleyInvolution_lieBasis_h`,
@@ -187,6 +192,32 @@ theorem lieSpan_lieBasis_e_union_f_eq_top :
       (Set.range (t.lieBasis ht).e ∪ Set.range (t.lieBasis ht).f) = ⊤ :=
   (t.lieBasis ht).span_ef
 
+variable {t} in
+/-- **A Lie homomorphism out of the pinned Lie algebra is determined by its values on the raising
+and lowering generators.** -/
+theorem lieHom_ext {L : Type*} [LieRing L] [LieAlgebra ℚ L] {g₁ g₂ : t.lieAlgebra ht →ₗ⁅ℚ⁆ L}
+    (he : ∀ i, g₁ ((t.lieBasis ht).e i) = g₂ ((t.lieBasis ht).e i))
+    (hf : ∀ i, g₁ ((t.lieBasis ht).f i) = g₂ ((t.lieBasis ht).f i)) : g₁ = g₂ := by
+  ext x
+  have hx : x ∈ LieSubalgebra.lieSpan ℚ (t.lieAlgebra ht)
+      (Set.range (t.lieBasis ht).e ∪ Set.range (t.lieBasis ht).f) := by
+    rw [t.lieSpan_lieBasis_e_union_f_eq_top ht]
+    exact LieSubalgebra.mem_top x
+  induction hx using LieSubalgebra.lieSpan_induction with
+  | mem y hy => rcases hy with ⟨i, rfl⟩ | ⟨i, rfl⟩; exacts [he i, hf i]
+  | zero => rw [map_zero, map_zero]
+  | add _ _ _ _ h₁ h₂ => rw [map_add, map_add, h₁, h₂]
+  | smul a _ _ h => rw [map_smul, map_smul, h]
+  | lie _ _ _ _ h₁ h₂ => rw [LieHom.map_lie, LieHom.map_lie, h₁, h₂]
+
+variable {t} in
+/-- **A Lie equivalence out of the pinned Lie algebra is determined by its values on the raising and
+lowering generators**, the equivalence form of `TauCeti.DynkinType.lieHom_ext`. -/
+theorem lieEquiv_ext {L : Type*} [LieRing L] [LieAlgebra ℚ L] {e₁ e₂ : t.lieAlgebra ht ≃ₗ⁅ℚ⁆ L}
+    (he : ∀ i, e₁ ((t.lieBasis ht).e i) = e₂ ((t.lieBasis ht).e i))
+    (hf : ∀ i, e₁ ((t.lieBasis ht).f i) = e₂ ((t.lieBasis ht).f i)) : e₁ = e₂ :=
+  LieEquiv.ext fun x => congr($(lieHom_ext ht (g₁ := e₁.toLieHom) (g₂ := e₂.toLieHom) he hf) x)
+
 /-! ## The pinned Cartan matrix and the relations -/
 
 /-- **The Cartan matrix of the pinned Chevalley generators is the Cartan matrix of the Dynkin
@@ -249,6 +280,17 @@ unfolding it. -/
 def geckLieEquiv :
     t.lieAlgebra ht ≃ₗ⁅ℚ⁆ RootPairing.GeckConstruction.lieAlgebra (t.rationalBase ht) :=
   LieEquiv.ofEq _ _ (by rw [lieAlgebra_def])
+
+/-- The identification with Geck's carrier does not move the underlying matrix. -/
+@[simp] theorem coe_geckLieEquiv (x : t.lieAlgebra ht) :
+    (t.geckLieEquiv ht x : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) = x :=
+  LieEquiv.ofEq_apply _ _ _ x
+
+/-- The inverse identification with Geck's carrier does not move the underlying matrix. -/
+@[simp] theorem coe_geckLieEquiv_symm
+    (x : RootPairing.GeckConstruction.lieAlgebra (t.rationalBase ht)) :
+    ((t.geckLieEquiv ht).symm x : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) = x :=
+  (rfl)
 
 /-- **The Chevalley involution of the pinned split Lie algebra**: the automorphism
 `hᵢ ↦ -hᵢ`, `eᵢ ↦ -fᵢ`, `fᵢ ↦ -eᵢ` of `TauCeti.DynkinType.lieAlgebra`. It is

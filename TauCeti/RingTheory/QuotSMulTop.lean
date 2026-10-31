@@ -40,6 +40,9 @@ Mathlib makes `QuotSMulTop x M = M ⧸ x M` a module over `R ⧸ (x)`; this acti
   to the identification of `(x) • ⊤` with `x • ⊤`.
 * `Ideal.mapQSMulTop_span_singleton_injective`: reduction modulo `(x)` preserves injectivity of the
   first map of a short exact sequence whose last term is `x`-regular.
+* `QuotSMulTop.ker_mapQ_mkQ` and `QuotSMulTop.mapQ_mkQ_surjective`: for an ideal `I` and `y : R`,
+  the map `N ⧸ I N → (N ⧸ y N) ⧸ I (N ⧸ y N)` is surjective with kernel `y (N ⧸ I N)`, so that
+  quotienting by `I` and by `y` may be done in either order.
 -/
 
 public section
@@ -133,3 +136,28 @@ theorem mapQSMulTop_span_singleton_injective {x : R} {f : K →ₗ[R] N} {g : N 
   exact (h ▸ this.comp (LinearEquiv.injective _)).of_comp
 
 end Ideal
+
+namespace QuotSMulTop
+
+variable {S N : Type*} [CommRing S] [AddCommGroup N] [Module S N]
+
+/-- For an ideal `I` of `S`, the map `N ⧸ I N → (N ⧸ y N) ⧸ I (N ⧸ y N)` has kernel
+`y (N ⧸ I N)`: both are `N ⧸ (I N + y N)`. -/
+theorem ker_mapQ_mkQ (I : Ideal S) (y : S) :
+    LinearMap.ker (Submodule.mapQ (I • ⊤ : Submodule S N) _ (y • ⊤ : Submodule S N).mkQ
+      (Submodule.smul_top_le_comap_smul_top I _)) =
+      (y • ⊤ : Submodule S (N ⧸ (I • ⊤ : Submodule S N))) := by
+  rw [Submodule.ker_mapQ, Submodule.comap_smul_top_of_surjective _ _ (Submodule.mkQ_surjective _),
+    Submodule.ker_mkQ, Submodule.map_sup, Submodule.mkQ_map_self, bot_sup_eq,
+    Submodule.map_pointwise_smul, Submodule.map_top, Submodule.range_mkQ]
+
+/-- The map `N ⧸ I N → (N ⧸ y N) ⧸ I (N ⧸ y N)` is surjective. -/
+theorem mapQ_mkQ_surjective (I : Ideal S) (y : S) :
+    Surjective (Submodule.mapQ (I • ⊤ : Submodule S N) _ (y • ⊤ : Submodule S N).mkQ
+      (Submodule.smul_top_le_comap_smul_top I _)) := by
+  intro q
+  obtain ⟨q, rfl⟩ := Submodule.Quotient.mk_surjective _ q
+  obtain ⟨n, rfl⟩ := Submodule.Quotient.mk_surjective _ q
+  exact ⟨Submodule.Quotient.mk n, rfl⟩
+
+end QuotSMulTop

@@ -16,7 +16,7 @@ public import TauCeti.RingTheory.SimpleModule.Basic
 Let `A` be an algebra over a field `k` of characteristic zero. A finite-dimensional semisimple
 `A`-module `M` gives the trace function `a ↦ tr_k (a • · : M → M)` on `A`. This file proves that
 the trace function determines `M` up to isomorphism
-(`TauCeti.IsSemisimpleModule.nonempty_linearEquiv_of_trace_eq`). No finiteness is asked of `A`,
+(`IsSemisimpleModule.nonempty_linearEquiv_of_trace_eq`). No finiteness is asked of `A`,
 which is the point: for the group algebra of an infinite group, such as `GL n ℂ`, it is what lets
 characters determine semisimple representations.
 
@@ -24,16 +24,16 @@ The argument isolates one isotypic type at a time by an element of `A`. For a se
 `X` finite over its endomorphism ring and a simple module `S`, the projection of `X` onto its
 `S`-isotypic component along the sum of the other isotypic components commutes with every
 endomorphism, because isotypic components are fully invariant. Jacobson density then writes it
-as the action of some `a : A` (`TauCeti.IsSemisimpleModule.exists_forall_smul_eq_ite`): `a` acts
+as the action of some `a : A` (`IsSemisimpleModule.exists_forall_smul_eq_ite`): `a` acts
 as the identity on every simple submodule of `X` isomorphic to `S`, and as zero on every other
 simple submodule. Applied to `X = M × N`, the trace of `a` on `M` is the multiplicity of `S` in
 `M` times the dimension of `S`, and likewise on `N`. In characteristic zero equal traces therefore
 give equal multiplicities, and finite semisimple modules with equal multiplicities are isomorphic
-(`TauCeti.IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq`).
+(`IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq`).
 
 ## Main results
 
-* `TauCeti.IsSemisimpleModule.nonempty_linearEquiv_of_trace_eq`: **finite-dimensional semisimple
+* `IsSemisimpleModule.nonempty_linearEquiv_of_trace_eq`: **finite-dimensional semisimple
   modules over an algebra in characteristic zero with the same traces are isomorphic.**
 
 ## References
@@ -43,9 +43,7 @@ give equal multiplicities, and finite semisimple modules with equal multipliciti
 
 public section
 
-namespace TauCeti
-
-open Module
+open Module TauCeti
 
 universe u
 
@@ -56,7 +54,7 @@ section Trace
 variable {k : Type*} [Field k] {A : Type u} [Ring A] [Algebra k A]
 
 open scoped Classical in
-/-- An element acting as in `TauCeti.IsSemisimpleModule.exists_forall_smul_eq_ite` on the simple
+/-- An element acting as in `IsSemisimpleModule.exists_forall_smul_eq_ite` on the simple
 submodules of `X` acts in the same way on every simple module embedded in `X`. -/
 private theorem smul_eq_ite_of_injective {X : Type*} [AddCommGroup X] [Module A X]
     {S : Type*} [AddCommGroup S] [Module A S] {a : A}
@@ -166,5 +164,3 @@ theorem nonempty_linearEquiv_of_trace_eq [CharZero k]
 end Trace
 
 end IsSemisimpleModule
-
-end TauCeti

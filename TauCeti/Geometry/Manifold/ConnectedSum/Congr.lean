@@ -37,10 +37,10 @@ its germ at the centre, and only up to a homeomorphism or diffeomorphism of the 
 
 Combining the two, `TauCeti.ConnectedSum.nonempty_diffeomorph_of_eventuallyEq` shows that
 diffeomorphisms `φ : M ≃ₘ M'` and `ψ : N ≃ₘ N'` with `φ ∘ e₁ = e₁'` and `ψ ∘ e₂ = e₂'` near `0`
-give a diffeomorphism between the two connected sums. This reduces the independence of the connected
-sum from the balls, for orientation-compatible balls in connected manifolds, to the disc theorem in
-its ambient form, which is not proved here: two such balls are carried into one another near their
-centres by a diffeomorphism of the summand.
+give a diffeomorphism between the two connected sums. With the disc theorem in its ambient form,
+which carries two orientation-compatible balls of a connected manifold into one another near their
+centres by a diffeomorphism, this shows that the connected sum does not depend on its balls
+(`TauCeti.ConnectedSum.nonempty_diffeomorph_of_isOrientationPreservingAt`).
 
 The homeomorphism `TauCeti.ConnectedSum.congrLeftHomeomorph` needs the image of a closed ball under
 `e₂` to be closed, so `E` is proper (finite-dimensional) and `N` is Hausdorff.

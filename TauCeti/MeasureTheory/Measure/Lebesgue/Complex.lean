@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.Coordinates
+public import TauCeti.Analysis.Complex.Euclidean.Space
 import Mathlib.Topology.Order.Compact
 
 /-!
@@ -14,6 +15,9 @@ import Mathlib.Topology.Order.Compact
 
 Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure.
 Interchanging the real and imaginary coordinates preserves planar area.
+Splitting complex vectors into real and imaginary blocks preserves product volume, using
+Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
+`PiLp.volume_preserving_toLp` for the Euclidean volume normalization.
 -/
 
 public section
@@ -76,3 +80,21 @@ theorem measurePreserving_coordinateSwapCLE :
     (Measure.measurePreserving_swap.comp Complex.volume_preserving_equiv_real_prod)
 
 end Complex
+
+namespace TauCeti
+
+/-- Splitting complex coordinates into their real and imaginary blocks preserves volume,
+including on an empty coordinate type. -/
+theorem volume_preserving_complexToRealEuclidean {ι : Type*} [Fintype ι] :
+    MeasurePreserving (complexToRealEuclidean ι) volume volume := by
+  have h₁ := volume_preserving_pi (fun _ : ι ↦ Complex.volume_preserving_equiv_real_prod)
+  have h₂ := volume_measurePreserving_arrowProdEquivProdArrow ℝ ℝ ι
+  have h₃ := volume_measurePreserving_sumPiEquivProdPi_symm (fun _ : ι ⊕ ι ↦ ℝ)
+  have h₄ := PiLp.volume_preserving_toLp (ι ⊕ ι)
+  rw [volume_pi] at h₄
+  exact (h₄.comp (h₃.comp (h₂.comp h₁))).congr (by fun_prop) (ae_of_all _ fun z ↦ by
+    ext j
+    cases j <;> simp [Function.comp_def, MeasurableEquiv.sumPiEquivProdPi,
+      MeasurableEquiv.arrowProdEquivProdArrow])
+
+end TauCeti
