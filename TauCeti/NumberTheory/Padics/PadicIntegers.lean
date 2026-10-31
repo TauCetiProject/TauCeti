@@ -78,6 +78,7 @@ calculation for first continuous cohomology with trivial integer coefficients.
 ## Main definitions
 
 * `PadicInt.unitsPowCharacter p k`: the continuous character `u ↦ u ^ k` of `ℤ_[p]ˣ`.
+  It is nontrivial for `k > 0` (`PadicInt.unitsPowCharacter_ne_one`).
 -/
 
 public section
@@ -208,6 +209,16 @@ noncomputable def unitsPowCharacter (k : ℕ) : ℤ_[p]ˣ →ₜ* ℤ_[p] where
 theorem unitsPowCharacter_apply (k : ℕ) (u : ℤ_[p]ˣ) :
     unitsPowCharacter p k u = (u : ℤ_[p]) ^ k :=
   (rfl)
+
+/-- For `k > 0` the power character `u ↦ u ^ k` of `ℤ_pˣ` is nontrivial: it does not fix the unit
+`1 + p`. -/
+theorem unitsPowCharacter_ne_one {k : ℕ} (hk : 0 < k) : unitsPowCharacter p k ≠ 1 := by
+  intro h
+  obtain ⟨a, ha⟩ := isUnit_one_add_of_dvd (dvd_refl (p : ℤ_[p]))
+  have hpow := congrArg (fun κ : ℤ_[p]ˣ →ₜ* ℤ_[p] => κ a) h
+  simp only [unitsPowCharacter_apply, ha, ContinuousMonoidHom.coe_one, Pi.one_apply] at hpow
+  have h1 : (1 + p) ^ k = 1 := by exact_mod_cast hpow
+  exact (Nat.one_lt_pow hk.ne' (by have := (Fact.out : p.Prime).pos; omega)).ne' h1
 
 /-- **Divisibility from the norm**: in `ℤ_p`, `y` divides every `x` with `‖x‖ ≤ ‖y‖`, because `x`
 then lies in the ideal `p^{v_p(y)} ℤ_p = y ℤ_p` when `y ≠ 0`, and vanishes when `y = 0`. -/
