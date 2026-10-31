@@ -34,7 +34,11 @@ from `X →L[ℝ] X` into the complex `C⋆`-algebra `X_ℂ →L[ℂ] X_ℂ`, so
 and `StarAlgHom.continuousFunctionalCalculus_of_isClosedEmbedding` applies. Consequently
 complexification preserves the spectrum of a self-adjoint operator
 (`ContinuousLinearMap.spectrum_complexifyL2`) and intertwines the two calculi
-(`ContinuousLinearMap.complexifyL2_cfc`): `(f(T))_ℂ = f(T_ℂ)`.
+(`ContinuousLinearMap.complexifyL2_cfc`): `(f(T))_ℂ = f(T_ℂ)`. Since complexification is
+isometric, so is the real calculus
+(`ContinuousLinearMap.instIsometricContinuousFunctionalCalculusRealIsSelfAdjoint`):
+`‖f(T)‖` is the supremum of `|f|` on the spectrum of `T`. This makes Mathlib's norm estimates and
+its continuity theorems for `T ↦ f(T)` available on real Hilbert spaces.
 
 The calculus over `RCLike 𝕜` is in turn pulled back from the real one along realification. A
 Hilbert space `E` over `𝕜` is a real Hilbert space for the inner product `re ⟪x, y⟫`
@@ -50,6 +54,8 @@ realification preserves the spectrum of a self-adjoint operator
 
 * `ContinuousLinearMap.instContinuousFunctionalCalculusRealIsSelfAdjoint`: the continuous
   functional calculus for bounded self-adjoint operators on a real Hilbert space.
+* `ContinuousLinearMap.instIsometricContinuousFunctionalCalculusRealIsSelfAdjoint`: this
+  calculus is isometric.
 * `ContinuousLinearMap.instContinuousFunctionalCalculusRCLikeIsSelfAdjoint`: the continuous
   functional calculus for bounded self-adjoint operators on a Hilbert space over `RCLike 𝕜`.
 * `ContinuousLinearMap.instStarOrderedRingRCLike`: Mathlib's star order on bounded operators,
@@ -109,6 +115,33 @@ theorem complexifyL2_cfc (f : ℝ → ℝ) (T : X →L[ℝ] X)
     (cfc f T).complexifyL2 = cfc f T.complexifyL2 := by
   simpa using (complexifyL2StarAlgHom X).map_cfc f T hf
     (isClosedEmbedding_complexifyL2StarAlgHom X).continuous hT (by simpa using hT)
+
+/-- The continuous functional calculus for bounded self-adjoint operators on a real Hilbert space
+is isometric: `‖f(T)‖` is the supremum norm of `f` on the spectrum of `T`. -/
+instance instIsometricContinuousFunctionalCalculusRealIsSelfAdjoint :
+    IsometricContinuousFunctionalCalculus ℝ (X →L[ℝ] X) IsSelfAdjoint where
+  isometric a ha := by
+    have hψa : IsSelfAdjoint (complexifyL2StarAlgHom X a) := ha.map _
+    have hsp : spectrum ℝ (complexifyL2StarAlgHom X a) = spectrum ℝ a := by
+      simpa using spectrum_complexifyL2 ha
+    let ι : C(spectrum ℝ (complexifyL2StarAlgHom X a), spectrum ℝ a) :=
+      ⟨Set.inclusion hsp.subset, by fun_prop⟩
+    -- Complexification intertwines the two calculi, up to the identification `ι` of spectra.
+    have key : (complexifyL2StarAlgHom X).comp (cfcHom ha) =
+        (cfcHom hψa).comp (ContinuousMap.compStarAlgHom' ℝ ℝ ι) := by
+      refine ContinuousMap.UniqueHom.eq_of_continuous_of_map_id _ _ _ ?_ ?_ ?_
+      · exact (isClosedEmbedding_complexifyL2StarAlgHom X).continuous.comp (cfcHom_continuous ha)
+      · exact (cfcHom_continuous hψa).comp (ContinuousMap.continuous_precomp _)
+      · simp only [StarAlgHom.comp_apply, cfcHom_id]
+        exact (cfcHom_id hψa).symm
+    refine AddMonoidHomClass.isometry_of_norm (cfcHom ha (R := ℝ)) fun f => ?_
+    rw [← norm_complexifyL2, ← complexifyL2StarAlgHom_apply, ← StarAlgHom.comp_apply, key,
+      StarAlgHom.comp_apply, norm_cfcHom (𝕜 := ℝ) _, ContinuousMap.compStarAlgHom'_apply]
+    -- `ι` is a bijection, so precomposition with it preserves the supremum norm.
+    refine le_antisymm ((ContinuousMap.norm_le (f.comp ι) (norm_nonneg f)).2 fun y => ?_)
+      ((ContinuousMap.norm_le f (norm_nonneg (f.comp ι))).2 fun x => ?_)
+    · exact f.norm_coe_le_norm (ι y)
+    · exact (f.comp ι).norm_coe_le_norm ⟨x, hsp.symm ▸ x.2⟩
 
 section RCLike
 
