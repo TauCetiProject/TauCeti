@@ -22,8 +22,9 @@ The coefficient semiring need only be commutative; no norm or topology is requir
 
 `MvPowerSeries.mem_map_rangeS` says that a power series is the image under `map f` of a power
 series exactly when each of its coefficients is in the range of `f`, as Mathlib's
-`Polynomial.mem_map_rangeS` does for polynomials. For the inclusion of a subring, it lifts a power
-series with coefficients in the subring to a power series over the subring.
+`Polynomial.mem_map_rangeS` does for polynomials. For the inclusion of a subring,
+`MvPowerSeries.exists_map_subtype_eq_of_coeff_mem` lifts a power series with coefficients in the
+subring to a power series over the subring.
 -/
 
 public section
@@ -75,6 +76,13 @@ theorem mem_map_rangeS {p : MvPowerSeries σ S} :
     -- a power series is its coefficient function
     let q : MvPowerSeries σ R := c
     exact ⟨q, ext fun d ↦ by rw [coeff_map, coeff_apply]; exact hc d⟩
+
+/-- A power series whose coefficients all lie in a subring `A` is the image under
+`map A.subtype` of a power series over `A`. -/
+theorem exists_map_subtype_eq_of_coeff_mem {S : Type*} [Ring S] {A : Subring S}
+    {p : MvPowerSeries σ S} (h : ∀ d, coeff d p ∈ A) :
+    ∃ q : MvPowerSeries σ A, map A.subtype q = p :=
+  (mem_map_rangeS A.subtype).mpr fun d ↦ RingHom.mem_rangeS.mpr ⟨⟨_, h d⟩, rfl⟩
 
 end Map
 
