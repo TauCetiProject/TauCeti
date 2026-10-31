@@ -64,10 +64,20 @@ theorem span_range_symm_inr_eq_ker {R M M₁ M₂ ι : Type*} [Semiring R]
     [AddCommMonoid M₂] [Module R M₂] (b : Module.Basis ι R M₂) (L : M ≃ₗ[R] M₁ × M₂) :
     Submodule.span R (Set.range fun i ↦ L.symm (0, b i)) =
       LinearMap.ker (LinearMap.fst R M₁ M₂ ∘ₗ L.toLinearMap) := by
-  rw [show (Set.range fun i ↦ L.symm (0, b i)) =
-      (L.symm.toLinearMap ∘ₗ LinearMap.inr R M₁ M₂) '' Set.range b from
-    Set.range_comp (L.symm.toLinearMap ∘ₗ LinearMap.inr R M₁ M₂) b, Submodule.span_image,
-    b.span_eq, Submodule.map_top, LinearMap.range_comp, LinearMap.range_inr, LinearMap.ker_comp,
-    Submodule.map_equiv_eq_comap_symm, L.symm_symm]
+  -- The vectors are the values of `L.symm ∘ inr` on the basis `b`, so they span its range.
+  have hspan : Submodule.span R (Set.range fun i ↦ L.symm (0, b i)) =
+      LinearMap.range (L.symm.toLinearMap ∘ₗ LinearMap.inr R M₁ M₂) := by
+    rw [← Submodule.span_eq (LinearMap.range _), LinearMap.coe_range,
+      span_range_eq_span_range_basis b]
+    rfl
+  rw [hspan]
+  ext u
+  simp only [LinearMap.mem_range, LinearMap.mem_ker, LinearMap.coe_comp, LinearEquiv.coe_coe,
+    Function.comp_apply, LinearMap.inr_apply, LinearMap.fst_apply]
+  constructor
+  · rintro ⟨y, rfl⟩
+    simp
+  · intro hu
+    exact ⟨(L u).2, L.symm_apply_eq.mpr (Prod.ext hu.symm rfl)⟩
 
 end Module.Basis
