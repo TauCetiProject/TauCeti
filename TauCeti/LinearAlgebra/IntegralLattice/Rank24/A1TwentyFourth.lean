@@ -41,13 +41,14 @@ module, the order and Lagrangian conditions needed to glue twenty-four `A₁` ro
 it.
 
 The nonzero label of `ℤ/2` names a coset of `A₁` of minimum norm `1/2`, so the minimum norm of a
-glue word is half its Hamming weight (`TauCeti.DynkinType.sum_glueMinimum_A_one`). Nonzero binary
-Golay words have weight at least `8`, hence every nonzero word of the table subgroup has minimum
-norm at least `4`. Gluing the orthogonal sum `R` of twenty-four `A₁` root lattices along the table
-subgroup by `TauCeti.DynkinType.gluedLattice` therefore gives a positive definite even unimodular
-lattice `a1TwentyFourthLattice` of rank `24`, whose carrier is the set of dual vectors of `R` with
-glue word in the Golay code, and whose norm-`2` vectors span exactly `R`. In particular this
-lattice is rootful, so it is not the Leech lattice.
+glue word is half its Hamming weight
+(`TauCeti.DynkinType.sum_glueMinimum_A_one_eq_hammingNorm_div_two`). Nonzero binary Golay words
+have weight at least `8`, hence every nonzero word of the table subgroup has minimum norm at least
+`4`. Gluing the orthogonal sum `R` of twenty-four `A₁` root lattices along the table subgroup by
+`TauCeti.DynkinType.gluedLattice` therefore gives a positive definite even unimodular lattice
+`a1TwentyFourthLattice` of rank `24`, whose carrier is the set of dual vectors of `R` with glue word
+in the Golay code, and whose norm-`2` vectors span exactly `R`. In particular this lattice is
+rootful, so it is not the Leech lattice.
 
 ## Main declarations
 
@@ -366,7 +367,8 @@ theorem four_le_sum_glueMinimum_of_mem_a1TwentyFourthGlueSubgroup
     hw0 (a1TwentyFourthGolayIsometry.toAddEquiv.map_eq_zero_iff.mp h)
   have h8 := BinaryGolay.eight_le_hammingNorm (mem_a1TwentyFourthGlueSubgroup_iff.mp hw) hiso0
   rw [hammingNorm_a1TwentyFourthGolayIsometry] at h8
-  rw [sum_glueMinimum_A_one (isSimplyLaced_A 1) w]
+  rw [sum_glueMinimum_A_one_eq_hammingNorm_div_two]
+  simp only [typeA1GlueAlphabetZModStandardIsometry_apply]
   have h8' : (8 : ℚ) ≤ hammingNorm (β := fun _ : Fin 24 ↦ ZMod 2) w := by exact_mod_cast h8
   linarith
 

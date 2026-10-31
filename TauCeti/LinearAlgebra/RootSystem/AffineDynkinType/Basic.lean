@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.CycleGraph
 public import TauCeti.Combinatorics.SimpleGraph.AdditiveFunction
-public import TauCeti.Combinatorics.SimpleGraph.Connected
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 
 /-!
@@ -324,7 +324,8 @@ smaller number first. -/
 `n - 1` is joined to node `1`, and node `n` is joined to node `n - 3`, so every node other than `0`
 has a neighbour with a smaller number. -/
 private theorem graph_D_connected {n : ℕ} (hn : 4 ≤ n) : (D n).graph.Connected := by
-  refine SimpleGraph.connected_fin_of_exists_adj_lt (D n).nodes_pos fun i hi ↦ ?_
+  refine connected_of_exists_adj_lt 0 fun i hi ↦ ?_
+  replace hi : (i : ℕ) ≠ 0 := Fin.val_ne_zero_iff.2 hi
   have hi' : (i : ℕ) < n + 1 := i.isLt
   -- In each branch the neighbour is named by its node number. The `hval` equations are `rfl`, and
   -- are stated only so that the `omega` calls after them can read that number off the `Fin.mk`.
@@ -346,9 +347,9 @@ theorem graph_connected {t : AffineDynkinType} (ht : t.Valid) : t.graph.Connecte
   cases t with
   | A n => exact (graph_A n) ▸ SimpleGraph.connected_cycleGraph_add_one
   | D n => exact graph_D_connected ht
-  | E6 => exact SimpleGraph.connected_fin_of_exists_adj_lt E6.nodes_pos (by decide)
-  | E7 => exact SimpleGraph.connected_fin_of_exists_adj_lt E7.nodes_pos (by decide)
-  | E8 => exact SimpleGraph.connected_fin_of_exists_adj_lt E8.nodes_pos (by decide)
+  | E6 => exact connected_of_exists_adj_lt 0 (by decide)
+  | E7 => exact connected_of_exists_adj_lt 0 (by decide)
+  | E8 => exact connected_of_exists_adj_lt 0 (by decide)
 
 /-- Every node of a valid affine simply-laced diagram has a neighbour: the diagram is connected
 and has at least two nodes. -/
