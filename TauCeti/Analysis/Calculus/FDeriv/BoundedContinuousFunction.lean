@@ -139,8 +139,8 @@ theorem hasFDerivAt_of_forall_apply_eq (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) 
         ((mem_ball.1 hx).le.trans (min_le_right _ _)))
     (mem_ball_self hρ) hmem
   rw [add_sub_cancel_left] at key
-  simp only [coe_sub, Pi.sub_apply, hΘ _ hmemf, hΘ f₀ (mem_ball_self hδ), applyCLM_apply, hΦ,
-    coe_add, Pi.add_apply]
+  simp only [FunLike.coe_sub, Pi.sub_apply, hΘ _ hmemf, hΘ f₀ (mem_ball_self hδ), applyCLM_apply,
+    hΦ, FunLike.coe_add, Pi.add_apply]
   simpa using key.trans (mul_le_mul_of_nonneg_left (norm_coe_le_norm h t) hc.le)
 
 

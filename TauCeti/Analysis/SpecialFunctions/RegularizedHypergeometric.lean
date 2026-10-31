@@ -17,7 +17,7 @@ of its power series. This file records that series as a `HasSum` statement and d
 function `₀F₁(; b; z) = ∑ zⁿ / (n! Γ(b + n))`, the case `a = 0`, `b = {b}`, which underlies the
 Bessel functions.
 
-For every complex `b` we prove the contiguous relation
+For every complex `b`, Mathlib provides the contiguous relation
 `₀F₁(; b; z) = b ₀F₁(; b + 1; z) + z ₀F₁(; b + 2; z)`.
 For real `b` and real `y` the value is real, given by the real series `∑ yⁿ / (n! Γ(b + n))`;
 it is jointly continuous in `(b, y)` and has derivative `₀F₁(; b + 1; y)` in `y`.
@@ -27,7 +27,6 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
 
 * `Complex.hasSum_regularizedHGFun` — the power series of `regularizedHGFun a b` converges to it
   everywhere when `a.card ≤ b.card`.
-* `Complex.regularizedHGFun_zero_singleton_eq_mul_add_mul` — the contiguous relation above.
 * `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F₁` at real
   arguments.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
@@ -57,34 +56,6 @@ theorem hasSum_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z 
     (by simp [radius_regularizedHGFunSeries_eq_top h])
   simpa [regularizedHGFun, regularizedHGFunSeries, FormalMultilinearSeries.ofScalars_apply_eq,
     mul_comm] using this
-
-/-- The contiguous relation `₀F₁(; b; z) = b ₀F₁(; b + 1; z) + z ₀F₁(; b + 2; z)`. -/
-theorem regularizedHGFun_zero_singleton_eq_mul_add_mul (b z : ℂ) :
-    regularizedHGFun 0 {b} z =
-      b * regularizedHGFun 0 {b + 1} z + z * regularizedHGFun 0 {b + 2} z := by
-  have hadd_one (n : ℕ) : b + 1 + ((n + 1 : ℕ) : ℂ) = b + ((n + 1 : ℕ) : ℂ) + 1 := by
-    push_cast
-    ring
-  have hadd_two (n : ℕ) : b + 2 + (n : ℂ) = b + ((n + 1 : ℕ) : ℂ) + 1 := by
-    push_cast
-    ring
-  have h₁ := (hasSum_regularizedHGFun (a := 0) (b := {b + 1}) (by simp) z).mul_left b
-  have h₂ := (hasSum_regularizedHGFun (a := 0) (b := {b + 2}) (by simp) z).mul_left z
-  rw [← hasSum_nat_add_iff' 1] at h₁
-  refine (hasSum_regularizedHGFun (a := 0) (b := {b}) (by simp) z).unique ?_
-  rw [← hasSum_nat_add_iff' 1]
-  convert h₁.add h₂ using 1
-  · ext n
-    simp only [regularizedHGFunCoeff_zero_singleton]
-    rw [hadd_one, hadd_two, mul_inv, mul_inv, mul_inv,
-      one_div_Gamma_eq_self_mul_one_div_Gamma_add_one (b + ((n + 1 : ℕ) : ℂ))]
-    generalize (Gamma (b + ((n + 1 : ℕ) : ℂ) + 1))⁻¹ = g
-    rw [Nat.factorial_succ]
-    push_cast
-    field_simp
-    ring
-  · simp [one_div_Gamma_eq_self_mul_one_div_Gamma_add_one b]
-    ring
 
 /-- The complex-valued `₀F₁` series at real parameters and arguments sums to its regularized
 hypergeometric value. -/

@@ -105,14 +105,14 @@ bounded and whose `k`-th iterated derivative is globally `α`-Hölder. Its norm 
           (continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (j + 1) ↦ E) F
             (field j.succ J x)) x}
       zero_mem' := fun j x ↦ by
-        simp only [map_zero, BoundedContinuousFunction.coe_zero, Pi.zero_apply]
+        simp only [map_zero, FunLike.coe_zero, Pi.zero_apply]
         exact hasFDerivAt_const (x := x) (c := (0 : E [×j]→L[ℝ] F))
       add_mem' := fun {J K} hJ hK j x ↦ by
-        simp only [Set.mem_ofPred_eq, map_add, BoundedContinuousFunction.coe_add,
+        simp only [Set.mem_ofPred_eq, map_add, FunLike.coe_add,
           Pi.add_apply] at hJ hK ⊢
         exact (hJ j x).add (hK j x)
       smul_mem' := fun c {J} hJ j x ↦ by
-        simp only [Set.mem_ofPred_eq, map_smul, BoundedContinuousFunction.coe_smul] at hJ ⊢
+        simp only [Set.mem_ofPred_eq, map_smul, FunLike.coe_smul] at hJ ⊢
         exact (hJ j x).const_smul c }
   graph
 
@@ -437,21 +437,21 @@ theorem iteratedFDerivHolder_smul (c : ℝ) (f : CkHolderSpace k α E F) :
 theorem coe_zero : ⇑(0 : CkHolderSpace k α E F) = 0 := by
   ext x
   simp only [← toFun_eq_coe, toFun, iteratedFDeriv_zero, Pi.zero_apply,
-    BoundedContinuousFunction.coe_zero]
+    FunLike.coe_zero]
   simp
 
 @[simp]
 theorem coe_add (f g : CkHolderSpace k α E F) : ⇑(f + g) = f + g := by
   ext x
   simp only [← toFun_eq_coe, toFun, iteratedFDeriv_add, Pi.add_apply,
-    BoundedContinuousFunction.add_apply]
+    _root_.add_apply]
   simp
 
 @[simp]
 theorem coe_smul (c : ℝ) (f : CkHolderSpace k α E F) : ⇑(c • f) = c • ⇑f := by
   ext x
   simp only [← toFun_eq_coe, toFun, iteratedFDeriv_smul, Pi.smul_apply,
-    BoundedContinuousFunction.smul_apply]
+    _root_.smul_apply]
   simp
 
 /-- A bounded continuous field built from a continuous function with a uniform bound. -/

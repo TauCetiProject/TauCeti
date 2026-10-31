@@ -68,7 +68,7 @@ theorem measurable_tsum_fiber_of_injective_fderiv
       ((he n).injective.tsum_fiber_eq_extend (fun x ↦ g x) y)
   have hfiber (y : V) : (∑' x : ↥(s ∩ f ⁻¹' {y}), g x) =
       ∑' n, extend ((p n).domRestrict f) (fun x ↦ g x) 0 y := by
-    rw [← hcover, iUnion_inter, ENNReal.tsum_biUnion]
+    rw [← hcover, iUnion_inter, ENNReal.tsum_iUnion]
     · exact tsum_congr fun n ↦ hsum n y
     · intro i _ j _ hij
       exact (hpd hij).mono inter_subset_left inter_subset_left
@@ -121,7 +121,7 @@ theorem lintegral_normDet_fderiv_mul_eq_lintegral_tsum_of_injective_fderiv
   rw [← lintegral_tsum (fun n ↦ (hmeas n).aemeasurable)]
   apply lintegral_congr
   intro y
-  rw [iUnion_inter, ENNReal.tsum_biUnion]
+  rw [iUnion_inter, ENNReal.tsum_iUnion]
   intro i _ j _ hij
   exact (hpd hij).mono inter_subset_left inter_subset_left
 

@@ -251,7 +251,7 @@ constant function `∑ x, f x`. -/
 theorem sum_leftTranslation [Fintype G] (f : UCB G) :
     ∑ g, leftTranslation g f = algebraMap ℝ (UCB G) (∑ x, (f : G →ᵇ ℝ) x) := by
   refine ext fun x => ?_
-  simp only [AddSubmonoidClass.coe_finsetSum, BoundedContinuousFunction.coe_sum, Finset.sum_apply,
+  simp only [AddSubmonoidClass.coe_finsetSum, FunLike.coe_sum, Finset.sum_apply,
     leftTranslation_apply, SubalgebraClass.coe_algebraMap,
     BoundedContinuousFunction.algebraMap_apply, smul_eq_mul, mul_one]
   exact Fintype.sum_equiv ((Equiv.inv G).trans (Equiv.mulRight x)) _ _ fun _ => rfl

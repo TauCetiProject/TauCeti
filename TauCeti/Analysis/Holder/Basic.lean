@@ -67,7 +67,7 @@ theorem nnHolderNorm_le_holderNorm {α : ℝ≥0} (f : X →ᵇ Y) :
 theorem holderNorm_add_le {α : ℝ≥0} (f g : X →ᵇ Y)
     (hf : MemHolder α (f : X → Y)) (hg : MemHolder α (g : X → Y)) :
     holderNorm α (f + g) ≤ holderNorm α f + holderNorm α g := by
-  simp only [holderNorm_def, BoundedContinuousFunction.coe_add]
+  simp only [holderNorm_def, FunLike.coe_add]
   calc
     ‖f + g‖ + (nnHolderNorm α ((f : X → Y) + (g : X → Y)) : ℝ) ≤
         (‖f‖ + ‖g‖) + (nnHolderNorm α (f : X → Y) + nnHolderNorm α (g : X → Y)) :=
@@ -80,7 +80,7 @@ theorem holderNorm_add_le {α : ℝ≥0} (f g : X →ᵇ Y)
 theorem holderNorm_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 Y]
     {α : ℝ≥0} (c : 𝕜) (f : X →ᵇ Y) (hf : MemHolder α (f : X → Y)) :
     holderNorm α (c • f) = ‖c‖ * holderNorm α f := by
-  simp only [holderNorm_def, norm_smul, BoundedContinuousFunction.coe_smul, ← Pi.smul_def,
+  simp only [holderNorm_def, norm_smul, FunLike.coe_smul,
     hf.nnHolderNorm_smul c, NNReal.coe_mul, coe_nnnorm, mul_add]
 
 variable [NormedSpace ℝ Y]

@@ -94,7 +94,7 @@ theorem exists_not_dvd_holomorphicCoordinateGerm_pow (hx : x ∈ e.source)
     dsimp only [S] at hsz
     simp only [map_apply] at hsz
     dsimp only [b, S] at hsz
-    rw [mul_apply, pow_apply, map_apply,
+    rw [holomorphicStructureSheaf.mul_apply, holomorphicStructureSheaf.pow_apply, map_apply,
       holomorphicCoordinateSection_apply e he (e x), e.right_inv hz] at hsz
     simpa only [A, Q, F, Function.comp_apply,
       Subtype.val_injective.extend_apply _ _ ⟨e.symm z, (leOfHom iU) hzW⟩,
