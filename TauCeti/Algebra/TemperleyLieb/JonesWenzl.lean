@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.TemperleyLieb.Basic
 public import TauCeti.QuantumGroups.QuantumInteger.Chebyshev
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # Jones–Wenzl projections
@@ -20,16 +19,17 @@ simple object of highest weight `n`, and at a root of unity the first projection
 vanishes generates the negligible ideal.
 
 This file constructs `f_n` by Wenzl's quadratic recursion
-`f_(n+2) = f_(n+1) - ([n + 1] / [n + 2]) f_(n+1) e_(n+1) f_(n+1)`,
+`f_(n+2) = f_(n+1) - ([n + 1] / [n + 2]) f_(n+1) e (Fin.last n) f_(n+1)`,
 where `f_(n+1)` is included on the first `n + 1` strands by `TauCeti.TemperleyLieb.strandIncl`,
-`e_(n+1)` is the last generator, and `[k]` is the quantum integer `TauCeti.qInt R δ k`. The
-division is `Ring.inverse`, so the definition makes sense over every commutative ring, and its
-characteristic properties hold whenever `[1], …, [n]` are units.
+`e (Fin.last n)` is the last generator on `n + 2` strands (generators `e i` are numbered from `0`),
+and `[k]` is the quantum integer `TauCeti.qInt R δ k`. The division is `Ring.inverse`, so the
+definition makes sense over every commutative ring, and its characteristic properties hold
+whenever `[1], …, [n]` are units.
 
 Uniqueness needs no invertibility: an element killed on the right by every generator multiplies
-every `x` on the left as the scalar `aug x`, because the generators and the scalars span the
-algebra; two normalized elements, one killed on the left and one on the right, are therefore
-equal.
+every `x` on the left as the scalar `aug x`, because the generators generate the algebra as an
+`R`-algebra (`TauCeti.TemperleyLieb.adjoin_range_e`); two normalized elements, one killed on the
+left and one on the right, are therefore equal.
 
 ## Main definitions
 
@@ -46,7 +46,8 @@ equal.
   `TauCeti.TemperleyLieb.strandIncl_jonesWenzl_mul_jonesWenzl`: absorption of `f_(n+1)` by
   `f_(n+2)`.
 * `TauCeti.TemperleyLieb.e_last_mul_strandIncl_jonesWenzl_mul_e_last`: the capping identity
-  `e_(n+1) f_(n+1) e_(n+1) = ([n + 2] / [n + 1]) f_n e_(n+1)`.
+  `e (Fin.last n) f_(n+1) e (Fin.last n) = ([n + 2] / [n + 1]) f_n e (Fin.last n)` on `n + 2`
+  strands.
 * `TauCeti.TemperleyLieb.eq_of_e_mul_eq_zero_of_mul_e_eq_zero`: uniqueness, over any commutative
   semiring.
 * `TauCeti.TemperleyLieb.eq_jonesWenzl_of_e_mul_eq_zero`,
@@ -114,8 +115,8 @@ open Ring (inverse)
 
 variable (δ : R) in
 /-- The **Jones–Wenzl projection** `f_n` on `n` strands, by Wenzl's quadratic recursion: `f_0` and
-`f_1` are `1`, and `f_(m+2) = f_(m+1) - ([m + 1] / [m + 2]) f_(m+1) e_(m+1) f_(m+1)` with
-`f_(m+1)` included on the first `m + 1` strands and `e_(m+1)` the last generator. Division is
+`f_1` are `1`, and `f_(m+2) = f_(m+1) - ([m + 1] / [m + 2]) f_(m+1) e (Fin.last m) f_(m+1)` with
+`f_(m+1)` included on the first `m + 1` strands and `e (Fin.last m)` the last generator. Division is
 `Ring.inverse`; the defining properties hold when `[1], …, [n]` are units
 (`TauCeti.TemperleyLieb.existsUnique_jonesWenzl`). -/
 noncomputable def jonesWenzl : (n : ℕ) → TemperleyLieb R δ n
@@ -238,15 +239,6 @@ private theorem e_last_mul_strandIncl_mul_e_last_mul_strandIncl_aux
   | zero => simp
   | succ m => exact e_last_mul_strandIncl_mul_e_last_mul_strandIncl_succ_aux hf
 
-/-- The scalar of Wenzl's recursion inverts the scalar produced by capping. -/
-private theorem qInt_mul_inverse_mul_sub_eq_one (hu : IsUnit (qInt R δ (m + 1)))
-    (hv : IsUnit (qInt R δ (m + 2))) :
-    qInt R δ (m + 1) * inverse (qInt R δ (m + 2)) *
-      (δ - qInt R δ m * inverse (qInt R δ (m + 1))) = 1 := by
-  linear_combination (-(qInt R δ m * inverse (qInt R δ (m + 2)))) *
-      Ring.mul_inverse_cancel _ hu - inverse (qInt R δ (m + 2)) * qInt_add_two δ m +
-    Ring.mul_inverse_cancel _ hv
-
 /-- The inductive step of the construction: if `f_m` and `f_(m+1)` are idempotent, `f_(m+1)` is
 killed by every generator, and `[m + 1]`, `[m + 2]` are units, then `f_(m+2)` is an idempotent
 killed by every generator. -/
@@ -257,7 +249,10 @@ private theorem jonesWenzl_add_two_spec (hf₀ : IsIdempotentElem (jonesWenzl δ
     IsIdempotentElem (jonesWenzl δ (m + 2)) ∧
       ∀ i, e δ i * jonesWenzl δ (m + 2) = 0 ∧ jonesWenzl δ (m + 2) * e δ i = 0 := by
   obtain ⟨hEFEF, hFEFE⟩ := e_last_mul_strandIncl_mul_e_last_mul_strandIncl_aux hf₀
-  have hcl := qInt_mul_inverse_mul_sub_eq_one hu hv
+  have hcl : qInt R δ (m + 1) * inverse (qInt R δ (m + 2)) *
+      (δ - qInt R δ m * inverse (qInt R δ (m + 1))) = 1 := by
+    rw [← qInt_add_two_mul_inverse δ m hu, mul_assoc, ← mul_assoc (inverse _),
+      Ring.inverse_mul_cancel _ hv, one_mul, Ring.mul_inverse_cancel _ hu]
   have hlast : e δ (Fin.last m) * jonesWenzl δ (m + 2) = 0 ∧
       jonesWenzl δ (m + 2) * e δ (Fin.last m) = 0 := by
     rw [jonesWenzl_add_two]
@@ -266,7 +261,7 @@ private theorem jonesWenzl_add_two_spec (hf₀ : IsIdempotentElem (jonesWenzl δ
         sub_self]
     · rw [sub_mul, smul_mul_assoc, hFEFE, smul_smul, hcl, one_smul, sub_self]
   refine ⟨?_, fun i ↦ ?_⟩
-  · -- `f_(m+2) * f_(m+2) = f_(m+2) * f_(m+1) - c • (f_(m+2) * e_(m+1) * f_(m+1))`.
+  · -- `f_(m+2) * f_(m+2) = f_(m+2) * f_(m+1) - c • (f_(m+2) * e (Fin.last m) * f_(m+1))`.
     rw [IsIdempotentElem]
     nth_rewrite 2 [jonesWenzl_add_two]
     rw [mul_sub, mul_smul_comm, ← mul_assoc, ← mul_assoc, jonesWenzl_mul_strandIncl_aux hf,
@@ -346,9 +341,9 @@ theorem strandIncl_jonesWenzl_mul_jonesWenzl
     strandIncl (jonesWenzl δ (m + 1)) * jonesWenzl δ (m + 2) = jonesWenzl δ (m + 2) :=
   strandIncl_mul_jonesWenzl_aux (isIdempotentElem_jonesWenzl h)
 
-/-- **The capping identity** `e_(m+2) f_(m+2) e_(m+2) = ([m + 3] / [m + 2]) f_(m+1) e_(m+2)`
-on `m + 3` strands, with `f_(m+2)` included on the first `m + 2` strands and `f_(m+1)` on the
-first `m + 1`, when `[1], …, [m + 2]` are units. -/
+/-- **The capping identity** `E f_(m+2) E = ([m + 3] / [m + 2]) f_(m+1) E` on `m + 3` strands,
+where `E = e (Fin.last (m + 1))` is the last generator, `f_(m+2)` is included on the first `m + 2`
+strands and `f_(m+1)` on the first `m + 1`, when `[1], …, [m + 2]` are units. -/
 theorem e_last_mul_strandIncl_jonesWenzl_mul_e_last
     (h : ∀ k ∈ Finset.Icc 1 (m + 2), IsUnit (qInt R δ k)) :
     e δ (Fin.last (m + 1)) * strandIncl (jonesWenzl δ (m + 2)) * e δ (Fin.last (m + 1)) =
@@ -356,10 +351,8 @@ theorem e_last_mul_strandIncl_jonesWenzl_mul_e_last
         (strandIncl (strandIncl (jonesWenzl δ (m + 1))) * e δ (Fin.last (m + 1))) := by
   rw [e_last_mul_strandIncl_jonesWenzl_mul_e_last_aux
     (isIdempotentElem_jonesWenzl fun k hk ↦ h k (Finset.Icc_subset_Icc le_rfl (by omega) hk))]
-  have h₃ : qInt R δ (m + 3) = δ * qInt R δ (m + 2) - qInt R δ (m + 1) := qInt_add_two δ (m + 1)
   congr 1
-  linear_combination (-δ) * Ring.mul_inverse_cancel _ (h (m + 2) (by simp)) -
-    inverse (qInt R δ (m + 2)) * h₃
+  exact (qInt_add_two_mul_inverse δ (m + 1) (h (m + 2) (by simp))).symm
 
 end Recursion
 
