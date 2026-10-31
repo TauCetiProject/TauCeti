@@ -59,10 +59,10 @@ theorem meromorphicOrderAt_completedRiemannZeta_zero :
   rw [completedRiemannZeta_eq, sub_zero, zpow_neg_one, smul_eq_mul]
   field_simp
 
-/-- The completed Riemann zeta function has a simple pole at `1`, transported from the pole at
-`0` along the functional equation `completedRiemannZeta_one_sub`. -/
+/-- The completed Riemann zeta function has a simple pole at `1`. -/
 theorem meromorphicOrderAt_completedRiemannZeta_one :
     meromorphicOrderAt completedRiemannZeta 1 = (-1 : ℤ) := by
+  -- Transport the pole at `0` along the functional equation `completedRiemannZeta_one_sub`.
   have h := meromorphicOrderAt_comp_of_deriv_ne_zero (f := completedRiemannZeta)
     (g := fun z : ℂ ↦ 1 - z) (x := 1) (by fun_prop) (by simp)
   rw [sub_self, meromorphicOrderAt_completedRiemannZeta_zero] at h

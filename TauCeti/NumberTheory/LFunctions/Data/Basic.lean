@@ -74,7 +74,7 @@ namespace TauCeti.LFunctions
 
 /-- **Completed L-function data in the analytic normalization.** The Dirichlet coefficients
 `coeff`, the conductor `N`, the real and complex gamma shifts, the root number `ε`, the completed
-function `Λ`, and the polar divisor, which records the order of the pole of `Λ` at each point.
+function `Λ`, and the polar divisor, intended to record the order of the pole of `Λ` at each point.
 The intended properties of these data are the predicates `HasDirichletAgreement`,
 `HasMeromorphicContinuation` and `HasFunctionalEquation`; the record itself imposes none of them.
 -/
@@ -90,9 +90,11 @@ structure AnalyticLFunctionData where
   gammaC : Multiset ℂ
   /-- The root number `ε`. -/
   rootNumber : ℂ
-  /-- The completed function `Λ(s) = N^(s/2) γ(s) L(s)`. -/
+  /-- The completed function `Λ`; `HasDirichletAgreement` asks that it equal
+  `N^(s/2) γ(s) L(s)` on `Re s > 1`. -/
   completed : ℂ → ℂ
-  /-- The polar divisor: the order of the pole of `Λ` at each point. -/
+  /-- The intended polar divisor of `Λ`; `HasMeromorphicContinuation` asks that it record the
+  exact pole orders. -/
   polarOrder : ℂ →₀ ℕ
 
 namespace AnalyticLFunctionData
