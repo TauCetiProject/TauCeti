@@ -110,33 +110,7 @@ private theorem exists_le_ker_of_posDef_neg_crossingForm (B D : E →L[ℝ] E �
       exact hy0 (by simpa using congrArg (fun z : M' ↦ ((z : B.ker) : E)) h)
     simpa using hM' ⟨y, hy⟩ hy0'
 
-variable {V : ℝ → E →L[ℝ] E →L[ℝ] ℝ} {t₀ : ℝ}
-
-/-- The parameter `t - t₀` and the remainder of a right derivative, along `𝓝[>] t₀`. -/
-private theorem tendsto_sub_nhdsGT_and_isLittleO {V' : E →L[ℝ] E →L[ℝ] ℝ}
-    (hV : HasDerivWithinAt V V' (Ici t₀) t₀) :
-    Tendsto (fun t ↦ t - t₀) (𝓝[>] t₀) (𝓝 0) ∧ (∀ᶠ t in 𝓝[>] t₀, 0 < t - t₀) ∧
-      (fun t ↦ V t - V t₀ - (t - t₀) • V') =o[𝓝[>] t₀] fun t ↦ t - t₀ := by
-  refine ⟨((continuous_sub_right t₀).tendsto' t₀ 0 (sub_self t₀)).mono_left nhdsWithin_le_nhds,
-    eventually_nhdsWithin_of_forall fun _ ht ↦ sub_pos.2 ht, ?_⟩
-  have hrem := (hasDerivWithinAt_iff_isLittleO (f := V) (f' := V') (s := Ici t₀) (x := t₀)).1 hV
-  exact hrem.mono (nhdsWithin_mono _ Ioi_subset_Ici_self)
-
-/-- The parameter `t₀ - t` and the remainder of a left derivative, along `𝓝[<] t₀`. -/
-private theorem tendsto_sub_nhdsLT_and_isLittleO {V' : E →L[ℝ] E →L[ℝ] ℝ}
-    (hV : HasDerivWithinAt V V' (Iic t₀) t₀) :
-    Tendsto (fun t ↦ t₀ - t) (𝓝[<] t₀) (𝓝 0) ∧ (∀ᶠ t in 𝓝[<] t₀, 0 < t₀ - t) ∧
-      (fun t ↦ V t - V t₀ - (t₀ - t) • -V') =o[𝓝[<] t₀] fun t ↦ t₀ - t := by
-  refine ⟨((continuous_sub_left t₀).tendsto' t₀ 0 (sub_self t₀)).mono_left nhdsWithin_le_nhds,
-    eventually_nhdsWithin_of_forall fun _ ht ↦ sub_pos.2 ht, ?_⟩
-  have hrem := ((hasDerivWithinAt_iff_isLittleO (f := V) (f' := V') (s := Iic t₀)
-    (x := t₀)).1 hV).mono (nhdsWithin_mono _ Iio_subset_Iic_self)
-  have hneg := hrem.neg_right
-  refine hneg.congr (fun t ↦ ?_) fun t ↦ ?_
-  · module
-  · rw [neg_sub]
-
-variable [FiniteDimensional ℝ E]
+variable [FiniteDimensional ℝ E] {V : ℝ → E →L[ℝ] E →L[ℝ] ℝ} {t₀ : ℝ}
 
 /-- The scalar inequality behind the key estimate: a term bounded by `-c₁ a²`, plus `h` times a
 term bounded by `C a² + 2 C a b - c₂ b²`, plus an error bounded by `c₂ h (2 a² + 2 b²) / 8`, is
@@ -250,33 +224,30 @@ private theorem eventually_add_sigNeg_le {l : Filter ℝ} {h : ℝ → ℝ} {D :
   exact le_sigNeg_of_negDef _ fun x hx0 ↦ by simpa using ht x x.2 (by simpa using hx0)
 
 /-- Lower bound for the positive index: eventually along `l`, the positive index of `V t` is at
-least that of `V t₀` plus that of the crossing form of `V t₀` and `D`. -/
+least that of `V t₀` plus that of the crossing form of `V t₀` and `D`. This is the negative-index
+bound applied to the path `-V`. -/
 private theorem eventually_add_sigPos_le {l : Filter ℝ} {h : ℝ → ℝ} {D : E →L[ℝ] E →L[ℝ] ℝ}
     (hsymm : (V t₀).toBilinForm.IsSymm) (hh : Tendsto h l (𝓝 0)) (hpos : ∀ᶠ t in l, 0 < h t)
     (hrem : (fun t ↦ V t - V t₀ - h t • D) =o[l] h) :
     ∀ᶠ t in l, sigPos (V t₀).toBilinForm.toQuadraticMap + sigPos (crossingForm (V t₀) D) ≤
       sigPos (V t).toBilinForm.toQuadraticMap := by
-  obtain ⟨N, hNr, hN⟩ := exists_finrank_eq_sigPos_and_posDef (V t₀).toBilinForm.toQuadraticMap
-  obtain ⟨M', hM'r, hM'⟩ := exists_finrank_eq_sigPos_and_posDef (crossingForm (V t₀) D)
-  obtain ⟨M, hMr, hMK, hM⟩ :=
-    exists_le_ker_of_posDef_neg_crossingForm (V t₀) (-D) (by simpa using hM')
-  -- Apply the negative-definite estimate to the path `-V`.
-  have hN' : ∀ x ∈ N, x ≠ 0 → (-V t₀) x x < 0 := fun x hx hx0 ↦ by
-    simpa using hN ⟨x, hx⟩ (by simpa using hx0)
-  have hMK' : M ≤ (-V t₀).ker := fun x hx ↦ by
-    have h₀ : V t₀ x = 0 := hMK hx
-    simp [LinearMap.mem_ker, h₀]
   have hsymm' : (-V t₀).toBilinForm.IsSymm := ⟨fun x y ↦ by simpa using hsymm.eq x y⟩
   have hrem' : (fun t ↦ -V t - -V t₀ - h t • -D) =o[l] h := by
     have hneg := (Asymptotics.isLittleO_neg_left (f' := fun t ↦ V t - V t₀ - h t • D) (g := h)
       (l := l)).2 hrem
     exact hneg.congr_left fun t ↦ by module
-  filter_upwards [eventually_forall_lt_zero (V := fun t ↦ -V t) hsymm' hh hpos hrem' hN' hMK'
-    hM] with t ht
-  have hdim := Submodule.finrank_sup_add_finrank_inf_eq N M
-  rw [inf_eq_bot_of_le_ker (fun x hx hx0 ↦ (hN' x hx hx0).ne) hMK', finrank_bot, add_zero] at hdim
-  rw [← hNr, ← hM'r, ← hMr, ← hdim]
-  exact le_sigPos_of_posDef _ fun x hx0 ↦ by simpa using ht x x.2 (by simpa using hx0)
+  -- The kernels of `-V t₀` and `V t₀` agree, so the two crossing forms are equivalent.
+  have hK : (-V t₀).ker = (V t₀).ker := by
+    ext x
+    simp
+  have hΓ : sigPos (crossingForm (-V t₀) D) = sigPos (crossingForm (V t₀) D) :=
+    QuadraticMap.Equivalent.sigPos_eq ⟨⟨LinearEquiv.ofEq _ _ hK, fun v ↦ by simp [crossingForm]⟩⟩
+  have hQ (L : E →L[ℝ] E →L[ℝ] ℝ) :
+      (-L).toBilinForm.toQuadraticMap = -L.toBilinForm.toQuadraticMap := by
+    ext x
+    simp
+  filter_upwards [eventually_add_sigNeg_le (V := fun t ↦ -V t) hsymm' hh hpos hrem'] with t ht
+  simpa [hQ, hΓ] using ht
 
 /-- At a regular crossing, eventually along `l` the negative index of `V t` is that of `V t₀`
 plus that of the crossing form, and `V t` has trivial radical: the two lower bounds add up to the
@@ -297,6 +268,41 @@ private theorem eventually_sigNeg_eq_and_radical_eq_bot {l : Filter ℝ} {h : �
   have hrad : Module.finrank ℝ (V t).toBilinForm.toQuadraticMap.radical = 0 := by omega
   exact ⟨by omega, Submodule.finrank_eq_zero.1 hrad⟩
 
+/-- The conclusion of `eventually_sigNeg_eq_and_radical_eq_bot` just after a regular crossing,
+from a right derivative, with `h t = t - t₀`. -/
+private theorem eventually_nhdsGT_sigNeg_eq_and_radical_eq_bot {V' : E →L[ℝ] E →L[ℝ] ℝ}
+    (hsymm : (V t₀).toBilinForm.IsSymm) (hV : HasDerivWithinAt V V' (Ici t₀) t₀)
+    (hreg : (crossingForm (V t₀) V').Nondegenerate) :
+    ∀ᶠ t in 𝓝[>] t₀, sigNeg (V t).toBilinForm.toQuadraticMap =
+      sigNeg (V t₀).toBilinForm.toQuadraticMap + sigNeg (crossingForm (V t₀) V') ∧
+        (V t).toBilinForm.toQuadraticMap.radical = ⊥ := by
+  refine eventually_sigNeg_eq_and_radical_eq_bot hsymm
+    (((continuous_sub_right t₀).tendsto' t₀ 0 (sub_self t₀)).mono_left nhdsWithin_le_nhds)
+    (eventually_nhdsWithin_of_forall fun _ ht ↦ sub_pos.2 ht) ?_ hreg
+  exact ((hasDerivWithinAt_iff_isLittleO (f := V) (f' := V') (s := Ici t₀) (x := t₀)).1
+    hV).mono (nhdsWithin_mono _ Ioi_subset_Ici_self)
+
+/-- The conclusion of `eventually_sigNeg_eq_and_radical_eq_bot` just before a regular crossing,
+from a left derivative `V'`, with `h t = t₀ - t` and `D = -V'`. -/
+private theorem eventually_nhdsLT_sigNeg_eq_and_radical_eq_bot {V' : E →L[ℝ] E →L[ℝ] ℝ}
+    (hsymm : (V t₀).toBilinForm.IsSymm) (hV : HasDerivWithinAt V V' (Iic t₀) t₀)
+    (hreg : (crossingForm (V t₀) V').Nondegenerate) :
+    ∀ᶠ t in 𝓝[<] t₀, sigNeg (V t).toBilinForm.toQuadraticMap =
+      sigNeg (V t₀).toBilinForm.toQuadraticMap + sigPos (crossingForm (V t₀) V') ∧
+        (V t).toBilinForm.toQuadraticMap.radical = ⊥ := by
+  have hreg' : (crossingForm (V t₀) (-V')).Nondegenerate := by
+    rwa [crossingForm_neg, QuadraticMap.nondegenerate_neg]
+  have hrem : (fun t ↦ V t - V t₀ - (t₀ - t) • -V') =o[𝓝[<] t₀] fun t ↦ t₀ - t := by
+    have hrem := ((hasDerivWithinAt_iff_isLittleO (f := V) (f' := V') (s := Iic t₀)
+      (x := t₀)).1 hV).mono (nhdsWithin_mono _ Iio_subset_Iic_self)
+    refine hrem.neg_right.congr (fun t ↦ ?_) fun t ↦ ?_
+    · module
+    · rw [neg_sub]
+  filter_upwards [eventually_sigNeg_eq_and_radical_eq_bot hsymm
+    (((continuous_sub_left t₀).tendsto' t₀ 0 (sub_self t₀)).mono_left nhdsWithin_le_nhds)
+    (eventually_nhdsWithin_of_forall fun _ ht ↦ sub_pos.2 ht) hrem hreg'] with t ht
+  rwa [crossingForm_neg, sigNeg_neg] at ht
+
 /-- **The negative index just after a regular crossing.** Let `V` be a path of continuous bilinear
 forms, symmetric at `t₀` and with right derivative `V'` there, whose crossing form at `t₀` is
 nondegenerate. For `t > t₀` close to `t₀`, the negative index of `V t` is the negative index of
@@ -305,9 +311,8 @@ theorem eventually_sigNeg_eq_add_sigNeg_crossingForm {V' : E →L[ℝ] E →L[�
     (hsymm : (V t₀).toBilinForm.IsSymm) (hV : HasDerivWithinAt V V' (Ici t₀) t₀)
     (hreg : (crossingForm (V t₀) V').Nondegenerate) :
     ∀ᶠ t in 𝓝[>] t₀, sigNeg (V t).toBilinForm.toQuadraticMap =
-      sigNeg (V t₀).toBilinForm.toQuadraticMap + sigNeg (crossingForm (V t₀) V') := by
-  obtain ⟨hh, hpos, hrem⟩ := tendsto_sub_nhdsGT_and_isLittleO hV
-  exact (eventually_sigNeg_eq_and_radical_eq_bot hsymm hh hpos hrem hreg).mono fun _ ht ↦ ht.1
+      sigNeg (V t₀).toBilinForm.toQuadraticMap + sigNeg (crossingForm (V t₀) V') :=
+  (eventually_nhdsGT_sigNeg_eq_and_radical_eq_bot hsymm hV hreg).mono fun _ ht ↦ ht.1
 
 /-- **The negative index just before a regular crossing.** Let `V` be a path of continuous
 bilinear forms, symmetric at `t₀` and with left derivative `V'` there, whose crossing form at `t₀`
@@ -317,12 +322,8 @@ theorem eventually_sigNeg_eq_add_sigPos_crossingForm {V' : E →L[ℝ] E →L[�
     (hsymm : (V t₀).toBilinForm.IsSymm) (hV : HasDerivWithinAt V V' (Iic t₀) t₀)
     (hreg : (crossingForm (V t₀) V').Nondegenerate) :
     ∀ᶠ t in 𝓝[<] t₀, sigNeg (V t).toBilinForm.toQuadraticMap =
-      sigNeg (V t₀).toBilinForm.toQuadraticMap + sigPos (crossingForm (V t₀) V') := by
-  obtain ⟨hh, hpos, hrem⟩ := tendsto_sub_nhdsLT_and_isLittleO hV
-  have hreg' : (crossingForm (V t₀) (-V')).Nondegenerate := by
-    rwa [crossingForm_neg, QuadraticMap.nondegenerate_neg]
-  filter_upwards [eventually_sigNeg_eq_and_radical_eq_bot hsymm hh hpos hrem hreg'] with t ht
-  rw [ht.1, crossingForm_neg, sigNeg_neg]
+      sigNeg (V t₀).toBilinForm.toQuadraticMap + sigPos (crossingForm (V t₀) V') :=
+  (eventually_nhdsLT_sigNeg_eq_and_radical_eq_bot hsymm hV hreg).mono fun _ ht ↦ ht.1
 
 /-- **Regular crossings are isolated.** A path of symmetric continuous bilinear forms,
 differentiable at `t₀` with nondegenerate crossing form there, is nondegenerate at every `t ≠ t₀`
@@ -336,15 +337,8 @@ theorem eventually_nondegenerate_of_crossingForm_nondegenerate {V' : E →L[ℝ]
   have hr := HasDerivAt.hasDerivWithinAt (f := V) (f' := V') (x := t₀) (s := Ici t₀) hV
   have hrad : ∀ᶠ t in 𝓝[≠] t₀, (V t).toBilinForm.toQuadraticMap.radical = ⊥ := by
     rw [← nhdsLT_sup_nhdsGT, eventually_sup]
-    constructor
-    · obtain ⟨hh, hpos, hrem⟩ := tendsto_sub_nhdsLT_and_isLittleO hl
-      have hreg' : (crossingForm (V t₀) (-V')).Nondegenerate := by
-        rwa [crossingForm_neg, QuadraticMap.nondegenerate_neg]
-      exact (eventually_sigNeg_eq_and_radical_eq_bot hsymm₀ hh hpos hrem hreg').mono
-        fun _ ht ↦ ht.2
-    · obtain ⟨hh, hpos, hrem⟩ := tendsto_sub_nhdsGT_and_isLittleO hr
-      exact (eventually_sigNeg_eq_and_radical_eq_bot hsymm₀ hh hpos hrem hreg).mono
-        fun _ ht ↦ ht.2
+    exact ⟨(eventually_nhdsLT_sigNeg_eq_and_radical_eq_bot hsymm₀ hl hreg).mono fun _ ht ↦ ht.2,
+      (eventually_nhdsGT_sigNeg_eq_and_radical_eq_bot hsymm₀ hr hreg).mono fun _ ht ↦ ht.2⟩
   filter_upwards [hrad, nhdsWithin_le_nhds hsymm] with t ht hts
   rw [← QuadraticMap.nondegenerate_iff_radical_eq_bot, ← QuadraticMap.nondegenerate_associated_iff,
     QuadraticMap.associated_left_inverse (S := ℝ) hts.eq] at ht
