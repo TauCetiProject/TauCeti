@@ -12,10 +12,10 @@ import Mathlib.Data.Finset.Order
 # Flatness of locally cyclic modules
 
 A module `M` over a commutative ring `R` is *locally cyclic* if its cyclic submodules `R ∙ x` form
-a directed family, equivalently if every finitely generated submodule of `M` is cyclic. For such a
-module the equational criterion for flatness reduces to relations in a single element: `M` is flat
-if and only if every relation `r • x = 0` is trivial in the sense that `x = d • y` for some `y`
-and some `d` with `r * d = 0`.
+a directed family, equivalently if every finitely generated submodule of `M` is contained in a
+cyclic submodule. For such a module the equational criterion for flatness reduces to relations in
+a single element: `M` is flat if and only if every relation `r • x = 0` is trivial in the sense
+that `x = d • y` for some `y` and some `d` with `r * d = 0`.
 
 This criterion computes the flatness of tensor squares of idempotent ideals which are directed
 unions of principal ideals, the input of the basic setups of almost mathematics.
