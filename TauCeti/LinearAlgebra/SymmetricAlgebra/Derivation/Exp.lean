@@ -31,7 +31,6 @@ polynomial functions Chevalley's restriction theorem describes.
 
 ## Main results
 
-* `SymmetricAlgebra.iterate_derivationOfEnd_ι`: the iterates of `D_f` on generators.
 * `SymmetricAlgebra.exists_iterate_derivationOfEnd_eq_zero`: `D_f` is locally nilpotent when `f`
   is nilpotent.
 * `SymmetricAlgebra.taylorExp_derivationOfEnd`: `exp D_f = map (exp f)`.
@@ -56,15 +55,6 @@ open Finset
 universe u v
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
-
-/-- The iterates of the derivation induced by `f` act on generators by the powers of `f`. -/
-@[simp]
-theorem iterate_derivationOfEnd_ι (f : Module.End R M) (n : ℕ) (x : M) :
-    (derivationOfEnd R M f)^[n] (ι R M x) = ι R M ((f ^ n) x) := by
-  induction n generalizing x with
-  | zero => simp
-  | succ n ih => rw [Function.iterate_succ_apply, derivationOfEnd_ι, ih, pow_succ,
-      Module.End.mul_apply]
 
 /-- **The derivation induced by a nilpotent endomorphism is locally nilpotent**: some iterate of it
 kills each element of the symmetric algebra. -/

@@ -32,7 +32,9 @@ public section
 
 open Module
 
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+section CommSemiring
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
 /-- The transpose of a power of an endomorphism is the power of its transpose. -/
 theorem LinearMap.dualMap_pow (f : Module.End R M) (n : ℕ) :
@@ -47,6 +49,10 @@ theorem IsNilpotent.dualMap {f : Module.End R M} (hf : IsNilpotent f) :
     IsNilpotent f.dualMap := by
   obtain ⟨n, hn⟩ := hf
   exact ⟨n, by rw [← LinearMap.dualMap_pow, hn]; ext; simp⟩
+
+end CommSemiring
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- **The transpose of the exponential of a nilpotent endomorphism** is the exponential of its
 transpose. -/
