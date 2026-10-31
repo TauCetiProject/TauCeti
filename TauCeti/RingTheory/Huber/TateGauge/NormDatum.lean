@@ -7,14 +7,14 @@ module
 
 public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.RingTheory.Huber.TateGauge.Basic
-import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
 /-!
 # Norm data of Tate rings
 
 A Tate ring carries no canonical norm, but each choice of a ring of definition `A₀`, a
 pseudouniformiser `ϖ ∈ A₀` and a radius `0 < r < 1` gives one: the Tate gauge
-`α(x) = inf { r ^ n | n ∈ ℤ, ϖ ^ (-n) x ∈ A₀ }`, for which `ϖ` has norm `r` exactly. This file
+`α(x) = inf { r ^ n | n ∈ ℤ, ϖ ^ (-n) x ∈ A₀ }`, which multiplication by `ϖ` scales exactly by
+`r`; in particular `ϖ` has norm `r` when `A` is Hausdorff and nonzero. This file
 packages such a choice as a *norm datum* `TateNormDatum A` and its norm `tateNorm d` as an
 ultrametric ring seminorm defining the topology of `A`.
 
@@ -56,8 +56,9 @@ namespace TauCeti.Huber
 variable (A : Type*) [CommRing A] [TopologicalSpace A]
 
 /-- A *norm datum* of a Tate ring `A`: an open bounded subring `A₀` (a ring of definition), a
-topologically nilpotent unit `ϖ ∈ A₀` (a pseudouniformiser) and a radius `0 < r < 1`. Its norm
-`TauCeti.Huber.tateNorm` gives `ϖ` the norm `r`. -/
+topologically nilpotent unit `ϖ ∈ A₀` (a pseudouniformiser) and a radius `0 < r < 1`.
+Multiplication by `ϖ` scales its norm `TauCeti.Huber.tateNorm` exactly by `r`, so `ϖ` has norm `r`
+when `A` is Hausdorff and nonzero. -/
 @[ext]
 structure TateNormDatum where
   /-- The ring of definition `A₀`. -/
@@ -72,7 +73,8 @@ structure TateNormDatum where
   isTopologicallyNilpotent_pseudoUniformizer : IsTopologicallyNilpotent (pseudoUniformizer : A)
   /-- The pseudouniformiser lies in the ring of definition. -/
   pseudoUniformizer_mem : (pseudoUniformizer : A) ∈ ringOfDefinition
-  /-- The radius `r`, the norm of the pseudouniformiser. -/
+  /-- The radius `r`, the factor by which multiplication by the pseudouniformiser scales the norm
+  (the norm of the pseudouniformiser when `A` is Hausdorff and nonzero). -/
   radius : ℝ
   /-- The radius is positive. -/
   radius_pos : 0 < radius

@@ -117,22 +117,24 @@ theorem spectralSeminorm_eq_of_ringOfDefinition (d' : TateNormDatum A)
   have h₂ (y : A) : tateNorm d' y ≤ C * tateNorm d y := by
     simpa only [tateNorm_apply, ← hϖ, ← hr] using (hC y).2
   ext x
-  exact le_antisymm (smoothingFun_map_le_of_le_mul (RingHom.id A) (tateNorm_one_le d') h₁ x)
-    (smoothingFun_map_le_of_le_mul (RingHom.id A) (tateNorm_one_le d) h₂ x)
+  exact le_antisymm ((RingHom.id A).smoothingFun_map_le_of_le_mul (tateNorm_one_le d') h₁ x)
+    ((RingHom.id A).smoothingFun_map_le_of_le_mul (tateNorm_one_le d) h₂ x)
 
-/-- **Changing the radius.** For two norm data differing only in their radii `r` and `r'`, the
-spectral seminorm for `r'` is the spectral seminorm for `r` raised to the power
+/-- **Changing the radius.** For two norm data with the same pseudouniformiser and radii `r` and
+`r'`, the spectral seminorm for `r'` is the spectral seminorm for `r` raised to the power
 `log r' / log r`. -/
 theorem spectralSeminorm_rpow (d' : TateNormDatum A)
-    (hA₀ : d.ringOfDefinition = d'.ringOfDefinition)
     (hϖ : d.pseudoUniformizer = d'.pseudoUniformizer) (x : A) :
     spectralSeminorm d' x = spectralSeminorm d x ^ (Real.log d'.radius / Real.log d.radius) := by
-  refine smoothingFun_eq_rpow_of_forall (tateNorm_one_le d)
+  -- Replace the ring of definition of `d` by that of `d'`, keeping the radius of `d`.
+  let d₁ : TateNormDatum A :=
+    { d' with radius := d.radius, radius_pos := d.radius_pos, radius_lt_one := d.radius_lt_one }
+  rw [spectralSeminorm_eq_of_ringOfDefinition d d₁ hϖ rfl]
+  refine smoothingFun_eq_rpow_of_forall (tateNorm_one_le d₁)
     (div_pos_of_neg_of_neg (Real.log_neg d'.radius_pos d'.radius_lt_one)
       (Real.log_neg d.radius_pos d.radius_lt_one)) (fun y ↦ ?_) x
-  rw [tateNorm_apply, tateNorm_apply, ← hA₀, ← hϖ,
-    tateGauge_rpow d.one_lt_radius_inv d'.one_lt_radius_inv, Real.log_inv, Real.log_inv,
-    neg_div_neg_eq]
+  rw [tateNorm_apply, tateNorm_apply, tateGauge_rpow d₁.one_lt_radius_inv d'.one_lt_radius_inv,
+    Real.log_inv, Real.log_inv, neg_div_neg_eq]
 
 /-- **The spectral seminorm detects topological nilpotence**: `|x|_sp < 1` exactly when the powers
 of `x` tend to zero. -/
@@ -213,7 +215,7 @@ theorem spectralSeminorm_map_le {B : Type*} [CommRing B] [TopologicalSpace B]
     (hA₀ : ∀ x ∈ d.ringOfDefinition, φ x ∈ d'.ringOfDefinition)
     (hϖ : φ d.pseudoUniformizer = d'.pseudoUniformizer) (hr : d'.radius = d.radius) (x : A) :
     spectralSeminorm d' (φ x) ≤ spectralSeminorm d x :=
-  smoothingFun_map_le_of_le_mul φ (tateNorm_one_le d) (C := 1)
+  φ.smoothingFun_map_le_of_le_mul (tateNorm_one_le d) (C := 1)
     (fun y ↦ by simpa using tateNorm_map_le d d' φ hA₀ hϖ hr y) x
 
 end TauCeti.Huber

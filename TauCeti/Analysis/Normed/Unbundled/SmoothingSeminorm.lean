@@ -36,6 +36,8 @@ open Filter Topology
 
 variable {R S : Type*} [CommRing R] [CommRing S]
 
+namespace RingHom
+
 /-- **Smoothing absorbs multiplicative constants.** If `ν (φ x) ≤ C * μ x` for a ring
 homomorphism `φ : R →+* S` and every `x`, then the smoothing of `ν` at `φ x` is at most the
 smoothing of `μ` at `x`, whatever the constant `C`. Only `μ` needs `μ 1 ≤ 1`, so that its
@@ -61,6 +63,10 @@ theorem smoothingFun_map_le_of_le_mul {μ : RingSeminorm R} {ν : RingSeminorm S
         exact (h _).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (apply_nonneg μ _))
     _ = D ^ (1 / n : ℝ) * smoothingSeminormSeq μ x n :=
         Real.mul_rpow hD.le (apply_nonneg μ _)
+
+end RingHom
+
+namespace TauCeti
 
 /-- **Exact scaling passes to the smoothing.** If multiplication by `c` scales `μ` by the factor
 `s ≥ 0`, then it scales the smoothing of `μ` by the same factor. -/
@@ -92,3 +98,5 @@ theorem smoothingFun_eq_rpow_of_forall {μ ν : RingSeminorm R} (hμ1 : μ 1 ≤
     ((tendsto_smoothingFun_of_map_one_le_one μ hμ1 x).rpow_const (Or.inr ht.le))
     (Eventually.of_forall fun n ↦ ?_)
   simp only [smoothingSeminormSeq, h, ← Real.rpow_mul (apply_nonneg μ _), mul_comm t]
+
+end TauCeti
