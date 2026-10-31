@@ -164,19 +164,21 @@ theorem totalSpaceBiprodIso_hom_naturality {E E' F F' : FiniteLocallyFreeSheaf X
           ((Category.comp_id ((totalSpaceScheme X).obj F).hom).trans
             (MorphismProperty.Over.w ((totalSpaceScheme X).map b)).symm) := by
   -- The underlying morphism of schemes of a composite in `AffineSchemeOver X` is by definition
-  -- the composite of the underlying morphisms, so both components follow from functoriality of
-  -- `totalSpaceScheme X` and `biprod.map_fst`, `biprod.map_snd`.
-  apply pullback.hom_ext
-  · rw [Category.assoc, totalSpaceBiprodIso_hom_fst, Category.assoc, pullback.lift_fst,
-      totalSpaceBiprodIso_hom_fst_assoc]
-    exact congrArg (fun φ ↦ φ.left) (((totalSpaceScheme X).map_comp _ _).symm.trans
-      ((congrArg (totalSpaceScheme X).map (biprod.map_fst a b)).trans
-        ((totalSpaceScheme X).map_comp _ _)))
-  · rw [Category.assoc, totalSpaceBiprodIso_hom_snd, Category.assoc, pullback.lift_snd,
+  -- the composite of the underlying morphisms, so each component is `.left` of an equation in
+  -- `AffineSchemeOver X` given by functoriality of `totalSpaceScheme X` and `biprod.map_fst`,
+  -- `biprod.map_snd`. (`rw` and `simp` cannot use `MorphismProperty.Comma.comp_left` here:
+  -- `AffineSchemeOver X` passes the class `IsAffineHom` as a `MorphismProperty`, which only
+  -- typechecks after unfolding.)
+  apply pullback.hom_ext <;>
+    simp only [Category.assoc, totalSpaceBiprodIso_hom_fst, totalSpaceBiprodIso_hom_snd,
+      pullback.lift_fst, pullback.lift_snd, totalSpaceBiprodIso_hom_fst_assoc,
       totalSpaceBiprodIso_hom_snd_assoc]
-    exact congrArg (fun φ ↦ φ.left) (((totalSpaceScheme X).map_comp _ _).symm.trans
-      ((congrArg (totalSpaceScheme X).map (biprod.map_snd a b)).trans
-        ((totalSpaceScheme X).map_comp _ _)))
+  · exact congrArg (fun φ ↦ φ.left) (show (totalSpaceScheme X).map (biprod.map a b) ≫
+      (totalSpaceScheme X).map biprod.fst = (totalSpaceScheme X).map biprod.fst ≫
+        (totalSpaceScheme X).map a by simp only [← Functor.map_comp, biprod.map_fst])
+  · exact congrArg (fun φ ↦ φ.left) (show (totalSpaceScheme X).map (biprod.map a b) ≫
+      (totalSpaceScheme X).map biprod.snd = (totalSpaceScheme X).map biprod.snd ≫
+        (totalSpaceScheme X).map b by simp only [← Functor.map_comp, biprod.map_snd])
 
 end
 
