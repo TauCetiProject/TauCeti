@@ -70,9 +70,9 @@ theorem genY_def : genY = RatFunc.X ^ 3 + sElement 2 := (rfl)
 theorem genY_sq : genY ^ 2 = genX ^ 3 + algebraMap (constants 2) _ (radicand 2) := by
   rw [algebraMap_radicand, genX, genY, add_pow_char, ← pow_mul, ← pow_mul]
 
-/-- `y` is transcendental over `k = 𝔽₂(t)`: otherwise `u ^ 3 = y - s` would be algebraic over
-`k' = 𝔽₂(s)`. -/
+/-- `y` is transcendental over `k = 𝔽₂(t)`. -/
 theorem transcendental_genY : Transcendental (constants 2) genY := by
+  -- Otherwise `u ^ 3 = y - s` would be algebraic over `k' = 𝔽₂(s)`.
   intro halg
   have h : IsAlgebraic (RatFunc (ZMod 2)) ((RatFunc.X : RatFunc (RatFunc (ZMod 2))) ^ 3) := by
     have := (halg.tower_top (RatFunc (ZMod 2))).sub

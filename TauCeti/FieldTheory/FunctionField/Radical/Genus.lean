@@ -330,9 +330,10 @@ degree `m ≥ 1`, and `n` is invertible in `k`, then
 
 `2g = (n - 1) (m - 2) + n - gcd(n, m)`.
 
-The places of `k(x)` over which `F` ramifies are the zeros of `f`, each with ramification index
-`n`, and the place at infinity, with ramification index `n / gcd(n, m)`. Neither a root of unity
-in `k` nor any other hypothesis on `k` is needed. -/
+The only places of `k(x)` over which `F` can ramify are the zeros of `f`, each with
+ramification index `n`, and the place at infinity, with ramification index `n / gcd(n, m)`; such
+a place is ramified precisely when its index exceeds `1`. Neither a root of unity in `k` nor any
+other hypothesis on `k` is needed. -/
 theorem two_mul_genus_eq_of_pow_eq_of_squarefree {y : F} {n : ℕ} {f : k[X]}
     (hgen : (RatFunc k)⟮y⟯ = ⊤)
     (hy : y ^ n = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) (hn : (n : k) ≠ 0)
