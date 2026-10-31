@@ -34,6 +34,8 @@ rotated braid words.
 * `List.formPerm_append_apply_of_mem_right` and `List.formPerm_append_apply_getLast_left`: the
   permutation formed by `T ++ V` on the entries of `V`, and on the last entry of `T`.
 * `List.IsRotated.filter`: filtering preserves cyclic rotation of lists.
+* `List.IsRotated.apply_prod_eq`: a function `φ` with `φ (x * y) = φ (y * x)`, such as a trace,
+  takes the same value on the products of cyclically rotated lists.
 * `List.ofFn_comp_finRotate_pow`: precomposing with a power of `finRotate` rotates `List.ofFn`.
 -/
 
@@ -155,6 +157,14 @@ theorem IsRotated.filter {α : Type*} {l l' : List α} (h : l ~r l') (p : α →
     (l := (l.take (k % l.length)).filter p)
     (l' := (l.drop (k % l.length)).filter p)
   simpa only [← List.filter_append, List.take_append_drop] using hrot
+
+/-- A function `φ` on a monoid with `φ (x * y) = φ (y * x)`, such as a trace, takes the same value
+on the products of cyclically rotated lists. -/
+theorem IsRotated.apply_prod_eq {M R : Type*} [Monoid M] {φ : M → R}
+    (hφ : ∀ x y, φ (x * y) = φ (y * x)) {l l' : List M} (h : l ~r l') : φ l.prod = φ l'.prod := by
+  obtain ⟨k, rfl⟩ := h
+  rw [List.rotate_eq_drop_append_take_mod, List.prod_append, hφ, ← List.prod_append,
+    List.take_append_drop]
 
 /-- Precomposing a tuple with a power of the cyclic permutation `finRotate n` rotates the list of
 its entries by the same amount. -/

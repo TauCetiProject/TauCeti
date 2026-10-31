@@ -34,6 +34,8 @@ regular measures follows from `MeasureTheory.Measure.OuterRegular.ext_isOpen`.
 * `TauCeti.variationMeasure μ Ω u`: the variation measure `|Du|` on `Ω`, a regular measure.
 * `TauCeti.variationMeasure_preimage_coe`: `|Du|(U) = totalVariationOn μ U u` for every open
   `U ⊆ Ω`, and `TauCeti.variationMeasure_univ`: `|Du|(Ω) = totalVariationOn μ Ω u`.
+* `TauCeti.enorm_integral_divergenceCLM_mul_le_variationMeasure`: a test vector field of norm at
+  most one supported in an open `U ⊆ Ω` pairs with `u` to at most `|Du|(U)`.
 * `TauCeti.eq_variationMeasure`: an outer regular measure with these values on open sets is
   the variation measure.
 * `TauCeti.variationMeasure_eq_comap_inclusion` and `TauCeti.map_inclusion_variationMeasure`:
@@ -56,8 +58,8 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory TopologicalSpace Set
-open scoped ENNReal
+open MeasureTheory TopologicalSpace Set TestFunction
+open scoped ENNReal Distributions
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] {μ : Measure E} {Ω U V : Opens E} {u v : E → ℝ}
@@ -125,6 +127,17 @@ theorem variationMeasure_preimage_coe (hu : LocallyIntegrableOn u Ω μ)
     (hU : U ≤ Ω) :
     variationMeasure μ Ω u ((↑) ⁻¹' (U : Set E)) = totalVariationOn μ U u := by
   rw [variationMeasure, dite_eq_left ⟨hu, hfin⟩, variationContent_measure_preimage_coe hu hfin hU]
+
+/-- A test vector field on `Ω` supported in an open set `U ⊆ Ω` with norm at most one pairs with
+`u` to at most `|Du|(U)`. -/
+theorem enorm_integral_divergenceCLM_mul_le_variationMeasure (hu : LocallyIntegrableOn u Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
+    (hU : U ≤ Ω) (φ : 𝓓(Ω, E)) (hφU : tsupport φ ⊆ U) (hφ : ∀ x, ‖φ x‖ ≤ 1) :
+    ‖∫ x, divergenceCLM φ x * u x ∂μ‖ₑ ≤ variationMeasure μ Ω u ((↑) ⁻¹' (U : Set E)) := by
+  let φU : 𝓓(U, E) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφU⟩
+  have hdiv (x : E) : divergenceCLM φU x = divergenceCLM φ x := by simp [φU]
+  rw [variationMeasure_preimage_coe hu hfin hU, Real.enorm_eq_ofReal_abs]
+  simpa only [hdiv] using ofReal_abs_integral_le_totalVariationOn (μ := μ) (u := u) φU hφ
 
 /-- The total mass of the variation measure of a function of locally finite variation on `Ω` is
 its total variation `|Du|(Ω)`. -/

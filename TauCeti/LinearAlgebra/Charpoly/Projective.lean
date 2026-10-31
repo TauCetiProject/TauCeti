@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
+public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.Algebra.Polynomial.AlgebraMap
 public import TauCeti.LinearAlgebra.Determinant.Projective
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
+import Mathlib.RingTheory.LocalProperties.Basic
 
 /-!
 # The reversed characteristic polynomial on a finite projective module
@@ -31,6 +33,8 @@ If `π : R ^ n → M` and `σ : M → R ^ n` split `M` off a free module, then
 
 * its value at `1` is the determinant of `1 - f` (`LinearMap.eval_one_projectiveCharpolyRev`);
 * it commutes with base change (`LinearMap.projectiveCharpolyRev_baseChange`);
+* its degree is at most any bound for the ranks of `M` at the points of `Spec R`
+  (`LinearMap.natDegree_projectiveCharpolyRev_le`);
 * it is transported along semilinear isomorphisms
   (`LinearMap.projectiveCharpolyRev_eq_map_of_comp_eq`);
 * **Cayley–Hamilton**: for some `n` bounding its degree, the reflection `X ^ n · Q(1/X)` of
@@ -142,6 +146,25 @@ theorem projectiveCharpolyRev_baseChange (A : Type*) [CommRing A] [Algebra R A]
       (Algebra.TensorProduct.basis A (Pi.basisFun R (Fin n))) _ _ hA,
     projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h,
     ← Matrix.charpolyRev_map, ← toMatrix_baseChange, baseChange_comp, baseChange_comp]
+
+open scoped TensorProduct in
+/-- The degree of the reversed characteristic polynomial is at most any bound for the ranks of
+`M` at the points of `Spec R`. -/
+theorem natDegree_projectiveCharpolyRev_le {n : ℕ} (hn : ∀ p, rankAtStalk (R := R) M p ≤ n)
+    (f : Module.End R M) : (projectiveCharpolyRev f).natDegree ≤ n := by
+  -- a coefficient of degree above `n` vanishes at every localisation `A` at a maximal ideal,
+  -- where `A ⊗[R] M` is free of rank at most `n`
+  refine natDegree_le_iff_coeff_eq_zero.2 fun k hk ↦ eq_zero_of_localization _ fun J hJ ↦ ?_
+  let A := Localization.AtPrime J
+  have : Module.Free A (A ⊗[R] M) := free_of_flat_of_isLocalRing
+  have hdeg : (projectiveCharpolyRev (f.baseChange A)).natDegree ≤ finrank A (A ⊗[R] M) := by
+    rw [projectiveCharpolyRev_eq_reverse_charpoly]
+    exact (reverse_natDegree_le _).trans (charpoly_natDegree _).le
+  have hr := hn ⟨J, hJ.isPrime⟩
+  rw [rankAtStalk_eq_finrank_tensorProduct] at hr
+  rw [projectiveCharpolyRev_baseChange] at hdeg
+  rw [← coeff_map]
+  exact coeff_eq_zero_of_natDegree_lt (hdeg.trans_lt (hr.trans_lt hk))
 
 /-- **Transport along a semilinear isomorphism.** If a `θ`-semilinear isomorphism `e : M ≃ M'`
 over a ring isomorphism `θ : R ≃ R'` carries `f` to `g`, that is `g ∘ e = e ∘ f`, then the

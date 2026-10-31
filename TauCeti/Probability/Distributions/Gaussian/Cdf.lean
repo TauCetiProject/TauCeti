@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Erf
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.CDF
+public import TauCeti.Probability.Distributions.Gaussian.Basic
+import TauCeti.MeasureTheory.Measure.Real
 import TauCeti.Probability.Cdf.Density
 
 /-!
@@ -38,8 +40,11 @@ over `Set.Iic x` is then the limit of those interval integrals, using
 * `TauCeti.Probability.cdf_gaussianReal_zero_one_neg` — the symmetry `Φ (-x) = 1 - Φ x` of the
   standard Gaussian cdf.
 * `TauCeti.Probability.gaussianReal_preimage_Ioo_pos`,
-  `TauCeti.Probability.measureReal_gaussianReal_preimage_Iic_lt` — for a nonzero variance every
+  `TauCeti.Probability.measureReal_gaussianReal_preimage_Iic_lt`,
+  `TauCeti.Probability.measureReal_gaussianReal_pos` — for a nonzero variance every
   nondegenerate interval with extended bounds has positive mass.
+* `TauCeti.Probability.measureReal_gaussianReal_eq_cdf_zero_one` — the mass of an interval with
+  finite bounds as a difference of standard Gaussian cdf values.
 * `TauCeti.Probability.cdf_gaussianReal_self` — for a nonzero variance the cdf equals `1 / 2` at
   the mean.
 * `TauCeti.Probability.cdf_gaussianReal_pos`, `TauCeti.Probability.cdf_gaussianReal_lt_one` — for
@@ -48,6 +53,10 @@ over `Set.Iic x` is then the limit of those interval integrals, using
   increasing.
 * `TauCeti.Probability.hasDerivAt_cdf_gaussianReal` — the cdf has the Gaussian density as its
   derivative.
+* `TauCeti.Probability.hasDerivAt_measureReal_gaussianReal_preimage_Iic`,
+  `TauCeti.Probability.hasDerivAt_measureReal_gaussianReal` — as a function of the mean, the mass
+  up to an extended bound, and the mass of an interval with extended bounds, have the Gaussian
+  densities at the bounds (`TauCeti.Probability.gaussianPDFRealEReal`) as derivative.
 * `TauCeti.Probability.measureReal_Ioi_gaussianReal` — the upper tail, in terms of
   `TauCeti.Real.erfc`.
 * `TauCeti.Probability.measureReal_Ioi_gaussianReal_eq_cdf` — the upper tail, in terms of the
@@ -217,6 +226,66 @@ theorem hasDerivAt_cdf_gaussianReal (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) (x : 
   hasDerivAt_cdf_of_eq_withDensity (by rw [gaussianReal_of_var_ne_zero m hv, gaussianPDF_def])
     (measurable_gaussianPDFReal m v).aemeasurable (ae_of_all _ (gaussianPDFReal_nonneg m v))
     (by rw [gaussianPDFReal_def]; fun_prop)
+
+/-- At positive variance, every set containing the open interval with extended bounds `l < r` has
+positive Gaussian mass. -/
+theorem measureReal_gaussianReal_pos (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) {l r : EReal} {s : Set ℝ}
+    (hlr : l < r) (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s) : 0 < (gaussianReal m v).real s :=
+  ENNReal.toReal_pos ((gaussianReal_preimage_Ioo_pos m hv hlr).trans_le (measure_mono hs₁)).ne'
+    (measure_ne_top _ _)
+
+/-- At positive variance, the Gaussian mass of a set between the open and the closed interval
+with finite bounds `l ≤ r` is a difference of standard Gaussian cdf values. -/
+theorem measureReal_gaussianReal_eq_cdf_zero_one (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) {l r : ℝ}
+    {s : Set ℝ} (hlr : l ≤ r) (hs₁ : Ioo l r ⊆ s) (hs₂ : s ⊆ Icc l r) :
+    (gaussianReal m v).real s = cdf (gaussianReal 0 1) ((r - m) / √(v : ℝ)) -
+      cdf (gaussianReal 0 1) ((l - m) / √(v : ℝ)) := by
+  have := nullSingletonClass_gaussianReal (μ := m) hv
+  rw [Measure.measureReal_eq_sub_of_preimage_Ioo_subset (l := l) (r := r)
+      (EReal.coe_le_coe_iff.2 hlr)
+      (by rwa [EReal.preimage_coe_Ioo]) (by rwa [EReal.preimage_coe_Icc])]
+  simp only [EReal.preimage_coe_Iic, ← cdf_eq_real, cdf_gaussianReal_eq_cdf_zero_one m hv]
+
+/-- At positive variance, the Gaussian mass up to an extended bound `e`, as a function of the
+mean, has derivative minus the Gaussian density at `e`. -/
+theorem hasDerivAt_measureReal_gaussianReal_preimage_Iic {v : ℝ≥0} (hv : v ≠ 0) (e : EReal)
+    (μ : ℝ) :
+    HasDerivAt (fun μ => (gaussianReal μ v).real (Real.toEReal ⁻¹' Iic e))
+      (-gaussianPDFRealEReal μ v e) μ := by
+  induction e with
+  | bot =>
+    have h : Real.toEReal ⁻¹' Iic ⊥ = ∅ := by
+      ext x
+      simp
+    simp only [h, measureReal_empty, gaussianPDFRealEReal_bot, neg_zero]
+    exact hasDerivAt_const μ 0
+  | top => simpa using hasDerivAt_const μ (1 : ℝ)
+  | coe x =>
+    have hcdf : (fun μ => (gaussianReal μ v).real (Real.toEReal ⁻¹' Iic (x : EReal))) =
+        fun μ => cdf (gaussianReal 0 v) (x - μ) := by
+      funext μ
+      rw [EReal.preimage_coe_Iic, ← cdf_eq_real, cdf_gaussianReal_eq μ hv,
+        cdf_gaussianReal_eq 0 hv, sub_zero]
+    rw [hcdf, gaussianPDFRealEReal_coe, ← zero_add μ, ← gaussianPDFReal_sub, zero_add]
+    simpa [Function.comp_def] using (hasDerivAt_cdf_gaussianReal 0 hv (x - μ)).comp μ
+      ((hasDerivAt_id' μ).const_sub x)
+
+/-- At positive variance, the Gaussian mass of a set between the open and the closed interval with
+extended bounds `l ≤ r`, as a function of the mean, has derivative the difference of the Gaussian
+densities at the two bounds. -/
+theorem hasDerivAt_measureReal_gaussianReal {v : ℝ≥0} (hv : v ≠ 0) {l r : EReal} {s : Set ℝ}
+    (hlr : l ≤ r) (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s) (hs₂ : s ⊆ Real.toEReal ⁻¹' Icc l r)
+    (μ : ℝ) :
+    HasDerivAt (fun μ => (gaussianReal μ v).real s)
+      (gaussianPDFRealEReal μ v l - gaussianPDFRealEReal μ v r) μ := by
+  have hmass (μ : ℝ) := by
+    have := nullSingletonClass_gaussianReal (μ := μ) hv
+    exact Measure.measureReal_eq_sub_of_preimage_Ioo_subset (μ := gaussianReal μ v) hlr hs₁
+      hs₂
+  simp_rw [hmass]
+  convert (hasDerivAt_measureReal_gaussianReal_preimage_Iic hv r μ).sub
+    (hasDerivAt_measureReal_gaussianReal_preimage_Iic hv l μ) using 1
+  ring
 
 /-- The upper tail of a Gaussian law with nonzero variance is half the complementary error
 function. -/
