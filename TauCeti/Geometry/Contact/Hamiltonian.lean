@@ -33,7 +33,9 @@ Conversely, for a contact form, a differentiable vector field `X` with `L_X α =
 function `g` is the contact Hamiltonian vector field of `α(X)`
 (`TauCeti.SmoothForm.IsContactForm.isContactHamiltonianVectorField_iff_mlieDerivForm`,
 `TauCeti.SmoothForm.IsContactForm.eq_contactHamiltonianVectorField_of_mlieDerivForm_eq_smul`); then
-necessarily `g = R_α(α(X))`. So contact vector fields are determined by their Hamiltonians.
+necessarily `g = R_α(α(X))`
+(`TauCeti.SmoothForm.IsContactForm.eq_mvfderiv_reebVectorField_of_mlieDerivForm_apply_eq_smul`).
+So contact vector fields are determined by their Hamiltonians.
 
 The two defining equations together say that the contact flat map `v ↦ ι_v dα + α(v) α` of
 `TauCeti.SmoothForm.contactFlat` sends `X` to the covector `(f + R_α f) α - df`. For a contact
@@ -62,6 +64,12 @@ In particular `X_f` is tangent to `ξ` exactly where `f` vanishes.
 * `TauCeti.SmoothForm.IsContactForm.isContactHamiltonianVectorField_iff_mlieDerivForm`,
   `TauCeti.SmoothForm.IsContactForm.eq_contactHamiltonianVectorField_of_mlieDerivForm_eq_smul`:
   contact vector fields are the contact Hamiltonian vector fields of their Hamiltonians.
+* `TauCeti.SmoothForm.IsContactForm.eq_mvfderiv_reebVectorField_of_mlieDerivForm_apply_eq_smul`:
+  the multiplier `g` in `L_X α = g α` is `R_α(α(X))`.
+
+The construction of `X_f`, its linearity lemmas and its regularity proof are adapted from
+`TauCeti.SmoothTwoForm.hamiltonianVectorField` in
+`TauCeti.Geometry.Symplectic.Hamiltonian.Manifold`.
 
 ## References
 
@@ -100,25 +108,6 @@ theorem isContactHamiltonianVectorField_iff :
         mvfderiv I f x (α.reebVectorField x) * α.1 x ![v] - mvfderiv I f x v :=
   Iff.rfl
 
-/-- Cartan's formula `L_X α = ι_X dα + d(α(X))` for a one-form, evaluated on a tangent vector, with
-the function `α(X)` named `f`. -/
-private theorem mlieDerivForm_apply_eq_mextDeriv_add (hf : ∀ y, α.1 y ![X y] = f y) {x : M}
-    (hXd : MDifferentiableAt I I.tangent (fun y ↦ (X y : TangentBundle I M)) x)
-    (v : TangentSpace I x) :
-    mlieDerivForm X α.1 x ![v] = mextDeriv α.1 x ![X x, v] + mvfderiv I f x v := by
-  -- The contraction `ι_X α` is the `0`-form of `f`.
-  have hι : RoughForm.interior X α.1 = RoughForm.ofFunction I f := by
-    rw [RoughForm.eq_ofFunction (RoughForm.interior X α.1)]
-    congr 1
-    funext y
-    rw [RoughForm.interior_apply, ← hf y]
-    congr 1
-    ext i
-    fin_cases i
-    rfl
-  rw [mlieDerivForm_eq_interior_mextDeriv_add_apply (α.mdifferentiableAt x) hXd, hι]
-  simp [mextDeriv_ofFunction]
-
 namespace IsContactHamiltonianVectorField
 
 /-- A contact Hamiltonian vector field of `f` takes the value `f` under `α`. -/
@@ -153,8 +142,8 @@ theorem mlieDerivForm_apply_eq (hX : α.IsContactHamiltonianVectorField f X) {x 
     mlieDerivForm X α.1 x = mvfderiv I f x (α.reebVectorField x) • α.1 x := by
   ext v
   obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, by ext i; fin_cases i; rfl⟩
-  rw [mlieDerivForm_apply_eq_mextDeriv_add hX.apply_eq hXd, hX.mextDeriv_apply_eq,
-    ContinuousAlternatingMap.smul_apply, smul_eq_mul, sub_add_cancel]
+  rw [mlieDerivForm_apply_eq_mextDeriv_add hX.apply_eq (α.mdifferentiableAt x) hXd,
+    hX.mextDeriv_apply_eq, ContinuousAlternatingMap.smul_apply, smul_eq_mul, sub_add_cancel]
 
 /-- **Cartan's formula for a contact Hamiltonian vector field**: a differentiable contact
 Hamiltonian vector field `X` of `f` satisfies `L_X α = (R_α f) α`. -/
@@ -239,17 +228,7 @@ theorem contactHamiltonianVectorField_neg (x : M) :
 /-- The contact Hamiltonian vector field commutes with multiplication by a real constant. -/
 theorem contactHamiltonianVectorField_const_smul (c : ℝ) (x : M) :
     α.contactHamiltonianVectorField (c • f) x = c • α.contactHamiltonianVectorField f x := by
-  have hd : mvfderiv I (c • f) x = c • mvfderiv I f x := by
-    by_cases hf : MDifferentiableAt I 𝓘(ℝ) f x
-    · exact mvfderiv_const_smul hf c
-    rcases eq_or_ne c 0 with rfl | hc
-    · simp [zero_smul, mvfderiv_zero]
-    -- Neither `f` nor `c • f` is differentiable at `x`, so both derivatives vanish.
-    have hcf : ¬MDifferentiableAt I 𝓘(ℝ) (c • f) x := fun hcf ↦
-      hf (by simpa [smul_smul, inv_mul_cancel₀ hc] using hcf.const_smul c⁻¹)
-    simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf,
-      mfderiv_zero_of_not_mdifferentiableAt hcf]
-  simp only [contactHamiltonianVectorField_def, hd, ← map_smul]
+  simp only [contactHamiltonianVectorField_def, mvfderiv_const_smul_field, ← map_smul]
   congr 1
   simp only [Pi.smul_apply, smul_apply, smul_eq_mul]
   module
@@ -360,10 +339,24 @@ theorem mdifferentiable_contactHamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ
   (hα.contMDiff_contactHamiltonianVectorField (n := 1) (by simp)
     (by norm_num [hf])).mdifferentiable one_ne_zero
 
+/-- **The multiplier of a contact vector field.** For a contact form `α` and a vector field `X`
+differentiable at `x` with `α(X) = f`, if `L_X α = c α` at `x`, then `c = R_α f` at `x`. -/
+theorem eq_mvfderiv_reebVectorField_of_mlieDerivForm_apply_eq_smul
+    (hf : ∀ y, α.1 y ![X y] = f y) {x : M}
+    (hXd : MDifferentiableAt I I.tangent (fun y ↦ (X y : TangentBundle I M)) x) {c : ℝ}
+    (hc : mlieDerivForm X α.1 x = c • α.1 x) :
+    c = mvfderiv I f x (α.reebVectorField x) := by
+  -- Evaluate Cartan's formula `L_X α = ι_X dα + df` at the Reeb vector field.
+  have h := mlieDerivForm_apply_eq_mextDeriv_add hf (α.mdifferentiableAt x) hXd
+    (α.reebVectorField x)
+  rwa [hc, ContinuousAlternatingMap.smul_apply, smul_eq_mul, hα.apply_reebVectorField,
+    hα.mextDeriv_reebVectorField_right, mul_one, zero_add] at h
+
 /-- **Contact vector fields are contact Hamiltonian vector fields.** For a contact form `α` and a
 differentiable vector field `X`, `X` is a contact Hamiltonian vector field of `f` exactly when
 `α(X) = f` and the Lie derivative `L_X α` is a multiple `g α` of `α` by some function `g`. The
-multiplier is then `g = R_α f`. -/
+multiplier is then `g = R_α f`
+(`TauCeti.SmoothForm.IsContactForm.eq_mvfderiv_reebVectorField_of_mlieDerivForm_apply_eq_smul`). -/
 theorem isContactHamiltonianVectorField_iff_mlieDerivForm
     (hXd : MDifferentiable I I.tangent (fun y ↦ (X y : TangentBundle I M))) :
     α.IsContactHamiltonianVectorField f X ↔ (∀ x, α.1 x ![X x] = f x) ∧
@@ -372,12 +365,9 @@ theorem isContactHamiltonianVectorField_iff_mlieDerivForm
     fun ⟨hf, g, hg⟩ x ↦ ⟨hf x, fun v ↦ ?_⟩⟩
   -- Cartan's formula: `g α = ι_X dα + df`.
   have key : ∀ v, g x * α.1 x ![v] = mextDeriv α.1 x ![X x, v] + mvfderiv I f x v := fun v ↦ by
-    rw [← mlieDerivForm_apply_eq_mextDeriv_add hf (hXd x), hg, ContinuousAlternatingMap.smul_apply,
-      smul_eq_mul]
-  -- Evaluating at the Reeb vector field gives `g = R_α f`.
-  have hg' := key (α.reebVectorField x)
-  rw [hα.apply_reebVectorField, hα.mextDeriv_reebVectorField_right, mul_one, zero_add] at hg'
-  rw [← hg']
+    rw [← mlieDerivForm_apply_eq_mextDeriv_add hf (α.mdifferentiableAt x) (hXd x), hg,
+      ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+  rw [← hα.eq_mvfderiv_reebVectorField_of_mlieDerivForm_apply_eq_smul hf (hXd x) (congrFun hg x)]
   linarith [key v]
 
 /-- **A contact vector field is the contact Hamiltonian vector field of its Hamiltonian.** For a

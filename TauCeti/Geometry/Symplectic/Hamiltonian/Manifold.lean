@@ -196,20 +196,7 @@ theorem hamiltonianVectorField_neg (x : M) :
 /-- The Hamiltonian vector field commutes with multiplication by a real constant. -/
 theorem hamiltonianVectorField_const_smul (c : ℝ) (x : M) :
     σ.hamiltonianVectorField (c • f) x = c • σ.hamiltonianVectorField f x := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · rw [zero_smul, zero_smul]
-    exact congrFun (hamiltonianVectorField_const σ 0) x
-  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f x
-  · have hd := mvfderiv_smul (a := fun _ : M ↦ c) mdifferentiableAt_const hf
-    simp only [mvfderiv_const, ContinuousLinearMap.zero_smulRight, add_zero] at hd
-    -- `c • f` is, pointwise, the product of `f` with the constant function `c`.
-    have hcf : c • f = (fun _ : M ↦ c) • f := rfl
-    rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hcf, hd, map_smul]
-  · -- Neither `f` nor `c • f` is differentiable at `x`, so both derivatives vanish.
-    have hcf : ¬MDifferentiableAt I 𝓘(ℝ) (c • f) x := fun hcf ↦
-      hf (by simpa [smul_smul, inv_mul_cancel₀ hc] using hcf.const_smul c⁻¹)
-    simp [hamiltonianVectorField_def, mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf,
-      mfderiv_zero_of_not_mdifferentiableAt hcf]
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, mvfderiv_const_smul_field, map_smul]
 
 namespace IsNondegenerate
 

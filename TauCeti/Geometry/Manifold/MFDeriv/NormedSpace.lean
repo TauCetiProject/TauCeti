@@ -23,6 +23,8 @@ with `F`, so one vanishes exactly when the other does.
   the component of its derivative.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
 * `TauCeti.mvfderiv_const_smul`: `mvfderiv` commutes with multiplication by a constant scalar.
+* `TauCeti.mvfderiv_const_smul_field`: the same for a scalar in the base field, without a
+  differentiability hypothesis.
 * `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
 * `TauCeti.mdifferentiableAt_of_mvfderiv_apply_ne_zero`: a function whose `mvfderiv` is nonzero on
@@ -93,6 +95,21 @@ theorem mvfderiv_const_smul {R : Type*} [Semiring R] [Module R F] [SMulCommClass
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     Function.comp_def, id] at hd ⊢
   exact fderivWithin_const_smul I.uniqueDiffWithinAt_image hd c
+
+/-- A version of `TauCeti.mvfderiv_const_smul` without differentiability hypothesis, for a scalar in
+the base field: the derivative of a vector-valued function, read in the target space, commutes
+with multiplication by any constant. -/
+theorem mvfderiv_const_smul_field (g : M → F) (x : M) (c : 𝕜) :
+    mvfderiv I (c • g) x = c • mvfderiv I g x := by
+  by_cases hg : MDiffAt g x
+  · exact mvfderiv_const_smul hg c
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp [mvfderiv_zero]
+  -- Neither `g` nor `c • g` is differentiable at `x`, so both derivatives vanish.
+  have hcg : ¬MDiffAt (c • g) x := fun hcg ↦
+    hg (by simpa [smul_smul, inv_mul_cancel₀ hc] using hcg.const_smul c⁻¹)
+  simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hg,
+    mfderiv_zero_of_not_mdifferentiableAt hcg]
 
 /-- The derivative of a vector-valued function, read in the target space, vanishes exactly when
 its manifold derivative does. -/

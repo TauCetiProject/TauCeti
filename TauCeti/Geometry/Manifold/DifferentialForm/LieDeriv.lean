@@ -40,6 +40,8 @@ The two characterizations below show that the definition is intrinsic.
   the bracket formula.
 * `TauCeti.mlieDerivFormWithin_eq_interior_mextDerivWithin_add`,
   `TauCeti.mlieDerivForm_eq_interior_mextDeriv_add`: Cartan's magic formula.
+* `TauCeti.mlieDerivForm_apply_eq_mextDeriv_add`: Cartan's magic formula for a one-form,
+  evaluated on a tangent vector.
 * `TauCeti.mlieDerivFormWithin_eq_mextDerivWithin_interior`,
   `TauCeti.mlieDerivForm_eq_mextDeriv_interior`: on closed forms, `L_V φ = d (ι_V φ)`.
 * `TauCeti.mlieDerivFormWithin_eq_lieDerivFormWithin`: over the model space, the manifold Lie
@@ -252,6 +254,28 @@ theorem mlieDerivForm_eq_interior_mextDeriv_add_apply {φ : RoughForm I M F (k +
   simpa only [mlieDerivFormWithin_univ, mextDerivWithin_univ] using
     mlieDerivFormWithin_eq_interior_mextDerivWithin_add hφ.mdifferentiableWithinAt
       hV.mdifferentiableWithinAt (uniqueMDiffWithinAt_univ I)
+
+/-- **Cartan's magic formula** for a one-form `φ`, evaluated on a tangent vector:
+`L_V φ (v) = dφ (V, v) + df (v)`, where the function `f = φ(V)` is the contraction `ι_V φ`. -/
+theorem mlieDerivForm_apply_eq_mextDeriv_add {φ : RoughForm I M F 1} {f : M → F}
+    (hf : ∀ y, φ y ![V y] = f y)
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (φ y)) x)
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (v : TangentSpace I x) :
+    mlieDerivForm V φ x ![v] = mextDeriv φ x ![V x, v] + mvfderiv I f x v := by
+  -- The contraction `ι_V φ` is the `0`-form of `f`.
+  have hι : RoughForm.interior V φ = RoughForm.ofFunction I f := by
+    rw [RoughForm.eq_ofFunction (RoughForm.interior V φ)]
+    congr 1
+    funext y
+    rw [RoughForm.interior_apply, ← hf y]
+    congr 1
+    ext i
+    fin_cases i
+    rfl
+  rw [mlieDerivForm_eq_interior_mextDeriv_add_apply hφ hV, hι]
+  simp [mextDeriv_ofFunction]
 
 /-- **Cartan's magic formula** `L_V = ι_V ∘ d + d ∘ ι_V` on differentiable forms, along a
 differentiable vector field. -/
