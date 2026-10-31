@@ -75,17 +75,6 @@ namespace PopaZagier
 
 variable {t n : ℤ}
 
-/-- Only finitely many matrices of trace `t` and determinant `n` have nonzero weight: their
-entries are at most `2 n` in absolute value (`abs_le_of_weight_ne_zero`). -/
-theorem finite_support_weight_traceDetFiber (t n : ℤ) :
-    (Function.support fun M : traceDetFiber (Fin 2) t n ↦ weight M.1).Finite := by
-  refine ((FixedDetMatrices.finite_setOf_abs_le (m := Fin 2) n (2 * n)).preimage
-    (f := fun M : traceDetFiber (Fin 2) t n ↦
-      (⟨M.1, (mem_traceDetFiber.mp M.2).2⟩ : FixedDetMatrix (Fin 2) ℤ n))
-    fun M _ N _ h ↦ Subtype.ext (by simpa using congrArg Subtype.val h)).subset fun M hM i j ↦ ?_
-  have := abs_le_of_weight_ne_zero hM i j
-  rwa [(mem_traceDetFiber.mp M.2).2] at this
-
 /-- The change of `T₁` under `M ↦ M + 1`, supported on the matrices with `a = c`. -/
 private def corr₁ (M : Matrix (Fin 2) (Fin 2) ℤ) : ℤ :=
   if 0 ≤ M 1 0 ∧ M 1 0 = M 0 0 then chainWeight₃ (M 0 0 - M 1 1) (-M 0 1) (M 1 0) else 0
@@ -168,20 +157,6 @@ private theorem finsum_eq_sum_divisorsAntidiagonal (g : Matrix (Fin 2) (Fin 2) �
     Subtype.ext (hinj p.2 q.2 (congrArg Subtype.val h))]
   exact Finset.sum_attach _ fun p ↦ g (φ p)
 
-/-- Membership in `traceDetFiber (Fin 2) t n` in terms of the entries. -/
-private theorem mem_traceDetFiber_of {M : Matrix (Fin 2) (Fin 2) ℤ}
-    (ht : M 0 0 + M 1 1 = t) (hn : M 0 0 * M 1 1 - M 0 1 * M 1 0 = n) :
-    M ∈ traceDetFiber (Fin 2) t n := by
-  rw [mem_traceDetFiber, trace_fin_two, det_fin_two]
-  exact ⟨ht, hn⟩
-
-/-- The trace and determinant of a member of `traceDetFiber (Fin 2) t n` in terms of the
-entries. -/
-private theorem entries_of_mem_traceDetFiber {M : Matrix (Fin 2) (Fin 2) ℤ}
-    (hM : M ∈ traceDetFiber (Fin 2) t n) :
-    M 0 0 + M 1 1 = t ∧ M 0 0 * M 1 1 - M 0 1 * M 1 0 = n := by
-  rwa [mem_traceDetFiber, trace_fin_two, det_fin_two] at hM
-
 /-- The matrices with `a = c` are `(u, t - u - v; u, t - u)` for `n = u v`. -/
 private theorem finsum_corr₁ (hn : 0 < n) :
     (Function.support fun M : traceDetFiber (Fin 2) t n ↦ corr₁ M.1).Finite ∧
@@ -189,14 +164,14 @@ private theorem finsum_corr₁ (hn : 0 < n) :
         chainWeight₃ (2 * p.1 - t) (p.1 + p.2 - t) p.1 := by
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₁
     (fun p ↦ !![(p.1 : ℤ), t - p.1 - p.2; p.1, t - p.1])
-    (fun p hp ↦ mem_traceDetFiber_of (by simp) (by
+    (fun p hp ↦ mem_traceDetFiber_fin_two.mpr ⟨by simp, by
       obtain ⟨-, -, h⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
       simp only [of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one]
-      linear_combination h))
+      linear_combination h⟩)
     (Set.LeftInvOn.injOn (f₁' := fun M ↦ ((M 0 0).toNat, (M 1 1 - M 0 1).toNat))
       fun _ _ ↦ by simp)
     (fun M hM h ↦ by
-      obtain ⟨ht, hdet⟩ := entries_of_mem_traceDetFiber hM
+      obtain ⟨ht, hdet⟩ := mem_traceDetFiber_fin_two.mp hM
       unfold corr₁ at h
       split_ifs at h with hg
       · obtain ⟨hc, hca⟩ := hg
@@ -224,14 +199,14 @@ private theorem finsum_corr₂ (hn : 0 < n) :
         chainWeight₃ p.1 (t + 2 * p.1) (t + p.1 + p.2) := by
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₂
     (fun p ↦ !![t + p.1, -(p.1 : ℤ); t + p.1 + p.2, -(p.1 : ℤ)])
-    (fun p hp ↦ mem_traceDetFiber_of (by simp) (by
+    (fun p hp ↦ mem_traceDetFiber_fin_two.mpr ⟨by simp, by
       obtain ⟨-, -, h⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
       simp only [of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one]
-      linear_combination h))
+      linear_combination h⟩)
     (Set.LeftInvOn.injOn (f₁' := fun M ↦ ((-M 1 1).toNat, (M 1 0 - M 0 0).toNat))
       fun _ _ ↦ by simp)
     (fun M hM h ↦ by
-      obtain ⟨ht, hdet⟩ := entries_of_mem_traceDetFiber hM
+      obtain ⟨ht, hdet⟩ := mem_traceDetFiber_fin_two.mp hM
       unfold corr₂ at h
       split_ifs at h with hg
       · obtain ⟨hbd, hd⟩ := hg
@@ -258,13 +233,13 @@ private theorem finsum_corr₃ (hn : 0 < n) :
         (chainWeight₃ p.2 t p.1 + chainWeight₄ 0 t p.2 p.1) := by
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₃
     (fun p ↦ !![t, -(p.2 : ℤ); p.1, 0])
-    (fun p hp ↦ mem_traceDetFiber_of (by simp) (by
+    (fun p hp ↦ mem_traceDetFiber_fin_two.mpr ⟨by simp, by
       obtain ⟨-, -, h⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
       simp only [of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one]
-      linear_combination h))
+      linear_combination h⟩)
     (Set.LeftInvOn.injOn (f₁' := fun M ↦ ((M 1 0).toNat, (-M 0 1).toNat)) fun _ _ ↦ by simp)
     (fun M hM h ↦ by
-      obtain ⟨ht, hdet⟩ := entries_of_mem_traceDetFiber hM
+      obtain ⟨ht, hdet⟩ := mem_traceDetFiber_fin_two.mp hM
       unfold corr₃ at h
       split_ifs at h with hg
       · obtain ⟨hd, hb⟩ := hg
@@ -290,13 +265,13 @@ private theorem finsum_corr₄ (hn : 0 < n) :
         chainWeight₄ 0 (-t) p.1 p.2 := by
   obtain ⟨hfin, hsum⟩ := finsum_eq_sum_divisorsAntidiagonal (t := t) (n := n) corr₄
     (fun p ↦ !![0, -(p.2 : ℤ); p.1, t])
-    (fun p hp ↦ mem_traceDetFiber_of (by simp) (by
+    (fun p hp ↦ mem_traceDetFiber_fin_two.mpr ⟨by simp, by
       obtain ⟨-, -, h⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat hp
       simp only [of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one]
-      linear_combination h))
+      linear_combination h⟩)
     (Set.LeftInvOn.injOn (f₁' := fun M ↦ ((M 1 0).toNat, (-M 0 1).toNat)) fun _ _ ↦ by simp)
     (fun M hM h ↦ by
-      obtain ⟨ht, hdet⟩ := entries_of_mem_traceDetFiber hM
+      obtain ⟨ht, hdet⟩ := mem_traceDetFiber_fin_two.mp hM
       unfold corr₄ at h
       split_ifs at h with hg
       · obtain ⟨ha, hc⟩ := hg
@@ -384,7 +359,7 @@ private theorem weight_eq_of_le {M : Matrix (Fin 2) (Fin 2) ℤ} {D : ℤ} (hD :
     (hM : M ∈ traceDetFiber (Fin 2) t n) (h : t ^ 2 - 4 * n = -D) (ht : t ≤ -D) :
     weight M = -(chainWeight₄ 0 (-(ofMatrix M).b) (ofMatrix M).a (ofMatrix M).c +
       chainWeight₄ 0 (-(ofMatrix M).b) (ofMatrix M).c (ofMatrix M).a) := by
-  obtain ⟨htr, hdet⟩ := entries_of_mem_traceDetFiber hM
+  obtain ⟨htr, hdet⟩ := mem_traceDetFiber_fin_two.mp hM
   rw [weight]
   simp only [ofMatrix_a, ofMatrix_b, ofMatrix_c, neg_sub]
   set a := M 0 0
@@ -458,19 +433,6 @@ private theorem six_mul_reducedFormWeight (f : BinaryQuadraticForm ℤ) :
 private def negMiddle (f : BinaryQuadraticForm ℤ) : BinaryQuadraticForm ℤ :=
   if 0 < |f.b| ∧ |f.b| < f.a ∧ f.a < f.c then ⟨f.a, -f.b, f.c⟩ else f
 
-/-- The conditions on a reduced form of discriminant `-D < 0`, whose first coefficient is
-positive. -/
-private theorem facts_of_mem_reducedForms {D : ℕ} [NeZero D] {f : BinaryQuadraticForm ℤ}
-    (hf : f ∈ reducedForms D) :
-    0 < f.a ∧ |f.b| ≤ f.a ∧ f.a ≤ f.c ∧ (|f.b| = f.a ∨ f.a = f.c → 0 ≤ f.b) ∧
-      f.discrim = -D := by
-  obtain ⟨hd, hr⟩ := (mem_reducedForms (NeZero.ne D)).mp hf
-  refine ⟨pos_of_nonneg_of_discrim_lt_zero (b := f.b) (c := f.c)
-    ((abs_nonneg _).trans hr.1) ?_, hr.1, hr.2.1, hr.2.2, hd⟩
-  rw [← BinaryQuadraticForm.discrim_def, hd]
-  have := NeZero.pos D
-  omega
-
 /-- On a reduced form `⟨a, b, c⟩` of discriminant `-D`, `chainWeight₄ 0 b a c - sixWeight` is `6`
 if `0 < b < a < c`, `-6` if `0 < -b < a < c`, and `0` otherwise. -/
 private theorem chainWeight₄_sub_sixWeight {D : ℕ} [NeZero D] {f : BinaryQuadraticForm ℤ}
@@ -478,7 +440,8 @@ private theorem chainWeight₄_sub_sixWeight {D : ℕ} [NeZero D] {f : BinaryQua
     chainWeight₄ 0 f.b f.a f.c - sixWeight f =
       (if 0 < f.b ∧ f.b < f.a ∧ f.a < f.c then 6 else 0) -
         (if 0 < -f.b ∧ -f.b < f.a ∧ f.a < f.c then 6 else 0) := by
-  obtain ⟨ha, h1, h2, h3, -⟩ := facts_of_mem_reducedForms hf
+  have ha := a_pos_of_mem_reducedForms hf
+  obtain ⟨-, h1, h2, h3⟩ := (mem_reducedForms (NeZero.ne D)).mp hf
   unfold chainWeight₄ sixWeight
   rcases abs_cases f.b with ⟨hb, hb'⟩ | ⟨hb, hb'⟩ <;> rw [hb] at h1 h3 <;>
   rcases lt_trichotomy f.b 0 with h | h | h <;>
@@ -486,17 +449,6 @@ private theorem chainWeight₄_sub_sixWeight {D : ℕ} [NeZero D] {f : BinaryQua
   rcases lt_trichotomy (-f.b) f.a with h₀ | h₀ | h₀ <;>
   rcases h2.lt_or_eq with h'' | h'' <;>
   simp (disch := omega) only [ite_eq_left, ite_eq_right] <;> omega
-
-/-- `⟨a, -b, c⟩` is reduced along with `⟨a, b, c⟩` when `0 < |b| < a < c`. -/
-private theorem mk_neg_mem_reducedForms {D : ℕ} [NeZero D] {f : BinaryQuadraticForm ℤ}
-    (hf : f ∈ reducedForms D) (hs : 0 < |f.b| ∧ |f.b| < f.a ∧ f.a < f.c) :
-    ⟨f.a, -f.b, f.c⟩ ∈ reducedForms D := by
-  obtain ⟨-, -, -, -, hd⟩ := facts_of_mem_reducedForms hf
-  refine (mem_reducedForms (NeZero.ne D)).mpr ⟨?_, ?_⟩
-  · rw [← hd]
-    simp [BinaryQuadraticForm.discrim_def, discrim]
-  · simp only [isReducedForm_iff, abs_neg]
-    exact ⟨hs.2.1.le, hs.2.2.le, fun h ↦ by omega⟩
 
 /-- The forms `⟨a, b, c⟩` with `0 ≤ b ≤ a ≤ c` of discriminant `-D`, counted with
 `chainWeight₄ 0 b a c`, are six times the weighted reduced forms: `⟨a, b, c⟩` with `0 < b < a < c`
@@ -508,7 +460,8 @@ private theorem sum_reducedForms_chainWeight₄ (D : ℕ) [NeZero D] :
     (fun f hf ↦ ?_) (fun f hf ↦ ?_)
   · unfold negMiddle
     split_ifs with hs
-    · rw [chainWeight₄_sub_sixWeight hf, chainWeight₄_sub_sixWeight (mk_neg_mem_reducedForms hf hs)]
+    · rw [chainWeight₄_sub_sixWeight hf,
+        chainWeight₄_sub_sixWeight (mk_neg_mem_reducedForms hf hs.2.1 hs.2.2)]
       dsimp only
       rcases abs_cases f.b with ⟨hb, -⟩ | ⟨hb, -⟩ <;> rw [hb] at hs <;>
       simp (disch := omega) only [ite_eq_left, ite_eq_right, neg_neg] <;> omega
@@ -527,7 +480,7 @@ private theorem sum_reducedForms_chainWeight₄ (D : ℕ) [NeZero D] :
       exact absurd rfl hne
   · unfold negMiddle
     split_ifs with hs
-    · exact mk_neg_mem_reducedForms hf hs
+    · exact mk_neg_mem_reducedForms hf hs.2.1 hs.2.2
     · exact hf
   · unfold negMiddle
     split_ifs with hs hs'

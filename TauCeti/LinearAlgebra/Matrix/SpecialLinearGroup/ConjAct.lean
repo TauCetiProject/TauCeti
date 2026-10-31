@@ -191,6 +191,12 @@ theorem mem_traceDetFiber {t d : R} {M : Matrix n n R} :
     M ∈ traceDetFiber n t d ↔ M.trace = t ∧ M.det = d :=
   Iff.rfl
 
+/-- A `2 × 2` matrix lies in `traceDetFiber (Fin 2) t d` exactly when its entries satisfy
+`M₀₀ + M₁₁ = t` and `M₀₀ M₁₁ - M₀₁ M₁₀ = d`. -/
+theorem mem_traceDetFiber_fin_two {t d : R} {M : Matrix (Fin 2) (Fin 2) R} :
+    M ∈ traceDetFiber (Fin 2) t d ↔ M 0 0 + M 1 1 = t ∧ M 0 0 * M 1 1 - M 0 1 * M 1 0 = d := by
+  rw [mem_traceDetFiber, trace_fin_two, det_fin_two]
+
 /-- The adjugate of a `2 × 2` matrix `M` has the trace and the determinant of `M`: it lies in
 `traceDetFiber (Fin 2) t d` whenever `M` does. -/
 theorem adjugate_mem_traceDetFiber {t d : R} {M : Matrix (Fin 2) (Fin 2) R}
@@ -211,7 +217,6 @@ theorem add_scalar_mem_traceDetFiber {t d : R} {M : Matrix (Fin 2) (Fin 2) R}
 
 /-- Translation `M ↦ M + r` by a scalar matrix, from the `2 × 2` matrices of trace `t` and
 determinant `d` to those of trace `t + 2 r` and determinant `d + r t + r²`. -/
-@[expose, simps]
 def traceDetFiberAddScalarEquiv (t d r : R) :
     traceDetFiber (Fin 2) t d ≃ traceDetFiber (Fin 2) (t + 2 * r) (d + r * t + r ^ 2) where
   toFun M := ⟨M.1 + scalar (Fin 2) r, add_scalar_mem_traceDetFiber M.2 r⟩
@@ -225,5 +230,19 @@ def traceDetFiberAddScalarEquiv (t d r : R) :
     exact ⟨by linear_combination ht, by linear_combination hd - r * ht⟩⟩
   left_inv M := Subtype.ext (add_sub_cancel_right _ _)
   right_inv M := Subtype.ext (sub_add_cancel _ _)
+
+/-- `traceDetFiberAddScalarEquiv t d r` adds the scalar matrix `r`. -/
+@[simp]
+theorem traceDetFiberAddScalarEquiv_apply_coe (t d r : R) (M : traceDetFiber (Fin 2) t d) :
+    (traceDetFiberAddScalarEquiv t d r M : Matrix (Fin 2) (Fin 2) R) = M.1 + scalar (Fin 2) r :=
+  (rfl)
+
+/-- The inverse of `traceDetFiberAddScalarEquiv t d r` subtracts the scalar matrix `r`. -/
+@[simp]
+theorem traceDetFiberAddScalarEquiv_symm_apply_coe (t d r : R)
+    (M : traceDetFiber (Fin 2) (t + 2 * r) (d + r * t + r ^ 2)) :
+    ((traceDetFiberAddScalarEquiv t d r).symm M : Matrix (Fin 2) (Fin 2) R) =
+      M.1 - scalar (Fin 2) r :=
+  (rfl)
 
 end TauCeti
