@@ -83,7 +83,7 @@ theorem frickeOperator_heckeTNat_of_mem_modFormCharSpace (hn : n.Coprime N)
     (hf : f ∈ modFormCharSpace k χ) :
     frickeOperator k (heckeTNat k n f) =
       (χ (ZMod.unitOfCoprime n hn) : ℂ) • heckeTNat k n (frickeOperator k f) := by
-  have hcomm := DFunLike.congr_fun (commute_heckeTNat_diamondOp k hn (ZMod.unitOfCoprime n hn)⁻¹).eq
+  have hcomm := DFunLike.congr_fun (commute_heckeTNat_diamondOp k n (ZMod.unitOfCoprime n hn)⁻¹).eq
     (frickeOperator k f)
   simp only [Module.End.mul_apply] at hcomm
   rw [frickeOperator_heckeTNat hn, ← hcomm,
