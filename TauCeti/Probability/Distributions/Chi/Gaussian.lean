@@ -10,6 +10,7 @@ public import TauCeti.Probability.Distributions.Gaussian.ChiSquared
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import Mathlib.Probability.CDF
 import TauCeti.Probability.Distributions.Gaussian.Cdf
+import TauCeti.Probability.Distributions.Tilted
 
 /-!
 # Gaussian constructions of chi laws
@@ -27,7 +28,8 @@ half-normal, Rayleigh, and Maxwell–Boltzmann constructions, respectively. The 
 absolute-value identity is also provided directly. These identifications allow the density,
 moments, and quantiles of chi laws to be used for Gaussian radii. The half-normal
 moment-generating function `E[exp (u * |Z|)] = 2 * exp (u ^ 2 / 2) * Φ(u)`, for a standard
-Gaussian `Z` and `Φ = cdf (gaussianReal 0 1)`, is computed directly by completing the square.
+Gaussian `Z` and `Φ = cdf (gaussianReal 0 1)`, is computed from the Gaussian tilting identity
+`gaussianPDFReal_mul_exp_div_mgf`.
 
 The proofs reuse `map_sum_sq_pi_gaussianReal` and Mathlib's orthonormal-basis representation
 `stdGaussian_eq_map_pi_orthonormalBasis`.
@@ -132,14 +134,14 @@ theorem gaussianReal_map_abs (hv : v ≠ 0) :
 theorem integral_exp_mul_abs_gaussianReal (u : ℝ) :
     ∫ x, Real.exp (u * |x|) ∂gaussianReal 0 1 =
       2 * Real.exp (u ^ 2 / 2) * cdf (gaussianReal 0 1) u := by
-  -- Completing the square: `φ(x) * exp (u * x) = exp (u ^ 2 / 2) * N(u, 1)(x)`.
+  -- Gaussian tilting: `φ(x) * exp (u * x) = exp (u ^ 2 / 2) * N(u, 1)(x)`.
   have htilt (x : ℝ) :
       gaussianPDFReal 0 1 x * Real.exp (u * x) =
         Real.exp (u ^ 2 / 2) * gaussianPDFReal u 1 x := by
-    simp only [gaussianPDFReal, NNReal.coe_one, mul_one, sub_zero]
-    rw [mul_assoc, ← Real.exp_add, mul_left_comm, ← Real.exp_add]
-    congr 2
-    ring
+    have h := gaussianPDFReal_mul_exp_div_mgf 0 1 u x
+    simp only [NNReal.coe_one, zero_mul, zero_add, one_mul] at h
+    rw [← h]
+    field_simp
   have heven : (fun x => gaussianPDFReal 0 1 x * Real.exp (u * |x|)) =
       fun x => (fun y => gaussianPDFReal 0 1 y * Real.exp (u * y)) |x| := by
     funext x
