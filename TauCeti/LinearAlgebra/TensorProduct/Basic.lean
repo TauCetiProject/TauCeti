@@ -21,6 +21,7 @@ the Casimir element of a trace commute with multiplication.
 ## Main declarations
 
 * `LinearMap.assoc_rTensor_lTensor_comp`: reassociation commutes with tensoring a composite map.
+* `LinearMap.lTensor_rTensor_apply`: tensoring maps on the left and on the right commute.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
 * `LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
 * `LinearMap.tensorComponent_assoc_symm`: contraction commutes with reassociation.
@@ -64,6 +65,11 @@ theorem assoc_rTensor_lTensor_comp (f : N →ₗ[R] P) (g : Q →ₗ[R] S)
         (TensorProduct.assoc R T N Q (ρ.rTensor Q t)) := by
   simp only [lTensor_def, rTensor_map, comp_id]
   rw [← map_rTensor, ← TensorProduct.map_map_assoc]
+
+/-- `lTensor` and `rTensor` commute pointwise: both composites are `TensorProduct.map f g`. -/
+theorem lTensor_rTensor_apply (f : N →ₗ[R] P) (g : Q →ₗ[R] S) (x : N ⊗[R] Q) :
+    g.lTensor P (f.rTensor Q x) = f.rTensor S (g.lTensor N x) := by
+  rw [← comp_apply, lTensor_comp_rTensor, ← rTensor_comp_lTensor, comp_apply]
 
 end Naturality
 
