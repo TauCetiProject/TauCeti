@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.EulerCharacteristic
 public import TauCeti.Algebra.Category.FGModuleCat.Finrank
 public import TauCeti.Algebra.Category.FGModuleCat.Homology
 public import TauCeti.Algebra.Category.ModuleCat.Finrank
+public import TauCeti.Algebra.Homology.EulerCharacteristic.Basic
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.CategoryTheory.GrothendieckGroup.EulerCharacteristic
 
@@ -16,10 +16,11 @@ public import TauCeti.CategoryTheory.GrothendieckGroup.EulerCharacteristic
 # Euler--Poincaré for complexes of finitely generated modules
 
 Mathlib defines the Euler characteristic of a homological complex using `finsum`.  That definition
-is intentionally total: it returns zero when the summand has infinite support, and `finrank` itself
-returns zero for modules that are not finite free.  This file identifies those totalized
-definitions with honest finite sums for bounded cochain complexes of finitely generated modules,
-and proves that the term and homology Euler characteristics agree.
+is intentionally total: it returns zero when the summand has infinite support, and `finrank`
+itself is the natural-number conversion of `Module.rank`, so it returns zero for modules of
+infinite rank.  This file identifies those totalized definitions with honest finite sums for
+bounded cochain complexes of finitely generated modules, and proves that the term and homology
+Euler characteristics agree.
 
 The coefficient ring `R` is Noetherian and satisfies the rank-nullity theorem (`HasRankNullity`).
 This covers division rings, where finrank is dimension, and Noetherian commutative domains such as
@@ -30,13 +31,12 @@ finitely generated, and rank-nullity makes finrank additive on short exact seque
 Finite generation is encoded either by taking the original complex in `FGModuleCat R`, with the
 characteristics evaluated after applying the forgetful functor to `ModuleCat R` as required by
 Mathlib's definitions, or by an explicit hypothesis on the terms of a complex in `ModuleCat R`.
-Boundedness is retained as explicit lower and upper bounds.  Thus neither possible junk value is
-used in the Euler--Poincaré identity.
+Finite generation ensures that every term and every homology object has finite rank, without
+requiring freeness, and boundedness is retained as explicit lower and upper bounds.  Thus neither
+possible junk value is used in the Euler--Poincaré identity.
 
 ## Main results
 
-* `HomologicalComplex.eulerChar_eq_of_iso` and `HomologicalComplex.homologyEulerChar_eq_of_iso`:
-  both Euler characteristics are invariant under isomorphisms of complexes.
 * `HomologicalComplex.eulerChar_forgetFG_eq_sum_finrank`: Mathlib's term Euler characteristic is
   the finite sum over any finite set containing the bounding interval.
 * `HomologicalComplex.homologyEulerChar_forgetFG_eq_sum_finrank`: Mathlib's homology Euler
@@ -60,22 +60,6 @@ open CategoryTheory CategoryTheory.Limits
 universe u v
 
 namespace HomologicalComplex
-
-section Iso
-
-variable {R : Type u} [Ring R] {ι : Type*} {c : ComplexShape ι} [c.EulerCharSigns]
-  {K L : HomologicalComplex (ModuleCat.{v} R) c}
-
-/-- Isomorphic complexes of modules have the same Euler characteristic. -/
-theorem eulerChar_eq_of_iso (e : K ≅ L) : K.eulerChar = L.eulerChar :=
-  finsum_congr fun i => by rw [(Hom.isoApp e i).toLinearEquiv.finrank_eq]
-
-/-- Isomorphic complexes of modules have the same homology Euler characteristic. -/
-theorem homologyEulerChar_eq_of_iso [∀ i, K.HasHomology i] [∀ i, L.HasHomology i] (e : K ≅ L) :
-    K.homologyEulerChar = L.homologyEulerChar :=
-  finsum_congr fun i => by rw [(homologyMapIso e i).toLinearEquiv.finrank_eq]
-
-end Iso
 
 section Ring
 
@@ -165,8 +149,9 @@ Noetherian ring with the rank-nullity property, Mathlib's Euler characteristic o
 with its homology Euler characteristic after forgetting a bounded complex from `FGModuleCat R` to
 `ModuleCat R`.
 
-The source category makes every term finitely generated, while the explicit bounds make both
-`finsum`s finite.  Consequently this equality does not rely on either totalized junk value.
+The source category makes every term and homology object finitely generated, hence of finite
+rank, while the explicit bounds make both `finsum`s finite.  Consequently this equality does not
+rely on either totalized junk value.
 -/
 theorem eulerChar_forgetFG_eq_homologyEulerChar [HasRankNullity.{v} R] (a b : ℤ)
     [K.IsStrictlyGE a]
@@ -199,13 +184,10 @@ theorem eulerChar_eq_homologyEulerChar (K : CochainComplex (ModuleCat.{v} R) ℤ
   let L : CochainComplex (FGModuleCat.{v} R) ℤ :=
     K.liftObjectProperty (ModuleCat.isFG R) fun n ↦ (ModuleCat.isFG_iff _).2 (hK n)
   let e : (F.mapHomologicalComplex _).obj L ≅ K := K.liftFGModuleCatIso hK
-  have hL : ∀ n, IsZero (K.X n) → IsZero (L.X n) := fun n hn ↦
-    IsZero.of_full_of_faithful_of_isZero F (L.X n)
-      (hn.of_iso (HomologicalComplex.Hom.isoApp e n))
-  have : L.IsStrictlyGE a := (isStrictlyGE_iff L a).2 fun n hn ↦
-    hL n (K.isZero_of_isStrictlyGE a n hn)
-  have : L.IsStrictlyLE b := (isStrictlyLE_iff L b).2 fun n hn ↦
-    hL n (K.isZero_of_isStrictlyLE b n hn)
+  have : L.IsStrictlyGE a :=
+    (isStrictlyGE_mapHomologicalComplex_obj_iff L F a).1 (isStrictlyGE_of_iso e.symm a)
+  have : L.IsStrictlyLE b :=
+    (isStrictlyLE_mapHomologicalComplex_obj_iff L F b).1 (isStrictlyLE_of_iso e.symm b)
   rw [← HomologicalComplex.eulerChar_eq_of_iso e,
     ← HomologicalComplex.homologyEulerChar_eq_of_iso e]
   exact L.eulerChar_forgetFG_eq_homologyEulerChar a b
