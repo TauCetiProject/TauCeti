@@ -556,13 +556,9 @@ sends the class of `(p, v)` to `p v` in the fibre over `p.proj`
 def associatedHomeomorph [FiniteDimensional ℝ F] [FiniteDimensional ℝ V]
     (h : Module.finrank ℝ V = Module.finrank ℝ F) :
     Quotient (associatedRel F E V) ≃ₜ TotalSpace F E :=
-  IsHomeomorph.homeomorph
-    (Quotient.lift (fun q : OrthonormalFrameBundle F E V × V ↦
-      (⟨q.1.proj, q.1.frame q.2⟩ : TotalSpace F E)) fun _ _ ↦ totalSpaceMk_frame_apply_eq_iff.2) <|
-    isHomeomorph_iff_isQuotientMap_injective.2
-      ⟨.of_comp continuous_quotient_mk' (continuous_totalSpaceMk_frame_apply.quotient_lift _)
-        (isOpenQuotientMap_totalSpaceMk_frame_apply h).isQuotientMap,
-      Quotient.ind₂ fun _ _ hxy ↦ Quotient.sound (totalSpaceMk_frame_apply_eq_iff.1 hxy)⟩
+  (Homeomorph.Quotient.congrRight (Setoid.ext_iff.1 associatedRel_eq_ker)).trans
+    (Topology.IsQuotientMap.homeomorph (f := ⟨_, continuous_totalSpaceMk_frame_apply⟩)
+      (isOpenQuotientMap_totalSpaceMk_frame_apply h).isQuotientMap)
 
 /-- The homeomorphism `associatedHomeomorph` sends the class of `(p, v)` to the vector `p v` of the
 fibre over `p.proj`. -/
