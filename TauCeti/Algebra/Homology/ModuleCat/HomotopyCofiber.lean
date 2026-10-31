@@ -70,7 +70,7 @@ theorem XEquiv_symm_apply {i j : ι} (hij : c.Rel i j) (y : L.X i × K.X j) :
 variable (K) in
 /-- The projection `fstX` identifies the term of the mapping cone of `K ⟶ 0` in a degree `i` with
 `c.Rel i j` with `K.X j`. -/
-@[expose] def zeroEquiv {i j : ι} (hij : c.Rel i j) :
+def zeroEquiv {i j : ι} (hij : c.Rel i j) :
     (X (0 : K ⟶ 0) i : ModuleCat R) ≃ₗ[R] K.X j :=
   LinearEquiv.ofLinearMap (fstX (0 : K ⟶ 0) i j hij).hom (inlX (0 : K ⟶ 0) j i hij).hom
     (by ext x; exact congr(($(inlX_fstX (0 : K ⟶ 0) j i hij)).hom x))
@@ -81,14 +81,14 @@ variable (K) in
 @[simp]
 theorem zeroEquiv_apply {i j : ι} (hij : c.Rel i j) (x : (X (0 : K ⟶ 0) i : ModuleCat R)) :
     zeroEquiv K hij x = (fstX (0 : K ⟶ 0) i j hij).hom x :=
-  rfl
+  (rfl)
 
 variable (K) in
 /-- The inverse of `zeroEquiv` is the inclusion `inlX`. -/
 @[simp]
 theorem zeroEquiv_symm_apply {i j : ι} (hij : c.Rel i j) (x : K.X j) :
     (zeroEquiv K hij).symm x = (inlX (0 : K ⟶ 0) j i hij).hom x :=
-  rfl
+  (rfl)
 
 variable (K) in
 /-- The differentials of the mapping cone of `K ⟶ 0` correspond under `zeroEquiv` to the negated

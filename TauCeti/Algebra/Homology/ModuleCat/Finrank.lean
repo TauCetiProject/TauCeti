@@ -19,7 +19,8 @@ import TauCeti.LinearAlgebra.Matrix.Rank
 Let `C` be a homological complex of vector spaces over a field `F`. If `C.X j` is
 finite-dimensional, `C` is exact in degree `j` exactly when the dimensions of the images of the
 incoming and outgoing differentials add up to the dimension of `C.X j`
-(`HomologicalComplex.exactAt_iff_finrank_add_finrank`).
+(`HomologicalComplex.exactAt_iff_finrank_add_finrank`). The boundaries of a based complex vanish
+in a degree where its basis is empty (`HomologicalComplex.finrank_range_d_eq_zero`).
 
 Let `φ : F →+* K` be a homomorphism of fields and let `D` be a complex of vector spaces over `K`
 of the same shape. If `C` and `D` have bases in which the matrices of the differentials of `D` are
@@ -55,6 +56,14 @@ theorem exactAt_iff_finrank_add_finrank (C : HomologicalComplex (ModuleCat F) s)
   have := Submodule.finrank_mono h
   have := Submodule.finrank_mono hle
   omega
+
+/-- The boundaries vanish in a degree where the based complex vanishes. -/
+theorem finrank_range_d_eq_zero (C : ChainComplex (ModuleCat F) ℤ) {n : ℤ → ℕ}
+    (c : ∀ i, Basis (Fin (n i)) F (C.X i)) {j : ℤ} (hj : n j = 0) :
+    finrank F (LinearMap.range (C.d (j + 1) j).hom) = 0 := by
+  have : Module.Finite F (C.X j) := .of_basis (c j)
+  have hle := Submodule.finrank_le (LinearMap.range (C.d (j + 1) j).hom)
+  rwa [finrank_eq_card_basis (c j), Fintype.card_fin, hj, Nat.le_zero] at hle
 
 variable {K : Type*} [Field K] (φ : F →+* K) {C : HomologicalComplex (ModuleCat F) s}
   {D : HomologicalComplex (ModuleCat K) s} {κ : ι → Type*} [∀ i, Fintype (κ i)]

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence.Splitting
-public import TauCeti.Algebra.Homology.ModuleCat.ShiftSequence
+public import TauCeti.Algebra.Homology.ModuleCat.Shift.Sequence
 
 /-!
 # The action of a cycle of degree zero on the cohomology of a shifted module complex

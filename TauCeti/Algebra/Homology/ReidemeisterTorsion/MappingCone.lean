@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.HomotopyCofiber
-public import TauCeti.Algebra.Homology.ModuleCat.Shift
+public import TauCeti.Algebra.Homology.ModuleCat.Shift.Basic
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
 import TauCeti.LinearAlgebra.Alternating.Append
 
@@ -22,7 +22,7 @@ Let `C` be a based chain complex and let `D` be `C` shifted up by one degree wit
 differentials: isomorphisms `e i : D.X (i + 1) ≃ C.X i` turn the differential of `D` into the
 negative of that of `C`, and carry the basis of `D.X (i + 1)` to that of `C.X i`. Then `D` is
 acyclic exactly when `C` is (`HomologicalComplex.acyclic_iff_of_shift`, from
-`TauCeti.Algebra.Homology.ModuleCat.Shift`), and `τ(D) = ε · τ(C)⁻¹` with
+`TauCeti.Algebra.Homology.ModuleCat.Shift.Basic`), and `τ(D) = ε · τ(C)⁻¹` with
 `ε = ∏ⱼ (-1) ^ (dim Bⱼ)`, where `Bⱼ ⊆ Cⱼ` is the space of boundaries
 (`HomologicalComplex.reidemeisterTorsion_eq_mul_inv_of_shift`). Indeed the brackets of `D` are
 those of `C` in the previous degree, up to the sign coming from the negated lifts, and they enter

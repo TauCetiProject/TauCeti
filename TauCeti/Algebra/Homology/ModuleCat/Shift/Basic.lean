@@ -51,7 +51,7 @@ theorem map_range_d_of_shift (i : ℤ) :
 
 /-- The isomorphism between the boundaries of `D` in degree `i + 1` and those of `C` in degree `i`
 induced by a shift `e` with negated differentials. -/
-@[expose] def boundaryEquivOfShift (i : ℤ) :
+def boundaryEquivOfShift (i : ℤ) :
     LinearMap.range (D.d (i + 1 + 1) (i + 1)).hom ≃ₗ[R] LinearMap.range (C.d (i + 1) i).hom :=
   ((e i).submoduleMap _).trans (LinearEquiv.ofEq _ _ (map_range_d_of_shift e he i))
 
@@ -60,7 +60,7 @@ induced by a shift `e` with negated differentials. -/
 theorem coe_boundaryEquivOfShift (i : ℤ)
     (x : LinearMap.range (D.d (i + 1 + 1) (i + 1)).hom) :
     (boundaryEquivOfShift e he i x : C.X i) = e i x :=
-  rfl
+  (rfl)
 
 include he in
 /-- Under a shift `e` with negated differentials, the cycles of `D` in degree `i + 1 + 1` are sent

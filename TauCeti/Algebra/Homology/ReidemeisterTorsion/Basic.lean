@@ -294,14 +294,6 @@ theorem reidemeisterTorsion_eq_zero_iff (hn : {i | n i ≠ 0}.Finite) :
   ⟨fun h₀ h ↦ C.reidemeisterTorsion_ne_zero c hn h h₀, C.reidemeisterTorsion_of_not_acyclic c⟩
 
 include c in
-/-- The boundaries vanish in a degree where the complex vanishes. -/
-theorem finrank_range_d_eq_zero {j : ℤ} (hj : n j = 0) :
-    finrank F (LinearMap.range (C.d (j + 1) j).hom) = 0 := by
-  have : Module.Finite F (C.X j) := .of_basis (c j)
-  have hle := Submodule.finrank_le (LinearMap.range (C.d (j + 1) j).hom)
-  rwa [finrank_eq_card_basis (c j), Fintype.card_fin, hj, Nat.le_zero] at hle
-
-include c in
 /-- The determinant of one basis of the boundaries with respect to another is `1` in a degree
 where the complex vanishes. -/
 private theorem det_eq_one_of_eq_zero {j : ℤ} (hj : n j = 0)
