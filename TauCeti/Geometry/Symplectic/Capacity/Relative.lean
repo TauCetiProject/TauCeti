@@ -8,8 +8,9 @@ module
 public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
-import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+import TauCeti.Geometry.Manifold.Diffeomorph.Support
+import TauCeti.Geometry.Symplectic.Capacity.HoferZehnder
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 
 /-!
@@ -199,24 +200,8 @@ theorem IsNondegenerate.isRelContractibleHZAdmissible_smul_smul_iff (hσ : σ.Is
 `c°_HZ(V, Z; cσ) = c · c°_HZ(V, Z; σ)`. -/
 theorem IsNondegenerate.relContractibleHZCapacity_smul (hσ : σ.IsNondegenerate) {c : ℝ}
     (hc : 0 < c) (V Z : Set M) :
-    (c • σ).relContractibleHZCapacity V Z = ENNReal.ofReal c * σ.relContractibleHZCapacity V Z := by
-  -- The maximum of `c • F` is `c` times the maximum of `F`.
-  have hmax (F : M → ℝ) :
-      ENNReal.ofReal (⨆ x, (c • F) x) = ENNReal.ofReal c * ENNReal.ofReal (⨆ x, F x) := by
-    simp only [Pi.smul_apply, smul_eq_mul, ← Real.mul_iSup_of_nonneg hc.le,
-      ENNReal.ofReal_mul hc.le]
-  refine le_antisymm (relContractibleHZCapacity_le_iff.2 fun F hF ↦ ?_) ?_
-  · have hF' : F = c • (c⁻¹ • F) := by rw [smul_smul, mul_inv_cancel₀ hc.ne', one_smul]
-    rw [hF'] at hF ⊢
-    rw [hmax]
-    gcongr
-    exact ((hσ.isRelContractibleHZAdmissible_smul_smul_iff hc).1 hF
-      ).ofReal_iSup_le_relContractibleHZCapacity
-  · simp only [relContractibleHZCapacity_def, ENNReal.mul_iSup]
-    refine iSup₂_le fun F hF ↦ ?_
-    rw [← hmax]
-    exact ((hσ.isRelContractibleHZAdmissible_smul_smul_iff hc).2 hF
-      ).ofReal_iSup_le_relContractibleHZCapacity
+    (c • σ).relContractibleHZCapacity V Z = ENNReal.ofReal c * σ.relContractibleHZCapacity V Z :=
+  iSup₂_ofReal_iSup_eq_ofReal_mul hc fun _ ↦ hσ.isRelContractibleHZAdmissible_smul_smul_iff hc
 
 end Conformality
 
@@ -236,20 +221,16 @@ theorem IsRelContractibleHZAdmissible.comp_symm (hσ₂ : σ₂.IsNondegenerate)
     σ₂.IsRelContractibleHZAdmissible (ψ '' V) (ψ '' Z) (F ∘ ψ.symm) := by
   have hσ : σ.IsNondegenerate := hψ ▸ hσ₂.isNondegenerate_mpullback_of_isLocalDiffeomorph
     ψ.isLocalDiffeomorph
-  have hsupp : tsupport (F ∘ ψ.symm) = ψ '' tsupport F := by
-    rw [ψ.image_eq_preimage_symm, ← ψ.symm.coe_toHomeomorph,
-      ← tsupport_comp_eq_preimage F ψ.symm.toHomeomorph]
   refine
     { contMDiff := hF.contMDiff.comp ψ.symm.contMDiff
-      isCompact_tsupport := hsupp ▸ hF.isCompact_tsupport.image ψ.continuous
-      tsupport_subset_interior := ?_
-      tsupport_subset_interior_manifold := ?_
+      isCompact_tsupport :=
+        ψ.tsupport_comp_symm F ▸ hF.isCompact_tsupport.image ψ.continuous
+      tsupport_subset_interior :=
+        ψ.tsupport_comp_symm_subset_interior_image hF.tsupport_subset_interior
+      tsupport_subset_interior_manifold :=
+        ψ.tsupport_comp_symm_subset_interior (by simp) hF.tsupport_subset_interior_manifold
       isMaxOn := ?_
       eq_of_isMIntegralCurve := ?_ }
-  · rw [hsupp, ← ψ.coe_toHomeomorph, ← ψ.toHomeomorph.image_interior]
-    exact image_mono hF.tsupport_subset_interior
-  · rw [hsupp, ← Diffeomorph.image_interior (by simp) ψ]
-    exact image_mono hF.tsupport_subset_interior_manifold
   · rintro _ ⟨z, hz, rfl⟩
     refine isMaxOn_iff.2 fun y hy ↦ ?_
     simpa using isMaxOn_iff.1 (hF.isMaxOn z hz) (ψ.symm y) hy
@@ -274,16 +255,12 @@ theorem IsNondegenerate.relContractibleHZCapacity_image (hσ₂ : σ₂.IsNondeg
     σ₂.relContractibleHZCapacity (ψ '' V) (ψ '' Z) = σ.relContractibleHZCapacity V Z := by
   have hσ : σ.IsNondegenerate := hψ ▸ hσ₂.isNondegenerate_mpullback_of_isLocalDiffeomorph
     ψ.isLocalDiffeomorph
-  refine le_antisymm (relContractibleHZCapacity_le_iff.2 fun F hF ↦ ?_)
-    (relContractibleHZCapacity_le_iff.2 fun F hF ↦ ?_)
-  · have h := hF.comp_symm hσ ψ.symm (SmoothForm.mpullback_symm_eq_of_mpullback_eq hψ)
-    -- `Diffeomorph.symm` is involutive by definition.
-    have hψ' : ψ.symm.symm = ψ := rfl
-    rw [hψ', ψ.symm_image_image, ψ.symm_image_image] at h
-    have hsup : ⨆ x, (F ∘ ψ) x = ⨆ y, F y := ψ.surjective.iSup_comp F
-    exact hsup ▸ h.ofReal_iSup_le_relContractibleHZCapacity
-  · have hsup : ⨆ y, (F ∘ ψ.symm) y = ⨆ x, F x := ψ.symm.surjective.iSup_comp F
-    exact hsup ▸ (hF.comp_symm hσ₂ ψ hψ).ofReal_iSup_le_relContractibleHZCapacity
+  refine iSup₂_ofReal_iSup_eq_of_comp ψ.surjective ψ.symm.surjective
+    (fun _ hF ↦ hF.comp_symm hσ₂ ψ hψ) fun G hG ↦ ?_
+  have h := hG.comp_symm hσ ψ.symm (SmoothForm.mpullback_symm_eq_of_mpullback_eq hψ)
+  -- `Diffeomorph.symm` is involutive by definition.
+  have hψ' : ψ.symm.symm = ψ := rfl
+  rwa [hψ', ψ.symm_image_image, ψ.symm_image_image] at h
 
 end Invariance
 
