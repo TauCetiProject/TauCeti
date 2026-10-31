@@ -19,12 +19,12 @@ unknotted by `k (P choose 2) = (P - 1) ((k P + 1) - 1) / 2` crossing changes: th
 `u(T_{P,Q}) ≤ (P - 1) (Q - 1) / 2` of the Milnor conjecture for `Q ≡ 1 mod P`. This covers the
 `(3, 4)` torus knot, unknotted by three crossing changes.
 
-The two-strand family is also handled by one explicit crossing change in the standard grid of
-every size. Exchanging the first two columns of the standard grid of the `(2, q + 3)` torus link
-is a cross-commutation, and the resulting diagram is obtained from the standard grid of the
+For two strands a full twist is one explicit crossing change in the standard grid of every
+size. Exchanging the first two columns of the standard grid of the `(2, q + 3)` torus link is a
+cross-commutation, and the resulting diagram is obtained from the standard grid of the
 `(2, q + 1)` torus link by two `X`-stabilizations, up to a cyclic permutation of the columns and
-row commutations. Induction on `k`, starting from the standard unknot grid, bounds the unknotting
-number of the `(2, 2k + 1)` torus knot by `k`.
+row commutations. The `(2, 2k + 1)` torus knot has unknotting number at most `k`, the case `P = 2`
+of the general bound.
 
 ## Main results
 
@@ -32,12 +32,12 @@ number of the `(2, 2k + 1)` torus knot by `k`.
   number `⊤`.
 * `TauCeti.GridLink.isCrossingChange_toGridLink_torusLink_one_add_two`: the `(2, q + 3)` and
   `(2, q + 1)` torus links differ by one crossing change.
-* `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_one_two_mul_le`: the `(2, 2k + 1)`
-  torus knot has unknotting number at most `k`.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_add_le`: removing a full twist from a
   torus link grid lowers the unknotting number by at most `P choose 2`.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_mul_le`: the `(P, k P + 1)` torus knot
   has unknotting number at most `k (P choose 2)`.
+* `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_one_two_mul_le`: the `(2, 2k + 1)`
+  torus knot has unknotting number at most `k`.
 * `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_two_three_le_three`: the `(3, 4)` torus
   knot has unknotting number at most three.
 
@@ -220,21 +220,6 @@ theorem isCrossingChange_toGridLink_torusLink_one_add_two (q : ℕ) :
       (GridDiagram.toGridLink_eq_iff_movesTo _).mpr
         (GridDiagram.movesTo_swapColumns_torusLink_one q)⟩
 
-/-- The `(2, 2k + 1)` torus knot, presented by its standard grid, has unknotting number at most
-`k`: this is the upper bound `u(T_{2, 2k+1}) ≤ (2 - 1) (2k + 1 - 1) / 2` of the Milnor
-conjecture. Each crossing change of `isCrossingChange_toGridLink_torusLink_one_add_two` lowers
-`k` by one, and the `(2, 1)` torus link grid is the standard unknot grid. -/
-theorem unknottingNumber_toGridLink_torusLink_one_two_mul_le (k : ℕ) :
-    (GridDiagram.torusLink 1 (2 * k)).toGridLink.unknottingNumber ≤ k := by
-  induction k with
-  | zero =>
-    rw [Nat.mul_zero, GridDiagram.torusLink_zero_right, GridDiagram.toGridLink_unknot,
-      unknottingNumber_unknot, Nat.cast_zero]
-  | succ k ih =>
-    rw [Nat.mul_succ, Nat.cast_succ]
-    exact (isCrossingChange_toGridLink_torusLink_one_add_two _).unknottingNumber_le.trans
-      (by gcongr)
-
 /-- Removing a full twist: the unknotting number of the grid link of the standard
 `(p + 1, (q + (p + 1)) + 1)` torus link grid exceeds that of the `(p + 1, q + 1)` torus link grid
 by at most `(p + 1) choose 2`. -/
@@ -261,6 +246,14 @@ theorem unknottingNumber_toGridLink_torusLink_mul_le (p k : ℕ) :
     calc _ ≤ _ := unknottingNumber_toGridLink_torusLink_add_le p (k * (p + 1))
       _ ≤ (p + 1).choose 2 + k * (p + 1).choose 2 := by gcongr
       _ = (k + 1) * (p + 1).choose 2 := by ring
+
+/-- The `(2, 2k + 1)` torus knot, presented by its standard grid, has unknotting number at most
+`k`: this is the upper bound `u(T_{2, 2k+1}) ≤ (2 - 1) (2k + 1 - 1) / 2` of the Milnor
+conjecture, the case `P = 2` of `unknottingNumber_toGridLink_torusLink_mul_le`. -/
+theorem unknottingNumber_toGridLink_torusLink_one_two_mul_le (k : ℕ) :
+    (GridDiagram.torusLink 1 (2 * k)).toGridLink.unknottingNumber ≤ k := by
+  rw [Nat.mul_comm]
+  simpa using unknottingNumber_toGridLink_torusLink_mul_le 1 k
 
 /-- The `(3, 4)` torus knot, presented by its standard `7 × 7` grid, has unknotting number at most
 three.
