@@ -127,6 +127,13 @@ theorem presentation_matchesMetadata (s : SporadicName) :
   | B => exact Sporadic.BabyMonster.matchesMetadata_presentation
   | M => exact Sporadic.Monster.presentation_matchesMetadata
 
+/-- The presentation selected for `M₁₁` is the transcribed presentation
+`TauCeti.Sporadic.m11Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_M11 : SporadicName.M11.presentation = Sporadic.m11Presentation :=
+  (rfl)
+
 /-- The sporadic group concretely defined by its selected finite presentation. -/
 abbrev SporadicName.Group (s : SporadicName) : Type := s.presentation.Group
 
