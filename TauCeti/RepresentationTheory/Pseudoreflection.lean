@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.Algebra.Group.Subgroup.Normalizer
 public import TauCeti.LinearAlgebra.FixedSubmodule
 
 /-!
@@ -92,13 +93,8 @@ theorem pseudoreflectionSubgroup_le_iff {H : Subgroup G} :
 
 /-- The pseudoreflection subgroup is normal, since a conjugate of a pseudoreflection is a
 pseudoreflection. -/
-instance normal_pseudoreflectionSubgroup : ρ.pseudoreflectionSubgroup.Normal where
-  conj_mem n hn h := by
-    have hle : ρ.pseudoreflectionSubgroup ≤
-        ρ.pseudoreflectionSubgroup.comap (MulAut.conj h).toMonoidHom :=
-      ρ.pseudoreflectionSubgroup_le_iff.2 fun g hg ↦
-        ρ.mem_pseudoreflectionSubgroup_of_finrank_quotient_eq_one
-          ((ρ.finrank_quotient_fixedSubmodule_conj h g).trans hg)
-    exact hle hn
+instance normal_pseudoreflectionSubgroup : ρ.pseudoreflectionSubgroup.Normal :=
+  Subgroup.closure_normal_of_forall_conj_mem fun h g hg ↦
+    (ρ.finrank_quotient_fixedSubmodule_conj h g).trans hg
 
 end Representation
