@@ -75,9 +75,8 @@ theorem map_prod_rescale_X {σ S : Type*} [Fintype σ] [CommSemiring S] [Algebra
       ∏ i : σ, rescale (φ (MvPolynomial.X i)) (Q.map (algebraMap R S)) := by
   rw [map_prod]
   refine Finset.prod_congr rfl fun i _ => ?_
-  rw [← rescale_map, ← RingHom.comp_apply (map _), ← map_comp,
-    show (φ : MvPolynomial σ R →+* S).comp (algebraMap R _) = algebraMap R S from
-      RingHom.ext φ.commutes, RingHom.coe_coe]
+  rw [← rescale_map, ← RingHom.comp_apply (map _), ← map_comp, AlgHom.comp_algebraMap,
+    RingHom.coe_coe]
 
 /-- The coefficient of `tᵏ` in `∏ᵢ Q(xᵢ t)` is a symmetric polynomial in the `xᵢ`. -/
 theorem isSymmetric_coeff_prod_rescale_X {σ : Type*} [Fintype σ] (Q : PowerSeries R)
@@ -204,8 +203,7 @@ theorem multiplicativeSequence_zero_right :
     Q.multiplicativeSequence n 0 = MvPolynomial.C (constantCoeff Q ^ n) := by
   refine (eq_multiplicativeSequence_iff.2 ?_).symm
   rw [MvPolynomial.aeval_C, coeff_zero_eq_constantCoeff_apply, map_prod]
-  simp only [← coeff_zero_eq_constantCoeff_apply, coeff_rescale, coeff_map, pow_zero, one_mul]
-  rw [prod_const, card_univ, Fintype.card_fin, map_pow, coeff_zero_eq_constantCoeff_apply]
+  simp [← coeff_zero_eq_constantCoeff_apply (rescale _ _), coeff_rescale]
 
 /-- Setting the last variable to zero in the polynomial for `n + 1` roots gives `Q(0)` times the
 polynomial for `n` roots, as a statement in `R[x₁, …, xₙ]`. -/
@@ -222,15 +220,17 @@ private theorem aeval_snoc_X_zero_multiplicativeSequence :
         (0 ::ₘ univ.val.map (MvPolynomial.X : Fin n → MvPolynomial (Fin n) R)).esymm (j + 1) := by
     funext j
     refine Fin.lastCases ?_ (fun i => ?_) j
-    · simp [Multiset.esymm_cons, Multiset.esymm_of_card_lt, -Fin.univ_val_map]
-    · simp [Multiset.esymm_cons, MvPolynomial.esymm_eq_multiset_esymm, -Fin.univ_val_map]
+    · rw [Fin.snoc_last, map_zero, Fin.val_last, Multiset.esymm_cons_zero,
+        Multiset.esymm_of_card_lt (by simp)]
+    · rw [Fin.snoc_castSucc, MvPolynomial.aeval_X, Fin.val_castSucc, Multiset.esymm_cons_zero,
+        MvPolynomial.esymm_eq_multiset_esymm]
   -- Both sides are now coefficients of `∏ᵢ Q(xᵢ t)`, with an extra factor `Q(0 t)` on the left.
   rw [MvPolynomial.esymmAlgHom_apply, MvPolynomial.esymmAlgHom_apply,
     MvPolynomial.comp_aeval_apply, h,
     aeval_multiset_esymm_multiplicativeSequence Q (n + 1) k _ (by simp), map_mul,
     MvPolynomial.aeval_C, aeval_esymm_multiplicativeSequence]
-  simp [← coeff_zero_eq_constantCoeff_apply, MvPolynomial.algebraMap_eq, -Fin.univ_val_map,
-    -coeff_zero_eq_constantCoeff]
+  simp [Finset.prod_eq_multiset_prod, Function.comp_def,
+    ← coeff_zero_eq_constantCoeff_apply (map _ Q), MvPolynomial.algebraMap_eq]
 
 variable {S : Type*} [CommSemiring S] [Algebra R S]
 
