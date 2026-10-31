@@ -90,9 +90,9 @@ namespace NovikovModule
 
 variable {R S₁ S₂ T₁ T₂ S₀ : Type*}
 
-section CommSemiring
+section Semiring
 
-variable [CommSemiring R] {F₁ : S₁ → ℝ} {F₂ : S₂ → ℝ} {F₀ : S₀ → ℝ}
+variable [Semiring R] {F₁ : S₁ → ℝ} {F₂ : S₂ → ℝ}
 
 /-- The coefficientwise product of two completed combinations is a completed combination of
 pairs of generators, for the sum of the two potentials. -/
@@ -101,6 +101,46 @@ theorem mul_mem_prod (a : NovikovModule R F₁) (b : NovikovModule R F₂) :
       NovikovModule R fun q : S₁ × S₂ => F₁ q.1 + F₂ q.2 :=
   mem_iff_finite_ge.2 fun T => (finite_setOf_le_add a b T).subset fun _ hq =>
     ⟨left_ne_zero_of_mul hq.1, right_ne_zero_of_mul hq.1, hq.2⟩
+
+section KernelTensor
+
+variable {G₁ : T₁ → ℝ} {G₂ : T₂ → ℝ} {C₁ C₂ : ℝ} {m₁ : S₁ → T₁ → R} {m₂ : S₂ → T₂ → R}
+
+/-- The tensor product of a kernel `m₁` from `S₁` to `T₁` and a kernel `m₂` from `S₂` to `T₂`:
+the coefficient from `(p₁, p₂)` to `(q₁, q₂)` is `m₁(p₁, q₁) m₂(p₂, q₂)`. -/
+def kernelTensor (m₁ : S₁ → T₁ → R) (m₂ : S₂ → T₂ → R) (p : S₁ × S₂) (q : T₁ × T₂) : R :=
+  m₁ p.1 q.1 * m₂ p.2 q.2
+
+/-- A coefficient of a tensor product of kernels is the product of the coefficients. -/
+@[simp]
+theorem kernelTensor_apply (m₁ : S₁ → T₁ → R) (m₂ : S₂ → T₂ → R) (p : S₁ × S₂) (q : T₁ × T₂) :
+    kernelTensor m₁ m₂ p q = m₁ p.1 q.1 * m₂ p.2 q.2 :=
+  (rfl)
+
+/-- **Potential bound of a tensor product of kernels.** The constants of the two potential bounds
+add. -/
+theorem potential_le_of_kernelTensor_ne_zero
+    (hm₁ : ∀ p₁ q₁, m₁ p₁ q₁ ≠ 0 → G₁ q₁ ≤ F₁ p₁ + C₁)
+    (hm₂ : ∀ p₂ q₂, m₂ p₂ q₂ ≠ 0 → G₂ q₂ ≤ F₂ p₂ + C₂) {p : S₁ × S₂} {q : T₁ × T₂}
+    (h : kernelTensor m₁ m₂ p q ≠ 0) : G₁ q.1 + G₂ q.2 ≤ F₁ p.1 + F₂ p.2 + (C₁ + C₂) := by
+  have h₁ := hm₁ _ _ (left_ne_zero_of_mul h)
+  have h₂ := hm₂ _ _ (right_ne_zero_of_mul h)
+  linarith
+
+/-- **Completed outputs of a tensor product of kernels.** The output at `(p₁, p₂)` is the tensor
+product of the outputs at `p₁` and at `p₂`. -/
+theorem kernelTensor_mem (hmfin₁ : ∀ p₁, m₁ p₁ ∈ NovikovModule R G₁)
+    (hmfin₂ : ∀ p₂, m₂ p₂ ∈ NovikovModule R G₂) (p : S₁ × S₂) :
+    kernelTensor m₁ m₂ p ∈ NovikovModule R fun q : T₁ × T₂ => G₁ q.1 + G₂ q.2 :=
+  mul_mem_prod ⟨m₁ p.1, hmfin₁ p.1⟩ ⟨m₂ p.2, hmfin₂ p.2⟩
+
+end KernelTensor
+
+end Semiring
+
+section CommSemiring
+
+variable [CommSemiring R] {F₁ : S₁ → ℝ} {F₂ : S₂ → ℝ} {F₀ : S₀ → ℝ}
 
 /-- The completed tensor product of completed combinations: the coefficient of a pair of
 generators `(p₁, p₂)` in the tensor product of `a` and `b` is `a(p₁) b(p₂)`. -/
@@ -192,34 +232,6 @@ end Universal
 section KernelTensor
 
 variable {G₁ : T₁ → ℝ} {G₂ : T₂ → ℝ} {C₁ C₂ : ℝ} {m₁ : S₁ → T₁ → R} {m₂ : S₂ → T₂ → R}
-
-/-- The tensor product of a kernel `m₁` from `S₁` to `T₁` and a kernel `m₂` from `S₂` to `T₂`:
-the coefficient from `(p₁, p₂)` to `(q₁, q₂)` is `m₁(p₁, q₁) m₂(p₂, q₂)`. -/
-def kernelTensor (m₁ : S₁ → T₁ → R) (m₂ : S₂ → T₂ → R) (p : S₁ × S₂) (q : T₁ × T₂) : R :=
-  m₁ p.1 q.1 * m₂ p.2 q.2
-
-/-- A coefficient of a tensor product of kernels is the product of the coefficients. -/
-@[simp]
-theorem kernelTensor_apply (m₁ : S₁ → T₁ → R) (m₂ : S₂ → T₂ → R) (p : S₁ × S₂) (q : T₁ × T₂) :
-    kernelTensor m₁ m₂ p q = m₁ p.1 q.1 * m₂ p.2 q.2 :=
-  (rfl)
-
-/-- **Potential bound of a tensor product of kernels.** The constants of the two potential bounds
-add. -/
-theorem potential_le_of_kernelTensor_ne_zero
-    (hm₁ : ∀ p₁ q₁, m₁ p₁ q₁ ≠ 0 → G₁ q₁ ≤ F₁ p₁ + C₁)
-    (hm₂ : ∀ p₂ q₂, m₂ p₂ q₂ ≠ 0 → G₂ q₂ ≤ F₂ p₂ + C₂) {p : S₁ × S₂} {q : T₁ × T₂}
-    (h : kernelTensor m₁ m₂ p q ≠ 0) : G₁ q.1 + G₂ q.2 ≤ F₁ p.1 + F₂ p.2 + (C₁ + C₂) := by
-  have h₁ := hm₁ _ _ (left_ne_zero_of_mul h)
-  have h₂ := hm₂ _ _ (right_ne_zero_of_mul h)
-  linarith
-
-/-- **Completed outputs of a tensor product of kernels.** The output at `(p₁, p₂)` is the tensor
-product of the outputs at `p₁` and at `p₂`. -/
-theorem kernelTensor_mem (hmfin₁ : ∀ p₁, m₁ p₁ ∈ NovikovModule R G₁)
-    (hmfin₂ : ∀ p₂, m₂ p₂ ∈ NovikovModule R G₂) (p : S₁ × S₂) :
-    kernelTensor m₁ m₂ p ∈ NovikovModule R fun q : T₁ × T₂ => G₁ q.1 + G₂ q.2 :=
-  mul_mem_prod ⟨m₁ p.1, hmfin₁ p.1⟩ ⟨m₂ p.2, hmfin₂ p.2⟩
 
 /-- **Kernel maps act factorwise on tensor products.** The map of the tensor product of two
 kernels sends the tensor product of `a` and `b` to the tensor product of their images. The
