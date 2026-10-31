@@ -20,6 +20,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.Ideals
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.Dual.Divisibility
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.LinearAlgebra.Submodule.Compl
 import TauCeti.Order.SupIndep
@@ -439,13 +440,10 @@ theorem exists_basis_toMatrix_mul_eq_of_isInternal [Module.Free R M] [Module.Fin
     Matrix.blockDiagonal' fun i : o ↦ π ^ (j - e i) • (U i)⁻¹, ?_, ?_, ?_⟩
   · -- The Gram matrix is block diagonal, with blocks `π ^ e i • U i`.
     have hG : B.toMatrix b = Matrix.blockDiagonal' fun i : o ↦ π ^ e i • U i := by
-      ext ⟨i, a⟩ ⟨i', a'⟩
-      rw [toMatrix_apply, DirectSum.IsInternal.collectedBasis_coe]
-      by_cases hii : i = i'
-      · subst hii
-        simp [Matrix.blockDiagonal'_apply_eq, U, toMatrix_apply, ← hCapp]
-      · rw [Matrix.blockDiagonal'_apply_ne _ _ _ hii]
-        exact horth _ _ hii _ (d i a).2 _ (d i' a').2
+      rw [toMatrix_collectedBasis hP horth]
+      congr 1
+      ext i a a'
+      simp [U, toMatrix_apply, ← hCapp]
     rw [hG, ← Matrix.blockDiagonal'_mul]
     have (i : o) : π ^ e i • U i * π ^ (j - e i) • (U i)⁻¹ = π ^ j • (1 : Matrix _ _ R) := by
       rw [Matrix.smul_mul, Matrix.mul_smul, smul_smul, ← pow_add, Nat.add_sub_cancel' (hle i),

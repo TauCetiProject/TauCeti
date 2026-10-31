@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 /-!
-# Invertibility of continuous linear maps: persistence and products
+# Invertibility of continuous linear maps: persistence, products, and completeness
 
 The totalized inverse of a continuous linear map is zero when the map is not invertible.
 Consequently, convergence of inverse maps to any nonzero map forces eventual invertibility.
@@ -21,6 +21,9 @@ inverse families.
 The file also records that the product `f.prodMap g` of two continuous linear maps is invertible
 exactly when both factors are, which is how block-diagonal second derivatives on a product space
 are shown to be invertible.
+
+Finally, between uniformly topologized modules an invertible continuous linear map transfers
+completeness from the codomain to the domain, because its inverse is a uniform homeomorphism.
 -/
 
 public section
@@ -29,6 +32,21 @@ open Filter
 open scoped Topology
 
 namespace ContinuousLinearMap
+
+section CompleteSpace
+
+variable {R E F : Type*} [Semiring R]
+  [UniformSpace E] [AddCommGroup E] [IsUniformAddGroup E] [Module R E]
+  [UniformSpace F] [AddCommGroup F] [IsUniformAddGroup F] [Module R F]
+
+/-- The domain of an invertible continuous linear map between uniformly topologized modules is
+complete when the codomain is: its inverse is a uniform homeomorphism. -/
+theorem completeSpace_of_isInvertible [CompleteSpace F] {f : E →L[R] F} (hf : f.IsInvertible) :
+    CompleteSpace E := by
+  obtain ⟨e, _⟩ := hf
+  exact (e.isUniformEmbedding.completeSpace_congr e.surjective).mpr inferInstance
+
+end CompleteSpace
 
 variable {𝕜 E F ι : Type*} [NormedField 𝕜]
   [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [T2Space E]
