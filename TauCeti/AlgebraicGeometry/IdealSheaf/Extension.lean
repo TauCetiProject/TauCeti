@@ -10,9 +10,10 @@ public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 /-!
 # Extending closed subschemes across open immersions
 
-The schematic closure of a closed subscheme of a quasi-compact open subscheme restricts
-back to the original closed subscheme, with its full scheme structure. In ideal-sheaf
-language, pushforward along a quasi-compact open immersion is a right inverse to pullback.
+The schematic closure of a closed subscheme across a quasi-compact open immersion
+(a retrocompact open) restricts back to the original closed subscheme, with its full scheme
+structure. In ideal-sheaf language, pushforward along a quasi-compact open immersion is a
+right inverse to pullback.
 
 Taking schematic closure also preserves avoidance of an open subset of the ambient scheme.
 These facts allow one to extend the centre of a blowup without introducing a centre on an
@@ -34,8 +35,8 @@ namespace AlgebraicGeometry.Scheme.IdealSheafData
 
 variable {X Y : Scheme.{u}}
 
-/-- The schematic closure of a closed subscheme of a quasi-compact open restricts to that
-same closed subscheme, including its nilpotents. -/
+/-- The schematic closure of a closed subscheme across a quasi-compact open immersion
+(a retrocompact open) restricts to that same closed subscheme, including its nilpotents. -/
 @[simp]
 theorem comap_map_of_isOpenImmersion (I : X.IdealSheafData) (j : X ⟶ Y)
     [IsOpenImmersion j] [QuasiCompact j] : (I.map j).comap j = I := by
