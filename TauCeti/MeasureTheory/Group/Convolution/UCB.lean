@@ -51,6 +51,7 @@ means on `UCB G` with invariant means on `L∞(G, μ)`.
 ## Main definitions
 
 * `MeasureTheory.Lp.convolutionUCB h`: the operator `φ ↦ h ⋆ φ` from `L∞(G, μ)` to `UCB G`.
+* `MeasureTheory.Lp.convolutionUCBL`: the continuous bilinear map `h ↦ (φ ↦ h ⋆ φ)`.
 
 ## Main results
 
@@ -58,6 +59,7 @@ means on `UCB G` with invariant means on `L∞(G, μ)`.
   and `MeasureTheory.Lp.convolutionUCB_apply_of_ae_eq` for arbitrary representatives.
 * `MeasureTheory.Lp.convolutionUCB_apply_mul`: `(h ⋆ φ) (u * x) = (h (u * ·) ⋆ φ) x`.
 * `MeasureTheory.Lp.norm_convolutionUCB_le`: the operator norm is at most `‖h‖₁`.
+* `MeasureTheory.Lp.continuous_convolutionUCB`: `h ⋆ ·` depends continuously on `h ∈ L¹(G, μ)`.
 * `MeasureTheory.Lp.convolutionUCB_nonneg`: `h ⋆ φ ≥ 0` when `h ≥ 0` and `φ ≥ 0`.
 * `MeasureTheory.Lp.convolutionUCB_linftyOne`: `h ⋆ 1 = (∫ h dμ) • 1`.
 
@@ -81,21 +83,16 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] {μ : Measure G}
   [μ.IsHaarMeasure] [μ.Regular]
 
-/-- For a regular Haar measure, `y ↦ y⁻¹ * x` preserves null sets: it is inversion followed by
-right translation by `x`. -/
-private theorem quasiMeasurePreserving_inv_mul (x : G) :
-    QuasiMeasurePreserving (fun y => y⁻¹ * x) μ μ :=
-  (quasiMeasurePreserving_mul_right_of_regular μ x).comp (quasiMeasurePreserving_inv_of_regular μ)
-
 /-- The translated function `y ↦ φ (y⁻¹ * x)` is bounded by `‖φ‖` almost everywhere. -/
 private theorem ae_norm_comp_inv_mul_le (φ : Lp ℝ ∞ μ) (x : G) :
     ∀ᵐ y ∂μ, ‖φ (y⁻¹ * x)‖ ≤ ‖φ‖ :=
-  (quasiMeasurePreserving_inv_mul x).ae (ae_le_lpNorm_exponent_top (Lp.memLp φ))
+  (quasiMeasurePreserving_inv_mul_of_regular μ x).ae (ae_le_lpNorm_exponent_top (Lp.memLp φ))
 
 private theorem integrable_mul_comp_inv_mul (h : Lp ℝ 1 μ) (φ : Lp ℝ ∞ μ) (x : G) :
     Integrable (fun y => h y * φ (y⁻¹ * x)) μ :=
   (L1.integrable_coeFn h).mul_bdd
-    ((Lp.aestronglyMeasurable φ).comp_quasiMeasurePreserving (quasiMeasurePreserving_inv_mul x))
+    ((Lp.aestronglyMeasurable φ).comp_quasiMeasurePreserving
+      (quasiMeasurePreserving_inv_mul_of_regular μ x))
     (ae_norm_comp_inv_mul_le φ x)
 
 /-- The convolution `x ↦ ∫ y, h y * φ (y⁻¹ * x) ∂μ` as a function. -/
@@ -106,7 +103,7 @@ private theorem convFun_of_ae_eq {h : Lp ℝ 1 μ} {φ : Lp ℝ ∞ μ} {h' φ' 
     (hh : h =ᵐ[μ] h') (hφ : φ =ᵐ[μ] φ') (x : G) :
     convFun h φ x = ∫ y, h' y * φ' (y⁻¹ * x) ∂μ := by
   refine integral_congr_ae ?_
-  filter_upwards [hh, (quasiMeasurePreserving_inv_mul x).ae_eq_comp hφ] with y hy hy'
+  filter_upwards [hh, (quasiMeasurePreserving_inv_mul_of_regular μ x).ae_eq_comp hφ] with y hy hy'
   simp only [Function.comp_apply] at hy'
   rw [hy, hy']
 
@@ -150,14 +147,14 @@ private theorem convFun_add_right (h : Lp ℝ 1 μ) (φ ψ : Lp ℝ ∞ μ) (x :
   rw [← integral_add (integrable_mul_comp_inv_mul h φ x)
     (integrable_mul_comp_inv_mul h ψ x)]
   refine integral_congr_ae ?_
-  filter_upwards [(quasiMeasurePreserving_inv_mul x).ae (Lp.coeFn_add φ ψ)] with y hy
+  filter_upwards [(quasiMeasurePreserving_inv_mul_of_regular μ x).ae (Lp.coeFn_add φ ψ)] with y hy
   rw [hy, Pi.add_apply, mul_add]
 
 private theorem convFun_smul_right (c : ℝ) (h : Lp ℝ 1 μ) (φ : Lp ℝ ∞ μ) (x : G) :
     convFun h (c • φ) x = c * convFun h φ x := by
   rw [convFun, convFun, ← integral_const_mul]
   refine integral_congr_ae ?_
-  filter_upwards [(quasiMeasurePreserving_inv_mul x).ae (Lp.coeFn_smul c φ)] with y hy
+  filter_upwards [(quasiMeasurePreserving_inv_mul_of_regular μ x).ae (Lp.coeFn_smul c φ)] with y hy
   rw [hy, Pi.smul_apply, smul_eq_mul, mul_left_comm]
 
 /-- Left translation of the argument of `h ⋆ φ` moves to the kernel `h`. -/
@@ -167,18 +164,16 @@ private theorem convFun_mul (h : Lp ℝ 1 μ) (φ : Lp ℝ ∞ μ) (u x : G) :
     ← integral_mul_left_eq_self _ u]
   simp [mul_assoc]
 
-/-- `Gᵈᵐᵃ` acts continuously on `L¹` of a regular Haar measure. -/
-private theorem tendsto_mk_smul (h : Lp ℝ 1 μ) :
-    Tendsto (fun u : G => mk u • h) (𝓝 1) (𝓝 h) := by
-  have : Fact ((1 : ℝ≥0∞) ≠ ∞) := ⟨ENNReal.one_ne_top⟩
-  have hc : Continuous fun u : G => mk u • h := continuous_mk.smul continuous_const
-  simpa using hc.tendsto 1
-
 private theorem convFun_mem_ucb (h : Lp ℝ 1 μ) (φ : Lp ℝ ∞ μ) :
     ∀ ε > 0, ∀ᶠ u in 𝓝 (1 : G), ∀ x, dist (convFun h φ (u * x)) (convFun h φ x) < ε := by
   intro ε hε
   have hδ : 0 < ε / (‖φ‖ + 1) := div_pos hε (by positivity)
-  filter_upwards [Metric.tendsto_nhds.1 (tendsto_mk_smul h) _ hδ] with u hu x
+  -- Left translation is continuous on `L¹` of a regular Haar measure.
+  have : Fact ((1 : ℝ≥0∞) ≠ ∞) := ⟨ENNReal.one_ne_top⟩
+  have hc : Tendsto (fun u : G => mk u • h) (𝓝 1) (𝓝 h) := by
+    have hcont : Continuous fun u : G => mk u • h := continuous_mk.smul continuous_const
+    simpa using hcont.tendsto 1
+  filter_upwards [Metric.tendsto_nhds.1 hc _ hδ] with u hu x
   have hsub : convFun h φ (u * x) - convFun h φ x = convFun (mk u • h - h) φ x := by
     rw [convFun_sub_left, convFun_mul]
   rw [Real.dist_eq, hsub]
@@ -257,24 +252,36 @@ theorem convolutionUCB_smul (c : ℝ) (h : Lp ℝ 1 μ) :
   ext φ x
   simpa [convFun] using convFun_smul_left c h φ x
 
-/-- `h ↦ (φ ↦ h ⋆ φ)` is linear. -/
-private def convolutionUCBₗ : Lp ℝ 1 μ →ₗ[ℝ] Lp ℝ ∞ μ →L[ℝ] UCB G where
-  toFun := convolutionUCB
-  map_add' := convolutionUCB_add
-  map_smul' := convolutionUCB_smul
+/-- Convolution as a continuous bilinear map `h ↦ (φ ↦ h ⋆ φ)` from `L¹(G, μ)` and `L∞(G, μ)` to
+`UCB G`, bounded by `‖h ⋆ φ‖∞ ≤ ‖h‖₁ ‖φ‖∞`. -/
+def convolutionUCBL : Lp ℝ 1 μ →L[ℝ] Lp ℝ ∞ μ →L[ℝ] UCB G :=
+  LinearMap.mkContinuous
+    { toFun := convolutionUCB
+      map_add' := convolutionUCB_add
+      map_smul' := convolutionUCB_smul } 1
+    fun h => by simpa using norm_convolutionUCB_le h
+
+@[simp]
+theorem convolutionUCBL_apply (h : Lp ℝ 1 μ) : convolutionUCBL h = convolutionUCB h :=
+  (rfl)
+
+/-- The operator `φ ↦ h ⋆ φ` depends continuously on the kernel `h ∈ L¹(G, μ)`. -/
+theorem continuous_convolutionUCB :
+    Continuous (convolutionUCB : Lp ℝ 1 μ → Lp ℝ ∞ μ →L[ℝ] UCB G) :=
+  convolutionUCBL.continuous
 
 @[simp]
 theorem convolutionUCB_zero : convolutionUCB (0 : Lp ℝ 1 μ) = 0 :=
-  map_zero (convolutionUCBₗ (G := G))
+  map_zero (convolutionUCBL (G := G))
 
 @[simp]
 theorem convolutionUCB_neg (h : Lp ℝ 1 μ) : convolutionUCB (-h) = -convolutionUCB h :=
-  map_neg convolutionUCBₗ h
+  map_neg convolutionUCBL h
 
 @[simp]
 theorem convolutionUCB_sub (h k : Lp ℝ 1 μ) :
     convolutionUCB (h - k) = convolutionUCB h - convolutionUCB k :=
-  map_sub convolutionUCBₗ h k
+  map_sub convolutionUCBL h k
 
 /-- Convolution with a nonnegative kernel is positive. -/
 theorem convolutionUCB_nonneg {h : Lp ℝ 1 μ} (hh : 0 ≤ h) {φ : Lp ℝ ∞ μ} (hφ : 0 ≤ φ) :
@@ -283,7 +290,7 @@ theorem convolutionUCB_nonneg {h : Lp ℝ 1 μ} (hh : 0 ≤ h) {φ : Lp ℝ ∞ 
   rw [convolutionUCB_apply]
   refine (integral_nonneg_of_ae ?_).trans_eq' (by simp)
   filter_upwards [(Lp.coeFn_nonneg h).2 hh,
-    (quasiMeasurePreserving_inv_mul x).ae ((Lp.coeFn_nonneg φ).2 hφ)] with y hy hy'
+    (quasiMeasurePreserving_inv_mul_of_regular μ x).ae ((Lp.coeFn_nonneg φ).2 hφ)] with y hy hy'
   exact mul_nonneg hy hy'
 
 /-- Convolution with a nonnegative kernel is monotone. -/
