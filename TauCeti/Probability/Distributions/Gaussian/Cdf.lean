@@ -226,14 +226,14 @@ theorem measureReal_gaussianReal_pos (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) {l r
     (measure_ne_top _ _)
 
 /-- At positive variance, the Gaussian mass of a set between the open and the closed interval
-with finite bounds `l < r` is a difference of standard Gaussian cdf values. -/
+with finite bounds `l ≤ r` is a difference of standard Gaussian cdf values. -/
 theorem measureReal_gaussianReal_eq_cdf_zero_one (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) {l r : ℝ}
-    {s : Set ℝ} (hlr : l < r) (hs₁ : Ioo l r ⊆ s) (hs₂ : s ⊆ Icc l r) :
+    {s : Set ℝ} (hlr : l ≤ r) (hs₁ : Ioo l r ⊆ s) (hs₂ : s ⊆ Icc l r) :
     (gaussianReal m v).real s = cdf (gaussianReal 0 1) ((r - m) / √(v : ℝ)) -
       cdf (gaussianReal 0 1) ((l - m) / √(v : ℝ)) := by
   have := nullSingletonClass_gaussianReal (μ := m) hv
   rw [Measure.measureReal_eq_sub_of_preimage_Ioo_subset (l := l) (r := r)
-      (EReal.coe_le_coe_iff.2 hlr.le)
+      (EReal.coe_le_coe_iff.2 hlr)
       (by rwa [EReal.preimage_coe_Ioo]) (by rwa [EReal.preimage_coe_Icc])]
   simp only [EReal.preimage_coe_Iic, ← cdf_eq_real, cdf_gaussianReal_eq_cdf_zero_one m hv]
 
@@ -262,16 +262,16 @@ theorem hasDerivAt_measureReal_gaussianReal_preimage_Iic {v : ℝ≥0} (hv : v �
       ((hasDerivAt_id' μ).const_sub x)
 
 /-- At positive variance, the Gaussian mass of a set between the open and the closed interval with
-extended bounds `l < r`, as a function of the mean, has derivative the difference of the Gaussian
+extended bounds `l ≤ r`, as a function of the mean, has derivative the difference of the Gaussian
 densities at the two bounds. -/
 theorem hasDerivAt_measureReal_gaussianReal {v : ℝ≥0} (hv : v ≠ 0) {l r : EReal} {s : Set ℝ}
-    (hlr : l < r) (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s) (hs₂ : s ⊆ Real.toEReal ⁻¹' Icc l r)
+    (hlr : l ≤ r) (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s) (hs₂ : s ⊆ Real.toEReal ⁻¹' Icc l r)
     (μ : ℝ) :
     HasDerivAt (fun μ => (gaussianReal μ v).real s)
       (gaussianPDFRealEReal μ v l - gaussianPDFRealEReal μ v r) μ := by
   have hmass (μ : ℝ) := by
     have := nullSingletonClass_gaussianReal (μ := μ) hv
-    exact Measure.measureReal_eq_sub_of_preimage_Ioo_subset (μ := gaussianReal μ v) hlr.le hs₁
+    exact Measure.measureReal_eq_sub_of_preimage_Ioo_subset (μ := gaussianReal μ v) hlr hs₁
       hs₂
   simp_rw [hmass]
   convert (hasDerivAt_measureReal_gaussianReal_preimage_Iic hv r μ).sub

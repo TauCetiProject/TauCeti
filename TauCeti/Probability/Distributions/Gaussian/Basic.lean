@@ -103,11 +103,13 @@ theorem gaussianPDFRealEReal_nonneg (m : ℝ) (v : ℝ≥0) (e : EReal) :
     0 ≤ gaussianPDFRealEReal m v e := by
   induction e <;> simp [gaussianPDFReal_nonneg]
 
-/-- At positive variance, the Gaussian density at an extended point `e`, as a function of the
-mean `μ`, has derivative `(e - μ) / v` times the density; both vanish at an infinite point. -/
-theorem hasDerivAt_gaussianPDFRealEReal {v : ℝ≥0} (hv : v ≠ 0) (e : EReal) (μ : ℝ) :
+/-- The Gaussian density at an extended point `e`, as a function of the mean `μ`, has derivative
+`(e - μ) / v` times the density; both vanish at an infinite point and at zero variance. -/
+theorem hasDerivAt_gaussianPDFRealEReal (v : ℝ≥0) (e : EReal) (μ : ℝ) :
     HasDerivAt (fun μ => gaussianPDFRealEReal μ v e)
       ((e.toReal - μ) * gaussianPDFRealEReal μ v e / v) μ := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · induction e <;> simpa [gaussianPDFReal_zero_var] using hasDerivAt_const μ (0 : ℝ)
   induction e with
   | bot => simpa using hasDerivAt_const μ (0 : ℝ)
   | top => simpa using hasDerivAt_const μ (0 : ℝ)

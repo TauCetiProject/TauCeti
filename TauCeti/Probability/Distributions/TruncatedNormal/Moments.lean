@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Distributions.TruncatedNormal.Basic
 public import Mathlib.Probability.Moments.MGFAnalytic
 public import Mathlib.Probability.Moments.Variance
-import TauCeti.Probability.Distributions.Gaussian.Basic
 import TauCeti.Probability.Distributions.Tilted
 
 /-!
@@ -141,7 +140,7 @@ private theorem hasDerivAt_mgf_id_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l
     convert ((((hasDerivAt_id' t).const_mul m).fun_add
       ((((hasDerivAt_id' t).fun_pow 2).const_mul (v : ℝ)).div_const 2))).exp using 1
     ring
-  have hmass₀ := (hasDerivAt_measureReal_gaussianReal hv hlr hs₁ hs₂ (m + v * t)).comp t hmean
+  have hmass₀ := (hasDerivAt_measureReal_gaussianReal hv hlr.le hs₁ hs₂ (m + v * t)).comp t hmean
   have hmass : HasDerivAt (fun t : ℝ => (gaussianReal (m + v * t) v).real s) _ t := hmass₀
   rw [show mgf id (truncatedNormalMeasure m v s) = fun t => exp (m * t + v * t ^ 2 / 2) *
       (gaussianReal (m + v * t) v).real s / (gaussianReal m v).real s from
@@ -186,10 +185,10 @@ theorem variance_id_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l < r)
     convert ((((hasDerivAt_id' (0 : ℝ)).const_mul m).fun_add
       ((((hasDerivAt_id' (0 : ℝ)).fun_pow 2).const_mul (v : ℝ)).div_const 2))).exp using 1
     simp
-  have hmass₀ := (hasDerivAt_measureReal_gaussianReal hv hlr hs₁ hs₂ (m + v * 0)).comp 0 hmean
+  have hmass₀ := (hasDerivAt_measureReal_gaussianReal hv hlr.le hs₁ hs₂ (m + v * 0)).comp 0 hmean
   have hmass : HasDerivAt (fun t : ℝ => (gaussianReal (m + v * t) v).real s) _ 0 := hmass₀
-  have hdens₀ := ((hasDerivAt_gaussianPDFRealEReal hv l (m + v * 0)).sub
-    (hasDerivAt_gaussianPDFRealEReal hv r (m + v * 0))).comp 0 hmean
+  have hdens₀ := ((hasDerivAt_gaussianPDFRealEReal v l (m + v * 0)).sub
+    (hasDerivAt_gaussianPDFRealEReal v r (m + v * 0))).comp 0 hmean
   have hdens : HasDerivAt (fun t : ℝ => gaussianPDFRealEReal (m + v * t) v l -
       gaussianPDFRealEReal (m + v * t) v r) _ 0 := hdens₀
   have hsecond : HasDerivAt (fun t : ℝ =>
@@ -234,8 +233,8 @@ theorem mgf_id_truncatedNormalMeasure_eq_cdf_zero_one {l r : ℝ} (hv : v ≠ 0)
     rw [hvσ]
     field_simp
     ring
-  rw [mgf_id_truncatedNormalMeasure, measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr hs₁ hs₂,
-    measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr hs₁ hs₂, hshift, hshift]
+  rw [mgf_id_truncatedNormalMeasure, measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr.le hs₁ hs₂,
+    measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr.le hs₁ hs₂, hshift, hshift]
 
 /-- The mean of a normal law of positive variance truncated to an interval with finite bounds
 `l < r`: with `s₀ = √v`, `α = (l - m) / s₀`, `β = (r - m) / s₀`, `φ` and `Φ` the standard Gaussian
@@ -250,7 +249,7 @@ theorem integral_id_truncatedNormalMeasure_eq_cdf_zero_one {l r : ℝ} (hv : v �
   have hv' : (0 : ℝ) < √(v : ℝ) := Real.sqrt_pos.2 (NNReal.coe_pos.2 (pos_iff_ne_zero.2 hv))
   rw [integral_id_truncatedNormalMeasure (l := l) (r := r) hv (EReal.coe_lt_coe_iff.2 hlr)
       (by rwa [EReal.preimage_coe_Ioo]) (by rwa [EReal.preimage_coe_Icc]),
-    measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr hs₁ hs₂]
+    measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr.le hs₁ hs₂]
   simp only [gaussianPDFRealEReal_coe, gaussianPDFReal_eq_gaussianPDFReal_zero_one m v]
   have hvσ : (v : ℝ) = √(v : ℝ) ^ 2 := (Real.sq_sqrt (NNReal.coe_nonneg v)).symm
   generalize √(v : ℝ) = σ at hv' hvσ ⊢
@@ -274,12 +273,12 @@ theorem variance_id_truncatedNormalMeasure_eq_cdf_zero_one {l r : ℝ} (hv : v �
   have hv' : (0 : ℝ) < √(v : ℝ) := Real.sqrt_pos.2 (NNReal.coe_pos.2 (pos_iff_ne_zero.2 hv))
   have hZ : cdf (gaussianReal 0 1) ((r - m) / √(v : ℝ)) -
       cdf (gaussianReal 0 1) ((l - m) / √(v : ℝ)) ≠ 0 := by
-    rw [← measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr hs₁ hs₂]
+    rw [← measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr.le hs₁ hs₂]
     exact (measureReal_gaussianReal_pos m hv (EReal.coe_lt_coe_iff.2 hlr)
       (by rwa [EReal.preimage_coe_Ioo])).ne'
   rw [variance_id_truncatedNormalMeasure (l := l) (r := r) hv (EReal.coe_lt_coe_iff.2 hlr)
       (by rwa [EReal.preimage_coe_Ioo]) (by rwa [EReal.preimage_coe_Icc]),
-    measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr hs₁ hs₂]
+    measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr.le hs₁ hs₂]
   simp only [gaussianPDFRealEReal_coe, EReal.toReal_coe,
     gaussianPDFReal_eq_gaussianPDFReal_zero_one m v]
   have hvσ : (v : ℝ) = √(v : ℝ) ^ 2 := (Real.sq_sqrt (NNReal.coe_nonneg v)).symm
