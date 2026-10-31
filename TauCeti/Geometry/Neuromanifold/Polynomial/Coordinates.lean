@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Neuromanifold.Polynomial.Presentation
+public import TauCeti.Geometry.Neuromanifold.Polynomial.Basic
 
 /-!
 # Linear coordinates on polynomial coefficient presentations
@@ -47,6 +47,31 @@ noncomputable def polynomialCoefficientTransform (P : J → MvPolynomial (W ⊕ 
   exact fun i => ∑ a : J × {s : X →₀ ℕ // s.degree ≤ polynomialInputDegree P},
     C (T ((boundedCoefficientEquiv X K J _).symm (Pi.single a 1)) i) *
       (inputPolynomial P a.1).coeff a.2
+
+open scoped Classical in
+/-- Each transformed coordinate is the linear combination of the monomial coefficient
+polynomials specified by `T`, independently of the finite enumeration of the coefficients. -/
+theorem polynomialCoefficientTransform_eq_sum (P : J → MvPolynomial (W ⊕ X) K)
+    (T : (J → restrictTotalDegree X K (polynomialInputDegree P)) →ₗ[K] (I → K))
+    [Fintype (J × {s : X →₀ ℕ // s.degree ≤ polynomialInputDegree P})] (i : I) :
+    polynomialCoefficientTransform P T i =
+      ∑ a : J × {s : X →₀ ℕ // s.degree ≤ polynomialInputDegree P},
+        C (T ((boundedCoefficientEquiv X K J _).symm (Pi.single a 1)) i) *
+          (inputPolynomial P a.1).coeff a.2 := by
+  classical
+  unfold polynomialCoefficientTransform
+  congr 1
+  ext a
+  simp
+
+/-- The zero linear transform gives the zero polynomial in every coordinate. -/
+@[simp]
+theorem polynomialCoefficientTransform_zero (P : J → MvPolynomial (W ⊕ X) K) (i : I) :
+    polynomialCoefficientTransform P
+      (0 : (J → restrictTotalDegree X K (polynomialInputDegree P)) →ₗ[K] (I → K)) i = 0 := by
+  classical
+  let := Fintype.ofFinite (J × {s : X →₀ ℕ // s.degree ≤ polynomialInputDegree P})
+  simp [polynomialCoefficientTransform_eq_sum]
 
 /-- The transformed parameter polynomials evaluate to the linear transform of the coefficient
 map, including when specialization cancels coefficients. -/
