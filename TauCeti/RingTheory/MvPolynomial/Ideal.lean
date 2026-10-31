@@ -39,7 +39,7 @@ its graph equations `Y i - f i`. These formulas need no monomial order.
 * `MvPolynomial.coeff_mul_of_mem_pow_idealOfVars`: for `p ∈ J ^ k` and a monomial `e` of total
   degree at most `k`, the coefficient of `e` in `p * q` is the coefficient of `e` in `p` times the
   constant coefficient of `q`.
-* `MvPolynomial.ker_aeval_sum_elim`: the graph equations generate the kernel of substitution
+* `MvPolynomial.ker_aeval_sumElim`: the graph equations generate the kernel of substitution
   which keeps the original variables.
 * `MvPolynomial.ker_aeval_eq_comap_graph`: the relations among a family of polynomials are
   obtained by eliminating the original variables from its graph ideal.
@@ -100,7 +100,7 @@ variable {ι : Type*} {R : Type*} [CommRing R]
 
 /-- The graph of a family of polynomials is cut out by the equations
 `Y i - f i`: their ideal is the kernel of substitution, keeping the original variables. -/
-theorem ker_aeval_sum_elim (f : ι → MvPolynomial σ R) :
+theorem ker_aeval_sumElim (f : ι → MvPolynomial σ R) :
     RingHom.ker (aeval (Sum.elim X f)) =
       Ideal.span (Set.range fun i ↦ X (Sum.inr i) - rename Sum.inl (f i)) := by
   let J := Ideal.span (Set.range fun i ↦ X (Sum.inr i) - rename Sum.inl (f i))
@@ -126,7 +126,7 @@ theorem ker_aeval_eq_comap_graph (f : ι → MvPolynomial σ R) :
     RingHom.ker (aeval f) =
       (Ideal.span (Set.range fun i ↦ X (Sum.inr i) - rename Sum.inl (f i))).comap
         (rename (R := R) Sum.inr) := by
-  rw [← ker_aeval_sum_elim]
+  rw [← ker_aeval_sumElim]
   ext p
   simp [RingHom.mem_ker, aeval_rename]
 
