@@ -40,6 +40,8 @@ the last basis vector.
   fixes the last one.
 * `Matrix.transpose_blockSucc`: extending a matrix commutes with transposing it, the last row and
   column of the identity matrix being exchanged with each other.
+* `Matrix.map_blockSucc`: extending a matrix commutes with applying a ring homomorphism
+  entrywise.
 * `Matrix.trace_blockSucc` and `Matrix.det_blockSucc`: the trace grows by one and the determinant
   is unchanged.
 -/
@@ -150,6 +152,23 @@ def blockSuccMonoidHom (k : Type u) (n : ℕ) [Semiring k] :
 theorem blockSuccMonoidHom_apply (M : Matrix (Fin n) (Fin n) k) :
     blockSuccMonoidHom k n M = blockSucc M :=
   (rfl)
+
+/-- Applying a ring homomorphism entrywise commutes with extending a matrix to the next size,
+since the homomorphism fixes the entries `0` and `1` of the last row and column. -/
+@[simp]
+theorem map_blockSucc {α F : Type*} [Semiring α] [FunLike F k α] [RingHomClass F k α]
+    (M : Matrix (Fin n) (Fin n) k) (f : F) :
+    (blockSucc M).map f = blockSucc (M.map f) := by
+  ext i j
+  induction i using Fin.lastCases with
+  | last =>
+    induction j using Fin.lastCases with
+    | last => simp
+    | cast j => simp
+  | cast i =>
+    induction j using Fin.lastCases with
+    | last => simp
+    | cast j => simp
 
 /-- Extending a matrix loses no information: `Matrix.blockSucc` is injective, because the
 upper-left block of `Matrix.blockSucc M` is `M`.  Use it to transfer an equation between extended

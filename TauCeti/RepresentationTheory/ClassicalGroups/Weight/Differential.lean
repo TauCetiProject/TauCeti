@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.GeneralLinear.GelfandInvariant.HighestWeight
 public import TauCeti.Algebra.Lie.GeneralLinear.HighestWeight
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 public import TauCeti.RepresentationTheory.ClassicalGroups.Differential
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Differential
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Differential
+import TauCeti.Algebra.Lie.Submodule.Atom
 import TauCeti.RingTheory.FiniteType.PointSeparation
 
 /-!
@@ -58,6 +60,9 @@ it to `lᵢ φ(w)`.
   `xᵢⱼ` is killed by `Eᵢⱼ`.
 * `TauCeti.IsRationalRep.isGlHighestWeightVector_differential`: a highest weight vector for the
   transvections is a highest weight vector for `𝔤𝔩ₙ` through the differential.
+* `TauCeti.IsRationalRep.lift_differential_gelfandInvariant_apply`: on an irreducible rational
+  representation with a highest weight vector of weight `λ`, the Gelfand invariant
+  `Cᵣ = trace (𝔼 ^ r)` of `U(𝔤𝔩ₙ)` acts by the scalar `gelfandEigenvalue λ r`.
 
 ## References
 
@@ -176,6 +181,34 @@ theorem isGlHighestWeightVector_differential (hρ : IsRationalRep ρ) {l : Fin n
       hρ.differential_single_self_apply_of_mem_weightSpace hwl]
   · rw [LieRingModule.compLieHom_apply, Module.End.lie_apply,
       hρ.differential_single_apply_eq_zero hij.ne (hw i j hij)]
+
+/-- **The Gelfand invariants act on an irreducible rational representation by their
+highest-weight eigenvalues.** If `ρ` is irreducible and has a nonzero vector of weight `λ` fixed
+by every transvection `xᵢⱼ(c)` with `i < j`, then the Gelfand invariant `Cᵣ = trace (𝔼 ^ r)` of
+`U(𝔤𝔩ₙ)` acts on `ρ` through its differential by the scalar `gelfandEigenvalue λ r`. -/
+theorem lift_differential_gelfandInvariant_apply (hρ : IsRationalRep ρ) [ρ.IsIrreducible]
+    {l : Fin n → ℤ} {w : W} (hw0 : w ≠ 0) (hwl : w ∈ weightSpace ρ l)
+    (hw : ∀ (i j : Fin n) (hij : i < j) (c : ℂ), ρ (transvectionUnit hij.ne c) w = w) (r : ℕ)
+    (x : W) :
+    UniversalEnvelopingAlgebra.lift ℂ hρ.differential (gelfandInvariant ℂ (Fin n) r) x =
+      gelfandEigenvalue (fun i ↦ (l i : ℂ)) r • x := by
+  let _ := LieRingModule.compLieHom W hρ.differential
+  let _ := LieModule.compLieHom W hρ.differential
+  have := hρ.isIrreducible_differential
+  -- Through the Lie module structure given by `dρ`, the enveloping-algebra representation is the
+  -- lift of `dρ`.
+  have hrep : UniversalEnvelopingAlgebra.lift ℂ hρ.differential =
+      TauCeti.UniversalEnvelopingAlgebra.representation ℂ (Matrix (Fin n) (Fin n) ℂ) W := by
+    apply _root_.UniversalEnvelopingAlgebra.hom_ext
+    refine LieHom.ext fun X ↦ ?_
+    simp only [LieHom.comp_apply, AlgHom.coe_toLieHom, UniversalEnvelopingAlgebra.lift_ι_apply,
+      TauCeti.UniversalEnvelopingAlgebra.representation_ι]
+    ext v
+    rw [LieModule.toEnd_apply_apply, LieRingModule.compLieHom_apply, Module.End.lie_apply]
+  rw [hrep]
+  exact gelfandInvariant_smul_of_isGlHighestWeightVector_of_lieSpan_eq_top
+    (hρ.isGlHighestWeightVector_differential hw0 hwl hw) (lieSpan_singleton_eq_top_of_ne_zero hw0)
+    r x
 
 end IsRationalRep
 
