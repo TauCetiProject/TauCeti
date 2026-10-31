@@ -32,8 +32,10 @@ adjacent ones included.
 The definitions follow the proposal
 [mathlib4#33355](https://github.com/leanprover-community/mathlib4/pull/33355), and their shape
 and API follow Mathlib's `SimpleGraph.IsEdgeReachable` and `SimpleGraph.IsEdgeConnected`. The
-vertex count condition is the usual one, as in R. Diestel, *Graph Theory*, 5th ed., Graduate Texts
-in Mathematics 173, Springer, 2017, Section 1.4.
+numerical invariant follows the multigraph `Graph.edgeConnectivity` in
+`TauCeti.Combinatorics.Graph.Connectivity.EdgeConnectivity`, a supremum in `ℕ∞` of natural
+thresholds. The vertex count condition is the usual one, as in R. Diestel, *Graph Theory*, 5th
+ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 1.4.
 
 ## Main definitions
 
