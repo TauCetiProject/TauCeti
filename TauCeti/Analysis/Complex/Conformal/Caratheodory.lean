@@ -39,9 +39,9 @@ length–area method:
   below any prescribed bound, a compact set `K` of diameter at most `ε` consisting of the closed
   image crosscut and a small connected piece of the image boundary joining its two ends;
 * **the far side stays wide.** `TauCeti.exists_pos_forall_le_diam_image_sdiff_closedBall`, applied
-  at the point `ζ` off the disc, gives a `d > 0` below which the image of the far side
-  `ball c r \ closedBall ζ ρ` never shrinks, for every small `ρ`; taking `K` narrower than `d` makes
-  it narrower than the far side;
+  at the point `ζ` off the disc (so that the far side at radius `0` is the whole disc), gives a
+  `d > 0` below which the image of the far side `ball c r \ closedBall ζ ρ` never shrinks, for every
+  small `ρ`; taking `K` narrower than `d` makes it narrower than the far side;
 * **both sides of the cut are connected.** The near side `ball c r ∩ ball ζ ρ` is an intersection of
   two discs, hence convex (`TauCeti.isConnected_ball_inter_ball`); the far side
   `ball c r \ closedBall ζ ρ` is connected by the Möbius reduction
@@ -133,11 +133,11 @@ theorem exists_diam_image_ball_inter_ball_le_of_locallyConnectedSpace_frontier
       abs_of_pos hhalf]
     linarith
   have hne : c ≠ c + ((r / 2 : ℝ) : ℂ) := by simp [hr.ne']
-  have hnotsub : ¬ (f '' ball c r).Subsingleton := fun h =>
-    hne (hinj hc hc' (h (mem_image_of_mem f hc) (mem_image_of_mem f hc')))
   have hζball : ζ ∉ ball c r := by simp [mem_ball, hζ]
-  obtain ⟨d, hd, ρ₀, hρ₀, hfar⟩ :=
-    exists_pos_forall_le_diam_image_sdiff_closedBall hnotsub hζball hb
+  have hnontriv : (f '' (ball c r \ closedBall ζ 0)).Nontrivial := by
+    rw [closedBall_zero, sdiff_singleton_eq_self hζball]
+    exact ⟨_, mem_image_of_mem f hc, _, mem_image_of_mem f hc', fun h => hne (hinj hc hc' h)⟩
+  obtain ⟨d, hd, ρ₀, hρ₀, hfar⟩ := exists_pos_forall_le_diam_image_sdiff_closedBall hnontriv hb
   -- a small enclosing set along the image crosscut, narrower than half the far-side width
   have hulc : IsUniformlyLocallyConnected (frontier (f '' ball c r)) :=
     (isCompact_of_isClosed_isBounded isClosed_frontier

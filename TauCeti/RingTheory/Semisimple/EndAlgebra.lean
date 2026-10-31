@@ -186,7 +186,7 @@ theorem nonempty_algEquiv_matrix_mulOpposite_end :
       Matrix (Fin (finrank K R)) (Fin (finrank K R)) (Module.End R M)ᵐᵒᵖ) := by
   have hdim : finrank K (Fin (finrank K R) → M) = finrank K (Fin (finrank K M) → R) := by
     simp [Module.finrank_pi_fintype, mul_comm]
-  obtain ⟨e⟩ := TauCeti.IsSimpleRing.nonempty_linearEquiv_of_finrank_eq (R := R) K hdim
+  obtain ⟨e⟩ := nonempty_linearEquiv_of_finrank_eq (R := R) K hdim
   exact ⟨(matrixAlgEquivEndVecMulOpposite K).trans <|
     (AlgEquiv.op (e.symm.conjAlgEquiv K)).trans <|
       (AlgEquiv.op (endVecAlgEquivMatrixEnd _ K R M)).trans AlgEquiv.mopMatrix.symm⟩
