@@ -15,7 +15,7 @@ Let `f : X ⟶ S` be a morphism of schemes, `U` an affine open of `S`, `V ⊆ f�
 of `X`, and `R` a `Γ(S, U)`-algebra. Then `Spec (R ⊗[Γ(S, U)] Γ(X, V))` is an open of the base
 change `X ×[S] Spec R`, with the evident projections, and for `e : R ⊗[Γ(S, U)] Γ(X, V)` the image
 of the basic open `D(e)` is finite over `Spec R` as soon as `R → (R ⊗[Γ(S, U)] Γ(X, V))[1/e]` is
-finite (`AlgebraicGeometry.exists_isOpenImmersion_tensor_isFinite`).
+finite (`AlgebraicGeometry.Scheme.Hom.exists_isOpenImmersion_tensor_isFinite`).
 
 This is the chart in which an algebraic statement about `Γ(S, U) → Γ(X, V)`, such as Stacks 00UJ,
 is turned into a finite open of a base change of `f`. It is the chart used in Mathlib's
@@ -38,7 +38,7 @@ universe u
 `Spec (R ⊗[Γ(S, U)] Γ(X, V))` is an open of `X ×[S] Spec R`, with the evident projections, and
 the image of `D(e)` is finite over `Spec R` whenever `R → (R ⊗[Γ(S, U)] Γ(X, V))[1/e]` is finite.
 -/
-lemma exists_isOpenImmersion_tensor_isFinite {X S : Scheme.{u}} (f : X ⟶ S)
+lemma Scheme.Hom.exists_isOpenImmersion_tensor_isFinite {X S : Scheme.{u}} (f : X ⟶ S)
     {U : S.Opens} (hU : IsAffineOpen U) {V : X.Opens} (hV : IsAffineOpen V) (hUV : V ≤ f ⁻¹ᵁ U)
     (R : Type u) [CommRing R] [Algebra Γ(S, U) R] :
     letI := (f.appLE U V hUV).hom.toAlgebra

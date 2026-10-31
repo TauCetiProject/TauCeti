@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Etale.QuasiFinite
+public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
+public import Mathlib.RingTheory.TensorProduct.Basic
 
 /-!
 # Residue fields of a base change with trivial residue field extension

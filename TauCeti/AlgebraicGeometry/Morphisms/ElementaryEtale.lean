@@ -8,10 +8,11 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
+import Mathlib.RingTheory.Etale.QuasiFinite
 import Mathlib.Tactic.Algebraize
 import TauCeti.AlgebraicGeometry.Morphisms.Finite.AffineChart
 import TauCeti.AlgebraicGeometry.ResidueField
-import TauCeti.RingTheory.Etale.QuasiFinite
+import TauCeti.RingTheory.TensorProduct.ResidueField
 
 /-!
 # Elementary étale neighbourhoods of a quasi-finite point
@@ -35,7 +36,7 @@ The construction is that of Mathlib's `AlgebraicGeometry.exists_etale_isCompl_of
 (Andrew Yang), which proves the finiteness statement on its way to Zariski's main theorem. There
 `f` is assumed separated so that the open is also closed; that conclusion is not needed here, and
 neither is separatedness. The chart is
-`AlgebraicGeometry.exists_isOpenImmersion_tensor_isFinite`, and the affine input is
+`AlgebraicGeometry.Scheme.Hom.exists_isOpenImmersion_tensor_isFinite`, and the affine input is
 Mathlib's `Algebra.exists_etale_isIdempotentElem_forall_liesOver_eq` (Stacks 00UJ), whose
 additional conclusions give the residue field isomorphism at `u`, the uniqueness of `v`, and,
 through `Ideal.ResidueField.bijective_map_includeRight`, the residue field isomorphism at `v`.
@@ -98,7 +99,7 @@ theorem Scheme.Hom.exists_elementaryEtale_finite_of_isolated {X S : Scheme.{u}} 
   let φ : Γ(S, U) ⟶ ↧R := CommRingCat.ofHom <| algebraMap Γ(S, U) R
   have hφ : φ.hom.Etale := RingHom.etale_algebraMap.mpr ‹_›
   have : Etale (Spec.map φ) := HasRingHomProperty.Spec_iff.mpr hφ
-  obtain ⟨g, _, hgfst, hgsnd, hfin⟩ := exists_isOpenImmersion_tensor_isFinite f hU hV hUV R
+  obtain ⟨g, _, hgfst, hgsnd, hfin⟩ := f.exists_isOpenImmersion_tensor_isFinite hU hV hUV R
   let W₁ := g ''ᵁ PrimeSpectrum.basicOpen e
   have : IsFinite (W₁.ι ≫ pullback.snd f _) := hfin e (RingHom.finite_algebraMap.mpr ‹_›)
   -- Step 3: the points `u = P` and `v = g P'`. They are introduced as points of the spectra, not
@@ -114,7 +115,7 @@ theorem Scheme.Hom.exists_elementaryEtale_finite_of_isolated {X S : Scheme.{u}} 
   refine ⟨Spec ↧R, Spec.map φ ≫ hU.fromSpec, u, inferInstance, hu, ?_, W₁,
     ⟨g v, v, heP', rfl⟩, ‹_›, ?_, ?_, ?_, ?_⟩
   · -- `κ(f x) ≅ κ(u)`: the residue field map of the open immersion `hU.fromSpec`, then 00UJ.
-    have := (isIso_SpecMap_residueFieldMap_iff (algebraMap Γ(S, U) R) u _
+    have := ((algebraMap Γ(S, U) R).isIso_SpecMap_residueFieldMap_iff u _
       (u.asIdeal.over_def _)).mpr hres
     rw [Scheme.residueFieldMap_comp]
     have h₁ : IsIso (hU.fromSpec.residueFieldMap ((Spec.map φ) u)) := inferInstance
@@ -132,7 +133,7 @@ theorem Scheme.Hom.exists_elementaryEtale_finite_of_isolated {X S : Scheme.{u}} 
       (hU.primeIdealOf ⟨f x, hxU⟩).asIdeal u.asIdeal (hV.primeIdealOf ⟨x, hxV⟩).asIdeal v.asIdeal
       hP'.symm hres
     -- Elaborating the equivalence before applying it to `hb` avoids an expensive unification.
-    have h₂' := isIso_SpecMap_residueFieldMap_iff
+    have h₂' := RingHom.isIso_SpecMap_residueFieldMap_iff
       Algebra.TensorProduct.includeRight.toRingHom v _ hP'.symm
     have h₂ := h₂'.mpr hb
     have h₃ : IsIso ((g ≫ pullback.fst _ _).residueFieldMap v) := by
