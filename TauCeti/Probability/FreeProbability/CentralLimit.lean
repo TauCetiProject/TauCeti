@@ -163,9 +163,11 @@ private theorem IsFreelyIndependentElements.tendsto_apply_inv_sqrt_smul_sum_pow
           if π.1.IsPairing then σ2 ^ #π.1.parts else 0 := by
     rw [← sum_filter, Fintype.card_subtype, mul_comm, ← nsmul_eq_mul, ← sum_const]
     refine sum_congr rfl fun π hπ => ?_
-    have := (mem_filter.1 hπ).2.card_eq_two_mul
-    rw [card_univ, Fintype.card_fin] at this
-    rw [show n / 2 = #π.1.parts by omega]
+    -- A pairing of `n` points has `n / 2` parts.
+    have hcard := (mem_filter.1 hπ).2.card_eq_two_mul
+    rw [card_univ, Fintype.card_fin] at hcard
+    have hparts : n / 2 = #π.1.parts := by omega
+    rw [hparts]
   rw [hL]
   refine (tendsto_finsetSum _ fun π _ =>
     tendsto_inv_sqrt_pow_mul_prod_sum_freeCumulant hcen hbdd hvar π).congr fun N => ?_
