@@ -8,11 +8,12 @@ module
 public import TauCeti.Analysis.BoundedVariation.VariationMeasure
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Integral.CompactlySupported
-import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.Analysis.BoundedVariation.DerivativeMeasure
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.MeasureTheory.Integral.Lebesgue.OpenSet
+import TauCeti.MeasureTheory.Measure.Decomposition.RadonNikodym
 
 /-!
 # The polar decomposition of the derivative of a function of locally bounded variation
@@ -99,18 +100,10 @@ private theorem exists_le_one :
       add_eq_zero, Finset.sum_eq_zero_iff, Finset.mem_univ, true_implies] at hs
     rcases hν with rfl | rfl
     exacts [(hs.2 i).1, (hs.2 i).2]
-  -- Integrals against `ν₁ i` and `ν₂ i` as integrals against `ρ`.
-  have hrn {i} {ν : Measure Ω} (hν : ν = ν₁ i ∨ ν = ν₂ i) (ψ : 𝓓(Ω, ℝ)) :
-      Integrable (fun x => (ν.rnDeriv ρ x).toReal * ψ x) ρ ∧
-        ∫ x, ψ x ∂ν = ∫ x, (ν.rnDeriv ρ x).toReal * ψ x ∂ρ := by
-    have : ν.Regular := by rcases hν with rfl | rfl; exacts [h₁ i, h₂ i]
-    have hψ : Integrable (fun x : Ω => ψ x) ν := by
-      have h := ψ.toCompactlySupportedContinuousMap.integrable (μ := ν)
-      exact h.congr (ae_of_all _ (toCompactlySupportedContinuousMap_apply ψ))
-    exact ⟨(integrable_toReal_rnDeriv_mul_iff (hac hν)).2 hψ,
-      (integral_toReal_rnDeriv_mul (hac hν)).symm⟩
   -- The vector field `g` of densities of the directional derivatives.
   set f : _ → Ω → ℝ := fun i x => ((ν₁ i).rnDeriv ρ x).toReal - ((ν₂ i).rnDeriv ρ x).toReal
+  have hloc (i) : LocallyIntegrable (f i) ρ :=
+    Measure.locallyIntegrable_toReal_rnDeriv.sub Measure.locallyIntegrable_toReal_rnDeriv
   set g : Ω → E := fun x => ∑ i, f i x • b i with hg
   have hgm : Measurable g := Finset.measurable_sum _ fun i _ =>
     ((Measure.measurable_rnDeriv _ _).ennreal_toReal.sub
@@ -121,60 +114,42 @@ private theorem exists_le_one :
     have hφ : φ = ∑ i, postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (b i)) (ψ i) := by
       ext x
       simp [ψ, b.sum_repr']
-    have hf (i) : ∫ x, f i x * ψ i x ∂ρ = ∫ x, ψ i x ∂ν₁ i - ∫ x, ψ i x ∂ν₂ i := by
-      rw [(hrn (i := i) (Or.inl rfl) (ψ i)).2, (hrn (i := i) (Or.inr rfl) (ψ i)).2,
-        ← integral_sub (hrn (i := i) (Or.inl rfl) (ψ i)).1 (hrn (i := i) (Or.inr rfl) (ψ i)).1]
-      simp only [f, sub_mul]
     calc ∫ x, divergenceCLM φ x * u x ∂μ
         = Distribution.ofFun Ω u μ ⊤ (divergenceCLM φ) := by
           simp [Distribution.ofFun_apply hu]
       _ = -∑ i, ∂_{b i} (Distribution.ofFun Ω u μ ⊤) (ψ i) := by
           conv_lhs => rw [hφ]
           simp [divergenceCLM_postcompCLM_toSpanSingleton]
-      _ = -∑ i, ∫ x, f i x * ψ i x ∂ρ := by simp only [hν, hf]
+      _ = -∑ i, ∫ x, ψ i x * f i x ∂ρ := by
+          simp only [hν, (ψ _).integral_sub_integral_eq_integral_mul_sub_rnDeriv
+            (hac (Or.inl rfl)) (hac (Or.inr rfl)), f]
       _ = -∫ x, ⟪φ x, g x⟫ ∂ρ := by
-          rw [← integral_finsetSum _ fun i _ =>
-            ((hrn (i := i) (Or.inl rfl) (ψ i)).1.sub (hrn (i := i) (Or.inr rfl) (ψ i)).1).congr
-              (ae_of_all _ fun x => by simp [f, sub_mul])]
+          rw [← integral_finsetSum _ fun i _ => (show Integrable (fun x : Ω => ψ i x * f i x) ρ from
+            (ψ i).integrable_bilin_subtype (ContinuousLinearMap.mul ℝ ℝ) (hloc i))]
           congr 2 with x
-          simp [hg, ψ, inner_sum, inner_smul_right, real_inner_comm]
+          simp [hg, ψ, inner_sum, inner_smul_right, real_inner_comm, mul_comm]
   -- `‖g‖` is bounded by the density `k` of `|Du|` with respect to `ρ`.
-  set k := lam.rnDeriv ρ
-  have hbound : ∀ᵐ x ∂ρ, ‖g x‖ₑ ≤ k x := by
+  have hbound : ∀ᵐ x ∂ρ, ‖g x‖ₑ ≤ 1 * lam.rnDeriv ρ x := by
+    simp_rw [one_mul]
     refine ae_enorm_le_of_forall_enorm_integral_inner_le
-      (locallyIntegrable_iff.2 fun K hK => integrable_finsetSum _ fun i _ => ?_)
+      (locallyIntegrable_iff.2 fun K hK => integrable_finsetSum _ fun i _ =>
+        ((hloc i).integrableOn_isCompact hK).smul_const _)
       (Measure.measurable_rnDeriv _ _)
       (fun K hK => ne_top_of_le_ne_top hK.measure_lt_top.ne (Measure.setLIntegral_rnDeriv_le K))
       fun U hU φ hφU hφ => ?_
-    · have hint {ν : Measure Ω} (hν : ν = ν₁ i ∨ ν = ν₂ i) :
-          IntegrableOn (fun x => (ν.rnDeriv ρ x).toReal) K ρ := by
-        have : ν.Regular := by rcases hν with rfl | rfl; exacts [h₁ i, h₂ i]
-        exact integrable_toReal_of_lintegral_ne_top (Measure.measurable_rnDeriv _ _).aemeasurable
-          (ne_top_of_le_ne_top hK.measure_lt_top.ne (Measure.setLIntegral_rnDeriv_le K))
-      exact ((hint (Or.inl rfl)).sub (hint (Or.inr rfl))).smul_const _
     rw [Measure.setLIntegral_rnDeriv hlam, ← enorm_neg, ← hrep]
     exact enorm_integral_divergenceCLM_mul_le_variationMeasure hu hfin hU φ hφU hφ
-  -- Normalize `g` by `k`.
-  refine ⟨fun x => (k x).toReal⁻¹ • g x,
-    ((Measure.measurable_rnDeriv _ _).ennreal_toReal.inv).smul hgm, hlam.ae_le ?_, fun φ => ?_⟩
-  · filter_upwards [hbound, Measure.rnDeriv_lt_top lam ρ] with x hx hk
-    have hle : ‖g x‖ ≤ (k x).toReal := by
-      rwa [← ofReal_norm, ENNReal.ofReal_le_iff_le_toReal hk.ne] at hx
-    rw [norm_smul, norm_inv, Real.norm_of_nonneg ENNReal.toReal_nonneg, inv_mul_eq_div]
-    exact div_le_one_of_le₀ hle ENNReal.toReal_nonneg
+  -- Normalize `g` by the density of `|Du|`.
+  refine ⟨fun x => (lam.rnDeriv ρ x).toReal⁻¹ • g x,
+    ((Measure.measurable_rnDeriv _ _).ennreal_toReal.inv).smul hgm,
+    (Measure.ae_enorm_inv_toReal_rnDeriv_smul_le hlam hbound).mono fun x hx => ?_, fun φ => ?_⟩
+  · rwa [← ofReal_norm, ENNReal.ofReal_le_one] at hx
   · rw [hrep, ← integral_toReal_rnDeriv_mul hlam]
     congr 1
     refine integral_congr_ae ?_
-    filter_upwards [hbound, Measure.rnDeriv_lt_top lam ρ] with x hx hk
-    rw [inner_smul_right, ← mul_assoc]
-    rcases eq_or_ne (k x).toReal 0 with h0 | h0
-    · have : g x = 0 := by
-        rw [ENNReal.toReal_eq_zero_iff] at h0
-        rcases h0 with h0 | h0
-        · simpa [h0] using hx
-        · exact absurd h0 hk.ne
-      simp [this]
-    · rw [mul_inv_cancel₀ h0, one_mul]
+    filter_upwards [Measure.toReal_rnDeriv_smul_inv_smul_ae_eq hbound] with x hx
+    conv_lhs => rw [← hx]
+    rw [inner_smul_right]
 
 /-- A density of norm at most one representing `Du` against `|Du|` has norm one almost
 everywhere. -/
@@ -204,26 +179,9 @@ private theorem ae_norm_eq_one_of_le_one {σ : Ω → E}
         (mul_le_of_le_one_left (norm_nonneg _) (hφ x)))
     · have : φΩ x = 0 := image_eq_zero_of_notMem_tsupport fun h => hx (φ.tsupport_subset h)
       simp [this]
-  -- Hence `1 ≤ ‖σ‖` almost everywhere on every open set of finite measure.
-  have hloc (V : Set Ω) (hV : IsOpen V) (hVfin : lam V ≠ ∞) :
-      ∀ᵐ x ∂lam.restrict V, 1 ≤ ‖σ x‖ₑ := by
-    have hle : ∀ᵐ x ∂lam.restrict V, ‖σ x‖ₑ ≤ 1 := ae_restrict_of_ae <| hσ1.mono fun x hx => by
-      rwa [← ofReal_norm, ENNReal.ofReal_le_one]
-    have hint : ∫⁻ x in V, ‖σ x‖ₑ ∂lam ≠ ∞ :=
-      ne_top_of_le_ne_top hVfin ((lintegral_mono_ae hle).trans_eq (by simp))
-    filter_upwards [ae_eq_of_ae_le_of_lintegral_le hle hint aemeasurable_const
-      (by simpa using hopen V hV)] with x hx
-    exact hx.symm.le
-  -- Cover `Ω` by countably many open sets of finite measure.
-  choose V hKV hVo hVfin using fun n =>
-    (isCompact_compactCovering Ω n).exists_open_superset_measure_lt_top lam
-  have hVU : ⋃ n, V n = univ :=
-    eq_univ_of_univ_subset ((iUnion_compactCovering Ω).symm.subset.trans (iUnion_mono hKV))
-  rw [← Measure.restrict_univ (μ := lam), ← hVU, ae_restrict_iUnion_iff]
-  intro n
-  filter_upwards [hloc (V n) (hVo n) (hVfin n).ne, ae_restrict_of_ae hσ1] with x h1 h2
-  rw [← ofReal_norm, ENNReal.one_le_ofReal] at h1
-  exact le_antisymm h2 h1
+  filter_upwards [ae_eq_one_of_forall_isOpen_le_setLIntegral
+    (hσ1.mono fun x hx => by rwa [← ofReal_norm, ENNReal.ofReal_le_one]) hopen] with x hx
+  rwa [← ofReal_norm, ENNReal.ofReal_eq_one] at hx
 
 private theorem exists_polarDensity :
     ∃ σ : Ω → E, Measurable σ ∧ (∀ᵐ x ∂variationMeasure μ Ω u, ‖σ x‖ = 1) ∧
