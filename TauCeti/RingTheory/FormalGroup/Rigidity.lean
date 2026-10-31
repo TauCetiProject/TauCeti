@@ -75,6 +75,34 @@ namespace FormalGroupHom
 
 variable {A : Type*} [CommRing A] {F G : FormalGroup A}
 
+/-- Reduce modulo `I J` a series `D` whose coefficients lie in `J`: the coefficients of the
+reduction are killed by the image of `I`. -/
+private theorem coeff_map_mul_eq_zero {D : A⟦X⟧} {I J : Ideal A} (hD : ∀ k, coeff k D ∈ J) (e : ℕ)
+    {x : A ⧸ I * J} (hx : x ∈ I.map (Ideal.Quotient.mk (I * J))) :
+    coeff e (D.map (Ideal.Quotient.mk (I * J))) * x = 0 := by
+  obtain ⟨y, hy, rfl⟩ := (Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective).1 hx
+  rw [coeff_map, ← map_mul, Ideal.Quotient.eq_zero_iff_mem]
+  exact Ideal.mul_mem_mul_rev hy (hD e)
+
+/-- Reduce modulo `I J` a series `D` whose coefficients lie in `J ⊆ I`: the reduction has square
+zero. -/
+private theorem sq_map_eq_zero {D : A⟦X⟧} {I J : Ideal A} (hJI : J ≤ I) (hD : ∀ k, coeff k D ∈ J) :
+    (D.map (Ideal.Quotient.mk (I * J))) ^ 2 = 0 := by
+  ext e
+  rw [sq, ← map_mul, coeff_map, map_zero, Ideal.Quotient.eq_zero_iff_mem]
+  exact Ideal.mul_mono_left hJI (coeff_mul_mem_ideal_mul_ideal_of_coeff_mem_ideal' hD hD e)
+
+/-- A series `d` with `d (u (X ^ q)) = 0` for a formal coordinate `u` vanishes: expansion by
+`X ↦ X ^ q` is injective, and so is substitution of a formal coordinate. -/
+private theorem eq_zero_of_subst_expand_eq_zero {R : Type*} [CommRing R] (u : FormalCoordinate R)
+    {q : ℕ} (hq : q ≠ 0) {d : R⟦X⟧} (h : d.subst (expand q hq u.toPowerSeries) = 0) : d = 0 := by
+  have hdu : d.subst u.toPowerSeries = 0 := by
+    ext m
+    rw [← coeff_expand_mul (p := q) (hp := hq), expand_apply,
+      subst_comp_subst_apply u.hasSubst (HasSubst.X_pow hq), ← expand_apply (hp := hq), h, map_zero,
+      map_zero]
+  rwa [← FormalCoordinate.substAlgEquiv_apply, map_eq_zero_iff _ u.substAlgEquiv.injective] at hdu
+
 /-- One step of the rigidity argument: if `f ≡ g` modulo `J ⊆ I`, then `f ≡ g` modulo `I J`. -/
 private theorem coeff_sub_mem_mul [G.IsComm] (f g : FormalGroupHom F G) {I J : Ideal A}
     (hJI : J ≤ I) {n q : ℕ} (hq : q ≠ 0) (hn : (n : A) ∈ I) (u : FormalCoordinate A)
@@ -84,21 +112,11 @@ private theorem coeff_sub_mem_mul [G.IsComm] (f g : FormalGroupHom F G) {I J : I
   set D := f.toPowerSeries - g.toPowerSeries with hD
   set π := Ideal.Quotient.mk (I * J)
   set d := D.map π with hd
-  -- In `B = A ⧸ I J` the image `d` of `f - g` is killed by `I`, and so has square zero.
-  have hdI : ∀ e, ∀ x ∈ I.map π, coeff e d * x = 0 := by
-    intro e x hx
-    obtain ⟨y, hy, rfl⟩ := (Ideal.mem_map_iff_of_surjective π Ideal.Quotient.mk_surjective).1 hx
-    rw [hd, coeff_map, ← map_mul, Ideal.Quotient.eq_zero_iff_mem]
-    exact Ideal.mul_mem_mul_rev hy (hfg e)
-  have hd2 : d ^ 2 = 0 := by
+  -- In `B = A ⧸ I J` the image `d` of `f - g` is killed by `I`, and so by `n`.
+  have hnd : (n : (A ⧸ I * J)⟦X⟧) * d = 0 := by
     ext e
-    rw [hd, sq, ← map_mul, coeff_map, map_zero, Ideal.Quotient.eq_zero_iff_mem]
-    exact Ideal.mul_mono_left hJI (coeff_mul_mem_ideal_mul_ideal_of_coeff_mem_ideal' hfg hfg e)
-  have hnd : n • d = 0 := by
-    ext e
-    rw [hd, map_nsmul, coeff_map, map_zero, nsmul_eq_mul, ← map_natCast π, ← map_mul,
-      Ideal.Quotient.eq_zero_iff_mem]
-    exact Ideal.mul_mem_mul hn (hfg e)
+    rw [← map_natCast C, coeff_C_mul, (coeff e).map_zero, mul_comm (n : A ⧸ I * J)]
+    exact coeff_map_mul_eq_zero hfg e (by simpa using Ideal.mem_map_of_mem π hn)
   -- `(f - g) ∘ [n]_F = [n]_G ∘ f - [n]_G ∘ g`, reduced modulo `I J`.
   have hsub : PowerSeries.subst (F.nsmulSeries n) D =
       PowerSeries.subst f.toPowerSeries (G.nsmulSeries n) -
@@ -118,9 +136,12 @@ private theorem coeff_sub_mem_mul [G.IsComm] (f g : FormalGroupHom F G) {I J : I
     rw [hd, hD, map_sub, add_sub_cancel]
   obtain ⟨V, hV⟩ := G.natCast_dvd_derivative_nsmulSeries n
   have hg' : HasSubst (g.toPowerSeries.map π) := g.hasSubst.map π
-  rw [hfπ, subst_add_of_sq_eq_zero hg' hd2, add_sub_cancel_left, derivative_map, hV,
-    ← nsmul_eq_mul, map_nsmul, ← coe_substAlgHom hg', map_nsmul, mul_smul_comm, ← smul_mul_assoc,
-    hnd, zero_mul] at hsubπ
+  have hTaylor : d * (d⁄dX ((G.nsmulSeries n).map π)).subst (g.toPowerSeries.map π) = 0 := by
+    rw [derivative_map, hV]
+    simp only [← coe_substAlgHom hg', map_mul, map_natCast]
+    linear_combination substAlgHom hg' (V.map π) * hnd
+  rw [hfπ, subst_add_of_sq_eq_zero hg' (sq_map_eq_zero hJI hfg), hTaylor, add_zero,
+    sub_self] at hsubπ
   -- The left side only sees `[n]_F` modulo `I`, where it is `u (X ^ q)`.
   have hu0 : constantCoeff (expand q hq u.toPowerSeries) = 0 := by
     rw [constantCoeff_expand, u.constantCoeff_toPowerSeries]
@@ -132,18 +153,10 @@ private theorem coeff_sub_mem_mul [G.IsComm] (f g : FormalGroupHom F G) {I J : I
       (fun _ e ↦ by
         rw [← coeff_def rfl, ← map_sub, coeff_map]
         exact Ideal.mem_map_of_mem π (hF _))
-      (fun e x hx ↦ by rw [← coeff_def rfl]; exact hdI _ x hx)
-  rw [← hd, hcongr] at hsubπ
+      (fun e x hx ↦ by rw [← coeff_def rfl]; exact coeff_map_mul_eq_zero hfg _ hx)
+  rw [← hd, hcongr, map_expand, ← FormalCoordinate.toPowerSeries_map] at hsubπ
   -- Since `u` is a coordinate and `X ↦ X ^ q` is injective, `d = 0`.
-  set v := FormalCoordinate.map π u
-  have hdv : d.subst v.toPowerSeries = 0 := by
-    ext m
-    rw [map_expand, expand_apply, ← FormalCoordinate.toPowerSeries_map,
-      ← subst_comp_subst_apply v.hasSubst (HasSubst.X_pow hq)] at hsubπ
-    rw [← coeff_expand_mul (p := q) (hp := hq), expand_apply, hsubπ, map_zero, map_zero]
-  have hd0 : d = 0 := by
-    rw [← X_subst d, ← FormalCoordinate.toPowerSeries_mul_inv v, ← FormalCoordinate.subst_subst,
-      hdv, subst_zero]
+  have hd0 := eq_zero_of_subst_expand_eq_zero _ hq hsubπ
   simpa [hd, ← Ideal.Quotient.eq_zero_iff_mem] using congrArg (coeff k) hd0
 
 /-- **Rigidity of homomorphisms of formal group laws.** Let `A` be `I`-adically Hausdorff, let
