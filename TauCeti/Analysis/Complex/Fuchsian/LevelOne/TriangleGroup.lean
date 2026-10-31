@@ -90,33 +90,13 @@ private theorem normSq_I : Complex.normSq (toComplex (.inl I) - ((0 : ℝ) : ℂ
 ideal vertex `∞`, listed counterclockwise. It is the left half of the standard fundamental domain
 of the modular group, and its triangle group is the level-one modular group
 (`TauCeti.ModularGroup.triangleGroup_triangle`). -/
-def triangle : ConvexPolygon 3 where
-  vertex := ![.inl ρ, .inl I, .inr ∞]
-  three_le := le_rfl
-  vertex_ne_vertex_add_one i := by
-    fin_cases i
-    exacts [ρ_ne_I, I_ne_infty, ρ_ne_infty.symm]
-  vertex_mem_extLeftHalfPlane i j hji hji' := by
-    -- `∞` is above the unit semicircle from `ρ` to `i`, and each of `ρ`, `i` is on the inner side
-    -- of the vertical through the other
-    have h₀ : (∞ : OnePoint ℝ) ∈ boundaryLeftHalfPlane (geodesicFromTo (.inl ρ) (.inl I)) :=
-      ((isGeodesicFromTo_geodesicFromTo ρ_ne_I).infty_mem_boundaryLeftHalfPlane_iff_re_lt
-        ρ_ne_infty I_ne_infty).2 re_ρ_lt_re_I
-    have h₁ : (.inl ρ : ℍ ⊕ OnePoint ℝ) ∈ extLeftHalfPlane (geodesicFromTo (.inl I) (.inr ∞)) := by
-      refine (mem_extLeftHalfPlane_iff_sideForm_toComplex_neg ρ_ne_infty).2 ?_
-      rw [(isGeodesicFromTo_geodesicFromTo I_ne_infty).sideForm_eq_of_inr_infty_right I_ne_infty]
-      linarith [re_ρ_lt_re_I]
-    have h₂ : (.inl I : ℍ ⊕ OnePoint ℝ) ∈ extLeftHalfPlane (geodesicFromTo (.inr ∞) (.inl ρ)) := by
-      refine (mem_extLeftHalfPlane_iff_sideForm_toComplex_neg I_ne_infty).2 ?_
-      rw [(isGeodesicFromTo_geodesicFromTo ρ_ne_infty.symm).sideForm_eq_of_inr_infty_left
-        ρ_ne_infty]
-      linarith [re_ρ_lt_re_I]
-    fin_cases i <;> fin_cases j <;> simp [h₀, h₁, h₂] at hji hji' ⊢
+def triangle : ConvexPolygon 3 :=
+  ConvexPolygon.triangleInfty ρ_ne_infty I_ne_infty re_ρ_lt_re_I
 
 /-- The vertices of the modular triangle are `ρ`, `i` and `∞`. -/
 @[simp]
 theorem vertex_triangle : triangle.vertex = ![.inl ρ, .inl I, .inr ∞] :=
-  (rfl)
+  ConvexPolygon.vertex_triangleInfty ..
 
 /-- The angle of the modular triangle at `ρ` is `π / 3`. -/
 @[simp]
@@ -145,7 +125,7 @@ theorem interiorAngle_triangle_one : triangle.interiorAngle 1 = π / 2 := by
 /-- The angle of the modular triangle at the ideal vertex `∞` is `0`. -/
 @[simp]
 theorem interiorAngle_triangle_two : triangle.interiorAngle 2 = 0 :=
-  triangle.interiorAngle_eq_zero_of_vertex_eq_inr (ξ := ∞) rfl
+  triangle.interiorAngle_eq_zero_of_vertex_eq_inr (ξ := ∞) (by simp)
 
 /-! ### The vertex transformations -/
 
@@ -185,8 +165,8 @@ private theorem mem_range_geodesicLine_unitCircleMatrix {z : ℍ} (hz : Complex.
 private theorem range_geodesicLine_sideGeodesic_zero :
     Set.range (geodesicLine (unitCircleMatrix : PSL(2, ℝ))) =
       Set.range (geodesicLine (triangle.sideGeodesic 0)) := by
-  have h : IsGeodesicFromTo (triangle.sideGeodesic 0) (.inl ρ) (.inl I) :=
-    triangle.isGeodesicFromTo_sideGeodesic 0
+  have h : IsGeodesicFromTo (triangle.sideGeodesic 0) (.inl ρ) (.inl I) := by
+    simpa using triangle.isGeodesicFromTo_sideGeodesic 0
   have hρ : Complex.normSq (ρ : ℂ) = 1 := by simpa using normSq_ρ
   have hI : Complex.normSq (I : ℂ) = 1 := by simp
   exact range_geodesicLine_eq_of_mem (fun h ↦ ρ_ne_I (congrArg _ h))
@@ -196,8 +176,8 @@ private theorem range_geodesicLine_sideGeodesic_zero :
 /-- The side of the modular triangle from `i` to `∞` lies on the imaginary axis. -/
 private theorem exists_sideGeodesic_one :
     ∃ s : ℝ, triangle.sideGeodesic 1 = 1 * ↑(Matrix.SpecialLinearGroup.dilation s) := by
-  have h : IsGeodesicFromTo (triangle.sideGeodesic 1) (.inl I) (.inr ∞) :=
-    triangle.isGeodesicFromTo_sideGeodesic 1
+  have h : IsGeodesicFromTo (triangle.sideGeodesic 1) (.inl I) (.inr ∞) := by
+    simpa using triangle.isGeodesicFromTo_sideGeodesic 1
   exact IsGeodesicFromTo.exists_eq_mul_dilation
     (isGeodesicFromTo_inl_inr.2 ⟨⟨0, by rw [geodesicLine_zero, one_smul]⟩, one_smul _ _⟩) h
 
@@ -205,8 +185,8 @@ private theorem exists_sideGeodesic_one :
 private theorem exists_sideGeodesic_two :
     ∃ s : ℝ, triangle.sideGeodesic 2 =
       upperRightHom (-1 / 2 : ℝ) * pslS * ↑(Matrix.SpecialLinearGroup.dilation s) := by
-  have h : IsGeodesicFromTo (triangle.sideGeodesic 2) (.inr ∞) (.inl ρ) :=
-    triangle.isGeodesicFromTo_sideGeodesic 2
+  have h : IsGeodesicFromTo (triangle.sideGeodesic 2) (.inr ∞) (.inl ρ) := by
+    simpa using triangle.isGeodesicFromTo_sideGeodesic 2
   refine IsGeodesicFromTo.exists_eq_mul_dilation
     (isGeodesicFromTo_mul_pslS_iff.2 (isGeodesicFromTo_inl_inr.2 ⟨?_, ?_⟩)) h
   · rw [mem_range_geodesicLine_iff, ← AddChar.map_neg_eq_inv, upperRightHom_smul, vadd_re]
