@@ -10,12 +10,10 @@ public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.Topology.Algebra.UniformRing
 public import TauCeti.RingTheory.AdicCompletion.Algebra
 public import TauCeti.RingTheory.AdicRing.Basic
-public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 
 import Mathlib.RingTheory.FiniteStability
 import Mathlib.RingTheory.TensorProduct.Quotient
 import TauCeti.RingTheory.AdicCompletion.Noetherian
-import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Adic
 
 /-!
 # The completed tensor product of adic rings
@@ -59,16 +57,16 @@ The completion is formed with the chosen ideals of definition `TauCeti.IsAdicRin
   out of `B ⊗̂_A C` into a Hausdorff ring agreeing on `B` and on `C` are equal.
 * `TauCeti.AdicRing.CompletedTensorProduct.existsUnique_lift`: the universal property of
   `B ⊗̂_A C`.
+* `TauCeti.AdicRing.CompletedTensorProduct.isNoetherianRing_quotient_tensorIdeal`: the quotient
+  `(B ⊗[A] C) ⧸ J` is noetherian when `C` is noetherian and `B ⧸ I_B` is a finitely generated
+  `A`-algebra.
 * `TauCeti.AdicRing.CompletedTensorProduct.isNoetherianRing_of_finiteType`: `B ⊗̂_A C` is
   noetherian when `C` is noetherian and `B ⧸ I_B` is a finitely generated `A`-algebra.
-* `TauCeti.AdicRing.CompletedTensorProduct.isNoetherianRing`: `B ⊗̂_A C` is noetherian when `C`
-  is noetherian and `B` is strictly topologically of finite type over `A` with an `I`-adic
-  topology, `I` finitely generated, that is, an open quotient of some `A⟨X₁, …, Xₖ⟩`.
 
 ## References
 
 * A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique I*, Ch. 0, §7.7
-  (7.7.1 and 7.7.6), and Ch. I, 10.7 and 10.13.5.
+  (7.7.1 and 7.7.6), and Ch. I, 10.7.
 -/
 
 public section
@@ -370,29 +368,6 @@ theorem isNoetherianRing_of_finiteType [IsNoetherianRing C]
     IsNoetherianRing (CompletedTensorProduct A B C) :=
   have := isNoetherianRing_quotient_tensorIdeal A B C
   Ideal.isNoetherianRing_adicCompletion_of_fg _ (tensorIdeal_fg A B C)
-
-variable {A} [TopologicalSpace A] [NonarchimedeanRing A]
-
-/-- **Noetherianity of the completed tensor product** (EGA I, Ch. I, 10.13.5). Let `A` carry the
-`I`-adic topology for a finitely generated ideal `I`. If `B` is strictly topologically of finite
-type over `A`, that is, an open quotient of some `A⟨X₁, …, Xₖ⟩`, and `C` is noetherian, then
-`B ⊗̂_A C` is noetherian. Neither `A` nor `B` needs to be noetherian here. -/
-theorem isNoetherianRing [IsNoetherianRing C] {I : Ideal A} (hI : IsAdic I) (hfg : I.FG)
-    (hB : Huber.IsStrictlyTopologicallyFiniteType (algebraMap A B)) :
-    IsNoetherianRing (CompletedTensorProduct A B C) := by
-  -- `B` is `I·B`-adic, so the open ideal `I_B` contains `(I·B) ^ (n + 1) = I ^ (n + 1)·B`
-  obtain ⟨n, -, hn⟩ := (hB.isAdic hI hfg).hasBasis_nhds_zero.mem_iff.mp
-    ((IsAdicRing.ideal_spec B).2.1.hasBasis_nhds_zero.mem_of_mem (i := 1) trivial)
-  have hle : (I ^ (n + 1)).map (algebraMap A B) ≤ IsAdicRing.ideal B := by
-    rw [Ideal.map_pow]
-    exact (Ideal.pow_le_pow_right n.le_succ).trans (by simpa using hn)
-  -- the reduction of `B` modulo `I ^ (n + 1)` is of finite type, and `B ⧸ I_B` is a quotient of it
-  have := hB.finiteType_quotient (is_ideal_adic_pow hI n.succ_pos) hfg.pow
-  have : Algebra.FiniteType A (B ⧸ (I ^ (n + 1)).map (algebraMap A B)) :=
-    .trans (S := A ⧸ I ^ (n + 1)) inferInstance inferInstance
-  have : Algebra.FiniteType A (B ⧸ IsAdicRing.ideal B) :=
-    .of_surjective (Ideal.Quotient.factorₐ A hle) (Ideal.Quotient.factor_surjective hle)
-  exact isNoetherianRing_of_finiteType A B C
 
 end Noetherian
 
