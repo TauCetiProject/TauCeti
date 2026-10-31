@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Basic.Real.Pointwise
+public import Mathlib.LinearAlgebra.TensorProduct.Associator
 public import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 
 /-!
@@ -49,6 +50,9 @@ this file adapts to two factors indexed by `Fin n` decompositions. The construct
   pure tensors is bounded by `C` times the projective seminorm.
 * `TensorProduct.norm_lift_le_projectiveSeminorm`: over a nontrivially normed field, the linear
   map induced by a bounded bilinear map `B` is bounded by `‖B‖` times the projective seminorm.
+* `TensorProduct.projectiveSeminorm_comm`, `TensorProduct.projectiveSeminorm_eq_norm_lid` and
+  `TensorProduct.projectiveSeminorm_eq_norm_rid`: the projective seminorm is preserved by
+  `TensorProduct.comm`, and on `𝕜 ⊗[𝕜] E` and `E ⊗[𝕜] 𝕜` it is the norm of the image in `E`.
 
 ## References
 
@@ -168,6 +172,38 @@ theorem le_projectiveSeminorm {p : Seminorm 𝕜 (E ⊗[𝕜] F)}
     (h : ∀ x y, p (x ⊗ₜ y) ≤ ‖x‖ * ‖y‖) : p ≤ projectiveSeminorm 𝕜 E F := fun u ↦ by
   simpa using apply_le_mul_projectiveSeminorm (p := p) (f := LinearMap.id) zero_le_one
     (by simpa using h) u
+
+private theorem projectiveSeminorm_comm_le (u : E ⊗[𝕜] F) :
+    projectiveSeminorm 𝕜 F E (TensorProduct.comm 𝕜 E F u) ≤ projectiveSeminorm 𝕜 E F u := by
+  simpa using apply_le_mul_projectiveSeminorm (p := projectiveSeminorm 𝕜 F E)
+    (f := (TensorProduct.comm 𝕜 E F).toLinearMap) zero_le_one
+    (fun x y ↦ by simpa [mul_comm ‖x‖] using projectiveSeminorm_tmul_le y x) u
+
+/-- The projective seminorm is symmetric: swapping the factors preserves it. -/
+@[simp]
+theorem projectiveSeminorm_comm (u : E ⊗[𝕜] F) :
+    projectiveSeminorm 𝕜 F E (TensorProduct.comm 𝕜 E F u) = projectiveSeminorm 𝕜 E F u :=
+  (projectiveSeminorm_comm_le u).antisymm <| by
+    simpa using projectiveSeminorm_comm_le (TensorProduct.comm 𝕜 E F u)
+
+/-- On `𝕜 ⊗[𝕜] E`, the projective seminorm is the norm of the image under `a ⊗ₜ x ↦ a • x`. -/
+theorem projectiveSeminorm_eq_norm_lid (u : 𝕜 ⊗[𝕜] E) :
+    projectiveSeminorm 𝕜 𝕜 E u = ‖TensorProduct.lid 𝕜 E u‖ := by
+  refine le_antisymm ?_ ?_
+  · calc projectiveSeminorm 𝕜 𝕜 E u
+        = projectiveSeminorm 𝕜 𝕜 E (1 ⊗ₜ TensorProduct.lid 𝕜 E u) := by
+          rw [← lid_symm_apply, LinearEquiv.symm_apply_apply]
+      _ ≤ ‖(1 : 𝕜)‖ * ‖TensorProduct.lid 𝕜 E u‖ := projectiveSeminorm_tmul_le _ _
+      _ = ‖TensorProduct.lid 𝕜 E u‖ := by rw [norm_one, one_mul]
+  · simpa using apply_le_mul_projectiveSeminorm (p := normSeminorm 𝕜 E)
+      (f := (TensorProduct.lid 𝕜 E).toLinearMap) zero_le_one
+      (fun a x ↦ by simp [norm_smul]) u
+
+/-- On `E ⊗[𝕜] 𝕜`, the projective seminorm is the norm of the image under `x ⊗ₜ a ↦ a • x`. -/
+theorem projectiveSeminorm_eq_norm_rid (u : E ⊗[𝕜] 𝕜) :
+    projectiveSeminorm 𝕜 E 𝕜 u = ‖TensorProduct.rid 𝕜 E u‖ := by
+  rw [← projectiveSeminorm_comm, projectiveSeminorm_eq_norm_lid, ← comm_trans_lid,
+    LinearEquiv.trans_apply]
 
 end NormedField
 

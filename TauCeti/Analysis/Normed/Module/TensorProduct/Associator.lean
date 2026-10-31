@@ -12,9 +12,12 @@ public import TauCeti.Analysis.Normed.Module.TensorProduct.Completion
 
 The linear equivalences `TensorProduct.comm`, `TensorProduct.lid`, `TensorProduct.rid` and
 `TensorProduct.assoc` of algebraic tensor products preserve the projective and the injective
-norms. This file records this at the level of seminorms, bundles the resulting maps as linear
-isometric equivalences of `TauCeti.ProjectiveTensor` and `TauCeti.InjectiveTensor`, and extends the
-symmetry and the scalar-unit isometries to the completed tensor products. Each isometry is
+norms. The symmetry and scalar-unit statements for the seminorms themselves live beside their
+definitions, in `TauCeti.Analysis.Normed.Module.TensorProduct.ProjectiveSeminorm` and
+`TauCeti.Analysis.Normed.Module.TensorProduct.InjectiveSeminorm`. This file bundles the resulting
+maps as linear isometric equivalences of `TauCeti.ProjectiveTensor` and `TauCeti.InjectiveTensor`,
+proves that associativity preserves both norms, and extends the symmetry and the scalar-unit
+isometries to the completed tensor products. Each isometry is
 determined by its value on pure tensors, recorded as its coherence lemma: for instance
 `(x ⊗ₜ y) ⊗ₜ z ↦ x ⊗ₜ (y ⊗ₜ z)` for the associativity isometry.
 
@@ -27,10 +30,6 @@ factor, which relies on the Hahn–Banach theorem, so they are stated over `ℝ`
 
 ## Main declarations
 
-* `TensorProduct.projectiveSeminorm_comm` and `TensorProduct.injectiveSeminorm_comm`: both
-  seminorms are symmetric.
-* `TensorProduct.projectiveSeminorm_eq_norm_lid` and `TensorProduct.injectiveSeminorm_eq_norm_lid`:
-  on `𝕜 ⊗[𝕜] E`, both seminorms are the norm of the image in `E`.
 * `TauCeti.ProjectiveTensor.comm`, `TauCeti.ProjectiveTensor.lid`,
   `TauCeti.ProjectiveTensor.rid` and `TauCeti.ProjectiveTensor.assoc`: the symmetry, scalar-unit
   and associativity isometries of projective tensor products, and their injective analogues in
@@ -48,117 +47,6 @@ factor, which relies on the Hahn–Banach theorem, so they are stated over `ℝ`
 public section
 
 open scoped TensorProduct
-
-namespace TensorProduct
-
-section NormedField
-
-variable {𝕜 E F : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-private theorem projectiveSeminorm_comm_le (u : E ⊗[𝕜] F) :
-    projectiveSeminorm 𝕜 F E (TensorProduct.comm 𝕜 E F u) ≤ projectiveSeminorm 𝕜 E F u := by
-  simpa using apply_le_mul_projectiveSeminorm (p := projectiveSeminorm 𝕜 F E)
-    (f := (TensorProduct.comm 𝕜 E F).toLinearMap) zero_le_one
-    (fun x y ↦ by simpa [mul_comm ‖x‖] using projectiveSeminorm_tmul_le y x) u
-
-/-- The projective seminorm is symmetric: swapping the factors preserves it. -/
-@[simp]
-theorem projectiveSeminorm_comm (u : E ⊗[𝕜] F) :
-    projectiveSeminorm 𝕜 F E (TensorProduct.comm 𝕜 E F u) = projectiveSeminorm 𝕜 E F u :=
-  (projectiveSeminorm_comm_le u).antisymm <| by
-    simpa using projectiveSeminorm_comm_le (TensorProduct.comm 𝕜 E F u)
-
-/-- On `𝕜 ⊗[𝕜] E`, the projective seminorm is the norm of the image under `a ⊗ₜ x ↦ a • x`. -/
-theorem projectiveSeminorm_eq_norm_lid (u : 𝕜 ⊗[𝕜] E) :
-    projectiveSeminorm 𝕜 𝕜 E u = ‖TensorProduct.lid 𝕜 E u‖ := by
-  refine le_antisymm ?_ ?_
-  · calc projectiveSeminorm 𝕜 𝕜 E u
-        = projectiveSeminorm 𝕜 𝕜 E (1 ⊗ₜ TensorProduct.lid 𝕜 E u) := by
-          rw [← lid_symm_apply, LinearEquiv.symm_apply_apply]
-      _ ≤ ‖(1 : 𝕜)‖ * ‖TensorProduct.lid 𝕜 E u‖ := projectiveSeminorm_tmul_le _ _
-      _ = ‖TensorProduct.lid 𝕜 E u‖ := by rw [norm_one, one_mul]
-  · simpa using apply_le_mul_projectiveSeminorm (p := normSeminorm 𝕜 E)
-      (f := (TensorProduct.lid 𝕜 E).toLinearMap) zero_le_one
-      (fun a x ↦ by simp [norm_smul]) u
-
-/-- On `E ⊗[𝕜] 𝕜`, the projective seminorm is the norm of the image under `x ⊗ₜ a ↦ a • x`. -/
-theorem projectiveSeminorm_eq_norm_rid (u : E ⊗[𝕜] 𝕜) :
-    projectiveSeminorm 𝕜 E 𝕜 u = ‖TensorProduct.rid 𝕜 E u‖ := by
-  rw [← projectiveSeminorm_comm, projectiveSeminorm_eq_norm_lid, ← comm_trans_lid,
-    LinearEquiv.trans_apply]
-
-end NormedField
-
-section NontriviallyNormedField
-
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- Evaluating the operator induced by `u : 𝕜 ⊗[𝕜] E` at the identity functional of `𝕜` gives
-the image of `u` under `a ⊗ₜ x ↦ a • x`. -/
-theorem contractStrongDual_id (u : 𝕜 ⊗[𝕜] E) :
-    contractStrongDual 𝕜 𝕜 E u (ContinuousLinearMap.id 𝕜 𝕜) = TensorProduct.lid 𝕜 E u := by
-  induction u with
-  | tmul a x => simp
-  | add u v hu hv => simp [hu, hv]
-
-/-- On `𝕜 ⊗[𝕜] E`, the injective seminorm is the norm of the image under `a ⊗ₜ x ↦ a • x`. -/
-theorem injectiveSeminorm_eq_norm_lid (u : 𝕜 ⊗[𝕜] E) :
-    injectiveSeminorm 𝕜 𝕜 E u = ‖TensorProduct.lid 𝕜 E u‖ := by
-  refine le_antisymm ?_ ?_
-  · exact (injectiveSeminorm_le_projectiveSeminorm u).trans (projectiveSeminorm_eq_norm_lid u).le
-  · calc ‖TensorProduct.lid 𝕜 E u‖
-        = ‖contractStrongDual 𝕜 𝕜 E u (ContinuousLinearMap.id 𝕜 𝕜)‖ := by
-          rw [contractStrongDual_id]
-      _ ≤ injectiveSeminorm 𝕜 𝕜 E u * ‖ContinuousLinearMap.id 𝕜 𝕜‖ :=
-          norm_contractStrongDual_apply_le u _
-      _ ≤ injectiveSeminorm 𝕜 𝕜 E u * 1 := by
-          gcongr
-          exact ContinuousLinearMap.norm_id_le
-      _ = injectiveSeminorm 𝕜 𝕜 E u := mul_one _
-
-end NontriviallyNormedField
-
-section RCLike
-
-variable {𝕜 E F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
-
-/-- The operators induced by `u` and by its swap `TensorProduct.comm 𝕜 E F u` pair the same way
-with functionals on both factors: both values are `∑ i, f (x i) * g (y i)` for any decomposition
-`u = ∑ i, x i ⊗ₜ y i`. -/
-theorem apply_contractStrongDual_comm (u : E ⊗[𝕜] F) (f : StrongDual 𝕜 E)
-    (g : StrongDual 𝕜 F) :
-    f (contractStrongDual 𝕜 F E (TensorProduct.comm 𝕜 E F u) g) =
-      g (contractStrongDual 𝕜 E F u f) := by
-  induction u with
-  | tmul x y => simp [mul_comm]
-  | add u v hu hv => simp [hu, hv]
-
-private theorem injectiveSeminorm_comm_le (u : E ⊗[𝕜] F) :
-    injectiveSeminorm 𝕜 F E (TensorProduct.comm 𝕜 E F u) ≤ injectiveSeminorm 𝕜 E F u :=
-  (injectiveSeminorm_le_iff_forall_norm_le_one (apply_nonneg _ u)).2 fun g f hg hf ↦ by
-    rw [apply_contractStrongDual_comm]
-    exact (injectiveSeminorm_le_iff_forall_norm_le_one (apply_nonneg _ u)).1 le_rfl f g hf hg
-
-/-- Over `ℝ` and `ℂ`, the injective seminorm is symmetric: swapping the factors preserves it. -/
-@[simp]
-theorem injectiveSeminorm_comm (u : E ⊗[𝕜] F) :
-    injectiveSeminorm 𝕜 F E (TensorProduct.comm 𝕜 E F u) = injectiveSeminorm 𝕜 E F u :=
-  (injectiveSeminorm_comm_le u).antisymm <| by
-    simpa using injectiveSeminorm_comm_le (TensorProduct.comm 𝕜 E F u)
-
-/-- Over `ℝ` and `ℂ`, on `E ⊗[𝕜] 𝕜` the injective seminorm is the norm of the image under
-`x ⊗ₜ a ↦ a • x`. -/
-theorem injectiveSeminorm_eq_norm_rid (u : E ⊗[𝕜] 𝕜) :
-    injectiveSeminorm 𝕜 E 𝕜 u = ‖TensorProduct.rid 𝕜 E u‖ := by
-  rw [← injectiveSeminorm_comm, injectiveSeminorm_eq_norm_lid, ← comm_trans_lid,
-    LinearEquiv.trans_apply]
-
-end RCLike
-
-end TensorProduct
 
 namespace TauCeti
 

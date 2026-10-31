@@ -51,6 +51,11 @@ scalar field; it is not the classical injective norm used here.
   ball of the dual of `E`.
 * `TensorProduct.injectiveSeminorm_tmul` and
   `TensorProduct.projectiveSeminorm_tmul`: both seminorms are cross norms.
+* `TensorProduct.injectiveSeminorm_eq_norm_lid`: on `𝕜 ⊗[𝕜] E`, the injective seminorm is the
+  norm of the image in `E`, over any nontrivially normed field.
+* `TensorProduct.injectiveSeminorm_comm` and `TensorProduct.injectiveSeminorm_eq_norm_rid`: over
+  `ℝ` and `ℂ`, the injective seminorm is preserved by `TensorProduct.comm`, and on `E ⊗[𝕜] 𝕜` it
+  is the norm of the image in `E`.
 * `TensorProduct.contractStrongDual_injective`: over `ℝ` and `ℂ`, a tensor is determined by the
   operator it induces on the dual of a normed left factor.
 * `TensorProduct.injectiveSeminorm_eq_zero_iff` and
@@ -147,6 +152,40 @@ theorem injectiveSeminorm_le_projectiveSeminorm :
     injectiveSeminorm 𝕜 E F ≤ projectiveSeminorm 𝕜 E F :=
   le_projectiveSeminorm injectiveSeminorm_tmul_le
 
+/-- Evaluating the operator induced by `u : 𝕜 ⊗[𝕜] E` at the identity functional of `𝕜` gives
+the image of `u` under `a ⊗ₜ x ↦ a • x`. -/
+theorem contractStrongDual_id (u : 𝕜 ⊗[𝕜] E) :
+    contractStrongDual 𝕜 𝕜 E u (ContinuousLinearMap.id 𝕜 𝕜) = TensorProduct.lid 𝕜 E u := by
+  induction u with
+  | tmul a x => simp
+  | add u v hu hv => simp [hu, hv]
+
+/-- On `𝕜 ⊗[𝕜] E`, the injective seminorm is the norm of the image under `a ⊗ₜ x ↦ a • x`. -/
+theorem injectiveSeminorm_eq_norm_lid (u : 𝕜 ⊗[𝕜] E) :
+    injectiveSeminorm 𝕜 𝕜 E u = ‖TensorProduct.lid 𝕜 E u‖ := by
+  refine le_antisymm ?_ ?_
+  · exact (injectiveSeminorm_le_projectiveSeminorm u).trans (projectiveSeminorm_eq_norm_lid u).le
+  · calc ‖TensorProduct.lid 𝕜 E u‖
+        = ‖contractStrongDual 𝕜 𝕜 E u (ContinuousLinearMap.id 𝕜 𝕜)‖ := by
+          rw [contractStrongDual_id]
+      _ ≤ injectiveSeminorm 𝕜 𝕜 E u * ‖ContinuousLinearMap.id 𝕜 𝕜‖ :=
+          norm_contractStrongDual_apply_le u _
+      _ ≤ injectiveSeminorm 𝕜 𝕜 E u * 1 := by
+          gcongr
+          exact ContinuousLinearMap.norm_id_le
+      _ = injectiveSeminorm 𝕜 𝕜 E u := mul_one _
+
+/-- The operators induced by `u` and by its swap `TensorProduct.comm 𝕜 E F u` pair the same way
+with functionals on both factors: both values are `∑ i, f (x i) * g (y i)` for any decomposition
+`u = ∑ i, x i ⊗ₜ y i`. -/
+theorem apply_contractStrongDual_comm (u : E ⊗[𝕜] F) (f : StrongDual 𝕜 E)
+    (g : StrongDual 𝕜 F) :
+    f (contractStrongDual 𝕜 F E (TensorProduct.comm 𝕜 E F u) g) =
+      g (contractStrongDual 𝕜 E F u f) := by
+  induction u with
+  | tmul x y => simp [mul_comm]
+  | add u v hu hv => simp [hu, hv]
+
 end NontriviallyNormedField
 
 section RCLike
@@ -207,6 +246,26 @@ theorem projectiveSeminorm_tmul (x : E) (y : F) :
     projectiveSeminorm 𝕜 E F (x ⊗ₜ y) = ‖x‖ * ‖y‖ :=
   le_antisymm (projectiveSeminorm_tmul_le x y)
     ((injectiveSeminorm_tmul x y).symm.le.trans (injectiveSeminorm_le_projectiveSeminorm _))
+
+private theorem injectiveSeminorm_comm_le (u : E ⊗[𝕜] F) :
+    injectiveSeminorm 𝕜 F E (TensorProduct.comm 𝕜 E F u) ≤ injectiveSeminorm 𝕜 E F u :=
+  (injectiveSeminorm_le_iff_forall_norm_le_one (apply_nonneg _ u)).2 fun g f hg hf ↦ by
+    rw [apply_contractStrongDual_comm]
+    exact (injectiveSeminorm_le_iff_forall_norm_le_one (apply_nonneg _ u)).1 le_rfl f g hf hg
+
+/-- Over `ℝ` and `ℂ`, the injective seminorm is symmetric: swapping the factors preserves it. -/
+@[simp]
+theorem injectiveSeminorm_comm (u : E ⊗[𝕜] F) :
+    injectiveSeminorm 𝕜 F E (TensorProduct.comm 𝕜 E F u) = injectiveSeminorm 𝕜 E F u :=
+  (injectiveSeminorm_comm_le u).antisymm <| by
+    simpa using injectiveSeminorm_comm_le (TensorProduct.comm 𝕜 E F u)
+
+/-- Over `ℝ` and `ℂ`, on `E ⊗[𝕜] 𝕜` the injective seminorm is the norm of the image under
+`x ⊗ₜ a ↦ a • x`. -/
+theorem injectiveSeminorm_eq_norm_rid (u : E ⊗[𝕜] 𝕜) :
+    injectiveSeminorm 𝕜 E 𝕜 u = ‖TensorProduct.rid 𝕜 E u‖ := by
+  rw [← injectiveSeminorm_comm, injectiveSeminorm_eq_norm_lid, ← comm_trans_lid,
+    LinearEquiv.trans_apply]
 
 end Seminormed
 
