@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Subgroup.Simple
-public import Mathlib.GroupTheory.Torsion
+public import TauCeti.GroupTheory.Torsion
 
 /-!
 # Simplicity from normal generation by elements of prime order
@@ -26,8 +26,6 @@ groups given by presentations or by permutation and matrix generators.
 
 ## Main results
 
-* `IsMulTorsion.exists_prime_orderOf_mem`: a nontrivial subgroup of a torsion group contains an
-  element of prime order.
 * `IsSimpleGroup.normalClosure_singleton_eq_top`: in a simple group, every nontrivial element
   generates the whole group as a normal subgroup.
 * `IsMulTorsion.isSimpleGroup_iff_normalClosure_singleton_eq_top`: a torsion group is simple if
@@ -36,7 +34,9 @@ groups given by presentations or by permutation and matrix generators.
 * `IsMulTorsion.isSimpleGroup_of_isConj_of_normalClosure_eq_top`: the certificate form, where the
   elements of prime order are covered up to conjugacy by a set of normal generators.
 
-A finite group is torsion by `isMulTorsion_of_finite`.
+A finite group is torsion by `isMulTorsion_of_finite`. The prime-order element of a nontrivial
+normal subgroup comes from `IsMulTorsion.exists_prime_orderOf_mem` in
+`TauCeti.GroupTheory.Torsion`.
 -/
 
 public section
@@ -44,16 +44,6 @@ public section
 open Subgroup
 
 variable {G : Type*} [Group G]
-
-/-- **Elements of prime order in a nontrivial subgroup.** A nontrivial subgroup of a torsion group
-contains an element of prime order: if `g ≠ 1` has order `n` and the prime `p` divides `n`, then
-`g ^ (n / p)` has order `p`. For a finite group this is a weak form of Cauchy's theorem. -/
-theorem IsMulTorsion.exists_prime_orderOf_mem (hG : IsMulTorsion G) {H : Subgroup G}
-    (hH : H ≠ ⊥) : ∃ g ∈ H, (orderOf g).Prime := by
-  obtain ⟨g, hgH, hg⟩ := H.bot_or_exists_ne_one.resolve_left hH
-  obtain ⟨p, hp, hpg⟩ := Nat.exists_prime_and_dvd (orderOf_eq_one_iff.not.mpr hg)
-  refine ⟨g ^ (orderOf g / p), H.pow_mem hgH _, ?_⟩
-  rwa [orderOf_pow_orderOf_div (hG g).orderOf_pos.ne' hpg]
 
 /-- In a simple group, every nontrivial element generates the whole group as a normal
 subgroup. -/
