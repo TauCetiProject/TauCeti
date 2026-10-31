@@ -16,7 +16,7 @@ Fix a relational language `L` and a carrier `V`. The back-and-forth levels
 `TauCeti.RelationalConfiguration.bfEquivSetoid L V α` stratify isomorphism of configurations on
 `V` into a decreasing family of equivalence relations, Borel below `ω₁` on a countable carrier.
 This file restricts these levels to the model class `modelsOf φ` of an infinitary sentence `φ`.
-The level classes themselves are model classes of the level sentences
+Below `ω₁`, the level classes are themselves model classes of the level sentences
 `TauCeti.RelationalConfiguration.scottSentenceAtLevel`
 (`TauCeti.RelationalConfiguration.modelsOf_scottSentenceAtLevel`).
 
