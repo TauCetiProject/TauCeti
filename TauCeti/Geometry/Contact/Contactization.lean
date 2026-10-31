@@ -99,7 +99,7 @@ theorem mextDerivₗ_contactization (θ : SmoothForm I W ℝ 1) :
     mextDerivₗ (I.prod 𝓘(ℝ)) 1 θ.contactization =
       mpullback Prod.fst contMDiff_fst (-mextDerivₗ I 1 θ) := by
   have hdz : mextDerivₗ 𝓘(ℝ) 1 realLineCoordForm = 0 :=
-    (isClosed_iff_mextDerivₗ_eq_zero _).1 (isClosed_const _)
+    (isClosed_iff_mextDerivₗ_eq_zero _).1 isClosed_realLineCoordForm
   rw [contactization, map_sub, mextDerivₗ_mpullback, mextDerivₗ_mpullback, hdz, map_zero,
     zero_sub, map_neg]
 

@@ -694,7 +694,7 @@ theorem const_apply {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   rfl
 
 /-- The coordinate one-form `dz` of the real line. -/
-@[expose] def realLineCoordForm : SmoothForm 𝓘(ℝ) ℝ ℝ 1 :=
+def realLineCoordForm : SmoothForm 𝓘(ℝ) ℝ ℝ 1 :=
   const (ContinuousAlternatingMap.ofSubsingleton ℝ ℝ ℝ 0 (ContinuousLinearMap.id ℝ ℝ))
 
 /-- The coordinate one-form `dz` of the real line sends a tangent vector to itself. -/
