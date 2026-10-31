@@ -297,6 +297,19 @@ private theorem exists_hochschildDifferential_eq_obstruction_four_of_linearPart_
       (hψ.add (hbr.smul _)).comp (isHomogeneous_lengthProj G ⟨3, by norm_num⟩)
   · exact LinearMap.ext fun z ↦ by simp only [LinearMap.comp_apply, lengthProj_lengthProj]
 
+/-- A minimal `A∞` structure `𝒜` with the grading and the binary operation of the graded algebra
+`ℋ` and with `m₃ = ⋯ = mₙ₊₁ = 0` agrees with `ℋ` on the words of length at most `n + 1`. -/
+private theorem IsMinimal.taylor_apply_eq_of_forall_m_eq_zero (h𝒜 : 𝒜.IsMinimal)
+    (hℋ : ℋ.IsMinimal) (hm : ∀ k, 3 ≤ k → ℋ.m k = 0) (hG : 𝒜.grading = ℋ.grading)
+    (h₂ : 𝒜.m 2 = ℋ.m 2) {n : ℕ} (hlow : ∀ k, 3 ≤ k → k ≤ n + 1 → 𝒜.m k = 0)
+    {z : ReducedTensorWords R A} (hz : z ∈ filtration R A (n + 1)) :
+    𝒜.taylor z = ℋ.taylor z :=
+  taylor_apply_eq_of_forall_m_eq hG (fun k hk hkn ↦ by
+    obtain rfl | rfl | hk₃ : k = 1 ∨ k = 2 ∨ 3 ≤ k := by omega
+    · exact MultilinearMap.ext fun x ↦ by rw [h𝒜.m_one, hℋ.m_one]
+    · exact h₂
+    · rw [hlow k hk₃ hkn, hm k hk₃]) hz
+
 /-- **Normalizing an isomorphism to a graded algebra.**  Let `ℋ` be a graded algebra, presented as
 a minimal `A∞` algebra without operations above arity two, and let `𝒜` be a minimal `A∞` structure
 with the grading and the binary operation of `ℋ`.  If `𝒜` is `A∞` isomorphic to `ℋ`, then there is
@@ -346,11 +359,9 @@ theorem IsMinimal.exists_hochschildDifferential_eq_obstruction_four_of_isIso
   obtain ⟨g, hg⟩ := h𝒜.exists_linearPart_eq_id_of_isIso hℋ hm hG h₂ hf
   -- On the words of length at most three, `𝒜` agrees with `ℋ`.
   have h : ∀ z ∈ filtration R A 3, 𝒜.taylor z = ℋ.taylor z := fun z hz ↦
-    taylor_apply_eq_of_forall_m_eq hG (n := 3) (fun k hk hk₃ ↦ by
-      obtain rfl | rfl | rfl : k = 1 ∨ k = 2 ∨ k = 3 := by omega
-      · exact MultilinearMap.ext fun x ↦ by rw [h𝒜.m_one, hℋ.m_one]
-      · exact h₂
-      · rw [h₃, hm 3 le_rfl]) hz
+    h𝒜.taylor_apply_eq_of_forall_m_eq_zero hℋ hm hG h₂ (n := 2) (fun k hk hk₃ ↦ by
+      obtain rfl : k = 3 := by omega
+      exact h₃) hz
   exact exists_hochschildDifferential_eq_obstruction_four_of_linearPart_eq_id hℋ hm hG h g hg
 
 /-- **A quartic obstruction which is not a coboundary obstructs formality.**  Assume that `2` is
@@ -543,21 +554,15 @@ theorem IsMinimal.exists_hochschildDifferential_eq_obstruction_of_isIso (h𝒜 :
       ℋ.hochschildDifferential 0 φ = 𝒜.obstruction ℋ ⟨n + 2, by omega⟩ := by
   -- On the words of length at most `n + 1`, `𝒜` agrees with `ℋ`.
   have h : ∀ z ∈ filtration R A (n + 1), 𝒜.taylor z = ℋ.taylor z := fun z hz ↦
-    taylor_apply_eq_of_forall_m_eq hG (fun k hk hkn ↦ by
-      obtain rfl | rfl | hk₃ : k = 1 ∨ k = 2 ∨ 3 ≤ k := by omega
-      · exact MultilinearMap.ext fun x ↦ by rw [h𝒜.m_one, hℋ.m_one]
-      · exact h₂
-      · rw [hlow k hk₃ hkn, hm k hk₃]) hz
+    h𝒜.taylor_apply_eq_of_forall_m_eq_zero hℋ hm hG h₂ hlow hz
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · -- In arity two the obstruction vanishes, since `𝒜` and `ℋ` have the same product.
     refine ⟨0, LinearMap.isHomogeneous_zero _ _ _, LinearMap.zero_comp _, ?_⟩
     refine LinearMap.ext fun z ↦ ?_
     rw [hochschildDifferential_zero, LinearMap.zero_apply, obstruction_def, LinearMap.comp_apply,
       LinearMap.sub_apply, eq_comm, sub_eq_zero]
-    exact taylor_apply_eq_of_forall_m_eq hG (n := 2) (fun k hk hk₂ ↦ by
-      obtain rfl | rfl : k = 1 ∨ k = 2 := by omega
-      · exact MultilinearMap.ext fun x ↦ by rw [h𝒜.m_one, hℋ.m_one]
-      · exact h₂) (lengthProj_mem_filtration R A ⟨0 + 2, by omega⟩ z)
+    exact h𝒜.taylor_apply_eq_of_forall_m_eq_zero hℋ hm hG h₂ (n := 1) (fun k hk hk₂ ↦ by omega)
+      (lengthProj_mem_filtration R A ⟨0 + 2, by omega⟩ z)
   obtain ⟨g, hg⟩ := h𝒜.exists_linearPart_eq_id_of_isIso hℋ hm hG h₂ hf
   exact exists_hochschildDifferential_eq_obstruction_of_linearPart_eq_id hℋ hm hG hn h g hg
 
