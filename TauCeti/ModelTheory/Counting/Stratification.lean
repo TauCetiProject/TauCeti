@@ -25,10 +25,12 @@ Countably many isomorphism classes also give a countable bound on every isolatin
 
 ## References
 
-The isolating-rank contract also appears in Cameron Freer's `cameronfreer/infinitary-logic`,
+The isolating-rank contract is adapted from Cameron Freer's `cameronfreer/infinitary-logic`,
 `InfinitaryLogic/Descriptive/ScatteredCounting.lean` (checkpoint `518a366`, Apache-2.0).
-The stratification argument is the rank-parametrized form of Morley's counting argument;
-see Antonio Montalbán, *Computable Structure Theory: Beyond the Arithmetic*, Chapter XII.
+The stratification bound is adapted from `mk_isoSetoid_subtype_le_aleph_one` in
+`InfinitaryLogic/ModelTheory/MorleyCounting.lean` at the same checkpoint, replacing Scott height
+with any isolating rank. For Morley's counting argument, see Antonio Montalbán,
+*Computable Structure Theory: Beyond the Arithmetic*, Chapter XII.
 -/
 
 public section
@@ -139,17 +141,23 @@ theorem mk_isoClasses_le_aleph_one_of_countable_levels (h : IsIsolatingRank ρ)
   h.mk_isoClasses_le_aleph_one K fun α hα =>
     (mk_le_aleph0_iff.mpr (hlevels α hα)).trans (aleph0_le_aleph 1)
 
+end IsIsolatingRank
+
 /-- Countably many isomorphism classes bound every invariant countable rank strictly below
-one countable ordinal. This direction requires no smallness hypothesis on the levels. -/
-theorem exists_bound_of_countable (h : IsIsolatingRank ρ)
+one countable ordinal. Neither isolation nor smallness of the levels is required. -/
+theorem exists_rank_bound_of_countable_isoClasses
+    (hinv : ∀ ⦃c d⦄, isoSetoid L ℕ c d → ρ c = ρ d) (hρ : ∀ c, ρ c < ω₁)
     (K : Set (RelationalConfiguration L ℕ))
     [Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _)))] :
     ∃ β < ω₁, ∀ c ∈ K, ρ c < β := by
+  let r : Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _)) → Ordinal.{0} :=
+    Quotient.lift (fun c : K => ρ c) (fun _ _ hcd => hinv hcd)
+  have hr (q) : r q < ω₁ := by
+    induction q using Quotient.inductionOn with
+    | h c => exact hρ c
   obtain ⟨β, hβ, hb⟩ := (Set.to_countable (Set.univ :
     Set (Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))))).exists_lt_omega_one_forall_lt
-      (r := h.onIsoClasses K) (fun q _ => h.onIsoClasses_lt_omega_one K q)
+      (r := r) (fun q _ => hr q)
   exact ⟨β, hβ, fun c hc => hb (Quotient.mk _ ⟨c, hc⟩) (mem_univ _)⟩
-
-end IsIsolatingRank
 
 end TauCeti
