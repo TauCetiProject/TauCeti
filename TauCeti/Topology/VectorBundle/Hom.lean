@@ -26,11 +26,9 @@ which is zero at noninvertible maps. In the same generality, invertibility of th
 maps is an open condition along a continuous Hom-bundle section, and composition of
 continuous Hom-bundle sections is continuous.
 
-For two vector bundle cores, the fibre instances `VectorBundleCore.isTopologicalAddGroupFiber`
-and `VectorBundleCore.continuousSMulFiber` make Mathlib's Hom bundle between them available.
-A section of it is continuous exactly when it is continuous in every pair of a source chart and
-a target chart, on their common domain, with chart expressions
-`VectorBundleCore.inChartCoordinates`
+For two vector bundle cores, a section of Mathlib's Hom bundle between them is continuous
+exactly when it is continuous in every pair of a source chart and a target chart, on their
+common domain, with chart expressions `VectorBundleCore.inChartCoordinates`
 (`VectorBundleCore.continuous_hom_bundle_iff_forall_continuousOn`).
 
 The coordinate argument uses `ContinuousLinearMap.inCoordinates_inverse` and parallels
@@ -332,17 +330,6 @@ namespace VectorBundleCore
 variable {𝕜 B F G ι κ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G]
-
-/-- The fibres of a vector bundle core are topological additive groups, as is the model fibre.
-This makes the Hom bundle between two cores available. -/
-instance isTopologicalAddGroupFiber (Z : VectorBundleCore 𝕜 B F ι) (x : B) :
-    IsTopologicalAddGroup (Z.Fiber x) :=
-  inferInstanceAs (IsTopologicalAddGroup F)
-
-/-- Scalar multiplication on the fibres of a vector bundle core is continuous. -/
-instance continuousSMulFiber (Z : VectorBundleCore 𝕜 B F ι) (x : B) :
-    ContinuousSMul 𝕜 (Z.Fiber x) :=
-  inferInstanceAs (ContinuousSMul 𝕜 F)
 
 section inChartCoordinates
 

@@ -27,6 +27,8 @@ of fibre maps as the composite of their coordinate expressions.
 `VectorBundleCore.localTriv_coordChangeL` and
 `VectorBundleCore.trivializationAt_coordChangeL` identify transitions between actual
 trivializations with their core coordinate-change maps.
+The fibre instances `VectorBundleCore.isTopologicalAddGroupFiber` and
+`VectorBundleCore.continuousSMulFiber` make Mathlib's Hom bundle between two cores available.
 `VectorBundleCore.inChartCoordinates` expresses a fibre map between two cores in an arbitrary
 pair of source and target charts, not only the preferred charts of base points, and
 `VectorBundleCore.inChartCoordinates_comp` composes these expressions through any intermediate
@@ -61,6 +63,17 @@ variable {𝕜 B F κ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace 
         Z.coordChange (Z.indexAt α) (Z.indexAt β) x := by
   ext v
   exact Z.trivializationAt_coordChange_eq hx v
+
+/-- The fibres of a vector bundle core are topological additive groups, as is the model fibre.
+This makes the Hom bundle between two cores available. -/
+instance isTopologicalAddGroupFiber (Z : VectorBundleCore 𝕜 B F κ) (x : B) :
+    IsTopologicalAddGroup (Z.Fiber x) :=
+  inferInstanceAs (IsTopologicalAddGroup F)
+
+/-- Scalar multiplication on the fibres of a vector bundle core is continuous. -/
+instance continuousSMulFiber (Z : VectorBundleCore 𝕜 B F κ) (x : B) :
+    ContinuousSMul 𝕜 (Z.Fiber x) :=
+  inferInstanceAs (ContinuousSMul 𝕜 F)
 
 section inChartCoordinates
 
