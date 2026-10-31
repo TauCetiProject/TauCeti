@@ -286,12 +286,9 @@ theorem four_le_sum_glueMinimum_of_mem_a2TwelfthGlueSubgroup {w : a2TwelfthGlueM
     4 ≤ ∑ i, (A 2).glueMinimum (isSimplyLaced_A 2) (w i) := by
   -- The ternary image is a signed permutation of `w`, so it has the same Hamming weight.
   have hweight : hammingNorm (β := fun _ : Fin 12 ↦ ZMod 3) (a2TwelfthGolayIsometry w) =
-      hammingNorm (β := fun _ : Fin 12 ↦ ZMod 3) w := by
-    refine (congrArg (hammingNorm (β := fun _ : Fin 12 ↦ ZMod 3))
-      (a2TwelfthGolayIsometry_eq_signedEquiv w)).trans ?_
-    rw [← monomialEquiv_eq_signedEquiv_of_intUnits (fun i ↦ Units.map (Int.castRingHom (ZMod 3))
-      (a2TwelfthSign (a2TwelfthDestinationToSource.symm i))) _ _ fun _ ↦ rfl]
-    exact hammingNorm_monomialEquiv _ _ _
+      hammingNorm (β := fun _ : Fin 12 ↦ ZMod 3) w :=
+    (congrArg (hammingNorm (β := fun _ : Fin 12 ↦ ZMod 3))
+      (a2TwelfthGolayIsometry_eq_signedEquiv w)).trans (hammingNorm_signedEquiv _ _ _)
   have hmem := TernaryGolay.hammingNorm_mem (mem_a2TwelfthGlueSubgroup_iff.mp hw)
   rw [hweight, Finset.mem_insert, Finset.mem_insert, Finset.mem_insert,
     Finset.mem_singleton] at hmem
