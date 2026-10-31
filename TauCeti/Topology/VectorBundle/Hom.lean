@@ -371,6 +371,8 @@ theorem continuous_hom_bundle_iff_forall_continuousOn {f : B → F →L[𝕜] G}
   filter_upwards [hU] with x hx
   ext v
   rw [Z.inCoordinates_eq W (f x) hx.1 hx.2, inChartCoordinates_apply]
+  -- `ContinuousLinearMap.comp_apply` does not fire on a vector of the core fibre `Z.Fiber`,
+  -- which is the model fibre `F` only up to unfolding.
   rfl
 
 end inChartCoordinates
