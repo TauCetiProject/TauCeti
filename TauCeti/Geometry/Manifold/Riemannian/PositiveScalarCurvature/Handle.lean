@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Concordance
 public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Torpedo
-public import TauCeti.Geometry.Manifold.Instances.Cylinder
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Radius
 
 /-!
@@ -21,27 +19,20 @@ common boundary `S^k × S^(q - 1)`. After the metric near `S^k` has been deforme
 torpedo metric on `ℝ^(k + 1)` with the round metric of radius `δ` on `S^(q - 1)`. This file
 constructs the handle side of the gluing.
 
-The torpedo metric has nonnegative scalar curvature in every dimension
-(`TauCeti.scalarCurvature_torpedoMetric_nonneg`), so its product with any metric of positive scalar
-curvature, such as a round sphere of dimension at least `2`, has positive scalar curvature. This
-covers the handles of low index `k + 1 ≤ 2`, where the torpedo metric itself is not of positive
-scalar curvature.
+The torpedo metric has nonnegative scalar curvature in every dimension, so its product with any
+metric of positive scalar curvature, such as a round sphere of dimension at least `2`, has positive
+scalar curvature (`TauCeti.hasPositiveScalarCurvature_torpedoMetric_prodTangentSpace`). This covers
+the handles of low index `k + 1 ≤ 2`, where the torpedo metric itself is not of positive scalar
+curvature.
 
 To match the handle with the deformed metric, the torpedo metric is read in polar coordinates
-`(u, t) ↦ e^t u` on `Sⁿ × ℝ`, the map underlying `TauCeti.sphereProdRealDiffeomorph`. These pull the
-Euclidean metric back to `e^(2 t) (g_(Sⁿ) + dt²)`, so they pull the torpedo metric back to
-`e^(2 w(t)) (g_(Sⁿ) + dt²)`, with `w` the torpedo profile. Where `t ≥ -1` the profile vanishes, and
-the torpedo metric is exactly the cylinder metric `g_(Sⁿ) + dt²`. Hence on its collar the handle
+`(u, t) ↦ e^t u` on `Sⁿ × ℝ`, the map underlying `TauCeti.sphereProdRealDiffeomorph`. Where
+`t ≥ -1` it is exactly the cylinder metric `g_(Sⁿ) + dt²`
+(`TauCeti.torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_le`). Hence on its collar the handle
 metric is the product `(g_(Sⁿ) + dt²) × g`.
 
 ## Main results
 
-* `TauCeti.inner_mvfderiv_exp_smul_coe_sphere`: the Euclidean metric in polar coordinates.
-* `TauCeti.torpedoMetric_inner_mfderiv_exp_smul_coe_sphere`: the torpedo metric in polar
-  coordinates, and `TauCeti.torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_le`: its cylindrical
-  end.
-* `TauCeti.hasPositiveScalarCurvature_torpedoMetric_prodTangentSpace`: the product of the torpedo
-  metric with a metric of positive scalar curvature has positive scalar curvature.
 * `TauCeti.hasPositiveScalarCurvature_torpedoMetric_prodTangentSpace_sphereRoundMetricOfRadius`:
   the handle metric on `D^(k + 1) × S^(q - 1)` has positive scalar curvature when `q ≥ 3`.
 * `TauCeti.torpedoMetric_prodTangentSpace_inner_mfderiv_prodMap_of_le`: the handle metric is a
@@ -65,67 +56,6 @@ open TauCeti.Manifold (tangentSpaceProdEquiv)
 
 namespace TauCeti
 
-section Polar
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
-  [Fact (finrank ℝ V = n + 1)]
-
-/-- **The Euclidean metric in polar coordinates.** Polar coordinates `(u, t) ↦ e^t u` pull the
-inner product of `V` back to `e^(2 t)` times the cylinder metric `g_(Sⁿ) + dt²`. -/
-theorem inner_mvfderiv_exp_smul_coe_sphere (p : sphere (0 : V) 1 × ℝ)
-    (v w : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
-    ⟪mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V)) p v,
-      mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V)) p w⟫_ℝ =
-      exp (2 * p.2) * ((sphereRoundMetric (E := V)).ofLE le_top).cylinder.inner p v w := by
-  have hu : ⟪(p.1 : V), (p.1 : V)⟫_ℝ = 1 := by
-    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p.1, one_pow]
-  have h₁ : ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.1 (tangentSpaceProdEquiv p v).1,
-      (p.1 : V)⟫_ℝ = 0 := by
-    rw [real_inner_comm]
-    exact inner_coe_mvfderiv_subtypeVal_sphere p.1 _
-  have h₂ := inner_coe_mvfderiv_subtypeVal_sphere p.1 (tangentSpaceProdEquiv p w).1
-  rw [mvfderiv_exp_smul_coe_sphere_apply, mvfderiv_exp_smul_coe_sphere_apply,
-    ContMDiffRiemannianMetric.cylinder_inner, ContMDiffRiemannianMetric.ofLE_inner,
-    sphereRoundMetric_inner, two_mul, exp_add]
-  simp only [real_inner_smul_left, real_inner_smul_right, inner_add_left, inner_add_right, h₁, h₂,
-    hu]
-  ring
-
-/-- **The torpedo metric in polar coordinates.** In the coordinates `y = e^t u`, with `t ∈ ℝ` and
-`u` in the unit sphere, the torpedo metric is `e^(2 w(t)) (g_(Sⁿ) + dt²)`, where `w` is the torpedo
-profile. -/
-theorem torpedoMetric_inner_mfderiv_exp_smul_coe_sphere (p : sphere (0 : V) 1 × ℝ)
-    (v w : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
-    (torpedoMetric V).inner (exp p.2 • (p.1 : V))
-        (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
-          p v)
-        (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
-          p w) =
-      exp (2 * torpedoProfile p.2) *
-        ((sphereRoundMetric (E := V)).ofLE le_top).cylinder.inner p v w := by
-  have hnorm : ‖exp p.2 • (p.1 : V)‖ = exp p.2 := by
-    rw [norm_smul, norm_eq_of_mem_sphere p.1, mul_one, norm_of_nonneg (exp_pos _).le]
-  rw [torpedoMetric_inner, NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_apply,
-    ← mvfderiv_apply_eq_mfderiv_apply, ← mvfderiv_apply_eq_mfderiv_apply,
-    inner_mvfderiv_exp_smul_coe_sphere, ← mul_assoc, ← exp_add, hnorm,
-    torpedoExponent_of_ne_zero (exp_pos _).ne', log_exp]
-  ring_nf
-
-/-- On the cylindrical end `t ≥ -1`, the torpedo metric in polar coordinates `y = e^t u` is the
-cylinder metric `g_(Sⁿ) + dt²`. -/
-theorem torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_le {p : sphere (0 : V) 1 × ℝ}
-    (hp : -1 ≤ p.2) (v w : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
-    (torpedoMetric V).inner (exp p.2 • (p.1 : V))
-        (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
-          p v)
-        (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
-          p w) =
-      ((sphereRoundMetric (E := V)).ofLE le_top).cylinder.inner p v w := by
-  rw [torpedoMetric_inner_mfderiv_exp_smul_coe_sphere, torpedoProfile_of_ge hp, mul_zero, exp_zero,
-    one_mul]
-
-end Polar
-
 section Handle
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -137,17 +67,6 @@ section ScalarCurvature
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [FiniteDimensional ℝ E] [T2Space N]
-
-/-- **Handle metrics have positive scalar curvature.** The product of the torpedo metric on `F`
-with a metric `g` of positive scalar curvature has positive scalar curvature, in every dimension of
-`F`: the torpedo factor contributes nonnegative scalar curvature. -/
-theorem hasPositiveScalarCurvature_torpedoMetric_prodTangentSpace
-    (hg : g.HasPositiveScalarCurvature) :
-    ((torpedoMetric F).prodTangentSpace g).HasPositiveScalarCurvature := by
-  refine (ContMDiffRiemannianMetric.hasPositiveScalarCurvature_iff _).2 fun p ↦ ?_
-  rw [ContMDiffRiemannianMetric.scalarCurvature_prodTangentSpace]
-  exact add_pos_of_nonneg_of_pos (scalarCurvature_torpedoMetric_nonneg p.1)
-    ((ContMDiffRiemannianMetric.hasPositiveScalarCurvature_iff _).1 hg p.2)
 
 /-- **The Gromov–Lawson handle metric.** For `m ≥ 2` and every radius `δ > 0`, the product of the
 torpedo metric on `F` with the round metric of radius `δ` on `Sᵐ` has positive scalar curvature.

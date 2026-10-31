@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Polar
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -65,6 +66,13 @@ arclength radial coordinate `r = ∫ e^w ds` the metric takes the form `dr² + f
   scalar curvature in dimension at least `3`.
 * `TauCeti.hasPositiveScalarCurvature_torpedoMetric`: the torpedo metric has positive scalar
   curvature in dimension at least `3`.
+* `TauCeti.hasPositiveScalarCurvature_torpedoMetric_prodTangentSpace`: the product of the torpedo
+  metric with a metric of positive scalar curvature has positive scalar curvature, in every
+  dimension.
+* `TauCeti.torpedoMetric_inner_mfderiv_exp_smul_coe_sphere`: the torpedo metric in polar
+  coordinates `y = e^t u` is `e^(2 w(t)) (g_(Sⁿ) + dt²)`, and
+  `TauCeti.torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_le`: on its cylindrical end `t ≥ -1`
+  it is the cylinder metric `g_(Sⁿ) + dt²`.
 
 ## References
 
@@ -438,10 +446,9 @@ of the scalar curvature, since the punctured space is dense. -/
 private theorem le_scalarCurvature_torpedoMetric_of_forall_ne_zero [Nontrivial F] {c : ℝ}
     (h : ∀ y : F, y ≠ 0 → c ≤ (torpedoMetric F).scalarCurvature y) (y : F) :
     c ≤ (torpedoMetric F).scalarCurvature y := by
-  have hclosed := isClosed_le (f := fun _ : F ↦ c) continuous_const
-    (torpedoMetric F).continuous_scalarCurvature
   have hy : y ∈ closure ({0}ᶜ : Set F) := by rw [closure_compl_singleton]; trivial
-  exact hclosed.closure_subset_iff.2 (fun z hz ↦ h z hz) hy
+  exact le_on_closure (fun z hz ↦ h z hz) continuous_const.continuousOn
+    (torpedoMetric F).continuous_scalarCurvature.continuousOn hy
 
 /-- **The torpedo metric has nonnegative scalar curvature** in every dimension, including the
 dimensions `n ≤ 2` in which it does not have positive scalar curvature. -/
@@ -534,6 +541,67 @@ theorem hasPositiveScalarCurvature_torpedoMetric (hn : 3 ≤ finrank ℝ F) :
   obtain ⟨c, hc, hle⟩ := exists_pos_le_scalarCurvature_torpedoMetric hn
   exact (ContMDiffRiemannianMetric.hasPositiveScalarCurvature_iff _).2 fun y ↦ hc.trans_le (hle y)
 
+section Prod
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {J : ModelWithCorners ℝ E H}
+  {N : Type*} [TopologicalSpace N] [T2Space N] [ChartedSpace H N] [IsManifold J ∞ N]
+  {g : ContMDiffRiemannianMetric J ∞ E (fun x : N ↦ TangentSpace J x)}
+
+/-- The product of the torpedo metric on `F` with a metric `g` of positive scalar curvature has
+positive scalar curvature, in every dimension of `F`: the torpedo factor contributes nonnegative
+scalar curvature. -/
+theorem hasPositiveScalarCurvature_torpedoMetric_prodTangentSpace
+    (hg : g.HasPositiveScalarCurvature) :
+    ((torpedoMetric F).prodTangentSpace g).HasPositiveScalarCurvature :=
+  hg.prodTangentSpace_of_nonneg_left scalarCurvature_torpedoMetric_nonneg
+
+end Prod
+
 end ScalarCurvature
+
+/-! ### The torpedo metric in polar coordinates -/
+
+section Polar
+
+open Metric Module
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
+  [Fact (finrank ℝ V = n + 1)]
+
+/-- **The torpedo metric in polar coordinates.** In the coordinates `y = e^t u`, with `t ∈ ℝ` and
+`u` in the unit sphere, the torpedo metric is `e^(2 w(t)) (g_(Sⁿ) + dt²)`, where `w` is the torpedo
+profile. -/
+theorem torpedoMetric_inner_mfderiv_exp_smul_coe_sphere (p : sphere (0 : V) 1 × ℝ)
+    (v w : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
+    (torpedoMetric V).inner (exp p.2 • (p.1 : V))
+        (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
+          p v)
+        (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
+          p w) =
+      exp (2 * torpedoProfile p.2) *
+        ((sphereRoundMetric (E := V)).ofLE le_top).cylinder.inner p v w := by
+  have hnorm : ‖exp p.2 • (p.1 : V)‖ = exp p.2 := by
+    rw [norm_smul, norm_eq_of_mem_sphere p.1, mul_one, norm_of_nonneg (exp_pos _).le]
+  rw [torpedoMetric_inner, NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_apply,
+    ← mvfderiv_apply_eq_mfderiv_apply, ← mvfderiv_apply_eq_mfderiv_apply,
+    inner_mvfderiv_exp_smul_coe_sphere, ← mul_assoc, ← exp_add, hnorm,
+    torpedoExponent_of_ne_zero (exp_pos _).ne', log_exp]
+  ring_nf
+
+/-- On the cylindrical end `t ≥ -1`, the torpedo metric in polar coordinates `y = e^t u` is the
+cylinder metric `g_(Sⁿ) + dt²`. -/
+theorem torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_le {p : sphere (0 : V) 1 × ℝ}
+    (hp : -1 ≤ p.2) (v w : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
+    (torpedoMetric V).inner (exp p.2 • (p.1 : V))
+        (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
+          p v)
+        (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))
+          p w) =
+      ((sphereRoundMetric (E := V)).ofLE le_top).cylinder.inner p v w := by
+  rw [torpedoMetric_inner_mfderiv_exp_smul_coe_sphere, torpedoProfile_of_ge hp, mul_zero, exp_zero,
+    one_mul]
+
+end Polar
 
 end TauCeti
