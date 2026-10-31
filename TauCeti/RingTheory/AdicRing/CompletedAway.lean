@@ -307,27 +307,17 @@ instance flat [IsNoetherianRing A] : Module.Flat A (CompletedAway A f) :=
 
 section Quotient
 
-/-- The reduction `A_{f} → A_f ⧸ I ^ n A_f` of the completed localisation. Since `A_{f}` is by
-definition the adic completion of `A_f`, this is Mathlib's `AdicCompletion.evalₐ`. -/
-private noncomputable def evalAway (n : ℕ) :
-    CompletedAway A f →ₐ[Localization.Away f]
-      Localization.Away f ⧸ (IsAdicRing.ideal A).map (algebraMap A (Localization.Away f)) ^ n :=
-  AdicCompletion.evalₐ _ n
-
-private theorem ker_evalAway (n : ℕ) :
-    RingHom.ker (evalAway A f n) =
-      (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n := by
-  rw [map_algebraMap_eq, ← Ideal.map_pow (algebraMap (Localization.Away f) (CompletedAway A f))]
-  exact AdicCompletion.ker_evalₐ_eq_map_pow (fg_map A f) n
-
 /-- Modulo `I ^ n`, the completed localisation is the ordinary localisation:
 `A_{f} ⧸ I ^ n A_{f}` is isomorphic as an `A`-algebra to the localisation of `A ⧸ I ^ n` away from
 the image of `f` (EGA I, Ch. 0, 7.6.2 and 7.6.15). -/
 noncomputable def quotientPowEquiv (n : ℕ) :
     (CompletedAway A f ⧸ (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n) ≃ₐ[A]
       Localization.Away (Ideal.Quotient.mk (IsAdicRing.ideal A ^ n) f) :=
-  (((Ideal.quotientEquivAlgOfEq (Localization.Away f) (ker_evalAway A f n).symm).trans
-    ((Ideal.quotientKerAlgEquivOfSurjective (AdicCompletion.surjective_evalₐ _ n)).trans
+  (((Ideal.quotientEquivAlgOfEq (Localization.Away f)
+    (J := ((IsAdicRing.ideal A).map (algebraMap A (Localization.Away f)) ^ n).map
+      (algebraMap (Localization.Away f) (CompletedAway A f)))
+    (by rw [map_algebraMap_eq, ← Ideal.map_pow])).trans
+    ((AdicCompletion.quotientMapPowAlgEquiv (fg_map A f) n).trans
       (Ideal.quotientEquivAlgOfEq (Localization.Away f)
         (Ideal.map_pow _ _ _).symm))).restrictScalars A).trans
     ((IsLocalization.algEquiv (Submonoid.powers (Ideal.Quotient.mk (IsAdicRing.ideal A ^ n) f))
