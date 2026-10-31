@@ -8,9 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Complex
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.CliffordAction
--- Private: the orthonormal-basis computations are used only inside proofs.
-import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
-import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
+-- Private: the shuffle signs of complementary index sets are used only inside proofs.
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 
 /-!
@@ -76,37 +74,6 @@ section Real
 
 variable (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
-
-/-- The Clifford product of the volume element of a positively oriented orthonormal basis with
-a basis vector `e_s` is a signed basis vector `e_{sᶜ}`. -/
-private theorem volumeElement_mul_basis (b : OrthonormalBasis (Fin n) ℝ V)
-    (hb : b.toBasis.orientation = o) {k l : ℕ} (hcard : l + k = Fintype.card (Fin n))
-    (s : powersetCard (Fin n) k) :
-    volumeElement Q o * basis Q b.toBasis s =
-      ((-1 : ℝ) ^ (k + 1).choose 2 * ((powersetCard.sign (powersetCard.compl hcard s) : ℤ) : ℝ))
-        • basis Q b.toBasis (powersetCard.compl hcard s) := by
-  set t := powersetCard.compl hcard s
-  have hts : Disjoint t.val s.val := (powersetCard.disjoint_iff_eq_compl hcard).2 rfl
-  have hunion : (powersetCard.disjUnion hts : Finset (Fin n)) = Finset.univ :=
-    Finset.eq_univ_of_card _ <| by
-      rw [powersetCard.coe_disjUnion, Finset.card_disjUnion, powersetCard.mem_iff.1 s.2,
-        powersetCard.mem_iff.1 t.2]
-      exact hcard
-  -- `e_t e_s = ε(t) vol`, and `ε(t) ^ 2 = 1`.
-  have hsq : ((powersetCard.sign t : ℤ) : ℝ) * ((powersetCard.sign t : ℤ) : ℝ) = 1 := by
-    rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
-  have hvol : volumeElement Q o = ((powersetCard.sign t : ℤ) : ℝ) •
-      (basis Q b.toBasis t * basis Q b.toBasis s) := by
-    rw [basis_mul_basis_of_disjoint (b.isOrthoᵢ_associated hQ) hts,
-      ← powersetCard.sign_eq_permOfDisjoint_sign (by omega) t s hts, hunion,
-      ← volumeElement_eq_basis o b hb]
-    simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ, smul_smul, hsq, one_smul]
-  have hss : basis Q b.toBasis s * basis Q b.toBasis s =
-      algebraMap ℝ (CliffordAlgebra Q) ((-1) ^ (k + 1).choose 2) := by
-    rw [basis_mul_self_of_orthonormal hQ, powersetCard.mem_iff.1 s.2]
-    simp
-  rw [hvol, smul_mul_assoc, mul_assoc, hss, ← Algebra.commutes, ← Algebra.smul_def, smul_smul,
-    mul_comm]
 
 /-- The volume element acts on basis forms of a positively oriented orthonormal basis by the
 signed Hodge star. -/

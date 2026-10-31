@@ -19,18 +19,12 @@ For a tower `R → A → B` and an `R`-module `M`, the structure map `A → B` i
 base change of the `R`-algebra map `IsScalarTower.toAlgHom R A B`. This file records that the two
 agree as functions, so the `A`-linearity of the first applies to the second.
 
-Mathlib's `Module.End.baseChangeHom` packages `LinearMap.baseChange` as an algebra map, but its
-generated computation lemma unfolds to `TensorProduct.liftAux`; this file records that it sends
-`f` to `f.baseChange A`, so the public `LinearMap.baseChange` API applies to its values.
-
 ## Main results
 
 * `AlgHom.rTensor_toLinearMap_apply_smul`: the scalar-extension comparison induced by an algebra
   map is semilinear over that map.
 * `TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply`: the `A`-linear base change of the
   structure map `A → B` is the base change of the `R`-algebra map `A →ₐ[R] B`.
-* `Module.End.baseChangeHom_apply`: the algebra map `Module.End.baseChangeHom` sends an
-  endomorphism `f` to its base change `f.baseChange A`.
 -/
 
 public section
@@ -59,11 +53,3 @@ theorem TensorProduct.AlgebraTensorModule.rTensor_linearMap_apply {R A B M : Typ
       (IsScalarTower.toAlgHom R A B).toLinearMap.rTensor M x := by
   rw [AlgebraTensorModule.coe_rTensor]
   exact congrArg (LinearMap.rTensor M · x) (LinearMap.ext fun a ↦ by simp)
-
-/-- The algebra map `Module.End.baseChangeHom` sends an endomorphism `f` to its base change
-`f.baseChange A`, so that `LinearMap.baseChange_tmul` computes its values on pure tensors. -/
-@[simp]
-theorem Module.End.baseChangeHom_apply {R A M : Type*} [CommSemiring R] [Semiring A]
-    [Algebra R A] [AddCommMonoid M] [Module R M] (f : Module.End R M) :
-    Module.End.baseChangeHom R A M f = f.baseChange A :=
-  rfl

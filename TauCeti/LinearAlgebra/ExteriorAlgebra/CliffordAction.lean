@@ -9,11 +9,11 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.BaseChange
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Grading
 -- Private: the transport of the involution and the grading along `equivExterior`, the
--- comparison of the two base-change maps, and the computation of `Module.End.baseChangeHom`
+-- comparison of the two base-change maps, and the computation of `LinearMap.tensorProductEnd`
 -- are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
-import TauCeti.LinearAlgebra.TensorProduct.Tower
+import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # The Clifford action on the exterior algebra
@@ -144,20 +144,17 @@ commutative `R`-algebra `A`: Mathlib's comparison `CliffordAlgebra.toBaseChange`
 `CliffordAlgebra Q` by `CliffordAlgebra.exteriorAction` on the second factor. -/
 def baseChangeExteriorAction :
     CliffordAlgebra (Q.baseChange A) →ₐ[A] Module.End A (A ⊗[R] ExteriorAlgebra R M) :=
-  (Algebra.TensorProduct.lift (Algebra.ofId A _)
-    ((Module.End.baseChangeHom R A (ExteriorAlgebra R M)).comp (exteriorAction Q))
-    fun _ _ ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left _ _).comp
-    (toBaseChange A Q)
+  ((LinearMap.tensorProductEnd R A (ExteriorAlgebra R M)).comp
+    (Algebra.TensorProduct.map (AlgHom.id A A) (exteriorAction Q))).comp (toBaseChange A Q)
 
 /-- An element whose image under `CliffordAlgebra.toBaseChange` is a pure tensor `w ⊗ c` acts on
 pure tensors factorwise: `(w * z) ⊗ c(c) ω`. -/
 private theorem baseChangeExteriorAction_tmul {a : CliffordAlgebra (Q.baseChange A)} {w : A}
     {c : CliffordAlgebra Q} (ha : toBaseChange A Q a = w ⊗ₜ c) (z : A) (x : ExteriorAlgebra R M) :
     baseChangeExteriorAction A Q a (z ⊗ₜ x) = (w * z) ⊗ₜ exteriorAction Q c x := by
-  rw [baseChangeExteriorAction, AlgHom.comp_apply, ha, Algebra.TensorProduct.lift_tmul,
-    AlgHom.comp_apply, Module.End.mul_apply, Module.End.baseChangeHom_apply,
-    LinearMap.baseChange_tmul, Algebra.ofId_apply, Module.algebraMap_end_apply,
-    TensorProduct.smul_tmul', smul_eq_mul]
+  rw [baseChangeExteriorAction, AlgHom.comp_apply, ha, AlgHom.comp_apply,
+    Algebra.TensorProduct.map_tmul, AlgHom.id_apply, LinearMap.tensorProductEnd_tmul,
+    LinearMap.smul_apply, LinearMap.baseChange_tmul, TensorProduct.smul_tmul', smul_eq_mul]
 
 /-- The image of a real Clifford element acts on the second factor:
 `c(a) (z ⊗ ω) = z ⊗ c(a) ω`. -/
