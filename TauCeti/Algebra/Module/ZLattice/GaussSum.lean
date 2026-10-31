@@ -47,9 +47,10 @@ dual lattice: its other side is the sum
 `∑_{y ∈ L^∨ / cL} e(a ‖y‖² / (2c))`
 
 over the classes of `L^∨` modulo `cL`, again well defined because `L` is even. For an integral
-full lattice of rank `n` the quotient `L^∨ / cL` has `cⁿ |L^∨ / L| = cⁿ det L` elements. When the
-coefficient is a multiple `N b` of the level, the summand is invariant under the larger lattice
-`c L^∨`, and the scaling `y ↦ √N • y` turns the sum into `|L^∨ / L|` times the Gauss sum
+full lattice of rank `n` and `c ≠ 0` the quotient `L^∨ / cL` is finite with
+`cⁿ |L^∨ / L| = cⁿ det L` elements (`ZLattice.IsIntegral.card_quotient_smul_submoduleOf_dual`).
+When the coefficient is a multiple `N b` of the level, the summand is invariant under the larger
+lattice `c L^∨`, and the scaling `y ↦ √N • y` turns the sum into `|L^∨ / L|` times the Gauss sum
 `G_{√N • L^∨}(b, c)` of the Fricke partner `√N • L^∨`, which is again an even lattice.
 
 ## Main definitions
@@ -70,8 +71,6 @@ coefficient is a multiple `N b` of the level, the summand is invariant under the
   for `m ∈ L^∨ \ L`.
 * `ZLattice.gaussSumTwisted_eq_of_mem`: for `m ∈ L` and `a d ≡ 1 (mod c)`,
   `G_L(a, c; m) = e(-a d² ‖m‖² / (2c)) G_L(a, c)`.
-* `ZLattice.IsIntegral.card_quotient_smul_submoduleOf_dual`: for an integral full lattice of
-  rank `n`, `L^∨ / cL` has `cⁿ |L^∨ / L|` elements.
 * `ZLattice.dualGaussSum_level_mul`: for an even full lattice of level `N`,
   `∑_{y ∈ L^∨ / cL} e(N b ‖y‖² / (2c)) = |L^∨ / L| · G_{√N • L^∨}(b, c)`.
 
@@ -399,29 +398,6 @@ theorem dualGaussSum_def (a : ℤ) (c : ℕ) [Fintype (dual L ⧸ ((c : ℝ) •
   (rfl)
 
 variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
-
-/-- For an integral full lattice `L` of rank `n`, the quotient `L^∨ / cL` has `cⁿ |L^∨ / L|`
-elements: the tower `cL ≤ L ≤ L^∨` has indices `cⁿ` and `|L^∨ / L| = det L`. -/
-theorem IsIntegral.card_quotient_smul_submoduleOf_dual (h : IsIntegral L) (c : ℕ) :
-    Nat.card (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L)) =
-      c ^ finrank ℝ E * Nat.card (DiscriminantGroup L) := by
-  have hcL : ((c : ℝ) • L).toAddSubgroup ≤ L.toAddSubgroup := by
-    rintro _ ⟨w, hw, rfl⟩
-    simpa [Nat.cast_smul_eq_nsmul] using L.nsmul_mem hw c
-  rw [← card_quotient_smul_submoduleOf L c, card_discriminantGroup]
-  -- The quotients by submodules are by definition the quotients by their additive subgroups,
-  -- whose orders are the relative indices.
-  exact (AddSubgroup.relIndex_mul_relIndex _ _ _ hcL
-    (toAddSubgroup_mono (isIntegral_iff_le_dual.mp h))).symm
-
-/-- For an integral full lattice `L` and `c ≠ 0`, the quotient `L^∨ / cL` is finite. -/
-theorem IsIntegral.finite_quotient_smul_submoduleOf_dual (h : IsIntegral L) (c : ℕ) [NeZero c] :
-    Finite (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L)) := by
-  borelize E
-  have := h.finite_discriminantGroup
-  refine Nat.finite_of_card_ne_zero ?_
-  rw [h.card_quotient_smul_submoduleOf_dual]
-  exact mul_ne_zero (pow_ne_zero _ (NeZero.ne c)) Nat.card_pos.ne'
 
 /-- The descent to the Fricke partner `M = √N • L^∨`, with `M` kept abstract. The summand
 `e(N b ‖y‖² / (2c))` is invariant under translation by `c L^∨`, the scaling `x ↦ √N • x` induces
