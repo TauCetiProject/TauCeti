@@ -14,8 +14,8 @@ import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 /-!
 # The integrability obstruction of the conformal flattening equation
 
-A metric `e^(2φ) g` has vanishing Schouten tensor exactly when `φ` solves the
-*conformal flattening equation*
+In dimension at least `3`, a metric `e^(2φ) g` has vanishing Schouten tensor exactly when `φ`
+solves the *conformal flattening equation*
 
 `Hess φ = P + dφ ⊗ dφ - (|dφ|² / 2) g`,
 
@@ -91,15 +91,7 @@ local notation "curvature" => cov.curvatureTensor (I := I) (M := M) (F := E)
 `Φ_ξ(u, v) = P(u, v) + ⟪ξ, u⟫ ⟪ξ, v⟫ - (‖ξ‖² / 2) ⟪u, v⟫`, where `P` is the Schouten tensor. -/
 def conformalFlatteningForm (x : M) (ξ : TangentSpace I x) :
     TangentSpace I x →ₗ[ℝ] TangentSpace I x →ₗ[ℝ] ℝ :=
-  LinearMap.mk₂ ℝ
-    (fun u v ↦ cov.schoutenTensor x u v + ⟪ξ, u⟫_ℝ * ⟪ξ, v⟫_ℝ - ‖ξ‖ ^ 2 / 2 * ⟪u, v⟫_ℝ)
-    (fun u u' v ↦ by
-      simp only [map_add, LinearMap.add_apply, inner_add_left, inner_add_right]; ring)
-    (fun c u v ↦ by
-      simp only [map_smul, LinearMap.smul_apply, real_inner_smul_left, real_inner_smul_right,
-        smul_eq_mul]; ring)
-    (fun u v v' ↦ by simp only [map_add, inner_add_right]; ring)
-    (fun c u v ↦ by simp only [map_smul, real_inner_smul_right, smul_eq_mul]; ring)
+  cov.schoutenTensor x + (innerₗ _ ξ).smulRight (innerₗ _ ξ) - (‖ξ‖ ^ 2 / 2) • innerₗ _
 
 /-- Evaluation of the right side of the conformal flattening equation. -/
 @[simp]
