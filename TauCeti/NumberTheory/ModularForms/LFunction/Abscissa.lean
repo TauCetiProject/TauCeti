@@ -180,7 +180,8 @@ in weight two the factor `n^ε` absorbs the divisor sums `σ₁(n)` of the Eisen
 theorem qExpansion_isBigO_rpow_of_Gamma1_le (hΓ : (Gamma1 N).map (mapGL ℝ) ≤ Γ) (hk : 2 ≤ k)
     {ε : ℝ} (hε : 0 < ε) [ModularFormClass F Γ k] (f : F) :
     (fun n ↦ (qExpansion 1 f).coeff n) =O[atTop] fun n : ℕ ↦ (n : ℝ) ^ ((k : ℝ) - 1 + ε) := by
-  obtain rfl | hk3 := (show k = 2 ∨ 3 ≤ k by omega)
+  have hcases : k = 2 ∨ 3 ≤ k := by omega
+  obtain rfl | hk3 := hcases
   · have h := isBigO_qExpansion_coeff_Gamma1_two hε
       (ModularForm.restrict hΓ (ModularFormClass.modularForm f))
     have hcoe : ⇑(ModularForm.restrict hΓ (ModularFormClass.modularForm f)) = ⇑f := by
