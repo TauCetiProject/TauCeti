@@ -113,6 +113,13 @@ theorem injuriesAt_eq_empty_of_eq_none {s : ℕ} (h : r e s = none) : injuriesAt
   ext x
   simp [h]
 
+/-- If nothing injures `e` in the transition to stage `s + 1`, no number at or below the active
+restraint enters in that transition. -/
+theorem notMem_fresh_of_injuriesAt_eq_empty {s b x : ℕ} (h : injuriesAt A r e s = ∅)
+    (hb : r e s = some b) (hx : x ≤ b) : x ∉ fresh A s := fun hx' =>
+  Finset.notMem_empty x <| h ▸
+    mem_injuriesAt.2 ⟨(mem_fresh.1 hx').1, (mem_fresh.1 hx').2, b, hb, hx⟩
+
 /-- A batch is nonempty exactly when it contains a number below the restraint bound, which is
 `b + 1` for an active restraint `some b` and `0` for no restraint. -/
 theorem injuriesAt_nonempty_iff {s : ℕ} :

@@ -98,6 +98,14 @@ theorem mem_injuriesAt_usePrefixRestraint {x : ℕ} :
     obtain ⟨c, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (Nat.ne_zero_of_lt hxb)
     exact ⟨c, hb, Nat.le_of_lt_succ hxb⟩
 
+/-- If nothing breaches the use prefix of `e` in the transition to stage `s + 1`, no number strictly
+below the active restraint enters in that transition. -/
+theorem notMem_fresh_of_injuriesAt_usePrefixRestraint_eq_empty {b x : ℕ}
+    (h : injuriesAt A (usePrefixRestraint r) e s = ∅) (hb : r e s = some b) (hx : x < b) :
+    x ∉ fresh A s := fun hx' =>
+  Finset.notMem_empty x <| h ▸
+    mem_injuriesAt_usePrefixRestraint.2 ⟨(mem_fresh.1 hx').1, (mem_fresh.1 hx').2, b, hb, hx⟩
+
 /-- Every use-prefix breach is an injury. -/
 theorem injuriesAt_usePrefixRestraint_subset :
     injuriesAt A (usePrefixRestraint r) e s ⊆ injuriesAt A r e s :=
