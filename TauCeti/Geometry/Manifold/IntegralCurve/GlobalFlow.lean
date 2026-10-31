@@ -193,11 +193,10 @@ noncomputable def globalFlowDiffeomorphHom {n : ℕ∞} (hn : 1 ≤ n) [IsManifo
     ℝ →+ Additive (M ≃ₘ^n⟮I, I⟯ M) where
   toFun t := Additive.ofMul (globalFlowDiffeomorph hcomplete hn hvn t)
   map_zero' := Additive.toMul.injective <| Diffeomorph.ext fun x ↦ by
-    rw [toMul_ofMul, globalFlowDiffeomorph_apply, Flow.map_zero_apply, toMul_zero,
-      Diffeomorph.one_apply]
+    simp only [toMul_ofMul, toMul_zero, Diffeomorph.one_apply, globalFlowDiffeomorph_apply,
+      Flow.map_zero_apply]
   map_add' s t := Additive.toMul.injective <| Diffeomorph.ext fun x ↦ by
-    rw [toMul_add, toMul_ofMul, toMul_ofMul, toMul_ofMul, Diffeomorph.mul_apply,
-      globalFlowDiffeomorph_apply, globalFlowDiffeomorph_apply, globalFlowDiffeomorph_apply,
+    simp only [toMul_add, toMul_ofMul, Diffeomorph.mul_apply, globalFlowDiffeomorph_apply,
       Flow.map_add]
 
 omit hv in

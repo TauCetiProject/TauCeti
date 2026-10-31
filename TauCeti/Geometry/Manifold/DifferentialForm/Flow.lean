@@ -30,7 +30,10 @@ derivative of forms. At `t = 0` it reads `d/dt|₀ (ψₜ^* α)ₓ = (L_Z α)ₓ
 Integrating it: if `L_Z α = c • α` for a real number `c`, then `ψₜ^* α = e^{ct} α` for every
 time `t` (`TauCeti.mpullback_globalFlow_eq_exp_smul`). This is how a Liouville flow rescales the
 symplectic form and its primitive, which turns hypersurfaces of contact type and the boundary of a
-Liouville domain into one-parameter families with conjugate characteristic foliations.
+Liouville domain into one-parameter families with conjugate characteristic foliations. For a
+closed form with closed contraction `ι_Z α`, Cartan's formula gives `L_Z α = 0`, so the flow
+preserves the form (`TauCeti.mpullback_globalFlow_of_mextDeriv_interior_eq_zero`); this is why
+Hamiltonian flows are symplectic.
 
 In the preferred chart at a point the flow is a jointly `C²` family of maps, and the statement
 reduces to its flat counterpart `TauCeti.hasDerivAt_compContinuousLinearMap_fderiv`.
@@ -40,6 +43,8 @@ reduces to its flat counterpart `TauCeti.hasDerivAt_compContinuousLinearMap_fder
 * `TauCeti.hasDerivAt_mpullback_globalFlow_zero`: the velocity of `ψₜ^* α` at `t = 0` is `L_Z α`.
 * `TauCeti.hasDerivAt_mpullback_globalFlow`: the time derivative of `ψₜ^* α` is `ψₜ^* L_Z α`.
 * `TauCeti.mpullback_globalFlow_eq_exp_smul`: if `L_Z α = c • α`, then `ψₜ^* α = e^{ct} α`.
+* `TauCeti.mpullback_globalFlow_of_mextDeriv_interior_eq_zero`: if `α` is closed and `ι_Z α` is
+  closed, then `ψₜ^* α = α`.
 
 ## References
 
@@ -278,5 +283,18 @@ theorem mpullback_globalFlow_eq_exp_smul {c : ℝ}
   rw [hP0] at hPt
   -- The value at `x` of the form `e^{ct} • α` is `e^{ct} • α x`.
   exact hPt
+
+/-- **Flows preserve closed forms with closed contraction.** For a closed smooth form `β` whose
+contraction `ι_Z β` with a complete `C²` vector field `Z` is closed, the flow `ψ` of `Z` satisfies
+`ψₜ^* β = β` for every time `t`, because Cartan's formula gives `L_Z β = d(ι_Z β) = 0`. -/
+theorem mpullback_globalFlow_of_mextDeriv_interior_eq_zero {β : SmoothForm I M F (k + 1)}
+    (hβ : β.IsClosed) (hZβ : mextDeriv (RoughForm.interior Z β.1) = 0) (t : ℝ) :
+    mpullback (F := F) I I (globalFlow Z (hZ.of_le one_le_two) hc t) β.1 = β.1 := by
+  -- Cartan's formula: `L_Z β = d(ι_Z β) = 0`.
+  have hL : mlieDerivForm Z β.1 = (0 : ℝ) • β.1 := by
+    rw [zero_smul, SmoothForm.mlieDerivForm_eq_mextDeriv_interior
+      (hZ.mdifferentiable two_ne_zero) hβ, hZβ]
+  simpa only [zero_mul, Real.exp_zero, one_smul] using
+    mpullback_globalFlow_eq_exp_smul hc hZ β.mdifferentiable hL t
 
 end TauCeti
