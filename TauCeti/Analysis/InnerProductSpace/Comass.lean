@@ -60,11 +60,12 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 namespace ContinuousAlternatingMap
 
-/-- The comass bound for real-valued forms. On the span `W` of an independent family `v`, with an
-orthonormal basis `b`, the form is `ω b` times the determinant in `b`, and the determinant of `v`
-has absolute value `‖v₁ ∧ ⋯ ∧ vₖ‖`. -/
+/-- The comass bound for real-valued forms: `|ω v| ≤ ‖ω‖ * ‖v₁ ∧ ⋯ ∧ vₖ‖`. -/
 private theorem abs_apply_le_opNorm_mul_norm_ιMulti (ω : E [⋀^Fin k]→L[ℝ] ℝ) (v : Fin k → E) :
     |ω v| ≤ ‖ω‖ * ‖ιMulti ℝ k v‖ := by
+  -- On the span `W` of an independent family `v`, with an orthonormal basis `b`, the form is
+  -- `ω b` times the determinant in `b`, and the determinant of `v` has absolute value
+  -- `‖v₁ ∧ ⋯ ∧ vₖ‖`.
   by_cases hv : LinearIndependent ℝ v
   swap
   · have hω : ω v = 0 := by
