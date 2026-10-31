@@ -135,18 +135,20 @@ theorem mem_chartRel_of_mem_closure {i j : D.J} [T2Space (D.U j)] {p : D.U i × 
     (hp : p ∈ closure (D.chartRel i j)) (h : p.1 ∈ range (D.f i j)) : p ∈ D.chartRel i j := by
   obtain ⟨x, y⟩ := p
   obtain ⟨z, rfl⟩ := h
-  refine D.mem_chartRel_iff_exists.2 ⟨z, rfl, ?_⟩
-  by_contra hne
-  obtain ⟨B₀, B, hB₀, hB, hdisj⟩ := t2_separation_nhds hne
-  -- Near `z`, the transition map takes values in `B₀`; the image of such a neighbourhood under
-  -- the open embedding `f i j` is a neighbourhood of `f i j z`.
-  have hN : (fun w ↦ D.f j i (D.t i j w)) ⁻¹' B₀ ∈ 𝓝 z :=
-    ((D.f j i).hom.continuous.comp (D.t i j).hom.continuous).continuousAt hB₀
-  obtain ⟨⟨_, _⟩, ⟨⟨w, hw, hwz⟩, hb⟩, hrel⟩ := mem_closure_iff_nhds.1 hp _
-    (prod_mem_nhds ((D.f_open i j).isOpenMap.image_mem_nhds hN) hB)
-  obtain ⟨w', rfl, rfl⟩ := D.mem_chartRel_iff_exists.1 hrel
-  obtain rfl := (D.f_open i j).injective hwz
-  exact hdisj.notMem_of_mem_left hw hb
+  -- Pulled back along the open map `f i j × id`, the relation is the graph of the transition map.
+  have hgraph : Prod.map (D.f i j) id ⁻¹' D.chartRel i j =
+      (fun w ↦ D.f j i (D.t i j w)).graph := by
+    ext ⟨w, b⟩
+    refine ⟨fun hrel ↦ ?_, fun hb ↦ D.mem_chartRel_iff_exists.2 ⟨w, rfl, hb⟩⟩
+    obtain ⟨w', hw', rfl⟩ := D.mem_chartRel_iff_exists.1 hrel
+    obtain rfl := (D.f_open i j).injective hw'
+    rfl
+  have hz : (z, y) ∈ closure (Prod.map (D.f i j) id ⁻¹' D.chartRel i j) :=
+    ((D.f_open i j).isOpenMap.prodMap IsOpenMap.id).preimage_closure_subset_closure_preimage hp
+  have hclosed : IsClosed (fun w ↦ D.f j i (D.t i j w)).graph :=
+    ((D.f j i).hom.continuous.comp (D.t i j).hom.continuous).isClosed_graph
+  rw [hgraph, hclosed.closure_eq] at hz
+  exact D.mem_chartRel_iff_exists.2 ⟨z, rfl, hz⟩
 
 /-- **Boundary criterion.** For Hausdorff charts, the relation between the `i`-th and `j`-th
 charts is closed exactly when a point of the `i`-th chart outside the overlap `V (i, j)` and a
