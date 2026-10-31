@@ -15,7 +15,7 @@ public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 
 Let `K` be a complete nontrivially normed field and `F` an ultrametric Banach space over `K`. A
 continuous linear map `u : E →L[K] F` maps the closed unit ball to a compactoid set exactly when it
-is a uniform limit of continuous maps of finite rank
+is a limit in operator norm of continuous linear maps of finite rank
 (`ContinuousLinearMap.hasCompactoidImage_iff_isCompletelyContinuous`). This is the comparison of
 Schikhof's compact operators with Serre's completely continuous operators on arbitrary Banach
 spaces; neither a discrete valuation nor spherical completeness of `K` is assumed.
@@ -27,7 +27,7 @@ set is approximated by the initial pieces of a single sequence
 subspace `D` spanned by a sequence. This subspace is of countable type, hence continuously
 linearly equivalent to a model space `C₀(I, K)` (`TauCeti.isPotentiallyONable_of_dense_span`).
 In such coordinates a compactoid set has uniformly decaying coordinates, so the coordinate
-projections onto finite sets of indices approximate `u` uniformly
+projections onto finite sets of indices approximate `u` in operator norm
 (`ContinuousLinearMap.HasCompactoidImage.isCompletelyContinuous_of_zeroAtInfty`). The
 argument never projects onto a finite-dimensional subspace of the ambient space `F`, which over a
 field that is not spherically complete need not be complemented.
@@ -40,8 +40,6 @@ differ: the identity of a line has finite rank but is not a compact operator
 
 ## Main results
 
-* `TauCeti.IsCompactoidSet.exists_seq_forall_exists_finset`: a compactoid set is approximated by
-  finite pieces of one sequence.
 * `ContinuousLinearMap.HasCompactoidImage.isCompletelyContinuous_of_zeroAtInfty`: a map into a
   model space with compactoid image is completely continuous.
 * `ContinuousLinearMap.HasCompactoidImage.isCompletelyContinuous`,
@@ -69,48 +67,6 @@ open scoped ZeroAtInfty
 
 variable {K E F : Type*}
 
-namespace TauCeti
-
-variable [NormedField K] [SeminormedAddCommGroup E] [NormedSpace K E]
-
-/-- **A compactoid set is approximated by finite pieces of one sequence**: there is a sequence `v`
-such that, for every `ε > 0`, every point of `S` is within `ε` of a combination of finitely many
-fixed terms of `v` with coefficients of norm at most one. Consequently `S` lies in the closure of
-the span of `v`. -/
-theorem IsCompactoidSet.exists_seq_forall_exists_finset {S : Set E} (hS : IsCompactoidSet K S) :
-    ∃ v : ℕ → E, ∀ ε : ℝ, 0 < ε → ∃ t : Finset ℕ, ∀ x ∈ S,
-      ∃ a : ℕ → K, (∀ i, ‖a i‖ ≤ 1) ∧ ‖x - ∑ i ∈ t, a i • v i‖ < ε := by
-  classical
-  choose m w hw using fun n : ℕ ↦ isCompactoidSet_iff.1 hS (1 / (n + 1)) Nat.one_div_pos_of_nat
-  -- Enumerate the approximating families for all the radii `1 / (n + 1)` at once.
-  let e : (Σ n, Fin (m n)) → ℕ := Encodable.encode
-  have he : Function.Injective e := Encodable.encode_injective
-  refine ⟨Function.extend e (fun p ↦ w p.1 p.2) 0, fun ε hε ↦ ?_⟩
-  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hε
-  refine ⟨Finset.univ.image fun i : Fin (m n) ↦ e ⟨n, i⟩, fun x hx ↦ ?_⟩
-  obtain ⟨a, ha, hxa⟩ := hw n x hx
-  -- Keep the coefficients of the `n`-th family and put zero everywhere else.
-  let b : (Σ n, Fin (m n)) → K := fun p ↦ if h : p.1 = n then a (Fin.cast (congrArg m h) p.2) else 0
-  refine ⟨Function.extend e b 0, fun i ↦ ?_, ?_⟩
-  · by_cases hi : ∃ p, e p = i
-    · obtain ⟨p, rfl⟩ := hi
-      rw [he.extend_apply]
-      dsimp only [b]
-      split_ifs
-      · exact ha _
-      · simp
-    · simp [Function.extend_apply' _ _ _ hi]
-  · have hsum : ∑ i ∈ Finset.univ.image fun i : Fin (m n) ↦ e ⟨n, i⟩, Function.extend e b 0 i •
-        Function.extend e (fun p ↦ w p.1 p.2) 0 i = ∑ i, a i • w n i := by
-      rw [Finset.sum_image fun i _ j _ h ↦ by simpa using he h]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [he.extend_apply, he.extend_apply]
-      simp [b]
-    rw [hsum]
-    exact hxa.trans hn
-
-end TauCeti
-
 namespace ContinuousLinearMap
 
 section ZeroAtInfty
@@ -120,7 +76,7 @@ variable [NontriviallyNormedField K] [SeminormedAddCommGroup E] [NormedSpace K E
 
 /-- **A map into a model space with compactoid image is completely continuous**: since the
 coordinates of a compactoid subset of `C₀(I, K)` decay uniformly, the coordinate projections onto
-finite sets of indices approximate the map uniformly. Neither completeness of `K` nor the
+finite sets of indices approximate the map in operator norm. Neither completeness of `K` nor the
 ultrametric inequality is needed. -/
 theorem HasCompactoidImage.isCompletelyContinuous_of_zeroAtInfty {u : E →L[K] C₀(I, K)}
     (hu : u.HasCompactoidImage) : u.IsCompletelyContinuous := by
@@ -151,8 +107,8 @@ variable [NontriviallyNormedField K] [CompleteSpace K] [SeminormedAddCommGroup E
 
 /-- **Compactoid image implies complete continuity.** Over a complete nontrivially normed field,
 a continuous linear map into an ultrametric Banach space that maps the closed unit ball to a
-compactoid set is a uniform limit of continuous maps of finite rank. The image lies in a closed
-subspace of countable type, which has a model space `C₀(I, K)` as coordinates. -/
+compactoid set is a limit in operator norm of continuous linear maps of finite rank. The image lies
+in a closed subspace of countable type, which has a model space `C₀(I, K)` as coordinates. -/
 theorem HasCompactoidImage.isCompletelyContinuous {u : E →L[K] F} (hu : u.HasCompactoidImage) :
     u.IsCompletelyContinuous := by
   obtain ⟨v, hv⟩ := (hasCompactoidImage_iff.1 hu).exists_seq_forall_exists_finset
@@ -218,8 +174,8 @@ end Banach
 end ContinuousLinearMap
 
 /-- **Compact operators are completely continuous.** Over a complete nontrivially normed field,
-every compact operator into an ultrametric Banach space is a uniform limit of continuous maps of
-finite rank. -/
+every compact operator into an ultrametric Banach space is a limit in operator norm of continuous
+linear maps of finite rank. -/
 theorem IsCompactOperator.isCompletelyContinuous [NontriviallyNormedField K] [CompleteSpace K]
     [SeminormedAddCommGroup E] [NormedSpace K E] [NormedAddCommGroup F] [NormedSpace K F]
     [IsUltrametricDist F] [CompleteSpace F] {u : E →L[K] F} (hu : IsCompactOperator u) :
