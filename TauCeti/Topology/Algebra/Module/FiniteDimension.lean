@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Multilinear.Basic
+public import Mathlib.LinearAlgebra.Multilinear.FiniteDimensional
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 public import Mathlib.Topology.Algebra.Ring.Ideal
@@ -32,6 +33,11 @@ not have when the multilinear map arrives from algebra — a tensor or symmetric
 construction, say — rather than from analysis. In particular alternating maps on such a space
 are the same as continuous alternating maps: `AlternatingMap.toContinuousAlternatingMap` is the
 alternating companion of `LinearMap.toContinuousLinearMap`.
+
+Continuous alternating maps between finite free modules over a Noetherian ring form a finite
+module, `ContinuousAlternatingMap.instModuleFinite`, the alternating companion of Mathlib's
+`ContinuousLinearMap.instModuleFinite`. No topological assumption beyond what makes them a module
+is needed: they embed linearly into the finite module of multilinear maps.
 
 In the same setting every seminorm on a finite-dimensional Hausdorff topological vector space is
 continuous: `Seminorm.continuous_of_finiteDimensional`. Such a seminorm is dominated by a multiple
@@ -149,6 +155,22 @@ theorem toContinuousAlternatingMap_symm_apply (f : M [⋀^ι]→L[𝕜] N) :
   (rfl)
 
 end AlternatingMap
+
+namespace ContinuousAlternatingMap
+
+variable {R ι M N : Type*} [CommRing R] [IsNoetherianRing R] [Finite ι] [AddCommGroup M]
+  [Module R M] [TopologicalSpace M] [Module.Finite R M] [Module.Free R M] [AddCommGroup N]
+  [Module R N] [TopologicalSpace N] [ContinuousAdd N] [ContinuousConstSMul R N]
+  [Module.Finite R N] [Module.Free R N]
+
+/-- The space of continuous alternating maps between finite free modules over a Noetherian ring
+is a finite module. -/
+instance instModuleFinite : Module.Finite R (M [⋀^ι]→L[R] N) :=
+  .of_injective (ContinuousMultilinearMap.toMultilinearMapLinear.comp
+      (toContinuousMultilinearMapLinear (R := R)))
+    (ContinuousMultilinearMap.toMultilinearMap_injective.comp toContinuousMultilinearMap_injective)
+
+end ContinuousAlternatingMap
 
 namespace Seminorm
 

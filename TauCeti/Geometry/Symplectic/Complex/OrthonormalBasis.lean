@@ -23,6 +23,16 @@ then uses `TauCeti.complexEuclideanRealLinearIsometryEquiv` to place each real c
 immediately before its imaginary coordinate. Both constructions preserve the original norm
 and real scalar action.
 
+Conversely, every even-dimensional real inner product space carries an orthogonal almost complex
+structure: transport multiplication by `i` along a real linear isometry with `ℂⁿ`.
+
+## Main results
+
+* `TauCeti.AlmostComplexStructure.exists_adapted_orthonormalBasis`: adapted orthonormal bases
+  exist.
+* `TauCeti.AlmostComplexStructure.exists_forall_norm_apply_eq`: orthogonal almost complex
+  structures exist in even dimension.
+
 ## References
 
 * H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I §5.
@@ -73,5 +83,20 @@ theorem exists_adapted_orthonormalBasis (J : AlmostComplexStructure V) (hJ : ∀
     LinearIsometryEquiv.trans_apply]
   rw [hsingle]
   exact (b.repr.symm.map_smul Complex.I _).trans (hI _)
+
+/-- An even-dimensional real inner product space admits an orthogonal almost complex structure,
+including the zero structure in dimension zero. -/
+theorem exists_forall_norm_apply_eq (hV : Even (finrank ℝ V)) :
+    ∃ J : AlmostComplexStructure V, ∀ v, ‖J v‖ = ‖v‖ := by
+  obtain ⟨n, hn⟩ := hV
+  -- A real linear isometry `e : V ≃ ℂⁿ`; then `J = e⁻¹ ∘ (i • ·) ∘ e`.
+  let e : V ≃ₗᵢ[ℝ] EuclideanSpace ℂ (Fin n) :=
+    ((stdOrthonormalBasis ℝ V).reindex (finCongr (by omega))).repr.trans
+      (complexEuclideanRealLinearIsometryEquiv n).symm
+  let L := DistribSMul.toLinearMap ℝ (EuclideanSpace ℂ (Fin n)) Complex.I
+  refine ⟨⟨e.symm.toLinearMap ∘ₗ L ∘ₗ e.toLinearMap, ?_⟩, fun v ↦ ?_⟩
+  · ext v
+    simp [L, smul_smul]
+  · simp [L, norm_smul]
 
 end TauCeti.AlmostComplexStructure

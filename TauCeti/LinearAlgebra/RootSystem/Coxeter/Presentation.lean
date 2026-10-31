@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.Coxeter.Bruhat
 public import TauCeti.GroupTheory.Coxeter.ExchangeCondition
 public import TauCeti.LinearAlgebra.RootSystem.BraidRelation
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 import all TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 
 /-!

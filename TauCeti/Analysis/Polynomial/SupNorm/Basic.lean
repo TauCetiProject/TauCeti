@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Polynomial.Norm
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Data.Nat.Choose.Bounds
+public import TauCeti.Analysis.Normed.Module.Basic
 import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.Tactic.NormNum

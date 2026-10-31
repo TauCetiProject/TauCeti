@@ -55,6 +55,11 @@ outside that case Mathlib's `ContinuousLinearMap.inverse` returns `0` and so doe
 noncomputable def kerSection (A : M →L[R] F) (q : M →L[R] G) : G →L[R] M :=
   (A.prod q).inverse ∘L .inr R F G
 
+/-- The kernel section is the inverse of the paired coordinate map on the zero slice. -/
+theorem kerSection_def (A : M →L[R] F) (q : M →L[R] G) :
+    A.kerSection q = (A.prod q).inverse ∘L .inr R F G :=
+  (rfl)
+
 /-- The defining property of the section: the pair `(A, q)` sends `A.kerSection q v` to `(0, v)`.
 Not a `simp` lemma: its two components, `ContinuousLinearMap.apply_kerSection` and
 `ContinuousLinearMap.apply_kerSection_right`, are, and together they prove it. -/

@@ -11,6 +11,7 @@ public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 import Mathlib.CategoryTheory.Abelian.Refinements
 import TauCeti.CategoryTheory.Abelian.GrothendieckAxioms.Colim
+import TauCeti.CategoryTheory.ObjectProperty.FunctorCategory.PreservesLimits
 
 /-!
 # K-flat resolutions of unbounded complexes
@@ -40,8 +41,11 @@ Given morphisms `p X : E X ⟶ X` for all objects `X`, this colimit is
 is a quasi-isomorphism when every `p X` is an epimorphism and sequential colimits are exact, and
 the colimit is K-flat when every `E X` is flat and the exactness conditions above hold. Every
 term of every stage is built from the objects `E X` by binary biproducts
-(`CochainComplex.kFlatResolution.prop_sequence_obj_X`). The stages, their transition maps and
-their morphisms to `K` are computed by `CochainComplex.kFlatResolution.sequence_obj_succ`,
+(`CochainComplex.kFlatResolution.prop_sequence_obj_X`), so the terms of the colimit are flat
+when every `E X` is flat
+(`CochainComplex.preservesFiniteLimits_tensorLeft_kFlatResolution_X`). The stages, their
+transition maps and their morphisms to `K` are computed by
+`CochainComplex.kFlatResolution.sequence_obj_succ`,
 `CochainComplex.kFlatResolution.sequence_map_succ` and
 `CochainComplex.kFlatResolution.toComplex_app_succ`, in terms of the public cell-attachment step
 `CochainComplex.kFlatResolution.attachingMap` and `CochainComplex.kFlatResolution.attachDesc`.
@@ -311,6 +315,29 @@ public instance isKFlat_kFlatResolution [MonoidalCategory C] [MonoidalPreadditiv
   have : ∀ k, ((kFlatResolution.sequence E p K).obj k).IsKFlat :=
     kFlatResolution.isKFlat_stage E p K
   isKFlat_of_isColimit (colimit.isColimit _)
+
+/-- The terms of the resolution `kFlatResolution E p K` are flat when the objects `E X` are flat,
+and sequential colimits are exact and commute with tensoring by each object. -/
+public instance preservesFiniteLimits_tensorLeft_kFlatResolution_X [MonoidalCategory C]
+    [MonoidalPreadditive C] [HasExactColimitsOfShape ℕ C]
+    [∀ X : C, PreservesColimitsOfShape ℕ (tensorRight X)]
+    [∀ X, PreservesFiniteLimits (tensorLeft (E X))] (n : ℤ) :
+    PreservesFiniteLimits (tensorLeft ((kFlatResolution E p K).X n)) := by
+  -- flatness of `X` is the property of `tensorLeft X` of preserving finite limits, which is
+  -- closed under binary products and sequential colimits of functors
+  let Q : ObjectProperty C := ObjectProperty.preservesFiniteLimits.inverseImage (curriedTensor C)
+  -- evaluating `curriedTensor C` at `X` is `tensorRight X` by definition
+  have : PreservesColimitsOfShape ℕ (curriedTensor C) :=
+    preservesColimitsOfShape_of_evaluation _ _ fun X ↦
+      inferInstanceAs (PreservesColimitsOfShape ℕ (tensorRight X))
+  have : PreservesBinaryBiproducts (curriedTensor C) :=
+    preservesBinaryBiproducts_of_preservesBiproducts _
+  have : PreservesLimitsOfShape (Discrete WalkingPair) (curriedTensor C) :=
+    preservesBinaryProducts_of_preservesBinaryBiproducts _
+  have hQ := kFlatResolution.prop_sequence_obj_X E p K Q fun X ↦
+    (inferInstance : PreservesFiniteLimits (tensorLeft (E X)))
+  exact Q.prop_of_isColimit (isColimitOfPreserves (eval C _ n) (colimit.isColimit _))
+    fun k ↦ hQ k n
 
 end Resolution
 

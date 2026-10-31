@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Henselian
 public import Mathlib.RingTheory.Unramified.LocalStructure
 public import TauCeti.RingTheory.Etale.FiniteEtaleSplit.Basic
 
+import TauCeti.RingTheory.TensorProduct.LiftEquiv
 import TauCeti.RingTheory.Unramified.Diagonal
 
 /-!
@@ -133,21 +134,10 @@ variable {R S A : Type*} [CommRing R] [CommRing S] [HenselianLocalRing S] [Algeb
 theorem comp_bijective_of_algebra :
     Function.Bijective
       ((IsScalarTower.toAlgHom R S (ResidueField S)).comp :
-        (A →ₐ[R] S) → A →ₐ[R] ResidueField S) := by
+        (A →ₐ[R] S) → A →ₐ[R] ResidueField S) :=
   -- Base change `A` to the étale `S`-algebra `S ⊗[R] A` and apply `comp_bijective` over `S`.
-  have h : Function.Bijective
-      ((Algebra.ofId S (ResidueField S)).comp :
-        (S ⊗[R] A →ₐ[S] S) → S ⊗[R] A →ₐ[S] ResidueField S) :=
-    comp_bijective (R := S) (S := S ⊗[R] A)
-  have hcomp : ((IsScalarTower.toAlgHom R S (ResidueField S)).comp :
-      (A →ₐ[R] S) → A →ₐ[R] ResidueField S) =
-      (AlgHom.liftEquiv R S A (ResidueField S)).symm ∘
-        (Algebra.ofId S (ResidueField S)).comp ∘ AlgHom.liftEquiv R S A S := by
-    ext f a
-    simp
-  rw [hcomp]
-  exact (AlgHom.liftEquiv R S A (ResidueField S)).symm.bijective.comp
-    (h.comp (AlgHom.liftEquiv R S A S).bijective)
+  (AlgHom.restrictScalars_comp_bijective_iff R A (Algebra.ofId S (ResidueField S))).mpr
+    (comp_bijective (R := S) (S := S ⊗[R] A))
 
 end Relative
 
