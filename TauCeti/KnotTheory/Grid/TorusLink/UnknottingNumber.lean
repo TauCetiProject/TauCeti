@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.CrossingChange.UnknottingNumber
 public import TauCeti.KnotTheory.Grid.TorusLink.Basic
+import TauCeti.Data.Fin.Basic
 import TauCeti.KnotTheory.Grid.Move.Stabilization
 import TauCeti.KnotTheory.Grid.TorusLink.Alexander
 
@@ -55,10 +56,6 @@ namespace GridDiagram
 
 /-! ### A crossing change between the `(2, q + 3)` and `(2, q + 1)` torus link grids -/
 
-/-- The element `1` of `Fin m` has value `1` once `2 ≤ m`. -/
-private theorem val_one_of_two_le {m : ℕ} [NeZero m] (hm : 2 ≤ m) : ((1 : Fin m) : ℕ) = 1 := by
-  rw [Fin.val_one', Nat.mod_eq_of_lt hm]
-
 variable (q : ℕ)
 
 /-- In the standard grid of the `(2, q + 1)` torus link the `X`-marking of column `c` sits in row
@@ -75,7 +72,7 @@ columns are exchanged, and the others stay on the diagonal. -/
 private theorem stabilizeX_torusLink_one_O_val (j : Fin (1 + 1 + (q + 1) + 1)) :
     (((torusLink 1 q).stabilizeX 1 0 1).O j : ℕ) =
       if (j : ℕ) = 0 then 1 else if (j : ℕ) = 1 then 0 else j := by
-  have h1 := val_one_of_two_le (m := 1 + 1 + (q + 1) + 1) (by omega)
+  have h1 := Fin.val_one_of_two_le (m := 1 + 1 + (q + 1) + 1) (by omega)
   rw [stabilizeX_O]
   induction j using Fin.succAboveCases 1 with
   | x => simp
@@ -90,8 +87,8 @@ rows, and every other column carries it two rows below the diagonal. -/
 private theorem stabilizeX_torusLink_one_X_val (j : Fin (1 + 1 + (q + 1) + 1)) :
     (((torusLink 1 q).stabilizeX 1 0 1).X j : ℕ) =
       if (j : ℕ) = 0 then q + 2 else if (j : ℕ) = 1 then q + 3 else j - 2 := by
-  have h1 := val_one_of_two_le (m := 1 + 1 + (q + 1) + 1) (by omega)
-  have h1' := val_one_of_two_le (m := 1 + 1 + (q + 1)) (by omega)
+  have h1 := Fin.val_one_of_two_le (m := 1 + 1 + (q + 1) + 1) (by omega)
+  have h1' := Fin.val_one_of_two_le (m := 1 + 1 + (q + 1)) (by omega)
   rw [stabilizeX_X]
   induction j using Fin.succAboveCases 1 with
   | x =>
@@ -118,7 +115,7 @@ then that of column `0`, with the new row and column at the top and right edge. 
 private theorem stabilizeX_stabilizeX_torusLink_one :
     ((torusLink 1 q).stabilizeX 1 0 1).stabilizeX (Fin.last _) (Fin.last _) 0 =
       (torusLink 1 (q + 2)).swapColumns 0 1 := by
-  have h1 := val_one_of_two_le (m := 1 + 1 + (q + 2 + 1)) (by omega)
+  have h1 := Fin.val_one_of_two_le (m := 1 + 1 + (q + 2 + 1)) (by omega)
   have h0 : ((0 : Fin (1 + 1 + (q + 2 + 1))) : ℕ) = 0 := rfl
   refine GridDiagram.ext (GridState.ext fun c => Fin.ext ?_) (GridState.ext fun c => Fin.ext ?_)
   · rw [stabilizeX_O, swapColumns_O, GridState.swapColumns_apply, torusLink_O_apply,
@@ -161,7 +158,7 @@ private theorem stabilizeX_stabilizeX_torusLink_one :
 /-- The first two columns of the `(2, q + 3)` torus link grid interleave. -/
 private theorem columnsInterleaving_torusLink_one_zero :
     (torusLink 1 (q + 2)).ColumnsInterleaving 0 (finRotate _ 0) := by
-  have h1 := val_one_of_two_le (m := 1 + 1 + (q + 2 + 1)) (by omega)
+  have h1 := Fin.val_one_of_two_le (m := 1 + 1 + (q + 2 + 1)) (by omega)
   have hX0 := torusLink_X_val_of_le 1 (q + 2) (c := 0) (by simp)
   have hX1 := torusLink_X_val_of_le 1 (q + 2) (c := 1) h1.le
   have hr : finRotate (1 + 1 + (q + 2 + 1)) 0 = 1 := finRotate_apply_zero
@@ -178,7 +175,7 @@ private theorem movesTo_swapColumns_torusLink_one :
   set H₁ := (torusLink 1 q).stabilizeX 1 0 1
   have h₁ : (1 : Fin (1 + 1 + (q + 1))).castSucc = 1 := by
     ext
-    rw [Fin.val_castSucc, val_one_of_two_le (by omega), val_one_of_two_le (by omega)]
+    rw [Fin.val_castSucc, Fin.val_one_of_two_le (by omega), Fin.val_one_of_two_le (by omega)]
   -- The cyclic permutation of the columns moves the new last column of the second stabilization
   -- to the front, next to the split column `0`; the new row then slides down by commutations
   -- to the elementary stabilization.
