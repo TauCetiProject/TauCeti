@@ -66,8 +66,7 @@ theorem finite_shafarevichTateGroupKer
   have : Finite (AddSubgroup.torsionBy (W₁.shafarevichTateGroup τ) (ofIsogeny φ).degree) := by
     simpa only [Hom.degree_ofIsogeny] using
       (inferInstance : Finite (AddSubgroup.torsionBy (W₁.shafarevichTateGroup τ) φ.degree))
-  exact Finite.of_injective _ (AddSubgroup.inclusion_injective
-    ((ofIsogeny φ).ker_shafarevichTateMap_le_torsionBy τ))
+  exact (ofIsogeny φ).finite_ker_shafarevichTateMap τ
 
 section Separable
 
