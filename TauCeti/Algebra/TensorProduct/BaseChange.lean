@@ -39,7 +39,8 @@ with passing to the opposite algebra, and composes in stages:
 * `TauCeti.Algebra.TensorProduct.baseChangeAutHom`: the base change `σ ↦ id ⊗ σ` of
   automorphisms of `L` along a commutative algebra `A`, acting on `A ⊗[K] L`.
 * `TauCeti.Algebra.TensorProduct.rightMulSemiringAction`: a monoid acting on `L` by
-  `K`-algebra endomorphisms acts on `A ⊗[K] L` through the right factor.
+  `K`-algebra endomorphisms acts on `A ⊗[K] L` through the right factor; for automorphisms of
+  `L` it is `baseChangeAutHom` (`rightMulSemiringAction_smul_eq_baseChangeAutHom`).
 * `TauCeti.ScalarAut.semilinearMap`: the scalar action as a semilinear map over `L`.
 * `TauCeti.ScalarAut.instMulSemiringAction`: scalar automorphisms act on a scalar extension
   through its scalar factor.
@@ -343,18 +344,14 @@ This is not a global instance: when `G` also acts on `A`, Mathlib's action throu
 would make the action of `G` on `A ⊗[K] L` ambiguous. -/
 noncomputable abbrev rightMulSemiringAction : MulSemiringAction G (A ⊗[K] L) where
   smul g := Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g)
-  one_smul x := by
-    change Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L 1) x = x
-    induction x using TensorProduct.inductionOn with
-    | tmul a x => simp
-    | add x y hx hy => simp_all
-  mul_smul g h x := by
-    change Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L (g * h)) x =
-      Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g)
-        (Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L h) x)
-    induction x using TensorProduct.inductionOn with
-    | tmul a x => simp [mul_smul]
-    | add x y hx hy => simp_all
+  one_smul := DFunLike.congr_fun (f := Algebra.TensorProduct.map (AlgHom.id A A)
+    (MulSemiringAction.toAlgHom K L (1 : G))) (g := AlgHom.id A _)
+    (Algebra.TensorProduct.ext' fun _ _ ↦ by simp)
+  mul_smul g h := DFunLike.congr_fun (f := Algebra.TensorProduct.map (AlgHom.id A A)
+    (MulSemiringAction.toAlgHom K L (g * h)))
+    (g := (Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g)).comp
+      (Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L h)))
+    (Algebra.TensorProduct.ext' fun _ _ ↦ by simp [mul_smul])
   smul_zero _ := map_zero _
   smul_add _ := map_add _
   smul_one _ := map_one _
@@ -364,6 +361,11 @@ attribute [local instance] rightMulSemiringAction
 
 variable {A L G}
 
+/-- The right-factor action of `g` is the `A`-algebra map `id ⊗ g`. -/
+theorem rightMulSemiringAction_smul_def (g : G) (z : A ⊗[K] L) :
+    g • z = Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g) z :=
+  rfl
+
 /-- The right-factor action on a pure tensor. -/
 @[simp]
 theorem rightMulSemiringAction_smul_tmul (g : G) (a : A) (x : L) :
@@ -372,8 +374,15 @@ theorem rightMulSemiringAction_smul_tmul (g : G) (a : A) (x : L) :
 
 /-- The right-factor action is by `A`-linear maps. -/
 instance rightMulSemiringAction_smulCommClass : SMulCommClass G A (A ⊗[K] L) where
-  smul_comm g :=
-    (Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g)).map_smul_of_tower
+  smul_comm g a z := by
+    simp only [rightMulSemiringAction_smul_def, map_smul]
+
+/-- For `L`-automorphisms acting on `L`, the right-factor action is `baseChangeAutHom`. -/
+theorem rightMulSemiringAction_smul_eq_baseChangeAutHom (σ : L ≃ₐ[K] L) (z : A ⊗[K] L) :
+    σ • z = baseChangeAutHom A L σ z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul a x => simp
+  | add x y hx hy => simp only [smul_add, map_add, hx, hy]
 
 end RightAction
 

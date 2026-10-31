@@ -8,10 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.RingTheory.Invariant.Free
--- Public: the instance `IsFiniteEtaleTorsor.baseChange` is stated for the right-factor action.
-public import TauCeti.Algebra.TensorProduct.BaseChange
 import Mathlib.RingTheory.TensorProduct.IncludeLeftSubRight
-import Mathlib.RingTheory.TensorProduct.Pi
 
 /-!
 # Finite étale torsors under a finite group
@@ -175,20 +172,13 @@ instance baseChange (A' : Type*) [CommRing A'] [Algebra A A'] [h : IsFiniteEtale
   let e : A' ⊗[A] (B ⊗[A] B) ≃ₐ[A'] (G → A' ⊗[A] B) :=
     (Algebra.TensorProduct.congr AlgEquiv.refl eB).trans
       (Algebra.TensorProduct.piRight A A' A' fun _ ↦ B)
-  have key (z : A' ⊗[A] (B ⊗[A] B)) : MulSemiringAction.tensorToPi A' (A' ⊗[A] B) G
-      (TensorProduct.baseChangeTensorAlgEquiv A A' B B z) = e z := by
-    induction z using TensorProduct.inductionOn with
-    | add x y hx hy => simp only [map_add, hx, hy]
-    | tmul a w =>
-      induction w using TensorProduct.inductionOn with
-      | add x y hx hy => simp only [tmul_add, map_add, hx, hy]
-      | tmul b b' =>
-        funext g
-        simp [e, eB]
   have hcomp : ⇑(MulSemiringAction.tensorToPi A' (A' ⊗[A] B) G) =
       e ∘ (TensorProduct.baseChangeTensorAlgEquiv A A' B B).symm := by
     funext x
-    simpa using key ((TensorProduct.baseChangeTensorAlgEquiv A A' B B).symm x)
+    rw [Function.comp_apply, ← (TensorProduct.baseChangeTensorAlgEquiv A A' B B).apply_symm_apply x,
+      MulSemiringAction.tensorToPi_baseChange, AlgEquiv.symm_apply_apply]
+    -- `e` is `id ⊗ tensorToPi A B G` followed by `piRight`, whose underlying map is `piRightHom`.
+    rfl
   rw [hcomp]
   exact e.bijective.comp (AlgEquiv.bijective _)
 

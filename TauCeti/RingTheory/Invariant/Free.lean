@@ -13,6 +13,10 @@ import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
+-- Public: `tensorToPi_baseChange` is stated with `baseChangeTensorAlgEquiv`, the right-factor
+-- action on `A' ⊗[R] A` and `Algebra.TensorProduct.piRightHom`.
+public import TauCeti.Algebra.TensorProduct.BaseChange
+public import Mathlib.RingTheory.TensorProduct.Pi
 import TauCeti.RingTheory.Invariant.Basic
 import TauCeti.RingTheory.FiniteType.PointSeparation
 
@@ -60,6 +64,8 @@ The invariant tensor identity `mul_tmul_eq_tmul_mul` also allows a noncommutativ
 
 ## Main results
 
+* `TauCeti.MulSemiringAction.tensorToPi_baseChange`: `tensorToPi` commutes with base change, for
+  `G` acting on `A' ⊗[R] A` through the right factor.
 * `TauCeti.MulSemiringAction.tensorToPi_surjective_iff`: `tensorToPi` is surjective exactly when
   the action is free.
 * `TauCeti.MulSemiringAction.tensorToPi_bijective`: for a free action with invariant ring `R`,
@@ -121,6 +127,26 @@ theorem tensorToPi_map_toAlgHom (k : G) (z : A ⊗[R] A) (g : G) :
   induction z using TensorProduct.inductionOn with
   | tmul a b => simp [mul_smul]
   | add x y hx hy => simp [hx, hy]
+
+attribute [local instance] TauCeti.Algebra.TensorProduct.rightMulSemiringAction in
+/-- `tensorToPi` commutes with base change along `R → A'`, with `G` acting on `A' ⊗[R] A`
+through the right factor: read through `A' ⊗[R] (A ⊗[R] A) ≃ (A' ⊗[R] A) ⊗[A'] (A' ⊗[R] A)`,
+the map `tensorToPi` for `A' ⊗[R] A` is `id ⊗ tensorToPi R A G` followed by
+`A' ⊗[R] (G → A) → (G → A' ⊗[R] A)`. -/
+theorem tensorToPi_baseChange (A' : Type*) [CommSemiring A'] [Algebra R A']
+    (z : A' ⊗[R] (A ⊗[R] A)) :
+    tensorToPi A' (A' ⊗[R] A) G
+        (TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv R A' A A z) =
+      Algebra.TensorProduct.piRightHom R A' A' (fun _ : G ↦ A)
+        (Algebra.TensorProduct.map (AlgHom.id A' A') ((tensorToPi R A G).restrictScalars R) z) := by
+  induction z using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul a w =>
+    induction w using TensorProduct.inductionOn with
+    | add x y hx hy => simp only [tmul_add, map_add, hx, hy]
+    | tmul b b' =>
+      funext g
+      simp [Algebra.TensorProduct.piRightHom, TensorProduct.piRightHom_tmul]
 
 end Semiring
 
