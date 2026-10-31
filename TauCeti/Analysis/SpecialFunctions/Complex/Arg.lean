@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 
 /-!
 # The argument of a quotient, and rotations onto the nonpositive real axis
@@ -16,8 +17,10 @@ of a product exactly when the sum of the arguments lies in `(-π, π]`
 common instance: for two points of the open upper half-plane the arguments lie in `(0, π)`, so
 the argument of their quotient is the difference of their arguments. It also records that every
 complex number is rotated onto the nonpositive real axis by the square of a unit complex number.
-Finally, a sector `{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, cut off by a punctured ball
-about its vertex, is the image of an open rectangle in polar coordinates.
+A sector `{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, cut off by a punctured ball
+about its vertex, is the image of an open rectangle in polar coordinates. Finally, it measures
+angles from the ray `{circleMap c r θ | 0 < r}` through `arg (-((z - c) * exp (-(θ * I))))`, which
+is continuous off that ray and its vertex `c`.
 
 ## Main results
 
@@ -28,6 +31,10 @@ about its vertex, is the image of an open rectangle in polar coordinates.
 * `TauCeti.image_polar_rectangle_eq`: in polar coordinates about `v`, rotated and scaled by `b`,
   the punctured truncated sector `{|arg ((z - v) / b)| < α}`, `α ≤ π`, is the image of an open
   rectangle.
+* `TauCeti.arg_neg_mul_exp_circleMap_sub`, `TauCeti.mem_image_circleMap_Ioi_of_arg_neg_mul_exp`:
+  measured from the ray at angle `θ`, the points of the ray at angle `φ ∈ (θ - 2π, θ]` are exactly
+  the points other than `c` at angle `φ - θ + π`.
+* `TauCeti.continuousAt_arg_neg_mul_exp`: this angle is continuous off the ray at angle `θ` and `c`.
 -/
 
 public section
@@ -109,5 +116,49 @@ theorem image_polar_rectangle_eq {v b : ℂ} (hb : b ≠ 0) {δ α : ℝ} (hα :
     · simp only [norm_mul_cos_add_sin_mul_I]
       field_simp
       ring
+
+/-- On the ray at angle `φ`, the angle measured from the ray at angle `θ` through
+`arg (-((z - c) * exp (-(θ * I))))` is `φ - θ + π`, for `φ ∈ (θ - 2π, θ]`. -/
+theorem arg_neg_mul_exp_circleMap_sub {c : ℂ} {r φ θ : ℝ} (hr : 0 < r)
+    (hφ : φ ∈ Ioc (θ - 2 * π) θ) :
+    arg (-((circleMap c r φ - c) * exp (-(θ * I)))) = φ - θ + π := by
+  have h : -((circleMap c r φ - c) * exp (-(θ * I))) = r * exp ((φ - θ + π : ℝ) * I) := by
+    rw [circleMap_sub_center, circleMap_zero]
+    push_cast
+    rw [show ((φ : ℂ) - θ + π) * I = φ * I + -(θ * I) + π * I by ring, Complex.exp_add,
+      Complex.exp_add, Complex.exp_pi_mul_I]
+    ring
+  rw [h, arg_real_mul _ hr, arg_exp_mul_I, toIocMod_eq_self]
+  constructor <;> linarith [hφ.1, hφ.2]
+
+/-- A point other than `c` at angle `φ - θ + π` from the ray at angle `θ`, measured through
+`arg (-((z - c) * exp (-(θ * I))))`, lies on the ray at angle `φ`. -/
+theorem mem_image_circleMap_Ioi_of_arg_neg_mul_exp {c z : ℂ} {φ θ : ℝ} (hz : z ≠ c)
+    (h : arg (-((z - c) * exp (-(θ * I)))) = φ - θ + π) :
+    z ∈ (circleMap c · φ) '' Ioi 0 := by
+  set w := -((z - c) * exp (-(θ * I))) with hw
+  have hw0 : w ≠ 0 := by simp [hw, sub_ne_zero.2 hz, Complex.exp_ne_zero]
+  refine ⟨‖w‖, norm_pos_iff.2 hw0, ?_⟩
+  have hpolar := norm_mul_exp_arg_mul_I w
+  rw [h] at hpolar
+  have hrot : exp ((φ - θ + π : ℝ) * I) * exp (θ * I) = -exp (φ * I) := by
+    rw [← Complex.exp_add]
+    push_cast
+    rw [show ((φ : ℂ) - θ + π) * I + θ * I = φ * I + π * I by ring, Complex.exp_add,
+      Complex.exp_pi_mul_I]
+    ring
+  have hexp : exp (-(θ * I)) * exp (θ * I) = 1 := by
+    rw [← Complex.exp_add, neg_add_cancel, Complex.exp_zero]
+  simp only [circleMap]
+  linear_combination (‖w‖ : ℂ) * hrot - exp (θ * I) * hpolar - exp (θ * I) * hw + (z - c) * hexp
+
+/-- The angle `arg (-((z - c) * exp (-(θ * I))))` is continuous at every `z ≠ c` where it is not
+`π`, that is, off the ray at angle `θ`. -/
+theorem continuousAt_arg_neg_mul_exp {c z : ℂ} {θ : ℝ} (hz : z ≠ c)
+    (h : arg (-((z - c) * exp (-(θ * I)))) ≠ π) :
+    ContinuousAt (fun z ↦ arg (-((z - c) * exp (-(θ * I))))) z := by
+  have hw : -((z - c) * exp (-(θ * I))) ∈ slitPlane :=
+    mem_slitPlane_iff_arg.2 ⟨h, by simp [sub_ne_zero.2 hz, Complex.exp_ne_zero]⟩
+  exact (continuousAt_arg hw).comp (f := fun z ↦ -((z - c) * exp (-(θ * I)))) (by fun_prop)
 
 end TauCeti

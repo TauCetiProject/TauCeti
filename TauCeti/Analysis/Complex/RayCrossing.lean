@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Curves tending to a circle cross the rays of an arc
@@ -55,48 +56,6 @@ open Complex Filter Set Topology
 open scoped Real
 
 namespace TauCeti
-
-/-- On the ray at angle `φ`, the angle measured from the ray at angle `θ` through
-`arg (-((z - c) * exp (-(θ * I))))` is `φ - θ + π`, for `φ ∈ (θ - 2π, θ]`. -/
-private theorem arg_neg_mul_exp_circleMap_sub {c : ℂ} {r φ θ : ℝ} (hr : 0 < r)
-    (hφ : φ ∈ Ioc (θ - 2 * π) θ) :
-    arg (-((circleMap c r φ - c) * exp (-(θ * I)))) = φ - θ + π := by
-  have h : -((circleMap c r φ - c) * exp (-(θ * I))) = r * exp ((φ - θ + π : ℝ) * I) := by
-    rw [circleMap_sub_center, circleMap_zero]
-    push_cast
-    rw [show ((φ : ℂ) - θ + π) * I = φ * I + -(θ * I) + π * I by ring, exp_add, exp_add,
-      exp_pi_mul_I]
-    ring
-  rw [h, arg_real_mul _ hr, arg_exp_mul_I, toIocMod_eq_self]
-  constructor <;> linarith [hφ.1, hφ.2]
-
-/-- A point other than `c` at angle `φ - θ + π` from the ray at angle `θ`, measured through
-`arg (-((z - c) * exp (-(θ * I))))`, lies on the ray at angle `φ`. -/
-private theorem mem_image_circleMap_Ioi_of_arg_neg_mul_exp {c z : ℂ} {φ θ : ℝ} (hz : z ≠ c)
-    (h : arg (-((z - c) * exp (-(θ * I)))) = φ - θ + π) :
-    z ∈ (circleMap c · φ) '' Ioi 0 := by
-  set w := -((z - c) * exp (-(θ * I))) with hw
-  have hw0 : w ≠ 0 := by simp [hw, sub_ne_zero.2 hz, exp_ne_zero]
-  refine ⟨‖w‖, norm_pos_iff.2 hw0, ?_⟩
-  have hpolar := norm_mul_exp_arg_mul_I w
-  rw [h] at hpolar
-  have hrot : exp ((φ - θ + π : ℝ) * I) * exp (θ * I) = -exp (φ * I) := by
-    rw [← exp_add]
-    push_cast
-    rw [show ((φ : ℂ) - θ + π) * I + θ * I = φ * I + π * I by ring, exp_add, exp_pi_mul_I]
-    ring
-  have hexp : exp (-(θ * I)) * exp (θ * I) = 1 := by rw [← exp_add, neg_add_cancel, exp_zero]
-  simp only [circleMap]
-  linear_combination (‖w‖ : ℂ) * hrot - exp (θ * I) * hpolar - exp (θ * I) * hw + (z - c) * hexp
-
-/-- The angle `arg (-((z - c) * exp (-(θ * I))))` is continuous at every `z ≠ c` where it is not
-`π`, that is, off the ray at angle `θ`. -/
-private theorem continuousAt_arg_neg_mul_exp {c z : ℂ} {θ : ℝ} (hz : z ≠ c)
-    (h : arg (-((z - c) * exp (-(θ * I)))) ≠ π) :
-    ContinuousAt (fun z ↦ arg (-((z - c) * exp (-(θ * I))))) z := by
-  have hw : -((z - c) * exp (-(θ * I))) ∈ slitPlane :=
-    mem_slitPlane_iff_arg.2 ⟨h, by simp [sub_ne_zero.2 hz, exp_ne_zero]⟩
-  exact (continuousAt_arg hw).comp (f := fun z ↦ -((z - c) * exp (-(θ * I)))) (by fun_prop)
 
 variable {γ : ℝ → ℂ} {c : ℂ} {a b : ℝ}
 
@@ -153,15 +112,11 @@ theorem eq_of_tendsto_circleMap_of_frequently_mem_image_circleMap_Ioi {ι X : Ty
     (hd : Tendsto (fun t ↦ dist (γ t) c) l (𝓝[<] R))
     (hθ : ∃ᶠ t in l, γ t ∈ (circleMap c · θ) '' Ioi 0) (hfγ : Tendsto (f ∘ γ) l (𝓝 w))
     (hL : Tendsto (fun r ↦ f (circleMap c r θ)) (𝓝[<] R) (𝓝 L)) : L = w := by
-  set l' := l ⊓ 𝓟 {t | γ t ∈ (circleMap c · θ) '' Ioi 0}
-  have : l'.NeBot := frequently_iff_neBot.1 hθ
-  -- along the crossing times, `γ t` is the point of the ray at its own distance from `c`
-  have heq : ∀ᶠ t in l', f (circleMap c (dist (γ t) c) θ) = (f ∘ γ) t := by
-    filter_upwards [mem_inf_of_right (mem_principal_self _)] with t ⟨r, hr, hrt⟩
-    rw [← hrt, dist_eq_norm, circleMap_sub_center, norm_circleMap_zero, abs_of_pos hr]
-    exact congrArg f hrt
-  exact tendsto_nhds_unique ((hL.comp (hd.mono_left inf_le_left)).congr' heq)
-    (hfγ.mono_left inf_le_left)
+  -- at the crossing times, `γ t` is the point of the ray at its own distance from `c`
+  refine tendsto_nhds_unique_of_frequently_eq (hL.comp hd) hfγ (hθ.mono ?_)
+  rintro t ⟨r, hr, hrt⟩
+  rw [Function.comp_apply, Function.comp_apply, ← hrt, dist_eq_norm, circleMap_sub_center,
+    norm_circleMap_zero, abs_of_pos hr]
 
 /-- **Limits along a curve that does not end at a point of the circle.** Let `γ` be continuous on
 `(a, b)` and tend to the circle `sphere c R` from inside as `t → b`, and let `f` tend to `w` along
