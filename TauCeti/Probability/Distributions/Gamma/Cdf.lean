@@ -68,7 +68,7 @@ variable {a r x : ℝ}
 /-! ### Reduction of the cdf integral to the positive half-line -/
 
 /-- The gamma density is integrable: it is a nonnegative function whose Lebesgue integral is `1`. -/
-private lemma integrable_gammaPDFReal (ha : 0 < a) (hr : 0 < r) :
+theorem integrable_gammaPDFReal (ha : 0 < a) (hr : 0 < r) :
     Integrable (gammaPDFReal a r) := by
   refine ⟨(measurable_gammaPDFReal a r).aestronglyMeasurable, ?_⟩
   have h : ∫⁻ y, ENNReal.ofReal (gammaPDFReal a r y) = 1 := lintegral_gammaPDF_eq_one ha hr

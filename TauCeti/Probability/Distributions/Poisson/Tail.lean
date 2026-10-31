@@ -41,6 +41,9 @@ the event `TauCeti.Probability.measureReal_Iic_gammaMeasure` measures.
   `1 - P(n + 1, r)`;
 * `TauCeti.Probability.sum_range_poissonMeasure_real_singleton` — the same identity written as the
   classical partial sum `∑ k ≤ n, exp (-r) * r ^ k / k !`;
+* `TauCeti.Probability.regularizedGamma_natCast` — the Erlang form
+  `P(n, x) = 1 - exp (-x) * ∑ j < n, x ^ j / j !` of the regularized gamma function at a positive
+  integer shape `n`;
 * `TauCeti.Probability.cdf_map_cast_poissonMeasure` — the cumulative distribution function of the
   real-valued law `Po(ℝ, r)`, a step function with its jumps at the natural numbers;
 * `TauCeti.Probability.measureReal_lt_of_hasLaw_poissonMeasure` and
@@ -151,6 +154,20 @@ theorem sum_range_poissonMeasure_real_singleton (r : ℝ≥0) (n : ℕ) :
       rw [mem_singleton_iff] at hk'
       omega
     rw [Finset.sum_range_succ, ih, hsplit, measureReal_union hdisj .of_discrete]
+
+/-- **The Erlang form of the regularized gamma function.** For a positive integer shape `n` and
+`x ≥ 0`, `P(n, x) = 1 - exp (-x) * ∑ j < n, x ^ j / j!`. This is
+`TauCeti.Probability.sum_range_poissonMeasure_real_singleton` at rate `x`; through
+`TauCeti.Probability.cdf_gammaMeasure_eq` it is the classical cdf of a gamma law of integer
+shape. -/
+theorem regularizedGamma_natCast {n : ℕ} (hn : n ≠ 0) {x : ℝ} (hx : 0 ≤ x) :
+    regularizedGamma n x = 1 - exp (-x) * ∑ j ∈ Finset.range n, x ^ j / j ! := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+  have h := sum_range_poissonMeasure_real_singleton x.toNNReal n
+  simp only [poissonMeasure_real_singleton, Real.coe_toNNReal _ hx] at h
+  rw [Finset.mul_sum, Nat.cast_succ]
+  simp_rw [mul_div_assoc] at h
+  linarith
 
 /-! ### The cast law -/
 
