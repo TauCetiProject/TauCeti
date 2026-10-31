@@ -58,9 +58,9 @@ same homotopy composed with the left map is minus the identity.
 
 ## Main results
 
-* `TauCeti.PathAlgebra.injective_arrowTensorDifferential`,
+* `TauCeti.PathAlgebra.arrowTensorDifferential_injective`,
   `TauCeti.PathAlgebra.exact_arrowTensorDifferential_vertexTensorMul` and
-  `TauCeti.PathAlgebra.surjective_vertexTensorMul`: **the standard sequence of a path algebra is
+  `TauCeti.PathAlgebra.vertexTensorMul_surjective`: **the standard sequence of a path algebra is
   a short exact sequence of bimodules**.
 * The instances `Module.Projective Aᵉ (vertexTensorBimodule k Q)` and
   `Module.Projective Aᵉ (arrowTensorBimodule k Q)`: both terms are projective bimodules.
@@ -354,7 +354,7 @@ theorem vertexTensorMul_tmul (v : Q) (x y : 𝒜) :
     IsIdempotentElem.mul_self_mul (x := ε v) (vertexIdempotent_mul_self v)]
 
 /-- **The multiplication map is surjective**: `x ⊗ 1` cut down by `∑ᵥ eᵥ ⊗ eᵥ` maps to `x`. -/
-theorem surjective_vertexTensorMul : Function.Surjective (vertexTensorMul k Q) := by
+theorem vertexTensorMul_surjective : Function.Surjective (vertexTensorMul k Q) := by
   intro x
   refine ⟨⟨((Bimodule.of (AlgHom.id k 𝒜)).symm x ⊗ₜ[k] 1) * vertexTensorIdempotent k Q,
     Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self _)⟩, ?_⟩
@@ -501,7 +501,7 @@ private theorem coe_arrowTensorDifferential_homotopy (v : 𝒜ᵉ) :
 /-! ### Exactness -/
 
 /-- **The differential of the standard resolution is injective.** -/
-theorem injective_arrowTensorDifferential : Function.Injective (arrowTensorDifferential k Q) := by
+theorem arrowTensorDifferential_injective : Function.Injective (arrowTensorDifferential k Q) := by
   intro w w' h
   rw [← neg_inj, ← homotopy_arrowTensorDifferential, ← homotopy_arrowTensorDifferential, h]
 
