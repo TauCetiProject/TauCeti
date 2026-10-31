@@ -58,6 +58,7 @@ to `0 ⊕ f`.
 
 * A. Connes, *Noncommutative Geometry*, Chapter III, §3.
 * J.-L. Loday, *Cyclic Homology*, §8.3.
+* J. Rosenberg, *Algebraic K-Theory and Its Applications*, §1.2.
 -/
 
 public section
