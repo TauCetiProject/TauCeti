@@ -23,10 +23,6 @@ Since `exp D` is invertible in the operator algebra, with inverse `exp (-D)`
 `t • D`, this makes every `exp (t • D)` an automorphism; the Singer–Wermer theorem composes
 characters with these automorphisms.
 
-The identity is proved by differentiating in the parameter: for fixed `x` and `y` the function
-`t ↦ exp (-t • D) (exp (t • D) x * exp (t • D) y)` has derivative zero by the Leibniz rule, so it
-is constant, equal to its value `x * y` at `t = 0`.
-
 ## Main results
 
 * `ContinuousLinearMap.exp_apply_mul_of_derivation`: the exponential of a bounded derivation is
@@ -61,7 +57,8 @@ theorem exp_apply_mul_of_derivation (D : B →L[𝕜] B) (hD : ∀ x y, D (x * y
   have hcomm (t : 𝕜) (z : B) : D (exp (t • D) z) = exp (t • D) (D z) := by
     simpa [mul_apply_eq_comp] using
       congr($(((Commute.refl D).smul_right t).exp_right) z)
-  -- The function `G t = exp (-t • D) (exp (t • D) x * exp (t • D) y)` has derivative zero.
+  -- The function `G t = exp (-t • D) (exp (t • D) x * exp (t • D) y)` has derivative zero by the
+  -- Leibniz rule, so it is constant, equal to its value `x * y` at `t = 0`.
   let G : 𝕜 → B := fun t ↦ exp (t • -D) (exp (t • D) x * exp (t • D) y)
   have hG (t : 𝕜) : HasDerivAt G 0 t := by
     have hm : HasDerivAt (fun s : 𝕜 ↦ exp (s • D) x * exp (s • D) y)

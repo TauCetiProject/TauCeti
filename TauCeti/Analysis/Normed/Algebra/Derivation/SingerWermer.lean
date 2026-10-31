@@ -17,13 +17,6 @@ import TauCeti.Analysis.Normed.Algebra.SeparatingIdeal.Derivation
 `B` maps `B` into its Jacobson radical. The algebra need not be unital. In particular a
 commutative semisimple complex Banach algebra has no nonzero bounded derivations.
 
-Let `φ` be a character of `B`, possibly zero. For every `z : ℂ` the operator `exp (z • D)` is
-multiplicative, because `z • D` is again a bounded derivation, so `φ ∘ exp (z • D)` is again a
-character. Characters of a Banach algebra are contractive, hence the entire function
-`z ↦ φ (exp (z • D) a)` is bounded by `‖a‖`. By Liouville's theorem it is constant, and its
-derivative `φ (D a)` at `z = 0` vanishes. In a commutative complex Banach algebra the elements
-killed by every character form the radical.
-
 ## Main results
 
 * `ContinuousLinearMap.apply_mem_nonUnitalJacobson_of_derivation`: the Singer–Wermer theorem for
@@ -56,6 +49,10 @@ algebra, possibly without unit, takes values in the Jacobson radical. -/
 theorem apply_mem_nonUnitalJacobson_of_derivation (D : B →L[ℂ] B)
     (hD : ∀ x y, D (x * y) = x * D y + D x * y) (a : B) :
     D a ∈ TauCeti.nonUnitalJacobson ℂ B := by
+  -- In a commutative complex Banach algebra the elements killed by every character, possibly
+  -- zero, form the radical. For a character `φ`, each `φ ∘ exp (z • D)` is again a character,
+  -- hence contractive, so `z ↦ φ (exp (z • D) a)` is a bounded entire function. By Liouville's
+  -- theorem it is constant, and its derivative `φ (D a)` at `z = 0` vanishes.
   rw [TauCeti.mem_nonUnitalJacobson_iff_forall_nonUnitalAlgHom_apply_eq_zero]
   intro φ
   -- Each `exp (z • D)` is an algebra endomorphism, because `z • D` is again a derivation.
@@ -108,10 +105,10 @@ variable {A : Type*} [NormedCommRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 
 /-- **Commutative semisimple Banach algebras have no nonzero derivations.** A linear map
 `D : A → A` on a commutative unital complex Banach algebra with zero Jacobson radical that
-satisfies the Leibniz rule is zero. No continuity is assumed: `D` is continuous by the
-Johnson–Sinclair theorem, and then zero by the Singer–Wermer theorem. -/
+satisfies the Leibniz rule is zero. No continuity is assumed. -/
 theorem eq_zero_of_derivation_of_jacobson_eq_bot (D : A →ₗ[ℂ] A)
     (hD : ∀ x y, D (x * y) = x * D y + D x * y) (hA : Ring.jacobson A = ⊥) : D = 0 := by
+  -- `D` is continuous by the Johnson–Sinclair theorem, and then zero by Singer–Wermer.
   ext a
   simpa [hA] using (ContinuousLinearMap.mk D (D.continuous_of_derivation_of_jacobson_eq_bot hD hA)
     |>.apply_mem_jacobson_of_derivation hD a)
