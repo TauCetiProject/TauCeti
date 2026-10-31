@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.LieType
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.SpecialLinearFrobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeA.Agreement
+public import TauCeti.LinearAlgebra.Projectivization.PSL.Simple
 
 /-!
-# Finiteness of the type-`A` groups on the classification list
+# Finiteness and simplicity of the untwisted type-`A` groups on the classification list
 
 The type-`A` carrier of `TauCeti.TypeALieIndex` is the explicit full-weight Chevalley carrier, and
 `TauCeti.TypeALieIndex.carrierEquivSpecialLinear` identifies it with the standard matrix group
@@ -28,7 +30,14 @@ group and the fixed points `TauCeti.TypeALieIndex.FixedPoints` of the index.
 Both groups attached to `A_r(q)` are then finite: the fixed points themselves, and the derived
 central quotient `TauCeti.TypeALieIndex.Group` of them, which inherits finiteness from the fixed
 points because a derived subgroup and a quotient by the centre of a finite group are finite.
-Nothing here asserts that the quotient is nontrivial or simple, and no order is computed.
+
+On every valid index `SL_{r+1}(𝔽_q)` is perfect: on at least three coordinates over every field,
+and on two coordinates because a valid `A₁(q)` has `q ≥ 4`. Its derived subgroup is then the
+whole group, so the derived central quotient of the fixed points is the projective special linear
+group `PSL_{r+1}(𝔽_q)`, which is simple by Iwasawa's criterion
+(`Matrix.ProjectiveSpecialLinearGroup.isSimpleGroup_of_commutator_eq_top`). This is the
+simplicity of every untwisted type-`A` group on the classification list, read both on the family
+carrier and on the assembled carrier `TauCeti.ValidLieTypeIndex.Group`. No order is computed.
 
 ## Main definitions and results
 
@@ -36,10 +45,15 @@ Nothing here asserts that the quotient is nontrivial or simple, and no order is 
   of `A_r(q)` are the finite special linear group `SL_{r+1}(𝔽_q)`.
 * `TauCeti.TypeALieIndex.finite_fixedPoints_ofA` and `TauCeti.TypeALieIndex.finite_group_ofA`: the
   fixed points and the derived central quotient of `A_r(q)` are finite.
+* `TauCeti.TypeALieIndex.projectiveSpecialLinearEquivGroup`: the group attached to `A_r(q)` is
+  `PSL_{r+1}(𝔽_q)`.
+* `TauCeti.TypeALieIndex.isSimpleGroup_group_ofA` and `TauCeti.ValidLieTypeIndex.isSimpleGroup_A`:
+  the group attached to `A_r(q)` is simple.
 
 ## Provenance
 
-This file adapts `CFSG/TypeALinearCandidate.lean` from
+The identification of the fixed points with `SL_{r+1}(𝔽_q)` adapts
+`CFSG/TypeALinearCandidate.lean` from
 `https://github.com/AxiomMath/CFSG` (Apache-2.0), commit
 `69cb972f587a3ecc035e092253167ff2e303c962`.
 -/
@@ -105,6 +119,89 @@ instance finite_group_ofA (r : ℕ) (q : PrimePower)
   finiteFixedPointCandidate (F := (ofA r q hv).steinberg)
     (h := finite_fixedPoints_ofA r q hv)
 
+/-- A valid `A_r(q)` has rank at least one, and field order at least four in rank one. -/
+private theorem one_le_and_four_le_card_of_valid {r : ℕ} {q : PrimePower}
+    (hv : (LieTypeIndex.A r q).Valid) : 1 ≤ r ∧ (r = 1 → 4 ≤ q.card) :=
+  (LieTypeIndex.inStandardRange_iff _).mp ((LieTypeIndex.valid_iff _).mp hv).1
+
+/-- **The finite special linear group of `A_r(q)` is perfect.** On at least three coordinates
+this holds over every field, and a valid `A₁(q)` has `q ≥ 4`. The validity predicate excludes
+exactly the two nonperfect groups `SL₂(𝔽₂)` and `SL₂(𝔽₃)`. -/
+theorem commutator_specialLinearGroup_eq_top (r : ℕ) (q : PrimePower)
+    (hv : (LieTypeIndex.A r q).Valid) :
+    commutator (SpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
+      (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent)) = ⊤ := by
+  obtain ⟨hr, hq⟩ := one_le_and_four_le_card_of_valid hv
+  rcases hr.eq_or_lt with rfl | hr
+  · apply SpecialLinearGroup.commutator_eq_top_of_four_le_natCard
+    simpa [ValidLieTypeIndex.characteristic, ValidLieTypeIndex.fieldExponent,
+      GaloisField.card _ _ q.exponent_pos.ne'] using hq rfl
+  · exact SpecialLinearGroup.commutator_eq_top_of_three_le_card
+      (by
+        rw [Fintype.card_fin]
+        simp [ValidLieTypeIndex.rank, ValidLieTypeIndex.dynkinType]
+        omega)
+
+/-- **The group attached to `A_r(q)` is the projective special linear group `PSL_{r+1}(𝔽_q)`.**
+
+The fixed points are `SL_{r+1}(𝔽_q)` by `TauCeti.TypeALieIndex.specialLinearEquivFixedPoints`.
+That group is perfect on every valid index, so its derived subgroup is the whole group and the
+derived central quotient is its quotient by the centre. -/
+def projectiveSpecialLinearEquivGroup (r : ℕ) (q : PrimePower)
+    (hv : (LieTypeIndex.A r q).Valid) :
+    ProjectiveSpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
+      (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent) ≃*
+      (ofA r q hv).Group :=
+  letI : Group.IsPerfect (SpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
+      (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent)) :=
+    ⟨commutator_specialLinearGroup_eq_top r q hv⟩
+  DerivedCentralQuotient.mulEquivQuotientCenter.symm.trans
+    (DerivedCentralQuotient.congr (specialLinearEquivFixedPoints r q hv))
+
+/-- The isomorphism with `PSL_{r+1}(𝔽_q)` sends the class of a matrix in the derived subgroup to
+the class of the corresponding fixed point. -/
+@[simp]
+theorem projectiveSpecialLinearEquivGroup_mk (r : ℕ) (q : PrimePower)
+    (hv : (LieTypeIndex.A r q).Valid)
+    (x : commutator (SpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
+      (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent))) :
+    projectiveSpecialLinearEquivGroup r q hv (QuotientGroup.mk (s := Subgroup.center _)
+        (x : Matrix.SpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
+          (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent))) =
+      ((MulEquiv.commutatorCongr (specialLinearEquivFixedPoints r q hv) x :
+        commutator (ofA r q hv).FixedPoints) : (ofA r q hv).Group) := by
+  let _ : Group.IsPerfect (SpecialLinearGroup (Fin ((ofA r q hv).1.rank + 1))
+      (GaloisField (ofA r q hv).1.characteristic (ofA r q hv).1.fieldExponent)) :=
+    ⟨commutator_specialLinearGroup_eq_top r q hv⟩
+  rw [projectiveSpecialLinearEquivGroup, MulEquiv.trans_apply,
+    ← DerivedCentralQuotient.mulEquivQuotientCenter_mk, MulEquiv.symm_apply_apply,
+    DerivedCentralQuotient.congr_mk]
+
+/-- **The group attached to `A_r(q)` is simple**, for every valid index: it is `PSL_{r+1}(𝔽_q)`,
+which is simple by Iwasawa's criterion because `SL_{r+1}(𝔽_q)` is perfect. -/
+theorem isSimpleGroup_group_ofA (r : ℕ) (q : PrimePower) (hv : (LieTypeIndex.A r q).Valid) :
+    IsSimpleGroup (ofA r q hv).Group :=
+  have : Nontrivial (Fin ((ofA r q hv).1.rank + 1)) :=
+    Fin.nontrivial_iff_two_le.mpr (by
+      simpa [ValidLieTypeIndex.rank, ValidLieTypeIndex.dynkinType] using
+        (one_le_and_four_le_card_of_valid hv).1)
+  have := ProjectiveSpecialLinearGroup.isSimpleGroup_of_commutator_eq_top
+    (commutator_specialLinearGroup_eq_top r q hv)
+  (projectiveSpecialLinearEquivGroup r q hv).symm.isSimpleGroup
+
 end TauCeti.TypeALieIndex
+
+namespace TauCeti.ValidLieTypeIndex
+
+/-- **Every `A_r(q)` on the classification list is simple.** On the constructor `A r q` the
+Steinberg endomorphism of the assembly is that of the type-`A` family, so the assembled candidate
+is the type-`A` one. -/
+theorem isSimpleGroup_A {r : ℕ} {q : PrimePower} (hv : (LieTypeIndex.A r q).Valid) :
+    IsSimpleGroup (ValidLieTypeIndex.Group ⟨_, hv⟩) := by
+  unfold ValidLieTypeIndex.Group
+  rw [steinberg_A, GraphTwistedIndex.steinberg_A]
+  exact TypeALieIndex.isSimpleGroup_group_ofA r q hv
+
+end TauCeti.ValidLieTypeIndex
 
 end
