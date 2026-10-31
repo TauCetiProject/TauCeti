@@ -23,7 +23,9 @@ public section
 
 open scoped LinearAlgebra.Projectivization
 
-namespace Projectivization
+open Projectivization
+
+namespace TauCeti.Projectivization
 
 variable {G K V : Type*} [Group G] [Field K] [AddCommGroup V] [Module K V]
   [DistribMulAction G V] [SMulCommClass G K V]
@@ -45,4 +47,4 @@ theorem forall_smul_eq_iff_exists_smul (g : G) :
     rw [smul_mk, mk_eq_mk_iff']
     exact ⟨c, (hc v).symm⟩
 
-end Projectivization
+end TauCeti.Projectivization

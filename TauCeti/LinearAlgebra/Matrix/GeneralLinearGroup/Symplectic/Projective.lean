@@ -45,13 +45,7 @@ theorem forall_projective_smul_eq_iff_mem_center (g : GLSymplecticFin m K) :
       simpa [Subgroup.smul_def, Units.smul_def, Matrix.smul_eq_mulVec,
         Matrix.mulVec_single, Pi.single_apply, Matrix.scalar, Matrix.diagonal, eq_comm] using
         congrFun (hc (Pi.single j 1)) i
-    rw [Subgroup.mem_center_iff]
-    intro h
-    apply Subtype.ext
-    apply Units.ext
-    simpa only [Subgroup.coe_mul, Units.val_mul, hscalar] using
-      (Matrix.scalar_commute c (fun r ↦ Commute.all c r)
-        (h.val : Matrix (Fin (m + m)) (Fin (m + m)) K)).eq.symm
+    exact mem_center_of_val_eq_scalar hscalar
   · intro hg
     by_cases hm : m = 0
     · subst m

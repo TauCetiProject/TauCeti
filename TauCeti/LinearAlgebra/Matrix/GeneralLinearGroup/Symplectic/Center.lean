@@ -94,6 +94,18 @@ namespace TauCeti.GLSymplecticFin
 
 variable {R : Type*} [CommRing R] {m : ℕ}
 
+/-- A symplectic element whose underlying matrix is scalar is central. -/
+theorem mem_center_of_val_eq_scalar {g : GLSymplecticFin m R} {c : R}
+    (hc : (g.val : Matrix _ _ R) = Matrix.scalar (Fin (m + m)) c) :
+    g ∈ Subgroup.center (GLSymplecticFin m R) := by
+  rw [Subgroup.mem_center_iff]
+  intro h
+  apply Subtype.ext
+  apply Units.ext
+  simpa only [Subgroup.coe_mul, Units.val_mul, hc] using
+    (Matrix.scalar_commute c (fun r ↦ Commute.all c r)
+      (h.val : Matrix (Fin (m + m)) (Fin (m + m)) R)).eq.symm
+
 /-- In positive rank the center of the symplectic group consists exactly of scalar matrices
 whose scalar squares to one. No reducedness or characteristic assumption is needed. -/
 theorem mem_center_iff (hm : m ≠ 0) (g : GLSymplecticFin m R) :
@@ -111,13 +123,7 @@ theorem mem_center_iff (hm : m ≠ 0) (g : GLSymplecticFin m R) :
     simpa only [← hc, Matrix.scalar_apply, Matrix.smul_one_eq_diagonal] using
       GLSymplecticFin.mem_iff.mp g.property
   · rintro ⟨c, hc, -⟩
-    rw [Subgroup.mem_center_iff]
-    intro h
-    apply Subtype.ext
-    apply Units.ext
-    simpa only [Subgroup.coe_mul, Units.val_mul, hc] using
-      (Matrix.scalar_commute c (fun r ↦ Commute.all c r)
-        (h.val : Matrix (Fin (m + m)) (Fin (m + m)) R)).eq.symm
+    exact mem_center_of_val_eq_scalar hc
 
 /-- In positive rank over a nontrivial ring, the central quotient of the symplectic group is
 nontrivial: a long-root transvection with parameter one is not scalar. -/
