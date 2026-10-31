@@ -30,6 +30,9 @@ orthogonality and finite-sum identities proved in
 * `TauCeti.FiniteBilinearModule.isNondegenerate_primaryComponents` and
   `TauCeti.FiniteQuadraticModule.isNondegenerate_primaryComponents`: nondegeneracy is equivalent
   to nondegeneracy of the orthogonal product.
+* `TauCeti.FiniteBilinearModule.nonempty_isometry_of_forall_primaryComponent` and
+  `TauCeti.FiniteQuadraticModule.nonempty_isometry_of_forall_primaryComponent`: two modules of the
+  same order are isometric when their primary components are isometric at every prime.
 
 ## References
 
@@ -38,6 +41,8 @@ orthogonality and finite-sum identities proved in
 -/
 
 public section
+
+open AddCommGroup
 
 namespace TauCeti
 
@@ -111,6 +116,35 @@ theorem isNondegenerate_primaryComponents :
     A.primaryComponents.IsNondegenerate ↔ A.IsNondegenerate :=
   A.primaryDecomposition.isNondegenerate_iff
 
+/-- Additive equivalences of the primary components of two finite abelian groups of the same order
+assemble to an additive equivalence of the products of their primary components. -/
+private def primaryComponentsAddEquiv {A : FiniteBilinearModule} {B : FiniteBilinearModule}
+    (hcard : Nat.card A = Nat.card B)
+    (f : ∀ p : ℕ, p.Prime → primaryComponent A p ≃+ primaryComponent B p) :
+    A.primaryComponents ≃+ B.primaryComponents :=
+  let e : (Nat.card A).primeFactors ≃ (Nat.card B).primeFactors :=
+    Equiv.subtypeEquivRight fun p ↦ by rw [hcard]
+  { toFun x q := f q.1 (Nat.prime_of_mem_primeFactors q.2) (x (e.symm q))
+    invFun y p := (f p.1 (Nat.prime_of_mem_primeFactors p.2)).symm (y (e p))
+    left_inv x := funext fun p ↦ (f p.1 _).symm_apply_apply (x p)
+    right_inv y := funext fun q ↦ (f q.1 _).apply_symm_apply (y q)
+    map_add' x y := funext fun q ↦ map_add (f q.1 _) (x (e.symm q)) (y (e.symm q)) }
+
+/-- **Primary components decide isometry.** Two finite bilinear modules of the same order are
+isometric as soon as, at every prime `p`, their `p`-primary components are isometric. -/
+theorem nonempty_isometry_of_forall_primaryComponent {A B : FiniteBilinearModule}
+    (hcard : Nat.card A = Nat.card B)
+    (h : ∀ p : ℕ, p.Prime →
+      Nonempty (Isometry (A.restrict (primaryComponent A p)) (B.restrict (primaryComponent B p)))) :
+    Nonempty (Isometry A B) := by
+  let f p hp := (h p hp).some
+  let g := primaryComponentsAddEquiv hcard fun p hp ↦ (f p hp).toAddEquiv
+  refine ⟨A.primaryDecomposition.symm.trans (Isometry.trans ⟨g, fun x y ↦ ?_⟩
+    B.primaryDecomposition)⟩
+  rw [primaryComponents_pairing, primaryComponents_pairing]
+  exact Fintype.sum_equiv (Equiv.subtypeEquivRight fun p ↦ by rw [hcard]) _ _ fun q ↦
+    (f q.1 (Nat.prime_of_mem_primeFactors q.2)).map_pairing _ _
+
 end FiniteBilinearModule
 
 namespace FiniteQuadraticModule
@@ -171,6 +205,22 @@ finite quadratic module is nondegenerate. -/
 theorem isNondegenerate_primaryComponents :
     A.primaryComponents.IsNondegenerate ↔ A.IsNondegenerate :=
   A.primaryDecomposition.isNondegenerate_iff
+
+/-- **Primary components decide isometry.** Two finite quadratic modules of the same order are
+isometric as soon as, at every prime `p`, their `p`-primary components are isometric. -/
+theorem nonempty_isometry_of_forall_primaryComponent {A B : FiniteQuadraticModule}
+    (hcard : Nat.card A = Nat.card B)
+    (h : ∀ p : ℕ, p.Prime →
+      Nonempty (Isometry (A.restrict (primaryComponent A p)) (B.restrict (primaryComponent B p)))) :
+    Nonempty (Isometry A B) := by
+  let f p hp := (h p hp).some
+  let g := FiniteBilinearModule.primaryComponentsAddEquiv hcard fun p hp ↦
+    (f p hp).toLinearEquiv.toAddEquiv
+  refine ⟨A.primaryDecomposition.symm.trans
+    ((⟨g.toIntLinearEquiv, fun x ↦ ?_⟩ : Isometry _ _).trans B.primaryDecomposition)⟩
+  rw [primaryComponents_quadratic, primaryComponents_quadratic]
+  exact Fintype.sum_equiv (Equiv.subtypeEquivRight fun p ↦ by rw [hcard]) _ _ fun q ↦
+    (f q.1 (Nat.prime_of_mem_primeFactors q.2)).map_app _
 
 end FiniteQuadraticModule
 

@@ -17,7 +17,8 @@ its image in `ℚ_[p]` is a `p`-adic integer at all but finitely many primes `p`
 rational number is a `p`-adic unit at all but finitely many primes. These are the statements that
 make a rational object, such as a rational basis or a rational isometry, integral in every
 completion outside a finite set of primes. Conversely, a rational number that is a `p`-adic integer
-at every prime is an integer.
+at every prime is an integer, and so is a rational number whose denominator is a power of `p` and
+which is a `p`-adic integer.
 
 ## Main results
 
@@ -28,6 +29,8 @@ at every prime is an integer.
   every prime.
 * `Padic.forall_norm_rat_le_one_iff_den_eq_one`: a rational number is an integer exactly when it
   is a `p`-adic integer at every prime.
+* `Padic.den_eq_one_of_norm_rat_le_one_of_pow_mul_eq`: a `p`-adic integer whose product with a
+  power of `p` is an integer is an integer.
 -/
 
 public section
@@ -70,5 +73,18 @@ theorem forall_norm_rat_le_one_iff_den_eq_one {q : ℚ} :
     (Int.natCast_dvd_natCast.mpr hpd)
   rw [Int.cast_natCast] at hlt
   exact hlt.ne ((PadicInt.isUnit_iff).mp (PadicInt.isUnit_den q (h ⟨p, hp⟩)))
+
+/-- A rational number `q` such that `p ^ k * q` is an integer is itself an integer as soon as it is
+a `p`-adic integer. -/
+theorem den_eq_one_of_norm_rat_le_one_of_pow_mul_eq {p : ℕ} [Fact p.Prime] {q : ℚ} {k : ℕ}
+    {n : ℤ} (hn : (p : ℚ) ^ k * q = n) (hq : ‖(q : ℚ_[p])‖ ≤ 1) : q.den = 1 := by
+  have hnorm : ‖(n : ℚ_[p])‖ ≤ (p : ℝ) ^ (-k : ℤ) := by
+    rw [← Rat.cast_intCast, ← hn, Rat.cast_mul, Rat.cast_pow, Rat.cast_natCast, norm_mul,
+      norm_p_pow]
+    exact mul_le_of_le_one_right (zpow_nonneg (Nat.cast_nonneg p) _) hq
+  obtain ⟨m, rfl⟩ := (norm_int_le_pow_iff_dvd n k).mp hnorm
+  have hp : (p : ℚ) ^ k ≠ 0 := pow_ne_zero _ (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
+  have hqm : q = m := mul_left_cancel₀ hp (by rw [hn]; push_cast; ring)
+  rw [hqm, Rat.den_intCast]
 
 end Padic
