@@ -9,9 +9,15 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Height
 public import Mathlib.RingTheory.Support
 
+public import Mathlib.RingTheory.FiniteLength
+public import Mathlib.RingTheory.Localization.AtPrime.Basic
+
 import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
+import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.Tactic.ENatToNat
+import TauCeti.RingTheory.Length
+import TauCeti.RingTheory.Localization.Annihilator
 
 /-!
 # Primes of small height in the support of a torsion module
@@ -23,6 +29,11 @@ of `A`, so every prime of height at most one in its support is minimal over the 
 are the height-one primes at which the characteristic divisor of `M` is supported, and the
 finiteness is what makes prime avoidance available for them
 (`Module.IsTorsion.exists_mem_forall_notMem_of_forall_not_le`).
+
+The localization of `M` at a prime of height at most one is a finitely generated module over a
+noetherian local ring of dimension at most one, killed by a non-zero-divisor, so it has finite
+length (`Module.IsTorsion.isFiniteLength_localizedModule`). These local lengths are the
+multiplicities of the characteristic divisor.
 -/
 
 public section
@@ -76,5 +87,22 @@ theorem exists_mem_forall_notMem_of_forall_not_le [IsNoetherianRing A] [Module.F
         obtain ⟨𝔭, hmem, hht, hx𝔭⟩ := h x hx
         exact Set.mem_biUnion (Set.mem_image_of_mem _ ⟨hmem, hht⟩) hx𝔭
   exact hI 𝔭 hmem hht hle
+
+/-- The localization of a finitely generated torsion module over a noetherian ring at a prime of
+height at most one has finite length. -/
+theorem isFiniteLength_localizedModule [IsNoetherianRing A] [Module.Finite A M]
+    (hM : Module.IsTorsion A M) {𝔭 : PrimeSpectrum A} (h𝔭 : 𝔭.asIdeal.height ≤ 1) :
+    IsFiniteLength (Localization.AtPrime 𝔭.asIdeal) (LocalizedModule 𝔭.asIdeal.primeCompl M) := by
+  have : Ring.KrullDimLE 1 (Localization.AtPrime 𝔭.asIdeal) := by
+    rw [Ring.krullDimLE_iff, IsLocalization.AtPrime.ringKrullDim_eq_height 𝔭.asIdeal]
+    exact_mod_cast h𝔭
+  -- A non-zero-divisor `s` kills `M`, and its image kills the localization.
+  obtain ⟨s, hsM, hs⟩ := Submodule.annihilator_top_inter_nonZeroDivisors hM
+  rw [SetLike.mem_coe, Submodule.annihilator_top] at hsM
+  refine TauCeti.isFiniteLength_of_nonZeroDivisor_mem_annihilator
+    (IsLocalizedModule.map_annihilator_le 𝔭.asIdeal.primeCompl _
+      (LocalizedModule.mkLinearMap 𝔭.asIdeal.primeCompl M) (Ideal.mem_map_of_mem _ hsM)) ?_
+  exact IsLocalization.map_nonZeroDivisors_le 𝔭.asIdeal.primeCompl _
+    (Submonoid.mem_map_of_mem _ hs)
 
 end Module.IsTorsion
