@@ -35,10 +35,10 @@ the codimension of its image, and the dimension of the source is at most that of
 * `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_le`: the source of a locally quasi-finite
   morphism has dimension at most that of its target.
 * `AlgebraicGeometry.Scheme.Hom.ringKrullDim_stalk_eq_of_quasiFiniteAt`: a dominant morphism of
-  integral schemes, locally of finite type over a locally Noetherian base, which is quasi-finite
-  at `x` with integrally closed local ring at `f x`, preserves the dimension of the local ring at
-  `x`; `AlgebraicGeometry.Scheme.Hom.ringKrullDim_stalk_eq_of_locallyQuasiFinite` is the form for
-  a locally quasi-finite morphism onto a normal scheme. Over a normal base the inequality between
+  integral schemes, locally of finite type, which is quasi-finite at `x` with integrally closed
+  local ring at `f x`, preserves the dimension of the local ring at `x`;
+  `AlgebraicGeometry.Scheme.Hom.ringKrullDim_stalk_eq_of_locallyQuasiFinite` is the form for a
+  locally quasi-finite morphism onto a normal scheme. Over a normal base the inequality between
   coheights becomes an equality; the ring-level input is
   `Ideal.height_eq_height_of_quasiFiniteAt`.
 
@@ -101,12 +101,12 @@ theorem Scheme.Hom.topologicalKrullDim_le {X Y : Scheme.{u}} (f : X ⟶ Y)
     (le_iSup (fun y : Y ↦ (Order.coheight y : WithBot ℕ∞)) (f x))
 
 /-- **Quasi-finite morphisms over a normal base preserve the dimension of local rings.** Let
-`f : X ⟶ Y` be a dominant morphism of integral schemes, locally of finite type, with `Y` locally
-Noetherian. If `f` is quasi-finite at `x` and the local ring of `Y` at `f x` is integrally closed,
-then the local rings at `x` and at `f x` have the same dimension. -/
+`f : X ⟶ Y` be a dominant morphism of integral schemes, locally of finite type. If `f` is
+quasi-finite at `x` and the local ring of `Y` at `f x` is integrally closed, then the local rings
+at `x` and at `f x` have the same dimension. -/
 theorem Scheme.Hom.ringKrullDim_stalk_eq_of_quasiFiniteAt {X Y : Scheme.{u}} (f : X ⟶ Y)
-    [IsIntegral X] [IsIntegral Y] [IsDominant f] [IsLocallyNoetherian Y] [LocallyOfFiniteType f]
-    {x : X} (hx : f.QuasiFiniteAt x) [IsIntegrallyClosed (Y.presheaf.stalk (f x))] :
+    [IsIntegral X] [IsIntegral Y] [IsDominant f] [LocallyOfFiniteType f] {x : X}
+    (hx : f.QuasiFiniteAt x) [IsIntegrallyClosed (Y.presheaf.stalk (f x))] :
     ringKrullDim (X.presheaf.stalk x) = ringKrullDim (Y.presheaf.stalk (f x)) := by
   -- Choose affine opens `U ∋ f x` and `V ∋ x` with `V ⊆ f⁻¹ U`. The two local rings are the
   -- localizations of `Γ(Y, U) ⟶ Γ(X, V)` at the primes of `f x` and `x`, and the ring-level
@@ -116,7 +116,6 @@ theorem Scheme.Hom.ringKrullDim_stalk_eq_of_quasiFiniteAt {X Y : Scheme.{u}} (f 
   obtain ⟨V, hV, hxV, e⟩ := TopologicalSpace.Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens
     (U := f ⁻¹ᵁ U) (x := x) hxU
   have : Nonempty V := ⟨⟨x, hxV⟩⟩
-  have : IsNoetherianRing Γ(Y, U) := IsLocallyNoetherian.component_noetherian ⟨U, hU⟩
   have hft := LocallyOfFiniteType.finiteType_appLE (f := f) hU hV e
   have hqf := hx.quasiFiniteAt hV hU e hxV
   algebraize [(f.appLE U V e).hom]
@@ -138,11 +137,11 @@ theorem Scheme.Hom.ringKrullDim_stalk_eq_of_quasiFiniteAt {X Y : Scheme.{u}} (f 
     Ideal.height_eq_height_of_quasiFiniteAt (hU.primeIdealOf ⟨f x, e hxV⟩).asIdeal q]
 
 /-- A locally quasi-finite dominant morphism `f : X ⟶ Y` of integral schemes, locally of finite
-type, onto a locally Noetherian normal scheme preserves the dimension of every local ring:
+type, onto a normal scheme preserves the dimension of every local ring:
 `dim 𝒪_{X,x} = dim 𝒪_{Y,f x}` for all `x`. Normality of `X` is not needed. -/
 theorem Scheme.Hom.ringKrullDim_stalk_eq_of_locallyQuasiFinite {X Y : Scheme.{u}} (f : X ⟶ Y)
-    [IsIntegral X] [IsIntegral Y] [IsDominant f] [IsLocallyNoetherian Y] [LocallyOfFiniteType f]
-    [LocallyQuasiFinite f] [TauCeti.AlgebraicGeometry.IsNormalScheme Y] (x : X) :
+    [IsIntegral X] [IsIntegral Y] [IsDominant f] [LocallyOfFiniteType f] [LocallyQuasiFinite f]
+    [TauCeti.AlgebraicGeometry.IsNormalScheme Y] (x : X) :
     ringKrullDim (X.presheaf.stalk x) = ringKrullDim (Y.presheaf.stalk (f x)) :=
   f.ringKrullDim_stalk_eq_of_quasiFiniteAt (f.quasiFiniteAt x)
 
