@@ -140,6 +140,14 @@ private theorem map_algebraMap_eq :
         (algebraMap (Localization.Away f) (CompletedAway A f)) := by
   rw [Ideal.map_map, ← IsScalarTower.algebraMap_eq]
 
+/-- The power `(I A_{f}) ^ n` of the ideal of definition of `A_{f}` is the extension of
+`(I A_f) ^ n` along `A_f → A_{f}`. -/
+private theorem map_algebraMap_pow_eq (n : ℕ) :
+    (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n =
+      (((IsAdicRing.ideal A).map (algebraMap A (Localization.Away f))) ^ n).map
+        (algebraMap (Localization.Away f) (CompletedAway A f)) := by
+  rw [map_algebraMap_eq, Ideal.map_pow]
+
 private theorem fg_map : ((IsAdicRing.ideal A).map (algebraMap A (Localization.Away f))).FG :=
   (IsAdicRing.ideal_spec A).1.map _
 
@@ -168,18 +176,23 @@ theorem algebraMap_mem_pow_iff (n : ℕ) {x : Localization.Away f} :
     algebraMap (Localization.Away f) (CompletedAway A f) x ∈
         (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n ↔
       x ∈ (IsAdicRing.ideal A).map (algebraMap A (Localization.Away f)) ^ n := by
-  rw [map_algebraMap_eq, ← Ideal.map_pow]
+  rw [map_algebraMap_pow_eq]
   exact AdicCompletion.algebraMap_mem_map_pow_iff (fg_map A f) n
+
+/-- Every element of `A_{f}` is congruent modulo `(I A_{f}) ^ n` to the image of an element
+of `A_f`. -/
+private theorem exists_sub_algebraMap_mem_pow (n : ℕ) (x : CompletedAway A f) :
+    ∃ y, x - algebraMap (Localization.Away f) (CompletedAway A f) y ∈
+      (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n := by
+  rw [map_algebraMap_pow_eq]
+  exact AdicCompletion.exists_sub_algebraMap_mem_map_pow (fg_map A f) n x
 
 /-- The image of `A_f` in the completed localisation `A_{f}` is dense. -/
 theorem denseRange_algebraMap :
     DenseRange (algebraMap (Localization.Away f) (CompletedAway A f)) := by
   refine fun x ↦ mem_closure_iff_nhds.mpr fun U hU ↦ ?_
   obtain ⟨n, -, hn⟩ := ((isAdic A f).hasBasis_nhds x).mem_iff.mp hU
-  obtain ⟨y, hy⟩ : ∃ y, x - algebraMap (Localization.Away f) (CompletedAway A f) y ∈
-      (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n := by
-    rw [map_algebraMap_eq, ← Ideal.map_pow]
-    exact AdicCompletion.exists_sub_algebraMap_mem_map_pow (fg_map A f) n x
+  obtain ⟨y, hy⟩ := exists_sub_algebraMap_mem_pow A f n x
   refine ⟨_, hn ⟨_, neg_mem hy, ?_⟩, y, rfl⟩
   simp only [neg_sub, add_sub_cancel]
 
@@ -441,14 +454,6 @@ end Restriction
 
 section Quotient
 
-/-- The power `(I A_{f}) ^ n` of the ideal of definition of `A_{f}` is the extension of
-`(I A_f) ^ n` along `A_f → A_{f}`. -/
-private theorem map_algebraMap_pow_eq (n : ℕ) :
-    (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n =
-      (((IsAdicRing.ideal A).map (algebraMap A (Localization.Away f))) ^ n).map
-        (algebraMap (Localization.Away f) (CompletedAway A f)) := by
-  rw [map_algebraMap_eq, Ideal.map_pow]
-
 /-- The **quotients of the completed localisation**: `A_{f} ⧸ I ^ n A_{f}` is the localisation of
 `A ⧸ I ^ n` away from the image of `f`. -/
 noncomputable def quotientPowAlgEquiv (n : ℕ) :
@@ -472,8 +477,11 @@ theorem quotientPowAlgEquiv_algebraMap (n : ℕ) (x : Localization.Away f) :
   refine RingHom.congr_fun (f := (quotientPowAlgEquiv A f n).toRingHom.comp
     (algebraMap (Localization.Away f) _)) (IsLocalization.ringHom_ext
       (Submonoid.powers f) (RingHom.ext fun a ↦ ?_)) x
-  simp [IsLocalization.Away.map, ← IsScalarTower.algebraMap_apply,
-    IsScalarTower.algebraMap_apply A (A ⧸ IsAdicRing.ideal A ^ n)]
+  -- the left side factors `algebraMap A` through `A_f`, the right side through `A ⧸ I ^ n`
+  rw [RingHom.comp_apply, RingHom.comp_apply, ← IsScalarTower.algebraMap_apply,
+    RingHom.comp_apply, IsLocalization.Away.map, IsLocalization.map_eq]
+  exact ((quotientPowAlgEquiv A f n).commutes a).trans
+    (IsScalarTower.algebraMap_apply A (A ⧸ IsAdicRing.ideal A ^ n) _ a)
 
 /-- The comparisons `A_{f} ⧸ I ^ n A_{f} ≃ₐ[A] (A ⧸ I ^ n)_f` are compatible with the reduction
 maps: for `m ≤ n`, reducing modulo `I ^ m A_{f}` corresponds to the localisation
@@ -488,10 +496,7 @@ theorem quotientPowAlgEquiv_factor {m n : ℕ} (h : m ≤ n)
         (quotientPowAlgEquiv A f n y) := by
   -- every class modulo `I ^ n A_{f}` is represented by an element of `A_f`
   obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective y
-  obtain ⟨x, hx⟩ : ∃ x, z - algebraMap (Localization.Away f) (CompletedAway A f) x ∈
-      (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n := by
-    rw [map_algebraMap_pow_eq]
-    exact AdicCompletion.exists_sub_algebraMap_mem_map_pow (fg_map A f) n z
+  obtain ⟨x, hx⟩ := exists_sub_algebraMap_mem_pow A f n z
   rw [← Ideal.Quotient.eq] at hx
   rw [hx, Ideal.Quotient.factor_mk, Ideal.Quotient.mk_algebraMap, Ideal.Quotient.mk_algebraMap,
     quotientPowAlgEquiv_algebraMap, quotientPowAlgEquiv_algebraMap]

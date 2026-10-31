@@ -52,5 +52,6 @@ away from the image of `r`. -/
 instance IsLocalization.Away.quotient {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
     (r : R) [IsLocalization.Away r S] (I : Ideal R) :
     IsLocalization.Away (Ideal.Quotient.mk I r) (S ⧸ I.map (algebraMap R S)) := by
-  simpa using (inferInstance : IsLocalization (Algebra.algebraMapSubmonoid (R ⧸ I)
-    (Submonoid.powers r)) (S ⧸ I.map (algebraMap R S)))
+  rw [IsLocalization.Away, ← Ideal.Quotient.algebraMap_eq,
+    ← Algebra.algebraMapSubmonoid_powers]
+  infer_instance
