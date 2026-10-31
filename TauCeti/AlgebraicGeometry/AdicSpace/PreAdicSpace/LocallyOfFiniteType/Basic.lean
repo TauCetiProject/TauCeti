@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Adic
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Comap
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.ChartLocally
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Pair
 
 /-!
@@ -81,50 +80,14 @@ finite type* when every point `x` of `X` has an open neighbourhood `U`, mapped b
 `V` of `Y`, together with Huber pairs `(A, A⁺)` and `(B, B⁺)`, `B` complete and Hausdorff with
 `Spa(B, B⁺)` having a sheaf as structure presheaf, a morphism `φ : (A, A⁺) → (B, B⁺)` topologically
 of finite type, and isomorphisms identifying `X` restricted to `U` with `Spa(B, B⁺)` and `Y`
-restricted to `V` with `Spa(A, A⁺)`, under which `f` becomes the morphism induced by `φ`. -/
+restricted to `V` with `Spa(A, A⁺)`, under which `f` becomes the morphism induced by `φ`; that is,
+`f` is chart-locally topologically of finite type (`TauCeti.PreAdicSpace.chartLocally`). -/
 def LocallyOfFiniteType (f : X ⟶ Y) : Prop :=
-  ∀ x : X, ∃ (U : Opens X) (_ : x ∈ U) (V : Opens Y) (_ : U ≤ (Opens.map f.base).obj V)
-    (A : Type u) (_ : CommRing A) (_ : TopologicalSpace A) (_ : IsTopologicalRing A)
-    (_ : IsHuberRing A) (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
-    (B : Type u) (_ : CommRing B) (_ : UniformSpace B) (_ : IsUniformAddGroup B)
-    (_ : IsTopologicalRing B) (_ : CompleteSpace B) (_ : T2Space B) (_ : IsHuberRing B)
-    (T : Pair B) (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
-    (φ : Pair.Hom S T) (_ : φ.IsTopologicallyFiniteType)
-    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
-      (presentationLimitPresheaf P' T.plus))
-    (eU : X.restrict U.isOpenEmbedding ≅
-      presentationLimitPreAdicSpace P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem hP')
-    (eV : Y.restrict V.isOpenEmbedding ≅
-      presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP),
-    X.ofRestrict _ ≫ f =
-      eU.hom ≫ presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-        φ.map_mem_plus
-        S.isRingOfIntegralElements.isPowerBounded_of_mem
-        T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫ eV.inv ≫ Y.ofRestrict _
+  chartLocally (fun φ ↦ φ.IsTopologicallyFiniteType) f
 
 /-- Unfolding lemma for `TauCeti.PreAdicSpace.LocallyOfFiniteType`. -/
-theorem locallyOfFiniteType_iff (f : X ⟶ Y) : LocallyOfFiniteType f ↔
-    ∀ x : X, ∃ (U : Opens X) (_ : x ∈ U) (V : Opens Y) (_ : U ≤ (Opens.map f.base).obj V)
-      (A : Type u) (_ : CommRing A) (_ : TopologicalSpace A) (_ : IsTopologicalRing A)
-      (_ : IsHuberRing A) (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
-      (B : Type u) (_ : CommRing B) (_ : UniformSpace B) (_ : IsUniformAddGroup B)
-      (_ : IsTopologicalRing B) (_ : CompleteSpace B) (_ : T2Space B) (_ : IsHuberRing B)
-      (T : Pair B) (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
-      (φ : Pair.Hom S T) (_ : φ.IsTopologicallyFiniteType)
-      (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
-        (presentationLimitPresheaf P' T.plus))
-      (eU : X.restrict U.isOpenEmbedding ≅
-        presentationLimitPreAdicSpace P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem
-          hP')
-      (eV : Y.restrict V.isOpenEmbedding ≅
-        presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem
-          hP),
-      X.ofRestrict _ ≫ f =
-        eU.hom ≫ presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-          φ.map_mem_plus
-          S.isRingOfIntegralElements.isPowerBounded_of_mem
-          T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫ eV.inv ≫
-            Y.ofRestrict _ :=
+theorem locallyOfFiniteType_iff (f : X ⟶ Y) :
+    LocallyOfFiniteType f ↔ chartLocally (fun φ ↦ φ.IsTopologicallyFiniteType) f :=
   Iff.rfl
 
 /-- Precomposing a morphism locally of finite type with an isomorphism gives one locally of finite

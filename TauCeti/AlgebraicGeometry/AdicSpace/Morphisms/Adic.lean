@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Analytic
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Comap
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.ChartLocally
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.AdicHom
 
 /-!
@@ -17,8 +18,9 @@ A morphism `f : X ⟶ Y` of adic spaces is *adic* (Huber 1994, §3) if every poi
 open neighbourhood `U`, mapped by `f` into an open `V` of `Y`, such that `U ≅ Spa(B, B⁺)` and
 `V ≅ Spa(A, A⁺)` for Huber pairs, `B` complete and Hausdorff, under which `f` restricted to
 `U → V` is the morphism induced by a morphism of Huber pairs `(A, A⁺) → (B, B⁺)` whose ring
-homomorphism is adic (`TauCeti.Huber.IsAdicHom`). The charts are those of
-`TauCeti.PreAdicSpace.LocallyOfFiniteType`, with adicness in place of topological finite type.
+homomorphism is adic (`TauCeti.Huber.IsAdicHom`). This is `TauCeti.PreAdicSpace.chartLocally`
+for adic homomorphisms, the chart construction that also defines
+`TauCeti.PreAdicSpace.LocallyOfFiniteType` with topological finite type in place of adicness.
 
 The main theorem identifies adic morphisms with the morphisms sending analytic points to analytic
 points (Huber 1994, Proposition 3.2(ii); Wedhorn, Proposition 8.39). On an affinoid chart this is
@@ -139,58 +141,14 @@ every point `x` of `X` has an open neighbourhood `U`, mapped by `f` into an open
 together with Huber pairs `(A, A⁺)` and `(B, B⁺)`, `B` complete and Hausdorff with `Spa(B, B⁺)`
 having a sheaf as structure presheaf, a morphism `φ : (A, A⁺) → (B, B⁺)` whose ring homomorphism
 is adic, and isomorphisms identifying `X` restricted to `U` with `Spa(B, B⁺)` and `Y` restricted
-to `V` with `Spa(A, A⁺)`, under which `f` becomes the morphism induced by `φ`. By
+to `V` with `Spa(A, A⁺)`, under which `f` becomes the morphism induced by `φ`; that is, `f` is
+chart-locally adic (`TauCeti.PreAdicSpace.chartLocally`). By
 `isAdic_iff_mapsTo_analyticPoints` these are the morphisms sending analytic points to analytic
 points. -/
-def IsAdic : MorphismProperty AdicSpace.{u} := fun X Y f ↦
-  ∀ x : X.obj, ∃ (U : Opens X.obj) (_ : x ∈ U) (V : Opens Y.obj)
-    (_ : U ≤ (Opens.map f.hom.base).obj V)
-    (A : Type u) (_ : CommRing A) (_ : TopologicalSpace A) (_ : IsTopologicalRing A)
-    (_ : IsHuberRing A) (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
-    (B : Type u) (_ : CommRing B) (_ : UniformSpace B) (_ : IsUniformAddGroup B)
-    (_ : IsTopologicalRing B) (_ : CompleteSpace B) (_ : T2Space B) (_ : IsHuberRing B)
-    (T : Pair B) (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
-    (φ : Pair.Hom S T) (_ : IsAdicHom φ.toRingHom)
-    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
-      (presentationLimitPresheaf P' T.plus))
-    (eU : X.obj.restrict U.isOpenEmbedding ≅
-      presentationLimitPreAdicSpace P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem hP')
-    (eV : Y.obj.restrict V.isOpenEmbedding ≅
-      presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem hP),
-    X.obj.ofRestrict _ ≫ f.hom =
-      eU.hom ≫ presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-        φ.map_mem_plus
-        S.isRingOfIntegralElements.isPowerBounded_of_mem
-        T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫ eV.inv ≫
-          Y.obj.ofRestrict _
+def IsAdic : MorphismProperty AdicSpace.{u} := fun _ _ f ↦
+  chartLocally (fun φ ↦ IsAdicHom φ.toRingHom) f.hom
 
 variable {X Y Z : AdicSpace.{u}}
-
-/-- Unfolding lemma for `TauCeti.AdicSpace.IsAdic`. -/
-theorem isAdic_iff (f : X ⟶ Y) : IsAdic f ↔
-    ∀ x : X.obj, ∃ (U : Opens X.obj) (_ : x ∈ U) (V : Opens Y.obj)
-      (_ : U ≤ (Opens.map f.hom.base).obj V)
-      (A : Type u) (_ : CommRing A) (_ : TopologicalSpace A) (_ : IsTopologicalRing A)
-      (_ : IsHuberRing A) (S : Pair A) (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
-      (B : Type u) (_ : CommRing B) (_ : UniformSpace B) (_ : IsUniformAddGroup B)
-      (_ : IsTopologicalRing B) (_ : CompleteSpace B) (_ : T2Space B) (_ : IsHuberRing B)
-      (T : Pair B) (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus)
-      (φ : Pair.Hom S T) (_ : IsAdicHom φ.toRingHom)
-      (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
-        (presentationLimitPresheaf P' T.plus))
-      (eU : X.obj.restrict U.isOpenEmbedding ≅
-        presentationLimitPreAdicSpace P' T.plus T.isRingOfIntegralElements.isPowerBounded_of_mem
-          hP')
-      (eV : Y.obj.restrict V.isOpenEmbedding ≅
-        presentationLimitPreAdicSpace P S.plus S.isRingOfIntegralElements.isPowerBounded_of_mem
-          hP),
-      X.obj.ofRestrict _ ≫ f.hom =
-        eU.hom ≫ presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-          φ.map_mem_plus
-          S.isRingOfIntegralElements.isPowerBounded_of_mem
-          T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫ eV.inv ≫
-            Y.obj.ofRestrict _ :=
-  Iff.rfl
 
 /-- An adic morphism sends analytic points to analytic points: on a chart it is the morphism
 induced by an adic homomorphism, and the chart isomorphisms and inclusions identify analytic
