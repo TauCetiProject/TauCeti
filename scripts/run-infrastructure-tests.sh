@@ -53,6 +53,7 @@ python3 scripts/test_finalize_batch.py
 python3 scripts/perf/test_perf.py
 python3 scripts/test_claims_access.py
 python3 scripts/test_lint_dot_notation.py
+python3 scripts/test_dot_notation_scope.py
 python3 scripts/test_check_expired_mathlib_shims.py
 python3 scripts/test_check_source_options.py
 python3 scripts/test_toolchain_tags.py
