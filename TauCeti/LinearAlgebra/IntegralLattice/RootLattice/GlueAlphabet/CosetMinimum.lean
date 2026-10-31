@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Field
+public import Mathlib.InformationTheory.Hamming
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.CosetMinimum
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.OrthogonalSum
@@ -63,6 +65,8 @@ half of `μ(w)` is the quadratic value of `w`, and `μ(w) = 0` only for the zero
 * `TauCeti.DynkinType.quadratic_pi_glueAlphabet_eq_sum_glueMinimum_div_two`:
   `q(w) = μ(w) / 2 mod ℤ`.
 * `TauCeti.DynkinType.sum_glueMinimum_eq_zero_iff`: `μ(w) = 0` exactly when `w = 0`.
+* `TauCeti.DynkinType.sum_glueMinimum_A_one_eq_hammingNorm_div_two`: for a word in copies of the
+  `A₁` glue alphabet, `μ(w)` is half its Hamming weight.
 
 ## References
 
@@ -303,5 +307,19 @@ theorem sum_glueMinimum_eq_zero_iff {w : ∀ i, (t i).glueAlphabet (ht i)} :
   simp only [Finset.mem_univ, true_imp_iff, glueMinimum_eq_zero_iff _ (hv _), Pi.zero_apply]
 
 end GlueWord
+
+/-- **The shortest norm of a word in copies of the `A₁` glue alphabet is half its Hamming
+weight**: the nonzero label of `A₁` has shortest norm `1/2`. -/
+theorem sum_glueMinimum_A_one_eq_hammingNorm_div_two {ι : Type*} [Fintype ι]
+    (w : ι → (A 1).glueAlphabet (isSimplyLaced_A 1)) :
+    ∑ j, (A 1).glueMinimum (isSimplyLaced_A 1) (w j) =
+      hammingNorm (fun j ↦ typeA1GlueAlphabetZModStandardIsometry (w j)) / 2 := by
+  have h (x : ZMod 2) :
+      (x.val : ℚ) * (1 + 1 - x.val) / (1 + 1) = ((if x ≠ 0 then 1 else 0 : ℕ) : ℚ) / 2 := by
+    rcases (by decide : ∀ x : ZMod 2, x = 0 ∨ x = 1) x with rfl | rfl <;> norm_num [ZMod.val_one]
+  rw [hammingNorm, Finset.card_filter, Nat.cast_sum, Finset.sum_div]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [typeA1GlueAlphabetZModStandardIsometry_apply]
+  exact (glueMinimum_A 1 _ (w j)).trans (h (w j))
 
 end TauCeti.DynkinType
