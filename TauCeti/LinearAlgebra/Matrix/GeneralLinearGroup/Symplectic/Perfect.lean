@@ -199,10 +199,8 @@ commutator subgroup**, over every commutative ring. -/
 theorem rootSubgroup_mem_commutator_of_three_le (hm : 3 ≤ m) (root : RootSubgroupIndex m)
     (c : Multiplicative R) : root.hom c ∈ commutator (GLSymplecticFin m R) := by
   refine rootSubgroup_mem_commutator_of_difference (by omega) (fun {i j} hij a => ?_) root c
-  obtain ⟨k, -, hk⟩ := Finset.exists_mem_notMem_of_card_lt_card (s := {i, j})
-    (t := Finset.univ) (Finset.card_le_two.trans_lt (by simpa using Nat.lt_of_succ_le hm))
-  simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hk
-  exact differenceShortRootUnit_mem_commutator hij (Ne.symm hk.1) hk.2 a
+  obtain ⟨k, hki, hkj⟩ := Fin.exists_ne_and_ne_of_two_lt i j hm
+  exact differenceShortRootUnit_mem_commutator hij hki.symm hkj a
 
 /-- **In rank at least two, if `2` is a unit, every root element of the standard symplectic group
 is in the commutator subgroup**, over every commutative ring. -/
