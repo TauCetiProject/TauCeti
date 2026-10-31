@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.LinearCombination
 public import TauCeti.Topology.MetricSpace.Ultra.ContinuousMaps
+import TauCeti.Analysis.Normed.Group.Ultra
 
 /-!
 # Orthonormal bases of nonarchimedean normed modules
@@ -22,6 +23,10 @@ norms of the terms `a i • e i`; over a ring the latter, weaker, condition woul
 *orthonormal basis* (`TauCeti.IsOrthonormalBasis R e`) is an orthonormal family whose span is
 dense. This is neither a Hamel basis nor an orthonormal basis of an inner product space: the
 vectors of `M` are the convergent infinite combinations of the `e i`.
+
+Perturbing each vector of an orthonormal family by norm less than one preserves
+orthonormality (`IsOrthonormalFamily.of_norm_sub_lt_one`). The bound can depend
+on the index; only finitely many errors occur in each linear combination.
 
 The model example is the family of unit coordinate vectors `single i 1` of `C₀(I, R)`
 (`TauCeti.isOrthonormalBasis_single_one`), and every orthonormal basis is of this form: over a
@@ -158,6 +163,43 @@ theorem map [SeminormedAddCommGroup N] [Module R N] (he : IsOrthonormalFamily R 
   simpa [map_sum, map_smul, he s a] using u.nnnorm_map (∑ i ∈ s, a i • e i)
 
 end Seminormed
+
+/-- Perturbing each vector of an orthonormal family by less than one preserves
+orthonormality in an ultrametric module. No uniform bound strictly below one is needed. -/
+theorem of_norm_sub_lt_one [SeminormedRing R] [SeminormedAddCommGroup M] [Module R M]
+    [IsBoundedSMul R M] [IsUltrametricDist M] {e v : I → M}
+    (he : IsOrthonormalFamily R e) (hv : ∀ i, ‖e i - v i‖ < 1) :
+    IsOrthonormalFamily R v := by
+  intro s a
+  by_cases hzero : s.sup (fun i ↦ ‖a i‖₊) = 0
+  · have ha (i) (hi : i ∈ s) : ‖a i‖ = 0 := by
+      exact NNReal.coe_eq_zero.2 <| le_antisymm
+        (hzero ▸ Finset.le_sup (f := fun i ↦ ‖a i‖₊) hi) zero_le
+    have hsum : ‖∑ i ∈ s, a i • v i‖ ≤ 0 :=
+      IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg le_rfl fun i hi ↦ by
+        exact (norm_smul_le _ _).trans_eq (by rw [ha i hi, zero_mul])
+    exact hzero ▸ NNReal.coe_injective (le_antisymm hsum (norm_nonneg _))
+  · have hpos : 0 < s.sup (fun i ↦ ‖a i‖₊) := pos_iff_ne_zero.2 hzero
+    have herr : ‖∑ i ∈ s, a i • (e i - v i)‖₊ < s.sup (fun i ↦ ‖a i‖₊) := by
+      refine (s.nnnorm_sum_le_sup_nnnorm _).trans_lt ((s.sup_lt_iff hpos).2 ?_)
+      intro i hi
+      have hb : ‖e i - v i‖₊ < 1 := by exact_mod_cast hv i
+      have hsmul : ‖a i • (e i - v i)‖₊ ≤ ‖a i‖₊ * ‖e i - v i‖₊ := by
+        exact_mod_cast norm_smul_le (a i) (e i - v i)
+      by_cases ha : ‖a i‖₊ = 0
+      · exact hsmul.trans_lt (by simpa [ha] using hpos)
+      · exact (hsmul.trans_lt (by
+          simpa using mul_lt_mul_of_pos_left hb (pos_iff_ne_zero.2 ha))).trans_le
+          (Finset.le_sup (f := fun i ↦ ‖a i‖₊) hi)
+    have herr' : ‖(∑ i ∈ s, a i • e i) - ∑ i ∈ s, a i • v i‖ <
+        ‖∑ i ∈ s, a i • e i‖ := by
+      rw [← Finset.sum_sub_distrib]
+      simp only [← smul_sub]
+      exact_mod_cast (he s a).symm ▸ herr
+    rw [← he s a]
+    apply NNReal.coe_injective
+    simpa only [coe_nnnorm] using
+      (IsUltrametricDist.norm_eq_of_norm_sub_lt_left herr').symm
 
 /-- An orthonormal family over a normed ring is linearly independent. -/
 theorem linearIndependent [NormedRing R] [SeminormedAddCommGroup M] [Module R M] {e : I → M}
