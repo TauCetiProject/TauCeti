@@ -23,6 +23,12 @@ The group `Aut (LaxMonoidalFunctor.of (𝟭 C))` of monoidal natural automorphis
 functor of a monoidal category, often written `Aut_⊗(𝟭_C)`, is commutative, like Mathlib's
 centre `CategoryTheory.CatCenter C` of all natural endomorphisms of `𝟭 C`. It is the group
 acting on the pivotal structures of a rigid monoidal category.
+
+A natural transformation `τ : F ⟶ G` between strong monoidal functors whose component at the
+unit is invertible is monoidal as soon as it is compatible with the tensor comparisons:
+compatibility with the unit comparisons then follows from the unitality of `F` and `G`
+(`CategoryTheory.NatTrans.IsMonoidal.of_tensor`). This applies in particular to natural
+isomorphisms.
 -/
 
 public section
@@ -78,3 +84,42 @@ instance : IsMulCommutative (Aut (LaxMonoidalFunctor.of (𝟭 C))) :=
   .of_comm fun u v ↦ Aut.ext (Iso.ext (hom_ext (NatTrans.id_comm v.asIso.hom.hom u.asIso.hom.hom)))
 
 end CategoryTheory.LaxMonoidalFunctor
+
+namespace CategoryTheory.NatTrans.IsMonoidal
+
+open MonoidalCategory Functor.LaxMonoidal Functor.OplaxMonoidal
+
+variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C]
+variable {D : Type u₂} [Category.{v₂} D] [MonoidalCategory D]
+
+/-- A natural transformation between strong monoidal functors that is compatible with the tensor
+comparisons, and whose component at the unit is invertible, is monoidal: compatibility with the
+unit comparisons is automatic. -/
+theorem of_tensor {F G : C ⥤ D} [F.Monoidal] [G.Monoidal] (τ : F ⟶ G)
+    [IsIso (τ.app (𝟙_ C))]
+    (h : ∀ X Y : C, μ F X Y ≫ τ.app (X ⊗ Y) = (τ.app X ⊗ₘ τ.app Y) ≫ μ G X Y) :
+    NatTrans.IsMonoidal τ where
+  unit := by
+    -- Left unitality of `F` and `G` and naturality of `τ` at `λ_ (𝟙_ C)` identify the
+    -- whiskerings of both sides by `F.obj (𝟙_ C)`, after `G.obj (𝟙_ C) ◁ τ_𝟙`.
+    have key : (ε F ≫ τ.app (𝟙_ C)) ▷ F.obj (𝟙_ C) ≫ G.obj (𝟙_ C) ◁ τ.app (𝟙_ C) =
+        ε G ▷ F.obj (𝟙_ C) ≫ G.obj (𝟙_ C) ◁ τ.app (𝟙_ C) := by
+      rw [← cancel_mono (μ G (𝟙_ C) (𝟙_ C) ≫ G.map (λ_ (𝟙_ C)).hom)]
+      calc
+        _ = ε F ▷ F.obj (𝟙_ C) ≫ μ F (𝟙_ C) (𝟙_ C) ≫ τ.app (𝟙_ C ⊗ 𝟙_ C) ≫
+              G.map (λ_ (𝟙_ C)).hom := by
+          rw [reassoc_of% h, tensorHom_def]; simp
+        _ = (λ_ (F.obj (𝟙_ C))).hom ≫ τ.app (𝟙_ C) := by
+          rw [← τ.naturality, Functor.LaxMonoidal.left_unitality]; simp
+        _ = 𝟙_ D ◁ τ.app (𝟙_ C) ≫ (λ_ (G.obj (𝟙_ C))).hom := (leftUnitor_naturality _).symm
+        _ = _ := by rw [Functor.LaxMonoidal.left_unitality, whisker_exchange_assoc]; simp
+    have hw : (ε F ≫ τ.app (𝟙_ C)) ▷ F.obj (𝟙_ C) = ε G ▷ F.obj (𝟙_ C) :=
+      (cancel_mono _).1 key
+    -- Whiskering by `F.obj (𝟙_ C) ≅ 𝟙_ D` is faithful.
+    have hw' : (ε F ≫ τ.app (𝟙_ C)) ▷ 𝟙_ D = ε G ▷ 𝟙_ D := by
+      rw [← cancel_epi (𝟙_ D ◁ η F), whisker_exchange, whisker_exchange, hw]
+    rw [whiskerRight_id, whiskerRight_id, cancel_epi, cancel_mono] at hw'
+    exact hw'
+  tensor := h
+
+end CategoryTheory.NatTrans.IsMonoidal
