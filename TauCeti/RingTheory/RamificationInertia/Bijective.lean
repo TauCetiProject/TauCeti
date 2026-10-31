@@ -17,7 +17,9 @@ over `S` when `algebraMap R S` is bijective, and the same ramification index whe
 surjective. In particular, statements about two presentations of the same base ring, such as
 `ℤ` and the ring of integers of `ℚ`, can be transported into each other. Dually, the
 ramification index of an ideal over `R` is unchanged by an `R`-algebra isomorphism of the ring
-containing it, so it does not depend on the chosen model of, say, an integral closure.
+containing it, so it does not depend on the chosen model of, say, an integral closure. Along a
+flat integral extension `S → T`, each maximal ideal of `S` lies under a maximal ideal of `T`
+whose ramification index it divides.
 
 ## Main results
 
@@ -25,6 +27,8 @@ containing it, so it does not depend on the chosen model of, say, an integral cl
 * `Ideal.ramificationIdx_eq_of_surjective`: `r.ramificationIdx S = r.ramificationIdx R`.
 * `Ideal.ramificationIdx_map_algEquiv`: `(P.map e).ramificationIdx R = P.ramificationIdx R` for
   an `R`-algebra isomorphism `e`.
+* `Ideal.exists_isMaximal_liesOver_ramificationIdx_dvd`: a maximal ideal `Q` of `S` lies under a
+  maximal ideal `P` of `T` with `Q.ramificationIdx R ∣ P.ramificationIdx R`.
 -/
 
 public section
@@ -81,5 +85,15 @@ theorem ramificationIdx_map_algEquiv {R S T : Type*} [CommRing R] [CommRing S] [
   have : (P.map e).IsPrime := map_isPrime_of_equiv e
   rw [ramificationIdx_tower (q := P), ← ramificationIdx_eq_of_surjective hbij.2,
     ramificationIdx_eq_one (P.map e) T, mul_one]
+
+/-- Going up along a flat integral extension `S → T` keeps track of ramification: every maximal
+ideal `Q` of `S` lies under a maximal ideal `P` of `T` whose ramification index over `R` is
+divisible by that of `Q`. -/
+theorem exists_isMaximal_liesOver_ramificationIdx_dvd (R : Type*) {S T : Type*} [CommRing R]
+    [CommRing S] [CommRing T] [Algebra R S] [Algebra S T] [Algebra R T] [IsScalarTower R S T]
+    [Algebra.IsIntegral S T] [FaithfulSMul S T] [Module.Flat S T] (Q : Ideal S) [Q.IsMaximal] :
+    ∃ P : Ideal T, P.IsMaximal ∧ P.LiesOver Q ∧ Q.ramificationIdx R ∣ P.ramificationIdx R := by
+  obtain ⟨P, _, _⟩ := exists_maximal_ideal_liesOver_of_isIntegral (S := T) Q
+  exact ⟨P, ‹_›, ‹_›, ramificationIdx_below_dvd Q P⟩
 
 end Ideal

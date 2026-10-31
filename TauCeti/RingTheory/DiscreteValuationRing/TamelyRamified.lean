@@ -428,33 +428,23 @@ variable (K : Type*) [Field K] [IsDomain A] [IsDiscreteValuationRing A] [Algebra
   [Algebra.IsSeparable K M]
 
 include K in
-/-- Every maximal ideal of the integral closure of `A` in `M` over the closed point lies under
-such an ideal of the integral closure of `A` in `L`, with ramification index divisible by its own
-and residue field containing its own. -/
-private theorem exists_tower_bot (Q : Ideal (integralClosure A M)) [Q.IsMaximal]
-    [Q.LiesOver (maximalIdeal A)] :
-    ∃ (P : Ideal (integralClosure A L)) (_ : P.IsMaximal) (_ : P.LiesOver Q)
-      (_ : P.LiesOver (maximalIdeal A)),
-      IsScalarTower (A ⧸ maximalIdeal A) (integralClosure A M ⧸ Q) (integralClosure A L ⧸ P) ∧
-        Q.ramificationIdx A ∣ P.ramificationIdx A := by
-  have : IsDedekindDomain (integralClosure A M) := integralClosure.isDedekindDomain A K M
-  have : Algebra.IsIntegral (integralClosure A M) (integralClosure A L) := .tower_top A
-  have : FaithfulSMul (integralClosure A M) (integralClosure A L) := .tower_bot _ _ L
-  obtain ⟨P, _, _⟩ := Ideal.exists_maximal_ideal_liesOver_of_isIntegral (S := integralClosure A L) Q
-  have : P.LiesOver (maximalIdeal A) := .trans P Q (maximalIdeal A)
-  exact ⟨P, ‹_›, ‹_›, this, Ideal.Quotient.isScalarTower_quotient_of_liesOver _ Q P,
-    Ideal.ramificationIdx_below_dvd Q P⟩
-
-include K in
 /-- Let `M` be a finite separable extension of the fraction field `K` of a discrete valuation ring
 `A`, and `L` any extension of `M`. If `L` is tamely ramified with respect to `A`, then so is `M`. -/
 theorem IsTamelyRamifiedWRT.tower_bot (h : IsTamelyRamifiedWRT A L) : IsTamelyRamifiedWRT A M := by
   intro Q _ _
-  obtain ⟨P, _, _, _, _, hdvd⟩ := exists_tower_bot (L := L) K Q
+  have : IsDedekindDomain (integralClosure A M) := integralClosure.isDedekindDomain A K M
+  have : Algebra.IsIntegral (integralClosure A M) (integralClosure A L) := .tower_top A
+  have : FaithfulSMul (integralClosure A M) (integralClosure A L) := .tower_bot _ _ L
+  have : Module.IsTorsionFree (integralClosure A M) (integralClosure A L) :=
+    FaithfulSMul.to_isTorsionFree ..
+  obtain ⟨P, _, _, hdvd⟩ :=
+    Ideal.exists_isMaximal_liesOver_ramificationIdx_dvd A (T := integralClosure A L) Q
+  have : P.LiesOver (maximalIdeal A) := .trans P Q (maximalIdeal A)
   obtain ⟨hsep, he⟩ := h P
   let := Ideal.Quotient.field (maximalIdeal A)
   let := Ideal.Quotient.field Q
   let := Ideal.Quotient.field P
+  have := Ideal.Quotient.isScalarTower_quotient_of_liesOver (maximalIdeal A) Q P
   exact ⟨Algebra.isSeparable_tower_bot_of_isSeparable _ _ (integralClosure A L ⧸ P),
     isUnit_of_dvd_unit (Nat.cast_dvd_cast hdvd) he⟩
 
@@ -463,11 +453,19 @@ include K in
 `A`, and `L` any extension of `M`. If `L` is unramified with respect to `A`, then so is `M`. -/
 theorem IsUnramifiedWRT.tower_bot (h : IsUnramifiedWRT A L) : IsUnramifiedWRT A M := by
   intro Q _ _
-  obtain ⟨P, _, _, _, _, hdvd⟩ := exists_tower_bot (L := L) K Q
+  have : IsDedekindDomain (integralClosure A M) := integralClosure.isDedekindDomain A K M
+  have : Algebra.IsIntegral (integralClosure A M) (integralClosure A L) := .tower_top A
+  have : FaithfulSMul (integralClosure A M) (integralClosure A L) := .tower_bot _ _ L
+  have : Module.IsTorsionFree (integralClosure A M) (integralClosure A L) :=
+    FaithfulSMul.to_isTorsionFree ..
+  obtain ⟨P, _, _, hdvd⟩ :=
+    Ideal.exists_isMaximal_liesOver_ramificationIdx_dvd A (T := integralClosure A L) Q
+  have : P.LiesOver (maximalIdeal A) := .trans P Q (maximalIdeal A)
   obtain ⟨he, hsep⟩ := h P
   let := Ideal.Quotient.field (maximalIdeal A)
   let := Ideal.Quotient.field Q
   let := Ideal.Quotient.field P
+  have := Ideal.Quotient.isScalarTower_quotient_of_liesOver (maximalIdeal A) Q P
   exact ⟨Nat.dvd_one.mp (he ▸ hdvd),
     Algebra.isSeparable_tower_bot_of_isSeparable _ _ (integralClosure A L ⧸ P)⟩
 
