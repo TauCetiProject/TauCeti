@@ -46,6 +46,9 @@ here.
   classes is the class of the corresponding word.
 * `TauCeti.UniversalEnvelopingAlgebra.pbwAssociatedGradedMap_prod_map_ι`: the canonical map sends
   a product of symmetric generators to the class of the corresponding word.
+* `TauCeti.UniversalEnvelopingAlgebra.mul_sub_mul_mem_pbwFiltrationPrevious` and
+  `TauCeti.UniversalEnvelopingAlgebra.lie_ι_mem_pbwFiltrationPrevious`: commutators lower the PBW
+  degree, so bracketing with a Lie generator preserves each filtration step.
 
 ## References
 
@@ -158,6 +161,19 @@ theorem mul_sub_mul_mem_pbwFiltrationPrevious {i j : ℕ} {x y : U}
       LinearMap.mulLeft_apply, LinearMap.mulRight_apply] using hright hy
   simpa only [left, q, Submodule.mem_comap, LinearMap.sub_apply,
     LinearMap.mulLeft_apply, LinearMap.mulRight_apply] using hleft hx
+
+/-- **Bracketing with a Lie generator preserves the PBW filtration.** If `u` has PBW degree
+strictly below `k`, then so does the commutator `⁅ι x, u⁆`: commutators lower the sum of the
+degrees, and `ι x` has degree one. -/
+theorem lie_ι_mem_pbwFiltrationPrevious (x : L) {k : ℕ} {u : U}
+    (hu : u ∈ pbwFiltrationPrevious R L k) :
+    ⁅_root_.UniversalEnvelopingAlgebra.ι R x, u⁆ ∈ pbwFiltrationPrevious R L k := by
+  cases k with
+  | zero => simp_all
+  | succ k =>
+      rw [pbwFiltrationPrevious_succ] at hu
+      have h := mul_sub_mul_mem_pbwFiltrationPrevious R L (ι_mem_pbwFiltration_one R L x) hu
+      rwa [add_comm, ← LieRing.of_associative_ring_bracket] at h
 
 /-- Multiplication of PBW homogeneous pieces is commutative after reindexing the degree. -/
 theorem pbwGradedMul_comm (i j : ℕ) (x : PBWGradedPiece R L i)
