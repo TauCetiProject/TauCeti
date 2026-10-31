@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Nerve
-public import TauCeti.Topology.CategoryTheory.ActionGroupoid
+public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic
 public import TauCeti.Topology.CategoryTheory.Nerve
 
 /-!
@@ -14,7 +14,7 @@ public import TauCeti.Topology.CategoryTheory.Nerve
 
 Let a topological monoid `G` act continuously on `X`, and give Mathlib's native action category
 `CategoryTheory.ActionCategory G X` the object and total-arrow topologies of
-`TauCeti.Topology.CategoryTheory.ActionGroupoid`. A string of `n` composable arrows
+`TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic`. A string of `n` composable arrows
 `x₀ ⟶ x₁ ⟶ ⋯ ⟶ xₙ` is then determined by its first point `x₀` and the labels `gₖ` of its
 consecutive arrows, with `xₖ₊₁ = gₖ • xₖ` (`TauCeti.ActionGroupoid.nerveEquiv`). This file proves
 that these coordinates identify the `n`-simplices of the topological nerve with `X × Gⁿ` as
@@ -83,6 +83,15 @@ theorem continuous_nerve_iff {Y : Type*} [TopologicalSpace Y]
   simp only [Function.comp_apply, ComposableArrows.totalArrow_def, arrowHomeomorph_apply]
   rw [back_obj_eq_smul (f y) i, Pi.smul_apply']
 
+/-- The inverse of `nerveEquiv`, which builds the string with given first point and consecutive
+labels, is continuous. -/
+theorem continuous_nerveEquiv_symm : Continuous (nerveEquiv G X n).symm :=
+  continuous_nerve_iff.2
+    ⟨by simpa only [back_obj_nerveEquiv_symm, Fin.partialProd_zero, MulOpposite.unop_one, one_smul]
+        using continuous_fst,
+      fun k ↦ ((continuous_apply k).comp continuous_snd).congr fun p ↦ by
+        rw [label_nerveEquiv_symm, Function.comp_apply]⟩
+
 variable (G X n) in
 /-- The `n`-simplices of the topological nerve of an action groupoid are homeomorphic to `X × Gⁿ`,
 by recording the first point and the labels of the consecutive arrows of a string. The string with
@@ -90,11 +99,7 @@ first point `x` and labels `g` has `k`-th point `gₖ₋₁ ⋯ g₀ • x`. -/
 def nerveHomeomorph : ComposableArrows (ActionCategory G X) n ≃ₜ X × (Fin n → G) where
   toEquiv := nerveEquiv G X n
   continuous_toFun := continuous_back_obj_zero.prodMk (continuous_pi continuous_label_succ)
-  continuous_invFun := show Continuous (nerveEquiv G X n).symm from continuous_nerve_iff.2
-    ⟨by simpa only [back_obj_nerveEquiv_symm, Fin.partialProd_zero, MulOpposite.unop_one, one_smul]
-        using continuous_fst,
-      fun k ↦ ((continuous_apply k).comp continuous_snd).congr fun p ↦ by
-        rw [label_nerveEquiv_symm, Function.comp_apply]⟩
+  continuous_invFun := continuous_nerveEquiv_symm
 
 @[simp]
 theorem toEquiv_nerveHomeomorph : (nerveHomeomorph G X n).toEquiv = nerveEquiv G X n := (rfl)
