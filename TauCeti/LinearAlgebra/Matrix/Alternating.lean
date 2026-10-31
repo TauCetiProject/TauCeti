@@ -288,4 +288,18 @@ theorem natCard_transpose_eq_neg [Fintype n] [AddCommGroup S] (I : AddSubgroup S
   rw [← hpairs, ← Nat.card_fun]
   exact Nat.card_congr (e.trans (skewStrictUpperAddEquiv h2I).toEquiv)
 
+/-- A square-zero matrix skew-adjoint for a form gives form-preserving unipotents. -/
+theorem one_add_smul_mul_mul_transpose {R : Type*} [CommRing R] [Fintype n]
+    [DecidableEq n] (J Y : Matrix n n R) (t : R)
+    (hskew : Y * J + J * Yᵀ = 0) (hsq : Y * Y = 0) :
+    (1 + t • Y) * J * (1 + t • Y)ᵀ = J := by
+  have hYJ : Y * J = -(J * Yᵀ) := eq_neg_iff_add_eq_zero.mpr hskew
+  have hcube : Y * J * Yᵀ = 0 := by
+    rw [hYJ, neg_mul, mul_assoc, ← transpose_mul, hsq, transpose_zero, mul_zero, neg_zero]
+  simp only [Matrix.transpose_add, Matrix.transpose_one, Matrix.transpose_smul,
+    Matrix.add_mul, Matrix.mul_add, Matrix.one_mul, Matrix.mul_one, Matrix.smul_mul,
+    Matrix.mul_smul]
+  rw [hcube, smul_zero, add_zero, hYJ, smul_neg]
+  simp only [add_assoc, neg_add_cancel, add_zero]
+
 end Matrix

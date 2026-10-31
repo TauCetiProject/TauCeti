@@ -378,4 +378,42 @@ theorem span_range_e7MinusculeWeight_eq_top :
     rw [show Pi.single (6 : Fin 7) 1 = e7MinusculeWeight 0 by decide +kernel]
     exact h 0
 
+/-! ## Signs on opposite weights -/
+
+/-- The sign changes along the existing parent tree. A weight index supplies enough fuel
+because every parent has smaller index. -/
+private def e7MinusculeSignAux : ℕ → Fin 56 → ℤ
+  | 0, _ => 1
+  | n + 1, a => if h : a = 0 then 1 else -e7MinusculeSignAux n
+      (e7MinusculeParent (a.pred h))
+
+/-- The alternating sign on the minuscule weight graph, normalized to `1` at `ϖ₇`. -/
+def e7MinusculeSign (a : Fin 56) : ℤ := e7MinusculeSignAux a.val a
+
+@[simp]
+theorem e7MinusculeSign_zero : e7MinusculeSign 0 = 1 := by
+  decide +kernel
+
+@[simp]
+theorem e7MinusculeSign_mul_self (a : Fin 56) :
+    e7MinusculeSign a * e7MinusculeSign a = 1 := by
+  decide +kernel +revert
+
+/-- A nontrivial simple reflection reverses the sign. -/
+theorem e7MinusculeSign_reflection (i : Fin 7) (a : Fin 56)
+    (h : e7MinusculeWeight a i ≠ 0) :
+    e7MinusculeSign (e7MinusculeReflection i a) = -e7MinusculeSign a := by
+  decide +kernel +revert
+
+/-- The minuscule weight table is closed under negation. -/
+theorem exists_e7MinusculeWeight_eq_neg (a : Fin 56) :
+    ∃ b, e7MinusculeWeight b = -e7MinusculeWeight a := by
+  decide +kernel +revert
+
+/-- Opposite weights have opposite signs. -/
+theorem e7MinusculeSign_eq_neg_of_weight_eq_neg (a b : Fin 56)
+    (h : e7MinusculeWeight b = -e7MinusculeWeight a) :
+    e7MinusculeSign b = -e7MinusculeSign a := by
+  decide +kernel +revert
+
 end TauCeti.DynkinType
