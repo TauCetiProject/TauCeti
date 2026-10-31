@@ -155,9 +155,7 @@ noncomputable def equivLevel :
     ((TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).symm
       (ringEquivLaurentSeries K d g))
   map_add' ω η := by simp
-  map_smul' g ω := by
-    rw [addEquivContinuousKaehlerDifferential_smul, map_smul, smul_eq_mul, map_mul,
-      RingEquiv.symm_apply_apply, RingHom.id_apply, smul_eq_mul]
+  map_smul' g ω := by simp
   left_inv ω := by simp
   right_inv g := by simp
 
@@ -187,9 +185,7 @@ noncomputable def map :
   map_add' ω η := by simp
   map_smul' f ω := by
     apply (addEquivContinuousKaehlerDifferential K d).injective
-    rw [RingHom.id_apply, addEquivContinuousKaehlerDifferential_laurentSeries_smul,
-      AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply, LinearMap.map_smulₛₗ, RingHom.coe_coe,
-      DFunLike.congr_fun (TauCeti.LaurentSeries.substAlgHom_X_pow_eq_expand d) f]
+    simp [TauCeti.LaurentSeries.substAlgHom_X_pow_eq_expand]
 
 variable {K d}
 
@@ -217,11 +213,9 @@ theorem equivLevel_map (ω : TauCeti.ContinuousKaehlerDifferential K) :
           (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K ω) *
         (ringEquivLaurentSeries K d).symm (derivative K (single (d : ℤ) 1)) := by
   apply (ringEquivLaurentSeries K d).injective
-  rw [ringEquivLaurentSeries_equivLevel, addEquivContinuousKaehlerDifferential_map,
+  simp [addEquivContinuousKaehlerDifferential_map,
     TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries_subst,
-    TauCeti.LaurentSeries.substAlgHom_X_pow_eq_expand, map_mul, algebraMap_apply,
-    RingEquiv.apply_symm_apply, PowerSeries.coe_pow, PowerSeries.coe_X, single_pow, one_pow,
-    nsmul_eq_mul, mul_one]
+    TauCeti.LaurentSeries.substAlgHom_X_pow_eq_expand, single_pow]
 
 /-- The derivative `d u ^ (d - 1)` of `u ^ d` vanishes exactly when `d` vanishes in `K`. -/
 private theorem derivative_single_eq_zero_iff :
@@ -236,12 +230,10 @@ theorem map_eq_zero_iff : map K d = 0 ↔ ((d : ℕ) : K) = 0 := by
   · intro h
     have h1 := congrArg (equivLevel K d) (LinearMap.congr_fun h
       ((TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).symm 1))
-    rw [equivLevel_map, ContinuousLinearEquiv.apply_symm_apply, map_one, one_mul,
-      LinearMap.zero_apply, map_zero, RingEquiv.map_eq_zero_iff] at h1
-    exact h1
+    simpa using h1
   · intro h
     refine LinearMap.ext fun ω ↦ (equivLevel K d).injective ?_
-    rw [equivLevel_map, h, map_zero, mul_zero, LinearMap.zero_apply, map_zero]
+    simp [h]
 
 /-! ### Scalar extension and the trace -/
 
@@ -328,9 +320,7 @@ theorem equivLaurentSeries_trace (ω : Level.ContinuousKaehlerDifferential K d) 
   have hω : ω = (equivLevel K d ω / c) •
       map K d (TauCeti.ContinuousKaehlerDifferential.D K (single 1 1)) := by
     apply (equivLevel K d).injective
-    rw [map_smul, equivLevel_map, TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries_D,
-      show derivative K (single 1 (1 : K)) = 1 by simp, map_one, one_mul, smul_eq_mul,
-      div_mul_cancel₀ _ symm_derivative_single_ne_zero]
+    simpa [c] using (div_mul_cancel₀ (equivLevel K d ω) symm_derivative_single_ne_zero).symm
   conv_lhs => rw [hω]
   rw [trace_smul_map, map_smul, TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries_D,
     smul_eq_mul]
