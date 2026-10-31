@@ -98,6 +98,10 @@ theorem swap_swap (a b : Fin (k + l)) (S : ShuffleMask k l) : (S.swap a b).swap 
 it is the index of `p` among the rest positions, counted from `0`. -/
 def restIndex (S : ShuffleMask k l) (p : Fin (k + l)) : ℕ := #{x ∈ S.1ᶜ | x < p}
 
+/-- `S.restIndex p` counts the rest positions of `S` before `p`. -/
+theorem restIndex_def (S : ShuffleMask k l) (p : Fin (k + l)) :
+    S.restIndex p = #{x ∈ S.1ᶜ | x < p} := (rfl)
+
 /-- A selected position does not change the number of rest positions before it. -/
 theorem restIndex_of_mem {S : ShuffleMask k l} {a b : Fin (k + l)} (hab : (b : ℕ) = a + 1)
     (ha : a ∈ S.1) : S.restIndex b = S.restIndex a := by
@@ -184,9 +188,15 @@ def initial : ShuffleMask k l :=
 theorem mem_initial {x : Fin (k + l)} : x ∈ (initial : ShuffleMask k l).1 ↔ (x : ℕ) < k := by
   simp [initial]
 
-/-- In the initial mask, the rest position `p` is the `(p - k)`-th rest position. -/
-theorem restIndex_initial {p : Fin (k + l)} (hp : k ≤ p) :
+/-- In the initial mask, the rest position `p` is the `(p - k)`-th rest position, and there are
+no rest positions before a selected position. -/
+theorem restIndex_initial (p : Fin (k + l)) :
     (initial : ShuffleMask k l).restIndex p = p - k := by
+  rcases lt_or_ge (p : ℕ) k with hp | hp
+  · rw [restIndex, Nat.sub_eq_zero_of_le hp.le, card_eq_zero, filter_eq_empty_iff]
+    intro x
+    simp only [mem_compl, mem_initial, not_lt, Fin.lt_def]
+    omega
   have h : ({x ∈ (initial : ShuffleMask k l).1ᶜ | x < p} : Finset (Fin (k + l))) =
       ({x | (x : ℕ) < p} : Finset (Fin (k + l))) \ ({x | (x : ℕ) < k} : Finset (Fin (k + l))) := by
     ext x
