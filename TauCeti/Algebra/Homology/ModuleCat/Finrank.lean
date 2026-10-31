@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.Algebra.FiniteSupport.Defs
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Algebra.Homology.ModuleCat.Basic
 import TauCeti.LinearAlgebra.Matrix.Rank
@@ -20,7 +21,9 @@ Let `C` be a homological complex of vector spaces over a field `F`. If `C.X j` i
 finite-dimensional, `C` is exact in degree `j` exactly when the dimensions of the images of the
 incoming and outgoing differentials add up to the dimension of `C.X j`
 (`HomologicalComplex.exactAt_iff_finrank_add_finrank`). The boundaries of a based complex vanish
-in a degree where its basis is empty (`HomologicalComplex.finrank_range_d_eq_zero`).
+in a degree where its basis is empty (`HomologicalComplex.finrank_range_d_eq_zero`), so for a
+bounded based complex the signs `(-1) ^ (dim Bⱼ · f j)` have finite multiplicative support
+(`HomologicalComplex.hasFiniteMulSupport_neg_one_pow_finrank_mul`).
 
 Let `φ : F →+* K` be a homomorphism of fields and let `D` be a complex of vector spaces over `K`
 of the same shape. If `C` and `D` have bases in which the matrices of the differentials of `D` are
@@ -64,6 +67,15 @@ theorem finrank_range_d_eq_zero (C : ChainComplex (ModuleCat F) ℤ) {n : ℤ �
   have : Module.Finite F (C.X j) := .of_basis (c j)
   have hle := Submodule.finrank_le (LinearMap.range (C.d (j + 1) j).hom)
   rwa [finrank_eq_card_basis (c j), Fintype.card_fin, hj, Nat.le_zero] at hle
+
+/-- The signs `(-1) ^ (dim Bⱼ · f j)`, where `Bⱼ` is the space of boundaries of a bounded based
+complex `C` in degree `j`, have finite multiplicative support. -/
+theorem hasFiniteMulSupport_neg_one_pow_finrank_mul (C : ChainComplex (ModuleCat F) ℤ)
+    {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i)) (hn : {i | n i ≠ 0}.Finite)
+    (f : ℤ → ℕ) : Function.HasFiniteMulSupport fun j : ℤ ↦
+      (-1 : F) ^ (finrank F (LinearMap.range (C.d (j + 1) j).hom) * f j) :=
+  hn.subset <| Function.mulSupport_subset_iff'.2 fun j hj ↦ by
+    simp [finrank_range_d_eq_zero C c (j := j) (by simpa using hj)]
 
 variable {K : Type*} [Field K] (φ : F →+* K) {C : HomologicalComplex (ModuleCat F) s}
   {D : HomologicalComplex (ModuleCat K) s} {κ : ι → Type*} [∀ i, Fintype (κ i)]

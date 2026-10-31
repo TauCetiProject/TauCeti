@@ -186,15 +186,6 @@ section MappingCone
 
 open Limits ZeroObject
 
-/-- The signs `(-1) ^ (dim Bⱼ · f j)`, where `Bⱼ` is the space of boundaries of a bounded based
-complex `K` in degree `j`, have finite multiplicative support. -/
-private theorem hasFiniteMulSupport_neg_one_pow_finrank_mul {K : ChainComplex (ModuleCat F) ℤ}
-    {nK : ℤ → ℕ} (cK : ∀ i, Basis (Fin (nK i)) F (K.X i)) (hn : {i | nK i ≠ 0}.Finite)
-    (f : ℤ → ℕ) : Function.HasFiniteMulSupport fun j : ℤ ↦
-      (-1 : F) ^ (finrank F (LinearMap.range (K.d (j + 1) j).hom) * f j) :=
-  hn.subset <| Function.mulSupport_subset_iff'.2 fun j hj ↦ by
-    simp [finrank_range_d_eq_zero K cK (j := j) (by simpa using hj)]
-
 open homotopyCofiber in
 /-- **The torsion of a mapping cone.** Let `φ : K ⟶ L` be a chain map of based complexes with `K`
 acyclic, and give its mapping cone `homotopyCofiber φ`, whose term in degree `i` is
@@ -246,9 +237,9 @@ theorem reidemeisterTorsion_homotopyCofiber {K L : ChainComplex (ModuleCat F) �
   · simp [reidemeisterTorsion_of_not_finite _ _ hn]
   -- Combine the Koszul sign of the multiplicativity formula with the sign of the shift.
   have hε := finprod_mul_distrib
-    (hasFiniteMulSupport_neg_one_pow_finrank_mul cK hn fun j ↦
+    (hasFiniteMulSupport_neg_one_pow_finrank_mul K cK hn fun j ↦
       finrank F (LinearMap.range (L.d (j + 1) j).hom))
-    (hasFiniteMulSupport_neg_one_pow_finrank_mul cK hn fun _ ↦ 1)
+    (hasFiniteMulSupport_neg_one_pow_finrank_mul K cK hn fun _ ↦ 1)
   simp only [mul_one, ← pow_add, ← mul_add_one] at hε
   rw [hε]
   ring
@@ -274,7 +265,7 @@ theorem reidemeisterTorsion_eq_mul_of_quasiIso {K L : ChainComplex (ModuleCat F)
   · simp [reidemeisterTorsion_of_not_acyclic _ _ hK,
       reidemeisterTorsion_of_not_acyclic _ _ (mt hKL.2 hK)]
   -- The sign squares to `1`, and `τ(K)` is nonzero.
-  have hsupp := hasFiniteMulSupport_neg_one_pow_finrank_mul cK hn fun j ↦
+  have hsupp := hasFiniteMulSupport_neg_one_pow_finrank_mul K cK hn fun j ↦
     finrank F (LinearMap.range (L.d (j + 1) j).hom) + 1
   have hε : (∏ᶠ j : ℤ, (-1 : F) ^ (finrank F (LinearMap.range (K.d (j + 1) j).hom) *
       (finrank F (LinearMap.range (L.d (j + 1) j).hom) + 1))) *
