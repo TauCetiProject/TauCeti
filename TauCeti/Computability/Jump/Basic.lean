@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.SingleOracle.Code
+public import TauCeti.Computability.SingleOracle.Universal
 public import TauCeti.Computability.TuringDegree
+import TauCeti.Computability.RecursiveIn
 
 /-!
 # The Turing jump of a set
@@ -18,9 +19,10 @@ A set `Z ⊆ ℕ` is used as an oracle through its characteristic function, the 
 `Z.pairedJump` is the relative paired halting set `K₀^Z = {⟨x, e⟩ | Φ_e^Z(x)↓}`, with the input in
 the first coordinate of `Nat.pair`.
 
-The main results are that the jump is a strict upper bound in the Turing order and that every set
-c.e. in `Z` reduces to it. These reductions are one-one reductions in the sense of Mathlib's
-`OneOneReducible`, and descend to Turing reducibility of the set oracles.
+The main results are that the jump is a strict upper bound in the Turing order, that every set
+c.e. in `Z` reduces to it, and that it is monotone in the Turing order. These reductions are
+one-one reductions in the sense of Mathlib's `OneOneReducible`, and descend to Turing
+reducibility of the set oracles.
 
 ## Main definitions
 
@@ -35,6 +37,8 @@ c.e. in `Z` reduces to it. These reductions are one-one reductions in the sense 
   one-one equivalent.
 * `Set.oneOneReducible_jump`, `Set.turingReducible_jump`: `Z` reduces to its jump.
 * `Set.not_jump_turingReducible`: the jump of `Z` is not computable relative to `Z`.
+* `Set.jump_turingReducible_jump`, `Set.jump_turingEquivalent_jump`: the jump is monotone in the
+  Turing order, and hence invariant under Turing equivalence.
 
 ## References
 
@@ -155,5 +159,28 @@ theorem not_jump_turingReducible : ¬TuringReducible Z.jump.oracle Z.oracle := b
   have := mem_jump (Z := Z) (e := encode c)
   rw [ofNat_encode, hc] at this
   by_cases he : encode c ∈ Z.jump <;> simp [he, Part.bind_eq_bind] at this
+
+variable {Z} {Y : Set ℕ}
+
+/-- **The jump is monotone in the Turing order:** if `Z` is Turing reducible to `Y`, then `Z'` is
+Turing reducible to `Y'`. -/
+theorem jump_turingReducible_jump (h : TuringReducible Z.oracle Y.oracle) :
+    TuringReducible Z.jump.oracle Y.jump.oracle := by
+  -- `Z'` is the domain of the diagonal of the universal program relative to `Z`. That diagonal is
+  -- recursive in `Z`, hence in `Y`, so `Z'` is c.e. in `Y` and reduces to `Y'`.
+  have hZ : Z.oracle = ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) := funext fun n => by simp
+  have hd : Nat.RecursiveIn {Z.oracle} fun e => Code.eval Z.oracle (ofNat Code e) e := by
+    rw [hZ]
+    refine ((Code.recursiveIn_eval_ofNat _).comp_primrec
+      (Primrec.nat_iff.1 (Primrec₂.natPair.comp Primrec.id Primrec.id))).of_eq fun e => ?_
+    simp
+  exact (oneOneReducible_jump_of_recursiveIn Y <| hd.subst fun g hg =>
+    (Set.mem_singleton_iff.1 hg) ▸ RecursiveIn.iff_nat.1 h).to_many_one.turingReducible_oracle
+
+/-- **The jump is invariant under Turing equivalence:** Turing equivalent sets have Turing
+equivalent jumps. -/
+theorem jump_turingEquivalent_jump (h : TuringEquivalent Z.oracle Y.oracle) :
+    TuringEquivalent Z.jump.oracle Y.jump.oracle :=
+  ⟨jump_turingReducible_jump h.1, jump_turingReducible_jump h.2⟩
 
 end Set
