@@ -32,7 +32,7 @@ Poincare--Birkhoff--Witt theorem or injectivity of the canonical Lie map is asse
 
 * `TauCeti.UniversalEnvelopingAlgebra.map_ι`: the induced map agrees with the original Lie
   homomorphism on the canonical generators.
-* `TauCeti.UniversalEnvelopingAlgebra.lift_map`: lifting along an induced map lifts the composite.
+* `UniversalEnvelopingAlgebra.lift_map`: lifting along an induced map lifts the composite.
 * `TauCeti.UniversalEnvelopingAlgebra.map_id` and
   `TauCeti.UniversalEnvelopingAlgebra.map_comp`: enveloping-algebra maps are functorial.
 * `TauCeti.UniversalEnvelopingAlgebra.map_surjective_of_surjective`: surjective Lie maps induce
@@ -102,21 +102,6 @@ theorem map_unique (f : LieHom R L M)
     exact h x
   · intro h x
     exact congrFun h x
-
-/-- Lifting a Lie homomorphism `g` out of `M` along the enveloping-algebra map of `f : L → M` is
-lifting the composite `g ∘ f`. -/
-@[simp]
-theorem lift_map {A : Type*} [Ring A] [Algebra R A] (f : LieHom R L M) (g : M →ₗ⁅R⁆ A)
-    (u : _root_.UniversalEnvelopingAlgebra R L) :
-    _root_.UniversalEnvelopingAlgebra.lift R g (map R f u) =
-      _root_.UniversalEnvelopingAlgebra.lift R (g.comp f) u := by
-  rw [← AlgHom.comp_apply]
-  congr 1
-  apply _root_.UniversalEnvelopingAlgebra.hom_ext
-  apply LieHom.ext
-  intro x
-  simp only [AlgHom.coe_toLieHom, LieHom.comp_apply, AlgHom.comp_apply, map_ι,
-    _root_.UniversalEnvelopingAlgebra.lift_ι_apply]
 
 /-- The identity Lie homomorphism induces the identity algebra homomorphism. -/
 @[simp]
@@ -286,3 +271,28 @@ theorem mapEquiv_trans (e : LieEquiv R L M) (d : LieEquiv R M N) :
     rw [hLie, map_comp]
 
 end TauCeti.UniversalEnvelopingAlgebra
+
+namespace UniversalEnvelopingAlgebra
+
+variable (R : Type u) [CommRing R]
+variable {L : Type v} {M : Type w}
+variable [LieRing L] [LieAlgebra R L]
+variable [LieRing M] [LieAlgebra R M]
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- Lifting a Lie homomorphism `g` out of `M` along the enveloping-algebra map of `f : L → M` is
+lifting the composite `g ∘ f`. -/
+@[simp]
+theorem lift_map {A : Type*} [Ring A] [Algebra R A] (f : LieHom R L M) (g : M →ₗ⁅R⁆ A)
+    (u : UniversalEnvelopingAlgebra R L) :
+    lift R g (TauCeti.UniversalEnvelopingAlgebra.map R f u) = lift R (g.comp f) u := by
+  rw [← AlgHom.comp_apply]
+  congr 1
+  apply hom_ext
+  apply LieHom.ext
+  intro x
+  simp only [AlgHom.coe_toLieHom, LieHom.comp_apply, AlgHom.comp_apply,
+    TauCeti.UniversalEnvelopingAlgebra.map_ι, lift_ι_apply]
+
+end UniversalEnvelopingAlgebra
