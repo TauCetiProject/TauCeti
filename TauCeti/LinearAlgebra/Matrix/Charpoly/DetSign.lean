@@ -9,6 +9,8 @@ public import Mathlib.Basic.Sign.Basic
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.Basic.Real.Basic
 import TauCeti.Analysis.Polynomial.RealRoots.Product
+import TauCeti.Data.Multiset.Filter
+import TauCeti.Data.SignType.Basic
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 
 /-!
@@ -27,11 +29,13 @@ algebraic multiplicity. If `1 - A ^ k` is invertible then
 
 `ε(A ^ k) = (-1) ^ i₊ * (-1) ^ ((k + 1) i₋)`.
 
-In particular `ε(A) = (-1) ^ i₊`, and the iterates of an orbit alternate in sign exactly when
-`i₋` is odd. If moreover no eigenvalue is `± 1`, the number of nonreal eigenvalues is even, so
-`(-1) ^ (i₊ + i₋) = (-1) ^ (n + i₀)` for an `n × n` matrix. These identities turn the logarithmic
-series `∑_k ε(A ^ k) t ^ k / k` of a closed orbit into the factor
-`(1 - (-1) ^ i₋ t) ^ (-(-1) ^ (i₊ + i₋))` of a dynamical zeta function.
+In particular `ε(A) = (-1) ^ i₊`. If `1 - A ^ k` is invertible for every positive `k`, then the
+signs `ε(A ^ k)` alternate in `k` exactly when `i₋` is odd, and are constant otherwise. If no
+eigenvalue is `± 1`, the number of nonreal eigenvalues is even, so
+`(-1) ^ (i₊ + i₋) = (-1) ^ (n + i₀)` for an `n × n` matrix. For a closed orbit all of whose
+iterates are nondegenerate, these identities make the exponential of the logarithmic series
+`∑_k ε(A ^ k) t ^ k / k` equal to the factor `(1 - (-1) ^ i₋ t) ^ (-(-1) ^ (i₊ + i₋))` of a
+dynamical zeta function; that series identity is not proved here.
 
 ## Main results
 
@@ -71,9 +75,15 @@ theorem exists_det_aeval_eq_mul_prod_roots (A : Matrix n n ℝ) (f : ℝ[X]) :
   -- Over `ℂ`, `det (f(A))` is the product of `f` over all characteristic roots of `A`.
   have hmap : (algebraMap ℝ ℂ).mapMatrix (aeval A f) = aeval (A.map (algebraMap ℝ ℂ)) f := by
     simpa using (aeval_algHom_apply (Complex.ofRealAm.mapMatrix (m := n)) A f).symm
-  rw [← h, ← Complex.coe_algebraMap, RingHom.map_det, hmap, ← aeval_map_algebraMap ℂ,
-    det_aeval_eq_prod_roots_charpoly, charpoly_map, ← aroots_def]
-  simp [eval_map_algebraMap]
+  -- The complex characteristic roots of `A` are the complex roots of its real charpoly.
+  have hroots : (A.map (algebraMap ℝ ℂ)).charpoly.roots = A.charpoly.aroots ℂ := by
+    rw [charpoly_map, aroots_def]
+  have hdet : ((aeval A f).det : ℂ) =
+      (A.charpoly.aroots ℂ |>.map fun z ↦ aeval z f).prod := by
+    rw [← Complex.coe_algebraMap, RingHom.map_det, hmap, ← aeval_map_algebraMap ℂ,
+      det_aeval_eq_prod_roots_charpoly, hroots]
+    simp [eval_map_algebraMap]
+  exact hdet.trans h
 
 /-- If `det (f(A)) ≠ 0` for a real square matrix `A` and a real polynomial `f`, its sign is the
 product of the signs of `f(x)` over the real characteristic roots `x` of `A`, counted with
@@ -94,34 +104,6 @@ private theorem eval_ne_zero_of_det_aeval_ne_zero (A : Matrix n n ℝ) (f : ℝ[
   rw [hdet, Multiset.prod_eq_zero (Multiset.mem_map.2 ⟨x, hx, hx0⟩), mul_zero] at h
   exact h rfl
 
-private theorem prod_map_ite_one {α M : Type*} [CommMonoid M] (s : Multiset α) (p : α → Prop)
-    [DecidablePred p] (a : M) :
-    (s.map fun x ↦ if p x then a else 1).prod = a ^ (s.filter p).card := by
-  induction s using Multiset.induction_on with
-  | empty => simp
-  | cons x s ih => by_cases hx : p x <;> simp [hx, ih, pow_succ, mul_comm]
-
-/-- The sign of `1 - x ^ k` for a real `x`, when it is nonzero: negative for `x > 1`, negative for
-`x < -1` and `k` even, and positive otherwise. -/
-private theorem sign_one_sub_pow {x : ℝ} {k : ℕ} (h : 1 - x ^ k ≠ 0) :
-    SignType.sign (1 - x ^ k) =
-      (if 1 < x then -1 else 1) * (if x < -1 then (-1) ^ (k + 1) else 1) := by
-  rcases Nat.eq_zero_or_pos k with rfl | hk
-  · simp at h
-  rcases lt_or_ge 1 x with hx | hx
-  · have : 1 < x ^ k := one_lt_pow₀ hx hk.ne'
-    simp [hx, (by linarith : ¬ x < -1), sign_neg (by linarith : 1 - x ^ k < 0)]
-  rcases lt_or_ge x (-1) with hx' | hx'
-  · have hy : 1 < (-x) ^ k := one_lt_pow₀ (by linarith) hk.ne'
-    rcases Nat.even_or_odd k with he | ho
-    · rw [he.neg_pow] at hy
-      simp [hx', not_lt.2 hx, sign_neg (by linarith : 1 - x ^ k < 0), he.add_one.neg_one_pow]
-    · rw [ho.neg_pow] at hy
-      simp [hx', not_lt.2 hx, sign_pos (by linarith : 0 < 1 - x ^ k), ho.add_one.neg_one_pow]
-  · have : x ^ k ≤ 1 := (le_abs_self _).trans <| by
-      rw [abs_pow]; exact pow_le_one₀ (abs_nonneg x) (abs_le.2 ⟨hx', hx⟩)
-    simp [not_lt.2 hx, not_lt.2 hx', sign_pos (lt_of_le_of_ne (sub_nonneg.2 this) (Ne.symm h))]
-
 /-- **The sign of an iterate.** If `1 - A ^ k` is invertible for a real square matrix `A`, then
 `sgn det (1 - A ^ k) = (-1) ^ i₊ * (-1) ^ ((k + 1) i₋)`, where `i₊` and `i₋` count the real
 characteristic roots of `A` in `(1, ∞)` and in `(-∞, -1)`, with algebraic multiplicity. -/
@@ -133,8 +115,8 @@ theorem sign_det_one_sub_pow (A : Matrix n n ℝ) (k : ℕ) (h : (1 - A ^ k).det
   rw [← haeval] at h ⊢
   rw [sign_det_aeval A _ h, Multiset.map_congr rfl fun x hx ↦ by
     rw [eval_sub, eval_one, eval_pow, eval_X,
-      sign_one_sub_pow (by simpa using eval_ne_zero_of_det_aeval_ne_zero A _ h hx)]]
-  rw [Multiset.prod_map_mul, prod_map_ite_one, prod_map_ite_one, pow_mul]
+      TauCeti.sign_one_sub_pow (by simpa using eval_ne_zero_of_det_aeval_ne_zero A _ h hx)]]
+  rw [Multiset.prod_map_mul, Multiset.prod_map_ite_one, Multiset.prod_map_ite_one, pow_mul]
 
 /-- The number of real characteristic roots of a real square matrix, counted with algebraic
 multiplicity, has the parity of its size: the nonreal roots come in conjugate pairs. -/
@@ -161,8 +143,9 @@ theorem neg_one_pow_card_filter_one_lt_add_card_filter_lt_neg_one (A : Matrix n 
       (-1) ^ (A.charpoly.roots.filter (1 < ·)).card *
         (-1) ^ (A.charpoly.roots.filter (· < -1)).card *
           (-1) ^ (A.charpoly.roots.filter (|·| < 1)).card := by
-    rw [← prod_map_ite_one, ← prod_map_ite_one, ← prod_map_ite_one, ← Multiset.prod_map_mul,
-      ← Multiset.prod_map_mul, ← Multiset.prod_replicate, ← Multiset.map_const']
+    rw [← Multiset.prod_map_ite_one, ← Multiset.prod_map_ite_one, ← Multiset.prod_map_ite_one,
+      ← Multiset.prod_map_mul, ← Multiset.prod_map_mul, ← Multiset.prod_replicate,
+      ← Multiset.map_const']
     refine congrArg _ (Multiset.map_congr rfl fun x hx ↦ ?_)
     have hx := eval_ne_zero_of_det_aeval_ne_zero A _ h hx
     simp only [eval_sub, eval_one, eval_pow, eval_X] at hx

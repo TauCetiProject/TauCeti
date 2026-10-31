@@ -58,11 +58,14 @@ theorem det_aeval_eq_prod_roots_charpoly (A : Matrix n n K) (p : K[X]) :
   have hφ (q : K[X]) : φ q = (aeval A q).det := (rfl)
   -- The linear factors: `det (A - μ) = ∏_λ (λ - μ)`.
   have hlin (μ : K) : φ (X - C μ) = (A.charpoly.roots.map (· - μ)).prod := by
-    rw [hφ, map_sub, aeval_X, aeval_C, Algebra.algebraMap_eq_smul_one, smul_one_eq_diagonal,
-      ← scalar_apply, ← neg_sub, det_neg, ← eval_charpoly,
-      (IsAlgClosed.splits _).eval_eq_prod_roots_of_monic (charpoly_monic A), ← hcard]
-    simpa [Function.comp_def] using
-      (Multiset.prod_map_neg (A.charpoly.roots.map (μ - ·))).symm
+    -- `X - C μ` evaluates at `A` to `-(μ - A)`, whose determinant is `(-1) ^ n χ_A(μ)`.
+    have hscalar : aeval A (X - C μ) = -(scalar n μ - A) := by
+      simp [Algebra.algebraMap_eq_smul_one, smul_one_eq_diagonal]
+    have hneg : (A.charpoly.roots.map (· - μ)).prod =
+        (-1) ^ A.charpoly.roots.card * (A.charpoly.roots.map (μ - ·)).prod := by
+      simpa [Function.comp_def] using Multiset.prod_map_neg (A.charpoly.roots.map (μ - ·))
+    rw [hφ, hscalar, det_neg, ← eval_charpoly,
+      (IsAlgClosed.splits _).eval_eq_prod_roots_of_monic (charpoly_monic A), hneg, hcard]
   -- Factor `p = c ∏_μ (X - μ)` and compare both sides as `c ^ n ∏_λ ∏_μ (λ - μ)`.
   conv_lhs => rw [← hφ, (IsAlgClosed.splits p).eq_prod_roots, map_mul, map_multiset_prod,
     Multiset.map_map]
