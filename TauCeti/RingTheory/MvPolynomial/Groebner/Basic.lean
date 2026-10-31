@@ -271,6 +271,14 @@ theorem IsGroebnerBasis.exists_degree_le_degree (h : m.IsGroebnerBasis G I)
   rw [m.support_leadingTerm' hp0]
   exact Finset.mem_singleton_self _
 
+/-- No monomial of a remainder on division by a Gröbner basis of `I` is divisible by the leading
+monomial of a nonzero element of `I`. -/
+theorem IsGroebnerBasis.not_degree_le_of_isRemainder (h : m.IsGroebnerBasis G I)
+    (hr : m.IsRemainder f G r) {c : σ →₀ ℕ} (hc : c ∈ r.support) {p : MvPolynomial σ R}
+    (hp : p ∈ I) (hp0 : p ≠ 0) : ¬ m.degree p ≤ c := fun hle ↦
+  let ⟨_, hg, hg0, hgp⟩ := h.exists_degree_le_degree hp hp0
+  hr.not_degree_le hc hg hg0 (hgp.trans hle)
+
 /-- A subset `G` of `I` whose nonzero members have unit leading coefficients is a Gröbner basis of
 `I` if and only if the leading monomial of every nonzero element of `I` is divisible by the
 leading monomial of a nonzero element of `G`. -/
@@ -354,6 +362,29 @@ if the divided polynomial lies in `I`. -/
 theorem IsGroebnerBasis.remainder_eq_zero_iff_mem (h : m.IsGroebnerBasis G I)
     (hr : m.IsRemainder f G r) : r = 0 ↔ f ∈ I := by
   simpa using (h.sub_mem_iff hr (isRemainder_zero_left_iff.2 rfl)).symm
+
+/-- If `r` is a remainder of `X^a` on division by a Gröbner basis of `I`, and `a` is the leading
+exponent of a nonzero element of `I`, then `X^a - r` is a nonzero monic element of `I` with
+leading exponent `a`. -/
+theorem IsGroebnerBasis.monic_monomial_sub_of_isRemainder (h : m.IsGroebnerBasis G I)
+    {a : σ →₀ ℕ} (hr : m.IsRemainder (monomial a 1) G r)
+    {p : MvPolynomial σ R} (hp : p ∈ I) (hp0 : p ≠ 0) (hpa : m.degree p = a) :
+    monomial a 1 - r ∈ I ∧ monomial a 1 - r ≠ 0 ∧ m.degree (monomial a 1 - r) = a ∧
+      m.Monic (monomial a 1 - r) := by
+  classical
+  have hmem : monomial a 1 - r ∈ I := Ideal.span_le.2 h.subset hr.sub_mem_span
+  have hcoeff : (monomial a 1 - r).coeff a = 1 := by
+    have : a ∉ r.support := fun hc ↦ h.not_degree_le_of_isRemainder hr hc hp hp0 hpa.le
+    simp [notMem_support_iff.1 this]
+  have hne : monomial a 1 - r ≠ 0 := by
+    have : Nontrivial R := nontrivial_of_ne _ _ (m.leadingCoeff_ne_zero_iff.2 hp0)
+    exact fun h0 ↦ by simp [h0] at hcoeff
+  -- The leading monomial is not a monomial of `r`, so it is `a`.
+  have hdeg : m.degree (monomial a 1 - r) = a := by
+    rcases Finset.mem_union.1 (support_sub σ _ _ (m.degree_mem_support hne)) with hc | hc
+    · exact Finset.mem_singleton.1 (support_monomial_subset hc)
+    · exact absurd le_rfl (h.not_degree_le_of_isRemainder hr hc hmem hne)
+  exact ⟨hmem, hne, hdeg, by rw [Monic, leadingCoeff, hdeg, hcoeff]⟩
 
 variable (m) in
 /-- The polynomials `∑ g_b * b` over `b ∈ B` with `deg b + deg g_b ≤ d` for every `b`: the

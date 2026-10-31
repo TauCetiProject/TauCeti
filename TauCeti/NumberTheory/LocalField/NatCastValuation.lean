@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Algebra.CharP.LocalRing
+import TauCeti.NumberTheory.Padics.PadicValNat
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 -- Proof-only: the valuation of a valuative extension extends that of the base.
 import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
@@ -305,14 +306,8 @@ theorem natCastValuation_le_div_log_mul_log {n : ℕ} (hn : (n : K) ≠ 0)
     (natCastValuation K n hn : ℝ) ≤
       natCastValuation K (ringChar 𝓀[K]) hp / Real.log (ringChar 𝓀[K]) * Real.log n := by
   have hp' : (ringChar 𝓀[K]).Prime := CharP.char_is_prime 𝓀[K] _
-  have hn0 : n ≠ 0 := by
-    rintro rfl
-    simp at hn
   have hlogp : 0 < Real.log (ringChar 𝓀[K]) := Real.log_pos (by exact_mod_cast hp'.one_lt)
-  have hv : (padicValNat (ringChar 𝓀[K]) n : ℝ) * Real.log (ringChar 𝓀[K]) ≤ Real.log n := by
-    rw [← Real.log_pow]
-    exact Real.log_le_log (pow_pos (by exact_mod_cast hp'.pos) _)
-      (by exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero hn0) pow_padicValNat_dvd)
+  have hv := padicValNat_mul_log_le_log (ringChar 𝓀[K]) n
   rw [natCastValuation_eq_padicValNat_mul K hn hp, div_mul_eq_mul_div, le_div_iff₀ hlogp]
   push_cast
   nlinarith [(Nat.cast_nonneg (natCastValuation K (ringChar 𝓀[K]) hp) : (0 : ℝ) ≤ _)]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.Riemannian
+public import TauCeti.Topology.VectorBundle.Riemannian.Basic
 public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 
 /-!

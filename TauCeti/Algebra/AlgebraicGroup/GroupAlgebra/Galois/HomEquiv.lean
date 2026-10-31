@@ -62,7 +62,7 @@ noncomputable def groupAlgebraInvariantsCharacterMap
     have h := smul_groupAlgebraInvariantsCharacterEquiv_symm_apply rho sigma
       (Multiplicative.ofAdd m)
     simp only [toAdd_ofAdd] at h
-    rw [← h, ScalarAut.groupLikeMap_smul, groupAlgebraInvariantsCharacterEquiv_smul]
+    rw [← h, BialgHom.mapGroupLike_baseChangeMap_smul, groupAlgebraInvariantsCharacterEquiv_smul]
     rfl
 
 /-- Evaluation of the recovered map in terms of the canonical character comparisons. -/

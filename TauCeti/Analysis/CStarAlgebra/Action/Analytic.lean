@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Generator.Basic
 public import TauCeti.Analysis.Complex.RealIdentity
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 
 /-!
 # Entire analytic elements of C⋆-algebra actions
@@ -24,6 +25,12 @@ every horizontal strip of bounded width. An eigenvector `α_t a = exp (c t) • 
 analytic, with `α_z a = exp (c z) • a`. Entire analytic elements lie in the domain of the
 generator `δ` of `α`, where `δ a` is the complex derivative of the extension at `0`, and the
 subalgebra is invariant under `δ`.
+
+A continuous linear functional invariant under the action is also invariant in complex time on
+entire analytic elements, `apply_entireExtension_of_apply_action`, so its correlations satisfy
+`φ (α_z(a) α_w(b)) = φ (a α_{w - z}(b))`. For an invariant positive functional `ω`, the
+imaginary-time correlation `ω (a⋆ α_{is}(a))` of an entire analytic `a` is nonnegative,
+`apply_star_mul_entireExtension_mul_I_nonneg_of_apply_action`.
 
 These are the elements on which the analytic form `ω(a α_{iβ}(b)) = ω(b a)` of the KMS
 condition is stated.
@@ -353,6 +360,70 @@ end IsEntireAnalytic
 theorem entireAnalytic_le_generatorDomain (α : CStarAction (Multiplicative ℝ) A) :
     α.entireAnalytic ≤ α.generatorDomain := fun a h =>
   (α.mem_generatorDomain a).mpr (IsEntireAnalytic.mem_generator_domain h)
+
+/-! ### Invariant functionals -/
+
+/-- **Invariant functionals are invariant in complex time.** If a continuous linear functional
+`φ` satisfies `φ (α_t a) = φ a` for all real `t`, then `φ (α_z b) = φ b` for every entire
+analytic `b` and every complex time `z`. -/
+theorem apply_entireExtension_of_apply_action {φ : A →L[ℂ] ℂ}
+    (hφ : ∀ t a, φ (α t a) = φ a) (hb : α.IsEntireAnalytic b) (z : ℂ) :
+    φ (α.entireExtension b z) = φ b :=
+  congrFun ((φ.differentiable.comp hb.differentiable_entireExtension).eq_of_ofReal_eq
+    (differentiable_const (φ b)) fun t => by simp [hb.entireExtension_ofReal, hφ]) z
+
+/-- For an invariant continuous linear functional `φ` and entire analytic `a, b`,
+`φ (α_z(a) α_w(b)) = φ (a α_{w - z}(b))`. -/
+theorem apply_entireExtension_mul_entireExtension_of_apply_action {φ : A →L[ℂ] ℂ}
+    (hφ : ∀ t a, φ (α t a) = φ a) (ha : α.IsEntireAnalytic a) (hb : α.IsEntireAnalytic b)
+    (z w : ℂ) :
+    φ (α.entireExtension a z * α.entireExtension b w) =
+      φ (a * α.entireExtension b (w - z)) := by
+  have hb' := hb.isEntireAnalytic_entireExtension (w - z)
+  rw [← apply_entireExtension_of_apply_action hφ (ha.mul hb') z, ha.entireExtension_mul hb',
+    hb.entireExtension_entireExtension, sub_add_cancel]
+
+/-- For an invariant continuous linear functional `φ` and an entire analytic `a`,
+`φ ((α_z(a))⋆ α_w(a)) = φ (a⋆ α_{w - conj z}(a))`. -/
+theorem apply_star_entireExtension_mul_entireExtension_of_apply_action {φ : A →L[ℂ] ℂ}
+    (hφ : ∀ t a, φ (α t a) = φ a) (ha : α.IsEntireAnalytic a) (z w : ℂ) :
+    φ (star (α.entireExtension a z) * α.entireExtension a w) =
+      φ (star a * α.entireExtension a (w - conj z)) := by
+  have h := apply_entireExtension_mul_entireExtension_of_apply_action hφ ha.star ha (conj z) w
+  rwa [ha.entireExtension_star, Complex.conj_conj] at h
+
+/-- For an invariant continuous linear functional `φ` and an entire analytic `a`, imaginary-time
+correlations add: `φ ((α_{is}(a))⋆ α_{it}(a)) = φ (a⋆ α_{i(s + t)}(a))` for real `s, t`. -/
+theorem apply_star_entireExtension_mul_I_mul_entireExtension_mul_I_of_apply_action
+    {φ : A →L[ℂ] ℂ} (hφ : ∀ t a, φ (α t a) = φ a) (ha : α.IsEntireAnalytic a) (s t : ℝ) :
+    φ (star (α.entireExtension a (s * Complex.I)) * α.entireExtension a (t * Complex.I)) =
+      φ (star a * α.entireExtension a ((s + t : ℝ) * Complex.I)) := by
+  rw [apply_star_entireExtension_mul_entireExtension_of_apply_action hφ ha]
+  congr 3
+  simp only [map_mul, Complex.conj_ofReal, Complex.conj_I, Complex.ofReal_add]
+  ring
+
+section Positive
+
+open Complex
+open scoped ComplexOrder
+
+variable [PartialOrder A] [StarOrderedRing A] {ω : A →P[ℂ] ℂ}
+
+/-- For an invariant positive functional `ω` and an entire analytic `a`, the imaginary-time
+correlation `ω (a⋆ α_{is}(a))` is nonnegative for every real `s`. -/
+theorem apply_star_mul_entireExtension_mul_I_nonneg_of_apply_action
+    (hω : ∀ t a, ω (α t a) = ω a) (ha : α.IsEntireAnalytic a) (s : ℝ) :
+    0 ≤ ω (star a * α.entireExtension a (s * I)) := by
+  have h := apply_star_entireExtension_mul_I_mul_entireExtension_mul_I_of_apply_action
+    (φ := (ω : A →L[ℂ] ℂ))
+    (fun t b => by simpa only [PositiveContinuousLinearMap.coe_toContinuousLinearMap] using hω t b)
+    ha (s / 2) (s / 2)
+  rw [add_halves, PositiveContinuousLinearMap.coe_toContinuousLinearMap] at h
+  rw [← h]
+  exact ω.map_nonneg (star_mul_self_nonneg _)
+
+end Positive
 
 /-! ### Examples -/
 

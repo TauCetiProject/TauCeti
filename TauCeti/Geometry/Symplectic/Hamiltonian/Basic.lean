@@ -72,6 +72,16 @@ theorem eq_hamiltonianVectorField_iff (ω : SymplecticForm V) (H : V → ℝ) (x
     ext v
     exact (h v).trans (ω.apply_hamiltonianVectorField H x v).symm
 
+/-- The Hamiltonian vector field is homogeneous: `X_{c H} = c X_H`. -/
+@[simp]
+theorem hamiltonianVectorField_const_mul (ω : SymplecticForm V) (c : ℝ) (H : V → ℝ) (x : V) :
+    ω.hamiltonianVectorField (fun y ↦ c * H y) x = c • ω.hamiltonianVectorField H x := by
+  have h : (fun y ↦ c * H y) = c • H := by
+    ext
+    simp
+  rw [hamiltonianVectorField, hamiltonianVectorField, h, fderiv_const_smul_field, Pi.smul_apply,
+    map_smul]
+
 /-- The Hamiltonian has zero derivative in its own Hamiltonian direction. -/
 @[simp]
 theorem fderiv_apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → ℝ) (x : V) :
@@ -123,6 +133,17 @@ theorem hamiltonianVectorField_const (ω : SymplecticForm V) (c : ℝ) :
   funext x
   rw [Pi.zero_apply, eq_comm, eq_hamiltonianVectorField_iff]
   simp
+
+/-- The Hamiltonian vector field is linear in Hamiltonians differentiable at the point:
+`X_{aF + bG} = a X_F + b X_G`. -/
+theorem hamiltonianVectorField_const_mul_add_const_mul (ω : SymplecticForm V) {F G : V → ℝ}
+    {x : V} (hF : DifferentiableAt ℝ F x) (hG : DifferentiableAt ℝ G x) (a b : ℝ) :
+    ω.hamiltonianVectorField (fun y ↦ a * F y + b * G y) x =
+      a • ω.hamiltonianVectorField F x + b • ω.hamiltonianVectorField G x := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  intro v
+  rw [fderiv_fun_add (hF.const_mul a) (hG.const_mul b), fderiv_const_mul hF, fderiv_const_mul hG]
+  simp [map_add, map_smul]
 
 section Continuity
 
@@ -204,6 +225,18 @@ theorem poissonBracket_const_left (ω : SymplecticForm V) (c : ℝ) (G : V → �
 theorem poissonBracket_const_right (ω : SymplecticForm V) (F : V → ℝ) (c : ℝ) (x : V) :
     ω.poissonBracket F (fun _ ↦ c) x = 0 := by
   simp [poissonBracket_def]
+
+/-- The Poisson bracket is homogeneous in its first argument: `{c F, G} = c {F, G}`. -/
+@[simp]
+theorem poissonBracket_const_mul_left (ω : SymplecticForm V) (c : ℝ) (F G : V → ℝ) (x : V) :
+    ω.poissonBracket (fun y ↦ c * F y) G x = c * ω.poissonBracket F G x := by
+  simp [poissonBracket_def, map_smul]
+
+/-- The Poisson bracket is homogeneous in its second argument: `{F, c G} = c {F, G}`. -/
+@[simp]
+theorem poissonBracket_const_mul_right (ω : SymplecticForm V) (F : V → ℝ) (c : ℝ) (G : V → ℝ)
+    (x : V) : ω.poissonBracket F (fun y ↦ c * G y) x = c * ω.poissonBracket F G x := by
+  simp [poissonBracket_def, map_smul]
 
 end PoissonBracket
 

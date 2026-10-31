@@ -57,6 +57,9 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
   proper subring as soon as there is a variable, while `W` is everything when there is none
   (`TauCeti.Dagger.washnitzerAlgebra_eq_top`), and then every series is a constant
   (`TauCeti.Dagger.algebraMap_washnitzerAlgebra_surjective`).
+* `TauCeti.Dagger.eventually_isRestricted_of_mem_washnitzerAlgebra`: an overconvergent series is
+  restricted at every radius `ρ > 1` close enough to `1`, so finitely many overconvergent series
+  share such a radius.
 * `TauCeti.Dagger.exists_isRestricted_forall_norm_coeff_mul_pow_lt`: strict coefficient bounds
   on an overconvergent series persist to some radius `ρ > 1`; by
   `TauCeti.Dagger.exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt` this holds for the
@@ -136,6 +139,15 @@ theorem isRestricted_of_mem_washnitzerAlgebra {f : MvPowerSeries σ R}
     IsRestricted (fun _ : σ ↦ ρ) f := by
   obtain ⟨ρ', hρ', hf⟩ := hf
   exact isRestricted_of_le hf (fun _ ↦ h0) fun _ ↦ h1.trans hρ'.le
+
+/-- An overconvergent series is restricted at every constant radius `ρ > 1` close enough to `1`.
+This allows one radius to be chosen for finitely many overconvergent series at once. -/
+theorem eventually_isRestricted_of_mem_washnitzerAlgebra {f : MvPowerSeries σ R}
+    (hf : f ∈ washnitzerAlgebra σ R) :
+    ∀ᶠ ρ in 𝓝[>] (1 : ℝ), IsRestricted (fun _ : σ ↦ ρ) f := by
+  obtain ⟨ρ₀, hρ₀, hf⟩ := hf
+  filter_upwards [Ioc_mem_nhdsGT hρ₀] with ρ ⟨hρ, hρρ₀⟩
+  exact isRestricted_of_le hf (fun _ ↦ zero_le_one.trans hρ.le) fun _ ↦ hρρ₀
 
 /-- Polynomials are overconvergent. -/
 theorem coe_mem_washnitzerAlgebra (p : MvPolynomial σ R) :
