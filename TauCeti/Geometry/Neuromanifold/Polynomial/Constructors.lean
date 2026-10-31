@@ -215,6 +215,12 @@ section Activation
 
 variable {ι : Type*}
 
+/-- Evaluating a one-variable polynomial `r` applied to a multivariate polynomial `p` is `r`
+evaluated at the value of `p`. -/
+@[simp] theorem _root_.MvPolynomial.eval_polynomial_aeval (f : W → K) (p : MvPolynomial W K)
+    (r : Polynomial K) : eval f (Polynomial.aeval p r) = r.eval (eval f p) := by
+  rw [← aeval_eq_eval, ← Polynomial.aeval_algHom_apply, Polynomial.coe_aeval_eq_eval]
+
 /-- The coordinatewise activation by a polynomial `p`, as a polynomial model whose
 parameters `W` do not occur. -/
 def polynomialActivation (p : Polynomial K) : ι → MvPolynomial (W ⊕ ι) K :=
@@ -230,10 +236,8 @@ theorem polynomialRealization_polynomialActivation (p : Polynomial K) (w : W →
     polynomialRealization (polynomialActivation (W := W) (ι := ι) p) w =
       activation (fun t => p.eval t) PUnit.unit := by
   funext x i
-  rw [polynomialRealization_apply, activation_apply, polynomialActivation]
-  have h := Polynomial.aeval_algHom_apply (aeval (Sum.elim w x)) (X (Sum.inr i)) p
-  rw [aeval_X, Polynomial.coe_aeval_eq_eval, aeval_eq_eval] at h
-  exact h.symm
+  rw [polynomialRealization_apply, activation_apply, polynomialActivation,
+    eval_polynomial_aeval, eval_X, Sum.elim_inr]
 
 /-- The identity activation is the input variable. -/
 @[simp] theorem polynomialActivation_X :
