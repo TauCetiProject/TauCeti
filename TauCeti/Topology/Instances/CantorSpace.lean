@@ -83,6 +83,7 @@ def prependWord (w : List α) (x : ℕ → α) : ℕ → α :=
 
 variable {w v : List α} {x y : ℕ → α} {n : ℕ}
 
+/-- Below `w.length`, the coordinates of `prependWord w x` are the letters of `w`. -/
 theorem prependWord_apply_of_lt (h : n < w.length) : prependWord w x n = w[n] :=
   Stream'.get_append_left n w x h
 
@@ -91,6 +92,8 @@ theorem prependWord_apply_length_add (w : List α) (x : ℕ → α) (n : ℕ) :
     prependWord w x (w.length + n) = x n :=
   Stream'.get_append_right n w x
 
+/-- From `w.length` on, the coordinates of `prependWord w x` are those of `x`, shifted by
+`w.length`. -/
 theorem prependWord_apply_of_le (h : w.length ≤ n) : prependWord w x n = x (n - w.length) := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le h
   simp
@@ -118,6 +121,7 @@ theorem prependWord_eq_self (hy : ∀ i (h : i < w.length), y i = w[i]) :
   · rw [prependWord_apply_of_lt h, hy n h]
   · rw [prependWord_apply_of_le h, Nat.add_sub_cancel' h]
 
+/-- Prepending a fixed word is injective. -/
 theorem prependWord_injective (w : List α) : Injective (prependWord w) :=
   Stream'.append_right_injective w
 
@@ -125,6 +129,8 @@ theorem prependWord_injective (w : List α) : Injective (prependWord w) :=
 theorem prependWord_inj : prependWord w x = prependWord w y ↔ x = y :=
   (prependWord_injective w).eq_iff
 
+/-- For any topology on the alphabet, prepending a word is continuous for the product topology on
+`ℕ → α`. -/
 @[fun_prop]
 theorem continuous_prependWord [TopologicalSpace α] (w : List α) :
     Continuous (prependWord w) := by
@@ -133,6 +139,8 @@ theorem continuous_prependWord [TopologicalSpace α] (w : List α) :
   · simpa only [prependWord_apply_of_lt h] using continuous_const
   · simpa only [prependWord_apply_of_le h] using continuous_apply _
 
+/-- For any measurable structure on the alphabet, prepending a word is measurable for the product
+σ-algebra on `ℕ → α`. -/
 @[fun_prop]
 theorem measurable_prependWord [MeasurableSpace α] (w : List α) :
     Measurable (prependWord w) := by
@@ -156,6 +164,8 @@ theorem prependWord_mem_wordCylinder (w : List α) (x : ℕ → α) :
     prependWord w x ∈ wordCylinder w :=
   mem_range_self x
 
+/-- A point lies in the cylinder of `w` iff its first `w.length` coordinates are the letters of
+`w`, in order. -/
 theorem mem_wordCylinder_iff : y ∈ wordCylinder w ↔ ∀ i (h : i < w.length), y i = w[i] := by
   refine ⟨?_, fun hy => ⟨_, prependWord_eq_self hy⟩⟩
   rintro ⟨x, rfl⟩ i hi
@@ -165,6 +175,7 @@ theorem mem_wordCylinder_iff : y ∈ wordCylinder w ↔ ∀ i (h : i < w.length)
 theorem wordCylinder_nil : wordCylinder ([] : List α) = univ := by
   simp [eq_univ_iff_forall, mem_wordCylinder_iff]
 
+/-- Over a nonempty alphabet, every word cylinder is nonempty. -/
 theorem wordCylinder_nonempty [Nonempty α] (w : List α) : (wordCylinder w).Nonempty :=
   ⟨_, prependWord_mem_wordCylinder w fun _ => Classical.arbitrary α⟩
 
@@ -258,22 +269,27 @@ theorem wordCylinder_eq_iInter (w : List α) :
   ext y
   simp [mem_wordCylinder_iff]
 
+/-- Over a `T₁` alphabet, every word cylinder is closed in the product topology. -/
 theorem isClosed_wordCylinder [TopologicalSpace α] [T1Space α] (w : List α) :
     IsClosed (wordCylinder w) := by
   rw [wordCylinder_eq_iInter]
   exact isClosed_iInter fun i => isClosed_iInter fun _ =>
     isClosed_singleton.preimage (continuous_apply i)
 
+/-- Over a discrete alphabet, every word cylinder is open in the product topology. -/
 theorem isOpen_wordCylinder [TopologicalSpace α] [DiscreteTopology α] (w : List α) :
     IsOpen (wordCylinder w) :=
   isOpen_iff_mem_nhds.2 fun y hy => by
     rw [← cylinder_eq_wordCylinder hy]
     exact (isOpen_cylinder _ y _).mem_nhds (self_mem_cylinder y _)
 
+/-- Over a discrete alphabet, every word cylinder is clopen in the product topology. -/
 theorem isClopen_wordCylinder [TopologicalSpace α] [DiscreteTopology α] (w : List α) :
     IsClopen (wordCylinder w) :=
   ⟨isClosed_wordCylinder w, isOpen_wordCylinder w⟩
 
+/-- Over an alphabet whose singletons are measurable, every word cylinder is measurable for the
+product σ-algebra. -/
 @[measurability]
 theorem measurableSet_wordCylinder [MeasurableSpace α] [MeasurableSingletonClass α]
     (w : List α) : MeasurableSet (wordCylinder w) := by
@@ -330,6 +346,7 @@ theorem symm_flipAt (n : ℕ) : (flipAt n).symm = flipAt n := (rfl)
 theorem flipAt_flipAt (n : ℕ) (x : ℕ → Bool) : flipAt n (flipAt n x) = x :=
   (flipAt n).symm_apply_apply x
 
+/-- The coordinate flip is an involution. -/
 theorem flipAt_involutive (n : ℕ) : Involutive (flipAt n) :=
   flipAt_flipAt n
 
