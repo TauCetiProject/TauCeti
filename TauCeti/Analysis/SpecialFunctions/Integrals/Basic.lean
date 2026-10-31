@@ -18,6 +18,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 
 * `TauCeti.integral_one_div_sqrt_one_sub_sq`: `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`
   for `a, b ∈ (-1, 1)`.
+* `TauCeti.integral_exp_mul`: `∫ x in a..b, exp (c x) = (exp (c b) - exp (c a)) / c` for
+  `c ≠ 0`, the real counterpart of Mathlib's `integral_exp_mul_complex`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
@@ -44,6 +46,13 @@ theorem integral_one_div_sqrt_one_sub_sq {a b : ℝ} (ha : a ∈ Set.Ioo (-1) 1)
     · intro x hx
       have hx' := hIcc hx
       exact (Real.sqrt_pos.2 (by nlinarith [hx'.1, hx'.2])).ne'
+
+/-- The integral of `x ↦ exp (c x)` for a nonzero real `c`: an antiderivative is
+`x ↦ exp (c x) / c`. The real counterpart of `integral_exp_mul_complex`. -/
+theorem integral_exp_mul {a b c : ℝ} (hc : c ≠ 0) :
+    ∫ x in a..b, Real.exp (c * x) = (Real.exp (c * b) - Real.exp (c * a)) / c := by
+  rw [intervalIntegral.integral_comp_mul_left (f := Real.exp) hc, integral_exp, smul_eq_mul,
+    inv_mul_eq_div]
 
 /-- The integral of the Fourier character `θ ↦ exp (k θ i)` over `[-π, π]`, for an integer `k`: it
 is `2π` when `k = 0`, and vanishes otherwise because `exp (k θ i)` has period `2π`. -/

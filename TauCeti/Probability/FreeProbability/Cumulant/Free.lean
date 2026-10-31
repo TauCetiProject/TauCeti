@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.FreeProbability.Cumulant.Multilinear
 public import TauCeti.Probability.FreeProbability.Cumulant.Product
-public import TauCeti.Probability.FreeProbability.Independence
+public import TauCeti.Probability.FreeProbability.Variables
 
 /-!
 # Freeness is the vanishing of mixed free cumulants
@@ -30,11 +30,18 @@ to every subword of a word; the cumulants `κ_n` are the case `s = Finset.univ :
   the family is free.
 * `TauCeti.isFreelyIndependent_iff_freeCumulant_eq_zero` — for a normalised `φ`, freeness is
   equivalent to the vanishing of all mixed free cumulants.
+* `TauCeti.IsFreelyIndependent.freeCumulant_sum`, `TauCeti.IsFreelyIndependent.freeCumulant_add`
+  — for a normalised `φ`, the free cumulant of a sum of words whose letters lie in distinct free
+  subalgebras is the sum of their free cumulants.
+* `TauCeti.IsFreelyIndependentElements.freeCumulant_sum`,
+  `TauCeti.IsFreelyIndependentElements.freeCumulant_add` — the cumulants `κ_n` of a sum of free
+  elements are the sums of their cumulants, which is the additivity underlying free convolution.
 
 ## References
 
 * A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Theorem 11.16 and its
   proof via Theorem 11.12 and Proposition 11.15.
+  Additivity of free cumulants on free families is in Lecture 12 there.
 * R. Speicher, *Multiplicative functions on the lattice of non-crossing partitions and free
   convolution*, Math. Ann. 298 (1994), 611–628.
 -/
@@ -227,5 +234,67 @@ theorem isFreelyIndependent_iff_freeCumulant_eq_zero (hφ : φ 1 = 1) :
         freeCumulant φ a univ = 0 :=
   ⟨fun h _ _ _ ha k k' hk => h.freeCumulant_eq_zero hφ (fun z _ => ha z) (mem_univ k)
     (mem_univ k') hk, isFreelyIndependent_of_freeCumulant_eq_zero⟩
+
+/-- *Free cumulants are additive on free families*: if the letters of the words `a k` lie in the
+freely independent subalgebras `B k`, for a normalised `φ`, then the free cumulant of the sum of
+these words is the sum of their free cumulants,
+`κ_s(∑ k ∈ T, a k) = ∑ k ∈ T, κ_s(a k)` for nonempty `s`. -/
+theorem IsFreelyIndependent.freeCumulant_sum (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1)
+    {T : Finset ι} {a : ι → α → A} (ha : ∀ k ∈ T, ∀ x ∈ s, a k x ∈ B k) (hs : s.Nonempty) :
+    freeCumulant φ (fun x => ∑ k ∈ T, a k x) s = ∑ k ∈ T, freeCumulant φ (a k) s := by
+  classical
+  -- Relabel the positions by `Fin #s` and expand by multilinearity: the free cumulant of the sum
+  -- is the sum over all label assignments `r` of the cumulants of the words `x ↦ a (r x) x`.
+  have : Nonempty (Fin #s) := ⟨⟨0, card_pos.2 hs⟩⟩
+  have he : ∀ b : α → A, freeCumulant φ b s = freeCumulant φ (b ∘ s.orderEmbOfFin rfl) univ :=
+    fun b => by rw [freeCumulant_comp_of_strictMonoOn φ
+      ((s.orderEmbOfFin rfl).strictMono.strictMonoOn _), image_orderEmbOfFin_univ]
+  simp_rw [he, ← freeCumulantMultilinear_apply,
+    comp_def, MultilinearMap.map_sum_finset, freeCumulantMultilinear_apply]
+  -- Only the constant assignments contribute: a non-constant one gives a mixed cumulant.
+  refine (sum_subset (s₁ := T.image (const (Fin #s))) (fun r hr => ?_)
+    fun r hr hr' => ?_).symm.trans (sum_image fun _ _ _ _ hkl => const_injective hkl)
+  · obtain ⟨k, hk, rfl⟩ := mem_image.1 hr
+    exact Fintype.mem_piFinset.2 fun _ => hk
+  · have hr := Fintype.mem_piFinset.1 hr
+    obtain ⟨x, y, hxy⟩ : ∃ x y, r x ≠ r y := by
+      by_contra! hc
+      exact hr' (mem_image.2 ⟨r ⟨0, card_pos.2 hs⟩, hr _, funext fun x => hc _ x⟩)
+    exact h.freeCumulant_eq_zero hφ (ℓ := r) (fun x _ => ha _ (hr x) _ (orderEmbOfFin_mem s rfl x))
+      (mem_univ x) (mem_univ y) hxy
+
+/-- *Free cumulants are additive on two free families*: if the letters of `a` lie in `B i` and
+those of `b` in `B j` for `i ≠ j`, with `B` freely independent for a normalised `φ`, then
+`κ_s(a + b) = κ_s(a) + κ_s(b)` for nonempty `s`. -/
+theorem IsFreelyIndependent.freeCumulant_add (h : IsFreelyIndependent φ B) (hφ : φ 1 = 1)
+    {i j : ι} (hij : i ≠ j) {a b : α → A} (ha : ∀ x ∈ s, a x ∈ B i) (hb : ∀ x ∈ s, b x ∈ B j)
+    (hs : s.Nonempty) :
+    freeCumulant φ (fun x => a x + b x) s = freeCumulant φ a s + freeCumulant φ b s := by
+  classical
+  have := h.freeCumulant_sum hφ (T := {i, j}) (a := fun k => if k = i then a else b)
+    (by simpa [hij.symm] using ⟨ha, hb⟩) hs
+  simpa [sum_pair hij, hij.symm] using this
+
+/-- *Free cumulants are additive on free elements*: if the elements `c k` are freely independent
+for a normalised `φ`, then `κ_n(∑ k ∈ T, c k) = ∑ k ∈ T, κ_n(c k)` for `n ≥ 1`, where `κ_n(c)` is
+the free cumulant of the constant word `(c, …, c)` along a nonempty set of `n` positions. -/
+theorem IsFreelyIndependentElements.freeCumulant_sum {c : ι → A}
+    (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) (T : Finset ι) (hs : s.Nonempty) :
+    freeCumulant φ (fun _ => ∑ k ∈ T, c k) s = ∑ k ∈ T, freeCumulant φ (fun _ => c k) s :=
+  (isFreelyIndependentElements_iff.1 h).freeCumulant_sum hφ
+    (fun k _ _ _ => Algebra.self_mem_adjoin_singleton R (c k)) hs
+
+/-- *Free cumulants are additive on two free elements*: if `c i` and `c j`, for `i ≠ j`, belong to
+a freely independent family for a normalised `φ`, then `κ_n(c i + c j) = κ_n(c i) + κ_n(c j)` for
+`n ≥ 1`, where `κ_n(c)` is the free cumulant of the constant word `(c, …, c)` along a nonempty set
+of `n` positions. -/
+theorem IsFreelyIndependentElements.freeCumulant_add {c : ι → A}
+    (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j)
+    (hs : s.Nonempty) :
+    freeCumulant φ (fun _ => c i + c j) s =
+      freeCumulant φ (fun _ => c i) s + freeCumulant φ (fun _ => c j) s :=
+  (isFreelyIndependentElements_iff.1 h).freeCumulant_add hφ hij
+    (fun _ _ => Algebra.self_mem_adjoin_singleton R (c i))
+    (fun _ _ => Algebra.self_mem_adjoin_singleton R (c j)) hs
 
 end TauCeti

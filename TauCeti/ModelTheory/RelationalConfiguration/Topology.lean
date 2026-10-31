@@ -12,8 +12,9 @@ public import Mathlib.SetTheory.Cardinal.Continuum
 /-!
 # Topology of relational configurations
 
-The product topology on relational configurations is compact Hausdorff. Specifying an atom's
-truth value gives a clopen, measurable cylinder. On countable carriers in countable relational
+The product topology on relational configurations is compact Hausdorff, and relabelling by a
+permutation of the carrier is continuous. Specifying an atom's truth value gives a clopen,
+measurable cylinder. On countable carriers in countable relational
 vocabularies the topology is Polish and its Borel σ-algebra is the existing product σ-algebra.
 The same construction handles finite and empty carriers.
 
@@ -62,6 +63,10 @@ theorem continuous_mk : Continuous (mk : (Atom L V → Bool) → RelationalConfi
 theorem continuous_restrict {W : Type*} (f : V → W) :
     Continuous (restrict (L := L) f) :=
   continuous_iff.2 fun a => by simpa using continuous_eval (a.map f)
+
+/-- Each relabelling by a permutation of the carrier is continuous. -/
+instance : ContinuousConstSMul (Equiv.Perm V) (RelationalConfiguration L V) :=
+  ⟨fun _ => continuous_restrict _⟩
 
 /-- The configurations giving a fixed answer to one atom form a clopen cylinder. -/
 theorem isClopen_setOf_eval (a : Atom L V) (b : Bool) :

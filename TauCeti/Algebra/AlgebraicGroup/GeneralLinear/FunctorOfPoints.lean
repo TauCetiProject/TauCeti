@@ -98,7 +98,7 @@ theorem map_genericMatrix_eq_coe_pointToGeneralLinear
 /-- Evaluate the polynomial coordinate ring at the entries of an invertible matrix. -/
 private noncomputable def evaluationOfGeneralLinear
     (g : Matrix.GeneralLinearGroup (Fin n) A) :
-    MatrixMonoid.CoordinateRing R n →ₐ[R] A :=
+    MatrixMonoid.CoordinateRing R (Fin n) →ₐ[R] A :=
   MvPolynomial.aeval fun ij : Fin n × Fin n ↦
     g.val ij.1 ij.2
 
@@ -118,7 +118,7 @@ private noncomputable def localizedEvaluationOfGeneralLinear
     (evaluationOfGeneralLinear_determinant_isUnit (R := R) n g)
 
 private theorem localizedEvaluationOfGeneralLinear_coordinateRingMap
-    (g : Matrix.GeneralLinearGroup (Fin n) A) (x : MatrixMonoid.CoordinateRing R n) :
+    (g : Matrix.GeneralLinearGroup (Fin n) A) (x : MatrixMonoid.CoordinateRing R (Fin n)) :
     localizedEvaluationOfGeneralLinear (R := R) n g (coordinateRingMap R n x) =
       evaluationOfGeneralLinear (R := R) n g x := by
   rw [coordinateRingMap_apply]
@@ -143,7 +143,7 @@ private theorem generalLinearToPoint_ofConv
 multivariable polynomial evaluation at the matrix entries. -/
 @[simp]
 theorem generalLinearToPoint_coordinateRingMap
-    (g : Matrix.GeneralLinearGroup (Fin n) A) (x : MatrixMonoid.CoordinateRing R n) :
+    (g : Matrix.GeneralLinearGroup (Fin n) A) (x : MatrixMonoid.CoordinateRing R (Fin n)) :
     (generalLinearToPoint (R := R) n g).ofConv
         (coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n x)) =
       MvPolynomial.aeval (fun ij : Fin n × Fin n ↦ g.val ij.1 ij.2) x := by

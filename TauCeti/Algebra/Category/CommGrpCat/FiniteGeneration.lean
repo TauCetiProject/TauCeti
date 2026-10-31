@@ -16,8 +16,7 @@ This file packages finitely generated commutative groups as a full subcategory o
 
 ## Main declarations
 
-* `TauCeti.instFGULift`: universe lifts preserve finite generation of groups.
-* `TauCeti.CommGrpCat.isFG`: the object property of being finitely generated.
+* `CommGrpCat.isFG`: the object property of being finitely generated.
 * `TauCeti.FGCommGrpCat`: the category of finitely generated commutative groups.
 -/
 
@@ -25,16 +24,7 @@ public section
 
 open CategoryTheory
 
-namespace TauCeti
-
-universe u v
-
-/-- Universe lifts of finitely generated groups are finitely generated. -/
-instance instFGULift (G : Type v) [Group G] [Group.FG G] :
-    Group.FG (ULift.{u} G) :=
-  Group.fg_of_surjective
-    (f := (MulEquiv.ulift.symm : G ≃* ULift.{u} G).toMonoidHom)
-    MulEquiv.ulift.symm.surjective
+universe v
 
 namespace CommGrpCat
 
@@ -49,6 +39,8 @@ theorem isFG_iff (G : CommGrpCat.{v}) :
   Iff.rfl
 
 end CommGrpCat
+
+namespace TauCeti
 
 /-- The category of finitely generated commutative groups. -/
 abbrev FGCommGrpCat : Type _ :=
@@ -106,7 +98,7 @@ are equal. -/
 @[ext]
 theorem hom_ext {G H : FGCommGrpCat.{v}} {φ ψ : G ⟶ H}
     (h : toMonoidHom φ = toMonoidHom ψ) : φ = ψ :=
-  ObjectProperty.hom_ext (P := CommGrpCat.isFG) (CommGrpCat.hom_ext h)
+  ObjectProperty.hom_ext _ (CommGrpCat.hom_ext h)
 
 @[simp]
 theorem toMonoidHom_id {G : FGCommGrpCat.{v}} :

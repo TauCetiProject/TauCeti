@@ -211,6 +211,16 @@ theorem map_mem (X Y : C) {p : ℤ} {f : homModule (R := R) X Y}
   rwa [(𝒞.induced ℱ.obj).grading_eq, ← homInclusion_map,
     homInclusion_mem_totalGrading_piece_iff] at h
 
+/-- The map of an `A∞` functor on a Hom module commutes with taking homogeneous components. -/
+theorem map_decompose (X Y : C) (p : ℤ) (f : homModule (R := R) X Y) :
+    ℱ.map X Y (DirectSum.decompose (grading (R := R) X Y).piece f p) =
+      (DirectSum.decompose (grading (R := R) (ℱ.obj X) (ℱ.obj Y)).piece (ℱ.map X Y f) p :
+        homModule (R := R) (ℱ.obj X) (ℱ.obj Y)) := by
+  have h := LinearMap.IsHomogeneous.map_decompose (ℳ := (grading (R := R) X Y).piece)
+    (𝓝 := (grading (R := R) (ℱ.obj X) (ℱ.obj Y)).piece) (r := 0)
+    (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by simpa using ℱ.map_mem X Y hx) p f
+  rwa [add_zero] at h
+
 /-- **The map of an `A∞` functor on a Hom module is a chain map** for the differentials `m₁`: this
 is the arity-one `A∞` functor equation. -/
 @[simp]
@@ -223,6 +233,17 @@ theorem map_homDifferential (X Y : C) (f : homModule (R := R) X Y) :
     AInfinityCategory.homInclusion_homDifferential, homInclusion_map,
     AInfinityAlgebra.differential_apply, AInfinityAlgebra.differential_apply,
     AInfinityHom.linearPart_m_one]
+
+/-- The map of an `A∞` functor on a Hom module is a chain map, as an equation of linear maps. -/
+theorem map_comp_homDifferential (X Y : C) :
+    ℱ.map X Y ∘ₗ ℬ.homDifferential X Y = 𝒞.homDifferential (ℱ.obj X) (ℱ.obj Y) ∘ₗ ℱ.map X Y :=
+  LinearMap.ext (ℱ.map_homDifferential X Y)
+
+/-- The map of an `A∞` functor on a Hom module sends closed morphisms to closed morphisms. -/
+theorem homDifferential_map_eq_zero {X Y : C} {f : homModule (R := R) X Y}
+    (hf : ℬ.homDifferential X Y f = 0) :
+    𝒞.homDifferential (ℱ.obj X) (ℱ.obj Y) (ℱ.map X Y f) = 0 := by
+  rw [← map_homDifferential, hf, map_zero]
 
 end AInfinityFunctor
 

@@ -17,7 +17,9 @@ import Mathlib.Tactic.NoncommRing
 
 This file records general scalar properties of a Clifford algebra obtained from Mathlib's
 linear equivalence with the exterior algebra, and the commutation rule
-`CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another.
+`CliffordAlgebra.ι_mul_ι_eq_ι_smul_sub_mul_ι` moving a vector past another. Rescaling the
+factors of a product of vectors pulls the scalars out in front
+(`CliffordAlgebra.prod_map_ι_smul`).
 -/
 
 public section
@@ -57,6 +59,15 @@ theorem ι_mul_ι_eq_ι_smul_sub_mul_ι {Q : QuadraticForm R M} (v m : M) {r : R
   rw [map_sub, map_smul, sub_mul, smul_mul_assoc, ι_sq_scalar, Algebra.smul_def,
     ← map_mul (algebraMap R (CliffordAlgebra Q)), hr,
     ← ι_mul_ι_add_swap, add_sub_cancel_right]
+
+/-- Rescaling every factor of a product of vectors collects the product of the scalars in front
+of the product. -/
+theorem prod_map_ι_smul (Q : QuadraticForm R M) (c : M → R) (l : List M) :
+    ((l.map fun v ↦ c v • v).map (ι Q)).prod = (l.map c).prod • (l.map (ι Q)).prod := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    simp only [List.map_cons, List.prod_cons, map_smul, ih, smul_mul_smul_comm]
 
 private theorem two_smul_contractLeft_associated [Invertible (2 : R)]
     (Q : QuadraticForm R M) (v : M) (x : CliffordAlgebra Q) :

@@ -97,10 +97,10 @@ theorem groupLikeSetSpan_eq_top_of_surjective (f : A →ₐc[R] B)
 /-- A bialgebra equivalence induces a multiplicative equivalence of group-like elements. -/
 def mapEquiv (e : A ≃ₐc[R] B) :
     _root_.GroupLike R A ≃* _root_.GroupLike R B where
-  __ := equivOfCoalgEquiv e.toCoalgEquiv
+  __ := e.toCoalgEquiv.mapGroupLike
   map_mul' x y := by
     apply _root_.GroupLike.val_injective
-    simp only [Equiv.toFun_as_coe, val_equivOfCoalgEquiv, _root_.GroupLike.val_mul]
+    simp only [Equiv.toFun_as_coe, CoalgEquiv.val_mapGroupLike, _root_.GroupLike.val_mul]
     rw [_root_.BialgEquiv.toCoalgEquiv_eq_coe]
     exact map_mul e x.val y.val
 
@@ -108,7 +108,7 @@ def mapEquiv (e : A ≃ₐc[R] B) :
 @[simp]
 theorem val_mapEquiv (e : A ≃ₐc[R] B) (x : _root_.GroupLike R A) :
     (mapEquiv e x).val = e x.val :=
-  val_equivOfCoalgEquiv e.toCoalgEquiv x
+  e.toCoalgEquiv.val_mapGroupLike x
 
 /-- Mapping group-like elements along the identity equivalence is the identity equivalence. -/
 @[simp]
