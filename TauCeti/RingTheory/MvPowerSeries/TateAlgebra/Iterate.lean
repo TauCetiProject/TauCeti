@@ -50,7 +50,9 @@ For two arbitrary families of variables, the analogous comparison into multivari
 * `MvPowerSeries.norm_restrictedOptionEquiv` and `MvPowerSeries.isometry_restrictedOptionEquiv`:
   it preserves the Gauss norms.
 * `MvPowerSeries.coe_restrictedOptionEquiv_restrictedMap`: it commutes with bounded coefficient
-  maps, acting on the coefficient ring of restricted series in the remaining variables.
+  maps, acting on the coefficient ring of restricted series in the remaining variables, and
+  `MvPowerSeries.restrictedMap_restrictedOptionEquiv_symm_polynomialToRestricted` describes the
+  coefficient map on polynomials in the separated variable.
 * `MvPowerSeries.isRestricted_of_map_subtype_eq_optionEquivLeft`: transporting restriction from
   constant radius `r` to an iterated series with coefficient radius `ρ ≤ r`.
 
@@ -355,5 +357,21 @@ theorem coe_restrictedOptionEquiv_restrictedMap {S : Type*} [NormedCommRing S]
   ext n : 1
   refine Subtype.ext (MvPowerSeries.ext fun t ↦ ?_)
   simp [coeff_coeff_optionEquivLeft, TauCeti.MvPowerSeries.coeff_restrictedMap]
+
+/-- The coefficient map sends a polynomial `ω` in the separated variable, with coefficients
+restricted in the remaining variables, to its coefficientwise image under the induced map of
+coefficient rings. -/
+@[simp]
+theorem restrictedMap_restrictedOptionEquiv_symm_polynomialToRestricted {S : Type*}
+    [NormedCommRing S] [IsUltrametricDist S] (φ : R →+* S) {C : ℝ} (hφ : ∀ a, ‖φ a‖ ≤ C * ‖a‖)
+    (ω : Polynomial Inner) :
+    TauCeti.MvPowerSeries.restrictedMap φ hφ
+        (restrictedOptionEquiv.symm (TauCeti.PowerSeries.polynomialToRestricted (c none) ω)) =
+      restrictedOptionEquiv.symm (TauCeti.PowerSeries.polynomialToRestricted (c none)
+        (ω.map (TauCeti.MvPowerSeries.restrictedMap φ hφ))) := by
+  refine restrictedOptionEquiv.injective (Subtype.ext ?_)
+  rw [coe_restrictedOptionEquiv_restrictedMap, AlgEquiv.apply_symm_apply,
+    AlgEquiv.apply_symm_apply, TauCeti.PowerSeries.coe_polynomialToRestricted,
+    TauCeti.PowerSeries.coe_polynomialToRestricted, Polynomial.polynomial_map_coe]
 
 end MvPowerSeries

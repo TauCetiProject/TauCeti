@@ -52,6 +52,12 @@ preserves norms, for instance for an isometric extension of complete ultrametric
   J. Eur. Math. Soc. 18 (2016), Proposition 1.27, Corollary 1.28 and the remark following it, for
   the several-variable division and preparation theorems whose uniqueness gives these
   compatibilities.
+* `TauCeti/RingTheory/PowerSeries/Weierstrass/Map.lean`, the one-variable formalization that
+  this file follows. Its division comparisons are `IsMulDistinguished.map_weierstrassDiv` and
+  `IsMulDistinguished.map_weierstrassMod`, its preparation comparison is
+  `IsMulDistinguished.eq_and_eq_map_of_mul_eq_map_mul`, and its preparation normalizations are
+  `IsMulDistinguished.isNormMulUnit_restrictedMap_and_gaussNorm_map_eq_of_mul_eq`, all in the
+  namespace `TauCeti.PowerSeries`.
 -/
 
 public section
@@ -91,20 +97,6 @@ theorem eq_and_eq_restrictedMap_of_mul_add_eq_of_isMulDistinguished {g f q r : F
 end Division
 
 section Preparation
-
-/-- The coefficient map sends a polynomial `ω` in the separated variable, with coefficients
-restricted in the remaining variables, to its coefficientwise image under the induced map of
-coefficient rings. -/
-@[simp]
-theorem restrictedMap_restrictedOptionEquiv_symm_polynomialToRestricted (ω : Polynomial Inner) :
-    restrictedMap φ hφ
-        (restrictedOptionEquiv.symm (PowerSeries.polynomialToRestricted (c none) ω)) =
-      restrictedOptionEquiv.symm
-        (PowerSeries.polynomialToRestricted (c none) (ω.map (restrictedMap φ hφ))) := by
-  refine restrictedOptionEquiv.injective (Subtype.ext ?_)
-  rw [MvPowerSeries.coe_restrictedOptionEquiv_restrictedMap, AlgEquiv.apply_symm_apply,
-    AlgEquiv.apply_symm_apply, PowerSeries.coe_polynomialToRestricted,
-    PowerSeries.coe_polynomialToRestricted, Polynomial.polynomial_map_coe]
 
 /-- **Bounded coefficient maps commute with Weierstrass preparation in several variables.** Let
 the iterated series of the image of `g` in the separated variable `X none` be multiplicatively
