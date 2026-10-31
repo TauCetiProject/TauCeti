@@ -132,6 +132,7 @@ theorem integral_abs_rpow_stableLevyMeasure_ball (hα : α ∈ Ioo 0 2) (hβ : |
   have hi := (integrable_indicator_iff measurableSet_ball).mpr
     (integrableOn_abs_rpow_stableLevyMeasure hα hβ hq r)
   rw [← integral_indicator measurableSet_ball, integral_stableLevyMeasure_eq hα hβ hi]
+  -- Reduce the positive half-line contribution to a power integral on the cutoff interval.
   have hhalf : (∫ x in Ioi (0 : ℝ), x ^ (-(α + 1)) •
       (Metric.ball (0 : ℝ) r).indicator (fun x ↦ |x| ^ q) x) =
       r ^ (q - α) / (q - α) := by
@@ -149,12 +150,21 @@ theorem integral_abs_rpow_stableLevyMeasure_ball (hα : α ∈ Ioo 0 2) (hβ : |
       · have hxball : x ∉ Metric.ball (0 : ℝ) r := by
           simpa [Metric.mem_ball, Real.dist_eq, abs_of_pos hx] using hxr
         simp [indicator_of_notMem hxball, hxr]
-    rw [setIntegral_congr_fun measurableSet_Ioi heq, setIntegral_indicator measurableSet_Ioo,
-      inter_eq_right.mpr Ioo_subset_Ioi_self, ← integral_Ioc_eq_integral_Ioo,
-      ← intervalIntegral.integral_of_le hr, integral_rpow (Or.inl (by linarith)),
-      Real.zero_rpow (by linarith : q - α - 1 + 1 ≠ 0), sub_zero]
-    have he : q - α - 1 + 1 = q - α := by ring
-    rw [he]
+    have hpower : (∫ x in (0 : ℝ)..r, x ^ (q - α - 1)) =
+        r ^ (q - α) / (q - α) := by
+      have he : q - α - 1 + 1 = q - α := by ring
+      simpa only [he, Real.zero_rpow (sub_pos.mpr hq).ne', sub_zero] using
+        (integral_rpow (a := 0) (b := r) (r := q - α - 1) (Or.inl (by linarith)))
+    calc
+      _ = ∫ x in Ioi (0 : ℝ), (Ioo (0 : ℝ) r).indicator
+          (fun x ↦ x ^ (q - α - 1)) x := setIntegral_congr_fun measurableSet_Ioi heq
+      _ = ∫ x in Ioo (0 : ℝ) r, x ^ (q - α - 1) := by
+        simp only [setIntegral_indicator measurableSet_Ioo,
+          inter_eq_right.mpr Ioo_subset_Ioi_self]
+      _ = ∫ x in (0 : ℝ)..r, x ^ (q - α - 1) := by
+        simp only [intervalIntegral.integral_of_le hr, integral_Ioc_eq_integral_Ioo]
+      _ = _ := hpower
+  -- Reflection gives the same integral on the negative half-line.
   have hneg (x : ℝ) : (Metric.ball (0 : ℝ) r).indicator (fun x ↦ |x| ^ q) (-x) =
       (Metric.ball (0 : ℝ) r).indicator (fun x ↦ |x| ^ q) x := by
     simp [indicator, Metric.mem_ball]
@@ -162,14 +172,23 @@ theorem integral_abs_rpow_stableLevyMeasure_ball (hα : α ∈ Ioo 0 2) (hβ : |
   simp only [smul_eq_mul]
   ring
 
-/-- The sum of the absolute sizes of small stable jumps has finite expectation exactly
-below shape one. In particular, shape one belongs to the divergent side. -/
+/-- The identity is integrable against the stable Lévy measure on a positive-radius ball
+about zero exactly below shape one. Shape one belongs to the divergent side. -/
 theorem integrableOn_id_stableLevyMeasure_iff (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
     (hr : 0 < r) :
     IntegrableOn (fun x : ℝ ↦ x) (Metric.ball 0 r) (stableLevyMeasure α β) ↔ α < 1 := by
   rw [IntegrableOn, ← integrable_norm_iff (by fun_prop)]
   simpa only [IntegrableOn, Real.norm_eq_abs, rpow_one] using
     (integrableOn_abs_rpow_stableLevyMeasure_iff (q := 1) hα hβ hr)
+
+/-- The small jumps of a stable Lévy measure have a finite second moment on every ball.
+The assertion includes the zero measures at invalid parameters. -/
+theorem integrableOn_sq_stableLevyMeasure (α β r : ℝ) :
+    IntegrableOn (fun x : ℝ ↦ x ^ 2) (Metric.ball 0 r) (stableLevyMeasure α β) := by
+  by_cases h : 0 < α ∧ α < 2 ∧ |β| ≤ 1
+  · simpa only [rpow_two, sq_abs] using
+      integrableOn_abs_rpow_stableLevyMeasure ⟨h.1, h.2.1⟩ h.2.2 h.2.1 r
+  · simp [IntegrableOn, stableLevyMeasure_eq_zero_of_not h]
 
 /-- The exact second moment of stable jumps smaller than `r`, the quantity controlling
 the variance of centered small-jump remainders. -/

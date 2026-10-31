@@ -20,9 +20,6 @@ at zero and is bounded outside a neighbourhood of zero. The cutoff integrals con
 this integral,
 which is the analytic input to compensated compound Poisson approximations.
 
-The estimates reuse Mathlib's complex exponential remainder bound and its local
-integrability criterion for radial powers.
-
 ## References
 
 * J. P. Nolan, *Univariate Stable Distributions: Models for Heavy Tailed Data*, Springer,
@@ -37,15 +34,6 @@ open MeasureTheory Real Set Filter
 open scoped Topology
 
 namespace TauCeti.Probability
-
-/-- The small jumps of a stable Lévy measure have a finite second moment on every ball.
-The assertion includes the zero measures at invalid parameters. -/
-theorem integrableOn_sq_stableLevyMeasure (α β r : ℝ) :
-    IntegrableOn (fun x : ℝ ↦ x ^ 2) (Metric.ball 0 r) (stableLevyMeasure α β) := by
-  by_cases h : 0 < α ∧ α < 2 ∧ |β| ≤ 1
-  · simpa only [rpow_two, sq_abs] using
-      integrableOn_abs_rpow_stableLevyMeasure ⟨h.1, h.2.1⟩ h.2.2 h.2.1 r
-  · simp [IntegrableOn, stableLevyMeasure_eq_zero_of_not h]
 
 /-- The sine-compensated characteristic kernel is absolutely integrable against the stable
 Lévy measure, including at shape one and both full-skewness boundaries. -/
