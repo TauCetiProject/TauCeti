@@ -82,6 +82,13 @@ def cohomologyZeroEquiv (M : X.Modules) :
   CategoryTheory.Sheaf.H.equiv₀
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) isTerminalTop
 
+/-- The identification of zeroth cohomology with global sections is Mathlib's
+`CategoryTheory.Sheaf.H.equiv₀` at the terminal open. -/
+lemma cohomologyZeroEquiv_apply {M : X.Modules} (x : Cohomology M 0) :
+    cohomologyZeroEquiv M x = CategoryTheory.Sheaf.H.equiv₀
+      ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M) isTerminalTop x :=
+  (rfl)
+
 /-- The degree-zero cohomology equivalence is natural in the coefficient sheaf. -/
 lemma cohomologyZeroEquiv_naturality {M N : X.Modules} (f : M ⟶ N) (x : Cohomology M 0) :
     cohomologyZeroEquiv N ((cohomologyFunctor X 0).map f x) =

@@ -30,6 +30,8 @@ require finitely many states; finiteness is imposed where it is used.
   `TauCeti.DFAO.mem_accepts_toDFA` describes its language.
 * `TauCeti.DFAO.mapOutput`, `TauCeti.DFAO.prod`: post-composition of the output, and the
   product automaton running two automata in parallel.
+* `TauCeti.DFAO.reindex`: relabelling the states along an equivalence, as Mathlib's
+  `DFA.reindex`.
 
 ## References
 
@@ -226,6 +228,63 @@ theorem evalFrom_prod {τ : Type x} {Δ' : Type y} (N : DFAO α τ Δ') (q : σ 
 theorem eval_prod {τ : Type x} {Δ' : Type y} (N : DFAO α τ Δ') (x : List α) :
     (M.prod N).eval x = (M.eval x, N.eval x) :=
   M.evalFrom_prod N _ x
+
+/-! ### Relabelling the states -/
+
+/-- Lift an equivalence of state types to an equivalence of automata with output: the relabelled
+automaton has the same transitions, initial state and outputs, read through the equivalence. -/
+def reindex {σ' : Type x} (g : σ ≃ σ') : DFAO α σ Δ ≃ DFAO α σ' Δ where
+  toFun M :=
+    { step := fun s a ↦ g (M.step (g.symm s) a)
+      start := g M.start
+      output := M.output ∘ g.symm }
+  invFun M :=
+    { step := fun s a ↦ g.symm (M.step (g s) a)
+      start := g.symm M.start
+      output := M.output ∘ g }
+  left_inv M := by ext <;> simp [Function.comp_def]
+  right_inv M := by ext <;> simp [Function.comp_def]
+
+@[simp]
+theorem reindex_apply_step {σ' : Type x} (g : σ ≃ σ') (s : σ') (a : α) :
+    (reindex g M).step s a = g (M.step (g.symm s) a) :=
+  (rfl)
+
+@[simp]
+theorem reindex_apply_start {σ' : Type x} (g : σ ≃ σ') : (reindex g M).start = g M.start :=
+  (rfl)
+
+@[simp]
+theorem reindex_apply_output {σ' : Type x} (g : σ ≃ σ') (s : σ') :
+    (reindex g M).output s = M.output (g.symm s) :=
+  (rfl)
+
+@[simp]
+theorem reindex_refl : reindex (Equiv.refl σ) M = M :=
+  (rfl)
+
+@[simp]
+theorem symm_reindex {σ' : Type x} (g : σ ≃ σ') :
+    (reindex (α := α) (Δ := Δ) g).symm = reindex g.symm :=
+  (rfl)
+
+@[simp]
+theorem evalFrom_reindex {σ' : Type x} (g : σ ≃ σ') (s : σ') (x : List α) :
+    (reindex g M).evalFrom s x = g (M.evalFrom (g.symm s) x) := by
+  induction x generalizing s with
+  | nil => simp
+  | cons a x ih => simp [ih]
+
+/-- The relabelled automaton reaches the relabelled state, so it has the same output on every
+word (`TauCeti.DFAO.output_eval_reindex`). -/
+@[simp]
+theorem eval_reindex {σ' : Type x} (g : σ ≃ σ') (x : List α) :
+    (reindex g M).eval x = g (M.eval x) := by
+  simp [eval_eq_evalFrom]
+
+theorem output_eval_reindex {σ' : Type x} (g : σ ≃ σ') (x : List α) :
+    (reindex g M).output ((reindex g M).eval x) = M.output (M.eval x) := by
+  simp
 
 end DFAO
 

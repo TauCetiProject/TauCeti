@@ -51,7 +51,7 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {K : Subgroup G} [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
 
 attribute [local instance] ContMDiffMul.boundarylessManifold
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 /-- The homomorphism presenting an immersed Lie subgroup, packaged as a smooth monoid morphism. -/
 def toContMDiffMonoidMorphism (d : ImmersedLieSubgroupData I K) :

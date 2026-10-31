@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Laurent
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import TauCeti.RingTheory.LaurentSeries.Convergence
 
 /-!
@@ -39,9 +40,13 @@ Laurent polynomials are dense in the Laurent-series field for its valuation topo
   inclusions into Laurent polynomials and power series.
 * `LaurentPolynomial.mem_range_toLaurentSeries_iff`: the image consists exactly of the
   finite-support Laurent series.
+* `LaurentSeries.finite_support_truncLT`: strict truncation of a Laurent series has finite support.
 * `LaurentSeries.trunc`: truncation of a Laurent series above a given integer exponent.
 * `LaurentSeries.tendsto_toLaurentSeries_trunc`: the truncations converge to the original series.
 * `LaurentPolynomial.denseRange_toLaurentSeries`: Laurent polynomials are dense in Laurent series.
+* `LaurentSeries.valuation_sub_toLaurentSeries_trunc_le`: the valuation bound on truncation errors.
+* `TauCeti.LaurentSeries.continuousLinearMap_ext_single`: continuous linear maps into a Hausdorff
+  module are determined by their values on monomials.
 -/
 
 public section
@@ -188,6 +193,14 @@ end LaurentPolynomial
 
 namespace LaurentSeries
 
+/-- Truncating a Laurent series below an integer cutoff gives finite support. -/
+theorem finite_support_truncLT {A : Type*} [Zero A] (a : ℤ) (f : A⸨X⸩) :
+    (Function.support (HahnSeries.truncLT a f).coeff).Finite := by
+  apply (Set.finite_Ico f.order a).subset
+  intro n hn
+  rw [← HahnSeries.support, HahnSeries.support_truncLT] at hn
+  exact ⟨HahnSeries.order_le_of_coeff_ne_zero hn.1, hn.2⟩
+
 open Filter Topology
 
 variable {R : Type*} [Semiring R]
@@ -196,28 +209,20 @@ variable {R : Type*} [Semiring R]
 exponents strictly less than `N`. The lower bound on a Laurent series makes this a finite sum. -/
 noncomputable def trunc (N : ℤ) : R⸨X⸩ →ₗ[R] R[T;T⁻¹] where
   toFun f := AddMonoidAlgebra.ofCoeff <| Finsupp.ofSupportFinite
-    (fun n ↦ if n < N then f.coeff n else 0) <| by
-      apply (Set.finite_Ico f.order N).subset
-      intro n hn
-      simp only [Function.mem_support] at hn
-      by_cases hN : n < N
-      · rw [ite_eq_left hN] at hn
-        exact ⟨HahnSeries.order_le_of_coeff_ne_zero hn, hN⟩
-      · simp [hN] at hn
+    (HahnSeries.truncLT N f).coeff (finite_support_truncLT N f)
   map_add' f g := by
     ext n
-    by_cases hn : n < N <;> simp [hn, HahnSeries.coeff_add]
+    simp [HahnSeries.truncLT_add]
   map_smul' r f := by
     ext n
-    by_cases hn : n < N <;> simp [hn, HahnSeries.coeff_smul]
+    simp [HahnSeries.truncLT_smul]
 
 /-- The coefficient of a truncation agrees with the original series below the cutoff and vanishes
 at and above it. -/
 @[simp]
 theorem coeff_trunc (N n : ℤ) (f : R⸨X⸩) :
     (trunc N f).coeff n = if n < N then f.coeff n else 0 := by
-  rw [trunc, AddMonoidAlgebra.coeff_ofCoeff]
-  exact congrFun Finsupp.ofSupportFinite_coe n
+  simp [trunc, HahnSeries.coeff_truncLT]
 
 /-- Embedding a Laurent-polynomial truncation gives the corresponding strict truncation of the
 Hahn series. -/
@@ -254,6 +259,14 @@ theorem tendsto_toLaurentSeries_trunc (f : K⸨X⸩) :
   filter_upwards [eventually_ge_atTop D] with N hN
   exact (WithTop.coe_le_coe.mpr hN).trans (le_orderTop_sub_toLaurentSeries_trunc N f)
 
+/-- The truncation error has valuation at most `exp (-a)`. -/
+theorem valuation_sub_toLaurentSeries_trunc_le (a : ℤ) (f : K⸨X⸩) :
+    Valued.v (f - LaurentPolynomial.toLaurentSeries (trunc a f)) ≤
+      WithZero.exp (-a) := by
+  rw [valuation_le_iff_coeff_lt_eq_zero]
+  intro n hn
+  simp [hn]
+
 end LaurentSeries
 
 namespace LaurentPolynomial
@@ -272,3 +285,29 @@ theorem denseRange_toLaurentSeries :
     Filter.Eventually.of_forall fun N ↦ Set.mem_range_self (LaurentSeries.trunc N f)
 
 end LaurentPolynomial
+
+namespace TauCeti.LaurentSeries
+
+open HahnSeries
+
+/-- Continuous linear maps from a Laurent-series field to a Hausdorff module are determined by
+their values on the monomials with coefficient one. -/
+@[ext]
+theorem continuousLinearMap_ext_single {K M : Type*} [Field K] [AddCommMonoid M]
+    [Module K M] [TopologicalSpace M] [T2Space M] {ℓ m : K⸨X⸩ →L[K] M}
+    (h : ∀ n : ℤ, ℓ (single n 1) = m (single n 1)) : ℓ = m := by
+  apply DFunLike.ext'
+  refine LaurentPolynomial.denseRange_toLaurentSeries.equalizer ℓ.continuous m.continuous ?_
+  funext p
+  induction p using LaurentPolynomial.induction_on' with
+  | add p q hp hq => simp only [Function.comp_apply, map_add] at *; rw [hp, hq]
+  | C_mul_T n r =>
+    have hs : (single n r : K⸨X⸩) = r • single n 1 := by
+      -- The linear-map apply lemma retains the additive-hom wrapper; unfold just that wrapper
+      -- to express its scalar-linearity law in terms of single.
+      simpa [HahnSeries.single.addMonoidHom] using
+        map_smul (HahnSeries.single.linearMap n) r (1 : K)
+    simp only [Function.comp_apply, ← LaurentPolynomial.single_eq_C_mul_T,
+      LaurentPolynomial.toLaurentSeries_single, hs, map_smul, h]
+
+end TauCeti.LaurentSeries

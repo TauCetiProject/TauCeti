@@ -55,7 +55,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 /-- The group adjoint on left-invariant derivations, obtained by transporting the differential of
 conjugation across evaluation at the identity. -/
@@ -96,12 +96,12 @@ tangent adjoint actions. -/
 @[simp high]
 theorem leftInvariantDerivationLinearIsometryEquivModelVectorSpace_Ad
     (g : G) (D : LeftInvariantDerivation I G) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
     let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
     leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G) (Ad g D) =
       tangentAd (I := I) g
         (leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := I) (G := G) D) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
   let _ : BoundarylessManifold I G := ContMDiffMul.boundarylessManifold
   dsimp only
   have h := leftInvariantDerivationLieEquivGroupLieAlgebra_Ad (I := I) g D

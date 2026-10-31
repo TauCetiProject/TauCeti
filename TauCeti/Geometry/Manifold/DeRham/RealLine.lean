@@ -138,7 +138,7 @@ private theorem exists_compactlySupportedClosedForms_integral_eq_one :
       (isClosed_tsupport _) (tsupport_smul_subset_left f fun _ ↦ dx)
   -- Every `2`-form on the line vanishes, so `φ` is closed.
   have hcl : mextDeriv φ = 0 := mextDeriv_eq_zero_of_finrank_le (by simp) φ
-  refine ⟨⟨⟨φ, hs.mem_smoothForms⟩, (mem_compactlySupportedClosedForms _).mpr
+  refine ⟨⟨⟨φ, hs.mem_smoothBundleForms⟩, (mem_compactlySupportedClosedForms _).mpr
     ⟨(mem_compactlySupportedForms _).mpr hc, (mem_closedForms _ _).mpr hcl⟩⟩, ?_⟩
   have hφf (t : ℝ) : φ t (fun _ ↦ 1) = f t := by
     have h : (f t • dx) (fun _ ↦ (1 : ℝ)) = f t := by simp [dx]

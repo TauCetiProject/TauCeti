@@ -106,6 +106,20 @@ theorem semicircleMeasure_eq_withDensity :
     show x - -1 = x + 1 by ring]
   norm_num
 
+/-- Reflection preserves the unit-radius semicircle law. -/
+@[simp]
+theorem map_neg_semicircleMeasure : semicircleMeasure.map Neg.neg = semicircleMeasure := by
+  rw [semicircleMeasure_eq_withDensity]
+  calc
+    _ = volume.withDensity (affineDensity 0 (-1) semicirclePDF) := by
+      simpa using
+        (map_affine_withDensity_volume (a := 0) (b := -1) semicirclePDF (by norm_num))
+    _ = _ := by
+      congr 1
+      ext x
+      simp only [affineDensity_apply, semicirclePDF_apply, semicirclePDFReal_apply]
+      norm_num [div_neg, div_one]
+
 /-- The semicircle law has no atoms. -/
 instance nullSingletonClass_semicircleMeasure : NullSingletonClass semicircleMeasure := by
   rw [semicircleMeasure_eq_withDensity]
