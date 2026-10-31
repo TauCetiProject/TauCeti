@@ -92,6 +92,19 @@ theorem insertVertex_apply_finRotate_succ_self :
     poly.insertVertex i c (finRotate (n + 1) i.succ) = poly (finRotate n i) := by
   rw [Fin.finRotate_succ_eq_succ_succAbove, insertVertex_apply_succAbove]
 
+/-- The vertices of `poly.insertVertex i c` by position: vertex `j` of `poly` for `j ≤ i`, then
+`c` at position `i + 1`, then vertex `j - 1` of `poly` at every later position `j`. -/
+theorem insertVertex_apply (j : Fin (n + 1)) :
+    poly.insertVertex i c j =
+      if h : (j : ℕ) ≤ i then poly ⟨j, by omega⟩
+      else if (j : ℕ) = i + 1 then c else poly ⟨j - 1, by omega⟩ := by
+  obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ j
+  · simp
+  · rw [insertVertex_apply_succAbove]
+    have hv := Fin.val_succAbove i.succ k
+    simp only [Fin.val_succ] at hv
+    split_ifs at hv <;> split_ifs <;> first | omega | (congr 1; ext; simp; omega)
+
 section EdgePath
 
 variable [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P]
@@ -191,6 +204,36 @@ theorem edgeSet_insertVertex_succAbove {k : Fin n} (hk : k ≠ i) :
     (poly.insertVertex i c).edgeSet R (i.succ.succAbove k) = poly.edgeSet R k := by
   rw [edgeSet, Fin.finRotate_succ_succAbove_of_ne hk, insertVertex_apply_succAbove,
     insertVertex_apply_succAbove, edgeSet]
+
+/-- Every edge of `poly.insertVertex i c` other than the first new edge is an edge of `poly` other
+than edge `i`, or the second new edge, from `c` to the vertex after `i`. -/
+theorem edgeSet_insertVertex_subset_of_ne_castSucc {k : Fin (n + 1)} (hk : k ≠ i.castSucc) :
+    (poly.insertVertex i c).edgeSet R k ⊆
+      (⋃ (l : Fin n) (_ : l ≠ i), poly.edgeSet R l) ∪ affineSegment R c (poly (finRotate n i)) := by
+  obtain rfl | ⟨l, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ k
+  · rw [edgeSet_insertVertex_succ_self]
+    exact subset_union_right
+  · have hl : l ≠ i := by
+      rintro rfl
+      exact hk (Fin.succAbove_succ_self l)
+    rw [edgeSet_insertVertex_succAbove _ _ _ hl]
+    exact subset_union_of_subset_left
+      (subset_iUnion₂ (s := fun l (_ : l ≠ i) => poly.edgeSet R l) l hl) _
+
+/-- Every edge of `poly.insertVertex i c` other than the second new edge is an edge of `poly` other
+than edge `i`, or the first new edge, from vertex `i` to `c`. -/
+theorem edgeSet_insertVertex_subset_of_ne_succ {k : Fin (n + 1)} (hk : k ≠ i.succ) :
+    (poly.insertVertex i c).edgeSet R k ⊆
+      (⋃ (l : Fin n) (_ : l ≠ i), poly.edgeSet R l) ∪ affineSegment R (poly i) c := by
+  obtain rfl | ⟨l, rfl⟩ := Fin.eq_self_or_eq_succAbove i.succ k
+  · exact absurd rfl hk
+  · by_cases hl : l = i
+    · subst hl
+      rw [Fin.succAbove_succ_self, edgeSet_insertVertex_castSucc_self]
+      exact subset_union_right
+    · rw [edgeSet_insertVertex_succAbove _ _ _ hl]
+      exact subset_union_of_subset_left
+        (subset_iUnion₂ (s := fun l (_ : l ≠ i) => poly.edgeSet R l) l hl) _
 
 /-- Inserting the vertex `c` after vertex `i` replaces edge `i` by the segments from vertex `i` to
 `c` and from `c` to the next vertex. -/
