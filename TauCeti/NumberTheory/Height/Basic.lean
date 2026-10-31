@@ -30,7 +30,7 @@ absolute values. This is how heights of polynomial expressions such as determina
 since no bound for the height of a sum in terms of the heights of its terms holds. Its constant
 case `Height.mulHeight_le_pow_totalWeight` bounds the height of a single tuple whose local factors
 are at most `C` at the archimedean absolute values and at most `1` at the others; for instance a
-tuple of natural numbers at most `N` has height at most `N ^ totalWeight K`
+tuple of natural numbers at most `N ≥ 1` has height at most `N ^ totalWeight K`
 (`Height.mulHeight_natCast_le`). Conversely, two tuples with the same local factors everywhere
 have the same height (`Height.mulHeight_eq_of_forall_iSup_eq`), which computes the height of the
 tuple of powers `α ^ k`, `0 ≤ k ≤ d`, as `mulHeight₁ α ^ d` (`Height.mulHeight_pow_range`).

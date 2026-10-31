@@ -502,13 +502,15 @@ theorem logHeight_ofBox [DecidableEq σ] (x : (∀ j, Fin (d j + 1)) → K) :
   rw [logHeight_eq_log_mulHeight, mulHeight_ofBox, Height.logHeight_eq_log_mulHeight]
 
 /-- The height of a row of the vanishing conditions on the box `∀ j, Fin (d j + 1)` at the point
-`α` is at most `(2 ^ ∑ j, d j) ^ totalWeight K * ∏ j, mulHeight₁ (α j) ^ d j`. The row is a
-product over the variables of rows in one variable, so its height is the product of their
-heights; in the variable `j` the binomial coefficients are at most `2 ^ d j`, and the powers
-`α j ^ k`, `k ≤ d j`, have height `mulHeight₁ (α j) ^ d j`. -/
+`α` is at most `(2 ^ ∑ j, d j) ^ totalWeight K * ∏ j, mulHeight₁ (α j) ^ d j`. The order `μ`
+need not lie in the box: outside it the row is zero. -/
 theorem mulHeight_hasseDerivRow_le (d : σ → ℕ) (α : σ → K) (μ : σ →₀ ℕ) :
     Height.mulHeight (hasseDerivRow d α μ) ≤
       ((2 : ℝ) ^ ∑ j, d j) ^ totalWeight K * ∏ j, mulHeight₁ (α j) ^ d j := by
+  -- The row is a product over the variables of rows in one variable. When no factor vanishes
+  -- identically, its height is the product of their heights; in the variable `j` the binomial
+  -- coefficients are at most `2 ^ d j`, and the powers `α j ^ k`, `k ≤ d j`, have height
+  -- `mulHeight₁ (α j) ^ d j`.
   let f (j : σ) (k : Fin (d j + 1)) : K := ((k : ℕ).choose (μ j) : K) * α j ^ ((k : ℕ) - μ j)
   have hrow : hasseDerivRow d α μ = fun I ↦ ∏ j, f j (I j) :=
     funext fun I ↦ hasseDerivRow_def d α μ I
