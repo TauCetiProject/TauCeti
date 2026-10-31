@@ -71,7 +71,7 @@ namespace LinearMap
 
 section BaseChange
 
-variable {R : Type*} [CommRing R] (B : Type*) [CommRing B] [Algebra R B]
+variable {R : Type*} [CommRing R] (B : Type*) [Ring B] [Algebra R B]
   {K₀ K₁ C₀ C₁ : Type*} [AddCommGroup K₀] [Module R K₀] [AddCommGroup K₁] [Module R K₁]
   [AddCommGroup C₀] [Module R C₀] [AddCommGroup C₁] [Module R C₁]
   {α₀ : K₀ →ₗ[R] C₀} {δ : K₀ →ₗ[R] K₁} {d : C₀ →ₗ[R] C₁} {α₁ : K₁ →ₗ[R] C₁}
