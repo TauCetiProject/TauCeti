@@ -400,8 +400,7 @@ theorem coe_arrowTensorDifferential_lof_tmul (b : Σ i j : Q, i ⟶ j) (x y : �
       (x * ofArrow b.2.2) ⊗ₜ[k] op (ε b.1 * y) - (x * ε b.2.1) ⊗ₜ[k] op (ofArrow b.2.2 * y) := by
   obtain ⟨i, j, b⟩ := b
   rw [coe_arrowTensorDifferential_lof, arrowTensorBoundary, mul_sub]
-  simp [← op_mul, mul_assoc, IsIdempotentElem.mul_self_mul (x := ε i) (vertexIdempotent_mul_self i),
-    ofPath_mul_vertexIdempotent_mul]
+  simp [← op_mul, mul_assoc, IsIdempotentElem.mul_self_mul (x := ε i) (vertexIdempotent_mul_self i)]
 
 /-- **The standard sequence is a complex**: multiplication kills the image of the differential. -/
 theorem vertexTensorMul_comp_arrowTensorDifferential :
@@ -436,6 +435,27 @@ private theorem coe_arrowTensorDifferential_homotopyPath {s t : Q} (q : Quiver.P
       ofPath_mul_vertexIdempotent]
     abel
 
+omit [Fintype Q] in
+/-- On the component of an arrow `b`, the homotopy after right multiplication by the boundary
+of `b` is minus the projection onto that component. -/
+private theorem homotopy_comp_mulRight_arrowTensorBoundary (b : Σ i j : Q, i ⟶ j) :
+    homotopy ∘ₗ LinearMap.mulRight k (arrowTensorBoundary k Q b) =
+      -(arrowTensorProj (k := k) b).restrictScalars k := by
+  -- Both sides are `k`-linear, so they agree as linear maps, compared on the `x ⊗ q`.
+  refine envelope_ext fun x s t q ↦ ?_
+  obtain ⟨i, j, c⟩ := b
+  simp only [LinearMap.comp_apply, LinearMap.mulRight_apply, LinearMap.neg_apply,
+    LinearMap.restrictScalars_apply]
+  rw [arrowTensorBoundary, mul_sub, map_sub, arrowTensorProj_tmul]
+  simp only [Algebra.TensorProduct.tmul_mul_tmul, ← op_mul]
+  by_cases ht : t = i
+  · subst ht
+    rw [vertexIdempotent_mul_ofPath, ofArrow_mul_ofPath, homotopy_tmul, homotopy_tmul,
+      homotopyPath_cons]
+    simp [mul_assoc]
+  · simp [vertexIdempotent_mul_ofPath_of_ne ⟨s, t, q⟩ (Ne.symm ht),
+      ofPath_mul_ofPath_of_not_composable (x := ⟨i, j, c.toPath⟩) (y := ⟨s, t, q⟩) ht]
+
 /-- **The homotopy composed with the differential is minus the identity.** -/
 private theorem homotopy_arrowTensorDifferential (w : arrowTensorBimodule k Q) :
     homotopy (arrowTensorDifferential k Q w : 𝒜ᵉ) = -w := by
@@ -448,23 +468,7 @@ private theorem homotopy_arrowTensorDifferential (w : arrowTensorBimodule k Q) :
     have hof : DirectSum.of _ b ⟨v * arrowTensorIdempotent k Q b, hu⟩ = arrowTensorProj b v := by
       rw [arrowTensorProj_apply, DirectSum.lof_eq_of]
     rw [hof, coe_arrowTensorDifferential_arrowTensorProj]
-    -- Both sides are `k`-linear in `v`, so they agree as linear maps, compared on the `x ⊗ q`.
-    have key : homotopy ∘ₗ LinearMap.mulRight k (arrowTensorBoundary k Q b) =
-        -(arrowTensorProj (k := k) b).restrictScalars k := by
-      refine envelope_ext fun x s t q ↦ ?_
-      obtain ⟨i, j, c⟩ := b
-      simp only [LinearMap.comp_apply, LinearMap.mulRight_apply, LinearMap.neg_apply,
-        LinearMap.restrictScalars_apply]
-      rw [arrowTensorBoundary, mul_sub, map_sub, arrowTensorProj_tmul]
-      simp only [Algebra.TensorProduct.tmul_mul_tmul, ← op_mul]
-      by_cases ht : t = i
-      · subst ht
-        rw [vertexIdempotent_mul_ofPath, ofArrow_mul_ofPath, homotopy_tmul, homotopy_tmul,
-          homotopyPath_cons]
-        simp [mul_assoc]
-      · simp [vertexIdempotent_mul_ofPath_of_ne ⟨s, t, q⟩ (Ne.symm ht),
-          ofPath_mul_ofPath_of_not_composable (x := ⟨i, j, c.toPath⟩) (y := ⟨s, t, q⟩) ht]
-    simpa using LinearMap.congr_fun key v
+    simpa using LinearMap.congr_fun (homotopy_comp_mulRight_arrowTensorBoundary b) v
 
 /-- **The differential composed with the homotopy** is `u ↦ (μ u ⊗ 1)(∑ᵥ eᵥ ⊗ eᵥ) - u` on
 `kQ ⊗_{kQ₀} kQ`, for `μ` the multiplication map, here the action of `u` on `1`; the elements of

@@ -460,6 +460,7 @@ theorem ofPath_mul_vertexIdempotent {a b : Q} (p : _root_.Quiver.Path a b) :
 
 /-- The vertex idempotent at the source of a path is absorbed by it in a right-associated
 product. -/
+@[simp]
 theorem ofPath_mul_vertexIdempotent_mul {a b : Q} (p : _root_.Quiver.Path a b)
     (y : pathAlgebra k Q) :
     ofPath ⟨a, b, p⟩ * (vertexIdempotent k a * y) = ofPath ⟨a, b, p⟩ * y := by
