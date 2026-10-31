@@ -245,7 +245,7 @@ private theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero (hab : a < b)
   have hg : MemLp (fun t => f (lineEquiv t)) 2 (volume.restrict (Ioc a b)) := by
     rw [← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
     exact (Lp.memLp f).comp_measurePreserving hmpΩ
-  have hg0 := ae_eq_zero_of_forall_integral_mul_sin_eq_zero hab hg fun k hk => by
+  have hg0 := ae_eq_zero_of_forall_integral_mul_sin_eq_zero hg fun k hk => by
     rw [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo, ← h k hk,
       ← preimage_lineEquiv_intervalDomain, ← hmp.setIntegral_preimage_emb
         lineEquiv.toHomeomorph.measurableEmbedding]
