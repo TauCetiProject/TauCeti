@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Perfection
+public import Mathlib.Algebra.CharP.Lemmas
 public import TauCeti.RingTheory.AdicCompletion.Pi
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Surjectivity of Frobenius in a `π`-adically complete ring
@@ -31,15 +32,13 @@ For a perfectoid Tate ring `R` this applies to `A = R°` and a pseudouniformiser
 `ϖ ^ p ∣ p`, where `R°` is `ϖ`-adically complete; it shows that the perfectoid condition can be
 tested modulo `p` and that it does not depend on the choice of `ϖ`. Condition 2 is the hypothesis
 of Mathlib's `WittVector.surjective_fontaineTheta`, in the form of
-`TauCeti.surjective_frobenius_modP_iff`.
+`TauCeti.surjective_frobenius_modP_iff` (in `TauCeti.RingTheory.Ideal.Quotient.Frobenius`).
 
 ## Main results
 
 * `TauCeti.exists_mul_dvd_sub_pow`: in a `π`-adically complete ring in which every element is a
   `p`-th power modulo `π ^ p`, every element is a `p`-th power modulo `π p`.
 * `TauCeti.tfae_forall_exists_dvd_sub_pow`: the equivalence of the three conditions above.
-* `TauCeti.surjective_frobenius_modP_iff`: Frobenius on `ModP A p = A ⧸ p` is surjective exactly
-  when every element of `A` is a `p`-th power modulo `p`.
 
 ## References
 
@@ -141,20 +140,5 @@ theorem tfae_forall_exists_dvd_sub_pow [IsHausdorff (Ideal.span {π}) A]
   tfae_have 3 → 2 := fun h3 x ↦ (h3 x).imp fun _ ↦ (dvd_mul_left _ _).trans
   tfae_have 2 → 1 := fun h2 x ↦ (h2 x).imp fun _ ↦ h.trans
   tfae_finish
-
-omit [Fact p.Prime] in
-variable (A) in
-/-- Frobenius on `ModP A p = A ⧸ p` is surjective exactly when every element of `A` is a `p`-th
-power modulo `p`. -/
-theorem surjective_frobenius_modP_iff [ExpChar (ModP A p) p] :
-    Function.Surjective (frobenius (ModP A p) p) ↔ ∀ x : A, ∃ y, (p : A) ∣ x - y ^ p := by
-  simp_rw [← Ideal.mem_span_singleton, ← Ideal.Quotient.eq]
-  refine ⟨fun h x ↦ ?_, fun h x ↦ ?_⟩
-  · obtain ⟨y, hy⟩ := h (Ideal.Quotient.mk _ x)
-    obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
-    exact ⟨y, by rw [← hy, frobenius_def, map_pow]⟩
-  · obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
-    obtain ⟨y, hy⟩ := h x
-    exact ⟨Ideal.Quotient.mk _ y, by rw [frobenius_def, ← map_pow, hy]⟩
 
 end TauCeti
