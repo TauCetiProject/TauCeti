@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Wishart.Bartlett
 
+import TauCeti.MeasureTheory.Integral.Pi
 import TauCeti.Probability.Distributions.Wishart.Congruence
 
 /-!
@@ -104,5 +105,196 @@ theorem hasLaw_prod_chiSquared_det_nonsingularWishartMeasure
   rw [map_det_nonsingularWishartMeasure hS hn]
   exact (⟨by fun_prop, rfl⟩ : HasLaw (fun x : Fin p → ℝ ↦ S.det * ∏ i, x i)
     _ (Measure.pi (fun i : Fin p ↦ chiSquaredMeasure (n - i.1)))).fun_comp (hY.hasLaw_pi hLaw)
+
+private theorem integrable_prod_rpow_pi_chiSquaredMeasure_iff
+    {k : Fin p → ℝ} (hk : ∀ i, 0 < k i) (q : ℝ) :
+    Integrable (fun x : Fin p → ℝ ↦ ∏ i, x i ^ q)
+        (Measure.pi fun i ↦ chiSquaredMeasure (k i)) ↔
+      ∀ i, -(k i / 2) < q := by
+  let μ : Fin p → Measure ℝ := fun i ↦ chiSquaredMeasure (k i)
+  let f : Fin p → ℝ → ℝ := fun _ x ↦ x ^ q
+  let _ (i : Fin p) : IsProbabilityMeasure (μ i) := by
+    dsimp [μ]
+    exact isProbabilityMeasure_chiSquaredMeasure (hk i).le
+  have hf (i : Fin p) : Measurable (f i) := by fun_prop
+  let L : Fin p → ENNReal := fun i ↦ ∫⁻ x, ENNReal.ofReal (f i x) ∂μ i
+  have hae_pos : ∀ᵐ x ∂Measure.pi μ, ∀ i, 0 < x i :=
+    Filter.eventually_all.2 fun i ↦
+      Measure.tendsto_eval_ae_ae.eventually (ae_pos_chiSquaredMeasure (hk i))
+  have hae_nonneg : ∀ᵐ x ∂Measure.pi μ, 0 ≤ ∏ i, f i (x i) :=
+    hae_pos.mono fun x hx ↦ Finset.prod_nonneg fun i _ ↦ (Real.rpow_pos_of_pos (hx i) q).le
+  have hlintegral :
+      (∫⁻ x : Fin p → ℝ, ENNReal.ofReal (∏ i, f i (x i)) ∂Measure.pi μ) =
+        ∏ i, L i := by
+    rw [lintegral_congr_ae (hae_pos.mono fun x hx ↦
+      ENNReal.ofReal_prod_of_nonneg fun i _ ↦ (Real.rpow_pos_of_pos (hx i) q).le)]
+    simpa [L] using TauCeti.lintegral_fintype_prod_eq_prod μ
+      (fun i ↦ (hf i).ennreal_ofReal)
+  have hpos (i : Fin p) : 0 < L i := by
+    dsimp only [L]
+    rw [lintegral_pos_iff_support (hf i).ennreal_ofReal]
+    have hae_chi : ∀ᵐ x ∂μ i, 0 < x := by
+      simpa [μ] using ae_pos_chiSquaredMeasure (hk i)
+    calc
+      μ i (Function.support fun x ↦ ENNReal.ofReal (f i x)) = μ i Set.univ :=
+        measure_congr (hae_chi.mono fun x hx ↦ by
+          simp only [Function.mem_support, Set.mem_univ]
+          apply propext
+          exact iff_true_intro (ENNReal.ofReal_ne_zero_iff.mpr (Real.rpow_pos_of_pos hx q)))
+      _ = 1 := measure_univ
+      _ > 0 := zero_lt_one
+  have hmeas : AEStronglyMeasurable (fun x : Fin p → ℝ ↦ ∏ i, f i (x i))
+      (Measure.pi μ) :=
+    (Finset.measurable_prod _ fun i _ ↦ (hf i).comp (measurable_pi_apply i)).aestronglyMeasurable
+  change Integrable (fun x ↦ ∏ i, f i (x i)) (Measure.pi μ) ↔ _
+  constructor
+  · intro hint i
+    apply (integrable_rpow_chiSquaredMeasure_iff (hk i) q).mp
+    refine ⟨(hf i).aestronglyMeasurable, ?_⟩
+    rw [hasFiniteIntegral_iff_ofReal
+      ((ae_pos_chiSquaredMeasure (hk i)).mono fun x hx ↦ (Real.rpow_pos_of_pos hx q).le)]
+    have hfinite : (∏ j, L j) < ⊤ := by
+      rw [← hlintegral, ← hasFiniteIntegral_iff_ofReal hae_nonneg]
+      exact hint.hasFiniteIntegral
+    by_contra hi
+    have hitop : L i = ⊤ := by
+      apply top_unique
+      simpa [L] using not_lt.mp hi
+    have hrest : (∏ j ∈ Finset.univ.erase i, L j) ≠ 0 :=
+      Finset.prod_ne_zero_iff.mpr fun j hj ↦ (hpos j).ne'
+    rw [← Finset.mul_prod_erase _ _ (Finset.mem_univ i), hitop, ENNReal.top_mul hrest] at hfinite
+    exact hfinite.false
+  · intro hq
+    have hi : ∀ i, Integrable (f i) (μ i) := fun i ↦ by
+      simpa [f, μ] using (integrable_rpow_chiSquaredMeasure_iff (hk i) q).2 (hq i)
+    exact Integrable.fintype_prod hi
+
+private theorem prod_gamma_ratio_eq_multivariateGamma_ratio (hn : (p : ℝ) - 1 < n) :
+    (∏ i : Fin p, Real.Gamma ((n - i.1) / 2 + q) / Real.Gamma ((n - i.1) / 2)) =
+      multivariateGamma p (n / 2 + q) / multivariateGamma p (n / 2) := by
+  have hnum : (∏ i : Fin p, Real.Gamma ((n - i.1) / 2 + q)) =
+      ∏ i : Fin p, Real.Gamma (n / 2 + q - (i.1 : ℝ) / 2) := by
+    apply Finset.prod_congr rfl
+    intro i _
+    congr 1
+    ring
+  have hden : (∏ i : Fin p, Real.Gamma ((n - i.1) / 2)) =
+      ∏ i : Fin p, Real.Gamma (n / 2 - (i.1 : ℝ) / 2) := by
+    apply Finset.prod_congr rfl
+    intro i _
+    congr 1
+    ring
+  rw [Finset.prod_div_distrib, hnum, hden, multivariateGamma_def, multivariateGamma_def]
+  have hgamma : multivariateGamma p (n / 2) ≠ 0 :=
+    multivariateGamma_ne_zero (show ((p : ℝ) - 1) / 2 < n / 2 by linarith)
+  field_simp [Real.rpow_pos_of_pos Real.pi_pos, hgamma]
+
+private theorem mul_prod_rpow_eq {a : ℝ} (ha : 0 < a) (x : Fin p → ℝ)
+    (hx : ∀ i, 0 < x i) (q : ℝ) :
+    (a * ∏ i, x i) ^ q = a ^ q * ∏ i, x i ^ q := by
+  rw [Real.mul_rpow ha.le (Finset.prod_nonneg fun i _ ↦ (hx i).le)]
+  congr 1
+  exact (Real.finsetProd_rpow Finset.univ x (fun i _ ↦ (hx i).le) q).symm
+
+/-- For positive dimension, the `q`-th real power of the determinant is integrable under a
+nonsingular Wishart law exactly above the sharp Bartlett threshold. -/
+@[simp]
+theorem integrable_rpow_det_nonsingularWishartMeasure_iff (hp : 0 < p) (hS : S.PosDef)
+    (hn : (p : ℝ) - 1 < n) (q : ℝ) :
+    Integrable
+        (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+          (A : Matrix (Fin p) (Fin p) ℝ).det ^ q)
+        (nonsingularWishartMeasure n S) ↔
+      -((n - p + 1) / 2) < q := by
+  have hk (i : Fin p) : 0 < n - i.1 := by
+    have hi : (i.1 : ℝ) + 1 ≤ p := by exact_mod_cast i.2
+    linarith
+  have hdet : Measurable
+      (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+        (A : Matrix (Fin p) (Fin p) ℝ).det) := by fun_prop
+  let _ (i : Fin p) : IsProbabilityMeasure (chiSquaredMeasure (n - i.1)) :=
+    isProbabilityMeasure_chiSquaredMeasure (hk i).le
+  change Integrable ((fun x : ℝ ↦ x ^ q) ∘
+      fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+        (A : Matrix (Fin p) (Fin p) ℝ).det) (nonsingularWishartMeasure n S) ↔ _
+  rw [← integrable_map_measure (by fun_prop) hdet.aemeasurable,
+    map_det_nonsingularWishartMeasure hS hn,
+    integrable_map_measure (by fun_prop) (by fun_prop)]
+  change Integrable (fun x : Fin p → ℝ ↦ (S.det * ∏ i, x i) ^ q)
+      (Measure.pi fun i : Fin p ↦ chiSquaredMeasure (n - i.1)) ↔ _
+  have hpos : ∀ᵐ x ∂Measure.pi (fun i : Fin p ↦ chiSquaredMeasure (n - i.1)),
+      ∀ i, 0 < x i := Filter.eventually_all.2 fun i ↦
+    Measure.tendsto_eval_ae_ae.eventually (ae_pos_chiSquaredMeasure (hk i))
+  have hae : (fun x : Fin p → ℝ ↦ (S.det * ∏ i, x i) ^ q) =ᵐ[
+      Measure.pi (fun i : Fin p ↦ chiSquaredMeasure (n - i.1))]
+      fun x ↦ S.det ^ q * ∏ i, x i ^ q := by
+    filter_upwards [hpos] with x hx
+    exact mul_prod_rpow_eq hS.det_pos x hx q
+  rw [integrable_congr hae, integrable_const_mul_iff
+    (isUnit_iff_ne_zero.mpr (Real.rpow_pos_of_pos hS.det_pos q).ne')]
+  rw [integrable_prod_rpow_pi_chiSquaredMeasure_iff hk]
+  constructor
+  · intro hall
+    have hp1 : 1 ≤ p := hp
+    have hlast := hall ⟨p - 1, Nat.sub_lt hp zero_lt_one⟩
+    rw [Nat.cast_sub hp1, Nat.cast_one] at hlast
+    linarith
+  · intro hq i
+    have hi : (i.1 : ℝ) + 1 ≤ p := by exact_mod_cast i.2
+    linarith
+
+/-- The real-power determinant moment of a nonsingular Wishart law on the stated domain. -/
+theorem integral_rpow_det_nonsingularWishartMeasure (hS : S.PosDef)
+    (hn : (p : ℝ) - 1 < n) (hq : -((n - p + 1) / 2) < q) :
+    ∫ A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ),
+        (A : Matrix (Fin p) (Fin p) ℝ).det ^ q ∂nonsingularWishartMeasure n S =
+      2 ^ ((p : ℝ) * q) * S.det ^ q *
+        multivariateGamma p (n / 2 + q) / multivariateGamma p (n / 2) := by
+  have hk (i : Fin p) : 0 < n - i.1 := by
+    have hi : (i.1 : ℝ) + 1 ≤ p := by exact_mod_cast i.2
+    linarith
+  have hdet : Measurable
+      (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+        (A : Matrix (Fin p) (Fin p) ℝ).det) := by fun_prop
+  have hrpow : Measurable (fun x : ℝ ↦ x ^ q) := by fun_prop
+  rw [← integral_map (f := fun x : ℝ ↦ x ^ q)
+      (hdet.aemeasurable) hrpow.aestronglyMeasurable,
+    map_det_nonsingularWishartMeasure hS hn,
+    integral_map (f := fun x : ℝ ↦ x ^ q) (by fun_prop) hrpow.aestronglyMeasurable]
+  let _ (i : Fin p) : IsProbabilityMeasure (chiSquaredMeasure (n - i.1)) :=
+    isProbabilityMeasure_chiSquaredMeasure (hk i).le
+  have hpos : ∀ᵐ x ∂Measure.pi (fun i : Fin p ↦ chiSquaredMeasure (n - i.1)),
+      ∀ i, 0 < x i := Filter.eventually_all.2 fun i ↦
+    Measure.tendsto_eval_ae_ae.eventually (ae_pos_chiSquaredMeasure (hk i))
+  rw [integral_congr_ae (hpos.mono fun x hx ↦ mul_prod_rpow_eq hS.det_pos x hx q)]
+  rw [integral_const_mul,
+    integral_fintype_prod_eq_prod (fun (_ : Fin p) (x : ℝ) ↦ x ^ q)]
+  have hqi (i : Fin p) : -((n - i.1) / 2) < q := by
+    have hi : (i.1 : ℝ) + 1 ≤ p := by exact_mod_cast i.2
+    linarith
+  simp_rw [integral_rpow_chiSquaredMeasure (hk _) (hqi _)]
+  simp_rw [mul_div_assoc]
+  rw [Finset.prod_mul_distrib,
+    Finset.prod_const, Finset.card_univ, Fintype.card_fin,
+    ← Real.rpow_mul_natCast (by norm_num : (0 : ℝ) ≤ 2),
+    prod_gamma_ratio_eq_multivariateGamma_ratio hn]
+  ring_nf
+
+/-- In dimension zero every real power of the determinant is the constant one under every valid
+nonsingular Wishart law. -/
+theorem integrable_rpow_det_nonsingularWishartMeasure_zero
+    (S : Matrix (Fin 0) (Fin 0) ℝ) (hn : -1 < n) (q : ℝ) :
+    Integrable
+      (fun A : selfAdjoint.submodule ℝ (Matrix (Fin 0) (Fin 0) ℝ) ↦
+        (A : Matrix (Fin 0) (Fin 0) ℝ).det ^ q)
+      (nonsingularWishartMeasure n S) := by
+  simp [nonsingularWishartMeasure_zero hn S]
+
+/-- In dimension zero every real-power determinant moment is one. -/
+theorem integral_rpow_det_nonsingularWishartMeasure_zero
+    (S : Matrix (Fin 0) (Fin 0) ℝ) (hn : -1 < n) (q : ℝ) :
+    ∫ A : selfAdjoint.submodule ℝ (Matrix (Fin 0) (Fin 0) ℝ),
+        (A : Matrix (Fin 0) (Fin 0) ℝ).det ^ q ∂nonsingularWishartMeasure n S = 1 := by
+  simp [nonsingularWishartMeasure_zero hn S]
 
 end TauCeti.Probability
