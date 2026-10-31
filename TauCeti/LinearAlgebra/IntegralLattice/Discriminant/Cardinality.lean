@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.IndexNSmul
 public import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Group
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
@@ -37,6 +38,9 @@ Gram matrix of `b`: the coefficient of `b j` along the dual vector indexed by `i
   constructed from a nonsingular integral symmetric matrix.
 * `TauCeti.IntegralLattice.inv_smul_mem_carrier_of_forall_dvd`: for `p` prime to `det L`, a vector
   pairing into `pℤ` with all of `L` lies in `p L`.
+* `TauCeti.IntegralLattice.natCard_discriminantGroup_dvd_two_pow_finrank` and
+  `TauCeti.IntegralLattice.exists_mem_dualCarrier_eq_two_nsmul`: a discriminant group killed by `2`
+  has order dividing `2^n`, `n` the rank, and if the order is `2^n` then `L = 2Lᵛ`.
 
 ## References
 
@@ -135,5 +139,67 @@ theorem natCard_discriminantGroup_ofGramMatrix {ι : Type v} [Fintype ι]
   have : (ofGramMatrix b G hG).IsNondegenerate :=
     isNondegenerate_ofGramMatrix b G hG hdet
   rw [natCard_discriminantGroup, discriminant_ofGramMatrix]
+
+/-! ## Discriminant groups killed by `2` -/
+
+section TwoTorsion
+
+variable (L : IntegralLattice V) [L.IsNondegenerate]
+
+omit [L.IsNondegenerate] in
+/-- A dual vector whose discriminant class is killed by `2` has its double in the lattice. -/
+theorem two_nsmul_mem_carrier (h2 : ∀ x : L.DiscriminantGroup, 2 • x = 0)
+    (y : L.dualCarrier) : 2 • (y : V) ∈ L.carrier := by
+  have h := h2 (L.carrierInDual.mkQ y)
+  rwa [← map_nsmul, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, mem_carrierInDual_iff,
+    Submodule.coe_smul_of_tower] at h
+
+omit [L.IsNondegenerate] in
+/-- When `2A_L = 0`, the image `2Lᵛ` of doubling lies in `L`, viewed inside `Lᵛ`. -/
+private theorem range_nsmul_two_le_carrierInDual (h2 : ∀ x : L.DiscriminantGroup, 2 • x = 0) :
+    (nsmulAddMonoidHom (α := L.dualCarrier) 2).range ≤ L.carrierInDual.toAddSubgroup := by
+  rintro _ ⟨y, rfl⟩
+  rw [Submodule.mem_toAddSubgroup, mem_carrierInDual_iff, nsmulAddMonoidHom_apply,
+    Submodule.coe_smul_of_tower]
+  exact L.two_nsmul_mem_carrier h2 y
+
+omit [L.IsNondegenerate] in
+/-- The index of `L` in `Lᵛ` is the order of the discriminant group. -/
+private theorem index_carrierInDual :
+    L.carrierInDual.toAddSubgroup.index = Nat.card L.DiscriminantGroup :=
+  AddSubgroup.index_eq_card _
+
+/-- The index of `2Lᵛ` in `Lᵛ` is `2^n`, `n` the rank. -/
+private theorem index_range_nsmul_two :
+    (nsmulAddMonoidHom (α := L.dualCarrier) 2).range.index = 2 ^ finrank ℚ V := by
+  rw [AddSubgroup.index_range_nsmul, finrank_dualCarrier]
+
+/-- **A discriminant group killed by `2` has order dividing `2^n`**, `n` the rank: it is a
+quotient of `Lᵛ/2Lᵛ ≅ (ℤ/2)^n`. -/
+theorem natCard_discriminantGroup_dvd_two_pow_finrank
+    (h2 : ∀ x : L.DiscriminantGroup, 2 • x = 0) :
+    Nat.card L.DiscriminantGroup ∣ 2 ^ finrank ℚ V := by
+  rw [← L.index_carrierInDual, ← L.index_range_nsmul_two]
+  exact AddSubgroup.index_dvd_of_le (L.range_nsmul_two_le_carrierInDual h2)
+
+/-- **If the discriminant group is killed by `2` and has order `2^n`, `n` the rank, then
+`L = 2Lᵛ`**: every lattice vector is twice a dual vector. -/
+theorem exists_mem_dualCarrier_eq_two_nsmul (h2 : ∀ x : L.DiscriminantGroup, 2 • x = 0)
+    (hcard : Nat.card L.DiscriminantGroup = 2 ^ finrank ℚ V) {x : V} (hx : x ∈ L.carrier) :
+    ∃ y ∈ L.dualCarrier, x = 2 • y := by
+  have hle := L.range_nsmul_two_le_carrierInDual h2
+  have hrel := AddSubgroup.relIndex_mul_index hle
+  rw [L.index_carrierInDual, hcard, ← L.index_range_nsmul_two] at hrel
+  have hK : L.carrierInDual.toAddSubgroup ≤ (nsmulAddMonoidHom (α := L.dualCarrier) 2).range :=
+    AddSubgroup.relIndex_eq_one.mp
+      (Nat.eq_of_mul_eq_mul_right (by rw [L.index_range_nsmul_two]; positivity)
+        (hrel.trans (one_mul _).symm))
+  obtain ⟨y, hy⟩ := hK ((Submodule.mem_toAddSubgroup _).mpr
+    ((L.mem_carrierInDual_iff ⟨x, L.le_dualCarrier hx⟩).mpr hx))
+  have hy' := congrArg Subtype.val hy
+  rw [nsmulAddMonoidHom_apply, Submodule.coe_smul_of_tower] at hy'
+  exact ⟨y, y.2, hy'.symm⟩
+
+end TwoTorsion
 
 end TauCeti.IntegralLattice
