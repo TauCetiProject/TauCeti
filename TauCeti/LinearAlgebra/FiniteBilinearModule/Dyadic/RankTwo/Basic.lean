@@ -88,6 +88,11 @@ theorem dyadicU_pairing (x y : ZMod (2 ^ k) × ZMod (2 ^ k)) :
   congr 1
   ring
 
+/-- `u^{(2)}(2^k)` has `2^k · 2^k` elements. Its carrier is `(ℤ/2^k)²` by definition. -/
+theorem natCard_dyadicU : Nat.card (dyadicU k) = 2 ^ k * 2 ^ k := by
+  rw [show Nat.card (dyadicU k) = Nat.card (ZMod (2 ^ k) × ZMod (2 ^ k)) from rfl, Nat.card_prod,
+    Nat.card_zmod]
+
 /-- **`u^{(2)}(2^k)` is nondegenerate**: pairing with the two coordinate vectors recovers the
 two coordinates. -/
 @[simp]
@@ -170,6 +175,11 @@ theorem dyadicV_pairing (x y : ZMod (2 ^ k) × ZMod (2 ^ k)) :
     Prod.snd_add, ← map_sub]
   congr 1
   ring
+
+/-- `v^{(2)}(2^k)` has `2^k · 2^k` elements. Its carrier is `(ℤ/2^k)²` by definition. -/
+theorem natCard_dyadicV : Nat.card (dyadicV k) = 2 ^ k * 2 ^ k := by
+  rw [show Nat.card (dyadicV k) = Nat.card (ZMod (2 ^ k) × ZMod (2 ^ k)) from rfl, Nat.card_prod,
+    Nat.card_zmod]
 
 /-- **`v^{(2)}(2^k)` is nondegenerate**: pairing with the two coordinate vectors recovers
 `2x₁ + x₂` and `x₁ + 2x₂`, which determine `x` because `3` is a unit modulo `2^k`. -/

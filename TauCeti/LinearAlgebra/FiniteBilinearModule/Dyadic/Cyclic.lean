@@ -100,6 +100,10 @@ theorem dyadicCyclic_pairing_intCast (i j : ℤ) :
   field_simp
   ring
 
+/-- `q_θ^{(2)}(2^k)` has `2^k` elements. Its carrier is `ℤ/2^k` by definition. -/
+theorem natCard_dyadicCyclic : Nat.card (dyadicCyclic k θ) = 2 ^ k :=
+  Nat.card_zmod (2 ^ k)
+
 /-- **`q_θ^{(2)}(2^k)` is nondegenerate exactly when `θ` is odd.** For even `θ` the nonzero
 element `2^{k-1}` lies in the radical. -/
 @[simp]
