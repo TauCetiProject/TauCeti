@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.Probability.Kernel.Disintegration.Basic
+public import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # Disintegrating a measure over a countable coordinate
@@ -22,26 +23,24 @@ On a countable `Y` no analytic input is needed — the disintegration is the ele
 `κ y s = (σ.fst {y})⁻¹ * σ ({y} ×ˢ s)`, conditioning on the atom `{y}`. The one point that needs
 care is the atoms of zero mass, where that formula reads `∞ * 0` and carries no information: they
 are given a default value, and the disintegration still holds there because such an atom carries
-no `σ`-mass to begin with (`measure_prod_eq_zero_of_fst_eq_zero`).
+no `σ`-mass to begin with (`MeasureTheory.Measure.measure_prod_eq_zero_of_fst_eq_zero`).
 
 ## Main definitions
 
-* `TauCeti.MeasureTheory.countableCondKernel` — the conditional kernel of a measure on `Y × Z`
-  over a countable `Y`.
+* `MeasureTheory.Measure.countableCondKernel` — the conditional kernel `σ.countableCondKernel` of
+  a measure `σ` on `Y × Z` over a countable `Y`.
 
 ## Main results
 
-* `TauCeti.MeasureTheory.measure_prod_eq_zero_of_fst_eq_zero` — a set of zero first-marginal
-  mass carries no mass at all: the fact that makes the default value at a null atom harmless;
-* `TauCeti.MeasureTheory.countableCondKernel_apply`,
-  `TauCeti.MeasureTheory.countableCondKernel_apply_of_ne_zero` and
-  `TauCeti.MeasureTheory.countableCondKernel_apply_of_eq_zero` — the defining formula and its two
+* `MeasureTheory.Measure.countableCondKernel_apply`,
+  `MeasureTheory.Measure.countableCondKernel_apply_of_ne_zero` and
+  `MeasureTheory.Measure.countableCondKernel_apply_of_eq_zero` — the defining formula and its two
   branches, made explicit;
-* `TauCeti.MeasureTheory.compProd_countableCondKernel` — **the disintegration**,
-  `σ.fst ⊗ₘ countableCondKernel σ = σ` for σ-finite `σ.fst`, registered as a
+* `MeasureTheory.Measure.compProd_countableCondKernel` — **the disintegration**,
+  `σ.fst ⊗ₘ σ.countableCondKernel = σ` for σ-finite `σ.fst`, registered as a
   `MeasureTheory.Measure.IsCondKernel` instance;
-* `TauCeti.MeasureTheory.eq_countableCondKernel_of_ne_zero` — for finite `σ`, every conditional
-  kernel of `σ` agrees with this one at every atom of positive mass.
+* `MeasureTheory.Measure.eq_countableCondKernel_of_ne_zero` — for σ-finite `σ.fst`, every
+  conditional kernel of `σ` agrees with this one at every atom of positive mass.
 
 The file also contains two private regression examples showing that the uniqueness statement
 cannot be strengthened and that the σ-finiteness hypothesis cannot be dropped.
@@ -75,21 +74,9 @@ open MeasureTheory ProbabilityTheory
 
 open scoped ENNReal
 
-namespace TauCeti
-
-namespace MeasureTheory
+namespace MeasureTheory.Measure
 
 variable {Y Z : Type*} [MeasurableSpace Y] [MeasurableSpace Z]
-
-/-- A set of zero first-marginal mass carries no mass in any rectangle over it. In particular an
-atom of `Y` that is null for `σ.fst` carries no `σ`-mass at all.
-
-This is the fact that makes the default value of `countableCondKernel` at a null atom harmless:
-such an atom contributes nothing to the disintegration, whatever the kernel does there. -/
-theorem measure_prod_eq_zero_of_fst_eq_zero (σ : Measure (Y × Z)) {t : Set Y}
-    (ht : σ.fst t = 0) (s : Set Z) : σ (t ×ˢ s) = 0 :=
-  measure_mono_null (Set.prod_subset_preimage_fst t s)
-    (Measure.preimage_null_of_map_null measurable_fst.aemeasurable ht)
 
 section CondKernel
 
@@ -164,14 +151,19 @@ instance instIsCondKernelCountableCondKernel (σ : Measure (Y × Z)) [SigmaFinit
     σ.IsCondKernel (countableCondKernel σ) where
   disintegrate := compProd_countableCondKernel σ
 
-/-- Any conditional kernel of a finite measure `σ` agrees with `countableCondKernel σ` at every
-atom of positive mass. The restriction to such atoms is sharp, as shown by the first private
-regression below. -/
-theorem eq_countableCondKernel_of_ne_zero (σ : Measure (Y × Z)) [IsFiniteMeasure σ]
+/-- Any conditional kernel of a measure `σ` with σ-finite first marginal agrees with
+`countableCondKernel σ` at every atom of positive mass. The restriction to such atoms is sharp, as
+shown by the first private regression below. -/
+theorem eq_countableCondKernel_of_ne_zero (σ : Measure (Y × Z)) [SigmaFinite σ.fst]
     (κ : Kernel Y Z) [σ.IsCondKernel κ] {y : Y} (hy : σ.fst {y} ≠ 0) :
-    κ y = countableCondKernel σ y :=
-  Measure.ext fun s _ => by
-    rw [Measure.IsCondKernel.apply_of_ne_zero σ κ hy s, countableCondKernel_apply_of_ne_zero hy]
+    κ y = countableCondKernel σ y := by
+  have := IsCondKernel.isSFiniteKernel σ κ (by rintro rfl; simp at hy)
+  ext s hs
+  have hslice : σ ({y} ×ˢ s) = σ.fst {y} * κ y s := by
+    conv_lhs => rw [← σ.disintegrate κ]
+    rw [compProd_apply_prod (measurableSet_singleton y) hs, lintegral_singleton, mul_comm]
+  rw [countableCondKernel_apply_of_ne_zero hy, hslice, ← mul_assoc,
+    ENNReal.inv_mul_cancel hy measure_singleton_lt_top.ne, one_mul]
 
 end CondKernel
 
@@ -234,6 +226,4 @@ private theorem exists_compProd_countableCondKernel_ne :
 
 end Regressions
 
-end MeasureTheory
-
-end TauCeti
+end MeasureTheory.Measure
