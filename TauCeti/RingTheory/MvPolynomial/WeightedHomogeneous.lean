@@ -46,8 +46,9 @@ arbitrary vectors without changing the value.
 
 ## Main results
 
-* `MvPolynomial.IsWeightedHomogeneous.aeval_mem`: evaluation at elements of graded pieces of the
-  weights of the variables preserves weighted homogeneity.
+* `MvPolynomial.IsWeightedHomogeneous.eval₂_mem`, `MvPolynomial.IsWeightedHomogeneous.aeval_mem`:
+  evaluation at elements of graded pieces of the weights of the variables preserves weighted
+  homogeneity.
 * `MvPolynomial.IsWeightedHomogeneous.aeval`: substituting polynomials that are weighted
   homogeneous of the weights of the variables preserves weighted homogeneity.
 * `MvPolynomial.isWeightedHomogeneous_of_isHomogeneous_aeval`: the converse of the homogeneous
@@ -82,6 +83,23 @@ section CommSemiring
 
 variable [CommSemiring R]
 
+/-- Evaluating a polynomial that is weighted homogeneous of weight `m`, along a ring homomorphism
+`f` with values in the graded piece `𝒜 0` of a graded ring, at elements `g i` of the graded pieces
+`𝒜 (w i)` gives an element of `𝒜 m`. -/
+theorem IsWeightedHomogeneous.eval₂_mem {M A S : Type*} [AddCommMonoid M] [CommSemiring A]
+    [SetLike S A] [AddSubmonoidClass S A] {𝒜 : M → S} [SetLike.GradedMonoid 𝒜] {w : σ → M}
+    {φ : MvPolynomial σ R} {m : M} (hφ : φ.IsWeightedHomogeneous w m) {f : R →+* A}
+    (hf : ∀ r, f r ∈ 𝒜 0) {g : σ → A} (hg : ∀ i, g i ∈ 𝒜 (w i)) :
+    eval₂ f g φ ∈ 𝒜 m := by
+  induction hφ using IsWeightedHomogeneous.induction_on with
+  | zero => simp
+  | add p q _ _ ihp ihq => simpa using add_mem ihp ihq
+  | monomial d r hr =>
+    -- Write the weight of `d` as `0 + ∑ i, d i • w i`, matching the product of `f r ∈ 𝒜 0` with
+    -- `∏ i, g i ^ d i ∈ 𝒜 (∑ i, d i • w i)`.
+    rw [eval₂_monomial, ← hr, Finsupp.weight_apply, Finsupp.sum, ← zero_add (∑ _ ∈ _, _)]
+    exact SetLike.mul_mem_graded (hf r) (SetLike.prod_pow_mem_graded 𝒜 w g d fun i _ ↦ hg i)
+
 /-- Evaluating a polynomial that is weighted homogeneous of weight `m` at elements `g i` of the
 graded pieces `𝒜 (w i)` of a graded algebra gives an element of `𝒜 m`. -/
 theorem IsWeightedHomogeneous.aeval_mem {M A S : Type*} [AddCommMonoid M] [CommSemiring A]
@@ -89,16 +107,10 @@ theorem IsWeightedHomogeneous.aeval_mem {M A S : Type*} [AddCommMonoid M] [CommS
     [SetLike.GradedMonoid 𝒜] {w : σ → M} {φ : MvPolynomial σ R} {m : M}
     (hφ : φ.IsWeightedHomogeneous w m) {g : σ → A} (hg : ∀ i, g i ∈ 𝒜 (w i)) :
     MvPolynomial.aeval g φ ∈ 𝒜 m := by
-  induction hφ using IsWeightedHomogeneous.induction_on with
-  | zero => simp
-  | add p q _ _ ihp ihq => simpa using add_mem ihp ihq
-  | monomial d r hr =>
-    -- Write the weight of `d` as `0 + ∑ i, d i • w i` and `algebraMap R A r` as `r • 1`, matching
-    -- the product of `r • 1 ∈ 𝒜 0` with `∏ i, g i ^ d i ∈ 𝒜 (∑ i, d i • w i)`.
-    rw [aeval_monomial, ← hr, Finsupp.weight_apply, Finsupp.sum, ← zero_add (∑ _ ∈ _, _),
-      Algebra.algebraMap_eq_smul_one]
-    exact SetLike.mul_mem_graded (SMulMemClass.smul_mem r SetLike.GradedOne.one_mem)
-      (SetLike.prod_pow_mem_graded 𝒜 w g d fun i _ ↦ hg i)
+  rw [aeval_def]
+  refine hφ.eval₂_mem (fun r ↦ ?_) hg
+  rw [Algebra.algebraMap_eq_smul_one]
+  exact SMulMemClass.smul_mem r SetLike.GradedOne.one_mem
 
 /-- Substituting, for each variable `i`, a polynomial that is weighted homogeneous of weight
 `w i` for the weights `v` into a polynomial that is weighted homogeneous of weight `m` for the

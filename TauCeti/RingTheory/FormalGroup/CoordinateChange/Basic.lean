@@ -46,6 +46,7 @@ representable by a polynomial ring over the Lazard ring.
   to `φ • F`, that is `φ(F(X, Y)) = (φ • F)(φ(X), φ(Y))`.
 * `FormalGroup.isStrict_smulIso_iff`: the isomorphism `φ` is strict exactly when its linear
   coefficient is `1`.
+* `TauCeti.FormalGroupHom.smul_eq`: if `φ` is a homomorphism from `F` to `G`, then `φ • F = G`.
 * `FormalGroup.instIsCommSMul`: changing coordinates preserves commutativity.
 * `FormalGroup.map_smul`: changing coordinates commutes with base change.
 * `FormalGroup.ofStrictCoeffs_single_smul_𝔾ₐ_toPowerSeries`: if `e² = 0`, transporting the
@@ -254,6 +255,24 @@ theorem smulIso_toHom_toPowerSeries (φ : FormalCoordinate R) (F : FormalGroup R
 theorem smulIso_invHom_toPowerSeries (φ : FormalCoordinate R) (F : FormalGroup R) :
     (smulIso φ F).invHom.toPowerSeries = φ⁻¹.toPowerSeries := by
   simp [smulIso, FormalCoordinate.toPowerSeries_inv]
+
+/-- **A coordinate that is a homomorphism changes the source into the target**: if the series of
+the formal coordinate `φ` underlies a homomorphism of formal group laws from `F` to `G`, then
+`φ • F = G`. Thus every isomorphism of formal group laws is, up to equality of the target, one of
+the isomorphisms `FormalGroup.smulIso`. -/
+theorem _root_.TauCeti.FormalGroupHom.smul_eq {F G : FormalGroup R} (f : FormalGroupHom F G)
+    {φ : FormalCoordinate R} (h : f.toPowerSeries = φ.toPowerSeries) : φ • F = G := by
+  have hφ (i : Fin 2) := φ⁻¹.hasSubst_subst (PowerSeries.HasSubst.X (S := R) i)
+  refine FormalGroup.ext ?_
+  -- `φ(φ⁻¹(Xᵢ)) = Xᵢ`, so the right side is `G(X₀, X₁) = G`.
+  have hX : (fun i ↦ PowerSeries.subst
+      (![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) φ⁻¹.toPowerSeries,
+        PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) φ⁻¹.toPowerSeries] i)
+      φ.toPowerSeries) = X := by
+    funext i
+    fin_cases i <;> exact φ.subst_subst_inv (PowerSeries.HasSubst.X _)
+  rw [smul_toPowerSeries, ← h, f.hom_subst (hasSubst_finTwo (hφ 0) (hφ 1)), h, hX, subst_self,
+    id]
 
 /-- The isomorphism `φ` from `F` to `φ • F` is strict exactly when `φ` has linear coefficient
 `1`. -/
