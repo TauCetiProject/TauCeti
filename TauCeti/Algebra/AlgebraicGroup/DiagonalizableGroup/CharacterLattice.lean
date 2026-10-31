@@ -90,7 +90,7 @@ noncomputable def geometricCharacterGroupEquivOfIso
     (i : DiagonalizableGroup.coordinateRing (AlgebraicClosure k) G ≅
       FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H) :
     geometricCharacterGroup H.obj ≃* G :=
-  (TauCeti.GroupLike.mapEquiv (bialgEquivOfBaseChangeIso k H G i)).symm.trans
+  (bialgEquivOfBaseChangeIso k H G i).mapGroupLike.symm.trans
     (TauCeti.MonoidAlgebra.groupLikeEquiv (R := AlgebraicClosure k) (H := G))
 
 /-- Characterization of the character corresponding to an index under
@@ -105,8 +105,8 @@ theorem geometricCharacterGroupEquivOfIso_apply_eq_iff
     geometricCharacterGroupEquivOfIso k H G i x = g ↔
       i.inv.hom x.val = _root_.MonoidAlgebra.single g 1 := by
   simp only [geometricCharacterGroupEquivOfIso, MulEquiv.trans_apply,
-    TauCeti.MonoidAlgebra.groupLikeEquiv_apply_eq_iff, TauCeti.GroupLike.mapEquiv_symm,
-    TauCeti.GroupLike.val_mapEquiv, bialgEquivOfBaseChangeIso_symm_apply]
+    TauCeti.MonoidAlgebra.groupLikeEquiv_apply_eq_iff, BialgEquiv.mapGroupLike_symm,
+    BialgEquiv.val_mapGroupLike, bialgEquivOfBaseChangeIso_symm_apply]
 
 end CommHopfAlgCat
 

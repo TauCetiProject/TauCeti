@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.MvPolynomial.Sum
-public import Mathlib.RingTheory.MvPolynomial.Basic
+public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
 
 /-!
 # Polynomial realization maps and input coefficients
@@ -23,12 +23,22 @@ independent of the parameters. `polynomialCoefficientMap P` therefore takes valu
 a product of bounded-degree polynomial submodules, ready for finite coefficient coordinates.
 Zero outputs and constant polynomials are included; the degree bound need not be minimal.
 
+A tuple of bounded-degree polynomials has finite coordinates:
+`MvPolynomial.boundedCoefficientEquiv` identifies it with functions on the pairs of an output and
+an exponent of degree at most `d`, by taking monomial coefficients. Its evaluation
+`MvPolynomial.boundedEvaluation` is a linear map to vector-valued functions on inputs, injective
+over an infinite integral domain, and
+`boundedEvaluation_comp_polynomialCoefficientMap` recovers the realization map from the
+coefficient presentation. Composing with the coordinates gives
+`polynomialCoefficientCoordinates P`, whose coordinates are polynomial in the parameters.
+
 The jointly polynomial setting and the coefficient/function viewpoint follow
 Marchetti–Shahverdi–Mereta–Trager–Kohn,
 *Algebra Unveils Deep Learning — An Invitation to Neuroalgebraic Geometry*,
 [arXiv:2501.18915v2](https://arxiv.org/abs/2501.18915v2), §3.1.
 The extraction uses Mathlib's `MvPolynomial.sumAlgEquiv` and coefficient mapping;
-the bounded spaces are Mathlib's `MvPolynomial.restrictTotalDegree`.
+the bounded spaces are Mathlib's `MvPolynomial.restrictTotalDegree`, with coordinates given by
+its monomial basis, and faithfulness of evaluation is Mathlib's `MvPolynomial.funext`.
 -/
 
 public section
@@ -91,6 +101,8 @@ theorem polynomialRealization_eq_sum (P : J → MvPolynomial (W ⊕ X) K)
         eval w ((inputPolynomial P j).coeff a) * a.prod (fun i n => x i ^ n) := by
   rw [← eval₂_inputPolynomial, eval₂_eq]
   rfl
+
+section InputDegree
 
 variable [Fintype J]
 
@@ -160,5 +172,34 @@ theorem coeff_polynomialCoefficientMap (P : J → MvPolynomial (W ⊕ X) K)
     (polynomialCoefficientMap P w j : MvPolynomial X K).coeff a =
       eval w ((inputPolynomial P j).coeff a) := by
   rw [polynomialCoefficientMap_coe, coeff_map]
+
+end InputDegree
+
+section Coordinates
+
+/-- Evaluating the coefficient presentation recovers the jointly polynomial realization map. -/
+theorem boundedEvaluation_comp_polynomialCoefficientMap [Fintype J]
+    (P : J → MvPolynomial (W ⊕ X) K) :
+    boundedEvaluation X K J (polynomialInputDegree P) ∘ polynomialCoefficientMap P =
+      polynomialRealization P := by
+  funext w x j
+  simp [eval_map]
+
+variable [Fintype J] [Finite X]
+
+/-- The polynomial coefficient presentation in finite coordinates, indexed by an output and
+an input exponent of degree at most `polynomialInputDegree P`. -/
+def polynomialCoefficientCoordinates (P : J → MvPolynomial (W ⊕ X) K) (w : W → K) :
+    J × {s : X →₀ ℕ // s.degree ≤ polynomialInputDegree P} → K :=
+  boundedCoefficientEquiv X K J _ (polynomialCoefficientMap P w)
+
+/-- Each finite coefficient coordinate is the evaluation at the parameters of a fixed
+polynomial in the parameters. -/
+@[simp] theorem polynomialCoefficientCoordinates_apply (P : J → MvPolynomial (W ⊕ X) K)
+    (w : W → K) (i : J × {s : X →₀ ℕ // s.degree ≤ polynomialInputDegree P}) :
+    polynomialCoefficientCoordinates P w i = eval w ((inputPolynomial P i.1).coeff i.2) := by
+  simp [polynomialCoefficientCoordinates, coeff_map]
+
+end Coordinates
 
 end TauCeti.Neuromanifold

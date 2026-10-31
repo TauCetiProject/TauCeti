@@ -41,6 +41,7 @@ Infinitary formulas are not modelled by extending Mathlib's finitary `BoundedFor
   `Sentenceω`.
 * The derived connectives `not`, `⊤`, `⊥`, `⊓`, `⊔`, `iff` and `ex`, and the quantifier closures
   `alls` and `exs`.
+* `FirstOrder.Language.BoundedFormulaInf.IsAtomic`: equations and relational atoms.
 * `FirstOrder.Language.BoundedFormula.toInf`: the carrier-generic embedding of finitary formulas,
   with its `ι := ℕ` case `BoundedFormula.toOmega`.
 
@@ -50,7 +51,8 @@ Infinitary formulas are not modelled by extending Mathlib's finitary `BoundedFor
   `9f82bd572af2d79a043c6bc3f1b745f14e0bcaa4`, whose infinitary syntax is
   `Mathlib/ModelTheory/Infinitary/Syntax.lean` in `leanprover-community/mathlib4#42758`
   (Apache 2.0) at commit `2264c2c872bb642ab519aa2288d53110f07af37d`.
-* Divergences from these sources: the binary connectives `⊓`, `⊔` and `iff` are added; the
+* Divergences from these sources: the binary connectives `⊓`, `⊔` and `iff` and the predicate
+  `IsAtomic` are added; the
   definition bodies are not exposed, except those of the match patterns `not` and `ex`, and are
   used through the defining equations `bot_def`, `top_def`, `inf_def`, `sup_def`, `iff_def`,
   `alls_zero`, `alls_succ`, `exs_zero`, `exs_succ` and the `toInf_*` equations.
@@ -190,6 +192,14 @@ theorem exs_zero (φ : L.BoundedFormulaInf ι α 0) : φ.exs = φ := (rfl)
 /-- `exs` quantifies the last slot existentially, then closes the remaining slots. -/
 @[simp]
 theorem exs_succ (φ : L.BoundedFormulaInf ι α (n + 1)) : φ.exs = φ.ex.exs := (rfl)
+
+/-- An infinitary formula is **atomic** when it is an equation between terms or a relation symbol
+applied to terms, as for Mathlib's finitary `BoundedFormula.IsAtomic`. -/
+inductive IsAtomic : L.BoundedFormulaInf ι α n → Prop
+  /-- An equation between terms is atomic. -/
+  | equal (t₁ t₂ : L.Term (α ⊕ Fin n)) : IsAtomic (equal t₁ t₂)
+  /-- A relation symbol applied to terms is atomic. -/
+  | rel {l : ℕ} (R : L.Relations l) (ts : Fin l → L.Term (α ⊕ Fin n)) : IsAtomic (rel R ts)
 
 end BoundedFormulaInf
 

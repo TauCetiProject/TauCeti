@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.RegularLocalRing.Polynomial
+public import TauCeti.Algebra.Algebra.Operations
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Integral
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
@@ -68,6 +69,8 @@ function `X₁ / X₀` on that chart going to `X`.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.projectiveLine.exists_eq_coord_pow_mul_add_coord_pow_mul`: a form
+  of degree `k + l` with `k ≤ l + 1` is `X₀ᵏ a + X₁ᵏ b` for forms `a` and `b` of degree `l`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.coord_mem_nonZeroDivisors`: homogeneous coordinates
   are nonzerodivisors over any ring, so every `polynomialChartι` is schematically dense.
 * `TauCeti.AlgebraicGeometry.projectiveLine.opensRange_polynomialChartι` and
@@ -173,6 +176,48 @@ theorem ι_eq_smul_coord_add_smul_coord (i : Fin 2) (m : Fin 2 → R) :
     fin_cases i <;> fin_cases j <;> simp
   conv_lhs => rw [hm]
   simp [coord]
+
+/-- The linear forms are the `R`-combinations of the two homogeneous coordinates. -/
+theorem range_ι_eq_span_coord_sup_span_coord :
+    LinearMap.range (_root_.SymmetricAlgebra.ι R (Fin 2 → R)) =
+      Submodule.span R {coord R 0} ⊔ Submodule.span R {coord R 1} := by
+  refine le_antisymm ?_ (sup_le ?_ ?_)
+  · rintro _ ⟨m, rfl⟩
+    rw [ι_eq_smul_coord_add_smul_coord R 0 m]
+    exact add_mem (Submodule.mem_sup_left (Submodule.smul_mem _ _
+      (Submodule.mem_span_singleton_self _))) (Submodule.mem_sup_right (Submodule.smul_mem _ _
+        (Submodule.mem_span_singleton_self _)))
+  all_goals exact Submodule.span_le.mpr (Set.singleton_subset_iff.mpr
+    (LinearMap.mem_range_self _ _))
+
+/-- **Forms of degree at least `2k - 1` lie in the ideal `(X₀ᵏ, X₁ᵏ)`.** A form of degree `k + l`
+with `k ≤ l + 1` is `X₀ᵏ a + X₁ᵏ b` for forms `a` and `b` of degree `l`: each of its monomials
+`X₀ᵖ X₁^q`, with `p + q = k + l ≥ 2k - 1`, has `p ≥ k` or `q ≥ k`. -/
+theorem exists_eq_coord_pow_mul_add_coord_pow_mul {k l : ℕ} (hkl : k ≤ l + 1)
+    {r : _root_.SymmetricAlgebra R (Fin 2 → R)} (hr : r ∈ 𝒜 (k + l)) :
+    ∃ a ∈ 𝒜 l, ∃ b ∈ 𝒜 l, r = coord R 0 ^ k * a + coord R 1 ^ k * b := by
+  obtain _ | k := k
+  · exact ⟨r, by simpa using hr, 0, zero_mem _, by simp⟩
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le (Nat.le_of_succ_le_succ hkl)
+  have hpow (x : _root_.SymmetricAlgebra R (Fin 2 → R)) (n : ℕ) :
+      Submodule.span R {x ^ n} = Submodule.span R {x} ^ n := by
+    rw [Submodule.span_pow, Set.singleton_pow]
+  -- the degree `k + 1 + (k + m)` part is `V ^ (k + k + 1) * V ^ m` for `V = R X₀ ⊔ R X₁`
+  have hle : 𝒜 (k + 1 + (k + m)) ≤
+      Submodule.span R {coord R 0 ^ (k + 1)} * 𝒜 (k + m) ⊔
+        Submodule.span R {coord R 1 ^ (k + 1)} * 𝒜 (k + m) := by
+    simp only [SymmetricAlgebra.homogeneousSubmodule, range_ι_eq_span_coord_sup_span_coord, hpow]
+    calc (Submodule.span R {coord R 0} ⊔ Submodule.span R {coord R 1}) ^ (k + 1 + (k + m))
+        = (Submodule.span R {coord R 0} ⊔ Submodule.span R {coord R 1}) ^ (k + k + 1) *
+            (Submodule.span R {coord R 0} ⊔ Submodule.span R {coord R 1}) ^ m := by
+          rw [← pow_add]; congr 1; omega
+      _ ≤ _ := by
+          grw [Submodule.sup_pow_add_add_one_le]
+          simp only [Submodule.sup_mul, mul_assoc, ← pow_add, le_refl]
+  obtain ⟨_, ha', _, hb', rfl⟩ := Submodule.mem_sup.mp (hle hr)
+  obtain ⟨a, ha, rfl⟩ := Submodule.mem_span_singleton_mul.mp ha'
+  obtain ⟨b, hb, rfl⟩ := Submodule.mem_span_singleton_mul.mp hb'
+  exact ⟨a, ha, b, hb, rfl⟩
 
 /-- **Dehomogenization** at `Xᵢ`: the `R`-algebra map `R[X₀, X₁] → R[X]` setting `Xᵢ = 1` and the
 other homogeneous coordinate to `X`. -/

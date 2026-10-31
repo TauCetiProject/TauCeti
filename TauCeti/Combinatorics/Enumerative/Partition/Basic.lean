@@ -20,7 +20,9 @@ hypothesis on `n`.
 
 It also records `TauCeti.parts_equivCast`, the transport of a partition along an equality of the
 number being partitioned: such a transport leaves the parts alone, and
-`Nat.Partition.card_parts_le`, which says a partition of `n` has at most `n` parts. Finally,
+`Nat.Partition.card_parts_le`, which says a partition of `n` has at most `n` parts.
+Positive-part counts determine the parts even for partitions of different numbers
+(`Nat.Partition.parts_eq_of_count_succ`); zero never occurs as a part. Finally,
 `Nat.Partition.sum_sort_parts` and `Nat.Partition.sort_parts_injective` say that the
 decreasingly sorted parts of a partition of `n` sum to `n` and determine the partition.
 -/
@@ -86,6 +88,21 @@ end Nat.Partition
 end TauCeti
 
 namespace Nat.Partition
+
+/-- Zero has multiplicity zero in every partition. -/
+@[simp]
+theorem count_parts_zero {n : ℕ} (p : n.Partition) : p.parts.count 0 = 0 := by
+  exact Multiset.count_eq_zero.mpr fun h => (p.parts_pos h).ne' rfl
+
+/-- Equal multiplicities of all positive parts determine the parts of two partitions,
+even when the numbers being partitioned are not assumed equal. -/
+theorem parts_eq_of_count_succ {m n : ℕ} {p : m.Partition} {q : n.Partition}
+    (h : ∀ k, p.parts.count (k + 1) = q.parts.count (k + 1)) : p.parts = q.parts := by
+  apply Multiset.ext.mpr
+  intro k
+  cases k with
+  | zero => simp
+  | succ k => exact h k
 
 /-- **A partition of `n` has at most `n` parts**, since every part is at least `1`. -/
 theorem card_parts_le {n : ℕ} (μ : n.Partition) : μ.parts.card ≤ n := by
