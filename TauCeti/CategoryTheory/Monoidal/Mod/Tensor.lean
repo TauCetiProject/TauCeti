@@ -5,15 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Monoidal.Bimod
 public import TauCeti.CategoryTheory.Monoidal.Mod.Bimodule
 public import Mathlib.CategoryTheory.Monoidal.Transport
-public import Mathlib.CategoryTheory.Bicategory.End
 
 /-!
 # The balanced tensor product of modules over a commutative monoid
 
-Let `A` be a commutative monoid object in a braided monoidal category `C` with coequalizers,
-preserved by tensoring on either side. The balanced tensor product `M ⊗_A N` of two left
+Let `A` be a commutative monoid object in a braided monoidal category `C` with coequalizers, such
+that tensoring on either side preserves (universe-`0` small) colimits, in particular these
+coequalizers. The balanced tensor product `M ⊗_A N` of two left
 `A`-modules is the coequalizer of the two actions of `A` on `M ⊗ A ⊗ N`: the right action
 `m ⊗ a ↦ a • m` of `A` on `M`, obtained through the braiding, and the left action on `N`. The
 scalars act on `M ⊗_A N` through `M`. With unit the regular module `A`, this makes `Mod C A` a
@@ -26,13 +27,12 @@ The construction reuses Mathlib's tensor product of bimodules `Bimod.tensorBimod
 associator and unitors of Mathlib's bicategory `Bimod.monBicategory` of monoids and bimodules.
 A module over a commutative monoid is a bimodule through `Mod.toBimod`. The bimodule tensor
 product of two such bimodules is again of this form (`Bimod.tensorBimod_actRight_eq`), so the
-monoidal structure of the endomorphism category `Bimod R R` is transported to `Mod C A` along the
-fully faithful functor `Mod.toBimod` by Mathlib's `Monoidal.induced`.
+monoidal structure `Bimod.monoidalCategory` of the endomorphism category `Bimod R R` is
+transported to `Mod C A` along the fully faithful functor `Mod.toBimod` by Mathlib's
+`Monoidal.induced`.
 
 ## Main definitions
 
-* `Bimod.monoidalCategory`: the monoidal category of `R`-`R`-bimodules under the tensor product of
-  bimodules.
 * `Mod.monoidalCategory`: the monoidal category of modules over a commutative monoid object, under
   the balanced tensor product.
 * `Mod.tensorπ M N : M.X ⊗ N.X ⟶ (M ⊗ N).X`: the quotient map onto the balanced tensor product, and
@@ -40,12 +40,11 @@ fully faithful functor `Mod.toBimod` by Mathlib's `Monoidal.induced`.
 
 ## Main statements
 
-* `Bimod.tensorBimod_actRight_eq`: the tensor product of bimodules whose right actions are their
-  left actions moved through the braiding again has this property.
 * `Mod.tensorπ_whiskerLeft_hom`, `Mod.tensorπ_whiskerRight_hom`, `Mod.tensorπ_associator_hom_hom`,
   `Mod.tensorπ_leftUnitor_hom_hom` and `Mod.tensorπ_rightUnitor_hom_hom`: the monoidal structure
   on representatives in `M.X ⊗ N.X`.
-* The instance `(Mod.toBimod (A := A)).Monoidal`: `Mod.toBimod` is a monoidal functor.
+* The instance `(Mod.toBimod (A := A)).Monoidal`: `Mod.toBimod` is a monoidal functor, with
+  structure maps `Mod.toBimod_μ`, `Mod.toBimod_δ`, `Mod.toBimod_ε` and `Mod.toBimod_η`.
 
 ## References
 
@@ -61,66 +60,6 @@ namespace CategoryTheory
 
 open MonoidalCategory MonoidalLeftAction MonObj BraidedCategory Limits
 
-section
-
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [HasCoequalizers C]
-  [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorLeft X)]
-  [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorRight X)] {R : Mon C}
-
-/-- Bimodules over a monoid object `R` form a monoidal category under the tensor product of
-bimodules, with unit the regular bimodule: the category of endomorphisms of `R` in Mathlib's
-bicategory `Bimod.monBicategory`. -/
-noncomputable instance _root_.Bimod.monoidalCategory (R : Mon C) :
-    MonoidalCategory (Bimod R R) :=
-  @instMonoidalCategoryHom _ Bimod.monBicategory R
-
-/-- The associator of bimodules on representatives in `P.X ⊗ Q.X ⊗ L.X`. -/
-@[reassoc]
-theorem _root_.Bimod.π_associator_hom_hom (P Q L : Bimod R R) :
-    coequalizer.π (P.actRight ▷ Q.X) ((α_ P.X R.X Q.X).hom ≫ P.X ◁ Q.actLeft) ▷ L.X ≫
-        coequalizer.π ((P ⊗ Q).actRight ▷ L.X)
-          ((α_ (P ⊗ Q).X R.X L.X).hom ≫ (P ⊗ Q).X ◁ L.actLeft) ≫ (α_ P Q L).hom.hom =
-      (α_ P.X Q.X L.X).hom ≫
-        P.X ◁ coequalizer.π (Q.actRight ▷ L.X) ((α_ Q.X R.X L.X).hom ≫ Q.X ◁ L.actLeft) ≫
-          coequalizer.π (P.actRight ▷ (Q ⊗ L).X)
-            ((α_ P.X R.X (Q ⊗ L).X).hom ≫ P.X ◁ (Q ⊗ L).actLeft) := by
-  -- The associator is defined by descending twice along these coequalizers.
-  erw [coequalizer.π_desc]
-  apply π_tensor_id_preserves_coequalizer_inv_desc
-
-/-- The left unitor of bimodules is induced by the left action. -/
-@[reassoc]
-theorem _root_.Bimod.π_leftUnitor_hom_hom (P : Bimod R R) :
-    coequalizer.π ((Bimod.regular R).actRight ▷ P.X)
-        ((α_ R.X R.X P.X).hom ≫ R.X ◁ P.actLeft) ≫ (λ_ P).hom.hom = P.actLeft :=
-  coequalizer.π_desc _ _
-
-/-- The right unitor of bimodules is induced by the right action. -/
-@[reassoc]
-theorem _root_.Bimod.π_rightUnitor_hom_hom (P : Bimod R R) :
-    coequalizer.π (P.actRight ▷ R.X)
-        ((α_ P.X R.X R.X).hom ≫ P.X ◁ (Bimod.regular R).actLeft) ≫ (ρ_ P).hom.hom = P.actRight :=
-  coequalizer.π_desc _ _
-
-variable [BraidedCategory C] in
-/-- If the right actions of two `R`-`R`-bimodules are their left actions precomposed with the
-inverse braiding, then so is the right action of their tensor product. -/
-theorem _root_.Bimod.tensorBimod_actRight_eq (P Q : Bimod R R)
-    (hP : P.actRight = (β_ R.X P.X).inv ≫ P.actLeft)
-    (hQ : Q.actRight = (β_ R.X Q.X).inv ≫ Q.actLeft) :
-    (P.tensorBimod Q).actRight = (β_ R.X _).inv ≫ (P.tensorBimod Q).actLeft := by
-  refine (cancel_epi ((tensorRight R.X).map (coequalizer.π _ _))).1 ?_
-  dsimp
-  rw [Bimod.TensorBimod.π_tensor_id_actRight]
-  dsimp only [Bimod.TensorBimod.X]
-  rw [braiding_inv_naturality_left_assoc,
-    Bimod.TensorBimod.whiskerLeft_π_actLeft, hQ, braiding_tensor_right_inv]
-  simp only [Category.assoc, Iso.hom_inv_id_assoc, ← comp_whiskerRight_assoc, ← hP]
-  rw [coequalizer.condition]
-  simp
-
-end
-
 namespace Mod
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
@@ -131,9 +70,7 @@ variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
 
 /-- The balanced tensor product `M ⊗_A N` of modules over a commutative monoid object: the
 tensor product of the associated bimodules, with its left action. -/
--- Exposed so that its carrier is definitionally that of the bimodule tensor product, which the
--- comparison `toBimodTensorObjIso` uses on underlying morphisms.
-@[expose] noncomputable def tensorObj (M N : Mod C A) : Mod C A :=
+noncomputable def tensorObj (M N : Mod C A) : Mod C A :=
   (Bimod.toLeftMod _ _).obj (toBimod.obj M ⊗ toBimod.obj N)
 
 /-- The bimodule associated with `M ⊗_A N` is the tensor product of the bimodules associated with
@@ -142,18 +79,6 @@ noncomputable def toBimodTensorObjIso (M N : Mod C A) :
     toBimod.obj M ⊗ toBimod.obj N ≅ toBimod.obj (tensorObj M N) :=
   (Bimod.toLeftModToBimodIsoOfActRightEq _
     (Bimod.tensorBimod_actRight_eq (toBimod.obj M) (toBimod.obj N) rfl rfl)).symm
-
-@[simp]
-theorem toBimodTensorObjIso_hom_hom (M N : Mod C A) :
-    (toBimodTensorObjIso M N).hom.hom = 𝟙 _ := by
-  simp [toBimodTensorObjIso]
-  rfl
-
-@[simp]
-theorem toBimodTensorObjIso_inv_hom (M N : Mod C A) :
-    (toBimodTensorObjIso M N).inv.hom = 𝟙 _ := by
-  simp [toBimodTensorObjIso]
-  rfl
 
 /-- The balanced tensor product, with the monoidal data of bimodules conjugated by
 `toBimodTensorObjIso`. -/
@@ -200,6 +125,28 @@ noncomputable instance monoidalCategory : MonoidalCategory (Mod C A) :=
 noncomputable instance : (toBimod (A := A)).Monoidal :=
   Monoidal.fromInducedMonoidal toBimod inducingFunctorData
 
+/-- The tensorator of the monoidal functor `toBimod` is the comparison `toBimodTensorObjIso`. -/
+@[simp]
+theorem toBimod_μ (M N : Mod C A) :
+    Functor.LaxMonoidal.μ toBimod M N = (toBimodTensorObjIso M N).hom :=
+  (rfl)
+
+/-- The inverse tensorator of `toBimod` is the inverse of `toBimodTensorObjIso`. -/
+@[simp]
+theorem toBimod_δ (M N : Mod C A) :
+    Functor.OplaxMonoidal.δ toBimod M N = (toBimodTensorObjIso M N).inv :=
+  (rfl)
+
+/-- The unit map of the monoidal functor `toBimod` is the inverse of `toBimodRegularIso`. -/
+@[simp]
+theorem toBimod_ε : Functor.LaxMonoidal.ε (toBimod (A := A)) = toBimodRegularIso.inv :=
+  (rfl)
+
+/-- The counit map of the monoidal functor `toBimod` is `toBimodRegularIso`. -/
+@[simp]
+theorem toBimod_η : Functor.OplaxMonoidal.η (toBimod (A := A)) = toBimodRegularIso.hom :=
+  (rfl)
+
 /-- The quotient map `M ⊗ N ⟶ M ⊗_A N` onto the balanced tensor product. -/
 noncomputable def tensorπ (M N : Mod C A) : M.X ⊗ N.X ⟶ (M ⊗ N).X :=
   coequalizer.π _ _
@@ -240,59 +187,87 @@ theorem whiskerLeft_tensorπ_smul (M N : Mod C A) :
     A ◁ tensorπ M N ≫ γ[A, (M ⊗ N).X] = (α_ A M.X N.X).inv ≫ γ[A, M.X] ▷ N.X ≫ tensorπ M N :=
   Bimod.TensorBimod.whiskerLeft_π_actLeft (toBimod.obj M) (toBimod.obj N)
 
-/- The comparison `toBimodTensorObjIso` is the identity between carriers which agree only after
-unfolding `tensorObj`, so cancelling it uses `erw`. -/
-private lemma hom_eq_of_toBimod_map_eq {M₁ N₁ M₂ N₂ : Mod C A} {f : M₁ ⊗ N₁ ⟶ M₂ ⊗ N₂}
-    {φ : toBimod.obj M₁ ⊗ toBimod.obj N₁ ⟶ toBimod.obj M₂ ⊗ toBimod.obj N₂}
-    (h : toBimod.map f = (toBimodTensorObjIso M₁ N₁).inv ≫ φ ≫ (toBimodTensorObjIso M₂ N₂).hom) :
-    f.hom = φ.hom := by
-  have := congrArg Bimod.Hom.hom h
-  simp only [Bimod.comp_hom', toBimodTensorObjIso_inv_hom,
-    toBimodTensorObjIso_hom_hom] at this
-  erw [Category.id_comp, Category.comp_id] at this
-  exact this
+/-- The comparison `toBimodTensorObjIso` carries the quotient map onto `M ⊗_A N` to the quotient
+map onto the tensor product of bimodules. -/
+theorem tensorπ_toBimodTensorObjIso_inv_hom (M N : Mod C A) :
+    tensorπ M N ≫ (toBimodTensorObjIso M N).inv.hom =
+      coequalizer.π ((toBimod.obj M).actRight ▷ (toBimod.obj N).X)
+        ((α_ (toBimod.obj M).X (Mon.mk A).X (toBimod.obj N).X).hom ≫
+          (toBimod.obj M).X ◁ (toBimod.obj N).actLeft) := by
+  -- The comparison is the identity on the common carrier.
+  simp only [toBimodTensorObjIso, Iso.symm_inv, Bimod.toLeftModToBimodIsoOfActRightEq_hom_hom]
+  exact Category.comp_id _
 
+/-- The comparison `toBimodTensorObjIso` carries the quotient map onto the tensor product of
+bimodules to the quotient map onto `M ⊗_A N`. -/
+theorem π_toBimodTensorObjIso_hom_hom (M N : Mod C A) :
+    coequalizer.π ((toBimod.obj M).actRight ▷ (toBimod.obj N).X)
+        ((α_ (toBimod.obj M).X (Mon.mk A).X (toBimod.obj N).X).hom ≫
+          (toBimod.obj M).X ◁ (toBimod.obj N).actLeft) ≫ (toBimodTensorObjIso M N).hom.hom =
+      tensorπ M N := by
+  -- The comparison is the identity on the common carrier.
+  simp only [toBimodTensorObjIso, Iso.symm_hom, Bimod.toLeftModToBimodIsoOfActRightEq_inv_hom]
+  exact Category.comp_id _
+
+/-- Whiskering `g : N ⟶ N'` on the left by `M` acts on representatives as `M.X ◁ g.hom`. -/
 @[reassoc (attr := simp)]
 theorem tensorπ_whiskerLeft_hom (M : Mod C A) {N N' : Mod C A} (g : N ⟶ N') :
     tensorπ M N ≫ (M ◁ g).hom = M.X ◁ g.hom ≫ tensorπ M N' := by
-  rw [hom_eq_of_toBimod_map_eq (inducingFunctorData.whiskerLeft_eq M g)]
-  exact ι_colimMap _ _
+  have h : (M ◁ g).hom = (toBimodTensorObjIso M N).inv.hom ≫
+      (toBimod.obj M ◁ toBimod.map g).hom ≫ (toBimodTensorObjIso M N').hom.hom :=
+    congrArg Bimod.Hom.hom (inducingFunctorData.whiskerLeft_eq M g)
+  rw [h, ← Category.assoc, tensorπ_toBimodTensorObjIso_inv_hom, Bimod.π_whiskerLeft_hom_assoc,
+    π_toBimodTensorObjIso_hom_hom, toBimod_map_hom]
 
+/-- Whiskering `f : M ⟶ M'` on the right by `N` acts on representatives as `f.hom ▷ N.X`. -/
 @[reassoc (attr := simp)]
 theorem tensorπ_whiskerRight_hom {M M' : Mod C A} (f : M ⟶ M') (N : Mod C A) :
     tensorπ M N ≫ (f ▷ N).hom = f.hom ▷ N.X ≫ tensorπ M' N := by
-  rw [hom_eq_of_toBimod_map_eq (inducingFunctorData.whiskerRight_eq f N)]
-  exact ι_colimMap _ _
+  have h : (f ▷ N).hom = (toBimodTensorObjIso M N).inv.hom ≫
+      (toBimod.map f ▷ toBimod.obj N).hom ≫ (toBimodTensorObjIso M' N).hom.hom :=
+    congrArg Bimod.Hom.hom (inducingFunctorData.whiskerRight_eq f N)
+  rw [h, ← Category.assoc, tensorπ_toBimodTensorObjIso_inv_hom, Bimod.π_whiskerRight_hom_assoc,
+    π_toBimodTensorObjIso_hom_hom, toBimod_map_hom]
 
+/-- The tensor product of `f : M ⟶ M'` and `g : N ⟶ N'` acts on representatives as
+`f.hom ⊗ₘ g.hom`. -/
 @[reassoc (attr := simp)]
 theorem tensorπ_tensorHom_hom {M M' N N' : Mod C A} (f : M ⟶ M') (g : N ⟶ N') :
     tensorπ M N ≫ (f ⊗ₘ g).hom = (f.hom ⊗ₘ g.hom) ≫ tensorπ M' N' := by
   simp [MonoidalCategory.tensorHom_def]
 
+/-- The associator of `M ⊗_A N ⊗_A P` acts on representatives in `M.X ⊗ N.X ⊗ P.X` as the
+associator of the underlying objects. -/
 @[reassoc]
 theorem tensorπ_associator_hom_hom (M N P : Mod C A) :
     tensorπ M N ▷ P.X ≫ tensorπ (M ⊗ N) P ≫ (α_ M N P).hom.hom =
       (α_ M.X N.X P.X).hom ≫ M.X ◁ tensorπ N P ≫ tensorπ M (N ⊗ P) := by
   have h : toBimod.map (α_ M N P).hom = (toBimodTensorObjIso (M ⊗ N) P).inv ≫
-      ((toBimodTensorObjIso M N).inv ▷ toBimod.obj P ≫
+      (toBimodTensorObjIso M N).inv ▷ toBimod.obj P ≫
         (α_ (toBimod.obj M) (toBimod.obj N) (toBimod.obj P)).hom ≫
-          toBimod.obj M ◁ (toBimodTensorObjIso N P).hom) ≫
-      (toBimodTensorObjIso M (N ⊗ P)).hom := by
+          toBimod.obj M ◁ (toBimodTensorObjIso N P).hom ≫
+            (toBimodTensorObjIso M (N ⊗ P)).hom := by
     rw [inducingFunctorData.associator_eq]
     simp [inducingFunctorData]
-  rw [hom_eq_of_toBimod_map_eq h]
-  simp only [Bimod.comp_hom', tensorπ]
-  -- The conjugating comparisons are identities between coequalizers of equal, but not
-  -- syntactically equal, pairs of morphisms; `erw` rewrites through their carriers.
-  erw [ι_colimMap_assoc]
-  simp only [parallelPairHom_app_one, toBimodTensorObjIso_inv_hom]
-  erw [id_whiskerRight, Category.id_comp,
-    Bimod.π_associator_hom_hom_assoc (toBimod.obj M) (toBimod.obj N) (toBimod.obj P)]
-  erw [ι_colimMap]
-  simp only [parallelPairHom_app_one, toBimodTensorObjIso_hom_hom]
-  erw [whiskerLeft_id, Category.id_comp]
-  rfl
+  replace h := congrArg Bimod.Hom.hom h
+  rw [toBimod_map_hom, Bimod.comp_hom', Bimod.comp_hom', Bimod.comp_hom', Bimod.comp_hom'] at h
+  rw [h, ← Category.assoc (tensorπ _ _), tensorπ_toBimodTensorObjIso_inv_hom,
+    Bimod.π_whiskerRight_hom_assoc, ← comp_whiskerRight_assoc, tensorπ_toBimodTensorObjIso_inv_hom,
+    Bimod.π_associator_hom_hom_assoc (toBimod.obj M) (toBimod.obj N) (toBimod.obj P),
+    Bimod.π_whiskerLeft_hom_assoc, ← whiskerLeft_comp_assoc,
+    π_toBimodTensorObjIso_hom_hom]
+  -- The remaining quotient map is that of `M ⊗_A (N ⊗_A P)`, written through `tensorObj N P`
+  -- rather than `N ⊗ P`, which `rw` does not unfold.
+  exact congrArg (fun f ↦ (α_ M.X N.X P.X).hom ≫ M.X ◁ tensorπ N P ≫ f)
+    (π_toBimodTensorObjIso_hom_hom M (N ⊗ P))
 
+omit [HasCoequalizers C] [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorLeft X)]
+  [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorRight X)] in
+/- The regular module has carrier `A`, so the comparison `toBimodRegularIso` is the identity. -/
+private lemma toBimodRegularIso_hom_hom_eq_id : (toBimodRegularIso (A := A)).hom.hom = 𝟙 A :=
+  toBimodRegularIso_hom_hom.trans (eqToHom_refl _ _)
+
+/-- The left unitor of `𝟙_ ⊗_A M` is induced by the action `γ[A, M.X]` of `A` on `M`. -/
 @[reassoc (attr := simp)]
 theorem tensorπ_leftUnitor_hom_hom (M : Mod C A) :
     tensorπ (𝟙_ (Mod C A)) M ≫ (λ_ M).hom.hom = γ[A, M.X] := by
@@ -300,16 +275,16 @@ theorem tensorπ_leftUnitor_hom_hom (M : Mod C A) :
       (toBimodRegularIso.hom ▷ toBimod.obj M) ≫ (λ_ (toBimod.obj M)).hom := by
     rw [inducingFunctorData.leftUnitor_eq]
     simp [inducingFunctorData]
-  -- As for the associator, the comparisons are identities on carriers agreeing up to unfolding.
-  have h' := congrArg Bimod.Hom.hom h
-  simp only [Bimod.comp_hom', toBimodTensorObjIso_inv_hom] at h'
-  erw [Category.id_comp] at h'
-  rw [h', tensorπ]
-  erw [ι_colimMap_assoc]
-  simp only [parallelPairHom_app_one, toBimodRegularIso_hom_hom]
-  erw [eqToHom_refl, id_whiskerRight, Category.id_comp]
-  exact Bimod.π_leftUnitor_hom_hom (toBimod.obj M)
+  replace h := congrArg Bimod.Hom.hom h
+  rw [toBimod_map_hom, Bimod.comp_hom', Bimod.comp_hom'] at h
+  rw [h, ← Category.assoc, tensorπ_toBimodTensorObjIso_inv_hom, Bimod.π_whiskerRight_hom_assoc,
+    Bimod.π_leftUnitor_hom_hom, toBimodRegularIso_hom_hom_eq_id]
+  -- This identity of `A` is typed by the carriers of the unit module and of the regular bimodule,
+  -- which are `A` only after unfolding, so `id_whiskerRight` is applied up to unfolding.
+  exact (congrArg (· ≫ γ[A, M.X]) (id_whiskerRight A M.X)).trans (Category.id_comp _)
 
+/-- The right unitor of `M ⊗_A 𝟙_` is induced by the action of `A` on `M` precomposed with the
+inverse braiding. -/
 @[reassoc (attr := simp)]
 theorem tensorπ_rightUnitor_hom_hom (M : Mod C A) :
     tensorπ M (𝟙_ (Mod C A)) ≫ (ρ_ M).hom.hom = (β_ A M.X).inv ≫ γ[A, M.X] := by
@@ -317,15 +292,13 @@ theorem tensorπ_rightUnitor_hom_hom (M : Mod C A) :
       (toBimod.obj M ◁ toBimodRegularIso.hom) ≫ (ρ_ (toBimod.obj M)).hom := by
     rw [inducingFunctorData.rightUnitor_eq]
     simp [inducingFunctorData]
-  -- As for the associator, the comparisons are identities on carriers agreeing up to unfolding.
-  have h' := congrArg Bimod.Hom.hom h
-  simp only [Bimod.comp_hom', toBimodTensorObjIso_inv_hom] at h'
-  erw [Category.id_comp] at h'
-  rw [h', tensorπ]
-  erw [ι_colimMap_assoc]
-  simp only [parallelPairHom_app_one, toBimodRegularIso_hom_hom]
-  erw [eqToHom_refl, whiskerLeft_id, Category.id_comp]
-  exact Bimod.π_rightUnitor_hom_hom (toBimod.obj M)
+  replace h := congrArg Bimod.Hom.hom h
+  rw [toBimod_map_hom, Bimod.comp_hom', Bimod.comp_hom'] at h
+  rw [h, ← Category.assoc, tensorπ_toBimodTensorObjIso_inv_hom, Bimod.π_whiskerLeft_hom_assoc,
+    Bimod.π_rightUnitor_hom_hom, toBimodRegularIso_hom_hom_eq_id]
+  -- As for the left unitor, `whiskerLeft_id` is applied up to unfolding the carriers.
+  exact (congrArg (· ≫ (β_ A M.X).inv ≫ γ[A, M.X]) (whiskerLeft_id M.X A)).trans
+    (Category.id_comp _)
 
 end Mod
 
