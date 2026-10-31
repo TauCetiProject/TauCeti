@@ -27,14 +27,14 @@ height as `q ∩ S'`. The finite extension `R ⊆ S'` preserves heights over a n
 (`Ideal.height_eq_height_of_isIntegral_of_isIntegrallyClosed`, through going down, Stacks 00H8).
 No Noetherian hypothesis is needed.
 
-Over a Noetherian base, the inequality `ht q ≤ ht p` needs neither normality nor injectivity: the
-fibre `S_q ⧸ p S_q` is Artinian, so Mathlib's `Ideal.height_le_height_add_of_liesOver`
-(Stacks 00OM) applies with a fibre term zero.
+Over a Noetherian base with `S_q` Noetherian (for instance, `S` of finite type), the inequality
+`ht q ≤ ht p` needs neither normality nor injectivity: the fibre `S_q ⧸ p S_q` is Artinian, so
+Mathlib's `Ideal.height_le_height_add_of_liesOver` (Stacks 00OM) applies with a fibre term zero.
 
 ## Main results
 
-* `Ideal.height_le_height_of_quasiFiniteAt`: along a finite type algebra over a Noetherian ring,
-  a prime at which the algebra is quasi-finite has height at most that of the prime below it.
+* `Ideal.height_le_height_of_quasiFiniteAt`: over a Noetherian ring, a prime `q` at which the
+  algebra is quasi-finite, with `S_q` Noetherian, has height at most that of the prime below it.
 * `Ideal.height_eq_height_of_quasiFiniteAt`: equality, for a domain containing `R` and a normal
   local ring `R_p`, over an arbitrary base.
 
@@ -53,13 +53,13 @@ namespace Ideal
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
-/-- Let `S` be a finite type algebra over a Noetherian ring `R` and `q` a prime of `S` over `p` at
-which `S` is quasi-finite over `R`. Then the height of `q` is at most the height of `p`. -/
-theorem height_le_height_of_quasiFiniteAt [IsNoetherianRing R] [Algebra.FiniteType R S]
-    (p : Ideal R) [p.IsPrime] (q : Ideal S) [q.IsPrime] [q.LiesOver p]
-    [Algebra.QuasiFiniteAt R q] : q.height ≤ p.height := by
+/-- Let `S` be an algebra over a Noetherian ring `R` and `q` a prime of `S` over `p` at which `S`
+is quasi-finite over `R`, with `S_q` Noetherian (for instance, `S` of finite type over `R`). Then
+the height of `q` is at most the height of `p`. -/
+theorem height_le_height_of_quasiFiniteAt [IsNoetherianRing R] (p : Ideal R) [p.IsPrime]
+    (q : Ideal S) [q.IsPrime] [q.LiesOver p] [Algebra.QuasiFiniteAt R q]
+    [IsNoetherianRing (Localization.AtPrime q)] : q.height ≤ p.height := by
   obtain rfl := q.over_def p
-  have := Algebra.FiniteType.isNoetherianRing R S
   let Sq := Localization.AtPrime q
   let m := IsLocalRing.maximalIdeal Sq
   let J := (q.under R).map (algebraMap R Sq)
