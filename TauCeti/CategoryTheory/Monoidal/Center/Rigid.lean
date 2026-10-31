@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
 public import TauCeti.CategoryTheory.Monoidal.Center.Basic
 public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
 /-!
 # The Drinfeld centre of a rigid category is rigid
@@ -56,7 +57,10 @@ the duals themselves, are computed in `C`.
   duals and their evaluation, coevaluation and mates computed in `C`
   (`CategoryTheory.Center.rightDual_fst`, `CategoryTheory.Center.coevaluation_f`,
   `CategoryTheory.Center.evaluation_f`, `CategoryTheory.Center.rightAdjointMate_f`), as are the
-  comparisons `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` (`CategoryTheory.Center.rightDualTensorIso_hom_f`).
+  comparisons `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` (`CategoryTheory.Center.rightDualTensorIso_hom_f`), the
+  tensor comparisons of the double right dual functor
+  (`CategoryTheory.Center.doubleRightDualFunctor_μ_f`) and the comparison of the forgetful
+  functor with right duals (`CategoryTheory.Center.forget_mapRightDualIso`).
 
 ## References
 
@@ -259,10 +263,10 @@ theorem rightDualβHom_rightDual [HasRightDual X] (W : C) [HasRightDual W]
     [HasRightDual (X ⊗ W)] [HasRightDual (W ⊗ X)] :
     b.rightDualβHom Xᘁ Wᘁ =
       (rightDualTensorIso W X).inv ≫ ((b.β W).hom)ᘁ ≫ (rightDualTensorIso X W).hom := by
-  rw [b.rightDualβHom_eq_rightMate Xᘁ (U := Wᘁ) (V := W), rightDualTensorIso,
-    rightDualTensorIso, ExactPairing.rightDualIso_inv, ExactPairing.rightDualIso_hom,
-    TauCeti.rightAdjointMate_eq_rightMate, ← ExactPairing.comp_rightMate,
-    ← ExactPairing.comp_rightMate, Category.id_comp, Category.comp_id]
+  rw [b.rightDualβHom_eq_rightMate Xᘁ (U := Wᘁ) (V := W)]
+  simp only [rightDualTensorIso, ExactPairing.rightDualIso_inv, ExactPairing.rightDualIso_hom,
+    TauCeti.rightAdjointMate_eq_rightMate, ← ExactPairing.comp_rightMate, Category.id_comp,
+    Category.comp_id]
 
 variable [RigidCategory C]
 
@@ -437,6 +441,29 @@ theorem rightDualTensorIso_inv_f (X Y : Center C) :
   have h := congrArg Hom.f (rightDualTensorIso X Y).hom_inv_id
   rw [comp_f, rightDualTensorIso_hom_f, id_f] at h
   exact (Iso.hom_comp_eq_id _).1 h
+
+open Functor.LaxMonoidal TauCeti in
+/-- The tensor comparison of the double right dual functor of the centre is computed in `C`. -/
+@[simp]
+theorem doubleRightDualFunctor_μ_f (X Y : Center C) :
+    (μ (doubleRightDualFunctor (Center C)) X Y).f = μ (doubleRightDualFunctor C) X.1 Y.1 := by
+  rw [doubleRightDualFunctor_μ, doubleRightDualFunctor_μ, comp_f, rightAdjointMate_f,
+    rightDualTensorIso_inv_f, rightDualTensorIso_hom_f]
+  -- The remaining difference is only in how the objects `(Xᘁ).1` and `X.1ᘁ` are written.
+  rfl
+
+/-- The comparison between the image of a right dual under the forgetful functor of the centre
+and the right dual of the image is the identity: right duals in the centre are computed in
+`C`. -/
+@[simp]
+theorem forget_mapRightDualIso (X : Center C) :
+    (forget C).mapRightDualIso X = Iso.refl X.1ᘁ := by
+  ext
+  refine ExactPairing.rightHom_ext (X := X.1) (Y := X.1ᘁ)
+    ((Functor.mapRightDualIso_hom_whiskerRight_evaluation X).trans ?_)
+  have h : 𝟙 X.1ᘁ ▷ X.1 ≫ ε_ X.1 X.1ᘁ = ε_ X.1 X.1ᘁ := by simp
+  exact (Category.id_comp _).trans ((Category.comp_id _).trans ((evaluation_f (X := X)).trans
+    h.symm))
 
 end Center
 

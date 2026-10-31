@@ -97,31 +97,7 @@ private theorem f_eq_of_eq_forget_map {a : 𝟙_ (Center C) ⟶ 𝟙_ (Center C)
   simp only [forget_ε, forget_η, forget_map] at h
   exact (h.trans ((Category.id_comp _).trans (Category.comp_id _))).symm
 
-variable [RigidCategory C]
-
-/-- The tensor comparison of the double right dual functor of the centre is computed in `C`. -/
-@[simp]
-theorem doubleRightDualFunctor_μ_f (X Y : Center C) :
-    (μ (doubleRightDualFunctor (Center C)) X Y).f = μ (doubleRightDualFunctor C) X.1 Y.1 := by
-  rw [doubleRightDualFunctor_μ, doubleRightDualFunctor_μ, comp_f, rightAdjointMate_f,
-    rightDualTensorIso_inv_f, rightDualTensorIso_hom_f]
-  -- The remaining difference is only in how the objects `(Xᘁ).1` and `X.1ᘁ` are written.
-  rfl
-
-/-- The comparison between the image of a right dual under the forgetful functor of the centre
-and the right dual of the image is the identity: right duals in the centre are computed in
-`C`. -/
-@[simp]
-theorem forget_mapRightDualIso (X : Center C) :
-    (forget C).mapRightDualIso X = Iso.refl X.1ᘁ := by
-  ext
-  refine ExactPairing.rightHom_ext (X := X.1) (Y := X.1ᘁ)
-    ((Functor.mapRightDualIso_hom_whiskerRight_evaluation X).trans ?_)
-  have h : 𝟙 X.1ᘁ ▷ X.1 ≫ ε_ X.1 X.1ᘁ = ε_ X.1 X.1ᘁ := by simp
-  exact (Category.id_comp _).trans ((Category.comp_id _).trans ((evaluation_f (X := X)).trans
-    h.symm))
-
-variable [PivotalCategory C]
+variable [RigidCategory C] [PivotalCategory C]
 
 /-- Auxiliary definition for the `PivotalCategory` instance on `Center C`: the component
 `φ_{X.1} : X.1 ⟶ X.1ᘁᘁ` of the pivotal structure of `C`, as a morphism of the centre. -/
