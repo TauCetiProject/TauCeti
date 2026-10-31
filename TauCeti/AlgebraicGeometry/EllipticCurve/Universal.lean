@@ -56,6 +56,10 @@ commutative ring is the base change of that curve.
   of `pointedCurve` — the universal curve really is pointed.
 * `WeierstrassCurve.map_specialize`: every Weierstrass curve is a specialization of the universal
   one.
+* `WeierstrassCurve.specialize_map`, `WeierstrassCurve.Universal.specialize_curve`: specialization
+  is natural in the base ring, and is the identity at the universal curve; so a homomorphism out of
+  `ℤ[A₁, ⋯, A₆]` is determined by the curve it classifies
+  (`WeierstrassCurve.Universal.map_curve_injective`).
 * `WeierstrassCurve.specialize_Δ`, `specialize_c₄`, `specialize_c₆`: `specialize` sends the
   discriminant and the invariants `c₄`, `c₆` of the universal curve to those of `W`.
 * `WeierstrassCurve.specialize_mk_smul`: the scaling `(u, 0, 0, 0)` multiplies the coordinate
@@ -386,6 +390,27 @@ lemma specialize_X (i : Coeff) :
 /-- Every Weierstrass curve is a specialization of the universal Weierstrass curve. -/
 @[simp]
 lemma map_specialize : Universal.curve.map W.specialize = W := by ext <;> simp
+
+open MvPolynomial in
+/-- Specialization commutes with base change: specializing at `W.map φ` is specializing at `W`
+and then applying `φ`. -/
+@[simp]
+lemma specialize_map {S : Type*} [CommRing S] (φ : R →+* S) :
+    (W.map φ).specialize = φ.comp W.specialize :=
+  ringHom_ext (fun n ↦ by rw [eq_intCast C, map_intCast, map_intCast]) fun i ↦ by cases i <;> simp
+
+open MvPolynomial in
+/-- Specializing at the universal curve itself is the identity. -/
+@[simp]
+lemma Universal.specialize_curve : Universal.curve.specialize = RingHom.id _ :=
+  ringHom_ext (fun n ↦ by rw [eq_intCast C, map_intCast, map_intCast]) fun i ↦ by cases i <;> simp
+
+/-- A homomorphism out of `ℤ[A₁, ⋯, A₆]` is determined by the Weierstrass curve it classifies:
+the specialization at that curve. -/
+lemma Universal.map_curve_injective :
+    Function.Injective fun f : MvPolynomial Coeff ℤ →+* R ↦
+      WeierstrassCurve.map Universal.curve f :=
+  fun f g h ↦ by simpa using congrArg specialize h
 
 /-- `specialize` sends the discriminant of the universal curve to the discriminant of `W`. -/
 @[simp]
