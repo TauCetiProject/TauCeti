@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.GradedAlgebra.TensorProduct
 public import TauCeti.Algebra.Homology.Curved.Algebra.Hom.Basic
+public import TauCeti.Algebra.Homology.DG.Algebra.BaseChange
 
 /-!
 # Base change of curved differential graded algebras
@@ -16,7 +16,9 @@ be a commutative `R`-algebra. The base change `S ⊗[R] A`, graded by the base c
 `S ⊗[R] Aᵖ` of the homogeneous pieces (Mathlib's `GradedAlgebra.baseChange`), with differential
 `1 ⊗ d` and curvature `1 ⊗ w`, is a curved differential graded algebra over `S`. No flatness of
 `S` is needed: every axiom is an identity between `R`-multilinear expressions in homogeneous
-elements, and these are preserved by `S ⊗[R] -`.
+elements, and these are preserved by `S ⊗[R] -`. The degree law and the graded Leibniz rule are
+transported by the lemmas shared with the base change of ordinary differential graded algebras in
+`TauCeti.Algebra.Homology.DG.Algebra.BaseChange`.
 
 Conversely, a curved differential graded `S`-algebra restricts to one over `R` with the same
 differential and curvature. Base change is left adjoint to this restriction on strict curved
@@ -24,9 +26,6 @@ morphisms: strict curved `R`-morphisms `A → B` correspond to strict curved `S`
 `S ⊗[R] A → B`, extending the graded adjunction `GradedAlgHom.liftEquiv` of Mathlib. The unit of
 the adjunction is the inclusion `a ↦ 1 ⊗ a`. In particular base change acts on strict curved
 morphisms, functorially.
-
-At curvature zero the base change of a curved differential graded algebra is the base change of
-the underlying differential graded algebra, since `1 ⊗ 0 = 0`.
 
 ## Main definitions
 
@@ -43,7 +42,6 @@ the underlying differential graded algebra, since `1 ⊗ 0 = 0`.
   algebra, with differential `1 ⊗ d` and curvature `1 ⊗ w`.
 * `TauCeti.IsCurvedDGAlgebra.restrictScalars`: restriction of scalars of a curved differential
   graded algebra.
-* `TauCeti.IsDGAlgebra.baseChange`: the base change of a differential graded algebra.
 * `TauCeti.CurvedDGAlgHom.baseChange_ext`: strict curved morphisms out of a base change are
   determined on the elements `1 ⊗ a`.
 * `TauCeti.CurvedDGAlgHom.baseChange_id` and `TauCeti.CurvedDGAlgHom.baseChange_comp`:
@@ -71,36 +69,14 @@ differential graded `R`-algebra, graded by the base changes of the homogeneous p
 differential graded `S`-algebra with differential `1 ⊗ d` and curvature `1 ⊗ w`. -/
 theorem IsCurvedDGAlgebra.baseChange (h : IsCurvedDGAlgebra 𝒜 d w) :
     IsCurvedDGAlgebra (fun p ↦ (𝒜 p).baseChange S) (d.baseChange S) (1 ⊗ₜ[R] w) where
-  map_mem {p x} hx := by
-    obtain ⟨x, rfl⟩ := Submodule.toBaseChange_surjective' _ _ hx
-    clear hx
-    induction x with
-    | tmul s a => simpa using Submodule.tmul_mem_baseChange_of_mem s (h.map_mem a.2)
-    | add x y hx hy => simpa using add_mem hx hy
-  leibniz {p x} hx y := by
-    obtain ⟨x, rfl⟩ := Submodule.toBaseChange_surjective' _ _ hx
-    clear hx
-    induction x with
-    | add x x' hx hx' => simp only [map_add, Submodule.coe_add, add_mul, hx, hx', smul_add]; abel
-    | tmul s a =>
-      obtain ⟨a, ha⟩ := a
-      induction y with
-      | add y y' hy hy' => simp only [map_add, mul_add, hy, hy', smul_add]; abel
-      | tmul t b =>
-        simp only [Submodule.coe_toBaseChange_tmul, Algebra.TensorProduct.tmul_mul_tmul,
-          LinearMap.baseChange_tmul, h.leibniz ha b, tmul_add, Units.smul_def, tmul_smul]
+  map_mem := map_mem_baseChange_of_map_mem S h.map_mem
+  leibniz := leibniz_baseChange_of_leibniz S h.leibniz
   curvature_mem := Submodule.tmul_mem_baseChange_of_mem 1 h.curvature_mem
   sq_eq x := by
     induction x with
     | add x y hx hy => simp only [map_add, hx, hy, add_mul, mul_add]; abel
     | tmul s a => simp [h.sq_eq a, tmul_sub]
   map_curvature := by simp [h.map_curvature]
-
-/-- The base change of a differential graded algebra, with differential `1 ⊗ d`, is a
-differential graded algebra. -/
-theorem IsDGAlgebra.baseChange (h : IsDGAlgebra 𝒜 d) :
-    IsDGAlgebra (fun p ↦ (𝒜 p).baseChange S) (d.baseChange S) := by
-  simpa using (h.isCurvedDGAlgebra_zero.baseChange S).toIsDGAlgebra_of_curvature_eq_zero
 
 end BaseChange
 
