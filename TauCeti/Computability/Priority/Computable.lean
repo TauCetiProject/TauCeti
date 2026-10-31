@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.Priority.Injury
+public import TauCeti.Computability.Priority.Injury.Basic
 public import TauCeti.Computability.RE
 import Mathlib.Computability.Reduce
 
@@ -15,7 +15,7 @@ import Mathlib.Computability.Reduce
 Let a finite-injury construction enumerate `A` in finite stages, with restraints `r e s`. When
 membership `x ∈ A s` is decidable by a computable procedure, uniformly in `s` and `x`, and the
 restraint `r e s` is computable from `e` and `s`, the injury objects of
-`TauCeti.Computability.Priority.Injury` are effective, uniformly in the requirement `e`:
+`TauCeti.Computability.Priority.Injury.Basic` are effective, uniformly in the requirement `e`:
 
 * the injury events, and hence the membership relation of each injury batch, are computable;
 * whether an injury batch is nonempty is computable: an injuring number lies at or below the
@@ -71,15 +71,6 @@ theorem computablePred_mem_injuryEvents (hA : ComputablePred fun p : ℕ × ℕ 
   have hold : ComputablePred fun p : ℕ × ℕ × ℕ => p.2.2 ∈ A p.2.1 :=
     ComputablePred.computable_of_manyOneReducible ⟨fun p => p.2, snd, fun _ => Iff.rfl⟩ hA
   exact (hnew.and (hold.not.and (computablePred_le_restraint hr))).of_eq fun p => by simp
-
-/-- A batch is nonempty exactly when it contains a number below the restraint bound, which is
-`b + 1` for an active restraint `some b` and `0` for no restraint. -/
-private theorem injuriesAt_nonempty_iff {e s : ℕ} :
-    (injuriesAt A r e s).Nonempty ↔ ∃ x < (r e s).elim 0 (· + 1), x ∈ injuriesAt A r e s := by
-  refine ⟨fun ⟨x, hx⟩ => ⟨x, ?_, hx⟩, fun ⟨x, _, hx⟩ => ⟨x, hx⟩⟩
-  obtain ⟨-, -, b, hb, hxb⟩ := mem_injuriesAt.1 hx
-  simp only [hb, Option.elim_some]
-  omega
 
 /-- **Nonemptiness of the injury batches is computable**, uniformly in the requirement and the
 stage, when membership in the stages and the restraints are computable. -/

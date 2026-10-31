@@ -16,11 +16,11 @@ The injury set of a requirement is c.e. uniformly in the requirement, but not co
 in the requirement, even when the stages and the restraints are computable.
 
 The stages `haltStage s` enumerate the halting set `{x | (eval (ofNat Code x) 0).Dom}` of
-Mathlib's `ComputablePred.halting_problem`: stage `s` holds the indices `x < s` whose program
-halts on input `0` within `s` steps. Under the constant restraint `r e s = some e`, the injury set
-of `e` is the halting set cut off at `e`. The diagonal query `e ∈ I_e` would then decide the
-halting set, so the injury sets are not uniformly computable, although they are uniformly c.e.
-and the injury stages are uniformly computable.
+Mathlib's `ComputablePred.halting_problem`: stage `s` holds the indices `x < s` for which the
+bounded evaluator `evaln s` succeeds on input `0`. Under the constant restraint
+`r e s = some e`, the injury set of `e` is the halting set cut off at `e`. The diagonal query
+`e ∈ I_e` would then decide the halting set, so the injury sets are not uniformly computable,
+although they are uniformly c.e. and the injury stages are uniformly computable.
 -/
 
 public section
@@ -29,8 +29,8 @@ open Nat.Partrec Nat.Partrec.Code Computable TauCeti.Priority
 
 namespace TauCeti.HaltingInjuryExample
 
-/-- Stage `s` of the enumeration of the halting set: the indices `x < s` whose program halts on
-input `0` within `s` steps. -/
+/-- Stage `s` of the enumeration of the halting set: the indices `x < s` for which the bounded
+evaluator `evaln s` succeeds on input `0`. -/
 def haltStage (s : ℕ) : Finset ℕ :=
   (Finset.range s).filter fun x => (evaln s (Denumerable.ofNat Code x) 0).isSome
 

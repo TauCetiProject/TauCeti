@@ -113,6 +113,15 @@ theorem injuriesAt_eq_empty_of_eq_none {s : ℕ} (h : r e s = none) : injuriesAt
   ext x
   simp [h]
 
+/-- A batch is nonempty exactly when it contains a number below the restraint bound, which is
+`b + 1` for an active restraint `some b` and `0` for no restraint. -/
+theorem injuriesAt_nonempty_iff {s : ℕ} :
+    (injuriesAt A r e s).Nonempty ↔ ∃ x < (r e s).elim 0 (· + 1), x ∈ injuriesAt A r e s := by
+  refine ⟨fun ⟨x, hx⟩ => ⟨x, ?_, hx⟩, fun ⟨x, _, hx⟩ => ⟨x, hx⟩⟩
+  obtain ⟨-, -, b, hb, hxb⟩ := mem_injuriesAt.1 hx
+  simp only [hb, Option.elim_some]
+  omega
+
 /-- Membership in the injury events. -/
 @[simp]
 theorem mem_injuryEvents {p : ℕ × ℕ} : p ∈ injuryEvents A r e ↔ p.2 ∈ injuriesAt A r e p.1 :=
