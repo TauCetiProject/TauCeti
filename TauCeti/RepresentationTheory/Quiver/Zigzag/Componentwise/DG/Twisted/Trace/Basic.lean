@@ -70,11 +70,20 @@ private theorem homCongr_comp {M M' N N' P P' : DGRightModuleCat.{u, u, u}
   subst M' N' P'
   rfl
 
-private def entryHomEquiv (X Y : 𝒮) (i j : V)
+/-- A shifted matrix entry transported to its selected zigzag generators. -/
+def entryHomEquiv (X Y : 𝒮) (i j : V)
     (hX : X.obj.obj = D i) (hY : Y.obj.obj = D j) (n : ℤ) :
     DGHom k n X Y ≃ₗ[k] DGHom k (n + (Y.shift - X.shift)) (D i) (D j) :=
   (DGShiftClosure.dgHomEquiv k X Y n).trans
     (homCongr k G hX hY (n + (Y.shift - X.shift)))
+
+/-- Evaluation uses the shift equivalence followed by the selected endpoint equalities. -/
+theorem entryHomEquiv_apply (X Y : 𝒮) (i j : V)
+    (hX : X.obj.obj = D i) (hY : Y.obj.obj = D j) (n : ℤ) (f : DGHom k n X Y) :
+    entryHomEquiv k G X Y i j hX hY n f =
+      (eqToIso (congrArg₂ (fun A B ↦ (dgHomComplex k A B).X (n + (Y.shift - X.shift)))
+        hX hY)).toLinearEquiv (DGShiftClosure.dgHomEquiv k X Y n f) := by
+  simp only [entryHomEquiv, homCongr, LinearEquiv.trans_apply]
 
 private def diagonalHomEquiv (X : 𝒮) (i : V) (hX : X.obj.obj = D i) :
     DGHom k 2 X X ≃ₗ[k] DGHom k 2 (D i) (D i) :=
