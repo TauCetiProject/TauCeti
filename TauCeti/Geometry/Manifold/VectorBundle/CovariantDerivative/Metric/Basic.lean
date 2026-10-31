@@ -15,7 +15,11 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 /-!
 # Metric compatibility and higher metric product rules
 
-This module records the twice-differentiated product rule for a metric-compatible covariant
+This module characterizes metric compatibility as the vanishing of `derivMetricTensor`, without
+assuming manifold regularity
+(`CovariantDerivative.isMetricCompatible_iff_derivMetricTensor_eq_zero`).
+
+It also records the twice-differentiated product rule for a metric-compatible covariant
 derivative. It supplies the second-derivative calculation used to establish curvature
 skew-adjointness and can be reused in other calculations with metric-compatible connections.
 

@@ -12,7 +12,9 @@ public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 
 Mathlib's `IsCovariantDerivativeOn` is additive on pairs of sections differentiable at a point of
 the set it is a covariant derivative on. This file derives the corresponding statements for
-negatives and differences, and iterates additivity to finite sums of sections.
+negatives and differences, and iterates additivity to finite sums of sections. It also evaluates
+Mathlib's `CovariantDerivative.addOneForm` on sections and `CovariantDerivative.difference` on
+section values and fibre vectors.
 
 ## Main results
 
@@ -20,6 +22,12 @@ negatives and differences, and iterates additivity to finite sums of sections.
   `u` commutes with negation and subtraction of sections differentiable at a point of `u`.
 * `TauCeti.Manifold.covariantDerivative_sum`: a covariant derivative over `u` commutes with finite
   sums of sections differentiable at a point of `u`.
+* `CovariantDerivative.addOneForm_apply`: evaluate a connection perturbed by an
+  endomorphism-valued one-form on a section.
+* `CovariantDerivative.difference_apply`: evaluate the difference of two connections on the value
+  of a section differentiable at the base point.
+* `CovariantDerivative.difference_apply_eq_extend`: evaluate the difference of two connections on
+  a fibre vector using a local extension.
 -/
 
 public section
