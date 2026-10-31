@@ -125,15 +125,6 @@ theorem measurable_hypoexponentialPDFReal (r : ι → ℝ) :
 theorem measurable_hypoexponentialPDF (r : ι → ℝ) : Measurable (hypoexponentialPDF r) :=
   (measurable_hypoexponentialPDFReal r).ennreal_ofReal
 
-/-- On `(0, ∞)`, each principal-part term is `A ρ k / ρ ^ k` times the Erlang density of shape
-`k` and rate `ρ`. -/
-private theorem coeff_mul_pow_mul_exp_eq {ρ : ℝ} (hρ : 0 < ρ) {k : ℕ} (hk : 1 ≤ k) (a : ℝ)
-    (hx : 0 < x) :
-    a * x ^ (k - 1) * exp (-(ρ * x)) / (k - 1)! = a / ρ ^ k * gammaPDFReal k ρ x := by
-  rw [gammaPDFReal_nat_eq hk hx.le]
-  have := Nat.factorial_pos (k - 1)
-  field_simp
-
 /-- For positive rates and `x > 0`, the density is the combination of Erlang densities with the
 weights `A ρ k / ρ ^ k`. For a nonempty family these weights sum to one by
 `sum_hypoexponentialCoeff_div_pow`. -/
@@ -143,7 +134,8 @@ theorem hypoexponentialPDFReal_eq_sum_gammaPDFReal (hr : ∀ i, 0 < r i) (hx : 0
   rw [hypoexponentialPDFReal_of_pos hr hx]
   refine sum_congr rfl fun ρ hρ ↦ sum_congr rfl fun k hk ↦ ?_
   obtain ⟨i, -, rfl⟩ := mem_image.1 hρ
-  exact coeff_mul_pow_mul_exp_eq (hr i) (mem_Icc.1 hk).1 _ hx
+  rw [div_mul_comm, gammaPDFReal_nat_div_pow (mem_Icc.1 hk).1 (hr i).ne' hx.le]
+  ring
 
 /-! ### Identification with the law -/
 

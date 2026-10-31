@@ -34,6 +34,14 @@ theorem gammaPDFReal_nat_eq {k : ℕ} (hk : 1 ≤ k) {r x : ℝ} (hx : 0 ≤ x) 
   rw [gammaPDFReal, ite_eq_left hx, Real.rpow_natCast, hpow,
     Nat.cast_succ, Real.Gamma_nat_eq_factorial, Nat.add_sub_cancel]
 
+/-- Dividing the Erlang density of shape `k` and rate `r` by `r ^ k` leaves
+`x ^ (k - 1) * exp (-(r * x)) / (k - 1)!`. -/
+theorem gammaPDFReal_nat_div_pow {k : ℕ} (hk : 1 ≤ k) {r x : ℝ} (hr : r ≠ 0) (hx : 0 ≤ x) :
+    gammaPDFReal k r x / r ^ k = x ^ (k - 1) * Real.exp (-(r * x)) / (k - 1).factorial := by
+  rw [gammaPDFReal_nat_eq hk hx]
+  have := Nat.factorial_pos (k - 1)
+  field_simp
+
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
 /-- A variable with a Gamma law has a density. -/
