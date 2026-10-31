@@ -24,11 +24,11 @@ a nonzero polynomial annihilating `x` and divisible by `X` as `X ^ k * g` with `
 otherwise `b (x) * g (x) = 1` would force `x ^ k = 0`.
 
 A left ideal consisting of nilpotent elements lies in the Jacobson radical, so a left ideal of
-algebraic elements not contained in the radical contains a nonzero idempotent. Every element of a
-finite-dimensional left ideal is algebraic, so a finite-dimensional left ideal lies in the radical
-exactly when its only idempotent is `0`. In a semisimple algebra, meaning one with zero Jacobson
-radical, every nonzero finite-dimensional left ideal contains a nonzero idempotent. This is the
-source of the idempotents in the structure theory of separating ideals of Banach algebras.
+algebraic elements lies in the radical exactly when its only idempotent is `0`. Every element of
+a finite-dimensional left ideal is algebraic, so this applies to finite-dimensional left ideals.
+In a semisimple algebra, meaning one with zero Jacobson radical, every nonzero finite-dimensional
+left ideal contains a nonzero idempotent. This is the source of the idempotents in the structure
+theory of separating ideals of Banach algebras.
 
 ## Main results
 
@@ -38,6 +38,8 @@ source of the idempotents in the structure theory of separating ideals of Banach
   elements not contained in the Jacobson radical contains a nonzero idempotent.
 * `Submodule.exists_isIdempotentElem_ne_zero_mem`: a finite-dimensional left ideal not contained
   in the Jacobson radical contains a nonzero idempotent.
+* `Submodule.le_jacobson_iff_forall_isIdempotentElem_eq_zero_of_isAlgebraic`: a left ideal of
+  algebraic elements lies in the Jacobson radical exactly when its only idempotent is `0`.
 * `Submodule.le_jacobson_iff_forall_isIdempotentElem_eq_zero`: a finite-dimensional left ideal
   lies in the Jacobson radical exactly when its only idempotent is `0`.
 * `Submodule.exists_isIdempotentElem_ne_zero_mem_of_jacobson_eq_bot`: in an algebra with zero
@@ -117,17 +119,26 @@ theorem exists_isIdempotentElem_ne_zero_mem (J : Submodule K B) [FiniteDimension
     ∃ e ∈ J, IsIdempotentElem e ∧ e ≠ 0 :=
   J.exists_isIdempotentElem_ne_zero_mem_of_isAlgebraic hJ (fun _ ↦ J.isAlgebraic_of_mem hJ) hrad
 
-/-- A finite-dimensional left ideal of an algebra over a field, given as a scalar submodule closed
-under left multiplication, lies in the Jacobson radical exactly when its only idempotent is `0`. -/
-theorem le_jacobson_iff_forall_isIdempotentElem_eq_zero (J : Submodule K B)
-    [FiniteDimensional K J] (hJ : ∀ (b : B) {y : B}, y ∈ J → b * y ∈ J) :
+/-- A left ideal of algebraic elements of an algebra over a field, given as a scalar submodule
+closed under left multiplication, lies in the Jacobson radical exactly when its only idempotent is
+`0`. -/
+theorem le_jacobson_iff_forall_isIdempotentElem_eq_zero_of_isAlgebraic (J : Submodule K B)
+    (hJ : ∀ (b : B) {y : B}, y ∈ J → b * y ∈ J) (halg : ∀ y ∈ J, IsAlgebraic K y) :
     J ≤ (Ring.jacobson B).restrictScalars K ↔ ∀ e ∈ J, IsIdempotentElem e → e = 0 := by
   refine ⟨fun h e he hidem ↦ hidem.eq_zero_of_mem_jacobson_bot ?_, fun h ↦ ?_⟩
   · rw [Ideal.jacobson_bot]
     exact (restrictScalars_mem K _ e).1 (h he)
   · by_contra hrad
-    obtain ⟨e, he, hidem, he0⟩ := J.exists_isIdempotentElem_ne_zero_mem hJ hrad
+    obtain ⟨e, he, hidem, he0⟩ := J.exists_isIdempotentElem_ne_zero_mem_of_isAlgebraic hJ halg hrad
     exact he0 (h e he hidem)
+
+/-- A finite-dimensional left ideal of an algebra over a field, given as a scalar submodule closed
+under left multiplication, lies in the Jacobson radical exactly when its only idempotent is `0`. -/
+theorem le_jacobson_iff_forall_isIdempotentElem_eq_zero (J : Submodule K B)
+    [FiniteDimensional K J] (hJ : ∀ (b : B) {y : B}, y ∈ J → b * y ∈ J) :
+    J ≤ (Ring.jacobson B).restrictScalars K ↔ ∀ e ∈ J, IsIdempotentElem e → e = 0 :=
+  J.le_jacobson_iff_forall_isIdempotentElem_eq_zero_of_isAlgebraic hJ
+    fun _ ↦ J.isAlgebraic_of_mem hJ
 
 /-- In an algebra over a field with zero Jacobson radical, every nonzero finite-dimensional left
 ideal, given as a scalar submodule closed under left multiplication, contains a nonzero
