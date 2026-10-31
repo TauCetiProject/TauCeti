@@ -18,7 +18,10 @@ This makes continued Dirichlet series canonical without asserting value identiti
 arbitrary representatives at poles.
 
 The comparison API first identifies punctured germs everywhere, then reads values where the
-representatives are analytic. The construction uses Mathlib's `toMeromorphicNFOn` and its
+representatives are analytic. Multiplying by a function that is analytic without zeros on the
+initial half-plane commutes with continuation (`TauCeti.meromorphicContinuation_smul`), whether
+or not a continuation exists; this compares Dirichlet series differing by finitely many Euler
+factors. The construction uses Mathlib's `toMeromorphicNFOn` and its
 local normal-form identity principle. The results allow values in a complex normed space.
 -/
 
@@ -144,5 +147,79 @@ theorem meromorphicContinuation_eq_of_le {τ : ℝ} (hστ : σ ≤ τ)
   apply meromorphicContinuation_eq (meromorphicNFOn_meromorphicContinuation σ f)
   intro s hs
   exact meromorphicContinuation_eqOn h (lt_of_le_of_lt hστ hs)
+
+/-- The canonical continuation only reads `f` on the initial half-plane. -/
+theorem meromorphicContinuation_congr (hfg : EqOn f g {s | σ < s.re}) :
+    meromorphicContinuation σ f = meromorphicContinuation σ g := by
+  by_cases h : ∃ g' : ℂ → E, MeromorphicNFOn g' univ ∧ EqOn g' g {s | σ < s.re}
+  · exact meromorphicContinuation_eq (meromorphicNFOn_meromorphicContinuation σ g)
+      ((meromorphicContinuation_eqOn h).trans hfg.symm)
+  · rw [meromorphicContinuation_of_not_exists h, meromorphicContinuation_of_not_exists]
+    exact fun ⟨h', hh', hh'f⟩ ↦ h ⟨h', hh', hh'f.trans hfg⟩
+
+/-- If `f` is analytic on the initial half-plane, so is its canonical continuation. -/
+theorem analyticOnNhd_meromorphicContinuation (hf : AnalyticOnNhd ℂ f {s | σ < s.re}) :
+    AnalyticOnNhd ℂ (meromorphicContinuation σ f) {s | σ < s.re} := by
+  by_cases h : ∃ g : ℂ → E, MeromorphicNFOn g univ ∧ EqOn g f {s | σ < s.re}
+  · have hopen : IsOpen {s : ℂ | σ < s.re} := isOpen_lt continuous_const Complex.continuous_re
+    refine fun s hs ↦ (hf s hs).congr ?_
+    filter_upwards [hopen.mem_nhds hs] with z hz using (meromorphicContinuation_eqOn h hz).symm
+  · rw [meromorphicContinuation_of_not_exists h]
+    exact analyticOnNhd_const
+
+/-- **Continuation commutes with multiplication by a function without zeros.** Let `f` be
+analytic on `σ < re s`, and let `c` be meromorphic on the plane, analytic and nonvanishing on
+that half-plane. Then `c • f` has a continuation exactly when `f` has one, and the canonical
+continuation of `c • f` is the normal form of `c` times that of `f`. When no continuation
+exists both sides are zero. -/
+theorem meromorphicContinuation_smul {c : ℂ → ℂ} (hc : Meromorphic c)
+    (hca : AnalyticOnNhd ℂ c {s | σ < s.re}) (hc0 : ∀ s : ℂ, σ < s.re → c s ≠ 0)
+    (hf : AnalyticOnNhd ℂ f {s | σ < s.re}) :
+    meromorphicContinuation σ (c • f) =
+      toMeromorphicNFOn (c • meromorphicContinuation σ f) univ := by
+  have hopen : IsOpen {s : ℂ | σ < s.re} := isOpen_lt continuous_const Complex.continuous_re
+  by_cases h : ∃ g : ℂ → E, MeromorphicNFOn g univ ∧ EqOn g f {s | σ < s.re}
+  · refine meromorphicContinuation_eq_toMeromorphicNFOn
+      (hc.smul (meromorphicOn_univ.mp (meromorphicNFOn_meromorphicContinuation σ f).meromorphicOn))
+      (fun s hs ↦ (hca s hs).smul (analyticOnNhd_meromorphicContinuation hf s hs))
+      fun s hs ↦ ?_
+    rw [Pi.smul_apply', Pi.smul_apply', meromorphicContinuation_eqOn h hs]
+  -- Without a continuation of `f`, a continuation `g` of `c • f` would give one of `f`,
+  -- namely the normal form of `c⁻¹ • g`, which agrees with `f` on the half-plane.
+  rw [meromorphicContinuation_of_not_exists h, smul_zero,
+    toMeromorphicNFOn_eq_self.mpr (analyticOnNhd_const.meromorphicNFOn (f := (0 : ℂ → E))),
+    meromorphicContinuation_of_not_exists]
+  rintro ⟨g, hg, hgf⟩
+  have hq : EqOn (c⁻¹ • g) f {s | σ < s.re} := fun s hs ↦ by
+    simp [hgf hs, smul_smul, inv_mul_cancel₀ (hc0 s hs)]
+  have hqa : AnalyticOnNhd ℂ (c⁻¹ • g) {s | σ < s.re} := fun s hs ↦ (hf s hs).congr (by
+    filter_upwards [hopen.mem_nhds hs] with z hz using (hq hz).symm)
+  have hqm : Meromorphic (c⁻¹ • g) := hc.inv.smul (meromorphicOn_univ.mp hg.meromorphicOn)
+  exact h ⟨meromorphicContinuation σ f, meromorphicNFOn_meromorphicContinuation σ f,
+    fun s hs ↦ (meromorphicContinuation_apply hqm hqa hq (hqa s hs)).trans (hq hs)⟩
+
+/-- **Continuation commutes with multiplication by a function without zeros, as germs.** Under
+the hypotheses of `meromorphicContinuation_smul`, the canonical continuation of `c • f` has the
+punctured germ of `c` times the canonical continuation of `f` at every point. -/
+theorem meromorphicContinuation_smul_eventuallyEq {c : ℂ → ℂ} (hc : Meromorphic c)
+    (hca : AnalyticOnNhd ℂ c {s | σ < s.re}) (hc0 : ∀ s : ℂ, σ < s.re → c s ≠ 0)
+    (hf : AnalyticOnNhd ℂ f {s | σ < s.re}) (z : ℂ) :
+    meromorphicContinuation σ (c • f) =ᶠ[𝓝[≠] z] c • meromorphicContinuation σ f := by
+  rw [meromorphicContinuation_smul hc hca hc0 hf]
+  exact (hc.smul (meromorphicOn_univ.mp (meromorphicNFOn_meromorphicContinuation σ f
+    ).meromorphicOn)).meromorphicOn.toMeromorphicNFOn_eq_self_on_nhdsNE (mem_univ z)
+
+/-- **Continuation commutes with multiplication by a function without zeros, on the initial
+half-plane.** Under the hypotheses of `meromorphicContinuation_smul`, the canonical continuation
+of `c • f` is `c` times the canonical continuation of `f` at every point of `σ < re s`. -/
+theorem meromorphicContinuation_smul_apply {c : ℂ → ℂ} (hc : Meromorphic c)
+    (hca : AnalyticOnNhd ℂ c {s | σ < s.re}) (hc0 : ∀ s : ℂ, σ < s.re → c s ≠ 0)
+    (hf : AnalyticOnNhd ℂ f {s | σ < s.re}) {s : ℂ} (hs : σ < s.re) :
+    meromorphicContinuation σ (c • f) s = c s • meromorphicContinuation σ f s := by
+  rw [meromorphicContinuation_smul hc hca hc0 hf, toMeromorphicNFOn_eq_toMeromorphicNFAt
+      (hc.smul (meromorphicOn_univ.mp (meromorphicNFOn_meromorphicContinuation σ f
+        ).meromorphicOn)).meromorphicOn (mem_univ s),
+    toMeromorphicNFAt_eq_self.mpr ((hca s hs).smul
+      (analyticOnNhd_meromorphicContinuation hf s hs)).meromorphicNFAt, Pi.smul_apply']
 
 end TauCeti

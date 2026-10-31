@@ -308,6 +308,24 @@ theorem exceptionalPolyadMass_def (η : ℝ) (r : ℕ) :
 
 variable {H C} {η η' ε ε' : ℝ} {r r' : ℕ}
 
+open Classical in
+/-- For a polyad decomposition, exceptional mass can be computed over all polyads of the
+skeleton, normalized by the number of injective triples. Omitted polyads have empty support. -/
+theorem exceptionalPolyadMass_eq_sum_div (hC : C.IsPolyadDecomposition) :
+    H.exceptionalPolyadMass C η r =
+      (∑ P : Polyad3 C.skeleton with ¬H.IsTopRegularOverPolyad P η r, (#P.support : ℝ)) /
+        (Fintype.card V).descFactorial 3 := by
+  have hsum : ∑ P ∈ C.polyads, (if ¬H.IsTopRegularOverPolyad P η r then (#P.support : ℝ) else 0) =
+      ∑ P : Polyad3 C.skeleton,
+        if ¬H.IsTopRegularOverPolyad P η r then (#P.support : ℝ) else 0 := by
+    refine sum_subset (subset_univ _) fun P _ hP ↦ ?_
+    have hzero : P.support = ∅ := not_nonempty_iff_eq_empty.1 fun h ↦
+      hP (C.isPolyadDecomposition_iff_forall_mem_of_nonempty.1 hC P h)
+    simp [hzero]
+  have htotal : ∑ P ∈ C.polyads, (#P.support : ℝ) = (Fintype.card V).descFactorial 3 := by
+    exact_mod_cast hC.sum_card_support
+  rw [exceptionalPolyadMass_def, sum_filter, hsum, ← sum_filter, htotal]
+
 /-- The exceptional polyad mass is nonnegative. -/
 theorem exceptionalPolyadMass_nonneg : 0 ≤ H.exceptionalPolyadMass C η r := by
   classical
