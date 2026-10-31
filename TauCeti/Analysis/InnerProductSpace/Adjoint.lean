@@ -7,12 +7,18 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
+public import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Adjoints of linear maps
 
 For bounded operators between complete inner product spaces, the adjoint takes values in the
 orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`).
+An operator on a Hilbert space is invertible exactly when its adjoint is
+(`ContinuousLinearMap.isUnit_adjoint_iff`), and inversion commutes with the adjoint
+(`ContinuousLinearMap.ringInverse_adjoint`). An operator on a Hilbert space that is bounded below
+by `M⁻¹` and has injective adjoint is invertible with `‖T⁻¹‖ ≤ M`
+(`ContinuousLinearMap.isUnit_and_norm_ringInverse_le_of_forall_norm_le`).
 For a continuous linear equivalence between complete inner product spaces, the adjoint is
 bijective (`ContinuousLinearEquiv.adjoint_bijective`).
 Its adjoint gives an equivalence in the reverse direction (`ContinuousLinearEquiv.adjointEquiv`),
@@ -59,6 +65,37 @@ theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]
     (u : E →L[𝕜] F) (y : F) : (u†) y ∈ u.kerᗮ := by
   rw [orthogonal_ker]
   exact Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ y)
+
+section Inverse
+
+variable [CompleteSpace E]
+
+/-- An operator on a Hilbert space that is bounded below by `M⁻¹` and whose adjoint is injective
+is invertible, and its inverse has norm at most `M`. -/
+theorem isUnit_and_norm_ringInverse_le_of_forall_norm_le {T : E →L[𝕜] E} {M : ℝ} (hM : 0 ≤ M)
+    (hT : ∀ x, ‖x‖ ≤ M * ‖T x‖) (hT' : Function.Injective (adjoint T)) :
+    IsUnit T ∧ ‖Ring.inverse T‖ ≤ M := by
+  have hanti : AntilipschitzWith (Real.toNNReal M) T :=
+    AddMonoidHomClass.antilipschitz_of_bound T fun x ↦ by
+      simpa [Real.coe_toNNReal _ hM] using hT x
+  have hdense : T.range.topologicalClosure = ⊤ := by
+    rw [Submodule.topologicalClosure_eq_top_iff, orthogonal_range, LinearMap.ker_eq_bot]
+    exact hT'
+  have hunit : IsUnit T := isUnit_iff_bijective.mpr
+    ((bijective_iff_dense_range_and_antilipschitz T).mpr ⟨hdense, _, hanti⟩)
+  exact ⟨hunit, norm_ringInverse_le_of_forall_norm_le hunit hM hT⟩
+
+/-- The adjoint of an operator on a Hilbert space is invertible exactly when the operator is. -/
+@[simp]
+theorem isUnit_adjoint_iff {A : E →L[𝕜] E} : IsUnit (adjoint A) ↔ IsUnit A := by
+  simpa only [star_eq_adjoint] using isUnit_star (a := A)
+
+/-- Inversion commutes with the adjoint. -/
+theorem ringInverse_adjoint (A : E →L[𝕜] E) :
+    Ring.inverse (adjoint A) = adjoint (Ring.inverse A) := by
+  simpa only [star_eq_adjoint] using Ring.inverse_star A
+
+end Inverse
 
 end ContinuousLinearMap
 

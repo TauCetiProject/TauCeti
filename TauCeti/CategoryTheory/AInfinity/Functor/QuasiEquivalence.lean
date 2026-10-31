@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SquareZero
+public import TauCeti.CategoryTheory.AInfinity.Functor.Comp
 public import TauCeti.CategoryTheory.AInfinity.Functor.HomotopyCategory
 
 /-!
@@ -17,7 +18,11 @@ bijection on the cohomology of every Hom complex.  The cohomology used here is t
 graded Hom module, `ker m₁ ⧸ im m₁`.  Since `m₁` raises degrees by one and `f₁` preserves them,
 this is the direct sum of the cohomology groups in the individual degrees.  Its degree-zero part
 is the Hom space of `H⁰`, and bijectivity there is
-`TauCeti.AInfinityFunctor.IsQuasiFullyFaithful.homClassMap_bijective`.  A **quasi-equivalence**
+`TauCeti.AInfinityFunctor.IsQuasiFullyFaithful.homClassMap_bijective`.  Taking the direct sum over
+all pairs of objects, `ℱ` is quasi-fully faithful exactly when the `A∞` morphism of total algebras
+of morphisms underlying it is a quasi-isomorphism
+(`TauCeti.AInfinityFunctor.isQuasiFullyFaithful_iff_isQuasiIso_toAInfinityHom`).
+A **quasi-equivalence**
 into a cohomologically
 unital `A∞` category `𝒞` is a quasi-fully faithful functor which is essentially surjective on
 `H⁰`: every object of `𝒞` is isomorphic in `H⁰(𝒞)` to the image of an object of `ℬ`.
@@ -50,6 +55,9 @@ of `TauCeti/CategoryTheory/DG/QuasiEquivalence.lean`.
 
 * `TauCeti.AInfinityFunctor.isQuasiFullyFaithful_iff`: the elementwise description by cycles and
   boundaries.
+* `TauCeti.AInfinityFunctor.isQuasiFullyFaithful_iff_isQuasiIso_toAInfinityHom`: quasi-full
+  faithfulness is the quasi-isomorphism property of the underlying `A∞` morphism of total
+  algebras.
 * `TauCeti.AInfinityFunctor.IsQuasiFullyFaithful.homClassMap_bijective`: a quasi-fully faithful
   functor induces bijections on the Hom classes of closed degree-zero morphisms.
 * `TauCeti.AInfinityFunctor.IsQuasiFullyFaithful.isUnital`: a quasi-fully faithful functor is
@@ -64,8 +72,11 @@ of `TauCeti/CategoryTheory/DG/QuasiEquivalence.lean`.
   faithful functor is a quasi-equivalence exactly when `H⁰(ℱ)` is essentially surjective.
 * `TauCeti.AInfinityFunctor.IsQuasiEquivalence.isEquivalence_mapHomotopyCategory`: a
   quasi-equivalence induces an equivalence `H⁰(ℬ) ≌ H⁰(𝒞)`.
-* `TauCeti.AInfinityFunctor.isQuasiEquivalence_id`: the identity `A∞` functor is a
-  quasi-equivalence.
+* `TauCeti.AInfinityFunctor.isQuasiFullyFaithful_id`,
+  `TauCeti.AInfinityFunctor.IsQuasiFullyFaithful.comp`,
+  `TauCeti.AInfinityFunctor.isQuasiEquivalence_id` and
+  `TauCeti.AInfinityFunctor.IsQuasiEquivalence.comp`: identities are quasi-fully faithful and
+  quasi-equivalences, and both classes are closed under composition.
 
 ## References
 
@@ -80,16 +91,18 @@ open CategoryTheory
 
 namespace TauCeti
 
-universe u₁ u₂ v₁ v₂ w
+universe u₀ u₁ u₂ v₀ v₁ v₂ w
 
 open GradedLinearQuiver
 
-variable {R : Type w} [CommRing R] {C : Type u₁} {D : Type u₂}
-  [GradedLinearQuiver.{u₁, v₁, w} R C] [GradedLinearQuiver.{u₂, v₂, w} R D]
+variable {R : Type w} [CommRing R] {B : Type u₀} {C : Type u₁} {D : Type u₂}
+  [GradedLinearQuiver.{u₀, v₀, w} R B] [GradedLinearQuiver.{u₁, v₁, w} R C]
+  [GradedLinearQuiver.{u₂, v₂, w} R D]
 
 namespace AInfinityFunctor
 
-variable {ℬ : AInfinityCategory R C} {𝒞 : AInfinityCategory R D} (ℱ : AInfinityFunctor ℬ 𝒞)
+variable {𝒜 : AInfinityCategory R B} {ℬ : AInfinityCategory R C} {𝒞 : AInfinityCategory R D}
+  (ℱ : AInfinityFunctor ℬ 𝒞)
 
 /-! ### The map on Hom cohomology -/
 
@@ -146,6 +159,69 @@ theorem isQuasiFullyFaithful_id : (AInfinityFunctor.id ℬ).IsQuasiFullyFaithful
     rw [map_zero, eq_comm, sub_eq_zero]
     exact (id_map_apply ℬ g).symm
 
+/-! ### Comparison with the `A∞` morphism of total algebras -/
+
+/-- **Quasi-full faithfulness is a quasi-isomorphism of total algebras.**  An `A∞` functor is
+quasi-fully faithful exactly when the `A∞` morphism of total algebras of morphisms underlying it is
+a quasi-isomorphism: the cohomology of the total algebras is the direct sum of the cohomology of
+the Hom complexes, and the linear part is the direct sum of the maps on Hom complexes. -/
+theorem isQuasiFullyFaithful_iff_isQuasiIso_toAInfinityHom :
+    ℱ.IsQuasiFullyFaithful ↔ ℱ.toAInfinityHom.IsQuasiIso := by
+  rw [isQuasiFullyFaithful_iff, AInfinityHom.isQuasiIso_iff_forall_cycles]
+  simp only [AInfinityAlgebra.cycles_def, AInfinityAlgebra.boundaries_def, LinearMap.mem_ker]
+  constructor
+  · intro hℱ
+    refine ⟨fun y hy ↦ ?_, fun x hx hx' ↦ ?_⟩
+    · -- Lift each component of the cycle `y` separately, and add up the lifts.
+      refine totalHom_induction_homProjection (P := fun y ↦ ∃ x,
+          ℬ.toAInfinityAlgebra.differential x = 0 ∧ ℱ.toAInfinityHom.linearPart x - y ∈
+            LinearMap.range (𝒞.induced ℱ.obj).toAInfinityAlgebra.differential)
+        ⟨0, map_zero _, by simp⟩ (fun y y' ⟨x, hx, hxy⟩ ⟨x', hx', hxy'⟩ ↦ ?_) y fun X Y ↦ ?_
+      · refine ⟨x + x', by rw [map_add, hx, hx', add_zero], ?_⟩
+        rw [map_add, add_sub_add_comm]
+        exact add_mem hxy hxy'
+      · have hg := congrArg (homProjection (R := R) X Y) hy
+        rw [AInfinityCategory.homProjection_differential, map_zero,
+          AInfinityCategory.homDifferential_induced] at hg
+        obtain ⟨f, hf, k, hk⟩ := (hℱ X.obj Y.obj).2 _ hg
+        refine ⟨homInclusion X.obj Y.obj f, by
+          rw [← AInfinityCategory.homInclusion_homDifferential, hf, map_zero],
+          ⟨homInclusion X Y (-k), ?_⟩⟩
+        rw [← AInfinityCategory.homInclusion_homDifferential,
+          AInfinityCategory.homDifferential_induced, map_neg, hk, neg_sub, map_sub,
+          homInclusion_map]
+    · -- Each component of the cycle `x` is a boundary, so `x` is a boundary.
+      refine totalHom_induction_homProjection
+        (P := (· ∈ LinearMap.range ℬ.toAInfinityAlgebra.differential)) (zero_mem _)
+        (fun _ _ ↦ add_mem) x fun X Y ↦ ?_
+      obtain ⟨w, hw⟩ := hx'
+      have hc := congrArg (homProjection (R := R) X Y) hx
+      rw [AInfinityCategory.homProjection_differential, map_zero] at hc
+      obtain ⟨k, hk⟩ := (hℱ X Y).1 _ hc
+        ⟨homProjection (R := R) (C := InducedQuiver D ℱ.obj) ⟨X⟩ ⟨Y⟩ w, by
+          rw [← AInfinityCategory.homDifferential_induced 𝒞 ℱ.obj ⟨X⟩ ⟨Y⟩,
+            ← AInfinityCategory.homProjection_differential, hw, homProjection_linearPart]⟩
+      exact ⟨homInclusion X Y k, by rw [← AInfinityCategory.homInclusion_homDifferential, hk]⟩
+  · rintro ⟨hsurj, hinj⟩
+    refine fun X Y ↦ ⟨fun f hf hf' ↦ ?_, fun g hg ↦ ?_⟩
+    · obtain ⟨k, hk⟩ := hf'
+      obtain ⟨w, hw⟩ := hinj (homInclusion X Y f)
+        (by rw [← AInfinityCategory.homInclusion_homDifferential, hf, map_zero])
+        ⟨homInclusion (R := R) (C := InducedQuiver D ℱ.obj) ⟨X⟩ ⟨Y⟩ k, by
+          rw [← AInfinityCategory.homInclusion_homDifferential,
+            AInfinityCategory.homDifferential_induced, hk, homInclusion_map]⟩
+      exact ⟨homProjection X Y w, by
+        rw [← AInfinityCategory.homProjection_differential, hw, homProjection_homInclusion]⟩
+    · obtain ⟨x, hx, w, hw⟩ := hsurj (homInclusion (R := R) (C := InducedQuiver D ℱ.obj) ⟨X⟩ ⟨Y⟩ g)
+        (by rw [← AInfinityCategory.homInclusion_homDifferential,
+          AInfinityCategory.homDifferential_induced, hg, map_zero])
+      refine ⟨homProjection X Y x, by
+        rw [← AInfinityCategory.homProjection_differential, hx, map_zero],
+        -homProjection (R := R) (C := InducedQuiver D ℱ.obj) ⟨X⟩ ⟨Y⟩ w, ?_⟩
+      rw [map_neg, ← AInfinityCategory.homDifferential_induced 𝒞 ℱ.obj ⟨X⟩ ⟨Y⟩,
+        ← AInfinityCategory.homProjection_differential, hw, map_sub, homProjection_linearPart,
+        homProjection_homInclusion, neg_sub]
+
 namespace IsQuasiFullyFaithful
 
 variable {ℱ} (hℱ : ℱ.IsQuasiFullyFaithful)
@@ -166,6 +242,22 @@ theorem exists_sub_map_mem_range {X Y : C} {g : homModule (R := R) (ℱ.obj X) (
     ∃ f, ℬ.homDifferential X Y f = 0 ∧
       g - ℱ.map X Y f ∈ LinearMap.range (𝒞.homDifferential (ℱ.obj X) (ℱ.obj Y)) :=
   (ℱ.isQuasiFullyFaithful_iff.mp hℱ X Y).2 g hg
+
+/-- **Quasi-fully faithful functors compose.** -/
+theorem comp {𝒢 : AInfinityFunctor 𝒜 ℬ} (h𝒢 : 𝒢.IsQuasiFullyFaithful) :
+    (ℱ.comp 𝒢).IsQuasiFullyFaithful := by
+  refine (isQuasiFullyFaithful_iff _).mpr fun X Y ↦ ⟨fun f hf hf' ↦ ?_, fun g hg ↦ ?_⟩
+  · rw [comp_map_apply] at hf'
+    exact h𝒢.mem_range_of_map_mem_range hf <|
+      hℱ.mem_range_of_map_mem_range (𝒢.homDifferential_map_eq_zero hf) hf'
+  · obtain ⟨f', hf', k, hk⟩ := hℱ.exists_sub_map_mem_range hg
+    obtain ⟨f, hf, k', hk'⟩ := h𝒢.exists_sub_map_mem_range hf'
+    -- `g - g₁(f₁ f) = (g - g₁ f') + g₁(f' - f₁ f)` is the differential of `k + g₁ k'`.
+    have h := congrArg₂ (· + ·) hk (congrArg (ℱ.map (𝒢.obj X) (𝒢.obj Y)) hk')
+    rw [map_homDifferential, ← map_add, map_sub] at h
+    refine ⟨f, hf, k + ℱ.map _ _ k', ?_⟩
+    rw [comp_map_apply]
+    exact h.trans (sub_add_sub_cancel _ _ _)
 
 /-- A closed degree-zero morphism between images differs from the image of a closed degree-zero
 morphism by a boundary. -/
@@ -341,6 +433,17 @@ theorem IsQuasiEquivalence.isEquivalence_mapHomotopyCategory (hℱ : ℱ.IsQuasi
 theorem isQuasiEquivalence_id (hℬ : ℬ.CohomologicallyUnital) :
     (AInfinityFunctor.id ℬ).IsQuasiEquivalence hℬ :=
   isQuasiEquivalence_iff.mpr ⟨isQuasiFullyFaithful_id, fun Y ↦ ⟨Y, ⟨Iso.refl _⟩⟩⟩
+
+/-- **Quasi-equivalences compose.** -/
+theorem IsQuasiEquivalence.comp {𝒢 : AInfinityFunctor 𝒜 ℬ} {hℬ : ℬ.CohomologicallyUnital}
+    (hℱ : ℱ.IsQuasiEquivalence h𝒞) (h𝒢 : 𝒢.IsQuasiEquivalence hℬ) :
+    (ℱ.comp 𝒢).IsQuasiEquivalence h𝒞 := by
+  refine isQuasiEquivalence_iff.mpr
+    ⟨hℱ.isQuasiFullyFaithful.comp h𝒢.isQuasiFullyFaithful, fun Z ↦ ?_⟩
+  obtain ⟨Y, ⟨e⟩⟩ := hℱ.exists_iso Z
+  obtain ⟨X, ⟨e'⟩⟩ := h𝒢.exists_iso Y
+  -- Transport `𝒢 X ≅ Y` along `H⁰(ℱ)` and compose with `ℱ Y ≅ Z`.
+  exact ⟨X, ⟨(mapHomotopyCategory hℬ h𝒞 hℱ.isQuasiFullyFaithful.isUnital).mapIso e' ≪≫ e⟩⟩
 
 end AInfinityFunctor
 

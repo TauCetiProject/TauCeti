@@ -27,7 +27,9 @@ nondegenerate exactly when every flat map is invertible
 smooth section as well, by `ContMDiff.clm_bundle_inverse`.
 
 Inverting the flat map turns covector fields into vector fields: a Hamiltonian vector field is
-`(σ♭)⁻¹ df`, and the Liouville field of a primitive `α` is `(σ♭)⁻¹ α`.
+`(σ♭)⁻¹ df`, and the Liouville field of a primitive `α` is `(σ♭)⁻¹ α`. For a nondegenerate form,
+in any dimension, a vector field is determined by its contraction with the form
+(`TauCeti.SmoothTwoForm.IsNondegenerate.interior_injective`).
 
 On smooth sections, contraction `X ↦ ι_X σ` is a linear map from smooth vector fields to smooth
 one-forms (`TauCeti.SmoothTwoForm.interiorₗ`). For a nondegenerate form on a finite-dimensional
@@ -39,6 +41,8 @@ inverse sends a one-form `α` to the vector field `(σ♭)⁻¹ α`.
 * `TauCeti.SmoothTwoForm.flat`: the flat map `v ↦ σ(v, ·)` at a point.
 * `TauCeti.SmoothTwoForm.interior_apply_eq_ofSubsingleton_flat`: the interior product `ι_X σ` is
   the flat map applied to `X`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.interior_injective`: for a nondegenerate form,
+  `X ↦ ι_X σ` is injective.
 * `TauCeti.SmoothTwoForm.contMDiff_flat`: the flat maps form a smooth section.
 * `TauCeti.SmoothTwoForm.isNondegenerate_iff_isInvertible_flat`: nondegeneracy is invertibility of
   the flat maps, in finite dimensions.
@@ -88,6 +92,18 @@ theorem interior_apply_eq_ofSubsingleton_flat (σ : SmoothTwoForm I M)
       ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ 0 (σ.flat x (X x)) := by
   rw [RoughForm.interior_apply_eq_curryLeft]
   exact (ContinuousAlternatingMap.ofSubsingleton_flatL_apply (E := E) (σ.1 x) (X x)).symm
+
+/-- For a nondegenerate two-form, a vector field is determined by its contraction with the form:
+if `ι_X σ = ι_Y σ`, then `X = Y`. In particular, the Liouville field of a primitive is unique. -/
+theorem IsNondegenerate.interior_injective (h : σ.IsNondegenerate) :
+    Function.Injective fun X : (x : M) → TangentSpace I x ↦ RoughForm.interior X σ.1 := by
+  intro X Y hXY
+  funext x
+  rw [← sub_eq_zero]
+  refine isNondegenerate_iff_separatingLeft.1 h x _ fun w ↦ ?_
+  -- By bilinearity, `σ(X - Y, w)` is `ι_X σ (w) - ι_Y σ (w)`, which vanishes.
+  rw [← flat_apply, map_sub, sub_apply, sub_eq_zero]
+  simpa [interior_apply_eq_ofSubsingleton_flat] using congr($hXY x ![w])
 
 /-- **The flat maps of a two-form form a smooth section** of the bundle `Hom(TM, Hom(TM, ℝ))`. -/
 theorem contMDiff_flat (σ : SmoothTwoForm I M) :

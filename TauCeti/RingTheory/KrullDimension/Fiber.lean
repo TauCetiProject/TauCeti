@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 public import Mathlib.RingTheory.QuasiFinite.Basic
+import Mathlib.RingTheory.Artinian.Algebra
+import Mathlib.RingTheory.Nakayama
 
 /-!
 # Krull dimension and the fibres of a ring homomorphism
@@ -42,6 +44,8 @@ set-theoretic fibre of `Spec S → Spec R` over `p`. Mathlib's
   a prime `P` over `p`, the fibre `S_P ⧸ p S_P` of the local ring `S_P` has Krull dimension zero.
 * `TauCeti.ringKrullDim_le_ringKrullDim_add_of_ringKrullDim_fiber_le`: the Krull dimension of `S`
   is at most that of `R` plus a bound on the Krull dimensions of all fibres.
+* `TauCeti.ringKrullDim_quotient_map_maximalIdeal_eq_zero`: the closed fibre `S ⧸ 𝔪S` of a finite
+  nonzero algebra over a local ring `(R, 𝔪)` has Krull dimension zero.
 * `TauCeti.ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq`: a flat local homomorphism whose
   closed fibre is a field, such as the completion of a Noetherian local ring, preserves the Krull
   dimension.
@@ -166,6 +170,27 @@ theorem ringKrullDim_le_ringKrullDim_add_of_ringKrullDim_fiber_le [IsNoetherianR
   gcongr
   · exact Ideal.height_le_ringKrullDim_of_ne_top Ideal.IsPrime.ne_top'
   · exact h _
+
+open IsLocalRing in
+/-- The closed fibre `S ⧸ 𝔪S` of a finite nonzero algebra `S` over a local ring `(R, 𝔪)` has Krull
+dimension zero: it is a nonzero finite algebra over the residue field, hence Artinian. -/
+theorem ringKrullDim_quotient_map_maximalIdeal_eq_zero [IsLocalRing R] [Module.Finite R S]
+    [Nontrivial S] : ringKrullDim (S ⧸ (maximalIdeal R).map (algebraMap R S)) = 0 := by
+  set I := (maximalIdeal R).map (algebraMap R S) with hIdef
+  -- By Nakayama's lemma `𝔪S ≠ S`, since `S` is a finite nonzero `R`-module.
+  have : Nontrivial (S ⧸ I) := by
+    refine Ideal.Quotient.nontrivial_iff.2 fun hI ↦
+      Submodule.top_ne_ideal_smul_of_le_jacobson_annihilator
+        (maximalIdeal_le_jacobson (Module.annihilator R S)) ?_
+    rw [Ideal.smul_top_eq_map, ← hIdef, hI, Submodule.restrictScalars_top]
+  have : Module.Finite R (S ⧸ I) :=
+    .of_surjective (Ideal.Quotient.mkₐ R I).toLinearMap Ideal.Quotient.mk_surjective
+  have : Module.Finite (R ⧸ maximalIdeal R) (S ⧸ I) := .of_restrictScalars_finite R _ _
+  have : IsArtinianRing (R ⧸ maximalIdeal R) :=
+    letI := Ideal.Quotient.field (maximalIdeal R)
+    inferInstance
+  have : IsArtinianRing (S ⧸ I) := .of_finite (R ⧸ maximalIdeal R) _
+  exact ringKrullDimZero_iff_ringKrullDim_eq_zero.mp inferInstance
 
 open IsLocalRing in
 /-- Along a flat homomorphism of local rings under which the maximal ideal of `R` generates the
