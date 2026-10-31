@@ -43,6 +43,8 @@ canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
 * `TauCeti.FormalScheme.Spf.quotientDiagram`: the diagram `n ↦ O_{I ^ (n + 1)}`.
 * `TauCeti.FormalScheme.Spf.structureSheaf`: its limit, the structure sheaf of `Spf A`.
 * `TauCeti.FormalScheme.Spf.quotientProjection`: the projection `O_{Spf A} → O_{I ^ (n + 1)}`.
+* `TauCeti.FormalScheme.Spf.structureSheaf.lift`: the morphism into `O_{Spf A}` induced by
+  morphisms to the thickenings compatible with the reduction maps.
 * `TauCeti.FormalScheme.Spf.globalSectionsIso`: for `I`-adically complete `A`, the isomorphism
   of the global sections of `O_{Spf A}` with `A`.
 
@@ -54,8 +56,9 @@ canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
   global sections the reduction map `O_J → O_K` is the quotient map `A ⧸ J → A ⧸ K`.
 * `TauCeti.FormalScheme.Spf.quotientProjection_comp_quotientTransition`: the projections are
   compatible with the reduction maps.
-* `TauCeti.FormalScheme.Spf.structureSheaf.hom_ext`: morphisms into the structure sheaf are
-  determined by their projections to the thickenings.
+* `TauCeti.FormalScheme.Spf.structureSheaf.lift_quotientProjection`,
+  `TauCeti.FormalScheme.Spf.structureSheaf.hom_ext`: morphisms into the structure sheaf correspond
+  to compatible families of morphisms to the thickenings.
 * `TauCeti.FormalScheme.Spf.globalSectionsIso_inv_comp_quotientProjection`: the global section
   corresponding to `a ∈ A` projects to the class of `a` in every `A ⧸ I ^ (n + 1)`.
 
@@ -189,6 +192,31 @@ theorem quotientProjection_comp_quotientTransition (hI : IsAdic I) {m n : ℕ} (
         (Ideal.pow_le_pow_right (Nat.succ_le_succ h)) =
       quotientProjection hI m :=
   limit.w (quotientDiagram hI) (homOfLE h).op
+
+/-- The morphism into the structure sheaf of `Spf A` induced by a family of morphisms to the
+thickenings that is compatible with the reduction maps. -/
+noncomputable def structureSheaf.lift (hI : IsAdic I)
+    {F : Sheaf (Opens.grothendieckTopology (TopCat.of (carrier A))) CommRingCat}
+    (f : ∀ n : ℕ, F ⟶ quotientSheaf (is_ideal_adic_pow hI n.succ_pos))
+    (hf : ∀ {m n : ℕ} (h : m ≤ n),
+      f n ≫ quotientTransition _ _ (Ideal.pow_le_pow_right (Nat.succ_le_succ h)) = f m) :
+    F ⟶ structureSheaf hI :=
+  limit.lift (quotientDiagram hI)
+    { pt := F
+      π :=
+        { app n := f n.unop
+          naturality _ _ g := (Category.id_comp _).trans (hf (leOfHom g.unop)).symm } }
+
+/-- The morphism `structureSheaf.lift` projects to the given morphisms to the thickenings. -/
+@[reassoc (attr := simp)]
+theorem structureSheaf.lift_quotientProjection (hI : IsAdic I)
+    {F : Sheaf (Opens.grothendieckTopology (TopCat.of (carrier A))) CommRingCat}
+    (f : ∀ n : ℕ, F ⟶ quotientSheaf (is_ideal_adic_pow hI n.succ_pos))
+    (hf : ∀ {m n : ℕ} (h : m ≤ n),
+      f n ≫ quotientTransition _ _ (Ideal.pow_le_pow_right (Nat.succ_le_succ h)) = f m)
+    (n : ℕ) :
+    structureSheaf.lift hI f hf ≫ quotientProjection hI n = f n :=
+  limit.lift_π _ _
 
 /-- Morphisms into the structure sheaf of `Spf A` are determined by their projections to the
 thickenings. -/
