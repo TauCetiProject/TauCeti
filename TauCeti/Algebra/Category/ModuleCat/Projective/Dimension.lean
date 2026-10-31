@@ -26,7 +26,8 @@ hereditary condition in terms of Mathlib's projective-dimension predicate.
 For a module of projective dimension at most one, the standard free presentation has
 projective kernel and hence is a projective resolution of length one. More generally, for a
 surjection `f` from a projective module onto `M`, the projective dimension of `M` is at most
-`n + 1` exactly when that of `ker f` is at most `n`. Iterating this along a resolution of `M`
+`n + 1` exactly when that of `ker f` is at most `n`, and when `M` is not projective its projective
+dimension is exactly one more than that of `ker f`. Iterating this along a resolution of `M`
 by projective modules, `M` has projective dimension at most `k + 1` exactly when the image of
 `F_{k+1} → F_k` is projective, whichever resolution is chosen.
 
@@ -104,6 +105,16 @@ theorem _root_.LinearMap.hasProjectiveDimensionLE_succ_iff_ker [Small.{v} R] {P 
       HasProjectiveDimensionLE (ModuleCat.of R (LinearMap.ker f)) n :=
   (LinearMap.shortExact_shortComplexKer hf).hasProjectiveDimensionLT_X₃_iff n
     ((IsProjective.iff_projective P).mp ‹_›)
+
+/-- For a surjection `f` from a projective module onto a module `M` that is not projective, the
+projective dimension of `M` is one more than that of `ker f`. -/
+theorem _root_.LinearMap.projectiveDimension_ker_add_one [Small.{v} R] {P M : Type v}
+    [AddCommGroup P] [Module R P] [Module.Projective R P] [AddCommGroup M] [Module R M]
+    {f : P →ₗ[R] M} (hf : Function.Surjective f) (hM : ¬ Module.Projective R M) :
+    projectiveDimension (ModuleCat.of R (LinearMap.ker f)) + 1 =
+      projectiveDimension (ModuleCat.of R M) :=
+  ((LinearMap.shortExact_shortComplexKer hf).projectiveDimension_X₃_eq_succ_of_not_projective
+    ((IsProjective.iff_projective P).mp ‹_›) (mt (IsProjective.iff_projective M).mpr hM)).symm
 
 /-- **Projective dimension along a projective resolution.** Along a resolution
 `⋯ → F₁ → F₀ → M → 0` of `M` by projective modules, exact everywhere, the image of

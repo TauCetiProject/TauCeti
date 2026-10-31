@@ -166,9 +166,8 @@ theorem isHomogeneous_cofreeLift {r : ℤ}
       (AInfinityRightModule.barGrading AA NN.grading).piece r := by
   let W := TensorWords.grading (AA.grading.shift 1)
   rw [Comodule.Hom.cofreeLift_toLinearMap, Comodule.cofree_coact,
-    AInfinityRightModule.barGrading_eq_tensorProduct,
-    AInfinityRightModule.barGrading_eq_tensorProduct]
-  rw [AInfinityRightModule.barGrading_eq_tensorProduct] at hF
+    AInfinityRightModule.barGrading_def, AInfinityRightModule.barGrading_def]
+  rw [AInfinityRightModule.barGrading_def] at hF
   have hρ := (InternalGrading.isHomogeneous_assoc_symm (MM.grading.shift 1) W W).comp
     ((LinearMap.isHomogeneous_id (MM.grading.shift 1).piece).tensorProduct
       (TensorWords.isHomogeneous_deconcatenation (AA.grading.shift 1)))

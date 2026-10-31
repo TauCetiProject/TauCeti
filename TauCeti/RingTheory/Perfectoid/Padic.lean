@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.Complex
 public import TauCeti.RingTheory.Perfectoid.IsAlgClosed
+import TauCeti.NumberTheory.Padics.Complex.Basic
 
 /-!
 # `ℂ_p` is perfectoid and `ℚ_p` is not
@@ -20,6 +21,8 @@ roots.
 
 ## Main results
 
+* `TauCeti.Perfectoid.isPseudoUniformizer_natCast_padicComplex`: `p` is a pseudouniformiser of
+  `ℂ_p`.
 * `TauCeti.Perfectoid.isPerfectoidTateRing_padicComplex`: `ℂ_p` is a perfectoid Tate ring.
 * `TauCeti.Perfectoid.not_pow_dvd_padic`: no pseudouniformiser `ϖ` of `ℚ_p` has `ϖ ^ p ∣ p` in
   `ℤ_p`.
@@ -42,12 +45,15 @@ namespace TauCeti.Perfectoid
 
 variable (p : ℕ) [Fact p.Prime]
 
+/-- `p` is a pseudouniformiser of `ℂ_p`, as `0 < ‖p‖ < 1`. -/
+theorem isPseudoUniformizer_natCast_padicComplex : IsPseudoUniformizer (p : ℂ_[p]) :=
+  isPseudoUniformizer_iff_norm_lt_one.mpr
+    ⟨Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero, PadicComplex.norm_p_lt_one p⟩
+
 /-- **`ℂ_p` is a perfectoid Tate ring**: it is complete and algebraically closed, and
 `‖p‖ = p⁻¹ < 1`. -/
 instance isPerfectoidTateRing_padicComplex : IsPerfectoidTateRing p ℂ_[p] :=
-  isPerfectoidTateRing_of_isAlgClosed (by
-    rw [← map_natCast (algebraMap ℚ_[p] ℂ_[p]) p, norm_algebraMap', Padic.norm_p]
-    exact inv_lt_one_of_one_lt₀ (mod_cast (Fact.out : p.Prime).one_lt))
+  isPerfectoidTateRing_of_isAlgClosed (PadicComplex.norm_p_lt_one p)
 
 /-- **No pseudouniformiser `ϖ` of `ℚ_p` has `ϖ ^ p ∣ p` in `ℤ_p`**: a pseudouniformiser has
 `‖ϖ‖ ≤ p⁻¹`, so `‖ϖ ^ p‖ < ‖p‖` (Scholze, *Étale cohomology of diamonds*, Remark 3.3). -/

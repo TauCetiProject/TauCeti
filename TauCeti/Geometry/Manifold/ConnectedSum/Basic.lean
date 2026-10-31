@@ -167,6 +167,14 @@ theorem mk_inl (x : puncture e₁) : mk e₁ e₂ (.inl x) = inl e₁ e₂ x :=
 theorem mk_inr (y : puncture e₂) : mk e₁ e₂ (.inr y) = inr e₁ e₂ y :=
   (rfl)
 
+/-- The quotient map restricted to the first punctured summand is `inl`. -/
+theorem mk_comp_inl : mk e₁ e₂ ∘ Sum.inl = inl e₁ e₂ :=
+  funext (mk_inl e₁ e₂)
+
+/-- The quotient map restricted to the second punctured summand is `inr`. -/
+theorem mk_comp_inr : mk e₁ e₂ ∘ Sum.inr = inr e₁ e₂ :=
+  funext (mk_inr e₁ e₂)
+
 theorem mk_surjective : Surjective (mk e₁ e₂) :=
   Quot.mk_surjective
 

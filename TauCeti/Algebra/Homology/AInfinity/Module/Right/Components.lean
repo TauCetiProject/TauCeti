@@ -304,7 +304,7 @@ theorem isHomogeneous_gradedCoderiv (G : InternalGrading R M)
     (hF : LinearMap.IsHomogeneous F (barGrading AA G).piece (G.shift 1).piece 1) :
     LinearMap.IsHomogeneous (gradedCoderiv AA G F) (barGrading AA G).piece
       (barGrading AA G).piece 1 := by
-  rw [barGrading_eq_tensorProduct] at hF ⊢
+  rw [barGrading_def] at hF ⊢
   have hid := LinearMap.isHomogeneous_id (R := R) (G.shift 1).piece
   let W := TensorWords.grading (AA.grading.shift 1)
   have hwid := LinearMap.isHomogeneous_id (R := R) W.piece
@@ -338,8 +338,7 @@ theorem isGradedCoderivationOver_gradedCoderiv (G : InternalGrading R M)
     (Comodule.Hom.cofreeLift (C := C) (P := M ⊗[R] C) F).map_coact_eq.symm
   have htw : (barGrading AA G).koszulTwist 1 =
       TensorProduct.map ((G.shift 1).koszulTwist 1) (map ((AA.grading.shift 1).koszulTwist 1)) := by
-    rw [barGrading_eq_tensorProduct, InternalGrading.koszulTwist_tensorProduct,
-      koszulTwist_grading]
+    rw [barGrading_def, InternalGrading.koszulTwist_tensorProduct, koszulTwist_grading]
   have hH : ρ ∘ₗ H = H.rTensor C ∘ₗ ρ + E ∘ₗ ρ := by
     refine TensorProduct.ext' fun x w ↦ ?_
     have key : ∀ t : C ⊗[R] C,

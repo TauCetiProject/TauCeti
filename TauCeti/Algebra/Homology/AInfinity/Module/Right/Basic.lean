@@ -59,12 +59,6 @@ noncomputable def barGrading (AA : AInfinityAlgebra R A) (G : InternalGrading R 
     InternalGrading R (M ⊗[R] TensorWords R A) :=
   (G.shift 1).tensorProduct (TensorWords.grading (AA.grading.shift 1))
 
-/-- The bar-comodule grading is the tensor-product grading of the suspended module and
-suspended tensor words. -/
-theorem barGrading_eq_tensorProduct (AA : AInfinityAlgebra R A) (G : InternalGrading R M) :
-    barGrading AA G =
-      (G.shift 1).tensorProduct (TensorWords.grading (AA.grading.shift 1)) := (rfl)
-
 /-- The degree-`p` part of the bar-comodule grading is the total-degree part of the suspended
 module grading and the suspended tensor-word grading. -/
 @[simp]
@@ -72,6 +66,22 @@ theorem barGrading_piece (AA : AInfinityAlgebra R A) (G : InternalGrading R M) (
     (barGrading AA G).piece p =
       ((G.shift 1).tensorProduct (TensorWords.grading (AA.grading.shift 1))).piece p :=
   (rfl)
+
+/-- The bar-comodule grading is the tensor product of the suspended module grading and the
+suspended tensor-word grading. -/
+theorem barGrading_def (AA : AInfinityAlgebra R A) (G : InternalGrading R M) :
+    barGrading AA G = (G.shift 1).tensorProduct (TensorWords.grading (AA.grading.shift 1)) :=
+  (rfl)
+
+/-- A homogeneous map `f` gives a map `f ⊗ 1` of the bar comodules of the same degree. -/
+theorem isHomogeneous_rTensor {AA : AInfinityAlgebra R A} {N : Type*} [AddCommGroup N]
+    [Module R N] {G : InternalGrading R M} {G' : InternalGrading R N} {f : M →ₗ[R] N} {r : ℤ}
+    (hf : LinearMap.IsHomogeneous f G.piece G'.piece r) :
+    LinearMap.IsHomogeneous (f.rTensor (TensorWords R A)) (barGrading AA G).piece
+      (barGrading AA G').piece r := by
+  rw [barGrading_def, barGrading_def, LinearMap.rTensor_def]
+  simpa only [add_zero] using (LinearMap.isHomogeneous_shift_piece_iff.2 hf).tensorProduct
+    (LinearMap.isHomogeneous_id (R := R) (TensorWords.grading (AA.grading.shift 1)).piece)
 
 end AInfinityRightModule
 

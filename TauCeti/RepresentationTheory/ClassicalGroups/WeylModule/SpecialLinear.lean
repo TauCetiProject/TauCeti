@@ -89,6 +89,7 @@ the constant weights (`TauCeti.IsRationalSLRep.existsUnique_nonempty_equiv_weylS
   `SL n k` are isomorphic exactly when `λ` and `λ'` differ by a constant weight.**
 * `TauCeti.nonempty_equiv_weylSLRepOfShape_iff`: Young diagrams with at most `n - 1` rows are
   recovered from the restrictions of their Weyl modules to `SL n k`.
+* `TauCeti.isRationalSLRep_weylSLRepOfShape`: the restricted Weyl modules are rational.
 * `TauCeti.isRationalSLRep_rationalWeylSLRep`: the restrictions of the rational Weyl modules are
   rational.
 * `TauCeti.IsRationalSLRep.exists_nonempty_equiv_rationalWeylSLRep`: **every irreducible rational
@@ -349,6 +350,12 @@ variable {n : ℕ}
 theorem isRationalSLRep_rationalWeylSLRep (l : DominantWeight n) :
     IsRationalSLRep (rationalWeylSLRep ℂ n l) :=
   (isRationalRep_rationalWeylRep n l).comp_toGL
+
+/-- The Weyl module of a shape is a rational representation of `SL n ℂ`. -/
+@[simp]
+theorem isRationalSLRep_weylSLRepOfShape (n : ℕ) (μ : YoungDiagram) :
+    IsRationalSLRep (weylSLRepOfShape ℂ n μ) :=
+  (isPolynomialRep_weylRepOfShape n μ).isRationalRep.comp_toGL
 
 namespace IsRationalSLRep
 
