@@ -38,8 +38,6 @@ Null modifications of the original set require no choice of a Borel representati
 
 ## Main results
 
-* `MeasureTheory.NullMeasurableSet.exists_isBounded_perimeter_approximation`: bounded truncations
-  of a set of finite measure, with perimeters at most and converging to its perimeter.
 * `MeasureTheory.NullMeasurableSet.exists_smooth_perimeter_approximation`: approximation of a set
   of finite measure by bounded open sets with smooth boundary, in measure and in perimeter.
 
@@ -54,81 +52,12 @@ public section
 noncomputable section
 
 open MeasureTheory Filter Metric Set TopologicalSpace ContinuousLinearMap
-open scoped ENNReal Convolution Topology symmDiff ContDiff InnerProductSpace
+open scoped ENNReal Convolution Topology symmDiff ContDiff
 
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] {μ : Measure E} {s : Set E}
-
-section Truncation
-
-variable [OpensMeasurableSpace E] [IsFiniteMeasureOnCompacts μ]
-
-/-- **Bounded truncation in perimeter.** A null-measurable set `s` of finite measure is the limit
-of an increasing sequence of bounded null-measurable subsets `t n ⊆ s`, converging to `s` in
-measure, whose perimeters are at most `P(s)` and converge to `P(s)`. The perimeters are
-extended-valued, so `s` may have infinite perimeter. The finiteness of `μ s` cannot be dropped,
-since bounded subsets of a set of infinite measure do not converge to it in measure. -/
-theorem _root_.MeasureTheory.NullMeasurableSet.exists_isBounded_perimeter_approximation
-    (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ⊤) :
-    ∃ t : ℕ → Set E, Monotone t ∧
-      (∀ n, t n ⊆ s ∧ NullMeasurableSet (t n) μ ∧ Bornology.IsBounded (t n) ∧
-        perimeter μ ⊤ (t n) ≤ perimeter μ ⊤ s) ∧
-      Tendsto (fun n => μ (s \ t n)) atTop (𝓝 0) ∧
-      Tendsto (fun n => perimeter μ ⊤ (t n)) atTop (𝓝 (perimeter μ ⊤ s)) := by
-  -- Cut `s` by the cubes `Q n = {x | |⟪b i, x⟫| ≤ n for all i}` of an orthonormal basis `b`.
-  let b := stdOrthonormalBasis ℝ E
-  let g : Fin (Module.finrank ℝ E) ⊕ Fin (Module.finrank ℝ E) → StrongDual ℝ E :=
-    Sum.elim (fun i => innerSL ℝ (b i)) (fun i => -innerSL ℝ (b i))
-  let Q : ℕ → Set E := fun n => ⋂ k ∈ (Finset.univ : Finset _), {x | g k x ≤ n}
-  have hQ (n : ℕ) (x : E) : x ∈ Q n ↔ ∀ i, |⟪b i, x⟫_ℝ| ≤ n := by
-    simp [Q, g, abs_le, forall_and, neg_le, and_comm]
-  have hQm (n : ℕ) : MeasurableSet (Q n) :=
-    Finset.univ.measurableSet_biInter fun k _ =>
-      measurableSet_le (g k).continuous.measurable measurable_const
-  have hQmono : Monotone Q := fun m n hmn x hx => (hQ n x).2 fun i =>
-    ((hQ m x).1 hx i).trans (by exact_mod_cast hmn)
-  let t : ℕ → Set E := fun n => s ∩ Q n
-  have ht (n : ℕ) : NullMeasurableSet (t n) μ := hs.inter (hQm n).nullMeasurableSet
-  have htP (n : ℕ) : perimeter μ ⊤ (t n) ≤ perimeter μ ⊤ s :=
-    perimeter_inter_biInter_halfSpace_le g (fun _ => n) Finset.univ hs hμs
-  have htb (n : ℕ) : Bornology.IsBounded (t n) := by
-    refine isBounded_iff_forall_norm_le.2 ⟨Module.finrank ℝ E * n,
-      fun x hx => ?_⟩
-    calc ‖x‖ = ‖∑ i, ⟪b i, x⟫_ℝ • b i‖ := by rw [b.sum_repr']
-      _ ≤ ∑ i, ‖⟪b i, x⟫_ℝ • b i‖ := norm_sum_le _ _
-      _ ≤ ∑ _i : Fin (Module.finrank ℝ E), (n : ℝ) := Finset.sum_le_sum fun i _ => by
-        rw [norm_smul, b.orthonormal.1 i, mul_one, Real.norm_eq_abs]
-        exact (hQ n x).1 hx.2 i
-      _ = _ := by simp
-  -- The remainders `s \ Q n` decrease to the empty set.
-  have hlim : Tendsto (fun n => μ (s \ t n)) atTop (𝓝 0) := by
-    have hdiff (n : ℕ) : s \ t n = s \ Q n := by simp [t]
-    have h := tendsto_measure_iInter_atTop (μ := μ) (s := fun n => s \ Q n)
-      (fun n => hs.diff (hQm n).nullMeasurableSet)
-      (fun m n hmn => sdiff_subset_sdiff_right (hQmono hmn))
-      ⟨0, measure_ne_top_of_subset sdiff_subset hμs⟩
-    have hempty : ⋂ n, s \ Q n = ∅ := by
-      refine eq_empty_of_forall_notMem fun x hx => ?_
-      obtain ⟨n, hn⟩ := exists_nat_ge ‖x‖
-      refine (mem_iInter.1 hx n).2 ((hQ n x).2 fun i => ?_)
-      calc |⟪b i, x⟫_ℝ| ≤ ‖b i‖ * ‖x‖ := abs_real_inner_le_norm _ _
-        _ = ‖x‖ := by rw [b.orthonormal.1 i, one_mul]
-        _ ≤ n := hn
-    simpa only [hdiff, hempty, measure_empty, Function.comp_def] using h
-  refine ⟨t, fun m n hmn => inter_subset_inter_right s (hQmono hmn),
-    fun n => ⟨inter_subset_left, ht n, htb n, htP n⟩, hlim, ?_⟩
-  refine tendsto_of_le_liminf_of_limsup_le ?_ (limsup_le_of_le (h := .of_forall htP))
-  refine perimeter_le_liminf (.of_forall ht) hs fun K _ _ => ?_
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ => zero_le)
-    fun n => measure_mono ?_
-  rw [symmDiff_of_le (inter_subset_left : t n ⊆ s)]
-  exact inter_subset_left
-
-end Truncation
-
-variable [BorelSpace E] [μ.IsAddHaarMeasure]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {s : Set E}
 
 private theorem exists_regular_superlevel_approximation_of_isBounded (hs : NullMeasurableSet s μ)
     (hb : Bornology.IsBounded s) {δ ε : ℝ} (hδ : 0 < δ) (hδ' : δ < 1 / 2) (hε : 0 < ε) :
