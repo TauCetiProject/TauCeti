@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.CosetMinimum
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Basic
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Labels
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.OrthogonalSum
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.CosetMinimum
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.CosetMinimum
@@ -41,7 +41,9 @@ for even `n`, and `2`, `1`, `3` in `ℤ/4` for odd `n`, name `v`, `s` and `c`.
 Two consequences hold uniformly, read off from attainment: half the shortest norm is the quadratic
 value of the label (`quadratic_glueAlphabet_eq_glueMinimum_div_two`), so a label is isotropic
 exactly when its shortest norm is an even integer, and only the zero label has shortest norm
-zero (`glueMinimum_eq_zero_iff`).
+zero (`glueMinimum_eq_zero_iff`).  As a function of the printed Conway--Sloane label rather than
+of its class, the shortest norm is the computable `glueLabelMinimum`
+(`glueMinimum_glueLabelEquiv`).
 
 For a glue word `w = (w_i)` of a finite family `t` of components, the coset of the orthogonal sum
 `⊥ i, (t i).rootLattice` named by `w` through `TauCeti.DynkinType.glueWordIsometry` has least norm
@@ -57,6 +59,7 @@ half of `μ(w)` is the quadratic value of `w`, and `μ(w) = 0` only for the zero
   coset `t.glueAlphabetIsometry hv ht a`, and it is attained.
 * `TauCeti.DynkinType.quadratic_glueAlphabet_eq_glueMinimum_div_two`: `q(a) = μ_t(a) / 2 mod ℤ`.
 * `TauCeti.DynkinType.glueMinimum_eq_zero_iff`: `μ_t(a) = 0` exactly when `a = 0`.
+* `TauCeti.DynkinType.glueLabelMinimum`: the shortest norm of a printed label.
 * `TauCeti.DynkinType.isLeast_sum_glueMinimum`: `μ(w) = ∑ i, μ_(t i)(w_i)` is the least norm of a
   dual vector of the orthogonal sum of root lattices in the coset named by the glue word `w`, and
   it is attained.
@@ -256,6 +259,50 @@ theorem glueMinimum_eq_zero_iff (t : DynkinType) (hv : t.Valid) (ht : t.IsSimply
     exact (map_eq_zero_iff _ (EquivLike.injective _)).mp hx.symm
   · rintro rfl
     exact t.glueMinimum_zero ht
+
+/-! ## Shortest norms of printed labels -/
+
+/-- **The shortest norm of the Conway--Sloane label** `a` of a simply-laced Dynkin type, read off
+the printed label: `a (n + 1 - a) / (n + 1)` for `Aₙ`; `0`, `n/4`, `1`, `n/4` for the labels `0`,
+spinor, vector, cospinor of `Dₙ`; and `4/3`, `3/2` for the nonzero labels of `E₆`, `E₇`.  It is
+`glueMinimum` of the class labelled `a` (`glueMinimum_glueLabelEquiv`), as a function of the label
+rather than of the class, so that finite checks on printed glue words evaluate by `decide`. -/
+@[expose] def glueLabelMinimum : DynkinType → ℕ → ℚ
+  | A n, a => (a : ℚ) * (n + 1 - a) / (n + 1)
+  | D n, a => if a = 0 then 0 else if a = 2 then 1 else (n : ℚ) / 4
+  | E6, a => if a = 0 then 0 else 4 / 3
+  | E7, a => if a = 0 then 0 else 3 / 2
+  | _, _ => 0
+
+/-- **The shortest norm of the class of a label is the shortest norm of the printed label.** -/
+@[simp]
+theorem glueMinimum_glueLabelEquiv (t : DynkinType) (ht : t.IsSimplyLaced)
+    (a : Fin t.glueLabelCount) :
+    t.glueMinimum ht (t.glueLabelEquiv ht a) = t.glueLabelMinimum a := by
+  obtain ⟨a, ha⟩ := a
+  cases t with
+  | A n =>
+    rw [glueLabelEquiv_A, glueMinimum_A, ZMod.val_natCast_of_lt ha, glueLabelMinimum]
+  | D n =>
+    simp only [glueLabelCount] at ha
+    rcases Nat.even_or_odd n with hn | hn
+    · rw [glueMinimum_D_of_even n ht hn _ _ (glueLabelEquiv_D_of_even n ht hn _)]
+      interval_cases a <;> simp +decide [glueLabelMinimum]
+    · rw [glueMinimum_D_of_odd n ht hn _ _ (glueLabelEquiv_D_of_odd n ht hn _)]
+      interval_cases a <;> simp +decide [glueLabelMinimum]
+  | E6 =>
+    rw [glueLabelEquiv_E6, glueMinimum_E6]
+    simp only [glueLabelCount] at ha
+    interval_cases a <;> simp +decide [glueLabelMinimum]
+  | E7 =>
+    rw [glueLabelEquiv_E7, glueMinimum_E7]
+    simp only [glueLabelCount] at ha
+    interval_cases a <;> simp +decide [glueLabelMinimum]
+  | E8 => rfl
+  | B n => exact absurd ht (not_isSimplyLaced_B n)
+  | C n => exact absurd ht (not_isSimplyLaced_C n)
+  | F4 => exact absurd ht not_isSimplyLaced_F4
+  | G2 => exact absurd ht not_isSimplyLaced_G2
 
 /-! ## Glue words -/
 
