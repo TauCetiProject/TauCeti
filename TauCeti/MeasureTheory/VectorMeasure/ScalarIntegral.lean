@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-public import Mathlib.MeasureTheory.Integral.SetToL1.ChangeMeasure
 public import Mathlib.MeasureTheory.Measure.Complex
-public import Mathlib.MeasureTheory.VectorMeasure.SetIntegral
 public import Mathlib.MeasureTheory.VectorMeasure.Variation.SignedMeasure
 public import Mathlib.MeasureTheory.VectorMeasure.WithDensity
+public import TauCeti.MeasureTheory.VectorMeasure.Integral
 
 /-!
 # Integration against scalar measures
@@ -23,15 +22,12 @@ reduction of a scalar measure to signed measures through its real and imaginary 
 are the comparisons needed to treat complex measures by the Jordan decomposition of their real
 and imaginary parts, as in uniqueness theorems for measures on compact spaces.
 
-The integral is natural in the measure: a continuous linear map `φ` applied to the values of `μ`
-corresponds to a continuous linear map applied to the integral, whenever the pairings are
-compatible (`map_integral_comp_eq_integral_mapRangeL`). The real and imaginary parts and the
-real-to-scalar embedding are instances of this naturality.
+The comparisons for the real and imaginary parts and the real-to-scalar embedding are instances
+of the naturality of the vector-measure integral, `map_integral_comp_eq_integral_mapRangeL` in
+`TauCeti.MeasureTheory.VectorMeasure.Integral`.
 
 ## Main declarations
 
-* `MeasureTheory.VectorMeasure.map_integral_comp_eq_integral_mapRangeL`: naturality of the
-  vector-measure integral under continuous linear maps of the values.
 * `MeasureTheory.VectorMeasure.integral_const_mul` and
   `MeasureTheory.VectorMeasure.integral_smul_vectorMeasure_mul`: `𝕜`-homogeneity of the scalar
   integral in the integrand and in the measure.
@@ -59,123 +55,7 @@ open scoped ENNReal NNReal
 
 namespace MeasureTheory.VectorMeasure
 
-section mapRangeL
-
-variable {α M N R : Type*} [MeasurableSpace α] [Semiring R]
-  [TopologicalSpace M] [AddCommMonoid M] [Module R M] [ContinuousAdd M] [ContinuousConstSMul R M]
-  [TopologicalSpace N] [AddCommMonoid N] [Module R N] [ContinuousAdd N] [ContinuousConstSMul R N]
-
-@[simp]
-theorem mapRangeL_apply (f : M →L[R] N) (v : VectorMeasure α M) (s : Set α) :
-    mapRangeL f v s = f (v s) :=
-  rfl
-
-end mapRangeL
-
-variable {X E₀ E F F' G G' 𝕜 : Type*} [MeasurableSpace X]
-  [NormedAddCommGroup E₀] [NormedSpace ℝ E₀] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup F'] [NormedSpace ℝ F']
-  [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup G'] [NormedSpace ℝ G']
-
-/-- Applying a continuous linear map to the values of a vector measure multiplies its variation
-by at most the operator norm of the map. -/
-theorem variation_mapRangeL_le (φ : F →L[ℝ] F') (μ : VectorMeasure X F) :
-    (mapRangeL φ μ).variation ≤ ‖φ‖₊ • μ.variation := by
-  refine variation_le_of_forall_enorm_le fun s _ => ?_
-  rw [mapRangeL_apply, Measure.smul_apply, ENNReal.smul_def, smul_eq_mul]
-  refine (φ.le_opENorm _).trans ?_
-  rw [enorm_eq_nnnorm φ]
-  gcongr
-  exact enorm_measure_le_variation μ s
-
-/-- **Naturality of the vector-measure integral.** Let `ψ`, `φ` and `L` be continuous linear maps
-on the integrand, on the values of the measure and on the values of the integral, compatible with
-the pairings `B` and `B'` in the sense that `L (B (ψ x) y) = B' x (φ y)`. Then for `f` integrable
-against `μ`, applying `L` to the integral of `ψ ∘ f` against `μ` gives the integral of `f` against
-the measure `φ ∘ μ`. -/
-theorem map_integral_comp_eq_integral_mapRangeL [CompleteSpace G] [CompleteSpace G']
-    (μ : VectorMeasure X F) {f : X → E₀} (hf : μ.Integrable f) (ψ : E₀ →L[ℝ] E)
-    (φ : F →L[ℝ] F') (L : G →L[ℝ] G') {B : E →L[ℝ] F →L[ℝ] G} {B' : E₀ →L[ℝ] F' →L[ℝ] G'}
-    (h : ∀ x y, L (B (ψ x) y) = B' x (φ y)) :
-    L (∫ᵛ x, ψ (f x) ∂[B; μ]) = ∫ᵛ x, f x ∂[B'; mapRangeL φ μ] := by
-  have hvar := variation_mapRangeL_le φ μ
-  rw [ENNReal.smul_def] at hvar
-  have hc : ((‖φ‖₊ : ℝ≥0) : ℝ≥0∞) ≠ ∞ := ENNReal.coe_ne_top
-  have hint : ∀ g : X → E₀, μ.Integrable g → (mapRangeL φ μ).Integrable g :=
-    fun g hg => hg.of_measure_le_smul hc hvar
-  -- Induction on integrable functions, following Mathlib's
-  -- `MeasureTheory.setToFun_congr_measure_of_integrable`.
-  refine hf.induction
-    (P := fun f => L (∫ᵛ x, ψ (f x) ∂[B; μ]) = ∫ᵛ x, f x ∂[B'; mapRangeL φ μ]) ?_ ?_ ?_ ?_
-  · intro c s hs hμs
-    have : IsFiniteMeasure (μ.variation.restrict s) := isFiniteMeasure_restrict.2 hμs.ne
-    have : IsFiniteMeasure ((mapRangeL φ μ).variation.restrict s) :=
-      isFiniteMeasure_restrict.2 ((hvar s).trans_lt (by
-        simpa using ENNReal.mul_lt_top ENNReal.coe_lt_top hμs)).ne
-    have hψ : (fun x => ψ (s.indicator (fun _ => c) x)) = s.indicator fun _ => ψ c := by
-      ext x
-      by_cases hx : x ∈ s <;> simp [hx]
-    rw [hψ, integral_indicator_const _ hs, integral_indicator_const _ hs, h, mapRangeL_apply]
-  · intro f g _ hf hg hf' hg'
-    have hψ : (fun x => ψ ((f + g) x)) = fun x => ψ (f x) + ψ (g x) := by
-      ext x
-      simp
-    rw [hψ, integral_fun_add (ψ.integrable_comp hf) (ψ.integrable_comp hg), L.map_add,
-      integral_add (hint f hf) (hint g hg), hf', hg']
-  · have hL : (fun g : X →₁[μ.variation] E₀ => L (∫ᵛ x, ψ (g x) ∂[B; μ])) =
-        fun g => L (∫ᵛ x, (ψ.compLpL 1 μ.variation g) x ∂[B; μ]) := by
-      ext1 g
-      rw [integral_congr_ae (ψ.coeFn_compLpL g).symm]
-    have hR : (fun g : X →₁[μ.variation] E₀ => ∫ᵛ x, g x ∂[B'; mapRangeL φ μ]) =
-        fun g : X →₁[μ.variation] E₀ =>
-          ∫ᵛ x, ((hint g (L1.integrable_coeFn g)).toL1 g) x ∂[B'; mapRangeL φ μ] := by
-      ext1 g
-      exact integral_congr_ae (Integrable.coeFn_toL1 _).symm
-    refine isClosed_eq ?_ ?_
-    · rw [hL]
-      exact L.continuous.comp (continuous_integral.comp (ψ.compLpL 1 μ.variation).continuous)
-    · rw [hR]
-      exact continuous_integral.comp (continuous_L1_toL1 _ hc hvar)
-  · intro f g hfg _ hf'
-    have hfg' : f =ᵐ[(mapRangeL φ μ).variation] g :=
-      (Measure.absolutelyContinuous_of_le_smul hvar).ae_eq hfg
-    rw [← integral_congr_ae (hfg.mono fun x hx => congrArg ψ hx), hf', integral_congr_ae hfg']
-
-section smul
-
-variable [NormedField 𝕜] {μ : VectorMeasure X F} {B : E →L[ℝ] F →L[ℝ] G}
-
-/-- The vector-measure integral is homogeneous for scalars of a normed field `𝕜` acting on the
-integrand, when the pairing is `𝕜`-linear in its first argument. -/
-theorem integral_fun_smul_of_smul_left [NormedSpace 𝕜 E] [NormedSpace 𝕜 G]
-    (hB : ∀ (c : 𝕜) x y, B (c • x) y = c • B x y) (c : 𝕜) (f : X → E) :
-    ∫ᵛ x, c • f x ∂[B; μ] = c • ∫ᵛ x, f x ∂[B; μ] := by
-  simp only [integral_eq_setToFun]
-  exact setToFun_smul _ (fun c s x => by simp [transpose_eq_cbmApplyMeasure, hB]) c f
-
-/-- The vector-measure integral is homogeneous for scalars of a normed field `𝕜` acting on the
-measure, when the pairing is `𝕜`-linear in its second argument. -/
-theorem integral_smul_vectorMeasure_of_smul_right [NormedAlgebra ℝ 𝕜]
-    [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G]
-    (hB : ∀ (c : 𝕜) x y, B x (c • y) = c • B x y) (c : 𝕜) (f : X → E) :
-    ∫ᵛ x, f x ∂[B; c • μ] = c • ∫ᵛ x, f x ∂[B; μ] := by
-  by_cases hG : CompleteSpace G; swap
-  · simp [integral_of_not_completeSpace hG]
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp
-  by_cases hf : μ.Integrable f
-  · have hμ : c • μ = mapRangeL (lsmul ℝ 𝕜 c) μ := by
-      ext s
-      simp
-    have := map_integral_comp_eq_integral_mapRangeL μ hf (ContinuousLinearMap.id ℝ E)
-      (lsmul ℝ 𝕜 c) (lsmul ℝ 𝕜 c) (B := B) (B' := B) (fun x y => by simp [hB])
-    simpa [← hμ] using this.symm
-  · have hf' : ¬(c • μ).Integrable f := by
-      rwa [VectorMeasure.Integrable, variation_smul, ENNReal.smul_def,
-        integrable_smul_measure (by simpa using hc) ENNReal.coe_ne_top]
-    rw [integral_undef hf, integral_undef hf', smul_zero]
-
-end smul
+variable {X 𝕜 : Type*} [MeasurableSpace X]
 
 section RCLike
 
