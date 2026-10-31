@@ -595,6 +595,7 @@ theorem unitSlope_add_affine {h : ℕ → WithTop ℝ} {n : ℕ} (hn : n ∈ fin
 
 /-- Scaling a height by a factor scales its real part; an infinite height keeps the real
 part zero. -/
+@[simp]
 theorem _root_.WithTop.untop₀_map_mul {α : Type*} [MulZeroClass α] (c : α) (x : WithTop α) :
     (x.map (c * ·)).untop₀ = c * x.untop₀ := by
   cases x <;> simp
@@ -640,6 +641,7 @@ theorem finiteEdges_map_mul (h : ℕ → WithTop ℝ) (c : ℝ) :
   simp only [mem_finiteEdges, ne_eq, WithTop.map_eq_top_iff]
 
 /-- Scaling the heights by a real factor scales every unit slope by that factor. -/
+@[simp]
 theorem unitSlope_map_mul (h : ℕ → WithTop ℝ) (c : ℝ) (n : ℕ) :
     unitSlope (fun n => (h n).map (c * ·)) n = c * unitSlope h n := by
   simp only [unitSlope_def, WithTop.untop₀_map_mul]
