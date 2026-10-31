@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
+public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.Topology.UniformSpace.CompactConvergence
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Basic
 
@@ -23,7 +24,9 @@ operator norm; no basis of the model space is chosen.
 The family criterion `continuous_chartC2_iff` expresses continuity by joint continuity of the
 coordinate derivatives in the parameter and chart variable; in particular each coordinate
 derivative is jointly continuous in the metric and the chart variable
-(`continuousAt_iteratedFDeriv_chartMetric`). Evaluation of the metric at a
+(`continuousAt_iteratedFDeriv_chartMetric`). Conversely, for a family whose chart metrics depend
+smoothly on a continuous parameter, `continuousAt_chartMetric_jets` gives joint continuity of the
+Gram matrices and their first two partial derivatives in a basis. Evaluation of the metric at a
 fixed point is continuous, and these evaluations separate metrics. The topology is selected
 by `open scoped TauCeti.MetricC2`, rather than a global instance, so it can coexist with
 topologies controlling higher derivatives.
@@ -200,6 +203,94 @@ theorem t2Space_chartC2 :
     (fun _ _ heq ↦ ext fun x v w ↦ congrFun (congrFun (congrFun heq x) v) w)
     (continuous_pi fun x ↦ continuous_pi fun v ↦ continuous_pi fun w ↦
       continuous_inner_apply x v w)
+
+end Bundle.ContMDiffRiemannianMetric
+
+/-! ### Jets of smoothly parametrised families
+
+These statements are outside the namespace block above, so their public signatures do not use
+its cached private operator-space instances. -/
+
+namespace Bundle.ContMDiffRiemannianMetric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+
+variable {P V : Type*} [TopologicalSpace P] [NormedAddCommGroup V] [NormedSpace ℝ V]
+  {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℝ E)
+
+/-- Suppose that on the chart target at `x` the chart metrics of `g p` are `F (ψ p, ·)`, for a
+continuous map `ψ` of the parameter space into a normed space and a function `F` smooth on the
+product of that space with the chart target. Then the Gram matrices and the first and second
+derivatives of the chart metrics vary continuously with the parameter and the chart point, as
+required by `TauCeti.Manifold.exists_pos_eventually_forall_le_scalarCurvature`. -/
+theorem continuousAt_chartMetric_jets
+    (g : P → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (x : M)
+    {ψ : P → V} (hψ : Continuous ψ) {F : V × E → E →L[ℝ] E →L[ℝ] ℝ}
+    (hF : ContDiffOn ℝ ∞ F (univ ×ˢ (extChartAt I x).target))
+    (hgF : ∀ p, ∀ z ∈ (extChartAt I x).target,
+      (g p).toNondegenerateMetric.chartMetric x z = F (ψ p, z)) (p₀ : P) :
+    ContinuousAt (fun r : P × E ↦ LinearMap.toMatrix₂ b b
+      ((g r.1).toNondegenerateMetric.chartMetric x r.2).toBilinForm) (p₀, extChartAt I x x) ∧
+    ContinuousAt (fun r : P × E ↦ fun k i j ↦
+      fderiv ℝ (fun z ↦ (g r.1).toNondegenerateMetric.chartMetric x z (b i) (b j)) r.2 (b k))
+      (p₀, extChartAt I x x) ∧
+    ContinuousAt (fun r : P × E ↦ fun m k i j ↦ fderiv ℝ
+      (fun z ↦ fderiv ℝ (fun z' ↦ (g r.1).toNondegenerateMetric.chartMetric x z' (b i) (b j))
+        z (b k)) r.2 (b m)) (p₀, extChartAt I x x) := by
+  set T := (extChartAt I x).target
+  have hT : IsOpen T := isOpen_extChartAt_target x
+  have hU : IsOpen (univ ×ˢ T) := (isOpen_univ (X := V)).prod hT
+  have hq₀ : (ψ p₀, extChartAt I x x) ∈ univ ×ˢ T := ⟨trivial, mem_extChartAt_target x⟩
+  -- The parameter and chart point enter through `Φ`, and near the base point the chart point
+  -- stays in the open chart target.
+  set Φ : P × E → V × E := fun r ↦ (ψ r.1, r.2)
+  have hΦ : ContinuousAt Φ (p₀, extChartAt I x x) :=
+    ((hψ.comp continuous_fst).prodMk continuous_snd).continuousAt
+  have hev : ∀ᶠ r : P × E in 𝓝 (p₀, extChartAt I x x), r.2 ∈ T :=
+    continuousAt_snd.preimage_mem_nhds (hT.mem_nhds (mem_extChartAt_target x))
+  have hcont {G : V × E → ℝ} (hG : ContDiffOn ℝ ∞ G (univ ×ˢ T)) :
+      ContinuousAt (fun r ↦ G (Φ r)) (p₀, extChartAt I x x) :=
+    ContinuousAt.comp (f := Φ) (hG.continuousOn.continuousAt (hU.mem_nhds hq₀)) hΦ
+  -- Partial derivatives in the chart point of functions smooth on `univ ×ˢ T` are smooth there.
+  have hD {G : V × E → ℝ} (hG : ContDiffOn ℝ ∞ G (univ ×ˢ T)) (w : E) :
+      ContDiffOn ℝ ∞ (fun q : V × E ↦ fderiv ℝ (fun z ↦ G (q.1, z)) q.2 w) (univ ×ˢ T) := by
+    intro q hq
+    have hGq : ContDiffAt ℝ ∞ (fun r : (V × E) × E ↦ G (r.1.1, r.2)) (q, q.2) :=
+      (hG.contDiffAt (hU.mem_nhds hq)).comp (q, q.2) (contDiffAt_fst.fst.prodMk contDiffAt_snd)
+    exact ((ContDiffAt.fderiv (f := fun (q : V × E) z ↦ G (q.1, z)) hGq contDiffAt_snd
+      (by simp)).clm_apply contDiffAt_const).contDiffWithinAt
+  -- The entries of `F` and their first two partial derivatives in the chart point.
+  have hF₀ (i j : ι) : ContDiffOn ℝ ∞ (fun q ↦ F q (b i) (b j)) (univ ×ˢ T) :=
+    (hF.clm_apply contDiffOn_const).clm_apply contDiffOn_const
+  have hF₁ (k i j : ι) := hD (hF₀ i j) (b k)
+  have hF₂ (m k i j : ι) := hD (hF₁ k i j) (b m)
+  -- Near a point of the chart target, the entries of the chart metric are those of `F`.
+  have heq (p : P) {z : E} (hz : z ∈ T) (i j : ι) :
+      (fun z' ↦ (g p).toNondegenerateMetric.chartMetric x z' (b i) (b j)) =ᶠ[𝓝 z]
+        fun z' ↦ F (ψ p, z') (b i) (b j) := by
+    filter_upwards [hT.mem_nhds hz] with z' hz'
+    rw [hgF p z' hz']
+  refine ⟨?_, ?_, ?_⟩
+  · refine continuousAt_pi.2 fun i ↦ continuousAt_pi.2 fun j ↦ ?_
+    refine (hcont (hF₀ i j)).congr ?_
+    filter_upwards [hev] with r hr
+    simp [LinearMap.toMatrix₂_apply, hgF r.1 r.2 hr, Φ]
+  · refine continuousAt_pi.2 fun k ↦ continuousAt_pi.2 fun i ↦ continuousAt_pi.2 fun j ↦ ?_
+    refine (hcont (hF₁ k i j)).congr ?_
+    filter_upwards [hev] with r hr
+    rw [(heq r.1 hr i j).fderiv_eq]
+  · refine continuousAt_pi.2 fun m ↦ continuousAt_pi.2 fun k ↦ continuousAt_pi.2 fun i ↦
+      continuousAt_pi.2 fun j ↦ ?_
+    refine (hcont (hF₂ m k i j)).congr ?_
+    filter_upwards [hev] with r hr
+    have heq₁ : (fun z ↦ fderiv ℝ
+        (fun z' ↦ (g r.1).toNondegenerateMetric.chartMetric x z' (b i) (b j)) z (b k)) =ᶠ[𝓝 r.2]
+        fun z ↦ fderiv ℝ (fun z' ↦ F (ψ r.1, z') (b i) (b j)) z (b k) := by
+      filter_upwards [hT.mem_nhds hr] with z hz
+      rw [(heq r.1 hz i j).fderiv_eq]
+    rw [heq₁.fderiv_eq]
 
 end Bundle.ContMDiffRiemannianMetric
 
