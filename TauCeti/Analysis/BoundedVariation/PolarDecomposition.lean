@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.Analysis.BoundedVariation.DerivativeMeasure
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 
 /-!
 # The polar decomposition of the derivative of a function of locally bounded variation
@@ -50,6 +51,8 @@ against this representation gives `|Du|(U) ≤ ∫_U ‖σ_u‖ d|Du|`, hence `�
   is `σ_u` almost everywhere.
 * `TauCeti.enorm_integral_divergenceCLM_mul_le_lintegral_enorm`: the pairing is bounded by
   `∫ ‖φ‖ d|Du|`.
+* `TauCeti.polarDensity_congr_ae` and `TauCeti.polarDensity_const_sub`: `σ_u` only depends on `u`
+  almost everywhere on `Ω`, and `σ_{c - u} = -σ_u` against an additive Haar measure.
 
 ## References
 
@@ -315,5 +318,53 @@ theorem enorm_integral_divergenceCLM_mul_le_lintegral_enorm (φ : 𝓓(Ω, E)) :
   filter_upwards [ae_norm_polarDensity_eq_one hu hfin] with x hx
   rw [← ofReal_norm, ← ofReal_norm]
   exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans_eq (by rw [hx, mul_one]))
+
+omit hu hfin
+
+/-- **Locality of the polar density.** If `u = v` almost everywhere on `Ω`, then `σ_u = σ_v` at
+`|Du|`-almost every point. -/
+theorem polarDensity_congr_ae (h : u =ᵐ[μ.restrict Ω] v) :
+    polarDensity μ Ω u =ᵐ[variationMeasure μ Ω u] polarDensity μ Ω v := by
+  by_cases hu : LocallyIntegrableOn u Ω μ ∧
+      ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞
+  · by_cases hv : LocallyIntegrableOn v Ω μ ∧
+        ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U v ≠ ∞
+    · have hσ := locallyIntegrable_polarDensity hv.1 hv.2
+      rw [← variationMeasure_congr_ae h] at hσ
+      refine (ae_eq_polarDensity hu.1 hu.2 hσ fun φ => ?_).symm
+      rw [integral_divergenceCLM_mul_congr_ae h,
+        integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hv.1 hv.2,
+        variationMeasure_congr_ae h]
+    · rw [variationMeasure_congr_ae h, variationMeasure_eq_zero_of_not hv]
+      simp [EventuallyEq]
+  · rw [variationMeasure_eq_zero_of_not hu]
+    simp [EventuallyEq]
+
+/-- Against an additive Haar measure, the polar density of `c - u` is `-σ_u` at `|Du|`-almost
+every point. In particular the polar densities of the indicators of a set and of its complement
+are opposite. -/
+theorem polarDensity_const_sub [μ.IsAddHaarMeasure] (c : ℝ) :
+    polarDensity μ Ω (fun x => c - u x) =ᵐ[variationMeasure μ Ω u] -polarDensity μ Ω u := by
+  by_cases hu : LocallyIntegrableOn u Ω μ ∧
+      ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞
+  · have hc : LocallyIntegrableOn (fun _ : E => c) Ω μ :=
+      (locallyIntegrable_const c).locallyIntegrableOn _
+    have hv : LocallyIntegrableOn (fun x => c - u x) Ω μ ∧ ∀ K, IsCompact K → K ⊆ Ω →
+        ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (fun x => c - u x) ≠ ∞ :=
+      ⟨hc.sub hu.1, fun K hK hKΩ => by simpa only [totalVariationOn_const_sub] using hu.2 K hK hKΩ⟩
+    have hσ := (locallyIntegrable_polarDensity hu.1 hu.2).neg
+    rw [← variationMeasure_const_sub (u := u) c] at hσ ⊢
+    refine (ae_eq_polarDensity hv.1 hv.2 hσ fun φ => ?_).symm
+    have hiu : Integrable (fun x => divergenceCLM φ x * u x) μ := by
+      simpa using integrable_smul_of_locallyIntegrableOn hu.1 (divergenceCLM φ)
+    have hic : Integrable (fun x => divergenceCLM φ x * c) μ :=
+      ((divergenceCLM φ).integrable ((locallyIntegrable_const 1).locallyIntegrableOn _)).mul_const c
+    simp_rw [mul_sub]
+    rw [integral_sub hic hiu, integral_mul_const, integral_divergenceCLM_eq_zero, zero_mul,
+      zero_sub, integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu.1 hu.2,
+      variationMeasure_const_sub]
+    simp [inner_neg_right, integral_neg]
+  · rw [variationMeasure_eq_zero_of_not hu]
+    simp [EventuallyEq]
 
 end TauCeti
