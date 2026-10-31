@@ -39,9 +39,10 @@ continuous and linear in `u`, the same identity gives associativity. The positiv
 a continuous linear functional on `L¹` invariant under left translation, so integrals multiply.
 In particular, convolution preserves nonnegative `L¹` functions of integral one.
 
-For abelian groups written additively, the integrated form
-`ContRepresentation.integratedOperatorL1` of a representation is the corresponding construction
-for an arbitrary strongly continuous representation in place of left translation, and
+The integrated form `ContRepresentation.integratedOperatorL1` is the corresponding construction
+for an arbitrary strongly continuous representation in place of left translation; it is stated
+for an additive, not necessarily commutative, monoid and reaches multiplicative groups only
+through `Additive G`, whereas this file works with the multiplicative group `G` directly. Similarly,
 `TauCeti.convolutionLp` is the additive version of this construction on a finite-dimensional real
 vector space with an additive Haar measure.
 
@@ -53,6 +54,7 @@ vector space with an additive Haar measure.
 ## Main results
 
 * `MeasureTheory.Lp.convolutionL_apply`: the defining `Lᵖ`-valued Bochner integral.
+* `MeasureTheory.Lp.integrable_smul_leftTranslation`: its integrand is integrable.
 * `MeasureTheory.Lp.norm_convolutionL_apply_le`: Young's inequality `‖h ⋆ f‖_p ≤ ‖h‖₁ ‖f‖_p`.
 * `MeasureTheory.Lp.leftTranslation_convolutionL`: `L_g (h ⋆ f) = (L_g h) ⋆ f`.
 * `MeasureTheory.Lp.convolutionL_assoc`: associativity, `(h ⋆ k) ⋆ f = h ⋆ (k ⋆ f)`.
@@ -80,8 +82,10 @@ variable {G E : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Me
   [μ.InnerRegularCompactLTTop] [NormedAddCommGroup E] [NormedSpace ℝ E]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- The integrand `y ↦ h(y) • L_y f` of a convolution is integrable. -/
-private theorem integrable_smul_leftTranslation (hp : p ≠ ∞) {h : G → ℝ} (hh : Integrable h μ)
+/-- The integrand `y ↦ h(y) • L_y f` of a convolution is integrable. Together with
+`convolutionL_apply`, this lets continuous linear maps pass through the integral defining
+`h ⋆ f`. -/
+theorem integrable_smul_leftTranslation (hp : p ≠ ∞) {h : G → ℝ} (hh : Integrable h μ)
     (f : Lp E p μ) : Integrable (fun y ↦ h y • leftTranslation μ p ℝ y f) μ := by
   have : Fact (p ≠ ∞) := ⟨hp⟩
   -- `y ↦ L_y f = DomMulAct.mk y⁻¹ • f` is continuous by Mathlib's `ContinuousSMul` instance.
