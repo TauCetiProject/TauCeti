@@ -33,11 +33,11 @@ Fourier coefficients vanish by Cauchy's theorem. The boundary condition turns in
 `aₙ = conj a_{k-n}` for every integer `n`, with `aₙ = 0` for `n < 0`. Hence `u` agrees on the
 closed disc with a polynomial of degree at most `k` whose coefficients satisfy `aᵢ = conj aⱼ`
 whenever `i + j = k`, a *conjugate-reciprocal* polynomial
-(`TauCeti.mem_unitDiscCauchyRiemannKernel_iff_exists_eqOn`). Conversely every such polynomial is a
+(`TauCeti.exists_mem_conjReciprocalPolynomials_eqOn`). Conversely every such polynomial is a
 solution.
 These polynomials form a real vector space of dimension `k + 1` for `k ≥ -1` and `0` for `k < 0`
-(`TauCeti.finrank_conjReciprocalPolynomials`), so the space of solutions, read on the closed
-disc, has real dimension `max (k + 1) 0` (`TauCeti.finrank_map_unitDiscCauchyRiemannKernel`).
+(`TauCeti.finrank_conjReciprocalPolynomials`), so the space of solutions, as functions on the
+closed disc, has real dimension `max (k + 1) 0` (`TauCeti.finrank_unitDiscCauchyRiemannKernel`).
 For `k ≥ -1` this is `1 + k`, rank plus Maslov index, as the Riemann–Roch formula predicts once
 the cokernel is known to vanish; the cokernel, which needs Sobolev completions, is not treated
 here.
@@ -49,19 +49,21 @@ coefficients with Fourier coefficients of boundary values in
 
 ## Main definitions
 
-* `TauCeti.unitDiscCauchyRiemannKernel k`: the real subspace of functions `u : ℂ → ℂ` that are
-  holomorphic on the open unit disc, continuous on its closure, and satisfy
-  `u w = w ^ k * conj (u w)` on the unit circle.
+* `TauCeti.unitDiscCauchyRiemannKernel k`: the real subspace of functions on the closed unit disc
+  that are restrictions of functions holomorphic on the open unit disc and continuous on its
+  closure, satisfying `u w = w ^ k * conj (u w)` on the unit circle.
 
 ## Main results
 
-* `TauCeti.mem_unitDiscCauchyRiemannKernel_iff_exists_eqOn`: `u` is a solution exactly when it
+* `TauCeti.exists_mem_conjReciprocalPolynomials_eqOn`: a function `u : ℂ → ℂ` solving the problem
   agrees on the closed disc with a conjugate-reciprocal polynomial of degree at most `k`.
-* `TauCeti.eqOn_zero_of_mem_unitDiscCauchyRiemannKernel`: for `k < 0` the only solution is zero.
+* `TauCeti.mem_unitDiscCauchyRiemannKernel_iff_exists_eval`: the solutions on the closed disc are
+  exactly the conjugate-reciprocal polynomials of degree at most `k`.
+* `TauCeti.unitDiscCauchyRiemannKernel_eq_bot`: for `k < 0` the only solution is zero.
 * `TauCeti.eval_eq_zpow_mul_conj_eval`: a conjugate-reciprocal polynomial of degree at most `k`
   satisfies the boundary condition on the unit circle.
-* `TauCeti.finrank_map_unitDiscCauchyRiemannKernel`: the solutions, restricted to the closed
-  disc, form a real vector space of dimension `(k + 1).toNat`.
+* `TauCeti.finrank_unitDiscCauchyRiemannKernel`: the solutions form a real vector space of
+  dimension `(k + 1).toNat`.
 
 ## References
 
@@ -107,34 +109,9 @@ theorem eval_eq_zpow_mul_conj_eval (hp : p ∈ conjReciprocalPolynomials k) {w :
   rw [inv_pow]
   field_simp
 
-/-! ### The Cauchy–Riemann kernel on the unit disc -/
-
-/-- The kernel of the Cauchy–Riemann operator `∂/∂(conj z)` on the closed unit disc with
-boundary values on the rotating line `w ^ (k / 2) ℝ`: the functions `u : ℂ → ℂ` that are
-holomorphic on the open unit disc, continuous on its closure, and satisfy
-`u w = w ^ k * conj (u w)` for `‖w‖ = 1`. The boundary loop of lines has Maslov index `k`.
-Membership only depends on the values of `u` on the closed disc. -/
-def unitDiscCauchyRiemannKernel (k : ℤ) : Submodule ℝ (ℂ → ℂ) where
-  carrier := {u | DiffContOnCl ℂ u (ball 0 1) ∧
-    ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ k * conj (u w)}
-  add_mem' := by
-    rintro u v ⟨hu, hu'⟩ ⟨hv, hv'⟩
-    refine ⟨hu.add hv, fun w hw => ?_⟩
-    rw [Pi.add_apply, map_add, mul_add, ← hu' w hw, ← hv' w hw]
-  zero_mem' := ⟨diffContOnCl_const, fun w _ => by simp⟩
-  smul_mem' := by
-    rintro c u ⟨hu, hu'⟩
-    refine ⟨hu.const_smul c, fun w hw => ?_⟩
-    rw [Pi.smul_apply, real_smul, map_mul, conj_ofReal, mul_left_comm, ← hu' w hw]
+/-! ### Solutions on the closed disc -/
 
 variable {u : ℂ → ℂ}
-
-/-- Membership in `unitDiscCauchyRiemannKernel k`, unfolded. -/
-@[simp]
-theorem mem_unitDiscCauchyRiemannKernel_iff :
-    u ∈ unitDiscCauchyRiemannKernel k ↔ DiffContOnCl ℂ u (ball 0 1) ∧
-      ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ k * conj (u w) :=
-  Iff.rfl
 
 /-- Under the boundary condition, the Fourier coefficients of the boundary values satisfy
 `bₘ = conj b_{-(k + m)}` in the normalization `bₘ = ∫ e^{imθ} u(e^{iθ}) dθ`. -/
@@ -152,11 +129,12 @@ private theorem integral_zpow_mul_eq_conj
   rw [map_mul, map_zpow₀, hconj, inv_zpow', neg_neg, zpow_add₀ hz0]
   ring
 
-/-- A solution agrees on the closed disc with a conjugate-reciprocal polynomial of degree at most
-`k`, namely its Taylor polynomial. -/
-theorem exists_mem_conjReciprocalPolynomials_eqOn (hu : u ∈ unitDiscCauchyRiemannKernel k) :
+/-- A function holomorphic on the open unit disc, continuous on its closure, and satisfying
+`u w = w ^ k * conj (u w)` on the unit circle agrees on the closed disc with a
+conjugate-reciprocal polynomial of degree at most `k`, namely its Taylor polynomial. -/
+theorem exists_mem_conjReciprocalPolynomials_eqOn (hu : DiffContOnCl ℂ u (ball 0 1))
+    (hb : ∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ k * conj (u w)) :
     ∃ p ∈ conjReciprocalPolynomials k, EqOn u (fun z => p.eval z) (closedBall 0 1) := by
-  obtain ⟨hu, hb⟩ := hu
   -- The Taylor coefficients `aₙ` satisfy `aₙ = conj a_{k-n}`, with `aₙ = 0` for `n > k`.
   have ha : ∀ n : ℕ, (cauchyPowerSeries u 0 1).coeff n = (2 * π : ℂ)⁻¹ *
       conj (∫ θ in 0..2 * π, circleMap 0 1 θ ^ ((n : ℤ) - k) * u (circleMap 0 1 θ)) :=
@@ -201,40 +179,71 @@ theorem exists_mem_conjReciprocalPolynomials_eqOn (hu : u ∈ unitDiscCauchyRiem
     (by rw [closure_ball (0 : ℂ) one_ne_zero])
   simpa [closure_ball (0 : ℂ) one_ne_zero] using hu.continuousOn
 
-/-- A function agreeing on the closed disc with a conjugate-reciprocal polynomial of degree at
-most `k` is a solution. -/
-theorem mem_unitDiscCauchyRiemannKernel_of_eqOn (hp : p ∈ conjReciprocalPolynomials k)
-    (h : EqOn u (fun z => p.eval z) (closedBall 0 1)) : u ∈ unitDiscCauchyRiemannKernel k := by
-  refine ⟨⟨p.differentiable.differentiableOn.congr fun z hz => h (ball_subset_closedBall hz),
-    p.differentiable.continuous.continuousOn.congr ?_⟩, fun w hw => ?_⟩
-  · rw [closure_ball (0 : ℂ) one_ne_zero]
-    exact h
-  · rw [h (sphere_subset_closedBall hw)]
-    exact eval_eq_zpow_mul_conj_eval hp (by simpa using hw)
+/-! ### The Cauchy–Riemann kernel on the unit disc -/
+
+/-- The kernel of the Cauchy–Riemann operator `∂/∂(conj z)` on the closed unit disc with
+boundary values on the rotating line `w ^ (k / 2) ℝ`: the functions `g` on the closed unit disc
+that are restrictions of functions `u : ℂ → ℂ` holomorphic on the open unit disc and continuous on
+its closure, with `u w = w ^ k * conj (u w)` for `‖w‖ = 1`. The boundary loop of lines has Maslov
+index `k`. Two solutions are equal exactly when they agree at every point of the closed disc
+(`TauCeti.unitDiscCauchyRiemannKernel.ext`). -/
+def unitDiscCauchyRiemannKernel (k : ℤ) : Submodule ℝ (closedBall (0 : ℂ) 1 → ℂ) where
+  carrier := {g | ∃ u : ℂ → ℂ, DiffContOnCl ℂ u (ball 0 1) ∧
+    (∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ k * conj (u w)) ∧ (closedBall 0 1).domRestrict u = g}
+  add_mem' := by
+    rintro _ _ ⟨u, hu, hu', rfl⟩ ⟨v, hv, hv', rfl⟩
+    refine ⟨u + v, hu.add hv, fun w hw => ?_, rfl⟩
+    rw [Pi.add_apply, map_add, mul_add, ← hu' w hw, ← hv' w hw]
+  zero_mem' := ⟨0, diffContOnCl_const, fun w _ => by simp, rfl⟩
+  smul_mem' := by
+    rintro c _ ⟨u, hu, hu', rfl⟩
+    refine ⟨c • u, hu.const_smul c, fun w hw => ?_, rfl⟩
+    rw [Pi.smul_apply, real_smul, map_mul, conj_ofReal, mul_left_comm, ← hu' w hw]
+
+variable {g : closedBall (0 : ℂ) 1 → ℂ}
+
+/-- Membership in `unitDiscCauchyRiemannKernel k`, unfolded. -/
+@[simp]
+theorem mem_unitDiscCauchyRiemannKernel_iff :
+    g ∈ unitDiscCauchyRiemannKernel k ↔ ∃ u : ℂ → ℂ, DiffContOnCl ℂ u (ball 0 1) ∧
+      (∀ w ∈ sphere (0 : ℂ) 1, u w = w ^ k * conj (u w)) ∧ (closedBall 0 1).domRestrict u = g :=
+  Iff.rfl
+
+/-- Elements of `unitDiscCauchyRiemannKernel k` agreeing at every point of the closed disc are
+equal. -/
+@[ext]
+theorem unitDiscCauchyRiemannKernel.ext {f g : unitDiscCauchyRiemannKernel k}
+    (h : ∀ z, (f : closedBall (0 : ℂ) 1 → ℂ) z = (g : closedBall (0 : ℂ) 1 → ℂ) z) : f = g :=
+  Subtype.ext (_root_.funext h)
 
 /-- The solutions of the Cauchy–Riemann equation on the unit disc with boundary values on the line
-`w ^ (k / 2) ℝ` are exactly the functions agreeing on the closed disc with a conjugate-reciprocal
-polynomial of degree at most `k`. -/
-theorem mem_unitDiscCauchyRiemannKernel_iff_exists_eqOn :
-    u ∈ unitDiscCauchyRiemannKernel k ↔
-      ∃ p ∈ conjReciprocalPolynomials k, EqOn u (fun z => p.eval z) (closedBall 0 1) :=
-  ⟨exists_mem_conjReciprocalPolynomials_eqOn, fun ⟨_, hp, h⟩ =>
-    mem_unitDiscCauchyRiemannKernel_of_eqOn hp h⟩
+`w ^ (k / 2) ℝ` are exactly the conjugate-reciprocal polynomials of degree at most `k`, evaluated
+on the closed disc. -/
+theorem mem_unitDiscCauchyRiemannKernel_iff_exists_eval :
+    g ∈ unitDiscCauchyRiemannKernel k ↔
+      ∃ p ∈ conjReciprocalPolynomials k, (fun z : closedBall (0 : ℂ) 1 => p.eval (z : ℂ)) = g := by
+  refine ⟨?_, ?_⟩
+  · rintro ⟨u, hu, hb, rfl⟩
+    obtain ⟨p, hp, h⟩ := exists_mem_conjReciprocalPolynomials_eqOn hu hb
+    exact ⟨p, hp, funext fun z => (h z.2).symm⟩
+  · rintro ⟨p, hp, rfl⟩
+    exact ⟨fun z => p.eval z, p.differentiable.diffContOnCl,
+      fun w hw => eval_eq_zpow_mul_conj_eval hp (by simpa using hw), rfl⟩
 
 /-- For a boundary condition of negative Maslov index, the only solution is zero. -/
-theorem eqOn_zero_of_mem_unitDiscCauchyRiemannKernel (hk : k < 0)
-    (hu : u ∈ unitDiscCauchyRiemannKernel k) : EqOn u 0 (closedBall 0 1) := by
-  obtain ⟨p, hp, h⟩ := exists_mem_conjReciprocalPolynomials_eqOn hu
+theorem unitDiscCauchyRiemannKernel_eq_bot (hk : k < 0) : unitDiscCauchyRiemannKernel k = ⊥ := by
+  refine (Submodule.eq_bot_iff _).mpr fun g hg => ?_
+  obtain ⟨p, hp, rfl⟩ := mem_unitDiscCauchyRiemannKernel_iff_exists_eval.mp hg
   obtain ⟨hp, -⟩ := mem_conjReciprocalPolynomials_iff.mp hp
   have : p = 0 := ext fun n => by simpa using hp n (by omega)
-  exact fun z hz => by simpa [this] using h hz
+  simp only [this, eval_zero]
+  rfl
 
 /-- The solutions of the Cauchy–Riemann equation on the unit disc with boundary values on the line
-`w ^ (k / 2) ℝ`, read on the closed disc, form a real vector space of dimension `k + 1` when
-`k ≥ -1`, and `0` when `k < 0`. -/
-theorem finrank_map_unitDiscCauchyRiemannKernel (k : ℤ) :
-    finrank ℝ ((unitDiscCauchyRiemannKernel k).map
-      (LinearMap.funLeft ℝ ℂ ((↑) : closedBall (0 : ℂ) 1 → ℂ))) = (k + 1).toNat := by
+`w ^ (k / 2) ℝ` form a real vector space of dimension `k + 1` when `k ≥ -1`, and `0` when
+`k < 0`. -/
+theorem finrank_unitDiscCauchyRiemannKernel (k : ℤ) :
+    finrank ℝ (unitDiscCauchyRiemannKernel k) = (k + 1).toNat := by
   -- Evaluation of polynomials on the closed disc, an injective real-linear map.
   let ev : ℂ[X] →ₗ[ℝ] (closedBall (0 : ℂ) 1 → ℂ) :=
     LinearMap.pi fun z : closedBall (0 : ℂ) 1 => (leval (z : ℂ)).restrictScalars ℝ
@@ -244,16 +253,10 @@ theorem finrank_map_unitDiscCauchyRiemannKernel (k : ℤ) :
     refine eq_zero_of_infinite_isRoot q
       ((infinite_of_mem_nhds (0 : ℂ) (closedBall_mem_nhds 0 one_pos)).mono fun z hz => ?_)
     simpa [ev] using congrFun hq ⟨z, hz⟩
-  have hmap : (unitDiscCauchyRiemannKernel k).map
-      (LinearMap.funLeft ℝ ℂ ((↑) : closedBall (0 : ℂ) 1 → ℂ)) =
-      (conjReciprocalPolynomials k).map ev := by
+  have hmap : unitDiscCauchyRiemannKernel k = (conjReciprocalPolynomials k).map ev := by
     ext g
-    simp only [Submodule.mem_map, mem_unitDiscCauchyRiemannKernel_iff_exists_eqOn]
-    constructor
-    · rintro ⟨u, ⟨p, hp, h⟩, rfl⟩
-      exact ⟨p, hp, funext fun z => (h z.2).symm⟩
-    · rintro ⟨p, hp, rfl⟩
-      exact ⟨fun z => p.eval z, ⟨p, hp, fun _ _ => rfl⟩, rfl⟩
+    rw [Submodule.mem_map, mem_unitDiscCauchyRiemannKernel_iff_exists_eval]
+    rfl
   rw [hmap, ← finrank_conjReciprocalPolynomials k]
   exact (Submodule.equivMapOfInjective _ hev _).finrank_eq.symm
 
