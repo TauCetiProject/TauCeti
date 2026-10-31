@@ -157,48 +157,37 @@ theorem lof_mem_scLattice_iff {i : Fin t.rank} {x : t.fundamentalModule ht i} :
   refine ⟨fun hx => ?_, t.lof_mem_scLattice ht⟩
   simpa using t.apply_mem_fundamentalLattice_of_mem_scLattice ht hx i
 
-/-- `v⁺ᵢ`, placed in the `i`-th summand, is a weight vector of weight `(δᵢⱼ)ⱼ` for the Cartan
-generators `hⱼ`, the coordinate vector of `ϖᵢ`. -/
-private theorem isCartanWeightVector_lof_fundamentalModuleGenerator (i : Fin t.rank) :
-    IsCartanWeightVector (t.lieBasis ht).h (representation ℚ (t.lieAlgebra ht) (t.scModule ht))
-      (Pi.single i 1)
-      (lof ℚ _ (t.fundamentalModule ht) i (t.fundamentalModuleGenerator ht i)) := by
-  refine (isCartanWeightVector_iff _ _).2 fun j => ?_
-  rw [representation_lof]
-  simp only [representation_ι_apply]
-  by_cases hji : j = i
-  · subst hji
-    simp
-  · simp [hji]
+/-- A weight vector of the `i`-th summand, placed in the `i`-th summand, is a weight vector of
+`V_sc(t)` of the same weight. -/
+private theorem isCartanWeightVector_lof {i : Fin t.rank} {μ : Fin t.rank → ℤ}
+    {x : t.fundamentalModule ht i}
+    (hx : IsCartanWeightVector (t.lieBasis ht).h
+      (representation ℚ (t.lieAlgebra ht) (t.fundamentalModule ht i)) μ x) :
+    IsCartanWeightVector (t.lieBasis ht).h (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) μ
+      (lof ℚ _ (t.fundamentalModule ht) i x) :=
+  (isCartanWeightVector_iff _ _).2 fun j => by
+    have hj := (isCartanWeightVector_iff _ _).1 hx j
+    simp only [representation_ι_apply] at hj
+    rw [representation_lof]
+    simp only [representation_ι_apply, hj, map_smul]
 
-/-- The raising generators kill `v⁺ᵢ` placed in the `i`-th summand. -/
-private theorem representation_e_lof_fundamentalModuleGenerator (i j : Fin t.rank) :
-    representation ℚ (t.lieAlgebra ht) (t.scModule ht)
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).e j))
-        (lof ℚ _ (t.fundamentalModule ht) i (t.fundamentalModuleGenerator ht i)) = 0 := by
-  rw [representation_lof]
-  simp only [representation_ι_apply, lie_lieBasis_e_fundamentalModuleGenerator, map_zero]
-
-/-- The full-weight lattice is the supremum of the Kostant orbits of the individual summand
-highest weight vectors. -/
+/-- The full-weight lattice is the supremum of the images of the fundamental lattices under the
+inclusions of the summands. -/
 private theorem scLattice_eq_iSup :
-    t.scLattice ht = ⨆ i, Subring.orbitOfRep (t.kostantForm ht)
-      (representation ℚ (t.lieAlgebra ht) (t.scModule ht))
-      {lof ℚ _ (t.fundamentalModule ht) i (t.fundamentalModuleGenerator ht i)} := by
-  refine le_antisymm ((Subring.orbitOfRep_le_iff _ _ _ _).2 ?_)
-    (iSup_le fun i => (Subring.orbitOfRep_le_iff _ _ _ _).2 ?_)
-  · rintro u hu _ ⟨i, rfl⟩
-    exact Submodule.mem_iSup_of_mem i (Subring.apply_mem_orbitOfRep _ _ _ hu rfl)
-  · rintro u hu _ rfl
-    exact t.representation_mem_scLattice ht hu (t.lof_fundamentalModuleGenerator_mem_scLattice ht i)
+    t.scLattice ht = ⨆ i, (t.fundamentalLattice ht i).map
+      ((lof ℚ _ (t.fundamentalModule ht) i).restrictScalars ℤ) := by
+  refine le_antisymm (fun x hx => ?_)
+    (iSup_le fun i => Submodule.map_le_iff_le_comap.2 fun y hy => ?_)
+  · rw [← sum_univ_of x]
+    exact sum_mem fun i _ => Submodule.mem_iSup_of_mem i
+      ⟨x i, (t.mem_scLattice_iff ht).1 hx i, (lof_eq_of ℚ _ _ i (x i)).symm⟩
+  · exact (t.lof_mem_scLattice_iff ht).2 hy
 
-/-- The full-weight lattice is finitely generated over `ℤ`, as the sum of the Kostant orbits of
-finitely many highest weight vectors in a finite-dimensional module. -/
+/-- The full-weight lattice is finitely generated over `ℤ`, as the sum of the images of the
+finitely many fundamental lattices. -/
 private theorem fg_scLattice : (t.scLattice ht).FG := by
-  rw [scLattice_eq_iSup, t.kostantForm_def ht]
-  exact Submodule.fg_iSup _ fun i => (t.lieBasis ht).fg_orbitOfRep_kostantForm_singleton _
-    (t.isCartanWeightVector_lof_fundamentalModuleGenerator ht i)
-    (t.representation_e_lof_fundamentalModuleGenerator ht i)
+  rw [scLattice_eq_iSup]
+  exact Submodule.fg_iSup _ fun i => (t.instIsLatticeFundamentalLattice ht i).fg.map _
 
 /-- The full-weight lattice spans `V_sc(t)` over `ℚ`, since each fundamental lattice spans its
 summand. -/
@@ -231,13 +220,19 @@ theorem mem_iSup_jointWeightSpace_of_mem_scLattice {x : t.scModule ht}
     (hx : x ∈ t.scLattice ht) :
     x ∈ ⨆ μ : Fin t.rank → ℤ, jointWeightSpace (t.lieBasis ht).h
       (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) μ := by
-  rw [scLattice_eq_iSup, t.kostantForm_def ht] at hx
+  rw [scLattice_eq_iSup] at hx
   refine Submodule.iSup_induction _ (motive := (· ∈ ⨆ μ : Fin t.rank → ℤ, jointWeightSpace
     (t.lieBasis ht).h (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) μ)) hx
     (fun i y hy => ?_) (zero_mem _) fun _ _ => add_mem
-  exact (t.lieBasis ht).mem_iSup_jointWeightSpace_of_mem_orbitOfRep_kostantForm_singleton _
-    (t.isCartanWeightVector_lof_fundamentalModuleGenerator ht i)
-    (t.representation_e_lof_fundamentalModuleGenerator ht i) hy
+  obtain ⟨z, hz, rfl⟩ := hy
+  -- `z` lies in the span of the integral weight spaces of the `i`-th summand, and the inclusion of
+  -- the summand sends each of them into the same weight space of `V_sc(t)`.
+  have hmap := Submodule.mem_map_of_mem (f := lof ℚ _ (t.fundamentalModule ht) i)
+    (t.mem_iSup_jointWeightSpace_of_mem_fundamentalLattice ht hz)
+  rw [Submodule.map_iSup] at hmap
+  refine iSup_mono (fun μ => Submodule.map_le_iff_le_comap.2 fun w hw => ?_) hmap
+  exact (mem_jointWeightSpace_iff _ _).2
+    (t.isCartanWeightVector_lof ht ((mem_jointWeightSpace_iff _ _).1 hw))
 
 /-! ### The weight basis -/
 
@@ -319,7 +314,8 @@ theorem single_mem_range_scWeight (i : Fin t.rank) :
     (Pi.single i 1 : Fin t.rank → ℤ) ∈ range (t.scWeight ht) := by
   rw [scWeight_def, mem_range_kostantWeightFin_iff]
   refine (Submodule.ne_bot_iff _).2 ⟨⟨_, t.lof_fundamentalModuleGenerator_mem_scLattice ht i⟩,
-    (mem_weightSublattice_iff _ _ _).2 (t.isCartanWeightVector_lof_fundamentalModuleGenerator ht i),
+    (mem_weightSublattice_iff _ _ _).2
+      (t.isCartanWeightVector_lof ht (t.isCartanWeightVector_fundamentalModuleGenerator ht i)),
     fun h => ?_⟩
   exact (t.isHighestWeightVector_lof_fundamentalModuleGenerator ht i).ne_zero
     (congrArg Subtype.val h)
