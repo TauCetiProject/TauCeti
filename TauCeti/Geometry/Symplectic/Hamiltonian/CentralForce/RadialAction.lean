@@ -21,7 +21,7 @@ the effective potential `U_ℓ(r) = ℓ² / (2 m r²) + U(r)`. At energy `E` its
 * the **radial action** `I_r = (1 / π) ∫_{r₁}^{r₂} √(2 m (E - U_ℓ(r))) dr`, the area enclosed by
   the radial phase curve divided by `2π` (`TauCeti.radialAction`);
 * the **radial period** `T_r = 2 ∫_{r₁}^{r₂} m dr / √(2 m (E - U_ℓ(r)))`, twice the time from
-  pericentre to apocentre, since `ṙ = p_r / m` (`TauCeti.radialPeriod`);
+  pericentre to apocentre, since `dr/dt = p_r / m` (`TauCeti.radialPeriod`);
 * the **apsidal angle** `Δθ = ∫_{r₁}^{r₂} ℓ dr / (r² √(2 m (E - U_ℓ(r))))`, the polar angle swept
   from pericentre to apocentre (`TauCeti.apsidalAngle`).
 
