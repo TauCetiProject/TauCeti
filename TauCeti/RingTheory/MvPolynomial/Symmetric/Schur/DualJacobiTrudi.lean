@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.JacobiTrudi
+import TauCeti.Algebra.Ring.Parity
 import TauCeti.Combinatorics.Young.BoxShuffle
 import TauCeti.Combinatorics.Young.Diagram
 import TauCeti.LinearAlgebra.Matrix.Determinant.ComplementaryMinor
@@ -75,17 +76,6 @@ open MvPolynomial
 /-! ### Sign cancellations -/
 
 section Signs
-
-variable {α : Type*} [Monoid α] [HasDistribNeg α]
-
-/-- An even summand of the exponent of `-1` can be dropped: `(-1)^{a + 2b} = (-1)^a`. -/
-private theorem neg_one_pow_add_two_mul (a b : ℕ) : (-1 : α) ^ (a + 2 * b) = (-1) ^ a := by
-  rw [pow_add, (even_two_mul b).neg_one_pow, mul_one]
-
-/-- Two equal powers of `-1` cancel: `(-1)^a * ((-1)^a * x) = x`. -/
-private theorem neg_one_pow_mul_neg_one_pow_mul (a : ℕ) (x : α) :
-    (-1 : α) ^ a * ((-1) ^ a * x) = x := by
-  rw [← mul_assoc, ← pow_add, ← two_mul, (even_two_mul a).neg_one_pow, one_mul]
 
 variable {R : Type*} [CommRing R] {σ : Type*}
 
