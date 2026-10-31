@@ -136,6 +136,13 @@ theorem functionsIn_exs (φ : L.BoundedFormulaInf ι α n) :
   | succ n ih => rw [exs_succ, ih, functionsIn_ex]
 
 @[simp]
+theorem functionsIn_exsLast {k : ℕ} (φ : L.BoundedFormulaInf ι α (n + k)) :
+    (exsLast φ).functionsIn = φ.functionsIn := by
+  induction k with
+  | zero => rw [exsLast_zero]
+  | succ k ih => rw [exsLast_succ, ih, functionsIn_ex]
+
+@[simp]
 theorem relationsIn_falsum :
     (falsum : L.BoundedFormulaInf ι α n).relationsIn = ∅ := (rfl)
 
@@ -211,6 +218,13 @@ theorem relationsIn_exs (φ : L.BoundedFormulaInf ι α n) :
   induction n with
   | zero => simp
   | succ n ih => rw [exs_succ, ih, relationsIn_ex]
+
+@[simp]
+theorem relationsIn_exsLast {k : ℕ} (φ : L.BoundedFormulaInf ι α (n + k)) :
+    (exsLast φ).relationsIn = φ.relationsIn := by
+  induction k with
+  | zero => rw [exsLast_zero]
+  | succ k ih => rw [exsLast_succ, ih, relationsIn_ex]
 
 /-- At a countable branching carrier the set of occurring function symbols is countable. -/
 theorem functionsIn_countable [Countable ι] (φ : L.BoundedFormulaInf ι α n) :
