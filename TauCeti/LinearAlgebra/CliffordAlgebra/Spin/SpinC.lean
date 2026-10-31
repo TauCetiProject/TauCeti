@@ -18,13 +18,15 @@ structure group of a `Spinᶜ` structure: for `Q v = -‖v‖²` on an oriented 
 half-spin representations `[s, z] ↦ z ρ^±(s)` are the fibres of the spinor bundles `W^±` of a
 `Spinᶜ` four-manifold.
 
-The group comes with two characters. The determinant character `[s, z] ↦ z²` is the structure
-group of the determinant line `L`, and the rotation `[s, z] ↦ π(s)` through the Spin action
-`π : Spin(Q) → SO(Q)` is the structure group of the frame bundle. Both are well defined because
-`(-1)² = 1` and `π(-1) = 1`. For a finite-dimensional nondegenerate `Q` in positive dimension, the
-kernel of their product `Spinᶜ(Q) → SO(Q) × U(1)` is the subgroup `{1, [1, -1]}` of order two, and
-the product is onto whenever the Spin action is. So `Spinᶜ(Q)` is a double cover of
-`SO(Q) × U(1)` whenever `Spin(Q)` is a double cover of `SO(Q)`.
+The group comes with two homomorphisms: the determinant character `[s, z] ↦ z²` to `U(1)`, and
+the rotation homomorphism `[s, z] ↦ π(s)` to `SO(Q)` through the Spin action
+`π : Spin(Q) → SO(Q)`. For a `Spinᶜ` structure, the determinant line `L` is the line bundle
+associated to its principal `Spinᶜ` bundle through the determinant character, and the frame bundle
+is obtained from that principal bundle through the rotation homomorphism. Both homomorphisms are
+well defined because `(-1)² = 1` and `π(-1) = 1`. For a finite-dimensional nondegenerate `Q` in
+positive dimension, the kernel of their product `Spinᶜ(Q) → SO(Q) × U(1)` is the subgroup
+`{1, [1, -1]}` of order two, and the product is onto whenever the Spin action is. So `Spinᶜ(Q)` is
+a double cover of `SO(Q) × U(1)` whenever `Spin(Q)` is a double cover of `SO(Q)`.
 
 ## Main definitions
 
@@ -36,7 +38,8 @@ the product is onto whenever the Spin action is. So `Spinᶜ(Q)` is a double cov
 * `CliffordAlgebra.spinCGroup.ofSpin Q hQ` and `CliffordAlgebra.spinCGroup.ofCircle Q hQ`: the
   injective homomorphisms `s ↦ [s, 1]` and `z ↦ [1, z]`.
 * `CliffordAlgebra.spinCGroup.det Q hQ`: the determinant character `[s, z] ↦ z²`.
-* `CliffordAlgebra.spinCGroup.toSpecialOrthogonal Q hQ`: the rotation `[s, z] ↦ π(s)`.
+* `CliffordAlgebra.spinCGroup.toSpecialOrthogonal Q hQ`: the rotation homomorphism
+  `[s, z] ↦ π(s)`.
 
 ## Main results
 
@@ -206,7 +209,8 @@ theorem ofCircle_injective : Function.Injective (ofCircle Q hQ) := by
 /-! ### The determinant character -/
 
 /-- **The determinant character** `Spinᶜ(Q) → U(1)`, `[s, z] ↦ z²`, well defined because
-`(-1)² = 1`. It is the structure group of the determinant line of a `Spinᶜ` structure. -/
+`(-1)² = 1`. The determinant line of a `Spinᶜ` structure is the line bundle associated to its
+principal `Spinᶜ` bundle through this character. -/
 def det : spinCGroup Q hQ →* Circle :=
   lift Q hQ ((powMonoidHom 2).comp (MonoidHom.snd _ _)) (by simp)
 
@@ -222,10 +226,10 @@ theorem det_ofSpin (s : spinGroup Q) : det Q hQ (ofSpin Q hQ s) = 1 := by
 theorem det_ofCircle (z : Circle) : det Q hQ (ofCircle Q hQ z) = z ^ 2 := by
   simp [ofCircle_apply]
 
-/-! ### The rotation action -/
+/-! ### The rotation homomorphism -/
 
-/-- **The rotation** `Spinᶜ(Q) → SO(Q)`, `[s, z] ↦ π(s)`, through the Spin action `π`; it is well
-defined because `π(-1) = 1`. -/
+/-- **The rotation homomorphism** `Spinᶜ(Q) → SO(Q)`, `[s, z] ↦ π(s)`, through the Spin action
+`π`; it is well defined because `π(-1) = 1`. -/
 def toSpecialOrthogonal : spinCGroup Q hQ →* specialOrthogonalGroup Q :=
   lift Q hQ ((spinToSpecialOrthogonal Q).comp (MonoidHom.fst _ _)) (by simp)
 
