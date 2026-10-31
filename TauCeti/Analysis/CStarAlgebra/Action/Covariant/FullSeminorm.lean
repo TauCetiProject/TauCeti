@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
-public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Regular
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Star
 
@@ -43,8 +42,6 @@ seminorm is a norm.
 
 ## Main statements
 
-* `TauCeti.CStarAction.CovariantRepresentation.norm_integratedStarAlgHom_le_norm`: the integrated
-  form of a covariant representation in any universe is bounded by the L¹ norm.
 * `TauCeti.CStarAction.ConvolutionAlgebra.norm_integratedStarAlgHom_le_fullSeminorm`: every
   integrated form is bounded by the full seminorm.
 * `TauCeti.CStarAction.ConvolutionAlgebra.fullSeminorm_le_iff`: the full seminorm is the least
@@ -78,14 +75,6 @@ variable {G : Type u} {A : Type v} [Group G] [TopologicalSpace G] [IsTopological
   [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] [NonUnitalCStarAlgebra A]
   {α : CStarAction G A} {μ : Measure G} [μ.IsHaarMeasure]
 
-/-- The integrated ⋆-homomorphism of a covariant representation, on a Hilbert space in any
-universe, is bounded by the L¹ norm. -/
-theorem CovariantRepresentation.norm_integratedStarAlgHom_le_norm {H : Type*}
-    [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-    (P : CovariantRepresentation α H) (f : ConvolutionAlgebra α μ) :
-    ‖P.integratedStarAlgHom μ f‖ ≤ ‖f‖ := by
-  simpa [ConvolutionAlgebra.norm_eq_integral_norm] using P.norm_integratedOperator_le μ f.ofConv
-
 namespace ConvolutionAlgebra
 
 variable (α μ) in
@@ -100,7 +89,7 @@ private def integratedSeminorms : Set (Seminorm ℂ (ConvolutionAlgebra α μ)) 
 private theorem bddAbove_integratedSeminorms : BddAbove (integratedSeminorms α μ) :=
   ⟨normSeminorm ℂ _, by
     rintro _ ⟨H, _, _, _, P, rfl⟩ f
-    exact P.norm_integratedStarAlgHom_le_norm f⟩
+    exact P.norm_integratedStarAlgHom_le_norm μ f⟩
 
 variable (α μ) in
 /-- The full C⋆-seminorm `‖f‖ᵤ = sup ‖(π ⋊ U)(f)‖` on the twisted convolution algebra: the supremum
@@ -141,7 +130,7 @@ theorem fullSeminorm_le_iff {f : ConvolutionAlgebra α μ} {c : ℝ} (hc : 0 ≤
 
 /-- The full seminorm is bounded by the L¹ norm. -/
 theorem fullSeminorm_le_norm (f : ConvolutionAlgebra α μ) : fullSeminorm α μ f ≤ ‖f‖ :=
-  (fullSeminorm_le_iff (norm_nonneg f)).2 fun _ _ _ _ P => P.norm_integratedStarAlgHom_le_norm f
+  (fullSeminorm_le_iff (norm_nonneg f)).2 fun _ _ _ _ P => P.norm_integratedStarAlgHom_le_norm μ f
 
 /-- The full seminorm is submultiplicative for twisted convolution. -/
 theorem fullSeminorm_mul_le (f g : ConvolutionAlgebra α μ) :
