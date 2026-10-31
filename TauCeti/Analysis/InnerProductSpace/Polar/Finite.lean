@@ -44,6 +44,13 @@ public section
 
 noncomputable section
 
+/-- The linear map underlying the isometric embedding of a linear isometric equivalence is the
+linear map underlying its linear equivalence. -/
+theorem LinearIsometryEquiv.toLinearMap_toLinearIsometry {𝕜 E F : Type*} [RCLike 𝕜]
+    [SeminormedAddCommGroup E] [Module 𝕜 E] [SeminormedAddCommGroup F] [Module 𝕜 F]
+    (e : E ≃ₗᵢ[𝕜] F) : e.toLinearIsometry.toLinearMap = e.toLinearEquiv :=
+  (rfl)
+
 namespace LinearMap
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
@@ -341,20 +348,17 @@ theorem polarFactor_comp_linearIsometryEquiv (A : F →ₗ[𝕜] G) (e : E ≃�
 /-- The modulus is natural under conjugation by a linear isometric equivalence. -/
 theorem operatorAbs_conj (e : E ≃ₗᵢ[𝕜] F) (T : E →ₗ[𝕜] E) :
     (e.toLinearEquiv.conj T).operatorAbs = e.toLinearEquiv.conj T.operatorAbs := by
-  have he : e.toLinearIsometry.toLinearMap = e.toLinearEquiv :=
-    LinearMap.ext (congr_fun e.coe_toLinearIsometry)
   have h := operatorAbs_comp_linearIsometryEquiv (e.toLinearIsometry.toLinearMap ∘ₗ T) e.symm
-  rw [operatorAbs_linearIsometry_comp, LinearIsometryEquiv.symm_symm, he] at h
+  rw [operatorAbs_linearIsometry_comp, LinearIsometryEquiv.symm_symm,
+    LinearIsometryEquiv.toLinearMap_toLinearIsometry] at h
   rw [LinearEquiv.conj_apply, LinearEquiv.conj_apply, ← LinearIsometryEquiv.toLinearEquiv_symm,
     h, comp_assoc]
 
 /-- The canonical polar factor is natural under conjugation by a linear isometric equivalence. -/
 theorem polarFactor_conj (e : E ≃ₗᵢ[𝕜] F) (T : E →ₗ[𝕜] E) :
     (e.toLinearEquiv.conj T).polarFactor = e.toLinearEquiv.conj T.polarFactor := by
-  have he : e.toLinearIsometry.toLinearMap = e.toLinearEquiv :=
-    LinearMap.ext (congr_fun e.coe_toLinearIsometry)
   have h := polarFactor_comp_linearIsometryEquiv (e.toLinearIsometry.toLinearMap ∘ₗ T) e.symm
-  rw [polarFactor_linearIsometry_comp, he] at h
+  rw [polarFactor_linearIsometry_comp, LinearIsometryEquiv.toLinearMap_toLinearIsometry] at h
   rw [LinearEquiv.conj_apply, LinearEquiv.conj_apply, ← LinearIsometryEquiv.toLinearEquiv_symm,
     h, comp_assoc]
 

@@ -127,23 +127,6 @@ that `U P = A`. Since `A` is skew-adjoint and injective, `P² = A† A = -A²` i
 commutes with `P` and with `A`, and `U² = -1`
 (`LinearMap.polarFactor_mul_self_of_adjoint_eq_neg`). -/
 
-section Polar
-
-variable (ω : SymplecticForm V)
-
-private theorem adjoint_comp_innerOperator :
-    LinearMap.adjoint ω.innerOperator ∘ₗ ω.innerOperator =
-      -(ω.innerOperator * ω.innerOperator) := by
-  rw [adjoint_innerOperator, LinearMap.neg_comp, Module.End.mul_eq_comp]
-
-private theorem commute_innerOperator_operatorAbs :
-    Commute ω.innerOperator ω.innerOperator.operatorAbs :=
-  LinearMap.commute_operatorAbs_of_commute <| by
-    rw [adjoint_comp_innerOperator]
-    exact ((Commute.refl _).mul_right (Commute.refl _)).neg_right
-
-end Polar
-
 /-- The **polar normalization** of a symplectic form: the polar factor `J` of its operator `A`,
 so that `A = J |A|`. It is an almost complex structure compatible with `ω`
 (`TauCeti.SymplecticForm.compatible_polarComplexStructure`) and orthogonal for the inner
@@ -170,7 +153,8 @@ theorem polarComplexStructure_apply_operatorAbs (ω : SymplecticForm V) (v : V) 
 theorem polarComplexStructure_apply_innerOperator (ω : SymplecticForm V) (v : V) :
     ω.polarComplexStructure (ω.innerOperator v) = ω.innerOperator (ω.polarComplexStructure v) :=
   LinearMap.congr_fun
-    (LinearMap.commute_polarFactor_of_commute ω.commute_innerOperator_operatorAbs).eq v
+    (LinearMap.commute_polarFactor_of_commute
+      (LinearMap.commute_operatorAbs_of_adjoint_eq_neg ω.adjoint_innerOperator)).eq v
 
 /-- The polar normalization is orthogonal: `⟪J u, J v⟫ = ⟪u, v⟫`. -/
 @[simp]
@@ -215,8 +199,8 @@ theorem polarComplexStructure_eq_of_apply_eq_inner (ω : SymplecticForm V)
     rw [real_inner_comm, ← h, hJ, ω.neg_eq]
   have hP : ω.innerOperator.operatorAbs = 1 := by
     refine (LinearMap.IsPositive.eq_operatorAbs LinearMap.isPositive_one ?_).symm
-    rw [adjoint_comp_innerOperator, ← hA, J.toLinearMap_mul_self, neg_neg, Module.End.one_eq_id,
-      LinearMap.id_comp]
+    rw [adjoint_innerOperator, LinearMap.neg_comp, ← hA, J.square_neg, neg_neg,
+      Module.End.one_eq_id, LinearMap.id_comp]
   refine AlmostComplexStructure.toLinearMap_injective ?_
   rw [polarComplexStructure_toLinearMap, hA]
   calc ω.innerOperator.polarFactor = ω.innerOperator.polarFactor * ω.innerOperator.operatorAbs := by

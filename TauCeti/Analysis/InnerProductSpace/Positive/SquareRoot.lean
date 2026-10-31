@@ -37,6 +37,9 @@ polar decomposition.
 * `LinearMap.commute_operatorAbs_of_commute`: an endomorphism commuting with `A† A` commutes
   with `|A|`.
 * `LinearMap.commute_operatorAbs`: a normal endomorphism commutes with its modulus.
+* `LinearMap.operatorAbs_mul_self_of_adjoint_eq_neg`,
+  `LinearMap.commute_operatorAbs_of_adjoint_eq_neg`: a skew-adjoint endomorphism `A` satisfies
+  `|A|² = -A²` and commutes with `|A|`.
 * `LinearMap.operatorAbs_comp_of_commute`: `|A P| = |A| P` for an orthogonal projection `P`
   commuting with `A† A`.
 
@@ -226,6 +229,18 @@ theorem commute_operatorAbs (A : E →ₗ[𝕜] E) [IsStarNormal A] :
   refine commute_operatorAbs_of_commute ?_
   simpa only [Module.End.mul_eq_comp, star_eq_adjoint] using
     star_comm_self.symm.mul_right (Commute.refl A)
+
+/-- The modulus of a skew-adjoint finite-dimensional endomorphism squares to `-A²`. -/
+theorem operatorAbs_mul_self_of_adjoint_eq_neg {A : E →ₗ[𝕜] E} (h : A.adjoint = -A) :
+    A.operatorAbs * A.operatorAbs = -(A * A) := by
+  rw [Module.End.mul_eq_comp, operatorAbs_sq, h, neg_comp, Module.End.mul_eq_comp]
+
+/-- A skew-adjoint finite-dimensional endomorphism commutes with its modulus. -/
+theorem commute_operatorAbs_of_adjoint_eq_neg {A : E →ₗ[𝕜] E} (h : A.adjoint = -A) :
+    Commute A A.operatorAbs :=
+  commute_operatorAbs_of_commute <| by
+    rw [h, neg_comp, ← Module.End.mul_eq_comp]
+    exact ((Commute.refl A).mul_right (Commute.refl A)).neg_right
 
 /-- If an orthogonal projection `P` commutes with the source Gram operator `A† A`, then the
 modulus of `A P` is `|A| P`. -/

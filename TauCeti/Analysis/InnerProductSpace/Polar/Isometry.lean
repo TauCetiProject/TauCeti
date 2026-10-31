@@ -143,12 +143,9 @@ theorem polarFactor_mul_self_of_adjoint_eq_neg {A : E →ₗ[𝕜] E} (hA : Func
   -- `U² P² = (U P)² = A² = -P²`; cancel the invertible `P²`.
   have hP := A.isUnit_operatorAbs hA
   have hUP : A.polarFactor * A.operatorAbs = A := A.polarFactor_comp_operatorAbs
-  have hPP : A.operatorAbs * A.operatorAbs = -(A * A) := by
-    rw [Module.End.mul_eq_comp, operatorAbs_sq, hS, neg_comp, Module.End.mul_eq_comp]
-  have hc := (commute_polarFactor_operatorAbs_of_commute (A := A)
-    (commute_operatorAbs_of_commute (by
-      rw [hS, neg_comp, ← Module.End.mul_eq_comp]
-      exact ((Commute.refl A).mul_right (Commute.refl A)).neg_right))).eq
+  have hPP := operatorAbs_mul_self_of_adjoint_eq_neg hS
+  have hc := (commute_polarFactor_operatorAbs_of_commute
+    (commute_operatorAbs_of_adjoint_eq_neg hS)).eq
   generalize A.polarFactor = U at *
   generalize A.operatorAbs = P at *
   rw [← hUP] at hPP
