@@ -136,6 +136,36 @@ theorem abs_log_normalizedAbsValue_le_logHeight₁ (v : Place K) (x : K) :
   have := log_normalizedAbsValue_le_logHeight₁ v x⁻¹
   rwa [map_inv₀, log_inv, logHeight₁_inv, neg_le] at this
 
+/-- If `x` has normalized absolute value `1` outside a nonempty finite set `T` of places, then at
+some place `v ∈ T` the logarithm `log ‖x‖_v` is at most `-logHeight₁ x / #T`. Indeed, by the
+product formula the negative parts of these logarithms sum to `-logHeight₁ x`. -/
+theorem exists_mem_log_normalizedAbsValue_le_neg_logHeight₁_div {T : Finset (Place K)}
+    (hT : T.Nonempty) {x : K} (hx : ∀ v ∉ T, normalizedAbsValue v x = 1) :
+    ∃ v ∈ T, log (normalizedAbsValue v x) ≤ -logHeight₁ x / T.card := by
+  have hsupp {f : ℝ → ℝ} (hf : f 1 = 0) : support (fun v ↦ f (normalizedAbsValue v x)) ⊆ T :=
+    fun v hv ↦ by
+      by_contra h
+      exact hv (by simp [hx v h, hf])
+  -- The negative parts of the logarithms sum to `-logHeight₁ x`.
+  have hsum : ∑ v ∈ T, min (log (normalizedAbsValue v x)) 0 = -logHeight₁ x := by
+    have h0 := finsum_log_normalizedAbsValue x
+    rw [finsum_eq_sum_of_support_subset _ (hsupp (f := log) log_one)] at h0
+    rw [logHeight₁_eq_finsum_posLog_normalizedAbsValue,
+      finsum_eq_sum_of_support_subset _ (hsupp (f := (log⁺ ·)) posLog_one)]
+    have hmin (y : ℝ) : min (log y) 0 = log y - log⁺ y := by
+      rw [posLog_apply]
+      rcases le_total (log y) 0 with h | h <;> simp [h]
+    simp only [hmin, Finset.sum_sub_distrib, h0, zero_sub]
+  obtain ⟨v, hv, hle⟩ := Finset.exists_le_of_sum_le hT
+    (f := fun v ↦ min (log (normalizedAbsValue v x)) 0) (g := fun _ ↦ -logHeight₁ x / T.card)
+    (le_of_eq (by rw [hsum, Finset.sum_const, nsmul_eq_mul]; field_simp [hT.card_pos.ne']))
+  refine ⟨v, hv, ?_⟩
+  rcases le_or_gt (log (normalizedAbsValue v x)) 0 with h | h
+  · rwa [min_eq_left h] at hle
+  · -- A positive logarithm forces a positive height, contradicting `0 ≤ -logHeight₁ x / #T`.
+    rw [min_eq_right h.le, le_div_iff₀ (by exact_mod_cast hT.card_pos)] at hle
+    linarith [log_normalizedAbsValue_le_logHeight₁ v x]
+
 /-- The multiplicative height of a nonzero tuple of elements of a number field is the product,
 over all places, of its largest normalized absolute value. -/
 theorem mulHeight_eq_finprod_iSup_normalizedAbsValue {ι : Type*} [Finite ι] {x : ι → K}

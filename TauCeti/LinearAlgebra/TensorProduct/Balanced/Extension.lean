@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Actions
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
+public import TauCeti.Algebra.Module.Projective.Semilinear
+public import Mathlib.RingTheory.Finiteness.Cardinality
 
 /-!
 # Extension of scalars along a ring homomorphism of noncommutative rings
@@ -42,9 +44,18 @@ commutativity is assumed.
 The extension of the zero module is zero by the `Subsingleton` instances of
 `TauCeti.BalancedTensorProduct`, since `TauCeti.BalancedExtension` is an `abbrev`.
 
+## Main results
+
+* `TauCeti.BalancedExtension.map_surjective`: extension of scalars preserves surjections.
+* Extension of scalars along any `f` sends finitely generated `R`-modules to finitely generated
+  `S`-modules and projective `R`-modules to projective `S`-modules (instances), hence finitely
+  generated projective modules to finitely generated projective modules. No flatness or
+  finiteness hypothesis on `f` is needed.
+
 ## References
 
-* C. A. Weibel, *The K-book*, Chapter I, §2, pp. 7–8, and Chapter II, §2.8.
+* C. A. Weibel, *The K-book*, Chapter I, §2, pp. 7–8, and Chapter II, §2.8 and
+  Example 2.8.1, pp. 12–13.
 -/
 
 public section
@@ -370,6 +381,41 @@ theorem piScalarRight_symm_apply [DecidableEq ι] (v : ι → S) :
   simp [Pi.single_apply]
 
 end Pi
+
+section FiniteProjective
+
+variable {P' : Type*} [AddCommGroup P'] [Module R P']
+
+/-- Extension of scalars preserves surjections: if `g : P → P'` is surjective, so is
+`S ⊗_R g`. -/
+theorem map_surjective {g : P →ₗ[R] P'} (hg : Function.Surjective g) :
+    Function.Surjective (map f g) := by
+  intro x
+  induction x using induction_on with
+  | tmul s p =>
+    obtain ⟨q, rfl⟩ := hg p
+    exact ⟨tmul f s q, map_tmul g s q⟩
+  | add x y hx hy =>
+    obtain ⟨x, rfl⟩ := hx
+    obtain ⟨y, rfl⟩ := hy
+    exact ⟨x + y, _root_.map_add _ x y⟩
+
+/-- The extension of scalars of a finitely generated module is finitely generated: a surjection
+`Rⁿ → P` extends to a surjection `Sⁿ ≃ S ⊗_R Rⁿ → S ⊗_R P`. -/
+instance [Module.Finite R P] : Module.Finite S (BalancedExtension f P) := by
+  obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin' R P
+  exact .of_surjective ((map f g).comp (piScalarRight f (Fin n)).symm.toLinearMap)
+    ((map_surjective hg).comp (piScalarRight f (Fin n)).symm.surjective)
+
+/-- The extension of scalars of a projective module is projective: an `S`-linear map out of
+`S ⊗_R P` is an `f`-semilinear map out of `P`, and these lift along surjections because `P` is
+projective. -/
+instance [Module.Projective R P] : Module.Projective S (BalancedExtension f P) := by
+  refine .of_lifting_property'' fun F hF ↦ ?_
+  obtain ⟨h, hh⟩ := Module.projective_lifting_property_semilinear F hF (includeRight f P)
+  exact ⟨lift h, hom_ext fun p ↦ by simpa using LinearMap.congr_fun hh p⟩
+
+end FiniteProjective
 
 end BalancedExtension
 

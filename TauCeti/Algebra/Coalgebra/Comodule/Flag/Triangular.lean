@@ -18,8 +18,8 @@ dimension, together with the extension basis from
 `TauCeti.Algebra.Coalgebra.Comodule.Flag.Extension`, gives a basis whose coefficient matrix is
 upper triangular with diagonal entries in `S`.
 
-This is the formal induction step behind both Kolchin arguments in Layer 5 of the ReductiveGroups
-roadmap. Taking `S = {1}` recovers the unitriangular statement used for unipotent groups, where
+This is the formal induction step behind both Kolchin arguments. Taking `S = {1}` recovers the
+unitriangular statement used for unipotent groups, where
 Kolchin's theorem supplies genuine fixed vectors; taking `S` to be the set of group-like elements
 gives the triangular statement Lie--Kolchin needs for solvable groups, where only eigenvectors are
 available and group-like elements survive on the diagonal. When `C` is the coordinate Hopf algebra

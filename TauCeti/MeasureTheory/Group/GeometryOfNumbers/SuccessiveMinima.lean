@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import TauCeti.Algebra.Module.ZLattice.Rank
+import TauCeti.Analysis.Convex.Gauge
+import TauCeti.Analysis.Convex.Star
 import TauCeti.LinearAlgebra.Dimension.Submodule
+import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
 
 /-!
 # Successive minima of an arbitrary set with respect to a submodule
@@ -42,6 +45,17 @@ Minkowski's second theorem.
 * `MeasureTheory.exists_linearIndependent_of_successiveMin_lt`: for discrete `L`,
   `i < finrank ℤ L` and a convex neighbourhood of `0`, every dilate by a factor strictly above the
   `i`-th minimum contains `i + 1` linearly independent vectors of `L`.
+* `MeasureTheory.lt_setFinrank_successiveMin_smul`: for discrete `L`, `i < finrank ℤ L` and a
+  compact convex neighbourhood of `0`, the infimum is attained: the dilate by the `i`-th minimum
+  itself contains vectors of `L` spanning a real subspace of dimension greater than `i`.
+* `MeasureTheory.setOf_lt_setFinrank_smul_inter_eq_Ici` and
+  `MeasureTheory.isClosed_setOf_lt_setFinrank_smul_inter`: in that setting the factors defining
+  the `i`-th minimum form the closed half-line above it.
+* `MeasureTheory.exists_directional_set'`, `MeasureTheory.exists_directional_set` and
+  `MeasureTheory.exists_directional_basis`: for discrete `L` and a compact convex neighbourhood
+  `s` of `0`, some `finrank ℤ L` independent vectors of `L` have their `j`-th member in the dilate
+  of `s` by the `j`-th minimum; for a full lattice they form a real basis of `E`. They need not
+  form a basis of `L` over `ℤ`.
 
 ## References
 
@@ -161,5 +175,125 @@ theorem exists_linearIndependent_of_successiveMin_lt [DiscreteTopology L] {r : �
   refine ⟨fun j ↦ ⟨f j, (hf j).2⟩, hf, ?_⟩
   rw [← L.subtype.linearIndependent_iff (ker_subtype L)]
   exact hfli.restrict_scalars' ℤ
+
+/-- **Attainment of the successive minima.** Below the integer rank of a discrete `L`, the dilate
+of a compact convex neighbourhood `s` of `0` by its `i`-th successive minimum itself contains
+vectors of `L` spanning a real subspace of dimension greater than `i`: the infimum defining
+`successiveMin L s i` is a minimum. The set `s` need not be symmetric. -/
+theorem lt_setFinrank_successiveMin_smul [DiscreteTopology L] (hsc : Convex ℝ s)
+    (hs : IsCompact s) (hs₀ : s ∈ 𝓝 0) (hi : i < finrank ℤ L) :
+    i < Set.finrank ℝ (successiveMin L s i • s ∩ L) := by
+  set m := successiveMin L s i
+  have h₀ : (0 : E) ∈ s := mem_of_mem_nhds hs₀
+  have hsmul (c : ℝ≥0) : c • s = (c : ℝ) • s := by
+    ext
+    simp only [Set.mem_smul_set, NNReal.smul_def]
+  -- The vectors of `L` in `(m + 1) • s` but outside `m • s` form a finite set `G`.
+  set G := ((m + 1 : ℝ) • s ∩ L) \ (m : ℝ) • s
+  have hG : G.Finite :=
+    (L.toAddSubgroup.finite_inter (hs.isBounded.smul₀ _)).subset Set.sdiff_subset
+  -- Each of them has gauge greater than `m`, because `{x | gauge s x ≤ m}` is the closed set
+  -- `m • s`.
+  have hgt : ∀ x ∈ G, (m : ℝ) < gauge s x := by
+    rintro x ⟨-, hxm⟩
+    by_contra! hle
+    have hsub := TauCeti.setOfPred_gauge_le_eq_closure_smul hsc
+      ((NormedSpace.isVonNBounded_iff ℝ).2 hs.isBounded) hs₀ m.2
+    exact hxm ((hs.smul (m : ℝ)).isClosed.closure_subset (hsub.subset hle))
+  -- Hence some `r > m` lies strictly below `m + 1` and the gauge of every vector of `G`.
+  have hev : ∀ᶠ r in 𝓝[>] (m : ℝ), ((∀ x ∈ G, r < gauge s x) ∧ r < m + 1) ∧ (m : ℝ) < r :=
+    (((hG.eventually_all.2 fun x hx ↦ eventually_lt_nhds (hgt x hx)).and
+      (eventually_lt_nhds (lt_add_one (m : ℝ)))).filter_mono nhdsWithin_le_nhds).and
+      self_mem_nhdsWithin
+  obtain ⟨r, ⟨hrG, hr1⟩, hmr⟩ := hev.exists
+  lift r to ℝ≥0 using m.2.trans hmr.le
+  -- Every vector of `L` in `r • s` lies in `(m + 1) • s` and has gauge at most `r`, so it is not
+  -- in `G`: it lies in `m • s`.
+  refine (lt_setFinrank_smul_inter_of_successiveMin_lt (hsc.starConvex h₀)
+    (absorbent_nhds_zero hs₀) hi (NNReal.coe_lt_coe.1 hmr)).trans_le (Set.finrank_mono ?_)
+  rintro x ⟨hxr, hxL⟩
+  rw [hsmul] at hxr ⊢
+  refine ⟨by_contra fun hxm ↦ ?_, hxL⟩
+  have hxG : x ∈ G := ⟨⟨hsc.smul_mono_of_zero_mem h₀ r.2 hr1.le hxr, hxL⟩, hxm⟩
+  exact (hrG x hxG).not_ge (gauge_le_of_mem r.2 hxr)
+
+/-- **The threshold set is a closed half-line.** Below the integer rank of a discrete `L`, the
+factors `r` for which the vectors of `L` in the dilate `r • s` of a compact convex neighbourhood
+`s` of `0` span a real subspace of dimension greater than `i` are exactly those at least the
+`i`-th successive minimum. -/
+theorem setOf_lt_setFinrank_smul_inter_eq_Ici [DiscreteTopology L] (hsc : Convex ℝ s)
+    (hs : IsCompact s) (hs₀ : s ∈ 𝓝 0) (hi : i < finrank ℤ L) :
+    {r : ℝ≥0 | i < Set.finrank ℝ (r • s ∩ L)} = Set.Ici (successiveMin L s i) := by
+  ext r
+  refine ⟨successiveMin_le_of_lt_setFinrank, fun hr ↦ ?_⟩
+  rcases (Set.mem_Ici.1 hr).eq_or_lt with hr | hr
+  · rw [← hr]
+    exact lt_setFinrank_successiveMin_smul hsc hs hs₀ hi
+  · exact lt_setFinrank_smul_inter_of_successiveMin_lt (hsc.starConvex (mem_of_mem_nhds hs₀))
+      (absorbent_nhds_zero hs₀) hi hr
+
+/-- Below the integer rank of a discrete `L`, the set of factors `r` for which the vectors of `L`
+in the dilate `r • s` of a compact convex neighbourhood `s` of `0` span a real subspace of
+dimension greater than `i` is closed. -/
+theorem isClosed_setOf_lt_setFinrank_smul_inter [DiscreteTopology L] (hsc : Convex ℝ s)
+    (hs : IsCompact s) (hs₀ : s ∈ 𝓝 0) (hi : i < finrank ℤ L) :
+    IsClosed {r : ℝ≥0 | i < Set.finrank ℝ (r • s ∩ L)} := by
+  rw [setOf_lt_setFinrank_smul_inter_eq_Ici hsc hs hs₀ hi]
+  exact isClosed_Ici
+
+variable (L) in
+/-- **A directional family.** For a discrete `L` and a compact convex neighbourhood `s` of `0`,
+there are `finrank ℤ L` real-linearly independent vectors of `L` whose `j`-th member lies in the
+dilate of `s` by the `j`-th successive minimum. They need not span `L` over `ℤ`;
+`exists_directional_set` restates them as an integrally independent family in `L`. The set `s`
+need not be symmetric. -/
+theorem exists_directional_set' [DiscreteTopology L] (hsc : Convex ℝ s) (hs : IsCompact s)
+    (hs₀ : s ∈ 𝓝 0) :
+    ∃ v : Fin (finrank ℤ L) → E,
+      (∀ j : Fin (finrank ℤ L), v j ∈ successiveMin L s j • s ∩ L) ∧ LinearIndependent ℝ v := by
+  -- Build the family one vector at a time: the vectors of `L` in the dilate by the `d`-th
+  -- minimum span more than `d` dimensions, so one of them lies outside the span of the first `d`.
+  suffices ∀ d ≤ finrank ℤ L, ∃ v : Fin d → E,
+      (∀ j : Fin d, v j ∈ successiveMin L s j • s ∩ L) ∧ LinearIndependent ℝ v from this _ le_rfl
+  intro d hd
+  induction d with
+  | zero => exact ⟨Fin.elim0, fun j ↦ j.elim0, linearIndependent_empty_type⟩
+  | succ d ih =>
+    obtain ⟨v, hv, hvli⟩ := ih (Nat.le_of_succ_le hd)
+    obtain ⟨w, hw, hwv⟩ : ∃ w ∈ successiveMin L s d • s ∩ L, w ∉ span ℝ (Set.range v) := by
+      by_contra! h
+      have hlt : d < Set.finrank ℝ (Set.range v) :=
+        (lt_setFinrank_successiveMin_smul hsc hs hs₀ hd).trans_le (finrank_mono (span_le.2 h))
+      exact (finrank_range_le_card v).not_gt (by simpa using hlt)
+    refine ⟨Fin.snoc v w, fun j ↦ ?_, hvli.finSnoc hwv⟩
+    induction j using Fin.lastCases with
+    | last => simpa using hw
+    | cast j => simpa using hv j
+
+variable (L) in
+/-- **A directional family in `L`.** For a discrete `L` and a compact convex neighbourhood `s` of
+`0`, there are `finrank ℤ L` linearly independent vectors of `L` whose `j`-th member lies in the
+dilate of `s` by the `j`-th successive minimum. They need not form a basis of `L`. -/
+theorem exists_directional_set [DiscreteTopology L] (hsc : Convex ℝ s) (hs : IsCompact s)
+    (hs₀ : s ∈ 𝓝 0) :
+    ∃ v : Fin (finrank ℤ L) → L,
+      (∀ j : Fin (finrank ℤ L), (v j : E) ∈ successiveMin L s j • s) ∧ LinearIndependent ℤ v := by
+  obtain ⟨v, hv, hvli⟩ := exists_directional_set' L hsc hs hs₀
+  refine ⟨fun j ↦ ⟨v j, (hv j).2⟩, fun j ↦ (hv j).1, ?_⟩
+  rw [← L.subtype.linearIndependent_iff (ker_subtype L)]
+  exact hvli.restrict_scalars' ℤ
+
+variable (L) in
+/-- **A directional basis.** For a full lattice `L` and a compact convex neighbourhood `s` of `0`,
+some real basis of `E` consists of vectors of `L` whose `j`-th member lies in the dilate of `s` by
+the `j`-th successive minimum. It need not be a basis of `L` over `ℤ`. -/
+theorem exists_directional_basis [DiscreteTopology L] [IsZLattice ℝ L] (hsc : Convex ℝ s)
+    (hs : IsCompact s) (hs₀ : s ∈ 𝓝 0) :
+    ∃ b : Basis (Fin (finrank ℝ E)) ℝ E,
+      ∀ j : Fin (finrank ℝ E), b j ∈ successiveMin L s j • s ∩ L := by
+  obtain ⟨v, hv, hvli⟩ := exists_directional_set' L hsc hs hs₀
+  rw [← ZLattice.rank ℝ L]
+  exact ⟨basisOfLinearIndependentOfCardEqFinrank' v hvli (by simp [ZLattice.rank ℝ L]),
+    by simpa using hv⟩
 
 end MeasureTheory

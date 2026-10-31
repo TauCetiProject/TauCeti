@@ -8,18 +8,20 @@ module
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 
 /-!
-# Sums of tensor maps differing in one factor
+# Tensor maps of families of linear maps
 
 Mathlib's `PiTensorProduct.map_update_add` says that `PiTensorProduct.map` is additive in each
 factor. This file records the form of that statement used when two tensor maps are compared
 directly: if two families of linear maps agree away from one index `k`, then the sum of their
 tensor maps is the tensor map of the family whose `k`-th factor is the sum of the two `k`-th
-factors.
+factors. It also records that a tensor map over an empty index type is the identity.
 
 ## Main results
 
 * `TauCeti.PiTensorProduct.map_add_map_eq_map_update`: the sum of two tensor maps whose factors
   agree away from one index.
+* `TauCeti.PiTensorProduct.map_of_isEmpty`: a tensor map over an empty index type is the
+  identity.
 -/
 
 public section
@@ -45,5 +47,12 @@ theorem map_add_map_eq_map_update (f g : ∀ i, s i →ₗ[R] t i) (k : ι)
       simp
     · simp [Function.update_of_ne hi, h i hi]
   rw [PiTensorProduct.map_update_add, Function.update_eq_self, ← hg]
+
+omit [DecidableEq ι] in
+/-- Over an empty index type, every tensor map of endomorphisms is the identity. -/
+@[simp]
+theorem map_of_isEmpty [IsEmpty ι] (f : ∀ i, s i →ₗ[R] s i) :
+    PiTensorProduct.map f = LinearMap.id := by
+  rw [Subsingleton.elim f fun _ ↦ LinearMap.id, PiTensorProduct.map_id]
 
 end TauCeti.PiTensorProduct

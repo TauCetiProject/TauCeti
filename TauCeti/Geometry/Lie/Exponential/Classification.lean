@@ -70,7 +70,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [IsManifold I 1 G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 /-- The local logarithm of a continuous one-parameter subgroup at time `2⁻ⁿ`. -/
 private noncomputable def continuousOneParameterLog [FiniteDimensional ℝ E] [LieGroup I ∞ G]
