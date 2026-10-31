@@ -33,8 +33,9 @@ theorem hasFDerivAt_iff_tendsto_norm_div_nhdsNE :
   -- The remainder vanishes at `h = 0`, so the point `0` can be removed from the filter.
   have hpunct : HasFDerivAt f L x ↔
       (fun h ↦ f (x + h) - f x - L h) =o[𝓝[≠] 0] fun h ↦ h := by
-    rw [hasFDerivAt_iff_isLittleO_nhds_zero, ← nhdsWithin_univ, ← Set.union_compl_self {0},
-      ← Set.insert_eq, Asymptotics.isLittleO_insert (by simp)]
+    rw [hasFDerivAt_iff_isLittleO_nhds_zero, ← nhdsNE_sup_pure 0, Asymptotics.isLittleO_sup,
+      Asymptotics.isLittleO_pure]
+    simp
   rw [hpunct, ← Asymptotics.isLittleO_norm_norm,
     Asymptotics.isLittleO_iff_tendsto (by simp +contextual)]
 

@@ -312,25 +312,29 @@ theorem hasRightQuotientFDerivAt_const (c q : ℍ) : HasRightQuotientFDerivAt (f
 
 /-- Right multiplication `x ↦ x * b` has left slope `b` at every point. -/
 theorem hasLeftQuotientFDerivAt_mul_const (b q : ℍ) :
-    HasLeftQuotientFDerivAt (fun x ↦ x * b) q b :=
-  ((ContinuousLinearMap.mul ℝ ℍ).flip b).hasFDerivAt
+    HasLeftQuotientFDerivAt (fun x ↦ x * b) q b := by
+  have hfun : ⇑((ContinuousLinearMap.mul ℝ ℍ).flip b) = fun x ↦ x * b := by
+    funext x; simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply']
+  rw [hasLeftQuotientFDerivAt_iff_hasFDerivAt, ← hfun]
+  exact ((ContinuousLinearMap.mul ℝ ℍ).flip b).hasFDerivAt
 
 /-- Left multiplication `x ↦ a * x` has right slope `a` at every point. -/
 theorem hasRightQuotientFDerivAt_const_mul (a q : ℍ) :
-    HasRightQuotientFDerivAt (fun x ↦ a * x) q a :=
-  (ContinuousLinearMap.mul ℝ ℍ a).hasFDerivAt
+    HasRightQuotientFDerivAt (fun x ↦ a * x) q a := by
+  have hfun : ⇑(ContinuousLinearMap.mul ℝ ℍ a) = fun x ↦ a * x := by
+    funext x; simp only [ContinuousLinearMap.mul_apply']
+  rw [hasRightQuotientFDerivAt_iff_hasFDerivAt, ← hfun]
+  exact (ContinuousLinearMap.mul ℝ ℍ a).hasFDerivAt
 
 /-- The identity has left slope `1`. -/
 theorem hasLeftQuotientFDerivAt_id (q : ℍ) : HasLeftQuotientFDerivAt id q 1 := by
-  have h := hasLeftQuotientFDerivAt_mul_const 1 q
-  simp only [mul_one] at h
-  exact h
+  rw [show (id : ℍ → ℍ) = fun x ↦ x * 1 from funext fun x ↦ (mul_one x).symm]
+  exact hasLeftQuotientFDerivAt_mul_const 1 q
 
 /-- The identity has right slope `1`. -/
 theorem hasRightQuotientFDerivAt_id (q : ℍ) : HasRightQuotientFDerivAt id q 1 := by
-  have h := hasRightQuotientFDerivAt_const_mul 1 q
-  simp only [one_mul] at h
-  exact h
+  rw [show (id : ℍ → ℍ) = fun x ↦ 1 * x from funext fun x ↦ (one_mul x).symm]
+  exact hasRightQuotientFDerivAt_const_mul 1 q
 
 /-! ### Limit characterisations -/
 
