@@ -78,20 +78,11 @@ omit [FiniteDimensional 𝕜 F] hn hgf hsurj hdim in
 private noncomputable abbrev mfderivV (g : N → V) : TangentSpace J (f x) →ₗ[𝕜] V :=
   (mfderiv J 𝓘(𝕜, V) g (f x)).toLinearMap
 
-omit [FiniteDimensional 𝕜 F] hn hgf hdim in
-/-- A regular point of `g` is one where `dg`, read with values in `V`, is surjective. -/
-private theorem surjective_mfderivV : Function.Surjective (mfderivV f x g) :=
-  isRegularPoint_iff.1 hsurj
-
-/-- `TauCeti.SmoothEmbedding.tangentRange_eq_ker_mfderiv`, with `dg` read with values in `V`. -/
-private theorem tangentRange_eq_ker_mfderivV : f.tangentRange x hn = (mfderivV f x g).ker :=
-  f.tangentRange_eq_ker_mfderiv x hn hgf hsurj hdim
-
 /-- The linear equivalence underlying `TauCeti.SmoothEmbedding.normalSpaceEquivOfLevel`: the
 tangent range is the kernel of `dg`, so the first isomorphism theorem applies. -/
 private noncomputable def normalSpaceLinearEquivOfLevel : f.NormalSpace x hn ≃ₗ[𝕜] V :=
-  (Submodule.quotEquivOfEq _ _ (f.tangentRange_eq_ker_mfderivV x hn hgf hsurj hdim)).trans
-    ((mfderivV f x g).quotKerEquivOfSurjective (surjective_mfderivV f x hsurj))
+  (Submodule.quotEquivOfEq _ _ (f.tangentRange_eq_ker_mfderiv x hn hgf hsurj hdim)).trans
+    ((mfderivV f x g).quotKerEquivOfSurjective (isRegularPoint_iff.1 hsurj))
 
 /-- `TauCeti.SmoothEmbedding.normalSpaceLinearEquivOfLevel` sends the normal class of `v` to
 `dg(v)`. -/
@@ -100,7 +91,7 @@ private theorem normalSpaceLinearEquivOfLevel_normalClass (v : TangentSpace J (f
       mfderivV f x g v := by
   rw [normalClass_def]
   -- `quotEquivOfEq` fixes classes, so this is the first isomorphism theorem on the class of `v`.
-  exact (mfderivV f x g).quotKerEquivOfSurjective_apply_mk (surjective_mfderivV f x hsurj) v
+  exact (mfderivV f x g).quotKerEquivOfSurjective_apply_mk (isRegularPoint_iff.1 hsurj) v
 
 variable [CompleteSpace 𝕜]
 
