@@ -51,6 +51,9 @@ Chapter V, §3, Exercise 1).
 * `TauCeti.Iwasawa.isPseudoIsomorphism_lsmul`: multiplication by `a` on a finitely generated
   module `M` is a pseudo-isomorphism if `a` lies in no prime of height at most one in the support
   of `M`.
+* `TauCeti.Iwasawa.isPseudoIsomorphism_prod_mkQ`: if `φ : M → N` restricts to multiplication by
+  `a` on a finitely generated submodule `N`, and `a` lies in no prime of height at most one in the
+  support of `N`, then `φ.prod N.mkQ : M → N × M ⧸ N` is a pseudo-isomorphism.
 * `TauCeti.Iwasawa.IsPseudoIsomorphism.exists_reverse`: over a noetherian ring, a
   pseudo-isomorphism `M → N` onto a finitely generated torsion module gives a pseudo-isomorphism
   `N → M`.
@@ -170,6 +173,43 @@ theorem isPseudoIsomorphism_lsmul [IsNoetherianRing A] [Module.Finite A M] (a : 
   · have := Module.notMem_support_iff.mp hmem
     exact ⟨Function.injective_of_subsingleton _, Function.surjective_to_subsingleton _⟩
 
+/-- Let `N` be a finitely generated submodule of a module `M` over a noetherian ring, and let
+`φ : M → N` restrict to multiplication by `a` on `N`. If `a` lies in no prime of height at most
+one in the support of `N`, then `m ↦ (φ m, m mod N)` is a pseudo-isomorphism `M → N × M ⧸ N`. -/
+theorem isPseudoIsomorphism_prod_mkQ [IsNoetherianRing A] {N : Submodule A M} [Module.Finite A N]
+    {φ : M →ₗ[A] N} {a : A} (hφ : φ ∘ₗ N.subtype = LinearMap.lsmul A N a)
+    (ha : ∀ 𝔭 ∈ Module.support A N, 𝔭.asIdeal.height ≤ 1 → a ∉ 𝔭.asIdeal) :
+    IsPseudoIsomorphism (φ.prod N.mkQ) := by
+  have hφa (n : N) : φ n = a • n := by simpa using congr($hφ n)
+  -- The kernel lies in `N`, where `φ` is multiplication by `a`.
+  have hkerN : LinearMap.ker (φ.prod N.mkQ) ≤ N := fun m hm ↦ by
+    simpa using (Prod.ext_iff.mp hm).2
+  -- The cokernel is a quotient of `N`: modulo the image, `(n, m mod N) ≡ (n - φ m, 0)`.
+  let π : N →ₗ[A] (N × M ⧸ N) ⧸ LinearMap.range (φ.prod N.mkQ) :=
+    (LinearMap.range (φ.prod N.mkQ)).mkQ ∘ₗ LinearMap.inl A N (M ⧸ N)
+  have hπ : Function.Surjective π := by
+    rintro ⟨⟨n, q⟩⟩
+    obtain ⟨m, rfl⟩ := N.mkQ_surjective q
+    refine ⟨n - φ m, (Submodule.Quotient.eq _).mpr ⟨-m, ?_⟩⟩
+    simp
+  have : Module.Finite A (LinearMap.ker (φ.prod N.mkQ)) :=
+    .of_injective (Submodule.inclusion hkerN) (Submodule.inclusion_injective hkerN)
+  have : Module.Finite A ((N × M ⧸ N) ⧸ LinearMap.range (φ.prod N.mkQ)) := .of_surjective π hπ
+  refine ⟨isPseudoNull_of_mem_annihilator ha ?_
+    (Module.support_subset_of_injective (Submodule.inclusion hkerN)
+      (Submodule.inclusion_injective hkerN)),
+    isPseudoNull_of_mem_annihilator ha ?_ (Module.support_subset_of_surjective π hπ)⟩
+  · refine Module.mem_annihilator.mpr fun ⟨m, hm⟩ ↦ Subtype.ext ?_
+    have h₁ : φ m = 0 := (Prod.ext_iff.mp hm).1
+    have h₂ := hφa ⟨m, hkerN hm⟩
+    simpa [h₁, eq_comm] using congr(($h₂ : M))
+  · -- `a • (n, 0) = (φ n, n mod N)` lies in the image.
+    refine Module.mem_annihilator.mpr fun x ↦ ?_
+    obtain ⟨n, rfl⟩ := hπ x
+    rw [← map_smul]
+    simp only [π, LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+    exact ⟨n, by simp [hφa]⟩
+
 /-- Prime avoidance for a pseudo-isomorphism `f : M → N` onto a finitely generated torsion module
 over a noetherian ring: some `γ` kills `ker f` and `coker f` and lies in no prime of height at most
 one in the support of `N`. -/
@@ -178,26 +218,19 @@ theorem IsPseudoIsomorphism.exists_mem_annihilator_notMem [IsNoetherianRing A] [
     ∃ γ ∈ Module.annihilator A (LinearMap.ker f),
       γ ∈ Module.annihilator A (N ⧸ LinearMap.range f) ∧
         ∀ 𝔭 ∈ Module.support A N, 𝔭.asIdeal.height ≤ 1 → γ ∉ 𝔭.asIdeal := by
-  have := hf.isPseudoNull_ker.finite
-  have := hf.isPseudoNull_coker.finite
   -- None of the finitely many primes of height at most one in the support of `N` contains either
   -- annihilator, so none contains their intersection.
-  suffices ∃ γ ∈ Module.annihilator A (LinearMap.ker f) ⊓
-      Module.annihilator A (N ⧸ LinearMap.range f),
-      ∀ 𝔭 ∈ {𝔭 ∈ Module.support A N | 𝔭.asIdeal.height ≤ 1}, γ ∉ 𝔭.asIdeal by
-    obtain ⟨γ, hγJ, hγ⟩ := this
-    exact ⟨γ, (Submodule.mem_inf.mp hγJ).1, (Submodule.mem_inf.mp hγJ).2,
-      fun 𝔭 hmem h𝔭 ↦ hγ 𝔭 ⟨hmem, h𝔭⟩⟩
-  by_contra! h
-  obtain ⟨_, ⟨𝔭, ⟨-, hht⟩, rfl⟩, hJ⟩ :=
-    (Ideal.subset_union_prime_finite (f := id)
-      (hN.finite_setOf_mem_support_height_le_one.image PrimeSpectrum.asIdeal) ⊥ ⊥
-      fun _ ⟨𝔭, _, h⟩ _ _ ↦ h ▸ 𝔭.isPrime).mp fun x hx ↦ by simpa using h x hx
-  rcases 𝔭.isPrime.inf_le.mp hJ with hJ | hJ
-  · exact (hf.isPseudoNull_ker.one_lt_height
-      (Module.mem_support_iff_of_finite.mpr hJ)).not_ge hht
-  · exact (hf.isPseudoNull_coker.one_lt_height
-      (Module.mem_support_iff_of_finite.mpr hJ)).not_ge hht
+  have := hf.isPseudoNull_ker.finite
+  have := hf.isPseudoNull_coker.finite
+  obtain ⟨γ, hγJ, hγ⟩ := hN.exists_mem_forall_notMem_of_forall_not_le
+    (I := Module.annihilator A (LinearMap.ker f) ⊓ Module.annihilator A (N ⧸ LinearMap.range f))
+    fun 𝔭 _ hht hJ ↦ by
+      rcases 𝔭.isPrime.inf_le.mp hJ with hJ | hJ
+      · exact (hf.isPseudoNull_ker.one_lt_height
+          (Module.mem_support_iff_of_finite.mpr hJ)).not_ge hht
+      · exact (hf.isPseudoNull_coker.one_lt_height
+          (Module.mem_support_iff_of_finite.mpr hJ)).not_ge hht
+  exact ⟨γ, (Submodule.mem_inf.mp hγJ).1, (Submodule.mem_inf.mp hγJ).2, hγ⟩
 
 /-- Over a noetherian ring, a pseudo-isomorphism `M → N` onto a finitely generated torsion module
 can be reversed: there is a pseudo-isomorphism `N → M`. Without the torsion hypothesis the

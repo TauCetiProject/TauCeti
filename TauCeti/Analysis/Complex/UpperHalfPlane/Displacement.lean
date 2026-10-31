@@ -206,6 +206,20 @@ theorem trace_commutatorElement_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz :
     h₁₀]
   linear_combination 2 * k 0 0 ^ 2 * hdet + (X 0 0 ^ 2 + X 0 1 ^ 2 + X 1 0 ^ 2 + X 1 1 ^ 2) * hab
 
+/-- The commutator of a noncentral element fixing `z` with an element moving `z` is
+hyperbolic, with trace strictly greater than two. -/
+theorem two_lt_trace_commutatorElement_of_smul_eq_self {g h : SL(2, ℝ)} {z : ℍ}
+    (hz : g • z = z) (hg : (g : PSL(2, ℝ)) ≠ 1) (hh : h • z ≠ z) :
+    2 < ((⁅g, h⁆ : SL(2, ℝ)) : Matrix (Fin 2) (Fin 2) ℝ).trace := by
+  have hell := (Matrix.isElliptic_iff_abs_trace_lt_two g.det_coe).mp
+    (isElliptic_of_smul_eq_self_of_ne_one hz hg)
+  have hκ : 0 < (4 - (g : Matrix (Fin 2) (Fin 2) ℝ).trace ^ 2) / 2 := by
+    nlinarith [sq_abs (g : Matrix (Fin 2) (Fin 2) ℝ).trace,
+      abs_nonneg (g : Matrix (Fin 2) (Fin 2) ℝ).trace]
+  rw [trace_commutatorElement_of_smul_eq_self hz]
+  have := mul_pos hκ (sub_pos.mpr (Real.one_lt_cosh.mpr (dist_ne_zero.mpr hh)))
+  linarith
+
 /-! ### Bounds from the displacement of a point -/
 
 /-- The polynomial inequality behind `abs_trace_commutatorElement_sub_two_le`, in the coordinates

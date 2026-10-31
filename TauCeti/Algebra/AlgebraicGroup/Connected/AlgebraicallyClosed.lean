@@ -13,6 +13,7 @@ import Mathlib.Algebra.GroupWithZero.Idempotent
 import Mathlib.RingTheory.Flat.Basic
 import TauCeti.RingTheory.FiniteType.PointSeparation
 import TauCeti.RingTheory.Idempotents.Connected.ScalarExtension
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Testing geometric connectedness over algebraically closed fields
@@ -77,7 +78,7 @@ theorem geometricallyConnectedCommHopfAlgProperty_iff_connectedSpace_of_isAlgClo
     have hg : Function.Injective g := RingHom.injective g.toRingHom
     have hf : Function.Injective f :=
       Module.Flat.lTensor_preserves_injective_linearMap g.toLinearMap hg
-    exact connectedSpace_primeSpectrum_of_injective f.toRingHom hf
+    exact f.toRingHom.connectedSpace_primeSpectrum_of_injective hf
 
 /-- Over an algebraically closed field, a commutative Hopf algebra is geometrically connected
 exactly when its prime spectrum is connected. No finite-type assumption is needed. -/

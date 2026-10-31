@@ -334,6 +334,9 @@ inductive Puncture : Type
 
 namespace Puncture
 
+instance : Fintype Puncture :=
+  ⟨{zero, one, inf}, fun q => by cases q <;> simp⟩
+
 /-- The standard punctured neighborhood of a puncture: `puncturedNeighborhoodZero`,
 `puncturedNeighborhoodOne` or `puncturedNeighborhoodInf`. The body is exposed so that types over
 `p ⁻¹' zero.neighborhood` are those over `p ⁻¹' puncturedNeighborhoodZero`, and likewise at `1` and
