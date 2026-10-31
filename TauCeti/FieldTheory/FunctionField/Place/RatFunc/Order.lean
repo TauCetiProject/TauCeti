@@ -373,12 +373,6 @@ theorem residue_adicOfIrreducible_eq_zero_iff {q : k[X]} (hq : Irreducible q)
   · rw [(adicOfIrreducible hq).residue_eq_zero_iff_ord_pos hf,
       ord_adicOfIrreducible_pos_iff hq hf]
 
-/-- The function `t` has no pole at the finite place `P_q`. -/
-theorem X_mem_integers_adicOfIrreducible {q : k[X]} (hq : Irreducible q) :
-    (RatFunc.X : RatFunc k) ∈ (adicOfIrreducible hq).integers := by
-  by_contra h
-  exact adicOfIrreducible_ne_infty hq (X_notMem_integers_iff_eq_infty.mp h)
-
 /-- The value of the function `t` at the place `t = a` is `a`. -/
 @[simp]
 theorem residue_X_adicOfIrreducible_X_sub_C (a : k) :

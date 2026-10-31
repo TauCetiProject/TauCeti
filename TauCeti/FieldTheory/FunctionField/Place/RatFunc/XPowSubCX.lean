@@ -13,6 +13,7 @@ import Mathlib.Algebra.Polynomial.SpecificDegree
 import TauCeti.FieldTheory.FunctionField.Different.Radical
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Kummer
 import TauCeti.FieldTheory.Kummer.Extension
+import TauCeti.RingTheory.Polynomial.Monic.Factorization
 
 /-!
 # The extension `k(t)[Y] / (Y ^ n - t)`
@@ -164,11 +165,9 @@ theorem exists_equiv_restrict_eq_adicOfIrreducible_X_sub_one (hn : (n : k) ≠ 0
     (Place.residue_X_adicOfIrreducible_X_sub_C (1 : k)).trans (map_one _)
   have hφres : φ.map (IsLocalRing.residue P.integers) = (X ^ n - 1 : k[X]).map σ := by
     simp [φ, hres]
-  -- `X ^ n - 1` is separable, so its monic irreducible factors are pairwise distinct.
+  -- `X ^ n - 1` is separable, so it is the product of its distinct monic irreducible factors.
   have hsep : (X ^ n - 1 : k[X]).Separable := by
     simpa using separable_X_pow_sub_C (1 : k) hn one_ne_zero
-  have hne : (X ^ n - 1 : k[X]) ≠ 0 := hsep.ne_zero
-  have hnodup := (squarefree_iff_nodup_normalizedFactors hne).mp hsep.squarefree
   have hmonic₁ : (X ^ n - 1 : k[X]).Monic := by
     simpa using monic_X_pow_sub_C (1 : k) (NeZero.ne n)
   have hmonic (q : (normalizedFactors (X ^ n - 1 : k[X])).toFinset) : (q : k[X]).Monic := by
@@ -177,10 +176,8 @@ theorem exists_equiv_restrict_eq_adicOfIrreducible_X_sub_one (hn : (n : k) ≠ 0
     exact monic_normalize (ne_zero_of_mem_normalizedFactors hq)
   have hprod : ∏ q : (normalizedFactors (X ^ n - 1 : k[X])).toFinset,
       (q : k[X]).map (σ : k →+* P.ResidueField) = φ.map (IsLocalRing.residue P.integers) := by
-    -- The distinct normalized factors of `X ^ n - 1` multiply to its normalization, itself.
     rw [hφres, ← Polynomial.map_prod, Finset.prod_coe_sort _ fun q ↦ q,
-      Finset.prod_eq_multiset_prod, Multiset.toFinset_val, hnodup.dedup, Multiset.map_id',
-      prod_normalizedFactors_eq hne, hmonic₁.normalize_eq_self]
+      hmonic₁.prod_toFinset_normalizedFactors_of_squarefree hsep.squarefree]
   obtain ⟨e, he⟩ := Place.exists_equiv_restrict_eq_of_prod_eq_map_residue (k' := k)
     (IsFunctionField.ratFunc k) P (IntermediateField.adjoin_root_eq_top _) hmin
     (γ := fun q : (normalizedFactors (X ^ n - 1 : k[X])).toFinset ↦
