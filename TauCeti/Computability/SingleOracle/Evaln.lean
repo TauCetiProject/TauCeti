@@ -46,6 +46,9 @@ the program relative to every oracle extending those answers.
 * `TauCeti.Oracle.Single.Code.mem_eval_iff_exists_evaln`: when the answers are exactly the values
   of an oracle, the values of a program relative to that oracle are exactly the outputs of its
   successful runs.
+* `TauCeti.Oracle.Single.Code.mem_eval_iff_exists_evaln_range_map`: relative to a total oracle,
+  the values of a program are the outputs of its successful runs against initial segments of the
+  oracle.
 
 ## References
 
@@ -484,5 +487,24 @@ theorem mem_eval_iff_exists_evaln {O : ℕ →. ℕ} (hσ : ∀ z y, σ z = some
     {c : Code} {y : ℕ} : y ∈ eval O c n ↔ ∃ k d, evaln σ k c n = some d ∧ d.output = y :=
   ⟨exists_evaln_eq_some_of_mem_eval fun z y => (hσ z y).2, fun ⟨_, _, h, hy⟩ =>
     hy ▸ evaln_sound h fun z _ y' hy' => (hσ z y').1 hy'⟩
+
+/-- **Finite use, for a total oracle.** Relative to a total oracle `O`, the values of a program are
+exactly the outputs of its successful runs at some fuel `k` against the oracle string
+`[O 0, …, O (k - 1)]` of the first `k` answers of `O`. -/
+theorem mem_eval_iff_exists_evaln_range_map {O : ℕ → ℕ} {c : Code} {n y : ℕ} :
+    y ∈ eval (O : ℕ →. ℕ) c n ↔
+      ∃ k d, evaln (fun z => ((List.range k).map O)[z]?) k c n = some d ∧ d.output = y := by
+  constructor
+  · intro h
+    obtain ⟨k, d, hd, rfl⟩ := (mem_eval_iff_exists_evaln (σ := fun z => some (O z))
+      (by simp [eq_comm])).1 h
+    -- the run reads only addresses below its use, which is at most the fuel
+    refine ⟨k, d, evaln_eq_some_of_eqOn hd fun z hz => ?_, rfl⟩
+    have := evaln_use_le hd
+    simp only [Set.mem_Iio] at hz
+    simp [List.getElem?_range (show z < k by omega)]
+  · rintro ⟨k, d, hd, rfl⟩
+    refine evaln_sound hd fun z _ y hy => ?_
+    by_cases hz : z < k <;> simp_all
 
 end TauCeti.Oracle.Single.Code

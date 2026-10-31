@@ -15,7 +15,8 @@ independent of the oracle, which on input `Nat.pair e x` computes the value of t
 `e` on `x`, relative to every total oracle `O : ℕ → ℕ`. In Soare's notation,
 `Φ^O_u(⟨e, x⟩) ≃ Φ^O_e(x)` for all `O`, `e` and `x`.
 
-The construction rests on the finite use of oracle computations. Relative to a total oracle `O`,
+The construction rests on the finite use of oracle computations
+(`TauCeti.Oracle.Single.Code.mem_eval_iff_exists_evaln_range_map`). Relative to a total oracle `O`,
 the values of a program are exactly the outputs of its successful bounded runs at some fuel `k`
 against the oracle string `[O 0, …, O (k - 1)]` of the first `k` answers. That oracle string is
 computed relative to `O` by primitive recursion, querying the oracle once per step, and bounded
@@ -33,9 +34,6 @@ by the same program for every total oracle `O`.
 
 ## Main results
 
-* `TauCeti.Oracle.Single.Code.mem_eval_iff_exists_evaln_range_map`: relative to a total oracle,
-  the values of a program are the outputs of its successful runs against initial segments of the
-  oracle.
 * `TauCeti.Oracle.Single.Code.eval_universal`: the universal program on `Nat.pair e x` computes
   the program numbered `e` on `x`, relative to every total oracle.
 * `TauCeti.Oracle.Single.Code.recursiveIn_eval_ofNat`: the universal function of programs relative
@@ -56,40 +54,12 @@ open Encodable Denumerable
 
 namespace TauCeti.Oracle.Single.Code
 
-/-! ### Runs against initial segments of a total oracle -/
-
-/-- **Finite use, for a total oracle.** Relative to a total oracle `O`, the values of a program are
-exactly the outputs of its successful runs at some fuel `k` against the oracle string
-`[O 0, …, O (k - 1)]` of the first `k` answers of `O`. -/
-theorem mem_eval_iff_exists_evaln_range_map {O : ℕ → ℕ} {c : Code} {n y : ℕ} :
-    y ∈ eval (O : ℕ →. ℕ) c n ↔
-      ∃ k d, evaln (fun z => ((List.range k).map O)[z]?) k c n = some d ∧ d.output = y := by
-  constructor
-  · intro h
-    obtain ⟨k, d, hd, rfl⟩ := (mem_eval_iff_exists_evaln (σ := fun z => some (O z))
-      (by simp [eq_comm])).1 h
-    -- the run reads only addresses below its use, which is at most the fuel
-    refine ⟨k, d, evaln_eq_some_of_eqOn hd fun z hz => ?_, rfl⟩
-    have := evaln_use_le hd
-    simp only [Set.mem_Iio] at hz
-    simp [List.getElem?_range (show z < k by omega)]
-  · rintro ⟨k, d, hd, rfl⟩
-    refine evaln_sound hd fun z _ y hy => ?_
-    by_cases hz : z < k <;> simp_all
-
 /-! ### Building blocks of the universal program -/
 
 /-- `Part.bind_some` for a continuation typed as a partial function `ℕ →. ℕ`, the form in which
 `eval_comp` presents a composition; `simp` does not apply `Part.bind_some` there. -/
 private theorem some_bind_eq (m : ℕ) (f : ℕ →. ℕ) : Part.some m >>= f = f m :=
   Part.bind_some _ _
-
-/-- A primitive recursive function is computed by a query-free program, relative to every
-oracle. -/
-private theorem exists_eval_eq_some_of_primrec {g : ℕ → ℕ} (hg : Primrec g) :
-    ∃ c : Code, ∀ (O : ℕ →. ℕ) n, eval O c n = Part.some (g n) := by
-  obtain ⟨c, hc⟩ := Nat.Partrec.Code.exists_code.1 (Partrec.nat_iff.1 hg.to_comp)
-  exact ⟨c.toSingleOracleCode, fun O n => by rw [eval_toSingleOracleCode, hc]; rfl⟩
 
 /-- A program computing, from `k`, the number of the oracle string of the first `k` answers of a
 total oracle, relative to every total oracle. -/

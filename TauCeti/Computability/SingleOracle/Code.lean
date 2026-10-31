@@ -49,6 +49,8 @@ program uniformly in the oracle.
   values of a pairing, and one step of a search.
 * `TauCeti.Oracle.Single.Code.eval_toSingleOracleCode`: a query-free program computes the same
   function as the ordinary code it comes from, relative to every oracle.
+* `TauCeti.Oracle.Single.Code.exists_eval_eq_some_of_primrec`: a primitive recursive function is
+  computed by one query-free program, relative to every oracle.
 * `TauCeti.Oracle.Single.Code.exists_code`: adequacy, `Nat.RecursiveIn {O} f ↔ ∃ c, eval O c = f`.
 * `TauCeti.Oracle.Single.Code.turingReducible_iff_exists_code`: the same for Turing
   reducibility.
@@ -524,5 +526,12 @@ theorem eval_toSingleOracleCode (O : ℕ →. ℕ) (c : Nat.Partrec.Code) :
   | prec cf cg ihf ihg =>
     rw [Nat.Partrec.Code.toSingleOracleCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
   | rfind' cf ihf => rw [Nat.Partrec.Code.toSingleOracleCode, eval, Nat.Partrec.Code.eval, ihf]
+
+/-- A primitive recursive function is computed by a query-free program, relative to every
+oracle. -/
+theorem exists_eval_eq_some_of_primrec {g : ℕ → ℕ} (hg : Primrec g) :
+    ∃ c : Code, ∀ (O : ℕ →. ℕ) n, eval O c n = Part.some (g n) := by
+  obtain ⟨c, hc⟩ := Nat.Partrec.Code.exists_code.1 (Partrec.nat_iff.1 hg.to_comp)
+  exact ⟨c.toSingleOracleCode, fun O n => by rw [eval_toSingleOracleCode, hc]; rfl⟩
 
 end TauCeti.Oracle.Single.Code
