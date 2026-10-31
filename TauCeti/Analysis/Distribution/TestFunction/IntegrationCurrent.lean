@@ -226,12 +226,9 @@ theorem integrationCurrent_pullbackCLM (o : Orientation ℝ E (Fin m)) (hinj : S
     ext x
     by_cases hx : x ∈ Ω <;> simp [hx]
   have htarget : ∫ y, ω y b ∂b.addHaar = ∫ y in Φ '' Ω, ω y b ∂b.addHaar := by
-    rw [himage, ← integral_indicator Ω'.isOpen.measurableSet]
-    congr 1
-    ext y
-    by_cases hy : y ∈ Ω'
-    · simp [hy]
-    · simp [hy, ω.zero_on_compl hy]
+    rw [himage]
+    exact (setIntegral_eq_integral_of_forall_compl_eq_zero
+      (fun y hy ↦ by simp [ω.zero_on_compl hy])).symm
   rw [integrationCurrent_apply_eq_signBasis_mul o Ω b,
     integrationCurrent_apply_eq_signBasis_mul o Ω' b, hsource, htarget, hcov, integral_const_mul]
   linear_combination -(o.signBasis b : ℝ) * (∫ x in Ω,
