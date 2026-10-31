@@ -282,21 +282,6 @@ theorem exists_mem_affineWeylGroup_apply_mem_fundamentalAlcove {x : N}
   exact ⟨f, hf, mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove.mpr
     ⟨hfx, P.root'_apply_ne_intCast_of_mem_affineWeylGroup hf hx⟩⟩
 
-omit [Finite ι] [Nonempty ι] [P.IsReduced] [P.IsIrreducible] [Archimedean R] in
-/-- An element of the affine Weyl group preserves the relation of lying on no affine root
-hyperplane and on the same side of each of them. -/
-private lemma sameAlcove_apply {f : N ≃ᵃ[R] N} (hf : f ∈ P.affineWeylGroup) {x y : N}
-    (h : ∀ j (k : ℤ), ((k : R) < P.root' j y ↔ (k : R) < P.root' j x) ∧ P.root' j y ≠ k)
-    (j : ι) (k : ℤ) :
-    ((k : R) < P.root' j (f y) ↔ (k : R) < P.root' j (f x)) ∧ P.root' j (f y) ≠ k := by
-  obtain ⟨j', m, hm⟩ := P.exists_root'_apply_eq_add_intCast_of_mem_affineWeylGroup hf j
-  obtain ⟨h₁, h₂⟩ := h j' (k - m)
-  simp only [Int.cast_sub, sub_lt_iff_lt_add] at h₁
-  refine ⟨by rw [hm, hm]; exact h₁, fun h ↦ h₂ ?_⟩
-  rw [hm] at h
-  push_cast
-  linarith
-
 /-- **The affine Weyl group is transitive on the alcoves.** The alcove of a point `x` lying on no
 affine root hyperplane, the set of points lying on no affine root hyperplane and on the same side
 as `x` of each of them, is the preimage of the fundamental alcove under an element of the affine
@@ -307,8 +292,14 @@ theorem exists_mem_affineWeylGroup_preimage_fundamentalAlcove_eq {x : N}
       {y | ∀ j (k : ℤ), ((k : R) < P.root' j y ↔ (k : R) < P.root' j x) ∧ P.root' j y ≠ k} := by
   obtain ⟨f, hf, hfx⟩ := exists_mem_affineWeylGroup_apply_mem_fundamentalAlcove b hx
   refine ⟨f, hf, Set.ext fun y ↦ ⟨fun hy ↦ ?_, fun hy ↦ ?_⟩⟩
-  · have h := sameAlcove_apply (inv_mem hf) ((mem_fundamentalAlcove_iff_of_mem hfx).mp hy)
-    simpa [AffineEquiv.inv_def] using h
-  · exact (mem_fundamentalAlcove_iff_of_mem hfx).mpr (sameAlcove_apply hf hy)
+  · have hy' := (mem_fundamentalAlcove_iff_of_mem hfx).mp hy
+    have h₁ := P.intCast_lt_root'_apply_iff_of_mem_affineWeylGroup (inv_mem hf)
+      fun j k ↦ (hy' j k).1
+    have h₂ := P.root'_apply_ne_intCast_of_mem_affineWeylGroup (inv_mem hf) fun j k ↦ (hy' j k).2
+    simp only [AffineEquiv.inv_def, AffineEquiv.symm_apply_apply] at h₁ h₂
+    exact fun j k ↦ ⟨h₁ j k, h₂ j k⟩
+  · exact (mem_fundamentalAlcove_iff_of_mem hfx).mpr fun j k ↦
+      ⟨P.intCast_lt_root'_apply_iff_of_mem_affineWeylGroup hf (fun j k ↦ (hy j k).1) j k,
+        P.root'_apply_ne_intCast_of_mem_affineWeylGroup hf (fun j k ↦ (hy j k).2) j k⟩
 
 end RootPairing

@@ -75,6 +75,9 @@ hyperplanes are moved by integer amounts.
   `RootPairing.root'_apply_ne_intCast_of_mem_affineWeylGroup`: for a crystallographic pairing the
   affine Weyl group permutes the affine roots, and preserves the set of points lying on no affine
   root hyperplane.
+* `RootPairing.intCast_lt_root'_apply_iff_of_mem_affineWeylGroup`: over an ordered ring, the
+  affine Weyl group preserves the relation of lying on the same side of each affine root
+  hyperplane.
 
 ## References
 
@@ -327,5 +330,15 @@ theorem root'_apply_ne_intCast_of_mem_affineWeylGroup [P.IsCrystallographic]
   obtain ⟨j', m', h⟩ := P.exists_root'_apply_eq_add_intCast_of_mem_affineWeylGroup hf j
   intro h'
   exact hx j' (m - m') (by push_cast; linear_combination (h x).symm.trans h')
+
+/-- For a crystallographic pairing over an ordered ring, the affine Weyl group preserves the
+relation of lying on the same side of each affine root hyperplane `αⱼ = m`: if `x` and `y` are on
+the same side of every such hyperplane, so are `f x` and `f y`. -/
+theorem intCast_lt_root'_apply_iff_of_mem_affineWeylGroup [PartialOrder R] [IsOrderedAddMonoid R]
+    [P.IsCrystallographic] {f : N ≃ᵃ[R] N} (hf : f ∈ P.affineWeylGroup) {x y : N}
+    (h : ∀ (j : ι) (m : ℤ), (m : R) < P.root' j y ↔ (m : R) < P.root' j x) (j : ι) (m : ℤ) :
+    (m : R) < P.root' j (f y) ↔ (m : R) < P.root' j (f x) := by
+  obtain ⟨j', m', hm⟩ := P.exists_root'_apply_eq_add_intCast_of_mem_affineWeylGroup hf j
+  simpa only [hm, Int.cast_sub, sub_lt_iff_lt_add] using h j' (m - m')
 
 end RootPairing
