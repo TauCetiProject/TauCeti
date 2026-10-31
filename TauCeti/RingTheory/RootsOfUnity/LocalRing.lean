@@ -165,9 +165,9 @@ theorem mem_range_algebraMap_of_pow_eq_one (pb : PowerBasis A R) (hgen : pb.gen 
   -- `t` is the constant coordinate with respect to the power basis.
   set t := pb.basis.coord ⟨0, pb.dim_pos⟩
   have ht (a : A) : t (algebraMap A R a) = a := by
-    have h : pb.basis ⟨0, pb.dim_pos⟩ = 1 := by rw [pb.basis_eq_pow, pow_zero]
-    rw [Algebra.algebraMap_eq_smul_one, ← h, map_smul, Module.Basis.coord_apply,
-      Module.Basis.repr_self, Finsupp.single_eq_same, smul_eq_mul, mul_one]
+    have h : pb.basis ⟨0, pb.dim_pos⟩ = 1 := by simp [pb.basis_eq_pow]
+    rw [Algebra.algebraMap_eq_smul_one, ← h]
+    simp [t, -PowerBasis.coe_basis]
   -- A unit has a unit as constant coordinate.
   have hunit (v : R) (hv : IsUnit v) : IsUnit (algebraMap A R (t v)) := by
     rw [← residue_ne_zero_iff_isUnit, pb.residue_algebraMap_coord_zero hgen,
@@ -187,8 +187,9 @@ theorem mem_range_algebraMap_of_pow_eq_one (pb : PowerBasis A R) (hgen : pb.gen 
     rw [(Commute.all ζ c).geom_sum₂_mul, hζ, map_sub, map_one, map_pow]
   -- Comparing constant coordinates in `ζ - c = (1 - t ζ ^ n) • u⁻¹` gives `1 - t ζ ^ n = 0`.
   have hcoord : (1 - t ζ ^ n) * t ↑hu.unit⁻¹ = 0 := by
-    rw [← smul_eq_mul, ← map_smul, Algebra.smul_def, ← hgeom, mul_comm u, mul_assoc,
-      IsUnit.mul_val_inv, mul_one, map_sub, ht, sub_self]
+    have h : ζ - c = (1 - t ζ ^ n) • ↑hu.unit⁻¹ := by
+      rw [Algebra.smul_def, ← hgeom, mul_right_comm, hu.mul_val_inv, one_mul]
+    simpa [c, ht] using (congrArg t h).symm
   have hzero : algebraMap A R (1 - t ζ ^ n) = 0 := by
     have h := congrArg (algebraMap A R) hcoord
     rwa [map_mul, map_zero, (hunit _ (Units.isUnit _)).mul_left_eq_zero] at h

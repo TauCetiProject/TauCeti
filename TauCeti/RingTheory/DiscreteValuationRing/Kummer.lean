@@ -317,8 +317,8 @@ theorem finrank_dvd_and_eq_adjoin_pow_of_pow_eq_of_irreducible (hπ : Irreducibl
   have hγ : (γ : L) ^ n = (α ^ m) ^ n := by
     have h : γ ^ n = algebraMap K E (algebraMap A K π) ^ m := by
       rw [← map_pow, hα, hπL, Algebra.norm_algebraMap]
-    rw [← pow_mul, mul_comm m, pow_mul, hα, hπL, ← map_pow, ← h, map_pow,
-      IntermediateField.algebraMap_apply]
+    rw [← pow_mul, mul_comm m, pow_mul, hα, hπL]
+    simpa using congrArg (algebraMap E L) h
   have hζ : ((γ : L) / α ^ m) ^ n = 1 := by
     rw [div_pow, hγ, div_self (pow_ne_zero _ (pow_ne_zero _ hα0))]
   obtain ⟨c, hc⟩ :=
@@ -335,8 +335,7 @@ theorem finrank_dvd_and_eq_adjoin_pow_of_pow_eq_of_irreducible (hπ : Irreducibl
     exact E.div_mem γ.2 (E.algebraMap_mem c)
   -- `K(α ^ m) ≤ E`, and both have degree `d` over `K`.
   have hroot : aeval (α ^ m) (X ^ d - C (algebraMap A K π)) = 0 := by
-    rw [map_sub, aeval_X_pow, aeval_C, ← pow_mul, mul_comm, hdm, hα,
-      IsScalarTower.algebraMap_apply A K L, sub_self]
+    simp [← pow_mul, mul_comm m d, hdm, hα, ← IsScalarTower.algebraMap_apply]
   have hint : IsIntegral K (α ^ m) := ⟨_, monic_X_pow_sub_C _ hd.ne', by rwa [← aeval_def]⟩
   have hmin : X ^ d - C (algebraMap A K π) = minpoly K (α ^ m) :=
     minpoly.eq_of_irreducible_of_monic (X_pow_sub_C_irreducible_of_irreducible hπ hd.ne') hroot
