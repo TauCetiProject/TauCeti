@@ -81,6 +81,28 @@ abbrev ofHom {Y : Scheme.{u}} (j : X ⟶ Y) (p : Y ⟶ S)
   ⟨⟨Y, j, p, fac⟩, (compactificationProperty_iff f _).mpr
     ⟨inferInstance, inferInstance, inferInstance⟩⟩
 
+section LocalizationAway
+
+variable {R : CommRingCat.{u}}
+
+/-- The tautological compactification of a principal affine open, over its ambient spectrum. -/
+noncomputable abbrev localizationAway (r : R) :
+    Compactification (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away r)))) :=
+  ofHom (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away r))))
+    (𝟙 _) (by simp)
+
+/-- Localizing at a non-zero-divisor gives a schematically dense interior; the ring need
+not be reduced. -/
+theorem isSchemeTheoreticallyDominant_localizationAway (r : R) (hr : IsRegular r) :
+    IsSchemeTheoreticallyDominant (localizationAway r).j := by
+  apply (isSchemeTheoreticallyDominant_SpecMap_iff _).mpr
+  apply (IsLocalization.injective_iff_isRegular (S := Localization.Away r)
+    (Submonoid.powers r)).mpr
+  rintro ⟨_, n, rfl⟩
+  exact hr.pow n
+
+end LocalizationAway
+
 /-- A morphism of compactifications fixes the source and lies over the base. -/
 abbrev Hom (C D : Compactification f) : Type _ := C ⟶ D
 

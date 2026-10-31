@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basic
-public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra
+public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Basic
 
 /-!
 # The PBW Rees algebra

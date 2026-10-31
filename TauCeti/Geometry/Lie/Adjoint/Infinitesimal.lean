@@ -241,7 +241,7 @@ theorem hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero
       (by simp)
   -- Varying the second parameter conjugates the `Y`-line by `γX t`, so this spatial partial
   -- evaluates the tangent adjoint orbit against the chosen test function.
-  have hspace (t : ℝ) : spatialFDeriv F 0 t 1 = q (A t) := by
+  have hspace (t : ℝ) : spatialFDeriv (𝕜 := ℝ) F 0 t 1 = q (A t) := by
     have hFdiff : DifferentiableAt ℝ F (t, 0) := hF.differentiable (by norm_num) (t, 0)
     have hpartial := (hasFDerivAt_timeSlice hFdiff).hasDerivAt
     have hfOne := f.contMDiff.mdifferentiable (by simp) (1 : G) |>.hasMFDerivAt
@@ -292,7 +292,7 @@ theorem hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero
   -- scalar conjugation generator along `Y`.
   have hmixed := deriv_spatialFDeriv_apply (F := F) (x := (0 : ℝ)) (w := (1 : ℝ))
     hFmin
-  have hspaceFun : (fun t => spatialFDeriv F 0 t 1) =
+  have hspaceFun : (fun t => spatialFDeriv (𝕜 := ℝ) F 0 t 1) =
       fun t => q (A t) := by
     funext t
     exact hspace t

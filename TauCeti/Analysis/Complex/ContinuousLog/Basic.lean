@@ -104,17 +104,6 @@ criterion through `TauCeti.mem_filledHull_or_mem_filledHull_of_notMem_connectedC
 `TauCeti/Analysis/Normed/Module/FilledHull.lean`, so a source of logarithm obstructions becomes a
 source of the enclosure hypothesis `Conformal/Crosscut/Inside.lean` consumes.
 
-## Coordination with upstream Mathlib
-
-Mathlib has continuous branches of the logarithm on simply connected open sets
-(`Complex.exists_continuousOn_eqOn_exp_comp` of `Mathlib/Analysis/Complex/BranchLogRoot.lean`,
-which layer L3 consumes), but no predicate for a logarithm on an arbitrary set, no gluing theorem
-for logarithms, and no separation theory for the plane. Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself. So this
-file is new Lean formalization rather than a temporary shim, and it consumes no L0–L3 shim: its
-only complex-analytic input is the principal branch `Complex.log` on `Complex.slitPlane`.
-
 ## Main results
 
 * `TauCeti.HasContinuousLogOn` — the predicate, with `TauCeti.hasContinuousLogOn_iff` exposing it,
