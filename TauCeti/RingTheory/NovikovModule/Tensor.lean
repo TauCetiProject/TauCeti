@@ -54,6 +54,8 @@ corresponding identity between kernels (`NovikovModule.kernelMap_kernelMap`).
 * `TauCeti.NovikovModule.kernelProduct_eq_kernelMap_tensor`,
   `TauCeti.NovikovModule.kernelMap_tensor_ext`: kernel products are the kernel maps out of the
   completed tensor product, composed with the tensor product.
+* `TauCeti.NovikovModule.kernelMap_tensor_single_ext`: a kernel map out of the completed tensor
+  product is determined by its values on tensor products of point masses.
 * `TauCeti.NovikovModule.kernelMap_kernelTensor_tensor`: kernel maps act factorwise on tensor
   products.
 * `TauCeti.NovikovModule.tensor_mem_gradeBy`,
@@ -156,6 +158,22 @@ theorem kernelProduct_eq_kernelMap_tensor {n : S₁ → S₂ → S₀ → R}
   rw [kernelProduct_apply_val, kernelMap_apply_val]
   simp only [tensor_apply_val]
 
+/-- **Kernel maps out of the completed tensor product are determined on tensor products of point
+masses.** Two kernel maps out of the completed tensor product that agree on the tensor products
+`single p₁ 1 ⊗ single p₂ 1` coincide. -/
+theorem kernelMap_tensor_single_ext [DecidableEq S₁] [DecidableEq S₂] {m m' : S₁ × S₂ → S₀ → R}
+    (hm : ∀ (q : S₁ × S₂) p₀, m q p₀ ≠ 0 → F₀ p₀ ≤ F₁ q.1 + F₂ q.2 + C)
+    (hmfin : ∀ q, m q ∈ NovikovModule R F₀)
+    (hm' : ∀ (q : S₁ × S₂) p₀, m' q p₀ ≠ 0 → F₀ p₀ ≤ F₁ q.1 + F₂ q.2 + C')
+    (hmfin' : ∀ q, m' q ∈ NovikovModule R F₀)
+    (h : ∀ p₁ p₂, kernelMap hm hmfin (tensor (single p₁ 1) (single p₂ 1)) =
+      kernelMap hm' hmfin' (tensor (single p₁ 1) (single p₂ 1))) :
+    kernelMap hm hmfin = kernelMap hm' hmfin' := by
+  refine (kernelMap_inj hm hmfin hm' hmfin').2
+    (funext fun q => funext fun p₀ => ?_)
+  have hq := congrArg (fun x => x.val p₀) (h q.1 q.2)
+  simpa only [tensor_single, kernelMap_single_apply_val, one_mul] using hq
+
 /-- **Kernel maps out of the completed tensor product are determined on tensor products.** Two
 kernel maps out of the completed tensor product that agree on all tensor products of completed
 combinations coincide. -/
@@ -167,10 +185,7 @@ theorem kernelMap_tensor_ext {m m' : S₁ × S₂ → S₀ → R}
     (h : ∀ a b, kernelMap hm hmfin (tensor a b) = kernelMap hm' hmfin' (tensor a b)) :
     kernelMap hm hmfin = kernelMap hm' hmfin' := by
   classical
-  refine (kernelMap_inj hm hmfin hm' hmfin').2
-    (funext fun q => funext fun p₀ => ?_)
-  have hq := congrArg (fun x => x.val p₀) (h (single q.1 1) (single q.2 1))
-  simpa only [tensor_single, kernelMap_single_apply_val, one_mul] using hq
+  exact kernelMap_tensor_single_ext hm hmfin hm' hmfin' fun _ _ => h _ _
 
 end Universal
 
@@ -400,28 +415,22 @@ theorem kernelMap_tensorDifferential_kernelMap_tensorDifferential_eq_zero
     (hδ₂δ₂ : ∀ b, kernelMap hδ₂ hδ₂fin (kernelMap hδ₂ hδ₂fin b) = 0)
     (x : NovikovModule R fun q : S₁ × S₂ => F₁ q.1 + F₂ q.2) :
     kernelMap hD hDfin (kernelMap hD hDfin x) = 0 := by
-  -- The composite is the kernel map of the composite kernel, which vanishes: its row at
-  -- `(p₁, p₂)` is the image of the point mass there, a tensor product of homogeneous point masses.
+  -- The composite is the kernel map of the composite kernel, which vanishes on tensor products
+  -- of point masses, as these are homogeneous.
   have hE (p r : S₁ × S₂) (h : kernelComp (tensorDifferential d₁ δ₁ δ₂)
       (tensorDifferential d₁ δ₁ δ₂) p r ≠ 0) :
       F₁ r.1 + F₂ r.2 ≤ F₁ p.1 + F₂ p.2 + (C + C) := by
     linarith [potential_le_of_kernelComp_ne_zero (F₀ := fun q : S₁ × S₂ => F₁ q.1 + F₂ q.2)
       (F₂ := fun q : S₁ × S₂ => F₁ q.1 + F₂ q.2) (hD p) (hD · r) h]
   have hEfin (p : S₁ × S₂) := kernelComp_mem hD hDfin (hDfin p)
-  rw [kernelMap_kernelMap hD hDfin hD hDfin hE hEfin]
-  suffices hz : kernelComp (tensorDifferential d₁ δ₁ δ₂) (tensorDifferential d₁ δ₁ δ₂) = 0 by
-    have h0 := (kernelMap_inj hE hEfin (C' := 0) (m' := 0) (fun _ _ h => absurd rfl h)
-      fun _ => zero_mem _).2 hz
-    rw [h0, kernelMap_zero, LinearMap.zero_apply]
-  funext ⟨p₁, p₂⟩ r
-  have key : (kernelMap hD hDfin (kernelMap hD hDfin
-      (tensor (single p₁ 1 : NovikovModule R F₁) (single p₂ 1 : NovikovModule R F₂)))).val r =
-      kernelComp (tensorDifferential d₁ δ₁ δ₂) (tensorDifferential d₁ δ₁ δ₂) (p₁, p₂) r := by
-    rw [tensor_single, kernelMap_kernelMap hD hDfin hD hDfin hE hEfin,
-      kernelMap_single_apply_val, one_mul, one_mul]
-  rw [kernelMap_tensorDifferential_kernelMap_tensorDifferential_tensor hδ₁ hδ₁fin hδ₂ hδ₂fin hD
-    hDfin hd (single_mem_gradeBy d₁ p₁ 1), hδ₁δ₁, hδ₂δ₂] at key
-  simpa using key.symm
+  suffices hz : kernelMap hE hEfin = 0 by
+    rw [kernelMap_kernelMap hD hDfin hD hDfin hE hEfin, hz, LinearMap.zero_apply]
+  rw [← kernelMap_zero (C := 0) (fun _ _ h => absurd rfl h) fun _ => zero_mem _]
+  refine kernelMap_tensor_single_ext _ _ _ _ fun p₁ p₂ => ?_
+  rw [kernelMap_zero, LinearMap.zero_apply, ← kernelMap_kernelMap hD hDfin hD hDfin hE hEfin,
+    kernelMap_tensorDifferential_kernelMap_tensorDifferential_tensor hδ₁ hδ₁fin hδ₂ hδ₂fin hD
+      hDfin hd (single_mem_gradeBy d₁ p₁ 1), hδ₁δ₁, hδ₂δ₂, map_zero, LinearMap.zero_apply,
+    map_zero, add_zero]
 
 end Differential
 
