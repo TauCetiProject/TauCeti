@@ -5,17 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.HahnSeries.Valuation
-public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.NumberTheory.NewtonPolygon.Mul
+public import TauCeti.RingTheory.HahnSeries.Multiplication
+public import TauCeti.RingTheory.LaurentSeries.Valuation
 
 /-!
 # Newton polygons and initial polynomials over Laurent series
 
 For a domain `R`, the order of vanishing `ord = HahnSeries.orderTop` on `R⸨X⸩`, with
-`ord(0) = ⊤` and `ord(X) = 1`, becomes a real additive valuation
-`TauCeti.LaurentSeries.realAddVal R` after the inclusion `ℤ → ℝ`. The general Newton-polygon
-API, `Polynomial.newtonPolygon` together with its slope multisets and the Minkowski-sum formula
+`ord(0) = ⊤` and `ord(X) = 1`, is the real additive valuation
+`LaurentSeries.realAddVal R`. The general Newton-polygon API, `Polynomial.newtonPolygon`
+together with its slope multisets and the Minkowski-sum formula
 `Polynomial.newtonPolygon_mul`, therefore applies to polynomials `P = ∑ aₙ Yⁿ` over `R⸨X⸩`
 with the coefficient heights `n ↦ ord(aₙ)`.
 
@@ -33,19 +33,18 @@ The main result is that taking initial polynomials is multiplicative,
 `Polynomial.initialPolynomial_mul`: the initial polynomial of `P * Q` at `σ` is the product of
 the initial polynomials of `P` and `Q`. This is the dominant-term identity behind the
 Minkowski-sum formula, refined from valuations to leading coefficients. No completeness and no
-characteristic hypothesis is used.
+characteristic hypothesis is used. The proof reads coefficients at the real exponents where
+supporting lines cross, through the embedding `HahnSeries.embDomainRingHom` of `R⸨X⸩` into the
+Hahn series with real exponents.
 
 ## Main definitions
 
-* `TauCeti.LaurentSeries.realAddVal R`: the real additive valuation `ord` on `R⸨X⸩`.
 * `Polynomial.initialPolynomial P σ`: the initial polynomial of `P` at slope `σ`.
 * `Polynomial.initialPolynomialHom R σ`: the initial polynomial at slope `σ` as a monoid
   homomorphism `R⸨X⸩[Y] →* R[Y]`.
 
 ## Main results
 
-* `TauCeti.LaurentSeries.realAddVal_apply`: `realAddVal R f` is `f.orderTop` cast to the reals,
-  and `TauCeti.LaurentSeries.realAddVal_eq_top_iff`: only zero has infinite valuation.
 * `Polynomial.coeff_initialPolynomial`: the coefficients of the initial polynomial.
 * `Polynomial.initialPolynomial_eq_zero_iff`: only the zero polynomial has initial polynomial
   zero, at any slope.
@@ -62,129 +61,10 @@ characteristic hypothesis is used.
 
 public section
 
-open HahnSeries TauCeti
+open HahnSeries LaurentSeries TauCeti
 open scoped LaurentSeries
 
-namespace TauCeti.LaurentSeries
-
-variable (R : Type*) [Ring R] [IsDomain R]
-
-/-- The order of vanishing `ord = orderTop` on `R⸨X⸩` as a real additive valuation: a nonzero
-Laurent series of order `n` has valuation `n`, and zero has valuation `⊤`. -/
-noncomputable def realAddVal : AddValuation R⸨X⸩ (WithTop ℝ) :=
-  (HahnSeries.addVal ℤ R).map
-    { (Int.castAddHom ℝ).withTopMap with
-      monotone' := WithTop.monotone_map_iff.mpr fun _ _ h => Int.cast_le.mpr h }
-    rfl
-
-variable {R}
-
-/-- The real valuation of a Laurent series is its order, cast to the reals. -/
-@[simp]
-theorem realAddVal_apply (f : R⸨X⸩) :
-    realAddVal R f = f.orderTop.map ((↑) : ℤ → ℝ) := by
-  rw [← HahnSeries.addVal_apply (Γ := ℤ)]
-  -- By construction, `realAddVal R` is `HahnSeries.addVal ℤ R` followed by `WithTop.map`.
-  rfl
-
-/-- The real valuation of a nonzero Laurent series is its order. -/
-theorem realAddVal_of_ne_zero {f : R⸨X⸩} (hf : f ≠ 0) :
-    realAddVal R f = ((f.order : ℝ) : WithTop ℝ) := by
-  rw [realAddVal_apply, ← order_eq_orderTop_of_ne_zero hf, WithTop.map_coe]
-
-/-- Only the zero Laurent series has infinite valuation. -/
-theorem realAddVal_eq_top_iff {f : R⸨X⸩} : realAddVal R f = ⊤ ↔ f = 0 := by
-  simp
-
-/-- The monomial `r Xⁿ`, for `r ≠ 0`, has valuation `n`; in particular `X` has valuation one. -/
-theorem realAddVal_single (n : ℤ) {r : R} (hr : r ≠ 0) :
-    realAddVal R (single n r) = ((n : ℝ) : WithTop ℝ) := by
-  rw [realAddVal_apply, orderTop_single hr, WithTop.map_coe]
-
-/-- A Laurent series with a nonzero coefficient at `k` has valuation at most `k`. -/
-theorem realAddVal_le_of_coeff_ne_zero {f : R⸨X⸩} {k : ℤ} (hk : f.coeff k ≠ 0) :
-    realAddVal R f ≤ ((k : ℝ) : WithTop ℝ) := by
-  rw [realAddVal_of_ne_zero (ne_zero_of_coeff_ne_zero hk), WithTop.coe_le_coe, Int.cast_le]
-  exact order_le_of_coeff_ne_zero hk
-
-/-! ### Coefficients at real exponents -/
-
-section coeffReal
-
-variable {R : Type*} [Ring R]
-
-open Classical in
-/-- The coefficient of a Laurent series at a real exponent: `f.coeff k` at the integer `k`, and
-`0` at a non-integer exponent. -/
-private noncomputable def coeffReal (f : R⸨X⸩) (r : ℝ) : R :=
-  if h : ∃ k : ℤ, (k : ℝ) = r then f.coeff h.choose else 0
-
-private theorem coeffReal_intCast (f : R⸨X⸩) (k : ℤ) : coeffReal f k = f.coeff k := by
-  rw [coeffReal]
-  split_ifs with h
-  · rw [Int.cast_inj.mp h.choose_spec]
-  · exact absurd ⟨k, rfl⟩ h
-
-private theorem coeffReal_of_not_exists {r : ℝ} (hr : ¬∃ k : ℤ, (k : ℝ) = r) (f : R⸨X⸩) :
-    coeffReal f r = 0 := by
-  rw [coeffReal]
-  split_ifs
-  rfl
-
-private theorem coeffReal_sum {ι : Type*} (s : Finset ι) (f : ι → R⸨X⸩) (r : ℝ) :
-    coeffReal (∑ i ∈ s, f i) r = ∑ i ∈ s, coeffReal (f i) r := by
-  by_cases hr : ∃ k : ℤ, (k : ℝ) = r
-  · obtain ⟨k, rfl⟩ := hr
-    simp only [coeffReal_intCast, coeff_sum]
-  · simp only [coeffReal_of_not_exists hr, Finset.sum_const_zero]
-
-/-- If `f` and `g` are supported at exponents at least `α` and `β`, the coefficient of `f * g`
-at `α + β` is the product of the coefficients at `α` and `β`. -/
-private theorem coeffReal_mul {f g : R⸨X⸩} {α β : ℝ}
-    (hf : ∀ k : ℤ, f.coeff k ≠ 0 → α ≤ k) (hg : ∀ k : ℤ, g.coeff k ≠ 0 → β ≤ k) :
-    coeffReal (f * g) (α + β) = coeffReal f α * coeffReal g β := by
-  by_cases hab : (∃ a : ℤ, (a : ℝ) = α) ∧ ∃ b : ℤ, (b : ℝ) = β
-  · obtain ⟨⟨a, rfl⟩, ⟨b, rfl⟩⟩ := hab
-    rw [← Int.cast_add, coeffReal_intCast, coeffReal_intCast, coeffReal_intCast, coeff_mul]
-    by_cases hmem : (a, b) ∈ Finset.antidiagonal f.isPWO_support g.isPWO_support (a + b)
-    · refine Finset.sum_eq_single_of_mem _ hmem fun ij hij hne => ?_
-      obtain ⟨hi, hj, hsum⟩ := Finset.mem_antidiagonal.mp hij
-      have hai := Int.cast_le.mp (hf _ hi)
-      have hbj := Int.cast_le.mp (hg _ hj)
-      exact absurd (Prod.ext (by omega) (by omega)) hne
-    · rw [Finset.sum_eq_zero fun ij hij => ?_]
-      · rcases eq_or_ne (f.coeff a) 0 with ha | ha
-        · rw [ha, zero_mul]
-        rcases eq_or_ne (g.coeff b) 0 with hb | hb
-        · rw [hb, mul_zero]
-        exact absurd (Finset.mem_antidiagonal.mpr ⟨ha, hb, rfl⟩) hmem
-      obtain ⟨hi, hj, hsum⟩ := Finset.mem_antidiagonal.mp hij
-      have hai := Int.cast_le.mp (hf _ hi)
-      have hbj := Int.cast_le.mp (hg _ hj)
-      exact absurd (Prod.ext (by omega) (by omega) : ij = (a, b)) (by rintro rfl; exact hmem hij)
-  · have hzero : coeffReal f α * coeffReal g β = 0 := by
-      rcases not_and_or.mp hab with ha | hb
-      · rw [coeffReal_of_not_exists ha, zero_mul]
-      · rw [coeffReal_of_not_exists hb, mul_zero]
-    rw [hzero]
-    by_cases hk : ∃ k : ℤ, (k : ℝ) = α + β
-    · obtain ⟨k, hk⟩ := hk
-      rw [← hk, coeffReal_intCast, coeff_mul]
-      refine Finset.sum_eq_zero fun ij hij => ?_
-      obtain ⟨hi, hj, hsum⟩ := Finset.mem_antidiagonal.mp hij
-      have hai := hf _ hi
-      have hbj := hg _ hj
-      have hsum' : (ij.1 : ℝ) + ij.2 = α + β := by rw [← hk, ← hsum, Int.cast_add]
-      exact absurd ⟨⟨ij.1, by linarith⟩, ⟨ij.2, by linarith⟩⟩ hab
-    · exact coeffReal_of_not_exists hk _
-
-end coeffReal
-
-end TauCeti.LaurentSeries
-
 namespace Polynomial
-
-open TauCeti.LaurentSeries
 
 variable {R : Type*} [Ring R] [IsDomain R]
 
@@ -259,17 +139,21 @@ private theorem sub_eq_supportingValue_iff (hP : P ≠ 0) (n : ℕ) :
     rw [WithTop.toEReal_coe, ← EReal.coe_sub, EReal.coe_eq_coe_iff, WithTop.coe_eq_coe]
     constructor <;> intro h <;> linarith
 
-/-- On a supporting line of `P ≠ 0`, every exponent of a coefficient of `P` lies above the
-line. -/
-private theorem le_of_coeff_ne_zero (hP : P ≠ 0) (i : ℕ) :
-    ∀ k : ℤ, (P.coeff i).coeff k ≠ 0 → intercept P σ + σ * i ≤ k := fun _ hk =>
-  WithTop.coe_le_coe.mp ((isSupportingLine_iff_forall.mp (isSupportingLine_intercept hP) i).trans
-    (realAddVal_le_of_coeff_ne_zero hk))
+/-- On a supporting line of `P ≠ 0`, every exponent of a coefficient of `P`, read in the Hahn
+series with real exponents, lies above the line. -/
+private theorem le_of_mem_support_embDomainRingHom (hP : P ≠ 0) (i : ℕ) :
+    ∀ r ∈ (embDomainRingHom (Int.castAddHom ℝ) Int.cast_injective (fun _ _ => Int.cast_le)
+      (P.coeff i)).support, intercept P σ + σ * i ≤ r := fun _ hr => by
+  obtain ⟨k, hk, rfl⟩ := support_embDomain_subset hr
+  exact WithTop.coe_le_coe.mp ((isSupportingLine_iff_forall.mp (isSupportingLine_intercept hP)
+    i).trans (realAddVal_le_of_coeff_ne_zero hk))
 
 /-- For `P ≠ 0`, the `n`-th coefficient of the initial polynomial is the coefficient of `aₙ` at
 the real exponent where the supporting line meets the vertical line through `n`. -/
-private theorem coeff_initialPolynomial_eq_coeffReal (hP : P ≠ 0) (n : ℕ) :
-    (P.initialPolynomial σ).coeff n = coeffReal (P.coeff n) (intercept P σ + σ * n) := by
+private theorem coeff_initialPolynomial_eq_coeff_embDomainRingHom (hP : P ≠ 0) (n : ℕ) :
+    (P.initialPolynomial σ).coeff n =
+      (embDomainRingHom (Int.castAddHom ℝ) Int.cast_injective (fun _ _ => Int.cast_le)
+        (P.coeff n)).coeff (intercept P σ + σ * n) := by
   rw [coeff_initialPolynomial]
   split_ifs with h
   · rw [sub_eq_supportingValue_iff hP] at h
@@ -278,17 +162,19 @@ private theorem coeff_initialPolynomial_eq_coeffReal (hP : P ≠ 0) (n : ℕ) :
       rw [h0, AddValuation.map_zero] at h
       exact WithTop.top_ne_coe h
     rw [realAddVal_of_ne_zero hne, WithTop.coe_eq_coe] at h
-    rw [← h, coeffReal_intCast, leadingCoeff_eq]
+    rw [← h, leadingCoeff_eq]
+    exact embDomain_coeff.symm
   · rw [sub_eq_supportingValue_iff hP] at h
     by_cases hk : ∃ k : ℤ, (k : ℝ) = intercept P σ + σ * n
     · obtain ⟨k, hk⟩ := hk
-      rw [← hk, coeffReal_intCast]
+      rw [← hk]
+      refine (embDomain_coeff.trans ?_).symm
       by_contra hc
       refine h (le_antisymm ?_
         (isSupportingLine_iff_forall.mp (isSupportingLine_intercept hP) n))
       rw [← hk]
-      exact realAddVal_le_of_coeff_ne_zero (Ne.symm hc)
-    · rw [coeffReal_of_not_exists hk]
+      exact realAddVal_le_of_coeff_ne_zero hc
+    · exact (embDomain_of_notMem_range hk).symm
 
 variable (σ) in
 /-- A nonzero polynomial has a nonzero initial polynomial at every slope: the coefficient
@@ -375,11 +261,13 @@ theorem initialPolynomial_mul (P Q : R⸨X⸩[X]) (σ : ℝ) :
     rw [← coe_intercept hPQ, ← coe_intercept hP, ← coe_intercept hQ, ← EReal.coe_add] at this
     exact EReal.coe_eq_coe_iff.mp this
   refine Polynomial.ext fun n => ?_
-  rw [coeff_initialPolynomial_eq_coeffReal hPQ, Polynomial.coeff_mul, Polynomial.coeff_mul,
-    coeffReal_sum, hc]
+  rw [coeff_initialPolynomial_eq_coeff_embDomainRingHom hPQ, Polynomial.coeff_mul,
+    Polynomial.coeff_mul, map_sum, HahnSeries.coeff_sum, hc]
   refine Finset.sum_congr rfl fun ij hij => ?_
-  rw [coeff_initialPolynomial_eq_coeffReal hP, coeff_initialPolynomial_eq_coeffReal hQ,
-    ← coeffReal_mul (le_of_coeff_ne_zero hP _) (le_of_coeff_ne_zero hQ _)]
+  rw [coeff_initialPolynomial_eq_coeff_embDomainRingHom hP,
+    coeff_initialPolynomial_eq_coeff_embDomainRingHom hQ,
+    ← coeff_mul_add_of_forall_le (le_of_mem_support_embDomainRingHom hP _)
+      (le_of_mem_support_embDomainRingHom hQ _), ← map_mul]
   congr 1
   rw [← Finset.HasAntidiagonal.mem_antidiagonal.mp hij, Nat.cast_add]
   ring
