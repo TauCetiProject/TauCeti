@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Restriction
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Sha
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Torsion
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Basic
 
 /-!
@@ -43,8 +45,24 @@ For a separable isogeny the main result is the **`φ`-descent sequence** of Selm
 obtained by restricting the global `φ`-descent sequence
 `0 → E₂(K) ⧸ φ(E₁(K)) → H¹(G_K, E₁[φ]) → H¹(G_K, E₁)[φ] → 0` of
 `TauCeti/AlgebraicGeometry/EllipticCurve/GaloisCohomology/Isogeny/Descent.lean` to the Selmer
-group. Applied to the dual isogeny `TauCeti.Isogeny.dual φ`, when it is separable, the same
-definitions give `Sel_φ̂ ⊆ H¹(G_K, E₂[φ̂])` and its descent sequence.
+group. Applied to the dual isogeny `TauCeti.Isogeny.dual φ`, the same definitions give
+`Sel_φ̂ ⊆ H¹(G_K, E₂[φ̂])`, and its descent sequence holds when `φ̂` is separable, for instance when
+`deg φ` is nonzero in `K` (`TauCeti.Isogeny.isSeparable_dual_of_degree_ne_zero`).
+
+The three Selmer groups `Sel_φ`, `Sel_m` and `Sel_φ̂`, for `m = deg φ`, are related through the
+short exact sequence `0 → E₁[φ] → E₁[m] → E₂[φ̂] → 0` (`TauCeti.Isogeny.torsionShortExact`): for
+a separable isogeny `φ` the sequence
+
+```text
+0 ⟶ E₂(K)[φ̂] ⧸ φ(E₁(K)[m]) ⟶ Sel_φ ⟶ Sel_m ⟶ Sel_φ̂
+```
+
+is exact (see Schaefer–Stoll). Here the first map is the Kummer map of `φ`: the kernel of
+`Sel_φ → Sel_m` is the Kummer image of `E₂(K)[φ̂]`
+(`TauCeti.Isogeny.selmerGroupToTorsion_eq_zero_iff`), and a point of `E₂(K)[φ̂]` has trivial
+Kummer class exactly when it lies in `φ(E₁(K))` (`TauCeti.Isogeny.kummerMap_eq_zero_iff`), hence
+in `φ(E₁(K)[m])`. This is the form in which the `φ`- and `φ̂`-Selmer groups bound the `m`-Selmer
+group.
 
 ## Main definitions
 
@@ -55,6 +73,8 @@ definitions give `Sel_φ̂ ⊆ H¹(G_K, E₂[φ̂])` and its descent sequence.
   Shafarevich–Tate group of `E₁`.
 * `TauCeti.Isogeny.kummerSelmerMap`: the Kummer map `E₂(K) ⧸ φ(E₁(K)) → Sel_φ`.
 * `TauCeti.Isogeny.selmerShaMap`: the map `Sel_φ → Sha(E₁)[φ]`.
+* `TauCeti.Isogeny.selmerGroupToTorsion` and `TauCeti.Isogeny.selmerGroupTorsionToDual`: the maps
+  `Sel_φ → Sel_{deg φ} → Sel_φ̂`.
 
 ## Main results
 
@@ -66,10 +86,16 @@ definitions give `Sel_φ̂ ⊆ H¹(G_K, E₂[φ̂])` and its descent sequence.
   `TauCeti.Isogeny.exact_kummerSelmerMap_selmerShaMap` and
   `TauCeti.Isogeny.selmerShaMap_surjective`: the `φ`-descent sequence
   `0 → E₂(K) ⧸ φ(E₁(K)) → Sel_φ → Sha(E₁)[φ] → 0` is exact.
+* `TauCeti.Isogeny.selmerGroupToTorsion_eq_zero_iff`: the kernel of `Sel_φ → Sel_{deg φ}` is the
+  Kummer image of `E₂(K)[φ̂]`.
+* `TauCeti.Isogeny.exact_selmerGroupToTorsion_selmerGroupTorsionToDual`: the sequence
+  `Sel_φ → Sel_{deg φ} → Sel_φ̂` is exact.
 
 ## References
 
 * [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], X.4.
+* E. F. Schaefer and M. Stoll, *How to do a `p`-descent on an elliptic curve*, Trans. Amer. Math.
+  Soc. 356 (2004), 1209–1231.
 -/
 
 public section
@@ -254,5 +280,67 @@ theorem selmerShaMap_surjective : Function.Surjective (φ.selmerShaMap τ) := by
   exact hd
 
 end Descent
+
+/-! ### The Selmer groups of `φ`, of `[deg φ]` and of `φ̂` -/
+
+/-- **The map `Sel_φ → Sel_{deg φ}`** induced by the inclusion `E₁(Kˢ)[φ] → E₁(Kˢ)[deg φ]`. -/
+def selmerGroupToTorsion : φ.selmerGroup τ →+ W₁.selmerGroup τ φ.degree :=
+  ((explicitCoeff1 _ _ φ.kerCoeffToTorsionCoeff continuous_of_discreteTopology).comp
+    (φ.selmerGroup τ).subtype).codRestrict _ fun c ↦ by
+    rw [AddMonoidHom.comp_apply, AddSubgroup.coe_subtype, WeierstrassCurve.mem_selmerGroup_iff,
+      explicitCoeff1_torsionCoeffIncl_kerCoeffToTorsionCoeff]
+    exact (φ.mem_selmerGroup_iff τ).1 c.2
+
+@[simp]
+theorem coe_selmerGroupToTorsion (c : φ.selmerGroup τ) :
+    (φ.selmerGroupToTorsion τ c : H1 (AbsoluteGaloisGroup K) (W₁.TorsionCoeff φ.degree)) =
+      explicitCoeff1 _ _ φ.kerCoeffToTorsionCoeff continuous_of_discreteTopology c :=
+  (rfl)
+
+/-- **The map `Sel_{deg φ} → Sel_φ̂`** induced by `φ : E₁(Kˢ)[deg φ] → E₂(Kˢ)[φ̂]`: the image in
+`H¹(G_K, E₂)` of the image of a `deg φ`-Selmer class is the image under `φ` of a class of
+`Sha(E₁)`, hence lies in `Sha(E₂)`. -/
+def selmerGroupTorsionToDual : W₁.selmerGroup τ φ.degree →+ φ.dual.selmerGroup τ :=
+  ((explicitCoeff1 _ _ φ.torsionCoeffToDualKerCoeff continuous_of_discreteTopology).comp
+    (W₁.selmerGroup τ φ.degree).subtype).codRestrict _ fun c ↦ by
+    rw [AddMonoidHom.comp_apply, AddSubgroup.coe_subtype, mem_selmerGroup_iff,
+      explicitCoeff1_kerCoeffIncl_torsionCoeffToDualKerCoeff]
+    exact (ofIsogeny φ).pointH1Map_mem_shafarevichTateGroup τ
+      ((W₁.mem_selmerGroup_iff τ φ.degree).1 c.2)
+
+@[simp]
+theorem coe_selmerGroupTorsionToDual (c : W₁.selmerGroup τ φ.degree) :
+    (φ.selmerGroupTorsionToDual τ c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) =
+      explicitCoeff1 _ _ φ.torsionCoeffToDualKerCoeff continuous_of_discreteTopology c :=
+  (rfl)
+
+section Separable
+
+variable [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
+
+/-- **`Sel_φ → Sel_{deg φ} → Sel_φ̂` is exact** for a separable isogeny `φ` (see
+Schaefer–Stoll): a `deg φ`-Selmer class dying in `H¹(G_K, E₂[φ̂])` comes from `H¹(G_K, E₁[φ])`,
+and every such preimage is `φ`-Selmer, since it has the same image in `H¹(G_K, E₁)`. -/
+theorem exact_selmerGroupToTorsion_selmerGroupTorsionToDual :
+    Function.Exact (φ.selmerGroupToTorsion τ) (φ.selmerGroupTorsionToDual τ) := by
+  intro c
+  rw [← Subtype.val_inj, coe_selmerGroupTorsionToDual, ZeroMemClass.coe_zero,
+    ← AddMonoidHom.mem_ker, ← range_explicitCoeff1_kerCoeffToTorsionCoeff]
+  refine ⟨fun ⟨d, hd⟩ ↦ ⟨⟨d, (φ.mem_selmerGroup_iff τ).2 ?_⟩, Subtype.ext hd⟩, ?_⟩
+  · rw [← explicitCoeff1_torsionCoeffIncl_kerCoeffToTorsionCoeff, hd]
+    exact (W₁.mem_selmerGroup_iff τ φ.degree).1 c.2
+  · rintro ⟨d, rfl⟩
+    exact ⟨d, rfl⟩
+
+/-- **The kernel of `Sel_φ → Sel_{deg φ}` consists of the Kummer classes of the points of `E₂(K)`
+killed by `φ̂`**, for a separable isogeny `φ` (see Schaefer–Stoll). -/
+theorem selmerGroupToTorsion_eq_zero_iff [DecidableEq K] {c : φ.selmerGroup τ} :
+    φ.selmerGroupToTorsion τ c = 0 ↔
+      ∃ Q : W₂.toAffine.Point, (ofIsogeny φ.dual).pointMap Q = 0 ∧
+        φ.kummerMap Q = (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) := by
+  rw [← Subtype.val_inj, coe_selmerGroupToTorsion, ZeroMemClass.coe_zero,
+    explicitCoeff1_kerCoeffToTorsionCoeff_eq_zero_iff]
+
+end Separable
 
 end TauCeti.Isogeny
