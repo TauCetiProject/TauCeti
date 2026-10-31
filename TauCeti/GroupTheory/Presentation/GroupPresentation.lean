@@ -12,11 +12,10 @@ public import TauCeti.GroupTheory.Presentation.Relator
 /-!
 # Auditable finite group presentations
 
-This file packages a finite group presentation together with the metadata needed to audit a
-transcription from a published source. The generator-name list alone fixes the relator index type
-to `Fin generatorNames.length`, so the relator arity cannot disagree with the generator names. The
-generator and relator counts stated by the source are separate metadata, checked against the
-transcribed data by `TauCeti.GroupPresentation.matchesMetadata`.
+This file packages a finite group presentation. The generator count fixes the relator index type
+to `Fin generatorCount`. Sources, generator names and conventions, and transcription notes belong
+in the docstring of each concrete presentation. The expected relator count stated by the source
+is checked against the transcribed data by `TauCeti.GroupPresentation.matchesMetadata`.
 
 The stored relators are human-readable `TauCeti.Relator` expressions. They are compiled to
 Mathlib's signed words and then interpreted by `FreeGroup.mk`; the resulting finite list of
@@ -25,7 +24,7 @@ relations, regarded as a set, defines `TauCeti.GroupPresentation.Group` using Ma
 
 ## Main definitions
 
-* `TauCeti.GroupPresentation`: cited presentation data and its transcription metadata.
+* `TauCeti.GroupPresentation`: finite presentation data and an expected relator count.
 * `TauCeti.GroupPresentation.relators`: the compiled signed words.
 * `TauCeti.GroupPresentation.relatorLetters`: the compiled words with generator indices as naturals,
   for stating a letter-by-letter comparison with a source.
@@ -36,7 +35,7 @@ relations, regarded as a set, defines `TauCeti.GroupPresentation.Group` using Ma
 * `TauCeti.GroupPresentation.relatorSet`: the relations as free-group elements.
 * `TauCeti.GroupPresentation.Group`: the group defined by the presentation.
 * `TauCeti.GroupPresentation.homEquiv`: homomorphisms specified by satisfying generator assignments.
-* `TauCeti.GroupPresentation.matchesMetadata`: the decidable generator and relator count check.
+* `TauCeti.GroupPresentation.matchesMetadata`: the decidable relator count check.
 
 ## Main results
 
@@ -48,37 +47,22 @@ public section
 
 namespace TauCeti
 
-/-- A finite group presentation together with auditable source and transcription metadata.
+/-- A finite group presentation with an expected relator count.
 
 The source must be a full presentation of the abstract group, not a semi-presentation for
-recognizing generators in a group already constructed elsewhere. `generatorNames` alone determines
-the relator arity; `expectedGeneratorCount` is retained only as metadata checked by
-`matchesMetadata`.
-
-There is deliberately no checksum field: without a pinned normalization and algorithm, a checksum
-would not be a reproducible check on the transcribed expressions. -/
+recognizing generators in a group already constructed elsewhere. Record its citation, generator
+names and conventions, and any transcription notes in the presentation's docstring.
+`generatorCount` determines the relator arity; `matchesMetadata` checks the relator count against
+`expectedRelatorCount`. -/
 structure GroupPresentation where
-  /-- Generator names, in the order used by the relator indices. -/
-  generatorNames : List String
-  /-- Bibliographic citation or database name for the full presentation. -/
-  source : String
-  /-- Page, theorem number, or stable database identifier locating the presentation. -/
-  sourceLocator : String
-  /-- The source's generator and commutator conventions. -/
-  generatorConvention : String
-  /-- Notes explaining any normalization or conversion made during transcription. -/
-  transcriptionNotes : String
-  /-- The number of generators stated by the source. -/
-  expectedGeneratorCount : ℕ
+  /-- The number of generators stated by the source, fixing the relator index type. -/
+  generatorCount : ℕ
   /-- The number of relators stated by the source. -/
   expectedRelatorCount : ℕ
-  /-- Relators transcribed in the generator order recorded by `generatorNames`. -/
-  transcribed : List (Relator (Fin generatorNames.length))
+  /-- Relators transcribed in the generator order documented for the presentation. -/
+  transcribed : List (Relator (Fin generatorCount))
 
 namespace GroupPresentation
-
-/-- The number of generators in a presentation, determined by its generator-name list. -/
-abbrev generatorCount (P : GroupPresentation) : ℕ := P.generatorNames.length
 
 /-- The relator expressions compiled to left-to-right signed words. -/
 def relators (P : GroupPresentation) : List (PresentationWord (Fin P.generatorCount)) :=
@@ -107,7 +91,7 @@ theorem mem_relators_iff (P : GroupPresentation) (w : PresentationWord (Fin P.ge
 
 A transcription is audited by comparing the compiled letters with the published relators, and this
 form of them is the one to state such a comparison against: the index type of a word depends on the
-generator-name list, whereas the letters here do not, so the comparison needs no arithmetic on that
+generator count, whereas the letters here do not, so the comparison needs no arithmetic on that
 dependency. -/
 def relatorLetters (P : GroupPresentation) : List (List (ℕ × Bool)) :=
   P.relators.map (List.map fun letter => (letter.1.val, letter.2))
@@ -122,10 +106,10 @@ theorem relatorLetters_def (P : GroupPresentation) :
 /-- The total number of letters in the compiled relator words.
 
 Sources for finite presentations customarily publish this figure, usually calling it the length of
-the presentation, so comparing it with the transcribed data is a third decidable check on a
-transcription alongside the two counts of `TauCeti.GroupPresentation.matchesMetadata`. A published
-length is normally measured after free and cyclic reduction of each relator, so a row using it as a
-check should also record that its compiled words are reduced. -/
+the presentation, so comparing it with the transcribed data gives a decidable check on a
+transcription alongside the relator count of `TauCeti.GroupPresentation.matchesMetadata`.
+A published length is normally measured after free and cyclic reduction of each relator, so a row
+using it as a check should also record that its compiled words are reduced. -/
 def totalLength (P : GroupPresentation) : ℕ := (P.relators.map List.length).sum
 
 /-- The total length is the sum of the lengths of the compiled relator words. This is the unfolding
@@ -243,20 +227,17 @@ theorem homEquiv_symm_apply_of (P : GroupPresentation) {G : Type*} [_root_.Group
     P.homEquiv.symm f (PresentedGroup.of i) = f.1 i := by
   simp [homEquiv]
 
-/-- The recorded generator and relator counts agree with the transcribed data.
+/-- The recorded relator count agrees with the transcribed data.
 
 This checks transcription metadata only; it makes no claim that the source presents a named group
 or that the transcription agrees with the source. -/
 def matchesMetadata (P : GroupPresentation) : Prop :=
-  P.generatorCount = P.expectedGeneratorCount ∧
-    P.transcribed.length = P.expectedRelatorCount
+  P.transcribed.length = P.expectedRelatorCount
 
-/-- The metadata check unfolds to its two count equalities. -/
+/-- The metadata check unfolds to the relator count equality. -/
 @[simp]
 theorem matchesMetadata_iff (P : GroupPresentation) :
-    P.matchesMetadata ↔
-      P.generatorCount = P.expectedGeneratorCount ∧
-        P.transcribed.length = P.expectedRelatorCount :=
+    P.matchesMetadata ↔ P.transcribed.length = P.expectedRelatorCount :=
   Iff.rfl
 
 instance (P : GroupPresentation) : Decidable P.matchesMetadata :=
@@ -265,12 +246,7 @@ instance (P : GroupPresentation) : Decidable P.matchesMetadata :=
 /-- A transcribed row discharges its count check by `decide`. The record below is an illustration
 of the format, not a transcription of a published source. -/
 example : GroupPresentation.matchesMetadata
-    { generatorNames := ["a", "b"]
-      source := "illustrative record"
-      sourceLocator := "none"
-      generatorConvention := "Mathlib's commutator bracket"
-      transcriptionNotes := "no normalization was needed"
-      expectedGeneratorCount := 2
+    { generatorCount := 2
       expectedRelatorCount := 3
       transcribed :=
         [.pow (.gen 0) 2, .pow (.gen 1) 3, .pow (.mul (.gen 0) (.gen 1)) 2] } := by

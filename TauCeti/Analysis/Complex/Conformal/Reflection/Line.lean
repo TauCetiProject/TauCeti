@@ -21,11 +21,10 @@ say that the original branch is continuous and holomorphic on one side of the li
 boundary values into the target line. The accompanying branch and symmetry lemmas characterize
 the extension without requiring consumers to unfold its definition.
 
-This is the straight-arc case of layer L4 in the conformal-mapping roadmap, which asks for Schwarz
-reflection across an analytic arc or circle by Möbius reduction. The construction follows the
+This is the straight-arc case of Schwarz reflection across an analytic arc; the circle case is
+`Reflection/Circle/Principle.lean`. The construction follows the
 standard affine reduction to the real-axis principle; see Ahlfors, *Complex Analysis*,
-Chapters 4--6. Layer L4 is absent from the upstream Mathlib Riemann-mapping draft
-leanprover-community/mathlib4#33505.
+Chapters 4--6.
 -/
 
 public section

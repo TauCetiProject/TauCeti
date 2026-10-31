@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
@@ -118,9 +118,6 @@ theorem card_quotient_range_mulVecLin_eq_pow [IsDiscreteValuationRing R] {A : Ma
   rw [card_quotient_range_mulVecLin_eq_card_quotient_span_det
       (hk.ne_zero_iff.mpr (pow_ne_zero k hϖ.ne_zero)),
     Ideal.span_singleton_eq_span_singleton.mpr hk, ← Ideal.span_singleton_pow,
-    ← hϖ.maximalIdeal_eq, ← cardQuot_apply, cardQuot_pow_of_prime
-      (IsDiscreteValuationRing.not_a_field R), cardQuot_apply]
-  -- `IsLocalRing.ResidueField R` is by definition `R ⧸ IsLocalRing.maximalIdeal R`.
-  rfl
+    ← hϖ.maximalIdeal_eq, TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow]
 
 end Matrix

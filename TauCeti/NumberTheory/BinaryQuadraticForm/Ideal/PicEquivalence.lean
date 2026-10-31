@@ -39,17 +39,10 @@ theorem posDefProperClassToPic_surjective (n : ℕ) [NeZero n]
   let O := QuadraticOrder.numberFieldOrder (-n : ℤ) hn
   intro c
   obtain ⟨I, hIc⟩ := O.mkPic_surjective c
-  obtain ⟨f, hf, hp, ha, r, hr, hscale⟩ :=
-    exists_pos_primitive_form_fractionalIdeal_eq (-n : ℤ) hn I.val (O.invertible_isProper I)
+  obtain ⟨f, hf, hp, ha, -, u, -, -, hI⟩ :=
+    exists_pos_primitive_form_invertibleFractionalIdeal_eq (-n : ℤ) hn I
   let g : ↥(posDef n ⊓ primitiveForms (-n : ℤ)) :=
     ⟨f, (mem_posDef_inf_primitiveForms n).mpr ⟨hf, ha, hp⟩⟩
-  have hrK : (r : QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0) ≠ 0 := by
-    exact_mod_cast hr.ne'
-  let u := Units.mk0 (r : QuadraticAlgebra ℚ ((-n : ℤ) : ℚ) 0) hrK
-  have hI : I = toPrincipalIdeal _ _ u * f.invertibleFractionalIdeal (-n : ℤ) hf hp := by
-    apply Units.ext
-    rw [Units.val_mul, coe_toPrincipalIdeal, coe_invertibleFractionalIdeal]
-    exact hscale
   have hmap := congrArg O.mkPic hI
   simp only [O, NumberFieldOrder.mkPic, map_mul,
     ClassGroup.mk_toPrincipalIdeal, one_mul] at hmap

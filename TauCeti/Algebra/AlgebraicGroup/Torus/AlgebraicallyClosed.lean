@@ -48,7 +48,7 @@ theorem torusCommHopfAlgProperty.split
   refine (splitTorusCommHopfAlgProperty_iff k H).mpr ⟨n, ⟨?_⟩⟩
   exact (DiagonalizableGroup.baseChangeCoordinateRingIso (AlgebraicClosure k) k G).symm ≪≫
     (FiniteTypeCommHopfAlgCat.baseChangeFunctor (K := k)).mapIso i ≪≫
-    ObjectProperty.isoMk _ (CommHopfAlgCat.baseChangeTowerIso k k H.obj) ≪≫ j
+    FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := AlgebraicClosure k) k k H ≪≫ j
 
 /-- Over an algebraically closed field, the torus and split-torus predicates coincide. -/
 theorem torusCommHopfAlgProperty_iff_split

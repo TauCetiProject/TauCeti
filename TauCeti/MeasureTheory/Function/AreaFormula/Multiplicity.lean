@@ -189,12 +189,9 @@ theorem aemeasurable_tsum_fiber (hf : LipschitzWith K f) (hs : NullMeasurableSet
       μHE[finrank ℝ U] from
     h.congr (hf.tsum_fiber_congr_ae hs.toMeasurable_ae_eq g)
   let G := {x | DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).normDet ≠ 0}
-  have hG : MeasurableSet G := (measurableSet_of_differentiableAt ℝ f).inter
-    (measurableSet_eq_fun (ContinuousLinearMap.continuous_normDet.measurable.comp
-      (measurable_fderiv ℝ f)) measurable_const).compl
+  have hG : MeasurableSet G := measurableSet_setOf_differentiableAt_normDet_ne_zero f
   have hinj (x : U) (hx : x ∈ G) : Injective (fderiv ℝ f x) :=
-    LinearMap.ker_eq_bot.1
-      (not_not.1 fun h ↦ hx.2 (LinearMap.normDet_eq_zero_iff_ker_ne_bot.2 h))
+    ((fderiv ℝ f x).toLinearMap.normDet_ne_zero_tfae.out 1 5).mp hx.2
   exact (measurable_tsum_fiber_of_injective_fderiv (ht.inter hG)
     (fun x hx ↦ hx.2.1) (fun x hx ↦ hinj x hx.2) hg).aemeasurable.congr
       (tsum_fiber_inter_setOf_regular_ae_eq t g hf)
@@ -214,9 +211,7 @@ theorem lintegral_normDet_fderiv_mul_eq_lintegral_tsum (hf : LipschitzWith K f)
     (setLIntegral_congr hs.toMeasurable_ae_eq.symm).trans
       (h.trans (lintegral_congr_ae (hf.tsum_fiber_congr_ae hs.toMeasurable_ae_eq g)))
   let G := {x | DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).normDet ≠ 0}
-  have hG : MeasurableSet G := (measurableSet_of_differentiableAt ℝ f).inter
-    (measurableSet_eq_fun (ContinuousLinearMap.continuous_normDet.measurable.comp
-      (measurable_fderiv ℝ f)) measurable_const).compl
+  have hG : MeasurableSet G := measurableSet_setOf_differentiableAt_normDet_ne_zero f
   have hzero : ∫⁻ x in t \ G, ENNReal.ofReal (fderiv ℝ f x).normDet * g x = 0 := by
     refine (setLIntegral_congr_fun_ae (ht.diff hG) ?_).trans lintegral_zero
     filter_upwards [hf.ae_differentiableAt] with x hx hxs
@@ -225,8 +220,7 @@ theorem lintegral_normDet_fderiv_mul_eq_lintegral_tsum (hf : LipschitzWith K f)
     lintegral_normDet_fderiv_mul_eq_lintegral_tsum_of_injective_fderiv (ht.inter hG)
       (fun x hx ↦ hx.2.1) (fun x hx ↦ ?_) hg]
   · exact lintegral_congr_ae (tsum_fiber_inter_setOf_regular_ae_eq t g hf)
-  · exact LinearMap.ker_eq_bot.1
-      (not_not.1 fun h ↦ hx.2.2 (LinearMap.normDet_eq_zero_iff_ker_ne_bot.2 h))
+  · exact ((fderiv ℝ f x).toLinearMap.normDet_ne_zero_tfae.out 1 5).mp hx.2.2
 
 /-- The unweighted area formula: multiplicity is the extended cardinality of the fiber,
 so infinite fibers are counted as infinity. -/
