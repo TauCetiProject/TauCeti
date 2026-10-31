@@ -9,7 +9,7 @@ public import TauCeti.Probability.Distributions.Triangular.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
 import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Moments.Variance
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # Moments of the triangular distribution
@@ -26,8 +26,8 @@ outer endpoint of each branch gives the natural moments as a finite sum,
 
 whose two halves are the contributions of the rising and the falling branch. The formula holds
 uniformly when the mode is an endpoint: the contribution of the empty branch vanishes. The mean
-`(a + b + c) / 3` and the variance `(a ^ 2 + b ^ 2 + c ^ 2 - a * b - a * c - b * c) / 18` are the
-cases `n = 1, 2`.
+`(a + b + c) / 3` is the case `n = 1`, and the variance
+`(a ^ 2 + b ^ 2 + c ^ 2 - a * b - a * c - b * c) / 18` follows from the cases `n = 1, 2`.
 
 ## Main results
 
@@ -74,10 +74,11 @@ theorem integrable_pow_triangularMeasure (a b c : ℝ) (n : ℕ) :
 
 /-- **Branch decomposition.** When the mode lies between the endpoints, integrating a continuous
 function against the triangular law is integrating it against the linear weight of the rising
-branch over `[a, c]` plus against that of the falling branch over `[c, b]`. -/
+branch over `[a, c]` plus against that of the falling branch over `[c, b]`. Only continuity on
+the support `[a, b]` is needed. -/
 theorem integral_triangularMeasure_eq_intervalIntegral {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (hac : a ≤ c) (hcb : c ≤ b) {g : ℝ → E}
-    (hg : Continuous g) :
+    (hg : ContinuousOn g (Icc a b)) :
     ∫ x, g x ∂triangularMeasure a b c =
       (∫ x in a..c, (2 * (x - a) / ((b - a) * (c - a))) • g x) +
         ∫ x in c..b, (2 * (b - x) / ((b - a) * (b - c))) • g x := by
@@ -87,7 +88,7 @@ theorem integral_triangularMeasure_eq_intervalIntegral {E : Type*} [NormedAddCom
     exact hx (by simp only [hF, triangularPDFReal_of_notMem_Ioo
       (fun h' ↦ h (Ioo_subset_Icc_self h')), zero_smul])
   have hFint : Integrable F := (integrableOn_iff_integrable_of_support_subset hsupp).1
-    ((integrable_triangularPDFReal a b c).integrableOn.smul_continuousOn hg.continuousOn
+    ((integrable_triangularPDFReal a b c).integrableOn.smul_continuousOn hg
       isCompact_Icc)
   rw [integral_triangularMeasure_eq, ← hF,
     ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦
@@ -108,27 +109,6 @@ theorem integral_triangularMeasure_eq_intervalIntegral {E : Type*} [NormedAddCom
     simp only [hF, triangularPDFReal_of_mem_Ico_right hac (hac.trans_lt hx.1)
       ⟨hx.1.le, hx.2.lt_of_ne hxb⟩]
 
-/-- The integral of `x ^ n` against the linear weight `x - p` vanishing at `p`, over `[p, r]`, as
-a binomial sum. -/
-private theorem integral_pow_mul_sub (p r : ℝ) (n : ℕ) :
-    ∫ x in p..r, x ^ n * (x - p) =
-      ∑ k ∈ range (n + 1), (n.choose k : ℝ) / (k + 2) * p ^ (n - k) * (r - p) ^ (k + 2) := by
-  have hexp (x : ℝ) : x ^ n * (x - p) =
-      ∑ k ∈ range (n + 1), (n.choose k : ℝ) * p ^ (n - k) * (x - p) ^ (k + 1) := by
-    conv_lhs => rw [show x = (x - p) + p by ring, add_pow, sum_mul]
-    refine sum_congr rfl fun k _ ↦ ?_
-    ring
-  simp_rw [hexp]
-  rw [intervalIntegral.integral_finsetSum fun k _ ↦
-    Continuous.intervalIntegrable (by fun_prop) _ _]
-  refine sum_congr rfl fun k _ ↦ ?_
-  rw [intervalIntegral.integral_const_mul,
-    intervalIntegral.integral_comp_sub_right (fun x ↦ x ^ (k + 1)), integral_pow, sub_self,
-    zero_pow (Nat.succ_ne_zero _)]
-  push_cast
-  field_simp
-  ring
-
 /-- **Natural moments.** The `n`th raw moment of the triangular law with mode `a ≤ c ≤ b`, as the
 sum of the binomial expansions of the rising branch about `a` and of the falling branch about `b`.
 In the degenerate case `a = b = c` the law is zero and so is the right-hand side. -/
@@ -136,7 +116,7 @@ theorem integral_pow_triangularMeasure (hac : a ≤ c) (hcb : c ≤ b) (n : ℕ)
     ∫ x, x ^ n ∂triangularMeasure a b c =
       2 / (b - a) * ∑ k ∈ range (n + 1), (n.choose k : ℝ) / (k + 2) *
         (a ^ (n - k) * (c - a) ^ (k + 1) - b ^ (n - k) * (c - b) ^ (k + 1)) := by
-  rw [integral_triangularMeasure_eq_intervalIntegral hac hcb (continuous_pow n)]
+  rw [integral_triangularMeasure_eq_intervalIntegral hac hcb (continuous_pow n).continuousOn]
   simp only [smul_eq_mul]
   have hrise : ∫ x in a..c, 2 * (x - a) / ((b - a) * (c - a)) * x ^ n =
       2 / (b - a) * (1 / (c - a)) * ∫ x in a..c, x ^ n * (x - a) := by
