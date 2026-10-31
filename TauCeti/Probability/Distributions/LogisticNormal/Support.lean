@@ -14,10 +14,11 @@ import Mathlib.Analysis.Calculus.FDeriv.WithLp
 /-!
 # Support and singularity of simplex logistic-normal laws
 
-For positive semidefinite log-ratio covariance, a logistic-normal vector lies almost surely
-in the logistic chart image of the Gaussian affine support. Its topological support is the
-ambient closure of that image: sequences in the affine space can approach the boundary of the
-simplex after normalized exponentiation.
+A logistic-normal vector lies almost surely in the logistic chart image of the affine range
+of its log-ratio covariance, including invalid-covariance Dirac fallbacks. For positive
+semidefinite covariance, its topological support is the ambient closure of that image:
+sequences in the affine space can approach the boundary of the simplex after normalized
+exponentiation.
 
 A covariance that is not positive definite gives a law singular relative to the reference
 measure obtained by pushing deleted-coordinate Lebesgue measure through `dirichletChart`.
@@ -45,20 +46,23 @@ namespace TauCeti.Probability
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 /-- A logistic-normal vector lies almost surely in the chart image of the affine range of
-its positive semidefinite log-ratio covariance. -/
+its log-ratio covariance, including invalid-covariance Dirac fallbacks. -/
 theorem ae_mem_chart_affineRange_logisticNormalMeasure (r : ι)
-    (m : EuclideanSpace ℝ {i // i ≠ r}) {S : Matrix {i // i ≠ r} {i // i ≠ r} ℝ}
-    (hS : S.PosSemidef) :
+    (m : EuclideanSpace ℝ {i // i ≠ r}) {S : Matrix {i // i ≠ r} {i // i ≠ r} ℝ} :
     ∀ᵐ x ∂logisticNormalMeasure r m S,
       x ∈ logisticNormalChart r ''
         (AffineSubspace.mk' m (LinearMap.range S.toEuclideanLin) :
           Set (EuclideanSpace ℝ {i // i ≠ r})) := by
-  have he := (continuous_logisticNormalChart r).measurableEmbedding
-    (logisticNormalChart_injective r)
-  rw [logisticNormalMeasure_def]
-  exact (ae_map_iff he.measurable.aemeasurable
-    (he.measurableSet_image' (AffineSubspace.closed_of_finiteDimensional _).measurableSet)).2 <|
-      (ae_mem_affineRange_multivariateGaussian hS m).mono fun _ hx ↦ mem_image_of_mem _ hx
+  by_cases hS : S.PosSemidef
+  · have he := (continuous_logisticNormalChart r).measurableEmbedding
+      (logisticNormalChart_injective r)
+    rw [logisticNormalMeasure_def]
+    exact (ae_map_iff he.measurable.aemeasurable
+      (he.measurableSet_image' (AffineSubspace.closed_of_finiteDimensional _).measurableSet)).2 <|
+        (ae_mem_affineRange_multivariateGaussian hS m).mono fun _ hx ↦ mem_image_of_mem _ hx
+  · rw [logisticNormalMeasure_of_not_posSemidef r m hS, ae_dirac_eq,
+      Filter.eventually_pure]
+    exact mem_image_of_mem _ (AffineSubspace.self_mem_mk' _ _)
 
 /-- The topological support is the ambient closure of the logistic image of the Gaussian
 affine support, including singular and zero covariances. -/
@@ -174,12 +178,12 @@ namespace ProbabilityTheory.HasLaw
 open TauCeti.Probability
 
 /-- A vector with logistic-normal law lies almost surely in the logistic image of the
-corresponding Gaussian affine support. -/
+affine range of its log-ratio covariance, including invalid-covariance Dirac fallbacks. -/
 theorem ae_mem_chart_affineRange_logisticNormalMeasure
     {ι Ω : Type*} [Fintype ι] [DecidableEq ι] [MeasurableSpace Ω] {P : Measure Ω}
     {r : ι} {X : Ω → EuclideanSpace ℝ ι} {m : EuclideanSpace ℝ {i // i ≠ r}}
     {S : Matrix {i // i ≠ r} {i // i ≠ r} ℝ}
-    (hX : HasLaw X (logisticNormalMeasure r m S) P) (hS : S.PosSemidef) :
+    (hX : HasLaw X (logisticNormalMeasure r m S) P) :
     ∀ᵐ ω ∂P, X ω ∈ logisticNormalChart r ''
       (AffineSubspace.mk' m (LinearMap.range S.toEuclideanLin) :
         Set (EuclideanSpace ℝ {i // i ≠ r})) := by
@@ -187,6 +191,6 @@ theorem ae_mem_chart_affineRange_logisticNormalMeasure
     (logisticNormalChart_injective r)
   exact (hX.ae_iff (measurableSet_setOfPred.mp
     (he.measurableSet_image' (AffineSubspace.closed_of_finiteDimensional _).measurableSet))).2
-      (TauCeti.Probability.ae_mem_chart_affineRange_logisticNormalMeasure r m hS)
+      (TauCeti.Probability.ae_mem_chart_affineRange_logisticNormalMeasure r m)
 
 end ProbabilityTheory.HasLaw
