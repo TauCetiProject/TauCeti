@@ -108,6 +108,12 @@ def ringOfDefinition : Subring (B ⊗[A] C) :=
   D.left.ringOfDefinition.map includeLeftRingHom ⊔
     D.right.ringOfDefinition.map ((includeRight : C →ₐ[A] B ⊗[A] C) : C →+* B ⊗[A] C)
 
+/-- `F` is the supremum of the images of `B₀` and `C₀`. -/
+theorem ringOfDefinition_eq_sup :
+    D.ringOfDefinition = D.left.ringOfDefinition.map includeLeftRingHom ⊔
+      D.right.ringOfDefinition.map ((includeRight : C →ₐ[A] B ⊗[A] C) : C →+* B ⊗[A] C) :=
+  (rfl)
+
 /-- `F` contains the image of `B₀`. -/
 theorem tmul_one_mem_ringOfDefinition {b : B} (hb : b ∈ D.left.ringOfDefinition) :
     b ⊗ₜ[A] (1 : C) ∈ D.ringOfDefinition :=

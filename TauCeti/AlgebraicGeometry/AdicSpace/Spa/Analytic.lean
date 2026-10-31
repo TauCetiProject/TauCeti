@@ -124,15 +124,8 @@ theorem spaAnalytic_antitone : Antitone (spaAnalytic (A := A)) := fun _ _ hle �
 contain `I`. -/
 theorem isAnalyticPoint_iff_not_le_supp_of_isAdic {I : Ideal A} (hI : IsAdic I) (v : Spv A) :
     IsAnalyticPoint v ↔ ¬ I ≤ v.supp := by
-  have : IsTopologicalRing A := hI ▸ I.nonarchimedean.toIsTopologicalRing
   rw [isAnalyticPoint_def, not_iff_not]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · -- an open prime ideal contains a power of `I`, hence `I` itself
-    obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp (h.mem_nhds v.supp.zero_mem)
-    exact Ideal.IsPrime.le_of_pow_le hn
-  · -- a prime containing `I` contains the open subgroup `I`
-    exact AddSubgroup.isOpen_mono (H₁ := I.toAddSubgroup) (H₂ := v.supp.toAddSubgroup) h
-      (by simpa using IsAdic.isOpen_pow hI 1)
+  exact hI.isOpen_iff_le_of_isRadical (Ideal.IsPrime.isRadical inferInstance)
 
 /-- **Analytic points pull back along adic homomorphisms**: if `φ : A → B` is adic and `w` is an
 analytic point of `Spv B`, then its pullback to `Spv A` is analytic. -/

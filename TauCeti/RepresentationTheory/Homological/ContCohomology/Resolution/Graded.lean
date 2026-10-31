@@ -17,7 +17,10 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functorial
 The shifted canonical resolution has degree-`n` term `C(G, …, C(G, X))`, with `n + 1`
 function-space layers. Its external direct sum carries the canonical square-zero differential
 of degree one and the componentwise `G`-action. The augmentation includes `X` as constant
-functions in degree zero. Coefficient morphisms act degreewise through Mathlib's resolution maps.
+functions in degree zero. A compatible pair, a continuous homomorphism `φ : H →ₜ* G` with a
+morphism `f : res φ X ⟶ Y`, acts degreewise through Mathlib's resolution maps `F ↦ f ∘ F ∘ φ`;
+coefficient morphisms are the case `φ = id`. This change of group is how restriction and
+inflation reach cocycles written on the total module.
 
 For a compact group, a discrete scalar ring `R`, and smooth discrete coefficients, the total
 module with its discrete topology is again smooth. This provides a graded coefficient module for
@@ -37,8 +40,14 @@ to contract a tensor power of total resolutions onto the tensor power of the coe
   discrete topological representations.
 * `gradedResolutionTopRepAugmentation` includes discrete coefficients into the degree-zero term
   as a morphism of topological representations, naturally in the coefficients.
+* `gradedResolutionMap` is the map of a compatible pair; it commutes with the differentials,
+  the augmentations, the projections and the contracting homotopies, preserves degrees, and
+  composes along composite pairs.
 * `gradedResolutionTopRepMap` bundles coefficient maps, preserving identities, composition,
   and the differential.
+* `gradedResolutionTopRepResMap` bundles the map of a compatible pair as a morphism from the
+  restricted total resolution, of degree zero and commuting with the differentials and the
+  augmentations.
 * `TauCeti.smoothGradedResolutionFunctor` packages the smooth total resolution functorially.
 * `TauCeti.smoothGradedResolutionAugmentation` is its natural coefficient augmentation, and
   `TauCeti.smoothGradedResolutionDifferential` its differential.
@@ -249,12 +258,14 @@ theorem gradedResolutionAugmentation_injective :
 
 section Maps
 
-variable {X} {Y : TopRep.{max v w} R G}
+variable {X} {H K : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  [Group K] [TopologicalSpace K] [IsTopologicalGroup K] (φ : H →ₜ* G)
+  {Y : TopRep.{max v w} R H}
 
-private noncomputable def resolutionModuleMap (f : X ⟶ Y) :
+private noncomputable def resolutionModuleMap (f : TopRep.res (φ : H →* G) X ⟶ Y) :
     resolutionModuleComplex X ⟶ resolutionModuleComplex Y :=
   CochainComplex.ofHom (fun n ↦
-    let g := _root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)
+    let g := _root_.ContinuousCohomology.resolutionMap φ f (n + 1)
     ModuleCat.ofHom g.hom.toContinuousLinearMap.toLinearMap) fun n ↦ by
     apply ModuleCat.hom_ext
     apply LinearMap.ext
@@ -263,65 +274,71 @@ private noncomputable def resolutionModuleMap (f : X ⟶ Y) :
     -- conversion only evaluates the `ofHom` components and composition on that same carrier;
     -- the differential itself is rewritten through its characteristic equation below.
     change ((resolutionModuleComplex Y).d n (n + 1)).hom
-        ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom x) =
-      (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1 + 1)).hom
+        ((_root_.ContinuousCohomology.resolutionMap φ f (n + 1)).hom x) =
+      (_root_.ContinuousCohomology.resolutionMap φ f (n + 1 + 1)).hom
         (((resolutionModuleComplex X).d n (n + 1)).hom x)
     erw [resolutionModuleComplex_d_apply, resolutionModuleComplex_d_apply]
-    exact TauCeti.ContinuousCohomology.resolutionMap_d_apply f (n + 1) x
+    exact TauCeti.ContinuousCohomology.resolutionMap_d_apply φ f (n + 1) x
 
-private theorem resolutionModuleMap_f_apply (f : X ⟶ Y) (n : ℕ)
+private theorem resolutionModuleMap_f_apply (f : TopRep.res (φ : H →* G) X ⟶ Y) (n : ℕ)
     (x : (resolutionModuleComplex X).X n) :
-    ((resolutionModuleMap f).f n).hom x =
-      (_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G) f (n + 1)).hom x := rfl
+    ((resolutionModuleMap φ f).f n).hom x =
+      (_root_.ContinuousCohomology.resolutionMap φ f (n + 1)).hom x := rfl
 
-/-- The degreewise coefficient map on the total shifted resolution. -/
-noncomputable def gradedResolutionMap (f : X ⟶ Y) :
+/-- The map of the total shifted resolutions induced by a compatible pair: a continuous
+homomorphism `φ : H →ₜ* G` and a morphism `f : res φ X ⟶ Y`. It is Mathlib's
+`ContinuousCohomology.resolutionMap φ f`, `F ↦ f ∘ F ∘ φ`, in every degree. At `φ = id` it is
+the map induced by a coefficient morphism. -/
+noncomputable def gradedResolutionMap (f : TopRep.res (φ : H →* G) X ⟶ Y) :
     X.gradedResolutionModule →ₗ[R] Y.gradedResolutionModule :=
-  CochainComplex.directSumMap (resolutionModuleMap f)
+  CochainComplex.directSumMap (resolutionModuleMap φ f)
 
-/-- A coefficient map acts on an included term by Mathlib's canonical resolution map. -/
-theorem gradedResolutionMap_lof [DecidableEq ℕ] (f : X ⟶ Y) (n : ℕ)
+/-- The map of a compatible pair acts on an included term by Mathlib's resolution map. -/
+theorem gradedResolutionMap_lof [DecidableEq ℕ] (f : TopRep.res (φ : H →* G) X ⟶ Y) (n : ℕ)
     (x : (resolutionX X (n + 1)).V) :
-    gradedResolutionMap f
+    gradedResolutionMap φ f
       (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n x) =
       DirectSum.lof R ℕ (fun n ↦ (resolutionX Y (n + 1)).V) n
-        ((_root_.ContinuousCohomology.resolutionMap (ContinuousMonoidHom.id G)
-          f (n + 1)).hom x) := by
-  have h := CochainComplex.directSumMap_lof (resolutionModuleMap f) n x
+        ((_root_.ContinuousCohomology.resolutionMap φ f (n + 1)).hom x) := by
+  have h := CochainComplex.directSumMap_lof (resolutionModuleMap φ f) n x
   erw [resolutionModuleComplex_lof, resolutionModuleComplex_lof,
     resolutionModuleMap_f_apply] at h
   exact h
 
-/-- Coefficient maps commute with the total differential. -/
-theorem gradedResolutionMap_differential (f : X ⟶ Y) (x : X.gradedResolutionModule) :
-    gradedResolutionMap f (X.gradedResolutionDifferential x) =
-      Y.gradedResolutionDifferential (gradedResolutionMap f x) :=
-  CochainComplex.directSumMap_differential (resolutionModuleMap f) x
+/-- The map of a compatible pair commutes with the total differentials. -/
+theorem gradedResolutionMap_differential (f : TopRep.res (φ : H →* G) X ⟶ Y)
+    (x : X.gradedResolutionModule) :
+    gradedResolutionMap φ f (X.gradedResolutionDifferential x) =
+      Y.gradedResolutionDifferential (gradedResolutionMap φ f x) :=
+  CochainComplex.directSumMap_differential (resolutionModuleMap φ f) x
 
-/-- Coefficient maps preserve the augmentations of the total resolutions. -/
+/-- The map of a compatible pair carries the augmentation of `x` to the augmentation of
+`f x`. -/
 @[simp↓]
-theorem gradedResolutionMap_augmentation (f : X ⟶ Y) (x : X.V) :
-    gradedResolutionMap f (X.gradedResolutionAugmentation x) =
+theorem gradedResolutionMap_augmentation (f : TopRep.res (φ : H →* G) X ⟶ Y) (x : X.V) :
+    gradedResolutionMap φ f (X.gradedResolutionAugmentation x) =
       Y.gradedResolutionAugmentation (f.hom x) := by
   rw [gradedResolutionAugmentation_apply, gradedResolutionMap_lof,
     gradedResolutionAugmentation_apply]
   apply congrArg (DirectSum.lof R ℕ (fun n ↦ (resolutionX Y (n + 1)).V) 0)
-  have h := (TauCeti.ContinuousCohomology.resolutionMap_d_apply f 0 x).symm
+  have h := (TauCeti.ContinuousCohomology.resolutionMap_d_apply φ f 0 x).symm
   erw [_root_.ContinuousCohomology.resolutionMap_zero] at h
   exact h
 
-/-- Coefficient maps preserve the homogeneous degrees of the total resolution. -/
-theorem isHomogeneous_gradedResolutionMap (f : X ⟶ Y) :
-    TauCeti.LinearMap.IsHomogeneous (gradedResolutionMap f) X.gradedResolutionPiece
+/-- The map of a compatible pair preserves the homogeneous degrees of the total resolutions. -/
+theorem isHomogeneous_gradedResolutionMap (f : TopRep.res (φ : H →* G) X ⟶ Y) :
+    TauCeti.LinearMap.IsHomogeneous (gradedResolutionMap φ f) X.gradedResolutionPiece
       Y.gradedResolutionPiece 0 :=
-  CochainComplex.isHomogeneous_directSumMap (resolutionModuleMap f)
+  CochainComplex.isHomogeneous_directSumMap (resolutionModuleMap φ f)
 
-/-- Coefficient maps on the total resolution are equivariant. -/
-theorem gradedResolutionMap_equivariant (f : X ⟶ Y) (g : G) (x : X.gradedResolutionModule) :
-    gradedResolutionMap f (X.gradedResolutionRepresentation g x) =
-      Y.gradedResolutionRepresentation g (gradedResolutionMap f x) := by
-  have h : (gradedResolutionMap f).comp (X.gradedResolutionRepresentation g) =
-      (Y.gradedResolutionRepresentation g).comp (gradedResolutionMap f) := by
+/-- The map of a compatible pair intertwines the action of `φ h` on the total resolution of `X`
+with the action of `h` on that of `Y`. -/
+theorem gradedResolutionMap_equivariant (f : TopRep.res (φ : H →* G) X ⟶ Y) (h : H)
+    (x : X.gradedResolutionModule) :
+    gradedResolutionMap φ f (X.gradedResolutionRepresentation (φ h) x) =
+      Y.gradedResolutionRepresentation h (gradedResolutionMap φ f x) := by
+  have hc : (gradedResolutionMap φ f).comp (X.gradedResolutionRepresentation (φ h)) =
+      (Y.gradedResolutionRepresentation h).comp (gradedResolutionMap φ f) := by
     apply DirectSum.linearMap_ext R
     intro n
     apply LinearMap.ext
@@ -330,24 +347,29 @@ theorem gradedResolutionMap_equivariant (f : X ⟶ Y) (g : G) (x : X.gradedResol
     rw [gradedResolutionRepresentation_lof, gradedResolutionMap_lof,
       gradedResolutionMap_lof, gradedResolutionRepresentation_lof]
     exact congrArg (DirectSum.lof R ℕ (fun n ↦ (resolutionX Y (n + 1)).V) n)
-      (TauCeti.ContinuousCohomology.resolutionMap_ρ_apply f (n + 1) g x)
-  exact DFunLike.congr_fun h x
+      (TauCeti.ContinuousCohomology.resolutionMap_ρ_apply φ f (n + 1) h x)
+  exact DFunLike.congr_fun hc x
 
 /-- Identity coefficients induce the identity on the total resolution. -/
 @[simp]
-theorem gradedResolutionMap_id : gradedResolutionMap (𝟙 X) = LinearMap.id := by
+theorem gradedResolutionMap_id :
+    gradedResolutionMap (ContinuousMonoidHom.id G) (𝟙 X) = LinearMap.id := by
   apply DirectSum.linearMap_ext R
   intro n
   apply LinearMap.ext
   intro x
   simp only [LinearMap.comp_apply, LinearMap.id_apply]
-  rw [gradedResolutionMap_lof, _root_.ContinuousCohomology.resolutionMap_id]
-  rfl
+  -- `𝟙 X` is a morphism out of `res id X` only up to unfolding `TopRep.res`, so the computation
+  -- rule is applied by unification rather than by rewriting.
+  exact (gradedResolutionMap_lof (ContinuousMonoidHom.id G) (𝟙 X) n x).trans
+    (congrArg (DirectSum.lof R ℕ (fun n ↦ (resolutionX X (n + 1)).V) n)
+      (congrArg (fun g ↦ g.hom x) (_root_.ContinuousCohomology.resolutionMap_id X (n + 1))))
 
-/-- Composite coefficient maps compose on the total resolution. -/
-@[simp]
-theorem gradedResolutionMap_comp {Z : TopRep.{max v w} R G} (f : X ⟶ Y) (g : Y ⟶ Z) :
-    gradedResolutionMap (f ≫ g) = (gradedResolutionMap g).comp (gradedResolutionMap f) := by
+/-- The maps of compatible pairs compose on the total resolutions. -/
+theorem gradedResolutionMap_comp (ψ : K →ₜ* H) {Z : TopRep.{max v w} R K}
+    (f : TopRep.res (φ : H →* G) X ⟶ Y) (g : TopRep.res (ψ : K →* H) Y ⟶ Z) :
+    gradedResolutionMap (φ.comp ψ) ((TopRep.resFunctor (ψ : K →* H)).map f ≫ g) =
+      (gradedResolutionMap ψ g).comp (gradedResolutionMap φ f) := by
   apply DirectSum.linearMap_ext R
   intro n
   apply LinearMap.ext
@@ -355,8 +377,7 @@ theorem gradedResolutionMap_comp {Z : TopRep.{max v w} R G} (f : X ⟶ Y) (g : Y
   simp only [LinearMap.comp_apply]
   rw [gradedResolutionMap_lof, gradedResolutionMap_lof, gradedResolutionMap_lof]
   have h := congrArg (fun h ↦ h.hom x)
-    (_root_.ContinuousCohomology.resolutionMap_comp (ContinuousMonoidHom.id G)
-      (ContinuousMonoidHom.id G) f g (n + 1))
+    (_root_.ContinuousCohomology.resolutionMap_comp φ ψ f g (n + 1))
   exact congrArg (DirectSum.lof R ℕ (fun n ↦ (resolutionX Z (n + 1)).V) n) h
 
 end Maps
@@ -497,11 +518,14 @@ theorem gradedResolutionHomotopy_eq_zero_of_mem_zero {v : X.gradedResolutionModu
   obtain ⟨F, rfl⟩ := hv
   exact X.gradedResolutionHomotopy_lof_zero F
 
-variable {X} {Y : TopRep.{max v w} R G}
+variable {X} {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H] (φ : H →ₜ* G)
+  {Y : TopRep.{max v w} R H}
 
-/-- The projection is natural in the coefficients. -/
-theorem gradedResolutionProjection_map (f : X ⟶ Y) (x : X.gradedResolutionModule) :
-    Y.gradedResolutionProjection (gradedResolutionMap f x) =
+/-- The projection is natural in compatible pairs: evaluation at `1` commutes with
+`F ↦ f ∘ F ∘ φ` because `φ 1 = 1`. -/
+theorem gradedResolutionProjection_map (f : TopRep.res (φ : H →* G) X ⟶ Y)
+    (x : X.gradedResolutionModule) :
+    Y.gradedResolutionProjection (gradedResolutionMap φ f x) =
       f.hom (X.gradedResolutionProjection x) := by
   classical
   induction x using DirectSum.induction_on with
@@ -510,18 +534,20 @@ theorem gradedResolutionProjection_map (f : X ⟶ Y) (x : X.gradedResolutionModu
     rw [← DirectSum.lof_eq_of R, gradedResolutionMap_lof]
     cases n with
     | zero =>
-      rw [gradedResolutionProjection_lof_zero, gradedResolutionProjection_lof_zero]
-      -- At a successor level `resolutionMap` is postcomposition with the previous level by
-      -- definition (`ContinuousCohomology.resolutionMap_succ`, `coind₁ResMap_apply`).
-      rfl
+      rw [gradedResolutionProjection_lof_zero, gradedResolutionProjection_lof_zero,
+        _root_.ContinuousCohomology.resolutionMap_succ, hom_ofHom,
+        ContRepresentation.coind₁ResMap_apply, map_one,
+        _root_.ContinuousCohomology.resolutionMap_zero]
     | succ n =>
       rw [gradedResolutionProjection_lof_succ, gradedResolutionProjection_lof_succ, map_zero]
   | add x y hx hy => simp only [map_add, hx, hy]
 
-/-- The contracting homotopy is natural in the coefficients. -/
-theorem gradedResolutionHomotopy_map (f : X ⟶ Y) (x : X.gradedResolutionModule) :
-    Y.gradedResolutionHomotopy (gradedResolutionMap f x) =
-      gradedResolutionMap f (X.gradedResolutionHomotopy x) := by
+/-- The contracting homotopy is natural in compatible pairs: evaluating the outermost variable
+at `1` commutes with `F ↦ f ∘ F ∘ φ` because `φ 1 = 1`. -/
+theorem gradedResolutionHomotopy_map (f : TopRep.res (φ : H →* G) X ⟶ Y)
+    (x : X.gradedResolutionModule) :
+    Y.gradedResolutionHomotopy (gradedResolutionMap φ f x) =
+      gradedResolutionMap φ f (X.gradedResolutionHomotopy x) := by
   classical
   induction x using DirectSum.induction_on with
   | zero => simp
@@ -531,10 +557,8 @@ theorem gradedResolutionHomotopy_map (f : X ⟶ Y) (x : X.gradedResolutionModule
     | zero => rw [gradedResolutionHomotopy_lof_zero, gradedResolutionHomotopy_lof_zero, map_zero]
     | succ n =>
       rw [gradedResolutionHomotopy_lof_succ, gradedResolutionHomotopy_lof_succ,
-        gradedResolutionMap_lof]
-      -- At a successor level `resolutionMap` is postcomposition with the previous level by
-      -- definition (`ContinuousCohomology.resolutionMap_succ`, `coind₁ResMap_apply`).
-      rfl
+        gradedResolutionMap_lof, _root_.ContinuousCohomology.resolutionMap_succ φ f (n + 1),
+        hom_ofHom, ContRepresentation.coind₁ResMap_apply, map_one]
   | add x y hx hy => simp only [map_add, hx, hy]
 
 end Contraction
@@ -630,17 +654,75 @@ theorem gradedResolutionTopRepDifferential_augmentation [DiscreteTopology X.V] :
 
 variable {X} {Y Z : TopRep.{max v w} R G}
 
+section ResMap
+
+variable {H K : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  [Group K] [TopologicalSpace K] [IsTopologicalGroup K] (φ : H →ₜ* G)
+  {Y' : TopRep.{max v w} R H}
+
+/-- **Change of group on the total resolution.** A compatible pair, a continuous homomorphism
+`φ : H →ₜ* G` and a morphism `f : res φ X ⟶ Y'`, induces a morphism from the restriction along `φ`
+of the discrete total resolution of `X` to that of `Y'`, given by `F ↦ f ∘ F ∘ φ` in every
+degree. It has degree zero and commutes with the differentials and the augmentations. -/
+noncomputable def gradedResolutionTopRepResMap (f : TopRep.res (φ : H →* G) X ⟶ Y') :
+    TopRep.res (φ : H →* G) X.gradedResolutionTopRep ⟶ Y'.gradedResolutionTopRep where
+  hom' := {
+    toContinuousLinearMap := ⟨gradedResolutionMap φ f, continuous_of_discreteTopology⟩
+    isIntertwining' h := by
+      ext x
+      exact gradedResolutionMap_equivariant φ f h x
+  }
+
+/-- The change-of-group morphism acts on the total resolution by `gradedResolutionMap`. -/
+theorem gradedResolutionTopRepResMap_apply (f : TopRep.res (φ : H →* G) X ⟶ Y')
+    (x : X.gradedResolutionModule) :
+    (gradedResolutionTopRepResMap φ f).hom x = gradedResolutionMap φ f x :=
+  (rfl)
+
+/-- The change-of-group morphism preserves the homogeneous degrees of the total resolutions. -/
+theorem isHomogeneous_gradedResolutionTopRepResMap (f : TopRep.res (φ : H →* G) X ⟶ Y') :
+    TauCeti.LinearMap.IsHomogeneous (gradedResolutionTopRepResMap φ f).hom.toLinearMap
+      X.gradedResolutionPiece Y'.gradedResolutionPiece 0 :=
+  isHomogeneous_gradedResolutionMap φ f
+
+/-- The change-of-group morphism commutes with the total differentials. -/
+theorem gradedResolutionTopRepResMap_differential (f : TopRep.res (φ : H →* G) X ⟶ Y') :
+    (TopRep.resFunctor (φ : H →* G)).map X.gradedResolutionTopRepDifferential ≫
+        gradedResolutionTopRepResMap φ f =
+      gradedResolutionTopRepResMap φ f ≫ Y'.gradedResolutionTopRepDifferential := by
+  ext x
+  exact gradedResolutionMap_differential φ f x
+
+/-- The change-of-group morphism lies over `f`: it carries the augmentation of the restricted
+coefficients to the augmentation of `Y'`. -/
+theorem gradedResolutionTopRepResMap_augmentation [DiscreteTopology X.V] [DiscreteTopology Y'.V]
+    (f : TopRep.res (φ : H →* G) X ⟶ Y') :
+    (TopRep.resFunctor (φ : H →* G)).map X.gradedResolutionTopRepAugmentation ≫
+        gradedResolutionTopRepResMap φ f =
+      f ≫ Y'.gradedResolutionTopRepAugmentation := by
+  ext x
+  exact gradedResolutionMap_augmentation φ f x
+
+/-- Change-of-group morphisms of total resolutions compose along composite compatible pairs. -/
+theorem gradedResolutionTopRepResMap_comp (ψ : K →ₜ* H) {Z' : TopRep.{max v w} R K}
+    (f : TopRep.res (φ : H →* G) X ⟶ Y') (g : TopRep.res (ψ : K →* H) Y' ⟶ Z') :
+    gradedResolutionTopRepResMap (φ.comp ψ) ((TopRep.resFunctor (ψ : K →* H)).map f ≫ g) =
+      (TopRep.resFunctor (ψ : K →* H)).map (gradedResolutionTopRepResMap φ f) ≫
+        gradedResolutionTopRepResMap ψ g := by
+  ext x
+  exact DFunLike.congr_fun (gradedResolutionMap_comp φ ψ f g) x
+
+end ResMap
+
 /-- A coefficient morphism induces a morphism of discrete total resolutions. -/
 noncomputable def gradedResolutionTopRepMap (f : X ⟶ Y) :
     X.gradedResolutionTopRep ⟶ Y.gradedResolutionTopRep :=
-  (TauCeti.discreteTopRepFunctor R G).map <| Rep.ofHom <|
-    (gradedResolutionMap f).intertwiningMap_of_isIntertwiningMap
-      X.gradedResolutionRepresentation Y.gradedResolutionRepresentation
-      (gradedResolutionMap_equivariant f)
+  -- Restriction along the identity homomorphism is the identity on objects by definition.
+  gradedResolutionTopRepResMap (ContinuousMonoidHom.id G) f
 
 /-- Bundling a coefficient map preserves its action on the original direct-sum carrier. -/
 theorem gradedResolutionTopRepMap_apply (f : X ⟶ Y) (x : X.gradedResolutionModule) :
-    (gradedResolutionTopRepMap f).hom x = gradedResolutionMap f x :=
+    (gradedResolutionTopRepMap f).hom x = gradedResolutionMap (ContinuousMonoidHom.id G) f x :=
   (rfl)
 
 /-- Identity coefficients induce the identity morphism of the discrete total resolution. -/
@@ -656,14 +738,17 @@ theorem gradedResolutionTopRepMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
     gradedResolutionTopRepMap (f ≫ g) =
       gradedResolutionTopRepMap f ≫ gradedResolutionTopRepMap g := by
   ext x
-  exact DFunLike.congr_fun (gradedResolutionMap_comp f g) x
+  -- The composite of identity homomorphisms and the restriction of `f` along the identity are
+  -- `ContinuousMonoidHom.id G` and `f` by definition.
+  exact DFunLike.congr_fun
+    (gradedResolutionMap_comp (ContinuousMonoidHom.id G) (ContinuousMonoidHom.id G) f g) x
 
 /-- Bundled coefficient maps commute with the resolution differential. -/
 theorem gradedResolutionTopRepMap_differential (f : X ⟶ Y) :
     X.gradedResolutionTopRepDifferential ≫ gradedResolutionTopRepMap f =
       gradedResolutionTopRepMap f ≫ Y.gradedResolutionTopRepDifferential := by
   ext x
-  exact gradedResolutionMap_differential f x
+  exact gradedResolutionMap_differential (ContinuousMonoidHom.id G) f x
 
 /-- Bundled coefficient maps preserve the augmentations of discrete coefficients. -/
 theorem gradedResolutionTopRepMap_augmentation [DiscreteTopology X.V] [DiscreteTopology Y.V]
@@ -671,7 +756,7 @@ theorem gradedResolutionTopRepMap_augmentation [DiscreteTopology X.V] [DiscreteT
     X.gradedResolutionTopRepAugmentation ≫ gradedResolutionTopRepMap f =
       f ≫ Y.gradedResolutionTopRepAugmentation := by
   ext x
-  exact gradedResolutionMap_augmentation f x
+  exact gradedResolutionMap_augmentation (ContinuousMonoidHom.id G) f x
 
 variable (X)
 

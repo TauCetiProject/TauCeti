@@ -135,6 +135,8 @@ of `G` trivial on `ε`, each for exactly one `t`.
 * `CliffordAlgebra.natCard_conjClasses_monomialGroup_of_even` and
   `CliffordAlgebra.natCard_conjClasses_monomialGroup_of_odd`: **the number of conjugacy classes**
   is `2 ^ n + 1` in even dimension `n` and `2 ^ n + 2` in odd dimension.
+* `CliffordAlgebra.involute_eq_or_eq_neg_of_mem_monomialGroup`: signed monomials are homogeneous:
+  the grade involution fixes or negates each of them.
 * `CliffordAlgebra.monomialGroup_hom_ext`: homomorphisms out of the group agree once they agree on
   `ε` and on the generators.
 * `CliffordAlgebra.ker_monomialGroupSupport` and `CliffordAlgebra.monomialGroupSupport_surjective`:
@@ -247,6 +249,29 @@ theorem units_map_involute_mem_monomialGroup {u : (CliffordAlgebra Q)ˣ}
   | one => simp
   | mul u w _ _ hu hw => simpa using mul_mem hu hw
   | inv u _ hu => simpa using inv_mem hu
+
+variable {v} in
+/-- **A signed monomial is homogeneous**: the grade involution fixes it or negates it. -/
+theorem involute_eq_or_eq_neg_of_mem_monomialGroup {u : (CliffordAlgebra Q)ˣ}
+    (hu : u ∈ monomialGroup Q v) :
+    involute (u : CliffordAlgebra Q) = u ∨ involute (u : CliffordAlgebra Q) = -u := by
+  rw [monomialGroup_def] at hu
+  induction hu using Subgroup.closure_induction with
+  | mem u hu =>
+    rcases hu with hu | ⟨i, hu⟩
+    · exact Or.inl (by simp [hu])
+    · exact Or.inr (by simp [hu])
+  | one => exact Or.inl (by simp)
+  | mul u w _ _ hu hw => rcases hu with hu | hu <;> rcases hw with hw | hw <;> simp [hu, hw]
+  | inv u _ hu =>
+    have h : involute ((u⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) *
+        involute (u : CliffordAlgebra Q) = 1 := by
+      rw [← map_mul, Units.inv_mul, map_one]
+    rcases hu with hu | hu
+    · rw [hu] at h
+      exact Or.inl (Units.eq_inv_of_mul_eq_one_right h)
+    · rw [hu, mul_neg, ← neg_mul] at h
+      exact Or.inr (neg_eq_iff_eq_neg.mp (Units.eq_inv_of_mul_eq_one_right h))
 
 /-- **The grade involution as an automorphism of the group of signed monomials.** For an orthogonal
 basis it sends the signed monomial `±e_s` to `±(-1) ^ #s e_s`. -/

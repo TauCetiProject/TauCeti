@@ -193,6 +193,10 @@ def limπ (n : ℕ) : F.lim →ₗ[R] F.obj (op n) :=
 theorem limπ_apply (n : ℕ) (x : F.lim) : F.limπ n x = (x : F.Product) n :=
   (rfl)
 
+/-- Two points of `lim A` are equal when all their coordinates agree. -/
+theorem lim_ext {x y : F.lim} (h : ∀ n, F.limπ n x = F.limπ n y) : x = y :=
+  Subtype.ext <| funext h
+
 /-- An element of `lim A` is compatible with the transition `Aₙ₊₁ → Aₙ`. -/
 @[simp]
 theorem transition_coe_lim_succ (x : F.lim) (n : ℕ) :
