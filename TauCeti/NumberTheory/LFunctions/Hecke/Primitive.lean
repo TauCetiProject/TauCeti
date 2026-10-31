@@ -100,6 +100,11 @@ namespace PrimitiveRayClassCharacter
 
 variable {𝔪 𝔫 : Modulus K}
 
+/-- The modulus of a primitive character is the conductor of its character. -/
+theorem conductor_character (ψ : PrimitiveRayClassCharacter K) :
+    ψ.character.conductor = ψ.conductor :=
+  (RayClassCharacter.isPrimitive_iff_conductor_eq _).mp ψ.isPrimitive
+
 /-- **Primitive characters are determined by any presentation.** Two primitive characters inducing
 the same character of a common multiple of their conductors are equal; in particular they have the
 same conductor. -/
@@ -114,6 +119,15 @@ theorem eq_of_induced_eq {ψ ψ' : PrimitiveRayClassCharacter K} {𝔐 : Modulus
       (RayClassCharacter.isPrimitive_iff_conductor_eq χ').mp hχ'] at this
   subst h𝔣
   obtain rfl := RayClassCharacter.induced_injective h hψ
+  rfl
+
+/-- Two primitive characters are equal exactly when they induce the same character of a common
+multiple of their conductors. -/
+theorem induced_character_inj {ψ ψ' : PrimitiveRayClassCharacter K} {𝔐 : Modulus K}
+    (h : ψ.conductor ∣ 𝔐) (h' : ψ'.conductor ∣ 𝔐) :
+    ψ.character.induced h = ψ'.character.induced h' ↔ ψ = ψ' := by
+  refine ⟨eq_of_induced_eq h h', ?_⟩
+  rintro rfl
   rfl
 
 /-- **The primitive character underlying a ray class character**: its conductor, with the
@@ -243,6 +257,20 @@ theorem eulerCorrection_eq_prod_support (χ : RayClassCharacter 𝔪) (𝔫 : Mo
 theorem eulerCorrection_self (χ : RayClassCharacter 𝔪) (s : ℂ) : χ.eulerCorrection 𝔪 s = 1 := by
   classical
   rw [eulerCorrection, Finset.sdiff_self, Finset.prod_empty]
+
+/-- No Euler factor is deleted when the primes dividing `𝔫₀` already divide `𝔪₀`. -/
+theorem eulerCorrection_of_support_subset (χ : RayClassCharacter 𝔪) (h : 𝔫.support ⊆ 𝔪.support)
+    (s : ℂ) : χ.eulerCorrection 𝔫 s = 1 := by
+  classical
+  rw [eulerCorrection, Finset.sdiff_eq_empty_iff_subset.mpr h, Finset.prod_empty]
+
+/-- The Euler correction is an entire function of `s`. -/
+theorem differentiable_eulerCorrection (χ : RayClassCharacter 𝔪) (𝔫 : Modulus K) :
+    Differentiable ℂ (χ.eulerCorrection 𝔫) := by
+  classical
+  refine Differentiable.fun_finsetProd fun 𝔭 _ ↦ (differentiable_const 1).sub
+    ((differentiable_const _).mul (differentiable_neg.const_cpow (.inl ?_)))
+  exact 𝔭.natCast_absNorm_ne_zero
 
 /-- **The correction of the trivial character is the finite Euler correction**: for the trivial
 character of the trivial modulus, inducing to `𝔫` deletes the factors `1 - N(𝔭) ^ (-s)` at every
