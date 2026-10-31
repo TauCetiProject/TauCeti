@@ -24,16 +24,17 @@ U(c) = {σ ∈ Aut(k) | σ • c = c} ,     M(c) = k ^ U(c) .
 For a representative `(F, t)` of `c`, an automorphism `σ` lies in `U(c)` exactly when the
 conjugate pair `(F, t)^σ` is isomorphic to `(F, t)` as a pair, that is by an isomorphism of
 function fields commuting with the Belyi maps
-(`TauCeti.AlgebraicBelyiPair.IsoClass.smul_mk_eq_mk_iff`).
-At `k = ℂ` these are Köck's relative moduli field `M(X, t)` and its group `U(X, t)`, through
-which Belyi pairs over `ℂ` are descended to number fields; at `k = AlgebraicClosure ℚ` they are
-the field of moduli and the stabilizer of a Belyi map under the absolute Galois group.
+(`TauCeti.AlgebraicBelyiPair.IsoClass.smul_mk_eq_mk_iff`, in
+`TauCeti.FieldTheory.FunctionField.Belyi.GaloisAction`). At `k = ℂ` these are Köck's relative
+moduli field `M(X, t)` and its group `U(X, t)`, through which Belyi pairs over `ℂ` are descended
+to number fields; at `k = AlgebraicClosure ℚ` they are the field of moduli and the stabilizer of
+a Belyi map under the absolute Galois group.
 
 Since `c` is an isomorphism class, the field of moduli is attached to the class and not to a
-representative, and it moves with the class: `M(σ • c) = σ(M(c))`. When `k / ℚ` is Galois, as
-for `AlgebraicClosure ℚ`, every subfield `K ⊆ k` such that each automorphism fixing `K` fixes `c`
-contains the field of moduli. This is how a field of definition of `c` is seen to contain its
-field of moduli: the automorphisms fixing it fix a model, hence the class.
+representative, and it moves with the class: `M(σ • c) = σ(M(c))`. Every subfield `K ⊆ k` with
+`k / K` Galois, as for any subfield of `AlgebraicClosure ℚ`, such that each automorphism fixing
+`K` fixes `c` contains the field of moduli. This is how a field of definition of `c` is seen to
+contain its field of moduli: the automorphisms fixing it fix a model, hence the class.
 
 The distinguished function `t` is part of the datum. Forgetting it, an automorphism `σ` fixes
 the **curve** of a pair `X = (F, t)` when the conjugate function field `F^σ` is isomorphic to `F`
@@ -46,19 +47,15 @@ field of moduli of the pair.
 
 * `TauCeti.AlgebraicBelyiPair.IsoClass.fieldOfModuli`: the field of moduli of an isomorphism class
   of algebraic Belyi pairs.
-* `TauCeti.AlgebraicBelyiPair.conjCurveAlgEquiv`: conjugation of isomorphisms of function fields
-  over `k`, not necessarily compatible with the Belyi maps.
 * `TauCeti.AlgebraicBelyiPair.curveStabilizer` and
   `TauCeti.AlgebraicBelyiPair.curveFieldOfModuli`: the automorphisms of `k` fixing the curve of a
   pair, and the field of moduli of the curve.
 
 ## Main results
 
-* `TauCeti.AlgebraicBelyiPair.IsoClass.smul_mk_eq_mk_iff`: `σ` stabilizes the class of `X`
-  exactly when the conjugate of `X` along `σ` is isomorphic to `X` as a pair.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.fieldOfModuli_smul`: `M(σ • c) = σ(M(c))`.
-* `TauCeti.AlgebraicBelyiPair.IsoClass.fieldOfModuli_le_of_fixingSubgroup_le`: over a Galois
-  extension of `ℚ`, the field of moduli lies in every subfield whose automorphisms fix the class.
+* `TauCeti.AlgebraicBelyiPair.IsoClass.fieldOfModuli_le_of_fixingSubgroup_le`: the field of
+  moduli lies in every subfield `K` with `k / K` Galois whose automorphisms fix the class.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.finrank_fieldOfModuli_eq_trueOrbitSize`: over a Galois
   extension of `ℚ`, and for a class with closed stabilizer, the degree of the field of moduli is
   the true orbit size.
@@ -83,20 +80,11 @@ namespace TauCeti
 
 namespace AlgebraicBelyiPair
 
-variable {k k' : Type u} [Field k] [CharZero k] [Field k'] [CharZero k']
+variable {k : Type u} [Field k] [CharZero k]
 
 /-! ### The field of moduli of a pair -/
 
 namespace IsoClass
-
-variable {X : AlgebraicBelyiPair k}
-
-/-- An automorphism `g` of `k` **stabilizes the class** of an algebraic Belyi pair `X` exactly
-when the conjugate of `X` along `g` is isomorphic to `X` as a pair, that is by an isomorphism of
-function fields over `k(t)`. -/
-theorem smul_mk_eq_mk_iff {g : k ≃ₐ[ℚ] k} :
-    g • mk X = mk X ↔ Nonempty (X.conj (g : k ≃+* k) ≃ₐ[RatFunc k] X) := by
-  rw [smul_mk, MulSemiringAction.toRingEquiv_algEquiv, mk_eq_mk_iff]
 
 /-- The **field of moduli** of an isomorphism class `c` of algebraic Belyi pairs over `k`: the
 subfield of `k` fixed by every automorphism of `k` that fixes `c`. At `k = ℂ` it is Köck's
@@ -122,14 +110,14 @@ theorem fieldOfModuli_smul (g : k ≃ₐ[ℚ] k) (c : IsoClass k) :
   rw [fieldOfModuli_def, MulAction.stabilizer_smul_eq_stabilizer_map_conj,
     MulEquiv.toMonoidHom_eq_coe, Subgroup.fixedField_map_conj, fieldOfModuli_def]
 
-/-- Over a Galois extension `k` of `ℚ`, such as `AlgebraicClosure ℚ`, the field of moduli of a
-class `c` is contained in every subfield `K` of `k` such that every automorphism of `k` fixing `K`
-pointwise also fixes `c`. A field of definition of `c` is such a subfield, since the automorphisms
-fixing it fix a model of `c`. -/
-theorem fieldOfModuli_le_of_fixingSubgroup_le [IsGalois ℚ k] {c : IsoClass k}
-    {K : IntermediateField ℚ k} (h : K.fixingSubgroup ≤ MulAction.stabilizer (k ≃ₐ[ℚ] k) c) :
+/-- The field of moduli of a class `c` is contained in every subfield `K` of `k` over which `k`
+is Galois, such as any subfield of `AlgebraicClosure ℚ`, and such that every automorphism of `k`
+fixing `K` pointwise also fixes `c`. A field of definition of `c` is such a subfield, since the
+automorphisms fixing it fix a model of `c`. -/
+theorem fieldOfModuli_le_of_fixingSubgroup_le {c : IsoClass k} {K : IntermediateField ℚ k}
+    [IsGalois K k] (h : K.fixingSubgroup ≤ MulAction.stabilizer (k ≃ₐ[ℚ] k) c) :
     c.fieldOfModuli ≤ K :=
-  (IntermediateField.fixedField_le h).trans (InfiniteGalois.fixedField_fixingSubgroup K).le
+  (IntermediateField.fixedField_le h).trans (IntermediateField.fixedField_fixingSubgroup K).le
 
 /-- Over a Galois extension `k` of `ℚ`, such as `AlgebraicClosure ℚ`, the degree of the field of
 moduli of a class over `ℚ` is its true orbit size, provided its stabilizer is closed in the Krull
@@ -143,27 +131,9 @@ theorem finrank_fieldOfModuli_eq_trueOrbitSize [IsGalois ℚ k] {c : IsoClass k}
 
 end IsoClass
 
-/-! ### Conjugation of isomorphisms of curves -/
-
-variable (σ : k ≃+* k') {X Y : AlgebraicBelyiPair k}
-
-/-- **Conjugation of isomorphisms of curves**: an isomorphism over `k` of the function fields of
-two algebraic Belyi pairs, not necessarily compatible with their Belyi maps, is also an
-isomorphism over `k'` of the function fields of their conjugates along `σ`. -/
-noncomputable def conjCurveAlgEquiv (e : X ≃ₐ[k] Y) : X.conj σ ≃ₐ[k'] Y.conj σ :=
-  AlgEquiv.ofRingEquiv
-    (f := (conjRingEquiv σ X).symm.trans (e.toRingEquiv.trans (conjRingEquiv σ Y))) fun c ↦ by
-    obtain ⟨c, rfl⟩ := σ.surjective c
-    rw [← conjRingEquiv_algebraMap σ X c, ← conjRingEquiv_algebraMap σ Y c]
-    simp only [RingEquiv.trans_apply, RingEquiv.symm_apply_apply, AlgEquiv.coe_toRingEquiv,
-      AlgEquiv.commutes]
-
-@[simp]
-theorem conjCurveAlgEquiv_conjRingEquiv (e : X ≃ₐ[k] Y) (x : X) :
-    conjCurveAlgEquiv σ e (conjRingEquiv σ X x) = conjRingEquiv σ Y (e x) := by
-  simp [conjCurveAlgEquiv]
-
 /-! ### The field of moduli of the curve -/
+
+variable {X Y : AlgebraicBelyiPair k}
 
 variable (X) in
 /-- The **stabilizer of the curve** of an algebraic Belyi pair `X = (F, t)`: the automorphisms `g`
