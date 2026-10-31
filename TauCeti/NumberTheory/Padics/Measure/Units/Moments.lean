@@ -36,6 +36,8 @@ quotient ring of `M` to `ℤ_p`, since it kills the regular element `δ_{1+p} - 
   only if `a` has infinite order.
 * `AbstractMeasure.dirac_sub_one_mem_nonZeroDivisors_of_val_eq_natCast`: `δ_a - 1` is a
   non-zero-divisor when the value of `a` is a natural number `n ≥ 2`, such as `1 + p`.
+* `AbstractMeasure.exists_val_eq_one_add_dirac_sub_one_mem_nonZeroDivisors`: the unit `a = 1 + p`
+  gives the regular element `δ_a - 1`.
 * `AbstractMeasure.no_totalMass_fraction_extension`: no ring homomorphism from the total quotient
   ring of `M` to `ℤ_p` restricts to the total mass on `M`.
 
@@ -116,15 +118,21 @@ theorem dirac_sub_one_mem_nonZeroDivisors_of_val_eq_natCast {a : ℤ_[p]ˣ} {n :
   rw [Units.val_pow_eq_pow_val, ha, Units.val_one, ← Nat.cast_pow, Nat.cast_eq_one] at h
   exact (Nat.one_lt_pow hk.ne' (by omega)).ne' h
 
+/-- There is a unit `a` of `ℤ_p` with value `1 + p`, and for it `δ_a - 1` is a non-zero-divisor of
+the convolution algebra of `ℤ_pˣ`. -/
+theorem exists_val_eq_one_add_dirac_sub_one_mem_nonZeroDivisors :
+    ∃ a : ℤ_[p]ˣ, (a : ℤ_[p]) = 1 + p ∧ dirac ℤ_[p] a - 1 ∈ D(ℤ_[p]ˣ, ℤ_[p])⁰ := by
+  obtain ⟨a, ha⟩ := isUnit_one_add_of_dvd (dvd_refl (p : ℤ_[p]))
+  exact ⟨a, ha, dirac_sub_one_mem_nonZeroDivisors_of_val_eq_natCast (n := 1 + p)
+    (by have := (Fact.out : p.Prime).two_le; omega) (by rw [ha]; push_cast; rfl)⟩
+
 /-- The total mass `μ ↦ μ 1` on `D(ℤ_pˣ, ℤ_p)` does not extend to a ring homomorphism from the total
 quotient ring to `ℤ_p`: it kills `δ_{1+p} - 1`, which becomes a unit there. -/
 theorem no_totalMass_fraction_extension :
     ¬∃ φ : FractionRing D(ℤ_[p]ˣ, ℤ_[p]) →+* ℤ_[p],
       ∀ μ, φ (algebraMap D(ℤ_[p]ˣ, ℤ_[p]) (FractionRing D(ℤ_[p]ˣ, ℤ_[p])) μ) = μ 1 := by
   rintro ⟨φ, hφ⟩
-  obtain ⟨a, ha⟩ := isUnit_one_add_of_dvd (dvd_refl (p : ℤ_[p]))
-  have hreg := dirac_sub_one_mem_nonZeroDivisors_of_val_eq_natCast (n := 1 + p)
-    (by have := (Fact.out : p.Prime).two_le; omega) (by rw [ha]; push_cast; rfl)
+  obtain ⟨a, -, hreg⟩ := exists_val_eq_one_add_dirac_sub_one_mem_nonZeroDivisors (p := p)
   have hu := (IsLocalization.map_units (FractionRing D(ℤ_[p]ˣ, ℤ_[p])) ⟨_, hreg⟩).map φ
   rw [hφ, ← characterIntegralAlgHom_one_character, map_sub, map_one, characterIntegralAlgHom_dirac,
     ContinuousMonoidHom.coe_one, Pi.one_apply, sub_self] at hu

@@ -89,13 +89,19 @@ variable (κ : ℤ_[p]ˣ →ₜ* ℤ_[p])
 private def toPadicRingHom : D(ℤ_[p]ˣ, ℤ_[p]) →+* ℚ_[p] :=
   (algebraMap ℤ_[p] ℚ_[p]).comp (characterIntegralAlgHom κ).toRingHom
 
-private theorem toPadicRingHom_apply (μ : D(ℤ_[p]ˣ, ℤ_[p])) :
-    toPadicRingHom κ μ = (μ κ : ℚ_[p]) := by
+/-- For the algebra structure on `ℚ_p` given by `toPadicRingHom κ`, `algebraMap` is `μ ↦ μ κ`. -/
+private theorem algebraMap_toAlgebra_apply (μ : D(ℤ_[p]ˣ, ℤ_[p])) :
+    letI := (toPadicRingHom κ).toAlgebra
+    algebraMap D(ℤ_[p]ˣ, ℤ_[p]) ℚ_[p] μ = (μ κ : ℚ_[p]) := by
+  let := (toPadicRingHom κ).toAlgebra
+  rw [RingHom.algebraMap_toAlgebra]
   simp [toPadicRingHom]
 
-private theorem toPadicRingHom_dirac_sub_one (g : ℤ_[p]ˣ) :
-    toPadicRingHom κ (diracHom g - 1) = (κ g : ℚ_[p]) - 1 := by
-  rw [map_sub, map_one, toPadicRingHom_apply]
+private theorem algebraMap_toAlgebra_dirac_sub_one (g : ℤ_[p]ˣ) :
+    letI := (toPadicRingHom κ).toAlgebra
+    algebraMap D(ℤ_[p]ˣ, ℤ_[p]) ℚ_[p] (diracHom g - 1) = (κ g : ℚ_[p]) - 1 := by
+  let := (toPadicRingHom κ).toAlgebra
+  rw [map_sub, map_one, algebraMap_toAlgebra_apply]
   simp
 
 private theorem exists_apply_ne_one {κ : ℤ_[p]ˣ →ₜ* ℤ_[p]} (hκ : κ ≠ 1) : ∃ g, κ g ≠ 1 := by
@@ -105,6 +111,14 @@ private theorem coe_apply_sub_one_ne_zero {g : ℤ_[p]ˣ} (hg : κ g ≠ 1) :
     (κ g : ℚ_[p]) - 1 ≠ 0 := by
   exact_mod_cast PadicInt.coe_ne_zero.2 (sub_ne_zero.2 hg)
 
+/-- For the algebra structure given by `μ ↦ μ κ`, the clearing factor `δ_g - 1` of a unit `g` with
+`κ g ≠ 1` maps to a unit of `ℚ_p`. -/
+private theorem isUnit_algebraMap_dirac_sub_one {g : ℤ_[p]ˣ} (hg : κ g ≠ 1) :
+    letI := (toPadicRingHom κ).toAlgebra
+    IsUnit (algebraMap D(ℤ_[p]ˣ, ℤ_[p]) ℚ_[p] (diracHom g - 1)) := by
+  rw [algebraMap_toAlgebra_dirac_sub_one]
+  exact Ne.isUnit (coe_apply_sub_one_ne_zero κ hg)
+
 /-- Evaluation of pseudo-measures on `ℤ_pˣ` at a nontrivial continuous character `κ`: the
 pseudo-measure `z` is sent to `n_g(z)(κ) / (κ g - 1)` in `ℚ_p`, for any `g` with `κ g ≠ 1`, where
 `n_g(z) = (δ_g - 1) z` is the cleared numerator. The value does not depend on `g`
@@ -112,9 +126,18 @@ pseudo-measure `z` is sent to `n_g(z)(κ) / (κ g - 1)` in `ℚ_p`, for any `g` 
 def unitCharacterEval (hκ : κ ≠ 1) : unitsPseudomeasures p →+ ℚ_[p] :=
   letI := (toPadicRingHom κ).toAlgebra
   (evalAt (diracHom (R := ℤ_[p])) (FractionRing D(ℤ_[p]ˣ, ℤ_[p])) ℚ_[p]
-    (exists_apply_ne_one hκ).choose (Ne.isUnit (by
-      rw [RingHom.algebraMap_toAlgebra, toPadicRingHom_dirac_sub_one]
-      exact coe_apply_sub_one_ne_zero κ (exists_apply_ne_one hκ).choose_spec))).toAddMonoidHom
+    (exists_apply_ne_one hκ).choose
+    (isUnit_algebraMap_dirac_sub_one κ (exists_apply_ne_one hκ).choose_spec)).toAddMonoidHom
+
+/-- `unitCharacterEval` is `evalAt` at the chosen clearing element, for the algebra structure on
+`ℚ_p` given by `μ ↦ μ κ`. All of its properties are derived from the `evalAt` API through this
+unfolding. -/
+private theorem unitCharacterEval_apply (hκ : κ ≠ 1) (z : unitsPseudomeasures p) :
+    letI := (toPadicRingHom κ).toAlgebra
+    κ.unitCharacterEval hκ z =
+      evalAt (diracHom (R := ℤ_[p])) _ ℚ_[p] (exists_apply_ne_one hκ).choose
+        (isUnit_algebraMap_dirac_sub_one κ (exists_apply_ne_one hκ).choose_spec) z :=
+  rfl
 
 /-- The cleared identity for the evaluation at a nontrivial character: for every unit `g`,
 `(κ g - 1) E_κ(z) = n_g(z)(κ)`, where `n_g(z) = (δ_g - 1) z` is the cleared numerator. -/
@@ -122,10 +145,9 @@ theorem unitCharacterEval_spec (hκ : κ ≠ 1) (g : ℤ_[p]ˣ) (z : unitsPseudo
     ((κ g : ℚ_[p]) - 1) * κ.unitCharacterEval hκ z =
       (numerator (diracHom (R := ℤ_[p])) _ g z κ : ℚ_[p]) := by
   let := (toPadicRingHom κ).toAlgebra
-  rw [← toPadicRingHom_apply, ← toPadicRingHom_dirac_sub_one]
-  -- With this algebra structure, `algebraMap` is `toPadicRingHom κ` by definition, and
-  -- `unitCharacterEval` unfolds to `evalAt`, so this is `evalAt_cross`.
-  exact evalAt_cross (A := ℚ_[p]) _ g _ z
+  rw [unitCharacterEval_apply, ← algebraMap_toAlgebra_dirac_sub_one,
+    ← algebraMap_toAlgebra_apply]
+  exact evalAt_cross _ g _ z
 
 /-- The ratio formula: for any unit `g` with `κ g ≠ 1`, the evaluation of a pseudo-measure `z` at
 `κ` is `n_g(z)(κ) / (κ g - 1)`. -/
@@ -141,15 +163,16 @@ pseudo-measures. -/
 theorem unitCharacterEval_integral (hκ : κ ≠ 1) (μ : D(ℤ_[p]ˣ, ℤ_[p])) :
     κ.unitCharacterEval hκ (integral (diracHom (R := ℤ_[p])) _ μ) = (μ κ : ℚ_[p]) := by
   let := (toPadicRingHom κ).toAlgebra
-  rw [← toPadicRingHom_apply]
-  exact evalAt_integral (A := ℚ_[p]) _ _ μ
+  rw [unitCharacterEval_apply, ← algebraMap_toAlgebra_apply]
+  exact evalAt_integral _ _ μ
 
 /-- The evaluation at `κ` is compatible with the action of measures on pseudo-measures:
 `E_κ(μ z) = μ(κ) E_κ(z)`. -/
 theorem unitCharacterEval_smul (hκ : κ ≠ 1) (μ : D(ℤ_[p]ˣ, ℤ_[p])) (z : unitsPseudomeasures p) :
     κ.unitCharacterEval hκ (μ • z) = (μ κ : ℚ_[p]) * κ.unitCharacterEval hκ z := by
   let := (toPadicRingHom κ).toAlgebra
-  rw [← toPadicRingHom_apply, ← RingHom.algebraMap_toAlgebra (toPadicRingHom κ), ← Algebra.smul_def]
+  rw [unitCharacterEval_apply, unitCharacterEval_apply, ← algebraMap_toAlgebra_apply,
+    ← Algebra.smul_def]
   exact map_smul (evalAt (diracHom (R := ℤ_[p])) _ ℚ_[p] _ _) μ z
 
 /-- Uniqueness of the evaluation at `κ`: an additive map on pseudo-measures which extends the
@@ -163,12 +186,15 @@ theorem unitCharacterEval_unique (hκ : κ ≠ 1) (L : unitsPseudomeasures p →
   let L' : unitsPseudomeasures p →ₗ[D(ℤ_[p]ˣ, ℤ_[p])] ℚ_[p] :=
     { L with
       map_smul' := fun μ z => by
-        -- The coercion of `{ L with .. }` is `L` and `RingHom.id` is the identity, by definition.
+        -- The coercion of `{ L with .. }` is `L` and `RingHom.id` is the identity, by definition;
+        -- the scalar action of `μ` on `ℚ_p` is the one given by `toPadicRingHom κ`.
         change L (μ • z) = μ • L z
-        rw [hsmul, Algebra.smul_def, RingHom.algebraMap_toAlgebra, toPadicRingHom_apply] }
+        rw [hsmul, Algebra.smul_def, algebraMap_toAlgebra_apply] }
   ext z
+  rw [unitCharacterEval_apply]
+  -- `L' z` is `L z` by definition.
   exact LinearMap.congr_fun (evalAt_unique _ _ L' fun μ => (hint μ).trans
-    (toPadicRingHom_apply κ μ).symm) z
+    (algebraMap_toAlgebra_apply κ μ).symm) z
 
 /-- Continuity of the evaluation away from the trivial character: for a continuous family of
 characters `κ : S → (ℤ_pˣ →ₜ* ℤ_p)` (for the compact-open topology, which is the topology of uniform
@@ -209,10 +235,7 @@ theorem unitsPseudomeasure_eq_zero_of_positive_moments (z : unitsPseudomeasures 
     (hz : ∀ k (hk : 0 < k),
       (unitsPowCharacter p k).unitCharacterEval (unitsPowCharacter_ne_one hk) z = 0) :
     z = 0 := by
-  obtain ⟨a, ha⟩ := isUnit_one_add_of_dvd (dvd_refl (p : ℤ_[p]))
-  have hreg : dirac ℤ_[p] a - 1 ∈ D(ℤ_[p]ˣ, ℤ_[p])⁰ :=
-    dirac_sub_one_mem_nonZeroDivisors_of_val_eq_natCast (n := 1 + p)
-      (by have := (Fact.out : p.Prime).two_le; omega) (by rw [ha, Nat.cast_add, Nat.cast_one])
+  obtain ⟨a, -, hreg⟩ := exists_val_eq_one_add_dirac_sub_one_mem_nonZeroDivisors (p := p)
   -- The cleared numerator `(δ_a - 1) z` is a measure with vanishing positive moments.
   have hn : numerator (diracHom (R := ℤ_[p])) _ a z = 0 := by
     refine units_eq_zero_of_positive_moments _ fun k hk => ?_
