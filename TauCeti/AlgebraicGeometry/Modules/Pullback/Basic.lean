@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.LocalIsomorphism
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pushforward
+public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.CategoryTheory.Adjunction.Mates
@@ -79,6 +80,10 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.overIsoFreeOfRestrictIsoFree`), and a trivialization of the
   pullback along an open immersion `f` is one of the restriction to `f.opensRange`
   (`AlgebraicGeometry.Scheme.Modules.restrictOpensRangeIsoFree`);
+* `AlgebraicGeometry.Scheme.Modules.ιFree_pullbackObjFreeIso_inv`: through Mathlib's
+  `f^* 𝒪_Y^I ≅ 𝒪_X^I`, the pullback of a basis section is the basis section; multiplied by a
+  global function `r`, it is the basis section multiplied by the pullback of `r`
+  (`pullback_map_globalSectionsSmul_comp_ιFree_comp_pullbackObjFreeIso_hom`);
 * `SheafOfModules.LocalGeneratorsData.pullback` and `SheafOfModules.QuasicoherentData.pullback`:
   local generators and quasi-coherent data carried along `f`;
 * `AlgebraicGeometry.Scheme.Modules.isQuasicoherent_pullback`,
@@ -514,6 +519,43 @@ def restrictOpensRangeIsoFree (M : Y.Modules) (f : X ⟶ Y) [IsOpenImmersion f] 
     ((pullbackComp f.isoOpensRange.inv f).app M).symm ≪≫
     (pullback f.isoOpensRange.inv).mapIso e ≪≫
     SheafOfModules.pullbackObjFreeIso f.isoOpensRange.inv.toRingCatSheafHom I
+
+section PullbackFree
+
+variable (f : X ⟶ Y) {I : Type u}
+
+-- Mathlib's pullback of free sheaves is stated for pushforwards known to be right adjoints; the
+-- adjunction is recorded for `Scheme.Modules.pushforward`, which instance search does not unfold.
+local instance : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
+  inferInstanceAs (pushforward f).IsRightAdjoint
+
+/-- Through `f^* 𝒪_Y^I ≅ 𝒪_X^I`, the basis section `ιFree i` of `𝒪_X^I` is the pullback along `f`
+of the basis section `ιFree i` of `𝒪_Y^I`. -/
+@[reassoc]
+lemma ιFree_pullbackObjFreeIso_inv (i : I) :
+    SheafOfModules.ιFree i ≫ (SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I).inv =
+      (pullbackObjUnitIso f).inv ≫ (pullback f).map (SheafOfModules.ιFree i) :=
+  (Iso.comp_inv_eq _).2 ((Category.assoc _ _ _).trans ((congrArg ((pullbackObjUnitIso f).inv ≫ ·)
+    (SheafOfModules.pullback_map_ιFree_comp_pullbackObjFreeIso_hom _ i)).trans
+      (by rw [← pullbackObjUnitIso_hom]; exact Iso.inv_hom_id_assoc _ _))).symm
+
+/-- Through `f^* 𝒪_Y^I ≅ 𝒪_X^I`, pulling back along `f` the basis section `ιFree i` of `𝒪_Y^I`
+multiplied by a global function `r` gives the basis section `ιFree i` of `𝒪_X^I` multiplied by
+the pullback of `r`. -/
+@[reassoc]
+lemma pullback_map_globalSectionsSmul_comp_ιFree_comp_pullbackObjFreeIso_hom (r : Γ(Y, ⊤))
+    (i : I) :
+    (pullback f).map (globalSectionsSmul (𝟙_ Y.Modules) r ≫ SheafOfModules.ιFree i) ≫
+        (SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I).hom =
+      (pullbackObjUnitIso f).hom ≫ globalSectionsSmul (𝟙_ X.Modules) (f.appTop r) ≫
+        SheafOfModules.ιFree i := by
+  refine (congrArg (· ≫ _) (Functor.map_comp _ _ _)).trans ((Category.assoc _ _ _).trans ?_)
+  refine (congrArg (_ ≫ ·)
+    (SheafOfModules.pullback_map_ιFree_comp_pullbackObjFreeIso_hom _ i)).trans ?_
+  rw [pullback_map_globalSectionsSmul, ← pullbackObjUnitIso_hom]
+  exact globalSectionsSmul_naturality_assoc _ _ _
+
+end PullbackFree
 
 end Free
 
