@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Operations
+public import TauCeti.Algebra.Algebra.CyclicQuotient
 import Mathlib.Algebra.Group.Pointwise.Set.Basic
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.LinearCombination
@@ -47,12 +48,24 @@ These are the relations satisfied at the branch node of the `E₆` and `E₈` di
 backtracks into their arms of lengths one and two, in the preprojective algebra: the backtrack into
 the third arm, of length two for `E₆` and of length four for `E₈`, is `-(x + y)`.
 
+For `(x + y) ^ 3 = 0` the same words also control the cyclic quotient `B / [B, B]`. Modulo the
+commutator submodule a word may be rotated, so it vanishes as soon as one of its rotations contains
+`x x` or `y y y`. Suppose that `x`, `y`, `y ^ 2` and `(x + y) ^ 2` are sums of commutators, as the
+backtracks at the branch node of `E₆` are. Then, if `2` and `3` are units, **every product of
+factors from `{x, y}` is a sum of commutators**: the remaining cyclic words are represented by
+`x y`, `x y y`, `x y x y` and `x y x y y`, which `(x + y) ^ 2`, `(x + y) ^ 3` and the products of
+`(x + y) ^ 3` with `x` and with `x y` express through vanishing words, with the coefficients `2`,
+`3`, `1` and `2`.
+
 ## Main results
 
 * `TauCeti.span_pair_pow_six_eq_bot`: if `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 3 = 0`, then the
   sixth power of the span of `{x, y}` is zero.
 * `TauCeti.span_pair_pow_fifteen_eq_bot`: if `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, then
   the fifteenth power of the span of `{x, y}` is zero.
+* `TauCeti.mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_three_eq_zero`: if moreover
+  `x`, `y`, `y ^ 2` and `(x + y) ^ 2` are sums of commutators and `2` and `3` are units, then so is
+  every element of a positive power of the span of `{x, y}`.
 -/
 
 public section
@@ -211,5 +224,124 @@ theorem span_pair_pow_fifteen_eq_bot (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x
   intro w hw
   have hw' : w ∈ span ℤ {x, y} ^ 15 := span_pow (R := ℤ) {x, y} 15 ▸ subset_span hw
   rwa [h15, mem_bot] at hw'
+
+/-- **Words in a square-zero and a cube-zero element with a cube-zero sum are sums of
+commutators.** Let `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 3 = 0`, and suppose that `x`, `y`,
+`y ^ 2` and `(x + y) ^ 2` lie in the commutator submodule `[B, B]`. If `2` and `3` are units in
+`k`, then every element of a positive power of the integer span of `{x, y}` lies in `[B, B]`. -/
+theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_three_eq_zero {B : Type*}
+    [Ring B] {k : Type*} [Ring k] [Module k B] {x y : B} (h2 : IsUnit (2 : k)) (h3 : IsUnit (3 : k))
+    (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 3 = 0) (hx₀ : x ∈ commutatorSubmodule k B)
+    (hy₀ : y ∈ commutatorSubmodule k B) (hy₁ : y ^ 2 ∈ commutatorSubmodule k B)
+    (hs : (x + y) ^ 2 ∈ commutatorSubmodule k B) {t : ℕ} (ht : 0 < t) {w : B}
+    (hw : w ∈ span ℤ {x, y} ^ t) : w ∈ commutatorSubmodule k B := by
+  -- Modulo `[B, B]` a word may be rotated, and a rotation containing `x x` or `y y y` vanishes.
+  -- The remaining cyclic words of length at most five are represented by `x y`, `x y y`, `x y x y`
+  -- and `x y x y y`; products of six factors vanish by `span_pair_pow_six_eq_bot`.
+  set C := commutatorSubmodule k B
+  -- The vanishing words, applied at the left end of a right-associated word `a`.
+  have hxx : x * x = 0 := by rw [← sq, hx]
+  have hyyy : y * (y * y) = 0 := by rw [← pow_three, hy]
+  have r₁ (a : B) : x * (x * a) = 0 := by rw [← mul_assoc, hxx, zero_mul]
+  have r₂ (a : B) : y * (y * (y * a)) = 0 := by
+    rw [← mul_assoc, ← mul_assoc, ← pow_three', hy, zero_mul]
+  -- Expanding `(x + y) ^ 3` leaves the four words with no `x x` and no `y y y`.
+  have hT (a : B) : a * (x * (y * x)) + a * (x * (y * y)) + a * (y * (x * y)) +
+      a * (y * (y * x)) = 0 := by
+    have h : (x + y) ^ 3 = x * (x * x) + x * (x * y) + y * (x * x) + y * (y * y) +
+        (x * (y * x) + x * (y * y) + y * (x * y) + y * (y * x)) := by noncomm_ring
+    simp only [hxy, r₁, hxx, hyyy, mul_zero, zero_add] at h
+    rw [← mul_add, ← mul_add, ← mul_add, ← h, mul_zero]
+  -- Scaling by a unit of `k`, and the rotation of a word.
+  have hunit {c : k} (hc : IsUnit c) {z : B} (h : c • z ∈ C) : z ∈ C :=
+    (Submodule.smul_mem_iff_of_isUnit _ hc).1 h
+  have hrot {a b : B} (h : b * a ∈ C) : a * b ∈ C := mul_mem_commutatorSubmodule_comm.2 h
+  have hcomm (a b : B) : a * b - b * a ∈ C := mul_sub_mul_mem_commutatorSubmodule k B a b
+  -- The representatives of the cyclic words of length two to five.
+  have c₂ : y * y ∈ C := by rwa [sq] at hy₁
+  have c₃ : x * y ∈ C := by
+    refine hunit h2 ?_
+    have h : (2 : k) • (x * y) = (x + y) ^ 2 - y * y - (y * x - x * y) := by
+      rw [two_smul, sq]
+      noncomm_ring
+      simp [hxx]
+    rw [h]
+    exact sub_mem (sub_mem hs c₂) (hcomm y x)
+  have c₄ : x * (y * y) ∈ C := by
+    refine hunit h3 ?_
+    have hxyx : x * (y * x) ∈ C := hrot (by rw [mul_assoc, hxx, mul_zero]; exact zero_mem _)
+    have h : (3 : k) • (x * (y * y)) =
+        -(x * (y * x)) - (y * (x * y) - x * y * y) - (y * y * x - x * (y * y)) := by
+      have h₀ := hT 1
+      simp only [one_mul] at h₀
+      rw [show (3 : k) = 2 + 1 by norm_num, add_smul, two_smul, one_smul,
+        ← sub_eq_zero, ← h₀]
+      noncomm_ring
+    rw [h]
+    exact sub_mem (sub_mem (neg_mem hxyx) (hcomm _ _)) (hcomm _ _)
+  have c₅ : x * (y * (x * y)) ∈ C := by
+    have h : x * (y * (x * y)) = -(x * (y * (y * x))) := by
+      have h₀ := hT x
+      simp only [r₁, zero_add] at h₀
+      exact eq_neg_of_add_eq_zero_left h₀
+    rw [h]
+    refine neg_mem (hrot ?_)
+    simp only [mul_assoc, hxx, mul_zero]
+    exact zero_mem _
+  have c₆ : x * (y * (x * (y * y))) ∈ C := by
+    refine hunit h2 ?_
+    have hfirst : x * (y * (x * (y * x))) ∈ C := hrot (by
+      simp only [mul_assoc, hxx, mul_zero]
+      exact zero_mem _)
+    have h : (2 : k) • (x * (y * (x * (y * y)))) = -(x * (y * (x * (y * x)))) -
+        (x * (y * y) * (x * y) - x * y * (x * (y * y))) := by
+      have h₀ := hT (x * y)
+      simp only [mul_assoc, r₂] at h₀
+      rw [two_smul, ← sub_eq_zero, ← h₀]
+      noncomm_ring
+    rw [h]
+    exact sub_mem (neg_mem hfirst) (hcomm _ _)
+  -- Every word of length at most five rotates into a vanishing word or a representative.
+  have hword (n : ℕ) (hn : 0 < n) (hn₅ : n ≤ 5) (v : B) (hv : v ∈ ({x, y} : Set B) ^ n) :
+      v ∈ C := by
+    interval_cases n <;>
+      simp only [pow_succ', pow_zero, mul_one, Set.mem_mul, Set.mem_insert_iff,
+        Set.mem_singleton_iff] at hv
+    -- Split each word into its letters, starting from the longest words.
+    on_goal 5 =>
+      obtain ⟨a₀, ha₀, _, ⟨a₁, ha₁, _, ⟨a₂, ha₂, _, ⟨a₃, ha₃, a₄, ha₄, rfl⟩, rfl⟩, rfl⟩, rfl⟩ :=
+        hv
+      rcases ha₀ with rfl | rfl <;> rcases ha₁ with rfl | rfl <;> rcases ha₂ with rfl | rfl <;>
+        rcases ha₃ with rfl | rfl <;> rcases ha₄ with rfl | rfl
+    on_goal 4 =>
+      obtain ⟨a₀, ha₀, _, ⟨a₁, ha₁, _, ⟨a₂, ha₂, a₃, ha₃, rfl⟩, rfl⟩, rfl⟩ := hv
+      rcases ha₀ with rfl | rfl <;> rcases ha₁ with rfl | rfl <;> rcases ha₂ with rfl | rfl <;>
+        rcases ha₃ with rfl | rfl
+    on_goal 3 =>
+      obtain ⟨a₀, ha₀, _, ⟨a₁, ha₁, a₂, ha₂, rfl⟩, rfl⟩ := hv
+      rcases ha₀ with rfl | rfl <;> rcases ha₁ with rfl | rfl <;> rcases ha₂ with rfl | rfl
+    on_goal 2 =>
+      obtain ⟨a₀, ha₀, a₁, ha₁, rfl⟩ := hv
+      rcases ha₀ with rfl | rfl <;> rcases ha₁ with rfl | rfl
+    on_goal 1 => rcases hv with rfl | rfl
+    all_goals
+      iterate 5
+        first
+        | done
+        | assumption
+        | (simp only [hxx, r₁, hyyy, r₂, mul_zero]; exact zero_mem _)
+        | (rw [mul_mem_commutatorSubmodule_comm]; try simp only [mul_assoc])
+  -- Products of six factors vanish, so only words of length at most five remain.
+  rcases Nat.lt_or_ge t 6 with ht₆ | ht₆
+  · rw [span_pow] at hw
+    induction hw using Submodule.span_induction with
+    | mem v hv => exact hword t ht (by omega) v hv
+    | zero => exact zero_mem _
+    | add a b _ _ ha hb => exact add_mem ha hb
+    | smul n a _ ha => exact zsmul_mem ha n
+  · obtain ⟨e, rfl⟩ : ∃ e, t = 6 + e := ⟨t - 6, by omega⟩
+    rw [pow_add, span_pair_pow_six_eq_bot hx hy hxy, bot_mul, mem_bot] at hw
+    rw [hw]
+    exact zero_mem _
 
 end TauCeti
