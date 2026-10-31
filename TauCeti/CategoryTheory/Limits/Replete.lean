@@ -7,12 +7,15 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 public import Mathlib.CategoryTheory.Abelian.Monomorphisms
+public import Mathlib.CategoryTheory.Filtered.Connected
 public import Mathlib.CategoryTheory.Filtered.Final
 public import Mathlib.CategoryTheory.Functor.OfSequence
+public import Mathlib.CategoryTheory.Limits.Constructions.Over.Connected
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 public import Mathlib.CategoryTheory.Limits.Shapes.SequentialProduct
 public import Mathlib.CategoryTheory.Limits.Types.Images
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
+public import TauCeti.CategoryTheory.Limits.Over
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Pi
 
 /-!
@@ -43,6 +46,9 @@ values in a concrete category over a replete topos form a replete category, see
 * `TauCeti.IsReplete.of_reflectsEpimorphisms`: repleteness descends along a functor that preserves
   sequential limits and preserves and reflects epimorphisms.
 * `TauCeti.IsReplete.of_equivalence`: repleteness is invariant under equivalence of categories.
+* `TauCeti.IsReplete.over`: a slice of a replete category is replete.
+* `TauCeti.IsReplete.of_over_epi`, `TauCeti.isReplete_over_iff`: when epimorphisms are stable under
+  base change, a category is replete as soon as its slice over a cover of the terminal object is.
 * `TauCeti.IsReplete.epi_isLimitMap`: the induced map of limits of a morphism of towers whose
   comparison maps are epimorphisms is an epimorphism.
 * `TauCeti.IsReplete.epi_pi_map`: a countable product of epimorphisms is an epimorphism.
@@ -71,7 +77,7 @@ replete abelian categories.
 ## References
 
 * B. Bhatt and P. Scholze, *The pro-étale topology for schemes*, Astérisque 369 (2015),
-  Definition 3.1.1, Lemma 3.1.8 and Proposition 3.1.9.
+  Definition 3.1.1, Lemmas 3.1.2, 3.1.3 and 3.1.8, and Proposition 3.1.9.
 -/
 
 public section
@@ -125,6 +131,27 @@ theorem of_reflectsEpimorphisms [IsReplete C] {D : Type u'} [Category.{v'} D] (G
 /-- **Repleteness is invariant under equivalence of categories.** -/
 theorem of_equivalence [IsReplete C] {D : Type u'} [Category.{v'} D] (e : C ≌ D) : IsReplete D :=
   of_reflectsEpimorphisms e.inverse
+
+section Over
+
+/-- **Slices of a replete category are replete** (Bhatt–Scholze, Lemma 3.1.2), provided that
+the forgetful functor `Over X ⥤ C` preserves epimorphisms. It does when `C` has binary products,
+being then left adjoint to `Over.star X`, and when `C` has pushouts
+(`CategoryTheory.Over.epi_left_of_epi`). -/
+instance over [IsReplete C] (X : C) [(Over.forget X).PreservesEpimorphisms] :
+    IsReplete (Over X) :=
+  have : IsConnected ℕᵒᵖ := IsCofiltered.isConnected _
+  of_reflectsEpimorphisms (Over.forget X)
+
+/-- **Repleteness is detected on a cover** (Bhatt–Scholze, Lemma 3.1.3). In a category with
+binary products and a terminal object, in which epimorphisms are stable under base change, let
+`X ⟶ ⊤_ C` be an epimorphism. If the slice `Over X` is replete, then so is `C`. -/
+theorem of_over_epi [HasBinaryProducts C] [HasTerminal C]
+    [(MorphismProperty.epimorphisms C).IsStableUnderBaseChange] (X : C) [Epi (terminal.from X)]
+    [IsReplete (Over X)] : IsReplete C :=
+  of_reflectsEpimorphisms (Over.star X)
+
+end Over
 
 section Map
 
@@ -371,5 +398,14 @@ instance countableAB4Star [Abelian C] [HasCountableProducts C] [IsReplete C] :
     exact hasExactLimitsOfShape_of_preservesEpi C (Discrete α)
 
 end IsReplete
+
+/-- **Repleteness is local on a cover** (Bhatt–Scholze, Lemmas 3.1.2 and 3.1.3). In a category with
+binary products and a terminal object, in which epimorphisms are stable under base change, such as a
+topos, let `X ⟶ ⊤_ C` be an epimorphism. Then the slice `Over X` is replete if and only if `C` is.
+-/
+theorem isReplete_over_iff [HasBinaryProducts C] [HasTerminal C]
+    [(MorphismProperty.epimorphisms C).IsStableUnderBaseChange] (X : C) [Epi (terminal.from X)] :
+    IsReplete (Over X) ↔ IsReplete C :=
+  ⟨fun _ ↦ IsReplete.of_over_epi X, fun _ ↦ inferInstance⟩
 
 end TauCeti
