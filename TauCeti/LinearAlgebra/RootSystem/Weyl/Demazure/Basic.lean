@@ -218,8 +218,8 @@ theorem coeff_reflection_demazureOperator (f : AddMonoidAlgebra ℤ M) (x : M) :
     (P.demazureOperator i f).coeff (P.reflection i x) = (P.demazureOperator i f).coeff x := by
   have h := congr(($(P.mapDomainRingEquiv_reflection_demazureOperator i f)).coeff x)
   rw [coeff_mapDomainRingEquiv, Finsupp.equivMapDomain_apply] at h
-  rw [← h]
-  rfl
+  -- The inverse of `sᵢ` is `sᵢ` itself (`RootPairing.reflection_inv`).
+  simpa [← LinearEquiv.coe_inv] using h
 
 /-- The Demazure operator fixes `f` exactly when `f` is fixed by the reflection `sᵢ`. -/
 theorem demazureOperator_eq_self_iff {f : AddMonoidAlgebra ℤ M} :

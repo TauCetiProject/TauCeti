@@ -7,9 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.MonoidAlgebra.Defs
-public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Positive
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
 
 /-!
 # The Weyl denominator
@@ -42,9 +40,6 @@ whose Weyl-group combinatorics is a much later dependency.
   `TauCeti.posRootCone`; and
 * `TauCeti.coeff_weylDenominator_zero`: the constant term of `Δ` is `1`, the empty set being the
   only set of positive roots summing to `0`.
-* `TauCeti.coeff_weylDenominator_of_mem_dominantChamber`: over a linearly ordered coefficient ring,
-  the constant term is the only coefficient of `Δ` on the dominant chamber, since a dominant weight
-  in the negative cone is `0`.
 
 ## References
 
@@ -136,20 +131,5 @@ theorem neg_mem_posRootCone_of_coeff_weylDenominator_ne_zero {x : M}
   rw [hxT, neg_neg]
   exact sum_mem fun i hi ↦
     root_mem_posRootCone_of_mem_posRoots P b ((mem_posRootsFinset P b i).mp (hT hi))
-
-/-- **On the dominant chamber the Weyl denominator has only its constant term `1`.** A weight
-carrying a nonzero coefficient of `Δ` is minus a member of the positive root cone, and a dominant
-such weight is `0` (`TauCeti.eq_zero_of_mem_dominantChamber_of_neg_mem_posRootCone`). -/
-theorem coeff_weylDenominator_of_mem_dominantChamber [LinearOrder R] [IsStrictOrderedRing R]
-    [P.IsCrystallographic] [P.IsReduced] [P.flip.IsReduced] {y : M}
-    (hy : y ∈ RootPairing.dominantChamber P b) :
-    (weylDenominator P b).coeff y = (1 : AddMonoidAlgebra ℤ M).coeff y := by
-  by_cases h : (weylDenominator P b).coeff y = 0
-  · rw [h, AddMonoidAlgebra.one_def, AddMonoidAlgebra.coeff_single, Finsupp.single_eq_of_ne]
-    rintro rfl
-    simp at h
-  · obtain rfl := eq_zero_of_mem_dominantChamber_of_neg_mem_posRootCone P b hy
-      (neg_mem_posRootCone_of_coeff_weylDenominator_ne_zero P b h)
-    simp [AddMonoidAlgebra.one_def]
 
 end TauCeti
