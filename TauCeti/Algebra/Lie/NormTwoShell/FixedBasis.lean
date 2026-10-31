@@ -107,8 +107,10 @@ theorem cycleCoeff_succ (a : B.normTwoShell) (r : ℕ) :
 cycle coefficient `c_r = Matrix.ShellLieAlgebra.cycleCoeff σ hσ a r`. -/
 theorem reindex_pow_root (a : B.normTwoShell) (r : ℕ) :
     ((reindex σ hσ).toLinearMap ^ r) (root B a) =
-      cycleCoeff σ hσ a r • root B ((normTwoShellCongr hσ ^ r) a) :=
-  Module.End.pow_apply_of_apply_eq_units_smul _ _ _ (root B) (reindex_root σ hσ) a r
+      cycleCoeff σ hσ a r • root B ((normTwoShellCongr hσ ^ r) a) := by
+  rw [Units.smul_def, cycleCoeff, ← Units.coeHom_apply, Equiv.Perm.map_cycleCoeff]
+  exact Module.End.pow_apply_of_apply_eq_smul _ _ _ (root B)
+    (fun b ↦ (reindex_root σ hσ b).trans (Units.smul_def _ _)) a r
 
 /-- The monodromy `μ = c_l` of a cycle of length `l` of the permutation
 `γ = Matrix.normTwoShellCongr hσ` of the norm-two shell: the monodromy `Equiv.Perm.monodromy` of its
