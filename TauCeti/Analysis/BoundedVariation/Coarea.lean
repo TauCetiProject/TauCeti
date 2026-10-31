@@ -399,10 +399,8 @@ theorem totalVariationOn_eq_lintegral_perimeter (hu : LocallyIntegrableOn u Ω �
   have hv : LocallyIntegrableOn v Ω μ := hu.congr hum.ae_eq_mk
   -- Exhaust `Ω` by open sets `Ω' j` with compact closures in `Ω`; by inner continuity and monotone
   -- convergence the level integral on `Ω` is the supremum of those on `Ω' j`.
-  obtain ⟨V, hVo, hVc, hVΩ, hVmono, hVU⟩ := IsOpen.exists_iUnion_isOpen_isCompact_closure Ω.isOpen
-  let Ω' : ℕ → Opens E := fun j => ⟨V j, hVo j⟩
-  have hΩ' : (⨆ j, Ω' j) = Ω := Opens.ext (by simpa [Ω'] using hVU)
-  have hmono : Monotone Ω' := fun i j hij => hVmono hij
+  obtain ⟨Ω', hVc, hVΩ, hmono, hVU, -⟩ := Ω.exists_monotone_isCompact_closure_iUnion_eq
+  have hΩ' : (⨆ j, Ω' j) = Ω := Opens.ext (by simpa using hVU)
   calc ∫⁻ t, perimeter μ Ω {x | t < v x}
       = ∫⁻ t, ⨆ j, perimeter μ (Ω' j) {x | t < v x} := by
         simp_rw [← perimeter_iSup hmono.directed_le, hΩ']
@@ -424,19 +422,6 @@ theorem ae_perimeter_setOf_lt_lt_top (hu : LocallyIntegrableOn u Ω μ)
 
 section VariationMeasure
 
-omit [MeasurableSpace E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- An exhaustion of `Ω` by an increasing sequence of open sets with compact closures in `Ω`,
-whose traces cover `Ω`. -/
-private theorem exists_opens_exhaustion (Ω : Opens E) :
-    ∃ V : ℕ → Opens E, (∀ j, IsCompact (closure (V j : Set E))) ∧
-      (∀ j, closure (V j : Set E) ⊆ Ω) ∧ Monotone V ∧ ⋃ j, (V j : Set E) = Ω ∧
-      ⋃ j, ((↑) : Ω → E) ⁻¹' (V j : Set E) = univ := by
-  obtain ⟨V, hVo, hVc, hVΩ, hVmono, hVU⟩ := IsOpen.exists_iUnion_isOpen_isCompact_closure Ω.isOpen
-  refine ⟨fun j => ⟨V j, hVo j⟩, hVc, hVΩ, fun _ _ h => hVmono h, hVU, ?_⟩
-  rw [← preimage_iUnion]
-  change ((↑) : Ω → E) ⁻¹' ⋃ j, V j = _
-  rw [hVU, Subtype.coe_preimage_self]
-
 omit [μ.IsAddHaarMeasure] in
 /-- **Measurability in the level of the perimeter measures.** For `u` almost everywhere measurable
 on `Ω`, the variation measure `|D1_{u > t}|` of the indicator of the superlevel set `{u > t}` is a
@@ -444,7 +429,7 @@ measurable function of the level `t`. -/
 theorem measurable_variationMeasure_indicator_setOf_lt [IsLocallyFiniteMeasure μ]
     (hu : AEMeasurable u (μ.restrict Ω)) :
     Measurable fun t => variationMeasure μ Ω ({x | t < u x}.indicator 1) := by
-  obtain ⟨V, hVc, hVΩ, hVmono, hVU, hcover⟩ := exists_opens_exhaustion Ω
+  obtain ⟨V, hVc, hVΩ, hVmono, hVU, hcover⟩ := Ω.exists_monotone_isCompact_closure_iUnion_eq
   have hlf (w : E → ℝ) :=
     forall_isCompact_exists_totalVariationOn_ne_top_iff (μ := μ) (w := w) hVc hVΩ hVmono hVU
   have hVsub (j : ℕ) : V j ≤ Ω := subset_closure.trans (hVΩ j)
@@ -506,7 +491,7 @@ theorem ae_exists_perimeter_setOf_lt_ne_top (hu : LocallyIntegrableOn u Ω μ)
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞) :
     ∀ᵐ t, ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ perimeter μ U {x | t < u x} ≠ ∞ := by
-  obtain ⟨V, hVc, hVΩ, hVmono, hVU, -⟩ := exists_opens_exhaustion Ω
+  obtain ⟨V, hVc, hVΩ, hVmono, hVU, -⟩ := Ω.exists_monotone_isCompact_closure_iUnion_eq
   have hlf (w : E → ℝ) :=
     forall_isCompact_exists_totalVariationOn_ne_top_iff (μ := μ) (w := w) hVc hVΩ hVmono hVU
   have hV := (hlf u).1 hfin
@@ -524,7 +509,7 @@ theorem variationMeasure_eq_bind (hu : LocallyIntegrableOn u Ω μ)
     variationMeasure μ Ω u =
       volume.bind fun t => variationMeasure μ Ω ({x | t < u x}.indicator 1) := by
   have hum : AEMeasurable u (μ.restrict Ω) := hu.aestronglyMeasurable.aemeasurable
-  obtain ⟨V, hVc, hVΩ, hVmono, hVU, hcover⟩ := exists_opens_exhaustion Ω
+  obtain ⟨V, hVc, hVΩ, hVmono, hVU, hcover⟩ := Ω.exists_monotone_isCompact_closure_iUnion_eq
   have hlf (w : E → ℝ) :=
     forall_isCompact_exists_totalVariationOn_ne_top_iff (μ := μ) (w := w) hVc hVΩ hVmono hVU
   have hVsub (j : ℕ) : V j ≤ Ω := subset_closure.trans (hVΩ j)
