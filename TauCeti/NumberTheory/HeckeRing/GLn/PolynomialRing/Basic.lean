@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.RingTheory.MvPolynomial.Basic
-public import TauCeti.NumberTheory.HeckeRing.GL2.Recurrence
+public import TauCeti.NumberTheory.HeckeRing.GL2.Basic
 public import TauCeti.NumberTheory.HeckeRing.GLn.PrimeDecomposition
 
 /-!
@@ -14,10 +14,8 @@ public import TauCeti.NumberTheory.HeckeRing.GLn.PrimeDecomposition
 
 Towards **Shimura's Theorem 3.20**, that the `p`-local Hecke ring `pLocalSubring` of `GL_n` is a
 polynomial ring `ℤ[X₁, …, Xₙ]` on the `n` diagonal prime cosets. This file sets up the
-generators and proves the surjectivity half for `n = 1` and `n = 2`. The injectivity half —
-algebraic independence of the generators — and the resulting isomorphisms live in the companion
-file `PolynomialRing/Injective.lean`, which consumes `evalHom_def` and `evalHom_apply` from
-here.
+generators and the evaluation map; the theorem itself is proved in
+`PolynomialRing/Presentation.lean`.
 
 ## Main definitions
 
@@ -32,24 +30,10 @@ here.
 
 ## Main results
 
-* `HeckeRing.GLn.evalHomLocal_two_surjective`,
-  `HeckeRing.GLn.evalHomLocal_one_surjective`: the presentation is onto, `ℤ[X₁, X₂] ↠ R_p` and
-  `ℤ[X₁] ↠ R_p` — the surjectivity half of Theorem 3.20 at `n = 2` and `n = 1`.
 * `HeckeRing.GLn.heckeGen_mem_pLocalSubring`: each generator lies in `pLocalSubring`.
-* `HeckeRing.GLn.pLocalSubring_two_le_evalHom_range`,
-  `HeckeRing.GLn.pLocalSubring_one_le_evalHom_range`: the underlying inclusions of
-  `pLocalSubring` into the range of `evalHom`, from which the two surjectivity statements
-  above are read off.
-
-## Implementation notes
-
-For general `n`, `PolynomialRing/LeadingExponent.lean` proves that the leading
-elementary-divisor vector recovers the generator exponents, and for a product of two diagonal
-cosets `GLn/LeadingCoefficient.lean` and `GLn/ProductSupport.lean` give the coefficient-one
-leading term and the dominance of the rest of the support. The remaining step is to extend
-that triangular expansion to monomials in the generators; the dimension-two proof below handles
-that expansion by direct calculation. Only the `n = 1` and `n = 2` polynomial presentations are
-proved here.
+* `HeckeRing.GLn.evalHom_apply`: the coefficient of the image of a polynomial at a double coset.
+* `HeckeRing.GLn.heckeGen_zero_eq_heckeTDiag`, `HeckeRing.GLn.heckeGen_one_eq_heckeTScalar`:
+  for `n = 2` the generators are the classical `T(1, p)` and `T(p, p)`.
 
 Ported from the AINTLIB `LeanModularForms` project
 ([`LeanModularForms/HeckeRIngs/GLn/PolynomialRing.lean`](https://github.com/CBirkbeck/AINTLIB),
@@ -115,11 +99,6 @@ lemma heckeGenDiag_apply (k : Fin n) (i : Fin n) :
   -- `(rfl)` rather than `rfl`: `heckeGenDiag` is not `@[expose]`d, so the parentheses opt out
   -- of exporting the definitional equality this lemma exists to replace.
   (rfl)
-
-/-- At `n = 1` the generator diagonal is the constant `p`: the index condition
-`i < 1 - 1 - 0` is never satisfied. -/
-lemma heckeGenDiag_one_eq_const (p : ℕ) : heckeGenDiag 1 p (0 : Fin 1) = fun _ ↦ p := by
-  funext i; simp [heckeGenDiag_apply]
 
 /-- The heckeGen diagonal has p-power entries (each entry is 1 = p^0 or p = p^1): it is `p`
 raised entrywise to `heckeGenExponent n k`. -/
@@ -238,8 +217,6 @@ generator, taken in `pLocalSubring` rather than in the ambient ring. -/
 
 end PolynomialRing
 
-
-
 open HeckeRing.GL2
 
 /-- `heckeGen 2 p 0 = heckeTDiag 1 p`: the first generator is `T(1,p)`.
@@ -267,119 +244,5 @@ lemma heckeGen_one_eq_heckeTScalar (p : ℕ) (hp : 0 < p) :
 lemma heckeT_prime_eq_heckeGen_zero (p : ℕ) (hp : p.Prime) :
     heckeT p = heckeGen 2 p (0 : Fin 2) := by
   rw [heckeGen_zero_eq_heckeTDiag p hp.pos, heckeT_prime p hp]
-
-private lemma heckeTScalar_mem_range (p : ℕ) (hp : p.Prime) :
-    heckeTScalar p ∈ (evalHom 2 p).range := by
-  rw [← heckeGen_one_eq_heckeTScalar p hp.pos]; exact heckeGen_mem_evalHom_range 2 p 1
-
-/-- `heckeT(p^k)` lies in the range of the evaluation homomorphism, for all `k`. -/
-lemma heckeT_prime_pow_mem_evalHom_range (p : ℕ) (hp : p.Prime) (k : ℕ) :
-    heckeT (p ^ k) ∈ (evalHom 2 p).range := by
-  induction k using Nat.strongRecOn with
-  | ind k ih =>
-  match k with
-  | 0 =>
-    rw [pow_zero, heckeT_one]
-    exact (evalHom 2 p).range.one_mem
-  | 1 =>
-    rw [pow_one, heckeT_prime_eq_heckeGen_zero p hp]; exact heckeGen_mem_evalHom_range 2 p 0
-  | k + 2 =>
-    have h_rec := heckeT_prime_pow_recurrence p hp (k + 1) (by omega)
-    -- The recurrence is stated at index `k + 1`; truncated ℕ-subtraction writes its two
-    -- exponents as `k + 1 - 1` and `k + 1 + 1`, which only `omega` identifies with `k`/`k + 2`.
-    rw [show k + 1 - 1 = k from by omega, show k + 1 + 1 = k + 2 from by omega] at h_rec
-    rw [h_rec, heckeT_prime_eq_heckeGen_zero p hp]
-    exact (evalHom 2 p).range.sub_mem
-      ((evalHom 2 p).range.mul_mem (heckeGen_mem_evalHom_range 2 p 0) (ih (k + 1) (by omega)))
-      ((evalHom 2 p).range.zsmul_mem
-        ((evalHom 2 p).range.mul_mem (heckeTScalar_mem_range p hp) (ih k (by omega))) (p : ℤ))
-
-/-- `heckeTDiag(1, p^k)` lies in the range of the evaluation homomorphism. -/
-lemma heckeTDiag_one_prime_pow_mem_evalHom_range (p : ℕ) (hp : p.Prime) (k : ℕ) :
-    heckeTDiag 1 (p ^ k) ∈ (evalHom 2 p).range := by
-  match k with
-  | 0 => simp only [pow_zero, heckeTDiag_one_one]; exact (evalHom 2 p).range.one_mem
-  | 1 =>
-    rw [pow_one, ← heckeGen_zero_eq_heckeTDiag p hp.pos]
-    exact heckeGen_mem_evalHom_range 2 p 0
-  | k + 2 =>
-    -- Same truncated-subtraction normalisation: the telescoping identity returns `k + 2 - 2`.
-    rw [heckeTDiag_one_prime_pow_eq p hp (k + 2) (by omega), show k + 2 - 2 = k from by omega]
-    exact (evalHom 2 p).range.sub_mem (heckeT_prime_pow_mem_evalHom_range p hp (k + 2))
-      ((evalHom 2 p).range.mul_mem (heckeTScalar_mem_range p hp)
-        (heckeT_prime_pow_mem_evalHom_range p hp k))
-
-/-- `diagElem (primePowDiag 2 p e)` is in the evalHom range when `e` is monotone. -/
-lemma diagElem_primePowDiag_mem_evalHom_range (p : ℕ) (hp : p.Prime) (e : Fin 2 → ℕ)
-    (hmono : Monotone e) :
-    diagElem (primePowDiag 2 p e) ∈ (evalHom 2 p).range := by
-  -- Factor out the scalar `p ^ e 0`; the cofactor is `T(1, p ^ (e 1 - e 0))`. This covers
-  -- `e 0 = 0` too, where the scalar factor is `1`, so no case split is needed.
-  have h_le : e 0 ≤ e 1 := hmono (Fin.zero_le _)
-  have h_eq : primePowDiag 2 p e = (fun _ ↦ p ^ (e 0)) * primePowDiag 2 p ![0, e 1 - e 0] := by
-    funext i
-    simp only [primePowDiag_apply, Pi.mul_apply]
-    fin_cases i
-    · simp
-    · -- the second entry splits as `p ^ e 0 * p ^ (e 1 - e 0)` since `e 0 ≤ e 1`
-      simp [Matrix.cons_val_one, ← pow_add, Nat.add_sub_cancel' h_le]
-  rw [congrArg diagElem h_eq,
-    ← diagElem_const_mul 2 (p ^ (e 0)) (pow_pos hp.pos _) (primePowDiag 2 p ![0, e 1 - e 0])
-      (primePowDiag_pos 2 p hp.pos _)]
-  apply (evalHom 2 p).range.mul_mem
-  · rw [← heckeTScalar_pow p hp.pos (e 0), ← heckeGen_one_eq_heckeTScalar p hp.pos]
-    exact (evalHom 2 p).range.pow_mem (heckeGen_mem_evalHom_range 2 p 1) _
-  · have h2 : primePowDiag 2 p ![0, e 1 - e 0] = ![1, p ^ (e 1 - e 0)] := by
-      funext i; simp only [primePowDiag_apply]; fin_cases i <;> simp
-    rw [congrArg diagElem h2,
-      ← heckeTDiag_eq_diagElem Nat.one_pos (pow_pos hp.pos _) (one_dvd _)]
-    exact heckeTDiag_one_prime_pow_mem_evalHom_range p hp (e 1 - e 0)
-
-/-- Surjectivity of `evalHom` at `n = 2`: `pLocalSubring 2 p` lies in the range of the
-evaluation homomorphism `ℤ[X₁, X₂] → IntegralHeckeRing 2`. Together with
-`heckeGen_mem_pLocalSubring` for the reverse inclusion, the two generators `T(1, p)` and
-`T(p, p)` therefore generate the whole `p`-local Hecke ring of `GL₂`. -/
-theorem pLocalSubring_two_le_evalHom_range (p : ℕ) (hp : p.Prime) :
-    pLocalSubring 2 p ≤ (evalHom 2 p).range :=
-  have : NeZero p := ⟨hp.pos.ne'⟩
-  (pLocalSubring_le_iff 2 p _).2 fun e hmono ↦
-    diagElem_primePowDiag_mem_evalHom_range p hp e hmono
-
-
-
-
-/-- Surjectivity of `evalHom` at `n = 1`: `pLocalSubring 1 p` lies in the range of `evalHom`.
-The `p`-local Hecke ring of `GL₁` is generated by the single element `T(p)`. -/
-theorem pLocalSubring_one_le_evalHom_range (p : ℕ) (hp : 0 < p) :
-    pLocalSubring 1 p ≤ (evalHom 1 p).range :=
-  have : NeZero p := ⟨hp.ne'⟩
-  (pLocalSubring_le_iff 1 p _).2 fun e _hmono ↦ by
-  have he : primePowDiag 1 p e = fun _ ↦ p ^ (e 0) := by
-    funext i
-    simp only [primePowDiag_apply]
-    congr 1
-    exact congr_arg e (Subsingleton.elim i 0)
-  rw [congrArg diagElem he, ← diagElem_const_pow 1 p hp (e 0),
-    -- `heckeGenDiag 1 p 0` is a `Fin 1 → ℕ` that is only *extensionally* the constant `p`,
-    -- so the two `diagElem` arguments are not syntactically equal and `rw` cannot match them.
-    show diagElem (fun _ : Fin 1 ↦ p) = heckeGen 1 p (0 : Fin 1) from by
-      rw [heckeGen_def]; exact (congrArg diagElem (heckeGenDiag_one_eq_const p)).symm]
-  exact (evalHom 1 p).range.pow_mem (heckeGen_mem_evalHom_range 1 p 0) _
-
-/-- **The presentation is onto at `n = 2`**: `ℤ[X₁, X₂] ↠ R_p`, the surjectivity half of
-Shimura's Theorem 3.20. This is the inclusion above read through `evalHomLocal`, whose codomain
-is `R_p` itself. -/
-theorem evalHomLocal_two_surjective (p : ℕ) (hp : p.Prime) :
-    Function.Surjective (evalHomLocal 2 p) := by
-  rintro ⟨y, hy⟩
-  obtain ⟨f, hf⟩ := pLocalSubring_two_le_evalHom_range p hp hy
-  exact ⟨f, Subtype.ext hf⟩
-
-/-- **The presentation is onto at `n = 1`**: `ℤ[X₁] ↠ R_p`. -/
-theorem evalHomLocal_one_surjective (p : ℕ) (hp : 0 < p) :
-    Function.Surjective (evalHomLocal 1 p) := by
-  rintro ⟨y, hy⟩
-  obtain ⟨f, hf⟩ := pLocalSubring_one_le_evalHom_range p hp hy
-  exact ⟨f, Subtype.ext hf⟩
 
 end HeckeRing.GLn

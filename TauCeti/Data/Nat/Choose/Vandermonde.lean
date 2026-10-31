@@ -23,13 +23,17 @@ both ways gives the multivariate Vandermonde identity
 Restricting to the choices with a prescribed number `m` of objects from one group `i` leaves
 `choose (K i) m` choices there, times the Vandermonde count for the remaining groups. These
 identities normalize the multivariate hypergeometric distribution and compute its coordinate
-marginals.
+marginals.  Grouping the categories along a map `f` and prescribing the number of objects drawn
+from each group gives a product of Vandermonde counts, one for each group; this is the
+aggregation property of the multivariate hypergeometric distribution.
 
 ## Main results
 
 * `Finset.sum_piAntidiag_prod_choose`: the multivariate Vandermonde identity, generalizing
   Mathlib's `Nat.add_choose_eq`.
 * `Finset.sum_filter_piAntidiag_prod_choose`: the same count with one coordinate prescribed.
+* `Finset.sum_filter_piAntidiag_prod_choose_fiberwise`: the same count with the totals over the
+  fibres of a map prescribed.
 -/
 
 public section
@@ -99,5 +103,43 @@ theorem sum_filter_piAntidiag_prod_choose {s : Finset ι} {i : ι} (hi : i ∈ s
       rw [mem_antidiagonal] at hp
       omega
     simp [ha]
+
+/-- **Vandermonde's identity** grouped along a map `f : ι → κ`: the ways of choosing objects from
+groups of sizes `K i` so that, for every `j`, exactly `m j` objects come from the groups in the
+fibre of `f` over `j`.  Merging the groups of each fibre into one group of size
+`∑ i with f i = j, K i` counts these choices as a product of binomial coefficients. -/
+theorem sum_filter_piAntidiag_prod_choose_fiberwise {κ : Type*} [Fintype ι] [Fintype κ]
+    [DecidableEq κ] (f : ι → κ) (K : ι → ℕ) (m : κ → ℕ) :
+    ∑ k ∈ (univ : Finset ι).piAntidiag (∑ j, m j) with ∀ j, ∑ i with f i = j, k i = m j,
+        ∏ i, (K i).choose (k i) =
+      ∏ j, (∑ i with f i = j, K i).choose (m j) := by
+  rw [prod_congr rfl fun j _ ↦ (sum_piAntidiag_prod_choose _ K (m j)).symm, prod_univ_sum]
+  -- A count vector is the same as a family of count vectors, one on each fibre of `f`.
+  refine sum_nbij' (fun k j i ↦ if f i = j then k i else 0) (fun F i ↦ F (f i) i)
+    ?_ ?_ ?_ ?_ ?_
+  · intro k hk
+    simp only [mem_filter, mem_piAntidiag, mem_univ, implies_true, and_true] at hk
+    simp only [Fintype.mem_piFinset, mem_piAntidiag, mem_filter, mem_univ, true_and]
+    refine fun j ↦ ⟨?_, fun i hi ↦ by_contra fun h ↦ hi (by simp [h])⟩
+    rw [← hk.2 j]
+    exact sum_congr rfl fun i hi ↦ by simp [(mem_filter.mp hi).2]
+  · intro F hF
+    simp only [Fintype.mem_piFinset, mem_piAntidiag, mem_filter, mem_univ, true_and] at hF
+    have hfib : ∀ j, ∑ i with f i = j, F (f i) i = m j := fun j ↦ by
+      rw [← (hF j).1]
+      exact sum_congr rfl fun i hi ↦ by rw [(mem_filter.mp hi).2]
+    simp only [mem_filter, mem_piAntidiag, mem_univ, implies_true, and_true]
+    exact ⟨by rw [← sum_fiberwise univ f]; exact sum_congr rfl fun j _ ↦ hfib j, hfib⟩
+  · intro k _
+    simp
+  · intro F hF
+    simp only [Fintype.mem_piFinset, mem_piAntidiag, mem_filter, mem_univ, true_and] at hF
+    funext j i
+    split_ifs with h
+    · simp [h]
+    · exact (not_imp_comm.mp ((hF j).2 i) h).symm
+  · intro k _
+    rw [← prod_fiberwise univ f]
+    exact prod_congr rfl fun j _ ↦ prod_congr rfl fun i hi ↦ by simp [(mem_filter.mp hi).2]
 
 end Finset

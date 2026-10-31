@@ -19,12 +19,17 @@ in the ambient coordinate space.
 A nonnegative vector paired with strictly positive weights has dot product zero precisely when
 the vector is zero.
 
+A ring homomorphism carries the bilinear form `v ⬝ᵥ A *ᵥ w` of a matrix to the form of the image
+matrix at the image vectors.
+
 ## Main results
 
 * `Function.Injective.dotProduct_extend_zero`: the dot product with a vector extended by zero
   along an injective map is the dot product of the pulled-back vectors.
 * `TauCeti.dotProduct_eq_zero_iff_of_pos`: a nonnegative vector is zero if its pairing with
   strictly positive weights vanishes.
+* `RingHom.map_dotProduct_mulVec`: a ring homomorphism commutes with the bilinear form
+  `v ⬝ᵥ A *ᵥ w`.
 -/
 
 public section
@@ -48,6 +53,21 @@ theorem dotProduct_extend_zero {f : n → m} (hf : f.Injective) (x : m → α) (
     rw [Function.extend_apply' _ _ _ hi, Pi.zero_apply, mul_zero]
 
 end Function.Injective
+
+namespace RingHom
+
+variable {n R S : Type*} [Fintype n] [NonAssocSemiring R] [NonAssocSemiring S]
+
+/-- A ring homomorphism `f` carries the bilinear form `v ⬝ᵥ A *ᵥ w` of a matrix `A` to the form of
+`A.map f` at `f ∘ v` and `f ∘ w`. -/
+theorem map_dotProduct_mulVec (f : R →+* S) (A : Matrix n n R) (v w : n → R) :
+    f (v ⬝ᵥ A *ᵥ w) = (f ∘ v) ⬝ᵥ A.map f *ᵥ (f ∘ w) := by
+  rw [f.map_dotProduct]
+  congr 1
+  ext i
+  exact f.map_mulVec A w i
+
+end RingHom
 
 namespace TauCeti
 

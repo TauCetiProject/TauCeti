@@ -31,7 +31,10 @@ For a complete ultrametric algebra norm on `A`, the presentation is continuous a
 bounded subring. Consequently the power-bounded elements of `A` are exactly the elements with
 `|f|sup ≤ 1`, and the topologically nilpotent ones are exactly those with `|f|sup < 1`, or
 equivalently `|f(x)| < 1` at every classical point `x`. In particular both sets depend only on
-the algebra structure of `A`, not on the chosen norm.
+the algebra structure of `A`, not on the chosen norm. An open bounded subring `B` is the whole
+unit ball `{f | |f|sup ≤ 1}` as soon as `B ⧸ ϖB` is reduced for some topologically nilpotent
+element `ϖ ∈ B` regular in `A`, by the general criterion
+`TauCeti.Huber.isPowerBounded_iff_mem_of_isReduced_quotient`.
 
 Integrality is detected modulo every prime `𝔭` (`TauCeti.isIntegral_of_forall_isPrime`). A
 Noether normalisation of the affinoid domain `A ⧸ 𝔭` adapted to the presentation sends the Gauss
@@ -47,11 +50,15 @@ value of the minimal polynomial; it therefore lifts to a monic polynomial over `
 * `TauCeti.IsAffinoidAlgebra.isTopologicallyNilpotent_iff_supSeminorm_lt_one`:
   `A°° = {f | |f|sup < 1}`, with the pointwise form
   `TauCeti.IsAffinoidAlgebra.isTopologicallyNilpotent_iff_forall_pointNorm_lt_one`.
+* `TauCeti.IsAffinoidAlgebra.mem_iff_supSeminorm_le_one_of_isReduced_quotient`: an open bounded
+  subring `B` containing a topologically nilpotent regular element `ϖ` of `A` with `B ⧸ ϖB`
+  reduced is `{f | |f|sup ≤ 1}`.
 
 ## References
 
 * [Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*][bosch-guntzer-remmert], §§6.2.3 and
   6.3.4.
+* K. Fujiwara, F. Kato, *Foundations of Rigid Geometry I*, Appendix B, Proposition B.1.3(1).
 -/
 
 public section
@@ -214,5 +221,18 @@ less than one at every classical point. -/
 theorem isTopologicallyNilpotent_iff_forall_pointNorm_lt_one (hA : IsAffinoidAlgebra K A)
     {f : A} : IsTopologicallyNilpotent f ↔ ∀ x, pointNorm K x f < 1 := by
   rw [hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one, hA.supSeminorm_lt_iff one_pos]
+
+/-- **A ring of definition with reduced quotient is the unit ball of the supremum seminorm.** Let
+`B` be an open bounded subring of an affinoid algebra with a complete ultrametric algebra norm,
+and `ϖ ∈ B` an element which is topologically nilpotent and left regular in `A`, for instance a
+topologically nilpotent unit of `A`; it need not be a scalar. If `B ⧸ ϖB` is reduced, then
+`B = A° = {f | |f|sup ≤ 1}`. -/
+theorem mem_iff_supSeminorm_le_one_of_isReduced_quotient (hA : IsAffinoidAlgebra K A)
+    {B : Subring A} (hBo : IsOpen (B : Set A)) (hBb : Huber.IsBounded (B : Set A)) {ϖ : B}
+    (hϖ : IsTopologicallyNilpotent (ϖ : A)) (hϖr : IsLeftRegular (ϖ : A))
+    (hred : IsReduced (B ⧸ Ideal.span {ϖ})) {f : A} :
+    f ∈ B ↔ supSeminorm K f ≤ 1 := by
+  rw [← Huber.isPowerBounded_iff_mem_of_isReduced_quotient hBo hBb hϖ hϖr hred,
+    hA.isPowerBounded_iff_supSeminorm_le_one]
 
 end TauCeti.IsAffinoidAlgebra

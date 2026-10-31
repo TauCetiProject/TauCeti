@@ -223,6 +223,14 @@ theorem star_mul_self_eq_neg_one_pow_smul_reverse_mul_self (l : List M) :
       (-1 : R) ^ l.length • (reverse (l.map (ι Q)).prod * (l.map (ι Q)).prod) := by
   rw [star_def, involute_prod_map_ι, map_smul, smul_mul_assoc]
 
+/-- The `star` norm of a product of `r` vectors is the scalar `(-1) ^ r` times the product of their
+quadratic norms. -/
+theorem star_prod_map_ι_mul_prod_map_ι (l : List M) :
+    star (l.map (ι Q)).prod * (l.map (ι Q)).prod =
+      algebraMap R (CliffordAlgebra Q) ((-1) ^ l.length * (l.map Q).prod) := by
+  rw [star_mul_self_eq_neg_one_pow_smul_reverse_mul_self, reverse_prod_map_ι_mul_prod_map_ι,
+    Algebra.smul_def, map_mul]
+
 /-- When the reverse norm of `x` is the scalar `r`, the reverse norm of `x * y` is `r` times
 the reverse norm of `y`. -/
 theorem reverse_mul_mul_self_mul {x y : CliffordAlgebra Q} {r : R}

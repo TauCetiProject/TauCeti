@@ -41,6 +41,12 @@ the nonzero paths in the preprojective algebra of type `A`. For two composable v
 `TauCeti.ladderValley_mul_ladderValley` gives their product with the exact crossing sign;
 `TauCeti.ladderValley_mul_ladderValley_eq_zero` handles a negative formal bottom.
 
+A valley word which descends and climbs the same number `s > 0` of rungs is closed. Rotating its
+descent past its climb gives a peak word, which the relations turn back into a closed valley word
+whose bottom is `s` rungs lower, or into zero. Hence every closed valley word of positive length
+lies in the commutator submodule (`TauCeti.ladderValley_mem_commutatorSubmodule`). For the
+preprojective algebra of type `A` this makes the cyclic quotient vanish in positive degrees.
+
 Without the relation `d 0 * u 0 = 0` at the bottom rung, a descent after a climb from rung `0`
 leaves the turn `d 0 * u 0` (`TauCeti.d_mul_ladderValley_zero_zero`). Its powers are, up to sign,
 the words climbing from rung `0` and descending back, so on a ladder with no climb from some rung
@@ -73,6 +79,8 @@ algebra of a branched graph this controls the cyclic quotient along its arms.
   descending back is, up to sign, the `j`-th power of the turn at rung `0`.
 * `TauCeti.pow_d_mul_u_eq_zero`: on a ladder with no climb from rung `N`, the turn at rung `0` has
   vanishing `N + 1`-st power.
+* `TauCeti.ladderValley_mem_commutatorSubmodule`: under the ladder relations, a closed valley word
+  of positive length is a sum of commutators.
 * `TauCeti.pow_d_mul_u_mem_commutatorSubmodule` and
   `TauCeti.ladderValley_mem_commutatorSubmodule_of_u_eq_zero`: on such a ladder, the positive
   powers of the turn at rung `0` and the closed valley words of positive length are sums of
@@ -80,8 +88,11 @@ algebra of a branched graph this controls the cyclic quotient along its arms.
 
 ## References
 
-See W. Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
-problem*, Section 1, for the preprojective relations of a quiver.
+* W. Crawley-Boevey, *Quiver algebras, weighted projective lines, and the Deligne--Simpson
+  problem*, Section 1, for the preprojective relations of a quiver.
+* P. Etingof and C.-H. Eu, *Hochschild and cyclic homology of preprojective algebras of ADE
+  quivers*, Mosc. Math. J. 7 (2007), https://arxiv.org/abs/math/0609006, for the vanishing of
+  the positive-degree cyclic quotient of a Dynkin preprojective algebra.
 -/
 
 public section
@@ -278,12 +289,14 @@ theorem pow_d_mul_u_eq_zero (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0)
 
 section Commutator
 
-variable (k : Type*) [Ring k] [Module k A]
+variable (k : Type*) [Semiring k] [Module k A]
 
-/-- A submodule is closed under multiplication by a sign `(-1) ^ e`. -/
-private theorem neg_one_pow_mul_mem {p : Submodule k A} {x : A} (hx : x ∈ p) (e : ℕ) :
-    (-1 : A) ^ e * x ∈ p := by
-  rcases neg_one_pow_eq_or A e with h | h <;> simp [h, hx]
+/-- The commutator submodule is closed under multiplication by a sign `(-1) ^ e`. -/
+private theorem neg_one_pow_mul_mem {x : A} (hx : x ∈ commutatorSubmodule k A) (e : ℕ) :
+    (-1 : A) ^ e * x ∈ commutatorSubmodule k A := by
+  rcases neg_one_pow_eq_or A e with h | h
+  · simpa [h] using hx
+  · simpa [h] using neg_mem_commutatorSubmodule hx
 
 /-- **The powers of the bottom turn of a finite ladder are sums of commutators.** If the turns at
 every positive rung cancel and there is no climb from rung `N`, then every positive power of the
@@ -314,7 +327,7 @@ theorem pow_d_mul_u_mem_commutatorSubmodule (hud : ∀ w, d (w + 1) * u (w + 1) 
     have hrot := mul_sub_mul_mem_commutatorSubmodule k A (d r) (u r * (d r * u r) ^ j)
     rw [hdu, hud'] at hrot
     have hup := neg_one_pow_mul_mem k (hr' ▸ ih (by omega)) (j + 1)
-    exact (Submodule.sub_mem_iff_left _ hup).1 hrot
+    simpa using add_mem hrot hup
 
 /-- **Closed valley words on a finite ladder are sums of commutators.** If the turns at every
 positive rung cancel and there is no climb from rung `N`, then the valley word descending `s > 0`
@@ -330,8 +343,8 @@ theorem ladderValley_mem_commutatorSubmodule_of_u_eq_zero
     have hrot := mul_sub_mul_mem_commutatorSubmodule k A
       (ladderValley u d 0 0 s) (ladderValley u d 0 s 0)
     rw [ladderValley_zero_mul_ladderValley, ladderValley_mul_ladderValley_zero_eq_pow hud] at hrot
-    exact (Submodule.sub_mem_iff_left _
-      (neg_one_pow_mul_mem k (pow_d_mul_u_mem_commutatorSubmodule k hud hN hs) _)).1 hrot
+    simpa using
+      add_mem hrot (neg_one_pow_mul_mem k (pow_d_mul_u_mem_commutatorSubmodule k hud hN hs) _)
   induction m using Nat.strong_induction_on generalizing s with
   | _ m ih =>
     rcases le_or_gt s m with hsm | hms
@@ -340,8 +353,7 @@ theorem ladderValley_mem_commutatorSubmodule_of_u_eq_zero
         (ladderValley u d m 0 s) (ladderValley u d m s 0)
       rw [ladderValley_zero_mul_ladderValley, ladderValley_mul_ladderValley hud rfl hsm,
         zero_add, add_zero] at hrot
-      exact (Submodule.sub_mem_iff_left _
-        (neg_one_pow_mul_mem k (ih (m - s) (by omega) hs hzero) _)).1 hrot
+      simpa using add_mem hrot (neg_one_pow_mul_mem k (ih (m - s) (by omega) hs hzero) _)
     · -- Rotating the last `m` steps of the descent gives the closed valley word with bottom `0`.
       -- Two descents concatenate: down to rung `m`, then on to rung `0`.
       have hsplit : ladderValley u d m (s - m) 0 * ladderValley u d s m 0 =
@@ -368,7 +380,31 @@ theorem ladderValley_mem_commutatorSubmodule_of_u_eq_zero
       have hrot := mul_sub_mul_mem_commutatorSubmodule k A
         (ladderValley u d m 0 s * ladderValley u d m (s - m) 0) (ladderValley u d s m 0)
       rw [hAB, hBA] at hrot
-      exact (Submodule.sub_mem_iff_left _ (neg_one_pow_mul_mem k hzero _)).1 hrot
+      simpa using add_mem hrot (neg_one_pow_mul_mem k hzero _)
+
+/-- **Closed valley words are sums of commutators.** If the turns at every rung cancel, including
+the single turn `d 0 * u 0` at the bottom rung, then the valley word descending `s > 0` rungs to
+rung `m` and climbing back lies in the commutator submodule `[A, A]`. -/
+theorem ladderValley_mem_commutatorSubmodule (hud₀ : d 0 * u 0 = 0)
+    (hud : ∀ w, d (w + 1) * u (w + 1) + u w * d w = 0) (m : ℕ) {s : ℕ} (hs : 0 < s) :
+    ladderValley u d m s s ∈ commutatorSubmodule k A := by
+  induction m using Nat.strong_induction_on with
+  | _ m ih =>
+    -- The valley is its climb times its descent; the rotated word climbs first.
+    have hcomm := mul_sub_mul_mem_commutatorSubmodule k A
+      (ladderValley u d m 0 s) (ladderValley u d m s 0)
+    rw [ladderValley_zero_mul_ladderValley] at hcomm
+    have hrot : ladderValley u d m s 0 * ladderValley u d m 0 s ∈ commutatorSubmodule k A := by
+      rcases lt_or_ge m s with hms | hsm
+      · rw [ladderValley_mul_ladderValley_eq_zero hud₀ hud rfl hms]
+        exact zero_mem _
+      · rw [ladderValley_mul_ladderValley hud rfl hsm, zero_add, add_zero]
+        have hlow := ih (m - s) (by omega)
+        rcases neg_one_pow_eq_or A (s * s) with h | h
+        · rwa [h, one_mul]
+        · rw [h, neg_one_mul]
+          exact neg_mem_commutatorSubmodule hlow
+    simpa using add_mem hcomm hrot
 
 end Commutator
 

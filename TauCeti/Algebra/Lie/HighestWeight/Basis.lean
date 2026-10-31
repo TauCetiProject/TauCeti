@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Basis.Borel
 public import TauCeti.Algebra.Lie.Basis.Cartan
 public import TauCeti.Algebra.Lie.HighestWeight.Basic
+public import TauCeti.Algebra.Lie.Weights.WeightLattice
 
 /-!
 # Highest-weight vectors from a Lie algebra basis
@@ -26,6 +27,8 @@ subalgebra dual to the `hᵢ` consists of the fundamental weights.
 * `LieAlgebra.Basis.isDominantIntegral_base_iff` reads dominance on the Cartan generators.
 * `LieAlgebra.Basis.isDominantIntegral_cartanBasis_dualBasis`: the fundamental weights, the
   vectors of the basis dual to the Cartan generators, are dominant integral.
+* `LieAlgebra.Basis.span_cartanBasis_dualBasis_eq_integralWeightLattice`: the fundamental weights
+  span the integral weight lattice over `ℤ`.
 -/
 
 public section
@@ -91,5 +94,33 @@ theorem isDominantIntegral_cartanBasis_dualBasis [DecidableEq ι] (b : LieAlgebr
   refine ⟨if j = i then 1 else 0, ?_⟩
   rw [← cartanBasis_apply, Module.Basis.dualBasis_apply_self]
   split_ifs <;> simp
+
+omit [Fintype ι] in
+/-- **The fundamental weights span the integral weight lattice.** Over `ℤ`, the vectors `ϖᵢ` of
+the basis dual to the Cartan generators span exactly the integral weights: an integral weight `λ`
+is `∑ᵢ λ(hᵢ) ϖᵢ`, and its values on the simple coroots `hᵢ` are integers. -/
+theorem span_cartanBasis_dualBasis_eq_integralWeightLattice [Finite ι] [DecidableEq ι]
+    (b : LieAlgebra.Basis ι H) :
+    letI := Fintype.ofFinite ι
+    letI := b.isCartanSubalgebra
+    letI := b.isTriangularizable
+    Submodule.span ℤ (Set.range b.cartanBasis.dualBasis) = TauCeti.integralWeightLattice H := by
+  let _ := Fintype.ofFinite ι
+  let _ := b.isCartanSubalgebra
+  let _ := b.isTriangularizable
+  refine le_antisymm (Submodule.span_le.mpr ?_) fun lam hlam ↦ ?_
+  · rintro _ ⟨i, rfl⟩
+    exact TauCeti.mem_integralWeightLattice_iff.mpr
+      (b.isDominantIntegral_cartanBasis_dualBasis i).isIntegralWeight
+  choose n hn using fun i ↦
+    (TauCeti.mem_integralWeightLattice_iff.mp hlam).exists_int_apply_coroot
+      (b.baseSupportEquiv i : Weight K H L)
+  have hlam : ∑ i, n i • b.cartanBasis.dualBasis i = lam := by
+    conv_rhs => rw [← b.cartanBasis.sum_dual_apply_smul_coord lam]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [Module.Basis.coe_dualBasis, cartanBasis_apply, ← coroot_eq_h', hn i]
+    exact (Int.cast_smul_eq_zsmul K _ _).symm
+  rw [← hlam]
+  exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
 
 end LieAlgebra.Basis

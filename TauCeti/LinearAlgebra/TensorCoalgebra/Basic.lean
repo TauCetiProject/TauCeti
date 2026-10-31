@@ -221,6 +221,16 @@ theorem of_tprod_eq_subword {n : ℕ} (hn : 0 < n) (x : Fin n → M) :
   congr 1
   exact congrArg _ (funext fun j ↦ (congrArg x (Fin.ext (Nat.zero_add j.1))).symm)
 
+/-- A block of length two is a two-letter word. -/
+theorem subword_two_eq {n : ℕ} (x : Fin n → M) {p : ℕ} (hp : p + 2 ≤ n) :
+    subword R x p 2 =
+      of R M (2 : ℕ+) (PiTensorProduct.tprod R ![x ⟨p, by omega⟩, x ⟨p + 1, by omega⟩]) := by
+  rw [subword_eq_of_tprod R x two_pos hp]
+  exact of_tprod_congr R M _ rfl fun i ↦ by
+    match i with
+    | ⟨0, _⟩ => simp
+    | ⟨1, _⟩ => simp
+
 /-- A block of a tensor word depends only on its letters, not on the tuple carrying them nor on
 where the block sits inside it. -/
 theorem subword_congr {n m : ℕ} (x : Fin n → M) (y : Fin m → M) {a a' b : ℕ} (hab : a + b ≤ n)

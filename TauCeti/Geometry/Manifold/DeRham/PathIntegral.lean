@@ -139,7 +139,7 @@ theorem mem_exactForms_one_iff_forall_pathIntegral_eq_zero [FiniteDimensional �
   obtain ⟨ψ, hψ, hdψ⟩ := exists_mextDeriv_eq_of_forall_pathIntegral_eq_zero (r := ⊤) le_top
     φ.isSmoothForm ((mem_closedForms I φ).mp hφ) x₀ h
   rw [exactForms_succ]
-  exact ⟨⟨ψ, hψ.mem_smoothForms⟩, Subtype.ext ((mextDerivₗ_apply I 0 _).trans hdψ)⟩
+  exact ⟨⟨ψ, hψ.mem_smoothBundleForms⟩, Subtype.ext ((mextDerivₗ_apply I 0 _).trans hdψ)⟩
 
 /-- A de Rham class of degree one on a preconnected manifold vanishes exactly when the integrals
 of a representative along all smooth loops at a base point `x₀` vanish. -/

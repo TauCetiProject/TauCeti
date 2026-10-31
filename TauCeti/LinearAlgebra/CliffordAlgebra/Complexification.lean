@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Star
+public import TauCeti.LinearAlgebra.Complex.Conjugation
 
 /-!
 # Complex conjugation on a complexified real Clifford algebra
@@ -191,6 +192,14 @@ it negates the real vectors `ι (1 ⊗ₜ v)`. -/
 theorem conjStar_ι_tmul (z : ℂ) (v : V) :
     conjStar Q (ι (Q.baseChange ℂ) (z ⊗ₜ v)) = -ι (Q.baseChange ℂ) (conj z ⊗ₜ v) := by
   simp [conjStar_apply]
+
+/-- `CliffordAlgebra.conjStar` sends the generator of a complex vector `w` to minus the generator
+of its conjugate `TauCeti.tmulConj V w`. -/
+theorem conjStar_ι (w : ℂ ⊗[ℝ] V) :
+    conjStar Q (ι (Q.baseChange ℂ) w) = -ι (Q.baseChange ℂ) (TauCeti.tmulConj V w) := by
+  induction w using TensorProduct.inductionOn with
+  | tmul z v => rw [conjStar_ι_tmul, TauCeti.tmulConj_tmul]
+  | add w w' hw hw' => rw [map_add, map_add, hw, hw', map_add, map_add, neg_add]
 
 /-- On the real Clifford algebra, `CliffordAlgebra.conjStar` is Clifford conjugation. -/
 @[simp]
