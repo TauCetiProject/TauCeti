@@ -38,8 +38,10 @@ whatever the kernel of the action.
 * `TauCeti.MulAction.isCutoff_div_finsum`: dividing a nonnegative function by the sum of its
   translates gives a cutoff function, as soon as each orbit meets its support and each compact set
   has finitely many translates meeting its support.
-* `TauCeti.MulAction.locallyFinite_support_apply_smul`: under this finiteness condition the
-  translates of a function have locally finite supports.
+* `TauCeti.MulAction.locallyFinite_preimage_smul_tsupport`,
+  `TauCeti.MulAction.locallyFinite_support_apply_smul`: under this finiteness condition the
+  translates of a function have locally finite topological supports, and so locally finite
+  supports.
 * `TauCeti.MulAction.IsCutoff.isProperMap_snd`: the source map of the action presentation is
   proper on the support of a cutoff function composed with the target.
 
@@ -94,14 +96,20 @@ theorem hasFiniteSupport_apply_smul
     ⟨g • x, smul_mem_smul_set (mem_singleton x), subset_tsupport f hg⟩
 
 /-- If only finitely many translates of each compact set meet the support of `f`, then the
+preimages of the topological support of `f` under the maps `x ↦ g • x` form a locally finite
+family. -/
+theorem locallyFinite_preimage_smul_tsupport [WeaklyLocallyCompactSpace X]
+    (hf : ∀ ⦃K : Set X⦄, IsCompact K → {g : G | (g • K ∩ tsupport f).Nonempty}.Finite) :
+    LocallyFinite fun g : G ↦ (g • ·) ⁻¹' tsupport f := fun x ↦ by
+  obtain ⟨K, hK, hKx⟩ := exists_compact_mem_nhds x
+  exact ⟨K, hKx, (hf hK).subset fun g ⟨y, hy, hyK⟩ ↦ ⟨g • y, smul_mem_smul_set hyK, hy⟩⟩
+
+/-- If only finitely many translates of each compact set meet the support of `f`, then the
 supports of the translates `x ↦ f (g • x)` form a locally finite family. -/
 theorem locallyFinite_support_apply_smul [WeaklyLocallyCompactSpace X]
     (hf : ∀ ⦃K : Set X⦄, IsCompact K → {g : G | (g • K ∩ tsupport f).Nonempty}.Finite) :
-    LocallyFinite fun g : G ↦ support fun x ↦ f (g • x) := fun x ↦ by
-  obtain ⟨K, hK, hKx⟩ := exists_compact_mem_nhds x
-  refine ⟨K, hKx, (hf hK).subset ?_⟩
-  rintro g ⟨y, hy, hyK⟩
-  exact ⟨g • y, smul_mem_smul_set hyK, subset_tsupport f hy⟩
+    LocallyFinite fun g : G ↦ support fun x ↦ f (g • x) :=
+  (locallyFinite_preimage_smul_tsupport hf).subset fun _ _ hx ↦ subset_tsupport f hx
 
 end Finite
 
