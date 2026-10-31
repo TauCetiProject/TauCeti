@@ -71,45 +71,6 @@ namespace TauCeti
 
 variable {K : Type*} [NormedField K]
 
-/-! ### Laurent series in a complete ultrametric field -/
-
-section Laurent
-
-/-- A Laurent series shifted by `k` places is multiplied by `uᵏ`. -/
-private theorem hasSum_laurent_shift {f : ℤ → K} {u : K} (hu : u ≠ 0) {s : K} (k : ℤ)
-    (hf : HasSum (fun n ↦ f n * u ^ n) s) :
-    HasSum (fun n ↦ f (n - k) * u ^ n) (u ^ k * s) := by
-  rw [← (Equiv.addRight k).hasSum_iff]
-  convert hf.mul_left (u ^ k) using 1
-  funext n
-  simp only [Function.comp_apply, Equiv.coe_addRight, add_sub_cancel_right, zpow_add₀ hu]
-  ring
-
-variable [IsUltrametricDist K] [CompleteSpace K]
-
-/-- The Cauchy product of two convergent Laurent series. -/
-private theorem hasSum_laurent_mul {f g : ℤ → K} {u : K} (hu : u ≠ 0) {a b : K}
-    (hf : HasSum (fun n ↦ f n * u ^ n) a) (hg : HasSum (fun n ↦ g n * u ^ n) b) :
-    HasSum (fun n ↦ (∑' m, f m * g (n - m)) * u ^ n) (a * b) := by
-  have h := hasSum_tsum_bilinear_sub_of_nonarchimedean (B := LinearMap.mul K K) (C := 1)
-    (fun x y ↦ by simp [norm_mul]) hf hg
-  simp only [LinearMap.mul_apply'] at h
-  convert h using 2 with n
-  rw [← tsum_mul_right]
-  congr 1 with m
-  rw [show u ^ n = u ^ m * u ^ (n - m) by rw [← zpow_add₀ hu, add_sub_cancel]]
-  ring
-
-/-- A family obtained from a summable one by multipliers of norm at most one is summable. -/
-private theorem summable_mul_of_norm_le_one {ι : Type*} {f c : ι → K} (hf : Summable f)
-    (hc : ∀ i, ‖c i‖ ≤ 1) : Summable (fun i ↦ c i * f i) := by
-  refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
-    (squeeze_zero_norm (fun i ↦ ?_) (by simpa using hf.tendsto_cofinite_zero.norm))
-  rw [norm_mul]
-  exact mul_le_of_le_one_left (norm_nonneg _) (hc i)
-
-end Laurent
-
 /-! ### The theta coefficients and products of theta functions -/
 
 section Theta
@@ -253,17 +214,6 @@ section XCoeff
 /-- The Laurent coefficient `k / (1 - qᵏ)` of `X + 2 s₁` on the annulus `‖q‖ < ‖u‖ < 1`. -/
 private noncomputable def xCoeff (q : Kˣ) (k : ℤ) : K := k / (1 - (q : K) ^ k)
 
-private theorem norm_zpow_ne_one {q : Kˣ} (hq : ‖(q : K)‖ < 1) {k : ℤ} (hk : k ≠ 0) :
-    ‖(q : K) ^ k‖ ≠ 1 := by
-  rw [norm_zpow, Ne, zpow_eq_one_iff_right₀ (norm_nonneg _) hq.ne]
-  exact hk
-
-private theorem one_sub_zpow_ne_zero {q : Kˣ} (hq : ‖(q : K)‖ < 1) {k : ℤ} (hk : k ≠ 0) :
-    1 - (q : K) ^ k ≠ 0 := by
-  intro h
-  apply norm_zpow_ne_one hq hk
-  rw [← sub_eq_zero.mp h, norm_one]
-
 /-- The Laurent coefficients of `X(u) + 2 s₁(q) - u / (1 - u)²` on the annulus
 `‖q‖ < ‖u‖ < ‖q‖⁻¹`. -/
 private noncomputable def yCoeff (q : Kˣ) (k : ℤ) : K :=
@@ -361,52 +311,6 @@ end XCoeff
 section Expansion
 
 variable [IsUltrametricDist K] [CompleteSpace K]
-
-/-- The Lambert series `∑_{n ≥ 1} qⁿw / (1 - qⁿw)² = ∑_{k ≥ 1} k qᵏ wᵏ / (1 - qᵏ)`, for
-`‖q w‖ < 1`. -/
-private theorem hasSum_lambert {q w : K} (hq : ‖q‖ < 1) (hw : ‖q * w‖ < 1) :
-    HasSum (fun k : ℕ ↦ ((k + 1 : ℕ) : K) * q ^ (k + 1) / (1 - q ^ (k + 1)) * w ^ (k + 1))
-      (∑' n : ℕ, q ^ (n + 1) * w / (1 - q ^ (n + 1) * w) ^ 2) := by
-  set F : ℕ × ℕ → K := fun p ↦ ((p.2 + 1 : ℕ) : K) * (q ^ (p.1 + 1) * w) ^ (p.2 + 1) with hF
-  have hz (n : ℕ) : ‖q ^ (n + 1) * w‖ = ‖q‖ ^ n * ‖q * w‖ := by
-    rw [pow_succ, mul_assoc, norm_mul, norm_pow]
-  have hqn (n : ℕ) : ‖q‖ ^ n ≤ 1 := pow_le_one₀ (norm_nonneg _) hq.le
-  have hz' (n : ℕ) : ‖q ^ (n + 1) * w‖ < 1 := by
-    rw [hz]
-    calc ‖q‖ ^ n * ‖q * w‖ ≤ 1 * ‖q * w‖ := by gcongr; exact hqn n
-      _ < 1 := by rwa [one_mul]
-  have hbound (p : ℕ × ℕ) : ‖F p‖ ≤ ‖q‖ ^ p.1 * ‖q * w‖ ^ (p.2 + 1) := by
-    rw [hF, norm_mul, norm_pow, hz, mul_pow]
-    calc ‖((p.2 + 1 : ℕ) : K)‖ * ((‖q‖ ^ p.1) ^ (p.2 + 1) * ‖q * w‖ ^ (p.2 + 1))
-        ≤ 1 * (‖q‖ ^ p.1 * ‖q * w‖ ^ (p.2 + 1)) := by
-          gcongr
-          · exact IsUltrametricDist.norm_natCast_le_one K _
-          · exact pow_le_of_le_one (by positivity) (hqn p.1) (Nat.succ_ne_zero _)
-      _ = ‖q‖ ^ p.1 * ‖q * w‖ ^ (p.2 + 1) := one_mul _
-  have hs : Summable F := by
-    refine Summable.of_norm_bounded ?_ hbound
-    exact (summable_geometric_of_lt_one (norm_nonneg _) hq).mul_of_nonneg
-      ((summable_nat_add_iff 1).mpr (summable_geometric_of_lt_one (norm_nonneg _) hw))
-      (fun _ ↦ by positivity) (fun _ ↦ by positivity)
-  have hrow (n : ℕ) :
-      HasSum (fun k ↦ F (n, k)) (q ^ (n + 1) * w / (1 - q ^ (n + 1) * w) ^ 2) := by
-    have h := (hs.prod_factor n).hasSum
-    rwa [show ∑' k, F (n, k) = _ from tsum_natCast_succ_mul_pow_succ _ (hz' n)] at h
-  have hcol (k : ℕ) : HasSum (fun n ↦ F (n, k))
-      (((k + 1 : ℕ) : K) * q ^ (k + 1) / (1 - q ^ (k + 1)) * w ^ (k + 1)) := by
-    have hξ : ‖q ^ (k + 1)‖ < 1 := by
-      rw [norm_pow]
-      exact pow_lt_one₀ (norm_nonneg _) hq (Nat.succ_ne_zero _)
-    convert (hasSum_geometric_of_norm_lt_one hξ).mul_left
-      (((k + 1 : ℕ) : K) * q ^ (k + 1) * w ^ (k + 1)) using 1
-    · funext n
-      simp only [hF]
-      ring
-    · rw [div_eq_mul_inv]
-      ring
-  have h₁ := hs.hasSum.prod_fiberwise hrow
-  have h₂ := ((Equiv.prodComm ℕ ℕ).hasSum_iff.mpr hs.hasSum).prod_fiberwise fun k ↦ hcol k
-  rwa [← h₁.tsum_eq] at h₂
 
 private theorem hasSum_yCoeff (q u : Kˣ) (hq : ‖(q : K)‖ < 1) (hu₁ : ‖(q : K) * u‖ < 1)
     (hu₂ : ‖(q : K) * (u : K)⁻¹‖ < 1) :

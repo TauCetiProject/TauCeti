@@ -10,7 +10,7 @@ import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.Data.Int.DivMod
 public import Mathlib.Topology.Algebra.InfiniteSum.Ring
 public import Mathlib.Analysis.Normed.Field.Basic
-import Mathlib.Analysis.SpecificLimits.Normed
+import TauCeti.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import Mathlib.Tactic.Ring
 
@@ -220,15 +220,6 @@ theorem hasSum_tateThetaCoefficients_mul [TopologicalSpace R] [IsTopologicalRing
 section Convergence
 
 variable {K : Type*} [NormedField K]
-
-/-- A sequence whose consecutive norms shrink by a factor `C ρᵏ` with `ρ < 1` is summable. -/
-private theorem summable_of_norm_succ_le_mul_pow [CompleteSpace K] {f : ℕ → K} {C ρ : ℝ}
-    (hρ₀ : 0 ≤ ρ) (hρ : ρ < 1) (h : ∀ k, ‖f (k + 1)‖ ≤ C * ρ ^ k * ‖f k‖) : Summable f := by
-  have ht : Filter.Tendsto (fun k : ℕ ↦ C * ρ ^ k) Filter.atTop (nhds 0) := by
-    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hρ₀ hρ).const_mul C
-  refine summable_of_ratio_norm_eventually_le (r := 1 / 2) (by norm_num) ?_
-  filter_upwards [(tendsto_order.1 ht).2 (1 / 2) (by norm_num)] with k hk
-  exact (h k).trans (mul_le_mul_of_nonneg_right hk.le (norm_nonneg _))
 
 /-- Along a residue class, the coefficient recurrence multiplies consecutive terms of the
 Laurent series by `c q^(r + d k) uᵈ`. -/
