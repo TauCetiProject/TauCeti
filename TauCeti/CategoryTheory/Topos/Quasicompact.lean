@@ -28,8 +28,9 @@ instance, to define locally weakly contractible and algebraic topoi.
 
 Quasicompactness of an object is not quasicompactness of its map to the terminal object: the
 identity of every object is a quasicompact morphism, while in sheaves on an infinite discrete
-space the terminal sheaf is not a quasicompact object. The two agree when the terminal object is
-quasicompact (`TauCeti.Topos.isQuasicompact_of_isTerminal`).
+space the terminal sheaf is not a quasicompact object. When the terminal object is quasicompact,
+an object whose map to it is quasicompact is itself quasicompact
+(`TauCeti.Topos.isQuasicompact_of_isTerminal`).
 
 ## Main definitions
 
