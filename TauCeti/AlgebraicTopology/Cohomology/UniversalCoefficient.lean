@@ -20,7 +20,7 @@ projective dimension at most one. This holds for principal ideal domains, for in
 `k`-module, for instance `k` itself, and let `M` be any `k`-module. For a topological space `X`,
 the singular chain modules `Cₙ(X; R) = ⨁ R` are projective (`SSet.projective_chainComplex_X`).
 Their cycles are then projective and split off the terms
-(`TauCeti.Algebra.Homology.HomologicalComplex.ProjectiveDimension`). These are the hypotheses
+(`TauCeti.Algebra.Homology.HomologicalComplex.Projective.Dimension`). These are the hypotheses
 of the algebraic universal coefficient sequence
 (`TauCeti.Algebra.Homology.UniversalCoefficient.Basic`), so
 

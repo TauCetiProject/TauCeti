@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.HomotopyCofiber
-public import TauCeti.Algebra.Homology.Boundaries
 
 /-!
 # Projective cycles and contractible complexes

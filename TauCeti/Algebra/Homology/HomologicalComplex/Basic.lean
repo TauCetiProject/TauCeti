@@ -20,8 +20,10 @@ complex endomorphism, and the existence of coproducts of complexes, computed deg
 records the basic properties of the maps
 `K.toCycles i j : K.X i ⟶ K.cycles j` induced by the differentials: they kill the cycles in degree
 `i`, commute with morphisms of complexes, vanish after a morphism from a complex concentrated in
-degree `i`, and are epimorphisms in degrees where the complex is exact. In a degree with no nonzero
-differential into it, the identification of the homology with the cycles is natural
+degree `i`, and are epimorphisms in degrees where the complex is exact; consequently, a morphism of
+complexes which is an epimorphism in degree `i` induces an epimorphism on cycles in degree `j` when
+its target is exact at `j` (`HomologicalComplex.epi_cyclesMap_of_exactAt`). In a degree with no
+nonzero differential into it, the identification of the homology with the cycles is natural
 (`HomologicalComplex.isoHomologyπ_inv_naturality`). The sequence
 `Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of cycles is exact when `j = c.next i`
 (`HomologicalComplex.cyclesShortComplex_exact`). For adjacent degrees `i` and `j`, the cycles of a
@@ -208,6 +210,15 @@ lemma epi_toCycles_of_exactAt {i j : ι} [K.HasHomology j]
   rw [← epi_comp_iff_of_isIso _ (K.cyclesIsoSc' i j (c.next j) hij rfl).hom,
     K.toCycles_cyclesIsoSc'_hom]
   exact h.epi_toCycles
+
+/-- A morphism of complexes which is an epimorphism in degree `i` induces an epimorphism on the
+cycles in degree `j`, for a relation `i → j`, when its target is exact at `j`. -/
+lemma epi_cyclesMap_of_exactAt {L : HomologicalComplex C c} (φ : K ⟶ L) {i j : ι}
+    [K.HasHomology j] [L.HasHomology j] (hij : c.Rel i j) [Epi (φ.f i)] (hL : L.ExactAt j) :
+    Epi (cyclesMap φ j) := by
+  have := epi_toCycles_of_exactAt hL (c.prev_eq' hij)
+  refine epi_of_epi_fac (f := K.toCycles i j) (h := φ.f i ≫ L.toCycles i j) ?_
+  simp [← cancel_mono (L.iCycles j)]
 
 /-- The cycle sequence `Zᵢ(K) ⟶ Kᵢ ⟶ Zⱼ(K)` is short exact when `i` and `j` are adjacent
 and `K` is exact in degree `j`. -/

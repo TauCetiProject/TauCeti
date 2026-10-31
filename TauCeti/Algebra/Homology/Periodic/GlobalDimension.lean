@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Homotopy
-public import TauCeti.Algebra.Homology.HomologicalComplex.ProjectiveCycles
+public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Cycles
 public import TauCeti.Algebra.Homology.Split
 public import TauCeti.Algebra.Homology.Periodic.HomotopicallyProjective
 

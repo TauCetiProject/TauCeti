@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.ShortComplex.Abelian
-public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 
 /-!
 # The differential onto the boundaries
@@ -28,8 +28,6 @@ boundaries and homology, used for splitting complexes and for the universal coef
 * `HomologicalComplex.toBoundariesIsCokernel`: it is then the cokernel of `Zᵢ ⟶ Kᵢ`.
 * `HomologicalComplex.ExactAt.isIso_kernel_ι_homologyπ`: at a degree where `K` is exact, the
   boundaries are all of the cycles.
-* `HomologicalComplex.epi_cyclesMap_of_exactAt`: a morphism of complexes which is an epimorphism in
-  degree `i` is an epimorphism on cycles in degree `j` if its target is exact at `j`.
 -/
 
 public section
@@ -90,13 +88,5 @@ cycles. -/
 lemma ExactAt.isIso_kernel_ι_homologyπ {j : ι} (hj : K.ExactAt j) :
     IsIso (kernel.ι (K.homologyπ j)) :=
   kernel.ι_of_zero (hj.isZero_homology.eq_of_tgt _ _)
-
-/-- A morphism of complexes which is an epimorphism in degree `i` induces an epimorphism on the
-cycles in degree `j`, for a relation `i → j`, when its target is exact at `j`. -/
-lemma epi_cyclesMap_of_exactAt {L : HomologicalComplex C c} (φ : K ⟶ L) {i j : ι}
-    (hij : c.Rel i j) [Epi (φ.f i)] (hL : L.ExactAt j) : Epi (cyclesMap φ j) := by
-  have := epi_toCycles_of_exactAt hL (c.prev_eq' hij)
-  refine epi_of_epi_fac (f := K.toCycles i j) (h := φ.f i ≫ L.toCycles i j) ?_
-  simp [← cancel_mono (L.iCycles j)]
 
 end HomologicalComplex
