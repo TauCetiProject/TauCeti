@@ -131,6 +131,15 @@ theorem finite_singularHomology_of_cwComplex [IsNoetherianRing k] [Module.Finite
   Module.Finite.equiv
     (asIso ((complexBasePair C).singularHomologyπ (C := ModuleCat.{w} k) M n)).symm.toLinearEquiv
 
+/-- The ordinary singular homology of a CW complex has the dimension of its singular homology
+relative to the empty subspace. -/
+theorem finrank_singularHomology_eq_complexBasePair (i : ℕ) :
+    finrank k (((AlgebraicTopology.singularHomologyFunctor.{w} (ModuleCat.{w} k) i).obj M).obj
+        (TopCat.of C)) =
+      finrank k ((complexBasePair C).singularHomology M i : ModuleCat k) :=
+  (asIso
+    ((complexBasePair C).singularHomologyπ (C := ModuleCat.{w} k) M i)).toLinearEquiv.finrank_eq
+
 end Ring
 
 variable {k : Type w} [DivisionRing k] (M : ModuleCat.{w} k) [Module.Finite k M]
@@ -147,8 +156,7 @@ theorem finsum_finrank_singularHomology_of_finite_cwComplex [RelCWComplex.Finite
     _ = ∑ᶠ i : ℕ, (-1 : ℤ) ^ i *
         finrank k ((complexBasePair C).singularHomology M i : ModuleCat k) :=
       finsum_congr fun i ↦ congrArg (fun d : ℕ ↦ (-1 : ℤ) ^ i * d)
-        (asIso ((complexBasePair C).singularHomologyπ
-          (C := ModuleCat.{w} k) M i)).toLinearEquiv.finrank_eq
+        (finrank_singularHomology_eq_complexBasePair C M i)
     _ = _ := finsum_finrank_singularHomology_complexBasePair C M
 
 end Absolute

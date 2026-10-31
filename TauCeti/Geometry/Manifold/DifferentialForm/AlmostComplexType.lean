@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.AlmostComplexType
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
+public import TauCeti.Geometry.Symplectic.Complex.Complexification
+public import TauCeti.Topology.Algebra.Module.Alternating.BaseChange
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 
 /-!
@@ -26,7 +28,10 @@ Mathlib's derivative `ContinuousAlternatingMap.fderivCompContinuousLinearMap` of
 identity, so it preserves smoothness. A form has type `(p,q)` for `J`
 (`TauCeti.SmoothForm.IsOfType`) when `p + q = k` and the derivation of `J` acts on it as
 multiplication by `(p - q) * I`; equivalently, `p + q = k` and its value at every point has type
-`(p,q)` for the almost complex structure of that tangent space.
+`(p,q)` for the almost complex structure of that tangent space. A one-form has type `(1,0)`
+exactly when its complex-linear extension to the complexified tangent space vanishes on the vectors
+of type `(0,1)` (the `-i`-eigenvectors of the complexification of `J`) at every point, and type
+`(0,1)` exactly when it vanishes on the vectors of type `(1,0)`.
 
 The type projections `TauCeti.SmoothAlmostComplexStructure.typeProjection J p q` are the fibrewise
 type polynomials evaluated at the derivation of `J`. Hence they are complex-linear endomorphisms
@@ -53,6 +58,9 @@ and it holds at boundary and corner points as well.
 * `TauCeti.SmoothAlmostComplexStructure.sum_typeProjection`,
   `TauCeti.SmoothAlmostComplexStructure.typeProjection_eq_of_sum_eq`: existence and uniqueness of
   the type decomposition.
+* `TauCeti.SmoothForm.isOfType_one_zero_iff_eigenspace_le_ker`,
+  `TauCeti.SmoothForm.isOfType_zero_one_iff_eigenspace_le_ker`: one-forms of type `(1,0)` and
+  `(0,1)` through their complex-linear extensions to the complexified tangent spaces.
 * `TauCeti.SmoothAlmostComplexStructure.mapCoeff_typeProjection_of_map_smul_conj`: conjugation.
 * `TauCeti.SmoothAlmostComplexStructure.mpullback_typeProjection`: pullback along
   pseudoholomorphic maps.
@@ -238,6 +246,26 @@ theorem isOfType_zero_one_iff {α : SmoothForm I M F 1} :
     α.IsOfType J 0 1 ↔ ∀ x v, α.1 x ![J x v] = -Complex.I • α.1 x ![v] := by
   simp only [isOfType_iff_forall, ContinuousAlternatingMap.isOfType_zero_one_iff, true_and]
 
+/-- A smooth one-form has type `(1,0)` exactly when, at every point, its complex-linear extension
+vanishes on the complexified tangent vectors of type `(0,1)`. -/
+theorem isOfType_one_zero_iff_eigenspace_le_ker {α : SmoothForm I M F 1} :
+    α.IsOfType J 1 0 ↔ ∀ x, Module.End.eigenspace
+      ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) (-Complex.I) ≤
+        LinearMap.ker ((α.1 x).liftBaseChangeFinOne ℂ) := by
+  simp_rw [isOfType_one_zero_iff, ContinuousAlternatingMap.liftBaseChangeFinOne_def,
+    AlmostComplexStructure.eigenspace_neg_I_le_ker_liftBaseChange_iff]
+  simp [Matrix.vec_single_eq_const]
+
+/-- A smooth one-form has type `(0,1)` exactly when, at every point, its complex-linear extension
+vanishes on the complexified tangent vectors of type `(1,0)`. -/
+theorem isOfType_zero_one_iff_eigenspace_le_ker {α : SmoothForm I M F 1} :
+    α.IsOfType J 0 1 ↔ ∀ x, Module.End.eigenspace
+      ((J.almostComplexStructureAt x).toLinearMap.baseChange ℂ) Complex.I ≤
+        LinearMap.ker ((α.1 x).liftBaseChangeFinOne ℂ) := by
+  simp_rw [isOfType_zero_one_iff, ContinuousAlternatingMap.liftBaseChangeFinOne_def,
+    AlmostComplexStructure.eigenspace_I_le_ker_liftBaseChange_iff]
+  simp [Matrix.vec_single_eq_const]
+
 end SmoothForm
 
 /-! ### The type projections -/
@@ -353,6 +381,15 @@ end SmoothForm
 namespace SmoothAlmostComplexStructure
 
 variable (J : SmoothAlmostComplexStructure I M)
+
+/-- Type projection commutes with transport across an equality of form degrees. -/
+theorem typeProjection_cast {l : ℕ} (h : k = l) (p q : ℕ) (φ : SmoothForm I M F k) :
+    J.typeProjection p q
+        (LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n) h φ) =
+      LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n) h
+        (J.typeProjection p q φ) := by
+  subst l
+  rfl
 
 /-- On one-forms, the type-`(1,0)` projection sends `α` to `(α - I • α ∘ J) / 2`. -/
 theorem typeProjection_one_zero :

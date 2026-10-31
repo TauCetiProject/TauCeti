@@ -69,6 +69,12 @@ def glueLabelEquiv : (t : DynkinType) → (ht : t.IsSimplyLaced) →
   simp only [glueLabelEquiv]
   exact (Fin.cast_val_eq_self i).symm
 
+/-- In a cyclic type-`A` alphabet the label of a class is its canonical residue. -/
+@[simp] theorem glueLabelEquiv_A_symm_apply (n : ℕ) (ht : (A n).IsSimplyLaced)
+    (x : ZMod (n + 1)) : ((A n).glueLabelEquiv ht).symm x = ⟨x.val, ZMod.val_lt x⟩ :=
+  ((A n).glueLabelEquiv ht).symm_apply_eq.mpr
+    ((glueLabelEquiv_A n ht _).trans (ZMod.natCast_zmod_val x)).symm
+
 /-- In even rank, the label is the binary pair with the vector bit first. -/
 @[simp] theorem glueLabelEquiv_D_of_even (n : ℕ) (ht : (D n).IsSimplyLaced) (hn : Even n)
     (i : Fin 4) :
@@ -108,6 +114,11 @@ def glueLabelEquiv : (t : DynkinType) → (ht : t.IsSimplyLaced) →
 /-- The only label of `E₈` is the zero class. -/
 @[simp] theorem glueLabelEquiv_E8 (ht : E8.IsSimplyLaced) (i : Fin 1) :
     E8.glueLabelEquiv ht i = 0 := Subsingleton.elim _ _
+
+/-- The glue alphabet has exactly one element for each of its labels. -/
+theorem natCard_glueAlphabet_eq_glueLabelCount (t : DynkinType) (ht : t.IsSimplyLaced) :
+    Nat.card (t.glueAlphabet ht) = t.glueLabelCount :=
+  (Nat.card_congr (t.glueLabelEquiv ht).symm).trans (Nat.card_fin _)
 
 /-- Every simply-laced component has at least the zero label. -/
 theorem glueLabelCount_pos (t : DynkinType) (ht : t.IsSimplyLaced) :

@@ -10,15 +10,27 @@ public import TauCeti.KnotTheory.ConnectedSum.Basic
 /-!
 # Interchanging the summands of a smooth connected sum
 
-The connected sums of two circle embeddings in connected-sum position, in either order,
-are smoothly isotopic. A half-turn in the distinguished complex plane exchanges the two
-hemispheres, while rotating the circle parameter by a half-turn keeps its orientation.
-The simultaneous motion is through smooth embeddings in every sphere dimension, and its collared
-trace gives a concordance between the two connected sums.
+Turning a knot over, moving it by the half-turn in the distinguished complex plane `ι ℂ` and
+rotating its circle parameter by a half-turn (`TauCeti.SmoothCircleEmbedding.turnOver`), is the end
+of a smooth isotopy through parametrized embeddings, in every sphere dimension
+(`TauCeti.SmoothCircleEmbedding.smoothIsotopic_turnOver`): the half-turn is joined to the identity
+by rotations, and the parameter is rotated alongside. Its collared trace is a concordance.
+These general turnover results are proved in `TauCeti.KnotTheory.ConnectedSum.Basic`.
 
-The conclusion concerns the parametrized embeddings, not just their images. It supplies the
-commutativity input for connected sum on knot classes, without asserting that arbitrary knots
-have been put in connected-sum position or that the operation is independent of that choice.
+Two consequences for knots in connected-sum position:
+
+* the connected sum with the great circle on the left is the turned-over knot, so **the great
+  circle is a left unit up to concordance**
+  (`TauCeti.SmoothCircleEmbedding.concordant_greatCircle_connectedSum`); it is a right unit on the
+  nose (`TauCeti.SmoothCircleEmbedding.connectedSum_greatCircle`);
+* the half-turn exchanges the two hemispheres, so turning `K₁ # K₂` over gives `K₂ # K₁`, and **the
+  connected sum is commutative** up to smooth isotopy and concordance
+  (`TauCeti.SmoothCircleEmbedding.smoothIsotopic_connectedSum_comm`,
+  `TauCeti.SmoothCircleEmbedding.concordant_connectedSum_comm`).
+
+The conclusions concern the parametrized embeddings, not just their images. They supply the unit
+and commutativity inputs for connected sum on concordance classes, without asserting that the
+operation is independent of the choice of representatives in connected-sum position.
 
 ## References
 
@@ -60,60 +72,25 @@ theorem turnOver_connectedSum {K₁ K₂ :
       neg_neg, Submodule.reflection_reflection,
       connectedSum_apply_of_im_nonneg _ _ hz.le]
 
+/-- **The great circle is a left unit up to concordance**: the connected sum of the great circle
+with a knot `K` in connected-sum position is concordant to `K`. On the right the great circle is a
+unit on the nose (`TauCeti.SmoothCircleEmbedding.connectedSum_greatCircle`). -/
+theorem concordant_greatCircle_connectedSum {K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
+    (h₀ : IsConnectedSumPosition ι (greatCircle ι)) (h : IsConnectedSumPosition ι K) :
+    SmoothEmbedding.Concordant (connectedSum (greatCircle ι) K h₀ h) K := by
+  have hK : connectedSum (greatCircle ι) K h₀ h = turnOver ι K := by
+    ext z : 2
+    simp [greatCircle_connectedSum]
+  exact hK ▸ (concordant_turnOver ι K).symm
+
 /-- Connected sum of knots in connected-sum position is commutative up to a jointly smooth
 isotopy through parametrized embeddings. No change of the knots' orientations is made. -/
 theorem smoothIsotopic_connectedSum_comm {K₁ K₂ :
     SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
     (h₁ : IsConnectedSumPosition ι K₁) (h₂ : IsConnectedSumPosition ι K₂) :
     SmoothIsotopic (connectedSum K₁ K₂ h₁ h₂).toContMDiffMap
-      (connectedSum K₂ K₁ h₂ h₁).toContMDiffMap := by
-  apply smoothIsotopic_def.mpr
-  obtain ⟨R, hR, hR0, hR1⟩ := ι.exists_contDiff_path_reflection_orthogonal_range
-  let K := connectedSum K₁ K₂ h₁ h₂
-  let a : unitInterval → Circle := fun t => Circle.exp (Real.pi * t)
-  have ha : ContMDiff (𝓡∂ 1) (𝓡 1) ∞ a :=
-    contMDiff_circleExp.comp
-      (contMDiff_const.mul (contMDiff_subtypeVal_Icc (x := 0) (y := 1)))
-  have ha0 : a 0 = 1 := by simp [a]
-  have ha1 : a 1 = -1 := by
-    apply Subtype.ext
-    simp [a, Circle.coe_exp, Complex.exp_pi_mul_I]
-  let F : unitInterval × Circle → sphere (0 : E) 1 := fun p =>
-    (R p.1).unitSphereDiffeomorph (n := n) (k := n) ∞ (K (a p.1 * p.2))
-  have hs : ContMDiff ((𝓡∂ 1).prod (𝓡 1)) (𝓡 n) ∞ F := by
-    have hK : ContMDiff ((𝓡∂ 1).prod (𝓡 1)) 𝓘(ℝ, E) ∞
-        (fun p : unitInterval × Circle => (K (a p.1 * p.2) : E)) :=
-      contMDiff_coe_sphere.comp
-        (K.contMDiff.comp ((ha.comp contMDiff_fst).mul contMDiff_snd))
-    have ht : ContMDiff ((𝓡∂ 1).prod (𝓡 1)) 𝓘(ℝ) ∞
-        (fun p : unitInterval × Circle => (p.1 : ℝ)) :=
-      (contMDiff_subtypeVal_Icc (x := 0) (y := 1)).comp contMDiff_fst
-    have hambient := hR.comp_contMDiff (ht.prodMk_space hK)
-    have hcoe : (fun p => (F p : E)) =
-        (fun p => R (p.1 : ℝ) (K (a p.1 * p.2))) := by
-      funext p
-      exact LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply _ _
-    have hmem (p : unitInterval × Circle) : (F p : E) ∈ sphere (0 : E) 1 := (F p).property
-    simp only [Function.comp_def] at hambient
-    rw [← hcoe] at hambient
-    exact hambient.codRestrict_sphere hmem
-  refine ⟨{ toContMDiffMap := ⟨F, hs⟩
-            map_zero_left := ?_
-            map_one_left := ?_
-            isSmoothEmbedding := ?_ }⟩
-  · intro z
-    apply Subtype.ext
-    simp [F, ha0, hR0, K]
-  · intro z
-    have heq := congrArg (fun L : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1) => (L z : E))
-      (turnOver_connectedSum ι h₁ h₂)
-    apply Subtype.ext
-    simpa [coe_turnOver_apply, F, ha1, hR1, K] using heq
-  · intro t
-    have hslice := (K.rotate (a t)).transDiffeomorph
-      ((R t).unitSphereDiffeomorph (n := n) (k := n) ∞) |>.isSmoothEmbedding
-    simpa only [SmoothEmbedding.coe_transDiffeomorph, Function.comp_def,
-      rotate_apply, F, ContMDiffMap.coeFn_mk] using hslice
+      (connectedSum K₂ K₁ h₂ h₁).toContMDiffMap :=
+  turnOver_connectedSum ι h₁ h₂ ▸ smoothIsotopic_turnOver ι _
 
 /-- Connected sum of knots in connected-sum position is commutative up to smooth concordance. -/
 theorem concordant_connectedSum_comm {K₁ K₂ :

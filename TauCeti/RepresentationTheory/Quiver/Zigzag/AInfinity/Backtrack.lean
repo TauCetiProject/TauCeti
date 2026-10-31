@@ -217,7 +217,8 @@ theorem zigzagLoopAInfinityAlgebra_zigzagBacktrackCoefficients_m_four
     (zigzagLoopAInfinityAlgebra hns (zigzagBacktrackCoefficients P a) hc).m 4 =
       ∑ p ∈ P, a p • (zigzagLoopOperation k G hns (zigzagBacktrackWalk G p.1 p.2) +
         zigzagLoopOperation k G hns (fun i ↦ zigzagBacktrackWalk G p.1 p.2 (i + 1))) := by
-  rw [zigzagLoopAInfinityAlgebra_m_four, zigzagBacktrackCoefficients, map_sum]
+  rw [zigzagLoopAInfinityAlgebra_m_eq_linearCombination (n := 4) _ _ (by norm_num),
+    zigzagBacktrackCoefficients, map_sum]
   simp [smul_add]
 
 /-- **The coboundary of the backtrack cochain** is the quartic operation of the loop deformation
@@ -544,7 +545,7 @@ private theorem taylor_zigzagLoopAInfinityAlgebra_subword_four_mem {n : ℕ}
     (zigzagLoopAInfinityAlgebra hns c hc).taylor (subword k x s 4) ∈ zigzagIntegerGrade k G 2 := by
   by_cases h : s + 4 ≤ n
   · rw [subword_eq_of_tprod k x (by norm_num) h, AInfinityAlgebra.taylor_of_tprod]
-    exact zigzagLoopAInfinityAlgebra_m_four_mem _ hc _
+    exact zigzagLoopAInfinityAlgebra_m_mem _ hc (by norm_num) _
   · rw [subword_eq_zero_of_lt_add k x (by omega), map_zero]
     exact zero_mem _
 
