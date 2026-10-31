@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.Orientation
-public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.Nijenhuis
 import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
@@ -67,6 +66,13 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M]
 
+/-- The real tangent coordinate changes of a complex manifold are complex linear. -/
+private lemma tangentCoordChange_complex_smul {x y z : M}
+    (h : z ∈ (chartAt E x).source ∩ (chartAt E y).source) (c : ℂ) (w : E) :
+    tangentCoordChange 𝓘(ℝ, E) x y z (c • w) = c • tangentCoordChange 𝓘(ℝ, E) x y z w := by
+  rw [tangentCoordChange_restrictScalars ℝ (𝕜' := ℂ) h, ContinuousLinearMap.coe_restrictScalars',
+    map_smul]
+
 namespace SmoothAlmostComplexStructure
 
 variable (E M) in
@@ -86,15 +92,13 @@ def ofComplexManifold : SmoothAlmostComplexStructure 𝓘(ℝ, E) M where
         (fun x : M ↦ (Complex.I • ContinuousLinearMap.id ℝ E :
           TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, E) x)) hx hx).trans
         (ContinuousLinearMap.ext fun v ↦ ?_)
-      have hsmul (w : E) : tangentCoordChange 𝓘(ℝ, E) x x₀ x (Complex.I • w) =
-          Complex.I • tangentCoordChange 𝓘(ℝ, E) x x₀ x w := by
-        rw [tangentCoordChange_restrictScalars ℝ (𝕜' := ℂ) ⟨mem_chart_source E x, hx⟩,
-          ContinuousLinearMap.coe_restrictScalars', map_smul]
       have hx' : x ∈ (extChartAt 𝓘(ℝ, E) x₀).source ∩ (extChartAt 𝓘(ℝ, E) x).source ∩
           (extChartAt 𝓘(ℝ, E) x₀).source := by
         simp [hx]
-      exact (hsmul _).trans (congrArg (Complex.I • ·)
-        ((tangentCoordChange_comp hx').trans (tangentCoordChange_self (by simp [hx]))))⟩
+      simp only [ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply]
+      exact (tangentCoordChange_complex_smul ⟨mem_chart_source E x, hx⟩ _ _).trans
+        (congrArg (Complex.I • ·)
+          ((tangentCoordChange_comp hx').trans (tangentCoordChange_self (by simp [hx]))))⟩
   square_neg x := ContinuousLinearMap.ext fun v ↦ by
     simp only [ContinuousLinearMap.comp_apply]
     -- The tangent space at `x` is the model space `E`, where `I • I • w = -w`.
@@ -136,7 +140,10 @@ theorem isPseudoholomorphicWithinAt_ofComplexManifold_iff :
     -- it commutes with `I`, so it is complex linear.
     let u₀ : E →L[ℝ] E' := u
     -- By `ofComplexManifold_apply`, both structures act on `E` and `E'` as multiplication by `I`.
-    have hI (w : E) : u₀ (Complex.I • w) = Complex.I • u₀ w := hJ' w
+    have hI (w : E) : u₀ (Complex.I • w) = Complex.I • u₀ w := by
+      have h := hJ' w
+      rwa [ofComplexManifold_apply (E := E) x w,
+        ofComplexManifold_apply (E := E') (f x) (u w)] at h
     let L : E →L[ℂ] E' :=
       { toFun := u₀
         map_add' := u₀.map_add
@@ -153,7 +160,9 @@ theorem isPseudoholomorphicWithinAt_ofComplexManifold_iff :
     refine ⟨u, h.hasMFDerivWithinAt.restrictScalars ℝ rfl,
       (isComplexLinearMap_iff_apply _ _ _).mpr fun w ↦ ?_⟩
     rw [almostComplexStructureAt_apply, almostComplexStructureAt_apply]
-    exact (mfderivWithin 𝓘(ℂ, E) 𝓘(ℂ, E') f s x).map_smul Complex.I w
+    exact (congrArg u (ofComplexManifold_apply (E := E) x w)).trans
+      (((mfderivWithin 𝓘(ℂ, E) 𝓘(ℂ, E') f s x).map_smul Complex.I w).trans
+        (ofComplexManifold_apply (E := E') (f x) (u w)).symm)
 
 /-- A map between complex manifolds is pseudoholomorphic at a point, for their almost complex
 structures, exactly when it is holomorphic at that point. -/
@@ -200,11 +209,9 @@ private lemma mpullbackWithin_ofComplexManifold_eventuallyEq
     TangentBundle.trivializationAt_apply_tangentCoordChange]
   have h : y ∈ (chartAt E y).source ∩ (chartAt E x).source := by
     simpa using hy
-  have hsmul (w : E) : tangentCoordChange 𝓘(ℝ, E) y x y (Complex.I • w) =
-      Complex.I • tangentCoordChange 𝓘(ℝ, E) y x y w := by
-    rw [tangentCoordChange_restrictScalars ℝ (𝕜' := ℂ) h, ContinuousLinearMap.coe_restrictScalars',
-      map_smul]
-  exact hsmul (V y)
+  rw [smul_apply, ContinuousLinearMap.id_apply]
+  exact (congrArg (tangentCoordChange 𝓘(ℝ, E) y x y)
+    (ofComplexManifold_apply (E := E) y (V y))).trans (tangentCoordChange_complex_smul h _ _)
 
 variable [FiniteDimensional ℂ E]
 
