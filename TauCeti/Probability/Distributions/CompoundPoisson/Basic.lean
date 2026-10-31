@@ -10,7 +10,7 @@ public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Probability.Distributions.Poisson.Basic
 public import TauCeti.Probability.Distributions.Poisson.Measurability
-public import TauCeti.MeasureTheory.Group.ConvolutionPower
+public import TauCeti.MeasureTheory.Group.Convolution.Power
 import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 
 /-!

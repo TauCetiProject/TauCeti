@@ -14,7 +14,8 @@ A functional `f` with `f x = 1` splits a module into the line through `x` and th
 This file records the projection `id - f(·) • x` that this splitting defines, and the dimension
 count for the trace of `ker f` on a subspace on which `f` does not vanish.
 A codimension-one subspace, even in an infinite-dimensional ambient space, is the kernel
-of a nonzero functional.
+of a nonzero functional. Since functionals separate points, a vector space whose endomorphism
+algebra is finite-dimensional is itself finite-dimensional.
 Over a field, a linearly independent family of vectors has a biorthogonal family of functionals,
 and on a finite-dimensional space a linearly independent family of functionals has a biorthogonal
 family of vectors.
@@ -30,6 +31,8 @@ family of vectors.
   codimension one.
 * `Submodule.exists_dual_ker_eq_of_finrank_quotient_eq_one`: every codimension-one subspace
   is the kernel of a nonzero functional.
+* `Module.Finite.of_finite_end`: a vector space is finite-dimensional once its endomorphism
+  algebra is.
 * `LinearIndependent.exists_dual_forall_apply_eq_ite`: a linearly independent family of vectors
   has a biorthogonal family of functionals, `f i (v j) = if i = j then 1 else 0`.
 * `LinearIndependent.exists_forall_apply_eq_ite_of_dual`: on a finite-dimensional space, a linearly
@@ -105,6 +108,23 @@ theorem exists_dual_ker_eq_of_finrank_quotient_eq_one (W : Submodule K V)
     simp
 
 end Submodule
+
+namespace Module.Finite
+
+/-- A vector space whose endomorphism algebra is finite-dimensional is finite-dimensional: for
+`x ≠ 0`, evaluation at `x` maps `End_K S` onto `S`. -/
+theorem of_finite_end (K S : Type*) [Field K] [AddCommGroup S] [Module K S]
+    [Module.Finite K (Module.End K S)] : Module.Finite K S := by
+  rcases subsingleton_or_nontrivial S with _ | _
+  · infer_instance
+  obtain ⟨x, hx⟩ := exists_ne (0 : S)
+  obtain ⟨φ, hφ⟩ : ∃ φ : Dual K S, φ x ≠ 0 := by
+    by_contra! h
+    exact hx ((forall_dual_apply_eq_zero_iff K x).1 h)
+  exact Module.Finite.of_surjective (LinearMap.applyₗ x)
+    fun y ↦ ⟨(φ x)⁻¹ • φ.smulRight y, by simp [hφ]⟩
+
+end Module.Finite
 
 namespace LinearIndependent
 

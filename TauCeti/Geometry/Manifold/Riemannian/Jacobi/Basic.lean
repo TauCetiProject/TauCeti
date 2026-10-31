@@ -97,25 +97,16 @@ theorem IsJacobiFieldOn.differentiableWithinAt_sectionCoord
 theorem IsJacobiFieldOn.contMDiffOn_alongCurveWithin (h : IsJacobiFieldOn I γ V s) :
     ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1
       (fun r ↦ TotalSpace.mk' E (γ r)
-        (alongCurveWithin (leviCivitaConnection I M) γ V s r)) s := by
-  let : IsManifold I (1 + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let : IsManifold I (1 + 1 + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  let : ContMDiffVectorBundle (1 + 1) E (TangentSpace I : M → Type _) I :=
-    TangentBundle.contMDiffVectorBundle
-  exact CovariantDerivative.contMDiffOn_alongCurveWithin (n := 1)
-    (leviCivitaConnection I M) γ V
-    (fun x ↦ contMDiffCovariantDerivativeOn_leviCivitaConnection
-      (m := ∞) (k := ∞) (trivializationAt E (TangentSpace I) x).open_baseSet
-      (by simp) (by simp)) h.uniqueDiffOn h.contMDiffOn
+        (alongCurveWithin (leviCivitaConnection I M) γ V s r)) s :=
+  contMDiffOn_alongCurveWithin_leviCivitaConnection h.uniqueDiffOn h.contMDiffOn
 
 /-- The covariant derivative has differentiable coordinate readings within the parameter set. -/
 theorem IsJacobiFieldOn.differentiableWithinAt_sectionCoord_alongCurveWithin
     (h : IsJacobiFieldOn I γ V s) (ht : t ∈ s) :
     DifferentiableWithinAt ℝ
       (sectionCoord (F := E) γ (alongCurveWithin (leviCivitaConnection I M) γ V s) (γ t)) s t :=
-  TauCeti.Manifold.differentiableWithinAt_sectionCoord γ _
-    ((h.contMDiffOn_alongCurveWithin t ht).mdifferentiableWithinAt one_ne_zero)
-    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
+  differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection
+    h.uniqueDiffOn h.contMDiffOn ht
 
 /-- The Jacobi equation solved for the second covariant derivative. -/
 theorem IsJacobiFieldOn.alongCurveWithin_alongCurveWithin_eq

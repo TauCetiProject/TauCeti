@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Split.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
-import TauCeti.GroupTheory.GroupAction.Stabilizer
+import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
