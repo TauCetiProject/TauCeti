@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Gram.Factor
 public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
-public import TauCeti.Analysis.Normed.Operator.LinearIsometry
 
 /-!
 # The canonical finite-dimensional polar factor
