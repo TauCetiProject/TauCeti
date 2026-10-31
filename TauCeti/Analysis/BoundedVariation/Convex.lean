@@ -403,14 +403,11 @@ theorem _root_.MeasureTheory.NullMeasurableSet.exists_isBounded_perimeter_approx
   have htP (n : ℕ) : perimeter μ ⊤ (t n) ≤ perimeter μ ⊤ s :=
     perimeter_inter_biInter_halfSpace_le g (fun _ => n) Finset.univ hs hμs
   have htb (n : ℕ) : Bornology.IsBounded (t n) := by
-    refine isBounded_iff_forall_norm_le.2 ⟨Module.finrank ℝ E * n,
-      fun x hx => ?_⟩
-    calc ‖x‖ = ‖∑ i, ⟪b i, x⟫_ℝ • b i‖ := by rw [b.sum_repr']
-      _ ≤ ∑ i, ‖⟪b i, x⟫_ℝ • b i‖ := norm_sum_le _ _
-      _ ≤ ∑ _i : Fin (Module.finrank ℝ E), (n : ℝ) := Finset.sum_le_sum fun i _ => by
-        rw [norm_smul, b.orthonormal.1 i, mul_one, Real.norm_eq_abs]
-        exact (hQ n x).1 hx.2 i
-      _ = _ := by simp
+    refine isBounded_iff_forall_norm_le.2 ⟨√(Module.finrank ℝ E) * n, fun x hx => ?_⟩
+    refine (b.norm_le_card_mul_iSup_norm_inner x).trans ?_
+    rw [Fintype.card_fin]
+    gcongr
+    exact Real.iSup_le (fun i => (Real.norm_eq_abs _).trans_le ((hQ n x).1 hx.2 i)) n.cast_nonneg
   -- The remainders `s \ Q n` decrease to the empty set.
   have hlim : Tendsto (fun n => μ (s \ t n)) atTop (𝓝 0) := by
     have hdiff (n : ℕ) : s \ t n = s \ Q n := by simp [t]
