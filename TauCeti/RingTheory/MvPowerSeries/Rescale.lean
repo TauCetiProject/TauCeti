@@ -14,7 +14,9 @@ public import TauCeti.Analysis.Normed.Ring.MulUnit
 
 This file records general facts about Mathlib's coefficientwise rescaling of multivariate
 power series. Rescaling by multiplicative units transports weighted coefficient norms, and hence
-restrictedness, when the weights are changed by the corresponding scalar norms. Rescaling by a
+restrictedness, when the weights are changed by the corresponding scalar norms; in particular,
+rescaling by the inverses of multiplicative units `uᵢ` turns the weighted coefficient norms at the
+radii `‖uᵢ‖⁻¹` into plain coefficient norms. Rescaling by a
 family of units and then by their inverses is the identity. Substituting a family into a rescaled
 power series is substituting the rescaled family: `f(a X)` at `X = v` is `f(a v)`; in particular,
 `s • g = f(s X)` gives `s • g(v) = f(s v)`.
@@ -60,6 +62,19 @@ theorem isRestricted_rescale_iff (u : σ → R) (hu : ∀ i, IsNormMulUnit (u i)
   unfold IsRestricted
   apply tendsto_congr'
   exact .of_forall (norm_coeff_rescale_mul_prod u hu hrs f)
+
+/-- **Weight bounds from multiplicative units.** If each `u i` is a multiplicative unit and
+`‖u i‖ * r i = 1`, then rescaling by the inverse units turns the weighted coefficient norms at the
+radii `r` into plain coefficient norms: the coefficient of `f(u⁻¹ X)` at `n` has norm
+`‖coeff n f‖ * rⁿ`. -/
+theorem norm_coeff_rescale_units_inv (u : σ → Rˣ) (hu : ∀ i, IsNormMulUnit (u i : R))
+    (hr : ∀ i, ‖(u i : R)‖ * r i = 1) (f : MvPowerSeries σ R) (n : σ →₀ ℕ) :
+    ‖coeff n (rescale (fun i ↦ (((u i)⁻¹ : Rˣ) : R)) f)‖ = ‖coeff n f‖ * n.prod (r · ^ ·) := by
+  have hinv (i : σ) : ‖(((u i)⁻¹ : Rˣ) : R)‖ * 1 = r i := by
+    have hu0 : ‖(u i : R)‖ ≠ 0 := left_ne_zero_of_mul_eq_one (hr i)
+    rw [mul_one, NormedRing.norm_units_inv_of_norm_mul hu0 (hu i).norm_mul,
+      inv_eq_of_mul_eq_one_right (hr i)]
+  simpa [Finsupp.prod] using norm_coeff_rescale_mul_prod _ (fun i ↦ (hu i).units_inv) hinv f n
 
 /-- Rescaling by a family of units and then by their inverses is the identity. -/
 theorem rescale_inv_rescale {A : Type*} [CommSemiring A] (u : σ → Aˣ) (f : MvPowerSeries σ A) :
