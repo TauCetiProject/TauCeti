@@ -424,8 +424,6 @@ inflated class: `infl (N_{U/N}^{G/N} x) = N_U^G (infl x)`, after transporting th
 `[G ⧸ N : U / N] = [G : U]`. -/
 theorem trivialF2Map_quotientMkContinuousMonoidHom_evensNorm {N : Subgroup G} [N.Normal]
     (hNU : N ≤ U.toSubgroup)
-    [(Subgroup.quotientOpenSubgroup N U).toSubgroup.FiniteIndex]
-    [CompactSpace (Subgroup.quotientOpenSubgroup N U).toSubgroup]
     [Fintype ((G ⧸ N) ⧸ (Subgroup.quotientOpenSubgroup N U).toSubgroup)] {n : ℕ}
     (x : continuousCohomology n (trivialF2 (Subgroup.quotientOpenSubgroup N U).toSubgroup)) :
     trivialF2Map (Subgroup.quotientMkContinuousMonoidHom N)
