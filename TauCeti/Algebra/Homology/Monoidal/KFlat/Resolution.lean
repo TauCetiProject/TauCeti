@@ -35,9 +35,11 @@ cone. The cone is an extension of the shift of `E` by `P`, split in each degree,
 again K-flat. The colimit of the resulting sequence is K-flat, and its map to `K` is a
 quasi-isomorphism because cohomology commutes with sequential colimits.
 
-Given covers `p X : E X ⟶ X` of all objects, this colimit is `CochainComplex.kFlatResolution`,
-with the quasi-isomorphism `CochainComplex.kFlatResolution.π` to `K`. Every term of every stage
-is built from the objects `E X` by binary biproducts
+Given morphisms `p X : E X ⟶ X` for all objects `X`, this colimit is
+`CochainComplex.kFlatResolution`, with the morphism `CochainComplex.kFlatResolution.π` to `K`. It
+is a quasi-isomorphism when every `p X` is an epimorphism and sequential colimits are exact, and
+the colimit is K-flat when every `E X` is flat and the exactness conditions above hold. Every
+term of every stage is built from the objects `E X` by binary biproducts
 (`CochainComplex.kFlatResolution.prop_sequence_obj_X`). The stages, their transition maps and
 their morphisms to `K` are computed by `CochainComplex.kFlatResolution.sequence_obj_succ`,
 `CochainComplex.kFlatResolution.sequence_map_succ` and
@@ -142,17 +144,19 @@ section Sequence
 
 variable (E : C → C) (p : ∀ X, E X ⟶ X) (K : CochainComplex C ℤ)
 
-/-- The stages of the resolution, each with its morphism to `K`: first the complex of flat covers
-of the cycles of `K`, then repeatedly the complex obtained by attaching cells along all pairs of
-a cycle and a primitive of its image. -/
+/-- The stages of the resolution, each with its morphism to `K`: first the complex with zero
+differentials of the objects `E (K.cycles n)`, mapping to `K` through `p`, then repeatedly the
+complex obtained by attaching cells along the morphisms `p` to the objects of pairs of a cycle
+and a primitive of its image. -/
 @[expose] public def stage : ℕ → Σ P : CochainComplex C ℤ, P ⟶ K
   | 0 => ⟨graded (.up ℤ) fun n ↦ E (K.cycles n), K.fromGraded fun n ↦ p (K.cycles n)⟩
   | k + 1 => ⟨mappingCone (attachingMap (stage k).2 fun n ↦ p (boundaryPairs (stage k).2 n)),
       attachDesc (stage k).2 fun n ↦ p (boundaryPairs (stage k).2 n)⟩
 
-/-- The sequence of stages of the resolution `kFlatResolution E p K`: first the complex of
-covers `p` of the cycles of `K`, then repeatedly the complex obtained by attaching cells along
-the covers of all pairs of a cycle and a primitive of its image in `K`. -/
+/-- The sequence of stages of the resolution `kFlatResolution E p K`: first the complex with
+zero differentials of the objects `E (K.cycles n)`, then repeatedly the complex obtained by
+attaching cells along the morphisms `p` to the objects of pairs of a cycle and a primitive of its
+image in `K`. -/
 @[expose] public def sequence : ℕ ⥤ CochainComplex C ℤ :=
   Functor.ofSequence (X := fun k ↦ (stage E p K k).1) fun k ↦ mappingCone.inr
     (attachingMap (stage E p K k).2 fun n ↦ p (boundaryPairs (stage E p K k).2 n))
@@ -266,13 +270,17 @@ section Resolution
 
 variable [HasColimitsOfShape ℕ C] (E : C → C) (p : ∀ X, E X ⟶ X) (K : CochainComplex C ℤ)
 
-/-- The K-flat resolution of `K` with respect to the covers `p X : E X ⟶ X`: the colimit of the
-stages `kFlatResolution.sequence E p K`, obtained by attaching cells. -/
+/-- The colimit of the stages `kFlatResolution.sequence E p K`, obtained by attaching cells along
+the morphisms `p X : E X ⟶ X`. It is K-flat when every `E X` is flat and countable coproducts and
+sequential colimits are exact and commute with tensor products
+(`CochainComplex.isKFlat_kFlatResolution`), and it resolves `K` when every `p X` is an
+epimorphism and sequential colimits are exact (`CochainComplex.kFlatResolution.quasiIso_π`). -/
 public abbrev kFlatResolution : CochainComplex C ℤ :=
   colimit (kFlatResolution.sequence E p K)
 
-/-- The morphism from the K-flat resolution of `K` to `K`, a quasi-isomorphism when every
-`p X` is an epimorphism (`CochainComplex.kFlatResolution.quasiIso_π`). -/
+/-- The morphism from `kFlatResolution E p K` to `K`, a quasi-isomorphism when sequential
+colimits in `C` are exact and every `p X` is an epimorphism
+(`CochainComplex.kFlatResolution.quasiIso_π`). -/
 public def kFlatResolution.π : kFlatResolution E p K ⟶ K :=
   colimit.desc _ (Cocone.mk K (kFlatResolution.toComplex E p K))
 
