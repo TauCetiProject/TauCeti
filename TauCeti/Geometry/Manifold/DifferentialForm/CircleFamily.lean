@@ -12,20 +12,28 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 public import TauCeti.Geometry.Manifold.Instances.CircleFamily
 
 /-!
-# The angle form and the time form of the family of positive-period circles
+# The angle, time and total forms of the family of positive-period circles
 
 The total family `C = {(p, x) : p > 0, x ∈ AddCircle p}` (`TauCeti.CircleFamily`) is normalized
 to `ℝ_{>0} × AddCircle 1` by `N(p, x) = (p, D_(p,1) x)`. This file puts on `C` the two one-forms
-that extend the time forms `dt_p` of the individual circles across the family.
+that extend the time forms `dt_p` of the individual circles across the family, and the two-form
+that orients it.
 
 * The **angle form** `β = (pr₂ ∘ N)^* dt_1` (`TauCeti.CircleFamily.angleForm`) is the pullback of
   the time form of the unit-period circle along the normalized angle. It is closed, and it
   restricts on the circle of period `p` to `p⁻¹ • dt_p`.
 * The **time form** `η = p • β` (`TauCeti.CircleFamily.timeForm`) restricts on the circle of
   period `p` to its time form `dt_p`. It is not closed: its exterior derivative is `dp ∧ β`.
+* The **total form** `dp ∧ η` (`TauCeti.CircleFamily.totalForm`) vanishes nowhere. On the circle
+  of period `p` it pairs a tangent vector `u` of the family with a tangent vector `w` of the circle
+  to `dp(u) * dt_p(w)`, so it orients the family by the base direction followed by the fiber
+  direction (`TauCeti.CircleFamily.orientation`).
 
 On the real cover `Q(p, t) = (p, [t]_p)` (`TauCeti.CircleFamily.representative`) the angle form is
-the differential of the normalized time `t / p`, and the time form is `dt - (t / p) • dp`.
+the differential of the normalized time `t / p`, and the time form is `dt - (t / p) • dp`. This
+pullback is invariant under the deck translations `(p, t) ↦ (p, t + k p)`: the derivative `k dp` of
+the translated time coordinate is cancelled by the change `k dp` of `(t / p) • dp`. Moreover
+`Q^*(dη) = p⁻¹ • (dp ∧ dt)` and `Q^*(dp ∧ η) = dp ∧ dt`.
 
 The fiber restrictions alone do not determine `η`: adding the pullback of a one-form on the
 positive base does not change them. The normalization by `N`, under which `β` annihilates the
@@ -35,6 +43,7 @@ direction in which the normalized angle is constant, fixes the extension.
 
 * `TauCeti.CircleFamily.angleForm`: the angle form `β = (pr₂ ∘ N)^* dt_1`.
 * `TauCeti.CircleFamily.timeForm`: the time form `η = p • β`.
+* `TauCeti.CircleFamily.totalForm`: the total form `dp ∧ η`.
 
 ## Main results
 
@@ -47,6 +56,14 @@ direction in which the normalized angle is constant, fixes the extension.
 * `TauCeti.CircleFamily.mpullback_representative_angleForm`,
   `TauCeti.CircleFamily.mpullback_representative_timeForm`: on the real cover,
   `Q^* β = d(t / p)` and `Q^* η = dt - (t / p) • dp`.
+* `TauCeti.CircleFamily.mpullback_deck_mpullback_representative`: forms pulled back to the real
+  cover, such as `Q^* η`, are invariant under the deck translations.
+* `TauCeti.CircleFamily.mpullback_representative_mextDeriv_timeForm`: `Q^*(dη) = p⁻¹ • (dp ∧ dt)`.
+* `TauCeti.CircleFamily.mpullback_representative_totalForm`,
+  `TauCeti.CircleFamily.eval₂_totalForm_mfderiv_representative`: `Q^*(dp ∧ η) = dp ∧ dt`.
+* `TauCeti.CircleFamily.totalForm_apply_ne_zero`: the total form vanishes nowhere.
+* `TauCeti.CircleFamily.eval₂_totalForm_mfderiv_mk`: on a fiber, the total form is
+  `dp(u) * dt_p(w)`.
 -/
 
 public section
@@ -240,6 +257,196 @@ theorem mpullback_representative_timeForm :
   simp only [mpullback_apply] at hv ⊢
   rw [timeForm_apply, hv, Pi.sub_apply, hprod]
   simp
+
+/-- The period of a real representative is its first coordinate. -/
+private theorem period_comp_representative :
+    (fun z : CircleFamily ↦ (z.period : ℝ)) ∘ representative = fun z ↦ (z.1 : ℝ) :=
+  funext fun z ↦ congrArg Subtype.val (period_representative z)
+
+/-- Every form pulled back to the real cover `Q(p, t) = (p, [t]_p)` is invariant under the deck
+translations `(p, t) ↦ (p, t + k p)`, which fix `Q`. For the time form this is the invariance of
+`Q^* η = dt - (t / p) • dp`. -/
+theorem mpullback_deck_mpullback_representative {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {l : ℕ} (k : ℤ) (φ : RoughForm (𝓘(ℝ).prod 𝓘(ℝ)) CircleFamily F l) :
+    mpullback (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ))
+        (fun z : PositivePeriod × ℝ ↦ (z.1, z.2 + k * (z.1 : ℝ)))
+        (mpullback (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ)) representative φ) =
+      mpullback (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ)) representative φ := by
+  have hdeck : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ)) ∞
+      fun z : PositivePeriod × ℝ ↦ (z.1, z.2 + k * (z.1 : ℝ)) :=
+    contMDiff_fst.prodMk
+      (contMDiff_snd.add (contMDiff_const.mul (contMDiff_subtype_val.comp contMDiff_fst)))
+  have hcomp : representative ∘ (fun z : PositivePeriod × ℝ ↦ (z.1, z.2 + k * (z.1 : ℝ))) =
+      representative :=
+    funext fun z ↦ representative_add_intCast_mul z.1 z.2 k
+  rw [← mpullback_comp (hdeck.mdifferentiable (by simp))
+    ((contMDiff_representative ∞).mdifferentiable (by simp)), hcomp]
+
+/-- On the real cover `Q(p, t) = (p, [t]_p)`, the exterior derivative of the time form is
+`Q^*(dη) = p⁻¹ • (dp ∧ dt)`. -/
+theorem mpullback_representative_mextDeriv_timeForm :
+    mpullback (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ)) representative (mextDeriv timeForm.1) =
+      fun z ↦ (z.1 : ℝ)⁻¹ •
+        RoughForm.wedge
+          (mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ))
+            fun z : PositivePeriod × ℝ ↦ (z.1 : ℝ)))
+          (mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ))
+            fun z : PositivePeriod × ℝ ↦ z.2)) z := by
+  have hQ := (contMDiff_representative (n := ∞)).mdifferentiable (by simp)
+  rw [mextDeriv_timeForm, mpullback_wedge, mpullback_mextDeriv_ofFunction hQ
+    (contMDiff_periodReal (n := 1).mdifferentiable one_ne_zero), mpullback_representative_angleForm,
+    period_comp_representative]
+  funext z
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  -- The product rule for `t = p * (t / p)` expresses `dt` through `dp` and `d(t / p)`.
+  have hprod := mextDeriv_ofFunction_mul (x := z)
+    (f := fun z : PositivePeriod × ℝ ↦ (z.1 : ℝ)) (g := fun z ↦ z.2 / (z.1 : ℝ))
+    ((contMDiff_subtype_val.comp contMDiff_fst (n := ∞)).mdifferentiable (by simp) z)
+    (contMDiff_normalizedTime (n := ∞).mdifferentiable (by simp) z)
+  have ht : (fun z : PositivePeriod × ℝ ↦ (z.1 : ℝ)) * (fun z ↦ z.2 / (z.1 : ℝ)) =
+      fun z ↦ z.2 := by
+    funext z
+    simp [mul_div_cancel₀ _ z.1.property.ne']
+  rw [ht] at hprod
+  have hv : v = ![v 0, v 1] := by
+    ext i
+    fin_cases i <;> rfl
+  rw [hv, ContinuousAlternatingMap.smul_apply, RoughForm.wedge_apply_one_one,
+    RoughForm.wedge_apply_one_one, hprod]
+  have hp : (z.1 : ℝ) ≠ 0 := z.1.property.ne'
+  simp only [ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+  field_simp
+  ring
+
+/-! ### The total form -/
+
+/-- The **total form** `dp ∧ η` of the family of positive-period circles: the wedge of the
+differential of the period with the time form. It vanishes nowhere
+(`TauCeti.CircleFamily.totalForm_apply_ne_zero`), so it orients the family. -/
+def totalForm : SmoothForm (𝓘(ℝ).prod 𝓘(ℝ)) CircleFamily ℝ 2 :=
+  SmoothForm.wedge
+    (SmoothForm.mpullback (fun z : CircleFamily ↦ (z.period : ℝ)) contMDiff_periodReal
+      SmoothForm.realLineCoordForm)
+    timeForm
+
+/-- The total form is the wedge `dp ∧ η` of the differential of the period with the time form. -/
+theorem coe_totalForm :
+    totalForm.1 =
+      RoughForm.wedge
+        (mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ))
+          fun z : CircleFamily ↦ (z.period : ℝ)))
+        timeForm.1 := by
+  rw [totalForm, SmoothForm.coe_wedge, SmoothForm.coe_mpullback,
+    SmoothForm.mpullback_realLineCoordForm]
+
+/-- On the real cover `Q(p, t) = (p, [t]_p)`, the total form is `Q^*(dp ∧ η) = dp ∧ dt`. -/
+theorem mpullback_representative_totalForm :
+    mpullback (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ)) representative totalForm.1 =
+      RoughForm.wedge
+        (mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ))
+          fun z : PositivePeriod × ℝ ↦ (z.1 : ℝ)))
+        (mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ))
+          fun z : PositivePeriod × ℝ ↦ z.2)) := by
+  have hQ := (contMDiff_representative (n := ∞)).mdifferentiable (by simp)
+  rw [coe_totalForm, mpullback_wedge, mpullback_mextDeriv_ofFunction hQ
+    (contMDiff_periodReal (n := 1).mdifferentiable one_ne_zero), mpullback_representative_timeForm,
+    period_comp_representative]
+  funext z
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  have hv : v = ![v 0, v 1] := by
+    ext i
+    fin_cases i <;> rfl
+  rw [hv, RoughForm.wedge_apply_one_one, RoughForm.wedge_apply_one_one]
+  simp only [Pi.sub_apply, ContinuousAlternatingMap.sub_apply, ContinuousAlternatingMap.smul_apply,
+    smul_eq_mul]
+  ring
+
+/-- On the real cover, the differential of the period reads the period coordinate of a tangent
+vector. -/
+private theorem mextDeriv_ofFunction_fst_apply (z : PositivePeriod × ℝ)
+    (v : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) z) :
+    mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ))
+      fun z : PositivePeriod × ℝ ↦ (z.1 : ℝ)) z ![v] = v.1 := by
+  have h : (fun z : PositivePeriod × ℝ ↦ (z.1 : ℝ)) = Subtype.val ∘ Prod.fst := rfl
+  rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    mvfderiv_apply_eq_mfderiv_apply, h, mfderiv_comp z
+      (contMDiff_subtype_val.mdifferentiableAt one_ne_zero) mdifferentiableAt_fst,
+    ContinuousLinearMap.comp_apply, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
+    Manifold.tangentSpaceOpenEquiv_apply, mfderiv_fst]
+  -- Tangent vectors of `ℝ_{>0} × ℝ` are pairs of real numbers.
+  rfl
+
+/-- On the real cover, the differential of the time coordinate reads the time coordinate of a
+tangent vector. -/
+private theorem mextDeriv_ofFunction_snd_apply (z : PositivePeriod × ℝ)
+    (v : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) z) :
+    mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ))
+      fun z : PositivePeriod × ℝ ↦ z.2) z ![v] = v.2 := by
+  rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+    mvfderiv_apply_eq_mfderiv_apply, mfderiv_snd]
+  -- Tangent vectors of `ℝ_{>0} × ℝ` are pairs of real numbers.
+  rfl
+
+/-- Read through the real cover `Q(p, t) = (p, [t]_p)`, the total form is the coordinate area form
+`dp ∧ dt`: it pairs the images of tangent vectors `v` and `w` of `ℝ_{>0} × ℝ` to
+`v.1 * w.2 - w.1 * v.2`. -/
+theorem eval₂_totalForm_mfderiv_representative (y : PositivePeriod × ℝ)
+    (v w : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) y) :
+    SmoothBundleForm.eval₂ totalForm (representative y)
+        (mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ)) representative y v)
+        (mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod 𝓘(ℝ)) representative y w) =
+      v.1 * w.2 - w.1 * v.2 := by
+  have h := DFunLike.congr_fun (congrFun mpullback_representative_totalForm y) ![v, w]
+  rw [mpullback_apply, RoughForm.wedge_apply_one_one, mextDeriv_ofFunction_fst_apply,
+    mextDeriv_ofFunction_fst_apply, mextDeriv_ofFunction_snd_apply,
+    mextDeriv_ofFunction_snd_apply] at h
+  rw [SmoothBundleForm.eval₂_apply, ← h]
+  congr 1
+  ext i
+  fin_cases i <;> rfl
+
+/-- The total form `dp ∧ η` vanishes nowhere. -/
+theorem totalForm_apply_ne_zero (z : CircleFamily) : totalForm.1 z ≠ 0 := by
+  obtain ⟨y, rfl⟩ := representative_surjective z
+  intro h
+  -- On the images of the coordinate frame `(∂_p, ∂_t)` of the real cover, the form is `1`.
+  have h1 := eval₂_totalForm_mfderiv_representative y ((1 : ℝ), (0 : ℝ)) ((0 : ℝ), (1 : ℝ))
+  rw [SmoothBundleForm.eval₂_apply, h] at h1
+  norm_num at h1
+
+/-- On a fiber, the total form is the product of the base and fiber directions: at a point of the
+circle of period `p`, it pairs a tangent vector `u` of the family with the image of a tangent
+vector `w` of `AddCircle p` to `dp(u) * dt_p(w)`. -/
+theorem eval₂_totalForm_mfderiv_mk (p : PositivePeriod) (x : AddCircle (p : ℝ))
+    (u : TangentSpace (𝓘(ℝ).prod 𝓘(ℝ)) (mk p x)) (w : TangentSpace 𝓘(ℝ) x) :
+    SmoothBundleForm.eval₂ totalForm (mk p x) u
+        (mfderiv 𝓘(ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) (mk p) x w) =
+      mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ))
+          fun z : CircleFamily ↦ (z.period : ℝ)) (mk p x) ![u] *
+        (AddCircle.timeForm (p : ℝ)).1 x ![w] := by
+  have hmk := (contMDiff_mk p ∞).mdifferentiable (by simp)
+  -- The time form restricts to `dt_p` on the fiber.
+  have hη := DFunLike.congr_fun (congrFun (congrArg Subtype.val (mpullback_mk_timeForm p)) x) ![w]
+  rw [SmoothForm.coe_mpullback, mpullback_apply] at hη
+  have hw : (fun i ↦ mfderiv 𝓘(ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) (mk p) x (![w] i)) =
+      ![mfderiv 𝓘(ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) (mk p) x w] := by
+    ext i
+    fin_cases i
+    rfl
+  rw [hw] at hη
+  -- The period is constant on the fiber, so `dp` vanishes on fiber directions.
+  have hp : mextDeriv (RoughForm.ofFunction (𝓘(ℝ).prod 𝓘(ℝ))
+      fun z : CircleFamily ↦ (z.period : ℝ)) (mk p x)
+        ![mfderiv 𝓘(ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) (mk p) x w] = 0 := by
+    have hconst : (fun z : CircleFamily ↦ (z.period : ℝ)) ∘ mk p = fun _ ↦ (p : ℝ) := rfl
+    have hc := mfderiv_comp_apply x
+      (contMDiff_periodReal (n := 1).mdifferentiableAt one_ne_zero (x := mk p x)) (hmk x) w
+    rw [hconst, mfderiv_const, zero_apply] at hc
+    rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+      mvfderiv_apply_eq_mfderiv_apply, Matrix.cons_val_zero]
+    exact hc.symm
+  rw [SmoothBundleForm.eval₂_apply, coe_totalForm, RoughForm.wedge_apply_one_one, hη, hp,
+    zero_mul, sub_zero]
 
 end CircleFamily
 
