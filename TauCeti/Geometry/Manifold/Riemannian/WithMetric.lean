@@ -136,6 +136,10 @@ theorem coe_homeomorph : ⇑(homeomorph g) = ofWithMetric :=
 theorem coe_homeomorph_symm : ⇑(homeomorph g).symm = toWithMetric g :=
   (rfl)
 
+/-- The copy of a Hausdorff manifold is Hausdorff. -/
+instance [T2Space M] : T2Space (WithMetric g) :=
+  (homeomorph g).symm.t2Space
+
 /-- The copy of a compact manifold is compact. -/
 instance [CompactSpace M] : CompactSpace (WithMetric g) :=
   (homeomorph g).symm.compactSpace
@@ -388,6 +392,13 @@ def metric : ContMDiffRiemannianMetric I n E (fun x : WithMetric g ↦ TangentSp
   g.pullback ofWithMetric contMDiff_ofWithMetric fun x ↦ by
     rw [mfderiv_ofWithMetric]
     exact Function.injective_id
+
+/-- The metric on the indexed copy is the pullback along its tautological diffeomorphism. -/
+theorem metric_def :
+    metric g = g.pullback ofWithMetric contMDiff_ofWithMetric (fun x ↦ by
+      rw [mfderiv_ofWithMetric]
+      exact Function.injective_id) :=
+  (rfl)
 
 /-- The copy of `M` carrying `g` has the metric `g`. -/
 instance : RiemannianBundle (fun x : WithMetric g ↦ TangentSpace I x) :=
