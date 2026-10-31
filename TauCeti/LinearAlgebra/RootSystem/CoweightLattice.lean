@@ -57,10 +57,17 @@ span (`RootPairing.toDualRootSpan_bijective`); so then the coroot lattice has fi
 itself (`RootPairing.finite_quotient_corootSpan`), and if the coroots also span `N`, as for a root
 system, it is the whole of the dual (`RootPairing.corootSpan_map_toDualRootSpan_eq_top`).
 
+For a root system over a field such as `ℝ`, the coweight lattice is instead a subgroup of the
+coweight space itself: the coweights at which every root takes an integer value
+(`RootPairing.coweightLattice`). It contains the coroot lattice when the pairing is
+crystallographic (`RootPairing.corootSpan_le_coweightLattice`). This is the lattice of
+translations of the extended affine Weyl group `P∨ ⋊ W`.
+
 ## Main definitions
 
 * `RootPairing.toDualRootSpan`: the restriction of the pairing to the root span, as a linear map
   from the coweight space to the dual of the root span.
+* `RootPairing.coweightLattice`: the coweights at which every root takes an integer value.
 
 ## Main results
 
@@ -270,5 +277,39 @@ theorem finiteIndex_toAddSubgroup_corootSpan {M N : Type*} [AddCommGroup M] [Add
     (P.corootSpan ℤ).toAddSubgroup.FiniteIndex :=
   have : Finite (N ⧸ (P.corootSpan ℤ).toAddSubgroup) := P.finite_quotient_corootSpan hP
   AddSubgroup.finiteIndex_of_finite_quotient
+
+/-! ### The coweight lattice inside the coweight space -/
+
+/-- **The coweight lattice** inside the coweight space: the coweights `x` at which every root takes
+an integer value, `⟨αᵢ, x⟩ ∈ ℤ`.
+
+For a root system over a field of characteristic zero, such as `ℝ`, this is the classical coweight
+lattice `P∨`, the group of coweights of Bourbaki. For a root datum (`R = ℤ`) every coweight
+qualifies, so this is the whole cocharacter lattice `N`, which may be smaller than
+`Hom_ℤ(Q, ℤ)`; for that comparison use `RootPairing.toDualRootSpan`. -/
+def coweightLattice : Submodule ℤ N where
+  carrier := {x | ∀ i, ∃ z : ℤ, P.root' i x = z}
+  zero_mem' i := ⟨0, by simp⟩
+  add_mem' {x y} hx hy i := by
+    obtain ⟨a, ha⟩ := hx i
+    obtain ⟨b, hb⟩ := hy i
+    exact ⟨a + b, by simp [ha, hb]⟩
+  smul_mem' n x hx i := by
+    obtain ⟨a, ha⟩ := hx i
+    exact ⟨n * a, by simp [ha]⟩
+
+@[simp]
+theorem mem_coweightLattice {x : N} : x ∈ P.coweightLattice ↔ ∀ i, ∃ z : ℤ, P.root' i x = z :=
+  Iff.rfl
+
+/-- A coroot lies in the coweight lattice of a crystallographic pairing. -/
+theorem coroot_mem_coweightLattice [P.IsCrystallographic] (i : ι) :
+    P.coroot i ∈ P.coweightLattice := fun j ↦
+  ⟨P.pairingIn ℤ j i, by simp [← P.algebraMap_pairingIn ℤ]⟩
+
+/-- **The coroot lattice lies in the coweight lattice** of a crystallographic pairing. -/
+theorem corootSpan_le_coweightLattice [P.IsCrystallographic] :
+    P.corootSpan ℤ ≤ P.coweightLattice :=
+  Submodule.span_le.2 <| Set.range_subset_iff.2 P.coroot_mem_coweightLattice
 
 end RootPairing
