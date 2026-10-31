@@ -363,11 +363,12 @@ theorem valuationSubring_isDiscreteValuationRing_of_surjective
   let _ := nontrivial_valueGroup_of_surjective v hv
   exact _root_.Valuation.valuationSubring_isDiscreteValuationRing v
 
-/-- For a surjective `ℤᵐ⁰`-valued valuation, any integer of valuation `exp (-1)` generates the
-maximal ideal of the valuation ring. -/
-theorem maximalIdeal_eq_span_of_surjective (v : _root_.Valuation F ℤᵐ⁰)
-    (hv : Function.Surjective v) {π : v.valuationSubring} (hπ : v π = WithZero.exp (-1)) :
+/-- For a `ℤᵐ⁰`-valued valuation, any integer of valuation `exp (-1)` generates the maximal ideal
+of the valuation ring. -/
+theorem maximalIdeal_eq_span_of_map_eq_exp_neg_one (v : _root_.Valuation F ℤᵐ⁰)
+    {π : v.valuationSubring} (hπ : v π = WithZero.exp (-1)) :
     IsLocalRing.maximalIdeal v.valuationSubring = Ideal.span {π} := by
+  have hv := surjective_of_map_eq_exp_neg_one v hπ
   let _ := nontrivial_valueGroup_of_surjective v hv
   refine IsUniformizer.is_generator ?_
   rw [isUniformizer_iff_ord_eq_one_of_surjective v hv]

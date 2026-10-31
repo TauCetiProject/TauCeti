@@ -8,8 +8,8 @@ module
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 public import Mathlib.RingTheory.Valuation.Extension
-public import TauCeti.RingTheory.LaurentSeries.Basic
 public import TauCeti.RingTheory.LaurentSeries.Level.Basis
+public import TauCeti.RingTheory.LaurentSeries.ValuationRing
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 
 /-!
@@ -26,8 +26,8 @@ the exponent decomposition `f = ∑ r : Fin d, u ^ r * (contract d f r)(u ^ d)`:
   components are;
 * the maximal ideal `(t)` of `K⟦t⟧` generates the `d`-th power of the maximal ideal `(u)` of
   `K⟦u⟧`, so the ramification index of `L / F` is `d`;
-* every element of `K⟦u⟧` is congruent modulo `u` to a constant, so both residue fields are `K`
-  and the inertia degree is `1`.
+* every element of `K⟦u⟧` is congruent modulo `u` to a constant, so both residue fields are `K`,
+  the residue of an integer being its constant coefficient, and the inertia degree is `1`.
 
 No hypothesis on `K` is needed: the residue field may be infinite, imperfect, or of any
 characteristic. Thus `L / F` is totally ramified, with `e f = d = [L : F]`.
@@ -37,13 +37,10 @@ characteristic. Thus `L / F` is totally ramified, with `e f = d = [L : F]`.
 * `TauCeti.LaurentSeries.Level.valuation`: the `u`-adic valuation of the level, valued in `ℤᵐ⁰`.
 * `TauCeti.LaurentSeries.Level.integerBasis`: the basis `1, u, ..., u ^ (d - 1)` of the integers
   of the level over the integers of `K⸨X⸩`.
+* `TauCeti.LaurentSeries.Level.residueFieldEquiv`: the residue field of the level is `K`.
 
 ## Main results
 
-* `LaurentSeries.valuation_expand`: expansion `X ↦ X ^ d` raises the valuation to the `d`-th
-  power.
-* `LaurentSeries.valuation_le_one_iff`: a Laurent series is integral exactly when it has no
-  negative exponents.
 * `TauCeti.LaurentSeries.Level.valuation_algebraMap`: the valuation of the level restricts to the
   `d`-th power of the valuation of `K⸨X⸩`.
 * `TauCeti.LaurentSeries.Level.hasExtension`: the valuation of the level extends that of `K⸨X⸩`.
@@ -52,6 +49,8 @@ characteristic. Thus `L / F` is totally ramified, with `e f = d = [L : F]`.
 * `TauCeti.LaurentSeries.Level.map_maximalIdeal`: the maximal ideal of `K⟦t⟧` generates the
   `d`-th power of the maximal ideal of `K⟦u⟧`.
 * `TauCeti.LaurentSeries.Level.ramificationIdx_maximalIdeal`: the ramification index is `d`.
+* `TauCeti.LaurentSeries.Level.residueFieldEquiv_residue`: the residue of an integer of the level
+  is its constant coefficient.
 * `TauCeti.LaurentSeries.Level.inertiaDeg_maximalIdeal`: the inertia degree is `1`.
 -/
 
@@ -59,31 +58,6 @@ public section
 
 open IsLocalRing Module
 open scoped LaurentSeries WithZero
-
-namespace LaurentSeries
-
-variable {K : Type*} [Field K]
-
-/-- Expansion `X ↦ X ^ d` raises the `X`-adic valuation of a Laurent series to the `d`-th power:
-it multiplies the order by `d`. -/
-@[simp]
-theorem valuation_expand (d : ℕ+) (f : K⸨X⸩) :
-    Valued.v (expand K d f) = Valued.v f ^ (d : ℕ) := by
-  rcases eq_or_ne f 0 with rfl | hf
-  · simp
-  have hf' : expand K d f ≠ 0 := (map_ne_zero_iff _ (expand_injective d)).mpr hf
-  have h := orderTop_expand d f
-  rw [← HahnSeries.order_eq_orderTop_of_ne_zero hf, ← HahnSeries.order_eq_orderTop_of_ne_zero hf',
-    ← WithTop.coe_nsmul, WithTop.coe_eq_coe] at h
-  rw [TauCeti.LaurentSeries.valuation_eq_exp_neg_order hf,
-    TauCeti.LaurentSeries.valuation_eq_exp_neg_order hf', h, ← WithZero.exp_nsmul, smul_neg]
-
-/-- A Laurent series lies in the valuation ring exactly when it has no negative exponents. -/
-theorem valuation_le_one_iff {f : K⸨X⸩} :
-    Valued.v f ≤ 1 ↔ ∀ n : ℤ, n < 0 → f.coeff n = 0 := by
-  simpa using valuation_le_iff_coeff_lt_eq_zero (D := 0) (f := f)
-
-end LaurentSeries
 
 namespace TauCeti.LaurentSeries.Level
 
@@ -252,10 +226,8 @@ theorem map_maximalIdeal :
   have ht : Algebra.algebraMap _ (valuation K d).valuationSubring t = u ^ (d : ℕ) := by
     ext
     simp [u, t, parameter_pow]
-  rw [Valuation.maximalIdeal_eq_span_of_surjective _ (_root_.LaurentSeries.valuation_surjective K)
-      (π := t) (valuation_single_zpow K 1),
-    Valuation.maximalIdeal_eq_span_of_surjective _ (valuation_surjective K d) (π := u)
-      (valuation_parameter K d),
+  rw [Valuation.maximalIdeal_eq_span_of_map_eq_exp_neg_one _ (π := t) (valuation_single_zpow K 1),
+    Valuation.maximalIdeal_eq_span_of_map_eq_exp_neg_one _ (π := u) (valuation_parameter K d),
     Ideal.map_span, Set.image_singleton, ht, Ideal.span_singleton_pow]
 
 /-- The ramification index of the level over `K⸨X⸩` is `d`. -/
@@ -288,9 +260,45 @@ theorem exists_sub_algebraMap_mem_maximalIdeal (x : (valuation K d).valuationSub
   rw [AddSubgroupClass.coe_sub, Valuation.HasExtension.coe_algebraMap_valuationSubring_eq,
     valuation_apply, map_sub, algebraMap_apply, valuation_le_iff_coeff_lt_eq_zero]
   intro n hn
-  rcases lt_or_eq_of_le (show n ≤ 0 by omega) with hn | rfl
+  -- The valuation bound `exp (-1)` means the difference vanishes below exponent `1`.
+  have hn0 : n ≤ 0 := by omega
+  rcases lt_or_eq_of_le hn0 with hn | rfl
   · simp [hx n hn, hn.ne]
   · simp
+
+variable {K d} in
+/-- The integers of the level are the power series in `u`. -/
+theorem ringEquivLaurentSeries_mem_powerSeries_as_subring_iff {x : Level K d} :
+    ringEquivLaurentSeries K d x ∈ powerSeries_as_subring K ↔
+      x ∈ (valuation K d).valuationSubring := by
+  rw [Huber.LaurentSeries.powerSeries_as_subring_eq_integer, Valuation.mem_integer_iff,
+    Valuation.mem_valuationSubring_iff, valuation_apply]
+
+/-- The integers of the level, identified with the power series `K⟦u⟧` inside `K⸨u⸩`. -/
+private noncomputable def valuationSubringEquiv :
+    (valuation K d).valuationSubring ≃+* powerSeries_as_subring K where
+  toFun x := ⟨ringEquivLaurentSeries K d x,
+    ringEquivLaurentSeries_mem_powerSeries_as_subring_iff.mpr x.2⟩
+  invFun f := ⟨(ringEquivLaurentSeries K d).symm f,
+    ringEquivLaurentSeries_mem_powerSeries_as_subring_iff.mp (by simp)⟩
+  left_inv x := by simp
+  right_inv f := by simp
+  map_mul' x y := by ext; simp
+  map_add' x y := by ext; simp
+
+/-- The residue field of the level is canonically the coefficient field `K`. -/
+noncomputable def residueFieldEquiv : ResidueField (valuation K d).valuationSubring ≃+* K :=
+  (ResidueField.mapEquiv (valuationSubringEquiv K d)).trans
+    (TauCeti.LaurentSeries.residueFieldEquiv K)
+
+variable {K d} in
+/-- The residue of an integer of the level is its constant coefficient. -/
+@[simp]
+theorem residueFieldEquiv_residue (x : (valuation K d).valuationSubring) :
+    residueFieldEquiv K d (residue _ x) = (ringEquivLaurentSeries K d x).coeff 0 := by
+  rw [residueFieldEquiv, RingEquiv.trans_apply, ResidueField.mapEquiv_apply,
+    ResidueField.map_residue, TauCeti.LaurentSeries.residueFieldEquiv_residue]
+  rfl
 
 /-- The residue field extension of the level over `K⸨X⸩` is trivial: its inertia degree is `1`. -/
 theorem inertiaDeg_maximalIdeal :
