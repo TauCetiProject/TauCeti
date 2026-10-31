@@ -47,6 +47,10 @@ norms, as for the monomials of a weighted Sobolev algebra.
 A positive real raised to a finitely supported sum of exponents is the product of the powers:
 `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i`, the `finsum` form of `Real.rpow_sum_of_pos`.
 
+An exponential upper bound on a nonnegative base passes to its nonnegative real powers: if
+`0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. This is how a bound `|q| ≤ e^{-t}` on a
+nome is turned into bounds on the fractional powers `|q| ^ c` in a product estimate.
+
 ## Main results
 
 * `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-2⁻¹)` for every real `x`.
@@ -62,6 +66,7 @@ A positive real raised to a finitely supported sum of exponents is the product o
 * `Real.pow_le_rpow_pow_of_le_mul`: `b ^ n ≤ (b ^ δ) ^ r` when `1 ≤ b` and `n ≤ δ r`.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
+* `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
   exponents have finite multiplicative support.
 * `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
@@ -147,6 +152,13 @@ theorem le_one_of_forall_pow_le_mul_rpow {r C s : ℝ}
   rw [rpow_add h0, rpow_one, rpow_natCast, mul_div_assoc', le_div_iff₀ (by positivity), one_mul]
   calc r * r ^ n ≤ r * (C * (1 + n) ^ s) := by gcongr; exact h n
     _ = C * r * (1 + n) ^ s := by ring
+
+/-- If `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. -/
+theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) (hc : 0 ≤ c) :
+    A ^ c ≤ exp (-(c * t)) := by
+  refine (rpow_le_rpow hA hAt hc).trans_eq ?_
+  rw [← exp_mul]
+  ring_nf
 
 end Real
 
