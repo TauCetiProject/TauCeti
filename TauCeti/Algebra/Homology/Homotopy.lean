@@ -86,9 +86,9 @@ theorem cyclesMap_sub_eq {C : Type u} [Category.{v} C] [Preadditive C]
   simp [dNext, prevD, Preadditive.comp_add, ← Category.assoc]
 
 /-- A contractible complex is acyclic. -/
-lemma acyclic {C : Type u} [Category.{v} C] [Preadditive C] [CategoryWithHomology C]
-    {ι : Type*} {c : ComplexShape ι} {K : HomologicalComplex C c} (h : Homotopy (𝟙 K) 0) :
-    K.Acyclic := fun i ↦ by
+lemma acyclic {C : Type u} [Category.{v} C] [Preadditive C]
+    {ι : Type*} {c : ComplexShape ι} {K : HomologicalComplex C c} [∀ i, K.HasHomology i]
+    (h : Homotopy (𝟙 K) 0) : K.Acyclic := fun i ↦ by
   rw [HomologicalComplex.exactAt_iff_isZero_homology, IsZero.iff_id_eq_zero]
   simpa only [HomologicalComplex.homologyMap_id, HomologicalComplex.homologyMap_zero] using
     h.homologyMap_eq i
