@@ -98,13 +98,6 @@ private theorem uliftEmbedding_apply (x : E) :
       (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).separableClosureCongr.symm (E.val x) :=
   (rfl)
 
-private theorem algebraMap_comp_ulift :
-    (algebraMap (ULift.{w} K) (ULift.{w} E)).comp
-        ((ULift.ringEquiv.symm : K ≃+* ULift.{w} K) : K →+* ULift.{w} K) =
-      ((ULift.ringEquiv.symm : E ≃+* ULift.{w} E) : E →+* ULift.{w} E).comp
-        (algebraMap K E) :=
-  RingHom.ext fun _ ↦ rfl
-
 /-- The finite Galois subextension of `(ULift K)ˢ` corresponding to `E`. -/
 private abbrev uliftField : IntermediateField (ULift.{w} K) (SeparableClosure (ULift.{w} K)) :=
   (uliftEmbedding E).fieldRange
@@ -148,11 +141,12 @@ module structure of the intermediate field used by the crossed-product and infla
 private instance finiteDimensional_uliftField :
     @FiniteDimensional (ULift.{w} K) (uliftField.{u, w} E) _ _ Algebra.toModule :=
   have : FiniteDimensional (ULift.{w} K) (ULift.{w} E) :=
-    Module.Finite.of_equiv_equiv _ _ (algebraMap_comp_ulift E)
+    Module.Finite.of_equiv_equiv _ _ ULift.algebraMap_comp_ringEquiv_symm
   (uliftEmbedding E).toLinearMap.finiteDimensional_range
 
 private instance isGalois_uliftField : IsGalois (ULift.{w} K) (uliftField.{u, w} E) :=
-  have : IsGalois (ULift.{w} K) (ULift.{w} E) := IsGalois.of_equiv_equiv (algebraMap_comp_ulift E)
+  have : IsGalois (ULift.{w} K) (ULift.{w} E) :=
+    IsGalois.of_equiv_equiv ULift.algebraMap_comp_ringEquiv_symm
   IsGalois.of_algEquiv (uliftEmbedding E).equivFieldRange
 
 private instance : Normal (ULift.{w} K) (uliftField.{u, w} E) :=

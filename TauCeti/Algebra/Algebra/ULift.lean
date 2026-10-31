@@ -22,6 +22,20 @@ universe u v w t t₁ t₂
 
 attribute [local instance] ULift.algebra'
 
+namespace ULift
+
+variable {R : Type u} [CommSemiring R] {A : Type v} [Semiring A] [Algebra R A]
+
+/-- Lifting the scalar ring and the algebra commutes with their algebra maps. -/
+theorem algebraMap_comp_ringEquiv_symm :
+    (algebraMap (ULift.{t} R) (ULift.{t₁} A)).comp
+        ((ULift.ringEquiv.symm : R ≃+* ULift.{t} R) : R →+* ULift.{t} R) =
+      ((ULift.ringEquiv.symm : A ≃+* ULift.{t₁} A) : A →+* ULift.{t₁} A).comp
+        (algebraMap R A) :=
+  RingHom.ext fun _ ↦ rfl
+
+end ULift
+
 namespace AlgEquiv
 
 variable {R : Type u} [CommSemiring R] {A : Type v} [Semiring A] [Algebra R A]
