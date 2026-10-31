@@ -147,18 +147,9 @@ theorem ker_mapQ_mkQ (I : Ideal S) (y : S) :
     LinearMap.ker (Submodule.mapQ (I • ⊤ : Submodule S N) _ (y • ⊤ : Submodule S N).mkQ
       (Submodule.smul_top_le_comap_smul_top I _)) =
       (y • ⊤ : Submodule S (N ⧸ (I • ⊤ : Submodule S N))) := by
-  ext p
-  rw [LinearMap.mem_ker]
-  obtain ⟨n, rfl⟩ := Submodule.Quotient.mk_surjective _ p
-  have hleft : Submodule.Quotient.mk (Submodule.Quotient.mk n : QuotSMulTop y N) =
-      (0 : QuotSMulTop y N ⧸ (I • ⊤ : Submodule S (QuotSMulTop y N))) ↔
-      n ∈ (I • ⊤ : Submodule S N) ⊔ (y • ⊤ : Submodule S N) := by
-    rw [Submodule.Quotient.mk_eq_zero, ← Submodule.mkQ_apply, ← Submodule.mem_comap,
-      Submodule.comap_smul_top_of_surjective _ _ (Submodule.mkQ_surjective _), Submodule.ker_mkQ]
-  rw [Submodule.mapQ_apply, Submodule.mkQ_apply, hleft, ← Submodule.ideal_span_singleton_smul,
-    ← Submodule.ideal_span_singleton_smul, ← Submodule.mkQ_apply, ← Submodule.mem_comap,
-    Submodule.comap_smul_top_of_surjective _ _ (Submodule.mkQ_surjective _), Submodule.ker_mkQ,
-    sup_comm]
+  rw [Submodule.ker_mapQ, Submodule.comap_smul_top_of_surjective _ _ (Submodule.mkQ_surjective _),
+    Submodule.ker_mkQ, Submodule.map_sup, Submodule.mkQ_map_self, bot_sup_eq,
+    Submodule.map_pointwise_smul, Submodule.map_top, Submodule.range_mkQ]
 
 /-- The map `N ⧸ I N → (N ⧸ y N) ⧸ I (N ⧸ y N)` is surjective. -/
 theorem mapQ_mkQ_surjective (I : Ideal S) (y : S) :
