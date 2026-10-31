@@ -42,6 +42,8 @@ Carlson's elliptic integrals near both endpoints of `(0, ∞)`.
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
 * `TauCeti.ofReal_pow_cpow` -- a principal power of a natural power of a nonnegative real
   multiplies the exponents.
+* `TauCeti.ofReal_cpow_conj` -- a principal power of a nonnegative real commutes with complex
+  conjugation of the exponent.
 * `TauCeti.cpow_sum` -- a principal power of a finite sum splits into a product for a nonzero
   complex base.
 * `TauCeti.ofReal_exp_cpow` -- a principal power of a positive real exponential is an exponential.
@@ -54,7 +56,7 @@ Carlson's elliptic integrals near both endpoints of `(0, ∞)`.
 
 public section
 
-open Complex Filter
+open Complex ComplexConjugate Filter
 open scoped Topology
 
 namespace TauCeti
@@ -83,6 +85,13 @@ theorem ofReal_pow_cpow {r : ℝ} (hr : 0 ≤ r) (n : ℕ) (s : ℂ) :
     ((r : ℂ) ^ n) ^ s = (r : ℂ) ^ (n * s) := by
   have harg : (r : ℂ).arg = 0 := arg_ofReal_of_nonneg hr
   rw [cpow_nat_mul' (by simp [harg, Real.pi_pos]) (by simp [harg, Real.pi_pos.le])]
+
+/-- A principal complex power of a nonnegative real commutes with conjugation of the exponent:
+`(r : ℂ) ^ conj s = conj ((r : ℂ) ^ s)`.  The argument of `(r : ℂ)` is `0`, so this is
+`Complex.cpow_conj` without its branch hypothesis. -/
+theorem ofReal_cpow_conj {r : ℝ} (hr : 0 ≤ r) (s : ℂ) :
+    (r : ℂ) ^ conj s = conj ((r : ℂ) ^ s) := by
+  rw [Complex.cpow_conj _ _ (by simp [arg_ofReal_of_nonneg hr, Real.pi_pos.ne]), conj_ofReal]
 
 /-- A principal complex power with nonzero base takes a finite sum of exponents to the
 corresponding product. -/

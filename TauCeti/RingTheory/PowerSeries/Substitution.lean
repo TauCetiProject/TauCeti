@@ -47,6 +47,11 @@ endomorphism of the power series ring has this form. In particular, a perturbati
 with `h ^ 2 = 0` substitutes by the first-order Taylor formula `f (X + h) = f + h f'`, since the
 right-hand side is multiplicative in `f` by the Leibniz rule.
 
+The coefficients of `f (X * M)` satisfy a shift recurrence: the coefficient of degree `n + 1` is
+`[X^n](M * g (X * M))`, the coefficient of degree `n` of the product of `M` with `g (X * M)`, where
+`g = (f - f(0)) / X` is the shift of `f`. This proves functional equations of generating functions
+such as `M = C (X * M)` coefficientwise.
+
 This file also records that the substitution `X ↦ (1 + X) ^ u - 1`, for a binomial series
 `(1 + X) ^ u`, is legitimate: it is the change of variable relating the power-series coordinates
 of a completed group algebra attached to two topological generators.
@@ -66,6 +71,8 @@ of a completed group algebra attached to two topological generators.
   has trivial kernel.
 * `PowerSeries.toNat_order_ne_zero`: such a `φ` has positive integer order.
 * `PowerSeries.coeff_one_subst`: linear coefficients multiply under substitution.
+* `PowerSeries.coeff_succ_subst_X_mul`: the `(n + 1)`-st coefficient of `f (X * M)` is
+  `[X^n](M * g (X * M))`, where `g` is the shift of `f`.
 * `PowerSeries.X_pow_dvd_subst`: substitution preserves divisibility by `X ^ n`.
 * `PowerSeries.X_pow_dvd_subst_sub_subst`: substitution respects congruence modulo `X ^ n` of
   the substituted series.
@@ -111,6 +118,17 @@ theorem subst_X_add_C_mul_X_pow {R τ : Type*} [CommRing R] {a : MvPowerSeries �
     (ha : HasSubst a) (e : R) (k : ℕ) :
     subst a (X + C e * X ^ k) = a + MvPowerSeries.C e * a ^ k := by
   rw [subst_add ha, subst_mul ha, subst_pow ha, subst_X ha, subst_C]
+
+/-- The `(n + 1)`-st coefficient of `f (X * M)` is the `n`-th coefficient of `M * g (X * M)`,
+where `g = (f - f(0)) / X` is the shift of `f`. -/
+theorem coeff_succ_subst_X_mul {R : Type*} [CommRing R] (M f : R⟦X⟧) (n : ℕ) :
+    coeff (n + 1) (f.subst (X * M)) =
+      coeff n (M * (mk fun p => coeff (p + 1) f).subst (X * M)) := by
+  have hP : HasSubst (X * M) := HasSubst.of_constantCoeff_zero' (by simp)
+  conv_lhs => rw [f.eq_X_mul_shift_add_const]
+  rw [subst_add hP, subst_mul hP, subst_X hP, subst_C, mul_assoc, map_add, coeff_succ_X_mul,
+    add_eq_left]
+  exact (coeff_C _ _).trans (ite_eq_right_iff.2 fun h => absurd h n.succ_ne_zero)
 
 section Nilpotent
 

@@ -31,6 +31,8 @@ separation or completeness hypotheses on the model.
 * `TauCeti.closedFormsZeroEquiv`: closed smooth `0`-forms are locally constant functions.
 * `TauCeti.deRhamCohomologyZeroEquiv`: `H⁰_dR(M) ≃ₗ[ℝ] LocallyConstant M ℝ`.
 * `TauCeti.deRhamCohomology.const`: the degree-zero class of a constant real function.
+* `TauCeti.deRhamCohomology.exists_eq_const`: on a preconnected manifold, every degree-zero
+  class is constant.
 * `TauCeti.finrank_deRhamCohomology_zero`: `H⁰_dR(M)` has dimension one when `M` is connected.
 * `TauCeti.subsingleton_compactlySupportedDeRhamCohomology_zero`: `H⁰_c(M) = 0` when `M` is
   preconnected and noncompact.
@@ -149,6 +151,14 @@ theorem deRhamCohomologyZeroEquiv_const (r : ℝ) :
   rw [const, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
   ext x
   exact LocallyConstant.constₗ_apply_apply ℝ r x
+
+/-- On a preconnected manifold, every degree-zero de Rham class is the class of a constant
+function. -/
+theorem exists_eq_const [PreconnectedSpace M] (c : deRhamCohomology I M 0) :
+    ∃ r, c = const I M r := by
+  obtain ⟨r, hr⟩ := (deRhamCohomologyZeroEquiv I M c).exists_eq_const
+  exact ⟨r, (deRhamCohomologyZeroEquiv I M).injective <| by
+    rw [deRhamCohomologyZeroEquiv_const, hr]⟩
 
 end deRhamCohomology
 
