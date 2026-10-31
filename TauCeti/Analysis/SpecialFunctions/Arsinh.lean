@@ -26,7 +26,7 @@ fixes `0` and `± 1`.
 * `TauCeti.analyticAt_normalizedArsinh`: `β` is analytic at every point.
 * `TauCeti.deriv_normalizedArsinh_pos`, `TauCeti.deriv_normalizedArsinh_le_two`,
   `TauCeti.abs_mul_deriv_normalizedArsinh_le_one`: the derivative satisfies `0 < β' s ≤ 2` and
-  `|s| * β' s ≤ 1`, that is, `|β' s| ≤ min 2 (1 / |s|)`.
+  `|s| * β' s ≤ 1`, that is, `|β' s| ≤ min 2 (1 / |s|)` for `s ≠ 0`.
 
 Where it is used: `TauCeti/Analysis/Analytic/HeightCompression.lean` compresses the height of
 a cylinder `E × ℝ` by `β`, following S. Łojasiewicz, *Triangulation of semi-analytic sets*,
@@ -125,8 +125,8 @@ theorem deriv_normalizedArsinh_le_two (s : ℝ) : deriv normalizedArsinh s ≤ 2
   refine (div_le_self (sinh_pos_iff.2 one_pos).le ?_).trans hsinh.le
   exact one_le_sqrt.2 (le_add_of_nonneg_right (sq_nonneg _))
 
-/-- The derivative of `β` at `s` is at most `1 / |s|`, in the form `|s| * β' s ≤ 1`, which also
-holds at `s = 0`. -/
+/-- For `s ≠ 0`, the derivative of `β` at `s` is at most `1 / |s|`. It is stated in the form
+`|s| * β' s ≤ 1`, which also holds at `s = 0`. -/
 theorem abs_mul_deriv_normalizedArsinh_le_one (s : ℝ) : |s| * deriv normalizedArsinh s ≤ 1 := by
   have h1 : 0 < sinh 1 := sinh_pos_iff.2 one_pos
   calc |s| * deriv normalizedArsinh s = |sinh 1 * s| / √(1 + (sinh 1 * s) ^ 2) := by
