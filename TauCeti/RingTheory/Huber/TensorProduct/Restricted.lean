@@ -44,7 +44,8 @@ Only the topological rings are compared here; rings of integral elements are not
 
 ## Main results
 
-* `TauCeti.Huber.CompletedTensor.isHomeomorph_weightedRestrictedEquiv`: it is a homeomorphism.
+* `TauCeti.Huber.CompletedTensor.isHomeomorph_weightedRestrictedEquiv` and `…_symm`: it is a
+  homeomorphism.
 * `TauCeti.Huber.CompletedTensor.weightedRestrictedEquiv_inl` and `…_inr`: it is the
   coefficientwise map on the left factor and the structure map on the right factor.
 * `TauCeti.Huber.CompletedTensor.weightedRestrictedEquiv_symm_weightedC` and `…_symm_weightedX`:
@@ -234,6 +235,12 @@ noncomputable def weightedRestrictedEquiv :
 theorem isHomeomorph_weightedRestrictedEquiv : IsHomeomorph (weightedRestrictedEquiv B hT) :=
   (weightedRestrictedEquiv B hT).toEquiv.isHomeomorph_iff.mpr
     ⟨continuous_weightedRestrictedEquiv B hT, continuous_weightedRestrictedEquiv_symm B hT⟩
+
+/-- The inverse isomorphism `B⟨X⟩_{λ(T)} → A⟨X⟩_T ⊗̂_A B` is a homeomorphism. -/
+theorem isHomeomorph_weightedRestrictedEquiv_symm :
+    IsHomeomorph (weightedRestrictedEquiv B hT).symm :=
+  (weightedRestrictedEquiv B hT).symm.toEquiv.isHomeomorph_iff.mpr
+    ⟨continuous_weightedRestrictedEquiv_symm B hT, continuous_weightedRestrictedEquiv B hT⟩
 
 end CompletedTensor
 
