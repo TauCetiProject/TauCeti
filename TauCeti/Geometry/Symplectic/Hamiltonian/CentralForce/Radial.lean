@@ -155,6 +155,14 @@ theorem hasDerivAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {U' r : �
     · field_simp
       ring
 
+/-- Away from `r = 0`, `r` is a critical point of the effective potential exactly when
+`U'(r) = ℓ² / (m r³)`. -/
+theorem hasDerivAt_effectivePotential_zero_iff {m ℓ : ℝ} {U : ℝ → ℝ} {U' r : ℝ}
+    (hU : HasDerivAt U U' r) (hr : r ≠ 0) :
+    HasDerivAt (effectivePotential m ℓ U) 0 r ↔ U' = ℓ ^ 2 / (m * r ^ 3) := by
+  have h := hasDerivAt_effectivePotential (m := m) (ℓ := ℓ) hU hr
+  exact ⟨fun h' ↦ sub_eq_zero.1 (h.unique h'), fun h' ↦ by rwa [h', sub_self] at h⟩
+
 /-- On the closed half-line `r ≥ 0`, the reduced Hamiltonian, the one-dimensional central-force
 Hamiltonian of the effective potential, is `H_ℓ(r, p_r) = p_r² / (2m) + ℓ² / (2 m r²) + U(r)`. -/
 theorem centralForceHamiltonian_effectivePotential_apply {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ}
@@ -377,11 +385,9 @@ theorem stdSymplecticForm_hamiltonianVectorField_effectivePotential_eq_zero_iff 
     (stdSymplecticForm (V := ℝ)).hamiltonianVectorField
         (centralForceHamiltonian m (effectivePotential m ℓ U)) (r, p_r) = 0 ↔
       p_r = 0 ∧ HasDerivAt (effectivePotential m ℓ U) 0 r := by
-  have h := hasDerivAt_effectivePotential (m := m) (ℓ := ℓ) hU hr.ne'
-  have hcrit : HasDerivAt (effectivePotential m ℓ U) 0 r ↔ ℓ ^ 2 / (m * r ^ 3) = U' :=
-    ⟨fun h' ↦ (sub_eq_zero.1 (h.unique h')).symm, fun h' ↦ by rwa [h', sub_self] at h⟩
-  rw [stdSymplecticForm_hamiltonianVectorField_effectivePotential hU hr, hcrit]
-  simp [hm, sub_eq_zero]
+  rw [stdSymplecticForm_hamiltonianVectorField_effectivePotential hU hr,
+    hasDerivAt_effectivePotential_zero_iff hU hr.ne']
+  simp [hm, sub_eq_zero, eq_comm (a := U')]
 
 /-! ### The radial projection of the Hamiltonian flow -/
 
@@ -479,13 +485,9 @@ theorem forall_hasDerivAt_circularMotion_iff {m : ℝ} (hm : m ≠ 0) {U : ℝ �
       ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U)
         (circularMotion m r₀ ω u w t)) t) ↔
       HasDerivAt (effectivePotential m (m * r₀ ^ 2 * ω) U) 0 r₀ := by
-  have h := hasDerivAt_effectivePotential (m := m) (ℓ := m * r₀ ^ 2 * ω) hU hr₀.ne'
   have he : (m * r₀ ^ 2 * ω) ^ 2 / (m * r₀ ^ 3) = m * r₀ * ω ^ 2 := by
     field_simp
-  rw [he] at h
-  rw [forall_hasDerivAt_circularMotion_iff_eq hm hU hr₀ ω hu hw huw]
-  refine ⟨fun h' ↦ ?_, fun h' ↦ ?_⟩
-  · rwa [h', sub_self] at h
-  · exact sub_eq_zero.1 (h.unique h')
+  rw [forall_hasDerivAt_circularMotion_iff_eq hm hU hr₀ ω hu hw huw,
+    hasDerivAt_effectivePotential_zero_iff hU hr₀.ne', he]
 
 end TauCeti
