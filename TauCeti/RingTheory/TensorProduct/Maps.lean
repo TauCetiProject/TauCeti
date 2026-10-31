@@ -238,6 +238,14 @@ theorem mulRight_tmul (b : B) (t : S) :
     (mulRight (b ⊗ₜ[R] t) : B) = b * algebraMap S B t := by
   simp [mulRight]
 
+/-- Multiplication on a self-tensor product is natural in the algebra. -/
+@[simp]
+theorem lmul'_map_self {R A C : Type*} [CommSemiring R] [CommSemiring A]
+    [CommSemiring C] [Algebra R A] [Algebra R C] (f : A →ₐ[R] C) (x : A ⊗[R] A) :
+    lmul' R (map f f x) = f (lmul' R x) := by
+  have h : (lmul' R).comp (map f f) = f.comp (lmul' R) := by ext <;> simp
+  exact DFunLike.congr_fun h x
+
 section Product
 
 /-- If two algebra maps `f, g : S → T` agree after composing with `p : T → U`, then `p` kills
