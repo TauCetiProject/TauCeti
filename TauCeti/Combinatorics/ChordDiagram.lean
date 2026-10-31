@@ -384,11 +384,10 @@ theorem Function.Involutive.isNoncrossingMatching_permCongr_finRotate_iff {n : �
   · simp [Subsingleton.elim σ 1]
   have : NeZero n := ⟨hn.ne'⟩
   have hinv' : Function.Involutive ((finRotate n).permCongr σ) := fun x => by simp [hinv _]
-  have hconj : (finRotate n).permCongr σ = finRotate n * σ * (finRotate n)⁻¹ := (rfl)
   -- Both sides are the boundary-count criterion, and rotating the matching conjugates the
   -- boundary traversal `finRotate n * σ` by `finRotate n`.
   rw [← hinv.orbitCount_finRotate_mul_add_orbitCount_eq_iff,
-    ← hinv'.orbitCount_finRotate_mul_add_orbitCount_eq_iff, hconj,
+    ← hinv'.orbitCount_finRotate_mul_add_orbitCount_eq_iff, Equiv.permCongr_eq_mul,
     show finRotate n * (finRotate n * σ * (finRotate n)⁻¹) =
       finRotate n * (finRotate n * σ) * (finRotate n)⁻¹ by simp only [mul_assoc],
     orbitCount_conj, orbitCount_conj]
