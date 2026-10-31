@@ -94,13 +94,6 @@ end SmulLeft
 
 section OneFormWedge
 
-/-- The pointwise bound `‖(α ∧ ω) x‖ₑ ≤ (k + 1) ‖α x‖ₑ ‖ω x‖ₑ` in extended norms. -/
-private theorem enorm_oneFormWedgeCLM_apply_le (hα : ContDiff ℝ n α)
-    (ω : 𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F)) (x : E) :
-    ‖oneFormWedgeCLM hα ω x‖ₑ ≤ (k + 1) * ‖α x‖ₑ * ‖ω x‖ₑ := by
-  simp only [enorm_eq_nnnorm]
-  exact_mod_cast norm_oneFormWedgeCLM_apply_le hα ω x
-
 /-- Contraction with a smooth one-form preserves locally finite mass. -/
 theorem HasLocallyFiniteMass.comp_oneFormWedgeCLM
     {T : 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) → V} (hT : HasLocallyFiniteMass T)
