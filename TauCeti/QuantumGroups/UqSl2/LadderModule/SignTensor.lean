@@ -26,8 +26,9 @@ The two tensor orders need different basis rescalings. Write `w = v₀` for the 
 `L_0^-` and `v_j` for the ladder vectors of `L_m^ε` and of `L_m^(-ε)`.
 
 * `signTensorEquiv : L_0^- ⊗ L_m^ε ≃ L_m^(-ε)` sends `w ⊗ v_j` to `v_j`. The sign of the left
-  factor enters only through the `K ⊗ E` term of `ΔE`, which already matches the sign change
-  `E v_j = ε [m - j + 1]_q v_(j - 1)` of `L_m^(-ε)`.
+  factor flips the sign of `K` through `ΔK = K ⊗ K`; among the `E` and `F` actions it enters
+  only through the `K ⊗ E` term of `ΔE`, which already matches the sign change
+  `E v_j = -ε [m - j + 1]_q v_(j - 1)` of `L_m^(-ε)`.
 * `tensorSignEquiv : L_m^ε ⊗ L_0^- ≃ L_m^(-ε)` sends `v_j ⊗ w` to `(-1)^j v_j`. Here the sign of
   the right factor enters through the `F ⊗ K⁻¹` term of `ΔF`, and the alternating rescaling
   moves it from `F` to `E`.
@@ -49,6 +50,7 @@ Only `q ≠ 0` is needed for the isomorphisms; no genericity hypothesis is used.
 * `TauCeti.UqSl2.LadderModule.signTensorEquiv_tmul_vec`: `w ⊗ v_j ↦ v_j`.
 * `TauCeti.UqSl2.LadderModule.tensorSignEquiv_tmul_vec`: `v_j ⊗ w ↦ (-1)^j v_j`.
 * `TauCeti.UqSl2.LadderModule.signTensorCommEquiv_tmul_vec`: `w ⊗ v_j ↦ (-1)^j v_j ⊗ w`.
+* `TauCeti.UqSl2.LadderModule.signTensorCommEquiv_symm_tmul_vec`: `v_j ⊗ w ↦ (-1)^j w ⊗ v_j`.
 * `TauCeti.UqSl2.LadderModule.not_exists_linearMap_tmul_eq_tmul`: the flip of tensor factors is
   not a module map `L_0^- ⊗ L_m^ε → L_m^ε ⊗ L_0^-` for `m ≥ 1`.
 
@@ -71,23 +73,6 @@ omit [Fact (q ≠ 0)] in
 /-- The basis vector of the sign representation is the ladder basis vector. -/
 private theorem vec_sign : vec q 0 (-1) 0 = basis q 0 (-1) 0 := by
   simpa using vec_coe (q := q) (m := 0) (ε := -1) 0
-
-/-- A complex-linear map out of `L_m^δ` commuting with `E`, `F` and `K` on the ladder vectors is
-`UqSl2 q`-linear. -/
-private def homOfVec {δ : ℤˣ} {W : Type*} [AddCommGroup W] [Module ℂ W] [Module (UqSl2 q) W]
-    [IsScalarTower ℂ (UqSl2 q) W] (φ : LadderModule q m δ →ₗ[ℂ] W)
-    (he : ∀ j : ℤ, φ (e q • vec q m δ j) = e q • φ (vec q m δ j))
-    (hf : ∀ j : ℤ, φ (f q • vec q m δ j) = f q • φ (vec q m δ j))
-    (hk : ∀ j : ℤ, φ (k q • vec q m δ j) = k q • φ (vec q m δ j)) :
-    LadderModule q m δ →ₗ[UqSl2 q] W where
-  toFun := φ
-  map_add' := φ.map_add
-  map_smul' := by
-    have key (a : UqSl2 q) (ha : ∀ j : ℤ, φ (a • vec q m δ j) = a • φ (vec q m δ j))
-        (x : LadderModule q m δ) : φ (a • x) = a • φ x := by
-      rw [← (basis q m δ).sum_repr x]
-      simp only [Finset.smul_sum, map_sum, smul_algebra_smul_comm, map_smul, ← vec_coe, ha]
-    exact φ.map_smul_of_commute_uqSl2 (key _ he) (key _ hf) (key _ hk)
 
 /-! ### The sign representation on the left -/
 
@@ -137,8 +122,9 @@ def signTensorEquiv :
     Tensor ℂ (UqSl2 q) (LadderModule q 0 (-1)) (LadderModule q m ε) ≃ₗ[UqSl2 q]
       LadderModule q m (-ε) :=
   (LinearEquiv.ofBijective
-    (homOfVec (signTensorLinearEquiv q m ε).toLinearMap signTensorLinearEquiv_e_smul
-      signTensorLinearEquiv_f_smul signTensorLinearEquiv_k_smul)
+    (homOfVec (signTensorLinearEquiv q m ε).toLinearMap
+      (fun j _ => signTensorLinearEquiv_e_smul j) (fun j _ => signTensorLinearEquiv_f_smul j)
+      (fun j _ => signTensorLinearEquiv_k_smul j))
     (signTensorLinearEquiv q m ε).bijective).symm
 
 /-- The inverse of `signTensorEquiv` sends `v_j` to `w ⊗ v_j`. -/
@@ -206,8 +192,9 @@ def tensorSignEquiv :
     Tensor ℂ (UqSl2 q) (LadderModule q m ε) (LadderModule q 0 (-1)) ≃ₗ[UqSl2 q]
       LadderModule q m (-ε) :=
   (LinearEquiv.ofBijective
-    (homOfVec (tensorSignLinearEquiv q m ε).toLinearMap tensorSignLinearEquiv_e_smul
-      tensorSignLinearEquiv_f_smul tensorSignLinearEquiv_k_smul)
+    (homOfVec (tensorSignLinearEquiv q m ε).toLinearMap
+      (fun j _ => tensorSignLinearEquiv_e_smul j) (fun j _ => tensorSignLinearEquiv_f_smul j)
+      (fun j _ => tensorSignLinearEquiv_k_smul j))
     (tensorSignLinearEquiv q m ε).bijective).symm
 
 /-- The inverse of `tensorSignEquiv` sends `v_j` to `(-1)^j v_j ⊗ w`. -/
@@ -242,6 +229,15 @@ theorem signTensorCommEquiv_tmul_vec (j : ℤ) :
     signTensorCommEquiv q m ε (tmul ℂ (UqSl2 q) (vec q 0 (-1) 0) (vec q m ε j)) =
       (-1 : ℂ) ^ j • tmul ℂ (UqSl2 q) (vec q m ε j) (vec q 0 (-1) 0) := by
   simp [signTensorCommEquiv]
+
+/-- The inverse of `signTensorCommEquiv` sends `v_j ⊗ w` to `(-1)^j w ⊗ v_j`. -/
+@[simp]
+theorem signTensorCommEquiv_symm_tmul_vec (j : ℤ) :
+    (signTensorCommEquiv q m ε).symm (tmul ℂ (UqSl2 q) (vec q m ε j) (vec q 0 (-1) 0)) =
+      (-1 : ℂ) ^ j • tmul ℂ (UqSl2 q) (vec q 0 (-1) 0) (vec q m ε j) := by
+  rw [LinearEquiv.symm_apply_eq, LinearMapClass.map_smul_of_tower, signTensorCommEquiv_tmul_vec,
+    smul_smul, ← mul_zpow]
+  simp
 
 /-- For `m ≥ 1` and `q ≠ ±1`, no module map `L_0^- ⊗ L_m^ε → L_m^ε ⊗ L_0^-` flips the tensor
 factors: the flip does not commute with `F`. Hence the alternating rescaling in
