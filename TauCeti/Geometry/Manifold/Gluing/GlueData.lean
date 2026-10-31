@@ -25,6 +25,11 @@ is a `C^n` manifold and every canonical map is a `C^n` local diffeomorphism, hen
 diffeomorphism onto its open image.
 For `𝕜 = ℂ` this glues complex manifolds along holomorphic transitions.
 
+The glued manifold structure is unique: any `C^n` manifold structure on the glued space for which
+every canonical map is a `C^n` local diffeomorphism has the same maximal atlas, so both define the
+same `C^n` structure. A map out of the glued space is a `C^n` local diffeomorphism exactly when its
+composite with every canonical map is.
+
 The relation identifying points of different pieces is consumed through `D.ι_eq_iff_rel`; it is
 not copied into a new structure. Empty pieces need no special treatment.
 
@@ -37,6 +42,10 @@ not copied into a new structure. Empty pieces need no special treatment.
   diffeomorphisms.
 * `TopCat.GlueData.IsCompatible.partialDiffeomorphι`: a canonical map as a `C^n` diffeomorphism
   from a piece onto its image.
+* `TopCat.GlueData.IsCompatible.isLocalDiffeomorph_iff`: local diffeomorphisms out of the glued
+  space are detected on the pieces.
+* `TopCat.GlueData.IsCompatible.maximalAtlas_chartedSpace_eq`: uniqueness of the glued manifold
+  structure.
 
 ## References
 
@@ -186,5 +195,29 @@ theorem IsCompatible.contMDiff_iff (h : D.IsCompatible I n) {E' : Type*} [Normed
     ContMDiff I I' n g ↔ ∀ i, ContMDiff I I' n (g ∘ D.toGlueData.ι i) :=
   TauCeti.contMDiff_iff_chartedSpaceOfIsOpenEmbedding D.ι_isOpenEmbedding D.ι_jointly_surjective
     fun _ _ _ _ ↦ h.exists_contMDiffAt_transition
+
+/-- **Local diffeomorphisms out of a compatible gluing.** A map out of the glued space is a `C^n`
+local diffeomorphism exactly when its composite with the canonical map of every piece is one. In
+particular, a bijection onto another `C^n` manifold with this property is a diffeomorphism, by
+`IsLocalDiffeomorph.diffeomorphOfBijective`. -/
+theorem IsCompatible.isLocalDiffeomorph_iff (h : D.IsCompatible I n) {E' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
+    {I' : ModelWithCorners 𝕜 E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+    {g : D.toGlueData.glued → N} :
+    letI := D.chartedSpace H
+    IsLocalDiffeomorph I I' n g ↔ ∀ i, IsLocalDiffeomorph I I' n (g ∘ D.toGlueData.ι i) :=
+  TauCeti.isLocalDiffeomorph_iff_chartedSpaceOfIsOpenEmbedding D.ι_isOpenEmbedding
+    D.ι_jointly_surjective fun _ _ _ _ ↦ h.exists_contMDiffAt_transition
+
+/-- **Uniqueness of the glued manifold structure.** A `C^n` manifold structure on the glued space
+for which every canonical map is a `C^n` local diffeomorphism has the same maximal atlas as
+`D.chartedSpace H`. -/
+theorem IsCompatible.maximalAtlas_chartedSpace_eq (h : D.IsCompatible I n)
+    {c : ChartedSpace H D.toGlueData.glued} (hc : letI := c; IsManifold I n D.toGlueData.glued)
+    (hιc : ∀ i, letI := c; IsLocalDiffeomorph I I n (D.toGlueData.ι i)) :
+    (letI := D.chartedSpace H; maximalAtlas I n D.toGlueData.glued) =
+      (letI := c; maximalAtlas I n D.toGlueData.glued) :=
+  TauCeti.maximalAtlas_chartedSpaceOfIsOpenEmbedding_eq D.ι_isOpenEmbedding
+    D.ι_jointly_surjective (fun _ _ _ _ ↦ h.exists_contMDiffAt_transition) hc hιc
 
 end TopCat.GlueData

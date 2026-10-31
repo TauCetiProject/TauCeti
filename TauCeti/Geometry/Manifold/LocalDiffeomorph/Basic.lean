@@ -30,7 +30,9 @@ every differential.
 The file also records that maximal-atlas charts and their inverses are local diffeomorphisms, and
 that being a local diffeomorphism at a point is an open condition: the partial diffeomorphism
 witnessing it at one point witnesses it at every nearby point, and that a local diffeomorphism can
-be cancelled on the right of a composite local diffeomorphism.
+be cancelled on the right of a composite local diffeomorphism. Conversely, an open partial
+homeomorphism to the model space which is a local diffeomorphism on its source is a chart of the
+maximal atlas.
 
 ## Main results
 
@@ -49,6 +51,9 @@ be cancelled on the right of a composite local diffeomorphism.
   local diffeomorphism at every point of its source.
 * `OpenPartialHomeomorph.isLocalDiffeomorphAt_symm_of_mem_maximalAtlas`: its inverse is a local
   diffeomorphism at every point of its target.
+* `IsManifold.mem_maximalAtlas_iff_forall_isLocalDiffeomorphAt`: conversely, an open partial
+  homeomorphism to the model space which is a local diffeomorphism at every point of its source
+  is a maximal-atlas chart.
 * `PartialDiffeomorph.trans_mem_maximalAtlas`: a partial diffeomorphism followed by a
   maximal-atlas chart is a maximal-atlas chart.
 * `IsLocalDiffeomorphAt.exists_mem_maximalAtlas_eventuallyEq`: a maximal-atlas chart pulls back
@@ -57,6 +62,8 @@ be cancelled on the right of a composite local diffeomorphism.
   condition.
 * `IsLocalDiffeomorphAt.of_comp_right`: a map whose composite with a local diffeomorphism is a local
   diffeomorphism is itself one.
+* `IsLocalDiffeomorphAt.isLocalDiffeomorphAt_comp_iff`: the resulting characterisation of local
+  diffeomorphisms out of the target of a local diffeomorphism.
 * `TauCeti.isLocalDiffeomorph_of_mfderiv_eq`: the global version.
 
 -/
@@ -227,6 +234,26 @@ theorem _root_.OpenPartialHomeomorph.isLocalDiffeomorphAt_symm_of_mem_maximalAtl
       contMDiffOn_invFun := contMDiffOn_symm_of_mem_maximalAtlas he }
   exact isLocalDiffeomorphAt_of_eqOn (Φ := φ.symm) hy fun _ _ => rfl
 
+/-- **The maximal atlas consists of the local diffeomorphisms to the model.** An open partial
+homeomorphism to the model space lies in the `C^n` maximal atlas exactly when it is a `C^n` local
+diffeomorphism at every point of its source. -/
+theorem _root_.IsManifold.mem_maximalAtlas_iff_forall_isLocalDiffeomorphAt [IsManifold I n M]
+    (e : OpenPartialHomeomorph M H) :
+    e ∈ IsManifold.maximalAtlas I n M ↔ ∀ x ∈ e.source, IsLocalDiffeomorphAt I I n e x := by
+  refine ⟨fun he _ hx ↦ e.isLocalDiffeomorphAt_of_mem_maximalAtlas he hx, fun h ↦ ?_⟩
+  rw [IsManifold.mem_maximalAtlas_iff_contMDiffOn]
+  refine ⟨fun x hx ↦ (h x hx).contMDiffAt.contMDiffWithinAt, fun z hz ↦ ?_⟩
+  obtain ⟨x, hx, rfl⟩ : ∃ x ∈ e.source, e x = z := ⟨e.symm z, e.map_target hz, e.right_inv hz⟩
+  have hl := h x hx
+  -- Near `e x`, the inverse of `e` is the local inverse of `e` at `x`.
+  have hsrc : hl.localInverse ⁻¹' e.source ∈ 𝓝 (e x) := by
+    refine hl.continuousAt_localInverse.preimage_mem_nhds (e.open_source.mem_nhds ?_)
+    rw [hl.localInverse_left_inv hl.localInverse_mem_target]
+    exact hx
+  refine (hl.contMDiffAt_localInverse.congr_of_eventuallyEq ?_).contMDiffWithinAt
+  filter_upwards [hl.localInverse_eventuallyEq_right, hsrc] with w hw hw'
+  simpa only [Function.comp_apply, id_eq, e.left_inv hw'] using congrArg e.symm hw.symm
+
 /-- A partial diffeomorphism `Φ : M → N'` followed by a chart `e` of the maximal `C^n` atlas of
 `N'` is a chart of the maximal `C^n` atlas of `M`. -/
 theorem _root_.PartialDiffeomorph.trans_mem_maximalAtlas {N' : Type*} [TopologicalSpace N']
@@ -275,6 +302,15 @@ theorem _root_.IsLocalDiffeomorphAt.of_comp_right {F' : Type*} [NormedAddCommGro
   have hx : he.localInverse (e x) = x := he.localInverse_left_inv he.localInverse_mem_target
   refine ⟨he.localInverse.trans Ψ, by simp [he.localInverse_mem_source, hx, hxΨ], fun y hy ↦ ?_⟩
   simpa [he.localInverse_right_inv hy.1] using hfeΨ hy.2
+
+/-- **Composing with a local diffeomorphism on the right.** If `e` is a `C^n` local diffeomorphism
+at `x`, then `f ∘ e` is a `C^n` local diffeomorphism at `x` exactly when `f` is one at `e x`. -/
+theorem _root_.IsLocalDiffeomorphAt.isLocalDiffeomorphAt_comp_iff {F' : Type*}
+    [NormedAddCommGroup F'] [NormedSpace 𝕂 F'] {G' : Type*} [TopologicalSpace G']
+    {K : ModelWithCorners 𝕂 F' G'} {P : Type*} [TopologicalSpace P] [ChartedSpace G' P]
+    {e : M → N} {f : N → P} {x : M} (he : IsLocalDiffeomorphAt I J n e x) :
+    IsLocalDiffeomorphAt I K n (f ∘ e) x ↔ IsLocalDiffeomorphAt J K n f (e x) :=
+  ⟨fun hfe ↦ hfe.of_comp_right he, fun hf ↦ he.comp (hg := hf)⟩
 
 end EqOn
 
