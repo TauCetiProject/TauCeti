@@ -44,6 +44,8 @@ that of `g`. Combined with Mathlib's functional equation it gives the Mellin pri
 * `TauCeti.FEPairWithLevel.toWeakFEPair`: its transport to Mathlib's `WeakFEPair`.
 * `WeakFEPair.toFEPairWithLevel`: a weak pair presented at a given level.
 * `TauCeti.FEPairWithLevel.symm`: the pair read backwards at the same level.
+* `WeakFEPair.Λ_congr`: the completed function of a weak pair depends only on `f` on `(0, ∞)` and
+  the constants.
 * `TauCeti.FEPairWithLevel.Λ`: the completed function, the continued Mellin transform of `f - f₀`.
 * `TauCeti.FEPairWithLevel.hasMellin`, `differentiableAt_Λ`, `Λ_residue_zero`, `Λ_residue_k`:
   its Mellin representation, regularity and residues.
@@ -182,6 +184,16 @@ variable (Q : WeakFEPair E) (N : ℝ) (hN : 0 < N)
 @[simp] theorem toFEPairWithLevel_g₀ : (Q.toFEPairWithLevel N hN).g₀ = Q.g₀ := (rfl)
 
 @[simp] theorem toFEPairWithLevel_N : (Q.toFEPairWithLevel N hN).N = N := (rfl)
+
+/-- Two weak pairs whose functions `f` agree on `(0, ∞)`, with the same weight, root number and
+constants, have the same completed function: `Λ` sees `f` only through a Mellin transform. -/
+theorem Λ_congr {P P' : WeakFEPair E} (hf : EqOn P.f P'.f (Ioi 0)) (hk : P.k = P'.k)
+    (hε : P.ε = P'.ε) (hf₀ : P.f₀ = P'.f₀) (hg₀ : P.g₀ = P'.g₀) : P.Λ = P'.Λ := by
+  have hmod : EqOn P.f_modif P'.f_modif (Ioi 0) := fun t ht ↦ by
+    simp only [f_modif, Pi.add_apply, indicator_apply, hf ht, hk, hε, hf₀, hg₀]
+  funext s
+  simp only [Λ, Λ₀, mellin, hk, hε, hf₀, hg₀]
+  rw [setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ by rw [hmod ht]]
 
 end WeakFEPair
 
@@ -329,19 +341,9 @@ see. -/
 @[simp]
 theorem _root_.WeakFEPair.toFEPairWithLevel_Λ (Q : WeakFEPair E) {N : ℝ} (hN : 0 < N) :
     (Q.toFEPairWithLevel N hN).Λ = Q.Λ := by
-  have hε := Q.toWeakFEPair_toFEPairWithLevel_ε hN
-  have hmod : EqOn (Q.toFEPairWithLevel N hN).toWeakFEPair.f_modif Q.f_modif (Ioi 0) :=
-    fun t ht ↦ by
-      simp only [WeakFEPair.f_modif, Pi.add_apply, indicator_apply, hε, toWeakFEPair_f₀,
-        toWeakFEPair_g₀, toWeakFEPair_k, WeakFEPair.toFEPairWithLevel_f₀,
-        WeakFEPair.toFEPairWithLevel_g₀, WeakFEPair.toFEPairWithLevel_k,
-        Q.toWeakFEPair_toFEPairWithLevel_f hN ht]
-  funext s
   rw [← toWeakFEPair_Λ]
-  simp only [WeakFEPair.Λ, WeakFEPair.Λ₀, mellin, hε, toWeakFEPair_f₀, toWeakFEPair_g₀,
-    toWeakFEPair_k, WeakFEPair.toFEPairWithLevel_f₀, WeakFEPair.toFEPairWithLevel_g₀,
-    WeakFEPair.toFEPairWithLevel_k]
-  rw [setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ by rw [hmod ht]]
+  exact WeakFEPair.Λ_congr (Q.toWeakFEPair_toFEPairWithLevel_f hN) rfl
+    (Q.toWeakFEPair_toFEPairWithLevel_ε hN) rfl rfl
 
 /-- On `Re s > k`, `Λ s` is the Mellin transform of `f - f₀`. -/
 theorem hasMellin [CompleteSpace E] {s : ℂ} (hs : P.k < s.re) :
@@ -400,12 +402,13 @@ theorem toWeakFEPair_symm_Λ [CompleteSpace E] {s : ℂ} (h0 : s ≠ 0) (hk : s 
       (continuous_re.tendsto _).eventually (lt_mem_nhds (by simp))
     filter_upwards [hre] with z hz
     rw [← (P.toWeakFEPair.symm.hasMellin hz).2, ← (P.symm.hasMellin hz).2]
+    simp only [WeakFEPair.symm_f, WeakFEPair.symm_f₀, toWeakFEPair_g, toWeakFEPair_g₀, symm_f,
+      symm_f₀]
     have h := mellin_comp_mul_right (fun t ↦ P.g t - P.g₀) z (inv_pos.mpr P.hN)
     simp only [← div_eq_mul_inv] at h
     refine h.trans ?_
     rw [ofReal_inv, inv_cpow _ _ (by rw [arg_ofReal_of_nonneg P.hN.le]; exact pi_ne_zero.symm),
       cpow_neg, inv_inv]
-    rfl
   exact hL.eqOn_of_preconnected_of_eventuallyEq hR hUc hmem hev (memU.mpr ⟨h0, hk⟩)
 
 /-- The Mellin principle at level `N`: `Λ(f, s) = ε N ^ (-s) Λ(g, k - s)` off the poles `0`
