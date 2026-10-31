@@ -182,8 +182,7 @@ private theorem stereographic'_mem_maximalAtlas (v : sphere (0 : E) 1) {k : â„•â
 /-- Stereographic projection from `v` sends the antipode `-v` to the origin. -/
 @[simp]
 theorem stereographic'_apply_neg (v : sphere (0 : E) 1) : stereographic' n v (-v) = 0 := by
-  rw [stereographic', OpenPartialHomeomorph.trans_apply, stereographic_apply_neg,
-    Homeomorph.toOpenPartialHomeomorph_apply, LinearIsometryEquiv.coe_toHomeomorph, map_zero]
+  simp [stereographic', stereographic_apply_neg]
 
 /-- Away from the centre `v` of projection, stereographic projection from `v` sends exactly the
 antipode `-v` to the origin. -/

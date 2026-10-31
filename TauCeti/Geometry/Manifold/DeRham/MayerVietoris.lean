@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 public import TauCeti.Algebra.Homology.ModuleCat.Biprod
 public import TauCeti.Geometry.Manifold.DeRham.DegreeZero
+import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import Mathlib.Geometry.Manifold.Metrizable
 import Mathlib.Geometry.Manifold.PartitionOfUnity
@@ -599,35 +600,36 @@ section Acyclic
 
 open CategoryTheory Limits
 
-omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] in
-/-- The degree-`k` cohomology of `Ω^•(U) ⊞ Ω^•(V)` vanishes when that of `U` and of `V` does. -/
-private theorem isZero_homology_biprod {U V : Opens M}
-    (hU : Subsingleton (deRhamCohomology I U k)) (hV : Subsingleton (deRhamCohomology I V k)) :
-    IsZero ((deRhamComplex I U ⊞ deRhamComplex I V).homology k) := by
-  have := preservesBinaryBiproducts_of_preservesBiproducts
-    (HomologicalComplex.homologyFunctor (ModuleCat ℝ) (ComplexShape.up ℕ) k)
-  exact ((biprod_isZero_iff _ _).mpr ⟨@ModuleCat.isZero_of_subsingleton _ _ _ hU,
-    @ModuleCat.isZero_of_subsingleton _ _ _ hV⟩).of_iso
-    ((HomologicalComplex.homologyFunctor _ _ k).mapBiprod _ _)
-
 /-- The Mayer–Vietoris connecting map `H^k(U ⊓ V) → H^{k+1}(U ⊔ V)` is injective when `U` and `V`
 have no de Rham cohomology in degree `k`. -/
 theorem mayerVietorisδ_injective {U V : Opens M}
     (hU : Subsingleton (deRhamCohomology I U k)) (hV : Subsingleton (deRhamCohomology I V k)) :
-    Function.Injective (mayerVietorisδ I U V k) :=
-  (ModuleCat.mono_iff_injective _).mp
-    (((mayerVietorisShortComplex_shortExact (I := I) U V).homology_exact₃ k (k + 1) rfl).mono_g
-      ((isZero_homology_biprod hU hV).eq_of_src _ _))
+    Function.Injective (mayerVietorisδ I U V k) := by
+  have h := ((HomologicalComplex.exactAt_biprod_iff _ _ k).mpr
+    ⟨(HomologicalComplex.exactAt_iff_isZero_homology _ _).mpr
+      (@ModuleCat.isZero_of_subsingleton _ _ _ hU),
+    (HomologicalComplex.exactAt_iff_isZero_homology _ _).mpr
+      (@ModuleCat.isZero_of_subsingleton _ _ _ hV)⟩).isZero_homology
+  refine (ModuleCat.mono_iff_injective (ModuleCat.ofHom (mayerVietorisδ I U V k))).mp ?_
+  rw [ofHom_mayerVietorisδ]
+  exact ((mayerVietorisShortComplex_shortExact (I := I) U V).homology_exact₃ k (k + 1) rfl).mono_g
+    (h.eq_of_src _ _)
 
 /-- The Mayer–Vietoris connecting map `H^k(U ⊓ V) → H^{k+1}(U ⊔ V)` is surjective when `U` and `V`
 have no de Rham cohomology in degree `k + 1`. -/
 theorem mayerVietorisδ_surjective {U V : Opens M}
     (hU : Subsingleton (deRhamCohomology I U (k + 1)))
     (hV : Subsingleton (deRhamCohomology I V (k + 1))) :
-    Function.Surjective (mayerVietorisδ I U V k) :=
-  (ModuleCat.epi_iff_surjective _).mp
-    (((mayerVietorisShortComplex_shortExact (I := I) U V).homology_exact₁ k (k + 1) rfl).epi_f
-      ((isZero_homology_biprod hU hV).eq_of_tgt _ _))
+    Function.Surjective (mayerVietorisδ I U V k) := by
+  have h := ((HomologicalComplex.exactAt_biprod_iff _ _ (k + 1)).mpr
+    ⟨(HomologicalComplex.exactAt_iff_isZero_homology _ _).mpr
+      (@ModuleCat.isZero_of_subsingleton _ _ _ hU),
+    (HomologicalComplex.exactAt_iff_isZero_homology _ _).mpr
+      (@ModuleCat.isZero_of_subsingleton _ _ _ hV)⟩).isZero_homology
+  refine (ModuleCat.epi_iff_surjective (ModuleCat.ofHom (mayerVietorisδ I U V k))).mp ?_
+  rw [ofHom_mayerVietorisδ]
+  exact ((mayerVietorisShortComplex_shortExact (I := I) U V).homology_exact₁ k (k + 1) rfl).epi_f
+    (h.eq_of_tgt _ _)
 
 /-- When `U` and `V` have no de Rham cohomology in degrees `k` and `k + 1`, the Mayer–Vietoris
 connecting map is a linear equivalence `H^k(U ⊓ V) ≃ H^{k+1}(U ⊔ V)`. -/
@@ -660,9 +662,7 @@ theorem mayerVietorisδ_const (U V : Opens M) (r : ℝ) :
   rw [const_eq_mk, mayerVietorisδ_mk U V _ α.1 0 ?_ 0 ?_ ?_, map_zero]
   · rw [map_zero, sub_zero]
     refine Subtype.ext ?_
-    rw [SmoothForm.coe_mpullback, coe_closedFormsZeroEquiv_symm_apply,
-      coe_closedFormsZeroEquiv_symm_apply, mpullback_ofFunction]
-    rfl
+    simp [α, coe_closedFormsZeroEquiv_symm_apply, mpullback_ofFunction]
   · rw [Submodule.coe_zero, map_zero, (mem_closedForms_iff_mextDerivₗ_eq_zero I α.1).mp α.2]
   · rw [Submodule.coe_zero, map_zero, map_zero]
 
