@@ -368,7 +368,7 @@ theorem gaussSign_dyadicCyclic [NeZero k] {θ : ℤ} (hθ : Odd θ) :
   exact gaussSign_dyadicCyclic_add_one hθ j
 
 /-- **The Gauss-sum invariant of `q_θ^{(2)}(2)` is `±1`** for odd `θ`: it is `1` for
-`θ ≡ ±1 (mod 8)` and `-1` for `θ ≡ ±3 (mod 8)`. -/
+`θ ≡ 1 (mod 4)` and `-1` for `θ ≡ 3 (mod 4)`. -/
 theorem gaussSign_dyadicCyclic_one_eq_one_or_eq_neg_one {θ : ℤ} (hθ : Odd θ) :
     (dyadicCyclic 1 θ).gaussSign = 1 ∨ (dyadicCyclic 1 θ).gaussSign = -1 := by
   rw [gaussSign_dyadicCyclic (k := 1) hθ]
