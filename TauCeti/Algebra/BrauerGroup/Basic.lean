@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 -- `TauCeti.Algebra.CentralSimple.TensorProduct` is imported publicly: its instances
--- `TauCeti.Algebra.IsCentral.tensorProduct` and `TauCeti.IsSimpleRing.tensorProduct` are two of the
+-- `TauCeti.Algebra.IsCentral.tensorProduct` and `IsSimpleRing.tensorProduct` are two of the
 -- three things that make `TauCeti.CSA.tensorProduct` well defined. It re-exports
 -- `Mathlib.RingTheory.TensorProduct.Basic` (hence the `⊗[K]` notation),
 -- `Mathlib.Algebra.Central.Basic` and `Mathlib.RingTheory.SimpleRing.Basic`, which is why none of
@@ -144,7 +144,7 @@ abbrev matrix (A : CSA.{u, v} K) (n : ℕ) [NeZero n] : CSA.{u, v} K :=
   of K (Matrix (Fin n) (Fin n) A)
 
 /-- The tensor product of two central simple `K`-algebras, again a central simple `K`-algebra by
-`TauCeti.Algebra.IsCentral.tensorProduct` and `TauCeti.IsSimpleRing.tensorProduct`. This is the
+`TauCeti.Algebra.IsCentral.tensorProduct` and `IsSimpleRing.tensorProduct`. This is the
 operation that descends to the group law on `BrauerGroup K`
 (`TauCeti.isBrauerEquivalent_tensorProduct_congr`). -/
 abbrev tensorProduct (A B : CSA.{u, v} K) : CSA.{u, v} K :=

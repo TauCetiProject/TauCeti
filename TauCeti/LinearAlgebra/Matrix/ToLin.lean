@@ -36,6 +36,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   vectors are equivalent over a commutative semiring.
 * `Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis`: an endomorphism with one matrix-unit
   coordinate action has the corresponding single-entry matrix.
+* `Module.Basis.equivFun_list_prod_smul`: the coordinates of a product of linear automorphisms
+  applied to a vector are the product of their matrices applied to its coordinates.
 
 The first is used to turn the Azumaya isomorphism of a finite-dimensional central simple algebra
 into a matrix algebra in `TauCeti/Algebra/CentralSimple/Opposite.lean`.
@@ -92,6 +94,23 @@ theorem toMatrixAlgEquiv_eq_single_of_apply_basis {R : Type*} [CommSemiring R] {
   intro c
   rw [toLinAlgEquiv_single_apply_basis]
   exact h c
+
+open Matrix in
+/-- **Coordinates of a product of linear automorphisms.** In a basis `b`, the coordinates of
+`(∏ G a) • x` are the ordered product of the matrices of the `G a` applied to the coordinates of
+`x`. -/
+theorem equivFun_list_prod_smul {R : Type*} [CommSemiring R] {M : Type*} [AddCommMonoid M]
+    [Module R M] {n α : Type*} [Fintype n] [DecidableEq n] (b : Module.Basis n R M) (l : List α)
+    (G : α → LinearMap.GeneralLinearGroup R M) (x : M) :
+    b.equivFun ((l.map G).prod • x) =
+      (l.map fun a ↦ LinearMap.toMatrixAlgEquiv b (G a : Module.End R M)).prod *ᵥ
+        b.equivFun x := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    rw [List.map_cons, List.prod_cons, mul_smul, List.map_cons, List.prod_cons,
+      ← mulVec_mulVec, ← ih, Units.smul_def, Module.End.smul_def]
+    exact (LinearMap.toMatrix_mulVec_repr b b _ _).symm
 
 end Module.Basis
 

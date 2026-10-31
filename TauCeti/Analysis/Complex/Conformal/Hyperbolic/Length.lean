@@ -130,8 +130,7 @@ Why `TauCeti.densityLength`, and not Mathlib's `ℝ≥0∞`-valued `Manifold.pat
 `Mathlib/Geometry/Manifold/Riemannian/PathELength.lean`, is the notion being instantiated is
 argued in `TauCeti/Analysis/Calculus/DensityLength.lean`. Should the Poincaré disc later be given
 a Riemannian structure, `TauCeti.isLeast_hyperbolicLength` is precisely the input needed to
-identify `hyperbolicDist` with `Manifold.riemannianEDist`, and this file should be refactored onto
-that API at that point.
+identify `hyperbolicDist` with `Manifold.riemannianEDist`.
 
 ## Main declarations
 
@@ -185,6 +184,9 @@ Mathlib has the hyperbolic metric on the upper half-plane
 characterisation of it.
 
 ## References
+
+* [Mathlib PR #33505](https://github.com/leanprover-community/mathlib4/pull/33505), the preceding
+  human-curated Riemann-mapping development and its local analytic prerequisites.
 
 * L. V. Ahlfors, *Conformal Invariants*, Ch. 1 (the Poincaré metric as a length metric).
 * J. B. Conway, *Functions of One Complex Variable I* (GTM 11), Ch. VII.
@@ -291,26 +293,27 @@ theorem hyperbolicLength_congr {δ : ℝ → ℂ} (hδ : EqOn δ γ (uIoo a b)) 
     hyperbolicLength δ a b = hyperbolicLength γ a b :=
   densityLength_congr hδ
 
-/-- **Hyperbolic length is additive along the parameter interval**: the lengths of the two halves
-of a path add up to the length of the whole, as soon as the density-weighted speed is integrable
-over the whole. For a `C¹` path in the disc that hypothesis holds by continuity. -/
-theorem hyperbolicLength_add {a b c : ℝ} (hab : a ≤ b) (hbc : b ≤ c)
+/-- **Hyperbolic length is additive along the parameter interval**: for a parameter `b` between
+`a` and `c`, the lengths of the two pieces of a path add up to the length of the whole, as soon as
+the density-weighted speed is integrable over the whole. For a `C¹` path in the disc that
+hypothesis holds by continuity. -/
+theorem hyperbolicLength_add {a b c : ℝ} (hb : b ∈ uIcc a c)
     (hint : IntervalIntegrable (fun t ↦ ‖deriv γ t‖ / (1 - ‖γ t‖ ^ 2))
       MeasureTheory.volume a c) :
     hyperbolicLength γ a b + hyperbolicLength γ b c = hyperbolicLength γ a c :=
-  densityLength_add hab hbc (by simpa only [div_eq_inv_mul] using hint)
+  densityLength_add hb (by simpa only [div_eq_inv_mul] using hint)
 
 /-- **Hyperbolic length is invariant under affine reparametrisation.** Replacing the parameter `t`
-by `s * t + d` for `s ≠ 0`, an orientation-preserving reparametrisation for `0 < s` and an
+by `s * t + d`, an orientation-preserving reparametrisation for `0 < s` and an
 orientation-reversing one for `s < 0`, transports the parameter interval and leaves the length
-unchanged: two affinely reparametrised copies of one path have the same hyperbolic length. For
-instance `s = r`, `d = 0` reads the path of
+unchanged, both sides vanishing for `s = 0`: two affinely reparametrised copies of one path have
+the same hyperbolic length. For instance `s = r`, `d = 0` reads the path of
 `TauCeti.exists_hyperbolicLength_eq_hyperbolicDist`, defined on `[0, r]`, on the parameter
 interval `[0, 1]` without changing its length. -/
-theorem hyperbolicLength_comp_mul_add (γ : ℝ → ℂ) {s : ℝ} (hs : s ≠ 0) (d a b : ℝ) :
+theorem hyperbolicLength_comp_mul_add (γ : ℝ → ℂ) (s d a b : ℝ) :
     hyperbolicLength (fun t ↦ γ (s * t + d)) a b
       = hyperbolicLength γ (s * a + d) (s * b + d) :=
-  densityLength_comp_mul_add _ γ hs d a b
+  densityLength_comp_mul_add _ γ s d a b
 
 /-- **Hyperbolic length is invariant under monotone reparametrisation.** Precomposing a path with
 a map `φ` that is continuous on the parameter interval and has a nonnegative derivative inside it —
@@ -462,7 +465,7 @@ theorem hyperbolicLength_comp_le {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f 
     simpa only [div_eq_inv_mul] using
       intervalIntegrable_norm_deriv_div_one_sub_norm_sq hγ hγ' hderiv hmem
   simp only [hyperbolicLength]
-  refine densityLength_le_densityLength hint1 hint2 fun t ht ↦ ?_
+  refine densityLength_le_densityLength hint1 hint2 (.of_forall fun t ht ↦ ?_)
   rw [(hcomp t ht).deriv, (hderiv t ht).deriv, ← div_eq_inv_mul, ← div_eq_inv_mul]
   calc ‖γ' t * deriv f (γ t)‖ / (1 - ‖(f ∘ γ) t‖ ^ 2)
       = ‖γ' t‖ * (‖deriv f (γ t)‖ / (1 - ‖f (γ t)‖ ^ 2)) := by

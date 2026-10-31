@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import TauCeti.Analysis.Normed.Algebra.Exponential
 
 /-!
 # Exponentials in normed algebras
@@ -59,8 +60,7 @@ theorem norm_exp_smul_le (A : X →L[ℝ] X) (t : ℝ) :
 theorem exp_add_smul [CompleteSpace X] (A : X →L[ℝ] X) (s t : ℝ) :
     exp ((s + t) • A) = (exp (s • A)).comp (exp (t • A)) := by
   let +nondep : NormedAlgebra ℚ (X →L[ℝ] X) := .restrictScalars ℚ ℝ _
-  rw [add_smul, exp_add_of_commute (((Commute.refl A).smul_left _).smul_right _),
-    ContinuousLinearMap.mul_def]
+  simpa [ContinuousLinearMap.mul_def] using NormedSpace.exp_add_smul A s t
 
 
 /-- If every power of a bounded operator `B` has norm at most `M`, then

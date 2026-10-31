@@ -55,6 +55,8 @@ scope.
   products of Clifford generators.
 * `CliffordAlgebra.quadraticLieSubalgebra_toSubmodule_le_of_bivector_mem`: the
   universal property of the underlying submodule, from which the containments below are read off.
+* `CliffordAlgebra.map_mem_quadraticLieSubalgebra`: the algebra map induced by a quadratic
+  isometry preserves the quadratic elements.
 * `CliffordAlgebra.quadraticLieSubalgebra_le_evenOdd_zero`,
   `CliffordAlgebra.quadraticLieSubalgebra_le_even` and
   `CliffordAlgebra.quadraticLieSubalgebra_le_filtration_two`: the quadratic elements are
@@ -290,6 +292,24 @@ theorem lie_ι_mem_range_ι_of_mem_quadraticLieSubalgebra {x : CliffordAlgebra Q
     quadraticLieSubalgebra_toSubmodule_le_of_bivector_mem Q fun a b m =>
       ⟨_, (bivector_lie_ι Q a b m).symm⟩
   exact key hx m
+
+section Map
+
+variable {Q} {M₂ : Type*} [AddCommGroup M₂] [Module R M₂] {Q₂ : QuadraticForm R M₂}
+
+/-- The algebra map induced by a quadratic isometry carries quadratic elements to quadratic
+elements. -/
+theorem map_mem_quadraticLieSubalgebra (f : Q →qᵢ Q₂) {x : CliffordAlgebra Q}
+    (hx : x ∈ quadraticLieSubalgebra Q) : map f x ∈ quadraticLieSubalgebra Q₂ := by
+  have key : (quadraticLieSubalgebra Q).toSubmodule ≤
+      (quadraticLieSubalgebra Q₂).toSubmodule.comap (map f).toLinearMap :=
+    quadraticLieSubalgebra_toSubmodule_le_of_bivector_mem Q fun a b => by
+      rw [Submodule.mem_comap, AlgHom.toLinearMap_apply, map_bivector,
+        LieSubalgebra.mem_toSubmodule]
+      exact bivector_mem_quadraticLieSubalgebra Q₂ _ _
+  exact key hx
+
+end Map
 
 end CommRing
 
