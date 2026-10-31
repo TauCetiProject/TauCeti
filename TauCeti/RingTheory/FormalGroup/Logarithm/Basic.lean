@@ -509,10 +509,8 @@ theorem derivative_exp :
 theorem toPowerSeries_eq_subst_exp :
     F.toPowerSeries =
       PowerSeries.subst (PowerSeries.subst (X 0) F.log + PowerSeries.subst (X 1) F.log) F.exp := by
-  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-  have hlog := PowerSeries.HasSubst.of_constantCoeff_zero' F.constantCoeff_log
-  rw [← subst_toPowerSeries_log, ← PowerSeries.subst_comp_subst_apply hlog hF, subst_log_exp,
-    PowerSeries.subst_X hF]
+  rw [← subst_toPowerSeries_log,
+    F.subst_subst_log_exp (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff)]
 
 /-- The logarithm, bundled as a homomorphism to the additive formal group. -/
 noncomputable def logHom : TauCeti.FormalGroupHom F (𝔾ₐ (R := R)) where
