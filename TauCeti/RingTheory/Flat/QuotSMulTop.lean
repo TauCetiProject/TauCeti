@@ -11,8 +11,8 @@ public import Mathlib.RingTheory.QuotSMulTop
 public import Mathlib.RingTheory.Regular.IsSMulRegular
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import TauCeti.LinearAlgebra.TensorProduct.Quotient
+public import TauCeti.RingTheory.Flat.Extensions
 public import TauCeti.RingTheory.Flat.FiniteLength
-public import TauCeti.RingTheory.Flat.QuotientRegular
 public import TauCeti.RingTheory.Length
 
 /-!
@@ -127,16 +127,8 @@ theorem quotSMulTop_of_isSMulRegular_quotient [Module.Finite S N] [Flat R N] {y 
     exact Submodule.mkQ_surjective _
   refine of_exact_of_lTensor_quotient_injective f g hexact hg ?_
   intro I _
-  -- Transport the regularity of `y` on `N ⊗[R] (R ⧸ I)` across the symmetry of `⊗`.
-  have hreg := isSMulRegular_tensorProduct_of_isSMulRegular_quotient hy (R ⧸ I)
-  let e := TensorProduct.comm R (R ⧸ I) N
-  have hcomm : e ∘ (f.lTensor (R ⧸ I)) = (y • · : N ⊗[R] (R ⧸ I) → _) ∘ e := by
-    funext z
-    induction z with
-    | add a b ha hb => simp only [Function.comp_apply, map_add, smul_add] at ha hb ⊢; rw [ha, hb]
-    | tmul r n => simp [e, f, smul_tmul']
-  refine Function.Injective.of_comp (f := e) ?_
-  rw [hcomm]
-  exact hreg.comp e.injective
+  rw [f.lTensor_inj_iff_rTensor_inj (R ⧸ I), show ⇑(f.rTensor (R ⧸ I)) = (y • ·) from
+    funext fun z ↦ (AlgebraTensorModule.smul_eq_lsmul_rTensor y z).symm]
+  exact isSMulRegular_tensorProduct_of_isSMulRegular_quotient hy (R ⧸ I)
 
 end Module.Flat

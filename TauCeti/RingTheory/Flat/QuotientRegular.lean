@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Flat.Tensor
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.RingTheory.Flat.Extensions
 
 /-!
@@ -33,9 +32,6 @@ once `I ⊗[R] (B ⧸ (g)) → R ⊗[R] (B ⧸ (g))` is injective for every fini
 
 ## Main results
 
-* `Module.Flat.of_exact_of_lTensor_quotient_injective`: the chase for an arbitrary exact pair
-  `N → P → Q → 0` with `P` flat; the cokernel `Q` is flat when `N → P` stays injective after
-  tensoring with every `R ⧸ I`.
 * `Module.Flat.quotient_span_singleton_of_lTensor_mulLeft_injective`: the statement above.
 * `Module.Flat.lTensor_mulLeft_injective_of_quotient_span_singleton`: flatness of `B ⧸ (g)`
   makes multiplication by a regular `g` stay injective after tensoring with any module.
@@ -59,7 +55,8 @@ module on the left, matching the orientation of Mathlib's flatness API.
 The equivalences allow test modules and algebras in any universe at least that of `R`.
 Their reverse implications test universe lifts of the quotients `R ⧸ I`.
 
-The chase is carried out once for an exact pair `N → P → Q → 0` with `P` flat. For
+The chase is carried out once, for an exact pair `N → P → Q → 0` with `P` flat, by
+`Module.Flat.of_exact_of_lTensor_quotient_injective` in `TauCeti.RingTheory.Flat.Extensions`. For
 `B ⧸ (g)` it reads, for a finitely generated ideal `I`: an element of `I ⊗ (B ⧸ (g))` killed in
 `R ⊗ (B ⧸ (g))` lifts to `I ⊗ B`, is there the image of `g` times some `w` in `R ⊗ B`, and
 injectivity of `g` on `(R ⧸ I) ⊗ B` shows that `w` comes from `I ⊗ B`, so the element is `g`
@@ -116,44 +113,6 @@ theorem isSMulRegular_one_tmul_of_quotient_span_singleton {g : B}
     lTensor_mulLeft_injective_of_quotient_span_singleton (R := R) hg S
 
 /-! ### Universal regularity gives a flat quotient -/
-
-/-- **A cokernel is flat when the presentation stays injective modulo ideals.** Let
-`f : N → P` and `g : P → Q` be exact with `g` surjective and `P` flat over `R`. If
-`id ⊗ f : (R ⧸ I) ⊗[R] N → (R ⧸ I) ⊗[R] P` is injective for every finitely generated ideal `I`,
-then `Q` is flat over `R`. In terms of `Tor`, the hypothesis kills the image of
-`Tor₁(R ⧸ I, Q)` in `(R ⧸ I) ⊗[R] N`, and flatness of `P` makes `Tor₁(R ⧸ I, Q) → (R ⧸ I) ⊗[R] N`
-injective. No flatness of `N` and no injectivity of `f` is needed. -/
-theorem of_exact_of_lTensor_quotient_injective {N : Type*} {P : Type*} {Q : Type*}
-    [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P] [AddCommGroup Q] [Module R Q]
-    [Flat R P] (f : N →ₗ[R] P) (g : P →ₗ[R] Q) (hexact : Function.Exact f g)
-    (hg : Function.Surjective g)
-    (hf : ∀ ⦃I : Ideal R⦄, I.FG → Function.Injective (LinearMap.lTensor (R ⧸ I) f)) :
-    Flat R Q := by
-  rw [iff_rTensor_injective]
-  intro I hI
-  have hgf : g ∘ₗ f = 0 := hexact.linearMap_comp_eq_zero
-  have hqι : I.mkQ ∘ₗ I.subtype = 0 := (LinearMap.exact_subtype_mkQ I).linearMap_comp_eq_zero
-  rw [injective_iff_map_eq_zero]
-  intro z hz
-  obtain ⟨z', rfl⟩ := LinearMap.lTensor_surjective I hg z
-  -- `rTensor P I.subtype z'` is killed by `lTensor R g`, so it is the image of some `w`.
-  have h1 : LinearMap.lTensor R g (LinearMap.rTensor P I.subtype z') = 0 := by
-    rwa [LinearMap.lTensor_rTensor_comm]
-  obtain ⟨w, hw⟩ := ((_root_.lTensor_exact R hexact hg) _).mp h1
-  -- The image of `w` in `(R ⧸ I) ⊗ N` is killed by `id ⊗ f`, hence zero, so `w` comes from
-  -- `I ⊗ N`.
-  have h2 : LinearMap.lTensor (R ⧸ I) f (LinearMap.rTensor N I.mkQ w) = 0 := by
-    rw [LinearMap.lTensor_rTensor_comm, hw, ← LinearMap.comp_apply, ← LinearMap.rTensor_comp, hqι,
-      LinearMap.rTensor_zero, LinearMap.zero_apply]
-  obtain ⟨z₀, hz₀⟩ := ((_root_.rTensor_exact N (LinearMap.exact_subtype_mkQ I)
-      I.mkQ_surjective) _).mp
-    ((injective_iff_map_eq_zero _).mp (hf hI) _ h2)
-  -- Flatness of `P` makes `I ⊗ P → R ⊗ P` injective, so `z'` is the image of `z₀`.
-  have h4 : LinearMap.lTensor I f z₀ = z' :=
-    rTensor_preserves_injective_linearMap I.subtype I.injective_subtype <| by
-      rw [← LinearMap.lTensor_rTensor_comm, hz₀, hw]
-  rw [← h4, ← LinearMap.comp_apply, ← LinearMap.lTensor_comp, hgf, LinearMap.lTensor_zero,
-    LinearMap.zero_apply]
 
 /-- **A flat algebra modulo an element acting injectively on each `(R ⧸ I) ⊗[R] B` is flat.**
 Let `B` be a flat `R`-algebra and `g ∈ B`. If `id ⊗ (g • ·) : (R ⧸ I) ⊗[R] B → (R ⧸ I) ⊗[R] B` is
