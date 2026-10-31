@@ -9,7 +9,12 @@ public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 public import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Basic
 public import TauCeti.Topology.MetricSpace.Holder
+import Mathlib.Analysis.Calculus.FDeriv.Extend
+import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Holder
+import TauCeti.Analysis.PDE.HeatKernel.HeatEquation
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
@@ -17,9 +22,9 @@ import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 For a suitable initial datum `g`, for instance a bounded continuous one, the classical solution of
 the heat equation `∂ₜu = Δu` on `E × [0, ∞)` with initial datum `g` is the *Cauchy potential*
-`u(t, x) = (K_t ⋆ g)(x)`, where `K_t` is the heat kernel. This file does not prove that `u` solves
-the heat equation; it proves the estimates below. Substituting `z = √t • y` in the convolution
-integral writes it as
+`u(t, x) = (K_t ⋆ g)(x)`, where `K_t` is the heat kernel. This file proves the estimates below and,
+for data of class `C²` with bounded derivatives, the heat equation. Substituting `z = √t • y` in the
+convolution integral writes it as
 
 `u(t, x) = ∫ K_1(y) g(x - √t • y) dy`,
 
@@ -49,6 +54,14 @@ These are the estimates behind the top-order seminorms of the Cauchy potential i
 space `C^{2+α,1+α/2}`, where they are applied to the second spatial derivatives and the Laplacian
 of the datum.
 
+For bounded continuous data the potential is jointly continuous and commutes with continuous
+linear maps. Differentiating under the integral, if `g` has a bounded continuous derivative then
+`D_x u(t, ·)` is the Cauchy potential of `Dg`, and if `g` is of class `C²` with bounded first and
+second derivatives then `Δ u(t, ·)` is the Cauchy potential of `Δ g`. The heat equation
+`∂ₜu = Δu` for `t > 0` then follows from the heat equation for `K_t ⋆ g`
+(`TauCeti.hasDerivAt_heatKernel_convolution`). At `t = 0` the potential of `Δ g` is continuous,
+which gives the one-sided derivative `∂ₜu(0, x) = Δ g x` for bounded `g`.
+
 ## Main declarations
 
 * `TauCeti.heatCauchyPotential`: the Cauchy potential `∫ K_1(y) g(x - √t • y) dy`.
@@ -59,6 +72,11 @@ of the datum.
 * `HolderWith.heatCauchyPotential`: the spatial Hölder estimate of each time slice.
 * `TauCeti.norm_heatCauchyPotential_sub_heatCauchyPotential_le`: the temporal Hölder estimate.
 * `TauCeti.norm_heatCauchyPotential_sub_le`: the rate of attainment of the initial datum.
+* `TauCeti.continuous_heatCauchyPotential`: joint continuity for bounded continuous data.
+* `TauCeti.hasFDerivAt_heatCauchyPotential`: the spatial derivative is the potential of `Dg`.
+* `TauCeti.laplacian_heatCauchyPotential`: the Laplacian is the potential of `Δ g`.
+* `TauCeti.hasDerivAt_heatCauchyPotential`, `TauCeti.hasDerivWithinAt_heatCauchyPotential`: the
+  heat equation for positive times, and up to the initial time.
 
 ## References
 
@@ -82,8 +100,8 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 /-- The **Cauchy heat potential** of `g`, `u(t, x) = ∫ K_1(y) g(x - √t • y) dy`. For `t > 0` it is
 the heat convolution `(K_t ⋆ g)(x)` (`TauCeti.heatCauchyPotential_eq_convolution`), which for
-suitable data, such as bounded continuous ones, is the classical solution of the heat equation with
-initial datum `g`; that is not proved here. When `F` is complete it is `g(x)` for `t ≤ 0`
+suitable data is the classical solution of the heat equation with initial datum `g`
+(`TauCeti.hasDerivWithinAt_heatCauchyPotential`). When `F` is complete it is `g(x)` for `t ≤ 0`
 (`TauCeti.heatCauchyPotential_of_nonpos`). If the translates of `g` are not integrable against
 `K_1`, the integral takes the junk value `0`. -/
 def heatCauchyPotential (g : E → F) (t : ℝ) (x : E) : F :=
@@ -271,5 +289,163 @@ theorem norm_heatCauchyPotential_sub_le [CompleteSpace F] (hg : HolderWith H α 
     (hgc : Continuous g) {t : ℝ} (ht : 0 ≤ t) (x : E) :
     ‖heatCauchyPotential g t x - g x‖ ≤ H * heatKernelMoment E α * t ^ ((α : ℝ) / 2) := by
   simpa [abs_of_nonneg ht] using norm_heatCauchyPotential_sub_heatCauchyPotential_le hg hgc t 0 x
+
+/-! ### Bounded continuous data and the heat equation -/
+
+section HeatEquation
+
+open InnerProductSpace Laplacian
+
+variable [CompleteSpace F] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {M M₁ M₂ : ℝ}
+
+/-- The translates of a bounded continuous function are integrable against `K_1`. -/
+theorem integrable_heatKernel_one_smul_sub_smul_of_norm_le {g : E → G} (hgc : Continuous g)
+    (hM : ∀ y, ‖g y‖ ≤ M) (x : E) (c : ℝ) :
+    Integrable fun y : E => heatKernel 1 y • g (x - c • y) :=
+  ((integrable_heatKernel (E := E) one_pos).mul_const M).mono'
+    (((contDiff_heatKernel (k := 0) 1).continuous.smul
+      (hgc.comp (by fun_prop))).aestronglyMeasurable)
+    (ae_of_all _ fun y => by
+      rw [norm_smul, norm_of_nonneg (heatKernel_pos one_pos y).le]
+      exact mul_le_mul_of_nonneg_left (hM _) (heatKernel_pos one_pos y).le)
+
+/-- **Continuity of the Cauchy heat potential.** The Cauchy potential of a bounded continuous
+function is jointly continuous in time and space. -/
+theorem continuous_heatCauchyPotential {g : E → G} (hgc : Continuous g) (hM : ∀ y, ‖g y‖ ≤ M) :
+    Continuous fun p : ParabolicSpaceTime E => heatCauchyPotential g p.time p.space := by
+  have hp : ∀ y : E, Continuous fun p : ParabolicSpaceTime E => p.space - √p.time • y := fun y =>
+    continuous_space.sub ((continuous_sqrt.comp continuous_time).smul continuous_const)
+  simp_rw [heatCauchyPotential_def]
+  refine continuous_of_dominated
+    (fun p => (integrable_heatKernel_one_smul_sub_smul_of_norm_le hgc hM _ _).aestronglyMeasurable)
+    (fun p => ae_of_all _ fun y => ?_) ((integrable_heatKernel (E := E) one_pos).mul_const M)
+    (ae_of_all _ fun y => continuous_const.smul (hgc.comp (hp y)))
+  rw [norm_smul, norm_of_nonneg (heatKernel_pos one_pos y).le]
+  exact mul_le_mul_of_nonneg_left (hM _) (heatKernel_pos one_pos y).le
+
+/-- The Cauchy heat potential is additive in bounded continuous data. -/
+theorem heatCauchyPotential_add {f g : E → G} (hfc : Continuous f) (hgc : Continuous g)
+    (hf : ∀ y, ‖f y‖ ≤ M) (hg : ∀ y, ‖g y‖ ≤ M₁) (t : ℝ) (x : E) :
+    heatCauchyPotential (f + g) t x = heatCauchyPotential f t x + heatCauchyPotential g t x := by
+  simp only [heatCauchyPotential_def, Pi.add_apply, smul_add]
+  exact integral_add (integrable_heatKernel_one_smul_sub_smul_of_norm_le hfc hf x _)
+    (integrable_heatKernel_one_smul_sub_smul_of_norm_le hgc hg x _)
+
+/-- The Cauchy heat potential commutes with scalar multiplication of the datum. -/
+theorem heatCauchyPotential_smul (c : ℝ) (g : E → G) (t : ℝ) (x : E) :
+    heatCauchyPotential (c • g) t x = c • heatCauchyPotential g t x := by
+  simp only [heatCauchyPotential_def, Pi.smul_apply, smul_comm (heatKernel 1 _) c]
+  exact integral_smul c _
+
+/-- A continuous linear map commutes with the Cauchy heat potential of bounded continuous data. -/
+theorem _root_.ContinuousLinearMap.map_heatCauchyPotential [CompleteSpace G] (L : F →L[ℝ] G)
+    {g : E → F} (hgc : Continuous g) (hM : ∀ y, ‖g y‖ ≤ M) (t : ℝ) (x : E) :
+    L (heatCauchyPotential g t x) = heatCauchyPotential (fun y => L (g y)) t x := by
+  simp only [heatCauchyPotential_def, ← map_smul]
+  exact (L.integral_comp_comm (integrable_heatKernel_one_smul_sub_smul_of_norm_le hgc hM x _)).symm
+
+omit [CompleteSpace F] in
+/-- **Spatial derivative of the Cauchy heat potential.** If `g` is differentiable with a bounded
+continuous derivative, the derivative of each time slice of its Cauchy potential is the Cauchy
+potential of `fderiv ℝ g`. -/
+theorem hasFDerivAt_heatCauchyPotential {g : E → F} (hg : Differentiable ℝ g)
+    (hg' : Continuous (fderiv ℝ g)) (hM₁ : ∀ y, ‖fderiv ℝ g y‖ ≤ M₁) (t : ℝ) (x : E) :
+    HasFDerivAt (heatCauchyPotential g t) (heatCauchyPotential (fderiv ℝ g) t x) x := by
+  -- A function with bounded derivative is Lipschitz, so its translates are integrable.
+  have hL : LipschitzWith M₁.toNNReal g :=
+    lipschitzWith_of_nnnorm_fderiv_le hg fun y => by
+      rw [← NNReal.coe_le_coe, coe_nnnorm, coe_toNNReal']
+      exact (hM₁ y).trans (le_max_left _ _)
+  have hint := integrable_heatKernel_one_smul_sub_smul hL.holderWith hg.continuous
+  simp_rw [funext (heatCauchyPotential_def g t), heatCauchyPotential_def]
+  refine hasFDerivAt_integral_of_dominated_of_fderiv_le
+    (F := fun x' y => heatKernel 1 y • g (x' - √t • y))
+    (F' := fun x' y => heatKernel 1 y • fderiv ℝ g (x' - √t • y))
+    (bound := fun y => heatKernel 1 y * M₁)
+    Filter.univ_mem (Filter.Eventually.of_forall fun x' => (hint x' _).aestronglyMeasurable)
+    (hint x _) ((integrable_heatKernel_one_smul_sub_smul_of_norm_le hg' hM₁ x
+      _).aestronglyMeasurable) (ae_of_all _ fun y x' _ => ?_)
+    ((integrable_heatKernel (E := E) one_pos).mul_const M₁) (ae_of_all _ fun y x' _ => ?_)
+  · rw [norm_smul, norm_of_nonneg (heatKernel_pos one_pos y).le]
+    exact mul_le_mul_of_nonneg_left (hM₁ _) (heatKernel_pos one_pos y).le
+  · have h := ((hg (x' - √t • y)).hasFDerivAt.comp x'
+      ((hasFDerivAt_id x').sub_const (√t • y))).const_smul (heatKernel 1 y)
+    rwa [ContinuousLinearMap.comp_id] at h
+
+omit [CompleteSpace F] in
+/-- The derivative of each time slice of the Cauchy heat potential, under the hypotheses of
+`TauCeti.hasFDerivAt_heatCauchyPotential`. -/
+theorem fderiv_heatCauchyPotential {g : E → F} (hg : Differentiable ℝ g)
+    (hg' : Continuous (fderiv ℝ g)) (hM₁ : ∀ y, ‖fderiv ℝ g y‖ ≤ M₁) (t : ℝ) :
+    fderiv ℝ (heatCauchyPotential g t) = heatCauchyPotential (fderiv ℝ g) t :=
+  funext fun x => (hasFDerivAt_heatCauchyPotential hg hg' hM₁ t x).fderiv
+
+/-- A local shortcut for the norm on curried Hessians, which otherwise only arises as a nested
+instance problem during unification. -/
+local instance instNormedAddCommGroupCurriedHessian :
+    NormedAddCommGroup (E →L[ℝ] E →L[ℝ] F) := inferInstance
+/-- A local shortcut for scalar operations on curried Hessians. -/
+local instance instNormedSpaceCurriedHessian : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) :=
+  inferInstance
+
+/-- **The Laplacian of the Cauchy heat potential.** If `g` is of class `C²` with bounded first and
+second derivatives, the Laplacian of each time slice of its Cauchy potential is the Cauchy
+potential of `Δ g`. -/
+theorem laplacian_heatCauchyPotential {g : E → F} (hg : ContDiff ℝ 2 g)
+    (hM₁ : ∀ y, ‖fderiv ℝ g y‖ ≤ M₁) (hM₂ : ∀ y, ‖fderiv ℝ (fderiv ℝ g) y‖ ≤ M₂) (t : ℝ)
+    (x : E) : Δ (heatCauchyPotential g t) x = heatCauchyPotential (Δ g) t x := by
+  have hg' : ContDiff ℝ 1 (fderiv ℝ g) := hg.fderiv_right (m := 1) (by norm_num)
+  have hgg : Continuous (fderiv ℝ (fderiv ℝ g)) := hg'.continuous_fderiv one_ne_zero
+  -- The Laplacian is a continuous linear functional of the curried Hessian.
+  have hΔ := fun f : E → F => funext (laplacian_eq_traceL f)
+  rw [hΔ, fderiv_heatCauchyPotential (hg.differentiable two_ne_zero)
+      (hg.continuous_fderiv two_ne_zero) hM₁,
+    fderiv_heatCauchyPotential (hg'.differentiable one_ne_zero) hgg hM₂, hΔ g]
+  exact ContinuousLinearMap.map_heatCauchyPotential _ hgg hM₂ t x
+
+/-- **The Cauchy heat potential solves the heat equation.** If `g` is bounded and of class `C²`
+with bounded first and second derivatives, then at every positive time
+`∂ₜ u(t, x) = u_{Δ g}(t, x) = Δ u(t, ·) x` for its Cauchy potential `u`. -/
+theorem hasDerivAt_heatCauchyPotential {g : E → F} (hg : ContDiff ℝ 2 g) (hM : ∀ y, ‖g y‖ ≤ M)
+    (hM₁ : ∀ y, ‖fderiv ℝ g y‖ ≤ M₁) (hM₂ : ∀ y, ‖fderiv ℝ (fderiv ℝ g) y‖ ≤ M₂) {t : ℝ}
+    (ht : 0 < t) (x : E) :
+    HasDerivAt (fun s => heatCauchyPotential g s x) (heatCauchyPotential (Δ g) t x) t := by
+  have h := hasDerivAt_heatKernel_convolution ht hg.continuous.aestronglyMeasurable
+    (ae_of_all _ hM) x
+  rw [← funext (heatCauchyPotential_eq_convolution g ht), laplacian_heatCauchyPotential hg hM₁ hM₂]
+    at h
+  exact h.congr_of_eventuallyEq <| Filter.mem_of_superset (Ioi_mem_nhds ht) fun s hs =>
+    heatCauchyPotential_eq_convolution g hs x
+
+/-- **The heat equation up to the initial time.** Under the hypotheses of
+`TauCeti.hasDerivAt_heatCauchyPotential`, at every time `t ≥ 0` the Cauchy potential `u` of `g`
+has derivative `u_{Δ g}(t, x)` within `[0, ∞)`. At `t = 0` this is the one-sided derivative
+`Δ g x`. -/
+theorem hasDerivWithinAt_heatCauchyPotential {g : E → F} (hg : ContDiff ℝ 2 g)
+    (hM : ∀ y, ‖g y‖ ≤ M) (hM₁ : ∀ y, ‖fderiv ℝ g y‖ ≤ M₁)
+    (hM₂ : ∀ y, ‖fderiv ℝ (fderiv ℝ g) y‖ ≤ M₂) {t : ℝ} (ht : 0 ≤ t) (x : E) :
+    HasDerivWithinAt (fun s => heatCauchyPotential g s x) (heatCauchyPotential (Δ g) t x)
+      (Set.Ici 0) t := by
+  rcases ht.lt_or_eq with ht | rfl
+  · exact (hasDerivAt_heatCauchyPotential hg hM hM₁ hM₂ ht x).hasDerivWithinAt
+  have hc : ∀ {f : E → F} {B : ℝ}, Continuous f → (∀ y, ‖f y‖ ≤ B) →
+      Continuous fun s => heatCauchyPotential f s x := fun hf hB => by
+    have h : Continuous fun s : ℝ => ofCoords x s :=
+      continuous_ofCoords.comp (continuous_const.prodMk continuous_id)
+    simpa only [Function.comp_def, space_ofCoords, time_ofCoords] using
+      (continuous_heatCauchyPotential hf hB).comp h
+  have hΔ : ∀ y, ‖Δ g y‖ ≤ Module.finrank ℝ E * M₂ := fun y => by
+    refine (norm_laplacian_le g y).trans ?_
+    rw [← norm_iteratedFDeriv_fderiv (n := 1), norm_iteratedFDeriv_one]
+    gcongr
+    exact hM₂ y
+  refine hasDerivWithinAt_Ici_of_tendsto_deriv
+    (fun s hs => (hasDerivAt_heatCauchyPotential hg hM hM₁ hM₂ hs x).differentiableAt
+      |>.differentiableWithinAt) (hc hg.continuous hM).continuousWithinAt self_mem_nhdsWithin ?_
+  refine ((hc hg.continuous_laplacian hΔ).tendsto 0).mono_left nhdsWithin_le_nhds |>.congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with s hs
+  exact (hasDerivAt_heatCauchyPotential hg hM hM₁ hM₂ hs x).deriv.symm
+
+end HeatEquation
 
 end TauCeti
