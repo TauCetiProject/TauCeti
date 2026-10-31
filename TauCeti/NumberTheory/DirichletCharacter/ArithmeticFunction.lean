@@ -27,22 +27,11 @@ section CommMonoidWithZero
 
 variable {R : Type*} [CommMonoidWithZero R] {M N : ℕ}
 
-/-- The product character at the least common multiple of the levels is the pointwise product
-on natural numbers, including the nonunits. -/
-@[simp] theorem mul_natCast (χ : DirichletCharacter R M) (ψ : DirichletCharacter R N) (n : ℕ) :
-    χ.mul ψ n = χ n * ψ n := by
-  by_cases hn : n.Coprime (Nat.lcm M N)
-  · rw [DirichletCharacter.mul, MulChar.mul_apply,
-      changeLevel_natCast_of_coprime _ _ hn, changeLevel_natCast_of_coprime _ _ hn]
-  · have hzero : χ.mul ψ n = 0 :=
-      (χ.mul ψ).map_nonunit (by rwa [ZMod.isUnit_iff_coprime])
-    rw [hzero]
-    have hbad : ¬ n.Coprime M ∨ ¬ n.Coprime N := by
-      by_contra! h
-      exact hn ((h.1.mul_right h.2).of_dvd_right (Nat.lcm_dvd_mul M N))
-    rcases hbad with h | h
-    · rw [χ.map_nonunit (by rwa [ZMod.isUnit_iff_coprime]), zero_mul]
-    · rw [ψ.map_nonunit (by rwa [ZMod.isUnit_iff_coprime]), mul_zero]
+/-- At a power of a nonzero natural number, a character's arithmetic function is the
+corresponding power of its character value. -/
+@[simp] theorem toArithmeticFunction_apply_pow (χ : DirichletCharacter R M)
+    {n : ℕ} (hn : n ≠ 0) (k : ℕ) : toArithmeticFunction (χ ·) (n ^ k) = χ n ^ k := by
+  rw [← χ.apply_eq_toArithmeticFunction_apply (pow_ne_zero _ hn), Nat.cast_pow, map_pow]
 
 /-- Passing from characters to arithmetic functions sends the product at the least common
 multiple of their levels to pointwise multiplication. -/
