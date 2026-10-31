@@ -123,15 +123,6 @@ section ZMod
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-omit [DecidableEq ι] in
-/-- The form of the reduction of an integer matrix, at the reduction of an integer vector, is the
-reduction of the integer value of the form: `RingHom.map_dotProduct_mulVec` for the cast. -/
-theorem intCast_dotProduct_mulVec (R : Type*) [CommRing R] (A : Matrix ι ι ℤ)
-    (v : ι → ℤ) :
-    (fun i ↦ (v i : R)) ⬝ᵥ A.map (Int.cast : ℤ → R) *ᵥ (fun i ↦ (v i : R)) =
-      ((v ⬝ᵥ A *ᵥ v : ℤ) : R) :=
-  ((Int.castRingHom R).map_dotProduct_mulVec A v v).symm
-
 variable {A : Matrix ι ι ℤ}
 
 /-- **Averaging over translates.** If `c ∈ ZMod N` has `c * c = 0` and `2c A x = 0` forces

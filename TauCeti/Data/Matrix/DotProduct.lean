@@ -30,6 +30,8 @@ matrix at the image vectors.
   strictly positive weights vanishes.
 * `RingHom.map_dotProduct_mulVec`: a ring homomorphism commutes with the bilinear form
   `v ⬝ᵥ A *ᵥ w`.
+* `Matrix.intCast_dotProduct_mulVec`: the form of the cast of an integer matrix, at the cast of an
+  integer vector, is the cast of the integer value of the form.
 -/
 
 public section
@@ -68,6 +70,19 @@ theorem map_dotProduct_mulVec (f : R →+* S) (A : Matrix n n R) (v w : n → R)
   exact f.map_mulVec A w i
 
 end RingHom
+
+namespace Matrix
+
+variable {n : Type*} [Fintype n]
+
+/-- The form of the reduction of an integer matrix, at the reduction of an integer vector, is the
+reduction of the integer value of the form: `RingHom.map_dotProduct_mulVec` for the cast. -/
+theorem intCast_dotProduct_mulVec (R : Type*) [CommRing R] (A : Matrix n n ℤ) (v : n → ℤ) :
+    (fun i ↦ (v i : R)) ⬝ᵥ A.map (Int.cast : ℤ → R) *ᵥ (fun i ↦ (v i : R)) =
+      ((v ⬝ᵥ A *ᵥ v : ℤ) : R) :=
+  ((Int.castRingHom R).map_dotProduct_mulVec A v v).symm
+
+end Matrix
 
 namespace TauCeti
 
