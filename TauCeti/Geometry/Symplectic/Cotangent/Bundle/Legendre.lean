@@ -54,9 +54,10 @@ metric (`TauCeti.mechanicalLagrangian`). Its Legendre map is `v ↦ g(v, ·)`, t
 of `g`, and its energy is the total energy `½ g(v, v) + V(x)`
 (`TauCeti.legendreMap_mechanicalLagrangian_snd`, `TauCeti.lagrangianEnergy_mechanicalLagrangian`).
 Its fibre Hessian is `g` itself (`TauCeti.fiberHessian_mechanicalLagrangian`), so it is regular
-exactly when `g` is nondegenerate (`TauCeti.isRegularLagrangian_mechanicalLagrangian_iff`), and in
-particular when `g` is positive definite, as for a Riemannian metric
-(`TauCeti.isRegularLagrangian_mechanicalLagrangian`).
+exactly when each `g x` is invertible as a map from `T_x M` onto its continuous dual
+(`TauCeti.isRegularLagrangian_mechanicalLagrangian_iff`). On a finite-dimensional manifold this
+means `g` is nondegenerate, and holds in particular when `g` is positive definite, as for a
+Riemannian metric (`TauCeti.isRegularLagrangian_mechanicalLagrangian`).
 
 ## Main declarations
 
@@ -69,7 +70,8 @@ particular when `g` is positive definite, as for a Riemannian metric
 * `TauCeti.cartanForm`, `TauCeti.cartanTwoForm`: the Cartan forms `θ_L = FL^*λ` and
   `ω_L = -dθ_L = FL^*ω`.
 * `TauCeti.mechanicalLagrangian`: the Lagrangian `½ g(v, v) - V(x)`, with its Legendre map,
-  energy and fibre Hessian, and its regularity for nondegenerate `g`.
+  energy and fibre Hessian, and its regularity for `g` invertible onto the dual, in particular
+  for positive definite `g` in finite dimensions.
 
 ## References
 
@@ -453,9 +455,9 @@ theorem fiberHessian_mechanicalLagrangian
   rw [fiberHessian_eq_fderiv_legendreMap, h]
   exact (g v.proj).fderiv
 
-/-- **A mechanical Lagrangian is regular** exactly when its kinetic form is nondegenerate: for
+/-- **A mechanical Lagrangian is regular** exactly when its kinetic form is invertible: for
 symmetric `g`, its fibre Hessians are invertible exactly when each `g x` is an isomorphism from
-`T_x M` onto its dual. -/
+`T_x M` onto its continuous dual. In finite dimensions this is nondegeneracy of `g`. -/
 theorem isRegularLagrangian_mechanicalLagrangian_iff
     {g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
     (hg : ∀ x v w, g x v w = g x w v) (V : M → ℝ) :
@@ -468,12 +470,9 @@ finite-dimensional manifold. This covers the Lagrangian `½ |v|² - V(x)` of a R
 theorem isRegularLagrangian_mechanicalLagrangian [FiniteDimensional ℝ E]
     {g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
     (hg : ∀ x v w, g x v w = g x w v) (hpos : ∀ x v, v ≠ 0 → 0 < g x v v) (V : M → ℝ) :
-    IsRegularLagrangian (mechanicalLagrangian g V) := by
-  refine (isRegularLagrangian_mechanicalLagrangian_iff hg V).2 fun x ↦
-    ContinuousLinearMap.isInvertible_of_injective (E := E) ((injective_iff_map_eq_zero _).2
-      fun v hv ↦ ?_)
-  by_contra hv₀
-  exact (hpos x v hv₀).ne' ((DFunLike.congr_fun hv v).trans (zero_apply v))
+    IsRegularLagrangian (mechanicalLagrangian g V) :=
+  (isRegularLagrangian_mechanicalLagrangian_iff hg V).2 fun x ↦
+    ContinuousLinearMap.isInvertible_of_pos (E := E) (hpos x)
 
 end Mechanical
 
