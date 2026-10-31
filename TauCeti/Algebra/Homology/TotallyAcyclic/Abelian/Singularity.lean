@@ -70,18 +70,12 @@ section Cycles
 variable {P : CochainComplex C ℤ} (hP : P.IsTotallyAcyclicProjective)
 include hP
 
-omit [HasDerivedCategory C] in
-/-- The short exact sequence `0 ⟶ Zᵐ ⟶ Pᵐ ⟶ Zᵐ' ⟶ 0` of cycles, for `m' = m + 1`. -/
-private lemma shortExact_cycles (m m' : ℤ) (hm : m + 1 = m') :
-    (ShortComplex.mk (P.iCycles m) (P.toCycles m m') (P.iCycles_toCycles m m')).ShortExact := by
-  simpa using P.cyclesShortComplex_shortExact_of_iso (show (ComplexShape.up ℤ).Rel m m' from hm)
-    (hP.acyclic m') (Iso.refl _) (Iso.refl _)
-
 /-- The rotated triangle of the short exact sequence `0 ⟶ Zᵐ ⟶ Pᵐ ⟶ Zᵐ' ⟶ 0` of cycles, placed in
 degree `m`. -/
 private noncomputable abbrev cyclesSESTriangle (m m' : ℤ) (hm : m + 1 = m') :
     Triangle (DerivedCategory C) :=
-  (triangleOfSES ((shortExact_cycles hP m m' hm).map_of_exact
+  have hS := P.cyclesShortComplex_shortExact m m' hm (hP.acyclic m')
+  (triangleOfSES ((P.cyclesShortComplex_def m m' ▸ hS).map_of_exact
     (HomologicalComplex.single C (.up ℤ) m))).invRotate
 
 /-- The first vertex of `cyclesSESTriangle` is isomorphic to `Zᵐ'` placed in degree `m'`. -/
@@ -103,8 +97,9 @@ private noncomputable def cyclesTriangle (m m' : ℤ) (hm : m + 1 = m') :
 
 private lemma cyclesTriangle_distinguished (m m' : ℤ) (hm : m + 1 = m') :
     cyclesTriangle hP m m' hm ∈ distTriang _ :=
+  have hS := P.cyclesShortComplex_shortExact m m' hm (hP.acyclic m')
   isomorphic_distinguished _ (inv_rot_of_distTriang _ (triangleOfSES_distinguished
-    ((shortExact_cycles hP m m' hm).map_of_exact (HomologicalComplex.single C (.up ℤ) m)))) _
+    ((P.cyclesShortComplex_def m m' ▸ hS).map_of_exact (HomologicalComplex.single C (.up ℤ) m)))) _
     (Triangle.isoMk (cyclesTriangle hP m m' hm) (cyclesSESTriangle hP m m' hm)
       (cyclesShiftIso hP m m' hm).symm (Iso.refl _) (Iso.refl _) (by simp [cyclesTriangle])
       (by simp only [cyclesTriangle, Triangle.mk_mor₂, Iso.refl_hom, Category.comp_id,
