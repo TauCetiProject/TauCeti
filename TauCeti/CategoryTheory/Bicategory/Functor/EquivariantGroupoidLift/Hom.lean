@@ -222,7 +222,9 @@ def isoMk {φ ψ : L.Hom L'} (e : φ.joint ≅ ψ.joint)
   hom := ⟨e.hom, comm⟩
   inv := ⟨e.inv, fun p a => by
     rw [← comm p a]
-    exact inv_hom_whiskerRight_assoc (isoApp e _) _ _⟩
+    simpa only [isoApp_hom, isoApp_inv] using inv_hom_whiskerRight_assoc
+      (isoApp e ((Prod.sectR p (SingleObj H)).toPseudofunctor.obj a)) ((L'.comparison p).app a)
+      ((ψ.fiberIso p).hom.as.app a)⟩
   hom_inv_id := hom₂_ext e.hom_inv_id
   inv_hom_id := hom₂_ext e.inv_hom_id
 
@@ -272,15 +274,17 @@ noncomputable def fiberFunctorIso (φ : L.Hom L') (p : Γ) :
     φ.jointFunctor p ⋙ (L'.fiberEquivalence p).functor ≅ (L.fiberEquivalence p).functor :=
   Cat.Hom.toNatIso (isoApp (φ.fiberIso p) ⟨SingleObj.star H⟩)
 
+@[simp]
 lemma fiberFunctorIso_hom_app (φ : L.Hom L') (p : Γ) (Y : L.jointFiber p) :
     (φ.fiberFunctorIso p).hom.app Y =
       ((φ.fiberIso p).hom.as.app ⟨SingleObj.star H⟩).toNatTrans.app Y :=
-  (rfl)
+  congrArg (fun m => m.toNatTrans.app Y) (isoApp_hom (φ.fiberIso p) ⟨SingleObj.star H⟩)
 
+@[simp]
 lemma fiberFunctorIso_inv_app (φ : L.Hom L') (p : Γ) (Y : L.jointFiber p) :
     (φ.fiberFunctorIso p).inv.app Y =
       ((φ.fiberIso p).inv.as.app ⟨SingleObj.star H⟩).toNatTrans.app Y :=
-  (rfl)
+  congrArg (fun m => m.toNatTrans.app Y) (isoApp_inv (φ.fiberIso p) ⟨SingleObj.star H⟩)
 
 /-- The naturality isomorphism `F (g, 1) ⋙ φ_q ≅ φ_p ⋙ F' (g, 1)` of the joint strong
 transformation at the arrow `(g, 1)`. -/
@@ -288,11 +292,13 @@ noncomputable def jointMapIso (φ : L.Hom L') {p q : Γ} (g : p ⟶ q) :
     L.jointMap g ⋙ φ.jointFunctor q ≅ φ.jointFunctor p ⋙ L'.jointMap g :=
   Cat.Hom.toNatIso (φ.joint.naturality (g ×ₘ 𝟙 (SingleObj.star H)).toLoc)
 
+@[simp]
 lemma jointMapIso_hom_app (φ : L.Hom L') {p q : Γ} (g : p ⟶ q) (Y : L.jointFiber p) :
     (φ.jointMapIso g).hom.app Y =
       (φ.joint.naturality (g ×ₘ 𝟙 (SingleObj.star H)).toLoc).hom.toNatTrans.app Y :=
   (rfl)
 
+@[simp]
 lemma jointMapIso_inv_app (φ : L.Hom L') {p q : Γ} (g : p ⟶ q) (Y : L.jointFiber p) :
     (φ.jointMapIso g).inv.app Y =
       (φ.joint.naturality (g ×ₘ 𝟙 (SingleObj.star H)).toLoc).inv.toNatTrans.app Y :=
@@ -316,6 +322,7 @@ noncomputable def transportIso (φ : L.Hom L') {p q : Γ} (g : p ⟶ q) :
       (Functor.isoWhiskerRight (φ.jointMapIso g) (L'.fiberEquivalence q).functor) ≪≫
     Functor.isoWhiskerRight (φ.inverseFiberIso p) (L'.jointMap g ⋙ (L'.fiberEquivalence q).functor)
 
+@[simp]
 lemma transportIso_hom_app (φ : L.Hom L') {p q : Γ} (g : p ⟶ q) (X : fiber actions p) :
     (φ.transportIso g).hom.app X =
       (φ.fiberFunctorIso q).inv.app ((L.jointMap g).obj ((L.fiberEquivalence p).inverse.obj X)) ≫

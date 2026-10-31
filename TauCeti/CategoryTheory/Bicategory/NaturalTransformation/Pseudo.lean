@@ -67,14 +67,21 @@ def whiskerLeft (P : B ⥤ᵖ B') {F G : B' ⥤ᵖ C} (η : F ⟶ G) : P.comp F 
     exact h
 
 /-- The component `η.app a ≅ θ.app a` at `a` of an invertible modification `e : η ≅ θ`. -/
--- The body is exposed so that the components of `isoApp e a` are definitionally those of `e`,
--- as for `Iso.app`; cancellation lemmas for `e` then apply to its components.
-@[expose, simps]
 def StrongTrans.isoApp {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (e : η ≅ θ) (a : B) : η.app a ≅ θ.app a where
   hom := e.hom.as.app a
   inv := e.inv.as.app a
   hom_inv_id := congrArg (fun m => m.as.app a) e.hom_inv_id
   inv_hom_id := congrArg (fun m => m.as.app a) e.inv_hom_id
+
+@[simp]
+lemma StrongTrans.isoApp_hom {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (e : η ≅ θ) (a : B) :
+    (isoApp e a).hom = e.hom.as.app a :=
+  (rfl)
+
+@[simp]
+lemma StrongTrans.isoApp_inv {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (e : η ≅ θ) (a : B) :
+    (isoApp e a).inv = e.inv.as.app a :=
+  (rfl)
 
 variable (P : B ⥤ᵖ B')
 
