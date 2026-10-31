@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.OrbitRay
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
 public import TauCeti.RepresentationTheory.LSPath.CentralShift
 
 /-!
@@ -26,7 +26,7 @@ only distinguished presentation is the constant path `[(1, 0)]` of duration `1`.
 path has at most one distinguished presentation (`TauCeti.PLPath.IsDistinguished.unique`). Distinct
 points of a finite Weyl orbit never lie in the same ray, so this applies to `S = W λ` for every
 weight `λ`, including `λ = 0` (`RootPairing.pairwise_not_sameRay_orbit_weylGroup`, in
-`TauCeti/LinearAlgebra/RootSystem/Weyl/OrbitRay.lean`).
+`TauCeti/LinearAlgebra/RootSystem/Weyl/Orbit/Ray.lean`).
 
 Adding the linear path `t ↦ t χ` to a timed presentation (`TauCeti.PLPath.shiftTimed`) is not
 well defined on reparametrization classes (`TauCeti.PLPath.not_exists_shiftTimed_on_paths`).
@@ -51,6 +51,9 @@ same minimum height.
 * `TauCeti.PLPath.IsDistinguished.isReduced`: if `0 ∉ S`, the segments of a distinguished
   presentation are already reduced.
 * `TauCeti.PLPath.IsDistinguished.unique`: **a path has at most one distinguished presentation.**
+* `TauCeti.PLPath.IsDistinguished.eq_singleton_of_zero_mem`,
+  `TauCeti.PLPath.HasDistinguished.eq_straight_zero`: if `0 ∈ S`, the only distinguished
+  presentation is `[(1, 0)]`, and a path with one is the constant path.
 * `TauCeti.PLPath.distinguished_ofSegments`: the distinguished presentation of the path presented
   by a distinguished `p` is `p`.
 * `TauCeti.PLPath.shiftDistinguished_ofSegments`: the central shift may be computed on any
@@ -123,7 +126,7 @@ theorem IsDistinguished.isReduced (hp : IsDistinguished S p)
 
 /-- If `0 ∈ S` and no two distinct points of `S` lie in the same ray, the only distinguished
 presentation for `S` is the constant path of duration `1`. -/
-private theorem IsDistinguished.eq_singleton_of_zero_mem (hp : IsDistinguished S p)
+theorem IsDistinguished.eq_singleton_of_zero_mem (hp : IsDistinguished S p)
     (hS : S.Pairwise fun u v ↦ ¬ SameRay 𝕜 u v) (h0 : (0 : V) ∈ S) : p = [(1, 0)] := by
   -- Every velocity is `0`, since `0` lies in the same ray as every vector.
   have hslope (x : 𝕜 × V) (hx : x ∈ p) : x.1⁻¹ • x.2 = 0 := by
@@ -196,6 +199,20 @@ theorem distinguished_ofSegments (hp : IsDistinguished S p)
     distinguished S (ofSegments 𝕜 (p.map Prod.snd)) = p :=
   (isDistinguished_distinguished hp.hasDistinguished).unique hp hS
     (ofSegments_distinguished hp.hasDistinguished)
+
+/-- If `0 ∈ S` and no two distinct points of `S` lie in the same ray, the distinguished
+presentation of a path with one is the constant presentation `[(1, 0)]`. -/
+theorem distinguished_of_zero_mem (h : HasDistinguished S π)
+    (hS : S.Pairwise fun u v ↦ ¬ SameRay 𝕜 u v) (h0 : (0 : V) ∈ S) :
+    distinguished S π = [(1, 0)] :=
+  (isDistinguished_distinguished h).eq_singleton_of_zero_mem hS h0
+
+/-- If `0 ∈ S` and no two distinct points of `S` lie in the same ray, a path with a distinguished
+presentation for `S` is the constant path. For `S = W 0` this is the case `λ = 0`. -/
+theorem HasDistinguished.eq_straight_zero (h : HasDistinguished S π)
+    (hS : S.Pairwise fun u v ↦ ¬ SameRay 𝕜 u v) (h0 : (0 : V) ∈ S) : π = straight 𝕜 0 := by
+  rw [← ofSegments_distinguished h, distinguished_of_zero_mem h hS h0, straight_def]
+  rfl
 
 /-! ### The central shift -/
 

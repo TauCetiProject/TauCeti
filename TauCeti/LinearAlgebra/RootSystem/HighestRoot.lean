@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Positive
 import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 import Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
 import TauCeti.LinearAlgebra.RootSystem.Lowering
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
 # The highest root of an irreducible root system
