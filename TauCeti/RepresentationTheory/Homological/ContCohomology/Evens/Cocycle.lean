@@ -19,7 +19,8 @@ This file supplies that construction directly on Mathlib's homogeneous cochains.
 degree its value depends only on the input cohomology class, including when that class is zero.
 Multiplication identifies the tensor-induced coefficients with the ambient trivial coefficients.
 In degree zero the norm is the identity of `𝔽₂ = H⁰`: a cocycle with value `a` has norm the
-degree-zero class of `aˡ = a` (`OpenSubgroup.tensorNormCocycleClass_eq_degreeZeroClass`).
+degree-zero class of `a ^ |G ⧸ U| = a`
+(`OpenSubgroup.tensorNormCocycleClass_eq_degreeZeroClass`).
 
 The construction uses `TauCeti.smoothTensorInducedDiagonalClass` and its change-of-coboundary
 theorem. These operate on the total graded resolution; `TopRep.cochainToGradedResolution`
@@ -146,8 +147,8 @@ theorem tensorNormCocycleClass_eq_zero_of_cochainClass_eq_zero {n : ℕ}
 
 /-- **The tensor norm in degree zero is the identity of `𝔽₂`**: a degree-zero cocycle, the
 constant function with value `a ∈ 𝔽₂`, has tensor norm the degree-zero class of `a` in
-`H⁰(G, 𝔽₂) = 𝔽₂`. The diagonal tensor `a ⊗ ⋯ ⊗ a` multiplies out to `aˡ`, which is `a` since
-`l ≠ 0`. -/
+`H⁰(G, 𝔽₂) = 𝔽₂`. The diagonal tensor `a ⊗ ⋯ ⊗ a` has one factor for each coset in `G ⧸ U`, so
+it multiplies out to `a ^ |G ⧸ U| = a` in `𝔽₂`. -/
 theorem tensorNormCocycleClass_eq_degreeZeroClass
     (z : (TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).X 0)
     (hz : ((TopRep.homogeneousCochains (trivialF2 U.toSubgroup)).d 0 (0 + 1)).hom z = 0) :
@@ -164,14 +165,16 @@ theorem tensorNormCocycleClass_eq_degreeZeroClass
   congr 1
   apply (trivialF2Equiv G).injective
   rw [AddEquiv.apply_symm_apply]
-  refine (congrArg (fun x ↦ trivialF2Equiv G
-      ((smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen' t).hom.hom.hom x))
-    (smoothTensorInducedTrivialF2Tprod_eq G U.toSubgroup U.isOpen' t fun _ ↦
-      (trivialF2 U.toSubgroup).gradedResolutionProjection
-        ((trivialF2 U.toSubgroup).cochainToGradedResolution 0 z))).symm.trans
-    ((smoothTensorInducedTrivialF2Iso_hom_apply_tprod G U.toSubgroup U.isOpen' t fun _ ↦
-      (trivialF2 U.toSubgroup).gradedResolutionProjection
-        ((trivialF2 U.toSubgroup).cochainToGradedResolution 0 z)).trans ?_)
+  -- The goal applies the isomorphism to a raw pure tensor. `rw` cannot fold it back into
+  -- `smoothTensorInducedTrivialF2Tprod` across the `Module ℤ` instance in
+  -- `smoothTensorInducedTrivialF2Tprod_eq`, so the computation rule is transported along that
+  -- equation once, for all tensor factors.
+  have key := fun x : G ⧸ U.toSubgroup → (DiscreteRep.trivialF2 U.toSubgroup).V ↦
+    (congrArg (fun y ↦ trivialF2Equiv G
+      ((smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen' t).hom.hom.hom y))
+      (smoothTensorInducedTrivialF2Tprod_eq G U.toSubgroup U.isOpen' t x)).symm.trans
+      (smoothTensorInducedTrivialF2Iso_hom_apply_tprod G U.toSubgroup U.isOpen' t x)
+  refine (key _).trans ?_
   rw [Finset.prod_const, ha]
   have hb : ∀ b : ZMod 2, IsIdempotentElem b := by
     unfold IsIdempotentElem

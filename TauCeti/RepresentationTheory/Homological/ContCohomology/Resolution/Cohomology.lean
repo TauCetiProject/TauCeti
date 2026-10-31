@@ -193,8 +193,8 @@ theorem cohomologyClass_eq_degreeZeroClass (z : (J.X 0).ρ.invariants)
       (c.ρ_proj_of_d_eq_zero hz ((ContRepresentation.mem_invariants _).1 z.2)) := by
   rw [cohomologyClass_def]
   apply cochainClass_eq_degreeZeroClass
-  rw [ContIntertwiningMap.mapInvariants_apply, comparison_f_zero_apply_apply, inv_one, map_one,
-    map_one, one_apply_eq_self, one_apply_eq_self]
+  rw [ContIntertwiningMap.mapInvariants_apply, comparison_f_zero_apply_apply]
+  simp
 
 section Homotopy
 
