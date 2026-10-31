@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
 
 /-!
@@ -12,16 +13,17 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
 
 Let `f : M → N` be a smooth embedding into a manifold modelled on a finite-dimensional space `F`,
 and let `g : N → V` be a map to a normed space which is constant on the image of `f` near `x`,
-differentiable at `f x` with surjective differential there, and such that the dimensions add up:
+has `f x` as a regular point (surjective differential), and such that the dimensions add up:
 `dim E + dim V = dim F`, where `E` is the model of `M`. This is the situation of a submanifold
 cut out by `dim V` independent equations. Then the tangent sequence
 
 `0 → T_x M → T_{f x} N → V → 0`,
 
 formed by the differentials of `f` and of `g`, is exact. Its injectivity on the left is the
-immersion property of `f`; this file proves exactness in the middle
+immersion property of `f`; exactness in the middle
 (`TauCeti.SmoothEmbedding.tangentRange_eq_ker_mfderiv`,
-`TauCeti.SmoothEmbedding.exact_mfderiv_mfderiv`). Consequently the differential of `g` induces
+`TauCeti.SmoothEmbedding.exact_mfderiv_mfderiv`) is the tangent space of a regular level,
+`TauCeti.IsRegularPoint.range_mfderiv_eq_ker_mfderiv`. Consequently the differential of `g` induces
 an isomorphism from the intrinsic normal space of `f` at `x` onto `V`
 (`TauCeti.SmoothEmbedding.normalSpaceEquivOfLevel`), sending the normal class of an ambient tangent
 vector `v` to `dg(v)`.
@@ -52,49 +54,53 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   {n : ℕ∞ω} {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
   (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) {g : N → V} {c : V}
-  (hg : MDifferentiableAt J 𝓘(𝕜, V) g (f x)) (hgf : ∀ᶠ y in 𝓝 x, g (f y) = c)
-  (hsurj : Function.Surjective (mfderiv J 𝓘(𝕜, V) g (f x)))
+  (hgf : ∀ᶠ y in 𝓝 x, g (f y) = c) (hsurj : IsRegularPoint J 𝓘(𝕜, V) g (f x))
   (hdim : Module.finrank 𝕜 E + Module.finrank 𝕜 V = Module.finrank 𝕜 F)
-include hn hg hgf hsurj hdim
+include hn hgf hsurj hdim
 
 /-- **The tangent space of an embedding cut out by equations is the kernel of their differential.**
 If `g` is constant on the image of the embedding `f` near `x`, has surjective differential at
 `f x`, and the dimension of the source of `f` plus that of the target of `g` is the ambient
 dimension, then the tangent range of `f` at `x` is the kernel of the differential of `g`. -/
 theorem tangentRange_eq_ker_mfderiv :
-    f.tangentRange x hn = (mfderiv J 𝓘(𝕜, V) g (f x)).ker := by
-  apply Submodule.eq_of_le_of_finrank_eq
-  · -- `g` is constant on the embedded manifold near `x`, so its differential kills tangents.
-    have hcomp := mfderiv_comp x hg ((f.contMDiff x).mdifferentiableAt hn)
-    rw [(show g ∘ f =ᶠ[𝓝 x] fun _ ↦ c from hgf).mfderiv_eq, mfderiv_const] at hcomp
-    rintro _ ⟨v, rfl⟩
-    exact congr($hcomp.symm v)
-  · have hker := LinearMap.finrank_range_add_finrank_ker
-      (mfderiv J 𝓘(𝕜, V) g (f x)).toLinearMap
-    rw [LinearMap.range_eq_top.2 hsurj, finrank_top] at hker
-    rw [tangentRange, LinearMap.finrank_range_of_inj (f.isImmersion.mfderiv_injective hn x)]
-    -- The tangent spaces of `M`, of `V` and of `N` are their model spaces.
-    change Module.finrank 𝕜 E = _
-    change Module.finrank 𝕜 V + _ = Module.finrank 𝕜 F at hker
-    omega
+    f.tangentRange x hn = (mfderiv J 𝓘(𝕜, V) g (f x)).ker :=
+  hsurj.range_mfderiv_eq_ker_mfderiv hgf (f.isImmersion.mfderiv_injective hn x) hdim
 
 /-- **The tangent sequence of an embedding cut out by equations is exact in the middle.** Under the
 hypotheses of `TauCeti.SmoothEmbedding.tangentRange_eq_ker_mfderiv`, the differentials
 `T_x M → T_{f x} N → V` of `f` and of `g` form an exact sequence. -/
 theorem exact_mfderiv_mfderiv :
     Function.Exact (mfderiv I J f x) (mfderiv J 𝓘(𝕜, V) g (f x)) :=
-  LinearMap.exact_iff.2 (f.tangentRange_eq_ker_mfderiv x hn hg hgf hsurj hdim).symm
+  LinearMap.exact_iff.2 (f.tangentRange_eq_ker_mfderiv x hn hgf hsurj hdim).symm
 
-omit [FiniteDimensional 𝕜 F] hn hg hgf hsurj hdim in
+omit [FiniteDimensional 𝕜 F] hn hgf hsurj hdim in
 /-- The differential of `g`, read with values in the model space `V`. -/
 private noncomputable abbrev mfderivV (g : N → V) : TangentSpace J (f x) →ₗ[𝕜] V :=
   (mfderiv J 𝓘(𝕜, V) g (f x)).toLinearMap
 
+omit [FiniteDimensional 𝕜 F] hn hgf hdim in
+/-- A regular point of `g` is one where `dg`, read with values in `V`, is surjective. -/
+private theorem surjective_mfderivV : Function.Surjective (mfderivV f x g) :=
+  isRegularPoint_iff.1 hsurj
+
+/-- `TauCeti.SmoothEmbedding.tangentRange_eq_ker_mfderiv`, with `dg` read with values in `V`. -/
+private theorem tangentRange_eq_ker_mfderivV : f.tangentRange x hn = (mfderivV f x g).ker :=
+  f.tangentRange_eq_ker_mfderiv x hn hgf hsurj hdim
+
 /-- The linear equivalence underlying `TauCeti.SmoothEmbedding.normalSpaceEquivOfLevel`: the
 tangent range is the kernel of `dg`, so the first isomorphism theorem applies. -/
 private noncomputable def normalSpaceLinearEquivOfLevel : f.NormalSpace x hn ≃ₗ[𝕜] V :=
-  (Submodule.quotEquivOfEq _ _ (f.tangentRange_eq_ker_mfderiv x hn hg hgf hsurj hdim)).trans
-    ((mfderivV f x g).quotKerEquivOfSurjective hsurj)
+  (Submodule.quotEquivOfEq _ _ (f.tangentRange_eq_ker_mfderivV x hn hgf hsurj hdim)).trans
+    ((mfderivV f x g).quotKerEquivOfSurjective (surjective_mfderivV f x hsurj))
+
+/-- `TauCeti.SmoothEmbedding.normalSpaceLinearEquivOfLevel` sends the normal class of `v` to
+`dg(v)`. -/
+private theorem normalSpaceLinearEquivOfLevel_normalClass (v : TangentSpace J (f x)) :
+    f.normalSpaceLinearEquivOfLevel x hn hgf hsurj hdim (f.normalClass x hn v) =
+      mfderivV f x g v := by
+  rw [normalClass_def]
+  -- `quotEquivOfEq` fixes classes, so this is the first isomorphism theorem on the class of `v`.
+  exact (mfderivV f x g).quotKerEquivOfSurjective_apply_mk (surjective_mfderivV f x hsurj) v
 
 variable [CompleteSpace 𝕜]
 
@@ -103,18 +109,19 @@ variable [CompleteSpace 𝕜]
 continuous linear equivalence from the normal space of `f` at `x` onto `V`
 (`TauCeti.SmoothEmbedding.normalSpaceEquivOfLevel_normalClass`). -/
 noncomputable def normalSpaceEquivOfLevel : f.NormalSpace x hn ≃L[𝕜] V :=
-  -- Tangent spaces are their model spaces, so the target `V` of `dg` is finite-dimensional.
+  -- Tangent spaces are their model spaces, so the normal space is finite-dimensional.
   haveI : FiniteDimensional 𝕜 (TangentSpace J (f x)) := inferInstanceAs (FiniteDimensional 𝕜 F)
-  haveI : FiniteDimensional 𝕜 V := Module.Finite.of_surjective (mfderivV f x g) hsurj
-  (f.normalSpaceLinearEquivOfLevel x hn hg hgf hsurj hdim).symm.toContinuousLinearEquiv.symm
+  haveI : FiniteDimensional 𝕜 (f.NormalSpace x hn) :=
+    inferInstanceAs (FiniteDimensional 𝕜 (TangentSpace J (f x) ⧸ f.tangentRange x hn))
+  (f.normalSpaceLinearEquivOfLevel x hn hgf hsurj hdim).toContinuousLinearEquiv
 
 /-- The normal-space equivalence induced by `g` sends the normal class of an ambient tangent
 vector `v` to the differential of `g` applied to `v`. -/
 @[simp]
 theorem normalSpaceEquivOfLevel_normalClass (v : TangentSpace J (f x)) :
-    f.normalSpaceEquivOfLevel x hn hg hgf hsurj hdim (f.normalClass x hn v) =
+    f.normalSpaceEquivOfLevel x hn hgf hsurj hdim (f.normalClass x hn v) =
       mfderiv J 𝓘(𝕜, V) g (f x) v := by
-  rw [normalClass_def]
-  rfl
+  simp only [normalSpaceEquivOfLevel, LinearEquiv.coe_toContinuousLinearEquiv']
+  exact f.normalSpaceLinearEquivOfLevel_normalClass x hn hgf hsurj hdim v
 
 end TauCeti.SmoothEmbedding

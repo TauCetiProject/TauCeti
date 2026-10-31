@@ -475,6 +475,17 @@ private theorem finrank_add_finrank_eq (hp : ∀ k, (p k).IsHomogeneous (d k))
   simp only [Module.finrank_fintype_fun_eq_card, Fintype.card_fin]
   omega
 
+/-- The chart equations of the zero locus are regular at each of its points in `U_i`. -/
+private theorem isRegularPoint_eval_dehomogenize_affineChart (hp : ∀ k, (p k).IsHomogeneous (d k))
+    (hrank : ∀ L ∈ complexProjectiveZeroLocus p,
+      Function.Surjective (jacobiMatrixAt p L.rep).mulVec)
+    (z : complexProjectiveZeroLocus p) (hi : (z : ℙ ℂ (Fin (n + 1) → ℂ)) ∈ affineOpen i) :
+    IsRegularPoint 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, ι → ℂ)
+      (fun w ↦ fun k ↦ eval (affineChart i w) (dehomogenize i (p k)))
+      (z : ℙ ℂ (Fin (n + 1) → ℂ)) :=
+  isRegularPoint_iff.2
+    ((surjective_mfderiv_eval_dehomogenize_affineChart_iff i hp z.2 hi).2 (hrank z z.2))
+
 /-- **The tangent space of a smooth projective zero locus.** At a point `z` of the zero locus in
 the standard affine open `U_i`, the image of the differential of the inclusion into `ℂℙⁿ` is the
 kernel of the differential of the chart equations
@@ -487,9 +498,8 @@ theorem tangentRange_complexProjectiveZeroLocusEmbedding (hr : r ≠ 0)
         (fun w ↦ fun k ↦ eval (affineChart i w) (dehomogenize i (p k))) z).ker :=
   letI := complexProjectiveZeroLocusChartedSpace hp hrank
   SmoothEmbedding.tangentRange_eq_ker_mfderiv _ z hr
-    (mdifferentiableAt_eval_dehomogenize_affineChart p hi)
     (eventually_eval_dehomogenize_affineChart_eq_zero hp z hi)
-    ((surjective_mfderiv_eval_dehomogenize_affineChart_iff i hp z.2 hi).2 (hrank z z.2))
+    (isRegularPoint_eval_dehomogenize_affineChart hp hrank z hi)
     (finrank_add_finrank_eq hp hrank z)
 
 /-- **The tangent sequence of a smooth projective zero locus is exact.** At a point `z` of the zero
@@ -520,9 +530,8 @@ noncomputable def complexProjectiveZeroLocusNormalSpaceEquiv (hr : r ≠ 0)
     (complexProjectiveZeroLocusEmbedding hp hrank r).NormalSpace z hr ≃L[ℂ] (ι → ℂ) :=
   letI := complexProjectiveZeroLocusChartedSpace hp hrank
   SmoothEmbedding.normalSpaceEquivOfLevel _ z hr
-    (mdifferentiableAt_eval_dehomogenize_affineChart p hi)
     (eventually_eval_dehomogenize_affineChart_eq_zero hp z hi)
-    ((surjective_mfderiv_eval_dehomogenize_affineChart_iff i hp z.2 hi).2 (hrank z z.2))
+    (isRegularPoint_eval_dehomogenize_affineChart hp hrank z hi)
     (finrank_add_finrank_eq hp hrank z)
 
 /-- The normal-space equivalence of a smooth projective zero locus sends the normal class of an
@@ -535,15 +544,9 @@ theorem complexProjectiveZeroLocusNormalSpaceEquiv_normalClass (hr : r ≠ 0)
     complexProjectiveZeroLocusNormalSpaceEquiv hp hrank hr z hi
         ((complexProjectiveZeroLocusEmbedding hp hrank r).normalClass z hr v) =
       mfderiv 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, ι → ℂ)
-        (fun w ↦ fun k ↦ eval (affineChart i w) (dehomogenize i (p k))) z v := by
-  let := complexProjectiveZeroLocusChartedSpace hp hrank
-  rw [complexProjectiveZeroLocusNormalSpaceEquiv]
-  exact SmoothEmbedding.normalSpaceEquivOfLevel_normalClass
-    (complexProjectiveZeroLocusEmbedding hp hrank r) z hr
-    (mdifferentiableAt_eval_dehomogenize_affineChart p hi)
-    (eventually_eval_dehomogenize_affineChart_eq_zero hp z hi)
-    ((surjective_mfderiv_eval_dehomogenize_affineChart_iff i hp z.2 hi).2 (hrank z z.2))
-    (finrank_add_finrank_eq hp hrank z) v
+        (fun w ↦ fun k ↦ eval (affineChart i w) (dehomogenize i (p k))) z v :=
+  letI := complexProjectiveZeroLocusChartedSpace hp hrank
+  SmoothEmbedding.normalSpaceEquivOfLevel_normalClass _ _ _ _ _ _ v
 
 end TangentNormal
 
