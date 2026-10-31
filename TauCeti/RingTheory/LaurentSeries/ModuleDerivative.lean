@@ -37,6 +37,8 @@ pairs `v tᵐ` and `w tⁿ` to `n Φ(v, w)` when `m + n = 0`, and to zero otherw
 * `HahnModule.coeff_single_one_smul_derivative`: the Euler operator `t D` multiplies the
   coefficient of `tⁿ` by `n`.
 * `HahnModule.derivative_smul`: the Leibniz rule `D (f • x) = D f • x + f • D x`.
+* `HahnModule.derivative_convolutionAddMonoidHom`: the Leibniz rule
+  `D Φ(x, y) = Φ(D x, y) + Φ(x, D y)` for the coefficientwise extension of a biadditive map `Φ`.
 * `HahnModule.derivative_mem_lattice`: `D` maps `U_a(V)` into `U_{a - 1}(V)`.
 * `HahnModule.derivative_map`: `D` commutes with linear maps of coefficients.
 * `HahnModule.residuePairing R Φ`: the residue pairing `(x, y) ↦ Res Φ(x, D y) dt`.
@@ -115,6 +117,61 @@ theorem derivative_map (g : V →ₗ[R] W) (x : HahnModule ℤ R V) :
     derivative R (of R (((of R).symm x).map g)) =
       of R (((of R).symm (derivative R x)).map g) := by
   simp [derivative]
+
+/-- The support of `D x` lies in the support of `x` shifted down by one. -/
+private theorem support_derivative_subset (x : HahnModule ℤ R V) :
+    ((of R).symm (derivative R x)).support ⊆ (· - 1) '' ((of R).symm x).support :=
+  fun i hi ↦ ⟨i + 1, fun h ↦ hi (by rw [coeff_derivative, h, smul_zero]), add_sub_cancel_right i 1⟩
+
+/-- The support of `x` shifted down by one is partially well-ordered. -/
+private theorem isPWO_image_sub_one_support (x : HahnModule ℤ R V) :
+    ((· - 1) '' ((of R).symm x).support).IsPWO :=
+  ((of R).symm x).isPWO_support.image_of_monotone fun _ _ h ↦ sub_le_sub_right h 1
+
+/-- **The Leibniz rule** `D Φ(x, y) = Φ(D x, y) + Φ(x, D y)` for the coefficientwise extension of
+a biadditive map `Φ : V → W → M`. -/
+theorem derivative_convolutionAddMonoidHom {M : Type*} [AddCommGroup M] [Module R M]
+    (Φ : V →+ W →+ M) (x : HahnModule ℤ R V) (y : HahnModule ℤ R W) :
+    LaurentSeries.derivative R (convolutionAddMonoidHom ℤ R Φ x y) =
+      convolutionAddMonoidHom ℤ R Φ (derivative R x) y +
+        convolutionAddMonoidHom ℤ R Φ x (derivative R y) := by
+  ext n
+  rw [HahnSeries.coeff_add, LaurentSeries.coeff_derivative, coeff_convolutionAddMonoidHom,
+    coeff_convolutionAddMonoidHom_left' (isPWO_image_sub_one_support x)
+      (support_derivative_subset x),
+    coeff_convolutionAddMonoidHom_right' (isPWO_image_sub_one_support y)
+      (support_derivative_subset y), Finset.smul_sum]
+  -- Shift the index of the differentiated factor up by one, to the antidiagonal of `n + 1`.
+  have hl : ∑ ij ∈ Finset.antidiagonal (isPWO_image_sub_one_support x)
+        ((of R).symm y).isPWO_support n,
+        Φ (((of R).symm (derivative R x)).coeff ij.1) (((of R).symm y).coeff ij.2) =
+      ∑ ij ∈ Finset.antidiagonal ((of R).symm x).isPWO_support ((of R).symm y).isPWO_support
+        (n + 1), Φ (ij.1 • ((of R).symm x).coeff ij.1) (((of R).symm y).coeff ij.2) := by
+    refine Finset.sum_nbij' (fun ij ↦ (ij.1 + 1, ij.2)) (fun ij ↦ (ij.1 - 1, ij.2)) ?_ ?_
+      (fun ij _ ↦ by simp) (fun ij _ ↦ by simp) fun ij _ ↦ by rw [coeff_derivative]
+    · rintro ⟨i, j⟩ hij
+      obtain ⟨⟨i, hi, rfl⟩, hj, hij⟩ := Finset.mem_antidiagonal.1 hij
+      exact Finset.mem_antidiagonal.2 ⟨by rwa [sub_add_cancel], hj, by omega⟩
+    · rintro ⟨i, j⟩ hij
+      obtain ⟨hi, hj, hij⟩ := Finset.mem_antidiagonal.1 hij
+      exact Finset.mem_antidiagonal.2 ⟨⟨i, hi, rfl⟩, hj, by omega⟩
+  have hr : ∑ ij ∈ Finset.antidiagonal ((of R).symm x).isPWO_support
+        (isPWO_image_sub_one_support y) n,
+        Φ (((of R).symm x).coeff ij.1) (((of R).symm (derivative R y)).coeff ij.2) =
+      ∑ ij ∈ Finset.antidiagonal ((of R).symm x).isPWO_support ((of R).symm y).isPWO_support
+        (n + 1), Φ (((of R).symm x).coeff ij.1) (ij.2 • ((of R).symm y).coeff ij.2) := by
+    refine Finset.sum_nbij' (fun ij ↦ (ij.1, ij.2 + 1)) (fun ij ↦ (ij.1, ij.2 - 1)) ?_ ?_
+      (fun ij _ ↦ by simp) (fun ij _ ↦ by simp) fun ij _ ↦ by rw [coeff_derivative]
+    · rintro ⟨i, j⟩ hij
+      obtain ⟨hi, ⟨j, hj, rfl⟩, hij⟩ := Finset.mem_antidiagonal.1 hij
+      exact Finset.mem_antidiagonal.2 ⟨hi, by rwa [sub_add_cancel], by omega⟩
+    · rintro ⟨i, j⟩ hij
+      obtain ⟨hi, hj, hij⟩ := Finset.mem_antidiagonal.1 hij
+      exact Finset.mem_antidiagonal.2 ⟨hi, ⟨j, hj, rfl⟩, by omega⟩
+  rw [hl, hr, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun ij hij ↦ ?_
+  obtain ⟨-, -, hij⟩ := Finset.mem_antidiagonal.1 hij
+  rw [map_zsmul, AddMonoidHom.zsmul_apply, map_zsmul, ← add_zsmul, hij]
 
 end Semiring
 

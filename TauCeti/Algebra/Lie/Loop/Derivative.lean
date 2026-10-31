@@ -46,30 +46,13 @@ namespace HahnModule
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
-/-- The Leibniz rule for the Euler operator `t D` and the bracket of formal loops. -/
-private theorem single_one_smul_derivative_lie (x y : HahnModule ℤ R L) :
-    single (1 : ℤ) (1 : R) • derivative R ⁅x, y⁆ =
-      ⁅single (1 : ℤ) (1 : R) • derivative R x, y⁆ +
-        ⁅x, single (1 : ℤ) (1 : R) • derivative R y⁆ := by
-  ext n
-  have hsupp (z : HahnModule ℤ R L) :
-      ((of R).symm (single (1 : ℤ) (1 : R) • derivative R z)).support ⊆ ((of R).symm z).support :=
-    fun i hi h ↦ hi (by rw [coeff_single_one_smul_derivative, h, smul_zero])
-  rw [of_symm_add, HahnSeries.coeff_add, coeff_single_one_smul_derivative, coeff_lie,
-    coeff_lie_left' ((of R).symm x).isPWO_support (hsupp x),
-    coeff_lie_right' ((of R).symm y).isPWO_support (hsupp y), Finset.smul_sum,
-    ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun ij hij ↦ ?_
-  obtain ⟨-, -, hij⟩ := Finset.mem_antidiagonal.1 hij
-  rw [coeff_single_one_smul_derivative, coeff_single_one_smul_derivative, ← hij, add_zsmul,
-    zsmul_lie, lie_zsmul]
-
-/-- **The Leibniz rule** `D ⁅x, y⁆ = ⁅D x, y⁆ + ⁅x, D y⁆` for the bracket of formal loops. -/
+/-- **The Leibniz rule** `D ⁅x, y⁆ = ⁅D x, y⁆ + ⁅x, D y⁆` for the bracket of formal loops: the
+bracket is the coefficientwise extension of the bracket of `L`. -/
 theorem derivative_lie (x y : HahnModule ℤ R L) :
-    derivative R ⁅x, y⁆ = ⁅derivative R x, y⁆ + ⁅x, derivative R y⁆ := by
-  -- Cancel the factor `t` from the Leibniz rule for `t D`.
-  refine single_one_smul_injective (1 : ℤ) ?_
-  simp only [single_one_smul_derivative_lie, smul_add, smul_lie, lie_smul]
+    derivative R ⁅x, y⁆ = ⁅derivative R x, y⁆ + ⁅x, derivative R y⁆ :=
+  (of R).symm.injective <| by
+    rw [of_symm_derivative, of_symm_add]
+    exact derivative_convolutionAddMonoidHom (LieRingModule.toEnd L L) x y
 
 variable (R L) in
 /-- The derivative of formal loops `L((t))` as a Lie derivation. -/

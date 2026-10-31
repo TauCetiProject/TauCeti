@@ -76,7 +76,7 @@ theorem coeff_lie (x y : HahnModule Γ R L) (c : Γ) :
       ∑ ij ∈ antidiagonal ((of R).symm x).isPWO_support ((of R).symm y).isPWO_support c,
         ⁅((of R).symm x).coeff ij.1, ((of R).symm y).coeff ij.2⁆ := by
   rw [of_symm_lie, coeff_convolutionAddMonoidHom]
-  rfl
+  simp only [LieRingModule.toEnd_apply_apply]
 
 /-- The coefficients of a bracket may be computed over any partially well-ordered set containing
 the support of the first argument. -/
@@ -86,7 +86,7 @@ theorem coeff_lie_left' {x y : HahnModule Γ R L} {c : Γ} {s : Set Γ} (hs : s.
       ∑ ij ∈ antidiagonal hs ((of R).symm y).isPWO_support c,
         ⁅((of R).symm x).coeff ij.1, ((of R).symm y).coeff ij.2⁆ := by
   rw [of_symm_lie, coeff_convolutionAddMonoidHom_left' hs hxs]
-  rfl
+  simp only [LieRingModule.toEnd_apply_apply]
 
 /-- The coefficients of a bracket may be computed over any partially well-ordered set containing
 the support of the second argument. -/
@@ -96,7 +96,7 @@ theorem coeff_lie_right' {x y : HahnModule Γ R L} {c : Γ} {s : Set Γ} (hs : s
       ∑ ij ∈ antidiagonal ((of R).symm x).isPWO_support hs c,
         ⁅((of R).symm x).coeff ij.1, ((of R).symm y).coeff ij.2⁆ := by
   rw [of_symm_lie, coeff_convolutionAddMonoidHom_right' hs hys]
-  rfl
+  simp only [LieRingModule.toEnd_apply_apply]
 
 /-- The support of a bracket lies in the sum of the supports. -/
 theorem support_lie_subset (x y : HahnModule Γ R L) :
@@ -110,8 +110,8 @@ theorem support_lie_subset (x y : HahnModule Γ R L) :
 theorem single_lie_single (a b : Γ) (x y : L) :
     ⁅of R (HahnSeries.single a x), of R (HahnSeries.single b y)⁆ =
       of R (HahnSeries.single (a + b) ⁅x, y⁆) := by
-  rw [← (of R).symm_apply_eq, of_symm_lie, convolutionAddMonoidHom_single_single]
-  rfl
+  rw [← (of R).symm_apply_eq, of_symm_lie, convolutionAddMonoidHom_single_single,
+    LieRingModule.toEnd_apply_apply]
 
 /-- The coefficients of a right-nested bracket, as a sum over pairs of antidiagonals. -/
 private theorem coeff_lie_lie (x y z : HahnModule Γ R L) (d : Γ) :
