@@ -54,8 +54,9 @@ the periods is assumed.
 * `TauCeti.NovikovModule.kernelMap_kernelMap`: composition of maps is composition of kernels.
 * `TauCeti.NovikovModule.kernelMap_add`, `TauCeti.NovikovModule.kernelMap_zero`: the map is
   additive in the kernel.
-* `TauCeti.NovikovModule.kernelMap_eq_id`: the identity kernel gives the identity map.
-* `TauCeti.NovikovModule.kernelMap_eq_kernelMap_iff`: a kernel map determines its kernel, through
+* `TauCeti.NovikovModule.kernelMap_eq_id`: the identity kernel gives the identity map, as the
+  special case of a diagonal kernel (`TauCeti.NovikovModule.kernelMap_diagonal_apply_val`).
+* `TauCeti.NovikovModule.kernelMap_inj`: a kernel map determines its kernel, through
   the images of point masses (`TauCeti.NovikovModule.kernelMap_pi_single_apply_val`).
 * `TauCeti.NovikovModule.coordinates_kernelMap`: the matrix formula in lift coordinates.
 
@@ -178,17 +179,21 @@ theorem kernelMap_zero (hm : ∀ p₁ p₀, (0 : S₁ → S₀ → R) p₁ p₀ 
   ext a p₀
   simp
 
-/-- The identity kernel, with coefficient `1` on the diagonal and `0` off it, gives the identity
-map. -/
-@[simp]
-theorem kernelMap_eq_id {S : Type*} [DecidableEq S] {F : S → ℝ}
-    (hm : ∀ p q, (if p = q then (1 : R) else 0) ≠ 0 → F q ≤ F p + C)
-    (hmfin : ∀ p, (fun q => if p = q then (1 : R) else 0) ∈ NovikovModule R F) :
-    kernelMap hm hmfin = LinearMap.id := by
-  ext a q
-  simp only [kernelMap_apply_val, LinearMap.id_apply, mul_ite, mul_one, mul_zero]
-  rw [finsum_eq_single _ q fun p hp => by simp [hp]]
-  simp
+/-- A diagonal kernel, with coefficient `s p` from `p` to itself and `0` off the diagonal,
+satisfies the potential bound with constant `0`. -/
+theorem potential_le_of_diagonal_ne_zero {S : Type*} [DecidableEq S] {F : S → ℝ} {s : S → R}
+    {p q : S} (h : (if p = q then s p else 0) ≠ 0) : F q ≤ F p + 0 := by
+  by_cases hpq : p = q
+  · simp [hpq]
+  · simp [hpq] at h
+
+/-- A diagonal kernel has completed outputs. -/
+theorem diagonal_mem {S : Type*} [DecidableEq S] {F : S → ℝ} (s : S → R) (p : S) :
+    (fun q => if p = q then s p else 0) ∈ NovikovModule R F :=
+  mem_of_finite_support <| (Set.finite_singleton p).subset fun q hq => by
+    by_contra h
+    have hpq : ¬p = q := fun e => h e.symm
+    simp [hpq] at hq
 
 /-- A diagonal kernel, with coefficient `s p` from `p` to itself and `0` off the diagonal,
 multiplies each coefficient by `s`. -/
@@ -200,6 +205,16 @@ theorem kernelMap_diagonal_apply_val {S : Type*} [DecidableEq S] {F : S → ℝ}
   rw [kernelMap_apply_val, finsum_eq_single _ q fun p hp => by simp [hp]]
   simp
 
+/-- The identity kernel, with coefficient `1` on the diagonal and `0` off it, gives the identity
+map. -/
+@[simp]
+theorem kernelMap_eq_id {S : Type*} [DecidableEq S] {F : S → ℝ}
+    (hm : ∀ p q, (if p = q then (1 : R) else 0) ≠ 0 → F q ≤ F p + C)
+    (hmfin : ∀ p, (fun q => if p = q then (1 : R) else 0) ∈ NovikovModule R F) :
+    kernelMap hm hmfin = LinearMap.id := by
+  ext a q
+  simpa using kernelMap_diagonal_apply_val (s := fun _ => 1) hm hmfin a q
+
 /-- The image of the point mass `r` at an input generator `p₁` has the coefficients `r * m p₁`
 of the output of the kernel at `p₁`. -/
 theorem kernelMap_pi_single_apply_val [DecidableEq S₁] (p₁ : S₁) (r : R) (p₀ : S₀) :
@@ -209,7 +224,7 @@ theorem kernelMap_pi_single_apply_val [DecidableEq S₁] (p₁ : S₁) (r : R) (
 
 /-- **A kernel map determines its kernel.** Two kernel maps, possibly with different potential
 bounds, coincide exactly when their kernels do. -/
-theorem kernelMap_eq_kernelMap_iff {C' : ℝ} {m' : S₁ → S₀ → R}
+theorem kernelMap_inj {C' : ℝ} {m' : S₁ → S₀ → R}
     (hm' : ∀ p₁ p₀, m' p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + C')
     (hmfin' : ∀ p₁, m' p₁ ∈ NovikovModule R F₀) :
     kernelMap hm hmfin = kernelMap hm' hmfin' ↔ m = m' := by
