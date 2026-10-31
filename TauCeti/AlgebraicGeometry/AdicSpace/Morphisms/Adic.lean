@@ -150,6 +150,11 @@ def IsAdic : MorphismProperty AdicSpace.{u} := fun _ _ f ↦
 
 variable {X Y Z : AdicSpace.{u}}
 
+/-- Unfolding lemma for `TauCeti.AdicSpace.IsAdic`. -/
+theorem isAdic_iff_chartLocally (f : X ⟶ Y) :
+    IsAdic f ↔ chartLocally (fun φ ↦ IsAdicHom φ.toRingHom) f.hom :=
+  Iff.rfl
+
 /-- An adic morphism sends analytic points to analytic points: on a chart it is the morphism
 induced by an adic homomorphism, and the chart isomorphisms and inclusions identify analytic
 points. -/
@@ -157,7 +162,7 @@ private theorem IsAdic.mapsTo_analyticPoints {f : X ⟶ Y} (hf : IsAdic f) :
     Set.MapsTo f.hom.base X.obj.analyticPoints Y.obj.analyticPoints := by
   intro x hx
   obtain ⟨U, hxU, V, -, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
-    hsheaf, eU, eV, hfac⟩ := hf x
+    hsheaf, eU, eV, hfac⟩ := (chartLocally_iff _).mp ((isAdic_iff_chartLocally f).mp hf) x
   have hx' : (⟨x, hxU⟩ : X.obj.restrict U.isOpenEmbedding) ∈
       (X.obj.restrict U.isOpenEmbedding).analyticPoints := by
     simp only [analyticPoints_restrict, Opens.coe_inclusion']
@@ -179,7 +184,7 @@ private theorem IsAdic.mapsTo_analyticPoints {f : X ⟶ Y} (hf : IsAdic f) :
 global-sections map, which is adic by Wedhorn's Lemma 7.46. -/
 private theorem isAdic_of_mapsTo_analyticPoints {f : X ⟶ Y}
     (hf : Set.MapsTo f.hom.base X.obj.analyticPoints Y.obj.analyticPoints) : IsAdic f := by
-  intro x
+  refine (isAdic_iff_chartLocally f).mpr <| (chartLocally_iff _).mpr fun x ↦ ?_
   -- affinoid opens `V ∋ f x` and `x ∈ U ⊆ f⁻¹(V)`, with complete models
   obtain ⟨V, hV, hxV⟩ := Y.property.isLocallyAffinoid (f.hom.base x)
   obtain ⟨U, hU, hxU, hUV⟩ := Opens.isBasis_iff_nbhd.mp

@@ -47,7 +47,7 @@ theorem LocallyOfFiniteType.restrictPreimage {f : X ⟶ Y} (hf : LocallyOfFinite
       LocallyOfFiniteType (XW.ofRestrict K.isOpenEmbedding ≫ f.restrictPreimage W) := by
     intro x
     obtain ⟨U, hx, V, -, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
-      hsheaf, eU, eV, hfac⟩ := (locallyOfFiniteType_iff f).mp hf x.1
+      hsheaf, eU, eV, hfac⟩ := (chartLocally_iff f).mp ((locallyOfFiniteType_iff f).mp hf) x.1
     let XA := presentationLimitPreAdicSpace P' T.plus
       T.isRingOfIntegralElements.isPowerBounded_of_mem hP'
     let YA := presentationLimitPreAdicSpace P S.plus

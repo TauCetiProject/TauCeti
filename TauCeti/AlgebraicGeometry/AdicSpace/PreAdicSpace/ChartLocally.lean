@@ -55,7 +55,6 @@ Hausdorff with `Spa(B, B⁺)` having a sheaf as structure presheaf, a morphism
 `φ : (A, A⁺) → (B, B⁺)` satisfying `Q`, and isomorphisms identifying `X` restricted to `U` with
 `Spa(B, B⁺)` and `Y` restricted to `V` with `Spa(A, A⁺)`, under which `f` becomes the morphism
 induced by `φ`. -/
-@[expose]
 def chartLocally
     (Q : ∀ {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
       {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
