@@ -167,6 +167,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 of additive circles: `Module.Basis.quotientLatticeEquiv`, read on the orbit space through
 `Submodule.orbitRelQuotientContinuousAddEquiv`. -/
 def orbitRelQuotientLatticeEquiv : AddAction.orbitRel.Quotient L E ≃ₜ+ UnitAddTorus ι :=
+  -- `quotientLatticeEquiv` is stated for an additive subgroup `L'` through `L'.toIntSubmodule`.
+  -- For `L' = L.toAddSubgroup` this submodule is `L` itself, by `AddSubgroup.toIntSubmodule` and
+  -- `Submodule.toAddSubgroup` being structure projections, so the instance, the basis `b` and the
+  -- quotient `E ⧸ L` are those of `L`.
   haveI : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
   L.orbitRelQuotientContinuousAddEquiv.trans (quotientLatticeEquiv (L := L.toAddSubgroup) b)
 
@@ -176,10 +180,24 @@ modulo one. -/
 theorem orbitRelQuotientLatticeEquiv_apply_mk (x : E) (i : ι) :
     b.orbitRelQuotientLatticeEquiv (_root_.Quotient.mk (AddAction.orbitRel L E) x) i =
       ((b.ofZLatticeBasis ℝ L).repr x i : UnitAddCircle) :=
+  -- As in `orbitRelQuotientLatticeEquiv`, `L.toAddSubgroup.toIntSubmodule` is `L` by structure
+  -- projections. The instance term of the definition is not syntactically `‹IsZLattice ℝ L›`, so
+  -- `simp` and `rw` cannot see through it; compose the two evaluation lemmas directly.
   haveI : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
   (congrArg (fun y ↦ quotientLatticeEquiv (L := L.toAddSubgroup) b y i)
     (L.orbitRelQuotientContinuousAddEquiv_mk x)).trans
     (quotientLatticeEquiv_apply_mk (L := L.toAddSubgroup) b x i)
+
+/-- The inverse circle coordinates send reduced real coordinates to the orbit of their linear
+combination in the lattice basis. -/
+@[simp]
+theorem orbitRelQuotientLatticeEquiv_symm_apply (x : ι → ℝ) :
+    b.orbitRelQuotientLatticeEquiv.symm (fun i => (x i : UnitAddCircle)) =
+      _root_.Quotient.mk (AddAction.orbitRel L E) ((b.ofZLatticeBasis ℝ L).equivFun.symm x) := by
+  apply b.orbitRelQuotientLatticeEquiv.injective
+  ext i
+  simp only [ContinuousAddEquiv.apply_symm_apply, orbitRelQuotientLatticeEquiv_apply_mk,
+    ← Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
 
 end Module.Basis
 

@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import TauCeti.AlgebraicTopology.Singular.Pontryagin.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # Exterior powers of the first homology of a commutative topological monoid
@@ -440,17 +440,10 @@ theorem bijective_pontryaginExteriorPower_of_isIso {G' : TopCat.{u}} [MonObj G']
   have hf (m : ℕ) : Function.Bijective
       (((singularHomologyFunctor (ModuleCat.{u} k) m).obj (𝟙_ _)).map f) :=
     ConcreteCategory.bijective_of_isIso _
-  -- `f` induces an isomorphism on first homology, hence on its exterior powers
-  have h₁ : Function.Bijective (exteriorPower.map n
-      (((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).map f).hom) := by
-    refine ⟨exteriorPower.map_injective
-      (((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).map (inv f)).hom ?_,
-      exteriorPower.map_surjective (hf 1).2⟩
-    rw [← ModuleCat.hom_comp, ← Functor.map_comp, IsIso.hom_inv_id,
-      CategoryTheory.Functor.map_id, ModuleCat.hom_id]
   rw [← (hf n).of_comp_iff', ← LinearMap.coe_comp, pontryaginExteriorPower_naturality,
     LinearMap.coe_comp]
-  exact h.comp h₁
+  -- `f` induces an isomorphism on first homology, hence on its exterior powers
+  exact h.comp (exteriorPower.map_bijective (hf 1))
 
 /-- The image of a class under a morphism of commutative monoid objects whose source has a
 surjective exterior power map `⋀ⁿ H₁ → Hₙ` lies in the image of the exterior power map of the

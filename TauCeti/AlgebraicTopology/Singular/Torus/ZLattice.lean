@@ -136,17 +136,19 @@ private theorem exteriorPowerToHomology_naturality (n : ℕ) (w : ⋀[ℤ]^n L) 
     ext l
     apply (firstHomologyEquiv L').injective
     apply Subtype.ext
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-      LinearEquiv.apply_symm_apply, LinearMap.restrict_apply]
+    simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+      LinearEquiv.apply_symm_apply, LinearMap.coe_restrict_apply]
     exact (L.toAddSubgroup.orbitRelQuotientFirstHomologyEquiv_singularHomologyMap
       L'.toAddSubgroup f.toAddMonoidHom hf ⟨_, L.continuous_orbitRelQuotientMap L' hfL hf⟩
       (fun v ↦ L.orbitRelQuotientMap_mk L' f hfL v) _).trans
         (congrArg f (congrArg Subtype.val ((firstHomologyEquiv L).apply_symm_apply l)))
+  -- hence on its exterior powers, the exterior powers of the restriction of `f`
+  have h₂ := LinearMap.congr_fun (congrArg (exteriorPower.map n) h₁) w
+  simp only [exteriorPower.map_comp, LinearMap.comp_apply] at h₂
   have := LinearMap.congr_fun (TopCat.pontryaginExteriorPower_naturality (k := ℤ)
     (orbitRelQuotientMapTop L L' hf hfL) n)
     (exteriorPower.map n (firstHomologyEquiv L).symm.toLinearMap w)
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, ← LinearMap.comp_apply (exteriorPower.map n _),
-    ← exteriorPower.map_comp, h₁, exteriorPower.map_comp, LinearMap.comp_apply] at this
+  simp only [LinearMap.comp_apply, h₂] at this
   exact this
 
 end Naturality
@@ -196,8 +198,7 @@ theorem bijective_pontryaginExteriorPower_orbitRelQuotient (n : ℕ) :
 private theorem bijective_exteriorPowerToHomology (n : ℕ) :
     Function.Bijective (exteriorPowerToHomology L n) :=
   (bijective_pontryaginExteriorPower_orbitRelQuotient L n).comp
-    ⟨exteriorPower.map_injective (firstHomologyEquiv L).toLinearMap (by ext; simp),
-      exteriorPower.map_surjective (LinearEquiv.surjective _)⟩
+    (exteriorPower.map_bijective (firstHomologyEquiv L).symm.bijective)
 
 /-- **The integral homology of `E / L` is the exterior algebra on `L`.** For a full lattice `L`
 in a finite-dimensional real normed space `E`, for instance the period lattice of a complex torus,
@@ -211,16 +212,25 @@ def orbitRelQuotientHomologyEquiv (n : ℕ) :
 /-- The inverse of `Submodule.orbitRelQuotientHomologyEquiv` sends `l₁ ∧ ⋯ ∧ lₙ` to the
 Pontryagin product of the classes of `l₁, …, lₙ` under
 `AddSubgroup.orbitRelQuotientFirstHomologyEquiv`. The Pontryagin product is taken on the
-multiplicative form of `E / L`, the same topological space. -/
+multiplicative form of `E / L`; the classes are carried there and back along `ofAdd` and `toAdd`.
+-/
 @[simp]
 theorem orbitRelQuotientHomologyEquiv_symm_ιMulti {n : ℕ} (v : Fin n → L) :
     (L.orbitRelQuotientHomologyEquiv n).symm (exteriorPower.ιMulti ℤ n v) =
-      TopCat.pontryaginMultilinear ℤ
-        (TopCat.of (Multiplicative (AddAction.orbitRel.Quotient L E))) n
-        fun i ↦ L.toAddSubgroup.orbitRelQuotientFirstHomologyEquiv.symm (v i) :=
-  -- the homology of `E / L` and of its multiplicative form are the same module, `Multiplicative`
-  -- being a type synonym
-  exteriorPowerToHomology_ιMulti L v
+      ContinuousMap.singularHomologyMap ℤ n
+        (⟨Multiplicative.toAdd, continuous_toAdd⟩ :
+          C(Multiplicative (AddAction.orbitRel.Quotient L E), AddAction.orbitRel.Quotient L E))
+        (TopCat.pontryaginMultilinear ℤ
+          (TopCat.of (Multiplicative (AddAction.orbitRel.Quotient L E))) n
+          fun i ↦ ContinuousMap.singularHomologyMap ℤ 1
+            (⟨Multiplicative.ofAdd, continuous_ofAdd⟩ :
+              C(AddAction.orbitRel.Quotient L E, Multiplicative (AddAction.orbitRel.Quotient L E)))
+            (L.toAddSubgroup.orbitRelQuotientFirstHomologyEquiv.symm (v i))) :=
+  -- `toAdd` and `ofAdd` are the identity map of the underlying type of `E / L`
+  (exteriorPowerToHomology_ιMulti L v).trans <|
+    (congrArg (TopCat.pontryaginMultilinear ℤ _ n) <|
+      funext fun _ ↦ (ContinuousMap.singularHomologyMap_id _).symm).trans
+    (ContinuousMap.singularHomologyMap_id _).symm
 
 /-- In degree one, `Submodule.orbitRelQuotientHomologyEquiv` is the identification
 `AddSubgroup.orbitRelQuotientFirstHomologyEquiv` of first homology with the lattice. -/
