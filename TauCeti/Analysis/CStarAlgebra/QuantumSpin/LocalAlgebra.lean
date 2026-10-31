@@ -342,6 +342,15 @@ theorem partialTrace_inclusion (h : Λ ⊆ Λ') (x : Matrix (Λ → S) (Λ → S
       (Fintype.card ({i : Λ' // (i : L) ∉ Λ} → S) : R) • x := by
   simp [partialTrace, submatrix_inclusion]
 
+/-- Tracing out the sites of `Λ''` outside `Λ'` from an observable localized in a smaller region
+`Λ ⊆ Λ'` multiplies it by the number of configurations of those sites. -/
+@[simp]
+theorem partialTrace_inclusion_of_subset (h₁ : Λ ⊆ Λ') (h₂ : Λ' ⊆ Λ'') (h : Λ ⊆ Λ'')
+    (x : Matrix (Λ → S) (Λ → S) R) :
+    partialTrace h₂ (inclusion h x) =
+      (Fintype.card ({i : Λ'' // (i : L) ∉ Λ'} → S) : R) • inclusion h₁ x := by
+  rw [← inclusion_inclusion h₁ h₂, partialTrace_inclusion]
+
 /-- The partial trace is left linear over the local algebra of the smaller region:
 `Tr (ι a * X) = a * Tr X`. -/
 theorem partialTrace_inclusion_mul (h : Λ ⊆ Λ') (a : Matrix (Λ → S) (Λ → S) R)
@@ -448,6 +457,14 @@ theorem expectation_inclusion [CharZero R] [Nonempty S] (h : Λ ⊆ Λ')
     expectation h (inclusion h x) = x := by
   rw [expectation_apply, partialTrace_inclusion, smul_smul,
     inv_mul_cancel₀ (Nat.cast_ne_zero.2 Fintype.card_ne_zero), one_smul]
+
+/-- The normalized partial trace onto an intermediate region `Λ ⊆ Λ' ⊆ Λ''` fixes observables
+localized in `Λ`: `E_{Λ''→Λ'} (ι_{Λ→Λ''} x) = ι_{Λ→Λ'} x`. -/
+@[simp]
+theorem expectation_inclusion_of_subset [CharZero R] [Nonempty S] (h₁ : Λ ⊆ Λ') (h₂ : Λ' ⊆ Λ'')
+    (h : Λ ⊆ Λ'') (x : Matrix (Λ → S) (Λ → S) R) :
+    expectation h₂ (inclusion h x) = inclusion h₁ x := by
+  rw [← inclusion_inclusion h₁ h₂, expectation_inclusion]
 
 /-- The normalized partial trace is left linear over the local algebra of the smaller region:
 `E (ι a * X) = a * E X`. -/
