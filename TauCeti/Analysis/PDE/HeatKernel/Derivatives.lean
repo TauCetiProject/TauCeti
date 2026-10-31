@@ -44,6 +44,8 @@ the constant function `1`.
   `C t^((α - m) / 2) K_{4t}(x)`.
 * `TauCeti.integrable_norm_iteratedFDeriv_heatKernel_mul_rpow`: integrability of the weighted
   derivatives.
+* `TauCeti.integrable_norm_rpow_mul_heatKernel`: integrability of the weight `‖x‖^α K_t(x)`.
+* `TauCeti.heatKernelMoment`: the absolute moment `∫ ‖y‖^α K_1(y) dy`.
 * `TauCeti.exists_integral_norm_iteratedFDeriv_heatKernel_mul_rpow_le`: the weighted `L¹` bound.
 * `TauCeti.exists_integral_norm_iteratedFDeriv_heatKernel_le`: the `L¹` bound.
 * `TauCeti.integral_iteratedFDeriv_heatKernel_eq_zero`: the derivatives have integral zero.
@@ -63,7 +65,7 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory Module Real
-open scoped ContDiff
+open scoped ContDiff NNReal
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
@@ -224,6 +226,26 @@ theorem integrable_norm_iteratedFDeriv_heatKernel_mul_rpow {t : ℝ} (ht : 0 < t
       (continuous_norm.rpow_const fun _ => Or.inr hα)).aestronglyMeasurable
   · rw [norm_of_nonneg (by positivity)]
     exact hC t ht x
+
+/-- For `t > 0` and `α ≥ 0`, the weight `x ↦ ‖x‖^α K_t(x)` is integrable. -/
+theorem integrable_norm_rpow_mul_heatKernel {t : ℝ} (ht : 0 < t) {α : ℝ} (hα : 0 ≤ α) :
+    Integrable fun x : E => ‖x‖ ^ α * heatKernel t x := by
+  refine (integrable_norm_iteratedFDeriv_heatKernel_mul_rpow (E := E) ht 0 hα).congr
+    (ae_of_all _ fun x => ?_)
+  dsimp only
+  rw [norm_iteratedFDeriv_zero, norm_of_nonneg (heatKernel_pos ht x).le, mul_comm]
+
+variable (E) in
+/-- The **absolute moment** `M_α = ∫ ‖y‖^α K_1(y) dy` of order `α` of the heat kernel at time one.
+It is the constant in the Hölder estimates of heat potentials. -/
+def heatKernelMoment (α : ℝ≥0) : ℝ≥0 :=
+  ⟨∫ y : E, ‖y‖ ^ (α : ℝ) * heatKernel 1 y,
+    integral_nonneg fun y => mul_nonneg (by positivity) (heatKernel_pos one_pos y).le⟩
+
+/-- The defining formula of `TauCeti.heatKernelMoment`. -/
+theorem coe_heatKernelMoment (α : ℝ≥0) :
+    (heatKernelMoment E α : ℝ) = ∫ y : E, ‖y‖ ^ (α : ℝ) * heatKernel 1 y :=
+  (rfl)
 
 /-- **Weighted `L¹` bounds on the derivatives of the heat kernel.** For every order `m` and every
 `α ≥ 0` there is a constant `C > 0`, independent of the time, with

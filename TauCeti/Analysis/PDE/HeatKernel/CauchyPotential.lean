@@ -9,21 +9,28 @@ public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 public import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Basic
 public import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # The Cauchy heat potential and its parabolic Hölder estimate
 
-The solution of the heat equation `∂ₜu = Δu` on `E × [0, ∞)` with initial datum `g` is the
-*Cauchy potential* `u(t, x) = (K_t ⋆ g)(x)`, where `K_t` is the heat kernel. Substituting
-`z = √t • y` in the convolution integral writes it as
+For a suitable initial datum `g`, for instance a bounded continuous one, the classical solution of
+the heat equation `∂ₜu = Δu` on `E × [0, ∞)` with initial datum `g` is the *Cauchy potential*
+`u(t, x) = (K_t ⋆ g)(x)`, where `K_t` is the heat kernel. This file does not prove that `u` solves
+the heat equation; it proves the estimates below. Substituting `z = √t • y` in the convolution
+integral writes it as
 
 `u(t, x) = ∫ K_1(y) g(x - √t • y) dy`,
 
 an average of translates of `g` against the fixed probability density `K_1`. This formula is the
-definition `TauCeti.heatCauchyPotential` used here. It makes sense for every real `t` and gives
-`u(t, ·) = g` for `t ≤ 0`, so the initial condition holds by definition, and
-`TauCeti.heatCauchyPotential_eq_convolution` identifies it with `K_t ⋆ g` for `t > 0`.
+definition `TauCeti.heatCauchyPotential` used here. It makes sense for every real `t`:
+`TauCeti.heatCauchyPotential_eq_convolution` identifies it with `K_t ⋆ g` for `t > 0`, and when `F`
+is complete `TauCeti.heatCauchyPotential_of_nonpos` gives `u(t, ·) = g` for `t ≤ 0`, because `K_1`
+has mass one. If the translates of `g` are not integrable against `K_1`, the Bochner integral takes
+the junk value `0`, so the potential is meaningful only under integrability assumptions, such as
+the continuity and Hölder hypotheses of the estimates below
+(`TauCeti.integrable_heatKernel_one_smul_sub_smul`).
 
 In this form the Hölder estimates are immediate. If `g` is `α`-Hölder with constant `H`, then for
 all `t, s` and `x, x'`
@@ -47,7 +54,6 @@ of the datum.
 * `TauCeti.heatCauchyPotential`: the Cauchy potential `∫ K_1(y) g(x - √t • y) dy`.
 * `TauCeti.heatCauchyPotential_of_nonpos`, `TauCeti.heatCauchyPotential_zero`: the initial datum.
 * `TauCeti.heatCauchyPotential_eq_convolution`: agreement with `K_t ⋆ g` for `t > 0`.
-* `TauCeti.heatKernelMoment`: the absolute moment `∫ ‖y‖^α K_1(y) dy`.
 * `TauCeti.norm_heatCauchyPotential_le`: the maximum principle `‖u‖ ≤ sup ‖g‖`.
 * `TauCeti.holderWith_heatCauchyPotential`: the parabolic Hölder estimate.
 * `HolderWith.heatCauchyPotential`: the spatial Hölder estimate of each time slice.
@@ -75,9 +81,11 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- The **Cauchy heat potential** of `g`, `u(t, x) = ∫ K_1(y) g(x - √t • y) dy`. For `t > 0` it is
-the heat convolution `(K_t ⋆ g)(x)` (`TauCeti.heatCauchyPotential_eq_convolution`), the solution of
-the heat equation with initial datum `g`; for `t ≤ 0` it is `g(x)`
-(`TauCeti.heatCauchyPotential_of_nonpos`). -/
+the heat convolution `(K_t ⋆ g)(x)` (`TauCeti.heatCauchyPotential_eq_convolution`), which for
+suitable data, such as bounded continuous ones, is the classical solution of the heat equation with
+initial datum `g`; that is not proved here. When `F` is complete it is `g(x)` for `t ≤ 0`
+(`TauCeti.heatCauchyPotential_of_nonpos`). If the translates of `g` are not integrable against
+`K_1`, the integral takes the junk value `0`. -/
 def heatCauchyPotential (g : E → F) (t : ℝ) (x : E) : F :=
   ∫ y, heatKernel 1 y • g (x - √t • y)
 
@@ -85,26 +93,6 @@ def heatCauchyPotential (g : E → F) (t : ℝ) (x : E) : F :=
 theorem heatCauchyPotential_def (g : E → F) (t : ℝ) (x : E) :
     heatCauchyPotential g t x = ∫ y, heatKernel 1 y • g (x - √t • y) :=
   (rfl)
-
-variable (E) in
-/-- The **absolute moment** `M_α = ∫ ‖y‖^α K_1(y) dy` of order `α` of the heat kernel at time one.
-It is the constant in the Hölder estimates of `TauCeti.heatCauchyPotential`. -/
-def heatKernelMoment (α : ℝ≥0) : ℝ≥0 :=
-  ⟨∫ y : E, ‖y‖ ^ (α : ℝ) * heatKernel 1 y,
-    integral_nonneg fun y => mul_nonneg (by positivity) (heatKernel_pos one_pos y).le⟩
-
-/-- The defining formula of `TauCeti.heatKernelMoment`. -/
-theorem coe_heatKernelMoment (α : ℝ≥0) :
-    (heatKernelMoment E α : ℝ) = ∫ y : E, ‖y‖ ^ (α : ℝ) * heatKernel 1 y :=
-  (rfl)
-
-/-- The weight `‖y‖^α K_1(y)` defining `TauCeti.heatKernelMoment` is integrable. -/
-private theorem integrable_norm_rpow_mul_heatKernel_one (α : ℝ≥0) :
-    Integrable fun y : E => ‖y‖ ^ (α : ℝ) * heatKernel 1 y := by
-  refine (integrable_norm_iteratedFDeriv_heatKernel_mul_rpow (E := E) one_pos 0 α.coe_nonneg).congr
-    (ae_of_all _ fun y => ?_)
-  dsimp only
-  rw [norm_iteratedFDeriv_zero, norm_of_nonneg (heatKernel_pos one_pos y).le, mul_comm]
 
 /-- **The initial datum.** For `t ≤ 0` the Cauchy heat potential of `g` is `g`. -/
 theorem heatCauchyPotential_of_nonpos [CompleteSpace F] (g : E → F) {t : ℝ} (ht : t ≤ 0)
@@ -136,12 +124,11 @@ theorem heatCauchyPotential_eq_convolution (g : E → F) {t : ℝ} (ht : 0 < t) 
 potential `u` of `g`, at every time `t` and point `x`. -/
 theorem norm_heatCauchyPotential_le {g : E → F} {M : ℝ} (hM : ∀ y, ‖g y‖ ≤ M) (t : ℝ) (x : E) :
     ‖heatCauchyPotential g t x‖ ≤ M := by
-  calc ‖heatCauchyPotential g t x‖ ≤ ∫ y : E, heatKernel 1 y * M := by
-        refine norm_integral_le_of_norm_le ((integrable_heatKernel one_pos).mul_const M)
-          (ae_of_all _ fun y => ?_)
-        rw [norm_smul, norm_of_nonneg (heatKernel_pos one_pos y).le]
-        exact mul_le_mul_of_nonneg_left (hM _) (heatKernel_pos one_pos y).le
-    _ = M := by rw [integral_mul_const, integral_heatKernel one_pos, one_mul]
+  -- `u(t, x)` is the heat convolution at time one and position zero of `z ↦ g (x + √t • z)`.
+  have h := norm_heatKernel_convolution_le one_pos (g := fun z => g (x + √t • z))
+    (ae_of_all _ fun z => hM _) 0
+  simpa only [convolution_def, ContinuousLinearMap.lsmul_apply, zero_sub, smul_neg,
+    ← sub_eq_add_neg, ← heatCauchyPotential_def] using h
 
 variable {g : E → F} {H α : ℝ≥0}
 
@@ -151,8 +138,8 @@ theorem integrable_heatKernel_one_smul_sub_smul (hg : HolderWith H α g) (hgc : 
     (x : E) (c : ℝ) :
     Integrable fun y : E => heatKernel 1 y • g (x - c • y) := by
   have hK := integrable_heatKernel (E := E) one_pos
-  refine ((hK.mul_const ‖g x‖).add
-      ((integrable_norm_rpow_mul_heatKernel_one (E := E) α).const_mul (H * |c| ^ (α : ℝ)))).mono'
+  have hw := integrable_norm_rpow_mul_heatKernel (E := E) one_pos α.coe_nonneg
+  refine ((hK.mul_const ‖g x‖).add (hw.const_mul (H * |c| ^ (α : ℝ)))).mono'
     (((contDiff_heatKernel (k := 0) 1).continuous.smul
       (hgc.comp (by fun_prop))).aestronglyMeasurable)
     (ae_of_all _ fun y => ?_)
@@ -174,13 +161,13 @@ private theorem norm_heatCauchyPotential_sub_le_of_le (hg : HolderWith H α g)
     (hAB : ∀ y, ‖g (x - √t • y) - g (x' - √s • y)‖ ≤ A + B * ‖y‖ ^ (α : ℝ)) :
     ‖heatCauchyPotential g t x - heatCauchyPotential g s x'‖ ≤ A + B * heatKernelMoment E α := by
   have hK := integrable_heatKernel (E := E) one_pos
+  have hw := integrable_norm_rpow_mul_heatKernel (E := E) one_pos α.coe_nonneg
   rw [heatCauchyPotential_def, heatCauchyPotential_def,
     ← integral_sub (integrable_heatKernel_one_smul_sub_smul hg hgc x _)
       (integrable_heatKernel_one_smul_sub_smul hg hgc x' _)]
   calc ‖∫ y, (heatKernel 1 y • g (x - √t • y) - heatKernel 1 y • g (x' - √s • y))‖
       ≤ ∫ y : E, (heatKernel 1 y * A + B * (‖y‖ ^ (α : ℝ) * heatKernel 1 y)) := by
-        refine norm_integral_le_of_norm_le
-          ((hK.mul_const A).add ((integrable_norm_rpow_mul_heatKernel_one α).const_mul B))
+        refine norm_integral_le_of_norm_le ((hK.mul_const A).add (hw.const_mul B))
           (ae_of_all _ fun y => ?_)
         rw [← smul_sub, norm_smul, norm_of_nonneg (heatKernel_pos one_pos y).le]
         calc heatKernel 1 y * ‖g (x - √t • y) - g (x' - √s • y)‖
@@ -188,8 +175,8 @@ private theorem norm_heatCauchyPotential_sub_le_of_le (hg : HolderWith H α g)
               mul_le_mul_of_nonneg_left (hAB y) (heatKernel_pos one_pos y).le
           _ = heatKernel 1 y * A + B * (‖y‖ ^ (α : ℝ) * heatKernel 1 y) := by ring
     _ = A + B * heatKernelMoment E α := by
-        rw [integral_add (hK.mul_const A) ((integrable_norm_rpow_mul_heatKernel_one α).const_mul B),
-          integral_mul_const, integral_heatKernel one_pos, one_mul, integral_const_mul,
+        rw [integral_add (hK.mul_const A) (hw.const_mul B), integral_mul_const,
+          integral_heatKernel one_pos, one_mul, integral_const_mul,
           coe_heatKernelMoment]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [NormedSpace ℝ F] in
