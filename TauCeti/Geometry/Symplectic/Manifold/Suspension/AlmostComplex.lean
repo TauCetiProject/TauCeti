@@ -62,7 +62,6 @@ structure is compatible with `Ω`.
   coordinates `(s, t, x)`.
 * `TauCeti.SmoothMappingTorus.eval₂_suspensionForm_suspensionAlmostComplexStructure`:
   `Ω(w, J w) = a² + b² + σ(v, K v)`.
-* `TauCeti.SmoothMappingTorus.eq_suspensionAlmostComplexStructure_iff`: uniqueness of the descent.
 * `TauCeti.SmoothMappingTorus.tames_suspensionAlmostComplexStructure`: vertical tameness descends.
 * `TauCeti.SmoothMappingTorus.compatible_suspensionAlmostComplexStructure`: a family of
   `σ`-compatible structures descends to an `Ω`-compatible structure.
@@ -274,20 +273,6 @@ theorem eval₂_suspensionForm_suspensionAlmostComplexStructure (s t : ℝ) (x :
       a ^ 2 + b ^ 2 + σ.eval₂ x v (K ((s, t), x) v) := by
   rw [suspensionAlmostComplexStructure_mk, eval₂_suspensionForm_mk]
   ring
-
-/-- The descended block structure is the unique almost complex structure for which the
-covering map has complex-linear differentials. -/
-theorem eq_suspensionAlmostComplexStructure_iff
-    (J' : SmoothAlmostComplexStructure (𝓘(ℝ).prod (𝓘(ℝ).prod I))
-      (UnitAddCircle × SmoothMappingTorus φ)) :
-    J' = suspensionAlmostComplexStructure φ hK hs ht ↔
-      ∀ (p : (ℝ × ℝ) × M) (v : TangentSpace (𝓘(ℝ, ℝ × ℝ).prod I) p),
-        J' (suspensionCover φ p)
-            (mfderiv (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (suspensionCover φ) p v) =
-          mfderiv (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (suspensionCover φ) p
-            (SmoothAlmostComplexStructure.prodFamily
-              (AlmostComplexStructure.product ℝ).constSmooth K hK p v) :=
-  SmoothAlmostComplexStructure.eq_descend_iff _ _ _ _ J'
 
 /-- If the fibre form tames every vertical structure, the suspension form tames the descended
 block structure. -/
