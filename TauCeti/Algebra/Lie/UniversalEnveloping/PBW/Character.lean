@@ -272,11 +272,6 @@ private theorem complementMonomial_mem_pbwFiltration (α : ιA →₀ ℕ) :
   simpa only [Multiset.length_sort, Finsupp.card_toMultiset_eq_degree] using
     pbwMonomial_mem_pbwFiltration R L (fun i ↦ (bA i : L)) (α.toMultiset.sort (· ≤ ·))
 
-/-- A relative PBW basis vector is a complement monomial times a subalgebra monomial. -/
-private theorem relativePBWBasis_eq_complementMonomial_mul (α : ιA →₀ ℕ) (β : ιB →₀ ℕ) :
-    B.relativePBWBasis hA bA bB (α, β) = complementMonomial bA α * map R B.incl (bB.pbwBasis β) :=
-  LieSubalgebra.relativePBWBasis_apply B hA bA bB α β
-
 /-- The character form of index `α` sends the complement monomial of `α'` to `1` if `α' = α` and
 to `0` otherwise. -/
 private theorem characterForm_complementMonomial (α α' : ιA →₀ ℕ) :
@@ -297,8 +292,8 @@ private theorem characterForm_eq_zero_of_mem_pbwFiltration {α : ιA →₀ ℕ}
   have hdeg := hs _ hp
   dsimp only at hdeg ⊢
   have hne : α' ≠ α := by rintro rfl; omega
-  simp [relativePBWBasis_eq_complementMonomial_mul,
-    _root_.UniversalEnvelopingAlgebra.characterForm_complementMonomial_mul, hne]
+  rw [LieSubalgebra.relativePBWBasis_apply, ← complementMonomial]
+  simp [_root_.UniversalEnvelopingAlgebra.characterForm_complementMonomial_mul, hne]
 
 /-- A character form whose index has total degree `d` vanishes below filtration degree `d`. -/
 private theorem characterForm_eq_zero_of_mem_pbwFiltrationPrevious {α : ιA →₀ ℕ} {s : U}
@@ -462,7 +457,7 @@ theorem pbwFiltration_le_span_pbwMonomial_sup {A : Submodule R L}
   set c := _root_.UniversalEnvelopingAlgebra.lift R χ (bB.pbwBasis β)
   have hsplit : B.relativePBWBasis hA bA bB (α, β) =
       complementMonomial bA α * (r - algebraMap R U c) + c • complementMonomial bA α := by
-    rw [relativePBWBasis_eq_complementMonomial_mul, mul_sub, Algebra.smul_def,
+    rw [LieSubalgebra.relativePBWBasis_apply, ← complementMonomial, mul_sub, Algebra.smul_def,
       Algebra.commutes c, sub_add_cancel]
   rw [hsplit]
   refine add_mem (Submodule.mem_sup_right (Submodule.mem_sup_left ?_)) (Submodule.smul_mem _ _ ?_)
