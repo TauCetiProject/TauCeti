@@ -100,7 +100,9 @@ private theorem free_and_bijective_baseChange (C' : Type u) [CommRing C']
   let A' := C' ⊗[(algebraMap A B).eqLocus t] A
   let B' := A' ⊗[A] B
   -- the base change `t' : A' → B'` of `t`, whose invariants are a copy `e` of the local ring `C'`
-  obtain ⟨t', e, h', _, ht₁, ht₂, he⟩ := h.exists_baseChange_ringEquiv_eqLocus C'
+  obtain ⟨t', e, h', ht₁, ht₂, he⟩ := h.exists_baseChange_ringEquiv_eqLocus C'
+  have : Nontrivial ((algebraMap A' B').eqLocus t') := e.symm.toEquiv.nontrivial
+  have : IsLocalRing ((algebraMap A' B').eqLocus t') := .of_surjective' e.toRingHom e.surjective
   -- a basis `aᵢ` of `A'` over `C'` whose images `t' aᵢ` form a basis of `B'` over `A'`
   obtain ⟨b', a', hb'⟩ := h'.exists_basis_eq_apply
   let bA' : Module.Basis _ C' A' := (h'.basis b' hb').mapCoeffs e.symm fun c x ↦ by
