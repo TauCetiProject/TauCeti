@@ -100,11 +100,11 @@ private theorem exists_fourierCoeff_eq_inner {T : HardySpace →L[ℂ] HardySpac
   refine ⟨b, fun i j ↦ ?_⟩
   rcases le_total j i with hji | hij
   · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hji
-    rw [show ((j + d : ℕ) : ℤ) - j = d by push_cast; ring, hcol, ← inner_hardyBasis_add_eq h d 0 j,
-      add_comm, zero_add]
+    have hd : ((j + d : ℕ) : ℤ) - j = d := by omega
+    rw [hd, hcol, ← inner_hardyBasis_add_eq h d 0 j, add_comm, zero_add]
   · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hij
-    rw [show (i : ℤ) - ((i + d : ℕ) : ℤ) = -d by push_cast; ring, hrow,
-      ← inner_hardyBasis_add_eq h 0 d i, zero_add, add_comm]
+    have hd : (i : ℤ) - ((i + d : ℕ) : ℤ) = -d := by omega
+    rw [hd, hrow, ← inner_hardyBasis_add_eq h 0 d i, zero_add, add_comm]
 
 /-- The operator `T` acting on circle `L²` through the Hardy projection. -/
 private abbrev ambient (T : HardySpace →L[ℂ] HardySpace) :
