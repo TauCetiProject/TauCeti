@@ -12,7 +12,8 @@ public import TauCeti.Algebra.Lie.Dual
 # Invariant bilinear forms on irreducible Lie modules
 
 A bilinear form `Φ` on a Lie module `M` is invariant when `Φ ⁅x, y⁆ z = -Φ y ⁅x, z⁆`
-(`LinearMap.BilinForm.lieInvariant`). This file collects the invariant symmetric forms into the
+(`LinearMap.BilinForm.lieInvariant`). On a Lie algebra, a symmetric invariant form satisfies the
+cyclic identity `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`. This file collects the invariant symmetric forms into the
 submodule `TauCeti.LieModule.invariantForms R L M` and shows that on a finite-dimensional
 irreducible module over an algebraically closed field there is at most one invariant form up to
 scalars.
@@ -33,6 +34,8 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
 
 ## Main results
 
+* `LinearMap.BilinForm.lieInvariant.apply_lie_cyclic`: a symmetric invariant form satisfies
+  `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`.
 * `TauCeti.LieModule.traceForm_mem_invariantForms`: the trace form of a Lie module, in particular
   the Killing form, is an invariant symmetric form on the Lie algebra.
 * `TauCeti.LieModule.invariantForms_le_maxTrivSubmodule`: invariant symmetric forms lie in the
@@ -55,6 +58,20 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
 public section
 
 open Module (Dual finrank)
+
+/-! ### The cyclic identity -/
+
+namespace LinearMap.BilinForm.lieInvariant
+
+variable {R L : Type*} [CommRing R] [LieRing L] [Module R L] {Φ : LinearMap.BilinForm R L}
+
+/-- A symmetric invariant form on a Lie algebra is invariant under cyclic permutation of a
+bracket and a third argument: `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`. -/
+theorem apply_lie_cyclic (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a b c : L) :
+    Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c := by
+  rw [hΦ, ← lie_skew a b, map_neg, LinearMap.neg_apply, hΦs.eq]
+
+end LinearMap.BilinForm.lieInvariant
 
 namespace TauCeti.LieModule
 

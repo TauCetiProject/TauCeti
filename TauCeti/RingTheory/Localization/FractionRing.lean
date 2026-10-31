@@ -18,6 +18,9 @@ direction, from a fraction ring of `R` to one of `S`, as
 This lets a statement about the fraction field of a localization of a domain be reduced to the
 fraction field of the domain itself. The non-zero-divisor hypothesis holds whenever a domain is
 localized to a nontrivial ring (`TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial`).
+
+When every positive integer is a non-zero-divisor of `R`, every quotient of a total ring of
+fractions of `R` by a proper ideal has characteristic zero (`IsFractionRing.charZero_quotient`).
 -/
 
 public section
@@ -52,3 +55,22 @@ theorem of_isLocalization_of_isFractionRing [IsLocalization M S] [IsFractionRing
     (IsLocalization.nonZeroDivisors_le_comap M S)] at this
 
 end TauCeti.IsFractionRing
+
+namespace IsFractionRing
+
+open scoped nonZeroDivisors
+
+variable (A K : Type*) [CommRing A] [CommRing K] [Algebra A K] [IsFractionRing A K]
+
+/-- If every positive integer is a non-zero-divisor of `A`, then every quotient of the total
+quotient ring of `A` by a proper ideal has characteristic zero. -/
+theorem charZero_quotient (h : ∀ n : ℕ, n ≠ 0 → (n : A) ∈ A⁰) {I : Ideal K} (hI : I ≠ ⊤) :
+    CharZero (K ⧸ I) := by
+  refine charZero_of_inj_zero fun n hn ↦ ?_
+  by_contra h0
+  have hu : IsUnit (n : K) := by
+    simpa using IsLocalization.map_units K ⟨(n : A), h n h0⟩
+  have := Ideal.Quotient.nontrivial_iff.mpr hI
+  exact (hu.map (Ideal.Quotient.mk I)).ne_zero (by simpa using hn)
+
+end IsFractionRing
