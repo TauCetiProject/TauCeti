@@ -104,6 +104,12 @@ theorem e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (a : Fin 56) (i 
       e7MinusculeWeight a i = 1 := by
   fin_cases a <;> fin_cases i <;> decide
 
+/-- Every minuscule weight other than the highest weight has a negative simple-coroot
+coordinate. This is the unique-highest-weight property needed by the scalar centralizer. -/
+theorem e7MinusculeWeight_has_negative_iff (a : Fin 56) :
+    (∃ i, e7MinusculeWeight a i = -1) ↔ a ≠ 0 := by
+  decide +kernel +revert
+
 /-! ## Simple reflections -/
 
 /-- The index table underlying the seven simple-reflection permutations. -/
