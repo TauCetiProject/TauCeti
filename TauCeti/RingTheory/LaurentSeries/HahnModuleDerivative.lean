@@ -18,11 +18,8 @@ This file transports Mathlib's coefficientwise derivative `LaurentSeries.derivat
 `R`-linear map `D = d/dt` on `V((t))` with `D (v t ^ n) = n v t ^ (n - 1)`.
 
 The main result is the Leibniz rule `D (f • x) = D f • x + f • D x` for the action of `f : R⸨X⸩`
-on `x : V((t))`, over any ring `R`. Its proof passes through the Euler operator `t D`, which
-multiplies the coefficient of `t ^ n` by `n`: on the convolution `f • x` this gives
-`n = i + j` on each pair of exponents `(i, j)` with `i + j = n`, and dividing by `t` recovers
-`D`. The same argument gives the Leibniz rule for the convolution bracket of Lie-algebra-valued
-Laurent series (`HahnModule.derivative_lie`).
+on `x : V((t))`, over any ring `R`. The Leibniz rule for the convolution bracket of
+Lie-algebra-valued Laurent series is `HahnModule.derivative_lie`.
 
 The derivative maps the lattice `U_a(V) = t ^ a V⟦t⟧` into `U_(a - 1)(V)`, the estimate that makes
 it continuous for the topology these lattices define, and it commutes with coefficientwise linear
@@ -121,6 +118,10 @@ theorem coeff_single_one_smul_derivative (x : HahnModule ℤ R V) (n : ℤ) :
       n • ((of R).symm x).coeff n := by
   obtain ⟨m, rfl⟩ : ∃ m : ℤ, n = (1 : ℤ) +ᵥ m := ⟨n - 1, by rw [vadd_eq_add, add_sub_cancel]⟩
   rw [coeff_single_smul_vadd, one_smul, coeff_derivative, vadd_eq_add, add_comm]
+
+/- The Leibniz rules pass through the Euler operator `t D`, which multiplies the coefficient of
+`t ^ n` by `n`: on the convolution `f • x` this gives `n = i + j` on each pair of exponents
+`(i, j)` with `i + j = n`, and dividing by `t` recovers `D`. -/
 
 /-- The Euler operator `t D` satisfies the Leibniz rule for the action of scalar Laurent series. -/
 private theorem single_one_smul_derivative_smul (f : R⸨X⸩) (x : HahnModule ℤ R V) :

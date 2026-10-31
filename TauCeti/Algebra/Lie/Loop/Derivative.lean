@@ -19,11 +19,6 @@ algebra:
 
 `D ⁅x, y⁆ = ⁅D x, y⁆ + ⁅x, D y⁆`.
 
-As for the action of scalar Laurent series, the proof passes through the Euler operator `t D`,
-which multiplies the coefficient of `t ^ n` by `n`; on the coefficient `∑_{i + j = n} ⁅x_i, y_j⁆`
-of a bracket it splits `n = i + j`. Dividing by `t`, which is compatible with the bracket because
-`L((t))` is a Lie algebra over `R⸨X⸩`, recovers the rule for `D`.
-
 On the polynomial loops `t ^ n ⊗ x`, embedded by `LieAlgebra.LoopAlgebra.toHahnModule`, the
 derivative is `D (t ^ n ⊗ x) = t ^ (n - 1) ⊗ n x`. This is the mode formula behind Mathlib's
 residue pairing `LieAlgebra.LoopAlgebra.residuePairing`, read as `(f, g) ↦ Res Φ(f, D g) dt` for a
@@ -53,6 +48,10 @@ open Finset HahnSeries
 namespace HahnModule
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/- The Euler operator `t D` multiplies the coefficient of `t ^ n` by `n`; on the coefficient
+`∑_{i + j = n} ⁅x_i, y_j⁆` of a bracket it splits `n = i + j`. Dividing by `t`, which is compatible
+with the bracket because `L((t))` is a Lie algebra over `R⸨X⸩`, recovers the rule for `D`. -/
 
 /-- The Euler operator `t D` is a derivation of the convolution bracket. -/
 private theorem single_one_smul_derivative_lie (x y : HahnModule ℤ R L) :
