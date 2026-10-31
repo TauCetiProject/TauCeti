@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.Probability.BorelCantelli
 public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Independence.InfinitePi
+public import TauCeti.Probability.Independence.ConvolutionPower
 
 /-!
 # Arrival times and counts of an ordinary renewal process
@@ -34,10 +35,10 @@ The probabilistic part shows that the process does not explode: if the increment
 and identically distributed and not almost surely zero, then almost surely the arrival times tend
 to infinity, and hence almost surely `renewalCount T t` is finite simultaneously for all `t`. The
 proof applies the second Borel–Cantelli lemma to the events `{a ≤ T n}` for a threshold `a > 0` of
-positive probability. Finally, the law of each count depends only on the common law `F` of the
-increments: it is the law of the count of the coordinate process under the product measure
-`Measure.infinitePi (fun _ ↦ F)`, on which Mathlib's `iIndepFun_infinitePi` constructs the
-increments.
+positive probability. For i.i.d. increments with common law `F`, the `n`-th arrival time has law
+the convolution power `F^{∗n}`. Finally, the law of each count depends only on `F`: it is the law
+of the count of the coordinate process under the product measure `Measure.infinitePi (fun _ ↦ F)`,
+on which Mathlib's `iIndepFun_infinitePi` constructs the increments.
 
 ## Main definitions
 
@@ -53,6 +54,8 @@ increments.
 * `TauCeti.Probability.tendsto_arrival_atTop_iff` — nonexplosion is finiteness of every count.
 * `TauCeti.Probability.ae_tendsto_arrival_atTop`, `TauCeti.Probability.ae_renewalCount_lt_top` —
   i.i.d. increments that are not almost surely zero do not explode.
+* `TauCeti.Probability.hasLaw_arrival` — for i.i.d. increments with law `F`, the `n`-th arrival
+  time has law the convolution power `F^{∗n}`.
 * `TauCeti.Probability.map_renewalCount_eq_infinitePi_map` — the law of a count is computed on the
   canonical product space.
 
@@ -276,6 +279,18 @@ theorem ae_renewalCount_lt_top (hT : ∀ n, Measurable (T n)) (hindep : iIndepFu
     ∀ᵐ ω ∂P, ∀ t, renewalCount T t ω < ⊤ := by
   filter_upwards [ae_tendsto_arrival_atTop hT hindep hid hzero] with ω hω
   exact tendsto_arrival_atTop_iff.1 hω
+
+/-- For independent increments with common law `F = P.map (T 0)`, the `n`-th arrival time
+`arrival T n` has law the convolution power `F^{∗n}`. -/
+theorem hasLaw_arrival (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
+    (n : ℕ) : HasLaw (arrival T n) ((P.map (T 0)).convolutionPower n) P := by
+  have := hindep.isProbabilityMeasure
+  have hsum : arrival T n = ∑ i ∈ Finset.range n, T i := by
+    ext ω
+    simp [arrival_def]
+  simpa [hsum] using
+    hindep.hasLaw_finset_sum_convolutionPower (fun i ↦ ⟨(hid i).aemeasurable_fst, (hid i).map_eq⟩)
+      (Finset.range n)
 
 /-- **Transfer to the canonical product space.** For independent, identically distributed
 increments, the law of `renewalCount T t` is the law of the count of the coordinate process under

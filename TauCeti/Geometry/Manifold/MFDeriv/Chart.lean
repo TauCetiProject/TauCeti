@@ -52,6 +52,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   normed space is differentiable whenever its preferred coordinate expression is.
 * `MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm`: on a boundaryless manifold, the
   vector-valued manifold derivative is the Fréchet derivative of the coordinate expression.
+* `MDifferentiableAt.mfderiv_eq_fderiv_extChartAt_conj`: on a boundaryless manifold, the manifold
+  derivative of a map between manifolds is the Fréchet derivative of its expression in the extended
+  charts at the point and at its image.
 * `ContMDiffAt.hasStrictFDerivAt_extChartAt_conj`: over `ℝ` or `ℂ`, a map out of a boundaryless
   manifold that is `C¹` at a point, read in the extended charts at that point and at its image, is
   strictly differentiable at the chart image of the point.
@@ -297,6 +300,20 @@ theorem _root_.MDifferentiableAt.mvfderiv_eq_fderiv_comp_extChartAt_symm
     mvfderiv I f x = fderiv 𝕜 (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
   rw [hf.mvfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ,
     writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp]
+
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- On a boundaryless manifold, the manifold derivative of `g : M → M'` at `x` is the Fréchet
+derivative of `g` read in the extended charts at `x` and at `y = g x`, with the tangent spaces at
+`x` and `g x` identified with the model spaces. Naming the image point `y` allows a self-map
+fixing `x` to be read in the single chart at `x`. -/
+theorem _root_.MDifferentiableAt.mfderiv_eq_fderiv_extChartAt_conj {g : M → M'} {y : M'}
+    (hg : MDifferentiableAt I I' g x) (hy : g x = y) :
+    mfderiv I I' g x =
+      fderiv 𝕜 (extChartAt I' y ∘ g ∘ (extChartAt I x).symm) (extChartAt I x x) := by
+  subst hy
+  rw [hg.mfderiv, ModelWithCorners.Boundaryless.range_eq_univ, fderivWithin_univ]
+  -- The tangent-space casts `tangentSpaceCastModel` are the identity maps of the model spaces.
+  rfl
 
 omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
 /-- On a boundaryless source, the manifold derivative, transported to the model spaces by the

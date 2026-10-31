@@ -51,6 +51,15 @@ theorem _root_.Set.mem_unit_iff_finitePlace (S : Set (HeightOneSpectrum (𝓞 K)
   (Set.mem_unit_iff S K).trans <|
     forall₂_congr fun v _ ↦ (FinitePlace.mk_apply_eq_one_iff v (x : K)).symm
 
+/-- A nonzero element of `K` which has absolute value `1` at every finite place outside `S` is
+an `S`-unit. -/
+theorem exists_sUnit_coe_eq {S : Set (HeightOneSpectrum (𝓞 K))} {x : K} (hx0 : x ≠ 0)
+    (hx : ∀ v ∉ S, HeightOneSpectrum.adicAbv K v x = 1) :
+    ∃ y : S.unit K, ((y : Kˣ) : K) = x :=
+  ⟨⟨Units.mk0 x hx0, (Set.mem_unit_iff_finitePlace _ _).mpr fun v hv ↦ by
+    rw [FinitePlace.mk_apply, FinitePlace.norm_embedding, Units.val_mk0]
+    exact hx v hv⟩, rfl⟩
+
 section Height
 
 variable (S : Set (HeightOneSpectrum (𝓞 K)))

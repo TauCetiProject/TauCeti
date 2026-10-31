@@ -52,6 +52,8 @@ an explicit hypothesis, so no normalisation is hidden in a typeclass instance.
 * `PowerSeries.isDistinguished_iff_isGreatest_supportingFace` and
   `PowerSeries.isLowestDominant_iff_isLeast_supportingFace`: the last and the first coefficient
   attaining the Gauss norm are the greatest and least contact indices.
+* `PowerSeries.exists_isSupportingLine_mem_supportingFace_of_isRestricted`: the coefficient
+  heights of a nonzero series restricted at `b ^ σ` touch a supporting line of slope `σ`.
 
 ## References
 
@@ -230,6 +232,27 @@ theorem isLowestDominant_iff_isLeast_supportingFace {σ : ℝ}
   · exact TauCeti.PowerSeries.gaussNorm_pos (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)
       hf hf0
   · exact (le_gaussNorm norm _ f hf m).lt_of_ne fun hm => (hs.2 m hm).not_gt hms
+
+/-- The coefficient heights of a nonzero series restricted at the radius `b ^ σ` touch a
+supporting line of slope `σ`. -/
+theorem exists_isSupportingLine_mem_supportingFace_of_isRestricted {σ : ℝ}
+    (hf : f.IsRestricted (b ^ σ)) (hf0 : f ≠ 0) :
+    ∃ (c : ℝ) (i : ℕ), IsSupportingLine (fun n => v (coeff n f)) σ c ∧
+      i ∈ supportingFace (fun n => v (coeff n f)) σ c := by
+  have hfn := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hf
+  obtain ⟨s, hs⟩ := TauCeti.PowerSeries.exists_isDistinguished
+    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) hf hf0
+  exact ⟨_, s, isSupportingLine_iff.mpr
+    (supportingValue_addValuation_coeff_eq_neg_logb_gaussNorm f v hb hv hfn hf0).ge,
+    ((isDistinguished_iff_isGreatest_supportingFace f v hb hv hfn hf0 s).mp hs).1⟩
+
+/-- A series restricted at the radius `b ^ σ` has a Newton polygon whose supporting value at `σ`
+is above `⊥`. -/
+theorem supportingValue_newtonPolygon_ne_bot_of_isRestricted {σ : ℝ}
+    (hf : f.IsRestricted (b ^ σ)) : supportingValue (f.newtonPolygon v) σ ≠ ⊥ := by
+  have h := (hasGaussNorm_iff_supportingValue_ne_bot f v hb hv σ).mp
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hf)
+  rwa [supportingValue_newtonPolygon (isAdmissible_iff_exists_supportingValue_ne_bot.mpr ⟨σ, h⟩)]
 
 end PowerSeries
 
