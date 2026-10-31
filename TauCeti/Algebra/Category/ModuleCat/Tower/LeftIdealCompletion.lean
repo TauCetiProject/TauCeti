@@ -45,6 +45,7 @@ ring. Every smooth `A`-module is a module over `Â`
 
 ## Main results
 
+* `TauCeti.ModuleTower.map_limSMul`: `A`-linear maps commute with the action of the completion.
 * `TauCeti.ModuleTower.limπ_mul_eq`: the coordinates of a product are computed by
   representatives.
 * `TauCeti.ModuleTower.smul_eq_toLimQuotients_mul`: the `A`-action on the completion is left
@@ -164,8 +165,8 @@ private theorem limSMul_add_right (x : (quotients J hJ).lim) {v w : V}
   rw [hvb, limSMul_eq hn' hb, limSMul_eq (fun a ha ↦ by rw [smul_add, hm' a ha, hn' a ha,
     add_zero]) hb, smul_add]
 
-/-- The action commutes with `A`-linear maps. -/
-private theorem limSMul_map {W : Type*} [AddCommGroup W] [Module A W] (f : V →ₗ[A] W)
+/-- `A`-linear maps commute with the action of the completion on vectors killed by some `Jₙ`. -/
+theorem map_limSMul {W : Type*} [AddCommGroup W] [Module A W] (f : V →ₗ[A] W)
     (x : (quotients J hJ).lim) {v : V} (hv : ∃ n, ∀ a ∈ J n, a • v = 0) :
     f (limSMul x v) = limSMul x (f v) := by
   obtain ⟨n, hn⟩ := hv
@@ -232,7 +233,7 @@ include hmul in
 /-- The product of the completion: `(x y)ₙ = x · yₙ`. -/
 instance : Mul (quotients J hJ).lim where
   mul x y := ⟨fun n ↦ limSMul x ((quotients J hJ).limπ n y), (quotients J hJ).mem_lim.2 fun n ↦ by
-    rw [limSMul_map _ _ (exists_smul_quotients_eq_zero hJ _), ← LinearMap.comp_apply,
+    rw [map_limSMul _ _ (exists_smul_quotients_eq_zero hJ _), ← LinearMap.comp_apply,
       transition_comp_limπ]⟩
 
 /-- The `n`-th coordinate of `x y` is `x · yₙ`. -/
