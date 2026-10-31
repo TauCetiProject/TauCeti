@@ -17,15 +17,8 @@ Let `P` be a reduced crystallographic root system over a field of characteristic
 (`RootPairing.exists_base_forall_exists_nat_root'_apply`).
 
 The coefficient field carries no order, so the usual argument through Weyl chambers is not
-available directly. Instead the base is built with Mathlib's `IsAddIndecomposable.baseOf`, which
-produces the base of positive indecomposable roots for any additive map `f : M →+ ℚ` vanishing on
-no root. The proof of `RootPairing.nonempty_base` applies it to a generic such `f`; the argument
-here follows that proof with a better choice of `f`. Pairing with `x`, followed by a `ℚ`-linear
-retraction of the coefficient field onto `ℚ`, is an additive map `g` taking the integer value
-`⟨α, x⟩` at each root `α`. It may vanish on some roots, so it is scaled and perturbed by a
-functional `f₀` vanishing on no root: with `n` larger than every `|f₀ α|`, the map `f = n • g + f₀`
-vanishes on no root, and is positive on a root only if `g` is nonnegative there. The simple roots
-of `baseOf f` are positive for `f`, hence take natural values at `x`.
+available directly. The base is instead built with Mathlib's `IsAddIndecomposable.baseOf`, as in
+the proof of `RootPairing.nonempty_base`.
 
 In the Lie-theoretic application `x` is the neutral element `h` of an `sl₂` triple lying in a
 splitting Cartan subalgebra: its roots take integer values, and a base making `h` dominant puts the
@@ -56,6 +49,12 @@ the coweight `x`, then some base of `P` makes `x` dominant: every simple root ta
 value at `x`. -/
 theorem exists_base_forall_exists_nat_root'_apply (x : N) (hx : ∀ i, ∃ z : ℤ, P.root' i x = z) :
     ∃ b : P.Base, ∀ i ∈ b.support, ∃ n : ℕ, P.root' i x = n := by
+  -- Pairing with `x`, followed by a `ℚ`-linear retraction of `R` onto `ℚ`, is an additive map `g`
+  -- taking the integer value `⟨α, x⟩` at each root `α`. It may vanish on some roots, so it is
+  -- scaled and perturbed by a functional `f₀` vanishing on no root: with `n` larger than every
+  -- `|f₀ α|`, the map `f = n • g + f₀` vanishes on no root, and is positive on a root only if `g`
+  -- is nonnegative there. The simple roots of `baseOf f` are positive for `f`, hence take natural
+  -- values at `x`.
   choose z hz using hx
   -- a `ℚ`-linear retraction of `R` onto `ℚ` turns pairing with `x` into a `ℚ`-valued map
   obtain ⟨π, hπ⟩ := (Algebra.linearMap ℚ R).exists_leftInverse_of_injective

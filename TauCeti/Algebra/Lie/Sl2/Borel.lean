@@ -21,29 +21,17 @@ closed field `K` of characteristic zero. This file proves that every `ad`-nilpot
 of its root system (`TauCeti.exists_mem_positiveNilradical_of_isNilpotent_ad`). In other words,
 every nilpotent element lies in the nilradical `n⁺` of some Borel subalgebra `𝔟 = H ⊕ n⁺`.
 
-The proof goes through the `sl₂` triple `(h, e, f)` of the Jacobson–Morozov theorem.
-
-* The neutral element `h` acts diagonalizably on `L`, so `ad h` is semisimple and `h` lies in a
-  Cartan subalgebra `H` (`TauCeti.exists_isCartanSubalgebra_mem_of_isSemisimple_ad`).
-* Every root of `H` takes an integer value at `h`, since it is an eigenvalue of `ad h`
-  (`IsSl2Triple.exists_int_weight_apply`), so some base `b` makes `h` dominant
-  (`RootPairing.exists_base_forall_exists_nat_root'_apply`).
-* The nilpositive element `e` is an eigenvector of `ad h` with eigenvalue `2`. An eigenvector of a
-  dominant element with positive eigenvalue lies in `n⁺`
-  (`TauCeti.mem_positiveNilradical_of_mem_genWeightSpaceOf`), so `e ∈ n⁺`
-  (`IsSl2Triple.exists_base_mem_positiveNilradical`).
-
-The second and third steps work over any field of characteristic zero, for a splitting Cartan
-subalgebra that happens to contain `h`; algebraic closure is used only to know that every Cartan
-subalgebra splits.
+The neutral element `h` of a Jacobson–Morozov triple `(h, e, f)` is dominant for a suitable
+Cartan subalgebra and base, and then `e` lies in `n⁺`. Over any field of characteristic zero this
+holds for every splitting Cartan subalgebra that happens to contain `h`
+(`IsSl2Triple.exists_base_mem_positiveNilradical`); algebraic closure is used only to know that
+every Cartan subalgebra splits.
 
 ## Main results
 
-* `IsSl2Triple.exists_int_weight_apply`: the weights of a nilpotent subalgebra containing the
-  neutral element `h` on a finite-dimensional module take integer values at `h`; in particular so
-  do the roots of a Cartan subalgebra containing `h`.
-* `IsSl2Triple.exists_base_mem_positiveNilradical`: such a Cartan subalgebra has a base making `h`
-  dominant, and the nilpositive element lies in the positive nilradical of that base.
+* `IsSl2Triple.exists_base_mem_positiveNilradical`: a splitting Cartan subalgebra containing the
+  neutral element `h` has a base making `h` dominant, and the nilpositive element lies in the
+  positive nilradical of that base.
 * `TauCeti.exists_mem_positiveNilradical_of_isNilpotent_ad`: over an algebraically closed field,
   every `ad`-nilpotent element lies in the positive nilradical of some Cartan subalgebra and base.
 
@@ -62,20 +50,6 @@ variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
 
 namespace IsSl2Triple
 
-/-- **The weights take integer values at a neutral element.** If the neutral element `h` of an
-`sl₂` triple lies in a nilpotent subalgebra `H`, then every weight of `H` on a finite-dimensional
-`L`-module takes an integer value at `h`: that value is an eigenvalue of `h`. -/
-theorem exists_int_weight_apply {H : LieSubalgebra K L} [LieRing.IsNilpotent H] {M : Type*}
-    [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
-    {h : H} {e f : L} (t : IsSl2Triple (h : L) e f) (α : Weight K H M) : ∃ z : ℤ, α h = z := by
-  obtain ⟨y, hy, hy0⟩ := α.exists_ne_zero
-  obtain ⟨k, hk⟩ := (mem_genWeightSpaceOf M (α h) h y).mp
-    (genWeightSpace_le_genWeightSpaceOf M h α hy)
-  refine TauCeti.exists_int_of_hasEigenvalue (M := M) t
-    (Module.End.hasEigenvalue_of_hasGenEigenvalue (k := k) ?_)
-  rw [Module.End.hasGenEigenvalue_iff, Submodule.ne_bot_iff]
-  exact ⟨y, Module.End.mem_genEigenspace_nat.mpr hk, hy0⟩
-
 variable [FiniteDimensional K L] [IsKilling K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
 
@@ -85,8 +59,11 @@ variable [FiniteDimensional K L] [IsKilling K L]
 theorem exists_base_mem_positiveNilradical {h : H} {e f : L} (t : IsSl2Triple (h : L) e f) :
     ∃ b : (rootSystem H).Base, (∀ i ∈ b.support, ∃ n : ℕ, (i : Weight K H L) h = n) ∧
       e ∈ TauCeti.positiveNilradical H b := by
+  -- the roots take integer values at `h`, since they are eigenvalues of `ad h`, so some base makes
+  -- `h` dominant
   obtain ⟨b, hb⟩ := (rootSystem H).exists_base_forall_exists_nat_root'_apply h
     fun i ↦ t.exists_int_weight_apply (i : Weight K H L)
+  -- `e` is an eigenvector of `ad h` with the positive eigenvalue `2`
   refine ⟨b, hb, TauCeti.mem_positiveNilradical_of_mem_genWeightSpaceOf hb two_ne_zero ?_⟩
   rw [mem_genWeightSpaceOf]
   exact ⟨1, by simp [t.lie_h_e_nsmul, two_smul]⟩
@@ -109,6 +86,7 @@ theorem exists_mem_positiveNilradical_of_isNilpotent_ad [IsAlgClosed K] {e : L}
   · obtain ⟨x, hx⟩ := exists_isCartanSubalgebra_engel K L
     exact ⟨LieSubalgebra.engel K x, hx, (rootSystem _).nonempty_base.some, zero_mem _⟩
   obtain ⟨h, f, t⟩ := exists_isSl2Triple_of_isNilpotent_ad he he0
+  -- `h` acts diagonalizably, so `ad h` is semisimple and `h` lies in a Cartan subalgebra
   obtain ⟨H, hH, hhH⟩ := exists_isCartanSubalgebra_mem_of_isSemisimple_ad
     (isSemisimple_of_iSup_eigenspace_eq_top (iSup_eigenspace_toEnd_eq_top (K := K) (M := L) t))
   obtain ⟨b, -, hb⟩ :=

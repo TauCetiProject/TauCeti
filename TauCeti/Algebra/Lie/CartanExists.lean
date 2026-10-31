@@ -17,14 +17,8 @@ Cartan subalgebra, namely the Engel subalgebra of a regular element
 semisimple adjoint action lies in some Cartan subalgebra
 (`TauCeti.exists_isCartanSubalgebra_mem_of_isSemisimple_ad`).
 
-The Cartan subalgebra is a Cartan subalgebra `C` of the Engel subalgebra `E = engel K x`, viewed
-inside `L`.
-
-* Since `ad x` is semisimple, its generalized kernel is its kernel, so `x` is central in `E`. A
-  self-normalizing subalgebra contains the centre, hence `x ∈ C`.
-* If `z` normalizes `C` in `L` then `⁅x, z⁆ ∈ C ≤ E`, so some power of `ad x` kills `z` and
-  `z ∈ E`. There `z` normalizes `C`, so `z ∈ C`. Thus `C` is self-normalizing in `L`, and it is
-  nilpotent because it is so as a Lie algebra in its own right.
+The Cartan subalgebra is a Cartan subalgebra of the Engel subalgebra `engel K x`, viewed inside
+`L`. This is the step that places the neutral element of an `sl₂` triple in a Cartan subalgebra.
 
 ## Main results
 
@@ -51,6 +45,8 @@ subalgebra. -/
 theorem exists_isCartanSubalgebra_mem_of_isSemisimple_ad [Infinite K] [FiniteDimensional K L]
     {x : L} (hx : (ad K L x).IsSemisimple) :
     ∃ H : LieSubalgebra K L, H.IsCartanSubalgebra ∧ x ∈ H := by
+  -- take a Cartan subalgebra `C` of `E = engel K x`; it contains `x`, which is central in `E`, and
+  -- an element normalizing `C` in `L` lies in `E`, so `C` is self-normalizing in `L`
   let E := engel K x
   obtain ⟨y, hy⟩ := exists_isCartanSubalgebra_engel K E
   let C : LieSubalgebra K E := engel K y
