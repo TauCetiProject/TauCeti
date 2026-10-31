@@ -87,10 +87,11 @@ theorem contDiffOn_polynomialPolyhedronExhaustion {n : WithTop ℕ∞} :
   refine ContDiffAt.contDiffWithinAt ?_
   have hp : ∀ p ∈ s, ‖eval z p‖ < 1 := fun p hp ↦ mem_iInter₂.1 hz.2 p hp
   exact (ContDiffAt.sum fun i _ ↦ contDiffAt_neg_log_one_sub_norm_sq
-      ((contDiff_apply ℂ (fun _ : ι ↦ ℂ) i).div_const (R : ℂ)).contDiffAt
+      (((contDiff_apply ℂ (fun _ : ι ↦ ℂ) i).div_const (R : ℂ)).contDiffAt.restrict_scalars ℝ)
       (Complex.pi_norm_div_lt_one_of_mem_ball hz.1 i)).add
     (ContDiffAt.sum fun p hps ↦ contDiffAt_neg_log_one_sub_norm_sq
-      ((AnalyticOnNhd.eval_mvPolynomial p z (mem_univ z)).contDiffAt) (hp p hps))
+      ((AnalyticOnNhd.eval_mvPolynomial p z (mem_univ z)).contDiffAt.restrict_scalars ℝ)
+        (hp p hps))
 
 /-- The exhaustion function is **strictly plurisubharmonic** at every point of
 `ball 0 R ∩ ⋂_{p ∈ s} {|p| < 1}`. -/
@@ -103,11 +104,12 @@ theorem isStrictlyPlurisubharmonicAt_polynomialPolyhedronExhaustion
   have hp : ∀ p ∈ s, ‖eval z p‖ < 1 := fun p hp ↦ mem_iInter₂.1 hz.2 p hp
   have hcoord (i : ι) : ContDiffAt ℝ 2 (fun z : ι → ℂ ↦ -Real.log (1 - ‖z i / R‖ ^ 2)) z :=
     contDiffAt_neg_log_one_sub_norm_sq
-      ((contDiff_apply ℂ (fun _ : ι ↦ ℂ) i).div_const (R : ℂ)).contDiffAt
+      (((contDiff_apply ℂ (fun _ : ι ↦ ℂ) i).div_const (R : ℂ)).contDiffAt.restrict_scalars ℝ)
       (Complex.pi_norm_div_lt_one_of_mem_ball hz.1 i)
   have hpoly : ∀ p ∈ s, ContDiffAt ℝ 2 (fun z : ι → ℂ ↦ -Real.log (1 - ‖eval z p‖ ^ 2)) z :=
     fun p hps ↦ contDiffAt_neg_log_one_sub_norm_sq
-      ((AnalyticOnNhd.eval_mvPolynomial p z (mem_univ z)).contDiffAt) (hp p hps)
+      ((AnalyticOnNhd.eval_mvPolynomial p z (mem_univ z)).contDiffAt.restrict_scalars ℝ)
+        (hp p hps)
   have hψ : polynomialPolyhedronExhaustion R s =
       (∑ i, fun z : ι → ℂ ↦ -Real.log (1 - ‖z i / R‖ ^ 2)) +
         ∑ p ∈ s, fun z : ι → ℂ ↦ -Real.log (1 - ‖eval z p‖ ^ 2) := by

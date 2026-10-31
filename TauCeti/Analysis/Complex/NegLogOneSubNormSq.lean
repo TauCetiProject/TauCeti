@@ -11,8 +11,9 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 /-!
 # The Levi form of `-log (1 - ‖g‖²)`
 
-For a holomorphic map `g` from a complex normed space into a complex inner product space, the
-function `y ↦ -log (1 - ‖g y‖²)` is smooth where `‖g‖ < 1`. Writing it as `h ∘ ‖g‖²` with
+For a smooth map `g` into a real inner product space, the function `y ↦ -log (1 - ‖g y‖²)` is
+smooth where `‖g‖ < 1`. For a holomorphic map `g` from a complex normed space into a complex
+inner product space, writing this function as `h ∘ ‖g‖²` with
 `h t = -log (1 - t)` convex and increasing, its Levi diagonal at `v` is at least
 `h'(‖g‖²) ‖Dg(v)‖² ≥ ‖Dg(v)‖²`, since the Levi diagonal of `‖g‖²` is exactly `‖Dg(v)‖²`
 (`TauCeti.re_leviForm_norm_sq_sub_comp_apply_self`). Such functions are the building blocks of
@@ -35,14 +36,17 @@ public section
 
 namespace TauCeti
 
+/-- `y ↦ -log (1 - ‖g y‖²)` is as smooth as the map `g` into a real inner product space where
+`‖g‖ < 1`. -/
+theorem contDiffAt_neg_log_one_sub_norm_sq {G F : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [NormedAddCommGroup F] [InnerProductSpace ℝ F] {g : G → F} {x : G}
+    {n : WithTop ℕ∞} (hg : ContDiffAt ℝ n g x) (hx : ‖g x‖ < 1) :
+    ContDiffAt ℝ n (fun y ↦ -Real.log (1 - ‖g y‖ ^ 2)) x := by
+  have hpos : 0 < 1 - ‖g x‖ ^ 2 := by nlinarith [norm_nonneg (g x)]
+  exact ((contDiffAt_const.sub (hg.norm_sq ℝ)).log hpos.ne').neg
+
 variable {V E : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup E] [InnerProductSpace ℂ E] {g : V → E} {x : V}
-
-/-- `y ↦ -log (1 - ‖g y‖²)` is as smooth as the holomorphic map `g` where `‖g‖ < 1`. -/
-theorem contDiffAt_neg_log_one_sub_norm_sq {n : WithTop ℕ∞} (hg : ContDiffAt ℂ n g x)
-    (hx : ‖g x‖ < 1) : ContDiffAt ℝ n (fun y ↦ -Real.log (1 - ‖g y‖ ^ 2)) x := by
-  have hpos : 0 < 1 - ‖g x‖ ^ 2 := by nlinarith [norm_nonneg (g x)]
-  exact ((contDiffAt_const.sub ((hg.restrict_scalars ℝ).norm_sq ℂ)).log hpos.ne').neg
 
 /-- **The Levi form of `-log (1 - ‖g‖²)`.** For a holomorphic map `g` into a complex inner product
 space with `‖g x‖ < 1`, the Levi diagonal of `y ↦ -log (1 - ‖g y‖²)` at `x` in the direction `v`
