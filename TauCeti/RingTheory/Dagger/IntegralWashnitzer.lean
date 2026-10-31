@@ -92,20 +92,36 @@ theorem mem_intWashnitzerAlgebra_iff {f : MvPowerSeries σ R} :
     exact Subring.mem_unitClosedBall.1 (coeff t g).2
   · let g : MvPowerSeries σ (Subring.unitClosedBall R) := fun t ↦
       ⟨coeff t f, Subring.mem_unitClosedBall.2 (h t)⟩
-    exact ⟨g, MvPowerSeries.ext fun t ↦ by rw [coeff_map]; rfl⟩
+    -- `MvPowerSeries` is a function type, and `coeff t` evaluates at `t`.
+    have hg (t) : coeff t g = ⟨coeff t f, Subring.mem_unitClosedBall.2 (h t)⟩ := coeff_apply g t
+    exact ⟨g, MvPowerSeries.ext fun t ↦ by simp [coeff_map, hg]⟩
 
 /-- The integral Monsky–Washnitzer algebra lies in the Monsky–Washnitzer algebra. -/
 theorem intWashnitzerAlgebra_le :
     intWashnitzerAlgebra σ R ≤ (washnitzerAlgebra σ R).toSubring :=
   inf_le_left
 
+namespace intWashnitzerAlgebra
+
+/-- The coefficients of a series in `R°⟨X⟩†` have norm at most one. -/
+theorem norm_coeff_le_one (f : intWashnitzerAlgebra σ R) (t : σ →₀ ℕ) :
+    ‖coeff t (f : MvPowerSeries σ R)‖ ≤ 1 :=
+  (mem_intWashnitzerAlgebra_iff.1 f.2).2 t
+
+/-- The constant coefficient of a series in `R°⟨X⟩†` has norm at most one. -/
+theorem norm_constantCoeff_le_one (f : intWashnitzerAlgebra σ R) :
+    ‖constantCoeff (f : MvPowerSeries σ R)‖ ≤ 1 := by
+  simpa using norm_coeff_le_one f 0
+
+end intWashnitzerAlgebra
+
 /-- A constant series lies in `R°⟨X⟩†` iff it has norm at most one. -/
 @[simp]
 theorem C_mem_intWashnitzerAlgebra_iff {a : R} :
     C a ∈ intWashnitzerAlgebra σ R ↔ ‖a‖ ≤ 1 := by
   classical
-  refine mem_intWashnitzerAlgebra_iff.trans
-    ⟨fun h ↦ by simpa using h.2 0, fun h ↦ ⟨C_mem_washnitzerAlgebra a, fun t ↦ ?_⟩⟩
+  refine ⟨fun h ↦ by simpa using intWashnitzerAlgebra.norm_constantCoeff_le_one ⟨_, h⟩,
+    fun h ↦ mem_intWashnitzerAlgebra_iff.2 ⟨C_mem_washnitzerAlgebra a, fun t ↦ ?_⟩⟩
   rw [coeff_C]
   split_ifs
   · exact h
@@ -128,8 +144,9 @@ theorem X_mem_intWashnitzerAlgebra (i : σ) :
 /-- With no variables, `R°⟨⟩†` consists of the constants of norm at most one. -/
 theorem mem_intWashnitzerAlgebra_iff_of_isEmpty [IsEmpty σ] {f : MvPowerSeries σ R} :
     f ∈ intWashnitzerAlgebra σ R ↔ ‖constantCoeff f‖ ≤ 1 := by
+  refine ⟨fun h ↦ intWashnitzerAlgebra.norm_constantCoeff_le_one ⟨_, h⟩, fun h ↦ ?_⟩
   rw [mem_intWashnitzerAlgebra_iff, washnitzerAlgebra_eq_top]
-  refine ⟨fun h ↦ by simpa using h.2 0, fun h ↦ ⟨trivial, fun t ↦ ?_⟩⟩
+  refine ⟨trivial, fun t ↦ ?_⟩
   rwa [Subsingleton.elim t 0, coeff_zero_eq_constantCoeff_apply]
 
 /-- **Integrality is the Gauss unit ball.** An overconvergent series lies in `R°⟨X⟩†` iff its
@@ -205,8 +222,8 @@ theorem mem_intWashnitzerAlgebra_iff_exists_norm_coeff_le_pow [Finite σ] {q : �
           · exact hρ.le
           · exact (Nat.lt_mul_div_succ _ hc).le
       _ = q⁻¹ := by
-          rw [hρc, inv_pow, pow_succ, mul_inv, ← mul_assoc, mul_inv_cancel₀ (by positivity),
-            one_mul]
+          rw [hρc, inv_pow, pow_succ]
+          field_simp
 
 end Defs
 
@@ -302,7 +319,7 @@ theorem mem_washnitzerAlgebra_iff_exists_C_pow_mul_mem {π : K} (hπ0 : π ≠ 0
     calc ‖π‖ ^ k * ‖coeff t f‖ ≤ (max B 1)⁻¹ * max B 1 := by gcongr
       _ = 1 := inv_mul_cancel₀ (zero_lt_one.trans_le (le_max_right B 1)).ne'
   · have := mul_mem (C_mem_washnitzerAlgebra (π ^ k)⁻¹) (intWashnitzerAlgebra_le hk)
-    rwa [← mul_assoc, ← map_mul, inv_mul_cancel₀ (pow_ne_zero _ hπ0), map_one, one_mul] at this
+    simpa [← mul_assoc, ← map_mul, ← map_pow, hπ0] using this
 
 variable [CompleteSpace K]
 
@@ -321,11 +338,10 @@ theorem isUnit_intWashnitzerAlgebra_iff {f : intWashnitzerAlgebra σ K} :
     obtain ⟨g, hg⟩ := hf.exists_right_inv
     have hfg : ‖constantCoeff (f : MvPowerSeries σ K)‖ *
         ‖constantCoeff (g : MvPowerSeries σ K)‖ = 1 := by
-      rw [← norm_mul, ← map_mul, ← Subring.coe_mul, hg, Subring.coe_one, map_one, norm_one]
-    have hf0 : ‖constantCoeff (f : MvPowerSeries σ K)‖ ≤ 1 := by
-      simpa using (mem_intWashnitzerAlgebra_iff.1 f.2).2 0
-    have hg0 : ‖constantCoeff (g : MvPowerSeries σ K)‖ ≤ 1 := by
-      simpa using (mem_intWashnitzerAlgebra_iff.1 g.2).2 0
+      simpa using
+        congrArg (fun x : intWashnitzerAlgebra σ K ↦ ‖constantCoeff (x : MvPowerSeries σ K)‖) hg
+    have hf0 := intWashnitzerAlgebra.norm_constantCoeff_le_one f
+    have hg0 := intWashnitzerAlgebra.norm_constantCoeff_le_one g
     have h1 : ‖constantCoeff (f : MvPowerSeries σ K)‖ = 1 := by
       nlinarith [norm_nonneg (constantCoeff (f : MvPowerSeries σ K)),
         norm_nonneg (constantCoeff (g : MvPowerSeries σ K))]
@@ -392,9 +408,10 @@ theorem mem_jacobson_bot_intWashnitzerAlgebra_iff {f : intWashnitzerAlgebra σ K
     refine isUnit_intWashnitzerAlgebra_iff.2 ⟨?_, fun t ht ↦ ?_⟩
     · have h0 := hfy 0
       rw [coeff_zero_eq_constantCoeff_apply] at h0
-      rw [Subring.coe_add, Subring.coe_one, map_add, map_one,
-        IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by simpa using h0.ne), norm_one,
-        max_eq_right h0.le]
+      have hne : ‖constantCoeff (f : MvPowerSeries σ K) * constantCoeff (y : MvPowerSeries σ K)‖ ≠
+          ‖(1 : K)‖ := by
+        simpa using h0.ne
+      simpa [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hne] using h0.le
     · simpa [coeff_one, ht] using hfy t
 
 end NormedField
