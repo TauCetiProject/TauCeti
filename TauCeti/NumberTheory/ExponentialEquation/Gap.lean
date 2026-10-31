@@ -33,7 +33,8 @@ most `log y / log 2` in absolute value.
 The lower bounds for linear forms in logarithms are hypotheses. For positive algebraic bases
 `a` and `b`, Baker's theory, for instance Matveev's theorem, supplies such a constant `C`
 depending only on `a` and `b`; for a finite set `S` of primes it supplies one depending only
-on `S`. The power-gap results themselves hold for arbitrary positive real bases.
+on `S`. The power-gap results themselves are stated for real bases and assume no
+algebraicity.
 
 ## Main results
 
