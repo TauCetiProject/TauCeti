@@ -58,10 +58,9 @@ theorem isAdic_map_algebraMap_weightedRestrictedSubring_one_weight
   let S := weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight
   let P := PairOfDefinition.adic I hI hfg
   let Q := P.weighted (k := n) isWeightFamily_one_weight
-  have htop : Q.ringOfDefinition = ⊤ := by
-    ext f
-    simp [Q, PairOfDefinition.weightedRingOfDefinition_def, P,
-      PairOfDefinition.adic_ringOfDefinition, mem_weightedNhd, weightMul_one_weight]
+  have htop : Q.ringOfDefinition = ⊤ :=
+    P.weighted_ringOfDefinition_one_weight_eq_top
+      (PairOfDefinition.adic_ringOfDefinition I hI hfg)
   have hsurj : Function.Surjective Q.ringOfDefinition.subtype := by
     intro f
     exact ⟨⟨f, htop ▸ Subring.mem_top f⟩, rfl⟩

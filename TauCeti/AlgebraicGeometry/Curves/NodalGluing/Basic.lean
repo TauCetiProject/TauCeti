@@ -50,7 +50,8 @@ The model is the following.
   a point of the disjoint union.  Consequently any chain of flag pairs reduces to equality or to a
   single generating step (`eq_of_flagRel_of_flagRel`).
 * `Marking d L` records marks on the curve labelled by `L`: pairwise distinct points of the
-  disjoint union, none of them a flag point.
+  disjoint union, none of them a flag point.  The flag points and marks lying on the component
+  `X i` are its special points (`Marking.specialPoints`).
 * `gluedRel` is the equivalence relation *generated* by the flag pairs: it is "the two points are
   equal, or they are the two points of one flag pair", which is `x = y ∨ flagRel d x y`.  It is
   symmetric and transitive (`gluedRel_symm`, `gluedRel_trans`), hence an equivalence relation
@@ -417,6 +418,20 @@ structure Marking (d : FlagPairData ι Flag X) (L : Type*) where
   point_injective : Function.Injective point
   /-- No mark is a flag point. -/
   point_notMem_flagPointSet (l : L) : point l ∉ flagPointSet d
+
+variable {d} in
+/-- The **special points** of the component `i` of a marked nodal curve: the points of `X i` which
+are flag points or marks. They are the special flags on that component counted by the stability
+condition `2 g_i - 2 + n_i > 0`, the node branches being counted as flags. -/
+def Marking.specialPoints {L : Type*} (m : Marking d L) (i : ι) : Set (X i) :=
+  Sigma.mk i ⁻¹' (flagPointSet d ∪ range m.point)
+
+variable {d} in
+/-- A point of the component `i` is special exactly when it is a flag point or a mark. -/
+@[simp]
+theorem Marking.mem_specialPoints_iff {L : Type*} {m : Marking d L} {i : ι} {x : X i} :
+    x ∈ m.specialPoints i ↔ (⟨i, x⟩ : Σ i, X i) ∈ flagPointSet d ∨ ∃ l, m.point l = ⟨i, x⟩ :=
+  Iff.rfl
 
 /-- The generated relation relates two points of the disjoint union only when they are equal or
 when both of them are flag points. -/

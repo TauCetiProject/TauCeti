@@ -62,7 +62,7 @@ theorem exists_coeIdeal_eq_spanSingleton_mul_of_valuation_le_one
     apply IsCoprime.symm
     refine Ideal.isCoprime_biInf fun x hx ↦
       Ideal.coprime_of_no_prime_ge fun P hmP hden hP ↦ ?_
-    have hP0 : P ≠ ⊥ := fun h0 ↦ Algebra.denIdeal_ne_bot K x
+    have hP0 : P ≠ ⊥ := fun h0 ↦ Algebra.denIdeal_ne_bot K R⁰ x
       (le_bot_iff.mp (h0 ▸ hden))
     let v : HeightOneSpectrum R := ⟨P, hP, hP0⟩
     have hxI : x ∈ I := by

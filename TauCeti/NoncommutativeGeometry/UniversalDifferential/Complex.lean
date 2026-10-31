@@ -21,8 +21,8 @@ one identifies with the multiplication-kernel universal one-forms; the degree-ze
 differential agrees with their universal derivation. Nonunital algebra homomorphisms induce
 chain maps compatible with these identifications.
 
-This constructs the underlying differential complex. Multiplication of general forms and
-its graded Leibniz law require the further tensor-algebra construction.
+This constructs the underlying differential complex. The product of forms and its graded
+Leibniz law are in `TauCeti.NoncommutativeGeometry.UniversalDifferential.Product`.
 
 ## References
 

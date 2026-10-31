@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZModStandard
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.Dynkin
 
 /-!
@@ -48,6 +49,8 @@ group for even `n`.
 * `TauCeti.DynkinType.glueAlphabetIsometry_A_apply`, `glueAlphabetIsometry_D_apply_of_even`,
   `glueAlphabetIsometry_D_apply_of_odd`, `glueAlphabetIsometry_E6_apply`,
   `glueAlphabetIsometry_E7_apply`: the isometry agrees with the family-specific identifications.
+* `TauCeti.DynkinType.typeA1GlueAlphabetZModStandardIsometry`: the `A₁` glue alphabet is the
+  binary coordinate alphabet `ℤ/2` with quadratic map `x ↦ x² / 4`.
 * `TauCeti.DynkinType.isNondegenerate_glueAlphabet`, `natCard_glueAlphabet`: the alphabet is
   nondegenerate, of order `|det t.cartanMatrix|`.
 
@@ -119,6 +122,30 @@ theorem glueAlphabet_E7 (ht : E7.IsSimplyLaced) :
 /-- The glue alphabet of `E₈` has a single element. -/
 instance (ht : E8.IsSimplyLaced) : Subsingleton (E8.glueAlphabet ht) :=
   inferInstanceAs (Subsingleton (ZMod 1))
+
+/-- **The `A₁` glue alphabet is the binary coordinate alphabet `ℤ/2`** with quadratic map
+`x ↦ x² / 4`: both send the nonzero label to `1/4`. The underlying map is the identity of
+`ℤ/2`. -/
+noncomputable def typeA1GlueAlphabetZModStandardIsometry :
+    FiniteQuadraticModule.Isometry ((A 1).glueAlphabet (isSimplyLaced_A 1))
+      (FiniteQuadraticModule.zmodStandard 2 even_two) :=
+  FiniteQuadraticModule.cyclicIsometryOfGenerator 2
+    ((A 1).glueAlphabet (isSimplyLaced_A 1)).quadratic
+    (FiniteQuadraticModule.zmodStandard 2 even_two).quadratic (AddEquiv.refl (ZMod 2)) (by
+      have h := typeAStandardQuadraticModule_quadratic_intCast 1 1
+      have h' := FiniteQuadraticModule.zmodStandardMap_intCast 2 even_two 1
+      push_cast at h h'
+      rw [AddEquiv.refl_apply, FiniteQuadraticModule.zmodStandard_quadratic, h']
+      -- The glue alphabet of `A₁` is the cyclic model `typeAStandardQuadraticModule 1` on `ℤ/2`.
+      refine Eq.trans ?_ h.symm
+      norm_num)
+
+/-- The identification of the `A₁` glue alphabet with `ℤ/2` is the identity. -/
+@[simp]
+theorem typeA1GlueAlphabetZModStandardIsometry_apply
+    (x : (A 1).glueAlphabet (isSimplyLaced_A 1)) :
+    typeA1GlueAlphabetZModStandardIsometry x = (x : ZMod 2) :=
+  FiniteQuadraticModule.cyclicIsometryOfGenerator_apply 2 _ _ _ _ x
 
 /-! The root lattices of `Aₙ`, `E₆`, `E₇` and `E₈` are equal to the family-specific simple-root
 lattices on `Fin n → ℚ`, `Fin 6 → ℚ`, `Fin 7 → ℚ` and `Fin 8 → ℚ` (`rootLattice_A` and its

@@ -268,9 +268,9 @@ private theorem exists_invariant_notMem_of_forall_lie_mem {d : ℕ} (ih : Invari
     rw [finrank_span_singleton hne] at hle
     have hP : finrank K (((W : Submodule K M) ⊔ Submodule.span K {v₀} :
         Submodule K M) : Type _) = finrank K P := by
-      simpa only [P] using finrank_toSubmodule P
+      simpa only [P] using LieSubmodule.finrank_toSubmodule P
     have hw : finrank K ((W : Submodule K M) : Type _) = finrank K W :=
-      finrank_toSubmodule W
+      LieSubmodule.finrank_toSubmodule W
     omega
   have : FiniteDimensional K P :=
     Submodule.finiteDimensional_sup (W : Submodule K M) (Submodule.span K {v₀})

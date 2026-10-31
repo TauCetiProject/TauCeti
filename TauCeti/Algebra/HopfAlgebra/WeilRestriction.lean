@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 public import TauCeti.RingTheory.TensorProduct.Maps
-public import TauCeti.RingTheory.WeilRestriction
+public import TauCeti.RingTheory.WeilRestriction.Basic
 
 /-!
 # Weil restriction of affine group schemes

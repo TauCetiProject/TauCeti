@@ -20,7 +20,7 @@ orbit map is a quotient covering map — freely, with the orbits locally separat
 space is a `K(G, 1)`.
 
 The two inputs are Mathlib's `RealTopologicalVectorSpace.contractibleSpace` and
-`TauCeti.HomotopyGroup.subsingleton_of_topologicalVectorSpace`; both are instances, so the
+`HomotopyGroup.subsingleton_of_topologicalVectorSpace`; both are instances, so the
 statement carries no hypothesis beyond the quotient covering map itself.
 
 This advances `TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 13, "`K(G, 1)`

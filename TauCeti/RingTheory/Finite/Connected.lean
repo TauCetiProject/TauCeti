@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
+public import TauCeti.RingTheory.Spectrum.Prime.Topology
 import Mathlib.RingTheory.KrullDimension.Zero
 import Mathlib.RingTheory.Spectrum.Prime.Noetherian
 
@@ -29,8 +29,6 @@ public section
 
 namespace AlgHom
 
-open TauCeti
-
 variable {k A B : Type*} [Field k] [Semiring A] [CommRing B] [Algebra k A] [Algebra k B]
   [Module.Finite k A] [IsReduced B] [ConnectedSpace (PrimeSpectrum B)]
 
@@ -43,7 +41,7 @@ theorem eq_algebraMap_comp_of_moduleFinite (f : A →ₐ[k] B) (e : B →ₐ[k] 
   let _ : Module.Finite k f.range :=
     Module.Finite.of_surjective f.rangeRestrict.toLinearMap f.rangeRestrict_surjective
   let _ : ConnectedSpace (PrimeSpectrum f.range) :=
-    connectedSpace_primeSpectrum_of_injective f.range.val.toRingHom Subtype.val_injective
+    f.range.val.toRingHom.connectedSpace_primeSpectrum_of_injective Subtype.val_injective
   let _ : IsArtinianRing f.range := IsArtinianRing.of_finite k f.range
   let _ : IsReduced f.range := isReduced_of_injective f.range.val Subtype.val_injective
   have hfield : IsField f.range := PrimeSpectrum.subsingleton_iff_isField_of_isReduced.mp

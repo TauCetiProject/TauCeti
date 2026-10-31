@@ -36,6 +36,15 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   vectors are equivalent over a commutative semiring.
 * `Module.Basis.toMatrixAlgEquiv_eq_single_of_apply_basis`: an endomorphism with one matrix-unit
   coordinate action has the corresponding single-entry matrix.
+* `LinearMap.vecMul_toMatrixRight'` and `LinearMap.isIdempotentElem_toMatrixRight'_iff`: over a
+  possibly noncommutative semiring, linear maps of coordinate vectors are matrices acting on row
+  vectors, and idempotent endomorphisms correspond to idempotent matrices.
+* `LinearMap.isIdempotentElem_toMatrixRight'_comp` and
+  `LinearMap.exists_toMatrixRight'_comp_eq_fromBlocks`: a direct summand of `m → R` is presented
+  by an idempotent matrix, and a split short exact sequence of such summands presents its middle
+  term by the block-diagonal sum of the idempotent matrices of its outer terms.
+* `Module.Basis.equivFun_list_prod_smul`: the coordinates of a product of linear automorphisms
+  applied to a vector are the product of their matrices applied to its coordinates.
 
 The first is used to turn the Azumaya isomorphism of a finite-dimensional central simple algebra
 into a matrix algebra in `TauCeti/Algebra/CentralSimple/Opposite.lean`.
@@ -93,7 +102,89 @@ theorem toMatrixAlgEquiv_eq_single_of_apply_basis {R : Type*} [CommSemiring R] {
   rw [toLinAlgEquiv_single_apply_basis]
   exact h c
 
+open Matrix in
+/-- **Coordinates of a product of linear automorphisms.** In a basis `b`, the coordinates of
+`(∏ G a) • x` are the ordered product of the matrices of the `G a` applied to the coordinates of
+`x`. -/
+theorem equivFun_list_prod_smul {R : Type*} [CommSemiring R] {M : Type*} [AddCommMonoid M]
+    [Module R M] {n α : Type*} [Fintype n] [DecidableEq n] (b : Module.Basis n R M) (l : List α)
+    (G : α → LinearMap.GeneralLinearGroup R M) (x : M) :
+    b.equivFun ((l.map G).prod • x) =
+      (l.map fun a ↦ LinearMap.toMatrixAlgEquiv b (G a : Module.End R M)).prod *ᵥ
+        b.equivFun x := by
+  induction l with
+  | nil => simp
+  | cons a l ih =>
+    rw [List.map_cons, List.prod_cons, mul_smul, List.map_cons, List.prod_cons,
+      ← mulVec_mulVec, ← ih, Units.smul_def, Module.End.smul_def]
+    exact (LinearMap.toMatrix_mulVec_repr b b _ _).symm
+
 end Module.Basis
+
+namespace LinearMap
+
+variable {R : Type*} [Semiring R] {m n : Type*} [Fintype m] [DecidableEq m]
+
+/-- Multiplying a row vector by the matrix `f.toMatrixRight'` applies the linear map `f`. -/
+@[simp]
+theorem vecMul_toMatrixRight' (f : (m → R) →ₗ[R] n → R) (v : m → R) :
+    Matrix.vecMul v f.toMatrixRight' = f v := by
+  rw [← Matrix.toLinearMapRight'_apply, LinearEquiv.symm_apply_apply]
+
+/-- The matrix of an endomorphism of `m → R`, acting on row vectors, is idempotent exactly when
+the endomorphism is. -/
+theorem isIdempotentElem_toMatrixRight'_iff (f : Module.End R (m → R)) :
+    IsIdempotentElem f.toMatrixRight' ↔ IsIdempotentElem f := by
+  rw [IsIdempotentElem, IsIdempotentElem, ← toMatrixRight'_comp, Module.End.mul_eq_comp]
+  exact toMatrixRight'.injective.eq_iff
+
+/-- A direct summand `s ∘ i = id` of `m → R` is the image of the idempotent matrix of `i ∘ s`,
+acting on row vectors. -/
+theorem isIdempotentElem_toMatrixRight'_comp {P : Type*} [AddCommMonoid P] [Module R P]
+    {s : (m → R) →ₗ[R] P} {i : P →ₗ[R] m → R} (h : s ∘ₗ i = LinearMap.id) :
+    IsIdempotentElem (i ∘ₗ s).toMatrixRight' :=
+  (isIdempotentElem_toMatrixRight'_iff _).2 <|
+    LinearMap.ext fun x ↦ congrArg i (LinearMap.congr_fun h (s x))
+
+/-- A split short exact sequence `X₁ → X₂ → X₃` whose outer terms are direct summands of `m → R`
+and `n → R` presents its middle term as a direct summand of `m ⊕ n → R`, whose idempotent matrix
+is the block-diagonal sum of the idempotent matrices of the outer terms. -/
+theorem exists_toMatrixRight'_comp_eq_fromBlocks [Fintype n] [DecidableEq n]
+    {X₁ X₂ X₃ : Type*} [AddCommMonoid X₁] [Module R X₁] [AddCommMonoid X₂] [Module R X₂]
+    [AddCommMonoid X₃] [Module R X₃]
+    {f : X₁ →ₗ[R] X₂} {g : X₂ →ₗ[R] X₃} {r : X₂ →ₗ[R] X₁} {σ : X₃ →ₗ[R] X₂}
+    (hfr : r ∘ₗ f = LinearMap.id) (hσg : g ∘ₗ σ = LinearMap.id)
+    (hid : f ∘ₗ r + σ ∘ₗ g = LinearMap.id) (hfg : g ∘ₗ f = 0) (hσr : r ∘ₗ σ = 0)
+    {s₁ : (m → R) →ₗ[R] X₁} {i₁ : X₁ →ₗ[R] m → R} (h₁ : s₁ ∘ₗ i₁ = LinearMap.id)
+    {s₃ : (n → R) →ₗ[R] X₃} {i₃ : X₃ →ₗ[R] n → R} (h₃ : s₃ ∘ₗ i₃ = LinearMap.id) :
+    ∃ (s₂ : (m ⊕ n → R) →ₗ[R] X₂) (i₂ : X₂ →ₗ[R] m ⊕ n → R), s₂ ∘ₗ i₂ = LinearMap.id ∧
+      (i₂ ∘ₗ s₂).toMatrixRight' =
+        Matrix.fromBlocks (i₁ ∘ₗ s₁).toMatrixRight' 0 0 (i₃ ∘ₗ s₃).toMatrixRight' := by
+  have hrf (x : X₁) : r (f x) = x := LinearMap.congr_fun hfr x
+  have hgσ (x : X₃) : g (σ x) = x := LinearMap.congr_fun hσg x
+  have hgf (x : X₁) : g (f x) = 0 := LinearMap.congr_fun hfg x
+  have hrσ (x : X₃) : r (σ x) = 0 := LinearMap.congr_fun hσr x
+  have hs₁ (x : X₁) : s₁ (i₁ x) = x := LinearMap.congr_fun h₁ x
+  have hs₃ (x : X₃) : s₃ (i₃ x) = x := LinearMap.congr_fun h₃ x
+  let e := LinearEquiv.sumArrowLequivProdArrow m n R R
+  have hl (u : m → R) (v : n → R) : LinearMap.funLeft R R Sum.inl (e.symm (u, v)) = u :=
+    funext fun _ ↦ by simp [e, LinearMap.funLeft_apply]
+  have hr (u : m → R) (v : n → R) : LinearMap.funLeft R R Sum.inr (e.symm (u, v)) = v :=
+    funext fun _ ↦ by simp [e, LinearMap.funLeft_apply]
+  have hl' (x : m ⊕ n → R) : LinearMap.funLeft R R Sum.inl x = x ∘ Sum.inl := rfl
+  have hr' (x : m ⊕ n → R) : LinearMap.funLeft R R Sum.inr x = x ∘ Sum.inr := rfl
+  refine ⟨f ∘ₗ s₁ ∘ₗ LinearMap.funLeft R R Sum.inl + σ ∘ₗ s₃ ∘ₗ LinearMap.funLeft R R Sum.inr,
+    e.symm.toLinearMap ∘ₗ (i₁ ∘ₗ r).prod (i₃ ∘ₗ g), ?_, ?_⟩
+  · refine LinearMap.ext fun x ↦ ?_
+    have hx := LinearMap.congr_fun hid x
+    simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply] at hx
+    simpa [hl, hr, hs₁, hs₃] using hx
+  · apply Matrix.toLinearMapRight'.injective
+    refine LinearMap.ext fun x ↦ funext fun q ↦ ?_
+    rcases q with b | d <;>
+      simp [e, Matrix.vecMul_fromBlocks, hl', hr', hrf, hgσ, hgf, hrσ]
+
+end LinearMap
 
 namespace TauCeti.Algebra
 

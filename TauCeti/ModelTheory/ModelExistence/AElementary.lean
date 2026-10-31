@@ -36,6 +36,8 @@ carriers is needed.
 * `FirstOrder.Language.AElementary.realize_sentenceInf_iff` and
   `FirstOrder.Language.AElementary.theoryω_model_iff`: sentences and theories of `A` hold in `N`
   exactly when they hold in `M`.
+* `FirstOrder.Language.OmitsType.of_aElementary`: omission of a partial type in `A` passes along
+  `A`-elementary embeddings.
 * `FirstOrder.Language.aElementary_of_tarskiVaught`: the fragment Tarski–Vaught criterion.
 
 ## References
@@ -117,6 +119,16 @@ theorem theoryω_model_iff {f : N ↪[L] M} (h : AElementary A f) {T : L.Theory�
   exact forall₂_congr fun φ hφ => h.realize_sentenceInf_iff (hT φ hφ)
 
 end AElementary
+
+/-- **Omission passes along `A`-elementary embeddings.** If `M` omits a partial type whose members
+lie in `A`, so does every structure embedded in `M` by an `A`-elementary embedding. -/
+theorem OmitsType.of_aElementary {A : Fragment L} {f : N ↪[L] M} (hf : AElementary A f) {n : ℕ}
+    {p : Set (L.BoundedFormulaω Empty n)}
+    (hp : ∀ φ ∈ p, (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) (h : OmitsType M p) :
+    OmitsType N p :=
+  omitsType_iff.2 fun a =>
+    let ⟨φ, hφp, hφ⟩ := omitsType_iff.1 h (f ∘ a)
+    ⟨φ, hφp, fun hr => hφ ((hf.realize_iff (hp φ hφp) a).2 hr)⟩
 
 /-- An isomorphism is `A`-elementary for every fragment `A`. -/
 theorem Equiv.aElementary (A : Fragment L) (e : N ≃[L] M) : AElementary A e.toEmbedding := by

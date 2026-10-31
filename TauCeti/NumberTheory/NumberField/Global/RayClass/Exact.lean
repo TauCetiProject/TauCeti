@@ -68,6 +68,10 @@ the input to the ray class number formula.
 * `TauCeti.GlobalNumberFields.classMap_eq_one_iff_of_finitePart_eq`: the kernel of a transition
   map between moduli with the same finite part consists of the classes of sign patterns trivial at
   the real places of the smaller modulus.
+* `TauCeti.GlobalNumberFields.residueSignRayClass_injective_iff`: the residue units and signs embed
+  into the ray class group exactly when every integer unit is congruent to one.
+* `TauCeti.GlobalNumberFields.neg_one_mem_unitsCongruenceSubgroup_iff`: the unit `-1` is congruent
+  to one exactly when `2` lies in the finite part and the infinite part is empty.
 
 ## References
 
@@ -380,6 +384,36 @@ theorem unitsResidueSignHom_neg_one (𝔪 : Modulus K) :
   · rw [residueSignHom_snd, modulusSignHom_apply, signHom_apply_eq_neg_one_iff,
       coe_unitsToPrimeToSubgroup]
     simp
+
+/-! ### The unit obstruction -/
+
+/-- **The residue units and signs embed into the ray class group exactly when every integer unit
+is congruent to one modulo `𝔪`.**  Otherwise the residues and signs of the integer units are
+nontrivial elements of the kernel of `residueSignRayClass 𝔪`. -/
+theorem residueSignRayClass_injective_iff (𝔪 : Modulus K) :
+    Function.Injective (residueSignRayClass 𝔪) ↔ unitsCongruenceSubgroup 𝔪 = ⊤ := by
+  rw [← MonoidHom.ker_eq_bot_iff, ker_residueSignRayClass, MonoidHom.range_eq_bot_iff,
+    ← MonoidHom.ker_eq_top_iff, ker_unitsResidueSignHom]
+
+/-- **The unit `-1` is congruent to one modulo `𝔪` exactly when `2` lies in the finite part and
+the infinite part is empty.** -/
+theorem neg_one_mem_unitsCongruenceSubgroup_iff (𝔪 : Modulus K) :
+    -1 ∈ unitsCongruenceSubgroup 𝔪 ↔ (2 : 𝓞 K) ∈ 𝔪.finitePart ∧ 𝔪.infinitePart = ∅ := by
+  rw [← ker_unitsResidueSignHom, MonoidHom.mem_ker, unitsResidueSignHom_neg_one]
+  simp [Units.ext_iff, neg_eq_iff_add_eq_zero, one_add_one_eq_two, funext_iff,
+    Finset.eq_empty_iff_forall_notMem, ← Ideal.Quotient.eq_zero_iff_mem, map_ofNat]
+
+/-- **Some integer unit is not congruent to one modulo `𝔪`** as soon as `2` does not lie in the
+finite part or the infinite part selects a real place: the unit `-1` is then not congruent to
+one. -/
+theorem unitsCongruenceSubgroup_ne_top {𝔪 : Modulus K}
+    (h𝔪 : (2 : 𝓞 K) ∉ 𝔪.finitePart ∨ 𝔪.infinitePart.Nonempty) :
+    unitsCongruenceSubgroup 𝔪 ≠ ⊤ := by
+  intro htop
+  obtain ⟨h2, hinf⟩ :=
+    (neg_one_mem_unitsCongruenceSubgroup_iff 𝔪).mp (htop ▸ Subgroup.mem_top _)
+  rw [← Finset.not_nonempty_iff_eq_empty] at hinf
+  tauto
 
 /-! ### Transition maps that only forget real places -/
 

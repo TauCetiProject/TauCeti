@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Dagger.DaggerAlgebra
+public import TauCeti.RingTheory.Dagger.GaussNorm
 public import TauCeti.RingTheory.Dagger.Weierstrass
 public import Mathlib.RingTheory.Finiteness.Basic
 import Mathlib.RingTheory.Finiteness.Ideal
@@ -25,19 +27,25 @@ spanned over `W` by `1, Y, …, Y ^ (s - 1)`, so it is a finite `W`-module. If `
 `W' ⧸ (f)` is then a noetherian module, hence `I` is finitely generated.
 
 The Weierstrass-division finiteness step is also exposed for any finite map annihilating a
-distinguished series with a unit coefficient in the distinguished degree.
+distinguished series with a unit coefficient in the distinguished degree. A Weierstrass polynomial
+`ω ∈ K⟨X⟩†[Y]`, monic with coefficients of Gauss norm at most `1`, is such a series, so a finite
+map whose kernel contains `ω` is finite over `K⟨X⟩†`. Dagger algebras, the quotients of
+Monsky–Washnitzer algebras, are noetherian.
 
 ## Main results
 
 * `TauCeti.Dagger.washnitzerAlgebra.finite_comp_optionC_of_isDistinguished`: a finite map
   annihilating such a distinguished series is finite over the algebra in one fewer variable.
+* `TauCeti.Dagger.washnitzerAlgebra.finite_comp_optionC_of_isMonicOfDegree`: the same for a
+  finite map annihilating a Weierstrass polynomial.
 * `TauCeti.Dagger.washnitzerAlgebra.isNoetherianRing`: `K⟨X⟩†` is noetherian for finitely many
   variables.
+* `TauCeti.Dagger.IsDaggerAlgebra.isNoetherianRing`: dagger algebras are noetherian.
 
 ## References
 
 * E. Grosse-Klönne, *Rigid analytic spaces with overconvergent structure sheaf*,
-  J. reine angew. Math. 519 (2000), §1.4 (1).
+  J. reine angew. Math. 519 (2000), §1.3 (iii) and §1.4 (1).
 * Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §5.2.6, Theorem 1 (the same argument for
   Tate algebras).
 -/
@@ -102,6 +110,26 @@ theorem finite_comp_optionC_of_isDistinguished {A : Type*}
     rwa [AlgHom.val_comp_rangeRestrict]
   have hfin := hval.comp hsmall
   rwa [← AlgHom.comp_assoc, AlgHom.val_comp_rangeRestrict] at hfin
+
+/-- A finite map annihilating a Weierstrass polynomial `ω ∈ K⟨X⟩†[Y]`, evaluated at `Y`, is
+already finite over `K⟨X⟩†`. Here `ω` is monic of degree `s` and its lower coefficients have
+Gauss norm at most `1`; such an `ω` is distinguished of degree `s` in `Y` at unit radius, with
+leading coefficient `1`. -/
+theorem finite_comp_optionC_of_isMonicOfDegree {A : Type*} [CommRing A] [Algebra K A]
+    {ω : Polynomial W} {s : ℕ} (hm : ω.IsMonicOfDegree s) (hle : ∀ k < s, ‖ω.coeff k‖ ≤ 1)
+    {π : W' →ₐ[K] A} (hπ : π.Finite) (hzero : π (polynomialToOption ω) = 0) :
+    (π.comp (washnitzerAlgebra.optionC (R := K))).Finite := by
+  have hg : PowerSeries.IsDistinguished 1 s
+      (restrictedOptionEquiv (toTate _ K (polynomialToOption ω)) : PowerSeries Tate) := by
+    rw [restrictedOptionEquiv_toTate_polynomialToOption]
+    exact PowerSeries.isDistinguished_of_isMonicOfDegree one_pos
+      ⟨by rw [hm.monic.natDegree_map, hm.natDegree_eq], hm.monic.map _⟩ fun k hk ↦ by
+        simpa [Polynomial.coeff_map, norm_toTate] using hle k hk
+  have hu : IsUnit (PowerSeries.coeff s
+      (restrictedOptionEquiv (toTate _ K (polynomialToOption ω)) : PowerSeries Tate)) := by
+    simp [restrictedOptionEquiv_toTate_polynomialToOption, Polynomial.coeff_coe,
+      ← hm.natDegree_eq, hm.monic.coeff_natDegree]
+  exact finite_comp_optionC_of_isDistinguished hg hu hπ hzero
 
 /-- An ideal of `K⟨X, Y⟩†` containing a series which is distinguished in `Y`, with a unit
 coefficient in the distinguished degree, is finitely generated as soon as `K⟨X⟩†` is
@@ -168,3 +196,17 @@ instance isNoetherianRing [Finite σ] : IsNoetherianRing (washnitzerAlgebra σ K
       isNoetherianRing_option) σ
 
 end TauCeti.Dagger.washnitzerAlgebra
+
+namespace TauCeti.Dagger.IsDaggerAlgebra
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
+
+include K in
+/-- **Dagger algebras are noetherian.** Over a complete ultrametric normed field `K`, every
+`K`-dagger algebra is a quotient of a noetherian Monsky–Washnitzer algebra. -/
+theorem isNoetherianRing : IsNoetherianRing A := by
+  obtain ⟨n, π, hπ⟩ := exists_surjective (K := K) (A := A)
+  exact isNoetherianRing_of_surjective _ _ π.toRingHom hπ
+
+end TauCeti.Dagger.IsDaggerAlgebra
