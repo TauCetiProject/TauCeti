@@ -31,6 +31,8 @@ For a nonunital `B` with zero Jacobson radical, `θ` extends to a surjective hom
 * `NonUnitalAlgHom.continuous_of_surjective_of_jacobson_eq_bot`: Johnson's theorem.
 * `NonUnitalAlgHom.continuous_of_surjective_of_nonUnitalJacobson_eq_bot`: Johnson's theorem for
   a nonunital semisimple target.
+* `NonUnitalAlgHom.isHomeomorph_of_bijective_of_nonUnitalJacobson_eq_bot`: a bijective
+  homomorphism onto a semisimple, possibly nonunital, Banach algebra is a homeomorphism.
 * `AlgEquiv.isHomeomorph_of_jacobson_eq_bot`: an algebra isomorphism from a complex Banach
   algebra onto a semisimple unital complex Banach algebra is a homeomorphism.
 
@@ -96,6 +98,18 @@ theorem continuous_of_surjective_of_nonUnitalJacobson_eq_bot {B : Type*}
   have hc := Θ.toNonUnitalAlgHom.continuous_of_surjective_of_jacobson_eq_bot hΘs hrad
   refine (WithLp.unitization_isometry_inr (𝕜 := ℂ) (A := B)).comp_continuous_iff.1 ?_
   exact (hc.comp (WithLp.unitization_isometry_inr (𝕜 := ℂ) (A := A)).continuous).congr hΘ
+
+/-- A bijective homomorphism `θ : A → B` of complex Banach algebras, not assumed continuous, is a
+homeomorphism when `B` has zero Jacobson radical. Neither algebra need be unital. The inverse is
+continuous by the open mapping theorem. -/
+theorem isHomeomorph_of_bijective_of_nonUnitalJacobson_eq_bot {B : Type*}
+    [NonUnitalNormedRing B] [NormedSpace ℂ B] [IsScalarTower ℂ B B] [SMulCommClass ℂ B B]
+    [CompleteSpace B] (θ : A →ₙₐ[ℂ] B) (hθ : Function.Bijective θ)
+    (hB : TauCeti.nonUnitalJacobson ℂ B = ⊥) : IsHomeomorph θ := by
+  have hc := θ.continuous_of_surjective_of_nonUnitalJacobson_eq_bot hθ.2 hB
+  let f : A ≃L[ℂ] B := .ofBijective ⟨(θ : A →ₗ[ℂ] B), hc⟩
+    (LinearMap.ker_eq_bot.2 hθ.1) (LinearMap.range_eq_top.2 hθ.2)
+  exact f.toHomeomorph.isHomeomorph
 
 end NonUnitalAlgHom
 
