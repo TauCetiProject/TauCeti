@@ -25,7 +25,7 @@ Scheme-theoretic density of the interior is not preserved by products in general
 when `f` and the structure map of the second compactification are flat
 (`Compactification.prod_isSchemeTheoreticallyDominant`). The interior map factors as the base
 change of one dense open immersion along a flat map followed by the base change of the other,
-and Mathlib's `AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_isPullback` applies to each.
+and flat base change preserves scheme-theoretic density.
 Over the spectrum of a field every structure morphism to the base is flat, so instance search
 supplies the hypotheses on `f` and the second structure map, and products of dense
 compactifications are dense there.
@@ -200,6 +200,8 @@ instance prod_isSchemeTheoreticallyDominant (C : Compactification f) (D : Compac
   have hb : IsPullback (pullback.fst f D.p) b C.j (pullback.fst C.p D.p) :=
     IsPullback.of_bot (by simpa [b] using IsPullback.of_hasPullback f D.p) (by simp [b])
       (IsPullback.of_hasPullback C.p D.p)
+  -- Mathlib's `AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_isPullback` transports density
+  -- along each flat base change.
   have := IsSchemeTheoreticallyDominant.of_isPullback ha
   have := IsSchemeTheoreticallyDominant.of_isPullback hb
   have hab : (C.prod D).j = a ≫ b := by
