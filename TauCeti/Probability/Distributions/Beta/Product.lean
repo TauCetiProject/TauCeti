@@ -57,10 +57,11 @@ theorem map_mul_prod_betaMeasure {a b c : ℝ} (ha : 0 < a) (hb : 0 < b) (hc : 0
       (map_dirichletStickInsert_prod_betaMeasure_dirichletMeasure hshapes)
     rw [Measure.map_map (by fun_prop) measurable_dirichletStickInsert,
       map_eval_dirichletMeasure hshapes] at h
-    simpa only [Function.comp_def, dirichletStickInsert_some, shapes, Option.elim_none,
-      Option.elim_some, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_fin_one, ne_eq, Finset.sum_filter, ite_not, Fintype.sum_option,
-      reduceCtorEq, ↓reduceIte, Option.some.injEq, one_ne_zero, zero_add, add_comm c b] using h
+    have hsum : (∑ j with j ≠ some 0, shapes j) = b + c := by
+      simp [shapes, Finset.sum_filter, Fintype.sum_option]
+      ring
+    rw [hsum] at h
+    simpa [Function.comp_def, dirichletStickInsert_some, shapes, Fin.sum_univ_two] using h
   have := isProbabilityMeasure_dirichletMeasure htwo
   have := isProbabilityMeasureBeta ha hb
   have := isProbabilityMeasureBeta (add_pos ha hb) hc
