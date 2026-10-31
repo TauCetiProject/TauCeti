@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
-public import TauCeti.Analysis.Asymptotics.SumWindow
+public import TauCeti.Analysis.Asymptotics.Sum.Window
 public import TauCeti.NumberTheory.LSeries.WienerIkehara.Approximation
 
 /-!

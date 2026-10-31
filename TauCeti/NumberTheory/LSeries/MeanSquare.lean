@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.Convergence
-public import TauCeti.Analysis.Asymptotics.SumNorm
+public import TauCeti.Analysis.Asymptotics.Sum.Norm
 import Mathlib.NumberTheory.LSeries.SumCoeff
 
 /-!

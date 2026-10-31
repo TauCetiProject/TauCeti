@@ -54,7 +54,7 @@ Ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/Modularforms/LFunction.lean`), rebuilt to consume Mathlib's
 `ModularForm.L` rather than defining a parallel Dirichlet series.
 The sharper cuspidal abscissa uses Mathlib's
-`CuspFormClass.exists_sum_range_norm_sq_qExpansion_coeff_le`, followed by Cauchy–Schwarz
+`CuspFormClass.sum_range_norm_sq_qExpansion_coeff_isBigO`, followed by Cauchy–Schwarz
 and Abel summation through `TauCeti.LSeries.abscissaOfAbsConv_le_of_sum_norm_sq_bigO`.
 
 ## References
@@ -123,28 +123,12 @@ theorem abscissaOfAbsConv_qExpansion_coeff_le [CuspFormClass F Γ k] (f : F) :
       ((((k : ℝ) + 1) / 2 : ℝ) : EReal) := by
   by_cases hk : 0 ≤ k
   · lift k to ℕ using hk
-    obtain ⟨C, hC⟩ := CuspFormClass.exists_sum_range_norm_sq_qExpansion_coeff_le f
-    -- Mathlib bounds the sum over `range M`; Abel summation uses `Icc 1 n`.
     have hO : (fun n ↦ ∑ j ∈ Finset.Icc 1 n,
         ‖(qExpansion Γ.strictWidthInfty f).coeff j‖ ^ 2) =O[atTop]
-        fun n ↦ (n : ℝ) ^ (k : ℝ) := by
-      refine Asymptotics.isBigO_iff.mpr ⟨max C 0 * 2 ^ k, ?_⟩
-      filter_upwards [eventually_ge_atTop 1] with n hn
-      rw [Real.norm_of_nonneg (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _),
-        Real.norm_of_nonneg (by positivity), Real.rpow_natCast]
-      calc
-        _ ≤ ∑ j ∈ Finset.range (n + 1),
-            ‖(qExpansion Γ.strictWidthInfty f).coeff j‖ ^ 2 :=
-          Finset.sum_le_sum_of_subset_of_nonneg
-            (fun j hj ↦ Finset.mem_range.mpr (by have := (Finset.mem_Icc.mp hj).2; omega))
-            (fun _ _ _ ↦ sq_nonneg _)
-        _ ≤ C * (n + 1 : ℝ) ^ k := by simpa only [Nat.cast_add, Nat.cast_one] using hC (n + 1)
-        _ ≤ max C 0 * (2 * (n : ℝ)) ^ k := by
-          have hn' : (1 : ℝ) ≤ n := Nat.one_le_cast.mpr hn
-          gcongr
-          · exact le_max_left C 0
-          · linarith
-        _ = _ := by rw [mul_pow]; ring
+        fun n ↦ (n : ℝ) ^ (k : ℝ) :=
+      TauCeti.isBigO_sum_Icc_of_sum_range (fun _ ↦ sq_nonneg _)
+        (by simpa only [Real.rpow_natCast] using
+          CuspFormClass.sum_range_norm_sq_qExpansion_coeff_isBigO f)
     simpa only [Int.cast_natCast] using
       TauCeti.LSeries.abscissaOfAbsConv_le_of_sum_norm_sq_bigO hO
         (le_trans (by norm_num) (Nat.cast_nonneg k))
