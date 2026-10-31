@@ -41,7 +41,8 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {p : ENNReal} [Fact (1 ≤ p)]
 
-local instance : (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
+local instance D1p0.instIsAddHaarMeasureRestrictTop :
+    (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
   simpa only [Opens.coe_top, Measure.restrict_univ] using
     (inferInstance : mu.IsAddHaarMeasure)
 
