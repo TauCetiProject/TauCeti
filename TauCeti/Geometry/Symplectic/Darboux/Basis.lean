@@ -28,7 +28,8 @@ so that `ω = ∑ dqᵢ ∧ dpᵢ` in the dual coordinates.
 The relabelling `TauCeti.SymplecticForm.darbouxIndexEquiv`, `(i, 0) ↦ inr i` and
 `(i, 1) ↦ inl i`, identifies Darboux bases with the bases in which the matrix of `ω` is Mathlib's
 standard symplectic matrix `Matrix.J`
-(`TauCeti.SymplecticForm.isDarbouxBasis_iff_toMatrix_reindex`). Hence Darboux bases exist on a
+(`TauCeti.SymplecticForm.isDarbouxBasis_iff_toMatrix_reindex`, and conversely
+`TauCeti.SymplecticForm.isDarbouxBasis_reindex_symm_iff`). Hence Darboux bases exist on a
 finite-dimensional space (`TauCeti.SymplecticForm.exists_isDarbouxBasis`), and any two of them
 have relative determinant `1` (`TauCeti.SymplecticForm.IsDarbouxBasis.det_eq_one`), from the
 corresponding facts `LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_J` and
@@ -103,6 +104,14 @@ def darbouxIndexEquiv (n : ℕ) : Fin n × Fin 2 ≃ Fin n ⊕ Fin n where
     rintro (i | i) <;> simp
 
 @[simp]
+theorem darbouxIndexEquiv_apply_zero (i : Fin n) : darbouxIndexEquiv n (i, 0) = Sum.inr i := by
+  simp [darbouxIndexEquiv]
+
+@[simp]
+theorem darbouxIndexEquiv_apply_one (i : Fin n) : darbouxIndexEquiv n (i, 1) = Sum.inl i := by
+  simp [darbouxIndexEquiv]
+
+@[simp]
 theorem darbouxIndexEquiv_symm_inl (i : Fin n) :
     (darbouxIndexEquiv n).symm (Sum.inl i) = (i, 1) :=
   (darbouxIndexEquiv n).symm_apply_eq.2 (by simp [darbouxIndexEquiv])
@@ -138,16 +147,22 @@ theorem isDarbouxBasis_iff_toMatrix_reindex :
     · simpa [Matrix.J] using h' (.inl i) (.inl j)
     · simpa [Matrix.J, Matrix.one_apply] using h' (.inr i) (.inl j)
 
+/-- A basis `d` indexed by `Fin n ⊕ Fin n`, relabelled by `darbouxIndexEquiv`, is a Darboux basis
+exactly when the matrix of `ω` in `d` is `Matrix.J`. -/
+theorem isDarbouxBasis_reindex_symm_iff {d : Basis (Fin n ⊕ Fin n) ℝ V} :
+    ω.IsDarbouxBasis (d.reindex (darbouxIndexEquiv n).symm) ↔
+      LinearMap.BilinForm.toMatrix d ω.toBilinForm = Matrix.J (Fin n) ℝ := by
+  have hd : (d.reindex (darbouxIndexEquiv n).symm).reindex (darbouxIndexEquiv n) = d :=
+    Basis.eq_of_apply_eq fun x ↦ by
+      simp only [Basis.reindex_apply, Equiv.symm_symm, Equiv.apply_symm_apply]
+  rw [isDarbouxBasis_iff_toMatrix_reindex, hd]
+
 /-- **Darboux bases exist**: every finite-dimensional symplectic vector space has a Darboux
 basis. -/
 theorem exists_isDarbouxBasis [FiniteDimensional ℝ V] (ω : SymplecticForm V) :
     ∃ (n : ℕ) (b : Basis (Fin n × Fin 2) ℝ V), ω.IsDarbouxBasis b := by
   obtain ⟨n, b, hb⟩ := ω.isAlt.exists_basis_toMatrix_eq_J ω.nondegenerate
-  refine ⟨n, b.reindex (darbouxIndexEquiv n).symm, isDarbouxBasis_iff_toMatrix_reindex.2 ?_⟩
-  have hb' : (b.reindex (darbouxIndexEquiv n).symm).reindex (darbouxIndexEquiv n) = b :=
-    Basis.eq_of_apply_eq fun x ↦ by
-      simp only [Basis.reindex_apply, Equiv.symm_symm, Equiv.apply_symm_apply]
-  rwa [hb']
+  exact ⟨n, b.reindex (darbouxIndexEquiv n).symm, isDarbouxBasis_reindex_symm_iff.2 hb⟩
 
 /-- A Darboux basis exists for any prescribed number `n` of pairs with `finrank ℝ V = n * 2`. -/
 theorem exists_isDarbouxBasis_of_finrank_eq [FiniteDimensional ℝ V] (ω : SymplecticForm V)

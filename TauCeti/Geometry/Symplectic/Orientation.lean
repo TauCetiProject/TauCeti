@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Orientation
-public import TauCeti.Geometry.Symplectic.DarbouxBasis
+public import TauCeti.Geometry.Symplectic.Darboux.Basis
 public import TauCeti.Geometry.Symplectic.Rescale
 public import TauCeti.LinearAlgebra.Orientation.Prod
 
@@ -16,7 +16,7 @@ import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 # The symplectic orientation
 
 Let `ω` be a symplectic form on a finite-dimensional real vector space `V`. Any two Darboux bases
-(`TauCeti.SymplecticForm.IsDarbouxBasis`, in `TauCeti.Geometry.Symplectic.DarbouxBasis`) have
+(`TauCeti.SymplecticForm.IsDarbouxBasis`, in `TauCeti.Geometry.Symplectic.Darboux.Basis`) have
 relative determinant `1` (`TauCeti.SymplecticForm.IsDarbouxBasis.det_eq_one`).
 
 All Darboux bases, listed in the interleaved order `(q₁, p₁, q₂, p₂, …, qₙ, pₙ)` (the reindexing
