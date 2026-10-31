@@ -43,8 +43,6 @@ Consequently the Littlewood–Richardson coefficient may be read off either side
 
 ## Main results
 
-* `TauCeti.SkewSemistandardYoungTableau.isLatticeWord_readingWord_iff`: the lattice condition in
-  terms of row counts.
 * `SemistandardYoungTableau.isYamanouchi_iff_rowCount`: Stembridge's Yamanouchi condition in terms
   of row counts.
 * `TauCeti.natCard_lrTableau_eq_natCard_isYamanouchi`: the two counts of `c^ν_{λ μ}` agree.
@@ -61,46 +59,6 @@ Consequently the Littlewood–Richardson coefficient may be read off either side
 public section
 
 open Finset
-
-namespace TauCeti
-
-namespace SkewSemistandardYoungTableau
-
-variable {inner outer : YoungDiagram}
-
-/-! ### The lattice condition -/
-
-/-- **The lattice condition in terms of row counts**: the reading word of a skew tableau is a
-lattice word exactly when, for every row `x` and letter `k`, the rows up to `x` contain `k + 1`
-at most as often as the rows above `x` contain `k`. -/
-theorem isLatticeWord_readingWord_iff (T : SkewSemistandardYoungTableau inner outer) :
-    T.readingWord.IsLatticeWord ↔
-      ∀ k x, ∑ r ∈ range (x + 1), T.rowCount r (k + 1) ≤ ∑ r ∈ range x, T.rowCount r k := by
-  constructor
-  · intro h k x
-    -- The rows above `x`, followed by the letters of row `x` larger than `k`, form a prefix.
-    have := List.isLatticeWord_iff.mp h _ (T.flatMap_range_append_prefix_readingWord_of_prefix
-      (List.take_prefix (outer.rowLen x - inner.rowLen x - ∑ l ∈ range (k + 1), T.rowCount x l)
-        (T.rowReadingWord x))) k
-    rw [List.count_append, List.count_append, count_flatMap_range_rowReadingWord,
-      count_flatMap_range_rowReadingWord, count_take_rowReadingWord, count_take_rowReadingWord,
-      ite_eq_right (Nat.not_succ_le_self k), ite_eq_left le_rfl] at this
-    rw [sum_range_succ]
-    omega
-  · refine fun h => List.isLatticeWord_iff.mpr fun p hp k => ?_
-    rw [← T.flatMap_range_rowReadingWord le_rfl] at hp
-    obtain ⟨x, q, hq, rfl⟩ := List.exists_eq_flatMap_range_append hp
-    rw [List.count_append, List.count_append, count_flatMap_range_rowReadingWord,
-      count_flatMap_range_rowReadingWord]
-    have h₁ := hq.count_le (k + 1)
-    rw [count_rowReadingWord] at h₁
-    have h₂ := h k x
-    rw [sum_range_succ] at h₂
-    omega
-
-end SkewSemistandardYoungTableau
-
-end TauCeti
 
 /-! ### The Yamanouchi condition -/
 
@@ -308,17 +266,6 @@ theorem isYamanouchi_iff_rowCount (lam : YoungDiagram) (T : SemistandardYoungTab
       lam.rowLen (i + 1) + ∑ r ∈ range (x + 1), ((botEquiv μ).symm T).rowCount r (i + 1) ≤
         lam.rowLen i + ∑ r ∈ range x, ((botEquiv μ).symm T).rowCount r i :=
   ⟨rowLen_add_sum_rowCount_le_of_isYamanouchi, isYamanouchi_of_rowLen_add_sum_rowCount_le⟩
-
-/-- The entries of a tableau with `λ + c(T) = ν` are letters of rows of `ν`. -/
-theorem apply_lt_colLen_zero_of_rowLen_add_content_eq
-    {lam ν : YoungDiagram} {T : SemistandardYoungTableau μ}
-    (h : ∀ i, lam.rowLen i + SemistandardYoungTableau.content T i = ν.rowLen i) {i c : ℕ}
-    (hc : (i, c) ∈ μ) : T i c < ν.colLen 0 := by
-  simpa using ((botEquiv μ).symm T).apply_lt_colLen_zero_of_content_le (ν := ν)
-    (fun k => by
-      rw [← content_botEquiv, Equiv.apply_symm_apply, ← h k]
-      exact Nat.le_add_left _ _)
-    (by rw [YoungDiagram.rowLen_bot]; exact Nat.zero_le c) (YoungDiagram.mem_iff_lt_rowLen.mp hc)
 
 end SemistandardYoungTableau
 

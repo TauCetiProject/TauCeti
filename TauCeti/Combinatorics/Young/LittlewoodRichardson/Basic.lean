@@ -42,6 +42,8 @@ first letter `m > i` would be read before any `m - 1`. Consequently
 
 ## Main results
 
+* `TauCeti.SkewSemistandardYoungTableau.isLatticeWord_readingWord_iff`: the lattice condition in
+  terms of row counts.
 * `TauCeti.LRTableau.entry_le`: the entries in row `i` are at most `i`.
 * `TauCeti.LRTableau.card_eq`: a Littlewood–Richardson tableau of shape `ν / λ` and content `μ`
   forces `|ν| = |λ| + |μ|`.
@@ -69,6 +71,48 @@ to left) is a lattice word. The Littlewood–Richardson coefficient `c^ν_{λ μ
 abbrev LRTableau (inner outer μ : YoungDiagram) : Type :=
   {T : SkewSemistandardYoungTableau inner outer //
     ⇑T.content = μ.rowLen ∧ T.readingWord.IsLatticeWord}
+
+/-! ### The lattice condition -/
+
+section LatticeCondition
+
+open Finset
+
+namespace SkewSemistandardYoungTableau
+
+variable {inner outer : YoungDiagram}
+
+/-- **The lattice condition in terms of row counts**: the reading word of a skew tableau is a
+lattice word exactly when, for every row `x` and letter `k`, the rows up to `x` contain `k + 1`
+at most as often as the rows above `x` contain `k`. -/
+theorem isLatticeWord_readingWord_iff (T : SkewSemistandardYoungTableau inner outer) :
+    T.readingWord.IsLatticeWord ↔
+      ∀ k x, ∑ r ∈ range (x + 1), T.rowCount r (k + 1) ≤ ∑ r ∈ range x, T.rowCount r k := by
+  constructor
+  · intro h k x
+    -- The rows above `x`, followed by the letters of row `x` larger than `k`, form a prefix.
+    have := List.isLatticeWord_iff.mp h _ (T.flatMap_range_append_prefix_readingWord_of_prefix
+      (List.take_prefix (outer.rowLen x - inner.rowLen x - ∑ l ∈ range (k + 1), T.rowCount x l)
+        (T.rowReadingWord x))) k
+    rw [List.count_append, List.count_append, count_flatMap_range_rowReadingWord,
+      count_flatMap_range_rowReadingWord, count_take_rowReadingWord, count_take_rowReadingWord,
+      ite_eq_right (Nat.not_succ_le_self k), ite_eq_left le_rfl] at this
+    rw [sum_range_succ]
+    omega
+  · refine fun h => List.isLatticeWord_iff.mpr fun p hp k => ?_
+    rw [← T.flatMap_range_rowReadingWord le_rfl] at hp
+    obtain ⟨x, q, hq, rfl⟩ := List.exists_eq_flatMap_range_append hp
+    rw [List.count_append, List.count_append, count_flatMap_range_rowReadingWord,
+      count_flatMap_range_rowReadingWord]
+    have h₁ := hq.count_le (k + 1)
+    rw [count_rowReadingWord] at h₁
+    have h₂ := h k x
+    rw [sum_range_succ] at h₂
+    omega
+
+end SkewSemistandardYoungTableau
+
+end LatticeCondition
 
 namespace LRTableau
 

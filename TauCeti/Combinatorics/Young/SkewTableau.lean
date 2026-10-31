@@ -632,4 +632,15 @@ theorem card_filter_le_rowCount_symm_botEquiv (T : SemistandardYoungTableau μ) 
   rw [rowCount_symm_botEquiv]
   exact card_le_card fun c hc => mem_filter.mpr ⟨(mem_filter.mp hc).1, (mem_filter.mp hc).2.2⟩
 
+/-- The entries of a tableau with `λ + c(T) = ν` are letters of rows of `ν`. -/
+theorem apply_lt_colLen_zero_of_rowLen_add_content_eq
+    {lam ν : YoungDiagram} {T : SemistandardYoungTableau μ}
+    (h : ∀ i, lam.rowLen i + SemistandardYoungTableau.content T i = ν.rowLen i) {i c : ℕ}
+    (hc : (i, c) ∈ μ) : T i c < ν.colLen 0 := by
+  simpa using ((botEquiv μ).symm T).apply_lt_colLen_zero_of_content_le (ν := ν)
+    (fun k => by
+      rw [← content_botEquiv, Equiv.apply_symm_apply, ← h k]
+      exact Nat.le_add_left _ _)
+    (by rw [YoungDiagram.rowLen_bot]; exact Nat.zero_le c) (YoungDiagram.mem_iff_lt_rowLen.mp hc)
+
 end SemistandardYoungTableau
