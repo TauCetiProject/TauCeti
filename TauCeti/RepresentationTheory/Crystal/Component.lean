@@ -22,6 +22,13 @@ the component of a dominant straight path is the path crystal `B(λ)`.
 This file sets up this decomposition, using Mathlib's connected components of simple graphs and
 the direct sums `TauCeti.NormalCrystal.sigma` of `TauCeti.RepresentationTheory.Crystal.Sigma`.
 
+Strict morphisms and strict isomorphisms of crystals are homomorphisms and isomorphisms of crystal
+graphs (`TauCeti.NormalCrystal.StrictHom.toGraphHom`,
+`TauCeti.NormalCrystal.StrictIso.toGraphIso`), so a strict isomorphism `ψ` acts on connected
+components, through `SimpleGraph.Iso.connectedComponentEquiv`, carrying the component of a vertex
+`x` to the component of `ψ x`. Restricting `ψ` to these two components is again a strict
+isomorphism (`TauCeti.NormalCrystal.StrictIso.componentIso`): components transport, as crystals.
+
 ## Main definitions
 
 * `TauCeti.NormalCrystal.graph`: the undirected, uncoloured crystal graph.
@@ -32,6 +39,8 @@ the direct sums `TauCeti.NormalCrystal.sigma` of `TauCeti.RepresentationTheory.C
 * `TauCeti.NormalCrystal.StrictHom.toGraphHom`, `TauCeti.NormalCrystal.StrictIso.toGraphIso`:
   strict morphisms and strict isomorphisms of crystals as maps of crystal graphs, so that they act
   on connected components.
+* `TauCeti.NormalCrystal.StrictIso.componentIso`: the strict isomorphism of two components
+  induced by a strict isomorphism of the ambient crystals.
 
 ## Main results
 
@@ -223,6 +232,50 @@ def StrictIso.toGraphIso (ψ : StrictIso c d) : c.graph ≃g d.graph where
 theorem StrictIso.coe_toGraphIso (ψ : StrictIso c d) : ⇑ψ.toGraphIso = ψ := (rfl)
 
 end Maps
+
+/-! ### Components of a strict isomorphism -/
+
+section Iso
+
+variable {c : NormalCrystal P b B} {d : NormalCrystal P b B'} (ψ : StrictIso c d)
+
+/-- **A strict isomorphism restricts to its components**: for every connected component `C` of
+`c.graph`, the component crystals `c.component C` and
+`d.component (ψ.toGraphIso.connectedComponentEquiv C)` are strictly isomorphic, through Mathlib's
+equivalence `SimpleGraph.ConnectedComponent.isoEquivSupp` of their vertex sets. -/
+def StrictIso.componentIso (C : c.graph.ConnectedComponent) :
+    StrictIso (c.component C) (d.component (ψ.toGraphIso.connectedComponentEquiv C)) where
+  toEquiv := SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C
+  wt_toFun x := ψ.wt_apply x.1
+  e_toFun i x := by
+    -- `isoEquivSupp` acts on vertices as `ψ`, so pushing `Subtype.val` through the required
+    -- equality leaves the ambient compatibility `ψ.e_apply`.
+    have hΦ : ∀ y : ↥C, ((SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C).toFun y).1
+        = ψ y.1 := fun _ => rfl
+    apply Option.map_injective Subtype.val_injective
+    rw [Option.map_map]
+    conv_rhs => rw [Option.map_subtype (g := ψ) (fun x _ => rfl)]
+    change ((d.component (ψ.toGraphIso.connectedComponentEquiv C)).e i
+        ((SimpleGraph.ConnectedComponent.isoEquivSupp ψ.toGraphIso C).toFun x)).unattach
+      = Option.map ψ ((c.component C).e i x).unattach
+    rw [component_eq_restrict, component_eq_restrict, unattach_restrict_e, unattach_restrict_e, hΦ,
+      ψ.e_apply]
+
+/-- The underlying map of `StrictIso.componentIso` sends a vertex `x` of `C` to `ψ x.1`. -/
+@[simp]
+theorem StrictIso.componentIso_apply (C : c.graph.ConnectedComponent) (x : C) :
+    (ψ.componentIso C x).1 = ψ x.1 := (rfl)
+
+/-- The underlying map of the inverse of `StrictIso.componentIso` sends a vertex `y` of the target
+component to `ψ.symm y.1`. -/
+@[simp]
+theorem StrictIso.componentIso_symm_apply (C : c.graph.ConnectedComponent)
+    (y : (ψ.toGraphIso.connectedComponentEquiv C)) :
+    ((ψ.componentIso C).symm y).1 = ψ.symm y.1 := by
+  apply EquivLike.injective ψ
+  rw [← StrictIso.componentIso_apply, StrictIso.apply_symm_apply, StrictIso.apply_symm_apply]
+
+end Iso
 
 /-! ### Decomposition into components -/
 
