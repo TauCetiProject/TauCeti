@@ -39,7 +39,11 @@ quasi-isomorphism because cohomology commutes with sequential colimits.
 Given covers `p X : E X ⟶ X` of all objects, this colimit is `CochainComplex.kFlatResolution`,
 with the quasi-isomorphism `CochainComplex.kFlatResolution.π` to `K`. Every term of every stage
 is built from the objects `E X` by binary biproducts
-(`CochainComplex.kFlatResolution.prop_sequence_obj_X`).
+(`CochainComplex.kFlatResolution.prop_sequence_obj_X`). The stages, their transition maps and
+their morphisms to `K` are computed by `CochainComplex.kFlatResolution.sequence_obj_succ`,
+`CochainComplex.kFlatResolution.sequence_map_succ` and
+`CochainComplex.kFlatResolution.toComplex_app_succ`, in terms of the public cell-attachment step
+`CochainComplex.kFlatResolution.attachingMap` and `CochainComplex.kFlatResolution.attachDesc`.
 
 ## References
 
@@ -67,23 +71,24 @@ variable {P K : CochainComplex C ℤ} (f : P ⟶ K)
 
 /-- The cycles of `P` in degree `n` whose image under `f` is a boundary, together with a
 primitive of that image. -/
-abbrev boundaryPairs {P K : CochainComplex C ℤ} (f : P ⟶ K) (n : ℤ) : C :=
+public abbrev boundaryPairs {P K : CochainComplex C ℤ} (f : P ⟶ K) (n : ℤ) : C :=
   pullback (cyclesMap f n) (K.toCycles (n - 1) n)
 
 variable {E : ℤ → C} (e : ∀ n, E n ⟶ boundaryPairs f n)
 
 /-- The cells attached to `P`: the cycle components of the pairs parametrized by `E`. -/
-abbrev attachingMap {P K : CochainComplex C ℤ} (f : P ⟶ K) {E : ℤ → C}
+public abbrev attachingMap {P K : CochainComplex C ℤ} (f : P ⟶ K) {E : ℤ → C}
     (e : ∀ n, E n ⟶ boundaryPairs f n) : graded (.up ℤ) E ⟶ P :=
   P.fromGraded fun n ↦ e n ≫ pullback.fst _ _
 
 /-- The boundary components of the pairs parametrized by `E`, a null-homotopy of
 `attachingMap f e ≫ f`. -/
-abbrev boundaryPrimitive {P K : CochainComplex C ℤ} (f : P ⟶ K) {E : ℤ → C}
+public abbrev boundaryPrimitive {P K : CochainComplex C ℤ} (f : P ⟶ K) {E : ℤ → C}
     (e : ∀ n, E n ⟶ boundaryPairs f n) : Cochain (graded (.up ℤ) E) K (-1) :=
   Cochain.mk fun p q hpq ↦ e p ≫ pullback.snd _ _ ≫ (K.XIsoOfEq (by lia)).hom
 
-lemma δ_boundaryPrimitive :
+/-- The boundary components form a null-homotopy of `attachingMap f e ≫ f`. -/
+public lemma δ_boundaryPrimitive :
     δ (-1) 0 (boundaryPrimitive f e) = Cochain.ofHom (attachingMap f e ≫ f) := by
   ext p
   rw [δ_v (-1) 0 (neg_add_cancel 1) _ p p (add_zero p) (p - 1) (p + 1) (by lia) rfl]
@@ -92,16 +97,18 @@ lemma δ_boundaryPrimitive :
   rw [← K.toCycles_i (p - 1) p, ← pullback.condition_assoc, cyclesMap_i]
 
 /-- The extension of `f` to the complex obtained by attaching the cells parametrized by `E`. -/
-abbrev attachDesc {P K : CochainComplex C ℤ} (f : P ⟶ K) {E : ℤ → C}
+public abbrev attachDesc {P K : CochainComplex C ℤ} (f : P ⟶ K) {E : ℤ → C}
     (e : ∀ n, E n ⟶ boundaryPairs f n) : mappingCone (attachingMap f e) ⟶ K :=
   mappingCone.desc _ (boundaryPrimitive f e) f (δ_boundaryPrimitive f e)
 
-lemma inr_attachDesc : mappingCone.inr (attachingMap f e) ≫ attachDesc f e = f :=
+/-- The morphism `attachDesc f e` extends `f`. -/
+@[reassoc]
+public lemma inr_attachDesc : mappingCone.inr (attachingMap f e) ≫ attachDesc f e = f :=
   mappingCone.inr_desc ..
 
 /-- If every `e n` is an epimorphism, then every cohomology class of `P` that `f` sends to zero
 becomes zero after attaching the cells parametrized by `E`. -/
-lemma comp_homologyMap_inr_eq_zero [∀ n, Epi (e n)] {n : ℤ} {X : C}
+public lemma comp_homologyMap_inr_eq_zero [∀ n, Epi (e n)] {n : ℤ} {X : C}
     (g : X ⟶ P.homology n) (hg : g ≫ homologyMap f n = 0) :
     g ≫ homologyMap (mappingCone.inr (attachingMap f e)) n = 0 := by
   -- lift `g` to cycles, then to boundary pairs, then to `E n`, up to refinements
@@ -139,7 +146,7 @@ variable (E : C → C) (p : ∀ X, E X ⟶ X) (K : CochainComplex C ℤ)
 /-- The stages of the resolution, each with its morphism to `K`: first the complex of flat covers
 of the cycles of `K`, then repeatedly the complex obtained by attaching cells along all pairs of
 a cycle and a primitive of its image. -/
-def stage : ℕ → Σ P : CochainComplex C ℤ, P ⟶ K
+@[expose] public def stage : ℕ → Σ P : CochainComplex C ℤ, P ⟶ K
   | 0 => ⟨graded (.up ℤ) fun n ↦ E (K.cycles n), K.fromGraded fun n ↦ p (K.cycles n)⟩
   | k + 1 => ⟨mappingCone (attachingMap (stage k).2 fun n ↦ p (boundaryPairs (stage k).2 n)),
       attachDesc (stage k).2 fun n ↦ p (boundaryPairs (stage k).2 n)⟩
@@ -147,21 +154,49 @@ def stage : ℕ → Σ P : CochainComplex C ℤ, P ⟶ K
 /-- The sequence of stages of the resolution `kFlatResolution E p K`: first the complex of
 covers `p` of the cycles of `K`, then repeatedly the complex obtained by attaching cells along
 the covers of all pairs of a cycle and a primitive of its image in `K`. -/
-public def sequence : ℕ ⥤ CochainComplex C ℤ :=
+@[expose] public def sequence : ℕ ⥤ CochainComplex C ℤ :=
   Functor.ofSequence (X := fun k ↦ (stage E p K k).1) fun k ↦ mappingCone.inr
     (attachingMap (stage E p K k).2 fun n ↦ p (boundaryPairs (stage E p K k).2 n))
 
-lemma sequence_map_succ (k : ℕ) :
-    (sequence E p K).map (homOfLE (k.le_add_right 1)) =
-      mappingCone.inr
-        (attachingMap (stage E p K k).2 fun n ↦ p (boundaryPairs (stage E p K k).2 n)) :=
-  Functor.ofSequence_map_homOfLE_succ _ k
-
 /-- The morphisms from the stages of the resolution to `K`. -/
-public def toComplex : sequence E p K ⟶ (Functor.const ℕ).obj K :=
-  NatTrans.ofSequence (fun k ↦ (stage E p K k).2) fun k ↦ by
-    simp only [sequence_map_succ, Functor.const_obj_map]
-    exact (inr_attachDesc _ _).trans (Category.comp_id _).symm
+@[expose] public def toComplex : sequence E p K ⟶ (Functor.const ℕ).obj K :=
+  NatTrans.ofSequence (fun k ↦ (stage E p K k).2) fun k ↦
+    (congrArg (· ≫ _) (Functor.ofSequence_map_homOfLE_succ _ k)).trans
+      ((inr_attachDesc _ _).trans (Category.comp_id _).symm)
+
+/-- The initial stage of the resolution is the complex with zero differentials of the covers of
+the cycles of `K`. -/
+public lemma sequence_obj_zero :
+    (sequence E p K).obj 0 = graded (.up ℤ) fun n ↦ E (K.cycles n) :=
+  rfl
+
+/-- The morphism from the initial stage of the resolution to `K` is induced by the covers of the
+cycles of `K`. -/
+public lemma toComplex_app_zero :
+    (toComplex E p K).app 0 = K.fromGraded fun n ↦ p (K.cycles n) :=
+  rfl
+
+/-- Each stage of the resolution after the first is the mapping cone of the cells attached to
+the previous stage along the covers of its boundary pairs. -/
+public lemma sequence_obj_succ (k : ℕ) :
+    (sequence E p K).obj (k + 1) = mappingCone (attachingMap ((toComplex E p K).app k)
+      fun n ↦ p (boundaryPairs ((toComplex E p K).app k) n)) :=
+  rfl
+
+/-- The morphism from each stage of the resolution after the first to `K` extends the morphism
+from the previous stage over the attached cells. -/
+public lemma toComplex_app_succ (k : ℕ) :
+    (toComplex E p K).app (k + 1) = attachDesc ((toComplex E p K).app k)
+      fun n ↦ p (boundaryPairs ((toComplex E p K).app k) n) :=
+  rfl
+
+/-- The transition maps of the resolution are the inclusions of the stages into the mapping
+cones of the attached cells. -/
+public lemma sequence_map_succ (k : ℕ) :
+    (sequence E p K).map (homOfLE (k.le_add_right 1)) =
+      mappingCone.inr (attachingMap ((toComplex E p K).app k)
+        fun n ↦ p (boundaryPairs ((toComplex E p K).app k) n)) :=
+  Functor.ofSequence_map_homOfLE_succ _ k
 
 lemma quasiIso_colimit_desc [HasColimitsOfShape ℕ C] [HasExactColimitsOfShape ℕ C]
     [∀ X, Epi (p X)] :
