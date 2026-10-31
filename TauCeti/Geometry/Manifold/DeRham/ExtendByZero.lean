@@ -352,11 +352,13 @@ theorem mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_exactForm
     have hμ : ∀ᶠ y in 𝓝 x, (fun y : U ↦ ρ (Opens.inclusion h y) • θ.1 y) y = θ.1 y := by
       filter_upwards [(continuous_inclusion h).continuousAt.eventually hρ1] with y hy
       rw [hy, one_smul]
+    have hdμ : mextDeriv μ.1 (Opens.inclusion h x) = mextDeriv θ.1 x := by
+      rw [← mpullback_inclusion_apply h (mextDeriv μ.1), mpullback_inclusion_mextDeriv,
+        RoughForm.mpullback_inclusion_extendByZero, mextDeriv_congr_of_eventuallyEq hμ]
+    have hdθ : mextDeriv θ.1 x = η.1 (Opens.inclusion h x) := by
+      rw [← mextDerivₗ_apply, hθ, SmoothForm.coe_mpullback, mpullback_inclusion_apply]
     apply hx
-    rw [Submodule.coe_sub, mextDerivₗ_apply, Pi.sub_apply,
-      ← mpullback_inclusion_apply h (mextDeriv μ.1), mpullback_inclusion_mextDeriv,
-      RoughForm.mpullback_inclusion_extendByZero, mextDeriv_congr_of_eventuallyEq hμ,
-      ← mextDerivₗ_apply, hθ, SmoothForm.coe_mpullback, mpullback_inclusion_apply, sub_self]
+    rw [Submodule.coe_sub, mextDerivₗ_apply, Pi.sub_apply, hdμ, hdθ, sub_self]
     -- The two zeros are the zero of the fibre and the value of the zero form at `x`.
     rfl
   · rw [map_sub, ← LinearMap.comp_apply (mextDerivₗ I (k + 1)), mextDerivₗ_comp_mextDerivₗ,
@@ -379,14 +381,18 @@ theorem mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_closedFor
       (U.isOpen.preimage continuous_subtype_val).isClosed_compl
     intro hxU
     obtain ⟨x, rfl⟩ : ∃ x' : U, Opens.inclusion h x' = x := ⟨⟨x, hxU⟩, rfl⟩
+    -- At points of `U`, both `η` and the constant form `γ` take the value `c`.
+    have hγ : γ.1.1 = RoughForm.ofFunction I fun _ ↦ c :=
+      coe_closedFormsZeroEquiv_symm_apply I (LocallyConstant.const W c)
+    have hηx : η.1 (Opens.inclusion h x) 0 = c := by
+      have hcx := congrFun hc x
+      simp only [SmoothForm.coe_mpullback, mpullback_inclusion_apply, Function.const_apply] at hcx
+      exact hcx
     refine hx (ContinuousAlternatingMap.ext fun v ↦ ?_)
-    have hcx := congrFun hc x
-    simp only [SmoothForm.coe_mpullback, mpullback_inclusion_apply, Function.const_apply] at hcx
-    rw [Subsingleton.elim v 0, Submodule.coe_sub, Pi.sub_apply,
-      coe_closedFormsZeroEquiv_symm_apply, ContinuousAlternatingMap.sub_apply,
-      RoughForm.ofFunction_apply, LocallyConstant.coe_const, Function.const_apply]
+    rw [Subsingleton.elim v 0, Submodule.coe_sub, Pi.sub_apply, ContinuousAlternatingMap.sub_apply,
+      hγ, RoughForm.ofFunction_apply, hηx, sub_self]
     -- The right-hand side is the zero alternating map evaluated at the empty tuple.
-    exact (sub_eq_zero.mpr hcx).trans rfl
+    rfl
   · rw [map_sub, (mem_closedForms_iff_mextDerivₗ_eq_zero I γ.1).mp γ.2, sub_zero]
 
 end ExactNearInfinity
