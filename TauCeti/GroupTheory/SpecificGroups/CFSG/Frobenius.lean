@@ -51,6 +51,9 @@ branch, which is why it is defined for every valid index and not only for the un
 * `TauCeti.ValidLieTypeIndex.mem_frobeniusFixedSubfield_iff_iterate_frobeniusEquiv_eq`: the `k`-th
   iterate fixes the subfield at exponent `e * k`, which for `k ≠ 0` is the field of `q ^ k`
   elements.
+* `TauCeti.ValidLieTypeIndex.extensionGaloisFieldEmbedding` and
+  `TauCeti.ValidLieTypeIndex.mem_range_extensionGaloisFieldEmbedding_iff`: a chosen embedding of
+  `GaloisField p (e * k)` into the closure, with image the solutions of `x ^ (q ^ k) = x`.
 * `TauCeti.ValidLieTypeIndex.exists_iterate_frobeniusEquiv_eq`: every element of the closure is
   fixed by some positive iterate.
 
@@ -188,13 +191,9 @@ theorem galoisFieldEmbedding_apply
 as a subring of the closure. -/
 theorem range_galoisFieldEmbedding :
     RingHom.range d.galoisFieldEmbedding = d.fixedField.toSubring := by
-  ext x
-  constructor
-  · rintro ⟨y, rfl⟩
-    exact (d.galoisFieldEquivFixedField y).property
-  · intro hx
-    obtain ⟨y, hy⟩ := d.galoisFieldEquivFixedField.surjective ⟨x, hx⟩
-    exact ⟨y, congrArg Subtype.val hy⟩
+  rw [galoisFieldEmbedding, ← RingHom.map_range,
+    RingHom.range_eq_top.mpr d.galoisFieldEquivFixedField.surjective, ← RingHom.range_eq_map]
+  exact Subring.range_subtype _
 
 variable {d}
 
@@ -217,6 +216,54 @@ theorem mem_frobeniusFixedSubfield_iff_iterate_frobeniusEquiv_eq {k : ℕ} {x : 
       (d.frobeniusEquiv : d.Closure → d.Closure)^[k] x = x := by
   rw [← Subfield.mem_toSubring, toSubring_frobeniusFixedSubfield,
     mem_frobeniusFixedSubring_mul_iff_iterate_eq, frobeniusEquiv, coe_iterateFrobeniusEquiv]
+
+variable (d) in
+/-- A chosen isomorphism from Mathlib's field `GaloisField p (e * k)` with `q ^ k` elements to the
+subfield of the closure fixed by the `q ^ k`-power Frobenius, for `k ≠ 0`. As for
+`galoisFieldEquivFixedField`, there is no canonical such isomorphism. -/
+noncomputable def extensionGaloisFieldEquivFixedSubfield (k : ℕ) (hk : k ≠ 0) :
+    GaloisField d.characteristic (d.fieldExponent * k) ≃+*
+      frobeniusFixedSubfield d.Closure d.characteristic (d.fieldExponent * k) :=
+  (Classical.choice (nonempty_frobeniusFixedSubfield_ringEquiv_galoisField d.Closure
+    d.characteristic (d.fieldExponent * k) (mul_ne_zero d.fieldExponent_pos.ne' hk))).symm
+
+variable (d) in
+/-- **A chosen embedding of the field with `q ^ k` elements into the closure**, for `k ≠ 0`: the
+isomorphism `extensionGaloisFieldEquivFixedSubfield` followed by the inclusion. A graph-twisted
+family is realized over the field with `q ^ k` elements for `k` the order of its diagram
+automorphism. As for `galoisFieldEmbedding`, only its image matters. -/
+noncomputable def extensionGaloisFieldEmbedding (k : ℕ) (hk : k ≠ 0) :
+    GaloisField d.characteristic (d.fieldExponent * k) →+* d.Closure :=
+  (frobeniusFixedSubfield d.Closure d.characteristic (d.fieldExponent * k)).subtype.comp
+    (d.extensionGaloisFieldEquivFixedSubfield k hk).toRingHom
+
+/-- The embedding of the field with `q ^ k` elements is the inclusion of the chosen fixed-subfield
+representative. -/
+@[simp]
+theorem extensionGaloisFieldEmbedding_apply {k : ℕ} (hk : k ≠ 0)
+    (x : GaloisField d.characteristic (d.fieldExponent * k)) :
+    d.extensionGaloisFieldEmbedding k hk x = d.extensionGaloisFieldEquivFixedSubfield k hk x :=
+  (rfl)
+
+/-- The image of the chosen embedding of the field with `q ^ k` elements is exactly the subfield
+fixed by the `q ^ k`-power Frobenius, viewed as a subring of the closure. -/
+theorem range_extensionGaloisFieldEmbedding {k : ℕ} (hk : k ≠ 0) :
+    (d.extensionGaloisFieldEmbedding k hk).range =
+      (frobeniusFixedSubfield d.Closure d.characteristic (d.fieldExponent * k)).toSubring := by
+  rw [extensionGaloisFieldEmbedding, ← RingHom.map_range,
+    RingHom.range_eq_top.mpr (d.extensionGaloisFieldEquivFixedSubfield k hk).surjective,
+    ← RingHom.range_eq_map]
+  exact Subring.range_subtype _
+
+/-- An element of the closure lies in the image of the chosen embedding of the field with `q ^ k`
+elements exactly when it is fixed by the `q ^ k`-power map.
+
+This is not a `simp` lemma: `RingHom.mem_range` already unfolds the left-hand side into an
+existential, so it is not in `simp`-normal form. -/
+theorem mem_range_extensionGaloisFieldEmbedding_iff {k : ℕ} (hk : k ≠ 0) {x : d.Closure} :
+    x ∈ (d.extensionGaloisFieldEmbedding k hk).range ↔ x ^ d.fieldOrder ^ k = x := by
+  rw [range_extensionGaloisFieldEmbedding, Subfield.mem_toSubring, mem_frobeniusFixedSubfield,
+    d.fieldOrder_eq_characteristic_pow, ← pow_mul]
 
 /-- **The closure is the union of the finite fields inside it.** Every element of the algebraic
 closure attached to a valid Lie-type index is fixed by some positive iterate of the Frobenius,

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Frobenius
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.SpecialLinearFrobenius
 public import TauCeti.GroupTheory.FixedSubgroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.GraphAutomorphism
 
@@ -36,10 +36,13 @@ matrix `Q` relative to `x ↦ x ^ q` (`mem_fixedSubgroup_galoisFieldTwistedFrobe
 `Qᵀ = (-1) ^ r • Q`, this form is Hermitian for even `r` or in characteristic two, and
 skew-Hermitian otherwise.
 
+The field with `q²` elements and its embedding come from `CFSG/Frobenius.lean`, and the entrywise
+description of the special linear matrices with coordinates in it from
+`CFSG/SpecialLinearFrobenius.lean`. The square relation for the twisted Frobenius is
+`Matrix.SpecialLinearGroup.typeAGraphAutomorphism_comp_map_comp_self`.
+
 ## Main definitions
 
-* `TauCeti.ValidLieTypeIndex.extensionGaloisFieldEmbedding`: a chosen embedding of the field
-  `GaloisField p (e * k)` with `q ^ k` elements into the closure.
 * `TauCeti.ValidLieTypeIndex.galoisFieldTwistedFrobenius`: the graph-twisted `q`-power Frobenius of
   `SL_{r+1}(𝔽_{q²})`.
 * `TauCeti.ValidLieTypeIndex.specialUnitaryEquivFrobeniusFixedPoints`: the isomorphism between
@@ -47,8 +50,6 @@ skew-Hermitian otherwise.
 
 ## Main results
 
-* `TauCeti.ValidLieTypeIndex.mem_range_extensionGaloisFieldEmbedding_iff`: the image of the
-  embedding is the set of solutions of `x ^ (q ^ k) = x`.
 * `TauCeti.ValidLieTypeIndex.mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff`: the finite fixed
   points are the isometries of determinant one of the form of Gram matrix `Q`.
 * `TauCeti.ValidLieTypeIndex.specialLinear_map_extensionGaloisFieldEmbedding_fixedSubgroup`: the
@@ -68,68 +69,7 @@ open Matrix
 
 namespace TauCeti.ValidLieTypeIndex
 
-variable (d : ValidLieTypeIndex)
-
-/-! ### The field with `q ^ k` elements inside the closure -/
-
-/-- **A chosen embedding of the field with `q ^ k` elements into the closure**, for `k ≠ 0`: an
-isomorphism from Mathlib's `GaloisField p (e * k)` onto the subfield of the closure fixed by the
-`q ^ k`-power Frobenius, followed by the inclusion. A graph-twisted family is realized over the
-field with `q ^ k` elements for `k` the order of its diagram automorphism. As for
-`TauCeti.ValidLieTypeIndex.galoisFieldEmbedding`, there is no canonical choice, and only its image
-matters. -/
-def extensionGaloisFieldEmbedding (k : ℕ) (hk : k ≠ 0) :
-    GaloisField d.characteristic (d.fieldExponent * k) →+* d.Closure :=
-  (frobeniusFixedSubfield d.Closure d.characteristic (d.fieldExponent * k)).subtype.comp
-    (Classical.choice (nonempty_frobeniusFixedSubfield_ringEquiv_galoisField d.Closure
-      d.characteristic (d.fieldExponent * k)
-      (mul_ne_zero d.fieldExponent_pos.ne' hk))).symm.toRingHom
-
-variable {d}
-
-/-- An element of the closure lies in the image of the chosen embedding of the field with `q ^ k`
-elements exactly when it is fixed by the `q ^ k`-power map.
-
-This is not a `simp` lemma: `RingHom.mem_range` already unfolds the left-hand side into an
-existential, so it is not in `simp`-normal form. -/
-theorem mem_range_extensionGaloisFieldEmbedding_iff {k : ℕ} (hk : k ≠ 0) {x : d.Closure} :
-    x ∈ (d.extensionGaloisFieldEmbedding k hk).range ↔ x ^ d.fieldOrder ^ k = x := by
-  rw [d.fieldOrder_eq_characteristic_pow, ← pow_mul, ← mem_frobeniusFixedSubfield]
-  constructor
-  · rintro ⟨y, rfl⟩
-    exact SetLike.coe_mem _
-  · intro hx
-    obtain ⟨y, hy⟩ := (Classical.choice (nonempty_frobeniusFixedSubfield_ringEquiv_galoisField
-      d.Closure d.characteristic (d.fieldExponent * k)
-      (mul_ne_zero d.fieldExponent_pos.ne' hk))).symm.surjective ⟨x, hx⟩
-    exact ⟨y, congrArg Subtype.val hy⟩
-
-/-- A special linear matrix over the closure has coordinates in the field with `q ^ k` elements
-exactly when every entry is fixed by the `q ^ k`-power map. -/
-theorem specialLinear_mem_range_extensionGaloisFieldEmbedding_iff
-    {k : ℕ} (hk : k ≠ 0) {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (g : SpecialLinearGroup ι d.Closure) :
-    g ∈ (SpecialLinearGroup.map (n := ι) (d.extensionGaloisFieldEmbedding k hk)).range ↔
-      ∀ i j, (g i j) ^ d.fieldOrder ^ k = g i j := by
-  constructor
-  · rintro ⟨g₀, rfl⟩ i j
-    exact (mem_range_extensionGaloisFieldEmbedding_iff hk).mp ⟨g₀ i j, rfl⟩
-  · intro hg
-    choose A hA using fun i j ↦ (mem_range_extensionGaloisFieldEmbedding_iff hk).mpr (hg i j)
-    have hmap : (Matrix.of A).map (d.extensionGaloisFieldEmbedding k hk) = g :=
-      Matrix.ext hA
-    have hdet : (Matrix.of A).det = 1 := by
-      apply (d.extensionGaloisFieldEmbedding k hk).injective
-      rw [RingHom.map_det, RingHom.mapMatrix_apply, hmap, g.property, map_one]
-    exact ⟨⟨Matrix.of A, hdet⟩, Subtype.ext hmap⟩
-
-/-- The coefficient extension of special linear groups along the embedding of the field with
-`q ^ k` elements is injective. -/
-theorem specialLinear_map_extensionGaloisFieldEmbedding_injective
-    {k : ℕ} (hk : k ≠ 0) {ι : Type*} [Fintype ι] [DecidableEq ι] :
-    Function.Injective
-      (SpecialLinearGroup.map (n := ι) (d.extensionGaloisFieldEmbedding k hk)) :=
-  fun _ _ h ↦ Subtype.ext (Matrix.map_injective (RingHom.injective _) (congrArg Subtype.val h))
+variable {d : ValidLieTypeIndex}
 
 /-! ### The graph-twisted Frobenius over the field with `q²` elements -/
 
@@ -215,22 +155,18 @@ private theorem fixedSubgroup_le_range_extensionGaloisFieldEmbedding (r : ℕ) :
       (SpecialLinearGroup.map (n := Fin (r + 1))
         (d.extensionGaloisFieldEmbedding 2 two_ne_zero)).range := by
   intro g hg
-  set φ := SpecialLinearGroup.map (n := Fin (r + 1))
-    (iterateFrobenius d.Closure d.characteristic d.fieldExponent)
-  set θ := SpecialLinearGroup.typeAGraphAutomorphism r d.Closure
-  have hg' : θ (φ g) = g := mem_fixedSubgroup.mp hg
-  -- `θ` is an involution commuting with `φ`, so `φ (φ g) = θ (φ g) = g`.
-  have hφφ : φ (φ g) = g := by
-    have h := congrArg (fun x ↦ θ (φ x)) hg'
-    simp only [φ, θ, SpecialLinearGroup.map_typeAGraphAutomorphism,
-      SpecialLinearGroup.typeAGraphAutomorphism_typeAGraphAutomorphism] at h
-    exact h.trans hg'
+  -- The square of the twisted Frobenius is the entrywise `q²`-power Frobenius.
+  have hg₂ : g ∈ fixedSubgroup (SpecialLinearGroup.map
+      (iterateFrobenius d.Closure d.characteristic (d.fieldExponent * 2))) := by
+    rw [mul_two, iterateFrobenius_add,
+      ← SpecialLinearGroup.typeAGraphAutomorphism_comp_map_comp_self]
+    exact fixedSubgroup_le_fixedSubgroup_pow _ 2 hg
+  rw [mem_fixedSubgroup] at hg₂
   rw [specialLinear_mem_range_extensionGaloisFieldEmbedding_iff]
   intro i j
-  have h := congrArg (fun x : SpecialLinearGroup (Fin (r + 1)) d.Closure ↦ x i j) hφφ
-  simp only [φ, SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
-    iterateFrobenius_def, ← pow_mul, ← d.fieldOrder_eq_characteristic_pow] at h
-  rwa [sq]
+  have h := congrArg (fun x : SpecialLinearGroup (Fin (r + 1)) d.Closure ↦ x i j) hg₂
+  simpa only [SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
+    iterateFrobenius_def, pow_mul, ← d.fieldOrder_eq_characteristic_pow] using h
 
 /-- **The coefficient extension carries the finite fixed subgroup onto the fixed subgroup over
 the closure.** The image of the points of `SL_{r+1}(𝔽_{q²})` fixed by the finite graph-twisted
@@ -244,7 +180,7 @@ theorem specialLinear_map_extensionGaloisFieldEmbedding_fixedSubgroup (r : ℕ) 
           (iterateFrobenius d.Closure d.characteristic d.fieldExponent))) := by
   rw [MonoidHom.map_fixedSubgroup_of_injective _
       (specialLinear_map_extensionGaloisFieldEmbedding_comp r)
-      (specialLinear_map_extensionGaloisFieldEmbedding_injective two_ne_zero),
+      (SpecialLinearGroup.map_injective (RingHom.injective _)),
     inf_eq_right]
   exact fixedSubgroup_le_range_extensionGaloisFieldEmbedding r
 
@@ -260,7 +196,7 @@ def specialUnitaryEquivFrobeniusFixedPoints (r : ℕ) :
         (SpecialLinearGroup.map
           (iterateFrobenius d.Closure d.characteristic d.fieldExponent))) :=
   ((fixedSubgroup (d.galoisFieldTwistedFrobenius r)).equivMapOfInjective _
-      (specialLinear_map_extensionGaloisFieldEmbedding_injective two_ne_zero)).trans
+      (SpecialLinearGroup.map_injective (RingHom.injective _))).trans
     (MulEquiv.subgroupCongr (specialLinear_map_extensionGaloisFieldEmbedding_fixedSubgroup r))
 
 /-- The isomorphism with the fixed points over the closure is the entrywise extension of
