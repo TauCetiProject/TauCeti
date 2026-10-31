@@ -24,7 +24,9 @@ variables can be smaller than the radius in `Y`, as is necessary for `Y + X²`.
 Uniqueness is detected at unit radius and needs no completeness hypothesis.
 `washnitzerAlgebra.exists_isUnit_isMonicOfDegree_mul_polynomialToOption_eq` restates existence
 in the overconvergent algebra itself, evaluating the monic polynomial at `Y` by
-`washnitzerAlgebra.polynomialToOption`.
+`washnitzerAlgebra.polynomialToOption`. After a triangular change of variables, every nonzero
+series is associated to such an evaluation
+(`washnitzerAlgebra.exists_associated_polynomialToOption`).
 
 ## References
 
@@ -208,6 +210,25 @@ theorem existsUnique_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s 
   refine ⟨(e, ω), ⟨he, hm, heq⟩, fun p ⟨he', hm', heq'⟩ ↦ ?_⟩
   obtain ⟨h1, h2⟩ := eq_and_eq_of_isUnit_isMonicOfDegree_mul_eq hg he' he hm' hm heq' heq
   exact Prod.ext h1 h2
+
+/-- After a change of variables, every nonzero series `f` of `K⟨X, Y⟩†` is associated to the
+evaluation at `Y` of a monic polynomial `ω ∈ K⟨X⟩†[Y]` which is distinguished at unit radius.
+The change of variables is the inverse of a triangular automorphism making `f` distinguished in
+`Y` (`exists_triangularEquiv_isDistinguished_isUnit`), followed by Weierstrass preparation. -/
+theorem exists_associated_polynomialToOption [CompleteSpace K] [Finite σ] (f : W) (hf : f ≠ 0) :
+    ∃ (E : W ≃+* W) (s : ℕ) (ω : Polynomial W₀),
+      PowerSeries.IsDistinguished 1 s (ω.map (toTate σ K).toRingHom : PowerSeries Tate) ∧
+        ω.IsMonicOfDegree s ∧ Associated f (E (polynomialToOption ω)) := by
+  obtain ⟨α, hα, s, hd, hu⟩ := exists_triangularEquiv_isDistinguished_isUnit f hf
+  let e := triangularEquiv (R := K) α hα
+  obtain ⟨u, ω, hu', hm, hfac⟩ := exists_isUnit_isMonicOfDegree_mul_polynomialToOption_eq hd hu
+  rw [← hfac, map_mul, map_mul, Subring.coe_mul,
+    restrictedOptionEquiv_toTate_polynomialToOption] at hd
+  refine ⟨e.toRingEquiv.symm, s, ω, hd.of_isUnit_mul one_pos
+    ((hu'.map (toTate _ K)).map restrictedOptionEquiv.toRingHom), hm,
+    .symm ⟨Units.map (e.toRingEquiv.symm : W →* W) hu'.unit, ?_⟩⟩
+  rw [Units.coe_map, IsUnit.unit_spec, MonoidHom.coe_ofClass, ← map_mul, mul_comm, hfac,
+    AlgEquiv.toRingEquiv_symm, AlgEquiv.coe_toRingEquiv, e.symm_apply_apply]
 
 end Field
 
