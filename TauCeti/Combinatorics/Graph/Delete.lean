@@ -10,7 +10,7 @@ public import Mathlib.Combinatorics.Graph.Simple
 public import Mathlib.Combinatorics.SimpleGraph.DeleteEdges
 
 /-!
-# Edge deletion in standard multigraphs
+# Deletion in standard multigraphs
 
 This file computes edge deletion `Graph.deleteEdges` in two families of multigraphs: graphs
 `Graph.ofSimpleGraph H` built from simple graphs, where deletion corresponds to
@@ -18,7 +18,8 @@ This file computes edge deletion `Graph.deleteEdges` in two families of multigra
 removes edges from `F`. These identities let deletion-based connectivity predicates be compared
 with their simple-graph versions and evaluated on explicit examples. It also records that
 deletion is antitone in the deleted set, `Graph.deleteEdges_anti_right`, complementing Mathlib's
-`Graph.deleteEdges_mono_left`.
+`Graph.deleteEdges_mono_left`. Vertex deletion commutes with simplification up to the canonical
+isomorphism `Graph.toSimpleGraphDeleteVertsIso`; its vertex map retains the original point.
 -/
 
 public section
@@ -46,5 +47,47 @@ theorem ofSimpleGraph_deleteEdges (H : SimpleGraph α) (F : Set (Sym2 α)) :
 theorem banana_deleteEdges (u w : α) (F D : Set β) :
     (banana u w F).deleteEdges D = banana u w (F \ D) :=
   Graph.ext (by simp) fun e x y ↦ by simp [and_assoc, and_comm (a := e ∉ D)]
+
+/-- Vertex deletion is monotone in the original graph. -/
+@[gcongr]
+theorem deleteVerts_mono_left {G H : Graph α β} (hGH : G ≤ H) (X : Set α) :
+    G.deleteVerts X ≤ H.deleteVerts X where
+  vertexSet_mono := by
+    simpa only [vertexSet_deleteVerts] using sdiff_subset_sdiff_left hGH.vertexSet_mono
+  isLink_mono e x y h := by
+    rw [deleteVerts_isLink] at h ⊢
+    exact ⟨h.1.mono hGH, h.2⟩
+
+/-- Simplifying after vertex deletion is the same as inducing the simplification on the
+remaining actual vertices. -/
+def toSimpleGraphDeleteVertsIso (G : Graph α β) (X : Set α) :
+    (G.deleteVerts X).toSimpleGraph ≃g G.toSimpleGraph.induce {v : V(G) | (v : α) ∉ X} where
+  toEquiv :=
+    { toFun := fun v ↦ by
+        have hv : (v : α) ∈ V(G) ∧ (v : α) ∉ X := by
+          simpa only [vertexSet_deleteVerts, mem_sdiff] using v.property
+        exact ⟨⟨v, hv.1⟩, hv.2⟩
+      invFun := fun v ↦ ⟨v.val.val, by
+        simpa only [vertexSet_deleteVerts, mem_sdiff, mem_ofPred_eq] using
+          And.intro v.val.property v.property⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl }
+  map_rel_iff' := by
+    intro u v
+    simp only [SimpleGraph.induce_adj, toSimpleGraph_adj, Graph.Adj, deleteVerts_isLink]
+    have hu := u.property
+    have hv := v.property
+    simp only [vertexSet_deleteVerts, mem_sdiff] at hu hv
+    simp [hu.2, hv.2, Subtype.ext_iff]
+
+@[simp]
+theorem coe_toSimpleGraphDeleteVertsIso_apply (G : Graph α β) (X : Set α)
+    (v : V(G.deleteVerts X)) :
+    (((G.toSimpleGraphDeleteVertsIso X) v).val : α) = v := (rfl)
+
+@[simp]
+theorem coe_toSimpleGraphDeleteVertsIso_symm_apply (G : Graph α β) (X : Set α)
+    (v : {v : V(G) // (v : α) ∉ X}) :
+    (((G.toSimpleGraphDeleteVertsIso X).symm v) : α) = v.val := (rfl)
 
 end Graph

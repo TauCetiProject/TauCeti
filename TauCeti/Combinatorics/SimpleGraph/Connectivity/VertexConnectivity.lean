@@ -165,6 +165,24 @@ theorem isVertexReachable_of_pairwise_internallyDisjoint {n : ℕ} {P : Fin n �
   rw [Set.encard_coe_eq_coe_finsetCard, Nat.cast_lt] at hs
   exact hs.not_ge hle
 
+/-- Graph isomorphisms preserve vertex reachability. -/
+theorem IsVertexReachable.map {W : Type*} {H : SimpleGraph W}
+    (h : G.IsVertexReachable k u v) (e : G ≃g H) :
+    H.IsVertexReachable k (e u) (e v) := by
+  rw [isVertexReachable_iff_exists_walk] at h ⊢
+  intro S hS hu hv
+  obtain ⟨p, hp⟩ := h
+    ((Set.encard_preimage_of_bijective e.bijective S).trans_lt hS) hu hv
+  refine ⟨p.map e.toHom, ?_⟩
+  simp only [Walk.support_map, List.mem_map]
+  rintro _ ⟨x, hx, rfl⟩
+  exact hp x hx
+
+/-- Vertex reachability is invariant under graph isomorphism. -/
+theorem Iso.isVertexReachable_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H) :
+    H.IsVertexReachable k (e u) (e v) ↔ G.IsVertexReachable k u v :=
+  ⟨fun h ↦ by simpa using h.map e.symm, fun h ↦ h.map e⟩
+
 /-! ### Vertex connectivity -/
 
 variable (G k) in
@@ -238,6 +256,14 @@ theorem isVertexConnected_top_iff : (⊤ : SimpleGraph V).IsVertexConnected k �
   · exact .rfl
   · exact ((top_adj u v).2 huv).isVertexReachable
 
+/-- Vertex connectivity predicates are invariant under graph isomorphism. -/
+theorem Iso.isVertexConnected_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H) :
+    H.IsVertexConnected k ↔ G.IsVertexConnected k := by
+  simp only [isVertexConnected_def, ← ENat.card_congr e.toEquiv]
+  exact and_congr_right fun _ ↦
+    ⟨fun h u v ↦ e.isVertexReachable_iff.mp (h (e u) (e v)),
+      fun h x y ↦ by simpa using (h (e.symm x) (e.symm y)).map e⟩
+
 /-! ### The numerical invariant -/
 
 variable (G) in
@@ -245,6 +271,15 @@ variable (G) in
 at which it is `k`-vertex-connected. It is `0` on the empty vertex type. -/
 noncomputable def vertexConnectivity : ℕ∞ :=
   ⨆ (k : ℕ) (_ : G.IsVertexConnected k), (k : ℕ∞)
+
+/-- Vertex connectivity is the supremum of the natural connectivity thresholds. -/
+theorem vertexConnectivity_def :
+    G.vertexConnectivity = ⨆ (k : ℕ) (_ : G.IsVertexConnected k), (k : ℕ∞) := (rfl)
+
+/-- Vertex connectivity is invariant under graph isomorphism. -/
+theorem Iso.vertexConnectivity_eq {W : Type*} {H : SimpleGraph W} (e : G ≃g H) :
+    H.vertexConnectivity = G.vertexConnectivity := by
+  simp only [vertexConnectivity, e.isVertexConnected_iff]
 
 /-- On a nonempty vertex type, vertex connectivity records exactly the thresholds at which the
 graph is vertex-connected. -/
@@ -281,6 +316,15 @@ theorem vertexConnectivity_add_one_le_card [Nonempty V] :
     exact ((isVertexConnected_iff_le_vertexConnectivity n).2 hn.le).1
   · rw [ENat.card_eq_top_of_infinite]
     exact le_top
+
+/-- A graph on at most one vertex has vertex connectivity zero. -/
+@[simp]
+theorem vertexConnectivity_of_subsingleton [Subsingleton V] : G.vertexConnectivity = 0 := by
+  cases isEmpty_or_nonempty V
+  · exact vertexConnectivity_of_isEmpty
+  · have h : G.vertexConnectivity + 1 ≤ (0 : ℕ∞) + 1 :=
+      vertexConnectivity_add_one_le_card.trans ENat.card_le_one
+    exact le_antisymm ((ENat.add_le_add_iff_right ENat.one_ne_top).mp h) bot_le
 
 /-- The complete graph on `V` has vertex connectivity `ENat.card V - 1`. -/
 @[simp]

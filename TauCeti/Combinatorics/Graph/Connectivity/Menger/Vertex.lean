@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Connectivity.VertexConnectivity
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Bidirected
 public import TauCeti.Combinatorics.Network.Menger.Vertex
 public import Mathlib.Data.Set.Card
@@ -42,6 +43,9 @@ edge from `s` to `t` could be repeated arbitrarily often in a packing.
 * `Graph.forall_reachable_deleteVerts_iff_exists_paths`: its predicate form: `s` and `t` stay
   reachable after deleting any fewer than `k` vertices other than `s` and `t` exactly when there
   are `k` pairwise internally disjoint `s`–`t` paths.
+
+* `Graph.isVertexReachable_iff_exists_paths`: the same equivalence stated through the
+  vertex-reachability predicate of the underlying simple graph.
 
 ## Implementation notes
 
@@ -197,5 +201,22 @@ theorem forall_reachable_deleteVerts_iff_exists_paths [Finite V(G)] (hst : s ≠
     rw [ENat.card_eq_coe_fintype_card, Fintype.card_fin, Set.encard_coe_eq_coe_finsetCard,
       Nat.cast_le] at this
     omega
+
+/-- **Menger's theorem for the vertex-reachability predicate.** For distinct nonadjacent actual
+vertices of a multigraph with finitely many actual vertices, `k`-vertex-reachability is equivalent
+to the existence of `k` internally vertex-disjoint native paths. No finite-edge assumption is
+needed. -/
+theorem isVertexReachable_iff_exists_paths [Finite V(G)] {s t : V(G)}
+    (hst : s ≠ t) (hadj : ¬G.Adj s t) (k : ℕ) :
+    G.IsVertexReachable k s t ↔ ∃ P : Fin k → G.Walk s t, (∀ i, (P i).IsPath) ∧
+      Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) := by
+  rw [isVertexReachable_iff]
+  refine ⟨fun h ↦ ?_, fun ⟨P, _, hP⟩ X hX hs ht ↦ ?_⟩
+  · exact (forall_reachable_deleteVerts_iff_exists_paths
+      (Subtype.val_injective.ne hst) hadj k).mp fun X hs ht hX ↦
+        h (by simpa using hX) hs ht
+  · by_contra hn
+    have hle := card_le_encard_of_not_reachable_deleteVerts hP s.property hs ht hn
+    exact hX.not_ge (by simpa using hle)
 
 end Graph

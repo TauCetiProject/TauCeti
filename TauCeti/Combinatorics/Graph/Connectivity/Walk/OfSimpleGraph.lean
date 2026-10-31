@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Graph.Simple
+public import TauCeti.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Basic
 
@@ -282,5 +282,15 @@ theorem toSimpleGraph_reachable_iff {u v : V(G)} :
   | cons huv _ ih =>
       obtain ⟨-, e, he⟩ := huv
       exact he.reachable.trans ih
+
+/-- Deletion in a multigraph agrees with deletion in its simplification, retaining the original
+endpoints. -/
+theorem toSimpleGraph_reachable_induce_compl_iff {X : Set α} {s t : V(G)}
+    (hs : (s : α) ∉ X) (ht : (t : α) ∉ X) :
+    (G.toSimpleGraph.induce {v : V(G) | (v : α) ∉ X}).Reachable ⟨s, hs⟩ ⟨t, ht⟩ ↔
+      (G.deleteVerts X).Reachable s t := by
+  rw [← SimpleGraph.Iso.reachable_iff (φ := (G.toSimpleGraphDeleteVertsIso X).symm),
+    toSimpleGraph_reachable_iff]
+  simp
 
 end Graph
