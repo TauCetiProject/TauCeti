@@ -18,7 +18,8 @@ characteristic zero, and let `M` be a finite-dimensional `L`-module. Write `M(μ
 grading of `M` by `h`.
 
 * The kernel of `e` is spanned by the vectors it contains of weight `n`, `n : ℕ`
-  (`IsSl2Triple.ker_toEnd_e_eq_iSup_inf_eigenspace`).
+  (`IsSl2Triple.ker_toEnd_e_eq_iSup_inf_eigenspace`, in
+  `TauCeti.Algebra.Lie.Sl2.EigenspaceMap`).
 * Its weight-`n` part has dimension `dim M(n) - dim M(n + 2)`, because `e` maps `M(n)` onto
   `M(n + 2)` (`IsSl2Triple.finrank_ker_toEnd_e_inf_eigenspace_add_finrank_eigenspace_add_two`).
   Summing over `n` telescopes, so `dim ker e = dim M(0) + dim M(1)`
@@ -33,32 +34,33 @@ In a decomposition of `M` into irreducible modules `V(n)`, the kernel of `e` is 
 highest weight vectors, one for each summand, and a summand has a weight `0` or a weight `1`
 according to the parity of `n`. The proofs here use no such decomposition.
 
-For the adjoint module, write `𝔤(j)` for the eigenspaces of `ad h`. The centralizer `𝔤ᵉ` of `e`
-then lies in the sum of the `𝔤(n)` with `n : ℕ`, which is the Lie algebra of the parabolic
-subgroup attached to the triple. It satisfies `dim 𝔤ᵉ = dim 𝔤(0) + dim 𝔤(1)`, so the adjoint orbit
-of `e` has dimension `dim 𝔤 - dim 𝔤(0) - dim 𝔤(1)`, which is read off the grading
+For the adjoint module `M = 𝔤`, write `𝔤(j)` for the eigenspaces of `ad h`. The specializations
+with `M := 𝔤` say that the centralizer `𝔤ᵉ = ker (ad e)` lies in the sum of the `𝔤(n)` with
+`n : ℕ`, that `dim 𝔤ᵉ = dim 𝔤(0) + dim 𝔤(1)`, and that `𝔤ᵉ` is the sum of the centralizer
+`𝔤ʰ ∩ 𝔤ᵉ ∩ 𝔤ᶠ` of the whole triple, which is its grade-zero part, and of its part of positive
+grade. Consequently `dim [𝔤, e] = dim 𝔤 - dim 𝔤(0) - dim 𝔤(1)`
 (`IsSl2Triple.finrank_range_ad_e_add_finrank_eigenspace_zero_add_finrank_eigenspace_one`).
-Finally `𝔤ᵉ` is the sum of the centralizer `𝔤ʰ ∩ 𝔤ᵉ ∩ 𝔤ᶠ` of the whole triple, which is its
-grade-zero part, and of its part of positive grade (`IsSl2Triple.ker_ad_e_eq_sup`). For an
-algebraic group this sum is the Lie algebra counterpart of writing the centralizer of `e` as the
-centralizer of the triple times a unipotent normal subgroup; only the Lie algebra statement is
-proved here.
+
+These are subspace and rank identities in `𝔤`. If moreover `𝔤` is the Lie algebra of a connected
+reductive algebraic group `G` over an algebraically closed field of characteristic zero, the sum of
+the `𝔤(n)` with `n : ℕ` is the Lie algebra of the parabolic subgroup of `G` attached to the triple,
+`[𝔤, e]` is the tangent space at `e` to the orbit `G • e`, and the decomposition of `𝔤ᵉ` is the Lie
+algebra counterpart of writing the centralizer of `e` in `G` as the centralizer of the triple times
+a unipotent normal subgroup. None of these group-level statements is formalized here.
 
 The statement that a vector killed by `h` and `e` is killed by `f` needs no field: it holds in a
 Noetherian torsion-free module over a domain of characteristic zero.
 
 ## Main results
 
-* `IsSl2Triple.ker_toEnd_e_eq_iSup_inf_eigenspace`: the kernel of `e` is graded by `ℕ`.
 * `IsSl2Triple.finrank_ker_toEnd_e_eq_finrank_eigenspace_zero_add_finrank_eigenspace_one`:
   `dim ker e = dim M(0) + dim M(1)`.
 * `IsSl2Triple.ker_toEnd_h_inf_ker_toEnd_e_le_ker_toEnd_f`: a vector killed by `h` and `e` is
   killed by `f`.
 * `IsSl2Triple.ker_toEnd_e_eq_sup`: the kernel of `e` is the sum of the invariants of the triple
   and of its part of positive weight.
-* `IsSl2Triple.finrank_ker_ad_e_eq_finrank_eigenspace_zero_add_finrank_eigenspace_one` and
-  `IsSl2Triple.finrank_range_ad_e_add_finrank_eigenspace_zero_add_finrank_eigenspace_one`: the
-  dimensions of the centralizer of `e` and of the tangent space `[𝔤, e]` to its orbit.
+* `IsSl2Triple.finrank_range_ad_e_add_finrank_eigenspace_zero_add_finrank_eigenspace_one`:
+  `dim [𝔤, e] + dim 𝔤(0) + dim 𝔤(1) = dim 𝔤`.
 
 ## References
 
@@ -98,13 +100,6 @@ theorem ker_toEnd_h_inf_ker_toEnd_e_le_ker_toEnd_f (t : IsSl2Triple h e f) :
   have : (n : ℤ) = -2 := by exact_mod_cast hn.symm.trans (zero_sub (2 : K))
   omega
 
-/-- **A vector killed by `h` and `f` is killed by `e`.** This is
-`IsSl2Triple.ker_toEnd_h_inf_ker_toEnd_e_le_ker_toEnd_f` for the triple `(-h, f, e)`. -/
-theorem ker_toEnd_h_inf_ker_toEnd_f_le_ker_toEnd_e (t : IsSl2Triple h e f) :
-    LinearMap.ker (toEnd K L M h) ⊓ LinearMap.ker (toEnd K L M f) ≤
-      LinearMap.ker (toEnd K L M e) := by
-  simpa using t.symm.ker_toEnd_h_inf_ker_toEnd_e_le_ker_toEnd_f (K := K) (M := M)
-
 end Domain
 
 /-! ### The weights of `h` on the kernel of the raising operator -/
@@ -114,15 +109,6 @@ section Field
 variable {K L M : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
   {h e f : L}
-
-/-- **The kernel of the raising operator is graded by `ℕ`.** In a finite-dimensional module over a
-field of characteristic zero, the kernel of `e` is spanned by the vectors it contains of weight `n`
-for `h`, `n : ℕ`. This is `IsSl2Triple.ker_toEnd_f_eq_iSup_inf_eigenspace` for the triple
-`(-h, f, e)`. -/
-theorem ker_toEnd_e_eq_iSup_inf_eigenspace (t : IsSl2Triple h e f) :
-    LinearMap.ker (toEnd K L M e) =
-      ⨆ n : ℕ, LinearMap.ker (toEnd K L M e) ⊓ (toEnd K L M h).eigenspace (n : K) := by
-  simpa using t.symm.ker_toEnd_f_eq_iSup_inf_eigenspace (K := K) (M := M)
 
 /-- **The weight-`μ` part of the kernel of `e`.** When `e` maps `M(μ)` onto `M(μ + 2)`, which is
 the case unless `μ + 2` is of the form `-n` with `n : ℕ`, the vectors of weight `μ` killed by `e`
@@ -224,36 +210,22 @@ theorem ker_toEnd_e_eq_sup (t : IsSl2Triple h e f) :
 
 variable [FiniteDimensional K L]
 
-/-- **The dimension of the centralizer of `e`.** For an `sl₂` triple `(h, e, f)` in a
-finite-dimensional Lie algebra `𝔤` over a field of characteristic zero,
-`dim 𝔤ᵉ = dim 𝔤(0) + dim 𝔤(1)`, where `𝔤(j)` is the `j`-eigenspace of `ad h`. -/
-theorem finrank_ker_ad_e_eq_finrank_eigenspace_zero_add_finrank_eigenspace_one
-    (t : IsSl2Triple h e f) :
-    finrank K (LinearMap.ker (ad K L e)) =
-      finrank K ((ad K L h).eigenspace 0) + finrank K ((ad K L h).eigenspace 1) :=
-  -- `ad K L` is by definition the action `toEnd K L L` of `L` on itself.
-  t.finrank_ker_toEnd_e_eq_finrank_eigenspace_zero_add_finrank_eigenspace_one (M := L)
-
-/-- **The dimension of the adjoint orbit of `e`.** For an `sl₂` triple `(h, e, f)` in a
-finite-dimensional Lie algebra `𝔤` over a field of characteristic zero, the tangent space `[𝔤, e]`
-to the orbit of `e` has dimension `dim 𝔤 - dim 𝔤(0) - dim 𝔤(1)`. -/
+/-- **The rank of `ad e`.** For an `sl₂` triple `(h, e, f)` in a finite-dimensional Lie algebra
+`𝔤` over a field of characteristic zero, the range `[𝔤, e]` of `ad e` has dimension
+`dim 𝔤 - dim 𝔤(0) - dim 𝔤(1)`, where `𝔤(j)` is the `j`-eigenspace of `ad h`. When `𝔤` is the Lie
+algebra of a connected reductive algebraic group `G`, this range is the tangent space at `e` to the
+orbit `G • e`, so the formula computes the dimension of that orbit; that interpretation is not
+formalized here. -/
 theorem finrank_range_ad_e_add_finrank_eigenspace_zero_add_finrank_eigenspace_one
     (t : IsSl2Triple h e f) :
     finrank K (LinearMap.range (ad K L e)) + finrank K ((ad K L h).eigenspace 0) +
         finrank K ((ad K L h).eigenspace 1) = finrank K L := by
-  rw [add_assoc, ← t.finrank_ker_ad_e_eq_finrank_eigenspace_zero_add_finrank_eigenspace_one]
-  exact LinearMap.finrank_range_add_finrank_ker _
-
-/-- **The centralizer of `e` and the centralizer of the triple.** For an `sl₂` triple `(h, e, f)` in
-a finite-dimensional Lie algebra over a field of characteristic zero, the centralizer of `e` is the
-sum of the centralizer of the whole triple, which is its grade-zero part, and of its part of
-positive grade for `ad h`. -/
-theorem ker_ad_e_eq_sup (t : IsSl2Triple h e f) :
-    LinearMap.ker (ad K L e) =
-      (LinearMap.ker (ad K L h) ⊓ LinearMap.ker (ad K L e) ⊓ LinearMap.ker (ad K L f)) ⊔
-        LinearMap.ker (ad K L e) ⊓ ⨆ n : ℕ, (ad K L h).eigenspace ((n + 1 : ℕ) : K) :=
   -- `ad K L` is by definition the action `toEnd K L L` of `L` on itself.
-  t.ker_toEnd_e_eq_sup (M := L)
+  have hker : finrank K (LinearMap.ker (ad K L e)) =
+      finrank K ((ad K L h).eigenspace 0) + finrank K ((ad K L h).eigenspace 1) :=
+    t.finrank_ker_toEnd_e_eq_finrank_eigenspace_zero_add_finrank_eigenspace_one (M := L)
+  rw [add_assoc, ← hker]
+  exact LinearMap.finrank_range_add_finrank_ker _
 
 end Field
 
