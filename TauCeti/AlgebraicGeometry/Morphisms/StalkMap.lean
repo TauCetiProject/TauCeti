@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 public import TauCeti.AlgebraicGeometry.AffineScheme
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
+public import TauCeti.AlgebraicGeometry.Restrict
 public import TauCeti.RingTheory.Etale.Locus
 public import TauCeti.RingTheory.QuasiFinite.Localization
 public import TauCeti.RingTheory.Unramified.LocalRing
@@ -108,19 +109,6 @@ theorem _root_.RingHom.RespectsIso.stalkMap_comp_isOpenImmersion_iff
   rw [← CommRingCat.hom_comp, ← Scheme.Hom.stalkMap_comp]
   -- The stalks at `(i ≫ f) x` and `f (i x)` agree definitionally, but not reducibly.
   exact Iff.rfl
-
-/-- Let `V ⊆ f⁻¹ U` with `U` and `V` affine, and let `P` be a morphism property attached to the
-ring-hom property `Q`. Then `P` holds for the restriction `V ⟶ U` of `f` iff `Q` holds for
-`f.appLE U V : Γ(Y, U) ⟶ Γ(X, V)`. -/
-theorem HasRingHomProperty.resLE_iff (P : MorphismProperty Scheme.{u})
-    {Q : ∀ {R S : Type u} [CommRing R] [CommRing S], (R →+* S) → Prop} [HasRingHomProperty P Q]
-    {f : X ⟶ Y} {U : Y.Opens} (hU : IsAffineOpen U) {V : X.Opens} (hV : IsAffineOpen V)
-    (hVU : V ≤ f ⁻¹ᵁ U) : P (f.resLE U V hVU) ↔ Q (f.appLE U V hVU).hom := by
-  have : IsAffine U := hU
-  have : IsAffine V := hV
-  rw [HasRingHomProperty.iff_of_isAffine (P := P)]
-  exact (HasRingHomProperty.isLocal_ringHomProperty P).respectsIso.arrow_mk_iso_iff
-    (arrowResLEAppIso f U V hVU)
 
 /-- Let `V ⊆ f⁻¹ U` with `U` and `V` affine, and let `P` be a morphism property attached to the
 ring-hom property `Q`. If `Q` holds for `Γ(Y, U) → Γ(X, V)_r`, then `P` holds for the restriction
