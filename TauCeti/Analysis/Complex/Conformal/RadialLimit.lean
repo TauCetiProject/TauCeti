@@ -8,8 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Area
 public import TauCeti.MeasureTheory.Integral.Circle.LIntegral
 import Mathlib.Algebra.Order.ToIntervalMod
-import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
+import TauCeti.Analysis.Complex.Conformal.LengthArea
 import TauCeti.MeasureTheory.Integral.DominatedIncrement
 
 /-!
@@ -29,16 +28,18 @@ image of finite length.
 
 ## The argument
 
-Fix `0 < a < R`. Along the radius at angle `θ` the derivative of `r ↦ f (circleMap c r θ)` has
-norm `‖deriv f (circleMap c r θ)‖`, so by the fundamental theorem of calculus the increments of `f`
-along the radius are dominated by the **radial length density** `r ↦ ‖deriv f (circleMap c r θ)‖ₑ`
-(`TauCeti.edist_comp_circleMap_le_lintegral_Ioc`). On `Ioo a R` the factor `r / a` is at least `1`,
-so integrating the radial lengths over one period of angles is bounded, through polar Fubini
-`TauCeti.lintegral_Ioc_lintegral_Ioi_circleMap_eq_lintegral`, by `a⁻¹` times the plane integral of
-`‖deriv f‖ₑ` over the disc (`TauCeti.lintegral_Ioc_lintegral_Ioo_enorm_deriv_circleMap_le`). If
-that is finite, almost every radius has image of finite length; along such a radius `f` is
-uniformly continuous (`Set.OrdConnected.uniformContinuousOn_of_edist_le_setLIntegral`), hence
-Cauchy as `r → R`, and `ℂ` is complete.
+Fix `0 < a < R`. Along the radius at angle `θ` the derivative of `r ↦ f (circleMap c r θ)` has norm
+`‖deriv f (circleMap c r θ)‖`, so by the fundamental theorem of calculus the increments of `f` along
+the radius are dominated by the **radial length density** `r ↦ ‖deriv f (circleMap c r θ)‖ₑ`
+(`TauCeti.edist_comp_circleMap_le_lintegral_Ioc`, the chord bound
+`TauCeti.edist_comp_le_lintegral_Ioc` of `Conformal/LengthArea.lean` along the ray). On `Ioo a R`
+the factor `r / a` is at least `1`, so integrating the radial lengths over one period of angles is
+bounded, through polar Fubini `TauCeti.lintegral_Ioc_lintegral_Ioi_circleMap_eq_lintegral`, by `a⁻¹`
+times the plane integral of `‖deriv f‖ₑ` over the disc
+(`TauCeti.lintegral_Ioc_lintegral_Ioo_enorm_deriv_circleMap_le`). If that is finite, almost every
+radius has image of finite length; along such a radius `f` is uniformly continuous
+(`Set.OrdConnected.uniformContinuousOn_of_edist_le_setLIntegral`), hence Cauchy as `r → R`, and `ℂ`
+is complete.
 
 ## Main results
 
@@ -73,31 +74,12 @@ theorem edist_comp_circleMap_le_lintegral_Ioc (hUo : IsOpen U) (hf : Differentia
       ∫⁻ r in Ioc a b, ‖deriv f (circleMap c r θ)‖ₑ := by
   have hray : ∀ r, HasDerivAt (fun r : ℝ => circleMap c r θ) (exp (θ * I)) r := fun r => by
     simpa [circleMap] using ((hasDerivAt_id r).ofReal_comp.mul_const (exp (θ * I))).const_add c
-  -- the ray has constant velocity `exp (θ * I)`, so it is `C¹`
+  -- the ray has constant velocity `exp (θ * I)`, of norm `1`, so it is `C¹`
   have hrayC : ContDiff ℝ 1 (fun r : ℝ => circleMap c r θ) := by
     refine contDiff_one_iff_deriv.2 ⟨fun r => (hray r).differentiableAt, ?_⟩
     rw [funext fun r => (hray r).deriv]
     exact continuous_const
-  have hcd : ContDiffOn ℝ 1 (fun r => f (circleMap c r θ)) (Icc a b) := fun r hr =>
-    (((hf.analyticAt (hUo.mem_nhds (hmemU r hr))).contDiffAt.restrict_scalars ℝ).comp r
-      hrayC.contDiffAt).contDiffWithinAt
-  have hderiv : ∀ r ∈ Ioc a b,
-      ‖deriv (fun r => f (circleMap c r θ)) r‖ₑ = ‖deriv f (circleMap c r θ)‖ₑ := by
-    intro r hr
-    have hmem := hmemU r (Ioc_subset_Icc_self hr)
-    have h : HasDerivAt (fun r => f (circleMap c r θ))
-        (exp (θ * I) • deriv f (circleMap c r θ)) r :=
-      ((hf _ hmem).differentiableAt (hUo.mem_nhds hmem)).hasDerivAt.scomp r (hray r)
-    rw [h.deriv, smul_eq_mul, enorm_mul, ← ofReal_norm, norm_exp_ofReal_mul_I, ENNReal.ofReal_one,
-      one_mul]
-  calc edist (f (circleMap c a θ)) (f (circleMap c b θ))
-      = ‖f (circleMap c b θ) - f (circleMap c a θ)‖ₑ := by rw [edist_comm, edist_eq_enorm_sub]
-    _ ≤ ∫⁻ r in Icc a b, ‖deriv (fun r => f (circleMap c r θ)) r‖ₑ :=
-        enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc hcd hab
-    _ = ∫⁻ r in Ioc a b, ‖deriv (fun r => f (circleMap c r θ)) r‖ₑ := by
-        rw [← restrict_Ioc_eq_restrict_Icc]
-    _ = ∫⁻ r in Ioc a b, ‖deriv f (circleMap c r θ)‖ₑ :=
-        setLIntegral_congr_fun measurableSet_Ioc hderiv
+  simpa [(hray _).deriv] using edist_comp_le_lintegral_Ioc hUo hf hrayC.contDiffOn hab hmemU
 
 /-- **The radial length–area inequality.** For `0 < a`, the lengths of the images of the radial
 segments from radius `a` to radius `R`, integrated over one period of angles, are at most `a⁻¹`
@@ -118,10 +100,10 @@ theorem lintegral_Ioc_lintegral_Ioo_enorm_deriv_circleMap_le (c : ℂ) {a : ℝ}
         refine setLIntegral_mono' measurableSet_Ioo fun r hr => ?_
         have hmem : circleMap c r θ ∈ ball c R :=
           sphere_subset_ball hr.2 (circleMap_mem_sphere c (ha.trans hr.1).le θ)
+        -- on `Ioo a R` the factor `a⁻¹ * r` is at least `1`
+        have h1 : (1 : ℝ) ≤ a⁻¹ * r := (one_le_div ha).2 hr.1.le |>.trans_eq (div_eq_inv_mul r a)
         rw [indicator_of_mem hmem, ← mul_assoc, ← ENNReal.ofReal_mul (inv_nonneg.2 ha.le)]
-        refine le_mul_of_one_le_left zero_le ?_
-        rw [ENNReal.one_le_ofReal, inv_mul_eq_div, one_le_div ha]
-        exact hr.1.le
+        exact le_mul_of_one_le_left zero_le (ENNReal.one_le_ofReal.2 h1)
     _ ≤ ∫⁻ r in Ioi 0, ENNReal.ofReal a⁻¹ * (ENNReal.ofReal r *
           (ball c R).indicator (fun z => ‖deriv f z‖ₑ) (circleMap c r θ)) :=
         lintegral_mono_set fun r hr => ha.trans hr.1
