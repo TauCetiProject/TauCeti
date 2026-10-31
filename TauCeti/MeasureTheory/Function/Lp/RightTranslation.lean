@@ -49,7 +49,7 @@ No σ-finiteness of `μ` and no countability of `G` is assumed.
 
 ## Main results
 
-* `MeasureTheory.eLpNorm_modularCharacter_rpow_smul_comp_inv`: the weighted inversion preserves
+* `TauCeti.eLpNorm_modularCharacter_rpow_smul_comp_inv`: the weighted inversion preserves
   the `Lᵖ` seminorm.
 * `MeasureTheory.Lp.coeFn_modularInversion`, `MeasureTheory.Lp.coeFn_rightTranslation`: the
   pointwise formulas, almost everywhere.
@@ -72,11 +72,11 @@ noncomputable section
 open Filter MeasureTheory MeasureTheory.Measure TauCeti
 open scoped ENNReal NNReal
 
-namespace MeasureTheory
-
 variable {G E : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] {μ : Measure G}
   [μ.IsHaarMeasure] [μ.Regular] [NormedAddCommGroup E] [NormedSpace ℝ E] {p : ℝ≥0∞}
+
+namespace MeasureTheory
 
 /-- The weighted inversion `x ↦ c(x)^r • f x⁻¹` of an almost everywhere strongly measurable
 function is almost everywhere strongly measurable. -/
@@ -85,6 +85,10 @@ theorem AEStronglyMeasurable.modularCharacter_rpow_smul_comp_inv {f : G → E}
     AEStronglyMeasurable (fun x => (modularCharacter x : ℝ) ^ r • f x⁻¹) μ :=
   (continuous_modularCharacter.measurable.coe_nnreal_real.pow_const r).aestronglyMeasurable.smul
     (hf.comp_quasiMeasurePreserving (quasiMeasurePreserving_inv_of_regular μ))
+
+end MeasureTheory
+
+namespace TauCeti
 
 /-- The weighted inversion `x ↦ c(x)^(1/p) • f x⁻¹` preserves the `Lᵖ` seminorm of an almost
 everywhere strongly measurable function, for a regular Haar measure. -/
@@ -120,6 +124,10 @@ theorem eLpNorm_modularCharacter_rpow_smul_comp_inv {f : G → E}
   simp only [inv_inv, ← mul_assoc, ← ENNReal.coe_mul, ← map_mul, mul_inv_cancel, map_one,
     ENNReal.coe_one, one_mul] at h
   simp_rw [hweight, h]
+
+end TauCeti
+
+namespace MeasureTheory
 
 /-- The weighted inversion `x ↦ c(x)^(1/p) • f x⁻¹` of an `Lᵖ` function is in `Lᵖ`, for a regular
 Haar measure. -/
