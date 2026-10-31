@@ -846,11 +846,21 @@ coordinate relative to `ζ` raised to the inverse of `zHatUnit hζ hζ'`. -/
 theorem continuousMulEquivZHat_apply_eq_zpowHat (x : PrimeToPTateModule 1 R) :
     continuousMulEquivZHat.{u} ζ' hζ' x =
       continuousMulEquivZHat.{u} ζ hζ x ^ᶻ ((zHatUnit.{u} hζ hζ')⁻¹ : (Additive zHat.{u})ˣ) := by
+  -- Normalize the `Additive` conversions: the new coordinate is the old one times `u⁻¹`.
+  have hc : Additive.ofMul (continuousMulEquivZHat.{u} ζ hζ x ^ᶻ
+      ((zHatUnit.{u} hζ hζ')⁻¹ : (Additive zHat.{u})ˣ)) =
+        Additive.ofMul (continuousMulEquivZHat ζ hζ x) * zHatUnit hζ' hζ := by
+    rw [← inv_zHatUnit]
+    exact congrArg Additive.ofMul (toMul_zpowHat _ _)
   refine Additive.ofMul.injective (zpowHat_right_injective hζ' ?_)
-  beta_reduce
-  rw [zpowHat_ofMul_continuousMulEquivZHat, ← toMul_ofMul (continuousMulEquivZHat ζ hζ x),
-    toMul_zpowHat, ofMul_toMul, inv_zHatUnit, mul_comm, zpowHat_mul, zpowHat_zHatUnit,
-    zpowHat_ofMul_continuousMulEquivZHat]
+  calc ζ' ^ᶻ Additive.ofMul (continuousMulEquivZHat ζ' hζ' x)
+      = x := zpowHat_ofMul_continuousMulEquivZHat hζ' x
+    _ = (ζ' ^ᶻ (zHatUnit hζ' hζ : Additive zHat.{u})) ^ᶻ
+          Additive.ofMul (continuousMulEquivZHat ζ hζ x) := by
+      rw [zpowHat_zHatUnit, zpowHat_ofMul_continuousMulEquivZHat]
+    _ = ζ' ^ᶻ Additive.ofMul (continuousMulEquivZHat ζ hζ x ^ᶻ
+          ((zHatUnit.{u} hζ hζ')⁻¹ : (Additive zHat.{u})ˣ)) := by
+      rw [hc, mul_comm, zpowHat_mul]
 
 end ZHatUnit
 
