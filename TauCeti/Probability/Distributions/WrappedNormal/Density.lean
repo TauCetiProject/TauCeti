@@ -10,6 +10,7 @@ public import TauCeti.Probability.Density
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 public import TauCeti.Analysis.SpecialFunctions.Gaussian.LatticeSum
 import TauCeti.Analysis.SpecialFunctions.Gaussian.PoissonSummation
+import TauCeti.Probability.Distributions.Gaussian.Periodization
 import TauCeti.MeasureTheory.Measure.AddCircle
 
 /-!
@@ -91,26 +92,6 @@ theorem wrappedNormalPDFReal_zero_var (m θ : AddCircle (2 * π)) :
   induction θ using QuotientAddGroup.induction_on with | H x => ?_
   simp [wrappedNormalPDFReal_coe, gaussianPDFReal_zero_var]
 
-/-- The periodized centred Gaussian density, written as a Gaussian lattice sum. -/
-private theorem hasSum_gaussianPDFReal_add_zsmul {v : ℝ≥0} (hv : v ≠ 0) (y : ℝ) :
-    HasSum (fun k : ℤ ↦ gaussianPDFReal 0 v (y + k • (2 * π)))
-      ((√(2 * π * v))⁻¹ * gaussianLatticeSum (-y / (2 * π)) (√(v : ℝ) / (2 * π))) := by
-  have hv' : (0 : ℝ) < v := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hv)
-  have hs : √(v : ℝ) / (2 * π) ≠ 0 := div_ne_zero (sqrt_ne_zero'.mpr hv') two_pi_pos.ne'
-  refine ((hasSum_gaussianLatticeSum _ hs).mul_left (√(2 * π * v))⁻¹).congr_fun fun k ↦ ?_
-  rw [gaussianPDFReal]
-  congr 2
-  rw [div_pow, sq_sqrt hv'.le, zsmul_eq_mul]
-  field_simp
-  ring
-
-private theorem summable_gaussianPDFReal_add (a : ℝ) (v : ℝ≥0) (x : ℝ) :
-    Summable fun k : ℤ ↦ gaussianPDFReal a v (x + 2 * π * k) := by
-  rcases eq_or_ne v 0 with rfl | hv
-  · simp [gaussianPDFReal_zero_var]
-  refine (hasSum_gaussianPDFReal_add_zsmul hv (x - a)).summable.congr fun k ↦ ?_
-  rw [zsmul_eq_mul, sub_add_eq_add_sub, gaussianPDFReal_sub, zero_add, mul_comm (k : ℝ)]
-
 /-- In real representatives, the wrapped normal density is a rescaled Gaussian lattice sum. This
 holds at every variance, both sides vanishing at variance zero. -/
 theorem wrappedNormalPDFReal_coe_eq_gaussianLatticeSum (a : ℝ) (v : ℝ≥0) (x : ℝ) :
@@ -119,7 +100,7 @@ theorem wrappedNormalPDFReal_coe_eq_gaussianLatticeSum (a : ℝ) (v : ℝ≥0) (
   rcases eq_or_ne v 0 with rfl | hv
   · simp
   rw [wrappedNormalPDFReal_def, ← AddCircle.coe_sub, AddCircle.automorphize_coe,
-    (hasSum_gaussianPDFReal_add_zsmul hv (x - a)).tsum_eq, neg_sub,
+    (hasSum_gaussianPDFReal_add_zsmul 0 hv two_pi_pos.ne' (x - a)).tsum_eq, zero_sub, neg_sub,
     sqrt_mul two_pi_pos.le, ← mul_assoc, mul_inv, ← mul_assoc]
   congr 1
   rw [← div_eq_mul_inv (2 * π), Real.div_sqrt, div_eq_mul_inv]
@@ -218,7 +199,8 @@ theorem wrappedNormalMeasure_eq_withDensity (m : AddCircle (2 * π)) {v : ℝ≥
   rw [Pi.smul_apply, smul_eq_mul, AddCircle.automorphize_coe, wrappedNormalPDF_apply,
     wrappedNormalPDFReal_coe, ENNReal.ofReal_mul two_pi_pos.le,
     ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ gaussianPDFReal_nonneg _ _ _)
-      (summable_gaussianPDFReal_add a v x)]
+      ((summable_gaussianPDFReal_add_zsmul a v two_pi_pos.ne' x).congr fun k ↦ by
+        rw [zsmul_eq_mul, mul_comm (k : ℝ)])]
   refine congrArg _ (tsum_congr fun k ↦ ?_)
   rw [gaussianPDF, zsmul_eq_mul, mul_comm (k : ℝ)]
 

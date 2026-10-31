@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircle
 public import TauCeti.MeasureTheory.Measure.WithDensity
+public import TauCeti.Topology.Algebra.InfiniteSum.Automorphize
 
 /-!
 # Densities on the additive circle
@@ -82,25 +83,22 @@ section Periodization
 
 variable {M : Type*} [TopologicalSpace M] [AddCommMonoid M]
 
-omit hT in
--- `automorphize` is a `Quotient.lift`, so at a real point it is the orbit sum by definition.
-private theorem automorphize_coe_eq_tsum_vadd (f : ℝ → M) (x : ℝ) :
-    QuotientAddGroup.automorphize f (x : AddCircle T) =
-      ∑' γ : (AddSubgroup.zmultiples T).op, f (γ +ᵥ x) :=
-  rfl
-
 /-- The periodization of a function on `ℝ`, evaluated at a real point, is the sum of the
 function over the translates of that point by multiples of the period. -/
 theorem automorphize_coe (f : ℝ → M) (x : ℝ) :
     QuotientAddGroup.automorphize f (x : AddCircle T) = ∑' k : ℤ, f (x + k • T) := by
   let e : ℤ ≃ (AddSubgroup.zmultiples T).op :=
     (AddSubgroup.zmultiplesEquivInt hT.out.ne').symm.toEquiv.trans (AddSubgroup.equivOp _)
-  rw [automorphize_coe_eq_tsum_vadd, ← e.tsum_eq]
+  rw [QuotientAddGroup.automorphize_mk, ← e.tsum_eq]
   refine tsum_congr fun k ↦ congrArg f ?_
   simp [e, AddSubgroup.vadd_def, AddSubgroup.coe_zmultiplesEquivInt_symm_apply]
 
 /-- Reducing a real law with density `f` modulo `T` gives the circle law whose density
-relative to circle volume is the periodization of `f`. -/
+relative to circle volume is the periodization of `f`.
+
+The proof is the unfolding argument of `QuotientAddGroup.integral_eq_integral_automorphize`,
+carried out for lower integrals of `ℝ≥0∞`-valued functions so that no integrability hypothesis
+is needed. -/
 theorem map_coe_withDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
     (volume.withDensity f).map ((↑) : ℝ → AddCircle T) =
       volume.withDensity (QuotientAddGroup.automorphize f) := by
@@ -119,7 +117,7 @@ theorem map_coe_withDensity {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
   have hx (γ : (AddSubgroup.zmultiples T).op) : ((γ +ᵥ x : ℝ) : AddCircle T) = x :=
     QuotientAddGroup.mk_add_of_mem x γ.2
   by_cases h : (x : AddCircle T) ∈ A
-  · simp [indicator, hx, h, automorphize_coe_eq_tsum_vadd]
+  · simp [indicator, hx, h, QuotientAddGroup.automorphize_mk]
   · simp [indicator, hx, h]
 
 end Periodization
