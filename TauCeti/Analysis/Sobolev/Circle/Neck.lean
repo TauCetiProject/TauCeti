@@ -43,8 +43,8 @@ node `xy = 0`. This is the linear model of the Hardy decomposition at a node.
 ## Main statements
 
 * `TauCeti.CircleSobolev.norm_neckTransfer_apply_le`: `‖neckTransfer a u‖ ≤ ‖a‖ ‖u‖`.
-* `TauCeti.CircleSobolev.toContinuousMap_neckTransfer`: for `s > 1/2` the continuous function of
-  `neckTransfer a u` is `x ↦ diskFunction u (a / x) - u₀`.
+* `TauCeti.CircleSobolev.toContinuousMap_neckTransfer`: for `s > 1/2` and `‖a‖ ≤ 1` the continuous
+  function of `neckTransfer a u` is `x ↦ diskFunction u (a / x) - u₀`.
 * `TauCeti.CircleSobolev.analyticOnNhd_neckTransfer`: `a ↦ neckTransfer a` is analytic on the open
   unit disc, as a map to the bounded operators on `H^s`.
 * `TauCeti.CircleSobolev.hasDerivAt_neckTransfer_zero`: its derivative at `0` is `u ↦ u₁ e^{-iθ}`.
@@ -76,50 +76,16 @@ namespace CircleSobolev
 
 variable {s t : ℝ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {a : ℂ}
 
-/-! ### Coefficient sequences reflected across frequency zero -/
-
-/-- The squared weighted norms of the reflected coefficients sum to the squared norm. -/
-private theorem hasSum_sq_weight_mul_norm_coeff_neg (u : CircleSobolev s E) :
-    HasSum (fun n ↦ (weight s n * ‖u.coeff (-n)‖) ^ 2) (‖u‖ ^ 2) := by
-  have h := (Equiv.neg ℤ).hasSum_iff.2 (hasSum_sq_weight_mul_norm_coeff u)
-  simpa only [Function.comp_def, Equiv.neg_apply, weight_neg_right] using h
-
-private theorem weight_mul_norm_le_of_le_neg {u : CircleSobolev s E} {c : ℤ → E} {C : ℝ}
-    (h : ∀ n, ‖c n‖ ≤ C * ‖u.coeff (-n)‖) (n : ℤ) :
-    weight s n * ‖c n‖ ≤ C * (weight s n * ‖u.coeff (-n)‖) := by
-  rw [mul_left_comm]
-  exact mul_le_mul_of_nonneg_left (h n) (weight_nonneg s n)
-
-/-- A sequence bounded by a multiple of the reflected coefficients of an element of `H^s` is the
-coefficient sequence of an element of `H^s`. -/
-private theorem memℓp_of_forall_le_neg {u : CircleSobolev s E} {c : ℤ → E} {C : ℝ}
-    (h : ∀ n, ‖c n‖ ≤ C * ‖u.coeff (-n)‖) : Memℓp (fun n ↦ weight s n • c n) 2 := by
-  rw [memℓp_weight_smul_iff]
-  refine ((hasSum_sq_weight_mul_norm_coeff_neg u).summable.mul_left (C ^ 2)).of_nonneg_of_le
-    (fun n ↦ sq_nonneg _) fun n ↦ ?_
-  rw [← mul_pow]
-  exact pow_le_pow_left₀ (mul_nonneg (weight_nonneg s n) (norm_nonneg _))
-    (weight_mul_norm_le_of_le_neg h n) 2
-
-private theorem norm_le_of_forall_le_neg {u v : CircleSobolev s E} {C : ℝ} (hC : 0 ≤ C)
-    (h : ∀ n, ‖v.coeff n‖ ≤ C * ‖u.coeff (-n)‖) : ‖v‖ ≤ C * ‖u‖ := by
-  have hle : ‖v‖ ^ 2 ≤ (C * ‖u‖) ^ 2 := by
-    rw [mul_pow]
-    refine hasSum_le (fun n ↦ ?_) (hasSum_sq_weight_mul_norm_coeff v)
-      ((hasSum_sq_weight_mul_norm_coeff_neg u).mul_left (C ^ 2))
-    rw [← mul_pow]
-    exact pow_le_pow_left₀ (mul_nonneg (weight_nonneg s n) (norm_nonneg _))
-      (weight_mul_norm_le_of_le_neg h n) 2
-  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 hle
-
 /-! ### The neck transfer -/
 
 /-- The coefficient sequence of the neck transfer. -/
 private def neckCoeff (a : ℂ) (u : CircleSobolev s E) (n : ℤ) : E :=
   if n < 0 then a ^ n.natAbs • u.coeff (-n) else 0
 
-private theorem norm_neckCoeff_le (ha : ‖a‖ ≤ 1) (u : CircleSobolev s E) (n : ℤ) :
-    ‖neckCoeff a u n‖ ≤ ‖a‖ * ‖u.coeff (-n)‖ := by
+private theorem weight_mul_norm_neckCoeff_le (ha : ‖a‖ ≤ 1) (u : CircleSobolev s E) (n : ℤ) :
+    weight s n * ‖neckCoeff a u n‖ ≤ ‖a‖ * (weight s n * ‖(reflect u).coeff n‖) := by
+  rw [mul_left_comm, coeff_reflect]
+  refine mul_le_mul_of_nonneg_left ?_ (weight_nonneg s n)
   unfold neckCoeff
   split_ifs with hn
   · rw [norm_smul, norm_pow]
@@ -130,7 +96,7 @@ private theorem norm_neckCoeff_le (ha : ‖a‖ ≤ 1) (u : CircleSobolev s E) (
 
 /-- The neck transfer of `u`, as an element of `H^s`, for `‖a‖ ≤ 1`. -/
 private def neckTransferFun (ha : ‖a‖ ≤ 1) (u : CircleSobolev s E) : CircleSobolev s E :=
-  ⟨neckCoeff a u, memℓp_of_forall_le_neg (norm_neckCoeff_le ha u)⟩
+  ⟨neckCoeff a u, memℓp_of_forall_le (weight_mul_norm_neckCoeff_le ha u)⟩
 
 /-- The **neck transfer** of the plumbing `xy = a`: the operator on `H^s` sending `u` to
 `∑_{n > 0} aⁿ uₙ e^{-inθ}`. On a nonnegative-frequency `u`, the boundary value of a holomorphic
@@ -147,7 +113,8 @@ def neckTransfer (a : ℂ) : CircleSobolev s E →L[ℂ] CircleSobolev s E :=
         map_smul' c u := CircleSobolev.ext <| funext fun n ↦ by
           simp only [neckTransferFun, neckCoeff, coeff_smul, Pi.smul_apply, RingHom.id_apply]
           split_ifs <;> simp [smul_comm c] }
-      ‖a‖ fun u ↦ norm_le_of_forall_le_neg (norm_nonneg a) (norm_neckCoeff_le ha u)
+      ‖a‖ fun u ↦ (norm_le_of_forall_le (b := neckTransferFun ha u) (norm_nonneg a)
+        (weight_mul_norm_neckCoeff_le ha u)).trans_eq (by rw [LinearIsometryEquiv.norm_map])
   else 0
 
 /-- The Fourier coefficients of the neck transfer: the `(-n)`-th one, `n > 0`, is `aⁿ uₙ`, and the
@@ -183,14 +150,18 @@ theorem neckTransfer_zero : (neckTransfer 0 : CircleSobolev s E →L[ℂ] Circle
     · simp [zero_pow (Int.natAbs_ne_zero.2 hn.ne)]
     · simp
 
+/-- The neck transfer has norm at most `‖a‖`, for every `a` (with the junk value `0` when
+`‖a‖ > 1`). -/
 theorem norm_neckTransfer_apply_le (a : ℂ) (u : CircleSobolev s E) :
     ‖neckTransfer a u‖ ≤ ‖a‖ * ‖u‖ := by
   by_cases ha : ‖a‖ ≤ 1
-  · exact norm_le_of_forall_le_neg (norm_nonneg a) fun n ↦ by
-      simpa only [coeff_neckTransfer ha, neckCoeff] using norm_neckCoeff_le ha u n
+  · rw [← LinearIsometryEquiv.norm_map reflect u]
+    exact norm_le_of_forall_le (norm_nonneg a) fun n ↦ by
+      simpa only [coeff_neckTransfer ha, neckCoeff] using weight_mul_norm_neckCoeff_le ha u n
   · simp only [neckTransfer, ha, dite_false, zero_apply, norm_zero]
     positivity
 
+/-- The operator norm of the neck transfer is at most `‖a‖`. -/
 theorem opNorm_neckTransfer_le (a : ℂ) :
     ‖(neckTransfer a : CircleSobolev s E →L[ℂ] CircleSobolev s E)‖ ≤ ‖a‖ :=
   ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg a) (norm_neckTransfer_apply_le a)
@@ -232,6 +203,7 @@ theorem neckTransfer_single_natCast (ha : ‖a‖ ≤ 1) {n : ℕ} (hn : n ≠ 0
     · rw [Pi.single_eq_of_ne (by omega), smul_zero]
     · rfl
 
+/-- The neck transfer commutes with the inclusion `H^s ⊆ H^t`. -/
 theorem inclusion_neckTransfer (h : t ≤ s) (a : ℂ) (u : CircleSobolev s E) :
     inclusion h (neckTransfer a u) = neckTransfer a (inclusion h u) := by
   by_cases ha : ‖a‖ ≤ 1
@@ -327,13 +299,11 @@ private theorem hasSum_neckMode {y : ℂ} (hy : ‖y‖ < 1) :
     rw [ite_eq_right (by omega), smul_zero]
   convert _root_.hasSum_single (-k).toNat hf using 1
   rw [add_apply, coeff_add, Pi.add_apply, coeff_neckMode_apply, coeff_neckTransfer hy.le]
-  rcases lt_trichotomy k 0 with hk | rfl | hk
-  · rw [ite_eq_left hk, ite_eq_right (by omega : k ≠ -((0 : ℕ) : ℤ)), add_zero,
-      ite_eq_left (by omega : k = -(((-k).toNat : ℕ) : ℤ))]
-    congr 2 <;> omega
+  obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg k <;> rcases eq_or_ne m 0 with rfl | hm
   · simp
-  · rw [ite_eq_right (by omega : ¬k < 0), ite_eq_right (by omega : k ≠ -((0 : ℕ) : ℤ)), add_zero,
-      ite_eq_right (by omega : k ≠ -(((-k).toNat : ℕ) : ℤ)), smul_zero]
+  · simp [hm]
+  · simp
+  · simp [hm]
 
 private theorem hasFPowerSeriesOnBall_neckTransfer_add :
     HasFPowerSeriesOnBall
@@ -393,11 +363,13 @@ def neckGraph (a : ℂ) : Submodule ℂ (CircleSobolev s E × CircleSobolev s E)
     simp only [Prod.smul_fst, Prod.smul_snd, coeff_smul, Pi.smul_apply, (hp n hn).1, (hp n hn).2,
       smul_neg, smul_comm c, and_self]
 
+/-- Membership in the neck graph, in terms of the Fourier coefficients. -/
 theorem mem_neckGraph {p : CircleSobolev s E × CircleSobolev s E} :
     p ∈ neckGraph s E a ↔ ∀ n : ℕ, n ≠ 0 →
       p.1.coeff (-n) = -(a ^ n • p.2.coeff n) ∧ p.2.coeff (-n) = -(a ^ n • p.1.coeff n) :=
   Iff.rfl
 
+/-- The neck graph is closed in `H^s × H^s`. -/
 theorem isClosed_neckGraph (a : ℂ) :
     IsClosed (neckGraph s E a : Set (CircleSobolev s E × CircleSobolev s E)) := by
   have hc (m : ℤ) : Continuous fun u : CircleSobolev s E ↦ u.coeff m :=
@@ -411,6 +383,19 @@ theorem isClosed_neckGraph (a : ℂ) :
   exact isClosed_iInter fun n ↦ isClosed_iInter fun _ ↦
     (isClosed_eq ((hc _).comp continuous_fst) (((hc _).comp continuous_snd).const_smul _).neg).inter
       (isClosed_eq ((hc _).comp continuous_snd) (((hc _).comp continuous_fst).const_smul _).neg)
+
+private theorem indicator_Ici_add_indicator_Iio (u : CircleSobolev s E) :
+    indicator (Set.Ici 0) u + indicator (Set.Iio 0) u = u := by
+  rw [← Set.compl_Ici]
+  exact indicator_add_indicator_compl _ u
+
+private theorem indicator_Iio_eq_zero_of_mem_supported {u : CircleSobolev s E}
+    (hu : u ∈ supported s E (Set.Ici 0)) : indicator (Set.Iio 0) u = 0 :=
+  indicator_eq_zero_iff.2 (by rwa [Set.compl_Iio])
+
+private theorem indicator_Ici_eq_zero_of_mem_supported {u : CircleSobolev s E}
+    (hu : u ∈ supported s E (Set.Iio 0)) : indicator (Set.Ici 0) u = 0 :=
+  indicator_eq_zero_iff.2 (by rwa [Set.compl_Ici])
 
 private theorem indicator_Iio_eq_neg_neckTransfer_iff (ha : ‖a‖ ≤ 1) (F G : CircleSobolev s E) :
     indicator (Set.Iio 0) F = -neckTransfer a G ↔
@@ -453,16 +438,14 @@ graph. -/
 theorem sub_neckTransfer_mem_neckGraph (ha : ‖a‖ ≤ 1) {F G : CircleSobolev s E}
     (hF : F ∈ supported s E (Set.Ici 0)) (hG : G ∈ supported s E (Set.Ici 0)) :
     (F - neckTransfer a G, G - neckTransfer a F) ∈ neckGraph s E a := by
-  have h₀ {u : CircleSobolev s E} (hu : u ∈ supported s E (Set.Ici 0)) :
-      indicator (Set.Iio 0) u = 0 :=
-    indicator_eq_zero_iff.2 (by rwa [Set.compl_Iio])
   have h₁ (u : CircleSobolev s E) : indicator (Set.Iio 0) (neckTransfer a u) = neckTransfer a u :=
     indicator_eq_self_iff.2 (neckTransfer_mem_supported a u)
   have h₂ (u : CircleSobolev s E) : neckTransfer a (neckTransfer a u) = 0 :=
     neckTransfer_eq_zero_of_mem_supported a
       (supported_mono Set.Iio_subset_Iic_self (neckTransfer_mem_supported a u))
   rw [mem_neckGraph_iff ha]
-  simp only [map_sub, h₀ hF, h₀ hG, h₁, h₂, zero_sub, sub_zero, and_self]
+  simp only [map_sub, indicator_Iio_eq_zero_of_mem_supported hF,
+    indicator_Iio_eq_zero_of_mem_supported hG, h₁, h₂, zero_sub, sub_zero, and_self]
 
 /-- **Uniqueness in the neck graph.** For `‖a‖ ≤ 1`, an element of the neck graph is determined by
 its nonnegative-frequency parts. -/
@@ -471,27 +454,22 @@ theorem eq_of_mem_neckGraph (ha : ‖a‖ ≤ 1) {p : CircleSobolev s E × Circl
     p = (indicator (Set.Ici 0) p.1 - neckTransfer a p.2,
       indicator (Set.Ici 0) p.2 - neckTransfer a p.1) := by
   obtain ⟨h₁, h₂⟩ := (mem_neckGraph_iff ha).1 hp
-  have h (u : CircleSobolev s E) : indicator (Set.Ici 0) u + indicator (Set.Iio 0) u = u := by
-    rw [← Set.compl_Ici]
-    exact indicator_add_indicator_compl _ u
   refine Prod.ext ?_ ?_ <;> dsimp only
-  · rw [sub_eq_add_neg, ← h₁, h p.1]
-  · rw [sub_eq_add_neg, ← h₂, h p.2]
+  · rw [sub_eq_add_neg, ← h₁, indicator_Ici_add_indicator_Iio p.1]
+  · rw [sub_eq_add_neg, ← h₂, indicator_Ici_add_indicator_Iio p.2]
 
 /-- **Transversality of the neck graph.** For `‖a‖ ≤ 1` the neck graph is a complement of the
 pair of negative Laurent subspaces. -/
 theorem isCompl_neckGraph (ha : ‖a‖ ≤ 1) :
     IsCompl (neckGraph s E a) ((supported s E (Set.Iio 0)).prod (supported s E (Set.Iio 0))) := by
-  have hIci {u : CircleSobolev s E} (hu : u ∈ supported s E (Set.Iio 0)) :
-      indicator (Set.Ici 0) u = 0 :=
-    indicator_eq_zero_iff.2 (by rwa [Set.compl_Ici])
   have hT {u : CircleSobolev s E} (hu : u ∈ supported s E (Set.Iio 0)) : neckTransfer a u = 0 :=
     neckTransfer_eq_zero_of_mem_supported a (supported_mono Set.Iio_subset_Iic_self hu)
   constructor
   · rw [Submodule.disjoint_def]
     rintro ⟨F, G⟩ hp ⟨hF, hG⟩
     have h := eq_of_mem_neckGraph ha hp
-    simp only [hIci hF, hIci hG, hT hF, hT hG, sub_zero] at h
+    simp only [indicator_Ici_eq_zero_of_mem_supported hF, indicator_Ici_eq_zero_of_mem_supported hG,
+      hT hF, hT hG, sub_zero] at h
     exact h
   · rw [Submodule.codisjoint_iff_exists_add_eq]
     rintro ⟨F, G⟩
@@ -504,12 +482,9 @@ theorem isCompl_neckGraph (ha : ‖a‖ ≤ 1) :
         (indicator_mem_supported (Set.Ici 0) G)
     · exact ⟨add_mem (indicator_mem_supported _ _) (neckTransfer_mem_supported a G),
         add_mem (indicator_mem_supported _ _) (neckTransfer_mem_supported a F)⟩
-    · have h (u : CircleSobolev s E) : indicator (Set.Ici 0) u + indicator (Set.Iio 0) u = u := by
-        rw [← Set.compl_Ici]
-        exact indicator_add_indicator_compl _ u
-      refine Prod.ext ?_ ?_
-      · simp only [Prod.fst_add, sub_add_add_cancel, h]
-      · simp only [Prod.snd_add, sub_add_add_cancel, h]
+    · refine Prod.ext ?_ ?_
+      · simp only [Prod.fst_add, sub_add_add_cancel, indicator_Ici_add_indicator_Iio]
+      · simp only [Prod.snd_add, sub_add_add_cancel, indicator_Ici_add_indicator_Iio]
 
 section Boundary
 
