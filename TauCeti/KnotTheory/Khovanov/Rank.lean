@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Polynomial.Laurent.Coeff
 public import TauCeti.KnotTheory.Khovanov.CircleTensor
 
 /-!
@@ -20,8 +21,8 @@ direct sum, over the states `s` of cochain degree `i`, of the degree-`j` pieces 
 circle tensors `V(Circle s)⟨|S| + n₊ - 2 n₋⟩`, that is, of the degree `j - (|S| + n₊ - 2 n₋)`
 pieces of `V(Circle s)`. The graded Euler characteristic of these chain groups is therefore the
 signed sum of the ranks of those pieces. `TauCeti.OrientedPDCode.coeff_enhancedStateSum` shows that
-this signed sum is the coefficient of `q ^ j` in the enhanced state sum, which is `(q + q⁻¹)` times
-the Jones polynomial at `t ^ (1/2) = -q`
+this signed sum is the coefficient of `q ^ j` in the enhanced state sum, which for a nonempty
+diagram is `(q + q⁻¹)` times the Jones polynomial at `t ^ (1/2) = -q`
 (`TauCeti.OrientedPDCode.enhancedStateSum_eq_mul_eval₂_jonesPolynomial`). This is the chain-level
 half of the identification of the graded Euler characteristic of Khovanov homology with the Jones
 polynomial; Euler–Poincaré for the Khovanov complex supplies the other half.
@@ -90,16 +91,10 @@ theorem coeff_enhancedStateSum (D : OrientedPDCode n) (R : Type*) [CommRing R] [
     D.enhancedStateSum.coeff j = ∑ s : Fin n → Bool, (D.stateCochainDegree s).negOnePow •
       (Module.finrank R ((Khovanov.circleQuantumGrading R (D.toPDCode.ResolvedCircle s)).piece
         (j - D.stateQuantumShift s)) : ℤ) := by
-  classical
-  rw [enhancedStateSum_def, Fintype.sum_sigma, AddMonoidAlgebra.coeff_sum,
-    Finset.sum_apply']
+  rw [enhancedStateSum_eq_sum, AddMonoidAlgebra.coeff_sum, Finset.sum_apply']
   refine Finset.sum_congr rfl fun s _ ↦ ?_
-  rw [Khovanov.finrank_circleQuantumGrading_piece, AddMonoidAlgebra.coeff_sum,
-    Finset.sum_apply', Finset.natCast_card_filter, Finset.smul_sum]
-  refine Finset.sum_congr rfl fun l _ ↦ ?_
-  rw [AddMonoidAlgebra.coeff_smul_apply, T, AddMonoidAlgebra.coeff_single,
-    Finsupp.single_apply, enhancedQuantumDegree_def]
-  simp only [eq_sub_iff_add_eq']
+  rw [smul_mul_assoc, AddMonoidAlgebra.coeff_smul_apply, coeff_T_mul,
+    ← PDCode.card_resolvedCircle, Khovanov.coeff_pow_eq_finrank_circleQuantumGrading_piece R]
 
 end OrientedPDCode
 
