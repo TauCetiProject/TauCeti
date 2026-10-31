@@ -39,8 +39,8 @@ quotient of the base-changed power series.
 * `TauCeti.Huber.TensorDatum.ringOfDefinition_map`, `TauCeti.Huber.TensorDatum.idealImage_map`:
   the ring of definition and the neighbourhoods of zero of the image datum are the images of
   those of the original datum.
-* `TauCeti.Huber.isOpenQuotientMap_map_tensorTopology`: `φ ⊗ ψ` is an open quotient map for the
-  tensor topologies.
+* `TauCeti.Huber.isOpenQuotientMap_mapRingHom_tensorTopology`: `φ ⊗ ψ` is an open quotient map
+  for the tensor topologies.
 * `TauCeti.Huber.CompletedTensor.isOpenQuotientMap_map`: the induced map of completed tensor
   rings is an open quotient map.
 
@@ -149,8 +149,8 @@ theorem idealImage_map (n : ℕ) :
     have hr : (r : B' ⊗[A] C') ∈ D.ringOfDefinition.map f := hF ▸ r.2
     obtain ⟨r₀, hr₀, hr⟩ := Subring.mem_map.mp hr
     refine ⟨_, D.mem_idealImage.mpr ⟨⟨r₀, hr₀⟩ * w, Ideal.mul_mem_left _ _ hw, rfl⟩, ?_⟩
-    change f (r₀ * w) = r * y
-    rw [map_mul, hr]
+    rw [RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass, Subring.coe_mul, Subring.coe_mul,
+      map_mul, hr]
     exact congrArg _ hzy
   · -- `f` maps `F` into `F'` and the image of `Iⁿ` into the image of `Iⁿ`.
     rintro _ ⟨x, hx, rfl⟩
