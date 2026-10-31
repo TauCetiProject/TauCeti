@@ -35,6 +35,14 @@ The moments and the resolvent transform of the Hermitian spectral measure are no
 These identities turn the moment method and the resolvent method for global laws into
 computations with traces of matrices.
 
+If `A.charpoly = X ^ k * B.charpoly`, the spectral measure of `A` is the mixture of that of `B`
+and of the Dirac mass at `0`, with weights proportional to the size of `B` and to `k`. For the
+Gram matrices of a `card m × card n` matrix `A` with `card m ≤ card n` this is the exact
+zero-mass correction `L_{AᴴA} = (card m / card n) L_{AAᴴ} + (1 - card m / card n) δ₀`, and with
+`k = card n - card m` the resolvent transforms satisfy the companion identity
+`m_{L_{AᴴA}}(z) = (card m / card n) m_{L_{AAᴴ}}(z) - (k / card n) z⁻¹`. These relate the
+spectral measures of a sample covariance matrix `X * Xᴴ / n` and of its companion `Xᴴ * X / n`.
+
 ## Main definitions
 
 * `Matrix.spectralMeasure A hA` — the empirical spectral measure of a Hermitian matrix;
@@ -56,7 +64,13 @@ computations with traces of matrices.
 * `Matrix.integral_pow_spectralMeasure` — the `k`-th moment of the spectral measure is the
   normalized trace of `A ^ k`;
 * `Matrix.resolventTransform_spectralMeasure` — the resolvent transform of the spectral measure is
-  the normalized trace of the resolvent `(A - z • 1)⁻¹`.
+  the normalized trace of the resolvent `(A - z • 1)⁻¹`;
+* `Matrix.spectralMeasure_toMeasure_of_charpoly_eq_X_pow_mul`,
+  `Matrix.integral_spectralMeasure_of_charpoly_eq_X_pow_mul` and
+  `Matrix.resolventTransform_spectralMeasure_of_charpoly_eq_X_pow_mul` — the spectral measure, its
+  integrals and its resolvent transform when `A.charpoly = X ^ k * B.charpoly`;
+* `Matrix.spectralMeasure_conjTranspose_mul_self`, `Matrix.spectralMeasure_mul_conjTranspose_self`
+  — the zero-mass correction between the spectral measures of `Aᴴ * A` and `A * Aᴴ`.
 
 ## References
 
@@ -232,5 +246,85 @@ theorem resolventTransform_spectralMeasure (A : Matrix n n ℂ) (hA : A.IsHermit
   rw [resolventTransform_apply, integral_spectralMeasure, hA.trace_inv_sub_smul_one hz,
     Complex.real_smul]
   simp [resolvent, Ring.inverse_eq_inv']
+
+section CharpolyXPowMul
+
+variable {m : Type*} [Fintype m] [DecidableEq m] [Nonempty m]
+
+/-- If the characteristic polynomial of a Hermitian matrix `A` of size `card n` is `X ^ k` times
+that of a Hermitian matrix `B` of size `card m`, then `L_A` is the mixture of `L_B` and of the
+Dirac mass at `0`, with weights `card m / card n` and `k / card n`. -/
+theorem spectralMeasure_toMeasure_of_charpoly_eq_X_pow_mul {A : Matrix n n 𝕜} {B : Matrix m m 𝕜}
+    (hA : A.IsHermitian) (hB : B.IsHermitian) {k : ℕ} (h : A.charpoly = X ^ k * B.charpoly) :
+    (A.spectralMeasure hA : Measure ℝ) =
+      ((Fintype.card m : ℝ≥0∞) / Fintype.card n) • (B.spectralMeasure hB : Measure ℝ) +
+        ((k : ℝ≥0∞) / Fintype.card n) • Measure.dirac 0 := by
+  have hm : ((Fintype.card m : ℕ) : ℝ≥0∞) ≠ 0 := by simp
+  simp only [spectralMeasure_def, empiricalMeasureOfFintype_toMeasure, ← Finset.smul_sum,
+    hA.sum_comp_eigenvalues_of_charpoly_eq_X_pow_mul hB h Measure.dirac, smul_add, smul_smul,
+    ← Nat.cast_smul_eq_nsmul ℝ≥0∞ k]
+  rw [add_comm]
+  congr 2
+  · rw [div_eq_mul_inv, mul_comm, ENNReal.inv_mul_cancel_left hm (by simp)]
+  · rw [ENNReal.div_eq_inv_mul]
+
+/-- If the characteristic polynomial of a Hermitian matrix `A` of size `card n` is `X ^ k` times
+that of a Hermitian matrix `B` of size `card m`, then integrating against `L_A` is the weighted
+average of integrating against `L_B` and evaluating at `0`, with weights `card m / card n` and
+`k / card n`. -/
+theorem integral_spectralMeasure_of_charpoly_eq_X_pow_mul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {A : Matrix n n 𝕜} {B : Matrix m m 𝕜}
+    (hA : A.IsHermitian) (hB : B.IsHermitian) {k : ℕ} (h : A.charpoly = X ^ k * B.charpoly)
+    (f : ℝ → E) :
+    ∫ x, f x ∂(A.spectralMeasure hA : Measure ℝ) =
+      ((Fintype.card m : ℝ) / Fintype.card n) • ∫ x, f x ∂(B.spectralMeasure hB : Measure ℝ) +
+        ((k : ℝ) / Fintype.card n) • f 0 := by
+  have hm : ((Fintype.card m : ℕ) : ℝ) ≠ 0 := by simp
+  rw [integral_spectralMeasure, integral_spectralMeasure,
+    hA.sum_comp_eigenvalues_of_charpoly_eq_X_pow_mul hB h f, ← Nat.cast_smul_eq_nsmul ℝ k,
+    smul_add, smul_smul, smul_smul, add_comm]
+  congr 2 <;> field_simp
+
+/-- If the characteristic polynomial of a complex Hermitian matrix `A` of size `card n` is `X ^ k`
+times that of a complex Hermitian matrix `B` of size `card m`, then the resolvent transforms of
+their spectral measures satisfy
+`m_{L_A}(z) = (card m / card n) m_{L_B}(z) - (k / card n) z⁻¹`. -/
+theorem resolventTransform_spectralMeasure_of_charpoly_eq_X_pow_mul {A : Matrix n n ℂ}
+    {B : Matrix m m ℂ} (hA : A.IsHermitian) (hB : B.IsHermitian) {k : ℕ}
+    (h : A.charpoly = X ^ k * B.charpoly) (z : ℂ) :
+    resolventTransform (A.spectralMeasure hA : Measure ℝ) z =
+      (Fintype.card m / Fintype.card n : ℂ) *
+          resolventTransform (B.spectralMeasure hB : Measure ℝ) z -
+        (k / Fintype.card n : ℂ) * z⁻¹ := by
+  rw [resolventTransform_apply, resolventTransform_apply,
+    integral_spectralMeasure_of_charpoly_eq_X_pow_mul hA hB h, Complex.real_smul,
+    Complex.real_smul]
+  simp [resolvent, Ring.inverse_eq_inv', sub_eq_add_neg]
+
+/-- For a matrix `A` with `card m ≤ card n` rows and columns, the spectral measure of the
+`card n × card n` Gram matrix `Aᴴ * A` is that of `A * Aᴴ` with the missing mass at `0`:
+`L_{AᴴA} = (card m / card n) L_{AAᴴ} + (1 - card m / card n) δ₀`. -/
+theorem spectralMeasure_conjTranspose_mul_self (A : Matrix m n 𝕜)
+    (hle : Fintype.card m ≤ Fintype.card n) :
+    ((Aᴴ * A).spectralMeasure (isHermitian_conjTranspose_mul_self A) : Measure ℝ) =
+      ((Fintype.card m : ℝ≥0∞) / Fintype.card n) •
+          ((A * Aᴴ).spectralMeasure (isHermitian_mul_conjTranspose_self A) : Measure ℝ) +
+        (1 - (Fintype.card m : ℝ≥0∞) / Fintype.card n) • Measure.dirac 0 := by
+  rw [spectralMeasure_toMeasure_of_charpoly_eq_X_pow_mul _ _ (charpoly_mul_comm_of_le Aᴴ A hle),
+    ENNReal.natCast_sub, ENNReal.sub_div (fun _ _ => by simp), ENNReal.div_self (by simp) (by simp)]
+
+/-- For a matrix `A` with `card m ≥ card n` rows and columns, the spectral measure of the
+`card m × card m` Gram matrix `A * Aᴴ` is that of `Aᴴ * A` with the missing mass at `0`:
+`L_{AAᴴ} = (card n / card m) L_{AᴴA} + (1 - card n / card m) δ₀`. -/
+theorem spectralMeasure_mul_conjTranspose_self (A : Matrix m n 𝕜)
+    (hle : Fintype.card n ≤ Fintype.card m) :
+    ((A * Aᴴ).spectralMeasure (isHermitian_mul_conjTranspose_self A) : Measure ℝ) =
+      ((Fintype.card n : ℝ≥0∞) / Fintype.card m) •
+          ((Aᴴ * A).spectralMeasure (isHermitian_conjTranspose_mul_self A) : Measure ℝ) +
+        (1 - (Fintype.card n : ℝ≥0∞) / Fintype.card m) • Measure.dirac 0 := by
+  rw [spectralMeasure_toMeasure_of_charpoly_eq_X_pow_mul _ _ (charpoly_mul_comm_of_le A Aᴴ hle),
+    ENNReal.natCast_sub, ENNReal.sub_div (fun _ _ => by simp), ENNReal.div_self (by simp) (by simp)]
+
+end CharpolyXPowMul
 
 end Matrix
