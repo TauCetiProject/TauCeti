@@ -115,6 +115,7 @@ instance isKFlat_shift (K : CochainComplex C ℤ) [K.IsKFlat] (n : ℤ) : (K⟦n
   exact (exactAt_shift_iff (tensorObj K A) n i (n + i) rfl).2 (IsKFlat.acyclic_tensor A hA _)
 
 /-- A complex is K-flat if and only if any of its shifts is. -/
+@[simp]
 lemma isKFlat_shift_iff (K : CochainComplex C ℤ) (n : ℤ) : (K⟦n⟧).IsKFlat ↔ K.IsKFlat :=
   ⟨fun _ ↦ isKFlat_of_iso (K := (K⟦n⟧)⟦-n⟧)
     ((shiftFunctorCompIsoId _ n (-n) (add_neg_cancel n)).app K),
@@ -243,14 +244,12 @@ theorem isKFlat_iff_quasiIso_id_tensorHom (K : CochainComplex C ℤ) :
     K.IsKFlat ↔ ∀ ⦃A B : CochainComplex C ℤ⦄ (f : A ⟶ B) [QuasiIso f],
       QuasiIso (tensorHom (𝟙 K) f) := by
   refine ⟨fun _ _ _ f _ ↦ inferInstance, fun h ↦ ⟨fun A hA i ↦ ?_⟩⟩
-  have acyclic_of_isZero {X : CochainComplex C ℤ} (hX : IsZero X) : X.Acyclic := fun j ↦
-    ExactAt.of_isZero ((eval C _ j).map_isZero hX)
   have : QuasiIso (0 : A ⟶ 0) := (quasiIso_iff _).2 fun j ↦
-    (quasiIsoAt_iff_exactAt' _ j (acyclic_of_isZero (isZero_zero _) j)).2 (hA j)
+    (quasiIsoAt_iff_exactAt' _ j (acyclic_of_isZero _ (isZero_zero _) j)).2 (hA j)
   have hz : IsZero (tensorObj K (0 : CochainComplex C ℤ)) :=
     ((curriedTensor C).mapBifunctorLeft (.up ℤ) (.up ℤ) K).map_isZero (isZero_zero _)
   exact (quasiIsoAt_iff_exactAt' (tensorHom (𝟙 K) (0 : A ⟶ 0)) i
-    (acyclic_of_isZero hz i)).1 inferInstance
+    (acyclic_of_isZero _ hz i)).1 inferInstance
 
 section Colimit
 
