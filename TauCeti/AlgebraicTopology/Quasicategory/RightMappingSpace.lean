@@ -82,11 +82,12 @@ def rightMappingSpace (x y : X _⦋0⦌) : Subcomplex (joinVertex.op ⋙ X) wher
   map {m m'} f σ hσ := by
     -- `f` acts on `joinVertex.op ⋙ X` as `joinVertex.map f.unop` acts on `X`.
     refine ⟨?_, ?_⟩
-    · change X.map (joinVertexInl m'.unop).op (X.map (joinVertex.map f.unop).op σ) = _
-      rw [← Functor.map_comp_apply, ← op_comp, joinVertexInl_comp_joinVertex_map, op_comp,
-        Functor.map_comp_apply, hσ.1, map_map_const_zero]
-    · change X.map (joinVertexInr m'.unop).op (X.map (joinVertex.map f.unop).op σ) = _
-      rw [← Functor.map_comp_apply, ← op_comp, joinVertexInr_comp_joinVertex_map, hσ.2]
+    · have h := congrArg (fun g ↦ X.map g.op σ) (joinVertexInl_comp_joinVertex_map f.unop)
+      simp only [op_comp, Functor.map_comp_apply, hσ.1, map_map_const_zero] at h
+      exact h
+    · have h := congrArg (fun g ↦ X.map g.op σ) (joinVertexInr_comp_joinVertex_map f.unop)
+      simp only [op_comp, Functor.map_comp_apply, hσ.2] at h
+      exact h
 
 variable {X} {x y : X _⦋0⦌}
 
@@ -146,6 +147,13 @@ theorem coe_σ {n : ℕ} (j : Fin (n + 1)) (s : (X.rightMappingSpace x y : SSet.
 
 variable {n : ℕ} {i : Fin (n + 2)}
 
+/-- Restricting a map out of a horn along the inclusion of its `j`-th face amounts to evaluating
+it at that face. -/
+private theorem yonedaEquiv_horn_ι_comp {Y : SSet.{u}} (g : (Λ[n + 1, i] : SSet.{u}) ⟶ Y)
+    (j : Fin (n + 2)) (hj : j ≠ i) :
+    yonedaEquiv (horn.ι i j hj ≫ g) = g.app _ (horn.face i j hj) := by
+  rw [yonedaEquiv_comp, horn.yonedaEquiv_ι]
+
 /-- The `j`-th face of a horn in `Hom^R_X(x, y)`, as a simplex of `joinVertex.op ⋙ X`. -/
 private def hornFace
     (σ₀ : (Λ[n + 1, i] : SSet.{u}) ⟶ (X.rightMappingSpace x y : SSet.{u}))
@@ -166,13 +174,10 @@ private theorem hornFace_δ {m : ℕ} {i : Fin (m + 3)}
         (hornFace σ₀ j hj) =
       SimplicialObject.δ (joinVertex.op ⋙ X) (j.castPred (Fin.ne_last_of_lt hjk))
         (hornFace σ₀ k hk) := by
-  have hg (l : Fin (m + 3)) (hl : l ≠ i) :
-      horn.ι i l hl ≫ σ₀ ≫ Subcomplex.ι _ = yonedaEquiv.symm (hornFace σ₀ l hl) := by
-    rw [Equiv.eq_symm_apply, yonedaEquiv_comp, horn.yonedaEquiv_ι]
-    rfl
-  have h := (horn.IsCompatible.of_hom (σ₀ ≫ Subcomplex.ι _)).δ_pred_comp j k hj hk hjk
-  rw [hg, hg, stdSimplex.δ_comp_yonedaEquiv_symm, stdSimplex.δ_comp_yonedaEquiv_symm] at h
-  exact yonedaEquiv.symm.injective h
+  have h := congrArg yonedaEquiv
+    ((horn.IsCompatible.of_hom (σ₀ ≫ Subcomplex.ι _)).δ_pred_comp j k hj hk hjk)
+  simp only [stdSimplex.yonedaEquiv_δ_comp, yonedaEquiv_horn_ι_comp] at h
+  exact h
 
 /-- The faces of the horn in `X` attached to a horn in `Hom^R_X(x, y)`: the faces of the given
 horn, and the constant simplex at `x` as the face opposite to the last vertex. -/
@@ -239,10 +244,8 @@ theorem hornFilling [X.Quasicategory] (hi : i ≠ 0)
   set t : X _⦋n + 2⦌ := yonedaEquiv τ with ht
   have hface (k : Fin (n + 3)) (hk : k ≠ i.castSucc) :
       X.δ k t = liftFace σ₀ k hk := by
-    rw [ht, SimplicialObject.δ, yonedaEquiv_naturality,
-      show stdSimplex.map (δ k) = horn.ι _ k hk ≫ Λ[n + 2, i.castSucc].ι from
-        (horn.ι_ι _ k hk).symm,
-      Category.assoc, ← hτ, horn.IsCompatible.ι_desc, Equiv.apply_symm_apply]
+    simpa [ht, stdSimplex.yonedaEquiv_δ_comp] using
+      (congrArg yonedaEquiv (horn.ι _ k hk ≫= hτ)).symm
   -- The filler is a simplex of the right mapping space.
   have hmem : t ∈ (X.rightMappingSpace x y).obj (op ⦋n + 1⦌) := by
     refine (mem_rightMappingSpace_iff _).2 ⟨?_, ?_⟩
@@ -259,8 +262,9 @@ theorem hornFilling [X.Quasicategory] (hi : i ≠ 0)
   refine ⟨yonedaEquiv.symm s, horn.hom_ext _ _ fun j hj ↦ Subtype.ext ?_⟩
   have hR : (Λ[n + 1, i].ι ≫ yonedaEquiv.symm s).app _ (horn.face i j hj) =
       SimplicialObject.δ (X.rightMappingSpace x y : SSet.{u}) j s := by
-    rw [← horn.yonedaEquiv_ι, ← yonedaEquiv_comp, ← Category.assoc, horn.ι_ι,
-      stdSimplex.δ_comp_yonedaEquiv_symm, Equiv.apply_symm_apply]
+    -- Evaluating at the `j`-th face is restricting along `horn.ι`, i.e. along `stdSimplex.δ j`.
+    rw [← yonedaEquiv_horn_ι_comp, horn.ι_ι_assoc, stdSimplex.yonedaEquiv_δ_comp,
+      Equiv.apply_symm_apply]
   rw [hR, coe_δ, hface _ fun h ↦ hj (Fin.castSucc_injective _ h), liftFace_castSucc σ₀ j hj]
   rfl
 
