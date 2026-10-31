@@ -18,9 +18,10 @@ public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 A cutoff function for an action of a group `G` on a space `X` is a nonnegative function
 `c : X → ℝ` whose translates sum to one, `∑ᶠ g, c (g • x) = 1`, and whose topological support
 meets the translates `g • K` of each compact set `K` for only finitely many `g`
-(`TauCeti.MulAction.IsCutoff`). The second condition makes every such sum finite, and locally
-finite in `x`, so cutoff functions can be used to average data along the orbits of a proper
-action of a discrete group whose orbit space is not compact.
+(`TauCeti.MulAction.IsCutoff`). The second condition makes every such sum finite
+(`TauCeti.MulAction.IsCutoff.hasFiniteSupport`), and locally finite in `x`
+(`TauCeti.MulAction.IsCutoff.locallyFinite_support`), so cutoff functions can be used to average
+data along the orbits of a proper action of a discrete group whose orbit space is not compact.
 
 For the action presentation `G ⋉ X` of a discrete group, whose space of arrows is `G × X`
 (`TauCeti.ActionGroupoid.arrowHomeomorph`) with source `(g, x) ↦ x` and target `(g, x) ↦ g • x`,
@@ -75,7 +76,7 @@ structure IsCutoff (c : X → ℝ) : Prop where
   /-- The translates of a cutoff function sum to one. -/
   finsum_smul_eq_one (x : X) : ∑ᶠ g : G, c (g • x) = 1
   /-- Only finitely many translates of a compact set meet the support of a cutoff function. -/
-  finite_smul_inter_tsupport {K : Set X} (hK : IsCompact K) :
+  finite_smul_inter_tsupport ⦃K : Set X⦄ (hK : IsCompact K) :
     {g : G | (g • K ∩ tsupport c).Nonempty}.Finite
 
 variable {G}
@@ -104,6 +105,15 @@ theorem locallyFinite_support_apply_smul [WeaklyLocallyCompactSpace X]
 
 end Finite
 
+/-- If `f` is nonnegative, nonzero somewhere on the orbit of `x`, and only finitely many translates
+of each compact set meet its support, then the sum of the translates of `f` at `x` is positive. -/
+theorem finsum_apply_smul_pos {R : Type*} [AddCommMonoid R] [PartialOrder R]
+    [IsOrderedCancelAddMonoid R] {f : X → R} (hf0 : ∀ x, 0 ≤ f x)
+    (hf : ∀ ⦃K : Set X⦄, IsCompact K → {g : G | (g • K ∩ tsupport f).Nonempty}.Finite) {x : X}
+    (hx : ∃ g : G, f (g • x) ≠ 0) : 0 < ∑ᶠ g : G, f (g • x) := by
+  obtain ⟨g, hg⟩ := hx
+  exact finsum_pos (fun _ ↦ hf0 _) ⟨g, (hf0 _).lt_of_ne' hg⟩ (hasFiniteSupport_apply_smul hf x)
+
 /-- For a finite nonempty `G`, such as a finite group, the constant function `|G|⁻¹` is a cutoff
 function. Every element is counted, including those acting trivially. -/
 theorem isCutoff_inv_card [Fintype G] [Nonempty G] :
@@ -111,11 +121,22 @@ theorem isCutoff_inv_card [Fintype G] [Nonempty G] :
   nonneg _ := inv_nonneg.2 (Nat.cast_nonneg _)
   finsum_smul_eq_one _ := by
     simp [finsum_eq_sum_of_fintype, Fintype.card_ne_zero]
-  finite_smul_inter_tsupport _ := toFinite _
+  finite_smul_inter_tsupport _ _ := toFinite _
 
 namespace IsCutoff
 
 variable {c : X → ℝ}
+
+/-- The translates of a cutoff function at a point are nonzero for only finitely many group
+elements. -/
+theorem hasFiniteSupport (hc : IsCutoff G c) (x : X) : HasFiniteSupport fun g : G ↦ c (g • x) :=
+  hasFiniteSupport_apply_smul hc.finite_smul_inter_tsupport x
+
+/-- The supports of the translates `x ↦ c (g • x)` of a cutoff function form a locally finite
+family. -/
+theorem locallyFinite_support [WeaklyLocallyCompactSpace X] (hc : IsCutoff G c) :
+    LocallyFinite fun g : G ↦ support fun x ↦ c (g • x) :=
+  locallyFinite_support_apply_smul hc.finite_smul_inter_tsupport
 
 /-- The source map `(g, x) ↦ x` of the action presentation of a discrete group is proper on the
 support of a cutoff function composed with the target map `(g, x) ↦ g • x`. -/
@@ -149,13 +170,11 @@ theorem isCutoff_div_finsum [Group G] [MulAction G X] {β : X → ℝ} (hβ : �
     (hfin : ∀ ⦃K : Set X⦄, IsCompact K → {g : G | (g • K ∩ tsupport β).Nonempty}.Finite)
     (hpos : ∀ x, ∃ g : G, β (g • x) ≠ 0) :
     IsCutoff G fun x ↦ β x / ∑ᶠ g : G, β (g • x) := by
-  have hsum (x : X) : 0 < ∑ᶠ g : G, β (g • x) := by
-    obtain ⟨g, hg⟩ := hpos x
-    exact finsum_pos (fun _ ↦ hβ _) ⟨g, (hβ _).lt_of_ne' hg⟩ (hasFiniteSupport_apply_smul hfin x)
+  have hsum (x : X) : 0 < ∑ᶠ g : G, β (g • x) := finsum_apply_smul_pos hβ hfin (hpos x)
   have hinv (h : G) (x : X) : ∑ᶠ g : G, β (g • h • x) = ∑ᶠ g : G, β (g • x) := by
     simpa only [Equiv.coe_mulRight, mul_smul] using
       finsum_comp_equiv (Equiv.mulRight h) (f := fun g ↦ β (g • x))
-  refine ⟨fun x ↦ div_nonneg (hβ x) (hsum x).le, fun x ↦ ?_, fun {K} hK ↦ (hfin hK).subset ?_⟩
+  refine ⟨fun x ↦ div_nonneg (hβ x) (hsum x).le, fun x ↦ ?_, fun _ hK ↦ (hfin hK).subset ?_⟩
   · simp only [hinv, div_eq_mul_inv]
     rw [← finsum_mul, mul_inv_cancel₀ (hsum x).ne']
   · rintro g ⟨y, hyK, hy⟩

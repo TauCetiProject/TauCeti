@@ -134,7 +134,7 @@ variable {I} {n : ℕ∞} [ContMDiffConstSMul I n G M]
 finite-dimensional real manifold has a `C^n` cutoff function. -/
 theorem exists_isCutoff_contMDiff [ProperlyDiscontinuousSMul G M] :
     ∃ c : M → ℝ, IsCutoff G c ∧ CMDiff n c := by
-  have : ContinuousConstSMul G M := ⟨fun g ↦ (contMDiff_const_smul (I := I) (n := n) g).continuous⟩
+  have := ContMDiffConstSMul.continuousConstSMul (I := I) (Γ := G) (M := M) n
   have : LocallyCompactSpace M := Manifold.locallyCompact_of_finiteDimensional I
   obtain ⟨β, hβs, hβ0, hfin, hpos⟩ :=
     exists_contMDiff_nonneg_finite_smul_inter_tsupport I (M := M) G
@@ -142,8 +142,6 @@ theorem exists_isCutoff_contMDiff [ProperlyDiscontinuousSMul G M] :
   refine ⟨_, hc, (hβs.of_le (by simp)).div₀ ?_ fun x ↦ ?_⟩
   · exact contMDiff_finsum (fun g ↦ (hβs.of_le (by simp)).comp (contMDiff_const_smul g))
       (locallyFinite_support_apply_smul hfin)
-  · obtain ⟨g, hg⟩ := hpos x
-    exact (finsum_pos (f := fun g ↦ β (g • x)) (fun _ ↦ hβ0 _) ⟨g, (hβ0 _).lt_of_ne' hg⟩
-      (hasFiniteSupport_apply_smul hfin x)).ne'
+  · exact (finsum_apply_smul_pos hβ0 hfin (hpos x)).ne'
 
 end TauCeti.MulAction
