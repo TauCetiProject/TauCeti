@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.Height.Naive
 import Mathlib.Analysis.Complex.IsIntegral
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.NumberTheory.NumberField.Global.Places.Height
+import TauCeti.NumberTheory.Height.SInteger
 import TauCeti.NumberTheory.NumberField.AdjoinPair
 import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
@@ -45,6 +46,9 @@ of bounded degree and bounded house.
   `TauCeti.exists_mem_rootSet_norm_eq_house`: the house is the maximum of the moduli of the
   complex conjugates; in particular `‖x‖ ≤ ⌈x⌉` for algebraic `x ∈ ℂ` (`TauCeti.norm_le_house`).
 * `TauCeti.house_eq_numberField_house`: on a number field the house is `NumberField.house`.
+* `NumberField.house_le_exp_logHeight₁`, `NumberField.logHeight₁_le_finrank_mul_posLog_house`:
+  `house x ≤ exp h(x)` for the relative height `h` over a number field `K`, and conversely
+  `h(x) ≤ [K : ℚ] log⁺ (house x)` for an algebraic integer `x` of `K`.
 * `TauCeti.house_map`, `TauCeti.house_eq_of_minpoly_eq`: invariance under field embeddings and
   conjugation.
 * `TauCeti.house_mul_le`, `TauCeti.house_add_le`, `TauCeti.house_pow`: the house is
@@ -163,6 +167,22 @@ theorem _root_.NumberField.house_le_exp_logHeight₁ {K : Type*} [Field K] [Numb
   change w x ≤ Real.exp (logHeight₁ x)
   rw [← Real.exp_log (InfinitePlace.pos_iff.mpr hx)]
   exact Real.exp_le_exp.mpr hw
+
+open Height NumberField Real in
+/-- The relative logarithmic height of an algebraic integer `x` of a number field `K` is at most
+`[K : ℚ] * log⁺ (house x)`. This is a converse to `NumberField.house_le_exp_logHeight₁`; the
+integrality hypothesis is needed, since `1 / 2` has house `1 / 2` but positive height. -/
+theorem _root_.NumberField.logHeight₁_le_finrank_mul_posLog_house {K : Type*} [Field K]
+    [NumberField K] {x : K} (hx : IsIntegral ℤ x) :
+    logHeight₁ x ≤ Module.finrank ℚ K * log⁺ (NumberField.house x) := by
+  have hx' : x ∈ (∅ : Set (IsDedekindDomain.HeightOneSpectrum (𝓞 K))).integer K :=
+    (Set.mem_integer_empty_iff K).mpr ⟨⟨x, hx⟩, rfl⟩
+  rw [logHeight₁_eq_of_mem_integer _ hx', finsum_mem_empty, add_zero,
+    ← InfinitePlace.sum_mult_eq, Nat.cast_sum, Finset.sum_mul]
+  refine Finset.sum_le_sum fun w _ ↦ mul_le_mul_of_nonneg_left
+    (posLog_le_posLog (by linarith [apply_nonneg w x]) ?_) (Nat.cast_nonneg _)
+  rw [← InfinitePlace.norm_embedding_eq]
+  exact NumberField.norm_embedding_le_house _ _
 
 /-- The house depends only on `minpoly ℚ x`: conjugates, possibly lying in different fields, have
 equal house. -/

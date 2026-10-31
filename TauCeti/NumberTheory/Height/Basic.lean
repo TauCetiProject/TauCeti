@@ -12,7 +12,8 @@ import all Mathlib.NumberTheory.Height.Basic
 /-!
 # Height bounds for coordinate ratios and from local estimates
 
-The height of a ratio of two coordinates is bounded by the projective height of the tuple.
+The height of a ratio of two coordinates is bounded by the projective height of the tuple, and
+the height of a quotient by the sum of the heights of its numerator and denominator.
 These bounds control the affine coordinates of a projective point after normalization.
 Both multiplicative and logarithmic heights are treated over any field with admissible
 absolute values and any finite coordinate type.
@@ -72,6 +73,11 @@ lemma logHeight₁_div_le_logHeight (x : ι → K) (i j : ι) :
     logHeight₁ (x i / x j) ≤ logHeight x := by
   rw [logHeight₁_div_eq_logHeight]
   simpa only [Matrix.vecCons, Fin.comp_cons, Matrix.empty_eq] using logHeight_comp_le ![i, j] x
+
+/-- The logarithmic height of a quotient is at most the sum of the logarithmic heights. -/
+lemma logHeight₁_div_le (x y : K) : logHeight₁ (x / y) ≤ logHeight₁ x + logHeight₁ y := by
+  rw [div_eq_mul_inv, ← logHeight₁_inv y]
+  exact logHeight₁_mul_le x y⁻¹
 
 omit [Finite ι] in
 /-- The multiplicative height is unchanged by changing the signs of some coordinates. -/
