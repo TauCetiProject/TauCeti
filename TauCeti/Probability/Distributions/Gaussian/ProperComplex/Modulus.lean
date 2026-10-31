@@ -83,6 +83,21 @@ theorem map_re_im_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
   rw [properComplexGaussianMeasure_def, Measure.map_map (by fun_prop) (by fun_prop)]
   simpa [μ, Function.comp_def, Complex.sub_re, Complex.sub_im] using hprod.map_eq
 
+/-- The centered real and imaginary coordinates, indexed by `Fin 2`, have the product
+Gaussian law with variance half the complex variance, including zero variance. -/
+@[simp]
+theorem map_finTwo_re_im_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
+    {C : Matrix ι ι ℂ} (hC : C.PosSemidef) (i : ι) :
+    (properComplexGaussianMeasure m C).map
+        (fun z ↦ ![(z i).re - (m i).re, (z i).im - (m i).im]) =
+      Measure.pi (fun _ : Fin 2 ↦ gaussianReal 0 ((C i i).re / 2).toNNReal) := by
+  apply MeasurableEquiv.map_measurableEquiv_injective MeasurableEquiv.finTwoArrow
+  rw [Measure.map_map (by fun_prop) (by fun_prop)]
+  simpa only [Function.comp_def, MeasurableEquiv.finTwoArrow_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one] using
+    (map_re_im_sub_eval_properComplexGaussianMeasure m hC i).trans
+      (measurePreserving_finTwoArrow (gaussianReal 0 ((C i i).re / 2).toNNReal)).map_eq.symm
+
 /-- The squared modulus of a centered proper complex Gaussian coordinate is a rate-one
 exponential scaled by its complex variance. At zero variance this is the point mass at zero. -/
 @[simp]
@@ -93,19 +108,10 @@ theorem map_norm_sq_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
   have hdiag : 0 ≤ (C i i).re := RCLike.nonneg_iff.mp hC.diag_nonneg |>.1
   let v := ((C i i).re / 2).toNNReal
   have hv : (v : ℝ) = (C i i).re / 2 := Real.coe_toNNReal _ (by positivity)
-  have hpair := map_re_im_sub_eval_properComplexGaussianMeasure m hC i
-  have hpi := (measurePreserving_finTwoArrow (gaussianReal 0 v)).map_eq
   have hsum := map_sum_sq_pi_gaussianReal (ι := Fin 2) v
-  have h := congrArg (fun ν : Measure (ℝ × ℝ) ↦ ν.map (fun x ↦ x.1 ^ 2 + x.2 ^ 2))
-    (hpair.trans hpi.symm)
-  rw [Measure.map_map (by fun_prop) (by fun_prop),
-    Measure.map_map (by fun_prop) (by fun_prop)] at h
-  simp only [Function.comp_def, MeasurableEquiv.finTwoArrow_apply] at h
-  have hnorm (z : ι → ℂ) : ((z i).re - (m i).re) ^ 2 + ((z i).im - (m i).im) ^ 2 =
-      ‖z i - m i‖ ^ 2 := by
-    simpa only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, pow_two] using
-      Complex.normSq_eq_norm_sq (z i - m i)
-  simp only [hnorm] at h
+  have h := congrArg (fun ν : Measure (Fin 2 → ℝ) ↦ ν.map (fun x ↦ x 0 ^ 2 + x 1 ^ 2))
+    (map_finTwo_re_im_sub_eval_properComplexGaussianMeasure m hC i)
+  rw [Measure.map_map (by fun_prop) (by fun_prop)] at h
   have hsum' : (Measure.pi fun _ : Fin 2 ↦ gaussianReal 0 v).map
       (fun x ↦ x 0 ^ 2 + x 1 ^ 2) =
       (expMeasure 1).map (fun x ↦ (C i i).re * x) := by
@@ -118,7 +124,9 @@ theorem map_norm_sq_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
     funext x
     simp only [Function.comp_apply, hv]
     ring
-  exact h.trans hsum'
+  simpa only [Function.comp_def, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Complex.sq_norm, Complex.normSq_apply, Complex.sub_re, Complex.sub_im, ← pow_two] using
+    h.trans hsum'
 
 /-- A positive-variance centered proper complex Gaussian coordinate has a Rayleigh modulus:
 the chi law with two degrees of freedom and scale the square root of half its variance. -/
@@ -132,23 +140,12 @@ theorem map_norm_sub_eval_properComplexGaussianMeasure (m : ι → ℂ)
   have hvpos : v ≠ 0 := by
     rw [Ne, Real.toNNReal_eq_zero, not_le]
     positivity
-  have hpair := map_re_im_sub_eval_properComplexGaussianMeasure m hC i
-  have hpi := (measurePreserving_finTwoArrow (gaussianReal 0 v)).map_eq
-  have h := congrArg (fun ν : Measure (ℝ × ℝ) ↦
-    ν.map (fun x ↦ Real.sqrt (x.1 ^ 2 + x.2 ^ 2))) (hpair.trans hpi.symm)
-  rw [Measure.map_map (by fun_prop) (by fun_prop),
-    Measure.map_map (by fun_prop) (by fun_prop)] at h
-  have hnorm (z : ι → ℂ) :
-      Real.sqrt (((z i).re - (m i).re) ^ 2 + ((z i).im - (m i).im) ^ 2) = ‖z i - m i‖ := by
-    rw [← Complex.sub_re, ← Complex.sub_im, ← Complex.sq_norm_sub_sq_re,
-      add_sub_cancel, Real.sqrt_sq (norm_nonneg _)]
-  have hnormPi (x : Fin 2 → ℝ) :
-      Real.sqrt ((MeasurableEquiv.finTwoArrow x).1 ^ 2 +
-        (MeasurableEquiv.finTwoArrow x).2 ^ 2) =
-      ‖(WithLp.toLp 2 x : EuclideanSpace ℝ (Fin 2))‖ := by
-    simp [EuclideanSpace.norm_eq, Fin.sum_univ_two]
-  simpa only [Function.comp_def, hnorm, hnormPi, map_norm_pi_gaussianReal hvpos,
-    Fintype.card_fin, Nat.cast_ofNat, hv] using h
+  have h := congrArg (fun ν : Measure (Fin 2 → ℝ) ↦
+    ν.map (fun x ↦ ‖(WithLp.toLp 2 x : EuclideanSpace ℝ (Fin 2))‖))
+    (map_finTwo_re_im_sub_eval_properComplexGaussianMeasure m hC i)
+  rw [Measure.map_map (by fun_prop) (by fun_prop), map_norm_pi_gaussianReal hvpos] at h
+  simpa [Function.comp_def, EuclideanSpace.norm_eq, Fin.sum_univ_two,
+    ← Complex.sub_re, ← Complex.sub_im, ← Complex.norm_eq_sqrt_sq_add_sq, hv] using h
 
 end TauCeti.Probability
 
