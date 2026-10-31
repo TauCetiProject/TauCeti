@@ -116,15 +116,10 @@ theorem arrowSum_bidirectedCapacity [AddCommMonoid K] (c : E(G) → K) (S : Fins
     exact ha.2 (Subtype.ext hzy ▸ hz)
   · -- Different arrows leaving `S` come from different edges: the opposite arrow of an edge
     -- enters `S`.
-    rintro ⟨x, y, e, hxy⟩ ha ⟨x', y', e', hxy'⟩ ha' he
-    obtain rfl : e = e' := congrArg Subtype.val he
+    rintro a ha a' ha' he
     simp only [mem_coe, mem_sigma, mem_compl, mem_univ, and_true] at ha ha'
-    rcases hxy.eq_and_eq_or_eq_and_eq hxy' with ⟨h₁, h₂⟩ | ⟨h₁, -⟩
-    · obtain rfl : x = x' := Subtype.ext h₁
-      obtain rfl : y = y' := Subtype.ext h₂
-      rfl
-    · obtain rfl : x = y' := Subtype.ext h₁
-      exact absurd ha.1 ha'.2
+    exact bidirectedHom_edge_injOn_cut (G := G) (S : Set V(G)) ha ha'
+      (congrArg Subtype.val he)
   · -- An edge crossing `S` gives the arrow from its end in `S` to its end outside `S`.
     rintro e he
     simp only [mem_coe, mem_filter, mem_univ, true_and, mem_edgeCut_iff] at he
