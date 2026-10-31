@@ -48,6 +48,7 @@ theorem map_re_dotProduct_properComplexGaussianMeasure (m q : ι → ℂ)
       ⟪complexToRealEuclidean ι q,
         (complexGaussianRealCovariance C).toEuclideanLin (complexToRealEuclidean ι q)⟫ =
         (star q ⬝ᵥ C *ᵥ q).re / 2 := by
+    -- For complex scalars, RCLike.re and RCLike.im are definitionally Complex.re and Complex.im.
     have hcoords : (complexToRealEuclidean ι q).ofLp =
         Sum.elim (fun i ↦ RCLike.re (q i)) (fun i ↦ RCLike.im (q i)) :=
       funext (complexToRealEuclidean_apply ι q)
@@ -84,12 +85,10 @@ theorem mgf_re_dotProduct_properComplexGaussianMeasure (m q : ι → ℂ)
     {C : Matrix ι ι ℂ} (hC : C.PosSemidef) (t : ℝ) :
     mgf (fun z ↦ (star q ⬝ᵥ z).re) (properComplexGaussianMeasure m C) t =
       Real.exp (t * (star q ⬝ᵥ m).re + t ^ 2 / 4 * (star q ⬝ᵥ C *ᵥ q).re) := by
-  have hnonneg : 0 ≤ (star q ⬝ᵥ C *ᵥ q).re / 2 :=
-    div_nonneg (hC.re_dotProduct_nonneg q) (by norm_num)
   rw [← mgf_id_map (by fun_prop), map_re_dotProduct_properComplexGaussianMeasure m q hC,
-    mgf_id_gaussianReal, Real.coe_toNNReal _ hnonneg]
-  dsimp only
-  congr 1
+    mgf_id_gaussianReal]
+  have hnonneg : 0 ≤ (star q ⬝ᵥ C *ᵥ q).re := hC.re_dotProduct_nonneg q
+  simp [Real.toNNReal_div' (by norm_num : (0 : ℝ) ≤ 2), hnonneg]
   ring
 
 /-- The cumulant-generating function of a real projection is a quadratic polynomial. -/
@@ -106,12 +105,10 @@ theorem charFun_map_re_dotProduct_properComplexGaussianMeasure (m q : ι → ℂ
     charFun ((properComplexGaussianMeasure m C).map (fun z ↦ (star q ⬝ᵥ z).re)) t =
       Complex.exp (t * (star q ⬝ᵥ m).re * Complex.I -
         t ^ 2 / 4 * (star q ⬝ᵥ C *ᵥ q).re) := by
-  have hnonneg : 0 ≤ (star q ⬝ᵥ C *ᵥ q).re / 2 :=
-    div_nonneg (hC.re_dotProduct_nonneg q) (by norm_num)
-  rw [map_re_dotProduct_properComplexGaussianMeasure m q hC, charFun_gaussianReal,
-    Real.coe_toNNReal _ hnonneg]
+  rw [map_re_dotProduct_properComplexGaussianMeasure m q hC, charFun_gaussianReal]
+  have hnonneg : 0 ≤ (star q ⬝ᵥ C *ᵥ q).re := hC.re_dotProduct_nonneg q
+  simp [Real.toNNReal_div' (by norm_num : (0 : ℝ) ≤ 2), hnonneg]
   congr 1
-  push_cast
   ring
 
 end TauCeti.Probability
