@@ -66,7 +66,7 @@ noncomputable section
 
 universe u
 
-open TensorProduct PiTensorProduct Module
+open TensorProduct PiTensorProduct Module TauCeti.Sym
 open scoped Finset
 
 namespace DividedPowerAlgebra
@@ -92,8 +92,7 @@ gives `m ↦ m ⊗ ⋯ ⊗ m`. -/
 theorem toPolynomialLaw_toTensorPower_comp_gamma (d : ℕ) :
     (toTensorPower R M d).toPolynomialLaw.comp (gamma R M d) = PolynomialLaw.tensorPower R M d := by
   rw [← coe_homogeneousLawMap_apply, ← homogeneousLawEquiv_apply, toTensorPower,
-    LinearEquiv.apply_symm_apply]
-  rfl
+    LinearEquiv.apply_symm_apply, tensorPowerLaw]
 
 /-- `toTensorPower` sends `dp R d m` to `m ⊗ ⋯ ⊗ m`. -/
 @[simp]
@@ -113,29 +112,48 @@ theorem toTensorPower_prod_dp (d : ℕ) {ι : Type*} [DecidableEq ι] (F : Finse
       ∑ w ∈ Fintype.piFinset (fun _ : Fin d ↦ F) with ∑ t, Finsupp.single (w t) 1 = l,
         tprod R fun t ↦ m (w t) := by
   classical
-  -- compare the coefficients of `∏ⱼ Xⱼ ^ lⱼ` in the identity of laws at `∑_{j ∈ F} Xⱼ ⊗ mⱼ`
-  have key := congrArg (fun y ↦ TensorProduct.lid R _ ((lcoeff R l).rTensor _ y))
-    (PolynomialLaw.toFun_comp_apply (gamma R M d) (toTensorPower R M d).toPolynomialLaw
-      (MvPolynomial ι R) (∑ j ∈ F, X j ⊗ₜ[R] m j))
-  rw [toPolynomialLaw_toTensorPower_comp_gamma, PolynomialLaw.tensorPower_toFun_sum_tmul,
-    LinearMap.toPolynomialLaw_toFun, gamma_toFun_sum_tmul] at key
-  have hX (w : Fin d → ι) : ∏ t, (X (w t) : MvPolynomial ι R) =
+  -- pass to the finite index type `F`, where representability computes the value as the
+  -- coefficient of `∏ⱼ Xⱼ ^ lⱼ` in `(∑_{j ∈ F} Xⱼ ⊗ mⱼ) ^ ⊗d`
+  set k : F →₀ ℕ := l.subtypeDomain (· ∈ F)
+  have hk : ∑ j, k j = d := by
+    simpa only [k, Finsupp.subtypeDomain_apply] using (Finset.sum_coe_sort F l).trans hl
+  have hprod : (⟨∏ j ∈ F, dp R (l j) (m j),
+      prod_dp_mem_homogeneousSubmodule_of_sum_finset_eq F m l hl⟩ :
+        homogeneousSubmodule (R := R) (M := M) d) =
+      ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq _ k hk⟩ :=
+    Subtype.ext (Finset.prod_coe_sort F fun j ↦ dp R (l j) (m j)).symm
+  have hX (w : Fin d → F) : ∏ t, (X (w t) : MvPolynomial F R) =
       monomial (∑ t, Finsupp.single (w t) 1) 1 := by
+    -- `X n` is by definition the monomial `monomial (single n 1) 1`
     rw [monomial_sum_one]
-    rfl
-  have hXl (l' : ι →₀ ℕ) (hl' : l'.support ⊆ F) :
-      ∏ j ∈ F, (X j : MvPolynomial ι R) ^ l' j = monomial l' 1 := by
-    rw [monomial_eq, C_1, one_mul, Finsupp.prod_of_support_subset _ hl' _ fun _ _ ↦ pow_zero _]
-  have hmem : l ∈ F.finsuppAntidiag d := Finset.mem_finsuppAntidiag.mpr ⟨hl, hF⟩
-  simp only [map_sum, LinearMap.baseChange_tmul, LinearMap.rTensor_tmul, TensorProduct.lid_tmul,
-    hX, lcoeff_apply, coeff_monomial, ite_smul, one_smul, zero_smul] at key
-  rw [Finset.sum_ite, Finset.sum_const_zero, add_zero] at key
-  rw [key, Finset.sum_eq_single_of_mem l hmem fun l' hl' hne ↦ ?_]
-  · rw [hXl l hF, coeff_monomial, ite_eq_left_iff.mpr fun h ↦ (h rfl).elim, one_smul]
-    exact congrArg _ (Subtype.ext (DirectSum.decompose_of_mem_same _
-      (prod_dp_mem_homogeneousSubmodule_of_sum_finset_eq F m l hl)).symm)
-  · rw [hXl l' (Finset.mem_finsuppAntidiag.mp hl').2, coeff_monomial,
-      ite_eq_right_iff.mpr fun h ↦ (hne h).elim, zero_smul]
+    simp only [X]
+  rw [hprod, toTensorPower, homogeneousLawEquiv_symm_apply_prod_dp d _ _ k hk,
+    PolynomialLaw.coeff_apply, tensorPowerLaw, PolynomialLaw.tensorPower_toFun_sum_tmul]
+  simp only [map_sum, LinearMap.rTensor_tmul, TensorProduct.lid_tmul, hX, lcoeff_apply,
+    coeff_monomial, ite_smul, one_smul, zero_smul, Finset.sum_ite, Finset.sum_const_zero,
+    add_zero]
+  -- a word in `F` is a word in `ι` with letters in `F`, with the same letter counts
+  have hcount (w : Fin d → F) :
+      ∑ t, Finsupp.single (w t) 1 = k ↔ ∑ t, Finsupp.single (w t : ι) 1 = l := by
+    refine ⟨fun h ↦ Finsupp.ext fun j ↦ ?_, fun h ↦ Finsupp.ext fun j ↦ ?_⟩
+    · by_cases hj : j ∈ F
+      · have h' := DFunLike.congr_fun h ⟨j, hj⟩
+        simp only [sum_single_apply, k, Finsupp.subtypeDomain_apply, Subtype.ext_iff] at h'
+        rw [sum_single_apply, h']
+      · -- letters outside `F` occur neither in the word nor in `l`
+        rw [Finsupp.notMem_support_iff.mp fun h' ↦ hj (hF h')]
+        by_contra h'
+        obtain ⟨t, rfl⟩ := sum_single_apply_ne_zero_iff.mp h'
+        exact hj (w t).2
+    · simp only [k, Finsupp.subtypeDomain_apply, ← h, sum_single_apply, Subtype.ext_iff]
+  refine Finset.sum_bij (fun w _ t ↦ w t) (fun w hw ↦ ?_) (fun v _ w _ h ↦ ?_) (fun w hw ↦ ?_)
+    fun _ _ ↦ rfl
+  · rw [Finset.mem_filter] at hw ⊢
+    exact ⟨Fintype.mem_piFinset.mpr fun t ↦ (w t).2, (hcount w).mp hw.2⟩
+  · exact funext fun t ↦ Subtype.ext (congrFun h t)
+  · rw [Finset.mem_filter, Fintype.mem_piFinset] at hw
+    exact ⟨fun t ↦ ⟨w t, hw.1 t⟩, Finset.mem_filter.mpr ⟨Fintype.mem_piFinset.mpr fun _ ↦
+      Finset.mem_univ _, (hcount _).mpr hw.2⟩, rfl⟩
 
 /-- The values of `toTensorPower` are symmetric tensors. -/
 theorem toTensorPower_mem_symmetricTensors (d : ℕ)
@@ -204,61 +222,7 @@ private theorem eq_canonWord_iff {v w : Fin d → κ} :
 
 variable (b : Basis κ R M)
 
-/-- A finite sum `∑_{j ∈ F} sⱼ ⊗ b j` represents every element of `S ⊗[R] M`. -/
-private theorem exists_eq_sum_tmul_basis {S : Type*} [CommSemiring S] [Algebra R S]
-    (x : S ⊗[R] M) : ∃ (F : Finset κ) (s : κ → S), x = ∑ j ∈ F, s j ⊗ₜ[R] b j := by
-  set bS := Algebra.TensorProduct.basis S b
-  refine ⟨(bS.repr x).support, bS.repr x, ?_⟩
-  conv_lhs => rw [← bS.linearCombination_repr x]
-  simp [Finsupp.linearCombination_apply, Finsupp.sum, bS, TensorProduct.smul_tmul']
-
 variable [DecidableEq κ]
-
-/-- The letter counts of a word: the coefficient of `j` in `∑ₜ single (w t) 1` is the number of
-positions of `w` carrying the letter `j`. -/
-private theorem sum_single_apply (w : Fin d → κ) (j : κ) :
-    (∑ t, Finsupp.single (w t) 1 : κ →₀ ℕ) j = #{t | w t = j} := by
-  simp [Finsupp.finsetSum_apply, Finsupp.single_apply]
-
-omit [DecidableEq κ] in
-/-- The letters of a word with values in `F` have counts summing to `d` over `F`. -/
-private theorem sum_sum_single_apply {w : Fin d → κ} {F : Finset κ} (hw : ∀ t, w t ∈ F) :
-    ∑ j ∈ F, (∑ t, Finsupp.single (w t) 1 : κ →₀ ℕ) j = d := by
-  classical
-  simp only [sum_single_apply]
-  exact (Finset.card_eq_sum_card_fiberwise fun t _ ↦ hw t).symm.trans (Finset.card_fin d)
-
-omit [DecidableEq κ] in
-/-- A letter occurs in a word exactly when its count is nonzero. -/
-private theorem sum_single_apply_ne_zero_iff {w : Fin d → κ} {j : κ} :
-    (∑ t, Finsupp.single (w t) 1 : κ →₀ ℕ) j ≠ 0 ↔ ∃ t, w t = j := by
-  classical
-  rw [sum_single_apply, ← Nat.pos_iff_ne_zero, Finset.card_pos]
-  simp [Finset.Nonempty]
-
-omit [DecidableEq κ] in
-/-- Two words have the same letter counts exactly when they have the same underlying unordered
-tuple. -/
-private theorem sum_single_eq_iff {v w : Fin d → κ} :
-    (∑ t, Finsupp.single (v t) 1 : κ →₀ ℕ) = ∑ t, Finsupp.single (w t) 1 ↔
-      TauCeti.Sym.ofFn v = TauCeti.Sym.ofFn w := by
-  classical
-  refine ⟨fun h ↦ Sym.coe_injective (Multiset.ext.mpr fun j ↦ ?_), fun h ↦ Finsupp.ext fun j ↦ ?_⟩
-  · simpa only [TauCeti.Sym.count_coe_ofFn, sum_single_apply] using DFunLike.congr_fun h j
-  · simpa only [TauCeti.Sym.count_coe_ofFn, sum_single_apply] using
-      congrArg (fun s : Sym κ d ↦ Multiset.count j (s : Multiset κ)) h
-
-omit [DecidableEq κ] in
-/-- Every exponent vector of total degree `d` is the letter count of a word of length `d`. -/
-private theorem exists_sum_single_eq (l : κ →₀ ℕ) (hl : (l.sum fun _ n ↦ n) = d) :
-    ∃ w : Fin d → κ, ∑ t, Finsupp.single (w t) 1 = l := by
-  classical
-  obtain ⟨w, hw⟩ := TauCeti.Sym.ofFn_surjective (α := κ) (n := d)
-    ⟨Finsupp.toMultiset l, by rw [Finsupp.card_toMultiset]; exact hl⟩
-  refine ⟨w, Finsupp.ext fun j ↦ ?_⟩
-  simpa only [TauCeti.Sym.count_coe_ofFn, sum_single_apply, Sym.coe_mk,
-    Finsupp.count_toMultiset] using
-      congrArg (fun s : Sym κ d ↦ Multiset.count j (s : Multiset κ)) hw
 
 /-- The product `∏ⱼ dp R lⱼ (b j)` of divided powers of basis vectors, where `lⱼ` is the number
 of occurrences of the letter `j` in the word `w`. -/
@@ -278,7 +242,7 @@ private theorem toTensorPower_basisProd (w : Fin d → κ) :
     exact Finset.mem_image_of_mem w (Finset.mem_univ t)
   rw [basisProd, toTensorPower_prod_dp d _ b _ hF
     (sum_sum_single_apply fun t ↦ Finset.mem_image_of_mem w (Finset.mem_univ t))]
-  simp only [sum_single_eq_iff, Basis.piTensorProduct_apply]
+  simp only [sum_single_eq_sum_single_iff, Basis.piTensorProduct_apply]
 
 /-- The map back from tensors to divided powers: the product basis vector of a chosen word goes to
 `basisProd b w`, and every other product basis vector goes to `0`. -/
@@ -301,12 +265,12 @@ private theorem fromTensorPower_comp_toTensorPower :
   ext S _ _ x
   simp only [PolynomialLaw.toFun'_eq_toFun, PolynomialLaw.toFun_comp_apply,
     LinearMap.toPolynomialLaw_toFun]
-  obtain ⟨F, s, rfl⟩ := exists_eq_sum_tmul_basis b x
-  rw [PolynomialLaw.tensorPower_toFun_sum_tmul, gamma_toFun_sum_tmul, map_sum]
+  obtain ⟨s, rfl⟩ := TensorProduct.eq_repr_basis_right b x
+  rw [Finsupp.sum, PolynomialLaw.tensorPower_toFun_sum_tmul, gamma_toFun_sum_tmul, map_sum]
   simp only [LinearMap.baseChange_tmul, fromTensorPower_tprod, TensorProduct.tmul_ite]
   rw [← Finset.sum_filter]
-  -- a chosen word with letters in `F` corresponds to its letter counts, an exponent vector
-  -- supported in `F` of total degree `d`
+  -- a chosen word with letters in `s.support` corresponds to its letter counts, an exponent vector
+  -- supported in `s.support` of total degree `d`
   refine Finset.sum_bij (fun w _ ↦ ∑ t, Finsupp.single (w t) 1) (fun w hw ↦ ?_)
     (fun v hv w hw h ↦ ?_) (fun l hl ↦ ?_) (fun w hw ↦ ?_)
   · rw [Finset.mem_filter, Fintype.mem_piFinset] at hw
@@ -314,25 +278,25 @@ private theorem fromTensorPower_comp_toTensorPower :
     obtain ⟨t, rfl⟩ := sum_single_apply_ne_zero_iff.mp (Finsupp.mem_support_iff.mp hj)
     exact hw.1 t
   · rw [← (Finset.mem_filter.mp hv).2, ← (Finset.mem_filter.mp hw).2,
-      canonWord_eq_canonWord_iff, ← sum_single_eq_iff, h]
+      canonWord_eq_canonWord_iff, ← sum_single_eq_sum_single_iff, h]
   · rw [Finset.mem_finsuppAntidiag] at hl
     obtain ⟨w₀, hw₀⟩ := exists_sum_single_eq l
       ((Finsupp.sum_of_support_subset l hl.2 _ fun _ _ ↦ rfl).trans hl.1)
     have hcount : ∑ t, Finsupp.single (canonWord w₀ t) 1 = l := by
-      rw [sum_single_eq_iff.mpr (ofFn_canonWord w₀), hw₀]
+      rw [sum_single_eq_sum_single_iff.mpr (ofFn_canonWord w₀), hw₀]
     refine ⟨canonWord w₀, Finset.mem_filter.mpr ⟨Fintype.mem_piFinset.mpr fun t ↦ hl.2 ?_,
       canonWord_canonWord w₀⟩, hcount⟩
     rw [Finsupp.mem_support_iff, ← hcount]
     exact sum_single_apply_ne_zero_iff.mpr ⟨t, rfl⟩
   · rw [Finset.mem_filter, Fintype.mem_piFinset] at hw
-    have hmaps : ∀ t ∈ Finset.univ, w t ∈ F := fun t _ ↦ hw.1 t
+    have hmaps : ∀ t ∈ Finset.univ, w t ∈ s.support := fun t _ ↦ hw.1 t
     congr 1
     · rw [← Finset.prod_fiberwise_of_maps_to' hmaps]
       simp [sum_single_apply]
     · apply Subtype.ext
-      rw [DirectSum.decompose_of_mem_same _ (prod_dp_mem_homogeneousSubmodule_of_sum_finset_eq F b _
+      rw [DirectSum.decompose_of_mem_same _ (prod_dp_mem_homogeneousSubmodule_of_sum_finset_eq _ b _
         (sum_sum_single_apply hw.1)), basisProd]
-      -- letters of `F` outside the word have exponent zero
+      -- letters of `s.support` outside the word have exponent zero
       refine Finset.prod_subset_one_on_sdiff (Finset.image_subset_iff.mpr hmaps)
         (fun j hj ↦ ?_) fun _ _ ↦ rfl
       rw [Finset.mem_sdiff, Finset.mem_image] at hj

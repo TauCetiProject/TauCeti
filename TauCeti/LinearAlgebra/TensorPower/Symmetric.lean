@@ -79,6 +79,7 @@ def symmetricTensors (n : ℕ) : Submodule R (⨂[R]^n M) :=
 variable {n : ℕ}
 
 /-- A tensor is symmetric exactly when it is fixed by every permutation of the factors. -/
+@[simp]
 theorem mem_symmetricTensors {t : ⨂[R]^n M} :
     t ∈ symmetricTensors R M n ↔ ∀ σ : Equiv.Perm (Fin n), reindex R (fun _ ↦ M) σ t = t := by
   simp [symmetricTensors, LinearMap.mem_fixedSubmodule_iff]
