@@ -73,6 +73,9 @@ bilinear forms are equivalent exactly when their associated quadratic forms are 
 * `LinearMap.BilinForm.iIsOrtho.dvd_apply`: divisibility from diagonal values.
 * `LinearMap.BilinForm.isUnit_two_of_iIsOrtho_toBilin'_hyperbolic`: an orthogonal basis of the
   hyperbolic plane forces `2` to be a unit.
+* `LinearMap.BilinForm.equivalent_toBilin'_diagonal_fin_two`: an orthogonal basis of a binary
+  diagonal form `⟨a, c⟩` identifies it with the diagonal form of its self-pairings, in every
+  characteristic.
 * `LinearMap.BilinForm.IsSymm.exists_forall_apply_self_dvd_of_forall_dvd`: over a local ring with
   `2` a unit, a minimal pairing yields a minimal self-pairing.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_isUnit_of_isUnit_det`: over a local ring
@@ -232,6 +235,31 @@ theorem isUnit_two_of_iIsOrtho_toBilin'_hyperbolic {ι : Type*} {b : Basis ι R 
   refine isUnit_of_dvd_one ?_
   simpa [Matrix.toBilin'_apply'] using
     hb.dvd_apply (fun i ↦ hd (b i)) (Pi.single 0 1) (Pi.single 1 1)
+
+/-- **Changing the orthogonal basis of a binary diagonal form.** If the vectors `(x, y)` and
+`(z, t)` are orthogonal for the diagonal form `⟨a, c⟩` on `R²` and form a basis, that is
+`x * t - y * z` is a unit, then `⟨a, c⟩` is isometric to the diagonal form of their self-pairings
+`a x² + c y²` and `a z² + c t²`.
+
+Over a ring in which `2` is not invertible, such as `ℤ_[2]`, this is the bilinear counterpart of
+the quadratic changes of variables `TauCeti.isometryEquivBinaryNormalForm` and
+`QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares`. -/
+theorem equivalent_toBilin'_diagonal_fin_two {a c a' c' x y z t : R}
+    (hdet : IsUnit (x * t - y * z)) (horth : a * x * z + c * y * t = 0)
+    (ha' : a * x ^ 2 + c * y ^ 2 = a') (hc' : a * z ^ 2 + c * t ^ 2 = c') :
+    (Matrix.toBilin' (Matrix.diagonal ![a, c])).Equivalent
+      (Matrix.toBilin' (Matrix.diagonal ![a', c'])) := by
+  let P : Matrix (Fin 2) (Fin 2) R := !![x, z; y, t]
+  have hP : IsUnit P.det := by rwa [Matrix.det_fin_two_of, mul_comm z y]
+  -- The coordinate change `v ↦ P v` carries `⟨a', c'⟩` to `⟨a, c⟩`.
+  refine Equivalent.symm ⟨⟨Matrix.toLinearEquiv' P (P.invertibleOfIsUnitDet hP), fun u v ↦ ?_⟩⟩
+  subst ha' hc'
+  simp only [Matrix.toLinearEquiv'_apply, AddHom.toFun_eq_coe, coe_toAddHom, Matrix.toLin'_apply,
+    Matrix.cons_mulVec, dotProduct, Fin.sum_univ_two, Fin.isValue, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one, Matrix.empty_mulVec, Matrix.toBilin'_apply',
+    Matrix.mulVec, Matrix.diagonal_apply_eq, ne_eq, zero_ne_one, not_false_eq_true,
+    Matrix.diagonal_apply_ne, zero_mul, add_zero, one_ne_zero, zero_add, P]
+  linear_combination (u 0 * v 1 + u 1 * v 0) * horth
 
 /-- Over a local ring in which `2` is a unit, if a value `B u w` of a symmetric bilinear form
 divides every value of the form, then so does one of the self-pairings `B u u`, `B w w` and
