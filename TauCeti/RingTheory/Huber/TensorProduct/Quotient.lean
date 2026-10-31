@@ -123,34 +123,29 @@ theorem idealImage_map (n : ℕ) :
   have hF : D'.ringOfDefinition = D.ringOfDefinition.map f := D.ringOfDefinition_map hφA hψA hφ hψ
   have hbase (a : A) : f (algebraMap A (B ⊗[A] C) a) = algebraMap A (B' ⊗[A] C') a := by
     simp [f, ← hφA]
-  apply le_antisymm
-  · -- `J'ⁿ` is generated over the image ring `F' = f(F)` by the image of `Iⁿ`, which `f` hits.
-    intro x hx
-    obtain ⟨y, hy, rfl⟩ := D'.mem_idealImage.mp hx
-    refine D'.idealOfDefinition_pow_induction
-      (p := fun y ↦ (y : B' ⊗[A] C') ∈ (D.idealImage n).map f.toAddMonoidHom)
-      (by simp) (fun y z hy hz ↦ by simpa using add_mem hy hz) (fun r y hy ↦ ?_)
-      (fun a ha ↦ ⟨_, D.algebraMap_mem_idealImage ha,
-        (hbase a).trans (coe_toRingOfDefinition D' a).symm⟩) hy
-    obtain ⟨z, hz, hzy⟩ := hy
-    obtain ⟨w, hw, rfl⟩ := D.mem_idealImage.mp hz
-    have hr : (r : B' ⊗[A] C') ∈ D.ringOfDefinition.map f := hF ▸ r.2
-    obtain ⟨r₀, hr₀, hr⟩ := Subring.mem_map.mp hr
-    exact ⟨_, D.mem_idealImage.mpr ⟨⟨r₀, hr₀⟩ * w, Ideal.mul_mem_left _ _ hw, rfl⟩,
-      by simp [hr, ← hzy]⟩
-  · -- `f` maps `F` into `F'` and the image of `Iⁿ` into the image of `Iⁿ`.
-    rintro _ ⟨x, hx, rfl⟩
-    obtain ⟨y, hy, rfl⟩ := D.mem_idealImage.mp hx
-    refine D.idealOfDefinition_pow_induction
-      (p := fun y ↦ f (y : B ⊗[A] C) ∈ D'.idealImage n)
-      (by simp) (fun y z hy hz ↦ by simpa using add_mem hy hz) (fun r y hy ↦ ?_)
-      (fun a ha ↦ by
-        rw [coe_toRingOfDefinition, hbase]
-        exact D'.algebraMap_mem_idealImage ha) hy
-    obtain ⟨z, hz, hzy⟩ := D'.mem_idealImage.mp hy
-    have hr : f r ∈ D'.ringOfDefinition := hF ▸ Subring.mem_map.mpr ⟨r, r.2, rfl⟩
-    exact D'.mem_idealImage.mpr
-      ⟨⟨f r, hr⟩ * z, Ideal.mul_mem_left _ _ hz, by simp [hzy]⟩
+  -- the restriction `g : F → F'` of `f` is surjective and carries `Jⁿ` onto `J'ⁿ`
+  let g : D.ringOfDefinition →+* D'.ringOfDefinition :=
+    f.restrict _ _ fun x hx ↦ hF ▸ Subring.mem_map.mpr ⟨x, hx, rfl⟩
+  have hg : Function.Surjective g := by
+    rintro ⟨_, hy⟩
+    obtain ⟨x, hx, rfl⟩ := Subring.mem_map.mp (hF ▸ hy)
+    exact ⟨⟨x, hx⟩, rfl⟩
+  have hgbase (a : D.base.ringOfDefinition) :
+      g (D.toRingOfDefinition a) = D'.toRingOfDefinition a :=
+    Subtype.ext <| (RingHom.coe_restrict_apply ..).trans <|
+      (congrArg f (coe_toRingOfDefinition D a)).trans <|
+        (hbase a).trans (coe_toRingOfDefinition D' a).symm
+  have hJ : D'.idealOfDefinition ^ n = (D.idealOfDefinition ^ n).map g := by
+    rw [Ideal.map_pow, idealOfDefinition_def, idealOfDefinition_def, Ideal.map_map]
+    congr 2
+    exact RingHom.ext fun a ↦ (hgbase a).symm
+  ext x
+  simp only [mem_idealImage, hJ, Ideal.mem_map_iff_of_surjective g hg, AddSubgroup.mem_map]
+  constructor
+  · rintro ⟨_, ⟨y, hy, rfl⟩, rfl⟩
+    exact ⟨y, ⟨y, hy, rfl⟩, rfl⟩
+  · rintro ⟨_, ⟨y, hy, rfl⟩, rfl⟩
+    exact ⟨g y, ⟨y, hy, rfl⟩, rfl⟩
 
 end TensorDatum
 
