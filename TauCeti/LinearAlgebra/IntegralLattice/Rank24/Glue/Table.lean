@@ -293,16 +293,6 @@ theorem glueSubgroup_def (r : RootfulNiemeierType) :
     r.glueSubgroup = AddSubgroup.closure r.glueGenerators :=
   (rfl)
 
-/-- The glue generators lie in the glue subgroup. -/
-theorem glueGenerators_subset_glueSubgroup (r : RootfulNiemeierType) :
-    r.glueGenerators ⊆ r.glueSubgroup :=
-  AddSubgroup.subset_closure
-
-/-- The glue subgroup is the least subgroup containing the glue generators. -/
-theorem glueSubgroup_le_iff {r : RootfulNiemeierType} {K : AddSubgroup r.glueModule} :
-    r.glueSubgroup ≤ K ↔ r.glueGenerators ⊆ K :=
-  AddSubgroup.closure_le K
-
 /-! ### The expected glue order -/
 
 /-- **`|H|² = |A_R|` for the expected glue order**: the square of the displayed order `|H|` is the
