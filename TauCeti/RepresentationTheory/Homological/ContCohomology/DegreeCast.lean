@@ -20,8 +20,9 @@ underlying element of the resolution, the transport one degree up. Both rules ar
 two constructions land in degrees that are equal but not definitionally so, as for the total
 degree `m + n` of a cup product built by recursion on `m`. On continuous cohomology the transport
 is `degreeCast`, the isomorphism `continuousCohomology n X ≅ continuousCohomology k X` along an
-equality `n = k`, and a cocycle that is the transport of another has the transported class
-(`π_eq_degreeCast_π`).
+equality `n = k`. It commutes with any family of maps between cohomology groups indexed by the
+degree (`degreeCast_naturality`), and a cocycle that is the transport of another has the
+transported class (`π_eq_degreeCast_π`).
 
 ## Main definitions
 
@@ -92,6 +93,17 @@ theorem degreeCast_hom_apply_heq {n k : ℕ} (h : n = k) (x : continuousCohomolo
 theorem degreeCast_hom_comp_degreeCast_hom {n k l : ℕ} (h : n = k) (h' : k = l) :
     (degreeCast X h).hom ≫ (degreeCast X h').hom = (degreeCast X (h.trans h')).hom := by
   simp [degreeCast]
+
+/-- **Transport along an equality of degrees is natural**: it commutes with any family of maps
+`f n : Hⁿ(G, X) ⟶ Hⁿ(H, Y)` indexed by the degree, such as restriction or a change of
+coefficients. -/
+@[reassoc]
+theorem degreeCast_naturality {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+    {Y : TopRep.{max v w} R H} (f : ∀ n, continuousCohomology n X ⟶ continuousCohomology n Y)
+    {n k : ℕ} (h : n = k) :
+    f n ≫ (degreeCast Y h).hom = (degreeCast X h).hom ≫ f k := by
+  subst h
+  simp
 
 /-- Transport of cocycles along an equality of degrees. -/
 noncomputable def cocyclesDegreeCast {n k : ℕ} (h : n = k) :
