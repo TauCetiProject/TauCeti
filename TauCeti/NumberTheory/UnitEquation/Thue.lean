@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Field.LinearFractional
 public import TauCeti.Algebra.Polynomial.Homogenize
 public import TauCeti.NumberTheory.NumberField.Units.Balanced
-
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # Reduction of Thue equations to unit equations
@@ -30,6 +28,9 @@ with coefficients
 As `μ` ranges over the finite set `(boundedDivisors u m)³`, only finitely many such unit
 equations occur. Conversely, if `y ≠ 0` and `θ₀ ≠ θ₂`, the quotient
 `t = (x - θ₀ y) / (x - θ₂ y) = (μ₀ / μ₂) (ε₀ / ε₂)` determines `x / y = (θ₀ - t θ₂) / (1 - t)`.
+The field identities behind both directions, `TauCeti.siegel_identity` and
+`TauCeti.div_eq_sub_mul_div_one_sub_of_mul_sub_mul_eq`, are in
+`TauCeti/Algebra/Field/LinearFractional.lean`.
 
 This applies to the Thue equation `G(x, y) = m` with `x, y, m ∈ ℤ`, `m ≠ 0`, and `G` the
 homogenization of a polynomial `g ∈ ℤ[X]` with three distinct roots `θ₀, θ₁, θ₂ ∈ 𝓞 K`: each
@@ -39,9 +40,6 @@ such as `TauCeti.NumberField.Units.max_abs_le_of_mul_add_mul_eq_one`, then bound
 
 ## Main results
 
-* `TauCeti.siegel_identity`: Siegel's identity, divided by `(θ₁ - θ₀) (x - θ₂ y)`.
-* `TauCeti.ne_one_of_mul_sub_mul_eq`, `TauCeti.div_eq_sub_mul_div_one_sub_of_mul_sub_mul_eq`:
-  the quotient `t` with `t (x - θ₂ y) = x - θ₀ y` is not `1` and determines `x / y`.
 * `TauCeti.NumberField.Units.exists_mem_boundedDivisors_mul_add_mul_eq_one`: if each
   `x - θᵢ y` divides `m ≠ 0`, the factors are units times bounded divisors of `m`, and the
   unit quotients solve one of finitely many unit equations.
@@ -60,32 +58,6 @@ open NumberField NumberField.Units
 open scoped NumberField Polynomial
 
 namespace TauCeti
-
-/-- **Siegel's identity.** For `θ₁ ≠ θ₀` and `x - θ₂ y ≠ 0` in a field,
-`(θ₁ - θ₂) / (θ₁ - θ₀) · (x - θ₀ y) / (x - θ₂ y) + (θ₂ - θ₀) / (θ₁ - θ₀) · (x - θ₁ y) / (x - θ₂ y)`
-equals `1`. Applied to the linear factors of a binary form, it turns a Thue equation into unit
-equations. -/
-theorem siegel_identity {F : Type*} [Field F] {θ₀ θ₁ θ₂ x y : F} (h : θ₁ ≠ θ₀)
-    (hxy : x - θ₂ * y ≠ 0) :
-    (θ₁ - θ₂) / (θ₁ - θ₀) * ((x - θ₀ * y) / (x - θ₂ * y)) +
-      (θ₂ - θ₀) / (θ₁ - θ₀) * ((x - θ₁ * y) / (x - θ₂ * y)) = 1 := by
-  have h' : θ₁ - θ₀ ≠ 0 := sub_ne_zero.2 h
-  field_simp
-  ring
-
-/-- If `t (x - θ₂ y) = x - θ₀ y` with `θ₀ ≠ θ₂` and `y ≠ 0`, then `t ≠ 1`. -/
-theorem ne_one_of_mul_sub_mul_eq {F : Type*} [Field F] {θ₀ θ₂ x y t : F} (h : θ₀ ≠ θ₂)
-    (hy : y ≠ 0) (ht : t * (x - θ₂ * y) = x - θ₀ * y) : t ≠ 1 := by
-  rintro rfl
-  exact mul_ne_zero (sub_ne_zero.2 h) hy (by linear_combination ht)
-
-/-- If `t (x - θ₂ y) = x - θ₀ y` with `θ₀ ≠ θ₂` and `y ≠ 0`, then `x / y = (θ₀ - t θ₂) / (1 - t)`.
-Thus the quotient of two linear factors at `(x, y)` determines the ratio `x / y`. -/
-theorem div_eq_sub_mul_div_one_sub_of_mul_sub_mul_eq {F : Type*} [Field F] {θ₀ θ₂ x y t : F}
-    (h : θ₀ ≠ θ₂) (hy : y ≠ 0) (ht : t * (x - θ₂ * y) = x - θ₀ * y) :
-    x / y = (θ₀ - t * θ₂) / (1 - t) := by
-  rw [div_eq_div_iff hy (sub_ne_zero.2 (ne_one_of_mul_sub_mul_eq h hy ht).symm)]
-  linear_combination -ht
 
 namespace NumberField.Units
 
