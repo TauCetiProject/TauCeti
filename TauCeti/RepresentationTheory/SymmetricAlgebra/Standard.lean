@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.DividedDifference
+public import Mathlib.LinearAlgebra.Transvection.Basic
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.Symmetric.Standard
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Permutation
@@ -29,8 +30,8 @@ section, and every invariant on `V₀` is the restriction of an invariant on `K[
 (`TauCeti.map_symmetricAlgebraInvariants_dualRestrict_augmentation`). The invariants on `K[σ]`
 form a polynomial algebra on the elementary symmetric invariants `e₁, …, e_(n+1)`
 (`Representation.esymmSymmetricAlgebraInvariantsEquiv`); restriction kills `e₁`, and the
-restrictions of `e₂, …, e_(n+1)` are algebraically independent. So over a domain in which `n + 1`
-is invertible, the invariant algebra `Sym(V₀*)^(S_σ)` is a polynomial algebra on `n` homogeneous
+restrictions of `e₂, …, e_(n+1)` are algebraically independent. So whenever `n + 1` is invertible
+in `K`, the invariant algebra `Sym(V₀*)^(S_σ)` is a polynomial algebra on `n` homogeneous
 invariants of degrees `2, …, n + 1` (`TauCeti.esymmStandardInvariantsEquiv`).
 
 This is the exact difference from the full permutation representation, whose basic invariants
@@ -194,18 +195,6 @@ theorem map_symmetricAlgebraInvariants_dualRestrict_augmentation
 
 variable {σ} [DecidableEq σ] {n : ℕ}
 
-/-- The elementary symmetric invariant of degree one is the coefficient sum. -/
-private theorem coe_esymmSymmetricAlgebraInvariantsEquiv_X_zero (hn : Fintype.card σ = n + 1) :
-    (esymmSymmetricAlgebraInvariantsEquiv K σ hn (X 0) :
-        SymmetricAlgebra K (Module.Dual K K[σ])) =
-      SymmetricAlgebra.ι K _ (MonoidAlgebra.basis σ K).sumCoords := by
-  have hsum : ∑ j, (MonoidAlgebra.basis σ K).dualBasis j = (MonoidAlgebra.basis σ K).sumCoords :=
-    (MonoidAlgebra.basis σ K).ext fun i ↦ by
-      simp [Module.Basis.coord_apply, Finsupp.single_apply]
-  rw [coe_esymmSymmetricAlgebraInvariantsEquiv_X_eq_sum, Fin.val_zero, zero_add,
-    Finset.powersetCard_one, Finset.sum_map, ← hsum, map_sum]
-  simp
-
 /-- The map sending `Xᵢ` to the restriction of the elementary symmetric invariant of degree
 `i + 2` to the trace-zero hyperplane. -/
 private noncomputable def esymmStandardAlgHom (hn : Fintype.card σ = n + 1) :
@@ -252,18 +241,26 @@ private theorem surjective_esymmStandardAlgHom (h : IsUnit (Fintype.card σ : K)
     AlgEquiv.coe_toAlgHom, hP, coe_restrictInvariants]
   rfl
 
-private theorem injective_esymmStandardAlgHom [IsDomain K] (h : IsUnit (Fintype.card σ : K))
+private theorem injective_esymmStandardAlgHom (h : IsUnit (Fintype.card σ : K))
     (hn : Fintype.card σ = n + 1) : Function.Injective (esymmStandardAlgHom K hn) := by
   set ψ := esymmSymmetricAlgebraInvariantsEquiv K σ hn
   have he₁ : (ψ (X 0) : SymmetricAlgebra K _) =
       SymmetricAlgebra.ι K _ (MonoidAlgebra.basis σ K).sumCoords :=
-    coe_esymmSymmetricAlgebraInvariantsEquiv_X_zero K hn
-  -- `e₁` is a nonzerodivisor, being a nonzero linear form.
+    coe_esymmSymmetricAlgebraInvariantsEquiv_X_zero K σ hn
+  -- `e₁` is a nonzerodivisor: the transvection `φ ↦ φ + φ(i) • (e₁ - xᵢ)` of the linear forms
+  -- sends the coordinate `xᵢ` to `e₁`, so `e₁` is a member of a basis of linear forms.
   have hreg : IsLeftRegular (SymmetricAlgebra.ι K _ (MonoidAlgebra.basis σ K).sumCoords) := by
-    refine SymmetricAlgebra.isLeftRegular_ι fun h0 ↦ ?_
-    have hne : Nonempty σ := Fintype.card_pos_iff.1 (hn ▸ n.succ_pos)
-    have := LinearMap.congr_fun h0 (MonoidAlgebra.single hne.some 1)
-    simp at this
+    obtain ⟨i⟩ : Nonempty σ := Fintype.card_pos_iff.1 (hn ▸ n.succ_pos)
+    have hv : Module.Dual.eval K K[σ] (MonoidAlgebra.single i 1)
+        ((MonoidAlgebra.basis σ K).sumCoords - (MonoidAlgebra.basis σ K).dualBasis i) = 0 := by
+      simp
+    have he : LinearEquiv.transvection hv ((MonoidAlgebra.basis σ K).dualBasis i) =
+        (MonoidAlgebra.basis σ K).sumCoords := by
+      rw [LinearEquiv.transvection.apply]
+      simp
+    have := (SymmetricAlgebra.isRegular_ι_basis
+      ((MonoidAlgebra.basis σ K).dualBasis.map (LinearEquiv.transvection hv)) i).left
+    rwa [Module.Basis.map_apply, he] at this
   refine (injective_iff_map_eq_zero _).2 fun P hP ↦ ?_
   -- The invariant `ψ (rename succ P)` restricts to zero, so it is a multiple `a * e₁`.
   rw [esymmStandardAlgHom_eq_comp_rename, AlgHom.comp_apply, AlgHom.comp_apply,
@@ -291,13 +288,13 @@ private theorem injective_esymmStandardAlgHom [IsDomain K] (h : IsUnit (Fintype.
     Fin.cases_zero, mul_zero] at this
 
 /-- **The invariants of the reflection representation of `S_σ` form a polynomial algebra.** Let
-`σ` have `n + 1` elements, with `n + 1` invertible in the domain `K`. The invariant polynomial
+`σ` have `n + 1` elements, with `n + 1` invertible in `K`. The invariant polynomial
 functions on the trace-zero hyperplane `V₀ ⊆ K[σ]` form a polynomial algebra on `n` generators:
 the variable `Xᵢ` is sent to the restriction to `V₀` of the elementary symmetric invariant
 `e_(i + 2)` (`coe_esymmStandardInvariantsEquiv_X`), which is homogeneous of degree `i + 2`
 (`esymmStandardInvariantsEquiv_X_mem_homogeneousSubmodule`). So the basic invariants have degrees
 `2, …, n + 1`. -/
-noncomputable def esymmStandardInvariantsEquiv [IsDomain K] (h : IsUnit (Fintype.card σ : K))
+noncomputable def esymmStandardInvariantsEquiv (h : IsUnit (Fintype.card σ : K))
     (hn : Fintype.card σ = n + 1) :
     MvPolynomial (Fin n) K ≃ₐ[K] (standardRepresentation K σ).dual.symmetricAlgebraInvariants :=
   AlgEquiv.ofBijective (esymmStandardAlgHom K hn)
@@ -305,7 +302,7 @@ noncomputable def esymmStandardInvariantsEquiv [IsDomain K] (h : IsUnit (Fintype
 
 /-- The generator `Xᵢ` is sent to the restriction to the trace-zero hyperplane of the elementary
 symmetric invariant of degree `i + 2`. -/
-theorem coe_esymmStandardInvariantsEquiv_X [IsDomain K] (h : IsUnit (Fintype.card σ : K))
+theorem coe_esymmStandardInvariantsEquiv_X (h : IsUnit (Fintype.card σ : K))
     (hn : Fintype.card σ = n + 1) (i : Fin n) :
     (esymmStandardInvariantsEquiv K h hn (X i) :
         SymmetricAlgebra K
@@ -319,7 +316,7 @@ theorem coe_esymmStandardInvariantsEquiv_X [IsDomain K] (h : IsUnit (Fintype.car
 `i + 2` elements of the products of the restrictions of their coordinates to the trace-zero
 hyperplane `V₀`. -/
 @[simp]
-theorem coe_esymmStandardInvariantsEquiv_X_eq_sum [IsDomain K] (h : IsUnit (Fintype.card σ : K))
+theorem coe_esymmStandardInvariantsEquiv_X_eq_sum (h : IsUnit (Fintype.card σ : K))
     (hn : Fintype.card σ = n + 1) (i : Fin n) :
     (esymmStandardInvariantsEquiv K h hn (X i) :
         SymmetricAlgebra K
@@ -332,7 +329,7 @@ theorem coe_esymmStandardInvariantsEquiv_X_eq_sum [IsDomain K] (h : IsUnit (Fint
 
 /-- **The basic invariants of the reflection representation of `S_σ` have degrees `2, …, n + 1`**:
 the generator `Xᵢ` is sent to a homogeneous invariant of degree `i + 2`. -/
-theorem esymmStandardInvariantsEquiv_X_mem_homogeneousSubmodule [IsDomain K]
+theorem esymmStandardInvariantsEquiv_X_mem_homogeneousSubmodule
     (h : IsUnit (Fintype.card σ : K)) (hn : Fintype.card σ = n + 1) (i : Fin n) :
     (esymmStandardInvariantsEquiv K h hn (X i) :
         SymmetricAlgebra K

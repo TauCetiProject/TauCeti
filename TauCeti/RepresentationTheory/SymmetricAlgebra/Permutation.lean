@@ -53,7 +53,8 @@ invertible. The cases `n = 0` and `n = 1` are included: the invariant algebra is
   group is isomorphic to `MvPolynomial.symmetricSubalgebra`.
 * `Representation.esymmSymmetricAlgebraInvariantsEquiv`: **the invariant algebra of the full
   permutation representation of `S_σ` is a polynomial algebra** on the elementary symmetric
-  invariants, with `coe_esymmSymmetricAlgebraInvariantsEquiv_X` computing the generators and
+  invariants, with `coe_esymmSymmetricAlgebraInvariantsEquiv_X` computing the generators,
+  `coe_esymmSymmetricAlgebraInvariantsEquiv_X_zero` identifying `e₁` with the coefficient sum, and
   `esymmSymmetricAlgebraInvariantsEquiv_X_mem_homogeneousSubmodule` giving their degrees
   `1, …, n`.
 
@@ -201,6 +202,19 @@ theorem coe_esymmSymmetricAlgebraInvariantsEquiv_X_eq_sum (hn : Fintype.card σ 
       ∑ t ∈ Finset.univ.powersetCard (i + 1), ∏ j ∈ t,
         SymmetricAlgebra.ι K _ ((MonoidAlgebra.basis σ K).dualBasis j) := by
   simp [coe_esymmSymmetricAlgebraInvariantsEquiv_X, esymm]
+
+/-- The elementary symmetric invariant of degree one is the coefficient sum `e₁ = ∑ᵢ xᵢ`, the
+invariant linear form spanning the dual of the trivial summand. -/
+theorem coe_esymmSymmetricAlgebraInvariantsEquiv_X_zero (hn : Fintype.card σ = n + 1) :
+    (esymmSymmetricAlgebraInvariantsEquiv K σ hn (X 0) :
+        SymmetricAlgebra K (Module.Dual K K[σ])) =
+      SymmetricAlgebra.ι K _ (MonoidAlgebra.basis σ K).sumCoords := by
+  have hsum : ∑ j, (MonoidAlgebra.basis σ K).dualBasis j = (MonoidAlgebra.basis σ K).sumCoords :=
+    (MonoidAlgebra.basis σ K).ext fun i ↦ by
+      simp [Module.Basis.coord_apply]
+  rw [coe_esymmSymmetricAlgebraInvariantsEquiv_X_eq_sum, Fin.val_zero, zero_add,
+    Finset.powersetCard_one, Finset.sum_map, ← hsum, map_sum]
+  simp
 
 /-- **The basic invariants of the full permutation representation have degrees `1, …, n`**: the
 generator `Xᵢ` is sent to a homogeneous invariant of degree `i + 1`. -/
