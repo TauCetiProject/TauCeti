@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Relative
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Basic
 
 /-!
 # The coefficient long exact sequence and the Bockstein homomorphism

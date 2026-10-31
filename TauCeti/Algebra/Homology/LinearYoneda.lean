@@ -321,9 +321,11 @@ section CoefficientSequence
 
 /-- For a chain complex `X`, the covariant functor `Y ↦ Hom(X, Y)` from the coefficient category to
 cochain complexes of `k`-modules. Its action on morphisms is postcomposition. -/
--- `@[expose]` is mandated by the module system, as for `linearYonedaFunctor`: statements about
--- `S.map (X.linearYonedaObjFunctor k)` downstream (the singular cochains with coefficients in the
--- terms of `S`) need `(X.linearYonedaObjFunctor k).obj Y` to unfold to `X.linearYonedaObj k Y`.
+-- `@[expose]` is mandated by the module system, as for `linearYonedaFunctor`: without it `map`
+-- cannot be characterised at all, since `linearYonedaObjFunctorMap_app` and the `simps` lemmas only
+-- typecheck once `obj` unfolds to `X.linearYonedaObj k Y`, and an exported statement may unfold
+-- only exposed definitions. Downstream, the terms of `S.map (X.linearYonedaObjFunctor k)` must be
+-- the singular cochain complexes with coefficients in the terms of `S`, for the same reason.
 @[expose, simps]
 noncomputable def _root_.ChainComplex.linearYonedaObjFunctor (X : ChainComplex C α) :
     C ⥤ CochainComplex (ModuleCat k) α where
