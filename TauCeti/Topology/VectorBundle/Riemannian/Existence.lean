@@ -11,6 +11,7 @@ public import Mathlib.Topology.VectorBundle.Hom
 public import Mathlib.Topology.VectorBundle.Riemannian
 
 import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.VectorBundle.Bilinear
 import TauCeti.Topology.VectorBundle.Section
 
 /-!
@@ -28,7 +29,8 @@ group.
 
 The proof is the classical one. Over the base set of a trivialization `e`, pulling back a fixed
 inner product on the model fibre along `e` gives a continuous local metric
-(`TauCeti.continuousOn_trivializationAt_pullbackForm`). The fibrewise conditions on a metric
+(`TauCeti.continuousOn_trivializationAt_pullbackForm`, in
+`TauCeti.Topology.VectorBundle.Bilinear`). The fibrewise conditions on a metric
 (symmetry, positive definiteness and a von Neumann bounded unit set) cut out a convex set of
 continuous bilinear forms on each fibre (`TauCeti.convex_setOfPred_symm_pos_isVonNBounded`), so the
 local metrics glue along a partition of unity, by
@@ -60,24 +62,6 @@ variable {B : Type*} [TopologicalSpace B]
   {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
   [∀ b, TopologicalSpace (E b)] [∀ b, AddCommGroup (E b)] [∀ b, Module ℝ (E b)]
   [FiberBundle F E] [VectorBundle ℝ F E]
-
-/-- The field of bilinear forms `b ↦ φ (e b ·) (e b ·)` obtained by pulling back a fixed bilinear
-form `φ` on the model fibre along the preferred trivialization `e` at `x` is continuous on the base
-set of `e`. -/
-theorem continuousOn_trivializationAt_pullbackForm (φ : F →L[ℝ] F →L[ℝ] ℝ) (x : B) :
-    ContinuousOn
-      (fun b ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) b
-        ((ContinuousLinearMap.precomp ℝ ((trivializationAt F E x).continuousLinearMapAt ℝ b)).comp
-          (φ.comp ((trivializationAt F E x).continuousLinearMapAt ℝ b))))
-      (trivializationAt F E x).baseSet := by
-  rw [Trivialization.continuousOn_section_iff (F := F →L[ℝ] F →L[ℝ] ℝ)
-    (E := fun b ↦ E b →L[ℝ] E b →L[ℝ] ℝ) (trivializationAt _ _ x)
-    (trivializationAt F E x).open_baseSet (by simp [hom_trivializationAt_baseSet])]
-  -- Read in the corresponding trivialization of the bundle of bilinear forms, the field is the
-  -- constant `φ`.
-  refine (continuousOn_const (c := φ)).congr fun b hb ↦ ?_
-  ext v w
-  simp [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates, hb]
 
 /-- **Existence of continuous Riemannian metrics.** A real vector bundle with finite-dimensional
 fibres over a normal paracompact space carries a continuous Riemannian metric. -/

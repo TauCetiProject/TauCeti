@@ -11,7 +11,6 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Topology.Algebra.Module.BilinearForm
-import TauCeti.Topology.VectorBundle.Riemannian.Existence
 
 /-!
 # Existence of Riemannian metrics

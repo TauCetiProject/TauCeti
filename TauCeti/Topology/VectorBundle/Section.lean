@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Convex.PartitionOfUnity
 public import Mathlib.Topology.VectorBundle.Basic
 
+import TauCeti.Topology.VectorBundle.Smul
+
 /-!
 # Continuous sections of vector bundles and partitions of unity
 
@@ -61,13 +63,12 @@ theorem continuousAt_section_iff {x₀ : B} (hx₀ : x₀ ∈ e.baseSet) :
   simp_rw [← continuousWithinAt_univ]
   exact e.continuousWithinAt_section_iff hx₀
 
-/-- On an open subset of the base set of a trivialization `e`, a section is continuous exactly
-when its coordinate function read in `e` is. -/
-theorem continuousOn_section_iff {a : Set B} (ha : IsOpen a) (ha' : a ⊆ e.baseSet) :
+/-- On a subset of the base set of a trivialization `e`, a section is continuous exactly when its
+coordinate function read in `e` is. -/
+theorem continuousOn_section_iff {a : Set B} (ha : a ⊆ e.baseSet) :
     ContinuousOn (fun x ↦ TotalSpace.mk' F x (s x)) a ↔
-      ContinuousOn (fun x ↦ (e ⟨x, s x⟩).2) a := by
-  simp only [ha.continuousOn_iff]
-  exact forall₂_congr fun x hx ↦ e.continuousAt_section_iff (ha' hx)
+      ContinuousOn (fun x ↦ (e ⟨x, s x⟩).2) a :=
+  forall₂_congr fun _ hx ↦ e.continuousWithinAt_section_iff (ha hx)
 
 end Bundle.Trivialization
 
@@ -124,15 +125,8 @@ theorem Continuous.add_section (hs : Continuous fun x ↦ TotalSpace.mk' F x (s 
 continuous there. -/
 theorem ContinuousWithinAt.smul_section (hf : ContinuousWithinAt f u x₀)
     (hs : ContinuousWithinAt (fun x ↦ TotalSpace.mk' F x (s x)) u x₀) :
-    ContinuousWithinAt (fun x ↦ TotalSpace.mk' F x (f x • s x)) u x₀ := by
-  rw [FiberBundle.continuousWithinAt_section] at hs ⊢
-  -- The coordinates in the preferred trivialization at `x₀` are linear near `x₀`.
-  set e := trivializationAt F E x₀
-  have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt F E x₀
-  have hlin {x} (hx : x ∈ e.baseSet) := (e.linear 𝕜 hx).map_smul (f x) (s x)
-  refine (hf.smul hs).congr_of_eventuallyEq ?_ (hlin hx₀)
-  filter_upwards [mem_nhdsWithin_of_mem_nhds (e.open_baseSet.mem_nhds hx₀)] with x hx
-  exact hlin hx
+    ContinuousWithinAt (fun x ↦ TotalSpace.mk' F x (f x • s x)) u x₀ :=
+  (TauCeti.VectorBundle.continuous_smul 𝕜 F E).continuousAt.comp_continuousWithinAt (hf.prodMk hs)
 
 /-- The product of a scalar function and a section, both continuous at a point, is continuous
 there. -/
@@ -153,7 +147,7 @@ theorem ContinuousOn.smul_section (hf : ContinuousOn f u)
 theorem Continuous.smul_section (hf : Continuous f)
     (hs : Continuous fun x ↦ TotalSpace.mk' F x (s x)) :
     Continuous fun x ↦ TotalSpace.mk' F x (f x • s x) :=
-  continuous_iff_continuousAt.mpr fun _ ↦ hf.continuousAt.smul_section hs.continuousAt
+  hf.smul_totalSpace hs
 
 /-- The product `f • s` of a continuous scalar function `f` and a section `s` is continuous as soon
 as `s` is continuous on an open set containing the closed support of `f`. This is the vector

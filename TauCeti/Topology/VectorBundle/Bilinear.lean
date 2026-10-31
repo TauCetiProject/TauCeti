@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Hom
 import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.VectorBundle.Section
 
 /-!
 # Openness of positivity in bilinear bundles
@@ -23,7 +24,12 @@ families of symmetric fields when constructing and perturbing Riemannian metrics
 fibres need only carry their original topological vector space structures; no background metric
 or choice of norms on the fibres is required.
 
-The proof uses the matrix-cone openness theorem
+The file also records that pulling back a fixed bilinear form on the model fibre along a
+trivialization gives a bilinear field continuous on its base set
+(`TauCeti.continuousOn_trivializationAt_pullbackForm`), the local building block for continuous
+Riemannian metrics.
+
+The openness proof uses the matrix-cone openness theorem
 `TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos`, transported through a basis and the native
 iterated hom-bundle trivializations.
 -/
@@ -63,6 +69,24 @@ theorem forall_inCoordinates_bilinear_apply_self_pos_iff {x₀ x : B}
     simpa using h (e v) (by simpa using hv)
   · intro h v hv
     exact h (e.symm v) (by simpa using hv)
+
+/-- The field of bilinear forms `b ↦ φ (e b ·) (e b ·)` obtained by pulling back a fixed bilinear
+form `φ` on the model fibre along the preferred trivialization `e` at `x` is continuous on the base
+set of `e`. -/
+theorem continuousOn_trivializationAt_pullbackForm (φ : F →L[ℝ] F →L[ℝ] ℝ) (x : B) :
+    ContinuousOn
+      (fun b ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) b
+        ((ContinuousLinearMap.precomp ℝ ((trivializationAt F V x).continuousLinearMapAt ℝ b)).comp
+          (φ.comp ((trivializationAt F V x).continuousLinearMapAt ℝ b))))
+      (trivializationAt F V x).baseSet := by
+  rw [Trivialization.continuousOn_section_iff (F := F →L[ℝ] F →L[ℝ] ℝ)
+    (E := fun b ↦ V b →L[ℝ] V b →L[ℝ] ℝ) (trivializationAt _ _ x)
+    (by simp [hom_trivializationAt_baseSet])]
+  -- Read in the corresponding trivialization of the bundle of bilinear forms, the field is the
+  -- constant `φ`.
+  refine (continuousOn_const (c := φ)).congr fun b hb ↦ ?_
+  ext v w
+  simp [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates, hb]
 
 variable [FiniteDimensional ℝ F]
 
