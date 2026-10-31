@@ -37,6 +37,13 @@ with the complex power `cpow`, and for even `n = 2k` the factor is the integer p
 * `TauCeti.fourier_cexp_pi_mul_I_mul_norm_sq_mul_of_finrank_eq`: the same in even rank `2k`, with
   the factor `((-i) ^ k * τ ^ k)⁻¹`.
 
+## Implementation notes
+
+The Schwartz decay estimate is adapted from the Faà di Bruno argument of
+`TauCeti.exists_one_add_norm_pow_mul_norm_iteratedFDeriv_heatKernel_le` in
+`TauCeti/Analysis/PDE/HeatKernel/Bounds.lean`: write the Gaussian as `exp ∘ q` with an exponent
+`q` of temperate growth, and bound its iterated derivatives with `norm_iteratedFDeriv_comp_le`.
+
 ## References
 
 * J.-P. Serre, *A Course in Arithmetic*, Ch. VII §6.
