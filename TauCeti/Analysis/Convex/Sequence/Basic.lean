@@ -259,6 +259,26 @@ theorem chord_inequality {i j k : ℕ} (hi : h i ≠ ⊤) (hk : h k ≠ ⊤)
     (sub_nonneg.mpr (Nat.cast_le.mpr hij) : (0 : ℝ) ≤ j - i)
   nlinarith
 
+/-- If a convex height sequence passes through two points of a real affine line, then at
+every intermediate index where it lies on or above that line it lies on the line. -/
+theorem eq_affine_of_affine_le {i j k : ℕ} {c m : ℝ} (hi : h i = ((c + m * i : ℝ) : WithTop ℝ))
+    (hk : h k = ((c + m * k : ℝ) : WithTop ℝ)) (hij : i ≤ j) (hjk : j ≤ k)
+    (hj : ((c + m * j : ℝ) : WithTop ℝ) ≤ h j) : h j = ((c + m * j : ℝ) : WithTop ℝ) := by
+  have hi' : h i ≠ ⊤ := hi ▸ WithTop.coe_ne_top
+  have hk' : h k ≠ ⊤ := hk ▸ WithTop.coe_ne_top
+  have hj' := hh.ne_top_of_le_of_le hi' hk' hij hjk
+  rw [← WithTop.coe_untop₀_of_ne_top hj'] at hj ⊢
+  rw [WithTop.coe_le_coe] at hj
+  rw [WithTop.coe_eq_coe]
+  rcases eq_or_lt_of_le (hij.trans hjk) with hik | hik
+  · obtain rfl : j = i := le_antisymm (hik ▸ hjk) hij
+    rw [hi, WithTop.untop₀_coe]
+  have hc := hh.chord_inequality hi' hk' hij hjk
+  rw [hi, hk, WithTop.untop₀_coe, WithTop.untop₀_coe] at hc
+  have hik' : (0 : ℝ) < k - i := sub_pos.mpr (Nat.cast_lt.mpr hik)
+  refine le_antisymm (le_of_mul_le_mul_left ?_ hik') hj
+  linarith
+
 /-- Moving two indices one step towards each other does not increase the sum of their
 heights: for `i ≤ k`, the inner pair `i + 1, k + 1` has sum at most that of the outer pair
 `i, k + 2`. If either outer height is infinite, the bound is trivial. -/

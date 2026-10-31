@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Index
+public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.OrthogonalQuotient.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.OrthogonalSum
 
 /-!
@@ -19,12 +20,13 @@ written in the component labels.  This file transports `H` to the discriminant g
 through `TauCeti.DynkinType.glueWordIsometry` and applies the isotropic gluing construction
 `TauCeti.IntegralLattice.ofIsotropicSubgroup`, uniformly in the components.
 
-The resulting lattice `TauCeti.DynkinType.gluedLattice t ht hv H hH` lives in the same rational
+The resulting lattice `R_H = TauCeti.DynkinType.gluedLattice t ht hv H hH` lives in the same
 ambient space as `R` and carries the same form.  Its carrier is the inverse image of `H` in the
 dual of `R` (`mem_gluedLattice_carrier_iff`), it contains `R` with index `|H|`, it is even and
 positive definite of rank `∑ i, rank (t i)`, and it is unimodular exactly when `H` is Lagrangian,
-equivalently when `|H|² = |⊕ i, (t i).glueAlphabet|`.  Gluing along the zero subgroup gives `R`
-back.
+equivalently when `|H|² = |⊕ i, (t i).glueAlphabet|`.  Its discriminant quadratic module is
+identified with `H⊥ / H` in glue-word coordinates (`gluedLatticeDiscriminantIsometry`).  Gluing
+along the zero subgroup gives `R` back.
 
 The root sublattice of a glued lattice is computed from the coset minima of the glue words in
 `TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Roots`.
@@ -39,6 +41,8 @@ The root sublattice of a glued lattice is computed from the coset minima of the 
 * `TauCeti.DynkinType.isEven_gluedLattice`, `isPosDef_gluedLattice`, `finrank_gluedLattice`.
 * `TauCeti.DynkinType.isUnimodular_gluedLattice_iff`,
   `TauCeti.DynkinType.isUnimodular_gluedLattice_iff_natCard_sq_eq`: the unimodularity criteria.
+* `TauCeti.DynkinType.gluedLatticeDiscriminantIsometry`: the isometry `A_(R_H) ≅ H⊥ / H` of
+  finite quadratic modules, in glue-word coordinates.
 
 ## References
 
@@ -165,5 +169,108 @@ theorem gluedLattice_bot :
     rintro _ _ rfl
     exact ofIsotropicSubgroup_bot _ _
   exact key _ _ (AddSubgroup.map_bot _)
+
+/-! ## The discriminant form -/
+
+/-- The glued lattice is the lattice carried by the even intermediate carrier attached to
+the image of `H`.  This is `IntegralLattice.ofIsotropicSubgroup_eq_toIntegralLattice` with the
+inverse-image carrier written out, the form that
+`IntegralLattice.discriminantOrthogonalQuotientIsometryOfSubgroup` uses. -/
+private theorem gluedLattice_eq_toIntegralLattice :
+    gluedLattice t ht hv H hH =
+      (((pi fun i ↦ (t i).rootLattice (ht i)).isEven_intermediateCarrierOfDiscriminantSubgroup_iff
+        (isEven_pi_rootLattice t ht)
+        (H.map (glueWordIsometry t ht hv).toAddEquiv.toAddMonoidHom)).mpr
+        (((glueWordIsometry t ht hv).isIsotropic_map_iff _ H).mpr
+          hH)).isIntegral.toIntegralLattice := by
+  refine (ofIsotropicSubgroup_eq_toIntegralLattice _ (isEven_pi_rootLattice t ht)
+    ⟨H.map (glueWordIsometry t ht hv).toAddEquiv.toAddMonoidHom,
+      ((glueWordIsometry t ht hv).isIsotropic_map_iff _ H).mpr hH⟩).trans ?_
+  congr 2
+  exact evenIntermediateCarrierOrderIsoIsotropicSubgroup_symm_apply_coe _ _ _
+
+/-- Every dual vector of a glued lattice is a dual vector of the orthogonal sum of root
+lattices. -/
+theorem dualCarrier_gluedLattice_le :
+    (gluedLattice t ht hv H hH).dualCarrier ≤
+      (pi fun i ↦ (t i).rootLattice (ht i)).dualCarrier := by
+  rw [gluedLattice_eq_toIntegralLattice]
+  exact IntermediateCarrier.IsIntegral.dualCarrier_le _
+
+/-- The class of a dual vector of a glued lattice in the discriminant group of the
+orthogonal sum of root lattices does not depend on the presentation of the glued lattice. -/
+private theorem mk_dualCarrierEquiv_ofEq_gluedLattice
+    (y : (gluedLattice t ht hv H hH).dualCarrier) :
+    (Submodule.Quotient.mk ⟨_, IntermediateCarrier.IsIntegral.dualCarrier_le _
+        ((Isometry.ofEq (gluedLattice_eq_toIntegralLattice t ht hv H hH)).dualCarrierEquiv
+          y).2⟩ : (pi fun i ↦ (t i).rootLattice (ht i)).DiscriminantGroup) =
+      Submodule.Quotient.mk ⟨y, dualCarrier_gluedLattice_le t ht hv H hH y.2⟩ :=
+  congrArg Submodule.Quotient.mk (Subtype.ext (by
+    rw [Isometry.coe_dualCarrierEquiv_apply, Isometry.ofEq_apply]))
+
+/-- **The discriminant form of a glued lattice in glue-word coordinates**: the isometry
+`A_(R_H) ≅ H⊥ / H` of finite quadratic modules, where `H⊥` is the orthogonal complement of `H`
+in the module of glue words. -/
+noncomputable def gluedLatticeDiscriminantIsometry :
+    FiniteQuadraticModule.Isometry
+      ((gluedLattice t ht hv H hH).discriminantQuadraticModule
+        (isEven_gluedLattice t ht hv H hH))
+      ((FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).orthogonalQuotient H hH) :=
+  ((Isometry.discriminantQuadraticIsometry
+      (Isometry.ofEq (gluedLattice_eq_toIntegralLattice t ht hv H hH))
+      (isEven_gluedLattice t ht hv H hH)).trans
+    ((pi fun i ↦ (t i).rootLattice (ht i)).discriminantOrthogonalQuotientIsometryOfSubgroup
+      (isEven_pi_rootLattice t ht)
+      (((glueWordIsometry t ht hv).isIsotropic_map_iff _ H).mpr hH))).trans
+    ((glueWordIsometry t ht hv).orthogonalQuotientEquiv hH rfl).symm
+
+/-- **The glue word of a dual vector of a glued lattice is orthogonal to the glue code.**
+A dual vector `y` of `R_H` is a dual vector of `R`, and the glue word of its class lies in the
+orthogonal complement `H⊥` for the polar pairing on glue words. -/
+theorem glueWordIsometry_symm_mk_mem_orthogonalComplement
+    (y : (gluedLattice t ht hv H hH).dualCarrier) :
+    (glueWordIsometry t ht hv).symm
+        (Submodule.Quotient.mk ⟨y, dualCarrier_gluedLattice_le t ht hv H hH y.2⟩) ∈
+      (FiniteQuadraticModule.pi fun i ↦
+        (t i).glueAlphabet (ht i)).toFiniteBilinearModule.orthogonalComplement H := by
+  have hmem := IntermediateCarrier.IsIntegral.dualClassHom_mem_orthogonalComplement _
+    ((Isometry.ofEq (gluedLattice_eq_toIntegralLattice t ht hv H hH)).dualCarrierEquiv y)
+  rw [discriminantSubgroup_intermediateCarrierOfDiscriminantSubgroup,
+    IntermediateCarrier.IsIntegral.dualClassHom_apply,
+    mk_dualCarrierEquiv_ofEq_gluedLattice] at hmem
+  have h := ((FiniteBilinearModule.Isometry.orthogonalComplementEquiv _
+    (glueWordIsometry t ht hv).toFiniteBilinearModule H).symm
+      ⟨_, by rwa [FiniteQuadraticModule.Isometry.toFiniteBilinearModule_toAddEquiv]⟩).2
+  rw [FiniteBilinearModule.Isometry.coe_orthogonalComplementEquiv_symm_apply,
+    ← FiniteBilinearModule.Isometry.coe_toAddEquiv,
+    FiniteBilinearModule.Isometry.symm_toAddEquiv] at h
+  simp only [FiniteQuadraticModule.Isometry.toFiniteBilinearModule_toAddEquiv] at h
+  exact h
+
+/-- The discriminant isometry of a glued lattice sends the class of a dual vector `y` to
+the class in `H⊥ / H` of the glue word of `y`. -/
+@[simp]
+theorem gluedLatticeDiscriminantIsometry_mk
+    (y : (gluedLattice t ht hv H hH).dualCarrier) :
+    gluedLatticeDiscriminantIsometry t ht hv H hH (Submodule.Quotient.mk y) =
+      (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).orthogonalQuotientMk H hH
+        ⟨_, glueWordIsometry_symm_mk_mem_orthogonalComplement t ht hv H hH y⟩ := by
+  have h2 := Isometry.discriminantQuadraticIsometry_mk
+    (Isometry.ofEq (gluedLattice_eq_toIntegralLattice t ht hv H hH))
+    (isEven_gluedLattice t ht hv H hH) y
+  have h3 := discriminantOrthogonalQuotientIsometryOfSubgroup_mk _ (isEven_pi_rootLattice t ht)
+    (((glueWordIsometry t ht hv).isIsotropic_map_iff _ H).mpr hH)
+    ((Isometry.ofEq (gluedLattice_eq_toIntegralLattice t ht hv H hH)).dualCarrierEquiv y)
+  -- Evaluate the three factors of the composite one at a time.
+  refine (congrArg (fun z ↦ ((glueWordIsometry t ht hv).orthogonalQuotientEquiv hH rfl).symm
+    ((pi fun i ↦ (t i).rootLattice (ht i)).discriminantOrthogonalQuotientIsometryOfSubgroup
+      (isEven_pi_rootLattice t ht)
+      (((glueWordIsometry t ht hv).isIsotropic_map_iff _ H).mpr hH) z)) h2).trans ?_
+  refine (congrArg ((glueWordIsometry t ht hv).orthogonalQuotientEquiv hH rfl).symm h3).trans ?_
+  refine (FiniteQuadraticModule.Isometry.orthogonalQuotientEquiv_symm_orthogonalQuotientMk
+    _ _ _ _).trans ?_
+  exact congrArg _ (Subtype.ext (congrArg (glueWordIsometry t ht hv).symm
+    ((IntermediateCarrier.IsIntegral.dualClassHom_apply _ _).trans
+      (mk_dualCarrierEquiv_ofEq_gluedLattice t ht hv H hH y))))
 
 end TauCeti.DynkinType

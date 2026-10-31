@@ -39,8 +39,8 @@ Let `T = L ⊗[K] A`, a central simple `L`-algebra, and let `V` be `A` regarded 
 `l ⊗ a` acting by `x ↦ a x l` (`TauCeti.BaseChangeModule`). Right multiplication through `g` is an
 `L`-algebra homomorphism `Bᵐᵒᵖ → End_T V`, because `L` is central in `B`. It is injective because
 `Bᵐᵒᵖ` is simple, and onto by the dimension count
-`TauCeti.IsSimpleRing.finrank_end_mul_finrank_eq_sq`. Finally `Mₐ(T) ≃ₐ[L] M_b((End_T V)ᵐᵒᵖ)` for
-nonzero sizes `a`, `b` (`TauCeti.IsSimpleRing.nonempty_algEquiv_matrix_mulOpposite_end`), and
+`IsSimpleRing.finrank_end_mul_finrank_eq_sq`. Finally `Mₐ(T) ≃ₐ[L] M_b((End_T V)ᵐᵒᵖ)` for
+nonzero sizes `a`, `b` (`IsSimpleRing.nonempty_algEquiv_matrix_mulOpposite_end`), and
 `(End_T V)ᵐᵒᵖ ≃ₐ[L] B`, so `T` and `B` have the same Brauer class.
 
 ## Main results

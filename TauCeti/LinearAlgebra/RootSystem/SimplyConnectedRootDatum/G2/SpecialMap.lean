@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.SpecialMap
+public import TauCeti.LinearAlgebra.Matrix.DotProduct
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Length
 
@@ -210,7 +210,7 @@ theorem g2Length_mul_pairing_g2SpecialIsogenyIndexEquiv (i j : Fin 12) :
           (g2SpecialIsogenyIndexEquiv i) (g2SpecialIsogenyIndexEquiv j) =
       g2Length j * g2SimplyConnectedRootDatum.pairing i j := by
   simp only [g2SimplyConnectedRootDatum_pairing, g2SpecialIsogenyIndexEquiv_apply]
-  exact mul_dotProduct_eq_of_mulVec_eq_smul g2SpecialIsogenyMatrix_mulVec_g2Root
-    g2SpecialIsogenyMatrix_transpose_mulVec_g2Coroot i j
+  exact mul_dotProduct_eq_of_mulVec_eq_smul (g2SpecialIsogenyMatrix_mulVec_g2Root i)
+    (g2SpecialIsogenyMatrix_transpose_mulVec_g2Coroot j)
 
 end TauCeti.DynkinType

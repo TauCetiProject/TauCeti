@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.Pi
 public import TauCeti.Algebra.Star.StarPolynomial
 public import TauCeti.Probability.FreeProbability.Distribution.Basic
 
@@ -19,13 +20,15 @@ adjoints. Equality of star distributions is therefore equivalent to equality of 
 moments, including the empty word.
 
 The transport formulas parallel those for joint distributions: star algebra homomorphisms,
-relabeling and subfamilies, and substitution of star polynomials. In particular, equal star
-distributions remain equal after evaluating the same family of star polynomials. The star
-distribution determines the joint algebraic distribution, and for two functionals on the same
-algebra it is equivalent to agreement on the generated star subalgebra.
+relabeling and subfamilies, adjoint families, and substitution of star polynomials. In particular,
+equal star distributions remain equal after evaluating the same family of star polynomials, and
+a surjective relabeling or passing to the adjoint family loses no information. The star
+distribution determines the joint algebraic distribution, and for selfadjoint families the two
+carry the same information. For two functionals on the same algebra, equality of star
+distributions is equivalent to agreement on the generated star subalgebra.
 
-No positivity is built in: a functional that commutes with `star`, or is nonnegative on
-elements `star x * x`, transfers that property to its star distributions.
+No positivity is built in: a functional that commutes with `star`, is nonnegative on elements
+`star x * x`, or is tracial transfers that property to its star distributions.
 
 ## References
 
@@ -73,14 +76,21 @@ theorem starDistribution_list_prod (φ : A →ₗ[R] R) (a : ι → A) (w : List
     starDistribution φ a (w.map (withStar (X (R := R)))).prod = φ (w.map (withStar a)).prod := by
   simp [map_list_prod, List.map_map, Function.comp_def]
 
+/-- Two families have the same star distribution exactly when the variables and their adjoints
+have the same joint algebraic distribution. -/
+theorem starDistribution_eq_iff_jointDistribution_withStar_eq {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R}
+    {a : ι → A} {b : ι → B} :
+    starDistribution φ a = starDistribution ψ b ↔
+      jointDistribution φ (withStar a) = jointDistribution ψ (withStar b) := by
+  rw [starDistribution_eq_jointDistribution_comp, starDistribution_eq_jointDistribution_comp,
+    (toFreeAlgebra R ι).surjective.injective_linearMapComp_right.eq_iff]
+
 /-- A star distribution is determined by the moments of all words in the variables and their
 adjoints, including the empty word. The two families may live in different algebras. -/
 theorem starDistribution_eq_iff {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R} {a : ι → A} {b : ι → B} :
     starDistribution φ a = starDistribution ψ b ↔
       ∀ w : List (ι × Bool), φ (w.map (withStar a)).prod = ψ (w.map (withStar b)).prod := by
-  rw [starDistribution_eq_jointDistribution_comp, starDistribution_eq_jointDistribution_comp,
-    (toFreeAlgebra R ι).surjective.injective_linearMapComp_right.eq_iff,
-    jointDistribution_eq_iff]
+  rw [starDistribution_eq_iff_jointDistribution_withStar_eq, jointDistribution_eq_iff]
 
 /-- Evaluating the formal variables recovers the original functional on star polynomials. -/
 @[simp]
@@ -125,6 +135,33 @@ theorem starDistribution_comp_eq {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R} {a : 
     starDistribution φ (a ∘ r) = starDistribution ψ (b ∘ r) := by
   rw [starDistribution_comp φ a r, starDistribution_comp ψ b r, h]
 
+/-- A surjective relabeling loses no information about the star distribution. -/
+theorem starDistribution_comp_eq_iff {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R} {a : ι → A} {b : ι → B}
+    {r : κ → ι} (hr : Function.Surjective r) :
+    starDistribution φ (a ∘ r) = starDistribution ψ (b ∘ r) ↔
+      starDistribution φ a = starDistribution ψ b := by
+  classical
+  refine ⟨fun h ↦ ?_, fun h ↦ starDistribution_comp_eq h r⟩
+  simpa [Function.comp_def, Function.surjInv_eq] using
+    starDistribution_comp_eq h (Function.surjInv hr)
+
+/-- The star distribution of the adjoint family is obtained from that of the family by
+substituting the formal adjoints for the variables. -/
+theorem starDistribution_star_family (φ : A →ₗ[R] R) (a : ι → A) :
+    starDistribution φ (star a) =
+      starDistribution (starDistribution φ a) (star (X (R := R))) := by
+  simpa [Pi.star_def] using starDistribution_subst φ a (star X)
+
+/-- Two families have the same star distribution exactly when their adjoint families do. -/
+theorem starDistribution_star_family_eq_iff {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R} {a : ι → A}
+    {b : ι → B} :
+    starDistribution φ (star a) = starDistribution ψ (star b) ↔
+      starDistribution φ a = starDistribution ψ b := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by
+    rw [starDistribution_star_family φ a, starDistribution_star_family ψ b, h]⟩
+  rw [← star_star a, ← star_star b, starDistribution_star_family φ (star a),
+    starDistribution_star_family ψ (star b), h]
+
 /-- The joint algebraic distribution is the restriction of the star distribution to
 polynomials without adjoints. -/
 theorem jointDistribution_eq_starDistribution_comp (φ : A →ₗ[R] R) (a : ι → A) :
@@ -138,6 +175,16 @@ theorem jointDistribution_eq_of_starDistribution_eq {φ : A →ₗ[R] R} {ψ : B
     {a : ι → A} {b : ι → B} (h : starDistribution φ a = starDistribution ψ b) :
     jointDistribution φ a = jointDistribution ψ b := by
   rw [jointDistribution_eq_starDistribution_comp, jointDistribution_eq_starDistribution_comp, h]
+
+/-- For selfadjoint families the star distribution carries no more information than the joint
+algebraic distribution. -/
+theorem starDistribution_eq_iff_jointDistribution_eq {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R}
+    {a : ι → A} {b : ι → B} (ha : ∀ i, IsSelfAdjoint (a i)) (hb : ∀ i, IsSelfAdjoint (b i)) :
+    starDistribution φ a = starDistribution ψ b ↔ jointDistribution φ a = jointDistribution ψ b :=
+  ⟨jointDistribution_eq_of_starDistribution_eq, fun h ↦ by
+    rw [starDistribution_eq_iff_jointDistribution_withStar_eq, withStar_eq_comp_fst ha,
+      withStar_eq_comp_fst hb]
+    exact jointDistribution_comp_eq h Prod.fst⟩
 
 /-- Two functionals have the same star distribution on a family exactly when they agree on the
 star subalgebra generated by that family. -/
@@ -160,9 +207,15 @@ theorem starDistribution_star {φ : A →ₗ[R] R} (hφ : ∀ x, φ (star x) = s
 
 /-- A functional that is nonnegative on every `star x * x` has star distributions with the
 same property. -/
-theorem starDistribution_star_mul_self_nonneg [PartialOrder R] {φ : A →ₗ[R] R}
+theorem starDistribution_star_mul_self_nonneg [LE R] {φ : A →ₗ[R] R}
     (hφ : ∀ x, 0 ≤ φ (star x * x)) (a : ι → A) (p : StarPolynomial R ι) :
     0 ≤ starDistribution φ a (star p * p) := by
   simpa [map_star] using hφ (lift a p)
+
+/-- A tracial functional has tracial star distributions. -/
+theorem starDistribution_mul_comm {φ : A →ₗ[R] R} (hφ : ∀ x y, φ (x * y) = φ (y * x))
+    (a : ι → A) (p q : StarPolynomial R ι) :
+    starDistribution φ a (p * q) = starDistribution φ a (q * p) := by
+  simpa using hφ (lift a p) (lift a q)
 
 end TauCeti
