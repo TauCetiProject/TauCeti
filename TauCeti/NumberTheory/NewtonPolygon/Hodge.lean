@@ -48,8 +48,8 @@ example from row bounds or invariant factors, is a separate matter; here they ar
   polygon of finite or infinite slope data lies below a Newton polygon (for admissible
   coefficient heights in the power-series case) exactly when the cumulative slope sums bound the
   coefficient heights on its domain and the coefficients are infinite outside it.
-* `Matrix.newtonPolygon_charpolyRev_zero`, `Matrix.newtonPolygon_charpolyRev_card`: the endpoint
-  heights `0` and `v (det A)` of the Newton polygon of `det (1 - X A)`.
+* `Matrix.newtonPolygon_charpolyRev_apply_zero`, `Matrix.newtonPolygon_charpolyRev_apply_card`:
+  the endpoint heights `0` and `v (det A)` of the Newton polygon of `det (1 - X A)`.
 * `Matrix.newtonSlopes_charpolyRev`, `Matrix.newtonSlopes_charpolyRev_eq_map_roots_map`: the
   finite slopes of `det (1 - X A)` are the negated slopes of the characteristic polynomial, and,
   when it splits in a valued extension where only zero has infinite valuation, the valuations of
@@ -121,14 +121,14 @@ variable {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] {v : AddValua
   (A : Matrix ι ι R)
 
 /-- The Newton polygon of `det (1 - X A)` starts at `(0, 0)`. -/
-theorem newtonPolygon_charpolyRev_zero : A.charpolyRev.newtonPolygon v 0 = 0 := by
+theorem newtonPolygon_charpolyRev_apply_zero : A.charpolyRev.newtonPolygon v 0 = 0 := by
   rw [newtonPolygon_apply_zero, coeff_charpolyRev_zero, AddValuation.map_one]
 
 /-- At the dimension `d`, the Newton polygon of `det (1 - X A)` has height `v (det A)`, the
 valuation of its degree-`d` coefficient `(-1) ^ d * det A`. It is infinite when `A` is singular,
 or more generally when `det A` has infinite valuation. -/
 @[simp]
-theorem newtonPolygon_charpolyRev_card :
+theorem newtonPolygon_charpolyRev_apply_card :
     A.charpolyRev.newtonPolygon v (Fintype.card ι) = v A.det := by
   rw [newtonPolygon_eq_of_natDegree_le _ _ (natDegree_charpolyRev_le A), coeff_charpolyRev_card,
     AddValuation.map_mul, AddValuation.map_neg_one_pow, zero_add]
