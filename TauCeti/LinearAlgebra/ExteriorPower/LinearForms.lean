@@ -229,6 +229,7 @@ theorem val_ofFinEmbEquiv_symm_topBlock {k : ℕ} (h : k + p = N) (a : Fin p) :
   simp [topBlock]
 
 /-- An index lies in the top block exactly when it is at least `k`. -/
+@[simp]
 theorem mem_topBlock {k : ℕ} (h : k + p = N) {j : Fin N} : j ∈ topBlock h ↔ k ≤ (j : ℕ) := by
   rw [← mem_range_ofFinEmbEquiv_symm_iff_mem]
   refine ⟨?_, fun hj ↦ ⟨⟨j - k, by omega⟩, Fin.ext ?_⟩⟩
@@ -251,11 +252,14 @@ private theorem card_powersetCard_fin (p : ℕ) :
     Fintype.card (powersetCard (Fin (Fintype.card ι)) p) = Fintype.card (powersetCard ι p) := by
   simp only [Fintype.card_eq_nat_card, Set.powersetCard.card, Nat.card_fin]
 
-/-- **The span of the wedges meeting the first `k` indices is a hyperplane**: for a basis `x` with
-biorthogonal forms `f`, it is the kernel of the wedge of the last `p` forms `f k, …, f (N - 1)`. -/
-theorem wedgeSpan_eq_ker (hx : LinearIndependent K x)
-    (hf : ∀ i j, f i (x j) = if i = j then 1 else 0) {k : ℕ} (h : k + p = Fintype.card ι) :
+/-- **The span of the wedges meeting the first `k` indices is a kernel**: for a basis `x` with
+biorthogonal forms `f`, it is the kernel of the wedge of the last `p` forms `f k, …, f (N - 1)`.
+It is a hyperplane by `finrank_wedgeSpan_add_one`. -/
+theorem wedgeSpan_eq_ker (hf : ∀ i j, f i (x j) = if i = j then 1 else 0) {k : ℕ}
+    (h : k + p = Fintype.card ι) :
     wedgeSpan k p x = LinearMap.ker (wedgeForms f p (topBlock h)) := by
+  have hx : LinearIndependent K x :=
+    .of_pairwise_dual_eq_zero_one x f (fun i j hij ↦ by simp [hf, hij]) (by simp [hf])
   refine le_antisymm (wedgeSpan_le_iff.2 fun J ⟨j, hjJ, hjk⟩ ↦ ?_) fun z hz ↦ ?_
   · rw [LinearMap.mem_ker, wedgeForms_plucker_comp_eq_ite hf, ite_eq_right_iff]
     rintro rfl
@@ -274,12 +278,14 @@ theorem wedgeSpan_eq_ker (hx : LinearIndependent K x)
 
 /-- For a basis `x` with biorthogonal forms `f`, a vector lies in the span of the first `k`
 vectors exactly when the wedge of the last `p` forms kills every wedge of `p` vectors through it. -/
-private theorem mem_span_iff_forall_wedgeForms_eq_zero (hx : LinearIndependent K x)
+private theorem mem_span_iff_forall_wedgeForms_eq_zero
     (hf : ∀ i j, f i (x j) = if i = j then 1 else 0) {k : ℕ} (h : k + p = Fintype.card ι)
     (u : ι → K) :
     u ∈ Submodule.span K (x '' {j | (j : ℕ) < k}) ↔
       ∀ (ω : Fin p → ι → K) (b : Fin p), ω b = u →
         wedgeForms f p (topBlock h) (plucker ω) = 0 := by
+  have hx : LinearIndependent K x :=
+    .of_pairwise_dual_eq_zero_one x f (fun i j hij ↦ by simp [hf, hij]) (by simp [hf])
   -- the last `p` forms vanish on the span of the first `k` vectors
   have hvan (a : Fin p) : Submodule.span K (x '' {j | (j : ℕ) < k}) ≤
       LinearMap.ker (f (ofFinEmbEquiv.symm (topBlock h) a)) := by
@@ -338,8 +344,8 @@ theorem mem_span_iff_forall_plucker_mem_wedgeSpan (hx : LinearIndependent K x) {
     u ∈ Submodule.span K (x '' {j | (j : ℕ) < k}) ↔
       ∀ (ω : Fin p → ι → K) (b : Fin p), ω b = u → plucker ω ∈ wedgeSpan k p x := by
   obtain ⟨f, hf⟩ := hx.exists_dual_forall_apply_eq_ite
-  rw [wedgeSpan_eq_ker hx hf h]
-  exact mem_span_iff_forall_wedgeForms_eq_zero hx hf h u
+  rw [wedgeSpan_eq_ker hf h]
+  exact mem_span_iff_forall_wedgeForms_eq_zero hf h u
 
 /-- **The span of the wedges meeting the first `k` indices depends only on the span of the first
 `k` vectors, and determines it** (Bombieri–Gubler, Lemma 7.5.33): for two bases `x` and `x'` and
@@ -372,7 +378,7 @@ theorem plucker_topBlock_notMem_wedgeSpan (hx : LinearIndependent K x) {k : ℕ}
     (h : k + p = Fintype.card ι) :
     plucker (x ∘ ofFinEmbEquiv.symm (topBlock h)) ∉ wedgeSpan k p x := by
   obtain ⟨f, hf⟩ := hx.exists_dual_forall_apply_eq_ite
-  rw [wedgeSpan_eq_ker hx hf h, LinearMap.mem_ker, wedgeForms_plucker_comp_eq_ite hf]
+  rw [wedgeSpan_eq_ker hf h, LinearMap.mem_ker, wedgeForms_plucker_comp_eq_ite hf]
   simp
 
 /-- **The span of the wedges meeting the first `k` indices has codimension one.** -/
@@ -380,7 +386,7 @@ theorem finrank_wedgeSpan_add_one (hx : LinearIndependent K x) {k : ℕ}
     (h : k + p = Fintype.card ι) :
     finrank K (wedgeSpan k p x) + 1 = Fintype.card (powersetCard ι p) := by
   obtain ⟨f, hf⟩ := hx.exists_dual_forall_apply_eq_ite
-  rw [wedgeSpan_eq_ker hx hf h]
+  rw [wedgeSpan_eq_ker hf h]
   have hrange : LinearMap.range (wedgeForms f p (topBlock h)) = ⊤ :=
     LinearMap.range_eq_top.2 fun a ↦ ⟨a • plucker (x ∘ ofFinEmbEquiv.symm (topBlock h)),
       by simp [wedgeForms_plucker_comp_eq_ite hf]⟩
@@ -392,8 +398,8 @@ end WedgeSpan
 
 /-! ### Examples -/
 
-/-- Laplace's identity pins the orientation: in two variables the wedge of two forms on the wedge
-of two vectors is the `2 × 2` determinant with the forms along the rows. -/
+/-- Laplace's identity pins the orientation: for two forms and two vectors the wedge of the forms
+on the wedge of the vectors is the `2 × 2` determinant with the forms along the rows. -/
 example [Fintype ι] (l : Fin 2 → Dual R (ι → R)) (y : Fin 2 → ι → R) :
     wedgeForm l (plucker y) = l 0 (y 0) * l 1 (y 1) - l 0 (y 1) * l 1 (y 0) := by
   simp [Matrix.det_fin_two]
