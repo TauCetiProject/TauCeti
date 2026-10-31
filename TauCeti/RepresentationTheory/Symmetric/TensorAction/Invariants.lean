@@ -26,7 +26,7 @@ special to permutations of tensor factors, and is taken here from
 representation has the invariants as its range once the group order is invertible.
 
 This is the spanning half of the double centralizer in Schur-Weyl duality. There `ι` is finite and
-`V` is a finite free module, so that the canonical map `(End V)^{⊗ι} → End (V^{⊗ι})` is an
+`V` is a finite projective module, so that the canonical map `(End V)^{⊗ι} → End (V^{⊗ι})` is an
 isomorphism; the results below need neither hypothesis on `M`. Under that identification the
 endomorphisms commuting with the factor permutations are the invariants of the permutation action
 on `(End V)^{⊗ι}`, and this file says they are spanned by the pure powers `f^{⊗ι}` — the diagonal

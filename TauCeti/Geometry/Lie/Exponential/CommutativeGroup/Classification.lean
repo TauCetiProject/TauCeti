@@ -40,7 +40,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
   [IsMulCommutative G] [IsTopologicalGroup G] [CompactSpace G] [PreconnectedSpace G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 noncomputable local instance : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=

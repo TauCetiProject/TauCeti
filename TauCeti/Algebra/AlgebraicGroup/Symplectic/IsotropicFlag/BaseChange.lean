@@ -110,7 +110,7 @@ theorem pointsMulEquiv_baseChangeIsoPointsMulEquiv
     (A : CommAlgCat.{w} K)
     (q : HopfAlgebra.points (R := K) (H := coordinateHopfAlgebra K m) A) :
     pointsMulEquiv R m
-        (A := TauCeti.CommAlgCat.restrictScalarsObj (algebraMap R K) A)
+        (A := CommAlgCat.restrictScalarsObj (algebraMap R K) A)
         (CommHopfAlgCat.baseChangeIsoPointsMulEquiv
           (coordinateHopfAlgebraBaseChangeIso R K m).symm A q) =
       pointsMulEquiv K m (A := A) q := by

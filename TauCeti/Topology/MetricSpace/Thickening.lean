@@ -14,8 +14,7 @@ import Mathlib.Topology.Order.DenselyOrdered
 
 Compact pairwise disjoint sets in a finite family in an extended metric space admit pairwise
 disjoint thickenings of one common positive radius. This supplies uniformly separated
-neighborhoods, for example the component neighborhoods used to construct disjoint solid-torus
-neighborhoods of a link.
+neighborhoods, all of the same metric size.
 
 In a pseudometric space, the closed `δ`-thickening of a nonempty set, for `δ ≥ 0`, consists of the
 points at distance at most `δ` from it (`TauCeti.mem_cthickening_iff_infDist_le`). This is the

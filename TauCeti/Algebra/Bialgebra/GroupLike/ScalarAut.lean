@@ -55,10 +55,10 @@ automorphisms. -/
 @[simp]
 theorem groupLikeMap_smul {B : Type*} [Semiring B] [Bialgebra K B] (f : A →ₐc[K] B)
     (σ : L ≃ₐ[K] L) (x : _root_.GroupLike L (L ⊗[K] A)) :
-    GroupLike.map (Bialgebra.TensorProduct.map (BialgHom.id L L) f) (σ • x) =
-      σ • GroupLike.map (Bialgebra.TensorProduct.map (BialgHom.id L L) f) x := by
+    BialgHom.mapGroupLike (Bialgebra.TensorProduct.map (BialgHom.id L L) f) (σ • x) =
+      σ • BialgHom.mapGroupLike (Bialgebra.TensorProduct.map (BialgHom.id L L) f) x := by
   apply _root_.GroupLike.val_injective
-  simp only [GroupLike.val_map, val_smul]
+  simp only [BialgHom.val_mapGroupLike, val_smul]
   exact baseChangeMap_smul (f : A →ₐ[K] B) σ x.val
 
 end ScalarAut
@@ -78,7 +78,7 @@ theorem map_smul_iff_groupLike (f : L ⊗[k] A →ₐc[L] L ⊗[k] B)
     (σ : L ≃ₐ[k] L) :
     (∀ x, f (σ • x) = σ • f x) ↔
       ∀ x : GroupLike L (L ⊗[k] A),
-        TauCeti.GroupLike.map f (σ • x) = σ • TauCeti.GroupLike.map f x := by
+        f.mapGroupLike (σ • x) = σ • f.mapGroupLike x := by
   constructor
   · intro h x
     apply GroupLike.val_injective
@@ -89,7 +89,7 @@ theorem map_smul_iff_groupLike (f : L ⊗[k] A →ₐc[L] L ⊗[k] B)
       apply LinearMap.ext_on_range hA
       intro x
       simpa only [LinearMap.comp_apply, BialgHom.coe_toLinearMap,
-        TauCeti.ScalarAut.semilinearMap_apply, TauCeti.GroupLike.val_map,
+        TauCeti.ScalarAut.semilinearMap_apply, BialgHom.val_mapGroupLike,
         TauCeti.ScalarAut.val_smul] using congrArg GroupLike.val (h x)
     intro x
     simpa only [LinearMap.comp_apply, BialgHom.coe_toLinearMap,

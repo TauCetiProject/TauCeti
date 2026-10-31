@@ -44,6 +44,8 @@ a vector of a weight module spans a finite-dimensional space.
 
 * `TauCeti.UqSl2.isWeightModule_iff_isInternal`: a weight module is the internal direct sum of
   its weight spaces.
+* `TauCeti.UqSl2.IsWeightModule.exists_basis_mem_weightSpace`: a finite-dimensional weight module
+  has a basis of weight vectors.
 * `TauCeti.UqSl2.isTypeOne_iff_isInternal`: at a generic parameter, `V` is of type 1 exactly when
   it is the internal direct sum of the weight spaces of weight `q ^ n`, `n : ℤ`.
 * `TauCeti.UqSl2.isLocallyFiniteModule_of_isWeightModule`: a weight module on which `E` and `F`
@@ -118,6 +120,17 @@ theorem isWeightModule_iff_isInternal :
   refine ⟨fun h => ⟨?_, h⟩, And.right⟩
   simp_rw [weightSpace_def]
   exact (Algebra.lsmul ℂ ℂ V (k q)).eigenspaces_iSupIndep.comp Subtype.val_injective
+
+/-- **A finite-dimensional weight module has a basis of weight vectors.** -/
+theorem IsWeightModule.exists_basis_mem_weightSpace [FiniteDimensional ℂ V]
+    (h : IsWeightModule q V S) :
+    ∃ (b : Module.Basis (Fin (Module.finrank ℂ V)) ℂ V) (wt : Fin (Module.finrank ℂ V) → ℂ),
+      ∀ i, b i ∈ weightSpace q V (wt i) := by
+  have hint := isWeightModule_iff_isInternal.mp h
+  let b := hint.collectedBasis fun μ => Module.Free.chooseBasis ℂ (weightSpace q V μ)
+  let e := b.indexEquiv (Module.finBasis ℂ V)
+  exact ⟨b.reindex e, fun i => (e.symm i).1, fun i => by
+    simpa only [Module.Basis.reindex_apply] using hint.collectedBasis_mem _ (e.symm i)⟩
 
 /-- A module is a weight module with weights in `S` when it is spanned by the images of module
 maps from weight modules with weights in `S`. -/
