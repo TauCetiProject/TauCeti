@@ -173,35 +173,6 @@ theorem arrowTensorBoundary_smul_one (b : Σ i j : Q, i ⟶ j) :
 
 /-! ### Building blocks of the contracting homotopy -/
 
-omit [Finite Q] in
-/-- Two `k`-linear maps out of the enveloping algebra agree once they agree on the `x ⊗ q`, for
-paths `q`. -/
-private theorem envelope_ext {M : Type*} [AddCommGroup M] [Module k M] {f g : 𝒜ᵉ →ₗ[k] M}
-    (h : ∀ (x : 𝒜) {s t : Q} (q : Quiver.Path s t),
-      f (x ⊗ₜ[k] op (ofPath ⟨s, t, q⟩)) = g (x ⊗ₜ[k] op (ofPath ⟨s, t, q⟩))) : f = g :=
-  TensorProduct.ext <| LinearMap.ext fun x ↦
-    ((pathAlgebraBasis k Q).map (opLinearEquiv k)).ext fun q ↦ by
-      simpa [Module.Basis.map_apply] using h x q.2.2
-
-/-- The enveloping algebra acting on `1 ∈ kQ`, as a `k`-linear map. -/
-private noncomputable def actOne : 𝒜ᵉ →ₗ[k] 𝒜 :=
-  LinearMap.applyₗ (1 : 𝒜) ∘ₗ (Bimodule.toEnd (AlgHom.id k 𝒜)).toLinearMap
-
-private theorem actOne_tmul (x : 𝒜) (y : 𝒜ᵐᵒᵖ) : actOne (x ⊗ₜ[k] y) = x * y.unop := by
-  simp [actOne]
-
-omit [Finite Q] in
-/-- A vertex idempotent absorbs a second copy of itself in a right-associated product. -/
-private theorem vertexIdempotent_mul_vertexIdempotent_mul (v : Q) (y : 𝒜) :
-    ε v * (ε v * y) = ε v * y := by
-  rw [← mul_assoc, vertexIdempotent_mul_self]
-
-omit [Finite Q] in
-/-- A path absorbs the vertex idempotent at its source in a right-associated product. -/
-private theorem ofPath_mul_vertexIdempotent_mul {a b : Q} (p : Quiver.Path a b) (y : 𝒜) :
-    ofPath ⟨a, b, p⟩ * (ε a * y) = ofPath ⟨a, b, p⟩ * y := by
-  rw [← mul_assoc, ofPath_mul_vertexIdempotent]
-
 section Homotopy
 
 variable [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
@@ -250,8 +221,7 @@ private theorem homotopyPath_cons {s t t' : Q} (q : Quiver.Path s t) (c : t ⟶ 
     homotopyPath (q.cons c) x =
       homotopyPath q (x * ofArrow c) +
         arrowTensorProj ⟨_, _, c⟩ (x ⊗ₜ[k] op (ofPath ⟨_, _, q⟩)) := by
-  rw [homotopyPath]
-  rfl
+  simp [homotopyPath]
 
 /-- The contracting homotopy, from the enveloping algebra to `⨁_b kQ eⱼ ⊗_k eᵢ kQ`: the `k`-linear
 map sending `x ⊗ q`, for a path `q`, to `homotopyPath q x`. -/
@@ -422,8 +392,9 @@ theorem coe_arrowTensorDifferential_lof (b : Σ i j : Q, i ⟶ j)
     (u : (Ideal.span {arrowTensorIdempotent k Q b} : Ideal 𝒜ᵉ)) :
     (arrowTensorDifferential k Q (DirectSum.lof 𝒜ᵉ _ _ b u) : 𝒜ᵉ) =
       u * arrowTensorBoundary k Q b := by
-  rw [arrowTensorDifferential, DirectSum.toModule_lof]
-  rfl
+  rw [arrowTensorDifferential, DirectSum.toModule_lof, arrowTensorDifferentialComponent,
+    LinearMap.comp_apply, Submodule.subtype_apply, LinearMap.toSpanSingleton_apply,
+    SetLike.val_smul, smul_eq_mul]
 
 /-- **The differential is `x ⊗ y ↦ x b ⊗ y - x ⊗ b y`**: on the generator `x eⱼ ⊗ eᵢ y` of the
 component of an arrow `b : i ⟶ j` its value is `x b ⊗ eᵢ y - x eⱼ ⊗ b y`. -/
@@ -433,7 +404,7 @@ theorem coe_arrowTensorDifferential_lof_tmul (b : Σ i j : Q, i ⟶ j) (x y : �
       (x * ofArrow b.2.2) ⊗ₜ[k] op (ε b.1 * y) - (x * ε b.2.1) ⊗ₜ[k] op (ofArrow b.2.2 * y) := by
   obtain ⟨i, j, b⟩ := b
   rw [coe_arrowTensorDifferential_lof, arrowTensorBoundary, mul_sub]
-  simp [← op_mul, mul_assoc, vertexIdempotent_mul_vertexIdempotent_mul,
+  simp [← op_mul, mul_assoc, IsIdempotentElem.mul_self_mul (x := ε i) (vertexIdempotent_mul_self i),
     ofPath_mul_vertexIdempotent_mul]
 
 /-- **The standard sequence is a complex**: multiplication kills the image of the differential. -/
@@ -502,29 +473,30 @@ private theorem homotopy_arrowTensorDifferential (w : arrowTensorBimodule k Q) :
         ofPath_mul_ofPath_of_not_composable (x := ⟨i, j, c.toPath⟩) (y := ⟨s, t, q⟩) ht]
 
 /-- **The differential composed with the homotopy** is `u ↦ (μ u ⊗ 1)(∑ᵥ eᵥ ⊗ eᵥ) - u` on
-`kQ ⊗_{kQ₀} kQ`, for `μ` the multiplication map; the elements of `kQ ⊗_{kQ₀} kQ` are the
-`v (∑ᵥ eᵥ ⊗ eᵥ)`. -/
+`kQ ⊗_{kQ₀} kQ`, for `μ` the multiplication map, here the action of `u` on `1`; the elements of
+`kQ ⊗_{kQ₀} kQ` are the `v (∑ᵥ eᵥ ⊗ eᵥ)`. -/
 private theorem coe_arrowTensorDifferential_homotopy (v : 𝒜ᵉ) :
     (arrowTensorDifferential k Q (homotopy (v * vertexTensorIdempotent k Q)) : 𝒜ᵉ) =
-      (actOne (v * vertexTensorIdempotent k Q) ⊗ₜ[k] 1) * vertexTensorIdempotent k Q -
-        v * vertexTensorIdempotent k Q := by
+      ((Bimodule.of (AlgHom.id k 𝒜)).symm
+          ((v * vertexTensorIdempotent k Q) • Bimodule.of (AlgHom.id k 𝒜) 1) ⊗ₜ[k] 1) *
+        vertexTensorIdempotent k Q - v * vertexTensorIdempotent k Q := by
   refine LinearMap.congr_fun (f := (vertexTensorBimodule k Q).subtype.restrictScalars k ∘ₗ
       (arrowTensorDifferential k Q).restrictScalars k ∘ₗ homotopy ∘ₗ
         LinearMap.mulRight k (vertexTensorIdempotent k Q))
     (g := LinearMap.mulRight k (vertexTensorIdempotent k Q) ∘ₗ
-      (TensorProduct.mk k 𝒜 𝒜ᵐᵒᵖ).flip 1 ∘ₗ actOne ∘ₗ
-        LinearMap.mulRight k (vertexTensorIdempotent k Q) -
+      (TensorProduct.mk k 𝒜 𝒜ᵐᵒᵖ).flip 1 ∘ₗ (Bimodule.of (AlgHom.id k 𝒜)).symm.toLinearMap ∘ₗ
+        (LinearMap.toSpanSingleton 𝒜ᵉ _ (Bimodule.of (AlgHom.id k 𝒜) 1)).restrictScalars k ∘ₗ
+          LinearMap.mulRight k (vertexTensorIdempotent k Q) -
       LinearMap.mulRight k (vertexTensorIdempotent k Q))
     (envelope_ext fun x s t q ↦ ?_) v
   simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.mulRight_apply,
     LinearMap.restrictScalars_apply, Submodule.subtype_apply, TensorProduct.mk_apply,
-    LinearMap.flip_apply]
+    LinearMap.flip_apply, LinearEquiv.coe_coe, LinearMap.toSpanSingleton_apply]
   rw [tmul_mul_vertexTensorIdempotent_of_vertexIdempotent_mul x (vertexIdempotent_mul_ofPath q),
-    homotopy_tmul,
-    coe_arrowTensorDifferential_homotopyPath, actOne_tmul, unop_op, mul_assoc x (ε t) (ε t),
-    vertexIdempotent_mul_self, ← op_one,
-    tmul_mul_vertexTensorIdempotent_of_mul_vertexIdempotent (v := s)
-      (by rw [mul_assoc, ofPath_mul_vertexIdempotent]), mul_one]
+    homotopy_tmul, coe_arrowTensorDifferential_homotopyPath, Bimodule.smul_of,
+    LinearEquiv.symm_apply_apply, ← op_one,
+    tmul_mul_vertexTensorIdempotent_of_mul_vertexIdempotent (v := s) (by simp [mul_assoc])]
+  simp [mul_assoc]
 
 /-! ### Exactness -/
 
@@ -542,11 +514,9 @@ theorem exact_arrowTensorDifferential_vertexTensorMul :
   · obtain ⟨u, hmem⟩ := u
     have hE := mem_vertexTensorBimodule_iff.1 hmem
     refine ⟨-homotopy u, Subtype.ext ?_⟩
-    have h₀ : actOne u = 0 := by
-      rw [vertexTensorMul_apply, Bimodule.smul_def] at hu
-      simpa [actOne] using hu
+    rw [vertexTensorMul_apply, Submodule.coe_mk] at hu
     have key := coe_arrowTensorDifferential_homotopy (k := k) (Q := Q) u
-    rw [hE, h₀, TensorProduct.zero_tmul, zero_mul, zero_sub] at key
+    rw [hE, hu, map_zero, TensorProduct.zero_tmul, zero_mul, zero_sub] at key
     rw [map_neg, Submodule.coe_neg, key, neg_neg]
   · rintro ⟨w, rfl⟩
     exact vertexTensorMul_arrowTensorDifferential w
