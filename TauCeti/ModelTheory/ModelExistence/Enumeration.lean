@@ -7,7 +7,7 @@ module
 
 public import TauCeti.ModelTheory.ModelExistence.ConsistencyProperty
 import TauCeti.ModelTheory.Basic
-import Mathlib.ModelTheory.Encoding
+import TauCeti.ModelTheory.Infinitary.Encoding
 import Mathlib.Data.Nat.Pairing
 
 /-!
@@ -17,7 +17,7 @@ Let `C` be a consistency property over `L` and `s` a countable member of `C`. Th
 `s` along an increasing chain of members of `C`, the **stages** `C.stage s e q n`, whose union
 `C.limit s e q` contains the target of every clause of `C` whenever it contains the clause's
 trigger: one chosen component of each disjunctive sentence, every component of each conjunctive
-one, every Henkin-constant instance of a universal sentence, a counterexample to a negated
+one, every Henkin-constant instance of a universal sentence, a witness to each negated
 universal sentence, the reflexive equations, substitution of equals into atomic sentences, and an
 equation naming each closed term by a Henkin constant. The limit contains neither `⊥` nor a
 sentence together with its negation, since each of these would already lie in a stage. The limit
@@ -79,25 +79,6 @@ namespace Language
 
 open BoundedFormulaInf
 
-namespace BoundedFormulaInf
-
-variable {L : Language.{u, v}} {ι : Type w} {α : Type u'} {n : ℕ}
-
-/-- With countably many variables and countably many function and relation symbols, there are
-countably many atomic formulas. -/
-instance countable_subtype_isAtomic [Countable α] [Countable (Σ l, L.Functions l)]
-    [Countable (Σ l, L.Relations l)] :
-    Countable {φ : L.BoundedFormulaInf ι α n // φ.IsAtomic} := by
-  refine Function.Surjective.countable
-    (f := Sum.elim (fun t : L.Term (α ⊕ Fin n) × L.Term (α ⊕ Fin n) =>
-        (⟨equal t.1 t.2, .equal _ _⟩ : {φ : L.BoundedFormulaInf ι α n // φ.IsAtomic}))
-      fun R : Σ l, L.Relations l × (Fin l → L.Term (α ⊕ Fin n)) => ⟨rel R.2.1 R.2.2, .rel _ _⟩)
-    ?_
-  rintro ⟨_, ⟨t₁, t₂⟩ | ⟨R, ts⟩⟩
-  exacts [⟨.inl (t₁, t₂), rfl⟩, ⟨.inr ⟨_, R, ts⟩, rfl⟩]
-
-end BoundedFormulaInf
-
 namespace ConsistencyProperty
 
 variable {L : Language.{u, v}}
@@ -123,7 +104,7 @@ inductive Request (L : Language.{u, v}) : Type (max u v)
   | notISup (i : ℕ ⊕ ℕ) (k : ℕ)
   /-- Instantiate the universal sentence named by the source at the Henkin constant `c`. -/
   | all (i : ℕ ⊕ ℕ) (c : ℕ)
-  /-- Choose a counterexample to the negated universal sentence named by the source. -/
+  /-- Choose a witness to the negated universal sentence named by the source. -/
   | notAll (i : ℕ ⊕ ℕ)
   /-- Add the equation `t = t`. -/
   | eqRefl (t : L[[ℕ]].Term (Empty ⊕ Fin 0))
@@ -266,6 +247,7 @@ variable {C : ConsistencyProperty L} {s : L[[ℕ]].Theoryω} {e : ℕ → L[[ℕ
   {q : ℕ → Request L}
 
 /-- A sentence lies in the limit exactly when it lies in some stage. -/
+@[simp]
 theorem mem_limit {φ : L[[ℕ]].Sentenceω} : φ ∈ C.limit s e q ↔ ∃ n, φ ∈ C.stage s e q n :=
   Set.mem_iUnion
 
@@ -465,7 +447,7 @@ theorem limit_all {φ : L[[ℕ]].BoundedFormulaω Empty 1} (h : φ.all ∈ C.lim
     fun t ht hφ => ⟨_, rfl, C.all t ht φ hφ c⟩
   exact hφ
 
-/-- The limit contains a counterexample at some Henkin constant to each of its negated universal
+/-- The limit contains a witness at some Henkin constant to each of its negated universal
 sentences. -/
 theorem limit_not_all {φ : L[[ℕ]].BoundedFormulaω Empty 1} (h : φ.all.not ∈ C.limit s e q) :
     ∃ c : ℕ, (φ.inst (L.con c).term).not ∈ C.limit s e q := by
