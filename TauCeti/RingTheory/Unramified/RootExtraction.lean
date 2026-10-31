@@ -29,7 +29,7 @@ namespace TauCeti
 
 /-- Formal unramifiedness of a positive-degree root extraction forces its exponent to be
 invertible in the base ring. No invertibility assumption on the radicand is needed. -/
-theorem isUnit_natCast_of_formallyUnramified_adjoinRoot {R : Type*} [CommRing R]
+theorem isUnit_natCast_of_formallyUnramified_adjoinRoot_X_pow_sub_C {R : Type*} [CommRing R]
     (a : R) {n : ℕ} (hn : n ≠ 0)
     [Algebra.FormallyUnramified R (AdjoinRoot (X ^ n - C a))] : IsUnit (n : R) := by
   nontriviality R
@@ -48,12 +48,12 @@ namespace Prime
 /-- An exponent of an unramified root extraction over `R[1/f]` descends to a unit of `R`
 if it is not divisible by the prime element `f`. In particular this applies to an étale root
 algebra and an exponent nonzero in the residue field at `(f)`. -/
-theorem isUnit_natCast_of_formallyUnramified_adjoinRoot_away {R S : Type*}
+theorem isUnit_natCast_of_formallyUnramified_adjoinRoot_X_pow_sub_C_away {R S : Type*}
     [CommRing R] [IsDomain R] [CommRing S] [Algebra R S] {f : R}
-    [IsLocalization.Away f S] (hf : Prime f) {n : ℕ} (hn : n ≠ 0) (hfn : ¬f ∣ (n : R))
-    [Algebra.FormallyUnramified S (AdjoinRoot (X ^ n - C (algebraMap R S f)))] :
-    IsUnit (n : R) := by
+    [IsLocalization.Away f S] (hf : Prime f) (a : S) {n : ℕ} (hfn : ¬f ∣ (n : R))
+    [Algebra.FormallyUnramified S (AdjoinRoot (X ^ n - C a))] : IsUnit (n : R) := by
+  have hn : n ≠ 0 := by rintro rfl; exact hfn (by simp)
   apply hf.isUnit_of_isUnit_away_of_not_dvd (S := S) _ hfn
-  simpa using TauCeti.isUnit_natCast_of_formallyUnramified_adjoinRoot (algebraMap R S f) hn
+  simpa using TauCeti.isUnit_natCast_of_formallyUnramified_adjoinRoot_X_pow_sub_C a hn
 
 end Prime
