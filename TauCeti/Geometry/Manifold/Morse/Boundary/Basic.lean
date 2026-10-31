@@ -176,14 +176,16 @@ noncomputable def morseBoundary :
     Finsupp.ofSupportFinite (h.morseBoundaryCoeff hf p) (toFinite _)
 
 /-- The coefficient of `q` in the Morse boundary of a chain `c` is the sum over the critical
-points `p` of `c p` times the number of trajectories from `p` to `q`. -/
+points `p` of `c p` times the boundary coefficient `morseBoundaryCoeff`: the number of
+trajectories from `p` to `q` modulo two when `ind p = ind q + 1`, and zero otherwise. -/
 theorem morseBoundary_apply (c : criticalPoints 𝓘(ℝ, E) f →₀ ZMod 2)
     (q : criticalPoints 𝓘(ℝ, E) f) :
     h.morseBoundary hf c q = c.sum fun p a ↦ a * h.morseBoundaryCoeff hf p q := by
   simp [morseBoundary, Finsupp.linearCombination_apply, Finsupp.ofSupportFinite_coe]
 
-/-- The coefficient of `q` in the Morse boundary of `a • p` is `a` times the number of
-trajectories from `p` to `q`. -/
+/-- The coefficient of `q` in the Morse boundary of `a • p` is `a` times the boundary
+coefficient `morseBoundaryCoeff`: the number of trajectories from `p` to `q` modulo two when
+`ind p = ind q + 1`, and zero otherwise. -/
 @[simp]
 theorem morseBoundary_single_apply (p q : criticalPoints 𝓘(ℝ, E) f) (a : ZMod 2) :
     h.morseBoundary hf (Finsupp.single p a) q = a * h.morseBoundaryCoeff hf p q := by
