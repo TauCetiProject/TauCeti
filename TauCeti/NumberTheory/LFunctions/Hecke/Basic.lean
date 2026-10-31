@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Meromorphic.Continuation
-public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Cancellation
 public import TauCeti.NumberTheory.LFunctions.Hecke.Primitive
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight
 

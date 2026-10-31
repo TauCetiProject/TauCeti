@@ -208,11 +208,6 @@ theorem conductor_inv (ψ : PrimitiveRayClassCharacter K) : ψ⁻¹.conductor = 
 theorem character_inv (ψ : PrimitiveRayClassCharacter K) : ψ⁻¹.character = ψ.character⁻¹ :=
   (rfl)
 
-/-- Every presentation of the inverse is the inverse of the corresponding presentation. -/
-theorem induced_character_inv (ψ : PrimitiveRayClassCharacter K) {𝔐 : Modulus K}
-    (h : ψ⁻¹.conductor ∣ 𝔐) : ψ⁻¹.character.induced h = (ψ.character.induced h)⁻¹ :=
-  map_inv (RayClassCharacter.induced h) ψ.character
-
 /-- **The primitive character of the inverse is the inverse of the primitive character.** -/
 @[simp]
 theorem of_inv (χ : RayClassCharacter 𝔪) : of χ⁻¹ = (of χ)⁻¹ :=
