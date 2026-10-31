@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Young.OfRowLens
 public import TauCeti.Combinatorics.Young.Partitions
-public import TauCeti.Combinatorics.Young.Yamanouchi
+public import TauCeti.Combinatorics.Young.LittlewoodRichardson.Yamanouchi
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Bialternant
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Symmetric
 
@@ -22,9 +22,11 @@ with natural-number coefficients in the Schur polynomials,
 where `c_ν` is the number of semistandard tableaux `T` of shape `μ` in the alphabet `Fin N` that are
 `λ`-Yamanouchi (`SemistandardYoungTableau.IsYamanouchi`) and whose content added to `λ` is `ν`.
 This is `TauCeti.diagramSchurPoly_mul_diagramSchurPoly`. The sum runs over the partitions `ν` of
-`|λ| + |μ|`, and no bound on the rows of `λ` or `μ` is needed. Identifying the count `c_ν` with
-the number `Nat.card (TauCeti.LRTableau λ ν μ)` of Littlewood–Richardson tableaux, whose
-lattice condition reads the rows rather than the columns, is a separate bijection, not made here.
+`|λ| + |μ|`, and no bound on the rows of `λ` or `μ` is needed. When `ν` has at most `N` rows,
+`c_ν` is the number `Nat.card (TauCeti.LRTableau λ ν μ)` of Littlewood–Richardson tableaux, by the
+bijection `TauCeti.lrTableauEquivYamanouchi`; for taller `ν` the Schur polynomial `s_ν` vanishes.
+So the coefficients may equally be taken to be the Littlewood–Richardson coefficients
+(`TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`).
 
 ## Stembridge's proof
 
@@ -51,6 +53,8 @@ commutative semiring.
 * `TauCeti.diagramSchurPoly_mul_alternant_betaNumber`: the Littlewood–Richardson rule for
   alternants, `s_μ · a_{λ+δ} = ∑_T a_{λ+δ+c(T)}`, the sum over the `λ`-Yamanouchi tableaux.
 * `TauCeti.diagramSchurPoly_mul_diagramSchurPoly`: **the Littlewood–Richardson rule**.
+* `TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`: the
+  Littlewood–Richardson rule with the Littlewood–Richardson coefficients `c^ν_{λ μ}`.
 
 ## References
 
@@ -300,5 +304,31 @@ theorem diagramSchurPoly_mul_diagramSchurPoly {R : Type*} [CommSemiring R]
       YoungDiagram.le_of_forall_rowLen_le fun i => hν i ▸ Nat.le_add_right _ _
     rw [diagramSchurPoly_eq_zero_of_lt_colLen
       (hlt.trans_le (YoungDiagram.colLen_le_of_le hle 0)), smul_zero]
+
+open scoped Classical in
+/-- **The Littlewood–Richardson rule**, with Littlewood–Richardson tableaux. The product of the
+Schur polynomials of two Young diagrams `λ` and `μ` in the alphabet `Fin N` is the sum, over the
+partitions `ν` of `|λ| + |μ|`, of `s_ν` counted with multiplicity the Littlewood–Richardson
+coefficient `c^ν_{λ μ} = Nat.card (LRTableau λ ν μ)`. -/
+theorem diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau {R : Type*}
+    [CommSemiring R] (lam μ : YoungDiagram) :
+    diagramSchurPoly N R lam * diagramSchurPoly N R μ =
+      ∑ ν : (lam.card + μ.card).Partition,
+        Nat.card (LRTableau lam (ofPartition ν) μ) • diagramSchurPoly N R (ofPartition ν) := by
+  rw [diagramSchurPoly_mul_diagramSchurPoly]
+  refine sum_congr rfl fun ν _ => ?_
+  by_cases hν : (ofPartition ν).colLen 0 ≤ N
+  · -- The `λ`-Yamanouchi tableaux with `λ + c(T) = ν` have entries below `ℓ(ν) ≤ N`.
+    congr 1
+    rw [natCard_lrTableau_eq_natCard_isYamanouchi, ← Fintype.card_subtype,
+      ← Nat.card_eq_fintype_card]
+    exact Nat.card_congr
+      { toFun T := ⟨T.1.1, T.2⟩
+        invFun T := ⟨⟨T.1, fun i c hc =>
+          (SemistandardYoungTableau.apply_lt_colLen_zero_of_rowLen_add_content_eq T.2.2 hc).trans_le
+            hν⟩, T.2⟩
+        left_inv _ := rfl
+        right_inv _ := rfl }
+  · rw [diagramSchurPoly_eq_zero_of_lt_colLen (Nat.lt_of_not_le hν), smul_zero, smul_zero]
 
 end TauCeti
