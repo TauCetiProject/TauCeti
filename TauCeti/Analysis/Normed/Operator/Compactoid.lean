@@ -27,10 +27,12 @@ sums, scalar multiples and composition on either side with continuous linear map
 limits in operator norm (`ContinuousLinearMap.isClosed_setOf_hasCompactoidImage`). Topologically
 compact operators have compactoid image (`IsCompactOperator.hasCompactoidImage`). Over a complete
 nontrivially normed field, so do completely continuous operators, the operator-norm limits of maps
-of finite rank (`ContinuousLinearMap.IsCompletelyContinuous.hasCompactoidImage`). Between the
-model spaces `C₀(I, K)` over a complete ultrametric field the converse holds too, combining the
-comparison with row compactness (`ContinuousLinearMap.isRowCompact_iff_hasCompactoidImage`) with
-Serre's criterion (`ContinuousLinearMap.isRowCompact_iff_isCompletelyContinuous`).
+of finite rank (`ContinuousLinearMap.IsCompletelyContinuous.hasCompactoidImage`); over a locally
+compact field these are moreover compact operators
+(`ContinuousLinearMap.IsCompletelyContinuous.isCompactOperator`). For maps into an ultrametric
+Banach space the converse holds too
+(`ContinuousLinearMap.hasCompactoidImage_iff_isCompletelyContinuous`, in
+`TauCeti.Analysis.Normed.Operator.Compactoid.CompletelyContinuous`).
 
 ## Main definitions
 
@@ -48,6 +50,8 @@ Serre's criterion (`ContinuousLinearMap.isRowCompact_iff_isCompletelyContinuous`
 * `LinearMap.IsFiniteRank.hasCompactoidImage`,
   `ContinuousLinearMap.IsCompletelyContinuous.hasCompactoidImage`: over a complete field, maps of
   finite rank and completely continuous maps have compactoid image.
+* `ContinuousLinearMap.IsCompletelyContinuous.isCompactOperator`: over a locally compact field,
+  completely continuous maps into a Banach space are compact operators.
 
 ## References
 
@@ -204,5 +208,13 @@ theorem ContinuousLinearMap.IsCompletelyContinuous.hasCompactoidImage {u : E →
   hasCompactoidImage_of_forall_approx fun ε hε ↦
     have ⟨v, hv, huv⟩ := isCompletelyContinuous_iff.1 hu ε hε
     ⟨v, hv.hasCompactoidImage, huv⟩
+
+/-- Over a locally compact nontrivially normed field, such as `ℚ_p`, **completely continuous maps
+into a Banach space are compact operators**: the image of the closed unit ball is compactoid, hence
+totally bounded, so its closure is compact. -/
+theorem ContinuousLinearMap.IsCompletelyContinuous.isCompactOperator [ProperSpace K]
+    [CompleteSpace F] {u : E →L[K] F} (hu : u.IsCompletelyContinuous) : IsCompactOperator u :=
+  (isCompactOperator_iff_isCompact_closure_image_closedBall (u : E →ₗ[K] F) one_pos).2 <|
+    hu.hasCompactoidImage.totallyBounded.closure.isCompact_of_isClosed isClosed_closure
 
 end Complete
