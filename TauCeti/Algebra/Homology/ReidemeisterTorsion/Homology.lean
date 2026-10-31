@@ -85,12 +85,6 @@ section Bracket
 
 variable {j : ℤ}
 
-/-- The boundaries `Bⱼ₊₁` are cycles. -/
-private theorem range_d_le_ker_d (j : ℤ) :
-    LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom ≤ LinearMap.ker (C.d (j + 1) j).hom := by
-  rintro _ ⟨x, rfl⟩
-  exact C.d_comp_d_apply _ _ _ x
-
 /-- A cycle of degree `j + 1`, as an element of the kernel of `d : Cⱼ₊₁ → Cⱼ`. -/
 private def toKer (j : ℤ) (y : C.cycles (j + 1)) : LinearMap.ker (C.d (j + 1) j).hom :=
   ⟨C.iCycles (j + 1) y, by
@@ -110,7 +104,10 @@ private theorem kerClass_toKer (j : ℤ) (y : C.cycles (j + 1)) :
 
 /-- The sequence `Bⱼ₊₁ → Zⱼ₊₁ → Hⱼ₊₁` is exact. -/
 private theorem exact_inclusion_kerClass (j : ℤ) :
-    Function.Exact (Submodule.inclusion (range_d_le_ker_d (C := C) j)) (kerClass j) := by
+    Function.Exact (Submodule.inclusion (LinearMap.range_le_ker_iff.2 (by
+      rw [← ModuleCat.hom_comp, C.d_comp_d, ModuleCat.hom_zero]) :
+        LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom ≤ LinearMap.ker (C.d (j + 1) j).hom))
+      (kerClass j) := by
   intro z
   rw [kerClass, C.moduleCatHomologyClass_eq_zero_iff _ _ _ (ChainComplex.prev ℤ (j + 1))]
   constructor
@@ -118,12 +115,6 @@ private theorem exact_inclusion_kerClass (j : ℤ) :
     exact ⟨⟨_, y, rfl⟩, Subtype.ext hy⟩
   · rintro ⟨⟨_, y, rfl⟩, rfl⟩
     exact ⟨y, rfl⟩
-
-/-- The sequence `Zⱼ₊₁ → Cⱼ₊₁ → Bⱼ` is exact. -/
-private theorem exact_subtype_ker_rangeRestrict (j : ℤ) :
-    Function.Exact (LinearMap.ker (C.d (j + 1) j).hom).subtype
-      (C.d (j + 1) j).hom.rangeRestrict :=
-  LinearMap.exact_iff.2 (by rw [LinearMap.ker_rangeRestrict, Submodule.range_subtype])
 
 variable {p m q : ℕ}
   (b₁ : Basis (Fin p) F (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom))
@@ -142,7 +133,9 @@ private def cyclesBasis : Basis (Fin p ⊕ Fin m) F (LinearMap.ker (C.d (j + 1) 
 representing a basis `h` of the homology `Hⱼ₊₁`, and lifts `s` of a basis `b₀` of the
 boundaries `Bⱼ`. -/
 private def bracketBasis : Basis ((Fin p ⊕ Fin m) ⊕ Fin q) F (C.X (j + 1)) :=
-  Basis.ofExactLift (Submodule.injective_subtype _) (exact_subtype_ker_rangeRestrict j)
+  -- The sequence `Zⱼ₊₁ → Cⱼ₊₁ → Bⱼ` is exact.
+  Basis.ofExactLift (Submodule.injective_subtype _)
+    (LinearMap.exact_iff.2 (by rw [LinearMap.ker_rangeRestrict, Submodule.range_subtype]))
     (cyclesBasis b₁ h y hy) b₀ s fun k ↦ Subtype.ext (hs k)
 
 include c b₁ h y hy b₀ s hs in
@@ -222,11 +215,12 @@ theorem torsionBracketWithHomology_eq_one (hn : n (j + 1) = 0) :
   have : IsEmpty (Fin (n (j + 1))) := by rw [hn]; infer_instance
   simp [torsionBracketWithHomology, Basis.det_reindex]
 
-/-- With an empty homology basis, the bracket `[b₁ y s / cⱼ₊₁]` is the bracket `[b₁ s / cⱼ₊₁]` of
-`HomologicalComplex.torsionBracket`. -/
-theorem torsionBracketWithHomology_eq_torsionBracket (hC : C.ExactAt (j + 1)) (hm : m = 0) :
+/-- In a degree `j + 1` where `C` is exact, the homology basis `h` is empty and the bracket
+`[b₁ y s / cⱼ₊₁]` is the bracket `[b₁ s / cⱼ₊₁]` of `HomologicalComplex.torsionBracket`. -/
+theorem torsionBracketWithHomology_eq_torsionBracket (hC : C.ExactAt (j + 1)) :
     torsionBracketWithHomology c b₁ h y hy b₀ s hs = torsionBracket c hC b₁ b₀ s hs := by
-  subst hm
+  have := ModuleCat.subsingleton_of_isZero hC.isZero_homology
+  obtain rfl : m = 0 := Nat.eq_zero_of_not_pos fun hm ↦ h.ne_zero ⟨0, hm⟩ (Subsingleton.elim _ _)
   have hn := eq_add_add c b₁ h y hy b₀ s hs
   rw [torsionBracketWithHomology_eq_det_append c b₁ h y hy b₀ s hs hn,
     torsionBracket_eq_det_append c hC b₁ b₀ s hs (by simpa using hn)]
@@ -242,22 +236,6 @@ end Bracket
 section Torsion
 
 variable (C)
-
-/-- The basis `Module.finBasis` of the boundaries `Bⱼ`, used to define the torsion. -/
-private def chosenBoundaryBasis (j : ℤ) :
-    Basis (Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom))) F
-      (LinearMap.range (C.d (j + 1) j).hom) :=
-  haveI : Module.Finite F (C.X (j + 1)) := .of_basis (c (j + 1))
-  finBasis F _
-
-/-- Lifts of `chosenBoundaryBasis C c j` through the differential. -/
-private def chosenBoundaryLift (j : ℤ)
-    (k : Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom))) : C.X (j + 1) :=
-  Function.surjInv (C.d (j + 1) j).hom.surjective_rangeRestrict (chosenBoundaryBasis C c j k)
-
-private theorem chosenBoundaryLift_spec (j : ℤ) (k) :
-    (C.d (j + 1) j).hom (chosenBoundaryLift C c j k) = chosenBoundaryBasis C c j k :=
-  congrArg Subtype.val (Function.surjInv_eq (C.d (j + 1) j).hom.surjective_rangeRestrict _)
 
 variable {m : ℤ → ℕ} (h : ∀ i, Basis (Fin (m i)) F (C.homology i))
 
@@ -288,21 +266,6 @@ def reidemeisterTorsionWithHomology : F := by
 theorem reidemeisterTorsionWithHomology_of_not_finite (hn : ¬{i | n i ≠ 0}.Finite) :
     C.reidemeisterTorsionWithHomology c h = 0 := by
   simp [reidemeisterTorsionWithHomology, hn]
-
-include h in
-/-- A homology basis of a vanishing homology group is empty. -/
-private theorem eq_zero_of_subsingleton {i : ℤ} [Subsingleton (C.homology i)] : m i = 0 := by
-  simpa using (finrank_eq_card_basis (h i)).symm.trans finrank_zero_of_subsingleton
-
-include c h in
-/-- The homology vanishes in a degree where the complex vanishes. -/
-private theorem eq_zero_of_eq_zero {i : ℤ} (hi : n i = 0) : m i = 0 := by
-  have : Subsingleton (C.X i) := by
-    have : IsEmpty (Fin (n i)) := by rw [hi]; infer_instance
-    exact (c i).repr.toEquiv.subsingleton
-  have : Subsingleton (C.cycles i) := (C.moduleCat_iCycles_injective i).subsingleton
-  have : Subsingleton (C.homology i) := (C.moduleCat_homologyπ_surjective i).subsingleton
-  exact eq_zero_of_subsingleton C h
 
 variable {C c h}
 
@@ -337,34 +300,12 @@ private theorem finprod_torsionBracketWithHomology_eq
         (b' j) (s' j) (hs' j) ^ (j.negOnePow : ℤ) =
       ∏ᶠ j : ℤ, torsionBracketWithHomology c (b (j + 1)) (h (j + 1)) (y (j + 1)) (hy (j + 1))
         (b j) (s j) (hs j) ^ (j.negOnePow : ℤ) := by
-  set δ : ℤ → F := fun j ↦ (b j).det (b' j)
-  have hδ (j : ℤ) : δ j ≠ 0 := (Basis.isUnit_det _ _).ne_zero
-  have hδ_one {j : ℤ} (hj : n j = 0) : δ j = 1 := by
-    have : IsEmpty (Fin (finrank F (LinearMap.range (C.d (j + 1) j).hom))) := by
-      rw [finrank_range_d_eq_zero C c hj]; infer_instance
-    simp [δ]
-  have hT := hasFiniteMulSupport_torsionBracketWithHomology (c := c) hn b y hy s hs
-  have hδ₀ : Function.HasFiniteMulSupport fun j : ℤ ↦ δ j ^ (j.negOnePow : ℤ) :=
-    hn.subset <| Function.mulSupport_subset_iff'.2 fun j hj ↦ by
-      rw [hδ_one (by simpa using hj), one_zpow]
-  have hδ₁ : Function.HasFiniteMulSupport fun j : ℤ ↦ δ (j + 1) ^ (j.negOnePow : ℤ) :=
-    (hn.preimage (add_left_injective (1 : ℤ)).injOn).subset <|
-      Function.mulSupport_subset_iff'.2 fun j hj ↦ by
-        rw [hδ_one (by simpa using hj), one_zpow]
-  calc ∏ᶠ j : ℤ, torsionBracketWithHomology c (b' (j + 1)) (h (j + 1)) (y' (j + 1)) (hy' (j + 1))
-        (b' j) (s' j) (hs' j) ^ (j.negOnePow : ℤ)
-      = ∏ᶠ j : ℤ, torsionBracketWithHomology c (b (j + 1)) (h (j + 1)) (y (j + 1)) (hy (j + 1))
-          (b j) (s j) (hs j) ^ (j.negOnePow : ℤ) * δ (j + 1) ^ (j.negOnePow : ℤ) *
-          δ j ^ (j.negOnePow : ℤ) := by
-        refine finprod_congr fun j ↦ ?_
-        rw [torsionBracketWithHomology_eq_mul c (b (j + 1)) (h (j + 1)) (y (j + 1)) (hy (j + 1))
-          (b j) (s j) (hs j), Basis.det_self, mul_one, mul_zpow, mul_zpow, mul_assoc]
-    _ = ∏ᶠ j : ℤ, torsionBracketWithHomology c (b (j + 1)) (h (j + 1)) (y (j + 1)) (hy (j + 1))
-          (b j) (s j) (hs j) ^ (j.negOnePow : ℤ) := by
-        -- The factors `δ (j + 1)` enter with the exponents opposite to those of the factors `δ j`.
-        rw [finprod_mul_distrib (hT.fun_mul hδ₁) hδ₀, finprod_mul_distrib hT hδ₁,
-          TauCeti.finprod_zpow_negOnePow_add_one, mul_assoc,
-          inv_mul_cancel₀ (finprod_ne_zero fun j ↦ zpow_ne_zero _ (hδ j)), mul_one]
+  -- Changing the boundary bases multiplies the bracket in degree `j + 1` by
+  -- `[b'ⱼ₊₁ / bⱼ₊₁] [b'ⱼ / bⱼ]`.
+  refine (finprod_congr fun j ↦ ?_).trans (TauCeti.finprod_mul_mul_add_one_zpow_negOnePow _
+    (hasFiniteMulSupport_det_range_d C c hn b b') fun j ↦ (Basis.isUnit_det _ _).ne_zero)
+  rw [torsionBracketWithHomology_eq_mul c (b (j + 1)) (h (j + 1)) (y (j + 1)) (hy (j + 1))
+    (b j) (s j) (hs j), Basis.det_self, mul_one]
 
 include hn in
 /-- For a bounded complex, the torsion `τ(C, c, h)` is the alternating product
@@ -402,15 +343,12 @@ theorem reidemeisterTorsionWithHomology_eq_reidemeisterTorsion (hC : C.Acyclic) 
   by_cases hn : {i | n i ≠ 0}.Finite
   swap
   · simp [hn]
-  have hm (i : ℤ) : m i = 0 :=
-    have : Subsingleton (C.homology i) := ModuleCat.subsingleton_of_isZero (hC i).isZero_homology
-    eq_zero_of_subsingleton C h
   rw [reidemeisterTorsionWithHomology_eq_finprod hn (chosenBoundaryBasis C c) (chosenCycle C h)
       (chosenCycle_spec C h) (chosenBoundaryLift C c) (chosenBoundaryLift_spec C c),
     reidemeisterTorsion_eq_finprod hn hC (chosenBoundaryBasis C c) (chosenBoundaryLift C c)
       (chosenBoundaryLift_spec C c)]
   refine finprod_congr fun j ↦ ?_
-  rw [torsionBracketWithHomology_eq_torsionBracket c _ _ _ _ _ _ _ (hC (j + 1)) (hm (j + 1))]
+  rw [torsionBracketWithHomology_eq_torsionBracket c _ _ _ _ _ _ _ (hC (j + 1))]
 
 section BasisChange
 
@@ -469,8 +407,13 @@ theorem reidemeisterTorsionWithHomology_eq_mul_finprod_det_homology
       (h (j + 1)).det (h' (j + 1)) ^ ((j + 1 + 1).negOnePow : ℤ) :=
     (hn.preimage (add_left_injective (1 : ℤ)).injOn).subset <|
       Function.mulSupport_subset_iff'.2 fun j hj ↦ by
-        have : IsEmpty (Fin (m (j + 1))) := by
-          rw [eq_zero_of_eq_zero C c h (show n (j + 1) = 0 by simpa using hj)]; infer_instance
+        -- The homology vanishes where the complex vanishes.
+        have : IsEmpty (Fin (n (j + 1))) := by
+          rw [show n (j + 1) = 0 by simpa using hj]; infer_instance
+        have := (c (j + 1)).repr.toEquiv.subsingleton
+        have hC : C.ExactAt (j + 1) := .of_isZero (ModuleCat.isZero_of_subsingleton _)
+        have := ModuleCat.subsingleton_of_isZero hC.isZero_homology
+        have : IsEmpty (Fin (m (j + 1))) := ⟨fun k ↦ (h (j + 1)).ne_zero k (Subsingleton.elim _ _)⟩
         simp
   have hshift : ∏ᶠ i : ℤ, (h i).det (h' i) ^ ((i + 1).negOnePow : ℤ) =
       ∏ᶠ j : ℤ, (h (j + 1)).det (h' (j + 1)) ^ ((j + 1 + 1).negOnePow : ℤ) :=
