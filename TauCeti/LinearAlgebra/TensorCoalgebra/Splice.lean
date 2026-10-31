@@ -233,8 +233,8 @@ theorem splice_two_succ_eq_subword {n p : ℕ} (hn : 0 < n) (hp : p = 0)
   simp only [not_lt_zero, dite_false, Fin.val_cast]
   split_ifs <;> exact congrArg x (Fin.ext (by simp; omega))
 
-/-- Collapsing the two letters at positions `p - 1` and `p` to the first deletes position `p`;
-for `p = n` this leaves the first `n` letters. -/
+/-- Collapsing the two letters at positions `p` and `p + 1` to the first deletes position `p + 1`;
+for `p + 1 = n` this leaves the first `n` letters. -/
 theorem splice_two_pred_eq_subword {n p : ℕ} (hn : 0 < n) (hp : p + 1 = n)
     (x : Fin (n + 1) → M) :
     splice R x 0 (n + 1) p 2 (x ⟨p, by omega⟩) = subword R x 0 n := by
