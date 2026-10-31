@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Basic
-public import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Continuous
 public import Mathlib.MeasureTheory.Group.Integral
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 
@@ -22,9 +21,7 @@ Let `μ` be a left-invariant measure on a group `G`. Left translation of functio
 preserves `Lᵖ` classes and norms, so it gives a group homomorphism
 `MeasureTheory.Lp.leftTranslation μ p 𝕜 : G →* (Lp E p μ ≃ₗᵢ[𝕜] Lp E p μ)`. It is the
 action of `DomMulAct.mk g⁻¹` from Mathlib's `DomMulAct` action on `Lp`, reindexed so that it is
-a left action of `G` itself. For `p < ∞` and a locally finite measure that is inner regular for
-compact sets, such as a Haar measure, Mathlib's continuity of that action makes left translation
-strongly continuous.
+a left action of `G` itself.
 
 For real-valued functions, left translation is an order automorphism, preserves integrals and
 fixes the constant class one of `L∞`. The class of the left translate of a bounded continuous
@@ -44,7 +41,6 @@ on bounded uniformly continuous functions with invariant means on `L∞` of a Ha
   automorphism of real `Lᵖ`.
 * `MeasureTheory.Lp.leftTranslation_linftyOne`: it fixes the constant class one in `L∞`.
 * `MeasureTheory.Lp.integral_leftTranslation`: left translation preserves integrals.
-* `MeasureTheory.Lp.continuous_leftTranslation_apply`: for `p < ∞`, `g ↦ L_g f` is continuous.
 * `MeasureTheory.Lp.leftTranslation_toLpTop`: the class in `L∞` of a bounded continuous
   function commutes with left translation.
 -/
@@ -140,14 +136,5 @@ theorem leftTranslation_toLpTop [TopologicalSpace G] [IsTopologicalGroup G] [Bor
     (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae
       (BoundedContinuousFunction.coeFn_toLpTop μ (𝕜 := 𝕜) f)] with x hx hc hf
   simp [hx, hc, hf]
-
-/-- For `p < ∞`, left translation on `Lᵖ` is strongly continuous: `g ↦ L_g f` is continuous for
-every `f`, when `μ` is locally finite and inner regular for compact sets, as a Haar measure is. -/
-theorem continuous_leftTranslation_apply [TopologicalSpace G] [IsTopologicalGroup G]
-    [BorelSpace G] [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop] (hp : p ≠ ∞)
-    (f : Lp E p μ) : Continuous fun g ↦ leftTranslation μ p 𝕜 g f := by
-  have : Fact (p ≠ ∞) := ⟨hp⟩
-  simp_rw [leftTranslation_apply]
-  exact (DomMulAct.continuous_mk.comp continuous_inv).smul continuous_const
 
 end MeasureTheory.Lp
