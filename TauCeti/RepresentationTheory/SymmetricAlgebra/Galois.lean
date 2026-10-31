@@ -167,9 +167,12 @@ theorem faithfulSMul_quotient_symmetricAlgebra (hρ : Function.Injective ρ) (H 
     fun p hp h ↦ (ρ.mem_symmetricAlgebraInvariants p).1 hp h).toAlgebra
   have : IsScalarTower ρ.symmetricAlgebraInvariants B (SymmetricAlgebra R M) :=
     .of_algebraMap_eq fun _ ↦ rfl
-  have : IsGaloisGroup H B (SymmetricAlgebra R M) := inferInstanceAs (IsGaloisGroup H
-    (FixedPoints.subalgebra ρ.symmetricAlgebraInvariants (SymmetricAlgebra R M) H)
-    (SymmetricAlgebra R M))
+  -- `H` is a Galois group of `Sym M` over its fixed points `B`; each field is a Mathlib instance
+  -- for `FixedPoints.subalgebra R`, as in `fixingSubgroup_symmetricAlgebraInvariants_comp_subtype`.
+  have : IsGaloisGroup H B (SymmetricAlgebra R M) :=
+    { faithful := have := ρ.faithfulSMul_symmetricAlgebraMulSemiringAction_iff.2 hρ; inferInstance
+      commutes := inferInstance
+      isInvariant := inferInstance }
   let := MulSemiringAction.compHom B (QuotientGroup.mk' H)
   have : IsScalarTower G (G ⧸ H) B := ⟨fun g q b ↦ by
     induction q using QuotientGroup.induction_on
