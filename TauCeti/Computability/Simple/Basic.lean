@@ -86,7 +86,7 @@ theorem simple_iff_forall_code {A : Set ℕ} :
     A.Simple ↔ REPred (· ∈ A) ∧ Aᶜ.Infinite ∧
       ∀ c : Code, {x | (c.eval x).Dom}.Infinite → ({x | (c.eval x).Dom} ∩ A).Nonempty := by
   refine ⟨fun hA => ⟨hA.rePred, hA.infinite_compl, fun c hc =>
-    hA.inter_nonempty (TauCeti.Enumeration.rePred_dom_eval c) hc⟩, ?_⟩
+    hA.inter_nonempty c.rePred_dom_eval hc⟩, ?_⟩
   rintro ⟨hA, hAc, hreq⟩
   refine ⟨hA, hAc, fun W hW hWinf hWA => ?_⟩
   -- every c.e. set is the domain of a code

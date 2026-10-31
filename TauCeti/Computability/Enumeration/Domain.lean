@@ -17,7 +17,7 @@ computable function `Nat.Partrec.Code.eval c` of some code `c`. This is the pres
 
 ## Main results
 
-* `TauCeti.Enumeration.rePred_dom_eval`: the domain of a code is c.e.
+* `Nat.Partrec.Code.rePred_dom_eval`: the domain of a code is c.e.
 * `TauCeti.Enumeration.rePred_iff_exists_code`: a predicate on `ℕ` is c.e. exactly when it is the
   domain of some code.
 
@@ -30,19 +30,23 @@ public section
 
 open Nat.Partrec
 
-namespace TauCeti
-
-namespace Enumeration
+namespace Nat.Partrec.Code
 
 /-- The domain `W_c` of a code `c` is c.e. -/
 theorem rePred_dom_eval (c : Code) : REPred fun x => (c.eval x).Dom :=
-  (Code.eval_part.comp (Computable.const c) Computable.id).dom_re
+  (eval_part.comp (Computable.const c) Computable.id).dom_re
+
+end Nat.Partrec.Code
+
+namespace TauCeti
+
+namespace Enumeration
 
 /-- **c.e. sets are domains of codes.** A predicate on `ℕ` is c.e. exactly when it is the domain
 of the partial computable function of some code. -/
 theorem rePred_iff_exists_code {p : ℕ → Prop} :
     REPred p ↔ ∃ c : Code, ∀ x, p x ↔ (c.eval x).Dom := by
-  refine ⟨fun hp => ?_, fun ⟨c, hc⟩ => (rePred_dom_eval c).of_eq fun x => (hc x).symm⟩
+  refine ⟨fun hp => ?_, fun ⟨c, hc⟩ => c.rePred_dom_eval.of_eq fun x => (hc x).symm⟩
   -- recode the `Unit`-valued semidecision procedure as a partial function `ℕ →. ℕ`
   have hf : Nat.Partrec fun x => (Part.assert (p x) fun _ => Part.some ()).map fun _ => 0 :=
     Partrec.nat_iff.1 (hp.map (Computable.const 0).to₂)
