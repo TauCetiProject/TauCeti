@@ -52,7 +52,7 @@ The separated completion of `SpectralTop A` is the ring of the uniformization of
 * `TauCeti.Huber.SpectralTop.isTopologicallyNilpotent_toSpectralTop_iff`: the two topologies have
   the same topologically nilpotent elements.
 * `TauCeti.Huber.SpectralTop.isTateRing`: `SpectralTop A` is a Tate ring.
-* `TauCeti.Huber.SpectralTop.setOf_isPowerBounded`: the power-bounded elements of
+* `TauCeti.Huber.SpectralTop.powerBoundedSubring_eq`: the power-bounded elements of
   `SpectralTop A` are those of spectral seminorm at most one.
 * `TauCeti.Huber.SpectralTop.isUniform`: `SpectralTop A` is uniform.
 * `TauCeti.Huber.SpectralTop.continuous_map`: functoriality for continuous homomorphisms.
@@ -97,7 +97,7 @@ def map (φ : A →+* B) : SpectralTop A →+* SpectralTop B :=
 
 /-- `SpectralTop.map φ` acts as `φ`. -/
 @[simp]
-theorem map_toSpectralTop (φ : A →+* B) (x : A) :
+theorem map_apply (φ : A →+* B) (x : A) :
     map φ (toSpectralTop A x) = toSpectralTop B (φ x) := by
   simp [map]
 
@@ -105,7 +105,7 @@ theorem map_toSpectralTop (φ : A →+* B) (x : A) :
 @[simp]
 theorem map_id : map (RingHom.id A) = RingHom.id (SpectralTop A) := by
   ext x
-  simpa using map_toSpectralTop (RingHom.id A) ((toSpectralTop A).symm x)
+  simpa using map_apply (RingHom.id A) ((toSpectralTop A).symm x)
 
 /-- `SpectralTop.map` preserves composition. -/
 theorem map_comp (ψ : B →+* C) (φ : A →+* B) : map (ψ.comp φ) = (map ψ).comp (map φ) := by
@@ -207,6 +207,11 @@ private theorem hasBasis_nhds_zero_basisSubgroup :
   haveI := nonempty_pseudoUniformizer (A := A)
   ringSubgroupsBasis.hasBasis_nhds_zero
 
+/-- The basis subgroup `u • A°°` of a pseudouniformiser `u` is a neighbourhood of zero. -/
+private theorem basisSubgroup_mem_nhds (u : {u : Aˣ // IsTopologicallyNilpotent (u : A)}) :
+    (basisSubgroup (u : Aˣ) : Set (SpectralTop A)) ∈ 𝓝 0 :=
+  hasBasis_nhds_zero_basisSubgroup.mem_of_mem trivial
+
 /-- The additive uniformity of the spectral topology. -/
 noncomputable instance : UniformSpace (SpectralTop A) := IsTopologicalAddGroup.rightUniformSpace _
 
@@ -286,9 +291,8 @@ theorem isTopologicallyNilpotent_toSpectralTop_iff {x : A} :
   refine ⟨fun h ↦ ?_, fun h ↦ h.map continuous_toSpectralTop⟩
   -- Some positive power `xⁿ` lies in `ϖ • A°° ⊆ A°°`.
   obtain ⟨⟨u, hu⟩⟩ := nonempty_pseudoUniformizer (A := A)
-  obtain ⟨n, hn, hn0⟩ := ((h.eventually_mem
-    (hasBasis_nhds_zero_basisSubgroup.mem_of_mem (i := ⟨u, hu⟩) trivial)).and
-      (eventually_ne_atTop 0)).exists
+  obtain ⟨n, hn, hn0⟩ :=
+    ((h.eventually_mem (basisSubgroup_mem_nhds ⟨u, hu⟩)).and (eventually_ne_atTop 0)).exists
   rw [SetLike.mem_coe, mem_basisSubgroup, ← map_pow, RingEquiv.symm_apply_apply] at hn
   refine IsTopologicallyNilpotent.of_pow hn0 ?_
   simpa using (IsPowerBounded.of_isTopologicallyNilpotent hu).isTopologicallyNilpotent_mul hn
@@ -306,14 +310,14 @@ instance isTateRing : IsTateRing (SpectralTop A) := by
       isTopologicallyNilpotent_toSpectralTop_iff.mpr hϖ.isTopologicallyNilpotent⟩)
   · -- `S` contains the neighbourhood `u • A°°` of zero.
     obtain ⟨⟨u, hu⟩⟩ := nonempty_pseudoUniformizer (A := A)
-    refine S.toAddSubgroup.isOpen_of_mem_nhds (Filter.mem_of_superset
-      (hasBasis_nhds_zero_basisSubgroup.mem_of_mem (i := ⟨u, hu⟩) trivial) fun x hx ↦ hS.mpr ?_)
+    refine S.toAddSubgroup.isOpen_of_mem_nhds
+      (Filter.mem_of_superset (basisSubgroup_mem_nhds ⟨u, hu⟩) fun x hx ↦ hS.mpr ?_)
     simpa using (IsPowerBounded.of_isTopologicallyNilpotent hu).mul
       (IsPowerBounded.of_isTopologicallyNilpotent (mem_basisSubgroup.mp hx))
   · -- `(u • A°°) * S ⊆ u • A°°`, since `A°° A° ⊆ A°°`.
     refine isBounded_iff.mpr fun U hU ↦ ?_
     obtain ⟨u, -, huU⟩ := hasBasis_nhds_zero_basisSubgroup.mem_iff.mp hU
-    refine ⟨_, hasBasis_nhds_zero_basisSubgroup.mem_of_mem (i := u) trivial, ?_⟩
+    refine ⟨_, basisSubgroup_mem_nhds u, ?_⟩
     rintro _ ⟨x, hx, s, hs, rfl⟩
     refine huU (mem_basisSubgroup.mpr ?_)
     simpa [mul_comm, mul_left_comm] using
@@ -350,19 +354,20 @@ theorem isPowerBounded_toSpectralTop_iff {x : A} :
     obtain ⟨m, hm⟩ := exists_pow_lt_of_lt_one (div_pos hδ hx0) d.radius_lt_one
     obtain ⟨k, hk⟩ := pow_unbounded_of_one_lt (d.radius ^ m)⁻¹ h
     let w : A := (d.pseudoUniformizer : A) ^ m
-    have hw (y : A) : spectralSeminorm d (w * y) = d.radius ^ m * spectralSeminorm d y := by
-      simpa using spectralSeminorm_zpow_mul d m y
-    have hwx : toSpectralTop A (w * x) ∈ V :=
-      hδV ⟨w * x, by rw [Set.mem_ofPred_eq, hw]; exact (lt_div_iff₀ hx0).mp hm, rfl⟩
+    have hwx : toSpectralTop A (w * x) ∈ V := hδV ⟨w * x, by
+      simpa [w, spectralSeminorm_pow_mul] using (lt_div_iff₀ hx0).mp hm, rfl⟩
     obtain ⟨y, hy, hyx⟩ := hVU (Set.mul_mem_mul hwx ⟨k, rfl⟩)
-    beta_reduce at hyx
-    rw [← map_pow, ← map_mul, (toSpectralTop A).injective.eq_iff] at hyx
-    rw [Set.mem_ofPred_eq, hyx, mul_assoc, hw, ← pow_succ',
-      isPowMul_spectralSeminorm d x k.succ_pos] at hy
-    have hlt := mul_lt_mul_of_pos_left (hk.trans_le (pow_le_pow_right₀ h.le k.le_succ))
-      (pow_pos d.radius_pos m)
-    rw [mul_inv_cancel₀ (pow_pos d.radius_pos m).ne'] at hlt
-    exact hlt.not_gt hy
+    obtain rfl : y = w * x ^ (k + 1) :=
+      (toSpectralTop A).injective (by simp [hyx, pow_succ', mul_assoc])
+    -- `|ϖ ^ m x ^ (k + 1)|_sp = r ^ m |x|_sp ^ (k + 1) > r ^ m (r ^ m)⁻¹ = 1`.
+    have hpos := pow_pos d.radius_pos m
+    refine (show spectralSeminorm d (w * x ^ (k + 1)) < 1 from hy).not_ge ?_
+    calc 1 = d.radius ^ m * (d.radius ^ m)⁻¹ := (mul_inv_cancel₀ hpos.ne').symm
+      _ ≤ d.radius ^ m * spectralSeminorm d x ^ (k + 1) := by
+          gcongr
+          exact hk.le.trans (pow_le_pow_right₀ h.le k.le_succ)
+      _ = spectralSeminorm d (w * x ^ (k + 1)) := by
+          rw [spectralSeminorm_pow_mul, isPowMul_spectralSeminorm d x k.succ_pos]
   · -- The powers of `x` stay in the bounded set of elements of spectral seminorm at most one.
     intro hx
     refine isPowerBounded_iff.mpr ((isBounded_setOf_spectralSeminorm_le_one d).subset ?_)
@@ -373,19 +378,20 @@ theorem isPowerBounded_toSpectralTop_iff {x : A} :
     · rw [Set.mem_ofPred_eq, isPowMul_spectralSeminorm d x hk]
       exact pow_le_one₀ (apply_nonneg _ x) hx
 
-/-- The set `(SpectralTop A)°` of power-bounded elements is the image of the closed unit ball of
-the spectral seminorm of any norm datum `d`. -/
-theorem setOf_isPowerBounded :
-    {x : SpectralTop A | IsPowerBounded x} = toSpectralTop A '' {x | spectralSeminorm d x ≤ 1} := by
+/-- The power-bounded subring `(SpectralTop A)°` is the image of the closed unit ball of the
+spectral seminorm of any norm datum `d`. -/
+theorem powerBoundedSubring_eq :
+    (powerBoundedSubring (SpectralTop A) : Set (SpectralTop A)) =
+      toSpectralTop A '' {x | spectralSeminorm d x ≤ 1} := by
   ext x
   obtain ⟨x, rfl⟩ := (toSpectralTop A).surjective x
-  rw [Set.mem_ofPred_eq, isPowerBounded_toSpectralTop_iff d,
+  rw [SetLike.mem_coe, mem_powerBoundedSubring, isPowerBounded_toSpectralTop_iff d,
     (toSpectralTop A).injective.mem_set_image, Set.mem_ofPred_eq]
 
 /-- **The spectral topology is uniform**: its power-bounded elements form a bounded set. -/
 instance isUniform : IsUniform (SpectralTop A) := by
   obtain ⟨d⟩ := (inferInstance : Nonempty (TateNormDatum A))
-  rw [isUniform_iff, setOf_isPowerBounded d]
+  rw [isUniform_iff, ← coe_powerBoundedSubring, powerBoundedSubring_eq d]
   exact isBounded_setOf_spectralSeminorm_le_one d
 
 /-- **Functoriality of the spectral topology**: a continuous homomorphism of Tate rings is

@@ -38,7 +38,8 @@ uniformization of a Tate Huber pair.
 ## Main results
 
 * `TauCeti.Huber.isPowMul_spectralSeminorm`, `TauCeti.Huber.spectralSeminorm_le_tateNorm`.
-* `TauCeti.Huber.spectralSeminorm_zpow_mul`: `|ϖ ^ k x|_sp = r ^ k |x|_sp` for `k ∈ ℤ`.
+* `TauCeti.Huber.spectralSeminorm_zpow_mul`: `|ϖ ^ k x|_sp = r ^ k |x|_sp` for `k ∈ ℤ`, and
+  `TauCeti.Huber.spectralSeminorm_pow_mul` for `k ∈ ℕ`.
 * `TauCeti.Huber.spectralSeminorm_eq_of_ringOfDefinition`: independence of the ring of
   definition.
 * `TauCeti.Huber.spectralSeminorm_rpow`: change of radius.
@@ -99,6 +100,12 @@ theorem spectralSeminorm_zpow_mul (k : ℤ) (x : A) :
       d.radius ^ k * spectralSeminorm d x :=
   smoothingFun_mul_eq_mul_of_forall (tateNorm_one_le d) (zpow_nonneg d.radius_pos.le k)
     (tateNorm_zpow_mul d k) x
+
+/-- Multiplication by `ϖ ^ n`, `n ∈ ℕ`, scales the spectral seminorm exactly by `r ^ n`. -/
+theorem spectralSeminorm_pow_mul (n : ℕ) (x : A) :
+    spectralSeminorm d ((d.pseudoUniformizer : A) ^ n * x) =
+      d.radius ^ n * spectralSeminorm d x := by
+  simpa using spectralSeminorm_zpow_mul d n x
 
 /-- Multiplication by the pseudouniformiser scales the spectral seminorm exactly by the radius. -/
 @[simp]
