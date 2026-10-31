@@ -25,7 +25,7 @@ is a root, is the case the weight theory uses, and
 `TauCeti.lie_pow_toEnd_eq_smul_of_mem_rootSpace` records it.
 
 For an arbitrary family of elements of `L`, the bracket adds simultaneous adjoint eigenvalues.
-Consequently, the sum of the simultaneous eigenspaces with integral eigenvalues in any additive
+Consequently, the sum of the simultaneous eigenspaces with eigenvalues in any additive
 subsemigroup, such as the set of all integral eigenvalues, is closed under the bracket.
 
 Dually, a linear functional on which an element acts by a scalar detects weights: over an
@@ -36,8 +36,10 @@ of the weight. This is how a weight is read off a coordinate of a vector in an e
 
 * `TauCeti.lie_mem_iInf_eigenspace_ad`: the bracket adds eigenvalues for any family of adjoint
   operators.
-* `TauCeti.lie_mem_biSup_iInf_eigenspace_ad`: the sum of simultaneous eigenspaces with integral
+* `TauCeti.lie_mem_biSup_iInf_eigenspace_ad`: the sum of simultaneous eigenspaces with
   eigenvalues in an additive subsemigroup is closed under the bracket.
+* `TauCeti.lie_mem_biSup_iInf_eigenspace_ad_intCast`: the same for integral eigenvalues in an
+  additive subsemigroup.
 * `TauCeti.lie_mem_iSup_iInf_eigenspace_ad`: the sum of simultaneous eigenspaces with integral
   eigenvalues is closed under the bracket.
 * `TauCeti.mem_genWeightSpace_of_forall_lie_eq_smul`: a simultaneous eigenvector of `H` lies in the
@@ -80,24 +82,38 @@ theorem lie_mem_iInf_eigenspace_ad {χ ψ : B → R} {x y : L}
   intro i
   rw [leibniz_lie, hx i, hy i, smul_lie, lie_smul, add_smul]
 
-/-- For an additive subsemigroup `S` of integral eigenvalue families, the sum of the simultaneous
+/-- For an additive subsemigroup `S` of eigenvalue families, the sum of the simultaneous
 eigenspaces of the `ad Hᵢ` with eigenvalues in `S` is closed under the bracket, since the bracket
 adds eigenvalues. -/
-theorem lie_mem_biSup_iInf_eigenspace_ad {S : AddSubsemigroup (B → ℤ)} {x y : L}
-    (hx : x ∈ ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i : R))
-    (hy : y ∈ ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i : R)) :
-    ⁅x, y⁆ ∈ ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i : R) := by
+theorem lie_mem_biSup_iInf_eigenspace_ad {S : AddSubsemigroup (B → R)} {x y : L}
+    (hx : x ∈ ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i))
+    (hy : y ∈ ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i)) :
+    ⁅x, y⁆ ∈ ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i) := by
   rw [iSup_subtype'] at hx hy ⊢
   induction hx using Submodule.iSup_induction' with
   | mem χ x hx =>
     induction hy using Submodule.iSup_induction' with
     | mem ψ y hy =>
       refine Submodule.mem_iSup_of_mem ⟨χ + ψ, add_mem χ.2 ψ.2⟩ ?_
-      simpa only [Pi.add_apply, Int.cast_add] using lie_mem_iInf_eigenspace_ad hx hy
+      simpa only [Pi.add_apply] using lie_mem_iInf_eigenspace_ad hx hy
     | zero => simp
     | add y₁ y₂ _ _ h₁ h₂ => rw [lie_add]; exact add_mem h₁ h₂
   | zero => simp
   | add x₁ x₂ _ _ h₁ h₂ => rw [add_lie]; exact add_mem h₁ h₂
+
+/-- For an additive subsemigroup `S` of integral eigenvalue families, the sum of the simultaneous
+eigenspaces of the `ad Hᵢ` with eigenvalues in `S` is closed under the bracket. This is
+`TauCeti.lie_mem_biSup_iInf_eigenspace_ad` for the image of `S` under the integer cast. -/
+theorem lie_mem_biSup_iInf_eigenspace_ad_intCast {S : AddSubsemigroup (B → ℤ)} {x y : L}
+    (hx : x ∈ ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i : R))
+    (hy : y ∈ ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i : R)) :
+    ⁅x, y⁆ ∈ ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i : R) := by
+  have hS : ⨆ χ ∈ S, ⨅ i, (ad R L (H i)).eigenspace (χ i : R) =
+      ⨆ χ ∈ S.map (AddMonoidHom.compLeft (Int.castAddHom R) B).toAddHom,
+        ⨅ i, (ad R L (H i)).eigenspace (χ i) := by
+    simp [iSup_and, iSup_comm (ι := B → R)]
+  rw [hS] at hx hy ⊢
+  exact lie_mem_biSup_iInf_eigenspace_ad hx hy
 
 /-- The sum of the simultaneous eigenspaces of the `ad Hᵢ` with integral eigenvalues is closed
 under the bracket, since the bracket adds eigenvalues. -/
@@ -105,7 +121,8 @@ theorem lie_mem_iSup_iInf_eigenspace_ad {x y : L}
     (hx : x ∈ ⨆ χ : B → ℤ, ⨅ i, (ad R L (H i)).eigenspace (χ i : R))
     (hy : y ∈ ⨆ χ : B → ℤ, ⨅ i, (ad R L (H i)).eigenspace (χ i : R)) :
     ⁅x, y⁆ ∈ ⨆ χ : B → ℤ, ⨅ i, (ad R L (H i)).eigenspace (χ i : R) := by
-  simpa using lie_mem_biSup_iInf_eigenspace_ad (S := ⊤) (by simpa using hx) (by simpa using hy)
+  simpa using lie_mem_biSup_iInf_eigenspace_ad_intCast (S := ⊤) (by simpa using hx)
+    (by simpa using hy)
 
 end AdjointFamily
 
