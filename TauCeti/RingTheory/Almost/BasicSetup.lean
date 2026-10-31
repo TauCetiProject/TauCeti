@@ -7,12 +7,12 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.LinearAlgebra.LinearDisjoint
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
+public import Mathlib.LinearAlgebra.LinearDisjoint
 public import Mathlib.LinearAlgebra.TensorProduct.Submodule
 public import Mathlib.RingTheory.Flat.Basic
-
-import TauCeti.RingTheory.Ideal.Operations
+public import Mathlib.RingTheory.Localization.Away.Basic
+public import TauCeti.RingTheory.Ideal.TensorProduct
 
 /-!
 # Basic setups for almost mathematics
@@ -38,6 +38,7 @@ pseudouniformiser.
 * `TauCeti.Almost.BasicSetup.classical`, `TauCeti.Almost.BasicSetup.zero`: the setups `(V, V)`,
   which recovers ordinary commutative algebra, and `(V, 0)`, for which every module is almost
   zero.
+* `TauCeti.Almost.BasicSetup.baseChange`: the setup `(W, mW)` for a `V`-algebra `W`.
 * `TauCeti.Almost.BasicSetup.IsFilteredPrincipal`, `TauCeti.Almost.BasicSetup.PowersGenerate`:
   Gabber–Ramero's conditions (A) (`m` is a directed union of principal ideals) and (B) (for every
   `k ≥ 1` the `k`-th powers of elements of `m` generate `m`).
@@ -57,19 +58,23 @@ pseudouniformiser.
 * `TauCeti.Almost.BasicSetup.isAlmostZero_classical_iff` and
   `TauCeti.Almost.BasicSetup.isAlmostIso_classical_iff`: in the classical setup, almost zero means
   zero and an almost isomorphism is a bijective linear map.
-* `TauCeti.Almost.BasicSetup.isAlmostIso_subtype`: the inclusion `m → V` is an almost
-  isomorphism.
-* `TauCeti.Almost.BasicSetup.IsFilteredPrincipal.powersGenerate`: condition (A) implies
-  condition (B).
 * `TauCeti.Almost.BasicSetup.tildeToIdeal_bijective_of_flat`: if `m` is flat, the multiplication
   map `m~ → m` is bijective.
+* `TauCeti.Almost.BasicSetup.isAlmostIso_subtype`: the inclusion `m → V` is an almost
+  isomorphism.
+* `TauCeti.Almost.BasicSetup.flat_tilde_map`: `mW ⊗[W] mW ≅ W ⊗[V] m~` is flat, so basic setups
+  base change (the isomorphism is `Ideal.baseChangeTensorSelfEquiv`, valid for every idempotent
+  ideal); `TauCeti.Almost.BasicSetup.baseChange_away_eq_classical`: inverting an element of
+  `m` makes the setup classical.
+* `TauCeti.Almost.BasicSetup.IsFilteredPrincipal.powersGenerate`: condition (A) implies
+  condition (B).
 * `Submodule.mulMap_top_top_bijective`: the multiplication map `R ⊗[R] R → R` is bijective; it
   makes `(V, V)` a basic setup.
 
 ## References
 
 * O. Gabber, L. Ramero, *Almost ring theory*, Lecture Notes in Mathematics 1800, §2.1:
-  (2.1.1), Example 2.1.2, (2.1.3), Remark 2.1.4 and (2.1.6).
+  (2.1.1), Example 2.1.2, (2.1.3), Remark 2.1.4(i), (ii) and (2.1.6).
 * P. Scholze, *Perfectoid spaces*, Publ. Math. IHÉS 116 (2012), §4.
 * B. Bhatt, *Lecture notes for a class on perfectoid spaces*, §4.1.
 -/
@@ -77,6 +82,7 @@ pseudouniformiser.
 public section
 
 open TensorProduct
+open scoped Pointwise
 
 /-- The multiplication map `R ⊗[R] R → R` of the top submodule of `R` is the identification
 `R ⊗[R] R ≃ R`, hence bijective. -/
@@ -146,14 +152,14 @@ theorem tildeToIdeal_surjective : Function.Surjective S.tildeToIdeal := by
   rw [tildeToIdeal, LinearMap.coe_comp]
   exact (LinearEquiv.surjective _).comp (Submodule.mulMap'_surjective S.ideal S.ideal)
 
-/-- If the ideal `m` is a flat `V`-module, the multiplication map `m~ → m` is bijective, so that
-`m~` is just `m` (Gabber–Ramero (2.1.1)). -/
+/-- If `m` is a flat `V`-module, the multiplication map `m~ → m` is bijective (Gabber–Ramero
+(2.1.3)): an ideal contained in `V = 1` is linearly disjoint from every flat submodule. -/
 theorem tildeToIdeal_bijective_of_flat [Module.Flat V S.ideal] :
     Function.Bijective S.tildeToIdeal := by
-  refine ⟨fun s t hst ↦ ?_, S.tildeToIdeal_surjective⟩
-  have hdisj : S.ideal.LinearDisjoint S.ideal :=
-    .of_right_le_one_of_flat _ _ (le_top.trans_eq Ideal.one_eq_top.symm)
-  exact hdisj.injective (by simpa only [coe_tildeToIdeal, tildeMul] using congrArg Subtype.val hst)
+  have H : S.ideal.LinearDisjoint S.ideal :=
+    .of_left_le_one_of_flat S.ideal S.ideal (le_top.trans Ideal.one_eq_top.ge)
+  refine ⟨fun s t hst ↦ H.injective ?_, S.tildeToIdeal_surjective⟩
+  simpa only [coe_tildeToIdeal, tildeMul] using congrArg Subtype.val hst
 
 /-! ### Almost zero modules -/
 
@@ -174,6 +180,11 @@ theorem isAlmostZero_iff {M : Type*} [AddCommGroup M] [Module V M] :
   ⟨fun h ε hε x ↦ @h x ⟨ε, hε⟩, fun h x ε ↦ h ε ε.2 x⟩
 
 variable {S} in
+theorem isAlmostZero_iff_le_annihilator {M : Type*} [AddCommGroup M] [Module V M] :
+    S.IsAlmostZero M ↔ S.ideal ≤ Module.annihilator V M :=
+  Module.isTorsionBySet_iff_subset_annihilator V M
+
+variable {S} in
 theorem IsAlmostZero.smul_eq_zero {M : Type*} [AddCommGroup M] [Module V M]
     (h : S.IsAlmostZero M) {ε : V} (hε : ε ∈ S.ideal) (x : M) : ε • x = 0 :=
   isAlmostZero_iff.mp h ε hε x
@@ -182,6 +193,11 @@ theorem IsAlmostZero.smul_eq_zero {M : Type*} [AddCommGroup M] [Module V M]
 theorem isAlmostZero_of_subsingleton {M : Type*} [AddCommGroup M] [Module V M]
     [Subsingleton M] : S.IsAlmostZero M :=
   isAlmostZero_iff.mpr fun _ _ _ ↦ Subsingleton.elim _ _
+
+/-- The quotient `M ⧸ m • M` is almost zero. -/
+theorem isAlmostZero_quotient_smul_top (M : Type*) [AddCommGroup M] [Module V M] :
+    S.IsAlmostZero (M ⧸ S.ideal • (⊤ : Submodule V M)) :=
+  Module.isTorsionBySet_quotient_ideal_smul M S.ideal
 
 /-- The quotient `V ⧸ m` is almost zero. -/
 @[simp]
@@ -361,6 +377,10 @@ instance : Subsingleton (zero V).ideal :=
 theorem zero_tildeMul : (zero V).tildeMul = 0 :=
   Subsingleton.elim _ _
 
+/-- For the zero setup, the multiplication map `m~ → m` is bijective, both sides being zero. -/
+theorem zero_tildeToIdeal_bijective : Function.Bijective (zero V).tildeToIdeal :=
+  ⟨Function.injective_of_subsingleton _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
+
 section ClassicalZero
 
 variable {M N : Type*} [AddCommGroup M] [Module V M] [AddCommGroup N] [Module V N]
@@ -393,6 +413,46 @@ theorem isAlmostIso_zero (f : M →ₗ[V] N) : (zero V).IsAlmostIso f :=
 
 end ClassicalZero
 
+/-! ### Base change -/
+
+section BaseChange
+
+variable (W : Type*) [CommRing W] [Algebra V W]
+
+/-- `mW ⊗[W] mW ≅ W ⊗[V] m~` is flat (Gabber–Ramero Remark 2.1.4(ii)). -/
+theorem flat_tilde_map :
+    Module.Flat W (S.ideal.map (algebraMap V W) ⊗[W] S.ideal.map (algebraMap V W)) :=
+  .of_linearEquiv (Ideal.baseChangeTensorSelfEquiv W S.isIdempotentElem).symm
+
+/-- The base change `(W, mW)` of a basic setup along `V → W` (Gabber–Ramero Remark 2.1.4(ii)). -/
+def baseChange : BasicSetup W where
+  ideal := S.ideal.map (algebraMap V W)
+  isIdempotentElem := S.isIdempotentElem.map (Ideal.mapHom (algebraMap V W))
+  flat_tilde := S.flat_tilde_map W
+
+@[simp]
+theorem baseChange_ideal : (S.baseChange W).ideal = S.ideal.map (algebraMap V W) :=
+  (rfl)
+
+/-- Base change preserves the classical setup. -/
+@[simp]
+theorem baseChange_classical : (classical V).baseChange W = classical W := by
+  ext1; exact Ideal.map_top _
+
+/-- Base change to `V ⧸ m` gives the zero setup. -/
+theorem baseChange_quotient_eq_zero : S.baseChange (V ⧸ S.ideal) = zero (V ⧸ S.ideal) := by
+  ext1; exact Ideal.map_quotient_self S.ideal
+
+/-- Inverting an element of `m` makes the setup classical (Gabber–Ramero Remark 2.1.4(ii)); this
+includes `ε = 0`, where `V[1/ε] = 0`. -/
+theorem baseChange_away_eq_classical {ε : V} (hε : ε ∈ S.ideal) [IsLocalization.Away ε W] :
+    S.baseChange W = classical W := by
+  ext1
+  exact Ideal.eq_top_of_isUnit_mem _ (Ideal.mem_map_of_mem _ hε)
+    (IsLocalization.Away.algebraMap_isUnit ε)
+
+end BaseChange
+
 /-! ### Conditions (A) and (B) -/
 
 /-- Condition (A) of Gabber–Ramero (2.1.6): any two elements of `m` have a common divisor in `m`,
@@ -416,6 +476,23 @@ theorem powersGenerate_iff :
       ∀ k : ℕ, 0 < k → Ideal.span ((fun x : V ↦ x ^ k) '' (S.ideal : Set V)) = S.ideal :=
   Iff.rfl
 
+/-- Under condition (A), every element of `m ^ k` is divisible by the `k`-th power of a single
+element of `m`. -/
+theorem IsFilteredPrincipal.exists_pow_dvd (h : S.IsFilteredPrincipal) :
+    ∀ k : ℕ, ∀ x ∈ S.ideal ^ k, ∃ z ∈ S.ideal, z ^ k ∣ x
+  | 0, x, _ => ⟨0, S.ideal.zero_mem, by simp⟩
+  | k + 1, x, hx => by
+    rw [pow_succ'] at hx
+    refine Submodule.mul_induction_on hx (fun a ha b hb ↦ ?_) fun x y hx hy ↦ ?_
+    · obtain ⟨z', hz', hz'b⟩ := h.exists_pow_dvd k b hb
+      obtain ⟨z, hz, hza, hzz'⟩ := h a ha z' hz'
+      exact ⟨z, hz, pow_succ' z k ▸ mul_dvd_mul hza ((pow_dvd_pow_of_dvd hzz' k).trans hz'b)⟩
+    · obtain ⟨z₁, hz₁, hz₁x⟩ := hx
+      obtain ⟨z₂, hz₂, hz₂y⟩ := hy
+      obtain ⟨z, hz, hzz₁, hzz₂⟩ := h z₁ hz₁ z₂ hz₂
+      exact ⟨z, hz, dvd_add ((pow_dvd_pow_of_dvd hzz₁ _).trans hz₁x)
+        ((pow_dvd_pow_of_dvd hzz₂ _).trans hz₂y)⟩
+
 /-- Condition (A) implies condition (B) for the idempotent ideal of a basic setup
 (Gabber–Ramero (2.1.6)): an element of `m = m ^ k` is divisible by `z ^ k` for some `z ∈ m`. -/
 theorem IsFilteredPrincipal.powersGenerate (h : S.IsFilteredPrincipal) : S.PowersGenerate := by
@@ -424,7 +501,7 @@ theorem IsFilteredPrincipal.powersGenerate (h : S.IsFilteredPrincipal) : S.Power
   · rintro _ ⟨y, hy, rfl⟩
     exact S.ideal.pow_mem_of_mem hy k hk
   · rw [← S.isIdempotentElem.pow_eq hk.ne'] at hx
-    obtain ⟨z, hz, hzx⟩ := Ideal.exists_pow_dvd_of_mem_pow (isFilteredPrincipal_iff.mp h) k x hx
+    obtain ⟨z, hz, hzx⟩ := h.exists_pow_dvd k x hx
     exact Ideal.mem_of_dvd _ hzx (Ideal.subset_span ⟨z, hz, rfl⟩)
 
 end BasicSetup

@@ -28,7 +28,7 @@ sum pins the difference to `1`, `0` or `-1`.
 
 The argument is Schur's lemma applied through a contraction. An orthonormal basis `e` carries the
 bilinear form `B(v, w) = ⟪J v, w⟫` and the contraction
-`TauCeti.tensorSquareEquivEnd e : V ⊗[𝕜] V ≃ₗ[𝕜] (V →ₗ[𝕜] V)`; unitarity of `π` makes `B` invariant
+`e.tensorSquareEquivEnd : V ⊗[𝕜] V ≃ₗ[𝕜] (V →ₗ[𝕜] V)`; unitarity of `π` makes `B` invariant
 for the pair `(π, {}^J π)`, where `{}^J π = OrthonormalBasis.conjugate e π` is the
 conjugate representation, so an **invariant** tensor contracts to an intertwiner `{}^J π ⟶ π`.
 Schur's lemma makes a nonzero such intertwiner surjective, hence bijective, and then every other
@@ -103,19 +103,19 @@ theorem inner_conjugation_apply_conjCLM (hπ : IsUnitary π) (g : G) (v u : V) :
 /-- Contracting the tensor square commutes with the action, up to conjugating the argument: the
 contraction of `(π g ⊗ π g) t` at `{}^J(π g) u` is `π g` of the contraction of `t` at `u`. -/
 theorem tensorSquareEquivEnd_tprod_apply (hπ : IsUnitary π) (g : G) (t : V ⊗[𝕜] V) (u : V) :
-    tensorSquareEquivEnd e (tprod π π g t) (e.conjCLM (π g) u)
-      = π g (tensorSquareEquivEnd e t u) := by
+    e.tensorSquareEquivEnd (tprod π π g t) (e.conjCLM (π g) u)
+      = π g (e.tensorSquareEquivEnd t u) := by
   induction t with
   | tmul v w =>
       rw [ContRepresentation.tprod_apply, TensorProduct.mapL_apply, TensorProduct.map_tmul]
-      simp only [ContinuousLinearMap.coe_coe, tensorSquareEquivEnd_tmul_apply]
+      simp only [ContinuousLinearMap.coe_coe, OrthonormalBasis.tensorSquareEquivEnd_tmul_apply]
       rw [inner_conjugation_apply_conjCLM e π hπ, map_smul]
   | add x y hx hy => simp only [map_add, LinearMap.add_apply, hx, hy]
 
 /-- **The contraction of an invariant tensor intertwines** the conjugate representation with `π`. -/
 theorem tensorSquareEquivEnd_conjCLM_of_mem_invariants (hπ : IsUnitary π) {t : V ⊗[𝕜] V}
     (ht : t ∈ (tprod π π).invariants) (g : G) (u : V) :
-    tensorSquareEquivEnd e t (e.conjCLM (π g) u) = π g (tensorSquareEquivEnd e t u) := by
+    e.tensorSquareEquivEnd t (e.conjCLM (π g) u) = π g (e.tensorSquareEquivEnd t u) := by
   conv_lhs => rw [← (mem_invariants t).mp ht g]
   exact tensorSquareEquivEnd_tprod_apply e π hπ g t u
 
@@ -124,7 +124,7 @@ noncomputable def invariantTensorIntertwiner (hπ : IsUnitary π) {t : V ⊗[�
     (ht : t ∈ (tprod π π).invariants) :
     Representation.IntertwiningMap (OrthonormalBasis.conjugate e π).toRepresentation
         π.toRepresentation :=
-  (tensorSquareEquivEnd e t).intertwiningMap_of_isIntertwiningMap
+  (e.tensorSquareEquivEnd t).intertwiningMap_of_isIntertwiningMap
     (OrthonormalBasis.conjugate e π).toRepresentation π.toRepresentation fun g u ↦ by
       have h := tensorSquareEquivEnd_conjCLM_of_mem_invariants e π hπ ht g u
       rw [← OrthonormalBasis.conjugate_apply e π g] at h
@@ -133,7 +133,7 @@ noncomputable def invariantTensorIntertwiner (hπ : IsUnitary π) {t : V ⊗[�
 @[simp]
 theorem invariantTensorIntertwiner_apply (hπ : IsUnitary π) {t : V ⊗[𝕜] V}
     (ht : t ∈ (tprod π π).invariants) (u : V) :
-    invariantTensorIntertwiner e π hπ ht u = tensorSquareEquivEnd e t u := (rfl)
+    invariantTensorIntertwiner e π hπ ht u = e.tensorSquareEquivEnd t u := (rfl)
 
 end Contraction
 
@@ -150,16 +150,16 @@ bijective. -/
 theorem tensorSquareEquivEnd_bijective_of_mem_invariants (hπ : IsUnitary π)
     (hirr : Representation.IsIrreducible π.toRepresentation) {t : V ⊗[𝕜] V}
     (ht : t ∈ (tprod π π).invariants) (ht0 : t ≠ 0) :
-    Function.Bijective (tensorSquareEquivEnd e t) := by
+    Function.Bijective (e.tensorSquareEquivEnd t) := by
   let _ : Representation.IsIrreducible π.toRepresentation := hirr
   have hne : invariantTensorIntertwiner e π hπ ht ≠ 0 := by
     intro h
-    refine ht0 ((tensorSquareEquivEnd e).map_eq_zero_iff.mp (LinearMap.ext fun u ↦ ?_))
+    refine ht0 (e.tensorSquareEquivEnd.map_eq_zero_iff.mp (LinearMap.ext fun u ↦ ?_))
     have hu : invariantTensorIntertwiner e π hπ ht u
         = (0 : Representation.IntertwiningMap (OrthonormalBasis.conjugate e π).toRepresentation
             π.toRepresentation) u := by rw [h]
     simpa using hu
-  have hsurj : Function.Surjective (tensorSquareEquivEnd e t) :=
+  have hsurj : Function.Surjective (e.tensorSquareEquivEnd t) :=
     (Representation.IsIrreducible.surjective_or_eq_zero
       (invariantTensorIntertwiner e π hπ ht)).resolve_right hne
   exact ⟨LinearMap.injective_iff_surjective.mpr hsurj, hsurj⟩
@@ -177,8 +177,8 @@ theorem exists_smul_eq_of_mem_invariants_tprod (hπ : IsUnitary π)
   let _ : Representation.IsIrreducible π.toRepresentation := hirr
   set b := stdOrthonormalBasis 𝕜 V
   have hbij := tensorSquareEquivEnd_bijective_of_mem_invariants b π hπ hirr ht ht0
-  set E : V ≃ₗ[𝕜] V := LinearEquiv.ofBijective (tensorSquareEquivEnd b t) hbij
-  have hEapply : ∀ x : V, E x = tensorSquareEquivEnd b t x := fun _ ↦ (rfl)
+  set E : V ≃ₗ[𝕜] V := LinearEquiv.ofBijective (b.tensorSquareEquivEnd t) hbij
+  have hEapply : ∀ x : V, E x = b.tensorSquareEquivEnd t x := fun _ ↦ (rfl)
   -- `E` transports the action of `π` back to the action of the conjugate representation.
   have hEsymm : ∀ (g : G) (u : V), E.symm (π g u) = b.conjCLM (π g) (E.symm u) := by
     intro g u
@@ -187,10 +187,10 @@ theorem exists_smul_eq_of_mem_invariants_tprod (hπ : IsUnitary π)
       tensorSquareEquivEnd_conjCLM_of_mem_invariants b π hπ ht, ← hEapply, E.apply_symm_apply]
   -- The second contraction, precomposed with `E⁻¹`, is a self-intertwiner of `π`.
   set A : Representation.IntertwiningMap π.toRepresentation π.toRepresentation :=
-    ((tensorSquareEquivEnd b t').comp E.symm.toLinearMap).intertwiningMap_of_isIntertwiningMap
+    ((b.tensorSquareEquivEnd t').comp E.symm.toLinearMap).intertwiningMap_of_isIntertwiningMap
       π.toRepresentation π.toRepresentation (fun g u ↦ by
-        have h : tensorSquareEquivEnd b t' (E.symm (π g u))
-            = π g (tensorSquareEquivEnd b t' (E.symm u)) := by
+        have h : b.tensorSquareEquivEnd t' (E.symm (π g u))
+            = π g (b.tensorSquareEquivEnd t' (E.symm u)) := by
           rw [hEsymm g u, tensorSquareEquivEnd_conjCLM_of_mem_invariants b π hπ ht']
         exact h) with hA
   obtain ⟨c, hc⟩ :=
@@ -200,12 +200,12 @@ theorem exists_smul_eq_of_mem_invariants_tprod (hπ : IsUnitary π)
     intro x
     rw [← hc]
     simp [Algebra.algebraMap_eq_smul_one]
-  have hkey : ∀ x : V, tensorSquareEquivEnd b t' (E.symm x) = c • x := by
+  have hkey : ∀ x : V, b.tensorSquareEquivEnd t' (E.symm x) = c • x := by
     intro x
     have h := hAx x
     rw [hA] at h
     exact h
-  refine ⟨c, (tensorSquareEquivEnd b).injective (LinearMap.ext fun x ↦ ?_)⟩
+  refine ⟨c, b.tensorSquareEquivEnd.injective (LinearMap.ext fun x ↦ ?_)⟩
   have hx := hkey (E x)
   rw [E.symm_apply_apply, hEapply] at hx
   rw [hx, map_smul, LinearMap.smul_apply]

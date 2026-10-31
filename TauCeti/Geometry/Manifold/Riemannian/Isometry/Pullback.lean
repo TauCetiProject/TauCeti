@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Curvature
-public import TauCeti.Geometry.Manifold.Riemannian.Pullback
+public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 
 /-!
 # Pulling a smooth metric back along a diffeomorphism

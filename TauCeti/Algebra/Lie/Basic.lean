@@ -41,6 +41,8 @@ This file supplies general constructions for Lie modules that are missing from M
 * `TauCeti.mem_lieAnnihilator`: membership in `lieAnnihilator R L v` is equivalent to vanishing
   of the Lie action on `v`.
 * `LieAlgebra.ad_eq_toEnd`: the adjoint action is the action `toEnd R L L` of `L` on itself.
+* `LieSubalgebra.apply_mem_of_mem`: every element of a Lie subalgebra `L` of `𝔤𝔩(V)` preserves
+  each `L`-submodule of `V`.
 * `LieModule.toEnd_eq_zero_of_isTrivial` and `LieAlgebra.ad_eq_zero_of_isLieAbelian`: on a
   trivial Lie module, in particular in an abelian Lie algebra, every element acts by zero.
 * `LieHom.map_ad_pow`: a Lie homomorphism carries `(ad x) ^ n y` to `(ad (f x)) ^ n (f y)`.
@@ -112,6 +114,18 @@ theorem LieModule.toEnd_eq_zero_of_isTrivial {R L M : Type*} [CommRing R] [LieRi
 theorem LieAlgebra.ad_eq_zero_of_isLieAbelian {R L : Type*} [CommRing R] [LieRing L]
     [LieAlgebra R L] [IsLieAbelian L] (x : L) : LieAlgebra.ad R L x = 0 :=
   LieModule.toEnd_eq_zero_of_isTrivial x
+
+section EndSubalgebra
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- Every element of a Lie subalgebra `L` of `𝔤𝔩(V)` preserves each `L`-submodule of `V`. -/
+theorem LieSubalgebra.apply_mem_of_mem {K V : Type*} [CommRing K] [AddCommGroup V] [Module K V]
+    (L : LieSubalgebra K (Module.End K V)) {z : Module.End K V} (hz : z ∈ L)
+    (W : LieSubmodule K L V) : ∀ w ∈ W, z w ∈ W :=
+  fun w hw ↦ by simpa using W.lie_mem (x := ⟨z, hz⟩) hw
+
+end EndSubalgebra
 
 namespace TauCeti
 

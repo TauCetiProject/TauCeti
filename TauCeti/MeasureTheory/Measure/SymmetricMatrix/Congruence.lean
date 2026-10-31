@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Lebesgue
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Bilinear
+public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Transvection
@@ -103,6 +104,13 @@ theorem coe_symmetricCongruenceLinearMap_apply_self_of_apply_eq_zero
     Matrix.mul_apply, Fintype.sum_eq_single j fun a ha ↦ by rw [hrow a ha, zero_mul],
     Matrix.transpose_apply]
   ring
+
+/-- Congruence by a permutation matrix permutes the rows and the columns simultaneously. -/
+theorem coe_symmetricCongruenceLinearMap_permMatrix_apply (σ : Equiv.Perm (Fin p))
+    (A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :
+    (symmetricCongruenceLinearMap (σ.permMatrix ℝ) A : Matrix (Fin p) (Fin p) ℝ) =
+      (A : Matrix (Fin p) (Fin p) ℝ).submatrix σ σ := by
+  simp [PEquiv.toMatrix_toPEquiv_mul, PEquiv.mul_toMatrix_toPEquiv, Equiv.Perm.inv_def]
 
 /-- Congruence by a square matrix `M` multiplies the determinant of a symmetric matrix by
 `(det M) ^ 2`, including when `M` is singular. -/

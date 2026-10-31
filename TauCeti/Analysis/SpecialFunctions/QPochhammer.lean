@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import TauCeti.Algebra.Ring.Parity
+public import TauCeti.Analysis.Normed.Ring.InfiniteProd
 public import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
@@ -34,6 +35,9 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
 * `TauCeti.tprod_one_sub_pow_mul_eq`: `∏_{n ≥ 1} (1 - qⁿ w) = (1 - q w) ∏_{n ≥ 1} (1 - qⁿ (q w))`.
 * `TauCeti.tprod_one_sub_pow_mul_ne_zero`: the product is nonzero when all of its factors are.
 * `TauCeti.tprod_one_sub_pow_ne_zero`: the Euler function `∏_{n ≥ 1} (1 - qⁿ)` is nonzero.
+* `TauCeti.norm_tprod_one_sub_pow_mul_le`, `TauCeti.norm_qTheta_le`: the bounds
+  `‖∏_{n ≥ 1} (1 - qⁿ w)‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖))` and
+  `‖θ_q(w)‖ ≤ ‖1 - w‖ exp (‖q‖ (‖w‖ + ‖w‖⁻¹) / (1 - ‖q‖))` for `‖q‖ < 1`.
 * `TauCeti.multipliable_one_add_pow`, `TauCeti.multipliable_one_sub_pow_odd`,
   `TauCeti.multipliable_one_add_pow_odd`: for `‖q‖ < 1` the products `∏_{n ≥ 1} (1 + qⁿ)` and
   `∏_{n ≥ 0} (1 ∓ q^{2n+1})` converge.
@@ -70,6 +74,17 @@ theorem summable_norm_pow_succ_mul {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
     Summable fun n : ℕ ↦ ‖q ^ (n + 1) * w‖ := by
   simpa [norm_pow, pow_succ, mul_assoc] using
     (summable_geometric_of_lt_one (norm_nonneg q) hq).mul_right (‖q‖ * ‖w‖)
+
+/-- For `‖q‖ < 1`, `‖∏_{n ≥ 1} (1 - qⁿ w)‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖))`. -/
+theorem norm_tprod_one_sub_pow_mul_le {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
+    ‖∏' n : ℕ, (1 - q ^ (n + 1) * w)‖ ≤ Real.exp (‖q‖ * ‖w‖ / (1 - ‖q‖)) := by
+  have h := norm_tprod_one_add_le_exp_tsum (f := fun n : ℕ ↦ -(q ^ (n + 1) * w))
+    (by simpa only [norm_neg] using summable_norm_pow_succ_mul hq w)
+  simp only [← sub_eq_add_neg, norm_neg] at h
+  refine h.trans_eq (congrArg Real.exp ?_)
+  simp only [norm_mul, norm_pow, pow_succ]
+  rw [tsum_mul_right, tsum_mul_right, tsum_geometric_of_lt_one (norm_nonneg q) hq]
+  ring
 
 /-- The **theta product** `θ_q(w) = (w; q)_∞ (q w⁻¹; q)_∞`, written as
 `(1 - w) ∏_{n ≥ 1} (1 - qⁿ w) (1 - qⁿ w⁻¹)`. The product converges for `‖q‖ < 1`; otherwise the
@@ -132,6 +147,16 @@ converges. -/
 theorem multipliable_qTheta {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
     Multipliable fun n : ℕ ↦ (1 - q ^ (n + 1) * w) * (1 - q ^ (n + 1) * w⁻¹) :=
   (multipliable_one_sub_pow_mul hq w).mul (multipliable_one_sub_pow_mul hq w⁻¹)
+
+/-- For `‖q‖ < 1` the theta product is bounded by
+`‖θ_q(w)‖ ≤ ‖1 - w‖ exp (‖q‖ (‖w‖ + ‖w‖⁻¹) / (1 - ‖q‖))`. -/
+theorem norm_qTheta_le {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
+    ‖qTheta q w‖ ≤ ‖1 - w‖ * Real.exp (‖q‖ * (‖w‖ + ‖w‖⁻¹) / (1 - ‖q‖)) := by
+  rw [qTheta_def, (multipliable_one_sub_pow_mul hq w).tprod_mul
+    (multipliable_one_sub_pow_mul hq w⁻¹), norm_mul, norm_mul, mul_add, add_div, Real.exp_add,
+    ← norm_inv]
+  exact mul_le_mul_of_nonneg_left (mul_le_mul (norm_tprod_one_sub_pow_mul_le hq w)
+    (norm_tprod_one_sub_pow_mul_le hq w⁻¹) (norm_nonneg _) (Real.exp_pos _).le) (norm_nonneg _)
 
 /-- For `‖q‖ < 1` the theta product `θ_q(w)` is nonzero when `w` is not an integral power of
 `q`. -/

@@ -108,7 +108,7 @@ noncomputable def geometricKernelCoordinateIso :
           (CommHopfAlgCat.geometricCharacterGroup K.obj ⧸
             (CommHopfAlgCat.geometricCharacterMap f).range)) :=
   geometricKernelCoordinateIsoAux hH hK f (CommHopfAlgCat.geometricCharacterMap f)
-    (CommHopfAlgCat.geometricCharacterMap_eq_groupLikeMap f)
+    (CommHopfAlgCat.geometricCharacterMap_eq_mapGroupLike f)
 
 /-- The geometric kernel comparison commutes with the scalar-extended quotient map.
 The right side expresses the ambient algebra in intrinsic character coordinates and
@@ -125,7 +125,7 @@ theorem baseChangeMap_mkQuotient_comp_geometricKernelCoordinateIso_hom :
         CommHopfAlgCat.ofHom (MonoidAlgebra.mapDomainBialgHom (AlgebraicClosure k)
           (QuotientGroup.mk' (CommHopfAlgCat.geometricCharacterMap f).range)) :=
   geometricKernelCoordinateIsoAux_comp hH hK f (CommHopfAlgCat.geometricCharacterMap f)
-    (CommHopfAlgCat.geometricCharacterMap_eq_groupLikeMap f)
+    (CommHopfAlgCat.geometricCharacterMap_eq_mapGroupLike f)
 
 include hH hK in
 /-- A homomorphism of multiplicative-type groups has finite scheme-theoretic kernel

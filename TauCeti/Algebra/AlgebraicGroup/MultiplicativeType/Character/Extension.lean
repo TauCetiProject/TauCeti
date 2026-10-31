@@ -54,12 +54,12 @@ theorem existsUnique_geometricCharacterExtension
   have hlinear := linearIndep_groupLikeVal
     (R := AlgebraicClosure k) (A := AlgebraicClosure k ⊗[k] H.obj)
   refine ⟨f.liftBialgHom hlinear hspan, ⟨?_, ?_⟩, ?_⟩
-  · exact f.groupLikeMap_liftBialgHom hlinear hspan
+  · exact f.mapGroupLike_liftBialgHom hlinear hspan
   · intro σ x
     -- The absolute-Galois wrapper uses the scalar action of its underlying algebra automorphism.
     apply ((f.liftBialgHom hlinear hspan).map_smul_iff_groupLike hspan
       (show AlgebraicClosure k ≃ₐ[k] AlgebraicClosure k from σ)).2 _ x
-    simp only [MonoidHom.groupLikeMap_liftBialgHom]
+    simp only [MonoidHom.mapGroupLike_liftBialgHom]
     exact hf σ
   · intro F hF
     apply f.liftBialgHom_unique hlinear hspan F

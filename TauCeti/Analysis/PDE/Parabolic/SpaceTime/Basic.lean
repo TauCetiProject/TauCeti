@@ -31,6 +31,8 @@ distances. The topology is the ordinary product topology on `E × ℝ`.
 * `TauCeti.ParabolicSpaceTime.coordsHomeomorph`: the homeomorphism with ordinary `E × ℝ`.
 * `TauCeti.ParabolicSpaceTime.timeReverse`: reversal of time about `T`, an isometry.
 * `TauCeti.ParabolicSpaceTime.slab`: the closed time slab `E × [a, b]`.
+* `TauCeti.ParabolicSpaceTime.slabTimeReverse`: reversal of time about `T`, an isometry from the
+  slab `E × [T - b, T - a]` onto `E × [a, b]`.
 
 ## References
 
@@ -128,6 +130,13 @@ theorem slabMk_space_slabTime {a b : ℝ} (p : slab (E := E) a b) :
 theorem slab_subset_slab {a b a' b' : ℝ} (ha : a ≤ a') (hb : b' ≤ b) :
     slab (E := E) a' b' ⊆ slab a b :=
   preimage_mono (Icc_subset_Icc ha hb)
+
+/-- Including a smaller slab into a larger one keeps the coordinates of a point. -/
+@[simp]
+theorem inclusion_slabMk {a b a' b' : ℝ} (h : slab (E := E) a' b' ⊆ slab a b) (x : E)
+    (t : Icc a' b') :
+    inclusion h (slabMk x t) = slabMk x ⟨t, by simpa using h (slabMk x t).2⟩ :=
+  (rfl)
 
 section PseudoEMetricSpace
 
@@ -281,6 +290,41 @@ theorem preimage_timeReverse_slab (T a b : ℝ) :
   ext p
   simp only [mem_preimage, mem_slab, time_timeReverse, mem_Icc]
   constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+
+/-- Reversal of time about `T`, as an isometry from the slab `E × [a', b']` onto the slab
+`E × [a, b]`, where `a' = T - b` and `b' = T - a`. -/
+def slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a) :
+    slab (E := E) a' b' ≃ᵢ slab (E := E) a b where
+  toFun p := ⟨timeReverse T p, by
+    rw [← mem_preimage, preimage_timeReverse_slab, ← ha, ← hb]; exact p.2⟩
+  invFun q := ⟨timeReverse T q, by
+    rw [← mem_preimage, preimage_timeReverse_slab, ha, hb, sub_sub_cancel, sub_sub_cancel]
+    exact q.2⟩
+  left_inv p := Subtype.ext (timeReverse_timeReverse T (p : ParabolicSpaceTime E))
+  right_inv q := Subtype.ext (timeReverse_timeReverse T (q : ParabolicSpaceTime E))
+  isometry_toFun := Isometry.of_dist_eq fun p q =>
+    (timeReverse T).dist_eq (p : ParabolicSpaceTime E) q
+
+/-- Time reversal between slabs sends `(x, t)` to `(x, T - t)`. -/
+@[simp]
+theorem slabTimeReverse_slabMk (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
+    (x : E) (t : Icc a' b') :
+    slabTimeReverse T ha hb (slabMk x t) = slabMk x ⟨T - t, by
+      obtain ⟨h₁, h₂⟩ := t.2
+      subst ha hb
+      constructor <;> linarith⟩ :=
+  (rfl)
+
+@[simp]
+theorem coe_slabTimeReverse (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
+    (p : slab (E := E) a' b') :
+    (slabTimeReverse T ha hb p : ParabolicSpaceTime E) = timeReverse T p := (rfl)
+
+/-- The inverse of time reversal between slabs is time reversal in the opposite direction. -/
+@[simp]
+theorem slabTimeReverse_symm (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a) :
+    (slabTimeReverse (E := E) T ha hb).symm =
+      slabTimeReverse T (by rw [hb, sub_sub_cancel]) (by rw [ha, sub_sub_cancel]) := (rfl)
 
 end PseudoMetricSpace
 

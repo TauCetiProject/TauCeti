@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Almost.BasicSetup
+public import TauCeti.RingTheory.Almost.FilteredPrincipal
 public import TauCeti.RingTheory.Ideal.CompatibleRoots
 public import TauCeti.RingTheory.Ideal.Flat
 
@@ -62,11 +62,10 @@ ideal is idempotent and satisfies condition (A), which makes `m~` flat. -/
 def ofCompatibleRoots : BasicSetup V where
   ideal := Ideal.span (Set.range ϖ)
   isIdempotentElem := isIdempotentElem_span_range_compatible_roots hp hϖ
-  flat_tilde := Ideal.flat_tensorProduct_self_of_directed_dvd
-    (fun _ hx _ hy ↦
+  flat_tilde := flat_tilde_of_isFilteredPrincipal
+    (isIdempotentElem_span_range_compatible_roots hp hϖ) fun _ hx _ hy ↦
       have ⟨n, hn⟩ := exists_dvd_and_dvd_of_mem_span_range_compatible_roots hϖ hx hy
-      ⟨ϖ n, Ideal.mem_span_range_self, hn⟩)
-    (isIdempotentElem_span_range_compatible_roots hp hϖ)
+      ⟨ϖ n, Ideal.mem_span_range_self, hn⟩
 
 @[simp]
 theorem ofCompatibleRoots_ideal : (ofCompatibleRoots hp hϖ).ideal = Ideal.span (Set.range ϖ) :=

@@ -14,6 +14,8 @@ public import TauCeti.RingTheory.AdicCompletion.Algebra
 public import TauCeti.RingTheory.AdicCompletion.Noetherian
 public import TauCeti.RingTheory.AdicRing.Basic
 
+import TauCeti.RingTheory.Localization.Away.Quotient
+
 /-!
 # The completed localisation of an adic ring
 
@@ -26,7 +28,10 @@ sheaf of `Spf A`.
 The ring `A_{f}` is an adic ring of finite ideal type with ideal of definition `I A_{f}`. The
 canonical map `A → A_{f}` is continuous and sends `f` to a unit, and it is universal with this
 property among continuous ring homomorphisms into complete Hausdorff linearly topologised rings.
-When `A` is noetherian, `A_{f}` is noetherian and flat over `A`.
+When `A` is noetherian, `A_{f}` is noetherian and flat over `A`. Modulo `I ^ n` nothing is
+completed: `A_{f} ⧸ I ^ n A_{f}` is the localisation of `A ⧸ I ^ n` away from the image of `f`,
+the ring of sections over `D(f)` of the thickening `Spec (A ⧸ I ^ n)`. This identifies the
+reductions of `A_{f}` with the sections of the thickenings that define the formal spectrum.
 
 For `g` in the radical of `f A + I`, that is, when `f` divides a power of `g` modulo `I` (so that
 `D(g) ⊆ D(f)` in the formal spectrum), the image of `f` in `A_{g}` is a unit, and the universal
@@ -45,6 +50,8 @@ inverse of `f`.
   topology of `I A_{f}`.
 * `TauCeti.AdicRing.CompletedAway.lift`: the continuous ring homomorphism `A_{f} → B` extending a
   continuous ring homomorphism `A → B` that sends `f` to a unit.
+* `TauCeti.AdicRing.CompletedAway.quotientPowEquiv`: the isomorphism of `A`-algebras
+  `A_{f} ⧸ I ^ n A_{f} ≃ (A ⧸ I ^ n)_f`.
 * `TauCeti.AdicRing.CompletedAway.restrict`: the restriction map `A_{f} → A_{g}` for `g` in the
   radical of `f A + I`.
 
@@ -60,6 +67,11 @@ inverse of `f`.
 * `TauCeti.AdicRing.CompletedAway.existsUnique_lift`: the universal property of `A_{f}`.
 * `TauCeti.AdicRing.CompletedAway.isNoetherianRing`, `TauCeti.AdicRing.CompletedAway.flat`: for
   noetherian `A`, the ring `A_{f}` is noetherian and flat over `A`.
+* `TauCeti.AdicRing.CompletedAway.quotientPowEquiv_algebraMap`: the isomorphism
+  `quotientPowEquiv` is induced by the reduction `A_f → (A ⧸ I ^ n)_f`.
+* `TauCeti.AdicRing.CompletedAway.quotient_algHom_subsingleton`: there is at most one
+  `A`-algebra homomorphism out of `A_{f} ⧸ I ^ n A_{f}`, so `quotientPowEquiv` is the unique
+  isomorphism and, for `m ≤ n`, is compatible with the reduction from `I ^ n` to `I ^ m`.
 * `TauCeti.AdicRing.CompletedAway.isUnit_algebraMap_iff`: `f` is a unit in `A_{g}` if and only if
   `g` lies in the radical of `f A + I`.
 * `TauCeti.AdicRing.CompletedAway.subsingleton_iff`: `A_{f}` is the zero ring if and only if `f`
@@ -292,6 +304,62 @@ instance flat [IsNoetherianRing A] : Module.Flat A (CompletedAway A f) :=
       (I := (IsAdicRing.ideal A).map (algebraMap A (Localization.Away f)))
   have : Module.Flat A (Localization.Away f) := IsLocalization.flat _ (Submonoid.powers f)
   Module.Flat.trans A (Localization.Away f) (CompletedAway A f)
+
+section Quotient
+
+/-- Modulo `I ^ n`, the completed localisation is the ordinary localisation:
+`A_{f} ⧸ I ^ n A_{f}` is isomorphic as an `A`-algebra to the localisation of `A ⧸ I ^ n` away from
+the image of `f` (EGA I, Ch. 0, 7.6.2 and 7.6.15). -/
+noncomputable def quotientPowEquiv (n : ℕ) :
+    (CompletedAway A f ⧸ (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n) ≃ₐ[A]
+      Localization.Away (Ideal.Quotient.mk (IsAdicRing.ideal A ^ n) f) :=
+  (((Ideal.quotientEquivAlgOfEq (Localization.Away f)
+    (J := ((IsAdicRing.ideal A).map (algebraMap A (Localization.Away f)) ^ n).map
+      (algebraMap (Localization.Away f) (CompletedAway A f)))
+    (by rw [map_algebraMap_eq, ← Ideal.map_pow])).trans
+    ((AdicCompletion.quotientMapPowAlgEquiv (fg_map A f) n).trans
+      (Ideal.quotientEquivAlgOfEq (Localization.Away f)
+        (Ideal.map_pow _ _ _).symm))).restrictScalars A).trans
+    ((IsLocalization.algEquiv (Submonoid.powers (Ideal.Quotient.mk (IsAdicRing.ideal A ^ n) f))
+      (Localization.Away f ⧸ (IsAdicRing.ideal A ^ n).map (algebraMap A (Localization.Away f)))
+      (Localization.Away (Ideal.Quotient.mk (IsAdicRing.ideal A ^ n) f))).restrictScalars A)
+
+/-- On the image of `A_f`, the isomorphism `A_{f} ⧸ I ^ n A_{f} ≃ (A ⧸ I ^ n)_f` is the map
+`A_f → (A ⧸ I ^ n)_f` induced by the reduction `A → A ⧸ I ^ n`. -/
+@[simp]
+theorem quotientPowEquiv_algebraMap (n : ℕ) (x : Localization.Away f) :
+    quotientPowEquiv A f n (algebraMap (Localization.Away f)
+        (CompletedAway A f ⧸ (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n) x) =
+      Localization.awayMap (Ideal.Quotient.mk (IsAdicRing.ideal A ^ n)) f x := by
+  -- both sides are ring homomorphisms out of `A_f` agreeing on `A`
+  have h := IsLocalization.ringHom_ext (Submonoid.powers f)
+    (j := (quotientPowEquiv A f n).toRingHom.comp (algebraMap (Localization.Away f)
+      (CompletedAway A f ⧸ (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n)))
+    (k := Localization.awayMap (Ideal.Quotient.mk (IsAdicRing.ideal A ^ n)) f)
+    (RingHom.ext fun a ↦ ?_)
+  · exact congr($h x)
+  · simp [← IsScalarTower.algebraMap_apply, IsLocalization.Away.map,
+      IsScalarTower.algebraMap_apply A (A ⧸ IsAdicRing.ideal A ^ n)]
+
+/-- There is at most one `A`-algebra homomorphism out of `A_{f} ⧸ I ^ n A_{f}`: it is a
+localisation of a quotient of `A`. In particular `quotientPowEquiv` is the only `A`-algebra
+isomorphism `A_{f} ⧸ I ^ n A_{f} ≃ (A ⧸ I ^ n)_f`, and these isomorphisms are compatible with the
+reductions from `I ^ n` to `I ^ m` for `m ≤ n`. -/
+instance quotient_algHom_subsingleton (n : ℕ) {B : Type*} [Semiring B] [Algebra A B] :
+    Subsingleton ((CompletedAway A f ⧸
+      (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n) →ₐ[A] B) := by
+  refine ⟨fun g₁ g₂ ↦ AlgHom.ext fun x ↦ ?_⟩
+  obtain ⟨y, rfl⟩ := (quotientPowEquiv A f n).symm.surjective x
+  -- transported to `(A ⧸ I ^ n)_f`, both maps are ring homomorphisms agreeing on `A`
+  have h := IsLocalization.ringHom_ext
+    (Submonoid.powers (Ideal.Quotient.mk (IsAdicRing.ideal A ^ n) f))
+    (j := (g₁.comp (quotientPowEquiv A f n).symm.toAlgHom).toRingHom)
+    (k := (g₂.comp (quotientPowEquiv A f n).symm.toAlgHom).toRingHom)
+    (Ideal.Quotient.ringHom_ext (RingHom.ext fun a ↦ ?_))
+  · exact congr($h y)
+  · simp [← Ideal.Quotient.algebraMap_eq, ← IsScalarTower.algebraMap_apply]
+
+end Quotient
 
 section Restriction
 

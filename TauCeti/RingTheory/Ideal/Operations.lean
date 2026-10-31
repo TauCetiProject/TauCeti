@@ -27,10 +27,9 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.smul_top_eq_top_of_pi`: an ideal that expands the whole of a product of modules expands
   the whole of every factor.
 * `Ideal.smul_top_eq_comap_mul`: the action on an ideal identifies its product submodule.
+* `Ideal.smul_top_eq_top_of_isIdempotentElem`: an idempotent ideal `I` satisfies `I • I = I`.
 * `Ideal.span_range_fin_two_eq_top_iff`: a pair generates the unit ideal exactly when its entries
   are coprime.
-* `Ideal.exists_pow_dvd_of_mem_pow`: if any two elements of `I` have a common divisor in `I`,
-  every element of `I ^ k` is divisible by the `k`-th power of a single element of `I`.
 * `LinearMap.apply_mem_of_mem_smul_top`: a linear functional carries `I • M` into `I`.
 * `Ideal.span_insert_eq_top_of_subset`: a generating set `S` may be replaced by a set `S'`, both
   taken together with a common element `a`, as soon as every element of `S` is `a` itself or
@@ -49,6 +48,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.span_pair_pow_eq_span_singleton`: if `z (1 - t) = x ^ n` with `t ∈ (x, z)` and
   the left ideals `(x, z)` and `(z)` are two-sided, then `(x, z) ^ n = (z)`.
 * `Ideal.isTwoSided_span_of_subset_center`: a left ideal spanned by central elements is two-sided.
+* `Ideal.coe_span_subset_of_forall_mul_mem`: a left ideal lies in an additive submonoid containing
+  every left multiple of its generators.
 * `Submodule.mem_span_algebraMap_smul_iff`: over an algebra `A`, the action on a submodule `N` of
   the left ideal spanned by a scalar `x` produces exactly the multiples `x • w` with `w ∈ N`.
 * `Subalgebra.toSubmodule_sup_pow_restrictScalars_eq_top`: if a subalgebra and a principal left
@@ -99,6 +100,13 @@ theorem smul_top_eq_comap_mul (I J : Ideal R) :
   simp only [Submodule.mem_smul_top_iff, Submodule.mem_comap, Submodule.coe_subtype,
     Ideal.smul_eq_mul, mul_comm J I]
 
+/-- If `I * I = I`, then `I • I = I`: every element of `I` is a sum of products of two elements
+of `I`. -/
+theorem smul_top_eq_top_of_isIdempotentElem {I : Ideal R} (hI : IsIdempotentElem I) :
+    I • (⊤ : Submodule R I) = ⊤ := by
+  apply Submodule.map_injective_of_injective I.injective_subtype
+  rw [Submodule.map_smul'', Submodule.map_top, Submodule.range_subtype, Ideal.smul_eq_mul, hI.eq]
+
 /-- The two entries of a pair generate the unit ideal exactly when they are coprime. -/
 theorem span_range_fin_two_eq_top_iff (v : Fin 2 → R) :
     span (Set.range v) = ⊤ ↔ IsCoprime (v 0) (v 1) := by
@@ -106,24 +114,6 @@ theorem span_range_fin_two_eq_top_iff (v : Fin 2 → R) :
     ext x
     simp [Fin.exists_fin_two, eq_comm]
   rw [hv, span_insert, sup_eq_top_iff_isCoprime]
-
-/-- If any two elements of an ideal `I` have a common divisor in `I` (condition (A) of
-Gabber–Ramero (2.1.6)), then every element of `I ^ k` is divisible by the `k`-th power of
-a single element of `I`. -/
-theorem exists_pow_dvd_of_mem_pow {I : Ideal R} (h : ∀ x ∈ I, ∀ y ∈ I, ∃ z ∈ I, z ∣ x ∧ z ∣ y) :
-    ∀ k : ℕ, ∀ x ∈ I ^ k, ∃ z ∈ I, z ^ k ∣ x
-  | 0, x, _ => ⟨0, I.zero_mem, by simp⟩
-  | k + 1, x, hx => by
-    rw [pow_succ'] at hx
-    refine Submodule.mul_induction_on hx (fun a ha b hb ↦ ?_) fun x y hx hy ↦ ?_
-    · obtain ⟨z', hz', hz'b⟩ := exists_pow_dvd_of_mem_pow h k b hb
-      obtain ⟨z, hz, hza, hzz'⟩ := h a ha z' hz'
-      exact ⟨z, hz, pow_succ' z k ▸ mul_dvd_mul hza ((pow_dvd_pow_of_dvd hzz' k).trans hz'b)⟩
-    · obtain ⟨z₁, hz₁, hz₁x⟩ := hx
-      obtain ⟨z₂, hz₂, hz₂y⟩ := hy
-      obtain ⟨z, hz, hzz₁, hzz₂⟩ := h z₁ hz₁ z₂ hz₂
-      exact ⟨z, hz, dvd_add ((pow_dvd_pow_of_dvd hzz₁ _).trans hz₁x)
-        ((pow_dvd_pow_of_dvd hzz₂ _).trans hz₂y)⟩
 
 end CommSemiring
 
@@ -227,6 +217,17 @@ theorem span_singleton_pow_sup_span_singleton_pow (a : R) (j m : ℕ) :
     exact ⟨a ^ (m - j), pow_sub_mul_pow a h⟩
   · rw [min_eq_right h, sup_eq_right, span_singleton_le_iff_mem, mem_span_singleton']
     exact ⟨a ^ (j - m), pow_sub_mul_pow a h⟩
+
+/-- A left ideal lies in an additive submonoid `U` as soon as every left multiple of each of its
+generators lies in `U`. -/
+theorem coe_span_subset_of_forall_mul_mem {U : AddSubmonoid R} (h : ∀ x ∈ S, ∀ r : R, r * x ∈ U) :
+    (span S : Set R) ⊆ U := by
+  intro y hy
+  have hy' : y ∈ (Submodule.span R S).toAddSubmonoid := hy
+  rw [Submodule.span_eq_closure] at hy'
+  refine (AddSubmonoid.closure_le (S := U)).mpr ?_ hy'
+  rintro _ ⟨r, -, x, hx, rfl⟩
+  exact h x hx r
 
 variable {A : Type*} [Semiring A] {s : Set A}
 
