@@ -75,9 +75,9 @@ variable {α : Type u} {β : Type v} {G : Graph α β} {s t : α}
 /-- **Weak duality for edge-disjoint walks.** A family of `s`–`t` walks, from an actual vertex `s`,
 of which no two traverse a common edge has at most as many members as any set of edges whose
 deletion leaves `s` and `t` unreachable. -/
-theorem card_le_encard_of_not_reachable_deleteEdges {ι : Type*} [Fintype ι] {P : ι → G.Walk s t}
+theorem card_le_encard_of_not_reachable_deleteEdges {ι : Type*} {P : ι → G.Walk s t}
     (hP : Pairwise fun i j ↦ (P i).edges.Disjoint (P j).edges) (hs : s ∈ V(G)) {F : Set β}
-    (hF : ¬(G.deleteEdges F).Reachable s t) : (Fintype.card ι : ℕ∞) ≤ F.encard := by
+    (hF : ¬(G.deleteEdges F).Reachable s t) : ENat.card ι ≤ F.encard := by
   -- Each member traverses an edge of `F`, and different members traverse different edges.
   have h (i : ι) : ∃ e ∈ (P i).edges, e ∈ F := by
     by_contra! h
@@ -86,7 +86,7 @@ theorem card_le_encard_of_not_reachable_deleteEdges {ι : Type*} [Fintype ι] {P
   have hinj : Function.Injective g := fun i j hij ↦ by
     by_contra hne
     exact hP hne (hg i) (hij ▸ hg j)
-  rw [← ENat.card_eq_coe_fintype_card, ← hinj.encard_range]
+  rw [← hinj.encard_range]
   exact Set.encard_le_encard (Set.range_subset_iff.2 hgF)
 
 /-- An acyclic integer flow on the bidirected arrow family of a multigraph, between distinct
@@ -195,9 +195,9 @@ variable {α : Type u} {G : SimpleGraph α} {s t : α}
 /-- **Weak duality for edge-disjoint walks in a simple graph.** A family of `s`–`t` walks of which
 no two traverse a common edge has at most as many members as any set of edges whose deletion leaves
 `s` and `t` unreachable. -/
-theorem card_le_encard_of_not_reachable_deleteEdges {ι : Type*} [Fintype ι] {P : ι → G.Walk s t}
+theorem card_le_encard_of_not_reachable_deleteEdges {ι : Type*} {P : ι → G.Walk s t}
     (hP : Pairwise fun i j ↦ (P i).edges.Disjoint (P j).edges) {F : Set (Sym2 α)}
-    (hF : ¬(G.deleteEdges F).Reachable s t) : (Fintype.card ι : ℕ∞) ≤ F.encard :=
+    (hF : ¬(G.deleteEdges F).Reachable s t) : ENat.card ι ≤ F.encard :=
   Graph.card_le_encard_of_not_reachable_deleteEdges (P := fun i ↦ (P i).toGraph)
     (by simpa only [Walk.edges_toGraph] using hP) (Set.mem_univ s)
     (by rwa [Graph.ofSimpleGraph_deleteEdges, reachable_ofSimpleGraph_iff])
