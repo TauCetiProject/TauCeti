@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.SUnits.Rat.Structure
 
+import TauCeti.Analysis.SpecialFunctions.Log.AddMulLog
 import TauCeti.NumberTheory.Padics.PadicValRat
 
 /-!
@@ -138,12 +139,12 @@ private theorem rpow_neg_le_zpow_neg (hS : ∀ p ∈ S, p.Prime) {C : ℝ} (hC :
       show padicValRat p (x : ℚ) = (N : ℤ) by omega, Rat.cast_zpow, Rat.cast_natCast] at h
 
 /-- The final real estimate: if `(e N) ^ (-C) ≤ q ^ (-N)` with `q ≥ 2` and `N ≥ 1`, then
-`N log 2 ≤ C (1 + log N)`, hence `N ≤ (2C / log 2) log(2C / log 2)`. -/
+`N log 2 ≤ C (1 + log N)`, hence `N ≤ (2C / log 2) log(2C / log 2)` by
+`Real.le_two_mul_add_of_le_add_mul_log`. -/
 private theorem le_max_of_rpow_neg_le {C : ℝ} (hC : 0 ≤ C) {q N : ℕ} (hq : 2 ≤ q) (hN : 1 ≤ N)
     (h : (Real.exp 1 * max 1 (N : ℝ)) ^ (-C) ≤ (q : ℝ) ^ (-(N : ℤ))) :
     (N : ℝ) ≤ max 1 (2 * C / Real.log 2 * Real.log (2 * C / Real.log 2)) := by
   have hN' : (1 : ℝ) ≤ N := by exact_mod_cast hN
-  have hN0 : (0 : ℝ) < N := by positivity
   have hq' : (2 : ℝ) ≤ q := by exact_mod_cast hq
   have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
   rw [max_eq_right hN'] at h
@@ -155,23 +156,15 @@ private theorem le_max_of_rpow_neg_le {C : ℝ} (hC : 0 ≤ C) {q N : ℕ} (hq :
     have := Real.log_le_log (by norm_num) hq'
     push_cast at hlog
     nlinarith
-  refine le_max_of_le_right ?_
-  rcases hC.eq_or_lt with rfl | hCpos
-  · nlinarith
-  -- with `b = C / log 2`, `N ≤ b (1 + log N)` and `log N ≤ log (2b) + N / (2b) - 1`
+  -- with `b = C / log 2`, `N ≤ b + b log N`
   set b := C / Real.log 2 with hb
-  have hb0 : 0 < b := div_pos hCpos hlog2
-  have hNb : (N : ℝ) ≤ b * (1 + Real.log N) := by
-    rw [hb, div_mul_eq_mul_div, le_div_iff₀ hlog2]
-    linarith
-  have hlogN : Real.log N ≤ Real.log (2 * b) + N / (2 * b) - 1 := by
-    have h1 := Real.log_le_sub_one_of_pos (show 0 < N / (2 * b) by positivity)
-    rw [Real.log_div hN0.ne' (by positivity)] at h1
+  have hNb : (N : ℝ) ≤ b + b * Real.log N := by
+    rw [← mul_one_add, hb, div_mul_eq_mul_div, le_div_iff₀ hlog2]
     linarith
   have h2b : 2 * C / Real.log 2 = 2 * b := by rw [hb, mul_div_assoc]
+  refine le_max_of_le_right ?_
   rw [h2b]
-  have : b * (N / (2 * b)) = N / 2 := by field_simp
-  nlinarith
+  linarith [Real.le_two_mul_add_of_le_add_mul_log (div_nonneg hC hlog2.le) (by positivity) hNb]
 
 /-- **The exponent bound for the rational `S`-unit equation** (Evertse, Theorem 5.17). Let `S` be
 a finite set of primes and `C ≥ 0` a constant such that for every `p ∈ S`, every sign `ε` and every
