@@ -31,6 +31,8 @@ and the value is a Hahn series, so that a bilinear form produces a scalar series
   `Φ`, as a biadditive map.
 * `HahnModule.convolution Γ Φ`: the coefficientwise extension of an `R`-bilinear map `Φ`, as an
   `R`-bilinear map.
+* `HahnModule.convolution_apply`: the extension of a bilinear map is the extension of the
+  underlying biadditive map.
 * `HahnModule.coeff_convolutionAddMonoidHom`, `HahnModule.coeff_convolution`: the coefficient
   formula.
 * `HahnModule.support_convolutionAddMonoidHom_subset`, `HahnModule.support_convolution_subset`:
@@ -219,6 +221,13 @@ def convolution (Φ : V →ₗ[R] W →ₗ[R] M) :
           (by rw [of_symm_smul']; exact HahnSeries.support_smul_subset _ _),
         coeff_convolutionAddMonoidHom, smul_sum]
       simp [of_symm_smul'])
+
+/-- The extension of an `R`-bilinear map is the extension `convolutionAddMonoidHom` of the
+underlying biadditive map. -/
+theorem convolution_apply (Φ : V →ₗ[R] W →ₗ[R] M) (x : HahnModule Γ R V) (y : HahnModule Γ R W) :
+    convolution Γ Φ x y =
+      convolutionAddMonoidHom Γ R (LinearMap.toAddMonoidHom'.comp Φ.toAddMonoidHom) x y :=
+  (rfl)
 
 /-- The coefficient formula `Φ(x, y)_c = ∑_{a + b = c} Φ(x_a, y_b)`. -/
 theorem coeff_convolution (Φ : V →ₗ[R] W →ₗ[R] M) (x : HahnModule Γ R V) (y : HahnModule Γ R W)

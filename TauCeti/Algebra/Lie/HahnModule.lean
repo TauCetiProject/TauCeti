@@ -29,6 +29,7 @@ coefficientwise action of `R`, and also for the convolution action of the Hahn s
 
 * `HahnModule.instBracket`: the coefficient convolution bracket, the coefficientwise extension
   `HahnModule.convolutionAddMonoidHom` of the bracket of `L`.
+* `HahnModule.of_symm_lie`: the bracket is the coefficientwise extension of the bracket of `L`.
 * `HahnModule.coeff_lie`: the coefficient formula for the bracket.
 * `HahnModule.support_lie_subset`: the support of a bracket lies in the sum of the supports.
 * `HahnModule.orderTop_add_le_lie`: over a linearly ordered `Γ`, the order of a bracket is at
@@ -66,7 +67,9 @@ biadditive bracket of `L`. -/
 instance instBracket : Bracket (HahnModule Γ R L) (HahnModule Γ R L) where
   bracket x y := of R (convolutionAddMonoidHom Γ R (LieRingModule.toEnd L L) x y)
 
-private theorem of_symm_lie (x y : HahnModule Γ R L) :
+/-- Read through `HahnModule.of`, the bracket is the coefficientwise extension
+`convolutionAddMonoidHom` of the bracket of `L`. -/
+theorem of_symm_lie (x y : HahnModule Γ R L) :
     (of R).symm ⁅x, y⁆ = convolutionAddMonoidHom Γ R (LieRingModule.toEnd L L) x y :=
   rfl
 

@@ -39,6 +39,7 @@ pairs `v tᵐ` and `w tⁿ` to `n Φ(v, w)` when `m + n = 0`, and to zero otherw
 * `HahnModule.derivative_smul`: the Leibniz rule `D (f • x) = D f • x + f • D x`.
 * `HahnModule.derivative_convolutionAddMonoidHom`: the Leibniz rule
   `D Φ(x, y) = Φ(D x, y) + Φ(x, D y)` for the coefficientwise extension of a biadditive map `Φ`.
+* `HahnModule.derivative_convolution`: the same Leibniz rule for the extension of a bilinear map.
 * `HahnModule.derivative_mem_lattice`: `D` maps `U_a(V)` into `U_{a - 1}(V)`.
 * `HahnModule.derivative_map`: `D` commutes with linear maps of coefficients.
 * `HahnModule.residuePairing R Φ`: the residue pairing `(x, y) ↦ Res Φ(x, D y) dt`.
@@ -128,6 +129,32 @@ private theorem isPWO_image_sub_one_support (x : HahnModule ℤ R V) :
     ((· - 1) '' ((of R).symm x).support).IsPWO :=
   ((of R).symm x).isPWO_support.image_of_monotone fun _ _ h ↦ sub_le_sub_right h 1
 
+/-- Shifting the first index up by one turns a sum over the antidiagonal of `n`, whose first
+index runs over the support of `D x`, into a sum over the antidiagonal of `n + 1`, whose first
+index runs over the support of `x`. -/
+private theorem sum_antidiagonal_derivative {M : Type*} [AddCommMonoid M] (x : HahnModule ℤ R V)
+    {t : Set ℤ} (ht : t.IsPWO) (g : V → ℤ → M) (n : ℤ) :
+    ∑ ij ∈ Finset.antidiagonal (isPWO_image_sub_one_support x) ht n,
+        g (((of R).symm (derivative R x)).coeff ij.1) ij.2 =
+      ∑ ij ∈ Finset.antidiagonal ((of R).symm x).isPWO_support ht (n + 1),
+        g (ij.1 • ((of R).symm x).coeff ij.1) ij.2 := by
+  refine Finset.sum_nbij' (fun ij ↦ (ij.1 + 1, ij.2)) (fun ij ↦ (ij.1 - 1, ij.2)) ?_ ?_
+    (fun ij _ ↦ by simp) (fun ij _ ↦ by simp) fun ij _ ↦ by rw [coeff_derivative]
+  · rintro ⟨i, j⟩ hij
+    obtain ⟨⟨i, hi, rfl⟩, hj, hij⟩ := Finset.mem_antidiagonal.1 hij
+    exact Finset.mem_antidiagonal.2 ⟨by rwa [sub_add_cancel], hj, by omega⟩
+  · rintro ⟨i, j⟩ hij
+    obtain ⟨hi, hj, hij⟩ := Finset.mem_antidiagonal.1 hij
+    exact Finset.mem_antidiagonal.2 ⟨⟨i, hi, rfl⟩, hj, by omega⟩
+
+/-- A sum over an antidiagonal may be indexed with the two factors exchanged. -/
+private theorem sum_antidiagonal_swap {M : Type*} [AddCommMonoid M] {s t : Set ℤ}
+    (hs : s.IsPWO) (ht : t.IsPWO) (n : ℤ) (f : ℤ → ℤ → M) :
+    ∑ ij ∈ Finset.antidiagonal hs ht n, f ij.1 ij.2 =
+      ∑ ij ∈ Finset.antidiagonal ht hs n, f ij.2 ij.1 :=
+  Finset.sum_equiv (Equiv.prodComm ℤ ℤ) (fun _ ↦ Finset.swap_mem_antidiagonal.symm)
+    fun _ _ ↦ rfl
+
 /-- **The Leibniz rule** `D Φ(x, y) = Φ(D x, y) + Φ(x, D y)` for the coefficientwise extension of
 a biadditive map `Φ : V → W → M`. -/
 theorem derivative_convolutionAddMonoidHom {M : Type*} [AddCommGroup M] [Module R M]
@@ -136,44 +163,39 @@ theorem derivative_convolutionAddMonoidHom {M : Type*} [AddCommGroup M] [Module 
       convolutionAddMonoidHom ℤ R Φ (derivative R x) y +
         convolutionAddMonoidHom ℤ R Φ x (derivative R y) := by
   ext n
+  -- Shift the index of the differentiated factor up by one, to the antidiagonal of `n + 1`.
   rw [HahnSeries.coeff_add, LaurentSeries.coeff_derivative, coeff_convolutionAddMonoidHom,
     coeff_convolutionAddMonoidHom_left' (isPWO_image_sub_one_support x)
       (support_derivative_subset x),
     coeff_convolutionAddMonoidHom_right' (isPWO_image_sub_one_support y)
-      (support_derivative_subset y), Finset.smul_sum]
-  -- Shift the index of the differentiated factor up by one, to the antidiagonal of `n + 1`.
-  have hl : ∑ ij ∈ Finset.antidiagonal (isPWO_image_sub_one_support x)
-        ((of R).symm y).isPWO_support n,
-        Φ (((of R).symm (derivative R x)).coeff ij.1) (((of R).symm y).coeff ij.2) =
-      ∑ ij ∈ Finset.antidiagonal ((of R).symm x).isPWO_support ((of R).symm y).isPWO_support
-        (n + 1), Φ (ij.1 • ((of R).symm x).coeff ij.1) (((of R).symm y).coeff ij.2) := by
-    refine Finset.sum_nbij' (fun ij ↦ (ij.1 + 1, ij.2)) (fun ij ↦ (ij.1 - 1, ij.2)) ?_ ?_
-      (fun ij _ ↦ by simp) (fun ij _ ↦ by simp) fun ij _ ↦ by rw [coeff_derivative]
-    · rintro ⟨i, j⟩ hij
-      obtain ⟨⟨i, hi, rfl⟩, hj, hij⟩ := Finset.mem_antidiagonal.1 hij
-      exact Finset.mem_antidiagonal.2 ⟨by rwa [sub_add_cancel], hj, by omega⟩
-    · rintro ⟨i, j⟩ hij
-      obtain ⟨hi, hj, hij⟩ := Finset.mem_antidiagonal.1 hij
-      exact Finset.mem_antidiagonal.2 ⟨⟨i, hi, rfl⟩, hj, by omega⟩
-  have hr : ∑ ij ∈ Finset.antidiagonal ((of R).symm x).isPWO_support
-        (isPWO_image_sub_one_support y) n,
-        Φ (((of R).symm x).coeff ij.1) (((of R).symm (derivative R y)).coeff ij.2) =
-      ∑ ij ∈ Finset.antidiagonal ((of R).symm x).isPWO_support ((of R).symm y).isPWO_support
-        (n + 1), Φ (((of R).symm x).coeff ij.1) (ij.2 • ((of R).symm y).coeff ij.2) := by
-    refine Finset.sum_nbij' (fun ij ↦ (ij.1, ij.2 + 1)) (fun ij ↦ (ij.1, ij.2 - 1)) ?_ ?_
-      (fun ij _ ↦ by simp) (fun ij _ ↦ by simp) fun ij _ ↦ by rw [coeff_derivative]
-    · rintro ⟨i, j⟩ hij
-      obtain ⟨hi, ⟨j, hj, rfl⟩, hij⟩ := Finset.mem_antidiagonal.1 hij
-      exact Finset.mem_antidiagonal.2 ⟨hi, by rwa [sub_add_cancel], by omega⟩
-    · rintro ⟨i, j⟩ hij
-      obtain ⟨hi, hj, hij⟩ := Finset.mem_antidiagonal.1 hij
-      exact Finset.mem_antidiagonal.2 ⟨hi, ⟨j, hj, rfl⟩, by omega⟩
-  rw [hl, hr, ← Finset.sum_add_distrib]
+      (support_derivative_subset y), Finset.smul_sum,
+    sum_antidiagonal_derivative x _ fun v j ↦ Φ v (((of R).symm y).coeff j),
+    sum_antidiagonal_swap _ _ _ fun i w ↦ Φ (((of R).symm x).coeff i)
+      (((of R).symm (derivative R y)).coeff w),
+    sum_antidiagonal_derivative y _ fun w i ↦ Φ (((of R).symm x).coeff i) w,
+    sum_antidiagonal_swap _ _ _ fun j i ↦ Φ (((of R).symm x).coeff i)
+      (j • ((of R).symm y).coeff j), ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun ij hij ↦ ?_
   obtain ⟨-, -, hij⟩ := Finset.mem_antidiagonal.1 hij
   rw [map_zsmul, AddMonoidHom.zsmul_apply, map_zsmul, ← add_zsmul, hij]
 
 end Semiring
+
+section CommSemiring
+
+variable {R V W M : Type*} [CommSemiring R] [AddCommGroup V] [Module R V] [AddCommGroup W]
+  [Module R W] [AddCommGroup M] [Module R M]
+
+/-- **The Leibniz rule** `D Φ(x, y) = Φ(D x, y) + Φ(x, D y)` for the coefficientwise extension of
+an `R`-bilinear map `Φ : V → W → M`. -/
+theorem derivative_convolution (Φ : V →ₗ[R] W →ₗ[R] M) (x : HahnModule ℤ R V)
+    (y : HahnModule ℤ R W) :
+    LaurentSeries.derivative R (convolution ℤ Φ x y) =
+      convolution ℤ Φ (derivative R x) y + convolution ℤ Φ x (derivative R y) := by
+  rw [convolution_apply, convolution_apply, convolution_apply]
+  exact derivative_convolutionAddMonoidHom _ x y
+
+end CommSemiring
 
 section Ring
 

@@ -51,8 +51,8 @@ bracket is the coefficientwise extension of the bracket of `L`. -/
 theorem derivative_lie (x y : HahnModule ℤ R L) :
     derivative R ⁅x, y⁆ = ⁅derivative R x, y⁆ + ⁅x, derivative R y⁆ :=
   (of R).symm.injective <| by
-    rw [of_symm_derivative, of_symm_add]
-    exact derivative_convolutionAddMonoidHom (LieRingModule.toEnd L L) x y
+    rw [of_symm_derivative, of_symm_add, of_symm_lie, of_symm_lie, of_symm_lie]
+    exact derivative_convolutionAddMonoidHom _ x y
 
 variable (R L) in
 /-- The derivative of formal loops `L((t))` as a Lie derivation. -/
