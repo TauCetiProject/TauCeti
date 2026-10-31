@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.Functoriality
+public import TauCeti.RepresentationTheory.Continuous.Restriction
 public import TauCeti.RepresentationTheory.Continuous.Invariants
 public import TauCeti.RepresentationTheory.Continuous.TopRep.EqToHom
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
@@ -41,6 +42,8 @@ transformations `resNatTrans` and `inflNatTrans`, matching the shape of Mathlib'
 * `TauCeti.ContinuousCohomology.resNatTrans`, `TauCeti.ContinuousCohomology.inflNatTrans`.
 * `TauCeti.ContinuousCohomology.shiftedResolutionMap`: the chain map of shifted coinduced
   resolutions induced by a coefficient morphism.
+* `TauCeti.ContinuousCohomology.shiftedResolutionResMap`: the chain map from the restricted
+  shifted coinduced resolution of `X` to that of `Y` induced by a compatible pair.
 
 ## Main results
 
@@ -148,6 +151,38 @@ theorem mapHomologicalComplex_map_shiftedResolutionMap (f : X ⟶ Y) :
   rfl
 
 end ResolutionMaps
+
+section ResolutionResMap
+
+open TopRep
+
+variable {k : Type u} [Ring k] [TopologicalSpace k]
+  {G H : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [Group H] [TopologicalSpace H] [IsTopologicalGroup H] (φ : H →ₜ* G)
+  {X : TopRep.{max v w} k G} {Y : TopRep.{max v w} k H}
+
+/-- The chain map from the restriction along `φ` of the shifted coinduced resolution of `X` to the
+shifted coinduced resolution of `Y` induced by a compatible pair, `F ↦ f ∘ F ∘ φ` in every degree.
+Its components are the maps `ContinuousCohomology.resolutionMap φ f` from which Mathlib builds the
+cochain map `ContinuousCohomology.cochainsMap φ f`. -/
+noncomputable def shiftedResolutionResMap (f : TopRep.res (φ : H →* G) X ⟶ Y) :
+    ((resFunctor (φ : H →* G)).mapHomologicalComplex _).obj (resolution' X) ⟶
+      resolution' Y where
+  f n := _root_.ContinuousCohomology.resolutionMap φ f (n + 1)
+  comm' i j hij := by
+    obtain rfl : i + 1 = j := hij
+    simp only [Functor.mapHomologicalComplex_obj_d, CochainComplex.of_d, resolution'd_eq]
+    exact _root_.ContinuousCohomology.resolutionMap_comp_d φ f (i + 1)
+
+/-- The degree-`n` component of `shiftedResolutionResMap φ f` is the map induced by the compatible
+pair on the `(n + 1)`-st term of the coinduced resolution. -/
+@[simp]
+theorem shiftedResolutionResMap_f (f : TopRep.res (φ : H →* G) X ⟶ Y) (n : ℕ) :
+    (shiftedResolutionResMap φ f).f n =
+      _root_.ContinuousCohomology.resolutionMap φ f (n + 1) :=
+  (rfl)
+
+end ResolutionResMap
 
 section InjectiveResolutionMap
 

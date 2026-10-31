@@ -38,15 +38,11 @@ coinduced resolution. As for the independence of these classes from the comparis
 
 ## Main definitions
 
-* `TauCeti.ContinuousCohomology.shiftedResolutionResMap`: the chain map from the restricted
-  shifted coinduced resolution of `X` to that of `Y` induced by a compatible pair.
 * `TopRep.ResolutionContraction.res`: the restriction of a contraction along a continuous
   homomorphism.
 
 ## Main results
 
-* `TauCeti.ContinuousCohomology.map_cochainClass`: the map of a compatible pair on the class of a
-  homogeneous cocycle.
 * `TopRep.ResolutionContraction.map_cohomologyClass_res`: restriction along `φ` of the class of an
   invariant cocycle is its class in the restricted complex.
 * `TopRep.ResolutionContraction.map_cohomologyClass`: naturality of the classes of contracted
@@ -67,50 +63,6 @@ public section
 open CategoryTheory
 
 universe u v w
-
-namespace TauCeti.ContinuousCohomology
-
-open TopRep
-
-variable {k : Type u} [Ring k] [TopologicalSpace k]
-  {G H : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [Group H] [TopologicalSpace H] [IsTopologicalGroup H] (φ : H →ₜ* G)
-  {X : TopRep.{max v w} k G} {Y : TopRep.{max v w} k H}
-
-/-- The chain map from the restriction along `φ` of the shifted coinduced resolution of `X` to the
-shifted coinduced resolution of `Y` induced by a compatible pair, `F ↦ f ∘ F ∘ φ` in every degree.
-Its components are the maps `ContinuousCohomology.resolutionMap φ f` from which Mathlib builds the
-cochain map `ContinuousCohomology.cochainsMap φ f`. -/
-noncomputable def shiftedResolutionResMap (f : TopRep.res (φ : H →* G) X ⟶ Y) :
-    ((resFunctor (φ : H →* G)).mapHomologicalComplex _).obj (resolution' X) ⟶
-      resolution' Y where
-  f n := _root_.ContinuousCohomology.resolutionMap φ f (n + 1)
-  comm' i j hij := by
-    obtain rfl : i + 1 = j := hij
-    simp only [Functor.mapHomologicalComplex_obj_d, CochainComplex.of_d, resolution'd_eq]
-    exact _root_.ContinuousCohomology.resolutionMap_comp_d φ f (i + 1)
-
-/-- The degree-`n` component of `shiftedResolutionResMap φ f` is the map induced by the compatible
-pair on the `(n + 1)`-st term of the coinduced resolution. -/
-@[simp]
-theorem shiftedResolutionResMap_f (f : TopRep.res (φ : H →* G) X ⟶ Y) (n : ℕ) :
-    (shiftedResolutionResMap φ f).f n =
-      _root_.ContinuousCohomology.resolutionMap φ f (n + 1) :=
-  (rfl)
-
-/-- The map of a compatible pair carries the class of a homogeneous cocycle `a` to the class of
-its image under Mathlib's cochain map `ContinuousCohomology.cochainsMap φ f`. -/
-@[simp]
-theorem map_cochainClass (f : TopRep.res (φ : H →* G) X ⟶ Y) {n : ℕ}
-    (a : (homogeneousCochains X).X n) (ha : ((homogeneousCochains X).d n (n + 1)).hom a = 0) :
-    _root_.ContinuousCohomology.map φ f n (X.cochainClass n a ha) =
-      Y.cochainClass n (((_root_.ContinuousCohomology.cochainsMap φ f).f n).hom a) (by
-        rw [← ConcreteCategory.comp_apply, HomologicalComplex.Hom.comm,
-          ConcreteCategory.comp_apply, ha, map_zero]) := by
-  rw [cochainClass_def, cochainClass_def]
-  exact HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq _ _ _ _ _
-
-end TauCeti.ContinuousCohomology
 
 namespace TopRep.ResolutionContraction
 
@@ -185,6 +137,8 @@ theorem map_cohomologyClass_res {n : ℕ} (z : (J.X n).ρ.invariants)
     HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq, ← cochainClass_def]
   -- Both cochains are `resolutionMap φ (𝟙 _) (n + 1) (c.comparison.f n z)`: this is how `α` and
   -- Mathlib's `cochainsMap` are defined, and `Submodule.inclusion` does not change the element.
+  simp only [α, Functor.mapHomologicalComplex_map_f, HomologicalComplex.comp_f, Functor.map_comp,
+    shiftedResolutionResMap_f]
   rfl
 
 /-- **Naturality of the classes of contracted complexes in compatible pairs.** Let `c` contract
