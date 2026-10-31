@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Module.Submodule.Finite
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Fundamental.Lattice
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnected.Module
 -- Non-public: these supply the inputs of the proofs, never the vocabulary of a statement.
-import TauCeti.Algebra.Lie.DirectSum
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 
 /-!
