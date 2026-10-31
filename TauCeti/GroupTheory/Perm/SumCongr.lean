@@ -29,6 +29,9 @@ one. Every cycle stays inside one of the two halves, so all the cycle data simpl
 * `Equiv.Perm.sumCongr_zpow`: powers are taken summandwise.
 * `Equiv.Perm.sameCycle_sumCongr_inl`, `Equiv.Perm.sameCycle_sumCongr_inr`: two points of one
   summand share a cycle exactly when they share a cycle of the permutation of that summand.
+* `Equiv.Perm.sameCycle_sumCongr_inl_iff_mem_image`,
+  `Equiv.Perm.sameCycle_sumCongr_inr_iff_mem_image`: the cycle through a point of one summand is
+  the image of its cycle in that summand.
 * `Equiv.Perm.finSumPerm`: the same construction read on `Fin (m + n)` through
   `finSumFinEquiv`, with `Equiv.Perm.finSumPermHom` packaging it as a monoid homomorphism from
   `Equiv.Perm (Fin m) × Equiv.Perm (Fin n)`, and with the two cycle-counting results transported.
@@ -112,6 +115,20 @@ theorem sameCycle_sumCongr_inr {σ : Perm α} {τ : Perm β} {a b : β} :
   rintro ⟨k, hk⟩
   simp only [Perm.sumCongr_zpow, Perm.sumCongr_apply, Sum.map_inl,
     Sum.inl_ne_inr] at hk
+
+/-- The cycle of `Equiv.Perm.sumCongr σ τ` through a point `a` of the left summand is the image of
+the cycle of `σ` through `a`. -/
+theorem sameCycle_sumCongr_inl_iff_mem_image {σ : Perm α} {τ : Perm β} {a : α} {x : α ⊕ β} :
+    (Perm.sumCongr σ τ).SameCycle (.inl a) x ↔ x ∈ Sum.inl '' {b | σ.SameCycle a b} := by
+  rcases x with b | b <;> simp
+
+/-- The cycle of `Equiv.Perm.sumCongr σ τ` through a point `a` of the right summand is the image
+of the cycle of `τ` through `a`. -/
+theorem sameCycle_sumCongr_inr_iff_mem_image {σ : Perm α} {τ : Perm β} {a : β} {x : α ⊕ β} :
+    (Perm.sumCongr σ τ).SameCycle (.inr a) x ↔ x ∈ Sum.inr '' {b | τ.SameCycle a b} := by
+  rcases x with b | b
+  · simpa using fun h ↦ not_sameCycle_sumCongr_inl_inr σ τ b a h.symm
+  · simp
 
 /-- The cycle quotient of a sum permutation is the sum of its two cycle quotients. -/
 def sameCycleQuotientSumCongrEquiv (σ : Perm α) (τ : Perm β) :
