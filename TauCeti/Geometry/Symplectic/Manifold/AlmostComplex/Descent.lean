@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorField.Pullback
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
@@ -19,9 +18,8 @@ structure `J` on `M` descends to `N` when it is compatible with the identificati
 makes: whenever two tangent vectors `v` at `x` and `v'` at `x'` have the same image under the
 differentials of `q`, so do `J v` and `J v'`. The descended structure
 `TauCeti.SmoothAlmostComplexStructure.descend` is then the unique almost complex structure `K` on
-`N` making every differential of `q` complex linear, `K (dq v) = dq (J v)`. It is smooth because
-`q` is a local diffeomorphism: near each point of `N`, the evaluation of `K` on a smooth vector
-field is the image under `dq` of `J` applied to the pulled back vector field.
+`N` making every differential of `q` complex linear, `K (dq v) = dq (J v)`. Smoothness is checked
+through a smooth local inverse of `q`, so completeness of the source model space is not required.
 
 The usual source of the compatibility hypothesis is a family of deck transformations: if every
 pair of points in a fibre of `q` is related by a chain of maps `g` with `q ∘ g = q` whose
@@ -60,8 +58,8 @@ against the pullback `q^* σ`, because `q` is surjective and its differentials a
 
 public noncomputable section
 
-open Bundle Function
-open scoped Manifold ContDiff
+open Bundle Function Filter
+open scoped Manifold Topology ContDiff
 
 namespace TauCeti.SmoothAlmostComplexStructure
 
@@ -77,10 +75,12 @@ variable {E H M E' H' N : Type*}
 section Deck
 
 /-- Deck transformations commuting with `J` make `J` compatible with the identifications of `q`:
-if `g` satisfies `q ∘ g = q`, sends `x` to `x'` and its differential at `x` commutes with `J`, then
+if `q` is differentiable with injective differentials, `g` satisfies `q ∘ g = q`, sends `x` to
+`x'` and its differential at `x` commutes with `J`, then
 any two tangent vectors at `x` and `x'` with the same image under the differentials of `q` are sent
 by `J` to two vectors with the same image. -/
-theorem mfderiv_apply_eq_of_deck (hq : IsLocalDiffeomorph I I' ∞ q)
+theorem mfderiv_apply_eq_of_deck (hq : MDifferentiable I I' q)
+    (hinj : ∀ x : M, Injective (mfderiv I I' q x))
     (J : SmoothAlmostComplexStructure I M) {g : M → M} {x x' : M} (hgx : g x = x')
     (hg : MDifferentiableAt I I g x) (hqg : q ∘ g = q)
     (hgJ : ∀ v, mfderiv I I g x (J x v) = J (g x) (mfderiv I I g x v))
@@ -91,7 +91,7 @@ theorem mfderiv_apply_eq_of_deck (hq : IsLocalDiffeomorph I I' ∞ q)
   -- The chain rule for `q ∘ g = q` identifies `dq_x` with `dq_{g x} ∘ dg_x`.
   have hchain (w : TangentSpace I x) :
       mfderiv I I' q x w = mfderiv I I' q (g x) (mfderiv I I g x w) := by
-    have h := mfderiv_comp x ((hq (g x)).mdifferentiableAt (by simp)) hg
+    have h := mfderiv_comp x (hq (g x)) hg
     rw [hqg] at h
     -- After rewriting, `ContinuousLinearMap.comp_apply` closes the goal definitionally; it
     -- cannot be used by `rw` because the tangent spaces at `q x` and `q (g x)` differ
@@ -100,7 +100,7 @@ theorem mfderiv_apply_eq_of_deck (hq : IsLocalDiffeomorph I I' ∞ q)
     rfl
   -- Injectivity of `dq_{g x}` identifies `v'` with `dg_x v`.
   have hv' : v' = mfderiv I I g x v :=
-    ((hq (g x)).isInvertible_mfderiv (by simp)).injective (by rw [← hvv', hchain])
+    (hinj (g x)) (by rw [← hvv', hchain])
   rw [hv', hchain, hgJ]
 
 /-- Deck transformations commuting with `J` make `J` compatible with the identifications of `q`
@@ -119,7 +119,8 @@ theorem mfderiv_apply_eq_of_eqvGen (hq : IsLocalDiffeomorph I I' ∞ q)
   induction hxx' with
   | rel x x' h =>
     obtain ⟨g, hgx, hg, hqg, hgJ⟩ := hR x x' h
-    exact mfderiv_apply_eq_of_deck hq J hgx hg hqg hgJ v v' hvv'
+    exact mfderiv_apply_eq_of_deck (hq.mdifferentiable (by simp))
+      (fun y ↦ (hq.isInvertible_mfderiv (by simp) y).injective) J hgx hg hqg hgJ v v' hvv'
   | refl x => rw [((hq x).isInvertible_mfderiv (by simp)).injective hvv']
   | symm x x' _ ih => exact (ih v' v hvv'.symm).symm
   | trans x x' x'' _ _ ih ih' =>
@@ -170,7 +171,7 @@ private theorem descendEndomorphism_comp_square (y : N) :
   simp only [ContinuousLinearMap.comp_apply, descendEndomorphism_apply_mfderiv hq hsurj J hJ,
     apply_apply, map_neg, _root_.neg_apply, ContinuousLinearMap.id_apply]
 
-variable [CompleteSpace E] [FiniteDimensional ℝ E'] [IsManifold I' ∞ N] [T2Space N]
+variable [FiniteDimensional ℝ E'] [IsManifold I' ∞ N] [T2Space N]
 
 include hJ in
 private theorem contMDiff_descendEndomorphism :
@@ -178,20 +179,41 @@ private theorem contMDiff_descendEndomorphism :
       (fun y ↦ TotalSpace.mk' (E' →L[ℝ] E')
         (E := fun y : N ↦ TangentSpace I' y →L[ℝ] TangentSpace I' y) y
         (descendEndomorphism hq hsurj J y)) := by
-  refine (Manifold.contMDiff_hom_iff _).2 fun s hs ↦ ?_
-  rw [← hq.contMDiff_comp_iff hsurj le_rfl]
-  -- Upstairs, the evaluation on `s` is the image under `dq` of `J` applied to `q^* s`.
-  have hpull : ContMDiff I I.tangent ∞
-      (fun x ↦ TotalSpace.mk' E x (VectorField.mpullback I I' q s x)) :=
-    hs.mpullback_vectorField hq.contMDiff (hq.isInvertible_mfderiv (by simp)) le_rfl
-  have hJs := (J.contMDiff_apply contMDiff_id hpull).of_le (le_refl ∞)
-  have htangent := (hq.contMDiff.contMDiff_tangentMap (m := ∞) le_rfl).comp hJs
-  refine htangent.congr fun x ↦ ?_
-  have hs' : mfderiv I I' q x (VectorField.mpullback I I' q s x) = s (q x) := by
-    rw [VectorField.mpullback_apply]
-    exact ((hq.isInvertible_mfderiv (by simp) x).inverse_apply_eq.1 rfl).symm
-  simp only [comp_apply, tangentMap, id_eq]
-  rw [← hs', descendEndomorphism_apply_mfderiv hq hsurj J hJ]
+  refine (Manifold.contMDiff_hom_iff _).2 fun V hV z₀ ↦ ?_
+  obtain ⟨x₀, rfl⟩ := hsurj z₀
+  have hx₀ := hq x₀
+  set s := hx₀.localInverse
+  have hs : ContMDiffAt I' I ∞ s (q x₀) := hx₀.contMDiffAt_localInverse
+  -- Read near `q x₀` through the local inverse `s`: `J' z (V z) = dq (J (ds (V z)))`.
+  have hA : ContMDiffAt I' I.tangent ∞ (fun z ↦ tangentMap I' I s ⟨z, V z⟩) (q x₀) :=
+    (hs.contMDiffAt_tangentMap (X := ⟨q x₀, V (q x₀)⟩) (by simp)).comp (q x₀) (hV (q x₀))
+  have hB : ContMDiffAt I' I.tangent ∞
+      (fun z ↦ TotalSpace.mk' E (s z) (J (s z) (mfderiv I' I s z (V z)))) (q x₀) :=
+    ((J.toEndomorphism.contMDiff (s (q x₀))).comp (q x₀) hs).clm_bundle_apply hA
+  have hC := ((hq.contMDiff.contMDiff_tangentMap (m := ∞) (by simp)).contMDiffAt).comp (q x₀) hB
+  refine hC.congr_of_eventuallyEq ?_
+  have hev : ∀ᶠ z in 𝓝 (q x₀), z ∈ hx₀.localInverse.source :=
+    hx₀.localInverse_open_source.mem_nhds hx₀.localInverse_mem_source
+  filter_upwards [hev] with z hz
+  have hqs : q (s z) = z := hx₀.localInverse_right_inv hz
+  -- The chain rule for `q ∘ s = id` near `z`: `dq_(s z) (ds_z (V z)) = V z`.
+  have hchain : mfderiv I I' q (s z) (mfderiv I' I s z (V z)) = V z := by
+    have hid : q ∘ s =ᶠ[𝓝 z] id :=
+      eventuallyEq_of_mem (hx₀.localInverse_open_source.mem_nhds hz)
+        hx₀.localInverse_eqOn_right
+    have hsz : MDifferentiableAt I' I s z :=
+      (hx₀.contMDiffOn_localInverse.contMDiffAt
+        (hx₀.localInverse_open_source.mem_nhds hz)).mdifferentiableAt (by simp)
+    have h := mfderiv_comp_apply z ((hq.contMDiff (s z)).mdifferentiableAt (by simp)) hsz (V z)
+    rw [hid.mfderiv_eq, mfderiv_id] at h
+    -- The base points `q (s z)` and `z` agree, so `h` is the claim.
+    exact h.symm
+  have key (y : M) (v : TangentSpace I y) (hy : q y = z) (hv : mfderiv I I' q y v = V z) :
+      (⟨z, descendEndomorphism hq hsurj J z (V z)⟩ : TangentBundle I' N) =
+        ⟨q y, mfderiv I I' q y (J y v)⟩ := by
+    subst hy
+    rw [← hv, descendEndomorphism_apply_mfderiv hq hsurj J hJ]
+  exact key (s z) _ hqs hchain
 
 /-- The almost complex structure on `N` induced by a smooth almost complex structure `J` on `M`
 along a surjective smooth local diffeomorphism `q : M → N`, provided that `J` respects the

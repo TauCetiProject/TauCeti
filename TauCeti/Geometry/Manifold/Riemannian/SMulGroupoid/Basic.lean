@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
-public import TauCeti.Geometry.Manifold.Riemannian.Pullback
+public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction
 public import TauCeti.Geometry.Manifold.SMulGroupoid
 
