@@ -5,11 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Analysis.RCLike.Basic
-public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
-public import Mathlib.LinearAlgebra.Matrix.DotProduct
-public import Mathlib.LinearAlgebra.Projectivization.Basic
 public import TauCeti.LinearAlgebra.Projectivization.Projector
 
 /-!
@@ -191,18 +187,13 @@ theorem rankOneHermitianProjector_col_eq_self {A : Matrix ι ι K}
       simpa [star_eq_conjTranspose, conjTranspose_apply] using congr_fun₂ hS.star_eq i k
     have : star v ⬝ᵥ v = (A * A) i i := by simp [v, dotProduct, mul_apply, hS']
     rwa [this, hI.eq]
-  -- So `A` fixes the line of `P = rankOneHermitianProjector v`: `A * P = P`, and taking adjoints
-  -- gives `P * A = P`.
+  -- So `A` fixes the line of `P = rankOneHermitianProjector v`: `A * P = P`.
   have hAP : A * rankOneHermitianProjector v = rankOneHermitianProjector v := by
     rw [rankOneHermitianProjector, Matrix.mul_smul, mul_vecMulVec, hAv]
-  have hPA : rankOneHermitianProjector v * A = rankOneHermitianProjector v := by
-    simpa only [star_mul, (isSelfAdjoint_rankOneHermitianProjector v).star_eq, hS.star_eq] using
-      congr_arg star hAP
   -- Hence `A - P` is an idempotent of trace zero, so it is zero.
-  have hB : IsIdempotentElem (A - rankOneHermitianProjector v) := by
-    rw [IsIdempotentElem, sub_mul, mul_sub, mul_sub, hI.eq, hAP, hPA,
-      (isIdempotentElem_rankOneHermitianProjector v).eq]
-    abel
+  have hB : IsIdempotentElem (A - rankOneHermitianProjector v) :=
+    ((isStarProjection_rankOneHermitianProjector v).sub_of_mul_eq_right ⟨hI, hS⟩
+      hAP).isIdempotentElem
   exact (sub_eq_zero.mp (Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero hB
     (by rw [trace_sub, htr, trace_rankOneHermitianProjector hv, sub_self]))).symm
 

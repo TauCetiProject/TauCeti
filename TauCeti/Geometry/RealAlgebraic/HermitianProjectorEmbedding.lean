@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
-public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Complex
 public import TauCeti.LinearAlgebra.Projectivization.HermitianProjector
 public import TauCeti.LinearAlgebra.Projectivization.ZeroLocus
