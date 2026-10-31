@@ -13,9 +13,9 @@ public import Mathlib.Topology.FiberBundle.Constructions
 /-!
 # Principal bundles
 
-A principal `G`-bundle is a fibre bundle `P` with model fibre a topological group `G`, whose fibres
-carry right actions of `G`, such that every trivialization of its atlas intertwines the action on
-the fibres with right multiplication on `G`: over a point `b` of its base set,
+A principal `G`-bundle is a fibre bundle `P` with model fibre a group `G` with a topology, whose
+fibres carry right actions of `G`, such that every trivialization of its atlas intertwines the
+action on the fibres with right multiplication on `G`: over a point `b` of its base set,
 
 `e (p • g) = (b, (e p).2 * g)`.
 
@@ -33,8 +33,9 @@ From equivariance alone each fibre is a `G`-torsor: the action is free
 trivialization it reads `(e p).2⁻¹ * (e q).2`. Coordinate changes between equivariant
 trivializations are left multiplications, `e.coordChange e' b g = e.coordChange e' b 1 * g`
 (`Bundle.Trivialization.coordChange_eq_mul`), so the transition functions of a principal bundle
-are the `G`-valued functions `b ↦ e.coordChange e' b 1`. For a topological group `G`, the right
-action is jointly continuous on the total space (`Continuous.totalSpaceMk_smul`) and the division
+are the `G`-valued functions `b ↦ e.coordChange e' b 1`. Continuity of the group operations is
+not part of the structure: assuming `ContinuousMul G`, the right action is jointly continuous on
+the total space (`Continuous.totalSpaceMk_smul`), and assuming `IsTopologicalGroup G`, the division
 map is continuous on pairs of points in a common fibre (`Continuous.division`); both are stated
 for continuous families over a varying base point, so that no cast between fibres is needed.
 Conversely to the local sections `b ↦ e⁻¹ (b, 1)` of an equivariant trivialization `e`, a section
@@ -143,9 +144,11 @@ variable (G : Type*) {B : Type*} [TopologicalSpace B] [Group G] [TopologicalSpac
   (P : B → Type*) [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
   [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)]
 
-/-- A *principal `G`-bundle* is a fibre bundle with model fibre a topological group `G`, whose
+/-- A *principal `G`-bundle* is a fibre bundle with model fibre a group `G` with a topology, whose
 fibres carry right actions of `G` (actions of `Gᵐᵒᵖ`), such that every trivialization of its
-atlas is equivariant: it turns the action on the fibres into right multiplication on `G`. -/
+atlas is equivariant: it turns the action on the fibres into right multiplication on `G`.
+Continuity of the group operations is not assumed; continuity results take `ContinuousMul G` or
+`IsTopologicalGroup G` as extra hypotheses. -/
 class PrincipalBundle : Prop where
   isEquivariant_trivialization' :
     ∀ (e : Trivialization G (π G P)) [MemTrivializationAtlas e], e.IsEquivariant
