@@ -109,6 +109,32 @@ noncomputable def rightUnitor (φ : L.Hom L') : φ.comp (id L') ≅ φ :=
     simp only [comp_fiberIso_hom_as_app, id_fiberIso_hom_as_app, rightUnitor_hom_as_app]
     bicategory
 
+@[simp]
+lemma associator_hom_joint (φ : L.Hom L') (ψ : L'.Hom L'') (χ : L''.Hom L''') :
+    (associator φ ψ χ).hom.joint = (α_ φ.joint ψ.joint χ.joint).hom :=
+  isoMk_hom_joint _ _
+
+@[simp]
+lemma associator_inv_joint (φ : L.Hom L') (ψ : L'.Hom L'') (χ : L''.Hom L''') :
+    (associator φ ψ χ).inv.joint = (α_ φ.joint ψ.joint χ.joint).inv :=
+  isoMk_inv_joint _ _
+
+@[simp]
+lemma leftUnitor_hom_joint (φ : L.Hom L') : (leftUnitor φ).hom.joint = (λ_ φ.joint).hom :=
+  isoMk_hom_joint _ _
+
+@[simp]
+lemma leftUnitor_inv_joint (φ : L.Hom L') : (leftUnitor φ).inv.joint = (λ_ φ.joint).inv :=
+  isoMk_inv_joint _ _
+
+@[simp]
+lemma rightUnitor_hom_joint (φ : L.Hom L') : (rightUnitor φ).hom.joint = (ρ_ φ.joint).hom :=
+  isoMk_hom_joint _ _
+
+@[simp]
+lemma rightUnitor_inv_joint (φ : L.Hom L') : (rightUnitor φ).inv.joint = (ρ_ φ.joint).inv :=
+  isoMk_inv_joint _ _
+
 end Hom
 
 /-- The bicategory of coherent equivariant lifts of a family of categorical actions. Its
@@ -129,22 +155,41 @@ noncomputable instance instBicategory : Bicategory (EquivariantGroupoidLift Γ a
   whiskerLeft_comp φ _ _ _ Θ Ξ :=
     Hom.hom₂_ext (by
       exact Bicategory.whiskerLeft_comp φ.joint (Hom.Hom₂.joint Θ) (Hom.Hom₂.joint Ξ))
-  id_whiskerLeft Θ := Hom.hom₂_ext (by exact Bicategory.id_whiskerLeft (Hom.Hom₂.joint Θ))
+  id_whiskerLeft Θ :=
+    Hom.hom₂_ext (by
+      simp only [Hom.Hom₂.comp_joint, Hom.leftUnitor_hom_joint, Hom.leftUnitor_inv_joint]
+      exact Bicategory.id_whiskerLeft (Hom.Hom₂.joint Θ))
   comp_whiskerLeft φ ψ _ _ Θ :=
-    Hom.hom₂_ext (by exact Bicategory.comp_whiskerLeft φ.joint ψ.joint (Hom.Hom₂.joint Θ))
+    Hom.hom₂_ext (by
+      simp only [Hom.Hom₂.comp_joint, Hom.associator_hom_joint, Hom.associator_inv_joint]
+      exact Bicategory.comp_whiskerLeft φ.joint ψ.joint (Hom.Hom₂.joint Θ))
   id_whiskerRight φ ψ := Hom.hom₂_ext (by exact Bicategory.id_whiskerRight φ.joint ψ.joint)
   comp_whiskerRight Θ Ξ χ :=
     Hom.hom₂_ext (by
       exact Bicategory.comp_whiskerRight (Hom.Hom₂.joint Θ) (Hom.Hom₂.joint Ξ) χ.joint)
-  whiskerRight_id Θ := Hom.hom₂_ext (by exact Bicategory.whiskerRight_id (Hom.Hom₂.joint Θ))
+  whiskerRight_id Θ :=
+    Hom.hom₂_ext (by
+      simp only [Hom.Hom₂.comp_joint, Hom.rightUnitor_hom_joint, Hom.rightUnitor_inv_joint]
+      exact Bicategory.whiskerRight_id (Hom.Hom₂.joint Θ))
   whiskerRight_comp Θ ψ χ :=
-    Hom.hom₂_ext (by exact Bicategory.whiskerRight_comp (Hom.Hom₂.joint Θ) ψ.joint χ.joint)
+    Hom.hom₂_ext (by
+      simp only [Hom.Hom₂.comp_joint, Hom.associator_hom_joint, Hom.associator_inv_joint]
+      exact Bicategory.whiskerRight_comp (Hom.Hom₂.joint Θ) ψ.joint χ.joint)
   whisker_assoc φ _ _ Θ χ :=
-    Hom.hom₂_ext (by exact Bicategory.whisker_assoc φ.joint (Hom.Hom₂.joint Θ) χ.joint)
+    Hom.hom₂_ext (by
+      simp only [Hom.Hom₂.comp_joint, Hom.associator_hom_joint, Hom.associator_inv_joint]
+      exact Bicategory.whisker_assoc φ.joint (Hom.Hom₂.joint Θ) χ.joint)
   whisker_exchange Θ Ξ :=
     Hom.hom₂_ext (by exact Bicategory.whisker_exchange (Hom.Hom₂.joint Θ) (Hom.Hom₂.joint Ξ))
-  pentagon φ ψ χ ω := Hom.hom₂_ext (by exact Bicategory.pentagon φ.joint ψ.joint χ.joint ω.joint)
-  triangle φ ψ := Hom.hom₂_ext (by exact Bicategory.triangle φ.joint ψ.joint)
+  pentagon φ ψ χ ω :=
+    Hom.hom₂_ext (by
+      simp only [Hom.Hom₂.comp_joint, Hom.whiskerLeft, Hom.whiskerRight, Hom.associator_hom_joint]
+      exact Bicategory.pentagon φ.joint ψ.joint χ.joint ω.joint)
+  triangle φ ψ :=
+    Hom.hom₂_ext (by
+      simp only [Hom.Hom₂.comp_joint, Hom.whiskerLeft, Hom.whiskerRight, Hom.associator_hom_joint,
+        Hom.leftUnitor_hom_joint, Hom.rightUnitor_hom_joint]
+      exact Bicategory.triangle φ.joint ψ.joint)
 
 section API
 
@@ -195,28 +240,28 @@ lemma whiskerRight_joint {φ φ' : L ⟶ L'} (Θ : φ ⟶ φ') (ψ : L' ⟶ L'')
 @[simp]
 lemma associator_hom_joint (φ : L ⟶ L') (ψ : L' ⟶ L'') (χ : L'' ⟶ L''') :
     (α_ φ ψ χ).hom.joint = (α_ φ.joint ψ.joint χ.joint).hom :=
-  (rfl)
+  Hom.associator_hom_joint φ ψ χ
 
 @[simp]
 lemma associator_inv_joint (φ : L ⟶ L') (ψ : L' ⟶ L'') (χ : L'' ⟶ L''') :
     (α_ φ ψ χ).inv.joint = (α_ φ.joint ψ.joint χ.joint).inv :=
-  (rfl)
+  Hom.associator_inv_joint φ ψ χ
 
 @[simp]
 lemma leftUnitor_hom_joint (φ : L ⟶ L') : (λ_ φ).hom.joint = (λ_ φ.joint).hom :=
-  (rfl)
+  Hom.leftUnitor_hom_joint φ
 
 @[simp]
 lemma leftUnitor_inv_joint (φ : L ⟶ L') : (λ_ φ).inv.joint = (λ_ φ.joint).inv :=
-  (rfl)
+  Hom.leftUnitor_inv_joint φ
 
 @[simp]
 lemma rightUnitor_hom_joint (φ : L ⟶ L') : (ρ_ φ).hom.joint = (ρ_ φ.joint).hom :=
-  (rfl)
+  Hom.rightUnitor_hom_joint φ
 
 @[simp]
 lemma rightUnitor_inv_joint (φ : L ⟶ L') : (ρ_ φ).inv.joint = (ρ_ φ.joint).inv :=
-  (rfl)
+  Hom.rightUnitor_inv_joint φ
 
 end API
 
