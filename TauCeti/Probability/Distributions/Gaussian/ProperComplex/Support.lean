@@ -20,8 +20,7 @@ positive definite gives a law singular with respect to real Lebesgue volume on t
 coordinate space. The Radon–Nikodym derivative then vanishes almost everywhere.
 
 This is the singular half of the density dichotomy for proper complex Gaussian laws. It includes
-positive-semidefinite singular covariances, invalid covariance parameters, and empty coordinate
-types.
+positive-semidefinite singular covariances and invalid covariance parameters.
 
 ## References
 
@@ -53,8 +52,9 @@ theorem support_properComplexGaussianMeasure {C : Matrix iota iota ℂ} (hC : C.
   rw [properComplexGaussianMeasure_def, ← (complexToRealEuclidean iota).symm.coe_toHomeomorph,
     Measure.support_map_homeomorph,
     support_multivariateGaussian ((posSemidef_complexGaussianRealCovariance_iff C).mpr hC)]
-  rw [(complexToRealEuclidean iota).symm.toHomeomorph.image_eq_preimage_symm]
-  rfl
+  rw [(complexToRealEuclidean iota).symm.toHomeomorph.image_eq_preimage_symm,
+    ContinuousLinearEquiv.toHomeomorph_symm, Homeomorph.symm_symm,
+    ContinuousLinearEquiv.coe_toHomeomorph]
 
 /-- A proper complex Gaussian lies almost surely in its realified affine range. -/
 theorem ae_mem_affineRange_properComplexGaussianMeasure (C : Matrix iota iota ℂ)
@@ -103,8 +103,8 @@ theorem mutuallySingular_properComplexGaussianMeasure_volume {C : Matrix iota io
     simpa using hmap
   rw [properComplexGaussianMeasure_def]
   rw [hmap'] at hsing
-  exact hsing.mono_ac Measure.AbsolutelyContinuous.rfl
-    (Measure.absolutelyContinuous_smul hc.ne')
+  simpa only [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] using
+    hsing.mono_ac Measure.AbsolutelyContinuous.rfl (Measure.absolutelyContinuous_smul hc.ne')
 
 /-- The Radon–Nikodym derivative of a degenerate proper complex Gaussian with respect to volume
 vanishes almost everywhere. -/
