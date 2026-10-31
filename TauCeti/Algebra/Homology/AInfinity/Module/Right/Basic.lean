@@ -59,6 +59,12 @@ noncomputable def barGrading (AA : AInfinityAlgebra R A) (G : InternalGrading R 
     InternalGrading R (M ⊗[R] TensorWords R A) :=
   (G.shift 1).tensorProduct (TensorWords.grading (AA.grading.shift 1))
 
+/-- The bar-comodule grading is the tensor-product grading of the suspended module and
+suspended tensor words. -/
+theorem barGrading_eq_tensorProduct (AA : AInfinityAlgebra R A) (G : InternalGrading R M) :
+    barGrading AA G =
+      (G.shift 1).tensorProduct (TensorWords.grading (AA.grading.shift 1)) := (rfl)
+
 /-- The degree-`p` part of the bar-comodule grading is the total-degree part of the suspended
 module grading and the suspended tensor-word grading. -/
 @[simp]
