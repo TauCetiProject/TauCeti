@@ -25,7 +25,8 @@ discontinuous, so its standard orbit space `(Y × E)/Λ` carries Mathlib's quoti
 
 If the periods are `C^n` for a model `I` of `Y` over a field `𝕜`, the period translations are
 `C^n`, so `(Y × E)/Λ` is a `C^n` manifold and the orbit map `q : Y × E → (Y × E)/Λ` is a `C^n`
-local diffeomorphism. It is also a covering map. The projection `p : (Y × E)/Λ → Y` of the
+local diffeomorphism. It is also a covering map
+(`TauCeti.isAddQuotientCoveringMap_torusFamily_mk`). The projection `p : (Y × E)/Λ → Y` of the
 family is a `C^n` submersion with complement `E`: in a chart of `(Y × E)/Λ` read through a local
 section of `q` and in the matching chart of `Y`, it is the first projection. The zero section
 `y ↦ [y, 0]` and the inclusion `E ⧸ LinearMap.range (P y) → (Y × E)/Λ` of each fibre are `C^n`.
@@ -46,8 +47,6 @@ use the `𝕜`-structure; for a complex space `E` these are its real and complex
 ## Main results
 
 * `TauCeti.contMDiffConstVAdd_periodAddAction`: `C^n` periods give `C^n` period translations.
-* `TauCeti.isAddQuotientCoveringMap_torusFamily_mk`: the orbit map `q` is a covering map, the
-  quotient map of the period translation action.
 * `TauCeti.isManifold_torusFamily`: `(Y × E)/Λ` is a `C^n` manifold.
 * `TauCeti.isLocalDiffeomorph_torusFamily_mk`: the orbit map `q` is a `C^n` local
   diffeomorphism.
@@ -62,6 +61,10 @@ use the `𝕜`-structure; for a complex space `E` these are its real and complex
 * Christina Birkenhake and Herbert Lange, *Complex Abelian Varieties*, second edition,
   Grundlehren der mathematischen Wissenschaften 302, Springer, 2004, Chapter 8 (families of
   complex tori given by period matrices).
+* Tau Ceti PR [#20968](https://github.com/TauCetiProject/TauCeti/pull/20968) (closed, unmerged)
+  installed the same quotient atlas and proved the manifold and local-diffeomorphism statements;
+  `TauCeti.torusFamilyChartedSpace`, `TauCeti.isManifold_torusFamily` and
+  `TauCeti.isLocalDiffeomorph_torusFamily_mk` follow its outline.
 -/
 
 public section
@@ -98,19 +101,6 @@ variable {Y : Type*} [TopologicalSpace Y] {Λ : Type*} [AddCommGroup Λ] [Module
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
   [T2Space Y] [LocallyCompactSpace Y]
   (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y))
-
-include hcont hinj in
-/-- **The orbit map is a covering map.** For a continuous family of full lattices, the orbit map
-`Y × E → (Y × E)/Λ` of the period translation action is a covering map, and `(Y × E)/Λ` is its
-quotient by the free action of `Λ`. -/
-theorem isAddQuotientCoveringMap_torusFamily_mk :
-    letI := periodAddAction P
-    IsAddQuotientCoveringMap (Quotient.mk (AddAction.orbitRel Λ (Y × E))) Λ := by
-  let _ := periodAddAction P
-  have := continuousConstVAdd_periodAddAction P hcont
-  have := properlyDiscontinuousVAdd_periodAddAction P hcont hinj
-  have := isCancelVAdd_periodAddAction P hinj
-  exact isAddQuotientCoveringMap_quotientMk_of_properlyDiscontinuousVAdd
 
 variable {H : Type*} [TopologicalSpace H] [ChartedSpace H Y]
 
