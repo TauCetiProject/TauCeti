@@ -13,6 +13,7 @@ import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Convex
+import Mathlib.Analysis.Convex.Contractible
 
 /-!
 # Holomorphic branches of `log` and of `n`-th roots on a simply connected domain
@@ -20,7 +21,8 @@ import Mathlib.Analysis.Complex.Convex
 Mathlib's `Complex.exists_continuousOn_eqOn_exp_comp` produces a **continuous** branch of `log ∘ g`
 on a simply connected open set. The Riemann-mapping argument needs a **holomorphic** one. This file
 supplies that upgrade for the logarithm, consuming Mathlib's branch rather than rebuilding it, and
-then obtains the `n`-th root from it directly as `exp (L / n)`.
+then obtains the `n`-th root from it directly as `exp (L / n)`. The same local argument shows that
+the branch is real `Cⁿ` wherever `g` is, which gives smooth phases of nonvanishing smooth maps.
 
 Note that the root branch is *not* an upgrade of Mathlib's `Complex.exists_continuousOn_pow_eq`,
 which this file does not use: once the logarithm branch is holomorphic, `exp (L / n)` is holomorphic
@@ -74,6 +76,9 @@ vanishes identically near `z₀`, of order `⊤`, is its own `n`-th root.
 ## Main statements
 
 * `TauCeti.exists_differentiableOn_eqOn_exp_comp` — a holomorphic branch of `log ∘ g`.
+* `TauCeti.exists_contDiffOn_eqOn_exp_comp` — a real `Cⁿ` branch of `log ∘ g` for real `Cⁿ` `g`.
+* `TauCeti.exists_contDiff_eq_exp_ofReal_mul_I` — a real `Cⁿ` phase of a unimodular real `Cⁿ` map
+  on the plane.
 * `TauCeti.exists_differentiableOn_pow_eq` — a holomorphic branch of `ⁿ√g`.
 * `TauCeti.exists_eventuallyEq_pow_iff_dvd` — a holomorphic germ has a holomorphic `n`-th root iff
   `n` divides its order of vanishing.
@@ -120,15 +125,13 @@ private theorem logBranch_exp {a w : ℂ} (h₁ : -Real.pi < (w - a).im) (h₂ :
   rw [logBranch, ← Complex.exp_sub, Complex.log_exp h₁ h₂]
   ring
 
-/-- **The local upgrade.** A continuous branch `L` of `log ∘ g` on an open set is complex
-differentiable wherever `g` is, because near any point it coincides with an honest local branch of
-`log` composed with `g`. -/
-private theorem differentiableAt_of_continuousOn_exp_comp {U : Set ℂ} (hU : IsOpen U)
-    {L g : ℂ → ℂ} (hL : ContinuousOn L U) (hEq : EqOn (Complex.exp ∘ L) g U)
-    (hg : DifferentiableOn ℂ g U) {z₀ : ℂ} (hz₀ : z₀ ∈ U) :
-    DifferentiableAt ℂ L z₀ := by
+/-- Near any point of an open set, a continuous branch `L` of `log ∘ g` coincides with the
+branch of the logarithm based at `L z₀`, composed with `g`: continuity confines `L z - L z₀` to
+the strip on which that branch inverts `Complex.exp`. -/
+private theorem eventuallyEq_logBranch_comp {U : Set ℂ} (hU : IsOpen U) {L g : ℂ → ℂ}
+    (hL : ContinuousOn L U) (hEq : EqOn (Complex.exp ∘ L) g U) {z₀ : ℂ} (hz₀ : z₀ ∈ U) :
+    L =ᶠ[nhds z₀] logBranch (L z₀) ∘ g := by
   set w₀ : ℂ := L z₀ with hw₀
-  have hgz₀ : g z₀ = Complex.exp w₀ := (hEq hz₀).symm
   -- `L` is continuous at `z₀` in the ambient sense, `U` being open.
   have hLat : ContinuousAt L z₀ := (hL.continuousAt (hU.mem_nhds hz₀))
   -- Continuity confines `L z - w₀` to the strip where the branch based at `w₀` inverts `exp`.
@@ -139,20 +142,29 @@ private theorem differentiableAt_of_continuousOn_exp_comp {U : Set ℂ} (hU : Is
     have hz : |(L z₀ - w₀).im| < Real.pi := by
       simp [hw₀, Real.pi_pos]
     exact hcont (Iio_mem_nhds hz)
-  -- On that neighbourhood (intersected with `U`), `L` and `logBranch w₀ ∘ g` agree.
-  have hloc : L =ᶠ[nhds z₀] logBranch w₀ ∘ g := by
-    filter_upwards [hstrip, hU.mem_nhds hz₀] with z hz hzU
-    have hgz : g z = Complex.exp (L z) := (hEq hzU).symm
-    simp only [Function.comp_apply, hgz]
-    exact (logBranch_exp (by linarith [abs_lt.mp hz |>.1]) (le_of_lt (abs_lt.mp hz).2)).symm
-  -- `logBranch w₀ ∘ g` is differentiable at `z₀`: the translated argument is `1` there.
-  have hdiffBranch : DifferentiableAt ℂ (logBranch w₀ ∘ g) z₀ := by
-    have hgd : DifferentiableAt ℂ g z₀ := (hg z₀ hz₀).differentiableAt (hU.mem_nhds hz₀)
-    have hslit : g z₀ / Complex.exp w₀ ∈ Complex.slitPlane := by
-      rw [hgz₀, div_self (Complex.exp_ne_zero _)]
-      exact Complex.one_mem_slitPlane
-    exact (differentiableAt_logBranch hslit).comp z₀ hgd
-  exact hdiffBranch.congr_of_eventuallyEq hloc
+  filter_upwards [hstrip, hU.mem_nhds hz₀] with z hz hzU
+  have hgz : g z = Complex.exp (L z) := (hEq hzU).symm
+  simp only [Function.comp_apply, hgz]
+  exact (logBranch_exp (by linarith [abs_lt.mp hz |>.1]) (le_of_lt (abs_lt.mp hz).2)).symm
+
+/-- The value of `g` at `z₀`, translated by the branch based at `L z₀`, is `1`, which lies in the
+slit plane. -/
+private theorem div_exp_mem_slitPlane {U : Set ℂ} {L g : ℂ → ℂ}
+    (hEq : EqOn (Complex.exp ∘ L) g U) {z₀ : ℂ} (hz₀ : z₀ ∈ U) :
+    g z₀ / Complex.exp (L z₀) ∈ Complex.slitPlane := by
+  rw [← hEq hz₀, Function.comp_apply, div_self (Complex.exp_ne_zero _)]
+  exact Complex.one_mem_slitPlane
+
+/-- **The local upgrade.** A continuous branch `L` of `log ∘ g` on an open set is complex
+differentiable wherever `g` is, because near any point it coincides with an honest local branch of
+`log` composed with `g`. -/
+private theorem differentiableAt_of_continuousOn_exp_comp {U : Set ℂ} (hU : IsOpen U)
+    {L g : ℂ → ℂ} (hL : ContinuousOn L U) (hEq : EqOn (Complex.exp ∘ L) g U)
+    (hg : DifferentiableOn ℂ g U) {z₀ : ℂ} (hz₀ : z₀ ∈ U) :
+    DifferentiableAt ℂ L z₀ :=
+  ((differentiableAt_logBranch (div_exp_mem_slitPlane hEq hz₀)).comp z₀
+    ((hg z₀ hz₀).differentiableAt (hU.mem_nhds hz₀))).congr_of_eventuallyEq
+    (eventuallyEq_logBranch_comp hU hL hEq hz₀)
 
 /-- **A holomorphic branch of `log ∘ g` on a simply connected domain.** If `g` is holomorphic and
 nowhere zero on a simply connected open `U ⊆ ℂ`, there is a holomorphic `f` on `U` with
@@ -165,6 +177,41 @@ theorem exists_differentiableOn_eqOn_exp_comp {U : Set ℂ} (hUc : IsSimplyConne
     Complex.exists_continuousOn_eqOn_exp_comp hUc hUo hg.continuousOn hU₀
   refine ⟨L, fun z hz => ?_, hLeq⟩
   exact ((differentiableAt_of_continuousOn_exp_comp hUo hLc hLeq hg hz).differentiableWithinAt)
+
+/-- **A real-smooth branch of `log ∘ g` on a simply connected domain.** If `g` is real `Cⁿ` and
+nowhere zero on a simply connected open `U ⊆ ℂ`, there is a real `Cⁿ` function `f` on `U` with
+`exp ∘ f = g`. Mathlib's `Complex.exists_continuousOn_eqOn_exp_comp` supplies the branch; only its
+smoothness is added here. -/
+theorem exists_contDiffOn_eqOn_exp_comp {U : Set ℂ} (hUc : IsSimplyConnected U)
+    (hUo : IsOpen U) {n : WithTop ℕ∞} {g : ℂ → ℂ} (hg : ContDiffOn ℝ n g U)
+    (hU₀ : 0 ∉ g '' U) :
+    ∃ f : ℂ → ℂ, ContDiffOn ℝ n f U ∧ EqOn (Complex.exp ∘ f) g U := by
+  obtain ⟨L, hLc, hLeq⟩ :=
+    Complex.exists_continuousOn_eqOn_exp_comp hUc hUo hg.continuousOn hU₀
+  refine ⟨L, fun z hz => ?_, hLeq⟩
+  have hbranch : ContDiffAt ℂ n (logBranch (L z)) (g z) :=
+    contDiffAt_const.add ((Complex.contDiffAt_log (div_exp_mem_slitPlane hLeq hz)).comp (g z)
+      (contDiffAt_id.div_const _))
+  exact (((hbranch.restrict_scalars ℝ).comp z ((hg z hz).contDiffAt (hUo.mem_nhds hz)))
+    |>.congr_of_eventuallyEq (eventuallyEq_logBranch_comp hUo hLc hLeq hz)).contDiffWithinAt
+
+/-- **A smooth phase of a smooth unimodular map on the plane.** A real `Cⁿ` map `h : ℂ → ℂ` with
+`‖h z‖ = 1` everywhere is `exp (f z * I)` for a real `Cⁿ` function `f : ℂ → ℝ`. -/
+theorem exists_contDiff_eq_exp_ofReal_mul_I {n : WithTop ℕ∞} {h : ℂ → ℂ} (hh : ContDiff ℝ n h)
+    (hnorm : ∀ z, ‖h z‖ = 1) :
+    ∃ f : ℂ → ℝ, ContDiff ℝ n f ∧ ∀ z, h z = Complex.exp (f z * Complex.I) := by
+  have hU : IsSimplyConnected (univ : Set ℂ) :=
+    have : ContractibleSpace (univ : Set ℂ) := Convex.contractibleSpace convex_univ univ_nonempty
+    SimplyConnectedSpace.ofContractible _
+  obtain ⟨L, hL, hLh⟩ := exists_contDiffOn_eqOn_exp_comp hU isOpen_univ hh.contDiffOn
+    (by rintro ⟨z, -, hz⟩; simpa [hz] using hnorm z)
+  -- `L` is purely imaginary, since `|exp (L z)| = exp (re (L z)) = 1`.
+  refine ⟨fun z => (L z).im, Complex.imCLM.contDiff.comp (contDiffOn_univ.1 hL), fun z => ?_⟩
+  have hLz : Complex.exp (L z) = h z := hLh (mem_univ z)
+  have hre : (L z).re = 0 := by simpa [← hLz, Complex.norm_exp] using hnorm z
+  rw [← hLz]
+  congr 1
+  apply Complex.ext <;> simp [hre]
 
 /-- **A holomorphic `n`-th root on a simply connected domain.** The Koebe square-root step of the
 Riemann mapping theorem is the case `n = 2`. -/
