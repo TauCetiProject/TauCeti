@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
 public import TauCeti.RingTheory.MvPolynomial.Ideal
-public import TauCeti.RingTheory.MvPolynomial.Groebner.Elimination
 
 /-!
 # Computing toric ideals by elimination
@@ -18,10 +17,13 @@ this graph ideal, for an order eliminating the `σ` variables, computes both gen
 a Gröbner basis of the toric ideal. A remainder of a polynomial in the `Y` variables modulo
 the graph ideal also tests toric-ideal membership.
 
-The contraction identity and membership test hold over every commutative coefficient ring,
-without finite-variable hypotheses. The Gröbner-basis extraction uses the existing elimination
-theorem, with its explicit order-compatibility and elimination hypotheses. In particular this
-applies to finite monomial maps, including redundant or constant monomial generators.
+The contraction identity holds over every commutative coefficient ring, without finite-variable
+hypotheses, including redundant or constant monomial generators. To extract a Gröbner basis or
+generators, import `TauCeti.RingTheory.MvPolynomial.Groebner.Elimination`, rewrite with
+`TauCeti.toricIdeal_eq_comap_graph`, then apply `MonomialOrder.IsGroebnerBasis.comap_rename` or
+`MonomialOrder.IsGroebnerBasis.comap_rename_eq_span` with the order-compatibility and elimination
+hypotheses. For the membership test, rewrite with the same identity and `Ideal.mem_comap`, then
+apply `MonomialOrder.IsGroebnerBasis.remainder_eq_zero_iff_mem`; no elimination order is needed.
 This construction concerns nonnegative exponent vectors; no Laurent variables are implicit.
 
 ## References
@@ -51,49 +53,3 @@ theorem toricIdeal_eq_comap_graph (a : ι → σ →₀ ℕ) :
   simp only [mem_toricIdeal_iff, RingHom.mem_ker, single_eq_monomial]
 
 end TauCeti
-
-namespace MonomialOrder
-
-variable {σ ι R : Type*} [CommRing R]
-  {m : MonomialOrder (σ ⊕ ι)} {m' : MonomialOrder ι}
-  {G : Set (MvPolynomial (σ ⊕ ι) R)} {a : ι → σ →₀ ℕ}
-
-/-- A remainder modulo the graph equations tests membership in the toric ideal. The order
-need not be an elimination order for this membership test. -/
-theorem IsGroebnerBasis.remainder_eq_zero_iff_mem_toricIdeal
-    (h : m.IsGroebnerBasis G (Ideal.span (Set.range fun i ↦ X (Sum.inr i) -
-      rename Sum.inl (monomial (a i) (1 : R)))))
-    {p : MvPolynomial ι R} {r : MvPolynomial (σ ⊕ ι) R}
-    (hr : m.IsRemainder (rename Sum.inr p) G r) :
-    r = 0 ↔ p ∈ TauCeti.toricIdeal R a := by
-  rw [TauCeti.toricIdeal_eq_comap_graph, Ideal.mem_comap]
-  exact h.remainder_eq_zero_iff_mem hr
-
-/-- For an elimination order, the members of a graph Gröbner basis involving only the
-parameter variables form a Gröbner basis of the toric ideal. -/
-theorem IsGroebnerBasis.toricIdeal
-    (h : m.IsGroebnerBasis G (Ideal.span (Set.range fun i ↦ X (Sum.inr i) -
-      rename Sum.inl (monomial (a i) (1 : R)))))
-    (hm : ∀ u v : ι →₀ ℕ, u ≼[m'] v ↔
-      u.mapDomain Sum.inr ≼[m] v.mapDomain Sum.inr)
-    (helim : ∀ u v : (σ ⊕ ι) →₀ ℕ, u ≼[m] v →
-      ↑v.support ⊆ Set.range (Sum.inr : ι → σ ⊕ ι) →
-        ↑u.support ⊆ Set.range (Sum.inr : ι → σ ⊕ ι)) :
-    m'.IsGroebnerBasis (rename Sum.inr ⁻¹' G) (TauCeti.toricIdeal R a) := by
-  rw [TauCeti.toricIdeal_eq_comap_graph]
-  exact h.comap_rename hm helim
-
-/-- Elimination computes generators for a toric ideal from a Gröbner basis of the graph
-ideal. No division of coefficients is needed for this extraction. -/
-theorem IsGroebnerBasis.toricIdeal_eq_span
-    (h : m.IsGroebnerBasis G (Ideal.span (Set.range fun i ↦ X (Sum.inr i) -
-      rename Sum.inl (monomial (a i) (1 : R)))))
-    (hm : ∀ u v : ι →₀ ℕ, u ≼[m'] v ↔
-      u.mapDomain Sum.inr ≼[m] v.mapDomain Sum.inr)
-    (helim : ∀ u v : (σ ⊕ ι) →₀ ℕ, u ≼[m] v →
-      ↑v.support ⊆ Set.range (Sum.inr : ι → σ ⊕ ι) →
-        ↑u.support ⊆ Set.range (Sum.inr : ι → σ ⊕ ι)) :
-    TauCeti.toricIdeal R a = Ideal.span (rename Sum.inr ⁻¹' G) :=
-  (h.toricIdeal hm helim).ideal_eq_span
-
-end MonomialOrder
