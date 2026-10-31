@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.LinearMap
 public import Mathlib.RingTheory.HopfAlgebra.Convolution
 public import TauCeti.Algebra.Coalgebra.Star
 
@@ -50,15 +51,6 @@ namespace TauCeti.HopfAlgebra
 variable {R A : Type*} [CommSemiring R] [StarRing R] [Semiring A] [StarRing A]
   [_root_.HopfAlgebra R A] [StarModule R A]
 
-/-- The map `a ↦ S(a*)*`, linear as the composite of two conjugate-linear maps. -/
-private def starAntipodeStar : A →ₗ[R] A where
-  toFun a := star (antipode R (star a))
-  map_add' a b := by simp
-  map_smul' r a := by simp [star_smul]
-
-private theorem starAntipodeStar_apply (a : A) :
-    starAntipodeStar (R := R) a = star (antipode R (star a)) := rfl
-
 variable [StarCoalgebra R A]
 
 /-- For `Δ a = ∑ xᵢ ⊗ yᵢ`, the star of the antipode law for `a*` reads `∑ S(yᵢ*)* xᵢ = ε(a)`. -/
@@ -71,18 +63,18 @@ private theorem sum_star_antipode_star_mul {ι : Type*} {a : A} (𝓡 : Repr R a
 /-- In a Hopf star algebra, `S(S(a*)*) = a`. -/
 @[simp]
 theorem antipode_star_antipode_star (a : A) : antipode R (star (antipode R (star a))) = a := by
-  -- `S ∘ T` is a right convolution inverse of `S`, for `T(a) = S(a*)*`.
-  have h : toConv (antipode R) * toConv (antipode R ∘ₗ starAntipodeStar (R := R)) =
+  -- `S ∘ T` is a right convolution inverse of `S`, for `T(a) = S(a*)*` the intrinsic star of `S`.
+  have h : toConv (antipode R) * toConv (antipode R ∘ₗ (star (toConv (antipode R))).ofConv) =
       (1 : WithConv (A →ₗ[R] A)) := by
     ext x
     rw [(ℛ R x).convMul_apply, LinearMap.convOne_apply]
-    simp only [LinearMap.comp_apply, starAntipodeStar_apply, ← antipode_mul_antidistrib,
+    simp only [LinearMap.comp_apply, LinearMap.intrinsicStar_apply, ← antipode_mul_antidistrib,
       ← map_sum, sum_star_antipode_star_mul, Algebra.algebraMap_eq_smul_one, map_smul,
       antipode_one]
   -- The identity is a left convolution inverse of `S`, so `S ∘ T = id`.
-  have hid : LinearMap.id = antipode R ∘ₗ starAntipodeStar :=
+  have hid : LinearMap.id = antipode R ∘ₗ (star (toConv (antipode R))).ofConv :=
     toConv_injective (left_inv_eq_right_inv LinearMap.id_mul_antipode h)
-  simpa [starAntipodeStar_apply] using (LinearMap.congr_fun hid a).symm
+  simpa using (LinearMap.congr_fun hid a).symm
 
 /-- In a Hopf star algebra, `S(S(a)*)* = a`. -/
 @[simp]
