@@ -24,8 +24,6 @@ bounds.
   two-term linear combination.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
-* `MeasureTheory.Lp.ae_norm_le_norm`: an `L∞` function is bounded by its norm almost
-  everywhere.
 * `MeasureTheory.Lp.measure_lt_norm_ne_zero`: every level strictly below the `L∞` norm is
   exceeded on a set of nonzero measure.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
@@ -82,13 +80,6 @@ end TauCeti
 namespace MeasureTheory
 
 open scoped ENNReal
-
-/-- An `L∞` function is bounded by its norm almost everywhere. -/
-theorem Lp.ae_norm_le_norm {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
-    {m : Measure alpha} (f : Lp F ∞ m) : ∀ᵐ x ∂m, ‖f x‖ ≤ ‖f‖ := by
-  filter_upwards [ae_le_eLpNormEssSup (f := (f : alpha → F)) (μ := m)] with x hx
-  rw [← eLpNorm_exponent_top (Lp.aestronglyMeasurable f)] at hx
-  simpa [Lp.norm_def] using ENNReal.toReal_mono (Lp.eLpNorm_ne_top f) hx
 
 /-- Every nonnegative level strictly below the `L∞` norm of `f` is exceeded by `‖f‖` on a set
 of nonzero measure. -/

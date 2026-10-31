@@ -12,8 +12,8 @@ public import Mathlib.MeasureTheory.Measure.Haar.Basic
 public import TauCeti.MeasureTheory.Function.Lp.One
 public import TauCeti.Topology.Algebra.Group.UCB.Basic
 
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Function.LpSpace.DomAct.Continuous
-import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Group.ModularCharacter
 
 /-!
@@ -90,7 +90,7 @@ private theorem quasiMeasurePreserving_inv_mul (x : G) :
 /-- The translated function `y ↦ φ (y⁻¹ * x)` is bounded by `‖φ‖` almost everywhere. -/
 private theorem ae_norm_comp_inv_mul_le (φ : Lp ℝ ∞ μ) (x : G) :
     ∀ᵐ y ∂μ, ‖φ (y⁻¹ * x)‖ ≤ ‖φ‖ :=
-  (quasiMeasurePreserving_inv_mul x).ae (ae_norm_le_norm φ)
+  (quasiMeasurePreserving_inv_mul x).ae (ae_le_lpNorm_exponent_top (Lp.memLp φ))
 
 private theorem integrable_mul_comp_inv_mul (h : Lp ℝ 1 μ) (φ : Lp ℝ ∞ μ) (x : G) :
     Integrable (fun y => h y * φ (y⁻¹ * x)) μ :=
