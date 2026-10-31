@@ -207,7 +207,9 @@ theorem exists_linearEquiv_range_vecMulLinear :
   obtain ⟨n, f, g, hf, hg, hfg⟩ := exists_comp_eq_id_of_projective A P
   -- `e` is the matrix of the idempotent endomorphism `g ∘ f` of the row vectors.
   have he : (LinearMap.toMatrixRight' (g ∘ₗ f)).vecMulLinear = g ∘ₗ f :=
-    Matrix.toLinearMapRight'.apply_symm_apply (g ∘ₗ f)
+    LinearMap.ext fun v ↦ by
+      rw [Matrix.vecMulLinear_apply, ← Matrix.toLinearMapRight'_apply,
+        LinearEquiv.symm_apply_apply]
   refine ⟨n, LinearMap.toMatrixRight' (g ∘ₗ f), ?_, ?_⟩
   · rw [IsIdempotentElem, ← LinearMap.toMatrixRight'_comp, LinearMap.comp_assoc,
       ← LinearMap.comp_assoc f g f, hfg, LinearMap.id_comp]
