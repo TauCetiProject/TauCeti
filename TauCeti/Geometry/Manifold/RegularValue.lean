@@ -42,8 +42,6 @@ to manifolds, including manifolds with boundary or corners.
   regularity is injectivity of the manifold derivative.
 * `TauCeti.isRegularPoint_iff_isInvertible_mfderiv`: between models of the same finite dimension
   over a complete field, regularity is invertibility of the manifold derivative.
-* `TauCeti.isInvertible_mfderiv_of_isInvertible_mfderiv_comp`: between models of the same finite
-  dimension, the factors of a composite with invertible derivative have invertible derivatives.
 * `TauCeti.IsRegularPoint.mdifferentiableAt`: a map into a normed space is differentiable at its
   regular points.
 * `TauCeti.range_mfderiv_le_ker_mfderiv_of_forall_eq`: a map into a level set `f ⁻¹' {y}` has
@@ -195,35 +193,6 @@ theorem IsRegularPoint.mdifferentiableAt {g : M → E'} (h : IsRegularPoint I �
     exact ha.symm.trans hb⟩
   exact hg ((mdifferentiableAt_const (c := g x)).congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun _ ↦ Subsingleton.elim _ _))
-
-section Comp
-
-variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 E']
-  {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [FiniteDimensional 𝕜 E'']
-  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 E'' H''}
-  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P] {g : N → P}
-
-/-- Between manifolds modelled on finite-dimensional spaces of the same dimension over a complete
-field, if a composite of differentiable maps has invertible manifold derivative, then so do both
-factors. -/
-theorem isInvertible_mfderiv_of_isInvertible_mfderiv_comp
-    (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E')
-    (hdim' : Module.finrank 𝕜 E' = Module.finrank 𝕜 E'')
-    (hg : MDifferentiableAt J K g (f x)) (hf : MDifferentiableAt I J f x)
-    (h : (mfderiv I K (g ∘ f) x).IsInvertible) :
-    (mfderiv I J f x).IsInvertible ∧ (mfderiv J K g (f x)).IsInvertible := by
-  rw [mfderiv_comp x hg hf] at h
-  refine ⟨(isRegularPoint_iff_isInvertible_mfderiv hdim).1 ?_,
-    (isRegularPoint_iff_isInvertible_mfderiv hdim').1 (isRegularPoint_iff.2 fun z ↦ ?_)⟩
-  · -- The derivative of `f` is injective since the composite is, and injectivity is regularity
-    -- between models of the same dimension.
-    exact (isRegularPoint_iff_injective_mfderiv hdim).2
-      (Injective.of_comp (f := mfderiv J K g (f x)) h.injective)
-  · -- The derivative of `g` is surjective since the composite is.
-    obtain ⟨v, rfl⟩ := h.surjective z
-    exact ⟨_, rfl⟩
-
-end Comp
 
 section Level
 

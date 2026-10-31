@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
 public import TauCeti.Geometry.Manifold.RegularValue
+public import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 
 /-!
 # The orientation sign of a map at a point
