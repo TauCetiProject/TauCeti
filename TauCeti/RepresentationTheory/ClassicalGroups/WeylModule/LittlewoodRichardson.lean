@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.UnitaryTrick
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Character
+public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Laurent
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rationality
 public import TauCeti.RepresentationTheory.Rep.DirectSum.Character
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LittlewoodRichardson
@@ -44,10 +45,27 @@ of a Weyl module is its Schur polynomial
 product is the product of the characters, so the two characters agree by the Littlewood–Richardson
 rule for Schur polynomials, `TauCeti.diagramSchurPoly_mul_diagramSchurPoly`.
 
+The same holds for the rational Weyl modules `V_λ = TauCeti.rationalWeylRep ℂ n λ` of arbitrary
+dominant weights, whose entries may be negative. Writing `λ = λ₀ + a·(1, …, 1)` and
+`μ = μ₀ + b·(1, …, 1)` with polynomial parts `λ₀`, `μ₀` and `a = λₙ`, `b = μₙ`, the tensor product
+`V_λ ⊗ V_μ` is the determinant twist by `det ^ (a + b)` of `𝕊^{λ₀}(ℂⁿ) ⊗ 𝕊^{μ₀}(ℂⁿ)`, so
+
+`V_λ ⊗ V_μ ≅ ⨁_ν V_{ν + (a + b)·(1, …, 1)} ^ c^ν_{λ₀μ₀}`
+
+(`TauCeti.nonempty_equiv_tprod_rationalWeylRep`). Here, unlike in the polynomial form, the sum has
+to be restricted to the partitions `ν` with at most `n` rows: the weight `TauCeti.weightOfShape n ν`
+records only the first `n` rows of `ν`, so its rational Weyl module is not zero when `ν` has more
+rows. Those partitions contribute nothing to the character, since their Schur polynomials in `n`
+variables vanish. On the torus the character of `V_λ` is the Laurent polynomial
+`(∏ᵢ tᵢ) ^ a · s_{λ₀}(t)` (`TauCeti.char_rationalWeylRep_diagonal_eq_eval_diagramSchurPoly`), and
+the proof is otherwise the one above.
+
 ## Main results
 
 * `TauCeti.nonempty_equiv_tprod_weylRepOfShape`: **the Littlewood–Richardson rule for `GL n ℂ`**,
   the decomposition of `𝕊^λ(ℂⁿ) ⊗ 𝕊^μ(ℂⁿ)` as an equivalence of representations.
+* `TauCeti.nonempty_equiv_tprod_rationalWeylRep`: the Littlewood–Richardson rule for the rational
+  Weyl modules `V_λ ⊗ V_μ` of two dominant weights.
 
 ## References
 
@@ -112,5 +130,56 @@ theorem nonempty_equiv_tprod_weylRepOfShape (lam μ : YoungDiagram) :
   refine sum_congr rfl fun ν _ => ?_
   simp only [map_nsmul, char_weylRepOfShape_diagonal_eq_eval_diagramSchurPoly, sum_const,
     card_univ, Fintype.card_subtype]
+
+open scoped Classical in
+/-- **The Littlewood–Richardson rule for the rational representations of `GL n ℂ`.** Write the
+dominant weights `λ` and `μ` as `λ₀ + a·(1, …, 1)` and `μ₀ + b·(1, …, 1)` with `a = λₙ`,
+`b = μₙ` and polynomial parts `λ₀ = λ.detShiftShape`, `μ₀ = μ.detShiftShape`. The tensor product
+of the rational Weyl modules `V_λ ⊗ V_μ` is equivalent to the direct sum of the rational Weyl
+modules `V_{ν + (a + b)·(1, …, 1)}`, one for each partition `ν` of `|λ₀| + |μ₀|` with at most `n`
+rows and each `λ₀`-Yamanouchi semistandard tableau `T` of shape `μ₀` with entries below `n` with
+`λ₀ + c(T) = ν`. So `V_{ν + (a + b)·(1, …, 1)}` occurs with multiplicity the Littlewood–Richardson
+coefficient `c^ν_{λ₀μ₀}`; each summand is irreducible by `TauCeti.isIrreducible_rationalWeylRep`.
+-/
+theorem nonempty_equiv_tprod_rationalWeylRep (l m : DominantWeight n) :
+    Nonempty (Representation.Equiv ((rationalWeylRep ℂ n l).tprod (rationalWeylRep ℂ n m))
+      (Representation.directSum fun p : Σ ν : {ν : (l.detShiftShape.card +
+            m.detShiftShape.card).Partition // (ofPartition ν).colLen 0 ≤ n},
+          {T : BoundedSSYT n m.detShiftShape // T.1.IsYamanouchi l.detShiftShape ∧
+            ∀ i, l.detShiftShape.rowLen i + T.1.content i = (ofPartition ν.1).rowLen i} =>
+        rationalWeylRep ℂ n ((weightOfShape n (ofPartition p.1.1)).shift
+          (l.detShift + m.detShift)))) := by
+  -- The additive groups are supplied as in `TauCeti.nonempty_equiv_tprod_weylRepOfShape`.
+  let _ (p : Σ ν : {ν : (l.detShiftShape.card + m.detShiftShape.card).Partition //
+        (ofPartition ν).colLen 0 ≤ n},
+      {T : BoundedSSYT n m.detShiftShape // T.1.IsYamanouchi l.detShiftShape ∧
+        ∀ i, l.detShiftShape.rowLen i + T.1.content i = (ofPartition ν.1).rowLen i}) :
+      AddCommGroup (weylModuleOfShape ℂ n
+        ((weightOfShape n (ofPartition p.1.1)).shift (l.detShift + m.detShift)).detShiftShape
+        ).toSubmodule :=
+    inferInstance
+  let _ : AddCommGroup (TensorProduct ℂ (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule
+      (weylModuleOfShape ℂ n m.detShiftShape).toSubmodule) :=
+    TensorProduct.addCommGroup (R := ℂ) (M := (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule)
+      (N := (weylModuleOfShape ℂ n m.detShiftShape).toSubmodule)
+  refine IsRationalRep.nonempty_equiv_of_forall_character_diagGL_eq
+    ((isRationalRep_rationalWeylRep n l).tprod (isRationalRep_rationalWeylRep n m))
+    (IsRationalRep.directSum fun p => isRationalRep_rationalWeylRep n _) fun t => ?_
+  refine (congrFun (Representation.char_tensor
+    (V := (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule)
+    (W := (weylModuleOfShape ℂ n m.detShiftShape).toSubmodule) (rationalWeylRep ℂ n l)
+    (rationalWeylRep ℂ n m)) (diagGL t)).trans ?_
+  rw [Pi.mul_apply, char_rationalWeylRep_diagonal_eq_eval_diagramSchurPoly,
+    char_rationalWeylRep_diagonal_eq_eval_diagramSchurPoly, mul_mul_mul_comm, ← eval_mul,
+    diagramSchurPoly_mul_diagramSchurPoly, ← Units.val_mul, ← zpow_add, map_sum, mul_sum,
+    Representation.char_directSum, Fintype.sum_sigma,
+    ← Fintype.sum_subtype_add_sum_subtype fun ν => (ofPartition ν).colLen 0 ≤ n]
+  -- The partitions with more than `n` rows contribute nothing: their Schur polynomials vanish.
+  rw [Fintype.sum_eq_zero (fun ν : {ν // ¬(ofPartition ν).colLen 0 ≤ n} => _) fun ν => by
+      rw [diagramSchurPoly_eq_zero_of_lt_colLen (not_le.mp ν.2), smul_zero, map_zero, mul_zero],
+    add_zero]
+  refine Fintype.sum_congr _ _ fun ν => ?_
+  simp only [char_rationalWeylRep_shift_weightOfShape_diagonal ℂ n ν.2, sum_const, card_univ,
+    Fintype.card_subtype, map_nsmul, mul_smul_comm]
 
 end TauCeti
