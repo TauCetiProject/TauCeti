@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
-public import TauCeti.NumberTheory.LFunctions.Data.Basic
+public import TauCeti.NumberTheory.LFunctions.Data.Series
 public import TauCeti.NumberTheory.LSeries.CompletedRiemannZeta
 
 /-!
@@ -33,6 +33,8 @@ the functional equation `completedRiemannZeta_one_sub`, the reflection symmetry
 * `riemannZetaData_dual`: the card is self-dual.
 * `riemannZetaData_hasDirichletAgreement`, `riemannZetaData_hasMeromorphicContinuation`,
   `riemannZetaData_hasFunctionalEquation`.
+* `ofSeries_riemannZetaData`: the canonical series construction recovers this card after
+  normalizing the completed function at its poles; in particular its root number is `1`.
 -/
 
 public section
@@ -143,5 +145,28 @@ theorem riemannZetaData_hasFunctionalEquation : riemannZetaData.HasFunctionalEqu
   completed_eq s _ _ := by
     rw [riemannZetaData_dual, riemannZetaData_rootNumber, one_mul, riemannZetaData_completed,
       completedRiemannZeta_one_sub]
+
+/-- Constructing the Riemann-zeta card from its series recovers every field, with the completed
+function put in meromorphic normal form. In particular, the extracted root number is `1`.
+No equality with Mathlib's representative at its poles is asserted. -/
+theorem ofSeries_riemannZetaData :
+    AnalyticLFunctionData.ofSeries riemannZetaData.coeff riemannZetaData.conductor
+      riemannZetaData.gammaR riemannZetaData.gammaC riemannZetaData.polarOrder =
+      { riemannZetaData with completed := toMeromorphicNFOn completedRiemannZeta Set.univ } := by
+  apply AnalyticLFunctionData.ofSeries_eq_normalized
+    riemannZetaData_hasDirichletAgreement riemannZetaData_hasMeromorphicContinuation
+    riemannZetaData_hasFunctionalEquation
+  · intro s hs
+    have h0 : s ≠ 0 := by rintro rfl; norm_num at hs
+    have h1 : s ≠ 1 := by rintro rfl; norm_num at hs
+    simp [Ne.symm h0, Ne.symm h1]
+  · have heq := riemannZetaData_hasDirichletAgreement.completed_eq 2 (by norm_num)
+    simp only [riemannZetaData_conductor, PNat.val_ofNat, Nat.cast_one, one_cpow, one_mul,
+      riemannZetaData_gammaFactor] at heq
+    have hL : LSeries riemannZetaData.coeff 2 = riemannZeta 2 :=
+      ArithmeticFunction.LSeries_zeta_eq_riemannZeta (by norm_num)
+    rw [heq, hL]
+    exact mul_ne_zero (Gammaℝ_ne_zero_of_re_pos (by norm_num))
+      (riemannZeta_ne_zero_of_one_lt_re (by norm_num))
 
 end TauCeti.LFunctions
