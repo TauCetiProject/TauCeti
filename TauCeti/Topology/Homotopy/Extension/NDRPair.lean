@@ -29,6 +29,11 @@ lifting theorem for Hurewicz fibrations
 Continuity of the deformation along the zero set, where the formula divides by zero, rests on
 the compactness argument `ContinuousMap.continuous_apply_prodMk_of_fixed`.
 
+NDR data usually comes from a neighbourhood `U` of `A` that deformation retracts onto `A`
+relative to `A`, together with a function `f : X → I` vanishing exactly on `A` and less than one
+only on `U`. `TauCeti.NDRPair.ofHomotopyRel` cuts the deformation off where `3 / 4 ≤ f`, so that
+it extends by the identity to all of `X`, and takes `min 1 (2 f)` as control function.
+
 ## Main declarations
 
 * `TauCeti.NDRPair A`: NDR data for `A ⊆ X`.
@@ -39,6 +44,8 @@ the compactness argument `ContinuousMap.continuous_apply_prodMk_of_fixed`.
   strong deformation retraction of the cylinder onto `J`.
 * `TauCeti.NDRPair.hasHomotopyExtensionProperty`: the subset of an NDR pair has the homotopy
   extension property.
+* `TauCeti.NDRPair.ofHomotopyRel`: NDR data from a deformation of a neighbourhood `U ⊇ A` onto
+  `A`, relative to `A`, and a function vanishing exactly on `A` that is less than one only on `U`.
 
 ## References
 
@@ -219,6 +226,140 @@ protected theorem hasHomotopyExtensionProperty (N : NDRPair A) :
   hasHomotopyExtensionProperty_of_retraction (r := (ContinuousMap.subtypeVal _).comp
       N.cylinderRetraction) N.isClosed (fun z ↦ (N.cylinderRetraction z).2)
     fun z hz ↦ congrArg Subtype.val (N.cylinderRetraction_apply_coe ⟨z, hz⟩)
+
+section OfHomotopyRel
+
+variable {U : Set X} {hAU : A ⊆ U} {r : C(U, A)}
+  (D : (ContinuousMap.id U).HomotopyRel ((ContinuousMap.inclusion hAU).comp r) {x | ↑x ∈ A})
+  (f : C(X, I))
+
+/-- The time `t * min 1 (3 - 4 f x)` at which `ofHomotopyRel` reads off the deformation `D`. -/
+private noncomputable def cutoffTime (p : I × X) : I :=
+  p.1 * projIcc 0 1 zero_le_one (3 - 4 * (f p.2 : ℝ))
+
+private theorem continuous_cutoffTime : Continuous (cutoffTime f) := by
+  unfold cutoffTime
+  fun_prop
+
+open scoped Classical in
+/-- The deformation `D` cut off by `cutoffTime`, and extended by the identity off `U`. -/
+private noncomputable def cutoff (p : I × X) : X :=
+  if h : p.2 ∈ U then D (cutoffTime f p, ⟨p.2, h⟩) else p.2
+
+private theorem cutoff_of_mem {p : I × X} (h : p.2 ∈ U) :
+    cutoff D f p = D (cutoffTime f p, ⟨p.2, h⟩) := by
+  simp only [cutoff, h, ↓reduceDIte]
+
+private theorem cutoff_of_notMem {p : I × X} (h : p.2 ∉ U) : cutoff D f p = p.2 := by
+  simp only [cutoff, h, ↓reduceDIte]
+
+/-- Where `3 / 4 ≤ f`, the cut-off deformation does not move the point. -/
+private theorem cutoff_of_le {x : X} (hx : 3 / 4 ≤ (f x : ℝ)) (t : I) : cutoff D f (t, x) = x := by
+  by_cases h : x ∈ U
+  · have h0 : cutoffTime f (t, x) = 0 := by
+      rw [cutoffTime, projIcc_eq_zero.2 (show 3 - 4 * (f x : ℝ) ≤ 0 by linarith)]
+      exact mul_zero t
+    rw [cutoff_of_mem D f h, h0, D.apply_zero, ContinuousMap.id_apply]
+  · exact cutoff_of_notMem D f h
+
+variable {f} in
+/-- On the open set `{f < 1} ⊆ U` the cut-off deformation is continuous, being a composite of
+`D`. -/
+private theorem continuousOn_cutoff (hfU : ∀ x, f x < 1 → x ∈ U) :
+    ContinuousOn (cutoff D f) (univ ×ˢ {x | f x < 1}) := by
+  rw [continuousOn_iff_continuous_domRestrict]
+  have hU (p : (univ ×ˢ {x | f x < 1} : Set (I × X))) : p.1.2 ∈ U := hfU _ p.2.2
+  refine (continuous_subtype_val.comp (D.continuous.comp (Continuous.prodMk
+    ((continuous_cutoffTime f).comp continuous_subtype_val)
+    (Continuous.subtype_mk (by fun_prop) hU)))).congr fun p ↦ ?_
+  simp only [Function.comp_apply, domRestrict_apply, cutoff_of_mem D f (hU p)]
+
+variable {f} in
+private theorem continuous_cutoff (hfU : ∀ x, f x < 1 → x ∈ U) : Continuous (cutoff D f) := by
+  refine continuous_iff_continuousAt.2 fun p ↦ ?_
+  rcases lt_or_ge (f p.2 : ℝ) 1 with hp | hp
+  · exact (continuousOn_cutoff D hfU).continuousAt (prod_mem_nhds Filter.univ_mem
+      ((isOpen_lt f.continuous continuous_const).mem_nhds (Subtype.coe_lt_coe.1 hp)))
+  · refine continuousAt_snd.congr (Filter.eventuallyEq_of_mem (prod_mem_nhds Filter.univ_mem
+      ((isOpen_lt continuous_const (continuous_subtype_val.comp f.continuous)).mem_nhds
+        (show (3 / 4 : ℝ) < f p.2 by linarith))) fun q hq ↦ ?_)
+    exact (cutoff_of_le D f (le_of_lt hq.2) q.1).symm
+
+private theorem coe_projIcc_two_mul (x : X) :
+    (projIcc 0 1 zero_le_one (2 * (f x : ℝ)) : ℝ) = min 1 (2 * (f x : ℝ)) := by
+  rw [Set.coe_projIcc]
+  exact max_eq_right (le_min zero_le_one (mul_nonneg zero_le_two (f x).2.1))
+
+variable (hAU) in
+/-- **NDR data from a deformation of a neighbourhood.** Let `D` be a homotopy, relative to `A`,
+from the identity of a set `U ⊇ A` to a retraction onto `A`, and let `f : X → I` vanish exactly on
+`A` with `{f < 1} ⊆ U`. Cutting `D` off by the time factor `min 1 (3 - 4 f)` gives NDR data for
+`A`, with control function `min 1 (2 f)`. The deformation runs in full where `f ≤ 1 / 2` and moves
+no point where `3 / 4 ≤ f`. The set `U` need not be open. -/
+noncomputable def ofHomotopyRel (hf : ∀ x, f x = 0 ↔ x ∈ A) (hfU : ∀ x, f x < 1 → x ∈ U) :
+    NDRPair A where
+  control := ⟨fun x ↦ projIcc 0 1 zero_le_one (2 * (f x : ℝ)), by fun_prop⟩
+  control_eq_zero_iff x := by
+    rw [← hf, ContinuousMap.coe_mk, ← Subtype.coe_inj, ← Subtype.coe_inj, coe_projIcc_two_mul,
+      Icc.coe_zero]
+    have := (f x).2.1
+    constructor <;> intro h
+    · rcases min_eq_iff.1 h with h | h <;> linarith [h.1]
+    · simp [h]
+  deformation := ⟨cutoff D f, continuous_cutoff D hfU⟩
+  deformation_zero x := by
+    by_cases h : x ∈ U
+    · rw [ContinuousMap.coe_mk, cutoff_of_mem D f h, cutoffTime, zero_mul, D.apply_zero,
+        ContinuousMap.id_apply]
+    · exact cutoff_of_notMem D f h
+  deformation_of_mem t x hx := by
+    rw [ContinuousMap.coe_mk, cutoff_of_mem D f (hAU hx),
+      D.eq_fst _ (show (⟨x, hAU hx⟩ : U) ∈ {x : U | ↑x ∈ A} from hx), ContinuousMap.id_apply]
+  deformation_one_mem {x} hx := by
+    have hx : (f x : ℝ) < 1 / 2 := by
+      have := Subtype.coe_lt_coe.2 hx
+      rw [ContinuousMap.coe_mk, coe_projIcc_two_mul, Icc.coe_one] at this
+      linarith [min_lt_iff.1 this |>.resolve_left (lt_irrefl 1)]
+    have hU := hfU x (Subtype.coe_lt_coe.1 (hx.trans (by norm_num)))
+    have h1 : cutoffTime f (1, x) = 1 := by
+      rw [cutoffTime, projIcc_eq_one.2 (show (1 : ℝ) ≤ 3 - 4 * (f x : ℝ) by linarith), one_mul]
+    rw [ContinuousMap.coe_mk, cutoff_of_mem D f hU, h1, D.apply_one]
+    exact (r ⟨x, hU⟩).2
+
+variable (hf : ∀ x, f x = 0 ↔ x ∈ A) (hfU : ∀ x, f x < 1 → x ∈ U)
+
+/-- The control function of `ofHomotopyRel` is `min 1 (2 f)`. -/
+@[simp]
+theorem coe_ofHomotopyRel_control (x : X) :
+    ((ofHomotopyRel hAU D f hf hfU).control x : ℝ) = min 1 (2 * (f x : ℝ)) :=
+  coe_projIcc_two_mul f x
+
+/-- At a point of `U`, the deformation of `ofHomotopyRel` follows `D` with time scaled by
+`min 1 (3 - 4 f)`. -/
+theorem ofHomotopyRel_deformation_of_mem (t : I) {x : X} (hx : x ∈ U) :
+    (ofHomotopyRel hAU D f hf hfU).deformation (t, x) =
+      D (t * projIcc 0 1 zero_le_one (3 - 4 * (f x : ℝ)), ⟨x, hx⟩) :=
+  cutoff_of_mem D f (p := (t, x)) hx
+
+/-- Off `U`, the deformation of `ofHomotopyRel` does not move the point. -/
+theorem ofHomotopyRel_deformation_of_notMem (t : I) {x : X} (hx : x ∉ U) :
+    (ofHomotopyRel hAU D f hf hfU).deformation (t, x) = x :=
+  cutoff_of_notMem D f (p := (t, x)) hx
+
+/-- Where `f ≤ 1 / 2`, the deformation of `ofHomotopyRel` is `D` itself. -/
+theorem ofHomotopyRel_deformation_of_le_half (t : I) {x : X} (hx : (f x : ℝ) ≤ 1 / 2) :
+    (ofHomotopyRel hAU D f hf hfU).deformation (t, x) =
+      D (t, ⟨x, hfU x (Subtype.coe_lt_coe.1 (hx.trans_lt (by norm_num)))⟩) := by
+  rw [ofHomotopyRel_deformation_of_mem,
+    projIcc_eq_one.2 (show (1 : ℝ) ≤ 3 - 4 * (f x : ℝ) by linarith)]
+  exact congrArg (fun s ↦ (D (s, _) : X)) (mul_one t)
+
+/-- Where `3 / 4 ≤ f`, the deformation of `ofHomotopyRel` does not move the point. -/
+theorem ofHomotopyRel_deformation_of_three_quarters_le (t : I) {x : X}
+    (hx : 3 / 4 ≤ (f x : ℝ)) : (ofHomotopyRel hAU D f hf hfU).deformation (t, x) = x :=
+  cutoff_of_le D f hx t
+
+end OfHomotopyRel
 
 end NDRPair
 
