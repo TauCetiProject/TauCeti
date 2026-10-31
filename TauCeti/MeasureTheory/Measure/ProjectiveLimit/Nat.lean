@@ -71,9 +71,12 @@ private theorem map_frestrictLe_zero_prefixLimit
     (P : ∀ n : ℕ, Measure (∀ i : Iic n, X i)) [∀ n, IsProbabilityMeasure (P n)]
     [∀ n, StandardBorelSpace (X (n + 1))] [∀ n, Nonempty (X (n + 1))] :
     (prefixLimit P).map (frestrictLe 0) = P 0 := by
-  rw [prefixLimit, Kernel.trajMeasure,
-    MeasureTheory.Measure.map_comp _ _ (measurable_frestrictLe 0), Kernel.traj_map_frestrictLe,
-    Kernel.partialTraj_self, MeasureTheory.Measure.id_comp, MeasurableEquiv.map_symm_map]
+  -- Through time `0`, the path law is its initial law, transported back along `piUnique`.
+  calc (prefixLimit P).map (frestrictLe 0)
+      = ((P 0).map (MeasurableEquiv.piUnique _)).map (MeasurableEquiv.piUnique _).symm := by
+        simp [prefixLimit, Kernel.trajMeasure, Measure.map_comp _ _ (measurable_frestrictLe 0),
+          Kernel.traj_map_frestrictLe]
+    _ = P 0 := MeasurableEquiv.map_symm_map _
 
 private theorem map_frestrictLe_succ_prefixLimit
     (P : ∀ n : ℕ, Measure (∀ i : Iic n, X i)) [∀ n, IsProbabilityMeasure (P n)]
@@ -81,12 +84,22 @@ private theorem map_frestrictLe_succ_prefixLimit
     (hP : ∀ n, (P (n + 1)).map (frestrictLe₂ n.le_succ) = P n) {n : ℕ}
     (hn : (prefixLimit P).map (frestrictLe n) = P n) :
     (prefixLimit P).map (frestrictLe (n + 1)) = P (n + 1) := by
+  -- The `n`-th transition kernel of `prefixLimit P`.
+  let κ :=
+    condDistrib (fun x ↦ x ⟨n + 1, mem_Iic.2 le_rfl⟩) (frestrictLe₂ n.le_succ) (P (n + 1))
+  -- Compare both laws after splitting off the last coordinate.
   apply (prefixSuccEquiv n).symm.map_measurableEquiv_injective
-  rw [MeasureTheory.Measure.map_map (by fun_prop) (by fun_prop),
-    prefixSuccEquiv_symm_comp_frestrictLe, prefixLimit,
-    ← Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure, ← prefixLimit, hn,
-    ← hP n, compProd_map_condDistrib (by fun_prop), coe_prefixSuccEquiv_symm]
-  exact (measurable_pi_apply _).aemeasurable
+  calc ((prefixLimit P).map (frestrictLe (n + 1))).map (prefixSuccEquiv n).symm
+      = (prefixLimit P).map fun x ↦ (frestrictLe n x, x (n + 1)) := by
+        rw [Measure.map_map (by fun_prop) (by fun_prop), prefixSuccEquiv_symm_comp_frestrictLe]
+    -- The path law is its prefix law through time `n` followed by the `n`-th kernel.
+    _ = (prefixLimit P).map (frestrictLe n) ⊗ₘ κ := by
+        rw [prefixLimit]; exact Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure.symm
+    _ = (P (n + 1)).map (frestrictLe₂ n.le_succ) ⊗ₘ κ := by rw [hn, hP]
+    -- Disintegrating `P (n + 1)` along its prefix through time `n` recovers it.
+    _ = (P (n + 1)).map fun x ↦ (frestrictLe₂ n.le_succ x, x ⟨n + 1, mem_Iic.2 le_rfl⟩) :=
+        compProd_map_condDistrib (by fun_prop) (measurable_pi_apply _).aemeasurable
+    _ = (P (n + 1)).map (prefixSuccEquiv n).symm := by rw [coe_prefixSuccEquiv_symm]
 
 /-- **Countable projective-family extension for coherent prefixes.** A coherent family of
 probability laws on the prefixes `∀ i : Iic n, X i` of a dependent sequence of standard Borel
