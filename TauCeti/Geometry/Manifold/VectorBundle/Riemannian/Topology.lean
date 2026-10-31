@@ -100,6 +100,20 @@ def chartC2Topology :
 
 attribute [local instance] chartC2Topology
 
+/-- The chart C² topology is induced by the chart derivatives through order two, indexed by
+pairs of a point and an order. -/
+theorem isInducing_chartMetricDerivative : withMetricOperatorNorms E in
+    Topology.IsInducing (fun (g : ContMDiffRiemannianMetric I ∞ E
+      (fun x : M ↦ TangentSpace I x)) (q : M × Fin 3) ↦ g.chartMetricDerivative q.1 q.2) := by
+  -- The topology is induced by the curried family; uncurrying is a homeomorphism of products,
+  -- with continuous inverse currying.
+  have huncurry : IsInducing fun (v : (x : M) → (m : Fin 3) → C((extChartAt I x).target,
+      E [×m]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ))) (q : M × Fin 3) ↦ v q.1 q.2 :=
+    .of_comp (continuous_pi fun q ↦ (continuous_apply q.2).comp (continuous_apply q.1))
+      (continuous_pi fun x ↦ continuous_pi fun m ↦ continuous_apply (x, m)) .id
+  exact huncurry.comp (f := fun (g : ContMDiffRiemannianMetric I ∞ E
+    (fun x : M ↦ TangentSpace I x)) (x : M) (m : Fin 3) ↦ g.chartMetricDerivative x m) ⟨rfl⟩
+
 /-- A family is C²-continuous exactly when all chart derivatives through order two are
 continuous as maps into compact-open continuous-map spaces. -/
 theorem continuous_chartC2_iff_continuous_chartMetricDerivative

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Section
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Mean
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
 
 /-!
@@ -18,8 +19,9 @@ It preserves the metric at every point where the two input metrics agree.
 
 For smooth tangent metrics on a boundaryless manifold, interpolation is jointly continuous
 in both metrics and the interval parameter for the chart C² topology. The coordinate
-derivatives of every order interpolate linearly. These facts allow local combinations of
-metrics in approximation arguments, including arguments relative to a fixed spatial region.
+derivatives of every order interpolate linearly, and so do those of a finite convex combination
+`TauCeti.weightedMeanRiemannianMetric` with constant weights. These facts allow local combinations
+of metrics in approximation arguments, including arguments relative to a fixed spatial region.
 They do not assert that scalar positivity is preserved by convex combinations.
 
 The ambient section space and its positive cone are those of
@@ -157,6 +159,48 @@ theorem iteratedFDeriv_chartMetric_convexCombination
       ((hh.of_le (by simp)).const_smul _),
     iteratedFDeriv_const_smul_apply' (hg.of_le (by simp)),
     iteratedFDeriv_const_smul_apply' (hh.of_le (by simp))]
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] in
+/-- On a chart target, the coordinate bilinear form of a weighted mean of metrics is the weighted
+sum of the coordinate bilinear forms, with the weights read at the corresponding point. -/
+theorem chartMetric_weightedMeanRiemannianMetric {ι : Type*} [Fintype ι]
+    (g : ι → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (ρ : ι → M → ℝ)
+    (hρ : ∀ i, ContMDiff I 𝓘(ℝ) ∞ (ρ i)) (hρ₀ : ∀ i x, 0 ≤ ρ i x) (hρ₁ : ∀ x, ∑ i, ρ i x = 1)
+    (x : M) {z : E} (hz : z ∈ (extChartAt I x).target) :
+    (TauCeti.weightedMeanRiemannianMetric g ρ hρ hρ₀ hρ₁).toNondegenerateMetric.chartMetric x z =
+      ∑ i, ρ i ((extChartAt I x).symm z) • (g i).toNondegenerateMetric.chartMetric x z := by
+  ext v w
+  simp only [(TauCeti.weightedMeanRiemannianMetric g ρ hρ hρ₀
+      hρ₁).toNondegenerateMetric.chartMetric_apply hz,
+    fun i ↦ (g i).toNondegenerateMetric.chartMetric_apply hz, toNondegenerateMetric_apply,
+    TauCeti.weightedMeanRiemannianMetric_inner, sum_apply, smul_apply, smul_eq_mul]
+
+omit [FiniteDimensional ℝ E] in
+/-- Every coordinate derivative of a finite convex combination of metrics, with constant weights,
+is the corresponding convex combination of coordinate derivatives. -/
+theorem iteratedFDeriv_chartMetric_weightedMeanRiemannianMetric_const {ι : Type*} [Fintype ι]
+    (g : ι → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (c : ι → ℝ)
+    {hρ : ∀ i, ContMDiff I 𝓘(ℝ) ∞ (fun _ : M ↦ c i)} {hρ₀ : ∀ i (_ : M), 0 ≤ c i}
+    {hρ₁ : ∀ _ : M, ∑ i, c i = 1} (x : M) (m : ℕ) {z : E} (hz : z ∈ (extChartAt I x).target) :
+    -- Public signatures cannot use the private cached instances: insert the canonical ones.
+    letI : NormedAddCommGroup (E →L[ℝ] ℝ) := ContinuousLinearMap.toNormedAddCommGroup
+    letI : NormedSpace ℝ (E →L[ℝ] ℝ) := ContinuousLinearMap.toNormedSpace
+    letI : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] ℝ) := ContinuousLinearMap.toNormedAddCommGroup
+    letI : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] ℝ) := ContinuousLinearMap.toNormedSpace
+    iteratedFDeriv ℝ m ((TauCeti.weightedMeanRiemannianMetric g (fun i _ ↦ c i) hρ hρ₀
+      hρ₁).toNondegenerateMetric.chartMetric x) z =
+      ∑ i, c i • iteratedFDeriv ℝ m ((g i).toNondegenerateMetric.chartMetric x) z := by
+  have hz' := (isOpen_extChartAt_target (I := I) x).mem_nhds hz
+  have hg (i : ι) := (((g i).toNondegenerateMetric.contDiffOn_chartMetric x).contDiffAt hz').of_le
+    (m := m) (by simp)
+  have heq : (TauCeti.weightedMeanRiemannianMetric g (fun i _ ↦ c i) hρ hρ₀
+      hρ₁).toNondegenerateMetric.chartMetric x =ᶠ[𝓝 z]
+      (fun y ↦ ∑ i, c i • (g i).toNondegenerateMetric.chartMetric x y) := by
+    filter_upwards [(isOpen_extChartAt_target x).mem_nhds hz] with y hy
+    exact chartMetric_weightedMeanRiemannianMetric g _ hρ hρ₀ hρ₁ x hy
+  rw [(heq.iteratedFDeriv ℝ m).eq_of_nhds,
+    iteratedFDeriv_fun_sum_apply fun i _ ↦ (hg i).const_smul _]
+  exact Finset.sum_congr rfl fun i _ ↦ iteratedFDeriv_const_smul_apply' (hg i)
 
 open scoped TauCeti.MetricC2
 

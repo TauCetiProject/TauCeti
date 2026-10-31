@@ -13,15 +13,21 @@ public import TauCeti.Topology.Algebra.Module.BilinearForm
 /-!
 # Finite means of smooth bundle metrics
 
-The arithmetic mean of a nonempty finite family of smooth Riemannian metrics on a real vector
-bundle is again a smooth Riemannian metric. This construction applies to arbitrary model fibres:
-the bounded-unit-set condition follows from convexity, without a finite-dimensionality assumption.
-Reindexing does not change the mean. In particular, one can average the pullbacks of a metric by
-a finite group of diffeomorphisms to obtain an invariant metric.
+A finite family of smooth Riemannian metrics on a real vector bundle, weighted by smooth
+nonnegative functions on the base which sum to one at every point, has a smooth weighted mean,
+`TauCeti.weightedMeanRiemannianMetric`. This construction applies to arbitrary model fibres: the
+bounded-unit-set condition follows from convexity, without a finite-dimensionality assumption.
+Weights varying over the base glue metrics, as with a partition of unity; constant weights give
+finite convex combinations of metrics.
+
+With equal weights, the arithmetic mean `TauCeti.meanRiemannianMetric` of a nonempty finite family
+of smooth Riemannian metrics is again a smooth Riemannian metric. Reindexing does not change the
+mean. In particular, one can average the pullbacks of a metric by a finite group of
+diffeomorphisms to obtain an invariant metric.
 
 The construction uses `TauCeti.convex_setOfPred_symm_pos_isVonNBounded` and
-`Convex.centerMass_mem` for the fibrewise metric conditions, and Mathlib's finite sums of smooth
-sections for regularity.
+`Convex.centerMass_mem` for the fibrewise metric conditions, and Mathlib's finite sums and
+function multiples of smooth sections for regularity.
 -/
 
 public noncomputable section
@@ -39,11 +45,13 @@ variable
   {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
   [∀ b, TopologicalSpace (E b)] [∀ b, AddCommGroup (E b)] [∀ b, Module ℝ (E b)]
   [∀ b, ContinuousConstSMul ℝ (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
-  {ι κ : Type*} [Fintype ι] [Nonempty ι]
+  {ι κ : Type*} [Fintype ι]
 
-/-- The arithmetic mean of a nonempty finite family of `C^n` Riemannian metrics. -/
-def meanRiemannianMetric (g : ι → ContMDiffRiemannianMetric IB n F E) :
-    ContMDiffRiemannianMetric IB n F E := by
+/-- The weighted mean `∑ i, ρ i b • g i` of a finite family of `C^n` Riemannian metrics, for
+`C^n` weights `ρ i` on the base which are nonnegative and sum to one at every point. -/
+def weightedMeanRiemannianMetric (g : ι → ContMDiffRiemannianMetric IB n F E) (ρ : ι → B → ℝ)
+    (hρ : ∀ i, ContMDiff IB 𝓘(ℝ) n (ρ i)) (hρ₀ : ∀ i b, 0 ≤ ρ i b)
+    (hρ₁ : ∀ b, ∑ i, ρ i b = 1) : ContMDiffRiemannianMetric IB n F E := by
   have hc (b : B) : Convex ℝ {q : E b →L[ℝ] E b →L[ℝ] ℝ |
       (∀ v w, q v w = q w v) ∧ (∀ v, v ≠ 0 → 0 < q v v) ∧
         Bornology.IsVonNBounded ℝ {v | q v v < 1}} :=
@@ -52,17 +60,32 @@ def meanRiemannianMetric (g : ι → ContMDiffRiemannianMetric IB n F E) :
       {q : E b →L[ℝ] E b →L[ℝ] ℝ | (∀ v w, q v w = q w v) ∧
         (∀ v, v ≠ 0 → 0 < q v v) ∧ Bornology.IsVonNBounded ℝ {v | q v v < 1}} :=
     ⟨(g i).symm b, (g i).pos b, (g i).isVonNBounded b⟩
-  have h b := (hc b).centerMass_mem
-    (t := Finset.univ) (w := fun _ : ι ↦ (1 : ℝ)) (z := fun i ↦ (g i).inner b)
-    (by simp) (by simp [Fintype.card_pos]) (fun i _ ↦ hm b i)
-  simp only [Finset.centerMass, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one,
-    one_smul] at h
+  have h (b : B) := Finset.centerMass_eq_of_sum_1 Finset.univ (fun i ↦ (g i).inner b) (hρ₁ b) ▸
+    (hc b).centerMass_mem (fun i _ ↦ hρ₀ i b) (by simp [hρ₁ b]) (fun i _ ↦ hm b i)
   exact
-    { inner := fun b ↦ (Fintype.card ι : ℝ)⁻¹ • ∑ i, (g i).inner b
+    { inner := fun b ↦ ∑ i, ρ i b • (g i).inner b
       symm := fun b ↦ (h b).1
       pos := fun b ↦ (h b).2.1
       isVonNBounded := fun b ↦ (h b).2.2
-      contMDiff := (ContMDiff.sum_section fun i _ ↦ (g i).contMDiff).const_smul_section }
+      contMDiff := ContMDiff.sum_section fun i _ ↦ (hρ i).smul_section (g i).contMDiff }
+
+/-- The weighted mean metric evaluates to the weighted sum of the inner products. -/
+@[simp]
+theorem weightedMeanRiemannianMetric_inner (g : ι → ContMDiffRiemannianMetric IB n F E)
+    (ρ : ι → B → ℝ) (hρ : ∀ i, ContMDiff IB 𝓘(ℝ) n (ρ i)) (hρ₀ : ∀ i b, 0 ≤ ρ i b)
+    (hρ₁ : ∀ b, ∑ i, ρ i b = 1) (b : B) (v w : E b) :
+    (weightedMeanRiemannianMetric g ρ hρ hρ₀ hρ₁).inner b v w =
+      ∑ i, ρ i b * (g i).inner b v w := by
+  simp [weightedMeanRiemannianMetric]
+
+variable [Nonempty ι]
+
+/-- The arithmetic mean of a nonempty finite family of `C^n` Riemannian metrics: the weighted mean
+with every weight equal to the reciprocal of the number of metrics. -/
+def meanRiemannianMetric (g : ι → ContMDiffRiemannianMetric IB n F E) :
+    ContMDiffRiemannianMetric IB n F E :=
+  weightedMeanRiemannianMetric g (fun _ _ ↦ (Fintype.card ι : ℝ)⁻¹) (fun _ ↦ contMDiff_const)
+    (fun _ _ ↦ by positivity) fun _ ↦ by simp [Fintype.card_ne_zero]
 
 /-- The mean metric evaluates to the arithmetic mean of the inner products. -/
 @[simp]
@@ -70,7 +93,7 @@ theorem meanRiemannianMetric_inner (g : ι → ContMDiffRiemannianMetric IB n F 
     (b : B) (v w : E b) :
     (meanRiemannianMetric g).inner b v w =
       (Fintype.card ι : ℝ)⁻¹ * ∑ i, (g i).inner b v w := by
-  simp [meanRiemannianMetric]
+  simp [meanRiemannianMetric, Finset.mul_sum]
 
 /-- Averaging a constant family leaves its metric unchanged. -/
 @[simp]
