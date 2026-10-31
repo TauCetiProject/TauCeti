@@ -71,11 +71,11 @@ theorem val_eq_zero_of_mem_gradeBy {d : S → D} {k : D} {a : NovikovModule R F}
   by_contra fun h => hs (ha s h)
 
 /-- A point mass at a generator is homogeneous of the degree of that generator. -/
-theorem pi_single_mem_gradeBy [DecidableEq S] (d : S → D) (s : S) (r : R) :
-    (⟨Pi.single s r, pi_single_mem s r⟩ : NovikovModule R F) ∈ gradeBy R F d (d s) :=
+theorem single_mem_gradeBy [DecidableEq S] (d : S → D) (s : S) (r : R) :
+    (single s r : NovikovModule R F) ∈ gradeBy R F d (d s) :=
   fun t ht => by
     by_contra h
-    exact ht (Pi.single_eq_of_ne (fun e => h (congrArg d e)) _)
+    exact ht (by rw [single_val]; exact Pi.single_eq_of_ne (fun e => h (congrArg d e)) _)
 
 /-- An affine reversal of generator degrees relabels the same homogeneous pieces. -/
 @[simp]
