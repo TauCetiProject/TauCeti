@@ -459,6 +459,11 @@ noncomputable def intSupportingValue (a : ℤ → WithTop ℝ) (σ : ℝ) : ERea
 theorem intSupportingValue_def (a : ℤ → WithTop ℝ) (σ : ℝ) :
     intSupportingValue a σ = ⨅ n : ℤ, (a n).toEReal - ((σ * n : ℝ) : EReal) := (rfl)
 
+/-- A lower bound on the supporting value is a lower bound on every tilted height. -/
+theorem le_intSupportingValue_iff {r : EReal} {σ : ℝ} :
+    r ≤ intSupportingValue a σ ↔ ∀ n : ℤ, r ≤ (a n).toEReal - ((σ * n : ℝ) : EReal) :=
+  le_iInf_iff
+
 /-- The supporting value lies below each tilted height. -/
 theorem intSupportingValue_le (a : ℤ → WithTop ℝ) (σ : ℝ) (n : ℤ) :
     intSupportingValue a σ ≤ (a n).toEReal - ((σ * n : ℝ) : EReal) :=
@@ -468,7 +473,7 @@ theorem intSupportingValue_le (a : ℤ → WithTop ℝ) (σ : ℝ) (n : ℤ) :
 every height. No admissibility assumption is needed. -/
 theorem coe_le_intSupportingValue_iff {c σ : ℝ} :
     (c : EReal) ≤ intSupportingValue a σ ↔ ∀ n : ℤ, ((c + σ * n : ℝ) : WithTop ℝ) ≤ a n := by
-  refine le_iInf_iff.trans (forall_congr' fun n => ?_)
+  refine le_intSupportingValue_iff.trans (forall_congr' fun n => ?_)
   rw [EReal.le_sub_iff_add_le (.inl (EReal.coe_ne_bot _)) (.inl (EReal.coe_ne_top _)),
     ← EReal.coe_add, ← WithTop.toEReal_coe, WithTop.toEReal_le_toEReal_iff]
 
@@ -477,12 +482,32 @@ theorem intSupportingValue_mono (hab : a ≤ b) (σ : ℝ) :
     intSupportingValue a σ ≤ intSupportingValue b σ :=
   iInf_mono fun n => EReal.sub_le_sub (WithTop.toEReal_le_toEReal_iff.mpr (hab n)) le_rfl
 
+/-- The empty two-sided sequence has supporting value `⊤` at every slope. -/
+@[simp]
+theorem intSupportingValue_top (σ : ℝ) : intSupportingValue (⊤ : ℤ → WithTop ℝ) σ = ⊤ :=
+  iInf_eq_top.mpr fun n => by rw [Pi.top_apply, WithTop.toEReal_top, EReal.top_sub_coe]
+
+/-- A supporting value equals `⊤` exactly when the two-sided sequence is empty. -/
+@[simp]
+theorem intSupportingValue_eq_top_iff {σ : ℝ} : intSupportingValue a σ = ⊤ ↔ a = ⊤ := by
+  refine ⟨fun hs => funext fun n => ?_, by rintro rfl; exact intSupportingValue_top σ⟩
+  have hn := intSupportingValue_le a σ n
+  rwa [hs, EReal.le_sub_iff_add_le (.inl (EReal.coe_ne_bot _)) (.inl (EReal.coe_ne_top _)),
+    EReal.top_add_coe, top_le_iff, WithTop.toEReal_eq_top_iff] at hn
+
 /-- A supporting value is not `⊥` exactly when there is a real affine minorant with the
 specified slope. -/
 theorem intSupportingValue_ne_bot_iff {σ : ℝ} :
     intSupportingValue a σ ≠ ⊥ ↔ ∃ c : ℝ, ∀ n : ℤ, ((c + σ * n : ℝ) : WithTop ℝ) ≤ a n :=
   ⟨fun hs => ⟨_, coe_le_intSupportingValue_iff.mp (EReal.coe_toReal_le hs)⟩,
     fun ⟨c, hc⟩ => ne_bot_of_le_ne_bot (EReal.coe_ne_bot c) (coe_le_intSupportingValue_iff.mpr hc)⟩
+
+/-- The value `⊥` means that no real affine line of this slope lies below the two-sided
+sequence. -/
+theorem intSupportingValue_eq_bot_iff {σ : ℝ} :
+    intSupportingValue a σ = ⊥ ↔ ∀ c : ℝ, ∃ n : ℤ, a n < ((c + σ * n : ℝ) : WithTop ℝ) := by
+  rw [← not_iff_not]
+  simp only [intSupportingValue_ne_bot_iff, not_forall, not_exists, not_lt]
 
 /-- Admissibility means that at least one slope has supporting value above `⊥`. -/
 theorem isIntAdmissible_iff_exists_intSupportingValue_ne_bot :
@@ -530,7 +555,8 @@ theorem intSupportingValue_comp_add_right (a : ℤ → WithTop ℝ) (k : ℤ) (�
 @[simp]
 theorem intSupportingValue_extend (a : ℕ → WithTop ℝ) (σ : ℝ) :
     intSupportingValue (Function.extend ((↑) : ℕ → ℤ) a ⊤) σ = supportingValue a σ := by
-  refine le_antisymm (le_supportingValue_iff.mpr fun m => ?_) (le_iInf fun n => ?_)
+  refine le_antisymm (le_supportingValue_iff.mpr fun m => ?_)
+    (le_intSupportingValue_iff.mpr fun n => ?_)
   · simpa [Nat.cast_injective.extend_apply] using
       intSupportingValue_le (Function.extend ((↑) : ℕ → ℤ) a ⊤) σ m
   · rcases lt_or_ge n 0 with hn | hn
