@@ -21,7 +21,8 @@ over `A ⊗ B`:
   `d (ω ⊗ η) = dω ⊗ η + (-1) ^ |ω| ω ⊗ dη` (`TauCeti.isDGAlgebra_gradedTensorGrading`);
 * the trace is `ω ⊗ η ↦ ∫₁ ω ⊗ ∫₂ η` on forms of bidegree `(p, q)`, and zero in every other
   bidegree (`TauCeti.gradedTensorTrace`);
-* the homomorphism is `a ⊗ b ↦ ρ₁(a) ⊗ ρ₂(b)` (`TauCeti.gradedTensorHomOfMemZero`).
+* the homomorphism is `a ⊗ b ↦ ρ₁(a) ⊗ ρ₂(b)` (`TauCeti.gradedTensorHomOfMemZero`, from
+  `TauCeti.RingTheory.GradedAlgebra.TensorProduct`).
 
 The graded trace property of the tensor trace combines those of the factors with the Koszul sign
 of the product, and closedness follows from the graded Leibniz rule of the tensor differential.
@@ -37,8 +38,6 @@ the product of the second arguments:
 ## Main definitions
 
 * `TauCeti.gradedTensorTrace`: the tensor product of two traces of dimensions `p` and `q`.
-* `TauCeti.gradedTensorHomOfMemZero`: the homomorphism `A ⊗ B → Ω₁ ᵍ⊗ Ω₂` induced by two
-  homomorphisms into degree zero.
 
 ## Main results
 
@@ -99,6 +98,32 @@ theorem gradedTensorTrace_tmul_of_mem_of_ne {i j : ℤ} {a : Ω₁} {b : Ω₂} 
   rcases h with h | h
   · rw [DirectSum.decompose_of_mem_ne 𝒜₁ ha h, map_zero, TensorProduct.zero_tmul]
   · rw [DirectSum.decompose_of_mem_ne 𝒜₂ hb h, map_zero, TensorProduct.tmul_zero]
+
+/-- The tensor trace is additive in the first trace. -/
+@[simp]
+theorem gradedTensorTrace_add_left (τ₁ τ₁' : Ω₁ →ₗ[R] M) (τ₂ : Ω₂ →ₗ[R] N) :
+    gradedTensorTrace 𝒜₁ 𝒜₂ (τ₁ + τ₁') τ₂ p q =
+      gradedTensorTrace 𝒜₁ 𝒜₂ τ₁ τ₂ p q + gradedTensorTrace 𝒜₁ 𝒜₂ τ₁' τ₂ p q := by
+  simp only [gradedTensorTrace, LinearMap.add_comp, TensorProduct.map_add_left]
+
+/-- The tensor trace is additive in the second trace. -/
+@[simp]
+theorem gradedTensorTrace_add_right (τ₁ : Ω₁ →ₗ[R] M) (τ₂ τ₂' : Ω₂ →ₗ[R] N) :
+    gradedTensorTrace 𝒜₁ 𝒜₂ τ₁ (τ₂ + τ₂') p q =
+      gradedTensorTrace 𝒜₁ 𝒜₂ τ₁ τ₂ p q + gradedTensorTrace 𝒜₁ 𝒜₂ τ₁ τ₂' p q := by
+  simp only [gradedTensorTrace, LinearMap.add_comp, TensorProduct.map_add_right]
+
+/-- The tensor trace is homogeneous in the first trace. -/
+@[simp]
+theorem gradedTensorTrace_smul_left (c : R) (τ₁ : Ω₁ →ₗ[R] M) (τ₂ : Ω₂ →ₗ[R] N) :
+    gradedTensorTrace 𝒜₁ 𝒜₂ (c • τ₁) τ₂ p q = c • gradedTensorTrace 𝒜₁ 𝒜₂ τ₁ τ₂ p q := by
+  simp only [gradedTensorTrace, LinearMap.smul_comp, TensorProduct.map_smul_left]
+
+/-- The tensor trace is homogeneous in the second trace. -/
+@[simp]
+theorem gradedTensorTrace_smul_right (c : R) (τ₁ : Ω₁ →ₗ[R] M) (τ₂ : Ω₂ →ₗ[R] N) :
+    gradedTensorTrace 𝒜₁ 𝒜₂ τ₁ (c • τ₂) p q = c • gradedTensorTrace 𝒜₁ 𝒜₂ τ₁ τ₂ p q := by
+  simp only [gradedTensorTrace, LinearMap.smul_comp, TensorProduct.map_smul_right]
 
 variable {d₁ : Ω₁ →ₗ[R] Ω₁} {d₂ : Ω₂ →ₗ[R] Ω₂}
 
@@ -213,55 +238,6 @@ theorem IsClosedGradedTrace.gradedTensor (hd₁ : IsDGAlgebra 𝒜₁ d₁) (hd�
     rw [h, negOnePow_smul_eq_negOnePowCast_smul (R := R)]
 
 end Trace
-
-/-! ### The tensor product of two homomorphisms into degree zero -/
-
-section Hom
-
-variable {A B : Type*} [NonUnitalSemiring A] [Module R A] [SMulCommClass R A A]
-  [IsScalarTower R A A] [NonUnitalSemiring B] [Module R B] [SMulCommClass R B B]
-  [IsScalarTower R B B]
-
-variable (ρ₁ : A →ₙₐ[R] Ω₁) (ρ₂ : B →ₙₐ[R] Ω₂)
-
-/-- The homomorphism `a ⊗ b ↦ ρ₁(a) ⊗ ρ₂(b)` from `A ⊗ B` to the graded tensor product, for two
-homomorphisms of nonunital algebras with values in degree zero, where the Koszul sign is
-trivial. -/
-noncomputable def gradedTensorHomOfMemZero (hρ₁ : ∀ a, ρ₁ a ∈ 𝒜₁ 0) (hρ₂ : ∀ b, ρ₂ b ∈ 𝒜₂ 0) :
-    A ⊗[R] B →ₙₐ[R] 𝒜₁ ᵍ⊗[R] 𝒜₂ where
-  toFun := (GradedTensorProduct.of R 𝒜₁ 𝒜₂).toLinearMap ∘ₗ
-    TensorProduct.map (ρ₁ : A →ₗ[R] Ω₁) (ρ₂ : B →ₗ[R] Ω₂)
-  map_smul' := map_smul _
-  map_zero' := map_zero _
-  map_add' := map_add _
-  map_mul' x y := by
-    induction x using TensorProduct.inductionOn with
-    | add x x' hx hx' => simp only [add_mul, map_add, hx, hx']
-    | tmul a b =>
-      induction y using TensorProduct.inductionOn with
-      | add y y' hy hy' => simp only [mul_add, map_add, hy, hy']
-      | tmul a' b' =>
-        simp only [LinearMap.comp_apply, Algebra.TensorProduct.tmul_mul_tmul,
-          TensorProduct.map_tmul, LinearEquiv.coe_coe, LinearMap.coe_ofClass, map_mul]
-        exact (GradedTensorProduct.tmul_zero_coe_mul_coe_tmul 𝒜₁ 𝒜₂ (ρ₁ a) ⟨ρ₂ b, hρ₂ b⟩
-          ⟨ρ₁ a', hρ₁ a'⟩ (ρ₂ b')).symm
-
-variable {ρ₁ ρ₂} (hρ₁ : ∀ a, ρ₁ a ∈ 𝒜₁ 0) (hρ₂ : ∀ b, ρ₂ b ∈ 𝒜₂ 0)
-
-@[simp]
-theorem gradedTensorHomOfMemZero_tmul (a : A) (b : B) :
-    gradedTensorHomOfMemZero ρ₁ ρ₂ hρ₁ hρ₂ (a ⊗ₜ b) = ρ₁ a ᵍ⊗ₜ[R] ρ₂ b :=
-  (rfl)
-
-/-- The homomorphism `a ⊗ b ↦ ρ₁(a) ⊗ ρ₂(b)` lands in degree zero. -/
-theorem gradedTensorHomOfMemZero_mem (x : A ⊗[R] B) :
-    gradedTensorHomOfMemZero ρ₁ ρ₂ hρ₁ hρ₂ x ∈ gradedTensorGrading 𝒜₁ 𝒜₂ 0 := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => rw [map_add]; exact add_mem hx hy
-  | tmul a b =>
-    simpa using tmul_mem_gradedTensorGrading 𝒜₁ 𝒜₂ (hρ₁ a) (hρ₂ b)
-
-end Hom
 
 /-! ### Tensoring with a cycle of dimension zero -/
 
