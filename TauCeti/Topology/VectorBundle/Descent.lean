@@ -81,14 +81,6 @@ variable (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B G κ)
   simp [Z.coordChange_self _ x (Z.mem_baseSet_at x),
     W.coordChange_self _ x (W.mem_baseSet_at x)]
 
-/-- Mathlib's coordinate expression centred at `x₀` is the expression in the preferred charts
-of `x₀`. -/
-theorem inCoordinates_eq_inChartCoordinates {x₀ x : B} (hZ : x ∈ Z.baseSet (Z.indexAt x₀))
-    (hW : x ∈ W.baseSet (W.indexAt x₀)) (ϕ : F →L[𝕜] G) :
-    ContinuousLinearMap.inCoordinates F Z.Fiber G W.Fiber x₀ x x₀ x ϕ =
-      Z.inChartCoordinates W (Z.indexAt x₀) (W.indexAt x₀) x ϕ :=
-  Z.inCoordinates_eq W ϕ hZ hW
-
 /-- Coordinate expressions of a composite compose through any intermediate chart containing
 the base point. -/
 theorem inChartCoordinates_comp (i : ι) {j : κ} (k : ν) {x : B} (hj : x ∈ W.baseSet j)
@@ -136,7 +128,7 @@ theorem continuous_hom_bundle_iff_forall_continuousOn {f : B → F →L[𝕜] G}
   rw [continuousAt_hom_bundle]
   refine ⟨continuousAt_id, ((h _ _).continuousAt hU).congr ?_⟩
   filter_upwards [hU] with x hx
-  exact (inCoordinates_eq_inChartCoordinates Z W hx.1 hx.2 (f x)).symm
+  exact (Z.inCoordinates_eq W (f x) hx.1 hx.2).symm
 
 end inChartCoordinates
 
