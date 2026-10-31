@@ -139,26 +139,6 @@ theorem zigzagLoopOperation_ofArrow (w d : Fin n → G.Dart) :
 
 /-! ### The cocycle identity -/
 
-/-- Telescoping an alternating sum of products in which one factor `β p` or `α p` is replaced
-by a factor `ε p` or `ε (p + 1)`. -/
-private theorem sum_range_negOnePowCast_telescope (n : ℕ) (α β ε : ℕ → k) :
-    ∑ p ∈ Finset.range n, negOnePowCast k (p : ℤ) * ((∏ i ∈ Finset.range p, α i) *
-        (ε p * β p + α p * ε (p + 1)) * ∏ i ∈ Finset.Ico (p + 1) n, β i) =
-      ε 0 * ∏ i ∈ Finset.range n, β i -
-        negOnePowCast k (n : ℤ) * ((∏ i ∈ Finset.range n, α i) * ε n) := by
-  set u : ℕ → k := fun q ↦ negOnePowCast k (q : ℤ) *
-    ((∏ i ∈ Finset.range q, α i) * ε q * ∏ i ∈ Finset.Ico q n, β i) with hu
-  have hterm : ∀ p ∈ Finset.range n, negOnePowCast k (p : ℤ) * ((∏ i ∈ Finset.range p, α i) *
-      (ε p * β p + α p * ε (p + 1)) * ∏ i ∈ Finset.Ico (p + 1) n, β i) = u p - u (p + 1) := by
-    intro p hp
-    simp only [hu, Finset.prod_eq_prod_Ico_succ_bot (Finset.mem_range.1 hp),
-      Finset.prod_range_succ, Nat.cast_succ, negOnePowCast_add, negOnePowCast_one]
-    ring
-  rw [Finset.sum_congr rfl hterm, Finset.sum_range_sub']
-  simp only [hu, Nat.Ico_zero_eq_range, Finset.prod_range_zero, Finset.Ico_self,
-    Finset.prod_empty, Nat.cast_zero, negOnePowCast_zero]
-  ring
-
 /-- The darts of `w`, extended periodically to all natural numbers. -/
 private def walkNat (w : Fin n → G.Dart) (i : ℕ) : G.Dart :=
   w ⟨i % n, Nat.mod_lt _ (NeZero.pos n)⟩
