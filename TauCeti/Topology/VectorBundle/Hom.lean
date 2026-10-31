@@ -26,6 +26,13 @@ which is zero at noninvertible maps. In the same generality, invertibility of th
 maps is an open condition along a continuous Hom-bundle section, and composition of
 continuous Hom-bundle sections is continuous.
 
+For two vector bundle cores, the fibre instances `VectorBundleCore.isTopologicalAddGroupFiber`
+and `VectorBundleCore.continuousSMulFiber` make Mathlib's Hom bundle between them available.
+A section of it is continuous exactly when it is continuous in every pair of a source chart and
+a target chart, on their common domain, with chart expressions
+`VectorBundleCore.inChartCoordinates`
+(`VectorBundleCore.continuous_hom_bundle_iff_forall_continuousOn`).
+
 The coordinate argument uses `ContinuousLinearMap.inCoordinates_inverse` and parallels
 the smooth inverse argument in `TauCeti.Geometry.Manifold.VectorBundle.Hom`.
 For the classical finite-rank bundle-isomorphism criterion see Hatcher,
@@ -319,3 +326,66 @@ theorem exists_bundleHomeomorph_of_bijective (ϕ : ∀ x, E₁ x →L[𝕜] E₂
 end TauCeti
 
 end
+
+namespace VectorBundleCore
+
+variable {𝕜 B F G ι κ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- The fibres of a vector bundle core are topological additive groups, as is the model fibre.
+This makes the Hom bundle between two cores available. -/
+instance isTopologicalAddGroupFiber (Z : VectorBundleCore 𝕜 B F ι) (x : B) :
+    IsTopologicalAddGroup (Z.Fiber x) :=
+  inferInstanceAs (IsTopologicalAddGroup F)
+
+/-- Scalar multiplication on the fibres of a vector bundle core is continuous. -/
+instance continuousSMulFiber (Z : VectorBundleCore 𝕜 B F ι) (x : B) :
+    ContinuousSMul 𝕜 (Z.Fiber x) :=
+  inferInstanceAs (ContinuousSMul 𝕜 F)
+
+section inChartCoordinates
+
+variable {Z : VectorBundleCore 𝕜 B F ι} {W : VectorBundleCore 𝕜 B G κ}
+
+/-- A section of the Hom bundle between two cores that is continuous on the common domain of
+a source chart and a target chart is continuous in those charts there. -/
+theorem continuousOn_inChartCoordinates {f : B → F →L[𝕜] G} {i : ι} {j : κ}
+    (hf : ContinuousOn (fun x ↦
+      TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (f x))
+      (Z.baseSet i ∩ W.baseSet j)) :
+    ContinuousOn (fun x ↦ Z.inChartCoordinates W i j x (f x)) (Z.baseSet i ∩ W.baseSet j) := by
+  have : MemTrivializationAtlas (Z.localTriv i) := ⟨⟨i, rfl⟩⟩
+  have : MemTrivializationAtlas (W.localTriv j) := ⟨⟨j, rfl⟩⟩
+  -- Read the section in the Hom-bundle trivialization built from the two fixed charts.
+  let e := (Z.localTriv i).continuousLinearMap (RingHom.id 𝕜) (W.localTriv j)
+  have he : ContinuousOn (fun x ↦ (e ⟨x, f x⟩).2) (Z.baseSet i ∩ W.baseSet j) :=
+    (e.continuousOn.comp hf fun _ hx ↦ e.mem_source.2 hx).snd
+  refine he.congr fun x hx ↦ ContinuousLinearMap.ext fun v ↦ ?_
+  simp only [e, Trivialization.continuousLinearMap_apply, localTriv_continuousLinearMapAt _ hx.2,
+    localTriv_symmL _ hx.1, inChartCoordinates_apply]
+  -- The remaining composite is stated between the core fibres, which are `F` and `G`.
+  rfl
+
+/-- A family of fibre maps is a continuous section of the Hom bundle between two cores exactly
+when it is continuous in every pair of charts. -/
+theorem continuous_hom_bundle_iff_forall_continuousOn {f : B → F →L[𝕜] G} :
+    (Continuous fun x ↦
+      TotalSpace.mk' (F →L[𝕜] G) (E := fun y ↦ Z.Fiber y →L[𝕜] W.Fiber y) x (f x)) ↔
+    ∀ i j, ContinuousOn (fun x ↦ Z.inChartCoordinates W i j x (f x))
+      (Z.baseSet i ∩ W.baseSet j) := by
+  refine ⟨fun hf _ _ ↦ continuousOn_inChartCoordinates hf.continuousOn,
+    fun h ↦ continuous_iff_continuousAt.2 fun x₀ ↦ ?_⟩
+  have hx₀ : x₀ ∈ Z.baseSet (Z.indexAt x₀) ∩ W.baseSet (W.indexAt x₀) :=
+    ⟨Z.mem_baseSet_at x₀, W.mem_baseSet_at x₀⟩
+  have hU := ((Z.isOpen_baseSet _).inter (W.isOpen_baseSet _)).mem_nhds hx₀
+  rw [continuousAt_hom_bundle]
+  refine ⟨continuousAt_id, ((h _ _).continuousAt hU).congr ?_⟩
+  filter_upwards [hU] with x hx
+  ext v
+  rw [Z.inCoordinates_eq W (f x) hx.1 hx.2, inChartCoordinates_apply]
+  rfl
+
+end inChartCoordinates
+
+end VectorBundleCore
