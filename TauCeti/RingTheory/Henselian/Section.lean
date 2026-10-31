@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Henselian
 import Mathlib.RingTheory.Smooth.Flat
 import Mathlib.RingTheory.Unramified.LocalStructure
 import TauCeti.RingTheory.Henselization.Section
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.TensorProduct.LiftEquiv
 import TauCeti.RingTheory.Unramified.Diagonal
 import TauCeti.RingTheory.Unramified.Section.Idempotent
@@ -118,14 +119,16 @@ theorem comp_bijective :
       exact hker _ (by simp [hs])
   -- `C` is an étale neighbourhood of `(S, J)`, so it has a section `τ`.
   obtain ⟨τ⟩ := Henselization.nonempty_algHom_of_bijective_reducedMap J hbij
-  -- `τ` maps `J C` into `J`, and `a` is congruent modulo `J C` to any `s ∈ S` lifting `ψ a`.
-  have hτ : J.map (algebraMap S C) ≤ J.comap τ :=
-    Ideal.map_le_iff_le_comap.mpr fun j hj ↦ by simpa using hj
-  refine ⟨τ.comp (IsScalarTower.toAlgHom S A C), AlgHom.ext fun a ↦ ?_⟩
-  obtain ⟨s, hs⟩ := Ideal.Quotient.mk_surjective (ψ a)
-  have hsa := hτ (hker (algebraMap S C s - algebraMap A C a) (by simp [hψC, hs]))
-  rw [Ideal.mem_comap, map_sub, AlgHom.commutes, Algebra.algebraMap_self_apply] at hsa
-  simpa [← hs] using (Ideal.Quotient.eq.mpr hsa).symm
+  -- Maps out of `C` to `S ⧸ J` are unique, so `τ` reduces to `ψC` modulo `J`.
+  have hsurj : Function.Surjective (algebraMap (S ⧸ J) (C ⧸ J.map (algebraMap S C))) :=
+    fun y ↦ by
+      obtain ⟨x, rfl⟩ := hbij.2 y
+      obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective x
+      exact ⟨Ideal.Quotient.mk J s, by simp⟩
+  have hτ : (Ideal.Quotient.mkₐ S J).comp τ = ψC :=
+    Ideal.algHom_ext_of_surjective_algebraMap_quotient J C hsurj (by simp) _ _
+  exact ⟨τ.comp (IsScalarTower.toAlgHom S A C), AlgHom.ext fun a ↦ by
+    simpa [hψC] using AlgHom.congr_fun hτ (algebraMap A C a)⟩
 
 end Absolute
 
