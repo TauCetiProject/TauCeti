@@ -16,11 +16,10 @@ import TauCeti.RingTheory.PowerSeries.Substitution
 Give each part of size `k` of a noncrossing partition the weight `c_k`, the `k`-th coefficient of
 a formal power series `C(z) = 1 + ∑_{k ≥ 1} c_k z^k`, and let
 `m_n = ∑_{π ∈ NC(n)} ∏_{B ∈ π} c_{|B|}` be the total weight of the noncrossing partitions of `n`
-ordered positions. Then the series
-`M(z) = ∑_{n ≥ 0} m_n z^n` satisfies the functional equation `M(z) = C(z M(z))`, which determines
-it. In free probability `c_k` is the `k`-th free cumulant of a variable and `m_n` its `n`-th
-moment, so this is the moment–cumulant relation between the moment series and the cumulant series
-`C(z) = 1 + z R(z)`.
+ordered positions. Then any series `M` satisfying the functional equation `M(z) = C(z M(z))` has
+`n`-th coefficient `m_n`, that is, `M(z) = ∑_{n ≥ 0} m_n z^n`. In free probability `c_k` is the
+`k`-th free cumulant of a variable and `m_n` its `n`-th moment, so this is the moment–cumulant
+relation between the moment series and the cumulant series `C(z) = 1 + z R(z)`.
 
 The proof is coefficientwise, by the recurrence of noncrossing partitions by the part containing
 the first position (`TauCeti.NoncrossingPartition.sum_mul_prod_eq_sum_mul_sum`). If that part ends
