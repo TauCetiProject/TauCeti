@@ -43,8 +43,7 @@ noncomputable def isColimitCofanSingleOfDEqZero (K : HomologicalComplex C c)
       simp
     · exact (isZero_single_obj_X c i (K.X i) p h).eq_of_src _ _
   · intro t m hm
-    have := hm p
-    simp at this
-    simp [← this]
+    rw [← cancel_epi (singleObjXSelf c p (K.X p)).hom]
+    simpa using hm p
 
 end HomologicalComplex

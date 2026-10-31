@@ -260,6 +260,9 @@ lemma isKFlat_stage (E : C → C) (p : ∀ X, E X ⟶ X)
         (mappingCone.triangleRotateShortComplexSplitting φ i).shortExact
     have (i : ℤ) : IsSplitMono ((mappingCone.triangleRotateShortComplex φ).f.f i) :=
       (mappingCone.triangleRotateShortComplexSplitting φ i).isSplitMono_f
+    -- the third term is the shifted cell complex `(graded _ fun n ↦ E _)⟦1⟧`, whose degree `i`
+    -- term is definitionally `E _` in degree `i + 1` (`shiftFunctor_obj_X'` holds by `rfl`), so
+    -- the flatness instances of the cells apply to it as they stand
     have : ∀ i, PreservesFiniteLimits
         (tensorLeft ((mappingCone.triangleRotateShortComplex φ).X₃.X i)) := fun i ↦
       inferInstanceAs (PreservesFiniteLimits (tensorLeft (E _)))
