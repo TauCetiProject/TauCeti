@@ -20,7 +20,8 @@ the general linear Lie algebra. If every irreducible submodule has the same high
 every pair of irreducible submodules is equivalent. Under complete reducibility, the module is the
 direct sum of copies of the named irreducible with that weight when the module is nonzero. For the
 zero module, the result is the empty direct sum and makes no dominance or irreducibility claim
-about the named carrier.
+about the named carrier. Under complete reducibility a highest weight vector also generates an
+irreducible submodule, which is a copy of the named irreducible of its weight.
 
 The foundational `LieModule.IsIsotypic` assertion is pairwise. The counted direct-sum theorem adds
 complete reducibility explicitly, since it is not automatic for representations of a reductive Lie
@@ -43,6 +44,10 @@ algebra unless its centre acts semisimply.
 * `isIsotypicOfType_glIrreducible_of_forall_isGlHighestWeightVector`: the fixed-carrier criterion.
 * `nonempty_lieModuleEquiv_directSum_glIrreducible_of_forall_isGlHighestWeightVector`: the counted
   direct-sum criterion for a completely reducible module.
+* `isIrreducible_lieSpan_of_isGlHighestWeightVector`: in a completely reducible module a highest
+  weight vector generates an irreducible submodule.
+* `exists_lieModuleHom_glIrreducible_apply_eq`: in a completely reducible module every highest
+  weight vector of dominant weight `ν` is the image of the generator of `glIrreducible N ν`.
 
 ## References
 
@@ -103,6 +108,45 @@ theorem isIsotypic_of_forall_irreducible_exists_isGlHighestWeightVector
   intro P _
   obtain ⟨v, hv⟩ := h P
   exact isIsotypicOfType_of_forall_irreducible_exists_isGlHighestWeightVector hv h
+
+/-- **In a completely reducible `gl_n`-module a highest weight vector generates an irreducible
+submodule.** If a proper nonzero submodule `P` of the module `v` generates had a complement `Q`,
+the `P`-component of `v` would be a vector of the weight of `v` in that module, hence a multiple of
+`v`; either `v ∈ P`, or `v ∈ Q` and `P ≤ P ⊓ Q = ⊥`. -/
+theorem isIrreducible_lieSpan_of_isGlHighestWeightVector
+    [ComplementedLattice (LieSubmodule K (Matrix n n K) M)] {v : M}
+    (hv : IsGlHighestWeightVector mu v) :
+    _root_.LieModule.IsIrreducible K (Matrix n n K)
+      (LieSubmodule.lieSpan K (Matrix n n K) {v}) := by
+  have hvmem : v ∈ LieSubmodule.lieSpan K (Matrix n n K) {v} := LieSubmodule.subset_lieSpan rfl
+  rw [isIrreducible_iff_isAtom]
+  refine ⟨fun h => hv.ne_zero (by simpa [h] using hvmem), fun P hP => ?_⟩
+  obtain ⟨Q, hPQ⟩ := exists_isCompl P
+  have hinf (m : M) (hmP : m ∈ P) (hmQ : m ∈ Q) : m = 0 := by
+    have hm : m ∈ P ⊓ Q := (LieSubmodule.mem_inf _ _ m).mpr ⟨hmP, hmQ⟩
+    rwa [hPQ.inf_eq_bot, LieSubmodule.mem_bot] at hm
+  obtain ⟨p, hp, q, hq, hpq⟩ :=
+    (LieSubmodule.mem_sup _ _ v).mp (hPQ.sup_eq_top ▸ LieSubmodule.mem_top v)
+  have hpw (i : n) : ⁅(single i i (1 : K) : Matrix n n K), p⁆ = mu i • p := by
+    have hsum := hv.lie_single_self_eq_smul i
+    rw [← hpq, lie_add, smul_add] at hsum
+    have hdiff : ⁅(single i i (1 : K) : Matrix n n K), p⁆ - mu i • p =
+        mu i • q - ⁅(single i i (1 : K) : Matrix n n K), q⁆ := by
+      rw [sub_eq_sub_iff_add_eq_add, hsum, add_comm]
+    exact sub_eq_zero.mp (hinf _ (sub_mem (P.lie_mem hp) (P.smul_mem _ hp))
+      (hdiff ▸ sub_mem (Q.smul_mem _ hq) (Q.lie_mem hq)))
+  obtain ⟨c, hc⟩ := exists_eq_smul_of_isGlHighestWeightVector_of_mem_lieSpan hv (hP.le hp) hpw
+  by_cases hc0 : c = 0
+  · have hvQ : LieSubmodule.lieSpan K (Matrix n n K) {v} ≤ Q := by
+      rw [LieSubmodule.lieSpan_le, Set.singleton_subset_iff, ← hpq, hc, hc0, zero_smul, zero_add]
+      exact hq
+    exact eq_bot_iff.mpr fun m hm => (hinf m hm (hvQ (hP.le hm))) ▸ LieSubmodule.zero_mem _
+  · have hvP : LieSubmodule.lieSpan K (Matrix n n K) {v} ≤ P := by
+      rw [LieSubmodule.lieSpan_le, Set.singleton_subset_iff]
+      have hvp : v = c⁻¹ • p := by rw [hc, smul_smul, inv_mul_cancel₀ hc0, one_smul]
+      rw [hvp]
+      exact P.smul_mem _ hp
+    exact absurd (le_antisymm hP.le hvP) hP.ne
 
 section Fin
 
@@ -222,6 +266,25 @@ theorem nonempty_lieModuleEquiv_directSum_glIrreducible_of_forall_isGlHighestWei
   let _ := isIrreducible_glIrreducible (K := K) hmu
   exact _root_.LieModule.nonempty_lieModuleEquiv_of_isIsotypicOfType _
     (isIsotypicOfType_glIrreducible_of_forall_isGlHighestWeightVector h)
+
+/-- **In a completely reducible module every highest weight vector of dominant weight `ν` is
+the image of the generator of `L(ν)`** under a morphism of `gl_N`-modules: the vector generates an
+irreducible submodule (`TauCeti.isIrreducible_lieSpan_of_isGlHighestWeightVector`), which is `L(ν)`
+with the vector matching the generator. -/
+theorem exists_lieModuleHom_glIrreducible_apply_eq
+    [ComplementedLattice (LieSubmodule K (Matrix (Fin N) (Fin N) K) M)] {nu : Fin N → K}
+    (hnu : IsGlDominantIntegral nu) {v : M} (hv : IsGlHighestWeightVector nu v) :
+    ∃ φ : glIrreducible N nu →ₗ⁅K,Matrix (Fin N) (Fin N) K⁆ M,
+      φ (glIrreducibleGenerator N nu) = v := by
+  let S := LieSubmodule.lieSpan K (Matrix (Fin N) (Fin N) K) {v}
+  let _ := isIrreducible_lieSpan_of_isGlHighestWeightVector hv
+  let _ := isIrreducible_glIrreducible (K := K) hnu
+  let v' : S := ⟨v, LieSubmodule.subset_lieSpan rfl⟩
+  have hv' : IsGlHighestWeightVector nu v' := isGlHighestWeightVector_coe_iff.mp hv
+  let e := lieModuleEquivOfIsGlHighestWeightVector
+    (isGlHighestWeightVector_glIrreducibleGenerator hnu) hv'
+  refine ⟨S.incl.comp (e : glIrreducible N nu →ₗ⁅K,Matrix (Fin N) (Fin N) K⁆ S), ?_⟩
+  simp [e, v']
 
 end Fin
 

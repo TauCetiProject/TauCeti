@@ -289,6 +289,17 @@ theorem exists_isGlHighestWeightVector_glIrreducible (hmu : IsGlDominantIntegral
     ∃ v : glIrreducible N mu, IsGlHighestWeightVector mu v :=
   ⟨_, isGlHighestWeightVector_glIrreducibleGenerator hmu⟩
 
+/-- **Every highest weight vector of `L(mu)` has weight `mu`**: the carrier is irreducible, so a
+highest weight vector and the generator each generate the whole module. -/
+theorem weight_eq_of_isGlHighestWeightVector_glIrreducible (hmu : IsGlDominantIntegral mu)
+    {lam : Fin N → K} {w : glIrreducible N mu} (hw : IsGlHighestWeightVector lam w) : lam = mu := by
+  let _ := isIrreducible_glIrreducible (K := K) hmu
+  refine (hw.weight_eq_of_mem_lieSpan (isGlHighestWeightVector_glIrreducibleGenerator hmu) ?_ ?_)
+  · rw [lieSpan_singleton_eq_top_of_ne_zero hw.ne_zero]
+    exact LieSubmodule.mem_top _
+  · rw [lieSpan_glIrreducibleGenerator_eq_top hmu]
+    exact LieSubmodule.mem_top _
+
 variable {M : Type*} [AddCommGroup M] [Module K M]
   [LieRingModule (Matrix (Fin N) (Fin N) K) M] [LieModule K (Matrix (Fin N) (Fin N) K) M]
 
@@ -304,6 +315,20 @@ theorem nonempty_lieModuleEquiv_glIrreducible
   have := isIrreducible_glIrreducible (K := K) hmu
   nonempty_lieModuleEquiv_of_isGlHighestWeightVector hv
     (isGlHighestWeightVector_glIrreducibleGenerator hmu)
+
+omit [LieModule K (Matrix (Fin N) (Fin N) K) M] in
+/-- **A morphism out of `L(mu)` is determined by the image of the generator**, which generates the
+carrier. -/
+theorem lieModuleHom_ext_glIrreducible (hmu : IsGlDominantIntegral mu)
+    {φ ψ : glIrreducible N mu →ₗ⁅K,Matrix (Fin N) (Fin N) K⁆ M}
+    (h : φ (glIrreducibleGenerator N mu) = ψ (glIrreducibleGenerator N mu)) : φ = ψ := by
+  have hle : LieSubmodule.lieSpan K (Matrix (Fin N) (Fin N) K) {glIrreducibleGenerator N mu} ≤
+      (φ - ψ).ker :=
+    LieSubmodule.lieSpan_le.mpr (Set.singleton_subset_iff.mpr
+      (LieModuleHom.mem_ker.mpr (by rw [_root_.sub_apply, h, sub_self])))
+  rw [lieSpan_glIrreducibleGenerator_eq_top hmu, top_le_iff] at hle
+  ext m
+  exact sub_eq_zero.mp (LieModuleHom.mem_ker.mp (hle ▸ LieSubmodule.mem_top m))
 
 /-- **`L(mu)` has the smallest dimension of the modules of highest weight `mu`**: any
 finite-dimensional `gl N K`-module carrying a highest weight vector of weight `mu` has at least the
