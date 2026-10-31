@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.FormalGroup.Basic
-public import TauCeti.RingTheory.FormalGroup.Hom
+public import TauCeti.RingTheory.FormalGroup.Hom.Basic
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 import TauCeti.Algebra.Ring.GeomSum
 import TauCeti.RingTheory.FormalGroup.AddInv
