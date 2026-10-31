@@ -65,6 +65,12 @@ constructions on Tate affinoids, such as completed tensor products, apply to non
   `Spa(A, A⁺)` are the points of its analytic locus `Spa(A, A⁺)ᵃ`.
 * `TauCeti.PreAdicSpace.preimage_analyticPoints_subset`: a point over an analytic point is
   analytic.
+* `TauCeti.PreAdicSpace.preimage_analyticPoints_of_isOpenImmersion`: open immersions identify
+  analytic points.
+* `TauCeti.PreAdicSpace.mapsTo_analyticPoints_comp_iff_of_isOpenImmersion`: composing with an
+  open immersion neither creates nor destroys the preservation of analytic points.
+* `TauCeti.ValuationSpectrum.analyticPoints_presentationLimitPreAdicSpace_of_isTateRing`: every
+  point of the adic spectrum of a Tate ring is analytic.
 * `TauCeti.PreAdicSpace.analyticPoints_analyticLocus`: every point of `X_a` is analytic.
 * `TauCeti.PreAdicSpace.isIso_analyticLocus_ι_iff`: `X_a ⟶ X` is an isomorphism exactly when
   every point of `X` is analytic.
@@ -149,6 +155,38 @@ theorem preimage_analyticPoints_eq_iff_mapsTo (f : Y ⟶ X) :
       Set.MapsTo f.base Y.analyticPoints X.analyticPoints :=
   ⟨fun h ↦ Set.mapsTo_iff_subset_preimage.mpr h.ge,
     fun h ↦ (preimage_analyticPoints_subset f).antisymm (Set.mapsTo_iff_subset_preimage.mp h)⟩
+
+/-- **Open immersions send analytic points to analytic points**: an open immersion `f : Y ⟶ X`
+identifies `Y` with the open subspace of `X` on its image, whose analytic points are the points
+that are analytic in `X`. -/
+theorem mapsTo_analyticPoints_of_isOpenImmersion (f : Y ⟶ X) [IsOpenImmersion f] :
+    Set.MapsTo f.base Y.analyticPoints X.analyticPoints := by
+  intro y hy
+  let e := IsOpenImmersion.isoRestrict f
+  -- `e⁻¹` pulls the analytic points of `Y` back into those of `X|_{f(Y)}`
+  have hy' : e.hom.base y ∈ (X.restrict f.isOpenEmbedding).analyticPoints := by
+    refine preimage_analyticPoints_subset e.inv ?_
+    rwa [Set.mem_preimage, ← ConcreteCategory.comp_apply, ← comp_base, e.hom_inv_id]
+  rw [analyticPoints_restrict] at hy'
+  -- `e` followed by the inclusion of `X|_{f(Y)}` is `f`, and that inclusion is `f` on points
+  rwa [← IsOpenImmersion.isoRestrict_hom_ofRestrict f, comp_base, ConcreteCategory.comp_apply,
+    ofRestrict_base]
+
+/-- **Open immersions identify analytic points**: a point of the source of an open immersion is
+analytic exactly when its image is. -/
+@[simp]
+theorem preimage_analyticPoints_of_isOpenImmersion (f : Y ⟶ X) [IsOpenImmersion f] :
+    f.base ⁻¹' X.analyticPoints = Y.analyticPoints :=
+  (preimage_analyticPoints_eq_iff_mapsTo f).mpr (mapsTo_analyticPoints_of_isOpenImmersion f)
+
+/-- A morphism followed by an open immersion sends analytic points to analytic points exactly when
+the morphism itself does. -/
+theorem mapsTo_analyticPoints_comp_iff_of_isOpenImmersion {Z : PreAdicSpace.{u}} (f : Y ⟶ X)
+    (g : X ⟶ Z) [IsOpenImmersion g] :
+    Set.MapsTo (f ≫ g).base Y.analyticPoints Z.analyticPoints ↔
+      Set.MapsTo f.base Y.analyticPoints X.analyticPoints := by
+  rw [← preimage_analyticPoints_of_isOpenImmersion g]
+  exact ⟨fun h _ hy ↦ h hy, fun h _ hy ↦ h hy⟩
 
 end Morphisms
 
@@ -321,6 +359,13 @@ theorem analyticPoints_presentationLimitPreAdicSpace :
       (isPseudoUniformizer_toCompletionLoc P _ _ _ p.hasDenominatorPower
         (P.isTopologicallyNilpotent_of_mem_idealOfDefinition
           (hG ▸ Ideal.subset_span (Finset.mem_coe.mpr hg)))).map ψ.2⟩
+
+/-- **Every point of the adic spectrum of a Tate ring is analytic**: over a Tate ring the
+analytic locus is the whole adic spectrum (Wedhorn, Remark 7.40(3)). -/
+theorem analyticPoints_presentationLimitPreAdicSpace_of_isTateRing [IsTateRing A] :
+    (presentationLimitPreAdicSpace P Aplus hAplus hP).analyticPoints = Set.univ := by
+  rw [analyticPoints_presentationLimitPreAdicSpace, spaAnalytic_eq_spa_of_isTateRing]
+  exact Set.eq_univ_of_forall fun x ↦ x.2
 
 end ValuationSpectrum
 
