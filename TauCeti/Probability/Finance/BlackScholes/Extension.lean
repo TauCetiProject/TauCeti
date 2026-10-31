@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Finance.BlackScholes.Basic
-import TauCeti.Probability.Distributions.Gaussian.Cdf
 import TauCeti.Probability.Finance.BlackScholes.Limits
 
 /-!
@@ -21,8 +20,8 @@ values
 `C(s, τ) = (s - K e^{-rτ})⁺`,  `P(s, τ) = (K e^{-rτ} - s)⁺`  off `{s > 0, τ > 0}`.
 
 On the boundary of the pricing domain these are the values the Black–Scholes problem prescribes:
-the payoffs `(s - K)⁺` and `(K - s)⁺` at maturity `τ = 0`, and `C(0, τ) = 0`,
-`P(0, τ) = K e^{-rτ}` at zero spot.
+the payoffs `(s - K)⁺` and `(K - s)⁺` at maturity `τ = 0`, and, for a strike `K ≥ 0`,
+`C(0, τ) = 0` and `P(0, τ) = K e^{-rτ}` at zero spot.
 
 For `σ > 0` and `K > 0` the extended prices are jointly continuous in `(s, τ)` on the whole plane,
 in particular on the closed domain `s ≥ 0`, `τ ≥ 0`; they satisfy put–call parity everywhere and
@@ -31,7 +30,8 @@ agree with the closed forms, so they solve the Black–Scholes equation there. T
 continuity, growth and terminal conditions under which a solution of the Black–Scholes equation
 is compared with the closed-form price.
 
-Continuity at an interior point is continuity of the closed forms. At a maturity point
+Continuity at an interior point is continuity of the closed forms
+(`TauCeti.BlackScholes.continuousAt_callPrice`). At a maturity point
 `(s₀, 0)` with `s₀ > 0` it combines the joint terminal limit
 `TauCeti.BlackScholes.tendsto_callPrice_terminal` from the side `τ > 0` with continuity of the
 intrinsic value from the side `τ ≤ 0`. At zero spot it is the squeeze `0 ≤ C ≤ s⁺`.
@@ -47,8 +47,6 @@ intrinsic value from the side `τ ≤ 0`. At zero spot it is the squeeze `0 ≤ 
 * `TauCeti.BlackScholes.callValue_nonneg`, `TauCeti.BlackScholes.callValue_le`,
   `TauCeti.BlackScholes.putValue_nonneg`, `TauCeti.BlackScholes.putValue_le`: the no-arbitrage
   bounds `0 ≤ C ≤ s` and `0 ≤ P ≤ K e^{-rτ}`.
-* `TauCeti.BlackScholes.continuousAt_callPrice`, `TauCeti.BlackScholes.continuousAt_putPrice`:
-  joint continuity of the closed forms in the interior.
 * `TauCeti.BlackScholes.continuous_callValue`, `TauCeti.BlackScholes.continuous_putValue`:
   joint continuity of the extended prices in the spot and the remaining maturity.
 * `TauCeti.BlackScholes.callValue_pde`, `TauCeti.BlackScholes.putValue_pde`: the Black–Scholes
@@ -75,15 +73,28 @@ variable {s r σ K τ : ℝ}
 
 /-- The Black–Scholes call price on the whole `(s, τ)`-plane: the closed form `callPrice` for spot
 `s > 0` and remaining maturity `τ > 0`, and the discounted intrinsic value `(s - K e^{-rτ})⁺`
-elsewhere. It is the payoff `(s - K)⁺` at maturity and `0` at zero spot. -/
+elsewhere. It is the payoff `(s - K)⁺` at maturity and, for a strike `K ≥ 0`, `0` at zero spot. -/
 def callValue (s r σ K τ : ℝ) : ℝ :=
   if 0 < s ∧ 0 < τ then callPrice s r σ K τ else (s - K * exp (-r * τ))⁺
 
 /-- The Black–Scholes put price on the whole `(s, τ)`-plane: the closed form `putPrice` for spot
 `s > 0` and remaining maturity `τ > 0`, and the discounted intrinsic value `(K e^{-rτ} - s)⁺`
-elsewhere. It is the payoff `(K - s)⁺` at maturity and `K e^{-rτ}` at zero spot. -/
+elsewhere. It is the payoff `(K - s)⁺` at maturity and, for a strike `K ≥ 0`, `K e^{-rτ}` at zero
+spot. -/
 def putValue (s r σ K τ : ℝ) : ℝ :=
   if 0 < s ∧ 0 < τ then putPrice s r σ K τ else (K * exp (-r * τ) - s)⁺
+
+/-- Unfolding lemma for `callValue`. -/
+theorem callValue_def (s r σ K τ : ℝ) :
+    callValue s r σ K τ =
+      if 0 < s ∧ 0 < τ then callPrice s r σ K τ else (s - K * exp (-r * τ))⁺ :=
+  (rfl)
+
+/-- Unfolding lemma for `putValue`. -/
+theorem putValue_def (s r σ K τ : ℝ) :
+    putValue s r σ K τ =
+      if 0 < s ∧ 0 < τ then putPrice s r σ K τ else (K * exp (-r * τ) - s)⁺ :=
+  (rfl)
 
 /-- In the interior of the pricing domain the extended call is the closed-form price. -/
 theorem callValue_of_pos (hs : 0 < s) (hτ : 0 < τ) : callValue s r σ K τ = callPrice s r σ K τ :=
@@ -115,12 +126,14 @@ theorem putValue_maturity_zero (s r σ K : ℝ) : putValue s r σ K 0 = (K - s)�
 
 /-- **Call boundary at zero spot.** For a nonnegative strike the extended call vanishes at zero
 spot. -/
+@[simp]
 theorem callValue_spot_zero (hK : 0 ≤ K) (r σ τ : ℝ) : callValue 0 r σ K τ = 0 := by
   rw [callValue_of_nonpos (Or.inl le_rfl), posPart_eq_zero, zero_sub, neg_nonpos]
   positivity
 
 /-- **Put boundary at zero spot.** For a nonnegative strike the extended put at zero spot is the
 discounted strike `K e^{-rτ}`. -/
+@[simp]
 theorem putValue_spot_zero (hK : 0 ≤ K) (r σ τ : ℝ) : putValue 0 r σ K τ = K * exp (-r * τ) := by
   rw [putValue_of_nonpos (Or.inl le_rfl), sub_zero, posPart_eq_self]
   positivity
@@ -132,8 +145,7 @@ theorem callValue_sub_putValue (s r σ K τ : ℝ) :
   · rw [callValue_of_pos h.1 h.2, putValue_of_pos h.1 h.2, callPrice_sub_putPrice]
   · have h' : s ≤ 0 ∨ τ ≤ 0 := by contrapose! h; exact h
     rw [callValue_of_nonpos h', putValue_of_nonpos h',
-      show K * exp (-r * τ) - s = -(s - K * exp (-r * τ)) by ring, posPart_neg,
-      posPart_sub_negPart]
+      ← neg_sub s (K * exp (-r * τ)), posPart_neg, posPart_sub_negPart]
 
 /-- Put–call parity, solved for the extended put. -/
 theorem putValue_eq_callValue (s r σ K τ : ℝ) :
@@ -184,33 +196,6 @@ private theorem callValue_le_posPart (hK : 0 ≤ K) : callValue s r σ K τ ≤ 
     exact callValue_le h.1.le hK
   · rw [callValue_of_nonpos (by contrapose! h; exact h)]
     exact posPart_mono (sub_le_self _ (by positivity))
-
-/-- The closed-form call price is jointly continuous in the spot and the remaining maturity at
-every point of the open pricing domain `s > 0`, `τ > 0`. -/
-theorem continuousAt_callPrice (hs : 0 < s) (hσ : σ ≠ 0) (hK : 0 < K) (hτ : 0 < τ) :
-    ContinuousAt (fun p : ℝ × ℝ => callPrice p.1 r σ K p.2) (s, τ) := by
-  have hΦ : Continuous (cdf (gaussianReal 0 1)) := continuous_iff_continuousAt.2 fun x =>
-    (TauCeti.Probability.hasDerivAt_cdf_gaussianReal 0 one_ne_zero x).continuousAt
-  have hd : ContinuousAt (fun p : ℝ × ℝ => dPlus p.1 r σ K p.2) (s, τ) := by
-    simp only [dPlus_def]
-    have hlog : ContinuousAt (fun p : ℝ × ℝ => log (p.1 / K)) (s, τ) :=
-      (continuousAt_fst.div_const K).log (div_pos hs hK).ne'
-    exact (hlog.add (continuousAt_const.mul continuousAt_snd)).div
-      (continuousAt_const.mul continuousAt_snd.sqrt) (mul_ne_zero hσ (sqrt_pos.2 hτ).ne')
-  have hd' : ContinuousAt (fun p : ℝ × ℝ => dMinus p.1 r σ K p.2) (s, τ) := by
-    simp only [dMinus_def]
-    exact hd.sub (continuousAt_const.mul continuousAt_snd.sqrt)
-  simp only [callPrice_def]
-  exact (continuousAt_fst.mul (hΦ.continuousAt.comp hd)).sub
-    ((continuousAt_const.mul (continuousAt_const.mul continuousAt_snd).rexp).mul
-      (hΦ.continuousAt.comp hd'))
-
-/-- The closed-form put price is jointly continuous in the spot and the remaining maturity at
-every point of the open pricing domain `s > 0`, `τ > 0`. -/
-theorem continuousAt_putPrice (hs : 0 < s) (hσ : σ ≠ 0) (hK : 0 < K) (hτ : 0 < τ) :
-    ContinuousAt (fun p : ℝ × ℝ => putPrice p.1 r σ K p.2) (s, τ) := by
-  simp only [putPrice_eq_callPrice]
-  exact ((continuousAt_callPrice hs hσ hK hτ).sub continuousAt_fst).add (by fun_prop)
 
 /-- The discounted intrinsic value `(s - K e^{-rτ})⁺` is jointly continuous. -/
 private theorem continuous_callIntrinsic (r K : ℝ) :

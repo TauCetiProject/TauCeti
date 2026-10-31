@@ -56,6 +56,8 @@ exponential tilting `N(0, 1) ↦ N(σ √τ, 1)`
   `TauCeti.BlackScholes.putPrice_nonneg`, `TauCeti.BlackScholes.putPrice_le_mul_cdf`,
   `TauCeti.BlackScholes.putPrice_le` — the no-arbitrage bounds `0 ≤ C ≤ s` and
   `0 ≤ P ≤ K e^{-rτ} Φ(-d₋) ≤ K e^{-rτ}`.
+* `TauCeti.BlackScholes.continuousAt_callPrice`, `TauCeti.BlackScholes.continuousAt_putPrice` —
+  joint continuity of the closed forms in the spot and the remaining maturity for `s, τ > 0`.
 
 ## References
 
@@ -361,5 +363,34 @@ theorem putPrice_le_mul_cdf (hs : 0 ≤ s) :
 theorem putPrice_le (hs : 0 ≤ s) (hK : 0 ≤ K) : putPrice s r σ K τ ≤ K * exp (-r * τ) :=
   (putPrice_le_mul_cdf hs).trans (mul_le_of_le_one_right (mul_nonneg hK (exp_pos _).le)
     (cdf_le_one _ _))
+
+/-! ### Continuity -/
+
+/-- The closed-form call price is jointly continuous in the spot and the remaining maturity at
+every point of the open pricing domain `s > 0`, `τ > 0`. -/
+theorem continuousAt_callPrice (hs : 0 < s) (hσ : σ ≠ 0) (hK : 0 < K) (hτ : 0 < τ) :
+    ContinuousAt (fun p : ℝ × ℝ => callPrice p.1 r σ K p.2) (s, τ) := by
+  have hΦ : Continuous (cdf (gaussianReal 0 1)) := continuous_iff_continuousAt.2 fun x =>
+    (TauCeti.Probability.hasDerivAt_cdf_gaussianReal 0 one_ne_zero x).continuousAt
+  have hd : ContinuousAt (fun p : ℝ × ℝ => dPlus p.1 r σ K p.2) (s, τ) := by
+    simp only [dPlus_def]
+    have hlog : ContinuousAt (fun p : ℝ × ℝ => log (p.1 / K)) (s, τ) :=
+      (continuousAt_fst.div_const K).log (div_pos hs hK).ne'
+    exact (hlog.add (continuousAt_const.mul continuousAt_snd)).div
+      (continuousAt_const.mul continuousAt_snd.sqrt) (mul_ne_zero hσ (sqrt_pos.2 hτ).ne')
+  have hd' : ContinuousAt (fun p : ℝ × ℝ => dMinus p.1 r σ K p.2) (s, τ) := by
+    simp only [dMinus_def]
+    exact hd.sub (continuousAt_const.mul continuousAt_snd.sqrt)
+  simp only [callPrice_def]
+  exact (continuousAt_fst.mul (hΦ.continuousAt.comp hd)).sub
+    ((continuousAt_const.mul (continuousAt_const.mul continuousAt_snd).rexp).mul
+      (hΦ.continuousAt.comp hd'))
+
+/-- The closed-form put price is jointly continuous in the spot and the remaining maturity at
+every point of the open pricing domain `s > 0`, `τ > 0`. -/
+theorem continuousAt_putPrice (hs : 0 < s) (hσ : σ ≠ 0) (hK : 0 < K) (hτ : 0 < τ) :
+    ContinuousAt (fun p : ℝ × ℝ => putPrice p.1 r σ K p.2) (s, τ) := by
+  simp only [putPrice_eq_callPrice]
+  exact ((continuousAt_callPrice hs hσ hK hτ).sub continuousAt_fst).add (by fun_prop)
 
 end TauCeti.BlackScholes
