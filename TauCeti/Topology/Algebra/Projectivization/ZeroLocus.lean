@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
 public import TauCeti.LinearAlgebra.Projectivization.ZeroLocus
 public import TauCeti.RingTheory.MvPolynomial.Jacobian
 public import TauCeti.Topology.Algebra.MvPolynomial.HomogeneousSubmodule
+public import TauCeti.Topology.Algebra.MvPolynomial.ZeroLocus
 public import TauCeti.Topology.Algebra.Projectivization
 
 /-!
@@ -35,6 +36,10 @@ Its projection is therefore closed, and its complement, the set of coefficients 
 zero-locus points have full Jacobian rank, is open. This open set is the parameter space for
 families of zero loci cut out by equations of full Jacobian rank everywhere.
 
+For homogeneous equations, the standard affine chart where coordinate `i` is nonzero restricts to
+a homeomorphism from the part of the zero locus outside the hyperplane `{x_i = 0}` onto the
+affine zero locus of the dehomogenized equations.
+
 ## Main definitions
 
 * `TauCeti.complexProjectiveIncidence N d`: the incidence variety of pairs `(c, L)` of a family
@@ -54,6 +59,9 @@ families of zero loci cut out by equations of full Jacobian rank everywhere.
 * `TauCeti.isClosed_complexProjectiveBadRankLocus`: the bad-rank locus is closed.
 * `TauCeti.isOpen_setOfPred_forall_mulVec_surjective_jacobiMatrixAt`: the coefficients whose cone
   Jacobian has full rank at every nonzero common zero form an open set.
+* `TauCeti.complexProjectiveZeroLocusAffineOpenHomeomorph`: the affine chart identifies the part
+  of a homogeneous zero locus outside a coordinate hyperplane with the affine zero locus of the
+  dehomogenized equations.
 
 ## References
 
@@ -228,5 +236,62 @@ theorem isOpen_setOfPred_forall_mulVec_surjective_jacobiMatrixAt [Finite ι] (d 
   obtain rfl : c' = c := hc
   rw [← L.mk_rep, mk_mem_complexProjectiveBadRankLocus_iff] at hL
   exact hL.2 (h _ L.rep_nonzero hL.1)
+
+/-! ### The affine part of a zero locus -/
+
+section AffineChart
+
+variable {n : ℕ} {p : ι → MvPolynomial (Fin (n + 1)) ℂ}
+
+/-- The standard affine chart where coordinate `i` is nonzero maps the part of a homogeneous zero
+locus in that chart onto the affine zero locus of the dehomogenized equations. -/
+theorem image_affineChart_complexProjectiveZeroLocus_inter_affineOpen
+    (hp : ∀ k, (p k).IsHomogeneous (d k)) (i : Fin (n + 1)) :
+    Projectivization.affineChart i '' (complexProjectiveZeroLocus p ∩
+        Projectivization.affineOpen i) = affineZeroLocus fun k ↦ dehomogenize i (p k) := by
+  ext z
+  constructor
+  · rintro ⟨L, ⟨hL, hLi⟩, rfl⟩
+    exact mem_affineZeroLocus.2 ((mem_complexProjectiveZeroLocus_iff_eval_affineChart hp hLi).1 hL)
+  · intro hz
+    refine ⟨(Projectivization.affineChart i).symm z, ⟨?_, ?_⟩,
+      (Projectivization.affineChart i).right_inv (by simp)⟩
+    · rw [Projectivization.affineChart_symm_apply]
+      exact (complexProjectiveZeroLocus_mk_insertNth_iff hp i z).2 (mem_affineZeroLocus.1 hz)
+    · rw [← Projectivization.affineChart_source]
+      exact (Projectivization.affineChart i).map_target (by simp)
+
+/-- **The affine part of a projective zero locus.** The standard affine chart where coordinate `i`
+is nonzero restricts to a homeomorphism from the part of a homogeneous zero locus outside the
+hyperplane `{x_i = 0}` onto the affine zero locus of the dehomogenized equations. -/
+noncomputable def complexProjectiveZeroLocusAffineOpenHomeomorph
+    (hp : ∀ k, (p k).IsHomogeneous (d k)) (i : Fin (n + 1)) :
+    ↥(complexProjectiveZeroLocus p ∩ Projectivization.affineOpen i) ≃ₜ
+      affineZeroLocus fun k ↦ dehomogenize i (p k) :=
+  (Projectivization.affineOpenPartialHomeomorph i).homeomorphOfImageSubsetSource
+    (by simp)
+    (by simpa using image_affineChart_complexProjectiveZeroLocus_inter_affineOpen hp i)
+
+/-- The homeomorphism `TauCeti.complexProjectiveZeroLocusAffineOpenHomeomorph` is the affine
+chart. -/
+@[simp]
+theorem coe_complexProjectiveZeroLocusAffineOpenHomeomorph_apply
+    (hp : ∀ k, (p k).IsHomogeneous (d k)) (i : Fin (n + 1))
+    (L : ↥(complexProjectiveZeroLocus p ∩ Projectivization.affineOpen i)) :
+    (complexProjectiveZeroLocusAffineOpenHomeomorph hp i L : Fin n → ℂ) =
+      Projectivization.affineChart i L := by
+  simp [complexProjectiveZeroLocusAffineOpenHomeomorph]
+
+/-- The inverse of `TauCeti.complexProjectiveZeroLocusAffineOpenHomeomorph` is the inverse affine
+chart, sending `z` to `[z₀ : ⋯ : 1 : ⋯ : zₙ₋₁]`. -/
+@[simp]
+theorem coe_complexProjectiveZeroLocusAffineOpenHomeomorph_symm_apply
+    (hp : ∀ k, (p k).IsHomogeneous (d k)) (i : Fin (n + 1))
+    (z : affineZeroLocus fun k ↦ dehomogenize i (p k)) :
+    ((complexProjectiveZeroLocusAffineOpenHomeomorph hp i).symm z : ℙ ℂ (Fin (n + 1) → ℂ)) =
+      (Projectivization.affineChart i).symm z := by
+  simp [complexProjectiveZeroLocusAffineOpenHomeomorph]
+
+end AffineChart
 
 end TauCeti
