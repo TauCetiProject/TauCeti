@@ -65,37 +65,25 @@ theorem IsRemainder.exists_finset_comparisons {f : MvPolynomial σ R}
   let := hB.fintype
   obtain ⟨q, hq, hbound⟩ := h.exists_linearCombination
   -- Include supports to fix leading exponents, and sums to transfer representation bounds.
-  let F : Finset (σ →₀ ℕ) := insert (m.degree f) f.support ∪
-    Finset.univ.biUnion fun b : B ↦
-      (insert (m.degree (b : MvPolynomial σ R)) (b : MvPolynomial σ R).support ∪
-        insert (m.degree (q b)) (q b).support) ∪
-        {m.degree (b : MvPolynomial σ R) + m.degree (q b)}
+  let S : B → Finset (σ →₀ ℕ) := fun b ↦
+    (insert (m.degree (b : MvPolynomial σ R)) (b : MvPolynomial σ R).support ∪
+      insert (m.degree (q b)) (q b).support) ∪
+      {m.degree (b : MvPolynomial σ R) + m.degree (q b)}
+  let F := insert (m.degree f) f.support ∪ Finset.univ.biUnion S
   have hfF : insert (m.degree f) f.support ⊆ F := Finset.subset_union_left
-  have hbF (b : B) :
-      (insert (m.degree (b : MvPolynomial σ R)) (b : MvPolynomial σ R).support ∪
-        insert (m.degree (q b)) (q b).support) ∪
-        {m.degree (b : MvPolynomial σ R) + m.degree (q b)} ⊆ F :=
-    (Finset.subset_biUnion_of_mem (fun b : B ↦
-      (insert (m.degree (b : MvPolynomial σ R)) (b : MvPolynomial σ R).support ∪
-        insert (m.degree (q b)) (q b).support) ∪
-        {m.degree (b : MvPolynomial σ R) + m.degree (q b)}) (Finset.mem_univ b)).trans
-      Finset.subset_union_right
+  have hbF (b : B) : S b ⊆ F :=
+    (Finset.subset_biUnion_of_mem S (Finset.mem_univ b)).trans Finset.subset_union_right
   -- Strict comparisons between these exponents also preserve all their weak comparisons.
   let C := (F ×ˢ F).filter fun p ↦ p.1 ≺[m] p.2
   refine ⟨C, fun p hp ↦ (Finset.mem_filter.1 hp).2, fun n hn ↦ ?_⟩
-  have hle {a b : σ →₀ ℕ} (ha : a ∈ F) (hb : b ∈ F) (hab : a ≼[m] b) :
-      a ≼[n] b := by
-    rcases eq_or_ne a b with rfl | hne
-    · exact le_rfl
-    · exact (hn (a, b) (Finset.mem_filter.2
-        ⟨Finset.mem_product.2 ⟨ha, hb⟩, lt_of_le_of_ne hab (m.toSyn.injective.ne hne)⟩)).le
+  have hcomp (a) (ha : a ∈ F) (b) (hb : b ∈ F) (hab : a ≺[m] b) : a ≺[n] b :=
+    hn (a, b) (Finset.mem_filter.2 ⟨Finset.mem_product.2 ⟨ha, hb⟩, hab⟩)
+  have hle : MonotoneOn (n.toSyn ∘ m.toSyn.symm) (m.toSyn.symm ⁻¹' (↑F : Set _)) :=
+    StrictMonoOn.monotoneOn fun a ha b hb hab ↦ hcomp _ ha _ hb (by simpa using hab)
   have hd (p : MvPolynomial σ R) (hp : insert (m.degree p) p.support ⊆ F) :
-      n.degree p = m.degree p := by
-    apply m.degree_eq_of_forall_lt n p
-    intro a ha hne
-    exact hn (a, m.degree p) (Finset.mem_filter.2 ⟨Finset.mem_product.2
-      ⟨hp (Finset.mem_insert_of_mem ha), hp (Finset.mem_insert_self _ _)⟩,
-      lt_of_le_of_ne (m.le_degree ha) (m.toSyn.injective.ne hne)⟩)
+      n.degree p = m.degree p :=
+    m.degree_eq_of_forall_mem_lt n p hcomp (fun _ ha ↦ hp (Finset.mem_insert_of_mem ha))
+      (hp (Finset.mem_insert_self _ _))
   have hdb (b : B) : n.degree (b : MvPolynomial σ R) = m.degree (b : MvPolynomial σ R) :=
     hd _ ((Finset.subset_union_left.trans Finset.subset_union_left).trans (hbF b))
   have hdq (b : B) : n.degree (q b) = m.degree (q b) :=
@@ -113,10 +101,13 @@ theorem IsRemainder.exists_finset_comparisons {f : MvPolynomial σ R}
     simp [hf0, hb0, hqb0] at this
   apply (toWithBotSyn_withBotDegree_add_le_iff hb0 hqb0 hf0).2
   rw [hdb, hdq, hd _ hfF, ← map_add]
-  apply hle (hbF b (Finset.mem_union_right _ (Finset.mem_singleton_self _)))
-    (hfF (Finset.mem_insert_self _ _))
-  simpa only [map_add] using
-    (toWithBotSyn_withBotDegree_add_le_iff hb0 hqb0 hf0).1 (hbound b)
+  have hbound' : m.degree (b : MvPolynomial σ R) + m.degree (q b) ≼[m] m.degree f := by
+    simpa only [map_add] using
+      (toWithBotSyn_withBotDegree_add_le_iff hb0 hqb0 hf0).1 (hbound b)
+  simpa only [Function.comp_apply, AddEquiv.symm_apply_apply] using
+    hle (a := m.toSyn _) (b := m.toSyn _) (by
+      simpa using hbF b (Finset.mem_union_right _ (Finset.mem_singleton_self _))) (by
+      simpa using hfF (Finset.mem_insert_self _ _)) hbound'
 
 end CommSemiring
 
@@ -148,17 +139,16 @@ theorem IsGroebnerBasis.exists_finset_comparisons (h : m.IsGroebnerBasis G I)
     hn p (Finset.mem_biUnion.2 ⟨j, Finset.mem_univ _, hp⟩)
   have hd (g : MvPolynomial σ R) (hg : g ∈ G) : n.degree g = m.degree g :=
     (hC (⟨g, hg⟩, ⟨g, hg⟩)).2 g hg
-  have hlt (g : MvPolynomial σ R) (hg : g ∈ G) : n.leadingTerm g = m.leadingTerm g := by
-    simp only [leadingTerm, leadingCoeff, hd g hg]
+  have hlt (g : MvPolynomial σ R) (hg : g ∈ G) : n.leadingTerm g = m.leadingTerm g :=
+    m.leadingTerm_eq_of_degree_eq n (hd g hg)
   have hnG : n.IsGroebnerBasis G I := by
     rw [h.ideal_eq_span]
     apply isGroebnerBasis_span_of_isRemainder_sPolynomial_zero
     · intro g hg hg0
-      simpa only [leadingCoeff, hd g hg] using hu g hg hg0
+      rw [m.leadingCoeff_eq_of_degree_eq n (hd g hg)]
+      exact hu g hg hg0
     · intro g₁ hg₁ g₂ hg₂
-      have hs : n.sPolynomial g₁ g₂ = m.sPolynomial g₁ g₂ := by
-        simp only [sPolynomial, leadingCoeff, hd g₁ hg₁, hd g₂ hg₂]
-      rw [hs]
+      rw [m.sPolynomial_eq_of_degree_eq n (hd g₁ hg₁) (hd g₂ hg₂)]
       exact (hC (⟨g₁, hg₁⟩, ⟨g₂, hg₂⟩)).1
   refine ⟨hnG, ?_⟩
   rw [hnG.span_leadingTerm_image, h.span_leadingTerm_image]
@@ -167,8 +157,8 @@ theorem IsGroebnerBasis.exists_finset_comparisons (h : m.IsGroebnerBasis G I)
 
 /-- A finite Gröbner basis with unit leading coefficients admits a positive integral weight
 whose strict comparisons certify stability. Every monomial order respecting all strict weight
-comparisons has this Gröbner basis and its original leading-term ideal. Only finitely many of
-those comparisons are needed, as supplied by `IsGroebnerBasis.exists_finset_comparisons`. -/
+comparisons has this Gröbner basis and its original leading-term ideal. See also
+`IsGroebnerBasis.exists_finset_comparisons` for the finite comparison certificate. -/
 theorem IsGroebnerBasis.exists_pos_weight_preserving (h : m.IsGroebnerBasis G I)
     (hG : G.Finite) (hu : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) :
     ∃ w : σ → ℕ, (∀ i, 0 < w i) ∧
