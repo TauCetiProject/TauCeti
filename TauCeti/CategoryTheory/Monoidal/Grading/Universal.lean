@@ -65,13 +65,9 @@ def degree (S : SimpleClasses C) : universalGradingGroup C := PresentedGroup.of 
 /-- Every simple constituent of a tensor product has the product of the degrees. -/
 theorem degree_mul (S T U : SimpleClasses C) (f : U.repr ⟶ S.repr ⊗ T.repr) (hf : f ≠ 0) :
     degree U = degree S * degree T := by
-  apply Eq.symm
-  apply eq_of_mul_inv_eq_one
-  have h : PresentedGroup.mk _
-      (FreeGroup.of S * FreeGroup.of T * (FreeGroup.of U)⁻¹) =
-        (1 : universalGradingGroup C) :=
-    PresentedGroup.one_of_mem ⟨S, T, U, f, hf, rfl⟩
-  simpa only [degree, PresentedGroup.of, map_mul, map_inv] using h
+  symm
+  simp only [degree, PresentedGroup.of, ← map_mul]
+  exact PresentedGroup.mk_eq_mk_of_mul_inv_mem ⟨S, T, U, f, hf, rfl⟩
 
 variable {G : Type w} [Group G]
 
