@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.ProperPower.Basic
+public import TauCeti.GroupTheory.NoncommPiCoprod
 public import Mathlib.GroupTheory.HNNExtension
 public import Mathlib.GroupTheory.NoncommCoprod
-public import Mathlib.GroupTheory.NoncommPiCoprod
 public import Mathlib.GroupTheory.PushoutI
 
 /-!
@@ -149,39 +149,6 @@ theorem commute_of_t {c : G} (hc : c ∈ centralizer {u}) (i : Fin n) :
 theorem commute_t_t (i j : Fin n) : Commute (t i : CentralizerExt u n) (t j) :=
   ((Commute.one_right 1).prod (Commute.all _ _)).map _
 
-/-- Homomorphisms out of `ℤⁿ` agree when they agree on the standard generators. -/
-private theorem pi_ext_mint {f g : (Fin n → Multiplicative ℤ) →* K}
-    (h : ∀ i, f (Pi.mulSingle i (.ofAdd 1)) = g (Pi.mulSingle i (.ofAdd 1))) : f = g :=
-  MonoidHom.pi_ext fun i x => by
-    simpa using DFunLike.congr_fun
-      (MonoidHom.ext_mint (f := f.comp (MonoidHom.mulSingle (fun _ => Multiplicative ℤ) i))
-        (g := g.comp (MonoidHom.mulSingle (fun _ => Multiplicative ℤ) i)) (h i)) x
-
-private theorem pairwise_commute_zpowersHom {τ : Fin n → K} (hτ : ∀ i j, Commute (τ i) (τ j)) :
-    Pairwise fun i j => ∀ x y : Multiplicative ℤ,
-      Commute (zpowersHom K (τ i) x) (zpowersHom K (τ j) y) := fun i j _ x y => by
-  simpa only [zpowersHom_apply] using (hτ i j).zpow_zpow x.toAdd y.toAdd
-
-/-- The homomorphism `ℤⁿ →* K` sending the `i`-th standard generator to `τ i`. -/
-private def zpowersPiHom (τ : Fin n → K) (hτ : ∀ i j, Commute (τ i) (τ j)) :
-    (Fin n → Multiplicative ℤ) →* K :=
-  MonoidHom.noncommPiCoprod (fun i => zpowersHom K (τ i)) (pairwise_commute_zpowersHom hτ)
-
-private theorem zpowersPiHom_mulSingle (τ : Fin n → K) (hτ : ∀ i j, Commute (τ i) (τ j))
-    (i : Fin n) : zpowersPiHom τ hτ (Pi.mulSingle i (.ofAdd 1)) = τ i := by
-  simp [zpowersPiHom]
-
-/-- An element commuting with every `τ i` commutes with the whole image of `zpowersPiHom`. -/
-private theorem commute_zpowersPiHom {τ : Fin n → K} {hτ : ∀ i j, Commute (τ i) (τ j)} {x : K}
-    (hx : ∀ i, Commute x (τ i)) (v : Fin n → Multiplicative ℤ) :
-    Commute x (zpowersPiHom τ hτ v) := by
-  have : (zpowersPiHom τ hτ).range ≤ centralizer {x} := by
-    rw [zpowersPiHom, MonoidHom.noncommPiCoprod_range]
-    refine iSup_le fun i => ?_
-    rintro _ ⟨k, rfl⟩
-    exact mem_centralizer_singleton_iff.mpr ((hx i).zpow_right k.toAdd).eq.symm
-  exact (mem_centralizer_singleton_iff.mp (this ⟨v, rfl⟩)).symm
-
 /-- Homomorphisms out of `G(u, ℤⁿ)` agree when they agree on `G` and on the new letters. -/
 @[ext high]
 theorem hom_ext {f g : CentralizerExt u n →* K} (hof : f.comp of = g.comp of)
@@ -197,7 +164,7 @@ theorem hom_ext {f g : CentralizerExt u n →* K} (hof : f.comp of = g.comp of)
         (MonoidHom.inr _ _) =
         (g.comp (Monoid.PushoutI.of (φ := centralizerExtMap u n) true)).comp
           (MonoidHom.inr _ _) :=
-      pi_ext_mint fun i => ht i
+      MonoidHom.pi_ext_mint fun i => ht i
     refine MonoidHom.ext fun ⟨c, v⟩ => ?_
     have hcv : ((c, v) : centralizer {u} × (Fin n → Multiplicative ℤ)) = (c, 1) * (1, v) := by
       simp
@@ -315,7 +282,7 @@ def equivProdOfMemCenter (hu : u ∈ center G) :
     (hom_ext (by ext; simp [toProd_of]) fun i => by simp [toProd_t, ofPi_mulSingle])
     (by
       have hv : (toProd (u := u) (n := n)).comp ofPi = .inr _ _ :=
-        pi_ext_mint fun i => by simp [ofPi_mulSingle, toProd_t]
+        MonoidHom.pi_ext_mint fun i => by simp [ofPi_mulSingle, toProd_t]
       refine MonoidHom.ext fun ⟨x, v⟩ => ?_
       simp [toProd_of, ← MonoidHom.comp_apply _ ofPi, hv])
 
@@ -403,7 +370,8 @@ theorem isAdmissibleCentralizerStep_freeGroup_of {α : Type*} (a : α) {n : ℕ}
     IsAdmissibleCentralizerStep (FreeGroup.of a) n :=
   ⟨FreeGroup.not_isProperPower_of a, hn⟩
 
-/-- Extending the centralizer of a proper power is never admissible. -/
+/-- Extending the centralizer of the square of a basis element of a free group is never
+admissible. -/
 theorem not_isAdmissibleCentralizerStep_freeGroup_of_sq {α : Type*} (a : α) (n : ℕ) :
     ¬IsAdmissibleCentralizerStep (FreeGroup.of a ^ 2) n :=
   fun h => h.1 (FreeGroup.isProperPower_of_sq a)
