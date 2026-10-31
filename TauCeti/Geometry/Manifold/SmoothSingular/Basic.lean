@@ -19,8 +19,8 @@ smooth in the sense of maps on arbitrary subsets (`TauCeti.ContMDiffOnSubset`): 
 of `Δᵏ`, including the points of its faces and corners, it agrees with a smooth map defined on a
 neighbourhood in `ℝᵏ`.
 
-Every simplicial operator of the standard simplices is the restriction of a smooth map of the
-ambient Euclidean spaces (`TauCeti.exists_contDiff_fullSimplexEquivStdSimplex_symm_map`), so the
+Every simplicial operator of the standard simplices is the restriction of a continuous affine map
+of the ambient Euclidean spaces (`TauCeti.simplexMapAmbient_coe`), so the
 smooth simplices are closed under faces and degeneracies and form a subcomplex
 `TauCeti.smoothSingularSubcomplex` of Mathlib's singular simplicial set `TopCat.toSSet.obj M`.
 Applying Mathlib's simplicial chain functor gives the complex of smooth singular chains
@@ -65,15 +65,15 @@ def smoothSingularSubcomplex : (TopCat.toSSet.obj (TopCat.of M)).Subcomplex wher
   obj k := {σ | ContMDiffOnSubset I ∞
     ((TopCat.of M).toSSetObjEquiv k σ ∘ fullSimplexEquivStdSimplex k.unop.len)}
   map {k l} f σ hσ := by
-    obtain ⟨A, hA, hAf⟩ := exists_contDiff_fullSimplexEquivStdSimplex_symm_map f.unop.toOrderHom
+    let A := simplexMapAmbient f.unop.toOrderHom
     have hst : MapsTo A (fullSimplex l.unop.len) (fullSimplex k.unop.len) := fun x hx ↦
-      hAf ⟨x, hx⟩ ▸ Subtype.prop _
+      simplexMapAmbient_coe _ ⟨x, hx⟩ ▸ Subtype.prop _
     rw [Set.mem_preimage, Set.mem_ofPred_eq]
-    convert hσ.comp_contDiff (hA.of_le le_top) hst using 2
+    convert hσ.comp_contDiff A.contDiff hst using 2
     funext x
     have hx : hst.restrict A _ _ x = (fullSimplexEquivStdSimplex _).symm
         ((fullSimplexEquivStdSimplex _ x).map f.unop.toOrderHom) :=
-      Subtype.ext (hAf x)
+      Subtype.ext (simplexMapAmbient_coe _ x)
     simp only [Function.comp_apply, hx, Homeomorph.apply_symm_apply]
     exact TopCat.toSSetObjEquiv_naturality_apply f.unop σ _
 
