@@ -165,8 +165,8 @@ namespace QuaternionAlgebra
 variable {c₁ c₂ c₃ : R}
 
 /-- An `R`-linear endomorphism `D` of the quaternion algebra `ℍ[R,c₁,c₂,c₃]` is a left
-multiplication `q ↦ a * q` exactly when it agrees with left multiplication by `D 1` on the units
-`i`, `j` and `k`; the multiplier is then `a = D 1`. -/
+multiplication `q ↦ a * q` exactly when it agrees with left multiplication by `D 1` on the basis
+elements `i`, `j` and `k` of `basisOneIJK`; the multiplier is then `a = D 1`. -/
 theorem exists_eq_mulLeft_iff {D : ℍ[R,c₁,c₂,c₃] →ₗ[R] ℍ[R,c₁,c₂,c₃]} :
     (∃ a, D = LinearMap.mulLeft R a) ↔
       D ⟨0, 1, 0, 0⟩ = D 1 * ⟨0, 1, 0, 0⟩ ∧ D ⟨0, 0, 1, 0⟩ = D 1 * ⟨0, 0, 1, 0⟩ ∧
@@ -177,8 +177,8 @@ theorem exists_eq_mulLeft_iff {D : ℍ[R,c₁,c₂,c₃] →ₗ[R] ℍ[R,c₁,c�
   fin_cases n <;> simp [basisOneIJK, h1, hi, hj, hk]
 
 /-- An `R`-linear endomorphism `D` of the quaternion algebra `ℍ[R,c₁,c₂,c₃]` is a right
-multiplication `q ↦ q * a` exactly when it agrees with right multiplication by `D 1` on the units
-`i`, `j` and `k`; the multiplier is then `a = D 1`. -/
+multiplication `q ↦ q * a` exactly when it agrees with right multiplication by `D 1` on the basis
+elements `i`, `j` and `k` of `basisOneIJK`; the multiplier is then `a = D 1`. -/
 theorem exists_eq_mulRight_iff {D : ℍ[R,c₁,c₂,c₃] →ₗ[R] ℍ[R,c₁,c₂,c₃]} :
     (∃ a, D = LinearMap.mulRight R a) ↔
       D ⟨0, 1, 0, 0⟩ = ⟨0, 1, 0, 0⟩ * D 1 ∧ D ⟨0, 0, 1, 0⟩ = ⟨0, 0, 1, 0⟩ * D 1 ∧
