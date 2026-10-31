@@ -91,7 +91,7 @@ public section
 open Function Metric Module Set
 open OpenPartialHomeomorph (contDiffOn_extendTrans_comp_symm contDiffOn_halfSpaceChart_symm_trans
   coe_halfSpaceChart_apply coe_halfSpaceChart_symm_apply halfSpaceChart_source
-  halfSpaceChart_target)
+  halfSpaceChart_target isManifold_of_forall_mem_atlas_halfSpaceChart)
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti
@@ -293,66 +293,13 @@ end FaceEquiv
 
 namespace ScalarSublevel
 
-section Face
-
-variable [I.Boundaryless] [FiniteDimensional ℝ E]
-
-variable (I) in
-/-- The face chart at a regular point `x`: the submersion chart of `f` at `x`, read in `ℝⁿ⁺¹`
-through `TauCeti.scalarRegularSublevelFaceEquiv`. -/
-private noncomputable def faceChart (hn : finrank ℝ E = n + 1) {x : M}
-    (hf : ContMDiffAt I 𝓘(ℝ) 1 f x) (hx : IsRegularPoint I 𝓘(ℝ) f x) :
-    OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1))) :=
-  (scalarSubmersionChartAt hf hx).extendTrans I (scalarRegularSublevelFaceEquiv hn hx).toHomeomorph
-
-private theorem faceChart_source (hn : finrank ℝ E = n + 1) {x : M}
-    (hf : ContMDiffAt I 𝓘(ℝ) 1 f x) (hx : IsRegularPoint I 𝓘(ℝ) f x) :
-    (faceChart I hn hf hx).source = (scalarSubmersionChartAt hf hx).source := by
-  simp [faceChart, mfld_simps]
-
-private theorem faceChart_apply (hn : finrank ℝ E = n + 1) {x : M}
-    (hf : ContMDiffAt I 𝓘(ℝ) 1 f x) (hx : IsRegularPoint I 𝓘(ℝ) f x) {w : M}
-    (hw : w ∈ (chartAt H x).source) :
-    faceChart I hn hf hx w =
-      let D := fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)
-      euclideanFinConsEquiv (by omega) (f x - f w,
-        D.kerModelEquiv D.isFredholm_of_finiteDimensional.finite_ker
-          hx.finrank_ker_fderiv_comp_extChartAt_symm
-          (Classical.choose D.isFredholm_of_finiteDimensional.closedComplemented_ker
-            (extChartAt I x w - extChartAt I x x))) := by
-  have h := scalarSubmersionChartAt_extend_apply hf hx hw
-  rw [OpenPartialHomeomorph.extend_coe, comp_apply] at h
-  simp only [faceChart, OpenPartialHomeomorph.extendTrans_apply,
-    ContinuousLinearEquiv.coe_toHomeomorph, h, scalarRegularSublevelFaceEquiv,
-    ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearEquiv.prodCongr_apply,
-    ContinuousLinearEquiv.neg_apply, neg_sub]
-
-private theorem faceChart_le_iff (hn : finrank ℝ E = n + 1) {x : M}
-    (hf : ContMDiffAt I 𝓘(ℝ) 1 f x) (hx : IsRegularPoint I 𝓘(ℝ) f x) (hxa : f x = a) :
-    ∀ w ∈ (faceChart I hn hf hx).source, w ∈ {x | f x ≤ a} ↔ 0 ≤ faceChart I hn hf hx w 0 := by
-  intro w hw
-  rw [faceChart_source, scalarSubmersionChartAt_source] at hw
-  rw [mem_ofPred_eq, faceChart_apply hn hf hx hw.1, euclideanFinConsEquiv_apply_zero, hxa,
-    sub_nonneg]
-
-end Face
-
 section RestrFace
 
 variable [I.Boundaryless] [FiniteDimensional ℝ E]
 
-/-- The face chart at a regular point `x` is `TauCeti.scalarRegularSublevelFaceEquiv` applied to the
-extended submersion chart of `f` at `x`. -/
-private theorem faceChart_apply_eq (hn : finrank ℝ E = n + 1) {x : M}
-    (hf : ContMDiffAt I 𝓘(ℝ) 1 f x) (hx : IsRegularPoint I 𝓘(ℝ) f x) (w : M) :
-    faceChart I hn hf hx w =
-      scalarRegularSublevelFaceEquiv hn hx ((scalarSubmersionChartAt hf hx).extend I w) := by
-  simp [faceChart, mfld_simps]
-
 variable (I) in
 /-- The submersion chart of `f` at a regular point `x`, restricted to a set `V` and read in `ℝⁿ⁺¹`
-through a linear equivalence `Ψ`. The face charts of a band are of this form. -/
+through a linear equivalence `Ψ`. The face charts of sublevels and bands are of this form. -/
 private noncomputable def restrFaceChart {x : M} (hf : ContMDiffAt I 𝓘(ℝ) 1 f x)
     (hx : IsRegularPoint I 𝓘(ℝ) f x) (V : Set M) (Ψ : E ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) :
     OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1))) :=
@@ -376,19 +323,44 @@ private theorem restrFaceChart_symm_apply (v : EuclideanSpace ℝ (Fin (n + 1)))
 
 end RestrFace
 
-section Atlas
+section Face
 
 variable [I.Boundaryless] [FiniteDimensional ℝ E]
 
-variable (I) in
-/-- `e` is a chart of `M` from its maximal atlas for `C^m`, read in `ℝⁿ⁺¹` by a `C^m` homeomorphism
-with `C^m` inverse. The preferred charts of sublevels and bands are half-space restrictions of such
-charts. -/
-private def IsExtendTransChart (m : ℕ∞ω)
-    (e : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1)))) : Prop :=
-  ∃ (c : OpenPartialHomeomorph M H) (Ψ : E ≃ₜ EuclideanSpace ℝ (Fin (n + 1))),
-    c ∈ IsManifold.maximalAtlas I m M ∧ ContDiff ℝ m Ψ ∧ ContDiff ℝ m Ψ.symm ∧
-      e = c.extendTrans I Ψ
+/-- `TauCeti.scalarRegularSublevelFaceEquiv` reads the extended submersion chart of `f` at a regular
+point `x` as `f x - f` in slot `0` and the tangential coordinates in slots `1, …, n`. -/
+private theorem scalarRegularSublevelFaceEquiv_extend_apply (hn : finrank ℝ E = n + 1) {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 1 f x) (hx : IsRegularPoint I 𝓘(ℝ) f x) {w : M}
+    (hw : w ∈ (chartAt H x).source) :
+    scalarRegularSublevelFaceEquiv hn hx ((scalarSubmersionChartAt hf hx).extend I w) =
+      let D := fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)
+      euclideanFinConsEquiv (by omega) (f x - f w,
+        D.kerModelEquiv D.isFredholm_of_finiteDimensional.finite_ker
+          hx.finrank_ker_fderiv_comp_extChartAt_symm
+          (Classical.choose D.isFredholm_of_finiteDimensional.closedComplemented_ker
+            (extChartAt I x w - extChartAt I x x))) := by
+  have h := scalarSubmersionChartAt_extend_apply hf hx hw
+  rw [OpenPartialHomeomorph.extend_coe, comp_apply] at h
+  simp only [OpenPartialHomeomorph.extend_coe, comp_apply, h, scalarRegularSublevelFaceEquiv,
+    ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.apply_symm_apply,
+    ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.neg_apply, neg_sub]
+
+private theorem restrFaceChart_univ_le_iff (hn : finrank ℝ E = n + 1) {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 1 f x) (hx : IsRegularPoint I 𝓘(ℝ) f x) (hxa : f x = a) :
+    ∀ w ∈ (restrFaceChart I hf hx univ (scalarRegularSublevelFaceEquiv hn hx)).source,
+      w ∈ {x | f x ≤ a} ↔
+        0 ≤ restrFaceChart I hf hx univ (scalarRegularSublevelFaceEquiv hn hx) w 0 := by
+  intro w hw
+  rw [restrFaceChart_source _ _ _ isOpen_univ, inter_univ, scalarSubmersionChartAt_source] at hw
+  rw [mem_ofPred_eq, restrFaceChart_apply,
+    scalarRegularSublevelFaceEquiv_extend_apply hn hf hx hw.1, euclideanFinConsEquiv_apply_zero,
+    hxa, sub_nonneg]
+
+end Face
+
+section Atlas
+
+variable [I.Boundaryless] [FiniteDimensional ℝ E]
 
 /-- The target of the interior chart is the ball of radius `r = interiorRadius` about the point
 `2 r e₀` of `ℝⁿ⁺¹`. -/
@@ -413,7 +385,7 @@ private theorem interiorChart_target {U : Set M} (hU : IsOpen U) (hn : finrank �
 smooth homeomorphism with smooth inverse. -/
 private theorem exists_interiorChart_eq_extendTrans {m : ℕ∞ω} [IsManifold I m M] {U : Set M}
     (hU : IsOpen U) (hn : finrank ℝ E = n + 1) {x : M} (hx : x ∈ U) :
-    IsExtendTransChart I m (interiorChart I hU hn hx) := by
+    (interiorChart I hU hn hx).IsExtendTransChart I m := by
   refine ⟨_, _, restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas _)
     (isOpen_interiorDomain hU hn hx), ?_, ?_, rfl⟩
   · exact ((modelEquiv hn).contDiff.comp (contDiff_id.sub contDiff_const)).add contDiff_const
@@ -428,27 +400,10 @@ private theorem exists_interiorChart_eq_extendTrans {m : ℕ∞ω} [IsManifold I
 private theorem isExtendTransChart_restrFaceChart {m : ℕ∞ω} [IsManifold I m M] (hm : 1 ≤ m)
     (hfm : ContMDiff I 𝓘(ℝ) m f) {x : M} (hx : IsRegularPoint I 𝓘(ℝ) f x) {V : Set M}
     (hV : IsOpen V) (Ψ : E ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) :
-    IsExtendTransChart I m (restrFaceChart I (hfm.of_le hm).contMDiffAt hx V Ψ) :=
+    (restrFaceChart I (hfm.of_le hm).contMDiffAt hx V Ψ).IsExtendTransChart I m :=
   ⟨_, _, restr_mem_maximalAtlas _
     (scalarSubmersionChartAt_mem_maximalAtlas _ _ hm fun _ _ ↦ hfm.contMDiffAt) hV,
     Ψ.contDiff, Ψ.symm.contDiff, rfl⟩
-
-omit [FiniteDimensional ℝ E] in
-/-- A charted space on a subset `s` of `M`, modelled on the half-space, all of whose charts are
-half-space restrictions of charts satisfying `IsExtendTransChart`, is a `C^m` manifold with
-boundary. -/
-private theorem isManifold_of_forall_mem_atlas {m : ℕ∞ω} {s : Set M}
-    [ChartedSpace (EuclideanHalfSpace (n + 1)) s]
-    (h : ∀ e ∈ atlas (EuclideanHalfSpace (n + 1)) s,
-      ∃ (e' : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1))))
-        (he' : ∀ w ∈ e'.source, w ∈ s ↔ 0 ≤ e' w 0) (x : s),
-        IsExtendTransChart I m e' ∧ e = e'.halfSpaceChart he' x) :
-    IsManifold (𝓡∂ (n + 1)) m s := by
-  refine isManifold_of_contDiffOn _ _ _ fun e₁ e₂ h₁ h₂ ↦ ?_
-  obtain ⟨_, he₁, x₁, ⟨c₁, Ψ₁, hc₁, -, hΨ₁, rfl⟩, rfl⟩ := h e₁ h₁
-  obtain ⟨_, he₂, x₂, ⟨c₂, Ψ₂, hc₂, hΨ₂, -, rfl⟩, rfl⟩ := h e₂ h₂
-  exact contDiffOn_halfSpaceChart_symm_trans he₁ he₂ x₁ x₂
-    (contDiffOn_extendTrans_comp_symm I hc₁ hc₂ hΨ₁ hΨ₂)
 
 end Atlas
 
@@ -481,8 +436,9 @@ noncomputable def scalarRegularSublevelChartAt (x : {x | f x ≤ a}) :
       (interiorChart_mem_iff _ hn _ preimage_Iio_subset_setOf_le) x
   else
     have hxa : f x = a := le_antisymm x.2 (not_lt.1 hx)
-    (faceChart I hn hf.contMDiffAt (hreg.isRegularPoint hxa)).halfSpaceChart
-      (faceChart_le_iff hn hf.contMDiffAt (hreg.isRegularPoint hxa) hxa) x
+    (restrFaceChart I hf.contMDiffAt (hreg.isRegularPoint hxa) univ
+        (scalarRegularSublevelFaceEquiv hn (hreg.isRegularPoint hxa))).halfSpaceChart
+      (restrFaceChart_univ_le_iff hn hf.contMDiffAt (hreg.isRegularPoint hxa) hxa) x
 
 private theorem scalarRegularSublevelChartAt_of_lt {x : {x | f x ≤ a}} (hx : f x < a) :
     scalarRegularSublevelChartAt hf hreg hn x =
@@ -492,8 +448,9 @@ private theorem scalarRegularSublevelChartAt_of_lt {x : {x | f x ≤ a}} (hx : f
 
 private theorem scalarRegularSublevelChartAt_of_eq {x : {x | f x ≤ a}} (hx : f x = a) :
     scalarRegularSublevelChartAt hf hreg hn x =
-      (faceChart I hn hf.contMDiffAt (hreg.isRegularPoint hx)).halfSpaceChart
-        (faceChart_le_iff hn hf.contMDiffAt (hreg.isRegularPoint hx) hx) x :=
+      (restrFaceChart I hf.contMDiffAt (hreg.isRegularPoint hx) univ
+          (scalarRegularSublevelFaceEquiv hn (hreg.isRegularPoint hx))).halfSpaceChart
+        (restrFaceChart_univ_le_iff hn hf.contMDiffAt (hreg.isRegularPoint hx) hx) x :=
   dite_eq_right hx.not_lt
 
 /-- Every point of the sublevel lies in the source of its preferred chart. -/
@@ -507,7 +464,7 @@ theorem mem_scalarRegularSublevelChartAt_source (x : {x | f x ≤ a}) :
     rw [mem_preimage, centredChart_apply, sub_self, map_zero]
     exact mem_ball_self (interiorRadius_pos (isOpen_Iio.preimage hf.continuous) hn _)
   · rw [scalarRegularSublevelChartAt_of_eq hf hreg hn hx, halfSpaceChart_source, mem_preimage,
-      faceChart_source]
+      restrFaceChart_source _ _ _ isOpen_univ, inter_univ]
     exact mem_scalarSubmersionChartAt_source _ _
 
 /-- The atlas of the sublevel `{f ≤ a}` of a `C¹` function at a regular value `a`, modelled on the
@@ -549,7 +506,8 @@ sublevel in the source of the submersion chart of `f` at `x`. -/
 theorem scalarRegularSublevelChartAt_source_of_eq :
     (scalarRegularSublevelChartAt hf hreg hn x).source =
       Subtype.val ⁻¹' (scalarSubmersionChartAt hf.contMDiffAt (hreg.isRegularPoint hx)).source := by
-  rw [scalarRegularSublevelChartAt_of_eq hf hreg hn hx, halfSpaceChart_source, faceChart_source]
+  rw [scalarRegularSublevelChartAt_of_eq hf hreg hn hx, halfSpaceChart_source,
+    restrFaceChart_source _ _ _ isOpen_univ, inter_univ]
 
 /-- At a point `x` of the level `f⁻¹(a)`, the preferred chart reads a point of its source in the
 extended submersion chart of `f` at `x`, followed by `TauCeti.scalarRegularSublevelFaceEquiv`. -/
@@ -560,8 +518,8 @@ theorem scalarRegularSublevelChartAt_apply_of_eq {w : {x | f x ≤ a}}
         ((scalarSubmersionChartAt hf.contMDiffAt (hreg.isRegularPoint hx)).extend I w) := by
   rw [scalarRegularSublevelChartAt_source_of_eq hf hreg hn hx, mem_preimage] at hw
   rw [scalarRegularSublevelChartAt_of_eq hf hreg hn hx,
-    coe_halfSpaceChart_apply _ _ (by rwa [faceChart_source])]
-  simp [faceChart, mfld_simps]
+    coe_halfSpaceChart_apply _ _ (by rwa [restrFaceChart_source _ _ _ isOpen_univ, inter_univ]),
+    restrFaceChart_apply]
 
 /-- At a point `x` of the level `f⁻¹(a)`, a point `z` of the half-space lies in the target of the
 preferred chart exactly when `TauCeti.scalarRegularSublevelFaceEquiv` sends it back into the target
@@ -572,7 +530,7 @@ theorem mem_scalarRegularSublevelChartAt_target_iff_of_eq (z : EuclideanHalfSpac
         ((scalarSubmersionChartAt hf.contMDiffAt (hreg.isRegularPoint hx)).extend I).target := by
   rw [scalarRegularSublevelChartAt_of_eq hf hreg hn hx, halfSpaceChart_target, mem_preimage,
     OpenPartialHomeomorph.extend_target, I.range_eq_univ, inter_univ]
-  simp [faceChart, mfld_simps]
+  simp [restrFaceChart, mfld_simps]
 
 /-- At a point `x` of the level `f⁻¹(a)`, the inverse of the preferred chart is the inverse of
 `TauCeti.scalarRegularSublevelFaceEquiv` followed by the inverse extended submersion chart of `f`
@@ -585,7 +543,7 @@ theorem coe_scalarRegularSublevelChartAt_symm_apply_of_eq {z : EuclideanHalfSpac
   rw [scalarRegularSublevelChartAt_of_eq hf hreg hn hx] at hz ⊢
   rw [halfSpaceChart_target, mem_preimage, modelWithCornersEuclideanHalfSpace_toFun] at hz
   rw [coe_halfSpaceChart_symm_apply _ _ hz]
-  simp [faceChart, mfld_simps]
+  simp [restrFaceChart, mfld_simps]
 
 /-- At a point `x` of the level `f⁻¹(a)`, the zeroth coordinate of the preferred chart is the
 inward coordinate `a - f`. -/
@@ -595,8 +553,10 @@ theorem scalarRegularSublevelChartAt_apply_zero_of_eq {w : {x | f x ≤ a}}
   rw [scalarRegularSublevelChartAt_source_of_eq hf hreg hn hx, mem_preimage,
     scalarSubmersionChartAt_source] at hw
   rw [scalarRegularSublevelChartAt_of_eq hf hreg hn hx, coe_halfSpaceChart_apply _ _ (by
-      rw [faceChart_source, scalarSubmersionChartAt_source]; exact hw),
-    faceChart_apply hn _ _ hw.1, euclideanFinConsEquiv_apply_zero, hx]
+      rw [restrFaceChart_source _ _ _ isOpen_univ, inter_univ, scalarSubmersionChartAt_source]
+      exact hw),
+    restrFaceChart_apply, scalarRegularSublevelFaceEquiv_extend_apply hn _ _ hw.1,
+    euclideanFinConsEquiv_apply_zero, hx]
 
 /-- At a point `x` of the level `f⁻¹(a)`, the coordinates of the preferred chart in slots
 `1, …, n` are the tangential coordinates `K (P (extChartAt I x w - extChartAt I x x))`, reindexed
@@ -614,8 +574,10 @@ theorem scalarRegularSublevelChartAt_apply_succ_of_eq {w : {x | f x ≤ a}}
   rw [scalarRegularSublevelChartAt_source_of_eq hf hreg hn hx, mem_preimage,
     scalarSubmersionChartAt_source] at hw
   rw [scalarRegularSublevelChartAt_of_eq hf hreg hn hx, coe_halfSpaceChart_apply _ _ (by
-      rw [faceChart_source, scalarSubmersionChartAt_source]; exact hw),
-    faceChart_apply hn _ _ hw.1, euclideanFinConsEquiv_apply_succ]
+      rw [restrFaceChart_source _ _ _ isOpen_univ, inter_univ, scalarSubmersionChartAt_source]
+      exact hw),
+    restrFaceChart_apply, scalarRegularSublevelFaceEquiv_extend_apply hn _ _ hw.1,
+    euclideanFinConsEquiv_apply_succ]
 
 /-- **On the level, the tangential coordinates are those of the level chart.** At a point `x` of
 the level `f⁻¹(a)`, the coordinates in slots `1, …, n` of the preferred chart of the sublevel at a
@@ -661,17 +623,14 @@ private theorem exists_scalarRegularSublevelChartAt_eq_halfSpaceChart {m : ℕ�
     (hm : 1 ≤ m) (hfm : ContMDiff I 𝓘(ℝ) m f) (x : {x | f x ≤ a}) :
     ∃ (e : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1))))
       (he : ∀ w ∈ e.source, w ∈ {x | f x ≤ a} ↔ 0 ≤ e w 0) (y : {x | f x ≤ a}),
-      IsExtendTransChart I m e ∧
+      e.IsExtendTransChart I m ∧
         scalarRegularSublevelChartAt (hfm.of_le hm) hreg hn x = e.halfSpaceChart he y := by
   have hxa : f x ≤ a := x.2
   rcases hxa.lt_or_eq with hx | hx
   · exact ⟨_, _, x,
       exists_interiorChart_eq_extendTrans (isOpen_Iio.preimage (hfm.of_le hm).continuous) hn _,
       scalarRegularSublevelChartAt_of_lt _ hreg hn hx⟩
-  · exact ⟨_, _, x, ⟨_, _, scalarSubmersionChartAt_mem_maximalAtlas _ _ hm fun _ _ ↦
-        hfm.contMDiffAt,
-      (scalarRegularSublevelFaceEquiv hn (hreg.isRegularPoint hx)).contDiff,
-      (scalarRegularSublevelFaceEquiv hn (hreg.isRegularPoint hx)).symm.contDiff, rfl⟩,
+  · exact ⟨_, _, x, isExtendTransChart_restrFaceChart hm hfm _ isOpen_univ _,
       scalarRegularSublevelChartAt_of_eq _ hreg hn hx⟩
 
 /-- **A sublevel at a regular value is a manifold with boundary.** If `f` is `C^m`, `m ≥ 1`, and
@@ -683,7 +642,7 @@ theorem isManifold_scalarRegularSublevel {m : ℕ∞ω} [IsManifold I m M] (hm :
     letI := scalarRegularSublevelChartedSpace (hfm.of_le hm) hreg hn
     IsManifold (𝓡∂ (n + 1)) m {x | f x ≤ a} := by
   let := scalarRegularSublevelChartedSpace (hfm.of_le hm) hreg hn
-  refine isManifold_of_forall_mem_atlas (I := I) fun e he ↦ ?_
+  refine isManifold_of_forall_mem_atlas_halfSpaceChart (I := I) fun e he ↦ ?_
   rw [scalarRegularSublevelChartedSpace_atlas] at he
   obtain ⟨x, rfl⟩ := he
   exact exists_scalarRegularSublevelChartAt_eq_halfSpaceChart hreg hn hm hfm x
@@ -756,7 +715,7 @@ private theorem lowerFaceChart_apply_zero {x : M} (hx : IsRegularPoint I 𝓘(�
     (hw : w ∈ (chartAt H x).source) : lowerFaceChart I hf hn b hx w 0 = f w - f x := by
   have h := scalarRegularSublevelFaceEquiv_apply_zero hn hx
     ((scalarSubmersionChartAt hf.contMDiffAt hx).extend I w)
-  rw [← faceChart_apply_eq hn hf.contMDiffAt hx, faceChart_apply hn _ hx hw,
+  rw [scalarRegularSublevelFaceEquiv_extend_apply hn _ hx hw,
     euclideanFinConsEquiv_apply_zero] at h
   rw [restrFaceChart_apply, scalarRegularBandLowerFaceEquiv_apply_zero]
   linarith
@@ -764,7 +723,7 @@ private theorem lowerFaceChart_apply_zero {x : M} (hx : IsRegularPoint I 𝓘(�
 /-- The zeroth coordinate of the upper face chart at `x` is `f x - f`. -/
 private theorem upperFaceChart_apply_zero {x : M} (hx : IsRegularPoint I 𝓘(ℝ) f x) {w : M}
     (hw : w ∈ (chartAt H x).source) : upperFaceChart I hf hn a hx w 0 = f x - f w := by
-  rw [restrFaceChart_apply, ← faceChart_apply_eq hn hf.contMDiffAt hx, faceChart_apply hn _ hx hw,
+  rw [restrFaceChart_apply, scalarRegularSublevelFaceEquiv_extend_apply hn _ hx hw,
     euclideanFinConsEquiv_apply_zero]
 
 /-- On the source of a face chart, the submersion chart at `x` is defined, hence so is the preferred
@@ -977,9 +936,11 @@ theorem scalarRegularBandChartAt_apply_succ_eq_regularLevelChartAt_of_eq_left
   rw [scalarRegularBandChartAt_of_eq_left hf hn ha hb hx, halfSpaceChart_source,
     mem_preimage] at hw'
   rw [scalarRegularBandChartAt_apply_of_eq_left hf hn ha hb hx hw,
-    scalarRegularBandLowerFaceEquiv_apply_succ, ← faceChart_apply_eq hn hf.contMDiffAt,
-    faceChart_apply hn _ _ (mem_chartAt_source_of_mem_restrFaceChart_source hf _
-      (isOpen_Iio.preimage hf.continuous) _ hw').1, euclideanFinConsEquiv_apply_succ,
+    scalarRegularBandLowerFaceEquiv_apply_succ,
+    scalarRegularSublevelFaceEquiv_extend_apply hn _ _
+      (mem_chartAt_source_of_mem_restrFaceChart_source hf _
+        (isOpen_Iio.preimage hf.continuous) _ hw').1,
+    euclideanFinConsEquiv_apply_succ,
     regularLevelChartAt_apply]
 
 end LowerFace
@@ -1062,9 +1023,10 @@ theorem scalarRegularBandChartAt_apply_succ_eq_regularLevelChartAt_of_eq_right
   rw [scalarRegularBandChartAt_of_eq_right hf hn ha hb hab hx, halfSpaceChart_source,
     mem_preimage] at hw'
   rw [scalarRegularBandChartAt_apply_of_eq_right hf hn ha hb hab hx hw,
-    ← faceChart_apply_eq hn hf.contMDiffAt,
-    faceChart_apply hn _ _ (mem_chartAt_source_of_mem_restrFaceChart_source hf _
-      (isOpen_Ioi.preimage hf.continuous) _ hw').1, euclideanFinConsEquiv_apply_succ,
+    scalarRegularSublevelFaceEquiv_extend_apply hn _ _
+      (mem_chartAt_source_of_mem_restrFaceChart_source hf _
+        (isOpen_Ioi.preimage hf.continuous) _ hw').1,
+    euclideanFinConsEquiv_apply_succ,
     regularLevelChartAt_apply]
 
 end UpperFace
@@ -1101,7 +1063,7 @@ private theorem exists_scalarRegularBandChartAt_eq_halfSpaceChart {m : ℕ∞ω}
     (hm : 1 ≤ m) (hfm : ContMDiff I 𝓘(ℝ) m f) (hab : a < b) (x : f ⁻¹' Icc a b) :
     ∃ (e : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1))))
       (he : ∀ w ∈ e.source, w ∈ f ⁻¹' Icc a b ↔ 0 ≤ e w 0) (y : f ⁻¹' Icc a b),
-      IsExtendTransChart I m e ∧
+      e.IsExtendTransChart I m ∧
         scalarRegularBandChartAt (hfm.of_le hm) hn ha hb x = e.halfSpaceChart he y := by
   by_cases hxa : f x = a
   · exact ⟨_, _, x, isExtendTransChart_restrFaceChart hm hfm _
@@ -1124,7 +1086,7 @@ theorem isManifold_scalarRegularBand {m : ℕ∞ω} [IsManifold I m M] (hm : 1 �
     letI := scalarRegularBandChartedSpace (hfm.of_le hm) hn ha hb hab
     IsManifold (𝓡∂ (n + 1)) m (f ⁻¹' Icc a b) := by
   let := scalarRegularBandChartedSpace (hfm.of_le hm) hn ha hb hab
-  refine isManifold_of_forall_mem_atlas (I := I) fun e he ↦ ?_
+  refine isManifold_of_forall_mem_atlas_halfSpaceChart (I := I) fun e he ↦ ?_
   rw [scalarRegularBandChartedSpace_atlas] at he
   obtain ⟨x, rfl⟩ := he
   exact exists_scalarRegularBandChartAt_eq_halfSpaceChart hn ha hb hm hfm hab x

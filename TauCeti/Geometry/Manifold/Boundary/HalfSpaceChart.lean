@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Instances.Real
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
@@ -23,12 +24,19 @@ regular value, become manifolds with boundary.
 The ambient `ℝⁿ⁺¹`-valued charts typically come from charts of a manifold with a boundaryless
 model, read in the model vector space and moved by a homeomorphism
 (`OpenPartialHomeomorph.extendTrans`, whose smooth transition maps are
-`OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`).
+`OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`). Such charts, taken from the maximal
+atlas and moved by `C^m` homeomorphisms with `C^m` inverses, are recorded by
+`OpenPartialHomeomorph.IsExtendTransChart`. A charted space on `s` all of whose charts are
+half-space restrictions of them is a `C^m` manifold with boundary
+(`OpenPartialHomeomorph.isManifold_of_forall_mem_atlas_halfSpaceChart`).
 
 ## Main declarations
 
 * `OpenPartialHomeomorph.halfSpaceChart`, with its source, target, apply and inverse laws, and
   `OpenPartialHomeomorph.contDiffOn_halfSpaceChart_symm_trans`.
+* `OpenPartialHomeomorph.IsExtendTransChart` and
+  `OpenPartialHomeomorph.isManifold_of_forall_mem_atlas_halfSpaceChart`: an atlas of half-space
+  restrictions of smoothly moved charts from the maximal atlas makes `s` a manifold with boundary.
 
 ## References
 
@@ -136,5 +144,47 @@ theorem contDiffOn_halfSpaceChart_symm_trans {m : ℕ∞ω}
   exact (h.mono fun v hv ↦ (key v hv).1).congr fun v hv ↦ (key v hv).2
 
 end HalfSpaceChart
+
+section ExtendTrans
+
+variable {𝕜 E F H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace H]
+  [TopologicalSpace M] [ChartedSpace H M]
+
+/-- `e` is a chart `c.extendTrans I Ψ`: a chart `c` of `M` from its maximal atlas for `C^m`, read in
+the model vector space `E` and moved to `F` by a `C^m` homeomorphism `Ψ` with `C^m` inverse. The
+transition maps between such charts are `C^m`
+(`OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`). -/
+@[expose] def IsExtendTransChart (e : OpenPartialHomeomorph M F) (I : ModelWithCorners 𝕜 E H)
+    [I.Boundaryless] (m : ℕ∞ω) : Prop :=
+  ∃ (c : OpenPartialHomeomorph M H) (Ψ : E ≃ₜ F),
+    c ∈ IsManifold.maximalAtlas I m M ∧ ContDiff 𝕜 m Ψ ∧ ContDiff 𝕜 m Ψ.symm ∧
+      e = c.extendTrans I Ψ
+
+end ExtendTrans
+
+section IsManifold
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
+
+/-- **Regular domains from half-space charts.** A charted space on a subset `s` of `M`, modelled on
+the half-space `EuclideanHalfSpace (n + 1)`, all of whose charts are half-space restrictions
+`OpenPartialHomeomorph.halfSpaceChart` of charts satisfying
+`OpenPartialHomeomorph.IsExtendTransChart` for `C^m`, is a `C^m` manifold with boundary. -/
+theorem isManifold_of_forall_mem_atlas_halfSpaceChart {m : ℕ∞ω} {n : ℕ} {s : Set M}
+    [ChartedSpace (EuclideanHalfSpace (n + 1)) s]
+    (h : ∀ e ∈ atlas (EuclideanHalfSpace (n + 1)) s,
+      ∃ (e' : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin (n + 1))))
+        (he' : ∀ w ∈ e'.source, w ∈ s ↔ 0 ≤ e' w 0) (x : s),
+        e'.IsExtendTransChart I m ∧ e = e'.halfSpaceChart he' x) :
+    IsManifold (𝓡∂ (n + 1)) m s := by
+  refine isManifold_of_contDiffOn _ _ _ fun e₁ e₂ h₁ h₂ ↦ ?_
+  obtain ⟨_, he₁, x₁, ⟨c₁, Ψ₁, hc₁, -, hΨ₁, rfl⟩, rfl⟩ := h e₁ h₁
+  obtain ⟨_, he₂, x₂, ⟨c₂, Ψ₂, hc₂, hΨ₂, -, rfl⟩, rfl⟩ := h e₂ h₂
+  exact contDiffOn_halfSpaceChart_symm_trans he₁ he₂ x₁ x₂
+    (contDiffOn_extendTrans_comp_symm I hc₁ hc₂ hΨ₁ hΨ₂)
+
+end IsManifold
 
 end OpenPartialHomeomorph
