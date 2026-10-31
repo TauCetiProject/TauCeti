@@ -94,7 +94,7 @@ open scoped Classical in
 theorem mixedInner_mixedEmbedding_traceToEuclidean (x y : K) :
     mixedInner K (mixedEmbedding K x) (traceToEuclidean K (mixedEmbedding K y)) =
       Algebra.trace ℚ K (x * y) := by
-  rw [← sum_mult_mul_re_embedding_eq_trace, sum_eq_sum_add_sum, mixedInner_def]
+  rw [← InfinitePlace.sum_mult_mul_re_embedding_eq_trace, sum_eq_sum_add_sum, mixedInner_def]
   congr 1 <;> refine Finset.sum_congr rfl fun w _ ↦ ?_
   · rw [mult_isReal, Nat.cast_one, one_mul, ← embedding_of_isReal_apply w.2, Complex.ofReal_re,
       map_mul]
@@ -132,19 +132,6 @@ theorem abs_det_traceToEuclidean :
   rw [det_traceToEuclidean, abs_pow, abs_neg, abs_of_pos four_pos]
 
 /-! ### The dual of an ideal lattice -/
-
-/-- Two points of the mixed space with the same Euclidean pairing against every vector of a basis
-are equal. -/
-private theorem eq_of_forall_mixedInner_eq {ι : Type*} (b : Basis ι ℝ (mixedSpace K))
-    {u v : mixedSpace K} (h : ∀ i, mixedInner K (b i) u = mixedInner K (b i) v) : u = v := by
-  classical
-  have hf : (mixedInnerBilin K).flip (u - v) = 0 :=
-    b.ext fun i ↦ by simp [map_sub, h]
-  have h0 : mixedInner K (u - v) (u - v) = 0 := by
-    rw [← mixedInnerBilin_apply, ← LinearMap.flip_apply, hf, LinearMap.zero_apply]
-  obtain ⟨z, hz⟩ := (euclidean.toMixed K).surjective (u - v)
-  rw [← hz, mixedInner_toMixed, inner_self_eq_zero] at h0
-  rw [← sub_eq_zero, ← hz, h0, map_zero]
 
 variable {K}
 
