@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.GorensteinProjective
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.Resolution
 
 /-!
 # The cokernel functor on matrix factorizations is fully faithful
@@ -17,9 +17,9 @@ cokernel of `d₀'` gives a finitely generated Gorenstein-projective `R`-module 
 induced functor `HMF(S,w) ⥤ stable(Gproj-R)` is fully faithful.
 
 Everything rests on the composite `p_X : X₁ → X₁' → M_X`, `y ↦ [1 ⊗ y]`, an `S`-linear surjection
-whose kernel is the image of `d₀`: if `1 ⊗ y = d₀' (1 ⊗ x)`, then `y - d₀ x = w y'` for some `y'`,
-and `w y' = d₀ (d₁ y')`. The non-zero-divisor hypothesis makes `d₀` injective on the projective
-module `X₀` (`TauCeti.MatrixFactorization.d₀_injective`).
+whose kernel is the image of `d₀` (`TauCeti.MatrixFactorization.quotientCokernelπ` and
+`TauCeti.MatrixFactorization.exact_d₀_quotientCokernelπ`). The non-zero-divisor hypothesis makes
+`d₀` injective on the projective module `X₀` (`TauCeti.MatrixFactorization.d₀_injective`).
 
 * **Fullness.** An `R`-linear map `φ : M_X → M_Y` lifts along `p_Y` to an `S`-linear
   `f₁ : X₁ → Y₁`, since `X₁` is projective. Then `f₁ ∘ d₀` lands in the image of `d₀`, so it
@@ -75,57 +75,6 @@ open scoped TensorProduct ChangeOfRings
 
 variable {S : Type u} [CommRing S] {w : S}
 
-/-! ### The cokernel of the reduction as a quotient of the odd component -/
-
-/-- The `S`-linear surjection `y ↦ [1 ⊗ y]` from the odd component onto the cokernel of the
-reduction modulo `w`, viewed as an `S`-module. -/
-private def reducedCokernelπ (X : MatrixFactorization S w) :
-    X.obj.X₁.obj ⟶ (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj
-      (cokernelFunctor.obj ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X)).obj :=
-  (ModuleCat.extendRestrictScalarsAdj.{u} (Ideal.Quotient.mk (Ideal.span {w}))).unit.app
-      X.obj.X₁.obj ≫
-    (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).map
-      (cokernelπ ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X))
-
-private theorem reducedCokernelπ_apply (X : MatrixFactorization S w) (y : X.obj.X₁) :
-    reducedCokernelπ X y =
-      cokernelπ ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X)
-        ((1 : S ⧸ Ideal.span {w}) ⊗ₜ[S, Ideal.Quotient.mk (Ideal.span {w})] y) :=
-  rfl
-
-private theorem reducedCokernelπ_surjective (X : MatrixFactorization S w) :
-    Function.Surjective (reducedCokernelπ X) := by
-  intro m
-  obtain ⟨z, rfl⟩ :=
-    cokernelπ_surjective ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj X) m
-  obtain ⟨y, rfl⟩ := TensorProduct.exists_one_tmul_eq (Ideal.span {w}) z
-  exact ⟨y, reducedCokernelπ_apply X y⟩
-
-/-- The kernel of `y ↦ [1 ⊗ y]` is the image of `d₀`: if `1 ⊗ y = d₀' (1 ⊗ x)`, then
-`y - d₀ x = w y' = d₀ (d₁ y')`. -/
-private theorem reducedCokernelπ_eq_zero_iff (X : MatrixFactorization S w) (y : X.obj.X₁) :
-    reducedCokernelπ X y = 0 ↔ y ∈ LinearMap.range X.obj.d₀.hom.hom := by
-  rw [reducedCokernelπ_apply]
-  constructor
-  · intro h
-    obtain ⟨z, hz⟩ := (exact_d₀_cokernelπ _ _).1 h
-    obtain ⟨x, rfl⟩ := TensorProduct.exists_one_tmul_eq (M := X.obj.X₀) (Ideal.span {w}) z
-    have : (1 : S ⧸ Ideal.span {w}) ⊗ₜ[S] (y - X.obj.d₀.hom.hom x) = 0 := by
-      rw [TensorProduct.tmul_sub]
-      exact sub_eq_zero.2 hz.symm
-    obtain ⟨y', hy'⟩ := (TensorProduct.one_tmul_eq_zero_iff_exists_smul_eq w _).1 this
-    refine ⟨x + X.obj.d₁.hom.hom y', ?_⟩
-    rw [map_add, d₁_comp_d₀_apply, hy', add_sub_cancel]
-  · rintro ⟨x, rfl⟩
-    exact (exact_d₀_cokernelπ _ _).2
-      ⟨(1 : S ⧸ Ideal.span {w}) ⊗ₜ[S, Ideal.Quotient.mk (Ideal.span {w})] x, rfl⟩
-
-private theorem reducedCokernelπ_naturality_apply {X Y : MatrixFactorization S w} (g : X ⟶ Y)
-    (y : X.obj.X₁) :
-    (cokernelFunctor.map ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).map g)).hom
-        (reducedCokernelπ X y) = reducedCokernelπ Y (g.hom.f₁.hom y) :=
-  cokernelπ_naturality_apply ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).map g) _
-
 /-! ### Fullness -/
 
 /-- Every map between the cokernels of the reductions of two matrix factorizations is induced by
@@ -136,20 +85,20 @@ private theorem exists_cokernelFunctor_map_eq (hw : w ∈ nonZeroDivisors S)
       cokernelFunctor.obj ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y)) :
     ∃ g : X ⟶ Y,
       cokernelFunctor.map ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).map g) = φ := by
-  have : Epi (reducedCokernelπ Y) :=
-    (ModuleCat.epi_iff_surjective _).2 (reducedCokernelπ_surjective Y)
+  have : Epi (quotientCokernelπ Y) :=
+    (ModuleCat.epi_iff_surjective _).2 (quotientCokernelπ_surjective Y)
   -- The odd component lifts `φ` along `y ↦ [1 ⊗ y]`.
-  let a := reducedCokernelπ X ≫
+  let a := quotientCokernelπ X ≫
     (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).map φ.hom
-  let f₁ := Projective.factorThru a (reducedCokernelπ Y)
-  have hf₁ (y : X.obj.X₁) : reducedCokernelπ Y (f₁ y) =
+  let f₁ := Projective.factorThru a (quotientCokernelπ Y)
+  have hf₁ (y : X.obj.X₁) : quotientCokernelπ Y (f₁ y) =
       (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).map φ.hom
-        (reducedCokernelπ X y) :=
-    ConcreteCategory.congr_hom (Projective.factorThru_comp a (reducedCokernelπ Y)) y
+        (quotientCokernelπ X y) :=
+    ConcreteCategory.congr_hom (Projective.factorThru_comp a (quotientCokernelπ Y)) y
   -- The even component lifts `f₁ ∘ d₀` along `d₀`.
   have hrange (x : X.obj.X₀) : f₁ (X.obj.d₀.hom x) ∈ LinearMap.range Y.obj.d₀.hom.hom := by
-    rw [← reducedCokernelπ_eq_zero_iff, hf₁,
-      (reducedCokernelπ_eq_zero_iff X _).2 ⟨x, rfl⟩, map_zero]
+    rw [← quotientCokernelπ_eq_zero_iff, hf₁,
+      (quotientCokernelπ_eq_zero_iff X _).2 ⟨x, rfl⟩, map_zero]
   obtain ⟨f₀, hf₀⟩ := Module.projective_lifting_property Y.obj.d₀.hom.hom.rangeRestrict
     ((f₁.hom ∘ₗ X.obj.d₀.hom.hom).codRestrict _ hrange) (LinearMap.surjective_rangeRestrict _)
   have hf₀' (x : X.obj.X₀) : Y.obj.d₀.hom (f₀ x) = f₁ (X.obj.d₀.hom x) :=
@@ -169,8 +118,8 @@ private theorem exists_cokernelFunctor_map_eq (hw : w ∈ nonZeroDivisors S)
         rw [d₁_comp_d₀_apply, hf₀', d₁_comp_d₀_apply, map_smul] }, ?_⟩
   apply ObjectProperty.hom_ext
   ext m
-  obtain ⟨y, rfl⟩ := reducedCokernelπ_surjective X m
-  exact (reducedCokernelπ_naturality_apply _ y).trans (hf₁ y)
+  obtain ⟨y, rfl⟩ := quotientCokernelπ_surjective X m
+  exact (quotientCokernelπ_naturality_apply _ y).trans (hf₁ y)
 
 /-- **The cokernel functor is full.** For a non-zero-divisor `w`, every map between the
 Gorenstein-projective `S/(w)`-modules attached to two finite-projective matrix factorizations of
@@ -214,22 +163,22 @@ private theorem mem_nullHomotopic_of_cokernelFunctor_map_eq_comp (hw : w ∈ non
   have : Epi u := (ModuleCat.epi_iff_surjective _).2 fun z ↦ by
     obtain ⟨y, rfl⟩ := TensorProduct.exists_one_tmul_eq (M := Y.obj.X₁) (Ideal.span {w}) z
     exact ⟨y, rfl⟩
-  let a := reducedCokernelπ X ≫
+  let a := quotientCokernelπ X ≫
     (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).map (i ≫ p')
   let h := Projective.factorThru a u
   have hh (y : X.obj.X₁) : u (h y) =
       (ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).map (i ≫ p')
-        (reducedCokernelπ X y) :=
+        (quotientCokernelπ X y) :=
     ConcreteCategory.congr_hom (Projective.factorThru_comp a u) y
   -- `g₁ - h` vanishes in the cokernel, so it is `d₀ k`.
   have ha (y : X.obj.X₁) : g.hom.f₁.hom y - h y ∈ LinearMap.range Y.obj.d₀.hom.hom := by
-    refine (reducedCokernelπ_eq_zero_iff Y _).1 ?_
+    refine (quotientCokernelπ_eq_zero_iff Y _).1 ?_
     rw [map_sub, sub_eq_zero]
-    exact (reducedCokernelπ_naturality_apply g y).symm.trans
-      ((ConcreteCategory.congr_hom hg (reducedCokernelπ X y)).trans
-        ((ConcreteCategory.congr_hom hp' (i (reducedCokernelπ X y))).symm.trans
-          (congrArg (cokernelπ ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y))
-            (hh y).symm)))
+    exact (quotientCokernelπ_naturality_apply g y).symm.trans
+      ((ConcreteCategory.congr_hom hg (quotientCokernelπ X y)).trans
+        ((ConcreteCategory.congr_hom hp' (i (quotientCokernelπ X y))).symm.trans
+          ((congrArg (cokernelπ ((baseChangeFunctor (Ideal.Quotient.mk (Ideal.span {w}))).obj Y))
+            (hh y).symm).trans (quotientCokernelπ_apply Y (h y)).symm)))
   obtain ⟨k, hk⟩ := Module.projective_lifting_property Y.obj.d₀.hom.hom.rangeRestrict
     ((g.hom.f₁.hom.hom - h.hom).codRestrict _ ha) (LinearMap.surjective_rangeRestrict _)
   have hk' (y : X.obj.X₁) : Y.obj.d₀.hom (k y) = g.hom.f₁.hom y - h y :=
@@ -238,7 +187,7 @@ private theorem mem_nullHomotopic_of_cokernelFunctor_map_eq_comp (hw : w ∈ non
   have hb (x : X.obj.X₀) : h (X.obj.d₀.hom x) ∈
       LinearMap.range (w • LinearMap.id : Y.obj.X₁ →ₗ[S] Y.obj.X₁) := by
     have : u (h (X.obj.d₀.hom x)) = 0 := by
-      rw [hh, (reducedCokernelπ_eq_zero_iff X _).2 ⟨x, rfl⟩, map_zero]
+      rw [hh, (quotientCokernelπ_eq_zero_iff X _).2 ⟨x, rfl⟩, map_zero]
     obtain ⟨y', hy'⟩ := (TensorProduct.one_tmul_eq_zero_iff_exists_smul_eq w _).1 this
     exact ⟨y', hy'⟩
   obtain ⟨t, ht⟩ := Module.projective_lifting_property
