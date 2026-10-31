@@ -37,7 +37,7 @@ measure.
   `TauCeti.Probability.not_hasLaw_of_measure_singleton_ne_zero` its reading for a law that is
   null on singletons;
 * `ProbabilityTheory.HasLaw.prod_extension` — adjoining a coordinate with an s-finite measure to
-  a random variable gives the pair the product measure, while preserving the old variable's law;
+  a random variable gives the pair the product measure;
 * `AEMeasurable.exists_map_restrict_eq_smul_dirac_of_atom` — the image of a finite positive
   measurable atom under an a.e.-measurable map to a standard Borel space is a point mass;
 * `ProbabilityTheory.HasLaw.exists_measure_atom_le_measure_singleton` — a law receiving such an
