@@ -76,13 +76,11 @@ theorem mem_comap_constantCoeff_pow_iff {N : ℕ} {f : R⟦X⟧} :
       Ideal.map_le_iff_le_comap.mpr fun a ha ↦ by simpa using ha
     have hX : (X : R⟦X⟧) ∈ I.comap constantCoeff := by simp
     -- Split `f` into its first `N` monomials and a multiple of `X ^ N`.
-    rw [eq_X_pow_mul_shift_add_trunc N f, trunc_apply, ← Polynomial.coeToPowerSeries.ringHom_apply,
-      map_sum]
-    refine add_mem (Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow hX N)) ?_
-    refine Ideal.sum_mem _ fun k hk ↦ ?_
-    rw [Finset.mem_Ico] at hk
-    rw [Polynomial.coeToPowerSeries.ringHom_apply, Polynomial.coe_monomial, monomial_eq_C_mul_X_pow,
-      show N = N - k + k by omega, pow_add]
+    rw [eq_X_pow_mul_shift_add_trunc N f, ← Polynomial.eval₂_C_X_eq_coe, eval₂_trunc_eq_sum_range]
+    refine add_mem (Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow hX N))
+      (Ideal.sum_mem _ fun k hk ↦ ?_)
+    -- The `k`-th monomial is a product of an element of `I ^ (N - k)` and `X ^ k`.
+    rw [← Nat.sub_add_cancel (Finset.mem_range.mp hk).le, pow_add]
     refine Ideal.mul_mem_mul (Ideal.pow_right_mono hC _ ?_) (Ideal.pow_mem_pow hX k)
     rw [← Ideal.map_pow]
     exact Ideal.mem_map_of_mem C (hf k)
@@ -92,10 +90,8 @@ constant coefficient in `I`. -/
 theorem isHausdorff_comap_constantCoeff [IsHausdorff I R] :
     IsHausdorff (I.comap constantCoeff) R⟦X⟧ := by
   refine ⟨fun f hf ↦ ext fun k ↦ IsHausdorff.haus ‹_› _ fun n ↦ ?_⟩
-  have h := hf (n + k)
-  rw [SModEq.zero, smul_eq_mul, Ideal.mul_top, mem_comap_constantCoeff_pow_iff] at h
-  rw [SModEq.zero, smul_eq_mul, Ideal.mul_top]
-  simpa using h k
+  simp only [SModEq.zero, smul_eq_mul, Ideal.mul_top, mem_comap_constantCoeff_pow_iff] at hf ⊢
+  simpa using hf (n + k) k
 
 /-- If `R` is `I`-adically precomplete, then `R⟦X⟧` is precomplete for the ideal of series with
 constant coefficient in `I`: a Cauchy sequence converges coefficientwise. -/

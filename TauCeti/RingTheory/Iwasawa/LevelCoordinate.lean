@@ -376,33 +376,31 @@ theorem range_iwasawaCoordinate [IsNoetherianRing O] :
     fun x hx ↦ (AlgHom.mem_range _).mpr ?_
   -- Lift each `x n` to a series `G n`; the lifts are congruent modulo `ω_m` for `m ≤ n`.
   choose G hG using fun n ↦ levelCoordinate_surjective hp n (x n)
-  have hdvd {m n : ℕ} (h : m ≤ n) : (1 + X : O⟦X⟧) ^ p ^ m - 1 ∣ G n - G m := by
-    rw [← levelCoordinate_eq_zero_iff hp, map_sub, ← levelTransition_levelCoordinate hp h, hG,
-      hG, hx h, sub_self]
+  have hω {m n : ℕ} (h : m ≤ n) : G m - G n ∈ Ideal.span {(1 + X : O⟦X⟧) ^ p ^ m - 1} := by
+    rw [← ker_levelCoordinate hp, RingHom.sub_mem_ker_iff, hG,
+      ← levelTransition_levelCoordinate hp h, hG, hx h]
   -- Since `ω_m` lies in the `(m + 1)`-st power of the maximal ideal, the lifts form a Cauchy
   -- sequence for the maximal-ideal-adic topology of `O⟦T⟧`, which is complete.
-  obtain ⟨F, hF⟩ := IsPrecomplete.prec' (I := maximalIdeal O⟦X⟧) G fun {m n} h ↦ by
-    rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, ← neg_sub, neg_mem_iff]
-    obtain ⟨q, hq⟩ := hdvd h
-    rw [hq]
-    exact Ideal.mul_mem_right _ _ (Ideal.pow_le_pow_right m.le_succ
-      (one_add_X_pow_sub_one_mem_maximalIdeal_pow hp m))
+  have hcauchy {m n : ℕ} (h : m ≤ n) : G m - G n ∈ maximalIdeal O⟦X⟧ ^ m :=
+    (Ideal.span_singleton_le_iff_mem _).mpr (Ideal.pow_le_pow_right m.le_succ
+      (one_add_X_pow_sub_one_mem_maximalIdeal_pow hp m)) (hω h)
+  obtain ⟨F, hF⟩ := IsPrecomplete.prec' (I := maximalIdeal O⟦X⟧) G fun h ↦ by
+    simpa only [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top] using hcauchy h
   refine ⟨F, funext fun n ↦ ?_⟩
-  -- By Krull's intersection theorem the ideal `(ω_n)` is closed, so `F ≡ G n` modulo `ω_n`.
-  rw [iwasawaCoordinate_apply, ← hG n, ← sub_eq_zero, ← map_sub, levelCoordinate_eq_zero_iff hp,
-    ← Ideal.mem_span_singleton, ← Ideal.Quotient.eq_zero_iff_mem]
-  refine IsHausdorff.haus' (I := maximalIdeal O⟦X⟧) _ fun i ↦ ?_
-  have hFi : F - G (max i n) ∈ maximalIdeal O⟦X⟧ ^ i := by
-    have := hF (max i n)
-    rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, ← neg_sub, neg_mem_iff] at this
-    exact Ideal.pow_le_pow_right (le_max_left i n) this
-  have hmk : Ideal.Quotient.mk (Ideal.span {(1 + X : O⟦X⟧) ^ p ^ n - 1}) (F - G n) =
-      Ideal.Quotient.mk _ (F - G (max i n)) := by
-    rw [Ideal.Quotient.eq, sub_sub_sub_cancel_left, Ideal.mem_span_singleton]
-    exact hdvd (le_max_right i n)
-  rw [hmk, SModEq.zero, ← Ideal.Quotient.mk_eq_mk, ← mul_one (F - G _), ← smul_eq_mul,
-    Submodule.Quotient.mk_smul]
-  exact Submodule.smul_mem_smul hFi Submodule.mem_top
+  -- By Krull's intersection theorem `O⟦T⟧ ⧸ (ω_n)` is maximal-ideal-adically Hausdorff, so it
+  -- suffices that the images of `F` and `G n` agree modulo every power of the maximal ideal.
+  let ω := Ideal.span {(1 + X : O⟦X⟧) ^ p ^ n - 1}
+  rw [iwasawaCoordinate_apply, ← hG n, ← RingHom.sub_mem_ker_iff, ker_levelCoordinate,
+    ← Submodule.Quotient.eq]
+  refine (IsHausdorff.eq_iff_smodEq (I := maximalIdeal O⟦X⟧)).mpr fun i ↦ ?_
+  -- Modulo `ω_n`, the lift `G n` agrees with the later lift `G (max i n)`, which is close to `F`.
+  have hk : Submodule.Quotient.mk (p := ω) (G n) = Submodule.Quotient.mk (G (max i n)) :=
+    (Submodule.Quotient.eq _).mpr (hω (le_max_right i n))
+  have hFk : F ≡ G (max i n) [SMOD maximalIdeal O⟦X⟧ ^ i • (⊤ : Submodule O⟦X⟧ O⟦X⟧)] :=
+    (hF _).symm.mono (Submodule.smul_mono_left (Ideal.pow_le_pow_right (le_max_left i n)))
+  rw [hk]
+  exact (hFk.map ω.mkQ).mono
+    (Submodule.map_le_iff_le_comap.mpr (Submodule.smul_top_le_comap_smul_top _ _))
 
 /-- **The Iwasawa algebra is the inverse limit of its levels.** Over a noetherian `O`, the level
 coordinates identify `O⟦T⟧` with the algebra `lim_n O[ℤ/pⁿ]` of compatible families. -/
