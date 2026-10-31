@@ -54,12 +54,9 @@ variable {R : Type*} [CommRing R] [Algebra ℚ R] {F G : FormalGroup R}
 `log_G(f(X)) = f'(0) · log_F(X)`. -/
 theorem subst_log (f : FormalGroupHom F G) :
     PowerSeries.subst f.toPowerSeries G.log = PowerSeries.coeff 1 f.toPowerSeries • F.log := by
-  have h := (hom_additive_iff (G.logHom.comp f).zero_constantCoeff).mp (G.logHom.comp f).hom
-  obtain ⟨c, hc⟩ := F.subst_toPowerSeries_eq_add_iff.mp h
-  have hc₁ := congrArg (PowerSeries.coeff 1) hc
-  simp only [coeff_one_comp, FormalGroup.logHom_toPowerSeries, FormalGroup.coeff_one_log, one_mul,
-    map_smul, smul_eq_mul, mul_one] at hc₁
-  simpa only [comp_toPowerSeries, FormalGroup.logHom_toPowerSeries, hc₁] using hc
+  have h := (G.logHom.comp f).toPowerSeries_eq_coeff_one_smul_log
+  rw [coeff_one_comp, FormalGroup.logHom_toPowerSeries, FormalGroup.coeff_one_log, one_mul] at h
+  simpa only [comp_toPowerSeries, FormalGroup.logHom_toPowerSeries] using h
 
 /-- **Every homomorphism is an exponential of a multiple of the logarithm**: a homomorphism
 `f : F → G` is `f(X) = exp_G(f'(0) · log_F(X))`. -/

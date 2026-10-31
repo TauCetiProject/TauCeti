@@ -540,15 +540,23 @@ theorem logIso_invHom : F.logIso.invHom = F.expHom := (rfl)
 instance : F.logIso.IsStrict where
   coeff_one := by simpa only [logIso_toHom, logHom_toPowerSeries] using F.coeff_one_log
 
-/-- A homomorphism to the additive group with linear coefficient one is the logarithm. -/
-theorem eq_logHom_of_coeff_one (f : TauCeti.FormalGroupHom F (𝔾ₐ (R := R)))
-    (hf : PowerSeries.coeff 1 f.toPowerSeries = 1) : f = F.logHom := by
+variable {F} in
+/-- A homomorphism to the additive group is its linear coefficient times the logarithm:
+`f(X) = f'(0) · log_F(X)`. -/
+theorem _root_.TauCeti.FormalGroupHom.toPowerSeries_eq_coeff_one_smul_log
+    (f : TauCeti.FormalGroupHom F (𝔾ₐ (R := R))) :
+    f.toPowerSeries = PowerSeries.coeff 1 f.toPowerSeries • F.log := by
   have h := (TauCeti.FormalGroupHom.hom_additive_iff f.zero_constantCoeff).mp f.hom
   obtain ⟨c, hc⟩ := F.subst_toPowerSeries_eq_add_iff.mp h
   have hc₁ := congrArg (PowerSeries.coeff 1) hc
-  simp only [hf, map_smul, coeff_one_log, smul_eq_mul, mul_one] at hc₁
+  simp only [map_smul, coeff_one_log, smul_eq_mul, mul_one] at hc₁
+  rwa [hc₁]
+
+/-- A homomorphism to the additive group with linear coefficient one is the logarithm. -/
+theorem eq_logHom_of_coeff_one (f : TauCeti.FormalGroupHom F (𝔾ₐ (R := R)))
+    (hf : PowerSeries.coeff 1 f.toPowerSeries = 1) : f = F.logHom := by
   apply TauCeti.FormalGroupHom.ext
-  simpa only [logHom_toPowerSeries, ← hc₁, one_smul] using hc
+  rw [f.toPowerSeries_eq_coeff_one_smul_log, hf, one_smul, logHom_toPowerSeries]
 
 /-- The logarithm is the unique strict isomorphism from `F` to the additive formal group. -/
 theorem eq_logIso (f : TauCeti.FormalGroupIso F (𝔾ₐ (R := R))) [f.IsStrict] :
