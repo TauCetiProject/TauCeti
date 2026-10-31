@@ -107,6 +107,14 @@ private theorem charDivisor_apply_eq_localLength [IsNoetherianRing A] [Module.Fi
     charDivisor A M 𝔭 = localLength A M 𝔭 := by
   rw [charDivisor, dite_eq_left (finite_support_localLength hM), Finsupp.ofSupportFinite_coe]
 
+/-- If the local lengths are the values of a finitely supported function `d`, then the
+characteristic divisor is `d`. -/
+private theorem charDivisor_eq_of_localLength_eq {d : PrimeSpectrum A →₀ ℕ}
+    (h : localLength A M = d) : charDivisor A M = d := by
+  rw [charDivisor, dite_eq_left (by rw [h, Finsupp.fun_support_eq]; exact Finset.finite_toSet _)]
+  ext 𝔭
+  simp [Finsupp.ofSupportFinite_coe, h]
+
 /-- The characteristic divisor vanishes at primes whose height is not one. -/
 @[simp]
 theorem charDivisor_apply_of_height_ne_one {𝔭 : PrimeSpectrum A} (h : 𝔭.asIdeal.height ≠ 1) :
@@ -144,9 +152,7 @@ theorem IsPseudoNull.charDivisor_eq_zero (h : IsPseudoNull A M) : charDivisor A 
     · have := h.subsingleton_localizedModule 𝔭 hht.le
       simp [localLength, hht, Module.length_eq_zero]
     · simp [localLength, hht]
-  rw [charDivisor, dite_eq_left (by simp [hloc])]
-  ext 𝔭
-  simp [Finsupp.ofSupportFinite_coe, hloc]
+  exact charDivisor_eq_of_localLength_eq (by rw [hloc, Finsupp.coe_zero])
 
 /-- The characteristic divisor of the zero module is zero. -/
 @[simp]
@@ -224,9 +230,7 @@ theorem charDivisor_quotient_of_height_eq_one {𝔭 : Ideal A} [𝔭.IsPrime] (h
       rw [Module.mem_support_iff_of_finite, Ideal.annihilator_quotient] at hsupp
       have : 𝔭.FiniteHeight := by simp [𝔭.finiteHeight_iff, h]
       exact h𝔮 (PrimeSpectrum.ext (𝔭.eq_of_le_of_height_le hsupp (hht.trans h.symm).le).symm)
-  rw [charDivisor, dite_eq_left (by rw [hloc, Finsupp.fun_support_eq]; exact Finset.finite_toSet _)]
-  ext 𝔮
-  simp [Finsupp.ofSupportFinite_coe, hloc]
+  exact charDivisor_eq_of_localLength_eq hloc
 
 end TauCeti.Iwasawa
 
