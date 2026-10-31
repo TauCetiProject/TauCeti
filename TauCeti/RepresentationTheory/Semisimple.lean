@@ -23,7 +23,7 @@ once complete reducibility is known by other means.
 The character determines the trace of every element `a = ∑ a_g g` of the monoid algebra `k[G]`
 acting on the representation, namely `∑ a_g χ(g)`. So the `k[G]`-modules of the two
 representations are semisimple with equal trace functions, and
-`TauCeti.IsSemisimpleModule.nonempty_linearEquiv_of_trace_eq` identifies them.
+`IsSemisimpleModule.nonempty_linearEquiv_of_trace_eq` identifies them.
 
 ## Main results
 
@@ -67,7 +67,7 @@ theorem nonempty_equiv_of_character_eq_of_isSemisimpleRepresentation [CharZero k
   have := (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule ρ).mp ‹_›
   have := (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule σ).mp ‹_›
   refine TauCeti.Representation.nonempty_equiv_iff.mpr <|
-    TauCeti.IsSemisimpleModule.nonempty_linearEquiv_of_trace_eq (k := k) _ _ fun a => ?_
+    IsSemisimpleModule.nonempty_linearEquiv_of_trace_eq (k := k) _ _ fun a => ?_
   rw [← LinearMap.trace_conj' _ ρ.asModuleEquiv, ← LinearMap.trace_conj' _ σ.asModuleEquiv]
   exact trace_asAlgebraHom_eq_of_character_eq h a
 
