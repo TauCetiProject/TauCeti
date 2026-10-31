@@ -19,6 +19,9 @@ The internal direct sum gives every finitely supported function a unique finite 
 decomposition, including when several basis vectors have the same degree. This construction
 also applies after a linear change of coordinates, via `InternalGrading.map`.
 
+Each piece is itself free: `InternalGrading.finsuppPieceBasis A g p` is its basis formed by the
+basis vectors of the indices of degree `p`.
+
 The construction uses Mathlib's `Finsupp.supported` submodules and
 `DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top`.
 -/
@@ -86,5 +89,24 @@ theorem single_mem_finsupp_piece_iff (i : I) (a : A) (p : ℤ) :
     · by_cases hji : j = i
       · simpa [hji] using hp
       · simp [hji] at hj
+
+variable (A g) in
+/-- The basis of the degree-`p` piece of `InternalGrading.finsupp A g` formed by the basis vectors
+`Finsupp.single i 1` of the indices `i` of degree `p`. -/
+noncomputable def finsuppPieceBasis (p : ℤ) :
+    Module.Basis {i // g i = p} A ((finsupp A g).piece p) :=
+  .ofRepr (Finsupp.supportedEquivFinsupp {i | g i = p})
+
+/-- The basis vector of an index of degree `p` is its single coordinate. -/
+@[simp]
+theorem coe_finsuppPieceBasis {p : ℤ} (i : {i // g i = p}) :
+    (finsuppPieceBasis A g p i : I →₀ A) = Finsupp.single (i : I) 1 :=
+  Finsupp.supportedEquivFinsupp_symm_single {i | g i = p} i 1
+
+/-- The coordinates of a homogeneous element in `finsuppPieceBasis` are its coefficients. -/
+@[simp]
+theorem finsuppPieceBasis_repr_apply {p : ℤ} (x : (finsupp A g).piece p) (i : {i // g i = p}) :
+    (finsuppPieceBasis A g p).repr x i = (x : I →₀ A) i :=
+  (rfl)
 
 end TauCeti.InternalGrading
