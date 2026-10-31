@@ -186,7 +186,8 @@ lemma singularCohomologyMap_comp {P P' P'' : TopPair.{w}} (f : P ⟶ P') (g : P'
   simp [TopPair.singularCohomologyMap, singularCochainComplexMap_comp,
     HomologicalComplex.homologyMap_comp]
 
-/-- Pulling a class back along a composite is pulling it back along each map in turn. -/
+/-- `TopPair.singularCohomologyMap_comp` evaluated at a class: the map induced by a composite of
+maps of pairs is the composite of the induced maps. -/
 lemma singularCohomologyMap_comp_apply {P P' P'' : TopPair.{w}} (f : P ⟶ P') (g : P' ⟶ P'')
     (n : ℕ) (x : P''.singularCohomology R k M n) :
     TopPair.singularCohomologyMap (f ≫ g) n x =

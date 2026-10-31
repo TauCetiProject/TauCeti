@@ -9,8 +9,8 @@ public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 public import TauCeti.AlgebraicTopology.Singular.ProdThomPair
 public import TauCeti.Topology.VectorBundle.ThomClass
 import TauCeti.Algebra.Category.ModuleCat.Biproducts
+import TauCeti.Algebra.Module.Equiv.SpanSingleton
 import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Pair
-import TauCeti.LinearAlgebra.LinearEquiv.Basic
 
 /-!
 # The Thom pair over finite unions of trivializing open sets
@@ -57,9 +57,9 @@ and the projection to the fibre is a local Thom class
 commutative ring `K` whose only unit is `1`, such as `ZMod 2`, a module isomorphic to `K` has a
 single generator (`LinearEquiv.eq_of_span_singleton_eq_top`), so any two local Thom classes have
 the same restriction to every fibre and they glue: every real vector bundle over a compact base has
-a Thom class with coefficients in `K` (`TauCeti.exists_isThomClass_of_compactSpace`). With
-integral coefficients the fibre generators have to be chosen compatibly, which is what an
-orientation of the bundle provides.
+a Thom class with coefficients in `K` (`TauCeti.exists_isThomClass_of_compactSpace`). With integral
+coefficients the fibre generators have to be chosen compatibly, which is what an orientation of the
+bundle provides.
 
 ## Main definitions
 
@@ -163,13 +163,12 @@ theorem thomPairOverIso_inv_snd_apply (p : (prodThomPair W F).snd) :
 
 end Linear
 
-section LinearFiber
+section Fiber
 
 variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {B : Type w} [TopologicalSpace B] {F : Type w}
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
-  [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)]
-  [FiberBundle F E] (e : Trivialization F (π F E)) [e.IsLinear 𝕜] {W : Set B} (hW : W ⊆ e.baseSet)
-  {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C}
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  (e : Trivialization F (π F E)) [e.IsLinear 𝕜] {W : Set B} (hW : W ⊆ e.baseSet)
 
 /-- On the fibre over a point `b ∈ W`, the identification of `(E|_W, E₀|_W)` with the Thom pair of
 the product bundle `W × F` is the isomorphism of fibre pairs `(E_b, E_b ∖ {0}) ≅ (F, F ∖ {0})`
@@ -196,7 +195,8 @@ the projection to the fibre, to a class of `Hⁿ(E|_W, E₀|_W)` whose restricti
 over each `b ∈ W` is the image of `g` under the isomorphism of fibre pairs
 `(E_b, E_b ∖ {0}) ≅ (F, F ∖ {0})` given by the trivialization. For `g` a generator in degree
 `dim F` these are local Thom classes. -/
-theorem exists_singularCohomology_thomPairOver_fiber {k : Type*} [Ring k] [Linear k C] {M : C}
+theorem exists_singularCohomology_thomPairOver_fiber {C : Type u} [Category.{v} C]
+    [HasCoproducts.{w} C] [Abelian C] {R : C} {k : Type*} [Ring k] [Linear k C] {M : C}
     {n : ℕ} (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R k M n) :
     ∃ u : (thomPairOver F E W).singularCohomology R k M n, ∀ b (hb : b ∈ W),
       TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) n u =
@@ -213,7 +213,7 @@ theorem exists_singularCohomology_thomPairOver_fiber {k : Type*} [Ring k] [Linea
   rw [← TopPair.singularCohomologyMap_comp_apply,
     e.fiberThomPairOverMap_comp_thomPairOverIso_hom_assoc 𝕜 hW hb, hproj, Category.comp_id]
 
-end LinearFiber
+end Fiber
 
 variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
@@ -252,13 +252,11 @@ theorem singularCohomology_thomPairOver_ext
   -- Transport `u` and `v` to the product bundle and compare them there, fibre by fibre.
   have hφu (w : (thomPairOver F E W).singularCohomology R' K M' (finrank ℝ F)) :
       TopPair.singularCohomologyMap φ.hom _ (TopPair.singularCohomologyMap φ.inv _ w) = w := by
-    rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp, Iso.hom_inv_id,
-      TopPair.singularCohomologyMap_id, ConcreteCategory.id_apply]
+    simp [← TopPair.singularCohomologyMap_comp_apply]
   refine (hφu u).symm.trans ((congrArg _ (singularCohomology_prodThomPair_ext fun b ↦ ?_)).trans
     (hφu v))
-  rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
-    ← TopPair.singularCohomologyMap_comp, hφ, TopPair.singularCohomologyMap_comp,
-    ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, h b b.2]
+  simp only [← TopPair.singularCohomologyMap_comp_apply, hφ]
+  simp only [TopPair.singularCohomologyMap_comp_apply, h b b.2]
 
 end Fiber
 
@@ -429,59 +427,49 @@ private theorem thomPairOverInterIso_hom_comp_ofInclusionMap_right :
 
 variable {R} {k : Type*} [Ring k] [Linear k C] {M : C}
 
-variable (R k M U V) in
-/-- The first map `Hⁿ(E|_{U ∪ V}, E₀|_{U ∪ V}) ⟶ Hⁿ(E|_U, E₀|_U) ⊞ Hⁿ(E|_V, E₀|_V)` of the
-Mayer–Vietoris sequence of the Thom pairs over `U` and over `V`. -/
-private abbrev thomPairOverToBiprod (n : ℕ) :=
-  TopCat.singularCohomologyPairMayerVietorisToBiprod R k M (X := TopCat.of (TotalSpace F E))
-    (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
-    (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V) n
+variable (R k M F E U V) in
+/-- The first map of the Mayer–Vietoris sequence of the Thom pairs over `U` and over `V`, from the
+cohomology of the Thom pair over `U ∪ V`. -/
+private abbrev thomPairOverToBiprod (n : ℕ) :
+    (thomPairOver F E (U ∪ V)).singularCohomology R k M n ⟶
+      (thomPairOver F E U).singularCohomology R k M n ⊞
+        (thomPairOver F E V).singularCohomology R k M n :=
+  TopPair.singularCohomologyMap (thomPairOverUnionIso F E U V).hom n ≫
+    TopCat.singularCohomologyPairMayerVietorisToBiprod R k M (X := TopCat.of (TotalSpace F E))
+      (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
+      (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V) n
 
-variable (R k M U V) in
-/-- The second map `Hⁿ(E|_U, E₀|_U) ⊞ Hⁿ(E|_V, E₀|_V) ⟶ Hⁿ(E|_{U ∩ V}, E₀|_{U ∩ V})` of the
-Mayer–Vietoris sequence of the Thom pairs over `U` and over `V`. -/
-private abbrev thomPairOverFromBiprod (n : ℕ) :=
-  TopCat.singularCohomologyPairMayerVietorisFromBiprod R k M (X := TopCat.of (TotalSpace F E))
-    (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
-    (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V) n
+/-- The first component of the Mayer–Vietoris map is the restriction from `U ∪ V` to `U`. -/
+private theorem thomPairOverToBiprod_fst (n : ℕ) :
+    thomPairOverToBiprod R F E U V k M n ≫ biprod.fst =
+      TopPair.singularCohomologyMap (thomPairOverMap F E subset_union_left) n := by
+  rw [Category.assoc, TopCat.singularCohomologyPairMayerVietorisToBiprod_fst,
+    ← TopPair.singularCohomologyMap_comp, ofInclusionMap_comp_thomPairOverUnionIso_hom_left]
 
-/-- The first component of the first Mayer–Vietoris map is the restriction from `U ∪ V` to `U`. -/
-private theorem fst_thomPairOverToBiprod {n : ℕ}
-    (z : (thomPairOver F E (U ∪ V)).singularCohomology R k M n) :
-    (biprod.fst : _ ⊞ _ ⟶ (thomPairOver F E U).singularCohomology R k M n)
-        (thomPairOverToBiprod R U V k M n
-          (TopPair.singularCohomologyMap (thomPairOverUnionIso F E U V).hom n z)) =
-      TopPair.singularCohomologyMap (thomPairOverMap F E subset_union_left) n z := by
-  rw [← ConcreteCategory.comp_apply, TopCat.singularCohomologyPairMayerVietorisToBiprod_fst,
-    ← TopPair.singularCohomologyMap_comp_apply, ofInclusionMap_comp_thomPairOverUnionIso_hom_left]
+/-- The second component of the Mayer–Vietoris map is the restriction from `U ∪ V` to `V`. -/
+private theorem thomPairOverToBiprod_snd (n : ℕ) :
+    thomPairOverToBiprod R F E U V k M n ≫ biprod.snd =
+      TopPair.singularCohomologyMap (thomPairOverMap F E subset_union_right) n := by
+  rw [Category.assoc, TopCat.singularCohomologyPairMayerVietorisToBiprod_snd,
+    ← TopPair.singularCohomologyMap_comp, ofInclusionMap_comp_thomPairOverUnionIso_hom_right]
 
-/-- The second component of the first Mayer–Vietoris map is the restriction from `U ∪ V` to `V`. -/
-private theorem snd_thomPairOverToBiprod {n : ℕ}
-    (z : (thomPairOver F E (U ∪ V)).singularCohomology R k M n) :
-    (biprod.snd : _ ⊞ _ ⟶ (thomPairOver F E V).singularCohomology R k M n)
-        (thomPairOverToBiprod R U V k M n
-          (TopPair.singularCohomologyMap (thomPairOverUnionIso F E U V).hom n z)) =
-      TopPair.singularCohomologyMap (thomPairOverMap F E subset_union_right) n z := by
-  rw [← ConcreteCategory.comp_apply, TopCat.singularCohomologyPairMayerVietorisToBiprod_snd,
-    ← TopPair.singularCohomologyMap_comp_apply, ofInclusionMap_comp_thomPairOverUnionIso_hom_right]
-
-/-- The second Mayer–Vietoris map sends `(a, b)` to the difference of the restrictions of `a` and
-`b` to `U ∩ V`. -/
-private theorem singularCohomologyMap_thomPairOverInterIso_hom_thomPairOverFromBiprod {n : ℕ}
-    (a : (thomPairOver F E U).singularCohomology R k M n)
-    (b : (thomPairOver F E V).singularCohomology R k M n) :
-    TopPair.singularCohomologyMap (thomPairOverInterIso F E U V).hom n
-        (thomPairOverFromBiprod R U V k M n
-          ((biprod.inl : _ ⟶ _ ⊞ (thomPairOver F E V).singularCohomology R k M n) a +
-            (biprod.inr : _ ⟶ (thomPairOver F E U).singularCohomology R k M n ⊞ _) b)) =
-      TopPair.singularCohomologyMap (thomPairOverMap F E inter_subset_left) n a -
-        TopPair.singularCohomologyMap (thomPairOverMap F E inter_subset_right) n b := by
-  rw [map_add, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
-    TopCat.inl_singularCohomologyPairMayerVietorisFromBiprod,
-    TopCat.inr_singularCohomologyPairMayerVietorisFromBiprod,
-    ← thomPairOverInterIso_hom_comp_ofInclusionMap_left,
-    ← thomPairOverInterIso_hom_comp_ofInclusionMap_right]
-  simp [TopPair.singularCohomologyMap_comp_apply, sub_eq_add_neg]
+/-- The second map of the Mayer–Vietoris sequence of the Thom pairs over `U` and over `V`, read in
+the cohomology of the Thom pair over `U ∩ V`, sends `(a, b)` to the difference of the restrictions
+of `a` and `b` to `U ∩ V`. -/
+private theorem singularCohomologyPairMayerVietorisFromBiprod_thomPairOverInterIso (n : ℕ) :
+    TopCat.singularCohomologyPairMayerVietorisFromBiprod R k M (X := TopCat.of (TotalSpace F E))
+        (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
+        (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V) n ≫
+          TopPair.singularCohomologyMap (thomPairOverInterIso F E U V).hom n =
+      biprod.desc (TopPair.singularCohomologyMap (thomPairOverMap F E inter_subset_left) n)
+        (-TopPair.singularCohomologyMap (thomPairOverMap F E inter_subset_right) n) := by
+  refine biprod.hom_ext' _ _ ?_ ?_
+  · rw [TopCat.inl_singularCohomologyPairMayerVietorisFromBiprod_assoc,
+      ← TopPair.singularCohomologyMap_comp, thomPairOverInterIso_hom_comp_ofInclusionMap_left,
+      biprod.inl_desc]
+  · rw [TopCat.inr_singularCohomologyPairMayerVietorisFromBiprod_assoc, Preadditive.neg_comp,
+      ← TopPair.singularCohomologyMap_comp, thomPairOverInterIso_hom_comp_ofInclusionMap_right,
+      biprod.inr_desc]
 
 variable [TopologicalSpace B] [∀ b, TopologicalSpace (E b)] [TopologicalSpace F] [FiberBundle F E]
 
@@ -496,25 +484,30 @@ theorem singularCohomology_thomPairOver_union_ext (hU : IsOpen U) (hV : IsOpen V
     (hxyV : TopPair.singularCohomologyMap (thomPairOverMap F E subset_union_right) n x =
       TopPair.singularCohomologyMap (thomPairOverMap F E subset_union_right) n y) : x = y := by
   obtain ⟨hA, hB, hC, hD⟩ := isOpen_thomPairOver_mayerVietoris (F := F) (E := E) hU hV
-  let ι := thomPairOverUnionIso F E U V
   -- The first map of the Mayer–Vietoris sequence is injective in degree `n`.
-  have hmono : Mono (thomPairOverToBiprod (F := F) (E := E) R U V k M n) := by
-    cases n with
-    | zero =>
-      exact TopCat.mono_singularCohomologyPairMayerVietorisToBiprod_zero R k M _ _ hA hB hC hD
-    | succ m =>
-      refine (TopCat.singularCohomologyPairMayerVietoris_exact₁ R k M _ _ hA hB hC hD m
-        (m + 1)).mono_g (IsZero.eq_of_src ?_ _ _)
-      exact (hUV m rfl).of_iso ((TopPair.singularCohomologyFunctor R k M m).mapIso
-        (thomPairOverInterIso F E U V).op)
-  have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) ι.hom n) :=
-    (TopPair.singularCohomologyFunctor R k M n).map_isIso ι.hom.op
-  refine (ModuleCat.mono_iff_injective (TopPair.singularCohomologyMap ι.hom n)).1 inferInstance
-    ((ModuleCat.mono_iff_injective _).1 hmono
-    ((ModuleCat.mono_iff_injective (ModuleCat.biprodIsoProd _ _).hom).1 inferInstance ?_))
-  rw [ModuleCat.biprodIsoProd_hom_apply, ModuleCat.biprodIsoProd_hom_apply,
-    fst_thomPairOverToBiprod, fst_thomPairOverToBiprod, snd_thomPairOverToBiprod,
-    snd_thomPairOverToBiprod, hxyU, hxyV]
+  have hmono : Mono (thomPairOverToBiprod R F E U V k M n) := by
+    have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+        (thomPairOverUnionIso F E U V).hom n) :=
+      (TopPair.singularCohomologyFunctor R k M n).map_isIso (thomPairOverUnionIso F E U V).hom.op
+    have : Mono (TopCat.singularCohomologyPairMayerVietorisToBiprod R k M
+        (X := TopCat.of (TotalSpace F E))
+        (inter_subset_left : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U)
+        (inter_subset_left : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V) n) := by
+      cases n with
+      | zero =>
+        exact TopCat.mono_singularCohomologyPairMayerVietorisToBiprod_zero R k M _ _ hA hB hC hD
+      | succ m =>
+        refine (TopCat.singularCohomologyPairMayerVietoris_exact₁ R k M _ _ hA hB hC hD m
+          (m + 1)).mono_g (IsZero.eq_of_src ?_ _ _)
+        exact (hUV m rfl).of_iso ((TopPair.singularCohomologyFunctor R k M m).mapIso
+          (thomPairOverInterIso F E U V).op)
+    exact mono_comp _ _
+  -- Its two components are the restrictions to `U` and to `V`.
+  refine (ModuleCat.mono_iff_injective _).1 hmono
+    ((ModuleCat.mono_iff_injective (ModuleCat.biprodIsoProd _ _).hom).1 inferInstance ?_)
+  rw [ModuleCat.biprodIsoProd_hom_apply, ModuleCat.biprodIsoProd_hom_apply]
+  simp only [← ConcreteCategory.comp_apply, thomPairOverToBiprod_fst, thomPairOverToBiprod_snd,
+    hxyU, hxyV]
 
 /-- **Classes over `U` and over `V` that agree over `U ∩ V` glue to a class over `U ∪ V`**: this is
 exactness of the Mayer–Vietoris sequence of the Thom pairs over the open sets `U` and `V` at
@@ -528,32 +521,31 @@ theorem exists_singularCohomology_thomPairOver_union (hU : IsOpen U) (hV : IsOpe
       TopPair.singularCohomologyMap (thomPairOverMap F E subset_union_left) n x = a ∧
         TopPair.singularCohomologyMap (thomPairOverMap F E subset_union_right) n x = b := by
   obtain ⟨hA, hB, hC, hD⟩ := isOpen_thomPairOver_mayerVietoris (F := F) (E := E) hU hV
-  let ι := thomPairOverUnionIso F E U V
   let hCA : π F E ⁻¹' U ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' U := inter_subset_left
   let hDB : π F E ⁻¹' V ∩ zeroSectionCompl F E ⊆ π F E ⁻¹' V := inter_subset_left
   let z := (biprod.inl : _ ⟶ _ ⊞ (thomPairOver F E V).singularCohomology R k M n) a +
     (biprod.inr : _ ⟶ (thomPairOver F E U).singularCohomology R k M n ⊞ _) b
   -- The pair `(a, b)` is in the kernel of the second map of the Mayer–Vietoris sequence, since its
   -- image there is the difference of the restrictions of `a` and `b` to `U ∩ V`.
-  have hz : thomPairOverFromBiprod R U V k M n z = 0 := by
+  have hz : TopCat.singularCohomologyPairMayerVietorisFromBiprod R k M hCA hDB n z = 0 := by
     have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
         (thomPairOverInterIso F E U V).hom n) :=
       (TopPair.singularCohomologyFunctor R k M n).map_isIso (thomPairOverInterIso F E U V).hom.op
     refine (ModuleCat.mono_iff_injective (TopPair.singularCohomologyMap
       (thomPairOverInterIso F E U V).hom n)).1 inferInstance ?_
-    rw [singularCohomologyMap_thomPairOverInterIso_hom_thomPairOverFromBiprod, hab, sub_self,
-      map_zero]
+    rw [← ConcreteCategory.comp_apply,
+      singularCohomologyPairMayerVietorisFromBiprod_thomPairOverInterIso]
+    simp [z, ← ConcreteCategory.comp_apply, hab]
   obtain ⟨x, hx⟩ := (ShortComplex.moduleCat_exact_iff _).1
     (TopCat.singularCohomologyPairMayerVietoris_exact₂ R k M hCA hDB hA hB hC hD n) z hz
-  -- The class over `U ∪ V` corresponding to `x` has components `a` and `b`.
-  have hι :
-      TopPair.singularCohomologyMap ι.hom n (TopPair.singularCohomologyMap ι.inv n x) = x := by
-    rw [← TopPair.singularCohomologyMap_comp_apply, Iso.hom_inv_id,
-      TopPair.singularCohomologyMap_id, ConcreteCategory.id_apply]
-  refine ⟨TopPair.singularCohomologyMap ι.inv n x, ?_, ?_⟩
-  · rw [← fst_thomPairOverToBiprod, hι, hx]
+  -- A preimage of `(a, b)` under the first map of the Mayer–Vietoris sequence.
+  have hι : thomPairOverToBiprod R F E U V k M n
+      (TopPair.singularCohomologyMap (thomPairOverUnionIso F E U V).inv n x) = z := by
+    simpa [← TopPair.singularCohomologyMap_comp_apply] using hx
+  refine ⟨TopPair.singularCohomologyMap (thomPairOverUnionIso F E U V).inv n x, ?_, ?_⟩
+  · rw [← thomPairOverToBiprod_fst, ConcreteCategory.comp_apply, hι]
     simp [z, ← ConcreteCategory.comp_apply]
-  · rw [← snd_thomPairOverToBiprod, hι, hx]
+  · rw [← thomPairOverToBiprod_snd, ConcreteCategory.comp_apply, hι]
     simp [z, ← ConcreteCategory.comp_apply]
 
 end Gluing
@@ -639,8 +631,19 @@ private theorem singularCohomologyMap_fiberThomPairOverMap_thomPairOverMap {W W'
     TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) n
         (TopPair.singularCohomologyMap (thomPairOverMap F E h) n x) =
       TopPair.singularCohomologyMap (fiberThomPairOverMap F E (h hb)) n x := by
-  rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp,
-    fiberThomPairOverMap_comp_thomPairOverMap]
+  rw [← TopPair.singularCohomologyMap_comp_apply, fiberThomPairOverMap_comp_thomPairOverMap]
+
+omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+/-- Restricting a class to a smaller set and then to a still smaller one is restricting it to the
+smallest set. -/
+private theorem singularCohomologyMap_thomPairOverMap_thomPairOverMap {W W' W'' : Set B}
+    (h : W ⊆ W') (h' : W' ⊆ W'') {n : ℕ}
+    (x : (thomPairOver F E W'').singularCohomology R' K M' n) :
+    TopPair.singularCohomologyMap (thomPairOverMap F E h) n
+        (TopPair.singularCohomologyMap (thomPairOverMap F E h') n x) =
+      TopPair.singularCohomologyMap (thomPairOverMap F E (h.trans h')) n x := by
+  rw [← TopPair.singularCohomologyMap_comp_apply, thomPairOverMap_comp_thomPairOverMap]
 
 omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
@@ -730,20 +733,20 @@ theorem exists_singularCohomology_thomPairOver_biUnion {ι : Type*} (s : Finset 
       · obtain ⟨e', he', hi'⟩ := hWe i (hs i hi)
         exact ⟨e', he', inter_subset_right.trans hi'⟩
       · obtain ⟨j, hj, hbj⟩ := mem_iUnion₂.1 hb
-        simp only [singularCohomologyMap_fiberThomPairOverMap_thomPairOverMap]
-        rw [← singularCohomologyMap_fiberThomPairOverMap_thomPairOverMap
-          (Finset.subset_set_biUnion_of_mem hj) hbj.2 y, hy j hj]
+        -- On the fibre over `b ∈ W j`, `y` restricts as its restriction `u j` to `W j` does.
+        have hyb := singularCohomologyMap_fiberThomPairOverMap_thomPairOverMap
+          (Finset.subset_set_biUnion_of_mem hj) hbj.2 y
+        rw [hy j hj] at hyb
+        simp only [singularCohomologyMap_fiberThomPairOverMap_thomPairOverMap, ← hyb]
         exact hu a ha' j (hs j hj) b hbj.1 hbj.2
     obtain ⟨z, hza, hzs⟩ := exists_singularCohomology_thomPairOver_union (hWo a ha') hSo (u a) y
       hagree
     refine ⟨TopPair.singularCohomologyMap
       (thomPairOverMap F E (Finset.set_biUnion_insert a s W).le) _ z, fun i hi ↦ ?_⟩
-    rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp,
-      thomPairOverMap_comp_thomPairOverMap]
+    rw [singularCohomologyMap_thomPairOverMap_thomPairOverMap]
     rcases Finset.mem_insert.1 hi with rfl | hi
     · exact hza
-    · rw [← hy i hi, ← hzs, ← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp,
-        thomPairOverMap_comp_thomPairOverMap]
+    · rw [← hy i hi, ← hzs, singularCohomologyMap_thomPairOverMap_thomPairOverMap]
 
 end TopDegree
 
@@ -778,19 +781,20 @@ theorem exists_isThomClass_of_compactSpace [CompactSpace B] [VectorBundle ℝ F 
     fun c _ c' _ b hc hc' ↦ by
       rw [hu c b hc, hu c' b hc']
       -- In a module isomorphic to `K` there is only one generator, since `K` has only one unit.
-      exact ((mapEquiv ((e c).fiberPairIso ℝ hc)).symm.trans gEquiv).eq_of_span_singleton_eq_top
+      exact LinearEquiv.eq_of_span_singleton_eq_top
+        ((mapEquiv ((e c).fiberPairIso ℝ hc)).symm.trans gEquiv)
         ((mapEquiv ((e c).fiberPairIso ℝ hc)).span_singleton_apply_eq_top_iff.2 hg)
         ((mapEquiv ((e c').fiberPairIso ℝ hc')).span_singleton_apply_eq_top_iff.2 hg)
   refine ⟨TopPair.singularCohomologyMap ((thomPairOverUnivIso F E).inv ≫ thomPairOverMap F E ht)
     _ x, isThomClass_iff.2 ⟨inferInstance, fun b ↦ ?_⟩⟩
   obtain ⟨c, hct, hbc⟩ := mem_iUnion₂.1 (ht (mem_univ b))
-  -- The fibre over `b` lies over the trivializing set of `c`, where `x` restricts to `u c`.
-  have hb : fiberThomPairMap F E b ≫ (thomPairOverUnivIso F E).inv ≫ thomPairOverMap F E ht =
-      fiberThomPairOverMap F E hbc ≫
-        thomPairOverMap F E
-          (Finset.subset_set_biUnion_of_mem (f := fun c ↦ (e c).baseSet) hct) := by
-    simp [← fiberThomPairOverMap_comp_thomPairOverUnivIso_hom]
-  rw [← TopPair.singularCohomologyMap_comp_apply, hb, TopPair.singularCohomologyMap_comp_apply,
+  -- The fibre over `b` factors through the Thom pair over the trivializing set `(e c).baseSet`.
+  have hfib : fiberThomPairMap F E b ≫ (thomPairOverUnivIso F E).inv ≫ thomPairOverMap F E ht =
+      fiberThomPairOverMap F E hbc ≫ thomPairOverMap F E
+        (Finset.subset_set_biUnion_of_mem (f := fun c ↦ (e c).baseSet) hct) := by
+    rw [← fiberThomPairOverMap_comp_thomPairOverUnivIso_hom, Category.assoc, Iso.hom_inv_id_assoc,
+      fiberThomPairOverMap_comp_thomPairOverMap, fiberThomPairOverMap_comp_thomPairOverMap]
+  rw [← TopPair.singularCohomologyMap_comp_apply, hfib, TopPair.singularCohomologyMap_comp_apply,
     hx c hct, hu c b hbc]
   exact (mapEquiv ((e c).fiberPairIso ℝ hbc)).span_singleton_apply_eq_top_iff.2 hg
 
