@@ -42,8 +42,8 @@ The steps of that construction are the following statements.
 * *Vertex shrinking.* For finite `ι`, a family that is not small has, for any countable cover of
   `X`, a subfamily that is not small whose members take each coordinate in one prescribed piece
   of the cover (`SetRel.exists_not_isSmallFamily_inter_pi`). In a separable pseudometric space
-  this gives, for every `ε > 0`, an analytic subfamily that is not small and whose members are
-  uniformly within `ε` of each other at every coordinate
+  this gives, for every `ε > 0` and if the original family is analytic, an analytic subfamily
+  that is not small and whose members are uniformly within `ε` of each other at every coordinate
   (`SetRel.exists_subset_not_isSmallFamily_dist_lt`).
 
 ## Main definitions
