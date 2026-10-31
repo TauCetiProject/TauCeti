@@ -31,6 +31,12 @@ the standard complex structure on `ℝ × ℝ`, or in coordinates
 the symplectic area density of the perturbed derivative, for solutions it is nonnegative under
 tameness (`SymplecticForm.floerEnergyDensity_nonneg`) and is half the metric energy density
 `|du - X_K|²`, by `IsComplexLinearMap.stdComplexLineEnergyDensity_eq_two_mul_symplecticForm`.
+For a merely tame `J` the form `ω(·, J ·)` is not a metric, so the energy is compared with the norm
+instead: if `c ‖v‖² ≤ ω(v, J v)` and `‖J v‖ ≤ M ‖v‖`, the energy density of a solution bounds
+`c (‖∂_s u - X_{K_s}‖² + ‖∂_t u - X_{K_t}‖²)` up to the factor `1 + M²`, pointwise and after
+integration. Such constants exist uniformly over a compact set of tamed structures
+(`IsCompact.exists_pos_forall_mul_norm_sq_le`), so on a compact window of tamed structures the
+energy bounds the `L²` norm of the perturbed derivative.
 
 The main result is the energy identity: pointwise,
 `ω(∂_s u - X_{K_s}, ∂_t u - X_{K_t}) = ω(∂_s u, ∂_t u) + d(K(u)) - R_K(u)`,
@@ -51,6 +57,11 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
 
 * `SymplecticForm.floerEnergyDensity_eq`: the pointwise energy identity.
 * `SymplecticForm.floerEnergyDensity_nonneg`: the energy density of a solution is nonnegative.
+* `SymplecticForm.floerEnergyDensity_eq_zero_iff`: under tameness, the energy density of a
+  solution vanishes exactly where the perturbed derivative does.
+* `SymplecticForm.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity` and
+  `SymplecticForm.setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le`: the energy controls the
+  perturbed derivative, pointwise and in `L²`.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
 * `SymplecticForm.isComplexLinearMap_perturbedFDeriv_iff`: the coordinate form of the Floer
   equation.
@@ -300,6 +311,54 @@ theorem floerEnergyDensity_nonneg (ω : SymplecticForm V) {J : AlmostComplexStru
   simpa only [floerEnergyDensity_def, ContinuousLinearMap.coe_coe] using
     h.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg hJ
 
+/-- For a solution of the Floer equation at `z`, the `t`-component of the perturbed derivative is
+`J` applied to its `s`-component `a = ∂_s u - X_{K_s}`, so the Floer energy density is
+`ω(a, J a)`. -/
+theorem floerEnergyDensity_eq_of_isComplexLinearMap (ω : SymplecticForm V)
+    {J : AlmostComplexStructure V}
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    ω.floerEnergyDensity Ks Kt u z =
+      ω (ω.perturbedFDeriv Ks Kt u z stdComplexLineReal)
+        (J (ω.perturbedFDeriv Ks Kt u z stdComplexLineReal)) := by
+  rw [floerEnergyDensity_def]
+  exact congrArg _ h.apply_stdComplexLineImag
+
+/-- For a solution of the Floer equation with `J` tamed by `ω`, the Floer energy density at `z`
+vanishes exactly when the perturbed derivative `du - X_K` vanishes at `z`. -/
+theorem floerEnergyDensity_eq_zero_iff (ω : SymplecticForm V) {J : AlmostComplexStructure V}
+    (hJ : ω.Tames J)
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    ω.floerEnergyDensity Ks Kt u z = 0 ↔ ω.perturbedFDeriv Ks Kt u z = 0 := by
+  -- The metric energy density of a solution is twice its Floer energy density.
+  rw [← ω.stdComplexLineEnergyDensity_toLinearMap_eq_zero_iff hJ,
+    h.stdComplexLineEnergyDensity_eq_two_mul_symplecticForm, floerEnergyDensity_def]
+  simp only [ContinuousLinearMap.coe_coe, mul_eq_zero, two_ne_zero, false_or]
+
+/-- **Coercivity of the Floer energy density.** Let `u` solve the Floer equation at `z` for an
+almost complex structure `J` with `c ‖v‖² ≤ ω(v, J v)` and `‖J v‖ ≤ M ‖v‖` for all `v`, where
+`0 ≤ c`. Then the energy density controls both components of the perturbed derivative:
+`c (‖∂_s u - X_{K_s}‖² + ‖∂_t u - X_{K_t}‖²) ≤ (1 + M²) ω(∂_s u - X_{K_s}, ∂_t u - X_{K_t})`.
+For `J` ranging over a compact set of tamed structures, uniform constants `c > 0` and `M` exist
+by `IsCompact.exists_pos_forall_mul_norm_sq_le` and the boundedness of compact sets. -/
+theorem mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity
+    (ω : SymplecticForm V) {J : AlmostComplexStructure V} {c M : ℝ} (hc : 0 ≤ c)
+    (hJc : ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J v)) (hJM : ∀ v, ‖J v‖ ≤ M * ‖v‖)
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    c * (‖ω.perturbedFDeriv Ks Kt u z stdComplexLineReal‖ ^ 2 +
+        ‖ω.perturbedFDeriv Ks Kt u z stdComplexLineImag‖ ^ 2) ≤
+      (1 + M ^ 2) * ω.floerEnergyDensity Ks Kt u z := by
+  rw [ω.floerEnergyDensity_eq_of_isComplexLinearMap h]
+  set a := ω.perturbedFDeriv Ks Kt u z stdComplexLineReal
+  -- The `t`-component is `J a`, of norm at most `M ‖a‖`, and `ω(a, J a)` dominates `c ‖a‖²`.
+  have hM : ‖ω.perturbedFDeriv Ks Kt u z stdComplexLineImag‖ ^ 2 ≤ M ^ 2 * ‖a‖ ^ 2 := by
+    rw [show ω.perturbedFDeriv Ks Kt u z stdComplexLineImag = J a from
+      h.apply_stdComplexLineImag, ← mul_pow]
+    exact pow_le_pow_left₀ (norm_nonneg _) (hJM a) 2
+  nlinarith [hJc a, mul_le_mul_of_nonneg_left hM hc, sq_nonneg M, sq_nonneg ‖a‖]
+
 end Density
 
 section Integral
@@ -433,6 +492,29 @@ theorem integral_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ × ℝ
       rw [h₁, h₂, hdiv]
       simp only [g, intervalIntegral.integral_neg, f]
       ring
+
+/-- **The energy controls the perturbed derivative in `L²`.** Let `u` solve the Floer equation on
+a measurable set `U` for domain-dependent almost complex structures `J z` satisfying
+`c ‖v‖² ≤ ω(v, J z v)` and `‖J z v‖ ≤ M ‖v‖` on `U`, with `0 < c`. Then the integral over `U` of
+`‖∂_s u - X_{K_s}‖² + ‖∂_t u - X_{K_t}‖²` is at most `(1 + M²) / c` times the energy over `U`.
+No measurability of the integrands is assumed. -/
+theorem setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le (ω : SymplecticForm V)
+    {U : Set (ℝ × ℝ)} (hU : MeasurableSet U) {J : ℝ × ℝ → AlmostComplexStructure V} {c M : ℝ}
+    (hc : 0 < c) (hJc : ∀ z ∈ U, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
+    (hJM : ∀ z ∈ U, ∀ v, ‖J z v‖ ≤ M * ‖v‖)
+    (h : ∀ z ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    ∫⁻ z in U, ENNReal.ofReal (‖ω.perturbedFDeriv Ks Kt u z stdComplexLineReal‖ ^ 2 +
+        ‖ω.perturbedFDeriv Ks Kt u z stdComplexLineImag‖ ^ 2) ≤
+      ENNReal.ofReal ((1 + M ^ 2) / c) *
+        ∫⁻ z in U, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) := by
+  rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  refine setLIntegral_mono' hU fun z hz => ?_
+  rw [← ENNReal.ofReal_mul (by positivity)]
+  refine ENNReal.ofReal_le_ofReal ?_
+  rw [div_mul_eq_mul_div, le_div_iff₀ hc, mul_comm]
+  exact ω.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity hc.le (hJc z hz)
+    (hJM z hz) (h z hz)
 
 end Integral
 
