@@ -9,7 +9,6 @@ public import TauCeti.Analysis.CStarAlgebra.Action.KMS.Basic
 import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.LocallyUniformLimit
-import TauCeti.Analysis.CStarAlgebra.Action.GaussianSmearing
 import TauCeti.Analysis.CStarAlgebra.Action.Generator.Core
 import TauCeti.Analysis.Complex.Conformal.Reflection.Principle
 import TauCeti.Analysis.Complex.PhragmenLindelof
@@ -415,16 +414,15 @@ private theorem antitone_re_apply_star_entireExtension_mul_entireExtension
 
 /-- **The generator inequality characterizes ground states.** A positive functional `ω` of norm
 one is a ground state as soon as `-i ω (a⋆ δ(a)) ≥ 0` for every entire analytic `a`, where `δ` is
-the generator of the dynamics.
-
-For entire analytic `b` and `im z ≥ 0` the inequality makes `ω ((α_z(b))⋆ α_z(b))` at most
-`ω (b⋆ b) ≤ ‖b‖ ^ 2`, and the Cauchy–Schwarz inequality then gives the analytic bound
-`‖ω (a α_z(b))‖ ≤ ‖a‖ ‖b‖` of `isGroundState_iff_norm_apply_mul_entireExtension_le`. -/
+the generator of the dynamics. -/
 theorem IsGroundState.of_neg_I_mul_apply_star_mul_generator_nonneg
     (hnorm : ‖(ω : A →L[ℂ] ℂ)‖ = 1)
     (h : ∀ a (ha : α.IsEntireAnalytic a),
       0 ≤ -I * ω (star a * α.generator ⟨a, ha.mem_generator_domain⟩)) :
     α.IsGroundState ω := by
+  -- For entire analytic `b` and `im z ≥ 0` the inequality makes `ω ((α_z(b))⋆ α_z(b))` at most
+  -- `ω (b⋆ b) ≤ ‖b‖ ^ 2`, and the Cauchy–Schwarz inequality then gives the analytic bound
+  -- `‖ω (a α_z(b))‖ ≤ ‖a‖ ‖b‖` of `isGroundState_iff_norm_apply_mul_entireExtension_le`.
   refine isGroundState_iff_norm_apply_mul_entireExtension_le.mpr ⟨hnorm, fun a b hb z hz => ?_⟩
   set x := α.entireExtension b z
   have hnorm_eq (y : A) : ‖ω (star y * y)‖ = (ω (star y * y)).re :=
