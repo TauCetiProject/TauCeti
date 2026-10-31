@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.ZLattice.Level
+public import TauCeti.Algebra.Module.ZLattice.FrickePartner
 public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
+import TauCeti.GroupTheory.Coset.Fiber
 
 /-!
 # Gauss sums of an even lattice
@@ -40,11 +41,25 @@ untwisted sum. For a multiple `c` of the level, `G_L(a, c; m)` vanishes unless `
 shift `y ↦ y + c w`, `w ∈ L^∨`, which multiplies the sum by `e(⟪w, m⟫)`; and for `m ∈ L` and
 `a d ≡ 1 (mod c)`, completing the square gives `G_L(a, c; m) = e(-a d² ‖m‖² / (2c)) G_L(a, c)`.
 
+The reciprocity law for these sums exchanges the modulus and the coefficient and passes to the
+dual lattice: its other side is the sum
+
+`∑_{y ∈ L^∨ / cL} e(a ‖y‖² / (2c))`
+
+over the classes of `L^∨` modulo `cL`, again well defined because `L` is even. For an integral
+full lattice of rank `n` and `c ≠ 0` the quotient `L^∨ / cL` is finite with
+`cⁿ |L^∨ / L| = cⁿ det L` elements (`ZLattice.IsIntegral.card_quotient_smul_submoduleOf_dual`).
+When the coefficient is a multiple `N b` of the level, the summand is invariant under the larger
+lattice `c L^∨`, and the scaling `y ↦ √N • y` turns the sum into `|L^∨ / L|` times the Gauss sum
+`G_{√N • L^∨}(b, c)` of the Fricke partner `√N • L^∨`, which is again an even lattice.
+
 ## Main definitions
 
 * `ZLattice.gaussTerm L hL a c m`: the summand `e(a ‖y‖² / (2c) + ⟪y, m⟫ / c)` on `L / cL`.
 * `ZLattice.gaussSumTwisted L hL a c m`: the twisted Gauss sum `G_L(a, c; m)`.
 * `ZLattice.gaussSum L hL a c`: the Gauss sum `G_L(a, c)`.
+* `ZLattice.dualGaussTerm L hL a c`: the summand `e(a ‖y‖² / (2c))` on `L^∨ / cL`.
+* `ZLattice.dualGaussSum L hL a c`: the Gauss sum `∑_{y ∈ L^∨ / cL} e(a ‖y‖² / (2c))`.
 
 ## Main statements
 
@@ -56,10 +71,13 @@ shift `y ↦ y + c w`, `w ∈ L^∨`, which multiplies the sum by `e(⟪w, m⟫)
   for `m ∈ L^∨ \ L`.
 * `ZLattice.gaussSumTwisted_eq_of_mem`: for `m ∈ L` and `a d ≡ 1 (mod c)`,
   `G_L(a, c; m) = e(-a d² ‖m‖² / (2c)) G_L(a, c)`.
+* `ZLattice.dualGaussSum_level_mul`: for an even full lattice of level `N`,
+  `∑_{y ∈ L^∨ / cL} e(N b ‖y‖² / (2c)) = |L^∨ / L| · G_{√N • L^∨}(b, c)`.
 
 ## References
 
 * B. Schoeneberg, *Elliptic Modular Functions*, Springer, 1974, Chapter IX.
+* J. Milnor and D. Husemoller, *Symmetric Bilinear Forms*, Springer, 1973, Appendix 4.
 -/
 
 public section
@@ -328,5 +346,126 @@ theorem gaussSumTwisted_eq_of_mem {a d : ℤ} {c : ℕ} [Fintype (L ⧸ ((c : �
       ← Equiv.sum_comp (Equiv.addRight (Submodule.Quotient.mk u)) (gaussTerm L hL a c 0)]
     exact Finset.sum_congr rfl fun y _ => hterm y
   rw [h, ← mul_assoc, ← exp_add, neg_add_cancel, exp_zero, one_mul]
+
+/-! ### Gauss sums over `L^∨ / cL` -/
+
+section DualGaussSum
+
+variable (L) in
+/-- The summand `e(a ‖y‖² / (2c))` of the Gauss sums of an even lattice `L` over `L^∨ / cL`, as a
+function of the class `y`. It is well defined because `L` is even: replacing `y ∈ L^∨` by
+`y + c w` with `w ∈ L` changes the argument of `e` by the integer `a ⟪y, w⟫ + a c ‖w‖² / 2`. -/
+noncomputable def dualGaussTerm (hL : IsEven L) (a : ℤ) (c : ℕ)
+    (y : dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L)) : ℂ :=
+  Quotient.liftOn' y (fun v : dual L => cexp (2 * π * I * ((a * ‖(v : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ)))
+    fun v₁ v₂ h => by
+      rw [quotientRel_def, submoduleOf, Submodule.mem_comap, subtype_apply,
+        mem_smul_pointwise_iff_exists] at h
+      obtain ⟨w, hw, hvw⟩ := h
+      have hv : (v₁ : E) = v₂ + (c : ℝ) • w := by rw [hvw, AddSubgroupClass.coe_sub]; abel
+      rcases eq_or_ne c 0 with rfl | hc
+      · simp
+      obtain ⟨k, hk⟩ := mem_dual.mp v₂.2 w hw
+      obtain ⟨j, hj⟩ := isEven_iff.mp hL w hw
+      -- The argument changes by `a ⟪v₂, w⟫ + a c ‖w‖² / 2 = a k + a c j`, an integer.
+      have harg : a * ‖(v₂ : E) + (c : ℝ) • w‖ ^ 2 / (2 * c) =
+          a * ‖(v₂ : E)‖ ^ 2 / (2 * c) + ((a * k + a * c * j : ℤ) : ℝ) := by
+        rw [norm_add_sq_real, norm_smul, inner_smul_right, hk, Real.norm_eq_abs, mul_pow, sq_abs,
+          hj]
+        push_cast
+        field_simp
+        ring
+      rw [hv, harg, ofReal_add _ ((a * k + a * c * j : ℤ) : ℝ), ofReal_intCast,
+        exp_two_pi_mul_I_mul_add_intCast]
+
+/-- The dual Gauss summand of the class of `v ∈ L^∨` is `e(a ‖v‖² / (2c))`. -/
+@[simp]
+theorem dualGaussTerm_mk (a : ℤ) (c : ℕ) (v : dual L) :
+    dualGaussTerm L hL a c (Submodule.Quotient.mk v) =
+      cexp (2 * π * I * ((a * ‖(v : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ)) :=
+  (rfl)
+
+variable (L) in
+/-- The Gauss sum `∑_{y ∈ L^∨ / cL} e(a ‖y‖² / (2c))` of an even lattice `L` over the classes of
+its dual lattice modulo `cL`. For a full lattice of rank `n` and `c ≠ 0` the quotient is finite
+of order `cⁿ |L^∨ / L|` (`ZLattice.IsIntegral.card_quotient_smul_submoduleOf_dual`). -/
+noncomputable def dualGaussSum (hL : IsEven L) (a : ℤ) (c : ℕ)
+    [Fintype (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))] : ℂ :=
+  ∑ y, dualGaussTerm L hL a c y
+
+theorem dualGaussSum_def (a : ℤ) (c : ℕ) [Fintype (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))] :
+    dualGaussSum L hL a c = ∑ y, dualGaussTerm L hL a c y :=
+  (rfl)
+
+variable [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
+
+/-- The descent to the Fricke partner `M = √N • L^∨`, with `M` kept abstract. The summand
+`e(N b ‖y‖² / (2c))` is invariant under translation by `c L^∨`, the scaling `x ↦ √N • x` induces
+a surjection `L^∨ / cL → M / cM` under which the summands correspond, and its fibres are copies
+of `c L^∨ / cL ≅ L^∨ / L`. -/
+private theorem dualGaussSum_level_mul_aux (b : ℤ) (c : ℕ)
+    [Fintype (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))] {M : Submodule ℤ E}
+    (hM : M = √(level L : ℝ) • dual L) (hMe : IsEven M)
+    [Fintype (M ⧸ ((c : ℝ) • M).submoduleOf M)] :
+    dualGaussSum L hL (level L * b) c = Nat.card (DiscriminantGroup L) * gaussSum M hMe b c := by
+  have hN : (0 : ℝ) < level L := Nat.cast_pos.mpr hL.isIntegral.level_pos
+  have : NeZero √(level L : ℝ) := ⟨(Real.sqrt_pos.mpr hN).ne'⟩
+  have : DiscreteTopology M := by subst hM; infer_instance
+  have : IsZLattice ℝ M := by subst hM; infer_instance
+  -- The scaling `L^∨ → M`, `x ↦ √N • x`, followed by the reduction modulo `cM`.
+  let g : dual L →ₗ[ℤ] M := LinearMap.codRestrict M
+    (DistribSMul.toLinearMap ℤ E √(level L : ℝ) ∘ₗ (dual L).subtype)
+    fun x => hM ▸ smul_mem_pointwise_smul _ _ _ x.2
+  -- `g` is a local definition, so its values are computed by unfolding it.
+  have hg (x : dual L) : (g x : E) = √(level L : ℝ) • (x : E) := (rfl)
+  let f₀ := (((c : ℝ) • M).submoduleOf M).mkQ ∘ₗ g
+  have hle : ((c : ℝ) • L).submoduleOf (dual L) ≤ LinearMap.ker f₀ := by
+    intro x hx
+    rw [submoduleOf, Submodule.mem_comap, subtype_apply, mem_smul_pointwise_iff_exists] at hx
+    obtain ⟨w, hw, hwx⟩ := hx
+    rw [LinearMap.mem_ker, LinearMap.comp_apply, mkQ_apply, Submodule.Quotient.mk_eq_zero,
+      submoduleOf, Submodule.mem_comap, subtype_apply, hg, ← hwx, smul_comm, hM]
+    exact smul_mem_pointwise_smul _ _ _ <| smul_mem_pointwise_smul _ _ _ <|
+      isIntegral_iff_le_dual.mp hL.isIntegral hw
+  let f := (((c : ℝ) • L).submoduleOf (dual L)).liftQ f₀ hle
+  have hf : Function.Surjective f := by
+    intro z
+    obtain ⟨⟨m, hm⟩, rfl⟩ := mkQ_surjective _ z
+    obtain ⟨x, hx, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).mp (hM ▸ hm)
+    exact ⟨Submodule.Quotient.mk ⟨x, hx⟩, rfl⟩
+  -- The kernel of `f` has `|L^∨ / L|` elements, by counting `L^∨ / cL` and `M / cM`.
+  have hker : Nat.card f.toAddMonoidHom.ker = Nat.card (DiscriminantGroup L) := by
+    have hcard := f.toAddMonoidHom.natCard_preimage_of_surjective hf Set.univ
+    rw [Set.preimage_univ, Nat.card_univ, Nat.card_univ,
+      hL.isIntegral.card_quotient_smul_submoduleOf_dual, card_quotient_smul_submoduleOf] at hcard
+    have hpos : 0 < c ^ finrank ℝ E := card_quotient_smul_submoduleOf M c ▸ Nat.card_pos
+    exact (Nat.eq_of_mul_eq_mul_left hpos hcard).symm
+  have hterm (y : dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L)) :
+      dualGaussTerm L hL (level L * b) c y = gaussTerm M hMe b c 0 (f.toAddMonoidHom y) := by
+    induction y using Submodule.Quotient.induction_on with | H v
+    rw [LinearMap.toAddMonoidHom_coe, liftQ_apply, dualGaussTerm_mk, LinearMap.comp_apply,
+      mkQ_apply, gaussTerm_mk, hg, ZeroMemClass.coe_zero, inner_zero_right, add_zero, norm_smul,
+      Real.norm_of_nonneg (Real.sqrt_nonneg _), mul_pow, Real.sq_sqrt hN.le]
+    push_cast
+    ring_nf
+  rw [dualGaussSum_def, gaussSum_def, Fintype.sum_congr _ _ hterm,
+    AddMonoidHom.sum_comp_of_surjective f.toAddMonoidHom hf, hker, nsmul_eq_mul]
+
+/-- **Descent to the Fricke partner.** Let `L` be an even full lattice of level `N`. For a
+coefficient `N b` divisible by the level, the Gauss sum over `L^∨ / cL` is `|L^∨ / L|` times the
+Gauss sum of the Fricke partner `√N • L^∨`:
+`∑_{y ∈ L^∨ / cL} e(N b ‖y‖² / (2c)) = |L^∨ / L| · G_{√N • L^∨}(b, c)`.
+Here `|L^∨ / L| = det L` (`ZLattice.IsIntegral.det_eq_card_discriminantGroup`), and the right
+side is a sum over `L^∨ / c L^∨`, read on the scaled lattice `√N • L^∨`. -/
+theorem dualGaussSum_level_mul (b : ℤ) (c : ℕ)
+    [Fintype (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L))]
+    [Fintype ((√(level L : ℝ) • dual L : Submodule ℤ E) ⧸
+      ((c : ℝ) • (√(level L : ℝ) • dual L)).submoduleOf (√(level L : ℝ) • dual L))] :
+    dualGaussSum L hL (level L * b) c =
+      Nat.card (DiscriminantGroup L) *
+        gaussSum (√(level L : ℝ) • dual L) (isEven_sqrt_level_smul_dual L) b c :=
+  dualGaussSum_level_mul_aux hL b c rfl _
+
+end DualGaussSum
 
 end ZLattice

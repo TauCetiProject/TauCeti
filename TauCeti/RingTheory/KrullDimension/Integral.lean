@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.Ideal.HasGoingUp
 public import Mathlib.RingTheory.Ideal.Height
 public import Mathlib.RingTheory.IntegralClosure.GoingDown
 public import Mathlib.RingTheory.KrullDimension.Basic
+public import Mathlib.RingTheory.Localization.Integral
+public import TauCeti.RingTheory.IntegralClosure.GoingDown
 
 /-!
 # Krull dimension along integral extensions
@@ -36,10 +38,14 @@ ring through Noether normalization.
   integral extension.
 * `Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown`: an integral extension with
   going down preserves the heights of prime ideals.
+* `Ideal.height_eq_height_of_isIntegral_of_isIntegrallyClosed`: along an integral extension of
+  domains, a prime `Q` over `p` has the height of `p` as soon as `R_p` is integrally closed.
 
 ## References
 
 * [Stacks Project, Tag 00GU](https://stacks.math.columbia.edu/tag/00GU) (going up)
+* [Stacks Project, Tag 00H8](https://stacks.math.columbia.edu/tag/00H8) (going down for integral
+  extensions of a normal domain)
 * M. F. Atiyah, I. G. Macdonald, *Introduction to Commutative Algebra*, Corollary 5.9 and
   Theorem 5.11.
 -/
@@ -71,6 +77,32 @@ theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown
         Ideal.exists_ideal_lt_liesOver_of_lt (p := b.asIdeal) a.asIdeal hb
       exact ⟨⟨Q, hQp⟩, hQ, PrimeSpectrum.ext hQo.over.symm⟩) ⟨P, ‹_›⟩
   rwa [← height_eq_orderHeight, ← height_eq_orderHeight] at h
+
+/-- Let `S` be an integral `R`-algebra which is a domain containing `R`, and let `Q` be a prime of
+`S` over a prime `p` of `R` such that `R_p` is integrally closed. Then `Q` and `p` have the same
+height: after localizing at `p`, the extension has going down (Stacks 00H8, through
+`Algebra.HasGoingDown.of_isIntegral_of_isTorsionFree`). Integral closedness of `R` itself is not
+required. -/
+theorem _root_.Ideal.height_eq_height_of_isIntegral_of_isIntegrallyClosed [Algebra.IsIntegral R S]
+    [IsDomain S] [FaithfulSMul R S] (p : Ideal R) [p.IsPrime] (Q : Ideal S) [Q.IsPrime]
+    [Q.LiesOver p] [IsIntegrallyClosed (Localization.AtPrime p)] :
+    Q.height = p.height := by
+  have : IsDomain R := (FaithfulSMul.algebraMap_injective R S).isDomain
+  let B := Localization (Algebra.algebraMapSubmonoid S p.primeCompl)
+  have hdisj := Ideal.disjoint_primeCompl_of_liesOver Q p
+  have : Algebra.IsIntegral (Localization.AtPrime p) B :=
+    ⟨isIntegral_localization (M := p.primeCompl) (S := S)⟩
+  have : FaithfulSMul (Localization.AtPrime p) B :=
+    (faithfulSMul_iff_algebraMap_injective _ _).mpr <|
+      localizationAlgebra_injective (M := p.primeCompl) _ _ (FaithfulSMul.algebraMap_injective R S)
+  let P := Q.map (algebraMap S B)
+  have : P.IsPrime := IsLocalization.isPrime_of_isPrime_disjoint _ B Q ‹_› hdisj
+  have hPQ : P.under S = Q := IsLocalization.under_map_of_isPrime_disjoint _ B ‹_› hdisj
+  have h := Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown
+    (R := Localization.AtPrime p) P
+  rw [IsLocalization.height_map_of_disjoint _ Q hdisj] at h
+  rw [h, ← IsLocalization.height_under p.primeCompl, Ideal.under_under,
+    ← Ideal.under_under (B := S), hPQ, ← Q.over_def p]
 
 /-- The Krull dimension of an integral `R`-algebra is at most that of `R`. -/
 theorem ringKrullDim_le_of_isIntegral [Algebra.IsIntegral R S] :

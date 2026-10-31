@@ -51,7 +51,7 @@ that basis.
 
 Countable generation of `𝓝 0` and `FirstCountableTopology G` are in fact equivalent under these
 hypotheses, since `NonarchimedeanAddGroup` extends `IsTopologicalAddGroup`:
-`TauCeti.SeparatelyContinuousAdd.toFirstCountableTopology` gives one direction and
+`TauCeti.ContinuousConstVAdd.toFirstCountableTopology` gives one direction and
 `FirstCountableTopology.nhds_generated_countable` the other. The `𝓝 0` form is stated because it
 is the one the proof consumes. -/
 theorem exists_antitone_basis_openAddSubgroup [(𝓝 (0 : G)).IsCountablyGenerated]

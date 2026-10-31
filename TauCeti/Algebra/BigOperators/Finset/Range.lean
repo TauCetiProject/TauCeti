@@ -65,6 +65,10 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   sum over `range (n * q)` into `q` consecutive blocks of `n` terms.
 * `Finset.sum_range_two_mul_succ`: the sum `∑_{i=1}^{m} 2i` of the first `m` positive even
   numbers is `m (m + 1)`.
+* `Finset.sum_range_add_two_mul`: the sum `∑_{j<J} (D + 2j + 1)` of an arithmetic progression
+  with common difference `2` is `J (D + J)`.
+* `Finset.sum_range_min_add_one_sub_two_mul`: the Clebsch–Gordan dimension count
+  `∑_{k ≤ min m n} (m + n - 2k + 1) = (m + 1)(n + 1)`.
 -/
 
 public section
@@ -160,6 +164,30 @@ theorem sum_range_two_mul_succ (m : ℕ) : ∑ i ∈ range m, 2 * (i + 1) = m * 
   induction m with
   | zero => rfl
   | succ m ih => rw [sum_range_succ, ih]; ring
+
+/-- The sum of the arithmetic progression `D + 1, D + 3, …, D + 2J - 1` of `J` terms with
+common difference `2` is `J (D + J)`. -/
+theorem sum_range_add_two_mul (D J : ℕ) :
+    ∑ j ∈ range J, (D + 2 * j + 1) = J * (D + J) := by
+  induction J with
+  | zero => simp
+  | succ J ih => rw [sum_range_succ, ih]; ring
+
+/-- The Clebsch–Gordan dimension count: the numbers `m + n - 2k + 1` for `k ≤ min m n` add up to
+`(m + 1)(n + 1)`. Reflecting the sum turns the descending terms into the ascending arithmetic
+progression starting at `|m - n| + 1`. -/
+theorem sum_range_min_add_one_sub_two_mul (m n : ℕ) :
+    ∑ k ∈ range (min m n + 1), (m + n - 2 * k + 1) = (m + 1) * (n + 1) := by
+  rw [← sum_range_reflect]
+  have hrw : ∀ j ∈ range (min m n + 1),
+      m + n - 2 * (min m n + 1 - 1 - j) + 1 = (m + n - 2 * min m n) + 2 * j + 1 := by
+    intro j hj
+    have hj' : j ≤ min m n := by simpa [Nat.lt_succ_iff] using hj
+    omega
+  rw [sum_congr rfl hrw, sum_range_add_two_mul]
+  rcases Nat.le_total m n with h | h
+  · rw [Nat.min_eq_left h, show m + n - 2 * m + (m + 1) = n + 1 by omega]
+  · rw [Nat.min_eq_right h, show m + n - 2 * n + (n + 1) = m + 1 by omega, mul_comm]
 
 /-- Summing over the truncated triangle `{(m, n, k) | m, n < N, k ≤ min m n}` is the same as summing
 over the slice `{(p, k, q) | p + k < N, q + k < N}` of the cube, the summand transported along

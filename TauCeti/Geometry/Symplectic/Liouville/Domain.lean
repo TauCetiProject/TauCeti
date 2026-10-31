@@ -89,7 +89,7 @@ structure IsLiouvilleDomain (ω : SmoothTwoForm I M) (α : SmoothForm I M ℝ 1)
   /-- The Liouville field of the primitive points strictly outwards along the boundary, the level
   `f⁻¹(c)` of a continuous function `f` with `W = {f ≤ c}` that is smooth along the level. -/
   exists_liouville_outward : ∃ Z : (x : M) → TangentSpace I x,
-    ContMDiff I I.tangent (⊤ : ℕ∞) (T% Z) ∧ ω.1.interior Z = α.1 ∧
+    ContMDiff I I.tangent (⊤ : ℕ∞) (T% Z) ∧ RoughForm.interior Z ω.1 = α.1 ∧
       ∃ (f : M → ℝ) (c : ℝ), Continuous f ∧ W = {x | f x ≤ c} ∧
         ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) (⊤ : ℕ∞) f x ∧ 0 < mvfderiv I f x (Z x)
 

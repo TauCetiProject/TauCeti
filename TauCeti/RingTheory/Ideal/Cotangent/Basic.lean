@@ -8,19 +8,21 @@ module
 public import Mathlib.RingTheory.Extension.Basic
 
 /-!
-# Generators and finiteness of cotangent spaces
+# Cotangent spaces of ideals and kernels
 
 If elements `f₁, f₂, …` generate an ideal `I`, their classes span the conormal module `I ⧸ I²`
-over `R ⧸ I`.
-
-For a surjective `R`-algebra homomorphism `f : A →ₐ[R] S` onto a module-finite `R`-algebra, if
-the kernel of `f` is finitely generated over `A`, then its cotangent space is finite over `R`.
-The main case is an augmentation `f : A →ₐ[R] R`, whose kernel is the augmentation ideal.
+over `R ⧸ I`. Conversely, elements of an ideal `I` of `A` whose images span the cotangent space
+`I ⧸ I ^ 2` over `A` generate `I` modulo `I ^ 2`. For a surjective `R`-algebra homomorphism
+`f : A →ₐ[R] S` onto a module-finite `R`-algebra, if the kernel of `f` is finitely generated over
+`A`, then its cotangent space is finite over `R`. The main case is an augmentation
+`f : A →ₐ[R] R`, whose kernel is the augmentation ideal.
 
 ## Main declarations
 
 * `Ideal.span_range_toCotangent_eq_top`: the classes of generators of `I` span `I ⧸ I²` over
   `R ⧸ I`.
+* `Ideal.le_span_sup_sq_of_span_toCotangent_eq_top`: elements whose images span the cotangent
+  space generate the ideal modulo its square.
 * `AlgHom.finite_cotangent_ker_of_fg`: finite generation of the kernel gives finiteness of its
   cotangent space over the base.
 * `AlgHom.finite_cotangent_ker`: the noetherian specialization.
@@ -34,6 +36,8 @@ The main case is an augmentation `f : A →ₐ[R] R`, whose kernel is the augmen
 public section
 
 namespace Ideal
+
+section
 
 variable {R : Type*} [CommRing R] {I : Ideal R} {ι : Type*}
 
@@ -62,6 +66,32 @@ theorem span_range_toCotangent_eq_top {f : ι → I}
   | smul a y _ ih =>
     have := Submodule.smul_of_tower_mem _ a ih
     rwa [← map_smul] at this
+
+end
+
+section
+
+variable {A : Type*} [CommRing A]
+
+/-- Elements of an ideal `I` whose images span the cotangent space `I ⧸ I ^ 2` over `A` generate
+`I` modulo `I ^ 2`. -/
+theorem le_span_sup_sq_of_span_toCotangent_eq_top (I : Ideal A) {ι : Type*} {f : ι → I}
+    (h : Submodule.span A (Set.range (I.toCotangent ∘ f)) = ⊤) :
+    I ≤ span (Set.range fun i ↦ (f i : A)) ⊔ I ^ 2 := by
+  set J := span (Set.range fun i ↦ (f i : A)) ⊔ I ^ 2
+  -- The image of `J ∩ I` in the cotangent space contains every generator, so is everything.
+  let P : Submodule A I.Cotangent := (Submodule.comap I.subtype J).map I.toCotangent
+  have hP : P = ⊤ := by
+    refine eq_top_iff.2 (h ▸ Submodule.span_le.2 ?_)
+    rintro _ ⟨i, rfl⟩
+    exact ⟨f i, mem_sup_left (subset_span ⟨i, rfl⟩), rfl⟩
+  intro y hy
+  obtain ⟨z, hzJ, hz⟩ : I.toCotangent ⟨y, hy⟩ ∈ P := hP ▸ Submodule.mem_top
+  rw [toCotangent_eq] at hz
+  rw [← sub_sub_cancel (z : A) y]
+  exact J.sub_mem hzJ (mem_sup_right hz)
+
+end
 
 end Ideal
 
