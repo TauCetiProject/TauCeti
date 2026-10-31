@@ -113,6 +113,15 @@ private theorem rpow_div_sub_le_self {B n N : ℝ} (hB : 1 ≤ B) (hn : 0 ≤ n)
   (Real.rpow_le_rpow_of_exponent_le hB (div_le_one_of_le₀ (by linarith) (by linarith))).trans_eq
     (Real.rpow_one B)
 
+/-- For `i < D₁`, `j < D₂` and `u, v ≤ B`, the total degree `i + u j + v j` of a term of
+Schneider's value `y_{uv}` in `u + v β`, `α` and `γ` is at most `D₁ + 2 B D₂`. -/
+private theorem schneider_exponent_le {D₁ D₂ B : ℕ} (i : Fin D₁) (j : Fin D₂) {u v : ℕ}
+    (hu : u ≤ B) (hv : v ≤ B) : (i : ℕ) + u * j + v * j ≤ D₁ + 2 * B * D₂ := by
+  have h₁ : u * (j : ℕ) ≤ B * D₂ := Nat.mul_le_mul hu j.is_lt.le
+  have h₂ : v * (j : ℕ) ≤ B * D₂ := Nat.mul_le_mul hv j.is_lt.le
+  have := i.is_lt
+  linarith
+
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- Bounds on the houses of two factors bound the house of their product. -/
@@ -184,12 +193,8 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
   set N := D₁ + 2 * L * D₂
   let k : Fin L × Fin L → Fin D₁ × Fin D₂ → ℕ := fun p q ↦
     q.1 + (p.1 + 1) * q.2 + (p.2 + 1) * q.2
-  have hk (p : Fin L × Fin L) (q : Fin D₁ × Fin D₂) : k p q ≤ N := by
-    have h₁ := q.1.is_lt
-    have h₂ : ((p.1 : ℕ) + 1) * q.2 ≤ L * D₂ := Nat.mul_le_mul p.1.is_lt q.2.is_lt.le
-    have h₃ : ((p.2 : ℕ) + 1) * q.2 ≤ L * D₂ := Nat.mul_le_mul p.2.is_lt q.2.is_lt.le
-    simp only [k, N]
-    linarith
+  have hk (p : Fin L × Fin L) (q : Fin D₁ × Fin D₂) : k p q ≤ N :=
+    schneider_exponent_le q.1 q.2 p.1.is_lt p.2.is_lt
   -- Name the exponent `r = N - k p q` of the power of `m`, so that `N = k p q + r` can be
   -- substituted and `ring` can combine the powers of `m`.
   have hNk (p q) : ∃ r, N - k p q = r ∧ N = k p q + r := ⟨N - k p q, rfl, by have := hk p q; omega⟩
@@ -279,15 +284,6 @@ it was made to vanish. The value there is the image under `σ` of
 plays an upper bound for `|σ y_{uv}|` against Liouville's lower bound, which needs the house and
 a denominator of `y_{uv}`. -/
 
-/-- For `i < D₁`, `j < D₂` and `u, v ≤ B`, the total degree `i + u j + v j` of a term of
-Schneider's value `y_{uv}` in `u + v β`, `α` and `γ` is at most `D₁ + 2 B D₂`. -/
-private theorem schneider_exponent_le {D₁ D₂ B : ℕ} (i : Fin D₁) (j : Fin D₂) {u v : ℕ}
-    (hu : u ≤ B) (hv : v ≤ B) : (i : ℕ) + u * j + v * j ≤ D₁ + 2 * B * D₂ := by
-  have h₁ : u * (j : ℕ) ≤ B * D₂ := Nat.mul_le_mul hu j.is_lt.le
-  have h₂ : v * (j : ℕ) ≤ B * D₂ := Nat.mul_le_mul hv j.is_lt.le
-  have := i.is_lt
-  linarith
-
 /-- **The house of Schneider's values.** If `α`, `β`, `γ` have house at most `H ≥ 1` and the
 integers `a_{ij}`, `i < D₁`, `j < D₂`, have absolute value at most `A`, then for `u, v ≤ B` with
 `B ≥ 1` the house of `∑_{i, j} a_{ij} (u + v β) ^ i α ^ (u j) γ ^ (v j)` is at most
@@ -319,10 +315,7 @@ theorem house_schneider_value_le {α β γ : K} {H A : ℝ} (hH : 1 ≤ H) (hα 
       (by exact_mod_cast (by omega : 1 ≤ 2 * B)) (by linarith) i.is_lt.le hk
     rw [one_pow, one_mul] at he
     rw [mul_assoc]
-    refine (house_mul_le _ _).trans (mul_le_mul ?_ he (house_nonneg _)
-      ((abs_nonneg _).trans (ha i j)))
-    rw [house_intCast, Int.cast_abs]
-    exact ha i j
+    exact house_mul_le_of_le (by rw [house_intCast, Int.cast_abs]; exact ha i j) he
   refine (house_sum_le_sum_house _ _).trans ?_
   refine (sum_le_sum fun i _ ↦ house_sum_le_sum_house _ _).trans ?_
   refine (sum_le_sum fun i _ ↦ sum_le_sum fun j _ ↦ hterm i j).trans (le_of_eq ?_)
@@ -553,6 +546,15 @@ theorem map_pow_mul_pow_eq_exp {R : Type*} [Semiring R] (σ : R →+* ℂ) {l : 
   congr 1
   push_cast
   ring
+
+/-- For `i < D₁`, `j < D₂` and `u, v ≤ B`, the total degree `i + u j + v j` of a term of
+Schneider's value `y_{uv}` in `u + v β`, `α` and `γ` is at most `D₁ + 2 B D₂`. -/
+private theorem schneider_exponent_le {D₁ D₂ B : ℕ} (i : Fin D₁) (j : Fin D₂) {u v : ℕ}
+    (hu : u ≤ B) (hv : v ≤ B) : (i : ℕ) + u * j + v * j ≤ D₁ + 2 * B * D₂ := by
+  have h₁ : u * (j : ℕ) ≤ B * D₂ := Nat.mul_le_mul hu j.is_lt.le
+  have h₂ : v * (j : ℕ) ≤ B * D₂ := Nat.mul_le_mul hv j.is_lt.le
+  have := i.is_lt
+  linarith
 
 variable {K : Type*} [Field K] [NumberField K]
 
