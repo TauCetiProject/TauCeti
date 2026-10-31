@@ -91,6 +91,8 @@ the notion be read off in any chart.
   nondegeneracy is invariant under a change of coordinates with invertible differential.
 * `TauCeti.IsNondegenerateCriticalPoint.neg` and `TauCeti.isNondegenerateCriticalPoint_neg`:
   nondegeneracy is invariant under negating the function.
+* `TauCeti.isNondegenerateCriticalPoint_add_const_iff`: nondegeneracy is invariant under adding a
+  constant.
 * `ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self`: the local model. A
   continuous bilinear form `B` whose polarization `B.flip + B` is invertible makes `z ↦ B z z` a
   function with a nondegenerate critical point at the origin.
@@ -293,6 +295,19 @@ gives both directions. -/
 theorem isNondegenerateCriticalPoint_neg :
     IsNondegenerateCriticalPoint (-f) x ↔ IsNondegenerateCriticalPoint f x :=
   ⟨fun h ↦ by simpa using h.neg, IsNondegenerateCriticalPoint.neg⟩
+
+/-- **Nondegeneracy of a critical point is invariant under adding a constant**, which changes
+neither the differential nor the second derivative. -/
+@[simp]
+theorem isNondegenerateCriticalPoint_add_const_iff (c : ℝ) :
+    IsNondegenerateCriticalPoint (fun y ↦ f y + c) x ↔ IsNondegenerateCriticalPoint f x := by
+  have hfun : fderiv ℝ (fun y ↦ f y + c) = fderiv ℝ f := funext fun _ ↦ fderiv_add_const c
+  refine ⟨fun h ↦ ⟨?_, ?_, ?_⟩, fun h ↦ ⟨h.contDiffAt.add contDiffAt_const, ?_, ?_⟩⟩
+  · simpa using h.contDiffAt.sub (contDiffAt_const (c := c))
+  · simpa [hfun] using h.fderiv_eq_zero
+  · simpa [hfun] using h.isInvertible
+  · simpa [hfun] using h.fderiv_eq_zero
+  · simpa [hfun] using h.isInvertible
 
 end Morse
 

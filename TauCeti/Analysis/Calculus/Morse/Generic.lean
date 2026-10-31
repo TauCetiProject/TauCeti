@@ -60,6 +60,8 @@ from its critical points; the regularity hypothesis `ContDiffOn ℝ 2 f U` is ca
 * `TauCeti.dense_setOfPred_hasNondegenerateCriticalPointsOn_sub` and
   `TauCeti.exists_norm_lt_hasNondegenerateCriticalPointsOn_sub`: the good perturbations are dense,
   so they can be taken arbitrarily small in the operator norm.
+* `TauCeti.ae_hasNondegenerateCriticalPointsOn_sub_prod`: for a `C²` family `f c`, almost every
+  pair `(a, c)` makes `f c - a` Morse.
 * `TauCeti.ae_hasNondegenerateCriticalPointsOn_sub_inner`,
   `TauCeti.dense_setOfPred_hasNondegenerateCriticalPointsOn_sub_inner` and
   `TauCeti.exists_norm_lt_hasNondegenerateCriticalPointsOn_sub_inner`: the same three statements on
@@ -211,6 +213,63 @@ theorem exists_norm_lt_hasNondegenerateCriticalPointsOn_sub (hU : IsOpen U)
     (dense_setOfPred_hasNondegenerateCriticalPointsOn_sub hU hf).exists_mem_open
       Metric.isOpen_ball ⟨0, Metric.mem_ball_self hε⟩
   exact ⟨a, by simpa [Metric.mem_ball, dist_zero_right] using hball, hmem⟩
+
+/-! ### Families of functions -/
+
+/-- **Almost every linear perturbation of a `C²` family is Morse, jointly in the parameter.**
+Let `f c` be a family of functions on `E`, depending in a jointly `C²` way on a parameter `c` in
+a finite-dimensional space `P`. For a Haar measure `ν` on `(E →L[ℝ] ℝ) × P`, for `ν`-almost every
+pair `(a, c)` the function `f c - a` has only nondegenerate critical points on the open set `U`.
+
+For a fixed parameter this is `TauCeti.ae_hasNondegenerateCriticalPointsOn_sub`. Jointly, the
+exceptional pairs are the critical values on `P × U` of `(c, x) ↦ (fderiv ℝ (f c) x, c)`, a map
+between spaces of the same dimension whose differential is block triangular, with the identity
+of `P` and the second derivative of `f c` on its diagonal. -/
+theorem ae_hasNondegenerateCriticalPointsOn_sub_prod {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] [FiniteDimensional ℝ P] [MeasurableSpace ((E →L[ℝ] ℝ) × P)]
+    [BorelSpace ((E →L[ℝ] ℝ) × P)] (ν : Measure ((E →L[ℝ] ℝ) × P)) [ν.IsAddHaarMeasure]
+    {f : P → E → ℝ} (hU : IsOpen U) (hf : ∀ c, ∀ x ∈ U, ContDiffAt ℝ 2 (uncurry f) (c, x)) :
+    ∀ᵐ q ∂ν, HasNondegenerateCriticalPointsOn (fun y ↦ f q.2 y - q.1 y) U := by
+  borelize (P × E)
+  -- The differential of each `f c`, as a function of the pair `(c, x)`.
+  set G : P × E → E →L[ℝ] ℝ := fun z ↦ fderiv ℝ (f z.1) z.2
+  have hfc : ∀ c, ContDiffOn ℝ 2 (f c) U := fun c x hx ↦
+    ((hf c x hx).comp x ((contDiffAt_const (c := c)).prodMk contDiffAt_id)).contDiffWithinAt
+  have hGd : ∀ z ∈ (univ : Set P) ×ˢ U, DifferentiableAt ℝ G z := fun z hz ↦ by
+    have h : ContDiffAt ℝ 1 (fun w : P × E ↦ fderiv ℝ (fun y ↦ f w.1 y) w.2) z :=
+      ContDiffAt.fderiv (f := fun w : P × E ↦ f w.1) (g := Prod.snd)
+        ((hf z.1 z.2 hz.2).comp (z, z.2) (contDiffAt_fst.fst.prodMk contDiffAt_snd))
+        contDiffAt_snd (by norm_num)
+    exact h.differentiableAt one_ne_zero
+  -- Restricted to the fibre over `c`, the derivative of `G` is the second derivative of `f c`.
+  have hGfib : ∀ z ∈ (univ : Set P) ×ˢ U,
+      fderiv ℝ (fderiv ℝ (f z.1)) z.2 = fderiv ℝ G z ∘L ContinuousLinearMap.inr ℝ P E := by
+    intro z hz
+    have hcomp : fderiv ℝ (f z.1) = G ∘ fun y ↦ (z.1, y) := rfl
+    rw [hcomp, fderiv_comp _ (hGd z hz) (hasFDerivAt_prodMk_right z.1 z.2).differentiableAt,
+      (hasFDerivAt_prodMk_right z.1 z.2).fderiv]
+  let Ψ : P × E → (E →L[ℝ] ℝ) × P := fun z ↦ (G z, z.1)
+  let s := {z ∈ (univ : Set P) ×ˢ U | ¬ Surjective (fderiv ℝ (fderiv ℝ (f z.1)) z.2)}
+  have hnull : ν (Ψ '' s) = 0 := by
+    refine addHaar_image_eq_zero_of_not_surjective_fderivWithin ν
+      (f' := fun z ↦ (fderiv ℝ G z).prod (ContinuousLinearMap.fst ℝ P E)) ?_
+      (fun z hz ↦ ((hGd z hz.1).hasFDerivAt.prodMk hasFDerivAt_fst).hasFDerivWithinAt) ?_
+    · rw [Module.finrank_prod, Module.finrank_prod, ContinuousLinearMap.dual_finrank_eq,
+        add_comm]
+    · -- A preimage of `(φ, 0)` lies in the fibre direction, where the derivative is that of
+      -- `fderiv ℝ (f c)`.
+      rintro z ⟨hz, hns⟩ hsurj
+      refine hns fun φ ↦ ?_
+      obtain ⟨⟨δc, δx⟩, hδ⟩ := hsurj (φ, 0)
+      simp only [ContinuousLinearMap.prod_apply, ContinuousLinearMap.coe_fst', Prod.mk.injEq]
+        at hδ
+      obtain ⟨hφ, rfl⟩ := hδ
+      exact ⟨δx, by rw [hGfib z hz]; simpa using hφ⟩
+  rw [ae_iff]
+  refine measure_mono_null (fun q hq ↦ ?_) hnull
+  obtain ⟨x, ⟨hxU, hxs⟩, hx⟩ := not_not.1 fun h ↦
+    hq ((hasNondegenerateCriticalPointsOn_sub_iff hU (hfc q.2) q.1).2 h)
+  exact ⟨(q.2, x), ⟨⟨mem_univ _, hxU⟩, hxs⟩, Prod.ext hx rfl⟩
 
 end FiniteDimensional
 
