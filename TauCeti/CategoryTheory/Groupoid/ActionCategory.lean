@@ -73,10 +73,6 @@ section Arrows
 
 variable {M : Type*} [Monoid M] {X : Type*} [MulAction M X]
 
-/-- The point underlying the object of the action category corresponding to `x` is `x`. -/
-@[simp]
-theorem back_objEquiv (x : X) : (objEquiv M X x).back = x := (rfl)
-
 /-- An arrow of the action category goes from a point to its translate by the arrow's label. -/
 theorem hom_smul {x y : X} (f : objEquiv M X x ⟶ objEquiv M X y) :
     (f.hom : M) • x = y :=

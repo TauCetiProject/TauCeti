@@ -61,7 +61,7 @@ theorem isOpenEmbedding_inclusion_obj (hS : IsOpen (S : Set X)) :
       (objectHomeomorph G X).symm ∘ ((↑) : S → X) ∘ objectHomeomorph H S := by
     funext a
     apply (objectHomeomorph G X).injective
-    simp
+    simp [objEquiv]
   rw [this]
   exact (objectHomeomorph G X).symm.isOpenEmbedding.comp
     (hS.isOpenEmbedding_subtypeVal.comp (objectHomeomorph H S).isOpenEmbedding)
@@ -81,7 +81,7 @@ theorem isOpenEmbedding_inclusion_total (hH : IsOpen (H : Set G)) (hS : IsOpen (
       (arrowHomeomorph G X).symm ∘ Prod.map Subtype.val Subtype.val ∘ arrowHomeomorph H S := by
     funext f
     apply (arrowHomeomorph G X).injective
-    simp
+    simp [objEquiv]
   rw [this]
   exact (arrowHomeomorph G X).symm.isOpenEmbedding.comp
     ((hH.isOpenEmbedding_subtypeVal.prodMap
