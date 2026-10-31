@@ -22,8 +22,8 @@ wedge product of forms `ContinuousAlternatingMap.wedge`, `⟨·, ·⟩` is the G
 turns the `L²` pairing of forms on an oriented Riemannian manifold into an integral of a top
 form. The star is an isometry, satisfies `⋆⋆ = (-1) ^ (k l)` on `k`-forms, and changes sign
 with the orientation. In an even middle degree, such as two-forms in dimension four, it is a
-self-adjoint involution whose `±1` eigenspaces, the self-dual and anti-self-dual forms, each have
-half the dimension of the `k`-forms.
+self-adjoint involution whose `±1` eigenspaces are the self-dual and anti-self-dual forms; when
+the degree is positive, each has half the dimension of the `k`-forms.
 
 In an arbitrary basis `b`, with dual basis `b*` for the inner product, the star is computed by
 `(⋆α)(w) = ∑ α(b_{i₁}, …, b_{iₖ}) vol(b*_{i₁}, …, b*_{iₖ}, w₁, …, wₗ)`

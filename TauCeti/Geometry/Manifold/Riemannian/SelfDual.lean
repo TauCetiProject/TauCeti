@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.HodgeStar
 
 /-!
@@ -23,11 +22,11 @@ and `Λ⁻` of `Λᵏ T*M`. Every middle-degree form splits as `α = α⁺ + α�
 
 Since `⋆` is a self-adjoint isometry of each fibre, the two parts are pointwise orthogonal, and
 `|α|² = |α⁺|² + |α⁻|²`. The fibre of `Λ±` at each point is the corresponding eigenspace of the
-Hodge star of the tangent space, of dimension `(k + k).choose k / 2`: three for two-forms on a
-four-manifold. The wedge square is `α ∧ α = (|α⁺|² - |α⁻|²) vol`. For the curvature `F` of a
-connection on a four-manifold this compares the integral of `F ∧ F`, a characteristic number, with
-the energies of `F⁺` and `F⁻`; the curvature equation of the Seiberg–Witten equations prescribes
-the self-dual part `F⁺`.
+Hodge star of the tangent space, of dimension `(k + k).choose k / 2` when `0 < k`: three for
+two-forms on a four-manifold. The wedge square is `α ∧ α = (|α⁺|² - |α⁻|²) vol`. For the
+curvature `F` of a connection on a four-manifold this compares the integral of `F ∧ F`, a
+characteristic number, with the energies of `F⁺` and `F⁻`; the curvature equation of the
+Seiberg–Witten equations prescribes the self-dual part `F⁺`.
 
 For a `C^n` metric on a `C^(n+1)` manifold both projections preserve `C^n` forms; on smooth forms
 they are `TauCeti.SmoothForm.selfDualPart` and `TauCeti.SmoothForm.antiSelfDualPart`.
@@ -53,7 +52,8 @@ they are `TauCeti.SmoothForm.selfDualPart` and `TauCeti.SmoothForm.antiSelfDualP
 * `TauCeti.RoughForm.wedge_self_apply`: `α ∧ α = (|α⁺|² - |α⁻|²) vol`.
 * `TauCeti.RoughForm.map_proj_selfDualForms`,
   `TauCeti.RoughForm.two_mul_finrank_map_proj_selfDualForms`: the fibre of `Λ⁺` at a point is the
-  self-dual subspace of the tangent forms, of dimension `(k + k).choose k / 2`; likewise for `Λ⁻`.
+  self-dual subspace of the tangent forms, of dimension `(k + k).choose k / 2` when `0 < k`;
+  likewise for `Λ⁻`.
 * `TauCeti.IsSmoothForm.selfDualPart`, `TauCeti.IsSmoothForm.antiSelfDualPart`: the projections
   preserve `C^n` forms.
 
@@ -81,21 +81,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {k : ℕ} (o : Manifold.Orientation I M (Fin (k + k)))
 
 namespace RoughForm
-
-/-- In an even middle degree the Hodge star of forms is an involution, `⋆⋆α = α`. -/
-@[simp]
-theorem hodgeStar_hodgeStar_of_even (hk : Even k) (α : RoughForm I M ℝ k) :
-    hodgeStar o rfl (hodgeStar o rfl α) = α := by
-  rw [hodgeStar_hodgeStar, (hk.mul_right k).neg_one_pow, one_smul]
-
-/-- In an even middle degree the Hodge star of forms is pointwise self-adjoint:
-`⟨⋆α, β⟩ = ⟨α, ⋆β⟩` at every point. -/
-theorem alternatingFormInner_hodgeStar_left (hk : Even k) (α β : RoughForm I M ℝ k) (x : M) :
-    alternatingFormInner (TangentSpace I x) k (hodgeStar o rfl α x) (β x) =
-      alternatingFormInner (TangentSpace I x) k (α x) (hodgeStar o rfl β x) := by
-  let := o.fact_finrank_tangentSpace x
-  rw [hodgeStar_apply, hodgeStar_apply]
-  exact (o.orientationAt x).alternatingFormInner_formHodgeStar_left hk _ (α x) (β x)
 
 /-! ### Self-dual and anti-self-dual forms -/
 
@@ -184,6 +169,18 @@ theorem isProj_antiSelfDualPart (hk : Even k) :
     rw [antiSelfDualPart_apply, mem_antiSelfDualForms.1 hα]
     module
 
+/-- Taking the self-dual part twice is taking it once. -/
+@[simp]
+theorem selfDualPart_selfDualPart (hk : Even k) (α : RoughForm I M ℝ k) :
+    selfDualPart o (selfDualPart o α) = selfDualPart o α :=
+  (isProj_selfDualPart o hk).map_id _ ((isProj_selfDualPart o hk).map_mem α)
+
+/-- Taking the anti-self-dual part twice is taking it once. -/
+@[simp]
+theorem antiSelfDualPart_antiSelfDualPart (hk : Even k) (α : RoughForm I M ℝ k) :
+    antiSelfDualPart o (antiSelfDualPart o α) = antiSelfDualPart o α :=
+  (isProj_antiSelfDualPart o hk).map_id _ ((isProj_antiSelfDualPart o hk).map_mem α)
+
 /-- The self-dual part of a form vanishes exactly when the form is anti-self-dual. -/
 @[simp]
 theorem ker_selfDualPart : LinearMap.ker (selfDualPart o) = antiSelfDualForms o := by
@@ -200,6 +197,20 @@ theorem ker_antiSelfDualPart : LinearMap.ker (antiSelfDualPart o) = selfDualForm
     eq_comm (b := α)]
   simp
 
+/-- The anti-self-dual part of a form has no self-dual part. -/
+@[simp]
+theorem selfDualPart_antiSelfDualPart (hk : Even k) (α : RoughForm I M ℝ k) :
+    selfDualPart o (antiSelfDualPart o α) = 0 := by
+  rw [← LinearMap.mem_ker, ker_selfDualPart]
+  exact (isProj_antiSelfDualPart o hk).map_mem α
+
+/-- The self-dual part of a form has no anti-self-dual part. -/
+@[simp]
+theorem antiSelfDualPart_selfDualPart (hk : Even k) (α : RoughForm I M ℝ k) :
+    antiSelfDualPart o (selfDualPart o α) = 0 := by
+  rw [← LinearMap.mem_ker, ker_antiSelfDualPart]
+  exact (isProj_selfDualPart o hk).map_mem α
+
 /-- **The splitting `Ω⁺ ⊕ Ω⁻`**: in an even middle degree, the self-dual and anti-self-dual forms
 are complementary. -/
 theorem isCompl_selfDualForms_antiSelfDualForms (hk : Even k) :
@@ -209,11 +220,15 @@ theorem isCompl_selfDualForms_antiSelfDualForms (hk : Even k) :
 /-! ### Pointwise orthogonality and the wedge square -/
 
 /-- Self-dual and anti-self-dual forms are pointwise orthogonal. -/
-theorem alternatingFormInner_eq_zero_of_mem_selfDualForms (hk : Even k)
+theorem alternatingFormInner_eq_zero_of_mem_selfDualForms
     {α β : RoughForm I M ℝ k} (hα : α ∈ selfDualForms o) (hβ : β ∈ antiSelfDualForms o)
     (x : M) : alternatingFormInner (TangentSpace I x) k (α x) (β x) = 0 := by
-  have h := alternatingFormInner_hodgeStar_left o hk α β x
-  rw [mem_selfDualForms.1 hα, mem_antiSelfDualForms.1 hβ, Pi.neg_apply, map_neg] at h
+  let := o.fact_finrank_tangentSpace x
+  -- The star is a pointwise isometry, so `⟨α, β⟩ = ⟨⋆α, ⋆β⟩ = ⟨α, -β⟩`.
+  have h := (o.orientationAt x).alternatingFormInner_formHodgeStar
+    (o.fact_finrank_tangentSpace x).out.symm (α x) (β x)
+  rw [← hodgeStar_apply o rfl α x, ← hodgeStar_apply o rfl β x, mem_selfDualForms.1 hα,
+    mem_antiSelfDualForms.1 hβ, Pi.neg_apply, map_neg] at h
   linarith
 
 /-- The self-dual and anti-self-dual parts of two forms are pointwise orthogonal. -/
@@ -221,7 +236,7 @@ theorem alternatingFormInner_selfDualPart_antiSelfDualPart (hk : Even k)
     (α β : RoughForm I M ℝ k) (x : M) :
     alternatingFormInner (TangentSpace I x) k (selfDualPart o α x) (antiSelfDualPart o β x) =
       0 :=
-  alternatingFormInner_eq_zero_of_mem_selfDualForms o hk ((isProj_selfDualPart o hk).map_mem α)
+  alternatingFormInner_eq_zero_of_mem_selfDualForms o ((isProj_selfDualPart o hk).map_mem α)
     ((isProj_antiSelfDualPart o hk).map_mem β) x
 
 /-- **Pythagoras for the splitting `Ω⁺ ⊕ Ω⁻`**: `|α|² = |α⁺|² + |α⁻|²` at every point. -/
@@ -398,6 +413,37 @@ theorem hodgeStar_antiSelfDualPart (hk : Even k) (α : SmoothForm I M ℝ k) :
   Subtype.ext <| by
     rw [coe_hodgeStar, coe_antiSelfDualPart, RoughForm.hodgeStar_antiSelfDualPart o hk,
       Submodule.coe_neg, coe_antiSelfDualPart]
+
+/-- Taking the self-dual part of a smooth form twice is taking it once. -/
+@[simp]
+theorem selfDualPart_selfDualPart (hk : Even k) (α : SmoothForm I M ℝ k) :
+    selfDualPart o (selfDualPart o α) = selfDualPart o α :=
+  Subtype.ext <| by
+    rw [coe_selfDualPart, coe_selfDualPart, RoughForm.selfDualPart_selfDualPart o hk]
+
+/-- Taking the anti-self-dual part of a smooth form twice is taking it once. -/
+@[simp]
+theorem antiSelfDualPart_antiSelfDualPart (hk : Even k) (α : SmoothForm I M ℝ k) :
+    antiSelfDualPart o (antiSelfDualPart o α) = antiSelfDualPart o α :=
+  Subtype.ext <| by
+    rw [coe_antiSelfDualPart, coe_antiSelfDualPart,
+      RoughForm.antiSelfDualPart_antiSelfDualPart o hk]
+
+/-- The anti-self-dual part of a smooth form has no self-dual part. -/
+@[simp]
+theorem selfDualPart_antiSelfDualPart (hk : Even k) (α : SmoothForm I M ℝ k) :
+    selfDualPart o (antiSelfDualPart o α) = 0 :=
+  Subtype.ext <| by
+    rw [coe_selfDualPart, coe_antiSelfDualPart, RoughForm.selfDualPart_antiSelfDualPart o hk,
+      Submodule.coe_zero]
+
+/-- The self-dual part of a smooth form has no anti-self-dual part. -/
+@[simp]
+theorem antiSelfDualPart_selfDualPart (hk : Even k) (α : SmoothForm I M ℝ k) :
+    antiSelfDualPart o (selfDualPart o α) = 0 :=
+  Subtype.ext <| by
+    rw [coe_antiSelfDualPart, coe_selfDualPart, RoughForm.antiSelfDualPart_selfDualPart o hk,
+      Submodule.coe_zero]
 
 end SmoothForm
 
