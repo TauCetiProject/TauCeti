@@ -19,7 +19,8 @@ periodic modulo `4 |a|` on all odd integers; this is the input that makes the Kr
 `(D / ·)` of a discriminant a Dirichlet character whose value at `-1` is the sign of `D`.
 
 It also records the form of quadratic reciprocity for an integer numerator `a ≡ 1 (mod 4)`, of
-either sign: `J(a | b) = J(b | |a|)` for odd `b`.
+either sign: `J(a | b) = J(b | |a|)` for odd `b`, and that a square factor prime to `b` can be
+dropped from the numerator.
 
 The proof of the reflection law for a natural numerator is adapted from the proof of Mathlib's
 `jacobiSym.mod_right'`: both split off the power of `2` and apply quadratic reciprocity to the odd
@@ -34,6 +35,7 @@ part.
   both statements can be lowered to `|a|`.
 * `TauCeti.jacobiSym_eq_jacobiSym_natAbs_of_emod_four_eq_one`: `J(a | b) = J(b | |a|)` for
   `a ≡ 1 (mod 4)` and odd `b`.
+* `TauCeti.jacobiSym_sq_mul_of_isCoprime`: `J(x² y | b) = J(y | b)` for `x` prime to `b`.
 
 ## References
 
@@ -137,5 +139,11 @@ theorem jacobiSym_eq_sign_mul_of_emod_four_eq_zero {a : ℤ} (ha : a % 4 = 0) {b
     ← jacobiSym.div_four_left ha (Nat.odd_iff.mp hb'), Int.mul_ediv_cancel_left _ four_ne_zero,
     Int.sign_mul, Int.sign_eq_one_of_pos four_pos, one_mul]
   exact jacobiSym_eq_sign_mul_of_dvd_add c hb hb' (by rwa [Int.natAbs_mul] at h)
+
+/-- A square factor prime to the denominator does not change the Jacobi symbol:
+`J(x² y | b) = J(y | b)` when `x` is prime to `b`. -/
+theorem jacobiSym_sq_mul_of_isCoprime {x : ℤ} {b : ℕ} (hx : IsCoprime x b) (y : ℤ) :
+    jacobiSym (x ^ 2 * y) b = jacobiSym y b := by
+  rw [jacobiSym.mul_left, jacobiSym.sq_one' (Int.isCoprime_iff_gcd_eq_one.1 hx), one_mul]
 
 end TauCeti

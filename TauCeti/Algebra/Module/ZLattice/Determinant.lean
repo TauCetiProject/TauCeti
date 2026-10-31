@@ -52,6 +52,8 @@ diagonal (`Matrix.IsSymm.neg_one_pow_mul_det_modEq_zero_or_one`).
 * `ZLattice.IsIntegral.det_eq_card_discriminantGroup`: for integral `L`, `det L = |L^∨ ⧸ L|`.
 * `ZLattice.IsIntegral.finite_discriminantGroup`: for integral `L`, `L^∨ ⧸ L` is finite.
 * `ZLattice.IsIntegral.one_le_det`: for integral `L`, `1 ≤ det L`.
+* `ZLattice.IsIntegral.det_toMatrix_integralForm`: for integral `L`, the integer Gram matrix of
+  any `ℤ`-basis has determinant `|L^∨ ⧸ L|`.
 * `ZLattice.IsIntegral.card_quotient_smul_submoduleOf_dual`,
   `ZLattice.IsIntegral.finite_quotient_smul_submoduleOf_dual`: for an integral full lattice `L`
   of rank `n` and `c ≠ 0`, the quotient `L^∨ / cL` is finite with `cⁿ |L^∨ / L|` elements.
@@ -228,6 +230,20 @@ theorem IsIntegral.one_le_det (h : IsIntegral L) : 1 ≤ det L := by
   exact_mod_cast Nat.card_pos
 
 omit [MeasurableSpace E] [BorelSpace E] in
+/-- For an integral full lattice `L`, the Gram matrix of a `ℤ`-basis `b` in the integer-valued
+inner product `IsIntegral.integralForm` has determinant `|L^∨ / L| = det L`. -/
+theorem IsIntegral.det_toMatrix_integralForm (h : IsIntegral L) {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (b : Basis ι ℤ L) :
+    (LinearMap.BilinForm.toMatrix b h.integralForm).det = Nat.card (DiscriminantGroup L) := by
+  -- The statement involves no measure; the comparison with `det L` uses the Borel volume.
+  borelize E
+  refine Int.cast_injective (α := ℝ) ?_
+  rw [Int.cast_natCast, ← h.det_eq_card_discriminantGroup, det_eq_det_gram L b, Int.cast_det]
+  congr 1
+  ext i j
+  simp [LinearMap.BilinForm.toMatrix_apply, Matrix.gram_apply]
+
+omit [MeasurableSpace E] [BorelSpace E] in
 /-- **The signed determinant of an even lattice is a discriminant.** For an even lattice `L` of
 even rank `2k`, the signed determinant `(-1)^k det L` is an integer congruent to `0` or `1`
 modulo `4`. Here `det L` appears as the order of the discriminant group, which it equals
@@ -237,35 +253,21 @@ theorem IsEven.neg_one_pow_mul_card_discriminantGroup_modEq_zero_or_one (h : IsE
     (-1) ^ k * (Nat.card (DiscriminantGroup L) : ℤ) ≡ 0 [ZMOD 4] ∨
       (-1) ^ k * (Nat.card (DiscriminantGroup L) : ℤ) ≡ 1 [ZMOD 4] := by
   classical
-  -- The statement involves no measure; the comparison with `det L` uses the Borel volume.
-  borelize E
-  -- The Gram matrix of a `ℤ`-basis of `L` is a symmetric integer matrix with even diagonal.
+  -- The Gram matrix of a `ℤ`-basis of `L` is a symmetric integer matrix with even diagonal, whose
+  -- determinant is the order of the discriminant group.
   let b := Free.chooseBasis ℤ L
-  have hint := isIntegral_iff.1 h.isIntegral
-  let G : Matrix (Free.ChooseBasisIndex ℤ L) (Free.ChooseBasisIndex ℤ L) ℤ :=
-    Matrix.of fun i j ↦ (hint _ (b i).2 _ (b j).2).choose
-  have hG (i j) : (G i j : ℝ) = inner ℝ (b i : E) (b j) :=
-    (hint _ (b i).2 _ (b j).2).choose_spec.symm
-  have hGsymm : G.IsSymm := Matrix.IsSymm.ext fun i j ↦
-    Int.cast_injective (α := ℝ) (by rw [hG, hG, real_inner_comm])
-  have hGeven (i) : Even (G i i) := by
+  have hGeven (i) : Even (LinearMap.BilinForm.toMatrix b h.isIntegral.integralForm i i) := by
     obtain ⟨m, hm⟩ := isEven_iff.1 h _ (b i).2
     refine ⟨m, Int.cast_injective (α := ℝ) ?_⟩
-    rw [hG, real_inner_self_eq_norm_sq, hm]
+    rw [LinearMap.BilinForm.toMatrix_apply, IsIntegral.integralForm_cast,
+      real_inner_self_eq_norm_sq, hm]
     push_cast
     ring
   have hcard : Fintype.card (Free.ChooseBasisIndex ℤ L) = 2 * k := by
     rw [← finrank_eq_card_chooseBasisIndex, ZLattice.rank ℝ L, hk]
-  -- Its determinant is `det L`, the order of the discriminant group.
-  have hdet : (Nat.card (DiscriminantGroup L) : ℤ) = G.det := by
-    refine Int.cast_injective (α := ℝ) ?_
-    rw [Int.cast_natCast, ← h.isIntegral.det_eq_card_discriminantGroup, det_eq_det_gram L b,
-      Int.cast_det]
-    congr 1
-    ext i j
-    simp [hG, Matrix.gram_apply]
-  rw [hdet]
-  exact hGsymm.neg_one_pow_mul_det_modEq_zero_or_one hGeven hcard
+  rw [← h.isIntegral.det_toMatrix_integralForm b]
+  exact ((LinearMap.BilinForm.isSymm_toMatrix_iff_isSymm b).2
+    h.isIntegral.isSymm_integralForm).neg_one_pow_mul_det_modEq_zero_or_one hGeven hcard
 
 /-! ### Unimodular lattices -/
 
