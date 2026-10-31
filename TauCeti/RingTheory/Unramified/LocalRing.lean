@@ -32,9 +32,11 @@ says the same for generation as an algebra by a single element.
 Over a field, an unramified local algebra is a field. Hence a proper ideal of a local algebra
 essentially of finite type over a field, with formally unramified quotient, is the maximal ideal.
 More generally, over a local ring of dimension at most one, an unramified local algebra which is a
-domain but not a field contains the base: otherwise the maximal ideal of the base, and with it that
-of the algebra, would be zero. Over a discrete valuation ring this makes the algebra torsion-free,
-hence flat, which is what makes an unramified point over a regular point of codimension one étale.
+domain but not a field contains the base: a nonzero kernel would be a nonzero prime, hence equal to
+the maximal ideal of the base, whose image generates the maximal ideal of the algebra; that image
+is zero, so the algebra would be a field. Over a discrete valuation ring this makes the algebra
+torsion-free, hence flat, which is what makes an unramified point over a regular point of
+codimension one étale.
 
 For an `R`-algebra `S` and primes `q` of `S` and `p = q ∩ R` of `R`, the local homomorphism
 `R_p → S_q` is formally unramified iff `S` is unramified over `R` at `q`. Stalk maps of morphisms of
