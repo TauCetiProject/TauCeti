@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Process.MarkovChain
 public import TauCeti.Probability.Process.PathLaw.ProcessShift
 public import TauCeti.Probability.Process.PathLaw.Filtration
-public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 
 /-!
 # The Markov property of a homogeneous chain at a fixed time
@@ -20,21 +19,21 @@ the future path `(X (n + k))ₖ = (shift α)^[n] X` is a chain with law `ℙ_{X 
 
 This file proves it in the following forms.
 
-* As a joint law (`markovChainLaw_map_prefix_shift_iterate_eq_compProd`): the pair formed by the
-  prefix `(X 0, …, X n)` and the future path has law `prefixLaw ⊗ₘ (u ↦ ℙ_{u n})`. This is the
-  strongest form, and the one transported to processes on arbitrary probability spaces
-  (`ProbabilityTheory.HasLaw.prefix_processShift_markovChainLaw`).
+* As a joint law (`MeasureTheory.Measure.markovChainLaw_map_prefix_shift_iterate_eq_compProd`):
+  the pair formed by the prefix `(X 0, …, X n)` and the future path has law
+  `prefixLaw ⊗ₘ (u ↦ ℙ_{u n})`. This is the strongest form, and the one transported to processes
+  on arbitrary probability spaces (`ProbabilityTheory.HasLaw.prefix_processShift_markovChainLaw`).
 * As an identity of conditional expectations with respect to the natural filtration
   `MeasureTheory.Filtration.piLE` of path space: for an integrable test function `f`,
   `𝔼[f ∘ (shift α)^[n] | X 0, …, X n] = ∫ f dℙ_{X n}` almost surely
-  (`condExp_shift_iterate_markovChainLaw`), and for an event `B` of path space,
-  `ℙ[(shift α)^[n] X ∈ B | X 0, …, X n] = ℙ_{X n}(B)` almost surely
-  (`condExp_indicator_shift_iterate_markovChainLaw`).
+  (`MeasureTheory.Measure.condExp_shift_iterate_markovChainLaw`), and for an event `B` of path
+  space, `ℙ[(shift α)^[n] X ∈ B | X 0, …, X n] = ℙ_{X n}(B)` almost surely
+  (`MeasureTheory.Measure.condExp_indicator_shift_iterate_markovChainLaw`).
 * Without conditioning, the future path is again a chain, started from the time-`n` law:
   `(markovChainLaw ν κ).map (shift α)^[n] = markovChainLaw ((κ ^ n) ∘ₘ ν) κ`
-  (`markovChainLaw_map_shift_iterate`). On an event `{(X 0, …, X n) ∈ A}` of the history, the
-  future path has the law of the chain started from the law of `X n` restricted to that event
-  (`markovChainLaw_restrict_map_shift_iterate`).
+  (`MeasureTheory.Measure.markovChainLaw_map_shift_iterate`). On an event `{(X 0, …, X n) ∈ A}` of
+  the history, the future path has the law of the chain started from the law of `X n` restricted
+  to that event (`MeasureTheory.Measure.markovChainLaw_restrict_map_shift_iterate`).
 
 The proof restricts the path law to an event of the history and identifies the law of the future
 path on it by the uniqueness theorem `MeasureTheory.Measure.eq_markovChainLaw`: the prefix
@@ -59,8 +58,8 @@ variable {α : Type*} [MeasurableSpace α] (ν : Measure α) (κ : Kernel α α)
 /-- **The future path on an event of the history.** Restricted to an event `{(X 0, …, X n) ∈ A}`,
 the law of the future path `(shift α)^[n] X` is the path law of the chain whose initial measure is
 the law of `X n` restricted to the same event. -/
-theorem markovChainLaw_restrict_map_shift_iterate [IsFiniteMeasure ν] (n : ℕ)
-    {A : Set (Fin (n + 1) → α)} (hA : MeasurableSet A) :
+theorem _root_.MeasureTheory.Measure.markovChainLaw_restrict_map_shift_iterate [IsFiniteMeasure ν]
+    (n : ℕ) {A : Set (Fin (n + 1) → α)} (hA : MeasurableSet A) :
     ((markovChainLaw ν κ).restrict ((fun x (i : Fin (n + 1)) => x i.1) ⁻¹' A)).map
         (shift α)^[n] =
       markovChainLaw (((markovChainLaw ν κ).restrict
@@ -120,15 +119,17 @@ theorem markovChainLaw_restrict_map_shift_iterate [IsFiniteMeasure ν] (n : ℕ)
 
 /-- **The future path is a chain started from the time-`n` law.** For a finite initial measure,
 the path `(X (n + k))ₖ` seen from time `n` has law `markovChainLaw ((κ ^ n) ∘ₘ ν) κ`. -/
-theorem markovChainLaw_map_shift_iterate [IsFiniteMeasure ν] (n : ℕ) :
+theorem _root_.MeasureTheory.Measure.markovChainLaw_map_shift_iterate [IsFiniteMeasure ν]
+    (n : ℕ) :
     (markovChainLaw ν κ).map (shift α)^[n] = markovChainLaw ((κ ^ n : Kernel α α) ∘ₘ ν) κ := by
   simpa [Measure.markovChainLaw_map_eval] using
-    markovChainLaw_restrict_map_shift_iterate ν κ n MeasurableSet.univ
+    Measure.markovChainLaw_restrict_map_shift_iterate ν κ n MeasurableSet.univ
 
 /-- **The Markov property at time `n`, as a joint law.** Under `markovChainLaw ν κ`, the prefix
 `(X 0, …, X n)` and the future path `(X (n + k))ₖ` have joint law the prefix law composed with the
 kernel `u ↦ ℙ_{u n}` sending a prefix to the law of the chain started at its last state. -/
-theorem markovChainLaw_map_prefix_shift_iterate_eq_compProd [IsFiniteMeasure ν] (n : ℕ) :
+theorem _root_.MeasureTheory.Measure.markovChainLaw_map_prefix_shift_iterate_eq_compProd
+    [IsFiniteMeasure ν] (n : ℕ) :
     (markovChainLaw ν κ).map (fun x => ((fun i : Fin (n + 1) => x i.1), (shift α)^[n] x)) =
       ((markovChainLaw ν κ).map fun x (i : Fin (n + 1)) => x i.1) ⊗ₘ
         κ.markovChainKernel.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
@@ -142,7 +143,7 @@ theorem markovChainLaw_map_prefix_shift_iterate_eq_compProd [IsFiniteMeasure ν]
     Measure.compProd_apply_prod hA hB, setLIntegral_map hA (Kernel.measurable_coe _ hB) hpre, hfib,
     ← Measure.restrict_apply (hB.preimage (measurable_shift_iterate n)),
     ← Measure.map_apply (measurable_shift_iterate n) hB,
-    markovChainLaw_restrict_map_shift_iterate ν κ n hA, Measure.markovChainLaw_eq_comp,
+    Measure.markovChainLaw_restrict_map_shift_iterate ν κ n hA, Measure.markovChainLaw_eq_comp,
     Measure.bind_apply hB (Kernel.aemeasurable _),
     lintegral_map (Kernel.measurable_coe _ hB) (measurable_pi_apply n)]
   simp [Kernel.comap_apply]
@@ -153,8 +154,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 function `f` of paths that is integrable for the law `markovChainLaw ((κ ^ n) ∘ₘ ν) κ` of the future
 path, the conditional expectation of `f ((shift α)^[n] X)` given the history `X 0, …, X n` is
 `∫ f dℙ_{X n}`. -/
-theorem condExp_shift_iterate_markovChainLaw [IsFiniteMeasure ν] (n : ℕ) {f : (ℕ → α) → E}
-    (hf : Integrable f (markovChainLaw ((κ ^ n : Kernel α α) ∘ₘ ν) κ)) :
+theorem _root_.MeasureTheory.Measure.condExp_shift_iterate_markovChainLaw [IsFiniteMeasure ν]
+    (n : ℕ) {f : (ℕ → α) → E} (hf : Integrable f (markovChainLaw ((κ ^ n : Kernel α α) ∘ₘ ν) κ)) :
     (markovChainLaw ν κ)[fun x => f ((shift α)^[n] x) | Filtration.piLE n] =ᵐ[markovChainLaw ν κ]
       fun x => ∫ y, f y ∂markovChainLaw (Measure.dirac (x n)) κ := by
   set P := markovChainLaw ν κ
@@ -163,10 +164,10 @@ theorem condExp_shift_iterate_markovChainLaw [IsFiniteMeasure ν] (n : ℕ) {f :
   have hpre : Measurable fun x : ℕ → α => fun i : Fin (n + 1) => x i.1 := by fun_prop
   have hF : Measurable fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.1), (shift α)^[n] x) :=
     hpre.prodMk (measurable_shift_iterate n)
-  have hjoint := markovChainLaw_map_prefix_shift_iterate_eq_compProd ν κ n
+  have hjoint := Measure.markovChainLaw_map_prefix_shift_iterate_eq_compProd ν κ n
   -- The future path has law `K ∘ₘ (law of the history)`, the second marginal of the joint law.
   have hshift : P.map (shift α)^[n] = markovChainLaw ((κ ^ n : Kernel α α) ∘ₘ ν) κ :=
-    markovChainLaw_map_shift_iterate ν κ n
+    Measure.markovChainLaw_map_shift_iterate ν κ n
   have hcomp : K ∘ₘ (P.map fun x (i : Fin (n + 1)) => x i.1) =
       markovChainLaw ((κ ^ n : Kernel α α) ∘ₘ ν) κ := by
     rw [← Measure.snd_compProd, ← hjoint,
@@ -204,20 +205,20 @@ theorem condExp_shift_iterate_markovChainLaw [IsFiniteMeasure ν] (n : ℕ) {f :
 /-- **The Markov property at time `n`, for events.** For a finite initial measure and a measurable
 set `B` of paths, the conditional probability that the future path `(X (n + k))ₖ` lies in `B` given
 the history `X 0, …, X n` is `ℙ_{X n}(B)`. -/
-theorem condExp_indicator_shift_iterate_markovChainLaw [IsFiniteMeasure ν] (n : ℕ)
-    {B : Set (ℕ → α)} (hB : MeasurableSet B) :
+theorem _root_.MeasureTheory.Measure.condExp_indicator_shift_iterate_markovChainLaw
+    [IsFiniteMeasure ν] (n : ℕ) {B : Set (ℕ → α)} (hB : MeasurableSet B) :
     (markovChainLaw ν κ)[((shift α)^[n] ⁻¹' B).indicator 1 | Filtration.piLE n]
       =ᵐ[markovChainLaw ν κ] fun x => (markovChainLaw (Measure.dirac (x n)) κ).real B := by
   have : IsFiniteMeasure (markovChainLaw ((κ ^ n : Kernel α α) ∘ₘ ν) κ) := by
-    rw [← markovChainLaw_map_shift_iterate]; infer_instance
-  have h := condExp_shift_iterate_markovChainLaw ν κ n (f := B.indicator (1 : (ℕ → α) → ℝ))
-    ((integrable_const (1 : ℝ)).indicator hB)
+    rw [← Measure.markovChainLaw_map_shift_iterate]; infer_instance
+  have h := Measure.condExp_shift_iterate_markovChainLaw ν κ n
+    (f := B.indicator (1 : (ℕ → α) → ℝ)) ((integrable_const (1 : ℝ)).indicator hB)
   simp_rw [integral_indicator_one hB] at h
   exact h
 
 section Process
 
-variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : ℕ → Ω → α}
+variable {ν κ} {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} {X : ℕ → Ω → α}
 
 /-- **The Markov property at time `n` for a process with the law of a chain.** If the path of `X`
 has law `markovChainLaw ν κ`, then the history `(X 0, …, X n)` and the future path
@@ -238,7 +239,7 @@ theorem _root_.ProbabilityTheory.HasLaw.prefix_processShift_markovChainLaw [IsFi
     rw [processShift_eq_shift_iterate]
     -- Both sides are the same function, the right one written as a composite.
     rfl
-  rw [hpre, ← markovChainLaw_map_prefix_shift_iterate_eq_compProd, hF]
+  rw [hpre, ← Measure.markovChainLaw_map_prefix_shift_iterate_eq_compProd, hF]
   exact (hasLaw_map ((by fun_prop : Measurable fun x : ℕ → α => fun i : Fin (n + 1) => x i.1).prodMk
     (measurable_shift_iterate n)).aemeasurable).comp h
 
