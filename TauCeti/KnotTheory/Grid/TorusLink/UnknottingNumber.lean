@@ -55,6 +55,10 @@ namespace GridDiagram
 
 /-! ### A crossing change between the `(2, q + 3)` and `(2, q + 1)` torus link grids -/
 
+/-- The element `1` of `Fin m` has value `1` once `2 ≤ m`. -/
+private theorem val_one_of_two_le {m : ℕ} [NeZero m] (hm : 2 ≤ m) : ((1 : Fin m) : ℕ) = 1 := by
+  rw [Fin.val_one', Nat.mod_eq_of_lt hm]
+
 variable (q : ℕ)
 
 /-- In the standard grid of the `(2, q + 1)` torus link the `X`-marking of column `c` sits in row
@@ -71,8 +75,7 @@ columns are exchanged, and the others stay on the diagonal. -/
 private theorem stabilizeX_torusLink_one_O_val (j : Fin (1 + 1 + (q + 1) + 1)) :
     (((torusLink 1 q).stabilizeX 1 0 1).O j : ℕ) =
       if (j : ℕ) = 0 then 1 else if (j : ℕ) = 1 then 0 else j := by
-  have h1 : ((1 : Fin (1 + 1 + (q + 1) + 1)) : ℕ) = 1 := by
-    rw [Fin.val_one']; exact Nat.mod_eq_of_lt (by omega)
+  have h1 := val_one_of_two_le (m := 1 + 1 + (q + 1) + 1) (by omega)
   rw [stabilizeX_O]
   induction j using Fin.succAboveCases 1 with
   | x => simp
@@ -87,10 +90,8 @@ rows, and every other column carries it two rows below the diagonal. -/
 private theorem stabilizeX_torusLink_one_X_val (j : Fin (1 + 1 + (q + 1) + 1)) :
     (((torusLink 1 q).stabilizeX 1 0 1).X j : ℕ) =
       if (j : ℕ) = 0 then q + 2 else if (j : ℕ) = 1 then q + 3 else j - 2 := by
-  have h1 : ((1 : Fin (1 + 1 + (q + 1) + 1)) : ℕ) = 1 := by
-    rw [Fin.val_one']; exact Nat.mod_eq_of_lt (by omega)
-  have h1' : ((1 : Fin (1 + 1 + (q + 1))) : ℕ) = 1 := by
-    rw [Fin.val_one']; exact Nat.mod_eq_of_lt (by omega)
+  have h1 := val_one_of_two_le (m := 1 + 1 + (q + 1) + 1) (by omega)
+  have h1' := val_one_of_two_le (m := 1 + 1 + (q + 1)) (by omega)
   rw [stabilizeX_X]
   induction j using Fin.succAboveCases 1 with
   | x =>
@@ -117,8 +118,7 @@ then that of column `0`, with the new row and column at the top and right edge. 
 private theorem stabilizeX_stabilizeX_torusLink_one :
     ((torusLink 1 q).stabilizeX 1 0 1).stabilizeX (Fin.last _) (Fin.last _) 0 =
       (torusLink 1 (q + 2)).swapColumns 0 1 := by
-  have h1 : ((1 : Fin (1 + 1 + (q + 2 + 1))) : ℕ) = 1 := by
-    rw [Fin.val_one']; exact Nat.mod_eq_of_lt (by omega)
+  have h1 := val_one_of_two_le (m := 1 + 1 + (q + 2 + 1)) (by omega)
   have h0 : ((0 : Fin (1 + 1 + (q + 2 + 1))) : ℕ) = 0 := rfl
   refine GridDiagram.ext (GridState.ext fun c => Fin.ext ?_) (GridState.ext fun c => Fin.ext ?_)
   · rw [stabilizeX_O, swapColumns_O, GridState.swapColumns_apply, torusLink_O_apply,
@@ -161,8 +161,7 @@ private theorem stabilizeX_stabilizeX_torusLink_one :
 /-- The first two columns of the `(2, q + 3)` torus link grid interleave. -/
 private theorem columnsInterleaving_torusLink_one_zero :
     (torusLink 1 (q + 2)).ColumnsInterleaving 0 (finRotate _ 0) := by
-  have h1 : ((1 : Fin (1 + 1 + (q + 2 + 1))) : ℕ) = 1 := by
-    rw [Fin.val_one']; exact Nat.mod_eq_of_lt (by omega)
+  have h1 := val_one_of_two_le (m := 1 + 1 + (q + 2 + 1)) (by omega)
   have hX0 := torusLink_X_val_of_le 1 (q + 2) (c := 0) (by simp)
   have hX1 := torusLink_X_val_of_le 1 (q + 2) (c := 1) h1.le
   have hr : finRotate (1 + 1 + (q + 2 + 1)) 0 = 1 := finRotate_apply_zero
@@ -179,24 +178,18 @@ private theorem movesTo_swapColumns_torusLink_one :
   set H₁ := (torusLink 1 q).stabilizeX 1 0 1
   have h₁ : (1 : Fin (1 + 1 + (q + 1))).castSucc = 1 := by
     ext
-    rw [Fin.val_castSucc, Fin.val_one', Fin.val_one', Nat.mod_eq_of_lt (by omega),
-      Nat.mod_eq_of_lt (by omega)]
+    rw [Fin.val_castSucc, val_one_of_two_le (by omega), val_one_of_two_le (by omega)]
   -- The cyclic permutation of the columns moves the new last column of the second stabilization
   -- to the front, next to the split column `0`; the new row then slides down by commutations
   -- to the elementary stabilization.
   have h₂ : (H₁.stabilizeX (Fin.last _) (Fin.last _) 0).MovesTo H₁ := by
     refine (cyclicColumns_movesTo _).trans ?_
     rw [stabilizeX_last_relabelColumns, ← Fin.castSucc_zero]
-    exact ((H₁.commutationMovesTo_stabilizeX_castSucc 0 _ (H₁.X 0).castSucc).movesTo).trans
-      (IsStabilization.movesTo ((isStabilization_iff _ _).mpr
-        (Or.inr (H₁.isXStabilization_stabilizeX_castSucc 0)))).symm
+    exact H₁.movesTo_stabilizeX_castSucc 0 _
   -- The same slide for the first stabilization, whose new column `1` precedes the split column.
   have h₃ : H₁.MovesTo (torusLink 1 q) := by
     simp only [H₁, ← h₁]
-    exact (((torusLink 1 q).commutationMovesTo_stabilizeX_castSucc 1 _
-      ((torusLink 1 q).X 1).castSucc).movesTo).trans
-      (IsStabilization.movesTo ((isStabilization_iff _ _).mpr
-        (Or.inr ((torusLink 1 q).isXStabilization_stabilizeX_castSucc 1)))).symm
+    exact (torusLink 1 q).movesTo_stabilizeX_castSucc 1 _
   rw [← stabilizeX_stabilizeX_torusLink_one]
   exact h₂.trans h₃
 
