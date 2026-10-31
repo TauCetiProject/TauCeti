@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Sylvester.Basic
 import TauCeti.Analysis.Fourier.HaagerupZsido.Fourier
 import TauCeti.Analysis.Fourier.HaagerupZsido.Mass
+import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 import TauCeti.Analysis.InnerProductSpace.Symmetric.FunctionalCalculus
 
 /-!
@@ -270,5 +271,74 @@ theorem mul_map_le_pi_div_two_mul_map_sylvester_apply (N : UnitarilyInvariantSem
   rw [map_smul_eq_mul, RCLike.norm_ofReal, abs_of_nonneg (by positivity)] at hN
   calc δ * N X = π / 2 * (2 * δ / π * N X) := by field_simp
     _ ≤ π / 2 * N (A.sylvester B X) := by gcongr
+
+/-! ### Pairwise Sylvester bound on invariant subspaces -/
+
+/-- **Pairwise Sylvester estimate on invariant blocks.** If symmetric `A` and `B`
+preserve `S` and `T`, their restricted real point spectra are separated by `δ`,
+`X` has range in `S`, and `X` vanishes on `Tᗮ`, then
+`δ N(X) ≤ (π / 2) N(A X - X B)`. -/
+theorem mul_map_le_pi_div_two_mul_map_sylvester_apply_of_mem
+    (N : UnitarilyInvariantSeminorm 𝕜 F E)
+    (hA : (A : E →ₗ[𝕜] E).IsSymmetric) (hB : (B : F →ₗ[𝕜] F).IsSymmetric)
+    {S : Submodule 𝕜 E} {T : Submodule 𝕜 F}
+    (hS : ∀ x ∈ S, A x ∈ S) (hT : ∀ y ∈ T, B y ∈ T)
+    (hgap : End.PointSpectraSeparated (A : E →ₗ[𝕜] E) S
+      (B : F →ₗ[𝕜] F) T δ) {X : F →L[𝕜] E}
+    (hXS : ∀ y, X y ∈ S) (hXT : ∀ y ∈ Tᗮ, X y = 0) :
+    δ * N X ≤ π / 2 * N (A.sylvester B X) := by
+  let : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  let : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  let : CompleteSpace S := FiniteDimensional.complete 𝕜 S
+  let : CompleteSpace T := FiniteDimensional.complete 𝕜 T
+  let AS : S →L[𝕜] S := ((A : E →ₗ[𝕜] E).restrict hS).toContinuousLinearMap
+  let BT : T →L[𝕜] T := ((B : F →ₗ[𝕜] F).restrict hT).toContinuousLinearMap
+  let Y : T →L[𝕜] S := S.orthogonalProjectionOnto ∘L X ∘L T.subtypeL
+  let Nblock : UnitarilyInvariantSeminorm 𝕜 T S := N.compress S T
+  have hAS : (AS : S →ₗ[𝕜] S).IsSymmetric := hA.restrict_invariant hS
+  have hBT : (BT : T →ₗ[𝕜] T).IsSymmetric := hB.restrict_invariant hT
+  have hgap' : End.PointSpectraSeparated (AS : S →ₗ[𝕜] S) ⊤
+      (BT : T →ₗ[𝕜] T) ⊤ δ := by
+    refine End.pointSpectraSeparated_iff.mpr ?_
+    intro μ hμ ν hν
+    exact hgap.le_abs_sub
+      (End.restrictedPointSpectrum_restrict_top_subset (A : E →ₗ[𝕜] E) hS hμ)
+      (End.restrictedPointSpectrum_restrict_top_subset (B : F →ₗ[𝕜] F) hT hν)
+  have hY : Nblock Y = N X := by
+    simpa only [Nblock, compress_apply, Y, ContinuousLinearMap.toLinearMap_comp] using
+      congrArg N (LinearMap.blockExtend_orthogonalProjection_comp_eq_of_mem S T
+        (X : F →ₗ[𝕜] E) hXS hXT)
+  -- The restricted Sylvester residual is the compression of the ambient residual.
+  have hSY : AS.sylvester BT Y =
+      S.orthogonalProjectionOnto ∘L (A.sylvester B X) ∘L T.subtypeL := by
+    -- `ext` already compares the ambient vectors underlying the subspace values.
+    ext y
+    simp only [ContinuousLinearMap.sylvester_apply, sub_apply,
+      ContinuousLinearMap.comp_apply, Submodule.coe_sub]
+    -- The restrictions apply `A` and `B` on their invariant blocks, while
+    -- projection acts as the identity on every value of `X` and `A X`.
+    change A (S.starProjection (X (y : F))) -
+      S.starProjection (X (B (y : F))) =
+        S.starProjection (A (X (y : F)) - X (B (y : F)))
+    rw [S.starProjection_eq_self_iff.mpr (hXS _), map_sub,
+      S.starProjection_eq_self_iff.mpr (hS _ (hXS _)),
+      S.starProjection_eq_self_iff.mpr (hXS _)]
+  have hRS (y : F) : (A.sylvester B X) y ∈ S := by
+    simp only [ContinuousLinearMap.sylvester_apply, sub_apply]
+    exact S.sub_mem (hS _ (hXS _)) (hXS _)
+  have hRT (y : F) (hy : y ∈ Tᗮ) : (A.sylvester B X) y = 0 := by
+    have hBy : B y ∈ Tᗮ :=
+      hB.orthogonalComplement_mem_invtSubmodule (p := T) hT hy
+    simp [ContinuousLinearMap.sylvester_apply, hXT y hy, hXT (B y) hBy]
+  have hR : Nblock (AS.sylvester BT Y) = N (A.sylvester B X) := by
+    rw [hSY]
+    simpa only [Nblock, compress_apply, ContinuousLinearMap.toLinearMap_comp] using
+      congrArg N (LinearMap.blockExtend_orthogonalProjection_comp_eq_of_mem S T
+        ((A.sylvester B X : F →L[𝕜] E) : F →ₗ[𝕜] E) hRS hRT)
+  have hbound := Nblock.mul_map_le_pi_div_two_mul_map_sylvester_apply hAS hBT hgap' Y
+  calc
+    δ * N X = δ * Nblock Y := by rw [hY]
+    _ ≤ π / 2 * Nblock (AS.sylvester BT Y) := hbound
+    _ = π / 2 * N (A.sylvester B X) := by rw [hR]
 
 end TauCeti.UnitarilyInvariantSeminorm

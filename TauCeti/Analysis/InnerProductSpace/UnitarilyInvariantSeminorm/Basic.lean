@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
-public import TauCeti.Analysis.InnerProductSpace.SingularValues
+public import TauCeti.Analysis.InnerProductSpace.ZeroExtension
 
 /-!
 # Unitarily invariant seminorms on rectangular linear maps
@@ -62,6 +62,8 @@ values:
 * `TauCeti.UnitarilyInvariantSeminorm.arrowCongr`: transport along isometric isomorphisms of the
   source and the target.
 * `TauCeti.UnitarilyInvariantSeminorm.compAdjoint`: the seminorm `B ↦ N B†` on the adjoint maps.
+* `TauCeti.UnitarilyInvariantSeminorm.compress`: a unitarily invariant seminorm on maps
+  between subspaces, evaluated via isometric zero extension.
 * `TauCeti.UnitarilyInvariantSeminorm.map_operatorAbs`: on endomorphisms, `N |A| = N A` for the
   operator modulus `|A| = √(A† A)`.
 
@@ -404,6 +406,52 @@ theorem compAdjoint_compAdjoint : N.compAdjoint.compAdjoint = N := by
   simp
 
 end Adjoint
+
+/-! ### Compression to finite-dimensional subspace blocks -/
+
+section Compression
+
+variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
+  (S : Submodule 𝕜 F) (T : Submodule 𝕜 E)
+  [S.HasOrthogonalProjection] [T.HasOrthogonalProjection]
+
+/-- Restrict an ambient unitarily invariant seminorm to rectangular maps
+between subspaces, measuring a map by its zero extension. -/
+noncomputable def compress (N : UnitarilyInvariantSeminorm 𝕜 E F)
+    (S : Submodule 𝕜 F) (T : Submodule 𝕜 E)
+    [T.HasOrthogonalProjection] :
+    UnitarilyInvariantSeminorm 𝕜 T S where
+  toSeminorm := N.toSeminorm.comp (LinearMap.blockExtend S T)
+  map_linearIsometryEquiv_comp_comp' L R X := by
+    -- Compression is unitarily invariant because zero extension preserves singular values.
+    change N (LinearMap.blockExtend S T ((L : S →ₗ[𝕜] S) ∘ₗ X ∘ₗ (R : T →ₗ[𝕜] T))) =
+      N (LinearMap.blockExtend S T X)
+    apply N.map_eq_of_singularValues_eq
+    calc
+      (LinearMap.blockExtend S T ((L : S →ₗ[𝕜] S) ∘ₗ X ∘ₗ (R : T →ₗ[𝕜] T))).singularValues =
+          ((L : S →ₗ[𝕜] S) ∘ₗ X ∘ₗ (R : T →ₗ[𝕜] T)).singularValues :=
+        LinearMap.blockExtend_singularValues S T _
+      _ = X.singularValues := by simp
+      _ = (LinearMap.blockExtend S T X).singularValues :=
+        (LinearMap.blockExtend_singularValues S T X).symm
+
+@[simp]
+theorem compress_apply (N : UnitarilyInvariantSeminorm 𝕜 E F)
+    (S : Submodule 𝕜 F) (T : Submodule 𝕜 E)
+    [T.HasOrthogonalProjection] (X : T →ₗ[𝕜] S) :
+    N.compress S T X = N (LinearMap.blockExtend S T X) := by
+  calc
+    N.compress S T X = (N.compress S T).toSeminorm X :=
+      (congrFun (coe_toSeminorm (N.compress S T)) X).symm
+    _ = N (LinearMap.blockExtend S T X) := by
+      -- The `toSeminorm` field of `compress` is the seminorm obtained by
+      -- composing `N.toSeminorm` with `LinearMap.blockExtend`.
+      -- Exposing that field lets `Seminorm.comp_apply` evaluate it.
+      change (N.toSeminorm.comp (LinearMap.blockExtend S T)) X =
+        N (LinearMap.blockExtend S T X)
+      rw [Seminorm.comp_apply, coe_toSeminorm]
+
+end Compression
 
 /-! ### The operator modulus -/
 

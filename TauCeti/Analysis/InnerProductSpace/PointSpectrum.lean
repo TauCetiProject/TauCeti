@@ -63,6 +63,8 @@ spectrum from that of its orthogonal complement.
 
 ## Main statements
 
+* `Module.End.restrictedPointSpectrum_restrict_top_subset`: the point spectrum of a
+  restriction lies in the original operator's restricted point spectrum.
 * `Module.End.mem_restrictedPointSpectrum_iff`: `λ` lies in the restricted point spectrum on `U`
   exactly when `A x = λ x` for some nonzero `x ∈ U`.
 * `Module.End.pointSpectrumIn_pointSpectralSubspace`: the point-spectral subspace selected by `Ω`
@@ -160,6 +162,23 @@ theorem restrictedPointSpectrum_top :
   ext μ
   simp only [mem_restrictedPointSpectrum_iff_inf_eigenspace_ne_bot, top_inf_eq, Set.mem_ofPred_eq]
   exact Iff.rfl
+
+/-- Restricting an endomorphism to an invariant subspace cannot introduce
+new real point-spectrum values: each eigenvector of the restriction is an
+eigenvector of the original endomorphism in that subspace. -/
+theorem restrictedPointSpectrum_restrict_top_subset (A : Module.End 𝕜 E)
+    {U : Submodule 𝕜 E} (hU : ∀ x ∈ U, A x ∈ U) :
+    Module.End.restrictedPointSpectrum (A.restrict hU) ⊤ ⊆
+      A.restrictedPointSpectrum U := by
+  intro μ hμ
+  obtain ⟨x, _, hx0, hx⟩ := mem_restrictedPointSpectrum_iff.mp hμ
+  have hx0' : (x : E) ≠ 0 := by
+    intro hx'
+    apply hx0
+    apply Subtype.ext
+    exact hx'
+  exact mem_restrictedPointSpectrum x.property hx0'
+    (congrArg Subtype.val hx)
 
 /-! ### Point-spectral containment -/
 
