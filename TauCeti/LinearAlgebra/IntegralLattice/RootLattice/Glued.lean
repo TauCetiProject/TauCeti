@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Dual
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.Index
 public import TauCeti.LinearAlgebra.IntegralLattice.Overlattice.OrthogonalQuotient.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.OrthogonalSum
+import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.OrthogonalGroup
 
 /-!
 # Gluing an orthogonal sum of ADE root lattices along glue words
@@ -32,7 +33,9 @@ Glued lattices are natural in their glue data.  An isometry of orthogonal sums o
 that carries the glue subgroup `H` onto `H'`, read in glue-word coordinates, restricts to an
 isometry of the glued lattices.  This applies in particular to componentwise isometries of the root
 lattices and to permutations of the components, the two changes of coordinates under which glue
-words are natural.
+words are natural.  When all components have the same type, combining the two gives the isometry
+induced by a signed permutation of the components which preserves the glue subgroup, the form in
+which automorphisms of a glue code act on the glued lattice.
 
 The root sublattice of a glued lattice is computed from the coset minima of the glue words in
 `TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Roots`.
@@ -54,6 +57,8 @@ The root sublattice of a glued lattice is computed from the coset minima of the 
 * `TauCeti.DynkinType.gluedLatticePiIsometry`, `TauCeti.DynkinType.gluedLatticePiCongrLeftIsometry`:
   the isometries of glued lattices induced by componentwise isometries of the root lattices and by
   permutations of the components.
+* `TauCeti.DynkinType.gluedLatticeSignedPermIsometry`: for identical components, the isometry of
+  the glued lattice induced by a signed permutation of the components preserving the glue subgroup.
 
 ## References
 
@@ -410,5 +415,72 @@ theorem gluedLatticePiCongrLeftIsometry_apply
     Isometry.piCongrLeft_apply_apply]
 
 end PiCongrLeft
+
+section SignedPermutation
+
+variable {T : DynkinType} {hT : T.IsSimplyLaced} (hvT : T.Valid)
+  {K : AddSubgroup (FiniteQuadraticModule.pi fun _ : ι ↦ T.glueAlphabet hT)}
+  (hK : (FiniteQuadraticModule.pi fun _ : ι ↦ T.glueAlphabet hT).IsIsotropic K)
+
+/-- Multiplying a lattice by a sign acts on its discriminant group by the same sign. -/
+private theorem discriminantGroupEquiv_ite_neg {V : Type*} [AddCommGroup V] [Module ℚ V]
+    (L : IntegralLattice V) (u : ℤˣ) (x : L.DiscriminantGroup) :
+    (if u = 1 then Isometry.refl L else Isometry.neg L).discriminantGroupEquiv x = u • x := by
+  rcases Int.units_eq_one_or u with rfl | rfl
+  · simp
+  · simp [show (-1 : ℤˣ) ≠ 1 by decide]
+
+/-- **Signed permutations of identical components induce isometries of glued lattices.**  Let all
+components have the same type `T`.  For signs `u : ι → ℤˣ` and a permutation `σ` of the
+components, the signed coordinate change moving `u i • x i` to position `σ i` is an isometry of the
+orthogonal sum of root lattices.  If the same signed permutation of glue words maps `K` onto
+itself, it restricts to a self-isometry of the lattice glued along `K`. -/
+noncomputable def gluedLatticeSignedPermIsometry (u : ι → ℤˣ) (σ : Equiv.Perm ι)
+    (hσ : ∀ w : ∀ _ : ι, T.glueAlphabet hT,
+      (fun j ↦ u (σ.symm j) • w (σ.symm j)) ∈ K ↔ w ∈ K) :
+    IntegralLattice.Isometry (gluedLattice (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT) K hK)
+      (gluedLattice (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT) K hK) :=
+  gluedLatticeIsometry (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT) K hK (fun _ ↦ hvT) hK
+    ((Isometry.pi fun i ↦ if u i = 1 then Isometry.refl _ else Isometry.neg _).trans
+      (Isometry.piCongrLeft (fun _ ↦ T.rootLattice hT) σ))
+    (fun w j ↦ u (σ.symm j) • w (σ.symm j))
+    (fun w ↦ by
+      -- The signs act first, componentwise, and the permutation then moves the components.
+      have h1 := (Isometry.discriminantQuadraticIsometry_apply _ (isEven_pi_rootLattice _ _)
+        _).symm.trans (discriminantQuadraticIsometry_pi_glueWordIsometry (fun _ ↦ T)
+          (fun _ ↦ hT) (fun _ ↦ hvT) (fun _ ↦ hvT)
+          (fun i ↦ if u i = 1 then Isometry.refl (T.rootLattice hT) else Isometry.neg _)
+          (fun i x ↦ u i • x) (fun i x ↦ by
+            refine Eq.trans ?_ ((Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
+              (discriminantGroupEquiv_ite_neg _ (u i) _)).symm
+            exact map_zsmul (T.glueAlphabetIsometry hvT hT) (u i : ℤ) x) w)
+      have h2 := (Isometry.discriminantQuadraticIsometry_apply _ (isEven_pi_rootLattice _ _)
+        _).symm.trans (discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry (fun _ ↦ T)
+          (fun _ ↦ hT) (fun _ ↦ hvT) σ (fun i ↦ u i • w i))
+      refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
+      rw [Isometry.discriminantGroupEquiv_trans]
+      refine (LinearEquiv.trans_apply _).trans ?_
+      rw [h1]
+      refine h2.trans (congrArg _ (funext fun j ↦ ?_))
+      obtain ⟨k, rfl⟩ := σ.surjective j
+      rw [Equiv.piCongrLeft_apply_apply, Equiv.symm_apply_apply])
+    hσ
+
+/-- The isometry of a glued lattice induced by a signed permutation of identical components moves
+the coordinates in position `σ.symm j`, multiplied by their sign, to position `j`. -/
+@[simp]
+theorem gluedLatticeSignedPermIsometry_apply (u : ι → ℤˣ) (σ : Equiv.Perm ι)
+    (hσ : ∀ w : ∀ _ : ι, T.glueAlphabet hT,
+      (fun j ↦ u (σ.symm j) • w (σ.symm j)) ∈ K ↔ w ∈ K)
+    (x : ι → Fin T.rank → ℚ) (j : ι) :
+    gluedLatticeSignedPermIsometry hvT hK u σ hσ x j = u (σ.symm j) • x (σ.symm j) := by
+  obtain ⟨k, rfl⟩ := σ.surjective j
+  rw [gluedLatticeSignedPermIsometry, gluedLatticeIsometry_apply, Isometry.trans_apply,
+    Isometry.piCongrLeft_apply_apply, Isometry.pi_apply, Equiv.symm_apply_apply]
+  rcases Int.units_eq_one_or (u k) with h | h
+  · simp [h]
+  · simp [h, show (-1 : ℤˣ) ≠ 1 by decide]
+
+end SignedPermutation
 
 end TauCeti.DynkinType

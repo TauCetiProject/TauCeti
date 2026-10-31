@@ -312,6 +312,14 @@ noncomputable def a2TwelfthLattice : IntegralLattice (Fin 12 → Fin (A 2).rank 
   gluedLattice (fun _ : Fin 12 ↦ A 2) (fun _ ↦ isSimplyLaced_A 2) (fun _ ↦ valid_A.mpr one_le_two)
     a2TwelfthGlueSubgroup isLagrangian_a2TwelfthGlueSubgroup.isIsotropic
 
+/-- The named `A₂¹²` lattice is gluing along the table subgroup. -/
+theorem a2TwelfthLattice_def :
+    a2TwelfthLattice =
+      gluedLattice (fun _ : Fin 12 ↦ A 2) (fun _ ↦ isSimplyLaced_A 2)
+        (fun _ ↦ valid_A.mpr one_le_two) a2TwelfthGlueSubgroup
+        isLagrangian_a2TwelfthGlueSubgroup.isIsotropic :=
+  (rfl)
+
 /-- **The carrier of `A₂¹²`**: a vector lies in the glued lattice exactly when it lies in the
 dual of the orthogonal sum of twelve `A₂` root lattices and the glue word of its discriminant
 class, read in Golay coordinates, is a word of the extended ternary Golay code. -/
