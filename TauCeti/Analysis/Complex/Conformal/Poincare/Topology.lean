@@ -50,19 +50,12 @@ radius is strictly less than one, so it is a closed subset of a compact subset o
 * `TauCeti.PoincareDisc.instProperSpace` — the Poincaré disc is a proper metric space, hence
   complete and locally compact.
 
-This carries the conformal-mapping roadmap's L2 target "the hyperbolic / Poincaré metric on
-`𝔻`" (see `ConformalMapping/README.md`) onto its topological side: with the homeomorphism in
+These results describe the topological side of the Poincaré metric: with the homeomorphism in
 hand, the hyperbolic metric may be used interchangeably with the Euclidean one for topological
 purposes, and completeness is what makes the Poincaré disc a usable model of the hyperbolic
-plane. It reuses Tau Ceti's pseudo-hyperbolic and hyperbolic-distance API. As with the rest of
-the L0--L3 conformal-mapping material, it is coordinated with the upstream Mathlib Riemann
-mapping effort leanprover-community/mathlib4#33505 and should be refactored to upstream API if
-that work lands a human-curated Poincaré metric. Mathlib already contains the preceding
-human-curated work in `Analysis/Complex/RiemannMapping.lean` and
-`Analysis/Complex/BranchLogRoot.lean`; this file duplicates none of their branch-logarithm and
-root API, adding only the topological side of the hyperbolic metric. Mathlib has the hyperbolic
-metric on the upper half-plane (`Analysis/Complex/UpperHalfPlane`), but no Poincaré metric on
-the disc.
+plane. It reuses Tau Ceti's pseudo-hyperbolic and hyperbolic-distance API. Mathlib has the
+hyperbolic metric on the upper half-plane (`Analysis/Complex/UpperHalfPlane`), but no Poincaré
+metric on the disc.
 -/
 
 public section

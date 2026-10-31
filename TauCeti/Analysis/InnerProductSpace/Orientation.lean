@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.InnerProductSpace.Orientation
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
@@ -14,6 +15,11 @@ public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 This file packages Mathlib's oriented volume form as a continuous alternating map.  The
 construction is shared by the manifold Riemannian volume form and the planar complex area form.
+
+It also evaluates the volume form on an arbitrary, not necessarily orthonormal, family of vectors:
+its absolute value is the square root of the Gram determinant, and on a basis its sign records
+whether the basis is positively oriented. In a coordinate frame of a Riemannian manifold this is
+the familiar formula `vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`.
 -/
 
 public section
@@ -52,5 +58,54 @@ theorem eq_volumeFormL_of_apply_orthonormal (o : Orientation ℝ E (Fin n))
   ext v
   rw [ContinuousAlternatingMap.apply_eq_det_mul ω b.toBasis, hω', mul_one,
     volumeFormL_apply, o.volumeForm_robust b hb]
+
+/-- **The volume of a family of vectors is the square root of its Gram determinant**, up to
+sign: `|vol v| = √(det ⟪vᵢ, vⱼ⟫)`. -/
+theorem abs_volumeForm_apply_eq_sqrt_det_gram (o : Orientation ℝ E (Fin n)) (v : Fin n → E) :
+    |o.volumeForm v| = √(Matrix.gram ℝ v).det := by
+  rcases n with - | n
+  · refine o.eq_or_eq_neg_of_isEmpty.elim ?_ ?_ <;> rintro rfl <;> simp
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  let b : OrthonormalBasis (Fin (n + 1)) ℝ E :=
+    (stdOrthonormalBasis ℝ E).reindex (finCongr Fact.out)
+  -- In the orthonormal basis `b`, the Gram matrix of `v` is `Aᵀ A` for the coordinate matrix `A`.
+  have hA : b.toBasis.toMatrix v = Matrix.of fun i j ↦ b.repr (v j) i := by
+    ext i j
+    simp [Module.Basis.toMatrix_apply]
+  rw [o.volumeForm_robust' b, Module.Basis.det_apply, Matrix.gram_eq_conjTranspose_mul b,
+    Matrix.det_mul, Matrix.det_conjTranspose, star_trivial, Real.sqrt_mul_self_eq_abs, hA]
+
+/-- The volume form is positive on a basis exactly when the basis is positively oriented. -/
+theorem volumeForm_apply_pos_iff {o : Orientation ℝ E (Fin n)} {b : Module.Basis (Fin n) ℝ E} :
+    0 < o.volumeForm b ↔ b.orientation = o := by
+  rcases n with - | n
+  · rw [b.orientation_isEmpty]
+    refine o.eq_or_eq_neg_of_isEmpty.elim ?_ ?_ <;> rintro rfl
+    · simp
+    · simp only [volumeForm_zero_neg, neg_apply,
+        AlternatingMap.constLinearEquivOfIsEmpty_apply, AlternatingMap.constOfIsEmpty_apply,
+        Left.neg_pos_iff]
+      exact iff_of_false (by norm_num) (Module.Ray.ne_neg_self _)
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  let f := ((stdOrthonormalBasis ℝ E).reindex (finCongr Fact.out)).adjustToOrientation o
+  rw [o.volumeForm_robust f (OrthonormalBasis.orientation_adjustToOrientation _ _),
+    ← Module.Basis.orientation_eq_iff_det_pos, OrthonormalBasis.orientation_adjustToOrientation,
+    eq_comm]
+
+/-- The volume of a positively oriented basis is the square root of its Gram determinant. -/
+theorem volumeForm_apply_eq_sqrt_det_gram (o : Orientation ℝ E (Fin n))
+    (b : Module.Basis (Fin n) ℝ E) (hb : b.orientation = o) :
+    o.volumeForm b = √(Matrix.gram ℝ b).det := by
+  rw [← abs_of_pos (volumeForm_apply_pos_iff.2 hb), abs_volumeForm_apply_eq_sqrt_det_gram]
+
+/-- The volume of a negatively oriented basis is minus the square root of its Gram determinant. -/
+theorem volumeForm_apply_eq_neg_sqrt_det_gram (o : Orientation ℝ E (Fin n))
+    (b : Module.Basis (Fin n) ℝ E) (hb : b.orientation ≠ o) :
+    o.volumeForm b = -√(Matrix.gram ℝ b).det := by
+  have hb' : b.orientation = -o := by
+    rw [(b.orientation_ne_iff_eq_neg o).1 (Ne.symm hb)]
+    exact (neg_neg b.orientation).symm
+  have h := (-o).volumeForm_apply_eq_sqrt_det_gram b hb'
+  rwa [volumeForm_neg_orientation, neg_apply, neg_eq_iff_eq_neg] at h
 
 end Orientation

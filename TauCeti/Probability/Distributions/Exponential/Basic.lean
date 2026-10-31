@@ -90,6 +90,25 @@ variable {a r s t : ℝ} {n : ℕ}
 theorem expMeasure_eq_withDensity (r : ℝ) :
     expMeasure r = volume.withDensity (exponentialPDF r) := rfl
 
+end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+/-- The exponential measure is zero when its rate is nonpositive. -/
+@[simp]
+theorem expMeasure_of_nonpos {r : ℝ} (hr : r ≤ 0) : expMeasure r = 0 := by
+  have hpdf : exponentialPDF r = 0 := by
+    funext x
+    rw [exponentialPDF_eq, Pi.zero_apply, ENNReal.ofReal_eq_zero]
+    split_ifs
+    · exact mul_nonpos_of_nonpos_of_nonneg hr (Real.exp_nonneg _)
+    · exact le_rfl
+  rw [TauCeti.Probability.expMeasure_eq_withDensity, hpdf, withDensity_zero]
+
+end ProbabilityTheory
+
+namespace TauCeti.Probability
+
 /-- Every singleton has zero exponential measure, for every rate. -/
 instance nullSingletonClass_expMeasure (r : ℝ) : NullSingletonClass (expMeasure r) := by
   rw [expMeasure_eq_withDensity]

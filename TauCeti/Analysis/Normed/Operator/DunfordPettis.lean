@@ -18,15 +18,15 @@ import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 /-!
 # Dunford–Pettis operators and the Dunford–Pettis property
 
-A bounded operator `T : E →L[𝕜] F` between real or complex normed spaces is *Dunford–Pettis*
+A bounded operator `T : E →L[𝕜] F` between normed spaces over a normed field is *Dunford–Pettis*
 (`ContinuousLinearMap.IsDunfordPettis`) if it maps weakly convergent sequences to norm-convergent
 sequences. In Banach space theory these operators are also called *completely continuous*; the
 name `ContinuousLinearMap.IsCompletelyContinuous` is already used in Tau Ceti for Serre's notion
 of uniform approximability by operators of finite rank, which is a different property.
 
-Dunford–Pettis operators are exactly the operators taking weakly compact sets to norm-compact
-sets. They are closed under sums, scalar multiples and composition on either side with bounded
-operators, and every compact operator is Dunford–Pettis.
+Dunford–Pettis operators are closed under sums, scalar multiples and composition on either side
+with bounded operators. Between real or complex normed spaces they are exactly the operators taking
+weakly compact sets to norm-compact sets, and every compact operator is Dunford–Pettis.
 
 A normed space `E` has the *Dunford–Pettis property* (`TauCeti.HasDunfordPettisProperty`) if
 every weakly compact operator from `E` into a Banach space is Dunford–Pettis. The main result is
@@ -64,14 +64,14 @@ Dunford–Pettis property.
 
 public section
 
-open Bornology Filter Function Metric NormedSpace Set Topology
+open Filter Function Metric NormedSpace Set Topology
 open scoped ZeroAtInfty
 
 namespace ContinuousLinearMap
 
 section Ideal
 
-variable {𝕜 D E F G : Type*} [RCLike 𝕜]
+variable {𝕜 D E F G : Type*} [NormedField 𝕜]
   [SeminormedAddCommGroup D] [NormedSpace 𝕜 D]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -111,7 +111,8 @@ theorem IsDunfordPettis.add {T S : E →L[𝕜] F} (hT : T.IsDunfordPettis)
   simpa using (hT hx).add (hS hx)
 
 /-- A scalar multiple of a Dunford–Pettis operator is Dunford–Pettis. -/
-theorem IsDunfordPettis.smul {T : E →L[𝕜] F} (hT : T.IsDunfordPettis) (c : 𝕜) :
+theorem IsDunfordPettis.smul {S : Type*} [DistribSMul S F] [SMulCommClass 𝕜 S F]
+    [ContinuousConstSMul S F] {T : E →L[𝕜] F} (hT : T.IsDunfordPettis) (c : S) :
     (c • T).IsDunfordPettis := fun _ _ hx ↦ by
   simpa using (hT hx).const_smul c
 
@@ -138,6 +139,24 @@ theorem IsDunfordPettis.clm_comp {T : E →L[𝕜] F} (hT : T.IsDunfordPettis) (
   (S.continuous.tendsto _).comp (hT hx)
 
 end Ideal
+
+section CompactOperator
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Compact operators are Dunford–Pettis. -/
+theorem _root_.IsCompactOperator.isDunfordPettis {T : E →L[𝕜] F} (hT : IsCompactOperator T) :
+    T.IsDunfordPettis := fun x _ hx ↦ by
+  -- A weakly convergent sequence is bounded, so its image lies in a norm-compact set, on which
+  -- weak convergence is norm convergence.
+  obtain ⟨K, hK, hTK⟩ := hT.image_subset_compact_of_bounded hx.isBounded_range_of_toWeakSpace
+  exact TauCeti.tendsto_of_tendsto_toWeakSpace_of_isCompact (𝕜 := 𝕜) hK
+    (Eventually.of_forall fun n ↦ hTK (mem_image_of_mem T (mem_range_self n)))
+    (((WeakSpace.map T).continuous.tendsto _).comp hx)
+
+end CompactOperator
 
 section Compact
 
@@ -166,25 +185,6 @@ theorem isDunfordPettis_iff_forall_isCompact_image {T : E →L[𝕜] F} :
       (Eventually.of_forall fun n ↦ mem_image_of_mem T (mem_insert_of_mem _ (mem_range_self n)))
       ?_
     exact ((WeakSpace.map T).continuous.tendsto _).comp hx
-
-/-- Compact operators are Dunford–Pettis. -/
-theorem _root_.IsCompactOperator.isDunfordPettis {T : E →L[𝕜] F} (hT : IsCompactOperator T) :
-    T.IsDunfordPettis := by
-  refine isDunfordPettis_iff_forall_isCompact_image.2 fun K hK ↦ ?_
-  -- `T '' K` is weakly compact, hence norm closed, and it lies in a norm-compact set.
-  have hb : IsBounded K := by
-    simpa [preimage_image_eq _ (toWeakSpace 𝕜 E).injective] using
-      hK.isBounded_toWeakSpace_preimage
-  obtain ⟨L, hL, hKL⟩ := hT.image_subset_compact_of_bounded hb
-  have hw : IsCompact (toWeakSpace 𝕜 F '' (T '' K)) := by
-    -- `WeakSpace.map T` is `T` itself, between the weak topologies.
-    have hmap (x : E) : WeakSpace.map T (toWeakSpace 𝕜 E x) = toWeakSpace 𝕜 F (T x) := rfl
-    simpa only [image_image, hmap] using hK.image (WeakSpace.map T).continuous
-  refine hL.of_isClosed_subset ?_ hKL
-  have hc := hw.isClosed.preimage (toWeakSpaceCLM 𝕜 F).continuous
-  rwa [show ⇑(toWeakSpaceCLM 𝕜 F) = toWeakSpace 𝕜 F from
-    funext (toWeakSpaceCLM_eq_toWeakSpace 𝕜 F), preimage_image_eq _ (toWeakSpace 𝕜 F).injective]
-    at hc
 
 /-- If `f n (x n) → 0` whenever `x` is weakly null in `E` and `f` is weakly null in the dual,
 then every weakly compact operator from `E` is Dunford–Pettis. The codomain need not be complete.
@@ -296,7 +296,7 @@ end TauCeti
 
 namespace lp
 
-variable {𝕜 ι F : Type*} [RCLike 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable {𝕜 ι F : Type*} [RCLike 𝕜] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- By Schur's theorem, every bounded operator out of `ℓ¹` is Dunford–Pettis. -/
 theorem isDunfordPettis_one (T : lp (fun _ : ι ↦ 𝕜) 1 →L[𝕜] F) : T.IsDunfordPettis :=

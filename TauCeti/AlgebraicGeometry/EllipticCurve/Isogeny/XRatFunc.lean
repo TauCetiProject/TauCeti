@@ -38,7 +38,8 @@ point with `x`-coordinate `r(x₀)`. This is what makes `φ` a morphism of degre
 * `TauCeti.Isogeny.fieldPullback_negIsogeny_eq_self_iff`: a function is fixed by negation exactly
   when it is a rational function of `x`.
 * `TauCeti.Isogeny.negIsogeny_comp`: an isogeny commutes with negation.
-* `TauCeti.Isogeny.algebraMap_xRatFunc`: `x ∘ φ = r(x)`, with `eq_xRatFunc_iff` for uniqueness.
+* `TauCeti.Isogeny.algebraMap_xRatFunc`: `x ∘ φ = r(x)`, with `eq_xRatFunc_iff` for uniqueness,
+  and `fieldPullback_genericX_eq_aeval_div` its form `x ∘ φ = N(x) / D(x)` for `r = N / D`.
 * `TauCeti.Isogeny.degree_eq_max_natDegree_xRatFunc`: `deg φ` is the degree of `r`.
 * `TauCeti.Isogeny.pointMap_ofIsogeny_some_eq_zero_iff`: `φ` sends `(x₀, y₀)` to the point at
   infinity exactly when the denominator of `r` vanishes at `x₀`.
@@ -139,6 +140,15 @@ theorem eq_xRatFunc_iff {φ : Isogeny W₁ W₂} {r : RatFunc F} :
     FaithfulSMul.algebraMap_injective (RatFunc F) W₁.FunctionField
       (h.trans φ.algebraMap_xRatFunc.symm)⟩
 
+/-- **`x ∘ φ = N(x) / D(x)`**, for `N / D = φ.xRatFunc` in lowest terms. -/
+theorem fieldPullback_genericX_eq_aeval_div (φ : Isogeny W₁ W₂) :
+    φ.fieldPullback (genericX W₂) =
+      aeval (genericX W₁) φ.xRatFunc.num / aeval (genericX W₁) φ.xRatFunc.denom := by
+  rw [← algebraMap_xRatFunc]
+  nth_rewrite 1 [← RatFunc.num_div_denom φ.xRatFunc]
+  rw [map_div₀, ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply,
+    algebraMap_eq_aeval_genericX, algebraMap_eq_aeval_genericX]
+
 /-- **The degree of an isogeny is the degree of its `x`-coordinate**, the larger of the degrees of
 the numerator and denominator of `φ.xRatFunc` in lowest terms (Silverman, proof of III.6.2(d)). -/
 theorem degree_eq_max_natDegree_xRatFunc (φ : Isogeny W₁ W₂) :
@@ -156,12 +166,9 @@ private theorem fieldPullback_genericX_eq_div (φ : Isogeny W₁ W₂) :
       algebraMap W₁.CoordinateRing W₁.FunctionField (CoordinateRing.mk W₁ (C φ.xRatFunc.num)) /
         algebraMap W₁.CoordinateRing W₁.FunctionField
           (CoordinateRing.mk W₁ (C φ.xRatFunc.denom)) := by
-  rw [← algebraMap_xRatFunc]
-  nth_rewrite 1 [← RatFunc.num_div_denom φ.xRatFunc]
-  rw [map_div₀,
-    ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply,
-    CoordinateRing.mk_C_eq_algebraMap, CoordinateRing.mk_C_eq_algebraMap,
-    ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply]
+  rw [fieldPullback_genericX_eq_aeval_div, CoordinateRing.mk_C_eq_algebraMap,
+    CoordinateRing.mk_C_eq_algebraMap, ← IsScalarTower.algebraMap_apply,
+    ← IsScalarTower.algebraMap_apply, algebraMap_eq_aeval_genericX, algebraMap_eq_aeval_genericX]
 
 private theorem mk_C_denom_ne_zero (φ : Isogeny W₁ W₂) :
     CoordinateRing.mk W₁ (C φ.xRatFunc.denom) ≠ 0 := by

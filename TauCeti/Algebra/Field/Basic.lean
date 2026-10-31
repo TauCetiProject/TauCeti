@@ -12,12 +12,20 @@ import Mathlib.Tactic.Ring
 /-!
 # Rational identities under inversion
 
-These identities use the field's total inverse, so they hold also at zero and one.
+These identities use the field's total inverse, so they hold also at zero and one. In a division
+ring, a nonzero `a` is separated from its inverse unless it is a square root of `1`:
+`a - a⁻¹` vanishes exactly when `a ^ 2 = 1` (`TauCeti.sub_inv_eq_zero_iff`).
 -/
 
 public section
 
 namespace TauCeti
+
+/-- **A nonzero element is separated from its inverse unless it squares to `1`**: in a division
+ring, `a - a⁻¹` vanishes at a nonzero `a` exactly when `a ^ 2 = 1`. -/
+theorem sub_inv_eq_zero_iff {K : Type*} [DivisionRing K] {a : K} (ha : a ≠ 0) :
+    a - a⁻¹ = 0 ↔ a ^ 2 = 1 := by
+  rw [sub_eq_zero, ← mul_eq_one_iff_eq_inv₀ ha, sq]
 
 variable {K : Type*} [Field K]
 

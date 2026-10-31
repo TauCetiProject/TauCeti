@@ -81,7 +81,7 @@ instance isSemisimpleModule_chainComplex_X {k : Type w} [Ring k] (X : SSet.{w})
 
 /-- The simplicial chain modules `Cₙ(X; M) = ⨁ M` with projective coefficients `M` are
 projective. -/
-instance projective_chainComplex_X {k : Type w} [Ring k] (X : SSet.{w})
+instance projective_chainComplex_X {k : Type*} [Ring k] (X : SSet.{w})
     (M : ModuleCat.{w} k) [Module.Projective k M] (n : ℕ) :
     Module.Projective k ((X.chainComplex M).X n) := by
   classical

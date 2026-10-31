@@ -48,12 +48,7 @@ normalise a map at a chosen base point (transitivity), then read off the freedom
 over (a rotation).
 
 This discharges the group half of the conformal-mapping roadmap's L2 description of the disc
-automorphism group `Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}` (see `ConformalMapping/README.md`).  As with
-the rest of the L0--L3 conformal-mapping material, it is coordinated with the upstream Mathlib
-Riemann-mapping effort leanprover-community/mathlib4#33505, whose human-curated predecessors are
-`Analysis/Complex/RiemannMapping.lean` and `Analysis/Complex/BranchLogRoot.lean`; should a disc
-automorphism group land upstream, these declarations are a temporary shim to be deleted and their
-consumers refactored onto it.
+automorphism group `Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}` (see `ConformalMapping/README.md`).
 
 ## References
 

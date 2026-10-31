@@ -12,6 +12,7 @@ import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Jordan
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded
 import TauCeti.Analysis.Complex.Conformal.SimplyConnected
 import TauCeti.Analysis.Complex.PlaneSeparation.JordanCurve
+import TauCeti.Analysis.Normed.Field.Inversion
 
 /-!
 # The image bounded by a simple unbounded Schwarz--Christoffel chain
@@ -80,7 +81,7 @@ theorem disjoint_image_schwarzChristoffelPrimitive_range_of_neg_one_le_sum
     isOpen_image_schwarzChristoffelPrimitive a e z₀ isOpen_upperHalfPlaneSet subset_rfl
   have hVo : IsOpen (κ '' U) := isOpen_image_inv_sub hUo (fun h => hq (subset_closure h))
   have hVcl : closure (κ '' U) = (κ '' U) ∪ C := by
-    rw [closure_image_inv_sub hq hUb, hcl, image_union]
+    rw [closure_image_inv_sub hUb, hcl, image_union]
     simp only [C, κ, union_insert]
   have hVfr : frontier (κ '' U) ⊆ C := by
     rw [hVo.frontier_eq, hVcl]

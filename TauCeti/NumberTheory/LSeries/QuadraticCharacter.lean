@@ -28,6 +28,8 @@ where it is compared with real quantities.
   `0 < L(s, χ)`.
 * `DirichletCharacter.LFunction_apply_one_pos`: for a nontrivial quadratic character `χ`,
   `0 < L(1, χ)`.
+* `DirichletCharacter.LFunction_pos_of_one_le`: for a nontrivial quadratic character `χ` and
+  real `s ≥ 1`, `0 < L(s, χ)`.
 
 ## References
 
@@ -92,5 +94,13 @@ theorem LFunction_apply_one_pos (hχ : χ.IsQuadratic) (hχ₁ : χ ≠ 1) :
   rw [← ofReal_one]
   exact ge_of_tendsto hc.tendsto <| eventually_nhdsWithin_of_forall fun s hs ↦
     (LFunction_pos_of_one_lt hχ hs).le
+
+/-- The continued `L`-function of a nontrivial quadratic Dirichlet character is a positive real
+number at every real point `s ≥ 1`. -/
+theorem LFunction_pos_of_one_le (hχ : χ.IsQuadratic) (hχ₁ : χ ≠ 1) {s : ℝ} (hs : 1 ≤ s) :
+    0 < χ.LFunction s := by
+  rcases hs.eq_or_lt with rfl | hs
+  · simpa using LFunction_apply_one_pos hχ hχ₁
+  · exact LFunction_pos_of_one_lt hχ hs
 
 end DirichletCharacter
