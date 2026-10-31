@@ -32,6 +32,15 @@ The isomorphism is natural in the coefficients: a linear map `f : M →ₗ[k] N`
 the two isomorphisms intertwine these maps
 (`TauCeti.classifyingSpaceSingularCohomologyIsoGroupCohomology_hom_naturality`).
 
+It respects the coefficient long exact sequences: for a short exact sequence
+`0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` of `k`-modules, the isomorphisms carry the Bockstein homomorphism
+`Hⁿ(BG; M₃) ⟶ Hⁿ⁺¹(BG; M₁)` to Mathlib's connecting map `groupCohomology.δ` of the short exact
+sequence of trivial representations
+(`singularCohomologyBockstein_comp_classifyingSpaceSingularCohomologyIsoGroupCohomology_hom`, in
+the namespace `TauCeti`).
+Together with the naturality in the coefficients, this identifies the long exact sequence of
+singular cohomology of `BG` in the coefficients with that of group cohomology.
+
 It is also natural in the group: for every `φ : G →* H`, the map `Hⁿ(BH; M) ⟶ Hⁿ(BG; M)` induced
 by the strictly functorial map `MonoidHom.classifyingSpaceMap φ` is Mathlib's change-of-group map
 `groupCohomology.map φ`, with the identity on the trivial coefficients `M`
@@ -47,6 +56,9 @@ by the strictly functorial map `MonoidHom.classifyingSpaceMap φ` is Mathlib's c
 
 * `TauCeti.classifyingSpaceSingularCohomologyIsoGroupCohomology_hom_naturality`: the isomorphism is
   natural in the coefficients.
+* `singularCohomologyBockstein_comp_classifyingSpaceSingularCohomologyIsoGroupCohomology_hom`, in
+  the namespace `TauCeti`: the isomorphism carries the Bockstein homomorphism to the connecting map
+  of group cohomology.
 * `MonoidHom.classifyingSpaceSingularCohomologyIsoGroupCohomology_hom_naturality`: the isomorphism
   is natural in the group.
 
@@ -100,6 +112,23 @@ theorem classifyingSpaceSingularCohomologyIsoGroupCohomology_hom_naturality (f :
     (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k M f n
+
+/-- **The comparison `Hⁿ(BG; M) ≅ Hⁿ(G, M)` respects the coefficient long exact sequences**: for a
+short exact sequence `0 ⟶ M₁ ⟶ M₂ ⟶ M₃ ⟶ 0` of `k`-modules, it carries the Bockstein
+homomorphism `Hⁿ(BG; M₃) ⟶ Hᵐ(BG; M₁)`, `n + 1 = m`, of singular cohomology to Mathlib's
+connecting map `groupCohomology.δ : Hⁿ(G, M₃) ⟶ Hᵐ(G, M₁)` of the short exact sequence of trivial
+representations. -/
+@[reassoc]
+theorem singularCohomologyBockstein_comp_classifyingSpaceSingularCohomologyIsoGroupCohomology_hom
+    {S : ShortComplex (ModuleCat.{u} k)} (hS : S.ShortExact) (n m : ℕ) (h : n + 1 = m := by lia) :
+    (TopCat.of (classifyingSpace G)).singularCohomologyBockstein (ModuleCat.of k k) k hS n m h ≫
+        (classifyingSpaceSingularCohomologyIsoGroupCohomology k G S.X₁ m).hom =
+      (classifyingSpaceSingularCohomologyIsoGroupCohomology k G S.X₃ n).hom ≫
+        groupCohomology.δ (Rep.shortExact_map_trivialFunctor hS) n m h :=
+  IsQuotientCoveringMap.singularCohomologyBockstein_comp_singularCohomologyIsoGroupCohomology_hom
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k hS n m h
 
 end TauCeti
 
