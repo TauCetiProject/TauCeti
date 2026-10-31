@@ -86,7 +86,8 @@ divides the coordinates in `ℤ̂` by `u`.
 * `TauCeti.PrimeToPTateModule.ratChar_ofAdd_eq_one_iff`: if every `ζ_n` is primitive, the
   character vanishes exactly on `ℤ`.
 * `TauCeti.PrimeToPTateModule.coe_proj_zHatLift`: the level-`n` component of `zHat.lift ζ a` is
-  `ζ_n` raised to the residue of `a` modulo `n`.
+  `ζ_n` raised to the residue of `a` modulo `n`; `TauCeti.PrimeToPTateModule.coe_proj_zpowHat`
+  restates this for `ζ ^ᶻ a` at an arbitrary level.
 * `TauCeti.PrimeToPTateModule.hasEnoughRootsOfUnity_of_isPrimitiveRoot_proj`: a point whose
   components are all primitive supplies all `n`-th roots of unity, for every `n ≠ 0`.
 * `TauCeti.PrimeToPTateModule.zHatLift_injective`, `TauCeti.PrimeToPTateModule.zHatLift_surjective`:
@@ -744,6 +745,17 @@ variable {R : Type*} [CommRing R] [IsDomain R] {ζ ζ' ζ'' : PrimeToPTateModule
   (hζ' : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}, IsPrimitiveRoot (proj m ζ' : Rˣ) m)
   (hζ'' : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}, IsPrimitiveRoot (proj m ζ'' : Rˣ) m)
 
+/-- The level-`m` component of `ζ ^ᶻ a` is the power of that of `ζ` by the residue of `a` modulo
+`m`. This is `coe_proj_zHatLift` indexed by an arbitrary level `m` instead of a positive natural. -/
+theorem coe_proj_zpowHat (ζ : PrimeToPTateModule 1 R) (a : Additive zHat.{u})
+    (m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}) :
+    (proj m (ζ ^ᶻ a) : Rˣ) =
+      (proj m ζ : Rˣ) ^ (zHat.toZMod (⟨m, Nat.pos_of_ne_zero m.2.1⟩ : ℕ+) a).val := by
+  obtain ⟨m, hm, -⟩ := m
+  rw [zpowHat_def]
+  -- The level `⟨m, hm, _⟩` is the one `coe_proj_zHatLift` attaches to `⟨m, _⟩ : ℕ+`.
+  exact coe_proj_zHatLift ζ ⟨m, Nat.pos_of_ne_zero hm⟩ (toMul a)
+
 include hζ in
 /-- If every component of `ζ` is primitive, the profinite power map `a ↦ ζ ^ᶻ a` is injective. -/
 theorem zpowHat_right_injective :
@@ -801,9 +813,8 @@ theorem eq_zHatUnit_iff {a : Additive zHat.{u}} :
       (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ : Rˣ) ^ (zHat.toZMod n a).val := by
   refine ⟨fun h n ↦ h ▸ coe_proj_eq_pow_val_toZMod_zHatUnit hζ hζ' n, fun h ↦ ?_⟩
   refine (zpowHat_eq_iff_eq_zHatUnit hζ hζ').1 (ext fun m ↦ Subtype.ext ?_)
-  set n : ℕ+ := ⟨m, Nat.pos_of_ne_zero m.2.1⟩
-  have hm : m = ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ := rfl
-  rw [hm, zpowHat_def, coe_proj_zHatLift, ofMul_toMul, h]
+  rw [coe_proj_zpowHat]
+  exact (h _).symm
 
 /-- The unit relating `ζ` to itself is `1`. -/
 @[simp]
@@ -828,11 +839,9 @@ include hζ in
 theorem isPrimitiveRoot_proj_zpowHat (v : (Additive zHat.{u})ˣ)
     (m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}) :
     IsPrimitiveRoot (proj m (ζ ^ᶻ (v : Additive zHat.{u})) : Rˣ) m := by
-  set n : ℕ+ := ⟨m, Nat.pos_of_ne_zero m.2.1⟩
-  have hm : m = ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ := rfl
-  rw [hm, zpowHat_def, coe_proj_zHatLift, ofMul_toMul]
-  exact (hζ _).pow_of_coprime _
-    (ZMod.val_coe_unit_coprime (Units.map (zHat.toZMod n : Additive zHat.{u} →* ZMod n) v))
+  rw [coe_proj_zpowHat]
+  exact (hζ m).pow_of_coprime _
+    (ZMod.val_coe_unit_coprime (Units.map (zHat.toZMod _).toMonoidHom v))
 
 /-- The unit relating `ζ` to `ζ ^ᶻ u` is `u`. Together with `zpowHat_zHatUnit`, this makes the
 compatible families of primitive roots of unity a torsor under the units of `ℤ̂`. -/
