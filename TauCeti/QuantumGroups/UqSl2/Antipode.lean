@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.HopfAlgebra.InverseAntipode
 public import TauCeti.QuantumGroups.UqSl2.Hopf
 import Mathlib.Algebra.Ring.Action.ConjAct
 
@@ -70,13 +71,9 @@ theorem antipode_antipode_f : antipode ℂ (antipode ℂ (f q)) = q ^ 2 • f q 
 
 /-- The antipode of `UqSl2 q` is bijective. -/
 theorem antipode_bijective :
-    Function.Bijective (antipode ℂ : UqSl2 q →ₗ[ℂ] UqSl2 q) := by
-  have h : Function.Bijective ((antipode ℂ : UqSl2 q →ₗ[ℂ] UqSl2 q) ∘ antipode ℂ) := by
-    convert (MulSemiringAction.toAlgEquiv ℂ (UqSl2 q)
-      (ConjAct.toConjAct (kUnit q)⁻¹)).bijective using 1
-    ext x
-    simp [antipode_antipode, ConjAct.units_smul_def]
-  exact ⟨.of_comp h.1, .of_comp h.2⟩
+    Function.Bijective (antipode ℂ : UqSl2 q →ₗ[ℂ] UqSl2 q) :=
+  HopfAlgebra.antipode_bijective_of_antipode_antipode (g := (kUnit q)⁻¹) fun x => by
+    simpa using antipode_antipode q x
 
 /-- The antipode of `UqSl2 q`, as an algebra isomorphism onto the opposite algebra. -/
 noncomputable def antipodeEquiv : UqSl2 q ≃ₐ[ℂ] (UqSl2 q)ᵐᵒᵖ :=
