@@ -8,9 +8,10 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Regularity
 
 /-!
-# Recovering regularity from a covariant derivative
+# Recovering regularity from a tangent-bundle covariant derivative
 
-If a section along a curve and its covariant derivative are both `C^n`, with `n ≥ 1`,
+If a tangent-bundle section along a curve and its covariant derivative are both `C^n`,
+with `n ≥ 1`,
 the section is `C^(n + 1)`, provided the connection is `C^n` and the base curve is `C^(n + 1)`.
 This is the converse regularity estimate to differentiation losing one derivative.
 It allows bootstrapping differential equations for sections without extending them to
@@ -45,14 +46,16 @@ variable
   [ContMDiffVectorBundle (n + 1 : ℕ) E (TangentSpace I : M → Type _) I]
   [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
 
-/-- A section and its covariant derivative of class `C^n`, for `n ≥ 1`, give a section
-of class `C^(n + 1)`. The statement holds within any parameter set with unique derivatives. -/
+/-- For a tangent-bundle connection that is `C^n` on the trivialization at each point
+of a `C^(n + 1)` curve in the parameter set, a section along the curve of class `C^n`,
+with `n ≥ 1`, whose covariant derivative is `C^n` is of class `C^(n + 1)`.
+The statement holds within any parameter set with unique derivatives. -/
 theorem contMDiffOn_succ_of_alongCurveWithin
     (cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
     (γ : 𝕜 → M) (V : ∀ t, TangentSpace I (γ t)) {s : Set 𝕜}
     (hn : 1 ≤ n)
-    (hcov : ∀ x : M, ContMDiffCovariantDerivativeOn E n cov.toFun
-      (trivializationAt E (TangentSpace I) x).baseSet)
+    (hcov : ∀ t ∈ s, ContMDiffCovariantDerivativeOn E n cov.toFun
+      (trivializationAt E (TangentSpace I) (γ t)).baseSet)
     (hs : UniqueDiffOn 𝕜 s)
     (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I (n + 1 : ℕ) γ s)
     (hV : ContMDiffOn 𝓘(𝕜, 𝕜) I.tangent n
@@ -87,7 +90,7 @@ theorem contMDiffOn_succ_of_alongCurveWithin
     ((contMDiffAt_extChartAt' (by
       simpa only [e, TangentBundle.trivializationAt_baseSet] using hx)).comp_contMDiffWithinAt
         t (hγ t ht)).contDiffWithinAt
-  let := hcov (γ t)
+  let := hcov t ht
   have hΓ : ContMDiffAt I 𝓘(𝕜, E →L[𝕜] E →L[𝕜] E) n Γ (γ t) :=
     (contMDiffOn_christoffelMap (Module.finBasis 𝕜 E)
       (cov.isCovariantDerivativeOn (s := e.baseSet))).contMDiffAt (e.open_baseSet.mem_nhds hx)

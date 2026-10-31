@@ -105,10 +105,11 @@ private theorem IsJacobiFieldOn.contMDiffOn_nat_pair (h : IsJacobiFieldOn I γ J
       simp only [curvatureTensorCLM_apply, neg_one_smul]
       exact congrArg (TotalSpace.mk' E (γ r)) (h.alongCurveWithin_alongCurveWithin_eq hr)
     -- Both first-order equations now have right-hand sides of class C^(n + 1).
-    have hcov (x : M) : ContMDiffCovariantDerivativeOn E (n + 1 : ℕ) cov.toFun
-        (trivializationAt E (TangentSpace I) x).baseSet :=
+    have hcov (t : ℝ) (_ht : t ∈ s) :
+        ContMDiffCovariantDerivativeOn E (n + 1 : ℕ) cov.toFun
+          (trivializationAt E (TangentSpace I) (γ t)).baseSet :=
       contMDiffCovariantDerivativeOn_leviCivitaConnection
-        (m := ∞) (k := ∞) (trivializationAt E (TangentSpace I) x).open_baseSet
+        (m := ∞) (k := ∞) (trivializationAt E (TangentSpace I) (γ t)).open_baseSet
         (by simp) (by simp)
     have hγ' : ContMDiffOn 𝓘(ℝ, ℝ) I (n + 1 + 1 : ℕ) γ s := hγ.of_le (by simp)
     exact ⟨contMDiffOn_succ_of_alongCurveWithin cov γ J (by omega) hcov h.uniqueDiffOn
