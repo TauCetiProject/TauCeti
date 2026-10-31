@@ -38,8 +38,9 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
 
 ## Main results
 
-* `TauCeti.RelationalConfiguration.modelsOf_inf`, `modelsOf_iInf`, `modelsOf_iSup`, `modelsOf_not`
-  and `modelsOf_bot`: model classes turn the connectives into the Boolean set operations.
+* `TauCeti.RelationalConfiguration.modelsOf_inf`, `modelsOf_sup`, `modelsOf_iInf`,
+  `modelsOf_iSup`, `modelsOf_not`, `modelsOf_imp`, `modelsOf_top` and `modelsOf_bot`: model
+  classes turn the connectives into the Boolean set operations.
 * `TauCeti.RelationalConfiguration.measurableSet_setOf_realize`: on a countable carrier, the
   configurations realizing an infinitary formula with countable branching at a fixed valuation
   form a measurable set.
@@ -78,6 +79,20 @@ theorem modelsOf_bot : modelsOf (V := V) (⊥ : L.SentenceInf ι) = ∅ := by
   ext c
   simp
 
+/-- The true sentence holds in every structure. -/
+@[simp]
+theorem modelsOf_top : modelsOf (V := V) (⊤ : L.SentenceInf ι) = Set.univ := by
+  ext c
+  simp
+
+/-- The model class of an implication is the complement of the model class of its hypothesis,
+joined with the model class of its conclusion. -/
+@[simp]
+theorem modelsOf_imp (φ ψ : L.SentenceInf ι) :
+    modelsOf (V := V) (φ.imp ψ) = (modelsOf φ)ᶜ ∪ modelsOf ψ := by
+  ext c
+  simp [imp_iff_not_or]
+
 /-- The model class of a negation is the complement of the model class. -/
 @[simp]
 theorem modelsOf_not (φ : L.SentenceInf ι) : modelsOf (V := V) φ.not = (modelsOf φ)ᶜ := by
@@ -88,6 +103,13 @@ theorem modelsOf_not (φ : L.SentenceInf ι) : modelsOf (V := V) φ.not = (model
 @[simp]
 theorem modelsOf_inf (φ ψ : L.SentenceInf ι) :
     modelsOf (V := V) (φ ⊓ ψ) = modelsOf φ ∩ modelsOf ψ := by
+  ext c
+  simp
+
+/-- The model class of a disjunction is the union of the model classes. -/
+@[simp]
+theorem modelsOf_sup (φ ψ : L.SentenceInf ι) :
+    modelsOf (V := V) (φ ⊔ ψ) = modelsOf φ ∪ modelsOf ψ := by
   ext c
   simp
 
