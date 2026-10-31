@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharZero.Infinite
-public import Mathlib.Algebra.MvPolynomial.Funext
 public import Mathlib.Basic.Complex.Basic
 public import TauCeti.Geometry.Neuromanifold.Polynomial.Constructors
 
