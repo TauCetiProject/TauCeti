@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.NumberTheory.Modular
-public import TauCeti.GroupTheory.GroupAction.Stabilizer
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Root
 public import TauCeti.NumberTheory.HurwitzClassNumber
 import TauCeti.Algebra.QuadraticDiscriminant

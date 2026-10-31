@@ -16,7 +16,9 @@ A locally finite family of sets stays locally finite when it is reindexed along 
 projection `ι × κ → ι` with `κ` finite (`LocallyFinite.comp_fst`). Together with
 `LocallyFinite.subset`, this makes a family indexed by `ι × κ` whose `(i, k)`-th member lies in
 the `i`-th member of a locally finite family locally finite. Dually, the pointwise union of
-finitely many locally finite families is locally finite (`LocallyFinite.iUnion`).
+finitely many locally finite families is locally finite (`LocallyFinite.iUnion`). The topological
+support of a locally finite sum of functions lies in the union of their topological supports
+(`LocallyFinite.tsupport_finsum_subset`).
 
 In a pseudometric space, a locally finite family of closed sets has the following useful local
 description: around each point there is a ball such that every member of the family meeting the
@@ -89,6 +91,18 @@ protected theorem iUnion [Finite κ] {f : κ → ι → Set X} (hf : ∀ k, Loca
   intro x
   filter_upwards [Filter.eventually_all.2 fun k ↦ hf k x] with t ht
   simpa only [iUnion_inter, nonempty_iUnion, ofPred_exists] using finite_iUnion ht
+
+/-- The topological multiplicative support of a product of functions with locally finite
+multiplicative supports lies in the union of their topological multiplicative supports. -/
+@[to_additive /-- The topological support of a sum of functions with locally finite supports lies
+in the union of their topological supports. -/]
+theorem mulTSupport_finprod_subset {M : Type*} [CommMonoid M] {b : ι → X → M}
+    (hb : LocallyFinite fun i ↦ Function.mulSupport (b i)) :
+    mulTSupport (fun x ↦ ∏ᶠ i, b i x) ⊆ ⋃ i, mulTSupport (b i) := by
+  refine (closure_mono fun x hx ↦ ?_).trans hb.closure_iUnion.subset
+  by_contra h
+  exact hx (finprod_eq_one_of_forall_eq_one fun i ↦
+    Function.notMem_mulSupport.1 fun hi ↦ h (mem_iUnion.2 ⟨i, hi⟩))
 
 end LocallyFinite
 

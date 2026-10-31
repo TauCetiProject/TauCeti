@@ -6,6 +6,7 @@ Authors: Taylor Dupuy, Thomas Tucker, Zhuoran Wang
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyClosed
+public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 public import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 public import TauCeti.Topology.Sets.Opens
 
@@ -33,6 +34,14 @@ ramification locus is the union of the opens on which `f` is unramified
 (`unramifiedAt_iff_stalkMap`), so the ramification locus is closed, and so is the branch locus of
 a universally closed morphism. The non-étale locus is closed directly from its definition.
 
+The two loci in `X` differ in general (a closed immersion is unramified but rarely flat), but they
+agree for a dominant morphism of integral schemes, locally of finite type, onto a locally
+Noetherian normal scheme (`ramificationLocus_eq_nonEtaleLocus`, SGA 1, Exposé I, 9.5 (ii)). At an
+unramified point `x` the morphism is quasi-finite, so `dim 𝒪_{X, x} = dim 𝒪_{Y, f x}`
+(`Scheme.Hom.ringKrullDim_stalk_eq_of_quasiFiniteAt`), and an unramified point over a normal
+local ring of the same dimension is étale
+(`Scheme.Hom.exists_etale_of_formallyUnramified_stalkMap_of_ringKrullDim_le`).
+
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Hom.ramificationLocus_eq_setOf_not_exists`: for `f` locally of finite
@@ -46,6 +55,9 @@ a universally closed morphism. The non-étale locus is closed directly from its 
   `AlgebraicGeometry.Scheme.Hom.isClosed_branchLocus` (for `f` universally closed and locally of
   finite type, in particular finite, Stacks 01WM).
 * `AlgebraicGeometry.Scheme.Hom.ramificationLocus_subset_nonEtaleLocus`.
+* `AlgebraicGeometry.Scheme.Hom.ramificationLocus_eq_nonEtaleLocus`: for a dominant morphism of
+  integral schemes, locally of finite type, onto a locally Noetherian normal (for instance,
+  regular) scheme, the ramification locus is the non-étale locus.
 * `AlgebraicGeometry.Scheme.Hom.ramificationLocus_specMap`,
   `AlgebraicGeometry.Scheme.Hom.nonEtaleLocus_specMap`,
   `AlgebraicGeometry.Scheme.Hom.branchLocus_specMap`: the affine comparisons with
@@ -56,7 +68,8 @@ a universally closed morphism. The non-étale locus is closed directly from its 
 * [Stacks Project, Definition 29.36.1](https://stacks.math.columbia.edu/tag/02G4),
   [Definition 29.37.1](https://stacks.math.columbia.edu/tag/02GI),
   [Lemma 29.45.7](https://stacks.math.columbia.edu/tag/01WM), and Section 58.21.
-* A. Grothendieck, *Revêtements étales et groupe fondamental* (SGA 1), Exposé X, Théorème 3.1.
+* A. Grothendieck, *Revêtements étales et groupe fondamental* (SGA 1), Exposé X, Théorème 3.1,
+  and Exposé I, Théorème 9.5.
 * The affine non-étale locus `(Algebra.etaleLocus R S)ᶜ` and its closedness appear in
   T. Dupuy, T. Tucker and Z. Wang,
   [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
@@ -171,6 +184,22 @@ theorem isClosed_nonEtaleLocus : IsClosed f.nonEtaleLocus :=
 theorem ramificationLocus_subset_nonEtaleLocus : f.ramificationLocus ⊆ f.nonEtaleLocus := by
   rintro x hx ⟨U, hxU, hU⟩
   exact hx <| formallyUnramified_stalkMap_of_isOpenImmersion_comp f U.ι ⟨x, hxU⟩
+
+/-- **Unramified points are étale over a normal base** (SGA 1, Exposé I, 9.5 (ii)). For a
+dominant morphism `f : X ⟶ Y` of integral schemes, locally of finite type, with `Y` locally
+Noetherian and normal (for instance, regular), the ramification locus of `f` is its non-étale
+locus. Normality of `X` is not needed. -/
+theorem ramificationLocus_eq_nonEtaleLocus [IsLocallyNoetherian Y] [IsIntegral X] [IsIntegral Y]
+    [IsDominant f] [LocallyOfFiniteType f] [TauCeti.AlgebraicGeometry.IsNormalScheme Y] :
+    f.ramificationLocus = f.nonEtaleLocus := by
+  refine (ramificationLocus_subset_nonEtaleLocus f).antisymm fun x hx hfu ↦ hx ?_
+  -- `f` is unramified, hence quasi-finite, near `x`, so the local rings have equal dimension.
+  obtain ⟨U, hxU, _, _⟩ := (unramifiedAt_iff_stalkMap f x).mpr hfu
+  have hqf : f.QuasiFiniteAt x :=
+    (quasiFiniteAt_comp_iff_of_isOpenImmersion (f := U.ι) (x := ⟨x, hxU⟩)).mp
+      ((U.ι ≫ f).quasiFiniteAt ⟨x, hxU⟩)
+  exact f.exists_etale_of_formallyUnramified_stalkMap_of_ringKrullDim_le hfu
+    (f.ringKrullDim_stalk_eq_of_quasiFiniteAt hqf).ge
 
 /-- The image of the closed ramification locus under a closed map is closed, for `f` locally of
 finite type. -/

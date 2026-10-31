@@ -20,7 +20,8 @@ Scalar extension `Algebra.TensorProduct.lTensor` preserves faithful flatness of 
 homomorphisms, via the pushout identification used by Mathlib's `RingHom.Flat.lTensor`.
 A finite family of flat ring homomorphisms `f i : R →+* S i` combines into a faithfully flat ring
 homomorphism `RingHom.pi f : R →+* ∀ i, S i` as soon as every maximal ideal of `R` stays proper
-under some `f i`.
+under some `f i`. A single flat ring homomorphism is faithfully flat as soon as every maximal
+ideal is contracted from a prime of the target.
 
 ## Main results
 
@@ -28,6 +29,8 @@ under some `f i`.
 * `RingHom.FaithfullyFlat.pi_of_exists_map_ne_top`: the criterion above.
 * `RingHom.FaithfullyFlat.pi_algebraMap_localizationAway`: in particular, the product of the
   localizations away from finitely many elements generating the unit ideal is faithfully flat.
+* `RingHom.FaithfullyFlat.of_flat_of_forall_isMaximal_mem_range_comap`: a flat ring homomorphism
+  whose prime-spectrum map hits every maximal ideal is faithfully flat.
 -/
 
 public section
@@ -53,6 +56,23 @@ theorem lTensor {f : B →ₐ[R] D} (hf : f.FaithfullyFlat) :
   exact Module.FaithfullyFlat.of_linearEquiv _ _ e.toLinearEquiv
 
 end lTensor
+
+/-- **A flat ring homomorphism is faithfully flat as soon as every maximal ideal is contracted from
+a prime of the target.** Compared with `RingHom.FaithfullyFlat.iff_flat_and_comap_surjective`, the
+map `PrimeSpectrum.comap f` only has to hit the closed points. -/
+theorem of_flat_of_forall_isMaximal_mem_range_comap {R S : Type*} [CommRing R] [CommRing S]
+    {f : R →+* S} (hf : f.Flat)
+    (h : ∀ (m : Ideal R) (hm : m.IsMaximal), ⟨m, hm.isPrime⟩ ∈ Set.range (PrimeSpectrum.comap f)) :
+    f.FaithfullyFlat := by
+  algebraize [f]
+  rw [← RingHom.algebraMap_toAlgebra f, RingHom.faithfullyFlat_algebraMap_iff]
+  refine ⟨fun m hm ↦ ?_⟩
+  obtain ⟨q, hq⟩ := h m hm
+  have hmq : m = q.asIdeal.comap (algebraMap R S) := congrArg PrimeSpectrum.asIdeal hq.symm
+  -- so `m S ⊆ q ≠ S`, as in Mathlib's `Module.FaithfullyFlat.of_comap_surjective`
+  rw [Ideal.smul_top_eq_map, hmq]
+  exact (Submodule.restrictScalars_eq_top_iff _ _ _).ne.mpr
+    fun htop ↦ q.isPrime.ne_top <| top_le_iff.mp <| htop ▸ Ideal.map_comap_le
 
 /-- **A finite product of flat ring homomorphisms is faithfully flat as soon as no maximal ideal
 becomes the unit ideal under every factor.** No single `f i` need be faithfully flat: each maximal

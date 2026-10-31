@@ -65,6 +65,8 @@ by `φ.order.toNat`, and in particular preserves the residue when `φ.order = 1`
   derivatives of Laurent series extend those of power series.
 * `LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le`: if `f` vanishes to order at least
   `m`, so does `f' - m X⁻¹ f`.
+* `LaurentSeries.valuation_le_one_iff`: a Laurent series is integral exactly when it has no
+  negative exponents.
 * `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative_eq_ite` and
   `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative`: the residue of `φ ^ n * φ'` for a power
   series `φ` is `φ.order.toNat` if `n = -1` and `0` otherwise (in particular `1` vs `0` when
@@ -332,6 +334,11 @@ theorem valuation_derivative_sub_zsmul_single_mul_le {K : Type*} [Field K] {m : 
   rcases lt_or_eq_of_le (show n + 1 ≤ m by omega) with h | h
   · rw [hf _ h, mul_zero]
   · simp [h]
+
+/-- A Laurent series lies in the valuation ring exactly when it has no negative exponents. -/
+theorem valuation_le_one_iff {K : Type*} [Field K] {f : K⸨X⸩} :
+    Valued.v f ≤ 1 ↔ ∀ n : ℤ, n < 0 → f.coeff n = 0 := by
+  simpa using valuation_le_iff_coeff_lt_eq_zero (D := 0) (f := f)
 
 end LaurentSeries
 

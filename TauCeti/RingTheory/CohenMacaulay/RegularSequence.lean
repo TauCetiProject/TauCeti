@@ -65,6 +65,8 @@ for regular local rings (Stacks, Lemma 58.21.3 (0BMA)).
 * `Module.IsCohenMacaulay.isRegular_iff_supportDim_add_length_eq_supportDim`: for `M ≠ 0`, a
   sequence in `𝔪` is `M`-regular if and only if it cuts the dimension of the support down by its
   length (Stacks, Proposition 10.103.4 (00N6)).
+* `Module.IsCohenMacaulay.isRegular_of_le_radical`: a system of parameters, that is `dim M`
+  elements of `𝔪` cutting `M` down to a module supported at the closed point, is `M`-regular.
 * `Module.IsCohenMacaulay.isRegular_map_algebraMap`: generators of the maximal ideal of `R` whose
   number is `dim S - dim S ⧸ 𝔪_R S` map to an `S`-regular sequence.
 * `Module.IsCohenMacaulay.isRegular_map_algebraMap_localization`: for a finite torsion-free
@@ -176,6 +178,38 @@ theorem isRegular_iff_supportDim_add_length_eq_supportDim [Nontrivial M]
     -- Now `dim N + 1 = dim M`, and the induction hypothesis applies to `N`.
     rw [← supportDim_quotSMulTop_succ_eq_supportDim reg hx, ENat.WithBot.add_one_cancel] at hdim
     exact (isRegular_cons_iff M x rs).2 ⟨reg, ih (h.quotSMulTop hx hlt) hrs' hdim⟩
+
+/-- **Systems of parameters are regular sequences.** Let `M` be a nonzero finite Cohen–Macaulay
+module over a Noetherian local ring `(R, 𝔪)`. A sequence `r₁, …, rₙ` of `dim M` elements of `𝔪`
+such that `(r₁, …, rₙ) + Ann M` has radical `𝔪` is `M`-regular. This is the case of
+`isRegular_iff_supportDim_add_length_eq_supportDim` (Stacks, Proposition 10.103.4 (00N6)) in
+which `M ⧸ (r₁, …, rₙ) M` is supported at the closed point, hence has dimension zero. -/
+theorem isRegular_of_le_radical [Nontrivial M] (h : IsCohenMacaulay R M) {rs : List R}
+    (hrs : ∀ r ∈ rs, r ∈ maximalIdeal R)
+    (hrad : maximalIdeal R ≤ (ofList rs ⊔ annihilator R M).radical)
+    (hlen : (rs.length : WithBot ℕ∞) = supportDim R M) : IsRegular M rs := by
+  refine (h.isRegular_iff_supportDim_add_length_eq_supportDim rs hrs).2 ?_
+  set N := M ⧸ ofList rs • (⊤ : Submodule R M)
+  have hle : ofList rs ≤ maximalIdeal R := span_le.2 hrs
+  have : Nontrivial N := Submodule.Quotient.nontrivial_iff.2
+    (Submodule.top_ne_ideal_smul_of_le_jacobson_annihilator
+      (hle.trans (maximalIdeal_le_jacobson _))).symm
+  have : Nontrivial (R ⧸ annihilator R N) :=
+    Quotient.nontrivial_iff.2 (annihilator_eq_top_iff.not.2 (not_subsingleton N))
+  -- Every prime containing the annihilator of `N` contains `rs` and `Ann M`, hence is `𝔪`.
+  have hann : ofList rs ⊔ annihilator R M ≤ annihilator R N := sup_le
+    (fun r hr ↦ mem_annihilator.2 fun n ↦ by
+      induction n using Submodule.Quotient.induction_on with | H m => ?_
+      rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero]
+      exact Submodule.smul_mem_smul hr Submodule.mem_top)
+    ((Submodule.mkQ _).annihilator_le_of_surjective (Submodule.mkQ_surjective _))
+  have : Ring.KrullDimLE 0 (R ⧸ annihilator R N) :=
+    krullDimLE_zero_quotient_iff_forall_minimalPrimes_isMaximal.2 fun J hJ ↦ by
+      have hJ' : maximalIdeal R ≤ J :=
+        hrad.trans ((radical_mono (hann.trans hJ.1.2)).trans_eq hJ.1.1.radical)
+      exact (maximalIdeal.isMaximal R).eq_of_le hJ.1.1.ne_top hJ' ▸ maximalIdeal.isMaximal R
+  rw [supportDim_eq_ringKrullDim_quotient_annihilator,
+    (ringKrullDimZero_iff_ringKrullDim_eq_zero).1 this, zero_add, hlen]
 
 end Module.IsCohenMacaulay
 
