@@ -295,6 +295,23 @@ theorem isCartanWeightVector_kostantWeightBasisFin
   rw [kostantWeightBasisFin_apply]
   exact isCartanWeightVector_kostantWeightBasis e h ρ M hM hV _
 
+/-- **The weights recorded by the `Fin`-indexed weight basis are the weights of the lattice**: an
+integral weight is the weight of some vector of the basis exactly when its weight sublattice is
+nonzero. -/
+theorem mem_range_kostantWeightFin_iff {μ : κ → ℤ} :
+    μ ∈ Set.range (kostantWeightFin e h ρ M hM hV) ↔ weightSublattice h ρ M μ ≠ ⊥ := by
+  constructor
+  · rintro ⟨x, rfl⟩ hbot
+    have hmem := kostantWeightBasis_mem e h ρ M hM hV
+      ((kostantWeightBasisIndexEquivFin e h ρ M hM hV).symm x)
+    rw [← kostantWeightFin, hbot, Submodule.mem_bot] at hmem
+    exact (kostantWeightBasis e h ρ M hM hV).ne_zero _ hmem
+  · intro hμ
+    have : Nontrivial (weightSublattice h ρ M μ) := Submodule.nontrivial_iff_ne_bot.2 hμ
+    obtain ⟨j⟩ := (Module.Free.chooseBasis ℤ (weightSublattice h ρ M μ)).index_nonempty
+    exact ⟨kostantWeightBasisIndexEquivFin e h ρ M hM hV ⟨μ, j⟩, by
+      rw [kostantWeightFin, Equiv.symm_apply_apply]⟩
+
 end WeightBasis
 
 end TauCeti.UniversalEnvelopingAlgebra
