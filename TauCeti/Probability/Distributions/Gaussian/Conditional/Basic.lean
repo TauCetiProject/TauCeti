@@ -138,7 +138,9 @@ theorem Matrix.PosSemidef.gaussianCondCov [Finite ι] {S : Matrix (ι ⊕ κ) (�
   have hblocks : Matrix.fromBlocks (S.submatrix Sum.inl Sum.inl) (S.submatrix Sum.inl Sum.inr)
       (S.submatrix Sum.inl Sum.inr)ᴴ (S.submatrix Sum.inr Sum.inr) = S := by
     rw [← hS₂₁]
-    exact Matrix.fromBlocks_toBlocks S
+    simpa only [Matrix.toBlocks₁₁_eq_submatrix, Matrix.toBlocks₁₂_eq_submatrix,
+      Matrix.toBlocks₂₁_eq_submatrix, Matrix.toBlocks₂₂_eq_submatrix] using
+      Matrix.fromBlocks_toBlocks S
   rw [Matrix.gaussianCondCov_def, hS₂₁]
   exact (hblocks ▸ hS).schur_complement₂₂_covariancePseudoInverse
 
@@ -249,8 +251,8 @@ omit [Fintype ι] [DecidableEq ι] in
 private theorem gaussianRegressionMatrix_mul_block22 [Finite ι]
     {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS : S.PosSemidef) :
     gaussianRegressionMatrix S * S.submatrix Sum.inr Sum.inr = S.submatrix Sum.inl Sum.inr := by
-  simpa only [gaussianRegressionMatrix, Matrix.toBlocks₁₂, Matrix.toBlocks₂₂,
-    Matrix.submatrix] using hS.toBlocks₁₂_mul_covariancePseudoInverse_mul
+  simpa only [gaussianRegressionMatrix, Matrix.toBlocks₁₂_eq_submatrix,
+    Matrix.toBlocks₂₂_eq_submatrix] using hS.toBlocks₁₂_mul_covariancePseudoInverse_mul
 
 private theorem gaussianSndMatrix_mulVec (x : EuclideanSpace ℝ (ι ⊕ κ)) :
     (gaussianSndMatrix (ι := ι) (κ := κ)).toEuclideanLin x =
