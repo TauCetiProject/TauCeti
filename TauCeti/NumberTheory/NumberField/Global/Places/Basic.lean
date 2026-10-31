@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.ProductFormula
 public import TauCeti.Algebra.BigOperators.Finprod
 
-import TauCeti.NumberTheory.NumberField.FinitePlace
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
 # Places of a number field and their normalized absolute values

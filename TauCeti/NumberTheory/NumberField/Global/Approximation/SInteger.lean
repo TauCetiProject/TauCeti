@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
-import TauCeti.NumberTheory.NumberField.FinitePlace
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
 
 /-!
