@@ -92,29 +92,25 @@ theorem faces_triangleBoundary (k : ℕ) (hk : k ≤ 2) :
   obtain rfl | hne := a.eq_empty_or_nonempty
   · exact Or.inl rfl
   · refine Or.inr (mem_simplexBoundary.2 ⟨hne, ?_⟩)
-    exact Finset.ssubset_iff_subset_ne.2 ⟨subset_univ _, fun he ↦ by
-      have := congrArg Finset.card he
-      simp only [card_univ, Fintype.card_fin, hcard] at this
-      omega⟩
+    exact Finset.ssubset_univ_iff.2 ((Finset.card_lt_iff_ne_univ a).1 (by
+      simp only [hcard, Fintype.card_fin]
+      omega))
 
 /-- Every complex on three labeled vertices has six copies in the filled triangle.
 The source faces may be missing: copies preserve faces but need not preserve nonfaces. -/
 theorem labelledCopyCount_filledTriangle {r : ℕ} (C : HypergraphComplex r (Fin 3)) :
     filledTriangle.labelledCopyCount C = 6 := by
-  have hall : filledTriangle.copies C = univ := by
-    apply eq_univ_of_forall
-    intro f
-    rw [mem_copies, isCopy_iff]
-    intro k hk a ha
-    have hcard : #(a.map f) = k := (card_map _).trans (C.face_card k hk a ha)
-    have hk' : k ≤ 3 := by
-      have := card_le_univ (a.map f)
-      simpa only [hcard, Fintype.card_fin] using this
-    refine ⟨hk', ?_⟩
-    rw [faces_filledTriangle]
-    exact mem_powersetCard.2 ⟨subset_univ _, hcard⟩
-  rw [labelledCopyCount_def, hall, card_univ, Fintype.card_embedding_eq]
-  decide
+  refine (labelledCopyCount_eq_descFactorial _ _ ?_).trans (by decide)
+  intro f
+  rw [isCopy_iff]
+  intro k hk a ha
+  have hcard : #(a.map f) = k := (card_map _).trans (C.face_card k hk a ha)
+  have hk' : k ≤ 3 := by
+    have := card_le_univ (a.map f)
+    simpa only [hcard, Fintype.card_fin] using this
+  refine ⟨hk', ?_⟩
+  rw [faces_filledTriangle]
+  exact mem_powersetCard.2 ⟨subset_univ _, hcard⟩
 
 example : filledTriangle.labelledCopyCount filledTriangle = 6 :=
   labelledCopyCount_filledTriangle _
@@ -134,20 +130,14 @@ example : triangleBoundary.labelledCopyCount filledTriangle = 0 := by
 example : filledTriangle.labelledCopyCount
     (ofPreAbstractSimplicialComplex (r := 0) (simplex (∅ : Finset (Fin 0)))
       (finite_faces_simplex _)) = 1 := by
-  classical
-  let C : HypergraphComplex 0 (Fin 0) :=
-    ofPreAbstractSimplicialComplex (simplex ∅) (finite_faces_simplex _)
-  have hall : filledTriangle.copies C = univ := by
-    apply eq_univ_of_forall
-    intro f
-    rw [mem_copies, isCopy_iff]
-    intro k hk a ha
-    have hk0 : k = 0 := by omega
-    subst k
-    have ha0 : a = ∅ := card_eq_zero.1 (C.face_card 0 hk a ha)
-    subst a
-    exact ⟨by decide, by simp⟩
-  rw [labelledCopyCount_def, hall, card_univ, Fintype.card_embedding_eq]
-  decide
+  refine (labelledCopyCount_eq_descFactorial _ _ ?_).trans (by decide)
+  intro f
+  rw [isCopy_iff]
+  intro k hk a _
+  have hk0 : k = 0 := by omega
+  subst k
+  have ha0 : a = ∅ := eq_empty_of_isEmpty a
+  subst a
+  exact ⟨by decide, by simp⟩
 
 end TauCeti.HypergraphComplex
