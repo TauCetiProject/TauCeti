@@ -111,44 +111,6 @@ theorem isFinite_fromNormalization_fromSpecStalk_genericPoint_iff :
 
 variable (L : Type u) [Field L] [Algebra Y.functionField L]
 
-/-- Over a nonempty affine open `U` of an integral scheme `Y`, the sections of `Spec L` over the
-preimage of `U` along `Spec L ⟶ Spec k(Y) ⟶ Y` are `L`, as a `Γ(Y, U)`-algebra through `k(Y)`. -/
-private noncomputable def algEquivAppPreimage {U : Y.Opens} [Nonempty U] [Algebra Γ(Y, U) L]
-    [IsScalarTower Γ(Y, U) Y.functionField L] :
-    letI := ((Spec.map (CommRingCat.ofHom (algebraMap Y.functionField L)) ≫
-      Y.fromSpecStalk (genericPoint Y)).app U).hom.toAlgebra
-    L ≃ₐ[Γ(Y, U)] Γ(Spec (.of L), (Spec.map (CommRingCat.ofHom (algebraMap Y.functionField L)) ≫
-      Y.fromSpecStalk (genericPoint Y)) ⁻¹ᵁ U) :=
-  letI f := Spec.map (CommRingCat.ofHom (algebraMap Y.functionField L)) ≫
-    Y.fromSpecStalk (genericPoint Y)
-  letI := (f.app U).hom.toAlgebra
-  have hη : genericPoint Y ∈ U :=
-    ((genericPoint_spec Y).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
-  -- The preimage of `U` is all of `Spec L`, so restriction from `⊤` is an isomorphism.
-  have htop : f ⁻¹ᵁ U = ⊤ := by
-    rw [Scheme.Hom.comp_preimage, Scheme.fromSpecStalk_preimage_eq_top hη,
-      Scheme.Hom.preimage_top]
-  have : IsIso ((Spec (.of L)).presheaf.map (homOfLE (le_top : f ⁻¹ᵁ U ≤ ⊤)).op) := by
-    rw [show homOfLE (le_top : f ⁻¹ᵁ U ≤ ⊤) = eqToHom htop from Subsingleton.elim _ _,
-      eqToHom_op, eqToHom_map]
-    infer_instance
-  let ι := (Scheme.ΓSpecIso (.of L)).inv ≫
-    (Spec (.of L)).presheaf.map (homOfLE (le_top : f ⁻¹ᵁ U ≤ ⊤)).op
-  have key : f.app U =
-      Y.germToFunctionField U ≫ CommRingCat.ofHom (algebraMap Y.functionField L) ≫ ι := by
-    have hnat : (Scheme.ΓSpecIso Y.functionField).inv ≫
-        (Spec.map (CommRingCat.ofHom (algebraMap Y.functionField L))).app ⊤ =
-          CommRingCat.ofHom (algebraMap Y.functionField L) ≫ (Scheme.ΓSpecIso (.of L)).inv :=
-      (Scheme.ΓSpecIso_inv_naturality _).symm
-    rw [Scheme.Hom.comp_app, Scheme.fromSpecStalk_app hη, Category.assoc, Category.assoc,
-      Scheme.Hom.naturality, reassoc_of% hnat]
-    -- The two restriction maps are along the same inclusion of opens of `Spec L`.
-    rfl
-  .ofBijective ⟨ι.hom, fun a ↦ by
-    rw [IsScalarTower.algebraMap_apply Γ(Y, U) Y.functionField L, RingHom.algebraMap_toAlgebra,
-      key]
-    rfl⟩ (ConcreteCategory.bijective_of_isIso ι)
-
 /-- **Finite normalization in a finite extension of the function field.** Let `Y` be an integral
 scheme such that the ring of sections of every nonempty affine open is Japanese, for instance
 Nagata. Then for every finite extension `L` of the function field `k(Y)`, the normalization of `Y`
@@ -174,7 +136,7 @@ theorem isFinite_fromNormalization_of_isJapanese
     have := functionField_isFractionRing_of_isAffineOpen Y U hU
     have := hY U hU
     have := Ring.IsJapanese.finite_integralClosure (R := Γ(Y, U)) Y.functionField L
-    exact .equiv (algEquivAppPreimage L).mapIntegralClosure.toLinearEquiv
+    exact .equiv (Scheme.algEquivAppPreimageSpecExtension L).mapIntegralClosure.toLinearEquiv
   · -- Over an open missing the generic point, the sections of `Spec L` are the zero ring.
     have := Scheme.subsingleton_preimage_of_genericPoint_notMem f hη
     infer_instance
