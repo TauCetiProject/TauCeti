@@ -101,11 +101,8 @@ theorem classifyingSpaceFirstHomologyAddEquiv_map_torusLoop (n : ι → ℤ) :
           (H₁AddEquivHomology _ (loopClass (torusLoop p n)))) =
       Additive.ofMul (Abelianization.of (fun i ↦ Multiplicative.ofAdd (n i))) := by
   rw [← hurewiczHomologyAddEquiv_ofMul_of_mk,
-    homologyMap_hurewiczHomologyAddEquiv, toMul_ofMul, Abelianization.map_of]
-  simp only [TopCat.hom_ofHom]
-  rw [← hurewiczHomologyAddEquiv_fundamentalGroupMulEquivOfPath
+    classifyingSpaceFirstHomologyAddEquiv_homologyMap_hurewiczHomologyAddEquiv _
       (torusClassifyingSpaceBasepointPath p hp),
-    classifyingSpaceFirstHomologyAddEquiv_hurewiczHomologyAddEquiv,
     classifyingSpaceFundamentalGroupMulEquiv_map_torusHomotopyEquivClassifyingSpace,
     AddCircle.piFundamentalGroupMulEquivZero_torusLoop]
 

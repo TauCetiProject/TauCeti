@@ -249,11 +249,8 @@ theorem classifyingSpaceFirstHomologyAddEquiv_map_wedgeCirclesHomotopyEquivClass
           (hurewiczHomologyAddEquiv (X := TopCat.of (WedgeSum fun _ : S ↦ (1 : Circle))) (base _)
             (Additive.ofMul (Abelianization.of a)))) =
       Additive.ofMul (Abelianization.of (circleFundamentalGroupMulEquiv S a)) := by
-  rw [homologyMap_hurewiczHomologyAddEquiv, toMul_ofMul, Abelianization.map_of]
-  simp only [TopCat.hom_ofHom]
-  rw [← hurewiczHomologyAddEquiv_fundamentalGroupMulEquivOfPath
+  rw [classifyingSpaceFirstHomologyAddEquiv_homologyMap_hurewiczHomologyAddEquiv _
       (wedgeCirclesClassifyingSpaceBasepointPath S),
-    classifyingSpaceFirstHomologyAddEquiv_hurewiczHomologyAddEquiv,
     classifyingSpaceFundamentalGroupMulEquiv_map_wedgeCirclesHomotopyEquivClassifyingSpace]
 
 /-- **The first homology of a wedge of circles agrees with the first group homology of the free
