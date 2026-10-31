@@ -113,15 +113,6 @@ private def permIso :
       twistedChainComplex.{u, u, u} (hG.isCoveringMap.permutationLocalSystem k) :=
   hG.isCoveringMap.singularChainComplexPermutationIso k
 
-private lemma permIso_inv_hom_apply (n : ℕ) (c : ((singularChains k).obj E).X n) :
-    ((permIso hG k).inv.f n).hom (((permIso hG k).hom.f n).hom c) = c :=
-  congrArg (fun f ↦ f.hom c) (HomologicalComplex.Hom.isoApp (permIso hG k) n).hom_inv_id
-
-private lemma permIso_hom_inv_apply (n : ℕ)
-    (x : (twistedChainComplex.{u, u, u} (hG.isCoveringMap.permutationLocalSystem k)).X n) :
-    ((permIso hG k).hom.f n).hom (((permIso hG k).inv.f n).hom x) = x :=
-  congrArg (fun f ↦ f.hom x) (HomologicalComplex.Hom.isoApp (permIso hG k) n).inv_hom_id
-
 /-- The comparison sends a simplex `τ` of `E` to its initial sheet in the summand of `p ∘ τ`. -/
 private lemma permIso_hom_simplexChain (n : ℕ) (τ : (TopCat.toSSet.obj E) _⦋n⦌) :
     ((permIso hG k).hom.f n).hom (simplexChain τ 1) =
@@ -213,11 +204,15 @@ private def liftRepHom (n : ℕ) (σ : (TopCat.toSSet.obj B) _⦋n⦌) :
         (ιTwistedChainComplex.{u, u, u} (hG.isCoveringMap.permutationLocalSystem k) n σ).hom
       isIntertwining' g := LinearMap.ext
           fun (v : (hG.isCoveringMap.permutationLocalSystem k).obj (initialVertex σ)) ↦ by
-        have h := permIso_hom_smul hG k n g (((permIso hG k).inv.f n).hom
-          ((ιTwistedChainComplex.{u, u, u} (hG.isCoveringMap.permutationLocalSystem k) n σ).hom v))
-        rw [permIso_hom_inv_apply, twistedChainComplexCoefficientMap_f_ι_apply] at h
+        have h := (permIso_hom_smul hG k n g (((permIso hG k).inv.f n).hom
+          ((ιTwistedChainComplex.{u, u, u} (hG.isCoveringMap.permutationLocalSystem k) n σ).hom
+            v))).trans <| congrArg
+          ((twistedChainComplexCoefficientMap.{u, u, u}
+            (permutationLocalSystemSMul hG k g)).f n).hom
+          (ModuleCat.hom_inv_apply (HomologicalComplex.Hom.isoApp (permIso hG k) n) _)
+        rw [twistedChainComplexCoefficientMap_f_ι_apply] at h
         exact (congrArg ((permIso hG k).inv.f n).hom h.symm).trans
-          (permIso_inv_hom_apply hG k n _) }
+          (ModuleCat.inv_hom_apply (HomologicalComplex.Hom.isoApp (permIso hG k) n) _) }
 
 /-- The inverse comparison map `Cₙ(B; L_A) ⟶ (A ⊗ Cₙ(E))_G` in degree `n`. -/
 private def twistedToCoinvariantsTensorX (n : ℕ) :
@@ -275,14 +270,15 @@ private def coinvariantsTensorIsoTwistedX (n : ℕ) :
     hom_inv_id := Rep.coinvariantsTensor_hom_ext (LinearMap.ext₂ fun a c ↦
       ((congrArg (twistedToCoinvariantsTensorX hG k n).hom (tensorToTwisted_apply hG k n a c)).trans
         (twistedToCoinvariantsTensorX_coefficientMap hG k n a _)).trans
-        (congrArg _ (permIso_inv_hom_apply hG k n c)))
+        (congrArg _ (ModuleCat.inv_hom_apply (HomologicalComplex.Hom.isoApp (permIso hG k) n) c)))
     inv_hom_id := twistedChainComplex_hom_ext.{u, u, u} _ fun σ ↦ Rep.coinvariantsTensor_hom_ext
       (A := A) (B := (hG.permutationRepFunctor k).obj (initialVertex σ))
       (LinearMap.ext₂ fun a v ↦
         (congrArg (coinvariantsTensorToTwistedX hG k n).hom
           (twistedToCoinvariantsTensorX_ι_mk hG k n σ a v)).trans
           ((tensorToTwisted_apply hG k n a _).trans
-            ((congrArg _ (permIso_hom_inv_apply hG k n _)).trans
+            ((congrArg _
+              (ModuleCat.hom_inv_apply (HomologicalComplex.Hom.isoApp (permIso hG k) n) _)).trans
               (twistedChainComplexCoefficientMap_f_ι_apply k
                 (coinvariantsTensorMkLocalSystem hG k a) n σ v)))) }
 
