@@ -70,18 +70,11 @@ private def conjugateInverse :
         Units.star_sub_inv_of_mem_unitary hq.out]
       rw [val_inv_unitT_mul_self, neg_sub, Algebra.smul_def, Algebra.commutes])
     (fun i ↦ unop_injective <| by
-      have h : unitT q i * unitT q (i + 1) * unitT q i =
-          unitT q (i + 1) * unitT q i * unitT q (i + 1) :=
-        Units.ext (by simpa only [Units.val_mul, val_unitT] using T_braid (q := q) i)
-      simpa only [unop_mul, unop_op, mul_inv_rev, Units.val_mul, mul_assoc] using
-        congrArg (fun u : (InfiniteTypeAHeckeAlgebra R q)ˣ ↦
-          (↑u⁻¹ : InfiniteTypeAHeckeAlgebra R q)) h)
+      simpa only [unop_mul, unop_op, map_mul, complementEquiv_T_eq_neg_inv, neg_mul, mul_neg,
+        neg_neg, neg_inj, mul_assoc] using congrArg (complementEquiv q) (T_braid (q := q) i))
     (fun h ↦ unop_injective <| by
-      have hc : Commute (unitT q _) (unitT q _) := Units.ext (by
-        simpa only [Units.val_mul, val_unitT] using (commute_T (q := q) (Or.inl h)).eq)
-      simpa only [unop_mul, unop_op, Units.val_mul] using
-        congrArg (fun u : (InfiniteTypeAHeckeAlgebra R q)ˣ ↦
-          (u : InfiniteTypeAHeckeAlgebra R q)) hc.inv_inv.eq.symm)).toRingHom
+      simpa only [unop_mul, unop_op, complementEquiv_T_eq_neg_inv, neg_mul_neg] using
+        ((commute_T (q := q) (Or.inl h)).map (complementEquiv q)).eq.symm)).toRingHom
 
 private theorem conjugateInverse_T (i : ℕ) :
     conjugateInverse (T q i) = op (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) := by
