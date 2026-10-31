@@ -10,6 +10,7 @@ public import TauCeti.CategoryTheory.DG.CochainComplex.Basic
 public import TauCeti.CategoryTheory.DG.NaturalTransformation
 public import TauCeti.CategoryTheory.DG.Representable
 public import TauCeti.CategoryTheory.DG.SingleObj
+import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # Right DG modules over a DG algebra as DG modules over its one-object DG category
@@ -37,8 +38,9 @@ the free rank-one module the signed right action is precomposition, so its DG mo
 representable module of the unique object
 (`TauCeti.DGRightModuleCat.toDGFunctor_of_isDGRightModule_dgMap_v_apply`).
 
-A morphism of right DG modules induces a chain map of underlying complexes commuting with the
-signed actions, hence a DG natural transformation.  This gives the functor
+A morphism of right DG modules induces a chain map of underlying complexes
+(`TauCeti.DGRightModuleCat.toCochainMap`) commuting with the signed actions, hence a DG natural
+transformation.  This gives the functor
 `TauCeti.DGRightModuleCat.singleObjFunctor` from right DG modules to DG functors, and it is fully
 faithful: a DG natural transformation between the DG modules of `M` and `N` is a closed degree-zero
 family of maps on the homogeneous pieces commuting with the action of every homogeneous element,
@@ -76,8 +78,9 @@ one-object DG category needs `A` in that universe, so ground ring, algebra and m
 universe, as for the DG category structure on `TauCeti.DGRightModuleCat`.
 
 `toDGFunctor` is an abbreviation with a literal object map, so that the objects of the DG module
-are the underlying complex of `M` up to reducible unfolding; the lemmas about that complex, stated
-through `TauCeti.gradedCochainComplexXEquiv`, then apply to the DG module directly.
+are the underlying complex `TauCeti.DGRightModuleCat.toCochainComplex M` up to reducible
+unfolding; the lemmas about that complex, stated through `TauCeti.gradedCochainComplexXEquiv`,
+then apply to the DG module directly.
 
 ## References
 
@@ -99,12 +102,6 @@ variable {R : Type u} {A : Type u} [CommRing R] [Ring A] [Algebra R A]
 namespace DGRightModuleCat
 
 variable (M : DGRightModuleCat.{u, u, u} h)
-
-/-- The underlying cochain complex of a DG right module. -/
-local notation "cx" M => gradedCochainComplex (DGRightModuleCat.grading M)
-  (DGRightModuleCat.differential M)
-  (IsDGRightModule.isHomogeneous (DGRightModuleCat.isDGRightModule M))
-  (fun _ x ↦ IsDGRightModule.sq_zero (DGRightModuleCat.isDGRightModule M) x)
 
 /-- The signed right action `x ↦ (-1) ^ (n * p) • x * a` of a homogeneous element `a` of degree
 `n` on the elements of degree `p`, bilinear in `a` and `x`. -/
@@ -128,7 +125,8 @@ private noncomputable def actionV (n p q : ℤ) (hpq : p + n = q) :
 /-- The **signed right action** of a homogeneous element `a` of degree `n` as a degree-`n`
 cochain on the underlying complex of `M`: on elements of degree `p` it is
 `x ↦ (-1) ^ (n * p) • x * a`. -/
-noncomputable def actionCochain (n : ℤ) : 𝒜 n →ₗ[R] Cochain (cx M) (cx M) n where
+noncomputable def actionCochain (n : ℤ) :
+    𝒜 n →ₗ[R] Cochain M.toCochainComplex M.toCochainComplex n where
   toFun a := Cochain.mk fun p q hpq ↦ ModuleCat.ofHom <|
     (gradedCochainComplexXEquiv q).symm.toLinearMap ∘ₗ M.actionV n p q hpq a ∘ₗ
       (gradedCochainComplexXEquiv p).toLinearMap
@@ -144,7 +142,7 @@ noncomputable def actionCochain (n : ℤ) : 𝒜 n →ₗ[R] Cochain (cx M) (cx 
 /-- The signed right action on an element of degree `p`. -/
 @[simp]
 theorem actionCochain_v_apply (n : ℤ) (a : 𝒜 n) (p q : ℤ) (hpq : p + n = q)
-    (x : (cx M).X p) :
+    (x : M.toCochainComplex.X p) :
     (gradedCochainComplexXEquiv q (((M.actionCochain n a).v p q hpq).hom x) : M) =
       (n * p).negOnePow • (op (a : A) • (gradedCochainComplexXEquiv p x : M)) := by
   simp [actionCochain, actionV]
@@ -179,7 +177,7 @@ theorem actionCochain_eq_δ {n : ℤ} (a : 𝒜 n) (a' : 𝒜 (n + 1)) (ha : (a'
 
 /-- The unit acts as the identity cochain. -/
 theorem actionCochain_eq_ofHom_id (e : 𝒜 0) (he : (e : A) = 1) :
-    M.actionCochain 0 e = Cochain.ofHom (𝟙 (cx M)) := by
+    M.actionCochain 0 e = Cochain.ofHom (𝟙 M.toCochainComplex) := by
   refine Cochain.ext _ _ fun p q hpq ↦ ?_
   obtain rfl : p = q := by omega
   ext x
@@ -219,7 +217,7 @@ underlying complex of `M`, on which a morphism `a` of degree `n` acts by the sig
 -- that complex apply to the objects of the DG module.
 noncomputable abbrev toDGFunctor :
     DGFunctor R (DGSingleObj h)ᵒᵖ (CochainComplex (ModuleCat.{u} R) ℤ) :=
-  let F := EnrichedFunctor.ofDGMap (fun _ ↦ cx M)
+  let F := EnrichedFunctor.ofDGMap (fun _ ↦ M.toCochainComplex)
       (fun {Y Z} n ↦ M.actionCochain n ∘ₗ (DGSingleObj.dgHomEquiv Z.unop Y.unop n).toLinearMap)
       (fun {Y Z} n f ↦ by
         rw [dgDifferential_linearHomComplex]
@@ -239,15 +237,16 @@ noncomputable abbrev toDGFunctor :
         refine M.actionCochain_eq_comp _ _ _ ?_ hpq
         rw [LinearEquiv.coe_coe, dgComp_op (R := R) (X := Y) (Y := Z) (Z := W) f g hpq,
           map_zsmul_unit, Units.smul_def, Submodule.coe_smul_of_tower,
-          DGSingleObj.dgHomEquiv_dgComp, Units.smul_def, smul_smul, ← Units.val_mul, mul_comm q p,
-          Int.units_mul_self, Units.val_one, one_smul, LinearEquiv.coe_coe, LinearEquiv.coe_coe])
-  ⟨{ obj := fun _ ↦ cx M
+          DGSingleObj.dgHomEquiv_dgComp, mul_comm q p, ← Units.smul_def]
+        simp)
+  ⟨{ obj := fun _ ↦ M.toCochainComplex
      map := F.map
      map_id := F.map_id
      map_comp := F.map_comp }⟩
 
 /-- The DG module of `M` sends the unique object to the underlying complex of `M`. -/
-theorem toDGFunctor_obj (X : (DGSingleObj h)ᵒᵖ) : M.toDGFunctor.toEnrichedFunctor.obj X = cx M :=
+theorem toDGFunctor_obj (X : (DGSingleObj h)ᵒᵖ) :
+    M.toDGFunctor.toEnrichedFunctor.obj X = M.toCochainComplex :=
   (rfl)
 
 /-- A morphism of the one-object DG category acts on the DG module of `M` by the signed right
@@ -265,7 +264,7 @@ theorem toDGFunctor_dgMap {X Y : DGSingleObj h} {n : ℤ} (f : DGHom R n Y X) :
 `x ↦ (-1) ^ (n * p) • x * a`, for `a` the element of the algebra corresponding to `f`. -/
 @[simp]
 theorem toDGFunctor_dgMap_v_apply {X Y : DGSingleObj h} {n : ℤ} (f : DGHom R n Y X)
-    (p q : ℤ) (hpq : p + n = q) (x : (cx M).X p) :
+    (p q : ℤ) (hpq : p + n = q) (x : M.toCochainComplex.X p) :
     (gradedCochainComplexXEquiv q
         (((M.toDGFunctor.toEnrichedFunctor.dgMap n (X := Opposite.op X) (Y := Opposite.op Y)
           f).v p q hpq).hom x) : M) =
@@ -297,76 +296,36 @@ theorem toDGFunctor_of_isDGRightModule_dgMap_v_apply {X Y : DGSingleObj h} {n p 
 
 variable {M} {N P : DGRightModuleCat.{u, u, u} h}
 
-/-- The chain map of underlying complexes of a morphism of right DG modules. -/
-private noncomputable def complexHom (φ : M ⟶ N) : (cx M) ⟶ (cx N) where
-  f p := ModuleCat.ofHom <| (gradedCochainComplexXEquiv p).symm.toLinearMap ∘ₗ
-    ((φ.toLinearMap.restrictScalars R ∘ₗ (M.grading p).subtype).codRestrict (N.grading p)
-      fun x ↦ by
-        simpa only [LinearMap.comp_apply, Submodule.coe_subtype,
-          LinearMap.restrictScalars_apply] using φ.map_mem' x.2) ∘ₗ
-      (gradedCochainComplexXEquiv p).toLinearMap
-  comm' p q hpq := by
-    obtain rfl : p + 1 = q := hpq
-    ext x
-    apply (gradedCochainComplexXEquiv (p + 1)).injective
-    apply Subtype.ext
-    simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
-      LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, gradedCochainComplexXEquiv_d,
-      LinearMap.codRestrict_apply, LinearMap.restrictScalars_apply, Submodule.coe_subtype]
-    exact φ.map_d' _
-
-private theorem complexHom_f_apply (φ : M ⟶ N) (p : ℤ) (x : (cx M).X p) :
-    (gradedCochainComplexXEquiv p (((complexHom φ).f p).hom x) : N) =
-      φ (gradedCochainComplexXEquiv p x) := by
-  simp [complexHom]
-
-private theorem complexHom_id : complexHom (𝟙 M) = 𝟙 (cx M) := by
-  ext p x
-  apply (gradedCochainComplexXEquiv p).injective
-  apply Subtype.ext
-  rw [complexHom_f_apply, DGRightModuleCat.id_apply, HomologicalComplex.id_f, ModuleCat.hom_id,
-    LinearMap.id_apply]
-
-private theorem complexHom_comp (φ : M ⟶ N) (ψ : N ⟶ P) :
-    complexHom (φ ≫ ψ) = complexHom φ ≫ complexHom ψ := by
-  ext p x
-  apply (gradedCochainComplexXEquiv p).injective
-  apply Subtype.ext
-  rw [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply, complexHom_f_apply,
-    complexHom_f_apply, complexHom_f_apply, DGRightModuleCat.comp_apply]
-
 /-- The chain map of a morphism of right DG modules commutes with the signed actions. -/
-private theorem naturality_complexHom (φ : M ⟶ N) {X Y : (DGSingleObj h)ᵒᵖ} (n : ℤ)
+private theorem naturality_toCochainMap (φ : M ⟶ N) {X Y : (DGSingleObj h)ᵒᵖ} (n : ℤ)
     (f : DGHom R n X Y) :
     dgComp R (M.toDGFunctor.toEnrichedFunctor.dgMap n f)
-        (Cochain.ofHom (complexHom φ) : DGHom R 0 (cx M) (cx N)) (add_zero n) =
-      dgComp R (Cochain.ofHom (complexHom φ) : DGHom R 0 (cx M) (cx N))
+        (Cochain.ofHom (toCochainMap φ) : DGHom R 0 M.toCochainComplex N.toCochainComplex)
+        (add_zero n) =
+      dgComp R (Cochain.ofHom (toCochainMap φ) : DGHom R 0 M.toCochainComplex N.toCochainComplex)
         (N.toDGFunctor.toEnrichedFunctor.dgMap n f) (zero_add n) := by
   obtain ⟨X⟩ := X
   obtain ⟨Y⟩ := Y
   refine Cochain.ext _ _ fun p q hpq ↦ ?_
   rw [dgComp_v R _ _ (add_zero n) p q q hpq (add_zero q),
-    dgComp_v R _ _ (zero_add n) p p q (add_zero p) hpq, Cochain.ofHom_v, Cochain.ofHom_v,
-    toDGFunctor_dgMap, toDGFunctor_dgMap, mul_zero, zero_mul, Int.negOnePow_zero, one_smul,
-    one_smul]
+    dgComp_v R _ _ (zero_add n) p p q (add_zero p) hpq, toDGFunctor_dgMap, toDGFunctor_dgMap]
   ext x
   apply (gradedCochainComplexXEquiv q).injective
   apply Subtype.ext
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply, complexHom_f_apply,
-    actionCochain_v_apply, map_zsmul_unit, map_smul]
+  simp
 
 /-- The **DG natural transformation of a morphism** `φ` of right DG modules, between their DG
 modules over the one-object DG category: its component is the chain map of underlying complexes
 induced by `φ`, which commutes with the signed actions because `φ` is a map of right modules. -/
 noncomputable def toDGFunctorMap (φ : M ⟶ N) : M.toDGFunctor ⟶ N.toDGFunctor :=
-  DGNatTrans.ofDGApp (fun _ ↦ Cochain.ofHom (complexHom φ))
+  DGNatTrans.ofDGApp (fun _ ↦ Cochain.ofHom (toCochainMap φ))
     (fun _ ↦ by
       rw [mem_dgCycles, dgDifferential_linearHomComplex]
       exact δ_ofHom _)
-    (fun n f ↦ naturality_complexHom φ n f)
+    (fun n f ↦ naturality_toCochainMap φ n f)
 
 private theorem dgApp_toDGFunctorMap (φ : M ⟶ N) (X : (DGSingleObj h)ᵒᵖ) :
-    DGNatTrans.dgApp (R := R) (toDGFunctorMap φ) X = Cochain.ofHom (complexHom φ) :=
+    DGNatTrans.dgApp (R := R) (toDGFunctorMap φ) X = Cochain.ofHom (toCochainMap φ) :=
   DGNatTrans.dgApp_ofDGApp _ _ _ X
 
 /-- The DG natural transformation of the identity is the identity. -/
@@ -375,7 +334,7 @@ theorem toDGFunctorMap_id (M : DGRightModuleCat.{u, u, u} h) :
     toDGFunctorMap (𝟙 M) = 𝟙 M.toDGFunctor :=
   DGNatTrans.ext_dgApp (R := R) (F := M.toDGFunctor.toEnrichedFunctor)
     (G := M.toDGFunctor.toEnrichedFunctor) fun X ↦ by
-    rw [dgApp_toDGFunctorMap, complexHom_id, ← dgId_linearHomComplex]
+    rw [dgApp_toDGFunctorMap, toCochainMap_id, ← dgId_linearHomComplex]
     exact (DGNatTrans.dgApp_id (R := R) M.toDGFunctor.toEnrichedFunctor X).symm
 
 /-- The DG natural transformation of a composite is the composite. -/
@@ -388,15 +347,13 @@ theorem toDGFunctorMap_comp (φ : M ⟶ N) (ψ : N ⟶ P) :
     refine Eq.trans ?_
       (DGNatTrans.dgApp_comp (R := R) (toDGFunctorMap φ) (toDGFunctorMap ψ) X).symm
     rw [dgApp_toDGFunctorMap, dgApp_toDGFunctorMap, dgCompZero_def, dgComp_linearHomComplex,
-      mul_zero, Int.negOnePow_zero, one_smul, complexHom_comp, Cochain.ofHom_comp]
+      toCochainMap_comp, Cochain.ofHom_comp]
+    simp
 
 /-- **Right DG modules as DG modules over the one-object DG category.**  The functor sending a
 right DG module `M` over `h` to its DG module `M.toDGFunctor` over `TauCeti.DGSingleObj h`, and a
 morphism of right DG modules to its DG natural transformation `toDGFunctorMap`.  It is fully
 faithful. -/
--- The body is exposed so that `singleObjFunctor.obj M` is definitionally `M.toDGFunctor`, which
--- the statement of `singleObjFunctor_map` needs.
-@[expose]
 noncomputable def singleObjFunctor : DGRightModuleCat.{u, u, u} h ⥤
     DGFunctor R (DGSingleObj h)ᵒᵖ (CochainComplex (ModuleCat.{u} R) ℤ) where
   obj M := M.toDGFunctor
@@ -410,66 +367,74 @@ theorem singleObjFunctor_obj (M : DGRightModuleCat.{u, u, u} h) :
     singleObjFunctor.obj M = M.toDGFunctor :=
   (rfl)
 
-/-- `singleObjFunctor` sends a morphism of right DG modules to its DG natural transformation. -/
+/-- `singleObjFunctor` sends a morphism of right DG modules to its DG natural transformation,
+transported along `singleObjFunctor_obj`. -/
 @[simp]
-theorem singleObjFunctor_map (φ : M ⟶ N) : singleObjFunctor.map φ = toDGFunctorMap φ :=
-  (rfl)
+theorem singleObjFunctor_map (φ : M ⟶ N) :
+    singleObjFunctor.map φ = eqToHom (singleObjFunctor_obj M) ≫ toDGFunctorMap φ ≫
+      eqToHom (singleObjFunctor_obj N).symm := by
+  -- Both transports are along definitional equalities, so they are identities.
+  change toDGFunctorMap φ = 𝟙 _ ≫ toDGFunctorMap φ ≫ 𝟙 _
+  simp
 
 /-- The component of the DG natural transformation of a morphism `φ` of right DG modules is `φ`
 on elements of every degree. -/
 @[simp]
 theorem dgApp_toDGFunctorMap_v_apply (φ : M ⟶ N) (X : (DGSingleObj h)ᵒᵖ) (p : ℤ)
-    (x : (cx M).X p) :
+    (x : M.toCochainComplex.X p) :
     (gradedCochainComplexXEquiv p
-        (((DGNatTrans.dgApp (R := R) (toDGFunctorMap φ) X : Cochain (cx M) (cx N) 0).v p p
-          (add_zero p)).hom x) : N) =
+        (((DGNatTrans.dgApp (R := R) (toDGFunctorMap φ) X :
+          Cochain M.toCochainComplex N.toCochainComplex 0).v p p (add_zero p)).hom x) : N) =
       φ (gradedCochainComplexXEquiv p x) := by
-  rw [dgApp_toDGFunctorMap, Cochain.ofHom_v, complexHom_f_apply]
+  rw [dgApp_toDGFunctorMap, Cochain.ofHom_v, toCochainMap_f_apply]
 
 /-- `singleObjFunctor` is faithful: a morphism of right DG modules is determined by its
 components on the homogeneous pieces. -/
 instance : (singleObjFunctor (h := h)).Faithful where
   map_injective {M N} {φ ψ} e := by
-    have hc : complexHom φ = complexHom ψ := Cochain.ofHom_injective <| by
-      rw [← dgApp_toDGFunctorMap φ (Opposite.op (DGSingleObj.star h)), ← singleObjFunctor_map, e,
-        singleObjFunctor_map, dgApp_toDGFunctorMap]
+    have hc : toCochainMap φ = toCochainMap ψ := Cochain.ofHom_injective <| by
+      -- Within this file `singleObjFunctor.map` unfolds to `toDGFunctorMap`.
+      have e' : toDGFunctorMap φ = toDGFunctorMap ψ := e
+      rw [← dgApp_toDGFunctorMap φ (Opposite.op (DGSingleObj.star h)), e', dgApp_toDGFunctorMap]
     refine DGRightModuleCat.hom_ext fun x ↦ ?_
     induction x using DirectSum.Decomposition.inductionOn M.grading with
     | zero => rw [map_zero, map_zero]
     | @homogeneous p x =>
-      have := congrArg (fun g : (cx M) ⟶ (cx N) ↦ (gradedCochainComplexXEquiv p
-        ((g.f p).hom ((gradedCochainComplexXEquiv p).symm x)) : N)) hc
-      simpa only [complexHom_f_apply, LinearEquiv.apply_symm_apply] using this
+      have := congrArg (fun g : M.toCochainComplex ⟶ N.toCochainComplex ↦
+        (gradedCochainComplexXEquiv p ((g.f p).hom ((gradedCochainComplexXEquiv p).symm x)) : N))
+        hc
+      simpa only [toCochainMap_f_apply, LinearEquiv.apply_symm_apply] using this
     | add x y hx hy => rw [map_add, map_add, hx, hy]
 
 /-! ### Fullness -/
 
 /-- The linear map on total modules assembled from the components of a degree-zero cochain
 between underlying complexes. -/
-private noncomputable def totalMap (z : Cochain (cx M) (cx N) 0) : M →ₗ[R] N :=
+private noncomputable def totalMap (z : Cochain M.toCochainComplex N.toCochainComplex 0) :
+    M →ₗ[R] N :=
   DirectSum.toModule R ℤ N (fun p ↦ (N.grading p).subtype ∘ₗ
       (gradedCochainComplexXEquiv p).toLinearMap ∘ₗ (z.v p p (add_zero p)).hom ∘ₗ
         (gradedCochainComplexXEquiv p).symm.toLinearMap) ∘ₗ
     (DirectSum.decomposeLinearEquiv M.grading).toLinearMap
 
-private theorem totalMap_of_mem (z : Cochain (cx M) (cx N) 0) {p : ℤ} {x : M}
-    (hx : x ∈ M.grading p) :
+private theorem totalMap_of_mem (z : Cochain M.toCochainComplex N.toCochainComplex 0) {p : ℤ}
+    {x : M} (hx : x ∈ M.grading p) :
     totalMap z x = gradedCochainComplexXEquiv p
       ((z.v p p (add_zero p)).hom ((gradedCochainComplexXEquiv p).symm ⟨x, hx⟩)) := by
-  rw [totalMap, LinearMap.comp_apply, LinearEquiv.coe_coe, DirectSum.decomposeLinearEquiv_apply,
-    DirectSum.decompose_of_mem _ hx, ← DirectSum.lof_eq_of R, DirectSum.toModule_lof,
-    LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, Submodule.coe_subtype,
-    LinearEquiv.coe_coe, LinearEquiv.coe_coe]
+  simp only [totalMap, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    DirectSum.decomposeLinearEquiv_apply, DirectSum.decompose_of_mem _ hx]
+  rw [← DirectSum.lof_eq_of R, DirectSum.toModule_lof]
+  simp
 
 /-- A closed degree-zero cochain commutes with the module differentials on total modules. -/
-private theorem totalMap_differential {z : Cochain (cx M) (cx N) 0} (hz : δ 0 1 z = 0)
-    (x : M) : N.differential (totalMap z x) = totalMap z (M.differential x) := by
+private theorem totalMap_differential {z : Cochain M.toCochainComplex N.toCochainComplex 0}
+    (hz : δ 0 1 z = 0) (x : M) : N.differential (totalMap z x) = totalMap z (M.differential x) := by
   induction x using DirectSum.Decomposition.inductionOn M.grading with
   | zero => rw [map_zero, map_zero, map_zero, map_zero]
   | @homogeneous p x =>
     have hd : (gradedCochainComplexXEquiv (p + 1)).symm
         ⟨M.differential x, M.isDGRightModule.isHomogeneous.map_mem x.2⟩ =
-          ((cx M).d p (p + 1)).hom ((gradedCochainComplexXEquiv p).symm x) := by
+          (M.toCochainComplex.d p (p + 1)).hom ((gradedCochainComplexXEquiv p).symm x) := by
       apply (gradedCochainComplexXEquiv (p + 1)).injective
       apply Subtype.ext
       rw [LinearEquiv.apply_symm_apply, gradedCochainComplexXEquiv_d,
@@ -485,7 +450,7 @@ private theorem totalMap_differential {z : Cochain (cx M) (cx N) 0} (hz : δ 0 1
 
 /-- A degree-zero cochain commuting with the signed actions is a map of right modules on total
 modules. -/
-private theorem totalMap_op_smul {z : Cochain (cx M) (cx N) 0}
+private theorem totalMap_op_smul {z : Cochain M.toCochainComplex N.toCochainComplex 0}
     (hnat : ∀ (n : ℤ) (a : 𝒜 n),
       (M.actionCochain n a).comp z (add_zero n) = z.comp (N.actionCochain n a) (zero_add n))
     (a : A) (x : M) : totalMap z (op a • x) = op a • totalMap z x := by
@@ -509,19 +474,15 @@ private theorem totalMap_op_smul {z : Cochain (cx M) (cx N) 0}
             (n * p).negOnePow • (gradedCochainComplexXEquiv (p + n)).symm ⟨_, hax⟩ := by
         apply (gradedCochainComplexXEquiv (p + n)).injective
         apply Subtype.ext
-        rw [actionCochain_v_apply, LinearEquiv.apply_symm_apply, map_zsmul_unit,
-          LinearEquiv.apply_symm_apply, Units.smul_def, Units.smul_def,
-          Submodule.coe_smul_of_tower]
-      rw [hy, map_zsmul_unit, map_zsmul_unit, Units.smul_def, Units.smul_def,
-        Submodule.coe_smul_of_tower] at key
+        simp
+      rw [hy] at key
       rw [totalMap_of_mem z hax, totalMap_of_mem z x.2]
-      have := congrArg (fun y : N ↦ (n * p).negOnePow • y) key
-      simpa only [Units.smul_def, smul_smul, ← Units.val_mul, Int.units_mul_self, Units.val_one,
-        one_smul] using this
+      simpa using congrArg (fun y : N ↦ (n * p).negOnePow • y) key
 
 /-- The morphism of right DG modules assembled from a closed degree-zero cochain commuting with
 the signed actions. -/
-private noncomputable def homOfCochain (z : Cochain (cx M) (cx N) 0) (hz : δ 0 1 z = 0)
+private noncomputable def homOfCochain (z : Cochain M.toCochainComplex N.toCochainComplex 0)
+    (hz : δ 0 1 z = 0)
     (hnat : ∀ (n : ℤ) (a : 𝒜 n),
       (M.actionCochain n a).comp z (add_zero n) = z.comp (N.actionCochain n a) (zero_add n)) :
     M ⟶ N where
@@ -535,7 +496,8 @@ private noncomputable def homOfCochain (z : Cochain (cx M) (cx N) 0) (hz : δ 0 
     exact Subtype.mem _
   map_d' x := totalMap_differential hz x
 
-private theorem homOfCochain_apply (z : Cochain (cx M) (cx N) 0) (hz : δ 0 1 z = 0)
+private theorem homOfCochain_apply (z : Cochain M.toCochainComplex N.toCochainComplex 0)
+    (hz : δ 0 1 z = 0)
     (hnat : ∀ (n : ℤ) (a : 𝒜 n),
       (M.actionCochain n a).comp z (add_zero n) = z.comp (N.actionCochain n a) (zero_add n))
     (x : M) : homOfCochain z hz hnat x = totalMap z x :=
@@ -548,7 +510,7 @@ instance : (singleObjFunctor (h := h)).Full where
   map_surjective {M N} η := by
     -- Retype `η` through `singleObjFunctor_obj`, so that the lemmas about `toDGFunctor` apply.
     let η' : M.toDGFunctor ⟶ N.toDGFunctor := η
-    let z : Cochain (cx M) (cx N) 0 := DGNatTrans.dgApp (R := R) η'
+    let z : Cochain M.toCochainComplex N.toCochainComplex 0 := DGNatTrans.dgApp (R := R) η'
       (Opposite.op (DGSingleObj.star h))
     have hz : δ 0 1 z = 0 := by
       have := DGNatTrans.dgApp_mem_dgCycles (R := R) η' (Opposite.op (DGSingleObj.star h))
@@ -557,23 +519,23 @@ instance : (singleObjFunctor (h := h)).Full where
         (M.actionCochain n a).comp z (add_zero n) = z.comp (N.actionCochain n a) (zero_add n) := by
       have := DGNatTrans.dgComp_dgMap_dgApp (R := R) η'
         ((DGSingleObj.dgHomEquiv (DGSingleObj.star h) (DGSingleObj.star h) n).symm a)
-      rwa [dgComp_linearHomComplex, dgComp_linearHomComplex, toDGFunctor_dgMap, toDGFunctor_dgMap,
-        LinearEquiv.apply_symm_apply, mul_zero, zero_mul, Int.negOnePow_zero, one_smul,
-        one_smul] at this
-    refine ⟨homOfCochain z hz hnat, ?_⟩
+      rw [dgComp_linearHomComplex, dgComp_linearHomComplex, toDGFunctor_dgMap,
+        toDGFunctor_dgMap] at this
+      simpa using this
+    refine ⟨homOfCochain z hz hnat, show toDGFunctorMap (homOfCochain z hz hnat) = η' from ?_⟩
     refine DGNatTrans.ext_dgApp (R := R) (F := M.toDGFunctor.toEnrichedFunctor)
       (G := N.toDGFunctor.toEnrichedFunctor) fun X ↦ ?_
     obtain ⟨X⟩ := X
     obtain rfl : X = DGSingleObj.star h := Subsingleton.elim _ _
-    rw [singleObjFunctor_map, dgApp_toDGFunctorMap]
+    rw [dgApp_toDGFunctorMap]
     refine Cochain.ext _ _ fun p q hpq ↦ ?_
     obtain rfl : p = q := by omega
     ext x
     apply (gradedCochainComplexXEquiv p).injective
     apply Subtype.ext
-    rw [Cochain.ofHom_v, complexHom_f_apply, homOfCochain_apply,
-      totalMap_of_mem z (gradedCochainComplexXEquiv p x).2, Subtype.coe_eta,
-      LinearEquiv.symm_apply_apply]
+    rw [Cochain.ofHom_v, toCochainMap_f_apply, homOfCochain_apply,
+      totalMap_of_mem z (gradedCochainComplexXEquiv p x).2]
+    simp [z]
 
 end DGRightModuleCat
 
