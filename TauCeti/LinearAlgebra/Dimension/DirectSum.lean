@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Finprod
-public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 
@@ -76,20 +75,14 @@ theorem finrank_iSup_eq_sum_finrank_of_iSupIndep [Fintype ι] (h : iSupIndep V) 
 an arbitrary type in which only finitely many summands are nonzero. -/
 theorem finsum_finrank_eq_finrank_of_isInternal [DecidableEq ι] (h : DirectSum.IsInternal V)
     (hV : {i | V i ≠ ⊥}.Finite) : ∑ᶠ i, finrank R (V i) = finrank R M := by
-  obtain ⟨hindep, htop⟩ := (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top V).1 h
-  have hbot : ∀ i ∉ hV.toFinset, V i = ⊥ := fun i hi ↦ by simpa using hi
-  have hsub : DirectSum.IsInternal fun i : hV.toFinset ↦ V i := by
-    refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-      (hindep.comp Subtype.val_injective) (top_unique (htop ▸ iSup_le fun i ↦ ?_))
-    by_cases hi : i ∈ hV.toFinset
-    · exact le_iSup (fun j : hV.toFinset ↦ V j) ⟨i, hi⟩
-    · simp [hbot i hi]
+  have := hV.fintype
   have hsupport : (Function.support fun i ↦ finrank R (V i)) ⊆ hV.toFinset :=
     Function.support_subset_iff'.2 fun i hi ↦
-      have := Submodule.subsingleton_iff_eq_bot.2 (hbot i hi)
+      have := Submodule.subsingleton_iff_eq_bot.2 (by simpa using hi)
       Module.finrank_zero_of_subsingleton
-  rw [finsum_eq_sum_of_support_subset _ hsupport, finrank_eq_sum_finrank_of_isInternal hsub]
-  exact (Finset.sum_coe_sort _ _).symm
+  rw [finsum_eq_sum_of_support_subset _ hsupport, ← Finset.sum_coe_sort,
+    finrank_eq_sum_finrank_of_isInternal (DirectSum.isInternal_ne_bot_iff.mpr h)]
+  exact Fintype.sum_equiv hV.subtypeEquivToFinset.symm _ _ fun _ ↦ rfl
 
 end Ring
 
