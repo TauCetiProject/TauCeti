@@ -61,8 +61,6 @@ they are in `TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient`.
   positive path degree of `Π⁺(Dₙ)` lies in `[Π⁺(Dₙ), Π⁺(Dₙ)]`.
 * `TauCeti.commutatorSubmodule_signlessPreprojectiveAlgebra_D_eq_ker`: if `2` is a unit, the
   commutator submodule is the kernel of the augmentation.
-* `TauCeti.signlessPreprojectiveDCyclicQuotientEquiv`: if `2` is a unit, the cyclic quotient of
-  `Π⁺(Dₙ)` is the module of vertex coefficients.
 * `TauCeti.finrank_cyclicQuotient_signlessPreprojectiveAlgebra_D`: over a field of characteristic
   other than two, the cyclic quotient of `Π⁺(Dₙ)` has dimension `n`.
 * `TauCeti.preprojectiveMk_D_ofPath_mem_commutatorSubmodule` and
@@ -103,19 +101,12 @@ local notation "Π" => signlessPreprojectiveAlgebra k (DoubledQuiver G)
 local notation "π" => signlessPreprojectiveMk k (DoubledQuiver G)
 
 omit hn in
-/-- The long arm has no step away from the branch node beyond its far end. -/
-private theorem forkUp_self_eq_zero : forkUp k G c c = 0 := by
-  simp only [forkUp, Nat.sub_self, Nat.zero_sub]
-  exact signlessArrow_fork_eq_zero k hG (by omega)
-
-omit hn in
 /-- The backtrack from the branch node into a leaf rotates into the backtrack at the leaf, which
 vanishes. -/
 private theorem forkTurn_mem_commutatorSubmodule {l : ℕ} (hl : c < l) (hln : l < n) :
     forkTurn k G c l ∈ commutatorSubmodule k Π := by
-  have h := mul_sub_mul_mem_commutatorSubmodule k Π (signlessArrow k G l c)
-    (signlessArrow k G c l)
-  rwa [signlessArrow_mul_signlessArrow_leaf k hG hl hln, sub_zero] at h
+  rw [forkTurn, mul_mem_commutatorSubmodule_comm, signlessArrow_mul_signlessArrow_leaf k hG hl hln]
+  exact zero_mem _
 
 /-- The positive powers of the sum of the two leaf backtracks, which is minus the backtrack into
 the long arm, are sums of commutators. -/
@@ -155,6 +146,54 @@ private theorem forkSpan_pow_succ_mul_vertexIdempotent {t : ℕ} {w : Π}
     rw [mul_assoc, add_mul, smul_mul_assoc, smul_mul_assoc, hturn, hturn]
   · rw [add_mul, ha, hb]
 
+omit hn hG in
+/-- A closed path of positive length which is a scalar multiple of its idempotent vanishes, since
+its augmentation does. -/
+private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_eq_algebraMap_mul {v : DoubledQuiver G}
+    (p : Path v v) (hp : 0 < p.length) {r : k}
+    (h : π (ofPath ⟨_, _, p⟩) = algebraMap k Π r * π (vertexIdempotent k v)) :
+    π (ofPath ⟨_, _, p⟩) = 0 := by
+  classical
+  -- The path has augmentation zero, while the right side has augmentation `r`.
+  have haug := signlessPreprojectiveAugmentation_mk k (ofPath ⟨_, _, p⟩)
+  rw [trivialCoeff_ofPath_of_length_pos hp, h] at haug
+  have hr : r = 0 := by
+    simpa [signlessPreprojectiveAugmentation_mk, trivialCoeff_vertexIdempotent] using
+      congrFun haug v
+  rw [h, hr, map_zero, zero_mul]
+
+/-- A closed path from a vertex `a` of the long arm through the branch node, with a word `w` in
+the leaf backtracks in its middle, is a sum of commutators when `2` is a unit: rotating its climb
+from the branch node back to `a` to the end leaves `w` times a positive power of `x + y`. -/
+private theorem ladderValley_mul_mul_forkEntry_mem_commutatorSubmodule (h2 : IsUnit (2 : k))
+    {a : Fin n} {h t : ℕ} (hh : c - (a : ℕ) = h + 1) {w : Π} (hw : w ∈ forkSpan k G c ^ t) :
+    ladderValley (forkUp k G c) (forkDown k G c) 0 0 (h + 1) * w *
+      (ladderValley (forkUp k G c) (forkDown k G c) 0 (h + 1) 0 *
+        π (vertexIdempotent k (vertex G a))) ∈ commutatorSubmodule k Π := by
+  have heX : π (vertexIdempotent k (vertex G a)) *
+      ladderValley (forkUp k G c) (forkDown k G c) 0 0 (h + 1) =
+        ladderValley (forkUp k G c) (forkDown k G c) 0 0 (h + 1) := by
+    rw [← u_mul_ladderValley, ← mul_assoc, zero_add, forkUp,
+      vertexIdempotent_mul_signlessArrow, ite_eq_left (by omega)]
+  -- The descent to the branch node followed by the climb back is a power of `q = -(x + y)`.
+  have hYX : ladderValley (forkUp k G c) (forkDown k G c) 0 (h + 1) 0 *
+      ladderValley (forkUp k G c) (forkDown k G c) 0 0 (h + 1) =
+        ((-1 : ℤ) ^ ((h + 1).choose 2 + (h + 1))) •
+          (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (h + 1) := by
+    rw [ladderValley_mul_ladderValley_zero_eq_pow (forkDown_mul_forkUp_add k hn hG),
+      eq_neg_of_add_eq_zero_left (forkDown_mul_forkUp_add_forkTurn k hn hG),
+      neg_pow (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)), ← mul_assoc, ← pow_add]
+    simp [zsmul_eq_mul]
+  have hsum : forkTurn k G c (c + 1) + forkTurn k G c (c + 2) ∈ forkSpan k G c :=
+    add_mem (Submodule.subset_span (by simp)) (Submodule.subset_span (by simp))
+  have hlow : w * (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (h + 1) ∈
+      commutatorSubmodule k Π := by
+    refine mem_commutatorSubmodule_of_mem_forkSpan_pow k hn hG h2 (t := t + (h + 1)) (by omega) ?_
+    rw [pow_add]
+    exact Submodule.mul_mem_mul hw (Submodule.pow_mem_pow _ hsum _)
+  rw [mul_assoc, mul_mem_commutatorSubmodule_comm, mul_assoc, mul_assoc, heX, hYX, mul_smul_comm]
+  exact zsmul_mem hlow _
+
 /-- **Every closed path of positive length is a sum of commutators**, when `2` is a unit. -/
 private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_fork
     (h2 : IsUnit (2 : k)) {a : Fin n} (p : Path (vertex G a) (vertex G a)) (hp : 0 < p.length) :
@@ -164,7 +203,6 @@ private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_fork
   -- final step comes first, leaving a nonempty word in the leaf backtracks. A path at the branch
   -- node whose word is empty is an integer multiple of its idempotent, and it vanishes since its
   -- augmentation does.
-  have hud := forkDown_mul_forkUp_add k hn hG
   have hspan {t : ℕ} (ht : 0 < t) {w : Π} (hw : w ∈ forkSpan k G c ^ t) :
       w ∈ commutatorSubmodule k Π :=
     mem_commutatorSubmodule_of_mem_forkSpan_pow k hn hG h2 ht hw
@@ -181,8 +219,8 @@ private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_fork
         forkDown k G c (m + s) := by
       rw [forkDown, signlessArrow_mul_vertexIdempotent, ite_eq_left (by omega)]
     rw [hz, ← ladderValley_mul_d, mul_assoc, hd, ladderValley_mul_d]
-    exact zsmul_mem (ladderValley_mem_commutatorSubmodule_of_u_eq_zero k hud
-      (forkUp_self_eq_zero k hG) m s.succ_pos) ε
+    exact zsmul_mem (ladderValley_mem_commutatorSubmodule_of_u_eq_zero k
+      (forkDown_mul_forkUp_add k hn hG) (forkUp_self_eq_zero k hG) m s.succ_pos) ε
   · -- A path through the branch node from a vertex of the long arm.
     rw [forkEntry, ite_eq_left hj] at hD
     rcases Nat.eq_zero_or_pos (c - a) with h0 | hpos
@@ -195,7 +233,6 @@ private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_fork
         exact zsmul_mem (hspan t.succ_pos hw) ε
       | zero =>
         -- A word without backtracks is an integer, which vanishes by the augmentation.
-        classical
         rw [pow_zero] at hw
         obtain ⟨y, rfl⟩ := Submodule.mem_one.1 hw
         have hform : ε • (algebraMap ℤ Π y * π (vertexIdempotent k (vertex G a))) =
@@ -204,48 +241,13 @@ private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_fork
         have hpath : π (ofPath ⟨_, _, p⟩) =
             algebraMap k Π ((ε * y : ℤ) : k) * π (vertexIdempotent k (vertex G a)) := by
           rw [hz, hD, mul_smul_comm, hform]
-        -- The path has augmentation zero, while the right side has augmentation `ε * y`.
-        have haug := signlessPreprojectiveAugmentation_mk k (ofPath ⟨_, _, p⟩)
-        rw [trivialCoeff_ofPath_of_length_pos hp, hpath] at haug
-        have hN : ((ε * y : ℤ) : k) = 0 := by
-          simpa [signlessPreprojectiveAugmentation_mk, trivialCoeff_vertexIdempotent] using
-            congrFun haug (vertex G a)
-        rw [hform, hN, map_zero, zero_mul]
+        rw [hform, ← hpath,
+          signlessPreprojectiveMk_ofPath_eq_zero_of_eq_algebraMap_mul k p hp hpath]
         exact zero_mem _
     · -- Rotating the climb out of the branch node to the end leaves `w` times a power of `q`.
       obtain ⟨h, hh⟩ : ∃ h, c - (a : ℕ) = h + 1 := ⟨c - a - 1, by omega⟩
-      rw [hh] at hz hD
-      have heX : π (vertexIdempotent k (vertex G a)) *
-          ladderValley (forkUp k G c) (forkDown k G c) 0 0 (h + 1) =
-            ladderValley (forkUp k G c) (forkDown k G c) 0 0 (h + 1) := by
-        rw [← u_mul_ladderValley, ← mul_assoc, zero_add, forkUp,
-          vertexIdempotent_mul_signlessArrow, ite_eq_left (by omega)]
-      have hYX : ladderValley (forkUp k G c) (forkDown k G c) 0 (h + 1) 0 *
-          ladderValley (forkUp k G c) (forkDown k G c) 0 0 (h + 1) =
-            ((-1 : ℤ) ^ ((h + 1).choose 2 + (h + 1))) •
-              (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (h + 1) := by
-        rw [ladderValley_mul_ladderValley_zero_eq_pow hud,
-          eq_neg_of_add_eq_zero_left (forkDown_mul_forkUp_add_forkTurn k hn hG),
-          neg_pow (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)), ← mul_assoc, ← pow_add]
-        simp [zsmul_eq_mul]
-      have hWX : w * D * ladderValley (forkUp k G c) (forkDown k G c) 0 0 (h + 1) =
-          ε • ((-1 : ℤ) ^ ((h + 1).choose 2 + (h + 1))) •
-            (w * (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (h + 1)) := by
-        rw [hD]
-        simp only [mul_smul_comm, smul_mul_assoc, mul_assoc, heX, hYX]
-      have hsum : forkTurn k G c (c + 1) + forkTurn k G c (c + 2) ∈ forkSpan k G c :=
-        add_mem (Submodule.subset_span (by simp)) (Submodule.subset_span (by simp))
-      have hlow : w * (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (h + 1) ∈
-          commutatorSubmodule k Π := by
-        refine hspan (t := t + (h + 1)) (by omega) ?_
-        rw [pow_add]
-        exact Submodule.mul_mem_mul hw (Submodule.pow_mem_pow _ hsum _)
-      have hrot := mul_sub_mul_mem_commutatorSubmodule k Π
-        (ladderValley (forkUp k G c) (forkDown k G c) 0 0 (h + 1)) (w * D)
-      rw [hWX] at hrot
-      have hsum' := add_mem hrot
-        (zsmul_mem (zsmul_mem hlow ((-1 : ℤ) ^ ((h + 1).choose 2 + (h + 1)))) ε)
-      rwa [sub_add_cancel, ← mul_assoc, ← hz] at hsum'
+      rw [hz, hD, hh, mul_smul_comm]
+      exact zsmul_mem (ladderValley_mul_mul_forkEntry_mem_commutatorSubmodule k hn hG h2 hh hw) ε
   · -- A path through the branch node from a leaf.
     rw [forkEntry, ite_eq_right (by omega)] at hD
     have heX : π (vertexIdempotent k (vertex G a)) * signlessArrow k G c a =
@@ -260,10 +262,8 @@ private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_fork
       refine hspan (t := t + 1) t.succ_pos ?_
       rw [pow_succ]
       exact Submodule.mul_mem_mul hw hturn
-    have hrot := mul_sub_mul_mem_commutatorSubmodule k Π (signlessArrow k G c a) (w * D)
-    rw [hWX] at hrot
-    have hsum := add_mem hrot (zsmul_mem hlow ε)
-    rwa [sub_add_cancel, ← mul_assoc, ← hz] at hsum
+    rw [hz, mul_assoc, mul_mem_commutatorSubmodule_comm, hWX]
+    exact zsmul_mem hlow ε
   · -- The empty path at a leaf has length zero.
     omega
 
@@ -322,31 +322,15 @@ theorem commutatorSubmodule_signlessPreprojectiveAlgebra_D_eq_ker (h2 : IsUnit (
   commutatorSubmodule_signlessPreprojectiveAlgebra_eq_ker k
     (signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k h2)
 
-/-- **The cyclic quotient of the signless algebra of `Dₙ` is the module of vertex coefficients**,
-by the augmentation, when `2` is a unit. -/
-noncomputable def signlessPreprojectiveDCyclicQuotientEquiv (h2 : IsUnit (2 : k)) :
-    cyclicQuotient k Π ≃ₗ[k] (Q → k) :=
-  (Submodule.quotEquivOfEq _ _
-    (commutatorSubmodule_signlessPreprojectiveAlgebra_D_eq_ker k h2)).trans
-    (LinearMap.quotKerEquivOfSurjective _ (signlessPreprojectiveAugmentation_surjective k))
-
-/-- The cyclic class of an element is sent to its augmentation. -/
-@[simp]
-theorem signlessPreprojectiveDCyclicQuotientEquiv_mk (h2 : IsUnit (2 : k)) (x : Π) :
-    signlessPreprojectiveDCyclicQuotientEquiv k (n := n) h2 (Submodule.Quotient.mk x) =
-      signlessPreprojectiveAugmentation k x :=
-  (rfl)
-
 end CommRing
 
 /-- **The cyclic quotient of the signless algebra of `Dₙ` has dimension `n`** over every field of
 characteristic other than two, one for each vertex. -/
 theorem finrank_cyclicQuotient_signlessPreprojectiveAlgebra_D [Field k] (h2 : (2 : k) ≠ 0) :
     Module.finrank k (cyclicQuotient k Π) = n := by
-  have : Fintype Q := Fintype.ofFinite _
-  rw [(signlessPreprojectiveDCyclicQuotientEquiv k h2.isUnit).finrank_eq,
-    Module.finrank_fintype_fun_eq_card, ← Fintype.card_congr (vertexEquiv DG), Fintype.card_fin,
-    DynkinType.rank_D]
+  rw [finrank_cyclicQuotient_signlessPreprojectiveAlgebra k
+      (signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k h2.isUnit),
+    ← Nat.card_congr (vertexEquiv DG), Nat.card_fin, DynkinType.rank_D]
 
 /-! ### Orientations -/
 

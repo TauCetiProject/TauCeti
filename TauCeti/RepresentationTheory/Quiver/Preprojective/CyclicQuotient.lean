@@ -16,8 +16,9 @@ The cyclic quotient `Π / [Π, Π]` of a preprojective algebra is spanned by the
 This file collects the steps of a vanishing argument for the cyclic quotient in positive degrees
 which do not depend on the graph: once every path of positive length is known to be a sum of
 commutators, the same holds for the graded pieces of positive degree, the commutator submodule is
-the kernel of the augmentation, and, for a two-coloured graph, the vanishing transfers to the
-additive preprojective algebra of every orientation. The only paths which need a graph-specific
+the kernel of the augmentation, so that the cyclic quotient is the module of vertex coefficients,
+and, for a two-coloured graph, the vanishing transfers to the additive preprojective algebra of
+every orientation. The only paths which need a graph-specific
 argument are the closed ones: a path between distinct vertices is a commutator with its target
 idempotent.
 
@@ -30,6 +31,10 @@ idempotent.
   commutators, then so is every graded piece of positive degree.
 * `TauCeti.commutatorSubmodule_signlessPreprojectiveAlgebra_eq_ker`: if every path of positive
   length is a sum of commutators, the commutator submodule is the augmentation kernel.
+* `TauCeti.signlessPreprojectiveCyclicQuotientEquiv` and
+  `TauCeti.finrank_cyclicQuotient_signlessPreprojectiveAlgebra`: in that case the augmentation
+  identifies the cyclic quotient with the module of vertex coefficients, of dimension the number of
+  vertices over a field.
 * `SimpleGraph.Coloring.preprojectiveMk_ofPath_mem_commutatorSubmodule`: for a two-coloured graph,
   the vanishing for paths of positive length transfers from the signless algebra to the additive
   preprojective algebra of every orientation.
@@ -98,7 +103,42 @@ theorem commutatorSubmodule_signlessPreprojectiveAlgebra_eq_ker
     rw [map_smul, coe_pathAlgebraBasis]
     exact Submodule.smul_mem _ _ (h x (mem_arrowIdeal_iff.1 hf x (Finsupp.mem_support_iff.1 hx)))
 
+/-- **If every path of positive length is a sum of commutators, then the cyclic quotient of the
+signless algebra is the module of vertex coefficients**, by the augmentation. -/
+noncomputable def signlessPreprojectiveCyclicQuotientEquiv
+    (h : ∀ x : Quiver.TotalPath R, 0 < x.2.2.length → π (ofPath x) ∈ commutatorSubmodule k Π) :
+    cyclicQuotient k Π ≃ₗ[k] (R → k) :=
+  (Submodule.quotEquivOfEq _ _ (commutatorSubmodule_signlessPreprojectiveAlgebra_eq_ker k h)).trans
+    (LinearMap.quotKerEquivOfSurjective _ (signlessPreprojectiveAugmentation_surjective k))
+
+/-- The cyclic class of an element is sent to its augmentation. -/
+@[simp]
+theorem signlessPreprojectiveCyclicQuotientEquiv_mk
+    (h : ∀ x : Quiver.TotalPath R, 0 < x.2.2.length → π (ofPath x) ∈ commutatorSubmodule k Π)
+    (x : Π) :
+    signlessPreprojectiveCyclicQuotientEquiv k h (Submodule.Quotient.mk x) =
+      signlessPreprojectiveAugmentation k x :=
+  (rfl)
+
 end Signless
+
+section Field
+
+variable (k : Type w) [Field k] {R : Type u} [Quiver.{v} R] [HasReverse R] [Finite R]
+  [∀ x : R, Fintype (Quiver.Star x)]
+
+/-- **If every path of positive length is a sum of commutators, then the cyclic quotient of the
+signless algebra has dimension the number of vertices** over every field. -/
+theorem finrank_cyclicQuotient_signlessPreprojectiveAlgebra
+    (h : ∀ x : Quiver.TotalPath R, 0 < x.2.2.length →
+      signlessPreprojectiveMk k R (ofPath x) ∈
+        commutatorSubmodule k (signlessPreprojectiveAlgebra k R)) :
+    Module.finrank k (cyclicQuotient k (signlessPreprojectiveAlgebra k R)) = Nat.card R := by
+  have : Fintype R := Fintype.ofFinite R
+  rw [(signlessPreprojectiveCyclicQuotientEquiv k h).finrank_eq,
+    Module.finrank_fintype_fun_eq_card, Nat.card_eq_fintype_card]
+
+end Field
 
 section Preprojective
 

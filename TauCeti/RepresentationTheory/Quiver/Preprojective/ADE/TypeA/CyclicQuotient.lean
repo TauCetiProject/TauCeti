@@ -46,8 +46,6 @@ they are in `TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient`.
   degree of `Π⁺(Aₙ)` lies in `[Π⁺(Aₙ), Π⁺(Aₙ)]`.
 * `TauCeti.commutatorSubmodule_signlessPreprojectiveAlgebra_A_eq_ker`: the commutator submodule
   is the kernel of the augmentation.
-* `TauCeti.signlessPreprojectiveACyclicQuotientEquiv`: the cyclic quotient of `Π⁺(Aₙ)` is the
-  module of vertex coefficients.
 * `TauCeti.finrank_cyclicQuotient_signlessPreprojectiveAlgebra_A`: over a field, the cyclic
   quotient of `Π⁺(Aₙ)` has dimension `n`.
 * `TauCeti.preprojectiveMk_A_ofPath_mem_commutatorSubmodule` and
@@ -127,28 +125,15 @@ theorem commutatorSubmodule_signlessPreprojectiveAlgebra_A_eq_ker :
   commutatorSubmodule_signlessPreprojectiveAlgebra_eq_ker k
     (signlessPreprojectiveMk_A_ofPath_mem_commutatorSubmodule k)
 
-/-- **The cyclic quotient of the signless algebra of `Aₙ` is the module of vertex coefficients**,
-by the augmentation. -/
-noncomputable def signlessPreprojectiveACyclicQuotientEquiv : cyclicQuotient k Π ≃ₗ[k] (Q → k) :=
-  (Submodule.quotEquivOfEq _ _ (commutatorSubmodule_signlessPreprojectiveAlgebra_A_eq_ker k)).trans
-    (LinearMap.quotKerEquivOfSurjective _ (signlessPreprojectiveAugmentation_surjective k))
-
-/-- The cyclic class of an element is sent to its augmentation. -/
-@[simp]
-theorem signlessPreprojectiveACyclicQuotientEquiv_mk (x : Π) :
-    signlessPreprojectiveACyclicQuotientEquiv k (n := n) (Submodule.Quotient.mk x) =
-      signlessPreprojectiveAugmentation k x :=
-  (rfl)
-
 end CommRing
 
 /-- **The cyclic quotient of the signless algebra of `Aₙ` has dimension `n`** over every field, one
 for each vertex. -/
 theorem finrank_cyclicQuotient_signlessPreprojectiveAlgebra_A [Field k] :
     Module.finrank k (cyclicQuotient k Π) = n := by
-  have : Fintype Q := Fintype.ofFinite _
-  rw [(signlessPreprojectiveACyclicQuotientEquiv k).finrank_eq, Module.finrank_fintype_fun_eq_card,
-    ← Fintype.card_congr (vertexEquiv AG), Fintype.card_fin, DynkinType.rank_A]
+  rw [finrank_cyclicQuotient_signlessPreprojectiveAlgebra k
+      (signlessPreprojectiveMk_A_ofPath_mem_commutatorSubmodule k),
+    ← Nat.card_congr (vertexEquiv AG), Nat.card_fin, DynkinType.rank_A]
 
 /-! ### Orientations -/
 

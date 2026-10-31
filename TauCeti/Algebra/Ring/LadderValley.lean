@@ -317,10 +317,8 @@ theorem pow_d_mul_u_mem_commutatorSubmodule (hud : ∀ w, d (w + 1) * u (w + 1) 
         u r * (d r * u r) ^ j * d r = (-1) ^ (j + 1) * (d (r + 1) * u (r + 1)) ^ (j + 1) := by
       rw [mul_assoc, mul_pow_mul, ← mul_assoc, ← pow_succ', eq_neg_of_add_eq_zero_right (hud r),
         neg_pow]
-    have hrot := mul_sub_mul_mem_commutatorSubmodule k A (d r) (u r * (d r * u r) ^ j)
-    rw [hdu, hud'] at hrot
-    have hup := neg_one_pow_mul_mem_commutatorSubmodule (hr' ▸ ih (by omega)) (j + 1)
-    simpa using add_mem hrot hup
+    rw [← hdu, mul_mem_commutatorSubmodule_comm, hud']
+    exact neg_one_pow_mul_mem_commutatorSubmodule (hr' ▸ ih (by omega)) (j + 1)
 
 /-- **Closed valley words on a finite ladder are sums of commutators.** If the turns at every
 positive rung cancel and there is no climb from rung `N`, then the valley word descending `s > 0`
@@ -333,24 +331,17 @@ theorem ladderValley_mem_commutatorSubmodule_of_u_eq_zero
     (hs : 0 < s) : ladderValley u d m s s ∈ commutatorSubmodule k A := by
   -- A closed valley with bottom `0` rotates into a power of the bottom turn.
   have hzero : ladderValley u d 0 s s ∈ commutatorSubmodule k A := by
-    have hrot := mul_sub_mul_mem_commutatorSubmodule k A
-      (ladderValley u d 0 0 s) (ladderValley u d 0 s 0)
-    rw [ladderValley_zero_mul_ladderValley, ladderValley_mul_ladderValley_zero_eq_pow hud] at hrot
-    have h := add_mem hrot
-      (neg_one_pow_mul_mem_commutatorSubmodule (pow_d_mul_u_mem_commutatorSubmodule k hud hN hs)
-        (s.choose 2))
-    rwa [sub_add_cancel] at h
+    rw [← ladderValley_zero_mul_ladderValley, mul_mem_commutatorSubmodule_comm,
+      ladderValley_mul_ladderValley_zero_eq_pow hud]
+    exact neg_one_pow_mul_mem_commutatorSubmodule
+      (pow_d_mul_u_mem_commutatorSubmodule k hud hN hs) (s.choose 2)
   induction m using Nat.strong_induction_on generalizing s with
   | _ m ih =>
     rcases le_or_gt s m with hsm | hms
     · -- The rotated word is a closed valley word with bottom `m - s`.
-      have hrot := mul_sub_mul_mem_commutatorSubmodule k A
-        (ladderValley u d m 0 s) (ladderValley u d m s 0)
-      rw [ladderValley_zero_mul_ladderValley, ladderValley_mul_ladderValley hud rfl hsm,
-        zero_add, add_zero] at hrot
-      have h := add_mem hrot
-        (neg_one_pow_mul_mem_commutatorSubmodule (ih (m - s) (by omega) hs hzero) (s * s))
-      rwa [sub_add_cancel] at h
+      rw [← ladderValley_zero_mul_ladderValley, mul_mem_commutatorSubmodule_comm,
+        ladderValley_mul_ladderValley hud rfl hsm, zero_add, add_zero]
+      exact neg_one_pow_mul_mem_commutatorSubmodule (ih (m - s) (by omega) hs hzero) (s * s)
     · -- Rotating the last `m` steps of the descent gives the closed valley word with bottom `0`.
       -- Two descents concatenate: down to rung `m`, then on to rung `0`.
       have hsplit : ladderValley u d m (s - m) 0 * ladderValley u d s m 0 =
@@ -374,11 +365,8 @@ theorem ladderValley_mem_commutatorSubmodule_of_u_eq_zero
       have hBA : ladderValley u d s m 0 * (ladderValley u d m 0 s * ladderValley u d m (s - m) 0) =
           (-1) ^ (m * s) * ladderValley u d 0 s s := by
         rw [← mul_assoc, hcross, mul_assoc, hjoin]
-      have hrot := mul_sub_mul_mem_commutatorSubmodule k A
-        (ladderValley u d m 0 s * ladderValley u d m (s - m) 0) (ladderValley u d s m 0)
-      rw [hAB, hBA] at hrot
-      have h := add_mem hrot (neg_one_pow_mul_mem_commutatorSubmodule hzero (m * s))
-      rwa [sub_add_cancel] at h
+      rw [← hAB, mul_mem_commutatorSubmodule_comm, hBA]
+      exact neg_one_pow_mul_mem_commutatorSubmodule hzero (m * s)
 
 /-- **Closed valley words are sums of commutators.** If the turns at every rung cancel, including
 the single turn `d 0 * u 0` at the bottom rung, then the valley word descending `s > 0` rungs to
@@ -389,20 +377,12 @@ theorem ladderValley_mem_commutatorSubmodule (hud₀ : d 0 * u 0 = 0)
   induction m using Nat.strong_induction_on with
   | _ m ih =>
     -- The valley is its climb times its descent; the rotated word climbs first.
-    have hcomm := mul_sub_mul_mem_commutatorSubmodule k A
-      (ladderValley u d m 0 s) (ladderValley u d m s 0)
-    rw [ladderValley_zero_mul_ladderValley] at hcomm
-    have hrot : ladderValley u d m s 0 * ladderValley u d m 0 s ∈ commutatorSubmodule k A := by
-      rcases lt_or_ge m s with hms | hsm
-      · rw [ladderValley_mul_ladderValley_eq_zero hud₀ hud rfl hms]
-        exact zero_mem _
-      · rw [ladderValley_mul_ladderValley hud rfl hsm, zero_add, add_zero]
-        have hlow := ih (m - s) (by omega)
-        rcases neg_one_pow_eq_or A (s * s) with h | h
-        · rwa [h, one_mul]
-        · rw [h, neg_one_mul]
-          exact neg_mem_commutatorSubmodule hlow
-    simpa using add_mem hcomm hrot
+    rw [← ladderValley_zero_mul_ladderValley, mul_mem_commutatorSubmodule_comm]
+    rcases lt_or_ge m s with hms | hsm
+    · rw [ladderValley_mul_ladderValley_eq_zero hud₀ hud rfl hms]
+      exact zero_mem _
+    · rw [ladderValley_mul_ladderValley hud rfl hsm, zero_add, add_zero]
+      exact neg_one_pow_mul_mem_commutatorSubmodule (ih (m - s) (by omega)) (s * s)
 
 end Commutator
 
