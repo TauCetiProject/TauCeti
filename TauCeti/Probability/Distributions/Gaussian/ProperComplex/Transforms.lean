@@ -76,6 +76,7 @@ theorem integrableExpSet_re_dotProduct_properComplexGaussianMeasure (m q : ι �
     integrableExpSet (fun z ↦ (star q ⬝ᵥ z).re) (properComplexGaussianMeasure m C) =
       Set.univ := by
   simp_rw [← inner_complexToRealEuclidean ι q]
+  -- The composed continuous linear map coerces definitionally to the inner-product observable.
   exact IsGaussian.integrableExpSet_dual (μ := properComplexGaussianMeasure m C)
     ((innerSL ℝ (complexToRealEuclidean ι q)).comp
       (complexToRealEuclidean ι).toContinuousLinearMap)
