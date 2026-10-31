@@ -57,7 +57,9 @@ theorem LSeries_eulerProduct_hasProd (f : Eigenform N k)
   rw [strictWidthInfty_Gamma1] at habs
   have hsum : LSeriesSummable (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s :=
     LSeriesSummable_of_abscissaOfAbsConv_lt_re
-      (habs.trans_lt (by exact_mod_cast hs))
+      (habs.trans_lt (by
+        have hs' : ((k : ℝ) + 1) / 2 < s.re := by linarith
+        exact_mod_cast hs'))
   exact TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence
     (a := fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) (s := s)
     (c := fun q ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) q * (q : ℂ) ^ (k - 1)) h₁
@@ -92,7 +94,9 @@ theorem LSeries_eulerProduct (f : Eigenform N k)
   rw [strictWidthInfty_Gamma1] at habs
   have hsum : LSeriesSummable (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s :=
     LSeriesSummable_of_abscissaOfAbsConv_lt_re
-      (habs.trans_lt (by exact_mod_cast hs))
+      (habs.trans_lt (by
+        have hs' : ((k : ℝ) + 1) / 2 < s.re := by linarith
+        exact_mod_cast hs'))
   exact TauCeti.LSeries.LSeries_eulerProduct_of_recurrence
     (a := fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) (s := s)
     (c := fun q ↦ (MulChar.ofUnitHom f.χ : DirichletCharacter ℂ N) q * (q : ℂ) ^ (k - 1)) h₁
