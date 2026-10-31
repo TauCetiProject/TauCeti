@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Laurent
 public import Mathlib.RingTheory.Smooth.Basic
+public import TauCeti.Algebra.Polynomial.Laurent.Polynomial
 
 /-!
 # Smoothness of Laurent polynomial algebras
@@ -18,8 +18,8 @@ instance records that `𝔾ₘ` is a smooth affine group over every commutative 
 
 ## Main declarations
 
-* `LaurentPolynomial.isScalarTower_polynomial`: the scalar tower `R → R[X] → R[T;T⁻¹]`.
-* `LaurentPolynomial.instSmooth`: `R[T;T⁻¹]` is smooth over `R`.
+* `LaurentPolynomial.instSmooth`: `R[T;T⁻¹]` is smooth over `R`, using the scalar tower
+  `LaurentPolynomial.isScalarTower_polynomial`.
 -/
 
 public section
@@ -29,10 +29,6 @@ open Polynomial
 namespace LaurentPolynomial
 
 variable (R : Type*)
-
-/-- The scalar tower `R → R[X] → R[T;T⁻¹]`, along `Polynomial.toLaurent`. -/
-instance isScalarTower_polynomial [CommSemiring R] : IsScalarTower R R[X] R[T;T⁻¹] :=
-  .of_algebraMap_eq fun r ↦ by simp [← C_eq_algebraMap]
 
 /-- The Laurent polynomial algebra `R[T;T⁻¹]`, the localization of `R[X]` away from `X`, is
 smooth over `R`. -/
