@@ -94,11 +94,11 @@ theorem Function.Pullback.continuous_snd : Continuous (Pullback.snd : f.Pullback
 variable (f g)
 
 /-- The projection `X ×_Y Z → X`, bundled as a continuous map. -/
-@[expose] def ContinuousMap.pullbackFst : C(f.Pullback g, X) :=
+def ContinuousMap.pullbackFst : C(f.Pullback g, X) :=
   ⟨Function.Pullback.fst, Function.Pullback.continuous_fst⟩
 
 /-- The projection `X ×_Y Z → Z`, bundled as a continuous map. -/
-@[expose] def ContinuousMap.pullbackSnd : C(f.Pullback g, Z) :=
+def ContinuousMap.pullbackSnd : C(f.Pullback g, Z) :=
   ⟨Function.Pullback.snd, Function.Pullback.continuous_snd⟩
 
 @[simp]

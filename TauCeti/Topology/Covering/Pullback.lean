@@ -182,12 +182,12 @@ private noncomputable def fwdLift (H : (φ.comp ψ).Homotopy (.id B)) :
 private theorem fwdLift_lifts (H : (φ.comp ψ).Homotopy (.id B)) (t : I)
     (x : Pullback ψ (Pullback.fst : Pullback φ p → A)) :
     p (hp.fwdLift H (t, x)) = H (t, x.fst) :=
-  congr_fun (hp.liftHomotopy_lifts _ _ _) (t, x)
+  (congr_fun (hp.liftHomotopy_lifts _ _ _) (t, x) : p (hp.fwdLift H (t, x)) = _).trans (by simp)
 
 private theorem fwdLift_zero (H : (φ.comp ψ).Homotopy (.id B))
     (x : Pullback ψ (Pullback.fst : Pullback φ p → A)) :
     hp.fwdLift H (0, x) = x.snd.snd :=
-  hp.liftHomotopy_zero _ _ _ x
+  (hp.liftHomotopy_zero _ _ _ x : hp.fwdLift H (0, x) = _).trans (by simp)
 
 /-- The endpoint of `fwdLift`. -/
 private noncomputable def fwdEnd (H : (φ.comp ψ).Homotopy (.id B)) :
@@ -206,6 +206,7 @@ private theorem pullbackSnd_comp_pullbackInvLift (H : (φ.comp ψ).Homotopy (.id
       hp.pullbackInv H := by
   -- `pullbackInvLift` is defined with `pullbackInv` as its second coordinate
   ext1 e
+  rw [ContinuousMap.comp_apply, coe_pullbackSnd]
   rfl
 
 /-- Following `H` forwards and then backwards returns to the start: `pullbackInvLift` is a left
@@ -238,7 +239,7 @@ private theorem homotopic_pullbackInv_comp_pullbackSnd (H : (φ.comp ψ).Homotop
   -- the two projections to `E` are homotopic to the endpoint of `fwdLift`
   have h₂ : ((pullbackSnd φ p).comp s).Homotopic (hp.fwdEnd H) :=
     ⟨{ toContinuousMap := hp.fwdLift H
-       map_zero_left x := hp.fwdLift_zero H x
+       map_zero_left x := by simpa [s] using hp.fwdLift_zero H x
        map_one_left _ := rfl }⟩
   -- `pullbackInv = s ∘ pullbackInvLift`; insert `s ∘ hq.pullbackInv K ≃ id` on the right
   rw [← hp.pullbackSnd_comp_pullbackInvLift H, ← ContinuousMap.comp_id ((s.comp _).comp _)]
@@ -263,7 +264,7 @@ noncomputable def pullbackHomotopyEquiv (e : A ≃ₕ B) : Pullback e p ≃ₕ E
 @[simp]
 theorem coe_pullbackHomotopyEquiv (e : A ≃ₕ B) :
     ⇑(hp.pullbackHomotopyEquiv e) = Pullback.snd :=
-  (rfl)
+  coe_pullbackSnd _ _
 
 /-- The first coordinate of the homotopy inverse of the projection `A ×_B E → E` at `x` is
 `e.symm (p x)`. -/
