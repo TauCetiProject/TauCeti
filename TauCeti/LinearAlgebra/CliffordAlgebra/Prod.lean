@@ -20,8 +20,9 @@ anticommutes with every `c₁(v)`. Then
 satisfies the Clifford relation `c(v, w)² = Q₁ v + Q₂ w` of the orthogonal sum `Q₁.prod Q₂`, so it
 makes `E ⊗ F` a module over `CliffordAlgebra (Q₁.prod Q₂)`
 (`AlgHom.cliffordProdTensor`). The cross terms `c₁(v) γ + γ c₁(v)` vanish by anticommutation; this
-is the Koszul sign of the graded tensor product, and without it no such action exists on the
-ungraded tensor product.
+is the Koszul sign of the graded tensor product. Without it, the untwisted formula
+`c₁(v) ⊗ 1 + 1 ⊗ c₂(w)` generally fails the Clifford relation, because its cross terms
+`2 c₁(v) ⊗ c₂(w)` need not vanish.
 
 The first summand acts through the first factor alone: an element `a` of `CliffordAlgebra Q₁`,
 included by `CliffordAlgebra.map` along `QuadraticMap.Isometry.inl`, acts by `ρ₁ a ⊗ 1`. A
@@ -153,9 +154,8 @@ theorem cliffordProdTensor_map_inr_prod (l : List M₂) :
   induction l with
   | nil => simp [TensorProduct.map_one]
   | cons w l ih =>
-    rw [List.map_cons, List.prod_cons, map_mul, map_mul, ih, map_apply_ι,
-      QuadraticMap.Isometry.inr_apply, cliffordProdTensor_ι_inr, ← TensorProduct.map_mul,
-      List.length_cons, pow_succ', map_mul]
+    simp only [List.map_cons, List.prod_cons, List.length_cons, map_mul, ih, map_apply_ι,
+      QuadraticMap.Isometry.inr_apply, cliffordProdTensor_ι_inr, pow_succ', TensorProduct.map_mul]
 
 /-- **The tensor product of graded modules is graded**: if `γ₂` is a grading operator of `F`,
 anticommuting with every `c₂(w)`, then the tensor grading `γ ⊗ γ₂` anticommutes with every vector
@@ -164,9 +164,10 @@ theorem map_mul_cliffordProdTensor_ι (γ₂ : Module.End R F)
     (hγ₂ρ : ∀ w, γ₂ * ρ₂ (ι Q₂ w) = -(ρ₂ (ι Q₂ w) * γ₂)) (x : M₁ × M₂) :
     map γ γ₂ * cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (ι (Q₁.prod Q₂) x) =
       -(cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (ι (Q₁.prod Q₂) x) * map γ γ₂) := by
-  rw [eq_neg_iff_add_eq_zero, cliffordProdTensor_ι, LinearMap.rTensor, ← Module.End.one_eq_id,
-    mul_add, add_mul, ← TensorProduct.map_mul, ← TensorProduct.map_mul, ← TensorProduct.map_mul,
-    ← TensorProduct.map_mul, mul_one, one_mul, add_add_add_comm, ← map_add_left, ← map_add_right,
-    hγρ, hγ₂ρ, neg_add_cancel, neg_add_cancel, map_zero_left, map_zero_right, add_zero]
+  rw [eq_neg_iff_add_eq_zero, cliffordProdTensor_ι, LinearMap.rTensor, ← Module.End.one_eq_id]
+  simp only [mul_add, add_mul, ← TensorProduct.map_mul, mul_one, one_mul]
+  -- Collect the anticommutators `γ c₁(v) + c₁(v) γ` and `γ₂ c₂(w) + c₂(w) γ₂`, which vanish.
+  rw [add_add_add_comm, ← map_add_left, ← map_add_right, hγρ, hγ₂ρ]
+  simp
 
 end AlgHom

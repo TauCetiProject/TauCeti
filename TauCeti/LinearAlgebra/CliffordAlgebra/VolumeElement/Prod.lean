@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
+import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
 # Chirality of the graded tensor product of Clifford modules
@@ -29,16 +30,17 @@ makes `E ⊗ F` a module over the complexified Clifford algebra of `V ⊕ W`
   `c(v, 0) = c_V(v) ⊗ 1`,  `c(0, w) = Γ_V ⊗ c_W(w)`.
 
 The vectors are moved from `ℂ ⊗ (V ⊕ W)` to `(ℂ ⊗ V) × (ℂ ⊗ W)` by the quadratic isometry
-`QuadraticForm.baseChangeProd` after the base change of `WithLp.linearEquiv`.
+`QuadraticMap.IsometryEquiv.baseChangeProd` of `WithLp.linearEquiv`.
 
 The main result computes the normalized volume element of `V ⊕ W` for the ordered product
 orientation, the orientation of the frame `(e₁, …, eₙ, f₁, …, fₘ)` obtained by concatenating
 positively oriented orthonormal frames of `V` and `W`, the latter orthogonal for `Q₂`. When
-`m` is also even,
+`m` is also even, the normalized volume elements compare as
 
-  `Γ_(V ⊕ W) = Γ_V ⊗ Γ_W`,
+  `Γ_(V ⊕ W) = Γ_V ⊗ Γ_W`.
 
-so the chirality of `V ⊕ W` is the tensor grading. Its eigenspace decomposition into
+When moreover `Q₂ w = -‖w‖²`, the factor `Γ_W` is the chirality of `W`, so the chirality of
+`V ⊕ W` is the tensor grading. Its eigenspace decomposition into
 `E⁺ ⊗ F⁺ ⊕ E⁻ ⊗ F⁻` and `E⁺ ⊗ F⁻ ⊕ E⁻ ⊗ F⁺` is not made here. When `m` is odd the central
 volume element of `V ⊕ W` acts through the second factor alone, as `1 ⊗ ω_W`. Both follow from
 the action of the ordered frame product, `c(e₁) ⋯ c(eₙ) Γ_V ^ m ⊗ c(f₁) ⋯ c(fₘ)`, and the
@@ -80,16 +82,16 @@ variable (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
 
 include hQ in
 /-- The quadratic isometry `ℂ ⊗ (V ⊕ W) ≃ (ℂ ⊗ V) × (ℂ ⊗ W)`, `z ⊗ (v, w) ↦ (z ⊗ v, z ⊗ w)`: the
-base change of `WithLp.linearEquiv`, followed by `QuadraticForm.baseChangeProd`. -/
+instance of `QuadraticMap.IsometryEquiv.baseChangeProd` for `WithLp.linearEquiv`. -/
 private def complexWithLpProd :
     (Q.baseChange ℂ).IsometryEquiv ((Q₁.baseChange ℂ).prod (Q₂.baseChange ℂ)) :=
-  (QuadraticMap.IsometryEquiv.baseChange
+  QuadraticMap.IsometryEquiv.baseChangeProd
     { toLinearEquiv := WithLp.linearEquiv 2 ℝ (V × W)
-      map_app' := fun x ↦ (hQ x).symm } ℂ).trans (QuadraticForm.baseChangeProd Q₁ Q₂)
+      map_app' := fun x ↦ (hQ x).symm } ℂ
 
 private theorem complexWithLpProd_one_tmul (x : WithLp 2 (V × W)) :
-    complexWithLpProd hQ (1 ⊗ₜ x) = (1 ⊗ₜ (WithLp.ofLp x).1, 1 ⊗ₜ (WithLp.ofLp x).2) := by
-  simp [complexWithLpProd, ← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+    complexWithLpProd hQ (1 ⊗ₜ x) = (1 ⊗ₜ (WithLp.ofLp x).1, 1 ⊗ₜ (WithLp.ofLp x).2) :=
+  QuadraticMap.IsometryEquiv.baseChangeProd_tmul _ 1 x
 
 private theorem equivOfIsometry_complexWithLpProd_ι_inl (v : V) :
     equivOfIsometry (complexWithLpProd hQ)
@@ -106,24 +108,26 @@ private theorem equivOfIsometry_complexWithLpProd_ι_inr (w : W) :
   simp [equivOfIsometry_apply, complexWithLpProd_one_tmul]
 
 include hQ in
-/-- Concatenating `Q₁`- and `Q₂`-orthogonal bases gives a `Q`-orthogonal basis of `V ⊕ W`. -/
+/-- Concatenating `Q₁`- and `Q₂`-orthogonal bases gives a `Q`-orthogonal basis of `V ⊕ W`: the
+`WithLp` form of `QuadraticMap.isOrthoᵢ_associated_prod`. -/
 private theorem isOrthoᵢ_associated_prod {n m : ℕ} (b₁ : OrthonormalBasis (Fin n) ℝ V)
     (hQb₁ : (QuadraticMap.associated Q₁).IsOrthoᵢ b₁.toBasis) (b₂ : OrthonormalBasis (Fin m) ℝ W)
     (hQb₂ : (QuadraticMap.associated Q₂).IsOrthoᵢ b₂.toBasis) :
     (QuadraticMap.associated Q).IsOrthoᵢ ((b₁.prod b₂).reindex finSumFinEquiv).toBasis := by
   have hcomp : Q = (Q₁.prod Q₂).comp (WithLp.linearEquiv 2 ℝ (V × W)).toLinearMap :=
     QuadraticMap.ext fun x ↦ by simp [hQ]
-  rw [LinearMap.isOrthoᵢ_def] at hQb₁ hQb₂ ⊢
+  have h := QuadraticMap.isOrthoᵢ_associated_prod hQb₁ hQb₂
+  rw [LinearMap.isOrthoᵢ_def] at h ⊢
   intro i j hij
-  have hij' : finSumFinEquiv.symm i ≠ finSumFinEquiv.symm j := finSumFinEquiv.symm.injective.ne hij
+  have hij' := h _ _ (finSumFinEquiv.symm.injective.ne hij)
   simp only [OrthonormalBasis.coe_toBasis, OrthonormalBasis.reindex_apply, hcomp,
-    QuadraticMap.associated_comp, QuadraticMap.associated_prod]
+    QuadraticMap.associated_comp, LinearMap.compl₁₂_apply]
   generalize finSumFinEquiv.symm i = p, finSumFinEquiv.symm j = q at hij'
   rcases p with p | p <;> rcases q with q | q
-  · simpa using hQb₁ p q (Sum.inl.inj_iff.not.1 hij')
+  · simpa using hij'
   · simp
   · simp
-  · simpa using hQb₂ p q (Sum.inr.inj_iff.not.1 hij')
+  · simpa using hij'
 
 variable [FiniteDimensional ℝ V] {n : ℕ} [Fact (finrank ℝ V = n)] (o₁ : Orientation ℝ V (Fin n))
   (hQ₁ : ∀ v, Q₁ v = -‖v‖ ^ 2) (hn : Even n)
@@ -206,10 +210,8 @@ private theorem complexProdTensor_complexVolume_eq_map (b₁ : OrthonormalBasis 
         (List.finRange m).map fun j ↦ WithLp.toLp 2 (0, b₂ j) := by
     rw [← List.ofFn_eq_map, List.ofFn_add, ← List.ofFn_eq_map, ← List.ofFn_eq_map]
     congr 2 <;> ext i
-    · rw [OrthonormalBasis.reindex_apply,
-        show Fin.castLE (Nat.le_add_right n m) i = Fin.castAdd m i from rfl,
-        finSumFinEquiv_symm_apply_castAdd]
-      simp
+    · have hcast : Fin.castLE (Nat.le_add_right n m) i = Fin.castAdd m i := by ext; simp
+      simp [OrthonormalBasis.reindex_apply, hcast]
     · simp [OrthonormalBasis.reindex_apply]
   have h₁ : equivOfIsometry (complexWithLpProd hQ)
       ((((List.finRange n).map fun i ↦ WithLp.toLp 2 (b₁ i, 0)).map
@@ -226,9 +228,12 @@ private theorem complexProdTensor_complexVolume_eq_map (b₁ : OrthonormalBasis 
             (ι (Q₂.baseChange ℂ))).prod := by
     simp [equivOfIsometry_apply, complexWithLpProd_one_tmul, map_list_prod, List.map_map,
       Function.comp_def]
-  rw [complexVolume_eq o _ ho (isOrthoᵢ_associated_prod hQ b₁ hQb₁ b₂ hQb₂), hl, map_smul,
-    List.map_append, List.prod_append, complexProdTensor_apply, map_mul, h₁, h₂, map_mul,
-    AlgHom.cliffordProdTensor_map_inl, AlgHom.cliffordProdTensor_map_inr_prod,
+  -- Split the frame product of `V ⊕ W` into its `V` block and its `W` block.
+  rw [complexVolume_eq o _ ho (isOrthoᵢ_associated_prod hQ b₁ hQb₁ b₂ hQb₂), hl,
+    List.map_append, List.prod_append]
+  -- Move each block into its summand, where the two Clifford algebras act.
+  rw [map_smul, complexProdTensor_apply, map_mul, h₁, h₂]
+  simp only [map_mul, AlgHom.cliffordProdTensor_map_inl, AlgHom.cliffordProdTensor_map_inr_prod,
     LinearMap.rTensor, ← Module.End.one_eq_id, ← TensorProduct.map_mul, one_mul]
   simp [List.map_map, Function.comp_def]
 
@@ -244,18 +249,19 @@ private theorem complexProdTensor_complexVolume_eq_map_pow (b₁ : OrthonormalBa
   rw [complexProdTensor_complexVolume_eq_map hQ o₁ hQ₁ hn ρ₁ ρ₂ o b₁ hQb₁ b₂ hQb₂ ho, pow_succ']
   -- Only the first factor `Γ_V` of `Γ_V ^ (m + 1) = Γ_V * Γ_V ^ m` is expanded in the frame.
   generalize ρ₁ (complexVolume Q₁ o₁) ^ m = g
-  rw [complexVolume_eq o₁ b₁ hb₁ hQb₁, complexVolume_eq o₂ b₂ hb₂ hQb₂, map_smul, map_smul,
-    smul_mul_assoc, TensorProduct.map_smul_left, TensorProduct.map_smul_right, smul_smul,
-    ← pow_add]
+  rw [complexVolume_eq o₁ b₁ hb₁ hQb₁, complexVolume_eq o₂ b₂ hb₂ hQb₂]
+  simp only [map_smul, smul_mul_assoc, TensorProduct.map_smul_left, TensorProduct.map_smul_right,
+    smul_smul, ← pow_add]
   congr 2
   obtain ⟨j, hj⟩ := hn
   omega
 
-/-- **The chirality of `V ⊕ W` is the tensor grading**: for `V` and `W` of even dimension with
-`Q₁ v = -‖v‖²`, and `V ⊕ W` oriented by the concatenation `(e₁, …, eₙ, f₁, …, fₘ)` of a positively
-oriented orthonormal frame of `V` and a positively oriented orthonormal frame of `W` orthogonal for
-`Q₂`, the normalized volume element of `V ⊕ W` acts on the graded tensor product `E ⊗ F` by
-`Γ_V ⊗ Γ_W`. -/
+/-- **Volume elements of `V ⊕ W` compare as a tensor product**: for `V` and `W` of even dimension
+with `Q₁ v = -‖v‖²`, and `V ⊕ W` oriented by the concatenation `(e₁, …, eₙ, f₁, …, fₘ)` of a
+positively oriented orthonormal frame of `V` and a positively oriented orthonormal frame of `W`
+orthogonal for `Q₂`, the normalized volume element of `V ⊕ W` acts on the graded tensor product
+`E ⊗ F` by `Γ_V ⊗ Γ_W`. When also `Q₂ w = -‖w‖²`, so that `Γ_W` is the chirality of `W`, this says
+the chirality of `V ⊕ W` is the tensor grading. -/
 theorem complexProdTensor_complexVolume (hm : Even m) (b₁ : OrthonormalBasis (Fin n) ℝ V)
     (hb₁ : b₁.toBasis.orientation = o₁) (b₂ : OrthonormalBasis (Fin m) ℝ W)
     (hb₂ : b₂.toBasis.orientation = o₂) (hQb₂ : (QuadraticMap.associated Q₂).IsOrthoᵢ b₂.toBasis)
