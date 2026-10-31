@@ -96,6 +96,10 @@ theorem encodeGlueWord_def (w : ∀ i, (t i).glueAlphabet (ht i)) :
       (((t i).glueLabelEquiv (ht i)).symm (w i)).val := by
   simp [encodeGlueWord]
 
+/-- The zero glue word has every label zero. -/
+@[simp] theorem encodeGlueWord_zero : encodeGlueWord t ht 0 = List.replicate n 0 := by
+  simp [encodeGlueWord, List.ofFn_const]
+
 /-- The labels of an encoded word satisfy the length and range checks. -/
 @[simp] theorem isValidGlueWord_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) :
     IsValidGlueWord t (encodeGlueWord t ht w) := by
