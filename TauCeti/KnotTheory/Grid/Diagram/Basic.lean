@@ -811,11 +811,13 @@ theorem swapRows_swapColumns_X_toPerm (a b : Fin n) :
   ext c
   simp
 
-/-- Exchanging two rows and the same two columns keeps diagonal `O`-markings diagonal. -/
-theorem swapRows_swapColumns_O_toPerm {G : GridDiagram n} (hO : G.O.toPerm = 1) (a b : Fin n) :
-    ((G.swapRows a b).swapColumns a b).O.toPerm = 1 := by
+/-- Exchanging two rows and the same two columns conjugates the `O`-permutation by the
+transposition. -/
+theorem swapRows_swapColumns_O_toPerm (a b : Fin n) :
+    ((G.swapRows a b).swapColumns a b).O.toPerm =
+      Equiv.swap a b * G.O.toPerm * Equiv.swap a b := by
   ext c
-  simp [hO]
+  simp
 
 /-- Row swaps transport the `O` marking set by the row transposition. -/
 theorem mem_OSet_swapRows (a b : Fin n) (p : Fin n × Fin n) :

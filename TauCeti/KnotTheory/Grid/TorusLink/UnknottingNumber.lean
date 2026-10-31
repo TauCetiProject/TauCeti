@@ -248,7 +248,7 @@ private theorem chainGrid_O_toPerm (n j : ℕ) : (chainGrid n j).O.toPerm = 1 :=
   | zero =>
     ext c
     simp [chainGrid]
-  | succ j ih => exact swapRows_swapColumns_O_toPerm ih _ _
+  | succ j ih => rw [chainGrid, swapRows_swapColumns_O_toPerm, ih, mul_one, swap_mul_self]
 
 private theorem chainGrid_X_toPerm (n j : ℕ) (hj : 2 * j + 1 < n + 5) :
     (chainGrid n j).X.toPerm = chainPerm n j := by
