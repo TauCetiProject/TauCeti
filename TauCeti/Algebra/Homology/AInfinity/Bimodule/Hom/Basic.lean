@@ -232,17 +232,8 @@ theorem isHomogeneous_bicofreeLift
   let W := TensorWords.grading (AA.grading.shift 1)
   let V := TensorWords.grading (BB.grading.shift 1)
   let Y := W.tensorProduct (MM.grading.shift 1)
-  have hL : LinearMap.IsHomogeneous
-      (Comodule.leftCoactRTensor (TensorWords R B)
-        (Comodule.leftCofreeCoact R (TensorWords R A) M))
-      (Y.tensorProduct V).piece (W.tensorProduct (Y.tensorProduct V)).piece 0 := by
-    rw [Comodule.leftCoactRTensor_def, Comodule.leftCofreeCoact_def,
-      LinearMap.rTensor_def, LinearMap.rTensor_def, TensorWords.comul_eq_deconcatenation]
-    simpa only [add_zero] using (InternalGrading.isHomogeneous_assoc W Y V).comp
-      ((((InternalGrading.isHomogeneous_assoc W W (MM.grading.shift 1)).comp
-        ((TensorWords.isHomogeneous_deconcatenation (AA.grading.shift 1)).tensorProduct
-          (LinearMap.isHomogeneous_id (MM.grading.shift 1).piece))).tensorProduct
-            (LinearMap.isHomogeneous_id V.piece)))
+  have hL := isHomogeneous_leftCoact AA BB MM.grading
+  simp only [barGrading_def] at hL
   have hR : LinearMap.IsHomogeneous (Comodule.cofreeCoact R (TensorWords R B)
       (TensorWords R A ⊗[R] M)) (Y.tensorProduct V).piece
       ((Y.tensorProduct V).tensorProduct V).piece 0 := by
