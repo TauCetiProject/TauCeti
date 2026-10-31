@@ -264,34 +264,13 @@ theorem mem_affineWeylGroup_iff {f : N ≃ᵃ[R] N} :
   constructor
   · intro hf
     let S : Subgroup (N ≃ᵃ[R] N) :=
-      { carrier := {f | f.linear ∈ Subgroup.closure (range P.coreflection) ∧
-          f 0 ∈ P.corootSpan ℤ}
-        one_mem' := by
-          refine ⟨?_, by simp⟩
-          rw [← AffineEquiv.linearHom_apply, map_one]
-          exact one_mem _
-        mul_mem' := by
-          rintro f g ⟨hf, hf0⟩ ⟨hg, hg0⟩
-          refine ⟨?_, ?_⟩
-          · rw [← AffineEquiv.linearHom_apply, map_mul]
-            exact mul_mem hf hg
-          · rw [AffineEquiv.coe_mul, comp_apply, AffineEquiv.apply_eq_linear_add f (g 0)]
-            exact add_mem (P.mem_corootSpan_of_mem_closure_range_coreflection hf hg0) hf0
-        inv_mem' := by
-          rintro f ⟨hf, hf0⟩
-          have hlin : f⁻¹.linear = f.linear⁻¹ := by
-            rw [← AffineEquiv.linearHom_apply, map_inv, AffineEquiv.linearHom_apply]
-          refine ⟨hlin ▸ inv_mem hf, ?_⟩
-          have h : f⁻¹ 0 = f⁻¹.linear (-f 0) := by
-            have h := AffineEquiv.apply_eq_linear_add f.symm (f 0)
-            rw [f.symm_apply_apply 0] at h
-            rw [map_neg]
-            exact eq_neg_of_add_eq_zero_right h.symm
-          rw [h, hlin]
-          exact P.mem_corootSpan_of_mem_closure_range_coreflection (inv_mem hf) (neg_mem hf0) }
-    refine (Subgroup.closure_le S).mpr ?_ hf
+      AffineEquiv.semidirectSubgroup (Subgroup.closure (range P.coreflection))
+        (P.corootSpan ℤ).toAddSubgroup fun _ hw _ hv ↦
+          P.mem_corootSpan_of_mem_closure_range_coreflection hw hv
+    refine AffineEquiv.mem_semidirectSubgroup_iff.mp ((Subgroup.closure_le S).mpr ?_ hf)
     rintro _ ⟨⟨i, k⟩, rfl⟩
-    refine ⟨by simpa using Subgroup.subset_closure (mem_range_self i), ?_⟩
+    refine AffineEquiv.mem_semidirectSubgroup_iff.mpr
+      ⟨by simpa using Subgroup.subset_closure (mem_range_self i), ?_⟩
     rw [affineCoreflection_apply, map_zero, zero_add, Int.cast_smul_eq_zsmul]
     exact Submodule.smul_mem _ k (Submodule.subset_span (mem_range_self i))
   · rintro ⟨hl, h0⟩
