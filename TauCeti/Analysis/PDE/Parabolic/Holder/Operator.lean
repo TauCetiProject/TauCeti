@@ -23,9 +23,11 @@ so `P` depends Lipschitz continuously on its coefficients in operator norm.
 On `ℝⁿ = EuclideanSpace ℝ ι` with scalar values, the coefficients of
 `P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` are Hölder functions `aⁱʲ`, `bⁱ`, `c`. If the matrix
 `a` is degenerate elliptic and `c ≤ γ` with `0 ≤ γ`, every `u` in `C_b^{2+α,1+α/2}` with
-`|P u| ≤ K` and `|u(·, t₀)| ≤ M` satisfies `|u(x, t)| ≤ exp (γ (t - t₀)) (M + (t - t₀) K)`. In
-particular `u` is determined by `P u` and its initial trace. This is the whole-space
-comparison principle applied to the Hölder class; no lower bound on `a` is needed.
+`P u ≤ K` and `u(·, t₀) ≤ M`, where `0 ≤ M` and `0 ≤ K`, satisfies
+`u(x, t) ≤ exp (γ (t - t₀)) (M + (t - t₀) K)`; applied to `±u`, the same bound holds for `|u|`
+when `|P u| ≤ K` and `|u(·, t₀)| ≤ M`. In particular `u` is determined by `P u` and its initial
+trace. This is the whole-space comparison principle applied to the Hölder class; no lower bound on
+`a` is needed.
 
 ## Main declarations
 
@@ -36,9 +38,10 @@ comparison principle applied to the Hölder class; no lower bound on `a` is need
   Lipschitz dependence on the coefficients.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL`: the operator with Hölder
   coefficients `aⁱʲ`, `bⁱ`, `c` on `ℝⁿ`.
-* `TauCeti.ParabolicC2HolderSpace.abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le`
-  and `TauCeti.ParabolicC2HolderSpace.eq_of_euclideanParabolicOperatorL_eq`: the a priori bound
-  and uniqueness for the Cauchy problem.
+* `TauCeti.ParabolicC2HolderSpace.le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le`,
+  `TauCeti.ParabolicC2HolderSpace.abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le`
+  and `TauCeti.ParabolicC2HolderSpace.eq_of_euclideanParabolicOperatorL_eq`: the one-sided and
+  two-sided a priori bounds and uniqueness for the Cauchy problem.
 
 ## References
 
@@ -134,18 +137,10 @@ theorem norm_spatialOperatorL_le :
     ‖spatialOperatorL (ht := ht) hα A B C‖ ≤ ‖A‖ + 24 * (‖B‖ + ‖C‖) := by
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
   -- Pointwise application of a coefficient field does not increase norms.
-  have hA := (ContinuousLinearMap.norm_compHolder₂_apply_le _ A (spatialSecondFDerivL u)).trans
-    (mul_le_mul_of_nonneg_right (mul_le_of_le_one_left (norm_nonneg A)
-      ContinuousLinearMap.norm_id_le) (norm_nonneg _))
-  have hB := (ContinuousLinearMap.norm_compHolder₂_apply_le _ B (spatialFDerivHolderL hα u)).trans
-    (mul_le_mul_of_nonneg_right (mul_le_of_le_one_left (norm_nonneg B)
-      ContinuousLinearMap.norm_id_le) (norm_nonneg _))
-  have hC := (ContinuousLinearMap.norm_compHolder₂_apply_le _ C (valueHolderL hα u)).trans
-    (mul_le_mul_of_nonneg_right (mul_le_of_le_one_left (norm_nonneg C)
-      ContinuousLinearMap.norm_id_le) (norm_nonneg _))
-  have h₂ : ‖spatialSecondFDerivL u‖ ≤ ‖u‖ := by
-    rw [norm_eq u]
-    linarith [norm_nonneg (valueL u), norm_nonneg (spatialFDerivL u), norm_nonneg (timeDerivL u)]
+  have hA := ContinuousLinearMap.norm_id_compHolder₂_apply_le A (spatialSecondFDerivL u)
+  have hB := ContinuousLinearMap.norm_id_compHolder₂_apply_le B (spatialFDerivHolderL hα u)
+  have hC := ContinuousLinearMap.norm_id_compHolder₂_apply_le C (valueHolderL hα u)
+  have h₂ := norm_spatialSecondFDerivL_le u
   have h₁ := norm_valueHolderL_add_norm_spatialFDerivHolderL_le hα u one_pos le_rfl
   simp only [Real.one_rpow, mul_one] at h₁
   have hv := norm_valueL_le u
@@ -166,9 +161,7 @@ theorem norm_parabolicOperatorL_le :
     ‖parabolicOperatorL (ht := ht) hα A B C‖ ≤ 1 + ‖A‖ + 24 * (‖B‖ + ‖C‖) := by
   have ht' : ‖timeDerivL (α := α) (E := E) (F := F) (hab := ht)‖ ≤ 1 :=
     ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
-      rw [one_mul, norm_eq u]
-      linarith [norm_nonneg (valueL u), norm_nonneg (spatialFDerivL u),
-        norm_nonneg (spatialSecondFDerivL u)]
+      simpa using norm_timeDerivL_le u
   rw [parabolicOperatorL_def, add_assoc]
   exact (norm_sub_le _ _).trans (add_le_add ht' (norm_spatialOperatorL_le hα))
 
@@ -260,17 +253,17 @@ private theorem shift_operator_eq (u : ParabolicC2HolderSpace α (EuclideanSpace
     euclideanParabolicOperatorL_apply]
   simp only [Matrix.of_apply, map_sum, map_smul, smul_eq_mul]
 
-/-- **The a priori bound for the Cauchy problem.** Let `a` be degenerate elliptic and `c ≤ γ`
-with `0 ≤ γ`. If `u ∈ C_b^{2+α,1+α/2}` on `ℝⁿ × [t₀, t₁]` satisfies `|P u| ≤ K` and
-`|u(·, t₀)| ≤ M`, then `|u(x, t)| ≤ exp (γ (t - t₀)) (M + (t - t₀) K)`. -/
-theorem abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le
+/-- **The one-sided a priori bound for the Cauchy problem.** Let `a` be degenerate elliptic and
+`c ≤ γ` with `0 ≤ γ`. If `u ∈ C_b^{2+α,1+α/2}` on `ℝⁿ × [t₀, t₁]` satisfies `P u ≤ K` and
+`u(·, t₀) ≤ M` with `0 ≤ M` and `0 ≤ K`, then `u(x, t) ≤ exp (γ (t - t₀)) (M + (t - t₀) K)`. -/
+theorem le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le
     (ha : ∀ p (ξ : EuclideanSpace ℝ ι), 0 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
-    {γ : ℝ} (hc : ∀ p, c p ≤ γ) (hγ : 0 ≤ γ) {M K : ℝ}
+    {γ : ℝ} (hc : ∀ p, c p ≤ γ) (hγ : 0 ≤ γ) {M K : ℝ} (hM : 0 ≤ M) (hK : 0 ≤ K)
     (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht)
-    (hP : ∀ p, |euclideanParabolicOperatorL hα a b c u p| ≤ K)
-    (hinit : ∀ x, |u (slabMk x ⟨t₀, left_mem_Icc.2 ht.le⟩)| ≤ M)
+    (hP : ∀ p, euclideanParabolicOperatorL hα a b c u p ≤ K)
+    (hinit : ∀ x, u (slabMk x ⟨t₀, left_mem_Icc.2 ht.le⟩) ≤ M)
     (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) :
-    |u p| ≤ Real.exp (γ * (slabTime p - t₀)) * (M + (slabTime p - t₀) * K) := by
+    u p ≤ Real.exp (γ * (slabTime p - t₀)) * (M + (slabTime p - t₀) * K) := by
   -- Shift the slab to `[0, t₁ - t₀]` and extend every field constantly in time outside it.
   have hcont : Continuous fun z : ℝ × EuclideanSpace ℝ ι ↦
       u (slabMk z.2 (projIcc t₀ t₁ ht.le (z.1 + t₀))) :=
@@ -282,7 +275,7 @@ theorem abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le
     rintro _ ⟨z, rfl⟩
     simpa using (valueL u).norm_coe_le_norm _
   have key :=
-    PDE.abs_le_exp_mul_mul_add_mul_of_abs_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le
+    PDE.le_exp_mul_mul_add_mul_of_deriv_le_sum_mul_fderiv_fderiv_add_fderiv_add_mul_add
       (u := fun t x ↦ u (slabMk x (projIcc t₀ t₁ ht.le (t + t₀))))
       (a := fun t x ↦ Matrix.of fun i j ↦ a i j (slabMk x (projIcc t₀ t₁ ht.le (t + t₀))))
       (b := fun t x ↦
@@ -301,18 +294,38 @@ theorem abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le
         calc _ ≤ ∑ i, ‖b i‖ := (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ by
                 simpa [norm_smul] using HolderSpace.norm_apply_le (b i) _)
           _ ≤ _ := le_mul_of_one_le_right h₀ (by linarith [norm_nonneg x]))
-      (fun t _ x ↦ hc _) hγ hcont.continuousOn
+      (fun t _ x ↦ hc _) hγ hM hK hcont.continuousOn
       (hbdd.subset (image_subset_range _ _)).bddAbove
-      (hbdd.subset (image_subset_range _ _)).bddBelow
       (fun t _ x ↦ (u.contDiff_spatialSlice _).contDiffAt)
       (fun t h x ↦ (hasDerivAt_shift u x h).differentiableAt)
-      (fun t h x ↦ by rw [shift_operator_eq hα u h x]; exact hP _)
+      (fun t h x ↦ sub_le_iff_le_add'.1 ((shift_operator_eq hα u h x).trans_le (hP _)))
       (fun x ↦ by simpa using hinit x)
   have hp : slabTime p - t₀ ∈ Icc 0 (t₁ - t₀) :=
     ⟨by linarith [(slabTime p).2.1], by linarith [(slabTime p).2.2]⟩
   have hτ : projIcc t₀ t₁ ht.le (slabTime p - t₀ + t₀) = slabTime p := by
     rw [sub_add_cancel, projIcc_val]
   simpa only [hτ, slabMk_space_slabTime] using key hp (p : ParabolicSpaceTime _).space
+
+/-- **The a priori bound for the Cauchy problem.** Let `a` be degenerate elliptic and `c ≤ γ`
+with `0 ≤ γ`. If `u ∈ C_b^{2+α,1+α/2}` on `ℝⁿ × [t₀, t₁]` satisfies `|P u| ≤ K` and
+`|u(·, t₀)| ≤ M`, then `|u(x, t)| ≤ exp (γ (t - t₀)) (M + (t - t₀) K)`. -/
+theorem abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le
+    (ha : ∀ p (ξ : EuclideanSpace ℝ ι), 0 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    {γ : ℝ} (hc : ∀ p, c p ≤ γ) (hγ : 0 ≤ γ) {M K : ℝ}
+    (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht)
+    (hP : ∀ p, |euclideanParabolicOperatorL hα a b c u p| ≤ K)
+    (hinit : ∀ x, |u (slabMk x ⟨t₀, left_mem_Icc.2 ht.le⟩)| ≤ M)
+    (p : slab (E := EuclideanSpace ℝ ι) t₀ t₁) :
+    |u p| ≤ Real.exp (γ * (slabTime p - t₀)) * (M + (slabTime p - t₀) * K) := by
+  have hM : 0 ≤ M := (abs_nonneg _).trans (hinit 0)
+  have hK : 0 ≤ K := (abs_nonneg _).trans (hP (slabMk 0 ⟨t₀, left_mem_Icc.2 ht.le⟩))
+  -- The lower bound is the upper bound for `-u`.
+  have hge := le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le hα ha hc hγ hM hK (-u)
+    (fun q ↦ by rw [map_neg, HolderSpace.neg_apply]; exact neg_le.1 (abs_le.1 (hP q)).1)
+    (fun x ↦ by rw [neg_apply]; exact neg_le.1 (abs_le.1 (hinit x)).1) p
+  rw [neg_apply] at hge
+  exact abs_le.2 ⟨neg_le.1 hge, le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le hα ha hc
+    hγ hM hK u (fun q ↦ (abs_le.1 (hP q)).2) (fun x ↦ (abs_le.1 (hinit x)).2) p⟩
 
 /-- **Uniqueness for the Cauchy problem.** For degenerate elliptic `a`, an element of
 `C_b^{2+α,1+α/2}` on `ℝⁿ × [t₀, t₁]` is determined by `P u` and its initial trace `u(·, t₀)`. -/

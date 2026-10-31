@@ -280,17 +280,14 @@ theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → HolderSpace α X Y) (
     (∑ i ∈ s, f i) x = ∑ i ∈ s, f i x := by
   simpa only [evalCLM_apply] using map_sum (evalCLM (α := α) (Y := Y) x) f s
 
-/-- Evaluation has operator norm at most one. -/
-theorem norm_evalCLM_le_one (x : X) : ‖evalCLM (α := α) (Y := Y) x‖ ≤ 1 := by
-  apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
-  intro f
-  simpa using (f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
-    f.norm_toBoundedContinuousFunction_le
-
 /-- Every value is bounded by the supremum-plus-Hölder norm. -/
 theorem norm_apply_le (f : HolderSpace α X Y) (x : X) : ‖f x‖ ≤ ‖f‖ := by
   simpa using (f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
     f.norm_toBoundedContinuousFunction_le
+
+/-- Evaluation has operator norm at most one. -/
+theorem norm_evalCLM_le_one (x : X) : ‖evalCLM (α := α) (Y := Y) x‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by simpa using f.norm_apply_le x
 
 private theorem holderWith_sub_of_tendsto_of_norm_sub_le {u : ℕ → HolderSpace α X Y}
     {F : X →ᵇ Y} (hF : Tendsto (fun n ↦ (u n).toBoundedContinuousFunction) atTop (𝓝 F))

@@ -129,6 +129,13 @@ theorem norm_compHolder₂_apply_le (B : E →L[ℝ] F →L[ℝ] G) (f : HolderS
     (g : HolderSpace α X F) : ‖B.compHolder₂ f g‖ ≤ ‖B‖ * ‖f‖ * ‖g‖ :=
   (B.compHolder₂.le_opNorm₂ f g).trans (by gcongr; exact B.norm_compHolder₂_le)
 
+/-- Pointwise application of a Hölder field of continuous linear maps to a Hölder function is
+bounded by the product of their norms. -/
+theorem norm_id_compHolder₂_apply_le (f : HolderSpace α X (F →L[ℝ] G)) (g : HolderSpace α X F) :
+    ‖(ContinuousLinearMap.id ℝ (F →L[ℝ] G)).compHolder₂ f g‖ ≤ ‖f‖ * ‖g‖ :=
+  (norm_compHolder₂_apply_le _ f g).trans (mul_le_mul_of_nonneg_right
+    (mul_le_of_le_one_left (norm_nonneg f) ContinuousLinearMap.norm_id_le) (norm_nonneg g))
+
 /-- On a nonempty domain, pointwise lifting preserves the bilinear operator norm. -/
 @[simp]
 theorem norm_compHolder₂ [Nonempty X] (B : E →L[ℝ] F →L[ℝ] G) :
