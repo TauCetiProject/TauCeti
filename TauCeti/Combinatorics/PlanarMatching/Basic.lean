@@ -159,8 +159,9 @@ theorem coe_reflect_apply (x : PlanarMatching k) :
 
 /-- Reflection moves the arc `{a, x a}` to `{Fin.rev a, Fin.rev (x a)}`. -/
 theorem reflect_apply_val_apply (x : PlanarMatching k) (a : Fin k) :
-    (reflect k x).1.val (Fin.rev a) = Fin.rev (x.1.val a) :=
-  PerfectMatching.congr_val_apply_apply Fin.revPerm x.1 a
+    (reflect k x).1.val (Fin.rev a) = Fin.rev (x.1.val a) := by
+  rw [coe_reflect_apply]
+  exact PerfectMatching.congr_val_apply_apply Fin.revPerm x.1 a
 
 /-- Reflection is an involution. -/
 @[simp]
