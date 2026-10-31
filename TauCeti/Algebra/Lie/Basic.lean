@@ -45,6 +45,8 @@ This file supplies general constructions for Lie modules that are missing from M
   each `L`-submodule of `V`.
 * `LieModule.toEnd_eq_zero_of_isTrivial` and `LieAlgebra.ad_eq_zero_of_isLieAbelian`: on a
   trivial Lie module, in particular in an abelian Lie algebra, every element acts by zero.
+* `LieSubalgebra.lie_eq_zero_of_mem` and `LieIdeal.lie_eq_zero_of_mem`: two elements of an
+  abelian Lie subalgebra, or of an abelian Lie ideal, have zero bracket in the ambient Lie algebra.
 * `LieHom.map_ad_pow`: a Lie homomorphism carries `(ad x) ^ n y` to `(ad (f x)) ^ n (f y)`.
 * `LieHom.isNilpotent_ad_of_surjective`: adjoint nilpotence descends along a surjective
   Lie homomorphism.
@@ -114,6 +116,18 @@ theorem LieModule.toEnd_eq_zero_of_isTrivial {R L M : Type*} [CommRing R] [LieRi
 theorem LieAlgebra.ad_eq_zero_of_isLieAbelian {R L : Type*} [CommRing R] [LieRing L]
     [LieAlgebra R L] [IsLieAbelian L] (x : L) : LieAlgebra.ad R L x = 0 :=
   LieModule.toEnd_eq_zero_of_isTrivial x
+
+/-- Two elements of an abelian Lie subalgebra have zero bracket in the ambient Lie algebra. -/
+theorem LieSubalgebra.lie_eq_zero_of_mem {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    {H : LieSubalgebra R L} [IsLieAbelian H] {x y : L} (hx : x ∈ H) (hy : y ∈ H) :
+    ⁅x, y⁆ = 0 := by
+  simpa using congr_arg ((↑) : H → L) (trivial_lie_zero H H ⟨x, hx⟩ ⟨y, hy⟩)
+
+/-- Two elements of an abelian Lie ideal have zero bracket in the ambient Lie algebra. -/
+theorem LieIdeal.lie_eq_zero_of_mem {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    {I : LieIdeal R L} [IsLieAbelian I] {x y : L} (hx : x ∈ I) (hy : y ∈ I) : ⁅x, y⁆ = 0 :=
+  have : IsLieAbelian (I : LieSubalgebra R L) := ‹IsLieAbelian I›
+  LieSubalgebra.lie_eq_zero_of_mem (H := (I : LieSubalgebra R L)) hx hy
 
 section EndSubalgebra
 
