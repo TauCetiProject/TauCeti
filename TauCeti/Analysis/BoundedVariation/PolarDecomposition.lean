@@ -45,6 +45,7 @@ against this representation gives `|Du|(U) ≤ ∫_U ‖σ_u‖ d|Du|`, hence `�
 * `TauCeti.integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity`: the representation
   `∫ u div φ dμ = -∫ ⟪φ, σ_u⟫ d|Du|`.
 * `TauCeti.ae_norm_polarDensity_eq_one`: `‖σ_u‖ = 1` at `|Du|`-almost every point.
+* `TauCeti.locallyIntegrable_polarDensity`: `σ_u` is locally integrable with respect to `|Du|`.
 * `TauCeti.ae_eq_polarDensity`: a locally integrable vector field representing `Du` against `|Du|`
   is `σ_u` almost everywhere.
 * `TauCeti.enorm_integral_divergenceCLM_mul_le_lintegral_enorm`: the pairing is bounded by
@@ -74,16 +75,6 @@ variable (hu : LocallyIntegrableOn u Ω μ)
   (hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
 include hu hfin
 
-/-- A test vector field on `Ω` supported in an open set `U` with norm at most one pairs with `u`
-to at most `|Du|(U)`. -/
-private theorem enorm_integral_divergenceCLM_mul_le_variationMeasure {U : Opens E} (hU : U ≤ Ω)
-    (φ : 𝓓(Ω, E)) (hφU : tsupport φ ⊆ U) (hφ : ∀ x, ‖φ x‖ ≤ 1) :
-    ‖∫ x, divergenceCLM φ x * u x ∂μ‖ₑ ≤ variationMeasure μ Ω u ((↑) ⁻¹' (U : Set E)) := by
-  let φU : 𝓓(U, E) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφU⟩
-  have hdiv (x : E) : divergenceCLM φU x = divergenceCLM φ x := by simp [φU]
-  rw [variationMeasure_preimage_coe hu hfin hU, Real.enorm_eq_ofReal_abs]
-  simpa only [hdiv] using ofReal_abs_integral_le_totalVariationOn (μ := μ) (u := u) φU hφ
-
 /-- Existence of a density of norm at most one representing `Du` against `|Du|`. -/
 private theorem exists_le_one :
     ∃ σ : Ω → E, Measurable σ ∧ (∀ᵐ x ∂variationMeasure μ Ω u, ‖σ x‖ ≤ 1) ∧
@@ -112,8 +103,7 @@ private theorem exists_le_one :
     have : ν.Regular := by rcases hν with rfl | rfl; exacts [h₁ i, h₂ i]
     have hψ : Integrable (fun x : Ω => ψ x) ν := by
       have h := ψ.toCompactlySupportedContinuousMap.integrable (μ := ν)
-      rwa [show (ψ.toCompactlySupportedContinuousMap : Ω → ℝ) = fun x : Ω => ψ x from
-        funext (toCompactlySupportedContinuousMap_apply ψ)] at h
+      exact h.congr (ae_of_all _ (toCompactlySupportedContinuousMap_apply ψ))
     exact ⟨(integrable_toReal_rnDeriv_mul_iff (hac hν)).2 hψ,
       (integral_toReal_rnDeriv_mul (hac hν)).symm⟩
   -- The vector field `g` of densities of the directional derivatives.
@@ -185,7 +175,7 @@ private theorem exists_le_one :
 
 /-- A density of norm at most one representing `Du` against `|Du|` has norm one almost
 everywhere. -/
-private theorem ae_norm_eq_one_of_le_one {σ : Ω → E} (hσm : Measurable σ)
+private theorem ae_norm_eq_one_of_le_one {σ : Ω → E}
     (hσ1 : ∀ᵐ x ∂variationMeasure μ Ω u, ‖σ x‖ ≤ 1)
     (hσ : ∀ φ : 𝓓(Ω, E), ∫ x, divergenceCLM φ x * u x ∂μ =
       -∫ x, ⟪φ x, σ x⟫ ∂variationMeasure μ Ω u) :
@@ -218,11 +208,9 @@ private theorem ae_norm_eq_one_of_le_one {σ : Ω → E} (hσm : Measurable σ)
       rwa [← ofReal_norm, ENNReal.ofReal_le_one]
     have hint : ∫⁻ x in V, ‖σ x‖ₑ ∂lam ≠ ∞ :=
       ne_top_of_le_ne_top hVfin ((lintegral_mono_ae hle).trans_eq (by simp))
-    have h0 : ∫⁻ x in V, (1 - ‖σ x‖ₑ) ∂lam = 0 := by
-      rw [lintegral_sub hσm.enorm hint hle, lintegral_one, Measure.restrict_apply_univ,
-        tsub_eq_zero_of_le (hopen V hV)]
-    filter_upwards [(lintegral_eq_zero_iff (measurable_const.sub hσm.enorm)).1 h0] with x hx
-    simpa [tsub_eq_zero_iff_le] using hx
+    filter_upwards [ae_eq_of_ae_le_of_lintegral_le hle hint aemeasurable_const
+      (by simpa using hopen V hV)] with x hx
+    exact hx.symm.le
   -- Cover `Ω` by countably many open sets of finite measure.
   choose V hKV hVo hVfin using fun n =>
     (isCompact_compactCovering Ω n).exists_open_superset_measure_lt_top lam
@@ -239,7 +227,7 @@ private theorem exists_polarDensity :
       ∀ φ : 𝓓(Ω, E), ∫ x, divergenceCLM φ x * u x ∂μ =
         -∫ x, ⟪φ x, σ x⟫ ∂variationMeasure μ Ω u :=
   let ⟨σ, hσm, hσ1, hσ⟩ := exists_le_one hu hfin
-  ⟨σ, hσm, ae_norm_eq_one_of_le_one hu hfin hσm hσ1 hσ, hσ⟩
+  ⟨σ, hσm, ae_norm_eq_one_of_le_one hu hfin hσ1 hσ, hσ⟩
 
 omit hu hfin
 
@@ -287,6 +275,15 @@ theorem ae_norm_polarDensity_eq_one :
     ∀ᵐ x ∂variationMeasure μ Ω u, ‖polarDensity μ Ω u x‖ = 1 :=
   (polarDensity_spec hu hfin).1
 
+/-- The polar density of a function of locally finite variation is locally integrable with
+respect to `|Du|`. -/
+theorem locallyIntegrable_polarDensity :
+    LocallyIntegrable (polarDensity μ Ω u) (variationMeasure μ Ω u) := by
+  have := Ω.isOpen.locallyCompactSpace
+  exact locallyIntegrable_iff.2 fun K hK => Measure.integrableOn_of_bounded hK.measure_lt_top.ne
+    measurable_polarDensity.aestronglyMeasurable (M := 1)
+    (ae_restrict_of_ae ((ae_norm_polarDensity_eq_one hu hfin).mono fun x hx => hx.le))
+
 /-- **Uniqueness of the polar density.** A locally integrable vector field `σ` on `Ω` with
 `∫ u div φ dμ = -∫ ⟪φ, σ⟫ d|Du|` for every test vector field `φ` agrees with `σ_u` at
 `|Du|`-almost every point. -/
@@ -295,10 +292,7 @@ theorem ae_eq_polarDensity {σ : Ω → E} (hσ : LocallyIntegrable σ (variatio
       -∫ x, ⟪φ x, σ x⟫ ∂variationMeasure μ Ω u) :
     σ =ᵐ[variationMeasure μ Ω u] polarDensity μ Ω u := by
   have := Ω.isOpen.locallyCompactSpace
-  have hσ' : LocallyIntegrable (polarDensity μ Ω u) (variationMeasure μ Ω u) :=
-    locallyIntegrable_iff.2 fun K hK => Measure.integrableOn_of_bounded hK.measure_lt_top.ne
-      measurable_polarDensity.aestronglyMeasurable (M := 1)
-      (ae_restrict_of_ae ((ae_norm_polarDensity_eq_one hu hfin).mono fun x hx => hx.le))
+  have hσ' := locallyIntegrable_polarDensity hu hfin
   have hint {τ : Ω → E} (hτ : LocallyIntegrable τ (variationMeasure μ Ω u)) (φ : 𝓓(Ω, E)) :
       Integrable (fun x : Ω => ⟪φ x, τ x⟫) (variationMeasure μ Ω u) := by
     exact (φ.integrable_bilin_subtype (innerSL ℝ) hτ).congr

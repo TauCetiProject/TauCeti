@@ -12,7 +12,6 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Function.Holder
-import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 
@@ -130,7 +129,7 @@ theorem integrable_bilin_subtype [OpensMeasurableSpace E] {F₂ F₃ : Type*} [N
       (memLp_one_iff_integrable.2 (hg.integrableOn_isCompact hK))
   rw [hf] at hon
   refine (integrableOn_iff_integrable_of_support_subset fun x hx => ?_).1 hon
-  exact subset_tsupport _ fun hφx => hx (by simp [show φ x = 0 from hφx])
+  exact subset_tsupport _ fun hφx => hx (by simp [(congrFun hf x).symm.trans hφx])
 
 section IntegralOne
 

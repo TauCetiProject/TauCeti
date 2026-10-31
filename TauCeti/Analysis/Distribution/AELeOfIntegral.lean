@@ -228,8 +228,9 @@ theorem ae_enorm_le_of_forall_enorm_integral_inner_le {h : Ω → F} (hh : Local
       congr 1 with x
       simp only [hφ, inner_smul_left, RCLike.conj_to_real]
       ring
+    have hφfun : (φ : E → F) = fun x => ψ x • (‖w‖⁻¹ • w) := funext hφ
     have hφs : tsupport φ ⊆ tsupport ψ := by
-      rw [show (φ : E → F) = fun x => ψ x • (‖w‖⁻¹ • w) from funext hφ]
+      rw [hφfun]
       exact tsupport_smul_subset_left _ _
     have hU := H ⟨(↑) '' W, Ω.isOpen.isOpenMap_subtype_val W hW⟩ (Subtype.coe_image_subset _ _)
       φ (hφs.trans hψW) fun x => by
@@ -237,7 +238,7 @@ theorem ae_enorm_le_of_forall_enorm_integral_inner_le {h : Ω → F} (hh : Local
           mul_one, Real.norm_of_nonneg (hψ0 x)]
         exact hψ1 x
     rw [hint, enorm_mul, enorm_inv (by simpa using hw0), enorm_norm, Opens.coe_mk,
-      show ((↑) : Ω → E) ⁻¹' ((↑) '' W) = W from preimage_image_eq W Subtype.val_injective] at hU
+      preimage_image_eq W Subtype.val_injective] at hU
     calc ‖∫ x, ψ x * ⟪w, h x⟫ ∂ρ‖ₑ
         = ‖w‖ₑ * (‖w‖ₑ⁻¹ * ‖∫ x, ψ x * ⟪w, h x⟫ ∂ρ‖ₑ) := by
           rw [← mul_assoc, ENNReal.mul_inv_cancel (by simpa using hw0) enorm_ne_top, one_mul]
