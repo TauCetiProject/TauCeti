@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Independence.ConvolutionPower
 public import TauCeti.Probability.Renewal.Moments
 
 /-!
@@ -41,8 +40,6 @@ measure and the renewal function are the objects of the renewal limit theorems a
   `U = δ₀ + F ∗ U`.
 * `MeasureTheory.Measure.renewalFunction_eq_tsum` — `m t = ∑_{n ≥ 1} F^{∗n} [0, t]`.
 * `MeasureTheory.Measure.renewalMeasure_Iic` — `U [0, t] = 1 + m t`.
-* `TauCeti.Probability.hasLaw_arrival` — for i.i.d. increments with law `F`, the `n`-th arrival
-  time has law `F^{∗n}`.
 * `TauCeti.Probability.lintegral_renewalCount` — `𝔼[N t] = m t` for i.i.d. increments.
 * `MeasureTheory.Measure.renewalFunction_lt_top`,
   `MeasureTheory.Measure.isLocallyFiniteMeasure_renewalMeasure` — local finiteness when
@@ -144,18 +141,6 @@ end MeasureTheory.Measure
 namespace TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → ℝ≥0}
-
-/-- For independent increments with common law `F = P.map (T 0)`, the `n`-th arrival time
-`arrival T n` has law the convolution power `F^{∗n}`. -/
-theorem hasLaw_arrival (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (n : ℕ) : HasLaw (arrival T n) ((P.map (T 0)).convolutionPower n) P := by
-  have := hindep.isProbabilityMeasure
-  have hsum : arrival T n = ∑ i ∈ Finset.range n, T i := by
-    ext ω
-    simp [arrival_def]
-  simpa [hsum] using
-    hindep.hasLaw_finset_sum_convolutionPower (fun i ↦ ⟨(hid i).aemeasurable_fst, (hid i).map_eq⟩)
-      (Finset.range n)
 
 /-- **The renewal function is the expected count.** For independent, identically distributed
 increments, the expected number of arrivals in `[0, t]` is the renewal function of the common law
