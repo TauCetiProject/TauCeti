@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.LinearAlgebra.Dimension.Basic
 import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.Topology.ConnectedComponents
+import Mathlib.Geometry.Manifold.HasGroupoid
 
 /-!
 # Removing a discrete set from a connected manifold
@@ -35,6 +36,8 @@ model space `E` itself; no smoothness of the transition maps is needed.
 * `TauCeti.isConnected_compl_of_isDiscrete_of_one_lt_rank`: removing a closed discrete set from a
   connected manifold leaves it connected.
 * `TauCeti.isConnected_compl_of_finite_of_one_lt_rank`: the special case of a finite set.
+* `TauCeti.isPreconnected_sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank`: closed discrete
+  deletion inside a preconnected open subset.
 -/
 
 public section
@@ -81,6 +84,22 @@ theorem isConnected_compl_of_isDiscrete_of_one_lt_rank [ConnectedSpace X]
     refine ⟨z, fun hzs ↦ hz.2 ?_⟩
     simpa [← hus] using And.intro (hVu hz.1) hzs
   · exact ⟨x, hx⟩
+
+/-- Removing a closed discrete set from a preconnected open subset of a manifold of real
+dimension greater than one leaves it preconnected. -/
+theorem isPreconnected_sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank
+    (h : 1 < Module.rank ℝ E) {U s : Set X} (hU : IsOpen U) (hUc : IsPreconnected U)
+    (hs : IsClosed s) (hd : IsDiscrete s) : IsPreconnected (U \ s) := by
+  let V : TopologicalSpace.Opens X := ⟨U, hU⟩
+  let : PreconnectedSpace V := isPreconnected_iff_preconnectedSpace.mp hUc
+  have hc := isPreconnected_compl_of_isDiscrete_of_one_lt_rank (E := E) h
+    (hs.preimage (continuous_subtype_val : Continuous (Subtype.val : V → X)))
+    (hd.preimage continuous_subtype_val.continuousOn Subtype.val_injective)
+  have himage : Subtype.val '' (Subtype.val ⁻¹' s : Set V)ᶜ = U \ s := by
+    rw [image_compl_preimage, Subtype.range_val]
+    rfl
+  rw [← himage]
+  exact hc.image _ continuous_subtype_val.continuousOn
 
 end Seminormed
 
