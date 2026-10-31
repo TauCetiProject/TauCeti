@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.List.Rotate
 public import Mathlib.GroupTheory.Perm.List
+public import Mathlib.Logic.Equiv.Fin.Rotate
 
 import TauCeti.Data.Fin.Basic
 
@@ -35,6 +36,7 @@ rotated braid words.
 * `List.IsRotated.filter`: filtering preserves cyclic rotation of lists.
 * `List.IsRotated.apply_prod_eq`: a function `φ` with `φ (x * y) = φ (y * x)`, such as a trace,
   takes the same value on the products of cyclically rotated lists.
+* `List.ofFn_comp_finRotate_pow`: precomposing with a power of `finRotate` rotates `List.ofFn`.
 -/
 
 public section
@@ -163,5 +165,17 @@ theorem IsRotated.apply_prod_eq {M R : Type*} [Monoid M] {φ : M → R}
   obtain ⟨k, rfl⟩ := h
   rw [List.rotate_eq_drop_append_take_mod, List.prod_append, hφ, ← List.prod_append,
     List.take_append_drop]
+
+/-- Precomposing a tuple with a power of the cyclic permutation `finRotate n` rotates the list of
+its entries by the same amount. -/
+theorem ofFn_comp_finRotate_pow {α : Type*} {n : ℕ} (f : Fin n → α) (k : ℕ) :
+    ofFn (f ∘ ⇑(finRotate n ^ k)) = (ofFn f).rotate k := by
+  apply ext_getElem
+  · simp
+  · intro i hi _
+    simp only [length_ofFn] at hi
+    simp only [List.getElem_ofFn, Function.comp_apply, getElem_rotate, length_ofFn]
+    congr 1
+    exact Fin.ext (Fin.coe_finRotate_pow k ⟨i, hi⟩)
 
 end List

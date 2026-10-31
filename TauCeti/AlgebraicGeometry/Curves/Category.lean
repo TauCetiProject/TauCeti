@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.Basic
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.FieldTheory.FunctionField.Category
 
@@ -25,6 +26,14 @@ and a dominant `k`-morphism `f : X ⟶ Y` to the pullback of rational functions
 `f^* : k(Y) → k(X)`, a `k`-algebra homomorphism by
 `AlgebraicGeometry.Scheme.Hom.functionFieldAlgHom`.
 
+A regular projective curve over `k` is an integral scheme of dimension one, projective over `k` in
+the sense of `AlgebraicGeometry.Scheme.IsProjectiveOver`, whose local rings at its codimension-one
+points are discrete valuation rings. A projective scheme is proper, so a regular projective curve
+is a regular proper curve, and the regular projective curves form a full subcategory of the regular
+proper curves. Every regular proper curve is projective
+(`AlgebraicGeometry.Scheme.isProjectiveOver_of_isCurveOver`), so this inclusion is an equivalence
+(`TauCeti.AlgebraicGeometry.RegularProjectiveCurveCat.equivRegularProperCurveCat`).
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.RegularProperCurveCat k`: the category of regular proper curves
@@ -33,6 +42,10 @@ and a dominant `k`-morphism `f : X ⟶ Y` to the pullback of rational functions
   from an isomorphism of schemes over `k`.
 * `TauCeti.AlgebraicGeometry.RegularProperCurveCat.functionFieldFunctor`: the contravariant
   function-field functor `X ↦ k(X)`.
+* `TauCeti.AlgebraicGeometry.RegularProjectiveCurveCat k`: the category of regular projective
+  curves over `k` with dominant `k`-morphisms.
+* `TauCeti.AlgebraicGeometry.RegularProjectiveCurveCat.toRegularProperCurveCat`: the fully faithful
+  functor regarding a regular projective curve as a regular proper curve.
 
 ## References
 
@@ -144,5 +157,69 @@ lemma functionFieldFunctor_map_unop_hom {X Y : RegularProperCurveCat k} (f : X �
   rfl
 
 end RegularProperCurveCat
+
+/-- The category of regular projective curves over a field `k`: integral schemes of dimension one,
+projective over `k`, whose local rings at the codimension-one points are discrete valuation rings,
+with the dominant `k`-morphisms as morphisms. -/
+structure RegularProjectiveCurveCat (k : Type u) [Field k] where
+  /-- The underlying scheme. -/
+  toScheme : Scheme.{u}
+  [over : toScheme.Over (Spec (.of k))]
+  [isIntegral : IsIntegral toScheme]
+  [isProjectiveOver : toScheme.IsProjectiveOver k]
+  /-- The curve has dimension one. -/
+  topologicalKrullDim_eq_one : topologicalKrullDim toScheme = 1
+  [isDiscreteValuationRing_stalk :
+    ∀ y : CodimensionOnePoint toScheme, IsDiscreteValuationRing (toScheme.presheaf.stalk y.1)]
+
+attribute [instance] RegularProjectiveCurveCat.over RegularProjectiveCurveCat.isIntegral
+  RegularProjectiveCurveCat.isProjectiveOver RegularProjectiveCurveCat.isDiscreteValuationRing_stalk
+
+namespace RegularProjectiveCurveCat
+
+variable {k : Type u} [Field k]
+
+/-- A regular projective curve is a curve: projective schemes are proper. -/
+instance isCurveOver (X : RegularProjectiveCurveCat k) : X.toScheme.IsCurveOver k :=
+  Scheme.isCurveOver_iff.2 ⟨inferInstance, inferInstance, X.topologicalKrullDim_eq_one⟩
+
+/-- Regular projective curves over `k` form a category, with the dominant `k`-morphisms of the
+underlying regular proper curves as morphisms. -/
+instance : Category (RegularProjectiveCurveCat k) :=
+  inferInstanceAs <| Category <|
+    InducedCategory (RegularProperCurveCat k) fun X : RegularProjectiveCurveCat k ↦
+      RegularProperCurveCat.of X.toScheme
+
+variable (k) in
+/-- The functor regarding a regular projective curve as a regular proper curve. It is fully
+faithful (`RegularProjectiveCurveCat.fullyFaithfulToRegularProperCurveCat`) and an equivalence,
+since every regular proper curve is projective
+(`RegularProjectiveCurveCat.equivRegularProperCurveCat`). -/
+def toRegularProperCurveCat : RegularProjectiveCurveCat k ⥤ RegularProperCurveCat k :=
+  inducedFunctor fun X : RegularProjectiveCurveCat k ↦ RegularProperCurveCat.of X.toScheme
+
+@[simp]
+lemma toRegularProperCurveCat_obj_toScheme (X : RegularProjectiveCurveCat k) :
+    ((toRegularProperCurveCat k).obj X).toScheme = X.toScheme :=
+  (rfl)
+
+@[simp]
+lemma toRegularProperCurveCat_map {X Y : RegularProjectiveCurveCat k} (f : X ⟶ Y) :
+    (toRegularProperCurveCat k).map f = f.hom :=
+  (rfl)
+
+variable (k) in
+/-- The functor regarding a regular projective curve as a regular proper curve is fully
+faithful. -/
+def fullyFaithfulToRegularProperCurveCat : (toRegularProperCurveCat k).FullyFaithful :=
+  fullyFaithfulInducedFunctor _
+
+instance : (toRegularProperCurveCat k).Full :=
+  (fullyFaithfulToRegularProperCurveCat k).full
+
+instance : (toRegularProperCurveCat k).Faithful :=
+  (fullyFaithfulToRegularProperCurveCat k).faithful
+
+end RegularProjectiveCurveCat
 
 end TauCeti.AlgebraicGeometry

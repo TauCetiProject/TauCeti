@@ -39,7 +39,7 @@ The proved `TauCeti.Relator.toWord_toFreeGroup` theorem is the audit boundary be
 structured expressions and the signed words used by `PresentedGroup`.
 
 The source artifact also gives subgroup generators for enumeration over `²F₄(2)`. They are not
-part of the abstract presentation and are therefore recorded in the metadata but not inserted as
+part of the abstract presentation and are therefore documented below rather than inserted as
 relations. An independent line-by-line read-through against the pinned source file and its pinned
 `tcfrontend.c` parser found an exact match after the parser's documented involution normalization.
 The parser's alphabet is `1 = u`, `2 = v = v⁻¹`, `3 = t = t⁻¹`, and `4 = u⁻¹`; after putting its
@@ -124,28 +124,32 @@ generators `u`, `v`, and `t`.
 
 Bradley, Curtis, and Malik prove the underlying presentation; the pinned `tcenum` artifact gives
 the exact machine-readable relator list. No structural property of the presented group is asserted
-here: this definition records only the cited generators and relators. -/
+here: this definition records only the cited generators and relators.
+
+Generator order (starting at index zero): `u`, `v`, `t`.
+
+Source: J. D. Bradley, R. T. Curtis, and M. Aslam Malik, Symmetric generation of the Rudvalis
+group, J. London Math. Soc. 82 (2010), 643-662; L. H. Soicher, tcenum.
+
+Source locator: doi:10.1112/jlms/jdq039; tcenum presentation file presentations/Ru at commit
+fb9dd89130fca8ad7dc4a92537c96ce7b30b62f1,
+https://github.com/lhsoicher/tcenum/blob/fb9dd89130fca8ad7dc4a92537c96ce7b30b62f1/presentations/Ru
+
+Generator convention: Generators have source order u,v,t, so indices 0, 1, and 2 have those names.
+The tcenum involution-default section lists only u, so v and t are involutions. Products are read
+left to right, a postfix minus denotes inversion, natural numbers denote powers, and [r,s] denotes
+`r^-1*s^-1*r*s`.
+
+Transcription notes: Prepend the implicit relators v^2 and t^2 to the ten words in the source's
+fifth section. The third-section words t, u, and `((uvu)^-1*t*u*v*u*v*t*v*[t,u]^2*v*t*v)^2` only
+generate the subgroup used for enumeration over twisted F4(2), so they are metadata rather than
+relations. The fourth section is empty and hence supplies no Coxeter relations. An independent
+line-by-line read-through against the pinned source and its tcfrontend.c parser found exact
+equality after its documented involution normalization: in the parser output alphabet 1 is u, 2 is
+both v and v^-1, 3 is both t and t^-1, and 4 is u^-1. FiniteSimpleGroups does not cover Ru, so its
+separate permutation-group cross-check does not apply. -/
 def ruPresentation : GroupPresentation where
-  generatorNames := ["u", "v", "t"]
-  source := "J. D. Bradley, R. T. Curtis, and M. Aslam Malik, Symmetric generation of the \
-    Rudvalis group, J. London Math. Soc. 82 (2010), 643-662; L. H. Soicher, tcenum"
-  sourceLocator := "doi:10.1112/jlms/jdq039; tcenum presentation file presentations/Ru at commit \
-    fb9dd89130fca8ad7dc4a92537c96ce7b30b62f1, https://github.com/lhsoicher/tcenum/blob/\
-    fb9dd89130fca8ad7dc4a92537c96ce7b30b62f1/presentations/Ru"
-  generatorConvention := "Generators have source order u,v,t, so indices 0, 1, and 2 have those \
-    names. The tcenum involution-default section lists only u, so v and t are involutions. \
-    Products are read left to right, a postfix minus denotes inversion, natural numbers denote \
-    powers, and [r,s] denotes r^-1*s^-1*r*s."
-  transcriptionNotes := "Prepend the implicit relators v^2 and t^2 to the ten words in the \
-    source's fifth section. The third-section words t, u, and ((uvu)^-1*t*u*v*u*v*t*v*\
-    [t,u]^2*v*t*v)^2 only generate the subgroup used for enumeration over twisted F4(2), so they \
-    are metadata rather than relations. The fourth section is empty and hence supplies no \
-    Coxeter relations. An independent line-by-line read-through against the pinned source and its \
-    tcfrontend.c parser found exact equality after its documented involution normalization: in \
-    the parser output alphabet 1 is u, 2 is both v and v^-1, 3 is both t and t^-1, and 4 is u^-1. \
-    FiniteSimpleGroups does not cover Ru, so its separate permutation-group cross-check does not \
-    apply."
-  expectedGeneratorCount := 3
+  generatorCount := 3
   expectedRelatorCount := 12
   transcribed :=
     [ .pow v 2,
@@ -161,50 +165,9 @@ def ruPresentation : GroupPresentation where
       ninthWord,
       tenthWord ]
 
-/-- The generator names recorded for `Ru`. -/
+/-- The number of generators in the presentation of `Ru`. -/
 @[simp]
-theorem ruPresentation_generatorNames : ruPresentation.generatorNames = ["u", "v", "t"] := by
-  simp [ruPresentation]
-
-/-- The sources recorded for the `Ru` presentation. -/
-theorem ruPresentation_source :
-    ruPresentation.source = "J. D. Bradley, R. T. Curtis, and M. Aslam Malik, Symmetric \
-      generation of the Rudvalis group, J. London Math. Soc. 82 (2010), 643-662; L. H. \
-      Soicher, tcenum" := by
-  simp [ruPresentation]
-
-/-- The exact paper and pinned machine-readable artifact locating the `Ru` presentation. -/
-theorem ruPresentation_sourceLocator :
-    ruPresentation.sourceLocator = "doi:10.1112/jlms/jdq039; tcenum presentation file \
-      presentations/Ru at commit fb9dd89130fca8ad7dc4a92537c96ce7b30b62f1, \
-      https://github.com/lhsoicher/tcenum/blob/\
-      fb9dd89130fca8ad7dc4a92537c96ce7b30b62f1/presentations/Ru" := by
-  simp [ruPresentation]
-
-/-- The generator order and word syntax used by the `Ru` presentation artifact. -/
-theorem ruPresentation_generatorConvention :
-    ruPresentation.generatorConvention = "Generators have source order u,v,t, so indices 0, 1, \
-      and 2 have those names. The tcenum involution-default section lists only u, so v and t are \
-      involutions. Products are read left to right, a postfix minus denotes inversion, natural \
-      numbers denote powers, and [r,s] denotes r^-1*s^-1*r*s." := by
-  simp [ruPresentation]
-
-/-- The conversion of the five `tcenum` sections into the twelve abstract relators. -/
-theorem ruPresentation_transcriptionNotes :
-    ruPresentation.transcriptionNotes = "Prepend the implicit relators v^2 and t^2 to the ten \
-      words in the source's fifth section. The third-section words t, u, and \
-      ((uvu)^-1*t*u*v*u*v*t*v*[t,u]^2*v*t*v)^2 only generate the subgroup used for enumeration \
-      over twisted F4(2), so they are metadata rather than relations. The fourth section is empty \
-      and hence supplies no Coxeter relations. An independent line-by-line read-through against \
-      the pinned source and its tcfrontend.c parser found exact equality after its documented \
-      involution normalization: in the parser output alphabet 1 is u, 2 is both v and v^-1, 3 is \
-      both t and t^-1, and 4 is u^-1. FiniteSimpleGroups does not cover Ru, so its separate \
-      permutation-group cross-check does not apply." := by
-  simp [ruPresentation]
-
-/-- The generator count recorded in the `Ru` presentation artifact. -/
-@[simp]
-theorem ruPresentation_expectedGeneratorCount : ruPresentation.expectedGeneratorCount = 3 := by
+theorem ruPresentation_generatorCount : ruPresentation.generatorCount = 3 := by
   simp [ruPresentation]
 
 /-- The relator count obtained from two implicit involution relations and ten explicit words. -/
@@ -258,7 +221,7 @@ theorem ruPresentation_transcribed :
                 (.inv (.gen ⟨0, by decide⟩))) 2) 2 ] := by
   simp [ruPresentation, eighthWord, ninthWord, tenthWord, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `Ru` agree with the transcribed data. -/
+/-- The relator count recorded for `Ru` agrees with the transcribed data. -/
 theorem ruPresentation_matchesMetadata : ruPresentation.matchesMetadata := by
   decide
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Basis
 public import TauCeti.GroupTheory.Coxeter.Restriction
+public import TauCeti.GroupTheory.Perm.Coxeter
 
 /-!
 # The finite type-A Hecke algebras embed in the infinite one
@@ -47,6 +48,8 @@ injective.
   `T_w` are linearly independent in the infinite algebra, so they form a basis of the stage.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.finrank_stage_eq_natCard`: the rank of the stage is the order
   of the Coxeter group of type `A_(n-1)`.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.finrank_stage`: the stage of the first `n` strands has rank
+  `n!`.
 
 ## References
 
@@ -200,6 +203,16 @@ include cs in
 of the Coxeter group `W` of type `A_(n-1)`. -/
 theorem finrank_stage_eq_natCard [Nontrivial R] : Module.finrank R (stage R q n) = Nat.card W := by
   rw [← (stageEquiv R q n).toLinearEquiv.finrank_eq, finrank_eq_natCard cs]
+
+/-- The stage of the first `n` strands is a finitely generated module: the images of the elements
+`T_w`, for `w` in the symmetric group on `n` letters, form a finite basis. -/
+instance : Module.Finite R (stage R q n) :=
+  .of_basis ((basisTw q (permCoxeterSystem n)).map (stageEquiv R q n).toLinearEquiv)
+
+/-- Over a nontrivial commutative ring, the stage of the first `n` strands has rank `n!`. -/
+theorem finrank_stage [Nontrivial R] : Module.finrank R (stage R q n) = n.factorial := by
+  rw [finrank_stage_eq_natCard (permCoxeterSystem n), Nat.card_eq_fintype_card,
+    Fintype.card_perm, Fintype.card_fin]
 
 end InfiniteTypeAHeckeAlgebra
 

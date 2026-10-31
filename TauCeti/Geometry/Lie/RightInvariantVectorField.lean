@@ -6,6 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.InvariantVectorField.Basic
+public import Mathlib.Geometry.Manifold.VectorField.LieBracket
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Geometry.Manifold.VectorField.LieBracket
+import TauCeti.Geometry.Manifold.VectorField.Related
 
 /-!
 # Right-invariant vector fields on Lie groups
@@ -38,6 +42,15 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
 * `contMDiff_mvfderiv_mulRightInvariantVectorField`: differentiating a smooth scalar function
   along a right-invariant field gives a smooth function.
 * `rightInvariantDerivative`: right-invariant differentiation bundled as a smooth scalar function.
+* `GroupLieAlgebra.mfderiv_inv_mulInvariantVectorField`: inversion carries the left-invariant
+  field of `v` to minus its right-invariant field, `d(inv)_g (v^L g) = -v^R g⁻¹`.
+* `GroupLieAlgebra.contMDiffAt_mulRightInvariantVectorField`,
+  `GroupLieAlgebra.mdifferentiableAt_mulRightInvariantVectorField`: on a Lie group,
+  right-invariant fields are `C^(minSmoothness 𝕜 2)`, hence differentiable.
+* `GroupLieAlgebra.mlieBracket_mulRightInvariantVectorField`: the bracket of right-invariant
+  fields is minus the right-invariant field of the bracket, `[v^R, w^R] = -⁅v, w⁆^R`. So
+  `v ↦ v^R` is an antihomomorphism of Lie algebras, unlike the homomorphism `v ↦ v^L` defining
+  `⁅v, w⁆`.
 
 ## References
 
@@ -48,6 +61,9 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
   `contMDiff_mulInvariantVectorField_infty` from
   `TauCeti.Geometry.Lie.InvariantVectorField.Basic`; those results in turn adapt Gouëzel's proof of
   Mathlib's `contMDiff_mulInvariantVectorField`.
+* The bracket of right-invariant fields is computed by transporting the left-invariant bracket
+  along inversion, by the naturality of the Lie bracket for related vector fields: John M. Lee,
+  *Introduction to Smooth Manifolds*, second edition, Chapter 8.
 * The pullback results `inverse_mfderiv_mul_right`, `mpullback_mulRightInvariantVectorField`, and
   `mulRightInvariantVectorField_eq_mpullback`, together with the addition and scalar-multiplication
   statements, transpose the corresponding left-translation results in Sébastien Gouëzel's
@@ -218,3 +234,94 @@ theorem rightInvariantDerivative_apply
     rightInvariantDerivative v f g =
       mvfderiv I f g (mulRightInvariantVectorField v g) :=
   by simp only [rightInvariantDerivative, ContMDiffMap.coeFn_mk]
+
+section Inversion
+
+variable [LieGroup I 1 G]
+
+namespace GroupLieAlgebra
+
+/-- Inversion carries the left-invariant vector field of `v` to minus its right-invariant vector
+field: `d(inv)_g (v^L g) = -v^R g⁻¹`. -/
+theorem mfderiv_inv_mulInvariantVectorField (v : GroupLieAlgebra I G) (g : G) :
+    mfderiv I I (fun h : G => h⁻¹) g (mulInvariantVectorField v g) =
+      -mulRightInvariantVectorField v g⁻¹ := by
+  -- Inversion turns left translation by `g` into right translation by `g⁻¹`.
+  have hinv (h : G) : MDifferentiableAt I I (fun k : G => k⁻¹) h :=
+    (contMDiff_inv I 1).mdifferentiableAt one_ne_zero
+  have hL : MDifferentiableAt I I (fun k : G => g * k) 1 :=
+    (contMDiff_mul_left (n := 1)).mdifferentiableAt one_ne_zero
+  have hR : MDifferentiableAt I I (fun k : G => k * g⁻¹) 1 :=
+    (contMDiff_mul_right (n := 1)).mdifferentiableAt one_ne_zero
+  have hfun : (fun k : G => k⁻¹) ∘ (fun k : G => g * k) =
+      (fun k : G => k * g⁻¹) ∘ fun k => k⁻¹ := by
+    funext k
+    simp
+  rw [mulInvariantVectorField, ← mfderiv_comp_apply_of_eq (1 : G) (hinv g) hL (mul_one g), hfun,
+    mfderiv_comp_apply_of_eq (1 : G) hR (hinv 1) inv_one, mfderiv_inv_one_apply, map_neg,
+    mulRightInvariantVectorField_apply]
+  -- The two negations live in the tangent spaces at `1 * g⁻¹` and at `g⁻¹`, which are both the
+  -- model space `E` with its negation.
+  rfl
+
+end GroupLieAlgebra
+
+end Inversion
+
+section Bracket
+
+open scoped Topology
+
+variable [LieGroup I (minSmoothness 𝕜 3) G]
+
+namespace GroupLieAlgebra
+
+/-- A right-invariant vector field on a Lie group is `C^(minSmoothness 𝕜 2)`; this is `C²` over `ℝ`
+and `ℂ`. -/
+theorem contMDiffAt_mulRightInvariantVectorField (v : GroupLieAlgebra I G) {g : G} :
+    ContMDiffAt I I.tangent (minSmoothness 𝕜 2)
+      (fun g : G => (mulRightInvariantVectorField v g : TangentBundle I G)) g := by
+  have h : minSmoothness 𝕜 2 + 1 ≤ minSmoothness 𝕜 3 := by
+    rw [← minSmoothness_add]
+    norm_num
+  exact (contMDiff_mulRightInvariantVectorField_modelSpace (I := I) (G := G) h).comp
+    (contMDiff_const.prodMk contMDiff_id) g
+
+/-- A right-invariant vector field on a Lie group is differentiable. -/
+theorem mdifferentiableAt_mulRightInvariantVectorField (v : GroupLieAlgebra I G) {g : G} :
+    MDifferentiableAt I I.tangent
+      (fun g : G => (mulRightInvariantVectorField v g : TangentBundle I G)) g :=
+  (contMDiffAt_mulRightInvariantVectorField v).mdifferentiableAt
+    (lt_of_lt_of_le (by simp) le_minSmoothness).ne'
+
+/-- **The bracket of right-invariant vector fields.** The Lie bracket of the right-invariant vector
+fields of `v` and `w` is minus the right-invariant vector field of their bracket in the tangent Lie
+algebra: `[v^R, w^R] = -⁅v, w⁆^R`. -/
+theorem mlieBracket_mulRightInvariantVectorField [CompleteSpace E] (v w : GroupLieAlgebra I G) :
+    VectorField.mlieBracket I (mulRightInvariantVectorField v) (mulRightInvariantVectorField w) =
+      -mulRightInvariantVectorField ⁅v, w⁆ := by
+  -- Inversion relates `v^L` to `-v^R`, so it carries `[v^L, w^L] = ⁅v, w⁆^L` to
+  -- `[-v^R, -w^R] = [v^R, w^R]`.
+  have : LieGroup I 1 G := LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness 𝕜 3)
+    ((show (1 : ℕ∞ω) ≤ 3 by norm_num).trans le_minSmoothness)
+  funext g
+  have hrel (u : GroupLieAlgebra I G) : ∀ᶠ k in 𝓝 g⁻¹,
+      mfderiv I I (fun h : G => h⁻¹) k (mulInvariantVectorField u k) =
+        (-mulRightInvariantVectorField u : Π h : G, TangentSpace I h) k⁻¹ :=
+    Filter.Eventually.of_forall fun k => mfderiv_inv_mulInvariantVectorField u k
+  have h := TauCeti.mfderiv_mlieBracket_of_eventually_related
+    (contMDiff_inv I (minSmoothness 𝕜 3) g⁻¹) (minSmoothness_monotone (by norm_num))
+    (mdifferentiableAt_mulInvariantVectorField v) (mdifferentiableAt_mulInvariantVectorField w)
+    ((ContMDiffAt.neg_section (contMDiffAt_mulRightInvariantVectorField v)).mdifferentiableAt
+      (lt_of_lt_of_le (by simp) le_minSmoothness).ne')
+    ((ContMDiffAt.neg_section (contMDiffAt_mulRightInvariantVectorField w)).mdifferentiableAt
+      (lt_of_lt_of_le (by simp) le_minSmoothness).ne')
+    (hrel v) (hrel w)
+  rw [← mulInvariantVector_mlieBracket, ← GroupLieAlgebra.bracket_def,
+    mfderiv_inv_mulInvariantVectorField, VectorField.mlieBracket_neg_left,
+    VectorField.mlieBracket_neg_right, neg_neg, inv_inv] at h
+  exact h.symm
+
+end GroupLieAlgebra
+
+end Bracket

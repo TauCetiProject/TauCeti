@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.ModelTheory.Basic
+public import Mathlib.ModelTheory.LanguageMap
 public import Mathlib.MeasureTheory.Group.Arithmetic
 public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
@@ -38,6 +38,8 @@ configuration by deciding its relations (`ofStructure`).
 * `TauCeti.RelationalConfiguration.Atom L V` — a relation symbol of `L` with a tuple of vertices;
 * `TauCeti.RelationalConfiguration L V` — a truth value for every atom;
 * `TauCeti.RelationalConfiguration.restrict` — pulling a configuration back along a vertex map;
+* `FirstOrder.Language.LHom.onAtom` — renaming the relation symbol of an atom along a language
+  map;
 * `TauCeti.RelationalConfiguration.instMulActionPerm` — permutations of `V` relabel configurations
   on `V`;
 * `TauCeti.RelationalConfiguration.instMulActionFinitaryPerm` — finitely supported permutations
@@ -102,6 +104,26 @@ theorem Atom.map_id (a : Atom L V) : a.map id = a := (rfl)
 
 theorem Atom.map_comp (g : W → X) (f : V → W) (a : Atom L V) :
     a.map (g ∘ f) = (a.map f).map g := (rfl)
+
+/-- Rename the relation symbol of an atom along a language map, keeping its arguments. -/
+def _root_.FirstOrder.Language.LHom.onAtom {L' : Language} (g : L →ᴸ L') (a : Atom L V) :
+    Atom L' V :=
+  ⟨a.1, g.onRelation a.2.1, a.2.2⟩
+
+@[simp]
+theorem _root_.FirstOrder.Language.LHom.onAtom_atom {L' : Language} (g : L →ᴸ L') {n : ℕ}
+    (R : L.Relations n) (x : Fin n → V) : g.onAtom (atom R x) = atom (g.onRelation R) x := (rfl)
+
+/-- Renaming the relation symbol of an atom commutes with relabelling its arguments. -/
+theorem _root_.FirstOrder.Language.LHom.onAtom_map {L' : Language} (g : L →ᴸ L') (f : V → W)
+    (a : Atom L V) : g.onAtom (a.map f) = (g.onAtom a).map f := (rfl)
+
+@[simp]
+theorem _root_.FirstOrder.Language.LHom.id_onAtom (a : Atom L V) :
+    (FirstOrder.Language.LHom.id L).onAtom a = a := (rfl)
+
+theorem _root_.FirstOrder.Language.LHom.comp_onAtom {L' L'' : Language} (g : L' →ᴸ L'')
+    (f : L →ᴸ L') (a : Atom L V) : (g.comp f).onAtom a = g.onAtom (f.onAtom a) := (rfl)
 
 /-- The atoms relabelled from `Fin m` are relabelled from `Fin n` for every `n ≥ m`. -/
 private theorem Atom.exists_map_val_of_le {m n : ℕ} (hmn : m ≤ n) {a : Atom L ℕ}

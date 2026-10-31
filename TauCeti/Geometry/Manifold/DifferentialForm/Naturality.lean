@@ -57,6 +57,14 @@ theorem mpullback_mextDeriv_ofFunction {f : M → M'} (hf : MDifferentiable I I'
   rw [mfderiv_comp x (hg _) (hf _)]
   rfl
 
+/-- The pullback of the coordinate one-form `dz` of the real line along a real function `h` is
+the differential `dh`. -/
+theorem SmoothForm.mpullback_realLineCoordForm (h : M → ℝ) :
+    TauCeti.mpullback I 𝓘(ℝ) h realLineCoordForm.1 = mextDeriv (RoughForm.ofFunction I h) := by
+  ext x v
+  rw [TauCeti.mpullback_apply, realLineCoordForm_apply, mextDeriv_ofFunction,
+    ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv_apply_eq_mfderiv_apply]
+
 variable [IsManifold I 2 M] [IsManifold I' 2 M']
 
 private theorem inChartAt_mpullback_eventuallyEq {f : M → M'} (x : M)
