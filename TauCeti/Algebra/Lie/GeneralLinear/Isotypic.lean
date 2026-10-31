@@ -11,9 +11,7 @@ public import TauCeti.Algebra.Lie.Multiplicity
 -- Non-public: these declarations appear only inside proofs.
 import TauCeti.Algebra.Lie.GeneralLinear.Existence
 import TauCeti.Algebra.Lie.UniversalEnveloping.Multiplicity
-import TauCeti.Algebra.Lie.DirectSum
 import TauCeti.Algebra.Lie.Submodule.Decomposition
-import TauCeti.Algebra.Lie.Submodule.DirectSum
 
 /-!
 # The single-weight isotypy criterion for `gl_n`

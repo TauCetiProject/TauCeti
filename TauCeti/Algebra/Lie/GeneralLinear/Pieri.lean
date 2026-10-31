@@ -8,9 +8,8 @@ module
 public import Mathlib.Algebra.Lie.DirectSum
 public import Mathlib.Algebra.Lie.TensorProduct
 public import TauCeti.Algebra.Lie.GeneralLinear.Carrier
-import Mathlib.LinearAlgebra.Dual.Basis
-import Mathlib.LinearAlgebra.TensorProduct.Basis
 import TauCeti.Algebra.Lie.GeneralLinear.CompleteReducibility
+import TauCeti.Algebra.Lie.GeneralLinear.DualTensorProduct
 import TauCeti.Algebra.Lie.GeneralLinear.Isotypic
 import TauCeti.Algebra.Lie.Matrix.Single
 
@@ -31,7 +30,8 @@ once (`TauCeti.gl_dual_standard_pieri`). Here `εₜ = Pi.single t 1`, and `-ε�
 
 Write an element of `V* ⊗ M` as `∑ₛ e*ₛ ⊗ mₛ`, with `e*ₛ` the dual basis. The matrix unit `Eᵢⱼ`
 sends `e*ᵢ` to `-e*ⱼ` and kills the other `e*ₛ`, so the coefficients of `⁅Eᵢⱼ, x⁆` are those of
-`x` acted on by `Eᵢⱼ`, minus the coefficient at `i` moved to `j`.
+`x` acted on by `Eᵢⱼ`, minus the coefficient at `i` moved to `j`
+(`TauCeti.dualStandardCoeff_lie_single`).
 
 * **Upper bound.** If `x` is a highest weight vector of weight `ν` and `s` is the least index with
   `mₛ ≠ 0`, the moved terms cannot reach `mₛ`, so `mₛ` is a highest weight vector of weight
@@ -47,7 +47,8 @@ sends `e*ᵢ` to `-e*ⱼ` and kills the other `e*ₛ`, so the coefficients of `�
   (`TauCeti.exists_isGlHighestWeightVector_dual_tensorProduct`). These are the classical
   lowering-operator formulas for the Gelfand–Tsetlin patterns of `gl n`.
 
-The identity matrix acts on `V* ⊗ L(μ)` by the scalar `∑ μ - 1`, so the module is completely
+The identity matrix acts on `V* ⊗ L(μ)` by the scalar `∑ μ - 1`
+(`TauCeti.one_lie_dual_tensorProduct`), so the module is completely
 reducible, and the multiplicity-free criterion
 `TauCeti.nonempty_lieModuleEquiv_directSum_glIrreducible_of_forall_exists_eq_smul` assembles the
 two halves into the decomposition.
@@ -83,88 +84,7 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 variable {K : Type*} [Field K] {n : ℕ}
 variable {M : Type*} [AddCommGroup M] [Module K M]
 
-/-! ### Coefficients along the dual basis -/
-
-variable (M) in
-/-- The coefficient of `x ∈ V* ⊗ M` at the dual basis functional `e*ₛ`, read off Mathlib's
-expansion `TensorProduct.equivFinsuppOfBasisLeft` along the dual of the standard basis. -/
-private noncomputable def dualCoeff (s : Fin n) : Module.Dual K (Fin n → K) ⊗[K] M →ₗ[K] M :=
-  (Finsupp.lapply s).comp
-    (equivFinsuppOfBasisLeft (Pi.basisFun K (Fin n)).dualBasis).toLinearMap
-
-/-- The coefficient of `f ⊗ m` at `e*ₛ` is `f (Pi.single s 1) • m`. -/
-private theorem dualCoeff_tmul (s : Fin n) (f : Module.Dual K (Fin n → K)) (m : M) :
-    dualCoeff M s (f ⊗ₜ m) = f (Pi.single s 1) • m := by
-  simp [dualCoeff]
-
-/-- Two elements of `V* ⊗ M` with the same coefficients are equal. -/
-private theorem ext_dualCoeff {x y : Module.Dual K (Fin n → K) ⊗[K] M}
-    (h : ∀ s, dualCoeff M s x = dualCoeff M s y) : x = y :=
-  (equivFinsuppOfBasisLeft (Pi.basisFun K (Fin n)).dualBasis).injective (Finsupp.ext h)
-
-/-- A nonzero element of `V* ⊗ M` has a least index with a nonzero coefficient. -/
-private theorem exists_dualCoeff_ne_zero_of_ne_zero {x : Module.Dual K (Fin n → K) ⊗[K] M}
-    (hx : x ≠ 0) : ∃ s, dualCoeff M s x ≠ 0 ∧ ∀ r < s, dualCoeff M r x = 0 := by
-  have hS : {s | dualCoeff M s x ≠ 0}.Nonempty := by
-    by_contra h
-    refine hx (ext_dualCoeff fun s => ?_)
-    by_contra hs
-    exact h ⟨s, by simpa using hs⟩
-  obtain ⟨s, hs, hmin⟩ := wellFounded_lt.has_min _ hS
-  exact ⟨s, hs, fun r hr => by_contra fun h => hmin r h hr⟩
-
-/-- The coefficients of `∑ᵣ e*ᵣ ⊗ mᵣ` are the `mᵣ`. -/
-private theorem dualCoeff_sum_dualBasis_tmul (m : Fin n → M) (s : Fin n) :
-    dualCoeff M s (∑ r, (Pi.basisFun K (Fin n)).dualBasis r ⊗ₜ m r) = m s := by
-  simp [dualCoeff_tmul, Pi.single_apply]
-
 variable [LieRingModule (Matrix (Fin n) (Fin n) K) M] [LieModule K (Matrix (Fin n) (Fin n) K) M]
-
-/-- **The coefficients of `⁅Eᵢⱼ, x⁆`.** The matrix unit acts on each coefficient, and also moves
-the coefficient at `i` to `j` with a sign, since `Eᵢⱼ` sends `e*ᵢ` to `-e*ⱼ`. -/
-private theorem dualCoeff_lie_single (i j s : Fin n) (x : Module.Dual K (Fin n → K) ⊗[K] M) :
-    dualCoeff M s ⁅(single i j 1 : Matrix (Fin n) (Fin n) K), x⁆ =
-      ⁅(single i j 1 : Matrix (Fin n) (Fin n) K), dualCoeff M s x⁆ -
-        if j = s then dualCoeff M i x else 0 := by
-  have h : (dualCoeff M s).comp (LieModule.toEnd K (Matrix (Fin n) (Fin n) K)
-      (Module.Dual K (Fin n → K) ⊗[K] M) (single i j 1)) =
-      (LieModule.toEnd K (Matrix (Fin n) (Fin n) K) M (single i j 1)).comp (dualCoeff M s) -
-        if j = s then dualCoeff M i else 0 := by
-    -- `Eᵢⱼ` sends the standard basis vector at `s` to the one at `i` when `j = s`, else to `0`.
-    have hvec : (single i j (1 : K) : Matrix (Fin n) (Fin n) K) *ᵥ Pi.single s 1 =
-        if j = s then Pi.single i 1 else 0 := by
-      ext r
-      rw [mulVec_single_one]
-      by_cases hjs : j = s
-      · subst hjs
-        by_cases hri : r = i
-        · subst hri; simp
-        · simp [hri, Ne.symm hri]
-      · simp [hjs]
-    refine TensorProduct.ext' fun f m => ?_
-    rw [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.comp_apply,
-      LieModule.toEnd_apply_apply, LieModule.toEnd_apply_apply, LieModule.lie_tmul_right,
-      map_add, dualCoeff_tmul, dualCoeff_tmul, dualCoeff_tmul, Module.Dual.lie_apply,
-      Matrix.lie_apply, hvec, lie_smul]
-    split_ifs <;> simp [dualCoeff_tmul, sub_eq_add_neg, add_comm]
-  have hx := LinearMap.congr_fun h x
-  rw [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.comp_apply,
-    LieModule.toEnd_apply_apply, LieModule.toEnd_apply_apply] at hx
-  rw [hx]
-  split_ifs <;> rfl
-
-/-- The diagonal matrix units on the coefficients of a vector of weight `ν`: the coefficient at `s`
-has weight `ν + εₛ`. -/
-private theorem lie_single_self_dualCoeff {nu : Fin n → K} {x : Module.Dual K (Fin n → K) ⊗[K] M}
-    (hx : ∀ k, ⁅(single k k 1 : Matrix (Fin n) (Fin n) K), x⁆ = nu k • x) (k s : Fin n) :
-    ⁅(single k k 1 : Matrix (Fin n) (Fin n) K), dualCoeff M s x⁆ =
-      (nu + Pi.single s (1 : K) : Fin n → K) k • dualCoeff M s x := by
-  have h := dualCoeff_lie_single k k s x
-  rw [hx, map_smul, eq_sub_iff_add_eq] at h
-  rw [← h]
-  by_cases hks : k = s
-  · subst hks; simp [add_smul]
-  · simp [hks]
 
 /-! ### Highest weight vectors of `V* ⊗ M` -/
 
@@ -172,13 +92,13 @@ section UpperBound
 
 /-- **The least nonzero coefficient of a highest weight vector is a highest weight vector**, of the
 weight shifted by `εₛ`: the raising matrix units can move a coefficient only to a larger index. -/
-private theorem isGlHighestWeightVector_dualCoeff {nu : Fin n → K}
+private theorem isGlHighestWeightVector_dualStandardCoeff {nu : Fin n → K}
     {x : Module.Dual K (Fin n → K) ⊗[K] M} (hx : IsGlHighestWeightVector nu x) {s : Fin n}
-    (hs : dualCoeff M s x ≠ 0) (hmin : ∀ r < s, dualCoeff M r x = 0) :
-    IsGlHighestWeightVector (nu + Pi.single s (1 : K)) (dualCoeff M s x) := by
-  refine isGlHighestWeightVector_iff.mpr ⟨hs, fun k => lie_single_self_dualCoeff
+    (hs : dualStandardCoeff M s x ≠ 0) (hmin : ∀ r < s, dualStandardCoeff M r x = 0) :
+    IsGlHighestWeightVector (nu + Pi.single s (1 : K)) (dualStandardCoeff M s x) := by
+  refine isGlHighestWeightVector_iff.mpr ⟨hs, fun k => lie_single_self_dualStandardCoeff
     hx.lie_single_self_eq_smul k s, fun i j hij => ?_⟩
-  have h := dualCoeff_lie_single i j s x
+  have h := dualStandardCoeff_lie_single i j s x
   rw [hx.lie_single_eq_zero hij, map_zero, eq_comm, sub_eq_zero] at h
   rw [h]
   split_ifs with hjs
@@ -195,18 +115,18 @@ theorem exists_eq_sub_single_of_isGlHighestWeightVector_dual_tensorProduct
     (hv : IsGlHighestWeightVector mu v) {nu : Fin n → K}
     {x : Module.Dual K (Fin n → K) ⊗[K] M} (hx : IsGlHighestWeightVector nu x) :
     ∃ t : Fin n, nu = mu - Pi.single t 1 := by
-  obtain ⟨s, hs, hmin⟩ := exists_dualCoeff_ne_zero_of_ne_zero hx.ne_zero
+  obtain ⟨s, hs, hmin⟩ := exists_dualStandardCoeff_ne_zero_of_ne_zero hx.ne_zero
   exact ⟨s, eq_sub_of_add_eq (hv.weight_eq_of_isIrreducible
-    (isGlHighestWeightVector_dualCoeff hx hs hmin))⟩
+    (isGlHighestWeightVector_dualStandardCoeff hx hs hmin))⟩
 
 /-- A highest weight vector of weight `μ - εₜ` has vanishing coefficients below `t`, and its
 coefficient at `t` is a nonzero multiple of the highest weight vector of `M`. -/
-private theorem dualCoeff_of_isGlHighestWeightVector_sub_single (hv : IsGlHighestWeightVector mu v)
-    {t : Fin n} {x : Module.Dual K (Fin n → K) ⊗[K] M}
+private theorem dualStandardCoeff_of_isGlHighestWeightVector_sub_single
+    (hv : IsGlHighestWeightVector mu v) {t : Fin n} {x : Module.Dual K (Fin n → K) ⊗[K] M}
     (hx : IsGlHighestWeightVector (mu - Pi.single t 1) x) :
-    (∀ r < t, dualCoeff M r x = 0) ∧ ∃ c : K, c ≠ 0 ∧ dualCoeff M t x = c • v := by
-  obtain ⟨s, hs, hmin⟩ := exists_dualCoeff_ne_zero_of_ne_zero hx.ne_zero
-  have hxs := isGlHighestWeightVector_dualCoeff hx hs hmin
+    (∀ r < t, dualStandardCoeff M r x = 0) ∧ ∃ c : K, c ≠ 0 ∧ dualStandardCoeff M t x = c • v := by
+  obtain ⟨s, hs, hmin⟩ := exists_dualStandardCoeff_ne_zero_of_ne_zero hx.ne_zero
+  have hxs := isGlHighestWeightVector_dualStandardCoeff hx hs hmin
   have hst : s = t := by
     by_contra hne
     have h := congr_fun (hv.weight_eq_of_isIrreducible hxs) s
@@ -223,8 +143,8 @@ private theorem exists_eq_smul_of_isGlHighestWeightVector_sub_single
     (hv : IsGlHighestWeightVector mu v) {t : Fin n} {x y : Module.Dual K (Fin n → K) ⊗[K] M}
     (hx : IsGlHighestWeightVector (mu - Pi.single t 1) x)
     (hy : IsGlHighestWeightVector (mu - Pi.single t 1) y) : ∃ c : K, y = c • x := by
-  obtain ⟨hx0, a, ha, hxa⟩ := dualCoeff_of_isGlHighestWeightVector_sub_single hv hx
-  obtain ⟨hy0, b, hb, hyb⟩ := dualCoeff_of_isGlHighestWeightVector_sub_single hv hy
+  obtain ⟨hx0, a, ha, hxa⟩ := dualStandardCoeff_of_isGlHighestWeightVector_sub_single hv hx
+  obtain ⟨hy0, b, hb, hyb⟩ := dualStandardCoeff_of_isGlHighestWeightVector_sub_single hv hy
   refine ⟨b / a, ?_⟩
   by_contra hne
   have hx' := hx.smul (div_ne_zero hb ha)
@@ -233,7 +153,7 @@ private theorem exists_eq_smul_of_isGlHighestWeightVector_sub_single
       rw [lie_sub, hy.lie_single_self_eq_smul, hx'.lie_single_self_eq_smul, smul_sub],
       fun i j hij => by
       rw [lie_sub, hy.lie_single_eq_zero hij, hx'.lie_single_eq_zero hij, sub_zero]⟩
-  obtain ⟨-, c, hc, hzc⟩ := dualCoeff_of_isGlHighestWeightVector_sub_single hv hz
+  obtain ⟨-, c, hc, hzc⟩ := dualStandardCoeff_of_isGlHighestWeightVector_sub_single hv hz
   apply hc
   have hv0 := hv.ne_zero
   rw [map_sub, map_smul, hxa, hyb, smul_smul, div_mul_cancel₀ b ha, sub_self, eq_comm,
@@ -436,21 +356,6 @@ end Lowering
 
 /-! ### The dual-standard Pieri rule -/
 
-/-- If the identity matrix acts on `M` by a scalar `c`, it acts on `V* ⊗ M` by `c - 1`, since it
-acts on `V*` by `-1`. -/
-private theorem one_lie_dual_tensorProduct {c : K} (hc : ∀ m : M,
-    ⁅(1 : Matrix (Fin n) (Fin n) K), m⁆ = c • m) (x : Module.Dual K (Fin n → K) ⊗[K] M) :
-    ⁅(1 : Matrix (Fin n) (Fin n) K), x⁆ = (c - 1) • x := by
-  have h : LieModule.toEnd K (Matrix (Fin n) (Fin n) K) (Module.Dual K (Fin n → K) ⊗[K] M) 1 =
-      (c - 1) • LinearMap.id := by
-    refine TensorProduct.ext' fun f m => ?_
-    have hf : ⁅(1 : Matrix (Fin n) (Fin n) K), f⁆ = -f := LinearMap.ext fun w => by
-      rw [Module.Dual.lie_apply, Matrix.lie_apply, Matrix.one_mulVec, LinearMap.neg_apply]
-    rw [LieModule.toEnd_apply_apply, LieModule.lie_tmul_right, hf, hc, LinearMap.smul_apply,
-      LinearMap.id_apply, neg_tmul, tmul_smul, sub_smul, one_smul]
-    abel
-  simpa using LinearMap.congr_fun h x
-
 variable [CharZero K]
 
 /-- **A highest weight vector of `V* ⊗ M` of weight `μ - εₜ`.** If `v` is a highest weight vector
@@ -465,16 +370,16 @@ theorem exists_isGlHighestWeightVector_dual_tensorProduct {mu : Fin n → K} {v 
   refine ⟨x, isGlHighestWeightVector_iff.mpr ⟨fun h0 => hv.ne_zero ?_, fun k => ?_,
     fun i j hij => ?_⟩⟩
   · rw [← pieriVec_self (mu := mu) (v := v) (t := t),
-      ← dualCoeff_sum_dualBasis_tmul (K := K) (pieriVec mu v t) t, ← hx, h0, map_zero]
-  · refine ext_dualCoeff fun r => ?_
-    rw [dualCoeff_lie_single, map_smul, hx, dualCoeff_sum_dualBasis_tmul,
-      dualCoeff_sum_dualBasis_tmul, lie_single_self_pieriVec hv]
+      ← dualStandardCoeff_sum_dualBasis_tmul (K := K) (pieriVec mu v t) t, ← hx, h0, map_zero]
+  · refine ext_dualStandardCoeff fun r => ?_
+    rw [dualStandardCoeff_lie_single, map_smul, hx, dualStandardCoeff_sum_dualBasis_tmul,
+      dualStandardCoeff_sum_dualBasis_tmul, lie_single_self_pieriVec hv]
     split_ifs with hkr
     · subst hkr; simp [add_smul]
     · simp [Pi.single_eq_of_ne hkr]
-  · refine ext_dualCoeff fun r => ?_
-    rw [dualCoeff_lie_single, map_zero, hx, dualCoeff_sum_dualBasis_tmul,
-      dualCoeff_sum_dualBasis_tmul, lie_single_pieriVec hv hmut r hij, sub_self]
+  · refine ext_dualStandardCoeff fun r => ?_
+    rw [dualStandardCoeff_lie_single, map_zero, hx, dualStandardCoeff_sum_dualBasis_tmul,
+      dualStandardCoeff_sum_dualBasis_tmul, lie_single_pieriVec hv hmut r hij, sub_self]
 
 /-- **The dual-standard Pieri rule for `gl n`.** Over an algebraically closed field of
 characteristic zero, the tensor product of the dual standard module `V*` with the irreducible
