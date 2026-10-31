@@ -25,8 +25,9 @@ that theorem, `SimpleGraph.IsTree.posDef_graphCartanMatrix`, says that a finite 
 none of them is a Dynkin diagram. This file shows that the affine diagrams `Dₘ₊₄`, `E₆`, `E₇` and
 `E₈` of `TauCeti.AffineDynkinType` are contained in those underlying graphs, by explicit vertex
 maps, and restates the forbidden-subgraph theorem in terms of `TauCeti.AffineDynkinType`. A graph
-with a cycle contains the cycle `Ãₙ` (`SimpleGraph.isAcyclic_iff_free_cycleGraph`), which gives
-the statement for connected graphs.
+with a cycle contains the cycle `Ãₙ`
+(`SimpleGraph.exists_isContained_affineDynkinType_A_of_not_isAcyclic`), which gives the statement
+for connected graphs.
 
 ## Main results
 
@@ -163,15 +164,6 @@ namespace SimpleGraph
 open TauCeti
 
 variable {V : Type*} {G : SimpleGraph V}
-
-/-- **A graph with a cycle contains an affine diagram `Ãₙ`**, the cycle on `n + 1 ≥ 3` nodes. -/
-theorem exists_isContained_affineDynkinType_A_of_not_isAcyclic (hG : ¬ G.IsAcyclic) :
-    ∃ n, 2 ≤ n ∧ (AffineDynkinType.A n).graph ⊑ G := by
-  rw [isAcyclic_iff_free_cycleGraph] at hG
-  push Not at hG
-  obtain ⟨n, hn, hc⟩ := hG
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  exact ⟨m, by omega, by rwa [AffineDynkinType.graph_A]⟩
 
 /-- **A finite tree which is not a Dynkin diagram contains affine `Dₙ`, `E₆`, `E₇` or `E₈`.** If
 a finite tree is not isomorphic to the diagram of any valid Dynkin type, then it contains a copy,

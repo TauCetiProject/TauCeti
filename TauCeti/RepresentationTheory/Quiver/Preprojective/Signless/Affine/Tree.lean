@@ -31,9 +31,9 @@ theorem that the zigzag algebra of a non-Dynkin tree is not intrinsically formal
 
 ## Main results
 
-* `TauCeti.exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_isTree`: a finite
-  tree which is not a Dynkin diagram has a nonzero cyclic class in path degree `4`, `6`, `8` or
-  `12`.
+* `SimpleGraph.IsTree.exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule`: a
+  finite tree which is not a Dynkin diagram has a nonzero cyclic class in path degree `4`, `6`,
+  `8` or `12`.
 
 ## References
 
@@ -44,7 +44,9 @@ theorem that the zigzag algebra of a non-Dynkin tree is not intrinsically formal
 
 public section
 
-namespace TauCeti
+namespace SimpleGraph.IsTree
+
+open TauCeti
 
 universe u w
 
@@ -56,7 +58,7 @@ not isomorphic to the diagram of any valid Dynkin type, then over every nontrivi
 ring some element of path degree `4`, `6`, `8` or `12` of the signless preprojective algebra
 `Π⁺(G)` does not lie in the commutator submodule `[Π⁺(G), Π⁺(G)]`: its class in the cyclic
 quotient is nonzero. -/
-theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_isTree
+theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule
     [Nontrivial k] (hG : G.IsTree)
     (hD : ¬ ∃ t : DynkinType, t.Valid ∧ Nonempty (G ≃g diagramGraph t.cartanMatrix)) :
     ∃ d ∈ ({4, 6, 8, 12} : Finset ℕ), ∃ x ∈ signlessPreprojectiveGrade k (DoubledQuiver G) d,
@@ -68,4 +70,4 @@ theorem exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_isTr
   · exact ⟨8, by simp, exists_mem_signlessPreprojectiveGrade_eight_notMem_commutatorSubmodule h⟩
   · exact ⟨12, by simp, exists_mem_signlessPreprojectiveGrade_twelve_notMem_commutatorSubmodule h⟩
 
-end TauCeti
+end SimpleGraph.IsTree

@@ -92,6 +92,8 @@ number, which reduces connectedness to a single induction. Explicitly:
 * `TauCeti.AffineDynkinType.cartanMatrix_mulVec_marks_eq_zero`: the marks are a null vector,
   `Cδ = 0`.
 * `TauCeti.AffineDynkinType.marks_affineNode`: the mark at the affine node is `1`.
+* `SimpleGraph.exists_isContained_affineDynkinType_A_of_not_isAcyclic`: a graph with a cycle
+  contains a copy of the cycle `Aₙ` for some `n ≥ 2`.
 
 ## References
 
@@ -640,3 +642,20 @@ theorem cartanMatrix_mulVec_marks_eq_zero {t : AffineDynkinType} (ht : t.Valid) 
 end AffineDynkinType
 
 end TauCeti
+
+namespace SimpleGraph
+
+open TauCeti
+
+variable {V : Type*} {G : SimpleGraph V}
+
+/-- **A graph with a cycle contains an affine diagram `Ãₙ`**, the cycle on `n + 1 ≥ 3` nodes. -/
+theorem exists_isContained_affineDynkinType_A_of_not_isAcyclic (hG : ¬ G.IsAcyclic) :
+    ∃ n, 2 ≤ n ∧ (AffineDynkinType.A n).graph ⊑ G := by
+  rw [isAcyclic_iff_free_cycleGraph] at hG
+  push Not at hG
+  obtain ⟨n, hn, hc⟩ := hG
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  exact ⟨m, by omega, by rwa [AffineDynkinType.graph_A]⟩
+
+end SimpleGraph
