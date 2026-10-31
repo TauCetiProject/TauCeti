@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Schatten
-public import TauCeti.Analysis.Matrix.SingularValues
+public import TauCeti.Analysis.InnerProductSpace.KyFan
 public import TauCeti.Algebra.Order.BigOperators.Sum.ByParts
-public import TauCeti.Analysis.InnerProductSpace.HoffmanWielandt.Basic
 
 /-!
 # Hoffman–Wielandt inequality for singular values
@@ -43,87 +42,40 @@ variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSp
   [FiniteDimensional 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
   [FiniteDimensional 𝕜 F]
 
-/-- The real diagonal pairing of two orthonormal families under `B` is bounded by the Ky Fan
-sum of its singular values. -/
-theorem sum_re_inner_apply_le_kyFanSum (B : E →ₗ[𝕜] F) {k : ℕ}
-    (u : Fin k → F) (v : Fin k → E) (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v) :
-    ∑ i, RCLike.re ⟪u i, B (v i)⟫_𝕜 ≤ B.kyFanSum k := by
-  calc
-    ∑ i, RCLike.re ⟪u i, B (v i)⟫_𝕜 =
-        RCLike.re (∑ i, ⟪u i, B (v i)⟫_𝕜) := by rw [← map_sum]
-    _ ≤ ‖∑ i, ⟪u i, B (v i)⟫_𝕜‖ := RCLike.re_le_norm _
-    _ ≤ B.kyFanSum k := by simpa using B.norm_sum_inner_le_kyFanSum hu hv
-
-/-- **The von Neumann trace inequality for rectangular maps.** For decreasing singular values of
-`A`, their weighted pairing with the diagonal coefficients of `B` in any orthonormal family of
-`F` paired with `A`'s right singular basis is bounded by the sorted pairing of the singular values
-of `A` and `B`. -/
-theorem sum_singularValues_mul_re_inner_le_sum_singularValues_mul_singularValues
-    (A B : E →ₗ[𝕜] F) {u : Fin (finrank 𝕜 E) → F} (hu : Orthonormal 𝕜 u) :
-    ∑ i : Fin (finrank 𝕜 E), A.singularValues i *
-        RCLike.re ⟪u i, B (A.rightSingularBasis i)⟫_𝕜 ≤
-      ∑ i : Fin (finrank 𝕜 E), A.singularValues i * B.singularValues i := by
-  let v := A.rightSingularBasis
-  have hv : Orthonormal 𝕜 v := v.orthonormal
-  let x : Fin (finrank 𝕜 E) → ℝ := fun i ↦
-    RCLike.re ⟪u i, B (v i)⟫_𝕜
-  let y : Fin (finrank 𝕜 E) → ℝ := fun i ↦ B.singularValues i
-  let f : ℕ → ℝ := fun i ↦ if hi : i < finrank 𝕜 E then x ⟨i, hi⟩ else 0
+/-- **Weighted Ky Fan trace core.** If the partial real diagonal pairings of two orthonormal
+families are bounded by the Ky Fan sums, pairing them with any nonnegative antitone weights is
+bounded by the same weighted pairing with the singular values. -/
+theorem sum_antitone_mul_re_inner_le_sum_mul_singularValues (B : E →ₗ[𝕜] F) {n : ℕ}
+    (u : Fin n → F) (v : Fin n → E) (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v)
+    {w : ℕ → ℝ} (hw : Antitone w) (hw0 : ∀ i, 0 ≤ w i) :
+    ∑ i : Fin n, w i * RCLike.re ⟪u i, B (v i)⟫_𝕜 ≤
+      ∑ i : Fin n, w i * B.singularValues i := by
+  let f : ℕ → ℝ := fun i ↦
+    if hi : i < n then RCLike.re ⟪u ⟨i, hi⟩, B (v ⟨i, hi⟩)⟫_𝕜 else 0
   let g : ℕ → ℝ := fun i ↦ B.singularValues i
-  have hf : (fun i : Fin (finrank 𝕜 E) ↦ f i) = x := by
-    ext i
-    simp [f]
-  have hg : (fun i : Fin (finrank 𝕜 E) ↦ g i) = y := by
-    ext i
-    rfl
-  have hprefix (k : ℕ) (hk : k ≤ finrank 𝕜 E) :
-      TauCeti.prefixSum k x ≤ TauCeti.prefixSum k y := by
+  have hfg : ∀ k ≤ n, ∑ i ∈ Finset.range k, f i ≤ ∑ i ∈ Finset.range k, g i := by
+    intro k hk
     have hsum : ∑ i : Fin k, f i =
-        ∑ i : Fin k, x (Fin.castLE hk i) := by
+        ∑ i : Fin k, RCLike.re ⟪u (Fin.castLE hk i), B (v (Fin.castLE hk i))⟫_𝕜 := by
       refine Finset.sum_congr rfl fun i _ ↦ ?_
-      have hcast : (⟨(i : ℕ), lt_of_lt_of_le i.isLt hk⟩ : Fin (finrank 𝕜 E)) =
-          Fin.castLE hk i := by
+      have hcast : (⟨(i : ℕ), lt_of_lt_of_le i.isLt hk⟩ : Fin n) = Fin.castLE hk i := by
         exact Fin.ext rfl
-      simp [f, x, hcast, lt_of_lt_of_le i.isLt hk]
-    have hreal : (∑ i ∈ Finset.range k, f i) ≤ B.kyFanSum k := by
+      simp [f, hcast, lt_of_lt_of_le i.isLt hk]
+    have hreal : ∑ i ∈ Finset.range k, f i ≤ B.kyFanSum k := by
       calc
-        _ = ∑ i : Fin k, f i := by
-          symm
-          rw [Fin.sum_univ_eq_sum_range f]
-        _ = ∑ i : Fin k, RCLike.re
-            ⟪u (Fin.castLE hk i), B (v (Fin.castLE hk i))⟫_𝕜 := by
-          simpa [x] using hsum
-        _ = RCLike.re
-            (∑ i : Fin k, ⟪u (Fin.castLE hk i), B (v (Fin.castLE hk i))⟫_𝕜) := by
-          rw [← map_sum]
+        _ = ∑ i : Fin k, f i := by rw [Fin.sum_univ_eq_sum_range]
+        _ = ∑ i : Fin k,
+            RCLike.re ⟪u (Fin.castLE hk i), B (v (Fin.castLE hk i))⟫_𝕜 := hsum
         _ ≤ B.kyFanSum k := by
-          simpa only [← map_sum] using B.sum_re_inner_apply_le_kyFanSum
+          simpa only [Fintype.card_fin] using B.sum_re_inner_apply_le_kyFanSum
             (fun i ↦ u (Fin.castLE hk i)) (fun i ↦ v (Fin.castLE hk i))
             (hu.comp _ (Fin.castLE_injective hk)) (hv.comp _ (Fin.castLE_injective hk))
-    rw [← hf, ← hg, TauCeti.prefixSum_eq_sum_range k f,
-      TauCeti.prefixSum_eq_sum_range k g]
-    simpa [LinearMap.kyFanSum_def, Nat.min_eq_left hk] using hreal
-  have hfg : ∀ k ≤ finrank 𝕜 E, ∑ i ∈ Finset.range k, f i ≤
-      ∑ i ∈ Finset.range k, g i := by
-    intro k hk
-    have h := hprefix k hk
-    rw [← hf, ← hg, TauCeti.prefixSum_eq_sum_range k f,
-      TauCeti.prefixSum_eq_sum_range k g] at h
-    rw [Nat.min_eq_left hk] at h
-    exact h
-  have hcross := TauCeti.sum_range_mul_le_sum_range_mul
-    (w := fun i ↦ A.singularValues i) hfg
-    (fun i hi ↦ A.singularValues_antitone (by omega))
-    (A.singularValues_nonneg (finrank 𝕜 E - 1))
-  rw [← Fin.sum_univ_eq_sum_range (fun i ↦ A.singularValues i * f i),
-    ← Fin.sum_univ_eq_sum_range (fun i ↦ A.singularValues i * g i)] at hcross
-  have hf' (i : Fin (finrank 𝕜 E)) : f i = x i := congrFun hf i
-  have hg' (i : Fin (finrank 𝕜 E)) : g i = y i := congrFun hg i
-  have hcross' :
-      ∑ i : Fin (finrank 𝕜 E), A.singularValues i * x i ≤
-        ∑ i : Fin (finrank 𝕜 E), A.singularValues i * y i := by
-    simpa only [hf', hg'] using hcross
-  simpa [x, y, v] using hcross'
+    simpa [LinearMap.kyFanSum_def, g] using hreal
+  have hcross := TauCeti.sum_range_mul_le_sum_range_mul (w := w) hfg
+    (fun i _ ↦ hw (Nat.le_succ i)) (hw0 _)
+  rw [← Fin.sum_univ_eq_sum_range (fun i ↦ w i * f i),
+    ← Fin.sum_univ_eq_sum_range (fun i ↦ w i * g i)] at hcross
+  simpa [f, g] using hcross
 
 /-- **The singular-value Hoffman–Wielandt inequality** when the domain dimension does not exceed
 the codomain dimension. The squared distance between the ordered singular values is at most the
@@ -144,8 +96,9 @@ theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_of_finrank_le
     · have hwi := hw i (Fin.castLE hEF i) (by simp) hσ
       simpa [u] using congrArg (fun z : F ↦
         ((A.singularValues i : ℝ) : 𝕜) • z) hwi.symm
-  have hcross := A.sum_singularValues_mul_re_inner_le_sum_singularValues_mul_singularValues
-    B (w.orthonormal.comp _ (Fin.castLE_injective hEF))
+  have hv : Orthonormal 𝕜 v := v.orthonormal
+  have hcross := B.sum_antitone_mul_re_inner_le_sum_mul_singularValues
+    u v hu hv A.singularValues_antitone A.singularValues_nonneg
   have hB2 :
       TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F B ^ 2 =
           ∑ i : Fin (finrank 𝕜 E), B.singularValues i ^ 2 := by
@@ -163,11 +116,6 @@ theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_of_finrank_le
             RCLike.re ⟪u i, B (v i)⟫_𝕜) + ‖B (v i)‖ ^ 2 := by
     rw [sub_apply, hAv i, norm_sub_sq (𝕜 := 𝕜)]
     simp [norm_smul, u, inner_smul_left, RCLike.conj_ofReal]
-  have hcross' :
-      ∑ i : Fin (finrank 𝕜 E), A.singularValues i *
-          RCLike.re ⟪u i, B (v i)⟫_𝕜 ≤
-        ∑ i : Fin (finrank 𝕜 E), A.singularValues i * B.singularValues i := by
-    simpa [u, v] using hcross
   have hexpSum :
       ∑ i : Fin (finrank 𝕜 E), ‖(A - B) (v i)‖ ^ 2 =
         (∑ i : Fin (finrank 𝕜 E), A.singularValues i ^ 2) -
@@ -185,11 +133,12 @@ theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_of_finrank_le
     rw [← Finset.mul_sum]
   rw [hsingexp, TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_apply v (A - B),
     hexpSum, hBbasis]
-  nlinarith [hcross']
+  nlinarith [hcross]
 
-/-- **The singular-value Hoffman–Wielandt inequality** for arbitrary finite-dimensional maps,
-with the sum indexed by the smaller of the domain and codomain dimensions. -/
-theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub
+/-- **The singular-value Hoffman–Wielandt inequality** for arbitrary finite-dimensional maps.
+The sum runs over the first `min (finrank 𝕜 E) (finrank 𝕜 F)` singular values; beyond that index,
+both maps' singular values are zero. -/
+theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_min
     (A B : E →ₗ[𝕜] F) :
     ∑ i : Fin (min (finrank 𝕜 E) (finrank 𝕜 F)),
         (A.singularValues i - B.singularValues i) ^ 2 ≤
@@ -217,37 +166,3 @@ theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub
     exact h
 
 end LinearMap
-
-open scoped Matrix.Norms.Frobenius
-
-namespace Matrix
-
-variable {m n : Type*} [Fintype m] [Fintype n] [DecidableEq n]
-
-/-- **The singular-value Hoffman–Wielandt inequality** for same-shaped rectangular matrices:
-the squared distance between their ordered singular values, summed up to the smaller dimension,
-is bounded by the squared Frobenius norm of their difference. -/
-theorem sum_sq_singularValues_toEuclideanLin_sub_le_frobenius_norm_sub_sq
-    {𝕜 : Type*} [RCLike 𝕜] (A B : Matrix m n 𝕜) :
-    ∑ i : Fin (min (Fintype.card n) (Fintype.card m)),
-        ((Matrix.toEuclideanLin A).singularValues i -
-          (Matrix.toEuclideanLin B).singularValues i) ^ 2 ≤ ‖A - B‖ ^ 2 := by
-  let e := EuclideanSpace.basisFun n 𝕜
-  let f := EuclideanSpace.basisFun m 𝕜
-  have hF : ‖A - B‖ = TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜
-      (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) (Matrix.toEuclideanLin (A - B)) := by
-    rw [← LinearMap.frobenius_norm_toMatrix _ e f, Matrix.toEuclideanLin_eq_toLin_orthonormal,
-      LinearMap.toMatrix_toLin]
-  have h := LinearMap.sum_sq_singularValues_sub_le_sq_frobenius_apply_sub
-    (Matrix.toEuclideanLin A) (Matrix.toEuclideanLin B)
-  have hn : finrank 𝕜 (EuclideanSpace 𝕜 n) = Fintype.card n := finrank_euclideanSpace
-  have hm : finrank 𝕜 (EuclideanSpace 𝕜 m) = Fintype.card m := finrank_euclideanSpace
-  have hF' :
-      TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜
-          (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m)
-          (Matrix.toEuclideanLin A - Matrix.toEuclideanLin B) = ‖A - B‖ := by
-    rw [← map_sub, hF]
-  rw [hn, hm] at h
-  simpa only [hF'] using h
-
-end Matrix

@@ -38,6 +38,8 @@ map `A ↦ ∫ f dL_A` is a Lipschitz function of the matrix entries.
 
 * `Matrix.IsHermitian.sum_sq_eigenvalues₀_sub_le_frobenius_norm_sub_sq`: the Hoffman–Wielandt
   inequality `∑ᵢ (λᵢ(A) - λᵢ(B))² ≤ ‖A - B‖_F²`.
+* `Matrix.sum_sq_singularValues_toEuclideanLin_sub_le_frobenius_norm_sub_sq`: the rectangular
+  singular-value Hoffman–Wielandt inequality.
 * `Matrix.norm_integral_spectralMeasure_sub_integral_spectralMeasure_le`: for a `K`-Lipschitz
   `f`, `‖∫ f dL_A - ∫ f dL_B‖ ≤ K ‖A - B‖_F / √n`.
 
@@ -51,12 +53,40 @@ map `A ↦ ∫ f dL_A` is a Lipschitz function of the matrix entries.
 
 public section
 
+open Module (finrank)
 open MeasureTheory
 open scoped Matrix.Norms.Frobenius NNReal
 
 namespace Matrix
 
 variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜] {A B : Matrix n n 𝕜}
+
+/-- **The singular-value Hoffman–Wielandt inequality** for same-shaped rectangular matrices:
+the squared distance between their ordered singular values, summed up to the smaller dimension,
+is bounded by the squared Frobenius norm of their difference. -/
+theorem sum_sq_singularValues_toEuclideanLin_sub_le_frobenius_norm_sub_sq
+    {m n : Type*} [Fintype m] [Fintype n] [DecidableEq n] {𝕜 : Type*} [RCLike 𝕜]
+    (A B : Matrix m n 𝕜) :
+    ∑ i : Fin (min (Fintype.card n) (Fintype.card m)),
+        ((Matrix.toEuclideanLin A).singularValues i -
+          (Matrix.toEuclideanLin B).singularValues i) ^ 2 ≤ ‖A - B‖ ^ 2 := by
+  let e := EuclideanSpace.basisFun n 𝕜
+  let f := EuclideanSpace.basisFun m 𝕜
+  have hF : ‖A - B‖ = TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜
+      (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) (Matrix.toEuclideanLin (A - B)) := by
+    rw [← LinearMap.frobenius_norm_toMatrix _ e f, Matrix.toEuclideanLin_eq_toLin_orthonormal,
+      LinearMap.toMatrix_toLin]
+  have h := LinearMap.sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_min
+    (Matrix.toEuclideanLin A) (Matrix.toEuclideanLin B)
+  have hn : finrank 𝕜 (EuclideanSpace 𝕜 n) = Fintype.card n := finrank_euclideanSpace
+  have hm : finrank 𝕜 (EuclideanSpace 𝕜 m) = Fintype.card m := finrank_euclideanSpace
+  have hF' :
+      TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜
+          (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m)
+          (Matrix.toEuclideanLin A - Matrix.toEuclideanLin B) = ‖A - B‖ := by
+    rw [← map_sub, hF]
+  rw [hn, hm] at h
+  simpa only [hF'] using h
 
 /-- **The Hoffman–Wielandt inequality** for Hermitian matrices: the squared Euclidean distance
 between the decreasingly sorted spectra is at most the squared Frobenius norm `‖A - B‖_F²`. -/
