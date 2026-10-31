@@ -42,26 +42,20 @@ theorem sum_card_support_not_isTopRegularOverPolyad_le_add_div (C : TriadicCompl
     (hε : 0 < ε) (hη : 0 < η) (hbudget : δ + η + η / ε ≤ ε) :
     (∑ P ∈ C.polyads with ¬H'.IsTopRegularOverPolyad P ε r, (#P.support : ℝ)) ≤
       (∑ P ∈ C.polyads with ¬H.IsTopRegularOverPolyad P δ r, (#P.support : ℝ)) +
-        (∑ P ∈ C.polyads, (#{x ∈ P.support |
-          H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
-            H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)} : ℝ)) / η := by
+        (∑ P ∈ C.polyads, (#(H.editedOn H' P.support) : ℝ)) / η := by
   classical
   rw [sum_filter, sum_filter, sum_div, ← sum_add_distrib]
   apply sum_le_sum
   intro P _
-  have he : 0 ≤ (#{x ∈ P.support |
-      H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
-        H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)} : ℝ) / η := by positivity
+  have he : 0 ≤ (#(H.editedOn H' P.support) : ℝ) / η := by positivity
   by_cases hnew : H'.IsTopRegularOverPolyad P ε r
   · simp only [hnew, not_true_eq_false, ↓reduceIte]
     positivity
   by_cases hold : H.IsTopRegularOverPolyad P δ r
   · simp only [hnew, hold, not_true_eq_false, not_false_eq_true, ↓reduceIte, zero_add]
     apply (le_div_iff₀ hη).2
-    have hbad : ¬(#{x ∈ P.support |
-        H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
-          H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)} : ℝ) ≤ η * #P.support :=
-      fun hed ↦ hnew (hold.edit_of_card_filter_ne_le hε hη.le hbudget hed)
+    have hbad : ¬(#(H.editedOn H' P.support) : ℝ) ≤ η * #P.support :=
+      fun hed ↦ hnew (hold.edit_of_card_editedOn_le hε hη.le hbudget hed)
     linarith [lt_of_not_ge hbad]
   · simpa only [hnew, hold, not_false_eq_true, ↓reduceIte] using le_add_of_nonneg_right he
 
@@ -72,17 +66,13 @@ need not be a polyad decomposition, and zero total support is allowed. -/
 theorem exceptionalPolyadMass_edit_le (C : TriadicComplex3 V)
     (hε : 0 < ε) (hη : 0 < η) (hbudget : δ + η + η / ε ≤ ε) :
     H'.exceptionalPolyadMass C ε r ≤ H.exceptionalPolyadMass C δ r +
-      (∑ P ∈ C.polyads, (#{x ∈ P.support |
-        H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
-          H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)} : ℝ)) /
+      (∑ P ∈ C.polyads, (#(H.editedOn H' P.support) : ℝ)) /
         (η * ∑ P ∈ C.polyads, (#P.support : ℝ)) := by
   classical
   rw [exceptionalPolyadMass_def, exceptionalPolyadMass_def]
   calc
     _ ≤ ((∑ P ∈ C.polyads with ¬H.IsTopRegularOverPolyad P δ r, (#P.support : ℝ)) +
-        (∑ P ∈ C.polyads, (#{x ∈ P.support |
-          H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
-            H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)} : ℝ)) / η) /
+        (∑ P ∈ C.polyads, (#(H.editedOn H' P.support) : ℝ)) / η) /
           (∑ P ∈ C.polyads, (#P.support : ℝ)) := by
       apply div_le_div_of_nonneg_right
       · exact sum_card_support_not_isTopRegularOverPolyad_le_add_div C hε hη hbudget
@@ -92,21 +82,15 @@ theorem exceptionalPolyadMass_edit_le (C : TriadicComplex3 V)
 open Classical in
 /-- The selected edited triples are bounded by the global edit discrepancy times `|V|³`.
 Distinct polyads have disjoint supports, so no ordered triple is charged twice. -/
-theorem sum_card_filter_ne_le_editDiscrepancy3 (H H' : Colored3Graph κ V)
+theorem sum_card_editedOn_le_editDiscrepancy3 (H H' : Colored3Graph κ V)
     (C : TriadicComplex3 V) :
-    (∑ P ∈ C.polyads, (#{x ∈ P.support |
-      H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
-        H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)} : ℝ)) ≤
+    (∑ P ∈ C.polyads, (#(H.editedOn H' P.support) : ℝ)) ≤
       (H.editDiscrepancy3 H' : ℝ) * (Fintype.card V : ℝ) ^ 3 := by
   classical
-  let edited (P : Polyad3 C.skeleton) := P.support.filter fun x ↦
-    H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
-      H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)
-  have hdisj : ∀ P ∈ C.polyads, ∀ Q ∈ C.polyads, P ≠ Q → Disjoint (edited P) (edited Q) :=
-    fun P _ Q _ hPQ ↦ (Polyad3.pairwise_disjoint_support hPQ).mono
-      (filter_subset _ _) (filter_subset _ _)
-  simpa only [← Nat.cast_sum, ← card_biUnion hdisj, edited, filter_biUnion] using
-    H.card_filter_ne_le_editDiscrepancy3 H' (C.polyads.biUnion Polyad3.support)
+  have hdisj : (C.polyads : Set (Polyad3 C.skeleton)).PairwiseDisjoint Polyad3.support :=
+    fun _ _ _ _ hPQ ↦ Polyad3.pairwise_disjoint_support hPQ
+  simpa only [← Nat.cast_sum, ← card_editedOn_biUnion H H' C.polyads Polyad3.support hdisj]
+    using H.card_editedOn_le_editDiscrepancy3 H' (C.polyads.biUnion Polyad3.support)
 
 /-- An edit approximation bounds the increase of exceptional mass on any selected family.
 The normalization uses the family's total support, even when it is zero. -/
@@ -118,7 +102,7 @@ theorem Approximates3.exceptionalPolyadMass_le {α : ℝ} (h : H.Approximates3 H
   refine (exceptionalPolyadMass_edit_le (H := H) C hε hη hbudget).trans
     (add_le_add le_rfl ?_)
   apply div_le_div_of_nonneg_right
-  · exact (sum_card_filter_ne_le_editDiscrepancy3 H H' C).trans
+  · exact (sum_card_editedOn_le_editDiscrepancy3 H H' C).trans
       (mul_le_mul_of_nonneg_right ((approximates3_iff _ _ _).1 h) (by positivity))
   · exact mul_nonneg hη.le (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _)
 

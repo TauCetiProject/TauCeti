@@ -43,10 +43,9 @@ variable {κ κ₂ V : Type*} [Fintype V] [DecidableEq V] [DecidableEq κ]
 /-- Top regularity survives recoloring at most an `η`-fraction of the polyad's support.
 The new threshold `ε` must absorb the old error, the change on the whole support, and the
 change on a test of relative size at least `ε`. The rank is unchanged. -/
-theorem IsTopRegularOverPolyad.edit_of_card_filter_ne_le
+theorem IsTopRegularOverPolyad.edit_of_card_editedOn_le
     (h : H.IsTopRegularOverPolyad P δ r) (hε : 0 < ε) (hη : 0 ≤ η) (hbudget : δ + η + η / ε ≤ ε)
-    (hedit : (#{x ∈ P.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
-      H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)} : ℝ) ≤ η * #P.support) :
+    (hedit : (#(H.editedOn H' P.support) : ℝ) ≤ η * #P.support) :
     H'.IsTopRegularOverPolyad P ε r := by
   rw [isTopRegularOverPolyad_iff]
   intro c Q hQ
@@ -61,11 +60,10 @@ theorem IsTopRegularOverPolyad.edit_of_card_filter_ne_le
   have hd (A : Finset {x : Fin 3 → V // Function.Injective x}) (hA : A ⊆ P.support) :
       |(H.relDensityOn c A : ℝ) - H'.relDensityOn c A| * #A ≤ η * #P.support := by
     have hc : |(H.relDensityOn c A : ℝ) - H'.relDensityOn c A| * #A ≤
-        (#{x ∈ A | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
-          H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)} : ℝ) := by
-      exact_mod_cast H.abs_relDensityOn_sub_mul_card_le_card_filter_ne H' c A
+        (#(H.editedOn H' A) : ℝ) := by
+      exact_mod_cast H.abs_relDensityOn_sub_mul_card_le_card_editedOn H' c A
     apply hc.trans (le_trans ?_ hedit)
-    exact_mod_cast card_le_card (filter_subset_filter _ hA)
+    exact_mod_cast card_le_card (H.editedOn_mono H' hA)
   have hwhole : |(H.relativeDensity c P : ℝ) - H'.relativeDensity c P| ≤ η := by
     rw [relativeDensity_def, relativeDensity_def]
     exact (mul_le_mul_iff_left₀ hPpos).1 (by simpa [mul_comm] using hd P.support Subset.rfl)
@@ -100,14 +98,13 @@ theorem IsTopRegularOverPolyad.edit_of_card_filter_ne_le
 rank. The old parameter is positive; empty polyad supports are allowed. -/
 theorem IsTopRegularOverPolyad.edit_sqrt (h : H.IsTopRegularOverPolyad P δ r)
     (hδ : 0 < δ) (hη : 0 ≤ η) (hη₁ : η ≤ 1)
-    (hedit : (#{x ∈ P.support | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
-      H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)} : ℝ) ≤ η * #P.support) :
+    (hedit : (#(H.editedOn H' P.support) : ℝ) ≤ η * #P.support) :
     H'.IsTopRegularOverPolyad P (δ + 2 * Real.sqrt η) r := by
   have hs := Real.sqrt_nonneg η
   have hs₂ := Real.sq_sqrt hη
   have hs₁ : Real.sqrt η ≤ 1 := (Real.sqrt_le_one).2 hη₁
   have hε : 0 < δ + 2 * Real.sqrt η := by positivity
-  apply h.edit_of_card_filter_ne_le hε hη ?_ hedit
+  apply h.edit_of_card_editedOn_le hε hη ?_ hedit
   have hdiv : η / (δ + 2 * Real.sqrt η) ≤ Real.sqrt η := by
     apply (div_le_iff₀ hε).2
     nlinarith
