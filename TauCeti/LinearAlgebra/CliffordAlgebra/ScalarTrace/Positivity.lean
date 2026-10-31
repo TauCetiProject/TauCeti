@@ -188,10 +188,7 @@ theorem scalarTrace_complexConj_reverse_mul_self (hb : (QuadraticMap.associated 
     scalarTrace (Q.baseChange ℂ) (complexConj Q (reverse x) * x) =
       (((basis (Q.baseChange ℂ) (b.baseChange ℂ)).repr x).sum fun s z ↦
         Complex.normSq z * ∏ i ∈ s, Q (b i) : ℝ) := by
-  rw [scalarTrace_complexConj_reverse_mul hb, Finsupp.sum, Finsupp.sum, Complex.ofReal_sum]
-  refine Finset.sum_congr rfl fun s _ ↦ ?_
-  rw [Complex.ofReal_mul, Complex.normSq_eq_conj_mul_self]
-  ring
+  rw [scalarTrace_complexConj_reverse_mul hb, Finsupp.ofReal_sum_normSq_mul]
 
 /-- **The negative-metric trace norm in coordinates**: `τ(conjStar x * x)` is the real number
 `∑ₛ |xₛ|² ∏ i ∈ s, -Q (b i)`. -/
@@ -200,10 +197,7 @@ theorem scalarTrace_conjStar_mul_self (hb : (QuadraticMap.associated Q).IsOrtho�
     scalarTrace (Q.baseChange ℂ) (conjStar Q x * x) =
       (((basis (Q.baseChange ℂ) (b.baseChange ℂ)).repr x).sum fun s z ↦
         Complex.normSq z * ∏ i ∈ s, -Q (b i) : ℝ) := by
-  rw [scalarTrace_conjStar_mul hb, Finsupp.sum, Finsupp.sum, Complex.ofReal_sum]
-  refine Finset.sum_congr rfl fun s _ ↦ ?_
-  rw [Complex.ofReal_mul, Complex.normSq_eq_conj_mul_self]
-  ring
+  rw [scalarTrace_conjStar_mul hb, Finsupp.ofReal_sum_normSq_mul]
 
 /-- **Positivity of the positive-form trace norm**: if `Q` is nonnegative on a real orthogonal
 basis, then `τ(complexConj (reverse x) * x) ≥ 0`, in particular it is real. -/
@@ -211,9 +205,8 @@ theorem scalarTrace_complexConj_reverse_mul_self_nonneg_of_isOrtho
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, 0 ≤ Q (b i))
     (x : CliffordAlgebra (Q.baseChange ℂ)) :
     0 ≤ scalarTrace (Q.baseChange ℂ) (complexConj Q (reverse x) * x) := by
-  rw [scalarTrace_complexConj_reverse_mul_self hb, Complex.zero_le_real, Finsupp.sum]
-  exact Finset.sum_nonneg fun s _ ↦
-    mul_nonneg (Complex.normSq_nonneg _) (Finset.prod_nonneg fun i _ ↦ hQ i)
+  rw [scalarTrace_complexConj_reverse_mul_self hb, Complex.zero_le_real]
+  exact Finsupp.sum_normSq_mul_nonneg _ fun s ↦ Finset.prod_nonneg fun i _ ↦ hQ i
 
 /-- **Positivity of the negative-metric trace norm**: if `Q` is nonpositive on a real orthogonal
 basis, then `τ(conjStar x * x) ≥ 0`, in particular it is real. -/
@@ -221,9 +214,8 @@ theorem scalarTrace_conjStar_mul_self_nonneg_of_isOrtho
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) ≤ 0)
     (x : CliffordAlgebra (Q.baseChange ℂ)) :
     0 ≤ scalarTrace (Q.baseChange ℂ) (conjStar Q x * x) := by
-  rw [scalarTrace_conjStar_mul_self hb, Complex.zero_le_real, Finsupp.sum]
-  exact Finset.sum_nonneg fun s _ ↦
-    mul_nonneg (Complex.normSq_nonneg _) (Finset.prod_nonneg fun i _ ↦ neg_nonneg.mpr (hQ i))
+  rw [scalarTrace_conjStar_mul_self hb, Complex.zero_le_real]
+  exact Finsupp.sum_normSq_mul_nonneg _ fun s ↦ Finset.prod_nonneg fun i _ ↦ neg_nonneg.mpr (hQ i)
 
 /-- **Null vectors of the positive-form trace norm in coordinates**: if `Q` is nonnegative on a
 real orthogonal basis, then `τ(complexConj (reverse x) * x) = 0` exactly when the coordinates of
@@ -337,9 +329,7 @@ theorem scalarTrace_complexConj_reverse_mul_self_eq_zero_iff (hQ : Q.PosDef)
     (B := QuadraticMap.associated Q) (QuadraticForm.associated_isSymm ℝ Q)
   have hpos (i) : 0 < Q (b i) := hQ (b i) (b.ne_zero i)
   rw [scalarTrace_complexConj_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero hb fun i ↦
-    (hpos i).le]
-  simp only [fun s ↦ (Finset.prod_pos (s := s) fun i _ ↦ hpos i).ne', ne_eq, not_false_eq_true,
-    forall_const, ← Module.Basis.coord_apply, Module.Basis.forall_coord_eq_zero_iff]
+    (hpos i).le, forall_prod_ne_zero_basis_repr_eq_zero_iff fun i ↦ (hpos i).ne']
 
 /-- **Faithfulness of the negative-metric trace norm** for a negative definite real quadratic
 form. -/
@@ -350,9 +340,7 @@ theorem scalarTrace_conjStar_mul_self_eq_zero_iff (hQ : (-Q).PosDef)
     (B := QuadraticMap.associated Q) (QuadraticForm.associated_isSymm ℝ Q)
   have hpos (i) : 0 < -Q (b i) := hQ (b i) (b.ne_zero i)
   rw [scalarTrace_conjStar_mul_self_eq_zero_iff_basis_repr_eq_zero hb fun i ↦ neg_nonneg.mp
-    (hpos i).le]
-  simp only [fun s ↦ (Finset.prod_pos (s := s) fun i _ ↦ hpos i).ne', ne_eq, not_false_eq_true,
-    forall_const, ← Module.Basis.coord_apply, Module.Basis.forall_coord_eq_zero_iff]
+    (hpos i).le, forall_prod_ne_zero_basis_repr_eq_zero_iff fun i ↦ (hpos i).ne']
 
 /-- **The real trace norm is faithful exactly for positive definite forms.** A nonzero real
 vector `v` with `Q v ≤ 0` gives a nonzero Clifford element of zero trace norm. -/
