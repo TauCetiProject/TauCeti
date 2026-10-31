@@ -45,9 +45,10 @@ maximum, then at most `s` spectral values have norm at least `ε`
 (`ContinuousLinearMap.IsRowCompact.encard_setOf_mem_spectrum_le`). Such an `s` exists for every
 `ε > 0`, since `H_u` is entire and nonzero, so only finitely many spectral values have norm
 bounded below by a positive number, and every nonzero spectral value is isolated in the spectrum.
-Zero may be an accumulation point of the spectrum. The same bound holds for the extension of `u`
-to `C₀(I, L)` along any complete normed field extension `L` of `K`, such as a complete field over
-which `H_u` splits: the spectrum of the extension is controlled by the zeros of `H_u` in `L`.
+Zero may be an accumulation point of the spectrum. The same bound, finiteness and isolation hold
+for the extension of `u` to `C₀(I, L)` along any complete normed field extension `L` of `K`, such
+as a complete field over which `H_u` splits: the spectrum of the extension is controlled by the
+zeros of `H_u` in `L`.
 
 ## Main results
 
@@ -63,8 +64,9 @@ which `H_u` splits: the spectrum of the extension is controlled by the zeros of 
   at least `ε`, where `H_u` is distinguished of degree `s` at `ε⁻¹`.
 * `ContinuousLinearMap.IsRowCompact.encard_setOf_mem_spectrum_le` and
   `ContinuousLinearMap.IsRowCompact.finite_setOf_mem_spectrum`: the same over `K` itself.
-* `ContinuousLinearMap.IsRowCompact.eventually_notMem_spectrum`: every nonzero spectral value is
-  isolated in the spectrum.
+* `ContinuousLinearMap.IsRowCompact.eventually_notMem_spectrum_mapCoeffs` and
+  `ContinuousLinearMap.IsRowCompact.eventually_notMem_spectrum`: every nonzero spectral value is
+  isolated in the spectrum, after extension to `L` and over `K` itself.
 
 ## References
 
@@ -190,19 +192,28 @@ theorem IsRowCompact.finite_setOf_mem_spectrum (hu : u.IsRowCompact) {ε : ℝ} 
     {μ ∈ spectrum K u | ε ≤ ‖μ‖}.Finite := by
   simpa using hu.finite_setOf_mem_spectrum_mapCoeffs (L := K) ⟨1, by simp⟩ hε
 
-/-- **Nonzero spectral values are isolated.** For a row-compact endomorphism `u` of `C₀(I, K)`
-and `μ ≠ 0`, no point of a punctured neighbourhood of `μ` lies in the spectrum of `u`. -/
-theorem IsRowCompact.eventually_notMem_spectrum (hu : u.IsRowCompact) {μ : K} (hμ : μ ≠ 0) :
-    ∀ᶠ ν in 𝓝[≠] μ, ν ∉ spectrum K u := by
+/-- **Nonzero spectral values are isolated.** For a row-compact endomorphism `u` of `C₀(I, K)`,
+a complete normed field extension `L` of `K` and `μ : L` with `μ ≠ 0`, no point of a punctured
+neighbourhood of `μ` lies in the spectrum of the extension of `u` to `C₀(I, L)`. -/
+theorem IsRowCompact.eventually_notMem_spectrum_mapCoeffs (hu : u.IsRowCompact)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖algebraMap K L r‖ ≤ C * ‖r‖) {μ : L} (hμ : μ ≠ 0) :
+    ∀ᶠ ν in 𝓝[≠] μ, ν ∉ spectrum L (u.mapCoeffs (algebraMap K L) hf) := by
   have hμ0 : 0 < ‖μ‖ := norm_pos_iff.2 hμ
   -- Near `μ` every point has norm above `‖μ‖ / 2`, and only finitely many spectral values do;
   -- removing these finitely many points leaves a punctured neighbourhood of `μ`.
   have hnorm : ∀ᶠ ν in 𝓝 μ, ‖μ‖ / 2 < ‖ν‖ :=
     (continuous_norm.tendsto μ).eventually (lt_mem_nhds (half_lt_self hμ0))
-  have hF := (hu.finite_setOf_mem_spectrum (half_pos hμ0)).to_subtype
+  have hF := (hu.finite_setOf_mem_spectrum_mapCoeffs hf (half_pos hμ0)).to_subtype
   filter_upwards [nhdsNE_of_nhdsNE_sdiff_finite (nhdsWithin_le_nhds hnorm) hF]
     with ν ⟨hν, hνF⟩ hνsp
   exact hνF ⟨hνsp, hν.le⟩
+
+/-- **Nonzero spectral values are isolated** over the coefficient field: for a row-compact
+endomorphism `u` of `C₀(I, K)` and `μ ≠ 0`, no point of a punctured neighbourhood of `μ` lies in
+the spectrum of `u`. -/
+theorem IsRowCompact.eventually_notMem_spectrum (hu : u.IsRowCompact) {μ : K} (hμ : μ ≠ 0) :
+    ∀ᶠ ν in 𝓝[≠] μ, ν ∉ spectrum K u := by
+  simpa using hu.eventually_notMem_spectrum_mapCoeffs (L := K) ⟨1, by simp⟩ hμ
 
 end Extension
 
