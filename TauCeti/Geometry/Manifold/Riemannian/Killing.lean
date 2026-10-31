@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
@@ -297,18 +296,8 @@ private theorem IsKillingField.inner_alongCurveWithin_alongCurveWithin_eq
     differentiableWithinAt_sectionCoord γ _
       (((hlift hY) t ht).mdifferentiableWithinAt (by norm_num))
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
-  have hWlift : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent 1 (fun r ↦ TotalSpace.mk' E (γ r) (W r)) s := by
-    let : IsManifold I (1 + 1) M := IsManifold.of_le (n := ∞) (by simp)
-    let : IsManifold I (1 + 1 + 1) M := IsManifold.of_le (n := ∞) (by simp)
-    let : ContMDiffVectorBundle (1 + 1) E (TangentSpace I : M → Type _) I :=
-      TangentBundle.contMDiffVectorBundle
-    exact CovariantDerivative.contMDiffOn_alongCurveWithin (n := 1) _ γ V
-      (fun x ↦ contMDiffCovariantDerivativeOn_leviCivitaConnection
-        (m := ∞) (k := ∞) (trivializationAt E (TangentSpace I) x).open_baseSet
-        (by simp) (by simp)) hs (hlift hX)
   have hWcoord : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t :=
-    differentiableWithinAt_sectionCoord γ W ((hWlift t ht).mdifferentiableWithinAt one_ne_zero)
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
+    differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection hs (hlift hX) ht
   have hγ'coord : DifferentiableWithinAt ℝ (sectionCoord (F := E) γ γ' (γ t)) s t :=
     differentiableWithinAt_sectionCoord_curveVelocityWithin γ hs hγ.contMDiffOn ht
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
