@@ -53,6 +53,17 @@ def totalSpaceFiniteProjectiveIso (M : (finiteProjectiveModules R).FullSubcatego
     ((toQuasicoherent (Spec R)).mapIso (finiteProjectiveEquivDualIso R M))).op ≪≫
     relativeSpecSymmetricAlgebraTildeIso (ModuleCat.of R (Module.Dual R M.obj))
 
+/-- The forward map of `totalSpaceFiniteProjectiveIso` is the relative spectrum of the symmetric
+algebra map induced by the dual comparison `(M~)^∨ ≅ (M^∨)~`, followed by the affine comparison
+`relativeSpecSymmetricAlgebraTildeIso`. -/
+lemma totalSpaceFiniteProjectiveIso_hom (M : (finiteProjectiveModules R).FullSubcategory) :
+    (totalSpaceFiniteProjectiveIso M).hom =
+      (relativeSpec (Spec R)).map ((symmetricAlgebra (Spec R)).map
+        ((toQuasicoherent (Spec R)).map (finiteProjectiveEquivDualIso R M).hom)).op ≫
+        (relativeSpecSymmetricAlgebraTildeIso (ModuleCat.of R (Module.Dual R M.obj))).hom := by
+  rw [totalSpaceFiniteProjectiveIso]
+  rfl
+
 end TauCeti.AlgebraicGeometry
 
 end
