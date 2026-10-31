@@ -83,7 +83,8 @@ theorem exists_mextDeriv_eq_of_simplyConnectedSpace [SimplyConnectedSpace M] {r 
     (by simpa using (zero_lt_one.trans_le hr).ne') (f := fun y ↦ PrimitiveSpace.value φ (s y))
     fun x ↦ ?_
   obtain ⟨g, hg, U, hxU, hgU, c, hc⟩ :=
-    PrimitiveSpace.eventually_value_eq hr hφ hclosed (s.continuous.continuousAt (x := x))
+    PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq hr hφ hclosed
+      (s.continuous.continuousAt (x := x))
   rw [hps] at hxU
   exact ⟨g, c, hg x, hc.mono fun y hy ↦ by rw [hy.2, hps], hgU.mextDeriv_eq x hxU⟩
 

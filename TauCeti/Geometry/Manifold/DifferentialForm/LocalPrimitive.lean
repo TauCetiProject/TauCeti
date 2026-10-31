@@ -23,7 +23,7 @@ Pairs `(x, a)` of a point and a value, topologized so that the graphs `{(y, g y)
 primitives `g` of `φ` on open sets `U` form a basis, make up the space `TauCeti.PrimitiveSpace φ`.
 For closed `φ` the projection to the point is a covering map
 (`TauCeti.PrimitiveSpace.isCoveringMap_proj`): over an open set carrying a primitive `g`, the sheets
-are the graphs of the translates `g + c`. Translating the value is a homeomorphism of this space
+are the graphs of the translates `g + c`. Translating the value is a continuous map of this space
 over `M` (`TauCeti.PrimitiveSpace.translate`).
 
 This covering space is the integration theory of closed `1`-forms along continuous paths: a lift of
@@ -36,8 +36,8 @@ exactness of closed `1`-forms on simply connected manifolds and the period homom
 * `TauCeti.IsPrimitiveOn φ g U`: `g` is a primitive of `φ` on the open set `U`.
 * `TauCeti.PrimitiveSpace φ`: the space of points and values with the topology of local primitives.
 * `TauCeti.PrimitiveSpace.isCoveringMap_proj`: its projection is a covering map when `φ` is closed.
-* `TauCeti.PrimitiveSpace.eventually_value_eq`: near each parameter, a continuous map into
-  `PrimitiveSpace φ` runs along the graph of a translate of a local primitive.
+* `TauCeti.PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq`: near each parameter, a
+  continuous map into `PrimitiveSpace φ` runs along the graph of a translate of a local primitive.
 
 ## References
 
@@ -94,6 +94,7 @@ theorem IsPrimitiveOn.add (hg : IsPrimitiveOn φ g U) (hh : IsPrimitiveOn ψ h V
   simp only [mextDeriv_ofFunction, ContinuousAlternatingMap.add_apply,
     ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv_apply_eq_mfderiv_apply,
     mfderiv_add hgy hhy]
+  -- `NormedSpace.fromTangentSpace` is the identity of `F`
   rfl
 
 /-- A scalar multiple of a primitive of `φ` is a primitive of the scalar multiple of `φ`. -/
@@ -133,9 +134,6 @@ sets form a basis. The body is exposed because the topology is defined on the un
 product. -/
 @[expose] def PrimitiveSpace (_φ : RoughForm I M F 1) : Type _ := M × F
 
-instance : TopologicalSpace (PrimitiveSpace φ) :=
-  .generateFrom {S | ∃ g U, IsPrimitiveOn φ g U ∧ S = (fun y ↦ ((y, g y) : M × F)) '' U}
-
 namespace PrimitiveSpace
 
 variable (φ) in
@@ -149,6 +147,9 @@ def value (e : PrimitiveSpace φ) : F := Prod.snd (α := M) (β := F) e
 variable (φ) in
 /-- The graph of a function, as a map into `PrimitiveSpace φ`. -/
 def graph (g : M → F) (y : M) : PrimitiveSpace φ := ((y, g y) : M × F)
+
+instance : TopologicalSpace (PrimitiveSpace φ) :=
+  .generateFrom {S | ∃ g U, IsPrimitiveOn φ g U ∧ S = graph φ g '' U}
 
 @[simp]
 theorem proj_graph (y : M) : proj φ (graph φ g y) = y := (rfl)
@@ -175,9 +176,10 @@ theorem continuousOn_graph [IsManifold I 1 M] (hg : IsPrimitiveOn φ g U) :
   refine fun y hy ↦ ContinuousAt.continuousWithinAt ?_
   refine TopologicalSpace.tendsto_nhds_generateFrom_iff.mpr ?_
   rintro _ ⟨h, V, hh, rfl⟩ ⟨w, hwV, hw⟩
-  obtain ⟨rfl, hwy⟩ := Prod.ext_iff.mp hw
+  simp only [PrimitiveSpace.ext_iff, proj_graph, value_graph] at hw
+  obtain ⟨rfl, hwy⟩ := hw
   filter_upwards [(hg.isOpen_setOf_eq hh).mem_nhds ⟨hy, hwV, hwy.symm⟩] with z hz
-  exact ⟨z, hz.2.1, Prod.ext_iff.mpr ⟨rfl, hz.2.2.symm⟩⟩
+  exact ⟨z, hz.2.1, ext (by simp) (by simp [hz.2.2])⟩
 
 /-- A map into `PrimitiveSpace φ` which, near a parameter `t`, runs along the graph of a primitive
 `g` on an open set containing the point at `t`, is continuous at `t`. -/
@@ -213,16 +215,13 @@ theorem continuous_translate (c : F) : Continuous (translate φ c) := by
   rintro _ ⟨g, U, hg, rfl⟩
   convert isOpen_image_graph (hg.add_const (-c)) using 1
   ext e
+  simp only [mem_preimage, mem_image, PrimitiveSpace.ext_iff, proj_graph, value_graph,
+    proj_translate, value_translate]
   constructor
-  · rintro ⟨y, hy, hye⟩
-    obtain ⟨rfl, hv⟩ := Prod.ext_iff.mp hye
-    refine ⟨proj φ e, hy, ext rfl ?_⟩
-    simp only [value_graph]
-    -- the value of `translate φ c e` is `value φ e + c`
-    have : value φ e + c = g (proj φ e) := hv.symm
-    rw [← this, add_neg_cancel_right]
-  · rintro ⟨y, hy, rfl⟩
-    exact ⟨y, hy, ext rfl (by simp; rfl)⟩
+  · rintro ⟨_, hy, rfl, hv⟩
+    exact ⟨_, hy, rfl, by rw [hv, add_neg_cancel_right]⟩
+  · rintro ⟨_, hy, rfl, hv⟩
+    exact ⟨_, hy, rfl, by rw [← hv, neg_add_cancel_right]⟩
 
 end PrimitiveSpace
 
@@ -268,7 +267,8 @@ theorem isCoveringMap_proj {r : ℕ∞} (hr : 1 ≤ r) (hφ : IsSmoothForm I r �
   · -- distinct translates have disjoint graphs
     refine disjoint_left.mpr ?_
     rintro _ ⟨y, -, rfl⟩ ⟨z, -, hzy⟩
-    obtain ⟨rfl, hzy⟩ := Prod.ext_iff.mp hzy
+    simp only [PrimitiveSpace.ext_iff, proj_graph, value_graph] at hzy
+    obtain ⟨rfl, hzy⟩ := hzy
     exact hij (WithTopology.ofTopology_injective _ (add_left_cancel hzy).symm)
   · -- every point over `U x` lies on the sheet through its value
     intro e he
@@ -279,9 +279,9 @@ theorem isCoveringMap_proj {r : ℕ∞} (hr : 1 ≤ r) (hφ : IsSmoothForm I r �
 /-- **Lifts run along local primitives.** Near each parameter `t`, a continuous map `Γ` into
 `PrimitiveSpace φ`, for a closed `C^r` form `φ` (`1 ≤ r`), runs along the graph of a translate
 `g + c` of a `C^r` primitive `g` of `φ` on an open set `U` containing the point at `t`. -/
-theorem eventually_value_eq {r : ℕ∞} (hr : 1 ≤ r) (hφ : IsSmoothForm I r φ)
-    (hclosed : mextDeriv φ = 0) {X : Type*} [TopologicalSpace X] {Γ : X → PrimitiveSpace φ}
-    {t : X} (hΓ : ContinuousAt Γ t) :
+theorem exists_isPrimitiveOn_eventually_value_eq {r : ℕ∞} (hr : 1 ≤ r)
+    (hφ : IsSmoothForm I r φ) (hclosed : mextDeriv φ = 0) {X : Type*} [TopologicalSpace X]
+    {Γ : X → PrimitiveSpace φ} {t : X} (hΓ : ContinuousAt Γ t) :
     ∃ g : M → F, ContMDiff I 𝓘(ℝ, F) r g ∧ ∃ U, proj φ (Γ t) ∈ U ∧ IsPrimitiveOn φ g U ∧
       ∃ c : F, ∀ᶠ s in 𝓝 t, proj φ (Γ s) ∈ U ∧ value φ (Γ s) = g (proj φ (Γ s)) + c := by
   obtain ⟨g, hg, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn hr hφ hclosed (proj φ (Γ t))

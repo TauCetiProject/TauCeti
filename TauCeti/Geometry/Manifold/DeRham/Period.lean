@@ -245,9 +245,11 @@ theorem pathClassIntegral_smul_add (hφ : IsSmoothForm I 1 φ) (hφc : mextDeriv
       b • PrimitiveSpace.value ψ (Δ t)) (γ t)
   have hΛ : Continuous Λ := continuous_iff_continuousAt.mpr fun t₀ ↦ by
     obtain ⟨g, -, U, hxU, hgU, c, hc⟩ :=
-      PrimitiveSpace.eventually_value_eq le_rfl hφ hφc Γ.continuous.continuousAt (t := t₀)
+      PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq le_rfl hφ hφc
+        Γ.continuous.continuousAt (t := t₀)
     obtain ⟨h, -, V, hxV, hhV, d, hd⟩ :=
-      PrimitiveSpace.eventually_value_eq le_rfl hψ hψc Δ.continuous.continuousAt (t := t₀)
+      PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq le_rfl hψ hψc
+        Δ.continuous.continuousAt (t := t₀)
     refine PrimitiveSpace.continuousAt_of_eventually_value_eq
       (by simp only [Λ, PrimitiveSpace.proj_graph]; exact γ.continuous.continuousAt)
       (((hgU.const_smul a).add (hhV.const_smul b)).add_const (a • c + b • d))
