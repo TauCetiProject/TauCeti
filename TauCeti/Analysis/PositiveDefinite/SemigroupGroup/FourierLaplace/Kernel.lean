@@ -17,14 +17,14 @@ import TauCeti.Analysis.PositiveDefinite.SemigroupGroup.Time.Slice.Measure
 # Berg--Christensen--Ressel representing measures as time kernels
 
 Let `V` be a finite-dimensional real inner-product space. A measure `μ` on `V` together with a
-kernel `κ` from `V` to `ℝ≥0` assembles into a measure `TauCeti.swapCompProd μ κ` on `ℝ≥0 × V`,
+kernel `κ` from `V` to `ℝ≥0` assembles into a measure `μ.swapCompProd κ` on `ℝ≥0 × V`,
 and conversely every *finite* measure on `ℝ≥0 × V` admits such a disintegration over its spatial
 marginal, the Markov kernel being unique only up to equality almost everywhere for that marginal.
 That assembly is general measure theory and lives in
 `TauCeti.Probability.Kernel.Composition.Swap`; this file reads the Berg--Christensen--Ressel
 representation through it.
 
-The point is that the spatial slice of `swapCompProd μ κ` at time `t` is computed by a
+The point is that the spatial slice of `μ.swapCompProd κ` at time `t` is computed by a
 *fibrewise Laplace transform*: it is `μ` weighted by the density
 `q ↦ ∫⁻ p, exp (-t p) ∂(κ q)` (`TauCeti.spatialSlice_swapCompProd`). Since a finite
 measure on `ℝ≥0 × V` represents a function `F` exactly when its spatial slices are the Bochner
@@ -47,7 +47,7 @@ masses — is in `TauCeti.Analysis.PositiveDefinite.SemigroupGroup.Time.Slice.Me
 
 * `TauCeti.spatialSlice_swapCompProd`: **the spatial slices of an assembled measure are the
   fibrewise Laplace transforms of its kernel**,
-  `spatialSlice (swapCompProd μ κ) t = μ.withDensity (Kernel.laplaceTransform κ t)`. The
+  `spatialSlice (μ.swapCompProd κ) t = μ.withDensity (Kernel.laplaceTransform κ t)`. The
   measure-level transform `TauCeti.laplaceTransformENN` and its identification with the usual
   real-valued Laplace transform are in the infrastructure under
   `TauCeti.Analysis.CompletelyMonotone.Laplace`.
@@ -87,7 +87,7 @@ weighted by the fibrewise Laplace transform of the kernel. -/
 @[simp]
 theorem spatialSlice_swapCompProd (μ : Measure V) [SFinite μ] (κ : Kernel V ℝ≥0)
     [IsSFiniteKernel κ] (t : ℝ≥0) :
-    spatialSlice (swapCompProd μ κ) t = μ.withDensity (Kernel.laplaceTransform κ t) := by
+    spatialSlice (μ.swapCompProd κ) t = μ.withDensity (Kernel.laplaceTransform κ t) := by
   refine Measure.ext fun B hB => ?_
   have hw : Measurable fun y : ℝ≥0 × V => ENNReal.ofReal (Real.exp (-(t : ℝ) * (y.1 : ℝ))) := by
     fun_prop
@@ -96,7 +96,7 @@ theorem spatialSlice_swapCompProd (μ : Measure V) [SFinite μ] (κ : Kernel V �
     hw.comp measurable_swap
   rw [spatialSlice_apply _ _ hB]
   simp_rw [ENNReal.ofNNReal_toNNReal]
-  rw [← Set.univ_prod, swapCompProd_def,
+  rw [← Set.univ_prod, Measure.swapCompProd_def,
     setLIntegral_map (MeasurableSet.univ.prod hB) hw measurable_swap,
     Set.preimage_swap_prod,
     Measure.setLIntegral_compProd hws hB MeasurableSet.univ]
@@ -126,11 +126,11 @@ theorem representsLaplaceFourier_swapCompProd
     (hκ : ∀ t : ℝ≥0,
       (bochnerMeasure fun a => F (0, a)).withDensity (Kernel.laplaceTransform κ t)
       = bochnerMeasure fun a => F (t, a)) :
-    RepresentsLaplaceFourier (swapCompProd (bochnerMeasure fun a => F (0, a)) κ) F := by
+    RepresentsLaplaceFourier ((bochnerMeasure fun a => F (0, a)).swapCompProd κ) F := by
   let μ₀ := bochnerMeasure fun a => F (0, a)
-  have hsnd : (swapCompProd μ₀ κ).snd = μ₀ := by
+  have hsnd : (μ₀.swapCompProd κ).snd = μ₀ := by
     rw [← spatialSlice_zero, spatialSlice_swapCompProd, hκ 0]
-  have hfin : IsFiniteMeasure (swapCompProd μ₀ κ) := by
+  have hfin : IsFiniteMeasure (μ₀.swapCompProd κ) := by
     refine ⟨?_⟩
     rw [← Measure.snd_univ, hsnd]
     exact measure_lt_top _ _
@@ -148,7 +148,7 @@ theorem representsLaplaceFourier_swapCompProd_of_ae_rnDeriv (hFpd : IsSemigroupG
     (hκ : ∀ t : ℝ≥0, Kernel.laplaceTransform κ t
       =ᵐ[bochnerMeasure fun a => F (0, a)]
         (bochnerMeasure fun a => F (t, a)).rnDeriv (bochnerMeasure fun a => F (0, a))) :
-    RepresentsLaplaceFourier (swapCompProd (bochnerMeasure fun a => F (0, a)) κ) F :=
+    RepresentsLaplaceFourier ((bochnerMeasure fun a => F (0, a)).swapCompProd κ) F :=
   representsLaplaceFourier_swapCompProd (fun t => hFpd.isPositiveDefiniteSub_timeSlice t)
     (fun t => hFcont.comp (.prodMk_right t)) κ fun t => by
     rw [withDensity_congr_ae (hκ t),
