@@ -22,7 +22,7 @@ rings, so they preserve and reflect their regularity.
 More generally, an étale morphism `f : X ⟶ Y` induces at each point `x` a flat local
 homomorphism `𝒪_{Y, f x} ⟶ 𝒪_{X, x}` under which the maximal ideal of the source generates the
 maximal ideal of the target, and which preserves and reflects Noetherianity
-(`TauCeti.AlgebraicGeometry.map_maximalIdeal_stalkMap_of_etale`,
+(`TauCeti.AlgebraicGeometry.map_maximalIdeal_stalkMap_of_formallyUnramified`,
 `TauCeti.AlgebraicGeometry.isNoetherianRing_stalk_iff_of_etale`). Between Noetherian local rings
 such a homomorphism both preserves and reflects regularity
 (`TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq`).
@@ -112,7 +112,7 @@ theorem isRegularLocalRing_stalk_iff_of_etale :
   have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
     inferInstanceAs <| IsLocalHom (f.stalkMap x).hom
   have : Module.Flat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := Flat.stalkMap f x
-  have h := map_maximalIdeal_stalkMap_of_etale f x
+  have h := map_maximalIdeal_stalkMap_of_formallyUnramified f x
   refine ⟨fun hy ↦ ?_, fun hx ↦ ?_⟩
   · have := (isNoetherianRing_stalk_iff_of_etale f x).mp inferInstance
     exact (TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq h).mpr hy

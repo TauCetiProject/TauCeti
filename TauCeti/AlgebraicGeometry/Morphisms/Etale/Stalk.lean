@@ -12,17 +12,18 @@ import TauCeti.RingTheory.KrullDimension.Fiber
 /-!
 # Local rings along étale morphisms
 
-An étale morphism `f : X ⟶ Y` induces at each point `x` a flat local homomorphism
-`𝒪_{Y, f x} ⟶ 𝒪_{X, x}`, essentially of finite type, under which the maximal ideal of the source
-generates the maximal ideal of the target
-(`TauCeti.AlgebraicGeometry.map_maximalIdeal_stalkMap_of_etale`). Such a homomorphism is
-faithfully flat, so Noetherianity descends along it, and it ascends because the target is a
-localization of a finitely generated algebra. Between Noetherian local rings it preserves the
-Krull dimension (`TauCeti.ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq`).
+Along the stalk map `𝒪_{Y, f x} ⟶ 𝒪_{X, x}` of a morphism `f : X ⟶ Y` that is formally
+unramified and locally of finite type, the maximal ideal of the source generates the maximal ideal
+of the target (`TauCeti.AlgebraicGeometry.map_maximalIdeal_stalkMap_of_formallyUnramified`). An
+étale morphism therefore induces at each point a flat local homomorphism of this kind, essentially
+of finite type. Such a homomorphism is faithfully flat, so Noetherianity descends along it, and
+it ascends because the target is a localization of a finitely generated algebra. Between Noetherian
+local rings it preserves the Krull dimension
+(`TauCeti.ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq`).
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.map_maximalIdeal_stalkMap_of_etale`
+* `TauCeti.AlgebraicGeometry.map_maximalIdeal_stalkMap_of_formallyUnramified`
 * `TauCeti.AlgebraicGeometry.isNoetherianRing_stalk_iff_of_etale`
 * `TauCeti.AlgebraicGeometry.ringKrullDim_stalk_eq_of_etale`
 -/
@@ -37,7 +38,27 @@ namespace AlgebraicGeometry
 
 universe u
 
-variable {X Y : Scheme.{u}} (f : X ⟶ Y) [Etale f] (x : X)
+variable {X Y : Scheme.{u}} (f : X ⟶ Y) (x : X)
+
+/-- Along the stalk map at `x` of a morphism `f : X ⟶ Y` that is formally unramified and locally of
+finite type, the maximal ideal of the local ring of `Y` at `f x` generates the maximal ideal of the
+local ring of `X` at `x`. -/
+theorem map_maximalIdeal_stalkMap_of_formallyUnramified [FormallyUnramified f]
+    [LocallyOfFiniteType f] :
+    (maximalIdeal (Y.presheaf.stalk (f x))).map (f.stalkMap x).hom =
+      maximalIdeal (X.presheaf.stalk x) := by
+  algebraize [(f.stalkMap x).hom]
+  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
+    inferInstanceAs <| IsLocalHom (f.stalkMap x).hom
+  have : Algebra.EssFiniteType (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
+    rw [← RingHom.essFiniteType_algebraMap, RingHom.algebraMap_toAlgebra]
+    exact LocallyOfFiniteType.stalkMap f x
+  have : Algebra.FormallyUnramified (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
+    rw [← RingHom.formallyUnramified_algebraMap, RingHom.algebraMap_toAlgebra]
+    exact FormallyUnramified.stalkMap f x
+  exact Algebra.FormallyUnramified.map_maximalIdeal
+
+variable [Etale f]
 
 /-- The stalk map of an étale morphism, as an algebra, is local, flat and essentially of finite
 type, and the maximal ideal of its source generates the maximal ideal of its target. -/
@@ -55,18 +76,8 @@ private theorem stalkMap_properties_of_etale :
   have : Algebra.EssFiniteType (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
     rw [← RingHom.essFiniteType_algebraMap, RingHom.algebraMap_toAlgebra]
     exact LocallyOfFiniteType.stalkMap f x
-  have : Algebra.FormallyUnramified (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
-    rw [← RingHom.formallyUnramified_algebraMap, RingHom.algebraMap_toAlgebra]
-    exact FormallyUnramified.stalkMap f x
   exact ⟨inferInstance, Flat.stalkMap f x, inferInstance,
-    Algebra.FormallyUnramified.map_maximalIdeal⟩
-
-/-- Along the stalk map of an étale morphism `f : X ⟶ Y` at `x`, the maximal ideal of the local
-ring of `Y` at `f x` generates the maximal ideal of the local ring of `X` at `x`. -/
-theorem map_maximalIdeal_stalkMap_of_etale :
-    (maximalIdeal (Y.presheaf.stalk (f x))).map (f.stalkMap x).hom =
-      maximalIdeal (X.presheaf.stalk x) :=
-  (stalkMap_properties_of_etale f x).2.2.2
+    map_maximalIdeal_stalkMap_of_formallyUnramified f x⟩
 
 /-- An étale morphism `f : X ⟶ Y` preserves and reflects Noetherian local rings: the local ring of
 `Y` at `f x` is Noetherian exactly when the local ring of `X` at `x` is. -/
