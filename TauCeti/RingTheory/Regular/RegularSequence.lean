@@ -7,8 +7,6 @@ module
 
 public import TauCeti.RingTheory.Depth.Basic
 public import Mathlib.RingTheory.Regular.RegularSequence
-import Mathlib.Algebra.Module.LocalizedModule.Submodule
-import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Ideal.AssociatedPrime.Finiteness
 
 /-!
@@ -138,20 +136,8 @@ theorem exists_isWeaklyRegular_of_le_depth_localizedModule (I : Ideal R) (n : �
       exact (Nat.cast_add_one_ne_zero n) (nonpos_iff_eq_zero.1 hdepth)
     -- Dividing by `a` lowers the depth of each localization at a prime `p ⊇ I` by exactly one.
     obtain ⟨rs, hlen, hmem, hrs⟩ := @ih (QuotSMulTop a M) _ _ _ fun p _ hle ↦ by
-      let Rₚ := Localization.AtPrime p
-      let e : LocalizedModule p.primeCompl (QuotSMulTop a M) ≃ₗ[Rₚ]
-          QuotSMulTop (algebraMap R Rₚ a) (LocalizedModule p.primeCompl M) :=
-        (localizedQuotientEquiv _ _).symm ≪≫ₗ Submodule.quotEquivOfEq _ _ (by
-          rw [Submodule.localized, ← Submodule.ideal_span_singleton_smul,
-            Submodule.localized'_smul, Ideal.localized'_eq_map, Submodule.localized'_top,
-            Ideal.map_span, Set.image_singleton, Submodule.ideal_span_singleton_smul])
-      have hmax : algebraMap R Rₚ a ∈ maximalIdeal Rₚ :=
-        (IsLocalization.AtPrime.to_map_mem_maximal_iff Rₚ p a).2 (hle haI)
-      have hsucc := depth_quotSMulTop_succ_eq_depth (reg.of_isLocalizedModule (S := Rₚ)
-        p.primeCompl (LocalizedModule.mkLinearMap p.primeCompl M)) hmax
       have hdepth := h p hle
-      rw [← hsucc, Nat.cast_add_one] at hdepth
-      rw [IsLocalRing.depth_eq_of_linearEquiv e]
+      rw [← depth_localizedModule_quotSMulTop_add_one reg p (hle haI), Nat.cast_add_one] at hdepth
       exact (ENat.add_le_add_iff_right ENat.one_ne_top).1 hdepth
     exact ⟨a :: rs, by simp [hlen], List.forall_mem_cons.2 ⟨haI, hmem⟩,
       (isWeaklyRegular_cons_iff M a rs).2 ⟨reg, hrs⟩⟩

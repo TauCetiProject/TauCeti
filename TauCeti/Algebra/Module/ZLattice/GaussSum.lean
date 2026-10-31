@@ -67,6 +67,8 @@ lattice `c L^∨`, and the scaling `y ↦ √N • y` turns the sum into `|L^∨
   on `a` only modulo `c`.
 * `ZLattice.gaussSumTwisted_one`, `ZLattice.gaussSum_one`: `G_L(a, 1; m) = G_L(a, 1) = 1`.
 * `ZLattice.gaussSum_comap`: the Gauss sums are invariant under linear isometry equivalences.
+* `ZLattice.gaussSumTwisted_orthSum`, `ZLattice.gaussSum_orthSum`: the Gauss sums are
+  multiplicative under orthogonal direct sums, `G_{L ⊕ M}(a, c) = G_L(a, c) G_M(a, c)`.
 * `ZLattice.gaussSumTwisted_eq_zero`: if the level of `L` divides `c`, then `G_L(a, c; m) = 0`
   for `m ∈ L^∨ \ L`.
 * `ZLattice.gaussSumTwisted_eq_of_mem`: for `m ∈ L` and `a d ≡ 1 (mod c)`,
@@ -256,6 +258,42 @@ theorem gaussSum_comap :
   gaussSumTwisted_comap hL e hL' a c (by simp)
 
 end Isometry
+
+/-! ### Orthogonal direct sums -/
+
+section OrthSum
+
+variable {M : Submodule ℤ F} (hM : IsEven M) (a : ℤ) (c : ℕ)
+
+variable [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)] [Fintype (M ⧸ ((c : ℝ) • M).submoduleOf M)]
+  [Fintype (orthSum L M ⧸ ((c : ℝ) • orthSum L M).submoduleOf (orthSum L M))]
+
+/-- The twisted Gauss sums are multiplicative under orthogonal direct sums: for `m ∈ (L ⊕ M)^∨`
+with components `m₁ ∈ L^∨` and `m₂ ∈ M^∨`, `G_{L ⊕ M}(a, c; m) = G_L(a, c; m₁) G_M(a, c; m₂)`. -/
+theorem gaussSumTwisted_orthSum {m : dual (orthSum L M)} {m₁ : dual L} {m₂ : dual M}
+    (hm : (m : WithLp 2 (E × F)) = WithLp.toLp 2 ((m₁ : E), (m₂ : F))) :
+    gaussSumTwisted (orthSum L M) (isEven_orthSum_iff.mpr ⟨hL, hM⟩) a c m =
+      gaussSumTwisted L hL a c m₁ * gaussSumTwisted M hM a c m₂ := by
+  rw [gaussSumTwisted_def, gaussSumTwisted_def, gaussSumTwisted_def, Finset.sum_mul_sum,
+    ← Fintype.sum_prod_type']
+  refine Fintype.sum_equiv (quotientSmulOrthSumEquiv L M c).toEquiv _ _ fun y => ?_
+  induction y using Submodule.Quotient.induction_on with | H x
+  simp only [LinearEquiv.coe_toEquiv, quotientSmulOrthSumEquiv_mk, gaussTerm_mk,
+    coe_orthSumEquivProd_apply_fst, coe_orthSumEquivProd_apply_snd, hm,
+    WithLp.prod_norm_sq_eq_of_L2, WithLp.prod_inner_apply, WithLp.ofLp_fst, WithLp.ofLp_snd]
+  rw [← exp_add]
+  congr 1
+  push_cast
+  ring
+
+/-- The Gauss sums are multiplicative under orthogonal direct sums:
+`G_{L ⊕ M}(a, c) = G_L(a, c) G_M(a, c)`. -/
+theorem gaussSum_orthSum :
+    gaussSum (orthSum L M) (isEven_orthSum_iff.mpr ⟨hL, hM⟩) a c =
+      gaussSum L hL a c * gaussSum M hM a c :=
+  gaussSumTwisted_orthSum hL hM a c rfl
+
+end OrthSum
 
 /-! ### Vanishing and completing the square -/
 
