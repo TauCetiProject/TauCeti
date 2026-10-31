@@ -36,6 +36,8 @@ its complex tangent coordinate changes regarded as `ℝ`-linear maps.
   `𝕜'` implies differentiability over `𝕜`.
 * `HasMFDerivWithinAt.restrictScalars`, `HasMFDerivAt.restrictScalars`: a derivative over `𝕜'`,
   with scalars restricted to `𝕜`, is a derivative over `𝕜`.
+* `HasMFDerivWithinAt.of_restrictScalars`: conversely, a `𝕜'`-linear map whose scalar restriction
+  is a derivative over `𝕜` is a derivative over `𝕜'`.
 * `MDifferentiableWithinAt.restrictScalars_mfderivWithin`,
   `MDifferentiableAt.mfderiv_restrictScalars`: the derivative over `𝕜` is the derivative over `𝕜'`
   with scalars restricted to `𝕜`.
@@ -114,6 +116,24 @@ theorem HasMFDerivAt.restrictScalars
         ((tangentSpaceCastModel 𝓘(𝕜, E) x).symm : E →L[𝕜] _)) :
     HasMFDerivAt 𝓘(𝕜, E) 𝓘(𝕜, E') f x g' :=
   hasMFDerivWithinAt_univ.mp (h.hasMFDerivWithinAt.restrictScalars 𝕜 hg)
+
+/-- If `g'` is a derivative of `f` within a set at a point for the models over `𝕜`, and `f'` is a
+`𝕜'`-linear map between the tangent spaces over `𝕜'` which agrees with `g'` once both are read in
+the model spaces, then `f'` is a derivative of `f` within that set at that point for the models
+over `𝕜'`. This is the converse of `HasMFDerivWithinAt.restrictScalars`. -/
+theorem HasMFDerivWithinAt.of_restrictScalars
+    {f' : TangentSpace 𝓘(𝕜', E) x →L[𝕜'] TangentSpace 𝓘(𝕜', E') (f x)}
+    {g' : TangentSpace 𝓘(𝕜, E) x →L[𝕜] TangentSpace 𝓘(𝕜, E') (f x)}
+    (h : HasMFDerivWithinAt 𝓘(𝕜, E) 𝓘(𝕜, E') f s x g')
+    (hg : ((tangentSpaceCastModel 𝓘(𝕜', E') (f x) : _ →L[𝕜'] E') ∘L f' ∘L
+        ((tangentSpaceCastModel 𝓘(𝕜', E) x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 =
+      (tangentSpaceCastModel 𝓘(𝕜, E') (f x) : _ →L[𝕜] E') ∘L g' ∘L
+        ((tangentSpaceCastModel 𝓘(𝕜, E) x).symm : E →L[𝕜] _)) :
+    HasMFDerivWithinAt 𝓘(𝕜', E) 𝓘(𝕜', E') f s x f' := by
+  have hf := h.2
+  simp only [mfld_simps] at hf hg
+  simp only [HasMFDerivWithinAt, mfld_simps]
+  exact ⟨h.1, hf.of_restrictScalars 𝕜 hg⟩
 
 /-- At a point where `f` is differentiable within a set for the models over `𝕜'`, and where the set
 has unique derivatives over the smaller field `𝕜`, the derivative of `f` within the set over `𝕜` is
