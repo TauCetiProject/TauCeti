@@ -72,8 +72,8 @@ and a linear map to a discrete module is continuous exactly when it vanishes on 
   zero in `HahnModule ℤ R V`.
 * `TauCeti.HahnModule.dense_span_single`, `TauCeti.HahnModule.continuousLinearMap_ext_single`:
   the monomials `v tⁿ` span a dense submodule, so they determine continuous linear maps.
-* `TauCeti.HahnModule.continuous_iff_exists_lattice_le_ker`: a linear map to a discrete module is
-  continuous exactly when it vanishes on some lattice.
+* `LinearMap.continuous_iff_exists_hahnModule_lattice_le_ker`: a linear map to a discrete module
+  is continuous exactly when it vanishes on some lattice.
 -/
 
 public section
@@ -538,11 +538,20 @@ theorem continuousLinearMap_ext_single {M : Type*} [AddCommMonoid M] [Module R M
       rintro _ ⟨⟨n, v⟩, rfl⟩
       exact h n v)
 
-variable {R V} in
+end Topology
+
+end TauCeti.HahnModule
+
+namespace LinearMap
+
+open _root_.HahnModule TauCeti.HahnModule Topology
+
+variable {R V : Type*} [Ring R] [AddCommGroup V] [Module R V]
+
 /-- A linear map from `HahnModule ℤ R V` to a discrete module is continuous exactly when it
 vanishes on some lattice `U_a(V)`. -/
-theorem continuous_iff_exists_lattice_le_ker {M : Type*} [AddCommMonoid M] [Module R M]
-    [TopologicalSpace M] [DiscreteTopology M] (ℓ : HahnModule ℤ R V →ₗ[R] M) :
+theorem continuous_iff_exists_hahnModule_lattice_le_ker {M : Type*} [AddCommMonoid M]
+    [Module R M] [TopologicalSpace M] [DiscreteTopology M] (ℓ : HahnModule ℤ R V →ₗ[R] M) :
     Continuous ℓ ↔ ∃ a : ℤ, lattice R V a ≤ LinearMap.ker ℓ := by
   constructor
   · intro hℓ
@@ -556,6 +565,4 @@ theorem continuous_iff_exists_lattice_le_ker {M : Type*} [AddCommMonoid M] [Modu
     exact (hasBasis_nhds_zero_lattice R V).eventually_iff.mpr
       ⟨a, trivial, fun f hf ↦ LinearMap.mem_ker.mp (ha hf)⟩
 
-end Topology
-
-end TauCeti.HahnModule
+end LinearMap

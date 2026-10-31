@@ -15,7 +15,7 @@ public import TauCeti.RingTheory.LaurentSeries.Lattice
 Let `R` be a commutative ring with the discrete topology and `V` an `R`-module, and give
 `V((t)) = HahnModule ℤ R V` its lattice topology, in which the lattices `U_a(V) = tᵃ V⟦t⟧` form a
 basis of neighbourhoods of zero. A continuous `R`-linear functional on `V((t))` is then one that
-vanishes on some lattice `U_a(V)` (`TauCeti.HahnModule.continuous_iff_exists_lattice_le_ker`).
+vanishes on some lattice `U_a(V)` (`LinearMap.continuous_iff_exists_hahnModule_lattice_le_ker`).
 
 A series `g ∈ V*((t)) = HahnModule ℤ R (Module.Dual R V)` with coefficients in the dual module
 defines the functional
@@ -47,8 +47,8 @@ finite sums of monomials, `TauCeti.HahnModule.continuousLinearMap_ext_single`.
 * `HahnModule.lattice_le_ker_residueDual_iff`: the functional attached to `g` vanishes on
   `U_a(V)` exactly when `g ∈ U_(-a)(V*)`.
 * `HahnModule.residueDual_of_map`: compatibility with coefficientwise linear maps.
-* `HahnModule.coeff_residueDualEquiv_symm`: the coefficients of the series representing
-  a continuous functional `ℓ` are `v ↦ ℓ(v t⁻¹⁻ⁿ)`.
+* `ContinuousLinearMap.coeff_hahnModule_residueDualEquiv_symm`: the coefficients of the series
+  representing a continuous functional `ℓ` are `v ↦ ℓ(v t⁻¹⁻ⁿ)`.
 
 ## References
 
@@ -107,7 +107,7 @@ attached to a series `g` with coefficients in the dual module `Module.Dual R V`.
 noncomputable def residueDual (g : HahnModule ℤ R (Module.Dual R V)) :
     HahnModule ℤ R V →L[R] R where
   toLinearMap := residueDualLinearMap g
-  cont := (continuous_iff_exists_lattice_le_ker _).mpr
+  cont := (LinearMap.continuous_iff_exists_hahnModule_lattice_le_ker _).mpr
     ⟨-((of R).symm g).order, fun _ hf ↦ residueDualLinearMap_eq_zero
       ((mem_lattice_iff R _).mpr fun _ hn ↦ coeff_eq_zero_of_lt_order (by omega)) hf⟩
 
@@ -160,7 +160,8 @@ theorem residueDual_of_map {W : Type*} [AddCommGroup W] [Module R W] (u : V →�
 coefficient at `m` is `v ↦ ℓ(v t⁻¹⁻ᵐ)`. -/
 private theorem exists_residueDual_eq (ℓ : HahnModule ℤ R V →L[R] R) :
     ∃ g : HahnModule ℤ R (Module.Dual R V), residueDual g = ℓ := by
-  obtain ⟨a, ha⟩ := (continuous_iff_exists_lattice_le_ker ℓ.toLinearMap).mp ℓ.continuous
+  obtain ⟨a, ha⟩ :=
+    ℓ.toLinearMap.continuous_iff_exists_hahnModule_lattice_le_ker.mp ℓ.continuous
   let c : ℤ → Module.Dual R V := fun m ↦
     ℓ.toLinearMap ∘ₗ (ofLinearEquiv R).toLinearMap ∘ₗ single.linearMap (-1 - m)
   have hc (m : ℤ) (v : V) : c m v = ℓ (of R (single (-1 - m) v)) := by
@@ -193,11 +194,22 @@ theorem residueDualEquiv_apply (g : HahnModule ℤ R (Module.Dual R V)) :
     residueDualEquiv R V g = residueDual g :=
   (rfl)
 
-/-- The residue functional of the series representing `ℓ` is `ℓ`. -/
+/-- The zero series pairs to the zero functional. -/
 @[simp]
-theorem residueDual_residueDualEquiv_symm (ℓ : HahnModule ℤ R V →L[R] R) :
-    residueDual ((residueDualEquiv R V).symm ℓ) = ℓ := by
-  rw [← residueDualEquiv_apply, LinearEquiv.apply_symm_apply]
+theorem residueDual_zero : residueDual (0 : HahnModule ℤ R (Module.Dual R V)) = 0 := by
+  rw [← residueDualEquiv_apply, map_zero]
+
+/-- Residue pairing is additive in the series. -/
+@[simp]
+theorem residueDual_add (g h : HahnModule ℤ R (Module.Dual R V)) :
+    residueDual (g + h) = residueDual g + residueDual h := by
+  simp only [← residueDualEquiv_apply, map_add]
+
+/-- Residue pairing commutes with scalar multiplication of the series. -/
+@[simp]
+theorem residueDual_smul (c : R) (g : HahnModule ℤ R (Module.Dual R V)) :
+    residueDual (c • g) = c • residueDual g := by
+  simp only [← residueDualEquiv_apply, map_smul]
 
 /-- The series representing the residue functional of `g` is `g`. -/
 @[simp]
@@ -205,10 +217,25 @@ theorem residueDualEquiv_symm_residueDual (g : HahnModule ℤ R (Module.Dual R V
     (residueDualEquiv R V).symm (residueDual g) = g := by
   rw [← residueDualEquiv_apply, LinearEquiv.symm_apply_apply]
 
+end HahnModule
+
+namespace ContinuousLinearMap
+
+open HahnModule
+
+variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V] [TopologicalSpace R]
+  [DiscreteTopology R]
+
+/-- The residue functional of the series representing `ℓ` is `ℓ`. -/
+@[simp]
+theorem hahnModule_residueDual_residueDualEquiv_symm (ℓ : HahnModule ℤ R V →L[R] R) :
+    residueDual ((residueDualEquiv R V).symm ℓ) = ℓ := by
+  rw [← residueDualEquiv_apply, LinearEquiv.apply_symm_apply]
+
 /-- The coefficient at `n` of the series representing `ℓ` is the functional `v ↦ ℓ(v t⁻¹⁻ⁿ)`. -/
 @[simp]
-theorem coeff_residueDualEquiv_symm (ℓ : HahnModule ℤ R V →L[R] R) (n : ℤ) (v : V) :
+theorem coeff_hahnModule_residueDualEquiv_symm (ℓ : HahnModule ℤ R V →L[R] R) (n : ℤ) (v : V) :
     ((of R).symm ((residueDualEquiv R V).symm ℓ)).coeff n v = ℓ (of R (single (-1 - n) v)) := by
-  rw [coeff_apply_eq_residueDual_of_single, residueDual_residueDualEquiv_symm]
+  rw [coeff_apply_eq_residueDual_of_single, hahnModule_residueDual_residueDualEquiv_symm]
 
-end HahnModule
+end ContinuousLinearMap
