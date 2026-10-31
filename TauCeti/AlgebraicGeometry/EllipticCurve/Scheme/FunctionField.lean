@@ -28,6 +28,9 @@ affine coordinate ring `R[x, y] ⧸ (W(x, y))`. No ellipticity hypothesis is nee
 * `WeierstrassCurve.projModelFunctionFieldAlgebra`: the transported `R`-algebra structure on
   `W.projModel.functionField`.
 * `WeierstrassCurve.projModelFunctionFieldAlgEquiv`: the comparison as an `R`-algebra equivalence.
+* `WeierstrassCurve.projModelFunctionFieldBaseAlgEquiv`: the comparison as an `R`-algebra
+  equivalence for the algebra structure `Scheme.functionFieldBaseAlgebra` defined by the structure
+  morphism `projModel W ⟶ Spec R`.
 
 ## Main results
 
@@ -282,5 +285,39 @@ theorem projModelFunctionFieldEquiv_baseRingToFunctionField [IsDomain R] (r : R)
     projModelPoint_projModelOver, ← Spec.map_comp, Spec.map_inj] at h
   rw [← Scheme.algebraMap_functionField_eq_baseRingToFunctionField]
   exact congr($h r)
+
+section BaseAlgebra
+
+-- Within this section the function field of the projective model carries the `R`-algebra structure
+-- `Scheme.functionFieldBaseAlgebra` defined by the structure morphism, not the transported one.
+attribute [local instance high] Scheme.functionFieldBaseAlgebra
+
+/-- The identification of function fields `projModelFunctionFieldEquiv`, as an equivalence of
+`R`-algebras for the algebra structure `Scheme.functionFieldBaseAlgebra` defined by the structure
+morphism. This is the structure for which pullbacks of rational functions along morphisms over
+`Spec R` are `R`-algebra maps; `projModelFunctionFieldAlgEquiv` uses the transported structure
+`projModelFunctionFieldAlgebra` instead. -/
+noncomputable def projModelFunctionFieldBaseAlgEquiv [IsDomain R] :
+    W.projModel.functionField ≃ₐ[R] W.toAffine.FunctionField :=
+  AlgEquiv.ofRingEquiv (f := W.projModelFunctionFieldEquiv) fun r ↦ by
+    rw [Scheme.algebraMap_functionField_eq_baseRingToFunctionField,
+      projModelFunctionFieldEquiv_baseRingToFunctionField]
+
+/-- The underlying function of `projModelFunctionFieldBaseAlgEquiv` is
+`projModelFunctionFieldEquiv`. -/
+@[simp]
+theorem projModelFunctionFieldBaseAlgEquiv_apply [IsDomain R] (z : W.projModel.functionField) :
+    W.projModelFunctionFieldBaseAlgEquiv z = W.projModelFunctionFieldEquiv z :=
+  AlgEquiv.ofRingEquiv_apply _ z
+
+/-- The inverse of `projModelFunctionFieldBaseAlgEquiv` is the inverse of
+`projModelFunctionFieldEquiv`. -/
+@[simp]
+theorem projModelFunctionFieldBaseAlgEquiv_symm_apply [IsDomain R]
+    (z : W.toAffine.FunctionField) :
+    W.projModelFunctionFieldBaseAlgEquiv.symm z = W.projModelFunctionFieldEquiv.symm z :=
+  AlgEquiv.ofRingEquiv_symm_apply _ z
+
+end BaseAlgebra
 
 end WeierstrassCurve

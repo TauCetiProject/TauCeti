@@ -8,6 +8,9 @@ module
 public import TauCeti.RingTheory.Dagger.Distinguished
 public import TauCeti.RingTheory.Dagger.OptionSeries
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
+public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
+import Mathlib.FieldTheory.Minpoly.Basic
+import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 import TauCeti.Algebra.GroupWithZero.Irreducible
 import TauCeti.RingTheory.PowerSeries.Trunc
 
@@ -31,6 +34,11 @@ For a distinguished monic polynomial `ω ∈ K⟨X⟩†[Y]`, evaluated at `Y` b
 the same in `K⟨X⟩†[Y]` and in `K⟨X, Y⟩†`, and existence shows that every series is congruent to
 a polynomial modulo `ω`. Hence irreducibility of `ω` descends from `K⟨X, Y⟩†` to `K⟨X⟩†[Y]`, and
 `ω` is prime in one ring iff it is prime in the other.
+
+Dividing one variable at a time by its minimal polynomial over `K`, a polynomial with constant
+coefficients and hence distinguished at unit radius, shows that every quotient of `K⟨X⟩†` in
+finitely many variables which is integral over `K` is spanned by the images of polynomials
+(`TauCeti.Dagger.washnitzerAlgebra.surjective_mkₐ_comp_ofMvPolynomial`).
 
 ## References
 
@@ -259,6 +267,127 @@ theorem prime_polynomialToOption_iff
     · exact Or.inr ((dvd_add_right (dvd_mul_left _ qb)).mpr ((hdvd rb).mpr hb))
 
 end Polynomial
+
+section IntegralQuotient
+
+/-- The statement of `surjective_mkₐ_comp_ofMvPolynomial` for the variables `σ`. -/
+private abbrev PolynomialsSurject (σ : Type*) : Prop :=
+  ∀ (I : Ideal (washnitzerAlgebra σ K)) [Algebra.IsIntegral K (washnitzerAlgebra σ K ⧸ I)],
+    Function.Surjective ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial σ K))
+
+omit [CompleteSpace K] in
+private theorem polynomialsSurject_of_equiv {σ τ : Type*} (e : σ ≃ τ)
+    (h : PolynomialsSurject (K := K) σ) : PolynomialsSurject (K := K) τ := by
+  intro I _
+  let φ := renameEquiv (R := K) e
+  let J := I.comap φ.toAlgHom
+  have : Algebra.IsIntegral K (washnitzerAlgebra σ K ⧸ J) :=
+    Algebra.IsIntegral.of_injective (Ideal.quotientMapₐ I φ.toAlgHom le_rfl)
+      Ideal.quotientMap_injective
+  intro x
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+  obtain ⟨p, hp⟩ := h J (Ideal.Quotient.mk J (φ.symm f))
+  refine ⟨MvPolynomial.rename e p, ?_⟩
+  simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, J,
+    Ideal.mem_comap] at hp
+  refine Ideal.Quotient.eq.mpr ?_
+  simpa [φ] using hp
+
+omit [CompleteSpace K] in
+private theorem polynomialsSurject_of_isEmpty {σ : Type*} [IsEmpty σ] :
+    PolynomialsSurject (K := K) σ := by
+  intro I _ x
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+  obtain ⟨r, rfl⟩ := algebraMap_surjective (R := K) f
+  exact ⟨algebraMap K _ r, by simp⟩
+
+omit [CompleteSpace K] in
+/-- A nonzero polynomial with coefficients in `K`, viewed in the separated variable `Y`, is
+distinguished at the unit radius, with a unit coefficient in its distinguished degree. -/
+private theorem exists_isDistinguished_polynomialToOption_map {Q : Polynomial K}
+    (hQ : Q ≠ 0) : ∃ s : ℕ,
+      PowerSeries.IsDistinguished 1 s (restrictedOptionEquiv
+        (toTate _ K (polynomialToOption (Q.map (algebraMap K W)))) : PowerSeries Tate) ∧
+      IsUnit (PowerSeries.coeff s (restrictedOptionEquiv
+        (toTate _ K (polynomialToOption (Q.map (algebraMap K W)))) :
+          PowerSeries Tate)) := by
+  obtain ⟨s, hs⟩ := PowerSeries.exists_isDistinguished zero_lt_one
+    (PowerSeries.isRestricted_polynomial Q) (by simpa [Polynomial.coe_eq_zero_iff] using hQ)
+  have hmap : (restrictedOptionEquiv (toTate _ K (polynomialToOption
+      (Q.map (algebraMap K W)))) : PowerSeries Tate) =
+      PowerSeries.map (algebraMap K Tate) (Q : PowerSeries K) := by
+    rw [restrictedOptionEquiv_toTate_polynomialToOption, Polynomial.map_map,
+      ← Polynomial.polynomial_map_coe]
+    congr 2
+    exact (toTate σ K).comp_algebraMap
+  rw [hmap]
+  refine ⟨s, hs.map _ (norm_algebraMap_isRestrictedSubring (c := fun _ : σ ↦ (1 : ℝ))), ?_⟩
+  rw [PowerSeries.coeff_map]
+  exact (isUnit_iff_ne_zero.mpr hs.coeff_ne_zero).map _
+
+/-- The inductive step: Weierstrass division by the minimal polynomial of `Y = X none`. -/
+private theorem polynomialsSurject_option (ih : PolynomialsSurject (K := K) σ) :
+    PolynomialsSurject (K := K) (Option σ) := by
+  intro I _
+  -- The minimal polynomial `Q` of `Y` modulo `I`, evaluated at `Y`, lies in `I`.
+  set Q := minpoly K (Ideal.Quotient.mk I (X (Option σ) K none))
+  have hQ0 : Q ≠ 0 := minpoly.ne_zero (Algebra.IsIntegral.isIntegral _)
+  set ω : Polynomial W := Q.map (algebraMap K W)
+  have hωI : polynomialToOption ω ∈ I := by
+    have h : polynomialToOption ω = Polynomial.aeval (X (Option σ) K none) Q := by
+      have h' : polynomialToOption.comp (Polynomial.mapRingHom (algebraMap K W)) =
+          (Polynomial.aeval (X (Option σ) K none) : Polynomial K →ₐ[K] W').toRingHom :=
+        Polynomial.ringHom_ext (fun a ↦ by simp) (by simp)
+      exact RingHom.congr_fun h' Q
+    rw [← Ideal.Quotient.eq_zero_iff_mem, h, ← Ideal.Quotient.mkₐ_eq_mk K,
+      ← Polynomial.aeval_algHom_apply, Ideal.Quotient.mkₐ_eq_mk, minpoly.aeval]
+  obtain ⟨s, hg, hu⟩ := exists_isDistinguished_polynomialToOption_map (σ := σ) hQ0
+  -- The coefficients of a remainder have polynomial representatives modulo `I ∩ W`.
+  let J : Ideal W := I.comap (optionC (σ := σ) (R := K))
+  have : Algebra.IsIntegral K (W ⧸ J) :=
+    Algebra.IsIntegral.of_injective (Ideal.quotientMapₐ I optionC le_rfl)
+      Ideal.quotientMap_injective
+  let S := ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial (Option σ) K)).range
+  have hC (a : W) : Ideal.Quotient.mk I (optionC a) ∈ S := by
+    obtain ⟨p, hp⟩ := ih J (Ideal.Quotient.mk J a)
+    refine ⟨MvPolynomial.rename some p, ?_⟩
+    simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, J,
+      Ideal.mem_comap] at hp
+    refine Ideal.Quotient.eq.mpr ?_
+    rwa [map_sub, optionC_ofMvPolynomial] at hp
+  have hY : Ideal.Quotient.mk I (X (Option σ) K none) ∈ S := ⟨MvPolynomial.X none, by simp⟩
+  let ψ : Polynomial W →+* W' ⧸ I :=
+    (Ideal.Quotient.mk I).comp polynomialToOption
+  have hr (r : Polynomial W) : ψ r ∈ S := by
+    induction r using Polynomial.induction_on' with
+    | add p q hp hq => rw [ψ.map_add]; exact S.add_mem hp hq
+    | monomial n a =>
+      rw [← Polynomial.C_mul_X_pow_eq_monomial, ψ.map_mul, ψ.map_pow]
+      simp only [ψ, RingHom.comp_apply, polynomialToOption_C, polynomialToOption_X]
+      exact S.mul_mem (hC a) (S.pow_mem hY n)
+  intro x
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+  obtain ⟨q, r, -, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
+  have hf : f = q * polynomialToOption ω + polynomialToOption r :=
+    optionSeries_injective (by
+      rw [map_add, map_mul, optionSeries_polynomialToOption r]
+      exact hqr.symm)
+  have hfr : Ideal.Quotient.mk I f = ψ r := by
+    rw [hf, (Ideal.Quotient.mk I).map_add, (Ideal.Quotient.mk I).map_mul,
+      Ideal.Quotient.eq_zero_iff_mem.mpr hωI, mul_zero, zero_add]
+    rfl
+  exact hfr ▸ (AlgHom.mem_range _).mp (hr r)
+
+/-- **Polynomials surject onto integral quotients.** If a quotient of the Monsky–Washnitzer
+algebra in finitely many variables is integral over `K`, for instance finite-dimensional, then
+every class has a polynomial representative. -/
+theorem surjective_mkₐ_comp_ofMvPolynomial {σ : Type*} [Finite σ]
+    (I : Ideal (washnitzerAlgebra σ K)) [Algebra.IsIntegral K (washnitzerAlgebra σ K ⧸ I)] :
+    Function.Surjective ((Ideal.Quotient.mkₐ K I).comp (ofMvPolynomial σ K)) :=
+  Finite.induction_empty_option (P := PolynomialsSurject (K := K))
+    polynomialsSurject_of_equiv polynomialsSurject_of_isEmpty polynomialsSurject_option σ I
+
+end IntegralQuotient
 
 end washnitzerAlgebra
 

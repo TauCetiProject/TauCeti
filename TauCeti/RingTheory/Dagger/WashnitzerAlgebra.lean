@@ -348,6 +348,13 @@ theorem coe_renameEquiv {τ : Type*} (e : σ ≃ τ) (f : washnitzerAlgebra σ R
       _root_.MvPowerSeries.renameEquiv R e f :=
   (rfl)
 
+/-- Renaming the variables commutes with the inclusion of the polynomials. -/
+@[simp]
+theorem renameEquiv_ofMvPolynomial {τ : Type*} (e : σ ≃ τ) (p : MvPolynomial σ R) :
+    washnitzerAlgebra.renameEquiv e (ofMvPolynomial σ R p) =
+      ofMvPolynomial τ R (MvPolynomial.rename e p) :=
+  Subtype.ext (by simp [_root_.MvPowerSeries.rename_coe])
+
 variable (σ R) in
 /-- **Overconvergent series in no variables.** With no variables every series is a constant, so
 the constant coefficient is an `R`-algebra isomorphism `R⟨⟩† ≃ R`. -/
