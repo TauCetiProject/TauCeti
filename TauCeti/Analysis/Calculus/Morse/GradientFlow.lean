@@ -59,7 +59,7 @@ route to Morse homology.
 * `IsIntegralCurve.gradient_eq_zero_of_periodic` and
   `IsIntegralCurve.eq_of_periodic_neg_gradient`: a periodic negative gradient trajectory
   consists entirely of critical points and is constant.
-* `TauCeti.IsIntegralCurve.exists_gradient_ne_zero`: a trajectory between distinct limits is
+* `IsIntegralCurve.exists_gradient_ne_zero`: a trajectory between distinct limits is
   not stationary.
 * `Flow.IsNegativeGradient`: every orbit of a flow solves the negative gradient equation.
 * `Flow.isNegativeGradient_iff`: the introduction and elimination rule for that predicate.

@@ -117,7 +117,7 @@ theorem exists_trajectoryOperator_hessianOperator_eq_zero
     (hf.gradient_right (m := 1) (by norm_num)).continuous.comp hγ.continuous
   have hmem : MemLp (fun s ↦ ∇ f (γ s)) 2 := by
     rw [memLp_two_iff_integrable_sq_norm hcont.aestronglyMeasurable]
-    exact TauCeti.IsIntegralCurve.integrable_norm_gradient_sq hγ
+    exact hγ.integrable_norm_gradient_sq
       (fun t ↦ hf.differentiable (by norm_num) (γ t))
       ((hf.continuous.tendsto p).comp hbot) ((hf.continuous.tendsto q).comp htop)
   exact exists_trajectoryOperator_eq_zero_of_hasDerivAt hAL
@@ -137,7 +137,7 @@ theorem finrank_ker_trajectoryOperator_hessianOperator_pos
     (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp hγ.continuous
   have := (kerTrajectoryOperatorEquiv hA AL hAL).symm.finiteDimensional
   obtain ⟨u, hu, hux⟩ := exists_trajectoryOperator_hessianOperator_eq_zero hγ hf hbot htop hAL
-  obtain ⟨t, ht⟩ := TauCeti.IsIntegralCurve.exists_gradient_ne_zero hγ hbot htop hpq
+  obtain ⟨t, ht⟩ := hγ.exists_gradient_ne_zero hbot htop hpq
   refine Module.finrank_pos_iff_exists_ne_zero.2 ⟨⟨u, hu⟩, fun h0 ↦ ht ?_⟩
   have hu0 : u = 0 := congrArg Subtype.val h0
   -- The continuous representative `s ↦ ∇f(γ s)` of `u = 0` vanishes everywhere.
