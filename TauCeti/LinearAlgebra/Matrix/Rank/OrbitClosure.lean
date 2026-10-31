@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
 public import TauCeti.LinearAlgebra.End.JordanChain.Basic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
-import TauCeti.RingTheory.MvPolynomial.ZeroLocus
+import TauCeti.RingTheory.MvPolynomial.ZariskiClosure
 
 /-!
 # Ranks of powers on closures of conjugacy classes
