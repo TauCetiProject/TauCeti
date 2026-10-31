@@ -202,14 +202,8 @@ abbrev iicFunctor (U : B) : Set.Iic U ⥤ B :=
 admissible covers of `G`. -/
 theorem coverPreserving_iicFunctor (U : B) :
     CoverPreserving (G.restrict U).grothendieckTopology G.grothendieckTopology
-      (iicFunctor U) where
-  cover_preserve {V R} hR := by
-    obtain ⟨S, hS, hSR⟩ := (mem_grothendieckTopology_iff _).mp hR
-    refine (mem_grothendieckTopology_iff G).mpr ⟨_, hS, ?_⟩
-    rintro _ g hg
-    obtain ⟨W, hW, rfl⟩ := (coverPresieve_apply _ g).mp hg
-    exact ⟨W, homOfLE ((G.restrict U).subset hS W hW), 𝟙 _,
-      hSR _ _ ((coverPresieve_apply _ _).mpr hW), Subsingleton.elim _ _⟩
+      (iicFunctor U) :=
+  coverPreserving_functor _ fun hS ↦ hS
 
 /-- The inclusion functor of `Set.Iic U` is a continuous functor of sites, so
 `Functor.sheafPushforwardContinuous` restricts sheaves on `G` to sheaves on the G-topology
