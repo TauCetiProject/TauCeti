@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Hypergraph.Colored.Basic
 public import Mathlib.Algebra.BigOperators.Field
 public import Mathlib.Algebra.Order.Field.Basic
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 /-!
 # Relative color densities over supports of injective triples
@@ -64,6 +65,23 @@ theorem relDensityOn_mul_card (H : Colored3Graph κ V) (c : κ)
   obtain rfl | hs := supp.eq_empty_or_nonempty
   · simp
   · rw [relDensityOn_def, div_mul_cancel₀ _ (by exact_mod_cast hs.card_pos.ne')]
+
+/-- Recoloring changes a color count by at most the number of edited supported triples.
+The count-scaled form includes empty supports and does not require a finite palette. -/
+theorem abs_relDensityOn_sub_mul_card_le_card_filter_ne (H H' : Colored3Graph κ V) (c : κ)
+    (supp : Finset {x : Fin 3 → V // Function.Injective x}) :
+    |H.relDensityOn c supp - H'.relDensityOn c supp| * #supp ≤
+      (#{x ∈ supp | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) ≠
+        H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)} : ℚ) := by
+  rw [← abs_of_nonneg (Nat.cast_nonneg (α := ℚ) #supp), ← abs_mul, sub_mul,
+    relDensityOn_mul_card, relDensityOn_mul_card]
+  simp only [← sum_boole]
+  rw [← sum_sub_distrib]
+  refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun x _ ↦ ?_)
+  by_cases h : H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) =
+      H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)
+  · simp [h]
+  · split_ifs <;> simp
 
 /-- Relative densities are nonnegative. -/
 theorem relDensityOn_nonneg (H : Colored3Graph κ V) (c : κ)
