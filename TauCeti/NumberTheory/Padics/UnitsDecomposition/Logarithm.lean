@@ -51,7 +51,8 @@ At `p = 2` the modulus `q = 4` cannot be lowered to `2`: `-1` has order two, so
 * `TauCeti.padicUnitsSection p`: the section `ω`, with `TauCeti.eq_padicUnitsSection` and
   `TauCeti.padicUnitsSection_pow_totient`.
 * `TauCeti.padicIntUnitsEquivZModUnitsProd p`: the decomposition `ℤ_pˣ ≃ₜ* (ℤ/qℤ)ˣ × ℤ_p`, with
-  `TauCeti.padicIntUnitsEquivZModUnitsProd_padicUnitsGenerator` and the uniqueness theorem
+  `TauCeti.padicIntUnitsEquivZModUnitsProd_padicUnitsGenerator`,
+  `TauCeti.padicIntUnitsEquivZModUnitsProd_padicUnitsSection` and the uniqueness theorem
   `TauCeti.eq_padicIntUnitsEquivZModUnitsProd`.
 
 ## References
@@ -416,6 +417,13 @@ theorem padicIntUnitsEquivZModUnitsProd_padicUnitsGenerator :
     padicIntUnitsEquivZModUnitsProd p (padicUnitsGenerator p) = (1, .ofAdd 1) := by
   rw [← (padicIntUnitsEquivZModUnitsProd p).apply_symm_apply (1, .ofAdd 1),
     padicIntUnitsEquivZModUnitsProd_symm_apply, map_one, one_mul, padicUnitsGenerator]
+
+/-- The decomposition sends the section `ω(δ)` to `(δ, 1)`. -/
+@[simp]
+theorem padicIntUnitsEquivZModUnitsProd_padicUnitsSection (δ : (ZMod (p ^ padicUnitsDepth p))ˣ) :
+    padicIntUnitsEquivZModUnitsProd p (padicUnitsSection p δ) = (δ, 1) := by
+  rw [← (padicIntUnitsEquivZModUnitsProd p).apply_symm_apply (δ, 1),
+    padicIntUnitsEquivZModUnitsProd_symm_apply, map_one, OneMemClass.coe_one, mul_one]
 
 /-- **Uniqueness of the decomposition.** A continuous homomorphism
 `ℤ_pˣ → (ℤ/qℤ)ˣ × ℤ_p` whose first component is reduction modulo `q` and which sends

@@ -19,8 +19,10 @@ canonical meromorphic continuation (`TauCeti.meromorphicContinuation`) of the L-
 the coefficients of the unitary weight `RayClassCharacter.toUnitaryIdealWeight`. The series
 depends on the presentation and not only on the character: presenting `χ` at a multiple `𝔫` of
 `𝔪` deletes the Euler factors at the primes dividing `𝔫` but not `𝔪`. Those factors are
-`TauCeti.LFunctions.eulerCorrection χ 𝔫 s = ∏_{𝔭 ∣ 𝔫, 𝔭 ∤ 𝔪} (1 - χ(𝔭) N𝔭 ^ (-s))`, an entire
-function without zeros on `Re s > 0`.
+`RayClassCharacter.eulerCorrection χ 𝔫 s = ∏_{𝔭 ∣ 𝔫, 𝔭 ∤ 𝔪} (1 - χ(𝔭) N𝔭 ^ (-s))`, an entire
+function (`RayClassCharacter.differentiable_eulerCorrection`) without zeros on `Re s > 0`, and on
+`Re s > 1` the series of the induced character is the series of `χ` times these factors
+(`RayClassCharacter.LSeries_induced`).
 
 The comparison of presentations holds on `Re s > 1`, where the series converge absolutely, and as
 an equality of punctured germs at every point of the plane. The germ statements make no assertion
@@ -36,16 +38,12 @@ conductor.
 
 * `TauCeti.LFunctions.heckeLFunctionC`: the continued L-series of a ray class character at its
   presentation modulus.
-* `TauCeti.LFunctions.eulerCorrection`: the Euler factors deleted by presenting a character at a
-  larger modulus.
 
 ## Main results
 
-* `TauCeti.LFunctions.LSeries_toUnitaryIdealWeight_induced`: on `Re s > 1`, inducing multiplies
-  the L-series by the deleted Euler factors.
 * `TauCeti.LFunctions.heckeLFunctionC_induced` and
-  `TauCeti.LFunctions.heckeLFunctionC_induced_eventuallyEq`: the same for the continued
-  functions, on `Re s > 1` and as germs everywhere.
+  `TauCeti.LFunctions.heckeLFunctionC_induced_eventuallyEq`: inducing multiplies the continued
+  function by the deleted Euler factors, on `Re s > 1` and as germs everywhere.
 * `TauCeti.LFunctions.heckeLFunctionC_eq_primitive` and
   `TauCeti.LFunctions.heckeLFunctionC_eventuallyEq_primitive`: the comparison with the primitive
   character.
@@ -67,93 +65,7 @@ open GlobalNumberFields
 
 variable {K : Type*} [Field K] [NumberField K] {𝔪 𝔫 : Modulus K}
 
-/-! ### The deleted Euler factors -/
-
-open Classical in
-/-- **The Euler factors deleted by a larger presentation**:
-`∏_{𝔭 ∣ 𝔫, 𝔭 ∤ 𝔪} (1 - χ(𝔭) N𝔭 ^ (-s))` for a ray class character `χ` of `𝔪`. The value
-`χ(𝔭)` is read through the ideal weight `RayClassCharacter.toMultiplicativeIdealWeight`, which is
-total, so no ray class is read off a prime dividing `𝔪`. -/
-def eulerCorrection (χ : RayClassCharacter 𝔪) (𝔫 : Modulus K) (s : ℂ) : ℂ :=
-  ∏ 𝔭 ∈ 𝔫.support \ 𝔪.support,
-    (1 - χ.toMultiplicativeIdealWeight 𝔭.asIdeal * (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-s))
-
-/-- The deleted Euler factors may be taken over all primes dividing `𝔫`: the factor at a prime
-dividing `𝔪` is `1`, since the weight vanishes there. -/
-theorem eulerCorrection_eq_prod_support (χ : RayClassCharacter 𝔪) (𝔫 : Modulus K) (s : ℂ) :
-    eulerCorrection χ 𝔫 s = ∏ 𝔭 ∈ 𝔫.support,
-      (1 - χ.toMultiplicativeIdealWeight 𝔭.asIdeal * (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-s)) := by
-  classical
-  rw [eulerCorrection]
-  refine Finset.prod_subset Finset.sdiff_subset fun 𝔭 h𝔭 h𝔭' ↦ ?_
-  have hbad : 𝔭 ∈ χ.toMultiplicativeIdealWeight.badPrimes := by
-    rw [RayClassCharacter.badPrimes_toMultiplicativeIdealWeight]
-    by_contra h
-    exact h𝔭' (Finset.mem_sdiff.mpr ⟨h𝔭, h⟩)
-  rw [MultiplicativeIdealWeight.mem_badPrimes.mp hbad, zero_mul, sub_zero]
-
-/-- No Euler factor is deleted when the primes dividing `𝔫` already divide `𝔪`. -/
-theorem eulerCorrection_of_support_subset (χ : RayClassCharacter 𝔪) (h : 𝔫.support ⊆ 𝔪.support)
-    (s : ℂ) : eulerCorrection χ 𝔫 s = 1 := by
-  classical
-  rw [eulerCorrection, Finset.sdiff_eq_empty_iff_subset.mpr h, Finset.prod_empty]
-
-/-- No Euler factor is deleted at the presentation modulus itself. -/
-@[simp]
-theorem eulerCorrection_self (χ : RayClassCharacter 𝔪) (s : ℂ) : eulerCorrection χ 𝔪 s = 1 :=
-  eulerCorrection_of_support_subset χ subset_rfl s
-
-/-- For the trivial character of the trivial modulus, presenting at `𝔫` deletes the Euler factors
-`∏_{𝔭 ∣ 𝔫} (1 - N𝔭 ^ (-s))` of the Dedekind zeta function. -/
-theorem eulerCorrection_one (𝔫 : Modulus K) (s : ℂ) :
-    eulerCorrection (1 : RayClassCharacter (Modulus.one K)) 𝔫 s =
-      ∏ 𝔭 ∈ 𝔫.support, (1 - (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-s)) := by
-  rw [eulerCorrection_eq_prod_support]
-  refine Finset.prod_congr rfl fun 𝔭 _ ↦ ?_
-  simp [MultiplicativeIdealWeight.ofBadPrimes_apply, 𝔭.ne_bot]
-
-/-- The deleted Euler factors form an entire function of `s`. -/
-theorem differentiable_eulerCorrection (χ : RayClassCharacter 𝔪) (𝔫 : Modulus K) :
-    Differentiable ℂ (eulerCorrection χ 𝔫) := by
-  classical
-  refine Differentiable.fun_finsetProd fun 𝔭 _ ↦ (differentiable_const 1).sub
-    ((differentiable_const _).mul (differentiable_neg.const_cpow (.inl ?_)))
-  exact 𝔭.natCast_absNorm_ne_zero
-
-/-- The deleted Euler factors have no zero on `Re s > 0`: there `|χ(𝔭) N𝔭 ^ (-s)| < 1`. -/
-theorem eulerCorrection_ne_zero (χ : RayClassCharacter 𝔪) (𝔫 : Modulus K) {s : ℂ}
-    (hs : 0 < s.re) : eulerCorrection χ 𝔫 s ≠ 0 := by
-  classical
-  refine Finset.prod_ne_zero_iff.mpr fun 𝔭 _ h ↦ ?_
-  have hlt : ‖χ.toMultiplicativeIdealWeight 𝔭.asIdeal * (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (-s)‖ <
-      1 := by
-    rw [norm_mul, Complex.cpow_neg, norm_inv]
-    have hnorm := 𝔭.one_lt_norm_absNorm_cpow hs
-    have hχ : ‖χ.toMultiplicativeIdealWeight 𝔭.asIdeal‖ ≤ 1 := by
-      simpa using χ.toUnitaryIdealWeight.norm_le_one 𝔭.asIdeal
-    calc _ ≤ 1 * ‖(Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s‖⁻¹ := by gcongr
-      _ < 1 := by rw [one_mul]; exact inv_lt_one_of_one_lt₀ hnorm
-  rw [sub_eq_zero] at h
-  rw [← h, norm_one] at hlt
-  exact lt_irrefl 1 hlt
-
 /-! ### The presented series and its continuation -/
-
-/-- **Inducing deletes Euler factors, on `Re s > 1`.** Presenting a ray class character `χ` of `𝔪`
-at a multiple `𝔫` of `𝔪` multiplies its L-series by `eulerCorrection χ 𝔫 s`. -/
-theorem LSeries_toUnitaryIdealWeight_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) {s : ℂ}
-    (hs : 1 < s.re) :
-    LSeries (normCoeff K (χ.induced h).toUnitaryIdealWeight.toIdealArithmeticFunction) s =
-      LSeries (normCoeff K χ.toUnitaryIdealWeight.toIdealArithmeticFunction) s *
-        eulerCorrection χ 𝔫 s := by
-  rw [RayClassCharacter.toUnitaryIdealWeight_induced,
-    UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
-    UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, UnitaryIdealWeight.val_restrictAway,
-    MultiplicativeIdealWeight.LSeries_restrictAway _ _ (by
-      simpa only [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val] using
-        summable_idealTerm_of_unitary_of_one_lt_re χ.toUnitaryIdealWeight hs),
-    eulerCorrection_eq_prod_support]
-  simp only [RayClassCharacter.val_toUnitaryIdealWeight, Complex.cpow_neg, div_eq_mul_inv]
 
 /-- **The presented Hecke L-function** of a ray class character `χ` of `𝔪`: the canonical
 meromorphic continuation from `Re s > 1` of the L-series of `χ`, summed over the ideals prime to
@@ -183,18 +95,18 @@ theorem analyticOnNhd_heckeLFunctionC (χ : RayClassCharacter 𝔪) :
 L-series of the original character times the deleted Euler factors. -/
 private theorem heckeLFunctionC_induced_eq_meromorphicContinuation (h : 𝔪 ∣ 𝔫)
     (χ : RayClassCharacter 𝔪) :
-    heckeLFunctionC (χ.induced h) = meromorphicContinuation 1 (eulerCorrection χ 𝔫 •
+    heckeLFunctionC (χ.induced h) = meromorphicContinuation 1 (χ.eulerCorrection 𝔫 •
       LSeries (normCoeff K χ.toUnitaryIdealWeight.toIdealArithmeticFunction)) :=
   meromorphicContinuation_congr fun s hs ↦ by
-    rw [LSeries_toUnitaryIdealWeight_induced h χ hs, Pi.smul_apply', smul_eq_mul, mul_comm]
+    rw [RayClassCharacter.LSeries_induced h χ hs, Pi.smul_apply', smul_eq_mul, mul_comm]
 
 /-- **Inducing deletes Euler factors, for the continued functions on `Re s > 1`.** -/
 theorem heckeLFunctionC_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) {s : ℂ} (hs : 1 < s.re) :
-    heckeLFunctionC (χ.induced h) s = heckeLFunctionC χ s * eulerCorrection χ 𝔫 s := by
+    heckeLFunctionC (χ.induced h) s = heckeLFunctionC χ s * χ.eulerCorrection 𝔫 s := by
   rw [heckeLFunctionC_induced_eq_meromorphicContinuation, meromorphicContinuation_smul_apply
-    (fun z ↦ ((differentiable_eulerCorrection χ 𝔫).analyticAt z).meromorphicAt)
-    (fun z _ ↦ (differentiable_eulerCorrection χ 𝔫).analyticAt z)
-    (fun z hz ↦ eulerCorrection_ne_zero χ 𝔫 (zero_lt_one.trans hz))
+    (fun z ↦ ((χ.differentiable_eulerCorrection 𝔫).analyticAt z).meromorphicAt)
+    (fun z _ ↦ (χ.differentiable_eulerCorrection 𝔫).analyticAt z)
+    (fun z hz ↦ χ.eulerCorrection_ne_zero 𝔫 (zero_lt_one.trans hz))
     (analyticOnNhd_LSeries_of_unitary χ.toUnitaryIdealWeight) hs, smul_eq_mul, mul_comm,
     heckeLFunctionC_def]
 
@@ -204,12 +116,12 @@ factors. This says nothing about the values at `s` itself: where a zero of the c
 meets a pole, the normal form of the product need not be the product of the values. -/
 theorem heckeLFunctionC_induced_eventuallyEq (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) (s : ℂ) :
     heckeLFunctionC (χ.induced h) =ᶠ[𝓝[≠] s]
-      fun z ↦ heckeLFunctionC χ z * eulerCorrection χ 𝔫 z := by
+      fun z ↦ heckeLFunctionC χ z * χ.eulerCorrection 𝔫 z := by
   rw [heckeLFunctionC_induced_eq_meromorphicContinuation]
   filter_upwards [meromorphicContinuation_smul_eventuallyEq
-    (fun z ↦ ((differentiable_eulerCorrection χ 𝔫).analyticAt z).meromorphicAt)
-    (fun z _ ↦ (differentiable_eulerCorrection χ 𝔫).analyticAt z)
-    (fun z hz ↦ eulerCorrection_ne_zero χ 𝔫 (zero_lt_one.trans hz))
+    (fun z ↦ ((χ.differentiable_eulerCorrection 𝔫).analyticAt z).meromorphicAt)
+    (fun z _ ↦ (χ.differentiable_eulerCorrection 𝔫).analyticAt z)
+    (fun z hz ↦ χ.eulerCorrection_ne_zero 𝔫 (zero_lt_one.trans hz))
     (analyticOnNhd_LSeries_of_unitary χ.toUnitaryIdealWeight) s] with z hz
   rw [hz, Pi.smul_apply', smul_eq_mul, mul_comm, heckeLFunctionC_def]
 
@@ -218,9 +130,8 @@ theorem heckeLFunctionC_induced_eventuallyEq (h : 𝔪 ∣ 𝔫) (χ : RayClassC
 presentation. -/
 theorem heckeLFunctionC_eq_primitive (χ : RayClassCharacter 𝔪) {s : ℂ} (hs : 1 < s.re) :
     heckeLFunctionC χ s = heckeLFunctionC (PrimitiveRayClassCharacter.of χ).character s *
-      eulerCorrection (PrimitiveRayClassCharacter.of χ).character 𝔪 s := by
-  conv_lhs => rw [← PrimitiveRayClassCharacter.induced_character_of χ
-    (PrimitiveRayClassCharacter.conductor_of_dvd χ)]
+      (PrimitiveRayClassCharacter.of χ).character.eulerCorrection 𝔪 s := by
+  conv_lhs => rw [← PrimitiveRayClassCharacter.induced_character_of χ]
   exact heckeLFunctionC_induced _ _ hs
 
 /-- **The presented series is the primitive series times the deleted Euler factors**, as germs at
@@ -228,9 +139,8 @@ every point of the plane. -/
 theorem heckeLFunctionC_eventuallyEq_primitive (χ : RayClassCharacter 𝔪) (s : ℂ) :
     heckeLFunctionC χ =ᶠ[𝓝[≠] s]
       fun z ↦ heckeLFunctionC (PrimitiveRayClassCharacter.of χ).character z *
-        eulerCorrection (PrimitiveRayClassCharacter.of χ).character 𝔪 z := by
-  conv_lhs => rw [← PrimitiveRayClassCharacter.induced_character_of χ
-    (PrimitiveRayClassCharacter.conductor_of_dvd χ)]
+        (PrimitiveRayClassCharacter.of χ).character.eulerCorrection 𝔪 z := by
+  conv_lhs => rw [← PrimitiveRayClassCharacter.induced_character_of χ]
   exact heckeLFunctionC_induced_eventuallyEq _ _ s
 
 end TauCeti.LFunctions

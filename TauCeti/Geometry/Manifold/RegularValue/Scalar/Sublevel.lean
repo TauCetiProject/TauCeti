@@ -31,8 +31,8 @@ The preferred charts `TauCeti.scalarRegularSublevelChartAt` are of two kinds.
   tangential coordinates of `w` are `K (P (extChartAt I x w - extChartAt I x x))`, reindexed by
   `Fin.cast` along `dim E - 1 = n` (`TauCeti.scalarRegularSublevelChartAt_apply_zero_of_eq` and
   `TauCeti.scalarRegularSublevelChartAt_apply_succ_of_eq`). On the level these are the coordinates
-  of the level chart `TauCeti.scalarRegularLevelChartAt`
-  (`TauCeti.scalarRegularSublevelChartAt_apply_succ_eq_scalarRegularLevelChartAt`).
+  of the level chart `TauCeti.regularLevelChartAt`
+  (`TauCeti.scalarRegularSublevelChartAt_apply_succ_eq_regularLevelChartAt`).
 * **Interior charts.** At a point `x` with `f x < a`, the chart is the preferred chart of `M`,
   restricted to `{f < a}`, read in `ℝⁿ⁺¹` through a fixed linear equivalence and recentred at `x`.
   It is then restricted to a ball of radius `r` contained in its target and translated by `2 r`
@@ -477,14 +477,15 @@ theorem scalarRegularSublevelChartAt_apply_succ_of_eq {w : {x | f x ≤ a}}
 /-- **On the level, the tangential coordinates are those of the level chart.** At a point `x` of
 the level `f⁻¹(a)`, the coordinates in slots `1, …, n` of the preferred chart of the sublevel at a
 point `w` of the level are the coordinates of the preferred level chart
-`TauCeti.scalarRegularLevelChartAt` at `x`, reindexed along `dim E - 1 = n`. -/
-theorem scalarRegularSublevelChartAt_apply_succ_eq_scalarRegularLevelChartAt {w : {x | f x ≤ a}}
+`TauCeti.regularLevelChartAt` at `x`, reindexed along `dim E - 1 = n`. -/
+theorem scalarRegularSublevelChartAt_apply_succ_eq_regularLevelChartAt {w : {x | f x ≤ a}}
     (hw : w ∈ (scalarRegularSublevelChartAt hf hreg hn x).source) (hwa : f w = a) (i : Fin n) :
     (scalarRegularSublevelChartAt hf hreg hn x w).1 i.succ =
-      scalarRegularLevelChartAt (fun y _ ↦ hf.contMDiffAt) hreg ⟨x, hx⟩ ⟨w, hwa⟩
+      regularLevelChartAt (n := finrank ℝ E - 1) (fun y _ ↦ hf.contMDiffAt) hreg
+        (by rw [finrank_self]) ⟨x, hx⟩ ⟨w, hwa⟩
         (Fin.cast (by omega) i) := by
   rw [scalarRegularSublevelChartAt_apply_succ_of_eq hf hreg hn hx hw,
-    scalarRegularLevelChartAt_apply]
+    regularLevelChartAt_apply]
 
 end Face
 

@@ -38,6 +38,13 @@ section DivisionRing
 
 variable (K : Type*) {V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 
+/-- The equivalence with one-dimensional subspaces retains the underlying line. -/
+@[simp]
+theorem coe_equivSubmodule (p : Projectivization K V) :
+    (equivSubmodule K V p).1 = p.submodule :=
+  -- Mathlib has no equivSubmodule_apply lemma; its forward map is definitionally submodule.
+  (rfl)
+
 /-- Two nonzero vectors have the same image under `mk'` iff one is a unit multiple of the other,
 for the action of `Kˣ` on `{ v : V // v ≠ 0 }`. -/
 theorem mk'_eq_mk'_iff (v w : { v : V // v ≠ 0 }) :

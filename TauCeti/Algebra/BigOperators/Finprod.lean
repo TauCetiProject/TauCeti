@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.Algebra.Ring.NegOnePow
 
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 
@@ -16,9 +17,11 @@ import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 both index types to be finite.  This file records the `finprod` analogue, which only needs the two
 restricted families to have finite multiplicative support. Regrouping by the fibers of an
 arbitrary map is also available, without finiteness assumptions on the fibers, as is cancelling a
-finitely supported factor whose product is `1`. Finally, a product over a finset is compared with
-the `finprod` of a finitely supported family whose factors off the finset are all at least `1`, or
-all at most `1`.
+finitely supported factor whose product is `1`. Shifting the index of an alternating product over
+`ℤ` by one inverts it, so multiplying each factor `f j` by `δ (j + 1) * δ j` does not change the
+product; this is how changes of boundary bases cancel in Reidemeister torsion.
+Finally, a product over a finset is compared with the `finprod` of a finitely supported family
+whose factors off the finset are all at least `1`, or all at most `1`.
 
 ## Main results
 
@@ -30,6 +33,11 @@ all at most `1`.
   with product `1` preserves a product, without any finiteness assumption on the other factor.
 * `TauCeti.finprod_comm`: the two iterated products of a family of two variables agree when the
   family has finite multiplicative support jointly in both variables.
+* `TauCeti.finprod_zpow_negOnePow_add_one`: `∏ᶠ j, f (j + 1) ^ (-1) ^ j` is the inverse of
+  `∏ᶠ j, f j ^ (-1) ^ j`.
+* `TauCeti.finprod_mul_mul_add_one_zpow_negOnePow`: multiplying each factor `f j` of
+  `∏ᶠ j, f j ^ (-1) ^ j` by `δ (j + 1) * δ j`, for a finitely supported family `δ` of nonzero
+  elements, does not change the product.
 * `Finset.prod_le_finprod_of_one_le₀` and `Finset.finprod_le_prod_of_le_one₀`: a product over a
   finset is at most, respectively at least, the `finprod` when the factors off the finset are at
   least, respectively at most, `1`.
@@ -128,6 +136,34 @@ theorem finprod_comm {ι κ : Type*} {f : ι → κ → M} (hf : HasFiniteMulSup
     _ = ∏ᶠ x : κ × ι, f x.2 x.1 :=
       (finprod_comp_equiv (Equiv.prodComm κ ι) (f := fun x : ι × κ ↦ f x.1 x.2)).symm
     _ = ∏ᶠ k, ∏ᶠ i, f i k := finprod_curry _ hf'
+
+/-- Shifting the index of an alternating product over `ℤ` by one inverts it: the factor `f (j + 1)`
+enters `∏ᶠ j, f (j + 1) ^ (-1) ^ j` with the exponent opposite to its exponent `(-1) ^ (j + 1)` in
+`∏ᶠ j, f j ^ (-1) ^ j`. No finiteness assumption is needed. -/
+theorem finprod_zpow_negOnePow_add_one {G : Type*} [DivisionCommMonoid G] (f : ℤ → G) :
+    ∏ᶠ j : ℤ, f (j + 1) ^ (j.negOnePow : ℤ) = (∏ᶠ j : ℤ, f j ^ (j.negOnePow : ℤ))⁻¹ := by
+  rw [← finprod_inv_distrib,
+    ← finprod_comp_equiv (Equiv.addRight (1 : ℤ)) (f := fun j ↦ (f j ^ (j.negOnePow : ℤ))⁻¹)]
+  refine finprod_congr fun j ↦ ?_
+  simp [Int.negOnePow_succ, zpow_neg]
+
+/-- Multiplying each factor `f j` of an alternating product over `ℤ` by `δ (j + 1) * δ j`, for a
+finitely supported family `δ` of nonzero elements, does not change the product: by
+`TauCeti.finprod_zpow_negOnePow_add_one` the factors `δ (j + 1)` contribute the inverse of the
+contribution of the factors `δ j`. No finiteness assumption on `f` is needed. -/
+theorem finprod_mul_mul_add_one_zpow_negOnePow {G : Type*} [CommGroupWithZero G] (f : ℤ → G)
+    {δ : ℤ → G} (hδ : HasFiniteMulSupport δ) (hδ₀ : ∀ j, δ j ≠ 0) :
+    ∏ᶠ j : ℤ, (f j * (δ (j + 1) * δ j)) ^ (j.negOnePow : ℤ) =
+      ∏ᶠ j : ℤ, f j ^ (j.negOnePow : ℤ) := by
+  have h₀ : HasFiniteMulSupport fun j : ℤ ↦ δ j ^ (j.negOnePow : ℤ) :=
+    hδ.subset <| mulSupport_subset_iff'.2 fun j hj ↦ by rw [notMem_mulSupport.1 hj, one_zpow]
+  have h₁ : HasFiniteMulSupport fun j : ℤ ↦ δ (j + 1) ^ (j.negOnePow : ℤ) :=
+    (hδ.preimage (add_left_injective 1).injOn).subset <| mulSupport_subset_iff'.2 fun j hj ↦ by
+      rw [notMem_mulSupport.1 hj, one_zpow]
+  refine (finprod_congr fun j ↦ by rw [mul_zpow, mul_comm, mul_zpow]).trans
+    (finprod_mul_eq_right_of_finprod_eq_one ((h₁.union h₀).subset (mulSupport_mul _ _)) ?_)
+  rw [finprod_mul_distrib h₁ h₀, finprod_zpow_negOnePow_add_one,
+    inv_mul_cancel₀ (finprod_ne_zero fun j ↦ zpow_ne_zero _ (hδ₀ j))]
 
 end TauCeti
 

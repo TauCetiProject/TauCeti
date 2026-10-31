@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Sites.Coverage
+public import Mathlib.CategoryTheory.Sites.CoverPreserving
 public import Mathlib.CategoryTheory.Sites.Spaces
 
 /-!
@@ -19,6 +20,8 @@ same construction applies to bundled admissible opens as well as subtypes of set
 `GTopology.grothendieckTopology` constructs the site on the inclusion preorder of admissible
 opens. `GTopology.isSheaf_iff` identifies its sheaves with presheaves satisfying unique gluing
 on admissible covers, using Mathlib's matching families and sheaf categories throughout.
+A monotone map of admissible opens that sends admissible covers to admissible covers gives a
+cover-preserving functor of sites (`GTopology.coverPreserving_functor`).
 `GTopology.topological` recovers ordinary open covers, and its site is the usual open-set site.
 
 A G-topology is *saturated* (`GTopology.Saturated`) if it satisfies the conditions (G0)–(G2) of
@@ -186,6 +189,26 @@ theorem isSheaf_iff (P : Bᵒᵖ ⥤ Type w) :
     exact h _ ⟨S, hS, rfl⟩
   · rintro h U R ⟨S, hS, rfl⟩
     exact h U S hS
+
+section CoverPreserving
+
+variable {G} {Y : Type*} {B' : Type*} [SemilatticeInf B'] [OrderTop B'] {ι' : B' ↪o Set Y}
+  {G' : GTopology ι'}
+
+/-- A monotone map of admissible opens sending admissible covers to admissible covers induces a
+cover-preserving functor of the associated sites. -/
+theorem coverPreserving_functor {φ : B' → B} (hφ : Monotone φ)
+    (h : ∀ {V S}, G'.Covers V S → G.Covers (φ V) (φ '' S)) :
+    CoverPreserving G'.grothendieckTopology G.grothendieckTopology hφ.functor where
+  cover_preserve {V R} hR := by
+    obtain ⟨S, hS, hSR⟩ := (mem_grothendieckTopology_iff G').mp hR
+    refine (mem_grothendieckTopology_iff G).mpr ⟨_, h hS, ?_⟩
+    intro _ g hg
+    obtain ⟨W, hW, rfl⟩ := (coverPresieve_apply _ g).mp hg
+    exact ⟨W, homOfLE (G'.subset hS W hW), 𝟙 _, hSR _ _ ((coverPresieve_apply _ _).mpr hW),
+      Subsingleton.elim _ _⟩
+
+end CoverPreserving
 
 section Topological
 
