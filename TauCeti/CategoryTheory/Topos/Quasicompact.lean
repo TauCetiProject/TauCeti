@@ -47,8 +47,10 @@ an object whose map to it is quasicompact is itself quasicompact
 * Quasicompact morphisms contain the identities and are stable under composition and base change;
   hence so are quasiseparated morphisms, through Mathlib's `MorphismProperty.diagonal`. Every
   monomorphism is quasiseparated (`TauCeti.Topos.monomorphisms_le_quasiseparated`).
-* `TauCeti.Topos.isQuasicompact_of_isTerminal`: if the terminal object is quasicompact, an object
-  whose map to it is quasicompact is quasicompact.
+* `TauCeti.Topos.isQuasicompact_of_quasicompact`: the source of a quasicompact morphism with
+  quasicompact target is quasicompact. In particular, if the terminal object is quasicompact, an
+  object whose map to it is quasicompact is quasicompact
+  (`TauCeti.Topos.isQuasicompact_of_isTerminal`).
 * `TauCeti.Topos.isQuasicompact_iff_finite`: in the topos of sets, an object is quasicompact if and
   only if it is finite. Every set is quasiseparated (`TauCeti.Topos.isQuasiseparated_type`) and
   every map of sets is quasiseparated (`TauCeti.Topos.quasiseparated_type`).
@@ -158,16 +160,23 @@ theorem monomorphisms_le_quasiseparated [HasPullbacks C] :
   rw [← diagonal_isomorphisms]
   exact fun _ _ f (_ : IsIso _) ↦ quasicompact.of_isIso (pullback.diagonal f)
 
+/-- The source of a quasicompact morphism with quasicompact target is quasicompact: it is the
+fibre product of the morphism with the identity of the target. -/
+theorem isQuasicompact_of_quasicompact {X Y : C} (f : X ⟶ Y) (hY : IsQuasicompact Y)
+    (hf : quasicompact f) : IsQuasicompact X :=
+  hf (𝟙 Y) f (𝟙 X) (IsPullback.of_id_snd (f := f)) hY
+
 /-- If the terminal object is quasicompact, every object whose map to it is quasicompact is
 quasicompact. Without the assumption on the terminal object this fails: the identity of any
 object is a quasicompact morphism. -/
 theorem isQuasicompact_of_isTerminal {T X : C} (hT : IsTerminal T) (hTq : IsQuasicompact T)
     (hX : quasicompact (hT.from X)) : IsQuasicompact X :=
-  hX (𝟙 T) (hT.from X) (𝟙 X) (IsPullback.of_id_snd (f := hT.from X)) hTq
+  isQuasicompact_of_quasicompact (hT.from X) hTq hX
 
 /-! ### The topos of sets -/
 
 /-- In the topos of sets, an object is quasicompact if and only if it is finite. -/
+@[simp]
 theorem isQuasicompact_iff_finite (X : Type u) : IsQuasicompact X ↔ Finite X := by
   simp only [isQuasicompact_iff, Types.effectiveEpiFamily_iff]
   constructor
@@ -199,6 +208,7 @@ theorem quasiseparated_type : (quasiseparated : MorphismProperty (Type u)) = ⊤
 
 /-- In the topos of sets, every object is quasiseparated: a fibre product of finite sets is
 finite. -/
+@[simp]
 theorem isQuasiseparated_type (X : Type u) : IsQuasiseparated X := by
   intro Y Z W f g fst snd h hY hZ
   rw [isQuasicompact_iff_finite] at hY hZ ⊢
