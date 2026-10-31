@@ -160,19 +160,21 @@ variable (C) in
 def kInjectiveReplacementAdjunction : Qh ⊣ kInjectiveReplacement C :=
   Adjunction.adjunctionOfEquivRight homEquiv homEquiv_naturality
 
+/-- The K-injective replacement functor sends `X` to its chosen replacement `complex X`. -/
+private theorem kInjectiveReplacement_obj (X : DerivedCategory C) :
+    (kInjectiveReplacement C).obj X = (HomotopyCategory.quotient _ _).obj (complex X) :=
+  rfl
+
 /-- The values of the K-injective replacement functor are K-injective complexes. -/
 instance isKInjective_kInjectiveReplacement_obj_as (X : DerivedCategory C) :
-    CochainComplex.IsKInjective ((kInjectiveReplacement C).obj X).as :=
-  isKInjective_complex X
+    CochainComplex.IsKInjective ((kInjectiveReplacement C).obj X).as := by
+  rw [kInjectiveReplacement_obj]
+  exact isKInjective_complex X
 
 private theorem kInjectiveReplacementAdjunction_counit_app (X : DerivedCategory C) :
     (kInjectiveReplacementAdjunction C).counit.app X = (iso X).hom := by
-  simp only [kInjectiveReplacementAdjunction, Adjunction.adjunctionOfEquivRight_counit_app,
-    homEquiv_symm_apply]
-  -- The source `Qh.obj ((kInjectiveReplacement C).obj X)` is definitionally the image of the
-  -- chosen replacement `complex X`; the term-mode `congrArg` sees through this unfolding.
-  exact (congrArg (· ≫ (iso X).hom) (Qh.map_id ((kInjectiveReplacement C).obj X))).trans
-    (Category.id_comp _)
+  rw [kInjectiveReplacementAdjunction, Adjunction.adjunctionOfEquivRight_counit_app,
+    homEquiv_symm_apply, Qh.map_id, Category.id_comp]
 
 instance : IsIso (kInjectiveReplacementAdjunction C).counit := by
   have (X : DerivedCategory C) : IsIso ((kInjectiveReplacementAdjunction C).counit.app X) := by
