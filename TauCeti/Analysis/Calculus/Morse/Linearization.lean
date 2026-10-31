@@ -42,10 +42,13 @@ results that identify the operator as the derivative of the gradient and prove s
 * `TauCeti.hessianOperator_eq_continuousLinearMapOfBilin`: its Riesz formula.
 * `TauCeti.hessianOperator_congr_of_eventuallyEq`: the operator depends only on the germ of the
   function at the point.
+* `ContDiff.contDiff_hessianOperator`: the Hessian operator of a `C^{m+2}` function is `Cᵐ`.
 * `ContDiffAt.isSelfAdjoint_hessianOperator`: symmetry of the second derivative becomes
   self-adjointness of the Hessian operator.
 * `ContDiffAt.hasFDerivAt_neg_gradient`: the derivative of `-∇ f` is the negative Hessian
   operator.
+* `ContDiffAt.hasDerivAt_gradient_comp`: the derivative of the gradient along a curve is the
+  Hessian operator applied to the velocity.
 * `TauCeti.negativeGradientRemainder`: the nonlinear part of the negative-gradient field after
   subtracting its linearization at a chosen point.
 * `ContDiffAt.exists_lipschitzOnWith_negativeGradientRemainder`: on a sufficiently small ball,
@@ -128,6 +131,23 @@ theorem hessianOperator_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
 
 end TauCeti
 
+namespace ContDiff
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  {f : E → ℝ}
+
+open TauCeti
+
+/-- The Hessian operator field of a `C^{m+2}` function is `Cᵐ`, being the derivative of its
+`C^{m+1}` gradient. -/
+theorem contDiff_hessianOperator {m n : WithTop ℕ∞} (hf : ContDiff ℝ n f) (hmn : m + 2 ≤ n) :
+    ContDiff ℝ m (hessianOperator f) := by
+  rw [show hessianOperator f = fderiv ℝ (∇ f) from funext fun x ↦ (fderiv_gradient f x).symm]
+  exact (hf.gradient_right (m := m + 1) (by rwa [add_assoc, one_add_one_eq_two])).fderiv_right
+    le_rfl
+
+end ContDiff
+
 namespace ContDiffAt
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
@@ -170,6 +190,13 @@ point, with derivative minus the Hessian operator. -/
 theorem hasFDerivAt_neg_gradient (hf : ContDiffAt ℝ 2 f x) :
     HasFDerivAt (-∇ f) (-hessianOperator f x) x :=
   (hasFDerivAt_gradient hf).neg
+
+/-- **Chain rule for the gradient along a curve.** If `f` is `C²` at `γ s` and the curve `γ` has
+velocity `v` at `s`, then `t ↦ ∇f(γ t)` has derivative `Hess f(γ s) v` at `s`. -/
+theorem hasDerivAt_gradient_comp {γ : ℝ → E} {s : ℝ} {v : E} (hf : ContDiffAt ℝ 2 f (γ s))
+    (hγ : HasDerivAt γ v s) :
+    HasDerivAt (fun t ↦ ∇ f (γ t)) (hessianOperator f (γ s) v) s :=
+  hf.hasFDerivAt_gradient.comp_hasDerivAt s hγ
 
 end ContDiffAt
 

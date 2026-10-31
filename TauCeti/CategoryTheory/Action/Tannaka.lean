@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Action.Concrete
 public import Mathlib.CategoryTheory.Whiskering
+public import TauCeti.CategoryTheory.Action.Basic
 
 /-!
 # Tannaka duality for `G`-sets
@@ -34,8 +34,6 @@ asks for a *compact* topological group, which for a discrete `G` means a finite 
 
 * `TauCeti.toEndForgetAction`: the monoid map sending `g : G` to the natural endomorphism of the
   forgetful functor acting by `g`, with `TauCeti.toEndForgetAction_app_apply` computing it.
-* `CategoryTheory.Action.leftRegularHom`: the orbit map of a point of a `G`-set, as a map of
-  `G`-sets out of the left regular `G`-set.
 * `TauCeti.end_forgetAction_app_apply`: a natural endomorphism of the forgetful functor acts on
   every `G`-set by the element of `G` it produces at the identity of the left regular `G`-set.
 * `TauCeti.endForgetActionMulEquiv`: **Tannaka duality for `G`-sets**: `G` is the monoid of
@@ -97,22 +95,6 @@ theorem toEndForgetAction_app_leftRegular_one (g : G) :
     (toEndForgetAction G g).asHom.app (Action.leftRegular G) (1 : G) = g :=
   mul_one g
 
-/-- The orbit map `a ↦ a • x` of a point `x` of a `G`-set `A`, as a map of `G`-sets from the left
-regular `G`-set to `A`. -/
-def _root_.CategoryTheory.Action.leftRegularHom {A : Action (Type u) G} (x : ToType A) :
-    Action.leftRegular G ⟶ A where
-  hom := ↾(fun a : G => a • x)
-  comm g := by ext a; exact mul_smul g a x
-
-@[simp]
-theorem _root_.CategoryTheory.Action.leftRegularHom_hom_apply {A : Action (Type u) G}
-    (x : ToType A) (a : G) :
-    (Action.leftRegularHom x).hom a = a • x :=
-  by
-    -- Unfold the unexposed constructor once to establish its public computation rule.
-    change a • x = a • x
-    rfl
-
 /-- A natural endomorphism of the forgetful functor from `G`-sets to types acts on every `G`-set
 as the element of `G` it produces at the identity of the left regular `G`-set: naturality against
 the orbit map `CategoryTheory.Action.leftRegularHom` leaves it no other choice. -/
@@ -121,8 +103,13 @@ theorem end_forgetAction_app_apply (η : End (Action.forget (Type u) G)) {s : G}
     (x : ToType A) :
     η.asHom.app A x = s • x := by
   subst hs
-  calc η.asHom.app A x = η.asHom.app A ((1 : G) • x) := by rw [one_smul]
-    _ = _ := NatTrans.naturality_apply η.asHom (Action.leftRegularHom x) (1 : G)
+  -- The forgetful functor sends the orbit map to its underlying function.
+  calc η.asHom.app A x = η.asHom.app A ((Action.leftRegularHom x).hom (1 : G)) :=
+        congrArg (fun y ↦ η.asHom.app A y) ((Action.leftRegularHom_hom_apply x 1).trans
+          (one_smul G x)).symm
+    _ = (Action.leftRegularHom x).hom (η.asHom.app (Action.leftRegular G) (1 : G)) :=
+        NatTrans.naturality_apply η.asHom (Action.leftRegularHom x) (1 : G)
+    _ = _ := Action.leftRegularHom_hom_apply x _
 
 variable (G)
 

@@ -74,6 +74,10 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
 * `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
   profinite group.
+
+## Main definitions
+
+* `PadicInt.unitsPowCharacter p k`: the continuous character `u ↦ u ^ k` of `ℤ_[p]ˣ`.
 -/
 
 public section
@@ -192,6 +196,18 @@ instance compactSpace_units : CompactSpace ℤ_[p]ˣ := by
 instance totallyDisconnectedSpace_units : TotallyDisconnectedSpace ℤ_[p]ˣ :=
   ⟨Units.isOpenEmbedding_val.isEmbedding.isTotallyDisconnected
     (isTotallyDisconnected_of_totallyDisconnectedSpace _)⟩
+
+variable (p) in
+/-- The power character `u ↦ u ^ k` of the unit group `ℤ_pˣ`, as a continuous homomorphism to
+`ℤ_p`. -/
+noncomputable def unitsPowCharacter (k : ℕ) : ℤ_[p]ˣ →ₜ* ℤ_[p] where
+  toMonoidHom := (powMonoidHom k).comp (Units.coeHom ℤ_[p])
+  continuous_toFun := Units.continuous_val.pow k
+
+@[simp]
+theorem unitsPowCharacter_apply (k : ℕ) (u : ℤ_[p]ˣ) :
+    unitsPowCharacter p k u = (u : ℤ_[p]) ^ k :=
+  (rfl)
 
 /-- **Divisibility from the norm**: in `ℤ_p`, `y` divides every `x` with `‖x‖ ≤ ‖y‖`, because `x`
 then lies in the ideal `p^{v_p(y)} ℤ_p = y ℤ_p` when `y ≠ 0`, and vanishes when `y = 0`. -/

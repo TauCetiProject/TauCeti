@@ -200,7 +200,7 @@ theorem lemniscateConstant_eq_pi_div_agm :
   have hM : (0 : ℝ) < NNReal.agm 1 (NNReal.sqrt 2) :=
     NNReal.coe_pos.mpr (NNReal.agm_pos one_pos (NNReal.sqrt_pos.mpr two_pos))
   rw [lemniscateConstant_eq_sqrt_two_mul_legendreK,
-    legendreK_eq_pi_div_two_div_agm (by rw [one_div_sqrt_two_sq]; norm_num),
+    legendreK_eq_pi_div_two_mul_agm (by rw [one_div_sqrt_two_sq]; norm_num),
     ← hs_def, hagm, NNReal.coe_mul, hs]
   field_simp
   exact sq_sqrt zero_le_two

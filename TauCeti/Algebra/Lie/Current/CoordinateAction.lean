@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Current.LeftIdeal
 public import TauCeti.Algebra.Lie.Current.Substitution
-public import TauCeti.Algebra.Lie.Extension
+public import TauCeti.Algebra.Lie.Extension.Basic
 
 /-!
 # Coordinate changes on residue central extensions and their enveloping algebras

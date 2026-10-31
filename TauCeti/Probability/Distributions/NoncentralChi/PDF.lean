@@ -202,6 +202,33 @@ theorem noncentralChiPDFReal_eq_besselI (hk : 0 ≤ k) (hδ : 0 < δ) (hs : 0 < 
     (pow_pos hδ 2) (by positivity), hsqrt, hpow, NNReal.coe_pow]
   ring
 
+/-- The degree-two noncentral chi density is the Rice density. Unlike the general Bessel
+formula, this specialization also includes zero noncentrality. -/
+theorem noncentralChiPDFReal_two_eq_besselI (δ : ℝ≥0) (hs : 0 < s) (hx : 0 < x) :
+    noncentralChiPDFReal 2 δ s x =
+      x / s ^ 2 * exp (-((x / s) ^ 2 + δ ^ 2) / 2) * besselI 0 (δ * x / s) := by
+  by_cases hδ0 : δ = 0
+  · subst δ
+    rw [noncentralChiPDFReal_zero_noncentrality, chiPDFReal_of_pos (by norm_num) hs hx]
+    simp only [NNReal.coe_zero, zero_pow two_ne_zero, add_zero, zero_mul, zero_div,
+      besselI_zero]
+    norm_num [Real.Gamma_one]
+    field_simp
+  · have hδ : 0 < δ := (pos_iff_ne_zero.mpr hδ0)
+    simpa only [show (2 : ℝ) / 2 - 1 = 0 by norm_num, Real.rpow_zero, mul_one] using
+      noncentralChiPDFReal_eq_besselI (k := 2) (δ := δ) (by norm_num) hδ hs hx
+
+/-- The Rice density in terms of the norm `ν` of the planar Gaussian mean and its positive
+coordinate scale `s`. -/
+theorem noncentralChiPDFReal_two_div_scale_eq_besselI (ν : ℝ≥0) (hs : 0 < s) (hx : 0 < x) :
+    noncentralChiPDFReal 2 (ν / s.toNNReal) s x =
+      x / s ^ 2 * exp (-(x ^ 2 + ν ^ 2) / (2 * s ^ 2)) *
+        besselI 0 (x * ν / s ^ 2) := by
+  rw [noncentralChiPDFReal_two_eq_besselI (ν / s.toNNReal) hs hx]
+  simp only [NNReal.coe_div, Real.coe_toNNReal _ hs.le]
+  congr 2
+  all_goals field_simp [hs.ne']
+
 /-- **Scaled square roots of the continuous noncentral chi-squared component.** The image of
 the continuous noncentral chi-squared component under `s * √·` is the continuous noncentral chi
 component; the substitution is `y = (x / s) ^ 2` on the positive half-line. -/

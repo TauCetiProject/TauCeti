@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 public import TauCeti.RepresentationTheory.Continuous.TopRep.HomologicalComplex
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Comparison
 
@@ -41,7 +42,9 @@ canonical:
   `TopRep.cohomologyClass_resolutionContraction`).
 
 Already without local compactness, the class is linear in the cocycle and cohomologous invariant
-cocycles have the same class (`TopRep.ResolutionContraction.cohomologyClass_eq_of_sub_eq_d`).
+cocycles have the same class (`TopRep.ResolutionContraction.cohomologyClass_eq_of_sub_eq_d`). In
+degree zero a cocycle is the augmentation of its retraction, so its class is the degree-zero class
+of that invariant vector (`TopRep.ResolutionContraction.cohomologyClass_eq_degreeZeroClass`).
 
 ## Main definitions
 
@@ -56,6 +59,8 @@ cocycles have the same class (`TopRep.ResolutionContraction.cohomologyClass_eq_o
   image of its class in `Hⁿ(Jᴳ)`.
 * `TopRep.ResolutionContraction.cohomologyClass_eq_of_sub_eq_d`: cohomologous invariant cocycles
   have the same class.
+* `TopRep.ResolutionContraction.cohomologyClass_eq_degreeZeroClass`: classes in degree zero are
+  degree-zero classes of invariant vectors.
 * `TopRep.ResolutionContraction.cohomologyMap_eq_of_ι_eq` and
   `TopRep.ResolutionContraction.cohomologyClass_eq_of_ι_eq`: independence of the contraction.
 * `TopRep.ResolutionContraction.cohomologyMap_comp_coeffMap`,
@@ -178,6 +183,18 @@ theorem cohomologyClass_eq_of_sub_eq_d {n : ℕ} (z z' : (J.X (n + 1)).ρ.invari
   rw [homogeneousCochains.d_apply, ContIntertwiningMap.mapInvariants_apply, d_comparison_f_apply,
     Submodule.coe_sub, ContIntertwiningMap.mapInvariants_apply,
     ContIntertwiningMap.mapInvariants_apply, ← map_sub, hy]
+
+/-- **The class of an invariant degree-zero cocycle is the degree-zero class of its retraction.**
+In degree zero a cocycle `z` of the contracted complex is `ι (proj z)`, so its class in
+`H⁰(G, X) = X^G` is the invariant vector `proj z`. -/
+theorem cohomologyClass_eq_degreeZeroClass (z : (J.X 0).ρ.invariants)
+    (hz : (J.d 0 (0 + 1)).hom (z : (J.X 0).V) = 0) :
+    c.cohomologyClass z hz = TauCeti.ContinuousCohomology.degreeZeroClass X (c.proj z)
+      (c.ρ_proj_of_d_eq_zero hz ((ContRepresentation.mem_invariants _).1 z.2)) := by
+  rw [cohomologyClass_def]
+  apply cochainClass_eq_degreeZeroClass
+  rw [ContIntertwiningMap.mapInvariants_apply, comparison_f_zero_apply_apply]
+  simp
 
 section Homotopy
 
