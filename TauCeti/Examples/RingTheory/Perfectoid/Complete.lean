@@ -21,16 +21,14 @@ open TauCeti.Huber TauCeti.Perfectoid
 
 namespace TauCeti.Examples
 
-variable (p : ℕ) [Fact p.Prime]
-
-example : IsAdicComplete (Ideal.span {(p : powerBoundedSubring ℂ_[p])})
+example (p : ℕ) [Fact p.Prime] : IsAdicComplete (Ideal.span {(p : powerBoundedSubring ℂ_[p])})
     (powerBoundedSubring ℂ_[p]) := by
   have := isPerfectoidTateRing_of_isAlgClosed (PadicComplex.norm_p_lt_one p)
   infer_instance
 
 section Product
 
-variable (R S : Type*) [CommRing R] [UniformSpace R] [IsUniformAddGroup R]
+variable (p : ℕ) (R S : Type*) [CommRing R] [UniformSpace R] [IsUniformAddGroup R]
   [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T2Space R]
   [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [IsTopologicalRing S]
   [IsTateRing S] [CompleteSpace S] [T2Space S]

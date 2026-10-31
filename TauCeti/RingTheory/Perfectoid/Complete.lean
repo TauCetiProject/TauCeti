@@ -31,13 +31,15 @@ namespace TauCeti.Perfectoid
 
 /-- The power-bounded ring of a perfectoid Tate ring is `p`-adically complete and separated,
 including when `p` vanishes or is a zero divisor in the ambient ring. -/
-instance IsPerfectoidTateRing.isAdicComplete_span_natCast (p : ℕ) [NeZero p]
+instance IsPerfectoidTateRing.isAdicComplete_span_natCast (p : ℕ)
     (R : Type*) [CommRing R] [UniformSpace R] [IsUniformAddGroup R] [IsTopologicalRing R]
     [IsTateRing R] [CompleteSpace R] [T2Space R] [IsPerfectoidTateRing p R] :
     IsAdicComplete (Ideal.span {(p : powerBoundedSubring R)}) (powerBoundedSubring R) := by
   have := IsPerfectoidTateRing.isUniform p (R := R)
   obtain ⟨ϖ, hϖ, hdvd, -, -⟩ := IsPerfectoidTateRing.exists_pseudoUniformizer (p := p) (R := R)
   have := IsUniform.isAdicComplete_span_singleton ϖ hϖ
-  exact IsAdicComplete.span_singleton_of_dvd ((dvd_pow_self ϖ (NeZero.ne p)).trans hdvd)
+  rcases eq_or_ne p 0 with rfl | hp
+  · exact IsAdicComplete.span_singleton_of_mem (I := Ideal.span {ϖ}) (by simp)
+  · exact IsAdicComplete.span_singleton_of_dvd ((dvd_pow_self ϖ hp).trans hdvd)
 
 end TauCeti.Perfectoid
