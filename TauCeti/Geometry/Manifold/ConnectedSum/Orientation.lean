@@ -277,35 +277,47 @@ variable {o₁ o₂ oE} (he₁ : ∀ v ≠ 0, IsOrientationPreservingAt oE o₁ 
   (he₂ : ∀ v ≠ 0, IsOrientationReversingAt oE o₂ e₂ v)
 
 /-- The inclusion of the punctured first summand `M ∖ {e₁ 0}` into the connected sum preserves
-orientation, for the restriction of `o₁` to `M ∖ {e₁ 0}`: any orientation `o` of `M ∖ {e₁ 0}` for
-which the inclusion into `M` preserves orientation. -/
+orientation at `x`, from any orientation `o` of `M ∖ {e₁ 0}` which agrees with `o₁` at `x`: that
+is, for which the inclusion into `M` preserves orientation at `x`. -/
 theorem isOrientationPreservingAt_inl {o : Manifold.Orientation I (puncture e₁) ι}
-    (ho : ∀ x, IsOrientationPreservingAt o o₁ Subtype.val x) (x : puncture e₁) :
+    {x : puncture e₁} (ho : IsOrientationPreservingAt o o₁ Subtype.val x) :
     letI := chartedSpace (H := H) h₁ h₂
     haveI := isManifold (n := 1) h₁ h₂ d₁ d₂
     IsOrientationPreservingAt o (orientation h₁ h₂ d₁ d₂ o₁ o₂ oE he₁ he₂) (inl e₁ e₂) x := by
   let := chartedSpace (H := H) h₁ h₂
   have := isManifold (n := 1) h₁ h₂ d₁ d₂
-  obtain rfl : o = o₁.restrict (puncture e₁) := eq_restrict_iff.2 ho
+  -- At `x`, `o` agrees with the restriction of `o₁`, since both are carried to `o₁` by the
+  -- derivative of the inclusion.
+  obtain ⟨D, hD, hDo⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 ho
+  have hx : o.orientationAt x = (o₁.restrict (puncture e₁)).orientationAt x :=
+    (_root_.Orientation.map ι D.toLinearEquiv).injective <| hDo.trans
+      ((isOrientationPreservingAt_iff_of_coe_eq _ _ _ x D hD).1
+        (isOrientationPreservingAt_restrict o₁ _ x)).symm
   rw [← mk_comp_inl,
     isOrientationPreservingAt_iff_of_coe_eq _ _ _ x _ (coe_derivInl h₁ h₂ d₁ d₂ x), orientation,
-    orientationAt_ofVectorBundleOrientation]
+    orientationAt_ofVectorBundleOrientation, hx]
   exact (tangentOrientation_mk h₁ h₂ d₁ d₂ he₁ he₂ (.inl x)).symm
 
 /-- The inclusion of the punctured second summand `N ∖ {e₂ 0}` into the connected sum preserves
-orientation, for the restriction of `o₂` to `N ∖ {e₂ 0}`: any orientation `o` of `N ∖ {e₂ 0}` for
-which the inclusion into `N` preserves orientation. -/
+orientation at `y`, from any orientation `o` of `N ∖ {e₂ 0}` which agrees with `o₂` at `y`: that
+is, for which the inclusion into `N` preserves orientation at `y`. -/
 theorem isOrientationPreservingAt_inr {o : Manifold.Orientation I (puncture e₂) ι}
-    (ho : ∀ y, IsOrientationPreservingAt o o₂ Subtype.val y) (y : puncture e₂) :
+    {y : puncture e₂} (ho : IsOrientationPreservingAt o o₂ Subtype.val y) :
     letI := chartedSpace (H := H) h₁ h₂
     haveI := isManifold (n := 1) h₁ h₂ d₁ d₂
     IsOrientationPreservingAt o (orientation h₁ h₂ d₁ d₂ o₁ o₂ oE he₁ he₂) (inr e₁ e₂) y := by
   let := chartedSpace (H := H) h₁ h₂
   have := isManifold (n := 1) h₁ h₂ d₁ d₂
-  obtain rfl : o = o₂.restrict (puncture e₂) := eq_restrict_iff.2 ho
+  -- At `y`, `o` agrees with the restriction of `o₂`, since both are carried to `o₂` by the
+  -- derivative of the inclusion.
+  obtain ⟨D, hD, hDo⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 ho
+  have hy : o.orientationAt y = (o₂.restrict (puncture e₂)).orientationAt y :=
+    (_root_.Orientation.map ι D.toLinearEquiv).injective <| hDo.trans
+      ((isOrientationPreservingAt_iff_of_coe_eq _ _ _ y D hD).1
+        (isOrientationPreservingAt_restrict o₂ _ y)).symm
   rw [← mk_comp_inr,
     isOrientationPreservingAt_iff_of_coe_eq _ _ _ y _ (coe_derivInr h₁ h₂ d₁ d₂ y), orientation,
-    orientationAt_ofVectorBundleOrientation]
+    orientationAt_ofVectorBundleOrientation, hy]
   exact (tangentOrientation_mk h₁ h₂ d₁ d₂ he₁ he₂ (.inr y)).symm
 
 /-- **The orientation of the connected sum is characterized by its summands.** For orientations
@@ -326,12 +338,12 @@ theorem eq_orientation_iff {o₁' : Manifold.Orientation I (puncture e₁) ι}
   have := isManifold (n := 1) h₁ h₂ d₁ d₂
   refine ⟨?_, fun ⟨hl, hr⟩ ↦ ?_⟩
   · rintro rfl
-    exact ⟨isOrientationPreservingAt_inl h₁ h₂ d₁ d₂ he₁ he₂ ho₁,
-      isOrientationPreservingAt_inr h₁ h₂ d₁ d₂ he₁ he₂ ho₂⟩
+    exact ⟨fun x ↦ isOrientationPreservingAt_inl h₁ h₂ d₁ d₂ he₁ he₂ (ho₁ x),
+      fun y ↦ isOrientationPreservingAt_inr h₁ h₂ d₁ d₂ he₁ he₂ (ho₂ y)⟩
   ext b
   obtain ⟨x, rfl⟩ | ⟨y, rfl⟩ := (range_inl_union_range_inr e₁ e₂).symm ▸ mem_univ b
-  · exact (hl x).orientationAt_eq (isOrientationPreservingAt_inl h₁ h₂ d₁ d₂ he₁ he₂ ho₁ x)
-  · exact (hr y).orientationAt_eq (isOrientationPreservingAt_inr h₁ h₂ d₁ d₂ he₁ he₂ ho₂ y)
+  · exact (hl x).orientationAt_eq (isOrientationPreservingAt_inl h₁ h₂ d₁ d₂ he₁ he₂ (ho₁ x))
+  · exact (hr y).orientationAt_eq (isOrientationPreservingAt_inr h₁ h₂ d₁ d₂ he₁ he₂ (ho₂ y))
 
 include d₁ d₂ in
 /-- **The connected sum of oriented manifolds is orientable**, when the balls induce opposite

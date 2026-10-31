@@ -25,6 +25,8 @@ one for which the inclusion preserves orientation.
 * `TauCeti.Manifold.Orientation.isOrientationPreservingAt_restrict`: the inclusion of the open
   subset preserves orientation from the restriction.
 * `TauCeti.Manifold.Orientation.eq_restrict_iff`: this property characterizes the restriction.
+* `TauCeti.Manifold.Orientation.restrict_neg`: restriction commutes with taking the opposite
+  orientation.
 -/
 
 public section
@@ -52,6 +54,11 @@ def restrict (o : Orientation I M ι) (U : Opens M) : Orientation I U ι :=
 theorem isOrientationPreservingAt_restrict (o : Orientation I M ι) (U : Opens M) (x : U) :
     IsOrientationPreservingAt (o.restrict U) o Subtype.val x :=
   isOrientationPreservingAt_pullback _ _ _ _ x
+
+/-- Restricting the opposite orientation gives the opposite of the restriction. -/
+@[simp]
+theorem restrict_neg (o : Orientation I M ι) (U : Opens M) : (-o).restrict U = -o.restrict U :=
+  pullback_neg ..
 
 /-- The restriction is the only orientation of `U` from which the inclusion into `M` preserves
 orientation at every point. -/
