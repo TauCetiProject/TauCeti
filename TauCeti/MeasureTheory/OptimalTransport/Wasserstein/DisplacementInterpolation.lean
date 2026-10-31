@@ -16,11 +16,13 @@ geodesics. It does not select an optimal coupling or a geodesic between each pai
 In particular different presentations are allowed, and different interpolations can join the
 same endpoint laws.
 
-For finite endpoint distance and `1 ≤ p`, such a curve has the constant-speed Wasserstein
-distance formula. For `1 < p < ∞`, this relation characterizes geodesic segments in `P_p(X)`.
-At the endpoints `p = 1` and `p = ∞` only the forward implication is asserted. Uniqueness of
-interpolation follows from uniqueness of the endpoint optimizer together with almost-everywhere
-uniqueness of the ground geodesics; neither condition alone is substituted for both.
+For finite endpoint distance, `IsDisplacementInterpolation.wassersteinEDist_eq` proves the
+constant-speed Wasserstein distance formula for `1 ≤ p ≤ ∞`. For the characterization of geodesic
+segments in `P_p(X)` when `1 < p < ∞`, see
+`TauCeti.WassersteinSpace.isGeodesicSegment_iff_isDisplacementInterpolation` in
+`TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic`. Uniqueness of interpolation
+follows from uniqueness of the endpoint optimizer together with almost-everywhere uniqueness of
+the ground geodesics; neither condition alone is substituted for both.
 
 On a separable real normed space the affine interpolation of an optimal coupling satisfies this
 relation. The affine interpolation induced by an optimal transport map is also a displacement
