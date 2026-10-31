@@ -89,6 +89,7 @@ def convexCombination (g h : ContMDiffRiemannianMetric IB n F V) (t : unitInterv
     (fun _ ↦ t.property.2)
 
 /-- Interpolation with a constant weight is `convexCombination`. -/
+@[simp]
 theorem convexCombinationFun_const (g h : ContMDiffRiemannianMetric IB n F V)
     (t : unitInterval) :
     g.convexCombinationFun h (fun _ ↦ (t : ℝ)) contMDiff_const (fun _ ↦ t.property.1)
