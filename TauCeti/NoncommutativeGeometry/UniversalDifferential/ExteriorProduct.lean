@@ -54,6 +54,20 @@ open scoped DirectSum TensorProduct
 
 namespace TauCeti
 
+/-- A nonempty product `f₀ f₁ ⋯ fₙ` is the left fold of `f₁, …, fₙ` starting from `f₀`. -/
+private theorem prod_ofFn_eq_foldl {R : Type*} [Monoid R] {n : ℕ} (f : Fin (n + 1) → R) :
+    (List.ofFn f).prod = (List.ofFn fun i : Fin n ↦ f i.succ).foldl (· * ·) (f 0) := by
+  rw [List.ofFn_succ, List.prod_cons, List.prod_eq_foldl,
+    ← List.foldl_assoc (op := fun x y : R ↦ x * y), mul_one]
+
+/-- A multiplicative map, not necessarily unital, carries a left fold of products to the left
+fold of the images. -/
+private theorem map_foldl_ofFn_mul {F R S : Type*} [Mul R] [Mul S] [FunLike F R S]
+    [MulHomClass F R S] (g : F) {n : ℕ} (f : Fin n → R) (x : R) :
+    g ((List.ofFn f).foldl (· * ·) x) = (List.ofFn fun i ↦ g (f i)).foldl (· * ·) (g x) := by
+  rw [← Function.comp_def, ← List.map_ofFn, List.foldl_map,
+    List.foldl_hom g fun x y ↦ (map_mul g x y).symm]
+
 section
 
 variable {k A B M N : Type*} [CommRing k] [NonUnitalRing A] [Module k A] [IsScalarTower k A A]
@@ -158,13 +172,7 @@ theorem exteriorProductCocycle_apply_tmul_of_zero_foldl (φ : cyclicCocycles k A
   rw [exteriorProductCocycle_apply]
   refine (cycleCharacter_gradedTensorHomOfMemZero_tmul_of_zero (UniversalForms.isDGAlgebra k A)
     (UniversalForms.isDGAlgebra k B) a b).trans ?_
-  have hmap : (List.ofFn fun i : Fin p ↦ UniversalForms.ι k B (b i.succ)) =
-      (List.ofFn fun i ↦ b i.succ).map (UniversalForms.ι k B) := by
-    rw [List.map_ofFn]
-    rfl
-  rw [UniversalForms.cycleCharacter_trace, List.ofFn_succ, List.prod_cons, List.prod_eq_foldl,
-    ← List.foldl_assoc (op := fun x y : ⨁ m, UniversalForms k B m ↦ x * y), mul_one, hmap,
-    List.foldl_map, List.foldl_hom (UniversalForms.ι k B) fun x y ↦ (map_mul _ x y).symm,
+  rw [UniversalForms.cycleCharacter_trace, prod_ofFn_eq_foldl, ← map_foldl_ofFn_mul,
     UniversalForms.trace_ι]
 
 /-- **The exterior product of two traces** is their tensor product:
@@ -191,8 +199,7 @@ theorem exteriorProductCocycle_apply_tmul_of_zero [Ring B] [Algebra k B]
       ((φ : cyclicCochains k A M p) : MultilinearMap k (fun _ : Fin (p + 1) ↦ A) M) a ⊗ₜ
         ((ψ : cyclicCochains k B N 0) : MultilinearMap k (fun _ : Fin 1 ↦ B) N)
           (fun _ ↦ (List.ofFn b).prod) := by
-  rw [exteriorProductCocycle_apply_tmul_of_zero_foldl, List.ofFn_succ, List.prod_cons,
-    List.prod_eq_foldl, ← List.foldl_assoc (op := fun x y : B ↦ x * y), mul_one]
+  rw [exteriorProductCocycle_apply_tmul_of_zero_foldl, prod_ofFn_eq_foldl]
 
 end
 
