@@ -55,6 +55,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `lieMap_lieMap_of_hodgeStar_eq_self`:
   `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` for self-dual `η`.
 * `ιMulti_sub_ιMulti_add_hodgeStar`: the self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`.
+* `ιMulti_apply_add_hodgeStar`: the self-dual part of `v ∧ J v` is `‖v‖² ω / 2`.
 
 ## References
 
@@ -252,6 +253,19 @@ theorem ιMulti_sub_ιMulti_add_hodgeStar (ξ a : V) :
     Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons,
     repr_apply h₀ h₂]
   ring
+
+include he h₀ h₂ in
+/-- **The self-dual part of `v ∧ J v` is `‖v‖² ω / 2`**: `v ∧ J v + ⋆(v ∧ J v) = ‖v‖² ω`. This is
+`ιMulti_sub_ιMulti_add_hodgeStar` with `a = ξ = v`. -/
+theorem ιMulti_apply_add_hodgeStar (v : V) :
+    ιMulti ℝ 2 ![v, J v] + o.hodgeStar hkl (ιMulti ℝ 2 ![v, J v]) = ‖v‖ ^ 2 • J.kahlerForm := by
+  have hswap : ιMulti ℝ 2 ![J v, v] = -ιMulti ℝ 2 ![v, J v] :=
+    ext_inner_ιMulti_two fun u w ↦ by
+      simp only [inner_neg_left, inner_ιMulti_two]
+      ring
+  have h := ιMulti_sub_ιMulti_add_hodgeStar h₀ h₂ hkl he v v
+  rw [hswap, sub_neg_eq_add, map_add, real_inner_self_eq_norm_sq] at h
+  linear_combination (norm := module) (2⁻¹ : ℝ) • h
 
 end Frame
 
