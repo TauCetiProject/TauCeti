@@ -101,6 +101,17 @@ all three are equalities is not covered by the rule; it does not occur in (15). 
     if w = x ∧ y = z then 3 else if w = x ∧ x = y ∨ x = y ∧ y = z then 2 else 6
   else 0
 
+/-- A first line `x ≤ y ≤ z` of nonzero weight holds. -/
+theorem le_of_chainWeight₃_ne_zero {x y z : ℤ} (h : chainWeight₃ x y z ≠ 0) : x ≤ y ∧ y ≤ z := by
+  unfold chainWeight₃ at h
+  split_ifs at h <;> omega
+
+/-- A first line `w ≤ x ≤ y ≤ z` of nonzero weight holds. -/
+theorem le_of_chainWeight₄_ne_zero {w x y z : ℤ} (h : chainWeight₄ w x y z ≠ 0) :
+    w ≤ x ∧ x ≤ y ∧ y ≤ z := by
+  unfold chainWeight₄ at h
+  split_ifs at h <;> omega
+
 /-- Twelve times the coefficient of `(a b; c d)` in `T₁ = ⟨a - d ≤ -b ≤ c; 0 ≤ c < a⟩`. -/
 @[expose] def weight₁ (a b c d : ℤ) : ℤ :=
   if 0 ≤ c ∧ c < a then chainWeight₃ (a - d) (-b) c else 0
