@@ -92,21 +92,17 @@ theorem smul_pointCoeff_eq_self_of_mem_inertiaSubgroup
   classical
   let i : SeparableClosure K →ₐ[K] AlgebraicClosure K :=
     (separableClosure K (AlgebraicClosure K)).val
-  have hcomm : σ.toAlgHom.comp i =
-      i.comp (absoluteGaloisGroupRestrictEquiv K σ).toAlgHom := by
-    ext x
-    exact (coe_absoluteGaloisGroupRestrictEquiv_apply K σ x).symm
   have hfix : Affine.Point.map σ.toAlgHom
       (m • Affine.Point.map i (W.pointCoeffEquiv.symm Q)) =
         m • Affine.Point.map i (W.pointCoeffEquiv.symm Q) := by
     rw [← map_nsmul, ← map_nsmul, hQ]
-    rw [Affine.Point.map_map, hcomm, ← Affine.Point.map_map,
-      ← pointCoeffEquiv_symm_smul, smul_basePointCoeff]
+    rw [Affine.Point.map_map_separableClosure_val, ← pointCoeffEquiv_symm_smul,
+      smul_basePointCoeff]
   have h := Affine.Point.map_eq_self_of_mem_inertiaSubgroup_algebraicClosure hm hσ hfix
   apply W.pointCoeffEquiv.symm.injective
   rw [pointCoeffEquiv_symm_smul]
   apply Affine.Point.map_injective i
-  rw [Affine.Point.map_map, ← hcomm, ← Affine.Point.map_map]
+  rw [← Affine.Point.map_map_separableClosure_val]
   exact h
 
 open scoped Classical in

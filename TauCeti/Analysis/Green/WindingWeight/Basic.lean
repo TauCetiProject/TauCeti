@@ -177,10 +177,9 @@ theorem _root_.AbsolutelyContinuousOnInterval.integrable_windingWeight
   obtain ⟨R, -, hR⟩ :=
     (isBounded_filledHull.mpr hK.isBounded).exists_pos_norm_lt
   let k : ℂ → ℝ := fun z ↦ ‖truncatedCauchyKernel (2 * R) z‖
-  have hkm : Measurable k := (measurable_truncatedCauchyKernel _).norm
   have hk : Integrable k := (integrable_truncatedCauchyKernel _).norm
   let F : ℂ → ℝ := fun z ↦ ∫ t in uIoc a b, k (z - γ t) * ‖deriv γ t‖
-  have hF : Integrable F := hk.integral_comp_sub_mul hkm
+  have hF : Integrable F := hk.integral_comp_sub_mul
     ((hγ.continuousOn.mono uIoc_subset_uIcc).aemeasurable measurableSet_uIoc)
     hγ.intervalIntegrable_deriv_of_finiteDimensional.def'.norm
   have hkpos (z : ℂ) : 0 ≤ k z := norm_nonneg _

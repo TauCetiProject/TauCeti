@@ -52,6 +52,8 @@ full set of sections of a finite locally free subgroup scheme.
 * `TauCeti.IsFullSetOfSections.of_localizationSpan`: being a full set of sections is Zariski-local
   on `Spec A`: it can be checked after localizing at a family of elements generating the unit
   ideal.
+* `TauCeti.isFullSetOfSections_iff_charpoly`: for finite `B`, the characteristic-polynomial
+  formulation (Katz–Mazur 1.8.2), tested on free base changes in the universe of `A`.
 
 In the following results, `B` is finite and flat over `A`; this includes the case that
 `Spec B → Spec A` is finite locally free. Together with Zariski locality, they let full sets of
@@ -59,6 +61,8 @@ sections be checked locally on `Spec A` and transported along changes of base.
 
 * `TauCeti.IsFullSetOfSections.norm_eq`: the defining identity holds on every base change
   `T ⊗[A] B` which is free over `T`, for test algebras `T` in every universe.
+* `TauCeti.IsFullSetOfSections.charpoly_eq`: the characteristic-polynomial identity holds on
+  free base changes for test algebras in every universe.
 * `TauCeti.IsFullSetOfSections.baseChange`, `TauCeti.IsFullSetOfSections.of_baseChange` and
   `TauCeti.isFullSetOfSections_baseChange_iff`: full sets of sections are stable under arbitrary
   base change and descend along injective ring maps, in particular along faithfully flat ones.
@@ -67,12 +71,12 @@ In the remaining results, `B` is free of finite rank over `A`.
 
 * `TauCeti.IsFullSetOfSections.norm_eq_prod`: the norm of a function on `Spec B` is the product
   of its values at a full set of sections.
+* `TauCeti.IsFullSetOfSections.charpoly_eq_prod`: without base change, the characteristic
+  polynomial of multiplication by `b : B` is `∏ i, (X - sᵢ(b))`.
 * `TauCeti.isFullSetOfSections_iff_norm_eq_prod`: the reduction to the universal case
   (Katz–Mazur, proof of 1.9.1). For a basis `b` of `B` indexed by `κ`, `s` is a full set of
   sections if and only if the norm form factors into linear forms,
   `Norm (∑ j, Xⱼ ⊗ bⱼ) = ∏ i, ∑ j, sᵢ(bⱼ) • Xⱼ` in `MvPolynomial κ A`.
-* `TauCeti.isFullSetOfSections_iff_charpoly`: the characteristic-polynomial formulation
-  (Katz–Mazur 1.8.2).
 * `TauCeti.IsFullSetOfSections.card_eq_finrank`: over a nontrivial ring, a full set of sections
   has exactly `rank B` members.
 * `TauCeti.isFullSetOfSections_evalAlgHom`: the coordinate projections of `ι → A`, the sections
@@ -176,6 +180,19 @@ private theorem IsFullSetOfSections.norm_eq_of_free (h : IsFullSetOfSections s) 
   norm_eq_prod_of_generic ((Module.Free.chooseBasis A B).reindex (Fintype.equivFin _))
     ((h _ _).trans (Finset.prod_congr rfl fun _ _ ↦ AlgHom.sectionBaseChange_sum_tmul _ _ _ _)) T f
 
+/-- Without base change, the characteristic polynomial of multiplication by `b` on `B` is
+`∏ i, (X - sᵢ(b))` for a full set of sections `s`. -/
+theorem IsFullSetOfSections.charpoly_eq_prod (h : IsFullSetOfSections s) (b : B) :
+    (Algebra.lmul A B b).charpoly = ∏ i, (Polynomial.X - Polynomial.C (s i b)) := by
+  -- Conjugate by `lid` to present multiplication on `B` as multiplication on `A ⊗[A] B`,
+  -- where `charpoly_lmul_eq_norm` and the full-set norm formula apply.
+  let e := Algebra.TensorProduct.lid A B
+  have he : e.toLinearEquiv.conj (Algebra.lmul A _ (e.symm b)) = Algebra.lmul A B b := by
+    ext x
+    simp [LinearEquiv.conj_apply]
+  rw [← he, LinearEquiv.charpoly_conj, Algebra.charpoly_lmul_eq_norm, h.norm_eq_of_free]
+  simp [e, Polynomial.algebraMap_eq]
+
 /-- **Reduction to the universal case** (Katz–Mazur, proof of 1.9.1). For a basis `b` of `B`
 indexed by `κ`, a family of sections `s` is a full set of sections if and only if the norm of the
 generic element `∑ j, Xⱼ ⊗ bⱼ` of `MvPolynomial κ A ⊗[A] B` is the product of the linear forms
@@ -206,10 +223,11 @@ end Free
 
 For `B` finite over `A`, being a full set of sections is local on `Spec A`: it can be checked on
 the localizations at a family of elements generating the unit ideal
-(`IsFullSetOfSections.of_localizationSpan`). When `B` is moreover flat over `A`, as it is when
-`Spec B → Spec A` is finite locally free, full sets of sections are stable under arbitrary base
-change and descend along injective ring maps, so that full sets of sections can be checked
-locally and transported to any base. -/
+(`IsFullSetOfSections.of_localizationSpan`). The characteristic-polynomial criterion likewise
+requires only finiteness when test algebras stay in the universe of `A`. If `B` is also flat over
+`A`, as it is when `Spec B → Spec A` is finite locally free, full sets of sections are stable
+under arbitrary base change and descend along injective ring maps, so that full sets of sections
+can be checked locally and transported to any base. -/
 
 section FiniteFlat
 
@@ -267,6 +285,26 @@ theorem IsFullSetOfSections.of_localizationSpan [Module.Finite A B] (t : Set A)
       B).symm.toLinearEquiv
   exact algebraMap_norm_eq_algebraMap_prod f (h r (T' r))
 
+/-- **Characteristic-polynomial formulation** (Katz–Mazur 1.8.2). A family of sections `s` is a
+full set of sections of a finite algebra if and only if, after every base change `A → T`
+with `T` in the universe of `A` and for which `T ⊗[A] B` is free over `T`, the characteristic
+polynomial of multiplication by every `f ∈ T ⊗[A] B` is `∏ i, (X - sᵢ(f))`. -/
+theorem isFullSetOfSections_iff_charpoly [Module.Finite A B] :
+    IsFullSetOfSections s ↔ ∀ (T : Type u) [CommRing T] [Algebra A T]
+      [Module.Free T (T ⊗[A] B)] (f : T ⊗[A] B),
+      (Algebra.lmul T (T ⊗[A] B) f).charpoly =
+        ∏ i, (Polynomial.X - Polynomial.C ((s i).sectionBaseChange T f)) := by
+  refine ⟨fun h T _ _ _ f ↦ (h.baseChange_of_univ T).charpoly_eq_prod f, fun h ↦ ?_⟩
+  intro T _ _ _ f
+  rcases subsingleton_or_nontrivial T with _ | _
+  · exact Subsingleton.elim _ _
+  have hdeg := congrArg Polynomial.natDegree (h T f)
+  rw [LinearMap.charpoly_natDegree, Polynomial.natDegree_finsetProd_X_sub_C_eq_card,
+    Finset.card_univ] at hdeg
+  rw [Algebra.norm_apply, LinearMap.det_eq_sign_charpoly_coeff, h T f,
+    Polynomial.coeff_zero_eq_eval_zero, Polynomial.eval_prod, hdeg]
+  simp [Finset.prod_neg, ← mul_assoc, ← pow_add]
+
 variable [Module.Finite A B] [Module.Flat A B]
 
 /-- The defining identity of a full set of sections of a finite flat algebra holds on every
@@ -293,6 +331,15 @@ theorem IsFullSetOfSections.baseChange (h : IsFullSetOfSections s) (T : Type w) 
   have : Module.Free T' (T' ⊗[A] B) :=
     .of_equiv (Algebra.TensorProduct.cancelBaseChange A T T' T' B).toLinearEquiv
   exact (forall_norm_eq_prod_cancelBaseChange_iff (A' := T)).2 (h.norm_eq T') g
+
+/-- The characteristic polynomial of multiplication by `f` on a base change of `B` by a full set
+of sections of a finite flat algebra is `∏ i, (X - sᵢ(f))`, whenever the base change is free
+over the test algebra, in any universe. -/
+theorem IsFullSetOfSections.charpoly_eq (h : IsFullSetOfSections s) (T : Type w) [CommRing T]
+    [Algebra A T] [Module.Free T (T ⊗[A] B)] (f : T ⊗[A] B) :
+    (Algebra.lmul T (T ⊗[A] B) f).charpoly =
+      ∏ i, (Polynomial.X - Polynomial.C ((s i).sectionBaseChange T f)) :=
+  (h.baseChange T).charpoly_eq_prod f
 
 /-- Being a full set of sections of a finite flat algebra descends along an injective ring
 map `A → T`, in particular along a faithfully flat one. -/
@@ -346,33 +393,6 @@ theorem IsFullSetOfSections.card_eq_finrank [Nontrivial A] (h : IsFullSetOfSecti
   have := h.norm_eq (Polynomial A) (algebraMap (Polynomial A) _ Polynomial.X)
   rw [Algebra.norm_algebraMap, Module.finrank_baseChange] at this
   simpa using congrArg Polynomial.natDegree this.symm
-
-/-- The characteristic polynomial of multiplication by `f` on a base change of `B` by a full set
-of sections is `∏ i, (X - sᵢ(f))`, for test algebras in any universe. -/
-theorem IsFullSetOfSections.charpoly_eq (h : IsFullSetOfSections s) (T : Type w) [CommRing T]
-    [Algebra A T] (f : T ⊗[A] B) :
-    (Algebra.lmul T (T ⊗[A] B) f).charpoly =
-      ∏ i, (Polynomial.X - Polynomial.C ((s i).sectionBaseChange T f)) := by
-  rw [Algebra.charpoly_lmul_eq_norm, h.norm_eq]
-  simp [Polynomial.algebraMap_eq]
-
-/-- **Characteristic-polynomial formulation** (Katz–Mazur 1.8.2). A family of sections `s` is a
-full set of sections if and only if after every base change `A → T` the characteristic polynomial
-of multiplication by every `f ∈ T ⊗[A] B` is `∏ i, (X - sᵢ(f))`. -/
-theorem isFullSetOfSections_iff_charpoly :
-    IsFullSetOfSections s ↔ ∀ (T : Type u) [CommRing T] [Algebra A T] (f : T ⊗[A] B),
-      (Algebra.lmul T (T ⊗[A] B) f).charpoly =
-        ∏ i, (Polynomial.X - Polynomial.C ((s i).sectionBaseChange T f)) := by
-  refine ⟨fun h T _ _ f ↦ h.charpoly_eq T f, fun h ↦ ?_⟩
-  intro T _ _ _ f
-  rcases subsingleton_or_nontrivial T with _ | _
-  · exact Subsingleton.elim _ _
-  have hdeg := congrArg Polynomial.natDegree (h T f)
-  rw [LinearMap.charpoly_natDegree, Polynomial.natDegree_finsetProd_X_sub_C_eq_card,
-    Finset.card_univ] at hdeg
-  rw [Algebra.norm_apply, LinearMap.det_eq_sign_charpoly_coeff, h T f,
-    Polynomial.coeff_zero_eq_eval_zero, Polynomial.eval_prod, hdeg]
-  simp [Finset.prod_neg, ← mul_assoc, ← pow_add]
 
 end Free
 

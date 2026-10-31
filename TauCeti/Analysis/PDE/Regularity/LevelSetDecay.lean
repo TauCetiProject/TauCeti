@@ -38,9 +38,9 @@ The energy bound holds for weak subsolutions with `u ≤ M` on `B(x₀, 2R)`: th
 inequality on the pair of balls `B_R ⊆ B_{2R}` bounds `∫_{B_R} |∇(u - l)⁺|²` by a multiple of
 `R⁻² ∫_{B_{2R}} ((u - l)⁺)² ≤ R⁻² (M - l)² |B_{2R}|`. This gives the estimate
 
-* for subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`, with `C` depending only on `λ`, `Λ`, `θ` and the
+* for subsolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`, with `C` depending only on `λ`, `Λ`, `θ` and the
   dimension (`TauCeti.PDE.exists_sqrt_mul_measureReal_le_mul_measureReal_ball`);
-* for subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0` with `‖b‖ ≤ β` and `c ≥ 0`, at levels
+* for subsolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ 0` with `‖b‖ ≤ β` and `c ≥ 0`, at levels
   `k ≥ 0`, with `C √(1 + (βR/λ)²)` in place of `C`
   (`TauCeti.PDE.exists_sqrt_mul_measureReal_le_mul_measureReal_ball_lowerOrder`). The drift term
   of the Caccioppoli inequality is not invariant under dilations, which is why the constant
@@ -57,9 +57,9 @@ Hölder continuity that makes the oscillation of a weak solution decay from one 
 * `TauCeti.PDE.sqrt_mul_measureReal_le_mul_measureReal_ball_of_forall_setIntegral_le`: the decay
   estimate for any `u ∈ H¹(Ω)` whose truncations satisfy the energy bound.
 * `TauCeti.PDE.exists_sqrt_mul_measureReal_le_mul_measureReal_ball`: the decay estimate for weak
-  subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`.
+  subsolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`.
 * `TauCeti.PDE.exists_sqrt_mul_measureReal_le_mul_measureReal_ball_lowerOrder`: the decay
-  estimate for weak subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0` with `c ≥ 0`.
+  estimate for weak subsolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ 0` with `c ≥ 0`.
 
 ## References
 
@@ -231,7 +231,7 @@ variable [DecidableEq ι]
 /-- **Decay of upper level sets of weak subsolutions (De Giorgi).** Fix ellipticity constants
 `λ, Λ` and a proportion `θ > 0`. There is `C > 0`, depending only on these and the dimension,
 such that the following holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants
-`λ, Λ`, and let `u ∈ H¹(Ω)` be a weak subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`, that is `a(u, v) ≤ 0`
+`λ, Λ`, and let `u ∈ H¹(Ω)` be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`, that is `a(u, v) ≤ 0`
 for every nonnegative `v ∈ H¹₀(Ω)`. Let `B(x₀, 2R) ⊆ Ω` and levels `k < M` be such that
 `(u - k)⁺ ∈ L²(Ω)`, `u ≤ M` almost everywhere on `B(x₀, 2R)`, and
 `|{u ≤ k} ∩ B(x₀, R)| ≥ θ |B(x₀, R)|`. Then for every `j`,
@@ -276,7 +276,7 @@ theorem exists_sqrt_mul_measureReal_le_mul_measureReal_ball {θ : ℝ} (hθ : 0 
 ellipticity constants `λ, Λ` and a proportion `θ > 0`. There is `C > 0`, depending only on these
 and the dimension, such that the following holds. Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `λ, Λ`, let `b` and `c` be measurable with `‖b‖ ≤ β`, `‖c‖ ≤ γ` and `c ≥ 0` on
-`Ω`, and let `u ∈ H¹(Ω)` be a weak subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0`, that is
+`Ω`, and let `u ∈ H¹(Ω)` be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ 0`, that is
 `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, where `a(·, ·)` is the energy form with drift
 `b` and mass coefficient `c`. Let `B(x₀, 2R) ⊆ Ω` and levels `0 ≤ k < M` be such that `u ≤ M`
 almost everywhere on `B(x₀, 2R)` and `|{u ≤ k} ∩ B(x₀, R)| ≥ θ |B(x₀, R)|`. Then for every `j`,

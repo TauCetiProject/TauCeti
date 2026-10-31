@@ -36,8 +36,6 @@ against exactly this metric.
   `g(J v, w) = -g(v, J w)`.
 * `TauCeti.SymplecticForm.Invariant.associatedBilinForm_add_apply_self`: the symmetric
   polarization identity for `g(a + J b, a + J b)`.
-* `TauCeti.SymplecticForm.Compatible.associatedBilinForm_nondegenerate`: the metric is
-  nondegenerate.
 * `TauCeti.SymplecticForm.Compatible.innerProductCore`: the metric of a compatible pair as an
   `InnerProductSpace.Core ℝ V`.
 * `TauCeti.SymplecticForm.abs_apply_le_norm_mul_norm`: when the inner product of `V` is the
@@ -163,16 +161,6 @@ lemma associatedBilinForm_self_eq_zero (h : ω.Compatible J) {v : V} :
     ω.associatedBilinForm J v v = 0 ↔ v = 0 :=
   SymplecticForm.associatedBilinForm_self_eq_zero h.positive
 
-/-- The metric of a compatible pair is nondegenerate. -/
-lemma associatedBilinForm_nondegenerate (h : ω.Compatible J) :
-    (ω.associatedBilinForm J).Nondegenerate := by
-  refine (LinearMap.IsRefl.nondegenerate_iff_separatingLeft
-    h.associatedBilinForm_isSymm.isRefl).mpr ?_
-  rw [LinearMap.separatingLeft_iff_linear_nontrivial]
-  intro v hv
-  refine h.associatedBilinForm_self_eq_zero.mp ?_
-  simpa using LinearMap.congr_fun hv v
-
 /-- The metric of a compatible pair, packaged as an `InnerProductSpace.Core ℝ V`.
 
 The inner product is the associated metric `⟪v, w⟫ = ω(v, J w)`. -/
@@ -202,7 +190,7 @@ section InnerProductSpace
 
 open scoped RealInnerProductSpace
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+variable {V : Type*} [SeminormedAddCommGroup V] [InnerProductSpace ℝ V]
   {ω : SymplecticForm V} {J : AlmostComplexStructure V}
 
 /-- Identifying the associated metric with a real inner product makes the symplectic form
@@ -218,13 +206,14 @@ lemma invariant_of_apply_apply_eq_inner
     _ = -ω w v := by simp
     _ = ω v w := ω.neg_eq _ _
 
-/-- The almost complex structure is an isometry for a norm whose inner product is its
-associated symplectic metric. -/
-lemma norm_apply_eq_norm_of_apply_apply_eq_inner
-    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (v : V) : ‖J v‖ = ‖v‖ := by
-  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← real_inner_self_eq_norm_sq,
-    ← real_inner_self_eq_norm_sq, ← hg, ← hg]
-  exact (ω.invariant_of_apply_apply_eq_inner hg).apply _ _
+/-- The almost complex structure preserves a norm when its squared norm is the diagonal
+`ω(v, J v)`. Only equality on the diagonal is needed. -/
+lemma norm_apply_eq_norm_of_apply_apply_self_eq_inner
+    (hg : ∀ v, ω v (J v) = ⟪v, v⟫) (v : V) : ‖J v‖ = ‖v‖ := by
+  have hself : ⟪J v, J v⟫ = ⟪v, v⟫ := by
+    simpa only [associatedBilinForm_apply, hg] using
+      ω.associatedBilinForm_apply_apply_self_eq J v
+  rw [norm_eq_sqrt_real_inner, norm_eq_sqrt_real_inner, hself]
 
 /-- If the inner product of `V` is the metric `ω(·, J ·)` of a symplectic form and an almost
 complex structure, then `ω` is bounded by the inner product norm: `|ω(v, w)| ≤ ‖v‖ ‖w‖`. -/
@@ -234,7 +223,7 @@ theorem abs_apply_le_norm_mul_norm (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (v w 
   have hω : ω v w = -⟪v, J w⟫ := by
     rw [← hg, J.apply_apply]
     simp
-  have hJ := ω.norm_apply_eq_norm_of_apply_apply_eq_inner hg w
+  have hJ := ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v => hg v v) w
   rw [hω, abs_neg, ← hJ]
   exact abs_real_inner_le_norm v (J w)
 

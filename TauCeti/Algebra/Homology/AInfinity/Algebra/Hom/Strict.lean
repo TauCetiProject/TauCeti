@@ -549,9 +549,8 @@ theorem component_comp_of_isStrict_inner {CC : AInfinityAlgebra R C}
     apply congrArg (ReducedTensorWords.of R B ⟨n, hn⟩)
     apply congrArg (PiTensorProduct.tprod R)
     funext i
-    have hcomm := LinearMap.congr_fun
-      (f.isHomogeneous_linearPart.koszulTwist_comp ((n : ℤ) - 1 - i)) (x i)
-    simpa [LinearMap.comp_apply] using hcomm.symm
+    simpa using
+      (f.isHomogeneous_linearPart.koszulTwist_apply ((n : ℤ) - 1 - i) (x i)).symm
 
 end AInfinityHom
 

@@ -16,10 +16,14 @@ subtriad tests used in hypergraph regularity; restricting the three vertex cells
 special case, supplied by `Subpolyad3.ofSubcells`.
 
 Subpolyads are extensional in their three selected pair graphs and form a finite type, even
-without a finite pair palette. Their supports lie in the parent support. The subcell constructor
-accepts arbitrary vertex sets and intersects with the parent pair supports, so no containment
-hypotheses are needed. `Subpolyad3.unionSupport` collects the supports of a finite family of
-subpolyads, and a family of at most `r` members has the same union as one indexed by `Fin r`.
+without a finite pair palette. Their supports lie in the parent support. Nonempty finite
+intersections are formed coordinatewise and their supports are the intersections of the supports.
+The subcell constructor accepts arbitrary vertex sets and intersects with the parent pair supports,
+so no containment hypotheses are needed. `Subpolyad3.unionSupport` collects the supports
+of a finite family. A family of at most `r` members has the same union as one indexed by `Fin r`.
+When the pair graphs of a polyad `P'`, possibly over another skeleton, lie in those of `P`,
+`Subpolyad3.inclusion` regards each subpolyad of `P'` as a subpolyad of `P` with the same
+support.
 
 ## References
 
@@ -139,6 +143,54 @@ theorem support_mono {Q R : Subpolyad3 P} (h₀₁ : Q.pair₀₁ ⊆ R.pair₀�
   rw [mem_support_iff_coordPair_mem] at hx ⊢
   exact ⟨h₀₁ hx.1, h₀₂ hx.2.1, h₁₂ hx.2.2⟩
 
+/-- The intersection of a nonempty finite family of subpolyads, formed by intersecting each
+of their three selected pair graphs. -/
+noncomputable def finsetInter {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
+    (Q : ι → Subpolyad3 P) : Subpolyad3 P where
+  pair₀₁ := s.inf' hs fun i ↦ (Q i).pair₀₁
+  pair₀₂ := s.inf' hs fun i ↦ (Q i).pair₀₂
+  pair₁₂ := s.inf' hs fun i ↦ (Q i).pair₁₂
+  pair₀₁_sub := by
+    have ⟨i, hi⟩ := hs
+    exact fun _ hx ↦ (Q i).pair₀₁_sub ((mem_inf' hs).1 hx i hi)
+  pair₀₂_sub := by
+    have ⟨i, hi⟩ := hs
+    exact fun _ hx ↦ (Q i).pair₀₂_sub ((mem_inf' hs).1 hx i hi)
+  pair₁₂_sub := by
+    have ⟨i, hi⟩ := hs
+    exact fun _ hx ↦ (Q i).pair₁₂_sub ((mem_inf' hs).1 hx i hi)
+
+/-- The zero-one pair graph of a finite intersection. -/
+@[simp]
+theorem finsetInter_pair₀₁ {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
+    (Q : ι → Subpolyad3 P) :
+    (finsetInter s hs Q).pair₀₁ = s.inf' hs fun i ↦ (Q i).pair₀₁ :=
+  (rfl)
+
+/-- The zero-two pair graph of a finite intersection. -/
+@[simp]
+theorem finsetInter_pair₀₂ {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
+    (Q : ι → Subpolyad3 P) :
+    (finsetInter s hs Q).pair₀₂ = s.inf' hs fun i ↦ (Q i).pair₀₂ :=
+  (rfl)
+
+/-- The one-two pair graph of a finite intersection. -/
+@[simp]
+theorem finsetInter_pair₁₂ {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
+    (Q : ι → Subpolyad3 P) :
+    (finsetInter s hs Q).pair₁₂ = s.inf' hs fun i ↦ (Q i).pair₁₂ :=
+  (rfl)
+
+/-- A finite intersection of subpolyads supports exactly the intersection of their supports. -/
+@[simp]
+theorem support_finsetInter {ι : Type*} (s : Finset ι) (hs : s.Nonempty)
+    (Q : ι → Subpolyad3 P) :
+    (finsetInter s hs Q).support = s.inf' hs fun i ↦ (Q i).support := by
+  ext x
+  simp only [mem_support_iff_coordPair_mem, finsetInter_pair₀₁, finsetInter_pair₀₂,
+    finsetInter_pair₁₂, mem_inf']
+  aesop
+
 /-- Restrict a polyad to three vertex sets, intersecting each parent pair graph with the
 corresponding vertex rectangle. The sets need not be contained in the parent cells. -/
 noncomputable def ofSubcells (P : Polyad3 S) (a₀ a₁ a₂ : Finset V) : Subpolyad3 P where
@@ -206,10 +258,59 @@ theorem support_ofSubcells_cells (P : Polyad3 S) :
   exact ⟨And.left, fun hx ↦ ⟨hx, ((P.mem_support x).1 hx).1,
     ((P.mem_support x).1 hx).2.1, ((P.mem_support x).1 hx).2.2.1⟩⟩
 
+section inclusion
+
+variable {κ' : Type*} {S' : PairSkeleton3 κ' V} {P' : Polyad3 S'}
+  (h₀₁ : P'.pairSupport₀₁ ⊆ P.pairSupport₀₁) (h₀₂ : P'.pairSupport₀₂ ⊆ P.pairSupport₀₂)
+  (h₁₂ : P'.pairSupport₁₂ ⊆ P.pairSupport₁₂)
+
+/-- A subpolyad of `P'` regarded as a subpolyad of `P`, when each pair graph of `P'` lies in the
+corresponding pair graph of `P`. The polyad `P'` may live over a different skeleton, for instance
+one refining the skeleton of `P`. The selected pairs are unchanged. -/
+def inclusion (Q : Subpolyad3 P') : Subpolyad3 P where
+  pair₀₁ := Q.pair₀₁
+  pair₀₂ := Q.pair₀₂
+  pair₁₂ := Q.pair₁₂
+  pair₀₁_sub := Q.pair₀₁_sub.trans h₀₁
+  pair₀₂_sub := Q.pair₀₂_sub.trans h₀₂
+  pair₁₂_sub := Q.pair₁₂_sub.trans h₁₂
+
+/-- A subpolyad and its inclusion select the same pairs on roles zero and one. -/
+@[simp]
+theorem inclusion_pair₀₁ (Q : Subpolyad3 P') :
+    (Q.inclusion h₀₁ h₀₂ h₁₂).pair₀₁ = Q.pair₀₁ :=
+  (rfl)
+
+/-- A subpolyad and its inclusion select the same pairs on roles zero and two. -/
+@[simp]
+theorem inclusion_pair₀₂ (Q : Subpolyad3 P') :
+    (Q.inclusion h₀₁ h₀₂ h₁₂).pair₀₂ = Q.pair₀₂ :=
+  (rfl)
+
+/-- A subpolyad and its inclusion select the same pairs on roles one and two. -/
+@[simp]
+theorem inclusion_pair₁₂ (Q : Subpolyad3 P') :
+    (Q.inclusion h₀₁ h₀₂ h₁₂).pair₁₂ = Q.pair₁₂ :=
+  (rfl)
+
+/-- Including a subpolyad does not change its support. -/
+@[simp]
+theorem support_inclusion (Q : Subpolyad3 P') :
+    (Q.inclusion h₀₁ h₀₂ h₁₂).support = Q.support := by
+  ext x
+  simp
+
+end inclusion
+
 /-- The union of the supports of a finite family of subpolyads of `P`. -/
 noncomputable def unionSupport {ι : Type*} [Fintype ι] (Q : ι → Subpolyad3 P) :
     Finset {x : Fin 3 → V // Function.Injective x} :=
   univ.biUnion fun i ↦ (Q i).support
+
+/-- The union support is the finite union of the members' supports. -/
+theorem unionSupport_def {ι : Type*} [Fintype ι] (Q : ι → Subpolyad3 P) :
+    unionSupport Q = univ.biUnion fun i ↦ (Q i).support :=
+  (rfl)
 
 variable {ι : Type*} [Fintype ι]
 
@@ -260,6 +361,15 @@ theorem exists_unionSupport_eq_of_card_le {r : ℕ} (Q : ι → Subpolyad3 P)
   · rintro ⟨i, hi⟩
     refine ⟨⟨e i, (e i).2.trans_le hr⟩, ?_⟩
     simpa [(e i).2] using hi
+
+/-- Including every member of a family of subpolyads does not change its union support. -/
+@[simp]
+theorem unionSupport_inclusion {κ' : Type*} {S' : PairSkeleton3 κ' V} {P' : Polyad3 S'}
+    (h₀₁ : P'.pairSupport₀₁ ⊆ P.pairSupport₀₁) (h₀₂ : P'.pairSupport₀₂ ⊆ P.pairSupport₀₂)
+    (h₁₂ : P'.pairSupport₁₂ ⊆ P.pairSupport₁₂) (Q : ι → Subpolyad3 P') :
+    unionSupport (fun i ↦ (Q i).inclusion h₀₁ h₀₂ h₁₂) = unionSupport Q := by
+  ext x
+  simp
 
 end Subpolyad3
 

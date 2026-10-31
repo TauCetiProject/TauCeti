@@ -15,7 +15,9 @@ Internal Hom into the structure sheaf gives a contravariant endofunctor on finit
 sheaves. Its action on morphisms is precomposition, not an arbitrary choice of categorical dual.
 The canonical map to the double dual is a natural isomorphism. It is the existing
 `TauCeti.doubleDualMap`, whose evaluation equation pairs a local functional with the original
-section. Thus dualization loses no information about the sheaf or its morphisms.
+section. Thus dualization loses no information about the sheaf or its morphisms: together with the
+triangle identity relating the bidual isomorphisms of `E` and of `E^∨`, biduality makes
+dualization an anti-autoequivalence `dualEquiv` of finite locally free sheaves.
 
 The functor and natural isomorphism follow the finite-projective module formalization in
 `TauCeti.Algebra.Category.ModuleCat.FiniteProjective.Monoidal` as their template.
@@ -99,6 +101,52 @@ theorem evalNatIso_hom_app (E : FiniteLocallyFreeSheaf X) :
 @[simp]
 theorem evalNatIso_inv_app (E : FiniteLocallyFreeSheaf X) :
     evalNatIso.inv.app E = (evalIso E).inv :=
+  (rfl)
+
+/-- **Triangle identity of biduality.** The bidual isomorphism of `E^∨` followed by the dual of
+the bidual isomorphism of `E` is the identity of `E^∨`. -/
+@[simp, reassoc]
+theorem evalIso_hom_dual_comp_dualFunctor_map (E : FiniteLocallyFreeSheaf X) :
+    (evalIso (dual E)).hom ≫
+        dualFunctor.map (X := .op (dual (dual E))) (Y := .op E) (evalIso E).hom.op =
+      𝟙 (dual E) := by
+  apply ObjectProperty.hom_ext
+  exact doubleDualMap_comp_pre_doubleDualMap E.obj
+
+/-- Internal-Hom dualization is an anti-autoequivalence of finite locally free sheaves. Its
+functor sends `E` to `E^∨` in the opposite category, its inverse is `dualFunctor`, its unit is
+the bidual isomorphism `evalNatIso` and its counit is the opposite of the bidual isomorphism. -/
+-- Exposed so that the functor, inverse, unit and counit lemmas below typecheck by unfolding.
+@[expose]
+def dualEquiv : FiniteLocallyFreeSheaf X ≌ (FiniteLocallyFreeSheaf X)ᵒᵖ where
+  functor := dualFunctor.rightOp
+  inverse := dualFunctor
+  unitIso := evalNatIso
+  counitIso := NatIso.ofComponents (fun E ↦ (evalIso E.unop).op)
+    fun f ↦ Quiver.Hom.unop_inj (evalIso_naturality f.unop).symm
+  functor_unitIso_comp E := by
+    rw [evalNatIso_hom_app]
+    exact Quiver.Hom.unop_inj (evalIso_hom_dual_comp_dualFunctor_map E)
+
+/-- The functor of `dualEquiv` is dualization into the opposite category. -/
+@[simp]
+theorem dualEquiv_functor : (dualEquiv (X := X)).functor = dualFunctor.rightOp :=
+  (rfl)
+
+/-- The inverse of `dualEquiv` is dualization out of the opposite category. -/
+@[simp]
+theorem dualEquiv_inverse : (dualEquiv (X := X)).inverse = dualFunctor :=
+  (rfl)
+
+/-- The unit of `dualEquiv` is the bidual isomorphism. -/
+@[simp]
+theorem dualEquiv_unitIso : (dualEquiv (X := X)).unitIso = evalNatIso :=
+  (rfl)
+
+/-- The counit of `dualEquiv` at `E` is the opposite of the bidual isomorphism of `E`. -/
+@[simp]
+theorem dualEquiv_counitIso_app (E : (FiniteLocallyFreeSheaf X)ᵒᵖ) :
+    (dualEquiv (X := X)).counitIso.app E = (evalIso E.unop).op :=
   (rfl)
 
 end

@@ -42,6 +42,8 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
 ## Main results
 
 * `TauCeti.mem_cornerSubmodule_iff`: the fixed-point characterization of an idempotent corner.
+* `TauCeti.mem_span_singleton_of_mem_cornerSubmodule`: the corner `eAf` lies in the left ideal
+  `Af` without idempotency assumptions.
 * `IsIdempotentElem.mul_corner_val` and `IsIdempotentElem.corner_val_mul`: an element of the
   corner ring `eAe` is fixed by `e` on both sides.
 * `Pi.isIdempotentElem_iff`: an element of a product is idempotent exactly when each component
@@ -58,6 +60,8 @@ public section
 namespace TauCeti
 
 universe u v
+
+section NonUnitalSemiring
 
 variable (k : Type v) [Semiring k] {A : Type u} [NonUnitalSemiring A] [Module k A]
   [SMulCommClass k A A] [IsScalarTower k A A]
@@ -102,6 +106,24 @@ theorem mul_eq_self_of_mem_cornerSubmodule_right {e f x : A} (hf : IsIdempotentE
   rcases hx with ⟨y, rfl⟩
   simp only [LinearMap.mulLeftRight_apply]
   rw [mul_assoc, hf.eq]
+
+end NonUnitalSemiring
+
+section Semiring
+
+variable {k : Type v} [Semiring k] {A : Type u} [Semiring A] [Module k A]
+  [SMulCommClass k A A] [IsScalarTower k A A]
+
+/-- An element of the corner `eAf` lies in the left ideal `Af`, without any idempotency
+assumption. -/
+theorem mem_span_singleton_of_mem_cornerSubmodule {e f x : A}
+    (hx : x ∈ cornerSubmodule k e f) : x ∈ (Ideal.span {f} : Ideal A) := by
+  rw [cornerSubmodule_def, LinearMap.mem_range] at hx
+  obtain ⟨y, hy⟩ := hx
+  exact Ideal.mem_span_singleton'.2 ⟨e * y, by
+    simpa only [LinearMap.mulLeftRight_apply] using hy⟩
+
+end Semiring
 
 end TauCeti
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
-# Proper maps: composition with homeomorphisms and products
+# Proper maps: compact domains, composition with homeomorphisms and products
 
 Composing with a homeomorphism on either side neither creates nor destroys properness, in the
 pattern of Mathlib's `Homeomorph.comp_isOpenMap_iff`.
@@ -24,12 +24,15 @@ The nonemptiness hypotheses cannot be dropped: a map out of an empty space is pr
 
 ## Main declarations
 
+* `IsProperMap.compactSpace`: the domain of a proper map to a compact space is compact.
 * `Homeomorph.comp_isProperMap_iff` and `Homeomorph.comp_isProperMap_iff'`: properness is
   invariant under composition with a homeomorphism.
 * `IsProperMap.of_prodMap_left` and `IsProperMap.of_prodMap_right`: the factors of a proper
   product map with nonempty sources are proper.
 * `isProperMap_prodMap_iff`: for nonempty sources, `Prod.map f g` is proper exactly when `f` and
   `g` are.
+* `Continuous.isClosedEmbedding_fst_prod`: a parameter-preserving map `(p, x) ↦ (p, G (p, x))`
+  with injective slices, compact second factor and Hausdorff target is a closed embedding.
 -/
 
 public section
@@ -58,6 +61,12 @@ theorem comp_isProperMap_iff' (h : X ≃ₜ Y) {f : Y → Z} : IsProperMap (f �
 end Homeomorph
 
 variable {f : X → Y} {g : Z → W}
+
+/-- The domain of a proper map to a compact space is compact. No separation axiom is needed. -/
+theorem IsProperMap.compactSpace [CompactSpace Y] (hf : IsProperMap f) : CompactSpace X := by
+  refine ⟨?_⟩
+  simpa only [Set.preimage_univ] using
+    hf.isCompact_preimage (isCompact_univ : IsCompact (Set.univ : Set Y))
 
 /-- If a product map `Prod.map f g` is proper and the source of `g` is nonempty, then `f` is
 proper. -/
@@ -95,3 +104,34 @@ are proper. -/
 theorem isProperMap_prodMap_iff [Nonempty X] [Nonempty Z] :
     IsProperMap (Prod.map f g) ↔ IsProperMap f ∧ IsProperMap g :=
   ⟨fun h ↦ ⟨h.of_prodMap_left, h.of_prodMap_right⟩, fun h ↦ h.1.prodMap h.2⟩
+
+/-- A parameter-preserving map `(p, x) ↦ (p, G (p, x))` whose slices are injective, from a
+product with a compact second factor to a Hausdorff space, is a closed embedding. Its image is the
+projection along the compact factor of a closed set, so it is closed. This applies to the track of
+an isotopy of a compact space, run over any parameter space. -/
+theorem Continuous.isClosedEmbedding_fst_prod {P : Type*} [TopologicalSpace P] [CompactSpace X]
+    [T2Space Y] {G : P × X → Y} (hG : Continuous G)
+    (hinj : ∀ p, Function.Injective fun x => G (p, x)) :
+    IsClosedEmbedding fun q : P × X => (q.1, G q) := by
+  refine .of_continuous_injective_isClosedMap (continuous_fst.prodMk hG) ?_ ?_
+  · rintro ⟨p, x⟩ ⟨p', x'⟩ h
+    simp only [Prod.mk.injEq] at h
+    obtain ⟨rfl, h⟩ := h
+    exact Prod.ext rfl (hinj p h)
+  · intro C hC
+    -- The image is the projection along `X` of a closed subset of `(P × Y) × X`.
+    have himage : (fun q : P × X => (q.1, G q)) '' C =
+        Prod.fst '' {r : (P × Y) × X | (r.1.1, r.2) ∈ C ∧ G (r.1.1, r.2) = r.1.2} := by
+      ext ⟨p, y⟩
+      constructor
+      · rintro ⟨⟨p', x⟩, hx, h⟩
+        simp only [Prod.mk.injEq] at h
+        obtain ⟨rfl, rfl⟩ := h
+        exact ⟨((p', G (p', x)), x), ⟨hx, rfl⟩, rfl⟩
+      · rintro ⟨⟨⟨p', y'⟩, x⟩, ⟨hx, hy⟩, h⟩
+        simp only [Prod.mk.injEq] at h hy
+        obtain ⟨rfl, rfl⟩ := h
+        exact ⟨(p', x), hx, by simp [hy]⟩
+    rw [himage]
+    exact isClosedMap_fst_of_compactSpace _
+      ((hC.preimage (by fun_prop)).inter (isClosed_eq (by fun_prop) (by fun_prop)))

@@ -45,6 +45,11 @@ loop once and counting parallel edges separately. The result is zero when this s
 noncomputable def incidenceCount (x : α) : ℕ :=
   (G.incidenceSet x).ncard
 
+theorem nonloopIncidenceCount_def (x : α) :
+    G.nonloopIncidenceCount x = (G.incidenceSet x \ G.loopSet x).ncard := (rfl)
+
+theorem incidenceCount_def (x : α) : G.incidenceCount x = (G.incidenceSet x).ncard := (rfl)
+
 /-- The incidence set of a vertex is finite when the graph has finitely many actual edges. -/
 theorem finite_incidenceSet [Finite G.edgeSet] (x : α) : (G.incidenceSet x).Finite :=
   (Set.finite_coe_iff.mp inferInstance).subset (G.incidenceSet_subset_edgeSet x)
@@ -261,6 +266,28 @@ theorem incidentEdges_mono {S T : Finset G.vertexSet} (hST : S ⊆ T) :
   simp only [mem_incidentEdges]
   rintro ⟨x, hx, hex⟩
   exact ⟨x, hST hx, hex⟩
+
+/-- An edge has no end in `S` exactly when both of its ends lie in the complement of `S`. -/
+theorem incidentEdges_compl [Fintype G.vertexSet] [DecidableEq G.vertexSet]
+    [DecidableEq G.edgeSet] (S : Finset G.vertexSet) :
+    (G.incidentEdges S)ᶜ = G.internalEdges Sᶜ := by
+  ext e
+  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
+  simp only [Finset.mem_compl, mem_incidentEdges, mem_internalEdges, not_exists, not_and]
+  constructor
+  · intro h
+    exact ⟨⟨x, hxy.left_mem⟩, fun hx ↦ h _ hx hxy.inc_left, ⟨y, hxy.right_mem⟩,
+      fun hy ↦ h _ hy hxy.inc_right, hxy⟩
+  · rintro ⟨u, hu, w, hw, huw⟩ z hz hez
+    obtain h | h := hez.eq_or_eq_of_isLink huw
+    exacts [hu (Subtype.ext h ▸ hz), hw (Subtype.ext h ▸ hz)]
+
+/-- Every actual edge is either incident with `S` or internal to its complement. -/
+theorem card_incidentEdges_add_card_internalEdges_compl [Fintype G.vertexSet]
+    [DecidableEq G.vertexSet] (S : Finset G.vertexSet) :
+    (G.incidentEdges S).card + (G.internalEdges Sᶜ).card = Fintype.card G.edgeSet := by
+  classical
+  rw [← incidentEdges_compl, Finset.card_add_card_compl]
 
 /-- The cardinality of the finite incident-edge set of a singleton is its incidence count. -/
 theorem card_incidentEdges_singleton (x : G.vertexSet) :

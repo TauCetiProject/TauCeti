@@ -97,16 +97,17 @@ section Group
 
 variable (p : ℕ) (G : Type u) [Group G]
 
-/-- Transport along `res_trivialFp` intertwines the restricted multiplication pairing of `G` with
-the multiplication pairing of `S`. -/
+/-- Transport along `res_trivialFp_hom` intertwines the restricted multiplication pairing of `G`
+with the multiplication pairing of `S`. -/
 theorem eqToHom_res_fpPairing_bil (S : Subgroup G)
     (x y : (TopRep.res (S.subtype : S →* G) (trivialFp p G)).V) :
-    eqToHom (res_trivialFp p G S) (((fpPairing p G).res S.subtype).bil x y) =
-      (fpPairing p S).bil (eqToHom (res_trivialFp p G S) x) (eqToHom (res_trivialFp p G S) y) :=
+    eqToHom (res_trivialFp_hom p S.subtype) (((fpPairing p G).res S.subtype).bil x y) =
+      (fpPairing p S).bil (eqToHom (res_trivialFp_hom p S.subtype) x)
+        (eqToHom (res_trivialFp_hom p S.subtype) y) :=
   (trivialFpEquiv p S).injective (by
-    -- the transport lemma is passed with `p G S` fixed: by bare name, `simp` indexes it through
-    -- the unfolded restricted carrier and does not find it in this module
-    simp only [trivialFpEquiv_eqToHom_res_trivialFp p G S, TopPairing.res_bil,
+    -- Fix `p` and `S.subtype` before passing the lemma: by bare name, `simp` indexes it through
+    -- the unfolded restricted carrier and does not find it in this module.
+    simp only [trivialFpEquiv_eqToHom_res_trivialFp_hom p S.subtype, TopPairing.res_bil,
       fpPairing_bil_apply, LinearEquiv.apply_symm_apply])
 
 variable [TopologicalSpace G] [IsTopologicalGroup G]
@@ -137,17 +138,17 @@ theorem cupFp_map {H : Type u} [Group H] [TopologicalSpace H] [IsTopologicalGrou
     cohomFpMap p φ 2 (cupFp p G a b) =
       cupFp p H (cohomFpMap p φ 1 a) (cohomFpMap p φ 1 b) := by
   have hpair (x y : (trivialFp p G).V) :
-      eqToHom (res_trivialFp_hom p φ) ((fpPairing p G).bil x y) =
-        (fpPairing p H).bil (eqToHom (res_trivialFp_hom p φ) x)
-          (eqToHom (res_trivialFp_hom p φ) y) := by
+      eqToHom (res_trivialFp_hom p φ.toMonoidHom) ((fpPairing p G).bil x y) =
+        (fpPairing p H).bil (eqToHom (res_trivialFp_hom p φ.toMonoidHom) x)
+          (eqToHom (res_trivialFp_hom p φ.toMonoidHom) y) := by
     apply (trivialFpEquiv p H).injective
-    simp only [trivialFpEquiv_eqToHom_res_trivialFp_hom p φ,
+    simp only [trivialFpEquiv_eqToHom_res_trivialFp_hom p φ.toMonoidHom,
       fpPairing_bil_apply, LinearEquiv.apply_symm_apply]
   simpa only [cohomFpMap_def, cupFp_def, one_add_one_eq_two] using
     (fpPairing p G).cup_map (fpPairing p H) φ
-      (eqToHom (res_trivialFp_hom p φ))
-      (eqToHom (res_trivialFp_hom p φ))
-      (eqToHom (res_trivialFp_hom p φ)) hpair 1 1 a b
+      (eqToHom (res_trivialFp_hom p φ.toMonoidHom))
+      (eqToHom (res_trivialFp_hom p φ.toMonoidHom))
+      (eqToHom (res_trivialFp_hom p φ.toMonoidHom)) hpair 1 1 a b
 
 /-- **Perfectness of the cup square transfers along a continuous homomorphism** `φ : H →ₜ* G`
 inducing isomorphisms on `H¹(-, ZMod p)` and `H²(-, ZMod p)`: `cupFp p G` is a bijection onto the

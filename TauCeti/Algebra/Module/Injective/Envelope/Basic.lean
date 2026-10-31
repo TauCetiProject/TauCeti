@@ -33,9 +33,10 @@ unique: any two injective envelopes of `M` differ by a linear equivalence commut
 structure maps (`TauCeti.IsInjectiveEnvelope.exists_linearEquiv`). Uniqueness is what makes "the"
 injective envelope a well-defined object.
 
-*Existence* of injective envelopes is a separate matter, and is not proved here; nothing below
-assumes it, every statement being conditional on an envelope being given. Over a finite-dimensional
-algebra the indecomposable injectives arise as the envelopes of the simple modules.
+*Existence* of injective envelopes is a separate matter, proved in
+`TauCeti/Algebra/Module/Injective/Envelope/Existence.lean`; nothing below assumes it, every
+statement being conditional on an envelope being given. Over a finite-dimensional algebra the
+indecomposable injectives arise as the envelopes of the simple modules.
 
 ## Universes
 
@@ -70,13 +71,6 @@ as an extension target; it is automatic whenever `R` and that module live in the
   submodules.
 
 ## References
-
-This implements the injective-envelope half of the "projective covers and injective envelopes"
-bullet of Layer 3 of `TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`
-("dually `injectiveEnvelope M`"), whose projective half is
-`TauCeti/Algebra/Module/ProjectiveCover/Basic.lean`. As on the projective side, the bullet is not
-discharged by this file: existence of envelopes, and hence a canonical `injectiveEnvelope M`
-chosen by it, remains.
 
 See I. Assem, D. Simson, A. Skowroński, *Elements of the Representation Theory of Associative
 Algebras, Vol. 1*, Section I.5, and T. Y. Lam, *Lectures on Modules and Rings*, §3.

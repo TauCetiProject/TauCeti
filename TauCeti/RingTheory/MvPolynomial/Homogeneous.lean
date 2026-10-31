@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
+import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 
 /-!
 # Scaling the variables of a homogeneous polynomial
@@ -22,12 +24,19 @@ notation such as `hp.eval₂_const_mul`, `hp.aeval_smul`, and `hp.eval_smul`. In
 vector, `hp.aeval_eq_sum_finsuppAntidiag` expands a value as a sum over the exponent vectors of
 degree `n`, `hp.constantCoeff_eq_zero` records that the constant coefficient vanishes in
 positive degree, `hp.natDegree_aeval_le` bounds by `n` the degree of a substitution of
-polynomials of degree at most one, and `hp.homogeneousComponent_mul_right` records that
+polynomials of degree at most one, `hp.homogeneousComponent_mul_right` records that
 multiplying on the right by a homogeneous polynomial of degree `d` shifts homogeneous components
-by `d`.
+by `d`, and `hp.not_dvd_X` records that over a domain a homogeneous polynomial of degree at least
+two divides no variable. Without zero divisors, the factors of a nonzero homogeneous product are
+homogeneous (`hp.of_mul_left`, `hp.of_mul_right`). `TauCeti.eval_coe_homogeneousSubmodule_eq_sum`
+restates the expansion of values for `eval` on elements of `homogeneousSubmodule`.
 
 The file also records `MvPolynomial.isHomogeneous_coeff_prod_X_sub_C`: the coefficients of a
-product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous.
+product of linear factors `X - C Ψ` with homogeneous `Ψ` of degree `m` are homogeneous, and
+`TauCeti.sum_smul_X_pow_mem_homogeneousSubmodule`: the `n`-th power of a linear form is
+homogeneous of degree `n`. Conversely, `MvPolynomial.homogeneousComponent_one_eq_sum` writes the
+degree-one component of a polynomial in finitely many variables as the linear form
+`∑ i, c i • X i` whose coefficients `c i` are the coefficients of the variables `X i`.
 -/
 
 public section
@@ -148,11 +157,116 @@ theorem aeval_eq_sum_finsuppAntidiag {σ R S : Type*} [Fintype σ] [DecidableEq 
     exact (hp.degree_eq_sum_deg_support hl).symm
   · rw [notMem_support_iff.mp hl, map_zero, zero_mul]
 
+/-- Over a domain, a homogeneous polynomial of degree at least two divides none of the variables. -/
+theorem not_dvd_X {σ R : Type*} [CommRing R] [IsDomain R] {p : MvPolynomial σ R} {n : ℕ}
+    (hp : p.IsHomogeneous n) (hn : 2 ≤ n) (i : σ) : ¬ p ∣ _root_.MvPolynomial.X i := by
+  rintro ⟨q, hq⟩
+  have hq0 : q ≠ 0 := by rintro rfl; simp at hq
+  have hp0 : p ≠ 0 := by rintro rfl; simp at hq
+  have := congrArg _root_.MvPolynomial.totalDegree hq
+  rw [_root_.MvPolynomial.totalDegree_X, _root_.MvPolynomial.totalDegree_mul_of_isDomain hp0 hq0,
+    hp.totalDegree hp0] at this
+  omega
+
+/-- Without zero divisors, the left factor of a nonzero homogeneous product is homogeneous, of
+degree its total degree. -/
+theorem of_mul_left {σ R : Type*} [CommSemiring R] [NoZeroDivisors R] {p q : MvPolynomial σ R}
+    {n : ℕ} (h : (p * q).IsHomogeneous n) (hpq : p * q ≠ 0) : p.IsHomogeneous p.totalDegree := by
+  have hp : p ≠ 0 := left_ne_zero_of_mul hpq
+  have hq : q ≠ 0 := right_ne_zero_of_mul hpq
+  have hweight (s : σ →₀ ℕ) : Finsupp.weight 1 s = s.degree := by
+    rw [Pi.one_def, ← Finsupp.degree_eq_weight_one]
+  -- As a power series, a polynomial has order at most the degree of each of its monomials, hence
+  -- at most its total degree.
+  have horder {r : MvPolynomial σ R} {s : σ →₀ ℕ} (hs : s ∈ r.support) :
+      (r : MvPowerSeries σ R).order ≤ s.degree :=
+    MvPowerSeries.order_le (by rwa [_root_.MvPolynomial.coeff_coe, ← mem_support_iff])
+  have hle {r : MvPolynomial σ R} (hr : r ≠ 0) :
+      (r : MvPowerSeries σ R).order ≤ r.totalDegree := by
+    obtain ⟨s, hs⟩ := support_nonempty.mpr hr
+    exact (horder hs).trans (by exact_mod_cast le_totalDegree hs)
+  obtain ⟨a, ha⟩ := ENat.ne_top_iff_exists.mp ((hle hp).trans_lt (ENat.natCast_lt_top _)).ne
+  obtain ⟨b, hb⟩ := ENat.ne_top_iff_exists.mp ((hle hq).trans_lt (ENat.natCast_lt_top _)).ne
+  -- The product is homogeneous of degree `n`, so `n` is its order.
+  have hn : ((p * q : MvPolynomial σ R) : MvPowerSeries σ R).order = n := by
+    obtain ⟨s, hs⟩ := support_nonempty.mpr hpq
+    have hdeg {s : σ →₀ ℕ} (hs : s ∈ (p * q).support) : s.degree = n :=
+      hweight s ▸ h (mem_support_iff.mp hs)
+    rw [MvPowerSeries.order_eq_nat]
+    refine ⟨⟨s, by rwa [_root_.MvPolynomial.coeff_coe, ← mem_support_iff], hdeg hs⟩,
+      fun s hs' ↦ ?_⟩
+    rw [_root_.MvPolynomial.coeff_coe, ← notMem_support_iff]
+    exact fun hs ↦ hs'.ne (hdeg hs)
+  -- Orders and total degrees of the factors both add up to `n`, so the order `a` of `p` is its
+  -- total degree, and every monomial of `p` has degree between the two.
+  rw [_root_.MvPolynomial.coe_mul, MvPowerSeries.order_mul, ← ha, ← hb] at hn
+  have hdeg := _root_.MvPolynomial.totalDegree_mul_of_isDomain hp hq
+  rw [h.totalDegree hpq] at hdeg
+  have hap := ha ▸ hle hp
+  have hbq := hb ▸ hle hq
+  norm_cast at hn hap hbq
+  intro s hs
+  have h₁ := ha ▸ horder (mem_support_iff.mpr hs)
+  have h₂ := le_totalDegree (mem_support_iff.mpr hs)
+  rw [Finsupp.sum, ← Finsupp.degree_apply] at h₂
+  norm_cast at h₁
+  rw [hweight]
+  omega
+
+/-- Without zero divisors, the right factor of a nonzero homogeneous product is homogeneous, of
+degree its total degree. -/
+theorem of_mul_right {σ R : Type*} [CommSemiring R] [NoZeroDivisors R] {p q : MvPolynomial σ R}
+    {n : ℕ} (h : (p * q).IsHomogeneous n) (hpq : p * q ≠ 0) : q.IsHomogeneous q.totalDegree :=
+  of_mul_left (mul_comm p q ▸ h) (mul_comm p q ▸ hpq)
+
 end MvPolynomial.IsHomogeneous
+
+namespace TauCeti
+
+open MvPolynomial
+
+variable {σ R : Type*} [CommSemiring R]
+
+/-- A homogeneous polynomial of degree `n` in finitely many variables evaluates as the sum, over
+the exponent vectors `l` of degree `n`, of its coefficient at `l` times `∏ i, v i ^ l i`. -/
+theorem eval_coe_homogeneousSubmodule_eq_sum [Fintype σ] [DecidableEq σ] {n : ℕ}
+    (p : homogeneousSubmodule σ R n) (v : σ → R) :
+    eval v (p : MvPolynomial σ R) = ∑ l ∈ Finset.univ.finsuppAntidiag n,
+      (p : MvPolynomial σ R).coeff l * ∏ i, v i ^ l i := by
+  simpa using ((mem_homogeneousSubmodule n _).mp p.2).aeval_eq_sum_finsuppAntidiag v
+
+end TauCeti
 
 namespace MvPolynomial
 
-variable {σ R : Type*} [CommRing R]
+variable {σ R : Type*}
+
+section CommSemiring
+
+variable [CommSemiring R]
+
+/-- The degree-one component of a polynomial in finitely many variables is the linear form whose
+coefficient of `X i` is the coefficient of `X i` in the polynomial. -/
+theorem homogeneousComponent_one_eq_sum [Fintype σ] (φ : MvPolynomial σ R) :
+    homogeneousComponent 1 φ = ∑ i, φ.coeff (Finsupp.single i 1) • X i := by
+  classical
+  ext d
+  simp only [coeff_homogeneousComponent, coeff_sum, coeff_smul, coeff_X, smul_eq_mul, mul_ite,
+    mul_one, mul_zero]
+  split_ifs with hd
+  · obtain ⟨i, rfl⟩ := (Finsupp.sum_eq_one_iff d).1 <| by
+      rw [Finsupp.sum, ← Finsupp.degree_apply]
+      exact hd
+    simp [Finsupp.single_left_inj one_ne_zero]
+  · refine (Finset.sum_eq_zero fun i _ ↦ ite_eq_right ?_).symm
+    rintro rfl
+    simp at hd
+
+end CommSemiring
+
+section CommRing
+
+variable [CommRing R]
 
 /-- The coefficient of `X ^ k` in a product of linear factors `X - C Ψ`, whose constant terms `Ψ`
 are all homogeneous of degree `m`, is homogeneous of degree `m * (s.card - k)`. -/
@@ -192,4 +306,21 @@ theorem isHomogeneous_coeff_prod_X_sub_C {ι : Type*} (s : Finset ι)
         rw [Polynomial.coeff_eq_zero_of_natDegree_lt hlt, zero_mul]
         exact isHomogeneous_zero σ R _
 
+end CommRing
+
 end MvPolynomial
+
+namespace TauCeti
+
+open MvPolynomial
+
+/-- The `n`-th power of a linear form is homogeneous of degree `n`. -/
+theorem sum_smul_X_pow_mem_homogeneousSubmodule {σ R : Type*} [Fintype σ] [CommSemiring R]
+    (x : σ → R) (n : ℕ) :
+    (∑ i, x i • X i : MvPolynomial σ R) ^ n ∈ homogeneousSubmodule σ R n := by
+  have h1 : (∑ i, x i • X i : MvPolynomial σ R) ∈ homogeneousSubmodule σ R 1 :=
+    Submodule.sum_mem _ fun i _ ↦
+      Submodule.smul_mem _ _ ((mem_homogeneousSubmodule 1 _).mpr (isHomogeneous_X R i))
+  simpa using ((mem_homogeneousSubmodule 1 _).mp h1).pow n
+
+end TauCeti

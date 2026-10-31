@@ -42,6 +42,8 @@ the canonical operation internal to integral lattices is the integer action defi
 * `TauCeti.IntegralLattice.discriminant_neg`: form negation preserves the discriminant.
 * `TauCeti.IntegralLattice.signature_neg`: form negation exchanges the positive and negative
   indices and preserves the null index.
+* `TauCeti.IntegralLattice.Isometry.smul`: an isometry of lattices is an isometry of their
+  scalings.
 
 ## References
 
@@ -390,6 +392,34 @@ theorem signature_neg (L : IntegralLattice V) :
 theorem discriminant_neg (L : IntegralLattice V) : (-L).discriminant = L.discriminant := by
   rw [neg_def, discriminant_smul]
   norm_num
+
+/-- The form negation of a lattice is positive definite exactly when the lattice is negative
+definite. -/
+@[simp]
+theorem isPosDef_neg_iff (L : IntegralLattice V) : (-L).IsPosDef ↔ L.IsNegDef := by
+  rw [IsPosDef, IsNegDef, neg_form, LinearMap.BilinMap.toQuadraticMap_neg]
+
+/-- The form negation of a lattice is negative definite exactly when the lattice is positive
+definite. -/
+@[simp]
+theorem isNegDef_neg_iff (L : IntegralLattice V) : (-L).IsNegDef ↔ L.IsPosDef := by
+  rw [← isPosDef_neg_iff, neg_neg]
+
+/-! ## Isometries -/
+
+/-- An isometry of integral lattices is also an isometry of their scalings by a common integer. -/
+def Isometry.smul {W : Type v} [AddCommGroup W] [Module ℚ W] {L : IntegralLattice V}
+    {M : IntegralLattice W} (n : ℤ) (e : Isometry L M) : Isometry (n • L) (n • M) where
+  toLinearEquiv := e.toLinearEquiv
+  map_app' x y := by
+    simp only [smul_form, LinearMap.smul_apply]
+    exact congrArg _ (e.map_app x y)
+  map_carrier := e.map_carrier
+
+@[simp]
+theorem Isometry.smul_apply {W : Type v} [AddCommGroup W] [Module ℚ W] {L : IntegralLattice V}
+    {M : IntegralLattice W} (n : ℤ) (e : Isometry L M) (x : V) : e.smul n x = e x :=
+  (rfl)
 
 /-! ## Interaction with constructors -/
 

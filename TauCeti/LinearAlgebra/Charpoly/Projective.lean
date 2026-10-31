@@ -29,6 +29,7 @@ If `π : R ^ n → M` and `σ : M → R ^ n` split `M` off a free module, then
 `projectiveCharpolyRev f` is the reversed characteristic polynomial of the matrix of `σ ∘ f ∘ π`
 (`LinearMap.projectiveCharpolyRev_eq_charpolyRev_toMatrix`). Through this description:
 
+* its value at `1` is the determinant of `1 - f` (`LinearMap.eval_one_projectiveCharpolyRev`);
 * it commutes with base change (`LinearMap.projectiveCharpolyRev_baseChange`);
 * it is transported along semilinear isomorphisms
   (`LinearMap.projectiveCharpolyRev_eq_map_of_comp_eq`);
@@ -84,14 +85,10 @@ theorem projectiveCharpolyRev_eq_charpolyRev_toMatrix {ι F : Type*} [Fintype ι
   have : Module.Finite R F := .of_basis b
   have hX : π.baseChange R[X] ∘ₗ σ.baseChange R[X] = id := by
     rw [← baseChange_comp, h, baseChange_id]
-  have hsplit : σ.baseChange R[X] ∘ₗ (1 - (X : R[X]) • f.baseChange R[X]) ∘ₗ π.baseChange R[X] +
-      (1 - σ.baseChange R[X] ∘ₗ π.baseChange R[X]) =
-      1 - (X : R[X]) • (σ ∘ₗ f ∘ₗ π).baseChange R[X] := by
-    rw [baseChange_comp, baseChange_comp, sub_comp, comp_sub, smul_comp, comp_smul,
-      Module.End.one_eq_id, id_comp]
-    abel
-  rw [projectiveCharpolyRev, projectiveDet_eq_det_of_comp_eq_id _ _ hX, hsplit,
-    ← det_toMatrix (Algebra.TensorProduct.basis R[X] b), Matrix.charpolyRev]
+  rw [projectiveCharpolyRev, projectiveDet_eq_det_of_comp_eq_id _ _ hX,
+    ← splitEnd_apply _ _ hX, splitEnd_one_sub, smul_comp, comp_smul,
+    ← baseChange_comp, ← baseChange_comp, ← det_toMatrix (Algebra.TensorProduct.basis R[X] b),
+    Matrix.charpolyRev]
   congr 1
   let b' := Algebra.TensorProduct.basis R[X] b
   rw [Module.End.one_eq_id,
@@ -119,6 +116,19 @@ theorem coeff_projectiveCharpolyRev_zero (f : Module.End R M) :
   obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
   rw [projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h,
     coeff_zero_eq_eval_zero, Matrix.eval_charpolyRev]
+
+/-- The value at `1` of the reversed characteristic polynomial `det (1 - X f)` is the determinant
+of `1 - f`. -/
+@[simp]
+theorem eval_one_projectiveCharpolyRev (f : Module.End R M) :
+    (projectiveCharpolyRev f).eval 1 = projectiveDet (1 - f) := by
+  obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
+  have hσ : σ ∘ₗ (1 - f) ∘ₗ π + (1 - σ ∘ₗ π) = 1 - σ ∘ₗ f ∘ₗ π := by
+    ext x
+    simp
+  rw [projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h,
+    Matrix.eval_one_charpolyRev, projectiveDet_eq_det_of_comp_eq_id π σ h, hσ,
+    ← det_toMatrix (Pi.basisFun R (Fin n)), map_sub, toMatrix_one]
 
 /-- The reversed characteristic polynomial commutes with base change. -/
 @[simp]

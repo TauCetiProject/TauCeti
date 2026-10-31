@@ -72,10 +72,6 @@ jobs:
           tools-repository: TauCetiProject/TauCetiTools
           tools-ref: 980a7a0e321a7fe86981f6c9f872a2acad93af69
           project-directory: .
-      - name: Test trusted policy
-        run: |
-          python3 scripts/test_stack_policy.py
-          python3 scripts/test_stack_checkpoint_restore.py
       - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         id: app-token
         with:

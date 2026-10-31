@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded
 public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 public import TauCeti.RingTheory.RootsOfUnity.PPower

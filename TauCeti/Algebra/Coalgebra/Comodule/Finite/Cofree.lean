@@ -15,17 +15,16 @@ This file lifts the cofree right comodule `M ⊗[R] C` to the finitely generated
 category when the tensor-product carrier is finitely generated over `R`. It is the
 finite-category version of `ComoduleCat.cofree`.
 
-This is Layer 1 infrastructure for the Tau Ceti reductive-groups roadmap target
-"Comodules over a coalgebra/Hopf algebra": the finite-dimensional representation category
-needs finite versions of the regular and cofree comodules before tensor products, duals, and
-the embedding theorem can be developed.
+The cofree universal property identifies morphisms into `M ⊗[R] C` with linear maps to `M`,
+as an `R`-linear equivalence. Thus both the counit projection and the cofree lifting map
+preserve addition and scalar multiplication.
 
 ## Main definitions
 
 * `TauCeti.FGComoduleCat.cofree`: the cofree comodule as a finitely generated object.
 * `TauCeti.FGComoduleCat.cofreeMap`: functoriality between finite cofree objects.
 * `TauCeti.FGComoduleCat.cofreeLift`: the finite-category form of the cofree lifting map.
-* `TauCeti.FGComoduleCat.cofreeEquiv`: the cofree universal property in `FGComoduleCat`.
+* `TauCeti.FGComoduleCat.cofreeEquiv`: the linear cofree universal property in `FGComoduleCat`.
 * `TauCeti.FGComoduleCat.incl_cofree`: forgetting the finite cofree comodule gives the
   ambient cofree comodule.
 
@@ -159,17 +158,10 @@ theorem cofreeLift_apply (g : P →ₗ[R] M) (p : P) :
       g.rTensor C (Comodule.coact (R := R) (C := C) (M := P) p) :=
   rfl
 
-/-- The finite-category cofree universal property. -/
-@[expose] noncomputable def cofreeEquiv (P : FGComoduleCat.{u, v, max w v} R C) :
-    (P ⟶ cofree (R := R) (C := C) M) ≃ (P →ₗ[R] M) := by
-  exact
-    { toFun φ := Comodule.Hom.cofreeEquiv (R := R) (C := C) (M := M) (P := P) φ.hom
-      invFun g := cofreeLift (R := R) (C := C) P g
-      left_inv φ := by
-        apply ObjectProperty.hom_ext
-        exact (Comodule.Hom.cofreeEquiv (R := R) (C := C) (M := M) (P := P)).left_inv φ.hom
-      right_inv g :=
-        (Comodule.Hom.cofreeEquiv (R := R) (C := C) (M := M) (P := P)).right_inv g }
+/-- The finite-category cofree universal property, as an `R`-linear equivalence. -/
+noncomputable def cofreeEquiv (P : FGComoduleCat.{u, v, max w v} R C) :
+    (P ⟶ cofree (R := R) (C := C) M) ≃ₗ[R] (P →ₗ[R] M) :=
+  (homLinearEquiv P (cofree (R := R) (C := C) M)).trans Comodule.Hom.cofreeEquiv
 
 /-- The forward direction of the finite cofree adjunction sends a comodule morphism to the
 `R`-linear map obtained by applying the counit to the `C` factor. -/
@@ -177,13 +169,16 @@ theorem cofreeLift_apply (g : P →ₗ[R] M) (p : P) :
 theorem cofreeEquiv_apply (φ : P ⟶ cofree (R := R) (C := C) M) :
     cofreeEquiv (R := R) (C := C) (M := M) P φ =
       Comodule.Hom.cofreeEquiv (R := R) (C := C) (M := M) (P := P) φ.hom := by
-  rfl
+  simp only [cofreeEquiv, LinearEquiv.trans_apply]
+  rw [homLinearEquiv_apply (M := P) (N := cofree (R := R) (C := C) M) φ]
 
 /-- The inverse direction of the finite cofree adjunction is `cofreeLift`. -/
 @[simp]
 theorem cofreeEquiv_symm_apply (g : P →ₗ[R] M) : (cofreeEquiv (R := R) (C := C) (M := M) P).symm g =
-      cofreeLift (R := R) (C := C) P g :=
-  rfl
+      cofreeLift (R := R) (C := C) P g := by
+  simp only [cofreeEquiv, LinearEquiv.symm_trans_apply]
+  rw [Comodule.Hom.cofreeEquiv_symm_apply (R := R) (C := C) (M := M) (P := P) g,
+    homLinearEquiv_symm_apply (M := P) (N := cofree (R := R) (C := C) M)]
 
 end FGComoduleCat
 

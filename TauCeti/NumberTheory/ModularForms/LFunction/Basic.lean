@@ -42,8 +42,9 @@ API and Mathlib's `LSeries` of the `q`-expansion coefficients:
   continuation.
 
 The non-cuspidal abscissa bound `k + 1` is weaker than Diamond–Shurman Prop. 5.9.1
-(which gives convergence for `Re s > k` via `aₙ = O(n^{k-1})`); tightening it is a
-separate milestone of the roadmap's Layer 7. The entire continuation of the cusp-form
+(which gives convergence for `Re s > k` via `aₙ = O(n^{k-1})`). In weight `k ≥ 3` on a level
+containing `Γ₁(N)`, `TauCeti.ModularFormClass.abscissaOfAbsConv_qExpansion_coeff_le_of_Gamma1_le`
+sharpens it to `k`. The entire continuation of the cusp-form
 series is `CuspForm.hasEntireExtension_qExpansion_coeff` below.
 
 Ported from the AINTLIB `LeanModularForms` project

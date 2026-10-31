@@ -124,6 +124,12 @@ nebentypus. -/
 theorem χ_conj (f : Newform N k) : f.conj.χ = f.χ⁻¹ :=
   (rfl)
 
+/-- The Dirichlet character of the conjugate newform is the inverse of that of the newform. -/
+@[simp]
+theorem dirichletLift_conj (f : Newform N k) : f.conj.dirichletLift = f.dirichletLift⁻¹ :=
+  MulChar.ext fun u ↦ by
+    simp [dirichletLift_def, MulChar.inv_apply_eq_inv']
+
 /-- The eigenvalues of the conjugate newform are the complex conjugates of the eigenvalues. -/
 @[simp]
 theorem eigenvalue_conj (f : Newform N k) (n : ℕ+) (hn : Nat.Coprime n.val N) :

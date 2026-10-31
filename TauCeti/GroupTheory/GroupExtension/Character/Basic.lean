@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.GroupExtension.Cohomology
 public import TauCeti.GroupTheory.GroupAction.Character
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.GroupTheory.FiniteAbelian.Duality
-import TauCeti.FieldTheory.IsAlgClosed.Units
+public import Mathlib.GroupTheory.Divisible
 import Mathlib.Algebra.Category.Grp.Injective
 
 /-!
@@ -25,8 +25,9 @@ The class vanishes exactly when the character extends to the whole extension.
 Consequently, if the kernel lies in the commutator subgroup, transgression is
 injective. Conversely, when characters into the coefficient group separate the kernel's
 image in the abelianization, injectivity forces the kernel into the commutator subgroup. In
-particular, over an algebraically closed field, injectivity detects containment of the kernel
-in the commutator subgroup when the finite kernel has enough roots of unity in the field.
+particular, for units of a commutative monoid that are divisible, such as those of an
+algebraically closed field, injectivity detects containment of the kernel in the commutator
+subgroup when the finite kernel has enough roots of unity.
 For central extensions, this is exactly the stem condition. These are the
 character-theoretic criteria used to identify the kernel of a representation group with the
 dual of the factor-set class group.
@@ -178,23 +179,18 @@ theorem characterTransgression_injective_iff_range_inl_le_commutator_of_separate
     simpa [χ] using this
   exact hψ haone
 
-variable {k : Type} [Field k] [IsAlgClosed k]
-
-/-- The trivial multiplicative action of `G` on the units of `k`. -/
-local instance : MulDistribMulAction G kˣ :=
-  MulDistribMulAction.compHom kˣ (1 : G →* MulAut kˣ)
-
 omit hA in
-/-- Over an algebraically closed field, character transgression is injective exactly when
-the extension kernel lies in the commutator subgroup, provided the finite kernel has enough
-roots of unity in the field. The ambient extension need not be finite, and the characteristic
-may divide the order of the quotient. For central extensions, this detects the stem condition. -/
-theorem characterTransgression_injective_iff_range_inl_le_commutator_of_isAlgClosed
-    (α : FactorSet G M) [Finite M] [HasEnoughRootsOfUnity k (Monoid.exponent M)] :
+/-- Character transgression into the units of a commutative monoid `k` with trivial action is
+injective exactly when the extension kernel lies in the commutator subgroup, provided `kˣ` is
+divisible and the finite kernel has enough roots of unity in `k`. This applies over any
+algebraically closed field: the ambient extension need not be finite, and the characteristic may
+divide the order of the quotient. For central extensions, this detects the stem condition. -/
+theorem characterTransgression_injective_iff_range_inl_le_commutator_of_rootableBy
+    {k : Type} [CommMonoid k] [MulDistribMulAction G kˣ] (hk : ∀ (g : G) (a : kˣ), g • a = a)
+    [RootableBy kˣ ℕ] [Finite M] [HasEnoughRootsOfUnity k (Monoid.exponent M)] :
     Function.Injective (α.characterTransgression (A := kˣ)) ↔
       (inl α).range ≤ commutator α.Extension := by
-  apply characterTransgression_injective_iff_range_inl_le_commutator_of_separates α
-    (fun _ _ ↦ rfl)
+  apply characterTransgression_injective_iff_range_inl_le_commutator_of_separates α hk
   intro a hx
   -- Only the image of the kernel needs enough roots; the whole abelianization may have
   -- torsion at the characteristic. Divisibility extends a character of that image.

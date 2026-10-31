@@ -112,7 +112,7 @@ end TauCeti.GridInitialPentagonRectangleDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 /-- A counted mixed pentagon--rectangle overlap whose turn row lies outside the arc from the
 rectangle's top to the pentagon's top belongs to an initial-side self-pair. -/

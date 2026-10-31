@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Multilinear.Basic
+public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
+public import Mathlib.Topology.Algebra.Ring.Ideal
 
 /-!
 # Finite-dimensional topological vector spaces
@@ -27,7 +29,9 @@ map is assumed.
 This is the multilinear companion of `LinearMap.continuous_of_finiteDimensional`. Mathlib's
 `MultilinearMap.continuous_of_bound` asks for an explicit bound, which is exactly what one does
 not have when the multilinear map arrives from algebra — a tensor or symmetric-power
-construction, say — rather than from analysis.
+construction, say — rather than from analysis. In particular alternating maps on such a space
+are the same as continuous alternating maps: `AlternatingMap.toContinuousAlternatingMap` is the
+alternating companion of `LinearMap.toContinuousLinearMap`.
 
 In the same setting every seminorm on a finite-dimensional Hausdorff topological vector space is
 continuous: `Seminorm.continuous_of_finiteDimensional`. Such a seminorm is dominated by a multiple
@@ -39,6 +43,12 @@ The inverse of the continuous coordinate equivalence `Module.Basis.equivFunL` of
 basis `v` sends a coordinate vector `x` to the linear combination `∑ i, x i • v i`:
 `Module.Basis.equivFunL_symm_apply`, the continuous counterpart of
 `Module.Basis.equivFun_symm_apply`.
+
+A linear map with dense range out of a finite-dimensional space into a Hausdorff topological
+vector space is surjective, since its range is finite-dimensional and therefore closed:
+`LinearMap.surjective_of_denseRange`. For an algebra map `f : A → B` with dense range into a
+topological `K`-algebra, this makes `A ⧸ (J ∩ A) → B ⧸ J` bijective whenever `B ⧸ J` is Hausdorff
+and `A ⧸ (J ∩ A)` is finite over `K`: `Ideal.quotientMapₐ_bijective_of_denseRange`.
 -/
 
 public section
@@ -102,6 +112,38 @@ theorem continuous_of_finiteDimensional (f : MultilinearMap 𝕜 M N) : Continuo
 
 end MultilinearMap
 
+namespace AlternatingMap
+
+variable {𝕜 ι M N : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [Finite ι]
+  [AddCommGroup M] [Module 𝕜 M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+  [ContinuousSMul 𝕜 M] [T2Space M] [FiniteDimensional 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+  [TopologicalSpace N] [ContinuousAdd N] [ContinuousSMul 𝕜 N]
+
+/-- On a finite-dimensional Hausdorff topological vector space over a complete nontrivially
+normed field, every alternating map is continuous, so alternating maps and continuous alternating
+maps form linearly equivalent spaces. -/
+def toContinuousAlternatingMap : (M [⋀^ι]→ₗ[𝕜] N) ≃ₗ[𝕜] M [⋀^ι]→L[𝕜] N where
+  toFun f := { f with cont := f.toMultilinearMap.continuous_of_finiteDimensional }
+  invFun f := f.toAlternatingMap
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- An alternating map and its continuous version have the same values. -/
+@[simp]
+theorem coe_toContinuousAlternatingMap (f : M [⋀^ι]→ₗ[𝕜] N) :
+    ⇑(toContinuousAlternatingMap f) = f :=
+  (rfl)
+
+/-- The inverse of `AlternatingMap.toContinuousAlternatingMap` forgets continuity. -/
+@[simp]
+theorem toContinuousAlternatingMap_symm_apply (f : M [⋀^ι]→L[𝕜] N) :
+    toContinuousAlternatingMap.symm f = f.toAlternatingMap :=
+  (rfl)
+
+end AlternatingMap
+
 namespace Seminorm
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [AddCommGroup E]
@@ -146,3 +188,37 @@ vector `x` to the linear combination `∑ i, x i • v i`. -/
     rw [equivFunL_apply, ← equivFun_apply, ← v.equivFun_symm_apply, LinearEquiv.apply_symm_apply]
 
 end Module.Basis
+
+namespace LinearMap
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [FiniteDimensional 𝕜 E]
+  [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F] [Module 𝕜 F]
+  [ContinuousSMul 𝕜 F] [T2Space F]
+
+/-- **A linear map with dense range out of a finite-dimensional space is surjective**, since its
+range is a finite-dimensional, hence closed, subspace of the Hausdorff topological vector space. -/
+theorem surjective_of_denseRange {f : E →ₗ[𝕜] F} (hf : DenseRange f) :
+    Function.Surjective f := fun y ↦
+  LinearMap.mem_range.mp <| (LinearMap.range f).closed_of_finiteDimensional.closure_subset_iff.mpr
+    (LinearMap.coe_range f).ge (hf y)
+
+end LinearMap
+
+/-- **Finite quotients along a dense algebra map.** Let `f : A → B` be a `K`-algebra map with dense
+range into a topological `K`-algebra, and `J` an ideal of `B` with `B ⧸ J` Hausdorff. If
+`A ⧸ (J ∩ A)` is finite over `K`, then the induced map `A ⧸ (J ∩ A) → B ⧸ J` is bijective. -/
+theorem Ideal.quotientMapₐ_bijective_of_denseRange {K A B : Type*} [NontriviallyNormedField K]
+    [CompleteSpace K] [CommRing A] [Algebra K A] [CommRing B] [Algebra K B] [TopologicalSpace B]
+    [IsTopologicalRing B] [ContinuousSMul K B] {f : A →ₐ[K] B} (hf : DenseRange f) (J : Ideal B)
+    [T2Space (B ⧸ J)] [Module.Finite K (A ⧸ J.comap f)] :
+    Function.Bijective (Ideal.quotientMapₐ J f le_rfl) := by
+  have : ContinuousSMul K (B ⧸ J) := continuousSMul_of_algebraMap K (B ⧸ J) <| by
+    rw [IsScalarTower.algebraMap_eq K B (B ⧸ J), RingHom.coe_comp, Ideal.Quotient.algebraMap_eq]
+    exact continuous_quot_mk.comp (continuous_algebraMap K B)
+  -- The range contains the dense image of `A` in `B ⧸ J`.
+  refine ⟨Ideal.quotientMap_injective, LinearMap.surjective_of_denseRange
+    (f := (Ideal.quotientMapₐ J f le_rfl).toLinearMap) (Dense.mono ?_
+      ((Ideal.Quotient.mk_surjective (I := J)).denseRange.comp hf continuous_quotient_mk'))⟩
+  rintro _ ⟨a, rfl⟩
+  exact ⟨Ideal.Quotient.mk _ a, rfl⟩

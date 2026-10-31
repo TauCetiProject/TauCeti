@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Localization.BaseChange
 
@@ -21,9 +22,13 @@ Mathlib's `isBaseChange_tensorProduct_map` is the analogous statement when only 
 base changed and the tensor product stays over the base ring.
 
 If `f : M →ₗ[R] N` exhibits `N` as the base change of `M` along `R → S`, then the `S`-linear map
-`S ⊗[R] M →ₗ[S] N` it induces, Mathlib's `LinearMap.liftBaseChange`, is injective: it is the
+`S ⊗[R] M →ₗ[S] N` it induces, Mathlib's `LinearMap.liftBaseChange`, is bijective: it is the
 equivalence `IsBaseChange.equiv`.
 The original map `f` is also injective whenever the scalar-unit map `m ↦ 1 ⊗ m` is injective.
+
+Base change of linear maps is compatible with the induced maps `S ⊗[R] M →ₗ[S] N`: a commutative
+square of `R`-linear maps gives a commutative square of the induced `S`-linear maps. The map
+induced on a finite product is injective as soon as each factor induces an injective map.
 
 For any localization, extension also preserves injectivity of a linear map into a module over
 the localized semiring, without requiring its image to span the target.
@@ -32,10 +37,12 @@ the localized semiring, without requiring its image to span the target.
 
 * `IsBaseChange.tensorProduct`: a tensor product of base changes is a base change of the tensor
   product.
-* `IsBaseChange.liftBaseChange_injective`: the map `S ⊗[R] M →ₗ[S] N` induced by a base change is
-  injective.
+* `IsBaseChange.liftBaseChange_bijective`, `IsBaseChange.liftBaseChange_injective`: the map
+  `S ⊗[R] M →ₗ[S] N` induced by a base change is bijective, in particular injective.
 * `IsBaseChange.injective_of_tensorProduct_mk_injective`: a base-change map is injective when
   the scalar-unit map `M → S ⊗[R] M` is injective.
+* `LinearMap.liftBaseChange_comp_baseChange`: naturality of the induced map `S ⊗[R] M → N`.
+* `LinearMap.liftBaseChange_pi_injective`: injectivity of the induced map on finite products.
 * `LinearMap.liftBaseChange_injective`: extension to a localization preserves injectivity of a
   map into a module over the localized semiring, without a full-span hypothesis.
 -/
@@ -63,14 +70,20 @@ theorem IsBaseChange.tensorProduct {f : M →ₗ[R] N} {g : M' →ₗ[R] N'}
   | add x y hx hy => simp_all [TensorProduct.tmul_add]
 
 /-- If `f` exhibits `N` as the base change of `M` along `R → S`, then the induced `S`-linear map
-`f.liftBaseChange S : S ⊗[R] M →ₗ[S] N` is injective, since it is the equivalence `hf.equiv`. -/
-theorem IsBaseChange.liftBaseChange_injective {f : M →ₗ[R] N} (hf : IsBaseChange S f) :
-    Function.Injective (f.liftBaseChange S) := by
+`f.liftBaseChange S : S ⊗[R] M →ₗ[S] N` is bijective, since it is the equivalence `hf.equiv`. -/
+theorem IsBaseChange.liftBaseChange_bijective {f : M →ₗ[R] N} (hf : IsBaseChange S f) :
+    Function.Bijective (f.liftBaseChange S) := by
   have : f.liftBaseChange S = hf.equiv.toLinearMap := by
     ext
     simp [IsBaseChange.equiv_tmul]
   rw [this]
-  exact hf.equiv.injective
+  exact hf.equiv.bijective
+
+/-- If `f` exhibits `N` as the base change of `M` along `R → S`, then the induced `S`-linear map
+`f.liftBaseChange S : S ⊗[R] M →ₗ[S] N` is injective, since it is the equivalence `hf.equiv`. -/
+theorem IsBaseChange.liftBaseChange_injective {f : M →ₗ[R] N} (hf : IsBaseChange S f) :
+    Function.Injective (f.liftBaseChange S) :=
+  hf.liftBaseChange_bijective.1
 
 /-- A base-change map is injective whenever the scalar-unit map `m ↦ 1 ⊗ m` is injective,
 since the original map factors through this map and the base-change equivalence. -/
@@ -81,6 +94,41 @@ theorem IsBaseChange.injective_of_tensorProduct_mk_injective {f : M →ₗ[R] N}
   apply hinj
   apply hf.equiv.injective
   simpa only [TensorProduct.mk_apply, hf.equiv_tmul, one_smul] using hxy
+
+section
+
+variable (S) {M₁ M₂ N₁ N₂ : Type*} [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid N₁]
+  [AddCommMonoid N₂] [Module R M₁] [Module R M₂] [Module R N₁] [Module R N₂] [Module S N₁]
+  [Module S N₂] [IsScalarTower R S N₁] [IsScalarTower R S N₂]
+
+/-- The base change of `f` followed by the map induced by `h₂` is the map induced by `h₁` followed
+by `f'`, whenever `h₂ ∘ f = f' ∘ h₁`. -/
+theorem LinearMap.liftBaseChange_comp_baseChange {h₁ : M₁ →ₗ[R] N₁} {h₂ : M₂ →ₗ[R] N₂}
+    {f : M₁ →ₗ[R] M₂} {f' : N₁ →ₗ[S] N₂}
+    (comm : h₂.comp f = (f'.restrictScalars R).comp h₁) :
+    (h₂.liftBaseChange S).comp (f.baseChange S) = f'.comp (h₁.liftBaseChange S) := by
+  ext m
+  simpa using congr($comm m)
+
+/-- The map `S ⊗[R] (∀ i, M i) → ∀ i, N i` induced by a finite product of maps `f i : M i → N i` is
+injective if each `S ⊗[R] M i → N i` is. -/
+theorem LinearMap.liftBaseChange_pi_injective {ι : Type*} [Finite ι] {M N : ι → Type*}
+    [∀ i, AddCommMonoid (M i)] [∀ i, AddCommMonoid (N i)] [∀ i, Module R (M i)]
+    [∀ i, Module R (N i)] [∀ i, Module S (N i)] [∀ i, IsScalarTower R S (N i)]
+    (f : ∀ i, M i →ₗ[R] N i) (hf : ∀ i, Function.Injective ((f i).liftBaseChange S)) :
+    Function.Injective ((LinearMap.pi fun i ↦ f i ∘ₗ LinearMap.proj i).liftBaseChange S) := by
+  classical
+  cases nonempty_fintype ι
+  have h : (LinearMap.pi fun i ↦ f i ∘ₗ LinearMap.proj i).liftBaseChange S =
+      (LinearMap.pi fun i ↦ (f i).liftBaseChange S ∘ₗ LinearMap.proj i) ∘ₗ
+        (TensorProduct.piRight R S S M).toLinearMap := by
+    ext x i
+    simp
+  rw [h, LinearMap.coe_comp]
+  exact Function.Injective.comp (fun _ _ hxy ↦ funext fun i ↦ hf i (congrFun hxy i))
+    (TensorProduct.piRight R S S M).injective
+
+end
 
 section
 

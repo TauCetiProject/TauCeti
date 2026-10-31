@@ -41,6 +41,8 @@ instance — independent of the presentation up to summands built from projectiv
   module are stably isomorphic as arrows.
 * `LinearMap.projective_ker_of_projective_ker`: whether the kernel of a surjection from a
   projective module is projective does not depend on the surjection.
+* `LinearMap.projective_ker_of_surjective`: the kernel of a surjection between projective modules
+  is projective.
 
 ## References
 
@@ -199,6 +201,15 @@ theorem _root_.LinearMap.projective_ker_of_projective_ker (f : P →ₗ[R] M)
   let i : ker f →ₗ[R] P × ker g := (fst R P Q ∘ₗ a).prod ((snd R P Q ∘ₗ a).codRestrict _ ha)
   refine .of_split i (b.codRestrict _ hb) (LinearMap.ext fun x ↦ Subtype.ext ?_)
   simp [i, a, b]
+
+/-- **The kernel of a surjection between projective modules is projective.** This is the case
+`g = id` of `LinearMap.projective_ker_of_projective_ker`, since `ker id` is zero. -/
+theorem _root_.LinearMap.projective_ker_of_surjective {N : Type*} [AddCommGroup N] [Module R N]
+    [Module.Projective R N] (f : P →ₗ[R] N) (hf : Function.Surjective f) :
+    Module.Projective R (ker f) :=
+  have : Module.Projective R (ker (id : N →ₗ[R] N)) :=
+    .of_split (0 : _ →ₗ[R] PUnit.{1}) 0 (LinearMap.ext fun x ↦ Subtype.ext (mem_ker.mp x.2).symm)
+  f.projective_ker_of_projective_ker hf id Function.surjective_id
 
 end Kernel
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
-public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 public import TauCeti.RingTheory.Idempotents.SquareRootOne
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import Mathlib.FieldTheory.IsSepClosed
@@ -51,8 +51,8 @@ map is a subalgebra, the generators `ι Q v` are in it because
 with `ω · ι Q v` even, and `CliffordAlgebra.adjoin_range_ι` says the generators generate.
 
 The element the theorem is meant for is the **volume element** of
-`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement.lean`: the ordered product `ω = v₁ ⋯ vₙ` of a
-pairwise orthogonal spanning list of **odd** length is central
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Basic.lean`: the ordered product
+`ω = v₁ ⋯ vₙ` of a pairwise orthogonal spanning list of **odd** length is central
 (`CliffordAlgebra.prod_map_ι_mem_center_of_odd_length`) and odd, and its square is the scalar
 `(-1) ^ (n.choose 2) ∏ᵢ Q vᵢ` (`CliffordAlgebra.prod_map_ι_sq_scalar`). Rescaling `ω` by a scalar
 `s` whose square inverts that constant normalizes the square to `1`, which is what
@@ -65,7 +65,7 @@ Only the odd case splits this way. For a list of even length the volume element 
 the generators coming from the span of the list rather than commuting with them
 (`CliffordAlgebra.prod_map_ι_mul_ι_of_even_length`). Anticommutation does not by itself rule out
 centrality — in an exterior algebra the volume element annihilates the generators and is central
-all the same, as `VolumeElement.lean` records — but it does rule it out under the hypotheses this
+all the same, as that file records — but it does rule it out under the hypotheses this
 file works with: were an even-length `ω` with `ω * ω = 1` central, then `2` being invertible would
 give `ι Q m * ω = 0`, hence `ι Q m = ι Q m * ω * ω = 0`, for every `m` in the span of the list. The
 even-dimensional Clifford algebra over a separably closed field is instead a matrix algebra, proved

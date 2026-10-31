@@ -141,7 +141,60 @@ theorem mextDeriv_wedge {φ : RoughForm I M ℝ k} {ψ : RoughForm I M ℝ l}
   simpa only [RoughForm.wedge_def] using
     mextDeriv_wedgeWith (ContinuousLinearMap.mul ℝ ℝ) hφ hψ v
 
+omit [IsManifold I 1 M] in
+/-- Forms of propositionally equal degrees which agree after reindexing their arguments have
+exterior derivatives which agree after the same reindexing. This transports the wedge `f ∧ φ`,
+of degree `0 + l`, to the pointwise product `f φ`, of degree `l`. -/
+private theorem mextDeriv_apply_eq_of_degree_eq {a b : ℕ} (h : a = b) {φ : RoughForm I M ℝ a}
+    {ψ : RoughForm I M ℝ b} (hφψ : ∀ y u, φ y u = ψ y (u ∘ Fin.cast h.symm))
+    (v : Fin (a + 1) → TangentSpace I x) :
+    mextDeriv φ x v = mextDeriv ψ x (v ∘ Fin.cast (congrArg (· + 1) h).symm) := by
+  subst h
+  have hφψ' : φ = ψ := funext fun y ↦ ContinuousAlternatingMap.ext fun u ↦ by
+    rw [hφψ, Fin.cast_refl, Function.comp_id]
+  rw [hφψ', Fin.cast_refl, Function.comp_id]
+
+/-- The Leibniz rule for a function times a form: `d (f φ) = df ∧ φ + f dφ`, at a point where
+`f` and `φ` are differentiable. The degree `0 + 1 + l` of `df ∧ φ` is identified with
+`l + 1` by `Fin.cast`. -/
+theorem mextDeriv_fun_smul {f : M → ℝ} {φ : RoughForm I M ℝ l}
+    (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f x)
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin l]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin l]→L[ℝ] ℝ) y (φ y)) x)
+    (v : Fin (l + 1) → TangentSpace I x) :
+    mextDeriv (fun y ↦ f y • φ y) x v =
+      (mextDeriv (RoughForm.ofFunction I f)).wedge φ x
+          (v ∘ Fin.cast (show 0 + 1 + l = l + 1 by omega)) +
+        f x * mextDeriv φ x v := by
+  have hf' := mdifferentiableAt_ofFunction hf
+  -- `f φ` is the wedge `f ∧ φ`, read in degree `l` instead of `0 + l`.
+  have hsmul : ∀ y (u : Fin l → TangentSpace I y), (f y • φ y) u =
+      (RoughForm.ofFunction I f).wedge φ y (u ∘ Fin.cast (zero_add l)) := by
+    intro y u
+    rw [RoughForm.ofFunction_wedge_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
+    simp only [Function.comp_apply, Fin.cast_cast, Fin.cast_eq_self]
+  rw [mextDeriv_apply_eq_of_degree_eq (zero_add l).symm hsmul, mextDeriv_wedge hf' hφ, pow_zero,
+    one_smul, RoughForm.ofFunction_wedge_apply]
+  simp only [Function.comp_def, Fin.cast_cast, Fin.cast_eq_self]
+
+/-- The Leibniz rule for a function times a one-form: `d (f α) = df ∧ α + f dα`, evaluated on a
+pair of tangent vectors, at a point where `f` and `α` are differentiable. -/
+theorem mextDeriv_fun_smul_apply {f : M → ℝ} {α : RoughForm I M ℝ 1}
+    (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f x)
+    (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
+    (v w : TangentSpace I x) :
+    mextDeriv (fun y ↦ f y • α y) x ![v, w] =
+      mvfderiv I f x v * α x ![w] - mvfderiv I f x w * α x ![v] +
+        f x * mextDeriv α x ![v, w] := by
+  have hvw : ∀ h : 0 + 1 + 1 = 1 + 1, (![v, w] ∘ Fin.cast h : Fin 2 → TangentSpace I x) =
+      ![v, w] := fun _ ↦ funext fun i ↦ by fin_cases i <;> rfl
+  rw [mextDeriv_fun_smul hf hα, hvw, RoughForm.wedge_apply_one_one, mextDeriv_ofFunction]
+  simp only [ContinuousAlternatingMap.ofSubsingleton_apply_apply, Matrix.cons_val_fin_one]
+
 namespace SmoothForm
+
+/-! ### Smooth-form interface -/
 
 /-- The exterior derivative of a paired wedge of smooth forms, evaluated on tangent vectors. -/
 theorem mextDeriv_wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
@@ -152,18 +205,51 @@ theorem mextDeriv_wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
           (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
         (-1 : ℝ) ^ k • RoughForm.wedgeWith μ φ.1 (mextDeriv ψ.1) x
           (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
-  exact mextDeriv_wedgeWith μ (φ.mdifferentiableAt x) (ψ.mdifferentiableAt x) v
+  exact TauCeti.mextDeriv_wedgeWith μ (φ.mdifferentiableAt x) (ψ.mdifferentiableAt x) v
 
-/-- The exterior derivative of the real wedge of smooth forms, evaluated on tangent vectors. -/
+/-- The exterior derivative of the real wedge `RoughForm.wedge` of the underlying forms of two
+smooth forms, evaluated on tangent vectors. See `SmoothForm.mextDerivₗ_wedge` for the bundled
+law. -/
 theorem mextDeriv_wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) (x : M)
     (v : Fin (k + l + 1) → TangentSpace I x) :
     mextDeriv (RoughForm.wedge φ.1 ψ.1) x v =
       RoughForm.wedge (mextDeriv φ.1) ψ.1 x
           (v ∘ Fin.cast (show k + 1 + l = k + l + 1 by omega)) +
-        (-1 : ℝ) ^ k • φ.1.wedge (mextDeriv ψ.1) x
+        (-1 : ℝ) ^ k • RoughForm.wedge φ.1 (mextDeriv ψ.1) x
           (v ∘ Fin.cast (show k + (l + 1) = k + l + 1 by omega)) := by
   simpa only [RoughForm.wedge_def] using
     mextDeriv_wedgeWith_apply (ContinuousLinearMap.mul ℝ ℝ) φ ψ x v
+
+/-- The bundled exterior derivative of a paired wedge of smooth forms. The two terms on the
+right are transported across the degree associativity equalities. -/
+theorem mextDerivₗ_wedgeWith [IsManifold I 2 M] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : SmoothForm I M F₁ k) (ψ : SmoothForm I M F₂ l) :
+    mextDerivₗ I (k + l) (SmoothForm.wedgeWith μ φ ψ) =
+      LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F₃ q)
+        (show k + 1 + l = k + l + 1 by omega)
+        (SmoothForm.wedgeWith μ (mextDerivₗ I k φ) ψ) +
+      (-1 : ℝ) ^ k • LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M F₃ q)
+        (show k + (l + 1) = k + l + 1 by omega)
+        (SmoothForm.wedgeWith μ φ (mextDerivₗ I l ψ)) := by
+  apply Subtype.ext
+  ext x v
+  simpa only [mextDerivₗ_apply, SmoothForm.coe_wedgeWith, Submodule.coe_add,
+    Submodule.coe_smul, Pi.add_apply, Pi.smul_apply, ContinuousAlternatingMap.add_apply,
+    ContinuousAlternatingMap.smul_apply, SmoothForm.cast_apply] using
+    mextDeriv_wedgeWith_apply μ φ ψ x v
+
+/-- The bundled exterior derivative of the real wedge of smooth forms. -/
+theorem mextDerivₗ_wedge [IsManifold I 2 M] (φ : SmoothForm I M ℝ k)
+    (ψ : SmoothForm I M ℝ l) :
+    mextDerivₗ I (k + l) (SmoothForm.wedge φ ψ) =
+      LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
+        (show k + 1 + l = k + l + 1 by omega)
+        (SmoothForm.wedge (mextDerivₗ I k φ) ψ) +
+      (-1 : ℝ) ^ k • LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q)
+        (show k + (l + 1) = k + l + 1 by omega)
+        (SmoothForm.wedge φ (mextDerivₗ I l ψ)) := by
+  simpa only [SmoothForm.wedge_def] using
+    mextDerivₗ_wedgeWith (ContinuousLinearMap.mul ℝ ℝ) φ ψ
 
 end SmoothForm
 

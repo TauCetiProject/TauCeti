@@ -11,8 +11,11 @@ public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Exact
 
 import Mathlib.NumberTheory.NumberField.Units.Basic
+import TauCeti.Algebra.Group.Subgroup.ZPowers
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 /-!
 # The ray class group of `ℚ` modulo `(n)·∞`
@@ -24,7 +27,8 @@ of that generator modulo `n`.  In particular the ray class of a nonzero integral
 `n` is its absolute norm modulo `n`.
 
 The real place is essential.  For the modulus `(n)` without it, both `a` and `-a` generate the
-same ideal, so the ray class group is only `(ZMod n)ˣ ⧸ {±1}`.
+same ideal, so the ray class group is only `(ZMod n)ˣ ⧸ {±1}`.  For `n > 2` this has half the
+order of `(ZMod n)ˣ`, so the two moduli give genuinely different ray class groups.
 
 The equivalence is read off from the ray class exact sequence.  The class group of `ℚ` is
 trivial, so every ray class is the class of a residue unit modulo `n` and a sign at the real
@@ -39,6 +43,8 @@ and a class with positive sign is determined by its residue.
 * `TauCeti.GlobalNumberFields.ratModulusEquivZMod`: the ray class group of `ratModulus n hn` is
   `(ZMod n)ˣ`.
 * `TauCeti.GlobalNumberFields.ratFiniteModulus`: the modulus `(n)` of `ℚ` without the real place.
+* `TauCeti.GlobalNumberFields.ratFiniteModulusEquivZMod`: the ray class group of
+  `ratFiniteModulus n hn` is `(ZMod n)ˣ ⧸ {±1}`.
 
 ## Main results
 
@@ -55,6 +61,12 @@ and a class with positive sign is determined by its residue.
 * `TauCeti.GlobalNumberFields.ratModulus_dvd_ratModulus_iff` and
   `TauCeti.GlobalNumberFields.ratFiniteModulus_dvd_ratModulus_iff`: divisibility of the moduli
   `(d)·∞` and `(d)` into `(n)·∞` is `d ∣ n`.
+* `TauCeti.GlobalNumberFields.ratFiniteModulusEquivZMod_classMap`: the transition map from
+  `(n)·∞` to `(d)` is reduction modulo `d` followed by the quotient by `±1`.
+* `TauCeti.GlobalNumberFields.ratFiniteModulusEquivZMod_idealClass`: the ray class modulo `(n)` of
+  a nonzero integral ideal prime to `n` is its absolute norm modulo `n`, up to sign.
+* `TauCeti.GlobalNumberFields.two_mul_card_rayClassGroup_ratFiniteModulus`: for `n > 2`, the ray
+  class group modulo `(n)` has order `φ(n) / 2`.
 
 ## References
 
@@ -131,36 +143,24 @@ private theorem exists_zmodUnitsToRayClass_eq_idealClass
     ∃ u : (ZMod n)ˣ, (u : ZMod n) = Ideal.absNorm (I : Ideal (𝓞 ℚ)) ∧
       zmodUnitsToRayClass n hn u = idealClass (ratModulus n hn) I := by
   set a := Ideal.absNorm (I : Ideal (𝓞 ℚ)) with ha_def
-  have ha : (a : ℚ) ≠ 0 := by
-    rw [Nat.cast_ne_zero, ha_def, Ne, Ideal.absNorm_eq_zero_iff]
+  have ha : a ≠ 0 := by
+    rw [ha_def, Ne, Ideal.absNorm_eq_zero_iff]
     exact (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)).1
-  let x : ℚˣ := Units.mk0 a ha
-  -- The principal ideal of the norm is `I` itself.
-  have hI : toPrincipalIdeal (𝓞 ℚ) ℚ x =
-      (NumberFieldArithmetic.integralIdealsAwayHom ℚ (ratModulus n hn).support I :
-        (FractionalIdeal (𝓞 ℚ)⁰ ℚ)ˣ) := by
-    refine Units.ext ?_
-    rw [coe_toPrincipalIdeal, NumberFieldArithmetic.coe_integralIdealsAwayHom]
-    conv_rhs => rw [← Rat.RingOfIntegers.ideal_span_absNorm_eq_self (I : Ideal (𝓞 ℚ))]
-    rw [FractionalIdeal.coeIdeal_span_singleton, map_natCast, Units.val_mk0]
-  have hx : x ∈ primeToSubgroup (ratModulus n hn) :=
-    NumberFieldArithmetic.toPrincipalIdeal_mem_idealsAway_iff.mp
-      (hI ▸ (NumberFieldArithmetic.integralIdealsAwayHom ℚ (ratModulus n hn).support I).2)
-  set r := residueHom (ratModulus n hn) ⟨x, hx⟩
+  -- The norm generates `I`, so the ray class of `I` is the principal ray class of the norm.
+  obtain ⟨x, hxa, hIx⟩ := exists_idealClass_eq_principalRayClass
+    (Rat.RingOfIntegers.ideal_span_absNorm_eq_self (I : Ideal (𝓞 ℚ))).symm
+  push_cast [← ha_def] at hxa
+  set r := residueHom (ratModulus n hn) x
   refine ⟨Units.mapEquiv (ratModulusResidueEquiv n hn).toMulEquiv r, ?_, ?_⟩
   · rw [Units.coe_mapEquiv, RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv, coe_residueHom,
-      residue_eq (a := (a : 𝓞 ℚ)) (b := 1) _ (by simp) (by simp [x]),
+      residue_eq (a := (a : 𝓞 ℚ)) (b := 1) _ (by simp) (by simp [hxa]),
       ratModulusResidueEquiv_mk, map_natCast, Int.cast_natCast]
   · -- The norm is positive at the real place, so the class is that of its residue alone.
-    have hsign : modulusSignHom (ratModulus n hn) x = 1 :=
-      (modulusSignHom_eq_one_iff x).mpr fun w _ ↦ by
-        rw [Units.val_mk0, map_natCast]
-        exact Nat.cast_pos.mpr (Nat.pos_of_ne_zero (by exact_mod_cast ha))
-    have hJ : NumberFieldArithmetic.integralIdealsAwayHom ℚ (ratModulus n hn).support I =
-        NumberFieldArithmetic.principalIdealAway ℚ (ratModulus n hn).support ⟨x, hx⟩ :=
-      Subtype.ext (by rw [NumberFieldArithmetic.coe_principalIdealAway]; exact hI.symm)
-    rw [idealClass_apply, hJ, ← principalRayClass_apply, ← residueSignRayClass_residueSignHom,
-      zmodUnitsToRayClass_apply]
+    have hsign : modulusSignHom (ratModulus n hn) (x : ℚˣ) = 1 :=
+      (modulusSignHom_eq_one_iff (x : ℚˣ)).mpr fun w _ ↦ by
+        rw [hxa, map_natCast]
+        exact Nat.cast_pos.mpr (Nat.pos_of_ne_zero ha)
+    rw [hIx, ← residueSignRayClass_residueSignHom, zmodUnitsToRayClass_apply]
     refine congrArg _ (Prod.ext (Units.ext ?_) ((residueSignHom_snd _ _).trans hsign).symm)
     simp [r]
 
@@ -230,7 +230,7 @@ theorem ratModulus_dvd_ratModulus_iff {d : ℕ} {hd : d ≠ 0} :
     ratModulus d hd ∣ ratModulus n hn ↔ d ∣ n := by
   rw [Modulus.dvd_iff, ratModulus_finitePart, ratModulus_finitePart, ratModulus_infinitePart,
     ratModulus_infinitePart, Ideal.span_singleton_dvd_span_singleton_iff_dvd,
-    Rat.RingOfIntegers.natCast_dvd_natCast, and_iff_left (Finset.Subset.refl _)]
+    NumberField.RingOfIntegers.natCast_dvd_natCast, and_iff_left (Finset.Subset.refl _)]
 
 /-- **The transition map from `(n)·∞` to `(d)·∞` is reduction modulo `d` on `(ZMod n)ˣ`.** -/
 theorem ratModulusEquivZMod_classMap {d : ℕ} {hd : d ≠ 0} (h : ratModulus d hd ∣ ratModulus n hn)
@@ -288,10 +288,112 @@ theorem ratFiniteModulus_dvd_ratModulus_iff {d : ℕ} {hd : d ≠ 0} :
     ratFiniteModulus d hd ∣ ratModulus n hn ↔ d ∣ n := by
   rw [Modulus.dvd_iff, ratFiniteModulus_finitePart, ratModulus_finitePart,
     ratFiniteModulus_infinitePart, Ideal.span_singleton_dvd_span_singleton_iff_dvd,
-    Rat.RingOfIntegers.natCast_dvd_natCast, and_iff_left (Finset.empty_subset _)]
+    NumberField.RingOfIntegers.natCast_dvd_natCast, and_iff_left (Finset.empty_subset _)]
 
 /-- The modulus `(n)` divides `(n)·∞`. -/
 theorem ratFiniteModulus_dvd_ratModulus : ratFiniteModulus n hn ∣ ratModulus n hn :=
   ratFiniteModulus_dvd_ratModulus_iff.mpr dvd_rfl
+
+/-! ### The ray class group of `ℚ` modulo `(n)` -/
+
+/-- The ray class modulo `(n)` of a positive rational with residue `u` modulo `n`: the class
+modulo `(n)·∞` attached to `u` by `ratModulusEquivZMod`, with the real place forgotten. -/
+private noncomputable def zmodUnitsToFiniteRayClass :
+    (ZMod n)ˣ →* RayClassGroup (ratFiniteModulus n hn) :=
+  (classMap ratFiniteModulus_dvd_ratModulus).comp (ratModulusEquivZMod n hn).symm.toMonoidHom
+
+private theorem zmodUnitsToFiniteRayClass_surjective :
+    Function.Surjective (zmodUnitsToFiniteRayClass (n := n) (hn := hn)) :=
+  (classMap_surjective _).comp (ratModulusEquivZMod n hn).symm.surjective
+
+/-- A unit modulo `n` has trivial ray class modulo `(n)` exactly when it is `±1`: forgetting the
+real place kills precisely the class of the sign `-1`, which is `-1 ∈ (ZMod n)ˣ`. -/
+private theorem ker_zmodUnitsToFiniteRayClass :
+    (zmodUnitsToFiniteRayClass (n := n) (hn := hn)).ker = Subgroup.zpowers (-1) := by
+  ext u
+  rw [Subgroup.mem_zpowers_iff_of_sq_eq_one neg_one_sq, MonoidHom.mem_ker,
+    zmodUnitsToFiniteRayClass, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    classMap_eq_one_iff_of_finitePart_eq _ (by simp)]
+  -- The modulus `(n)` has no real place, so the sign pattern is unconstrained; since the real
+  -- place is the only element of the infinite part of `(n)·∞`, the pattern is `1` or `-1`.
+  let w₀ : (ratModulus n hn).infinitePart :=
+    ⟨⟨Rat.infinitePlace, Rat.isReal_infinitePlace⟩, by simp⟩
+  constructor
+  · rintro ⟨s, -, hs⟩
+    rw [MulEquiv.eq_symm_apply] at hs
+    rcases Int.units_eq_one_or (s w₀) with h | h
+    · have hs' : s = 1 := funext fun w ↦ by rw [Subsingleton.elim w w₀, h, Pi.one_apply]
+      rw [← hs, hs', Prod.mk_one_one, map_one, map_one]
+      exact Or.inl rfl
+    · have hs' : s = fun _ ↦ -1 := funext fun w ↦ by rw [Subsingleton.elim w w₀, h]
+      rw [← hs, hs', ratModulusEquivZMod_residueSignRayClass_neg_one]
+      exact Or.inr rfl
+  · rintro (rfl | rfl)
+    · exact ⟨1, fun _ _ ↦ rfl, by rw [Prod.mk_one_one, map_one, map_one]⟩
+    · refine ⟨fun _ ↦ -1, fun w hw ↦ by simp at hw, ?_⟩
+      rw [MulEquiv.eq_symm_apply, ratModulusEquivZMod_residueSignRayClass_neg_one]
+
+variable (n hn)
+
+/-- **The ray class group of `ℚ` modulo `(n)` is `(ZMod n)ˣ ⧸ {±1}`.**  Without the real place, a
+fractional ideal of `ℚ` prime to `n` has the two generators `±a` on an equal footing, so its ray
+class is the residue of a generator modulo `n`, up to sign. -/
+noncomputable def ratFiniteModulusEquivZMod :
+    RayClassGroup (ratFiniteModulus n hn) ≃* (ZMod n)ˣ ⧸ Subgroup.zpowers (-1) :=
+  ((QuotientGroup.quotientMulEquivOfEq ker_zmodUnitsToFiniteRayClass).symm.trans
+    (QuotientGroup.quotientKerEquivOfSurjective _ zmodUnitsToFiniteRayClass_surjective)).symm
+
+variable {n hn}
+
+private theorem ratFiniteModulusEquivZMod_zmodUnitsToFiniteRayClass (u : (ZMod n)ˣ) :
+    ratFiniteModulusEquivZMod n hn (zmodUnitsToFiniteRayClass u) = u := by
+  rw [ratFiniteModulusEquivZMod, MulEquiv.symm_apply_eq, MulEquiv.trans_apply,
+    (MulEquiv.symm_apply_eq _).mpr (QuotientGroup.quotientMulEquivOfEq_mk _ u).symm,
+    TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
+
+/-- **Forgetting the real place is reduction modulo `±1`.**  For `d ∣ n`, the transition map from
+`(n)·∞` to `(d)` sends the class of `u ∈ (ZMod n)ˣ` to the class of its reduction modulo `d`, up to
+sign. -/
+theorem ratFiniteModulusEquivZMod_classMap {d : ℕ} {hd : d ≠ 0}
+    (h : ratFiniteModulus d hd ∣ ratModulus n hn) (c : RayClassGroup (ratModulus n hn)) :
+    ratFiniteModulusEquivZMod d hd (classMap h c) =
+      ZMod.unitsMap (ratFiniteModulus_dvd_ratModulus_iff.mp h) (ratModulusEquivZMod n hn c) := by
+  have hdn := ratFiniteModulus_dvd_ratModulus_iff.mp h
+  have h₂ : ratModulus d hd ∣ ratModulus n hn := ratModulus_dvd_ratModulus_iff.mpr hdn
+  rw [← classMap_classMap ratFiniteModulus_dvd_ratModulus h₂, ← ratModulusEquivZMod_classMap h₂,
+    ← ratFiniteModulusEquivZMod_zmodUnitsToFiniteRayClass]
+  refine congrArg (ratFiniteModulusEquivZMod d hd) ?_
+  rw [zmodUnitsToFiniteRayClass, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    MulEquiv.symm_apply_apply]
+
+/-- **The ray class modulo `(n)` of a nonzero integral ideal prime to `n` is its absolute norm
+modulo `n`, up to sign.** -/
+theorem ratFiniteModulusEquivZMod_idealClass (I : integralIdealsPrimeTo (ratFiniteModulus n hn))
+    {u : (ZMod n)ˣ} (hu : (u : ZMod n) = Ideal.absNorm (I : Ideal (𝓞 ℚ))) :
+    ratFiniteModulusEquivZMod n hn (idealClass (ratFiniteModulus n hn) I) = u := by
+  -- The two moduli have the same finite part, hence the same integral ideals prime to them.
+  have hI : (I : Ideal (𝓞 ℚ)) ∈ integralIdealsPrimeTo (ratModulus n hn) := by
+    have := Modulus.mem_integralIdealsPrimeTo.mp I.2
+    rw [Modulus.isCoprimeTo_iff_sup_eq_top, ratFiniteModulus_finitePart] at this
+    rwa [Modulus.mem_integralIdealsPrimeTo, Modulus.isCoprimeTo_iff_sup_eq_top,
+      ratModulus_finitePart]
+  have hincl : integralIdealsPrimeToInclusion ratFiniteModulus_dvd_ratModulus ⟨_, hI⟩ = I :=
+    Subtype.ext (coe_integralIdealsPrimeToInclusion _ _)
+  rw [← hincl, ← classMap_idealClass, ratFiniteModulusEquivZMod_classMap, ZMod.unitsMap_self]
+  congr 1
+  exact Units.ext ((coe_ratModulusEquivZMod_idealClass n hn _).trans hu.symm)
+
+/-- **The ray class group of `ℚ` modulo `(n)` has half the order of the one modulo `(n)·∞`** once
+`n > 2`, so that `-1 ≠ 1` modulo `n`: its order is `φ(n) / 2`, while
+`RayClassGroup (ratModulus n hn)` has order `φ(n)`.  The real place therefore genuinely enlarges
+the ray class group. -/
+theorem two_mul_card_rayClassGroup_ratFiniteModulus (h2 : 2 < n) :
+    2 * Nat.card (RayClassGroup (ratFiniteModulus n hn)) = n.totient := by
+  have : NeZero n := ⟨hn⟩
+  have : Fact (2 < n) := ⟨h2⟩
+  have hne : (-1 : (ZMod n)ˣ) ≠ 1 := fun h ↦ ZMod.neg_one_ne_one (congrArg Units.val h)
+  rw [Nat.card_congr (ratFiniteModulusEquivZMod n hn).toEquiv, ← Subgroup.index,
+    ← orderOf_eq_prime neg_one_sq hne, ← Nat.card_zpowers, Subgroup.card_mul_index,
+    Nat.card_eq_fintype_card, ZMod.card_units_eq_totient]
 
 end TauCeti.GlobalNumberFields

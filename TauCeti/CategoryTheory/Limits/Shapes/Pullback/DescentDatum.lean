@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
+public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
 
 /-!
 # Descent data on objects over a base, relative to a morphism
@@ -44,7 +45,9 @@ construct.
 * `TauCeti.DescentDatum.transport e E`: the descent datum transported from `E` along an
   isomorphism `e : X ≅ Y` over `S'`, with the isomorphism `transportHom e E` to `E`.
 * `TauCeti.DescentDatum.pullbackAlong D q`: the descent datum obtained from `D` after an arbitrary
-  base change `q : T ⟶ S`, functorial on morphisms of descent data.
+  base change `q : T ⟶ S`, functorial on morphisms of descent data. Its carrier and its action
+  space are the base changes along `q` of `X` and of the action space `S' ×_S X`
+  (`isPullback_pullbackAlongObj`, `isPullback_pullbackAlongActionComparison`).
 * `TauCeti.DescentDatum.baseChange p X`: the canonical descent datum on the base change
   `X ×_S S'` of an object `X` over `S`, acting by `s · (x, s₀) = (x, s)`, with the morphism
   `baseChangeHom p f : Hom (baseChange p X) (baseChange p Y)` induced by `f : X ⟶ Y` over `S`.
@@ -436,6 +439,36 @@ theorem pullbackAlong_act_snd (D : DescentDatum p X) :
     (D.pullbackAlong q).act ≫ pullback.snd X.hom (pullback.snd q p) = pullback.fst _ _ :=
   pullback.lift_snd _ _ _
 
+/-- The carrier `X ×_{S'} (T ×_S S')` of the base-changed datum is the base change of `X` along
+`q : T ⟶ S`, through its projection to `X`. -/
+theorem isPullback_pullbackAlongObj (X : Over S') :
+    IsPullback (pullback.fst X.hom (pullback.snd q p))
+      ((pullbackAlongObj (p := p) q X).hom ≫ pullback.fst q p) (X.hom ≫ p) q :=
+  (IsPullback.of_hasPullback X.hom (pullback.snd q p)).paste_vert
+    (IsPullback.of_hasPullback q p).flip
+
+/-- The action space of the base-changed datum is the base change of the action space
+`S' ×_S X` along `q : T ⟶ S`, through `pullbackAlongActionComparison`. -/
+theorem isPullback_pullbackAlongActionComparison (X : Over S') :
+    IsPullback (pullbackAlongActionComparison (p := p) q X)
+      (pullback.snd _ _ ≫ (pullbackAlongObj (p := p) q X).hom ≫ pullback.fst q p)
+      (pullback.snd p (X.hom ≫ p) ≫ X.hom ≫ p) q := by
+  -- Writing `S'_T = T ×_S S'` and `X_T` for the carrier, the action space is `S'_T ×_T X_T`. Its
+  -- projections to `S'` and `X_T` exhibit it as `S' ×_S X_T`, and hence as the base change of
+  -- `S' ×_S X ⟶ X` along `X_T ⟶ X`.
+  have hout : IsPullback
+      (pullback.fst (pullback.fst q p) ((pullbackAlongObj (p := p) q X).hom ≫ pullback.fst q p) ≫
+        pullback.snd q p)
+      (pullback.snd (pullback.fst q p) ((pullbackAlongObj (p := p) q X).hom ≫ pullback.fst q p))
+      p (pullback.fst X.hom (pullback.snd q p) ≫ X.hom ≫ p) := by
+    have := (IsPullback.of_hasPullback (pullback.fst q p)
+      ((pullbackAlongObj (p := p) q X).hom ≫ pullback.fst q p)).paste_horiz
+        (IsPullback.of_hasPullback q p).flip
+    rwa [← (isPullback_pullbackAlongObj q X).w] at this
+  have hleft := IsPullback.of_right (by rwa [← pullbackAlongActionComparison_fst] at hout)
+    (pullbackAlongActionComparison_snd q X) (IsPullback.of_hasPullback p (X.hom ≫ p))
+  simpa only [Category.assoc] using hleft.paste_vert (isPullback_pullbackAlongObj q X)
+
 variable {q}
 
 /-- Base change of a morphism of descent data. -/
@@ -554,6 +587,16 @@ theorem transportArrowActionComparison_fst (X : Over S') :
 theorem transportArrowActionComparison_snd (X : Over S') :
     transportArrowActionComparison e X ≫ pullback.snd p (X.hom ≫ p) = pullback.snd _ _ :=
   (pullback.lift_snd _ _ _).trans (Category.comp_id _)
+
+/-- The action-space comparison for transport is an isomorphism, being the map of pullbacks
+induced by isomorphisms. -/
+instance isIso_transportArrowActionComparison (X : Over S') :
+    IsIso (transportArrowActionComparison e X) := by
+  -- The identity of `X.left` appears with the source `((Over.map e.hom.left).obj X).left`, which
+  -- instance search does not unfold.
+  have : IsIso (𝟙 X.left : ((Over.map e.hom.left).obj X).left ⟶ X.left) := IsIso.id _
+  unfold transportArrowActionComparison
+  infer_instance
 
 /-- The transport of a descent datum along an isomorphism of arrows `e : Arrow.mk p ≅ Arrow.mk q`.
 If `D` acts on `X ⟶ S'` relative to `p : S' ⟶ S`, then `D.transportArrow e` acts on

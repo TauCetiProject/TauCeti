@@ -5,18 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import Mathlib.RingTheory.Unramified.LocalRing
+public import TauCeti.RingTheory.KrullDimension.Fiber
+public import TauCeti.RingTheory.LocalRing.MaximalIdeal.Flat
 
 /-!
-# Regularity ascends along flat unramified local homomorphisms
+# Regularity along flat local homomorphisms with a field as closed fibre
 
 Let `R → S` be a flat homomorphism of Noetherian local rings under which the maximal ideal of `R`
-generates the maximal ideal of `S`. If `R` is regular, so is `S`: the images of `dim R`
-generators of `𝔪_R` generate `𝔪_S`, and flatness gives going down, hence `dim R ≤ dim S`.
-This is the special case, with a field as closed fibre, of the ascent of regularity along flat
-local homomorphisms with regular closed fibre.
+generates the maximal ideal of `S`. Then `R` is regular if and only if `S` is: the maximal ideals
+of `R` and `S` need the same number of generators, and `R` and `S` have the same Krull dimension.
+The ascent of regularity is the special case, with a field as closed fibre, of the ascent along
+flat local homomorphisms with regular closed fibre. The descent of regularity is the special case
+of the descent along arbitrary flat local homomorphisms; it applies for instance to the completion
+of a Noetherian local ring.
 
 Formally unramified local homomorphisms essentially of finite type satisfy the hypothesis on the
 maximal ideals, so regularity ascends along local homomorphisms of this kind which are flat, such
@@ -25,8 +28,10 @@ algebra smooth over a regular ring is regular.
 
 ## Main declarations
 
-* `TauCeti.IsRegularLocalRing.of_flat_of_map_maximalIdeal_eq`: regularity ascends along a flat
-  homomorphism of Noetherian local rings with `𝔪_R S = 𝔪_S`;
+* `TauCeti.isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq`: along a flat homomorphism of
+  Noetherian local rings with `𝔪_R S = 𝔪_S`, the target is regular if and only if the source is;
+* `TauCeti.IsRegularLocalRing.of_flat_of_map_maximalIdeal_eq`: regularity ascends along such a
+  homomorphism;
 * `TauCeti.IsRegularLocalRing.of_flat_of_formallyUnramified`: the same for a flat, formally
   unramified local homomorphism essentially of finite type.
 
@@ -43,6 +48,17 @@ open _root_.IsLocalRing
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 
+/-- Along a flat homomorphism of Noetherian local rings under which the maximal ideal of the
+source generates the maximal ideal of the target, the target is regular if and only if the source
+is. -/
+theorem isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq [IsLocalRing R] [IsNoetherianRing R]
+    [IsLocalRing S] [IsNoetherianRing S] [Module.Flat R S]
+    (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
+    _root_.IsRegularLocalRing S ↔ _root_.IsRegularLocalRing R := by
+  rw [isRegularLocalRing_iff, isRegularLocalRing_iff,
+    IsLocalRing.spanFinrank_maximalIdeal_eq_of_flat_of_map_maximalIdeal_eq h,
+    ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq h]
+
 namespace IsRegularLocalRing
 
 /-- Regularity ascends along a flat homomorphism of Noetherian local rings under which the maximal
@@ -50,21 +66,8 @@ ideal of the source generates the maximal ideal of the target. -/
 theorem of_flat_of_map_maximalIdeal_eq [IsRegularLocalRing R] [IsLocalRing S]
     [IsNoetherianRing S] [Module.Flat R S]
     (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
-    IsRegularLocalRing S := by
-  have : IsLocalHom (algebraMap R S) :=
-    ((local_hom_TFAE (algebraMap R S)).out 1 3).mpr h.le
-  apply _root_.IsRegularLocalRing.of_spanFinrank_maximalIdeal_le
-  have hspan : (maximalIdeal S).spanFinrank ≤ (maximalIdeal R).spanFinrank :=
-    h ▸ Ideal.spanFinrank_map_le_of_fg _ (maximalIdeal R).fg_of_isNoetherianRing
-  -- Going down along the flat map bounds the height of `𝔪_R` by that of `𝔪_S`.
-  have hdim : ringKrullDim R ≤ ringKrullDim S := by
-    rw [← maximalIdeal_height_eq_ringKrullDim, ← maximalIdeal_height_eq_ringKrullDim,
-      Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown (maximalIdeal R) (maximalIdeal S)]
-    exact_mod_cast le_self_add
-  calc ((maximalIdeal S).spanFinrank : WithBot ℕ∞) ≤ (maximalIdeal R).spanFinrank := by
-        exact_mod_cast hspan
-    _ = ringKrullDim R := _root_.IsRegularLocalRing.spanFinrank_maximalIdeal
-    _ ≤ ringKrullDim S := hdim
+    IsRegularLocalRing S :=
+  (isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq h).mpr ‹_›
 
 /-- Regularity ascends along a flat, formally unramified local homomorphism essentially of finite
 type between Noetherian local rings. -/

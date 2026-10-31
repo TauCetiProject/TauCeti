@@ -48,6 +48,11 @@ point for the geometry of sections used in the regularity theory of the Monge–
 
 * `TauCeti.mongeAmpereMeasure_ite_mul_norm_sq_add` — the Monge–Ampère measure of
   `y ↦ (a / 2) ‖y‖² + c` on an open convex set is `aⁿ μ`;
+* `TauCeti.mongeAmpereMeasure_ite_convexSection_add_linearMap` — subtracting a plane from `u`
+  on a section `S` restricts the Monge–Ampère measure of `u` to `S`;
+* `TauCeti.exists_ofReal_neg_pow_le_mul_ofReal_mul_measure_mul_mongeAmpereMeasure` — the depth
+  bound `(max 0 (-v x₀)) ^ n ≤ C d μ(G) MA_v(G)` when `d` bounds the distance to the boundary in
+  every normalized position;
 * `TauCeti.exists_ofReal_neg_pow_le_mul_measure_mul_mongeAmpereMeasure` — the depth bound
   `(max 0 (-v x₀)) ^ n ≤ C μ(G) MA_v(G)`;
 * `TauCeti.exists_mul_measure_sq_le_mul_ofReal_pow` — the volume bound `λ μ(G)² ≤ C hⁿ`;
@@ -99,42 +104,62 @@ theorem mongeAmpereMeasure_ite_mul_norm_sq_add {U : Set E} [DecidablePred (· �
     ContinuousLinearMap.coe_id, LinearMap.det_smul, LinearMap.det_id, mul_one]
   exact withDensity_const _
 
-/-- Transport of the Monge–Ampère measure of a function on `G` to the function `v ∘ T⁻¹` on
-`T '' G = T⁻¹ ⁻¹' G`. -/
-private theorem mongeAmpereMeasure_ite_comp_symm_apply (T : E ≃ᵃ[ℝ] E) (G : Set E)
-    [DecidablePred (· ∈ G)] [DecidablePred (· ∈ T.symm ⁻¹' G)] (v : E → ℝ) {s : Set E}
-    (hs : MeasurableSet s) :
-    mongeAmpereMeasure μ (fun y => if y ∈ T.symm ⁻¹' G then (v (T.symm y) : EReal) else ⊤) s =
-      ENNReal.ofReal |LinearMap.det (T.symm.linear : E →ₗ[ℝ] E)| *
-        mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) (T.symm '' s) := by
-  have hfun : (fun y => if y ∈ T.symm ⁻¹' G then (v (T.symm y) : EReal) else ⊤) =
-      (fun x => if x ∈ G then (v x : EReal) else ⊤) ∘ T.symm := by
-    funext y
-    by_cases hy : T.symm y ∈ G <;> simp only [Function.comp_apply, mem_preimage, hy, ↓reduceIte]
-  rw [hfun, mongeAmpereMeasure_comp_affineEquiv_apply μ _ T.symm hs]
+/-- **Subtracting a plane on a section.** Let `u` be convex on an open set `Ω`, and let
+`S = {y ∈ Ω | u y < u x + ℓ (y - x) + h}`. The Monge–Ampère measure of `u + L + c`, extended by
+`⊤` off `S`, is the restriction to `S` of the Monge–Ampère measure of `u` extended by `⊤` off
+`Ω`. With `L = -ℓ` and `c = ℓ x - u x - h` this is the potential `u - u x - ℓ (· - x) - h`, which
+vanishes on the frontier of `S`. -/
+theorem mongeAmpereMeasure_ite_convexSection_add_linearMap {Ω : Set E} [DecidablePred (· ∈ Ω)]
+    {u : E → ℝ} {x : E} {ℓ : E →ₗ[ℝ] ℝ} {h : ℝ} [DecidablePred (· ∈ convexSection Ω u x ℓ h)]
+    (hΩ : IsOpen Ω) (hu : ConvexOn ℝ Ω u) (L : E →ₗ[ℝ] ℝ) (c : ℝ) :
+    mongeAmpereMeasure μ
+        (fun y => if y ∈ convexSection Ω u x ℓ h then ((u y + L y + c : ℝ) : EReal) else ⊤) =
+      (mongeAmpereMeasure μ (fun y => if y ∈ Ω then (u y : EReal) else ⊤)).restrict
+        (convexSection Ω u x ℓ h) := by
+  rw [mongeAmpereMeasure_ite_add_linearMap μ u L c,
+    mongeAmpereMeasure_ite_eq_restrict μ hΩ
+      (isOpen_convexSection hΩ (hu.continuousOn hΩ) ℓ.continuous_of_finiteDimensional)
+      (convex_convexSection hu) convexSection_subset hu AbsolutelyContinuous.rfl]
+
+/-- A lower bound `a μ ≤ MA_u` on `Ω` gives the lower bound `a μ ≤ MA_{u + L + c}` on a section
+`S` of `u`, for the Monge–Ampère measures of `u` extended by `⊤` off `Ω` and of `u + L + c`
+extended by `⊤` off `S`. -/
+theorem smul_restrict_le_mongeAmpereMeasure_ite_convexSection_add_linearMap {Ω : Set E}
+    [DecidablePred (· ∈ Ω)] {u : E → ℝ} {x : E} {ℓ : E →ₗ[ℝ] ℝ} {h : ℝ}
+    [DecidablePred (· ∈ convexSection Ω u x ℓ h)] (hΩ : IsOpen Ω) (hu : ConvexOn ℝ Ω u)
+    (L : E →ₗ[ℝ] ℝ) (c : ℝ) {a : ℝ≥0∞}
+    (hMA : a • μ.restrict Ω ≤ mongeAmpereMeasure μ (fun y => if y ∈ Ω then (u y : EReal) else ⊤)) :
+    a • μ.restrict (convexSection Ω u x ℓ h) ≤ mongeAmpereMeasure μ
+      (fun y => if y ∈ convexSection Ω u x ℓ h then ((u y + L y + c : ℝ) : EReal) else ⊤) := by
+  rw [mongeAmpereMeasure_ite_convexSection_add_linearMap μ hΩ hu L c,
+    ← Measure.restrict_restrict_of_subset convexSection_subset, ← Measure.restrict_smul]
+  exact Measure.restrict_mono_measure hMA _
 
 variable [Nontrivial E]
 
-/-- **The depth of a convex function is controlled by its volume and Monge–Ampère mass.** There
-is a constant `C`, depending only on `E` and `μ`, such that for every bounded open set `G`, every
-`v` convex on `G`, continuous on its closure and nonnegative on its frontier, and every `x₀ ∈ G`,
-`(max 0 (-v x₀)) ^ n ≤ C μ(G) MA_v(G)` for the Monge–Ampère measure of `v` extended by `⊤` off
-`G`, where `n = finrank ℝ E`. Unlike the Aleksandrov maximum principle it involves no diameter
-or distance, so it is invariant under affine changes of coordinates. -/
-theorem exists_ofReal_neg_pow_le_mul_measure_mul_mongeAmpereMeasure :
-    ∃ C : ℝ≥0, ∀ (G : Set E) [DecidablePred (· ∈ G)] (v : E → ℝ), IsOpen G →
+/-- **The depth of a convex function is controlled by its distance to the boundary, volume and
+Monge–Ampère mass.** There is a constant `C`, depending only on `E` and `μ`, with the following
+property. Let `G` be a bounded open set, `v` convex on `G`, continuous on its closure and
+nonnegative on its frontier, and `x₀ ∈ G`. If `d` bounds the distance from `T x₀` to the
+complement of `T '' G` for every affine equivalence `T` mapping `G` into the unit ball, then
+`(max 0 (-v x₀)) ^ n ≤ C d μ(G) MA_v(G)` for the Monge–Ampère measure of `v` extended by `⊤` off
+`G`, where `n = finrank ℝ E`. Both the hypothesis and the conclusion are invariant under affine
+changes of coordinates. -/
+theorem exists_ofReal_neg_pow_le_mul_ofReal_mul_measure_mul_mongeAmpereMeasure :
+    ∃ C : ℝ≥0, ∀ (G : Set E) [DecidablePred (· ∈ G)] (v : E → ℝ) (d : ℝ), IsOpen G →
       Bornology.IsBounded G → ConvexOn ℝ G v → ContinuousOn v (closure G) →
       (∀ x ∈ frontier G, 0 ≤ v x) → ∀ x₀ ∈ G,
-      ENNReal.ofReal (-v x₀) ^ finrank ℝ E ≤
-        C * μ G * mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) G := by
+      (∀ T : E ≃ᵃ[ℝ] E, T '' G ⊆ ball 0 1 → infDist (T x₀) (T '' G)ᶜ ≤ d) →
+      ENNReal.ofReal (-v x₀) ^ finrank ℝ E ≤ C * ENNReal.ofReal d * μ G *
+        mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) G := by
   classical
   obtain ⟨r, hr, hnorm⟩ := exists_affineEquiv_ball_subset_image_subset_ball E
   set n := finrank ℝ E
   set B := μ (ball (0 : E) 1)
   have hB0 : B ≠ 0 := (measure_ball_pos μ 0 one_pos).ne'
   have hBtop : B ≠ ∞ := measure_ball_lt_top.ne
-  -- In normalized position the diameter and the distance to the boundary are at most `2`.
-  set c₁ : ℝ≥0∞ := 2 ^ (n + 1) * ENNReal.ofReal (2 ^ (n - 1) * 2)
+  -- In normalized position the diameter is at most `2`.
+  set c₁ : ℝ≥0∞ := 2 ^ (n + 1) * ENNReal.ofReal (2 ^ (n - 1))
   set R : ℝ≥0∞ := ENNReal.ofReal (r ^ n) * B
   have hR0 : R ≠ 0 := mul_ne_zero (by simp [hr, n]) hB0
   have hRtop : R ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofReal_ne_top hBtop
@@ -143,11 +168,12 @@ theorem exists_ofReal_neg_pow_le_mul_measure_mul_mongeAmpereMeasure :
   have hK : c₁ * (R * B)⁻¹ ≠ ∞ :=
     ENNReal.mul_ne_top (ENNReal.mul_ne_top (by simp) ENNReal.ofReal_ne_top)
       (ENNReal.inv_ne_top.2 hRB0)
-  refine ⟨(c₁ * (R * B)⁻¹).toNNReal, fun G _ v hGo hGb hv hvc hfr x₀ hx₀ => ?_⟩
+  refine ⟨(c₁ * (R * B)⁻¹).toNNReal, fun G _ v d hGo hGb hv hvc hfr x₀ hx₀ hd => ?_⟩
   rw [ENNReal.coe_toNNReal hK]
   -- Normalize `G` by an affine equivalence `T`, so that `ball 0 r ⊆ G' ⊆ ball 0 1`.
   obtain ⟨T, hTr, hT1⟩ := hnorm G hv.1 hGb ⟨x₀, hGo.interior_eq.symm ▸ hx₀⟩
-  rw [show T '' G = T.symm ⁻¹' G from T.toEquiv.image_eq_preimage_symm G] at hTr hT1
+  have hdist := hd T hT1
+  rw [show T '' G = T.symm ⁻¹' G from T.toEquiv.image_eq_preimage_symm G] at hTr hT1 hdist
   set G' := T.symm ⁻¹' G
   set H := (AffineEquiv.toContinuousAffineEquiv T.symm).toHomeomorph
   set D := ENNReal.ofReal |LinearMap.det (T.symm.linear : E →ₗ[ℝ] E)|
@@ -170,32 +196,51 @@ theorem exists_ofReal_neg_pow_le_mul_measure_mul_mongeAmpereMeasure :
   -- Bound the diameter and the distance to the complement in normalized position.
   have hdiam : diam G' ≤ 2 :=
     (diam_mono hT1 isBounded_ball).trans ((diam_ball zero_le_one).trans_eq (mul_one 2))
-  have hdist : infDist (T x₀) G'ᶜ ≤ 2 := by
-    obtain ⟨z, hz⟩ := exists_norm_eq E zero_le_one
-    have hzG : z ∈ G'ᶜ := fun hz' => by simpa [hz] using hT1 hz'
-    have hx₀' : ‖T x₀‖ < 1 := by simpa using hT1 (show T x₀ ∈ G' by simpa [G'] using hx₀)
-    refine (infDist_le_dist_of_mem hzG).trans ?_
-    rw [dist_eq_norm]
-    linarith [norm_sub_le (T x₀) z]
   have hgeom : ENNReal.ofReal (diam G' ^ (n - 1) * infDist (T x₀) G'ᶜ) ≤
-      ENNReal.ofReal (2 ^ (n - 1) * 2) :=
-    ENNReal.ofReal_le_ofReal (mul_le_mul (pow_le_pow_left₀ diam_nonneg hdiam _) hdist
+      ENNReal.ofReal (2 ^ (n - 1)) * ENNReal.ofReal d := by
+    rw [← ENNReal.ofReal_mul (by positivity)]
+    exact ENNReal.ofReal_le_ofReal (mul_le_mul (pow_le_pow_left₀ diam_nonneg hdiam _) hdist
       infDist_nonneg (by positivity))
   -- The volume of `G'` is at least that of `ball 0 r`.
   have hRG' : R ≤ μ G' := (addHaar_ball μ 0 hr.le).symm.trans_le (measure_mono hTr)
   set M := mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) G
   set X := ENNReal.ofReal (-v x₀) ^ n
-  have hmain : X * (R * B) ≤ c₁ * μ G * M :=
+  have hmain : X * (R * B) ≤ c₁ * ENNReal.ofReal d * μ G * M :=
     calc X * (R * B) = X * B * R := by ring
       _ ≤ 2 ^ (n + 1) * ENNReal.ofReal (diam G' ^ (n - 1) * infDist (T x₀) G'ᶜ) * (D * M) * R :=
         mul_le_mul_left hmax R
-      _ ≤ c₁ * (D * M) * μ G' :=
+      _ ≤ 2 ^ (n + 1) * (ENNReal.ofReal (2 ^ (n - 1)) * ENNReal.ofReal d) * (D * M) * μ G' :=
         mul_le_mul' (mul_le_mul_left (mul_le_mul_right hgeom _) _) hRG'
-      _ = c₁ * μ G * M := by rw [hμG]; ring
+      _ = c₁ * ENNReal.ofReal d * μ G * M := by rw [hμG]; ring
   calc X = X * (R * B) * (R * B)⁻¹ := by
         rw [mul_assoc, ENNReal.mul_inv_cancel hRB0 hRBtop, mul_one]
-    _ ≤ c₁ * μ G * M * (R * B)⁻¹ := mul_le_mul_left hmain _
-    _ = c₁ * (R * B)⁻¹ * μ G * M := by ring
+    _ ≤ c₁ * ENNReal.ofReal d * μ G * M * (R * B)⁻¹ := mul_le_mul_left hmain _
+    _ = c₁ * (R * B)⁻¹ * ENNReal.ofReal d * μ G * M := by ring
+
+/-- **The depth of a convex function is controlled by its volume and Monge–Ampère mass.** There
+is a constant `C`, depending only on `E` and `μ`, such that for every bounded open set `G`, every
+`v` convex on `G`, continuous on its closure and nonnegative on its frontier, and every `x₀ ∈ G`,
+`(max 0 (-v x₀)) ^ n ≤ C μ(G) MA_v(G)` for the Monge–Ampère measure of `v` extended by `⊤` off
+`G`, where `n = finrank ℝ E`. Unlike the Aleksandrov maximum principle it involves no diameter
+or distance, so it is invariant under affine changes of coordinates. -/
+theorem exists_ofReal_neg_pow_le_mul_measure_mul_mongeAmpereMeasure :
+    ∃ C : ℝ≥0, ∀ (G : Set E) [DecidablePred (· ∈ G)] (v : E → ℝ), IsOpen G →
+      Bornology.IsBounded G → ConvexOn ℝ G v → ContinuousOn v (closure G) →
+      (∀ x ∈ frontier G, 0 ≤ v x) → ∀ x₀ ∈ G,
+      ENNReal.ofReal (-v x₀) ^ finrank ℝ E ≤
+        C * μ G * mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) G := by
+  obtain ⟨C, hC⟩ := exists_ofReal_neg_pow_le_mul_ofReal_mul_measure_mul_mongeAmpereMeasure μ
+    (E := E)
+  refine ⟨C * 2, fun G _ v hGo hGb hv hvc hfr x₀ hx₀ => ?_⟩
+  -- In normalized position the distance to the boundary is at most `2`.
+  have hd (T : E ≃ᵃ[ℝ] E) (hT : T '' G ⊆ ball 0 1) : infDist (T x₀) (T '' G)ᶜ ≤ 2 := by
+    obtain ⟨z, hz⟩ := exists_norm_eq E zero_le_one
+    have hzG : z ∈ (T '' G)ᶜ := fun hz' => by simpa [hz] using hT hz'
+    have hx₀' : ‖T x₀‖ < 1 := by simpa using hT (mem_image_of_mem T hx₀)
+    refine (infDist_le_dist_of_mem hzG).trans ?_
+    rw [dist_eq_norm]
+    linarith [norm_sub_le (T x₀) z]
+  simpa using hC G v 2 hGo hGb hv hvc hfr x₀ hx₀ hd
 
 /-- **The volume of a domain is controlled by the depth of a convex function on it.** There is a
 constant `C`, depending only on `E` and `μ`, with the following property. Let `G` be a bounded
@@ -290,7 +335,6 @@ theorem exists_mul_measure_sq_le_mul_ofReal_pow :
     _ = K * ENNReal.ofReal h ^ n := by
       rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow hh]
       ring
-
 /-! ### Sections -/
 
 /-- **Lower volume estimate for sections.** There is a constant `C`, depending only on `E` and
@@ -312,27 +356,21 @@ theorem exists_ofReal_pow_le_mul_measure_convexSection_mul_mongeAmpereMeasure :
   rcases le_or_gt h 0 with hh | hh
   · rw [ENNReal.ofReal_of_nonpos hh, zero_pow finrank_pos.ne']
     exact bot_le
+  have hℓ : Continuous ℓ := ℓ.continuous_of_finiteDimensional
   have huc : ContinuousOn u Ω := hu.continuousOn hΩ
-  have hSo : IsOpen S := isOpen_convexSection hΩ huc ℓ.continuous_of_finiteDimensional
-  have hSc : Convex ℝ S := convex_convexSection hu
+  have hSo : IsOpen S := isOpen_convexSection hΩ huc hℓ
   -- Subtract the plane: `v y = u y - u x - ℓ (y - x) - h` vanishes on the boundary of `S`.
   set c := ℓ x - u x - h
-  have hv : ConvexOn ℝ S fun y => u y + (-ℓ) y + c :=
-    ((hu.subset convexSection_subset hSc).add ((-ℓ).convexOn hSc)).add_const c
-  have hvc : ContinuousOn (fun y => u y + (-ℓ) y + c) (closure S) :=
-    ((huc.mono hSΩ).add (-ℓ).continuous_of_finiteDimensional.continuousOn).add continuousOn_const
-  have hfr : ∀ y ∈ frontier S, 0 ≤ u y + (-ℓ) y + c := by
-    intro y hy
-    rw [hSo.frontier_eq] at hy
-    have hyS : ¬u y < u x + ℓ (y - x) + h := fun h' => hy.2 (mem_convexSection_iff.2 ⟨hSΩ hy.1, h'⟩)
-    simp only [LinearMap.neg_apply, map_sub, c] at hyS ⊢
+  have hfr : ∀ y ∈ frontier S, 0 ≤ u y + (-ℓ) y + c := fun y hy => by
+    have := eq_of_mem_frontier_convexSection hΩ huc hℓ hSΩ hy
+    simp only [LinearMap.neg_apply, map_sub, c] at this ⊢
     linarith
-  have key := hC S (fun y => u y + (-ℓ) y + c) hSo hSb hv hvc hfr x
+  have key := hC S (fun y => u y + (-ℓ) y + c) hSo hSb
+    (convexOn_convexSection_add_linearMap hu (-ℓ) c)
+    (continuousOn_closure_convexSection_add_linearMap huc hℓ.neg hSΩ c) hfr x
     (mem_convexSection_iff.2 ⟨hx, by simpa using hh⟩)
   beta_reduce at key
-  rw [mongeAmpereMeasure_ite_add_linearMap μ u (-ℓ) c,
-    mongeAmpereMeasure_ite_eq_restrict μ hΩ hSo hSc convexSection_subset hu
-      AbsolutelyContinuous.rfl, Measure.restrict_apply_self,
+  rw [mongeAmpereMeasure_ite_convexSection_add_linearMap μ hΩ hu, Measure.restrict_apply_self,
     show -(u x + (-ℓ) x + c) = h by simp only [LinearMap.neg_apply, c]; ring] at key
   exact key
 
@@ -355,32 +393,19 @@ theorem exists_mul_measure_convexSection_sq_le_mul_ofReal_pow :
   have hℓ : Continuous ℓ := ℓ.continuous_of_finiteDimensional
   have huc : ContinuousOn u Ω := hu.continuousOn hΩ
   have hSo : IsOpen S := isOpen_convexSection hΩ huc hℓ
-  have hSc : Convex ℝ S := convex_convexSection hu
   -- Subtract the plane: `v y = u y - u x - ℓ (y - x) - h` lies between `-h` and `0` on `S`.
   set c := ℓ x - u x - h
-  have hv : ConvexOn ℝ S fun y => u y + (-ℓ) y + c :=
-    ((hu.subset convexSection_subset hSc).add ((-ℓ).convexOn hSc)).add_const c
-  have hvc : ContinuousOn (fun y => u y + (-ℓ) y + c) (closure S) :=
-    ((huc.mono hSΩ).add (-ℓ).continuous_of_finiteDimensional.continuousOn).add continuousOn_const
-  have hfr : ∀ y ∈ frontier S, u y + (-ℓ) y + c ≤ 0 := by
-    intro y hy
-    have hyS : y ∈ closure S ∩ Ω := ⟨frontier_subset_closure hy, hSΩ (frontier_subset_closure hy)⟩
-    have hle : u y ≤ u x + ℓ (y - x) + h := le_of_forall_pos_lt_add fun ε hε => by
-      simpa only [add_assoc] using (mem_convexSection_iff.1
-        (closure_convexSection_inter_subset huc hℓ (lt_add_of_pos_right h hε) hyS)).2
-    simp only [LinearMap.neg_apply, map_sub, c] at hle ⊢
+  have hfr : ∀ y ∈ frontier S, u y + (-ℓ) y + c ≤ 0 := fun y hy => by
+    have := eq_of_mem_frontier_convexSection hΩ huc hℓ hSΩ hy
+    simp only [LinearMap.neg_apply, map_sub, c] at this ⊢
     linarith
   have hlow : ∀ y ∈ S, -h ≤ u y + (-ℓ) y + c := fun y hy => by
     have := hℓx y (mem_convexSection_iff.1 hy).1
     simp only [LinearMap.neg_apply, c]
     linarith
-  have hMA' : (lam : ℝ≥0∞) • μ.restrict S ≤ mongeAmpereMeasure μ
-      (fun y => if y ∈ S then ((u y + (-ℓ) y + c : ℝ) : EReal) else ⊤) := by
-    rw [mongeAmpereMeasure_ite_add_linearMap μ u (-ℓ) c,
-      mongeAmpereMeasure_ite_eq_restrict μ hΩ hSo hSc convexSection_subset hu
-        AbsolutelyContinuous.rfl, ← Measure.restrict_restrict_of_subset convexSection_subset,
-      ← Measure.restrict_smul]
-    exact Measure.restrict_mono_measure hMA S
-  exact hC S (fun y => u y + (-ℓ) y + c) lam h hSo hSb hv hvc hfr hlow hMA'
+  exact hC S (fun y => u y + (-ℓ) y + c) lam h hSo hSb
+    (convexOn_convexSection_add_linearMap hu (-ℓ) c)
+    (continuousOn_closure_convexSection_add_linearMap huc hℓ.neg hSΩ c) hfr hlow
+    (smul_restrict_le_mongeAmpereMeasure_ite_convexSection_add_linearMap μ hΩ hu (-ℓ) c hMA)
 
 end TauCeti

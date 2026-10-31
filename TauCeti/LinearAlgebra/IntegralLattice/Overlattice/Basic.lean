@@ -8,6 +8,7 @@ module
 public import Mathlib.Order.LatticeIntervals
 public import TauCeti.Algebra.Module.Submodule.Quotient
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Group
+import TauCeti.Algebra.Group.Subgroup.ZPowers
 
 /-!
 # Intermediate carriers of integral lattices
@@ -164,6 +165,21 @@ theorem mem_intermediateCarrierOfDiscriminantSubgroup_iff
       (L.coe_mem_intermediateCarrierOfDiscriminantSubgroup_iff H ⟨x, hxdual⟩).mp hx⟩
   · rintro ⟨hxdual, hxH⟩
     exact (L.coe_mem_intermediateCarrierOfDiscriminantSubgroup_iff H ⟨x, hxdual⟩).mpr hxH
+
+/-- **Gluing along an order-two class**: if `s ∈ Lᵛ` has a discriminant class of order dividing
+two, then the carrier attached to the subgroup this class generates is `L ∪ (s + L)`. -/
+theorem mem_intermediateCarrierOfDiscriminantSubgroup_zmultiples_iff {s : V}
+    (hs : s ∈ L.dualCarrier)
+    (h2 : 2 • (Submodule.Quotient.mk ⟨s, hs⟩ : L.DiscriminantGroup) = 0) (x : V) :
+    x ∈ (L.intermediateCarrierOfDiscriminantSubgroup
+        (AddSubgroup.zmultiples (Submodule.Quotient.mk ⟨s, hs⟩))).1 ↔
+      x ∈ L.carrier ∨ x - s ∈ L.carrier := by
+  simp only [L.mem_intermediateCarrierOfDiscriminantSubgroup_iff,
+    AddSubgroup.mem_zmultiples_iff_of_two_nsmul_eq_zero h2, L.discriminantGroup_mk_eq_zero_iff,
+    L.discriminantGroup_mk_eq_iff, Submodule.coe_sub, exists_prop, and_iff_right_iff_imp]
+  rintro (hx | hx)
+  · exact L.le_dualCarrier hx
+  · simpa only [sub_add_cancel] using L.dualCarrier.add_mem (L.le_dualCarrier hx) hs
 
 /-- The inverse image of the bottom discriminant subgroup is the bottom intermediate carrier. -/
 @[simp]

@@ -14,7 +14,7 @@ public import TauCeti.LinearAlgebra.Dual.BaseChange
 # Base change of the finite dual
 
 The finite dual of a finite projective bialgebra commutes with extension of scalars. More
-precisely, for a map of commutative rings `k → K` and a finite projective `k`-bialgebra `H`,
+precisely, for a map of commutative semirings `k → K` and a finite projective `k`-bialgebra `H`,
 there is a canonical `K`-bialgebra equivalence
 
 ```text
@@ -48,7 +48,7 @@ namespace TauCeti.ConvolutionDual
 universe u v w x
 
 variable {k : Type u} {K : Type v} {H : Type w}
-variable [CommRing k] [CommRing K] [Algebra k K]
+variable [CommSemiring k] [CommSemiring K] [Algebra k K]
 variable [Semiring H] [Bialgebra k H]
 
 variable [Module.Finite k H] [Module.Projective k H]
@@ -196,7 +196,7 @@ private theorem baseChangeAlgEquiv_map_comp_comul :
 
 /-- Finite dualization commutes with extension of scalars for finite projective bialgebras. -/
 noncomputable def baseChangeBialgEquiv (k : Type u) (K : Type v) (H : Type w)
-    [CommRing k] [CommRing K] [Algebra k K]
+    [CommSemiring k] [CommSemiring K] [Algebra k K]
     [Semiring H] [Bialgebra k H]
     [Module.Finite k H] [Module.Projective k H] :
     K ⊗[k] ConvolutionDual k H ≃ₐc[K] ConvolutionDual K (K ⊗[k] H) :=

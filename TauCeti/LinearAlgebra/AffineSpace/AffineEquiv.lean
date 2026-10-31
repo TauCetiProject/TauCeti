@@ -19,6 +19,8 @@ infinite-order elements, such as those used for Euclidean triangle groups.
 
 ## Main results
 
+* `AffineEquiv.apply_eq_linear_add`: an affine equivalence between modules is its linear part
+  followed by the translation by the image of `0`.
 * `TauCeti.AffineEquiv.commutatorElement_homothetyUnitsMulHom_zero_one`: the commutator of
   homotheties about `0` and `1` is a translation.
 -/
@@ -26,6 +28,18 @@ infinite-order elements, such as those used for Euclidean triangle groups.
 public section
 
 open scoped commutatorElement
+
+namespace AffineEquiv
+
+variable {k V₁ V₂ : Type*} [Ring k] [AddCommGroup V₁] [Module k V₁] [AddCommGroup V₂]
+  [Module k V₂]
+
+/-- An affine equivalence between modules is its linear part followed by the translation by
+`f 0`; this is `AffineMap.decomp` evaluated at a point. -/
+theorem apply_eq_linear_add (f : V₁ ≃ᵃ[k] V₂) (x : V₁) : f x = f.linear x + f 0 :=
+  congrFun f.toAffineMap.decomp x
+
+end AffineEquiv
 
 namespace TauCeti
 

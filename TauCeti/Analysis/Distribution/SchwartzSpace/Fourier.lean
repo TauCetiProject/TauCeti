@@ -39,6 +39,7 @@ Plancherel's theorem `‖𝓕⁻ f‖_{L²} = ‖f‖_{L²}`.
 * `SchwartzMap.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
 * `SchwartzMap.fourierMultiplierCLM_laplacian`: Fourier multipliers commute with the Laplacian.
 
+* `SchwartzMap.fourier_lineDerivOp_apply`: the Fourier transform of a directional derivative.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
   directional derivative.
 * `SchwartzMap.fourier_laplacian_apply`: the Fourier transform of the Laplacian.
@@ -101,6 +102,14 @@ end FourierMultiplier
 section normed
 
 variable [NormedSpace ℂ F]
+
+/-- The Fourier transform of the directional derivative `∂_v u` of a Schwartz function is `𝓕 u`
+multiplied by `2πi ⟪ξ, v⟫`. -/
+theorem fourier_lineDerivOp_apply (u : 𝓢(E, F)) (v ξ : E) :
+    𝓕 (∂_{v} u) ξ = ((2 * π * Complex.I) * ⟪ξ, v⟫) • 𝓕 u ξ := by
+  have hv : (inner ℝ · v : E → ℝ).HasTemperateGrowth := by fun_prop
+  rw [fourier_lineDerivOp_eq, smul_apply, smulLeftCLM_apply_apply hv, ← Complex.coe_smul,
+    smul_smul]
 
 /-- The Fourier transform of the second directional derivative `∂_v ∂_w u` of a Schwartz function
 is `𝓕 u` multiplied by `-(2π)² ⟪ξ, v⟫ ⟪ξ, w⟫`. -/

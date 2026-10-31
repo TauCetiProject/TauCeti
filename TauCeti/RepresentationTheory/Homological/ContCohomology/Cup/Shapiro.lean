@@ -79,7 +79,8 @@ section Multiplicativity
 
 section DegreeZero
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G] (U : Subgroup G)
+variable (G : Type uG) [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+  (U : Subgroup G)
   (A : Type uA) [AddCommGroup A] [DistribMulAction U A]
   (B : Type uB) [AddCommGroup B] [DistribMulAction U B]
   (C : Type uC) [AddCommGroup C] [DistribMulAction U C]
@@ -235,7 +236,8 @@ so the multiplicativity above computes the corestriction of a cup product of `U`
 
 section DegreeZero
 
-variable (G : Type uG) [Group G] [TopologicalSpace G] [ContinuousMul G] (U : Subgroup G)
+variable (G : Type uG) [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+  (U : Subgroup G)
   [U.FiniteIndex]
   (M : Type uA) [AddCommGroup M] [DistribMulAction U M]
   (N : Type uB) [AddCommGroup N] [DistribMulAction U N]

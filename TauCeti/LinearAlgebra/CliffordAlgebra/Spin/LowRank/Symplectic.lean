@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Five
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Symplectic
 import Mathlib.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.Algebra.CentralSimple.SeparablyClosed
-import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
+import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.CentralSimple.Even
 import TauCeti.LinearAlgebra.Matrix.Involution
 import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
@@ -220,7 +220,7 @@ theorem exists_algEquiv_reverseEven_baseChange_eq_neg_J_mul_transpose_mul_J
   -- splits over the separably closed field `L`.
   have := TauCeti.CliffordAlgebra.isCentral_even_of_odd_finrank hQL hodd
   have := TauCeti.CliffordAlgebra.isSimpleRing_even_of_odd_finrank hQL hodd
-  obtain ⟨n, -, hn, ⟨e⟩⟩ := TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_isSepClosed L
+  obtain ⟨n, -, hn, ⟨e⟩⟩ := IsSimpleRing.exists_algEquiv_matrix_of_isSepClosed L
     (even (Q.baseChange L))
   obtain rfl : n = 4 := by
     rw [← TauCeti.Algebra.deg_eq_of_finrank_eq_sq hn,

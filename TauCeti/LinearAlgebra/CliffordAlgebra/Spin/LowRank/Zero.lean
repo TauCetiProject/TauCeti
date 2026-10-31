@@ -44,10 +44,6 @@ universe u v
 variable {K : Type u} {V : Type v} [CommRing K] [AddCommGroup V] [Module K V]
   (Q : QuadraticForm K V)
 
-private noncomputable def unitsEquivOfSubsingleton [Subsingleton V] :
-    (CliffordAlgebra Q)ˣ ≃* Kˣ :=
-  Units.mapEquiv (equivOfSubsingleton Q).toMulEquiv
-
 private theorem map_evenUnitaryGroup_unitsEquivOfSubsingleton [Subsingleton V] :
     (evenUnitaryGroup Q).map (unitsEquivOfSubsingleton Q).toMonoidHom = rootsOfUnity 2 K := by
   ext u
@@ -55,9 +51,9 @@ private theorem map_evenUnitaryGroup_unitsEquivOfSubsingleton [Subsingleton V] :
   · rintro ⟨x, hx, rfl⟩
     rw [mem_rootsOfUnity]
     apply Units.ext
-    -- Expose the value of `Units.map`, whose coercion is definitionally the algebra equivalence.
-    change (equivOfSubsingleton Q (x : CliffordAlgebra Q)) ^ 2 = 1
-    rw [pow_two, ← map_mul]
+    rw [pow_two, Units.val_mul, Units.val_one]
+    simp only [MulEquiv.coe_toMonoidHom, coe_unitsEquivOfSubsingleton_apply]
+    rw [← map_mul]
     calc
       equivOfSubsingleton Q ((x : CliffordAlgebra Q) * x) =
           equivOfSubsingleton Q (reverse (x : CliffordAlgebra Q) * x) := by
@@ -75,10 +71,9 @@ private theorem map_evenUnitaryGroup_unitsEquivOfSubsingleton [Subsingleton V] :
     · simp [even_eq_top_of_subsingleton Q]
     · rw [reverse_eq_self_of_subsingleton Q]
       apply (equivOfSubsingleton Q).injective
-      have hx : Units.map (equivOfSubsingleton Q).toMonoidHom x = u :=
-        (unitsEquivOfSubsingleton Q).apply_symm_apply u
-      have hxval : equivOfSubsingleton Q (x : CliffordAlgebra Q) = (u : K) :=
-        congrArg Units.val hx
+      have hxval : equivOfSubsingleton Q (x : CliffordAlgebra Q) = (u : K) := by
+        rw [← coe_unitsEquivOfSubsingleton_apply]
+        exact congrArg Units.val ((unitsEquivOfSubsingleton Q).apply_symm_apply u)
       rw [map_mul, map_one, hxval]
       have hu' : u ^ 2 = 1 := (mem_rootsOfUnity 2 u).mp hu
       simpa only [pow_two, Units.val_mul, Units.val_one] using congrArg Units.val hu'
@@ -98,7 +93,17 @@ theorem coe_evenUnitaryGroupEquivRootsOfUnityOfSubsingleton_apply [Subsingleton 
     (x : evenUnitaryGroup Q) :
     ((evenUnitaryGroupEquivRootsOfUnityOfSubsingleton Q x : rootsOfUnity 2 K) : Kˣ) =
       Units.map (equivOfSubsingleton Q).toMonoidHom (x : (CliffordAlgebra Q)ˣ) := by
-  rfl
+  have hx :
+      ((evenUnitaryGroupEquivRootsOfUnityOfSubsingleton Q x : rootsOfUnity 2 K) : Kˣ) =
+        unitsEquivOfSubsingleton Q (x : (CliffordAlgebra Q)ˣ) := by
+    apply Units.ext
+    simp only [evenUnitaryGroupEquivRootsOfUnityOfSubsingleton, MulEquiv.trans_apply]
+    exact congrArg Units.val
+      (MulEquiv.subgroupCongr_apply _
+        (((unitsEquivOfSubsingleton Q).subgroupMap (evenUnitaryGroup Q)) x))
+  rw [hx]
+  apply Units.ext
+  simp
 
 /-- In dimension zero and characteristic not two, the even unitary group has two elements. -/
 theorem card_evenUnitaryGroup_of_subsingleton [Subsingleton V] [IsDomain K]

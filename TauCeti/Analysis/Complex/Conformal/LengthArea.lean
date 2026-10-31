@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import TauCeti.Analysis.Complex.Conformal.Area
-public import TauCeti.MeasureTheory.Integral.CircleLIntegral
+public import TauCeti.MeasureTheory.Integral.Circle.LIntegral
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 
@@ -19,7 +19,7 @@ The **length–area method** converts the finiteness of the Dirichlet integral
 with the area of `f '' s` — into a statement about *lengths*: among the circles `‖z - ζ‖ = ρ`
 with `r < ρ < R`, at least one has a short image. This file is the holomorphic half of that
 method. The measure-theoretic half is
-`TauCeti/MeasureTheory/Integral/CircleLIntegral.lean`, which proves the length–area inequality and
+`TauCeti/MeasureTheory/Integral/Circle/LIntegral.lean`, which proves the length–area inequality and
 Wolff's lemma for an arbitrary measurable weight `g : ℂ → ℝ≥0∞` on the plane, out of
 Cauchy–Schwarz on each circle and polar Fubini. All this file does is instantiate that weight at
 the **length density of `f`**, namely `‖deriv f‖ₑ` cut off outside `s`, and identify what the two
@@ -84,15 +84,6 @@ Holomorphy is used in exactly two places: through `Conformal/Area.lean`, to repl
 integral by the area of the image, and in the chord bound, where the fundamental theorem of calculus
 along the arc is applied. The estimates themselves hold for the measurable function `deriv f`
 whatever it is, which is why they are proved for a general weight one file down.
-
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505),
-the in-progress human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem
-itself, and the pinned Mathlib has no length–area estimate; so this file is new Lean formalization
-rather than a temporary shim. Its Mathlib inputs — the measurability of `deriv` and the increment
-bound `MeasureTheory.enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc` along an arc — are consumed,
-not restated.
 
 ## References
 
@@ -182,7 +173,7 @@ theorem circleImageLength_eq_lintegral_Ioc (f : ℂ → ℂ) (s : Set ℂ) (ζ :
 /-! ### The length–area inequality and Wolff's lemma -/
 
 /-- The length density of `f` cut off outside a measurable set is measurable, so the estimates of
-`TauCeti/MeasureTheory/Integral/CircleLIntegral.lean` apply to it. -/
+`TauCeti/MeasureTheory/Integral/Circle/LIntegral.lean` apply to it. -/
 private theorem measurable_indicator_enorm_deriv (f : ℂ → ℂ) (hs : MeasurableSet s) :
     Measurable (s.indicator fun z => ‖deriv f z‖ₑ) :=
   (measurable_deriv f).enorm.indicator hs

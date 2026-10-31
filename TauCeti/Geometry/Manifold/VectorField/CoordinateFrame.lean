@@ -14,13 +14,16 @@ public import TauCeti.Geometry.Manifold.VectorField.LieBracket
 The canonical trivialization of the tangent bundle at `x₀` is read off the chart at `x₀`, so the
 local frame it induces from a basis `b` of the model space is the classical coordinate frame of
 that chart.  This file identifies that frame with the pullback of constant model-space vector
-fields and proves that its vector fields commute.
+fields, shows that the chart derivative reads it back as the basis, and proves that its vector
+fields commute.
 
 ## Main results
 
 * `TauCeti.Manifold.eqOn_localFrame_trivializationAt_mpullbackWithin`: over the chart source, the
   local frame of the canonical trivialization at `x₀` is the pullback along the extended chart of
   a constant model-space vector field.
+* `TauCeti.Manifold.mfderiv_extChartAt_localFrame_trivializationAt`: the derivative of the chart
+  sends the coordinate frame to the basis of the model space it is built from.
 * `TauCeti.Manifold.mlieBracket_localFrame_trivializationAt`: the coordinate frame commutes.
 -/
 
@@ -62,6 +65,16 @@ theorem eqOn_localFrame_trivializationAt_mpullbackWithin (b : Basis ι 𝕜 E) (
   rw [hpull, mfderivWithin_of_isOpen (isOpen_extChartAt_source x₀) hy,
     inverse_mfderiv_extChartAt x₀ hy]
   exact (symmL_basis_eq_localFrame b (by simpa using hy) i).symm
+
+/-- **The chart reads the coordinate frame as the basis.**  At a point of the source of the chart
+at `x₀`, the derivative of the extended chart sends the `i`-th vector of the local frame induced by
+a basis `b` to `b i`. -/
+theorem mfderiv_extChartAt_localFrame_trivializationAt (b : Basis ι 𝕜 E) (x₀ : M)
+    (hx : x ∈ (extChartAt I x₀).source) (i : ι) :
+    mfderiv I 𝓘(𝕜, E) (extChartAt I x₀) x
+        ((trivializationAt E (TangentSpace I) x₀).localFrame b i x) = b i := by
+  rw [← TangentBundle.continuousLinearMapAt_trivializationAt (by simpa using hx)]
+  exact continuousLinearMapAt_localFrame b (by simpa using hx) i
 
 end Frame
 

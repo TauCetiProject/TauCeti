@@ -24,6 +24,8 @@ coprime to `𝔣` in `O`.
 
 ## Main results
 
+* `Ideal.Quotient.isUnit_mk_iff`: the class of `x` is a unit modulo `C` exactly when
+  `(x) + C = R`; no finiteness is needed here.
 * `Ideal.exists_pow_sub_one_mem_of_sup_eq_top`: an element coprime to an ideal with finite
   quotient has a positive power congruent to `1`.
 * `Ideal.span_singleton_sup_comap_eq_top`: coprimality to an ideal with finite quotient descends
@@ -36,17 +38,25 @@ namespace Ideal
 
 variable {R S : Type*} [CommRing R] [CommRing S] {C : Ideal R}
 
+/-- The class of `x` is a unit of `R ⧸ C` exactly when `x` is coprime to `C`. -/
+theorem Quotient.isUnit_mk_iff {x : R} : IsUnit (Quotient.mk C x) ↔ span {x} ⊔ C = ⊤ := by
+  rw [eq_top_iff_one, mem_span_singleton_sup]
+  constructor
+  · rintro ⟨u, hu⟩
+    obtain ⟨a, ha⟩ := Quotient.mk_surjective (↑u⁻¹ : R ⧸ C)
+    refine ⟨a, 1 - a * x, Quotient.eq_zero_iff_mem.mp ?_, by ring⟩
+    rw [map_sub, map_one, map_mul, ha, ← hu, Units.inv_mul, sub_self]
+  · rintro ⟨a, b, hb, hab⟩
+    refine IsUnit.of_mul_eq_one_right (Quotient.mk C a) ?_
+    rw [← map_mul, ← map_one (Quotient.mk C), ← hab, map_add, Quotient.eq_zero_iff_mem.mpr hb,
+      add_zero]
+
 /-- An element coprime to an ideal `C` with finite quotient ring has a positive power congruent
 to `1` modulo `C`. -/
 theorem exists_pow_sub_one_mem_of_sup_eq_top [Finite (R ⧸ C)] {x : R} (hx : span {x} ⊔ C = ⊤) :
     ∃ n, 0 < n ∧ x ^ n - 1 ∈ C := by
-  obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.mp ((eq_top_iff_one _).mp hx)
-  obtain ⟨s, rfl⟩ := mem_span_singleton'.mp ha
   -- The class of `x` is a unit of the finite ring `R ⧸ C`, so it has finite order.
-  have hs : Quotient.mk C s * Quotient.mk C x = 1 := by
-    rw [← map_mul, ← map_one (Quotient.mk C), ← hab, map_add,
-      Quotient.eq_zero_iff_mem.mpr hb, add_zero]
-  set u : (R ⧸ C)ˣ := (IsUnit.of_mul_eq_one_right _ hs).unit
+  set u : (R ⧸ C)ˣ := (Quotient.isUnit_mk_iff.mpr hx).unit
   refine ⟨orderOf u, (isOfFinOrder_of_finite u).orderOf_pos, Quotient.eq.mp ?_⟩
   have h := congrArg Units.val (pow_orderOf_eq_one u)
   rw [Units.val_pow_eq_pow_val, IsUnit.unit_spec, Units.val_one] at h

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.LocallyConvex.WithSeminorms
 public import TauCeti.Analysis.Normed.Module.PiTensorProduct.Projective.Topology
 public import Mathlib.Topology.Algebra.LinearMapCompletion
 
@@ -75,6 +76,22 @@ theorem tprod_apply [∀ i, TopologicalSpace (E i)] (hp : ∀ i, WithSeminorms (
       (ProjectiveTensorProduct.tprod p x : CompletedProjectiveTensorProduct p) :=
   (rfl)
 
+/-- A continuous linear map from a completed projective tensor product is determined by its
+values on pure tensors. -/
+@[ext]
+theorem continuousLinearMap_ext {F : Type*} [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
+    [T2Space F] {g h : CompletedProjectiveTensorProduct p →L[𝕜] F}
+    (hgh : ∀ x : ∀ i, E i, g (⟨⨂ₜ[𝕜] i, x i⟩ : ProjectiveTensorProduct p) =
+      h (⟨⨂ₜ[𝕜] i, x i⟩ : ProjectiveTensorProduct p)) :
+    g = h := by
+  have hz : g.toLinearMap.comp Completion.toComplL.toLinearMap =
+      h.toLinearMap.comp Completion.toComplL.toLinearMap :=
+    ProjectiveTensorProduct.linearMap_ext p fun x => by
+      simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, Completion.coe_toComplL,
+        ProjectiveTensorProduct.tprod_apply] using hgh x
+  exact DFunLike.coe_injective <|
+    Completion.ext g.continuous h.continuous (LinearMap.congr_fun hz)
+
 variable {F : Type*} [AddCommGroup F] [UniformSpace F] [Module 𝕜 F]
   [IsUniformAddGroup F] [UniformContinuousConstSMul 𝕜 F] [T0Space F] [CompleteSpace F]
 
@@ -98,22 +115,6 @@ theorem lift_tprod {τ : Type*} (q : SeminormFamily 𝕜 F τ) (hq : WithSeminor
     (x : ∀ i, E i) :
     lift p q hq f hf (⟨⨂ₜ[𝕜] i, x i⟩ : ProjectiveTensorProduct p) = f x := by
   simp [lift]
-
-omit [UniformContinuousConstSMul 𝕜 F] [CompleteSpace F] in
-/-- A continuous linear map from a completed projective tensor product is determined by its
-values on pure tensors. -/
-@[ext]
-theorem continuousLinearMap_ext {g h : CompletedProjectiveTensorProduct p →L[𝕜] F}
-    (hgh : ∀ x : ∀ i, E i, g (⟨⨂ₜ[𝕜] i, x i⟩ : ProjectiveTensorProduct p) =
-      h (⟨⨂ₜ[𝕜] i, x i⟩ : ProjectiveTensorProduct p)) :
-    g = h := by
-  have hz : g.toLinearMap.comp Completion.toComplL.toLinearMap =
-      h.toLinearMap.comp Completion.toComplL.toLinearMap :=
-    ProjectiveTensorProduct.linearMap_ext p fun x => by
-      simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, Completion.coe_toComplL,
-        ProjectiveTensorProduct.tprod_apply] using hgh x
-  exact DFunLike.coe_injective <|
-    Completion.ext g.continuous h.continuous (LinearMap.congr_fun hz)
 
 /-- The completed lift is the unique continuous linear map with the prescribed values on pure
 tensors. -/
@@ -162,16 +163,15 @@ theorem map_id (hf : ∀ i, Seminorm.IsBounded (p i) (p i) LinearMap.id) :
 variable {H : ι → Type*} [∀ i, AddCommGroup (H i)] [∀ i, Module 𝕜 (H i)]
 variable {υ : ι → Type*} (r : ∀ i, SeminormFamily 𝕜 (H i) (υ i))
 
-/-- Completed tensor maps preserve composition. -/
+/-- Completed tensor maps preserve composition, using the bounds on the two families of maps. -/
 theorem map_comp (f : ∀ i, E i →ₗ[𝕜] G i) (g : ∀ i, G i →ₗ[𝕜] H i)
     (hf : ∀ i, Seminorm.IsBounded (p i) (q i) (f i))
-    (hg : ∀ i, Seminorm.IsBounded (q i) (r i) (g i))
-    (hgf : ∀ i, Seminorm.IsBounded (p i) (r i) ((g i).comp (f i))) :
-    map p r (fun i => (g i).comp (f i)) hgf = (map q r g hg).comp (map p q f hf) := by
+    (hg : ∀ i, Seminorm.IsBounded (q i) (r i) (g i)) :
+    map p r (fun i => (g i).comp (f i)) (fun i => (hg i).comp (hf i)) =
+      (map q r g hg).comp (map p q f hf) := by
   apply continuousLinearMap_ext p
   intro x
-  rw [map_tprod, ContinuousLinearMap.comp_apply, map_tprod, map_tprod]
-  congr 2
+  simp only [map_tprod, ContinuousLinearMap.comp_apply, LinearMap.comp_apply]
 
 end CompletedProjectiveTensorProduct
 

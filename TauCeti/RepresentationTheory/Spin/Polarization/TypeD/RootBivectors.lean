@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
 public import TauCeti.RepresentationTheory.Spin.IntegralLattice
 public import TauCeti.RepresentationTheory.Spin.Weight
 
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 
 /-!
 # Simple-root bivectors for the type-D spin representation

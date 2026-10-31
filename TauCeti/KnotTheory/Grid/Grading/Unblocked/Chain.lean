@@ -86,9 +86,10 @@ the unblocked grid homology `GH⁻` and in which the concordance invariant `τ` 
 * `TauCeti.OddComponentGridDiagram.matrixMap_mem_bigradedChainMinusPiece` and
   `TauCeti.OddComponentGridDiagram.matrixMap_mem_alexanderChainMinusPiece`: a renamed matrix map
   whose weighted transitions preserve bidegree or Alexander degree preserves the corresponding
-  homogeneous pieces. More generally, one whose weighted transitions raise the bidegree by `δ`
-  raises the bidegree of homogeneous chains by `δ`
-  (`TauCeti.OddComponentGridDiagram.matrixMap_mem_bigradedChainMinusPiece_add`).
+  homogeneous pieces. More generally, one whose weighted transitions raise the bidegree, or the
+  Alexander degree, by `δ` raises it by `δ` on homogeneous chains
+  (`TauCeti.OddComponentGridDiagram.matrixMap_mem_bigradedChainMinusPiece_add`,
+  `TauCeti.OddComponentGridDiagram.matrixMap_mem_alexanderChainMinusPiece_add`).
 * `TauCeti.OddComponentGridDiagram.isInternal_bigradedChainMinusPiece`: `GC⁻` is the internal
   direct sum of its homogeneous pieces.
 * `TauCeti.OddComponentGridDiagram.isHomogeneous_unblockedDifferential_alexanderChainMinusGrading`
@@ -207,14 +208,23 @@ namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) {x y : GridState n}
 
+/-- The integer Alexander grading change across an arbitrary rectangle: once its weight
+`V^{O(r)}` is charged `-1` per variable, a rectangle lowers the Alexander grading by the number of
+`X`-markings it covers. -/
+theorem alexanderℤ_sub_card_OColumns_eq_sub_card (r : GridRectangleBetween x y) :
+    G.alexanderℤ y - ((G.1.OColumns r.toGridRectangle).card : ℤ) =
+      G.alexanderℤ x - ((G.1.XSet ∩ r.toGridRectangle.coveredSquares).card : ℤ) := by
+  have h := G.1.alexanderTwoℤ_eq_add_two_mul_card_sub_card r
+  rw [← G.two_mul_alexanderℤ, ← G.two_mul_alexanderℤ] at h
+  omega
+
 /-- The integer Alexander grading is unchanged across a rectangle counted by `∂⁻`, once its weight
 `V^{O(r)}` is charged `-1` per variable. -/
 theorem alexanderℤ_sub_card_OColumns {r : GridRectangleBetween x y}
     (hr : Disjoint r.toGridRectangle.coveredSquares G.1.XSet) :
     G.alexanderℤ y - ((G.1.OColumns r.toGridRectangle).card : ℤ) = G.alexanderℤ x := by
-  have h := G.1.alexanderTwoℤ_sub_two_mul_card_OColumns hr
-  rw [← G.two_mul_alexanderℤ, ← G.two_mul_alexanderℤ] at h
-  omega
+  rw [G.alexanderℤ_sub_card_OColumns_eq_sub_card r,
+    Finset.disjoint_iff_inter_eq_empty.mp hr.symm, Finset.card_empty, Nat.cast_zero, sub_zero]
 
 /-! ### The bidegree of a monomial generator -/
 
@@ -656,6 +666,22 @@ theorem matrixMap_mem_bigradedChainMinusPiece
     (by simpa using hgrade) hc
 
 omit hgrade in
+/-- A renamed matrix map whose weighted transitions raise the Alexander degree by `δ` sends an
+Alexander-homogeneous chain of degree `a` for `G` to a chain of Alexander degree `a + δ` for
+`G'`. -/
+theorem matrixMap_mem_alexanderChainMinusPiece_add (δ : ℤ)
+    (hAlexander : ∀ x y, ∀ w ∈ (M x y).support, ∀ d : Fin n →₀ ℕ,
+      (G'.monomialBidegree y (Finsupp.mapDomain σ d + w)).2 = (G.monomialBidegree x d).2 + δ)
+    {a : ℤ} {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
+    f c ∈ G'.alexanderChainMinusPiece R (a + δ) := by
+  rw [mem_alexanderChainMinusPiece] at hc ⊢
+  intro y e he
+  rw [hf] at he
+  obtain ⟨x, d, hd, w, hw, rfl⟩ :=
+    GridChain.exists_eq_mapDomain_add_of_mem_support_sum_rename_mul R c σ M he
+  rw [← monomialBidegree_snd, hAlexander x y w hw d, monomialBidegree_snd, hc x d hd]
+
+omit hgrade in
 /-- A renamed matrix map whose weighted transitions preserve Alexander degree sends an
 Alexander-homogeneous chain for `G` to a chain of the same Alexander degree for `G'`. -/
 theorem matrixMap_mem_alexanderChainMinusPiece
@@ -663,12 +689,8 @@ theorem matrixMap_mem_alexanderChainMinusPiece
       (G'.monomialBidegree y (Finsupp.mapDomain σ d + w)).2 = (G.monomialBidegree x d).2)
     {a : ℤ} {c : GridChainMinus R n} (hc : c ∈ G.alexanderChainMinusPiece R a) :
     f c ∈ G'.alexanderChainMinusPiece R a := by
-  rw [mem_alexanderChainMinusPiece] at hc ⊢
-  intro y e he
-  rw [hf] at he
-  obtain ⟨x, d, hd, w, hw, rfl⟩ :=
-    GridChain.exists_eq_mapDomain_add_of_mem_support_sum_rename_mul R c σ M he
-  rw [← monomialBidegree_snd, hAlexander x y w hw d, monomialBidegree_snd, hc x d hd]
+  simpa using G.matrixMap_mem_alexanderChainMinusPiece_add R G' σ M f hf 0
+    (by simpa using hAlexander) hc
 
 end RenameMatrixMap
 

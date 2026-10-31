@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.GreenFunction.HalfSpace
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Converse
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
@@ -114,7 +115,7 @@ private theorem halfSpacePoissonKernel_eq_rpow_one_add (v : U) {x : E}
       abs_inv, abs_of_pos hx]
     field_simp
     ring
-  rw [halfSpacePoissonKernel_def, norm_rpow_eq_norm_sq_rpow, h1,
+  rw [halfSpacePoissonKernel_def, ← Real.sq_rpow_div_two (norm_nonneg _), h1,
     Real.mul_rpow (by positivity) (by positivity)]
   ring
 

@@ -40,6 +40,8 @@ assembles a `ℤ`-indexed complex of modules from the same kind of data.
   element of a term.
 * `TopRep.gradedCochainComplexLift`: the factorization through a term of a morphism into `M`
   with values in one piece of the grading.
+* `TopRep.gradedCochainComplexMap`: the chain map induced by a morphism of degree zero commuting
+  with the differentials.
 
 ## Main results
 
@@ -224,5 +226,44 @@ theorem gradedCochainComplex_d_invariant {n : ℕ} {z : M.V} (hz : z ∈ ℳ n)
       (M.gradedCochainComplexInvariant ℳ hρ d hd hdd n z hz hinv :
         ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).V) = 0 :=
   Subtype.ext ((gradedCochainComplex_d_apply M ℳ hρ d hd hdd n _).trans hdz)
+
+section Map
+
+variable {M ℳ hρ d hd hdd} {M' : TopRep.{w} k G} {ℳ' : ℤ → Submodule k M'.V}
+  {hρ' : ∀ n g x, x ∈ ℳ' n → M'.ρ g x ∈ ℳ' n} {d' : M' ⟶ M'}
+  {hd' : TauCeti.LinearMap.IsHomogeneous d'.hom.toLinearMap ℳ' ℳ' 1} {hdd' : d' ≫ d' = 0}
+
+/-- A morphism `F : M ⟶ M'` of graded topological representations, of degree zero and commuting
+with the differentials, restricts degree by degree to a chain map between their cochain
+complexes. This is the counterpart of `TauCeti.gradedCochainComplexMap` for topological
+representations. -/
+noncomputable def gradedCochainComplexMap (F : M ⟶ M')
+    (hF : TauCeti.LinearMap.IsHomogeneous F.hom.toLinearMap ℳ ℳ' 0) (hFd : d ≫ F = F ≫ d') :
+    M.gradedCochainComplex ℳ hρ d hd hdd ⟶ M'.gradedCochainComplex ℳ' hρ' d' hd' hdd' where
+  f n := M'.gradedCochainComplexLift ℳ' hρ' d' hd' hdd' n
+    (M.gradedCochainComplexι ℳ hρ d hd hdd n ≫ F) fun v ↦ by
+      have h := hF.map_mem v.2
+      rw [add_zero] at h
+      rw [comp_apply, gradedCochainComplexι_apply]
+      exact h
+  comm' i j hij := by
+    obtain rfl : i + 1 = j := hij
+    refine ConcreteCategory.hom_ext _ _ fun v ↦ ?_
+    apply gradedCochainComplexι_injective M' ℳ' hρ' d' hd' hdd' (i + 1)
+    simp only [comp_apply, gradedCochainComplexι_apply, gradedCochainComplex_d_apply,
+      gradedCochainComplexLift_apply]
+    rw [← comp_apply, ← comp_apply, hFd]
+
+/-- The chain map `gradedCochainComplexMap F` evaluates by `F`. -/
+@[simp]
+theorem gradedCochainComplexMap_f_apply (F : M ⟶ M')
+    (hF : TauCeti.LinearMap.IsHomogeneous F.hom.toLinearMap ℳ ℳ' 0) (hFd : d ≫ F = F ≫ d')
+    (n : ℕ) (v : ((M.gradedCochainComplex ℳ hρ d hd hdd).X n).V) :
+    (((gradedCochainComplexMap (hρ' := hρ') (hd' := hd') (hdd' := hdd') F hF hFd).f n).hom
+      v).1 = F.hom v.1 := by
+  simp only [gradedCochainComplexMap, gradedCochainComplexLift_apply, comp_apply,
+    gradedCochainComplexι_apply]
+
+end Map
 
 end TopRep

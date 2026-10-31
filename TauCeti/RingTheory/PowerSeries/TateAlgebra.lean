@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
 
 /-!
 # Restricted power series as a normed ring
@@ -23,9 +24,10 @@ that the norm inherits the properties of the norm on `R` that the theory of Tate
 At the unit radius over a complete nonarchimedean field `K`, the result is the Tate algebra
 `K⟨X⟩` with its Gauss norm. Iterating the construction, the ring of series in one more variable
 restricted over `K⟨X₁, …, Xₙ₋₁⟩` is again complete, ultrametric and multiplicatively normed. This
-is the setting in which Bosch–Güntzer–Remmert apply Weierstrass division in `n` variables, and it
-is exactly the hypothesis set of
-`TauCeti.PowerSeries.IsDistinguished.existsUnique_mul_add_eq_subring`.
+is the setting in which Bosch–Güntzer–Remmert apply Weierstrass division in `n` variables.
+It satisfies the hypotheses of
+`TauCeti.PowerSeries.IsMulDistinguished.existsUnique_mul_add_eq_subring`: with a multiplicative
+coefficient norm, every unit coefficient is a multiplicative unit.
 
 The radius is supplied as an instance argument `[Fact (0 < c)]`; at the unit radius it is found
 automatically.
@@ -38,6 +40,7 @@ radius the Krull dimension of the restricted series ring is at least `dim R + 1`
 * `TauCeti.PowerSeries.norm_eq_gaussNorm`: the norm of a restricted series is its Gauss norm.
 * `TauCeti.PowerSeries.norm_le_iff`: the norm is bounded by `r ≥ 0` exactly when every weighted
   coefficient norm `‖aₙ‖ cⁿ` is.
+* `TauCeti.PowerSeries.tendsto_trunc_atTop`: polynomial truncations converge in the Gauss norm.
 * `TauCeti.PowerSeries.norm_C`, `TauCeti.PowerSeries.norm_X`: constants keep their norm, and the
   variable has norm `c`.
 * `TauCeti.PowerSeries.nnnorm_eq_gaussValuation`: the norm is the Gauss valuation
@@ -119,6 +122,32 @@ theorem norm_X [NormOneClass R] :
     · rfl
     · simp [PowerSeries.coeff_X, hm, hc.out.le]
 
+/-- Each coefficient is uniformly continuous for the positive-radius Gauss norm.
+This specializes the multivariate coefficient map at `Finsupp.single () n`, using
+`PowerSeries R = MvPowerSeries Unit R` and the corresponding restricted subrings. -/
+theorem uniformContinuous_coeff (n : ℕ) :
+    UniformContinuous fun f : PowerSeries.IsRestricted.subring (R := R) c ↦
+      PowerSeries.coeff n (f : PowerSeries R) :=
+  _root_.MvPowerSeries.uniformContinuous_coeff_isRestrictedSubring
+    (c := fun _ : Unit ↦ c) (Finsupp.single () n)
+
+/-- Polynomial truncations converge to a restricted series in its positive-radius Gauss norm. -/
+theorem tendsto_trunc_atTop (f : PowerSeries.IsRestricted.subring (R := R) c) :
+    Tendsto (fun n ↦ (⟨((f : PowerSeries R).trunc n : PowerSeries R),
+      isRestricted_polynomial _⟩ : PowerSeries.IsRestricted.subring (R := R) c)) atTop (𝓝 f) := by
+  refine Metric.tendsto_atTop.mpr fun ε hε ↦ ?_
+  obtain ⟨N, hN⟩ := eventually_atTop.mp
+    (((PowerSeries.isRestricted_iff' c _).mp f.2).eventually
+      (gt_mem_nhds (half_pos hε)))
+  refine ⟨N, fun n hn ↦ ?_⟩
+  rw [dist_eq_norm]
+  refine lt_of_le_of_lt ((norm_le_iff (half_pos hε).le).mpr fun m ↦ ?_) (half_lt_self hε)
+  simp only [AddSubgroupClass.coe_sub, map_sub, Polynomial.coeff_coe, PowerSeries.coeff_trunc]
+  split_ifs with hm
+  · simp only [sub_self, norm_zero, zero_mul]
+    exact (half_pos hε).le
+  · simpa using (hN m (hn.trans (Nat.le_of_not_gt hm))).le
+
 /-- The norm of a restricted series is its Gauss valuation. -/
 theorem nnnorm_eq_gaussValuation [NormMulClass R] [NormOneClass R]
     (f : PowerSeries.IsRestricted.subring (R := R) c) :
@@ -146,6 +175,33 @@ instance [CompleteSpace R] : CompleteSpace (PowerSeries.IsRestricted.subring (R 
     (MvPowerSeries.IsRestricted.subring (R := R) (fun _ : Unit ↦ c)))
 
 end NormedRing
+
+section Radius
+
+variable {R : Type*} [NormedRing R] [IsUltrametricDist R] {r s : ℝ}
+    (hr : 0 ≤ r) (hrs : r ≤ s)
+
+/-- Restrict a univariate series to a smaller nonnegative radius. This specializes the
+multivariate restriction to constant polyradii on `Unit`. -/
+noncomputable def restrictedRadiusHom :
+    PowerSeries.IsRestricted.subring (R := R) s →+* PowerSeries.IsRestricted.subring (R := R) r :=
+  TauCeti.MvPowerSeries.restrictedRadiusHom (R := R)
+    (r := fun _ : Unit ↦ r) (s := fun _ : Unit ↦ s) (fun _ ↦ hr) (fun _ ↦ hrs)
+
+/-- Radius restriction leaves the underlying univariate formal series unchanged. -/
+@[simp]
+theorem coe_restrictedRadiusHom (f : PowerSeries.IsRestricted.subring (R := R) s) :
+    (restrictedRadiusHom hr hrs f : PowerSeries R) = f :=
+  TauCeti.MvPowerSeries.coe_restrictedRadiusHom (fun _ : Unit ↦ hr) (fun _ ↦ hrs) f
+
+/-- Radius restriction is continuous for the positive-radius Gauss norms. -/
+@[continuity]
+theorem continuous_restrictedRadiusHom [Fact (0 < r)] [Fact (0 < s)] :
+    Continuous (restrictedRadiusHom (R := R) hr hrs) :=
+  TauCeti.MvPowerSeries.continuous_restrictedRadiusHom
+    (r := fun _ : Unit ↦ r) (s := fun _ : Unit ↦ s) (fun _ ↦ hr) (fun _ ↦ hrs)
+
+end Radius
 
 section NormedCommRing
 

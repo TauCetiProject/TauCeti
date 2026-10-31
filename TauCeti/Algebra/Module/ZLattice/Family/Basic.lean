@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Covering.Quotient
+
+import TauCeti.Analysis.Normed.Group.Int
 
 /-!
 # Continuous families of full lattices
@@ -57,6 +60,8 @@ trivialization of the family built from it is in
 * `TauCeti.properlyDiscontinuousVAdd_periodAddAction`, `TauCeti.isCancelVAdd_periodAddAction`,
   `TauCeti.continuousConstVAdd_periodAddAction`: the period translation action on `Y × E` is
   properly discontinuous, free, and continuous.
+* `TauCeti.isAddQuotientCoveringMap_torusFamily_mk`: the orbit map `Y × E → (Y × E)/Λ` is a
+  covering map, the quotient map of the period translation action.
 * `TauCeti.mem_orbit_periodAddAction_iff`: two points lie in one orbit exactly when they have the
   same parameter `y` and differ by a period at `y`.
 * `TauCeti.continuous_torusFamilyProjection`, `TauCeti.isOpenMap_torusFamilyProjection`: the
@@ -67,6 +72,9 @@ trivialization of the family built from it is in
 * Christina Birkenhake and Herbert Lange, *Complex Abelian Varieties*, second edition,
   Grundlehren der mathematischen Wissenschaften 302, Springer, 2004, Chapter 8 (families of
   complex tori given by period matrices).
+* Tau Ceti PR [#20968](https://github.com/TauCetiProject/TauCeti/pull/20968) (closed, unmerged)
+  proved that the orbit map is a covering map along the lines of
+  `TauCeti.isAddQuotientCoveringMap_torusFamily_mk`.
 -/
 
 public section
@@ -158,9 +166,7 @@ theorem exists_pos_mul_norm_equivFun_le_norm_period_of_isCompact {ι : Type*} [F
   have hl : P y l = ∑ i, ((b.equivFun l i : ℤ) : ℝ) • P y (b i) := by
     conv_lhs => rw [← b.sum_equivFun l]
     simp only [map_sum, map_zsmul, Int.cast_smul_eq_zsmul]
-  have hn : ‖fun i ↦ ((b.equivFun l i : ℤ) : ℝ)‖ = ‖b.equivFun l‖ := by
-    simp only [Pi.norm_def]
-    exact congrArg _ (Finset.sup_congr rfl fun i _ ↦ NNReal.eq (Int.norm_cast_real _))
+  have hn := pi_norm_intCast_real (b.equivFun l)
   have := h y hy fun i ↦ (b.equivFun l i : ℝ)
   rwa [hn, ← hl] at this
 
@@ -313,5 +319,20 @@ theorem properlyDiscontinuousVAdd_periodAddAction [FiniteDimensional ℝ E]
   calc ‖P p.1 l‖ = ‖(p.2 + P p.1 l) - p.2‖ := by rw [add_sub_cancel_left]
     _ ≤ ‖p.2 + P p.1 l‖ + ‖p.2‖ := norm_sub_le _ _
     _ ≤ R₁ + R₂ := by linarith
+
+/-- **The orbit map is a covering map.** For a continuous family of full lattices, the orbit map
+`Y × E → (Y × E)/Λ` of the period translation action is a covering map, and `(Y × E)/Λ` is its
+quotient by the free action of `Λ`. -/
+theorem isAddQuotientCoveringMap_torusFamily_mk [FiniteDimensional ℝ E]
+    [∀ y, DiscreteTopology (LinearMap.range (P y))] [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
+    [Free ℤ Λ] [Module.Finite ℤ Λ] [T2Space Y] [LocallyCompactSpace Y]
+    (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y)) :
+    letI := periodAddAction P
+    IsAddQuotientCoveringMap (Quotient.mk (AddAction.orbitRel Λ (Y × E))) Λ := by
+  let _ := periodAddAction P
+  have := continuousConstVAdd_periodAddAction P hcont
+  have := properlyDiscontinuousVAdd_periodAddAction P hcont hinj
+  have := isCancelVAdd_periodAddAction P hinj
+  exact isAddQuotientCoveringMap_quotientMk_of_properlyDiscontinuousVAdd
 
 end TauCeti

@@ -10,6 +10,9 @@ import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Sections
 public import Mathlib.LinearAlgebra.Isomorphisms
+public import Mathlib.RingTheory.Flat.Basic
+public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
+import TauCeti.RingTheory.Flat.Extensions
 
 /-!
 # The linear two-open computation of first cohomology
@@ -22,12 +25,17 @@ restrictions. No acyclicity on the overlap is needed.
 
 This upgrades the additive computation in `SectionsQuotient.Basic` to a linear one,
 so it can be used for dimensions and extension of scalars. For quasi-coherent coefficients,
-affine acyclicity supplies the hypotheses on any two affine opens of a locally Noetherian
-scheme. The quotient uses the sign `s| - t|` of the Mayer–Vietoris sequence.
+affine acyclicity supplies the hypotheses on any two affine opens of any scheme. The
+quotient uses the sign `s| - t|` of the Mayer–Vietoris sequence.
 
 The construction reuses `mayerVietorisSectionClass`, its kernel calculation and
 surjectivity, and Mathlib's linear first isomorphism theorem. It does not assert a comparison of
 Čech complexes or flat base change.
+
+If `H¹(X, M)` itself vanishes, the difference of restrictions is surjective, so the global
+sections `H⁰(X, M)` are the kernel of a surjection `Γ(M, U) × Γ(M, V) → Γ(M, U ∩ V)`. For a scheme
+over a commutative ring `R` whose sections over `U`, `V` and `U ∩ V` are flat `R`-modules, this
+makes `H⁰(X, M)` flat over `R` (`flat_cohomology_zero_of_subsingleton_cohomology_one`).
 
 ## References
 
@@ -142,6 +150,25 @@ lemma exact_mayerVietorisSectionsRestrictionLinear (hUV : U ⊔ V = ⊤) :
       exact sub_self _
     exact hz ▸ hzero
 
+/-- On a two-open cover `X = U ∪ V`, global sections, through `H⁰(X, M) ≅ Γ(M, ⊤)`, are the pairs
+of sections over `U` and `V` that agree on `U ∩ V`. -/
+lemma exact_mayerVietorisSectionsRestrictionLinear_comp_cohomologyZeroLinearEquiv
+    (hUV : U ⊔ V = ⊤) :
+    Function.Exact ((mayerVietorisSectionsRestrictionLinear M U V).comp
+        (Scheme.Modules.cohomologyZeroLinearEquiv M).toLinearMap)
+      (mayerVietorisSectionsDifferenceLinear M U V) := fun y ↦
+  (exact_mayerVietorisSectionsRestrictionLinear M U V hUV y).trans
+    ⟨fun ⟨s, hs⟩ ↦ ⟨(Scheme.Modules.cohomologyZeroLinearEquiv M).symm s, by simpa using hs⟩,
+      fun ⟨x, hx⟩ ↦ ⟨_, hx⟩⟩
+
+/-- On a two-open cover, a degree-zero class is determined by its restrictions to the members. -/
+lemma mayerVietorisSectionsRestrictionLinear_comp_cohomologyZeroLinearEquiv_injective
+    (hUV : U ⊔ V = ⊤) :
+    Function.Injective ((mayerVietorisSectionsRestrictionLinear M U V).comp
+        (Scheme.Modules.cohomologyZeroLinearEquiv M).toLinearMap) :=
+  (mayerVietorisSectionsRestrictionLinear_injective M U V hUV).comp
+    (Scheme.Modules.cohomologyZeroLinearEquiv M).injective
+
 private def terminalUnion (hUV : U ⊔ V = ⊤) : IsTerminal (U ⊔ V) := by
   rw [hUV]
   exact isTerminalTop
@@ -226,6 +253,15 @@ lemma ker_mayerVietorisBoundaryLinear :
     mayerVietorisSectionsDifference_apply]
   rfl
 
+include hUV in
+/-- If `H¹(X, M)` vanishes, every section over the overlap of a two-open cover is a difference of
+restrictions of sections over the two members. -/
+lemma mayerVietorisSectionsDifferenceLinear_surjective [Subsingleton (Cohomology M 1)] :
+    Function.Surjective (mayerVietorisSectionsDifferenceLinear M U V) := fun s ↦ by
+  have hs : s ∈ LinearMap.ker (mayerVietorisBoundaryLinear M U V hUV) :=
+    LinearMap.mem_ker.mpr (Subsingleton.elim _ _)
+  rwa [ker_mayerVietorisBoundaryLinear] at hs
+
 variable (hU : Subsingleton (cohomologyOn M 1 U))
   (hV : Subsingleton (cohomologyOn M 1 V))
 
@@ -263,5 +299,41 @@ lemma sectionsQuotientLinearEquivCohomologyOne_symm_boundary (s : Γ(M, U ⊓ V)
   apply (sectionsQuotientLinearEquivCohomologyOne M U V hUV hU hV).injective
   rw [LinearEquiv.apply_symm_apply]
   exact (sectionsQuotientLinearEquivCohomologyOne_mk M U V hUV hU hV s).symm
+
+section Flat
+
+variable {R : Type u} [CommRing R] [X.Over (Spec (.of R))]
+
+include hUV in
+/-- **Flatness of `H⁰` when `H¹` vanishes.** Let `X` be a scheme over `R` covered by two opens `U`
+and `V` such that the sections of `M` over `U`, `V` and `U ∩ V` are flat `R`-modules. If
+`H¹(X, M) = 0`, then `H⁰(X, M)` is a flat `R`-module: it is the kernel of the surjective
+difference of restrictions `Γ(M, U) × Γ(M, V) → Γ(M, U ∩ V)`. -/
+theorem flat_cohomology_zero_of_subsingleton_cohomology_one
+    [Module.Flat R (((Scheme.Modules.sectionsBasePresheafFunctor R).obj M).obj (op U))]
+    [Module.Flat R (((Scheme.Modules.sectionsBasePresheafFunctor R).obj M).obj (op V))]
+    [Module.Flat R (((Scheme.Modules.sectionsBasePresheafFunctor R).obj M).obj (op (U ⊓ V)))]
+    [Subsingleton (Cohomology M 1)] :
+    Module.Flat R (Cohomology M 0) := by
+  let : ∀ W : X.Opens, Algebra R Γ(X, W) := fun W ↦
+    ((X.baseRingToStructurePresheaf R).app (op W)).hom.toAlgebra
+  let : ∀ W : X.Opens, Module R Γ(M, W) := fun W ↦ Scheme.Modules.sectionsBaseModule R M W
+  have : ∀ W : X.Opens, IsScalarTower R Γ(X, ⊤) Γ(M, W) := Scheme.Modules.isScalarTower_sections R M
+  have := Scheme.Modules.isScalarTower_cohomology R X M 0
+  have : Module.Flat R Γ(M, U) :=
+    ‹Module.Flat R (((Scheme.Modules.sectionsBasePresheafFunctor R).obj M).obj (op U))›
+  have : Module.Flat R Γ(M, V) :=
+    ‹Module.Flat R (((Scheme.Modules.sectionsBasePresheafFunctor R).obj M).obj (op V))›
+  have : Module.Flat R Γ(M, U ⊓ V) :=
+    ‹Module.Flat R (((Scheme.Modules.sectionsBasePresheafFunctor R).obj M).obj (op (U ⊓ V)))›
+  exact Function.Exact.flat_left_of_injective_of_surjective
+    (f := ((mayerVietorisSectionsRestrictionLinear M U V).comp
+      (Scheme.Modules.cohomologyZeroLinearEquiv M).toLinearMap).restrictScalars R)
+    (g := (mayerVietorisSectionsDifferenceLinear M U V).restrictScalars R)
+    (exact_mayerVietorisSectionsRestrictionLinear_comp_cohomologyZeroLinearEquiv M U V hUV)
+    (mayerVietorisSectionsRestrictionLinear_comp_cohomologyZeroLinearEquiv_injective M U V hUV)
+    (mayerVietorisSectionsDifferenceLinear_surjective M U V hUV)
+
+end Flat
 
 end TauCeti.AlgebraicGeometry

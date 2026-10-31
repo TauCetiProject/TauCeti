@@ -110,6 +110,12 @@ def cartanMatrix (i : Fin 7) : Matrix (Fin 56) (Fin 56) ℤ :=
 def raisingMatrix (i : Fin 7) : Matrix (Fin 56) (Fin 56) ℤ :=
   weightTable.raisingMatrix i
 
+/-- The raising matrices of the minuscule weight table are the named raising generators. -/
+@[simp]
+theorem weightTable_raisingMatrix (i : Fin 7) :
+    weightTable.raisingMatrix i = raisingMatrix i :=
+  (rfl)
+
 /-- The lowering generator `F_i` in the minuscule weight basis. -/
 def loweringMatrix (i : Fin 7) : Matrix (Fin 56) (Fin 56) ℤ :=
   weightTable.loweringMatrix i

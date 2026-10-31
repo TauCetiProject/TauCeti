@@ -16,15 +16,14 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 
 Every element of `PSL(2, ℝ)` acts on the upper half-plane by a biholomorphism. This file expresses
 holomorphy as a `ContMDiffConstSMul` instance, so each transformation is packaged by the generic
-`Diffeomorph.constSmul` constructor. Subgroups inherit the same holomorphic action, which is the
-input needed to put complex charts on their free orbit quotients.
+`Diffeomorph.constSmul` constructor. Subgroups inherit the same holomorphic action through the
+generic instance `SetLike.contMDiffConstSMul`, which is the input needed to put complex charts on
+their free orbit quotients.
 
 ## Main declarations
 
 * `UpperHalfPlane.instContMDiffConstSMulPSL2`: the action of each element of `PSL(2, ℝ)` is
   holomorphic.
-* `Subgroup.instContMDiffConstSMulPSL2`: every subgroup of `PSL(2, ℝ)` acts
-  holomorphically.
 -/
 
 public section
@@ -44,14 +43,5 @@ instance instContMDiffConstSMulPSL2 : ContMDiffConstSMul 𝓘(ℂ, ℂ) ∞ PSL(
         (g := Matrix.SpecialLinearGroup.toGL g) (by simp)
 
 end UpperHalfPlane
-
-namespace Subgroup
-
-/-- Every subgroup of `PSL(2, ℝ)` inherits a holomorphic action on the upper half-plane. -/
-instance instContMDiffConstSMulPSL2 (G : Subgroup PSL(2, ℝ)) :
-    ContMDiffConstSMul 𝓘(ℂ, ℂ) ∞ G ℍ :=
-  IsScalarTower.contMDiffConstSMul (I := 𝓘(ℂ, ℂ)) (n := ∞) PSL(2, ℝ)
-
-end Subgroup
 
 end

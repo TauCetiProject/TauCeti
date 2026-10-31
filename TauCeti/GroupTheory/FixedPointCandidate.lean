@@ -60,6 +60,14 @@ these properties is asserted here. -/
 abbrev FixedPointCandidate (F : G →* G) : Type _ :=
   DerivedCentralQuotient ↥(fixedSubgroup F)
 
+/-- The candidate attached to an endomorphism is finite as soon as its fixed subgroup is: the
+derived subgroup of a finite group is finite, and so is a quotient of it by the centre. This is the
+finiteness step of the recipe, and it is what transfers a finiteness proof for the fixed points of a
+Steinberg endomorphism to the candidate group attached to them. -/
+instance finiteFixedPointCandidate {F : G →* G} [h : Finite ↥(fixedSubgroup F)] :
+    Finite (FixedPointCandidate F) :=
+  inferInstance
+
 namespace FixedPointCandidate
 
 variable {G' G'' : Type*} [Group G'] [Group G'']

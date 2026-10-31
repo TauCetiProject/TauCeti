@@ -42,6 +42,26 @@ universe u
 
 variable (T : NumericalType.{u})
 
+/-- The numerical data of a genus-one affine E₈ diagram: constant weights, multiplicities
+proportional to its marks, and intersection matrix given by its affine Cartan matrix.
+Component genera are imposed separately in the minimal classification. -/
+def IsGenusOneAffineE8Shape (T : NumericalType.{u}) : Prop :=
+  ∃ e : Fin 9 ≃ T.Component,
+  (∀ i, T.weight (e i) = T.weight (e 0)) ∧
+  (∀ i, (T.multiplicity (e i) : ℤ) =
+    AffineDynkinType.E8.marks i * T.multiplicity (e 8)) ∧
+  (∀ i j, T.intersection (e i) (e j) =
+    -(T.weight (e 0) : ℤ) * AffineDynkinType.E8.cartanMatrix i j)
+
+/-- The complete numerical data recorded by `IsGenusOneAffineE8Shape`. -/
+theorem isGenusOneAffineE8Shape_iff : T.IsGenusOneAffineE8Shape ↔
+  ∃ e : Fin 9 ≃ T.Component,
+  (∀ i, T.weight (e i) = T.weight (e 0)) ∧
+  (∀ i, (T.multiplicity (e i) : ℤ) =
+    AffineDynkinType.E8.marks i * T.multiplicity (e 8)) ∧
+  (∀ i j, T.intersection (e i) (e j) =
+    -(T.weight (e 0) : ℤ) * AffineDynkinType.E8.cartanMatrix i j) := Iff.rfl
+
 /-- The finite E₈ calculation and affine exclusion determine the full intersection data. -/
 private lemma affineE8_weights_intersections (l : Fin 9 → T.Component)
     (hl : Function.Injective l)
@@ -185,5 +205,21 @@ theorem IsMinimal.exists_equiv_affineE8 (hT : T.IsMinimal) (hg : T.arithmeticGen
   obtain ⟨e, he, hw, hm, ha⟩ := T.exists_equiv_affineE8 l hl
     (fun i ↦ (T.isMinusTwoIndex_iff.mp (h₂ (l i))).2) hadj
   exact ⟨e, he, fun i ↦ (T.isMinusTwoIndex_iff.mp (h₂ (e i))).1, hw, hm, ha⟩
+
+/-- In the affine E₈ shape, a component weight divides all weights with quotient at most four,
+and a component multiplicity divides all multiplicities with quotient at most six. -/
+lemma IsGenusOneAffineE8Shape.exists_weight_and_multiplicity_dvd_and_le
+    (hshape : T.IsGenusOneAffineE8Shape) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  obtain ⟨e, hw, hm, -⟩ := (isGenusOneAffineE8Shape_iff T).mp hshape
+  refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_of_equiv (nw := 4) (nm := 6)
+    e 0 8 (fun i ↦ ?_) (fun i ↦ ?_)
+  all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+  · rw [hw i]; omega
+  · rw [hm i]
+    fin_cases i <;> simp
 
 end TauCeti.NumericalType

@@ -7,13 +7,18 @@ module
 
 public import Mathlib.Algebra.BigOperators.Finprod
 
+import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
+
 /-!
 # Regrouping finitely supported products
 
 `Fintype.prod_sum_type` splits a product over `α ⊕ β` into the two partial products, but it needs
 both index types to be finite.  This file records the `finprod` analogue, which only needs the two
 restricted families to have finite multiplicative support. Regrouping by the fibers of an
-arbitrary map is also available, without finiteness assumptions on the fibers.
+arbitrary map is also available, without finiteness assumptions on the fibers, as is cancelling a
+finitely supported factor whose product is `1`. Finally, a product over a finset is compared with
+the `finprod` of a finitely supported family whose factors off the finset are all at least `1`, or
+all at most `1`.
 
 ## Main results
 
@@ -21,6 +26,13 @@ arbitrary map is also available, without finiteness assumptions on the fibers.
   soon as its two restrictions do.
 * `TauCeti.finprod_sum_type`: `∏ᶠ v : α ⊕ β, f v = (∏ᶠ a, f (.inl a)) * ∏ᶠ b, f (.inr b)`.
 * `TauCeti.finprod_fiberwise`: regroup a finitely supported product by the fibers of a map.
+* `TauCeti.finprod_mul_eq_right_of_finprod_eq_one`: multiplying by a finitely supported family
+  with product `1` preserves a product, without any finiteness assumption on the other factor.
+* `TauCeti.finprod_comm`: the two iterated products of a family of two variables agree when the
+  family has finite multiplicative support jointly in both variables.
+* `Finset.prod_le_finprod_of_one_le₀` and `Finset.finprod_le_prod_of_le_one₀`: a product over a
+  finset is at most, respectively at least, the `finprod` when the factors off the finset are at
+  least, respectively at most, `1`.
 -/
 
 public section
@@ -85,4 +97,71 @@ theorem finprod_fiberwise {α β M : Type*} [CommMonoid M] (g : α → β) (f : 
     _ = ∏ a ∈ hf.toFinset, f a := finprod_prod_filter g hf.toFinset f
     _ = ∏ᶠ a, f a := (finprod_eq_prod f hf).symm
 
+/-- Multiplying a family by a finitely supported family whose product is `1` does not change its
+product. The other family need not have finite multiplicative support: if it does not, neither
+does the product family, and both products are `1`. -/
+@[to_additive /-- Adding a finitely supported family whose sum is `0` to a family does not change
+its sum. The other family need not have finite support: if it does not, neither does the sum
+family, and both sums are `0`. -/]
+theorem finprod_mul_eq_right_of_finprod_eq_one {ι : Type*} {f g : ι → M}
+    (hf : HasFiniteMulSupport f) (hf1 : ∏ᶠ i, f i = 1) : ∏ᶠ i, f i * g i = ∏ᶠ i, g i := by
+  by_cases hg : HasFiniteMulSupport g
+  · rw [finprod_mul_distrib hf hg, hf1, one_mul]
+  · have hfg : ¬HasFiniteMulSupport fun i ↦ f i * g i := fun hfg ↦ hg <|
+      (hfg.union hf).subset fun i hi ↦ by
+        by_contra h
+        simp only [Set.mem_union, mem_mulSupport, not_or, not_not] at h
+        exact hi (by simpa [h.2] using h.1)
+    rw [finprod_of_infinite_mulSupport hfg, finprod_of_infinite_mulSupport hg]
+
+/-- The two iterated products of a family of two variables agree when the family has finite
+multiplicative support jointly in both variables. This is the `finprod` analogue of
+`Finset.prod_comm`. -/
+@[to_additive /-- The two iterated sums of a family of two variables agree when the family has
+finite support jointly in both variables. This is the `finsum` analogue of `Finset.sum_comm`. -/]
+theorem finprod_comm {ι κ : Type*} {f : ι → κ → M} (hf : HasFiniteMulSupport (uncurry f)) :
+    ∏ᶠ i, ∏ᶠ k, f i k = ∏ᶠ k, ∏ᶠ i, f i k := by
+  have hf' : HasFiniteMulSupport fun x : κ × ι ↦ f x.2 x.1 :=
+    Set.Finite.preimage (Equiv.prodComm κ ι).injective.injOn hf
+  calc
+    ∏ᶠ i, ∏ᶠ k, f i k = ∏ᶠ x : ι × κ, f x.1 x.2 := (finprod_curry (uncurry f) hf).symm
+    _ = ∏ᶠ x : κ × ι, f x.2 x.1 :=
+      (finprod_comp_equiv (Equiv.prodComm κ ι) (f := fun x : ι × κ ↦ f x.1 x.2)).symm
+    _ = ∏ᶠ k, ∏ᶠ i, f i k := finprod_curry _ hf'
+
 end TauCeti
+
+namespace Finset
+
+open Function
+
+section OrderedWithZero
+
+variable {ι M₀ : Type*} [CommMonoidWithZero M₀] [PartialOrder M₀] [ZeroLEOneClass M₀]
+  [PosMulMono M₀] {f : ι → M₀}
+
+/-- A product over a finset is at most the `finprod` of a finitely supported family whose factors
+off the finset are at least `1`. This is the `finprod` analogue of
+`Finset.prod_le_prod_of_subset_of_one_le₀`. -/
+theorem prod_le_finprod_of_one_le₀ (s : Finset ι) (hf : HasFiniteMulSupport f)
+    (hf₀ : ∀ i ∈ s, 0 ≤ f i) (hf₁ : ∀ i ∉ s, 1 ≤ f i) : ∏ i ∈ s, f i ≤ ∏ᶠ i, f i := by
+  classical
+  rw [finprod_eq_finsetProd_of_mulSupport_subset f (s := s ∪ hf.toFinset)
+    fun i hi ↦ Finset.mem_union_right s (hf.mem_toFinset.mpr hi)]
+  exact Finset.prod_le_prod_of_subset_of_one_le₀ Finset.subset_union_left hf₀
+    fun i _ hi ↦ hf₁ i hi
+
+/-- The `finprod` of a finitely supported nonnegative family whose factors off a finset are at
+most `1` is at most the product over that finset. This is the `finprod` analogue of
+`Finset.prod_le_prod_of_subset_of_le_one₀`. -/
+theorem finprod_le_prod_of_le_one₀ (s : Finset ι) (hf : HasFiniteMulSupport f)
+    (hf₀ : ∀ i, 0 ≤ f i) (hf₁ : ∀ i ∉ s, f i ≤ 1) : ∏ᶠ i, f i ≤ ∏ i ∈ s, f i := by
+  classical
+  rw [finprod_eq_finsetProd_of_mulSupport_subset f (s := s ∪ hf.toFinset)
+    fun i hi ↦ Finset.mem_union_right s (hf.mem_toFinset.mpr hi)]
+  exact Finset.prod_le_prod_of_subset_of_le_one₀ Finset.subset_union_left (fun i _ ↦ hf₀ i)
+    fun i _ hi ↦ hf₁ i hi
+
+end OrderedWithZero
+
+end Finset

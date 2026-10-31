@@ -134,7 +134,7 @@ theorem exists_map_IccExtend_eq_lintegral_curveAction_le (hp : p ≠ ∞)
           rw [lintegral_map (measurable_curveAction_IccExtend hab.le _ _ _) hΦ]
           refine lintegral_congr fun x ↦ ?_
           rw [← curveAction_eq_sum_edist_rpow_mul_rpow_one_sub_of_eqOn_polygonalInterpolation hh
-            (by linarith) (hΦeq x), hNh]
+            (hΦeq x), hNh]
       _ = ∑ k ∈ Finset.range N,
             edist (μ (a + k * h)) (μ (a + (k + 1) * h)) ^ p.toReal *
               ENNReal.ofReal h ^ (1 - p.toReal) := by

@@ -78,7 +78,10 @@ morphism.
   as left mates;
 * `CategoryTheory.ExactPairing.leftMate_rightDualIso_hom` and
   `CategoryTheory.ExactPairing.rightMate_leftDualIso_hom`: the opposite-handed mate of the
-  comparison between two duals is an identity.
+  comparison between two duals is an identity;
+* `CategoryTheory.ExactPairing.leftMate_rightDualIso_inv` and
+  `CategoryTheory.ExactPairing.rightMate_leftDualIso_inv`: the opposite-handed mate of the
+  inverse comparison between two duals is the comparison between the two opposite-handed duals.
 
 ## References
 
@@ -462,6 +465,22 @@ theorem rightMate_leftDualIso_hom {X₁ X₂ Y Z : C} (p₁ : ExactPairing X₁ 
     rightHom_ext (X := X₁) (by
       rw [rightMate_comp_evaluation, leftDualIso_hom, leftMate_comp_evaluation])
   rw [← Category.comp_id (leftDualIso p₁ p₂).hom, comp_rightMate p₁ p₂ q, h, Category.comp_id]
+
+/-- If `X` has two right duals `Y₁` and `Y₂` and `Z` is a left dual of `Y₁`, then the left mate
+of the inverse comparison `Y₂ ⟶ Y₁` is the comparison `leftDualIso q p₁ : Z ≅ X` of the two left
+duals of `Y₁`. -/
+theorem leftMate_rightDualIso_inv {X Y₁ Y₂ Z : C} (p₁ : ExactPairing X Y₁)
+    (p₂ : ExactPairing X Y₂) (q : ExactPairing Z Y₁) :
+    leftMate p₂ q (rightDualIso p₁ p₂).inv = (leftDualIso q p₁).hom := by
+  rw [rightDualIso_inv, ← rightDualIso_hom, leftMate_rightDualIso_hom, ← leftDualIso_hom]
+
+/-- If `Y` has two left duals `X₁` and `X₂` and `Z` is a right dual of `X₁`, then the right mate
+of the inverse comparison `X₂ ⟶ X₁` is the comparison `rightDualIso q p₁ : Z ≅ Y` of the two
+right duals of `X₁`. -/
+theorem rightMate_leftDualIso_inv {X₁ X₂ Y Z : C} (p₁ : ExactPairing X₁ Y)
+    (p₂ : ExactPairing X₂ Y) (q : ExactPairing X₁ Z) :
+    rightMate p₂ q (leftDualIso p₁ p₂).inv = (rightDualIso q p₁).hom := by
+  rw [leftDualIso_inv, ← leftDualIso_hom, rightMate_leftDualIso_hom, ← rightDualIso_hom]
 
 end CategoryTheory.ExactPairing
 

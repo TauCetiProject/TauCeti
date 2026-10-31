@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Contour.Cycle.HomologyCauchy
 public import TauCeti.Analysis.Contour.Residue.Cycle
 import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 
 /-!
 # The classical residue theorem for contour cycles
@@ -38,7 +39,9 @@ by the homology Cauchy theorem for cycles
 generators. Its `S = ∅` case is exactly that theorem.
 
 Cauchy's integral formula for a cycle follows, as usual, by applying the residue theorem to the
-Cauchy kernel `w ↦ f w / (w − z) ^ (k + 1)`, whose only singularity in `U` is at `z`.
+Cauchy kernel `w ↦ f w / (w − z) ^ (k + 1)`, whose only singularity in `U` is at `z`. For a
+function with values in a complex Banach space, the formula follows from the scalar one, since
+continuous linear functionals commute with the cycle integral and separate points.
 
 ## Main results
 
@@ -50,6 +53,11 @@ Cauchy kernel `w ↦ f w / (w − z) ^ (k + 1)`, whose only singularity in `U` i
   `TauCeti.Contour.Cycle.cauchyIntegralFormula_nullHomologous` and
   `TauCeti.Contour.Cycle.cauchyIntegralFormula_deriv_nullHomologous` — Cauchy's integral formula
   for a cycle, for every iterated derivative and for `f` and `f'` themselves.
+* `TauCeti.Contour.Cycle.cauchyIntegralFormula_iteratedDeriv_smul_nullHomologous`,
+  `TauCeti.Contour.Cycle.cauchyIntegralFormula_smul_nullHomologous` and
+  `TauCeti.Contour.Cycle.cauchyIntegralFormula_deriv_smul_nullHomologous`: the same formulas for
+  functions with values in a complex Banach space, with the Cauchy kernel acting by scalar
+  multiplication.
 
 ## References
 
@@ -207,6 +215,63 @@ theorem cauchyIntegralFormula_deriv_nullHomologous {z : ℂ} (hU : IsOpen U)
       = 2 * (Real.pi : ℂ) * Complex.I * windingNumber z C * deriv f z := by
   simpa [iteratedDeriv_one] using
     cauchyIntegralFormula_iteratedDeriv_nullHomologous hU hf hCU hnull hz hoff 1
+
+section VectorValued
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+
+/-- **Cauchy's integral formula for a cycle, for the `k`-th derivative of a Banach-valued
+function.** Let `f` be holomorphic on an open `U` with values in a complex Banach space, let `C` be
+a contour cycle in `U` that is null-homologous there, and let `z ∈ U` lie off the trace of `C`.
+Then for every `k`,
+
+`Cycle.integral (fun w ↦ ((w − z) ^ (k + 1))⁻¹ • f w) C = (2πi · n_z(C) / k !) • f⁽ᵏ⁾(z)`.
+
+For `E = ℂ` this is `TauCeti.Contour.Cycle.cauchyIntegralFormula_iteratedDeriv_nullHomologous`. -/
+theorem cauchyIntegralFormula_iteratedDeriv_smul_nullHomologous {f : ℂ → E} {z : ℂ}
+    (hU : IsOpen U) (hf : DifferentiableOn ℂ f U) {C : Cycle} (hCU : IsIn C U)
+    (hnull : IsNullHomologous C U) (hz : z ∈ U) (hoff : z ∉ trace C) (k : ℕ) :
+    integral (fun w ↦ ((w - z) ^ (k + 1))⁻¹ • f w) C
+      = (2 * (Real.pi : ℂ) * Complex.I * windingNumber z C / (k.factorial : ℂ)) •
+          iteratedDeriv k f z := by
+  have hcont : ContinuousOn (fun w ↦ ((w - z) ^ (k + 1))⁻¹ • f w) (trace C) :=
+    (((continuousOn_id.sub continuousOn_const).pow _).inv₀ fun w hw ↦
+      pow_ne_zero _ (sub_ne_zero.mpr (by rintro rfl; exact hoff hw))).smul
+        (hf.continuousOn.mono (isIn_iff.mp hCU))
+  refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℂ)).2 fun ℓ ↦ ?_
+  rw [← integral_comp_comm (fun _ ↦ intervalIntegrable_of_mem_support hcont), map_smul,
+    ← ℓ.iteratedDeriv_comp_left ((hf.contDiffOn (n := k) hU).contDiffAt (hU.mem_nhds hz)) le_rfl]
+  simp only [map_smul, smul_eq_mul, ← div_eq_inv_mul, Function.comp_def]
+  rw [cauchyIntegralFormula_iteratedDeriv_nullHomologous (f := fun w ↦ ℓ (f w)) hU
+    (ℓ.differentiable.comp_differentiableOn hf) hCU hnull hz hoff k]
+  ring
+
+/-- **Cauchy's integral formula for a cycle, for a Banach-valued function.** For `f` holomorphic
+on an open `U` with values in a complex Banach space, `C` a contour cycle in `U` that is
+null-homologous there, and `z ∈ U` off the trace of `C`,
+
+`Cycle.integral (fun w ↦ (w − z)⁻¹ • f w) C = (2πi · n_z(C)) • f z`. -/
+theorem cauchyIntegralFormula_smul_nullHomologous {f : ℂ → E} {z : ℂ} (hU : IsOpen U)
+    (hf : DifferentiableOn ℂ f U) {C : Cycle} (hCU : IsIn C U) (hnull : IsNullHomologous C U)
+    (hz : z ∈ U) (hoff : z ∉ trace C) :
+    integral (fun w ↦ (w - z)⁻¹ • f w) C
+      = (2 * (Real.pi : ℂ) * Complex.I * windingNumber z C) • f z := by
+  simpa using cauchyIntegralFormula_iteratedDeriv_smul_nullHomologous hU hf hCU hnull hz hoff 0
+
+/-- **Cauchy's integral formula for a cycle, first derivative of a Banach-valued function.** The
+`k = 1` case of `TauCeti.Contour.Cycle.cauchyIntegralFormula_iteratedDeriv_smul_nullHomologous`,
+stated with `deriv f z`:
+
+`Cycle.integral (fun w ↦ ((w − z) ^ 2)⁻¹ • f w) C = (2πi · n_z(C)) • f' z`. -/
+theorem cauchyIntegralFormula_deriv_smul_nullHomologous {f : ℂ → E} {z : ℂ} (hU : IsOpen U)
+    (hf : DifferentiableOn ℂ f U) {C : Cycle} (hCU : IsIn C U) (hnull : IsNullHomologous C U)
+    (hz : z ∈ U) (hoff : z ∉ trace C) :
+    integral (fun w ↦ ((w - z) ^ 2)⁻¹ • f w) C
+      = (2 * (Real.pi : ℂ) * Complex.I * windingNumber z C) • deriv f z := by
+  simpa [iteratedDeriv_one] using
+    cauchyIntegralFormula_iteratedDeriv_smul_nullHomologous hU hf hCU hnull hz hoff 1
+
+end VectorValued
 
 end TauCeti.Contour.Cycle
 

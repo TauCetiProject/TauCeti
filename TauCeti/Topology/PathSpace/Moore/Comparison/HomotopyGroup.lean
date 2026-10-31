@@ -55,11 +55,53 @@ theorem homotopyGroupMulEquiv_apply (x : X) (n : ℕ)
     homeomorphMulEquivOfEq_apply, HomotopyGroup.map_comp_apply]
   congr 1
 
+/-- The Moore loop space `MooreLoopSpace X x` is path connected if and only if `π_ 1 X x` is
+trivial. -/
+theorem pathConnectedSpace_iff_subsingleton_pi1 (x : X) :
+    PathConnectedSpace (MooreLoopSpace X x) ↔ Subsingleton (π_ 1 X x) :=
+  (pathConnectedSpace_iff x).trans pi1MulEquivFundamentalGroup.symm.toEquiv.subsingleton_congr
+
+/-- The double Moore loop space `MooreLoopSpace (MooreLoopSpace X x) 1` is path connected if and
+only if `π_ 2 X x` is trivial. -/
+theorem pathConnectedSpace_double_iff (x : X) :
+    PathConnectedSpace (MooreLoopSpace (MooreLoopSpace X x) 1) ↔ Subsingleton (π_ 2 X x) :=
+  (pathConnectedSpace_iff_subsingleton_pi1 (1 : MooreLoopSpace X x)).trans
+    (homotopyGroupMulEquiv x 0).toEquiv.subsingleton_congr
+
 /-- The double Moore loop space is path connected when the second homotopy group
 of the original space vanishes. -/
 theorem pathConnectedSpace_double (x : X) [Subsingleton (π_ 2 X x)] :
-    PathConnectedSpace (MooreLoopSpace (MooreLoopSpace X x) 1) := by
-  apply (pathConnectedSpace_iff (1 : MooreLoopSpace X x)).2
-  exact (pi1MulEquivFundamentalGroup.symm.trans (homotopyGroupMulEquiv x 0)).injective.subsingleton
+    PathConnectedSpace (MooreLoopSpace (MooreLoopSpace X x) 1) :=
+  (pathConnectedSpace_double_iff x).mpr inferInstance
+
+/-- All homotopy groups `π_ k (MooreLoopSpace X x) 1` (including `k = 0`) are trivial if and only
+if `π_ (n + 1) X x` is trivial for every `n : ℕ`. -/
+theorem forall_subsingleton_homotopyGroup_iff (x : X) :
+    (∀ k : ℕ, Subsingleton (π_ k (MooreLoopSpace X x) 1)) ↔
+      ∀ n : ℕ, Subsingleton (π_ (n + 1) X x) := by
+  constructor
+  · intro h n
+    cases n with
+    | zero =>
+      exact (pathConnectedSpace_iff_subsingleton_pi1 x).mp
+        ((pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (1 : MooreLoopSpace X x)).mpr
+          (h 0))
+    | succ m =>
+      exact (homotopyGroupMulEquiv x m).toEquiv.subsingleton_congr.mp (h (m + 1))
+  · intro h k
+    cases k with
+    | zero =>
+      exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (1 : MooreLoopSpace X x)).mp
+        ((pathConnectedSpace_iff_subsingleton_pi1 x).mpr (h 0))
+    | succ m =>
+      exact (homotopyGroupMulEquiv x m).toEquiv.subsingleton_congr.mpr (h (m + 1))
+
+/-- All homotopy groups of the double Moore loop space `MooreLoopSpace (MooreLoopSpace X x) 1`
+(including `k = 0`) are trivial if and only if `π_ (n + 2) X x` is trivial for every `n : ℕ`. -/
+theorem forall_subsingleton_homotopyGroup_double_iff (x : X) :
+    (∀ k : ℕ, Subsingleton (π_ k (MooreLoopSpace (MooreLoopSpace X x) 1) 1)) ↔
+      ∀ n : ℕ, Subsingleton (π_ (n + 2) X x) :=
+  (forall_subsingleton_homotopyGroup_iff (1 : MooreLoopSpace X x)).trans
+    (forall_congr' fun n ↦ (homotopyGroupMulEquiv x n).toEquiv.subsingleton_congr)
 
 end TauCeti.MooreLoopSpace

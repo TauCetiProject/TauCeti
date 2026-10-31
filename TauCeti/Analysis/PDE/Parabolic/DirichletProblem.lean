@@ -16,7 +16,7 @@ import Mathlib.MeasureTheory.Measure.SeparableMeasure
 
 Let `Ω ⊆ ℝⁿ` be open and let `L(t)` be the divergence-form operator
 
-`L(t) u = -∂ⱼ(aⁱʲ(t, ·) ∂ᵢu) + bⁱ(t, ·) ∂ᵢu + c(t, ·) u`
+`L(t) u = -∂ᵢ(aⁱʲ(t, ·) ∂ⱼu) + bⁱ(t, ·) ∂ᵢu + c(t, ·) u`
 
 with bounded measurable coefficients depending on time, uniformly elliptic with constants
 `λ, Λ` for almost every `t`. This file solves the initial-boundary value problem
@@ -226,7 +226,7 @@ private theorem exists_ae_apply_eq_energyFormH1_of_lt (ht : t₀ < t₁)
 end StandingHypotheses
 
 /-- **Existence for the parabolic Dirichlet problem.** Let the coefficients `a, b, c` of
-`L(t) u = -∂ⱼ(aⁱʲ(t, ·) ∂ᵢu) + bⁱ(t, ·) ∂ᵢu + c(t, ·) u` be jointly a.e. strongly measurable on
+`L(t) u = -∂ᵢ(aⁱʲ(t, ·) ∂ⱼu) + bⁱ(t, ·) ∂ᵢu + c(t, ·) u` be jointly a.e. strongly measurable on
 `(t₀, t₁) × Ω`, and for almost every `t ∈ (t₀, t₁)` let `a(t, ·)` be uniformly elliptic on `Ω`
 with constants `λ, Λ`, `‖b(t, ·)‖ ≤ β` and `‖c(t, ·)‖ ≤ γ` on `Ω`. Then for every forcing term
 `f ∈ L²(t₀, t₁; H⁻¹(Ω))` and initial value `u₀ ∈ L²(Ω)` there is `u ∈ L²(t₀, t₁; H¹₀(Ω))` with

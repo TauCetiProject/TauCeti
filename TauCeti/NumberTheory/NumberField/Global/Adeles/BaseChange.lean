@@ -97,7 +97,7 @@ theorem adeleBaseChangeHom_fst (t : AdeleRing (𝓞 K) K ⊗[K] L) :
   induction t using TensorProduct.inductionOn with
   | tmul a x =>
     rw [adeleBaseChangeHom_tmul, AdeleRing.fst_mul, adeleExtension_fst,
-      AdeleRing.algebraMap_fst]
+      AdeleRing.algebraMap_fst_def]
     exact (infiniteAdeleBaseChangeHom_tmul K L a.1 x).symm
   | add t u ht hu =>
     -- Type the distribution map on adeles: rewriting cannot unfold their type synonym
@@ -125,7 +125,7 @@ theorem adeleBaseChangeHom_snd (t : AdeleRing (𝓞 K) K ⊗[K] L) :
     -- The adele type synonym hides the product-ring second projection from rewriting.
     change (adeleExtension (𝓞 K) K (𝓞 L) L a).2 *
       (algebraMap L (AdeleRing (𝓞 L) L) x).2 = _
-    rw [adeleExtension_snd, AdeleRing.algebraMap_snd]
+    rw [adeleExtension_snd, AdeleRing.algebraMap_snd_def]
     exact (finiteAdeleBaseChangeHom_tmul K L a.2 x).symm
   | add t u ht hu =>
     -- Type the distribution map on adeles: rewriting cannot unfold their type synonym

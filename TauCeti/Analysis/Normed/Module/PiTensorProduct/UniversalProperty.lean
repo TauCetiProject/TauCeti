@@ -5,19 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Module.PiTensorProduct.Projective.Topology
+public import TauCeti.Analysis.Normed.Module.PiTensorProduct.Projective.Completion
 public import TauCeti.Analysis.LocallyConvex.Multilinear
 
 /-!
-# The continuous universal property of the projective tensor topology
+# Continuous universal properties of projective tensor products
 
 The algebraic tensor lift is continuous if and only if its multilinear map is continuous,
 when the factors and target carry topologies defined by seminorm families. Thus continuous
 multilinear maps correspond linearly to continuous linear maps out of the projective tensor
 product. This statement concerns the algebraic tensor product with its projective topology;
-no completeness or Hausdorffness is required.
+no completeness or Hausdorffness is required for the algebraic tensor product. For a complete
+Hausdorff target, `CompletedProjectiveTensorProduct.liftEquiv` extends this correspondence to
+the separated completion, without requiring the caller to supply seminorm bounds.
 
-The missing continuity-to-bound implication is supplied by
+The continuity-to-bound implication is supplied by
 `exists_multilinearMap_seminorm_bound`. The algebraic construction and uniqueness are those
 of `ProjectiveTensorProduct.lift`.
 -/
@@ -98,3 +100,82 @@ tensors. -/
   simp [liftEquiv, ContinuousLinearMap.compContinuousMultilinearMap_coe]
 
 end TauCeti.ProjectiveTensorProduct
+
+namespace TauCeti.CompletedProjectiveTensorProduct
+
+open UniformSpace
+
+variable {ι 𝕜 : Type*} [Fintype ι] [NontriviallyNormedField 𝕜]
+variable {E : ι → Type*} [∀ i, AddCommGroup (E i)] [∀ i, Module 𝕜 (E i)]
+variable {σ : ι → Type*} (p : ∀ i, SeminormFamily 𝕜 (E i) (σ i))
+variable [∀ i, TopologicalSpace (E i)] (hp : ∀ i, WithSeminorms (p i))
+variable {F : Type*} [AddCommGroup F] [UniformSpace F] [Module 𝕜 F]
+  [IsUniformAddGroup F] [UniformContinuousConstSMul 𝕜 F] [T0Space F] [CompleteSpace F]
+variable {τ : Type*} (q : SeminormFamily 𝕜 F τ) (hq : WithSeminorms q)
+
+/-- Continuous multilinear maps to a complete Hausdorff space correspond linearly to
+continuous linear maps from the completed projective tensor product. The inverse restricts
+to pure tensors. The target retains its given compatible additive uniformity.
+
+This extends `ProjectiveTensorProduct.liftEquiv` using
+`ContinuousLinearMap.fromCompletion`; continuity supplies all required seminorm bounds. -/
+noncomputable def liftEquiv :
+    ContinuousMultilinearMap 𝕜 E F ≃ₗ[𝕜] (CompletedProjectiveTensorProduct p →L[𝕜] F) where
+  toFun f := (ProjectiveTensorProduct.liftEquiv p hp q hq f).fromCompletion
+  invFun g := g.compContinuousMultilinearMap (tprod p hp)
+  left_inv f := by
+    ext x
+    simp [ContinuousLinearMap.compContinuousMultilinearMap_coe]
+  right_inv g := by
+    apply continuousLinearMap_ext p
+    intro x
+    simp [ContinuousLinearMap.compContinuousMultilinearMap_coe]
+  map_add' f g := by
+    apply continuousLinearMap_ext p
+    intro x
+    simp
+  map_smul' c f := by
+    apply continuousLinearMap_ext p
+    intro x
+    simp
+
+/-- Restricting the completed lift to the algebraic tensor product gives its continuous lift. -/
+@[simp] theorem liftEquiv_coe (f : ContinuousMultilinearMap 𝕜 E F)
+    (z : ProjectiveTensorProduct p) :
+    liftEquiv p hp q hq f (z : CompletedProjectiveTensorProduct p) =
+      ProjectiveTensorProduct.liftEquiv p hp q hq f z := by
+  simp [liftEquiv]
+
+/-- The completed lift has the prescribed value on every pure tensor. -/
+theorem liftEquiv_tprod (f : ContinuousMultilinearMap 𝕜 E F) (x : ∀ i, E i) :
+    liftEquiv p hp q hq f (tprod p hp x) = f x := by
+  simp
+
+/-- The inverse correspondence evaluates a continuous linear map on pure tensors. -/
+@[simp] theorem liftEquiv_symm_apply (g : CompletedProjectiveTensorProduct p →L[𝕜] F)
+    (x : ∀ i, E i) : (liftEquiv p hp q hq).symm g x = g (tprod p hp x) := by
+  simp [liftEquiv, ContinuousLinearMap.compContinuousMultilinearMap_coe]
+
+/-- Choosing explicit seminorm bounds gives the same map as the continuous universal property. -/
+theorem lift_eq_liftEquiv (f : ContinuousMultilinearMap 𝕜 E F)
+    (hf : ∀ j, ∃ (s : ∀ i, Finset (σ i)) (C : NNReal),
+      ∀ x, q j (f x) ≤ (C : ℝ) * ∏ i, (s i).sup (p i) (x i)) :
+    lift p q hq f.toMultilinearMap hf = liftEquiv p hp q hq f := by
+  apply continuousLinearMap_ext p
+  intro x
+  simp
+
+variable {G : Type*} [AddCommGroup G] [UniformSpace G] [Module 𝕜 G]
+  [IsUniformAddGroup G] [UniformContinuousConstSMul 𝕜 G] [T0Space G] [CompleteSpace G]
+variable {υ : Type*} (r : SeminormFamily 𝕜 G υ) (hr : WithSeminorms r)
+
+/-- The completed universal property commutes with continuous linear postcomposition. -/
+theorem liftEquiv_compContinuousMultilinearMap (f : ContinuousMultilinearMap 𝕜 E F)
+    (g : F →L[𝕜] G) :
+    liftEquiv p hp r hr (g.compContinuousMultilinearMap f) =
+      g.comp (liftEquiv p hp q hq f) := by
+  apply continuousLinearMap_ext p
+  intro x
+  simp [ContinuousLinearMap.compContinuousMultilinearMap_coe]
+
+end TauCeti.CompletedProjectiveTensorProduct

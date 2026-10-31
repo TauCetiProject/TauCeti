@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.Sequence.FiniteSlopeMultiset
+public import TauCeti.Data.Rat.NumDenDvd
 public import TauCeti.NumberTheory.NewtonPolygon.Basic
+public import TauCeti.RingTheory.Valuation.AddValuation
 
 /-!
 # Finite slopes of the Newton polygon of a polynomial
@@ -37,6 +39,9 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
   `d` and order of vanishing `a` at zero has `d - a` finite slopes.
 * `Polynomial.sum_newtonSlopes`: their sum is the difference between the valuations of the
   leading and trailing coefficients.
+* `Polynomial.den_dvd_card_newtonSlopes`: for a valuation taking integer values on nonzero
+  elements, if every finite slope equals the rational `q`, then the denominator of `q` divides
+  the number of finite slopes.
 * `Polynomial.count_newtonSlopes_of_isFiniteFace`: the multiplicity of a slope `σ` is the
   width of the face of slope `σ`.
 * `Polynomial.left_eq_natTrailingDegree_add_card_filter_newtonSlopes_lt` and
@@ -48,6 +53,8 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
   a scalar of finite valuation and by `X ^ k` preserves the slopes, the substitution
   `X ↦ c X` adds the valuation of `c` to every slope, and an extension of coefficients
   compatible with the valuations preserves them.
+* `Polynomial.newtonSlopes_reflect` and `Polynomial.newtonSlopes_reverse`: reversing the
+  coefficients negates the finite slopes.
 * `Polynomial.newtonSlopes_monomial`: a monomial, in particular a constant, has no finite
   slopes.
 * `Polynomial.newtonSlopes_X_sub_C`: the only finite slope of `X - C α` is `-v α`.
@@ -95,23 +102,23 @@ variable {f v}
 
 /-- Transport of finite slopes along a matching of finite unit edges. -/
 private theorem newtonSlopes_eq_map {g : S[X]} {w : AddValuation S (WithTop ℝ)}
-    {φ : ℕ → ℕ} (hφ : φ.Injective) {t : ℝ → ℝ}
+    {φ : ℕ → ℕ} (hφ : Set.InjOn φ (finiteEdges (f.newtonPolygon v))) {t : ℝ → ℝ}
     (hedges : finiteEdges (g.newtonPolygon w) = φ '' finiteEdges (f.newtonPolygon v))
     (hslope : ∀ n ∈ finiteEdges (f.newtonPolygon v),
       unitSlope (g.newtonPolygon w) (φ n) = t (unitSlope (f.newtonPolygon v) n)) :
     g.newtonSlopes w = (f.newtonSlopes v).map t := by
   have hfin : (g.finite_finiteEdges_newtonPolygon w).toFinset =
-      (f.finite_finiteEdges_newtonPolygon v).toFinset.map ⟨φ, hφ⟩ := by
+      (f.finite_finiteEdges_newtonPolygon v).toFinset.image φ := by
     ext n
     simp [hedges]
-  rw [newtonSlopes_def, newtonSlopes_def, hfin, Finset.map_val, Multiset.map_map,
-    Multiset.map_map]
+  rw [newtonSlopes_def, newtonSlopes_def, hfin,
+    Finset.image_val_of_injOn (by simpa using hφ), Multiset.map_map, Multiset.map_map]
   exact Multiset.map_congr rfl fun n hn => hslope n (by simpa using hn)
 
 /-- The finite slope multiset depends only on the Newton polygon. -/
 theorem newtonSlopes_congr {g : S[X]} {w : AddValuation S (WithTop ℝ)}
     (h : f.newtonPolygon v = g.newtonPolygon w) : f.newtonSlopes v = g.newtonSlopes w := by
-  rw [newtonSlopes_eq_map (f := g) (v := w) (g := f) (w := v) Function.injective_id (t := id)
+  rw [newtonSlopes_eq_map (f := g) (v := w) (g := f) (w := v) Function.injective_id.injOn (t := id)
     (by rw [h, Set.image_id]) (fun n _ => by rw [h, id, id]), Multiset.map_id]
 
 /-- The finite slope multiset is the slope multiset of any finite slope data representing the
@@ -228,6 +235,26 @@ theorem sum_newtonSlopes (hv : ∀ x, v x = ⊤ → x = 0) :
     Nat.add_sub_cancel' (natTrailingDegree_le_natDegree f), newtonPolygon_natDegree,
     newtonPolygon_natTrailingDegree]
 
+variable {f v} in
+/-- If the valuation takes integer values on nonzero elements and every finite slope of `f`
+equals the rational number `q`, then the denominator of `q` divides the number of finite slopes
+of `f`, that is, the horizontal length of its Newton polygon. -/
+theorem den_dvd_card_newtonSlopes (hint : ∀ x, x ≠ 0 → ∃ n : ℤ, v x = ((n : ℝ) : WithTop ℝ))
+    {q : ℚ} (hf : ∀ m ∈ f.newtonSlopes v, m = q) :
+    q.den ∣ (f.newtonSlopes v).card := by
+  have hv := AddValuation.eq_zero_of_eq_top_of_forall_ne_zero hint
+  rcases eq_or_ne f 0 with rfl | hf₀
+  · simp [card_newtonSlopes (0 : R[X]) v hv]
+  obtain ⟨a, ha⟩ := hint _ (leadingCoeff_ne_zero.mpr hf₀)
+  obtain ⟨b, hb⟩ := hint _ (trailingCoeff_nonzero_iff_nonzero.mpr hf₀)
+  have hsum := sum_newtonSlopes f v hv
+  rw [Multiset.eq_replicate_card.mpr hf, Multiset.sum_replicate, nsmul_eq_mul,
+    ha, hb, WithTop.untop₀_coe, WithTop.untop₀_coe] at hsum
+  have hq : ((a - b : ℤ) : ℚ) = q * ((f.newtonSlopes v).card : ℤ) := by
+    rw [mul_comm]
+    exact_mod_cast hsum.symm
+  exact Int.natCast_dvd_natCast.mp (Rat.den_dvd_of_intCast_eq_mul_intCast q hq)
+
 /-! ### Elementary operations -/
 
 /-- A monomial, in particular a constant, has no finite slopes. -/
@@ -254,7 +281,7 @@ theorem newtonSlopes_C_mul {c : R} (hc : v c ≠ ⊤) :
   have hpoly : (C c * f).newtonPolygon v =
       fun n => f.newtonPolygon v n + ((r + 0 * n : ℝ) : WithTop ℝ) := by
     simp [newtonPolygon_C_mul, ← hr, add_comm]
-  rw [newtonSlopes_eq_map (f := f) (v := v) Function.injective_id (t := id)
+  rw [newtonSlopes_eq_map (f := f) (v := v) Function.injective_id.injOn (t := id)
     (by rw [hpoly, finiteEdges_add_affine, Set.image_id])
     (fun n hn => by rw [hpoly, id, id, unitSlope_add_affine hn, add_zero]), Multiset.map_id]
 
@@ -266,7 +293,7 @@ theorem newtonSlopes_smul {c : R} (hc : v c ≠ ⊤) :
 /-- Multiplying by `X ^ k` preserves the finite slopes. -/
 @[simp]
 theorem newtonSlopes_X_pow_mul (k : ℕ) : (X ^ k * f).newtonSlopes v = f.newtonSlopes v := by
-  rw [newtonSlopes_eq_map (f := f) (v := v) (φ := (· + k)) (add_left_injective k) (t := id)
+  rw [newtonSlopes_eq_map (f := f) (v := v) (φ := (· + k)) (add_left_injective k).injOn (t := id)
     (by rw [newtonPolygon_X_pow_mul, finiteEdges_shift])
     (fun n _ => by rw [newtonPolygon_X_pow_mul, unitSlope_shift, id]), Multiset.map_id]
 
@@ -279,9 +306,30 @@ theorem newtonSlopes_comp_C_mul_X {c : R} (hc : v c ≠ ⊤) :
       fun n => f.newtonPolygon v n + ((0 + r * n : ℝ) : WithTop ℝ) := by
     simp only [f.newtonPolygon_comp_C_mul_X v hc, ← hr, ← WithTop.coe_nsmul, nsmul_eq_mul,
       zero_add, mul_comm]
-  refine newtonSlopes_eq_map (φ := id) Function.injective_id
+  refine newtonSlopes_eq_map (φ := id) Function.injective_id.injOn
     (by rw [hpoly, finiteEdges_add_affine, Set.image_id]) fun n hn => ?_
   rw [hpoly, id, unitSlope_add_affine hn, ← hr, WithTop.untop₀_coe]
+
+/-- Reflecting the coefficients in an index `N` at least the degree negates the finite slopes.
+The order of the slopes is reversed, which a multiset does not record. -/
+theorem newtonSlopes_reflect {N : ℕ} (hN : f.natDegree ≤ N) :
+    (reflect N f).newtonSlopes v = (f.newtonSlopes v).map Neg.neg := by
+  have hlt : ∀ n ∈ finiteEdges (f.newtonPolygon v), n < N := fun n hn =>
+    lt_of_not_ge fun h => (mem_finiteEdges.mp hn).2
+      (f.newtonPolygon_eq_top_of_natDegree_lt v (by omega))
+  refine newtonSlopes_eq_map (φ := (N - 1 - ·))
+    (fun m hm n hn hmn => by have := hlt m hm; have := hlt n hn; dsimp only at hmn; omega)
+    ?_ fun n hn => ?_
+  · rw [f.newtonPolygon_reflect v hN, finiteEdges_reflect fun n hn =>
+      f.newtonPolygon_eq_top_of_natDegree_lt v (hN.trans_lt hn)]
+  · have := hlt n hn
+    rw [f.newtonPolygon_reflect v hN, unitSlope_reflect _ (by omega),
+      show N - 1 - (N - 1 - n) = n by omega]
+
+/-- Reversing a polynomial negates its finite slopes. -/
+@[simp]
+theorem newtonSlopes_reverse : f.reverse.newtonSlopes v = (f.newtonSlopes v).map Neg.neg :=
+  f.newtonSlopes_reflect v le_rfl
 
 /-- Mapping the coefficients along a ring homomorphism compatible with the valuations
 preserves the finite slopes. -/

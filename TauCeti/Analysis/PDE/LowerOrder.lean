@@ -13,7 +13,7 @@ public import Mathlib.Analysis.Normed.Operator.Mul
 /-!
 # Lower-order pointwise forms for divergence-form PDEs
 
-For a divergence-form operator `L u = -∂ⱼ(aⁱʲ ∂ᵢ u) + bⁱ ∂ᵢ u + c u`, the principal matrix
+For a divergence-form operator `L u = -∂ᵢ(aⁱʲ ∂ⱼ u) + bⁱ ∂ᵢ u + c u`, the principal matrix
 coefficient lives in `TauCeti.Analysis.PDE.Ellipticity.Basic`. This file records the two
 lower-order pointwise forms:
 

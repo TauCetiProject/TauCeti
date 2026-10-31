@@ -28,8 +28,12 @@ Mathlib's `Valuation.ltAddSubgroup` packages a sublevel set as an additive subgr
 indexed by `Γ₀ˣ` and so forces a `LinearOrderedCommGroupWithZero` codomain. `IsContinuous` is
 stated over a `LinearOrderedCommMonoidWithZero`, matching Mathlib's `Valuation`, and this
 criterion is stated over one too — the strict triangle inequality needs no inverses. The
-subgroup used below is therefore `TauCeti.Valuation.ltAddSubgroupOfNeZero`, the analogue of
+subgroup used below is therefore `Valuation.ltAddSubgroupOfNeZero`, the analogue of
 Mathlib's construction at the weaker codomain, rather than Mathlib's own.
+
+Only separate continuity of addition is required on the domain: a subgroup containing an open
+subgroup is open because translation by each fixed element is continuous. No continuity of
+multiplication or joint continuity of addition is used.
 
 ## Main results
 
@@ -52,7 +56,7 @@ namespace TauCeti.Huber.PairOfDefinition
 
 open Set Topology TauCeti
 
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [SeparatelyContinuousAdd A]
   {Γ₀ : Type*} [LinearOrderedCommMonoidWithZero Γ₀]
 
 /-- **Continuity, tested against the ideal-of-definition basis.** A valuation on a Huber ring is
@@ -60,7 +64,8 @@ continuous exactly when every set `{a | v a < v b}` contains the image of some p
 ideal of definition.
 
 The `b` with `v b = 0` are excluded because `{a | v a < 0}` is empty, hence not a subgroup;
-`Valuation.isContinuous_iff_forall_ne_zero` shows they cost nothing. -/
+`Valuation.isContinuous_iff_forall_ne_zero` shows they cost nothing. Only separate continuity of
+addition is needed, to translate the neighbourhood of zero throughout the sublevel subgroup. -/
 theorem isContinuous_iff_forall_exists_idealImage_subset (P : PairOfDefinition A)
     (v : Valuation A Γ₀) :
     v.IsContinuous ↔

@@ -133,7 +133,7 @@ theorem sum_indexClassicalEntry_comp (q : ℤ) (x : {x : P // ind x = q + 1 + 1}
   simp only [hγ, hβ]
   -- The twisting equation at index difference two: the double action is by `∑ y, m x y * m y z`.
   rw [Finset.sum_congr rfl fun y _ ↦ op_smul_koszulTwist_op_smul_koszulTwist
-      (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) hα₀,
+      (m.m_mem_zero_of_eq_add_one (x := x.1) (y := y.1) (by rw [x.2, y.2])) hα₀ 1,
     ← Finset.sum_smul, ← Finset.op_sum, m.sum_subtype_m_mul_m_of_eq_add_two q x.2 z.2]
   -- The Leibniz rule for the cycle `α₀` and the entry `m x z` of degree `-1`.
   have hl := hM.leibniz hα₀ (m.m x z)

@@ -8,6 +8,7 @@ module
 public import Mathlib.SetTheory.Cardinal.NatCard
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # The number of orbits of a permutation
@@ -34,6 +35,9 @@ permutations of the same type.
   `Equiv.Perm.orbitQuotientEquivCycleFactorsSumFixedPoints` of `TauCeti.GroupTheory.Perm.Partition`.
 * `TauCeti.orbitCount_eq_one_of_forall_sameCycle`: a transitive permutation of a nonempty type has
   orbit count one.
+* `TauCeti.exists_not_sameCycle_apply_of_isPretransitive_closure`: if `σ` has more than one
+  orbit but generates a transitive group together with a set `S`, then some member of `S`
+  moves a point to another orbit of `σ`.
 * `Equiv.Perm.orbitCount_le_card`: on a finite type, a permutation has at most as many orbits as
   the type has points, the orbits being the classes of a partition of it.
 * `Equiv.Perm.card_le_orderOf_mul_orbitCount`: conversely, the number of points is at most the
@@ -112,6 +116,20 @@ theorem orbitCount_eq_one_of_forall_sameCycle [Nonempty α] {σ : Equiv.Perm α}
     ⟨fun q r => Quotient.inductionOn q fun x => Quotient.inductionOn r fun y =>
       Quotient.sound (h x y)⟩
   exact Nat.card_unique
+
+/-- If a permutation `σ` with more than one orbit generates, together with a set `S` of
+permutations, a subgroup acting transitively, then some permutation in `S` moves some point to a
+different orbit of `σ`. -/
+theorem exists_not_sameCycle_apply_of_isPretransitive_closure [Nonempty α] {σ : Equiv.Perm α}
+    {S : Set (Equiv.Perm α)} (hconn : MulAction.IsPretransitive (Subgroup.closure (insert σ S)) α)
+    (hσ : orbitCount σ ≠ 1) : ∃ g ∈ S, ∃ x, ¬ σ.SameCycle x (g x) := by
+  by_contra! h
+  refine hσ (orbitCount_eq_one_of_forall_sameCycle fun x y ↦ Quotient.exact
+    (apply_eq_apply_of_isPretransitive_closure (f := Quotient.mk (SameCycle.setoid σ)) ?_
+      hconn x y))
+  rintro g (rfl | hg) z
+  · exact Quotient.sound ⟨-1, by simp⟩
+  · exact (Quotient.sound (h g hg z)).symm
 
 /-- A permutation of a finite type has at most as many orbits as there are points. -/
 theorem _root_.Equiv.Perm.orbitCount_le_card [Finite α] (σ : Equiv.Perm α) :

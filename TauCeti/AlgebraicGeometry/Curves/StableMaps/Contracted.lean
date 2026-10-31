@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableMaps.Basic
+public import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
 public import TauCeti.AlgebraicGeometry.Scheme.ConstantOnClosed
 
 /-!
@@ -35,6 +36,15 @@ same components when the morphism of targets is injective on points, for instanc
 immersion such as an isomorphism or a closed immersion. A constant map contracts every component
 of a curve over a one-point base.
 
+Contraction is invariant under extension of the algebraically closed base field. Let `F` be a
+prestable map over an algebraically closed field `K`, with target locally of finite type, and let
+`F_L` be its base change to a field extension `L` of `K`, with projection `p : C_L ⟶ C` of source
+curves. Since `Spec L ⟶ Spec K` is geometrically irreducible and open, the irreducible components
+of `C_L` are the preimages `p ⁻¹' E` of the irreducible components `E` of `C`, and `p` maps them
+back onto `E`. A component `E'` of `C_L` is contracted by `F_L` exactly when `p '' E'` is contracted
+by `F`. So the contracted components of a geometric fibre do not depend on the chosen
+algebraically closed field.
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.PrestableMap.IsContractedComponent`: an irreducible component of
@@ -55,6 +65,8 @@ In the namespace `TauCeti.AlgebraicGeometry.PrestableMap`:
   is the case of an immersion.
 * `isContractedComponent_const_iff`: a constant map over a one-point base contracts every
   component.
+* `isContractedComponent_pullback_iff` and `isContractedComponent_pullback_preimage_iff`: over an
+  algebraically closed field, contraction is invariant under base change to a field extension.
 
 ## References
 
@@ -193,6 +205,57 @@ theorem isContractedComponent_const_iff [Subsingleton S] (P : PointedPrestableFa
   rintro _ ⟨a, -, rfl⟩ _ ⟨b, -, rfl⟩
   simp only [const_map]
   exact congr(σ $(Subsingleton.elim _ _))
+
+section FieldExtension
+
+variable {K L : Type u} [Field K] [IsAlgClosed K] [Field L] {q : V ⟶ Spec (.of K)}
+  [LocallyOfFiniteType q] (F : PrestableMap q n) (g : Spec (.of L) ⟶ Spec (.of K))
+
+/-- **Contraction is invariant under extension of an algebraically closed base field.** Over an
+algebraically closed field `K`, with the target locally of finite type over `K`, an irreducible
+component `E` of the source curve of the base change of `F` to a field extension `L` of `K` is
+contracted exactly when its image in the source curve of `F` is contracted by `F`. That image is an
+irreducible component, as the projection of source curves is geometrically irreducible and open. -/
+theorem isContractedComponent_pullback_iff {E : Set (F.pullback g).curve.total}
+    (hE : E ∈ irreducibleComponents (F.pullback g).curve.total) :
+    (F.pullback g).IsContractedComponent E ↔
+      F.IsContractedComponent (Limits.pullback.fst F.curve.toBase g '' E) := by
+  let p := Limits.pullback.fst F.curve.toBase g
+  -- The components of `C_L` correspond to those of `C`, by image and preimage under `p`.
+  let e := p.irreducibleComponentsEquiv p.isOpenMap
+  have hpE : p ⁻¹' (p '' E) = E := congr($(e.symm_apply_apply ⟨E, hE⟩).1)
+  refine (and_iff_right hE).trans (Iff.trans ?_ (and_iff_right (e ⟨E, hE⟩).2).symm)
+  constructor
+  · -- `F ∘ p` factors through `F_L`, so `F` maps `p '' E` onto the image of `F_L '' E` in the
+    -- target.
+    refine fun h ↦ (h.image (Limits.pullback.fst q g)).anti ?_
+    rintro _ ⟨_, ⟨x, hx, rfl⟩, rfl⟩
+    refine ⟨_, ⟨x, hx, rfl⟩, ?_⟩
+    have := congrArg (fun φ : _ ⟶ V ↦ φ x) (F.pullback_map_fst g)
+    exact (Scheme.Hom.comp_apply _ _ x).symm.trans (this.trans (Scheme.Hom.comp_apply _ _ x))
+  · -- `F` maps the contracted component `p '' E` to a closed point, which is a `K`-point of the
+    -- target, and the fibre of the base-changed target over a `K`-point is a single point.
+    intro h
+    rw [← hpE]
+    exact F.map.subsingleton_image_preimage_of_subsingleton_image q g p (F.pullback g).map
+      (F.pullback_map_fst g)
+      (isClosed_of_mem_irreducibleComponents _ (e ⟨E, hE⟩).2).isLocallyClosed h
+
+/-- Over an algebraically closed field `K`, with the target locally of finite type over `K`, an
+irreducible component `E` of the source curve of `F` is contracted by `F` exactly when its preimage
+in the source curve of the base change of `F` to a field extension of `K` is contracted. That
+preimage is an irreducible component. -/
+theorem isContractedComponent_pullback_preimage_iff {E : Set F.curve.total}
+    (hE : E ∈ irreducibleComponents F.curve.total) :
+    (F.pullback g).IsContractedComponent (Limits.pullback.fst F.curve.toBase g ⁻¹' E) ↔
+      F.IsContractedComponent E := by
+  let p := Limits.pullback.fst F.curve.toBase g
+  have hE' : p ⁻¹' E ∈ irreducibleComponents ↥(Limits.pullback F.curve.toBase g) :=
+    ((p.irreducibleComponentsEquiv p.isOpenMap).symm ⟨E, hE⟩).2
+  refine (F.isContractedComponent_pullback_iff g hE').trans ?_
+  rw [Set.image_preimage_eq E p.surjective]
+
+end FieldExtension
 
 end PrestableMap
 

@@ -96,8 +96,14 @@ def transportOrderIso (e : M ≃ₗ[R] N) :
     Subcomodule R C M ≃o Subcomodule R C N := by
   letI : Comodule R C N := Comodule.Transport e
   exact mapOrderIso (Comodule.transportToHom e) (Comodule.transportInvHom e)
-    (Comodule.Hom.ext fun m => e.symm_apply_apply m)
-    (Comodule.Hom.ext fun n => e.apply_symm_apply n)
+    (by
+      ext m
+      simp only [Comodule.Hom.comp_apply, Comodule.Hom.id_apply, Comodule.transportToHom_apply,
+        Comodule.transportInvHom_apply, LinearEquiv.symm_apply_apply])
+    (by
+      ext n
+      simp only [Comodule.Hom.comp_apply, Comodule.Hom.id_apply, Comodule.transportToHom_apply,
+        Comodule.transportInvHom_apply, LinearEquiv.apply_symm_apply])
 
 /-- The forward transport correspondence is image under the transport equivalence. -/
 @[simp]

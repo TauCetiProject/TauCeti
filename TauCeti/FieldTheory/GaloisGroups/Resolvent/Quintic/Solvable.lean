@@ -69,7 +69,7 @@ theorem exists_isRoot_specialize_quinticF20Spec_of_isSolvable (hf : f.Monic) (hs
   obtain ⟨τ, hτ⟩ :=
     (isSolvable_gal_iff_exists_le_map_conj_referenceSubgroup_five_two hirr
       (e.trans (finCongr hdeg))).mp hsol
-  exact quinticF20Spec.exists_isRoot_specialize_of_le_map_conj hf hsep hdeg _ τ
+  exact quinticF20Spec.exists_isRoot_specialize_of_le_map_conj hf hdeg _ τ
     (by rwa [quinticF20Spec_H])
 
 /-- **The quintic resolvent solvability criterion.** Let `f` be a monic irreducible separable
@@ -86,7 +86,7 @@ theorem isSolvable_gal_iff_exists_isRoot_specialize_quinticF20Spec (hf : f.Monic
   let _ : Fact ((f.map (algebraMap F f.SplittingField)).Splits) := ⟨SplittingField.splits f⟩
   let _ : IsGalois F f.SplittingField := IsGalois.of_separable_splitting_field hsep
   obtain ⟨e⟩ := nonempty_rootSet_splittingField_equiv_fin f hsep
-  obtain ⟨τ, hτ⟩ := quinticF20Spec.exists_le_map_conj_of_isRoot_specialize hf hsep hdeg
+  obtain ⟨τ, hτ⟩ := quinticF20Spec.exists_le_map_conj_of_isRoot_specialize hf hdeg
     (e.trans (finCongr hdeg)) hres ha
   exact (isSolvable_gal_iff_exists_le_map_conj_referenceSubgroup_five_two hirr
     (e.trans (finCongr hdeg))).mpr ⟨τ, by rwa [quinticF20Spec_H] at hτ⟩

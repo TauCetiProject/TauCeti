@@ -35,9 +35,6 @@ orthogonality and finite-sum identities proved in
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-
-This is the canonical-primary-decomposition part of Layer 3 of
-`TauCetiRoadmap/IntegralLattices/README.md`.
 -/
 
 public section

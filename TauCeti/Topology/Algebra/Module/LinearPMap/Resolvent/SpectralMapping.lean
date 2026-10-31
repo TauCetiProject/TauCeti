@@ -37,7 +37,7 @@ noncomputable section
 
 namespace TauCeti.LinearPMap
 
-open _root_.LinearPMap (IsResolventAt resolvent_sub_resolvent_apply)
+open _root_.LinearPMap (IsResolventAt resolvent_sub_resolvent_apply subScalar subScalar_apply)
 
 section CommRing
 

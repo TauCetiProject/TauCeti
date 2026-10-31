@@ -200,6 +200,11 @@ example [Nonempty ι] (hJ : Directed (· ≥ ·) J) : Abelian (smoothModules.{v}
     isClosedUnderFiniteLimits_smoothModules hJ
   inferInstance
 
+/-- The inclusion of smooth modules into all `A`-modules preserves monomorphisms: a monomorphism
+of smooth modules is injective. -/
+instance [Nonempty ι] : (smoothModules.{v} J).ι.PreservesMonomorphisms :=
+  (smoothModules.{v} J).preservesMonomorphisms_ι_of_isNormalEpiCategory
+
 /-- Restriction of scalars along `f : B →+* A` sends modules smooth for `J` to modules smooth for
 `J'` when every pulled-back ideal `f⁻¹(J i)` contains some `J' i'`. -/
 theorem smoothModules_restrictScalars {B : Type u'} [Ring B] (f : B →+* A) {ι' : Type*}
@@ -311,6 +316,17 @@ instance : (discreteModules.{v} A).IsClosedUnderFiniteLimits where
       exact ⟨fun h k => h ▸ rfl, fun h => Concrete.isLimit_ext _ p.isLimit (a • m) x h⟩
     exact this ▸ isOpen_iInter_of_finite fun k =>
       discreteModules_iff_isOpen.1 (p.prop_diag_obj k) _ _⟩
+
+/-- The product of two discrete modules, with the componentwise action, is discrete. -/
+theorem discreteModules_prod {M : ModuleCat.{v} A} {N : ModuleCat.{v'} A}
+    (hM : discreteModules A M) (hN : discreteModules A N) :
+    discreteModules A (ModuleCat.of A (M × N)) := by
+  rw [discreteModules_iff_isOpen] at hM hN ⊢
+  intro m x
+  have : {a : A | a • m = x} = {a | a • m.1 = x.1} ∩ {a | a • m.2 = x.2} := by
+    ext a
+    simp [Prod.ext_iff]
+  exact this ▸ (hM m.1 x.1).inter (hN m.2 x.2)
 
 /-- The discrete modules form an abelian category. -/
 example : Abelian (discreteModules.{v} A).FullSubcategory :=

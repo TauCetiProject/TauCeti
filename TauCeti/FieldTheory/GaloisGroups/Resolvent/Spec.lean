@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Separable
 public import TauCeti.FieldTheory.GaloisGroups.Resolvent.Specialization
 
 import Mathlib.Data.Fintype.Perm
+import TauCeti.RingTheory.Polynomial.RootEnumeration
 
 /-!
 # Resolvent specifications
@@ -51,6 +52,10 @@ the orbit of `Φ` at those roots.
   resolvent is monic of degree `[Sₙ : H]`.
 * `TauCeti.ResolventSpec.map_specialize_eq_galResolvent`: the resolvent is the orbit product at
   the roots.
+* `TauCeti.ResolventSpec.map_specialize_eq_galResolvent_numbering`: the same description at a
+  degree-sized numbering of the distinct roots in a domain.
+* `TauCeti.ResolventSpec.splits_specialize`: the resolvent splits in a domain containing the
+  numbered distinct roots of a monic polynomial.
 * `TauCeti.ResolventSpec.isRoot_specialize_eval₂_rename`: every orbit value at the roots is a
   root of the resolvent.
 * `TauCeti.ResolventSpec.specialize_rename`: renaming the invariant does not change the
@@ -231,6 +236,26 @@ theorem map_specialize_eq_galResolvent {R L : Type*} [CommRing R] [CommRing L] [
   rw [specialize_map, specialize_def]
   exact map_vietaHom_eq_galResolvent_of_roots spec.orbitProduct_esymm (hf.map φ)
     (by rw [hf.natDegree_map, hdeg]) hx
+
+/-- The resolvent is the orbit product at a numbering of all `n` distinct roots of a monic
+polynomial of degree `n` in a domain. -/
+theorem map_specialize_eq_galResolvent_numbering {R L : Type*} [CommRing R] [CommRing L]
+    [IsDomain L] [Algebra R L] {f : R[X]} (hf : f.Monic) (hdeg : f.natDegree = n)
+    (e : f.rootSet L ≃ Fin n) :
+    (spec.specialize R f).map (algebraMap R L) =
+      galResolvent spec.Φ (fun i ↦ (e.symm i : L)) := by
+  subst hdeg
+  exact spec.map_specialize_eq_galResolvent _ hf rfl
+    (Polynomial.isRootEnumeration_iff.mp (Polynomial.isRootEnumeration_numbering e.symm))
+
+/-- The specialized resolvent splits over a domain with a degree-sized numbering of the root set
+of a monic polynomial. The numbering requires `n` distinct roots in `L`; `f.Separable` over `R`
+is not a premise, and no separability of the resolvent is required. -/
+theorem splits_specialize {R L : Type*} [CommRing R] [CommRing L] [IsDomain L] [Algebra R L]
+    {f : R[X]} (hf : f.Monic) (hdeg : f.natDegree = n) (e : f.rootSet L ≃ Fin n) :
+    ((spec.specialize R f).map (algebraMap R L)).Splits := by
+  rw [spec.map_specialize_eq_galResolvent_numbering hf hdeg e, MvPolynomial.galResolvent_def]
+  exact Splits.prod fun _ _ => Splits.X_sub_C _
 
 /-- **Every orbit value is a root of the resolvent.** If `f` is the product of the linear factors
 attached to a family `x`, then the value at `x` of every renaming of the invariant is a root of

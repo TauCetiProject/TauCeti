@@ -291,12 +291,40 @@ theorem exists_isGenusOneFourStarShape (hcard : Fintype.card T.Component = 4)
     (hjk0 : T.intersection j k = 0) (hci0 : 0 < T.intersection c i)
     (hcj0 : 0 < T.intersection c j) (hck0 : 0 < T.intersection c k) :
     ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
+      ({c, x, y, z} : Finset T.Component) = univ ∧
+      x ≠ y ∧ x ≠ z ∧ y ≠ z ∧
+      T.intersection x y = 0 ∧ T.intersection x z = 0 ∧ T.intersection y z = 0 ∧
       T.IsGenusOneFourStarShape c x y z := by
+  classical
+  have hci := ne_of_intersection_nonneg hc hci0.le
+  have hcj := ne_of_intersection_nonneg hc hcj0.le
+  have hck := ne_of_intersection_nonneg hc hck0.le
+  have hij := ne_of_intersection_nonneg hi hij0.ge
+  have hik := ne_of_intersection_nonneg hi hik0.ge
+  have hjk := ne_of_intersection_nonneg hj hjk0.ge
+  suffices ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
+      T.IsGenusOneFourStarShape c x y z by
+    obtain ⟨x, y, z, hset, hshape⟩ := this
+    have huniv : ({c, x, y, z} : Finset T.Component) = univ := by
+      rw [hset]
+      apply eq_univ_of_card
+      simp [hci, hcj, hck, hij, hik, hjk, hcard]
+    have hxyz : x ≠ y ∧ x ≠ z ∧ y ≠ z := by
+      apply card_triple_eq_three_iff.mp
+      rw [hset]
+      exact card_triple_eq_three_iff.mpr ⟨hij, hik, hjk⟩
+    have hzero (u v : T.Component) (hu : u ∈ ({x, y, z} : Finset T.Component))
+        (hv : v ∈ ({x, y, z} : Finset T.Component)) (huv : u ≠ v) :
+        T.intersection u v = 0 := by
+      rw [hset] at hu hv
+      simp only [mem_insert, mem_singleton] at hu hv
+      grind [T.intersection_comm]
+    exact ⟨x, y, z, hset, huniv, hxyz.1, hxyz.2.1, hxyz.2.2,
+      hzero x y (by simp) (by simp) hxyz.1,
+      hzero x z (by simp) (by simp) hxyz.2.1,
+      hzero y z (by simp) (by simp) hxyz.2.2, hshape⟩
   -- The four components are distinct, so they exhaust `T` and each satisfies a fibre relation.
-  have hr := fiber_relation_of_card_eq_four hcard (ne_of_intersection_nonneg hc hci0.le)
-    (ne_of_intersection_nonneg hc hcj0.le) (ne_of_intersection_nonneg hc hck0.le)
-    (ne_of_intersection_nonneg hi hij0.ge) (ne_of_intersection_nonneg hi hik0.ge)
-    (ne_of_intersection_nonneg hj hjk0.ge)
+  have hr := fiber_relation_of_card_eq_four hcard hci hcj hck hij hik hjk
   have rc := hr c
   have ri := hr i
   have rj := hr j
@@ -349,11 +377,66 @@ theorem exists_isGenusOneFourStarShape_of_isMinimal_and_arithmeticGenus_eq_one
     (hci0 : 0 < T.intersection c i) (hcj0 : 0 < T.intersection c j)
     (hck0 : 0 < T.intersection c k) :
     ∃ x y z, ({x, y, z} : Finset T.Component) = {i, j, k} ∧
+      ({c, x, y, z} : Finset T.Component) = univ ∧
+      x ≠ y ∧ x ≠ z ∧ y ≠ z ∧
+      T.intersection x y = 0 ∧ T.intersection x z = 0 ∧ T.intersection y z = 0 ∧
       T.IsGenusOneFourStarShape c x y z := by
   have h₂ := (T.isMinimal_and_arithmeticGenus_eq_one_iff (by omega)).mp ⟨hT, hg⟩
   exact T.exists_isGenusOneFourStarShape hcard (T.isMinusTwoIndex_iff.mp (h₂ c)).2
     (T.isMinusTwoIndex_iff.mp (h₂ i)).2 (T.isMinusTwoIndex_iff.mp (h₂ j)).2
     (T.isMinusTwoIndex_iff.mp (h₂ k)).2 hij0 hik0 hjk0 hci0 hcj0 hck0
+
+/-- For a genus-one four-component path whose vertices exhaust all components, some component's
+weight divides every weight with quotient at most four, and some component's multiplicity
+divides every multiplicity with quotient at most six. -/
+lemma IsGenusOneFourPathShape.exists_weight_and_multiplicity_dvd_and_le
+    {x y z t : T.Component} (h4 : T.IsGenusOneFourPathShape x y z t)
+    (huniv : ({x, y, z, t} : Finset T.Component) = univ) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  rcases isGenusOneFourPathShape_iff.mp h4 with ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ |
+    ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ | ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩
+  case' inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x t ?_ ?_
+  case' inr.inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) x x ?_ ?_
+  case' inr.inr =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) y x ?_ ?_
+  all_goals
+    intro i
+    have hi : i ∈ ({x, y, z, t} : Finset T.Component) := huniv ▸ mem_univ i
+    simp only [mem_insert, mem_singleton] at hi
+    rcases hi with rfl | rfl | rfl | rfl
+    all_goals
+      simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+      omega
+
+/-- For a genus-one four-component star whose vertices exhaust all components, some component's
+weight divides every weight with quotient at most four, and some component's multiplicity
+divides every multiplicity with quotient at most six. -/
+lemma IsGenusOneFourStarShape.exists_weight_and_multiplicity_dvd_and_le
+    {c₀ x y z : T.Component} (hstar : T.IsGenusOneFourStarShape c₀ x y z)
+    (huniv : ({c₀, x, y, z} : Finset T.Component) = univ) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  rcases isGenusOneFourStarShape_iff.mp hstar with ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩ |
+    ⟨hw1, hw2, hw3, hm1, hm2, hm3, -⟩
+  case' inl =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) c₀ x ?_ ?_
+  case' inr =>
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) z x ?_ ?_
+  all_goals
+    intro i
+    have hi : i ∈ ({c₀, x, y, z} : Finset T.Component) := huniv ▸ mem_univ i
+    simp only [mem_insert, mem_singleton] at hi
+    rcases hi with rfl | rfl | rfl | rfl
+    all_goals
+      simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+      omega
 
 end NumericalType
 

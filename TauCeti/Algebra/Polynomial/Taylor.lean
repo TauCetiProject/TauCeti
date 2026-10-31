@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Polynomial.RingDivision
 public import Mathlib.Algebra.Polynomial.Taylor
 
 /-!
-# Taylor coefficients at a root
+# Taylor coefficients at a root and in subleading degree
 
 The Taylor expansion `taylor r p = p(X + r)` of a polynomial `p` at `r` starts in degree
 `p.rootMultiplicity r`, and its trailing coefficient is the value at `r` of `p` divided by the
@@ -22,6 +22,10 @@ Since the Taylor coefficients of `p` at `r` are the values at `r` of the Hasse d
 divisibility of `p` by `(X - r) ^ n` is the vanishing of its Hasse derivatives of order less than
 `n` at `r`. A Hasse derivative of order `k` therefore lowers such a divisibility by at most `k`.
 
+At the other end of the expansion, the leading coefficient is unchanged and the subleading
+coefficient moves by `p.natDegree * r * p.leadingCoeff`. This is the input for the Tschirnhaus
+shift, which removes the subleading coefficient whenever `p.natDegree` is invertible.
+
 ## Main results
 
 * `Polynomial.natTrailingDegree_taylor`: the Taylor expansion at `r` starts in degree
@@ -33,11 +37,27 @@ divisibility of `p` by `(X - r) ^ n` is the vanishing of its Hasse derivatives o
 * `Polynomial.pow_sub_dvd_hasseDeriv_of_pow_dvd`: if `(X - r) ^ n` divides `p`, then
   `(X - r) ^ (n - k)` divides the Hasse derivative of `p` of order `k`.
 * `Polynomial.eval_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - r) ^ m` at `r`.
+* `Polynomial.nextCoeff_taylor`: the subleading coefficient of the Taylor expansion of `p` at `r`
+  is `p.nextCoeff + p.natDegree * r * p.leadingCoeff`.
 -/
 
 public section
 
 namespace Polynomial
+
+/-- The subleading coefficient of the Taylor expansion `p(X + r)` is that of `p` plus
+`p.natDegree * r * p.leadingCoeff`. -/
+theorem nextCoeff_taylor {R : Type*} [CommSemiring R] (p : R[X]) (r : R) :
+    (taylor r p).nextCoeff = p.nextCoeff + p.natDegree * r * p.leadingCoeff := by
+  rcases Nat.eq_zero_or_pos p.natDegree with h | h
+  · simp [nextCoeff, natDegree_taylor, h]
+  -- The Hasse derivative of order `p.natDegree - 1` is linear; evaluate it at `r`.
+  rw [nextCoeff_of_natDegree_pos (by rwa [natDegree_taylor]), nextCoeff_of_natDegree_pos h,
+    natDegree_taylor, taylor_coeff,
+    eq_X_add_C_of_natDegree_le_one ((natDegree_hasseDeriv_le _ _).trans (by omega))]
+  obtain ⟨d, hd⟩ : ∃ d, p.natDegree = d + 1 := ⟨_, (Nat.succ_pred_eq_of_pos h).symm⟩
+  simp [hasseDeriv_coeff, leadingCoeff, hd, add_comm 1 d]
+  ring
 
 variable {R : Type*} [CommRing R]
 

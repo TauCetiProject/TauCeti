@@ -148,6 +148,15 @@ theorem constPoint_apply (g : WithConv (H →ₐ[R] A)) :
   rw [constPoint, AlgHom.mapValue_apply]
 
 variable (A) in
+/-- On a rational point, the constant-point inclusion agrees with pullback along the structure
+map `R → A[T;T⁻¹]`. -/
+theorem constPoint_mapValue_ofId (g : WithConv (H →ₐ[R] R)) :
+    constPoint A (AlgHom.mapValue (Algebra.ofId R A) g) =
+      AlgHom.mapValue (Algebra.ofId R (LaurentPolynomial A)) g := by
+  rw [constPoint_apply, AlgHom.mapValue_apply, AlgHom.mapValue_apply, ofConv_toConv,
+    ← AlgHom.comp_assoc, Algebra.comp_ofId]
+
+variable (A) in
 /-- The constant-point inclusion post-composes a point with the structure map `A → A[X]`. -/
 theorem constPolyPoint_apply (g : WithConv (H →ₐ[R] A)) :
     constPolyPoint A g = toConv ((IsScalarTower.toAlgHom R A (Polynomial A)).comp g.ofConv) := by

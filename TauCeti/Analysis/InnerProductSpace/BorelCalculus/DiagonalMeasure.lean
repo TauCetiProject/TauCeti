@@ -1,16 +1,12 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT-6
 -/
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
-public import Mathlib.Analysis.InnerProductSpace.StarOrder
-public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
-import Mathlib.Analysis.RCLike.ContinuousMap
-import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import TauCeti.MeasureTheory.Integral.ContinuousMap
+public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Representation.DiagonalMeasure
 
 /-!
 # The diagonal measure of a normal operator
@@ -27,6 +23,9 @@ This measure is the scalar spectral measure of `a` at `ξ`. Its total mass is `�
 computes `‖f(a) ξ‖²` as the squared `L²(μ_ξ)` norm of `f`. Polarizing these diagonal measures
 gives the matrix elements of the bounded Borel functional calculus, which extends the continuous
 calculus from continuous to bounded Borel symbols.
+
+The diagonal measure and its integration identities specialize
+`StarAlgHom.representationDiagMeasure` to the continuous functional calculus `cfcHom`.
 
 `LinearMap.exists_isFiniteMeasure_integral_characterSpace_eq` gives the analogous representation
 on the character space of a commutative C⋆-algebra, as an existence statement. Here the measure
@@ -61,63 +60,21 @@ namespace ContinuousLinearMap
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   (a : H →L[ℂ] H) [IsStarNormal a]
 
-/-- The positive functional `g ↦ Re ⟪ξ, g(a) ξ⟫` on real continuous functions on the spectrum of
-a normal operator `a`, whose Riesz–Markov–Kakutani measure is the diagonal measure. -/
-private def diagFunctional (ξ : H) : C_c(spectrum ℂ a, ℝ) →ₚ[ℝ] ℝ :=
-  PositiveLinearMap.mk₀
-    { toFun g := RCLike.re ⟪ξ, cfcHom (a := a) ‹_› (g.toContinuousMap.realToRCLike ℂ) ξ⟫_ℂ
-      map_add' g h := by
-        simp only [← realToRCLikeStarAlgHom_apply]
-        rw [show (g + h).toContinuousMap = g.toContinuousMap + h.toContinuousMap by ext; simp,
-          map_add, map_add, _root_.add_apply, inner_add_right, map_add]
-      map_smul' c g := by
-        simp only [← realToRCLikeStarAlgHom_apply]
-        rw [show (c • g).toContinuousMap = c • g.toContinuousMap by ext; simp, map_smul,
-          ← algebraMap_smul ℂ c (M := C(spectrum ℂ a, ℂ)), map_smul, _root_.smul_apply,
-          inner_smul_right]
-        simp }
-    fun g hg => by
-      have hT : 0 ≤ cfcHom (a := a) ‹_› (g.toContinuousMap.realToRCLike ℂ) := by
-        rw [cfcHom_nonneg_iff]
-        intro x
-        simpa using hg x
-      exact (nonneg_iff_isPositive.mp hT).re_inner_nonneg_right ξ
-
-private lemma diagFunctional_apply (ξ : H) (g : C_c(spectrum ℂ a, ℝ)) :
-    diagFunctional a ξ g =
-      RCLike.re ⟪ξ, cfcHom (a := a) ‹_› (g.toContinuousMap.realToRCLike ℂ) ξ⟫_ℂ :=
-  rfl
-
-/-- The **diagonal measure** `μ_ξ` of a normal operator `a` at a vector `ξ`: the finite Borel
-measure on `spectrum ℂ a` with `∫ f dμ_ξ = ⟪ξ, f(a) ξ⟫` for every continuous `f`
-(`integral_diagMeasure_eq_inner_cfcHom`), characterized by this property among finite measures
-(`eq_diagMeasure_iff`). -/
+/-- The **diagonal measure** `μ_ξ` of a normal operator `a` at a vector `ξ`: the diagonal
+Riesz measure for its unital continuous functional calculus, characterized by the identity
+`∫ f dμ_ξ = ⟪ξ, f(a) ξ⟫`. -/
 def diagMeasure (ξ : H) : Measure (spectrum ℂ a) :=
-  RealRMK.rieszMeasure (diagFunctional a ξ)
+  (cfcHom (a := a) ‹_›).representationDiagMeasure ξ
 
 instance (ξ : H) : IsFiniteMeasure (a.diagMeasure ξ) := by
-  unfold diagMeasure; infer_instance
+  unfold diagMeasure
+  infer_instance
 
-/-- The defining identity of the diagonal measure on real symbols. -/
-private lemma ofReal_integral_diagMeasure (ξ : H) (g : C(spectrum ℂ a, ℝ)) :
-    ((∫ x, g x ∂(a.diagMeasure ξ) : ℝ) : ℂ) = ⟪ξ, cfcHom ‹_› (g.realToRCLike ℂ) ξ⟫_ℂ := by
-  have h := RealRMK.integral_rieszMeasure (diagFunctional a ξ) ⟨g, .of_compactSpace _⟩
-  rw [CompactlySupportedContinuousMap.coe_mk, diagFunctional_apply] at h
-  -- A real symbol gives a self-adjoint operator, whose diagonal matrix elements are real.
-  have hsa := (isSelfAdjoint_realToRCLike (𝕜 := ℂ) (f := g)).map (cfcHom ‹IsStarNormal a›)
-  rw [diagMeasure, h]
-  exact RCLike.conj_eq_iff_re.mp ((inner_conj_symm _ _).trans (hsa.isSymmetric ξ ξ))
-
-/-- Integration against the diagonal measure `μ_ξ` of a normal operator `a` computes the diagonal
-matrix elements of the continuous functional calculus: `∫ f dμ_ξ = ⟪ξ, f(a) ξ⟫`. -/
+/-- Integration against the diagonal measure `μ_ξ` computes the diagonal matrix element
+of the continuous functional calculus: `∫ f dμ_ξ = ⟪ξ, f(a) ξ⟫`. -/
 theorem integral_diagMeasure_eq_inner_cfcHom (ξ : H) (f : C(spectrum ℂ a, ℂ)) :
-    ∫ x, f x ∂(a.diagMeasure ξ) = ⟪ξ, cfcHom ‹_› f ξ⟫_ℂ := by
-  let φ : C(spectrum ℂ a, ℂ) →ₗ[ℂ] ℂ :=
-    { toFun f := ⟪ξ, cfcHom ‹_› f ξ⟫_ℂ
-      map_add' f g := by simp [inner_add_right]
-      map_smul' c f := by simp [inner_smul_right] }
-  exact (φ.apply_eq_integral_of_forall_realToRCLike
-    (fun g ↦ (ofReal_integral_diagMeasure a ξ g).symm) f).symm
+    ∫ x, f x ∂(a.diagMeasure ξ) = ⟪ξ, cfcHom ‹_› f ξ⟫_ℂ :=
+  (cfcHom (a := a) ‹_›).integral_representationDiagMeasure ξ f
 
 /-- The `cfc` form of `integral_diagMeasure_eq_inner_cfcHom`: for `f` continuous on the spectrum
 of a normal operator `a`, `∫ f dμ_ξ = ⟪ξ, cfc f a ξ⟫`. -/
@@ -131,32 +88,22 @@ theorem integral_diagMeasure_eq_inner_cfc (ξ : H) (f : ℂ → ℂ)
 operator `a` that represents `f ↦ ⟪ξ, f(a) ξ⟫` on continuous functions. -/
 theorem eq_diagMeasure_iff (ξ : H) (μ : Measure (spectrum ℂ a)) [IsFiniteMeasure μ] :
     μ = a.diagMeasure ξ ↔ ∀ f : C(spectrum ℂ a, ℂ), ∫ x, f x ∂μ = ⟪ξ, cfcHom ‹_› f ξ⟫_ℂ := by
-  refine ⟨fun h ↦ h ▸ integral_diagMeasure_eq_inner_cfcHom a ξ, fun h ↦ ?_⟩
-  -- Finite measures on the compact metrizable spectrum are regular, so they are determined
-  -- by their integrals of real continuous functions.
-  refine Measure.ext_of_integral_eq_on_compactlySupported fun g ↦ ?_
-  have hg := h (g.toContinuousMap.realToRCLike ℂ)
-  rw [← integral_diagMeasure_eq_inner_cfcHom] at hg
-  simpa [integral_complex_ofReal] using hg
+  exact (cfcHom (a := a) ‹_›).eq_representationDiagMeasure_iff ξ μ
 
 /-- The total mass of the diagonal measure `μ_ξ`, as a real number, is `‖ξ‖²`. -/
 @[simp]
-theorem diagMeasure_real_univ (ξ : H) : (a.diagMeasure ξ).real Set.univ = ‖ξ‖ ^ 2 := by
-  simpa [← Complex.ofReal_pow] using
-    congrArg Complex.re (integral_diagMeasure_eq_inner_cfcHom a ξ 1)
+theorem diagMeasure_real_univ (ξ : H) : (a.diagMeasure ξ).real Set.univ = ‖ξ‖ ^ 2 :=
+  (cfcHom (a := a) ‹_›).representationDiagMeasure_real_univ ξ
 
 /-- The total mass of the diagonal measure `μ_ξ` is `‖ξ‖²`. -/
 @[simp]
-theorem diagMeasure_univ (ξ : H) : a.diagMeasure ξ Set.univ = ‖ξ‖ₑ ^ 2 := by
-  rw [← ofReal_measureReal, diagMeasure_real_univ, ENNReal.ofReal_pow (norm_nonneg ξ),
-    ofReal_norm]
+theorem diagMeasure_univ (ξ : H) : a.diagMeasure ξ Set.univ = ‖ξ‖ₑ ^ 2 :=
+  (cfcHom (a := a) ‹_›).representationDiagMeasure_univ ξ
 
 /-- The diagonal measure `μ_ξ` computes `‖f(a) ξ‖²` as the squared `L²(μ_ξ)` norm of `f`:
 `∫ |f|² dμ_ξ = ‖f(a) ξ‖²`. -/
 theorem integral_norm_sq_diagMeasure (ξ : H) (f : C(spectrum ℂ a, ℂ)) :
-    ∫ x, ‖f x‖ ^ 2 ∂(a.diagMeasure ξ) = ‖cfcHom ‹_› f ξ‖ ^ 2 := by
-  rw [apply_norm_sq_eq_inner_adjoint_right, ← star_eq_adjoint, ← mul_def, ← map_star, ← map_mul,
-    ← integral_diagMeasure_eq_inner_cfcHom]
-  simp [Complex.conj_mul', ← Complex.ofReal_pow, integral_complex_ofReal]
+    ∫ x, ‖f x‖ ^ 2 ∂(a.diagMeasure ξ) = ‖cfcHom ‹_› f ξ‖ ^ 2 :=
+  (cfcHom (a := a) ‹_›).integral_norm_sq_representationDiagMeasure ξ f
 
 end ContinuousLinearMap

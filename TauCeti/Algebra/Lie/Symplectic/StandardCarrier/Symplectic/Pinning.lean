@@ -73,7 +73,7 @@ noncomputable def coordinateSymplecticIso :
 theorem mkQuotient_comp_coordinateSymplecticIso_hom :
     CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ ((n + 1) + (n + 1)))
           (kostantToralDefiningIdeal (rootGenerator n) (cartanGenerator n) (rep n)
-            (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+            (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
             (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n)) ≫
         (coordinateSymplecticIso n).hom =
       Symplectic.coordinateMap ℤ (n + 1) := by
@@ -89,7 +89,7 @@ theorem coordinateSymplecticIso_hom_comp_rootSubgroupCoordinateMap
     (coordinateSymplecticIso n).hom ≫
         Symplectic.rootSubgroupCoordinateMap (R := ℤ) (symplecticRootIndex n k) =
       kostantRootSubgroupToralCoordinateMap (rootGenerator n) (cartanGenerator n) (rep n)
-        (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+        (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
         (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) k := by
   apply CommHopfAlgCat.mkQuotient_hom_ext
   rw [mkQuotient_comp_coordinateSymplecticIso_hom_assoc,
@@ -106,7 +106,7 @@ theorem coordinateSymplecticIso_hom_comp_diagonalTorusCoordinateMap :
             (GeneralLinear.weightCharacterMap
               (fun i : Fin (n + 1) => DynkinType.TypeC.weight (n + 1) i)))).hom =
       kostantWeightTorusToralCoordinateMap (rootGenerator n) (cartanGenerator n) (rep n)
-        (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+        (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
         (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) := by
   apply CommHopfAlgCat.mkQuotient_hom_ext
   rw [mkQuotient_comp_coordinateSymplecticIso_hom_assoc,
@@ -140,7 +140,7 @@ theorem pinning_torus_coordinateMap_comp_symplecticCharacters :
             (GeneralLinear.weightCharacterMap
               (fun i : Fin (n + 1) => DynkinType.TypeC.weight (n + 1) i)))).hom =
       kostantWeightTorusToralCoordinateMap (rootGenerator n) (cartanGenerator n) (rep n)
-        (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+        (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
         (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) := by
   rw [pinning_torus, SplitMaximalTorus.comapOfIso_coordinateMap,
     Symplectic.splitMaximalTorus_coordinateMap, Category.assoc,
@@ -185,7 +185,7 @@ theorem pinning_rootVector (i : Fin (n + 1)) :
       (Derivation.cotangentLinearEquiv (B := ℤ)).symm
         (derivationComp (B := ℤ)
           (kostantRootSubgroupToralCoordinateMap (rootGenerator n) (cartanGenerator n) (rep n)
-            (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+            (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n)
             (isNilpotent_rep_rootGenerator n) (latticeBasis n) (basisWeight n) (.inl i)).hom
           ((AdditiveGroup.gaTangentLinearEquiv (R := ℤ) (B := ℤ)).symm 1)) := by
   have hα : (⟨(pinningSimpleRootEquiv n i).val,

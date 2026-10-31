@@ -40,14 +40,16 @@ and upper bounds and preserves every excess: this is cycle augmentation of bound
 
 ## Main results
 
+* `TauCeti.Assignment.map_walkAssignment`: additive changes of coefficients commute with
+  weighting a walk.
 * `TauCeti.excessAt_walkAssignment`: a walk from `s` to `t` weighted by `q` has excess `q` at `t`
   and `-q` at `s`.
 * `TauCeti.walkAssignment_mem_Icc`: a walk repeating no arrow, weighted by `q`, lies between zero
   and any nonnegative capacities that are at least `q` along the walk.
-* `TauCeti.walkAssignment_bottleneck_le` and
-  `TauCeti.card_filter_pos_sub_walkAssignment_bottleneck_lt`: a walk repeating no arrow, weighted
-  by its bottleneck for a nonnegative assignment, is bounded by the assignment, and subtracting it
-  strictly decreases the number of arrows of positive value.
+* `TauCeti.walkAssignment_bottleneck_le`: a walk repeating no arrow, weighted by its bottleneck
+  for a nonnegative assignment, is bounded by the assignment.
+* `TauCeti.card_filter_pos_sub_walkAssignment_bottleneck_lt`: subtracting a nonempty walk of
+  positive arrows, weighted by its bottleneck, strictly decreases the number of positive arrows.
 * `TauCeti.Flow.val_augmentWalk` and `TauCeti.Flow.val_augmentBottleneck`: augmentation along a
   residual `s`–`t` walk between distinct terminals `s ≠ t` increases the value by the augmenting
   amount.
@@ -79,9 +81,9 @@ variable {V : Type u} {Q : V → V → Type v} {K : Type w}
 
 /-! ### Walk assignments -/
 
-section AddCommMonoid
+section AddMonoid
 
-variable [AddCommMonoid K]
+variable [AddMonoid K]
 
 open Classical in
 /-- The assignment of the walk `p` weighted by `q`: an arrow traversed `n` times by `p` carries
@@ -93,6 +95,15 @@ open Classical in
 theorem walkAssignment_apply {s t : V} (p : ArrowWalk Q s t) (q : K) {x y : V} (e : Q x y) :
     walkAssignment p q e = p.arrows.count ⟨_, _, e⟩ • q :=
   (rfl)
+
+/-- Additive coefficient maps commute with weighting a walk. -/
+@[simp]
+theorem Assignment.map_walkAssignment {L F : Type*} [AddMonoid L] [FunLike F K L]
+    [AddMonoidHomClass F K L] (φ : F) {s t : V} (p : ArrowWalk Q s t) (q : K) :
+    (walkAssignment p q).map φ = walkAssignment p (φ q) := by
+  classical
+  funext x y e
+  simp [walkAssignment_apply]
 
 @[simp]
 theorem walkAssignment_nil (s : V) (q : K) :
@@ -146,35 +157,42 @@ theorem walkAssignment_mem {S : Type*} [SetLike S K] [AddSubmonoidClass S K] {H 
   rw [walkAssignment_apply]
   exact nsmul_mem hq _
 
-section Order
+section Preorder
 
-variable [PartialOrder K] [IsOrderedAddMonoid K]
+variable [Preorder K]
 
 /-- A walk weighted by a nonnegative amount gives a nonnegative assignment. -/
-theorem walkAssignment_nonneg {s t : V} (p : ArrowWalk Q s t) {q : K} (hq : 0 ≤ q) :
+theorem walkAssignment_nonneg [AddLeftMono K] {s t : V} (p : ArrowWalk Q s t) {q : K} (hq : 0 ≤ q) :
     0 ≤ walkAssignment p q := by
   classical
   intro x y e
   rw [walkAssignment_apply]
   exact nsmul_nonneg hq _
 
+/-- A walk that traverses no arrow twice carries at most its nonnegative weight on every arrow. -/
+theorem walkAssignment_le {s t : V} {p : ArrowWalk Q s t} (hp : p.arrows.Nodup) {q : K}
+    (hq : 0 ≤ q) {x y : V} (e : Q x y) : walkAssignment p q e ≤ q := by
+  by_cases he : ⟨x, y, e⟩ ∈ p.arrows
+  · rw [walkAssignment_eq_of_mem hp q he]
+  · rw [walkAssignment_eq_zero_of_notMem p q he]
+    exact hq
+
 /-- **Feasibility of a walk.** A walk that traverses no arrow twice, weighted by `q ≥ 0`, lies
 between zero and any nonnegative capacities that are at least `q` on every arrow it traverses. -/
 theorem walkAssignment_mem_Icc {s t : V} {p : ArrowWalk Q s t} (hp : p.arrows.Nodup) {q : K}
     (hq : 0 ≤ q) {cap : Assignment Q K} (hcap : 0 ≤ cap) (hle : ∀ a ∈ p.arrows, q ≤ cap a.2.2) :
     walkAssignment p q ∈ Set.Icc 0 cap := by
-  refine ⟨walkAssignment_nonneg p hq, fun x y e ↦ ?_⟩
-  by_cases he : ⟨x, y, e⟩ ∈ p.arrows
-  · rw [walkAssignment_eq_of_mem hp q he]
-    exact hle _ he
-  · rw [walkAssignment_eq_zero_of_notMem p q he]
-    exact hcap x y e
+  constructor <;> intro x y e <;> by_cases he : ⟨x, y, e⟩ ∈ p.arrows
+  · simpa only [walkAssignment_eq_of_mem hp q he, Pi.zero_apply] using hq
+  · simp only [walkAssignment_eq_zero_of_notMem p q he, Pi.zero_apply, le_refl]
+  · simpa only [walkAssignment_eq_of_mem hp q he] using hle _ he
+  · simpa only [walkAssignment_eq_zero_of_notMem p q he, Pi.zero_apply] using hcap x y e
 
-end Order
+end Preorder
 
 section LinearOrder
 
-variable [LinearOrder K] [IsOrderedAddMonoid K]
+variable [LinearOrder K]
 
 /-- A walk that traverses no arrow twice, weighted by its bottleneck for a nonnegative
 assignment `f`, is bounded by `f`. -/
@@ -185,6 +203,29 @@ theorem walkAssignment_bottleneck_le {f : Assignment Q K} (hf : 0 ≤ f) {s t : 
     fun _ ha ↦ ArrowWalk.bottleneck_le ha).2
 
 end LinearOrder
+
+end AddMonoid
+
+section AddCommMonoid
+
+variable [AddCommMonoid K]
+
+/-- The total value that a walk weighted by `q` brings into `v` is `q` times the number of visits
+of the walk to `v` after its start. -/
+theorem arrowSum_walkAssignment_univ_singleton [Fintype V] [DecidableEq V]
+    [∀ x y, Fintype (Q x y)] {s t : V} (p : ArrowWalk Q s t) (q : K) (v : V) :
+    arrowSum (walkAssignment p q) univ {v} = p.vertices.tail.count v • q := by
+  induction p with
+  | nil => simp
+  | @cons x y p e ih =>
+    rw [walkAssignment_cons, arrowSum_add, ih, arrowSum_def, sum_congr rfl fun _ _ ↦ sum_singleton
+      _ _, sum_sum_single_in]
+    simp only [ArrowWalk.vertices, Quiver.Path.vertices_cons, List.concat_eq_append,
+      List.tail_append_of_ne_nil (@Quiver.Path.vertices_ne_nil V ⟨Q⟩ _ _ p), List.count_append,
+      List.count_singleton, add_nsmul]
+    rcases eq_or_ne y v with rfl | h
+    · simp [one_nsmul]
+    · simp [h, h.symm]
 
 end AddCommMonoid
 
@@ -209,9 +250,9 @@ theorem isCirculation_walkAssignment {s : V} (c : ArrowWalk Q s s) (q : K) :
   classical
   exact (isCirculation_iff _).2 fun v ↦ by rw [excessAt_walkAssignment, sub_self]
 
-section Order
+section Preorder
 
-variable [PartialOrder K] [IsOrderedAddMonoid K]
+variable [Preorder K]
 
 /-- A walk from `s` to `t` that traverses no arrow twice, weighted by `q ≥ 0`, as an ordinary
 `s`–`t` flow for nonnegative capacities that are at least `q` on every arrow it traverses. -/
@@ -240,20 +281,22 @@ theorem val_walkFlow (hst : s ≠ t) : (walkFlow p hp hq hcap hle).val = q := by
   classical
   simp [BoundedFlow.val_def, hst.symm]
 
-end Order
+end Preorder
 
 section LinearOrder
 
 variable [LinearOrder K] [IsOrderedAddMonoid K]
 
-/-- Subtracting a walk of positive arrows that traverses no arrow twice, weighted by its
-bottleneck, strictly decreases the number of arrows of positive value: the arrows of positive
-value afterwards were positive before, and an arrow attaining the bottleneck drops to zero. -/
+/-- Subtracting a nonempty walk of positive arrows, weighted by its bottleneck, strictly
+decreases the number of arrows of positive value: the arrows of positive value afterwards were
+positive before, and an arrow attaining the bottleneck becomes nonpositive. Repeated arrows
+may make the difference negative. -/
 theorem card_filter_pos_sub_walkAssignment_bottleneck_lt {f : Assignment Q K} {s t : V}
-    {p : ArrowWalk Q s t} (hp : p.arrows.Nodup) (hne : p.arrows ≠ [])
+    {p : ArrowWalk Q s t} (hne : p.arrows ≠ [])
     (hpos : ∀ a ∈ p.arrows, 0 < f a.2.2) :
     #{a : Σ x y, Q x y | 0 < (f - walkAssignment p (p.bottleneck f hne)) a.2.2} <
       #{a : Σ x y, Q x y | 0 < f a.2.2} := by
+  classical
   have hle : f - walkAssignment p (p.bottleneck f hne) ≤ f := fun x y e ↦
     sub_le_self _ (walkAssignment_nonneg p (ArrowWalk.lt_bottleneck_iff.2 hpos).le x y e)
   obtain ⟨⟨x, y, e⟩, ha, hqa⟩ := ArrowWalk.exists_mem_bottleneck_eq (c := f) (hne := hne)
@@ -261,7 +304,29 @@ theorem card_filter_pos_sub_walkAssignment_bottleneck_lt {f : Assignment Q K} {s
   · simp only [mem_filter_univ] at hb ⊢
     exact hb.trans_le (hle _ _ _)
   · simpa using hpos _ ha
-  · simp [walkAssignment_eq_of_mem hp _ ha, hqa]
+  · simp only [mem_filter_univ, Pi.sub_apply, not_lt, sub_nonpos, walkAssignment_apply]
+    rw [hqa]
+    simpa only [one_nsmul] using
+      nsmul_le_nsmul_left (hpos _ ha).le (List.one_le_count_iff.2 ha)
+
+/-- Subtracting a walk of positive arrows that traverses no arrow twice, weighted by its
+bottleneck, leaves a nonnegative assignment in the same additive subgroup and strictly decreases
+the number of positive arrows. -/
+theorem sub_walkAssignment_bottleneck_spec {S : Type*} [SetLike S K] [AddSubgroupClass S K]
+    (H : S) {f : Assignment Q K} (hf : 0 ≤ f)
+    (hH : ∀ ⦃x y : V⦄ (e : Q x y), f e ∈ H) {s t : V} {p : ArrowWalk Q s t}
+    (hp : p.arrows.Nodup) (hne : p.arrows ≠ []) (hpos : ∀ a ∈ p.arrows, 0 < f a.2.2) :
+    0 < p.bottleneck f hne ∧ p.bottleneck f hne ∈ H ∧
+      0 ≤ f - walkAssignment p (p.bottleneck f hne) ∧
+      (∀ ⦃x y : V⦄ (e : Q x y), (f - walkAssignment p (p.bottleneck f hne)) e ∈ H) ∧
+      #{a : Σ x y, Q x y | 0 < (f - walkAssignment p (p.bottleneck f hne)) a.2.2} <
+        #{a : Σ x y, Q x y | 0 < f a.2.2} := by
+  have hqH : p.bottleneck f hne ∈ H :=
+    ArrowWalk.bottleneck_mem fun a _ ↦ hH a.2.2
+  exact ⟨ArrowWalk.lt_bottleneck_iff.2 hpos, hqH,
+    sub_nonneg.2 (walkAssignment_bottleneck_le hf hp hne),
+    fun _ _ e ↦ sub_mem (hH e) (walkAssignment_mem p hqH e),
+    card_filter_pos_sub_walkAssignment_bottleneck_lt hne hpos⟩
 
 end LinearOrder
 
@@ -335,9 +400,9 @@ theorem excessAt_residualUpdate_walkAssignment_self [Fintype V] [∀ x y, Fintyp
     excessAt (residualUpdate f (walkAssignment c q)) v = excessAt f v :=
   (isCirculation_walkAssignment c q).excessAt_residualUpdate f v
 
-section PartialOrder
+section Preorder
 
-variable [PartialOrder K] [IsOrderedAddMonoid K]
+variable [Preorder K] [AddLeftMono K]
 
 /-- **Feasibility of augmentation.** Updating a feasible assignment `f` along a residual walk that
 traverses no arrow twice, by an amount between zero and the residual capacities along the walk,
@@ -380,14 +445,15 @@ theorem val_augmentWalk (hst : s ≠ t) : (f.augmentWalk p hp hq hle).val = f.va
 
 /-- Augmenting a flow with values in an additive subgroup along a residual walk, by an amount in
 the subgroup, gives a flow with values in the subgroup. -/
-theorem augmentWalk_mem {H : AddSubgroup K} (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ H)
+theorem augmentWalk_mem {S : Type*} [SetLike S K] [AddSubgroupClass S K] {H : S}
+    (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ H)
     (hqH : q ∈ H) {v w : V} (e : Q v w) : (f.augmentWalk p hp hq hle).toFun e ∈ H := by
   rw [augmentWalk_toFun]
   exact residualUpdate_mem H hf (fun _ _ ↦ walkAssignment_mem p hqH) e
 
 end Flow
 
-end PartialOrder
+end Preorder
 
 section LinearOrder
 
@@ -427,14 +493,15 @@ theorem val_augmentBottleneck (hst : s ≠ t) :
 omit [IsOrderedAddMonoid K] in
 /-- The bottleneck of a residual walk lies in an additive subgroup that contains the capacities
 and the flow values. -/
-theorem bottleneck_residualCapacity_mem {H : AddSubgroup K}
-    (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ H) (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ H) :
+theorem bottleneck_residualCapacity_mem {S : Type*} [SetLike S K] [AddSubgroupClass S K]
+    {H : S} (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ H) (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ H) :
     p.bottleneck (residualCapacity 0 cap f.toFun) hne ∈ H :=
   ArrowWalk.bottleneck_mem fun a _ ↦ residualCapacity_mem H (fun _ _ _ ↦ zero_mem H) hcap hf a.2.2
 
 /-- Augmenting by the bottleneck preserves values in an additive subgroup that contains the
 capacities. -/
-theorem augmentBottleneck_mem {H : AddSubgroup K} (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ H)
+theorem augmentBottleneck_mem {S : Type*} [SetLike S K] [AddSubgroupClass S K] {H : S}
+    (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ H)
     (hf : ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ H) {v w : V} (e : Q v w) :
     (f.augmentBottleneck p hp hne).toFun e ∈ H := by
   rw [augmentBottleneck_toFun]

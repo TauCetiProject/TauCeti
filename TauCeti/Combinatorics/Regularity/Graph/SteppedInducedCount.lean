@@ -22,7 +22,7 @@ parts included, contributes the volume `∏ i, #(φ i)` times, for each pair `i 
 sums over all maps `g : Fin 3 → V` the product of these densities between the parts containing the
 images (`SimpleGraph.steppedInducedGraphCount3_eq_sum_part`).
 
-Unlike the coarse prediction `SimpleGraph.coarseInducedGraphEstimate3`, which only sums over
+Unlike the coarse prediction `SimpleGraph.coarseInducedGraphEstimate`, which only sums over
 assignments to three distinct parts, the stepped prediction behaves well under refinement: for a
 refinement `Q ≤ P` whose size-weighted energy exceeds that of `P` by at most `ε`, the stepped
 predictions of `Q` and `P` differ by at most `3 √ε (card V) ^ 3`. Each of the three density factors
@@ -46,8 +46,8 @@ partition through the stepped predictions of the fine and coarse partitions.
   maps `Fin 3 → V`.
 * `SimpleGraph.abs_steppedInducedGraphCount3_sub_le`: the energy-transfer bound
   `|T_Q - T_P| ≤ 3 √ε (card V) ^ 3` for a refinement with energy gap at most `ε`.
-* `SimpleGraph.coarseInducedGraphEstimate3_le_steppedInducedGraphCount3` and
-  `SimpleGraph.steppedInducedGraphCount3_le_coarseInducedGraphEstimate3_add`: the stepped
+* `SimpleGraph.coarseInducedGraphEstimate_le_steppedInducedGraphCount3` and
+  `SimpleGraph.steppedInducedGraphCount3_le_coarseInducedGraphEstimate_add`: the stepped
   prediction exceeds the coarse prediction by at most `3 * m * (card V) ^ 2`.
 
 ## References
@@ -103,28 +103,28 @@ theorem steppedInducedGraphCount3_nonneg (R : Finpartition (univ : Finset V)) :
 /-- The stepped prediction splits into the coarse prediction, over the assignments to distinct
 parts, and the contribution of the assignments with a repeated part. -/
 private lemma steppedInducedGraphCount3_eq_add (R : Finpartition (univ : Finset V)) :
-    J.steppedInducedGraphCount3 G R = J.coarseInducedGraphEstimate3 G R +
+    J.steppedInducedGraphCount3 G R = J.coarseInducedGraphEstimate G R +
       ∑ φ : Fin 3 → R.parts with ¬Injective φ, (∏ i, (#(φ i : Finset V) : ℝ)) *
         ∏ p : {p : Fin 3 × Fin 3 // p.1 < p.2},
           G.patternDensity (J.Adj p.1.1 p.1.2) (φ p.1.1) (φ p.1.2) := by
-  rw [steppedInducedGraphCount3_def, coarseInducedGraphEstimate3_def,
+  rw [steppedInducedGraphCount3_def, coarseInducedGraphEstimate_def,
     sum_filter_add_sum_filter_not]
 
 /-- The coarse prediction, which omits the assignments with a repeated part, is at most the
 stepped prediction. -/
-theorem coarseInducedGraphEstimate3_le_steppedInducedGraphCount3
+theorem coarseInducedGraphEstimate_le_steppedInducedGraphCount3
     (R : Finpartition (univ : Finset V)) :
-    J.coarseInducedGraphEstimate3 G R ≤ J.steppedInducedGraphCount3 G R := by
+    J.coarseInducedGraphEstimate G R ≤ J.steppedInducedGraphCount3 G R := by
   rw [steppedInducedGraphCount3_eq_add]
   exact le_add_of_nonneg_right (sum_nonneg fun φ _ ↦ mul_nonneg (by positivity)
     (prod_nonneg fun p _ ↦ G.patternDensity_nonneg _ _ _))
 
 /-- If every part of `R` has at most `m` vertices, the assignments with a repeated part add at
 most `3 * m * (card V) ^ 2` to the coarse prediction. -/
-theorem steppedInducedGraphCount3_le_coarseInducedGraphEstimate3_add
+theorem steppedInducedGraphCount3_le_coarseInducedGraphEstimate_add
     (R : Finpartition (univ : Finset V)) {m : ℕ} (hm : ∀ A ∈ R.parts, #A ≤ m) :
     J.steppedInducedGraphCount3 G R ≤
-      J.coarseInducedGraphEstimate3 G R + 3 * m * (Fintype.card V : ℝ) ^ 2 := by
+      J.coarseInducedGraphEstimate G R + 3 * m * (Fintype.card V : ℝ) ^ 2 := by
   rw [steppedInducedGraphCount3_eq_add]
   gcongr
   calc _ ≤ ∑ φ : Fin 3 → R.parts with ¬Injective φ, ∏ i, (#(φ i : Finset V) : ℝ) := by
@@ -158,7 +158,8 @@ theorem abs_steppedInducedGraphCount3_sub_le {P Q : Finpartition (univ : Finset 
     _ = ∑ _p : {p : Fin 3 × Fin 3 // p.1 < p.2}, Fintype.card V • ∑ x, ∑ y, D x y := by
         rw [sum_comm]
         exact sum_congr rfl fun p _ ↦ by
-          simpa using Fintype.sum_piFinset_apply_apply (ne_of_lt p.2) univ D
+          simpa [card_sdiff, ne_of_lt p.2, Nat.sub_sub] using
+            Fintype.sum_piFinset_apply_apply (ne_of_lt p.2) (fun _ ↦ univ) D
     _ = 3 * Fintype.card V * ∑ x, ∑ y, D x y := by
         have hpairs : Fintype.card {p : Fin 3 × Fin 3 // p.1 < p.2} = 3 := by decide
         rw [sum_const, card_univ, hpairs, nsmul_eq_mul, nsmul_eq_mul, ← mul_assoc]

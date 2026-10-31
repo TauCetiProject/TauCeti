@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.HilbertSymbol.Basic
+public import TauCeti.NumberTheory.LocalField.Squares
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 
 import Mathlib.FieldTheory.Finite.GaloisField
-import TauCeti.Algebra.QuadraticAlgebra.NormTrace
+import Mathlib.RingTheory.QuadraticAlgebra
 import TauCeti.NumberTheory.LocalField.Henselian
 import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.RingTheory.Finite.ArtinSchreier
@@ -53,6 +54,7 @@ With the Hilbert symbol this reads `(Δ, b)_K = (-1)^{v_K(b)}`.
 * `TauCeti.not_isSquare_of_unramified_class`: every class with this norm criterion is nonsquare.
 * `TauCeti.unramified_class_of_isSquare_mul`: the criterion is invariant under square classes.
 * `TauCeti.hilbertSymbol_unramified`: for such a `Δ`, `(Δ, b)_K = (-1)^{v_K(b)}`.
+* `TauCeti.hilbertSymbol_two_unramified`: for such a `Δ`, `(2, Δ)_K = (-1)^{v_K(2)}`.
 
 ## References
 
@@ -144,7 +146,7 @@ private theorem exists_sq_add_mul_sub_mul_sq_eq (hc : ∀ t : 𝓀[K], t ^ 2 + t
   obtain ⟨z, hz⟩ := @FiniteField.norm_surjective 𝓀[K]
     (QuadraticAlgebra 𝓀[K] (residue 𝒪[K] c) 1) _ _ QuadraticAlgebra.instAlgebra _
     (residue 𝒪[K] u)
-  replace hz : z.norm = residue 𝒪[K] u := (QuadraticAlgebra.algebraNorm_eq_norm z).symm.trans hz
+  replace hz : z.norm = residue 𝒪[K] u := (Algebra.norm_quadraticAlgebra_apply z).symm.trans hz
   obtain ⟨s, hs⟩ := residue_surjective z.re
   obtain ⟨t, ht⟩ := residue_surjective z.im
   -- `ω` is a unit of unit trace, so Hensel's lemma for the norm applies.
@@ -155,15 +157,15 @@ private theorem exists_sq_add_mul_sub_mul_sq_eq (hc : ∀ t : 𝓀[K], t ^ 2 + t
     rw [QuadraticAlgebra.isUnit_iff_norm_isUnit, QuadraticAlgebra.norm_def]
     simpa using hc0.neg
   have htr : IsUnit (Algebra.trace 𝒪[K] (QuadraticAlgebra 𝒪[K] c 1) QuadraticAlgebra.omega) := by
-    rw [QuadraticAlgebra.algebraTrace_eq_trace, QuadraticAlgebra.trace_omega]
+    rw [Algebra.trace_quadraticAlgebra_apply, QuadraticAlgebra.trace_omega]
     exact isUnit_one
   obtain ⟨y, hy, -⟩ := Algebra.exists_norm_eq_of_norm_sub_mem hw htr
     (a := (⟨s, t⟩ : QuadraticAlgebra 𝒪[K] c 1)) u.isUnit (by
-      rw [QuadraticAlgebra.algebraNorm_eq_norm, ← residue_eq_zero_iff, map_sub, ← hz,
+      rw [Algebra.norm_quadraticAlgebra_apply, ← residue_eq_zero_iff, map_sub, ← hz,
         QuadraticAlgebra.norm_def, QuadraticAlgebra.norm_def]
       simp [hs, ht])
   refine ⟨y.re, y.im, ?_⟩
-  rw [QuadraticAlgebra.algebraNorm_eq_norm, QuadraticAlgebra.norm_def] at hy
+  rw [Algebra.norm_quadraticAlgebra_apply, QuadraticAlgebra.norm_def] at hy
   linear_combination hy
 
 /-- **The unramified quadratic class, explicitly.** Let `c ∈ 𝒪[K]` have residue outside the image
@@ -265,5 +267,24 @@ theorem hilbertSymbol_unramified {Δ : Kˣ}
   split_ifs with h
   · exact (hilbertSymbol_eq_one_iff Δ b).mpr ((hΔ b).mpr h)
   · exact (hilbertSymbol_eq_neg_one_iff Δ b).mpr (mt (hΔ b).mp h)
+
+/-- **The Hilbert symbol of `2` against the unramified class** is `(2, Δ)_K = (-1)^{v_K(2)}`,
+where `v_K(2)` is the dyadic level `TauCeti.dyadicLevel`. In odd residue characteristic it is
+`1`; over a finite extension of `ℚ₂` it is `-1` exactly when the absolute ramification index is
+odd. -/
+theorem hilbertSymbol_two_unramified [Invertible (2 : K)] {Δ : Kˣ}
+    (hΔ : ∀ b : Kˣ, (∃ x y : K, (b : K) = x ^ 2 - Δ * y ^ 2) ↔
+      Even (normalizedValuation K b).toAdd) :
+    hilbertSymbol (unitOfInvertible (2 : K)) Δ =
+      (-1) ^ dyadicLevel K (isUnit_of_invertible (2 : K)).ne_zero := by
+  have h2 : (2 : K) ≠ 0 := (isUnit_of_invertible (2 : K)).ne_zero
+  have hunit : unitOfInvertible (2 : K) = Units.mk0 ((2 : ℕ) : K) (by exact_mod_cast h2) :=
+    Units.ext (by simp)
+  rw [hilbertSymbol_comm, hilbertSymbol_unramified hΔ, hunit, normalizedValuation_natCast,
+    toAdd_ofAdd]
+  simp only [Int.even_coe_nat, dyadicLevel_def]
+  rcases Nat.even_or_odd (natCastValuation K 2 (by exact_mod_cast h2)) with h | h
+  · simp [h, h.neg_one_pow]
+  · simp [Nat.not_even_iff_odd.2 h, h.neg_one_pow]
 
 end TauCeti

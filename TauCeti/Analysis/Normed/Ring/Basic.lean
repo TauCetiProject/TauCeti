@@ -43,6 +43,11 @@ theorem norm_pow_succ_mul_pow_lt_one {K : Type*} [SeminormedRing K]
         (pow_nonneg (norm_nonneg _) _)
     _ < 1 := by simpa using pow_lt_one₀ (norm_nonneg _) hu (Nat.succ_ne_zero n)
 
+/-- For `‖q‖ < 1` also `‖qⁿ‖ < 1` for every `n ≠ 0`. -/
+theorem norm_pow_lt_one {R : Type*} [SeminormedRing R] {q : R} (hq : ‖q‖ < 1) {n : ℕ}
+    (hn : n ≠ 0) : ‖q ^ n‖ < 1 :=
+  (norm_pow_le' q (Nat.pos_of_ne_zero hn)).trans_lt (pow_lt_one₀ (norm_nonneg q) hq hn)
+
 end TauCeti
 
 end

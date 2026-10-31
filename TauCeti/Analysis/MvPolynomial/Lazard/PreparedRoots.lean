@@ -98,10 +98,17 @@ theorem exists_complexification_isLazardEvaluator_lazardEval_roots
   let q := MvPolynomial.optionEquivRight ℝ (Fin n)
     ((MvPolynomial.optionEquivLeft ℝ (Fin n)).symm p)
   obtain ⟨ρ, hρ, Φ, c, hc, hΦ, hreal, hstar, u, v, hu, hunit, hv, hvunit,
-      R, hR, hfit, r, g, hr, hg, hfac, e, hLaurent⟩ :=
+      R, hR, hfit, r, g, hr, hg, hfac, e, w, he, hwa, hwne, hform⟩ :=
     p.exists_complexification_isLazardEvaluator_nonmonic_laurent hφ
       vLead vConst vDiscr hlead hconst hdiscr (MvPolynomial.finite_range_lazardExponent q)
-  obtain ⟨w, he, hw, hw0, hlocal⟩ := hLaurent _ (mem_ball_self hρ)
+  have ha : ((fun j ↦ (a j : ℂ)), (0 : ℂ)) ∈
+      ball (fun j ↦ (a j : ℂ)) ρ ×ˢ ball 0 R := ⟨mem_ball_self hρ, mem_ball_self hR⟩
+  have hw (i) := hwa i _ ha
+  have hw0 (i) := hwne i _ ha
+  have hlocal : ∀ᶠ b in 𝓝 ((fun j ↦ (a j : ℂ)), (0 : ℂ)), (∀ i, w i b ≠ 0) ∧
+      (b.2 ≠ 0 → ∀ i, r i b = b.2 ^ e i * w i b) := by
+    filter_upwards [(isOpen_ball.prod isOpen_ball).mem_nhds ha] with b hb
+    exact ⟨fun i ↦ hwne i b hb, fun hb0 i ↦ hform b ⟨hb.1, hb.2, hb0⟩ i⟩
   refine ⟨ρ, hρ, Φ, c, hc, hΦ, hreal, hstar, u, v, hu, hunit, hv, hvunit,
     R, hR, hfit, r, g, hr, hg, hfac, e, w, he, hw, hw0, hlocal, ?_⟩
   have hp : p ≠ 0 := by

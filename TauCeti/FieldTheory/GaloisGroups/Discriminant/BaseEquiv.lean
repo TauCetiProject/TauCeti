@@ -27,9 +27,9 @@ The construction uses the discriminant base-change identity and Mathlib's
 
 public section
 
-namespace TauCeti
-
 open Polynomial
+
+namespace TauCeti
 
 variable {F F' E E' : Type*} [Field F] [Field F'] [Field E] [Field E']
     [Algebra F E] [Algebra F' E']

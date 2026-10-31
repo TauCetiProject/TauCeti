@@ -51,6 +51,12 @@ def additiveIntUnitsAddEquiv : Additive ℤˣ ≃+ ZMod 2 where
     additiveIntUnitsAddEquiv u = if Additive.toMul u = 1 then 0 else 1 :=
   (rfl)
 
+/-- The sign `(-1)^n`, read additively in `ZMod 2`, is the parity of `n`. -/
+theorem additiveIntUnitsAddEquiv_ofMul_neg_one_pow (n : ℕ) :
+    additiveIntUnitsAddEquiv (Additive.ofMul ((-1 : ℤˣ) ^ n)) = n := by
+  rw [ofMul_pow, map_nsmul]
+  simp
+
 /-- Translate an additive `ZMod 2` normalization, such as that of the cohomological local symbol,
 to the classical sign normalization, sending `0` to `+1` and `1` to `-1`. -/
 def hilbertSign (x : ZMod 2) : ℤˣ :=

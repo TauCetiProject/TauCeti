@@ -115,9 +115,7 @@ theorem finrank_skewAdjointMatricesSubmodule_le_choose_two [NeZero (2 : K)] {C :
     (hC : Cᵀ = C) (hCu : IsUnit C) :
     finrank K (skewAdjointMatricesSubmodule C) ≤ (Fintype.card n).choose 2 := by
   let _ : LinearOrder n := LinearOrder.lift' _ (Fintype.equivFin n).injective
-  have h2 : ∀ x : K, x + x = 0 → x = 0 := fun x hx => by
-    rw [← two_mul] at hx
-    exact (mul_eq_zero.mp hx).resolve_left (NeZero.ne 2)
+  have h2 := (NeZero.ne (2 : K)).isUnit.eq_zero_of_add_self_eq_zero
   -- Left multiplication by `C` lands in the skew-symmetric matrices.
   have hskew : ∀ X ∈ skewAdjointMatricesSubmodule C, (C * X)ᵀ = -(C * X) := by
     intro X hX
@@ -159,11 +157,9 @@ theorem exists_algEquiv_inv_mul_transpose_mul_eq_neg_J_mul_transpose_mul_J [NeZe
       conv_lhs => rw [dotProduct_mulVec, ← mulVec_transpose, hC, neg_mulVec, neg_dotProduct,
         dotProduct_comm]
     rw [toBilin'_apply']
-    have h2 : (2 : K) * (x ⬝ᵥ Cm *ᵥ x) = 0 := by
-      rw [two_mul]
-      nth_rewrite 1 [h]
-      exact neg_add_cancel _
-    exact (mul_eq_zero.mp h2).resolve_left (NeZero.ne 2)
+    apply (NeZero.ne (2 : K)).isUnit.eq_zero_of_add_self_eq_zero
+    nth_rewrite 1 [h]
+    exact neg_add_cancel _
   have hnd : (toBilin' Cm).Nondegenerate :=
     LinearMap.BilinForm.nondegenerate_toBilin'_of_det_ne_zero' Cm (isUnits_det_units C).ne_zero
   obtain ⟨m, b, hb⟩ := hB.exists_basis_toMatrix_eq_J hnd

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.BaseChange
+public import TauCeti.LinearAlgebra.QuadraticForm.Witt.Clifford
 public import TauCeti.LinearAlgebra.QuadraticForm.Witt.FundamentalIdeal
 public import TauCeti.RingTheory.Ideal.Operations
 
@@ -15,7 +16,8 @@ public import TauCeti.RingTheory.Ideal.Operations
 Scalar extension preserves the hyperbolic class, so the Witt index cannot decrease under a field
 extension.  It is unchanged when the anisotropic part remains anisotropic after base change.
 It also induces ring homomorphisms on Witt-Grothendieck and Witt rings that preserve dimension
-modulo two and every power of the fundamental ideal.
+modulo two and every power of the fundamental ideal, and that push the signed discriminant and the
+Clifford invariant of a Witt class forward to the extension field.
 
 ## Main results
 
@@ -33,6 +35,8 @@ modulo two and every power of the fundamental ideal.
 * `TauCeti.WittRing.baseChange_oneFoldPfisterClass`: compatibility with one-fold Pfister classes.
 * `TauCeti.WittRing.map_fundamentalIdeal_pow_le`: compatibility with the fundamental ideal
   filtration.
+* `TauCeti.WittRing.signedDiscr_baseChange` and `TauCeti.WittRing.cliffordInvariant_baseChange`:
+  compatibility with the signed discriminant and the Clifford invariant.
 
 ## References
 
@@ -194,12 +198,7 @@ theorem WittGrothendieckRing.baseChange_mem_hyperbolicIdeal
     {x : WittGrothendieckRing K} (hx : x ∈ hyperbolicIdeal K) :
     WittGrothendieckRing.baseChange (L := L) x ∈ hyperbolicIdeal L := by
   obtain ⟨n, rfl⟩ := mem_hyperbolicIdeal_iff.mp hx
-  have hhyper : RegularFormClass.baseChange L (hyperbolicClass K) = hyperbolicClass L := by
-    have hinst : ((Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm) =
-        (inferInstance : Invertible (2 : L)) := Subsingleton.elim _ _
-    exact (RegularFormClass.baseChange_hyperbolicClass (K := K) (L := L)).trans
-      (congrArg (fun i : Invertible (2 : L) => @hyperbolicClass L _ i) hinst)
-  rw [map_zsmul, baseChange_toWittGrothendieck, hhyper]
+  rw [map_zsmul, baseChange_toWittGrothendieck, RegularFormClass.baseChange_hyperbolicClass]
   have h : toWittGrothendieck (hyperbolicClass L) ∈ hyperbolicIdeal L := by
     apply mem_hyperbolicIdeal_iff.mpr
     refine ⟨1, ?_⟩
@@ -297,6 +296,11 @@ theorem WittRing.dimMod2_baseChange (x : WittRing K) :
   obtain ⟨q, rfl⟩ := wittClass_surjective x
   simp
 
+/-- A Witt class killed by scalar extension has even dimension modulo two. -/
+theorem WittRing.dimMod2_eq_zero_of_baseChange_eq_zero {x : WittRing K}
+    (h : WittRing.baseChange (L := L) x = 0) : WittRing.dimMod2 x = 0 := by
+  simpa only [WittRing.dimMod2_baseChange, map_zero] using congrArg WittRing.dimMod2 h
+
 /-- Scalar extension sends the fundamental ideal into the fundamental ideal. -/
 theorem WittRing.baseChange_mem_fundamentalIdeal {x : WittRing K}
     (hx : x ∈ fundamentalIdeal K) :
@@ -321,5 +325,26 @@ theorem WittRing.baseChange_mem_fundamentalIdeal_pow (n : ℕ) {x : WittRing K}
     (hx : x ∈ fundamentalIdeal K ^ n) :
     WittRing.baseChange (L := L) x ∈ fundamentalIdeal L ^ n := by
   exact WittRing.map_fundamentalIdeal_pow_le n (Ideal.mem_map_of_mem _ hx)
+
+/-! ### Signed discriminant and Clifford invariant -/
+
+/-- Scalar extension pushes the signed discriminant of a Witt class forward along the induced map
+of square-class groups. -/
+@[simp]
+theorem WittRing.signedDiscr_baseChange (x : WittRing K) :
+    WittRing.signedDiscr (WittRing.baseChange (L := L) x) =
+      (algebraMap K L).squareClassMap (WittRing.signedDiscr x) := by
+  obtain ⟨q, rfl⟩ := wittClass_surjective x
+  simp
+
+/-- Scalar extension pushes the Clifford invariant of a Witt class forward to the Brauer group of
+the extension field. -/
+@[simp]
+theorem WittRing.cliffordInvariant_baseChange {F : Type u} [Field F] [Algebra K F]
+    [Invertible (2 : F)] (x : WittRing K) :
+    WittRing.cliffordInvariant (WittRing.baseChange (L := F) x) =
+      BrauerGroup.baseChange K F (WittRing.cliffordInvariant x) := by
+  obtain ⟨q, rfl⟩ := wittClass_surjective x
+  simp
 
 end TauCeti

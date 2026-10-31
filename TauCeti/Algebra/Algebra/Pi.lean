@@ -37,6 +37,11 @@ from Mathlib's `linearIndependent_monoidHom` (Dedekind independence) and
 `span_flip_eq_top_iff_linearIndependent` (finite duality). This supplies polynomial interpolation
 on finite Weyl orbits for the Harish-Chandra central-character theorem.
 
+Over any nontrivial commutative semiring, an algebra map `φ : (ι → T) →ₐ[T] (κ → T)` whose matrix
+entries `φ (Pi.single i 1) j` are all `0` or `1` is induced by a map of index sets `κ → ι`
+(`AlgHom.exists_apply_eq_comp_of_entries`). This computes equalizers of algebra maps between split
+algebras.
+
 For a finite-dimensional algebra over a field, `TauCeti.AlgHom.pi_bijective_of_injective`
 identifies evaluation at a finite family of distinct characters with the function algebra,
 provided those characters separate elements. The same evaluation, at all characters, is bijective
@@ -54,6 +59,10 @@ coordinates of `C ⊗[R] D ≅ (ι → R) ⊗[R] (κ → R) ≅ (κ → ι → R
 
 * `AlgHom.surjective_pi_of_injective`: distinct finitely many augmentations admit arbitrary
   simultaneous values.
+* `AlgHom.exists_apply_eq_comp_of_entries`: an algebra map `(ι → T) →ₐ[T] (κ → T)` whose matrix
+  entries are all `0` or `1` is induced by a map `κ → ι`.
+* `AlgHom.exists_eq_comp_piEvalAlgHom`: an algebra homomorphism from a finite product of algebras
+  into a domain factors through one of the projections.
 * `Pi.evalAlgHom_injective`: distinct coordinates give distinct evaluation homomorphisms.
 * `Pi.evalAlgHomEquiv`: the coordinates of `ι → R` are exactly the `R`-algebra homomorphisms
   `(ι → R) →ₐ[R] R`.
@@ -114,6 +123,82 @@ theorem surjective_pi_of_injective {K A ι : Type*} [Field K] [Semiring A] [Alge
   have hr : LinearMap.range (AlgHom.pi f).toLinearMap = ⊤ := by
     simpa only [← LinearMap.coe_range, Submodule.span_eq] using hspan
   exact LinearMap.range_eq_top.mp hr
+
+/-- An algebra map between function algebras whose matrix entries `φ (Pi.single i 1) j` are all `0`
+or `1` is induced by a map of the index sets. -/
+theorem exists_apply_eq_comp_of_entries {T ι κ : Type*} [CommSemiring T] [Nontrivial T]
+    [_root_.Finite ι] [DecidableEq ι] (φ : (ι → T) →ₐ[T] (κ → T))
+    (hφ : ∀ i j, φ (Pi.single i 1) j = 0 ∨ φ (Pi.single i 1) j = 1) :
+    ∃ u : κ → ι, ∀ s j, φ s j = s (u j) := by
+  have := Fintype.ofFinite ι
+  have hsum (j : κ) : ∑ i, φ (Pi.single i 1) j = 1 := by
+    have h1 : ∑ i, (Pi.single i 1 : ι → T) = 1 := by
+      simpa using Finset.univ_sum_single (1 : ι → T)
+    rw [← Finset.sum_apply, ← map_sum, h1, map_one, Pi.one_apply]
+  have hone (j : κ) : ∃ i, φ (Pi.single i 1) j = 1 := by
+    by_contra! h
+    have h0 (i : ι) : φ (Pi.single i 1) j = 0 := (hφ i j).resolve_right (h i)
+    exact one_ne_zero ((hsum j).symm.trans (by simp [h0]))
+  choose u hu using hone
+  refine ⟨u, fun s j ↦ ?_⟩
+  have hs : s = ∑ i, s i • (Pi.single i 1 : ι → T) := by
+    conv_lhs => rw [← Finset.univ_sum_single s]
+    simp [← Pi.single_smul']
+  have hφs : φ s j = ∑ i, s i * φ (Pi.single i 1) j := by
+    conv_lhs => rw [hs]
+    rw [map_sum, Finset.sum_apply]
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [map_smul, Pi.smul_apply, smul_eq_mul]
+  rw [hφs, Finset.sum_eq_single (u j) (fun i _ hi ↦ ?_) (by simp), hu j, mul_one]
+  have hprod : (Pi.single i 1 : ι → T) * Pi.single (u j) 1 = 0 := by
+    ext k
+    by_cases hk : k = i
+    · subst hk
+      simp [hi]
+    · simp [Pi.single_apply, hk]
+  have h0 := congrFun (congrArg φ hprod) j
+  simp [hu j] at h0
+  simp [h0]
+
+
+/-- **An algebra homomorphism from a finite product into a domain factors through a projection.**
+For a finite family of `R`-algebras `A i` and an `R`-algebra `B` without zero divisors, every
+`φ : (Π i, A i) →ₐ[R] B` is `ψ ∘ Pi.evalAlgHom R A i` for some `i` and `ψ : A i →ₐ[R] B`. This
+generalises Mathlib's `AlgHom.eq_piEvalAlgHom`, the case `A i = B = R`. -/
+theorem exists_eq_comp_piEvalAlgHom {R ι : Type*} [CommSemiring R] [_root_.Finite ι]
+    {A : ι → Type*} [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] {B : Type*} [Semiring B]
+    [Algebra R B] [NoZeroDivisors B] [Nontrivial B] (φ : (Π i, A i) →ₐ[R] B) :
+    ∃ i, ∃ ψ : A i →ₐ[R] B, φ = ψ.comp (Pi.evalAlgHom R A i) := by
+  classical
+  have := Fintype.ofFinite ι
+  have h1 := map_one φ
+  rw [← Finset.univ_sum_single (1 : Π i, A i), map_sum] at h1
+  simp only [Pi.one_apply] at h1
+  obtain ⟨i, hi⟩ : ∃ i, φ (Pi.single i 1) ≠ 0 := by
+    by_contra! h
+    simp_all
+  have h2 : ∀ j ≠ i, φ (Pi.single j 1) = 0 := by
+    refine fun j hj ↦ (eq_zero_or_eq_zero_of_mul_eq_zero ?_).resolve_left hi
+    rw [← map_mul]
+    convert map_zero φ
+    ext k
+    by_cases hk : k = i
+    · subst hk
+      simp [hj]
+    · simp [hk]
+  have h3 : φ (Pi.single i 1) = 1 := by rwa [Fintype.sum_eq_single i h2] at h1
+  -- `φ` only sees the `i`-th coordinate: the other summands of `x` are killed by `Pi.single j 1`.
+  have h4 (x : Π i, A i) : φ x = φ (Pi.single i (x i)) := by
+    conv_lhs => rw [← Finset.univ_sum_single x, map_sum]
+    refine Fintype.sum_eq_single i fun j hj ↦ ?_
+    rw [← mul_one (x j), Pi.single_mul, map_mul, h2 j hj, mul_zero]
+  refine ⟨i,
+    { toFun a := φ (Pi.single i a)
+      map_one' := h3
+      map_mul' a b := by rw [Pi.single_mul, map_mul]
+      map_zero' := by simp
+      map_add' a b := by rw [Pi.single_add, map_add]
+      commutes' r := by rw [← Pi.algebraMap_apply ι A r i, ← h4, AlgHom.commutes] },
+    AlgHom.ext h4⟩
 
 end AlgHom
 

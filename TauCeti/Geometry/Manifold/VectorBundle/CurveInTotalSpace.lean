@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Differentiating a curve into the total space of a fibre bundle
@@ -29,6 +30,10 @@ a tangent bundle is unpacked into an equation on its base curve and one on its v
   curve in the base chart and of the derivative of its fibre coordinate in the trivialization,
   both taken at the current point of the curve.
 * `TauCeti.Manifold.hasMFDerivAt_totalSpace_curve_iff`: its unrestricted case.
+* `TauCeti.Manifold.extChartAt_totalSpace_apply_snd`: the fibre coordinate of a point in a chart
+  of the total space is its fibre coordinate in the trivialization at the centre of the chart.
+* `Bundle.TotalSpace.hasMFDerivAt_smul_curve`: in a vector bundle, the velocity of a scalar
+  curve `r ↦ f r • z` through the fibre of `z`.
 
 -/
 
@@ -39,8 +44,6 @@ open scoped Manifold Topology
 
 noncomputable section
 
-namespace TauCeti.Manifold
-
 variable
   {𝕜 B F : Type*} {V : B → Type*}
   [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -49,6 +52,17 @@ variable
   {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
   [TopologicalSpace B] [ChartedSpace HB B] [FiberBundle F V]
   {z : 𝕜 → TotalSpace F V} {s : Set 𝕜} {t : 𝕜} {a : EB} {b : F}
+
+namespace TauCeti.Manifold
+
+/-- The fibre coordinate of a point `y` in the chart of the total space at `x` is its fibre
+coordinate in the trivialization at `x.proj`: by `FiberBundle.extChartAt` that chart is the
+trivialization followed by a chart of the base, which leaves the fibre coordinate unchanged. -/
+theorem extChartAt_totalSpace_apply_snd (x y : TotalSpace F V) :
+    (extChartAt (IB.prod 𝓘(𝕜, F)) x y).2 = (trivializationAt F V x.proj y).2 := by
+  rw [FiberBundle.extChartAt]
+  -- The second factor of `(extChartAt IB x.proj).prod (PartialEquiv.refl F)` is the identity.
+  rfl
 
 /-- A curve into the total space which is continuous within `s` at `t` has a manifold derivative
 there exactly when its base curve, read in the base chart at the current base point, and its fibre
@@ -126,5 +140,38 @@ theorem hasMFDerivAt_totalSpace_curve_iff :
     hasDerivWithinAt_univ]
 
 end TauCeti.Manifold
+
+namespace Bundle.TotalSpace
+
+section VectorBundle
+
+variable [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
+
+/-- The fibre coordinate of `c • y` is `c` times that of `y`, by linearity of the trivialization
+at the base point of `y`. -/
+theorem trivializationAt_smul_snd (y : TotalSpace F V) (c : 𝕜) :
+    (trivializationAt F V y.proj (⟨y.proj, c • y.2⟩ : TotalSpace F V)).2 =
+      c • (trivializationAt F V y.proj y).2 :=
+  ((trivializationAt F V y.proj).linear 𝕜
+    (FiberBundle.mem_baseSet_trivializationAt F V y.proj)).map_smul c y.2
+
+/-- If `f` has derivative `f'` at `t`, then the curve `r ↦ f r • y` in the fibre of `y` has
+velocity `(0, f' • ξ)` at `t`, read in the chart at `y`, where `ξ` is the fibre coordinate of
+`y`. -/
+theorem hasMFDerivAt_smul_curve (y : TotalSpace F V) {f : 𝕜 → 𝕜} {f' : 𝕜}
+    (hf : HasDerivAt f f' t) :
+    HasMFDerivAt 𝓘(𝕜) (IB.prod 𝓘(𝕜, F)) (fun r : 𝕜 ↦ (⟨y.proj, f r • y.2⟩ : TotalSpace F V)) t
+      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight ((0 : EB), f' • (trivializationAt F V y.proj y).2)) := by
+  rw [TauCeti.Manifold.hasMFDerivAt_totalSpace_curve_iff]
+  -- Both the continuity and the derivative of the fibre coordinate reduce to those of
+  -- `r ↦ f r • ξ`.
+  refine ⟨(FiberBundle.continuousAt_totalSpace F _).2 ⟨continuousAt_const, ?_⟩,
+    hasDerivAt_const t (extChartAt IB y.proj y.proj), ?_⟩ <;>
+    rw [funext fun r ↦ trivializationAt_smul_snd y (f r)]
+  exacts [hf.continuousAt.smul continuousAt_const, hf.smul_const _]
+
+end VectorBundle
+
+end Bundle.TotalSpace
 
 end

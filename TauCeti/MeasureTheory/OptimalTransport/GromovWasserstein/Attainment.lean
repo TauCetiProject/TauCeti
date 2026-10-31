@@ -48,7 +48,8 @@ essential supremum exceeds `c`.
 * `TauCeti.exists_isCoupling_gromovWassersteinDistortion_eq_of_standardBorelSpace` — the same
   conclusion on standard Borel carriers, through a compatible Polish topology on each;
 * `TauCeti.exists_isCoupling_gromovWassersteinDistortion_dist_eq` — the specialization of the
-  Polish theorem to metric-measure spaces, whose kernels are the distance functions.
+  Polish theorem to distance kernels on pseudometric spaces with Polish topologies; the chosen
+  distances need not be complete.
 
 ## References
 
@@ -257,13 +258,13 @@ theorem exists_isCoupling_gromovWassersteinDistortion_eq_of_standardBorelSpace {
   let := upgradeStandardBorel Y
   exact exists_isCoupling_gromovWassersteinDistortion_eq μ ν hωX hωY p
 
-/-- **Optimal Gromov–Wasserstein couplings of metric-measure spaces.** For Borel probability
-measures on complete separable metric spaces, with the distance functions as kernels, the
-`p`-Gromov–Wasserstein distance is attained by some coupling. -/
-theorem exists_isCoupling_gromovWassersteinDistortion_dist_eq {X Y : Type*} [MetricSpace X]
-    [CompleteSpace X] [SecondCountableTopology X] [MeasurableSpace X] [BorelSpace X]
-    [MetricSpace Y] [CompleteSpace Y] [SecondCountableTopology Y] [MeasurableSpace Y]
-    [BorelSpace Y] (μ : Measure X) [IsProbabilityMeasure μ] (ν : Measure Y)
+/-- **Optimal Gromov–Wasserstein couplings for distance kernels.** For Borel probability measures
+on pseudometric spaces with Polish topologies, with the distance functions as kernels, the
+`p`-Gromov–Wasserstein distance is attained by some coupling. The chosen distances need not be
+complete. -/
+theorem exists_isCoupling_gromovWassersteinDistortion_dist_eq {X Y : Type*} [PseudoMetricSpace X]
+    [PolishSpace X] [MeasurableSpace X] [BorelSpace X] [PseudoMetricSpace Y] [PolishSpace Y]
+    [MeasurableSpace Y] [BorelSpace Y] (μ : Measure X) [IsProbabilityMeasure μ] (ν : Measure Y)
     [IsProbabilityMeasure ν] (p : ℝ≥0∞) :
     ∃ π, IsCoupling π μ ν ∧
       gromovWassersteinDistortion p (fun x : X × X ↦ dist x.1 x.2)

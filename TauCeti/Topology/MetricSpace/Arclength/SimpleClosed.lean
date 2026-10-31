@@ -72,8 +72,7 @@ theorem exists_simple_closed_arclength_parametrization
   have hsa : s a = 0 := variationOnFromTo.self _ _ _
   have hsb : s b = L := by
     simp only [s, variationOnFromTo.eq_of_le _ _ hab, inter_self, L]
-  have himage : s '' Icc a b = Icc 0 L := by
-    rw [hs.image_Icc_of_monotoneOn hab hm.monotoneOn, hsa, hsb]
+  have himage : s '' Icc a b = Icc 0 L := hγ.image_variationOnFromTo_Icc hcont hab
   have himageco : s '' Ico a b = Ico 0 L := by
     rw [hs.image_Ico_of_strictMonoOn hab hm, hsa, hsb]
   let g := naturalParameterization γ (Icc a b) a
@@ -82,7 +81,7 @@ theorem exists_simple_closed_arclength_parametrization
     exact has_unit_speed_naturalParameterization γ hγ.locallyBoundedVariationOn ha
   have hg : LipschitzOnWith 1 g (Icc 0 L) := hunit.lipschitzOnWith
   have hfactor : EqOn (g ∘ s) γ (Icc a b) := fun t ht ↦
-    edist_eq_zero.mp (edist_naturalParameterization_eq_zero hγ.locallyBoundedVariationOn ha ht)
+    hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo ha ht
   have hg0 : g 0 = γ a := by
     rw [← hsa]
     exact hfactor ha
@@ -94,9 +93,7 @@ theorem exists_simple_closed_arclength_parametrization
   have hginj : InjOn g (Ico 0 L) := by
     rw [← himageco]
     exact (hinj.congr (hfactor.mono Ico_subset_Icc_self).symm).image_of_comp
-  have htrace : g '' Icc 0 L = γ '' Icc a b := by
-    rw [← himage, image_image]
-    exact hfactor.image_eq
+  have htrace : g '' Icc 0 L = γ '' Icc a b := hγ.image_naturalParameterization_Icc hcont hab
   refine ⟨g, hg, hunit, hfactor, hg0, hgL, htrace, ?_⟩
   -- The right endpoint is the only parameter omitted by half-open injectivity.
   -- Separating it out also handles a length interval consisting of one point.

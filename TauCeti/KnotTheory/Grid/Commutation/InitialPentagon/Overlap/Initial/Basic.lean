@@ -212,7 +212,7 @@ end GridRectangleInitialPentagonDecomposition
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 
 section Weights
 
@@ -281,11 +281,10 @@ private theorem initialPentagonInitialCrossOverlapSource_data
       D.toGridRectangleDecomposition.HasOneCommonSide ∧ D.first.IsEmpty ∧ D.second.IsEmpty := by
   obtain ⟨hcounted, hcommon, hcol⟩ := (G.mem_initialPentagonInitialCrossOverlapSources C D).1 hD
   rw [G.mem_rectangleInitialPentagonDecompositions, G.mem_unblockedRectangles,
-    G.mem_initialPentagons,
-    GridRectangleInitialPentagonDecomposition.pentagon_toGridRectangleBetween] at hcounted
+    G.mem_initialPentagons] at hcounted
   exact ⟨hcommon, hcol,
     D.toGridRectangleDecomposition.hasOneCommonSide_of_left_eq_left_of_mem_cIoo hcommon hcol,
-    hcounted.1.1, hcounted.2.1⟩
+    hcounted.1.1, D.underlying_second_isEmpty hcounted.2.1⟩
 
 private noncomputable def initialPentagonInitialCrossOverlapPartner
     (D : {D // D ∈ G.initialPentagonInitialCrossOverlapSources C x z}) :

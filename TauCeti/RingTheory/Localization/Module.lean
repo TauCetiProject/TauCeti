@@ -1,0 +1,84 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Module.FinitePresentation
+public import Mathlib.RingTheory.Localization.Module
+
+/-!
+# Localized linear maps
+
+Facts about the localization `LocalizedModule.map S f : Mₛ → Nₛ` of a linear map at a
+submonoid `S`:
+
+* `LocalizedModule.map_comp`: localization is functorial, `(g ∘ f)ₛ = gₛ ∘ fₛ`.
+* `LocalizedModule.bijective_map_lsmul`: multiplication by an element of `S` becomes bijective
+  after localizing at `S`.
+* `LinearMap.exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id`: if `M` is finitely
+  presented and `N` is finitely generated, a left inverse of the localization `iₛ` of
+  `i : N → M` descends to a map `φ : M → N` with `φ ∘ i` multiplication by some element of `S`.
+-/
+
+public section
+
+namespace LocalizedModule
+
+variable {R : Type*} [CommSemiring R] (S : Submonoid R) {M N P : Type*} [AddCommMonoid M]
+  [Module R M] [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
+
+/-- Localization of a composite is the composite of the localizations. -/
+@[simp]
+theorem map_comp (f : M →ₗ[R] N) (g : N →ₗ[R] P) :
+    map S (g ∘ₗ f) = map S g ∘ₗ map S f := by
+  ext x
+  induction x using induction_on with
+  | h m s => simp
+
+variable {S} (M) in
+/-- Multiplication by an element of `S` becomes bijective after localizing at `S`. -/
+theorem bijective_map_lsmul {s : R} (hs : s ∈ S) :
+    Function.Bijective (map S (LinearMap.lsmul R M s)) := by
+  convert (Module.End.isUnit_iff _).mp (IsLocalizedModule.map_units (mkLinearMap S M) ⟨s, hs⟩)
+    using 1
+  ext x
+  induction x using induction_on with
+  | h m t => simp [smul'_mk]
+
+end LocalizedModule
+
+namespace LinearMap
+
+open LocalizedModule
+
+variable {R : Type*} [CommRing R] {S : Submonoid R} {M N : Type*} [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N]
+
+/-- Let `M` be finitely presented and `N` finitely generated. If the localization of
+`i : N →ₗ[R] M` at `S` has a left inverse, then some `φ : M →ₗ[R] N` is a left inverse of `i` up
+to multiplication by an element of `S`. -/
+theorem exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id
+    [Module.FinitePresentation R M] [Module.Finite R N]
+    (i : N →ₗ[R] M) {ρ : LocalizedModule S M →ₗ[Localization S] LocalizedModule S N}
+    (hρ : ρ ∘ₗ LocalizedModule.map S i = LinearMap.id) :
+    ∃ s ∈ S, ∃ φ : M →ₗ[R] N, φ ∘ₗ i = LinearMap.lsmul R N s := by
+  -- Lift `ρ` to `φ : M → N` with denominator `s`; then `φ ∘ i` and `s` agree after localizing,
+  -- hence after multiplication by some `u ∈ S`.
+  obtain ⟨φ, s, hφ⟩ := Module.FinitePresentation.exists_lift_of_isLocalizedModule S
+    (mkLinearMap S N) (ρ.restrictScalars R ∘ₗ mkLinearMap S M)
+  have key : mkLinearMap S N ∘ₗ (φ ∘ₗ i) = mkLinearMap S N ∘ₗ LinearMap.lsmul R N s := by
+    ext n
+    have h₁ := congr($hφ (i n))
+    have h₂ := congr($hρ (LocalizedModule.mk n 1))
+    simp only [LinearMap.comp_apply, LinearMap.coe_restrictScalars, mkLinearMap_apply,
+      LinearMap.smul_apply, map_mk, LinearMap.id_apply] at h₁ h₂
+    simp [h₁, h₂, Submonoid.smul_def, smul'_mk]
+  obtain ⟨u, hu⟩ := Module.Finite.exists_smul_of_comp_eq_of_isLocalizedModule S
+    (mkLinearMap S N) _ _ key
+  refine ⟨u * s, mul_mem u.2 s.2, (u : R) • φ, ?_⟩
+  ext n
+  simpa [Submonoid.smul_def, mul_smul] using congr($hu n)
+
+end LinearMap

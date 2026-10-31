@@ -220,7 +220,7 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
   have hgB : ∀ i : S, ∀ x : E,
       ballAverage mu r ⇑(i : Lp F p mu) x ∈ closedBall (0 : F) Bₑ.toReal := fun i x => by
     rw [mem_closedBall, dist_zero_right]
-    have h := (enorm_ballAverage_le hp hp' (Lp.aestronglyMeasurable (i : Lp F p mu)) hr x).trans
+    have h := (enorm_ballAverage_le (r := r) hp hp' x).trans
       (mul_le_mul' le_rfl (hbdd _ i.2))
     simpa [Bₑ, V] using ENNReal.toReal_mono hBₑt h
   -- The uniform equicontinuity of the ball averages, at the fixed scale `r`.

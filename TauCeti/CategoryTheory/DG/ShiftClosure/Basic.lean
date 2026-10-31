@@ -31,6 +31,14 @@ These are the signs for which the formal shifts of cochain complexes are Mathlib
 complexes `K⟦r⟧`, with `Hom(K, L)[s - r] ≅ Hom(K⟦r⟧, L⟦s⟧)` multiplying the underlying cochain
 by `(-1)^(r * p)`: see `TauCeti/CategoryTheory/DG/ShiftClosure/CochainComplex.lean`.
 
+Shifting every object by the same integer `n` does not change the Hom complexes, so
+`X[r] ↦ X[r + n]` is a DG functor `TauCeti.DGShiftClosure.shiftFunctor n` which is the identity on
+underlying morphisms of `C`.  The objects `X[r]` and `X[r + n]` are related by the closed
+morphism `TauCeti.DGShiftClosure.toShift : X[r] ⟶ X[r + n]` of degree `-n` and its inverse
+`TauCeti.DGShiftClosure.fromShift` of degree `n`, whose underlying morphisms are `(-1)^(n * r)`
+times the identity of `X`.  With this sign, `toShift` is natural up to the Koszul sign:
+`f ≫ toShift = (-1)^(n * p) • toShift ≫ f[n]` for `f` of degree `p`, and so is `fromShift`.
+
 The shift closure is the home of the matrix entries of one-sided twisted complexes, the objects
 `(⊕ᵢ Xᵢ[rᵢ], δ)` of the pretriangulated envelope of Bondal and Kapranov.
 
@@ -41,6 +49,9 @@ The shift closure is the home of the matrix entries of one-sided twisted complex
 * `TauCeti.DGShiftClosure.dgHomEquiv`: degree-`n` morphisms `X[r] ⟶ Y[s]` are degree-`n + s - r`
   morphisms `X ⟶ Y`.
 * `TauCeti.DGShiftClosure.ι`: the DG functor `X ↦ X[0]`.
+* `TauCeti.DGShiftClosure.shiftFunctor`: the DG functor `X[r] ↦ X[r + n]`.
+* `TauCeti.DGShiftClosure.toShift` and `TauCeti.DGShiftClosure.fromShift`: the closed comparison
+  morphisms `X[r] ⟶ X[r + n]` of degree `-n` and `X[r + n] ⟶ X[r]` of degree `n`.
 
 ## Main results
 
@@ -51,6 +62,11 @@ The shift closure is the home of the matrix entries of one-sided twisted complex
   `(-1)^((s - r) * q)`.
 * `TauCeti.DGShiftClosure.dgHomEquiv_dgId`: the identity of `X[r]` is the identity of `X`.
 * `TauCeti.DGShiftClosure.isIso_ι_map`: `X ↦ X[0]` is an isomorphism on Hom complexes.
+* `TauCeti.DGShiftClosure.dgComp_toShift_fromShift` and
+  `TauCeti.DGShiftClosure.dgComp_fromShift_toShift`: the comparison morphisms are mutually
+  inverse.
+* `TauCeti.DGShiftClosure.dgComp_toShift` and `TauCeti.DGShiftClosure.dgComp_fromShift`: the
+  comparison morphisms are natural up to the Koszul sign.
 
 ## References
 
@@ -259,6 +275,187 @@ its shift closure. -/
 instance isIso_ι_map (X Y : C) : IsIso ((ι R).map X Y) :=
   have (n : ℤ) : IsIso (((ι R).map X Y).f n) := (ιHomEquiv R X Y n).toModuleIso.isIso_hom
   HomologicalComplex.Hom.isIso_of_components _
+
+/-! ### Shifting every object -/
+
+/-- Shifting both objects by `n` does not change the morphisms: a degree-`p` morphism
+`X[r] ⟶ Y[s]` and a degree-`p` morphism `X[r + n] ⟶ Y[s + n]` are both morphisms `X ⟶ Y` of
+degree `p + (s - r)`. -/
+noncomputable def shiftHomEquiv (X Y : DGShiftClosure C) (n p : ℤ) :
+    DGHom R p X Y ≃ₗ[R] DGHom R p (⟨X.obj, X.shift + n⟩ : DGShiftClosure C) ⟨Y.obj, Y.shift + n⟩ :=
+  ((dgHomEquiv R X Y p).trans ((dgHomComplex R X.obj Y.obj).XIsoOfEq
+    (by omega : p + (Y.shift - X.shift) = p + (Y.shift + n - (X.shift + n)))).toLinearEquiv).trans
+      (dgHomEquiv R ⟨X.obj, X.shift + n⟩ ⟨Y.obj, Y.shift + n⟩ p).symm
+
+/-- Shifting both objects does not change the underlying morphism of `C`. -/
+@[simp]
+theorem dgHomEquiv_shiftHomEquiv {X Y : DGShiftClosure C} {n p : ℤ} (f : DGHom R p X Y) :
+    dgHomEquiv R _ _ p (shiftHomEquiv R X Y n p f) =
+      castDeg R (by dsimp only; omega) (dgHomEquiv R X Y p f) := by
+  simp [shiftHomEquiv, castDeg_def]
+
+/-- Shifting both objects commutes with the differential: both differentials are `(-1)^(s - r)`
+times the differential of `C`. -/
+theorem shiftHomEquiv_dgDifferential {X Y : DGShiftClosure C} (n p : ℤ) (f : DGHom R p X Y) :
+    shiftHomEquiv R X Y n (p + 1) (dgDifferential R p f) =
+      dgDifferential R p (shiftHomEquiv R X Y n p f) :=
+  (dgHomEquiv R _ _ (p + 1)).injective <| by
+    rw [dgHomEquiv_shiftHomEquiv, dgHomEquiv_dgDifferential, dgHomEquiv_dgDifferential,
+      dgHomEquiv_shiftHomEquiv, map_zsmul_unit, d_castDeg R _
+        (show p + 1 + (Y.shift - X.shift) = p + 1 + (Y.shift + n - (X.shift + n)) by omega)]
+    simp only [add_sub_add_right_eq_sub]
+
+/-- Shifting both objects preserves identities. -/
+theorem shiftHomEquiv_dgId (X : DGShiftClosure C) (n : ℤ) :
+    shiftHomEquiv R X X n 0 (dgId R X) = dgId R (⟨X.obj, X.shift + n⟩ : DGShiftClosure C) :=
+  (dgHomEquiv R _ _ 0).injective <| by
+    rw [dgHomEquiv_shiftHomEquiv, dgHomEquiv_dgId, dgHomEquiv_dgId, castDeg_def,
+      ← ModuleCat.comp_apply, XIsoOfEq_hom_comp_XIsoOfEq_hom]
+
+/-- Shifting both objects preserves composition: the composition signs
+`(-1)^((t - s) * (p + s - r))` do not change when `r`, `s` and `t` are shifted by the same
+integer. -/
+theorem shiftHomEquiv_dgComp {X Y Z : DGShiftClosure C} (n : ℤ) {p q m : ℤ} (f : DGHom R p X Y)
+    (g : DGHom R q Y Z) (h : p + q = m) :
+    shiftHomEquiv R X Z n m (dgComp R f g h) =
+      dgComp R (shiftHomEquiv R X Y n p f) (shiftHomEquiv R Y Z n q g) h :=
+  (dgHomEquiv R _ _ m).injective <| by
+    rw [dgHomEquiv_shiftHomEquiv, dgHomEquiv_dgComp, dgHomEquiv_dgComp, dgHomEquiv_shiftHomEquiv,
+      dgHomEquiv_shiftHomEquiv, map_zsmul_unit,
+      castDeg_dgComp R _ (show m + (Z.shift - X.shift) = m + (Z.shift + n - (X.shift + n)) by
+        omega),
+      dgComp_castDeg R _ rfl, castDeg_self]
+    simp only [add_sub_add_right_eq_sub]
+
+/-- The DG functor shifting every object of the shift closure by `n`, `X[r] ↦ X[r + n]`.  It
+does not change the underlying morphisms of `C` (`TauCeti.DGShiftClosure.shiftHomEquiv`). -/
+-- This is reducible, with the object map given explicitly, so that the image of `X[r]` is
+-- reducibly `X[r + n]`.
+noncomputable abbrev shiftFunctor (n : ℤ) :
+    EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) (DGShiftClosure C) (DGShiftClosure C) where
+  obj X := ⟨X.obj, X.shift + n⟩
+  __ := EnrichedFunctor.ofDGMap (fun X ↦ (⟨X.obj, X.shift + n⟩ : DGShiftClosure C))
+    (fun {X Y} p ↦ (shiftHomEquiv R X Y n p).toLinearMap)
+    (fun p f ↦ shiftHomEquiv_dgDifferential R n p f) (fun X ↦ shiftHomEquiv_dgId R X n)
+    (fun f g h ↦ shiftHomEquiv_dgComp R n f g h)
+
+/-- The shift by `n` acts on morphisms by `TauCeti.DGShiftClosure.shiftHomEquiv`. -/
+@[simp]
+theorem dgMap_shiftFunctor (n : ℤ) {X Y : DGShiftClosure C} {p : ℤ} (f : DGHom R p X Y) :
+    (shiftFunctor R n).dgMap p f = shiftHomEquiv R X Y n p f :=
+  (EnrichedFunctor.dgMap_apply _ f).trans rfl
+
+/-- The shift is an isomorphism on Hom complexes. -/
+instance isIso_shiftFunctor_map (n : ℤ) (X Y : DGShiftClosure C) :
+    IsIso ((shiftFunctor R n).map X Y) :=
+  have (p : ℤ) : IsIso (((shiftFunctor R n).map X Y).f p) :=
+    (shiftHomEquiv R X Y n p).toModuleIso.isIso_hom
+  HomologicalComplex.Hom.isIso_of_components _
+
+/-- The comparison morphism `X[r] ⟶ X[r + n]` of degree `-n`, whose underlying morphism is
+`(-1)^(n * r)` times the identity of `X`. -/
+noncomputable def toShift (X : DGShiftClosure C) (n : ℤ) :
+    DGHom R (-n) X ((shiftFunctor R n).obj X) :=
+  (dgHomEquiv R _ _ (-n)).symm ((n * X.shift).negOnePow • castDeg R (by dsimp only; omega)
+    (dgId R X.obj))
+
+/-- The comparison morphism `X[r + n] ⟶ X[r]` of degree `n`, whose underlying morphism is
+`(-1)^(n * r)` times the identity of `X`. -/
+noncomputable def fromShift (X : DGShiftClosure C) (n : ℤ) :
+    DGHom R n ((shiftFunctor R n).obj X) X :=
+  (dgHomEquiv R _ _ n).symm ((n * X.shift).negOnePow • castDeg R (by dsimp only; omega)
+    (dgId R X.obj))
+
+/-- The underlying morphism of `X[r] ⟶ X[r + n]` is `(-1)^(n * r)` times the identity of `X`. -/
+@[simp]
+theorem dgHomEquiv_toShift (X : DGShiftClosure C) (n : ℤ) :
+    dgHomEquiv R _ _ (-n) (toShift R X n) =
+      (n * X.shift).negOnePow • castDeg R (by dsimp only; omega) (dgId R X.obj) := by
+  simp [toShift]
+
+/-- The underlying morphism of `X[r + n] ⟶ X[r]` is `(-1)^(n * r)` times the identity of `X`. -/
+@[simp]
+theorem dgHomEquiv_fromShift (X : DGShiftClosure C) (n : ℤ) :
+    dgHomEquiv R _ _ n (fromShift R X n) =
+      (n * X.shift).negOnePow • castDeg R (by dsimp only; omega) (dgId R X.obj) := by
+  simp [fromShift]
+
+/-- The comparison morphism `X[r] ⟶ X[r + n]` is closed. -/
+@[simp↓]
+theorem dgDifferential_toShift (X : DGShiftClosure C) (n : ℤ) :
+    dgDifferential R (-n) (toShift R X n) = 0 :=
+  (dgHomEquiv R _ _ (-n + 1)).injective <| by
+    rw [dgHomEquiv_dgDifferential, dgHomEquiv_toShift, map_zsmul_unit, d_castDeg_dgId,
+      smul_zero, smul_zero, map_zero]
+
+/-- Two morphisms `X[r] ⟶ X[s] ⟶ X[r]` whose underlying morphisms are the same sign `u` times
+the identity of `X` compose to the identity of `X[r]`: the composition sign is trivial because the
+first underlying morphism has degree `0`, and `u * u = 1`. -/
+private theorem dgComp_eq_dgId_of_units_smul (X : DGShiftClosure C) (s : ℤ) (u : ℤˣ) {p q : ℤ}
+    {f : DGHom R p X (⟨X.obj, s⟩ : DGShiftClosure C)} {g : DGHom R q ⟨X.obj, s⟩ X}
+    {hp : 0 = p + (s - X.shift)} {hq : 0 = q + (X.shift - s)}
+    (hf : dgHomEquiv R _ _ p f = u • castDeg R hp (dgId R X.obj))
+    (hg : dgHomEquiv R _ _ q g = u • castDeg R hq (dgId R X.obj)) (h : p + q = 0) :
+    dgComp R f g h = dgId R X :=
+  (dgHomEquiv R _ _ 0).injective <| by
+    rw [dgHomEquiv_dgComp, hf, hg, dgHomEquiv_dgId]
+    simp only [← hp, mul_zero, Int.negOnePow_zero, one_smul, units_smul_dgComp, dgComp_units_smul,
+      castDeg_dgId_dgComp, castDeg_castDeg, smul_smul, Int.units_mul_self]
+    exact LinearMap.congr_fun (castDeg_def (C := C) R _) _
+
+/-- The comparison morphisms `X[r] ⟶ X[r + n] ⟶ X[r]` compose to the identity of `X[r]`. -/
+@[simp↓]
+theorem dgComp_toShift_fromShift (X : DGShiftClosure C) (n : ℤ) :
+    dgComp R (toShift R X n) (fromShift R X n) (neg_add_cancel n) = dgId R X :=
+  dgComp_eq_dgId_of_units_smul R X _ _ (dgHomEquiv_toShift R X n) (dgHomEquiv_fromShift R X n) _
+
+/-- The comparison morphisms `X[r + n] ⟶ X[r] ⟶ X[r + n]` compose to the identity of
+`X[r + n]`. -/
+@[simp↓]
+theorem dgComp_fromShift_toShift (X : DGShiftClosure C) (n : ℤ) :
+    dgComp R (fromShift R X n) (toShift R X n) (add_neg_cancel n) =
+      dgId R ((shiftFunctor R n).obj X) :=
+  dgComp_eq_dgId_of_units_smul R _ X.shift _ (dgHomEquiv_fromShift R X n)
+    (dgHomEquiv_toShift R X n) _
+
+/-- The comparison morphism `X[r + n] ⟶ X[r]` is closed. -/
+@[simp↓]
+theorem dgDifferential_fromShift (X : DGShiftClosure C) (n : ℤ) :
+    dgDifferential R n (fromShift R X n) = 0 :=
+  dgDifferential_eq_zero_of_dgComp_eq_dgId R (dgDifferential_toShift R X n) (neg_add_cancel n)
+    (dgComp_toShift_fromShift R X n) (dgComp_fromShift_toShift R X n)
+
+/-- **The comparison morphisms are natural up to the Koszul sign**: for `f : X[r] ⟶ Y[s]` of
+degree `p`, `f` followed by `Y[s] ⟶ Y[s + n]` is `(-1)^(n * p)` times `X[r] ⟶ X[r + n]` followed
+by the shift of `f`. -/
+theorem dgComp_toShift {X Y : DGShiftClosure C} (n : ℤ) {p m : ℤ} (f : DGHom R p X Y)
+    (h : p + -n = m) :
+    dgComp R f (toShift R Y n) h =
+      (n * p).negOnePow • dgComp R (toShift R X n) ((shiftFunctor R n).dgMap p f) (by omega) :=
+  (dgHomEquiv R _ _ _).injective <| by
+    rw [dgMap_shiftFunctor, map_zsmul_unit, dgHomEquiv_dgComp, dgHomEquiv_dgComp,
+      dgHomEquiv_toShift, dgHomEquiv_toShift, dgHomEquiv_shiftHomEquiv, dgComp_units_smul,
+      dgComp_castDeg_dgId, units_smul_dgComp, castDeg_dgId_dgComp, castDeg_castDeg, smul_smul,
+      smul_smul, smul_smul]
+    congr 1
+    simp only [← Int.negOnePow_add, Int.negOnePow_eq_iff]
+    exact ⟨n * (Y.shift - X.shift), by ring⟩
+
+/-- **The inverse comparison morphisms are natural up to the Koszul sign**: for
+`f : X[r] ⟶ Y[s]` of degree `p`, the shift of `f` followed by `Y[s + n] ⟶ Y[s]` is
+`(-1)^(n * p)` times `X[r + n] ⟶ X[r]` followed by `f`. -/
+theorem dgComp_fromShift {X Y : DGShiftClosure C} (n : ℤ) {p m : ℤ} (f : DGHom R p X Y)
+    (h : p + n = m) :
+    dgComp R ((shiftFunctor R n).dgMap p f) (fromShift R Y n) h =
+      (n * p).negOnePow • dgComp R (fromShift R X n) f (by omega) :=
+  (dgHomEquiv R _ _ _).injective <| by
+    rw [dgMap_shiftFunctor, map_zsmul_unit, dgHomEquiv_dgComp, dgHomEquiv_dgComp,
+      dgHomEquiv_fromShift, dgHomEquiv_fromShift, dgHomEquiv_shiftHomEquiv, dgComp_units_smul,
+      dgComp_castDeg_dgId, units_smul_dgComp, castDeg_dgId_dgComp, castDeg_castDeg, smul_smul,
+      smul_smul, smul_smul]
+    congr 1
+    simp only [← Int.negOnePow_add, Int.negOnePow_eq_iff]
+    exact ⟨-(n * p), by ring⟩
 
 end DGShiftClosure
 

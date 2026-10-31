@@ -64,11 +64,15 @@ open CategoryTheory CategoryTheory.Limits
 
 universe u v w w'
 
-variable {C : Type u} [Category.{v} C] [Abelian C]
+variable {C : Type u} [Category.{v} C]
 
 section
 
 variable {J : Type w} [Category.{w'} J] [HasLimitsOfShape J C]
+
+section HasZeroMorphisms
+
+variable [HasZeroMorphisms C]
 
 private theorem lim_π_comp_mapNatTrans_evaluation
     (F : J ⥤ ShortComplex C) {X Y : J} (f : X ⟶ Y) :
@@ -118,7 +122,9 @@ private noncomputable def isLimitShortComplexLimCone (F : J ⥤ ShortComplex C) 
         rw [ShortComplex.diagramEvaluationIso_hom_τ₃]
         exact (Category.comp_id _).symm.trans (Category.id_comp _).symm))
 
-variable [HasExactLimitsOfShape J C]
+end HasZeroMorphisms
+
+variable [Abelian C] [HasExactLimitsOfShape J C]
 
 private theorem shortComplex_mapHomologyIso_limit (F : J ⥤ ShortComplex C) (j : J) :
     (((ShortComplex.functorEquivalence J C).inverse.obj F).mapHomologyIso lim).inv ≫
@@ -205,16 +211,11 @@ theorem quasiIso_limMap {F G : J ⥤ HomologicalComplex C c} (φ : F ⟶ G)
   intro q
   rw [quasiIsoAt_iff_isIso_homologyMap]
   let H := HomologicalComplex.homologyFunctor C c q
-  -- `H` commutes with the limits, through the comparison isomorphisms `limit.post`
-  have h : H.map (limMap φ) ≫ limit.post G H =
-      limit.post F H ≫ limMap (Functor.whiskerRight φ H) := by
-    ext j
-    simp [← Functor.map_comp]
   have (j : J) : IsIso ((Functor.whiskerRight φ H).app j) :=
     (quasiIsoAt_iff_isIso_homologyMap (φ.app j) q).mp ((hφ j).quasiIsoAt q)
   have : IsIso (Functor.whiskerRight φ H) := NatIso.isIso_of_isIso_app _
   have : IsIso (H.map (limMap φ) ≫ limit.post G H) := by
-    rw [h]
+    rw [limit.map_post]
     infer_instance
   exact IsIso.of_isIso_comp_right (H.map (limMap φ)) (limit.post G H)
 
@@ -222,7 +223,7 @@ end
 
 /-- **Products of quasi-isomorphisms.** If products indexed by `β` are exact, the product of a
 family of quasi-isomorphisms of homological complexes is a quasi-isomorphism. -/
-theorem quasiIso_pi_map {I : Type*} {c : ComplexShape I}
+theorem quasiIso_pi_map [Abelian C] {I : Type*} {c : ComplexShape I}
     {β : Type w} [HasLimitsOfShape (Discrete β) C]
     [HasExactLimitsOfShape (Discrete β) C] {K L : β → HomologicalComplex C c}
     (φ : ∀ b, K b ⟶ L b) (hφ : ∀ b, QuasiIso (φ b)) : QuasiIso (Limits.Pi.map φ) :=

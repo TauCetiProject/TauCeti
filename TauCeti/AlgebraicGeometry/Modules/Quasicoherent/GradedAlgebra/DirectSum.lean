@@ -37,6 +37,9 @@ is quasicoherent because coproducts of quasicoherent sheaves are.
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.isColimitιTotal` and
   `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.toQuasicoherentAlgebra_hom_ext`: these
   inclusions exhibit the underlying module as the coproduct of the homogeneous components;
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.toQuasicoherentAlgebra_tensor_hom_ext`:
+  morphisms out of the tensor square of the underlying module are determined on the summands
+  `Aᵢ ⊗ Aⱼ`;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.ιTotal_tensorHom_ιTotal_mul` and
   `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.one_toQuasicoherentAlgebra`: its
   multiplication restricts to the homogeneous multiplication on `Aᵢ ⊗ Aⱼ`, and its unit is the
@@ -149,6 +152,17 @@ theorem toQuasicoherentAlgebra_hom_ext {A : GradedQuasicoherentAlgebra X} {M : X
     {f g : (toQuasicoherentAlgebra.obj A).obj.X ⟶ M} (h : ∀ n, ιTotal A n ≫ f = ιTotal A n ≫ g) :
     f = g :=
   Cofan.IsColimit.hom_ext (isColimitιTotal A) f g h
+
+/-- Morphisms out of the tensor square of the direct-sum algebra agree as soon as they agree on
+every summand `Aᵢ ⊗ Aⱼ`. -/
+theorem toQuasicoherentAlgebra_tensor_hom_ext {A : GradedQuasicoherentAlgebra X} {M : X.Modules}
+    {f g : (toQuasicoherentAlgebra.obj A).obj.X ⊗ (toQuasicoherentAlgebra.obj A).obj.X ⟶ M}
+    (h : ∀ i j, (ιTotal A i ⊗ₘ ιTotal A j) ≫ f = (ιTotal A i ⊗ₘ ιTotal A j) ≫ g) :
+    f = g := by
+  rw [← cancel_epi (eqToHom (toQuasicoherentAlgebra_obj_obj_X A).symm ⊗ₘ
+    eqToHom (toQuasicoherentAlgebra_obj_obj_X A).symm)]
+  refine GradedObject.total_tensor_hom_ext fun i j ↦ ?_
+  simpa only [tensorHom_comp_tensorHom_assoc, ιTotal_def] using h i j
 
 /-- On the summand `Aᵢ ⊗ Aⱼ`, the multiplication of the direct-sum algebra is the homogeneous
 multiplication `Aᵢ ⊗ Aⱼ ⟶ Aᵢ₊ⱼ` followed by the inclusion of the summand of degree `i + j`. -/

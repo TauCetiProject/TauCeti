@@ -6,16 +6,33 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Basic.Real.Basic
+import Mathlib.Data.Fin.VecNotation
+import Mathlib.Tactic.FinCases
+import TauCeti.Combinatorics.Network.Acyclic
 import TauCeti.Combinatorics.Network.Coefficients
+import TauCeti.Combinatorics.Network.CycleAdjustment
 
 /-!
-# Examples of bounded assignments
+# Examples of bounded assignments and flows
 
 Take two vertices `false` and `true`, with one arrow for each ordered pair, including the two
 loops, lower bound `-2` and upper bound `1` on every arrow. The integral assignment with value
 `-1` on the arrow from `false` to `true` and zero elsewhere is a bounded `false`–`true` assignment
 of negative value `-1`; conservation is vacuous because both vertices are terminals. Casting its
 coefficients from `ℤ` to `ℝ` gives a real bounded assignment for the cast bounds, of value `-1`.
+
+Take four vertices `s = 0`, `a = 1`, `b = 2` and `t = 3`, with one arrow for each ordered pair. The
+unit flows along `s → a → b → t` and `s → b → a → t` add up to an `s`–`t` flow of value `2` that
+these two paths decompose without any cycle, although its arrows of positive value contain the
+cycle `a → b → a`. The unit flows along `s → a → t` and `s → b → t` add up to an acyclic flow of
+the same value below it.
+
+Take two vertices `false` and `true` again, now with two parallel arrows `false` and `true` for
+each ordered pair, bounds `0` and `1`, and the unit assignments `f` and `g` on the two parallel
+arrows from `false` to `true`. They have the same excess, and the residual cycle adjustments of
+their residual difference lead from `f` to `g` through feasible assignments of that excess. The
+residual difference from `f` to zero is a residual assignment of nonzero excess, computed directly
+at both vertices, which cancels the excess of `f`.
 -/
 
 namespace TauCeti
@@ -44,5 +61,113 @@ example :
   · simp [BoundedFlow.val_def, excessAt_def]
   · simp [BoundedFlow.val_def, excessAt_def, φ]
   · simp [φ]
+
+-- A flow with a cycle-free decomposition whose support contains a cycle, and an acyclic flow of
+-- the same value below it.
+example :
+    let p₁ : ArrowWalk (fun _ _ : Fin 4 ↦ Unit) 0 3 :=
+      (((ArrowWalk.nil 0).cons (x := 1) ()).cons (x := 2) ()).cons (x := 3) ()
+    let p₂ : ArrowWalk (fun _ _ : Fin 4 ↦ Unit) 0 3 :=
+      (((ArrowWalk.nil 0).cons (x := 2) ()).cons (x := 1) ()).cons (x := 3) ()
+    let q₁ : ArrowWalk (fun _ _ : Fin 4 ↦ Unit) 0 3 :=
+      ((ArrowWalk.nil 0).cons (x := 1) ()).cons (x := 3) ()
+    let q₂ : ArrowWalk (fun _ _ : Fin 4 ↦ Unit) 0 3 :=
+      ((ArrowWalk.nil 0).cons (x := 2) ()).cons (x := 3) ()
+    let f : Assignment (fun _ _ : Fin 4 ↦ Unit) ℤ := walkAssignment p₁ 1 + walkAssignment p₂ 1
+    let g : Assignment (fun _ _ : Fin 4 ↦ Unit) ℤ := walkAssignment q₁ 1 + walkAssignment q₂ 1
+    ∃ (F G : Flow f 0 3) (D : PathCycleDecomposition f), F.toFun = f ∧ G.toFun = g ∧
+      F.val = 2 ∧ G.val = 2 ∧ D.cycles = [] ∧ ¬f.IsAcyclic ∧ g.IsAcyclic := by
+  intro p₁ p₂ q₁ q₂ f g
+  have hf₀ : 0 ≤ f := add_nonneg (walkAssignment_nonneg _ zero_le_one)
+    (walkAssignment_nonneg _ zero_le_one)
+  have hgf : g ≤ f := by
+    intro x y e
+    fin_cases x <;> fin_cases y <;>
+      simp [f, g, p₁, p₂, q₁, q₂, Assignment.single_apply]
+  let F : Flow f 0 3 :=
+    { toFun := f
+      mem_Icc := ⟨hf₀, le_rfl⟩
+      conserve v hv₀ hv₃ := by simp [f, excessAt_add, hv₀, hv₃]
+      excessAt_sink_nonneg := by simp [f, excessAt_add] }
+  let G : Flow f 0 3 :=
+    { toFun := g
+      mem_Icc := ⟨add_nonneg (walkAssignment_nonneg _ zero_le_one)
+        (walkAssignment_nonneg _ zero_le_one), hgf⟩
+      conserve v hv₀ hv₃ := by simp [g, excessAt_add, hv₀, hv₃]
+      excessAt_sink_nonneg := by simp [g, excessAt_add] }
+  let D : PathCycleDecomposition f :=
+    { paths := [⟨0, 3, p₁, 1⟩, ⟨0, 3, p₂, 1⟩]
+      cycles := []
+      isPath_walk := by simp [ArrowWalk.isPath_def, p₁, p₂, Quiver.Path.vertices_cons]
+      isCycle_walk := by simp
+      weight_pos_of_mem_paths := by simp
+      weight_pos_of_mem_cycles := by simp
+      excessAt_source_neg := by simp [f, excessAt_add]
+      excessAt_target_pos := by simp [f, excessAt_add]
+      sum_paths_add_sum_cycles := by simp [f, WeightedWalk.assignment_def] }
+  refine ⟨F, G, D, rfl, rfl, ?_, ?_, rfl, ?_, ?_⟩
+  · simp [F, BoundedFlow.val_def, f, excessAt_add]
+  · simp [G, BoundedFlow.val_def, g, excessAt_add]
+  · -- The arrows `a → b` and `b → a` both carry one unit.
+    rw [Assignment.isAcyclic_iff_forall_not_transGen]
+    push Not
+    refine ⟨1, .tail (.single ⟨(), ?_⟩) (c := 1) (b := 2) ⟨(), ?_⟩⟩ <;>
+      simp [f, p₁, p₂, Assignment.single_apply]
+  · -- Every arrow of positive value strictly raises the rank `![0, 1, 1, 2]`.
+    let r : Fin 4 → ℕ := ![0, 1, 1, 2]
+    have step (x y : Fin 4) (h : ∃ e, 0 < g (x := x) (y := y) e) : r x < r y := by
+      fin_cases x <;> fin_cases y <;> simp_all [r, g, q₁, q₂, Assignment.single_apply]
+    rw [Assignment.isAcyclic_iff_forall_not_transGen]
+    intro v h
+    suffices ∀ {x y}, Relation.TransGen (fun v w ↦ ∃ e, 0 < g (x := v) (y := w) e) x y →
+        r x < r y from lt_irrefl _ (this h)
+    intro x y hxy
+    induction hxy with
+    | single h => exact step _ _ h
+    | tail _ h ih => exact ih.trans (step _ _ h)
+
+-- Two feasible assignments of the same excess, connected by residual cycle adjustments.
+example :
+    let lo : Assignment (fun _ _ : Bool ↦ Bool) ℤ := 0
+    let hi : Assignment (fun _ _ : Bool ↦ Bool) ℤ := fun _ _ _ ↦ 1
+    let f : Assignment (fun _ _ : Bool ↦ Bool) ℤ :=
+      Assignment.single (x := false) (y := true) false 1
+    let g : Assignment (fun _ _ : Bool ↦ Bool) ℤ :=
+      Assignment.single (x := false) (y := true) true 1
+    f ≠ g ∧ ∃ D : PathCycleDecomposition (residualDifference f g), D.cycles ≠ [] ∧
+      (∀ k, D.cycleUpdate f k ∈ Set.Icc lo hi ∧
+        ∀ v, excessAt (D.cycleUpdate f k) v = excessAt f v) ∧
+      D.cycleUpdate f D.cycles.length = g := by
+  intro lo hi f g
+  have hfg : ∀ v, excessAt f v = excessAt g v := by simp [f, g]
+  have hf : f ∈ Set.Icc lo hi := by
+    constructor <;> intro v w e <;> simp only [f, lo, hi, Assignment.single_apply] <;>
+      split_ifs <;> simp
+  have hg : g ∈ Set.Icc lo hi := by
+    constructor <;> intro v w e <;> simp only [g, lo, hi, Assignment.single_apply] <;>
+      split_ifs <;> simp
+  have hne : f ≠ g := fun h ↦ by
+    have := congrArg (fun h : Assignment (fun _ _ : Bool ↦ Bool) ℤ ↦
+      h (x := false) (y := true) false) h
+    simp [f, g, Assignment.single_apply] at this
+  obtain ⟨D⟩ := nonempty_pathCycleDecomposition (residualDifference_nonneg f g)
+  have hend := D.cycleUpdate_length_residualDifference hfg
+  refine ⟨hne, D, fun h ↦ hne ?_, fun k ↦
+    ⟨D.cycleUpdate_mem_Icc (residualDifference_mem_Icc hf hg).2 k, D.excessAt_cycleUpdate f k⟩,
+    hend⟩
+  -- Without cycles the adjustment would end where it starts.
+  rwa [h, List.length_nil, PathCycleDecomposition.cycleUpdate_zero] at hend
+
+-- A residual assignment of nonzero excess: the excess `-1` at `true` and `1` at `false` of the
+-- residual difference from `f` to zero cancels the excess of `f`, and the update returns zero.
+example :
+    let f : Assignment (fun _ _ : Bool ↦ Bool) ℤ :=
+      Assignment.single (x := false) (y := true) false 1
+    let r := residualDifference f 0
+    excessAt f true = 1 ∧ excessAt f false = -1 ∧ excessAt r true = -1 ∧ excessAt r false = 1 ∧
+      residualUpdate f r = 0 := by
+  intro f r
+  refine ⟨by simp [f], by simp [f], ?_, ?_, residualUpdate_residualDifference f 0⟩ <;>
+    simp [r, f, excessAt_def, Fintype.sum_sum_type, Assignment.single_apply]
 
 end TauCeti

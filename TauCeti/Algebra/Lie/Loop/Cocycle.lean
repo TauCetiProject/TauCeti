@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Loop
 public import TauCeti.Algebra.Lie.Killing.InvariantForm
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
+import TauCeti.Algebra.Lie.BaseChange.Perfect
 import TauCeti.Algebra.Lie.Cochain
 import TauCeti.Algebra.Lie.Killing.Basic
 import TauCeti.Algebra.Lie.Whitehead
@@ -59,6 +60,8 @@ class of the Killing form.
 * `TauCeti.LieAlgebra.LoopAlgebra.residuePairing_single_tmul`: the residue pairing on modes.
 * `TauCeti.LieAlgebra.LoopAlgebra.residuePairing_one_tmul`: the residue pairing vanishes when its
   first argument is a constant loop.
+* `TauCeti.LieAlgebra.LoopAlgebra.single_add_tmul_mem_span_lie`: for a perfect Lie algebra, every
+  mode `x_{a + b}` is a linear combination of brackets `⁅y_a, z_b⁆`.
 * `TauCeti.LieAlgebra.LoopAlgebra.exists_eq_smul_twoCocycleOfBilinear_iff`: **a 2-cocycle is a
   multiple of the residue cocycle if and only if it vanishes on constant loops**, for a form `Ψ`
   spanning the invariant forms and nonzero on some bracket.
@@ -126,6 +129,23 @@ theorem residuePairing_one_tmul (Φ : LinearMap.BilinForm R L) (x : L) (a : loop
   · rw [Finsupp.single_eq_of_ne (neg_ne_zero.mpr h), map_zero, LinearMap.zero_apply, smul_zero]
 
 end ResiduePairingConstant
+
+section Perfect
+
+variable {R A L : Type*} [CommRing R] [AddCommMonoid A] [LieRing L] [LieAlgebra R L]
+
+/-- **Modes of a perfect Lie algebra are sums of brackets of modes.** If `L` is perfect, then for
+all exponents `a` and `b` every mode `x_{a + b}` is a linear combination of brackets
+`⁅y_a, z_b⁆` of modes `y_a = t^a ⊗ y` and `z_b = t^b ⊗ z`. -/
+theorem single_add_tmul_mem_span_lie (hL : derivedSeries R L 1 = ⊤) (a b : A) (x : L) :
+    (AddMonoidAlgebra.single (a + b) 1 ⊗ₜ x : loopAlgebra R A L) ∈ Submodule.span R
+      {u | ∃ y z : L, ⁅(AddMonoidAlgebra.single a 1 ⊗ₜ y : loopAlgebra R A L),
+        AddMonoidAlgebra.single b 1 ⊗ₜ z⁆ = u} := by
+  simpa only [AddMonoidAlgebra.single_mul_single, mul_one] using
+    ExtendScalars.mul_tmul_mem_span_lie hL (AddMonoidAlgebra.single a (1 : R))
+      (AddMonoidAlgebra.single b 1) x
+
+end Perfect
 
 section ModeBlocks
 

@@ -15,6 +15,7 @@ public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.LinearAlgebra.Dimension.Constructions
+public import Mathlib.LinearAlgebra.DirectSum.Basis
 public import Mathlib.RingTheory.Finiteness.Prod
 
 /-!
@@ -34,6 +35,8 @@ In degree zero, a chosen point identifies reduced homology with the coproduct of
 coefficient object indexed by the path components other than that of the point
 (`TauCeti.reducedSingularHomology₀Iso`); the generator at the component of `y` is the class
 `[y] - [x]`. This is the kernel of the codiagonal of Mathlib's `TopCat.singularHomology₀Iso`.
+A morphism out of zeroth homology is determined by its values on the classes of points
+(`TauCeti.singularHomology₀_hom_ext`).
 With coefficients in a ring with the strong rank condition, such as a field, its rank is therefore
 the number of path components other than that of the point
 (`TauCeti.rank_reducedSingularHomologyFunctor_zero`). With coefficients in any nontrivial ring, a
@@ -42,7 +45,9 @@ nonempty space with vanishing reduced zeroth homology is path-connected.
 With coefficients in a module `M`, the splitting shows that `H_q(X; M)` of a nonempty space is
 free or finitely generated when the reduced homology in degree `q` is and `M` is, and that its
 rank is that of the reduced homology, plus the rank of `M` in degree zero
-(`ModuleCat.finrank_singularHomology_eq_finrank_reducedSingularHomology_add`).
+(`ModuleCat.finrank_singularHomology_eq_finrank_reducedSingularHomology_add`). The zeroth
+homology `H₀(X; M)` itself is a direct sum of copies of `M`, so it is free whenever `M` is
+(`ModuleCat.free_singularHomology_zero`), with no assumption on `X`.
 
 This follows Hatcher, *Algebraic Topology*, Section 2.1, using Mathlib's singular homology and
 augmentation and `ShortComplex.Splitting.isoBinaryBiproduct`.
@@ -82,6 +87,20 @@ lemma singularHomology₀Section_singularHomology₀ε {X : TopCat.{w}} (x : X) 
     singularHomology₀Section R x ≫ X.singularHomology₀ε R = 𝟙 R :=
   SSet.ιHomology₀_homology₀ε R _
 
+/-- On a path-connected space the class of any point is also a left inverse to the augmentation,
+so it is the inverse of the augmentation isomorphism. -/
+@[reassoc (attr := simp)]
+lemma singularHomology₀ε_singularHomology₀Section {X : TopCat.{w}} [PathConnectedSpace X] (x : X) :
+    X.singularHomology₀ε R ≫ singularHomology₀Section R x = 𝟙 _ := by
+  rw [← IsIso.inv_eq_of_inv_hom_id (singularHomology₀Section_singularHomology₀ε R x),
+    IsIso.hom_inv_id]
+
+/-- On a path-connected space every self-map induces the identity on zeroth homology. -/
+lemma singularHomology₀_map_eq_id_of_pathConnectedSpace {X : TopCat.{w}} [PathConnectedSpace X]
+    (c : X ⟶ X) : ((singularHomologyFunctor C 0).obj R).map c = 𝟙 _ := by
+  rw [← cancel_mono (X.singularHomology₀ε R), singularHomologyMap_singularHomology₀ε,
+    Category.id_comp]
+
 /-- The section is natural in the chosen point under continuous maps. -/
 @[reassoc (attr := simp)]
 lemma singularHomology₀Section_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (x : X) :
@@ -104,6 +123,17 @@ lemma singularHomology₀Section_singularHomology₀Iso_hom {X : TopCat.{w}} (x 
     ((TopCat.toSSet.obj X).homology₀Iso R ≪≫
       (sigmaConst.obj R).mapIso TopCat.zerothHomotopyEquiv.toIso.symm).hom = _
   simp [sigmaConst]
+
+/-- Morphisms out of zeroth singular homology are determined by their values on the classes of
+points: the singular counterpart of `TauCeti.SSet.homology₀_hom_ext`. -/
+lemma singularHomology₀_hom_ext {X : TopCat.{w}} {Y : C}
+    {f g : ((singularHomologyFunctor C 0).obj R).obj X ⟶ Y}
+    (h : ∀ x : X, singularHomology₀Section R x ≫ f = singularHomology₀Section R x ≫ g) :
+    f = g :=
+  SSet.homology₀_hom_ext R fun x ↦ by
+    have hx := h (TopCat.toSSetObj₀Equiv x)
+    rw [singularHomology₀Section_def, Equiv.symm_apply_apply] at hx
+    exact hx
 
 variable [HasKernels C]
 
@@ -373,6 +403,22 @@ private def singularHomology₀LinearEquiv (x : X) :
     ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).obj X ≃ₗ[k]
       (reducedSingularHomologyFunctor M 0).obj X × M :=
   (singularHomology₀SplitIso M x ≪≫ ModuleCat.biprodIsoProd _ _).toLinearEquiv
+
+/-- The zeroth singular homology with coefficients in a free module is free: it is a direct sum of
+copies of the coefficient module, one for each path component. -/
+instance free_singularHomology_zero [Module.Free k M] :
+    Module.Free k (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).obj X) := by
+  classical
+  exact .of_equiv (X.singularHomology₀Iso M ≪≫ coprodIsoDirectSum _).toLinearEquiv.symm
+
+/-- The zeroth homology of the singular chain complex with free module coefficients is free.
+Mathlib's `singularHomologyFunctor` is the composite of the singular-chain functor with
+`HomologicalComplex.homologyFunctor`; evaluating that composite gives this chain-homology
+module by definitional equality. -/
+instance free_singularChainComplex_homology_zero [Module.Free k M] :
+    Module.Free k ((((singularChainComplexFunctor (ModuleCat.{w} k)).obj M).obj X).homology 0) :=
+  inferInstanceAs (Module.Free k
+    (((singularHomologyFunctor (ModuleCat.{w} k) 0).obj M).obj X))
 
 variable [Nonempty X]
 

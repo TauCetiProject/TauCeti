@@ -14,6 +14,7 @@ An essentially finite type algebra is unramified at a prime exactly when its ram
 is one and its residue field extension is separable. The separability condition concerns only
 the selected prime, rather than every prime above its contraction. This distinction matters
 over imperfect residue fields, where ramification index one alone does not imply unramifiedness.
+At a maximal prime over a maximal ideal the residue fields may be replaced by the quotient fields.
 -/
 
 public section
@@ -39,5 +40,17 @@ theorem isUnramifiedAt_iff_ramificationIdx_eq_one_and_isSeparable_residueField
       Module.length_eq_one_iff, isSimpleModule_iff_isCoatom, ← Ideal.isMaximal_def,
       IsLocalRing.isMaximal_iff]
   rw [Algebra.isUnramifiedAt_iff_map_eq R (q.under R) q, he, and_comm]
+
+/-- At a maximal prime `q` over a maximal ideal `p`, unramifiedness is ramification index one
+together with separability of the extension of quotient fields `(S ⧸ q) / (R ⧸ p)`. -/
+theorem isUnramifiedAt_iff_ramificationIdx_eq_one_and_isSeparable_quotient
+    (p : Ideal R) [p.IsMaximal] (q : Ideal S) [q.IsMaximal] [q.LiesOver p]
+    [Algebra.EssFiniteType R S] :
+    Algebra.IsUnramifiedAt R q ↔
+      q.ramificationIdx R = 1 ∧ Algebra.IsSeparable (R ⧸ p) (S ⧸ q) := by
+  obtain rfl := q.over_def p
+  let := Localization.AtPrime.algebraOfLiesOver (q.under R) q
+  rw [isUnramifiedAt_iff_ramificationIdx_eq_one_and_isSeparable_residueField,
+    Algebra.isSeparable_residueField_iff]
 
 end Ideal

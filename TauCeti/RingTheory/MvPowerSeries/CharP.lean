@@ -9,8 +9,8 @@ public import Mathlib.Data.Nat.Prime.Defs
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.RingTheory.MvPowerSeries.Order
 import Mathlib.Algebra.CharP.Defs
-import Mathlib.Algebra.MvPolynomial.Coeff
 import Mathlib.Data.Nat.Choose.Factorization
+import TauCeti.RingTheory.MvPowerSeries.Basic
 
 /-!
 # Power series in two variables whose `q`-th power lies in `(X ^ q, Y ^ q)`
@@ -64,15 +64,8 @@ theorem coeff_single_add_single_pow_eq_choose (h₀ : f.constantCoeff = 0)
     exact Nat.add_sub_cancel' hi
   have heq := congrArg (coeff (single (0 : Fin 2) i + single 1 (q - i))) hpow
   rw [coeff_homogeneousComponent, ite_eq_left hd] at heq
-  have hnat : coeff (single (0 : Fin 2) i + single 1 (q - i))
-      ((X 0 + X 1 : MvPowerSeries (Fin 2) ℕ) ^ q) = q.choose i := by
-    rw [← MvPolynomial.coe_X, ← MvPolynomial.coe_X, ← MvPolynomial.coe_add,
-      ← MvPolynomial.coe_pow, MvPolynomial.coeff_coe, MvPolynomial.coeff_add_pow]
-    simp [hi]
-  -- The linear polynomial has natural coefficients, so its formula maps to any semiring.
-  rw [heq]
-  simpa only [← coeff_map, map_pow, map_add, map_X, Nat.coe_castRingHom] using
-    congrArg (Nat.castRingHom R) hnat
+  rw [heq, coeff_X_add_X_pow]
+  simp [hi]
 
 /-- If `f ∈ R⟦X, Y⟧` has zero constant coefficient and linear part `X + Y`, and `f ^ q` lies in
 the ideal `(X ^ q, Y ^ q)`, then the binomial coefficient `q.choose i` vanishes in `R` for every

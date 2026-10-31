@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 
+import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Topology.DiscreteSeparation
 
@@ -16,10 +17,11 @@ import TauCeti.Topology.DiscreteSeparation
 
 Near `τ`, the chart of `ℍ` at `τ` reads a function `f` as its extension `f ∘ ofComplex`. A
 function holomorphic on the upper half-plane, extended to `ℂ` by `ofComplex`, is
-analytic at every point of the open upper half-plane. Holomorphy on `ℍ` is also invariant
-under the Möbius action of a positive-determinant real matrix, the biholomorphism
-`UpperHalfPlane.mdifferentiable_smul` exhibits. Polynomial functions of the coordinate, such as
-`z ↦ P(z, 1)` for a binary form `P`, are holomorphic.
+analytic at every point of the open upper half-plane, and a locally uniform limit of holomorphic
+functions on `ℍ` is holomorphic. Holomorphy on `ℍ` is also invariant under the Möbius action of
+a positive-determinant real matrix, the biholomorphism `UpperHalfPlane.mdifferentiable_smul`
+exhibits. Polynomial functions of the coordinate, such as `z ↦ P(z, 1)` for a binary form `P`,
+are holomorphic.
 
 ## Main declarations
 
@@ -117,6 +119,22 @@ lemma exists_isOpen_zeros_inter {g : ℍ → ℂ} (hg : MDiff g) (hg0 : g ≠ 0)
     ext z
     exact ⟨fun hz => ⟨hz.1, hW hz.1, hz.2⟩, fun hz => ⟨hz.1, hz.2.2⟩⟩
   rw [hmassage hUV, hmassage hK, hUZ]
+
+/-- **A locally uniform limit of holomorphic functions on `ℍ` is holomorphic**: the limit is
+transported to the open upper half-plane of `ℂ` by `ofComplex`. -/
+lemma mdifferentiable_of_tendstoLocallyUniformly {ι : Type*} {l : Filter ι} [l.NeBot]
+    {F : ι → ℍ → ℂ} {f : ℍ → ℂ} (hF : TendstoLocallyUniformly F f l)
+    (hFd : ∀ᶠ i in l, MDiff (F i)) : MDiff f := by
+  rw [UpperHalfPlane.mdifferentiable_iff]
+  have hloc : TendstoLocallyUniformlyOn (fun i ↦ ↑ₕ(F i)) (↑ₕf) l {z : ℂ | 0 < z.im} := by
+    rw [← upperHalfPlaneSet, ← range_coe, ← Set.image_univ]
+    apply TendstoLocallyUniformlyOn.comp (s := ⊤) _ _ _
+      (OpenPartialHomeomorph.continuousOn_symm _)
+    · simpa only [Set.top_eq_univ, tendstoLocallyUniformlyOn_univ] using hF
+    · simp only [Topology.IsOpenEmbedding.toOpenPartialHomeomorph_target, Set.top_eq_univ,
+        Set.mapsTo_range_iff, Set.mem_univ, forall_const]
+  exact hloc.differentiableOn (hFd.mono fun i hi ↦ UpperHalfPlane.mdifferentiable_iff.mp hi)
+    isOpen_upperHalfPlaneSet
 
 /-! ### Holomorphy and the Möbius action -/
 

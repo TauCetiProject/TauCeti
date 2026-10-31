@@ -29,7 +29,7 @@ E₆ group or its Borel.
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§21 and 26–28.
 * J. S. Milne, *Algebraic Groups* (2017), Chapter 17.
-* Related formalization: `TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.BorelCandidate`.
+* Related formalization: `TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.Positive.Borel.Candidate`.
 * Minuscule weight order: `TauCeti.E6Minuscule.positiveRootWeight_strict`.
 -/
 

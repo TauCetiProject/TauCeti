@@ -13,6 +13,12 @@ public import TauCeti.Data.List.SignVariations
 Zero-skipping variations are unchanged when an interior zero has neighbors of
 opposite signs. This bookkeeping works over a strictly ordered ring. The closing
 constancy lemma uses the intermediate value property of a real closed field.
+
+The variations `TauCeti.Sturm.signVariationsAt` of a polynomial list at a point inherit the
+append, negation, scaling and zero-deletion laws of `List.signVariations`: they split at any
+entry that does not vanish at the point, and are unchanged by negating every entry, by
+multiplying every entry by a polynomial that does not vanish at the point, and by deleting the
+entries that do.
 -/
 
 public section
@@ -106,7 +112,57 @@ theorem signVariationsAt_cons (cs : List (Polynomial R)) {p : Polynomial R} {x :
   rw [signVariationsAt_def, List.map_cons, List.signVariations_cons,
     signVariationsAt_def]
 
+/-- Ordered coefficient embeddings preserve variations at the corresponding evaluation point. -/
+@[simp]
+theorem signVariationsAt_map {S : Type*} [Semiring S] [LinearOrder S]
+    (cs : List (Polynomial R)) (f : R →+* S) (hf : StrictMono f) (x : R) :
+    signVariationsAt (cs.map (Polynomial.map f)) (f x) = signVariationsAt cs x := by
+  rw [signVariationsAt_def, signVariationsAt_def]
+  apply List.signVariations_congr
+  simp only [List.map_map, Function.comp_def]
+  exact List.map_congr_left fun p _ ↦ p.sign_eval_map f hf x
+
+/-- The variations at `x` of a concatenation are those of the two parts, plus one exactly when
+the last nonzero value of the first part and the first nonzero value of the second part have
+opposite signs. -/
+theorem signVariationsAt_append (cs ds : List (Polynomial R)) (x : R) :
+    signVariationsAt (cs ++ ds) x =
+      signVariationsAt cs x +
+        (if List.lastSign (cs.map (Polynomial.eval x)) *
+            List.firstSign (ds.map (Polynomial.eval x)) = -1 then 1 else 0) +
+        signVariationsAt ds x := by
+  simp only [signVariationsAt_def, List.map_append, List.signVariations_append]
+
+/-- The variations at `x` split at any entry that does not vanish at `x`. -/
+theorem signVariationsAt_append_cons_of_eval_ne_zero (cs ds : List (Polynomial R))
+    {p : Polynomial R} {x : R} (hp : p.eval x ≠ 0) :
+    signVariationsAt (cs ++ p :: ds) x =
+      signVariationsAt (cs ++ [p]) x + signVariationsAt (p :: ds) x := by
+  simpa only [signVariationsAt_def, List.map_append, List.map_cons, List.map_nil] using
+    List.signVariations_append_cons_of_ne_zero _ _ hp
+
+/-- Deleting the entries that vanish at `x` does not change the variations at `x`. -/
+@[simp]
+theorem signVariationsAt_filter_eval_ne_zero (cs : List (Polynomial R)) (x : R) :
+    signVariationsAt (cs.filter fun p ↦ !decide (p.eval x = 0)) x = signVariationsAt cs x := by
+  rw [signVariationsAt_def, signVariationsAt_def,
+    ← List.signVariations_filter_ne_zero (cs.map _), List.filter_map]
+  simp [Function.comp_def]
+
 end Basic
+
+section Neg
+
+variable {R : Type*} [Ring R] [LinearOrder R] [AddLeftStrictMono R]
+
+/-- Negating every entry does not change the variations at a point. -/
+@[simp]
+theorem signVariationsAt_map_neg (cs : List (Polynomial R)) (x : R) :
+    signVariationsAt (cs.map Neg.neg) x = signVariationsAt cs x := by
+  simpa only [signVariationsAt_def, List.map_map, Function.comp_def, Polynomial.eval_neg] using
+    List.signVariations_map_of_sign_eq_neg Left.sign_neg (cs.map (Polynomial.eval x))
+
+end Neg
 
 section OrderedCommRing
 

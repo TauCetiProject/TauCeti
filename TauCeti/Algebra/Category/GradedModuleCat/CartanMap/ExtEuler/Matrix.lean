@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler.Basic
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Matrix
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Resolution
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Matrix
+public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.ModuleResolution
 
 /-!
 # The graded Cartan matrix and the q-Euler matrix
@@ -24,12 +25,22 @@ q-antilinear in its first argument, `Cᴴ * E` is the matrix of the projective/m
 `Cᴴ` is the transpose of `C` with `q ↦ q⁻¹` applied to every entry.
 
 If the projective basis consists of the classes `[A eᵢ]` of degree-zero idempotents `eᵢ`, and the
-module basis consists of graded simples `Sⱼ` with `gdim(eᵢ • Sⱼ) = δᵢⱼ`, then the projective/module
-pairing matrix is the identity. Such a projective basis is, for instance,
-`TauCeti.gradedIndecomposableProjectiveClassBasis` for an exhaustive family of indecomposable
-`A eᵢ`. Hence `Cᴴ * E = 1`: the q-Euler matrix of the graded simples is the inverse of the
-conjugate transpose of the graded Cartan matrix, and the determinant of the graded Cartan matrix
-is a unit of `ℤ[q,q⁻¹]`. These are the graded analogues of
+module basis consists of classes `[Sⱼ]` with `gdim(eᵢ • Sⱼ) = 0` for `i ≠ j`, then the
+projective/module pairing matrix is diagonal with entries `gdim(eᵢ • Sᵢ)`, so
+`Cᴴ * E = diagonal (fun i ↦ gdim(eᵢ • Sᵢ))`. Over a general field, for `Sᵢ` the simple head of
+`A eᵢ` (for instance, `eᵢ` a primitive idempotent of a finite-dimensional algebra) concentrated in
+degree zero, this entry is the constant `dim_k End_A(Sᵢ)`, the dimension of a division algebra by
+Schur, as in the ungraded identity
+`TauCeti.cartanMatrix_transpose_mul_extEulerMatrix_eq_diagonal`. If every finite graded module has a
+finite graded-projective resolution, the graded Cartan matrix is invertible
+(`TauCeti.isUnit_det_gradedCartanMatrix_of_le_admitsFiniteResolution`), and therefore
+`E = (Cᴴ)⁻¹ * diagonal (fun i ↦ gdim(eᵢ • Sᵢ))`.
+
+When `gdim(eᵢ • Sⱼ) = δᵢⱼ`, the projective/module pairing matrix is the identity. Such a
+projective basis is, for instance, `TauCeti.gradedIndecomposableProjectiveClassBasis` for an
+exhaustive family of indecomposable `A eᵢ`. Hence `Cᴴ * E = 1`: the q-Euler matrix of the graded
+simples is the inverse of the conjugate transpose of the graded Cartan matrix, and the determinant
+of the graded Cartan matrix is a unit of `ℤ[q,q⁻¹]`. These are the graded analogues of
 `TauCeti.cartanMatrix_transpose_mul_extEulerMatrix_eq_one` and
 `TauCeti.extEulerMatrix_eq_inverseCartanMatrix_transpose`.
 
@@ -43,6 +54,13 @@ not graded Euler-admissible against itself
 
 * `TauCeti.gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix`: in arbitrary bases,
   `Cᴴ * E` is the matrix of the projective/module q-Euler form.
+* `TauCeti.gradedExtEulerMatrix_eq_diagonal_smulGradedDimension`: the classes `[A eᵢ]` and `[Sⱼ]`
+  have diagonal pairing matrix with entries `gdim(eᵢ • Sᵢ)`.
+* `TauCeti.gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix_eq_diagonal`:
+  `Cᴴ * E = diagonal (fun i ↦ gdim(eᵢ • Sᵢ))` over a general field.
+* `TauCeti.gradedExtEulerMatrix_eq_inv_gradedCartanMatrix_map_invert_transpose_mul_diagonal` and
+  `TauCeti.gradedExtEuler_eq_inv_gradedCartanMatrix_map_invert_transpose_mul_smulGradedDimension`:
+  under finite graded-projective resolutions, `E = (Cᴴ)⁻¹ * diagonal (fun i ↦ gdim(eᵢ • Sᵢ))`.
 * `TauCeti.gradedExtEulerMatrix_gradedSimpleClassBasis_eq_one`: the classes `[A eᵢ]` and the graded
   simple-class basis have identity pairing matrix.
 * `TauCeti.gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix_eq_one`: `Cᴴ * E = 1`.
@@ -61,6 +79,8 @@ not graded Euler-admissible against itself
 * Ibrahim Assem, Daniel Simson and Andrzej Skowroński, *Elements of the Representation Theory of
   Associative Algebras I*, Chapter III, Proposition 3.13, for the ungraded relation between the
   Cartan matrix and the Euler form.
+* Peter Webb, *A Course in Finite Group Representation Theory*, Chapter 7, Section 7.4, for the
+  division-algebra correction over a general field.
 -/
 
 public section
@@ -154,6 +174,107 @@ theorem gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix
   -- `B` is the form on the right, typed on the other presentation of `G₀^gr(mod A)`.
   rfl
 
+section Diagonal
+
+variable [DecidableEq I] (S : I → (gradedFiniteModules 𝒜).FullSubcategory) {e : I → A}
+  (he : ∀ i, IsIdempotentElem (e i)) (he₀ : ∀ i, e i ∈ 𝒜 0)
+  (hI : ∀ i, (Ideal.span {e i} : Ideal A).IsHomogeneous 𝒜)
+  (hne : Pairwise fun i j => (S j).obj.smulGradedDimension (e i) = 0)
+  (bP : Module.Basis I (LaurentPolynomial ℤ)
+    (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
+  (hbP : ∀ i, bP i = LaurentK0.of.{uA} _
+    ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),
+      gradedFiniteProjectiveModules_ofIdeal_span_singleton (he i) (hI i)⟩)
+  (bM : Module.Basis I (LaurentPolynomial ℤ)
+    (LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)))
+  (hbM : ∀ i, bM i = LaurentK0.of.{uA} (gradedFiniteModulesExactStructure 𝒜) (S i))
+
+omit [Fintype I] in
+include he₀ hne hbP hbM in
+/-- **The classes `[A eᵢ]` and `[Sⱼ]` pair diagonally under the q-Euler form**: if
+`gdim(eᵢ • Sⱼ) = 0` for `i ≠ j`, then in a projective basis of classes `[A eᵢ]` and a module basis
+of classes `[Sⱼ]`, the matrix of the projective/module q-Euler form is diagonal with entries
+`gdim(eᵢ • Sᵢ)`. Over a general field this entry is the constant `dim_k End_A(Sᵢ)` when `Sᵢ` is
+the simple head of `A eᵢ` (for instance, `eᵢ` a primitive idempotent of a finite-dimensional
+algebra) concentrated in degree zero, so it need not be `1`. -/
+theorem gradedExtEulerMatrix_eq_diagonal_smulGradedDimension :
+    gradedExtEulerMatrix (GradedModuleCat.shift 𝒜) (gradedFiniteProjectiveModules 𝒜)
+        (gradedFiniteModules 𝒜) isExtensionClosed_gradedFiniteProjectiveModules_gradedAbelian
+        isExtensionClosed_gradedFiniteModules_gradedAbelian
+        gradedFiniteProjectiveModules_gradedAbelian_shift gradedFiniteModules_gradedAbelian_shift
+        isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules bP bM =
+      Matrix.diagonal fun i ↦ (S i).obj.smulGradedDimension (e i) := by
+  refine Matrix.ext fun i j ↦ ?_
+  rw [gradedExtEulerMatrix_apply_eq_gradedProjectiveExtEuler, hbP, hbM,
+    gradedProjectiveExtEuler_ofIdeal_span_singleton (he i) (he₀ i) (hI i),
+    gradedIdempotentCoordinate_of, Matrix.diagonal_apply]
+  split_ifs with hij
+  · rw [hij]
+  · exact hne hij
+
+include he₀ hne hbP hbM in
+/-- **The general-field graded Cartan/q-Euler identity.** Let `C` be the graded Cartan matrix in a
+projective basis of classes `[A eᵢ]` and a module basis of classes `[Sⱼ]`, with `gdim(eᵢ • Sⱼ) = 0`
+for `i ≠ j`, and let `E` be the q-Euler matrix of the `Sᵢ`. If every pair of finite graded modules
+is graded Euler-admissible, then `(C.map invert)ᵀ * E` is the diagonal matrix of the graded
+dimensions `gdim(eᵢ • Sᵢ)`. -/
+theorem gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix_eq_diagonal
+    (h : IsGradedEulerAdmissibleOn.{uA} (k := k) (e := GradedModuleCat.shift 𝒜)
+      (gradedFiniteModules 𝒜) (gradedFiniteModules 𝒜)) :
+    ((gradedCartanMatrix 𝒜 bP bM).map (LaurentPolynomial.invert (R := ℤ)))ᵀ *
+        gradedExtEulerMatrix (GradedModuleCat.shift 𝒜) (gradedFiniteModules 𝒜)
+          (gradedFiniteModules 𝒜) isExtensionClosed_gradedFiniteModules_gradedAbelian
+          isExtensionClosed_gradedFiniteModules_gradedAbelian
+          gradedFiniteModules_gradedAbelian_shift gradedFiniteModules_gradedAbelian_shift h bM bM =
+      Matrix.diagonal fun i ↦ (S i).obj.smulGradedDimension (e i) := by
+  rw [gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix,
+    gradedExtEulerMatrix_eq_diagonal_smulGradedDimension S he he₀ hI hne bP hbP bM hbM]
+
+variable (hres : gradedFiniteModules 𝒜 ≤
+  (gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution
+    (gradedFiniteProjectiveModules 𝒜))
+
+include he₀ hne hbP hbM in
+/-- **The q-Euler matrix in terms of the inverse graded Cartan matrix, over a general field.** If
+every finite graded module has a finite graded-projective resolution, then in the bases of
+`TauCeti.gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix_eq_diagonal`,
+`E = ((C.map invert)ᵀ)⁻¹ * diagonal (fun i ↦ gdim(eᵢ • Sᵢ))`. -/
+theorem gradedExtEulerMatrix_eq_inv_gradedCartanMatrix_map_invert_transpose_mul_diagonal :
+    gradedExtEulerMatrix (GradedModuleCat.shift 𝒜) (gradedFiniteModules 𝒜)
+        (gradedFiniteModules 𝒜) isExtensionClosed_gradedFiniteModules_gradedAbelian
+        isExtensionClosed_gradedFiniteModules_gradedAbelian
+        gradedFiniteModules_gradedAbelian_shift gradedFiniteModules_gradedAbelian_shift
+        (isGradedEulerAdmissibleOn_gradedFiniteModules hres) bM bM =
+      ((gradedCartanMatrix 𝒜 bP bM).map (LaurentPolynomial.invert (R := ℤ)))ᵀ⁻¹ *
+        Matrix.diagonal fun i ↦ (S i).obj.smulGradedDimension (e i) := by
+  have hdet : IsUnit
+      ((gradedCartanMatrix 𝒜 bP bM).map (LaurentPolynomial.invert (R := ℤ)))ᵀ.det := by
+    rw [Matrix.det_transpose, ← AlgEquiv.mapMatrix_apply, ← AlgEquiv.map_det]
+    exact (isUnit_map_iff (LaurentPolynomial.invert (R := ℤ)) _).2
+      (isUnit_det_gradedCartanMatrix_of_le_admitsFiniteResolution 𝒜 hres bP bM)
+  rw [← gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix_eq_diagonal S he he₀ hI
+    hne bP hbP bM hbM, Matrix.nonsing_inv_mul_cancel_left _ _ hdet]
+
+include he₀ hne hbP hbM in
+/-- **The q-Euler characteristic of two simples over a general field**: if every finite graded
+module has a finite graded-projective resolution, then `χ_q(Sᵢ, Sⱼ)` is the `(i, j)` entry of
+`((C.map invert)ᵀ)⁻¹` times `gdim(eⱼ • Sⱼ)`, in the bases of
+`TauCeti.gradedCartanMatrix_map_invert_transpose_mul_gradedExtEulerMatrix_eq_diagonal`. -/
+theorem gradedExtEuler_eq_inv_gradedCartanMatrix_map_invert_transpose_mul_smulGradedDimension
+    (i j : I) :
+    gradedExtEuler k (GradedModuleCat.shift 𝒜)
+        ((isGradedEulerAdmissibleOn_gradedFiniteModules hres).isGradedEulerAdmissible
+          (S i).property (S j).property) =
+      ((gradedCartanMatrix 𝒜 bP bM).map (LaurentPolynomial.invert (R := ℤ)))ᵀ⁻¹ i j *
+        (S j).obj.smulGradedDimension (e j) := by
+  have hE := congrFun (congrFun
+    (gradedExtEulerMatrix_eq_inv_gradedCartanMatrix_map_invert_transpose_mul_diagonal S he he₀ hI
+      hne bP hbP bM hbM hres) i) j
+  rwa [Matrix.mul_diagonal,
+    gradedExtEulerMatrix_of_of (X := S i) (Y := S j) (hi := hbM i) (hj := hbM j)] at hE
+
+end Diagonal
+
 section Simple
 
 variable [DecidableEq I] (S : I → (gradedFiniteModules 𝒜).FullSubcategory) {e : I → A}
@@ -180,9 +301,8 @@ theorem gradedExtEulerMatrix_gradedSimpleClassBasis_eq_one :
         gradedFiniteProjectiveModules_gradedAbelian_shift gradedFiniteModules_gradedAbelian_shift
         isGradedEulerAdmissibleOn_gradedFiniteProjectiveModules_gradedFiniteModules bP
         (gradedSimpleClassBasis S he he₀ hne hself hS) = 1 := by
-  refine Matrix.ext fun i j ↦ ?_
-  rw [gradedExtEulerMatrix_apply_eq_gradedProjectiveExtEuler, hbP, gradedSimpleClassBasis_apply,
-    gradedProjectiveExtEuler_basis S he he₀ hI hne hself, Matrix.one_apply]
+  rw [gradedExtEulerMatrix_eq_diagonal_smulGradedDimension S he he₀ hI hne bP hbP _
+    (gradedSimpleClassBasis_apply S he he₀ hne hself hS), funext hself, Matrix.diagonal_one]
 
 include hbP in
 /-- **The conjugate-transposed graded Cartan matrix inverts the q-Euler matrix of the graded

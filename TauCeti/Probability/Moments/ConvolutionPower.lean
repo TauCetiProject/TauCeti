@@ -47,7 +47,9 @@ theorem mgf_addMonoidHom_convolutionPower (μ : Measure α) [SFinite μ]
   | zero => simp [mgf]
   | succ n ih => simp [TauCeti.mgf_id_conv, ih, pow_succ]
 
-variable {E : Type*} [NormedAddCommGroup E]
+section Seminormed
+
+variable {E : Type*} [SeminormedAddCommGroup E]
   [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableAdd₂ E]
   {μ : Measure E} [IsProbabilityMeasure μ]
 
@@ -71,39 +73,28 @@ theorem integrable_id_convolutionPower (hμ : Integrable id μ) (n : ℕ) :
     Integrable id (μ.convolutionPower n) :=
   memLp_one_iff_integrable.1 (memLp_id_convolutionPower (memLp_one_iff_integrable.2 hμ) n)
 
-/-- The mean of a convolution power is the number of summands times the mean of `μ`. -/
-@[simp]
-theorem integral_id_convolutionPower [NormedSpace ℝ E] (hμ : Integrable id μ) (n : ℕ) :
-    ∫ x, x ∂μ.convolutionPower n = n • ∫ x, x ∂μ := by
-  have hlaw := μ.hasLaw_sum_pi_convolutionPower n
-  rw [← hlaw.integral_comp (f := fun x : E ↦ x)
-    (integrable_id_convolutionPower hμ n).aestronglyMeasurable]
-  simp only [Function.comp_apply]
-  rw [integral_finsetSum _ (fun i _ ↦ integrable_eval (i := i) (μ := fun _ : Fin n ↦ μ) hμ)]
-  simp [integral_comp_eval (μ := fun _ : Fin n ↦ μ) (f := fun x : E ↦ x)
-    hμ.aestronglyMeasurable]
-
 /-- The absolute moment of order `p ≥ 1` of a convolution power grows at most as `n ^ p`. -/
 theorem integral_norm_rpow_convolutionPower_le {p : ℝ} (hp : 1 ≤ p)
     (hμ : MemLp id (ENNReal.ofReal p) μ) (n : ℕ) :
     ∫ x, ‖x‖ ^ p ∂μ.convolutionPower n ≤ (n : ℝ) ^ p * ∫ x, ‖x‖ ^ p ∂μ := by
   have hp0 : 0 ≤ p := le_trans zero_le_one hp
   have hlaw := μ.hasLaw_sum_pi_convolutionPower n
-  have hrpow : Integrable (fun x : E ↦ ‖x‖ ^ p) μ := by
-    simpa only [ENNReal.toReal_ofReal hp0, id_eq] using hμ.integrable_norm_rpow'
-  have hpow := memLp_id_convolutionPower hμ n
+  have hrpow_of_memLp {ν : Measure E} [IsFiniteMeasure ν] (hν : MemLp id (ENNReal.ofReal p) ν) :
+      Integrable (fun x : E ↦ ‖x‖ ^ p) ν := by
+    -- Apply the normed-target moment lemma to the real-valued norm.
+    simpa only [ENNReal.toReal_ofReal hp0, id_eq, norm_norm] using
+      (hν.of_le_enorm hν.aestronglyMeasurable.norm (by simp)).integrable_norm_rpow'
+  have hrpow := hrpow_of_memLp hμ
+  have hpow := hrpow_of_memLp (memLp_id_convolutionPower hμ n)
   have heval (i : Fin n) : Integrable (fun x : Fin n → E ↦ ‖x i‖ ^ p)
       (Measure.pi fun _ ↦ μ) := integrable_comp_eval (μ := fun _ : Fin n ↦ μ) hrpow
-  rw [← hlaw.integral_comp (f := fun x ↦ ‖x‖ ^ p) (by
-    simpa only [ENNReal.toReal_ofReal hp0, id_eq] using
-      hpow.integrable_norm_rpow'.aestronglyMeasurable)]
+  rw [← hlaw.integral_comp (f := fun x ↦ ‖x‖ ^ p) hpow.aestronglyMeasurable]
   simp only [Function.comp_apply]
   calc
     _ ≤ ∫ x : Fin n → E, (n : ℝ) ^ (p - 1) * ∑ i, ‖x i‖ ^ p
         ∂Measure.pi (fun _ ↦ μ) := by
       apply integral_mono
-      · exact hlaw.integrable_comp (f := fun x : E ↦ ‖x‖ ^ p) (by
-          simpa only [ENNReal.toReal_ofReal hp0, id_eq] using hpow.integrable_norm_rpow')
+      · exact hlaw.integrable_comp (f := fun x : E ↦ ‖x‖ ^ p) hpow
       · exact (integrable_finsetSum _ (fun i _ ↦ heval i)).const_mul _
       · intro x
         calc
@@ -122,7 +113,30 @@ theorem integral_norm_rpow_convolutionPower_le {p : ℝ} (hp : 1 ≤ p)
       simpa using (Real.rpow_add_one' (Nat.cast_nonneg n)
         (by linarith : p - 1 + 1 ≠ 0) : (n : ℝ) ^ (p - 1 + 1) = _).symm
 
-variable [NormedSpace ℝ E]
+end Seminormed
+
+section Normed
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableAdd₂ E]
+  {μ : Measure E} [IsProbabilityMeasure μ]
+
+/-- The mean of a convolution power is the number of summands times the mean of `μ`. -/
+@[simp]
+theorem integral_id_convolutionPower (hμ : Integrable id μ) (n : ℕ) :
+    ∫ x, x ∂μ.convolutionPower n = n • ∫ x, x ∂μ := by
+  have hlaw := μ.hasLaw_sum_pi_convolutionPower n
+  rw [← hlaw.integral_comp (f := fun x : E ↦ x)
+    (integrable_id_convolutionPower hμ n).aestronglyMeasurable]
+  simp only [Function.comp_apply]
+  rw [integral_finsetSum _ (fun i _ ↦ integrable_eval (i := i) (μ := fun _ : Fin n ↦ μ) hμ)]
+  simp [integral_comp_eval (μ := fun _ : Fin n ↦ μ) (f := fun x : E ↦ x)
+    hμ.aestronglyMeasurable]
+
+end Normed
+
+variable {E : Type*} [AddCommMonoid E] [Module ℝ E] [TopologicalSpace E]
+  [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableAdd₂ E]
 
 /-- The mean of a linear observable under a convolution power is the number of summands
 times its mean under `μ`. Only the observed first moment needs to be finite. -/

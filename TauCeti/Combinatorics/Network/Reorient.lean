@@ -144,9 +144,34 @@ theorem reorientUpper_flip (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (lo hi : Ass
 
 end Neg
 
-section AddCommGroup
+section InvolutiveNeg
 
-variable [AddCommGroup K]
+variable [InvolutiveNeg K]
+
+/-- Recovering an assignment after reorienting it returns the original assignment. -/
+@[simp]
+theorem unreorientAssignment_reorientAssignment (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    (f : Assignment Q K) : unreorientAssignment σ (reorientAssignment σ f) = f := by
+  funext x y e
+  by_cases h : σ e
+  · simp [unreorientAssignment, reorientAssignment, ReorientedHom.flip, h]
+  · simp [unreorientAssignment, reorientAssignment, ReorientedHom.keep, h]
+
+/-- Reorienting a recovered assignment returns the original reoriented assignment. -/
+@[simp]
+theorem reorientAssignment_unreorientAssignment (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    (f : Assignment (ReorientedHom Q σ) K) :
+    reorientAssignment σ (unreorientAssignment σ f) = f := by
+  funext x y e
+  obtain e | e := e
+  · simp [unreorientAssignment, reorientAssignment, ReorientedHom.keep, e.2]
+  · simp [unreorientAssignment, reorientAssignment, ReorientedHom.flip, e.2]
+
+end InvolutiveNeg
+
+section SubtractionCommMonoid
+
+variable [SubtractionCommMonoid K]
 
 /-- Reorienting assignments is an additive equivalence.  Its inverse uses the same selected
 arrows and negates their values again. -/
@@ -154,16 +179,8 @@ def reorientAssignmentEquiv (σ : ∀ ⦃x y : V⦄, Q x y → Bool) :
     Assignment Q K ≃+ Assignment (ReorientedHom Q σ) K where
   toFun := reorientAssignment σ
   invFun := unreorientAssignment σ
-  left_inv f := by
-    funext x y e
-    by_cases h : σ e
-    · simp [unreorientAssignment, reorientAssignment, ReorientedHom.flip, h]
-    · simp [unreorientAssignment, reorientAssignment, ReorientedHom.keep, h]
-  right_inv f := by
-    funext x y e
-    obtain e | e := e
-    · simp [unreorientAssignment, reorientAssignment, ReorientedHom.keep, e.2]
-    · simp [unreorientAssignment, reorientAssignment, ReorientedHom.flip, e.2]
+  left_inv := unreorientAssignment_reorientAssignment σ
+  right_inv := reorientAssignment_unreorientAssignment σ
   map_add' f g := by
     funext x y e
     obtain e | e := e <;> simp [reorientAssignment, add_comm]
@@ -179,9 +196,15 @@ theorem reorientAssignmentEquiv_symm_apply (σ : ∀ ⦃x y : V⦄, Q x y → Bo
     (reorientAssignmentEquiv σ).symm f = unreorientAssignment σ f :=
   (rfl)
 
+end SubtractionCommMonoid
+
+section AddCommGroup
+
+variable [AddCommGroup K]
+
 section Order
 
-variable [PartialOrder K] [IsOrderedAddMonoid K]
+variable [Preorder K] [AddLeftMono K]
 
 /-- Reorienting selected arrows and negating their values preserves membership in the pointwise
 interval between the lower and upper bounds. -/
@@ -244,7 +267,11 @@ end AddCommGroup
 
 namespace Network
 
-variable [AddCommGroup K] [PartialOrder K] [IsOrderedAddMonoid K]
+variable [AddCommGroup K]
+
+section LE
+
+variable [LE K] [AddLeftMono K]
 
 /-- Reverse the selected arrows of a network, negate their values, and replace every reversed
 interval `[l, u]` by `[-u, -l]`. The body is exposed because the dependent arrow family occurs in
@@ -283,10 +310,12 @@ theorem reorient_upper_flip (N : Network K V) (σ : ∀ ⦃x y : V⦄, N.Hom x y
     (N.reorient σ).upper (ReorientedHom.flip σ e h) = -N.lower e :=
   (rfl)
 
+end LE
+
 /-- An assignment is feasible for a network exactly when its reorientation is feasible for the
 reoriented network. -/
 @[simp]
-theorem reorientAssignment_mem_Icc_reorient_iff (N : Network K V)
+theorem reorientAssignment_mem_Icc_reorient_iff [Preorder K] [AddLeftMono K] (N : Network K V)
     (σ : ∀ ⦃x y : V⦄, N.Hom x y → Bool) (f : N.Assignment K) :
     reorientAssignment σ f ∈ Set.Icc (N.reorient σ).lower (N.reorient σ).upper ↔
       f ∈ Set.Icc N.lower N.upper :=

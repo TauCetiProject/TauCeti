@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.StrongType
-public import TauCeti.MeasureTheory.Function.Lp.OperatorExtension
+public import TauCeti.MeasureTheory.Function.Lp.Operator.Extension
 
 /-!
 # Calderón–Zygmund operators on the full `Lᵖ` space

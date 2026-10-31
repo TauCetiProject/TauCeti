@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Degree.SmallDegree
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Ring.Basic
 
 /-!
-# Coefficients of products of linear polynomials over ultrametric rings
+# Polynomial bounds over ultrametric rings
 
 Over an ultrametric seminormed commutative ring with `‖1‖ = 1`, let `p a` be polynomials of
 degree at most one whose constant coefficients have norm at most one and whose linear
@@ -21,6 +22,9 @@ it by every common bound for the products `∏ a ∈ t, r a` over the `m`-elemen
 bounds the coefficients of determinants such as `det (1 - X A)` and of the adjugate of
 `1 - X A`.
 
+An integral polynomial has norm at most one on the closed unit ball of an ultrametric
+seminormed ring with `‖1‖ = 1` (`Polynomial.norm_aeval_le_one`).
+
 ## References
 
 * J.-P. Serre, *Endomorphismes complètement continus des espaces de Banach p-adiques*,
@@ -30,6 +34,20 @@ bounds the coefficients of determinants such as `det (1 - X A)` and of the adjug
 public section
 
 open Finset Polynomial
+
+namespace Polynomial
+
+/-- An integral polynomial evaluated at a point of the closed unit ball of a non-archimedean
+seminormed ring with `‖1‖ = 1` has norm at most one. -/
+theorem norm_aeval_le_one {K : Type*} [SeminormedRing K] [NormOneClass K] [IsUltrametricDist K]
+    (p : ℤ[X]) {x : K} (hx : ‖x‖ ≤ 1) : ‖aeval x p‖ ≤ 1 := by
+  rw [aeval_eq_sum_range]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one fun i _ ↦ ?_
+  exact (IsUltrametricDist.norm_zsmul_le (x ^ i) (p.coeff i)).trans
+    ((norm_pow_le x i).trans (pow_le_one₀ (norm_nonneg _) hx))
+
+end Polynomial
+
 
 namespace TauCeti
 

@@ -37,6 +37,8 @@ of curved modules which split after forgetting the differentials.
   the graded-split stable category is a triangle functor.
 * `TauCeti.CurvedDGRightModuleCat.map_stableConflationTriangle_mem_distTriang`: graded-split
   conflations give distinguished triangles.
+* `TauCeti.CurvedDGRightModuleCat.mk_distinguished_of_conflation`: an identity-cone extension
+  computes the positive connecting arrow of any graded-split conflation.
 * `TauCeti.CurvedDGRightModuleCat.homotopy_mem_distTriang_iff`: every distinguished triangle is
   isomorphic to the image of the standard triangle of a graded-split conflation.
 * `TauCeti.CurvedDGRightModuleCat.prop_cone`,
@@ -107,6 +109,67 @@ theorem map_stableConflationTriangle_mem_distTriang
       distTriang (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) :=
   gradedSplitExact_isFrobenius.map_stableConflationTriangle_mem_distTriang
     gradedSplitStableToHomotopy gradedSplitStableToHomotopyCommShift S hS
+
+section Conflation
+
+-- The closed and homotopy categories retain the same underlying curved-module objects.
+attribute [local implicit_reducible] ForgetEnrichment dgClosedToHomotopy
+  DGHomotopyCategory.of DGHomotopyCategory.underlying coneIdentityInjectivePresentation
+  EnrichedFunctor.ofDGMap EnrichedFunctor.mapDGHomotopyCategory
+
+variable {S : ShortComplex (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ)
+  (CurvedDGRightModuleCat.{u, u, u} h))}
+
+/-- The identity-cone connecting map gives the transported stable conflation triangle. -/
+private noncomputable def mapStableConflationTriangleIso
+    (hS : (gradedSplitExact (h := h)).Conflation S)
+    (a : S.X₂ ⟶ (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)).I)
+    (δ : S.X₃ ⟶ (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)).K)
+    (ha : S.f ≫ a = (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)).i)
+    (hδ : S.g ≫ δ = a ≫ (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)).p) :
+    letI := (gradedSplitExact_isFrobenius (h := h)).stableHasShift
+    letI := gradedSplitStableToHomotopyCommShift (h := h)
+    Triangle.mk ((dgClosedToHomotopy R).map S.f) ((dgClosedToHomotopy R).map S.g)
+        ((dgClosedToHomotopy R).map δ ≫ eqToHom (by
+          simp only [coneIdentityInjectivePresentation_K, dgClosedToHomotopy_obj,
+            shiftFunctor_eq_homotopyShiftFunctor, homotopyShiftFunctor_obj_of,
+            ForgetEnrichment.to_of])) ≅
+      (gradedSplitStableToHomotopy (h := h)).mapTriangle.obj
+        ((gradedSplitExact_isFrobenius (h := h)).stableConflationTriangle S hS) := by
+  letI := (gradedSplitExact_isFrobenius (h := h)).stableHasShift
+  letI := gradedSplitStableToHomotopyCommShift (h := h)
+  have h₃ := gradedSplitStableToHomotopy_map_connectingMap hS a δ ha hδ
+  rw [ExactStructure.IsFrobenius.stableConflationTriangle_eq_mk]
+  refine Triangle.isoMk _ _ (eqToIso (by simp)) (eqToIso (by simp)) (eqToIso (by simp))
+    ?_ ?_ ?_
+  · simp [gradedSplitStableToHomotopy_map_projectiveStableFunctor_map]
+  · simp [gradedSplitStableToHomotopy_map_projectiveStableFunctor_map]
+  · simp only [Triangle.mk_obj₃, Functor.mapTriangle_obj, Triangle.mk_mor₃,
+      Triangle.mk_obj₁, eqToIso.hom, Category.assoc]
+    conv_rhs => arg 2; rw [h₃]
+    simp only [eqToHom_map, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+
+/-- A graded-split conflation gives a distinguished triangle whose third arrow is the class of
+the cokernel map induced by an extension to the first object's identity cone. The canonical
+suspension comparison gives this connecting arrow with positive sign. -/
+theorem mk_distinguished_of_conflation
+    (hS : (gradedSplitExact (h := h)).Conflation S)
+    (a : S.X₂ ⟶ (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)).I)
+    (δ : S.X₃ ⟶ (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)).K)
+    (ha : S.f ≫ a = (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)).i)
+    (hδ : S.g ≫ δ = a ≫ (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)).p) :
+    Triangle.mk ((dgClosedToHomotopy R).map S.f) ((dgClosedToHomotopy R).map S.g)
+        ((dgClosedToHomotopy R).map δ ≫ eqToHom (by
+          simp only [coneIdentityInjectivePresentation_K, dgClosedToHomotopy_obj,
+            shiftFunctor_eq_homotopyShiftFunctor, homotopyShiftFunctor_obj_of,
+            ForgetEnrichment.to_of])) ∈
+      distTriang (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) := by
+  let := (gradedSplitExact_isFrobenius (h := h)).stableHasShift
+  let := gradedSplitStableToHomotopyCommShift (h := h)
+  exact isomorphic_distinguished _ (map_stableConflationTriangle_mem_distTriang S hS) _
+    (mapStableConflationTriangleIso hS a δ ha hδ)
+
+end Conflation
 
 /-- A triangle in the curved homotopy category is distinguished exactly when it is isomorphic to
 the image of the standard stable triangle of a graded-split conflation. -/

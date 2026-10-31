@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # Weak derivatives pass to `L¹` limits
@@ -35,48 +36,12 @@ public section
 
 namespace TauCeti
 
-open Filter MeasureTheory TopologicalSpace
+open Filter _root_.MeasureTheory TopologicalSpace
 open scoped Distributions ENNReal Topology
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace E] {μ : Measure E}
   {Ω : Opens E} {v : E} {ι : Type*} {l : Filter ι}
-
-omit [NormedSpace ℝ E] in
-/-- Pairing against a bounded function supported in `Ω` is continuous for the `L¹(Ω)` distance.
-This is the analytic content of the limit theorems below; the two test factors `∂_v φ` and `φ`
-are both bounded and supported in `Ω`. -/
-private theorem tendsto_integral_smul_of_tendsto_lintegral_enorm_sub {c : E → ℝ} {K : ℝ}
-    (hK : ∀ x, ‖c x‖ ≤ K) (hcsupp : ∀ x ∉ (Ω : Set E), c x = 0)
-    {a : ι → E → F} {b : E → F} (ha : ∀ i, Integrable (fun x => c x • a i x) μ)
-    (hb : Integrable (fun x => c x • b x) μ)
-    (hab : Tendsto (fun i => ∫⁻ x in (Ω : Set E), ‖a i x - b x‖ₑ ∂μ) l (𝓝 0)) :
-    Tendsto (fun i => ∫ x, c x • a i x ∂μ) l (𝓝 (∫ x, c x • b x ∂μ)) := by
-  refine tendsto_integral_of_L1 (fun x => c x • b x) hb.1
-    (Filter.Eventually.of_forall ha) ?_
-  have hlim : Tendsto (fun i => ENNReal.ofReal K * ∫⁻ x in (Ω : Set E), ‖a i x - b x‖ₑ ∂μ) l
-      (𝓝 0) := by
-    simpa using ENNReal.Tendsto.const_mul (a := ENNReal.ofReal K) hab
-      (Or.inr ENNReal.ofReal_ne_top)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim
-    (fun _ => zero_le) fun i => ?_
-  have hsupp : Function.support (fun x => ‖c x • (a i x - b x)‖ₑ) ⊆ (Ω : Set E) := by
-    intro x hx
-    by_contra hxΩ
-    exact hx (by simp [hcsupp x hxΩ])
-  calc ∫⁻ x, ‖c x • a i x - c x • b x‖ₑ ∂μ
-      = ∫⁻ x, ‖c x • (a i x - b x)‖ₑ ∂μ := by
-        congr with x
-        rw [smul_sub]
-    _ = ∫⁻ x in (Ω : Set E), ‖c x • (a i x - b x)‖ₑ ∂μ :=
-        (setLIntegral_eq_of_support_subset hsupp).symm
-    _ ≤ ∫⁻ x in (Ω : Set E), ENNReal.ofReal K * ‖a i x - b x‖ₑ ∂μ := by
-        refine lintegral_mono fun x => ?_
-        rw [enorm_smul]
-        gcongr
-        simpa only [← ofReal_norm] using ENNReal.ofReal_le_ofReal (hK x)
-    _ = ENNReal.ofReal K * ∫⁻ x in (Ω : Set E), ‖a i x - b x‖ₑ ∂μ :=
-        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
 
 /-- **Weak directional derivatives pass to `L¹(Ω)` limits.**  If each `uᵢ` has `uᵢ'` as a weak
 derivative in the direction `v` on `Ω`, and both families converge in `L¹(Ω)` to locally
@@ -101,16 +66,20 @@ theorem hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub [OpensMeasurableSpace 
   rw [hdφ] at hK'
   have h1 : Tendsto (fun i => ∫ x, lineDeriv ℝ (φ : E → ℝ) x v • u i x ∂μ) l
       (𝓝 (∫ x, lineDeriv ℝ (φ : E → ℝ) x v • w x ∂μ)) :=
-    tendsto_integral_smul_of_tendsto_lintegral_enorm_sub hK'
-      (fun x hx => lineDeriv_of_notMem_tsupport (fun hm => hx (φ.tsupport_subset hm)) v)
-      (fun i => integrable_lineDeriv_smul_of_locallyIntegrableOn (h i).locallyIntegrableOn φ v)
-      (integrable_lineDeriv_smul_of_locallyIntegrableOn hw φ v) hu
+    MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub (ae_of_all _ hK')
+      (ae_of_all _ fun x hx =>
+        lineDeriv_of_notMem_tsupport (fun hm => hx (φ.tsupport_subset hm)) v)
+      (Eventually.of_forall fun i =>
+        integrable_lineDeriv_smul_of_locallyIntegrableOn (h i).locallyIntegrableOn φ v)
+      (integrable_lineDeriv_smul_of_locallyIntegrableOn hw φ v).aestronglyMeasurable hu
   have h2 : Tendsto (fun i => ∫ x, (φ : E → ℝ) x • u' i x ∂μ) l
       (𝓝 (∫ x, (φ : E → ℝ) x • w' x ∂μ)) :=
-    tendsto_integral_smul_of_tendsto_lintegral_enorm_sub hK
-      (fun x hx => image_eq_zero_of_notMem_tsupport fun hm => hx (φ.tsupport_subset hm))
-      (fun i => integrable_smul_of_locallyIntegrableOn (h i).locallyIntegrableOn_deriv φ)
-      (integrable_smul_of_locallyIntegrableOn hw' φ) hu'
+    MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub (ae_of_all _ hK)
+      (ae_of_all _ fun x hx =>
+        image_eq_zero_of_notMem_tsupport fun hm => hx (φ.tsupport_subset hm))
+      (Eventually.of_forall fun i =>
+        integrable_smul_of_locallyIntegrableOn (h i).locallyIntegrableOn_deriv φ)
+      (integrable_smul_of_locallyIntegrableOn hw' φ).aestronglyMeasurable hu'
   refine tendsto_nhds_unique ?_ h2.neg
   simpa only [(h _).integral_lineDeriv_smul_eq_neg_integral_smul φ] using h1
 

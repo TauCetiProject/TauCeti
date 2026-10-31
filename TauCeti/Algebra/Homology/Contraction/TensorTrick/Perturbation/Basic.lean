@@ -377,7 +377,7 @@ theorem isGradedCoderivation_reducedTensorWords_perturbedDifferential
     exact neg_one_smul R (δ ∘ₗ τ)
   have hτi : τ ∘ₗ i = i ∘ₗ τN := by
     have hτincl : G.koszulTwist 1 ∘ₗ c.incl = c.incl ∘ₗ H.koszulTwist 1 := by
-      simpa using hincl.koszulTwist_comp 1
+      simpa using hincl.koszulTwist_comp_eq_smul 1
     simp only [τ, i, τN, ← ReducedTensorWords.map_comp, hτincl]
   -- `i'` commutes with the twists, since both `τ i'` and `i' τ` solve `F + h δ F = i τ`.
   have hinj : Function.Injective (1 + h * δ : Module.End R (ReducedTensorWords R M)) := by

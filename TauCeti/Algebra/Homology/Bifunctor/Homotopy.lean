@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.BifunctorHomotopy
+public import TauCeti.Algebra.Homology.Bifunctor.Basic
 
 /-!
 # Bifunctors on homological complexes preserve homotopy equivalences
@@ -15,7 +16,8 @@ Let `F : C₁ ⥤ C₂ ⥤ D` be a bifunctor which is additive in each variable,
 (for `F` the tensor product this is the tensor product of complexes).  Mathlib's
 `HomologicalComplex.mapBifunctorMapHomotopy₁` and `HomologicalComplex.mapBifunctorMapHomotopy₂`
 show that `mapBifunctorMap f₁ f₂ F c` only depends on the homotopy classes of `f₁` and `f₂`.
-This file records that `mapBifunctorMap` is functorial in the pair `(f₁, f₂)`, and deduces that
+The functoriality of `mapBifunctorMap` in the pair `(f₁, f₂)` comes from
+`TauCeti.Algebra.Homology.Bifunctor.Basic`. This file deduces that
 homotopy equivalences `K₁ ≃ L₁` and `K₂ ≃ L₂` induce a homotopy equivalence
 `mapBifunctor K₁ K₂ F c ≃ mapBifunctor L₁ L₂ F c`.  In particular the homology of a tensor
 product of complexes only depends on the homotopy types of the factors, which is how the Künneth
@@ -38,32 +40,7 @@ open CategoryTheory Limits
 variable {C₁ C₂ D I₁ I₂ J : Type*} [Category* C₁] [Category* C₂] [Category* D]
   {c₁ : ComplexShape I₁} {c₂ : ComplexShape I₂}
 
-namespace HomologicalComplex
 
-variable [HasZeroMorphisms C₁] [HasZeroMorphisms C₂] [Preadditive D]
-  (F : C₁ ⥤ C₂ ⥤ D) [F.PreservesZeroMorphisms] [∀ X₁, (F.obj X₁).PreservesZeroMorphisms]
-  (c : ComplexShape J) [DecidableEq J] [TotalComplexShape c₁ c₂ c]
-
-/-- `mapBifunctorMap` sends the pair of identities to the identity. -/
-@[simp]
-lemma mapBifunctorMap_id (K₁ : HomologicalComplex C₁ c₁) (K₂ : HomologicalComplex C₂ c₂)
-    [HasMapBifunctor K₁ K₂ F c] :
-    mapBifunctorMap (𝟙 K₁) (𝟙 K₂) F c = 𝟙 _ := by
-  ext
-  simp
-
-/-- `mapBifunctorMap` is compatible with composition in both variables simultaneously. -/
-@[reassoc]
-lemma mapBifunctorMap_comp {K₁ L₁ M₁ : HomologicalComplex C₁ c₁}
-    {K₂ L₂ M₂ : HomologicalComplex C₂ c₂} [HasMapBifunctor K₁ K₂ F c]
-    [HasMapBifunctor L₁ L₂ F c] [HasMapBifunctor M₁ M₂ F c]
-    (f₁ : K₁ ⟶ L₁) (g₁ : L₁ ⟶ M₁) (f₂ : K₂ ⟶ L₂) (g₂ : L₂ ⟶ M₂) :
-    mapBifunctorMap (f₁ ≫ g₁) (f₂ ≫ g₂) F c =
-      mapBifunctorMap f₁ f₂ F c ≫ mapBifunctorMap g₁ g₂ F c := by
-  ext
-  simp [NatTrans.naturality_assoc]
-
-end HomologicalComplex
 
 namespace HomotopyEquiv
 

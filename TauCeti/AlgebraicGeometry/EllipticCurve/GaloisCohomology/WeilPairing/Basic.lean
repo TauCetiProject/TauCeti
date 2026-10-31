@@ -54,6 +54,8 @@ classes unramified outside a finite set `S` of places are then controlled by the
 * `WeierstrassCurve.torsionCoeffWeilPairing_nondegenerate`: the Weil pairing is nondegenerate.
 * `WeierstrassCurve.torsionCoeffWeilPairing_two_eq_mu2NegOne`: the Weil pairing of two distinct
   points of order two is the nontrivial element of `μ₂`.
+* `WeierstrassCurve.torsionCoeffWeilPairing_sum_ite`: the Weil pairing of a sum of points of order
+  two with a nonzero point of order two.
 * `WeierstrassCurve.explicitMap1_explicitCoeff1_weilPairingCoeff`: restriction to a field
   extension commutes with the maps `H¹(G, E[m]) → H¹(G, μ_m)`.
 * `WeierstrassCurve.explicitCoeff1_weilPairingCoeff_injective`: if `G_K` fixes `E(Kˢ)[m]`, the
@@ -153,6 +155,32 @@ theorem torsionCoeffWeilPairing_two_eq_mu2NegOne (h2 : IsUnit ((2 : ℕ) : K))
   · rw [hQS, h]
   rw [IsAddKleinFour.eq_add_of_ne_all hT hS hTS hQ hQT hQS, map_add, h,
     torsionCoeffWeilPairing_self, add_zero]
+
+/-- **Pairing with a sum of points of order two.** For a family `m` of square roots of unity
+indexed by `E(Kˢ)[2]`, the sum of the points `T` with `m T ≠ 0` pairs with a nonzero point `S` to
+`∑ T, m T - m O - m S`, as two distinct nonzero points of order two pair to `-1`. -/
+theorem torsionCoeffWeilPairing_sum_ite (h2 : IsUnit ((2 : ℕ) : K))
+    [Fintype (W.TorsionCoeff 2)] (m : W.TorsionCoeff 2 → KummerCoeff K 2)
+    [DecidablePred (m · = 0)] {S : W.TorsionCoeff 2} (hS : S ≠ 0) :
+    W.torsionCoeffWeilPairing 2 h2 (∑ T, if m T = 0 then 0 else T) S =
+      (∑ T, m T) - m 0 - m S := by
+  classical
+  have hterm (T : W.TorsionCoeff 2) :
+      W.torsionCoeffWeilPairing 2 h2 (if m T = 0 then 0 else T) S =
+        m T - (if T = 0 then m T else 0) - (if T = S then m T else 0) := by
+    by_cases hT0 : T = 0
+    · simp [hT0, Ne.symm hS]
+    by_cases hTS : T = S
+    · subst hTS
+      rcases eq_or_ne (m T) 0 with h | h <;> simp [h, hS]
+    simp only [hT0, hTS, ↓reduceIte, sub_zero]
+    have : Invertible (2 : K) := (by simpa using h2 : IsUnit (2 : K)).invertible
+    rcases eq_zero_or_eq_mu2NegOne (m T) with h | h
+    · simp [h]
+    · simp only [h, mu2NegOne_ne_zero, ↓reduceIte]
+      exact WeierstrassCurve.torsionCoeffWeilPairing_two_eq_mu2NegOne h2 hT0 hS hTS
+  simp only [map_sum, AddMonoidHom.finsetSum_apply, hterm, Finset.sum_sub_distrib,
+    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
 
 include hm in
 /-- If `G_K` fixes every point of `E(Kˢ)[m]`, it fixes every `m`-th root of unity: these are

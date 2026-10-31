@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Algebra.Module.Submodule.Lattice
+public import Mathlib.LinearAlgebra.Prod
 
 /-!
 # A submodule of a topological module is a topological module
@@ -38,6 +39,7 @@ So there are exactly two gaps, and they are what this file fills:
   scalars.
 * `AddSubgroup.discreteTopology_toIntSubmodule`: the `ℤ`-submodule of a discrete additive
   subgroup is discrete, so that a discrete subgroup can be fed to the `ℤ`-lattice API.
+* `Submodule.instDiscreteTopologyProd`: the product of two discrete submodules is discrete.
 -/
 
 public section
@@ -66,3 +68,12 @@ instance AddSubgroup.discreteTopology_toIntSubmodule {M : Type*} [AddCommGroup M
     [TopologicalSpace M] (H : AddSubgroup M) [DiscreteTopology H] :
     DiscreteTopology H.toIntSubmodule :=
   inferInstanceAs (DiscreteTopology H)
+
+/-- The product of two discrete submodules is a discrete submodule of the product module. -/
+instance Submodule.instDiscreteTopologyProd {R M M₂ : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [TopologicalSpace M] [AddCommMonoid M₂] [Module R M₂] [TopologicalSpace M₂]
+    (p : Submodule R M) (q : Submodule R M₂) [DiscreteTopology p] [DiscreteTopology q] :
+    DiscreteTopology (p.prod q) :=
+  DiscreteTopology.of_continuous_injective (f := p.prodEquiv q)
+    ((continuous_subtype_val.fst.subtype_mk _).prodMk (continuous_subtype_val.snd.subtype_mk _))
+    (p.prodEquiv q).injective

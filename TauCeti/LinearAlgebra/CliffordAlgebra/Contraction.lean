@@ -48,6 +48,8 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
 
 ## Main results
 
+* `CliffordAlgebra.contractLeft_map`: contraction is natural under quadratic isometries.
+
 * `CliffordAlgebra.contractLeft_mem_evenOdd`: **contraction shifts the parity**.
 * `CliffordAlgebra.involute_contractLeft`: `involute (d ⌋ x) = -(d ⌋ involute x)`.
 * `CliffordAlgebra.contractLeft_mul`: the graded Leibniz rule
@@ -76,12 +78,32 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
 public section
 
 
-universe u v
+universe u v w
 
 namespace CliffordAlgebra
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   {Q : QuadraticForm R M}
+
+section Naturality
+
+variable {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
+  {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
+  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+
+/-- Contraction against a linear functional commutes with the algebra map induced by a
+quadratic isometry, after pulling back the functional. -/
+theorem contractLeft_map (f : Q₁ →qᵢ Q₂) (d : Module.Dual R M₂)
+    (x : CliffordAlgebra Q₁) :
+    contractLeft d (map f x) = map f (contractLeft (d ∘ₗ f.toLinearMap) x) := by
+  induction x using CliffordAlgebra.left_induction with
+  | algebraMap r => simp only [AlgHom.commutes, contractLeft_algebraMap, map_zero]
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | ι_mul x m hx =>
+    simp only [map_mul, map_apply_ι, contractLeft_ι_mul, hx, map_sub,
+      map_smul, LinearMap.comp_apply, QuadraticMap.Isometry.coe_toLinearMap]
+
+end Naturality
 
 /-- **The grade involution anticommutes with contraction.** Contracting against a linear
 functional lowers the degree by one, hence swaps the even and odd parts of the Clifford algebra,

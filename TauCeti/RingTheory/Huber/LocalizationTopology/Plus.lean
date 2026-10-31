@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 public import TauCeti.RingTheory.Huber.Pair
+import TauCeti.Algebra.Ring.Subgroup
 
 /-!
 # The plus ring `A_U⁺` of a rational localisation
@@ -340,17 +341,11 @@ theorem locSubring_mul_idealOfDefinition_mem_adjoin_plus
       add_mem' := fun hx hy j hj ↦ by rw [add_mul]; exact add_mem (hx j hj) (hy j hj)
       zero_mem' := fun j _ ↦ by rw [zero_mul]; exact zero_mem E
       neg_mem' := fun hx j hj ↦ by rw [neg_mul]; exact neg_mem (hx j hj) }
-  -- `R`: the transporter of `W` into itself, which is a subring, so `D ≤ R` is decided by the
+  -- The transporter of `W` into itself is a subring, so `D ≤ W.multiplierRing` is decided by the
   -- generators of `D`.
-  let R : Subring S :=
-    { carrier := {x | ∀ z ∈ W, x * z ∈ W}
-      one_mem' := fun z hz ↦ by rwa [one_mul]
-      mul_mem' := fun hx hy z hz ↦ by rw [mul_assoc]; exact hx _ (hy z hz)
-      zero_mem' := fun z _ ↦ by rw [zero_mul]; exact zero_mem W
-      add_mem' := fun hx hy z hz ↦ by rw [add_mul]; exact add_mem (hx z hz) (hy z hz)
-      neg_mem' := fun hx z hz ↦ by rw [neg_mul]; exact neg_mem (hx z hz) }
-  have hDR : locSubring P T s S ≤ R := by
-    refine (locSubring_le_iff P T s S).mpr ⟨fun a ha z hz j hj ↦ ?_, fun t ht z hz j hj ↦ ?_⟩
+  have hDR : locSubring P T s S ≤ W.multiplierRing := by
+    refine (locSubring_le_iff P T s S).mpr ⟨fun a ha ↦ AddSubgroup.mem_multiplierRing.mpr
+      fun z hz j hj ↦ ?_, fun t ht ↦ AddSubgroup.mem_multiplierRing.mpr fun z hz j hj ↦ ?_⟩
     · -- a coefficient from `A₀` moves onto the numerator, where `I` absorbs it
       have h := hz (⟨a, ha⟩ * j) (Ideal.mul_mem_left _ _ hj)
       rw [MulMemClass.coe_mul, map_mul] at h
@@ -359,8 +354,9 @@ theorem locSubring_mul_idealOfDefinition_mem_adjoin_plus
     · -- a fraction is already in `A⁺[T/s]`
       rw [mul_assoc]
       exact mul_mem (hdiv t ht) (hz j hj)
-  -- `1 ∈ W` by `hI`, and multiplying by it turns `c ∈ R` back into `c ∈ W`
-  have h := hDR hc 1 (fun j hj ↦ by rw [one_mul]; exact hI j hj) i hi
+  -- `1 ∈ W` by `hI`, and multiplying by it turns `c ∈ W.multiplierRing` back into `c ∈ W`
+  have h := AddSubgroup.mem_multiplierRing.mp (hDR hc) 1
+    (fun j hj ↦ by rw [one_mul]; exact hI j hj) i hi
   rwa [mul_one] at h
 
 omit [IsTopologicalRing A] in

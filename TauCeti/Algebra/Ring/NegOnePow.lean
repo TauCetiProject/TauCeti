@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 public import Mathlib.Algebra.Ring.NegOnePow
-public import Mathlib.Algebra.Module.Defs
+import Mathlib.Tactic.Ring
 
 /-!
 # Powers of negative one in a ground ring
@@ -22,9 +22,12 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 ## Main results
 
 * `TauCeti.negOnePowCast_sum`: the sign of a finite sum is the product of the signs of its terms.
+* `TauCeti.sum_range_negOnePowCast_telescope`: an alternating sum of products, in which one
+  factor is replaced by a two-term correction, telescopes.
 * `TauCeti.negOnePow_smul_eq_negOnePowCast_smul`: the unit-valued sign and its ground-ring cast
   induce the same scalar action on a module.
 * `TauCeti.negOnePow_smul_negOnePow_smul`: the unit-valued sign acts as an involution.
+* `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`: signs of quadratic products.
 * `Int.negOnePow_sub_sub_one`, `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity
   identities behind the sign cancellations of twisted differentials.
 -/
@@ -116,6 +119,20 @@ end NegOnePowSMul
 
 section Parity
 
+/-- The product of an integer and one minus that integer is even, so its sign is one. -/
+@[simp]
+theorem _root_.Int.negOnePow_mul_one_sub (n : ℤ) :
+    (n * (1 - n)).negOnePow = 1 := by
+  rw [Int.negOnePow_eq_one_iff]
+  simpa only [← mul_neg, neg_sub] using n.even_mul_pred_self.neg
+
+/-- The product of an integer and two minus that integer has the same parity as the integer. -/
+@[simp]
+theorem _root_.Int.negOnePow_mul_two_sub (n : ℤ) :
+    (n * (2 - n)).negOnePow = n.negOnePow := by
+  simp only [mul_sub, mul_comm n 2, Int.negOnePow_sub, Int.negOnePow_two_mul,
+    Int.negOnePow_mul_self, one_mul]
+
 /-- Reversing a difference and shifting it by one flips the sign:
 `(-1) ^ (a - b - 1) = -(-1) ^ (b - a)`. -/
 theorem _root_.Int.negOnePow_sub_sub_one (a b : ℤ) :
@@ -144,6 +161,29 @@ theorem negOnePowCast_sum {ι : Type uI} (s : Finset ι) (f : ι → ℤ) :
   | empty => simp
   | cons a s ha ih =>
       rw [Finset.sum_cons, Finset.prod_cons, negOnePowCast_add, ih]
+
+/-- **Telescoping an alternating sum of products.** The `p`-th summand is
+`α 0 ⋯ α (p - 1) · (ε p · β p + α p · ε (p + 1)) · β (p + 1) ⋯ β (n - 1)`, that is, the factor
+`β p` of `α 0 ⋯ α (p - 1) · β p ⋯ β (n - 1)` is replaced by `ε p · β p + α p · ε (p + 1)`.
+Writing `u q = (-1) ^ q · α 0 ⋯ α (q - 1) · ε q · β q ⋯ β (n - 1)`, the signed `p`-th summand
+is `u p - u (p + 1)`, so the alternating sum over `p < n` telescopes to `u 0 - u n`. -/
+theorem sum_range_negOnePowCast_telescope (n : ℕ) (α β ε : ℕ → R) :
+    ∑ p ∈ Finset.range n, negOnePowCast R (p : ℤ) * ((∏ i ∈ Finset.range p, α i) *
+        (ε p * β p + α p * ε (p + 1)) * ∏ i ∈ Finset.Ico (p + 1) n, β i) =
+      ε 0 * ∏ i ∈ Finset.range n, β i -
+        negOnePowCast R (n : ℤ) * ((∏ i ∈ Finset.range n, α i) * ε n) := by
+  set u : ℕ → R := fun q ↦ negOnePowCast R (q : ℤ) *
+    ((∏ i ∈ Finset.range q, α i) * ε q * ∏ i ∈ Finset.Ico q n, β i) with hu
+  have hterm : ∀ p ∈ Finset.range n, negOnePowCast R (p : ℤ) * ((∏ i ∈ Finset.range p, α i) *
+      (ε p * β p + α p * ε (p + 1)) * ∏ i ∈ Finset.Ico (p + 1) n, β i) = u p - u (p + 1) := by
+    intro p hp
+    simp only [hu, Finset.prod_eq_prod_Ico_succ_bot (Finset.mem_range.1 hp),
+      Finset.prod_range_succ, Nat.cast_succ, negOnePowCast_add, negOnePowCast_one]
+    ring
+  rw [Finset.sum_congr rfl hterm, Finset.sum_range_sub']
+  simp only [hu, Nat.Ico_zero_eq_range, Finset.prod_range_zero, Finset.Ico_self,
+    Finset.prod_empty, Nat.cast_zero, negOnePowCast_zero]
+  ring
 
 end CommRing
 

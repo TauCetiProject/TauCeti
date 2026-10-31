@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Algebra.Spectrum
 public import Mathlib.Geometry.Convex.ConvexSpace.Topology
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Algebra.Order.Field.Pi
 public import TauCeti.LinearAlgebra.Eigenspace.Matrix
 public import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.Matrix.Connected
@@ -22,8 +23,9 @@ is unique up to a scalar: every eigenvector for `r`, of any sign, is a multiple 
 nonzero entrywise nonnegative eigenvector, for any eigenvalue, is a positive multiple of it.
 Finally `r` is the spectral radius: every complex eigenvalue has modulus at most `r`.
 
-The comparison arguments work over any linearly ordered field. Their heart is the Collatz–Wielandt
-bound: if `A` is entrywise nonnegative and `A v = r v` with `v` strictly positive, then `t y ≤ A y`
+The comparison arguments work over any linearly ordered semifield; the eigenspace statement for
+vectors of arbitrary sign uses a linearly ordered field. Their heart is the Collatz–Wielandt
+bound: if `A` is entrywise nonnegative and `A v ≤ r v` with `v` strictly positive, then `t y ≤ A y`
 for a nonzero nonnegative `y` forces `t ≤ r`. This bound, and with it the spectral radius
 statement, needs only nonnegativity of `A` once a strictly positive eigenvector is given.
 Existence is specific to `ℝ`: the Perron root is the largest `t` for which some point `x` of the
@@ -37,7 +39,7 @@ the other structure matrices act on the Perron eigenvector by scalars.
 
 ## Main results
 
-* `Matrix.le_of_smul_le_mulVec`: the Collatz–Wielandt bound against a positive eigenvector.
+* `Matrix.le_of_smul_le_mulVec`: the Collatz–Wielandt bound against a positive vector.
 * `Matrix.exists_eq_smul_of_mulVec_eq_smul`: for a strictly positive matrix, the eigenspace of a
   strictly positive eigenvector is spanned by it.
 * `Matrix.eq_of_mulVec_eq_smul_of_nonneg` and `Matrix.exists_pos_eq_smul_of_mulVec_eq_smul`:
@@ -45,9 +47,10 @@ the other structure matrices act on the Perron eigenvector by scalars.
   eigenvalue, and is a positive multiple of the Perron eigenvector.
 * `Matrix.exists_mulVec_eq_smul_of_pos`: a strictly positive real matrix has a strictly positive
   eigenvector with positive eigenvalue.
-* `Matrix.norm_le_of_mulVec_eq_smul` and `Matrix.spectralRadius_eq_of_mulVec_eq_smul`: the
-  eigenvalue of a strictly positive eigenvector of a nonnegative real matrix bounds the modulus of
-  every complex eigenvalue, and is the spectral radius.
+* `Matrix.norm_le_of_mulVec_le_smul`: if `A v ≤ r v` for a strictly positive vector `v` and a
+  nonnegative real matrix `A`, then every complex eigenvalue has modulus at most `r`.
+* `Matrix.spectralRadius_eq_of_mulVec_eq_smul`: the eigenvalue of a strictly positive eigenvector
+  of a nonnegative real matrix is its spectral radius.
 
 ## References
 
@@ -67,41 +70,86 @@ namespace Matrix
 
 variable {n : Type*} [Fintype n]
 
-section OrderedField
+section StrictOrderedSemiring
 
-variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] {A : Matrix n n K}
-  {v w y : n → K} {r μ t : K}
-
-/-- **Collatz–Wielandt bound.** Let `A` be entrywise nonnegative with an eigenvector `v` all of
-whose entries are strictly positive, for the eigenvalue `r`. If `t y ≤ A y` entrywise for some
-nonzero nonnegative vector `y`, then `t ≤ r`. -/
-theorem le_of_smul_le_mulVec (hA : ∀ i j, 0 ≤ A i j) (hv : ∀ i, 0 < v i)
-    (hAv : A *ᵥ v = r • v) (hy : 0 ≤ y) (hy0 : y ≠ 0) (h : t • y ≤ A *ᵥ y) : t ≤ r := by
-  obtain ⟨j, hj⟩ := Function.ne_iff.1 hy0
-  have : Nonempty n := ⟨j⟩
-  -- Compare `y` with the smallest multiple `c • v` lying above it, at a coordinate `i` where
-  -- the two agree.
-  obtain ⟨i, hi⟩ := Finite.exists_max fun i => y i / v i
-  set c := y i / v i
-  have hyc : y ≤ c • v := fun k => by
-    simpa [mul_comm] using (div_le_iff₀ (hv k)).1 (hi k)
-  have hyi : y i = c * v i := (div_mul_cancel₀ _ (hv i).ne').symm
-  have hc : 0 < c := (div_pos ((hy j).lt_of_ne' hj) (hv j)).trans_le (hi j)
-  have key : t * y i ≤ r * y i :=
-    calc t * y i = (t • y) i := by rw [Pi.smul_apply, smul_eq_mul]
-      _ ≤ (A *ᵥ y) i := h i
-      _ ≤ (A *ᵥ (c • v)) i := mulVec_mono hA hyc i
-      _ = r * y i := by simp [mulVec_smul, hAv, hyi, mul_left_comm]
-  exact le_of_mul_le_mul_right key (hyi ▸ mul_pos hc (hv i))
+variable {K : Type*} [Semiring K] [PartialOrder K] [IsStrictOrderedRing K] {A : Matrix n n K}
+  {w : n → K} {μ : K}
 
 /-- A nonzero nonnegative eigenvector of a strictly positive matrix has all entries strictly
 positive. -/
 theorem pos_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hw : 0 ≤ w) (hw0 : w ≠ 0)
     (hAw : A *ᵥ w = μ • w) (i : n) : 0 < w i := by
-  have h : ∀ k, 0 < μ * w k := fun k => by
-    simpa [hAw] using mulVec_pos hA hw hw0 k
-  obtain ⟨j, hj⟩ := Function.ne_iff.1 hw0
-  exact pos_of_mul_pos_right (h i) (pos_of_mul_pos_left (h j) (hw j)).le
+  have h : 0 < μ * w i := by simpa [hAw] using mulVec_pos hA hw hw0 i
+  exact (hw i).lt_of_ne' fun hi => by simp [hi] at h
+
+end StrictOrderedSemiring
+
+section OrderedSemifield
+
+variable {K : Type*} [Semifield K] [LinearOrder K] [IsStrictOrderedRing K] {A : Matrix n n K}
+  {v w y : n → K} {r μ t : K}
+
+/-- **Collatz–Wielandt bound.** Let `A` be entrywise nonnegative with `A v ≤ r v` for a vector `v`
+all of whose entries are strictly positive. If `t y ≤ A y` entrywise for some nonzero nonnegative
+vector `y`, then `t ≤ r`. -/
+theorem le_of_smul_le_mulVec (hA : ∀ i j, 0 ≤ A i j) (hv : ∀ i, 0 < v i)
+    (hAv : A *ᵥ v ≤ r • v) (hy : 0 ≤ y) (hy0 : y ≠ 0) (h : t • y ≤ A *ᵥ y) : t ≤ r := by
+  obtain ⟨j, hj⟩ := Function.ne_iff.1 hy0
+  obtain ⟨i, hyc, hyi⟩ := TauCeti.exists_le_smul_of_pos hv j y
+  set c := y i / v i
+  have hc : 0 < c := (mul_pos_iff_of_pos_right (hv j)).mp <| by
+    simpa only [Pi.smul_apply, smul_eq_mul, Pi.zero_apply] using
+      ((hy j).lt_of_ne' hj).trans_le (hyc j)
+  have key : t * y i ≤ r * y i :=
+    calc t * y i = (t • y) i := by rw [Pi.smul_apply, smul_eq_mul]
+      _ ≤ (A *ᵥ y) i := h i
+      _ ≤ (A *ᵥ (c • v)) i := mulVec_mono hA hyc i
+      _ ≤ (c • (r • v)) i := by
+        rw [mulVec_smul]
+        exact smul_le_smul_of_nonneg_left hAv hc.le i
+      _ = r * y i := by simp [hyi, mul_left_comm]
+  exact le_of_mul_le_mul_right key (hyi ▸ mul_pos hc (hv i))
+
+/-- A nonzero nonnegative eigenvector of a strictly positive matrix has the same eigenvalue as any
+eigenvector with strictly positive entries. -/
+theorem eq_of_mulVec_eq_smul_of_nonneg (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0 < v i)
+    (hAv : A *ᵥ v = r • v) (hw : 0 ≤ w) (hw0 : w ≠ 0) (hAw : A *ᵥ w = μ • w) : μ = r := by
+  have hA' : ∀ i j, 0 ≤ A i j := fun i j => (hA i j).le
+  refine le_antisymm (le_of_smul_le_mulVec hA' hv hAv.le hw hw0 hAw.ge) ?_
+  have hv0 : v ≠ 0 := by
+    obtain ⟨j, hj⟩ := Function.ne_iff.1 hw0
+    exact fun h => (hv j).ne' (congrFun h j)
+  exact le_of_smul_le_mulVec hA' (pos_of_mulVec_eq_smul hA hw hw0 hAw) hAw.le
+    (fun i => (hv i).le) hv0 hAv.ge
+
+/-- A nonzero nonnegative eigenvector of a strictly positive matrix is a positive multiple of any
+eigenvector with strictly positive entries, whatever eigenvalue it was taken for. -/
+theorem exists_pos_eq_smul_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0 < v i)
+    (hAv : A *ᵥ v = r • v) (hw : 0 ≤ w) (hw0 : w ≠ 0) (hAw : A *ᵥ w = μ • w) :
+    ∃ c : K, 0 < c ∧ w = c • v := by
+  obtain rfl := eq_of_mulVec_eq_smul_of_nonneg hA hv hAv hw hw0 hAw
+  obtain ⟨j, -⟩ := Function.ne_iff.1 hw0
+  obtain ⟨i, hwc, hwi⟩ := TauCeti.exists_le_smul_of_pos hv j w
+  set c := w i / v i
+  -- Equality in row `i` of the comparison forces equality in every coordinate, since each
+  -- coefficient in that row is strictly positive.
+  have hsum : (A *ᵥ w) i = (A *ᵥ (c • v)) i := by
+    rw [hAw, mulVec_smul, hAv]
+    simp only [Pi.smul_apply, smul_eq_mul, hwi, mul_left_comm]
+  simp only [mulVec, dotProduct, Pi.smul_apply, smul_eq_mul] at hsum
+  refine ⟨c, div_pos (pos_of_mulVec_eq_smul hA hw hw0 hAw i) (hv i), funext fun k => ?_⟩
+  exact mul_left_cancel₀ (hA i k).ne' <|
+    (Finset.sum_eq_sum_iff_of_le fun k _ =>
+      mul_le_mul_of_nonneg_left
+        (by simpa only [Pi.smul_apply, smul_eq_mul] using hwc k) (hA i k).le).1
+      hsum k (Finset.mem_univ k)
+
+end OrderedSemifield
+
+section OrderedField
+
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] {A : Matrix n n K}
+  {v w : n → K} {r μ : K}
 
 /-- For a strictly positive matrix, the eigenspace of an eigenvector `v` with strictly positive
 entries is spanned by `v`: every eigenvector for the same eigenvalue, of any sign, is a multiple
@@ -119,29 +167,6 @@ theorem exists_eq_smul_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 
   by_cases hij : i = j
   · exact hij ▸ .refl
   · exact .single ⟨hij, (hoff hij).symm ▸ hA i j⟩
-
-/-- A nonzero nonnegative eigenvector of a strictly positive matrix has the same eigenvalue as any
-eigenvector with strictly positive entries. -/
-theorem eq_of_mulVec_eq_smul_of_nonneg (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0 < v i)
-    (hAv : A *ᵥ v = r • v) (hw : 0 ≤ w) (hw0 : w ≠ 0) (hAw : A *ᵥ w = μ • w) : μ = r := by
-  have hA' : ∀ i j, 0 ≤ A i j := fun i j => (hA i j).le
-  refine le_antisymm (le_of_smul_le_mulVec hA' hv hAv hw hw0 hAw.ge) ?_
-  have hv0 : v ≠ 0 := by
-    obtain ⟨j, hj⟩ := Function.ne_iff.1 hw0
-    exact fun h => (hv j).ne' (congrFun h j)
-  exact le_of_smul_le_mulVec hA' (pos_of_mulVec_eq_smul hA hw hw0 hAw) hAw
-    (fun i => (hv i).le) hv0 hAv.ge
-
-/-- A nonzero nonnegative eigenvector of a strictly positive matrix is a positive multiple of any
-eigenvector with strictly positive entries, whatever eigenvalue it was taken for. -/
-theorem exists_pos_eq_smul_of_mulVec_eq_smul (hA : ∀ i j, 0 < A i j) (hv : ∀ i, 0 < v i)
-    (hAv : A *ᵥ v = r • v) (hw : 0 ≤ w) (hw0 : w ≠ 0) (hAw : A *ᵥ w = μ • w) :
-    ∃ c : K, 0 < c ∧ w = c • v := by
-  obtain rfl := eq_of_mulVec_eq_smul_of_nonneg hA hv hAv hw hw0 hAw
-  obtain ⟨c, rfl⟩ := exists_eq_smul_of_mulVec_eq_smul hA hv hAv hAw
-  obtain ⟨j, hj⟩ := Function.ne_iff.1 hw0
-  refine ⟨c, pos_of_mul_pos_left ?_ (hv j).le, rfl⟩
-  simpa using pos_of_mulVec_eq_smul hA hw hw0 hAw j
 
 /-- If `r x ≤ A x` for a nonzero nonnegative vector `x` and a strictly positive matrix `A`, but `x`
 is not an eigenvector for `r`, then some probability vector `y` satisfies `(r + ε) y ≤ A y` for
@@ -236,10 +261,10 @@ theorem exists_mulVec_eq_smul_of_pos [Nonempty n] (hA : ∀ i j, 0 < A i j) :
   rw [heig] at h
   exact pos_of_mul_pos_left h (hx i₀)
 
-/-- The eigenvalue `r` of an eigenvector with strictly positive entries of an entrywise
-nonnegative real matrix bounds the modulus of every complex eigenvalue. -/
-theorem norm_le_of_mulVec_eq_smul (hA : ∀ i j, 0 ≤ A i j) (hv : ∀ i, 0 < v i)
-    (hAv : A *ᵥ v = r • v) {μ : ℂ} {z : n → ℂ} (hz : z ≠ 0)
+/-- If `A v ≤ r v` for a vector `v` with strictly positive entries and an entrywise nonnegative
+real matrix `A`, then `r` bounds the modulus of every complex eigenvalue. -/
+theorem norm_le_of_mulVec_le_smul (hA : ∀ i j, 0 ≤ A i j) (hv : ∀ i, 0 < v i)
+    (hAv : A *ᵥ v ≤ r • v) {μ : ℂ} {z : n → ℂ} (hz : z ≠ 0)
     (hAz : A.map (↑) *ᵥ z = μ • z) : ‖μ‖ ≤ r := by
   refine le_of_smul_le_mulVec hA hv hAv (y := fun i => ‖z i‖) (fun i => norm_nonneg _) ?_ ?_
   · intro h
@@ -267,7 +292,7 @@ theorem spectralRadius_eq_of_mulVec_eq_smul [Nonempty n] (hA : ∀ i j, 0 ≤ A 
   refine le_antisymm (iSup₂_le fun μ hμ => ?_) ?_
   · obtain ⟨z, hz, hAz⟩ := mem_spectrum_iff_exists_mulVec_eq_smul.1 hμ
     rw [← ENNReal.ofReal_coe_nnreal, coe_nnnorm]
-    exact ENNReal.ofReal_le_ofReal (norm_le_of_mulVec_eq_smul hA hv hAv hz hAz)
+    exact ENNReal.ofReal_le_ofReal (norm_le_of_mulVec_le_smul hA hv hAv.le hz hAz)
   · refine le_iSup₂_of_le (r : ℂ)
       (mem_spectrum_iff_exists_mulVec_eq_smul.2 ⟨fun i => v i, ?_, ?_⟩) ?_
     · exact fun h => (hv i₀).ne' (by simpa using congrFun h i₀)

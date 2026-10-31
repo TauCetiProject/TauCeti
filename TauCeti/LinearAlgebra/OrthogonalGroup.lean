@@ -21,6 +21,11 @@ corresponding Euclidean space.
 
 ## Main results
 
+* `TauCeti.orthogonalGroupToLinearIsometryEquiv_mul_apply` and
+  `TauCeti.orthogonalGroupToLinearIsometryEquiv_inv_apply`: products and inverses act by
+  composites and inverses.
+* `TauCeti.det_orthogonalGroupToLinearIsometryEquiv`: the linear isometry has the determinant of
+  the matrix.
 * `TauCeti.continuous_orthogonalGroupToLinearIsometryEquiv`: the resulting linear maps depend
   continuously on the matrix, for the operator-norm topology.
 -/
@@ -80,6 +85,22 @@ theorem orthogonalGroupToLinearIsometryEquiv_apply
   classical
   rfl
 
+/-- The linear isometry equivalence of a product of orthogonal matrices acts as the composite of
+the actions of the factors. -/
+theorem orthogonalGroupToLinearIsometryEquiv_mul_apply
+    (A B : Matrix.orthogonalGroup ι ℝ) (x : EuclideanSpace ℝ ι) :
+    orthogonalGroupToLinearIsometryEquiv (A * B) x =
+      orthogonalGroupToLinearIsometryEquiv A (orthogonalGroupToLinearIsometryEquiv B x) := by
+  rw [map_mul, _root_.LinearIsometryEquiv.coe_mul, Function.comp_apply]
+
+/-- The linear isometry equivalence of the inverse of an orthogonal matrix is the inverse of its
+linear isometry equivalence. -/
+theorem orthogonalGroupToLinearIsometryEquiv_inv_apply
+    (A : Matrix.orthogonalGroup ι ℝ) (x : EuclideanSpace ℝ ι) :
+    orthogonalGroupToLinearIsometryEquiv A⁻¹ x =
+      (orthogonalGroupToLinearIsometryEquiv A).symm x := by
+  rw [map_inv, _root_.LinearIsometryEquiv.coe_inv]
+
 /-- The conversion from orthogonal matrices to linear isometry equivalences is injective. -/
 theorem orthogonalGroupToLinearIsometryEquiv_injective :
     Function.Injective
@@ -91,6 +112,17 @@ theorem orthogonalGroupToLinearIsometryEquiv_injective :
   exact LinearMap.ext fun x => by
     simpa only [orthogonalGroupToLinearIsometryEquiv_apply, Matrix.toLpLin_apply] using
       _root_.LinearIsometryEquiv.congr_fun h x
+
+/-- The linear isometry equivalence of an orthogonal matrix has the determinant of the matrix. -/
+@[simp]
+theorem det_orthogonalGroupToLinearIsometryEquiv (A : Matrix.orthogonalGroup ι ℝ) :
+    LinearMap.det (orthogonalGroupToLinearIsometryEquiv A).toLinearIsometry.toLinearMap =
+      (A : Matrix ι ι ℝ).det := by
+  have : (orthogonalGroupToLinearIsometryEquiv A).toLinearIsometry.toLinearMap =
+      Matrix.toEuclideanLin (A : Matrix ι ι ℝ) := by
+    ext x
+    simp [Matrix.toLpLin_apply]
+  rw [this, LinearMap.det_toLpLin]
 
 /-- The linear map of an orthogonal matrix depends continuously on the matrix: the conversion to
 continuous linear endomorphisms of Euclidean space is continuous for the subspace topology on the

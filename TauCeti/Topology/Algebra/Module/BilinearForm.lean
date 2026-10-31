@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Basic
+public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.LocallyConvex.Bounded
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+import TauCeti.Analysis.Matrix.PosDef
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 -- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
 import TauCeti.Analysis.Normed.Module.FiniteDimension
@@ -31,7 +33,8 @@ The file also records that the continuous bilinear forms which are symmetric, po
 and have a von Neumann bounded unit set form a convex set. These are the fibrewise conditions of a
 Riemannian metric, and convexity is what lets local metrics be glued by partitions of unity; the
 statement itself involves no manifolds, so it is recorded here with the other facts about
-continuous bilinear forms.
+continuous bilinear forms. In finite dimensions, strict diagonal positivity is open, by
+transporting `TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos` from matrices through a basis.
 
 ## Main results
 
@@ -45,17 +48,26 @@ continuous bilinear forms.
   space (`ContinuousLinearMap.dual_finrank_eq`).
 * `ContinuousLinearMap.isInvertible_of_separatingLeft`: in finite dimensions, a map into the dual
   with left-separating bilinear form is invertible.
+* `ContinuousLinearMap.isInvertible_of_pos`: in finite dimensions, a map into the dual that is
+  positive on nonzero diagonal vectors is invertible.
 * `TauCeti.isInvertible_toContinuousBilinearMap_iff_separatingLeft`:
   contraction with a bilinear form is invertible exactly when it is left-separating in
   finite dimensions, identifying covectors with vectors for local contraction equations.
 * `ContinuousLinearMap.isVonNBounded_setOf_lt_one_of_pos`: in finite dimensions, positivity on
   nonzero diagonal vectors already implies the bounded-unit-set condition.
+* `TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos`: strict diagonal positivity is open
+  among all continuous bilinear forms in finite dimensions, without imposing symmetry.
 * `TauCeti.convex_setOfPred_symm_pos_isVonNBounded`: the continuous bilinear forms on a real
   topological vector space that are symmetric, positive definite and have a von Neumann bounded
   unit set form a convex set; these are the fibrewise conditions of a Riemannian metric.
+* `ContinuousLinearEquiv.mem_setOfPred_symm_pos_isVonNBounded_of_inner`: a form reading as an inner
+  product through a continuous linear equivalence satisfies these conditions; this supplies the
+  local metrics that are glued.
 -/
 
 public section
+
+open scoped Matrix
 
 namespace TauCeti
 
@@ -125,6 +137,15 @@ theorem isInvertible_toContinuousBilinearMap_iff_separatingLeft
 
 end FiniteDimensional
 
+/-- In finite dimensions, a continuous linear map into the dual that is positive on nonzero
+diagonal vectors is invertible. This is the musical isomorphism of a Riemannian metric. -/
+theorem _root_.ContinuousLinearMap.isInvertible_of_pos
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {L : E →L[ℝ] E →L[ℝ] ℝ} (hpos : ∀ v, v ≠ 0 → 0 < L v v) : L.IsInvertible :=
+  ContinuousLinearMap.isInvertible_of_separatingLeft fun v hv ↦ by
+    by_contra hv0
+    exact (hpos v hv0).ne' (hv v)
+
 section Convex
 
 open Bornology Set
@@ -176,7 +197,56 @@ theorem convex_setOfPred_symm_pos_isVonNBounded :
     · exact isVonNBounded_setOfPred_lt_one_of_le one_half_pos (fun v ↦ by
         rw [hab']; nlinarith [nonneg hgp' v, mul_nonneg ha (nonneg hgp v)]) hgb'
 
+omit [ContinuousConstSMul ℝ V] in
+/-- A continuous bilinear form that reads as the inner product of a real inner product space
+through a continuous linear equivalence `L` is symmetric and positive definite, with von Neumann
+bounded unit set: these are the fibrewise conditions on a Riemannian metric. -/
+theorem _root_.ContinuousLinearEquiv.mem_setOfPred_symm_pos_isVonNBounded_of_inner
+    {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] (L : V ≃L[ℝ] G)
+    {g : V →L[ℝ] V →L[ℝ] ℝ}
+    (hg : ∀ v w, g v w = inner ℝ (L v) (L w)) :
+    g ∈ {g : V →L[ℝ] V →L[ℝ] ℝ | (∀ v w, g v w = g w v) ∧ (∀ v, v ≠ 0 → 0 < g v v) ∧
+      IsVonNBounded ℝ {v | g v v < 1}} := by
+  refine ⟨fun v w ↦ by rw [hg, hg, real_inner_comm], fun v hv ↦ ?_, ?_⟩
+  · rw [hg, real_inner_self_eq_norm_sq]
+    have : L v ≠ 0 := by simpa using hv
+    positivity
+  · -- The unit set is the image of the unit ball of `G` under `L⁻¹`.
+    refine ((NormedSpace.isVonNBounded_ball ℝ G 1).image (L.symm : G →L[ℝ] V)).subset ?_
+    intro v hv
+    refine ⟨L v, ?_, by simp⟩
+    rw [mem_ofPred_eq, hg, real_inner_self_eq_norm_sq] at hv
+    simpa using (sq_lt_one_iff₀ (norm_nonneg _)).mp hv
+
 end Convex
+
+/-- Strict positivity on nonzero diagonal vectors is open in the space of continuous real
+bilinear forms on a finite-dimensional space. Symmetry is not imposed. -/
+theorem isOpen_setOf_forall_bilinear_apply_self_pos
+    {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [ContinuousSMul ℝ E] [Module.Finite ℝ E] :
+    IsOpen {b : E →L[ℝ] E →L[ℝ] ℝ | ∀ v, v ≠ 0 → 0 < b v v} := by
+  let e := Module.finBasis ℝ E
+  let A := fun b : E →L[ℝ] E →L[ℝ] ℝ ↦ b.toBilinForm.toMatrix e
+  have hA : Continuous A := by
+    apply continuous_pi fun i ↦ continuous_pi fun j ↦ ?_
+    simpa only [A, LinearMap.BilinForm.toMatrix_apply, ContinuousLinearMap.toBilinForm_apply,
+      id_eq] using
+      ((continuous_id : Continuous (id : (E →L[ℝ] E →L[ℝ] ℝ) → _)).eval_const
+        (e i)).eval_const (e j)
+  have heq : {b : E →L[ℝ] E →L[ℝ] ℝ | ∀ v, v ≠ 0 → 0 < b v v} =
+      A ⁻¹' {a | ∀ v, v ≠ 0 → 0 < v ⬝ᵥ a *ᵥ v} := by
+    ext b
+    constructor
+    · intro hb v hv
+      rw [LinearMap.BilinForm.dotProduct_toMatrix_mulVec]
+      exact hb _ (e.equivFun.symm.map_ne_zero_iff.mpr hv)
+    · intro hb v hv
+      have h := hb (e.equivFun v) (by simpa using hv)
+      simpa only [A, LinearMap.BilinForm.dotProduct_toMatrix_mulVec,
+        LinearEquiv.symm_apply_apply, ContinuousLinearMap.toBilinForm_apply] using h
+  rw [heq]
+  exact isOpen_setOfPred_dotProduct_mulVec_pos.preimage hA
 
 /-- On a finite-dimensional real normed space, a continuous bilinear form positive on
 nonzero diagonal vectors has a bounded unit sublevel set. Symmetry is not needed. -/

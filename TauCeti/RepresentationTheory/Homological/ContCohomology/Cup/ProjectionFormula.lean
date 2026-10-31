@@ -88,7 +88,8 @@ private noncomputable def coindBil (hU : IsOpen (U : Set G))
     X.V →ₗ[R] DiscreteCoind G U Y.V →ₗ[R] DiscreteCoind G U Z.V :=
   let _ : DiscreteTopology Z.V := hZ.discreteTopology
   let _ : ContinuousSMul U Z.V := continuousSMul_subgroup U hZ
-  LinearMap.mk₂ R (DiscreteCoind.pairing U hU (bilAddMonoidHom P) (bilAddMonoidHom_smul P) · ·)
+  LinearMap.mk₂ R
+    (DiscreteCoind.pairing U hU (bilAddMonoidHom P) (fun u => bilAddMonoidHom_smul P u) · ·)
     (fun x x' f ↦ by rw [map_add, AddMonoidHom.add_apply])
     (fun r x f ↦ DiscreteCoind.ext fun g ↦ by
       simp [DiscreteCoind.pairing_apply, smul_comm g r x])
@@ -102,7 +103,7 @@ private theorem coindBil_apply (hU : IsOpen (U : Set G))
     coindBil U hU hZ P x f g = P.bil (X.ρ g x) (f g) :=
   let _ : DiscreteTopology Z.V := hZ.discreteTopology
   let _ : ContinuousSMul U Z.V := continuousSMul_subgroup U hZ
-  DiscreteCoind.pairing_apply U hU (bilAddMonoidHom P) (bilAddMonoidHom_smul P) x f g
+  DiscreteCoind.pairing_apply U hU (bilAddMonoidHom P) (fun u => bilAddMonoidHom_smul P u) x f g
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
@@ -167,7 +168,8 @@ noncomputable def coindTopPairing (hU : IsOpen (U : Set G))
     cont := coindBil_continuous U hU hY hZ P
     -- The action of `G` on the coinduced representation is the translation action on
     -- `DiscreteCoind G U Y.V`.
-    equivariant g x f := DiscreteCoind.pairing_smul U hU _ (bilAddMonoidHom_smul P) g x f }
+    equivariant g x f :=
+      DiscreteCoind.pairing_smul U hU _ (fun u => bilAddMonoidHom_smul P u) g x f }
 
 @[simp]
 theorem coindTopPairing_bil_apply (hU : IsOpen (U : Set G))

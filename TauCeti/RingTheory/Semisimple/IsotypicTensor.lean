@@ -84,13 +84,15 @@ namespace TauCeti
 
 open Module TensorProduct
 
-variable (k : Type*) {A S M N : Type*} [Field k] [Ring A] [Algebra k A]
-variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
-variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
-variable [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
-variable [IsSimpleModule A S] [IsAlgClosed k] [FiniteDimensional k S]
+variable (k : Type*) {A S M N : Type*}
 
 /-! ### Injectivity of evaluation -/
+
+section CodRestrict
+
+variable [CommSemiring k] [Ring A] [Algebra k A]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
+variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
 
 /-- Evaluation, corestricted to the isotypic component it surjects onto. -/
 private def isotypicEvalCodRestrict :
@@ -98,13 +100,20 @@ private def isotypicEvalCodRestrict :
   (isotypicEval k).codRestrict _ fun x ↦ by
     rw [← range_isotypicEval k]; exact LinearMap.mem_range_self _ x
 
-omit [IsAlgClosed k] [FiniteDimensional k S] in
 private theorem isotypicEvalCodRestrict_surjective :
     Function.Surjective (isotypicEvalCodRestrict k (A := A) (S := S) (M := M)) := by
   rintro ⟨y, hy⟩
   rw [← range_isotypicEval k] at hy
   obtain ⟨x, hx⟩ := hy
   exact ⟨x, Subtype.ext hx⟩
+
+end CodRestrict
+
+variable [Field k] [Ring A] [Algebra k A]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+variable [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
+variable [IsSimpleModule A S] [IsAlgClosed k] [FiniteDimensional k S]
 
 private theorem finrank_tensor_eq_finrank_isotypicComponent [FiniteDimensional k M] :
     finrank k (S ⊗[k] (S →ₗ[A] M)) = finrank k (isotypicComponent A M S) := by
@@ -133,11 +142,8 @@ theorem isotypicEval_injective :
   -- Collect the ranges of the maps occurring in the sum into one finite-dimensional submodule.
   obtain ⟨F, hF⟩ : ∃ F : (t → S) →ₗ[A] M,
       ∀ (p : t) (s : S), F (Pi.single p s) = (p : S × (S →ₗ[A] M)).2 s :=
-    ⟨∑ p : t, (p : S × (S →ₗ[A] M)).2 ∘ₗ LinearMap.proj p, fun p s ↦ by
-      simp only [LinearMap.sum_apply, LinearMap.comp_apply, LinearMap.proj_apply]
-      rw [Finset.sum_eq_single p (fun q _ hq ↦ by simp [Pi.single_eq_of_ne hq])
-        fun h ↦ absurd (Finset.mem_univ p) h]
-      simp⟩
+    ⟨LinearMap.lsum A (fun _ : t ↦ S) ℕ (fun p ↦ (p : S × (S →ₗ[A] M)).2),
+      LinearMap.lsum_piSingle A _ ℕ _⟩
   have hFD : FiniteDimensional k (LinearMap.range F) :=
     Module.Finite.of_surjective (F.rangeRestrict.restrictScalars k) F.surjective_rangeRestrict
   have hmem : ∀ (p : t) (s : S), (p : S × (S →ₗ[A] M)).2 s ∈ LinearMap.range F :=
@@ -239,13 +245,14 @@ open TensorProduct
 
 section DirectSum
 
-variable (k A : Type*) [CommRing k] [Ring A] [Algebra k A]
-  {κ : Type*} [DecidableEq κ] (S : κ → Type*) [∀ j, AddCommGroup (S j)] [∀ j, Module k (S j)]
+variable (k A : Type*) [CommSemiring k] [Semiring A] [Algebra k A]
+  {κ : Type*} [DecidableEq κ] (S : κ → Type*) [∀ j, AddCommMonoid (S j)] [∀ j, Module k (S j)]
   [∀ j, Module A (S j)] [∀ j, IsScalarTower k A (S j)]
-  (M : Type*) [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+  (M : Type*) [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
 
 /-- The sum over a family of modules `S j` of the evaluation maps
-`S j ⊗[k] (S j →ₗ[A] M) →ₗ[A] M`, `s ⊗ f ↦ f s`. -/
+`S j ⊗[k] (S j →ₗ[A] M) →ₗ[A] M`, `s ⊗ f ↦ f s`. This construction works over semirings
+and needs no additive inverses. -/
 noncomputable def directSumIsotypicEval : (Π₀ j, S j ⊗[k] (S j →ₗ[A] M)) →ₗ[A] M :=
   DFinsupp.lsum ℕ fun _ => isotypicEval k
 
@@ -265,7 +272,7 @@ private theorem directSumIsotypicEval_eq_lsum_comp :
 
 section Naturality
 
-variable {A M} {N : Type*} [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
+variable {A M} {N : Type*} [AddCommMonoid N] [Module k N] [Module A N] [IsScalarTower k A N]
 
 /-- **Naturality of the summed evaluation in the target.** An `A`-linear map `g : M →ₗ[A] N`
 acts on each summand through its multiplicity space alone; the factors `S j` are untouched. -/
@@ -290,7 +297,14 @@ theorem directSumIsotypicEval_map_apply (g : M →ₗ[A] N) (x : Π₀ j, S j �
 
 end Naturality
 
-variable [∀ j, IsSimpleModule A (S j)]
+end DirectSum
+
+section DirectSumRange
+
+variable (k A : Type*) [CommSemiring k] [Ring A] [Algebra k A]
+  {κ : Type*} [DecidableEq κ] (S : κ → Type*) [∀ j, AddCommGroup (S j)] [∀ j, Module k (S j)]
+  [∀ j, Module A (S j)] [∀ j, IsScalarTower k A (S j)] [∀ j, IsSimpleModule A (S j)]
+  (M : Type*) [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
 
 /-- The range of `directSumIsotypicEval` is the sum of the isotypic components of the `S j`. -/
 theorem range_directSumIsotypicEval :
@@ -304,19 +318,20 @@ theorem range_directSumIsotypicEval :
 
 variable {A M}
 
+omit [∀ j, IsSimpleModule A (S j)] in
 /-- Evaluation is onto a semisimple module `M` as soon as each simple submodule of `M` is
-isomorphic to one of the `S j`. -/
+isomorphic to one of the `S j`. The remaining `S j` need not be simple. -/
 theorem directSumIsotypicEval_surjective [IsSemisimpleModule A M]
     (hcover : ∀ m : Submodule A M, IsSimpleModule A m → ∃ j, Nonempty (S j ≃ₗ[A] m)) :
     Function.Surjective (directSumIsotypicEval k A S M) := by
-  rw [← LinearMap.range_eq_top, range_directSumIsotypicEval, eq_top_iff,
+  rw [← LinearMap.range_eq_top, eq_top_iff,
     ← IsSemisimpleModule.sSup_simples_eq_top]
-  refine sSup_le fun m hm => ?_
+  refine sSup_le fun m hm x hx => ?_
   obtain ⟨j, ⟨e⟩⟩ := hcover m hm
-  exact m.le_isotypicComponent.trans <| e.symm.isotypicComponent_eq.le.trans <|
-    le_iSup (fun j => isotypicComponent A M (S j)) j
+  refine ⟨DFinsupp.single j (e.symm ⟨x, hx⟩ ⊗ₜ[k] (m.subtype ∘ₗ (e : S j →ₗ[A] m))), ?_⟩
+  simp
 
-end DirectSum
+end DirectSumRange
 
 section DirectSumEquiv
 

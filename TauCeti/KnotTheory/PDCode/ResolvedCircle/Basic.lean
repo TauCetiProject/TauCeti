@@ -100,6 +100,19 @@ together with one label for each crossing-free circle of the code. -/
 abbrev ResolvedCircle (D : PDCode n) (s : Fin n → Bool) : Type :=
   D.CrossingCircle s ⊕ Fin D.crossinglessComponentCount
 
+/-- Two correspondences of resolved circles that send the circle of every half-edge to its circle
+and retain every crossing-free label are equal. -/
+theorem resolvedCircle_funext (D : PDCode n) {s t : Fin n → Bool}
+    {φ ψ : D.ResolvedCircle s → D.ResolvedCircle t}
+    (hφ : ∀ x : Fin (4 * n), φ (.inl ⟦x⟧) = .inl ⟦x⟧)
+    (hψ : ∀ x : Fin (4 * n), ψ (.inl ⟦x⟧) = .inl ⟦x⟧)
+    (hφ' : ∀ i, φ (.inr i) = .inr i) (hψ' : ∀ i, ψ (.inr i) = .inr i) : φ = ψ := by
+  funext C
+  rcases C with C | i
+  · induction C using Quotient.ind
+    rw [hφ, hψ]
+  · rw [hφ', hψ']
+
 /-- Two half-edges lie on one circle of a smoothed diagram exactly when the second lies on the
 directed traversal orbit of the first, or on that of the other end of the first's arc. -/
 theorem eqvGen_circleStep_iff (D : PDCode n) (s : Fin n → Bool) {x y : Fin (4 * n)} :

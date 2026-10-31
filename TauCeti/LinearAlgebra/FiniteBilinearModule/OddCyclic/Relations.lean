@@ -5,7 +5,9 @@ Authors: Wentao Li
 -/
 module
 
+public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Basic
+import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Classification
 import TauCeti.Data.ZMod.SumSquares
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
@@ -20,6 +22,10 @@ of the coefficient ratio gives the rotation between them.
 
 The rotation preserves the half-norm quadratic form, and canonical conversion
 to a bilinear isometry gives the corresponding discriminant relation.
+
+Combined with the isometry of generators with the same Legendre symbol, the doubled
+relation shows that orthogonal sums `q_a ⊕ q_b` and `q_c ⊕ q_d` of generators of the same
+order, with coefficients prime to `p`, are isometric whenever `(a/p)(b/p) = (c/p)(d/p)`.
 
 ## References
 
@@ -81,5 +87,46 @@ noncomputable def oddCyclicProdSelfIsometry (p k : ℕ) [Fact p.Prime] (hp : Odd
         ⟨(isNondegenerate_oddCyclic_iff _ _ _).mpr hη,
           (isNondegenerate_oddCyclic_iff _ _ _).mpr hη⟩
     exact ⟨(g.toIsometryOfNondegenerate hsource rfl).symm⟩
+
+/-- **The binary relation at an odd prime.** Orthogonal sums `q_a ⊕ q_b` and `q_c ⊕ q_d` of odd
+cyclic generators of the same order `p^e` are isometric as soon as `(a/p)(b/p) = (c/p)(d/p)`.
+It follows from Nikulin's doubled relation `q_θ ⊕ q_θ ≅ q_η ⊕ q_η`. -/
+theorem nonempty_isometry_oddCyclic_prod {p : ℕ} [Fact p.Prime] (hp : Odd p) (e : ℕ)
+    {a b c d : ℤ} (ha : IsCoprime (p : ℤ) a) (hb : IsCoprime (p : ℤ) b)
+    (hc : IsCoprime (p : ℤ) c) (hd : IsCoprime (p : ℤ) d)
+    (h : legendreSym p a * legendreSym p b = legendreSym p c * legendreSym p d) :
+    Nonempty (Isometry ((oddCyclic (p ^ e) hp.pow a).prod (oddCyclic (p ^ e) hp.pow b))
+      ((oddCyclic (p ^ e) hp.pow c).prod (oddCyclic (p ^ e) hp.pow d))) := by
+  have hχ (t : ℤ) (ht : IsCoprime (p : ℤ) t) : legendreSym p t = 1 ∨ legendreSym p t = -1 :=
+    legendreSym.eq_one_or_neg_one p ((ZMod.coe_int_isUnit_iff_isCoprime t p).2 ht).ne_zero
+  have hcyc := fun {s t : ℤ} (hs : IsCoprime (p : ℤ) s) (ht : IsCoprime (p : ℤ) t)
+    (hst : legendreSym p s = legendreSym p t) ↦
+      nonempty_isometry_oddCyclic_of_legendreSym_eq hp e hs ht hst
+  -- Every `q_s ⊕ q_t` is isometric to `q_1 ⊕ q_{st}`.
+  have key (s t : ℤ) (hs : IsCoprime (p : ℤ) s) (ht : IsCoprime (p : ℤ) t) :
+      Nonempty (Isometry ((oddCyclic (p ^ e) hp.pow s).prod (oddCyclic (p ^ e) hp.pow t))
+        ((oddCyclic (p ^ e) hp.pow 1).prod (oddCyclic (p ^ e) hp.pow (s * t)))) := by
+    have h1 : IsCoprime (p : ℤ) 1 := isCoprime_one_right
+    have hst : IsCoprime (p : ℤ) (s * t) := hs.mul_right ht
+    rcases hχ s hs with hs1 | hs1
+    · obtain ⟨f⟩ := hcyc hs h1 (by rw [hs1, legendreSym.at_one])
+      obtain ⟨g⟩ := hcyc ht hst (by rw [legendreSym.mul, hs1, one_mul])
+      exact ⟨f.prod g⟩
+    rcases hχ t ht with ht1 | ht1
+    · obtain ⟨f⟩ := hcyc ht h1 (by rw [ht1, legendreSym.at_one])
+      obtain ⟨g⟩ := hcyc hs hst (by rw [legendreSym.mul, ht1, mul_one])
+      exact ⟨(QuadraticMap.IsometryEquiv.prodComm _ _).trans (f.prod g)⟩
+    · obtain ⟨f⟩ := hcyc ht hs (by rw [hs1, ht1])
+      obtain ⟨g⟩ := hcyc h1 hst (by rw [legendreSym.mul, hs1, ht1, legendreSym.at_one]; norm_num)
+      have hpe (u : ℤ) (hu : IsCoprime (p : ℤ) u) : IsCoprime ((p ^ e : ℕ) : ℤ) u := by
+        simpa using hu.pow_left
+      exact ⟨((QuadraticMap.IsometryEquiv.refl _).prod f).trans
+        ((oddCyclicProdSelfIsometry p e hp (hpe s hs) (hpe 1 h1)).trans
+          ((QuadraticMap.IsometryEquiv.refl _).prod g))⟩
+  obtain ⟨f⟩ := key a b ha hb
+  obtain ⟨g⟩ := key c d hc hd
+  obtain ⟨u⟩ := hcyc (ha.mul_right hb) (hc.mul_right hd)
+    (by rw [legendreSym.mul, legendreSym.mul, h])
+  exact ⟨f.trans (((QuadraticMap.IsometryEquiv.refl _).prod u).trans g.symm)⟩
 
 end TauCeti.FiniteQuadraticModule

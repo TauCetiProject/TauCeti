@@ -17,8 +17,8 @@ same is true for any indexed product of real circles. In particular, all higher 
 of the finite-dimensional torus `Tᵏ` vanish.
 
 Together with the fundamental-group computation in
-`TauCeti.AlgebraicTopology.UniversalCover.Torus.FundamentalGroup`, this completes the
-`π_n(Tᵏ)` application in `TauCetiRoadmap/UniversalCovers/README.md`, Stage 4, item 13.
+`TauCeti.AlgebraicTopology.UniversalCover.Torus.FundamentalGroup`, this determines every
+homotopy group of `Tᵏ`.
 
 ## Main declarations
 

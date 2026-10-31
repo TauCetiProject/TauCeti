@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Gaussian.Affine
 public import TauCeti.Probability.Distributions.LogNormal.Basic
+public import TauCeti.Analysis.InnerProductSpace.PiL2
 
 /-!
 # Multivariate log-normal laws
@@ -68,11 +69,8 @@ theorem multivariateLogNormalMeasure_zero (m : EuclideanSpace ℝ ι) :
 theorem ae_pos_multivariateLogNormalMeasure (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) :
     ∀ᵐ x ∂multivariateLogNormalMeasure m S, ∀ i, 0 < x i := by
   rw [multivariateLogNormalMeasure_def]
-  have hmeas : MeasurableSet {x : EuclideanSpace ℝ ι | ∀ i, 0 < x i} := by
-    rw [Set.ofPred_forall]
-    exact MeasurableSet.iInter fun i ↦ measurableSet_lt
-      (measurable_const (a := (0 : ℝ))) (by fun_prop)
-  exact (ae_map_iff (by fun_prop) hmeas).mpr (ae_of_all _ fun x i ↦ Real.exp_pos (x i))
+  exact (ae_map_iff (by fun_prop) EuclideanSpace.measurableSet_setOf_forall_pos).mpr
+    (ae_of_all _ fun x i ↦ Real.exp_pos (x i))
 
 /-- Coordinatewise logarithms recover the original Gaussian, even at invalid covariances. -/
 @[simp]

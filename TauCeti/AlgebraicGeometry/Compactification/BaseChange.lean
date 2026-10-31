@@ -12,9 +12,10 @@ public import TauCeti.AlgebraicGeometry.Compactification.Basic
 
 Pulling back both maps of a compactification gives a compactification over any new base.
 The induced map on interiors is itself a pullback of the original open immersion, and
-maps of compactifications pull back functorially. Scheme-theoretic density of the interior
-is preserved when the base change is flat, using Mathlib's
-`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_isPullback`.
+maps of compactifications pull back functorially, as pullbacks of the original maps of ambient
+schemes; in particular closed immersions of compactifications pull back to closed immersions.
+Scheme-theoretic density of the interior is preserved when the base change is flat, using
+Mathlib's `AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_isPullback`.
 
 ## References
 
@@ -34,6 +35,25 @@ variable {X S T : Scheme.{u}} {f : X ⟶ S}
 namespace Compactification
 
 noncomputable section
+
+/-- The special fibre of a principal open is empty along a ring map that kills its defining
+element. -/
+theorem isEmpty_pullback_localizationAway {R A : CommRingCat.{u}}
+    (r : R) (φ : R →+* A) (hφ : φ r = 0) :
+    IsEmpty ↑(pullback (localizationAway r).j (Spec.map (CommRingCat.ofHom φ))) := by
+  -- Normalize the dependent endpoints of the compactification before using the affine API.
+  dsimp only [localizationAway, j, Xbar, ofHom]
+  apply Scheme.isEmpty_pullback
+  rw [Set.disjoint_left]
+  rintro _ ⟨x, rfl⟩ ⟨y, hy⟩
+  have hx : r ∉ (PrimeSpectrum.comap (algebraMap R (Localization.Away r)) x).asIdeal := by
+    have : x.asIdeal.IsPrime := x.isPrime
+    exact x.asIdeal.notMem_of_isUnit (IsLocalization.Away.algebraMap_isUnit r)
+  have hy' := congrArg (fun p : Spec (CommRingCat.of R) ↦ p.asIdeal) hy
+  simp only [Spec.map_apply, CommRingCat.hom_ofHom] at hy'
+  have hy0 : r ∈ (PrimeSpectrum.comap φ y).asIdeal :=
+    (PrimeSpectrum.comap_asIdeal φ y).symm ▸ Ideal.mem_comap.mpr (hφ ▸ y.asIdeal.zero_mem)
+  exact hx (hy' ▸ hy0)
 
 /-- The open interior map induced on the pullbacks of a compactification. -/
 private def baseChangeJ (C : Compactification f) (g : T ⟶ S) :
@@ -124,6 +144,19 @@ theorem baseChangeMap_hom_h {C D : Compactification f} (h : C ⟶ D) (g : T ⟶ 
     (baseChangeMap h g).hom.h =
       pullback.map C.p g D.p g h.hom.h (𝟙 T) (𝟙 S) (by simp) (by simp) :=
   (rfl)
+
+/-- The pulled-back map of ambient schemes is a pullback of the original map. -/
+theorem isPullback_baseChangeMap {C D : Compactification f} (h : C ⟶ D) (g : T ⟶ S) :
+    IsPullback (pullback.fst C.p g) (baseChangeMap h g).hom.h h.hom.h (pullback.fst D.p g) := by
+  apply IsPullback.of_bot (t := IsPullback.of_hasPullback D.p g)
+  · simpa using IsPullback.of_hasPullback C.p g
+  · simp
+
+/-- Base change preserves closed immersions of compactifications. -/
+instance {C D : Compactification f} (h : C ⟶ D) [IsClosedImmersion h.hom.h] (g : T ⟶ S) :
+    IsClosedImmersion (baseChangeMap h g).hom.h :=
+  MorphismProperty.of_isPullback (isPullback_baseChangeMap h g)
+    (inferInstance : IsClosedImmersion h.hom.h)
 
 /-- Base change acts functorially on all compactifications of a fixed morphism. -/
 -- The object equations must remain available when elaborating dependent morphism formulas.

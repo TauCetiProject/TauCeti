@@ -10,18 +10,17 @@ public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Right
 /-!
 # Weights of the overlap recuts for grid commutation
 
-Let `C` be a validated column commutation of a grid diagram `G`, commuting the columns `a` and
-`b = finRotate n a`, and let `G' = G.swapColumns a b`. The chain-map equation for the pentagon
-map compares, coefficient by coefficient, a sum over a rectangle of `G` followed by a pentagon,
-weighted by `GridDiagram.rectanglePentagonWeight`, with a sum over a pentagon followed by a
-rectangle of `G'`, weighted by `GridDiagram.pentagonRectangleWeight`. When the two domains share
+Let `C` be a column turn (`GridDiagram.ColumnTurn`) for a grid diagram `G`, exchanging the columns
+`a` and `b = finRotate n a`, and let `G' = G.swapColumns a b`. The chain-map equation for the
+pentagon map compares, coefficient by coefficient, a sum over a rectangle of `G` followed by a
+pentagon, weighted by `GridDiagram.rectanglePentagonWeight`, with a sum over a pentagon followed by
+a rectangle of `G'`, weighted by `GridDiagram.pentagonRectangleWeight`. When the two domains share
 exactly one side, their union is recut the other way (`Overlap/Basic.lean`, `Overlap/Right.lean`),
 and `Overlap/Counted.lean` shows that the recuts landing in the other sum are counted there. This
 file shows that each of these recuts of a rectangle followed by a pentagon has the weight of the
 domain it came from: a recut into the other sum contributes the same monomial there, and the recut
 that stays in the same sum has the weight of the term it came from. That is the equal-weight step a
-future pairing of such terms within the same sum needs; the pairing itself is not established
-here.
+future pairing of such terms within the same sum needs; the pairing itself is not established here.
 
 Both weights depend only on the composite domain, its squares counted with multiplicity, with a
 rectangle of `G'` read in `G` with its two commuted columns exchanged
@@ -61,7 +60,7 @@ namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
 
-variable (C : ColumnCommutationData G) (R : Type*) [CommSemiring R] {x z : GridState n}
+variable (C : ColumnTurn n) (R : Type*) [CommSemiring R] {x z : GridState n}
 
 /-- Recutting a rectangle followed by a pentagon along their common initial side preserves the
 weight: the promoted pentagon followed by the remaining rectangle of the commuted diagram has

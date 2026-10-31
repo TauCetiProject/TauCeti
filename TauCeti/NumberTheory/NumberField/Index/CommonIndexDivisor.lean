@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.NumberTheory.NumberField.Ideal.KummerDedekind
 public import TauCeti.NumberTheory.NumberField.Index.Exponent
 public import TauCeti.RingTheory.Polynomial.Monic.Irreducible
 
@@ -37,8 +36,6 @@ and then `p` divides `exponent θ`, hence `index θ`.
   rules out an element of index `1`, so it obstructs monogenicity.
 * `TauCeti.NumberField.IsCommonIndexDivisor.adjoin_ne_top`: equivalently, no order `ℤ[θ]` is all
   of `𝓞 K`.
-* `TauCeti.NumberField.inertiaDeg_eq_natDegree_primesOverSpanEquivMonicFactorsMod`: the
-  Kummer–Dedekind bijection matches residue degree with the degree of the factor.
 * `TauCeti.NumberField.ncard_primesOverOfInertiaDeg_le`: the Kummer–Dedekind counting bound.
 * `TauCeti.NumberField.card_filter_monicFactorsMod_le`: the factors of `minpoly ℤ θ` of degree
   `d` are among the degree-`d` monic irreducibles over `𝔽_p`.
@@ -153,7 +150,7 @@ private theorem mem_filter_monicFactorsMod_of_mem_primesOverOfInertiaDeg {θ : �
       (monicFactorsMod θ p).filter fun R => R.natDegree = d := by
   classical
   refine Finset.mem_filter.mpr ⟨(primesOverSpanEquivMonicFactorsMod hp Q).2, ?_⟩
-  exact (inertiaDeg_eq_natDegree_primesOverSpanEquivMonicFactorsMod hp Q) ▸ hQ
+  exact (inertiaDeg_primesOverSpanEquivMonicFactorsMod_apply hp Q) ▸ hQ
 
 /-- **The Kummer–Dedekind counting bound.** For a `θ` whose conductor exponent is prime to `p`,
 the primes of `𝓞 K` above `p` with residue degree `d` are no more numerous than the degree-`d`

@@ -47,8 +47,12 @@ consume, but not the passage from a square root of one to the idempotent pair.
 
 * `TauCeti.halfOneAdd_add_halfOneAdd_neg`, `TauCeti.halfOneAdd_sub_halfOneAdd_neg`: the pair is
   complementary, and its difference recovers `ω`.
+* `TauCeti.halfOneAdd_smul_add_halfOneAdd_neg_smul`: in every module, each vector is the sum of
+  its images under the pair.
 * `TauCeti.halfOneAdd_mul_halfOneAdd_neg`, `TauCeti.isIdempotentElem_halfOneAdd`: for a square root
   of one the pair is orthogonal and idempotent.
+* `TauCeti.mul_halfOneAdd`, `TauCeti.mul_halfOneAdd_neg`: `ω` acts on the two idempotents by
+  `1` and `-1`, so in every module they project onto the `±1`-eigenvectors of `ω`.
 * `TauCeti.halfOneAdd_mul_add_mul`: **the multiplication rule** `(e₊ a + e₋ b) (e₊ c + e₋ d)
   = e₊ (a c) + e₋ (b d)`, for `a` and `b` commuting with `ω`.
 -/
@@ -90,6 +94,11 @@ theorem halfOneAdd_sub_halfOneAdd_neg (ω : A) : halfOneAdd R ω - halfOneAdd R 
 theorem halfOneAdd_neg_eq_one_sub (ω : A) : halfOneAdd R (-ω) = 1 - halfOneAdd R ω :=
   eq_sub_of_add_eq' (halfOneAdd_add_halfOneAdd_neg R ω)
 
+/-- **Every vector splits along the pair**: in any `A`-module, `½ (1 + ω) m + ½ (1 - ω) m = m`. -/
+theorem halfOneAdd_smul_add_halfOneAdd_neg_smul {M : Type*} [AddCommGroup M] [Module A M] (ω : A)
+    (m : M) : halfOneAdd R ω • m + halfOneAdd R (-ω) • m = m := by
+  rw [← add_smul, halfOneAdd_add_halfOneAdd_neg, one_smul]
+
 variable {ω : A}
 
 /-- **The pair is orthogonal** when `ω` squares to `1`: `½ (1 + ω) · ½ (1 - ω) = 0`. -/
@@ -116,6 +125,17 @@ theorem halfOneAdd_neg_mul_halfOneAdd (hsq : ω * ω = 1) :
     halfOneAdd R (-ω) * halfOneAdd R ω = 0 := by
   rw [halfOneAdd_neg_eq_one_sub]
   exact (isIdempotentElem_halfOneAdd R hsq).one_sub_mul_self
+
+/-- **`½ (1 + ω)` cuts out the `1`-eigenvectors of `ω`**: `ω · ½ (1 + ω) = ½ (1 + ω)` when `ω`
+squares to `1`. -/
+theorem mul_halfOneAdd (hsq : ω * ω = 1) : ω * halfOneAdd R ω = halfOneAdd R ω := by
+  rw [halfOneAdd_def, mul_smul_comm, mul_add, mul_one, hsq, add_comm]
+
+/-- **`½ (1 - ω)` cuts out the `-1`-eigenvectors of `ω`**: `ω · ½ (1 - ω) = -½ (1 - ω)` when `ω`
+squares to `1`. -/
+theorem mul_halfOneAdd_neg (hsq : ω * ω = 1) : ω * halfOneAdd R (-ω) = -halfOneAdd R (-ω) := by
+  rw [halfOneAdd_def, mul_smul_comm, ← smul_neg, mul_add, mul_one, mul_neg, hsq, neg_add, neg_neg,
+    add_comm]
 
 /-- **The pair inherits commutation from `ω`.** Only commutation with the element at hand is
 needed, so a central `ω` gives a central pair. -/

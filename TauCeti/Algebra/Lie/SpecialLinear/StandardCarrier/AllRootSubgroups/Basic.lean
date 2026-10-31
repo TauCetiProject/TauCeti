@@ -258,7 +258,7 @@ private theorem generalLinear_rootSubgroupCoordinateMap_eq_kostantRootSubgroupCo
         (R := ℤ) (rootTarget_ne_rootSource r k) =
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+        (rep_kostantForm_mem_lattice r) k
         (isNilpotent_rep_rootGenerator r k) (latticeBasis r) := by
   apply _root_.CommHopfAlgCat.hom_ext
   apply TauCeti.GeneralLinear.coordinateHopfAlgebra_bialgHom_ext
@@ -298,7 +298,7 @@ private theorem generalLinear_rootSubgroupCoordinateMap_eq_kostantRootSubgroupCo
   have hK :=
     TauCeti.UniversalEnvelopingAlgebra.pointsMulEquiv_kostantRootSubgroupCoordinateMap
       (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv) k
+      (rep_kostantForm_mem_lattice r) k
       (isNilpotent_rep_rootGenerator r k) (latticeBasis r)
       (A := AdditiveGroup.coordinateHopfAlgebra ℤ) q
   have hK' := hK.trans (kostantRootSubgroupMatrix_eq_transvection r k q)
@@ -342,7 +342,7 @@ theorem rootSubgroupCoordinateMapOfPair_eq_rootSubgroupCoordinateMap
     rootSubgroupCoordinateMapOfPair r (rootTarget_ne_rootSource r k) =
       TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+        (rep_kostantForm_mem_lattice r)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) k := by
   let q := CommHopfAlgCat.mkQuotient
     (TauCeti.GeneralLinear.coordinateHopfAlgebra ℤ (r + 1)) (definingIdeal r)

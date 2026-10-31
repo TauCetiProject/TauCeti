@@ -20,9 +20,6 @@ constant `1` has a single coefficient, at exponent `0`. These hold over an arbit
 * `LaurentPolynomial.coeff_C_mul` and `LaurentPolynomial.coeff_natCast_mul`: constants scale
   coefficients.
 * `LaurentPolynomial.coeff_one`: the coefficients of `1`.
-* `LaurentPolynomial.mul_coeff_zero_of_coeff_mem`: if the nonconstant coefficients of two Laurent
-  polynomials lie in a square-zero ideal, the constant coefficient of their product is the
-  product of their constant coefficients.
 -/
 
 public section
@@ -53,20 +50,5 @@ theorem coeff_natCast_mul (m : ℕ) (f : R[T;T⁻¹]) (d : ℤ) :
 @[simp]
 theorem coeff_one (d : ℤ) : (1 : R[T;T⁻¹]).coeff d = if d = 0 then 1 else 0 := by
   rw [← map_one (C : R →+* R[T;T⁻¹]), C_apply]
-
-/-- If all nonconstant coefficients of two Laurent polynomials lie in a square-zero ideal, the
-constant coefficient of their product is the product of their constant coefficients. Thus the
-constant coefficient is a ring homomorphism on the Laurent polynomials that are constant modulo
-such an ideal. -/
-theorem mul_coeff_zero_of_coeff_mem {R : Type*} [CommSemiring R] {I : Ideal R} (hI : I ^ 2 = ⊥)
-    {f g : R[T;T⁻¹]} (hf : ∀ n ≠ 0, f.coeff n ∈ I) (hg : ∀ n ≠ 0, g.coeff n ∈ I) :
-    (f * g).coeff 0 = f.coeff 0 * g.coeff 0 := by
-  rw [AddMonoidAlgebra.coeff_mul_apply_left, Finsupp.sum_eq_single 0]
-  · simp
-  · intro n _ hn
-    have hmem : f.coeff n * g.coeff (-n + 0) ∈ I ^ 2 :=
-      pow_two I ▸ Ideal.mul_mem_mul (hf n hn) (hg _ (by simpa using hn))
-    simpa [hI] using hmem
-  · simp
 
 end LaurentPolynomial

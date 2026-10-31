@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Spin.Exceptional.Six.ExteriorSquare
 public import TauCeti.RepresentationTheory.Spin.Polarization.Split.Even
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 import Mathlib.LinearAlgebra.Basis.SMul
 import Mathlib.Data.Fintype.EquivFin
 
@@ -31,7 +32,7 @@ public section
 
 namespace TauCeti
 
-open Module
+open CliffordAlgebra Module
 
 universe u
 
@@ -268,5 +269,23 @@ theorem spinSixWedgeQuadraticIsometryEquivSplit_apply (x : ⋀[K]^2 (Fin 4 → K
 theorem spinSixWedgeQuadraticIsometryEquivSplit_symm_apply (x : SplitEvenSpace K 3) :
     (spinSixWedgeQuadraticIsometryEquivSplit K).symm x =
       (spinSixWedgeIsometryEquivPolarSplit K).symm x := (rfl)
+
+/-- The isometry `spinSixWedgeIsometryEquivPolarSplit K` intertwines the Spin vector action on
+`⋀²(K⁴)`, transported along the induced Spin-group map, with the vector action of
+`splitEvenForm K 3`. -/
+@[simp]
+theorem spinSixWedgeIsometryEquivPolarSplit_spinVectorAction
+    (s : spinGroup (splitEvenForm K 3)) (x : ⋀[K]^2 (Fin 4 → K)) :
+    spinSixWedgeIsometryEquivPolarSplit K
+        (spinVectorAction (spinSixWedgeQuadraticForm K)
+          ((spinSixWedgeQuadraticIsometryEquivSplit K).symm.toIsometry.spinGroupMap s) x) =
+      spinVectorAction (splitEvenForm K 3) s
+        (spinSixWedgeIsometryEquivPolarSplit K x) := by
+  have h := QuadraticMap.IsometryEquiv.apply_spinVectorAction_symm_spinGroupMap
+    (spinSixWedgeQuadraticIsometryEquivSplit K) s x
+  simpa only [QuadraticMap.IsometryEquiv.toIsometry_apply,
+    QuadraticMap.IsometryEquiv.spinGroupEquiv_apply,
+    spinSixWedgeQuadraticIsometryEquivSplit_apply] using h
+
 
 end TauCeti

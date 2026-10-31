@@ -11,24 +11,32 @@ import TauCeti.Analysis.Contour.Dixon.H2.Bound
 import TauCeti.Analysis.Contour.Dixon.H2.Diff
 import TauCeti.Analysis.Contour.Dixon.FunctionDiff
 import Mathlib.Analysis.Complex.Liouville
+import Mathlib.Analysis.LocallyConvex.SeparatingDual
 
 /-!
 # The homology Cauchy theorem for contour cycles
 
 This file extends the homology form of Cauchy's theorem from one parametrized closed curve to a
 finite formal integer cycle. If a cycle `C` lies in an open set `U`, is null-homologous there, and
-`f` is holomorphic on `U`, then `Cycle.integral f C = 0`.
+`f` is holomorphic on `U`, then `Cycle.integral f C = 0`. Here `f` may take values in any complex
+normed space, as needed for Banach-valued contour integrals such as resolvent integrals.
 
 The point is that null-homology belongs to the whole cycle: cancellation between different
 generators may make `C` null-homologous even when no individual generator is. Thus the result does
 not follow by applying the single-curve theorem termwise. Instead, Dixon's two auxiliary integrals
 are summed over the finite support of `C`. Their jump across the boundary of `U` is the winding
 number of the whole cycle, so cycle-level null-homology makes the sum entire; decay at infinity and
-Liouville then make it zero.
+Liouville then make it zero. For a complete space `E`, the vector-valued case follows from the
+scalar one: every continuous linear functional commutes with the cycle integral
+(`TauCeti.Contour.Cycle.integral_comp_comm`), and these functionals separate the points of `E` by
+the Hahn–Banach theorem. For an incomplete `E`, every Bochner integral valued in `E` is zero, and
+hence so is the cycle integral.
 
-## Main result
+## Main results
 
 * `TauCeti.Contour.Cycle.homologyCauchyTheorem` — Cauchy's theorem for a null-homologous cycle.
+* `TauCeti.Contour.Cycle.integral_eq_of_windingNumber_eq` — cycles with the same winding numbers
+  about the singular set have the same integral.
 
 ## References
 
@@ -164,9 +172,10 @@ private theorem differentiable_cycleDixonFunction {f : ℂ → ℂ} {C : Cycle} 
       unfold cycleDixonH2
       exact DifferentiableAt.fun_sum fun γ hγ ↦ by
         have hoff := avoids_of_mem_support hwtrace hγ
-        exact (TauCeti.Contour.differentiableAt_dixonH2 γ.continuousOn hoff
+        exact (TauCeti.Contour.hasDerivAt_dixonH2 γ.continuousOn hoff
           (TauCeti.Contour.cauchy_integrand_intervalIntegrable hf.continuousOn γ.continuousOn
-            (mapsTo_of_mem_support hCU hγ) γ.intervalIntegrable_deriv hoff)).const_mul
+            (mapsTo_of_mem_support hCU hγ) γ.intervalIntegrable_deriv
+              hoff)).differentiableAt.const_mul
               (FreeAbelianGroup.coeff γ C : ℂ)
     obtain ⟨ε, hε, hball⟩ :=
       Metric.isOpen_iff.mp (isCompact_trace C).isClosed.isOpen_compl w hwtrace
@@ -224,14 +233,8 @@ private theorem cycleDixonH2_twist_eq_integral {f : ℂ → ℂ} {C : Cycle} {w 
   rw [mul_div_cancel_left₀ _ (sub_ne_zero.mpr
     (avoids_of_mem_support hw hγ t ht)), smul_eq_mul, mul_comm]
 
-/-- **The homology Cauchy theorem for contour cycles.** Let `C` be a finite formal integer
-combination of closed piecewise-`C¹` curves whose trace lies in an open set `U`. If `C` is
-null-homologous in `U` and `f` is holomorphic on `U`, then the contour integral of `f` over the
-whole cycle vanishes.
-
-The null-homology assumption is imposed only on `C`, not on each supported curve, so the theorem
-includes cancellations between different generators. -/
-theorem homologyCauchyTheorem {f : ℂ → ℂ} {C : Cycle} {U : Set ℂ} (hU : IsOpen U)
+/-- The scalar case of `homologyCauchyTheorem`, by Dixon's argument. -/
+private theorem homologyCauchyTheorem_complex {f : ℂ → ℂ} {C : Cycle} {U : Set ℂ} (hU : IsOpen U)
     (hCU : IsIn C U) (hf : DifferentiableOn ℂ f U) (hnull : IsNullHomologous C U) :
     integral f C = 0 := by
   by_cases hC : C = 0
@@ -247,6 +250,46 @@ theorem homologyCauchyTheorem {f : ℂ → ℂ} {C : Cycle} {U : Set ℂ} (hU : 
         htwist.continuousOn hCU hwtrace,
       cycleDixonH2_twist_eq_integral hwtrace] at hzero
     simpa using hzero
+
+/-- **The homology Cauchy theorem for contour cycles.** Let `C` be a finite formal integer
+combination of closed piecewise-`C¹` curves whose trace lies in an open set `U`. If `C` is
+null-homologous in `U` and `f` is holomorphic on `U`, with values in any complex normed space,
+then the contour integral of `f` over the whole cycle vanishes.
+
+The null-homology assumption is imposed only on `C`, not on each supported curve, so the theorem
+includes cancellations between different generators. -/
+theorem homologyCauchyTheorem {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f : ℂ → E}
+    {C : Cycle} {U : Set ℂ} (hU : IsOpen U) (hCU : IsIn C U) (hf : DifferentiableOn ℂ f U)
+    (hnull : IsNullHomologous C U) : integral f C = 0 := by
+  by_cases hE : CompleteSpace E
+  · -- Continuous linear functionals separate points, and each one reduces to the scalar case.
+    refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℂ) fun ℓ ↦ ?_
+    rw [← integral_comp_comm fun _ ↦
+      intervalIntegrable_of_mem_support (hf.continuousOn.mono (isIn_iff.mp hCU))]
+    exact homologyCauchyTheorem_complex hU hCU (ℓ.differentiable.comp_differentiableOn hf) hnull
+  · -- Without completeness every Bochner integral valued in `E` vanishes.
+    rw [integral_eq_sum_support]
+    exact Finset.sum_eq_zero fun γ _ ↦ by
+      simp [intervalIntegral, integral_of_not_completeSpace hE]
+
+/-- **Homologous cycles have equal integrals.** Let `f` be holomorphic on `U \ K`, with `U` open
+and `K` closed, and let `C` and `D` be cycles in `U \ K` that are null-homologous in `U`. If `C`
+and `D` have the same winding number about every point of `K`, then `f` has the same integral over
+`C` and over `D`. -/
+theorem integral_eq_of_windingNumber_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℂ → E} {U K : Set ℂ} (hU : IsOpen U) (hK : IsClosed K)
+    (hf : DifferentiableOn ℂ f (U \ K)) {C D : Cycle} (hC : IsIn C (U \ K))
+    (hD : IsIn D (U \ K)) (hCU : IsNullHomologous C U) (hDU : IsNullHomologous D U)
+    (hCD : ∀ z ∈ K, windingNumber z C = windingNumber z D) :
+    integral f C = integral f D := by
+  rw [← sub_eq_zero, ← map_sub]
+  refine homologyCauchyTheorem (hU.sdiff hK) ?_ hf (isNullHomologous_iff.mpr fun z hz ↦ ?_)
+  · rw [sub_eq_add_neg]
+    exact hC.add (isIn_neg_iff.mpr hD)
+  · rw [map_sub, sub_eq_zero]
+    by_cases hzU : z ∈ U
+    · exact hCD z (by simpa [hzU] using hz)
+    · rw [isNullHomologous_iff.mp hCU z hzU, isNullHomologous_iff.mp hDU z hzU]
 
 end TauCeti.Contour.Cycle
 

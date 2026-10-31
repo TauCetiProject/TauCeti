@@ -15,7 +15,7 @@ import TauCeti.Analysis.Sobolev.W1p.LevelSet
 
 Let `Ω ⊆ ℝⁿ` be open with finite measure, and let
 
-`L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u`
+`L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u`
 
 have measurable, uniformly elliptic `a` with constants `0 < λ ≤ Λ`, bounded measurable drift
 `‖b‖ ≤ β` and bounded measurable `c ≥ 0`. This file proves the **weak maximum principle** for
@@ -247,7 +247,7 @@ private theorem UniformlyEllipticOn.ofReal_le_mul_measure_rpow_of_not_ae_value_l
 
 /-- **The weak maximum principle with bounded drift**, under a Sobolev inequality. Let
 `Ω ⊆ ℝⁿ` be open, and suppose `‖w‖_q ≤ S ‖∇w‖₂` on `H¹₀(Ω)` for some exponent `q > 2`. Let
-`L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u` have measurable, uniformly elliptic `a` with constants
+`L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` have measurable, uniformly elliptic `a` with constants
 `λ, Λ`, measurable `b` with `‖b‖ ≤ β` and measurable `c` with `0 ≤ c ≤ γ`. If `u ∈ H¹(Ω)` is a
 weak subsolution, `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, and `(u - k)⁺ ∈ H¹₀(Ω)` for
 some `k ≥ 0`, then `u ≤ k` almost everywhere. There is no smallness condition on `β`, and `Ω`
@@ -305,7 +305,7 @@ theorem UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le
       (hl j).1 hboundary hu (hl j).2) zero_le)
 
 /-- **The weak maximum principle with bounded drift.** Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be open with finite
-measure, and let `L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u` have measurable, uniformly elliptic `a` with
+measure, and let `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` have measurable, uniformly elliptic `a` with
 constants `λ, Λ`, measurable `b` with `‖b‖ ≤ β` and measurable `c` with `0 ≤ c ≤ γ`. If
 `u ∈ H¹(Ω)` is a weak subsolution, `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, and
 `(u - k)⁺ ∈ H¹₀(Ω)` for some `k ≥ 0`, then `u ≤ k` almost everywhere. There is no smallness
@@ -439,7 +439,7 @@ theorem UniformlyEllipticOn.eq_of_isWeakSolutionDirichlet_of_mass_nonneg_of_meas
     hc_bound hc_nonneg hq hsob hu hv
 
 /-- **Existence and uniqueness for the Dirichlet problem with `c ≥ 0`.** Let `Ω ⊆ ℝⁿ`, `n ≥ 1`,
-be a bounded open set, and let `L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u` have measurable, uniformly
+be a bounded open set, and let `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` have measurable, uniformly
 elliptic `a`, measurable `b` with `‖b‖ ≤ β` and measurable `c` with `0 ≤ c ≤ γ`. Then for every
 `f ∈ L²(Ω)` there is exactly one `u ∈ H¹₀(Ω)` with `a(u, v) = ∫_Ω f v` for all `v ∈ H¹₀(Ω)`.
 Since `β` is arbitrary, the energy form of `L` need not be coercive. -/

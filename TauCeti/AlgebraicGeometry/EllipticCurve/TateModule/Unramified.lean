@@ -32,6 +32,8 @@ into rational torsion over unramified extensions of `K`.
 
 * `WeierstrassCurve.isUnramified_divisionField_iff`: `K(E[m])/K` is unramified exactly when inertia
   fixes every point of `E(Kˢ)[m]`.
+* `WeierstrassCurve.isUnramified_divisionField_iff_forall_mem_inertiaSubgroup`: for `W` elliptic
+  and `m` invertible in `K`, equivalently inertia fixes every point of `E(K^{alg})[m]`.
 * `WeierstrassCurve.isUnramified_divisionField_pow_of_tateModuleGaloisRepresentation_eq_one`: if
   inertia acts trivially on `T_ℓ E`, then `K(E[ℓ ^ k])/K` is unramified for every `k`.
 
@@ -65,6 +67,22 @@ theorem isUnramified_divisionField_iff (m : ℕ) [ValuativeRel (W.divisionField 
   simp only [mem_fixingSubgroup_divisionField_iff]
 
 open scoped Classical in
+/-- **The `m`-division field is unramified exactly when inertia fixes `E(K^{alg})[m]`.** For `W`
+elliptic, `m` invertible in `K`, and a structure of nonarchimedean local field on `K(E[m])`
+compatible with `K`, the extension `K(E[m])/K` is unramified exactly when every element of the
+inertia subgroup of `Gal(K^{alg}/K)` fixes every point of `E(K^{alg})[m]`. -/
+theorem isUnramified_divisionField_iff_forall_mem_inertiaSubgroup [W.IsElliptic] {m : ℕ}
+    (hm : (m : K) ≠ 0) [ValuativeRel (W.divisionField m)] [TopologicalSpace (W.divisionField m)]
+    [IsNonarchimedeanLocalField (W.divisionField m)] [ValuativeExtension K (W.divisionField m)] :
+    IsUnramified K (W.divisionField m) ↔
+      ∀ σ ∈ inertiaSubgroup K, ∀ P : (W⁄(AlgebraicClosure K)).toAffine.Point, m • P = 0 →
+        Affine.Point.map σ.toAlgHom P = P := by
+  rw [isUnramified_divisionField_iff]
+  refine ⟨fun h σ hσ ↦ (forall_smul_torsionCoeff_eq_self_iff hm σ).1 (h _ ⟨σ, hσ, rfl⟩), ?_⟩
+  rintro h _ ⟨σ, hσ, rfl⟩
+  exact (forall_smul_torsionCoeff_eq_self_iff hm σ).2 (h σ hσ)
+
+open scoped Classical in
 /-- **An unramified Tate module gives unramified division fields.** Let `ℓ` be a prime invertible
 in `K`. If the inertia subgroup of `Gal(K^{alg}/K)` acts trivially on the `ℓ`-adic Tate module of
 an elliptic curve `W`, then for every `k` the `ℓ ^ k`-division field `K(E[ℓ ^ k])` is unramified
@@ -76,26 +94,9 @@ theorem isUnramified_divisionField_pow_of_tateModuleGaloisRepresentation_eq_one 
     [IsNonarchimedeanLocalField (W.divisionField (ℓ ^ k))]
     [ValuativeExtension K (W.divisionField (ℓ ^ k))] :
     IsUnramified K (W.divisionField (ℓ ^ k)) := by
-  rw [isUnramified_divisionField_iff]
-  rintro _ ⟨σ, hσ, rfl⟩ P
-  -- `P` is the image of a point `Q` of `E(Kˢ)[ℓ ^ k]`; it suffices that the restriction of `σ`
-  -- fixes `Q`.
-  set Q := (AddEquiv.torsionByCongr W.pointCoeffEquiv (ℓ ^ k)).symm P
-  have hQ : W.pointCoeffEquiv Q = P := by simp [Q]
-  refine Subtype.ext ?_
-  rw [coe_smul_torsionCoeff, ← hQ, smul_pointCoeffEquiv]
-  congr 1
-  -- Restriction to `Kˢ` followed by the inclusion `ι` into `K^{alg}` is `ι` followed by `σ`.
-  set ι := (separableClosure K (AlgebraicClosure K)).val
-  have hcomm : ι.comp ((absoluteGaloisGroupRestrictEquiv K).toMonoidHom σ).toAlgHom =
-      σ.toAlgHom.comp ι :=
-    AlgHom.ext fun x ↦ coe_absoluteGaloisGroupRestrictEquiv_apply K σ x
-  refine Affine.Point.map_injective ι ?_
-  rw [Affine.Point.map_map, hcomm, ← Affine.Point.map_map]
-  -- The image of `Q` in `E(K^{alg})[ℓ ^ k]` is fixed by `σ`, which acts trivially on `T_ℓ E`.
+  rw [W.isUnramified_divisionField_iff_forall_mem_inertiaSubgroup (by simpa using pow_ne_zero k hℓ)]
   have hℓ' : (ℓ : AlgebraicClosure K) ≠ 0 := by
     simpa using (map_ne_zero (algebraMap K (AlgebraicClosure K))).2 hℓ
-  refine (W.tateModuleGaloisRepresentation_eq_one_iff hℓ').1 (h σ hσ) k _ ?_
-  rw [← map_nsmul, AddSubgroup.torsionBy.nsmul_iff.1 Q.2, map_zero]
+  exact fun σ hσ ↦ (W.tateModuleGaloisRepresentation_eq_one_iff hℓ').1 (h σ hσ) k
 
 end WeierstrassCurve

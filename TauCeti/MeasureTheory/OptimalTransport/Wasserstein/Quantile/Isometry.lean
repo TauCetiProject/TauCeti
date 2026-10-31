@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Rearrangement
 public import TauCeti.Topology.MetricSpace.CBBZero
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Pushforward

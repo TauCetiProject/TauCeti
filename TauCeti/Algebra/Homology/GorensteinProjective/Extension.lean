@@ -109,61 +109,25 @@ private structure HorseshoeStep
   right_g : middleIso.inv ≫ presentation.g ≫ targetIso.hom ≫ V.S.g ≫
       V.rightIso.hom = biprod.snd ≫ Q.toCycles n (n + 1)
 
-private theorem positiveHorseshoeStep_nonempty
-    {P Q : CochainComplex (ModuleCat.{v} A) ℤ} (hP : P.IsTotallyAcyclic)
-    (hQ : Q.IsTotallyAcyclic) {n : ℤ} (U : CycleExtension P Q n) :
+private theorem positiveHorseshoeStep_nonempty {P Q : CochainComplex (ModuleCat.{v} A) ℤ}
+    (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic) {n : ℤ} (U : CycleExtension P Q n) :
     ∃ V : CycleExtension P Q (n + 1), Nonempty (HorseshoeStep P Q n U V) := by
-  let iP := U.leftIso.hom ≫ P.iCycles n
-  let iQ := U.rightIso.hom ≫ Q.iCycles n
-  let pP := P.toCycles n (n + 1)
-  let pQ := Q.toCycles n (n + 1)
-  have hPi : iP ≫ pP = 0 := by
-    dsimp [iP, pP]
-    rw [Category.assoc, P.iCycles_toCycles, comp_zero]
-  have hQi : iQ ≫ pQ = 0 := by
-    dsimp [iQ, pQ]
-    rw [Category.assoc, Q.iCycles_toCycles, comp_zero]
-  let SP₀ := ShortComplex.mk (P.iCycles n) (P.toCycles n (n + 1))
-    (P.iCycles_toCycles n (n + 1))
-  let SP := ShortComplex.mk iP pP hPi
-  let SQ₀ := ShortComplex.mk (Q.iCycles n) (Q.toCycles n (n + 1))
-    (Q.iCycles_toCycles n (n + 1))
-  let SQ := ShortComplex.mk iQ pQ hQi
-  have hPS₀ : SP₀.ShortExact := by
-    simpa only [SP₀, ← HomologicalComplex.cyclesShortComplex_def] using
-      P.cyclesShortComplex_shortExact n (n + 1) (by simp) (hP.acyclic (n + 1))
-  have hQS₀ : SQ₀.ShortExact := by
-    simpa only [SQ₀, ← HomologicalComplex.cyclesShortComplex_def] using
-      Q.cyclesShortComplex_shortExact n (n + 1) (by simp) (hQ.acyclic (n + 1))
-  have hPS : (ShortComplex.mk iP pP hPi).ShortExact :=
-    ShortComplex.shortExact_of_iso (S₁ := SP₀) (S₂ := SP)
-      (ShortComplex.isoMk U.leftIso.symm (Iso.refl _) (Iso.refl _)
-        (by simp [SP₀, SP, iP]) (by simp [SP₀, SP, pP])) hPS₀
-  have hQS : (ShortComplex.mk iQ pQ hQi).ShortExact :=
-    ShortComplex.shortExact_of_iso (S₁ := SQ₀) (S₂ := SQ)
-      (ShortComplex.isoMk U.rightIso.symm (Iso.refl _) (Iso.refl _)
-        (by simp [SQ₀, SQ, iQ]) (by simp [SQ₀, SQ, pQ])) hQS₀
+  have hPS := P.cyclesShortComplex_shortExact_of_iso rfl (hP.acyclic (n + 1)) U.leftIso
+    (Iso.refl _)
+  have hQS := Q.cyclesShortComplex_shortExact_of_iso rfl (hQ.acyclic (n + 1)) U.rightIso
+    (Iso.refl _)
   have hright : IsGorensteinProjective A U.S.X₃ :=
-    (IsGorensteinProjective A).prop_of_iso U.rightIso.symm
-      (hQ.isGorensteinProjective_cycles n)
+    (IsGorensteinProjective A).prop_of_iso U.rightIso.symm (hQ.isGorensteinProjective_cycles n)
   have := hP.finite n
-  have := hQ.finite n
   have := hP.projective n
-  have := hQ.projective n
   obtain ⟨K, i, p, hip, a, b, hab, hT, hV, hleftf, hrightf, hleftg, hrightg⟩ :=
     hright.exists_copresentation_horseshoe U.shortExact hPS hQS
-  let V : CycleExtension P Q (n + 1) :=
-    ⟨ShortComplex.mk a b hab, hV, Iso.refl _, Iso.refl _⟩
-  refine ⟨V, ⟨⟨ShortComplex.mk i p hip, hT, Iso.refl _, Iso.refl _, Iso.refl _,
-    ?_, ?_, ?_, ?_⟩⟩⟩
-  · simpa only [Iso.refl_hom, Iso.refl_inv, Category.comp_id, Category.id_comp,
-      Category.assoc, iP] using hleftf
-  · simpa only [Iso.refl_hom, Iso.refl_inv, Category.comp_id, Category.id_comp,
-      Category.assoc, iQ] using hrightf
-  · simpa only [Iso.refl_hom, Iso.refl_inv, Category.comp_id, Category.id_comp,
-      Category.assoc, pP, V] using hleftg
-  · simpa only [Iso.refl_hom, Iso.refl_inv, Category.comp_id, Category.id_comp,
-      Category.assoc, pQ, V] using hrightg
+  refine ⟨⟨ShortComplex.mk a b hab, hV, Iso.refl _, Iso.refl _⟩,
+    ⟨⟨ShortComplex.mk i p hip, hT, Iso.refl _, Iso.refl _, Iso.refl _, ?_, ?_, ?_, ?_⟩⟩⟩
+  · simpa using hleftf
+  · simpa using hrightf
+  · simpa using hleftg
+  · simpa using hrightg
 
 private noncomputable def positiveNext
     {P Q : CochainComplex (ModuleCat.{v} A) ℤ} (hP : P.IsTotallyAcyclic)
@@ -178,58 +142,26 @@ private noncomputable def positiveStep
   Classical.choice (Classical.choose_spec (positiveHorseshoeStep_nonempty hP hQ U))
 
 omit [Small.{v} A] in
-private theorem negativeHorseshoeStep_nonempty
-    {P Q : CochainComplex (ModuleCat.{v} A) ℤ} (hP : P.IsTotallyAcyclic)
-    (hQ : Q.IsTotallyAcyclic) {n : ℤ} (V : CycleExtension P Q (n + 1)) :
+private theorem negativeHorseshoeStep_nonempty {P Q : CochainComplex (ModuleCat.{v} A) ℤ}
+    (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic) {n : ℤ} (V : CycleExtension P Q (n + 1)) :
     ∃ U : CycleExtension P Q n, Nonempty (HorseshoeStep P Q n U V) := by
-  let pP := P.toCycles n (n + 1) ≫ V.leftIso.inv
-  let pQ := Q.toCycles n (n + 1) ≫ V.rightIso.inv
-  have hPi : P.iCycles n ≫ pP = 0 := by
-    dsimp [pP]
-    rw [P.iCycles_toCycles_assoc, zero_comp]
-  have hQi : Q.iCycles n ≫ pQ = 0 := by
-    dsimp [pQ]
-    rw [Q.iCycles_toCycles_assoc, zero_comp]
-  let SP₀ := ShortComplex.mk (P.iCycles n) (P.toCycles n (n + 1))
-    (P.iCycles_toCycles n (n + 1))
-  let SP := ShortComplex.mk (P.iCycles n) pP hPi
-  let SQ₀ := ShortComplex.mk (Q.iCycles n) (Q.toCycles n (n + 1))
-    (Q.iCycles_toCycles n (n + 1))
-  let SQ := ShortComplex.mk (Q.iCycles n) pQ hQi
-  have hPS₀ : SP₀.ShortExact := by
-    simpa only [SP₀, ← HomologicalComplex.cyclesShortComplex_def] using
-      P.cyclesShortComplex_shortExact n (n + 1) (by simp) (hP.acyclic (n + 1))
-  have hQS₀ : SQ₀.ShortExact := by
-    simpa only [SQ₀, ← HomologicalComplex.cyclesShortComplex_def] using
-      Q.cyclesShortComplex_shortExact n (n + 1) (by simp) (hQ.acyclic (n + 1))
-  have hPS : (ShortComplex.mk (P.iCycles n) pP hPi).ShortExact :=
-    ShortComplex.shortExact_of_iso (S₁ := SP₀) (S₂ := SP)
-      (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) V.leftIso.symm
-        (by simp [SP₀, SP]) (by simp [SP₀, SP, pP])) hPS₀
-  have hQS : (ShortComplex.mk (Q.iCycles n) pQ hQi).ShortExact :=
-    ShortComplex.shortExact_of_iso (S₁ := SQ₀) (S₂ := SQ)
-      (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) V.rightIso.symm
-        (by simp [SQ₀, SQ]) (by simp [SQ₀, SQ, pQ])) hQS₀
-  have hconf := (ExactStructure.abelian_conflation V.S).mpr V.shortExact
+  have hPS := P.cyclesShortComplex_shortExact_of_iso rfl (hP.acyclic (n + 1)) (Iso.refl _)
+    V.leftIso.symm
+  have hQS := Q.cyclesShortComplex_shortExact_of_iso rfl (hQ.acyclic (n + 1)) (Iso.refl _)
+    V.rightIso.symm
   obtain ⟨K, i, p, hip, a, b, hab, hT, hU, hleftg, hrightg, hleftf, hrightf⟩ :=
     (ExactStructure.abelian (ModuleCat.{v} A)).exists_conflation_biprod_of_conflation_of_projective
-      hconf ((ExactStructure.abelian_conflation _).mpr hPS)
+      ((ExactStructure.abelian_conflation V.S).mpr V.shortExact)
+      ((ExactStructure.abelian_conflation _).mpr hPS)
       ((ExactStructure.abelian_conflation _).mpr hQS)
       ((ExactStructure.abelian_isProjective_iff _).mpr (hQ.projective n))
-  let U : CycleExtension P Q n :=
-    ⟨ShortComplex.mk a b hab, (ExactStructure.abelian_conflation _).mp hU,
-      Iso.refl _, Iso.refl _⟩
-  refine ⟨U, ⟨⟨ShortComplex.mk i p hip, (ExactStructure.abelian_conflation _).mp hT,
-    Iso.refl _, Iso.refl _, Iso.refl _, ?_, ?_, ?_, ?_⟩⟩⟩
-  · simpa only [Iso.refl_hom, Iso.refl_inv, Category.comp_id, Category.id_comp,
-      Category.assoc, U] using hleftf
-  · simpa only [Iso.refl_hom, Iso.refl_inv, Category.comp_id, Category.id_comp,
-      Category.assoc, U] using hrightf
-  · simpa only [Iso.refl_hom, Iso.refl_inv, Category.comp_id, Category.id_comp,
-      Category.assoc, pP] using hleftg
-  · simp only [Iso.refl_hom, Iso.refl_inv, Category.id_comp]
-    rw [← Category.assoc, hrightg]
-    simp [pQ]
+  rw [ExactStructure.abelian_conflation] at hT hU
+  refine ⟨⟨ShortComplex.mk a b hab, hU, Iso.refl _, Iso.refl _⟩,
+    ⟨⟨ShortComplex.mk i p hip, hT, Iso.refl _, Iso.refl _, Iso.refl _, ?_, ?_, ?_, ?_⟩⟩⟩
+  · simpa using hleftf
+  · simpa using hrightf
+  · simpa using hleftg
+  · simpa using hrightg =≫ V.rightIso.hom
 
 private noncomputable def negativePrevious
     {P Q : CochainComplex (ModuleCat.{v} A) ℤ} (hP : P.IsTotallyAcyclic)
@@ -379,141 +311,99 @@ private theorem completeHorseshoeComplex_d
         (completeHorseshoe hP hQ U (n + 1)).f :=
   CochainComplex.splice_d _ _ n
 
-private theorem completeHorseshoe_left_comm
-    {P Q : CochainComplex (ModuleCat.{v} A) ℤ} (hP : P.IsTotallyAcyclic)
-    (hQ : Q.IsTotallyAcyclic) (U : CycleExtension P Q 0) (n : ℤ) :
+private theorem completeMiddleIso_inv_d_hom_natCast {P Q : CochainComplex (ModuleCat.{v} A) ℤ}
+    (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic) (U : CycleExtension P Q 0) (n : ℕ) :
+    (completeMiddleIso hP hQ U n).inv ≫ (completeHorseshoe hP hQ U n).g ≫
+        (completeHorseshoeIso hP hQ U n).hom ≫ (completeHorseshoe hP hQ U (n + 1)).f ≫
+        (completeMiddleIso hP hQ U (n + 1)).hom =
+      (positiveStepAt hP hQ U n).middleIso.inv ≫ (positiveStepAt hP hQ U n).presentation.g ≫
+        (positiveStepAt hP hQ U n).targetIso.hom ≫ (positiveNextMiddleIso hP hQ U n).inv ≫
+        (positiveStepAt hP hQ U (n + 1)).sourceIso.inv ≫
+        (positiveStepAt hP hQ U (n + 1)).presentation.f ≫
+        (positiveStepAt hP hQ U (n + 1)).middleIso.hom :=
+  rfl
+
+private theorem completeMiddleIso_inv_d_hom_neg_one {P Q : CochainComplex (ModuleCat.{v} A) ℤ}
+    (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic) (U : CycleExtension P Q 0) :
+    (completeMiddleIso hP hQ U (-↑(0 + 1 : ℕ))).inv ≫
+        (completeHorseshoe hP hQ U (-↑(0 + 1 : ℕ))).g ≫
+        (completeHorseshoeIso hP hQ U (-↑(0 + 1 : ℕ))).hom ≫
+        (completeHorseshoe hP hQ U (-↑(0 + 1 : ℕ) + 1)).f ≫
+        (completeMiddleIso hP hQ U (-↑(0 + 1 : ℕ) + 1)).hom =
+      (negativeStepAt hP hQ U 0).middleIso.inv ≫ (negativeStepAt hP hQ U 0).presentation.g ≫
+        (negativeStepAt hP hQ U 0).targetIso.hom ≫ (negativeCurrentMiddleIso hP hQ U 0).hom ≫
+        (positiveStepAt hP hQ U 0).sourceIso.inv ≫ (positiveStepAt hP hQ U 0).presentation.f ≫
+        (positiveStepAt hP hQ U 0).middleIso.hom :=
+  rfl
+
+private theorem completeMiddleIso_inv_d_hom_negSucc_succ {P Q : CochainComplex (ModuleCat.{v} A) ℤ}
+    (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic) (U : CycleExtension P Q 0) (n : ℕ) :
+    (completeMiddleIso hP hQ U (-↑(n + 1 + 1))).inv ≫
+        (completeHorseshoe hP hQ U (-↑(n + 1 + 1))).g ≫
+        (completeHorseshoeIso hP hQ U (-↑(n + 1 + 1))).hom ≫
+        (completeHorseshoe hP hQ U (-↑(n + 1 + 1) + 1)).f ≫
+        (completeMiddleIso hP hQ U (-↑(n + 1 + 1) + 1)).hom =
+      (negativeStepAt hP hQ U (n + 1)).middleIso.inv ≫
+        (negativeStepAt hP hQ U (n + 1)).presentation.g ≫
+        (negativeStepAt hP hQ U (n + 1)).targetIso.hom ≫
+        (negativeCurrentMiddleIso hP hQ U (n + 1)).hom ≫ (negativeStepAt hP hQ U n).sourceIso.inv ≫
+        (negativeStepAt hP hQ U n).presentation.f ≫ (negativeStepAt hP hQ U n).middleIso.hom :=
+  rfl
+
+private theorem completeHorseshoe_left_comm {P Q : CochainComplex (ModuleCat.{v} A) ℤ}
+    (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic) (U : CycleExtension P Q 0) (n : ℤ) :
     (biprod.inl ≫ (completeMiddleIso hP hQ U n).inv) ≫
         (completeHorseshoeComplex hP hQ U).d n (n + 1) =
       P.d n (n + 1) ≫ biprod.inl ≫ (completeMiddleIso hP hQ U (n + 1)).inv := by
-  rw [completeHorseshoeComplex_d]
-  rw [← cancel_mono (completeMiddleIso hP hQ U (n + 1)).hom]
+  rw [completeHorseshoeComplex_d, ← cancel_mono (completeMiddleIso hP hQ U (n + 1)).hom]
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-  -- Expose the three integer-constructor cases so adjacent recursive states have matching indices.
-  -- In each case, `change` only unfolds the constructor clauses of `completeHorseshoe`,
-  -- `completeHorseshoeIso` and `completeMiddleIso`, writing the goal as a composite of the
-  -- horseshoe-step fields whose compatibility equations are then rewritten.
-  cases n with
-  | ofNat n =>
-      change biprod.inl ≫ (positiveStepAt hP hQ U n).middleIso.inv ≫
-          (positiveStepAt hP hQ U n).presentation.g ≫
-          (positiveStepAt hP hQ U n).targetIso.hom ≫
-          (positiveNextMiddleIso hP hQ U n).inv ≫
-          (positiveStepAt hP hQ U (n + 1)).sourceIso.inv ≫
-          (positiveStepAt hP hQ U (n + 1)).presentation.f ≫
-          (positiveStepAt hP hQ U (n + 1)).middleIso.hom =
-        P.d (n : ℤ) ((n + 1 : ℕ) : ℤ) ≫ biprod.inl
-      rw [reassoc_of% (positiveStepAt hP hQ U n).left_g,
-        reassoc_of% positive_f_connect hP hQ U n,
-        (positiveStepAt hP hQ U (n + 1)).left_f]
-      simp
-  | negSucc n =>
-      cases n with
-      | zero =>
-          change biprod.inl ≫ (negativeStepAt hP hQ U 0).middleIso.inv ≫
-              (negativeStepAt hP hQ U 0).presentation.g ≫
-              (negativeStepAt hP hQ U 0).targetIso.hom ≫
-              (negativeCurrentMiddleIso hP hQ U 0).hom ≫
-              (positiveStepAt hP hQ U 0).sourceIso.inv ≫
-              (positiveStepAt hP hQ U 0).presentation.f ≫
-              (positiveStepAt hP hQ U 0).middleIso.hom =
-            P.d (-1) 0 ≫ biprod.inl
-          rw [reassoc_of% (negativeStepAt hP hQ U 0).left_g,
-            reassoc_of% negative_f_connect hP hQ U 0,
-            (positiveStepAt hP hQ U 0).left_f]
-          simp
-      | succ n =>
-          change biprod.inl ≫ (negativeStepAt hP hQ U (n + 1)).middleIso.inv ≫
-              (negativeStepAt hP hQ U (n + 1)).presentation.g ≫
-              (negativeStepAt hP hQ U (n + 1)).targetIso.hom ≫
-              (negativeCurrentMiddleIso hP hQ U (n + 1)).hom ≫
-              (negativeStepAt hP hQ U n).sourceIso.inv ≫
-              (negativeStepAt hP hQ U n).presentation.f ≫
-              (negativeStepAt hP hQ U n).middleIso.hom =
-            P.d (Int.negSucc (n + 1)) (Int.negSucc n) ≫ biprod.inl
-          rw [reassoc_of% (negativeStepAt hP hQ U (n + 1)).left_g,
-            reassoc_of% negative_f_connect hP hQ U (n + 1),
-            (negativeStepAt hP hQ U n).left_f]
-          simp only [Int.natCast_add, Int.cast_ofNat_Int, eqToIso_refl, Iso.trans_refl,
-            Iso.inv_hom_id_assoc]
-          -- The cycle indices `-(n + 1 + 1) + 1` and `-(n + 1)` left by the recursive states are
-          -- the integer `Int.negSucc n` by evaluation; restate them as such to match `P.d`.
-          change P.toCycles (Int.negSucc (n + 1)) (Int.negSucc n) ≫
-              P.iCycles (Int.negSucc n) ≫ biprod.inl =
-            P.d (Int.negSucc (n + 1)) (Int.negSucc n) ≫ biprod.inl
-          rw [reassoc_of% P.toCycles_i]
+  -- Split `n` into the indices `m`, `-1` and `-(m + 2)`, each written as the horseshoe steps
+  -- write it; the matching evaluation lemma exposes the step fields, whose compatibilities are
+  -- then rewritten.
+  rcases n with m | m
+  · rw [Int.ofNat_eq_natCast, completeMiddleIso_inv_d_hom_natCast,
+      reassoc_of% (positiveStepAt hP hQ U m).left_g, reassoc_of% positive_f_connect,
+      (positiveStepAt hP hQ U (m + 1)).left_f]
+    simp
+  rw [Int.negSucc_eq, ← Int.natCast_add_one]
+  rcases m with _ | m
+  · rw [completeMiddleIso_inv_d_hom_neg_one, reassoc_of% (negativeStepAt hP hQ U 0).left_g,
+      reassoc_of% negative_f_connect, (positiveStepAt hP hQ U 0).left_f]
+    simp
+  · rw [completeMiddleIso_inv_d_hom_negSucc_succ,
+      reassoc_of% (negativeStepAt hP hQ U (m + 1)).left_g, reassoc_of% negative_f_connect,
+      (negativeStepAt hP hQ U m).left_f, eqToIso_refl, Iso.trans_refl, Iso.inv_hom_id_assoc]
+    -- `P.toCycles_i` applies once the index `-(m + 2) + 1` is evaluated to `-(m + 1)`.
+    exact P.toCycles_i_assoc _ _ _
 
-private theorem completeHorseshoe_right_comm
-    {P Q : CochainComplex (ModuleCat.{v} A) ℤ} (hP : P.IsTotallyAcyclic)
-    (hQ : Q.IsTotallyAcyclic) (U : CycleExtension P Q 0) (n : ℤ) :
+private theorem completeHorseshoe_right_comm {P Q : CochainComplex (ModuleCat.{v} A) ℤ}
+    (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic) (U : CycleExtension P Q 0) (n : ℤ) :
     (completeMiddleIso hP hQ U n).hom ≫ biprod.snd ≫ Q.d n (n + 1) =
-      (completeHorseshoeComplex hP hQ U).d n (n + 1) ≫
-        (completeMiddleIso hP hQ U (n + 1)).hom ≫ biprod.snd := by
-  rw [completeHorseshoeComplex_d]
-  rw [← cancel_epi (completeMiddleIso hP hQ U n).inv]
-  simp only [Category.assoc, Iso.inv_hom_id_assoc]
-  -- Expose the three integer-constructor cases so adjacent recursive states have matching indices.
-  -- In each case, `change` only unfolds the constructor clauses of `completeHorseshoe`,
-  -- `completeHorseshoeIso` and `completeMiddleIso`, writing the goal as a composite of the
-  -- horseshoe-step fields whose compatibility equations are then rewritten.
-  cases n with
-  | ofNat n =>
-      change biprod.snd ≫ Q.d (n : ℤ) ((n + 1 : ℕ) : ℤ) =
-        (positiveStepAt hP hQ U n).middleIso.inv ≫
-          (positiveStepAt hP hQ U n).presentation.g ≫
-          (positiveStepAt hP hQ U n).targetIso.hom ≫
-          (positiveNextMiddleIso hP hQ U n).inv ≫
-          (positiveStepAt hP hQ U (n + 1)).sourceIso.inv ≫
-          (positiveStepAt hP hQ U (n + 1)).presentation.f ≫
-          (positiveStepAt hP hQ U (n + 1)).middleIso.hom ≫ biprod.snd
-      rw [(positiveStepAt hP hQ U (n + 1)).right_f,
-        positive_g_iCycles_connect hP hQ U n,
-        reassoc_of% (positiveStepAt hP hQ U n).right_g]
-      rw [Q.toCycles_i]
-      simp
-  | negSucc n =>
-      cases n with
-      | zero =>
-          change biprod.snd ≫ Q.d (-1) 0 =
-            (negativeStepAt hP hQ U 0).middleIso.inv ≫
-              (negativeStepAt hP hQ U 0).presentation.g ≫
-              (negativeStepAt hP hQ U 0).targetIso.hom ≫
-              (negativeCurrentMiddleIso hP hQ U 0).hom ≫
-              (positiveStepAt hP hQ U 0).sourceIso.inv ≫
-              (positiveStepAt hP hQ U 0).presentation.f ≫
-              (positiveStepAt hP hQ U 0).middleIso.hom ≫ biprod.snd
-          -- Zero-index identification: `positiveState 0` and `negativeState 0` are both the
-          -- initial extension `U`, and `((0 : ℕ) : ℤ)` and `-((0 : ℕ) : ℤ)` both evaluate to `0`,
-          -- so the two composites below agree by `rfl`; this links the positive and negative
-          -- halves of the horseshoe.
-          rw [(positiveStepAt hP hQ U 0).right_f,
-            show (positiveState hP hQ U 0).S.g ≫
-                (positiveState hP hQ U 0).rightIso.hom ≫ Q.iCycles ((0 : ℕ) : ℤ) =
-              (negativeState hP hQ U 0).S.g ≫
-                (negativeState hP hQ U 0).rightIso.hom ≫ Q.iCycles (-((0 : ℕ) : ℤ)) by rfl,
-            negative_g_iCycles_connect hP hQ U 0,
-            reassoc_of% (negativeStepAt hP hQ U 0).right_g]
-          rw [reassoc_of% Q.toCycles_i]
-          simp only [Nat.reduceAdd, Int.cast_ofNat_Int, Int.reduceNeg, Int.reduceAdd,
-            eqToHom_refl, Category.comp_id]
-      | succ n =>
-          change biprod.snd ≫ Q.d (Int.negSucc (n + 1)) (Int.negSucc n) =
-            (negativeStepAt hP hQ U (n + 1)).middleIso.inv ≫
-              (negativeStepAt hP hQ U (n + 1)).presentation.g ≫
-              (negativeStepAt hP hQ U (n + 1)).targetIso.hom ≫
-              (negativeCurrentMiddleIso hP hQ U (n + 1)).hom ≫
-              (negativeStepAt hP hQ U n).sourceIso.inv ≫
-              (negativeStepAt hP hQ U n).presentation.f ≫
-              (negativeStepAt hP hQ U n).middleIso.hom ≫ biprod.snd
-          rw [(negativeStepAt hP hQ U n).right_f,
-            negative_g_iCycles_connect hP hQ U (n + 1),
-            reassoc_of% (negativeStepAt hP hQ U (n + 1)).right_g]
-          rw [reassoc_of% Q.toCycles_i]
-          have hd := Q.d_comp_XIsoOfEq_hom
-            (by omega : (-((n + 1 + 1 : ℕ) : ℤ) + 1) = -((n + 1 : ℕ) : ℤ))
-            (-((n + 1 + 1 : ℕ) : ℤ))
-          simp only [HomologicalComplex.XIsoOfEq, eqToIso.hom] at hd
-          rw [hd]
-          simp [Int.negSucc_eq]
+      (completeHorseshoeComplex hP hQ U).d n (n + 1) ≫ (completeMiddleIso hP hQ U (n + 1)).hom ≫
+        biprod.snd := by
+  rw [reassoc_of% completeHorseshoeComplex_d, ← Iso.eq_inv_comp]
+  -- Split `n` as in `completeHorseshoe_left_comm`; in each case `biprod.snd` is restated at the
+  -- index of the next horseshoe step, so that its `right_f` applies.
+  rcases n with m | _ | m
+  · rw [Int.ofNat_eq_natCast, reassoc_of% completeMiddleIso_inv_d_hom_natCast,
+      show biprod.snd (X := P.X (m + 1 : ℤ)) (Y := Q.X (m + 1 : ℤ)) =
+        biprod.snd (X := P.X ↑(m + 1)) (Y := Q.X ↑(m + 1)) from rfl,
+      (positiveStepAt hP hQ U (m + 1)).right_f, positive_g_iCycles_connect,
+      reassoc_of% (positiveStepAt hP hQ U m).right_g, Q.toCycles_i]
+  · -- Zero-boundary identification: `positiveState 0` and `negativeState 0` are both `U`, and
+    -- the index `((0 : ℕ) : ℤ)` is `-((0 : ℕ) : ℤ)`; this links the two halves of the horseshoe.
+    rw [Int.negSucc_eq, ← Int.natCast_add_one, reassoc_of% completeMiddleIso_inv_d_hom_neg_one,
+      show biprod.snd (X := P.X (-↑(0 + 1 : ℕ) + 1)) (Y := Q.X (-↑(0 + 1 : ℕ) + 1)) =
+        biprod.snd (X := P.X ↑(0 : ℕ)) (Y := Q.X ↑(0 : ℕ)) from rfl,
+      (positiveStepAt hP hQ U 0).right_f, show Q.iCycles ↑(0 : ℕ) = Q.iCycles (-↑(0 : ℕ)) from rfl,
+      negative_g_iCycles_connect, reassoc_of% (negativeStepAt hP hQ U 0).right_g]
+    simp
+  · rw [Int.negSucc_eq, ← Int.natCast_add_one, reassoc_of% completeMiddleIso_inv_d_hom_negSucc_succ,
+      show biprod.snd (X := P.X (-↑(m + 1 + 1) + 1)) (Y := Q.X (-↑(m + 1 + 1) + 1)) =
+        biprod.snd (X := P.X (-↑(m + 1))) (Y := Q.X (-↑(m + 1))) from rfl,
+      (negativeStepAt hP hQ U m).right_f, negative_g_iCycles_connect,
+      reassoc_of% (negativeStepAt hP hQ U (m + 1)).right_g]
+    simp
 
 private noncomputable def completeHorseshoeInclusion
     {P Q : CochainComplex (ModuleCat.{v} A) ℤ} (hP : P.IsTotallyAcyclic)

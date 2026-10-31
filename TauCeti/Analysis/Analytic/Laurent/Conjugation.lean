@@ -12,10 +12,10 @@ public import Mathlib.Analysis.Complex.Basic
 /-!
 # Conjugation of Laurent unit germs
 
-If two Laurent forms are interchanged by conjugation near a fixed parameter,
+If two Laurent forms are interchanged by conjugation near two corresponding parameters,
 their integer exponents agree and their unit germs are interchanged as well.
 The exponents may be negative. Real analyticity of the units suffices; the
-parameter map need only be continuous at and fix the central parameter.
+parameter map need only be continuous at the central parameter.
 
 This comparison makes the Laurent forms of nonmonic polynomial roots compatible
 with the conjugation action on root labels. It uses Mathlib's uniqueness theorem
@@ -36,14 +36,14 @@ namespace AnalyticAt
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- Conjugate Laurent forms at a fixed parameter have the same integer exponent
+/-- Conjugate Laurent forms at corresponding parameters have the same integer exponent
 and conjugate unit germs, including on the exceptional hyperplane. No
 involutivity assumption on the parameter map is needed; continuity at the
 central parameter suffices. -/
 theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ : E → E}
     (hu : AnalyticAt ℝ u (x₀, 0)) (hu0 : u (x₀, 0) ≠ 0)
-    (hv : AnalyticAt ℝ v (x₀, 0)) (hv0 : v (x₀, 0) ≠ 0)
-    (hτ : ContinuousAt τ x₀) (hτ0 : τ x₀ = x₀)
+    (hv : AnalyticAt ℝ v (τ x₀, 0)) (hv0 : v (τ x₀, 0) ≠ 0)
+    (hτ : ContinuousAt τ x₀)
     (heq : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 →
       p.2 ^ m * u p = conj ((conj p.2) ^ n * v (τ p.1, conj p.2))) :
     m = n ∧ ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), u p = conj (v (τ p.1, conj p.2)) := by
@@ -56,17 +56,17 @@ theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ :
     analyticAt_const.prod hreal
   have huR : AnalyticAt ℝ (fun t : ℝ ↦ u (x₀, (t : ℂ))) 0 :=
     hu.comp_of_eq hline (by simp)
-  have hvR' : AnalyticAt ℝ (fun t : ℝ ↦ v (x₀, (t : ℂ))) 0 :=
-    hv.comp_of_eq hline (by simp)
-  have hvR : AnalyticAt ℝ (fun t : ℝ ↦ conj (v (x₀, (t : ℂ)))) 0 := by
-    convert (Complex.conjCLE.analyticAt (v (x₀, 0))).comp_of_eq hvR' (by simp) using 1
+  have hvR' : AnalyticAt ℝ (fun t : ℝ ↦ v (τ x₀, (t : ℂ))) 0 :=
+    hv.comp_of_eq (analyticAt_const.prod hreal) (by simp)
+  have hvR : AnalyticAt ℝ (fun t : ℝ ↦ conj (v (τ x₀, (t : ℂ)))) 0 := by
+    convert (Complex.conjCLE.analyticAt (v (τ x₀, 0))).comp_of_eq hvR' (by simp) using 1
     exact funext fun t ↦ (Complex.conjCLE_apply _).symm
   have hslice : ∀ᶠ t in 𝓝 (0 : ℝ), t ≠ 0 →
-      f t = (t - 0) ^ n • conj (v (x₀, (t : ℂ))) := by
+      f t = (t - 0) ^ n • conj (v (τ x₀, (t : ℂ))) := by
     have ht : Tendsto (fun t : ℝ ↦ (x₀, (t : ℂ))) (𝓝 0) (𝓝 (x₀, (0 : ℂ))) := by
       simpa using (continuous_const.prodMk Complex.continuous_ofReal).tendsto (0 : ℝ)
     filter_upwards [ht.eventually heq] with t h tne
-    simpa [f, hτ0, map_mul, map_zpow₀, Complex.real_smul] using h (by exact_mod_cast tne)
+    simpa [f, map_mul, map_zpow₀, Complex.real_smul] using h (by exact_mod_cast tne)
   have hmn : m = n := unique_eventuallyEq_zpow_smul_nonzero
     (f := f) (z₀ := (0 : ℝ))
     ⟨_, huR, by simpa using hu0, by
@@ -75,8 +75,8 @@ theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ :
     ⟨_, hvR, by simpa using hv0, eventually_nhdsWithin_iff.mpr hslice⟩
   refine ⟨hmn, ?_⟩
   let T : E × ℂ → E × ℂ := fun p ↦ (τ p.1, conj p.2)
-  have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (x₀, (0 : ℂ))) := by
-    simpa only [T, Prod.map_def, hτ0, map_zero] using hτ.tendsto.prodMap_nhds
+  have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (τ x₀, (0 : ℂ))) := by
+    simpa only [T, Prod.map_def, map_zero] using hτ.tendsto.prodMap_nhds
       (Complex.continuous_conj.tendsto (0 : ℂ))
   have hunit : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 → u p = conj (v (T p)) := by
     filter_upwards [heq] with p hp hp0

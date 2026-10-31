@@ -40,6 +40,8 @@ it, and two such cocycles have the same class exactly when they differ by a homo
   the differential on a successor level of the resolution, at a point.
 * `TopRep.d_sum_apply_add_sum_d_apply`: evaluation at finitely many points, summed, contracts the
   coinduced resolution up to the number of points.
+* `TopRep.resolutionX_add_self_eq_zero`: the resolution of coefficients that are their own
+  additive inverses has the same property.
 * `TopRep.homogeneousCochains.eq_d_zero_apply_of_d_eq_zero`: a homogeneous zero-cocycle is
   constant.
 * `TopRep.homogeneousCochains.d_one_apply`: the differential of a homogeneous one-cochain,
@@ -90,6 +92,14 @@ theorem d_sum_apply_add_sum_d_apply {ι : Type*} [Fintype ι] (σ : ι → G) (m
         Fintype.card ι • F := by
   rw [map_sum, ← Finset.sum_add_distrib]
   simp [hom_d_succ, ContIntertwiningMap.sub_apply]
+
+/-- If every coefficient is its own additive inverse, then so is every element of every term of
+the coinduced resolution, the terms being iterated spaces of continuous functions into the
+coefficients. -/
+theorem resolutionX_add_self_eq_zero (hX : ∀ x : X.V, x + x = 0) :
+    ∀ (n : ℕ) (F : (resolutionX X n).V), F + F = 0
+  | 0, F => hX F
+  | n + 1, F => ContinuousMap.ext fun g ↦ resolutionX_add_self_eq_zero hX n (F g)
 
 variable {X}
 

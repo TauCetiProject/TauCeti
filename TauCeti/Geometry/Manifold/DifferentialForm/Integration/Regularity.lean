@@ -16,6 +16,10 @@ A finite open chart cover with compact coordinate bounds controls each local coe
 Unsigned Jacobian transport then gives integrability on every preferred chart, using only
 the model's Borel measurable structure. No Hausdorff or orientation assumption on the
 manifold is needed; a model basis records the actual top degree.
+
+The resulting chart formula characterizes the oriented integral of such forms; on a
+finite-dimensional normed space with a constant orientation it is the Haar integral of the
+coefficient in a positively oriented basis.
 -/
 
 public section
@@ -73,6 +77,26 @@ theorem integralTopForm_of_tsupport_subset_chart
     (by simpa only [extChartAt_source] using hs),
     l.chartIntegral_eq_integral_mpullback φ b α, ← hb,
     _root_.Orientation.signBasis_orientation]
+  simp
+
+/-- On a finite-dimensional normed space with a constant orientation, the oriented integral of
+a compactly supported C0 top form is the integral of its coefficient in any positively oriented
+basis against that basis's Haar measure. -/
+theorem integralTopForm_model_eq_integral (o : _root_.Orientation ℝ E (Fin k))
+    (hk : Fintype.card (Fin k) = Module.finrank ℝ E) {φ : RoughForm 𝓘(ℝ, E) E ℝ k}
+    (hφ : IsSmoothForm 𝓘(ℝ, E) 0 φ)
+    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ))
+    (b : Module.Basis (Fin k) ℝ E) (hb : b.orientation = o) :
+    integralTopForm (Manifold.Orientation.model (I := 𝓘(ℝ, E)) o hk) φ =
+      ∫ x, φ x b ∂b.addHaar := by
+  rw [Manifold.Orientation.model_eq_mk,
+    integralTopForm_of_tsupport_subset_chart _ hφ hc 0 (by simp) b
+      (hb.trans (Manifold.OrientationLift.model_modelOrientation o hk).symm)]
+  simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_target, PartialEquiv.refl_symm,
+    PartialEquiv.refl_coe, Measure.restrict_univ]
+  refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
+  simp only [id_eq, mpullback_id]
+  rw [Manifold.OrientationLift.signAt_of_mem _ (by simp), Manifold.OrientationLift.model_sign]
   simp
 
 omit [MeasurableSpace E] [BorelSpace E] in

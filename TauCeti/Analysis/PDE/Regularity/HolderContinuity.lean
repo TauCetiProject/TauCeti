@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 # Hölder continuity of weak solutions (De Giorgi)
 
 Let `a` be measurable and uniformly elliptic on an open set `Ω ⊆ ℝⁿ`, `n ≥ 1`, with constants
-`0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. This file proves
+`0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`. This file proves
 De Giorgi's theorem: `u` has a representative which is locally Hölder continuous in `Ω`, with an
 exponent `α ∈ (0, 1]` depending only on `λ`, `Λ`, the dimension and the normalization of the
 Haar measure. No regularity of the coefficients beyond measurability is assumed.
@@ -28,11 +28,11 @@ by the `L²` norm of `u` on `Ω`, and `TauCeti.MeasureTheory.holderOnWith_precis
 turns them into a Hölder bound for the precise representative, with constant
 `C R^(-α - n/2) ‖u‖_{L²(Ω)}`.
 
-The same holds for weak solutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu = 0` with a measurable drift
+The same holds for weak solutions of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu = 0` with a measurable drift
 `‖b‖ ≤ β`, from the oscillation estimate with a drift and local boundedness with lower-order
 terms. Their constants depend on a bound `σ` for `βR/λ`. On a compact subset of `Ω` the radius can
 be taken with `βR ≤ λ`, so there the Hölder exponent depends only on `λ`, `Λ`, the dimension and
-the Haar normalization, as for `b = 0`. The theorems for `-∂ⱼ(aⁱʲ ∂ᵢu) = 0` are the case `b = 0`.
+the Haar normalization, as for `b = 0`. The theorems for `-∂ᵢ(aⁱʲ ∂ⱼu) = 0` are the case `b = 0`.
 
 ## Main declarations
 
@@ -46,7 +46,7 @@ the Haar normalization, as for `b = 0`. The theorems for `-∂ⱼ(aⁱʲ ∂ᵢu
 * `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_drift`,
   `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_isCompact_drift`,
   `TauCeti.PDE.continuousOn_preciseRepresentative_drift`: the same three statements for weak
-  solutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu = 0`.
+  solutions of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu = 0`.
 
 ## References
 
@@ -76,7 +76,7 @@ the dimension, and fix a bound `σ` for `βR/λ`. There are `α ∈ (0, 1]` and 
 on `λ`, `Λ`, `σ`, the dimension and the normalization of the additive Haar measure `mu`, such that
 the following holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`,
 let `b` be measurable with `‖b‖ ≤ β` on `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu = 0`, that is `a(u, v) = 0` for every `v ∈ H¹₀(Ω)`, where `a(·, ·)` is the
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu = 0`, that is `a(u, v) = 0` for every `v ∈ H¹₀(Ω)`, where `a(·, ·)` is the
 energy form with drift `b` and no mass term. If the closed `R`-thickening of a set `K` lies in
 `Ω` and `βR ≤ σλ`, then the precise representative of `u` is Hölder continuous on `K` with
 exponent `α` and constant `C R^(-α - n/2) ‖u‖_{L²(Ω)}`.
@@ -173,7 +173,7 @@ theorem exists_holderOnWith_preciseRepresentative_drift [Nonempty ι] (σ : ℝ)
 dimension. There are `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, the dimension and the
 normalization of the additive Haar measure `mu`, such that the following holds. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak
-solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. If the closed `R`-thickening of a set `K` lies in `Ω`, then the
+solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`. If the closed `R`-thickening of a set `K` lies in `Ω`, then the
 precise representative of `u` is Hölder continuous on `K` with exponent `α` and constant
 `C R^(-α - n/2) ‖u‖_{L²(Ω)}`.
 
@@ -201,7 +201,7 @@ theorem exists_holderOnWith_preciseRepresentative [Nonempty ι] :
 `α ∈ (0, 1]`, depending only on `λ`, `Λ`, the dimension and the normalization of the additive
 Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `λ, Λ`, let `b` be measurable and bounded on `Ω`, and let `u ∈ H¹(Ω)` be a weak
-solution of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu = 0`. Then the precise representative of `u` is Hölder
+solution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu = 0`. Then the precise representative of `u` is Hölder
 continuous with exponent `α` on every compact `K ⊆ Ω`.
 
 The exponent does not depend on the bound `β` of the drift: the drift is comparable to the
@@ -238,7 +238,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_isCompact_drift [Nonempty �
 /-- **De Giorgi's theorem on compact sets.** Let `n ≥ 1` be the dimension. There is
 `α ∈ (0, 1]`, depending only on `λ`, `Λ`, the dimension and the normalization of the additive
 Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic on
-`Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. Then the
+`Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`. Then the
 precise representative of `u` is Hölder continuous with exponent `α` on every compact `K ⊆ Ω`.
 This is the case `b = 0` of
 `TauCeti.PDE.exists_holderOnWith_preciseRepresentative_of_isCompact_drift`. -/
@@ -259,7 +259,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_isCompact [Nonempty ι] :
 
 /-- **Continuity of weak solutions with a drift.** Let `n ≥ 1` be the dimension. Let `a` be
 measurable and uniformly elliptic on `Ω`, let `b` be measurable and bounded on `Ω`, and let
-`u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu = 0`. Then the precise representative of
+`u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu = 0`. Then the precise representative of
 `u`, which agrees with `u` almost everywhere on `Ω`, is continuous on `Ω`. -/
 theorem continuousOn_preciseRepresentative_drift [Nonempty ι]
     {Omega : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
@@ -279,7 +279,7 @@ theorem continuousOn_preciseRepresentative_drift [Nonempty ι]
   exact ((hC.continuousOn hα).continuousAt (closedBall_mem_nhds x hε)).continuousWithinAt
 
 /-- **Continuity of weak solutions.** Let `n ≥ 1` be the dimension. Let `a` be measurable and
-uniformly elliptic on `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. Then the
+uniformly elliptic on `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`. Then the
 precise representative of `u`, which agrees with `u` almost everywhere on `Ω`, is continuous on
 `Ω`. This is the case `b = 0` of `TauCeti.PDE.continuousOn_preciseRepresentative_drift`. -/
 theorem continuousOn_preciseRepresentative [Nonempty ι] {Omega : Opens (EuclideanSpace ℝ ι)}

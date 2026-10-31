@@ -51,6 +51,8 @@ any ordering of the circles or parenthesization of the tensor product, and it is
   carries two `X`s.
 * `TauCeti.Khovanov.isHomogeneous_fiberwiseMul`: the merge map along `f : σ → τ` has quantum
   degree `|τ| - |σ|`; in particular merging two circles into one has degree `-1`.
+* `TauCeti.Khovanov.isHomogeneous_reindex`: relabelling the circle factors preserves quantum
+  degree.
 
 ## References
 
@@ -138,6 +140,34 @@ factors along the labels. -/
 theorem circleBasis_repr_tprod [Fintype ι] (x : ι → R[ε]) (l : ι → Bool) :
     (circleBasis R ι).repr (tprod R x) l = ∏ i, (labelBasis R).repr (x i) (l i) :=
   Basis.piTensorProduct_repr_tprod_apply _ x l
+
+/-- The labelling with `1` on every circle is the unit of the circle tensor. It is a pre-simp
+lemma since `circleBasis_apply` would otherwise expand the basis vector first. -/
+@[simp↓]
+theorem circleBasis_const_false [Finite ι] : circleBasis R ι (fun _ ↦ false) = 1 := by
+  rw [circleBasis_apply, labelBasis_false, PiTensorProduct.one_def, Pi.one_def]
+
+/-- The labelling with `X` on the circle `i` and `1` elsewhere is `X` placed in the factor `i`.
+It is a pre-simp lemma since `circleBasis_apply` would otherwise expand the basis vector first. -/
+@[simp↓]
+theorem circleBasis_update_const_false [Finite ι] [DecidableEq ι] (i : ι) :
+    circleBasis R ι (Function.update (fun _ ↦ false) i true) =
+      singleAlgHom (A := fun _ ↦ R[ε]) i ε := by
+  rw [circleBasis_apply, singleAlgHom_apply]
+  congr 1
+  funext j
+  by_cases hj : j = i
+  · subst hj
+    simp
+  · simp [hj]
+
+/-- Reindexing circle factors transports their labellings along the inverse bijection. -/
+@[simp↓]
+theorem reindex_circleBasis {σ τ : Type*} [Finite σ] [Finite τ] (e : σ ≃ τ)
+    (l : σ → Bool) :
+    reindex R (fun _ ↦ R[ε]) e (circleBasis R σ l) =
+      circleBasis R τ (l ∘ e.symm) := by
+  simp only [circleBasis_apply, reindex_tprod, Function.comp_apply]
 
 section Merge
 
@@ -255,6 +285,15 @@ theorem isHomogeneous_fiberwiseMul (f : σ → τ) :
   · rw [← hx l hl, ← labelingQuantumDegree_merge h]
     exact circleBasis_mem_circleQuantumGrading_piece _
   · exact zero_mem _
+
+omit [DecidableEq τ] in
+/-- Reindexing the circle factors preserves their total quantum degree. -/
+theorem isHomogeneous_reindex (e : σ ≃ τ) :
+    TauCeti.LinearMap.IsHomogeneous (reindex R (fun _ ↦ R[ε]) e).toLinearMap
+      (circleQuantumGrading R σ).piece (circleQuantumGrading R τ).piece 0 := by
+  classical
+  simpa only [toLinearMap_fiberwiseMul_equiv, Fintype.card_congr e, sub_self] using
+    (isHomogeneous_fiberwiseMul (R := R) e)
 
 end Grading
 

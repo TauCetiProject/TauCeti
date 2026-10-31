@@ -22,6 +22,8 @@ times the identity; for a negative crossing it is `q ^ (-N)` times the identity.
 These are the local identities used to normalize a weighted braid trace under Markov
 stabilization. The partial traces are stated as matrix-coefficient sums in the canonical
 word basis, so they apply over any commutative ring and require no choice of basis.
+The weights themselves are defined in any monoid, their summation identities hold in any
+ring, and the diagonal enhancement and its inverse are defined over any commutative semiring.
 
 ## References
 
@@ -33,7 +35,7 @@ word basis, so they apply over any commutative ring and require no choice of bas
   and the Alexander polynomial of knots*, Comm. Algebra 33 (2005), 2375-2385,
   Definition 3.1 (the enhancement conditions).
 
-The R-matrix and its inverse are `jimboGenerator` and `jimboUnit` from the companion module.
+The R-matrix is `jimboGenerator`; `jimboUnit` bundles an adjacent crossing with its inverse.
 -/
 
 public section
@@ -43,10 +45,14 @@ open scoped BigOperators
 
 namespace TauCeti.KnotTheory
 
-variable {R : Type*} [CommRing R] {N n : ℕ}
+variable {R : Type*} {N n : ℕ}
+
+section Monoid
+
+variable [Monoid R]
 
 /-- The diagonal eigenvalue of Turaev's enhancement on the colour `a`. The exponent is
-an integer, and the parameter is a unit, so this is defined over any commutative ring. -/
+an integer, and the parameter is a unit, so this is defined in any monoid. -/
 def jimboWeight (q : Rˣ) (a : Fin N) : R :=
   ↑(q ^ ((N : ℤ) - 1 - 2 * (a : ℕ)))
 
@@ -63,8 +69,13 @@ theorem jimboWeight_one (a : Fin N) : jimboWeight (1 : Rˣ) a = 1 := by
 @[simp]
 theorem jimboWeight_mul_inv (q : Rˣ) (a : Fin N) :
     jimboWeight q a * jimboWeight q⁻¹ a = 1 := by
-  simp only [jimboWeight_def, ← Units.val_mul, ← mul_zpow, mul_inv_cancel, one_zpow,
-    Units.val_one]
+  simp only [jimboWeight_def, ← Units.val_mul, inv_zpow, mul_inv_cancel, Units.val_one]
+
+end Monoid
+
+section CommSemiring
+
+variable [CommSemiring R]
 
 /-- The tensor power of the diagonal enhancement: a basis word is multiplied by the
 product of the weights of its colours. -/
@@ -77,22 +88,34 @@ theorem jimboEnhancement_single_one (q : Rˣ) (w : Fin n → Fin N) :
     jimboEnhancement q (single w 1) = (∏ i, jimboWeight q (w i)) • single w 1 := by
   simp [jimboEnhancement]
 
+/-- The coefficient of a word after applying the tensor-power enhancement is its original
+coefficient multiplied by the product of the colour weights. -/
+@[simp]
+theorem jimboEnhancement_apply (q : Rˣ) (v : (Fin n → Fin N) →₀ R) (w : Fin n → Fin N) :
+    jimboEnhancement q v w = (∏ i, jimboWeight q (w i)) * v w := by
+  classical
+  induction v using Finsupp.induction_linear with
+  | zero => simp
+  | add v₁ v₂ h₁ h₂ => simp [h₁, h₂, mul_add]
+  | single u r =>
+    rw [← smul_single_one, map_smul, jimboEnhancement_single_one]
+    by_cases h : u = w
+    · subst w
+      simp [mul_comm]
+    · simp [h]
+
 /-- At `q = 1` the enhancement is the identity. -/
 @[simp]
 theorem jimboEnhancement_one : jimboEnhancement (N := N) (n := n) (1 : Rˣ) = 1 := by
-  ext w : 2
+  refine LinearMap.ext fun v ↦ Finsupp.ext fun w ↦ ?_
   simp
 
 /-- The tensor-power enhancement is inverted by replacing the parameter with its inverse. -/
 @[simp]
 theorem jimboEnhancement_mul_inv (q : Rˣ) :
     jimboEnhancement (N := N) (n := n) q * jimboEnhancement q⁻¹ = 1 := by
-  ext w : 2
-  simp only [LinearMap.coe_comp, Function.comp_apply, Finsupp.lsingle_apply,
-    Module.End.mul_apply, jimboEnhancement_single_one, map_smul, Module.End.one_apply,
-    smul_smul]
-  rw [mul_comm, ← Finset.prod_mul_distrib]
-  simp
+  refine LinearMap.ext fun v ↦ Finsupp.ext fun w ↦ ?_
+  simp [Module.End.mul_apply, ← mul_assoc, ← Finset.prod_mul_distrib]
 
 /-- The enhancement is an invertible operator. -/
 theorem isUnit_jimboEnhancement (q : Rˣ) :
@@ -100,6 +123,12 @@ theorem isUnit_jimboEnhancement (q : Rˣ) :
   refine ⟨⟨jimboEnhancement q, jimboEnhancement q⁻¹,
     jimboEnhancement_mul_inv q, ?_⟩, rfl⟩
   simpa only [inv_inv] using jimboEnhancement_mul_inv (N := N) (n := n) q⁻¹
+
+end CommSemiring
+
+section CommRing
+
+variable [CommRing R]
 
 /-- The tensor-power enhancement commutes with the Jimbo crossing on any pair of strands. -/
 theorem jimboEnhancement_commute_generator (q : Rˣ) (j k : Fin n) :
@@ -127,6 +156,12 @@ theorem jimboEnhancement_commute (q : Rˣ) (b : BraidGroup n) :
   | one => simp
   | mul b c hb hc => simpa only [map_mul, Units.val_mul] using hb.mul_right hc
   | inv b hb => simpa only [map_inv] using hb.units_inv_right
+
+end CommRing
+
+section Ring
+
+variable [Ring R]
 
 private theorem weight_step (q : Rˣ) (a : ℕ) :
     ((q : R) - ↑(q⁻¹)) * ↑(q ^ ((N : ℤ) - 1 - 2 * a)) =
@@ -176,6 +211,12 @@ theorem jimboWeight_sum (q : Rˣ) :
   congr 2
   have he : (N : ℤ) - 2 * N = -(N : ℤ) := by omega
   rw [he, zpow_neg, zpow_natCast, inv_pow]
+
+end Ring
+
+section CommRing
+
+variable [CommRing R]
 
 /-- The weighted partial trace of a positive Jimbo crossing over its second colour. -/
 theorem sum_jimboGenerator_coeff_mul_weight (q : Rˣ) (a b : Fin N) :
@@ -231,5 +272,7 @@ theorem sum_jimboUnit_inv_coeff_mul_weight (q : Rˣ) (a b : Fin N) :
     have hs := jimboWeight_sum (N := N) q
     linear_combination -hs
   · simp [h, Ne.symm h]
+
+end CommRing
 
 end TauCeti.KnotTheory

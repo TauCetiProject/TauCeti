@@ -69,7 +69,7 @@ theorem of_baseChange
     ((DiagonalizableGroup.baseChangeCoordinateRingIso L (AlgebraicClosure k) G).symm ≪≫
       (FiniteTypeCommHopfAlgCat.baseChangeFunctor
         (K := AlgebraicClosure k)).mapIso i) ≪≫
-      ObjectProperty.isoMk _ (CommHopfAlgCat.baseChangeTowerIso k (AlgebraicClosure k) H.obj)
+      FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := L) k (AlgebraicClosure k) H
   let j' := (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
     (CommHopfAlgCat.{u} (AlgebraicClosure k))).mapIso j
   refine (iff_multiplicativeType_and_geometricallyConnected_and_geometricallyReduced k H).2

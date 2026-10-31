@@ -23,6 +23,9 @@ import TauCeti.Algebra.MvPolynomial.Coeff
 import TauCeti.Data.Nat.Choose.Basic
 -- Proof-only: the coefficients of the four terms of the cocycle identity.
 import TauCeti.Algebra.MvPolynomial.Fin.Three
+-- Proof-only: rescaling the values of the homogeneous `C_n`, and computing them over `ℤ`.
+import Mathlib.RingTheory.MvPolynomial.Tower
+import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
 /-!
 # The Lazard symmetric 2-cocycles `C_n(X, Y)`
@@ -68,12 +71,16 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`
   `d_n` is `p` for `n = pᵏ`, and `1` for `n ≥ 2` not a prime power.
 * `TauCeti.prime_dvd_lazardGcd_iff`: for `n ≠ 0` and a prime `p`, `p ∣ d_n` exactly when `n` is a
   power of `p`. In particular `d_n` is odd unless `n` is a power of two.
+* `Nat.Prime.exists_not_dvd_choose`: if `n ≠ 0` is not a power of the prime `p`, then `p` does not
+  divide some `n.choose i` with `0 < i < n`.
 * `TauCeti.gcd_choose_div_lazardGcd_eq_one`: for `n ≥ 2`, the coefficients `n.choose i / d_n`
   have greatest common divisor `1`.
 * `TauCeti.coeff_lazardCocycle`: the coefficient of `XⁱYʲ` in `C_n` is
   `n.choose i / d_n` when `i + j = n` and `i, j ≠ 0`, and `0` otherwise.
 * `TauCeti.lazardGcd_nsmul_lazardCocycle`: `d_n • C_n = (X + Y)ⁿ - Xⁿ - Yⁿ` for `n ≠ 0`.
 * `TauCeti.aeval_diag_lazardCocycle`: the diagonal `C_n(a, a)` is `((2ⁿ - 2) / d_n) • aⁿ`.
+* `TauCeti.sum_aeval_natCast_mul_lazardCocycle`: if `p = 0`, then `∑_{j < p} C_n(j t, t) = -tⁿ`
+  for `n = pᵏ`, `k ≥ 1`.
 * `TauCeti.map_lazardCocycle`: `C_n` is compatible with ring homomorphisms.
 * `TauCeti.isHomogeneous_lazardCocycle`, `TauCeti.isSymmetric_lazardCocycle`,
   `TauCeti.isAddCocycle₂_lazardCocycle`: `C_n` is a homogeneous symmetric additive 2-cocycle
@@ -225,6 +232,14 @@ theorem dvd_lazardGcd_iff {n d : ℕ} :
   rw [mem_Icc] at hi
   exact h i (by omega) (by omega)
 
+/-- If `n ≠ 0` is not a power of the prime `p`, some binomial coefficient `n.choose i` with
+`0 < i < n` is not divisible by `p`. This is the converse of `Nat.Prime.dvd_choose_pow`. -/
+theorem _root_.Nat.Prime.exists_not_dvd_choose {p n : ℕ} (hp : p.Prime) (hn0 : n ≠ 0)
+    (hn : ∀ k, n ≠ p ^ k) : ∃ i, 0 < i ∧ i < n ∧ ¬p ∣ n.choose i := by
+  by_contra! H
+  obtain ⟨k, hk⟩ := (prime_dvd_lazardGcd_iff hp hn0).1 (dvd_lazardGcd_iff.2 H)
+  exact hn k hk
+
 /-- `d_n` divides `n.choose i` for `0 < i < n`. -/
 theorem lazardGcd_dvd_choose {n i : ℕ} (hi : 0 < i) (hin : i < n) : lazardGcd n ∣ n.choose i :=
   gcd_dvd (mem_Icc.2 ⟨hi, by omega⟩)
@@ -348,6 +363,48 @@ theorem isHomogeneous_lazardCocycle (n : ℕ) : (lazardCocycle n R).IsHomogeneou
     rw [mem_Icc] at hi
     simp only [map_add, Finsupp.degree_single]
     omega
+
+/-- **The values `C_n(j t, t)`, `j < p`, sum to `-tⁿ` in characteristic `p`** for `n = pᵏ`,
+`k ≥ 1`. Over the integers `p C_n(j, 1) = (j + 1)ⁿ - jⁿ - 1`, which telescopes to
+`p ∑_{j < p} C_n(j, 1) = pⁿ - p`, and `pⁿ⁻¹ - 1 = -1` when `p = 0`. This is the degree-`n` part
+of the `p`-series `[p](X)` of a formal group law `X + Y + c C_n(X, Y) + ⋯`. -/
+theorem sum_aeval_natCast_mul_lazardCocycle {p : ℕ} (hp : p.Prime) {A : Type*} [CommRing A]
+    [Algebra R A] (hpA : (p : A) = 0) {k : ℕ} (hk : k ≠ 0) (t : A) :
+    ∑ j ∈ range p, aeval ![(j : A) * t, t] (lazardCocycle (p ^ k) R) = -t ^ p ^ k := by
+  set n := p ^ k with hn
+  have hn0 : n ≠ 0 := pow_ne_zero k hp.ne_zero
+  have hn₁ : 1 ≤ n - 1 := by
+    have := Nat.one_lt_pow hk hp.one_lt
+    omega
+  -- `C_n(j t, t) = C_n(j, 1) tⁿ` by homogeneity, with `C_n(j, 1)` computed over the integers
+  set m : ℕ → ℤ := fun j ↦ aeval ![(j : ℤ), 1] (lazardCocycle n ℤ)
+  have hm (j : ℕ) : aeval ![(j : A) * t, t] (lazardCocycle n R) = (m j : A) * t ^ n := by
+    have hx : ![(j : A) * t, t] = t • ![(j : A), 1] := by
+      ext i
+      fin_cases i <;> simp [mul_comm]
+    have hy : ![(j : A), 1] = algebraMap ℤ A ∘ ![(j : ℤ), 1] := by
+      ext i
+      fin_cases i <;> simp
+    rw [hx, (isHomogeneous_lazardCocycle (R := R) n).aeval_smul,
+      ← map_lazardCocycle (Int.castRingHom R), ← algebraMap_int_eq, aeval_map_algebraMap, hy,
+      aeval_algebraMap_apply, smul_eq_mul, mul_comm, eq_intCast]
+  -- `p ∑_{j < p} C_n(j, 1) = pⁿ - p`
+  have hsum : (p : ℤ) * ∑ j ∈ range p, m j = p * ((p : ℤ) ^ (n - 1) - 1) := by
+    have hpm (j : ℕ) : (p : ℤ) * m j = ((j + 1 : ℕ) : ℤ) ^ n - (j : ℤ) ^ n - 1 := by
+      have := lazardGcd_nsmul_aeval_lazardCocycle (R := ℤ) (A := ℤ) hn0 (j : ℤ) 1
+      rw [hn, lazardGcd_prime_pow hp hk, nsmul_eq_mul, ← hn] at this
+      push_cast
+      simpa [m] using this
+    have hpn : (p : ℤ) * ((p : ℤ) ^ (n - 1) - 1) = (p : ℤ) ^ n - p := by
+      rw [mul_sub, ← pow_succ', Nat.sub_add_cancel (by omega), mul_one]
+    rw [Finset.mul_sum, Finset.sum_congr rfl fun j _ ↦ hpm j, Finset.sum_sub_distrib,
+      Finset.sum_range_sub (fun j ↦ (j : ℤ) ^ n), hpn]
+    simp [zero_pow hn0]
+  have hsum' := mul_left_cancel₀ (Nat.cast_ne_zero.mpr hp.ne_zero) hsum
+  rw [Finset.sum_congr rfl fun j _ ↦ hm j, ← Finset.sum_mul, ← Int.cast_sum, hsum']
+  push_cast
+  rw [hpA, zero_pow (by omega)]
+  ring
 
 -- Over `ℤ`, multiplication by `d_n ≠ 0` is injective, so identities for `C_n` follow from the
 -- corresponding identities for `(X + Y)ⁿ - Xⁿ - Yⁿ`; they then hold over every ring by base change.

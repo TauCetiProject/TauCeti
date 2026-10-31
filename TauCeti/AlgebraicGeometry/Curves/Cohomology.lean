@@ -7,11 +7,14 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.MayerVietoris
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
+public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveLine.Finite
 public import TauCeti.AlgebraicGeometry.Curves.AffineCover
+public import TauCeti.AlgebraicGeometry.Curves.ProjectiveLine
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
+import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
-# Vanishing of quasi-coherent cohomology above degree one on a curve
+# Vanishing above degree one and finiteness of quasi-coherent cohomology on a curve
 
 Let `X` be a proper integral curve over a field `k` whose codimension-one local rings are
 discrete valuation rings, for instance a smooth proper connected curve. Then `X` is covered by
@@ -30,6 +33,13 @@ the vanishing hypothesis in `Scheme.Modules.finrank_cohomology_zero_sub_one_eq_a
 finite-dimensional `H¹` of the first term and finite-dimensional `H⁰` and `H¹` of the middle term,
 it makes the Euler characteristic `χ(X, M) = dim H⁰(X, M) - dim H¹(X, M)` additive.
 
+The cohomology of a quasi-coherent sheaf `M` of finite type on `X` is finite-dimensional over `k`
+in every degree. A rational function `x ∈ k(X)` transcendental over `k` identifies `X` with the
+two-chart model of `k(X)` built from `x` (`AlgebraicGeometry.Scheme.isoTwoChartModel`), which maps
+finitely to the projective line (`TauCeti.AlgebraicGeometry.twoChartModel.toProjectiveLine`). The
+cohomology of a coherent sheaf on a scheme finite over `ℙ¹_k` is finite-dimensional
+(`AlgebraicGeometry.Scheme.Modules.finite_cohomology_of_isFinite_to_projectiveLine`).
+
 Neither a rational point nor a perfect base field is assumed.
 
 ## Main results
@@ -42,12 +52,17 @@ Neither a rational point nor a perfect base field is assumed.
   `AlgebraicGeometry.Scheme.Modules.cohomologyMap_one_surjective_of_epi_of_isCurveOver`:
   right exactness of `H¹` on such a curve;
 * `AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_one_of_epi_of_isCurveOver`:
-  finite-dimensionality of `H¹` passes to quotients.
+  finite-dimensionality of `H¹` passes to quotients;
+* `AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_of_isCurveOver` and
+  `AlgebraicGeometry.Scheme.Modules.finiteDimensional_cohomology_of_smooth`: `Hⁿ(X, M)` is
+  finite-dimensional for `M` quasi-coherent of finite type, on a regular proper curve and on a
+  smooth proper connected curve.
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, Chapter III, Theorem 2.7 (Grothendieck vanishing) and
-  Theorem 4.5 (Čech computation of quasi-coherent cohomology on a separated Noetherian scheme).
+* R. Hartshorne, *Algebraic Geometry*, Chapter III, Theorem 2.7 (Grothendieck vanishing),
+  Theorem 4.5 (Čech computation of quasi-coherent cohomology on a separated Noetherian scheme) and
+  Theorem 5.2 (finiteness of cohomology on projective schemes, here for curves).
 -/
 
 public section
@@ -74,7 +89,7 @@ codimension-one local rings are discrete valuation rings, a quasi-coherent sheaf
 no cohomology in degrees at least two. -/
 theorem subsingleton_cohomology_of_two_le_of_isCurveOver (M : X.Modules) [M.IsQuasicoherent]
     (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) :=
-  subsingleton_cohomology_of_two_le_of_isProper (k := k) (X.exists_two_affine_opens (k := k)) M
+  subsingleton_cohomology_of_two_le_of_isSeparated (R := k) (X.exists_two_affine_opens (k := k)) M
     n hn
 
 /-- On a proper integral curve over a field whose codimension-one local rings are discrete
@@ -102,11 +117,27 @@ again has finite-dimensional `H¹`. -/
 theorem finiteDimensional_cohomology_one_of_epi_of_isCurveOver {M N : X.Modules}
     [M.IsQuasicoherent] [N.IsQuasicoherent] (f : M ⟶ N) [Epi f]
     [FiniteDimensional k (Cohomology M 1)] : FiniteDimensional k (Cohomology N 1) := by
-  refine Module.Finite.of_surjective (cohomologyMapBaseLinear k X f 1) fun y ↦ ?_
-  obtain ⟨x, hx⟩ := cohomologyMap_one_surjective_of_epi_of_isCurveOver k f y
-  refine ⟨x, ?_⟩
-  rw [cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
-  exact hx
+  apply Module.Finite.of_surjective (cohomologyMapBaseLinear k X f 1)
+  simpa only [coe_cohomologyMapBaseLinear] using
+    cohomologyMap_one_surjective_of_epi_of_isCurveOver k f
+
+/-- **Finiteness of coherent cohomology on a curve.** On a proper integral curve over a field `k`
+whose codimension-one local rings are discrete valuation rings, the cohomology of a quasi-coherent
+sheaf of modules of finite type is finite-dimensional over `k` in every degree. -/
+theorem finiteDimensional_cohomology_of_isCurveOver (M : X.Modules) [M.IsQuasicoherent]
+    [M.IsFiniteType] (n : ℕ) : FiniteDimensional k (Cohomology M n) := by
+  have hF := IsCurveOver.isFunctionField (k := k) (X := X)
+  obtain ⟨x, hx⟩ := hF.exists_transcendental
+  -- `k(X)` is finite over the subfield `k(x)`, viewed as `k(X)`-algebra with `X` acting as `x`
+  let _ := ratFuncAlgebraOfTranscendental hx
+  have := isScalarTower_ratFuncAlgebraOfTranscendental hx
+  have := hF.finiteDimensional_adjoin hx
+  have := finiteDimensional_ratFuncAlgebraOfTranscendental hx
+  have hX := algebraMap_ratFuncAlgebraOfTranscendental_X hx
+  -- the two-chart model built from the image of `X` maps finitely to `ℙ¹_k`
+  let ν : X ⟶ projectiveLine k := (X.isoTwoChartModel (hX ▸ hx.ne_zero) (hX ▸ hx)).hom ≫
+    twoChartModel.toProjectiveLine hF (hX ▸ hx.ne_zero)
+  exact finite_cohomology_of_isFinite_to_projectiveLine k ν M n
 
 end IsCurveOver
 
@@ -117,7 +148,25 @@ degrees at least two. -/
 theorem subsingleton_cohomology_of_two_le_of_smooth [IsProper (X ↘ Spec (.of k))]
     [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))] [ConnectedSpace X] (M : X.Modules)
     [M.IsQuasicoherent] (n : ℕ) (hn : 2 ≤ n) : Subsingleton (Cohomology M n) :=
-  subsingleton_cohomology_of_two_le_of_isProper (k := k)
+  subsingleton_cohomology_of_two_le_of_isSeparated (R := k)
     (X.exists_two_affine_opens_of_smooth (k := k)) M n hn
+
+variable (k) in
+/-- **Finiteness of coherent cohomology on a smooth curve.** On a smooth proper connected curve of
+relative dimension one over any field `k`, the cohomology of a quasi-coherent sheaf of modules of
+finite type is finite-dimensional over `k` in every degree. -/
+theorem finiteDimensional_cohomology_of_smooth [IsProper (X ↘ Spec (.of k))]
+    [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))] [ConnectedSpace X] (M : X.Modules)
+    [M.IsQuasicoherent] [M.IsFiniteType] (n : ℕ) : FiniteDimensional k (Cohomology M n) := by
+  -- a smooth connected curve is integral with regular local rings
+  have := SmoothOfRelativeDimension.smooth 1 (X ↘ Spec (.of k))
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  have : ∀ x : X, IsRegularLocalRing (X.presheaf.stalk x) :=
+    isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k))
+  have : IsIntegral X := isIntegral_of_connected_of_isRegularLocalRing_stalk X
+  have : X.IsCurveOver k :=
+    { topologicalKrullDim_eq_one :=
+        topologicalKrullDim_eq_of_smoothOfRelativeDimension (X ↘ Spec (.of k)) }
+  exact finiteDimensional_cohomology_of_isCurveOver k M n
 
 end AlgebraicGeometry.Scheme.Modules

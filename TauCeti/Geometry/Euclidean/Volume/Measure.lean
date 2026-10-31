@@ -19,11 +19,18 @@ In dimension zero, Hausdorff measure is counting measure
 (`TauCeti.hausdorffMeasure_zero_eq_count`). In dimension one the normalizing constant is `1`,
 because `μH[1]` already agrees with Lebesgue measure on `ℝ`. Hence `μHE[1] = μH[1]` on every
 extended metric space, so length statements may be proved with either normalization.
+
+On a nonempty affine subspace `s` of a Euclidean affine space, volume on the direction of `s`,
+transported to `s` by adding a base point, is the Euclidean Hausdorff measure of the dimension
+of `s` (`AffineSubspace.volume_preimage_coe_vadd`). These coordinates `v ↦ v +ᵥ q` are Mathlib's
+`IsometryEquiv.vaddConst q` followed by the inclusion of `s`
+(`AffineSubspace.val_comp_vaddConst`), so they form an isometry onto `s`
+(`AffineSubspace.isometry_coe_vadd`, `AffineSubspace.range_coe_vadd`).
 -/
 
 public section
 
-open Set
+open MeasureTheory Module Set
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
@@ -68,3 +75,41 @@ theorem euclideanHausdorffMeasure_one {X : Type*} [EMetricSpace X] [MeasurableSp
   rw [euclideanHausdorffMeasure_def, hc, one_smul, Nat.cast_one]
 
 end MeasureTheory.Measure
+
+namespace AffineSubspace
+
+variable {V P : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [MetricSpace P]
+  [NormedAddTorsor V P]
+
+/-- Adding a base point `q` of `s` to the directions of `s` and including the result in `P` is
+`IsometryEquiv.vaddConst q` followed by the inclusion of `s`. -/
+theorem val_comp_vaddConst (s : AffineSubspace ℝ P) [Nonempty s] (q : s) :
+    Subtype.val ∘ IsometryEquiv.vaddConst q = fun v : s.direction ↦ ((v +ᵥ q : s) : P) :=
+  funext fun v ↦ by rw [Function.comp_apply, IsometryEquiv.vaddConst_apply]
+
+/-- Adding a base point `q` of `s` to the directions of `s` is an isometry into `P`. -/
+theorem isometry_coe_vadd (s : AffineSubspace ℝ P) [Nonempty s] (q : s) :
+    Isometry fun v : s.direction ↦ ((v +ᵥ q : s) : P) := by
+  rw [← s.val_comp_vaddConst q]
+  exact isometry_subtype_coe.comp (IsometryEquiv.vaddConst q).isometry
+
+/-- Adding a base point `q` of `s` to the directions of `s` reaches exactly the points of `s`. -/
+theorem range_coe_vadd (s : AffineSubspace ℝ P) [Nonempty s] (q : s) :
+    range (fun v : s.direction ↦ ((v +ᵥ q : s) : P)) = s := by
+  rw [← s.val_comp_vaddConst q, range_comp, (IsometryEquiv.vaddConst q).range_eq_univ, image_univ,
+    Subtype.range_coe]
+
+variable [MeasurableSpace V] [BorelSpace V] [FiniteDimensional ℝ V] [MeasurableSpace P]
+  [BorelSpace P]
+
+/-- Volume on the direction of an affine subspace `s`, transported to `s` by adding a base point
+`q`, is the Euclidean Hausdorff measure of the dimension of `s`: the volume of the set of
+directions `v` with `v +ᵥ q ∈ t` is `μHE[finrank ℝ s.direction] (t ∩ s)`. -/
+theorem volume_preimage_coe_vadd (s : AffineSubspace ℝ P) [Nonempty s] (q : s) (t : Set P) :
+    volume ((fun v : s.direction ↦ ((v +ᵥ q : s) : P)) ⁻¹' t) =
+      μHE[finrank ℝ s.direction] (t ∩ s) := by
+  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume, ← s.val_comp_vaddConst q,
+    preimage_comp, (IsometryEquiv.vaddConst q).isometry.euclideanHausdorffMeasure_preimage,
+    (IsometryEquiv.vaddConst q).range_eq_univ, inter_univ, euclideanHausdorffMeasure_preimage_coe]
+
+end AffineSubspace

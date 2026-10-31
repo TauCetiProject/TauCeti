@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.DirectSum.Exact
 public import TauCeti.Algebra.Module.GradedModule.Generated
 public import TauCeti.LinearAlgebra.Graded.LinearMap

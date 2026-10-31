@@ -104,4 +104,10 @@ theorem mem_top_iff {ι : Type*} {σ : Finset ι} :
     σ ∈ (⊤ : _root_.AbstractSimplicialComplex ι) ↔ σ.Nonempty :=
   Iff.rfl
 
+/-- The faces of the bottom abstract complex are exactly the singletons. -/
+@[simp]
+theorem mem_bot {ι : Type*} {σ : Finset ι} :
+    σ ∈ (⊥ : _root_.AbstractSimplicialComplex ι) ↔ ∃ v, σ = {v} :=
+  Iff.rfl
+
 end TauCeti.AbstractSimplicialComplex

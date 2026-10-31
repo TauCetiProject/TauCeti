@@ -31,6 +31,11 @@ with the uniqueness statement `Ideal.eq_and_eq_of_pow_mul_eq_pow_mul` and the re
 finite set of primes into a finite Euler product in
 `TauCeti/NumberTheory/ArithmeticDirichletSeries/EulerProduct/Basic.lean`.
 
+The carrier `IsDedekindDomain.HeightOneSpectrum.primeIdealPow` represents prime powers as nonzero
+ideals over any integral domain, with injectivity in the exponent over a Dedekind domain.
+`Ideal.eventually_isPrimeTo_compl` records that a nonzero ideal is supported on every sufficiently
+large finite set of primes. These constructions use only ideal arithmetic, independently of norms.
+
 It also collects how an isomorphism `e : R ≃+* R'` moves ideals: `Ideal.map e` preserves
 divisibility (`Ideal.map_dvd_map_iff_of_ringEquiv`, `Ideal.map_pow_dvd_map_iff_of_ringEquiv`,
 stated over commutative *semirings*, since the proofs use only that `Ideal.map e` and
@@ -79,6 +84,8 @@ with the map producing the ideal dropped, since it plays no role — and proved 
 -/
 
 public section
+
+open scoped nonZeroDivisors
 
 namespace Ideal
 
@@ -160,6 +167,19 @@ theorem multiplicity_eq_zero_of_isPrime_ne {P Q : Ideal B} (hP0 : P ≠ ⊥) [P.
 
 end Multiplicity
 
+section NormalizedFactors
+
+variable {B : Type*} [CommRing B] [IsDedekindDomain B]
+
+open UniqueFactorizationMonoid in
+/-- A prime factor of an ideal of a Dedekind domain is a maximal ideal. -/
+theorem isMaximal_of_mem_normalizedFactors {P I : Ideal B} (hP : P ∈ normalizedFactors I) :
+    P.IsMaximal :=
+  have hPp := prime_of_normalized_factor P hP
+  (isPrime_of_prime hPp).isMaximal (by simpa using hPp.ne_zero)
+
+end NormalizedFactors
+
 section Injective
 
 /-- If the contraction of `J` along an injective ring homomorphism is nonzero, so is `J` itself.
@@ -179,6 +199,40 @@ end Injective
 end Ideal
 
 namespace IsDedekindDomain.HeightOneSpectrum
+
+section PrimeIdealPow
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- The `e`-th power of a height-one prime, as a nonzero ideal. -/
+def primeIdealPow (P : HeightOneSpectrum R) (e : ℕ) : (Ideal R)⁰ :=
+  ⟨P.asIdeal ^ e, mem_nonZeroDivisors_of_ne_zero (pow_ne_zero e P.ne_bot)⟩
+
+/-- A prime power, as a nonzero ideal, has the expected underlying ideal. -/
+@[simp]
+theorem coe_primeIdealPow (P : HeightOneSpectrum R) (e : ℕ) :
+    (primeIdealPow P e : Ideal R) = P.asIdeal ^ e :=
+  (rfl)
+
+/-- The zeroth power of a height-one prime is the unit ideal in the nonzero-ideal carrier. -/
+@[simp]
+theorem primeIdealPow_zero (P : HeightOneSpectrum R) : P.primeIdealPow 0 = 1 :=
+  Subtype.ext (by simp)
+
+/-- Distinct primes give distinct first powers. -/
+theorem primeIdealPow_one_injective :
+    Function.Injective fun P : HeightOneSpectrum R ↦ primeIdealPow P 1 := fun P Q h ↦
+  HeightOneSpectrum.asIdeal_injective
+    (by simpa only [coe_primeIdealPow, pow_one] using
+      congrArg (Subtype.val : (Ideal R)⁰ → Ideal R) h)
+
+end PrimeIdealPow
+
+/-- Distinct exponents give distinct powers of a height-one prime of a Dedekind domain. -/
+theorem primeIdealPow_injective {R : Type*} [CommRing R] [IsDedekindDomain R]
+    (P : HeightOneSpectrum R) : Function.Injective (primeIdealPow P) := fun m n h ↦
+  pow_injective_of_not_isUnit P.prime.not_isUnit P.prime.ne_zero
+    (by simpa only [coe_primeIdealPow] using congrArg Subtype.val h)
 
 section Comap
 
@@ -308,6 +362,17 @@ theorem isPrimeTo_comap_iff {A : Type*} [CommRing A] (e : R ≃+* A)
   simp only [isPrimeTo_iff, ne_eq, hbot, Set.forall_mem_image, hdvd]
 
 variable [IsDedekindDomain R]
+
+/-- Every nonzero ideal is eventually supported: a sufficiently large finite set of height-one
+primes contains all its finitely many prime divisors. -/
+theorem eventually_isPrimeTo_compl (hI : I ≠ ⊥) :
+    ∀ᶠ S : Finset (HeightOneSpectrum R) in Filter.atTop,
+      IsPrimeTo I (S : Set (HeightOneSpectrum R))ᶜ := by
+  classical
+  have hfinite := Ideal.finite_factors hI
+  filter_upwards [Filter.eventually_ge_atTop hfinite.toFinset] with S hS
+  rw [isPrimeTo_iff]
+  exact ⟨hI, fun P hP hPdvd ↦ hP (hS (hfinite.mem_toFinset.mpr hPdvd))⟩
 
 @[simp]
 theorem isPrimeTo_top : IsPrimeTo (⊤ : Ideal R) S := by

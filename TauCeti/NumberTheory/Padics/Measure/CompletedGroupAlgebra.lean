@@ -10,16 +10,20 @@ public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.CompletedGroupAlgebra.Basic
 import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 import Mathlib.Analysis.Normed.Group.Ultra
+import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Extend
 import Mathlib.Topology.ContinuousMap.Compact
+import Mathlib.Topology.UniformSpace.UniformApproximation
+import TauCeti.NumberTheory.Padics.Measure.Norm
 import TauCeti.Topology.Algebra.Group.LocallyConstant
 import TauCeti.Topology.ContinuousMap.LocallyConstant
 
 /-!
 # Measures on a compact group in its completed group algebra
 
-For a compact topological group `Γ` and a topological commutative ring `R`, every open normal
-subgroup `U` of `Γ` gives a finite discrete quotient `Γ ⧸ U`, and pushing a measure forward along
+For a compact, locally compact group `Γ` with continuous multiplication (in particular, a compact
+topological group) and a topological commutative ring `R`, every open normal subgroup `U` of `Γ`
+gives a finite discrete quotient `Γ ⧸ U`, and pushing a measure forward along
 `Γ → Γ ⧸ U` gives its finite algebra projection in the group algebra `R[Γ ⧸ U]`. These projections
 are compatible under the quotient maps `Γ ⧸ U → Γ ⧸ V` for `U ≤ V`, so they assemble, through the
 universal property of the inverse limit, into an `R`-algebra homomorphism
@@ -31,6 +35,12 @@ the cosets of `U`, so integrating a function that factors through `Γ ⧸ U` is 
 them. When `Γ` is profinite such cylinder functions are dense, and hence the comparison map is
 injective over every Hausdorff coefficient ring. For normed coefficients it is continuous from
 the weak topology on measures to the inverse-limit topology on the completed group algebra.
+
+For `ℤ_p` coefficients the comparison is moreover a homeomorphism. Integration against a cylinder
+function is a finite combination of coordinates in the completed group algebra, and every
+integral measure is `1`-Lipschitz, so integration against an arbitrary test function is a uniform
+limit of such combinations. Hence the weak topology is the one induced by the comparison, and
+the integral measures on a profinite group are weakly compact because `ℤ_p[[Γ]]` is compact.
 
 ## Main definitions
 
@@ -51,6 +61,10 @@ the weak topology on measures to the inverse-limit topology on the completed gro
   integral measures and the completed group algebra.
 * `AbstractMeasure.continuous_toCompletedGroupAlgebra`: for normed `R`, the comparison map is
   continuous for the weak topology on measures.
+* `AbstractMeasure.isHomeomorph_toCompletedGroupAlgebra_weak`: for `ℤ_p` coefficients, the
+  comparison is a homeomorphism from the weak topology to the inverse-limit topology.
+* `AbstractMeasure.compactSpace_integralMeasures_weak`: integral measures on a profinite group
+  are compact for the weak topology.
 
 ## References
 
@@ -64,7 +78,11 @@ open ContinuousMap TauCeti
 
 namespace AbstractMeasure
 
-variable {Γ R : Type*} [Group Γ] [TopologicalSpace Γ] [IsTopologicalGroup Γ] [CompactSpace Γ]
+variable {Γ R : Type*} [Group Γ] [TopologicalSpace Γ] [CompactSpace Γ]
+
+section ContinuousMul
+
+variable [ContinuousMul Γ] [LocallyCompactSpace Γ]
 
 section TopologicalRing
 
@@ -128,22 +146,6 @@ theorem apply_eq_sum_coeff_proj_toCompletedGroupAlgebra {U : OpenNormalSubgroup 
   rw [hF', apply_comp_eq_sum_finiteProjection]
   simp
 
-/-- **Injectivity of the comparison.** Over a Hausdorff coefficient ring, a measure on a
-profinite group is determined by its image in the completed group algebra. -/
-theorem toCompletedGroupAlgebra_injective [T2Space R] [TotallyDisconnectedSpace Γ] :
-    Function.Injective (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ) := by
-  intro μ ν h
-  -- The two measures agree on the dense set of functions factoring through a finite quotient.
-  let := IsTopologicalAddGroup.rightUniformSpace R
-  have hEqOn : Set.EqOn μ ν {F : C(Γ, R) |
-      ∃ (U : OpenNormalSubgroup Γ) (g : Γ ⧸ U.toSubgroup → R), g ∘ (↑) = F} := by
-    rintro F ⟨U, g, hF⟩
-    let _ := Fintype.ofFinite (Γ ⧸ U.toSubgroup)
-    rw [apply_eq_sum_coeff_proj_toCompletedGroupAlgebra μ hF,
-      apply_eq_sum_coeff_proj_toCompletedGroupAlgebra ν hF, h]
-  exact AbstractMeasure.ext fun F ↦ congrFun
-    (Continuous.ext_on (dense_setOf_comp_quotientMk R) μ.continuous ν.continuous hEqOn) F
-
 end TopologicalRing
 
 section Normed
@@ -162,6 +164,42 @@ theorem continuous_toCompletedGroupAlgebra :
   exact (continuous_apply a).comp (continuous_finiteProjection _)
 
 end Normed
+
+/-! The comparison on products of Dirac measures. -/
+
+example [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] (x y : Γ)
+    (U : OpenNormalSubgroup Γ) :
+    completedGroupAlgebra.proj R Γ U (toCompletedGroupAlgebra (dirac R x * dirac R y)) =
+      MonoidAlgebra.single ((x * y : Γ) : Γ ⧸ U.toSubgroup) 1 := by
+  simp [dirac_mul_dirac]
+
+end ContinuousMul
+
+section TopologicalGroup
+
+variable [IsTopologicalGroup Γ]
+
+section TopologicalRing
+
+variable [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
+
+/-- **Injectivity of the comparison.** Over a Hausdorff coefficient ring, a measure on a
+profinite group is determined by its image in the completed group algebra. -/
+theorem toCompletedGroupAlgebra_injective [T2Space R] [TotallyDisconnectedSpace Γ] :
+    Function.Injective (toCompletedGroupAlgebra : D(Γ, R) →ₐ[R] completedGroupAlgebra R Γ) := by
+  intro μ ν h
+  -- The two measures agree on the dense set of functions factoring through a finite quotient.
+  let := IsTopologicalAddGroup.rightUniformSpace R
+  have hEqOn : Set.EqOn μ ν {F : C(Γ, R) |
+      ∃ (U : OpenNormalSubgroup Γ) (g : Γ ⧸ U.toSubgroup → R), g ∘ (↑) = F} := by
+    rintro F ⟨U, g, hF⟩
+    let _ := Fintype.ofFinite (Γ ⧸ U.toSubgroup)
+    rw [apply_eq_sum_coeff_proj_toCompletedGroupAlgebra μ hF,
+      apply_eq_sum_coeff_proj_toCompletedGroupAlgebra ν hF, h]
+  exact AbstractMeasure.ext fun F ↦ congrFun
+    (Continuous.ext_on (dense_setOf_comp_quotientMk R) μ.continuous ν.continuous hEqOn) F
+
+end TopologicalRing
 
 section PadicInt
 
@@ -417,19 +455,61 @@ theorem completedGroupAlgebraEquiv_apply (μ : D(Γ, ℤ_[p])) :
     completedGroupAlgebraEquiv μ = toCompletedGroupAlgebra μ :=
   AlgEquiv.ofBijective_apply _ _ _
 
+open Topology in
+/-- **The comparison is a homeomorphism.** For a profinite group `Γ`, the comparison of integral
+measures with the completed group algebra `ℤ_p[[Γ]]` is a homeomorphism from the weak topology on
+measures to the inverse-limit topology. -/
+theorem isHomeomorph_toCompletedGroupAlgebra_weak :
+    @IsHomeomorph _ _ (WeakTopology (X := Γ) (R := ℤ_[p]) (E := ℤ_[p])) _
+      (toCompletedGroupAlgebra : D(Γ, ℤ_[p]) →ₐ[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ) := by
+  -- Every test function integrates continuously for the topology induced by the comparison.
+  have heval (f : C(Γ, ℤ_[p])) :
+      Continuous[.induced toCompletedGroupAlgebra inferInstance, _] fun μ : D(Γ, ℤ_[p]) ↦ μ f := by
+    let : TopologicalSpace D(Γ, ℤ_[p]) := .induced toCompletedGroupAlgebra inferInstance
+    -- On cylinder functions, integration is a finite combination of the coordinates.
+    have hcyl : ∀ F ∈ {F : C(Γ, ℤ_[p]) |
+        ∃ (U : OpenNormalSubgroup Γ) (g : Γ ⧸ U.toSubgroup → ℤ_[p]), g ∘ (↑) = F},
+        Continuous fun μ : D(Γ, ℤ_[p]) ↦ μ F := by
+      rintro F ⟨U, g, hF⟩
+      let _ := Fintype.ofFinite (Γ ⧸ U.toSubgroup)
+      simp_rw [apply_eq_sum_coeff_proj_toCompletedGroupAlgebra _ hF]
+      exact continuous_finsetSum _ fun a _ ↦ continuous_const.mul
+        ((completedGroupAlgebra.continuous_coeff_proj ℤ_[p] Γ U a).comp continuous_induced_dom)
+    -- Integral measures are uniformly `1`-Lipschitz, so the density of cylinder functions
+    -- passes continuity on to every test function.
+    refine continuous_of_uniform_approx_of_continuous fun u hu ↦ ?_
+    obtain ⟨ε, hε, hεu⟩ := Metric.mem_uniformity_dist.mp hu
+    obtain ⟨F, hF, hfF⟩ := (dense_setOf_comp_quotientMk ℤ_[p]).exists_dist_lt f hε
+    refine ⟨_, hcyl F hF, fun μ ↦ hεu ?_⟩
+    rw [dist_eq_norm, ← map_sub]
+    exact (norm_apply_le μ _).trans_lt (by rwa [← dist_eq_norm])
+  have hle : .induced toCompletedGroupAlgebra inferInstance ≤
+      WeakTopology (X := Γ) (R := ℤ_[p]) (E := ℤ_[p]) := by
+    let : TopologicalSpace D(Γ, ℤ_[p]) := .induced toCompletedGroupAlgebra inferInstance
+    exact continuous_iff_le_induced.mp (continuous_pi heval)
+  let : TopologicalSpace D(Γ, ℤ_[p]) := WeakTopology
+  have hind : IsInducing
+      (toCompletedGroupAlgebra : D(Γ, ℤ_[p]) →ₐ[ℤ_[p]] completedGroupAlgebra ℤ_[p] Γ) :=
+    ⟨le_antisymm (continuous_iff_le_induced.mp continuous_toCompletedGroupAlgebra) hle⟩
+  exact isHomeomorph_iff_isEmbedding_surjective.mpr
+    ⟨⟨hind, toCompletedGroupAlgebra_injective⟩, toCompletedGroupAlgebra_surjective⟩
+
+/-- **Weak compactness of integral measures.** The integral measures on a profinite group are
+compact for the weak topology, being homeomorphic to the compact completed group algebra. -/
+theorem compactSpace_integralMeasures_weak :
+    @CompactSpace D(Γ, ℤ_[p]) (WeakTopology (X := Γ) (R := ℤ_[p]) (E := ℤ_[p])) :=
+  let : TopologicalSpace D(Γ, ℤ_[p]) := WeakTopology
+  (isHomeomorph_toCompletedGroupAlgebra_weak.homeomorph _).symm.compactSpace
+
 end PadicInt
 
-/-! The comparison on products of Dirac measures, and on distinct points of a profinite group. -/
-
-example [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] (x y : Γ)
-    (U : OpenNormalSubgroup Γ) :
-    completedGroupAlgebra.proj R Γ U (toCompletedGroupAlgebra (dirac R x * dirac R y)) =
-      MonoidAlgebra.single ((x * y : Γ) : Γ ⧸ U.toSubgroup) 1 := by
-  simp [dirac_mul_dirac]
+/-! The comparison on distinct points of a profinite group. -/
 
 example [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [Nontrivial R]
     [TotallyDisconnectedSpace Γ] {x y : Γ} (hxy : x ≠ y) :
     toCompletedGroupAlgebra (dirac R x) ≠ toCompletedGroupAlgebra (dirac R y) := by
   simpa using (completedGroupAlgebra.of_injective R Γ).ne hxy
+
+end TopologicalGroup
 
 end AbstractMeasure

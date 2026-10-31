@@ -171,7 +171,7 @@ theorem exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_pos {K : Set E} (hK 
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hpos : ∀ ⦃x⦄, x ∈ interior K → 0 < Δ f x + fderiv ℝ f x (b x)) :
     ∃ x ∈ frontier K, IsMaxOn f K x := by
-  exact exists_mem_frontier_isMaxOn_of_forall_mem_interior_not_isLocalMax hK hne hcont
+  exact hK.exists_mem_frontier_isMaxOn_of_forall_mem_interior_not_isLocalMax hne hcont
     fun {_} hx ↦ not_isLocalMax_of_laplacian_add_fderiv_pos (hcd hx) (hpos hx)
 
 /-- **Strict boundary minimum principle for `Δ + b·∇`.** The dual of
@@ -181,7 +181,7 @@ theorem exists_mem_frontier_isMinOn_of_laplacian_add_fderiv_neg {K : Set E} (hK 
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
     (hneg : ∀ ⦃x⦄, x ∈ interior K → Δ f x + fderiv ℝ f x (b x) < 0) :
     ∃ x ∈ frontier K, IsMinOn f K x := by
-  exact exists_mem_frontier_isMinOn_of_forall_mem_interior_not_isLocalMin hK hne hcont
+  exact hK.exists_mem_frontier_isMinOn_of_forall_mem_interior_not_isLocalMin hne hcont
     fun {_} hx ↦ not_isLocalMin_of_laplacian_add_fderiv_neg (hcd hx) (hneg hx)
 
 section Nontrivial
@@ -249,38 +249,21 @@ private theorem le_of_strict_subsolution_barrier {K : Set E} (hK : IsCompact K)
     (hwlap : ∀ ⦃x⦄, x ∈ interior K → 0 < Δ w x + fderiv ℝ w x (b x)) :
     ∀ ⦃x⦄, x ∈ K → f x ≤ m := by
   intro x hxK
-  -- `w` is bounded above by some `C` on the compact set `K`; perturbing `f` to `f + ε w`
-  -- makes it a strict subsolution, so `f x ≤ m + ε (C - w x)`, and letting `ε → 0` gives `f x ≤ m`.
-  obtain ⟨C, hCub⟩ := hK.bddAbove_image (f := w) hwcont
-  have hxC : w x ≤ C := hCub (Set.mem_image_of_mem w hxK)
-  have key : ∀ ε : ℝ, 0 < ε → f x ≤ m + ε * (C - w x) := by
-    intro ε hε
-    set g : E → ℝ := fun y ↦ f y + ε • w y with hgdef
-    have hgcont : ContinuousOn g K := hcont.add (hwcont.const_smul ε)
-    have hgcd : ∀ ⦃y⦄, y ∈ interior K → ContDiffAt ℝ 2 g y :=
-      fun y hy ↦ (hcd hy).add ((hwcd hy).const_smul ε)
-    -- The perturbed function is a strict subsolution of `Δ + b·∇`.
-    have hgpos : ∀ ⦃y⦄, y ∈ interior K → 0 < Δ g y + fderiv ℝ g y (b y) := by
-      intro y hy
-      rw [hgdef, laplacian_add_fderiv_add_const_smul f w (b y) ε y (hcd hy) (hwcd hy)]
-      linarith [mul_pos hε (hwlap hy), hlap hy]
-    -- Its maximum over `K` is attained on the frontier.
-    obtain ⟨z, hzfr, hzmax⟩ :=
-      exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_pos hK ⟨x, hxK⟩ hgcont hgcd hgpos
-    have hzK : z ∈ K := hK.isClosed.frontier_subset hzfr
-    have hgx : g x = f x + ε * w x := by
-      rw [hgdef]
-      simp [smul_eq_mul]
-    have hgz : g z = f z + ε * w z := by
-      rw [hgdef]
-      simp [smul_eq_mul]
-    have hxle : f x + ε * w x ≤ f z + ε * w z := by
-      rw [← hgx, ← hgz]
-      exact hzmax hxK
-    have hzC : ε * w z ≤ ε * C :=
-      mul_le_mul_of_nonneg_left (hCub (Set.mem_image_of_mem w hzK)) hε.le
-    linarith [hbdry hzfr]
-  exact le_of_forall_pos_mul_le (sub_nonneg.mpr hxC) key
+  refine (hK.bddAbove_image hwcont).le_of_forall_pos_exists_add_mul_le fun ε hε => ?_
+  set g : E → ℝ := fun y ↦ f y + ε • w y with hgdef
+  have hgcont : ContinuousOn g K := hcont.add (hwcont.const_smul ε)
+  have hgcd : ∀ ⦃y⦄, y ∈ interior K → ContDiffAt ℝ 2 g y :=
+    fun y hy ↦ (hcd hy).add ((hwcd hy).const_smul ε)
+  -- The perturbed function is a strict subsolution of `Δ + b·∇`.
+  have hgpos : ∀ ⦃y⦄, y ∈ interior K → 0 < Δ g y + fderiv ℝ g y (b y) := by
+    intro y hy
+    rw [hgdef, laplacian_add_fderiv_add_const_smul f w (b y) ε y (hcd hy) (hwcd hy)]
+    linarith [mul_pos hε (hwlap hy), hlap hy]
+  -- Its maximum over `K` is attained on the frontier.
+  obtain ⟨z, hzfr, hzmax⟩ :=
+    exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_pos hK ⟨x, hxK⟩ hgcont hgcd hgpos
+  exact ⟨z, hK.isClosed.frontier_subset hzfr,
+    by simpa only [hgdef, smul_eq_mul] using isMaxOn_iff.mp hzmax x hxK, hbdry hzfr⟩
 
 /-- **Weak maximum principle for `Δ + b·∇` with bounded drift.**
 
@@ -374,7 +357,8 @@ theorem exists_mem_frontier_isMaxOn_of_laplacian_add_fderiv_nonneg {K : Set E} (
     (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x) (hb : ∀ ⦃x⦄, x ∈ interior K → ‖b x‖ ≤ β)
     (hlap : ∀ ⦃x⦄, x ∈ interior K → 0 ≤ Δ f x + fderiv ℝ f x (b x)) :
     ∃ x ∈ frontier K, IsMaxOn f K x := by
-  exact exists_mem_frontier_isMaxOn_of_le_frontier hK hne hcont fun hbdry ↦
+  exact hK.exists_mem_frontier_isMaxOn_of_le_frontier hne
+    (hcont.mono hK.isClosed.frontier_subset) fun hbdry ↦
     le_of_laplacian_add_fderiv_nonneg_le_frontier hK hcont hcd hb hlap hbdry
 
 /-- The `∃`-form of the weak minimum principle for `Δ + b·∇`: a supersolution with bounded

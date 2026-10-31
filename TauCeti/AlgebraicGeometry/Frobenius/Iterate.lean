@@ -27,6 +27,8 @@ Frobenius twists and finite-field Frobenius morphisms.
   schemes commutes with every iterate.
 * `AlgebraicGeometry.Scheme.iterateFrobenius_appTop_apply`: the iterate raises global sections to
   their `p ^ n`-th powers.
+* `AlgebraicGeometry.Scheme.frobenius_spec_zmod`: the absolute Frobenius of `Spec 𝔽_p` is the
+  identity.
 * `AlgebraicGeometry.Scheme.qPowerFrobenius`: the absolute `q`-power map of a scheme over a finite
   field of cardinality `q`.
 
@@ -131,6 +133,14 @@ theorem Spec_map_iterateFrobenius (R : Type u) [CommRing R] [CharP R p] (n : ℕ
       TauCeti.powRingHom_eq_frobenius (CharP.cast_eq_zero R p)]
     simpa only [_root_.iterateFrobenius_one] using
       congrArg CommRingCat.ofHom (_root_.iterateFrobenius_add R p n 1)
+
+/-- The absolute Frobenius of `Spec 𝔽_p` is the identity, since `a ^ p = a` for every `a ∈ 𝔽_p`. -/
+theorem frobenius_spec_zmod :
+    (Spec (.of (ULift.{u} (ZMod p)))).frobenius p (natCast_spec_eq_zero (p := p) _) = 𝟙 _ := by
+  rw [← Spec_map_powRingHom _ (CharP.cast_eq_zero (ULift.{u} (ZMod p)) p)]
+  convert Spec.map_id (CommRingCat.of (ULift.{u} (ZMod p)))
+  ext x
+  simp [TauCeti.powRingHom_apply, ZMod.pow_card]
 
 /-- Every morphism of schemes in characteristic `p` commutes with every absolute Frobenius
 iterate. -/

@@ -89,18 +89,24 @@ theorem mul_norm_starProjection_comp_starProjection_le_norm_sub {A B : E →L[�
     (hB.starProjection_apply_comm (fun y hy ↦ hW y hy) y).symm
   -- On `X = P_W P_U`, the Sylvester operator of the extensions `B P_W + c P_{Wᗮ}` and
   -- `A P_U + (c + g) P_{Uᗮ}` is `P_W (B - A) P_U`.
-  set A' := A ∘L U.starProjection + ((c + g : ℝ) : 𝕜) • Uᗮ.starProjection
-  set B' := B ∘L W.starProjection + (c : 𝕜) • Wᗮ.starProjection
+  set A' := A.reducedExtension U (c + g)
+  set B' := B.reducedExtension W c
   set X := W.starProjection ∘L U.starProjection
   have hsyl (x : E) :
       B'.sylvester A' X x = W.starProjection ((B - A) (U.starProjection x)) := by
     have hmem : W.starProjection (U.starProjection x) ∈ W := W.starProjection_apply_mem _
-    simp only [B', A', X, sylvester_apply, sub_apply, comp_apply, add_apply, smul_apply, map_add,
-      map_smul]
-    rw [starProjection_eq_self_iff.mpr hmem, starProjection_orthogonal_apply_eq_zero hmem,
+    have hBapp : B' (W.starProjection (U.starProjection x)) =
+        B (W.starProjection (U.starProjection x)) :=
+      B.reducedExtension_apply_of_mem W c hmem
+    have hAapp : A' x =
+        A (U.starProjection x) + ((c + g : ℝ) : 𝕜) • Uᗮ.starProjection x :=
+      A.reducedExtension_apply U (c + g) x
+    simp only [sylvester_apply, sub_apply, X, comp_apply]
+    rw [hBapp, hAapp]
+    simp only [map_add, map_smul,
       starProjection_eq_self_iff.mpr (hU _ (U.starProjection_apply_mem x)),
-      (U.starProjection_apply_eq_zero_iff).mpr (Uᗮ.starProjection_apply_mem x)]
-    simp only [map_zero, smul_zero, add_zero]
+      (U.starProjection_apply_eq_zero_iff).mpr (Uᗮ.starProjection_apply_mem x),
+      smul_zero, add_zero]
     rw [hcomm, map_sub]
   have hbound : ‖B'.sylvester A' X‖ ≤ ‖B - A‖ := by
     refine opNorm_le_bound _ (norm_nonneg _) fun x ↦ ?_
@@ -110,8 +116,10 @@ theorem mul_norm_starProjection_comp_starProjection_le_norm_sub {A B : E →L[�
       _ ≤ ‖B - A‖ * ‖U.starProjection x‖ := (B - A).le_opNorm _
       _ ≤ ‖B - A‖ * ‖x‖ := by gcongr; exact U.norm_starProjection_apply_le x
   exact (mul_norm_le_norm_sylvester_apply_of_re_inner_le_of_le_re_inner
-    (W.re_inner_comp_starProjection_add_smul_apply_self_le hW hBW)
-    (U.le_re_inner_comp_starProjection_add_smul_apply_self hU hAU) X).trans hbound
+    (B.re_inner_reducedExtension_self_le W hW
+      (r := c) (κ := c) le_rfl hBW)
+    (A.le_re_inner_reducedExtension_self U hU
+      (r := c + g) (κ := c + g) le_rfl hAU) X).trans hbound
 
 /-- The directed Davis–Kahan `sin Θ` theorem in division form: for `g > 0`, under the hypotheses
 of `mul_norm_starProjection_comp_starProjection_le_norm_sub`, `‖P_W P_U‖ ≤ ‖B - A‖ / g`. -/

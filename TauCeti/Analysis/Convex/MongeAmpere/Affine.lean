@@ -36,7 +36,9 @@ transfers to an arbitrary one.
   functional.
 * `TauCeti.mongeAmpereMeasure_comp_affineEquiv_apply` and
   `TauCeti.mongeAmpereMeasure_comp_affineEquiv` give the change of variables formula for the
-  Monge–Ampère measure under an affine equivalence of the domain.
+  Monge–Ampère measure under an affine equivalence of the domain, and
+  `TauCeti.mongeAmpereMeasure_ite_comp_symm_apply` is its form for a finite function on a set
+  transported to the image of the set.
 
 ## References
 
@@ -184,6 +186,21 @@ theorem mongeAmpereMeasure_comp_affineEquiv_apply (f : E → EReal) (A : E ≃�
     · rintro ⟨q, ⟨-, ⟨x, hx, rfl⟩, hq⟩, rfl⟩
       exact ⟨x, hx, q, hq, rfl⟩
   rw [himage, addHaar_image_linearMap, LinearMap.det_adjoint, star_trivial]
+
+/-- Transport of the Monge–Ampère measure of a function on `G` to the function `v ∘ T⁻¹` on
+`T '' G = T⁻¹ ⁻¹' G`: the measure of `s` is `|det L|` times the Monge–Ampère measure of `v` on
+`G` of `T⁻¹ '' s`, where `L` is the linear part of `T⁻¹`. -/
+theorem mongeAmpereMeasure_ite_comp_symm_apply (T : E ≃ᵃ[ℝ] E) (G : Set E)
+    [DecidablePred (· ∈ G)] [DecidablePred (· ∈ T.symm ⁻¹' G)] (v : E → ℝ) {s : Set E}
+    (hs : MeasurableSet s) :
+    mongeAmpereMeasure μ (fun y => if y ∈ T.symm ⁻¹' G then (v (T.symm y) : EReal) else ⊤) s =
+      ENNReal.ofReal |LinearMap.det (T.symm.linear : E →ₗ[ℝ] E)| *
+        mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) (T.symm '' s) := by
+  have hfun : (fun y => if y ∈ T.symm ⁻¹' G then (v (T.symm y) : EReal) else ⊤) =
+      (fun x => if x ∈ G then (v x : EReal) else ⊤) ∘ T.symm := by
+    funext y
+    by_cases hy : T.symm y ∈ G <;> simp only [Function.comp_apply, mem_preimage, hy, ↓reduceIte]
+  rw [hfun, mongeAmpereMeasure_comp_affineEquiv_apply μ _ T.symm hs]
 
 /-- **Change of variables for the Aleksandrov Monge–Ampère measure**, as an identity of measures:
 for an affine equivalence `A` of `E` with linear part `L`, the Monge–Ampère measure of `f ∘ A`

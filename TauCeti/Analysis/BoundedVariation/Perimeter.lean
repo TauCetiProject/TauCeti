@@ -33,8 +33,8 @@ the semicontinuity half of the direct method for perimeter problems.
 
 * `TauCeti.perimeter μ Ω s`: the perimeter of `s` in `Ω`.
 * `TauCeti.perimeter_eq_iSup`: the perimeter of a null-measurable set as a supremum of `∫_s div φ`.
-* `TauCeti.perimeter_congr_ae` and `TauCeti.perimeter_mono`: invariance under null modification
-  inside `Ω`, and monotonicity in `Ω`.
+* `TauCeti.perimeter_congr_ae`, `TauCeti.perimeter_mono` and `TauCeti.perimeter_iSup`: invariance
+  under null modification inside `Ω`, and monotonicity and inner continuity in `Ω`.
 * `TauCeti.perimeter_compl`, `TauCeti.perimeter_empty` and `TauCeti.perimeter_univ`.
 * `TauCeti.perimeter_le_liminf`: lower semicontinuity of the perimeter.
 
@@ -86,6 +86,12 @@ theorem perimeter_congr_ae (h : s =ᵐ[μ.restrict Ω] t) : perimeter μ Ω s = 
 theorem perimeter_mono (h : Ω' ≤ Ω) : perimeter μ Ω' s ≤ perimeter μ Ω s :=
   totalVariationOn_mono h
 
+/-- **Inner continuity in the open set.** The perimeter in the union of a directed family of open
+sets is the supremum of the perimeters in its members. -/
+theorem perimeter_iSup {ι : Type*} {Ω : ι → Opens E} (hΩ : Directed (· ≤ ·) Ω) :
+    perimeter μ (⨆ i, Ω i) s = ⨆ i, perimeter μ (Ω i) s :=
+  totalVariationOn_iSup hΩ
+
 /-- The empty set has perimeter zero. -/
 @[simp]
 theorem perimeter_empty : perimeter μ Ω ∅ = 0 := by
@@ -118,7 +124,7 @@ end Haar
 measure in `Ω`, that is `μ ((s i ∆ s₀) ∩ K) → 0` for every compact `K ⊆ Ω`, then
 `P(s₀; Ω) ≤ liminf P(s i; Ω)`. -/
 theorem perimeter_le_liminf [OpensMeasurableSpace E] [IsLocallyFiniteMeasure μ] {ι : Type*}
-    {l : Filter ι} [l.NeBot] {s : ι → Set E} {s₀ : Set E}
+    {l : Filter ι} {s : ι → Set E} {s₀ : Set E}
     (hs : ∀ᶠ i in l, NullMeasurableSet (s i) μ) (hs₀ : NullMeasurableSet s₀ μ)
     (h : ∀ K, IsCompact K → K ⊆ Ω → Tendsto (fun i => μ ((s i ∆ s₀) ∩ K)) l (𝓝 0)) :
     perimeter μ Ω s₀ ≤ liminf (fun i => perimeter μ Ω (s i)) l := by

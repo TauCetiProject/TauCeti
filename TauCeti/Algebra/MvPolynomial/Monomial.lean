@@ -28,6 +28,8 @@ univariate polynomial in the variable `Xᵢ`, on monomials.
   `MvPolynomial.sum_monomial_ne_zero`: the coefficients, partial degrees and nonvanishing of the
   polynomial `∑_{μ ∈ s} x_μ X^μ` whose coefficient vector `x` is indexed by a finite set `s` of
   exponents.
+* `MvPolynomial.coeff_prod_univ_X_pow`: the coefficients of the monomial `∏ᵢ Xᵢ ^ Lᵢ` in finitely
+  many variables.
 * `MvPolynomial.eval₂_monomial_sumElim_of_eq_one`: evaluating `c X^a Y^e` with every `X`
   variable set to `1` gives the value of `c Y^e`.
 * `Polynomial.toMvPolynomial_monomial`: a univariate monomial placed in `Xᵢ` is the multivariate
@@ -91,6 +93,13 @@ theorem sum_monomial_ne_zero [Finite ι] {s : Finset (ι → ℕ)} {x : s → A}
   refine ne_of_apply_ne (fun Q : MvPolynomial ι A ↦ Q.coeff (Finsupp.equivFunOnFinite.symm μ.1)) ?_
   rw [coeff_sum_monomial]
   simpa [μ.2] using hμ
+
+/-- The coefficient of `Xᴷ` in the monomial `∏ᵢ Xᵢ ^ Lᵢ` in finitely many variables is `1` when
+the exponents agree and `0` otherwise. -/
+theorem coeff_prod_univ_X_pow [Fintype ι] (L : ι → ℕ) (K : ι →₀ ℕ) :
+    (∏ i, (X i : MvPolynomial ι A) ^ L i).coeff K = if ∀ i, L i = K i then 1 else 0 := by
+  classical
+  simp [coeff_prod_X_pow, Finsupp.ext_iff, eq_comm]
 
 /-- Evaluating the monomial `c X^a Y^e` in the variables `τ ⊕ σ` at a point whose `.inl`
 coordinates are all `1` gives the value of `c Y^e` at the `.inr` coordinates. -/

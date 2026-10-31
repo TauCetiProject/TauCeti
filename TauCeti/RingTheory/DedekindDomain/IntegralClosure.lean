@@ -95,7 +95,7 @@ instance integralClosure.isDedekindDomain_fractionRing {A : Type*} [CommRing A] 
 /-- Over a Dedekind domain `A`, an integral closure of `A` in a torsion-free `A`-algebra `L` is a
 flat `A`-module. This cannot be an instance since `L` cannot be inferred. -/
 theorem IsIntegralClosure.flat (A : Type*) [CommRing A] [IsDedekindDomain A] (L : Type*)
-    [CommRing L] [Algebra A L] [Module.IsTorsionFree A L] (C : Type*) [CommRing C] [Algebra A C]
+    [CommRing L] [Algebra A L] [Module.IsTorsionFree A L] (C : Type*) [CommRing C] [Module A C]
     [Algebra C L] [IsScalarTower A C L] [IsIntegralClosure C A L] : Module.Flat A C :=
   have : Module.IsTorsionFree A C := _root_.IsIntegralClosure.isTorsionFree A L
   inferInstance

@@ -54,6 +54,8 @@ an affine parametrization with a segment whose terminal endpoint is removed.
   product space.
 * `TauCeti.image_add_smul_Ico` — the affine image of `Ico 0 D` is a segment with its terminal
   endpoint removed.
+* `TauCeti.mem_segment_lineMap_of_one_le` — a point `x` lies on the segment from `a` to any point
+  `lineMap a x T` with `1 ≤ T`, at or beyond `x` on the ray from `a` through `x`.
 * `TauCeti.exists_lineMap_endpoint` — the overlap of `[0, 1]` with its image under an affine map
   `lineMap a b` of `𝕜`, when nondegenerate, has two ends each given by a point `u ∈ [0, 1]` with
   `u` or `lineMap a b u` an end of `[0, 1]`.
@@ -212,6 +214,15 @@ theorem image_add_smul_Ico {x y u : E} {D : 𝕜} (hDpos : 0 < D) (hu : u ≠ 0)
     · nlinarith [ht.2, hDpos]
     · rw [hdir]
       simp only [smul_smul]
+
+/-- A point `x` lies on the segment from `a` to any point `lineMap a x T` with `1 ≤ T`, that is,
+to any point at or beyond `x` on the ray from `a` through `x`. -/
+theorem mem_segment_lineMap_of_one_le {a x : E} {T : 𝕜} (hT : 1 ≤ T) :
+    x ∈ segment 𝕜 a (AffineMap.lineMap a x T) := by
+  rw [segment_eq_image_lineMap]
+  refine ⟨T⁻¹, ⟨inv_nonneg.2 (zero_le_one.trans hT), inv_le_one_of_one_le₀ hT⟩, ?_⟩
+  rw [AffineMap.lineMap_lineMap_right, inv_mul_cancel₀ (zero_lt_one.trans_le hT).ne',
+    AffineMap.lineMap_apply_one]
 
 end HalfOpen
 

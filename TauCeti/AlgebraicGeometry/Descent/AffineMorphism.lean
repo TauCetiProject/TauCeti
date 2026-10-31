@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Descent.Invariants
+public import TauCeti.AlgebraicGeometry.Restrict
+public import TauCeti.AlgebraicGeometry.RelativeSpec.Affine
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Counit
 public import TauCeti.AlgebraicGeometry.RelativeSpec.Equalizer
-public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.DescentDatum
 
 /-!
 # The descended scheme of a descent datum on an affine morphism
@@ -28,7 +30,16 @@ action (`DescentDatum.act_toDescended`). Consequently it induces a morphism of d
 `D.toBaseChangeDescended : Hom D (baseChange p D.descended)` from `D` to the canonical descent
 datum on `D.descended ×_S S'`. Faithfully flat descent for affine morphisms asserts that this
 comparison is an isomorphism when `p` is flat, so that `D` is then effective with descended
-scheme `D.descended`; this file constructs the comparison.
+scheme `D.descended`.
+
+This file constructs the comparison and proves that it is an isomorphism whenever `p` is flat
+(`DescentDatum.isIso_toBaseChangeDescended_hom`), over an arbitrary base `S`. Being an
+isomorphism is local on `S`, so it suffices to work over an affine open `U` of `S`. There the
+descent datum restricts to the descent datum `D.pullbackAlong U.ι` relative to `U ×_S S' ⟶ U`,
+on `X ×_{S'} (U ×_S S')`, the part of `X` over `U`. Its invariant functions are the equalizer
+sections over `U`, by which the chart of `D.descended` over `U` is defined. Effective descent for
+affine schemes in terms of invariant functions (`DescentDatum.isPushout_invariants`) then shows
+that the part of `X` over `U` is the base change of this chart.
 
 ## Main declarations
 
@@ -41,7 +52,11 @@ scheme `D.descended`; this file constructs the comparison.
   `TauCeti.DescentDatum.relativeSpecFunctionsToScheme_toDescended` and
   `TauCeti.DescentDatum.act_toDescended`;
 * `TauCeti.DescentDatum.toBaseChangeDescended D`: the comparison morphism of descent data from `D`
-  to the canonical descent datum on the base change of `D.descended`.
+  to the canonical descent datum on the base change of `D.descended`;
+* `TauCeti.DescentDatum.isIso_toBaseChangeDescended_hom`: for `p` flat, the comparison is an
+  isomorphism, so that `D` is effective with descended scheme `D.descended`;
+* `TauCeti.DescentDatum.isPullback_toDescended`: for `p` flat, `X` is the base change of
+  `D.descended` along `p`, through the quotient map.
 
 ## References
 
@@ -170,6 +185,260 @@ theorem toBaseChangeDescended_hom_left_fst :
 theorem toBaseChangeDescended_hom_left_snd :
     D.toBaseChangeDescended.hom.left ≫ pullback.snd D.descended.hom p = X.hom :=
   pullback.lift_snd _ _ _
+
+section Effective
+
+open Opposite
+
+omit [IsAffineHom p] [IsAffineHom X.hom] in
+variable {D} in
+/-- Over an open `U` of `S`, the equalizer sections of the function algebra of `X ⟶ S` are the
+functions on the inverse image of `U` which become invariant under the restriction
+`D.pullbackAlong U.ι` of `D` over `U`, once pulled back to its carrier
+`X ×_{S'} (U ×_S S') ≅ (X.hom ≫ p) ⁻¹ᵁ U`. -/
+private theorem mem_equalizerSections_iff {U : S.Opens} {x : Γ(X.left, (X.hom ≫ p) ⁻¹ᵁ U)} :
+    ((X.hom ≫ p).pushforwardStructureAlgebraSectionsRingEquiv U).symm x ∈
+        CommMon.equalizerSections D.actAlgebraMap (sndAlgebraMap p X) U ↔
+      (pullback.fst X.hom (pullback.snd U.ι p)).appLE _ ⊤
+          (isPullback_pullbackAlongObj U.ι X).toCommSq.top_le_preimage_preimage x ∈
+        (D.pullbackAlong U.ι).invariants := by
+  have hP := isPullback_pullbackAlongActionComparison (p := p) U.ι X
+  have : IsIso ((pullbackAlongActionComparison (p := p) U.ι X).appLE _ ⊤
+      hP.toCommSq.top_le_preimage_preimage) := hP.isIso_appLE
+  -- Pulling back along a morphism `aU` of the restricted action space which the comparisons
+  -- intertwine with a morphism `a` of the action space is restriction of the pullback along `a`.
+  have key (a : pullback p (X.hom ≫ p) ⟶ X.left)
+      (ha : a ≫ X.hom ≫ p = pullback.snd p (X.hom ≫ p) ≫ X.hom ≫ p) (aU)
+      (hU : aU ≫ pullback.fst X.hom (pullback.snd U.ι p) =
+        pullbackAlongActionComparison (p := p) U.ι X ≫ a) :
+      aU.appTop ((pullback.fst X.hom (pullback.snd U.ι p)).appLE _ ⊤
+          (isPullback_pullbackAlongObj U.ι X).toCommSq.top_le_preimage_preimage x) =
+        (pullbackAlongActionComparison (p := p) U.ι X).appLE _ ⊤
+          hP.toCommSq.top_le_preimage_preimage
+          (a.appLE ((X.hom ≫ p) ⁻¹ᵁ U) ((pullback.snd p (X.hom ≫ p) ≫ X.hom ≫ p) ⁻¹ᵁ U)
+            (by rw [← Scheme.Hom.comp_preimage, ha]) x) := by
+    -- `Scheme.Hom.app_eq_appLE` states this with the open `aU ⁻¹ᵁ ⊤`, which is `⊤` only up to
+    -- defeq; the `show` retypes it with `⊤` so that the composite below is well-typed.
+    rw [show aU.appTop = aU.appLE ⊤ ⊤ (Scheme.Hom.preimage_top aU).ge from
+        Scheme.Hom.app_eq_appLE _,
+      ← CommRingCat.comp_apply, ← CommRingCat.comp_apply, Scheme.Hom.appLE_comp_appLE,
+      Scheme.Hom.appLE_comp_appLE]
+    exact congr($(Scheme.Hom.congr_appLE _ hU _ _ _ _) x)
+  rw [CommMon.mem_equalizerSections, mem_invariants_iff,
+    Scheme.Hom.sectionsAlgHom_pushforwardStructureAlgebraMap_apply,
+    Scheme.Hom.sectionsAlgHom_pushforwardStructureAlgebraMap_apply, RingEquiv.apply_symm_apply,
+    EmbeddingLike.apply_eq_iff_eq,
+    key D.act D.act_comp_hom_comp _ (pullbackAlong_act_fst U.ι D),
+    key (pullback.snd p (X.hom ≫ p)) rfl _ (pullbackAlongActionComparison_snd U.ι X).symm,
+    (ConcreteCategory.bijective_of_isIso
+      ((pullbackAlongActionComparison (p := p) U.ι X).appLE _ ⊤ _)).injective.eq_iff]
+
+omit [IsAffineHom p] [IsAffineHom X.hom] in
+/-- The equalizer sections over an open `U` of `S` are isomorphic to the invariant functions of
+the restriction of `D` over `U`, by pullback along `X ×_{S'} (U ×_S S') ⟶ X`. -/
+private noncomputable def equalizerSectionsEquiv (U : S.Opens) :
+    (CommMon.equalizerSubalgebraPresheaf D.actAlgebraMap (sndAlgebraMap p X)).sections U ≃+*
+      (D.pullbackAlong U.ι).invariants :=
+  have := (isPullback_pullbackAlongObj (p := p) U.ι X).isIso_appLE
+  (((X.hom ≫ p).pushforwardStructureAlgebraSectionsRingEquiv U).trans
+    (RingEquiv.ofBijective _ (ConcreteCategory.bijective_of_isIso
+      ((pullback.fst X.hom (pullback.snd U.ι p)).appLE _ ⊤
+        (isPullback_pullbackAlongObj U.ι X).toCommSq.top_le_preimage_preimage)))).restrict _ _
+    fun x ↦ by
+      have h := mem_equalizerSections_iff (D := D)
+        (x := (X.hom ≫ p).pushforwardStructureAlgebraSectionsRingEquiv U x)
+      rwa [RingEquiv.symm_apply_apply, ← CommMon.equalizerSubalgebraPresheaf_sections] at h
+
+omit [IsAffineHom p] [IsAffineHom X.hom] in
+/-- The isomorphism `equalizerSectionsEquiv` is pullback of functions along the inclusion of the
+part of `X` over `U`. -/
+private theorem coe_equalizerSectionsEquiv_apply (U : S.Opens)
+    (x : (CommMon.equalizerSubalgebraPresheaf D.actAlgebraMap (sndAlgebraMap p X)).sections U) :
+    (D.equalizerSectionsEquiv U x : Γ((pullbackAlongObj (p := p) U.ι X).left, ⊤)) =
+      (pullback.fst X.hom (pullback.snd U.ι p)).appLE _ ⊤
+        (isPullback_pullbackAlongObj U.ι X).toCommSq.top_le_preimage_preimage
+        ((X.hom ≫ p).pushforwardStructureAlgebraSectionsRingEquiv U x) :=
+  (rfl)
+
+omit [IsAffineHom X.hom] in
+variable (p) in
+/-- Over an affine open `U` of `S`, the base change `U ×_S S'` is affine. -/
+private theorem isAffine_pullback_ι {U : S.Opens} (hU : IsAffineOpen U) :
+    IsAffine (pullback U.ι p) :=
+  have : IsAffine U := hU
+  inferInstance
+
+variable (p X) in
+/-- Over an affine open `U` of `S`, the part `X ×_{S'} (U ×_S S')` of `X` over `U` is affine. -/
+private theorem isAffine_pullbackAlongObj_left {U : S.Opens} (hU : IsAffineOpen U) :
+    IsAffine (pullbackAlongObj (p := p) U.ι X).left :=
+  have := isAffine_pullback_ι p hU
+  inferInstanceAs (IsAffine (pullback X.hom (pullback.snd U.ι p)))
+
+/-- Over an affine open `U` of `S`, effective descent for the restriction `D.pullbackAlong U.ι` of
+`D`, with its invariant functions replaced by the equalizer sections over `U`: the carrier
+`X ×_{S'} (U ×_S S')` is the base change of `Spec` of the equalizer sections along
+`U ×_S S' ⟶ U`. -/
+private theorem isPullback_spec_equalizerSections [Flat p] {U : S.Opens} (hU : IsAffineOpen U) :
+    IsPullback ((pullbackAlongObj (p := p) U.ι X).left.toSpecΓ ≫
+        Spec.map (CommRingCat.ofHom (D.pullbackAlong U.ι).invariants.subtype) ≫
+          Spec.map (CommRingCat.ofHom (D.equalizerSectionsEquiv U).toRingHom))
+      (pullbackAlongObj (p := p) U.ι X).hom
+      (Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) ((CommMon.equalizerSubalgebraPresheaf
+        D.actAlgebraMap (sndAlgebraMap p X)).sections U))) ≫ hU.isoSpec.inv)
+      (pullback.fst U.ι p) := by
+  have : IsAffine U := hU
+  have := isAffine_pullback_ι p hU
+  have := isAffine_pullbackAlongObj_left p X hU
+  -- Effective descent for the restricted datum over the affine scheme `U`.
+  have hpb : IsPullback ((pullbackAlongObj (p := p) U.ι X).left.toSpecΓ ≫
+        Spec.map (CommRingCat.ofHom (D.pullbackAlong U.ι).invariants.subtype))
+      (pullbackAlongObj (p := p) U.ι X).hom
+      (Spec.map (CommRingCat.ofHom (D.pullbackAlong U.ι).toInvariants) ≫
+        (U : Scheme).isoSpec.inv)
+      (pullback.fst U.ι p) :=
+    (isPullback_SpecMap_of_isPushout _ _ _ _ (D.pullbackAlong U.ι).isPushout_invariants).of_iso
+      (pullbackAlongObj (p := p) U.ι X).left.isoSpec.symm (Iso.refl _)
+      (pullback U.ι p).isoSpec.symm (U : Scheme).isoSpec.symm (by simp)
+      (by simp [Scheme.isoSpec_inv_naturality]) (by simp) (by simp [Scheme.isoSpec_inv_naturality])
+  refine hpb.of_iso (Iso.refl _)
+    (Scheme.Spec.mapIso (D.equalizerSectionsEquiv U).toCommRingCatIso.op) (Iso.refl _)
+    (Iso.refl _) (by simp) (by simp) ?_ (by simp)
+  -- It remains to see that the functions on `S` restricted to `U` map to the invariant functions
+  -- of the restricted datum as they do through the equalizer sections.
+  have hr : (U.topIso.hom ≫ CommRingCat.ofHom (algebraMap Γ(S, U)
+      ((CommMon.equalizerSubalgebraPresheaf D.actAlgebraMap (sndAlgebraMap p X)).sections U)) ≫
+        CommRingCat.ofHom (D.equalizerSectionsEquiv U).toRingHom :
+      Γ(U, ⊤) ⟶ CommRingCat.of (D.pullbackAlong U.ι).invariants) =
+        CommRingCat.ofHom (D.pullbackAlong U.ι).toInvariants := by
+    ext r
+    simp only [CommRingCat.hom_comp, RingHom.comp_apply, CommRingCat.hom_ofHom]
+    rw [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, D.coe_equalizerSectionsEquiv_apply,
+      Subalgebra.coe_algebraMap, Scheme.Hom.pushforwardStructureAlgebraSectionsRingEquiv_apply,
+      Scheme.Hom.pushforwardStructureAlgebra_algebraMap, coe_toInvariants]
+    exact (isPullback_pullbackAlongObj (p := p) U.ι X).toCommSq.appLE_app_topIso_hom r
+  rw [← hr]
+  simp only [Iso.refl_hom, Category.comp_id, Functor.mapIso_hom, Iso.op_hom,
+    IsAffineOpen.isoSpec_inv, Scheme.Spec_map, Quiver.Hom.unop_op, Spec.map_comp, Category.assoc]
+  rw [Scheme.Opens.topIso_hom, RingEquiv.toCommRingCatIso_hom, RingEquiv.toRingHom_eq_coe]
+
+/-- On the chart of the descended scheme over an affine open `U` of `S`, the quotient map
+`X ⟶ D.descended` restricted to `X ×_{S'} (U ×_S S')` is `Spec` of the inclusion of the
+equalizer sections, read as invariant functions of the restricted datum. -/
+private theorem toSpecΓ_comp_relativeSpecCover {U : S.Opens} (hU : IsAffineOpen U) :
+    ((pullbackAlongObj (p := p) U.ι X).left.toSpecΓ ≫
+        Spec.map (CommRingCat.ofHom (D.pullbackAlong U.ι).invariants.subtype) ≫
+          Spec.map (CommRingCat.ofHom (D.equalizerSectionsEquiv U).toRingHom)) ≫
+        (CommMon.equalizerSubalgebraPresheaf D.actAlgebraMap
+          (sndAlgebraMap p X)).relativeSpecCover.f ⟨U, hU⟩ =
+      pullback.fst X.hom (pullback.snd U.ι p) ≫ D.toDescended := by
+  have := isAffine_pullbackAlongObj_left p X hU
+  -- The same instance, stated for the underlying pullback on which `γ` below is defined.
+  have : IsAffine (pullback X.hom (pullback.snd U.ι p)) := this
+  -- Rebind the charts over `U` and the maps of rings between them at their explicit sources and
+  -- targets, so that ordinary rewriting applies.
+  let E := CommMon.equalizerSubalgebraPresheaf D.actAlgebraMap (sndAlgebraMap p X)
+  let cA : Spec (CommRingCat.of Γ((X.hom ≫ p).pushforwardStructureAlgebra.X, U)) ⟶
+      (X.hom ≫ p).pushforwardStructureAlgebra.relativeSpec :=
+    (X.hom ≫ p).pushforwardStructureAlgebra.relativeSpecCover.f ⟨U, hU⟩
+  let cE : Spec (CommRingCat.of (E.sections U)) ⟶ D.descended.left :=
+    E.relativeSpecCover.f ⟨U, hU⟩
+  let iE : CommRingCat.of (E.sections U) ⟶
+      CommRingCat.of Γ((X.hom ≫ p).pushforwardStructureAlgebra.X, U) :=
+    E.sectionsPresheafι.app (op U)
+  let e : CommRingCat.of Γ((X.hom ≫ p).pushforwardStructureAlgebra.X, U) ≅
+      Γ(X.left, (X.hom ≫ p) ⁻¹ᵁ U) :=
+    ((X.hom ≫ p).pushforwardStructureAlgebraSectionsRingEquiv U).toCommRingCatIso
+  let γ := (pullback.fst X.hom (pullback.snd U.ι p)).appLE _ ⊤
+    (isPullback_pullbackAlongObj (p := p) U.ι X).toCommSq.top_le_preimage_preimage
+  have hA : cA ≫ (X.hom ≫ p).relativeSpecFunctionsToScheme =
+      Spec.map e.inv ≫ (hU.preimage (X.hom ≫ p)).fromSpec := by
+    have h := Scheme.Hom.relativeSpecCover_f_relativeSpecFunctionsToScheme (X.hom ≫ p) ⟨U, hU⟩
+    rw [Scheme.Hom.pushforwardStructureAlgebraPresheafIso_inv_app] at h
+    exact h
+  have hA' : Spec.map e.hom ≫ cA ≫ (X.hom ≫ p).relativeSpecFunctionsToScheme =
+      (hU.preimage (X.hom ≫ p)).fromSpec := by
+    rw [hA, ← Spec.map_comp_assoc, e.inv_hom_id, Spec.map_id, Category.id_comp]
+  have hπ : cA ≫ E.relativeSpecπ = Spec.map iE ≫ cE := E.relativeSpecCover_f_relativeSpecπ ⟨U, hU⟩
+  have hq : (X.hom ≫ p).relativeSpecFunctionsToScheme ≫ D.toDescended = E.relativeSpecπ :=
+    D.relativeSpecFunctionsToScheme_toDescended
+  -- Through `X ≅ Spec_S (π_* 𝒪_X)`, the inclusion of `(X.hom ≫ p) ⁻¹ᵁ U` followed by the
+  -- quotient map is the chart of `π_* 𝒪_X` over `U` followed by the projection to the relative
+  -- spectrum of the equalizer.
+  have hk : (hU.preimage (X.hom ≫ p)).fromSpec ≫ D.toDescended =
+      Spec.map e.hom ≫ Spec.map iE ≫ cE := by
+    rw [← hA', Category.assoc, Category.assoc, hq, hπ]
+  have hj : (pullbackAlongObj (p := p) U.ι X).left.toSpecΓ ≫ Spec.map γ ≫
+      (hU.preimage (X.hom ≫ p)).fromSpec = pullback.fst X.hom (pullback.snd U.ι p) := by
+    rw [IsAffineOpen.SpecMap_appLE_fromSpec _ _ (isAffineOpen_top _), IsAffineOpen.fromSpec_top]
+    exact (pullbackAlongObj (p := p) U.ι X).left.toSpecΓ_isoSpec_inv_assoc _
+  have hring : CommRingCat.ofHom (D.equalizerSectionsEquiv U).toRingHom ≫
+      CommRingCat.ofHom (D.pullbackAlong U.ι).invariants.subtype = iE ≫ e.hom ≫ γ := by
+    ext x
+    simp only [CommRingCat.hom_comp, RingHom.comp_apply, CommRingCat.hom_ofHom, iE, e,
+      CommMon.SubalgebraPresheaf.sectionsPresheafι_app, RingEquiv.toCommRingCatIso_hom]
+    exact D.coe_equalizerSectionsEquiv_apply U x
+  -- State the goal with the rebound chart `cE`, so that `hk` and `hring` rewrite it.
+  suffices h : ((pullbackAlongObj (p := p) U.ι X).left.toSpecΓ ≫
+      Spec.map (CommRingCat.ofHom (D.pullbackAlong U.ι).invariants.subtype) ≫
+        Spec.map (CommRingCat.ofHom (D.equalizerSectionsEquiv U).toRingHom)) ≫ cE =
+      pullback.fst X.hom (pullback.snd U.ι p) ≫ D.toDescended from h
+  refine Eq.trans ?_ (congrArg (· ≫ D.toDescended) hj)
+  simp only [Category.assoc]
+  rw [hk, ← Spec.map_comp_assoc, ← Spec.map_comp_assoc, ← Spec.map_comp_assoc, hring]
+
+/-- Over an affine open `U` of `S`, the restriction `X ×_{S'} (U ×_S S')` of `X` is the base
+change of the descended scheme along `U ×_S S' ⟶ S`, through the quotient map. -/
+private theorem isPullback_restrict [Flat p] {U : S.Opens} (hU : IsAffineOpen U) :
+    IsPullback (pullback.fst X.hom (pullback.snd U.ι p) ≫ D.toDescended)
+      (pullbackAlongObj (p := p) U.ι X).hom D.descended.hom (pullback.snd U.ι p ≫ p) := by
+  have hB := (CommMon.equalizerSubalgebraPresheaf D.actAlgebraMap
+    (sndAlgebraMap p X)).isPullback_relativeSpecCover ⟨U, hU⟩
+  rw [CommMon.SubalgebraPresheaf.toSectionsPresheaf_app] at hB
+  have := (D.isPullback_spec_equalizerSections hU).paste_horiz hB.flip
+  rwa [D.toSpecΓ_comp_relativeSpecCover hU, pullback.condition] at this
+
+/-- **Effective descent for affine morphisms.** If `p : S' ⟶ S` is affine and flat, the comparison
+from a descent datum `D` on a scheme `X` affine over `S'` to the canonical descent datum on the
+base change of the descended scheme `D.descended` is an isomorphism, over an arbitrary base `S`.
+So `D` is effective, with descended scheme `D.descended`. -/
+instance isIso_toBaseChangeDescended_hom [Flat p] : IsIso D.toBaseChangeDescended.hom := by
+  suffices IsIso ((Over.forget S').map D.toBaseChangeDescended.hom) from
+    isIso_of_reflects_iso _ (Over.forget S')
+  rw [Over.forget_map]
+  -- Cover `D.descended ×_S S'` by its parts over `U ×_S S'` for the affine opens `U` of `S`.
+  let 𝒱 := ((Scheme.AffineZariskiSite.directedCover S).pullback₂ p).pullback₁
+    (pullback.snd D.descended.hom p)
+  refine MorphismProperty.IsLocalAtTarget.of_zeroHypercover (P := .isomorphisms Scheme) 𝒱
+    fun V ↦ ?_
+  -- Over `U ×_S S'`, the comparison is the comparison of two pullbacks of `D.descended ⟶ S` along
+  -- `U ×_S S' ⟶ S`, which commutes with their projections.
+  obtain ⟨U, hU⟩ := V
+  let g : (pullbackAlongObj (p := p) U.ι X).left ⟶
+      pullback (pullback.snd D.descended.hom p) (pullback.snd U.ι p) :=
+    pullback.map _ _ _ _ D.toBaseChangeDescended.hom.left (𝟙 _) (𝟙 _) (by simp) (by simp)
+  have hsq : IsPullback (pullback.fst X.hom (pullback.snd U.ι p)) g
+      D.toBaseChangeDescended.hom.left
+      (pullback.fst (pullback.snd D.descended.hom p) (pullback.snd U.ι p)) := by
+    refine IsPullback.of_bot ?_ (by simp [g]) (IsPullback.of_hasPullback _ _)
+    simpa [g] using IsPullback.of_hasPullback X.hom (pullback.snd U.ι p)
+  have hQ := (IsPullback.of_hasPullback (pullback.snd D.descended.hom p)
+    (pullback.snd U.ι p)).paste_horiz (IsPullback.of_hasPullback D.descended.hom p)
+  have hg : g = ((D.isPullback_restrict hU).isoIsPullback _ _ hQ).hom := by
+    apply hQ.hom_ext <;> simp [g]
+  have : IsIso g := by rw [hg]; infer_instance
+  exact hsq.isoPullback_inv_snd ▸ inferInstanceAs (IsIso (hsq.isoPullback.inv ≫ g))
+
+/-- If `p : S' ⟶ S` is affine and flat, `X` is the base change of the descended scheme: the
+square formed by the quotient map `D.toDescended : X ⟶ D.descended`, the structure morphisms
+`X ⟶ S'` and `D.descended ⟶ S`, and `p` is cartesian. -/
+theorem isPullback_toDescended [Flat p] : IsPullback D.toDescended X.hom D.descended.hom p := by
+  have : IsIso D.toBaseChangeDescended.hom.left :=
+    (Over.forget S').map_isIso D.toBaseChangeDescended.hom
+  exact .of_iso_pullback ⟨D.toDescended_hom⟩ (asIso D.toBaseChangeDescended.hom.left)
+    D.toBaseChangeDescended_hom_left_fst D.toBaseChangeDescended_hom_left_snd
+
+end Effective
 
 end
 

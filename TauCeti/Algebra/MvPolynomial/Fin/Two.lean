@@ -29,6 +29,8 @@ largest `s 0 + s 1` over its support.  These are the forms in which a plane curv
 * `MvPolynomial.aeval_fin_two_eq_sum`: `φ(a, b) = ∑ₛ cₛ a ^ s 0 b ^ s 1`.
 * `MvPolynomial.aeval_monomial_fin_two`: the monomial `c X₀ ^ s 0 X₁ ^ s 1` evaluates at `(a, b)`
   to `c a ^ s 0 b ^ s 1`.
+* `MvPolynomial.IsHomogeneous.add_eq_of_mem_support`: every monomial of a homogeneous `φ` of
+  degree `n` has degree `n`.
 * `MvPolynomial.add_le_totalDegree_of_mem_support`: every monomial of `φ` has degree at most the
   total degree of `φ`.
 * `MvPolynomial.exists_mem_support_add_eq_totalDegree`: a nonzero `φ` has a monomial of degree
@@ -96,6 +98,13 @@ theorem aeval_monomial_fin_two {A : Type*} [CommSemiring A] [Algebra R A] (a b :
     aeval ![a, b] (monomial s c) = algebraMap R A c * (a ^ s 0 * b ^ s 1) := by
   rw [aeval_monomial, Finsupp.prod_fintype _ _ fun _ => pow_zero _, Fin.prod_univ_two,
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_zero]
+
+/-- Every monomial of a homogeneous polynomial of degree `n` in two variables has degree `n`. -/
+theorem IsHomogeneous.add_eq_of_mem_support {φ : MvPolynomial (Fin 2) R} {n : ℕ}
+    (hφ : φ.IsHomogeneous n) {s : Fin 2 →₀ ℕ} (hs : s ∈ φ.support) : s 0 + s 1 = n := by
+  by_contra h
+  refine mem_support_iff.mp hs (hφ.coeff_eq_zero ?_)
+  rwa [Finsupp.degree_eq_sum, Fin.sum_univ_two]
 
 /-- Every monomial of a polynomial in two variables has degree at most its total degree. -/
 theorem add_le_totalDegree_of_mem_support {φ : MvPolynomial (Fin 2) R} {s : Fin 2 →₀ ℕ}

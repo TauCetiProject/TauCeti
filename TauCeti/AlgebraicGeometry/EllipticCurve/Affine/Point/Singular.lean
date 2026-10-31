@@ -136,21 +136,13 @@ private theorem cusp_coeffs : W.a₁ = -2 * α ∧ W.a₂ = -α ^ 2 ∧ W.a₃ =
   exact ⟨by linear_combination hc, by linear_combination -hα + α * hc, h3, h4⟩
 
 include h0 hα hc in
-/-- At a cusp with tangent `y = α x` the equation reads `(y - α x)² = x³`. -/
-private theorem equation_iff_cusp {x y : F} :
-    W.toAffine.Equation x y ↔ (y - α * x) ^ 2 = x ^ 3 := by
-  rw [equation_iff_of_isSingular_zero h0]
-  constructor <;> intro h
-  · linear_combination h - (x * y - α * x ^ 2) * hc - x ^ 2 * hα
-  · linear_combination h + (x * y - α * x ^ 2) * hc + x ^ 2 * hα
-
-include h0 hα hc in
 /-- A nonsingular point of a cusp is `(1 / t², 1 / t³ + α / t²)` for `t = x / (y - α x)`. -/
 private theorem cusp_param {x y : F} (h : W.toAffine.Nonsingular x y) :
     y - α * x ≠ 0 ∧ x = 1 / (x / (y - α * x)) ^ 2 ∧
       y = 1 / (x / (y - α * x)) ^ 3 + α / (x / (y - α * x)) ^ 2 := by
   have hx := ne_zero_of_isSingular_zero h0 h
-  have he := (equation_iff_cusp h0 hα hc).1 h.1
+  have he : (y - α * x) ^ 2 = x ^ 3 := by
+    simpa using (equation_iff_sq_eq_cube_of_isSingular h0 (by simpa using hα) hc x y).1 h.1
   have hu : y - α * x ≠ 0 := fun hu ↦ hx <| by
     rw [hu, zero_pow two_ne_zero] at he
     exact pow_eq_zero_iff three_ne_zero |>.1 he.symm
@@ -163,7 +155,8 @@ private theorem cusp_param {x y : F} (h : W.toAffine.Nonsingular x y) :
 include h0 hα hc in
 private theorem cusp_nonsingular {t : F} (ht : t ≠ 0) :
     W.toAffine.Nonsingular (1 / t ^ 2) (1 / t ^ 3 + α / t ^ 2) :=
-  nonsingular_of_isSingular_zero h0 ((equation_iff_cusp h0 hα hc).2 (by field_simp; ring))
+  nonsingular_of_isSingular_zero h0
+    ((equation_iff_sq_eq_cube_of_isSingular h0 (by simpa using hα) hc _ _).2 (by field_simp; ring))
     (by simpa using ht)
 
 /-- The parameter `t = x / (y - α x)` of a point of a cusp, with the point at infinity at `0`. -/
@@ -298,16 +291,6 @@ private theorem node_coeffs : W.a₂ = α ^ 2 + W.a₁ * α ∧ W.a₃ = 0 ∧ W
   obtain ⟨-, h4, h3⟩ := (isSingular_zero _).1 h0
   exact ⟨by linear_combination -hα, h3, h4⟩
 
-include h0 hα in
-/-- At a node with tangents `y = α x` and `y = -(a₁ + α) x` the equation reads
-`(y - α x) (y + (a₁ + α) x) = x³`. -/
-private theorem equation_iff_node {x y : F} :
-    W.toAffine.Equation x y ↔ (y - α * x) * (y + (W.a₁ + α) * x) = x ^ 3 := by
-  rw [equation_iff_of_isSingular_zero h0]
-  constructor <;> intro h
-  · linear_combination h - x ^ 2 * hα
-  · linear_combination h + x ^ 2 * hα
-
 include h0 hα hn in
 /-- A nonsingular point of a split node is `(D² s / (s - 1)², -D³ s² / (s - 1)³ + α x)` for
 `D = 2 α + a₁` and `s = (y - α x) / (y + (a₁ + α) x) ≠ 1`. -/
@@ -321,7 +304,8 @@ private theorem node_param {x y : F} (h : W.toAffine.Nonsingular x y) :
         α * ((2 * α + W.a₁) ^ 2 * ((y - α * x) / (y + (W.a₁ + α) * x)) /
           ((y - α * x) / (y + (W.a₁ + α) * x) - 1) ^ 2) := by
   have hx := ne_zero_of_isSingular_zero h0 h
-  have he := (equation_iff_node h0 hα).1 h.1
+  have he : (y - α * x) * (y + (W.a₁ + α) * x) = x ^ 3 := by
+    simpa using (equation_iff_mul_eq_cube_of_isSingular h0 (by simpa using hα) x y).1 h.1
   have hu : y - α * x ≠ 0 := fun hu ↦ hx <| by
     rw [hu, zero_mul] at he
     exact pow_eq_zero_iff three_ne_zero |>.1 he.symm
@@ -345,7 +329,8 @@ include h0 hα hn in
 private theorem node_nonsingular {s : F} (hs₀ : s ≠ 0) (hs : s - 1 ≠ 0) :
     W.toAffine.Nonsingular ((2 * α + W.a₁) ^ 2 * s / (s - 1) ^ 2)
       (-(2 * α + W.a₁) ^ 3 * s ^ 2 / (s - 1) ^ 3 + α * ((2 * α + W.a₁) ^ 2 * s / (s - 1) ^ 2)) :=
-  nonsingular_of_isSingular_zero h0 ((equation_iff_node h0 hα).2 (by field_simp; ring))
+  nonsingular_of_isSingular_zero h0
+    ((equation_iff_mul_eq_cube_of_isSingular h0 (by simpa using hα) _ _).2 (by field_simp; ring))
     (div_ne_zero (mul_ne_zero (pow_ne_zero 2 hn) hs₀) (pow_ne_zero 2 hs))
 
 /-- The parameter `s = (y - α x) / (y + (a₁ + α) x)` of a point of a split node, with the point at

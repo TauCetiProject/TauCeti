@@ -42,6 +42,8 @@ Petersson complement of the old one, stable under `𝒲_N`.
   `TauCeti.normalizedFrickeOperator_levelRaise`, `TauCeti.normalizedFrickeOperatorCusp_levelRaise`:
   the Fricke operator, raw and normalized, on modular and on cusp forms, intertwines `V_d` at
   level `N` with `V_e` at level `M`.
+* `TauCeti.frickeOperatorCusp_mem_cuspFormsOldOf`: the span `cuspFormsOldOf N k P` of the
+  level-raises from the levels satisfying any condition `P` is stable.
 * `TauCeti.frickeOperatorCusp_mem_cuspFormsOld`,
   `TauCeti.normalizedFrickeOperatorCusp_mem_cuspFormsOld`: the old subspace is stable.
 * `TauCeti.cuspFormsOld_map_frickeOperatorCusp`,
@@ -180,15 +182,15 @@ theorem normalizedFrickeOperatorCusp_levelRaise [NeZero M] [NeZero d] [NeZero e]
 
 /-! ### Stability of the old subspace -/
 
-/-- **The Fricke operator preserves the old subspace**: `W_N` maps `S_k(Γ₁(N))ᵒˡᵈ` into itself.
-A level-raise `V_d f` from a proper divisor level `M`, with `d * M ∣ N`, goes to a multiple of
-`V_e (W_M f)` for the complementary `e = N / (d * M)` (`frickeOperatorCusp_levelRaise`), which is
-again old. -/
-theorem frickeOperatorCusp_mem_cuspFormsOld [NeZero N]
-    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormsOld N k) :
-    frickeOperatorCusp k f ∈ cuspFormsOld N k := by
-  refine (cuspFormsOld_le (V := (cuspFormsOld N k).comap (frickeOperatorCusp k))
-    fun M d hdM hM g ↦ ?_) hf
+/-- **The Fricke operator preserves `cuspFormsOldOf`**: `W_N` maps `cuspFormsOldOf N k P` into
+itself. A level-raise `V_d f` from a level `M` with `P M`, with `d * M ∣ N`, goes to a multiple of
+`V_e (W_M f)` for the complementary `e = N / (d * M)` (`frickeOperatorCusp_levelRaise`), again a
+level-raise from `M`. -/
+theorem frickeOperatorCusp_mem_cuspFormsOldOf [NeZero N] {P : ℕ → Prop}
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormsOldOf N k P) :
+    frickeOperatorCusp k f ∈ cuspFormsOldOf N k P := by
+  refine (cuspFormsOldOf_le (V := (cuspFormsOldOf N k P).comap (frickeOperatorCusp k))
+    fun M d hdM hP g ↦ ?_) hf
   obtain ⟨e, he⟩ := hdM
   have hN : d * e * M = N := by rw [he]; ring
   have heM : e * M ∣ N := ⟨d, by rw [← hN]; ring⟩
@@ -197,7 +199,15 @@ theorem frickeOperatorCusp_mem_cuspFormsOld [NeZero N]
   have : NeZero e := NeZero.of_dvd (dvd_of_mul_right_dvd heM)
   rw [Submodule.mem_comap, frickeOperatorCusp_levelRaise hN _
     (Gamma1_map_le_conjAct_scaleGL_of_dvd heM)]
-  exact Submodule.smul_mem _ _ (levelRaise_mem_cuspFormsOld heM hM k _)
+  exact Submodule.smul_mem _ _ (levelRaise_mem_cuspFormsOldOf heM hP k _)
+
+/-- **The Fricke operator preserves the old subspace**: `W_N` maps `S_k(Γ₁(N))ᵒˡᵈ` into itself,
+as the case of the proper divisor levels in `frickeOperatorCusp_mem_cuspFormsOldOf`. -/
+theorem frickeOperatorCusp_mem_cuspFormsOld [NeZero N]
+    {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k} (hf : f ∈ cuspFormsOld N k) :
+    frickeOperatorCusp k f ∈ cuspFormsOld N k := by
+  rw [cuspFormsOld_def] at hf ⊢
+  exact frickeOperatorCusp_mem_cuspFormsOldOf hf
 
 /-- **The normalized Fricke operator preserves the old subspace**: `𝒲_N` maps
 `S_k(Γ₁(N))ᵒˡᵈ` into itself, being a scalar multiple of `W_N`. -/

@@ -36,7 +36,7 @@ open PowerSeries
 
 namespace TauCeti
 
-variable {K : Type*} [NormedCommRing K] [NormOneClass K] [CompleteSpace K]
+variable {K : Type*} [NormedCommRing K] [CompleteSpace K]
   [IsUltrametricDist K]
 
 /-- Evaluating after the formal substitution `q = u v` agrees with directly evaluating at the

@@ -153,6 +153,16 @@ def classifyingSpaceFirstHomologyAddEquivGroupHomology :
 
 variable {G}
 
+/-- The comparison with first group homology is the abelianization computation followed by
+Mathlib's trivial-coefficient group-homology isomorphism. -/
+theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_apply
+    (x : ((singularChains ℤ).obj (TopCat.of (classifyingSpace G))).homology 1) :
+    classifyingSpaceFirstHomologyAddEquivGroupHomology G x =
+      (H1AddEquivOfIsTrivial (Rep.trivial ℤ G ℤ)).symm
+        ((TensorProduct.rid ℤ (Additive (Abelianization G))).symm
+          (classifyingSpaceFirstHomologyAddEquiv G x)) :=
+  (rfl)
+
 /-- The Hurewicz class of a loop at the base point representing `g` corresponds to the class in
 `H₁(G, ℤ)` of the `1`-cycle `g` with coefficient `1`. -/
 @[simp]

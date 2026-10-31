@@ -12,8 +12,21 @@ public import TauCeti.LinearAlgebra.Dimension.IsQuadraticExtension
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 public import TauCeti.RingTheory.Norm.Units
 
+-- Proof-only: the companion matrix computes multiplication by a quadratic generator.
+import TauCeti.LinearAlgebra.Matrix.RationalCanonicalFormFinTwo
+
 /-!
 # Trace and norm in quadratic algebras and separable quadratic extensions
+
+For a degree-two algebra `L` over a field `K`, any non-scalar element `x` gives the basis
+`(1, x)`. If `x² = t x - d`, multiplication by `x` has companion matrix
+`TauCeti.companionFinTwo t d`, whose determinant is `d`. Thus the norm of `x` is `d`
+(`TauCeti.Algebra.norm_eq_of_mul_self_eq`), requiring only a ring structure on `L`. For a
+commutative algebra its trace is `t`, by
+`Algebra.IsQuadraticExtension.trace_eq_neg_of_sq_add_mul_add_eq_zero` with coefficient `-t`.
+This covers split and non-reduced quadratic algebras such as `K × K` and `K[X]/(X²)`. The formulas
+also identify the trace and norm of the eigenvalues used in the elliptic conjugacy normal forms
+of `GL₂(K)`.
 
 For a separable quadratic extension `L/K` the trace and norm are the two elementary symmetric
 functions of the pair `{x, σx}`, where `σ` is the nontrivial automorphism: `tr x = x + σx` and
@@ -55,8 +68,10 @@ These formulas support quadratic twists and computations of norms in quadratic n
 The nonzero-discriminant criterion selects a generator for a separable quadratic extension
 and ensures that twisting by that generator preserves ellipticity.
 
-Over a base field, a square root `x` of `d ∈ K` with `x ∉ K` has characteristic polynomial
-`X² - d`, in every commutative quadratic algebra:
+Over a base field, an element `θ ∉ K` with `θ² + t θ + c = 0` has characteristic polynomial
+`X² + t X + c`, in every commutative quadratic algebra, so `Tr θ = -t` and `N θ = c`
+(`trace_eq_neg_of_sq_add_mul_add_eq_zero`, `norm_eq_of_sq_add_mul_add_eq_zero`). In particular a
+square root `x` of `d ∈ K` with `x ∉ K` has characteristic polynomial `X² - d`:
 
 * `trace_eq_zero_of_sq_eq` and `norm_eq_neg_of_sq_eq`: `Tr x = 0` and `N x = -d`;
 * `trace_algebraMap_add_algebraMap_mul_of_sq_eq` and
@@ -75,11 +90,67 @@ Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
 `FLT/Mathlib/RingTheory/Norm/Quadratic.lean` at revision `bc2fe8ff7396`, FLT PR #1088,
 Apache 2.0). That file's own header reads `Authors: Kevin Buzzard, Claude`; following this
 repository's convention for adapted material, the upstream authorship is credited here rather
-than in the copyright header. The square-root lemmas and `trace_inv` are not part of the
-adapted material.
+than in the copyright header. The root and square-root lemmas and `trace_inv` are not part of the
+adapted material. The companion-matrix calculations follow C. Bonnafé,
+*Representations of `SL₂(𝔽_q)`* (2011), Chapter 1.
 -/
 
 public section
+
+namespace TauCeti
+
+variable {F : Type*} [Field F]
+
+/-! ### The basis `(1, x)` -/
+
+section Basis
+
+variable {E : Type*} [Ring E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
+
+/-- In the basis `(1, x)`, multiplication by `x` **is** the companion matrix of the monic quadratic
+that `x` satisfies. -/
+private theorem leftMulMatrix_quadraticExtensionBasis {x : E}
+    (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
+    (hx2 : x * x = algebraMap F E t * x - algebraMap F E d) :
+    Algebra.leftMulMatrix
+      (quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)) x =
+      companionFinTwo t d := by
+  let b := quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)
+  -- Use the shared basis under a short name for the two column calculations.
+  change Algebra.leftMulMatrix b x = companionFinTwo t d
+  have e0 : x * b 0 = b 1 := by
+    simp [b]
+  have e1 : x * b 1 = (-d) • b 0 + t • b 1 := by
+    simp only [b, quadraticExtensionBasis_zero, quadraticExtensionBasis_one, Algebra.smul_def,
+      mul_one, map_neg]
+    rw [hx2, sub_eq_neg_add]
+  rw [companionFinTwo_def]
+  ext i j
+  rw [Algebra.leftMulMatrix_eq_repr_mul]
+  fin_cases j <;> fin_cases i <;> simp [e0, e1]
+
+end Basis
+
+/-! ### The norm of a quadratic generator -/
+
+namespace Algebra
+
+variable {E : Type*}
+
+/-- The norm of a non-scalar element `x` in a degree-two algebra over a field is `d` whenever
+`x² = t x - d`. The algebra need only be a ring. -/
+theorem norm_eq_of_mul_self_eq [Ring E] [Algebra F E] [Algebra.IsQuadraticExtension F E]
+    {x : E} (hx : x ∉ Set.range (algebraMap F E)) {t d : F}
+    (hx2 : x * x = algebraMap F E t * x - algebraMap F E d) :
+    Algebra.norm F x = d := by
+  rw [Algebra.norm_eq_matrix_det
+      (quadraticExtensionBasis F E hx (Algebra.IsQuadraticExtension.finrank_eq_two F E)),
+    leftMulMatrix_quadraticExtensionBasis hx hx2,
+    det_companionFinTwo]
+
+end Algebra
+
+end TauCeti
 
 section CommRing
 
@@ -158,26 +229,50 @@ variable {K L : Type*} [Field K] [CommRing L] [Algebra K L] [Algebra.IsQuadratic
 
 namespace Algebra.IsQuadraticExtension
 
+/-- In a commutative quadratic algebra over a field, a root `θ ∉ K` of `X² + t X + c` has trace
+`-t`. -/
+theorem trace_eq_neg_of_sq_add_mul_add_eq_zero {θ : L} (hθ : θ ∉ Set.range (algebraMap K L))
+    {t c : K} (h : θ ^ 2 + algebraMap K L t * θ + algebraMap K L c = 0) :
+    Algebra.trace K L θ = -t := by
+  -- By Cayley–Hamilton `θ² = Tr θ · θ - N θ`; comparing with `h` and using that `1, θ` are
+  -- linearly independent forces `Tr θ = -t`.
+  by_contra hne
+  have hsq := sq_eq_trace_smul_sub_norm K θ
+  rw [Algebra.smul_def] at hsq
+  have key : algebraMap K L (Algebra.trace K L θ + t) * θ =
+      algebraMap K L (Algebra.norm K θ - c) := by
+    rw [map_add, map_sub]
+    linear_combination h - hsq
+  have hne' : Algebra.trace K L θ + t ≠ 0 := fun h0 ↦ hne (by linear_combination h0)
+  refine hθ ⟨(Algebra.trace K L θ + t)⁻¹ * (Algebra.norm K θ - c), ?_⟩
+  rw [map_mul, ← key, ← mul_assoc, ← map_mul, inv_mul_cancel₀ hne', map_one, one_mul]
+
+/-- In a commutative quadratic algebra over a field, a root `θ ∉ K` of `X² + t X + c` has norm
+`c`: its characteristic polynomial `X² - Tr θ · X + N θ` is `X² + t X + c`. -/
+theorem norm_eq_of_sq_add_mul_add_eq_zero {θ : L} (hθ : θ ∉ Set.range (algebraMap K L))
+    {t c : K} (h : θ ^ 2 + algebraMap K L t * θ + algebraMap K L c = 0) :
+    Algebra.norm K θ = c := by
+  have := Module.nontrivial_of_finrank_eq_succ (finrank_eq_two K L)
+  have hsq := sq_eq_trace_smul_sub_norm K θ
+  rw [Algebra.smul_def, trace_eq_neg_of_sq_add_mul_add_eq_zero hθ h, map_neg] at hsq
+  have key : algebraMap K L (Algebra.norm K θ - c) = 0 := by
+    rw [map_sub]
+    linear_combination hsq - h
+  exact sub_eq_zero.mp ((map_eq_zero_iff _ (algebraMap K L).injective).mp key)
+
 /-- A square root `x` of an element of the base field, lying outside the base field, has trace
 zero. This holds in every commutative quadratic algebra over a field, including split and
 nonreduced ones; for field extensions of any finite degree it is
 `TauCeti.Algebra.trace_eq_zero_of_sq_algebraMap_of_not_mem_range`. -/
 theorem trace_eq_zero_of_sq_eq {x : L} {d : K} (hx : x ∉ Set.range (algebraMap K L))
     (hx2 : x ^ 2 = algebraMap K L d) : Algebra.trace K L x = 0 := by
-  by_contra h
-  refine hx ⟨(Algebra.trace K L x)⁻¹ * (d + Algebra.norm K x), ?_⟩
-  rw [map_mul, ← Algebra.smul_def, inv_smul_eq_iff₀ h]
-  simpa only [map_add, ← eq_sub_iff_add_eq, ← hx2] using sq_eq_trace_smul_sub_norm K x
+  simpa using trace_eq_neg_of_sq_add_mul_add_eq_zero (t := 0) (c := -d) hx (by simp [hx2])
 
 /-- A square root `x` of `d`, lying outside the base field, has norm `-d`: its characteristic
 polynomial `X² - Tr x · X + N x` is `X² - d`. -/
 theorem norm_eq_neg_of_sq_eq {x : L} {d : K} (hx : x ∉ Set.range (algebraMap K L))
-    (hx2 : x ^ 2 = algebraMap K L d) : Algebra.norm K x = -d := by
-  have := Module.nontrivial_of_finrank_eq_succ (finrank_eq_two K L)
-  apply FaithfulSMul.algebraMap_injective K L
-  rw [map_neg, ← neg_eq_iff_eq_neg]
-  simpa only [trace_eq_zero_of_sq_eq hx hx2, zero_smul, zero_sub, hx2] using
-    (sq_eq_trace_smul_sub_norm K x).symm
+    (hx2 : x ^ 2 = algebraMap K L d) : Algebra.norm K x = -d :=
+  norm_eq_of_sq_add_mul_add_eq_zero (t := 0) hx (by simp [hx2])
 
 /-- The trace in square-root coordinates: if `x² = d` with `x ∉ K`, then
 `Tr (b + a x) = 2 b`. -/

@@ -529,8 +529,7 @@ theorem formalAddEval_zero_right {t : O} (ht : PowerSeries.HasEval t) :
     funext s
     rcases s with _ | _
     · simp
-    · simpa using
-        MvPowerSeries.eval₂_C (φ := RingHom.id O) (a := fun _ : Unit ↦ t) (0 : O)
+    · simp
   have hev : MvPowerSeries.HasEval fun s : Unit ⊕ Unit ↦
       MvPowerSeries.aeval (PowerSeries.hasEval ht)
         ((Sum.elim MvPowerSeries.X (fun _ ↦ 0) : Unit ⊕ Unit → MvPowerSeries Unit O) s) := by
@@ -553,8 +552,7 @@ theorem formalAddEval_zero_left {t : O} (ht : PowerSeries.HasEval t) :
       Sum.elim (fun _ ↦ (0 : O)) fun _ ↦ t := by
     funext s
     rcases s with _ | _
-    · simpa using
-        MvPowerSeries.eval₂_C (φ := RingHom.id O) (a := fun _ : Unit ↦ t) (0 : O)
+    · simp
     · simp
   have hev : MvPowerSeries.HasEval fun s : Unit ⊕ Unit ↦
       MvPowerSeries.aeval (PowerSeries.hasEval ht)

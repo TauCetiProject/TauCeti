@@ -19,8 +19,11 @@ both degrees. Thus a stabilized chain in degree `(m, a)` maps to original chains
 summands have degrees `(-1,-1)` and `(0,0)`.
 
 This file restricts the specified comparison to homogeneous chain pieces and proves that its
-two components intertwine the graded differentials. These chain comparisons supply the grading
-input for the fully blocked homology stabilization equivalence.
+two components intertwine the graded differentials. It also shows that, on an arbitrary
+stabilized chain, the center component sends the homogeneous part of degree `g` to the homogeneous
+part of degree `g + (1,1)` of the image, and the off-center component preserves homogeneous parts.
+These chain comparisons supply the grading input for the fully blocked homology stabilization
+equivalence.
 
 ## References
 
@@ -198,5 +201,40 @@ theorem gradedFullyBlockedStabilizeXOffCenter_differential (a m : ℤ)
     ((G.stabilizeX s).bigradedChainInclusion F (m + 1, a) c)
   simpa only [LinearMap.comp_apply, LinearMap.prodMap_apply, val_stabilizeX] using
     congrArg Prod.snd h
+
+/-- The center component of the chain comparison sends the part of bidegree `g` of a stabilized
+chain to the part of bidegree `g + (1, 1)` of its image. -/
+theorem fst_fullyBlockedStabilizeXMap_bigradedChainInclusion (g : ℤ × ℤ)
+    (c : GridChain F (n + 1)) :
+    (G.1.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g
+        ((G.stabilizeX s).bigradedChainProjection F g c))).1 =
+      G.bigradedChainInclusion F (g + (1, 1))
+        (G.bigradedChainProjection F (g + (1, 1)) (G.1.fullyBlockedStabilizeXMap s c).1) := by
+  refine (G.stabilizeX s).map_bigradedChainInclusion_bigradedChainProjection G
+    (LinearMap.fst F _ _ ∘ₗ G.1.fullyBlockedStabilizeXMap s) (1, 1) (fun x y hy => ?_) g c
+  have h := G.fullyBlockedStabilizeXMap_fst_bigradedChainInclusion_eq_zero_of_ne s
+    ((G.stabilizeX s).bidegree x)
+    ((G.stabilizeX s).bigradedChainProjection F ((G.stabilizeX s).bidegree x) (Finsupp.single x 1))
+    hy
+  simpa only [bigradedChainInclusion_bigradedChainProjection_single, ↓reduceIte,
+    LinearMap.comp_apply, LinearMap.fst_apply] using h
+
+/-- The off-center component of the chain comparison preserves homogeneous parts. -/
+theorem snd_fullyBlockedStabilizeXMap_bigradedChainInclusion (g : ℤ × ℤ)
+    (c : GridChain F (n + 1)) :
+    (G.1.fullyBlockedStabilizeXMap s ((G.stabilizeX s).bigradedChainInclusion F g
+        ((G.stabilizeX s).bigradedChainProjection F g c))).2 =
+      G.bigradedChainInclusion F g
+        (G.bigradedChainProjection F g (G.1.fullyBlockedStabilizeXMap s c).2) := by
+  have h := (G.stabilizeX s).map_bigradedChainInclusion_bigradedChainProjection G
+    (LinearMap.snd F _ _ ∘ₗ G.1.fullyBlockedStabilizeXMap s) 0 (fun x y hy => ?_) g c
+  · rw [add_zero] at h
+    simpa only [LinearMap.comp_apply, LinearMap.snd_apply] using h
+  have h := G.fullyBlockedStabilizeXMap_snd_bigradedChainInclusion_eq_zero_of_ne s
+    ((G.stabilizeX s).bidegree x)
+    ((G.stabilizeX s).bigradedChainProjection F ((G.stabilizeX s).bidegree x) (Finsupp.single x 1))
+    (x := y) (by rwa [← add_zero ((G.stabilizeX s).bidegree x)])
+  simpa only [bigradedChainInclusion_bigradedChainProjection_single, ↓reduceIte,
+    LinearMap.comp_apply, LinearMap.snd_apply] using h
 
 end TauCeti.OddComponentGridDiagram

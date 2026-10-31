@@ -208,6 +208,19 @@ theorem wedgeWith_apply (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃
             (ψ.1 y (fun j ↦ v (σ (Fin.natAdd k j)))) := by
   rw [coe_wedgeWith, bundleWedgeWith_apply]
 
+/-- The smooth bundle wedge of two one-forms is the alternating two-term pairing. -/
+theorem wedgeWith_apply_one_one
+    (μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y)
+    (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
+    (hpair : ContMDiff I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) ∞
+      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y)))
+    (φ : SmoothBundleForm I F₁ V₁ 1) (ψ : SmoothBundleForm I F₂ V₂ 1)
+    (y : M) (v w : TangentSpace I y) :
+    (wedgeWith μ hμ hpair φ ψ).1 y ![v, w] =
+      μ y (φ.1 y ![v]) (ψ.1 y ![w]) - μ y (φ.1 y ![w]) (ψ.1 y ![v]) := by
+  simpa only [coe_wedgeWith] using
+    (bundleWedgeWith_apply_one_one μ hμ φ.1 ψ.1 y v w)
+
 end SmoothBundleForm
 
 end TauCeti

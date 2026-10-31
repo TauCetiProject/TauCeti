@@ -69,7 +69,7 @@ def linearHom : Comodule R H (M →ₗ[R] N) :=
 attribute [local instance] linearHom
 
 /-- The Hom coaction is transported from the tensor product of the dual and the target. -/
-@[simp]
+@[simp↓]
 theorem linearHom_coact (f : M →ₗ[R] N) :
     coact (R := R) (C := H) f =
       TensorProduct.map (dualTensorHom R M N) LinearMap.id

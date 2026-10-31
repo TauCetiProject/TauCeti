@@ -46,7 +46,7 @@ public section
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 open scoped Classical in
 /-- The counted same-side initial-side pentagon--rectangle domains are exactly the two

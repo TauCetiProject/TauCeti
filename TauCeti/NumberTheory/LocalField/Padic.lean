@@ -33,6 +33,9 @@ concrete p-adic norm and valuation APIs.
   it on `p ^ n`, and `Padic.toAdd_normalizedValuation_eq_zero_of_coe_eq` on units of `ℤ_[p]`.
 * `Padic.uniformSpace_eq_rightUniformSpace` identifies the metric uniformity on `ℚ_[p]` with
   the additive-group uniformity, so completeness arguments can use the canonical group structure.
+* `Padic.valuation_le_valuation_iff_norm_le`, `Padic.valuation_eq_valuation_iff_norm_eq` and
+  `Padic.valuation_le_valuation_natCast_pow_iff` compare the valuation of the valuative relation
+  on `ℚ_[p]` with Mathlib's norm.
 * `Padic.integerRingEquiv` identifies the ring of integers of `ℚ_[p]` with `ℤ_[p]`, and
   `Padic.isUnit_intCast_integerRing` shows that an integer prime to `p` is a unit of it.
 * `Padic.natCard_residueField` computes the residue-field cardinality of `ℚ_[p]`.
@@ -44,8 +47,10 @@ concrete p-adic norm and valuation APIs.
   the latter, `Padic.isUnit_two_integerRing` shows that `2` is a unit of the integer ring for odd
   `p`.
 * `TauCeti.Padic.irreducible_natCast_self` shows that the residue prime is a uniformizer of
-  the integer ring, and `TauCeti.Padic.isUniformizer_natCast_self` that it is a uniformizer of
-  `ℚ_[p]`.
+  the integer ring, `TauCeti.Padic.irreducible_intCast_mul_natCast_self` that so is its product
+  with an integer prime to `p`, and `TauCeti.Padic.isUniformizer_natCast_self` that it is a
+  uniformizer of `ℚ_[p]`.
+* `TauCeti.Padic.mem_maximalIdeal_pow_iff_norm_le`: `𝓂 ^ i` is the disc `‖x‖ ≤ p ^ (-i)`.
 * `TauCeti.Padic.valuation_eq_one_of_coe_eq`: a unit of `ℤ_[p]` has valuation one in `ℚ_[p]`.
 * `TauCeti.Padic.spanSingleton_natCast_pow_eq_maximalIdeal_zpow`: `p ^ n 𝒪[ℚ_[p]] = 𝓂 ^ n`.
 * `Padic.not_isSquare_neg_one_of_mod_four_eq_three`: `-1` is nonsquare in `ℚ_[p]` when
@@ -108,6 +113,30 @@ theorem toAdd_normalizedValuation_eq_zero_of_coe_eq {a : ℚ_[p]ˣ} {u : ℤ_[p]
     (ha : (a : ℚ_[p]) = u) : (TauCeti.normalizedValuation ℚ_[p] a).toAdd = 0 := by
   rw [toAdd_normalizedValuation_eq_valuation, ha, PadicInt.valuation_coe,
     PadicInt.valuation_eq_zero_of_isUnit u.isUnit, Nat.cast_zero]
+
+variable {p} in
+/-- On `ℚ_[p]` the valuation of the valuative relation and the norm induce the same order. -/
+theorem valuation_le_valuation_iff_norm_le {x y : ℚ_[p]} :
+    ValuativeRel.valuation ℚ_[p] x ≤ ValuativeRel.valuation ℚ_[p] y ↔ ‖x‖ ≤ ‖y‖ := by
+  rw [(isEquiv (ValuativeRel.valuation ℚ_[p]) Padic.mulValuation) x y, ← not_lt, ← not_lt,
+    Padic.norm_lt_norm_iff_mulValuation_lt]
+
+variable {p} in
+/-- On `ℚ_[p]` two elements have the same valuation for the valuative relation exactly when they
+have the same norm. -/
+theorem valuation_eq_valuation_iff_norm_eq {x y : ℚ_[p]} :
+    ValuativeRel.valuation ℚ_[p] x = ValuativeRel.valuation ℚ_[p] y ↔ ‖x‖ = ‖y‖ := by
+  simp only [le_antisymm_iff, valuation_le_valuation_iff_norm_le]
+
+variable {p} in
+/-- On `ℚ_[p]` the valuation of `x` is at most that of `p ^ i` exactly when
+`‖x‖ ≤ p ^ (-i)`. -/
+theorem valuation_le_valuation_natCast_pow_iff {x : ℚ_[p]} {i : ℕ} :
+    ValuativeRel.valuation ℚ_[p] x ≤
+        ValuativeRel.valuation ℚ_[p] (((p : 𝒪[ℚ_[p]]) : ℚ_[p])) ^ i ↔
+      ‖x‖ ≤ (p : ℝ) ^ (-(i : ℤ)) := by
+  rw [← map_pow, valuation_le_valuation_iff_norm_le]
+  simp
 
 /-- The ring of integers of `ℚ_[p]` for its valuative relation is Mathlib's subring of elements
 of norm at most `1`. -/
@@ -283,6 +312,23 @@ namespace TauCeti.Padic
 theorem irreducible_natCast_self : Irreducible (p : 𝒪[ℚ_[p]]) := by
   simpa only [map_natCast] using
     (PadicInt.irreducible_p (p := p)).map (_root_.Padic.integerRingEquiv p).symm
+
+variable {p} in
+/-- An element of the integer ring of `ℚ_[p]` lies in `𝓂 ^ i` exactly when its norm is at most
+`p ^ (-i)`. -/
+theorem mem_maximalIdeal_pow_iff_norm_le {x : 𝒪[ℚ_[p]]} {i : ℕ} :
+    x ∈ IsLocalRing.maximalIdeal 𝒪[ℚ_[p]] ^ i ↔ ‖(x : ℚ_[p])‖ ≤ (p : ℝ) ^ (-(i : ℤ)) := by
+  rw [← _root_.Padic.valuation_le_valuation_natCast_pow_iff]
+  exact Set.ext_iff.mp ((irreducible_natCast_self p).maximalIdeal_pow_eq_setOfPred_le_v_coe_pow
+    (ValuativeRel.valuation ℚ_[p]) i) x
+
+variable {p} in
+/-- The product of `p` with an integer prime to `p` is a uniformizer of the integer ring of
+`ℚ_[p]`. -/
+theorem irreducible_intCast_mul_natCast_self {m : ℤ} (hm : ¬ (p : ℤ) ∣ m) :
+    Irreducible ((m : 𝒪[ℚ_[p]]) * p) :=
+  (irreducible_isUnit_mul (_root_.Padic.isUnit_intCast_integerRing hm)).2
+    (irreducible_natCast_self p)
 
 /-- The residue prime `p` is a uniformizer of `ℚ_[p]`. -/
 theorem isUniformizer_natCast_self :

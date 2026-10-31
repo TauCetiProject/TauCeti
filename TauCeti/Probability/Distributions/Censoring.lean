@@ -129,30 +129,8 @@ theorem map_coe_projIcc {l r : ℝ} (hlr : l < r) :
 projection of the original quantile. -/
 @[simp] theorem quantile_map_coe_projIcc [IsProbabilityMeasure μ] {l r u : ℝ} (hlr : l ≤ r)
     (hu : u ∈ Ioo (0 : ℝ) 1) :
-    (μ.map clip[l, r; hlr]).quantile u = clip[l, r; hlr] (μ.quantile u) := by
-  let ν := μ.map clip[l, r; hlr]
-  have hlevel (x : ℝ) :
-      clip[l, r; hlr] (μ.quantile u) ≤ x ↔ u ≤ cdf ν x := by
-    rw [cdf_map_coe_projIcc μ hlr]
-    by_cases hxl : x < l
-    · rw [ite_eq_left hxl]
-      constructor <;> intro h
-      · exact ((not_le_of_gt hxl) ((Set.projIcc l r hlr _).property.1.trans h)).elim
-      · linarith [hu.1]
-    · rw [ite_eq_right hxl]
-      by_cases hxr : x < r
-      · rw [ite_eq_left hxr]
-        rw [← quantile_le_iff μ hu.1 hu.2]
-        simp only [Set.coe_projIcc]
-        grind
-      · rw [ite_eq_right hxr]
-        constructor
-        · exact fun _ ↦ hu.2.le
-        · intro _
-          exact (Set.projIcc l r hlr _).property.2.trans (not_lt.mp hxr)
-  apply le_antisymm
-  · exact (quantile_le_iff ν hu.1 hu.2).2 ((hlevel _).1 le_rfl)
-  · exact (hlevel _).2 ((quantile_le_iff ν hu.1 hu.2).1 le_rfl)
+    (μ.map clip[l, r; hlr]).quantile u = clip[l, r; hlr] (μ.quantile u) :=
+  Measure.quantile_map_of_monotone (Set.monotone_projIcc hlr) (by fun_prop) hu.1 hu.2
 
 /-- Every natural power is integrable under a law projected onto a bounded interval. -/
 theorem integrable_pow_map_coe_projIcc [IsFiniteMeasure μ] {l r : ℝ} (hlr : l ≤ r) (n : ℕ) :
@@ -260,16 +238,12 @@ cutoff and the original quantile. -/
     (fun _ _ h ↦ max_le_max le_rfl h) (by fun_prop) hu.1 hu.2
 
 /-- Integrability after lower censoring is exactly integrability on the unchanged upper tail. -/
-theorem integrable_map_coe_projIci_iff {E : Type*} [NormedAddCommGroup E]
+theorem integrable_map_coe_projIci_iff {E : Type*} [SeminormedAddGroup E]
     [IsFiniteMeasure μ] (l : ℝ) {f : ℝ → E} :
     Integrable f (μ.map fun x : ℝ ↦ (Set.projIci l x : ℝ)) ↔
       Integrable f (μ.restrict (Ioi l)) := by
   rw [map_coe_projIci μ l, integrable_add_measure]
-  refine and_iff_right ?_
-  by_cases hzero : μ (Iic l) = 0
-  · simp [hzero]
-  · rw [integrable_smul_measure hzero (measure_ne_top μ (Iic l))]
-    exact integrable_dirac (by simp)
+  exact and_iff_right ((integrable_dirac (by simp)).smul_measure (measure_ne_top μ (Iic l)))
 
 /-- Integration under lower censoring is the endpoint contribution plus the unchanged upper-tail
 integral. -/
@@ -361,16 +335,12 @@ cutoff and the original quantile. -/
     (fun _ _ h ↦ min_le_min le_rfl h) (by fun_prop) hu.1 hu.2
 
 /-- Integrability after upper censoring is exactly integrability on the unchanged lower tail. -/
-theorem integrable_map_coe_projIic_iff {E : Type*} [NormedAddCommGroup E]
+theorem integrable_map_coe_projIic_iff {E : Type*} [SeminormedAddGroup E]
     [IsFiniteMeasure μ] (r : ℝ) {f : ℝ → E} :
     Integrable f (μ.map fun x : ℝ ↦ (Set.projIic r x : ℝ)) ↔
       Integrable f (μ.restrict (Iio r)) := by
   rw [map_coe_projIic μ r, integrable_add_measure]
-  refine and_iff_left ?_
-  by_cases hzero : μ (Ici r) = 0
-  · simp [hzero]
-  · rw [integrable_smul_measure hzero (measure_ne_top μ (Ici r))]
-    exact integrable_dirac (by simp)
+  exact and_iff_left ((integrable_dirac (by simp)).smul_measure (measure_ne_top μ (Ici r)))
 
 /-- Integration under upper censoring is the unchanged lower-tail integral plus the endpoint
 contribution. -/

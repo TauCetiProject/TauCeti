@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.TensorProduct.Quotient
+public import TauCeti.Algebra.Module.Submodule.LinearMap
 public import TauCeti.LinearAlgebra.TensorProduct.Kernel
+public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 public import TauCeti.LinearAlgebra.TensorProduct.Torsion
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 
 /-!
 # Extended ideals and annihilators under scalar extension
@@ -17,6 +21,14 @@ on tensor products to be read as membership statements in extended ideals.
 The extension of a module annihilator is contained in its annihilator after arbitrary
 scalar extension, without a flatness hypothesis. The coefficient algebra `S` need not be
 commutative; extended ideals are left ideals.
+
+For an ideal `I` and a module `M`, injectivity of `I ⊗ M → R ⊗ M` is the vanishing of
+`Tor₁(R ⧸ I, M)`. `Ideal.sup_subtype_rTensor_injective` propagates it from `I` and `J` to `I ⊔ J`,
+provided `I M ∩ J M = (I ⊓ J) M`.
+
+Along a flat ring map `R → S` the base change `S ⊗[R] I` is the extended ideal `I S`, so the
+fibres of `I` and `I S` at a field-valued point of `S` have the same dimension
+(`Ideal.finrank_tensor_map_of_flat`).
 -/
 
 public section
@@ -71,3 +83,63 @@ theorem annihilator_map_le_baseChange :
 end Semiring
 
 end TauCeti
+
+namespace Ideal
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- If `I ⊗ M → R ⊗ M` and `J ⊗ M → R ⊗ M` are injective, that is, if
+`Tor₁(R ⧸ I, M) = Tor₁(R ⧸ J, M) = 0`, and `I M ∩ J M = (I ⊓ J) M`, then `(I ⊔ J) ⊗ M → R ⊗ M` is
+injective as well. -/
+theorem sup_subtype_rTensor_injective {I J : Ideal R}
+    (hI : Function.Injective (I.subtype.rTensor M))
+    (hJ : Function.Injective (J.subtype.rTensor M))
+    (hIJ : I • (⊤ : Submodule R M) ⊓ J • ⊤ ≤ (I ⊓ J) • ⊤) :
+    Function.Injective ((I ⊔ J).subtype.rTensor M) := by
+  rw [injective_iff_map_eq_zero]
+  intro t ht
+  obtain ⟨a, b, rfl⟩ := Submodule.exists_eq_rTensor_inclusion_add I J t
+  simp only [map_add, ← LinearMap.rTensor_comp_apply, Submodule.subtype_comp_inclusion] at ht
+  -- The image of `a` in `M` lies in `I M ∩ J M`, hence comes from some `s : (I ⊓ J) ⊗ M`.
+  obtain ⟨s, hs⟩ : TensorProduct.lid R M (I.subtype.rTensor M a) ∈
+      LinearMap.range ((TensorProduct.lid R M).comp ((I ⊓ J).subtype.rTensor M)) := by
+    rw [subtype_rTensor_range]
+    refine hIJ ⟨?_, ?_⟩
+    · rw [← subtype_rTensor_range]
+      exact ⟨a, rfl⟩
+    · rw [eq_neg_of_add_eq_zero_left ht, map_neg, ← subtype_rTensor_range]
+      exact neg_mem ⟨b, rfl⟩
+  rw [LinearMap.comp_apply, LinearEquiv.coe_coe, (TensorProduct.lid R M).injective.eq_iff] at hs
+  -- Since `I ⊗ M → R ⊗ M` and `J ⊗ M → R ⊗ M` are injective, `a` and `-b` both come from `s`.
+  have ha : (Submodule.inclusion inf_le_left).rTensor M s = a := hI (by
+    rw [← LinearMap.rTensor_comp_apply, Submodule.subtype_comp_inclusion, hs])
+  have hb : (Submodule.inclusion inf_le_right).rTensor M (-s) = b := hJ (by
+    rw [← LinearMap.rTensor_comp_apply, Submodule.subtype_comp_inclusion, map_neg, hs,
+      eq_neg_of_add_eq_zero_right ht])
+  simp only [← ha, ← hb, ← LinearMap.rTensor_comp_apply, Submodule.inclusion_comp_inclusion,
+    map_neg, add_neg_cancel]
+
+end Ideal
+
+namespace Ideal
+
+variable {R S F : Type*} [CommRing R] [CommRing S] [Algebra R S] [Field F] [Algebra R F]
+  [Algebra S F] [IsScalarTower R S F]
+
+/-- Along a flat ring map `R → S`, the fibre of the extended ideal `I S` at a field-valued point
+`S → F` has the same dimension as the fibre of `I`: by flatness, `S ⊗[R] I` is `I S`. The
+identification `S ⊗[R] I ≃ I S` follows the construction in the proof of Mathlib's
+`Ideal.FG.of_FG_map_of_faithfullyFlat`. -/
+theorem finrank_tensor_map_of_flat [Module.Flat R S] (I : Ideal R) :
+    Module.finrank F (F ⊗[S] I.map (algebraMap R S)) = Module.finrank F (F ⊗[R] I) := by
+  let f : S ⊗[R] I →ₗ[S] S := (AlgebraTensorModule.rid R S S).toLinearMap ∘ₗ I.subtype.baseChange S
+  have hf : Function.Injective f := (AlgebraTensorModule.rid R S S).injective.comp
+    (Module.Flat.lTensor_preserves_injective_linearMap _ I.injective_subtype)
+  have hrange : LinearMap.range f = I.map (algebraMap R S) := by
+    rw [map_eq_baseChange_map_rid, LinearMap.range_comp, Submodule.baseChange]
+  let e : S ⊗[R] I ≃ₗ[S] I.map (algebraMap R S) :=
+    LinearEquiv.ofInjective f hf ≪≫ₗ LinearEquiv.ofEq _ _ hrange
+  rw [← (e.baseChange S F _ _).finrank_eq,
+    (AlgebraTensorModule.cancelBaseChange R S F F I).finrank_eq]
+
+end Ideal

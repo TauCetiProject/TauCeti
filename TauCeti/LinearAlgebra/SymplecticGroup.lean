@@ -6,24 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.SymplecticGroup
+public import Mathlib.LinearAlgebra.UnitaryGroup
 
--- Non-public: `noncomm_ring` normalises the conjugation identities below, but no statement
--- mentions it.
+-- Non-public: `noncomm_ring` normalises the conjugation identities below, and the Schur complement
+-- evaluates `det J`, but no statement mentions either.
+import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Mathlib.Tactic.NoncommRing
 
 /-!
 # The canonical skew-symmetric matrix as a unit, and block matrices in the symplectic group
 
-Mathlib's `Matrix.J` satisfies `J * J = -1`, so it is a unit with inverse `-J`. This file records
-that unit and the conjugation cancellation it supports — `X = J * Y * J⁻¹` iff `X * J = J * Y` —
-and solves the symplectic inverse formula `SymplecticGroup.inv_eq_symplectic_inv` for the
-transpose, `Aᵀ = J * A⁻¹ * J⁻¹`. Conjugation by `J` is the shape the matrix exponential consumes:
+Mathlib's `Matrix.J` satisfies `J * J = -1`, so it is a unit with inverse `-J`, and its
+determinant is `1`. This file records that unit and the conjugation cancellation it supports —
+`X = J * Y * J⁻¹` iff `X * J = J * Y` — and solves the symplectic inverse formula
+`SymplecticGroup.inv_eq_symplectic_inv` for the transpose, `Aᵀ = J * A⁻¹ * J⁻¹`.
+Conjugation by `J` is the shape the matrix exponential consumes:
 the exponential does not interact with `Aᵀ * J = J * (-A)`, but it does turn `Aᵀ = J * (-A) * J⁻¹`
 into `(exp A)ᵀ = J * (exp A)⁻¹ * J⁻¹`.
 
 Read entrywise, `Jᵀ = -J` and `J * Jᵀ = 1` become the antisymmetry of the entries and the pairing
 of a row of `J` with itself; summing the latter over all rows contracts `J` against itself to
-`2 * card l`, the loop value of the symplectic Brauer diagrams up to sign.
+`2 * card l`, the loop value of the symplectic Brauer diagrams up to sign. Read entrywise in the
+same way, `Jᵀ * J = 1` is the orthonormality of the columns of `J`.
 
 It also records membership in `Matrix.symplecticGroup` of three families of block matrices, each a
 specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
@@ -32,14 +36,23 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 
 * `Matrix.J_mul_neg_J`, `Matrix.neg_J_mul_J` and `Matrix.isUnit_J`: the canonical skew-symmetric
   matrix is a unit, with inverse `-J`.
+* `Matrix.det_J`: its determinant is `1`.
+* `Matrix.star_J` and `Matrix.J_mem_unitaryGroup`: over any star ring its adjoint is `-J`, so
+  it is unitary (orthogonal over `ℝ`).
 * `Matrix.J_apply_swap` and `Matrix.sum_J_mul_J`: the two entrywise identities for `J`, its
   antisymmetry and the pairing of a row with itself; `Matrix.sum_sum_J_mul_J` is the double sum of
   the latter, `tr (J * Jᵀ) = 2 * card l`.
+* `Matrix.sum_J_mul_J_eq_ite`: the columns of `J` are orthonormal, `Jᵀ * J = 1` read entrywise.
 * `Matrix.eq_J_conj_iff_mul_J_eq`: cancelling a conjugation by `J`.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
   `J`-conjugate of its inverse.
 * `SymplecticGroup.mem_iff_neg_J_mul_transpose_mul_J_mul_eq_one`: the symplectic matrices are the
   unitary elements for the symplectic adjoint `A ↦ -(J * Aᵀ * J)`.
+* `SymplecticGroup.mem_iff_mem_orthogonalGroup_of_commute` and
+  `SymplecticGroup.commute_J_of_mem_orthogonalGroup`: among the matrices commuting with `J`, the
+  symplectic ones are exactly the orthogonal ones, and an orthogonal symplectic matrix commutes
+  with `J`. Any two of the three conditions symplectic, orthogonal and commuting with `J` imply the
+  third.
 * `SymplecticGroup.fromBlocks_upper_mem`: `fromBlocks 1 B 0 1` for symmetric `B`;
 * `SymplecticGroup.fromBlocks_lower_mem`: `fromBlocks 1 0 C 1` for symmetric `C`;
 * `SymplecticGroup.fromBlocks_diagonal_mem`: `fromBlocks A 0 0 D` when `Aᵀ * D = 1`.
@@ -66,6 +79,29 @@ theorem neg_J_mul_J : (-J l R) * J l R = 1 := by
 theorem isUnit_J : IsUnit (J l R) :=
   ⟨⟨J l R, -J l R, J_mul_neg_J l R, neg_J_mul_J l R⟩, rfl⟩
 
+/-- The canonical skew-symmetric matrix has determinant one. Mathlib records only
+`det J * det J = 1` (`Matrix.J_det_mul_J_det`), which leaves the sign open. -/
+@[simp]
+theorem det_J : (J l R).det = 1 := by
+  -- Multiplying by a unipotent block matrix moves the identity block into the corner, where
+  -- `Matrix.det_fromBlocks_one₂₂` evaluates the determinant.
+  have hJ : J l R * fromBlocks 1 1 0 1 = fromBlocks 0 (-1) 1 1 := by
+    simp [J, fromBlocks_multiply]
+  simpa [det_fromBlocks_zero₂₁, det_fromBlocks_one₂₂] using congrArg det hJ
+
+omit [Fintype l] in
+/-- The adjoint of the canonical skew-symmetric matrix is `-J`: its entries are `0` and `±1`, which
+every star ring fixes, so its adjoint is its transpose. -/
+@[simp]
+theorem star_J [StarRing R] : star (J l R) = -J l R := by
+  simp [star_eq_conjTranspose, J, fromBlocks_conjTranspose, fromBlocks_neg]
+
+/-- The canonical skew-symmetric matrix is unitary, orthogonal over `ℝ`: its adjoint is
+`-J = J⁻¹`. -/
+theorem J_mem_unitaryGroup [StarRing R] : J l R ∈ unitaryGroup (l ⊕ l) R := by
+  rw [mem_unitaryGroup_iff', star_J]
+  exact neg_J_mul_J l R
+
 omit [Fintype l] in
 /-- `J` is antisymmetric, entrywise: `Jᵀ = -J` read at a pair of indices. -/
 theorem J_apply_swap (x y : l ⊕ l) : J l R y x = -J l R x y := by
@@ -79,6 +115,16 @@ theorem sum_J_mul_J (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y * J l R x y = 1 :
     exact J_mul_neg_J l R
   have h := congrFun (congrFun hJ x) x
   simpa only [mul_apply, one_apply_eq, transpose_apply] using h
+
+/-- The columns of `J` are orthonormal for the standard coordinate dot product, because
+`Jᵀ * J = 1`. -/
+theorem sum_J_mul_J_eq_ite (y p : l ⊕ l) :
+    ∑ x : l ⊕ l, J l R x y * J l R x p = if y = p then 1 else 0 := by
+  have hJ : (J l R)ᵀ * J l R = 1 := by
+    rw [J_transpose]
+    exact neg_J_mul_J l R
+  have h := congrFun (congrFun hJ y) p
+  simpa only [mul_apply, one_apply, transpose_apply] using h
 
 /-- **`J` contracted against itself** is `tr (J * Jᵀ) = tr 1 = 2 * card l`: the double sum of
 `Matrix.sum_J_mul_J` over the `2 * card l` rows. -/
@@ -122,6 +168,22 @@ theorem mem_iff_neg_J_mul_transpose_mul_J_mul_eq_one {A : Matrix (l ⊕ l) (l �
   calc Aᵀ * J l R * A = -J l R * J l R * (Aᵀ * J l R * A) := by rw [neg_J_mul_J, one_mul]
     _ = J l R * -(J l R * Aᵀ * J l R * A) := by noncomm_ring
     _ = J l R := by rw [h, mul_one]
+
+/-- **For a matrix commuting with `J`, symplectic means orthogonal**: if `A * J = J * A` then
+`A * J * Aᵀ = J * (A * Aᵀ)`, which is `J` exactly when `A * Aᵀ = 1`, since `J` is a unit. -/
+theorem mem_iff_mem_orthogonalGroup_of_commute {A : Matrix (l ⊕ l) (l ⊕ l) R}
+    (h : Commute (J l R) A) : A ∈ symplecticGroup l R ↔ A ∈ orthogonalGroup (l ⊕ l) R := by
+  rw [mem_iff, mem_orthogonalGroup_iff, ← h.eq, Matrix.mul_assoc, (isUnit_J l R).mul_eq_left]
+
+/-- **An orthogonal symplectic matrix commutes with `J`**: from `A * J * Aᵀ = J` and
+`Aᵀ * A = 1`, multiplying on the right by `A` gives `A * J = J * A`. -/
+theorem commute_J_of_mem_orthogonalGroup {A : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hS : A ∈ symplecticGroup l R) (hO : A ∈ orthogonalGroup (l ⊕ l) R) :
+    Commute (J l R) A := by
+  rw [mem_iff] at hS
+  rw [mem_orthogonalGroup_iff'] at hO
+  calc J l R * A = A * J l R * Aᵀ * A := by rw [hS]
+    _ = A * J l R := by rw [Matrix.mul_assoc, hO, Matrix.mul_one]
 
 /-- An upper unitriangular block matrix is symplectic when its upper-right block is symmetric. -/
 theorem fromBlocks_upper_mem {B : Matrix l l R} (hB : Bᵀ = B) :

@@ -19,8 +19,11 @@ Let `G (x, y)` be analytic near `(x₀, y₀)`, over `ℝ` or `ℂ`, with `y` a 
 variable. This file shows that `G` vanishes to order exactly `m` in `y` along `y = y₀` for every
 `x` near `x₀` if and only if `G (x, y) = (y - y₀) ^ m • u (x, y)` near `(x₀, y₀)` with `u` analytic
 and `u (x₀, y₀) ≠ 0` (`AnalyticAt.eventually_analyticOrderAt_eq_natCast_iff`). This is
-McCallum–Parusiński–Paunescu, Lemma 4.4. Since `u` is then nonzero near `(x₀, y₀)`, it writes a
-function of constant order in a distinguished variable as a centered power `(y - y₀) ^ m` times a
+McCallum–Parusiński–Paunescu, Lemma 4.4. Since `u` is then nonzero near `(x₀, y₀)`, the
+factorization holds on a product of balls `ball x₀ r ×ˢ ball y₀ r`, a polydisc when `E` is `ι → 𝕜`,
+on which `u` is analytic and nowhere zero (`AnalyticAt.exists_ball_prod_eq_pow_smul` and
+`AnalyticAt.eventually_analyticOrderAt_eq_natCast_iff_exists_ball`). This writes a function of
+constant order in a distinguished variable as a centered power `(y - y₀) ^ m` times a
 nowhere-vanishing analytic factor, the form of the hypotheses of the Puiseux theorem with
 parameters (op. cit., §4).
 
@@ -28,6 +31,9 @@ The version with `m ≤` the order in place of equality, and no condition on `u`
 `AnalyticAt.eventually_natCast_le_analyticOrderAt_iff`. It rests on Hadamard's lemma in a
 distinguished variable (`AnalyticAt.exists_eventuallyEq_sub_smul`): a function analytic at
 `(x₀, y₀)` that vanishes on `y = y₀` near `x₀` is `(y - y₀) • H` near `(x₀, y₀)` with `H` analytic.
+Applied in both variables, it shows that a function of two variables vanishing on two crossing
+lines is divisible by the product of their equations
+(`AnalyticAt.exists_eventuallyEq_mul_smul`).
 
 ## References
 
@@ -38,6 +44,27 @@ distinguished variable (`AnalyticAt.exists_eventuallyEq_sub_smul`): a function a
 public section
 
 open Filter Set Topology
+
+section NontriviallyNormedField
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+
+/-- **Shrinking to a nowhere-vanishing unit.** A local factorization
+`G (x, y) = (y - y₀) ^ m • u (x, y)` with `u` analytic at `(x₀, y₀)` and `u (x₀, y₀) ≠ 0` holds on
+a product of balls `ball x₀ r ×ˢ ball y₀ r` on which `u` is analytic and nowhere zero. When `E` is
+`ι → 𝕜` with its sup norm, this product is a polydisc. -/
+theorem AnalyticAt.exists_ball_prod_eq_pow_smul {G u : E × 𝕜 → F} {x₀ : E} {y₀ : 𝕜} {m : ℕ}
+    (hu : AnalyticAt 𝕜 u (x₀, y₀)) (hu0 : u (x₀, y₀) ≠ 0)
+    (hGu : ∀ᶠ p in 𝓝 (x₀, y₀), G p = (p.2 - y₀) ^ m • u p) :
+    ∃ r > 0, AnalyticOnNhd 𝕜 u (Metric.ball x₀ r ×ˢ Metric.ball y₀ r) ∧
+      ∀ p ∈ Metric.ball x₀ r ×ˢ Metric.ball y₀ r, u p ≠ 0 ∧ G p = (p.2 - y₀) ^ m • u p := by
+  obtain ⟨r, hr, h⟩ := Metric.eventually_nhds_iff_ball.1
+    (hu.eventually_analyticAt.and ((hu.continuousAt.eventually_ne hu0).and hGu))
+  rw [← ball_prod_same] at h
+  exact ⟨r, hr, fun p hp ↦ (h p hp).1, fun p hp ↦ (h p hp).2⟩
+
+end NontriviallyNormedField
 
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
@@ -102,6 +129,35 @@ theorem AnalyticAt.exists_eventuallyEq_sub_smul {G : E × 𝕜 → F} {x₀ : E}
   refine intervalIntegral.integral_congr fun t _ ↦ ?_
   simp [hLapply, RCLike.real_smul_eq_coe_mul]
 
+/-- **Functions vanishing on two crossing lines.** A function of two scalar variables which is
+analytic at `(a, b)` and vanishes near `(a, b)` on the lines `y = b` and `x = a` is
+`(x - a) (y - b)` times a function analytic at `(a, b)`. -/
+theorem AnalyticAt.exists_eventuallyEq_mul_smul {G : 𝕜 × 𝕜 → F} {a b : 𝕜}
+    (hG : AnalyticAt 𝕜 G (a, b)) (h₁ : ∀ᶠ x in 𝓝 a, G (x, b) = 0)
+    (h₂ : ∀ᶠ y in 𝓝 b, G (a, y) = 0) :
+    ∃ K : 𝕜 × 𝕜 → F, AnalyticAt 𝕜 K (a, b) ∧
+      ∀ᶠ p in 𝓝 (a, b), G p = ((p.1 - a) * (p.2 - b)) • K p := by
+  -- Divide by `y - b`: `G (x, y) = (y - b) • g (x, y)`.
+  obtain ⟨g, hg, hGg⟩ := hG.exists_eventuallyEq_sub_smul h₁
+  have hla : Tendsto (fun y : 𝕜 ↦ (a, y)) (𝓝 b) (𝓝 (a, b)) :=
+    (Continuous.prodMk_right a).tendsto' b (a, b) rfl
+  -- The quotient `g` vanishes on `x = a`: off `y = b` because `G` does, then by continuity.
+  have hga : ∀ᶠ y in 𝓝 b, g (a, y) = 0 := by
+    refine ((hg.continuousAt.comp hla).eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
+      (g := fun _ ↦ 0) continuousAt_const).1 ?_
+    filter_upwards [nhdsWithin_le_nhds (hla.eventually hGg), nhdsWithin_le_nhds h₂,
+      self_mem_nhdsWithin] with y hy hy₂ hne
+    rw [hy₂, eq_comm, smul_eq_zero] at hy
+    exact hy.resolve_left (sub_ne_zero.2 hne)
+  -- Divide `g` by `x - a`: `g (x, y) = (x - a) • k (y, x)`.
+  have hswap : AnalyticAt 𝕜 Prod.swap (a, b) := analyticAt_snd.prod analyticAt_fst
+  obtain ⟨k, hk, hgk⟩ := (hg.comp (f := Prod.swap) (x := (b, a))
+    (analyticAt_snd.prod analyticAt_fst)).exists_eventuallyEq_sub_smul (h0 := hga)
+  refine ⟨k ∘ Prod.swap, hk.comp (f := Prod.swap) (x := (a, b)) hswap, ?_⟩
+  filter_upwards [hGg, (continuous_swap.tendsto (a, b)).eventually hgk] with p hp hpk
+  rw [Function.comp_apply, Prod.swap_swap, Prod.snd_swap] at hpk
+  rw [hp, hpk, smul_smul, mul_comm (p.2 - b), Function.comp_apply]
+
 /-- **Order in a distinguished variable**, lower bound: a function `G` analytic at `(x₀, y₀)`
 vanishes to order at least `m` in `y` at `y₀` along every slice `x = const` near `x₀` if and only
 if `G (x, y) = (y - y₀) ^ m • u (x, y)` near `(x₀, y₀)` for some `u` analytic at `(x₀, y₀)`. -/
@@ -164,3 +220,22 @@ theorem AnalyticAt.eventually_analyticOrderAt_eq_natCast_iff {G : E × 𝕜 → 
     filter_upwards [hGu.curry, hG.eventually_analyticAt_curry_right,
       hu.eventually_analyticAt_curry_right, hne] with x hGux hGx hux hnex
     exact hGx.analyticOrderAt_eq_natCast.2 ⟨_, hux, hnex, hGux⟩
+
+/-- **Order in a distinguished variable on a product of balls.** A function `G` analytic at
+`(x₀, y₀)` vanishes to order exactly `m` in `y` at `y₀` along every slice `x = const` near `x₀` if
+and only if, on some product of balls around `(x₀, y₀)`, `G (x, y) = (y - y₀) ^ m • u (x, y)` with
+`u` analytic and nowhere zero there. When `E` is `ι → 𝕜` with its sup norm, this product is a
+polydisc. -/
+theorem AnalyticAt.eventually_analyticOrderAt_eq_natCast_iff_exists_ball {G : E × 𝕜 → F}
+    {x₀ : E} {y₀ : 𝕜} (hG : AnalyticAt 𝕜 G (x₀, y₀)) {m : ℕ} :
+    (∀ᶠ x in 𝓝 x₀, analyticOrderAt (fun y ↦ G (x, y)) y₀ = m) ↔
+      ∃ r > 0, ∃ u : E × 𝕜 → F, AnalyticOnNhd 𝕜 u (Metric.ball x₀ r ×ˢ Metric.ball y₀ r) ∧
+        ∀ p ∈ Metric.ball x₀ r ×ˢ Metric.ball y₀ r, u p ≠ 0 ∧ G p = (p.2 - y₀) ^ m • u p := by
+  rw [hG.eventually_analyticOrderAt_eq_natCast_iff]
+  refine ⟨fun ⟨u, hu, hu0, hGu⟩ ↦ ?_, fun ⟨r, hr, u, hu, h⟩ ↦ ?_⟩
+  · obtain ⟨r, hr, h⟩ := hu.exists_ball_prod_eq_pow_smul hu0 hGu
+    exact ⟨r, hr, u, h⟩
+  · have hc : (x₀, y₀) ∈ Metric.ball x₀ r ×ˢ Metric.ball y₀ r :=
+      ⟨Metric.mem_ball_self hr, Metric.mem_ball_self hr⟩
+    exact ⟨u, hu _ hc, (h _ hc).1, eventually_of_mem
+      ((Metric.isOpen_ball.prod Metric.isOpen_ball).mem_nhds hc) fun p hp ↦ (h p hp).2⟩

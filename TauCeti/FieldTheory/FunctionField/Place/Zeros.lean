@@ -149,16 +149,11 @@ private theorem valuation_sum_eq_exp_neg {x t : F} (hx : 0 < P.ord x) (ht : P.or
   -- The coefficient block at an exponent `a`, read inside `𝒪_P`.
   set Y : Fin E → P.integers :=
     fun a ↦ ∑ j, aeval (⟨x, hxmem⟩ : P.integers) (q a j) * ⟨u j, humem j⟩ with hY
-  have hcoe : ∀ p : k[X], ((aeval (⟨x, hxmem⟩ : P.integers) p : P.integers) : F) = aeval x p := by
-    intro p
-    have := Polynomial.aeval_algHom_apply (IsScalarTower.toAlgHom k P.integers F)
-      (⟨x, hxmem⟩ : P.integers) p
-    simpa using this.symm
   have hYcoe : ∀ a : Fin E, (Y a : F) = ∑ j : Fin N, aeval x (q a j) * u j := by
     intro a
     rw [hY]
     push_cast
-    exact Finset.sum_congr rfl fun j _ ↦ by rw [hcoe]
+    rfl
   -- Regrouping: the `a`-th slice of the family is the block `Y a` times `t ^ a`.
   have hslice : ∀ a : Fin E, ∑ j : Fin N, aeval x (q a j) * (u j * t ^ (a : ℕ))
       = (Y a : F) * t ^ (a : ℕ) := by

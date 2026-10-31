@@ -8,14 +8,15 @@ module
 public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.Homotopy
+public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplexSingle
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
 # Constructions on chain homotopies
 
-Three constructions of chain homotopies: two produce new homotopies from old ones, and the
-third assembles a null-homotopy from components given all at once.
+Four constructions of chain homotopies: two produce new homotopies from old ones, and the
+other two assemble a null-homotopy from components given all at once.
 
 `Homotopy.descCokernel` descends a homotopy along a degreewise cokernel.  Let `p : L ⟶ M` exhibit
 `M` in each degree as the cokernel of `u : K ⟶ L`, and let `p' : L' ⟶ M'` be any morphism of
@@ -39,8 +40,19 @@ homotopy identities in degree zero and in positive degrees.  It is the non-induc
 Mathlib's `Homotopy.mkInductive`, for the situation where the components are constructed by a
 recursion of their own rather than one degree at a time from the previous two.
 
+`Homotopy.mkCochainComplexInt` is its counterpart for `ℤ`-indexed cochain complexes: a
+null-homotopy of `e : P ⟶ Q` from components `h n : P.X (n + 1) ⟶ Q.X n` and the homotopy
+identities `e.f (n + 1) = d ≫ h (n + 1) + h n ≫ d`, stated in every degree `n + 1` so that no
+index is a difference.
+
 `Homotopy.comm_zero_apply` and `Homotopy.comm_succ_apply` are the homotopy identities of a
 homotopy between maps of `ℕ`-indexed chain complexes of modules, evaluated on elements.
+
+`CochainComplex.nonempty_homotopy_mkHomToSingle_zero_iff` characterizes null-homotopic chain maps
+from a cochain complex `K` to an object `A` placed in degree `i`: the map given by `φ : Kⁱ ⟶ A` is
+null-homotopic if and only if `φ` factors through the differential `Kⁱ ⟶ Kⁱ⁺¹`. It is Mathlib's
+criterion `CochainComplex.HomComplex.Cocycle.toSingleMk_mem_coboundaries_iff`, translated from
+coboundaries to homotopies.
 
 `Homotopy.cyclesMap_sub_eq` expresses the difference of the maps on cycles induced by
 homotopic maps as a factorization through a term of the target complex. In particular, these
@@ -208,6 +220,38 @@ end Homotopy
 
 end MkChainComplex
 
+section MkCochainComplexInt
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] {P Q : CochainComplex C ℤ}
+
+namespace Homotopy
+
+/-- A null-homotopy of a map `e : P ⟶ Q` between `ℤ`-indexed cochain complexes, from its
+components `h n : P.X (n + 1) ⟶ Q.X n` and the homotopy identities
+`e.f (n + 1) = d ≫ h (n + 1) + h n ≫ d`. Every degree is written as `n + 1`, so that no index is
+ever a difference. The components are given all at once, as in `Homotopy.mkChainComplex`. -/
+@[no_expose]
+def mkCochainComplexInt (e : P ⟶ Q) (h : ∀ n, P.X (n + 1) ⟶ Q.X n)
+    (comm : ∀ n, e.f (n + 1) = P.d (n + 1) (n + 1 + 1) ≫ h (n + 1) + h n ≫ Q.d n (n + 1)) :
+    Homotopy e 0 where
+  hom i j := if hij : j + 1 = i then eqToHom (congrArg P.X hij.symm) ≫ h j else 0
+  zero i j hij := dite_eq_right (by simpa [ComplexShape.up_Rel] using hij)
+  comm i := by
+    obtain ⟨n, rfl⟩ : ∃ n, i = n + 1 := ⟨i - 1, by omega⟩
+    rw [dNext_eq _ (ComplexShape.up_mk (n + 1) (n + 1 + 1) rfl),
+      prevD_eq _ (ComplexShape.up_mk n (n + 1) rfl)]
+    simpa using comm n
+
+@[simp]
+lemma mkCochainComplexInt_hom (e : P ⟶ Q) (h : ∀ n, P.X (n + 1) ⟶ Q.X n)
+    (comm : ∀ n, e.f (n + 1) = P.d (n + 1) (n + 1 + 1) ≫ h (n + 1) + h n ≫ Q.d n (n + 1))
+    (n : ℤ) : (mkCochainComplexInt e h comm).hom (n + 1) n = h n := by
+  simp [mkCochainComplexInt]
+
+end Homotopy
+
+end MkCochainComplexInt
+
 section ModuleCat
 
 variable {R : Type*} [Ring R] {P Q : ChainComplex (ModuleCat R) ℕ} {e e' : P ⟶ Q}
@@ -234,3 +278,30 @@ theorem comm_succ_apply (h : Homotopy e e') (n : ℕ) (x : P.X (n + 1)) :
 end Homotopy
 
 end ModuleCat
+
+namespace CochainComplex
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C]
+
+open HomComplex in
+/-- **Null-homotopic chain maps to an object in one degree**: the chain map from `K` to `A`
+placed in degree `i` given by `φ : Kⁱ ⟶ A` is null-homotopic if and only if `φ` factors through
+the differential `Kⁱ ⟶ Kʲ`, where `j = i + 1`. -/
+lemma nonempty_homotopy_mkHomToSingle_zero_iff (K : CochainComplex C ℤ) {i j : ℤ}
+    (hij : i + 1 = j) {A : C} (φ : K.X i ⟶ A)
+    (hφ : ∀ k, (ComplexShape.up ℤ).Rel k i → K.d k i ≫ φ = 0) :
+    Nonempty (Homotopy (HomologicalComplex.mkHomToSingle φ hφ) 0) ↔
+      ∃ g : K.X j ⟶ A, K.d i j ≫ g = φ := by
+  have hφ' : K.d (i - 1) i ≫ φ = 0 := hφ _ (by simp)
+  rw [← Cocycle.toSingleMk_mem_coboundaries_iff φ (add_zero i) (i - 1) (by lia) hφ' j hij,
+    mem_coboundaries_iff _ (-1) (by simp)]
+  -- The cocycle of `Cocycle.toSingleMk` is the zero-cochain of the chain map.
+  have h : (Cocycle.toSingleMk φ (add_zero i) (i - 1) (by lia) hφ' : Cochain _ _ 0) =
+      Cochain.ofHom (HomologicalComplex.mkHomToSingle φ hφ) :=
+    (Cochain.toSingleEquiv (add_zero i)).injective (by
+      simp [Cochain.toSingleEquiv, HomologicalComplex.mkHomToSingle_f])
+  rw [h]
+  exact ⟨fun ⟨ho⟩ ↦ ⟨Cochain.ofHomotopy ho, by simp [δ_ofHomotopy]⟩,
+    fun ⟨z, hz⟩ ↦ ⟨(Cochain.equivHomotopy _ _).symm ⟨z, by simpa using hz.symm⟩⟩⟩
+
+end CochainComplex

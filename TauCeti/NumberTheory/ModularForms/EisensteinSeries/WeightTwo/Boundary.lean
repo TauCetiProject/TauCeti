@@ -56,6 +56,12 @@ levels are linearly independent. -/
 theorem linearIndependent_constantTerms_correctedE2AtLevel :
     LinearIndependent ℂ (fun d : {d : ℕ // 1 < d ∧ d ∣ N} ↦
       ModularForm.constantTerms (correctedE2AtLevel N d)) := by
+  suffices h : LinearIndependent ℂ (constantTermsAtDivisors ∘ correctedE2AtLevel N) by
+    apply LinearIndependent.of_comp (LinearMap.funLeft ℂ ℂ divisorCuspRep)
+    convert h using 1
+    funext d c
+    simp only [Function.comp_apply, LinearMap.funLeft_apply, ModularForm.constantTerms_apply,
+      constantTermsAtDivisors_apply]
   classical
   let v : N.divisors → N.divisors → ℂ :=
     fun d c ↦ (Nat.gcd c.val d.val : ℂ) ^ 2 / d.val
@@ -72,21 +78,11 @@ theorem linearIndependent_constantTerms_correctedE2AtLevel :
   let one : N.divisors := ⟨1, Nat.one_mem_divisors.mpr (NeZero.ne N)⟩
   have hd := (affineIndependent_iff_linearIndependent_vsub ℂ v one).mp
     (hv.affineIndependent ℂ)
-  let e : {d : ℕ // 1 < d ∧ d ∣ N} → {d : N.divisors // d ≠ one} := fun d ↦
-    ⟨⟨d.val, Nat.mem_divisors.mpr ⟨d.property.2, NeZero.ne N⟩⟩,
-      fun h ↦ by have := congrArg Subtype.val h; simp only [one] at this; omega⟩
-  have he : Function.Injective e := fun d d' h ↦
-    Subtype.ext (congrArg (fun x ↦ x.val.val) h)
-  let γ : N.divisors → SL(2, ℤ) := fun c ↦ ⟨!![1, 0; (c.val : ℤ), 1], by simp⟩
-  let ev : (SL(2, ℤ) → ℂ) →ₗ[ℂ] N.divisors → ℂ :=
-    LinearMap.funLeft ℂ ℂ γ
-  apply LinearIndependent.of_comp ev
-  convert! (hd.comp e he).neg using 1
+  convert (hd.comp nontrivialDivisorEquiv nontrivialDivisorEquiv.injective).neg using 1
   funext d c
-  dsimp only [Function.comp_def, Pi.neg_apply, ev, e]
-  rw [LinearMap.funLeft_apply]
-  rw [ModularForm.constantTerms_apply, constantTermAt_correctedE2AtLevel]
-  simp [γ, v, one, Int.gcd_natCast_natCast, sub_eq_add_neg, add_comm]
+  dsimp only [Function.comp_def, Pi.neg_apply]
+  rw [constantTermsAtDivisors_apply, constantTermAt_correctedE2AtLevel]
+  simp [v, one, Int.gcd_natCast_natCast, sub_eq_add_neg, add_comm]
 
 /-- The span of corrected weight-two Eisenstein series has no nonzero cusp form. -/
 theorem disjoint_span_correctedE2AtLevel_cuspFormSubmodule :

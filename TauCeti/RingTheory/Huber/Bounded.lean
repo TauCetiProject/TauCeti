@@ -131,6 +131,14 @@ theorem IsBounded.exists_pow_mul_subset {S U : Set M} {a : M} (hS : IsBounded S)
   obtain ⟨n, hn⟩ := ha.exists_pow_mem_of_mem_nhds hV
   exact ⟨n, (Set.mul_subset_mul_right (Set.singleton_subset_iff.mpr hn)).trans hVS⟩
 
+/-- A family tending to zero, times a family eventually in a bounded set, tends to zero. -/
+theorem IsBounded.tendsto_mul {S : Set M} (hS : IsBounded S) {ι : Type*} {l : Filter ι}
+    {a b : ι → M} (ha : Tendsto a l (𝓝 0)) (hb : ∀ᶠ i in l, b i ∈ S) :
+    Tendsto (fun i ↦ a i * b i) l (𝓝 0) := fun U hU ↦ by
+  obtain ⟨V, hV, hVS⟩ := hS U hU
+  refine mem_map.mpr ?_
+  filter_upwards [ha hV, hb] with i hi hi' using hVS (Set.mul_mem_mul hi hi')
+
 /-- Subsets of bounded sets are bounded. -/
 theorem IsBounded.subset {S T : Set M} (hS : IsBounded S) (hTS : T ⊆ S) : IsBounded T :=
   isModuleBounded_self_iff.mp <| (isModuleBounded_self_iff.mpr hS).subset hTS

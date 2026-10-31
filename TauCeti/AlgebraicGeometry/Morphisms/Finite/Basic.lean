@@ -25,6 +25,10 @@ of its global sections.
 If `g : Y ⟶ S` is moreover flat and locally of finite presentation (finite locally free), its
 sections `Γ(Y, g⁻¹ U)` over an affine open `U` of `S` form a projective `Γ(S, U)`-module
 (`AlgebraicGeometry.Scheme.Hom.projective_app`).
+
+Finite, flat and locally finitely presented morphisms each respect isomorphisms
+(`TauCeti.isFinite_respectsIso`, `TauCeti.flat_respectsIso` and
+`TauCeti.locallyOfFinitePresentation_respectsIso`).
 -/
 
 public section
@@ -62,3 +66,30 @@ theorem Scheme.Hom.projective_app {Y S : Scheme.{u}} (g : Y ⟶ S) [IsFinite g] 
   exact Module.Flat.projective_of_finitePresentation
 
 end AlgebraicGeometry
+
+namespace TauCeti
+
+open AlgebraicGeometry
+
+universe u
+
+/-- Finite morphisms of schemes respect isomorphisms. -/
+instance isFinite_respectsIso :
+    MorphismProperty.RespectsIso (@IsFinite : MorphismProperty Scheme.{u}) :=
+  MorphismProperty.respectsIso_of_isStableUnderComposition
+    (fun _ _ f (_ : IsIso f) ↦ inferInstance)
+
+/-- Flat morphisms of schemes respect isomorphisms. -/
+instance flat_respectsIso :
+    MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme.{u}) :=
+  MorphismProperty.respectsIso_of_isStableUnderComposition
+    (fun _ _ f (_ : IsIso f) ↦ inferInstance)
+
+/-- Morphisms of schemes locally of finite presentation respect isomorphisms. -/
+instance locallyOfFinitePresentation_respectsIso :
+    MorphismProperty.RespectsIso
+      (@LocallyOfFinitePresentation : MorphismProperty Scheme.{u}) :=
+  MorphismProperty.respectsIso_of_isStableUnderComposition
+    (fun _ _ f (_ : IsIso f) ↦ inferInstance)
+
+end TauCeti

@@ -121,11 +121,6 @@ private theorem divisorPullback_divisorPullback_mulByIntIsogeny {hψ₁ : psiFun
   have hcomm : φ.comp (mulByIntIsogeny W₁ hψ₁) = (mulByIntIsogeny W₂ hψ₂).comp φ :=
     φ.comp_mulByIntIsogenyOfNeZero (n := N) fun h ↦ hN (by
       rw [Int.natCast_eq_zero.mp h, Nat.cast_zero])
-  have hcongr : ∀ ψ ψ' : Isogeny W₁ W₂, ψ = ψ' →
-      @divisorPullback _ _ _ _ ψ ψ.fieldPullback.toRingHom.toAlgebra (fun _ ↦ rfl) D =
-        @divisorPullback _ _ _ _ ψ' ψ'.fieldPullback.toRingHom.toAlgebra (fun _ ↦ rfl) D := by
-    rintro _ _ rfl
-    rfl
   -- the composites carry their own algebra structures `F(W₂) → F(W₁)`, of the same type as that of
   -- `φ`, so every structure is passed explicitly
   rw [@divisorPullback_comp _ _ _ _ φ φ.fieldPullback.toRingHom.toAlgebra (fun _ ↦ rfl) _
@@ -137,7 +132,7 @@ private theorem divisorPullback_divisorPullback_mulByIntIsogeny {hψ₁ : psiFun
       φ.fieldPullback.toRingHom.toAlgebra
       (φ.comp (mulByIntIsogeny W₁ hψ₁)).fieldPullback.toRingHom.toAlgebra (fun _ ↦ rfl)
       (fun _ ↦ rfl) D]
-  exact hcongr _ _ hcomm.symm
+  rw [hcomm]
 
 variable [NeZero N] (hN : (N : F) ≠ 0)
 

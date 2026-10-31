@@ -8,10 +8,16 @@ module
 public import Mathlib.RingTheory.MvPowerSeries.Rename
 public import Mathlib.RingTheory.MvPowerSeries.Restricted
 public import Mathlib.RingTheory.MvPowerSeries.GaussNorm
+public import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Data.Finsupp.MonomialOrder
+public import Mathlib.RingTheory.Finiteness.Defs
+import Mathlib.LinearAlgebra.Dimension.Finite
+import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
+import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.SetTheory.Cardinal.Order
+import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
 # The Gauss norm on multivariate restricted power series
@@ -39,7 +45,11 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 * `Finsupp.prod_pow_le_prod_pow_mul`: shrinking a polyradius from `c` to `c'` divides the
   monomial weight `∏ cⱼ ^ νⱼ` at least by `(cᵢ / c'ᵢ) ^ νᵢ`.
 * `MvPowerSeries.norm_le_iff`: a norm bound is equivalent to bounds on every weighted coefficient.
+* `TauCeti.MvPowerSeries.norm_le_mul_of_norm_coeff_le`: a coefficientwise norm bound gives
+  the same Gauss-norm bound, even across different coefficient rings.
 * `MvPowerSeries.norm_lt_iff`: since the norm is attained, the same holds for strict bounds.
+* `MvPowerSeries.norm_coeff_le_norm` and `MvPowerSeries.exists_norm_coeff_eq_norm`: at unit
+  polyradius the norm is the largest coefficient norm, and it is attained.
 * `MvPowerSeries.norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le`: a constant coefficient
   dominating every other weighted coefficient attains the Gauss norm.
 * `MvPowerSeries.IsRestricted.exists_achievesGaussNorm_max`: a nonzero restricted series has a
@@ -62,6 +72,10 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 * The restricted-series subring is an algebra over every algebra `S` of coefficients, through the
   constant series, and over a normed field `K` restricted series over a normed `K`-algebra form a
   `NormedAlgebra` over `K`.
+* `TauCeti.MvPowerSeries.polynomialToRestricted`: the inclusion of polynomials as an algebra
+  homomorphism into restricted series.
+* `TauCeti.MvPowerSeries.not_finite_isRestrictedSubring`: over a nontrivial ring, restricted
+  series in at least one variable do not form a finitely generated module.
 
 ## References
 
@@ -69,6 +83,12 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
 -/
 
 public section
+
+/-- Restricted series over a normed domain form a domain at any polyradius. -/
+instance TauCeti.instIsDomainIsRestrictedSubring {σ R : Type*}
+    [NormedRing R] [IsUltrametricDist R] [IsDomain R] (c : σ → ℝ) :
+    IsDomain (MvPowerSeries.IsRestricted.subring (R := R) c) :=
+  NoZeroDivisors.to_isDomain _
 
 namespace MvPowerSeries
 
@@ -117,6 +137,42 @@ variable [IsUltrametricDist R] {c : σ → ℝ} [hc : ∀ i, Fact (0 < c i)]
 /-- At positive polyradii, the weight `∏ i, c i ^ t i` of an exponent is positive. -/
 theorem prod_pow_pos (t : σ →₀ ℕ) : 0 < t.prod (c · ^ ·) :=
   Finset.prod_pos fun i _ ↦ pow_pos (hc i).out _
+
+/-- A coefficientwise Cauchy sequence of restricted families that is uniformly Cauchy in the
+weighted coefficient norms has a restricted limit, with uniform weighted error estimates.
+This is the common limit construction for scalar and module-valued Gauss completeness. -/
+theorem _root_.TauCeti.MvPowerSeries.exists_weighted_coefficient_limit {σ E : Type*}
+    [SeminormedAddCommGroup E] [CompleteSpace E] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+    (A : ℕ → (σ →₀ ℕ) → E)
+    (hcoeff : ∀ t, CauchySeq fun k ↦ A k t)
+    (hres : ∀ k, Tendsto (fun t ↦ ‖A k t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0))
+    (hC : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ l ≥ N, ∀ t,
+      ‖A k t - A l t‖ * t.prod (c · ^ ·) < ε) :
+    ∃ a : (σ →₀ ℕ) → E,
+      Tendsto (fun t ↦ ‖a t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0) ∧
+      ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * t.prod (c · ^ ·) ≤ ε := by
+  choose a ha using fun t ↦ cauchySeq_tendsto_of_complete (hcoeff t)
+  -- Pass the Cauchy estimates to the coefficientwise limit uniformly in the exponent.
+  have hunif : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t,
+      ‖A k t - a t‖ * t.prod (c · ^ ·) ≤ ε := by
+    intro ε hε
+    obtain ⟨N, hN⟩ := hC ε hε
+    exact ⟨N, fun k hk t ↦ le_of_tendsto
+      (((tendsto_const_nhds.sub (ha t)).norm).mul_const (t.prod (c · ^ ·)))
+      (eventually_atTop.mpr ⟨N, fun l hl ↦ (hN k hk l hl t).le⟩)⟩
+  refine ⟨a, ?_, hunif⟩
+  -- A uniform weighted limit again vanishes at infinity.
+  refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun t ↦
+    hb.trans_le (mul_nonneg (norm_nonneg _) (prod_pow_pos t).le), fun ε hε ↦ ?_⟩
+  obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
+  filter_upwards [(hres N).eventually (gt_mem_nhds (half_pos hε))] with t ht
+  calc
+    ‖a t‖ * t.prod (c · ^ ·) ≤ ‖A N t‖ * t.prod (c · ^ ·) +
+        ‖A N t - a t‖ * t.prod (c · ^ ·) := by
+      rw [← add_mul]
+      exact mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _) (prod_pow_pos t).le
+    _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le ht (hN N le_rfl t)
+    _ = ε := add_halves ε
 
 omit hc in
 /-- The weights of exponents are multiplicative. -/
@@ -235,6 +291,17 @@ theorem norm_lt_iff {f : IsRestricted.subring (R := R) c} {r : ℝ} :
   rw [norm_eq_gaussNorm, ← ht]
   exact h t
 
+/-- At unit polyradius every coefficient norm is bounded by the Gauss norm. -/
+theorem norm_coeff_le_norm (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) (t : σ →₀ ℕ) :
+    ‖coeff t (f : MvPowerSeries σ R)‖ ≤ ‖f‖ := by
+  simpa using norm_coeff_mul_prod_le f t
+
+/-- At unit polyradius a restricted series has a coefficient whose norm is its Gauss norm. -/
+theorem exists_norm_coeff_eq_norm (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) :
+    ∃ t, ‖coeff t (f : MvPowerSeries σ R)‖ = ‖f‖ := by
+  obtain ⟨t, ht⟩ := exists_achievesGaussNorm f
+  exact ⟨t, by simpa [AchievesGaussNorm, ← norm_eq_gaussNorm] using ht⟩
+
 /-- The norm of a restricted monomial is its weighted coefficient norm. -/
 @[simp]
 theorem norm_monomial (t : σ →₀ ℕ) (a : R) :
@@ -320,34 +387,15 @@ instance [CompleteSpace R] : CompleteSpace
   refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
   have hcoeff (t : σ →₀ ℕ) : CauchySeq fun k ↦ coeff t (F k : MvPowerSeries σ R) :=
     (uniformContinuous_coeff_isRestrictedSubring t).comp_cauchySeq hF
-  -- Multivariate power series are coefficient functions; `a` is their coefficientwise limit.
-  choose a ha using fun t ↦ cauchySeq_tendsto_of_complete (hcoeff t)
-  have hunif : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t,
-      ‖coeff t (F k : MvPowerSeries σ R) - a t‖ * t.prod (c · ^ ·) ≤ ε := by
-    intro ε hε
-    obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
-    refine ⟨N, fun k hk t ↦ le_of_tendsto
-      (((tendsto_const_nhds.sub (ha t)).norm).mul_const (t.prod (c · ^ ·)))
-      (eventually_atTop.mpr ⟨N, fun l hl ↦ ?_⟩)⟩
-    have h := norm_coeff_mul_prod_le (F k - F l) t
-    rw [AddSubgroupClass.coe_sub, map_sub] at h
-    exact h.trans ((dist_eq_norm _ _).symm.trans_le (hN k hk l hl).le)
-  have hg : IsRestricted c (a : MvPowerSeries σ R) := by
-    refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun t ↦
-      hb.trans_le (mul_nonneg (norm_nonneg _) (prod_pow_pos t).le), fun ε hε ↦ ?_⟩
-    obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
-    filter_upwards [((F N).2).eventually (gt_mem_nhds (half_pos hε))] with t ht
-    calc ‖coeff t (a : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
-        ≤ ‖coeff t (F N : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) +
-          ‖coeff t (F N : MvPowerSeries σ R) - a t‖ * t.prod (c · ^ ·) := by
-            rw [← add_mul]
-            exact mul_le_mul_of_nonneg_right
-              (by
-                rw [coeff_apply (a : MvPowerSeries σ R) t]
-                exact norm_le_norm_add_norm_sub
-                  (coeff t (F N : MvPowerSeries σ R)) (a t)) (prod_pow_pos t).le
-      _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le ht (hN N le_rfl t)
-      _ = ε := add_halves ε
+  obtain ⟨a, hg, hunif⟩ := TauCeti.MvPowerSeries.exists_weighted_coefficient_limit
+    (fun k t ↦ coeff t (F k : MvPowerSeries σ R)) hcoeff (fun k ↦ (F k).2)
+    (by
+      intro ε hε
+      obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
+      refine ⟨N, fun k hk l hl t ↦ ?_⟩
+      have h := norm_coeff_mul_prod_le (F k - F l) t
+      rw [AddSubgroupClass.coe_sub, map_sub] at h
+      exact h.trans_lt ((dist_eq_norm _ _).symm.trans_lt (hN k hk l hl)))
   refine ⟨⟨a, hg⟩, Metric.tendsto_atTop.mpr fun ε hε ↦ ?_⟩
   obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
   refine ⟨N, fun k hk ↦ (?_ : _ ≤ ε / 2).trans_lt (half_lt_self hε)⟩
@@ -561,6 +609,11 @@ theorem norm_algebraMap_isRestrictedSubring (r : R) :
     Subtype.ext (coe_algebraMap_isRestrictedSubring r)
   rw [h, norm_C]
 
+/-- The constant-series embedding is an isometry. -/
+theorem isometry_algebraMap_isRestrictedSubring :
+    Isometry (algebraMap R (IsRestricted.subring (R := R) c)) :=
+  AddMonoidHomClass.isometry_of_norm _ norm_algebraMap_isRestrictedSubring
+
 end NormedCommRing
 
 section Rename
@@ -572,16 +625,8 @@ variable {σ τ R : Type*} [NormedCommRing R]
 restricted at the reindexed polyradii `c ∘ e`. -/
 theorem isRestricted_renameEquiv_iff (e : σ ≃ τ) {c : τ → ℝ} {f : MvPowerSeries σ R} :
     IsRestricted c (renameEquiv R e f) ↔ IsRestricted (c ∘ e) f := by
-  -- the weighted coefficients of `f` are those of the renamed series, reindexed along `e`
-  have h : (fun t : σ →₀ ℕ ↦ ‖coeff t f‖ * t.prod ((c ∘ e) · ^ ·)) =
-      (fun u : τ →₀ ℕ ↦ ‖coeff u (renameEquiv R e f)‖ * u.prod (c · ^ ·)) ∘
-        Finsupp.equivCongrLeft e := by
-    funext t
-    have hc : coeff (t.equivMapDomain e) (rename e f) = coeff t f := by
-      simpa [Finsupp.embDomain_eq_mapDomain, Finsupp.equivMapDomain_eq_mapDomain] using
-        coeff_embDomain_rename e.toEmbedding f t
-    simp [hc, Finsupp.prod_equivMapDomain]
-  rw [IsRestricted, IsRestricted, h, ← (Finsupp.equivCongrLeft e).injective.comap_cofinite_eq]
+  rw [IsRestricted, IsRestricted, weightedCoeff_renameEquiv,
+    ← (Finsupp.equivCongrLeft e).injective.comap_cofinite_eq]
   exact (tendsto_comap'_iff (by rw [(Finsupp.equivCongrLeft e).range_eq_univ]; exact univ_mem)).symm
 
 variable [IsUltrametricDist R]
@@ -600,6 +645,19 @@ underlying series. -/
 theorem IsRestricted.coe_renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ)
     (f : IsRestricted.subring (R := R) (c ∘ e)) :
     (renameAlgEquiv e c f : MvPowerSeries τ R) = renameEquiv R e f := (rfl)
+
+/-- Reindexing positive polyradii keeps them positive. -/
+instance IsRestricted.fact_pos_comp {c : τ → ℝ} [∀ i, Fact (0 < c i)] (e : σ → τ) (i : σ) :
+    Fact (0 < (c ∘ e) i) :=
+  ⟨Fact.out (p := 0 < c (e i))⟩
+
+/-- Renaming the variables of restricted series preserves the Gauss norm. -/
+@[simp]
+theorem IsRestricted.norm_renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ) [∀ i, Fact (0 < c i)]
+    (f : IsRestricted.subring (R := R) (c ∘ e)) : ‖renameAlgEquiv e c f‖ = ‖f‖ := by
+  rw [norm_eq_gaussNorm, norm_eq_gaussNorm,
+    gaussNorm, gaussNorm, coe_renameAlgEquiv, ← (Finsupp.equivCongrLeft e).iSup_comp]
+  exact congrArg iSup (weightedCoeff_renameEquiv e c (f : MvPowerSeries σ R)).symm
 
 end Rename
 
@@ -629,6 +687,41 @@ theorem coe_smul_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] 
   rw [Algebra.smul_def, Subring.coe_mul, coe_algebraMap_isRestrictedSubring_apply, coeff_C_mul]
   exact (Algebra.smul_def s _).symm
 
+variable (c) in
+/-- The inclusion of polynomials into the algebra of restricted power series: Mathlib's
+`MvPolynomial.toRestricted` as an `R`-algebra homomorphism. -/
+noncomputable def polynomialToRestricted :
+    MvPolynomial σ R →ₐ[R] IsRestricted.subring (R := R) c where
+  __ := MvPolynomial.toRestricted c
+  commutes' r := Subtype.ext (MvPolynomial.coe_C r)
+
+/-- The polynomial inclusion has the usual underlying power series. -/
+@[simp]
+theorem coe_polynomialToRestricted (p : MvPolynomial σ R) :
+    (polynomialToRestricted c p : MvPowerSeries σ R) = p := (rfl)
+
+/-- The polynomial inclusion sends `p` to `p` with its restrictedness witness. -/
+theorem polynomialToRestricted_apply (p : MvPolynomial σ R) :
+    polynomialToRestricted c p = ⟨(p : MvPowerSeries σ R), p.isRestricted c⟩ := (rfl)
+
+/-- The polynomial inclusion sends each variable to the corresponding variable. -/
+@[simp]
+theorem polynomialToRestricted_X (i : σ) :
+    polynomialToRestricted c (MvPolynomial.X i) =
+      ⟨X i, isRestricted_monomial c (Finsupp.single i 1) (1 : R)⟩ :=
+  Subtype.ext (MvPolynomial.coe_X i)
+
+variable (c) in
+/-- Over a nontrivial ring, restricted series in at least one variable do not form a finitely
+generated module: the restricted monomials are linearly independent and infinite in number. -/
+theorem not_finite_isRestrictedSubring [Nontrivial R] [Nonempty σ] :
+    ¬Module.Finite R (IsRestricted.subring (R := R) c) := fun _ ↦
+  Module.Finite.not_linearIndependent_of_infinite _
+    ((MvPolynomial.basisMonomials σ R).linearIndependent.map'
+      (polynomialToRestricted c).toLinearMap
+      (LinearMap.ker_eq_bot.2 fun _ _ h ↦
+        MvPolynomial.coe_injective σ R (by simpa using congrArg Subtype.val h)))
+
 end Algebra
 
 section NormedField
@@ -652,5 +745,23 @@ noncomputable instance instNormedAlgebraIsRestrictedSubring :
       _ ≤ ‖r‖ * ‖f‖ := mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le f t) (norm_nonneg r)
 
 end NormedField
+
+/-- A coefficientwise norm bound gives the same Gauss-norm bound for restricted series over
+possibly different coefficient rings, at the same positive polyradii. -/
+theorem norm_le_mul_of_norm_coeff_le {σ R S : Type*}
+    [NormedRing R] [IsUltrametricDist R] [NormedRing S] [IsUltrametricDist S]
+    {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+    {f : IsRestricted.subring (R := R) c} {g : IsRestricted.subring (R := S) c}
+    {K : ℝ} (hK : 0 ≤ K)
+    (h : ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ ≤ K * ‖coeff t (g : MvPowerSeries σ S)‖) :
+    ‖f‖ ≤ K * ‖g‖ := by
+  refine (norm_le_iff (mul_nonneg hK (norm_nonneg g))).mpr fun t ↦ ?_
+  calc
+    ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
+        K * ‖coeff t (g : MvPowerSeries σ S)‖ * t.prod (c · ^ ·) :=
+      mul_le_mul_of_nonneg_right (h t) (prod_pow_pos t).le
+    _ ≤ K * ‖g‖ := by
+      rw [mul_assoc]
+      exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le g t) hK
 
 end TauCeti.MvPowerSeries

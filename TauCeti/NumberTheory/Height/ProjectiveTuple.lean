@@ -42,6 +42,8 @@ theorem.
 
 * `TauCeti.absoluteProjectiveTupleHeight_eq`: for a tuple `x` in a number field `K`, the absolute
   height is `H_K(x) ^ (1 / [K : ℚ])`.
+* `TauCeti.absoluteProjectiveTupleHeight_le_of_forall_le`: a nonzero tuple of algebraic integers
+  whose coordinates are at most `c` at every infinite place has absolute height at most `c`.
 * `TauCeti.absoluteProjectiveTupleHeight_comp`: invariance under homomorphisms of fields of
   characteristic zero.
 * `TauCeti.absoluteProjectiveTupleHeight_smul`: invariance under nonzero algebraic scalars.
@@ -109,6 +111,20 @@ theorem absoluteProjectiveTupleHeight_eq {K : Type*} [Field K] [NumberField K] (
   push_cast
   field_simp
 
+/-- A nonzero tuple of algebraic integers whose coordinates have absolute value at most `c` at
+every infinite place has absolute height at most `c`. -/
+theorem absoluteProjectiveTupleHeight_le_of_forall_le {K : Type*} [Field K] [NumberField K]
+    {y : ι → 𝓞 K} (hy : y ≠ 0) {c : ℝ} (hc : ∀ i (w : InfinitePlace K), w (y i) ≤ c) :
+    absoluteProjectiveTupleHeight (fun i ↦ (y i : K)) ≤ c := by
+  obtain ⟨i₀, -⟩ := Function.ne_iff.mp hy
+  have hc0 : 0 ≤ c := (apply_nonneg _ _).trans (hc i₀ (Classical.arbitrary _))
+  rw [absoluteProjectiveTupleHeight_eq]
+  calc mulHeight (fun i ↦ (y i : K)) ^ (finrank ℚ K : ℝ)⁻¹
+      ≤ (c ^ finrank ℚ K) ^ (finrank ℚ K : ℝ)⁻¹ :=
+        Real.rpow_le_rpow (mulHeight_pos _).le (mulHeight_le_pow_finrank_of_forall_le hy hc)
+          (by positivity)
+    _ = c := Real.pow_rpow_inv_natCast hc0 finrank_pos.ne'
+
 /-- The absolute height is invariant under homomorphisms of fields of characteristic zero. -/
 @[simp]
 theorem absoluteProjectiveTupleHeight_comp (f : F →+* F') (x : ι → F) :
@@ -123,16 +139,13 @@ theorem absoluteProjectiveTupleHeight_comp (f : F →+* F') (x : ι → F) :
     have : NumberField E := {}
     have : FiniteDimensional ℚ E' := finiteDimensional_adjoin (by rintro _ ⟨i, rfl⟩; exact hfx i)
     have : NumberField E' := {}
-    have hE : E.map f.toRatAlgHom = E' := by
-      rw [adjoin_map, ← Set.range_comp]
-      rfl
     -- `f` restricts to an isomorphism `ℚ(x) ≃ ℚ(f ∘ x)` sending `x` to `f ∘ x`.
-    let e : E ≃ₐ[ℚ] E' := (equivMap E f.toRatAlgHom).trans (equivOfEq hE)
+    let e : E ≃ₐ[ℚ] E' := adjoinRangeMapEquiv x f
     rw [absoluteProjectiveTupleHeight, dite_eq_left hfx, absoluteProjectiveTupleHeight,
       dite_eq_left hx, ← e.toLinearEquiv.finrank_eq, ← mulHeight_ringEquiv e.toRingEquiv]
     -- `e` sends `⟨x i, _⟩` to `⟨f (x i), _⟩`.
     refine congrArg (· ^ _) (congrArg mulHeight (funext fun i ↦ Subtype.ext ?_))
-    simp [e]
+    exact (coe_adjoinRangeMapEquiv_apply x f ⟨x i, subset_adjoin ℚ _ (Set.mem_range_self i)⟩).symm
   · obtain ⟨i, hi⟩ := not_forall.mp hx
     rw [absoluteProjectiveTupleHeight_of_not_isIntegral hi,
       absoluteProjectiveTupleHeight_of_not_isIntegral (i := i) ((hint i).not.mpr hi)]
@@ -159,6 +172,18 @@ theorem one_le_absoluteProjectiveTupleHeight (x : ι → F) :
 /-- The absolute height of a tuple is positive. -/
 theorem absoluteProjectiveTupleHeight_pos (x : ι → F) : 0 < absoluteProjectiveTupleHeight x :=
   zero_lt_one.trans_le (one_le_absoluteProjectiveTupleHeight x)
+
+/-- A tuple with at most one coordinate has absolute projective height one, including the
+empty tuple and the transcendental junk branch. -/
+@[simp]
+theorem absoluteProjectiveTupleHeight_eq_one_of_subsingleton [Subsingleton ι] (x : ι → F) :
+    absoluteProjectiveTupleHeight x = 1 := by
+  by_cases hx : ∀ i, IsIntegral ℚ (x i)
+  · obtain ⟨E, _, y, rfl⟩ := exists_numberField_comp fun i ↦ (hx i).isAlgebraic
+    rw [absoluteProjectiveTupleHeight_comp, absoluteProjectiveTupleHeight_eq,
+      Height.mulHeight_eq_one_of_subsingleton, Real.one_rpow]
+  · obtain ⟨i, hi⟩ := not_forall.mp hx
+    exact absoluteProjectiveTupleHeight_of_not_isIntegral hi
 
 /-- The absolute height is invariant under reordering the coordinates. -/
 @[simp]

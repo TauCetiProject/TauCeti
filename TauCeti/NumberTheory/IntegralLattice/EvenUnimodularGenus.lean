@@ -9,16 +9,15 @@ public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.EvenUnimodular
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Plus
 public import TauCeti.NumberTheory.IntegralLattice.Genus
 import TauCeti.LinearAlgebra.IntegralLattice.PosDef.RepresentationNumber
-import TauCeti.NumberTheory.IntegralLattice.Dyadic.Unimodular
+import TauCeti.NumberTheory.IntegralLattice.UnimodularGenus
 
 /-!
 # The genus of even unimodular lattices
 
-Two even unimodular lattices with equal signatures lie in one genus. The determinant of a
-unimodular lattice is `(-1) ^ n₋`, a unit determined by the signature, so only the prime `2` needs
-a local comparison, and there the even unimodular forms over `ℤ_[2]` are classified by rank and
-determinant square class. In particular, the positive definite even unimodular lattices of a given
-rank form a single genus.
+Two even unimodular lattices with equal signatures lie in one genus, by the description of the
+genus of a unimodular lattice through its signature and type
+(`TauCeti.IntegralLattice.sameGenus_iff_of_isUnimodular`). In particular, the positive definite
+even unimodular lattices of a given rank form a single genus.
 
 From rank sixteen on, this genus has more than one class. For `k ≥ 2` the lattices `E₈^k` and
 `D_{8k}⁺` are both positive definite, even and unimodular of rank `8k`, hence in one genus, but they
@@ -54,33 +53,12 @@ open Module
 variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
   {L : IntegralLattice V} {M : IntegralLattice W}
 
-/-- **Even unimodular lattices with equal signatures lie in one genus.** Both determinants equal
-`(-1) ^ n₋`. Away from `2` both localizations are unimodular of equal rank and determinant, and at
-`2` even unimodular forms over `ℤ_[2]` are classified by rank and determinant square class. -/
+/-- **Even unimodular lattices with equal signatures lie in one genus.** This is the even case of
+`TauCeti.IntegralLattice.sameGenus_iff_of_isUnimodular`. -/
 theorem sameGenus_of_isEven_of_isUnimodular (hLe : L.IsEven) (hMe : M.IsEven)
     (hLu : L.IsUnimodular) (hMu : M.IsUnimodular) (hsig : L.signature = M.signature) :
-    L.SameGenus M := by
-  have : L.IsNondegenerate := ⟨hLu.nondegenerate⟩
-  have : M.IsNondegenerate := ⟨hMu.nondegenerate⟩
-  -- Both determinants are `(-1) ^ n₋`, since both discriminants are `1`.
-  have hdet : L.determinant = M.determinant := by
-    rw [L.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
-      M.determinant_eq_neg_one_pow_sigNeg_mul_discriminant,
-      L.isUnimodular_iff_discriminant_eq_one.mp hLu, M.isUnimodular_iff_discriminant_eq_one.mp hMu,
-      show L.sigNeg = M.sigNeg from congrArg (·.2.2) hsig]
-  have hL := L.isUnimodular_iff_isUnit_determinant.mp hLu
-  have hM := M.isUnimodular_iff_isUnit_determinant.mp hMu
-  refine (L.sameGenus_iff_localIntegralForm_equivalent_primeFactors M hdet hL.ne_zero).mpr
-    ⟨hsig, fun p _ hp ↦ ?_⟩
-  -- The determinant is a unit, so `2` is the only prime that needs checking.
-  rw [Int.isUnit_iff_natAbs_eq.mp hL, mul_one, Nat.prime_two.primeFactors,
-    Finset.mem_singleton] at hp
-  subst hp
-  refine (L.localIntegralForm_two_equivalent_iff_of_isEven M hLe hMe
-    (hL.map (Int.castRingHom ℤ_[2])) (hM.map (Int.castRingHom ℤ_[2]))).mpr
-    ⟨L.finrank_eq_of_signature_eq hsig, ?_⟩
-  rw [hdet]
-  exact IsSquare.mul_self _
+    L.SameGenus M :=
+  (sameGenus_iff_of_isUnimodular hLu hMu).mpr ⟨hsig, iff_of_true hLe hMe⟩
 
 /-- **Positive definite even unimodular lattices of equal rank lie in one genus.** -/
 theorem IsPosDef.sameGenus_of_isEven_of_isUnimodular (hLp : L.IsPosDef) (hMp : M.IsPosDef)

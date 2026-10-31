@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.Matrix
 public import TauCeti.RingTheory.Huber.OpenMapping
 public import TauCeti.RingTheory.Huber.RingOfDefinition
+import Mathlib.Topology.Baire.CompleteMetrizable
 
 /-!
 # Dense submodules of a module-finite complete Tate-module

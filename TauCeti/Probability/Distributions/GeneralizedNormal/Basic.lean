@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Density
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Analysis.SpecialFunctions.Gamma
 import TauCeti.MeasureTheory.Integral.Gamma
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
@@ -217,6 +218,11 @@ theorem generalizedNormalMeasure_eq_withDensity (m s p : ℝ) :
     generalizedNormalMeasure m s p = volume.withDensity (generalizedNormalPDF m s p) := by
   rw [generalizedNormalMeasure]
 
+/-- Generalized normal laws have no atoms, including at invalid parameters. -/
+instance (m s p : ℝ) : NullSingletonClass (generalizedNormalMeasure m s p) := by
+  rw [generalizedNormalMeasure_eq_withDensity]
+  infer_instance
+
 /-- Outside the valid parameter range the generalized normal law is the zero measure. -/
 @[simp]
 theorem generalizedNormalMeasure_of_not_pos (h : ¬ (0 < s ∧ 0 < p)) (m : ℝ) :
@@ -238,7 +244,7 @@ theorem isProbabilityMeasure_generalizedNormalMeasure_iff :
   refine ⟨fun h => ?_, fun h => isProbabilityMeasure_generalizedNormalMeasure h.1 h.2 m⟩
   by_contra hsp
   rw [generalizedNormalMeasure_of_not_pos hsp] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- The generalized normal law is a finite measure at every parameter. -/
 instance (m s p : ℝ) : IsFiniteMeasure (generalizedNormalMeasure m s p) := by

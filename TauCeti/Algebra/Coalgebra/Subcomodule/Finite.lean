@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.Order.SupClosed
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Lattice
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
 
 /-!
 # Finite subcomodules
@@ -35,6 +37,12 @@ No flatness or noetherian hypothesis is needed.
   directed family.
 * `TauCeti.Subcomodule.sSup_finiteSubcomodules_eq_top`: for a free coefficient coalgebra,
   the finite subcomodules have supremum `⊤`.
+* `TauCeti.Subcomodule.exists_finite_le_of_mem`: every element of a subcomodule belongs to a
+  finite subcomodule contained in it.
+* `TauCeti.Subcomodule.finite_of_isAtom`: for a free coefficient coalgebra, simple subcomodules
+  are finite.
+* `TauCeti.Subcomodule.instIsAtomic`: over a field every nonzero subcomodule contains a simple
+  subcomodule.
 
 ## References
 
@@ -295,7 +303,47 @@ theorem iUnion_finiteSubcomodules_eq_univ [Module.Free R C] :
   simpa only [Set.iUnion_coe_set, mem_finiteSubcomodules] using
     iUnion_finiteSubcomodules_eq_univ_of_exists_mem exists_finite_subcomodule_mem
 
+/-- If the coefficient coalgebra is free, every element of a subcomodule `Q` belongs to a finite
+subcomodule contained in `Q`. -/
+theorem exists_finite_le_of_mem [Module.Free R C] {Q : Subcomodule R C M} {m : M}
+    (hm : m ∈ Q) : ∃ N : Subcomodule R C M, N ≤ Q ∧ Module.Finite R N.toSubmodule ∧ m ∈ N := by
+  -- Find a finite subcomodule of the comodule `Q` containing `m` and include it back into `M`.
+  obtain ⟨N, hN, hmN⟩ := exists_finite_subcomodule_mem (R := R) (C := C) (⟨m, hm⟩ : Q)
+  have : Module.Finite R N := hN
+  exact ⟨N.map (subtype Q), map_le_iff.mpr fun n _ ↦ by simp, map_finite (subtype Q) N,
+    by simpa using mem_map_of_mem (subtype Q) hmN⟩
+
+/-- If the coefficient coalgebra is free, a simple subcomodule is finite. -/
+theorem finite_of_isAtom [Module.Free R C] {S : Subcomodule R C M} (hS : IsAtom S) :
+    Module.Finite R S := by
+  obtain ⟨v, hvS, hv0⟩ := ne_bot_iff.mp hS.1
+  obtain ⟨F, hFS, hF, hvF⟩ := exists_finite_le_of_mem hvS
+  rw [← (hS.le_iff.mp hFS).resolve_left (ne_bot_iff.mpr ⟨v, hvF, hv0⟩)]
+  exact hF
+
 end General
+
+section Field
+
+variable {k : Type u} [Field k]
+variable {C : Type v} [AddCommGroup C] [Module k C] [Coalgebra k C]
+variable {M : Type w} [AddCommGroup M] [Module k M] [Comodule k C M]
+
+/-- **Every nonzero subcomodule over a field contains a simple subcomodule.** -/
+instance instIsAtomic : IsAtomic (Subcomodule k C M) := by
+  -- A nonzero finite-dimensional subcomodule of minimal dimension inside `b` is simple.
+  refine ⟨fun b ↦ or_iff_not_imp_left.mpr fun hb ↦ ?_⟩
+  obtain ⟨v, hvb, hv0⟩ := ne_bot_iff.mp hb
+  obtain ⟨F, hFb, hF, hvF⟩ := exists_finite_le_of_mem hvb
+  obtain ⟨A, ⟨hAF, hA0⟩, hmin⟩ :=
+    (measure fun A : Subcomodule k C M ↦ Module.finrank k A.toSubmodule).wf.has_min
+      {A | A ≤ F ∧ A ≠ ⊥} ⟨F, le_rfl, ne_bot_iff.mpr ⟨v, hvF, hv0⟩⟩
+  refine ⟨A, ⟨hA0, fun B hBA ↦ by_contra fun hB0 ↦ ?_⟩, hAF.trans hFb⟩
+  have : Module.Finite k A.toSubmodule :=
+    Submodule.finiteDimensional_of_le (toSubmodule_le_toSubmodule.mpr hAF)
+  exact hmin B ⟨hBA.le.trans hAF, hB0⟩ (Submodule.finrank_lt_finrank_of_lt hBA)
+
+end Field
 
 end Subcomodule
 

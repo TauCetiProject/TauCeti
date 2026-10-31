@@ -16,15 +16,13 @@ import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 # The Gaussian is a positive-definite function
 
 The Gaussian `a ↦ exp (-c‖a‖²)` on a real inner-product space `V` is continuous, and its
-subtraction kernel `(a, b) ↦ exp (-c‖a - b‖²)` is positive definite, for every `c ≥ 0`. This
-supplies the positive-definiteness half of the Gaussian acceptance example requested in Part C of
-the `OneParameterSemigroups` roadmap in TauCetiRoadmap ("positive-definite functions and
-Bochner's theorem"); the representing-measure half is supplied by `TauCeti.bochner` in
-`TauCeti/Analysis/Bochner/BochnerTheorem.lean`.
+subtraction kernel `(a, b) ↦ exp (-c‖a - b‖²)` is positive definite, for every `c ≥ 0`.
+For `c > 0`, it is integrable on finite-dimensional spaces. These facts support Gaussian
+regularization in the proof of Bochner's theorem. Its representing measure is identified in
+`TauCeti/Analysis/Bochner/Gaussian/Measure.lean`.
 
-The positive-definiteness is not proved from scratch: Mathlib's
-`ProbabilityTheory.charFun_stdGaussian` computes the characteristic function of the standard
-Gaussian measure on `V` to be `t ↦ exp (-‖t‖²/2)`, and
+Mathlib's `ProbabilityTheory.charFun_stdGaussian` computes the characteristic function of the
+standard Gaussian measure on `V` to be `t ↦ exp (-‖t‖²/2)`, and
 `TauCeti.posSemidef_charFun` (the finite-measure Fourier-transform correspondence)
 already records that a characteristic function has a positive-definite kernel. Rescaling the
 argument by `√(2c)` turns `exp (-‖·‖²/2)` into `exp (-c‖·‖²)`. The standard Gaussian measure
@@ -44,11 +42,11 @@ form then follows on that same generality through
   `(a, b) ↦ exp (-c‖a - b‖²)` is a positive-definite kernel on any real inner-product space.
 * `TauCeti.continuous_cexp_neg_mul_sq_norm`: `a ↦ exp (-c‖a‖²)` is continuous.
 * `TauCeti.tendsto_cexp_neg_mul_sq_norm`: `exp (-c‖a‖²) → 1` as `c → 0`.
-* `TauCeti.integrable_cexp_neg_mul_sq_norm`: `a ↦ exp (-c‖a‖²)` is integrable for `c > 0`.
-* `TauCeti.isPositiveDefinite_cexp_neg_sq_norm`: the positive-definiteness half of the Gaussian
-  acceptance example (`c = 1`), `a ↦ exp (-‖a‖²)`.
-* `TauCeti.posSemidef_cexp_neg_sq_norm`: the involution-free kernel form of the
-  `c = 1` acceptance example, `(a, b) ↦ exp (-‖a - b‖²)`.
+* `TauCeti.integrable_cexp_neg_mul_sq_norm`: on a finite-dimensional space,
+  `a ↦ exp (-c‖a‖²)` is integrable for `c > 0`.
+* `TauCeti.isPositiveDefinite_cexp_neg_sq_norm`: `a ↦ exp (-‖a‖²)` is positive definite.
+* `TauCeti.posSemidef_cexp_neg_sq_norm`: `(a, b) ↦ exp (-‖a - b‖²)` is a positive-definite
+  kernel.
 
 ## References
 
@@ -69,16 +67,16 @@ namespace TauCeti
 
 section Elementary
 
-variable {V : Type*} [NormedAddCommGroup V]
+variable {V : Type*}
 
-/-- The Gaussian `a ↦ exp (-c‖a‖²)` is continuous on `V` for every real `c`. -/
-theorem continuous_cexp_neg_mul_sq_norm (c : ℝ) :
+/-- The Gaussian `a ↦ exp (-c‖a‖²)` is continuous on a seminormed group for every real `c`. -/
+theorem continuous_cexp_neg_mul_sq_norm [SeminormedAddGroup V] (c : ℝ) :
     Continuous fun a : V => Complex.exp (-(c * ‖a‖ ^ 2 : ℝ)) := by
   fun_prop
 
 /-- The Gaussian factor `exp (-c‖a‖²)` tends to `1` as the width parameter `c` tends to `0`.
 This is the pointwise convergence underlying Gaussian regularization. -/
-theorem tendsto_cexp_neg_mul_sq_norm (a : V) :
+theorem tendsto_cexp_neg_mul_sq_norm [Norm V] (a : V) :
     Filter.Tendsto (fun c : ℝ => Complex.exp (-(c * ‖a‖ ^ 2 : ℝ))) (𝓝 0) (𝓝 1) := by
   have hc : Continuous fun c : ℝ => Complex.exp (-(c * ‖a‖ ^ 2 : ℝ)) := by fun_prop
   simpa using hc.tendsto 0
@@ -92,15 +90,14 @@ section FiniteDimensional
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V]
 
-/-- The Gaussian `a ↦ exp (-c‖a‖²)` is integrable on `V` for every `c > 0`. -/
+/-- The Gaussian `a ↦ exp (-c‖a‖²)` is integrable on a finite-dimensional real inner-product
+space for every `c > 0`. -/
 theorem integrable_cexp_neg_mul_sq_norm {c : ℝ} (hc : 0 < c) :
     Integrable fun a : V => Complex.exp (-(c * ‖a‖ ^ 2 : ℝ)) := by
-  have hre : 0 < (c : ℂ).re := by simpa using hc
-  have h := GaussianFourier.integrable_cexp_neg_mul_sq_norm_add (V := V) hre 0 (0 : V)
-  simp only [zero_mul, add_zero] at h
-  refine h.congr (ae_of_all _ fun a => ?_)
-  push_cast
-  ring_nf
+  simpa only [zero_mul, add_zero, ← Complex.ofReal_pow, ← Complex.ofReal_mul,
+    ← Complex.ofReal_neg, neg_mul] using
+    GaussianFourier.integrable_cexp_neg_mul_sq_norm_add (V := V) (b := (c : ℂ))
+      (by simpa using hc) 0 (0 : V)
 
 /-- The characteristic function of the standard Gaussian measure on `V`, with its argument
 rescaled by `√(2c)`, is the Gaussian `a ↦ exp (-c‖a‖²)`. -/
@@ -175,15 +172,13 @@ theorem isPositiveDefinite_cexp_neg_mul_sq_norm [StarAddMonoid V]
   (isPositiveDefinite_iff_posSemidef_sub hstar).mpr
     (posSemidef_cexp_neg_mul_sq_norm hc)
 
-/-- The positive-definiteness half of the Gaussian acceptance example (`c = 1`):
-`a ↦ exp (-‖a‖²)` is positive definite under the negation involution. -/
+/-- The Gaussian `a ↦ exp (-‖a‖²)` is positive definite under the negation involution. -/
 theorem isPositiveDefinite_cexp_neg_sq_norm [StarAddMonoid V] (hstar : ∀ x : V, star x = -x) :
     IsPositiveDefinite fun a : V => Complex.exp (-(‖a‖ ^ 2 : ℝ)) := by
   simpa only [one_mul] using
     isPositiveDefinite_cexp_neg_mul_sq_norm hstar (V := V) (c := 1) zero_le_one
 
-/-- The involution-free kernel form of the Gaussian acceptance example (`c = 1`):
-`(a, b) ↦ exp (-‖a - b‖²)` is a positive-definite kernel. Unlike
+/-- The Gaussian kernel `(a, b) ↦ exp (-‖a - b‖²)` is positive definite. Unlike
 `isPositiveDefinite_cexp_neg_sq_norm`, this requires no choice of involution on `V`. -/
 theorem posSemidef_cexp_neg_sq_norm :
     Matrix.PosSemidef fun a b : V => Complex.exp (-(‖a - b‖ ^ 2 : ℝ)) := by

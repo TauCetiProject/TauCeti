@@ -38,7 +38,6 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y) [IsClosedImmersion f]
 theorem exact_pushforward_of_isClosedImmersion (S : ShortComplex X.Modules)
     (hS : S.Exact) : (S.map (Scheme.Modules.pushforward f)).Exact := by
   let G := TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf Y
-  have : G.Faithful := inferInstanceAs (SheafOfModules.toSheaf Y.ringCatSheaf).Faithful
   have : (TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).PreservesZeroMorphisms :=
     inferInstanceAs (SheafOfModules.toSheaf X.ringCatSheaf).PreservesZeroMorphisms
   apply G.reflects_exact_of_faithful

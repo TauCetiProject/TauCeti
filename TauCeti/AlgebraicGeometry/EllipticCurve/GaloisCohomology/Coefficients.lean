@@ -78,6 +78,8 @@ automorphisms of an algebraic closure are the points over the perfect closure of
   `WeierstrassCurve.pointGaloisAction`, and
   `WeierstrassCurve.torsionByCongr_pointCoeffEquiv_symm_smul` its torsion counterpart
   `WeierstrassCurve.torsionGaloisAction`.
+* `WeierstrassCurve.Affine.Point.map_map_separableClosure_val`: an automorphism of `K^{alg}` acts
+  on the points of `E(Kˢ)` through its restriction to `Kˢ`.
 * `WeierstrassCurve.natCard_torsionCoeff`: `E(Kˢ)[m]` has `m²` points for `m` invertible in `K`.
 * `WeierstrassCurve.isAddKleinFour_torsionCoeff_two`: `E(Kˢ)[2]` is a Klein four-group.
 * `WeierstrassCurve.cast_pointCoeff_smul`, `WeierstrassCurve.cast_torsionCoeff_smul`: transport of
@@ -180,6 +182,22 @@ theorem pointGaloisAction_apply_eq_smul (σ : AbsoluteGaloisGroup K)
     Multiplicative.toAdd (W.pointGaloisAction σ) P =
       W.pointCoeffEquiv.symm (σ • W.pointCoeffEquiv P) := by
   rw [pointGaloisAction_apply, pointCoeffEquiv_symm_smul, AddEquiv.symm_apply_apply]
+
+open scoped Classical in
+variable {W} in
+/-- **Restriction to `Kˢ` commutes with the point map into `K^{alg}`.** An automorphism `σ` of
+`K^{alg}` acts on the image in `E(K^{alg})` of a point of `E(Kˢ)` as its restriction to `Kˢ` acts
+on that point. -/
+theorem Affine.Point.map_map_separableClosure_val (σ : Gal(AlgebraicClosure K/K))
+    (Q : (W⁄(SeparableClosure K)).toAffine.Point) :
+    Affine.Point.map σ.toAlgHom (Affine.Point.map (separableClosure K (AlgebraicClosure K)).val Q) =
+      Affine.Point.map (separableClosure K (AlgebraicClosure K)).val
+        (Affine.Point.map (absoluteGaloisGroupRestrictEquiv K σ).toAlgHom Q) := by
+  have h : σ.toAlgHom.comp (separableClosure K (AlgebraicClosure K)).val =
+      (separableClosure K (AlgebraicClosure K)).val.comp
+        (absoluteGaloisGroupRestrictEquiv K σ).toAlgHom :=
+    AlgHom.ext fun x ↦ (coe_absoluteGaloisGroupRestrictEquiv_apply K σ x).symm
+  rw [Affine.Point.map_map, h, ← Affine.Point.map_map]
 
 open scoped Classical in
 /-- **`E(Kˢ)` is a discrete `G_K`-module**: the stabilizer of an affine point contains the

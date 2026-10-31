@@ -141,7 +141,7 @@ theorem pinning_rootVector (i : Fin r) :
         (derivationComp (B := ℤ)
           (UniversalEnvelopingAlgebra.kostantRootSubgroupToralCoordinateMap
             (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-            (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+            (rep_kostantForm_mem_lattice r)
             (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) (Sum.inl i) :
             coordinateHopfAlgebra r ⟶ AdditiveGroup.coordinateHopfAlgebra ℤ).hom
           ((AdditiveGroup.gaTangentLinearEquiv (R := ℤ) (B := ℤ)).symm 1)) := by

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.LevelOne
+public import TauCeti.Analysis.Complex.Fuchsian.Cusp.Finite
 public import TauCeti.Analysis.Complex.Fuchsian.Cusp.FiniteIndex
 
 /-!
@@ -17,7 +18,8 @@ orbit of infinity under the full modular group. The subgroup can split this one 
 orbit into several cusp orbits: every cusp orbit is that of `γ • ∞` for some `γ ∈ SL(2, ℤ)`,
 and two such orbits agree exactly when `γ⁻¹ h γ'` fixes `∞` for some `h` in the subgroup.
 These facts allow the compactified Fuchsian quotient and its cusp charts to be used for
-congruence modular curves, and reduce counting cusps to arithmetic in `SL(2, ℤ)`.
+congruence modular curves, and reduce counting cusps to arithmetic in `SL(2, ℤ)`; in
+particular there are finitely many cusp orbits.
 
 ## References
 
@@ -116,5 +118,10 @@ theorem cuspOrbitOfSL2Z_eq_iff (γ γ' : SL(2, ℤ)) :
 @[simp]
 theorem cuspOrbitOfSL2Z_neg (γ : SL(2, ℤ)) : H.cuspOrbitOfSL2Z (-γ) = H.cuspOrbitOfSL2Z γ :=
   (H.cuspOrbitOfSL2Z_eq_iff _ _).mpr ⟨1, H.one_mem, by simp⟩
+
+/-- A finite-index subgroup of `SL(2, ℤ)` has finitely many cusp orbits, since its image in
+`PSL(2, ℝ)` is cofinite. -/
+instance finite_cuspOrbit_map_sl2zToPSL2R : Finite (H.map sl2zToPSL2R).CuspOrbit :=
+  H.isCofinite_map_sl2zToPSL2R.finite_cuspOrbit
 
 end Subgroup

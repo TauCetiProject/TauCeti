@@ -16,6 +16,8 @@ integrability on the new interval. The oriented image interval records reversal 
 The statements use the raw-curve integral `∫ t in a..b, ω (γ t) (deriv γ t)`.
 For a `Path`, Mathlib's `curveIntegral_eq_intervalIntegral_deriv` gives this representation.
 The 1-form needs only the integrability of its pairing with the original velocity.
+`TauCeti.integral_oneForm_congr` records that this integral only depends on the curve on the
+closed parameter interval.
 -/
 
 public section
@@ -77,3 +79,17 @@ theorem integral_oneForm_comp (hγ : AbsolutelyContinuousOnInterval γ (θ a) (�
   · exact hθ.integral_deriv_smul_comp_of_antitoneOn hab hanti hω
 
 end AbsolutelyContinuousOnInterval
+
+namespace TauCeti
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {ω : E → E →L[ℝ] F} {c d : ℝ}
+
+/-- The integral `∫ u in c..d, ω (f u) (deriv f u)` of a 1-form along a curve only depends on
+the curve on `[[c, d]]`. -/
+theorem integral_oneForm_congr {f g : ℝ → E} (h : EqOn f g (uIcc c d)) :
+    ∫ u in c..d, ω (f u) (deriv f u) = ∫ u in c..d, ω (g u) (deriv g u) :=
+  intervalIntegral.integral_congr_uIoo fun u hu ↦ by
+    rw [h (uIoo_subset_uIcc_self hu), (h.mono uIoo_subset_uIcc_self).deriv isOpen_Ioo hu]
+
+end TauCeti

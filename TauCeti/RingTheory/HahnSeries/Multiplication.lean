@@ -43,7 +43,11 @@ needs this instance.
 Finally, `HahnModule.of_symm_smul'` reads the coefficientwise action of `R` on `HahnModule Γ R V`
 through `HahnModule.of`, for the action instance underlying the `R`-module structure.
 `HahnModule.ofLinearEquiv` bundles this coefficient-preserving comparison as an `R`-linear
-equivalence.
+equivalence. The lemmas `HahnModule.coeff_smul_single_zero` and
+`HahnModule.single_smul_single_zero` describe the convolution action of a scalar series on a
+constant module-valued series, coefficientwise and on monomials, and
+`HahnModule.single_neg_smul_single_smul` records that the monomials `t ^ a` and `t ^ (-a)` act
+inversely.
 -/
 
 public section
@@ -111,5 +115,47 @@ theorem ofLinearEquiv_apply {Γ R V : Type*} [PartialOrder Γ] [Semiring R] [Add
 @[simp]
 theorem ofLinearEquiv_symm_apply {Γ R V : Type*} [PartialOrder Γ] [Semiring R] [AddCommMonoid V]
     [Module R V] (f : HahnModule Γ R V) : (ofLinearEquiv R).symm f = (of R).symm f := (rfl)
+
+open HahnSeries
+
+variable {Γ R V : Type*} [AddCommMonoid Γ] [PartialOrder Γ]
+  [IsOrderedCancelAddMonoid Γ]
+
+/-- Multiplying a constant module-valued series by a scalar series multiplies each coefficient
+by the constant vector. -/
+@[simp]
+theorem coeff_smul_single_zero [Zero R] [AddCommMonoid V] [SMulWithZero R V]
+    (f : HahnSeries Γ R) (v : V) (g : Γ) :
+    ((of R).symm (f • of R (single 0 v))).coeff g = f.coeff g • v := by
+  classical
+  rw [coeff_smul_right (x := f) (y := of R (single (0 : Γ) v))
+    (Set.isPWO_singleton 0) (by exact support_single_subset)]
+  trans f.coeff g • ((of R).symm (of R (single (0 : Γ) v))).coeff 0
+  · apply Finset.sum_eq_single (g, 0)
+    · intro ij hij hne
+      have hj : ij.2 = 0 := ((Finset.mem_vaddAntidiagonal _ _).mp hij).2.1
+      have hi : ij.1 = g := by simpa [hj] using ((Finset.mem_vaddAntidiagonal _ _).mp hij).2.2
+      exact (hne (Prod.ext hi hj)).elim
+    · intro h
+      by_cases hf : f.coeff g = 0
+      · simp [hf]
+      · exact (h ((Finset.mem_vaddAntidiagonal _ _).mpr ⟨hf, rfl, by simp⟩)).elim
+  · simp
+
+/-- Multiplying by the monomials `t ^ a` and then `t ^ (-a)` is the identity. -/
+@[simp]
+theorem single_neg_smul_single_smul {Γ : Type*} [AddCommGroup Γ] [PartialOrder Γ]
+    [IsOrderedAddMonoid Γ] [Semiring R] [AddCommMonoid V] [Module R V] (a : Γ)
+    (x : HahnModule Γ R V) : single (-a) (1 : R) • single a (1 : R) • x = x := by
+  rw [← mul_smul, single_mul_single, neg_add_cancel, one_mul, single_zero_one, one_smul]
+
+/-- A scalar monomial times a constant vector series is a vector-valued monomial. -/
+@[simp]
+theorem single_smul_single_zero [Zero R] [AddCommMonoid V] [SMulWithZero R V]
+    (g : Γ) (r : R) (v : V) :
+    single g r • of R (single 0 v) = of R (single g (r • v)) := by
+  apply HahnModule.ext
+  funext h
+  by_cases hh : h = g <;> simp [hh]
 
 end HahnModule

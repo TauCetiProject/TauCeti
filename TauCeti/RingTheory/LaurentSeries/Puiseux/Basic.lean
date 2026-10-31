@@ -127,6 +127,19 @@ theorem coe_single (q : ℚ) (a : K) : (single K q a : HahnSeries ℚ K) = HahnS
 theorem single_eq_zero_iff {q : ℚ} {a : K} : single K q a = 0 ↔ a = 0 := by
   rw [← Subtype.coe_inj, coe_single, ZeroMemClass.coe_zero, HahnSeries.single_eq_zero_iff]
 
+/-- The `n`-th power of a monomial `a t ^ q` is the monomial `a ^ n t ^ (n * q)`. -/
+@[simp]
+theorem single_pow (q : ℚ) (a : K) (n : ℕ) : single K q a ^ n = single K (n * q) (a ^ n) := by
+  apply Subtype.ext
+  simp [HahnSeries.single_pow, nsmul_eq_mul]
+
+/-- Multiplying a monomial by a constant multiplies its coefficient. -/
+@[simp]
+theorem algebraMap_mul_single (c : K) (q : ℚ) (a : K) :
+    algebraMap K (puiseuxField K) c * single K q a = single K q (c * a) := by
+  apply Subtype.ext
+  simp [HahnSeries.algebraMap_apply', HahnSeries.single_mul_single]
+
 end puiseuxField
 
 /-- Each level `K⸨t ^ (1 / n)⸩` is contained in the Puiseux field. -/

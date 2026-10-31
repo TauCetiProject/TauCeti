@@ -47,8 +47,10 @@ to some finite level `A n`, and the finite levels are cofinal among all the fini
 * `TauCeti.FiniteQuotientTower.ext`: a tower is determined by its projections; the transition
   homomorphisms are forced by surjectivity.
 * `TauCeti.FiniteQuotientTower.t_t`: the transition homomorphisms compose.
-* `TauCeti.FiniteQuotientTower.totallyDisconnectedSpace`: a group with a tower is totally
-  disconnected.
+* `TauCeti.FiniteQuotientTower.totallySeparatedSpace`: a group with a tower is totally separated,
+  hence Hausdorff and totally disconnected.
+* `TauCeti.FiniteQuotientTower.isTopologicalGroup`: over a compact space the tower makes the
+  group operations continuous.
 * `TauCeti.FiniteQuotientTower.hasAntitoneBasis_nhds_one`: over a compact group the kernels form
   a decreasing neighbourhood basis of `1`.
 * `TauCeti.FiniteQuotientTower.exists_ker_le_of_isOpen`: every open subgroup of a compact group
@@ -158,17 +160,33 @@ theorem eq_of_forall_q_eq {x y : Γ} (h : ∀ n, T.q n x = T.q n y) : x = y := b
   exact hn (by rw [map_mul, map_inv, h n, inv_mul_cancel])
 
 include T in
-/-- A group with a tower of finite quotients is totally disconnected: the projections are
-constant on every preconnected set, and they separate points. -/
-theorem totallyDisconnectedSpace : TotallyDisconnectedSpace Γ where
-  isTotallyDisconnected_univ _ _ hs _ hx _ hy :=
-    T.eq_of_forall_q_eq fun n ↦ hs.constant (T.q n).continuous.continuousOn hx hy
+/-- A group with a tower of finite quotients is totally separated: any two distinct points are
+separated by a clopen fibre of a projection. No compactness or continuity of the group operations
+is required. -/
+theorem totallySeparatedSpace : TotallySeparatedSpace Γ := by
+  classical
+  refine totallySeparatedSpace_iff_exists_isClopen.mpr fun x y hxy ↦ ?_
+  have hq : ∃ n, T.q n x ≠ T.q n y := by
+    by_contra! h
+    exact hxy (T.eq_of_forall_q_eq h)
+  obtain ⟨n, hn⟩ := hq
+  exact ⟨(T.q n) ⁻¹' {T.q n x}, (isClopen_discrete _).preimage (T.q n).continuous, rfl,
+    fun hy ↦ hn hy.symm⟩
 
 include T in
 /-- Over a compact group the quotients of a tower are finite. -/
 theorem finite [CompactSpace Γ] (n : ℕ) : Finite (A n) :=
   have : CompactSpace (A n) := (T.surjective_q n).compactSpace (T.q n).continuous
   finite_of_compact_of_discrete
+
+include T in
+/-- A compact group with a tower has continuous multiplication and inversion: its projections
+embed it into the product of the discrete quotient groups. -/
+theorem isTopologicalGroup [CompactSpace Γ] : IsTopologicalGroup Γ := by
+  let q := MonoidHom.pi fun n ↦ (T.q n : Γ →* A n)
+  exact Topology.IsInducing.isTopologicalGroup q
+    ((continuous_pi fun n ↦ (T.q n).continuous).isClosedEmbedding
+      fun _ _ h ↦ T.eq_of_forall_q_eq fun n ↦ congrFun h n).isInducing
 
 /-! ### The kernels of a tower -/
 
@@ -206,14 +224,15 @@ theorem iInf_ker_eq_bot : ⨅ n, (T.ker n : Subgroup Γ) = ⊥ := by
   exact T.mem_ker.mp (Subgroup.mem_iInf.mp hx n)
 
 /-- **The kernels of a tower of a compact group are a neighbourhood basis of `1`.** -/
-theorem hasAntitoneBasis_nhds_one [SeparatelyContinuousMul Γ] [CompactSpace Γ] :
-    (𝓝 (1 : Γ)).HasAntitoneBasis fun n ↦ (T.ker n : Set Γ) :=
-  hasAntitoneBasis_nhds_one_of_iInf_eq_bot (N := fun n ↦ (T.ker n : Subgroup Γ))
+theorem hasAntitoneBasis_nhds_one [CompactSpace Γ] :
+    (𝓝 (1 : Γ)).HasAntitoneBasis fun n ↦ (T.ker n : Set Γ) := by
+  have := T.isTopologicalGroup
+  exact hasAntitoneBasis_nhds_one_of_iInf_eq_bot (N := fun n ↦ (T.ker n : Subgroup Γ))
     (fun _ _ h ↦ T.ker_antitone h) (fun n ↦ (T.ker n).isOpen) T.iInf_ker_eq_bot
 
 /-- **Cofinality of the kernels.** Every open subgroup of a compact group contains the kernel of
 some level of a tower. -/
-theorem exists_ker_le_of_isOpen [SeparatelyContinuousMul Γ] [CompactSpace Γ] {U : Subgroup Γ}
+theorem exists_ker_le_of_isOpen [CompactSpace Γ] {U : Subgroup Γ}
     (hU : IsOpen (U : Set Γ)) : ∃ n, (T.ker n : Subgroup Γ) ≤ U :=
   (T.hasAntitoneBasis_nhds_one.mem_iff.mp (hU.mem_nhds U.one_mem)).imp fun _ hn ↦
     SetLike.coe_subset_coe.mp hn
@@ -279,17 +298,18 @@ theorem exists_comp_q_eq_of_le {m n : ℕ} (h : m ≤ n) {f : Γ → B}
 /-- **Descent of locally constant functions.** Every locally constant function on a compact
 group, with values in any type, factors through some level of a tower. This applies in particular
 to every continuous map to a discrete space, by `IsLocallyConstant.iff_continuous`. -/
-theorem exists_comp_q_eq [ContinuousMul Γ] [CompactSpace Γ] {f : Γ → B}
+theorem exists_comp_q_eq [CompactSpace Γ] {f : Γ → B}
     (hf : IsLocallyConstant f) : ∃ n, ∃ g : A n → B, g ∘ T.q n = f := by
+  have := T.isTopologicalGroup
   -- The right-translation stabilizer of `f` is open, so it contains the kernel of some level.
   obtain ⟨n, hn⟩ := T.exists_ker_le_of_isOpen (isOpen_rightTranslationStabilizer hf)
   exact ⟨n, T.exists_comp_q_eq_iff.mpr fun x k hk ↦ mem_rightTranslationStabilizer.mp (hn hk) x⟩
 
-/-- Every locally constant homomorphism from a compact group to a monoid factors through some
-level of a tower by a homomorphism. This applies in particular to the quotient map onto `Γ ⧸ U`
-for an open normal subgroup `U`, so the levels of a tower are cofinal among the finite quotients
-of `Γ`. -/
-theorem exists_monoidHom_comp_q_eq [ContinuousMul Γ] [CompactSpace Γ] [Monoid B] {f : Γ →* B}
+/-- Every locally constant homomorphism from a compact group to a type with multiplication and
+one factors through some level of a tower by a homomorphism. This applies in particular to the
+quotient map onto `Γ ⧸ U` for an open normal subgroup `U`, so the levels of a tower are cofinal
+among the finite quotients of `Γ`. -/
+theorem exists_monoidHom_comp_q_eq [CompactSpace Γ] [MulOne B] {f : Γ →* B}
     (hf : IsLocallyConstant f) :
     ∃ n, ∃ g : A n →* B, g.comp (T.q n : Γ →* A n) = f := by
   obtain ⟨n, g, hg⟩ := T.exists_comp_q_eq hf

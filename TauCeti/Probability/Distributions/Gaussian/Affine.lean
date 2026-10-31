@@ -17,11 +17,15 @@ This file proves that a multivariate Gaussian measure is carried by a rectangula
 the multivariate Gaussian with the transformed mean and covariance.  Rectangular matrices are
 allowed, so the result applies both to embeddings and to possibly singular projections.
 
-## Main result
+## Main results
 
 * `TauCeti.Probability.map_affine_multivariateGaussian`: the affine pushforward formula for a
   multivariate
   Gaussian measure.
+* `TauCeti.Probability.map_add_smul_multivariateGaussian`: scaling by a real number followed by
+  a translation.
+* `TauCeti.Probability.map_comp_multivariateGaussian`: reindexing the coordinates along a map of
+  index types.
 * `TauCeti.Probability.multivariateGaussian_one_eq_map_pi`: the identity-covariance law as a
   product of its Gaussian coordinate laws.
 
@@ -102,6 +106,35 @@ theorem map_affine_multivariateGaussian (m : EuclideanSpace ℝ ι) {S : Matrix 
     · fun_prop
     · fun_prop
   · exact covarianceBilin_map_affine_multivariateGaussian m hS L c
+
+/-- Scaling a multivariate Gaussian vector by `c` and then translating it by `m` gives the
+multivariate Gaussian with mean `m + c • m₀` and covariance `c ^ 2 • S`. -/
+theorem map_add_smul_multivariateGaussian (m₀ : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
+    (hS : S.PosSemidef) (m : EuclideanSpace ℝ ι) (c : ℝ) :
+    (multivariateGaussian m₀ S).map (fun z => m + c • z) =
+      multivariateGaussian (m + c • m₀) (c ^ 2 • S) := by
+  have h := map_affine_multivariateGaussian m₀ hS (c • (1 : Matrix ι ι ℝ)) m
+  have hL (z : EuclideanSpace ℝ ι) : (c • (1 : Matrix ι ι ℝ)).toEuclideanLin z = c • z := by
+    simp
+  have hcov : c • (1 : Matrix ι ι ℝ) * S * (c • (1 : Matrix ι ι ℝ)).transpose = c ^ 2 • S := by
+    simp [sq, smul_smul]
+  simpa only [hL, hcov, add_comm] using h
+
+/-- Reading the coordinates of a multivariate Gaussian vector along a map of index types gives the
+multivariate Gaussian with the reindexed mean and covariance. The map need not be injective, so
+coordinates may be repeated or omitted. -/
+theorem map_comp_multivariateGaussian (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
+    (hS : S.PosSemidef) (f : κ → ι) :
+    (multivariateGaussian m S).map (fun x => WithLp.toLp 2 fun k => x (f k)) =
+      multivariateGaussian (WithLp.toLp 2 fun k => m (f k)) (S.submatrix f f) := by
+  let L : Matrix κ ι ℝ := (1 : Matrix ι ι ℝ).submatrix f id
+  have hL (x : EuclideanSpace ℝ ι) : L.toEuclideanLin x = WithLp.toLp 2 fun k => x (f k) := by
+    ext k
+    simp [L, Matrix.mulVec, dotProduct, Matrix.one_apply]
+  have hcov : L * S * L.transpose = S.submatrix f f := by
+    ext
+    simp [L, Matrix.mul_apply, Matrix.one_apply]
+  simpa [hL, hcov] using map_affine_multivariateGaussian m hS L 0
 
 /-- An identity-covariance Gaussian is the product of its unit-variance Gaussian coordinate
 laws, transported to Euclidean space. -/

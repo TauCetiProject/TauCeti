@@ -29,10 +29,8 @@ the one in which the inequality `|τ(K)| ≤ u(K)` of grid homology is proved: t
 maps bound the change of `τ` across a single cross-commutation, and summing along an unknotting
 sequence bounds `τ` by the unknotting number.
 
-As checks of the definition, the Hopf link has unknotting number `⊤`
-(`GridLink.unknottingNumber_toGridLink_torusLink_one_one`), while the trefoil, presented by the
-standard `5 × 5` grid of the `(2, 3)` torus knot, is unknotted by a single crossing change
-(`GridLink.unknottingNumber_toGridLink_torusLink_one_two_le_one`).
+The unknotting numbers of specific torus links are bounded in
+`TauCeti.KnotTheory.Grid.TorusLink.UnknottingNumber`.
 
 ## Main definitions
 
@@ -48,8 +46,8 @@ standard `5 × 5` grid of the `(2, 3)` torus knot, is unknotted by a single cros
   unknotting number by at most one.
 * `TauCeti.GridLink.isKnot_of_unknottingNumber_ne_top`: a grid link with finite unknotting number
   is a knot.
-* `TauCeti.GridLink.unknottingNumber_toGridLink_torusLink_one_two_le_one`: the trefoil has
-  unknotting number at most one.
+* `TauCeti.GridDiagram.unknottingNumber_toGridLink_le_swapColumns_add_one`: exchanging two
+  adjacent interleaving columns changes the unknotting number by at most one.
 
 ## References
 
@@ -146,6 +144,15 @@ theorem IsCrossingChange.unknottingNumber_le {L L' : GridLink} (h : IsCrossingCh
     _ ≤ 1 + L'.unknottingNumber := by gcongr
     _ = L'.unknottingNumber + 1 := add_comm _ _
 
+/-- Exchanging a cyclically adjacent interleaving pair of columns of a grid diagram changes the
+unknotting number of its grid link by at most one. -/
+theorem _root_.TauCeti.GridDiagram.unknottingNumber_toGridLink_le_swapColumns_add_one {n : ℕ}
+    (G : GridDiagram n) {a : Fin n} (h : G.ColumnsInterleaving a (finRotate n a)) :
+    G.toGridLink.unknottingNumber ≤
+      (G.swapColumns a (finRotate n a)).toGridLink.unknottingNumber + 1 :=
+  ((GridDiagram.isCrossCommutation_iff _ _).mpr
+    (Or.inr (G.isColumnCrossCommutation_swapColumns h))).isCrossingChange.unknottingNumber_le
+
 /-- Grid links joined by a sequence of crossing changes have the same number of components. -/
 private theorem componentCount_eq_of_reachable {L L' : GridLink}
     (h : crossingChangeGraph.Reachable L L') : L'.componentCount = L.componentCount := by
@@ -161,80 +168,6 @@ theorem isKnot_of_unknottingNumber_ne_top {L : GridLink} (h : L.unknottingNumber
   rw [isKnot_def, componentCount_eq_of_reachable (SimpleGraph.reachable_of_edist_ne_top h).symm,
     ← isKnot_def]
   exact isKnot_unknot
-
-/-- The Hopf link, presented by the standard `4 × 4` grid of the `(2, 2)` torus link, has
-unknotting number `⊤`: it has two components, so no sequence of crossing changes reaches the
-unknot. -/
-theorem unknottingNumber_toGridLink_torusLink_one_one :
-    (GridDiagram.torusLink 1 1).toGridLink.unknottingNumber = ⊤ := by
-  by_contra h
-  have := isKnot_of_unknottingNumber_ne_top h
-  rw [isKnot_toGridLink] at this
-  exact GridDiagram.not_isKnot_torusLink_one_one this
-
-/-- The standard `5 × 5` grid of the `(2, 3)` torus knot with its markings made explicit. -/
-private def trefoilGrid : GridDiagram 5 where
-  O := ⟨1⟩
-  X := ⟨finRotate 5 ^ 3⟩
-  disjoint := by decide
-
-private theorem torusLink_one_two_eq_trefoilGrid : GridDiagram.torusLink 1 2 = trefoilGrid := by
-  ext c <;> simp [trefoilGrid]
-
-/-- The standard `5 × 5` unknot grid with its markings made explicit. -/
-private def unknotGrid : GridDiagram 5 where
-  O := ⟨1⟩
-  X := ⟨finRotate 5⟩
-  disjoint := by decide
-
-private theorem unknot_three_eq_unknotGrid : GridDiagram.unknot 3 = unknotGrid := by
-  ext c <;> simp [unknotGrid]
-
-/-- The trefoil, presented by the standard `5 × 5` grid of the `(2, 3)` torus knot, has unknotting
-number at most one. Exchanging its first two columns is a cross-commutation, and five
-commutations turn the result into the standard `5 × 5` unknot grid. -/
-theorem unknottingNumber_toGridLink_torusLink_one_two_le_one :
-    (GridDiagram.torusLink 1 2).toGridLink.unknottingNumber ≤ 1 := by
-  rw [torusLink_one_two_eq_trefoilGrid]
-  -- Each step exchanges an adjacent non-interleaving pair of rows or columns.
-  have row (G : GridDiagram 5) (a : Fin 5) (ha : a ≠ finRotate 5 a)
-      (h : G.RowsNoninterleaving a (finRotate 5 a)) :
-      G.MovesTo (G.swapRows a (finRotate 5 a)) :=
-    GridDiagram.IsCommutation.movesTo
-      ((GridDiagram.isCommutation_iff _ _).mpr (Or.inl (G.isRowCommutation_swapRows a ha h)))
-  have col (G : GridDiagram 5) (a : Fin 5) (ha : a ≠ finRotate 5 a)
-      (h : G.ColumnsNoninterleaving a (finRotate 5 a)) :
-      G.MovesTo (G.swapColumns a (finRotate 5 a)) :=
-    GridDiagram.IsCommutation.movesTo
-      ((GridDiagram.isCommutation_iff _ _).mpr (Or.inr (G.isColumnCommutation_swapColumns a ha h)))
-  set G₀ := trefoilGrid.swapColumns 0 (finRotate 5 0)
-  set G₁ := G₀.swapRows 0 (finRotate 5 0)
-  set G₂ := G₁.swapRows 1 (finRotate 5 1)
-  set G₃ := G₂.swapColumns 1 (finRotate 5 1)
-  set G₄ := G₃.swapRows 4 (finRotate 5 4)
-  have hcross : trefoilGrid.IsCrossCommutation G₀ :=
-    (GridDiagram.isCrossCommutation_iff _ _).mpr <|
-      Or.inr (trefoilGrid.isColumnCrossCommutation_swapColumns (a := 0) (by
-      simp only [GridDiagram.columnsInterleaving_iff, GridDiagram.columnArc, Grid.mem_cIoo]
-      decide))
-  have hmoves : G₀.MovesTo (GridDiagram.unknot 3) := by
-    have h₅ : G₄.swapColumns 4 (finRotate 5 4) = GridDiagram.unknot 3 := by
-      rw [unknot_three_eq_unknotGrid]
-      ext c
-      all_goals revert c; decide
-    rw [← h₅]
-    refine (row G₀ 0 (by decide) ?_).trans <| (row G₁ 1 (by decide) ?_).trans <|
-      (col G₂ 1 (by decide) ?_).trans <| (row G₃ 4 (by decide) ?_).trans <|
-      col G₄ 4 (by decide) ?_
-    all_goals
-      simp only [GridDiagram.RowsNoninterleaving, GridDiagram.ColumnsNoninterleaving,
-        Grid.Noninterleaving, Grid.mem_cIoo]
-      decide
-  calc trefoilGrid.toGridLink.unknottingNumber ≤ G₀.toGridLink.unknottingNumber + 1 :=
-        hcross.isCrossingChange.unknottingNumber_le
-    _ = 1 := by
-      rw [(G₀.toGridLink_eq_iff_movesTo).mpr hmoves, GridDiagram.toGridLink_unknot,
-        unknottingNumber_unknot, zero_add]
 
 end GridLink
 

@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.ConstantField
 public import TauCeti.RingTheory.TensorProduct.IsDomain
+import TauCeti.AlgebraicGeometry.AffineScheme
 
 /-!
 # The function field of a geometrically integral scheme
@@ -75,9 +76,7 @@ instance isDomain_functionField_tensorProduct_of_geometricallyIntegral (L : Type
   have := functionField_isFractionRing_of_isAffineOpen X U hU
   have hw : hU.fromSpec ≫ (X ↘ Spec (.of k)) =
       Spec.map (CommRingCat.ofHom (algebraMap k Γ(X, U))) := by
-    rw [← IsAffineOpen.SpecMap_appLE_fromSpec _ (isAffineOpen_top _) hU le_top,
-      IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp,
-      RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom]
+    rw [hU.fromSpec_comp_eq_SpecMap, RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom]
   -- `Spec (Γ(X, U) ⊗[k] L)` is the base change of `U` to `L`, an open subscheme of the integral
   -- scheme `X ×_k Spec L`.
   let s := Spec.map (CommRingCat.ofHom (algebraMap k L))

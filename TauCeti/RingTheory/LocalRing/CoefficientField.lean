@@ -7,8 +7,11 @@ module
 
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.RingTheory.Etale.Field
+public import Mathlib.RingTheory.MvPowerSeries.Basic
 public import Mathlib.RingTheory.Smooth.AdicCompletion
+public import TauCeti.Algebra.Module.SpanRank
 public import TauCeti.RingTheory.Smooth.Field
+import TauCeti.RingTheory.MvPowerSeries.Evaluation
 
 /-!
 # Coefficient fields of complete local rings
@@ -37,6 +40,17 @@ In the theory of algebraic function fields this is the device that turns the com
 function field at a place with residue field `F_P` into a field of Laurent series over `F_P`, and
 so gives `F_P`-valued expansion coefficients and residues at places that are not rational.
 
+Any coefficient field, together with finitely many generators of `𝔪`, presents `R` as a quotient
+of a power series ring over its residue field: this is
+`MvPowerSeries.exists_surjective_ringHom_of_isAdicComplete` with `I := 𝔪`. Together with Cohen's
+theorem it gives the **Cohen structure theorem** for complete local rings containing a field
+(`TauCeti.exists_surjective_mvPowerSeries_of_span_eq_maximalIdeal`).
+The number of variables can be taken to be the minimal number of generators of `𝔪`
+(`TauCeti.exists_surjective_mvPowerSeries_spanFinrank`). A ring of prime characteristic `p`
+contains the field `𝔽_p`, so this applies to every complete Noetherian local ring of
+characteristic `p`. No regularity is involved: for instance `k[ε]/(ε²)` is the quotient
+`k⟦X⟧/(X²)`.
+
 ## Main definitions
 
 * `TauCeti.residueFieldSection`: the coefficient field, as a `k`-algebra map
@@ -48,12 +62,18 @@ so gives `F_P`-valued expansion coefficients and residues at places that are not
 * `TauCeti.eq_residueFieldSection`: it is the only `k`-algebra section of reduction.
 * `TauCeti.exists_residueFieldSection`: **Cohen's theorem**, a complete local ring containing a
   field has a coefficient field.
+* `TauCeti.exists_surjective_mvPowerSeries_of_span_eq_maximalIdeal`: the **Cohen structure
+  theorem**, such a ring is a quotient of a power series ring over its residue field, with the
+  variables sent to any given finite generating family of `𝔪`.
+* `TauCeti.exists_surjective_mvPowerSeries_spanFinrank`: the same with `spanFinrank 𝔪` variables.
 
 ## References
 
 * I. S. Cohen, *On the structure and ideal theory of complete local rings*, Trans. Amer. Math.
   Soc. 59 (1946), 54–106.
 * J.-P. Serre, *Local Fields*, GTM 67, Springer, 1979, Chapter II, §4.
+* [Stacks Project, Tag 032A](https://stacks.math.columbia.edu/tag/032A), the Cohen structure
+  theorem.
 -/
 
 public section
@@ -116,5 +136,40 @@ theorem exists_residueFieldSection :
   · -- in characteristic `p`, use the perfect prime field `𝔽_p`
     let : Algebra (ZMod p) R := ((algebraMap k R).comp (ZMod.castHom dvd_rfl k)).toAlgebra
     exact ⟨residueFieldSection (ZMod p) R, residue_residueFieldSection (ZMod p) R⟩
+
+open MvPowerSeries in
+include k in
+/-- **Cohen structure theorem for complete local rings containing a field.** Let `R` be a
+complete local ring containing a field, and let a finite family `x` generate its maximal ideal.
+Then `R` has a coefficient field `s`, and there is a surjective ring homomorphism from the power
+series ring over the residue field onto `R` that is `s` on constants and sends each variable
+`X i` to `x i`. Such a surjection exists for every coefficient field
+(`MvPowerSeries.exists_surjective_ringHom_of_isAdicComplete`). -/
+theorem exists_surjective_mvPowerSeries_of_span_eq_maximalIdeal {σ : Type*} [Finite σ]
+    (x : σ → R) (hx : Ideal.span (Set.range x) = maximalIdeal R) :
+    ∃ s : ResidueField R →+* R, (∀ a, residue R (s a) = a) ∧
+      ∃ φ : MvPowerSeries σ (ResidueField R) →+* R,
+        Function.Surjective φ ∧ φ.comp C = s ∧ ∀ i, φ (X i) = x i :=
+  -- `ResidueField R` is `R ⧸ 𝔪` and `residue R` is `Ideal.Quotient.mk 𝔪`, so `hs a` shows that
+  -- `Ideal.Quotient.mk 𝔪 ∘ s` reaches the class `a`.
+  (exists_residueFieldSection k R).imp fun s hs ↦
+    ⟨hs, exists_surjective_ringHom_of_isAdicComplete s (fun a ↦ ⟨a, hs a⟩) x hx⟩
+
+open MvPowerSeries in
+include k in
+/-- **Cohen structure theorem with the minimal number of variables.** A complete local ring
+containing a field whose maximal ideal `𝔪` is finitely generated has a coefficient field `s` and
+is a quotient of the power series ring over its residue field in `spanFinrank 𝔪` variables, by a
+surjection which is `s` on constants and sends the variables to generators of `𝔪`. -/
+theorem exists_surjective_mvPowerSeries_spanFinrank (hfg : (maximalIdeal R).FG) :
+    ∃ s : ResidueField R →+* R, (∀ a, residue R (s a) = a) ∧
+      ∃ φ : MvPowerSeries (Fin (maximalIdeal R).spanFinrank) (ResidueField R) →+* R,
+        Function.Surjective φ ∧ φ.comp C = s ∧
+          Ideal.span (Set.range fun i ↦ φ (X i)) = maximalIdeal R := by
+  obtain ⟨x, hx⟩ :=
+    (Submodule.FG.spanFinrank_le_iff_exists_fin_generating_family hfg _).mp le_rfl
+  obtain ⟨s, hs, φ, hφ, hC, hX⟩ :=
+    exists_surjective_mvPowerSeries_of_span_eq_maximalIdeal k R x hx
+  exact ⟨s, hs, φ, hφ, hC, by rwa [funext hX]⟩
 
 end TauCeti

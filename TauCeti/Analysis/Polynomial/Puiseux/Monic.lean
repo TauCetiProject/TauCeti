@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Polynomial.Puiseux.Branches
 public import TauCeti.Analysis.Polynomial.Puiseux.Extension
-public import TauCeti.Analysis.Polynomial.Puiseux.RootDifference.Basic
+public import TauCeti.Analysis.Polynomial.Puiseux.RootDifference.Global
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -23,13 +23,14 @@ dimensional complex normed space, in particular a polydisc.
 under the weaker assumption of separability off the hyperplane, for any nonzero multiple
 of `d!` and any substituted radius that fits. The discriminant form of the result is
 `exists_analyticOnNhd_prod_X_sub_C_of_discr_eq_pow_mul`; it chooses a positive substituted
-radius and also gives the local power-times-unit form of every difference of distinct
-root labels at each point of the hyperplane. The degree-zero case is included.
+radius and also gives a global power-times-unit form of every difference of distinct
+root labels. Each difference has one parameter-independent natural exponent and one analytic
+unit nowhere zero on the full product, including the hyperplane. The degree-zero case is included.
 
 The splitting uses the punctured root covering and monodromy theorem
 `exists_analyticOnNhd_eq_prod_X_sub_C_powerSubstitution`, followed by the joint analytic
 extension `exists_analyticOnNhd_monicOfCoeff_eq_prod_X_sub_C`. The root-difference conclusion
-uses `TauCeti.exists_root_sub_eq_pow_mul_unit`.
+uses `TauCeti.exists_analyticOnNhd_root_sub_eq_pow_mul_unit`.
 
 ## References
 
@@ -39,7 +40,7 @@ uses `TauCeti.exists_root_sub_eq_pow_mul_unit`.
 
 public section
 
-open Filter Function Metric Polynomial Set Topology
+open Function Metric Polynomial Set
 
 namespace TauCeti.Polynomial
 
@@ -87,9 +88,9 @@ theorem exists_analyticOnNhd_prod_X_sub_C_powerSubstitution_ball
 
 /-- **Monic Puiseux with parameters.** If the discriminant is `y ^ a * u`, with analytic
 nowhere-zero `u`, substitution by `t ^ d!` gives an analytic splitting on a full disc of
-positive radius. At every parameter on `t = 0`, every difference of distinct root labels
-is locally a power of `t` times an analytic unit. The branches may collide at `t = 0`,
-but are pointwise distinct elsewhere. -/
+positive radius. Every difference of distinct root labels is a fixed natural power of `t`
+times an analytic unit nowhere zero on the full product. The exponents are independent of
+the base parameter. The branches may collide at `t = 0`, but are pointwise distinct elsewhere. -/
 theorem exists_analyticOnNhd_prod_X_sub_C_of_discr_eq_pow_mul
     (hU : IsOpen U) (hR : 0 < R)
     (hF : ∀ i < d, AnalyticOnNhd ℂ (fun b ↦ (F b).coeff i) (U ×ˢ ball 0 R))
@@ -103,9 +104,10 @@ theorem exists_analyticOnNhd_prod_X_sub_C_of_discr_eq_pow_mul
         (∀ i, AnalyticOnNhd ℂ (r i) (U ×ˢ ball 0 R')) ∧
         (∀ b ∈ U ×ˢ ball 0 R', F (b.1, b.2 ^ d.factorial) = ∏ i, (X - C (r i b))) ∧
         (∀ b ∈ U ×ˢ (ball 0 R' \ {0}), Injective (fun i ↦ r i b)) ∧
-        ∀ w ∈ U, ∀ i j : Fin d, i ≠ j → ∃ m : ℕ, ∃ v : E × ℂ → ℂ,
-          AnalyticAt ℂ v (w, 0) ∧ v (w, 0) ≠ 0 ∧
-            ∀ᶠ b in 𝓝 (w, 0), r i b - r j b = b.2 ^ m * v b := by
+        ∀ i j : Fin d, i ≠ j → ∃ m : ℕ, ∃ v : E × ℂ → ℂ,
+          AnalyticOnNhd ℂ v (U ×ˢ ball 0 R') ∧
+            (∀ b ∈ U ×ˢ ball 0 R', v b ≠ 0) ∧
+            ∀ b ∈ U ×ˢ ball 0 R', r i b - r j b = b.2 ^ m * v b := by
   have hsep : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), (F b).Separable := by
     intro b hb
     have hb' : b ∈ U ×ˢ ball (0 : ℂ) R := ⟨hb.1, hb.2.1⟩
@@ -124,25 +126,20 @@ theorem exists_analyticOnNhd_prod_X_sub_C_of_discr_eq_pow_mul
     (fun i hi ↦ (hF i hi).continuousOn) hmonic hdeg hsep
     d.factorial_ne_zero hfit (dvd_refl _)
   refine ⟨R', hR', hfit, r, hr, hfac, hinj, ?_⟩
-  intro w hw i j hij
+  intro i j hij
   let Q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ d.factorial)
-  have hQ : AnalyticAt ℂ Q (w, 0) := analyticAt_fst.prod (analyticAt_snd.pow _)
-  have hw0 : (w, (0 : ℂ)) ∈ U ×ˢ ball 0 R' := ⟨hw, mem_ball_self hR'⟩
-  have hwR : Q (w, 0) ∈ U ×ˢ ball 0 R := by simp [Q, d.factorial_ne_zero, hw, hR]
-  have hQmem : ∀ b ∈ U ×ˢ ball 0 R', Q b ∈ U ×ˢ ball 0 R := by
-    intro b hb
-    refine ⟨hb.1, ?_⟩
-    rw [mem_ball_zero_iff, norm_pow]
-    exact (pow_lt_pow_left₀ (mem_ball_zero_iff.1 hb.2) (norm_nonneg _)
-      d.factorial_ne_zero).trans_le hfit
-  have hd : ∀ᶠ b in 𝓝 (w, (0 : ℂ)), (F (Q b)).discr = b.2 ^ (d.factorial * a) * u (Q b) := by
-    filter_upwards [(hU.prod isOpen_ball).mem_nhds hw0] with b hb
-    simpa only [Q, ← pow_mul] using hdiscr _ (hQmem b hb)
-  obtain ⟨m, v, hv, hv0, heq⟩ := TauCeti.exists_root_sub_eq_pow_mul_unit
-    (fun i ↦ hr i _ hw0)
-    (Filter.mem_of_superset ((hU.prod isOpen_ball).mem_nhds hw0) hfac)
-    ((hu _ hwR).comp hQ) (hu0 _ hwR)
-    (by simpa only [sub_zero, Q, Function.comp_apply] using hd) hij
+  have hQ : AnalyticOnNhd ℂ Q (U ×ˢ ball 0 R') :=
+    fun _ _ ↦ analyticAt_fst.prod (analyticAt_snd.pow _)
+  have hQmem : MapsTo Q (U ×ˢ ball 0 R') (U ×ˢ ball 0 R) :=
+    (mapsTo_id U).prodMap (mapsTo_pow_ball_zero d.factorial_ne_zero hfit)
+  have hunit := hu.comp hQ hQmem
+  have hUc : IsConnected U := isConnected_iff_connectedSpace.mpr inferInstance
+  obtain ⟨m, v, hv, hv0, heq⟩ := TauCeti.exists_analyticOnNhd_root_sub_eq_pow_mul_unit
+    hU hUc (isOpen_ball.mem_nhds (mem_ball_self hR')) hr hfac
+    (fun w hw ↦ hunit (w, 0) ⟨hw, mem_ball_self hR'⟩)
+    (fun _ hb ↦ hu0 _ (hQmem hb))
+    (fun b hb ↦ by
+      simpa only [Q, Function.comp_apply, sub_zero, ← pow_mul] using hdiscr _ (hQmem hb)) hij
   exact ⟨m, v, hv, hv0, by simpa only [sub_zero] using heq⟩
 
 end TauCeti.Polynomial

@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
 import TauCeti.Analysis.Calculus.SegmentIncrement
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.Dilation
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
@@ -231,31 +232,14 @@ theorem enorm_sub_setAverage_le_of_starConvex [CompleteSpace F] (hΩ : IsOpen Ω
   have hS_top : μ S ≠ ∞ := ((measure_mono (hS.trans hD)).trans_lt measure_closedBall_lt_top).ne
   have hcore := setLIntegral_enorm_sub_le_of_starConvex (μ := μ) hΩ hu hx hD
   rw [ENNReal.div_eq_inv_mul, mul_assoc]
-  have hmeas : AEStronglyMeasurable (fun y => u x - u y) (μ.restrict S) :=
-    (aestronglyMeasurable_const.sub ((hu.continuousOn.aestronglyMeasurable
-      hΩ.measurableSet).mono_measure (Measure.restrict_mono hS le_rfl)))
-  by_cases hint : ∫⁻ y in S, ‖u x - u y‖ₑ ∂μ = ∞
-  · have htop : ∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ = ∞ := top_le_iff.1 (hint ▸ lintegral_mono_set hS)
-    rw [htop, top_le_iff] at hcore
-    rw [hcore, ENNReal.mul_top (ENNReal.inv_ne_zero.2 hS_top)]
-    exact le_top
-  have hdiff : IntegrableOn (fun y => u x - u y) S μ := ⟨hmeas, Ne.lt_top hint⟩
-  have hu_int : IntegrableOn u S μ := by
-    refine ((integrableOn_const (C := u x) hS_top).sub hdiff).congr (ae_of_all _ fun y => ?_)
-    simp
-  have hmean : u x - ⨍ y in S, u y ∂μ = ⨍ y in S, (u x - u y) ∂μ := by
-    rw [setAverage_fun_sub (integrableOn_const (C := u x) hS_top) hu_int,
-      setAverage_const hS₀ hS_top]
+  have hSm : AEStronglyMeasurable u (μ.restrict S) :=
+    (hu.continuousOn.aestronglyMeasurable hΩ.measurableSet).mono_measure
+      (Measure.restrict_mono hS le_rfl)
   calc
-    ‖u x - ⨍ y in S, u y ∂μ‖ₑ = ‖(μ.real S)⁻¹ • ∫ y in S, (u x - u y) ∂μ‖ₑ := by
-      rw [hmean, setAverage_eq]
-    _ ≤ (μ S)⁻¹ * ∫⁻ y in S, ‖u x - u y‖ₑ ∂μ := by
-      rw [enorm_smul]
-      gcongr
-      · rw [Real.enorm_of_nonneg (inv_nonneg.2 measureReal_nonneg), ENNReal.ofReal_inv_of_pos
-          (by rw [measureReal_def]; exact ENNReal.toReal_pos hS₀ hS_top),
-        ofReal_measureReal hS_top]
-      · exact enorm_integral_le_lintegral_enorm _
+    ‖u x - ⨍ y in S, u y ∂μ‖ₑ ≤ (μ S)⁻¹ * ∫⁻ y in S, ‖u x - u y‖ₑ ∂μ := by
+      rw [enorm_sub_rev, ← ENNReal.div_eq_inv_mul, ← setLAverage_eq]
+      refine (enorm_setAverage_sub_le_setLAverage hSm hS₀ hS_top (u x)).trans_eq ?_
+      exact congrArg (laverage _) (funext fun y => enorm_sub_rev _ _)
     _ ≤ (μ S)⁻¹ * ∫⁻ y in Ω, ‖u x - u y‖ₑ ∂μ := by gcongr
     _ ≤ _ := by gcongr
 

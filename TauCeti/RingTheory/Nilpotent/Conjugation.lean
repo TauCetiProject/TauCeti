@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Claude
+Authors: Claude, Codex
 -/
 module
 
@@ -32,9 +32,7 @@ is in `TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/RootSubgroup/NumberedSymm
 
 ## Main definitions and results
 
-* `TauCeti.apply_pow_smul_of_intertwines` and `TauCeti.apply_dividedPower_smul_of_intertwines`:
-  an intertwiner for `x` and `y` intertwines their powers and their divided powers.
-* `TauCeti.baseChange_invariantRestrict_baseChangeExp`: the conjugation formula for the
+* `LinearEquiv.baseChange_invariantRestrict_baseChangeExp`: the conjugation formula for the
   base-changed exponential.
 
 ## References
@@ -45,9 +43,9 @@ is in `TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/RootSubgroup/NumberedSymm
 
 public section
 
-namespace TauCeti
+namespace LinearEquiv
 
-open TensorProduct
+open TauCeti TensorProduct
 
 universe u v
 
@@ -55,36 +53,7 @@ variable {A : Type*} [Ring A] [Algebra ℚ A]
 variable {V : Type u} [AddCommGroup V] [Module ℚ V] [Module A V] [IsScalarTower ℚ A V]
 variable {S : Type*} [SetLike S V] [AddSubgroupClass S V]
 
-/-! ## Transporting powers and divided powers -/
-
-section Powers
-
-variable {B X Y : Type*} [Monoid B] [MulAction B X] [MulAction B Y]
-variable (f : X → Y) {x y : B}
-
-/-- A map intertwining the actions of `x` and `y` intertwines the actions of their powers. -/
-theorem apply_pow_smul_of_intertwines (hxy : ∀ v, f (x • v) = y • f v) (n : ℕ) (v : X) :
-    f (x ^ n • v) = y ^ n • f v := by
-  induction n generalizing v with
-  | zero => simp
-  | succ n ih =>
-      rw [pow_succ x n, mul_smul, ih (x • v), hxy, pow_succ y n, mul_smul]
-
-end Powers
-
-variable (θ : V →ₗ[ℚ] V) {x y : A}
-
-/-- A linear map intertwining the actions of `x` and `y` intertwines the actions of their
-divided powers.
-
-The divided powers involve division by factorials, which is why the intertwiner is required to be
-`ℚ`-linear rather than merely additive. -/
-theorem apply_dividedPower_smul_of_intertwines (hxy : ∀ v, θ (x • v) = y • θ v) (n : ℕ) (v : V) :
-    θ (Associative.dividedPower n x • v) = Associative.dividedPower n y • θ v := by
-  rw [Associative.dividedPower_def, Associative.dividedPower_def, smul_assoc, smul_assoc,
-    map_smul, apply_pow_smul_of_intertwines θ hxy]
-
-variable (θ : V ≃ₗ[ℚ] V)
+variable (θ : V ≃ₗ[ℚ] V) {x y : A}
 
 /-! ## Conjugating the base-changed exponential -/
 
@@ -93,48 +62,37 @@ attribute [local instance high] Algebra.toModule
 
 variable {R : Type v} [CommRing R] [Algebra ℤ R]
 
-omit [AddSubgroupClass S V] in
-/-- An invariant equivalence carries preservation of a set by the divided powers of
-one element to preservation by the divided powers of an intertwined element. -/
-theorem dividedPower_smul_mem_of_intertwines (M : S)
-    (hθ : ∀ v, θ v ∈ M ↔ v ∈ M) (hxy : ∀ v, θ (x • v) = y • θ v)
-    (hx : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M) :
-    ∀ n, ∀ v ∈ M, Associative.dividedPower n y • v ∈ M := by
-  intro n v hv
-  have hv' : θ.symm (v : V) ∈ M :=
-    (hθ (θ.symm v)).1 (by simpa only [θ.apply_symm_apply] using hv)
-  have hdp : θ (Associative.dividedPower n x • θ.symm v) =
-      Associative.dividedPower n y • v := by
-    simpa only [LinearEquiv.coe_toLinearMap, θ.apply_symm_apply] using
-      apply_dividedPower_smul_of_intertwines θ.toLinearMap hxy n (θ.symm v)
-  rw [← hdp]
-  exact (hθ _).2 (hx n (θ.symm v) hv')
-
 /-- Conjugating the base-changed divided-power exponential of `x` by an intertwiner produces the
 base-changed divided-power exponential of `y`, with the same parameter.
 
-Both exponentials are truncated at a common bound `k`; in the intended application, the second
-bound follows structurally by conjugating the first nilpotent endomorphism. -/
+The two nilpotent elements may have different nilpotency indices; the finite-sum comparison
+uses a common bound internally. -/
 theorem baseChange_invariantRestrict_baseChangeExp (M : S) (hθ : ∀ v, θ v ∈ M ↔ v ∈ M)
     (hxy : ∀ v, θ (x • v) = y • θ v)
     (hx : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
-    {k : ℕ} (hkx : x ^ k = 0) (hky : y ^ k = 0) (t : R) (z : R ⊗[ℤ] M) :
+    (hnilx : IsNilpotent x) (hnily : IsNilpotent y) (t : R) (z : R ⊗[ℤ] M) :
     (θ.toAddEquiv.invariantRestrict M hθ).baseChange ℤ R M M
         (baseChangeExp x M hx t z) =
-      baseChangeExp y M (dividedPower_smul_mem_of_intertwines θ M hθ hxy hx) t
+      baseChangeExp y M (θ.dividedPower_smul_mem_of_intertwines M M hθ hxy hx) t
         ((θ.toAddEquiv.invariantRestrict M hθ).baseChange ℤ R M M z) := by
+  obtain ⟨kx, hkx⟩ := hnilx
+  obtain ⟨ky, hky⟩ := hnily
+  have hkx' : x ^ max kx ky = 0 := pow_eq_zero_of_le (Nat.le_max_left _ _) hkx
+  have hky' : y ^ max kx ky = 0 := pow_eq_zero_of_le (Nat.le_max_right _ _) hky
   induction z using TensorProduct.inductionOn with
   | tmul r v =>
-      rw [baseChangeExp_tmul_of_pow_eq_zero x M hx hkx, map_sum,
+      rw [baseChangeExp_tmul_of_pow_eq_zero x M hx hkx', map_sum,
         LinearEquiv.baseChange_tmul, baseChangeExp_tmul_of_pow_eq_zero y M
-          (dividedPower_smul_mem_of_intertwines θ M hθ hxy hx) hky]
+          (θ.dividedPower_smul_mem_of_intertwines M M hθ hxy hx) hky']
       refine Finset.sum_congr rfl fun n _ => ?_
       rw [LinearEquiv.baseChange_tmul]
       congr 1
       refine Subtype.ext ?_
       rw [AddEquiv.coe_invariantRestrict_apply, coe_integralDividedPower_apply,
         coe_integralDividedPower_apply, AddEquiv.coe_invariantRestrict_apply]
-      convert apply_dividedPower_smul_of_intertwines θ.toLinearMap hxy n (v : V) using 1
-  | add z w hz hw => rw [map_add, map_add, map_add, map_add, hz, hw]
+      simpa only [LinearEquiv.coe_toLinearMap, LinearEquiv.coe_toAddEquiv,
+        LinearEquiv.coe_addEquiv_apply] using
+        θ.toLinearMap.map_dividedPower_smul_of_intertwines hxy n (v : V)
+  | add z w hz hw => simp only [map_add, hz, hw]
 
-end TauCeti
+end LinearEquiv

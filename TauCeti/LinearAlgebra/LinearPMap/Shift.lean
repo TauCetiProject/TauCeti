@@ -16,16 +16,16 @@ unchanged.  This file develops the generic construction and its basic normalizat
 
 ## Main results
 
-* `TauCeti.LinearPMap.subScalar`: the operator `A - omega I` on the domain of `A`.
-* `TauCeti.LinearPMap.subScalar_domain`: scalar shifts preserve the domain.
-* `TauCeti.LinearPMap.subScalar_apply`: pointwise evaluation of a scalar shift.
-* `TauCeti.LinearPMap.vadd_subScalar` and `TauCeti.LinearPMap.subScalar_vadd`: scalar shifts
+* `LinearPMap.subScalar`: the operator `A - omega I` on the domain of `A`.
+* `LinearPMap.subScalar_domain`: scalar shifts preserve the domain.
+* `LinearPMap.subScalar_apply`: pointwise evaluation of a scalar shift.
+* `LinearPMap.vadd_subScalar` and `LinearPMap.subScalar_vadd`: scalar shifts
   commute with adding a globally defined map, and absorb into it.
 -/
 
 public section
 
-namespace TauCeti.LinearPMap
+namespace LinearPMap
 
 variable {R X : Type*} [CommRing R] [AddCommGroup X] [Module R X]
 
@@ -69,7 +69,7 @@ subtracting `omega I` gives the same operator either way round. -/
 theorem vadd_subScalar {A : X →ₗ.[R] X} (f : X →ₗ[R] X) (omega : R) :
     f +ᵥ subScalar A omega = subScalar (f +ᵥ A) omega := by
   refine LinearPMap.ext rfl fun x hf hg => ?_
-  rw [LinearPMap.vadd_apply, subScalar_apply, subScalar_apply, LinearPMap.vadd_apply]
+  rw [vadd_apply, subScalar_apply, subScalar_apply, vadd_apply]
   module
 
 /-- A scalar shift of a globally defined linear perturbation absorbs into the perturbing map.
@@ -78,10 +78,10 @@ This is the form in which the domain of a shifted perturbation is visibly the do
 theorem subScalar_vadd {A : X →ₗ.[R] X} (f : X →ₗ[R] X) (omega : R) :
     subScalar (f +ᵥ A) omega = (f - omega • LinearMap.id) +ᵥ A := by
   refine LinearPMap.ext rfl fun x hf hg => ?_
-  rw [subScalar_apply, LinearPMap.vadd_apply, LinearPMap.vadd_apply, LinearMap.sub_apply,
-    LinearMap.smul_apply, LinearMap.id_apply]
+  rw [subScalar_apply, vadd_apply, vadd_apply,
+    LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.id_apply]
   module
 
-end TauCeti.LinearPMap
+end LinearPMap
 
 end

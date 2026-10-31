@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Grassmannian.Chart.Transition
-public import TauCeti.RingTheory.Grassmannian.HopfIdeal
+public import TauCeti.RingTheory.Grassmannian.QuotientHopfAlgebra
 
 /-!
 # Affine charts parametrising Hopf ideals
@@ -19,7 +19,9 @@ spectrum is the universal finite free subgroup on this chart of the subgroup par
 
 The construction uses `Module.Grassmannian.chartHomEquiv` for the ambient chart and
 `Module.Grassmannian.hopfIdealLocus` for the closed equations. The equations agree under
-the Grassmannian transition isomorphisms, as needed to glue the closed charts.
+the Grassmannian transition isomorphisms, as needed to glue the closed charts. When `H` is
+finitely presented as an `R`-module, as it is for a finite locally free group scheme, each closed
+chart is a finitely presented `R`-algebra.
 
 ## References
 
@@ -60,6 +62,12 @@ theorem mk_surjective : Function.Surjective (mk R x) :=
 @[simp]
 theorem ker_mk : RingHom.ker (mk R x) = ideal R x :=
   Ideal.Quotient.mkₐ_ker R _
+
+/-- For `H` finitely presented as an `R`-module, the closed chart is a finitely presented
+`R`-algebra: the ambient chart algebra is finitely presented, and the Hopf-ideal equations are
+finitely generated (`Module.Grassmannian.hopfIdealLocus_fg`). -/
+instance [Module.FinitePresentation R H] : Algebra.FinitePresentation R (CoordinateRing R x) :=
+  Algebra.FinitePresentation.quotient (hopfIdealLocus_fg _)
 
 variable {R x}
 
@@ -107,26 +115,24 @@ variable (R x)
 def universalPoint : chart (CoordinateRing R x) (fun i ↦ (1 : CoordinateRing R x) ⊗ₜ[R] x i) :=
   chartHomEquiv R x _ (mk R x)
 
-/-- The submodule at the universal point is a Hopf ideal. -/
-private theorem exists_universalIdeal :
-    ∃ I : Ideal (CoordinateRing R x ⊗[R] H),
-      I.restrictScalars (CoordinateRing R x) = (universalPoint R x).1.toSubmodule ∧
-        I.IsHopfIdeal (CoordinateRing R x) :=
-  (ideal_le_ker_iff (mk R x)).mp (by rw [ker_mk])
+/-- The universal point lies on the Hopf-ideal locus. -/
+theorem hopfIdealLocus_universalPoint : (universalPoint R x).1.hopfIdealLocus = ⊥ := by
+  rw [universalPoint, ← ideal_map]
+  exact (Ideal.map_eq_bot_iff_le_ker _).2 (ker_mk R x).ge
 
 /-- The universal Hopf ideal in the base change of `H` to the closed chart. -/
 def universalIdeal : Ideal (CoordinateRing R x ⊗[R] H) :=
-  (exists_universalIdeal R x).choose
+  (universalPoint R x).1.hopfIdeal (hopfIdealLocus_universalPoint R x)
 
 /-- The universal ideal has the underlying submodule classified by the universal point. -/
 @[simp]
 theorem universalIdeal_restrictScalars :
     (universalIdeal R x).restrictScalars (CoordinateRing R x) =
       (universalPoint R x).1.toSubmodule :=
-  (exists_universalIdeal R x).choose_spec.1
+  restrictScalars_hopfIdeal _ _
 
 instance : (universalIdeal R x).IsHopfIdeal (CoordinateRing R x) :=
-  (exists_universalIdeal R x).choose_spec.2
+  inferInstanceAs (((universalPoint R x).1.hopfIdeal _).IsHopfIdeal _)
 
 /-- The universal finite free Hopf quotient on the chart. -/
 abbrev Quotient := (CoordinateRing R x ⊗[R] H) ⧸ universalIdeal R x

@@ -60,11 +60,13 @@ noncomputable section
 
 namespace TauCeti
 
+universe u
+
 open _root_.ContinuousCohomology
 
 open scoped Quaternion
 
-variable {K : Type} [Field K] [Invertible (2 : K)]
+variable {K : Type u} [Field K] [Invertible (2 : K)]
 
 /-- **The cup product of two Kummer classes vanishes exactly when the quaternion symbol is
 trivial**: `(a) ∪ (b) = 0` in `H²(G_K, 𝔽₂)` if and only if `[(a, b)] = 1` in `Br(K)`. -/

@@ -106,7 +106,7 @@ noncomputable def ofIrreducibleBasis
     multiplicity f i := ((e f.1).lazardEval (Polynomial.C ∘ x₀.1)).rootMultiplicity (D.root i x₀)
     rootMultiplicity_root f i x := by
       rw [hswap]
-      exact hB.rootMultiplicity_lazardEval_eq f.2 fun b hb ↦
+      exact hB.isSquarefreeBasis.rootMultiplicity_lazardEval_eq f.2 fun b hb ↦
         (hmul b hb i x).trans (hmul b hb i x₀).symm
     exists_root_eq f x hf t ht := by
       rw [hswap] at ht

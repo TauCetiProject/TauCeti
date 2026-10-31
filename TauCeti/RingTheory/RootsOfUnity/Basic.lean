@@ -26,6 +26,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 
 ## Main definitions
 
+* `TauCeti.negOneRootsOfUnity`: the square root of unity `-1` in a commutative ring.
+
 * `TauCeti.torsionByUnitsEquivRootsOfUnity`: the `n`-torsion of `Mˣ`, written additively, is
   `μₙ(M)`, written additively.
 * `TauCeti.rootsOfUnityPowOfDvd`: for `n ∣ m`, the power map `η ↦ η ^ (m / n)` from `μₘ(M)` to
@@ -46,6 +48,9 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
   unity.
 * `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
   order `n` is a primitive `2n`-th root of unity.
+* `IsPrimitiveRoot.sq_eq_neg_one`: a primitive fourth root of unity squares to `-1`.
+* `IsPrimitiveRoot.sum_pow_pow_eq` and `IsPrimitiveRoot.sum_prod_pow_pow_eq`: orthogonality of
+  the characters `a ↦ (ζ ^ e) ^ a` of `ℤ ⧸ m`, in one and in several variables.
 * `HasEnoughRootsOfUnity.of_injective`: a domain receiving an injective homomorphism from a
   commutative monoid with enough `n`-th roots of unity has enough `n`-th roots of unity.
 * `HasEnoughRootsOfUnity.primitiveRoots_nonempty` and
@@ -103,6 +108,33 @@ theorem card_rootsOfUnity_two [IsDomain R] (h2 : (2 : R) ≠ 0) :
     Nat.card (rootsOfUnity 2 R) = 2 :=
   (IsPrimitiveRoot.neg_one_of_two_ne_zero h2).card_rootsOfUnity
 
+/-- The square root of unity `-1` in a commutative ring. -/
+def negOneRootsOfUnity : rootsOfUnity 2 R :=
+  ⟨-1, (mem_rootsOfUnity 2 _).mpr (by simp)⟩
+
+/-- The unit underlying the square root `-1` is the negative unit. -/
+@[simp]
+theorem coe_negOneRootsOfUnity :
+    ((negOneRootsOfUnity : rootsOfUnity 2 R) : Rˣ) = -1 :=
+  (rfl)
+
+/-- In a ring without zero divisors, every square root of unity is `1` or `-1`. -/
+theorem _root_.rootsOfUnity.eq_one_or_eq_negOneRootsOfUnity [NoZeroDivisors R]
+    (ζ : rootsOfUnity 2 R) :
+    ζ = 1 ∨ ζ = negOneRootsOfUnity := by
+  have h : ((ζ : Rˣ) : R) ∈ ({1, -1} : Set R) :=
+    Units.val_set_image_rootsOfUnity_two (R := R) ▸ Set.mem_image_of_mem _ ζ.2
+  rcases h with h | h
+  · exact Or.inl (Subtype.ext (Units.ext h))
+  · exact Or.inr (Subtype.ext (Units.ext h))
+
+/-- The square roots `-1` and `1` are distinct when `2 ≠ 0`. -/
+theorem negOneRootsOfUnity_ne_one (h2 : (2 : R) ≠ 0) :
+    (negOneRootsOfUnity : rootsOfUnity 2 R) ≠ 1 := by
+  intro h
+  have h' : (-1 : R) = 1 := congrArg (fun ζ : rootsOfUnity 2 R ↦ ((ζ : Rˣ) : R)) h
+  exact h2 (by simpa [one_add_one_eq_two] using (congrArg (fun x : R ↦ x + 1) h').symm)
+
 /-- In a domain, the number of `n`-th roots of unity divides `n`: they form a cyclic group, and its
 exponent divides `n`. -/
 theorem card_rootsOfUnity_dvd [IsDomain R] (n : ℕ) : Nat.card (rootsOfUnity n R) ∣ n := by
@@ -120,6 +152,32 @@ theorem _root_.IsPrimitiveRoot.neg_of_odd {ζ : R} {n : ℕ} (hζ : IsPrimitiveR
   rw [IsPrimitiveRoot.iff_orderOf, neg_eq_neg_one_mul,
     (Commute.all _ _).orderOf_mul_eq_mul_orderOf_of_coprime, ← hneg.eq_orderOf, ← hζ.eq_orderOf]
   rwa [← hneg.eq_orderOf, ← hζ.eq_orderOf, Nat.coprime_two_left]
+
+/-- In a commutative ring without zero divisors, a primitive fourth root of unity is a square root
+of `-1`: its square is a primitive square root of unity. -/
+theorem _root_.IsPrimitiveRoot.sq_eq_neg_one [NoZeroDivisors R] {ζ : R}
+    (hζ : IsPrimitiveRoot ζ 4) : ζ ^ 2 = -1 :=
+  (hζ.pow (by norm_num) (by norm_num : 4 = 2 * 2)).eq_neg_one_of_two_right
+
+/-- **Orthogonality of characters.** In a domain, the sum of the powers `(ζ ^ e) ^ a` over `a < m`
+of a primitive `m`-th root of unity `ζ` is `m` if `m` divides `e`, and zero otherwise. -/
+theorem _root_.IsPrimitiveRoot.sum_pow_pow_eq [IsDomain R] {ζ : R} {m : ℕ}
+    (hζ : IsPrimitiveRoot ζ m) (e : ℕ) :
+    ∑ a : Fin m, (ζ ^ e) ^ (a : ℕ) = if m ∣ e then (m : R) else 0 := by
+  rw [Fin.sum_univ_eq_sum_range (fun a ↦ (ζ ^ e) ^ a)]
+  split_ifs with h
+  · simp [(hζ.pow_eq_one_iff_dvd e).mpr h]
+  · have h1 : ζ ^ e - 1 ≠ 0 := sub_ne_zero.mpr fun h' ↦ h ((hζ.pow_eq_one_iff_dvd e).mp h')
+    refine (mul_eq_zero.mp ?_).resolve_left h1
+    rw [mul_geom_sum, ← pow_mul, mul_comm, pow_mul, hζ.pow_eq_one, one_pow, sub_self]
+
+/-- **Orthogonality of characters in several variables.** In a domain, the sum of
+`∏ᵢ (ζ ^ eᵢ) ^ jᵢ` over `j ∈ {0, …, m - 1} ^ ι`, for a primitive `m`-th root of unity `ζ`, is the
+product over `i` of `m` if `m` divides `eᵢ`, and zero otherwise. -/
+theorem _root_.IsPrimitiveRoot.sum_prod_pow_pow_eq [IsDomain R] {ι : Type*} [Fintype ι]
+    [DecidableEq ι] {ζ : R} {m : ℕ} (hζ : IsPrimitiveRoot ζ m) (e : ι → ℕ) :
+    ∑ j : ι → Fin m, ∏ i, (ζ ^ e i) ^ (j i : ℕ) = ∏ i, if m ∣ e i then (m : R) else 0 := by
+  simp only [← hζ.sum_pow_pow_eq, Fintype.prod_sum]
 
 /-- A domain receiving an injective monoid homomorphism from a commutative monoid with enough
 `n`-th roots of unity has enough `n`-th roots of unity: the image of a primitive root is primitive,

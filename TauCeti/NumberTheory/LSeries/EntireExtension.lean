@@ -9,8 +9,8 @@ import Mathlib.Analysis.Analytic.Uniqueness
 public import Mathlib.Analysis.Calculus.FDeriv.Defs
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Convex
-import Mathlib.NumberTheory.LSeries.Deriv
 public import Mathlib.NumberTheory.LSeries.Convergence
+import TauCeti.NumberTheory.LSeries.Deriv
 
 /-!
 # The entire-continuation predicate for L-series
@@ -157,8 +157,7 @@ theorem hasEntireExtension_of_support_finite {a : ℕ → ℂ}
     · exact Finset.single_le_sum (fun m _ ↦ norm_nonneg (a m)) hn
     · rw [Function.notMem_support.mp fun h ↦ hn (ha.mem_toFinset.mpr h), norm_zero]
       exact Finset.sum_nonneg fun m _ ↦ norm_nonneg (a m)
-  · exact Differentiable.fun_sum (𝕜 := ℂ) (A := fun n s ↦ LSeries.term a s n)
-      fun n _ s ↦ (LSeries.hasDerivAt_term a n s).differentiableAt
+  · exact differentiable_sum_term a ha.toFinset
   · exact (tsum_eq_sum fun n hn ↦ by
       simp [LSeries.term_def,
         Function.notMem_support.mp fun h ↦ hn (ha.mem_toFinset.mpr h)]).symm

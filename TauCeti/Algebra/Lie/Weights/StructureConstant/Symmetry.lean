@@ -144,6 +144,24 @@ theorem structureConstant_mul_killingForm_eq (hα : α.IsNonZero) :
         killingForm K L (x α) (x (-α)) := by
       simp
 
+/-- Cyclic symmetry followed by skew-symmetry relates the opposite-root constant to the
+constant for the remaining step of the root string. -/
+theorem structureConstant_neg_neg_mul_killingForm_eq (hβ : β.IsNonZero) :
+    hx.structureConstant (-α) (-β) (-γ) hγ.neg (by
+        rw [Weight.coe_neg, Weight.coe_neg, Weight.coe_neg, hαβ]
+        abel) * killingForm K L (x γ) (x (-γ)) =
+      -(hx.structureConstant (-α) γ β hβ (by
+          rw [Weight.coe_neg, hαβ]
+          abel) * killingForm K L (x β) (x (-β))) := by
+  have hαγ : (β : H → K) = ((-α : Weight K H L) : H → K) + γ := by
+    rw [Weight.coe_neg, hαβ]
+    abel
+  have hγα : (β : H → K) = (γ : H → K) + ((-α : Weight K H L) : H → K) :=
+    hαγ.trans (add_comm _ _)
+  have h := hx.structureConstant_mul_killingForm_eq γ (-α) β hβ hγα hγ
+  rw [hx.structureConstant_skew (-α) γ β hβ hαγ, neg_mul] at h
+  exact h.symm
+
 end IsSl2System
 
 end TauCeti

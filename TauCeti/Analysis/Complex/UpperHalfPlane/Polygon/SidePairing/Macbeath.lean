@@ -69,8 +69,8 @@ theorem macbeathHom_bijective (hmap : ∀ i, σ.map i ∈ Γ)
     (hlf : LocallyFinite fun γ : Γ ↦ (γ : PSL(2, ℝ)) • P.carrier) :
     Function.Bijective (macbeathHom Γ P.carrier) := by
   obtain ⟨hlf', hcover⟩ := σ.locallyFinite_and_iUnion_eq_univ hmap hlf
-  exact ⟨macbeathHom_injective_of_locallyFinite P.isClosed_carrier P.isPathConnected_carrier
-      hlf' hcover,
+  exact ⟨macbeathHom_injective_of_locallyFinite P.isClosed_carrier
+      P.isPathConnected_carrier.isConnected hlf' hcover,
     macbeathHom_surjective_of_locallyFinite P.isClosed_carrier hlf' hcover⟩
 
 /-- **Macbeath's presentation of the group of a polygon**, as a description of the relations:
@@ -82,6 +82,6 @@ theorem ker_lift_eq_normalClosure_macbeathRels (hmap : ∀ i, σ.map i ∈ Γ)
       Subgroup.normalClosure (macbeathRels Γ P.carrier) := by
   obtain ⟨hlf', hcover⟩ := σ.locallyFinite_and_iUnion_eq_univ hmap hlf
   exact ker_lift_eq_normalClosure_macbeathRels_of_locallyFinite P.isClosed_carrier
-    P.isPathConnected_carrier hlf' hcover
+    P.isPathConnected_carrier.isConnected hlf' hcover
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing

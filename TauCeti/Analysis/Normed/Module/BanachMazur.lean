@@ -18,22 +18,26 @@ The Banach–Mazur distance between two normed spaces `E` and `F` is
 It measures how far `E` and `F` are from being isometric, and is the distance used to compare
 finite-dimensional spaces with Euclidean spaces in the local theory of Banach spaces.
 
+The definition and basic properties also apply to seminormed spaces. Lower bounds by `1`
+require a nontrivial topology, since a nonzero space can have an identically zero seminorm.
+
 `TauCeti.banachMazurDist 𝕜 E F` is this infimum, as a real number. When `E` and `F` are not
 isomorphic the infimum is over the empty set and its value is the junk value `0`; two
-finite-dimensional spaces over a complete field are isomorphic exactly when they have the same
-dimension (`FiniteDimensional.nonempty_continuousLinearEquiv_iff_finrank_eq`).
+finite-dimensional normed spaces over a complete field are isomorphic exactly when they have the
+same dimension (`FiniteDimensional.nonempty_continuousLinearEquiv_iff_finrank_eq`).
 
 ## Main results
 
 * `TauCeti.banachMazurDist_comm`: the distance is symmetric.
 * `TauCeti.banachMazurDist_triangle`: the multiplicative triangle inequality
   `d(E, G) ≤ d(E, F) d(F, G)`.
-* `TauCeti.one_le_banachMazurDist`: between isomorphic nonzero spaces the distance is at least `1`.
+* `TauCeti.one_le_banachMazurDist`: between isomorphic spaces with nontrivial topology the
+  distance is at least `1`.
 * `LinearIsometryEquiv.banachMazurDist_congr_left` and
   `LinearIsometryEquiv.banachMazurDist_congr_right`: the distance is invariant under replacing
   either space by an isometric copy.
 * `TauCeti.exists_norm_mul_norm_symm_eq_banachMazurDist`: over a locally compact field, the
-  infimum is attained when the spaces are finite-dimensional.
+  infimum is attained for finite-dimensional normed spaces.
 * `TauCeti.banachMazurDist_eq_one_iff`: over `ℝ` or `ℂ`, two nonzero finite-dimensional spaces
   are at distance one exactly when they are isometric.
 
@@ -56,10 +60,10 @@ variable (𝕜 E F : Type*)
 
 section Definition
 
-variable [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- The **Banach–Mazur distance** between normed spaces `E` and `F`: the infimum of
+/-- The **Banach–Mazur distance** between seminormed spaces `E` and `F`: the infimum of
 `‖T‖ * ‖T⁻¹‖` over all continuous linear equivalences `T : E ≃L[𝕜] F`. It takes the junk value
 `0` when there is no such equivalence. -/
 noncomputable def banachMazurDist : ℝ :=
@@ -77,8 +81,8 @@ variable {𝕜 E F}
 
 section Basic
 
-variable {G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+variable {G : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
 
 private theorem bddBelow_range_norm_mul_norm_symm :
     BddBelow (range fun T : E ≃L[𝕜] F ↦ ‖(T : E →L[𝕜] F)‖ * ‖(T.symm : F →L[𝕜] E)‖) :=
@@ -117,9 +121,8 @@ theorem banachMazurDist_comm : banachMazurDist 𝕜 E F = banachMazurDist 𝕜 F
     ContinuousLinearEquiv.symm_symm, ContinuousLinearEquiv.symm_symm⟩ fun T ↦ by
       simp [mul_comm]
 
-/-- The **multiplicative triangle inequality** for the Banach–Mazur distance. The hypothesis
-excludes the junk value `0` of `banachMazurDist 𝕜 E F`; when `F` and `G` are not isomorphic but
-`E` and `F` are, both sides vanish. -/
+/-- The **multiplicative triangle inequality** for the Banach–Mazur distance when `E` and `F`
+are isomorphic. If `F` and `G` are not isomorphic, both sides vanish. -/
 theorem banachMazurDist_triangle (h : Nonempty (E ≃L[𝕜] F)) :
     banachMazurDist 𝕜 E G ≤ banachMazurDist 𝕜 E F * banachMazurDist 𝕜 F G := by
   rcases isEmpty_or_nonempty (F ≃L[𝕜] G) with hFG | hFG
@@ -141,16 +144,17 @@ theorem banachMazurDist_triangle (h : Nonempty (E ≃L[𝕜] F)) :
       gcongr <;> exact ContinuousLinearMap.opNorm_comp_le _ _
     _ = _ := by ring
 
-/-- Between isomorphic nonzero spaces, the Banach–Mazur distance is at least `1`. -/
-theorem one_le_banachMazurDist [Nontrivial E] (h : Nonempty (E ≃L[𝕜] F)) :
+/-- Between isomorphic spaces with nontrivial topology, the Banach–Mazur distance is at
+least `1`. -/
+theorem one_le_banachMazurDist [NontrivialTopology E] (h : Nonempty (E ≃L[𝕜] F)) :
     1 ≤ banachMazurDist 𝕜 E F := by
   refine le_banachMazurDist_iff.2 fun T ↦ ?_
   calc (1 : ℝ) = ‖(T.symm : F →L[𝕜] E).comp (T : E →L[𝕜] F)‖ := by simp
     _ ≤ _ := (ContinuousLinearMap.opNorm_comp_le _ _).trans_eq (mul_comm _ _)
 
-/-- A nonzero space is at Banach–Mazur distance `1` from itself. -/
+/-- A space with nontrivial topology is at Banach–Mazur distance `1` from itself. -/
 @[simp]
-theorem banachMazurDist_self [Nontrivial E] : banachMazurDist 𝕜 E E = 1 :=
+theorem banachMazurDist_self [NontrivialTopology E] : banachMazurDist 𝕜 E E = 1 :=
   le_antisymm ((banachMazurDist_le (ContinuousLinearEquiv.refl 𝕜 E)).trans_eq (by simp))
     (one_le_banachMazurDist ⟨ContinuousLinearEquiv.refl 𝕜 E⟩)
 
@@ -162,8 +166,8 @@ namespace LinearIsometryEquiv
 
 open TauCeti
 
-variable {𝕜 E F : Type*} {E' : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
-  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup E']
+variable {𝕜 E F : Type*} {E' : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup E']
   [NormedSpace 𝕜 E']
 
 /-- Isometric spaces are at Banach–Mazur distance at most `1`. -/
@@ -173,8 +177,9 @@ theorem banachMazurDist_le_one (e : E ≃ₗᵢ[𝕜] F) : banachMazurDist 𝕜 
       e.symm.toLinearIsometry.norm_toContinuousLinearMap_le (norm_nonneg _) zero_le_one).trans_eq
       (one_mul 1)
 
-/-- Isometric nonzero spaces are at Banach–Mazur distance `1`. -/
-theorem banachMazurDist_eq_one [Nontrivial E] (e : E ≃ₗᵢ[𝕜] F) : banachMazurDist 𝕜 E F = 1 :=
+/-- Isometric spaces with nontrivial topology are at Banach–Mazur distance `1`. -/
+theorem banachMazurDist_eq_one [NontrivialTopology E] (e : E ≃ₗᵢ[𝕜] F) :
+    banachMazurDist 𝕜 E F = 1 :=
   le_antisymm e.banachMazurDist_le_one (one_le_banachMazurDist ⟨e.toContinuousLinearEquiv⟩)
 
 /-- The Banach–Mazur distance is unchanged when the first space is replaced by an isometric

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Geometry.Manifold.Diffeomorph
 import TauCeti.Analysis.Calculus.DifferentialForm.Poincare
+import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.Calculus.Moser
 import TauCeti.Dynamics.Flow.RestPoint
 import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -83,19 +84,15 @@ private theorem exists_moserData {ω : V → V [⋀^Fin 2]→L[ℝ] ℝ} {W : Se
     congr 1
     funext i
     rw [Subsingleton.elim i 0]
-  let B : V → V →L[ℝ] V →L[ℝ] ℝ := fun y ↦ e ∘L (ω y).curryLeft
-  have hBapp (y v w : V) : B y v w = ω y ![v, w] := by
-    simpa [B] using he ((ω y).curryLeft v) ![w]
+  let B : V → V →L[ℝ] V →L[ℝ] ℝ := fun y ↦ ContinuousAlternatingMap.flatL ℝ V ℝ (ω y)
   have hL : (B x₀).IsInvertible := ContinuousLinearMap.isInvertible_of_injective <|
     (injective_iff_map_eq_zero (B x₀)).2 fun v hv ↦
-      hnd v fun w ↦ by rw [← hBapp, hv]; rfl
+      hnd v fun w ↦ by rw [← ContinuousAlternatingMap.flatL_apply_apply, hv]; rfl
   have hB : ContDiffOn ℝ r B (ball x₀ ρ) := by
     -- The source and target are given explicitly, so that their normed instances are used.
     have hc := ContinuousLinearMap.contDiff (𝕜 := ℝ) (n := r) (E := V [⋀^Fin 2]→L[ℝ] ℝ)
-      (F := V →L[ℝ] V [⋀^Fin 1]→L[ℝ] ℝ)
-      (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := V) (F := ℝ)
-        (n := 1)).toContinuousLinearMap
-    exact contDiffOn_const.clm_comp (hc.comp_contDiffOn (hω.mono hρW))
+      (F := V →L[ℝ] V →L[ℝ] ℝ) (ContinuousAlternatingMap.flatL ℝ V ℝ)
+    exact hc.comp_contDiffOn (hω.mono hρW)
   obtain ⟨T, U, X, hT, hU, hTI, hxU, hUB, hX, hXeq⟩ := exists_contDiffOn_moserField hL
     isOpen_ball (mem_ball_self hρ) hB rfl (e.contDiff.comp_contDiffOn hα)
   refine ⟨α, T, U, X, hT, hU, hTI, hxU, hUB.trans hρW, hX,
@@ -110,7 +107,7 @@ private theorem exists_moserData {ω : V → V [⋀^Fin 2]→L[ℝ] ℝ} {W : Se
     rfl
   rw [hm, ContinuousAlternatingMap.curryLeft_apply_apply, ContinuousAlternatingMap.neg_apply,
     ← he (α p.2) ![m 0]]
-  simpa [hBapp] using hp' (m 0)
+  simpa [B] using hp' (m 0)
 
 /-- **Darboux's theorem.** A closed `C^r` two-form `ω` (`r ≥ 1`) on an open subset of a
 finite-dimensional real normed space, nondegenerate at `x₀`, is constant in suitable coordinates

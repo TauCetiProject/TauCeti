@@ -294,7 +294,10 @@ variable {n : ℕ} (G : OddComponentGridDiagram n) (s : Fin n)
 has doubled Alexander grading two below that of the state it comes from, so the parity of the
 number of components, which is that of the doubled Alexander grading of any state, is
 unchanged. -/
-def stabilizeX : OddComponentGridDiagram (n + 1) :=
+-- The body is exposed so that the fully blocked homology of `G.stabilizeX s` is definitionally
+-- that of the underlying stabilized diagram, the source of the stabilization comparison
+-- `GridDiagram.fullyBlockedHomologyStabilizeXEquivProd`.
+@[expose] def stabilizeX : OddComponentGridDiagram (n + 1) :=
   ⟨G.1.stabilizeX s.castSucc (G.1.X s).castSucc s, by
     rw [← GridDiagram.even_alexanderTwoℤ_iff _ (G.1.O.insertPoint s.succ (G.1.X s).succ),
       GridDiagram.alexanderTwoℤ_stabilizeX_insertPoint]

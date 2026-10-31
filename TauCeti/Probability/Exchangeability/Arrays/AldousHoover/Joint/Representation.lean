@@ -6,14 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Exchangeability.Arrays.AldousHoover.Basic
-import Mathlib.Order.Sym2
+import TauCeti.Probability.Process.Array.AldousHoover.NoiseSplit
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Probability.Exchangeability.Arrays.Block.Basic
 import TauCeti.Probability.Exchangeability.Arrays.Strip.Cell.OffDiagonalCoding
 import TauCeti.Probability.Exchangeability.Arrays.Strip.VertexCoding
 import TauCeti.Probability.Independence.InfinitePi
 import TauCeti.Probability.Kernel.Randomization
-import TauCeti.Probability.ProductMeasure
 
 /-!
 # The Aldous--Hoover representation of a jointly exchangeable array
@@ -80,63 +79,6 @@ noncomputable section
 open MeasureTheory ProbabilityTheory unitInterval
 
 namespace TauCeti.Probability
-
-namespace AldousHoover
-
-/-- The noise of a joint Aldous--Hoover coding, sorted into the global variable, the vertex
-variables, and the variables of the off-diagonal unordered pairs, indexed by the increasing
-pairs. -/
-private def splitJointNoise (u : NoiseIndex Unit (Sym2 ℕ) → I) :
-    (I × (ℕ → I)) × ({t : ℕ × ℕ // t.1 < t.2} → I) :=
-  ((u .global, fun k => u (.vertex () k)), fun t => u (.cell s(t.1.1, t.1.2)))
-
-private theorem measurable_splitJointNoise : Measurable splitJointNoise :=
-  ((measurable_pi_apply _).prodMk (Measurable.of_eval fun _ => measurable_pi_apply _)).prodMk
-    (Measurable.of_eval fun _ => measurable_pi_apply _)
-
-/-- The non-cell noise indices of a joint coding, read as `none` for the global index and `some k`
-for the vertex index `k`. -/
-private def jointVertexNoiseIndex : Option ℕ → NoiseIndex Unit (Sym2 ℕ)
-  | none => .global
-  | some k => .vertex () k
-
-private theorem jointVertexNoiseIndex_injective : Function.Injective jointVertexNoiseIndex := by
-  rintro (_ | _) (_ | _) h <;> simp_all [jointVertexNoiseIndex]
-
-/-- **The joint-coding noise splits into independent pieces**: the global variable, the i.i.d.
-vertex variables and the i.i.d. variables of the off-diagonal unordered pairs, indexed by the
-increasing pairs, are independent uniform families. -/
-private theorem map_splitJointNoise_noiseMeasure :
-    (noiseMeasure Unit (Sym2 ℕ)).map splitJointNoise =
-      ((volume : Measure I).prod (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).prod
-        (Measure.infinitePi fun _ : {t : ℕ × ℕ // t.1 < t.2} => (volume : Measure I)) := by
-  set c : {t : ℕ × ℕ // t.1 < t.2} → NoiseIndex Unit (Sym2 ℕ) := fun t => .cell s(t.1.1, t.1.2)
-  -- Increasing pairs are sorted, so `Sym2.mk` is injective on them.
-  have hc : Function.Injective c := fun t t' h => by
-    have := Sym2.sortEquiv.symm.injective (a₁ := ⟨t.1, t.2.le⟩) (a₂ := ⟨t'.1, t'.2.le⟩)
-      (NoiseIndex.cell.inj h)
-    exact Subtype.ext (Subtype.ext_iff.1 this :)
-  have hdisj : Disjoint (Set.range jointVertexNoiseIndex) (Set.range c) := by
-    rw [Set.disjoint_left]
-    rintro _ ⟨(_ | _), rfl⟩ ⟨_, h⟩ <;> cases h
-  -- Separate the cell noise, then the global variable from the vertex variables.
-  set f₁ : (NoiseIndex Unit (Sym2 ℕ) → I) → (Option ℕ → I) × ({t : ℕ × ℕ // t.1 < t.2} → I) :=
-    fun u => (fun o => u (jointVertexNoiseIndex o), fun t => u (c t))
-  set f₂ : (Option ℕ → I) → I × (ℕ → I) := fun y => (y none, fun k => y (some k))
-  have h₁ : Measurable f₁ := (Measurable.of_eval fun _ => measurable_pi_apply _).prodMk
-    (Measurable.of_eval fun _ => measurable_pi_apply _)
-  have h₂ : Measurable f₂ :=
-    (measurable_pi_apply _).prodMk (Measurable.of_eval fun _ => measurable_pi_apply _)
-  have hsplit : splitJointNoise = Prod.map f₂ id ∘ f₁ := by
-    funext u
-    simp [splitJointNoise, f₁, f₂, c, jointVertexNoiseIndex]
-  rw [hsplit, ← Measure.map_map (h₂.prodMap measurable_id) h₁, noiseMeasure_def,
-    infinitePi_map_pair_comp _ hc hdisj,
-    Measure.map_infinitePi_infinitePi_of_inj jointVertexNoiseIndex_injective,
-    ← Measure.map_prod_map _ _ h₂ measurable_id, Measure.map_id,
-    TauCeti.MeasureTheory.Measure.infinitePi_map_none_some]
-
-end AldousHoover
 
 open AldousHoover
 
@@ -742,7 +684,10 @@ theorem JointlyExchangeable.exists_map_jointArray_eq [IsProbabilityMeasure ρ]
   -- The joint coding is the coding oriented by the vertex variables, read off the split noise.
   have hnoise : (fun (u : NoiseIndex Unit (Sym2 ℕ) → I) p => jointArray (jointCoding φ v G) p u) =
       (A ∘ fun r => (r.1, fun t => Φt t r.1 (r.2 t))) ∘ splitJointNoise :=
-    funext (jointArray_jointCoding φ v G)
+    by
+      funext u
+      simpa only [Function.comp_apply, splitJointNoise_apply] using
+        jointArray_jointCoding φ v G u
   have hΦ := measurable_fst.prodMk (measurable_pi_uncurry_prod hΦt)
   rw [hnoise, ← Measure.map_map (hA.comp hΦ) measurable_splitJointNoise,
     map_splitJointNoise_noiseMeasure, ← Measure.map_map hA hΦ,

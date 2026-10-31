@@ -48,21 +48,14 @@ theorem translation_smul_pointEquivDegreeOnePlace (P Q : W.Point) :
   -- `σ • v` is the place of some point `R`, read off the reduction of the generic point
   have hdeg : (σ • v.1).degree = 1 := (Place.degree_smul σ v.1).trans v.2
   set R := (pointEquivDegreeOnePlace W).symm ⟨σ • v.1, hdeg⟩ with hR
-  have hRv : (pointEquivDegreeOnePlace W R).1 = σ • v.1 := by
-    rw [hR, Equiv.apply_symm_apply]
-  suffices R = Q - P by rw [← this, hRv]
+  suffices R = Q - P by rw [← this, hR, Equiv.apply_symm_apply]
   apply (Point.equivBaseChangeSelf W).injective
   -- the generic point is the image under `σ` of its translate by `-P`
   have hgen : genericPoint W = Point.map (σ : W.FunctionField →ₐ[F] W.FunctionField)
       (translatedGenericPoint W (-Point.equivBaseChangeSelf W P)) := by
     rw [map_translation_translatedGenericPoint, neg_add_cancel,
       translatedGenericPoint_zero]
-  -- the reduction depends on the place only, not on the proof that it has degree one
-  have hred : ∀ {w₁ w₂ : Place F W.FunctionField} (_ : w₁ = w₂) (h₁ : w₁.degree = 1)
-      (h₂ : w₂.degree = 1), reductionOfDegreeEqOne W h₁ = reductionOfDegreeEqOne W h₂ := by
-    rintro _ _ rfl _ _
-    rfl
-  rw [← reductionOfDegreeEqOne_genericPoint W R, hred hRv _ hdeg, hgen,
+  rw [← reductionOfDegreeEqOne_genericPoint W R, hR, Equiv.apply_symm_apply, hgen,
     reductionOfDegreeEqOne_smul_map W σ v.2, translatedGenericPoint_def, map_add,
     reductionOfDegreeEqOne_genericPoint, reductionOfDegreeEqOne_baseChange, map_sub,
     sub_eq_add_neg]

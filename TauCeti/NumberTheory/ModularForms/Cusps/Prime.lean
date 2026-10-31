@@ -79,25 +79,21 @@ private theorem constantTerm_other_orbit {k : ℤ}
     (f : ModularForm ((Gamma0 p).map (mapGL ℝ)) k)
     (c : CuspTranslationOrbit ((Gamma0 p).map (mapGL ℝ))) (hc : c ≠ infinityOrbit p) :
     constantTermAtCuspTranslationOrbit f c = constantTermAt S f := by
-  induction c using Quotient.inductionOn with
-  | h q =>
-    induction q using Quotient.inductionOn with
-    | h x =>
-      obtain ⟨γ, hγ⟩ := x.property
-      have hx : x = (mapGL ℝ).rangeRestrict γ := Subtype.ext hγ.symm
-      rw [hx, constantTermAtCuspTranslationOrbit_mk_mapGL,
-        ModularForm.constantTermAt_Gamma0_prime]
-      refine ite_eq_right ?_
-      intro h
-      have hγmem : γ ∈ Gamma0 p := by
-        apply (Gamma0 p).inv_mem_iff.mp
-        exact mem_Gamma0_iff_dvd.mpr h
-      apply hc
-      congr 1
-      rw [hx, QuotientGroup.eq]
-      simpa only [mul_one, Subgroup.mem_subgroupOf, InvMemClass.coe_inv,
-        MonoidHom.coe_rangeRestrict, ← map_inv] using
-          Subgroup.mem_map_of_mem (mapGL ℝ) ((Gamma0 p).inv_mem hγmem)
+  induction c using CuspTranslationOrbit.induction_on with
+  | h γ =>
+    rw [constantTermAtCuspTranslationOrbit_mk_mapGL,
+      ModularForm.constantTermAt_Gamma0_prime]
+    refine ite_eq_right ?_
+    intro h
+    have hγmem : γ ∈ Gamma0 p := by
+      apply (Gamma0 p).inv_mem_iff.mp
+      exact mem_Gamma0_iff_dvd.mpr h
+    apply hc
+    congr 1
+    rw [QuotientGroup.eq]
+    simpa only [mul_one, Subgroup.mem_subgroupOf, InvMemClass.coe_inv,
+      MonoidHom.coe_rangeRestrict, ← map_inv] using
+        Subgroup.mem_map_of_mem (mapGL ℝ) ((Gamma0 p).inv_mem hγmem)
 
 /-- The two cusp constant terms of a weight-two form at prime level satisfy the
 residue relation `a₀(∞) + p a₀(0) = 0`. -/

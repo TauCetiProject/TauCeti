@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.Resolvent.RestrictScalars
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.RestrictScalars
 public import TauCeti.Analysis.Semigroups.Complexification
 
 /-!

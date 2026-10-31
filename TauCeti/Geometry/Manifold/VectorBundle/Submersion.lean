@@ -26,8 +26,12 @@ derivative of the inverse of a preferred chart of the total space, it is the der
 inverse base chart applied to the first coordinate
 (`Bundle.mfderiv_proj_comp_mfderivWithin_extChartAt_symm`). This is how forms built from the
 derivative of the projection, such as the Liouville form of a cotangent bundle, are computed in
-charts. A self-map of the total space covering the identity of the base commutes with the
-derivative of the projection (`Bundle.mfderiv_proj_comp_mfderiv_of_proj_eq`).
+charts. In particular the derivative of the projection is surjective at every point
+(`Bundle.mfderiv_proj_surjective`). A self-map of the total space covering the identity of the
+base commutes with the derivative of the projection
+(`Bundle.mfderiv_proj_comp_mfderiv_of_proj_eq`), and the derivative of a section is a right
+inverse of the derivative of the projection, hence injective
+(`Bundle.mfderiv_injective_of_proj_comp_eq_id`).
 
 No linear structure on the fibres is used, and the regularity order `n` is arbitrary.
 -/
@@ -114,6 +118,21 @@ theorem mfderiv_proj_comp_mfderivWithin_extChartAt_symm [IsManifold IB 1 B]
     rw [ModelWithCorners.range_prod] at hy'
     exact hy'.1
 
+/-- The derivative of the projection of a fibre bundle is surjective at every point of the total
+space: every tangent vector of the base lifts to a tangent vector of the total space. -/
+theorem mfderiv_proj_surjective [IsManifold IB 1 B]
+    [IsManifold (IB.prod 𝓘(𝕜, F)) 1 (TotalSpace F V)] (p : TotalSpace F V) :
+    Function.Surjective (mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F V) p) := by
+  intro v
+  have hy := mem_extChartAt_target (I := IB.prod 𝓘(𝕜, F)) p
+  -- In the preferred chart at `p` the projection is the first projection, and the inverse base
+  -- chart has invertible derivative.
+  obtain ⟨u, hu⟩ :=
+    (isInvertible_mfderivWithin_extChartAt_symm (fst_mem_extChartAt_target p hy)).surjective v
+  have h := DFunLike.congr_fun (mfderiv_proj_comp_mfderivWithin_extChartAt_symm p hy) (u, 0)
+  rw [extChartAt_to_inv] at h
+  exact ⟨_, h.trans hu⟩
+
 /-- A self-map `g` of the total space covering the identity of the base commutes with the
 derivative of the projection: `dπ_{g z} ∘ dg_z = dπ_z`. -/
 theorem mfderiv_proj_comp_mfderiv_of_proj_eq {g : TotalSpace F V → TotalSpace F V}
@@ -123,5 +142,22 @@ theorem mfderiv_proj_comp_mfderiv_of_proj_eq {g : TotalSpace F V → TotalSpace 
       mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F V) z := by
   have hπg : π F V ∘ g = π F V := funext hproj
   rw [← mfderiv_comp z ((contMDiff_proj V (g z)).mdifferentiableAt one_ne_zero) hg, hπg]
+
+/-- The derivative of a section `s` of the bundle (`π ∘ s = id`) is a right inverse of the
+derivative of the projection: `dπ_{s b} ∘ ds_b = id`. -/
+theorem mfderiv_proj_comp_mfderiv_of_proj_comp_eq_id {s : B → TotalSpace F V} {b : B}
+    (hs : MDifferentiableAt IB (IB.prod 𝓘(𝕜, F)) s b) (hπs : π F V ∘ s = id) :
+    mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F V) (s b) ∘L mfderiv IB (IB.prod 𝓘(𝕜, F)) s b =
+      ContinuousLinearMap.id 𝕜 (TangentSpace IB b) := by
+  rw [← mfderiv_comp b ((contMDiff_proj V (s b)).mdifferentiableAt one_ne_zero) hs, hπs,
+    mfderiv_id]
+
+/-- A section `s` of the bundle (`π ∘ s = id`) has injective derivative at every point where it is
+differentiable. -/
+theorem mfderiv_injective_of_proj_comp_eq_id {s : B → TotalSpace F V} {b : B}
+    (hs : MDifferentiableAt IB (IB.prod 𝓘(𝕜, F)) s b) (hπs : π F V ∘ s = id) :
+    Function.Injective (mfderiv IB (IB.prod 𝓘(𝕜, F)) s b) :=
+  Function.LeftInverse.injective (g := mfderiv (IB.prod 𝓘(𝕜, F)) IB (π F V) (s b)) fun v ↦
+    DFunLike.congr_fun (mfderiv_proj_comp_mfderiv_of_proj_comp_eq_id hs hπs) v
 
 end Bundle

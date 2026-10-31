@@ -9,7 +9,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Distance
 public import TauCeti.Combinatorics.DenseGraphLimits.Graphon.Pullback
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Basic
 public import Mathlib.MeasureTheory.Function.AEEqFun
-import TauCeti.MeasureTheory.Constructions.Pi
+import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Monotone
 
 /-!
 # The almost-everywhere view of a graphon
@@ -70,11 +70,8 @@ exactly because `π` has left marginal `μ₁`.  Every coupling therefore contri
 the two infima, which gives the invariance of `δ□` with no triangle inequality; vanishing on a.e.
 equal graphons is then the case `U' = W` of that invariance together with `cutDist_self`.
 
-For homomorphism densities the a.e. hypothesis lives on `μ ⊗ μ` while the integral is over
-`Measure.pi`, so it has to be transported along the evaluation map `x ↦ (x a, x b)` at the two
-endpoints of an edge.  That map is measure preserving precisely because the endpoints of an edge of
-a `SimpleGraph` are distinct (`TauCeti.measurePreserving_eval_pair`); the finitely many edges are
-then intersected with `Filter.eventually_all_finset`.
+For homomorphism densities, a.e. equality is a.e. comparison in both directions, so the invariance
+is two applications of the monotonicity `homDensity_mono_ae`.
 
 The strict representative built by `exists_graphon_repr` is
 `fun x y => max 0 (min 1 ((f (x, y) + f (y, x)) / 2))`: the average symmetrises *everywhere*, not
@@ -209,19 +206,9 @@ The hypothesis is the a.e. equality itself; for the equality of classes use
 `Graphon.toAEEqFun_eq_iff`. -/
 theorem homDensity_congr_ae {V : Type*} [Fintype V] (F : SimpleGraph V) [DecidableRel F.Adj]
     {U W : Graphon Ω μ} (h : ∀ᵐ p ∂(μ.prod μ), U p.1 p.2 = W p.1 p.2) :
-    homDensity F U = homDensity F W := by
-  have hedge : ∀ e ∈ F.edgeFinset, ∀ᵐ x ∂(Measure.pi fun _ : V => μ),
-      edgeFactor U x e = edgeFactor W x e := by
-    intro e
-    induction e using Sym2.ind with
-    | _ a b =>
-      intro he
-      have hab : a ≠ b := F.ne_of_adj (by simpa using he)
-      simpa using
-        (TauCeti.measurePreserving_eval_pair (fun _ : V => μ) hab).quasiMeasurePreserving.ae h
-  rw [homDensity_def, homDensity_def]
-  refine integral_congr_ae (((Filter.eventually_all_finset _).2 hedge).mono fun x hx => ?_)
-  exact Finset.prod_congr rfl hx
+    homDensity F U = homDensity F W :=
+  (homDensity_mono_ae (h.mono fun _ hp => hp.le)).antisymm
+    (homDensity_mono_ae (h.mono fun _ hp => hp.ge))
 
 section CutDistance
 

@@ -31,6 +31,8 @@ The standard simplex is sent to `[1] - [0]` (`TauCeti.cubeRelClass_singularHomol
   `H₁(I¹, ∂I¹; R)`; `TauCeti.cubeRelClass_singularHomologyMap`: its image under a map of pairs.
 * `TauCeti.reducedSingularHomologyTopCatSphereIso_zero_inv_ι`: the generator of reduced `H₀(S⁰)` is
   `[-e₀] - [e₀]` on `TopCat.sphere 0`.
+* `TauCeti.eq_sphereMinus_or_eq_spherePlus`, `TauCeti.sphereMinus_ne_spherePlus`: `S⁰` consists
+  of the two distinct points `-e₀` and `e₀`.
 * `TauCeti.singularHomologyCubeBoundaryPairIso_one_inv`: the generator of `H₁(I¹, ∂I¹; R)` is
   `-cubeRelClass R`.
 -/
@@ -212,6 +214,25 @@ lemma sphereMinus_coord :
       EuclideanSpace ℝ (Fin 1)) 0 = -1
   rw [diskBoundaryHomeomorph_symm_apply_down_apply]
   simp
+
+/-- **`S⁰` consists of the two points `-e₀` and `e₀`.** -/
+lemma eq_sphereMinus_or_eq_spherePlus (p : TopCat.diskBoundary.{w} 1) :
+    p = sphereMinus ∨ p = spherePlus := by
+  have hnorm : ‖((p : ULift.{w} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+      EuclideanSpace ℝ (Fin 1))‖ = 1 := by
+    simp
+  rw [EuclideanSpace.norm_eq, Fin.sum_univ_one, Real.norm_eq_abs, sq_abs,
+    Real.sqrt_sq_eq_abs, abs_eq zero_le_one] at hnorm
+  rcases hnorm with h | h
+  · exact Or.inr (diskBoundary_one_ext (h.trans spherePlus_coord.{w}.symm))
+  · exact Or.inl (diskBoundary_one_ext (h.trans sphereMinus_coord.{w}.symm))
+
+/-- The two points `-e₀` and `e₀` of `S⁰` are distinct. -/
+lemma sphereMinus_ne_spherePlus : (sphereMinus : TopCat.diskBoundary.{w} 1) ≠ spherePlus := by
+  intro h
+  have h' := sphereMinus_coord.{w}
+  rw [h, spherePlus_coord] at h'
+  norm_num at h'
 
 lemma diskBoundaryPairToCube_snd_spherePlus :
     TopPair.Hom.snd (diskBoundaryPairToCube.{w} 1) spherePlus = cubeEnd 1 (Or.inr rfl) := by

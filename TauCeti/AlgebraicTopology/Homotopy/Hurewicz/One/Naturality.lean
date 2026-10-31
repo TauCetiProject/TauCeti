@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
 public import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
 
 import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
-import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 
 /-!
 # Naturality of the Hurewicz map in degree one
@@ -117,7 +116,7 @@ theorem homologyMap_hurewiczHomologyAddEquiv_mapOfEq [PathConnectedSpace X]
       hurewiczHomologyAddEquiv y (Additive.ofMul (Abelianization.map
         (FundamentalGroup.mapOfEq f.hom h) a.toMul)) := by
   subst h
-  rw [TauCeti.FundamentalGroup.mapOfEq_rfl, homologyMap_hurewiczHomologyAddEquiv]
+  rw [FundamentalGroup.mapOfEq_rfl, homologyMap_hurewiczHomologyAddEquiv]
 
 /-- **Independence of the base point**: the Hurewicz map is invariant under the change of base
 point along a path. -/
@@ -142,5 +141,16 @@ theorem hurewicz₁_fundamentalGroupMulEquivOfPath {x x' : X} (p : Path x x')
   have := add_mem (sub_mem (neg_mem h₁) h₂) h₃
   convert this using 1
   abel
+
+/-- Changing the base point along a path does not change the singular homology class supplied
+by the degree-one Hurewicz isomorphism. -/
+theorem hurewiczHomologyAddEquiv_fundamentalGroupMulEquivOfPath [PathConnectedSpace X]
+    {x x' : X} (p : Path x x') (a : FundamentalGroup X x) :
+    hurewiczHomologyAddEquiv x' (Additive.ofMul (Abelianization.of
+      (FundamentalGroup.fundamentalGroupMulEquivOfPath p a))) =
+      hurewiczHomologyAddEquiv x (Additive.ofMul (Abelianization.of a)) := by
+  simp only [hurewiczHomologyAddEquiv_apply, hurewiczAb_ofMul_of]
+  exact congrArg (fun z ↦ H₁AddEquivHomology X (Multiplicative.toAdd z))
+    (hurewicz₁_fundamentalGroupMulEquivOfPath p a)
 
 end TauCeti.HurewiczOne

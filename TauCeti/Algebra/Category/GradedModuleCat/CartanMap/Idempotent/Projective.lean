@@ -29,25 +29,35 @@ maps through shifted idempotent ideals. Its local endomorphism ring makes one su
 invertible, and indecomposability of that ideal turns the resulting retract into an isomorphism.
 This argument needs no positivity assumption on the grading.
 
-If moreover `A` is nonnegatively graded and its degree-zero piece is spanned by the nonzero
-idempotents `eᵢ`, the ideals `A eᵢ` are indecomposable and pairwise non-isomorphic up to shift.
-A degree-preserving endomorphism of `A eᵢ` is determined by the image of `eᵢ`, a vector of the
-degree-zero corner `eᵢ A eᵢ ∩ 𝒜 0 = k eᵢ`, so `A eᵢ` is indecomposable. An isomorphism
-`A eᵢ ≅ (A eⱼ){d}` with `i ≠ j` would produce nonzero elements of `eᵢ A eⱼ` in degree `-d` and of
-`eⱼ A eᵢ` in degree `d`, while off-diagonal corners live in positive degrees. Hence the classes
-`[A eᵢ]` form a basis of `K₀^gr(proj A)` over `ℤ[q,q⁻¹]`, the projective counterpart of the basis
-of graded heads. The same corner computations show that, as ungraded modules, the `A eᵢ` are
-indecomposable and pairwise non-isomorphic: an idempotent of `A` without degree-zero component
-vanishes (`TauCeti.GradedAlgebra.eq_zero_of_isIdempotentElem_of_decompose_zero`).
+If the `eᵢ` are moreover primitive idempotents of `A` whose ungraded left ideals `A eᵢ` are
+pairwise nonisomorphic, then the classes `[A eᵢ]` form a basis of `K₀^gr(proj A)` over
+`ℤ[q,q⁻¹]`. A graded endomorphism or isomorphism is in particular an `A`-linear one, so
+indecomposability of the ungraded module `A eᵢ` makes the graded module `A eᵢ` indecomposable,
+and nonisomorphic ungraded modules `A eᵢ`, `A eⱼ` are not isomorphic up to any internal shift.
+These hypotheses involve no grading positivity and no splitting: the degree-zero corners
+`eᵢ A eᵢ ∩ 𝒜 0` need not be the lines `k eᵢ`, so the field need not split the simple modules.
+
+If `A` is nonnegatively graded and its degree-zero piece is spanned by the nonzero
+idempotents `eᵢ`, both hypotheses hold. The degree-zero part of the corner `eᵢ A eᵢ` is `k eᵢ`,
+and an idempotent of `A` without degree-zero component vanishes
+(`TauCeti.GradedAlgebra.eq_zero_of_isIdempotentElem_of_decompose_zero`), so each `eᵢ` is
+primitive. An isomorphism `A eᵢ ≃ A eⱼ` with `i ≠ j` would write `eᵢ = x y` with `x ∈ eᵢ A eⱼ`,
+while off-diagonal corners live in positive degrees, so the degree-zero component of `x y`
+vanishes. This is the projective counterpart of the basis of graded heads.
 
 ## Main definitions
 
-* `TauCeti.gradedIdempotentProjectiveBasis`: the basis `[A eᵢ]` of `K₀^gr(proj A)`.
+* `TauCeti.gradedIdempotentProjectiveBasisOfPrimitive`: the basis `[A eᵢ]` of `K₀^gr(proj A)` for
+  primitive idempotents with pairwise nonisomorphic left ideals.
+* `TauCeti.gradedIdempotentProjectiveBasis`: the same basis when the degree-zero piece of a
+  nonnegatively graded algebra is spanned by the `eᵢ`.
 
 ## Main results
 
 * `TauCeti.isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalIdempotents`:
   indecomposable idempotent ideals `A eᵢ` exhaust the finite graded indecomposable projectives.
+* `TauCeti.indecomposable_ofIdeal_span_singleton`: the graded projective `A f` of a primitive
+  idempotent `f` is indecomposable.
 * `TauCeti.cornerSubmodule_inf_zero_eq_span_singleton` and
   `TauCeti.pos_of_mem_cornerSubmodule_inf`: if the degree-zero piece of a nonnegatively graded
   algebra is spanned by orthogonal idempotents, its diagonal corners are `k eᵢ` in degree zero
@@ -55,12 +65,9 @@ vanishes (`TauCeti.GradedAlgebra.eq_zero_of_isIdempotentElem_of_decompose_zero`)
 * `TauCeti.coe_decompose_mem_cornerSubmodule`: the homogeneous components of an element of a
   corner `aAb` cut out by idempotents of degree zero lie in that corner.
 * `TauCeti.isPrimitiveIdempotent_of_gradeZero_le_span`: each `eᵢ` is a primitive idempotent of
-  `A`, so `A eᵢ` is indecomposable as an ungraded module.
+  `A`.
 * `TauCeti.isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span`: the ungraded modules `A eᵢ`
   are pairwise nonisomorphic.
-* `TauCeti.indecomposable_ofIdeal_span_singleton`: each `A eᵢ` is indecomposable.
-* `TauCeti.isEmpty_iso_ofIdeal_span_singleton_shiftObj`: distinct `A eᵢ` are not isomorphic up
-  to shift.
 
 ## References
 
@@ -263,7 +270,7 @@ theorem isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span {i j : I} (hij :
   refine ⟨fun φ => hi ?_⟩
   set x : A := (φ (spanSingletonGenerator (e i)) : A) with hxdef
   have hx : x ∈ cornerSubmodule k (e i) (e j) :=
-    apply_generator_mem_cornerSubmodule (ho.idem i) (ho.idem j) φ.toLinearMap
+    apply_generator_mem_cornerSubmodule (ho.idem i) φ.toLinearMap
   have hxy : e i = x * (φ.symm (spanSingletonGenerator (e j)) : A) := by
     have h := coe_apply_eq_mul_apply_generator (ho.idem j) φ.symm.toLinearMap
       (φ (spanSingletonGenerator (e i)))
@@ -345,98 +352,83 @@ theorem isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalId
 
 section Basis
 
-variable (ho : OrthogonalIdempotents e) (hneg : ∀ p < 0, 𝒜 p = ⊥)
-  (hspan : 𝒜 0 ≤ Submodule.span k (Set.range e))
-
-omit [Fintype I] in
-include ho he₀ hspan in
-/-- **The graded projective `A eᵢ` is indecomposable** when the degree-zero piece of `A` is spanned
-by the orthogonal idempotents `eᵢ` and `eᵢ ≠ 0`: its degree-preserving endomorphisms are the
-vectors of `eᵢ A eᵢ ∩ 𝒜 0 = k eᵢ`, a one-dimensional space. -/
-theorem indecomposable_ofIdeal_span_singleton (i : I) (hne : e i ≠ 0) :
-    Indecomposable (⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),
-      gradedFiniteProjectiveModules_ofIdeal_span_singleton (ho.idem i) (hI i)⟩ :
+omit [Module.Finite k A] in
+/-- **The graded projective `A f` of a primitive idempotent `f` is indecomposable.** A graded
+endomorphism of `A f` is in particular an `A`-linear endomorphism, and `A f` is an indecomposable
+module (`TauCeti.IsPrimitiveIdempotent.isIndecomposableModule`), so its only idempotent graded
+endomorphisms are `0` and the identity. No hypothesis on the grading is needed. -/
+theorem indecomposable_ofIdeal_span_singleton {f : A} (hf : IsPrimitiveIdempotent f)
+    (hfI : (Ideal.span {f} : Ideal A).IsHomogeneous 𝒜) :
+    Indecomposable (⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {f}) hfI,
+      gradedFiniteProjectiveModules_ofIdeal_span_singleton hf.isIdempotentElem hfI⟩ :
         (gradedFiniteProjectiveModules 𝒜).FullSubcategory) := by
-  apply indecomposable_of_finrank_end_eq_one (k := k)
-  refine InducedCategory.homLinearEquiv.finrank_eq.trans ?_
-  rw [(GradedModuleCat.ofIdealSpanSingletonHomEquiv (ho.idem i) (he₀ i) (hI i) _).finrank_eq]
-  have h := GradedModuleCat.coeff_smulGradedDimension_ofIdeal_span_singleton (ho.idem i) (he₀ i)
-    (ho.idem i) (hI i) 0
-  rw [GradedModuleCat.coeff_smulGradedDimension,
-    cornerSubmodule_inf_zero_eq_span_singleton he₀ ho hspan i, finrank_span_singleton hne] at h
-  exact_mod_cast h
+  have hind := hf.isIndecomposableModule
+  refine indecomposable_of_idempotent_eq_zero_or_id (fun h => ?_) fun φ hφ => ?_
+  · -- The underlying module of a zero object would be trivial.
+    have := hind.nontrivial
+    exact not_subsingleton (Ideal.span {f} : Ideal A) (ModuleCat.isZero_iff_subsingleton.1
+      (((gradedFiniteProjectiveModules 𝒜).ι ⋙ GradedModuleCat.toModuleCat).map_isZero h))
+  · -- Composition of graded maps is composition of the underlying linear maps.
+    have hφ' : IsIdempotentElem φ.hom.hom := by
+      rw [IsIdempotentElem, Module.End.mul_eq_comp]
+      simpa only [ObjectProperty.FullSubcategory.comp_hom, GradedModuleCat.hom_comp] using
+        congrArg (fun ψ => ψ.hom.hom) hφ
+    rcases hind.eq_zero_or_eq_one_of_isIdempotentElem hφ' with h | h
+    · exact .inl (ObjectProperty.hom_ext _ (GradedModuleCat.hom_ext h))
+    · exact .inr (ObjectProperty.hom_ext _ (GradedModuleCat.hom_ext h))
 
-omit [Module.Finite k A] [Fintype I] in
-include hneg ho he₀ hspan in
-/-- **Distinct graded projectives `A eᵢ` and `A eⱼ` are not isomorphic up to shift** in a
-nonnegatively graded algebra whose degree-zero piece is spanned by the orthogonal idempotents
-`eᵢ`, provided they are nonzero. An isomorphism `A eᵢ ≅ (A eⱼ){d}` would send `eᵢ` to a nonzero
-element of `eᵢ A eⱼ` of degree `-d`, and its inverse would send `eⱼ` to a nonzero element of
-`eⱼ A eᵢ` of degree `d`; both degrees cannot be positive. -/
-theorem isEmpty_iso_ofIdeal_span_singleton_shiftObj {i j : I} (hij : i ≠ j) (hi : e i ≠ 0)
-    (hj : e j ≠ 0) (d : ℤ) :
-    IsEmpty (GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i) ≅
-      (GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e j}) (hI j)).shiftObj d) := by
-  refine ⟨fun f => ?_⟩
-  -- An `A`-linear map `Aeₐ ⟶ Ae_b` sends the generator `eₐ` into the corner `eₐ A e_b`.
-  have hcorner {a b : I} (g : (Ideal.span {e a} : Ideal A) →ₗ[A] (Ideal.span {e b} : Ideal A)) :
-      (g (spanSingletonGenerator (e a)) : A) ∈ cornerSubmodule k (e a) (e b) := by
-    rw [mem_cornerSubmodule_iff k (ho.idem a) (ho.idem b), mul_assoc,
-      (mem_span_singleton_iff_mul_eq_self (ho.idem b)).1 (Submodule.coe_mem _)]
-    have hfix := smul_spanSingletonGenerator (ho.idem a) (spanSingletonGenerator (e a))
-    rw [coe_spanSingletonGenerator] at hfix
-    rw [← smul_eq_mul, ← Submodule.coe_smul, ← map_smul, hfix]
-  have hgen (a : I) : spanSingletonGenerator (e a) ∈
-      (GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e a}) (hI a)).grading.piece 0 :=
-    (GradedModuleCat.mem_ofIdeal_piece_iff (hI a)).2 <| by
-      rw [coe_spanSingletonGenerator]
-      exact he₀ a
-  have hgen_ne {a : I} (ha : e a ≠ 0) : spanSingletonGenerator (e a) ≠ 0 := fun h =>
-    ha ((coe_spanSingletonGenerator (e a)).symm.trans (congrArg Subtype.val h))
-  -- `f` sends `eᵢ` to a nonzero element of degree `-d` in `eᵢ A eⱼ`.
-  have hneg_d : 0 < -d := by
-    refine pos_of_mem_cornerSubmodule_inf ho hneg hspan hij
-      (x := (f.hom.hom (spanSingletonGenerator (e i)) : A)) ⟨hcorner f.hom.hom, ?_⟩ ?_
-    · have h := (GradedModuleCat.mem_shiftObj_piece_iff _ d 0 _).1
-        (GradedModuleCat.map_mem f.hom (hgen i))
-      rw [zero_sub] at h
-      exact (GradedModuleCat.mem_ofIdeal_piece_iff (hI j)).1 h
-    · intro h
-      refine hgen_ne hi ((GradedModuleCat.mono_iff_injective f.hom).1 inferInstance ?_)
-      rw [map_zero]
-      exact Subtype.ext h
-  -- The inverse of `f` sends `eⱼ` to a nonzero element of degree `d` in `eⱼ A eᵢ`.
-  have hpos_d : 0 < d := by
-    refine pos_of_mem_cornerSubmodule_inf ho hneg hspan (Ne.symm hij)
-      (x := (f.inv.hom (spanSingletonGenerator (e j)) : A)) ⟨hcorner f.inv.hom, ?_⟩ ?_
-    · have h := GradedModuleCat.map_mem f.inv
-        ((GradedModuleCat.mem_shiftObj_piece_iff _ d d _).2 (by rw [sub_self]; exact hgen j))
-      exact (GradedModuleCat.mem_ofIdeal_piece_iff (hI i)).1 h
-    · intro h
-      refine hgen_ne hj ((GradedModuleCat.mono_iff_injective f.inv).1 inferInstance ?_)
-      rw [map_zero]
-      exact Subtype.ext h
-  omega
+variable (hprim : ∀ i, IsPrimitiveIdempotent (e i))
+  (hnoniso : Pairwise fun i j =>
+    IsEmpty ((Ideal.span {e i} : Ideal A) ≃ₗ[A] (Ideal.span {e j} : Ideal A)))
 
-variable (hne : ∀ i, e i ≠ 0)
-
-include hneg he₀ hspan hne in
-/-- **The graded projectives `A eᵢ` form a basis of `K₀^gr(proj A)`** over `ℤ[q,q⁻¹]`, for a
-nonnegatively graded finite-dimensional algebra whose degree-zero piece is spanned by a complete
-family of orthogonal nonzero idempotents `eᵢ`. Its basis vector at `i` is the class `[A eᵢ]`. This
-is the projective counterpart of the head basis `TauCeti.gradedIdempotentHeadBasis`. -/
-def gradedIdempotentProjectiveBasis :
+include he₀ hprim hnoniso in
+/-- **The graded projectives `A eᵢ` of primitive idempotents form a basis of `K₀^gr(proj A)`**
+over `ℤ[q,q⁻¹]`, for a finite-dimensional graded algebra with a complete family of orthogonal
+primitive idempotents `eᵢ` of degree zero whose ungraded left ideals `A eᵢ` are pairwise
+nonisomorphic. Its basis vector at `i` is the class `[A eᵢ]`. The degree-zero corners
+`eᵢ A eᵢ ∩ 𝒜 0` need not be the lines `k eᵢ`, so the field need not split the simple modules. This
+is the graded counterpart of `TauCeti.idempotentProjectiveBasis`. -/
+def gradedIdempotentProjectiveBasisOfPrimitive :
     Module.Basis I (LaurentPolynomial ℤ)
       (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)) :=
   gradedIndecomposableProjectiveClassBasis _
-    (fun i => indecomposable_ofIdeal_span_singleton he₀ hI he.toOrthogonalIdempotents hspan i
-      (hne i))
-    (fun i j hij d => ⟨fun f => (isEmpty_iso_ofIdeal_span_singleton_shiftObj he₀ hI
-      he.toOrthogonalIdempotents hneg hspan hij (hne i) (hne j) d).false
-        ((gradedFiniteProjectiveModules 𝒜).ι.mapIso f)⟩)
+    (fun i => indecomposable_ofIdeal_span_singleton (hprim i) (hI i))
+    -- A graded isomorphism `A eᵢ ≅ (A eⱼ){d}` forgets to an `A`-linear isomorphism `A eᵢ ≃ A eⱼ`.
+    (fun _ _ hij _ => ⟨fun φ => (hnoniso hij).false
+      (((gradedFiniteProjectiveModules 𝒜).ι ⋙ GradedModuleCat.toModuleCat).mapIso
+        φ).toLinearEquiv⟩)
     (isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalIdempotents he he₀ hI
-      fun i => indecomposable_ofIdeal_span_singleton he₀ hI he.toOrthogonalIdempotents hspan i
-        (hne i))
+      fun i => indecomposable_ofIdeal_span_singleton (hprim i) (hI i))
+
+/-- The basis vector of `TauCeti.gradedIdempotentProjectiveBasisOfPrimitive` at `i` is the class
+`[A eᵢ]`. -/
+@[simp]
+theorem gradedIdempotentProjectiveBasisOfPrimitive_apply (i : I) :
+    gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso i =
+      LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
+        ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),
+          gradedFiniteProjectiveModules_ofIdeal_span_singleton (he.idem i) (hI i)⟩ :=
+  gradedIndecomposableProjectiveClassBasis_apply _ _ _ _ i
+
+variable (hneg : ∀ p < 0, 𝒜 p = ⊥) (hspan : 𝒜 0 ≤ Submodule.span k (Set.range e))
+  (hne : ∀ i, e i ≠ 0)
+
+include hneg hspan hne in
+/-- **The graded projectives `A eᵢ` form a basis of `K₀^gr(proj A)`** over `ℤ[q,q⁻¹]`, for a
+nonnegatively graded finite-dimensional algebra whose degree-zero piece is spanned by a complete
+family of orthogonal nonzero idempotents `eᵢ`. Its basis vector at `i` is the class `[A eᵢ]`. This
+is the projective counterpart of the head basis `TauCeti.gradedIdempotentHeadBasis`, and the case of
+`TauCeti.gradedIdempotentProjectiveBasisOfPrimitive` where each `eᵢ` is primitive by
+`TauCeti.isPrimitiveIdempotent_of_gradeZero_le_span` and the `A eᵢ` are pairwise nonisomorphic by
+`TauCeti.isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span`. -/
+def gradedIdempotentProjectiveBasis :
+    Module.Basis I (LaurentPolynomial ℤ)
+      (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)) :=
+  gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI
+    (fun i => isPrimitiveIdempotent_of_gradeZero_le_span he₀ he.toOrthogonalIdempotents hneg hspan i
+      (hne i))
+    (fun i _ hij => isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span he₀
+      he.toOrthogonalIdempotents hneg hspan hij (hne i))
 
 /-- The basis vector of `TauCeti.gradedIdempotentProjectiveBasis` at `i` is the class `[A eᵢ]`. -/
 @[simp]
@@ -445,7 +437,7 @@ theorem gradedIdempotentProjectiveBasis_apply (i : I) :
       LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)
         ⟨GradedModuleCat.ofIdeal 𝒜 (Ideal.span {e i}) (hI i),
           gradedFiniteProjectiveModules_ofIdeal_span_singleton (he.idem i) (hI i)⟩ :=
-  gradedIndecomposableProjectiveClassBasis_apply _ _ _ _ i
+  gradedIdempotentProjectiveBasisOfPrimitive_apply _ _ _ _ _ i
 
 end Basis
 

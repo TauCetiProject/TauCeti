@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Cyclic
+public import TauCeti.LinearAlgebra.FiniteBilinearModule.ZModStandard
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Cardinality
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Quadratic
 public import TauCeti.LinearAlgebra.IntegralLattice.PosDef.Minimum
@@ -54,6 +55,8 @@ The identification of this simple-root model with the classical coordinate model
 * `TauCeti.IntegralLattice.typeARootLattice`: the lattice, with Gram matrix `CartanMatrix.A n`.
 * `TauCeti.IntegralLattice.form_typeASimpleRoot_typeASimpleRoot`: its simple-root Gram matrix is
   `CartanMatrix.A n`.
+* `TauCeti.IntegralLattice.sum_smul_typeASimpleRoot`: every vector is the combination of the
+  simple roots with its own coordinates.
 * `TauCeti.IntegralLattice.typeASimpleRootBasis`: the simple roots as a `ℤ`-basis of the lattice.
 * `TauCeti.IntegralLattice.isEven_typeARootLattice`: it is even.
 * `TauCeti.IntegralLattice.isPosDef_typeARootLattice`: it is positive definite.
@@ -61,6 +64,8 @@ The identification of this simple-root model with the classical coordinate model
 * `TauCeti.IntegralLattice.minimum_typeARootLattice`: for `n ≥ 1` its minimum is `2`.
 * `TauCeti.IntegralLattice.typeAFundamentalWeight`: the first fundamental weight `ω₁`.
 * `TauCeti.IntegralLattice.typeAFundamentalWeightClass`: its class in the discriminant group.
+* `TauCeti.IntegralLattice.mk_eq_zsmul_typeAFundamentalWeightClass_iff`: a dual vector lies in
+  the class `k ω₁` exactly when it differs from `k ω₁` by a lattice vector.
 * `TauCeti.IntegralLattice.form_typeAFundamentalWeight_self`: `⟨ω₁, ω₁⟩ = n / (n + 1)`.
 * `TauCeti.IntegralLattice.addOrderOf_typeAFundamentalWeightClass`: the class of `ω₁` has order
   `n + 1`.
@@ -68,6 +73,8 @@ The identification of this simple-root model with the classical coordinate model
   discriminant group.
 * `TauCeti.IntegralLattice.typeADiscriminantGroupEquiv`: the resulting isomorphism
   `ZMod (n + 1) ≃+ A_{Aₙ}`.
+* `TauCeti.IntegralLattice.typeADiscriminantGroupEquiv_apply`: it carries the label `a` to the
+  class `a.val • ω₁`.
 * `TauCeti.IntegralLattice.discriminantQuadraticMap_typeAFundamentalWeightClass`:
   `q(ω₁) = n / (2 (n + 1))`.
 * `TauCeti.IntegralLattice.discriminantPairing_typeAFundamentalWeightClass`:
@@ -77,6 +84,10 @@ The identification of this simple-root model with the classical coordinate model
 * `TauCeti.IntegralLattice.discriminantPairing_zsmul_typeAFundamentalWeightClass`: the pairing on
   every pair of multiples of `ω₁`.
 * `TauCeti.IntegralLattice.typeAStandardQuadraticModule`: the cyclic model on `ℤ/(n+1)`.
+* `TauCeti.IntegralLattice.typeAOneZModStandardIsometry`: the identity comparison between the
+  `A₁` alphabet and the standard binary quadratic alphabet.
+* `TauCeti.IntegralLattice.typeAStandardQuadraticModule_one_quadratic`: the `A₁` quadratic value
+  on each binary residue.
 * `TauCeti.IntegralLattice.typeADiscriminantQuadraticIsometry`: the model is the discriminant
   quadratic module of the `Aₙ` root lattice.
 * `TauCeti.IntegralLattice.isNondegenerate_typeAStandardQuadraticModule`: the model is
@@ -125,6 +136,13 @@ theorem typeASimpleRoot_apply (i j : Fin n) :
 
 private theorem typeASimpleRoot_eq_basisFun (i : Fin n) :
     typeASimpleRoot n i = Pi.basisFun ℚ (Fin n) i := rfl
+
+variable {n} in
+/-- Every vector of the ambient space is the combination of the simple roots with its own
+coordinates as coefficients. -/
+theorem sum_smul_typeASimpleRoot (x : Fin n → ℚ) : ∑ j, x j • typeASimpleRoot n j = x := by
+  ext k
+  simp [Finset.sum_apply]
 
 /-- The form of the type `Aₙ` root lattice, expanded in the standard coordinates. -/
 theorem typeARootLattice_form_apply (x y : Fin n → ℚ) :
@@ -293,11 +311,7 @@ theorem form_typeAFundamentalWeight_self :
     (typeARootLattice n).form (typeAFundamentalWeight n) (typeAFundamentalWeight n) =
       (n : ℚ) / ((n : ℚ) + 1) := by
   classical
-  have hexpand : typeAFundamentalWeight n =
-      ∑ j : Fin n, (typeAFundamentalWeight n j) • typeASimpleRoot n j := by
-    ext k
-    simp [typeASimpleRoot, Pi.basisFun_apply, Pi.single_apply]
-  nth_rewrite 2 [hexpand]
+  nth_rewrite 2 [← sum_smul_typeASimpleRoot (typeAFundamentalWeight n)]
   rw [map_sum]
   simp only [map_smul, smul_eq_mul, form_typeAFundamentalWeight_simpleRoot]
   rcases Nat.eq_zero_or_pos n with rfl | hn
@@ -345,6 +359,17 @@ theorem coe_typeAFundamentalWeightDual :
 noncomputable def typeAFundamentalWeightClass :
     (typeARootLattice n).DiscriminantGroup :=
   Submodule.Quotient.mk (typeAFundamentalWeightDual n)
+
+variable {n} in
+/-- A dual vector lies in the class `k ω₁` exactly when it differs from `k ω₁` by a vector of the
+root lattice. -/
+theorem mk_eq_zsmul_typeAFundamentalWeightClass_iff (x : (typeARootLattice n).dualCarrier)
+    (k : ℤ) :
+    (Submodule.Quotient.mk x : (typeARootLattice n).DiscriminantGroup) =
+        k • typeAFundamentalWeightClass n ↔
+      (x : Fin n → ℚ) - k • typeAFundamentalWeight n ∈ (typeARootLattice n).carrier := by
+  rw [typeAFundamentalWeightClass, ← Submodule.Quotient.mk_smul, discriminantGroup_mk_eq_iff,
+    Submodule.coe_sub, Submodule.coe_smul, coe_typeAFundamentalWeightDual]
 
 /-- **An integer multiple of the first fundamental weight lies in the root lattice exactly when
 `n + 1` divides it**.  For `n > 0`, this is forced by the last simple-root coordinate
@@ -413,6 +438,11 @@ noncomputable def typeADiscriminantGroupEquiv :
 theorem typeADiscriminantGroupEquiv_apply_one :
     typeADiscriminantGroupEquiv n 1 = typeAFundamentalWeightClass n :=
   zmodAddEquivOfGenerator_apply_one _ _
+
+/-- The label `a : ZMod (n + 1)` names the class `a.val • ω₁`. -/
+theorem typeADiscriminantGroupEquiv_apply (a : ZMod (n + 1)) :
+    typeADiscriminantGroupEquiv n a = a.val • typeAFundamentalWeightClass n := by
+  rw [← typeADiscriminantGroupEquiv_apply_one, ← map_nsmul, nsmul_one, ZMod.natCast_zmod_val]
 
 /-! ## The discriminant form on every class
 
@@ -532,6 +562,50 @@ theorem typeAStandardQuadraticModule_pairing_intCast (j k : ℤ) :
   rw [zsmul_eq_mul]
   push_cast
   field_simp
+
+/-- The standard `A₁` discriminant module is the binary standard quadratic alphabet, by the
+identity on its carrier `ZMod 2`. Both use the half-norm convention `q(a) = a² / 4`. -/
+noncomputable def typeAOneZModStandardIsometry :
+    FiniteQuadraticModule.Isometry (typeAStandardQuadraticModule 1)
+      (FiniteQuadraticModule.zmodStandard 2 even_two) where
+  toLinearEquiv := LinearEquiv.refl ℤ (ZMod 2)
+  map_app' a := by
+    -- Name the residue carrier explicitly before using its canonical integer representative.
+    change ZMod 2 at a
+    change (FiniteQuadraticModule.zmodStandard 2 even_two).quadratic a =
+      (typeAStandardQuadraticModule 1).quadratic a
+    have ha : (((a.val : ℤ) : ZMod 2)) = a := by
+      exact_mod_cast ZMod.natCast_rightInverse a
+    conv_lhs => rw [← ha]
+    conv_rhs => rw [← ha]
+    rw [FiniteQuadraticModule.zmodStandard_quadratic,
+      FiniteQuadraticModule.zmodStandardMap_intCast,
+      typeAStandardQuadraticModule_quadratic_intCast]
+    congr 1
+    norm_num [pow_two]
+
+/-- The binary comparison preserves the residue label. -/
+@[simp] theorem typeAOneZModStandardIsometry_apply (a : ZMod 2) :
+    typeAOneZModStandardIsometry a = a := by rfl
+
+/-- The inverse binary comparison preserves the residue label. -/
+@[simp] theorem typeAOneZModStandardIsometry_symm_apply (a : ZMod 2) :
+    typeAOneZModStandardIsometry.symm a = a := by rfl
+
+/-- The additive equivalence underlying the binary comparison is the identity. -/
+theorem typeAOneZModStandardIsometry_toAddEquiv :
+    typeAOneZModStandardIsometry.toAddEquiv = AddEquiv.refl (ZMod 2) := by rfl
+
+/-- In the standard `A₁` discriminant alphabet, a residue has quadratic value one quarter of
+its canonical representative. -/
+theorem typeAStandardQuadraticModule_one_quadratic (a : ZMod 2) :
+    (typeAStandardQuadraticModule 1).quadratic a =
+      (((a.val : ℚ) / 4 : ℚ) : AddCircle (1 : ℚ)) := by
+  rw [← typeAOneZModStandardIsometry.map_app a,
+    typeAOneZModStandardIsometry_apply, FiniteQuadraticModule.zmodStandard_quadratic,
+    FiniteQuadraticModule.zmodStandardMap_val]
+  have hlt : a.val < 2 := a.isLt
+  interval_cases hval : a.val <;> norm_num
 
 /-- In the standard `A₂` discriminant module, the quadratic value of a symbol is `0` at zero
 and `1/3` at either nonzero symbol. -/

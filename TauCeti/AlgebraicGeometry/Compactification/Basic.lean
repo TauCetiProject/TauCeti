@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
-public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
+public import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import Mathlib.CategoryTheory.Category.Factorisation
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Terminal
 public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
@@ -24,6 +24,8 @@ These definitions impose no quasi-compactness or quasi-separatedness condition o
 The dense compactifications form the further full subcategory where the open immersion is
 scheme-theoretically dominant. This condition retains the scheme structure, including
 nilpotents. No existence theorem or reducedness assumption is part of these definitions.
+Every map from a dense compactification lifts along a closed immersion of compactifications
+(`Compactification.liftOfIsClosedImmersion`).
 
 ## References
 
@@ -79,6 +81,28 @@ abbrev ofHom {Y : Scheme.{u}} (j : X ⟶ Y) (p : Y ⟶ S)
   ⟨⟨Y, j, p, fac⟩, (compactificationProperty_iff f _).mpr
     ⟨inferInstance, inferInstance, inferInstance⟩⟩
 
+section LocalizationAway
+
+variable {R : CommRingCat.{u}}
+
+/-- The tautological compactification of a principal affine open, over its ambient spectrum. -/
+noncomputable abbrev localizationAway (r : R) :
+    Compactification (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away r)))) :=
+  ofHom (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away r))))
+    (𝟙 _) (by simp)
+
+/-- Localizing at a non-zero-divisor gives a schematically dense interior; the ring need
+not be reduced. -/
+theorem isSchemeTheoreticallyDominant_localizationAway (r : R) (hr : IsRegular r) :
+    IsSchemeTheoreticallyDominant (localizationAway r).j := by
+  apply (isSchemeTheoreticallyDominant_SpecMap_iff _).mpr
+  apply (IsLocalization.injective_iff_isRegular (S := Localization.Away r)
+    (Submonoid.powers r)).mpr
+  rintro ⟨_, n, rfl⟩
+  exact hr.pow n
+
+end LocalizationAway
+
 /-- A morphism of compactifications fixes the source and lies over the base. -/
 abbrev Hom (C D : Compactification f) : Type _ := C ⟶ D
 
@@ -90,6 +114,20 @@ instance proper {C D : Compactification f} (h : Hom C D) : IsProper h.hom.h := b
     rw [h.hom.h_π]
     infer_instance
   exact IsProper.of_comp h.hom.h D.p
+
+/-- A morphism of compactifications is a monomorphism when its map of ambient schemes is. -/
+theorem mono_of_mono_h {C D : Compactification f} (h : Hom C D) [Mono h.hom.h] : Mono h :=
+  ⟨fun a b hab ↦ ObjectProperty.hom_ext _ <| Factorisation.Hom.ext <| by
+    rw [← cancel_mono h.hom.h]
+    simpa using congrArg (fun k ↦ k.hom.h) hab⟩
+
+instance {C D : Compactification f} (h : Hom C D) [IsClosedImmersion h.hom.h] : Mono h :=
+  mono_of_mono_h h
+
+/-- The map of ambient schemes underlying an isomorphism of compactifications is an
+isomorphism. -/
+instance isIso_hom_h {C D : Compactification f} (h : Hom C D) [IsIso h] : IsIso h.hom.h :=
+  (ObjectProperty.ι _ ⋙ Factorisation.forget (f := f)).map_isIso h
 
 end Hom
 
@@ -136,6 +174,15 @@ theorem denseCompactificationProperty_iff (C : Compactification f) :
     denseCompactificationProperty f C ↔ IsSchemeTheoreticallyDominant C.j :=
   (Iff.rfl)
 
+/-- Schematic density of the interior is invariant under isomorphism of compactifications. -/
+instance : (denseCompactificationProperty f).IsClosedUnderIsomorphisms where
+  of_iso {C D} e hC := by
+    rw [denseCompactificationProperty_iff] at hC ⊢
+    have := hC
+    have h : C.j ≫ e.hom.hom.h = D.j := e.hom.hom.ι_h
+    rw [← h]
+    infer_instance
+
 /-- The full subcategory of compactifications with scheme-theoretically dense interior. -/
 abbrev DenseCompactification := (denseCompactificationProperty f).FullSubcategory
 
@@ -152,5 +199,39 @@ abbrev identity [IsProper f] : DenseCompactification f :=
     (inferInstanceAs (IsSchemeTheoreticallyDominant (𝟙 X)))⟩
 
 end DenseCompactification
+
+namespace Compactification
+
+variable {f}
+
+/-- A map out of a dense compactification into `C` lifts along a closed immersion `φ : D ⟶ C`
+of compactifications: the interior of `E` is scheme-theoretically dense and lands in the
+closed subscheme `D.Xbar` of `C.Xbar`. -/
+noncomputable def liftOfIsClosedImmersion {C D : Compactification f} (φ : D ⟶ C)
+    [IsClosedImmersion φ.hom.h] (E : DenseCompactification f) (h : E.obj ⟶ C) : E.obj ⟶ D :=
+  have H : φ.hom.h.ker ≤ h.hom.h.ker := by
+    rw [← E.obj.j.ker_comp_of_isSchemeTheoreticallyDominant h.hom.h, h.hom.ι_h, ← φ.hom.ι_h]
+    exact Scheme.Hom.le_ker_comp D.j φ.hom.h
+  ObjectProperty.homMk
+    { h := IsClosedImmersion.lift φ.hom.h h.hom.h H
+      ι_h := by
+        rw [← cancel_mono φ.hom.h, Category.assoc, IsClosedImmersion.lift_fac, h.hom.ι_h,
+          φ.hom.ι_h]
+      h_π := by
+        rw [← φ.hom.h_π, IsClosedImmersion.lift_fac_assoc, h.hom.h_π] }
+
+@[reassoc (attr := simp)]
+theorem liftOfIsClosedImmersion_comp {C D : Compactification f} (φ : D ⟶ C)
+    [IsClosedImmersion φ.hom.h] (E : DenseCompactification f) (h : E.obj ⟶ C) :
+    liftOfIsClosedImmersion φ E h ≫ φ = h :=
+  ObjectProperty.hom_ext _ <| Factorisation.Hom.ext <| IsClosedImmersion.lift_fac _ _ _
+
+@[reassoc (attr := simp)]
+theorem liftOfIsClosedImmersion_hom_h_comp {C D : Compactification f} (φ : D ⟶ C)
+    [IsClosedImmersion φ.hom.h] (E : DenseCompactification f) (h : E.obj ⟶ C) :
+    (liftOfIsClosedImmersion φ E h).hom.h ≫ φ.hom.h = h.hom.h :=
+  IsClosedImmersion.lift_fac _ _ _
+
+end Compactification
 
 end TauCeti

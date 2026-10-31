@@ -24,10 +24,9 @@ A Poincaré inequality bounds the `Lᵖ` seminorm of a function by the `Lᵖ` se
 derivative, `‖u‖_p ≤ C ‖Du‖_p`. Mathlib proves such an estimate in
 `MeasureTheory.eLpNorm_le_eLpNorm_fderiv`, for `1 ≤ p < n` and functions supported in a *fixed
 bounded* set `s`, with the explicit `s`-dependent constant
-`MeasureTheory.eLpNormLESNormFDerivOfLeConst ℝ μ s p p`. The PDE roadmap asks for the companion
-fact that pins the role of that hypothesis: on the whole of a finite-dimensional space no single
-constant works for *all* compactly supported functions, so the boundedness of the support is
-load-bearing rather than an artefact of the proof.
+`MeasureTheory.eLpNormLESNormFDerivOfLeConst ℝ μ s p p`. On the whole of a finite-dimensional
+space no single constant works even for compactly supported smooth functions, so the boundedness
+of the support is load-bearing rather than an artefact of the proof.
 
 The obstruction is scaling. Dilating the variable by `r > 0` multiplies `‖u‖_p` by `r ^ (n / p)`
 and `‖Du‖_p` by `r ^ (n / p - 1)` (`TauCeti.eLpNorm_comp_inv_smul` and
@@ -43,10 +42,10 @@ support in a single direction already suffices, and the constant is then the wid
 ## Main declarations
 
 * `TauCeti.not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv`: no constant `C` satisfies
-  `‖u‖_p ≤ C ‖Du‖_p` for all compactly supported `C¹` functions on a finite-dimensional real
-  normed space with an additive Haar measure.
-* `TauCeti.not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv_euclideanSpace`: the roadmap's
-  `ℝⁿ` form, for Lebesgue measure on `EuclideanSpace ℝ (Fin n)`.
+  `‖u‖_p ≤ C ‖Du‖_p` for all compactly supported `Cᵏ` functions, for any order `k ≤ ∞`, on a
+  finite-dimensional real normed space with an additive Haar measure.
+* `TauCeti.not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv_euclideanSpace`: the `ℝⁿ` form,
+  for Lebesgue measure on `EuclideanSpace ℝ (Fin n)`.
 -/
 
 public section
@@ -59,31 +58,18 @@ open scoped ENNReal NNReal
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
-omit [BorelSpace E] in
-/-- A bump function has nonzero `p`-seminorm: it is continuous and equal to `1` at the origin. -/
-private theorem eLpNorm_contDiffBump_ne_zero {p : ℝ≥0∞} (hp₀ : p ≠ 0)
-    (φ : ContDiffBump (0 : E)) : eLpNorm (φ : E → ℝ) p μ ≠ 0 := by
-  intro h
-  have hcont : Continuous (φ : E → ℝ) := (φ.contDiff (n := 1)).continuous
-  have hae := (eLpNorm_eq_zero_iff hp₀).1 h
-  have hzero : (φ : E → ℝ) = 0 :=
-    (Continuous.ae_eq_iff_eq μ hcont continuous_const).1 hae
-  have h0 : (φ : E → ℝ) 0 = 1 := φ.one_of_mem_closedBall (by simp [φ.rIn_pos.le])
-  rw [hzero] at h0
-  norm_num at h0
-
 /-- Testing a putative Poincaré inequality on the dilate of a bump by `r` and cancelling the common
 factor `r ^ (n / p)` leaves a bound on the bump's own seminorm that degrades like `r⁻¹`. -/
-private theorem eLpNorm_le_ofReal_inv_mul_of_forall {p : ℝ≥0∞}
+private theorem eLpNorm_le_ofReal_inv_mul_of_forall {p : ℝ≥0∞} {k : ℕ∞}
     (φ : ContDiffBump (0 : E)) {C : ℝ≥0}
-    (hC : ∀ u : E → ℝ, ContDiff ℝ 1 u → HasCompactSupport u →
+    (hC : ∀ u : E → ℝ, ContDiff ℝ k u → HasCompactSupport u →
       eLpNorm u p μ ≤ C * eLpNorm (fderiv ℝ u) p μ)
     {r : ℝ} (hr : 0 < r) :
     eLpNorm (φ : E → ℝ) p μ
       ≤ ENNReal.ofReal r⁻¹ * (C * eLpNorm (fderiv ℝ (φ : E → ℝ)) p μ) := by
-  have hφ1 : ContDiff ℝ 1 (φ : E → ℝ) := φ.contDiff
+  have hφ : ContDiff ℝ k (φ : E → ℝ) := φ.contDiff
   have h1 := hC (fun x => φ (r⁻¹ • x))
-    (hφ1.comp (ContDiff.const_smul r⁻¹ (contDiff_id (𝕜 := ℝ) (E := E))))
+    (hφ.comp (ContDiff.const_smul r⁻¹ (contDiff_id (𝕜 := ℝ) (E := E))))
     (φ.hasCompactSupport.comp_homeomorph (Homeomorph.smul (Units.mk0 r⁻¹ (inv_ne_zero hr.ne'))))
   rw [eLpNorm_comp_inv_smul μ _ hr p, eLpNorm_fderiv_comp_inv_smul μ _ hr p] at h1
   set s := ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal)) with hs_def
@@ -99,14 +85,15 @@ private theorem eLpNorm_le_ofReal_inv_mul_of_forall {p : ℝ≥0∞}
   ring
 
 /-- **No Poincaré inequality holds on the whole space.** There is no constant `C` with
-`‖u‖_p ≤ C ‖Du‖_p` for every compactly supported `C¹` function `u`, for any `p ≠ 0`, including
-`p = ∞`.
+`‖u‖_p ≤ C ‖Du‖_p` for every compactly supported `Cᵏ` function `u`, for any order `k ≤ ∞`
+and any `p ≠ 0`, including `p = ∞`. In particular, the inequality fails even when restricted
+to smooth test functions.
 
 Compare `MeasureTheory.eLpNorm_le_eLpNorm_fderiv`, which supplies such a constant once every
 `u` is supported in one fixed bounded set; the proof here shows that hypothesis cannot be
 dropped. -/
-theorem not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv {p : ℝ≥0∞} (hp₀ : p ≠ 0) :
-    ¬ ∃ C : ℝ≥0, ∀ u : E → ℝ, ContDiff ℝ 1 u → HasCompactSupport u →
+theorem not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv {p : ℝ≥0∞} {k : ℕ∞} (hp₀ : p ≠ 0) :
+    ¬ ∃ C : ℝ≥0, ∀ u : E → ℝ, ContDiff ℝ k u → HasCompactSupport u →
       eLpNorm u p μ ≤ C * eLpNorm (fderiv ℝ u) p μ := by
   rintro ⟨C, hC⟩
   -- Fix one bump function; every dilate of it is an admissible test function.
@@ -126,13 +113,18 @@ theorem not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv {p : ℝ≥0∞} (hp₀ :
     filter_upwards [eventually_gt_atTop (0 : ℝ)] with r hr using
       eLpNorm_le_ofReal_inv_mul_of_forall μ φ hC hr
   rw [zero_mul, le_zero_iff] at hle
-  exact eLpNorm_contDiffBump_ne_zero μ hp₀ φ hle
+  -- A continuous function vanishing almost everywhere vanishes at the origin, where the bump is 1.
+  have hzero : (φ : E → ℝ) = 0 :=
+    (Continuous.ae_eq_iff_eq μ (φ.contDiff (n := 0)).continuous continuous_const).1
+      ((eLpNorm_eq_zero_iff hp₀).1 hle)
+  have h0 : (φ : E → ℝ) 0 = 1 := φ.one_of_mem_closedBall (by simp [φ.rIn_pos.le])
+  simp [hzero] at h0
 
-/-- The Poincaré inequality fails on `ℝⁿ` with Lebesgue measure: the roadmap's form of
+/-- The Poincaré inequality fails on `ℝⁿ` with Lebesgue measure, for any differentiability order:
 `TauCeti.not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv`. -/
-theorem not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv_euclideanSpace (n : ℕ) {p : ℝ≥0∞}
+theorem not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv_euclideanSpace (n : ℕ) {p : ℝ≥0∞} {k : ℕ∞}
     (hp₀ : p ≠ 0) :
-    ¬ ∃ C : ℝ≥0, ∀ u : EuclideanSpace ℝ (Fin n) → ℝ, ContDiff ℝ 1 u → HasCompactSupport u →
+    ¬ ∃ C : ℝ≥0, ∀ u : EuclideanSpace ℝ (Fin n) → ℝ, ContDiff ℝ k u → HasCompactSupport u →
       eLpNorm u p volume ≤ C * eLpNorm (fderiv ℝ u) p volume :=
   not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv volume hp₀
 

@@ -41,7 +41,8 @@ dimension count but no isotropic/Lagrangian vocabulary, which this file supplies
 * `TauCeti.SymplecticForm.orthogonal`: the symplectic complement `L^ω`.
 * `TauCeti.SymplecticForm.IsIsotropic`, `IsCoisotropic`, `IsLagrangian`, `IsSymplectic`: the four
   predicates on subspaces.
-* `TauCeti.SymplecticForm.isIsotropic_iff`: isotropy is the vanishing of `ω` on `L × L`.
+* `TauCeti.SymplecticForm.isIsotropic_iff`: isotropy is the vanishing of `ω` on `L × L`, and
+  `isIsotropic_span_iff` tests it on spanning vectors.
 * `TauCeti.SymplecticForm.isLagrangian_iff`: Lagrangian is isotropic and coisotropic.
 * `TauCeti.SymplecticForm.isLagrangian_iff_maximal_isIsotropic`: Lagrangian subspaces are exactly
   the maximal isotropic subspaces, in any dimension.
@@ -136,6 +137,19 @@ lemma isIsotropic_iff : ω.IsIsotropic L ↔ ∀ v ∈ L, ∀ w ∈ L, ω v w = 
 /-- Coisotropy is containment of the symplectic complement. -/
 lemma isCoisotropic_iff : ω.IsCoisotropic L ↔ ∀ v, v ∈ ω.orthogonal L → v ∈ L :=
   Iff.rfl
+
+/-- The symplectic complement of a span is tested on the spanning vectors. -/
+lemma mem_orthogonal_span_iff {s : Set V} {x : V} :
+    x ∈ ω.orthogonal (Submodule.span ℝ s) ↔ ∀ y ∈ s, ω y x = 0 :=
+  -- Both sides say that the span, respectively `s`, lies in the kernel of `ω (·, x)`.
+  (Submodule.span_le (p := LinearMap.ker (ω.toBilinForm.flip x)))
+
+/-- A span is isotropic exactly when `ω` vanishes on pairs of spanning vectors. -/
+lemma isIsotropic_span_iff {s : Set V} :
+    ω.IsIsotropic (Submodule.span ℝ s) ↔ ∀ v ∈ s, ∀ w ∈ s, ω v w = 0 := by
+  rw [isIsotropic_iff_le, Submodule.span_le]
+  exact ⟨fun h v hv w hw ↦ mem_orthogonal_span_iff.1 (h hw) v hv,
+    fun h w hw ↦ mem_orthogonal_span_iff.2 fun v hv ↦ h v hv w hw⟩
 
 /-- A subspace of an isotropic subspace is isotropic. -/
 lemma IsIsotropic.mono (h : ω.IsIsotropic L') (hL : L ≤ L') : ω.IsIsotropic L :=
@@ -293,6 +307,11 @@ lemma finrank_orthogonal (ω : SymplecticForm V) (L : Submodule ℝ V) :
 lemma orthogonal_orthogonal (ω : SymplecticForm V) (L : Submodule ℝ V) :
     ω.orthogonal (ω.orthogonal L) = L :=
   ω.toBilinForm.orthogonal_orthogonal ω.nondegenerate ω.isRefl L
+
+/-- The complement of an intersection is the sum of the complements. -/
+lemma orthogonal_inf (ω : SymplecticForm V) (L L' : Submodule ℝ V) :
+    ω.orthogonal (L ⊓ L') = ω.orthogonal L ⊔ ω.orthogonal L' :=
+  ω.toBilinForm.orthogonal_inf ω.nondegenerate ω.isRefl L L'
 
 /-- An isotropic subspace has at most half the dimension of the ambient space. -/
 lemma IsIsotropic.two_mul_finrank_le (h : ω.IsIsotropic L) :

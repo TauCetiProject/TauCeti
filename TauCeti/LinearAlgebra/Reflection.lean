@@ -10,9 +10,11 @@ public import Mathlib.LinearAlgebra.Reflection
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
-# Determinant of a module reflection
+# Module reflections
 
-This file computes the determinant of Mathlib's `Module.reflection` on a finite free module.
+This file computes the determinant of Mathlib's `Module.reflection` on a finite free module, and
+records that a reflection negates the linear form defining it. Consequently a finite free module
+of positive rank has a linear automorphism of determinant `-1`.
 -/
 
 public section
@@ -57,5 +59,21 @@ theorem det_reflection [Module.Free R M] [Module.Finite R M] :
       _ = f x := congrArg f (b.sum_repr x)
   rw [hsum, h]
   ring
+
+include h in
+/-- The reflection `Module.preReflection x f` negates the linear form `f` defining it. -/
+@[simp]
+theorem apply_preReflection (y : M) : f (preReflection x f y) = -f y := by
+  rw [preReflection_apply, map_sub, map_smul, smul_eq_mul, h]
+  ring
+
+/-- A finite free module of positive rank has a linear automorphism of determinant `-1`, namely
+a reflection in a basis vector. -/
+theorem exists_det_eq_neg_one [Module.Free R M] [Module.Finite R M] [StrongRankCondition R]
+    (hM : 0 < finrank R M) : ∃ g : M ≃ₗ[R] M, LinearEquiv.det g = -1 := by
+  let b := Module.finBasis R M
+  let i : Fin (finrank R M) := ⟨0, hM⟩
+  have hf : (2 • b.coord i) (b i) = 2 := by simp
+  exact ⟨reflection hf, det_reflection hf⟩
 
 end Module

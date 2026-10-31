@@ -27,6 +27,9 @@ be combined with other permutation sums, such as those defining wedge products.
 
 ## Main declarations
 
+* `ContinuousAlternatingMap.alternatizeUncurryFin_neg`,
+  `ContinuousAlternatingMap.alternatizeUncurryFin_sub`: alternatization commutes with negation
+  and subtraction, complementing Mathlib's `alternatizeUncurryFin_add`.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_curryLeft_comp_add_curryLeft`: the identity
   above.
 * `ContinuousAlternatingMap.alternatizeUncurryFin_compContinuousLinearMap`: alternatization
@@ -44,6 +47,18 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   {n : ℕ}
 
 namespace ContinuousAlternatingMap
+
+/-- Alternatization commutes with negation. -/
+@[simp]
+theorem alternatizeUncurryFin_neg (f : E →L[𝕜] E [⋀^Fin n]→L[𝕜] F) :
+    alternatizeUncurryFin (-f) = -alternatizeUncurryFin f :=
+  map_neg (alternatizeUncurryFinCLM 𝕜 E F) f
+
+/-- Alternatization commutes with subtraction. -/
+@[simp]
+theorem alternatizeUncurryFin_sub (f g : E →L[𝕜] E [⋀^Fin n]→L[𝕜] F) :
+    alternatizeUncurryFin (f - g) = alternatizeUncurryFin f - alternatizeUncurryFin g :=
+  map_sub (alternatizeUncurryFinCLM 𝕜 E F) f g
 
 /-- Alternatizing the interior product with `y` of a family of forms, plus the interior product
 with `y` of its alternatization, is evaluation of the family at `y`. This is the pointwise

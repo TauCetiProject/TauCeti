@@ -83,22 +83,22 @@ private theorem locallyOfFiniteType_ofRestrict_comp_of_toRingHom_eq {T : Finset 
     letI := P'.isHuberRing_completion_locTopology T s L hden
     ∀ (V : Pair (UniformSpace.Completion L))
       (_ : V.plus = P'.completedPlusSubring U'.plus T s L hden) (χ : Pair.Hom U V)
-      (_ : χ.toRingHom = (P'.toCompletionLoc T s L hden).comp φ.toRingHom) (hopen)
+      (_ : χ.toRingHom = (P'.toCompletionLoc T s L hden).comp φ.toRingHom)
       (hPV : (P'.completionLocalization T s L hden).ringOfDefinition ≤ V.plus) (hsheafV),
       LocallyOfFiniteType (presentationLimitPreAdicSpaceComap χ.toRingHom χ.continuous_toRingHom
-        hopen χ.map_mem_plus U.isRingOfIntegralElements.isPowerBounded_of_mem
+        χ.map_mem_plus U.isRingOfIntegralElements.isPowerBounded_of_mem
         V.isRingOfIntegralElements.isPowerBounded_of_mem hP hPV hsheafV) →
       LocallyOfFiniteType
         ((presentationLimitPreAdicSpace P' U'.plus U'.isRingOfIntegralElements.isPowerBounded_of_mem
             hP').ofRestrict (isOpenEmbedding_spaComapLocHom P' U'.plus hP' T s L hden) ≫
           presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-            (fun _ hJ ↦ hφ.isTopologicallyFiniteType_toRingHom.isOpen_map hJ) φ.map_mem_plus
+            φ.map_mem_plus
             U.isRingOfIntegralElements.isPowerBounded_of_mem
             U'.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf) := by
   let _ := P'.locUniformSpace T s L hden
   have _ := P'.isUniformAddGroup_locUniformSpace T s L hden
   have _ := P'.isTopologicalRing_locUniformSpace T s L hden
-  rintro ⟨_, _⟩ rfl ⟨_, _, _⟩ rfl _ _ _ key
+  rintro ⟨_, _⟩ rfl ⟨_, _, _⟩ rfl _ _ key
   have hU' := U'.isRingOfIntegralElements.isPowerBounded_of_mem
   have hsheafL := isSheaf_presentationLimitPresheaf_completionLocalization P' U'.plus hU' hP' T s
     L hden hT hsheaf
@@ -106,9 +106,8 @@ private theorem locallyOfFiniteType_ofRestrict_comp_of_toRingHom_eq {T : Finset 
   -- isomorphism `e` of Wedhorn's Remark 8.8. The source of `j` is `Spa(B⟨T/s⟩, B_V⁺)` only up to
   -- unfolding, so the equalities are composed as terms rather than rewritten in the goal.
   have heq := (presentationLimitPreAdicSpaceComap_comp φ.toRingHom φ.continuous_toRingHom
-      (fun _ hJ ↦ hφ.isTopologicallyFiniteType_toRingHom.isOpen_map hJ) φ.map_mem_plus
+      φ.map_mem_plus
       (P'.toCompletionLoc T s L hden) (P'.continuous_toCompletionLoc T s L hden)
-      (fun _ hJ ↦ P'.isOpen_map_toCompletionLoc T s L hden hJ)
       (fun _ ha ↦ P'.toCompletionLoc_mem_completedPlusSubring U'.plus T s L hden ha)
       U.isRingOfIntegralElements.isPowerBounded_of_mem hU'
       (P'.isPowerBounded_of_mem_completedPlusSubring U'.plus hU' T s L hden) hP hP'
@@ -119,6 +118,7 @@ private theorem locallyOfFiniteType_ofRestrict_comp_of_toRingHom_eq {T : Finset 
   exact (MorphismProperty.cancel_left_of_respectsIso @LocallyOfFiniteType.{u} _ _).mp
     (cast (congrArg LocallyOfFiniteType heq) key)
 
+include hφ in
 /-- **A finite-type morphism over a Huber ring restricts to every open of its source**: let
 `φ : (A, A⁺) → (B, B⁺)` be topologically of finite type, with `A` a Huber ring and `Spa(B, B⁺)`
 sheafy. For every open `W` of `Spa(B, B⁺)`, the restriction `W → Spa(A, A⁺)` of
@@ -130,7 +130,7 @@ theorem locallyOfFiniteType_ofRestrict_comp_presentationLimitPreAdicSpaceComap
       ((presentationLimitPreAdicSpace P' U'.plus U'.isRingOfIntegralElements.isPowerBounded_of_mem
           hP').ofRestrict W.isOpenEmbedding ≫
         presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
-          (fun _ hJ ↦ hφ.isTopologicallyFiniteType_toRingHom.isOpen_map hJ) φ.map_mem_plus
+          φ.map_mem_plus
           U.isRingOfIntegralElements.isPowerBounded_of_mem
           U'.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf) := by
   have hU' := U'.isRingOfIntegralElements.isPowerBounded_of_mem
@@ -164,9 +164,9 @@ theorem locallyOfFiniteType_ofRestrict_comp_presentationLimitPreAdicSpaceComap
     rw [rationalLocalizationPair_plus]
     exact isSheaf_presentationLimitPresheaf_completionLocalization P' U'.plus hU' hP' T s _ hden hT
       hsheaf
-  exact locallyOfFiniteType_ofRestrict_comp_of_toRingHom_eq P P' hP hP' φ hφ hsheaf hT _ hden _
+  exact locallyOfFiniteType_ofRestrict_comp_of_toRingHom_eq P P' hP hP' φ hsheaf hT _ hden _
     (rationalLocalizationPair_plus ..) _
-    (by rw [Pair.Hom.toRingHom_comp, toRingHom_toCompletionLocHom]) _ hPV hsheafV
+    (by rw [Pair.Hom.toRingHom_comp, toRingHom_toCompletionLocHom]) hPV hsheafV
     (locallyOfFiniteType_presentationLimitPreAdicSpaceComap P _ hP hPV hsheafV _ hχ)
 
 end ValuationSpectrum

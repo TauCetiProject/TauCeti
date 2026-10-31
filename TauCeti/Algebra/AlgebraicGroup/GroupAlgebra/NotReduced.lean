@@ -51,13 +51,6 @@ theorem generator_ne_one : generator p ≠ 1 := by
   rw [show generator p = Multiplicative.ofAdd (1 : ZMod p) from rfl, ne_eq, ofAdd_eq_one]
   exact one_ne_zero
 
-omit hp in
-/-- The standard generator of `μ_p = D(ℤ/p)` is `p`-torsion: `(ofAdd 1) ^ p = ofAdd (p • 1) = 1`
-since `p = 0` in `ZMod p`. -/
-theorem generator_pow_eq_one : generator p ^ p = 1 := by
-  rw [show generator p = Multiplicative.ofAdd (1 : ZMod p) from rfl, ← ofAdd_nsmul, ofAdd_eq_one]
-  simp
-
 /-- **The coordinate Hopf algebra of `μ_p` is non-reduced in characteristic `p`.** Over a
 nontrivial base `R` of characteristic `p`, the group algebra `R[Multiplicative (ZMod p)]`
 representing `μ_p = D(ℤ/p)` is not reduced: the group-like difference

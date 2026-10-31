@@ -351,12 +351,10 @@ class. -/
     (X : f4ModularChevalleyLieAlgebra) :
     f4ShortRootCarrierQuotientProjection (f4ShortRootCarrierRepresentedMap X) =
       Submodule.Quotient.mk X := by
-  rw [f4ShortRootCarrierQuotientProjection]
-  -- Unfold the projection into transport followed by the quotient map.
-  change f4ShortRootCarrierMiddleEquivQuotient
-    (Submodule.Quotient.mk (f4ShortRootCarrierRepresentedMap X)) = _
-  rw [← f4ShortRootCarrierMiddleEquivQuotient_symm_mk X,
-    LinearEquiv.apply_symm_apply]
+  simp only [f4ShortRootCarrierQuotientProjection, Comodule.Hom.comp_apply,
+    Comodule.transportToHom_apply, Subcomodule.mkQ_apply]
+  simpa only [f4ShortRootCarrierMiddleEquivQuotient_symm_mk] using
+    f4ShortRootCarrierMiddleEquivQuotient.apply_symm_apply (Submodule.Quotient.mk X)
 
 /-- The represented adjoint map followed by the carrier quotient projection remains the ordinary
 quotient map after arbitrary scalar extension. -/

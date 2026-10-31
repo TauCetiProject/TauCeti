@@ -19,6 +19,11 @@ A normal subgroup `N` of `G` carries the conjugation action `MulAut.conjNormal` 
 Dually, conjugation cannot move a *central* element: a subgroup containing one has every
 conjugate containing it too.
 
+A conjugate `gΓg⁻¹` sees `g` only modulo the normalizer of `Γ` on the right, and multiplying `g`
+on the left by an element of the normalizer of `Γ₁` conjugates the relative stabilizer
+`(gΓ₂g⁻¹).subgroupOf Γ₁` by that element. `TauCeti.NumberTheory.HeckeRing.StabConjugation` turns
+these into equivalences of Hecke decomposition quotients.
+
 For an action of `G` on a type, translation by `g` carries the orbits of a subgroup `H` onto the
 orbits of its conjugate `g H g⁻¹`.
 
@@ -26,10 +31,15 @@ orbits of its conjugate `g H g⁻¹`.
 
 * `MonoidHom.map_conjNormal_val`: a homomorphism from a normal subgroup to a commutative monoid is
   unchanged by conjugation by an element of that subgroup.
+* `Subgroup.inv_mul_mul_mem_conjAct_smul_iff`: conjugation preserves subgroup membership.
 * `Subgroup.mem_conjAct_smul_of_mem_center`: a central element of a subgroup lies in each of its
   conjugates.
 * `Subgroup.inclusion_conj_smul`: the inclusion of a normal subgroup into a larger normal
   subgroup commutes with conjugation.
+* `Subgroup.conjAct_smul_mul_right_of_mem_normalizer`: `(gh)Γ(gh)⁻¹ = gΓg⁻¹` when `h`
+  normalizes `Γ`.
+* `Subgroup.subgroupOf_conjAct_smul_mul_left_of_mem_normalizer`: left multiplication of `g` by an
+  element of the normalizer of `Γ₁` conjugates `(gΓ₂g⁻¹).subgroupOf Γ₁`.
 * `TauCeti.MulAction.orbitRel_smul_smul_iff_of_conjAct_smul_eq`: `g • x` and `g • y` lie in the
   same orbit of `g H g⁻¹` exactly when `x` and `y` lie in the same orbit of `H`.
 -/
@@ -55,6 +65,13 @@ namespace Subgroup
 
 open scoped Pointwise
 
+/-- Conjugating an element and a subgroup by the same inverse preserves membership. -/
+@[simp]
+theorem inv_mul_mul_mem_conjAct_smul_iff {G : Type*} [Group G] (g x : G) (H : Subgroup G) :
+    g⁻¹ * x * g ∈ (ConjAct.toConjAct g)⁻¹ • H ↔ x ∈ H := by
+  simpa only [← ConjAct.toConjAct_inv, ConjAct.toConjAct_smul, inv_inv] using
+    (smul_mem_pointwise_smul_iff (a := (ConjAct.toConjAct g)⁻¹) (S := H) (x := x))
+
 /-- **A central element of a subgroup lies in each of its conjugates**, since conjugation fixes
 it. -/
 theorem mem_conjAct_smul_of_mem_center {G : Type*} [Group G] {H : Subgroup G} {z : G}
@@ -70,6 +87,34 @@ theorem inclusion_conj_smul {G : Type*} [Group G] {H K : Subgroup G} [H.Normal] 
   Subtype.ext <| by
     rw [coe_inclusion, ConjAct.Subgroup.val_conj_smul, ConjAct.Subgroup.val_conj_smul,
       coe_inclusion]
+
+/-- Conjugation only sees `g` modulo the normalizer on the right: `(gh)Γ(gh)⁻¹ = gΓg⁻¹`
+whenever `h` normalizes `Γ`. Membership in `Γ` itself is the special case
+`Subgroup.le_normalizer`. -/
+theorem conjAct_smul_mul_right_of_mem_normalizer {G : Type*} [Group G] (Γ : Subgroup G) (g : G)
+    {h : G} (hh : h ∈ normalizer Γ) :
+    ConjAct.toConjAct (g * h) • Γ = ConjAct.toConjAct g • Γ := by
+  rw [map_mul, ← smul_smul, conjAct_pointwise_smul_eq_self hh]
+
+/-- Left multiplication of the base point by anything normalizing `Γ₁` conjugates the
+stabilizer by it: `x` stabilizes `hg` exactly when `h⁻¹xh` stabilizes `g`. Membership in `Γ₁`
+itself is the special case `Subgroup.le_normalizer`.
+
+The conjugating automorphism of `↥Γ₁` is `Subgroup.normalizerMonoidHom`, which is defined for
+exactly this: `MulAut.conj h` would need `h` to be an element of `Γ₁`. -/
+theorem subgroupOf_conjAct_smul_mul_left_of_mem_normalizer {G : Type*} [Group G]
+    (Γ₁ Γ₂ : Subgroup G) (g : G) (h : normalizer (Γ₁ : Set G)) :
+    (ConjAct.toConjAct ((h : G) * g) • Γ₂).subgroupOf Γ₁ =
+      ((ConjAct.toConjAct g • Γ₂).subgroupOf Γ₁).map
+        (Γ₁.normalizerMonoidHom h).toMonoidHom := by
+  ext x
+  rw [mem_map_equiv]
+  simp only [mem_subgroupOf, mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def, map_inv,
+    ConjAct.ofConjAct_toConjAct, inv_inv, normalizerMonoidHom_apply_symm_apply_coe]
+  -- Both sides are membership of the *same* element of `Γ₂`, written with different
+  -- bracketing: `(hg)⁻¹x(hg)` versus `g⁻¹(h⁻¹xh)g`. Reassociating proves that identity; the
+  -- `iff` is then congruence along it, so no rewriting has to find a redex.
+  exact iff_of_eq (congrArg (· ∈ Γ₂) (by simp only [mul_inv_rev, mul_assoc]))
 
 end Subgroup
 

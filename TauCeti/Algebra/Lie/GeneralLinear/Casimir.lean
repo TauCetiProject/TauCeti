@@ -12,7 +12,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.Algebra.Lie.GeneralLinear.HighestWeight
 
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
-import TauCeti.Algebra.Lie.GeneralLinear.Basic
+import TauCeti.Algebra.Lie.Matrix.Single
 
 /-!
 # The trace-form Casimir element of `gl n`
@@ -90,7 +90,7 @@ private theorem ι_lie_single_single (a b i j : n) :
     ι K ⁅Matrix.single a b (1 : K), Matrix.single i j (1 : K)⁆ =
       (if b = i then ι K (Matrix.single a j (1 : K)) else 0) -
         if j = a then ι K (Matrix.single i b (1 : K)) else 0 := by
-  rw [lie_single_single a b i j 1 1]
+  rw [Matrix.lie_single_single a b i j 1 1]
   by_cases hbi : b = i <;> by_cases hja : j = a <;> simp [hbi, hja]
 
 private theorem ι_single_mul_glCasimir (a b : n) :
@@ -179,7 +179,7 @@ private theorem lie_single_lie_single_of_isGlHighestWeightVector
       if i < j then (mu i - mu j) • v else if i = j then (mu i * mu i) • v else 0 := by
   rcases lt_trichotomy i j with hij | rfl | hji
   · rw [leibniz_lie]
-    simp only [lie_single_single_eq_sub, sub_lie, hv.lie_single_self_eq_smul,
+    simp only [Matrix.lie_single_single_eq_sub, sub_lie, hv.lie_single_self_eq_smul,
       hv.lie_single_eq_zero hij, lie_zero, add_zero, sub_smul]
     simp [hij]
   · rw [hv.lie_single_self_eq_smul, lie_smul, hv.lie_single_self_eq_smul, smul_smul]

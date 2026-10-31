@@ -8,9 +8,10 @@ module
 public import Mathlib.Analysis.Normed.Group.AddTorsor
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 public import Mathlib.LinearAlgebra.Span.Defs
-import Mathlib.Analysis.Normed.Module.Ball.Pointwise
-import Mathlib.Analysis.Normed.Module.RCLike.Real
+public import TauCeti.Analysis.Normed.Module.RCLike.Real
+import Mathlib.Tactic.Module
 
 /-!
 # Metric balls and spheres in normed spaces
@@ -36,6 +37,12 @@ In a nontrivial real normed space, one ball lies in another exactly when its rad
 distance between the centres is at most the radius of the other. The sufficiency holds in every
 pseudometric space (`Metric.closedBall_subset_closedBall'`, `Metric.ball_subset_ball'`); the
 necessity uses a point of the smaller ball on the far side of its centre.
+
+For `t ≥ 0`, the outer parallel set `K + t • closedBall 0 1` of a compact set `K` is its closed
+`t`-thickening (`IsCompact.add_smul_closedBall_eq_cthickening`).
+
+Half the difference body of a bounded set lies in a ball of half its diameter. A bounded set
+centrally symmetric up to translation lies in a ball of half its diameter about its center.
 -/
 
 public section
@@ -178,5 +185,53 @@ theorem ball_subset_ball_iff (hr : 0 < r) :
   linarith [le_max_left t 0, (closedBall_subset_closedBall_iff (le_max_right t 0)).1 hsub]
 
 end Subset
+
+end TauCeti
+
+section Parallel
+
+open scoped Pointwise
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- For `t ≥ 0`, the outer parallel set `K + t • closedBall 0 1` of a compact set `K` is the closed
+`t`-thickening of `K`. -/
+theorem IsCompact.add_smul_closedBall_eq_cthickening {K : Set E} (hK : IsCompact K) {t : ℝ}
+    (ht : 0 ≤ t) : K + t • Metric.closedBall (0 : E) 1 = Metric.cthickening t K := by
+  rw [smul_unitClosedBall_of_nonneg ht, hK.add_closedBall_zero ht]
+
+end Parallel
+
+namespace TauCeti
+
+open Metric Set
+open scoped Pointwise
+
+section Diameter
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Half the difference body `(1 / 2) • K + (-(1 / 2)) • K` of a bounded set `K` lies in the closed
+ball about `0` whose radius is half the diameter of `K`. -/
+theorem half_smul_add_neg_half_smul_subset_closedBall_diam_div_two {K : Set E}
+    (hK : Bornology.IsBounded K) :
+    (1 / 2 : ℝ) • K + (-(1 / 2) : ℝ) • K ⊆ closedBall 0 (diam K / 2) := by
+  rintro _ ⟨_, ⟨a, ha, rfl⟩, _, ⟨b, hb, rfl⟩, rfl⟩
+  dsimp only
+  rw [mem_closedBall_zero_iff, neg_smul, ← sub_eq_add_neg, ← smul_sub]
+  exact norm_half_smul_sub_le (dist_eq_norm a b ▸ dist_le_diam_of_mem hK ha hb)
+
+/-- A bounded set `H` with `-H = v +ᵥ H` is symmetric about `-(1 / 2) • v`, so it lies in the
+closed ball of radius `diam H / 2` about that point. -/
+theorem subset_closedBall_diam_div_two_of_neg_eq_vadd {H : Set E}
+    (hH : Bornology.IsBounded H) {v : E} (hv : -H = v +ᵥ H) :
+    H ⊆ closedBall (-((1 / 2 : ℝ) • v)) (diam H / 2) := by
+  intro y hy
+  have hy' : -v + -y ∈ H := (mem_vadd_set_iff_neg_vadd_mem).1 (hv ▸ Set.neg_mem_neg.2 hy)
+  have hcenter : y + (1 / 2 : ℝ) • v = (1 / 2 : ℝ) • (y - (-v + -y)) := by module
+  rw [mem_closedBall, dist_eq_norm, sub_neg_eq_add, hcenter]
+  exact norm_half_smul_sub_le (dist_eq_norm y _ ▸ dist_le_diam_of_mem hH hy hy')
+
+end Diameter
 
 end TauCeti

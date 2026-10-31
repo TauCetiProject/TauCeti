@@ -81,20 +81,12 @@ of `L` with the maximal tamely ramified extension. -/
 theorem lift_fixedField_lowerRamificationGroup_one :
     lift (fixedField (lowerRamificationGroup K L 1)) =
       maximalTameExtension K (AlgebraicClosure K) ⊓ L := by
-  rw [← map_wildInertiaSubgroup_restrictNormalHom L, wildInertiaSubgroup_def]
-  rw [← InfiniteGalois.restrict_fixedField]
+  rw [← map_wildInertiaSubgroup_restrictNormalHom L, wildInertiaSubgroup_def,
+    ← InfiniteGalois.restrict_fixedField]
   -- In equal characteristic the absolute fixed field also contains purely inseparable elements;
   -- intersecting with the separable field `L` removes them.
-  have hT : maximalTameExtension K (AlgebraicClosure K) ≤
-      separableClosure K (AlgebraicClosure K) := le_separableClosure _ _ _
-  have hfix := fixedField_fixingSubgroup_lift_inf_separableClosure (restrict hT)
-  rw [lift_restrict] at hfix
-  calc
-    fixedField (maximalTameExtension K (AlgebraicClosure K)).fixingSubgroup ⊓ L =
-        (fixedField (maximalTameExtension K (AlgebraicClosure K)).fixingSubgroup ⊓
-          separableClosure K (AlgebraicClosure K)) ⊓ L := by
-      rw [inf_assoc, inf_eq_right.mpr (le_separableClosure K _ L)]
-    _ = maximalTameExtension K (AlgebraicClosure K) ⊓ L := congrArg (· ⊓ L) hfix
+  conv_lhs => rw [← inf_eq_right.mpr (le_separableClosure K _ L), ← inf_assoc,
+    fixedField_fixingSubgroup_inf_separableClosure (le_separableClosure K _ _)]
 
 end Galois
 

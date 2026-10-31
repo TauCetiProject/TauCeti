@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 
 /-!
 # Cotangent lifts of diffeomorphisms
@@ -23,15 +24,34 @@ Smoothness of the lift is the smoothness of pulling covectors back along a map,
 `TauCeti.CotangentBundle.contMDiff_mk_comp_mfderiv`.
 
 The construction is functorial: cotangent lifts preserve identity maps, inverses and composition
-(`Diffeomorph.cotangent_refl`, `Diffeomorph.cotangent_symm`, `Diffeomorph.cotangent_trans`).
+(`Diffeomorph.cotangent_refl`, `Diffeomorph.cotangent_symm`, `Diffeomorph.cotangent_trans`),
+and a diffeomorphism is determined by its lift (`Diffeomorph.cotangent_injective`,
+`Diffeomorph.cotangent_inj`).
 It is the cotangent counterpart of the tangent lift `Diffeomorph.tangent`. The cotangent lift of
 a diffeomorphism preserves the Liouville form and the canonical symplectic form of the cotangent
 bundle; see `TauCeti.Geometry.Symplectic.Cotangent.Bundle.Lift`.
 
+By functoriality, a group `G` acting on `M` by smooth maps (`ContMDiffConstSMul I ∞ G M`) acts on
+`T*M` by the cotangent lifts of these maps,
+
+`g • (x, p) = (g • x, p ∘ (dg_x)⁻¹)`
+
+(`TauCeti.CotangentBundle.instMulAction`), again by smooth maps
+(`TauCeti.CotangentBundle.instContMDiffConstSMul`). This **cotangent-lifted action** covers the
+action on `M` (`TauCeti.CotangentBundle.proj_smul`), preserves the pairing of covectors with
+tangent vectors (`TauCeti.CotangentBundle.smul_snd_apply_mfderiv`) and the zero section, and the
+cotangent lift of each `x ↦ g • x` is the action of `g` on `T*M`
+(`Diffeomorph.cotangent_constSmul`). Cotangent lifts are equivariant for these actions: the
+cotangent lift of a diffeomorphism intertwines the lifted actions exactly when the diffeomorphism
+intertwines the actions on the base (`Diffeomorph.cotangent_smul`,
+`Diffeomorph.forall_cotangent_smul_iff`).
+
 ## References
 
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
-  Springer, 2001, Section 2.
+  Springer, 2001, Sections 2 and 22.
+* J. E. Marsden, T. S. Ratiu, *Introduction to Mechanics and Symmetry*, 2nd ed., Texts in Applied
+  Mathematics 17, Springer, 1999, Section 12.1 (cotangent lifts of group actions).
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
   Springer, 2013, Chapter 11.
 -/
@@ -131,6 +151,13 @@ theorem cotangent_snd_apply_mfderiv (h : M ≃ₘ⟮I, J⟯ N) (z : CotangentBun
   (cotangent_snd_apply h z _).trans
     (congrArg z.2 (h.mfderiv_symm_apply_mfderiv_apply (by simp) z.proj v))
 
+/-- The cotangent lift of `h` sends the zero covector at `x` to the zero covector at `h x`. -/
+@[simp]
+theorem cotangent_zeroSection (h : M ≃ₘ⟮I, J⟯ N) (x : M) :
+    h.cotangent (zeroSection (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x) =
+      zeroSection (F →L[𝕜] 𝕜) (fun y : N ↦ TangentSpace J y →L[𝕜] 𝕜) (h x) :=
+  CotangentBundle.ext rfl fun _ ↦ rfl
+
 /-- The inverse of a cotangent lift is the cotangent lift of the inverse diffeomorphism. -/
 @[simp]
 theorem cotangent_symm (h : M ≃ₘ⟮I, J⟯ N) :
@@ -159,5 +186,122 @@ theorem cotangent_trans (h : M ≃ₘ⟮I, J⟯ N) (g : N ≃ₘ⟮J, K⟯ P) :
   rw [g.symm_apply_apply] at hcomp
   exact ((cotangent_snd_apply _ z v).trans (congrArg z.2 hcomp)).trans
     ((cotangent_snd_apply h z _).symm.trans (cotangent_snd_apply g _ v).symm)
+
+/-- A smooth diffeomorphism is determined by its cotangent lift, which covers it. -/
+theorem cotangent_injective :
+    Function.Injective (Diffeomorph.cotangent : (M ≃ₘ⟮I, J⟯ N) → _) := fun _ _ hh ↦
+  Diffeomorph.ext fun x ↦ congrArg TotalSpace.proj (DFunLike.congr_fun hh (zeroSection _ _ x))
+
+/-- Two smooth diffeomorphisms have the same cotangent lift exactly when they are equal. -/
+@[simp]
+theorem cotangent_inj {h h' : M ≃ₘ⟮I, J⟯ N} : h.cotangent = h'.cotangent ↔ h = h' :=
+  cotangent_injective.eq_iff
+
+end Diffeomorph
+
+namespace TauCeti.CotangentBundle
+
+variable {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M] [IsManifold I 2 M]
+
+/-- The **cotangent lift of a smooth group action**: an element `g` acts on `T*M` by the cotangent
+lift of the diffeomorphism `x ↦ g • x`, sending a covector `p` at `x` to the covector
+`p ∘ (dg_x)⁻¹` at `g • x` (`TauCeti.CotangentBundle.smul_eq_mk`). -/
+instance instSMul : SMul G (CotangentBundle I M) where
+  smul g := (Diffeomorph.constSmul I ∞ g).cotangent
+
+/-- The cotangent-lifted action of `g` is the cotangent lift of the diffeomorphism `x ↦ g • x`. -/
+theorem smul_def (g : G) (z : CotangentBundle I M) :
+    g • z = (Diffeomorph.constSmul I ∞ g).cotangent z :=
+  (rfl)
+
+/-- The cotangent-lifted action sends a covector `p` at `x` to the covector `p ∘ (dg_x)⁻¹` at
+`g • x`, where `(dg_x)⁻¹` is the differential of `x ↦ g⁻¹ • x` at `g • x`. -/
+theorem smul_eq_mk (g : G) (z : CotangentBundle I M) :
+    g • z = TotalSpace.mk' (E →L[𝕜] 𝕜) (g • z.proj)
+      (z.2 ∘L mfderiv I I (fun x : M ↦ g⁻¹ • x) (g • z.proj)) := by
+  rw [smul_def, Diffeomorph.cotangent_apply, Diffeomorph.coe_constSmul_symm,
+    Diffeomorph.coe_constSmul]
+
+/-- The cotangent-lifted action covers the action on the base. -/
+@[simp]
+theorem proj_smul (g : G) (z : CotangentBundle I M) : (g • z).proj = g • z.proj := by
+  rw [smul_eq_mk]
+
+/-- The covector `g • p` evaluates a tangent vector `w` at `g • x` as `p` evaluates
+`(dg_x)⁻¹ w`, the differential of `x ↦ g⁻¹ • x` at `g • x` applied to `w`. -/
+theorem smul_snd_apply (g : G) (z : CotangentBundle I M) (w : TangentSpace I (g • z.proj)) :
+    (g • z).2 w = z.2 (mfderiv I I (fun x : M ↦ g⁻¹ • x) (g • z.proj) w) := by
+  rw [smul_eq_mk]
+  -- The second component of `TotalSpace.mk'` is the displayed composite.
+  rfl
+
+/-- **The cotangent-lifted action preserves the pairing of covectors with tangent vectors:** the
+covector `g • p` evaluated on `dg_x v` is `p v`. -/
+@[simp]
+theorem smul_snd_apply_mfderiv (g : G) (z : CotangentBundle I M) (v : TangentSpace I z.proj) :
+    (g • z).2 (mfderiv I I (fun x : M ↦ g • x) z.proj v) = z.2 v := by
+  rw [← Diffeomorph.coe_constSmul g (I := I) (n := ∞), smul_def]
+  exact (Diffeomorph.constSmul I ∞ g).cotangent_snd_apply_mfderiv z v
+
+/-- The cotangent-lifted action preserves the zero section. -/
+@[simp]
+theorem smul_zeroSection (g : G) (x : M) :
+    g • zeroSection (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x =
+      zeroSection (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) (g • x) :=
+  CotangentBundle.ext (proj_smul g _) fun v ↦ (smul_snd_apply g _ v).trans <| by
+    rw [zeroSection_snd, zeroSection_snd]
+    exact (zero_apply _).trans (zero_apply _).symm
+
+/-- The cotangent lift of a smooth group action is a group action. -/
+instance instMulAction : MulAction G (CotangentBundle I M) where
+  one_smul z := by
+    rw [smul_def, Diffeomorph.constSmul_one, Diffeomorph.cotangent_refl, Diffeomorph.coe_refl,
+      id_eq]
+  mul_smul g h z := by
+    rw [smul_def, Diffeomorph.constSmul_mul, Diffeomorph.cotangent_trans, Diffeomorph.coe_trans,
+      Function.comp_apply, ← smul_def, ← smul_def]
+
+/-- The cotangent lift of a smooth group action is again an action by smooth maps. -/
+instance instContMDiffConstSMul :
+    ContMDiffConstSMul (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) ∞ G (CotangentBundle I M) where
+  contMDiff_const_smul g := (Diffeomorph.constSmul I ∞ g).cotangent.contMDiff.congr (smul_def g)
+
+end TauCeti.CotangentBundle
+
+namespace Diffeomorph
+
+open TauCeti TauCeti.CotangentBundle
+
+variable {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M] [IsManifold I 2 M]
+
+/-- The cotangent lift of the diffeomorphism `x ↦ g • x` is the diffeomorphism `z ↦ g • z` of the
+cotangent-lifted action. -/
+@[simp]
+theorem cotangent_constSmul (g : G) :
+    (constSmul I ∞ g : M ≃ₘ⟮I, I⟯ M).cotangent = constSmul (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) ∞ g :=
+  Diffeomorph.ext fun z ↦ (smul_def g z).symm.trans (constSmul_apply g z).symm
+
+variable [MulAction G N] [ContMDiffConstSMul J ∞ G N] [IsManifold J 2 N]
+
+/-- **Cotangent lifts of equivariant diffeomorphisms are equivariant.** If `h : M → N` commutes
+with the action of `g`, its cotangent lift commutes with the cotangent-lifted action of `g`. -/
+theorem cotangent_smul (h : M ≃ₘ⟮I, J⟯ N) (g : G) (hh : ∀ x : M, h (g • x) = g • h x)
+    (z : CotangentBundle I M) : h.cotangent (g • z) = g • h.cotangent z := by
+  have hcomm : (constSmul I ∞ g).trans h = h.trans (constSmul J ∞ g) :=
+    Diffeomorph.ext fun x ↦ by simp only [coe_trans, Function.comp_apply, constSmul_apply, hh]
+  have := congrArg (fun e : M ≃ₘ⟮I, J⟯ N ↦ e.cotangent z) hcomm
+  simpa only [cotangent_trans, coe_trans, Function.comp_apply, cotangent_constSmul,
+    constSmul_apply] using this
+
+/-- **Equivariance of cotangent lifts.** The cotangent lift of a diffeomorphism `h : M → N`
+commutes with the cotangent-lifted action of `g` exactly when `h` commutes with the action of `g`
+on the base. -/
+theorem forall_cotangent_smul_iff (h : M ≃ₘ⟮I, J⟯ N) (g : G) :
+    (∀ z : CotangentBundle I M, h.cotangent (g • z) = g • h.cotangent z) ↔
+      ∀ x : M, h (g • x) = g • h x := by
+  refine ⟨fun hh x ↦ ?_, cotangent_smul h g⟩
+  -- Project the equivariance of the lift at the zero covector over `x` to the base.
+  simpa only [proj_cotangent, proj_smul, zeroSection_proj] using
+    congrArg TotalSpace.proj (hh (zeroSection (E →L[𝕜] 𝕜) _ x))
 
 end Diffeomorph

@@ -117,6 +117,23 @@ theorem mem_PLGroupoid_iff {e : OpenPartialHomeomorph H H} :
 theorem PLGroupoid_le_continuousGroupoid : PLGroupoid I ≤ continuousGroupoid H :=
   le_top
 
+/-- In a zero-dimensional model every coordinate transformation is PL. -/
+@[simp]
+theorem PLGroupoid_eq_top [Subsingleton E] : PLGroupoid I = ⊤ := by
+  apply top_unique
+  rw [StructureGroupoid.le_iff]
+  intro e _
+  rw [mem_PLGroupoid_iff]
+  constructor <;>
+    exact (isPLOn_continuousAffineMap (ContinuousAffineMap.const ℝ E (0 : E)) _).congr
+      (fun _ _ => Subsingleton.elim _ _)
+
+/-- Every atlas over a zero-dimensional model is PL compatible. -/
+instance {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [Subsingleton E] :
+    HasGroupoid M (PLGroupoid I) := by
+  rw [PLGroupoid_eq_top]
+  exact hasGroupoid_continuousGroupoid
+
 /-- The identity of an open set belongs to the PL groupoid. -/
 theorem ofSet_mem_PLGroupoid {s : Set H} (hs : IsOpen s) :
     OpenPartialHomeomorph.ofSet s hs ∈ PLGroupoid I := by

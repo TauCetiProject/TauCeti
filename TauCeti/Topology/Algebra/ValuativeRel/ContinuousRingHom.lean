@@ -45,6 +45,7 @@ Chapter II, Proposition (3.3), for absolute values.
   continuity of the algebra map of a compatible extension.
 * `TauCeti.continuous_algebraMap_of_valuativeExtension`: the algebra map of an algebraic
   compatible extension is continuous.
+* `TauCeti.continuous_algebraMap_integerRing`: so is its restriction to the rings of integers.
 * `RingHom.isEquiv_comap_valuation_of_continuous`: the pullback of the valuation of `L` along a
   continuous `f : K →+* L` is equivalent to the valuation of `K`.
 * `RingHom.map_vle_map_iff_of_continuous`: a continuous `f : K →+* L` satisfies
@@ -97,6 +98,21 @@ theorem TauCeti.continuous_algebraMap_of_valuativeExtension (K L : Type*)
     Continuous (algebraMap K L) :=
   continuous_algebraMap_of_coinitial K L fun y hy ↦
     (Algebra.IsAlgebraic.isAlgebraic y).exists_ne_zero_vle hy
+
+/-- The structure map of the rings of integers of an algebraic compatible extension is continuous
+for the subspace topologies. -/
+theorem TauCeti.continuous_algebraMap_integerRing (K L : Type*)
+    [Field K] [ValuativeRel K] [TopologicalSpace K] [IsValuativeTopology K]
+    [Field L] [ValuativeRel L] [TopologicalSpace L] [IsValuativeTopology L]
+    [Algebra K L] [ValuativeExtension K L] [Algebra.IsAlgebraic K L] :
+    Continuous
+      (algebraMap (Valuation.integer (valuation K)) (Valuation.integer (valuation L))) := by
+  refine continuous_induced_rng.2 ?_
+  have : ((↑) : Valuation.integer (valuation L) → L) ∘ algebraMap _ _ =
+      algebraMap K L ∘ ((↑) : Valuation.integer (valuation K) → K) :=
+    funext coe_algebraMap_integerRing
+  rw [this]
+  exact (continuous_algebraMap_of_valuativeExtension K L).comp continuous_subtype_val
 
 section RingHom
 
