@@ -56,8 +56,8 @@ variable (k : Type w) [CommRing k] {R : Type u} [Quiver.{v} R] [HasReverse R] [F
 local notation "Π" => signlessPreprojectiveAlgebra k R
 local notation "π" => signlessPreprojectiveMk k R
 
-/-- **A path between distinct vertices is a sum of commutators**: it is the commutator of its
-target idempotent with itself. -/
+/-- **A path between distinct vertices is a sum of commutators**: it is the commutator
+`e_b * p - p * e_b` of the path `p` with its target idempotent `e_b`. -/
 theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_ne {a b : R} (p : Path a b)
     (hab : a ≠ b) : π (ofPath ⟨a, b, p⟩) ∈ commutatorSubmodule k Π := by
   have hcomm := mul_sub_mul_mem_commutatorSubmodule k Π
