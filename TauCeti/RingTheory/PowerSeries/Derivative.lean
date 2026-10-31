@@ -46,6 +46,9 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
   `PowerSeries.constantCoeff_iterate_of_derivative_subst`: iteration and coefficient extraction
   for an operator intertwined with the derivative by substitution.
 * `PowerSeries.derivative_map`: the derivative commutes with change of coefficients.
+* `PowerSeries.derivative_algebraMap_polynomial`, `PowerSeries.derivative_polynomial_smul`: the
+  derivative of the image of a polynomial, and the Leibniz rule for the action of `R[X]` on
+  `A⟦X⟧`.
 * `PowerSeries.coeff_eq_zero_of_derivative_eq_zero`: in prime characteristic `p`, a series
   with zero derivative is supported on degrees divisible by `p`.
 * `PowerSeries.nsmul_coeff_mul_succ_pow_succ_eq_coeff_X_mul_pow_mul_derivative`,
@@ -192,6 +195,36 @@ theorem mul_coeff_val_zpow_neg_add_coeff_val_zpow_neg_sub_one_mul_derivative_eq_
       u e n
 
 end CommRing
+
+section Algebra
+
+variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+
+/-- The image of a polynomial under `PowerSeries.algebraPolynomial` is differentiated as a
+polynomial. -/
+@[simp]
+theorem derivative_algebraMap_polynomial (p : Polynomial R) :
+    d⁄dX (algebraMap (Polynomial R) A⟦X⟧ p) =
+      algebraMap (Polynomial R) A⟦X⟧ (Polynomial.derivative p) := by
+  rw [algebraMap_apply', algebraMap_apply', derivative_map, derivative_coe]
+
+/-- Iterated derivatives of the image of a polynomial under `PowerSeries.algebraPolynomial`. -/
+theorem iterate_derivative_algebraMap_polynomial (p : Polynomial R) (m : ℕ) :
+    (d⁄dX)^[m] (algebraMap (Polynomial R) A⟦X⟧ p) =
+      algebraMap (Polynomial R) A⟦X⟧ (Polynomial.derivative^[m] p) := by
+  induction m with
+  | zero => rfl
+  | succ m ih => rw [Function.iterate_succ_apply', ih, derivative_algebraMap_polynomial,
+      Function.iterate_succ_apply']
+
+/-- The Leibniz rule for the action of `R[X]` on `A⟦X⟧` given by
+`PowerSeries.algebraPolynomial`. -/
+theorem derivative_polynomial_smul (p : Polynomial R) (f : A⟦X⟧) :
+    d⁄dX (p • f) = Polynomial.derivative p • f + p • d⁄dX f := by
+  rw [Algebra.smul_def, Algebra.smul_def, Algebra.smul_def, Derivation.leibniz,
+    derivative_algebraMap_polynomial, smul_eq_mul, smul_eq_mul, mul_comm f, add_comm]
+
+end Algebra
 
 /-- In prime characteristic, a series with zero derivative has no coefficients outside the
 multiples of the characteristic. -/
