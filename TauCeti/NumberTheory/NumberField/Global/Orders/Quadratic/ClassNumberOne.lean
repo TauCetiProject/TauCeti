@@ -7,7 +7,8 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.OrderOfConductor
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.Units
-import Mathlib.NumberTheory.LegendreSymbol.QuadraticReciprocity
+import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Values
+import Mathlib.Tactic.NormNum.LegendreSymbol
 
 /-!
 # Orders of class number one in imaginary quadratic fields
@@ -51,8 +52,8 @@ public section
 
 open NumberField Module
 open TauCeti.Multiquadratic (fundamentalDiscriminantChar isFundamentalDiscr_discr
-  fundamentalDiscriminantChar_le_one fundamentalDiscriminantChar_two
-  fundamentalDiscriminantChar_two_eq_one_iff fundamentalDiscriminantChar_natCast_eq_legendreSym)
+  fundamentalDiscriminantChar_le_one fundamentalDiscriminantChar_two_eq_one_iff
+  fundamentalDiscriminantChar_neg_four fundamentalDiscriminantChar_neg_three)
 
 namespace TauCeti.GlobalNumberFields.NumberFieldOrder
 
@@ -63,16 +64,6 @@ of `f` at a prime `p ∣ f` is `p ^ (v_p(f) - 1) · (p - c(p))`.
 -/
 
 variable {c : ℕ → ℤ} {f : ℕ}
-
-/-- If every prime factor of `f > 1` is `q`, to the first power, then `f = q`. -/
-private theorem eq_of_forall_mem_primeFactors {q : ℕ} (hf : 1 < f)
-    (h : ∀ p ∈ f.primeFactors, p = q ∧ f.factorization p = 1) : f = q := by
-  obtain ⟨p, hp⟩ := Nat.nonempty_primeFactors.mpr hf
-  obtain ⟨rfl, hv⟩ := h p hp
-  have hs : f.primeFactors = {p} :=
-    Finset.eq_singleton_iff_unique_mem.mpr ⟨hp, fun x hx ↦ (h x hx).1⟩
-  have := Nat.prod_primeFactors_pow_factorization (n := f) (by omega)
-  rwa [hs, Finset.prod_singleton, hv, pow_one] at this
 
 /-- A local factor is at least `p - c(p) ≥ 1`. -/
 private theorem sub_le_pow_mul_sub (hc : ∀ p, c p ≤ 1) {p : ℕ} (hp : p ∈ f.primeFactors) :
@@ -111,23 +102,36 @@ private theorem eq_two_of_prod_eq_one (hc : ∀ p, c p ≤ 1) (hf : 1 < f)
     obtain rfl : p = 2 := by linarith [hc p]
     have h21 : c 2 = 1 := by push_cast at hp1; linarith [hc 2]
     exact ⟨rfl, h21, hv (by push_cast; rw [h21]; norm_num)⟩
-  obtain rfl := eq_of_forall_mem_primeFactors hf fun p hp ↦ ⟨(hpf p hp).1, (hpf p hp).2.2⟩
-  exact ⟨rfl, (hpf 2 (by simp [Nat.prime_two.primeFactors])).2.1⟩
+  obtain ⟨p, hp⟩ := Nat.nonempty_primeFactors.mpr hf
+  obtain ⟨rfl, h21, hv⟩ := hpf p hp
+  -- `2` is the only prime factor of `f`, and it occurs once.
+  have hf2 := Nat.eq_prime_pow_of_unique_prime_dvd (p := 2) (by omega) fun hd hdvd ↦
+    (hpf _ (Nat.mem_primeFactors.mpr ⟨hd, hdvd, by omega⟩)).1
+  rw [hf2, Nat.factorization_pow_self Nat.prime_two] at hv
+  exact ⟨by rwa [hv, pow_one] at hf2, h21⟩
 
 /-- If `c(2) = 0`, `c(3) = -1` and the local factors of `f > 1` multiply to `2`, then `f = 2`. -/
 private theorem eq_two_of_prod_eq_two (hc : ∀ p, c p ≤ 1) (hc2 : c 2 = 0) (hc3 : c 3 = -1)
     (hf : 1 < f)
     (h : ∏ p ∈ f.primeFactors, (p : ℤ) ^ (f.factorization p - 1) * (p - c p) = 2) : f = 2 := by
-  refine eq_of_forall_mem_primeFactors hf fun p hp ↦ ?_
-  obtain ⟨hp2, hv⟩ := sub_le_of_prod_eq hc h hp
-  have := (Nat.prime_of_mem_primeFactors hp).two_le
-  obtain rfl : p = 2 := by
-    have hp23 : p = 2 ∨ p = 3 := by have := hc p; omega
-    rcases hp23 with h | rfl
-    · exact h
-    · push_cast at hp2
-      linarith
-  exact ⟨rfl, hv (by push_cast; rw [hc2]; norm_num)⟩
+  have hpf : ∀ p ∈ f.primeFactors, p = 2 ∧ f.factorization p = 1 := by
+    intro p hp
+    obtain ⟨hp2, hv⟩ := sub_le_of_prod_eq hc h hp
+    have := (Nat.prime_of_mem_primeFactors hp).two_le
+    obtain rfl : p = 2 := by
+      have hp23 : p = 2 ∨ p = 3 := by have := hc p; omega
+      rcases hp23 with h | rfl
+      · exact h
+      · push_cast at hp2
+        linarith
+    exact ⟨rfl, hv (by push_cast; rw [hc2]; norm_num)⟩
+  obtain ⟨p, hp⟩ := Nat.nonempty_primeFactors.mpr hf
+  obtain ⟨rfl, hv⟩ := hpf p hp
+  -- `2` is the only prime factor of `f`, and it occurs once.
+  have hf2 := Nat.eq_prime_pow_of_unique_prime_dvd (p := 2) (by omega) fun hd hdvd ↦
+    (hpf _ (Nat.mem_primeFactors.mpr ⟨hd, hdvd, by omega⟩)).1
+  rw [hf2, Nat.factorization_pow_self Nat.prime_two] at hv
+  rwa [hv, pow_one] at hf2
 
 /-- If `c(2) = -1`, `c(3) = 0` and the local factors of `f > 1` multiply to `3`, then `f = 2` or
 `f = 3`. -/
@@ -155,15 +159,16 @@ private theorem eq_two_or_eq_three_of_prod_eq_three (hc : ∀ p, c p ≤ 1) (hc2
       (Finset.insert_subset h2f (Finset.singleton_subset_iff.mpr h3f))
     rw [Finset.prod_pair (by decide), h, (hpf 2 h2f).2, (hpf 3 h3f).2, hc2, hc3] at hdvd
     norm_num at hdvd
-  by_cases h2f : 2 ∈ f.primeFactors
-  · refine Or.inl (eq_of_forall_mem_primeFactors hf fun p hp ↦ ⟨?_, (hpf p hp).2⟩)
-    rcases (hpf p hp).1 with h | rfl
-    · exact h
-    · exact absurd ⟨h2f, hp⟩ hnot
-  · refine Or.inr (eq_of_forall_mem_primeFactors hf fun p hp ↦ ⟨?_, (hpf p hp).2⟩)
-    rcases (hpf p hp).1 with rfl | h
-    · exact absurd hp h2f
-    · exact h
+  -- So some prime factor `q` is the only one, and it occurs once.
+  obtain ⟨q, hq⟩ := Nat.nonempty_primeFactors.mpr hf
+  have hall : ∀ p ∈ f.primeFactors, p = q := fun p hp ↦ by
+    rcases (hpf p hp).1 with rfl | rfl <;> rcases (hpf q hq).1 with rfl | rfl <;> tauto
+  have hfq := Nat.eq_prime_pow_of_unique_prime_dvd (p := q) (by omega) fun hd hdvd ↦
+    hall _ (Nat.mem_primeFactors.mpr ⟨hd, hdvd, by omega⟩)
+  obtain ⟨hq23, hv⟩ := hpf q hq
+  rw [hfq, Nat.factorization_pow_self (Nat.prime_of_mem_primeFactors hq)] at hv
+  rw [hv, pow_one] at hfq
+  rwa [hfq]
 
 /-- The product of the local factors of a prime `p` is `p - c(p)`. -/
 private theorem prod_pow_mul_sub_prime {p : ℕ} (hp : p.Prime) :
@@ -180,12 +185,9 @@ private theorem fundamentalDiscriminantChar_two_three_of_eq_neg_four
     fundamentalDiscriminantChar D hD (2 : ℕ) = 0 ∧
       fundamentalDiscriminantChar D hD (3 : ℕ) = -1 := by
   subst h
-  refine ⟨?_, ?_⟩
-  · rw [Nat.cast_ofNat, fundamentalDiscriminantChar_two, ZMod.χ₈_int_eq_if_mod_eight]
-    norm_num
-  · rw [← Int.cast_natCast, fundamentalDiscriminantChar_natCast_eq_legendreSym _ (by decide),
-      legendreSym.mod]
-    norm_num [legendreSym.at_two, ZMod.χ₈_nat_eq_if_mod_eight]
+  rw [← Int.cast_natCast, ← Int.cast_natCast (R := ZMod _), fundamentalDiscriminantChar_neg_four,
+    fundamentalDiscriminantChar_neg_four]
+  decide
 
 /-- For `D = -3`, `χ_D(2) = -1` and `χ_D(3) = 0`. -/
 private theorem fundamentalDiscriminantChar_two_three_of_eq_neg_three
@@ -193,12 +195,9 @@ private theorem fundamentalDiscriminantChar_two_three_of_eq_neg_three
     fundamentalDiscriminantChar D hD (2 : ℕ) = -1 ∧
       fundamentalDiscriminantChar D hD (3 : ℕ) = 0 := by
   subst h
-  refine ⟨?_, ?_⟩
-  · rw [Nat.cast_ofNat, fundamentalDiscriminantChar_two, ZMod.χ₈_int_eq_if_mod_eight]
-    norm_num
-  · rw [← Int.cast_natCast, fundamentalDiscriminantChar_natCast_eq_legendreSym _ (by decide),
-      legendreSym.eq_zero_iff]
-    decide
+  rw [← Int.cast_natCast, ← Int.cast_natCast (R := ZMod _), fundamentalDiscriminantChar_neg_three,
+    fundamentalDiscriminantChar_neg_three]
+  norm_num
 
 /-! ### Class number one -/
 
