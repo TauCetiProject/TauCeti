@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Euclidean
+public import TauCeti.Geometry.Manifold.SmoothIsotopy.Extension
 
 /-!
 # The disc theorem in a manifold
@@ -21,10 +22,15 @@ determinants be positive.
 
 This is the disc theorem in the form of Hirsch, Chapter 4, Theorem 6.6, for open discs `E ≅ ℝⁿ`: the
 condition there, `Det (D(g⁻¹ ∘ f)(0)) > 0`, is the positivity of the product of determinants
-above. The ambient form of Palais's disc theorem, used to show that connected sums are well
-defined, follows from it by the isotopy extension theorem, and on a connected manifold the
-centres can first be made to agree by a compactly supported diffeotopy
-(`TauCeti.exists_diffeotopy_final_apply_eq`). Neither of these steps is taken here.
+above.
+
+The isotopy extension theorem (`TauCeti.SmoothIsotopy.exists_diffeotopy_final_apply_eq`) turns
+this into the ambient form of Palais's disc theorem, used to show that connected sums are well
+defined: on every compact subset of `E`, `g` is `f` followed by the final diffeomorphism of a
+compactly supported diffeotopy of `M`
+(`TauCeti.SmoothEmbedding.exists_diffeotopy_eqOn_of_det_chartAt_mul_pos`). On a connected
+manifold the centres can first be made to agree by a compactly supported diffeotopy
+(`TauCeti.exists_diffeotopy_final_apply_eq`); that step is not taken here.
 
 The Euclidean case is `TauCeti.SmoothEmbedding.exists_smoothIsotopy_of_det_mul_pos`. To reduce to
 it, both embeddings are first shrunk by precomposing with a radial contraction of `E` onto a small
@@ -39,6 +45,8 @@ connects them. Since the motion stays in `B`, the inverse chart carries it back 
 
 * `TauCeti.SmoothEmbedding.exists_smoothIsotopy_of_det_chartAt_mul_pos`: the disc theorem in a
   manifold, for embeddings with a common centre.
+* `TauCeti.SmoothEmbedding.exists_diffeotopy_eqOn_of_det_chartAt_mul_pos`: the ambient disc
+  theorem, for embeddings with a common centre, on compact subsets of `E`.
 
 ## References
 
@@ -138,5 +146,20 @@ theorem exists_smoothIsotopy_of_det_chartAt_mul_pos
     · rw [mem_singleton_iff, hL', hL0, φ.left_inv hpφ]
   · rw [mem_singleton_iff, SmoothIsotopy.symm_apply, compRadialContractionIsotopy_apply,
       radialContraction_self, hcentre]
+
+/-- **The ambient disc theorem in a manifold.** Let `f` and `g` be smooth embeddings of `E` into a
+Hausdorff, σ-compact boundaryless manifold modelled on `E`, with the same centre `f 0 = g 0` and
+derivatives at `0` of the same orientation, compared in the chart at the centre. On every compact
+subset `A` of `E`, `g` is `f` followed by the final diffeomorphism of a smooth diffeotopy of `M`
+fixing every point outside a compact set. -/
+theorem exists_diffeotopy_eqOn_of_det_chartAt_mul_pos [T2Space M] [SigmaCompactSpace M]
+    (f g : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M) (hcentre : f 0 = g 0)
+    (hdet : 0 < (fderiv ℝ (chartAt E (f 0) ∘ f) 0).det *
+      (fderiv ℝ (chartAt E (f 0) ∘ g) 0).det) {A : Set E} (hA : IsCompact A) :
+    ∃ Φ : Diffeotopy 𝓘(ℝ, E) ∞ M, ∃ K : Set M, IsCompact K ∧ (∀ t, ∀ y ∉ K, Φ (t, y) = y) ∧
+      EqOn (Φ.final ∘ f) g A := by
+  obtain ⟨G, -⟩ := exists_smoothIsotopy_of_det_chartAt_mul_pos f g hcentre hdet
+  obtain ⟨Φ, K, hK, hΦK, hΦ⟩ := G.exists_diffeotopy_final_apply_eq (m := ⊤) hA le_top le_top
+  exact ⟨Φ, K, hK, hΦK, fun x hx => hΦ x hx⟩
 
 end TauCeti.SmoothEmbedding
