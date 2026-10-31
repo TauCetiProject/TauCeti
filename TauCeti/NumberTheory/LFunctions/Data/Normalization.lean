@@ -142,6 +142,8 @@ structure NormalizationTranslation where
 
 namespace NormalizationTranslation
 
+attribute [simp] conductor_eq gammaR_eq gammaC_eq rootNumber_eq polarOrder_eq
+
 variable (T : NormalizationTranslation)
 
 private theorem conj_weight_div_two (w : ℤ) : conj ((w : ℂ) / 2) = (w : ℂ) / 2 := by
@@ -152,15 +154,15 @@ private theorem conductor_cpow_ne_zero (N : ℕ+) (z : ℂ) : ((N : ℕ) : ℂ) 
 
 /-- The coefficient translation holds at every index, `0` included, since both zeroth
 coefficients vanish. -/
+@[simp]
 theorem analytic_coeff (n : ℕ) :
     T.analytic.coeff n = T.arithmetic.coeff n / (n : ℂ) ^ ((T.weight : ℂ) / 2) := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp [T.analytic_coeff_zero]
   · exact T.coeff_eq n hn
 
-@[simp]
 theorem analytic_coeff_one : T.analytic.coeff 1 = T.arithmetic.coeff 1 := by
-  simp [T.analytic_coeff]
+  simp
 
 /-- The analytic Dirichlet series is the arithmetic one shifted by `w/2`. -/
 theorem LSeries_analytic_coeff (s : ℂ) :
@@ -177,12 +179,13 @@ theorem analytic_completed :
 
 @[simp]
 theorem analytic_degree : T.analytic.degree = T.arithmetic.degree := by
-  simp [AnalyticLFunctionData.degree_def, T.gammaR_eq, T.gammaC_eq]
+  simp [AnalyticLFunctionData.degree_def]
 
 /-- The analytic gamma factor is the arithmetic one shifted by `w/2`. -/
+@[simp]
 theorem analytic_gammaFactor (s : ℂ) :
     T.analytic.gammaFactor s = T.arithmetic.gammaFactor (s + (T.weight : ℂ) / 2) := by
-  simp [AnalyticLFunctionData.gammaFactor_def, T.gammaR_eq, T.gammaC_eq, Multiset.map_map,
+  simp [AnalyticLFunctionData.gammaFactor_def, Multiset.map_map,
     ← add_assoc, add_right_comm _ ((T.weight : ℂ) / 2)]
 
 /-- **A translation is determined by its arithmetic card and its weight.** -/
@@ -234,8 +237,8 @@ theorem of_arithmetic (a : ArithmeticLFunctionData) (w : ℤ) : (of a w).arithme
 theorem of_weight (a : ArithmeticLFunctionData) (w : ℤ) : (of a w).weight = w := (rfl)
 
 /-- Every translation is the one constructed by `NormalizationTranslation.of`. -/
-theorem eq_of : T = of T.arithmetic T.weight :=
-  ext (of_arithmetic _ _).symm (of_weight _ _).symm
+theorem of_arithmetic_weight : of T.arithmetic T.weight = T :=
+  ext (of_arithmetic _ _) (of_weight _ _)
 
 /-- **Existence and uniqueness of the translation** of an arithmetic card at a given weight. -/
 theorem existsUnique (a : ArithmeticLFunctionData) (w : ℤ) :
@@ -248,10 +251,10 @@ coefficients are `0`. -/
 theorem analytic_eq_of_weight_zero (h : T.weight = 0) :
     T.analytic = T.arithmetic.toAnalyticLFunctionData := by
   ext n
-  · simp [T.analytic_coeff, h]
+  · simp [h]
   · exact T.conductor_eq
-  · simp [T.gammaR_eq, h]
-  · simp [T.gammaC_eq, h]
+  · simp [h]
+  · simp [h]
   · exact T.rootNumber_eq
   · simp [T.completed_eq, h]
   · simp [T.polarOrder_eq, h]
@@ -266,14 +269,14 @@ noncomputable def dual : NormalizationTranslation where
   coeff_eq n hn := by
     have hpow := TauCeti.ofReal_cpow_conj (n.cast_nonneg : (0 : ℝ) ≤ n) ((T.weight : ℂ) / 2)
     rw [ofReal_natCast, conj_weight_div_two] at hpow
-    simp [T.coeff_eq n hn, map_div₀, ← hpow]
-  analytic_coeff_zero := by simp [T.analytic_coeff_zero]
-  conductor_eq := by simpa using T.conductor_eq
+    simp [map_div₀, ← hpow]
+  analytic_coeff_zero := by simp
+  conductor_eq := by simp
   gammaR_eq := by
-    simp [T.gammaR_eq, Multiset.map_map, map_ofNat]
+    simp [Multiset.map_map, map_ofNat]
   gammaC_eq := by
-    simp [T.gammaC_eq, Multiset.map_map, map_ofNat]
-  rootNumber_eq := by simp [T.rootNumber_eq]
+    simp [Multiset.map_map, map_ofNat]
+  rootNumber_eq := by simp
   completed_eq s := by
     have hpow := TauCeti.ofReal_cpow_conj ((T.arithmetic.conductor : ℕ).cast_nonneg : (0 : ℝ) ≤ _)
       (-(T.weight : ℂ) / 4)
@@ -441,7 +444,7 @@ gamma shift `11/2`, not `-11/2`. -/
 example (T : NormalizationTranslation) (hw : T.weight = 11) (hR : T.arithmetic.gammaR = 0)
     (hC : T.arithmetic.gammaC = {0}) :
     T.analytic.gammaR = 0 ∧ T.analytic.gammaC = {11 / 2} ∧ T.analytic.degree = 2 := by
-  simp [T.gammaR_eq, T.gammaC_eq, AnalyticLFunctionData.degree_def, hw, hR, hC]
+  simp [AnalyticLFunctionData.degree_def, hw, hR, hC]
 
 /-- A malformed weight-zero card, with completed function `0` and a single pole at `0`, has a
 unit root number and satisfies the value equation off the polar loci, but its polar divisor is
