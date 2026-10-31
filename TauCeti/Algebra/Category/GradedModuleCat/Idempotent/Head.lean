@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.SimpleFamily
 public import TauCeti.Algebra.Category.GradedModuleCat.Ideal
+import TauCeti.Algebra.Category.GradedModuleCat.Concentrated
 
 /-!
 # Graded simple modules of a nonnegatively graded algebra with split degree-zero part
@@ -258,14 +259,9 @@ theorem gradedPositiveMulQuotient_piece_eq_bot (hneg : ∀ p < 0, 𝒜 p = ⊥)
 nonnegatively graded algebra. -/
 theorem gradedPositiveMulQuotient_piece_zero_eq_top (hneg : ∀ p < 0, 𝒜 p = ⊥)
     (he : IsIdempotentElem e) (he₀ : e ∈ 𝒜 0) :
-    (gradedPositiveMulQuotient 𝒜 he₀).grading.piece 0 = ⊤ := by
-  refine top_unique ?_
-  rw [← (gradedPositiveMulQuotient 𝒜 he₀).grading.isInternal.submodule_iSup_eq_top]
-  refine iSup_le fun p => ?_
-  rcases eq_or_ne p 0 with rfl | hp
-  · exact le_rfl
-  · rw [gradedPositiveMulQuotient_piece_eq_bot hneg he he₀ hp]
-    exact bot_le
+    (gradedPositiveMulQuotient 𝒜 he₀).grading.piece 0 = ⊤ :=
+  GradedModuleCat.piece_eq_top_of_concentrated fun _ hp =>
+    gradedPositiveMulQuotient_piece_eq_bot hneg he he₀ hp
 
 end CommRing
 

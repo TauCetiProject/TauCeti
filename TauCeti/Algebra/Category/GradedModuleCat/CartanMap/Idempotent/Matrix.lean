@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler.Matrix
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Coefficients
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.FiniteLength
 
 /-!
@@ -69,7 +68,6 @@ noncomputable section
 namespace TauCeti
 
 open CategoryTheory
-open scoped Pointwise
 
 universe uk uA uI
 
@@ -141,31 +139,17 @@ theorem finrank_end_mul_coeff_gradedCartanMatrix_gradedIdempotentProjectiveBasis
         (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso)
           (gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim hnoniso) i j).coeff p =
       Module.finrank k ↥(cornerSubmodule k (e i) (e j) ⊓ 𝒜 p) := by
-  let S (i : I) : (gradedFiniteModules 𝒜).FullSubcategory :=
-    ⟨gradedPositiveMulQuotient 𝒜 (he₀ i), gradedFiniteModules_gradedPositiveMulQuotient 𝒜 (he₀ i)⟩
-  have hne : Pairwise fun i j => (S j).obj.smulGradedDimension (e i) = 0 := fun _ _ hij =>
-    smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg (hprim _) (he₀ _) (hprim _)
-      (hnoniso hij.symm)
-  have hself (i : I) : (S i).obj.smulGradedDimension (e i) ≠ 0 :=
-    smulGradedDimension_gradedPositiveMulQuotient_self_ne_zero hneg (he.idem i) (he₀ i)
-      (hprim i).ne_zero
-  have hS := isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent
-    hneg he he₀ hprim
-  -- The head basis is the simple-class basis of the heads.
-  have hbasis : gradedSimpleClassBasisOfNeZero S he.idem he₀ hne hself hS =
-      gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim hnoniso :=
-    Module.Basis.eq_of_apply_eq fun i => by
-      rw [gradedSimpleClassBasisOfNeZero_apply, gradedIdempotentHeadBasisOfPrimitive_apply]
-  -- The weight `dim_k(eᵢ • (Sᵢ)₀)` is the constant term of `gdim(eᵢ • Sᵢ) = dim_k End_A(Sᵢ)`.
-  have hd : (Module.finrank k ↥(e i • (S i).obj.grading.piece 0) : ℤ) =
-      Module.finrank k (Module.End A (gradedPositiveMulQuotient 𝒜 (he₀ i))) := by
-    simpa [GradedModuleCat.coeff_smulGradedDimension] using congrArg (·.coeff 0)
-      (smulGradedDimension_gradedPositiveMulQuotient_self hneg (hprim i) (he₀ i))
-  rw [← hd, ← hbasis]
-  exact finrank_smul_simple_piece_zero_mul_coeff_gradedCartanMatrix S he.idem he₀ hne hself hS _
-    (he.idem j) (hI j) j
-    (gradedIdempotentProjectiveBasisOfPrimitive_apply he he₀ hI hprim hnoniso j) i
-    (fun _ hp => gradedPositiveMulQuotient_piece_eq_bot hneg (he.idem i) (he₀ i) hp) p
+  rw [gradedCartanMatrix_apply, gradedIdempotentProjectiveBasisOfPrimitive_apply he he₀ hI hprim
+    hnoniso j, gradedCartanMap_of]
+  -- The `eᵢ`-coordinate of `[A eⱼ]` is `dim_k End_A(Sᵢ)` times its `i`th head-basis coordinate.
+  have h := congrArg (fun f : LaurentPolynomial ℤ => f.coeff p)
+    (gradedIdempotentCoordinate_eq_mul_gradedIdempotentHeadBasisOfPrimitive_repr hneg he he₀ hprim
+      hnoniso (LaurentK0.of _ ⟨_, gradedFiniteProjectiveModules_le_finiteModules _
+        (gradedFiniteProjectiveModules_ofIdeal_span_singleton (he.idem j) (hI j))⟩) i)
+  rw [gradedIdempotentCoordinate_of, ← LaurentPolynomial.smul_eq_C_mul,
+    GradedModuleCat.coeff_smulGradedDimension_ofIdeal_span_singleton (he.idem i) (he₀ i)
+      (he.idem j) (hI j)] at h
+  simpa only [AddMonoidAlgebra.coeff_smul, Finsupp.smul_apply, smul_eq_mul] using h.symm
 
 end Primitive
 

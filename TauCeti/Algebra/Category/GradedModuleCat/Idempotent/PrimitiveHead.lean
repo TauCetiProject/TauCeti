@@ -21,8 +21,9 @@ Since `f` stays primitive in `A₀` and `A₀` is semisimple, this quotient is a
 projective cover.
 
 Unlike the split situation of `TauCeti.Algebra.Category.GradedModuleCat.Idempotent.Head`, the
-degree-zero corner `f A₀ f` need not be the line `k f`: it is the division algebra `End_A(Sf)`,
-whose dimension is the constant graded dimension of `f • Sf`. A second primitive idempotent
+degree-zero corner `f A₀ f` need not be the line `k f`: it is isomorphic to the opposite of the
+division algebra `End_A(Sf)`, so its dimension is `dim_k End_A(Sf)`, the constant graded dimension
+of `f • Sf`. A second primitive idempotent
 `f'` whose ungraded left ideal `A f'` is not isomorphic to `A f` kills `Sf`: otherwise `A f'`
 would cover `Sf` as well, and projective covers are unique.
 
