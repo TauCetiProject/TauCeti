@@ -39,6 +39,8 @@ same stage.
 * `Nat.Partrec.Code.domStage_zero`, `Nat.Partrec.Code.monotone_domStage`: the stages start empty
   and increase.
 * `Nat.Partrec.Code.stageLimit_domStage`: their limit is the domain of the code.
+* `Nat.Partrec.Code.primrec₂_evaln_isSome`: halting of step-bounded evaluation is primitive
+  recursive in the code, the step bound and the input.
 * `Nat.Partrec.Code.primrecRel_mem_domStage`, `Nat.Partrec.Code.primrec_domStage`: membership in
   the stages and their binary codes are primitive recursive, uniformly in the code and the stage.
 * `TauCeti.Enumeration.rePred_mem_stageLimit`: the limit of finite stages with computable
@@ -97,7 +99,7 @@ theorem stageLimit_domStage (c : Code) : stageLimit c.domStage = {x | (eval c x)
 
 /-- Halting of step-bounded evaluation is primitive recursive in the code, the step bound and the
 input. -/
-private theorem primrec₂_evaln_isSome :
+theorem primrec₂_evaln_isSome :
     Primrec₂ fun (p : Code × ℕ) (x : ℕ) => (evaln p.2 p.1 x).isSome :=
   Primrec.option_isSome.comp (primrec_evaln.comp
     ((_root_.Primrec.pair (Primrec.snd.comp Primrec.fst) (Primrec.fst.comp Primrec.fst)).pair
