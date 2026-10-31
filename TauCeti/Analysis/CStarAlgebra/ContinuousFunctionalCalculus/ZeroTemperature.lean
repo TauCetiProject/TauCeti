@@ -5,12 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.Matrix
-public import Mathlib.Analysis.Matrix.HermitianFunctionalCalculus
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog.Basic
-import Mathlib.LinearAlgebra.Matrix.PosDef
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
-import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
 
 /-!
 # Zero-temperature limits of Boltzmann weights
@@ -18,9 +14,7 @@ import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
 Let `a` be a self-adjoint element with finite spectrum of an algebra with a real continuous
 functional calculus, for instance a Hermitian matrix, and let `λ₀ = sInf (spectrum ℝ a)` be its
 least spectral value. The spectral projection of `a` at `λ₀` is `P₀ = cfc ({λ₀}.indicator 1) a`,
-a star projection by `TauCeti.isStarProjection_cfc_indicator`; for a Hermitian matrix its
-Euclidean operator is the orthogonal projection onto the lowest eigenspace,
-`Matrix.IsHermitian.toEuclideanLin_cfc_indicator`.
+a star projection by `TauCeti.isStarProjection_cfc_indicator`.
 
 As the inverse temperature `β` tends to `+∞`, the rescaled Boltzmann weights converge to `P₀`:
 `exp (β λ₀) exp (-βa) → P₀`. Indeed `exp (β λ₀) exp (-βa)` is the functional calculus of
@@ -29,9 +23,10 @@ spectrum, and on a finite spectrum pointwise convergence passes to the functiona
 
 Consequently, for a continuous real-linear functional `φ` with `φ P₀ ≠ 0`, the normalised
 functionals `x ↦ φ (exp (-βa) x) / φ (exp (-βa))` converge pointwise to
-`x ↦ φ (P₀ x) / φ P₀`. For the trace of matrices this is the zero-temperature limit of the Gibbs
-state of a matrix Hamiltonian `K`:
-`Tr (exp (-βK) x) / Tr (exp (-βK)) → Tr (P₀ x) / Tr P₀`.
+`x ↦ φ (P₀ x) / φ P₀`. The instance of this for the trace of a Hermitian matrix, the
+zero-temperature limit of the Gibbs state of a matrix Hamiltonian, is
+`Matrix.IsHermitian.tendsto_trace_exp_neg_smul_mul_div` in
+`TauCeti.Analysis.Matrix.Exponential.ZeroTemperature`.
 
 ## Main results
 
@@ -39,10 +34,7 @@ state of a matrix Hamiltonian `K`:
 * `TauCeti.tendsto_exp_mul_sInf_smul_exp_neg_smul`: `exp (β λ₀) • exp (-(β • a)) → P₀` in a
   normed algebra;
 * `TauCeti.tendsto_apply_exp_neg_smul_mul_div`: `φ (exp (-(β • a)) x) / φ (exp (-(β • a)))`
-  tends to `φ (P₀ x) / φ P₀`;
-* `Matrix.IsHermitian.tendsto_trace_exp_neg_smul_mul_div`: the Gibbs functionals
-  `x ↦ Tr (exp (-(β • K)) x) / Tr (exp (-(β • K)))` of a Hermitian matrix converge pointwise
-  to `x ↦ Tr (P₀ x) / Tr P₀`.
+  tends to `φ (P₀ x) / φ P₀`.
 
 ## References
 
@@ -121,40 +113,3 @@ theorem tendsto_apply_exp_neg_smul_mul_div (ha : IsSelfAdjoint a) (hfin : (spect
 end Normed
 
 end TauCeti
-
-namespace Matrix
-
-open TauCeti
-open scoped ComplexOrder Matrix.Norms.L2Operator
-
-variable {m : Type*} [Fintype m] [DecidableEq m] {K : Matrix m m ℂ}
-
-/-- **Zero-temperature limit of the Gibbs state.** For a Hermitian matrix `K`, let `P₀` be the
-spectral projection of `K` at its least eigenvalue, the orthogonal projection onto the lowest
-eigenspace. As `β → +∞`, the Gibbs functionals
-`x ↦ Tr (exp (-(β • K)) x) / Tr (exp (-(β • K)))` converge pointwise to
-`x ↦ Tr (P₀ x) / Tr P₀`. -/
-theorem IsHermitian.tendsto_trace_exp_neg_smul_mul_div (hK : K.IsHermitian) (x : Matrix m m ℂ) :
-    Tendsto (fun β : ℝ ↦ (exp (-(β • K)) * x).trace / (exp (-(β • K))).trace) atTop
-      (𝓝 ((cfc (Set.indicator {sInf (spectrum ℝ K)} 1) K * x).trace /
-        (cfc (Set.indicator {sInf (spectrum ℝ K)} 1) K).trace)) := by
-  cases isEmpty_or_nonempty m
-  · simp [Matrix.trace]
-  set P := cfc (Set.indicator {sInf (spectrum ℝ K)} 1) K
-  -- `P` is a nonzero star projection, so its trace `Tr (Pᴴ P)` is nonzero
-  have hP : P ≠ 0 := by
-    intro h
-    have hfin : (spectrum ℝ K).Finite := finite_real_spectrum
-    have hspec := ContinuousFunctionalCalculus.spectrum_nonempty (R := ℝ) K hK.isSelfAdjoint
-    have := eqOn_of_cfc_eq_cfc (h.trans (cfc_zero ℝ K).symm) (hfin.continuousOn _)
-      (hfin.continuousOn _) hK.isSelfAdjoint (hspec.csInf_mem hfin)
-    simp at this
-  have htr : P.trace ≠ 0 := by
-    have hPP : IsStarProjection P := isStarProjection_cfc_indicator K _
-    have h : P.trace = (Pᴴ * P).trace := by
-      rw [← star_eq_conjTranspose, hPP.isSelfAdjoint.star_eq, hPP.isIdempotentElem.eq]
-    rwa [h, Ne, trace_conjTranspose_mul_self_eq_zero_iff]
-  exact tendsto_apply_exp_neg_smul_mul_div hK.isSelfAdjoint finite_real_spectrum
-    (LinearMap.toContinuousLinearMap ((traceLinearMap m ℂ ℂ).restrictScalars ℝ)) htr x
-
-end Matrix
