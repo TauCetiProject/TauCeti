@@ -187,14 +187,10 @@ theorem discriminantGroupHom_conjMulEquiv (e : Isometry L M) (g : Isometry L L) 
     discriminantGroupHom M (e.conjMulEquiv g) =
       (e.discriminantGroupEquiv.symm.trans (discriminantGroupHom L g)).trans
         e.discriminantGroupEquiv := by
-  ext a
-  induction a using Submodule.Quotient.induction_on with
-  | _ y =>
-    simp only [discriminantGroupHom_apply, LinearEquiv.trans_apply, discriminantGroupEquiv_symm_mk,
-      discriminantGroupEquiv_mk]
-    congr 1
-    ext
-    simp [-dualCarrierEquiv_symm]
+  have h : e.conjMulEquiv g = (e.symm.trans g).trans e :=
+    Isometry.ext fun y ↦ by rw [conjMulEquiv_apply, trans_apply, trans_apply]
+  rw [discriminantGroupHom_apply, discriminantGroupHom_apply, h, discriminantGroupEquiv_trans,
+    discriminantGroupEquiv_trans, discriminantGroupEquiv_symm]
 
 /-- Conjugation by an isometry preserves membership in the discriminant kernel. -/
 @[simp]
