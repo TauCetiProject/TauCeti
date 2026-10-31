@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Weierstrass.Division
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Weierstrass.Preparation
 
@@ -115,9 +116,7 @@ theorem eq_and_eq_restrictedMap_of_mul_eq_of_isMulDistinguished {g e : Flat}
       restrictedMap φ hφ g) :
     e' = restrictedMap φ hφ e ∧ ω' = ω.map (restrictedMap φ hφ) := by
   have : Nontrivial Inner' := hg'.nontrivial
-  have hm : (ω.map (restrictedMap φ hφ)).IsMonicOfDegree s :=
-    ⟨(hω.monic.natDegree_map _).trans hω.natDegree_eq, hω.monic.map _⟩
-  exact eq_and_eq_of_mul_eq_of_mul_eq_of_isMulDistinguished hg' he' (he.map _) hω' hm h'
+  exact eq_and_eq_of_mul_eq_of_mul_eq_of_isMulDistinguished hg' he' (he.map _) hω' (hω.map _) h'
     (by rw [← restrictedMap_restrictedOptionEquiv_symm_polynomialToRestricted, ← map_mul, h])
 
 /-- **The image of a prepared factorization is prepared.** Over a complete target, let the
