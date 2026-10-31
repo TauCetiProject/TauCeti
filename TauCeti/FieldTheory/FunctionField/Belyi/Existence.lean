@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.Belyi.Polynomial
 public import TauCeti.FieldTheory.FunctionField.Different.Divisor
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Polynomial
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
