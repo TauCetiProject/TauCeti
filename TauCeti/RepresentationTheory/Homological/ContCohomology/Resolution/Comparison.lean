@@ -59,6 +59,9 @@ this comparison; the resulting maps and classes are in
 
 ## Main results
 
+* `TopRep.ResolutionContraction.ι_proj_of_d_eq_zero` and
+  `TopRep.ResolutionContraction.ρ_proj_of_d_eq_zero`: a degree-zero cocycle is the augmentation of
+  its retraction, and the retraction of an invariant one is invariant.
 * `TopRep.ResolutionContraction.ι_comp_comparison_f_zero`: the comparison lies over the identity
   of `X`, carrying the augmentation `ι` to the constant functions.
 * `TopRep.ResolutionContraction.comparison_f_zero_apply_apply` and
@@ -135,6 +138,23 @@ private theorem d_hom_add_hom_d_conj (n : ℕ) (x : G) (v : (J.X (n + 1)).V) :
   rw [(J.d n (n + 1)).hom.isIntertwining, ← (J.d (n + 1) (n + 2)).hom.isIntertwining,
     ← map_add, c.d_hom_add_hom_d]
   exact Representation.self_inv_apply (J.X (n + 1)).ρ.toRepresentation x v
+
+section DegreeZero
+
+variable {v : (J.X 0).V} (hv : (J.d 0 1).hom v = 0)
+include hv
+
+/-- **A degree-zero cocycle is the augmentation of its retraction**: if `d v = 0` in degree zero,
+then `v = ι (proj v)`. -/
+theorem ι_proj_of_d_eq_zero : c.ι.hom (c.proj v) = v := by
+  simpa only [hv, map_zero, add_zero] using c.ι_proj_add_hom_d v
+
+/-- The retraction of an invariant degree-zero cocycle is invariant. -/
+theorem ρ_proj_of_d_eq_zero (hinv : ∀ g, (J.X 0).ρ g v = v) (g : G) :
+    X.ρ g (c.proj v) = c.proj v := by
+  conv_rhs => rw [← hinv g, ← c.ι_proj_of_d_eq_zero hv, ← c.ι.hom.isIntertwining, c.proj_ι]
+
+end DegreeZero
 
 variable [IsTopologicalGroup G]
 
