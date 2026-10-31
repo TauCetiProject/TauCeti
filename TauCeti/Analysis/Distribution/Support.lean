@@ -151,6 +151,14 @@ noncomputable def augmentation (f : 𝓓^{n}(Ω, F) → V) (c : F) : V :=
     f (TestFunction.postcompCLM (toSpanSingleton ℝ c) h.choose)
   else 0
 
+/-- The augmentation is zero when no test function is equal to one on a neighbourhood of the
+support. -/
+@[simp]
+theorem augmentation_of_not_exists {f : 𝓓^{n}(Ω, F) → V}
+    (h : ¬∃ χ : 𝓓^{n}(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (dsupport f), χ x = 1) (c : F) :
+    augmentation f c = 0 := by
+  rw [augmentation, dite_eq_right h]
+
 /-- The support of a boundary `T ∘ d` lies in the support of `T`. -/
 theorem dsupport_comp_extDerivCLM_subset {k : ℕ} (f : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) → V) :
     dsupport (f ∘ TestFunction.extDerivCLM (k := k)) ⊆ dsupport f := by
