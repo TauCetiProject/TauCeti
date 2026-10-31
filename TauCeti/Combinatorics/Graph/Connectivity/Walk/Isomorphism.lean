@@ -81,18 +81,13 @@ theorem toPrefunctor_obj (f : Iso G H) (x : G.vertexSet) :
       H.vertexSet (Quiver.mk H.BidirectedHom) f.toPrefunctor x = f.vertexEquiv x :=
   (rfl)
 
-/-- The arrow map of the induced prefunctor is `Graph.Iso.mapHom`. -/
+/-- The arrow map of the induced prefunctor transports the underlying edge. -/
 @[simp]
-theorem toPrefunctor_map (f : Iso G H) {x y : G.vertexSet} (a : G.BidirectedHom x y) :
-    @Quiver.Hom.cast H.vertexSet (Quiver.mk H.BidirectedHom)
-      (@Prefunctor.obj G.vertexSet (Quiver.mk G.BidirectedHom)
-        H.vertexSet (Quiver.mk H.BidirectedHom) f.toPrefunctor x)
-      (@Prefunctor.obj G.vertexSet (Quiver.mk G.BidirectedHom)
-        H.vertexSet (Quiver.mk H.BidirectedHom) f.toPrefunctor y)
-      (f.vertexEquiv x) (f.vertexEquiv y) (toPrefunctor_obj f x) (toPrefunctor_obj f y)
-      (@Prefunctor.map G.vertexSet (Quiver.mk G.BidirectedHom)
-        H.vertexSet (Quiver.mk H.BidirectedHom) f.toPrefunctor x y a) = f.mapHom a := by
-  simp [toPrefunctor, mapHom]
+theorem toPrefunctor_map_fst (f : Iso G H) {x y : G.vertexSet} (a : G.BidirectedHom x y) :
+    (@Prefunctor.map G.vertexSet (Quiver.mk G.BidirectedHom)
+      H.vertexSet (Quiver.mk H.BidirectedHom) f.toPrefunctor x y a).1 =
+        f.edgeEquiv ⟨a.1, a.2.edge_mem⟩ :=
+  (rfl)
 
 /-- The identity graph isomorphism induces the identity prefunctor. -/
 @[simp]
