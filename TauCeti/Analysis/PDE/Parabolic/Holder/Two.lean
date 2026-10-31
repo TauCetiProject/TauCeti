@@ -94,6 +94,13 @@ theorem timeExtension_of_mem (hab : a ≤ b) (f : slab (E := E) a b → F)
     (x : E) (t : Icc a b) : timeExtension hab f x t = f (slabMk x t) := by
   simp [timeExtension, projIcc_of_mem hab t.2]
 
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- A slab map is recovered from its total time slices. -/
+theorem timeExtension_space_slabTime (hab : a ≤ b) (f : slab (E := E) a b → F) :
+    (fun p : slab (E := E) a b ↦
+      timeExtension hab f (p : ParabolicSpaceTime E).space (slabTime p)) = f :=
+  funext fun p ↦ by rw [timeExtension_of_mem, slabMk_space_slabTime]
+
 private def IsJetGraph (hab : a < b) (J : Jet α E F a b) : Prop :=
   (∀ (t : Icc a b) (x : E), HasFDerivAt (fun y ↦ valueJetL J (slabMk y t))
     (spatialJetL J (slabMk x t)) x) ∧
@@ -366,6 +373,12 @@ theorem norm_def (f : ParabolicC2HolderSpace α E F hab) :
         nnHolderNorm α ((timeDerivL f).toBoundedContinuousFunction : _ → _)) := by
   rw [norm_eq, HolderSpace.norm_def, HolderSpace.norm_def]
   ring
+
+/-- The supremum norm of the value is bounded by the reduced parabolic norm. -/
+theorem norm_valueL_le (f : ParabolicC2HolderSpace α E F hab) : ‖valueL f‖ ≤ ‖f‖ := by
+  rw [norm_eq]
+  linarith [norm_nonneg (spatialFDerivL f), norm_nonneg (spatialSecondFDerivL f),
+    norm_nonneg (timeDerivL f)]
 
 /-- The Hessian field gives the native second iterated Fréchet derivative of each slice. -/
 theorem iteratedFDeriv_two_apply (f : ParabolicC2HolderSpace α E F hab)

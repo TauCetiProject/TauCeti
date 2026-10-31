@@ -93,35 +93,42 @@ theorem norm_toBoundedContinuousFunction_spatialSecondFDerivL_le
     ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖ ≤ 32 * ‖valueL f‖ / ε ^ 2 +
       2 * nnHolderNorm α ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _) *
         ε ^ (α : ℝ) := by
-  -- The gradient bound at the scale `ε / 4`.
-  have h₁ := f.norm_spatialFDerivL_le (ε := ε / 4) (by positivity)
-  -- At a common time the parabolic distance is the spatial one, so each Hessian slice is
-  -- `α`-Hölder with the parabolic seminorm as constant. Interpolating between it and the
-  -- gradient bound at the scale `ε` bounds the Hessian by half its supremum plus the rest.
-  have h₂ : ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖ ≤
-      2 * (2 * ‖valueL f‖ / (ε / 4) +
-        ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖ * (ε / 4)) / ε +
-      nnHolderNorm α ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _) *
-        ε ^ (α : ℝ) := by
-    refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun p ↦ ?_
-    obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
-    have hH : HolderWith (nnHolderNorm α
-        ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _)) α
-        fun y ↦ spatialSecondFDerivL f (slabMk y t) := fun y z ↦ by
-      simpa [edist_slabMk] using
-        (spatialSecondFDerivL f).memHolder.holderWith (slabMk y t) (slabMk z t)
-    rw [HolderSpace.toBoundedContinuousFunction_apply]
-    exact hH.norm_le_of_hasFDerivAt (f.hasSpatialSecondFDerivAt t)
-      (fun y ↦ ((spatialFDerivL f).norm_coe_le_norm (slabMk y t)).trans h₁) hε x
-  set S := ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖
-  have heq : 2 * (2 * ‖valueL f‖ / (ε / 4) + S * (ε / 4)) / ε =
-      16 * ‖valueL f‖ / ε ^ 2 + S / 2 := by
-    field_simp
-    ring
-  have h32 : 32 * ‖valueL f‖ / ε ^ 2 = 2 * (16 * ‖valueL f‖ / ε ^ 2) := by ring
-  rw [heq] at h₂
-  rw [h32]
-  linarith
+  refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun p ↦ ?_
+  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
+  -- Each time slice is `C²`, with the gradient and Hessian fields as derivatives.
+  have hf : ContDiff ℝ 2 fun y ↦ f (slabMk y t) := by
+    refine (contDiff_succ_iff_hasFDerivAt (n := 1)).2
+      ⟨fun y ↦ spatialFDerivL f (slabMk y t), ?_, f.hasSpatialFDerivAt t⟩
+    refine (contDiff_succ_iff_hasFDerivAt (n := 0)).2
+      ⟨fun y ↦ spatialSecondFDerivL f (slabMk y t), ?_, f.hasSpatialSecondFDerivAt t⟩
+    exact contDiff_zero.2 ((spatialSecondFDerivL f).continuous.comp
+      (continuous_slabMk.comp (continuous_id.prodMk continuous_const)))
+  -- At a common time the parabolic distance is the spatial one, so the second iterated
+  -- derivative of each slice is `α`-Hölder with the parabolic seminorm as constant.
+  have hH : HolderWith (nnHolderNorm α
+      ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _)) α
+      (iteratedFDeriv ℝ 2 fun y ↦ f (slabMk y t)) := by
+    let e := (continuousMultilinearCurryFin1 ℝ E (E →L[ℝ] F)).symm.trans
+      (continuousMultilinearCurryRightEquiv' ℝ 1 E F).symm
+    have he : (iteratedFDeriv ℝ 2 fun y ↦ f (slabMk y t)) =
+        fun y ↦ e (spatialSecondFDerivL f (slabMk y t)) := by
+      funext y
+      ext m
+      simp [e, f.iteratedFDeriv_two_apply, Fin.init]
+    rw [he]
+    intro y z
+    simpa [edist_slabMk] using
+      (spatialSecondFDerivL f).memHolder.holderWith (slabMk y t) (slabMk z t)
+  -- The absorbed whole-space interpolation inequality for the slice.
+  have h := hH.norm_iteratedFDeriv_add_two_le_of_norm_le (k := 0) hf
+    (fun y ↦ by simpa using (valueL f).norm_coe_le_norm (slabMk y t))
+    ⟨‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖, by
+      rintro _ ⟨y, rfl⟩
+      change ‖iteratedFDeriv ℝ 2 _ y‖ ≤ _
+      rw [f.norm_iteratedFDeriv_two, ← HolderSpace.toBoundedContinuousFunction_apply]
+      exact BoundedContinuousFunction.norm_coe_le_norm _ _⟩ hε x
+  change ‖iteratedFDeriv ℝ 2 _ x‖ ≤ _ at h
+  rwa [f.norm_iteratedFDeriv_two, ← HolderSpace.toBoundedContinuousFunction_apply] at h
 
 /-- **Interpolation inequality for the time derivative.** For every `ε > 0` with
 `2 ε² ≤ b - a`, that is `ε ≤ √((b - a) / 2)`,
@@ -154,13 +161,6 @@ theorem norm_toBoundedContinuousFunction_timeDerivL_le (f : ParabolicC2HolderSpa
   rwa [hpow, timeExtension_of_mem, ← HolderSpace.toBoundedContinuousFunction_apply] at h
 
 /-! ### Lower-order parabolic Hölder norms -/
-
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
-/-- A field on the slab is recovered from its extension to all times. -/
-private theorem timeExtension_slab {G : Type*} (hab : a ≤ b) (g : slab (E := E) a b → G) :
-    (fun p : slab (E := E) a b ↦
-      timeExtension hab g (p : ParabolicSpaceTime E).space (slabTime p)) = g :=
-  funext fun p ↦ by rw [timeExtension_of_mem, slabMk_space_slabTime]
 
 /-- The parabolic seminorms of the value and of the spatial gradient, bounded by the existing
 absorption estimate on slabs. -/
@@ -205,12 +205,12 @@ private theorem eHolderNorm_valueL_add_eHolderNorm_spatialFDerivL_le (hα : α �
       simpa only [timeExtension_def, HolderSpace.toBoundedContinuousFunction_apply, coe_nnnorm]
         using (timeDerivL f).toBoundedContinuousFunction.norm_coe_le_norm _)
     (by
-      rw [timeExtension_slab, ← HolderSpace.coe_toBoundedContinuousFunction,
+      rw [timeExtension_space_slabTime, ← HolderSpace.coe_toBoundedContinuousFunction,
         (spatialSecondFDerivL f).memHolder.coe_nnHolderNorm_eq_eHolderNorm])
     (by
-      rw [timeExtension_slab, ← HolderSpace.coe_toBoundedContinuousFunction,
+      rw [timeExtension_space_slabTime, ← HolderSpace.coe_toBoundedContinuousFunction,
         (timeDerivL f).memHolder.coe_nnHolderNorm_eq_eHolderNorm])
-  rwa [timeExtension_slab, timeExtension_slab] at h
+  rwa [timeExtension_space_slabTime, timeExtension_space_slabTime] at h
 
 /-- For `α ≤ 1`, the value of a bounded order-two parabolic Hölder map is parabolically
 `α`-Hölder. -/
@@ -272,12 +272,6 @@ private theorem norm_valueL_add_nnHolderNorm_add_le (hα : α ≤ 1)
   nlinarith [mul_le_mul_of_nonneg_left hN (by positivity : (0 : ℝ) ≤ 6 * ε ^ (1 - (α : ℝ))),
     mul_le_mul_of_nonneg_right hpow₂ hM₀, mul_le_mul_of_nonneg_right hpow₃ hM₀,
     mul_le_mul hpow₁ hM₂ (norm_nonneg _) hP]
-
-/-- The supremum norm of the value is bounded by the order-two norm. -/
-private theorem norm_valueL_le (f : ParabolicC2HolderSpace α E F hab) : ‖valueL f‖ ≤ ‖f‖ := by
-  rw [norm_eq]
-  linarith [norm_nonneg (spatialFDerivL f), norm_nonneg (spatialSecondFDerivL f),
-    norm_nonneg (timeDerivL f)]
 
 /-- For `α ≤ 1`, the inclusion of the value into the bounded parabolic Hölder space
 `C_b^{α,α/2}` on the slab, as a continuous linear map. -/
