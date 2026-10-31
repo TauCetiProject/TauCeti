@@ -210,12 +210,19 @@ theorem charFun_eq_of_forall_integral_pow_eq (hμ : (0 : ℝ) ∈ interior (inte
 
 /-- **Moment determinacy for finite measures on `ℝ`.** A finite measure on `ℝ` with finite
 exponential moments near `0` is determined by its polynomial moments `∫ xⁿ`.  Combines
-`charFun_eq_of_forall_integral_pow_eq` with `MeasureTheory.Measure.ext_of_charFun`. -/
-theorem Measure.ext_of_forall_integral_pow_eq [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+`charFun_eq_of_forall_integral_pow_eq` with `MeasureTheory.Measure.ext_of_charFun`.
+Finiteness follows from the exponential-moment hypothesis at zero. -/
+theorem Measure.ext_of_forall_integral_pow_eq
     (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ))
     (hν : (0 : ℝ) ∈ interior (integrableExpSet id ν)) (hmom : ∀ n, ∫ x, x ^ n ∂μ = ∫ x, x ^ n ∂ν) :
-    μ = ν :=
-  Measure.ext_of_charFun (charFun_eq_of_forall_integral_pow_eq hμ hν hmom)
+    μ = ν := by
+  have hfinite (ρ : Measure ℝ) (hρ : (0 : ℝ) ∈ interior (integrableExpSet id ρ)) :
+      IsFiniteMeasure ρ := by
+    apply (integrable_const_iff_isFiniteMeasure (one_ne_zero : (1 : ℝ) ≠ 0)).mp
+    simpa [integrableExpSet] using interior_subset hρ
+  have := hfinite μ hμ
+  have := hfinite ν hν
+  exact Measure.ext_of_charFun (charFun_eq_of_forall_integral_pow_eq hμ hν hmom)
 
 /-- If `∫ e^{a|x|} dμ` is finite for a single `a > 0`, then `0` lies in the interior of the
 integrability set `integrableExpSet id μ`: for `|t| ≤ a` the exponential `e^{tx}` is dominated by
@@ -241,7 +248,6 @@ on `ℝ` for which some exponential moment `∫ e^{a|x|} dμ` with `a > 0` is fi
 polynomial moments.  This is the form the completeness argument consumes: the hypothesis holds for
 Gaussian decay and automatically for compactly supported measures. -/
 theorem Measure.ext_of_forall_integral_pow_eq_of_exists_integrable_exp
-    [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     (hμ : ∃ a : ℝ, 0 < a ∧ Integrable (fun x => Real.exp (a * |x|)) μ)
     (hν : ∃ a : ℝ, 0 < a ∧ Integrable (fun x => Real.exp (a * |x|)) ν)
     (hmom : ∀ n, ∫ x, x ^ n ∂μ = ∫ x, x ^ n ∂ν) :
