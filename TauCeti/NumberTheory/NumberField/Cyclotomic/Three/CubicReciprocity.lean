@@ -24,9 +24,10 @@ and two primes of different norms `p₁, p₂ ≡ 1 (mod 3)`.
 For a primary prime `π` of norm `p` and `P = π 𝓞 K`, let `χ = (· / P)_3` and let `ψ` be a primitive
 additive character of `𝓞 K ⧸ P`. Since `J(χ, χ) = π`, the cube of the Gauss sum is
 `g(χ, ψ) ^ 3 = p π` (`Ideal.gaussSum_powerResidueSymbol_three_pow_three_eq`). Dually, the Gauss
-sum power `Φ(P) = g(χ⁻¹, ψ) ^ 3` of Stickelberger's relation is `p π̄`, which we record as
-`π Φ(P) = p ^ 2` (`Ideal.mul_stickelbergerPhi_three_eq_absNorm_sq`). The residue symbol of `Φ(P)`
-at a second prime `P'` of norm prime to `3 p` is `(Φ(P) / P')_3 = (N P' / P)_3`
+sum power `Φ(P) = g(χ⁻¹, ψ) ^ 3` of Stickelberger's relation is `p` times the conjugate of `π`,
+which we record as `π Φ(P) = p ^ 2` (`Ideal.mul_stickelbergerPhi_three_eq_absNorm_sq`). The
+residue symbol of `Φ(P)` at a second prime `P'` of norm prime to `3 p` is
+`(Φ(P) / P')_3 = (N P' / P)_3`
 (`Ideal.powerResidueSymbol_stickelbergerPhi`), so
 
 `(π / P')_3 (N P' / P)_3 = (p / P')_3 ^ 2`.
