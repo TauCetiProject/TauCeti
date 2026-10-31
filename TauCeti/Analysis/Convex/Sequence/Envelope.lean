@@ -47,6 +47,8 @@ input: geometric conclusions about `lowerConvexEnvelope a` assume `IsAdmissible 
 * `lowerConvexEnvelope_add_affine`: adding a real affine function to the sequence adds it
   to the envelope; `lowerConvexEnvelope_const_add` allows an infinite constant, and
   `lowerConvexEnvelope_add_nsmul` states the shear by a finite slope.
+* `lowerConvexEnvelope_map_mul`: scaling the sequence by a positive real factor scales the
+  envelope by the same factor.
 * `lowerConvexEnvelope_shift`: shifting the sequence to the right, with infinite heights
   at the vacated indices, shifts the envelope in the same way.
 * `lowerConvexEnvelope_reflect`: reflecting points that are infinite beyond `N` in the index
@@ -434,6 +436,41 @@ theorem lowerConvexEnvelope_add_nsmul (a : ℕ → WithTop ℝ) {t : WithTop ℝ
     rw [← WithTop.coe_nsmul, nsmul_eq_mul, zero_add, mul_comm]
   simp only [key]
   exact lowerConvexEnvelope_add_affine a 0 m
+
+/-! ### Scaling of heights -/
+
+/-- Scaling the points by a positive real factor scales their lower convex envelope by the
+same factor. -/
+theorem IsLowerConvexEnvelope.map_mul (hh : IsLowerConvexEnvelope a h) {c : ℝ} (hc : 0 < c) :
+    IsLowerConvexEnvelope (fun n => (a n).map (c * ·)) (fun n => (h n).map (c * ·)) := by
+  have hmono {r : ℝ} (hr : 0 < r) {x y : WithTop ℝ} : x.map (r * ·) ≤ y.map (r * ·) ↔ x ≤ y :=
+    WithTop.map_le_iff _ (mul_le_mul_iff_right₀ hr)
+  have hinv (x : WithTop ℝ) : (x.map (c⁻¹ * ·)).map (c * ·) = x := by
+    cases x <;> simp only [WithTop.map_top, WithTop.map_coe, mul_inv_cancel_left₀ hc.ne']
+  refine ⟨hh.isConvexSeq.map_mul hc.le, fun n => (hmono hc).mpr (hh.le n), fun g hg hga n => ?_⟩
+  -- Scaling `g` back by `c⁻¹` gives a convex minorant of `a`.
+  have hle := hh.greatest (hg.map_mul (inv_nonneg.mpr hc.le)) fun k => by
+    rw [← hmono hc, hinv]
+    exact hga k
+  rw [← hinv (g n)]
+  exact (hmono hc).mpr (hle n)
+
+/-- Scaling a sequence by a positive real factor scales its lower convex envelope by the same
+factor. This holds for inadmissible sequences too, where both sides are the all-infinite
+fallback. -/
+theorem lowerConvexEnvelope_map_mul (a : ℕ → WithTop ℝ) {c : ℝ} (hc : 0 < c) :
+    lowerConvexEnvelope (fun n => (a n).map (c * ·)) =
+      fun n => (lowerConvexEnvelope a n).map (c * ·) := by
+  by_cases ha : IsAdmissible a
+  · exact ((isLowerConvexEnvelope_lowerConvexEnvelope ha).map_mul hc
+      |>.eq_lowerConvexEnvelope).symm
+  · have ha' : ¬IsAdmissible fun n => (a n).map (c * ·) := fun h' => ha <| by
+      have hinv (x : WithTop ℝ) : (x.map (c * ·)).map (c⁻¹ * ·) = x := by
+        cases x <;> simp only [WithTop.map_top, WithTop.map_coe, inv_mul_cancel_left₀ hc.ne']
+      simpa only [hinv] using h'.map_mul (inv_nonneg.mpr hc.le)
+    rw [lowerConvexEnvelope_of_not_isAdmissible ha, lowerConvexEnvelope_of_not_isAdmissible ha']
+    funext n
+    simp
 
 /-! ### Translation of indices -/
 
