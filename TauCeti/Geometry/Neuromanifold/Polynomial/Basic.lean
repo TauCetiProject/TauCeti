@@ -130,6 +130,12 @@ def polynomialInputDegree (P : J → MvPolynomial (W ⊕ X) K) : ℕ :=
     (P : J → MvPolynomial (W ⊕ X) K) : polynomialInputDegree P = 0 := by
   simp [polynomialInputDegree]
 
+/-- The uniform input-degree bound is at most `d` exactly when every output's collected input
+polynomial has total degree at most `d`. -/
+theorem polynomialInputDegree_le_iff {P : J → MvPolynomial (W ⊕ X) K} {d : ℕ} :
+    polynomialInputDegree P ≤ d ↔ ∀ j, (inputPolynomial P j).totalDegree ≤ d := by
+  simp [polynomialInputDegree]
+
 /-- Each output's collected input polynomial has degree at most the uniform bound. -/
 theorem totalDegree_inputPolynomial_le (P : J → MvPolynomial (W ⊕ X) K) (j : J) :
     (inputPolynomial P j).totalDegree ≤ polynomialInputDegree P :=
