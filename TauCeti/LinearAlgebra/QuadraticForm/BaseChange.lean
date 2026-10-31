@@ -229,6 +229,13 @@ theorem baseChange_one_tmul (Q : QuadraticForm R M) (v : M) :
     Q.baseChange A (1 ⊗ₜ v) = algebraMap R A (Q v) := by
   rw [baseChange_tmul, mul_one, Algebra.smul_def, mul_one]
 
+/-- Extending scalars evaluates a quadratic form at the base change `1 ⊗ₜ b i` of a basis vector
+by applying the algebra map to its value at `b i`. -/
+theorem baseChange_apply_basis_baseChange (Q : QuadraticForm R M) {ι : Type*}
+    (b : Module.Basis ι R M) (i : ι) :
+    Q.baseChange A (b.baseChange A i) = algebraMap R A (Q (b i)) := by
+  rw [Module.Basis.baseChange_apply, baseChange_one_tmul]
+
 /-- Polarization after base change, evaluated on pure tensors. -/
 @[simp]
 theorem polar_baseChange_tmul (Q : _root_.QuadraticForm R M) (a b : A) (x y : M) :

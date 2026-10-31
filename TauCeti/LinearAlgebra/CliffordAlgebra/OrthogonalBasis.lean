@@ -137,10 +137,9 @@ theorem basis_repr_involute (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (x :
   refine LinearMap.congr_fun ((basis Q b).ext
     (f₁ := (basis Q b).coord s ∘ₗ involute.toLinearMap)
     (f₂ := (-1 : R) ^ s.card • (basis Q b).coord s) fun t ↦ ?_) x
-  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, involute_basis hb, map_smul,
-    Module.Basis.coord_apply, Module.Basis.repr_self, LinearMap.smul_apply, Finsupp.single_apply,
-    smul_eq_mul, mul_ite, mul_one, mul_zero]
-  split_ifs with h <;> simp [h]
+  rw [LinearMap.comp_apply, AlgHom.toLinearMap_apply, involute_basis hb, map_smul,
+    LinearMap.smul_apply, Module.Basis.coord_apply, Module.Basis.repr_self]
+  by_cases h : t = s <;> simp [h]
 
 /-- The full-support Clifford basis vector of an odd-dimensional orthogonal basis is central. -/
 theorem basis_univ_mem_center_of_odd_card [Fintype I]
@@ -535,10 +534,9 @@ theorem scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero [IsStrictOrd
 theorem scalarTrace_reverse_mul_self_eq_zero_iff [IsStrictOrderedRing R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, 0 < Q (b i))
     {x : CliffordAlgebra Q} : scalarTrace Q (reverse x * x) = 0 ↔ x = 0 := by
-  rw [scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero hb fun i ↦ (hQ i).le,
-    ← (basis Q b).repr.map_eq_zero_iff]
-  exact ⟨fun h ↦ Finsupp.ext fun s ↦ h s (Finset.prod_pos fun i _ ↦ hQ i).ne',
-    fun h s _ ↦ by simp [h]⟩
+  rw [scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero hb fun i ↦ (hQ i).le]
+  simp only [fun s ↦ (Finset.prod_pos (s := s) fun i _ ↦ hQ i).ne', ne_eq, not_false_eq_true,
+    forall_const, ← Module.Basis.coord_apply, Module.Basis.forall_coord_eq_zero_iff]
 
 end Ordered
 
