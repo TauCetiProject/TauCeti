@@ -36,6 +36,8 @@ to those of Mathlib's shift on cochain complexes.
 * `TauCeti.PeriodicComplex.shiftFunctorIsoId`: the periodicity isomorphism `X⟦k⟧ ≅ X` for even
   `k` divisible by `n`.
 * `Homotopy.periodicShift`: the shift of a homotopy.
+* `Homotopy.comm_periodic_shift_neg_one`: the components of a null-homotopy of a morphism out of
+  the shift by `-1`, read off on the unshifted complex.
 * `TauCeti.PeriodicComplex.homotopyCategoryShiftFunctorIsoId`: periodicity in the homotopy
   category.
 
@@ -271,6 +273,20 @@ lemma periodicShift_hom {K L : HomologicalComplex C (ComplexShape.up (ZMod n))}
     (h.periodicShift k).hom i j =
       k.negOnePow • h.hom (i + k) (j + k) := by
   rw [periodicShift.eq_def]
+
+/-- The relation `Homotopy.comm` for a null-homotopy `h` of a morphism `u : K⟦-1⟧ ⟶ L` out of the
+shift by `-1`, read off on `K` through the identification `(K⟦-1⟧)ⁱ⁺¹ = Kⁱ`: the sign comes from
+the differential of `K⟦-1⟧`. -/
+lemma comm_periodic_shift_neg_one {K L : HomologicalComplex C (ComplexShape.up (ZMod n))}
+    {u : K⟦(-1 : ℤ)⟧ ⟶ L} (h : Homotopy u 0) (i : ZMod n) :
+    (K.XIsoOfEq (by push_cast; ring) : K.X i ≅ (K⟦(-1 : ℤ)⟧).X (i + 1)).hom ≫ u.f (i + 1) =
+      -(K.d i (i + 1) ≫
+          (K.XIsoOfEq (by push_cast; ring) : K.X (i + 1) ≅ (K⟦(-1 : ℤ)⟧).X (i + 1 + 1)).hom ≫
+            h.hom (i + 1 + 1) (i + 1)) +
+        (K.XIsoOfEq (by push_cast; ring) : K.X i ≅ (K⟦(-1 : ℤ)⟧).X (i + 1)).hom ≫
+          h.hom (i + 1) i ≫ L.d i (i + 1) := by
+  rw [h.comm (i + 1), dNext_eq (i' := i + 1 + 1) _ rfl, prevD_eq (j' := i) _ rfl]
+  simp [TauCeti.PeriodicComplex.shiftFunctor_obj_d', XIsoOfEq_hom_comp_d_assoc]
 
 end Homotopy
 

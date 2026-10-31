@@ -26,6 +26,8 @@ boundaries and homology, used for splitting complexes and for the universal coef
 * `HomologicalComplex.toBoundaries`: the corestriction `Kᵢ ⟶ Bⱼ` of the differential.
 * `HomologicalComplex.epi_toBoundaries`: it is an epimorphism for a relation `i → j`.
 * `HomologicalComplex.toBoundariesIsCokernel`: it is then the cokernel of `Zᵢ ⟶ Kᵢ`.
+* `HomologicalComplex.ExactAt.isIso_kernel_ι_homologyπ`: at a degree where `K` is exact, the
+  boundaries are all of the cycles.
 -/
 
 public section
@@ -78,5 +80,13 @@ def toBoundariesIsCokernel {i j : ι} (hij : c.Rel i j) :
   Abelian.epiIsCokernelOfKernel _
     (isKernelOfComp (kernel.ι _ ≫ K.iCycles j) (K.d i j) (K.cyclesIsKernel i j (c.next_eq' hij))
       (K.iCycles_toBoundaries i j) (by simp))
+
+variable {K}
+
+/-- At a degree where a complex is exact, the boundaries `Bⱼ = ker (Zⱼ ⟶ Hⱼ)` are all of the
+cycles. -/
+lemma ExactAt.isIso_kernel_ι_homologyπ {j : ι} (hj : K.ExactAt j) :
+    IsIso (kernel.ι (K.homologyπ j)) :=
+  kernel.ι_of_zero (hj.isZero_homology.eq_of_tgt _ _)
 
 end HomologicalComplex
