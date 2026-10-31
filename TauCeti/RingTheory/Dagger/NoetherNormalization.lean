@@ -181,12 +181,14 @@ namespace IsDaggerAlgebra
 
 variable {A : Type*} [CommRing A] [Algebra K A] [IsDaggerAlgebra K A]
 
+variable (K) in
 /-- **Residue fields of dagger algebras are finite.** Every maximal-ideal quotient of a
 `K`-dagger algebra is finite-dimensional over `K`. -/
 theorem finite_quotient_of_isMaximal (m : Ideal A) [m.IsMaximal] : Module.Finite K (A ⧸ m) := by
   obtain ⟨n, π, hπ⟩ := exists_surjective (K := K) (A := A)
   exact washnitzerAlgebra.finite_quotient_of_isMaximal (AlgHom.Finite.of_surjective π hπ) m
 
+variable (K) in
 /-- If the radical of an ideal `q` of a `K`-dagger algebra `A` is maximal, then `A ⧸ q` is
 finite-dimensional over `K`. -/
 theorem finite_quotient_of_isMaximal_radical (q : Ideal A) [q.radical.IsMaximal] :
