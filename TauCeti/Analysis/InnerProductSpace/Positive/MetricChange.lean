@@ -29,9 +29,10 @@ Unlike the eigenbasis construction of `TauCeti.exists_continuousLinearEquiv_inne
 transport involves no choice. It is characterized as the unique positive operator `S` with
 `S * H * S = 1`, and it is natural: pulling `h` back along a linear isometry equivalence `e`
 conjugates the transport by `e`. When `E` is finite-dimensional, every other isometry from
-`(E, ⟪·, ·⟫)` to `(E, h)` is the transport composed with a unique orthogonal automorphism of `E`.
-In particular, composing the transports of two successive changes of inner product need not give
-the transport of the composite change, but it differs from it only by an orthogonal automorphism.
+`(E, ⟪·, ·⟫)` to `(E, h)` is the transport composed with an orthogonal automorphism of `E`. This
+classification is the tool for comparing the composite of the transports of two successive changes
+of inner product with the transport of the composite change; that comparison is not formalized
+here, since every result in this file is relative to the fixed inner product of `E`.
 
 ## Main declarations
 
