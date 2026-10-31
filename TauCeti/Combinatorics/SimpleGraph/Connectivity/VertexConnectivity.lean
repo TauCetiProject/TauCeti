@@ -53,8 +53,8 @@ in Mathematics 173, Springer, 2017, Section 1.4.
   vertex other than their ends make their ends `k`-vertex-reachable.
 * `SimpleGraph.isVertexConnected_iff_le_vertexConnectivity`: on a nonempty vertex type, the
   numerical invariant records exactly the thresholds at which `G` is vertex-connected.
-* `SimpleGraph.vertexConnectivity_add_one_le_card`: the vertex connectivity of a graph on a
-  nonempty vertex type is less than the number of vertices.
+* `SimpleGraph.vertexConnectivity_add_one_le_card`: on a nonempty vertex type, `κ + 1` is at
+  most the number of vertices, where `κ` is the vertex connectivity.
 * `SimpleGraph.vertexConnectivity_top`: the complete graph has vertex connectivity
   `ENat.card V - 1`.
 * `SimpleGraph.isVertexReachable_iff_exists_paths`: **Menger's theorem**, predicate form, for
@@ -144,10 +144,11 @@ theorem Adj.isVertexReachable (h : G.Adj u v) : G.IsVertexReachable k u v :=
 
 /-- **Weak duality for vertex reachability.** If there are `n` walks from `u` to `v` pairwise
 sharing no vertex other than `u` and `v`, then `u` and `v` are `n`-vertex-reachable. No finiteness
-is needed: a set of fewer than `n` vertices is finite, and weak duality for internally disjoint
-walks (`SimpleGraph.card_le_card_of_not_reachable_induce`) applies to it. -/
+assumption on `V` is needed. -/
 theorem isVertexReachable_of_pairwise_internallyDisjoint {n : ℕ} {P : Fin n → G.Walk u v}
     (hP : Pairwise fun i j ↦ (P i).InternallyDisjoint (P j)) : G.IsVertexReachable n u v := by
+  -- A set of fewer than `n` vertices is finite, so weak duality for internally disjoint walks
+  -- (`SimpleGraph.card_le_card_of_not_reachable_induce`) applies to it.
   intro s hs hu hv
   lift s to Finset V using Set.encard_lt_top_iff.1 (hs.trans (ENat.natCast_lt_top n))
   by_contra h
@@ -201,6 +202,7 @@ theorem isVertexConnected_zero : G.IsVertexConnected 0 ↔ Nonempty V := by
 
 /-- A graph is `1`-vertex-connected exactly when it is connected and has at least two
 vertices. -/
+@[simp]
 theorem isVertexConnected_one : G.IsVertexConnected 1 ↔ G.Connected ∧ Nontrivial V := by
   rw [IsVertexConnected, ENat.add_one_le_iff ENat.one_ne_top, ENat.one_lt_card_iff_nontrivial,
     connected_iff]
@@ -215,6 +217,7 @@ theorem IsVertexConnected.connected (hk : k ≠ 0) (h : G.IsVertexConnected k) :
   (connected_iff G).2 ⟨h.preconnected hk, h.nonempty⟩
 
 /-- The complete graph is `k`-vertex-connected exactly when it has more than `k` vertices. -/
+@[simp]
 theorem isVertexConnected_top_iff : (⊤ : SimpleGraph V).IsVertexConnected k ↔
     k + 1 ≤ ENat.card V := by
   refine ⟨And.left, fun h ↦ ⟨h, fun u v ↦ ?_⟩⟩
@@ -254,8 +257,8 @@ theorem vertexConnectivity_le_card : G.vertexConnectivity ≤ ENat.card V :=
 theorem vertexConnectivity_ne_top [Finite V] : G.vertexConnectivity ≠ ⊤ :=
   ne_top_of_le_ne_top ENat.card_lt_top_of_finite.ne vertexConnectivity_le_card
 
-/-- The vertex connectivity of a graph on a nonempty vertex type is less than the number of
-vertices. -/
+/-- On a nonempty vertex type, the vertex connectivity plus one is at most the number of
+vertices, so the vertex connectivity is strictly less than it when `V` is finite. -/
 theorem vertexConnectivity_add_one_le_card [Nonempty V] :
     G.vertexConnectivity + 1 ≤ ENat.card V := by
   cases finite_or_infinite V
