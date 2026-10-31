@@ -107,6 +107,12 @@ discriminant group `A_L`. -/
 def discriminantKernel (L : IntegralLattice V) : Subgroup (Isometry L L) :=
   (discriminantGroupHom L).ker
 
+/-- The discriminant kernel is the kernel of the action `O(L) →* Aut(A_L)`. -/
+@[simp]
+theorem ker_discriminantGroupHom (L : IntegralLattice V) :
+    (discriminantGroupHom L).ker = discriminantKernel L :=
+  (rfl)
+
 instance (L : IntegralLattice V) : (discriminantKernel L).Normal :=
   MonoidHom.normal_ker _
 
