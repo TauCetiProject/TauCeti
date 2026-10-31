@@ -112,26 +112,10 @@ def edges {x y : α} : G.Walk x y → List β
   | .nil => []
   | .cons e _ p => e :: p.edges
 
-/-- The vertices visited by a walk starting at an actual vertex, as actual vertices. -/
-def supportAttach {x y : α} : (p : G.Walk x y) → (hx : x ∈ V(G)) → List G.vertexSet
-  | .nil, hx => [⟨x, hx⟩]
-  | .cons _ h p, hx => ⟨x, hx⟩ :: p.supportAttach h.right_mem
-
 /-- The edges traversed by a walk, as actual edges. -/
 def edgesAttach {x y : α} : (p : G.Walk x y) → List G.edgeSet
   | .nil => []
   | .cons e h p => ⟨e, h.edge_mem⟩ :: p.edgesAttach
-
-@[simp]
-theorem supportAttach_nil (hx : x ∈ V(G)) :
-    (nil : G.Walk x x).supportAttach hx = [⟨x, hx⟩] :=
-  (rfl)
-
-@[simp]
-theorem supportAttach_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z)
-    (hx : x ∈ V(G)) :
-    (cons e h p).supportAttach hx = ⟨x, hx⟩ :: p.supportAttach h.right_mem :=
-  (rfl)
 
 @[simp]
 theorem edgesAttach_nil : (nil : G.Walk x x).edgesAttach = [] :=
@@ -141,14 +125,6 @@ theorem edgesAttach_nil : (nil : G.Walk x x).edgesAttach = [] :=
 theorem edgesAttach_cons (e : β) (h : G.IsLink e x y) (p : G.Walk y z) :
     (cons e h p).edgesAttach = ⟨e, h.edge_mem⟩ :: p.edgesAttach :=
   (rfl)
-
-/-- Forgetting actual-vertex membership from `supportAttach` gives the support. -/
-@[simp]
-theorem supportAttach_unattach (p : G.Walk x y) (hx : x ∈ V(G)) :
-    (p.supportAttach hx).unattach = p.support := by
-  induction p with
-  | nil => rfl
-  | cons e h p ih => simp [supportAttach, support, ih]
 
 /-- Forgetting actual-edge membership from `edgesAttach` gives the edge list. -/
 @[simp]

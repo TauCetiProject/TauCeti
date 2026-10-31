@@ -114,6 +114,22 @@ theorem toPrefunctor_trans (f : Iso G H) (g : Iso H K) :
   exact (@Quiver.Hom.cast_heq K.vertexSet (Quiver.mk K.BidirectedHom) _ _ _ _ _ _ _).symm.trans
     (heq_of_eq (mapHom_trans f g a))
 
+private theorem cast_mapPath_eq_of_eq
+    {f g : @Prefunctor G.vertexSet (Quiver.mk G.BidirectedHom)
+      H.vertexSet (Quiver.mk H.BidirectedHom)} (h : f = g)
+    {x y : G.vertexSet} (p : ArrowWalk G.BidirectedHom x y) :
+    @Quiver.Path.cast H.vertexSet (Quiver.mk H.BidirectedHom) _ _ _ _
+      (congrArg (fun k ↦ @Prefunctor.obj G.vertexSet (Quiver.mk G.BidirectedHom)
+        H.vertexSet (Quiver.mk H.BidirectedHom) k x) h)
+      (congrArg (fun k ↦ @Prefunctor.obj G.vertexSet (Quiver.mk G.BidirectedHom)
+        H.vertexSet (Quiver.mk H.BidirectedHom) k y) h)
+      (@Prefunctor.mapPath G.vertexSet (Quiver.mk G.BidirectedHom)
+        H.vertexSet (Quiver.mk H.BidirectedHom) f x y p) =
+        @Prefunctor.mapPath G.vertexSet (Quiver.mk G.BidirectedHom)
+          H.vertexSet (Quiver.mk H.BidirectedHom) g x y p := by
+  subst g
+  rfl
+
 /-- Transport a directed walk of the bidirected arrow family. -/
 def mapPath (f : Iso G H) {x y : G.vertexSet} (p : ArrowWalk G.BidirectedHom x y) :
     ArrowWalk H.BidirectedHom (f.vertexEquiv x) (f.vertexEquiv y) :=
@@ -140,17 +156,11 @@ theorem mapPath_cons (f : Iso G H) {x y z : G.vertexSet}
 theorem mapPath_refl (G : Graph α β) {x y : G.vertexSet}
     (p : ArrowWalk G.BidirectedHom x y) :
     @Quiver.Path.cast G.vertexSet (Quiver.mk G.BidirectedHom) _ _ x y
-      (refl_vertexEquiv_apply G x) (refl_vertexEquiv_apply G y) ((refl G).mapPath p) = p := by
-  induction p with
-  | nil => simp
-  | cons p a ih =>
-      rw [mapPath_cons, @Quiver.Path.cast_eq_iff_heq G.vertexSet (Quiver.mk G.BidirectedHom)]
-      congr 1
-      exacts [refl_vertexEquiv_apply G _, refl_vertexEquiv_apply G _,
-        refl_vertexEquiv_apply G _,
-        (@Quiver.Path.cast_eq_iff_heq G.vertexSet (Quiver.mk G.BidirectedHom) _ _ _ _ _ _ _ _).1 ih,
-        (@Quiver.Hom.cast_eq_iff_heq G.vertexSet (Quiver.mk G.BidirectedHom) _ _ _ _ _ _ _ _).1
-          (mapHom_refl G a)]
+      (refl_vertexEquiv_apply G x) (refl_vertexEquiv_apply G y) ((refl G).mapPath p) = p :=
+  -- The public prefunctor law identifies this transport with the identity prefunctor.
+  by
+    exact (cast_mapPath_eq_of_eq (toPrefunctor_refl G) p).trans
+      (@Prefunctor.mapPath_id G.vertexSet (Quiver.mk G.BidirectedHom) x y p)
 
 /-- Transport along a composite isomorphism applies the two directed-walk transports in order. -/
 @[simp]
@@ -158,18 +168,13 @@ theorem mapPath_trans (f : Iso G H) (g : Iso H K) {x y : G.vertexSet}
     (p : ArrowWalk G.BidirectedHom x y) :
     @Quiver.Path.cast K.vertexSet (Quiver.mk K.BidirectedHom) _ _ _ _
       (trans_vertexEquiv_apply f g x) (trans_vertexEquiv_apply f g y) ((f.trans g).mapPath p) =
-        g.mapPath (f.mapPath p) := by
-  induction p with
-  | nil => simp
-  | cons p a ih =>
-      rw [mapPath_cons, mapPath_cons, mapPath_cons,
-        @Quiver.Path.cast_eq_iff_heq K.vertexSet (Quiver.mk K.BidirectedHom)]
-      congr 1
-      exacts [trans_vertexEquiv_apply f g _, trans_vertexEquiv_apply f g _,
-        trans_vertexEquiv_apply f g _,
-        (@Quiver.Path.cast_eq_iff_heq K.vertexSet (Quiver.mk K.BidirectedHom) _ _ _ _ _ _ _ _).1 ih,
-        (@Quiver.Hom.cast_eq_iff_heq K.vertexSet (Quiver.mk K.BidirectedHom) _ _ _ _ _ _ _ _).1
-          (mapHom_trans f g a)]
+        g.mapPath (f.mapPath p) :=
+  -- The public prefunctor law identifies this transport with composite prefunctor transport.
+  by
+    exact (cast_mapPath_eq_of_eq (toPrefunctor_trans f g) p).trans
+      (@Prefunctor.mapPath_comp_apply G.vertexSet (Quiver.mk G.BidirectedHom)
+          H.vertexSet (Quiver.mk H.BidirectedHom) f.toPrefunctor
+          K.vertexSet (Quiver.mk K.BidirectedHom) g.toPrefunctor x y p)
 
 /-- Mapping a directed walk forward and then along the inverse isomorphism fixes it. -/
 @[simp]
@@ -294,7 +299,6 @@ theorem mapWalk_append (f : Iso G H) {x y z : G.vertexSet}
     f.mapWalk (p.append q) = (f.mapWalk p).append (f.mapWalk q) := by
   simp [mapWalk, Walk.toBidirected_append]
 
-/-- Walk transport commutes with reversal. -/
 private theorem mapWalk_reverse_aux (f : Iso G H) {x y : α} (p : G.Walk x y)
     (hx : x ∈ G.vertexSet) (hy : y ∈ G.vertexSet) :
     f.mapWalk (x := ⟨y, hy⟩) (y := ⟨x, hx⟩) p.reverse =
@@ -309,6 +313,7 @@ private theorem mapWalk_reverse_aux (f : Iso G H) {x y : α} (p : G.Walk x y)
       rw [Walk.reverse_cons, happ, ih h.right_mem hy, hc, Walk.reverse_cons]
       rw [mapWalk_toWalk]
 
+/-- Walk transport commutes with reversal. -/
 @[simp]
 theorem mapWalk_reverse (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
     f.mapWalk p.reverse = (f.mapWalk p).reverse := by
@@ -348,82 +353,77 @@ theorem mapWalk_mapWalk_symm (f : Iso G H) {x y : H.vertexSet} (p : H.Walk x y) 
   simp [mapWalk, ← ArrowWalk.toGraphWalk_cast]
 
 /-- The support of a transported walk is the pointwise image of the original support. -/
-private theorem support_mapWalk_aux (f : Iso G H) {x y : α} (p : G.Walk x y)
-    (hx : x ∈ G.vertexSet) (hy : y ∈ G.vertexSet) :
-    (f.mapWalk (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) p).support =
-      ((p.supportAttach hx).map f.vertexEquiv).unattach := by
-  induction p with
-  | nil => rw [mapWalk_nil, Walk.support_nil, Walk.supportAttach_nil, List.map_cons,
-      List.map_nil, List.unattach_cons, List.unattach_nil]
-  | @cons x y z e h p ih =>
-      have hc := mapWalk_cons' f e h p hx hy
-      rw [hc, Walk.support_cons, Walk.supportAttach_cons, List.map_cons, List.unattach_cons,
-        ih h.right_mem hy]
-
 theorem support_mapWalk (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
-    (f.mapWalk p).support = ((p.supportAttach x.2).map f.vertexEquiv).unattach := by
-  exact support_mapWalk_aux f p x.2 y.2
+    (f.mapWalk p).support = ((p.toBidirected x.2).vertices.map f.vertexEquiv).unattach := by
+  rw [mapWalk, ArrowWalk.support_toGraphWalk, vertices_mapPath]
 
 /-- A vertex occurs on a transported walk exactly when its inverse image occurs on the original
 walk. -/
-private theorem vertexEquiv_mem_support_mapWalk_iff_aux (f : Iso G H) {x y : α}
-    (p : G.Walk x y) (hx : x ∈ G.vertexSet) (hy : y ∈ G.vertexSet) (z : G.vertexSet) :
-    (f.vertexEquiv z : α') ∈
-      (f.mapWalk (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) p).support ↔ (z : α) ∈ p.support := by
-  induction p with
-  | nil =>
-      simp only [mapWalk_nil, Walk.support_nil, List.mem_singleton]
-      rw [Subtype.coe_injective.eq_iff, f.vertexEquiv.injective.eq_iff, Subtype.ext_iff]
-  | @cons x y z' a h p ih =>
-      have hc := mapWalk_cons' f a h p hx hy
-      rw [hc]
-      simp only [Walk.support_cons, List.mem_cons]
-      rw [Subtype.coe_injective.eq_iff, f.vertexEquiv.injective.eq_iff, Subtype.ext_iff,
-        ih h.right_mem hy]
-
 @[simp]
 theorem vertexEquiv_mem_support_mapWalk_iff (f : Iso G H) {x y : G.vertexSet}
     (p : G.Walk x y) (z : G.vertexSet) :
     (f.vertexEquiv z : α') ∈ (f.mapWalk p).support ↔ (z : α) ∈ p.support := by
-  exact vertexEquiv_mem_support_mapWalk_iff_aux f p x.2 y.2 z
+  have hleft :
+      (f.vertexEquiv z : α') ∈
+          ((p.toBidirected x.2).vertices.map f.vertexEquiv).unattach ↔
+        f.vertexEquiv z ∈ (p.toBidirected x.2).vertices.map f.vertexEquiv := by
+    rw [List.mem_unattach]
+    constructor
+    · rintro ⟨_, h⟩
+      simpa using h
+    · intro h
+      exact ⟨(f.vertexEquiv z).2, h⟩
+  have hright :
+      (z : α) ∈ (p.toBidirected x.2).vertices.unattach ↔
+        z ∈ (p.toBidirected x.2).vertices := by
+    rw [List.mem_unattach]
+    constructor
+    · rintro ⟨_, h⟩
+      simpa using h
+    · intro h
+      exact ⟨z.2, h⟩
+  rw [support_mapWalk, ← Walk.vertices_toBidirected p x.2, hleft, hright,
+    List.mem_map_of_injective f.vertexEquiv.injective]
 
-/-- The edges of a transported walk are the pointwise image of the original traversed edges. -/
 private theorem edges_mapWalk_aux (f : Iso G H) {x y : α} (p : G.Walk x y)
     (hx : x ∈ G.vertexSet) (hy : y ∈ G.vertexSet) :
     (f.mapWalk (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) p).edges =
       (p.edgesAttach.map f.edgeEquiv).unattach := by
   induction p with
-  | nil => rw [mapWalk_nil, Walk.edges_nil, Walk.edgesAttach_nil, List.map_nil,
-      List.unattach_nil]
+  | nil => simp
   | @cons x y z e h p ih =>
       have hc := mapWalk_cons' f e h p hx hy
-      rw [hc, Walk.edges_cons, Walk.edgesAttach_cons, List.map_cons, List.unattach_cons,
-        ih h.right_mem hy]
+      simp [hc, ih h.right_mem hy]
 
+/-- The edges of a transported walk are the pointwise image of the original traversed edges. -/
 theorem edges_mapWalk (f : Iso G H) {x y : G.vertexSet} (p : G.Walk x y) :
     (f.mapWalk p).edges = (p.edgesAttach.map f.edgeEquiv).unattach := by
   exact edges_mapWalk_aux f p x.2 y.2
 
 /-- An edge occurs on a transported walk exactly when its inverse image occurs on the original
 walk. -/
-private theorem edgeEquiv_mem_edges_mapWalk_iff_aux (f : Iso G H) {x y : α}
-    (p : G.Walk x y) (hx : x ∈ G.vertexSet) (hy : y ∈ G.vertexSet) (e : G.edgeSet) :
-    (f.edgeEquiv e : β') ∈
-      (f.mapWalk (x := ⟨x, hx⟩) (y := ⟨y, hy⟩) p).edges ↔ (e : β) ∈ p.edges := by
-  induction p with
-  | nil => simp
-  | @cons x y z a h p ih =>
-      have hc := mapWalk_cons' f a h p hx hy
-      rw [hc]
-      simp only [Walk.edges_cons, List.mem_cons]
-      rw [Subtype.coe_injective.eq_iff, f.edgeEquiv.injective.eq_iff, Subtype.ext_iff,
-        ih h.right_mem hy]
-
 @[simp]
 theorem edgeEquiv_mem_edges_mapWalk_iff (f : Iso G H) {x y : G.vertexSet}
     (p : G.Walk x y) (e : G.edgeSet) :
     (f.edgeEquiv e : β') ∈ (f.mapWalk p).edges ↔ (e : β) ∈ p.edges := by
-  exact edgeEquiv_mem_edges_mapWalk_iff_aux f p x.2 y.2 e
+  have hleft :
+      (f.edgeEquiv e : β') ∈ (p.edgesAttach.map f.edgeEquiv).unattach ↔
+        f.edgeEquiv e ∈ p.edgesAttach.map f.edgeEquiv := by
+    rw [List.mem_unattach]
+    constructor
+    · rintro ⟨_, h⟩
+      simpa using h
+    · intro h
+      exact ⟨(f.edgeEquiv e).2, h⟩
+  have hright : (e : β) ∈ p.edgesAttach.unattach ↔ e ∈ p.edgesAttach := by
+    rw [List.mem_unattach]
+    constructor
+    · rintro ⟨_, h⟩
+      simpa using h
+    · intro h
+      exact ⟨e.2, h⟩
+  rw [edges_mapWalk, ← Walk.edgesAttach_unattach p, hleft, hright,
+    List.mem_map_of_injective f.edgeEquiv.injective]
 
 /-- Walk transport preserves and reflects trails. -/
 @[simp]
