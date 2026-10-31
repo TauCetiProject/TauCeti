@@ -122,15 +122,22 @@ theorem surjective_mfderiv_eval_dehomogenize_affineChart_iff [Fintype ι]
     (Projectivization.affineOpenPartialHomeomorph_mem_atlas i)).mfderiv_bijective
     (by simpa using hi)
   rw [Projectivization.coe_affineOpenPartialHomeomorph] at hbij
-  rw [← surjective_fderiv_eval_dehomogenize_affineChart_iff i hp hL hi,
-    show (fun w ↦ fun k ↦ eval (Projectivization.affineChart i w) (dehomogenize i (p k))) =
-      (fun z : Fin n → ℂ ↦ fun k ↦ eval z (dehomogenize i (p k))) ∘
-        Projectivization.affineChart i from rfl,
-    mfderiv_comp L ((hasFDerivAt_eval_family _ _).differentiableAt.mdifferentiableAt) hchart,
-    mfderiv_eq_fderiv, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp,
-    ContinuousLinearMap.coe_comp, Function.Surjective.of_comp_iff _ hbij.surjective,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe, EquivLike.comp_surjective,
-    Function.Surjective.of_comp_iff _ (NormedSpace.fromTangentSpace _).surjective]
+  -- The chain rule through the chart `affineChart i`, with the Fréchet derivative of the
+  -- polynomial equations read between tangent spaces.
+  have hcomp := mfderiv_comp L
+    (hasFDerivAt_eval_family (fun k ↦ dehomogenize i (p k)) _).differentiableAt.mdifferentiableAt
+    hchart
+  rw [mfderiv_eq_fderiv] at hcomp
+  -- Surjectivity is unchanged by the bijective chart differential and tangent identifications.
+  have hiff : Function.Surjective (mfderiv 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, ι → ℂ)
+      ((fun z : Fin n → ℂ ↦ fun k ↦ eval z (dehomogenize i (p k))) ∘
+        Projectivization.affineChart i) L) ↔
+      Function.Surjective (fderiv ℂ (fun z ↦ fun k ↦ eval z (dehomogenize i (p k)))
+        (Projectivization.affineChart i L)) := by
+    simp only [hcomp, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe]
+    rw [Function.Surjective.of_comp_iff _ hbij.surjective, EquivLike.comp_surjective,
+      Function.Surjective.of_comp_iff _ (NormedSpace.fromTangentSpace _).surjective]
+  exact hiff.trans (surjective_fderiv_eval_dehomogenize_affineChart_iff i hp hL hi)
 
 /-- At a common zero, derivatives of homogeneous chart equations transform by the homogeneous
 transition factor, after precomposition with the derivative of the native chart transition.

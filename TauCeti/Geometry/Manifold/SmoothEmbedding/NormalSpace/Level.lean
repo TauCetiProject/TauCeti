@@ -90,18 +90,11 @@ omit [FiniteDimensional 𝕜 F] hn hg hgf hsurj hdim in
 private noncomputable abbrev mfderivV (g : N → V) : TangentSpace J (f x) →ₗ[𝕜] V :=
   (mfderiv J 𝓘(𝕜, V) g (f x)).toLinearMap
 
-/-- The map induced on normal classes by the differential of `g` is bijective. -/
-private theorem bijective_normalLift_mfderiv :
-    Function.Bijective (f.normalLift x hn (mfderivV f x g) fun _ ⟨u, hu⟩ ↦
-      hu ▸ (f.exact_mfderiv_mfderiv x hn hg hgf hsurj hdim).apply_apply_eq_zero u) := by
-  have hlift := f.normalLift_comp_normalClass x hn (mfderivV f x g) fun _ ⟨u, hu⟩ ↦
-    hu ▸ (f.exact_mfderiv_mfderiv x hn hg hgf hsurj hdim).apply_apply_eq_zero u
-  refine ⟨(injective_iff_map_eq_zero _).2 fun a ha ↦ ?_, fun w ↦ ?_⟩
-  · obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn a
-    rw [normalClass_eq_zero_iff, f.tangentRange_eq_ker_mfderiv x hn hg hgf hsurj hdim]
-    exact congr($hlift v).symm.trans ha
-  · obtain ⟨v, rfl⟩ := hsurj w
-    exact ⟨f.normalClass x hn v, congr($hlift v)⟩
+/-- The linear equivalence underlying `TauCeti.SmoothEmbedding.normalSpaceEquivOfLevel`: the
+tangent range is the kernel of `dg`, so the first isomorphism theorem applies. -/
+private noncomputable def normalSpaceLinearEquivOfLevel : f.NormalSpace x hn ≃ₗ[𝕜] V :=
+  (Submodule.quotEquivOfEq _ _ (f.tangentRange_eq_ker_mfderiv x hn hg hgf hsurj hdim)).trans
+    ((mfderivV f x g).quotKerEquivOfSurjective hsurj)
 
 variable [CompleteSpace 𝕜]
 
@@ -113,8 +106,7 @@ noncomputable def normalSpaceEquivOfLevel : f.NormalSpace x hn ≃L[𝕜] V :=
   -- Tangent spaces are their model spaces, so the target `V` of `dg` is finite-dimensional.
   haveI : FiniteDimensional 𝕜 (TangentSpace J (f x)) := inferInstanceAs (FiniteDimensional 𝕜 F)
   haveI : FiniteDimensional 𝕜 V := Module.Finite.of_surjective (mfderivV f x g) hsurj
-  (LinearEquiv.ofBijective _
-    (f.bijective_normalLift_mfderiv x hn hg hgf hsurj hdim)).symm.toContinuousLinearEquiv.symm
+  (f.normalSpaceLinearEquivOfLevel x hn hg hgf hsurj hdim).symm.toContinuousLinearEquiv.symm
 
 /-- The normal-space equivalence induced by `g` sends the normal class of an ambient tangent
 vector `v` to the differential of `g` applied to `v`. -/
@@ -122,10 +114,7 @@ vector `v` to the differential of `g` applied to `v`. -/
 theorem normalSpaceEquivOfLevel_normalClass (v : TangentSpace J (f x)) :
     f.normalSpaceEquivOfLevel x hn hg hgf hsurj hdim (f.normalClass x hn v) =
       mfderiv J 𝓘(𝕜, V) g (f x) v := by
-  have : FiniteDimensional 𝕜 (TangentSpace J (f x)) := inferInstanceAs (FiniteDimensional 𝕜 F)
-  have : FiniteDimensional 𝕜 V := Module.Finite.of_surjective (mfderivV f x g) hsurj
-  rw [normalSpaceEquivOfLevel, LinearEquiv.coe_toContinuousLinearEquiv_symm',
-    LinearEquiv.symm_symm, LinearEquiv.ofBijective_apply]
-  exact congr($(f.normalLift_comp_normalClass x hn _ _) v)
+  rw [normalClass_def]
+  rfl
 
 end TauCeti.SmoothEmbedding
