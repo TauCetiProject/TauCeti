@@ -78,22 +78,6 @@ theorem IsRegularOfDim.iSup_ringKrullDim_stalk_eq (h : IsRegularOfDim X d) (U : 
     (hU : (U : Set X).Nonempty) : ⨆ x : U, ringKrullDim (X.presheaf.stalk x) = d := by
   rw [← topologicalKrullDim_opens_eq_iSup_ringKrullDim_stalk, h.topologicalKrullDim_eq U hU]
 
-/-- If `f : X ⟶ Y` is étale and the open `V` of `Y` is the image of an open `U` of `X` whose local
-rings are Noetherian, then the local rings at the points of `U` and of `V` have the same
-supremum of dimensions. -/
-private theorem iSup_ringKrullDim_stalk_eq_of_etale (f : X ⟶ Y) [Etale f] (U : X.Opens)
-    (V : Y.Opens) (hUV : f '' U = V) (hU : ∀ x : U, IsNoetherianRing (X.presheaf.stalk x)) :
-    ⨆ x : U, ringKrullDim (X.presheaf.stalk x) = ⨆ y : V, ringKrullDim (Y.presheaf.stalk y) := by
-  refine le_antisymm (iSup_le fun x ↦ ?_) (iSup_le fun y ↦ ?_)
-  · have := (isNoetherianRing_stalk_iff_of_etale f x).mpr (hU x)
-    rw [← ringKrullDim_stalk_eq_of_etale f x]
-    exact le_iSup (fun y : V ↦ ringKrullDim (Y.presheaf.stalk y))
-      ⟨f x, by rw [← SetLike.mem_coe, ← hUV]; exact ⟨x, x.2, rfl⟩⟩
-  · obtain ⟨x, hx, hxy⟩ : (y : Y) ∈ f '' U := by rw [hUV]; exact y.2
-    have := (isNoetherianRing_stalk_iff_of_etale f x).mpr (hU ⟨x, hx⟩)
-    rw [← hxy, ringKrullDim_stalk_eq_of_etale f x]
-    exact le_iSup (fun x : U ↦ ringKrullDim (X.presheaf.stalk x)) ⟨x, hx⟩
-
 /-- **Regularity of dimension `d` ascends along étale morphisms.** If `f : X ⟶ Y` is étale, `X`
 is nonempty and `Y` is regular of dimension `d`, then `X` is regular of dimension `d`. -/
 theorem IsRegularOfDim.of_etale (f : X ⟶ Y) [Etale f] [Nonempty X] (h : IsRegularOfDim Y d) :
