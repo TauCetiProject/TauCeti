@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Affine.AddTorsor
 public import TauCeti.Topology.Homotopy.Isotopy.Basic
-import Mathlib.Topology.Compactness.CompactlyCoherentSpace
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import Mathlib.Topology.Order.IntermediateValue
 
@@ -15,7 +14,8 @@ import Mathlib.Topology.Order.IntermediateValue
 # Pushing along a vector inside a region
 
 Let `P` be a real normed affine space with space of translations `V`, let `p : P` and `v : V`, and
-let `μ : V → ℝ` be continuous. The **push** along `v` weighted by `μ` moves a point `x` by
+let `μ : V → ℝ` be continuous and nonnegative. The **push** along `v` weighted by `μ` moves a
+point `x` by
 
 `x ↦ (t * max (1 - μ (x -ᵥ p)) 0) • v +ᵥ x`
 
@@ -181,6 +181,8 @@ def push (hμ : Continuous μ) (hμ₀ : ∀ w, 0 ≤ μ w)
 variable (hμ : Continuous μ) (hμ₀ : ∀ w, 0 ≤ μ w)
   (hv : ∀ (w : V) (r : ℝ), 0 < r → μ (w + r • v) < μ w + r)
 
+/-- The push evaluated at a time-point pair `(t, x)`: at time `t` it moves `x` to
+`(t * max (1 - μ (x -ᵥ p)) 0) • v +ᵥ x`. -/
 @[simp]
 theorem push_apply (q : I × P) :
     (push μ p v hμ hμ₀ hv).toContinuousMap q =
