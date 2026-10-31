@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Contour.PiecewiseC1On
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
@@ -48,7 +48,7 @@ theorem _root_.ContinuousOn.absolutelyContinuousOnInterval_of_intervalIntegrable
 
 /-- A piecewise `C¹` curve is Lipschitz on its compact parameter interval, including across its
 breakpoints. -/
-theorem IsPiecewiseC1On.exists_lipschitzOnWith (hγ : IsPiecewiseC1On γ a b) :
+theorem _root_.TauCeti.IsPiecewiseC1On.exists_lipschitzOnWith (hγ : IsPiecewiseC1On γ a b) :
     ∃ K : ℝ≥0, LipschitzOnWith K γ (uIcc a b) := by
   obtain ⟨C, hCpos, hC⟩ := hγ.isBounded_image_deriv.exists_pos_norm_le
   refine ⟨⟨C, hCpos.le⟩, lipschitzOnWith_iff_dist_le_mul.mpr ?_⟩
@@ -63,7 +63,7 @@ theorem IsPiecewiseC1On.exists_lipschitzOnWith (hγ : IsPiecewiseC1On γ a b) :
     hC _ ⟨t, hsub (uIoc_subset_uIcc ht), rfl⟩
 
 /-- Every piecewise `C¹` contour is absolutely continuous on its parameter interval. -/
-theorem IsPiecewiseC1On.absolutelyContinuousOnInterval (hγ : IsPiecewiseC1On γ a b) :
+theorem _root_.TauCeti.IsPiecewiseC1On.absolutelyContinuousOnInterval (hγ : IsPiecewiseC1On γ a b) :
     AbsolutelyContinuousOnInterval γ a b := by
   obtain ⟨K, hK⟩ := hγ.exists_lipschitzOnWith
   exact hK.absolutelyContinuousOnInterval

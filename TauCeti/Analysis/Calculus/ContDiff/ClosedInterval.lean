@@ -26,6 +26,9 @@ The endpoint argument uses Mathlib's
 `hasFDerivWithinAt_closure_of_tendsto_fderiv`; higher orders use
 `iteratedDerivWithin_succ` and the native criterion for `ContDiffOn` in terms of iterated
 derivatives. No completeness assumption on the codomain is needed.
+
+`ContDiffOn.isBounded_image_deriv` bounds the derivative of a `C¹` function on a closed interval:
+it agrees with the continuous within-interval derivative away from the two endpoints.
 -/
 
 public section
@@ -116,3 +119,24 @@ theorem contDiffOn_Icc_iff_exists_continuous_jet (hab : a < b) {n : ℕ} :
     exact contDiffOn_Icc_of_continuous_jet hab hzero hc hd
 
 end TauCeti
+
+/-- The derivative of a function that is `C¹` on a closed interval has bounded image on that
+interval. At the two endpoints `deriv f` may differ from the one-sided derivative, but these
+contribute only two values. -/
+theorem ContDiffOn.isBounded_image_deriv {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : ℝ → F} {a b : ℝ} {n : ℕ∞ω} (hf : ContDiffOn ℝ n f (Icc a b)) (hn : 1 ≤ n) :
+    Bornology.IsBounded (deriv f '' Icc a b) := by
+  rcases lt_or_ge a b with hab | hba
+  swap
+  · exact ((subsingleton_Icc_of_ge hba).image _).finite.isBounded
+  have hdw : Bornology.IsBounded (derivWithin f (Icc a b) '' Icc a b) :=
+    (isCompact_Icc.image_of_continuousOn
+      (hf.continuousOn_derivWithin (uniqueDiffOn_Icc hab) hn)).isBounded
+  refine (hdw.union (Set.toFinite {deriv f a, deriv f b}).isBounded).subset ?_
+  rintro y ⟨t, ht, rfl⟩
+  rcases eq_or_ne t a with rfl | hta
+  · simp
+  rcases eq_or_ne t b with rfl | htb
+  · simp
+  exact Or.inl ⟨t, ht, derivWithin_of_mem_nhds (Icc_mem_nhds (ht.1.lt_of_ne' hta)
+    (ht.2.lt_of_ne htb))⟩

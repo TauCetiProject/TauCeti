@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Contour.PiecewiseC1On
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 
@@ -13,7 +13,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 # Reversal and concatenation of piecewise `C¹` curves
 
 The contour-integration layer works with raw curves `γ : ℝ → ℂ` on a parameter interval
-`[[a, b]]` (`Contour.IsPiecewiseC1On`) and with the raw contour integral
+`[[a, b]]` (`TauCeti.IsPiecewiseC1On`) and with the raw contour integral
 `∫ t in a..b, deriv γ t • f (γ t)`. This file supplies the two operations on such curves that a
 path-independence argument needs: running a curve backwards, and following one curve by another.
 
@@ -28,10 +28,10 @@ path-independence argument needs: running a curve backwards, and following one c
 
 ## Main results
 
-* `TauCeti.Contour.IsPiecewiseC1On.comp_const_sub` — reversal preserves piecewise `C¹` regularity.
+* `TauCeti.IsPiecewiseC1On.comp_const_sub` — reversal preserves piecewise `C¹` regularity.
 * `TauCeti.Contour.intervalIntegral_deriv_smul_comp_const_sub` — the contour integral of the
   reversed curve.
-* `TauCeti.Contour.IsPiecewiseC1On.if_le` — concatenation preserves piecewise `C¹` regularity.
+* `TauCeti.IsPiecewiseC1On.if_le` — concatenation preserves piecewise `C¹` regularity.
 * `TauCeti.Contour.intervalIntegral_deriv_smul_congr` — the contour integral depends on the curve
   only through its values on the open parameter interval.
 * `TauCeti.Contour.intervalIntegral_deriv_smul_eq_add_of_eqOn` — the contour integral along a
@@ -49,7 +49,7 @@ variable {γ δ : ℝ → ℂ} {a b c : ℝ}
 /-- **Reversal of a piecewise-`C¹` curve.** If `γ` is piecewise `C¹` on `[[a, b]]`, then the
 reversed curve `t ↦ γ (c - t)` is piecewise `C¹` on `[[c - a, c - b]]`, with the reflected
 breakpoints. -/
-theorem IsPiecewiseC1On.comp_const_sub (h : IsPiecewiseC1On γ a b) (c : ℝ) :
+theorem _root_.TauCeti.IsPiecewiseC1On.comp_const_sub (h : IsPiecewiseC1On γ a b) (c : ℝ) :
     IsPiecewiseC1On (fun t => γ (c - t)) (c - a) (c - b) := by
   obtain ⟨p, hp, hC1⟩ := h.exists_breakpoints
   have hmem : ∀ {t : ℝ}, t ∈ uIcc (c - a) (c - b) → c - t ∈ uIcc a b := fun ht => by
@@ -89,8 +89,8 @@ theorem intervalIntegral_deriv_smul_comp_const_sub {E : Type*} [NormedAddCommGro
 /-- **Concatenation of piecewise-`C¹` curves.** If `γ` is piecewise `C¹` on `[a, b]`, `δ` is
 piecewise `C¹` on `[b, c]`, and the two agree at `b`, then the curve following `γ` up to time `b`
 and `δ` afterwards is piecewise `C¹` on `[a, c]`. -/
-theorem IsPiecewiseC1On.if_le (h₁ : IsPiecewiseC1On γ a b) (h₂ : IsPiecewiseC1On δ b c)
-    (hab : a ≤ b) (hbc : b ≤ c) (hb : γ b = δ b) :
+theorem _root_.TauCeti.IsPiecewiseC1On.if_le (h₁ : IsPiecewiseC1On γ a b)
+    (h₂ : IsPiecewiseC1On δ b c) (hab : a ≤ b) (hbc : b ≤ c) (hb : γ b = δ b) :
     IsPiecewiseC1On (fun t => if t ≤ b then γ t else δ t) a c := by
   classical
   obtain ⟨p₁, -, hC₁⟩ := h₁.exists_breakpoints

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
-public import TauCeti.Analysis.Contour.PiecewiseC1On
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import Mathlib.Analysis.Convex.Segment
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Proximity
 import TauCeti.Analysis.Contour.AbsolutelyContinuous
@@ -26,7 +26,7 @@ are absolutely continuous. Their proximity invariance follows from the absolutel
 winding-number theorem.
 
 The application is homotopy invariance of the winding number off the curve.
-`Contour.IsPiecewiseC1On.windingNumber_eq_of_notMem_segment` deduces invariance
+`TauCeti.IsPiecewiseC1On.windingNumber_eq_of_notMem_segment` deduces invariance
 along the straight-line homotopy `s ↦ (1 - s) • γ₀ + s • γ₁` from the purely geometric hypothesis
 that the segment `[γ₀ t, γ₁ t]` misses `w` for every parameter `t`: the intermediate curves are
 piecewise `C¹` because that predicate is stable under affine combinations, and a compactness
@@ -37,11 +37,11 @@ estimate lets finitely many of them be chained together by the leash lemma.
 * `Contour.windingNumber_eq_of_dist_lt_dist` — the raw-hypothesis form: closed curves that are
   continuous, differentiable off a countable set, and have interval-integrable derivatives, with
   `dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w` throughout, have equal winding numbers about `w`.
-* `Contour.IsPiecewiseC1On.windingNumber_eq_of_dist_lt_dist` — the same for closed piecewise-`C¹`
+* `TauCeti.IsPiecewiseC1On.windingNumber_eq_of_dist_lt_dist` — the same for closed piecewise-`C¹`
   curves, whose regularity supplies the raw hypotheses on its own.
-* `Contour.IsPiecewiseC1On.windingNumber_eq_of_dist_lt_dist_of_eq_endpoints` — the common-endpoint
+* `TauCeti.IsPiecewiseC1On.windingNumber_eq_of_dist_lt_dist_of_eq_endpoints` — the common-endpoint
   version for paths that need not be closed.
-* `Contour.IsPiecewiseC1On.windingNumber_eq_of_notMem_segment` — invariance along the
+* `TauCeti.IsPiecewiseC1On.windingNumber_eq_of_notMem_segment` — invariance along the
   straight-line homotopy: if `w ∉ [γ₀ t, γ₁ t]` for every `t`, the winding numbers agree.
 
 ## Provenance
@@ -84,8 +84,9 @@ theorem windingNumber_eq_of_dist_lt_dist {P : Set ℝ} (hP : P.Countable)
 stay closer to each other than the first stays to `w`, they have the same winding number about `w`.
 Piecewise-`C¹` regularity supplies the continuity, differentiability and integrability hypotheses
 of `windingNumber_eq_of_dist_lt_dist`. -/
-theorem IsPiecewiseC1On.windingNumber_eq_of_dist_lt_dist (h₀ : IsPiecewiseC1On γ₀ a b)
-    (h₁ : IsPiecewiseC1On γ₁ a b) (h₀closed : γ₀ a = γ₀ b) (h₁closed : γ₁ a = γ₁ b)
+theorem _root_.TauCeti.IsPiecewiseC1On.windingNumber_eq_of_dist_lt_dist
+    (h₀ : IsPiecewiseC1On γ₀ a b) (h₁ : IsPiecewiseC1On γ₁ a b) (h₀closed : γ₀ a = γ₀ b)
+    (h₁closed : γ₁ a = γ₁ b)
     (hlt : ∀ t ∈ uIcc a b, dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
     windingNumber γ₁ a b w = windingNumber γ₀ a b w := by
   exact h₀.absolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist
@@ -95,7 +96,7 @@ theorem IsPiecewiseC1On.windingNumber_eq_of_dist_lt_dist (h₀ : IsPiecewiseC1On
 both endpoints and stay closer to each other than the first stays to `w`, then they have the same
 winding number about `w`. Unlike `IsPiecewiseC1On.windingNumber_eq_of_dist_lt_dist`, the paths need
 not be closed; their common endpoints make the comparison quotient a closed curve. -/
-theorem IsPiecewiseC1On.windingNumber_eq_of_dist_lt_dist_of_eq_endpoints
+theorem _root_.TauCeti.IsPiecewiseC1On.windingNumber_eq_of_dist_lt_dist_of_eq_endpoints
     (h₀ : IsPiecewiseC1On γ₀ a b) (h₁ : IsPiecewiseC1On γ₁ a b)
     (ha : γ₀ a = γ₁ a) (hb : γ₀ b = γ₁ b)
     (hlt : ∀ t ∈ uIcc a b, dist (γ₁ t) (γ₀ t) < dist (γ₀ t) w) :
@@ -160,8 +161,9 @@ piecewise `C¹` because that predicate is stable under affine combinations; a co
 bounds their distance to `w` below by a positive `m` and the displacement `‖γ₁ - γ₀‖` above by
 some `M`; and the `N + 1` stages `k / N` with `M / N < m` are then chained together by
 `IsPiecewiseC1On.windingNumber_eq_of_dist_lt_dist`. -/
-theorem IsPiecewiseC1On.windingNumber_eq_of_notMem_segment (h₀ : IsPiecewiseC1On γ₀ a b)
-    (h₁ : IsPiecewiseC1On γ₁ a b) (h₀closed : γ₀ a = γ₀ b) (h₁closed : γ₁ a = γ₁ b)
+theorem _root_.TauCeti.IsPiecewiseC1On.windingNumber_eq_of_notMem_segment
+    (h₀ : IsPiecewiseC1On γ₀ a b) (h₁ : IsPiecewiseC1On γ₁ a b) (h₀closed : γ₀ a = γ₀ b)
+    (h₁closed : γ₁ a = γ₁ b)
     (hseg : ∀ t ∈ uIcc a b, w ∉ segment ℝ (γ₀ t) (γ₁ t)) :
     windingNumber γ₁ a b w = windingNumber γ₀ a b w := by
   have hHne : ∀ s ∈ Icc (0 : ℝ) 1, ∀ t ∈ uIcc a b, lineHomotopy γ₀ γ₁ s t - w ≠ 0 := by
