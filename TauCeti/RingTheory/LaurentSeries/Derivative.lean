@@ -49,8 +49,6 @@ operation is introduced.
   `f ≠ 0` is nonzero in a ring without zero divisors, then `ord (D f) = r - 1`.
 * `LaurentSeries.derivative_eq_zero_iff_exists_C`: without additive torsion the kernel of `D`
   consists of the constants.
-* `LaurentSeries.coeff_single_one_mul_derivative`: the Euler operator `X D` multiplies the
-  coefficient of `Xⁿ` by `n`.
 * `LaurentSeries.derivative_inv` and `LaurentSeries.derivative_div`: the inverse and quotient
   rules over a field.
 * `LaurentSeries.continuous_derivative`: `D` is continuous for the valuation topology.
@@ -233,6 +231,11 @@ theorem derivative_eq_zero_iff_eq_single [IsAddTorsionFree V] {f : LaurentSeries
 
 end Module
 
+/-- The Euler operator `X D` multiplies the coefficient of `Xⁿ` by `n`. -/
+theorem coeff_single_one_mul_derivative {R : Type*} [Ring R] (f : R⸨X⸩) (n : ℤ) :
+    (single (1 : ℤ) (1 : R) * derivative R f).coeff n = n • f.coeff n := by
+  rw [coeff_single_mul, one_mul, coeff_derivative_sub_one]
+
 /-- If `f ≠ 0` has order `r` and `r` is nonzero in a ring `R` without zero divisors, for instance
 a field in which `r` is nonzero, then `f'` has order `r - 1`. -/
 theorem orderTop_derivative_eq_order_sub_one_of_cast_ne_zero {R : Type*} [Ring R]
@@ -250,11 +253,6 @@ theorem derivative_eq_zero_iff_exists_C {R : Type*} [Ring R] [IsAddTorsionFree R
   refine ⟨fun h ↦ ⟨_, by simpa only [C_apply] using h.symm⟩, ?_⟩
   rintro ⟨c, rfl⟩
   simp
-
-/-- The Euler operator `X D` multiplies the coefficient of `Xⁿ` by `n`. -/
-theorem coeff_single_one_mul_derivative {R : Type*} [Ring R] (f : R⸨X⸩) (n : ℤ) :
-    (single (1 : ℤ) (1 : R) * derivative R f).coeff n = n • f.coeff n := by
-  rw [coeff_single_mul, one_mul, coeff_derivative_sub_one]
 
 section Ramified
 

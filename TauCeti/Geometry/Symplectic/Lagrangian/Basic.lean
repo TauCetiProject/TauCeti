@@ -308,6 +308,11 @@ lemma orthogonal_orthogonal (ω : SymplecticForm V) (L : Submodule ℝ V) :
     ω.orthogonal (ω.orthogonal L) = L :=
   ω.toBilinForm.orthogonal_orthogonal ω.nondegenerate ω.isRefl L
 
+/-- The complement of an intersection is the sum of the complements. -/
+lemma orthogonal_inf (ω : SymplecticForm V) (L L' : Submodule ℝ V) :
+    ω.orthogonal (L ⊓ L') = ω.orthogonal L ⊔ ω.orthogonal L' :=
+  ω.toBilinForm.orthogonal_inf ω.nondegenerate ω.isRefl L L'
+
 /-- An isotropic subspace has at most half the dimension of the ambient space. -/
 lemma IsIsotropic.two_mul_finrank_le (h : ω.IsIsotropic L) :
     2 * finrank ℝ L ≤ finrank ℝ V := by

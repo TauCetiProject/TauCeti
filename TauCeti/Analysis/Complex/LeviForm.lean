@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.RCLike.Extend
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
+public import TauCeti.Analysis.Calculus.DerivativeTest
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.SecondDerivative
 public import TauCeti.LinearAlgebra.Complex.Finrank
@@ -56,9 +57,11 @@ function.
 
 * `TauCeti.leviForm_apply_self`: the diagonal of the Levi form is one quarter of
   `Hess f(v, v) + Hess f(I • v, I • v)`.
+* `TauCeti.re_leviForm_nonpos_of_isLocalMax`: at a local maximum, the Levi form is nonpositive
+  on every diagonal.
 * `TauCeti.isSymm_leviForm`: the Levi form of a `C²` function is Hermitian.
-* `TauCeti.leviForm_add`, `TauCeti.leviForm_neg`, `TauCeti.leviForm_smul`: the Levi form is
-  real linear in the function.
+* `TauCeti.leviForm_add`, `TauCeti.leviForm_sum`, `TauCeti.leviForm_neg`,
+  `TauCeti.leviForm_smul`: the Levi form is real linear in the function.
 * `TauCeti.leviForm_mul_apply`: the product rule
   `L(f g) = f L g + g L f + (conj (∂f) ⊗ ∂g + conj (∂g) ⊗ ∂f)`.
 * `TauCeti.leviForm_scalar_comp_apply`: the composition rule
@@ -143,6 +146,14 @@ theorem leviForm_apply_self (hf : ContDiffAt ℝ 2 f x) (v : V) :
   rw [leviForm_def, LinearMap.BilinForm.leviForm_apply_self hB]
   simp
 
+/-- At a local maximum of a real `C²` function, the Levi form is nonpositive on the diagonal. -/
+theorem re_leviForm_nonpos_of_isLocalMax (hf : ContDiffAt ℝ 2 f x)
+    (hmax : IsLocalMax f x) (v : V) : (leviForm f x v v).re ≤ 0 := by
+  rw [re_leviForm_apply]
+  exact div_nonpos_of_nonpos_of_nonneg
+    (add_nonpos (fderiv_fderiv_self_nonpos_of_isLocalMax hf hmax v)
+      (fderiv_fderiv_self_nonpos_of_isLocalMax hf hmax (Complex.I • v))) (by norm_num)
+
 /-- The Levi form of a `C²` function is Hermitian. -/
 theorem isSymm_leviForm (hf : ContDiffAt ℝ 2 f x) : (leviForm f x).IsSymm := by
   have hB : (fderiv ℝ (fderiv ℝ f) x).toBilinForm.IsSymm := ⟨hf.isSymmSndFDerivAt (by simp)⟩
@@ -177,6 +188,21 @@ theorem leviForm_smul (a : ℝ) (f : V → ℝ) (x : V) :
     leviForm (a • f) x = (a : ℂ) • leviForm f x := by
   rw [leviForm_def, leviForm_def, fderiv_fderiv_const_smul, ← LinearMap.BilinForm.leviForm_smul]
   exact congrArg _ (map_smul ContinuousLinearMap.toLinearMap₁₂ a _)
+
+/-- **The sum rule** for finite sums. -/
+theorem leviForm_sum {ι : Type*} (s : Finset ι) {f : ι → V → ℝ}
+    (hf : ∀ i ∈ s, ContDiffAt ℝ 2 (f i) x) :
+    leviForm (∑ i ∈ s, f i) x = ∑ i ∈ s, leviForm (f i) x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using leviForm_smul 0 (0 : V → ℝ) x
+  | insert i s hi ih =>
+    have hs : ContDiffAt ℝ 2 (∑ j ∈ s, f j) x := by
+      simpa only [Finset.sum_fn] using
+        ContDiffAt.sum fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)
+    rw [Finset.sum_insert hi, Finset.sum_insert hi,
+      leviForm_add (hf i (Finset.mem_insert_self i s)) hs,
+      ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)]
 
 /-- **The product rule** for the Levi form. Writing `∂f` for the complex-linear extension
 `StrongDual.extendRCLike` of the real differential `Df(x)`, the Levi form of `f g` at `x` is

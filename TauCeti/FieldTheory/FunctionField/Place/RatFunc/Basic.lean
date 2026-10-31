@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.RatFunc.Ostrowski
 public import TauCeti.FieldTheory.FunctionField.Place.Adic
+public import TauCeti.FieldTheory.FunctionField.Place.Equiv
 public import TauCeti.RingTheory.Polynomial.HeightOneSpectrum
 
 /-!
@@ -61,6 +62,11 @@ becomes the bijection `TauCeti.Place.ratFuncEquiv`.
 * `TauCeti.Place.eq_infty_or_exists_eq_adicOfIrreducible_X_sub_C` and
   `TauCeti.Place.ratFuncDegreeOneEquiv`: the degree-one places are `ℙ¹(k) = k ∪ {∞}`
   (Stichtenoth, Corollary 1.2.3).
+* `TauCeti.Place.exists_degree_eq_one_adjoin`: `k⟮x⟯` has a rational place for every
+  transcendental `x`.
+* `TauCeti.Place.infinite_setOf_degree_eq_one_ratFunc` and
+  `TauCeti.Place.infinite_setOf_degree_eq_one_adjoin`: over an infinite field, `k(x)` has
+  infinitely many rational places, also when realized as `k⟮x⟯` for a transcendental `x`.
 
 That `k` is the exact field of constants of `k(x)` — Proposition 1.2.1(d) — is
 `TauCeti.algebraicClosure_ratFunc`.
@@ -373,6 +379,12 @@ theorem one_lt_valuation_X_iff_eq_infty {P : Place k (RatFunc k)} :
     1 < P.valuation (RatFunc.X : RatFunc k) ↔ P = infty k := by
   simpa only [mem_integers_iff, not_le] using X_notMem_integers_iff_eq_infty (k := k) (P := P)
 
+/-- The function `x` has no pole at the finite place of an irreducible polynomial. -/
+theorem X_mem_integers_adicOfIrreducible {q : k[X]} (hq : Irreducible q) :
+    (RatFunc.X : RatFunc k) ∈ (adicOfIrreducible hq).integers := by
+  by_contra h
+  exact adicOfIrreducible_ne_infty hq (X_notMem_integers_iff_eq_infty.mp h)
+
 /-- A place of `k(x)` has valuation greater than one on a polynomial exactly when it is the
 place at infinity. This is the simp-normal form of
 `exists_algebraMap_notMem_integers_iff_eq_infty`. -/
@@ -522,6 +534,44 @@ theorem ratFuncDegreeOneEquiv_symm_adicOfIrreducible (a : k)
     (h : (adicOfIrreducible (irreducible_X_sub_C a)).degree = 1) :
     (ratFuncDegreeOneEquiv k).symm ⟨adicOfIrreducible (irreducible_X_sub_C a), h⟩ = some a :=
   ((ratFuncDegreeOneEquiv k).symm_apply_eq).mpr (Subtype.ext (rfl))
+
+/-- **Over an infinite field, `k(x)` has infinitely many rational places**, since they are indexed
+by `ℙ¹(k)` (`TauCeti.Place.ratFuncDegreeOneEquiv`). -/
+theorem infinite_setOf_degree_eq_one_ratFunc [Infinite k] :
+    {P : Place k (RatFunc k) | P.degree = 1}.Infinite :=
+  Set.infinite_coe_iff.mp (Infinite.of_injective _ (ratFuncDegreeOneEquiv k).injective)
+
+variable {k} in
+/-- For `x` transcendental over `k`, transport along `k⟮x⟯ ≃ₐ[k] RatFunc k` is an injective map
+from the places of `k(x)` to those of `k⟮x⟯` preserving degrees. -/
+private theorem exists_injective_degree_eq_adjoin {F : Type*} [Field F] [Algebra k F] {x : F}
+    (hx : Transcendental k x) :
+    ∃ τ : Place k (RatFunc k) → Place k (IntermediateField.adjoin k {x}),
+      Function.Injective τ ∧ ∀ P, (τ P).degree = P.degree :=
+  let e := RatFunc.algEquivOfTranscendental x hx
+  let τ := equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv fun c ↦ e.commutes c
+  ⟨τ, τ.injective, degree_equivOfRingEquiv _ _ _⟩
+
+variable {k} in
+/-- **Every rational function field `k(x)` has a rational place**, also when realized as `k⟮x⟯` for
+`x` transcendental over `k` in any extension field: transport the place at infinity along
+`k⟮x⟯ ≃ₐ[k] RatFunc k`. -/
+theorem exists_degree_eq_one_adjoin {F : Type*} [Field F] [Algebra k F] {x : F}
+    (hx : Transcendental k x) : ∃ P : Place k (IntermediateField.adjoin k {x}), P.degree = 1 := by
+  obtain ⟨τ, -, hτ⟩ := exists_injective_degree_eq_adjoin hx
+  exact ⟨τ (infty k), (hτ _).trans (degree_infty k)⟩
+
+variable {k} in
+/-- **Over an infinite field, every rational function field `k(x)` has infinitely many rational
+places**: for `x` transcendental over `k` in any extension field, `k(x) ≃ₐ[k] RatFunc k`, and
+transport along this isomorphism preserves degrees. -/
+theorem infinite_setOf_degree_eq_one_adjoin [Infinite k] {F : Type*} [Field F] [Algebra k F]
+    {x : F} (hx : Transcendental k x) :
+    {P : Place k (IntermediateField.adjoin k {x}) | P.degree = 1}.Infinite := by
+  obtain ⟨τ, hτi, hτ⟩ := exists_injective_degree_eq_adjoin hx
+  refine ((infinite_setOf_degree_eq_one_ratFunc k).image hτi.injOn).mono ?_
+  rintro _ ⟨P, hP, rfl⟩
+  exact (hτ P).trans hP
 
 end Place
 

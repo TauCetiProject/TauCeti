@@ -146,29 +146,33 @@ generators `a` and `b`; the ATLAS records no individual contributor for this pre
 The ATLAS lists this as a full presentation of the abstract group, separately from the
 semi-presentation used to recognize standard generators inside a group already constructed. No
 structural property of the presented group is asserted here: this definition records only the
-cited generators and relations. -/
+cited generators and relations.
+
+Generator order (starting at index zero): `a`, `b`.
+
+Source: R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite Group Representations,
+version 3; individual presentation contributor not recorded.
+
+Source locator: J3G1-P1, https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/J3G1-P1, with the relator
+list and the demonstration of correctness in the Magma source file
+https://brauer.maths.qmul.ac.uk/Atlas/spor/J3/mag/J3G1-P1.M
+
+Generator convention: The ATLAS standard generators a and b of J3, that is, a in class 2A and b in
+class 3A with ab of order 19, in that order, so index 0 is a and index 1 is b. Products are read
+left to right, negative exponents denote inverses, and [r,s] denotes r^-1 s^-1 r s.
+
+Transcription notes: The eight words of the source's relator list are stored as eight relators
+equal to the identity, in the order of the Magma file; the ATLAS page records no individual
+contributor for this presentation. The presentation page displays the same eight words with
+(x,y)^9 and `(x*y)^19` interchanged. No word is marked redundant in either rendering. The source
+demonstrates correctness by the coset enumeration `19*Index(G,K1)` over the cyclic subgroup K1 =
+`<a*b>` of order 19, returning the order 50232960 of J3. GAP 4.15.1 reproduces that enumeration
+from the eight compiled words, obtaining the index 2643840, and checks that the same eight words
+vanish on the ATLAS 6156-point standard generators of J3, which have a an involution with
+centralizer of order 1920, b of order 3 with centralizer of order 1080, ab of order 19, and which
+generate a simple group of order 50232960. -/
 def j3Presentation : GroupPresentation where
-  generatorNames := ["a", "b"]
-  source := "R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite Group \
-    Representations, version 3; individual presentation contributor not recorded"
-  sourceLocator := "J3G1-P1, https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/J3G1-P1, with the \
-    relator list and the demonstration of correctness in the Magma source file \
-    https://brauer.maths.qmul.ac.uk/Atlas/spor/J3/mag/J3G1-P1.M"
-  generatorConvention := "The ATLAS standard generators a and b of J3, that is, a in class 2A and \
-    b in class 3A with ab of order 19, in that order, so index 0 is a and index 1 is b. Products \
-    are read left to right, negative exponents denote inverses, and [r,s] denotes r^-1 s^-1 r s."
-  transcriptionNotes := "The eight words of the source's relator list are stored as eight \
-    relators equal to the identity, in the order of the Magma file; the ATLAS page records no \
-    individual contributor for this presentation. The presentation page displays the same eight \
-    words with (x,y)^9 and (x*y)^19 interchanged. No word is marked redundant in either rendering. \
-    The source demonstrates correctness by the coset enumeration \
-    19*Index(G,K1) over the cyclic subgroup K1 = <a*b> of order 19, returning the order 50232960 \
-    of J3. GAP 4.15.1 reproduces that enumeration from the eight compiled words, obtaining the \
-    index 2643840, and checks that the same eight words vanish on the ATLAS 6156-point standard \
-    generators of J3, which have a an involution with centralizer of order 1920, b of order 3 \
-    with centralizer of order 1080, ab of order 19, and which generate a simple group of order \
-    50232960."
-  expectedGeneratorCount := 2
+  generatorCount := 2
   expectedRelatorCount := 8
   transcribed :=
     [ .pow a 2,
@@ -180,64 +184,15 @@ def j3Presentation : GroupPresentation where
       seventhWord,
       .pow (.pow ab1 3 ⬝ .pow (ab1 ⬝ abNeg1) 2) 4 ]
 
-/-- The generator names recorded for `J₃`. The row's body is sealed, so this is what lets a
+/-- The number of generators in the presentation of `J₃`. The row's body is sealed, so this is
+what lets a
 consumer see that it is a two-generator presentation. -/
 @[simp]
-theorem j3Presentation_generatorNames : j3Presentation.generatorNames = ["a", "b"] := by
-  simp [j3Presentation]
-
-/-- The source recorded for `J₃`. The row's body is sealed, so this equation is what publishes the
-citation itself, rather than only the row's name, to a downstream audit. -/
-@[simp]
-theorem j3Presentation_source :
-    j3Presentation.source = "R. A. Wilson, R. A. Parker, J. N. Bray et al., ATLAS of Finite Group \
-      Representations, version 3; individual presentation contributor not recorded" := by
-  simp [j3Presentation]
-
-/-- The locator recorded for `J₃`, pointing at the presentation inside its source. -/
-@[simp]
-theorem j3Presentation_sourceLocator :
-    j3Presentation.sourceLocator = "J3G1-P1, \
-      https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/J3G1-P1, with the relator list and the \
-      demonstration of correctness in the Magma source file \
-      https://brauer.maths.qmul.ac.uk/Atlas/spor/J3/mag/J3G1-P1.M" := by
-  simp [j3Presentation]
-
-/-- The generator convention recorded for `J₃`, fixing which generator each relator index names and
-which commutator convention the source uses. -/
-@[simp]
-theorem j3Presentation_generatorConvention :
-    j3Presentation.generatorConvention = "The ATLAS standard generators a and b of J3, that is, a \
-      in class 2A and b in class 3A with ab of order 19, in that order, so index 0 is a and index \
-      1 is b. Products are read left to right, negative exponents denote inverses, and [r,s] \
-      denotes r^-1 s^-1 r s." := by
-  simp [j3Presentation]
-
-/-- The transcription notes recorded for `J₃`. -/
-@[simp]
-theorem j3Presentation_transcriptionNotes :
-    j3Presentation.transcriptionNotes = "The eight words of the source's relator list are stored \
-      as eight relators equal to the identity, in the order of the Magma file; the ATLAS page \
-      records no individual contributor for this presentation. The presentation page displays the \
-      same eight words with (x,y)^9 and (x*y)^19 interchanged. No word is marked redundant in \
-      either rendering. The source demonstrates correctness by the coset enumeration \
-      19*Index(G,K1) over the cyclic subgroup K1 = <a*b> of order 19, returning the order \
-      50232960 of J3. GAP 4.15.1 reproduces that enumeration from the eight compiled words, \
-      obtaining the index 2643840, and checks that the same eight words vanish on the ATLAS \
-      6156-point standard generators of J3, which have a an involution with centralizer of order \
-      1920, b of order 3 with centralizer of order 1080, ab of order 19, and which generate a \
-      simple group of order 50232960." := by
-  simp [j3Presentation]
-
-/-- The generator count `J₃`'s source states. With
-`TauCeti.Sporadic.j3Presentation_generatorNames` this is what makes
-`TauCeti.Sporadic.j3Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem j3Presentation_expectedGeneratorCount : j3Presentation.expectedGeneratorCount = 2 := by
+theorem j3Presentation_generatorCount : j3Presentation.generatorCount = 2 := by
   simp [j3Presentation]
 
 /-- The relator count `J₃`'s source states; see
-`TauCeti.Sporadic.j3Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.j3Presentation_generatorCount`. -/
 @[simp]
 theorem j3Presentation_expectedRelatorCount : j3Presentation.expectedRelatorCount = 8 := by
   simp [j3Presentation]
@@ -250,7 +205,7 @@ The row's body is sealed, so this is the equation that characterizes it: with
 `TauCeti.GroupPresentation.mem_relatorSet_iff` it determines the relations defining
 `TauCeti.GroupPresentation.Group`, so a consumer never has to unfold the row. Index `0` is the
 generator `a` and index `1` is `b`, and the bounds come from
-`TauCeti.Sporadic.j3Presentation_generatorNames`. Every occurrence of a syllable `ab` or `ab⁻¹` is
+`TauCeti.Sporadic.j3Presentation_generatorCount`. Every occurrence of a syllable `ab` or `ab⁻¹` is
 bracketed, since the stored expression is a tree and not a flat word. -/
 @[simp]
 theorem j3Presentation_transcribed :
@@ -291,7 +246,7 @@ theorem j3Presentation_transcribed :
             (.gen ⟨0, by simp⟩ ⬝ .inv (.gen ⟨1, by simp⟩))) 2) 4 ] := by
   simp [j3Presentation, Relator.commInvInv]
 
-/-- The generator and relator counts recorded for `J₃` agree with the transcribed data. -/
+/-- The relator count recorded for `J₃` agrees with the transcribed data. -/
 theorem j3Presentation_matchesMetadata : j3Presentation.matchesMetadata := by decide
 
 /-- The lengths of the eight compiled relator words for `J₃`, in the order of the Magma source

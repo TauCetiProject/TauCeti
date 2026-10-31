@@ -23,7 +23,8 @@ it the scheme-level interface needed by the Jacobian roadmap:
 * `ZariskiCotangentSpace X x` is `𝔪ₓ / 𝔪ₓ²` over `κ(x)`;
 * `ZariskiTangentSpace X x` is its `κ(x)`-linear dual;
 * Mathlib's existing instances make both spaces finite-dimensional when the stalk is Noetherian;
-* at a regular point, the dimension of the tangent space is the coheight of the point.
+* a point with Noetherian stalk is regular exactly when the dimension of the tangent space is the
+  coheight of the point.
 
 The last statement combines Mathlib's cotangent-space criterion for regular local rings with its
 identification of the Krull dimension of `𝒪_{X,x}` and the coheight of `x`.
@@ -66,14 +67,24 @@ abbrev ZariskiTangentSpace (X : Scheme.{u}) (x : X) : Type u :=
   Module.Dual (IsLocalRing.ResidueField (X.presheaf.stalk x))
     (ZariskiCotangentSpace X x)
 
+/-- A point of a scheme with Noetherian stalk is regular exactly when the dimension of its
+Zariski tangent space is the coheight of the point. -/
+lemma isRegularLocalRing_stalk_iff_finrank_zariskiTangentSpace_eq_coheight (X : Scheme.{u})
+    (x : X) [IsNoetherianRing (X.presheaf.stalk x)] :
+    IsRegularLocalRing (X.presheaf.stalk x) ↔
+      (Module.finrank (IsLocalRing.ResidueField (X.presheaf.stalk x))
+        (ZariskiTangentSpace X x) : ℕ∞) = Order.coheight x := by
+  rw [IsRegularLocalRing.iff_finrank_cotangentSpace, ringKrullDim_stalk_eq_coheight,
+    Subspace.dual_finrank_eq]
+  norm_cast
+
 /-- At a regular point of a scheme, the dimension of the Zariski tangent space is the coheight of
-the point. Both sides are compared in `WithBot ℕ∞`, the codomain of Krull dimension. -/
+the point. -/
 lemma finrank_zariskiTangentSpace_eq_coheight (X : Scheme.{u}) (x : X)
     [IsRegularLocalRing (X.presheaf.stalk x)] :
     (Module.finrank (IsLocalRing.ResidueField (X.presheaf.stalk x))
-      (ZariskiTangentSpace X x) : WithBot ℕ∞) = Order.coheight x := by
-  rw [Subspace.dual_finrank_eq, ← ringKrullDim_stalk_eq_coheight]
-  exact (IsRegularLocalRing.iff_finrank_cotangentSpace _).mp inferInstance
+      (ZariskiTangentSpace X x) : ℕ∞) = Order.coheight x :=
+  (isRegularLocalRing_stalk_iff_finrank_zariskiTangentSpace_eq_coheight X x).mp inferInstance
 
 end
 

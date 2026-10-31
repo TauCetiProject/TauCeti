@@ -7,7 +7,8 @@ module
 
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Basic
 
--- the gcd decomposition and `Γ(N) ≤ Γ₀(N)` are used only inside proofs here
+-- the coprime-level generation and `Γ(N) ≤ Γ₀(N)` are used only inside proofs here
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.CongruenceSplit
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
 /-!
@@ -23,10 +24,10 @@ submonoid containing both `Γ₀(N)` and `α`. The content is the other inclusio
 `σ₁, σ₂` taken from `Γ₀(N)`.
 
 The mechanism is the Chinese-remainder decomposition
-`CongruenceSubgroup.Gamma_gcd_eq_sup`: coprimality of `det α` with `N` makes
-`Γ(N) ⊔ Γ(det α) = ⊤`, so `σ₁` factors as `τ_N · τ_a` with `τ_N ∈ Γ(N) ≤ Γ₀(N)` and
-`τ_a ∈ Γ(det α)`. The second factor is absorbed on the other side: `HeckeRing.GLn`'s
-`inv_conjugate_mem_SLnZ_of_mem_ker` says `α⁻¹ τ_a α` is again integral, so
+`Matrix.SpecialLinearGroup.sup_ker_map_intCast_zmod_eq_top_of_coprime`: coprimality of
+`det α` with `N` makes `Γ(N) ⊔ Γ(det α) = ⊤`, so `σ₁` factors as `τ_N · τ_a` with
+`τ_N ∈ Γ(N) ≤ Γ₀(N)` and `τ_a ∈ Γ(det α)`. The second factor is absorbed on the other side:
+`HeckeRing.GLn`'s `inv_conjugate_mem_SLnZ_of_mem_ker` says `α⁻¹ τ_a α` is again integral, so
 `τ_a α = α · (α⁻¹ τ_a α)`, and the new right factor is forced into `Γ₀(N)` by reading off the
 lower-left entry of the product —
 which is where `gcd(det α, N) = 1` is used a second time, through the lower-right entry.
@@ -157,11 +158,11 @@ private lemma mem_doubleCoset_Gamma0Image_of_mem_Delta0
   -- coprimality of `det α` with `N` makes the two principal congruence subgroups fill `SL₂(ℤ)`
   have h_top : Gamma N ⊔ Gamma A.det.natAbs = ⊤ := by
     -- `Int.gcd` is *defined* as `Nat.gcd` on the `natAbs`, but `rw` does not identify the two
-    -- spellings, and `Gamma_gcd_eq_sup` takes its levels in the other order
-    have hcop : Nat.gcd N A.det.natAbs = 1 := by
-      rw [Nat.gcd_comm]; simpa [Int.gcd] using hdet
-    have hg := Gamma_gcd_eq_sup N A.det.natAbs
-    rwa [hcop, Gamma_one_top, eq_comm] at hg
+    -- spellings
+    have hcop : N.Coprime A.det.natAbs := by
+      rw [Nat.coprime_comm, Nat.coprime_iff_gcd_eq_one]; simpa [Int.gcd] using hdet
+    unfold Gamma
+    exact sup_ker_map_intCast_zmod_eq_top_of_coprime hcop
   obtain ⟨τ_N, hτ_N, τ_a, hτ_a, hσ₁_eq⟩ :=
     Subgroup.mem_sup_of_normal_left.mp (h_top ▸ Subgroup.mem_top σ₁)
   have hτ_N_Gamma0 : τ_N ∈ Gamma0 N := Gamma_le_Gamma0 N hτ_N

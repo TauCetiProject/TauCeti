@@ -8,9 +8,13 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Cohomology.Affine
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Affine
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
+public import Mathlib.AlgebraicGeometry.Morphisms.Separated
+public import TauCeti.AlgebraicGeometry.Scheme.Opens
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Functor
 public import TauCeti.Topology.Sheaves.Leray
+import Mathlib.Algebra.Category.Grp.Zero
+import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 
 /-!
 # Čech cohomology of quasi-coherent sheaves for affine covers
@@ -44,7 +48,11 @@ structures of both sides over the ring of global functions, and hence over any b
 * `AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardIsoOfIsAffineHom_naturality`: its naturality
   in `M`;
 * `AlgebraicGeometry.Scheme.Hom.cohomologyPushforwardBaseLinearEquivOfIsAffineHom`: the same
-  isomorphism as a linear equivalence over a base ring.
+  isomorphism as a linear equivalence over a base ring;
+* `AlgebraicGeometry.Scheme.Modules.exists_mono_isQuasicoherent_subsingleton_cohomology`: on a
+  quasi-compact scheme with affine diagonal, every quasi-coherent sheaf embeds into a
+  quasi-coherent sheaf with no cohomology in positive degrees, the step of a dimension-shifting
+  argument.
 
 ## Cohomology along affine morphisms
 
@@ -175,14 +183,6 @@ private lemma cechComplexPushforwardIso_naturality {M N : X.Modules} (α : M ⟶
 variable [IsAffineHom f] (hU : ∀ i, IsAffineOpen (U i))
 
 include hU in
-/-- On a scheme with affine diagonal, the nonempty finite intersections of members of an affine
-family `U` of opens are affine. -/
-private lemma isAffineOpen_finset_inf [IsAffineHom (pullback.diagonal (terminal.from Y))]
-    (s : Finset ι) (hs : s.Nonempty) : IsAffineOpen (s.inf U) := by
-  rw [Finset.inf_eq_iInf]
-  exact IsAffineOpen.biInf _ s.finite_toSet hs fun j _ ↦ hU j
-
-include hU in
 /-- On the cover of `X` by the preimages under the affine morphism `f` of an affine cover `U` of a
 scheme with affine diagonal, a quasi-coherent sheaf has no cohomology in positive degrees on a
 nonempty finite intersection: it is the preimage of an affine open, hence affine. -/
@@ -194,7 +194,7 @@ private lemma subsingleton_cohomologyOn_inf_preimage_succ
     have h : (s.inf fun i ↦ f ⁻¹ᵁ U i) = f ⁻¹ᵁ s.inf U :=
       (map_finset_inf (Opens.comap f.base.hom) s U).symm
     rw [h]
-    exact (isAffineOpen_finset_inf U hU s hs).preimage f
+    exact (IsAffineOpen.finset_inf s hs fun i _ ↦ hU i).preimage f
   exact subsingleton_cohomologyOn_succ_of_isAffineOpen M hW k
 
 variable [IsAffineHom (pullback.diagonal (terminal.from Y))] [Finite ι] (hcover : ⨆ i, U i = ⊤)
@@ -227,8 +227,8 @@ complex, for the cover `U` of `Y` and for the cover of `X` by the preimages `f�
 def cohomologyPushforwardIsoOfIsAffineHom (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
     AddCommGrpCat.of (Cohomology ((pushforward f).obj M) n) ≅
       AddCommGrpCat.of (Cohomology M n) :=
-  (homologyCechComplexIsoCohomology U (isAffineOpen_finset_inf U hU) hcover
-      ((pushforward f).obj M) n).symm ≪≫
+  (homologyCechComplexIsoCohomology U (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ hU i)
+      hcover ((pushforward f).obj M) n).symm ≪≫
     HomologicalComplex.homologyMapIso (cechComplexPushforwardIso f U M) n ≪≫
     homologyCechComplexPreimageIsoCohomology f U hU hcover M n
 
@@ -243,7 +243,7 @@ theorem cohomologyPushforwardIsoOfIsAffineHom_naturality {M N : X.Modules} [M.Is
         (cohomologyFunctor X n).map α := by
   -- each of the three comparisons composing the isomorphism is natural
   have hY := homologyMap_comp_homologyCechComplexIsoCohomology_hom U
-    (isAffineOpen_finset_inf U hU) hcover ((pushforward f).map α) n
+    (fun s hs ↦ IsAffineOpen.finset_inf s hs fun i _ ↦ hU i) hcover ((pushforward f).map α) n
   have hC := congrArg (HomologicalComplex.homologyMap · n)
     (cechComplexPushforwardIso_naturality f U α)
   have hX := homologyMap_comp_homologyCechComplexPreimageIsoCohomology_hom f U hU hcover α n
@@ -313,3 +313,69 @@ lemma cohomologyPushforwardBaseLinearEquivOfIsAffineHom_symm_apply (M : X.Module
 end BaseRing
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+open TauCeti TauCeti.AlgebraicGeometry.Scheme.Modules
+
+variable {X : Scheme.{u}}
+
+open TauCeti.AlgebraicGeometry in
+/-- Every quasi-coherent sheaf `M` on a quasi-compact scheme with affine diagonal embeds into a
+quasi-coherent sheaf with no cohomology in positive degrees, namely the direct sum of the
+pushforwards of the restrictions of `M` to the members of a finite affine open cover. -/
+lemma exists_mono_isQuasicoherent_subsingleton_cohomology [CompactSpace X]
+    [IsAffineHom (pullback.diagonal (terminal.from X))] (M : X.Modules) [M.IsQuasicoherent] :
+    ∃ (I : X.Modules) (i : M ⟶ I), I.IsQuasicoherent ∧ Mono i ∧
+      ∀ k, Subsingleton (Cohomology I (k + 1)) := by
+  let 𝒰 := X.affineCover.finiteSubcover
+  let U : 𝒰.I₀ → X.Opens := fun i ↦ (𝒰.f i).opensRange
+  have hU (i : 𝒰.I₀) : IsAffineOpen (U i) := isAffineOpen_opensRange (𝒰.f i)
+  have hcover : ⨆ i, U i = ⊤ := 𝒰.iSup_opensRange
+  -- An affine open of a scheme with affine diagonal is an affine morphism.
+  have hι (i : 𝒰.I₀) : IsAffineHom (U i).ι := ⟨fun V hV ↦
+    (U i).ι.isAffineOpen_iff_of_isOpenImmersion.mp (by
+      rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
+      exact (hU i).inf hV)⟩
+  have : HasFiniteBiproducts X.Modules := .of_hasFiniteProducts
+  let F : 𝒰.I₀ → X.Modules := fun i ↦
+    (pushforward (U i).ι).obj ((restrictFunctor (U i).ι).obj M)
+  have hF (i : 𝒰.I₀) : (F i).IsQuasicoherent := by
+    have := isQuasicoherent_restrictFunctor (U i).ι M
+    infer_instance
+  refine ⟨⨁ F, biproduct.lift fun i ↦ (restrictAdjunction (U i).ι).unit.app M,
+    isQuasicoherent_of_isColimit (K := Discrete.functor F) (fun j ↦ hF j.as)
+      (biproduct.isColimit F), ⟨fun {T} a b hab ↦ ?_⟩, fun k ↦ ?_⟩
+  · -- A section of `M` is determined by its restrictions to the members of the cover.
+    ext W t
+    refine TopCat.Sheaf.eq_of_locally_eq' (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
+      (fun i ↦ (U i).ι ''ᵁ ((U i).ι ⁻¹ᵁ W)) W (fun i ↦ homOfLE ((U i).ι.image_preimage_le W))
+      ?_ _ _ fun i ↦ ?_
+    · intro x hx
+      have hx' : x ∈ ⨆ i, U i := hcover.symm ▸ trivial
+      obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hx'
+      refine Opens.mem_iSup.mpr ⟨i, ?_⟩
+      rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
+      exact ⟨hi, hx⟩
+    · have := congrArg (fun φ ↦ (φ ≫ biproduct.π F i).app W t) hab
+      simp only [Category.assoc, biproduct.lift_π, Scheme.Modules.Hom.comp_app,
+        restrictAdjunction_unit_app_app] at this
+      exact this
+  · -- Each summand has no higher cohomology, being pushed forward from an affine scheme along an
+    -- affine morphism; so neither has their direct sum.
+    have hzero (i : 𝒰.I₀) : IsZero ((cohomologyFunctor X (k + 1)).obj (F i)) := by
+      have : IsAffine (U i).toScheme := hU i
+      have := isQuasicoherent_restrictFunctor (U i).ι M
+      have : Subsingleton (Cohomology (F i) (k + 1)) :=
+        ((U i).ι.cohomologyPushforwardIsoOfIsAffineHom U hU hcover _
+          (k + 1)).addCommGroupIsoToAddEquiv.toEquiv.subsingleton_congr.mpr
+            (subsingleton_cohomology_succ_of_isAffine _ k)
+      exact @AddCommGrpCat.isZero_of_subsingleton _ this
+    refine AddCommGrpCat.subsingleton_of_isZero (G := (cohomologyFunctor X (k + 1)).obj (⨁ F)) ?_
+    rw [IsZero.iff_id_eq_zero, ← CategoryTheory.Functor.map_id, ← biproduct.total,
+      Functor.map_sum]
+    refine Finset.sum_eq_zero fun i _ ↦ ?_
+    rw [CategoryTheory.Functor.map_comp, (hzero i).eq_of_tgt ((cohomologyFunctor X (k + 1)).map
+      (biproduct.π F i)) 0, zero_comp]
+
+end AlgebraicGeometry.Scheme.Modules

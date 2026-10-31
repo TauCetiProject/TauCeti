@@ -10,6 +10,7 @@ public import Mathlib.Analysis.LocallyConvex.Separation
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Analysis.Calculus.TangentCone.Basic
+public import TauCeti.Analysis.Calculus.TangentCone.Prod
 
 /-!
 # The depth of a point of a manifold with corners
@@ -42,6 +43,13 @@ both directions this gives chart independence, and applied to a map with injecti
 it shows that local diffeomorphisms and diffeomorphisms preserve the depth
 (`IsLocalDiffeomorphAt.depth_eq`, `Diffeomorph.depth_eq`).
 
+The depth is additive on products (`ModelWithCorners.depthAt_prod`, `ModelWithCorners.depth_prod`):
+the range of a product model is the product of the ranges, both are convex, and the positive tangent
+cone of a product of convex sets is the product of the cones (`Convex.posTangentConeAt_prod`). So a
+product of manifolds with boundary has corners of depth two exactly over pairs of boundary points
+(`ModelWithCorners.depth_prod_eq_two_iff`). For instance, a handle `Dᵏ × Dⁿ⁻ᵏ` has its corners
+along `Sᵏ⁻¹ × Sⁿ⁻ᵏ⁻¹`, and `M × [0, 1]` along `∂M × {0, 1}`.
+
 ## Main definitions
 
 * `ModelWithCorners.depthAt`: the depth of a point of the model vector space.
@@ -60,6 +68,12 @@ it shows that local diffeomorphisms and diffeomorphisms preserve the depth
   the dimension of the largest linear subspace in the cone.
 * `IsLocalDiffeomorphAt.depth_eq`, `Diffeomorph.depth_eq`: (local) diffeomorphisms preserve the
   depth.
+* `ModelWithCorners.depthAt_prod`, `ModelWithCorners.depth_prod`: the depth of a point of a
+  product is the sum of the depths of its coordinates.
+* `ModelWithCorners.depth_modelWithCornersEuclideanHalfSpace_eq_one_iff`: on a manifold modelled on
+  the half-space, the points of depth one are the boundary points.
+* `ModelWithCorners.depth_prod_eq_two_iff`: in a product of two such manifolds, the points of
+  depth two are the pairs of boundary points.
 
 ## Implementation notes
 
@@ -222,6 +236,36 @@ theorem finrank_sub_depthAt_le_of_hasFDerivWithinAt (hy : y ∈ range I) {φ : E
   have hv' : v ∈ posTangentConeAt s y := tangentConeAt_mono_nhds (nhdsWithin_le_iff.mpr hs) hv
   exact posTangentConeAt_mono (image_subset_iff.mpr hφ) (hφD.mapsTo_posTangentConeAt hv')
 
+/-- **The depth is additive on product models**: the depth of a point of the range of `I.prod I'`
+is the sum of the depths of its two coordinates. -/
+@[simp]
+theorem depthAt_prod (hy : y ∈ range I) {y' : E'} (hy' : y' ∈ range I') :
+    (I.prod I').depthAt (y, y') = I.depthAt y + I'.depthAt y' := by
+  have hcone : posTangentConeAt (range (I.prod I')) (y, y') =
+      posTangentConeAt (range I) y ×ˢ posTangentConeAt (range I') y' := by
+    rw [range_prod]
+    exact I.convex_range.posTangentConeAt_prod I'.convex_range hy hy'
+  have hfin (V : Submodule ℝ E) (V' : Submodule ℝ E') :
+      finrank ℝ (V.prod V') = finrank ℝ V + finrank ℝ V' := by
+    rw [(Submodule.prodEquiv V V').finrank_eq, finrank_prod]
+  obtain ⟨V, hV, hVd⟩ := exists_finrank_add_depthAt_eq hy
+  obtain ⟨V', hV', hV'd⟩ := exists_finrank_add_depthAt_eq hy'
+  rw [depthAt_eq_iff (by rw [range_prod]; exact ⟨hy, hy'⟩), finrank_prod]
+  refine ⟨⟨V.prod V', ?_, by rw [hfin]; omega⟩, fun U hU ↦ ?_⟩
+  · rw [Submodule.prod_coe, hcone]
+    exact prod_mono hV hV'
+  · -- The two projections of `U` are linear subspaces in the cones of the factors, and `U` lies
+    -- in their product.
+    have h₁ := finrank_add_depthAt_le (I := I) (y := y) (U.map (LinearMap.fst ℝ E E'))
+      (by rintro _ ⟨u, hu, rfl⟩; exact (hcone ▸ hU hu).1)
+    have h₂ := finrank_add_depthAt_le (I := I') (y := y') (U.map (LinearMap.snd ℝ E E'))
+      (by rintro _ ⟨u, hu, rfl⟩; exact (hcone ▸ hU hu).2)
+    have hle : U ≤ (U.map (LinearMap.fst ℝ E E')).prod (U.map (LinearMap.snd ℝ E E')) :=
+      fun u hu ↦ ⟨⟨u, hu, rfl⟩, ⟨u, hu, rfl⟩⟩
+    have hU' := Submodule.finrank_mono hle
+    rw [hfin] at hU'
+    omega
+
 end Model
 
 section Coordinates
@@ -343,6 +387,15 @@ theorem depth_eq_zero_iff {x : M} : I.depth x = 0 ↔ I.IsInteriorPoint x := by
 theorem depth_pos_iff {x : M} : 0 < I.depth x ↔ I.IsBoundaryPoint x := by
   rw [Nat.pos_iff_ne_zero, Ne, depth_eq_zero_iff, isBoundaryPoint_iff_not_isInteriorPoint]
 
+/-- **The depth is additive on product manifolds**: the depth of a point of `M × N` is the sum of
+the depths of its two coordinates. -/
+@[simp]
+theorem depth_prod [FiniteDimensional ℝ E'] (x : M) (x' : N) :
+    (I.prod I').depth (x, x') = I.depth x + I'.depth x' := by
+  simp only [depth_def, extChartAt_prod, PartialEquiv.prod_coe]
+  exact depthAt_prod (extChartAt_target_subset_range x (mem_extChartAt_target x))
+    (extChartAt_target_subset_range x' (mem_extChartAt_target x'))
+
 variable {n : WithTop ℕ∞} [IsManifold I n M]
 
 /-- On a `C¹` manifold the depth of a point does not depend on the chart: its image in any chart
@@ -376,6 +429,42 @@ theorem depthAt_extend_eq_depth (hn : n ≠ 0) {e : OpenPartialHomeomorph M H}
   omega
 
 end Manifold
+
+section HalfSpace
+
+variable {n : ℕ} [NeZero n] {M : Type*} [TopologicalSpace M]
+  [ChartedSpace (EuclideanHalfSpace n) M]
+
+/-- On a manifold modelled on the half-space `𝓡∂ n`, every point has depth at most `1`. -/
+theorem depth_modelWithCornersEuclideanHalfSpace_le_one (x : M) : (𝓡∂ n).depth x ≤ 1 := by
+  rw [depth_def, depthAt_modelWithCornersEuclideanHalfSpace
+    (extChartAt_target_subset_range x (mem_extChartAt_target x))]
+  split_ifs <;> simp
+
+/-- On a manifold modelled on the half-space `𝓡∂ n`, the points of depth `1` are exactly the
+boundary points; the others are the interior points, of depth `0`. -/
+@[simp]
+theorem depth_modelWithCornersEuclideanHalfSpace_eq_one_iff {x : M} :
+    (𝓡∂ n).depth x = 1 ↔ (𝓡∂ n).IsBoundaryPoint x := by
+  rw [← depth_pos_iff]
+  have := depth_modelWithCornersEuclideanHalfSpace_le_one (n := n) x
+  omega
+
+variable {m : ℕ} [NeZero m] {N : Type*} [TopologicalSpace N]
+  [ChartedSpace (EuclideanHalfSpace m) N]
+
+/-- In the product of two manifolds with boundary modelled on half-spaces, the corners, the points
+of depth `2`, are exactly the pairs of boundary points. -/
+theorem depth_prod_eq_two_iff {x : M} {y : N} :
+    ((𝓡∂ n).prod (𝓡∂ m)).depth (x, y) = 2 ↔
+      (𝓡∂ n).IsBoundaryPoint x ∧ (𝓡∂ m).IsBoundaryPoint y := by
+  rw [depth_prod, ← depth_modelWithCornersEuclideanHalfSpace_eq_one_iff,
+    ← depth_modelWithCornersEuclideanHalfSpace_eq_one_iff]
+  have := depth_modelWithCornersEuclideanHalfSpace_le_one (n := n) x
+  have := depth_modelWithCornersEuclideanHalfSpace_le_one (n := m) y
+  omega
+
+end HalfSpace
 
 end ModelWithCorners
 

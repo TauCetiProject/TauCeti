@@ -251,11 +251,8 @@ theorem W1p.eq_frontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
   refine DFunLike.coe_injective <|
     (W1p.denseRange_restrictL_ofTestFunctionₗ_top hp hΩ hb).equalizer
       T.continuous (W1p.frontierTrace hp hΩ hb).continuous (funext fun φ => ?_)
-  refine Lp.ext ((hT φ).trans (W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb
-    φ.continuous.continuousOn ?_).symm)
-  exact (W1p.value_restrictL_ae (le_top : Ω ≤ ⊤) _).trans
-    (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 le_top)
-      (W1p.value_ofTestFunctionₗ_ae φ))
+  exact Lp.ext ((hT φ).trans (W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb
+    φ.continuous.continuousOn (W1p.value_restrictL_ofTestFunctionₗ_ae le_top φ)).symm)
 
 /-- **Functions in `W^{1,p}_0(Ω)` have zero trace.** -/
 theorem W1p.w1p0Submodule_le_ker_frontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
@@ -282,6 +279,21 @@ theorem W1p.w1p0Submodule_le_ker_frontierTrace (hp : p ≠ (∞ : ℝ≥0∞))
 
 /-! ### Localization and the kernel of the trace -/
 
+/-- The trace of `ψ` times the restriction of a whole-space test function `φ` is `ψ φ` on the
+frontier. This is the test-function case of `TauCeti.W1p.frontierTrace_contDiffSMul_ae`. -/
+private theorem W1p.frontierTrace_contDiffSMul_restrictL_ofTestFunctionₗ_ae
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ)) :
+    W1p.frontierTrace hp hΩ hb (W1p.contDiffSMul ψ hψ hM hψM hgM
+        (W1p.restrictL (le_top : Ω ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p φ))) =ᵐ[
+      (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+        (frontier (Ω : Set (WithLp 2 (ℝ × E))))] fun x => ψ x * φ x :=
+  W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb (hψ.continuous.mul φ.continuous).continuousOn
+    (Filter.EventuallyEq.trans (W1p.value_contDiffSMul_ae hψ hM hψM hgM _)
+      (Filter.EventuallyEq.rfl.smul (W1p.value_restrictL_ofTestFunctionₗ_ae le_top φ)))
+
 /-- **The trace commutes with smooth bounded multiplication.** On a bounded Lipschitz domain, for
 `1 ≤ p < ∞`, the trace of `ψ u` is `ψ` times the trace of `u`, for every smooth `ψ` bounded
 together with its gradient on `Ω`. The density argument is adapted from the flat version
@@ -294,15 +306,13 @@ theorem W1p.frontierTrace_contDiffSMul_ae (hp : p ≠ (∞ : ℝ≥0∞))
       (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
         (frontier (Ω : Set (WithLp 2 (ℝ × E))))]
       fun x => ψ x * W1p.frontierTrace hp hΩ hb u x := by
-  set σ := (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+  let σ := (μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
     (frontier (Ω : Set (WithLp 2 (ℝ × E))))
   -- The frontier lies in the closure of `Ω`, where `ψ` is still bounded by `M`.
   have hB : MemLp ψ ∞ σ := memLp_top_of_bound hψ.continuous.aestronglyMeasurable M <|
-    (ae_restrict_mem isClosed_frontier.measurableSet).mono fun x hx => by
-      rw [Real.norm_eq_abs]
-      exact closure_minimal (t := {x | |ψ x| ≤ M}) hψM
-        (isClosed_le (continuous_abs.comp hψ.continuous) continuous_const)
-        (frontier_subset_closure hx)
+    (ae_restrict_mem isClosed_frontier.measurableSet).mono fun x hx =>
+      closure_minimal (fun y hy => (Real.norm_eq_abs _).trans_le (hψM y hy))
+        (isClosed_le hψ.continuous.norm continuous_const) (frontier_subset_closure hx)
   let T : Lp ℝ p σ →L[ℝ] Lp ℝ p σ :=
     (ContinuousLinearMap.lsmul ℝ ℝ).holderL σ ∞ p p (hB.toLp ψ)
   have hT (f : Lp ℝ p σ) : T f =ᵐ[σ] fun x => ψ x * f x := by
@@ -315,28 +325,16 @@ theorem W1p.frontierTrace_contDiffSMul_ae (hp : p ≠ (∞ : ℝ≥0∞))
       T (W1p.frontierTrace hp hΩ hb u) := by
     refine (W1p.denseRange_restrictL_ofTestFunctionₗ_top hp hΩ hb).induction_on u
       (isClosed_eq ?_ ?_) fun φ => ?_
-    · simpa only [Function.comp_def, W1p.contDiffSMulL_apply] using
-        (W1p.frontierTrace hp hΩ hb).continuous.comp
-          (W1p.contDiffSMulL ψ hψ hM hψM hgM).continuous
+    · exact ((W1p.frontierTrace hp hΩ hb).continuous.comp
+        (W1p.contDiffSMulL ψ hψ hM hψM hgM).continuous).congr fun v =>
+          congrArg _ (W1p.contDiffSMulL_apply hψ hM hψM hgM v)
     · exact T.continuous.comp (W1p.frontierTrace hp hΩ hb).continuous
-    have hφ := (W1p.value_restrictL_ae (le_top : Ω ≤ ⊤) _).trans
-      (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 le_top)
-        (W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := p) φ))
-    have hψφ : W1p.value (W1p.contDiffSMul ψ hψ hM hψM hgM
-        (W1p.restrictL (le_top : Ω ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p φ))) =ᵐ[
-          volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))] fun x => ψ x * φ x := by
-      filter_upwards [W1p.value_contDiffSMul_ae hψ hM hψM hgM
-        (W1p.restrictL (le_top : Ω ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p φ)), hφ] with x hx hφx
-      rw [hx, hφx, smul_eq_mul]
-    apply Lp.ext
-    filter_upwards [W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb
-        (hψ.continuous.mul φ.continuous).continuousOn hψφ,
-      hT (W1p.frontierTrace hp hΩ hb _),
-      W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb φ.continuous.continuousOn hφ]
-      with x h₁ h₂ h₃
-    rw [h₁, h₂, h₃, Pi.mul_apply]
-  rw [heq]
-  exact hT _
+    have hφ := W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb φ.continuous.continuousOn
+      (W1p.value_restrictL_ofTestFunctionₗ_ae le_top φ)
+    exact Lp.ext <| (W1p.frontierTrace_contDiffSMul_restrictL_ofTestFunctionₗ_ae hp hΩ hb hψ hM hψM
+      hgM φ).trans ((hT _).trans (Filter.EventuallyEq.rfl.mul hφ)).symm
+  exact (Filter.EventuallyEq.of_eq (congrArg (fun f : Lp ℝ p σ => (f : WithLp 2 (ℝ × E) → ℝ))
+    heq)).trans (hT _)
 
 /-- **A local chart trace on the frontier is the trace of the cutoff product.** On a bounded
 Lipschitz domain, for `1 ≤ p < ∞`, the frontier version of the local trace through a Lipschitz
@@ -355,17 +353,10 @@ theorem W1p.lipschitzChartFrontierTrace_eq_frontierTrace_comp (hp : p ≠ (∞ :
       (W1p.lipschitzChartFrontierTrace hp h ψ hψ hM hψM hgM hs).continuous
       ((W1p.frontierTrace hp hΩ hb).comp (W1p.contDiffSMulL ψ hψ hM hψM hgM)).continuous
       (funext fun χ => ?_)
-  have hχ := (W1p.value_restrictL_ae (le_top : Ω ≤ ⊤) _).trans
-    (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 le_top)
-      (W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := p) χ))
   simp only [Function.comp_apply, ContinuousLinearMap.comp_apply, W1p.contDiffSMulL_apply]
-  apply Lp.ext
-  filter_upwards [W1p.lipschitzChartFrontierTrace_ae_eq_of_continuousOn hp h hψ hM hψM hgM hs
-      χ.continuous.continuousOn hχ,
-    W1p.frontierTrace_contDiffSMul_ae hp hΩ hb hψ hM hψM hgM _,
-    W1p.frontierTrace_ae_eq_of_continuousOn hp hΩ hb χ.continuous.continuousOn hχ]
-    with x h₁ h₂ h₃
-  rw [h₁, h₂, h₃]
+  exact Lp.ext <| (W1p.lipschitzChartFrontierTrace_ae_eq_of_continuousOn hp h hψ hM hψM hgM hs
+    χ.continuous.continuousOn (W1p.value_restrictL_ofTestFunctionₗ_ae le_top χ)).trans
+      (W1p.frontierTrace_contDiffSMul_restrictL_ofTestFunctionₗ_ae hp hΩ hb hψ hM hψM hgM χ).symm
 
 /-- **A local chart trace vanishes off the chart.** On a bounded Lipschitz domain, for
 `1 ≤ p < ∞`, the local trace through a Lipschitz boundary chart vanishes almost everywhere at
@@ -379,39 +370,27 @@ theorem W1p.lipschitzChartTrace_ae_eq_zero_of_notMem (hp : p ≠ (∞ : ℝ≥0�
     (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) (u : W1p volume Ω p) :
     ∀ᵐ y ∂(volume : Measure E), normalGraphEmbedding φ y ∉ normalCylinder a b →
       W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u y = 0 := by
-  set S : Set E := (normalGraphEmbedding φ ⁻¹' normalCylinder a b)ᶜ
+  let S : Set E := (normalGraphEmbedding φ ⁻¹' normalCylinder a b)ᶜ
   let R := (LpToLpRestrictCLM E ℝ ℝ (volume : Measure E) p S).comp
     (W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs)
-  -- Restricted to `S`, the local trace vanishes on restrictions of test functions, hence
-  -- everywhere by density.
-  have hR : R = 0 := by
-    refine DFunLike.coe_injective <|
-      (W1p.denseRange_restrictL_ofTestFunctionₗ_top hp hΩ hb).equalizer
-        R.continuous continuous_const (funext fun χ => ?_)
-    have hχ := (W1p.value_restrictL_ae (le_top : Ω ≤ ⊤) _).trans
-      (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 le_top)
-        (W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := p) χ))
-    refine Lp.ext ?_
-    filter_upwards [LpToLpRestrictCLM_coeFn ℝ S (W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs
-        (W1p.restrictL (le_top : Ω ≤ ⊤) (W1p.ofTestFunctionₗ volume ⊤ p χ))),
-      ae_restrict_of_ae (W1p.lipschitzChartTrace_apply_ae_of_continuousOn hp h hψ hM hψM hgM hs
-        χ.continuous.continuousOn hχ),
-      ae_restrict_mem (h.measurableSet_normalGraphEmbedding_preimage_normalCylinder.compl),
-      Lp.coeFn_zero ℝ p ((volume : Measure E).restrict S)] with y hRy hy hyS h0
-    simp only [R, Function.comp_apply, Pi.zero_apply, ContinuousLinearMap.comp_apply,
-      zero_apply] at hRy h0 ⊢
-    have hψy : ψ (e.symm (normalGraphEmbedding φ y)) = 0 :=
-      image_eq_zero_of_notMem_tsupport fun hys => hyS (by simpa using hs hys)
-    rw [hRy, hy, h0, hψy, zero_mul]
-  have hu : LpToLpRestrictCLM E ℝ ℝ (volume : Measure E) p S
-      (W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u) = 0 := by
-    simpa [R] using DFunLike.congr_fun hR u
-  have h0 : W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u =ᵐ[(volume : Measure E).restrict S]
-      (0 : E → ℝ) := by
-    filter_upwards [LpToLpRestrictCLM_coeFn ℝ S (W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u),
-      Lp.coeFn_zero ℝ p ((volume : Measure E).restrict S)] with y hy h0
-    rw [← hy, hu, h0]
-  exact (ae_restrict_iff' h.measurableSet_normalGraphEmbedding_preimage_normalCylinder.compl).1 h0
+  -- `R v` is zero exactly when the local trace of `v` vanishes almost everywhere on `S`.
+  have hR (v : W1p volume Ω p) :
+      R v = 0 ↔ W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs v =ᵐ[volume.restrict S] 0 :=
+    Lp.eq_zero_iff_ae_eq_zero.trans ⟨(LpToLpRestrictCLM_coeFn ℝ S _).symm.trans,
+      (LpToLpRestrictCLM_coeFn ℝ S _).trans⟩
+  -- On restrictions of test functions, the local trace is the cutoff product at the graph point,
+  -- which vanishes on `S`; the general case follows by density.
+  have hu : R u = 0 := (W1p.denseRange_restrictL_ofTestFunctionₗ_top hp hΩ hb).induction_on u
+    (isClosed_eq R.continuous continuous_const) fun χ => (hR _).2 <| by
+      filter_upwards [ae_restrict_of_ae (W1p.lipschitzChartTrace_apply_ae_of_continuousOn hp h hψ
+          hM hψM hgM hs χ.continuous.continuousOn
+            (W1p.value_restrictL_ofTestFunctionₗ_ae le_top χ)),
+        ae_restrict_mem h.measurableSet_normalGraphEmbedding_preimage_normalCylinder.compl]
+        with y hy hyS
+      exact hy.trans (mul_eq_zero_of_left (image_eq_zero_of_notMem_tsupport fun hys =>
+        hyS (by simpa using hs hys)) _)
+  exact (ae_restrict_iff' h.measurableSet_normalGraphEmbedding_preimage_normalCylinder.compl).1
+    ((hR u).1 hu)
 
 /-- **Zero trace gives zero local chart traces.** On a bounded Lipschitz domain, for
 `1 ≤ p < ∞`, if the trace of `u ∈ W^{1,p}(Ω)` vanishes, then so does its local trace through
@@ -425,38 +404,27 @@ theorem W1p.lipschitzChartTrace_eq_zero_of_frontierTrace_eq_zero (hp : p ≠ (�
     (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) {u : W1p volume Ω p}
     (hu : W1p.frontierTrace hp hΩ hb u = 0) :
     W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u = 0 := by
-  set g := W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u
   -- The frontier version of the local trace is the trace of `ψ u`, which is `ψ` times zero.
-  have hF : ∀ᵐ x ∂(μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))),
-      x ∈ frontier (Ω : Set (WithLp 2 (ℝ × E))) ∩ e ⁻¹' normalCylinder a b → g (e x).snd = 0 := by
-    have h₁ := W1p.lipschitzChartFrontierTrace_ae_eq hp h hψ hM hψM hgM hs u
+  have hF : W1p.lipschitzChartFrontierTrace hp h ψ hψ hM hψM hgM hs u = 0 := by
     rw [W1p.lipschitzChartFrontierTrace_eq_frontierTrace_comp hp hΩ hb,
-      ContinuousLinearMap.comp_apply, W1p.contDiffSMulL_apply] at h₁
-    have h₂ := (h₁.symm.trans (W1p.frontierTrace_contDiffSMul_ae hp hΩ hb hψ hM hψM hgM u))
-    rw [hu] at h₂
-    have h0 := Lp.coeFn_zero ℝ p ((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
-      (frontier (Ω : Set (WithLp 2 (ℝ × E)))))
-    filter_upwards [(ae_restrict_iff' isClosed_frontier.measurableSet).1 h₂,
-      (ae_restrict_iff' isClosed_frontier.measurableSet).1 h0] with x hx h0x hxP
-    have hgx := hx hxP.1
-    rwa [indicator_of_mem hxP, h0x hxP.1, Pi.zero_apply, mul_zero] at hgx
-  -- Hence `g` vanishes almost everywhere on the parameters of the frontier patch.
-  set bad : Set E := {y | normalGraphEmbedding φ y ∈ normalCylinder a b ∧ g y ≠ 0}
-  have hbad : volume bad = 0 := by
-    refine (h.euclideanHausdorffMeasure_image_boundaryParametrization_eq_zero_iff bad).1 ?_
-    rw [ae_iff] at hF
-    refine measure_mono_null ?_ hF
-    rintro _ ⟨y, hy, rfl⟩
-    simp only [mem_ofPred_eq, not_imp, e.apply_symm_apply, normalGraphEmbedding_snd]
-    exact ⟨h.image_boundaryParametrization.subset ⟨y, hy.1, rfl⟩, hy.2⟩
-  refine Lp.ext ?_
+      ContinuousLinearMap.comp_apply, W1p.contDiffSMulL_apply, Lp.eq_zero_iff_ae_eq_zero]
+    filter_upwards [W1p.frontierTrace_contDiffSMul_ae hp hΩ hb hψ hM hψM hgM u,
+      Lp.eq_zero_iff_ae_eq_zero.1 hu] with x hx h0
+    rw [hx, h0, Pi.zero_apply, mul_zero]
+  -- Hence the local trace vanishes at almost every tangential parameter in the chart cylinder.
+  have hP : ∀ᵐ y ∂(volume : Measure E).restrict (normalGraphEmbedding φ ⁻¹' normalCylinder a b),
+      W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u y = 0 := by
+    refine h.ae_restrict_frontier_inter_iff.1 ?_
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset inter_subset_left
+        ((W1p.lipschitzChartFrontierTrace_ae_eq hp h hψ hM hψM hgM hs u).symm.trans
+          (Lp.eq_zero_iff_ae_eq_zero.1 hF)),
+      ae_restrict_mem (measurableSet_frontier_inter_preimage_normalCylinder _ e a b)] with x hx hxP
+    rwa [indicator_of_mem hxP] at hx
+  refine Lp.eq_zero_iff_ae_eq_zero.2 ?_
   filter_upwards [W1p.lipschitzChartTrace_ae_eq_zero_of_notMem hp hΩ hb h hψ hM hψM hgM hs u,
-    measure_eq_zero_iff_ae_notMem.1 hbad, Lp.coeFn_zero ℝ p (volume : Measure E)] with y hy hyb h0
-  rw [h0]
-  by_contra hne
-  by_cases hyC : normalGraphEmbedding φ y ∈ normalCylinder a b
-  · exact hyb ⟨hyC, hne⟩
-  · exact hne (hy hyC)
+    (ae_restrict_iff' h.measurableSet_normalGraphEmbedding_preimage_normalCylinder).1 hP]
+    with y hy hy'
+  exact (em _).elim hy' hy
 
 /-- **The functions of zero trace on a bounded Lipschitz domain are those of `W^{1,p}_0`.** For
 `1 ≤ p < ∞`, `u ∈ W^{1,p}(Ω)` lies in `W^{1,p}_0(Ω)` exactly when its trace on the frontier

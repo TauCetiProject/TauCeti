@@ -159,7 +159,7 @@ theorem hasDerivAt_extChartAt_mulInvariantIntegralCurve_zero [CompleteSpace E]
   rw [tangentCoordChange_self hone] at hcurveDeriv
   exact hcurveDeriv
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 section SmoothInvariantIntegralCurve
 

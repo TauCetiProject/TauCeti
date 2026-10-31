@@ -24,6 +24,7 @@ composite `𝔾ₘ → D(X) → G`. On points it sends a unit `u` to the image i
   point formula `BialgHom.pointsHom_cocharacter`.
 * `BialgHom.cocharacter_id_single`: evaluation of a cocharacter on a group-algebra monomial.
 * `BialgHom.cocharacter_id_comp`: composition with a diagonalizable-group cocharacter.
+* `BialgHom.ker_le_ker_cocharacter`: the cocharacter kills the functions vanishing on `D(X)`.
 * `BialgHom.pointsHom_cocharacter_mul` and `BialgHom.cocharacter_pow`: products and powers of
   cocharacters of `D(X)`.
 
@@ -77,6 +78,14 @@ theorem cocharacter_id_comp (ψ : X →* Multiplicative ℤ) :
     ((BialgHom.id R (MonoidAlgebra R X)).cocharacter ψ).comp π = π.cocharacter ψ := by
   ext h : 1
   simp only [cocharacter, BialgHom.comp_apply, BialgHom.id_apply]
+
+/-- The cocharacter of `ψ` factors through `D(X)`, so it kills every function vanishing on
+`D(X)`. -/
+theorem ker_le_ker_cocharacter (ψ : X →* Multiplicative ℤ) :
+    RingHom.ker π.toAlgHom.toRingHom ≤ RingHom.ker (π.cocharacter ψ).toAlgHom.toRingHom := by
+  intro h hh
+  rw [RingHom.mem_ker] at hh ⊢
+  simp_all [cocharacter]
 
 /-! ### Points -/
 

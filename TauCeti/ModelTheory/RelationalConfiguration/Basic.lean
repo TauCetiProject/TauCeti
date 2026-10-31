@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.ModelTheory.Basic
+public import Mathlib.ModelTheory.LanguageMap
 public import Mathlib.MeasureTheory.Group.Arithmetic
 public import Mathlib.MeasureTheory.MeasurableSpace.Constructions
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
@@ -25,10 +25,10 @@ atom of `W`. This **restriction** is measurable and functorial: restriction alon
 the identity, and restriction along a composite is the composite of the restrictions in the
 opposite order.
 
-Over the vertex set `ℕ`, functoriality makes restriction along inverses a left action of the
-finitely supported permutations `TauCeti.FinitaryPerm` by relabelling vertices, and each element
-acts measurably. This is the action under which laws of random structures on `ℕ` are invariant or
-ergodic.
+Functoriality makes restriction along inverses a left action of the permutations of `V` by
+relabelling vertices, and each permutation acts measurably. Over the vertex set `ℕ`, the
+finitely supported permutations `TauCeti.FinitaryPerm` act in the same way; this is the action
+under which laws of random structures on `ℕ` are invariant or ergodic.
 
 The function symbols of `L` are permitted and play no role. A structure of `L` determines a
 configuration by deciding its relations (`ofStructure`).
@@ -38,6 +38,10 @@ configuration by deciding its relations (`ofStructure`).
 * `TauCeti.RelationalConfiguration.Atom L V` — a relation symbol of `L` with a tuple of vertices;
 * `TauCeti.RelationalConfiguration L V` — a truth value for every atom;
 * `TauCeti.RelationalConfiguration.restrict` — pulling a configuration back along a vertex map;
+* `FirstOrder.Language.LHom.onAtom` — renaming the relation symbol of an atom along a language
+  map;
+* `TauCeti.RelationalConfiguration.instMulActionPerm` — permutations of `V` relabel configurations
+  on `V`;
 * `TauCeti.RelationalConfiguration.instMulActionFinitaryPerm` — finitely supported permutations
   of `ℕ` relabel configurations over `ℕ`;
 * `TauCeti.RelationalConfiguration.ofStructure` — the configuration of an `L`-structure.
@@ -49,8 +53,9 @@ configuration by deciding its relations (`ofStructure`).
 * `TauCeti.RelationalConfiguration.measurable_restrict` — restriction is measurable;
 * `TauCeti.RelationalConfiguration.restrict_id` and
   `TauCeti.RelationalConfiguration.restrict_comp` — restriction is functorial;
-* `TauCeti.RelationalConfiguration.instMeasurableConstSMulFinitaryPerm` — each finitary
-  relabelling is measurable.
+* `TauCeti.RelationalConfiguration.instMeasurableConstSMulPerm` and
+  `TauCeti.RelationalConfiguration.instMeasurableConstSMulFinitaryPerm` — each relabelling is
+  measurable.
 -/
 
 public section
@@ -99,6 +104,26 @@ theorem Atom.map_id (a : Atom L V) : a.map id = a := (rfl)
 
 theorem Atom.map_comp (g : W → X) (f : V → W) (a : Atom L V) :
     a.map (g ∘ f) = (a.map f).map g := (rfl)
+
+/-- Rename the relation symbol of an atom along a language map, keeping its arguments. -/
+def _root_.FirstOrder.Language.LHom.onAtom {L' : Language} (g : L →ᴸ L') (a : Atom L V) :
+    Atom L' V :=
+  ⟨a.1, g.onRelation a.2.1, a.2.2⟩
+
+@[simp]
+theorem _root_.FirstOrder.Language.LHom.onAtom_atom {L' : Language} (g : L →ᴸ L') {n : ℕ}
+    (R : L.Relations n) (x : Fin n → V) : g.onAtom (atom R x) = atom (g.onRelation R) x := (rfl)
+
+/-- Renaming the relation symbol of an atom commutes with relabelling its arguments. -/
+theorem _root_.FirstOrder.Language.LHom.onAtom_map {L' : Language} (g : L →ᴸ L') (f : V → W)
+    (a : Atom L V) : g.onAtom (a.map f) = (g.onAtom a).map f := (rfl)
+
+@[simp]
+theorem _root_.FirstOrder.Language.LHom.id_onAtom (a : Atom L V) :
+    (FirstOrder.Language.LHom.id L).onAtom a = a := (rfl)
+
+theorem _root_.FirstOrder.Language.LHom.comp_onAtom {L' L'' : Language} (g : L' →ᴸ L'')
+    (f : L →ᴸ L') (a : Atom L V) : (g.comp f).onAtom a = g.onAtom (f.onAtom a) := (rfl)
 
 /-- The atoms relabelled from `Fin m` are relabelled from `Fin n` for every `n ≥ m`. -/
 private theorem Atom.exists_map_val_of_le {m n : ℕ} (hmn : m ≤ n) {a : Atom L ℕ}
@@ -268,6 +293,35 @@ open Classical in
 theorem eval_ofStructure [L.Structure V] {n : ℕ} (R : L.Relations n) (x : Fin n → V) :
     (ofStructure L V).eval (atom R x) = decide (Language.Structure.RelMap R x) := (rfl)
 
+/-! ### Relabelling by permutations -/
+
+/-- Permutations of `V` relabel configurations on `V`: `σ` acts by restriction along `σ⁻¹`, so
+that relabelling is a left action. -/
+instance instSMulPerm : SMul (Equiv.Perm V) (RelationalConfiguration L V) :=
+  ⟨fun σ c => c.restrict ⇑σ⁻¹⟩
+
+/-- Relabelling by `σ` is restriction along `σ⁻¹`. -/
+theorem perm_smul_def (σ : Equiv.Perm V) (c : RelationalConfiguration L V) :
+    σ • c = c.restrict ⇑σ⁻¹ := (rfl)
+
+/-- Relabelling by `σ` reads every atom at its relabelling along `σ⁻¹`. -/
+@[simp]
+theorem eval_perm_smul (σ : Equiv.Perm V) (c : RelationalConfiguration L V) (a : Atom L V) :
+    (σ • c).eval a = c.eval (a.map σ.symm) := by
+  rw [perm_smul_def, eval_restrict, Equiv.Perm.coe_inv]
+
+/-- Relabelling by permutations is a left action on configurations. -/
+instance instMulActionPerm : MulAction (Equiv.Perm V) (RelationalConfiguration L V) where
+  one_smul c := by rw [perm_smul_def, inv_one, Equiv.Perm.coe_one, restrict_id]
+  mul_smul σ τ c := by
+    rw [perm_smul_def, perm_smul_def, perm_smul_def, mul_inv_rev, Equiv.Perm.coe_mul,
+      restrict_comp]
+
+/-- Each relabelling by a permutation is measurable. -/
+instance instMeasurableConstSMulPerm :
+    MeasurableConstSMul (Equiv.Perm V) (RelationalConfiguration L V) :=
+  ⟨fun _ => measurable_restrict _⟩
+
 /-! ### Finitary relabelling of configurations over `ℕ` -/
 
 /-- Finitely supported permutations of `ℕ` relabel configurations over `ℕ`: `g` acts by
@@ -284,6 +338,10 @@ theorem finitaryPerm_smul_def (g : FinitaryPerm) (c : RelationalConfiguration L 
 theorem eval_finitaryPerm_smul (g : FinitaryPerm) (c : RelationalConfiguration L ℕ)
     (a : Atom L ℕ) : (g • c).eval a = c.eval (a.map ⇑(FinitaryPerm.toPerm g)⁻¹) := by
   rw [finitaryPerm_smul_def, eval_restrict]
+
+/-- Finitary relabelling by `g` is relabelling by the underlying permutation of `ℕ`. -/
+theorem finitaryPerm_smul_eq_toPerm_smul (g : FinitaryPerm) (c : RelationalConfiguration L ℕ) :
+    g • c = FinitaryPerm.toPerm g • c := (rfl)
 
 /-- Finitary relabelling is a left action on configurations over `ℕ`. -/
 instance instMulActionFinitaryPerm : MulAction FinitaryPerm (RelationalConfiguration L ℕ) where

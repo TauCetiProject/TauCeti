@@ -569,7 +569,7 @@ instance (priority := 100) restrictedMvPowerSeriesSubmodule.instAddCommGroup
     AddCommGroup (restrictedMvPowerSeriesSubmodule k A M) :=
   -- Reuse the submodule's additive submonoid directly so the group operations also match
   -- the native ring-scalar instance at typeclass-search transparency.
-  fast_instance% AddSubgroupClass.toAddCommGroup
+  AddSubgroupClass.toAddCommGroup
     ({ (restrictedMvPowerSeriesSubmodule k A M).toAddSubmonoid with
         neg_mem' := fun hf ↦ mem_restrictedMvPowerSeriesSubmodule.mpr
           (mem_restrictedMvPowerSeriesSubmodule.mp hf).neg } :
