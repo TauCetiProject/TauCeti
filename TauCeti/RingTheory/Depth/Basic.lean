@@ -14,6 +14,7 @@ public import TauCeti.RingTheory.Ideal.AssociatedPrime.Localization
 public import TauCeti.RingTheory.KrullDimension.Quotient
 public import TauCeti.RingTheory.Regular.LinearMap
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+import TauCeti.Data.ENat.Basic
 
 /-!
 # Basic depth of modules
@@ -261,12 +262,6 @@ section Free
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] [Small.{v} R]
 
-/-- If `c ⊓ (b + 1) ≤ a` and `c ⊓ (a + 1) ≤ b`, then `c ≤ a`. -/
-private theorem le_of_inf_le_of_inf_le {a b c : ℕ∞} (ha : c ⊓ (b + 1) ≤ a)
-    (hb : c ⊓ (a + 1) ≤ b) : c ≤ a := by
-  induction a using ENat.recTopCoe <;> induction b using ENat.recTopCoe <;>
-    induction c using ENat.recTopCoe <;> simp_all <;> norm_cast at * <;> omega
-
 /-- The depth of a product of two modules over a local ring is the minimum of their depths. -/
 theorem depth_prod (M N : Type v) [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] :
     depth (ModuleCat.of R (M × N)) = depth (ModuleCat.of R M) ⊓ depth (ModuleCat.of R N) := by
@@ -274,7 +269,7 @@ theorem depth_prod (M N : Type v) [AddCommGroup M] [Module R M] [AddCommGroup N]
     (LinearMap.snd R M N) Function.Exact.inl_snd LinearMap.inl_injective LinearMap.snd_surjective
   have hN := depth_min_snd_trd_add_one_le_fst_of_exact (LinearMap.inr R M N)
     (LinearMap.fst R M N) Function.Exact.inr_fst LinearMap.inr_injective LinearMap.fst_surjective
-  exact le_antisymm (le_inf (le_of_inf_le_of_inf_le hM hN) (le_of_inf_le_of_inf_le hN hM))
+  exact le_antisymm (le_inf (ENat.le_of_inf_le_of_inf_le hM hN) (ENat.le_of_inf_le_of_inf_le hN hM))
     (depth_min_fst_trd_le_snd_of_exact (LinearMap.inl R M N) (LinearMap.snd R M N)
       Function.Exact.inl_snd LinearMap.inl_injective LinearMap.snd_surjective)
 

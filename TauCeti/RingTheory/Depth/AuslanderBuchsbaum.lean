@@ -12,6 +12,7 @@ import Mathlib.RingTheory.LocalRing.Module
 import Mathlib.RingTheory.KrullDimension.Regular
 import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
 import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
+import TauCeti.Data.ENat.Basic
 import TauCeti.RingTheory.Depth.WeaklyRegular
 import TauCeti.RingTheory.LocalRing.Module
 
@@ -66,28 +67,6 @@ namespace IsLocalRing
 
 variable {R : Type u} [CommRing R] [IsLocalRing R] [Small.{v} R]
 
-/-- A minimal free presentation of a finite module `M`, by a free module in the universe of `M`:
-a surjection `(Fin n → R) → M` whose kernel lies in `𝔪 • ⊤`. -/
-private theorem exists_surjective_ker_le_maximalIdeal_smul (M : Type v) [AddCommGroup M]
-    [Module R M] [Module.Finite R M] :
-    ∃ (n : ℕ) (g : (Fin n → Shrink.{v} R) →ₗ[R] M), Function.Surjective g ∧
-      LinearMap.ker g ≤ maximalIdeal R • ⊤ := by
-  obtain ⟨n, v, hv, hrel⟩ :=
-    TauCeti.IsLocalRing.exists_span_eq_top_forall_mem_maximalIdeal (R := R) (M := M)
-  let e : (Fin n → Shrink.{v} R) ≃ₗ[R] (Fin n → R) :=
-    LinearEquiv.piCongrRight fun _ ↦ Shrink.linearEquiv R R
-  refine ⟨n, Fintype.linearCombination R v ∘ₗ e.toLinearMap, ?_, fun x hx ↦ ?_⟩
-  · rw [← LinearMap.range_eq_top, LinearMap.range_comp, LinearEquiv.range, Submodule.map_top,
-      Fintype.range_linearCombination, hv]
-  · have hx' : e x ∈ maximalIdeal R • (⊤ : Submodule R (Fin n → R)) := by
-      rw [pi_eq_sum_univ (e x)]
-      exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem_smul
-        (hrel (e x) (by simpa [Fintype.linearCombination_apply] using hx) i) trivial
-    have : x ∈ (maximalIdeal R • (⊤ : Submodule R (Fin n → R))).map e.symm.toLinearMap := by
-      rw [Submodule.mem_map_equiv]
-      simpa using hx'
-    rwa [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range] at this
-
 /-- If `0 → K → F → M → 0` is a free presentation with `K` finite free and `K ⊆ 𝔪 F`, then
 `depth M + 1 ≤ depth K`. -/
 private theorem depth_add_one_le_depth_ker {F M : Type v} [AddCommGroup F] [Module R F]
@@ -108,19 +87,6 @@ private theorem depth_add_one_le_depth_ker {F M : Type v} [AddCommGroup F] [Modu
   -- `h` is the goal, with `IsLocalRing.depth` unfolded to `ModuleCat.depth`.
   exact h
 
-/-- The arithmetic of the inductive step: if `depth K = b` is finite, `depth M = a`, and
-`b + p = depth R`, then `b - 1 ≤ a` and `a + 1 ≤ b` give `a + (p + 1) = b + p`. -/
-private theorem add_succ_eq_of_le_of_le {a b : ℕ∞} {p : ℕ} (hb : b ≠ ⊤)
-    (h₁ : (b + p) ⊓ (b - 1) ≤ a) (h₂ : a + 1 ≤ b) : a + (p + 1 : ℕ) = b + p := by
-  induction b using ENat.recTopCoe with
-  | top => exact absurd rfl hb
-  | coe b =>
-    induction a using ENat.recTopCoe with
-    | top => simp at h₂
-    | coe a =>
-      norm_cast at h₂ ⊢
-      rcases min_le_iff.mp h₁ with h | h <;> norm_cast at h <;> omega
-
 variable [IsNoetherianRing R]
 
 /-- The Auslander–Buchsbaum formula for a module of projective dimension `p : ℕ`, by induction
@@ -137,7 +103,8 @@ private theorem depth_add_eq_of_projectiveDimension_eq (p : ℕ) (M : Type v) [A
     have : Module.Free R M := Module.free_of_flat_of_isLocalRing
     simpa using depth_eq_depth_self_of_free M
   | succ p ih =>
-    obtain ⟨n, g, hg, hker⟩ := exists_surjective_ker_le_maximalIdeal_smul (R := R) M
+    obtain ⟨n, g, hg, hker⟩ :=
+      TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul (R := R) M
     have hM : ¬ Module.Projective R M := fun h ↦ by
       have := Projective.projectiveDimension_le_zero (ModuleCat.of R M)
       rw [hp] at this
@@ -179,7 +146,7 @@ private theorem depth_add_eq_of_projectiveDimension_eq (p : ℕ) (M : Type v) [A
         | coe b => norm_cast at h'; omega
     rw [hF, ← hK] at h₁
     rw [← hK]
-    exact add_succ_eq_of_le_of_le hKtop h₁ h₂
+    exact ENat.add_succ_eq_of_le_of_le hKtop h₁ h₂
 
 end IsLocalRing
 

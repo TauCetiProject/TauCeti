@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Shrink
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Generators and bases of a free module over a local ring
@@ -38,6 +41,8 @@ as in the Auslander–Buchsbaum formula.
   basis.
 * `TauCeti.IsLocalRing.exists_span_eq_top_forall_mem_maximalIdeal`: a finite module over a local
   ring has a finite generating family whose relations all have coefficients in the maximal ideal.
+* `TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul`: a finite module over a local
+  ring has a minimal free presentation `(Fin n → R) → M`, with kernel in `𝔪 • ⊤`.
 -/
 
 public section
@@ -89,23 +94,6 @@ theorem exists_basis_of_linearIndependent_residue_coord {ι κ : Type*} [Fintype
   refine ⟨(b.map (Matrix.toLinearEquiv b A hA)).reindex e.symm, fun k ↦ ?_⟩
   simp [A, Matrix.toLin_self, Module.Basis.sum_repr]
 
-omit [_root_.IsLocalRing R] in
-/-- If `v₀, …, vₘ` span `M` and some relation `∑ cᵢ vᵢ = 0` has a unit coefficient `cⱼ`, then the
-family with `vⱼ` removed still spans `M`. -/
-private theorem span_range_comp_succAbove_eq_top {m : ℕ} {v : Fin (m + 1) → M}
-    (hv : Submodule.span R (Set.range v) = ⊤) {c : Fin (m + 1) → R} (hc : ∑ i, c i • v i = 0)
-    {j : Fin (m + 1)} (hj : IsUnit (c j)) :
-    Submodule.span R (Set.range (v ∘ j.succAbove)) = ⊤ := by
-  rw [eq_top_iff, ← hv, Submodule.span_le]
-  rintro _ ⟨i, rfl⟩
-  rcases eq_or_ne i j with rfl | hij
-  · rw [Fin.sum_univ_succAbove _ i] at hc
-    rw [SetLike.mem_coe, ← Submodule.smul_mem_iff_of_isUnit _ hj, eq_neg_of_add_eq_zero_left hc]
-    exact neg_mem (Submodule.sum_mem _ fun k _ ↦
-      Submodule.smul_mem _ _ (Submodule.subset_span ⟨k, rfl⟩))
-  · obtain ⟨k, rfl⟩ := Fin.exists_succAbove_eq hij
-    exact Submodule.subset_span ⟨k, rfl⟩
-
 /-- **Minimal generating families.** A finite module over a local ring has a finite generating
 family all of whose relations have coefficients in the maximal ideal. -/
 theorem exists_span_eq_top_forall_mem_maximalIdeal [Module.Finite R M] :
@@ -124,6 +112,37 @@ theorem exists_span_eq_top_forall_mem_maximalIdeal [Module.Finite R M] :
   | succ m =>
     by_contra hj
     exact hmin m m.lt_succ_self
-      ⟨_, span_range_comp_succAbove_eq_top hv hc (_root_.IsLocalRing.notMem_maximalIdeal.mp hj)⟩
+      ⟨_, Submodule.span_range_comp_succAbove_eq_top hv hc
+        (_root_.IsLocalRing.notMem_maximalIdeal.mp hj)⟩
+
+end TauCeti.IsLocalRing
+
+namespace TauCeti.IsLocalRing
+
+universe u v
+
+variable {R : Type u} [CommRing R] [_root_.IsLocalRing R] [Small.{v} R]
+
+/-- **Minimal free presentations.** A finite module `M` over a local ring has a surjection
+`(Fin n → R) → M`, from a free module in the universe of `M`, whose kernel lies in `𝔪 • ⊤`. -/
+theorem exists_surjective_ker_le_maximalIdeal_smul (M : Type v) [AddCommGroup M]
+    [Module R M] [Module.Finite R M] :
+    ∃ (n : ℕ) (g : (Fin n → Shrink.{v} R) →ₗ[R] M), Function.Surjective g ∧
+      LinearMap.ker g ≤ _root_.IsLocalRing.maximalIdeal R • ⊤ := by
+  obtain ⟨n, v, hv, hrel⟩ := exists_span_eq_top_forall_mem_maximalIdeal (R := R) (M := M)
+  let e : (Fin n → Shrink.{v} R) ≃ₗ[R] (Fin n → R) :=
+    LinearEquiv.piCongrRight fun _ ↦ Shrink.linearEquiv R R
+  refine ⟨n, Fintype.linearCombination R v ∘ₗ e.toLinearMap, ?_, fun x hx ↦ ?_⟩
+  · rw [← LinearMap.range_eq_top, LinearMap.range_comp, LinearEquiv.range, Submodule.map_top,
+      Fintype.range_linearCombination, hv]
+  · have hx' : e x ∈ _root_.IsLocalRing.maximalIdeal R • (⊤ : Submodule R (Fin n → R)) := by
+      rw [pi_eq_sum_univ (e x)]
+      exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem_smul
+        (hrel (e x) (by simpa [Fintype.linearCombination_apply] using hx) i) trivial
+    have : x ∈ (_root_.IsLocalRing.maximalIdeal R •
+        (⊤ : Submodule R (Fin n → R))).map e.symm.toLinearMap := by
+      rw [Submodule.mem_map_equiv]
+      simpa using hx'
+    rwa [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range] at this
 
 end TauCeti.IsLocalRing
