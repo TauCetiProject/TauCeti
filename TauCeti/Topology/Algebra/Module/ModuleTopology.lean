@@ -30,6 +30,10 @@ over a semiring with the indiscrete topology, the module topology of every modul
 (`IndiscreteTopology.of_continuousSMul`), so `IsModuleTopology` on its own does not replace the
 separation of the scalars.
 
+Without a basis, the module topology on `M` is the quotient topology along any linear surjection
+`q : F → M` from a module with its module topology, so it is Hausdorff exactly when `ker q` is
+closed (`TauCeti.t2Space_moduleTopology_iff_isClosed_ker`).
+
 The basis-dependent API is grouped in `TauCeti.ModuleTopology`, alongside Mathlib's
 organizational `ModuleTopology` namespace.
 -/
@@ -90,6 +94,21 @@ theorem t2Space_moduleTopology {R V : Type*} [Semiring R] [TopologicalSpace R]
     @T2Space V (moduleTopology R V) := by
   let _ : TopologicalSpace V := moduleTopology R V
   exact ModuleTopology.t2Space (Module.Free.chooseBasis R V)
+
+/-- **The module topology is Hausdorff exactly when the kernel of a presentation is closed.** For
+a linear surjection `q : F → M` from a module with its module topology, `moduleTopology A M` is
+Hausdorff if and only if `ker q` is closed in `F`. No finiteness is needed: the module topology on
+`M` is the quotient topology along `q`. -/
+theorem t2Space_moduleTopology_iff_isClosed_ker {A M F : Type*} [Ring A] [TopologicalSpace A]
+    [AddCommGroup M] [Module A M] [AddCommGroup F] [Module A F] [TopologicalSpace F]
+    [IsModuleTopology A F] {q : F →ₗ[A] M} (hq : Function.Surjective q) :
+    @T2Space M (moduleTopology A M) ↔ IsClosed (LinearMap.ker q : Set F) := by
+  let _ : TopologicalSpace M := moduleTopology A M
+  have _ : IsModuleTopology A M := ⟨rfl⟩
+  have _ : IsTopologicalAddGroup M := IsModuleTopology.isTopologicalAddGroup A M
+  rw [IsTopologicalAddGroup.t2Space_iff_zero_closed,
+    ← (IsModuleTopology.isQuotientMap_of_surjective hq).isClosed_preimage]
+  rfl
 
 variable {K V : Type*} [DivisionRing K] [TopologicalSpace K] [IsTopologicalSemiring K]
   [AddCommGroup V] [Module K V] [FiniteDimensional K V]

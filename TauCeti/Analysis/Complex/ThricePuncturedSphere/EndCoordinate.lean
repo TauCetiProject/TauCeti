@@ -58,6 +58,10 @@ def endSign : Puncture → ℝ
 
 @[simp] theorem endSign_inf : inf.endSign = -1 := (rfl)
 
+/-- The sign of an end has absolute value one. -/
+@[simp] theorem abs_endSign (q : Puncture) : |q.endSign| = 1 := by
+  cases q <;> simp
+
 /-- The center of an end lift: `cylindricalEndLift q z - q.endCenter` is a multiple of
 `exp (-2πz)`. It is `0` at the ends at `0` and `∞`, and `1` at the end at `1`. -/
 def endCenter : Puncture → ℂ

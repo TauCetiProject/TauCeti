@@ -59,6 +59,8 @@ route to Morse homology.
 * `IsIntegralCurve.gradient_eq_zero_of_periodic` and
   `IsIntegralCurve.eq_of_periodic_neg_gradient`: a periodic negative gradient trajectory
   consists entirely of critical points and is constant.
+* `IsIntegralCurve.exists_gradient_ne_zero`: a trajectory between distinct limits is
+  not stationary.
 * `Flow.IsNegativeGradient`: every orbit of a flow solves the negative gradient equation.
 * `Flow.isNegativeGradient_iff`: the introduction and elimination rule for that predicate.
 * `Flow.IsNegativeGradient.isIntegralCurve`: the orbit curve through a point, as an integral
@@ -242,6 +244,19 @@ theorem eq_of_periodic_neg_gradient
   intro v
   rw [(hγ v).deriv]
   exact neg_eq_zero.mpr (gradient_eq_zero_of_periodic hγ hf hT hper v)
+
+/-- A negative gradient trajectory between distinct limits is not stationary: the gradient does
+not vanish identically along it. -/
+theorem exists_gradient_ne_zero (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {p q : E}
+    (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q)) (hpq : p ≠ q) :
+    ∃ t, ∇ f (γ t) ≠ 0 := by
+  by_contra! h
+  have hconst : γ = fun _ ↦ γ 0 :=
+    funext fun t ↦ is_const_of_deriv_eq_zero (fun t ↦ (hγ t).differentiableAt)
+      (fun t ↦ by simp only [(hγ t).deriv, h t, neg_zero]) t 0
+  rw [hconst] at hbot htop
+  exact hpq ((tendsto_nhds_unique tendsto_const_nhds hbot).symm.trans
+    (tendsto_nhds_unique tendsto_const_nhds htop))
 
 end IsIntegralCurve
 

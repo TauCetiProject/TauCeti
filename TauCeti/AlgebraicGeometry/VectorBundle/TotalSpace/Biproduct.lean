@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.RelativeSpec.Equivalence
 public import TauCeti.AlgebraicGeometry.VectorBundle.TotalSpace
 
 /-!
@@ -20,6 +21,13 @@ sums. The direct sum is given by any bilimit bicone of finite locally free sheav
 biproduct `E ⊞ F` this gives an isomorphism `𝕍(E ⊞ F) ≅ 𝕍(E) ×_X 𝕍(F)` of schemes over `X`,
 natural in `E` and `F` (`totalSpaceSchemeBiprodIso`).
 
+More generally, the functor `totalSpaceScheme X` preserves finite products
+(`preservesFiniteProducts_totalSpaceScheme`); in particular the total space of the zero bundle is
+`X`. Indeed `totalSpaceScheme X` is the composite of dualization, an anti-equivalence; of the
+inclusion into quasicoherent sheaves, which is additive; of the symmetric algebra, a left adjoint
+(`symmetricAlgebraAdjunction`); and of relative Spec, an anti-equivalence onto affine schemes
+over `X`.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.totalSpaceSchemeBinaryFanIsLimit`: the total space of a direct sum is
@@ -27,7 +35,9 @@ natural in `E` and `F` (`totalSpaceSchemeBiprodIso`).
 * `TauCeti.AlgebraicGeometry.isPullback_totalSpaceScheme_map_fst_snd`: the same statement as a
   pullback square of schemes;
 * `TauCeti.AlgebraicGeometry.totalSpaceSchemeBiprodIso`: the isomorphism `𝕍(E ⊞ F) ≅ 𝕍(E) ×_X 𝕍(F)`
-  over `X`, with naturality `totalSpaceSchemeBiprodIso_hom_naturality`.
+  over `X`, with naturality `totalSpaceSchemeBiprodIso_hom_naturality`;
+* `TauCeti.AlgebraicGeometry.preservesFiniteProducts_totalSpaceScheme`: the total space functor
+  preserves finite products.
 
 ## References
 
@@ -49,6 +59,17 @@ open _root_.AlgebraicGeometry FiniteLocallyFreeSheaf
 universe u
 
 noncomputable section
+
+/-- **The total space of a vector bundle preserves finite products.** In particular the total
+space of a direct sum of finite locally free sheaves is the product of their total spaces in affine
+schemes over `X`, and the total space of the zero bundle is `X`. -/
+instance preservesFiniteProducts_totalSpaceScheme (X : Scheme.{u}) :
+    PreservesFiniteProducts (totalSpaceScheme X) :=
+  have : (dualFunctor (X := X)).rightOp.IsEquivalence := dualEquiv.isEquivalence_functor
+  have := preservesFiniteProducts_op (toQuasicoherent X)
+  have := preservesFiniteProducts_op (symmetricAlgebra X)
+  inferInstanceAs (PreservesFiniteProducts (dualFunctor.rightOp ⋙
+    (toQuasicoherent X).op ⋙ (symmetricAlgebra X).op ⋙ relativeSpec X))
 
 variable {X : Scheme.{u}}
 

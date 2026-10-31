@@ -240,6 +240,22 @@ theorem formClass_atRealPlace [FiniteDimensional K V] [Invertible (2 : K)]
   convert atRealPlace_def Q w
   exact Subsingleton.elim _ _
 
+open TauCeti in
+/-- The class of the scalar extension of a form along the complex embedding of an infinite place
+is the scalar extension of the class of the form along that embedding. -/
+theorem formClass_atComplexEmbedding [FiniteDimensional K V] [Invertible (2 : K)]
+    (Q : _root_.QuadraticForm K V) (hQ : Q.Nondegenerate) (w : InfinitePlace K) :
+    letI : Algebra K ℂ := w.embedding.toAlgebra
+    formClass (Q.atComplexEmbedding w) (Nondegenerate.atComplexEmbedding hQ w) =
+      RegularFormClass.baseChange ℂ (formClass Q hQ) := by
+  let : Algebra K ℂ := w.embedding.toAlgebra
+  rw [← formClass_baseChange Q hQ]
+  -- `atComplexEmbedding` builds its own `Invertible 2` instance on `K`, which agrees with the given
+  -- one because `Invertible 2` is a subsingleton.
+  congr 1
+  convert atComplexEmbedding_def Q w
+  exact Subsingleton.elim _ _
+
 section Diagonal
 
 variable {ι : Type*} [Fintype ι]
