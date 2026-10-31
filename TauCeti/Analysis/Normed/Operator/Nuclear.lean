@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Module.TensorProduct.Completion
 public import TauCeti.Analysis.OperatorIdeal.Carrier
-public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.Analysis.Normed.Group.Quotient
-import TauCeti.Analysis.Normed.Module.Dual.Functoriality
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
