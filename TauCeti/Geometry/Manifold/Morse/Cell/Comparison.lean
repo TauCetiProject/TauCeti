@@ -52,7 +52,7 @@ level are handled simultaneously.
 * `TauCeti.morseCellAttachment`: the space `M_{c-ε} ∪_α ⨆ᵢ D^{k i}`.
 * `TauCeti.morseCellAttachmentIncl`, `TauCeti.morseCellAttachmentCell`: its inclusion of the lower
   sublevel and the characteristic maps of its cells.
-* `TauCeti.morseCellAttachmentLift`: the map out of `TauCeti.morseCellAttachment` induced by
+* `TauCeti.morseCellAttachmentDesc`: the map out of `TauCeti.morseCellAttachment` induced by
   compatible maps on the lower sublevel and on the discs.
 * `TauCeti.morseCellComparison`: the comparison map `M_{c-ε} ∪_α ⨆ᵢ D^{k i} → M_{c+ε}`.
 
@@ -147,7 +147,7 @@ theorem morseAttachingMap_comp_morseCellAttachmentIncl (hε : 0 ≤ ε) (i : ι)
 
 /-- A map on the lower sublevel and maps on the discs which agree on the boundary spheres induce a
 map out of `TauCeti.morseCellAttachment`. -/
-def morseCellAttachmentLift (φ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
+def morseCellAttachmentDesc (φ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
     (k : ι → ℕ) (hk : ∀ i, k i ≤ n) (hε : 0 ≤ ε) (hball : ∀ i, closedBall 0 √ε ⊆ (φ i).target)
     (hf : ∀ i, ∀ y ∈ (φ i).source, f y = c + ∑ j, (if j.val < k i then -1 else 1) * φ i y j ^ 2)
     {Z : TopCat.{u}} (g : TopCat.of {x | f x ≤ c - ε} ⟶ Z)
@@ -158,26 +158,26 @@ def morseCellAttachmentLift (φ : ι → OpenPartialHomeomorph M (EuclideanSpace
   (isPushout_morseCellAttachment φ k hk hball hf hε).desc g (Sigma.desc G)
     (Sigma.hom_ext _ _ fun i ↦ by simpa using h i)
 
-/-- The lift out of `TauCeti.morseCellAttachment` restricts to the prescribed map on the lower
+/-- The map out of `TauCeti.morseCellAttachment` restricts to the prescribed map on the lower
 sublevel. -/
 @[reassoc (attr := simp)]
-theorem morseCellAttachmentIncl_lift (hε : 0 ≤ ε) {Z : TopCat.{u}}
+theorem morseCellAttachmentIncl_desc (hε : 0 ≤ ε) {Z : TopCat.{u}}
     (g : TopCat.of {x | f x ≤ c - ε} ⟶ Z) (G : ∀ i, TopCat.disk.{u} (k i) ⟶ Z)
     (h : ∀ i, (φ i).morseAttachingMap (hk i) hε (hball i) (hf i) ≫ g =
       TopCat.diskBoundaryInclusion (k i) ≫ G i) :
     morseCellAttachmentIncl φ k hk hε hball hf ≫
-      morseCellAttachmentLift φ k hk hε hball hf g G h = g :=
+      morseCellAttachmentDesc φ k hk hε hball hf g G h = g :=
   IsPushout.inl_desc _ _ _ _
 
-/-- The lift out of `TauCeti.morseCellAttachment` restricts to the prescribed map on each disc. -/
+/-- The map out of `TauCeti.morseCellAttachment` restricts to the prescribed map on each disc. -/
 @[reassoc (attr := simp)]
-theorem morseCellAttachmentCell_lift (hε : 0 ≤ ε) {Z : TopCat.{u}}
+theorem morseCellAttachmentCell_desc (hε : 0 ≤ ε) {Z : TopCat.{u}}
     (g : TopCat.of {x | f x ≤ c - ε} ⟶ Z) (G : ∀ i, TopCat.disk.{u} (k i) ⟶ Z)
     (h : ∀ i, (φ i).morseAttachingMap (hk i) hε (hball i) (hf i) ≫ g =
       TopCat.diskBoundaryInclusion (k i) ≫ G i) (i : ι) :
     morseCellAttachmentCell φ k hk hε hball hf i ≫
-      morseCellAttachmentLift φ k hk hε hball hf g G h = G i := by
-  rw [morseCellAttachmentLift, ← Sigma.ι_comp_desc (morseCellAttachmentCell φ k hk hε hball hf) i,
+      morseCellAttachmentDesc φ k hk hε hball hf g G h = G i := by
+  rw [morseCellAttachmentDesc, ← Sigma.ι_comp_desc (morseCellAttachmentCell φ k hk hε hball hf) i,
     Category.assoc, IsPushout.inr_desc, Sigma.ι_comp_desc]
 
 /-- Maps out of `TauCeti.morseCellAttachment` are determined by their restrictions to the lower
@@ -218,7 +218,7 @@ def morseCellComparison (φ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ
     (k : ι → ℕ) (hk : ∀ i, k i ≤ n) (hε : 0 ≤ ε) (hball : ∀ i, closedBall 0 √ε ⊆ (φ i).target)
     (hf : ∀ i, ∀ y ∈ (φ i).source, f y = c + ∑ j, (if j.val < k i then -1 else 1) * φ i y j ^ 2) :
     morseCellAttachment φ k hk hε hball hf ⟶ TopCat.of {x | f x ≤ c + ε} :=
-  morseCellAttachmentLift φ k hk hε hball hf
+  morseCellAttachmentDesc φ k hk hε hball hf
     (TopCat.ofHom (sublevelInclusion f (c - ε) (c + ε) (by linarith)))
     (fun i ↦ (φ i).morseCharacteristicMap (hk i) hε (hball i) (hf i)) fun i ↦
       OpenPartialHomeomorph.morseAttachingMap_comp_sublevelInclusion (hball i) (hf i) (hk i) hε
@@ -228,14 +228,14 @@ def morseCellComparison (φ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ
 theorem morseCellAttachmentIncl_comp_morseCellComparison (hε : 0 ≤ ε) :
     morseCellAttachmentIncl φ k hk hε hball hf ≫ morseCellComparison φ k hk hε hball hf =
       TopCat.ofHom (sublevelInclusion f (c - ε) (c + ε) (by linarith)) :=
-  morseCellAttachmentIncl_lift _ _ _ _ _ _ _ _ _
+  morseCellAttachmentIncl_desc _ _ _ _ _ _ _ _ _
 
 /-- On the cell of the chart `φ i`, the comparison map is the characteristic map of the cell. -/
 @[reassoc (attr := simp)]
 theorem morseCellAttachmentCell_comp_morseCellComparison (hε : 0 ≤ ε) (i : ι) :
     morseCellAttachmentCell φ k hk hε hball hf i ≫ morseCellComparison φ k hk hε hball hf =
       (φ i).morseCharacteristicMap (hk i) hε (hball i) (hf i) :=
-  morseCellAttachmentCell_lift _ _ _ _ _ _ _ _ _ _
+  morseCellAttachmentCell_desc _ _ _ _ _ _ _ _ _ _
 
 /-- The comparison map sends a point of the lower sublevel to itself. -/
 @[simp]

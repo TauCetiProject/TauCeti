@@ -87,10 +87,10 @@ theorem coe_sublevelInclusion_apply {X β : Type*} [TopologicalSpace X] [Preorde
 
 /-- For continuous `f`, the inclusion `{f ≤ a} → {f ≤ b}` of sublevels is a closed embedding. -/
 theorem isClosedEmbedding_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β]
-    [TopologicalSpace β] [OrderClosedTopology β] {f : X → β} (hf : Continuous f) {a b : β}
+    [TopologicalSpace β] [ClosedIicTopology β] {f : X → β} (hf : Continuous f) {a b : β}
     (hab : a ≤ b) : Topology.IsClosedEmbedding (sublevelInclusion f a b hab) :=
   .inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab)
-    ((isClosed_le hf continuous_const).preimage continuous_subtype_val)
+    ((isClosed_Iic.preimage hf).preimage continuous_subtype_val)
 
 /-- **Deformation of sublevels along a unit-speed descent.** Let `φ t` be a continuous motion of
 `X`, with `φ 0` the identity, which lowers `f` at unit speed through the band `a ≤ f ≤ b`: if
