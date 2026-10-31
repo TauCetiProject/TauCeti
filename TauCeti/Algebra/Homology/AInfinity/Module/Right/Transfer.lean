@@ -270,7 +270,8 @@ private theorem pow_succ_higherBarDifferential_comp_rTensor_tmul_of_tprod (k : M
       higherBarDifferential_tmul_of_tprod, map_sum]
     refine Finset.sum_eq_zero fun j hj ↦ ?_
     have hj : j < n := Finset.mem_range.1 hj
-    rw [subword_eq_of_tprod R a (show j + 1 + (n - (j + 1)) ≤ n by omega)]
+    have hle : j + 1 + (n - (j + 1)) ≤ n := by omega
+    rw [subword_eq_of_tprod R a hle]
     exact Module.End.pow_map_zero_of_le (k := n - (j + 1) + 1) (by omega)
       (ih (n - (j + 1)) (by omega) _ fun i ↦ a ⟨j + 1 + i.1, by omega⟩)
 
@@ -382,8 +383,10 @@ theorem coact_comp_perturbationSeries :
     ⟨MM.higherBarDifferential, MM.coact_comp_higherBarDifferential.symm⟩
   let U := Comodule.Hom.id R (TensorWords R A) (M ⊗[R] TensorWords R A) +
     δ.comp (Comodule.Hom.cofreeMap c.homotopy)
+  have hX := ((Comodule.Hom.ringInverse U).comp δ).map_coact_eq
+  rw [Comodule.Hom.comp_toLinearMap, Comodule.Hom.ringInverse_toLinearMap] at hX
   rw [LinearSpecialContraction.perturbationSeries_def, barContraction_homotopy]
-  exact ((Comodule.Hom.ringInverse U).comp δ).map_coact_eq.symm
+  exact hX.symm
 
 /-- The perturbation operator has degree one. -/
 theorem isHomogeneous_perturbationSeries :
