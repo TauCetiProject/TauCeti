@@ -294,8 +294,8 @@ theorem coe_ker_of_comp_toCompletion
     (f.toAddMonoidHom.ker_completion hfc hfo)
   rw [AddSubgroup.topologicalClosure_coe, AddSubgroup.coe_map,
     ← toAddMonoidHom_eq_completion F hF f hfc hFf] at h
-  -- the kernels of `F` and `f` as additive maps are their kernels as ring maps
-  exact h
+  simp only [AddMonoidHom.coe_ker, RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass] at h
+  rwa [RingHom.ker_eq, RingHom.ker_eq]
 
 end OpenQuotient
 
