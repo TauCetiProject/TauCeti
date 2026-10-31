@@ -8,7 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Evens.Norm.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.ChangeOfGroup
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeCast
-public import TauCeti.RepresentationTheory.Tensor.Induction.Naturality.Basic
+public import TauCeti.RepresentationTheory.Tensor.Induction.Naturality.Discrete
 
 /-!
 # Naturality of the Evens norm in the group
@@ -27,7 +27,7 @@ needed.
 
 The norm of the class of a cocycle `z` is the class of the diagonal tensor `z ⊗ ⋯ ⊗ z` in the
 tensor induction of the total coinduced resolution. Relabelling the tensor factors along `e`
-(`Subgroup.tensorInducedMapEquiv`) and pulling each factor back along `ψ`
+(`DiscreteRep.tensorInducedMapIso`) and pulling each factor back along `ψ`
 (`TopRep.gradedResolutionMap`) is a morphism of complexes from the restriction along `φ` of the
 tensor-induced resolution for `U` to the one for `V`. It preserves the total degree, commutes with
 the slot-sum differentials, and lies over the corresponding comparison of the tensor-induced
@@ -73,51 +73,39 @@ variable [U.toSubgroup.FiniteIndex] [V.toSubgroup.FiniteIndex]
   {A : DiscreteRep.{0, u, u} ℤ U.toSubgroup} {B : DiscreteRep.{0, u, u} ℤ V.toSubgroup}
   (Φ : Representation.IntertwiningMap (A.ρ.comp (ψ : V.toSubgroup →* U.toSubgroup)) B.ρ)
 
-/-- Tensor induction compared along `φ`, as an intertwining map: relabel the tensor factors along
-`e` and apply `Φ` to each of them. -/
-private noncomputable def tensorComparison :
-    Representation.IntertwiningMap
-      ((U.toSubgroup.tensorInducedRepresentation (s.map (φ : H →* G) e he) A.ρ).comp
-        (φ : H →* G))
-      (V.toSubgroup.tensorInducedRepresentation s B.ρ) :=
-  (Φ.tensorInduced s).comp
-    (Subgroup.tensorInducedMapEquiv (φ : H →* G) (ψ : V.toSubgroup →* U.toSubgroup) hψ e he s
-      A.ρ).symm.toIntertwiningMap
-
-omit [IsTopologicalGroup G] [IsTopologicalGroup H] [U.toSubgroup.FiniteIndex]
-  [V.toSubgroup.FiniteIndex] in
-/-- The comparison relabels the factors along `e` and applies `Φ` to each one. -/
-private theorem tensorComparison_toLinearMap :
-    (tensorComparison φ ψ hψ he s Φ).toLinearMap =
-      PiTensorProduct.map (fun _ ↦ Φ.toLinearMap) ∘ₗ
-        (PiTensorProduct.reindex ℤ (fun _ ↦ A.V) e.symm).toLinearMap := by
-  apply PiTensorProduct.ext
-  apply MultilinearMap.ext
-  intro m
-  simp [tensorComparison]
-
-/-- The comparison of discrete tensor inductions along `φ`, as a morphism of topological
-`H`-representations from the restriction along `φ`. -/
+/-- Tensor induction compared along `φ`, as a morphism of topological `H`-representations from
+the restriction along `φ`: relabel the tensor factors along `e`
+(`DiscreteRep.tensorInducedMapIso`) and apply `Φ` to each of them. -/
 private noncomputable def tensorComparisonHom :
     TopRep.res (φ : H →* G) ((toSmoothDiscrete ℤ G).obj
         (DiscreteRep.tensorInduced U.toSubgroup U.isOpen' (s.map (φ : H →* G) e he) A)).obj ⟶
-      ((toSmoothDiscrete ℤ H).obj (DiscreteRep.tensorInduced V.toSubgroup V.isOpen' s B)).obj where
-  hom' :=
-    { toContinuousLinearMap :=
-        ⟨{ toFun := tensorComparison φ ψ hψ he s Φ
-           map_add' := map_add _
-           map_smul' := (tensorComparison φ ψ hψ he s Φ).toLinearMap.map_smul },
-          continuous_of_discreteTopology⟩
-      isIntertwining' h := by
-        ext x
-        exact Representation.IntertwiningMap.isIntertwining _ _
-          (tensorComparison φ ψ hψ he s Φ) h x }
+      ((toSmoothDiscrete ℤ H).obj (DiscreteRep.tensorInduced V.toSubgroup V.isOpen' s B)).obj :=
+  ((toSmoothDiscrete ℤ H).map
+    ((DiscreteRep.tensorInducedMapIso V.isOpen' U.isOpen' φ.continuous hψ he s A).inv ≫
+      (DiscreteRep.tensorInductionFunctor V.toSubgroup V.isOpen' s).map Φ)).hom
 
+/-- The comparison relabels the factors along `e` and applies `Φ` to each one. -/
 private theorem tensorComparisonHom_apply (x : ⨂[ℤ] _ : G ⧸ U.toSubgroup, A.V) :
     (tensorComparisonHom φ ψ hψ he s Φ).hom x =
       PiTensorProduct.map (fun _ ↦ Φ.toLinearMap)
-        (PiTensorProduct.reindex ℤ (fun _ ↦ A.V) e.symm x) :=
-  LinearMap.congr_fun (tensorComparison_toLinearMap φ ψ hψ he s Φ) x
+        (PiTensorProduct.reindex ℤ (fun _ ↦ A.V) e.symm x) := by
+  have h : ((DiscreteRep.tensorInducedMapIso V.isOpen' U.isOpen' φ.continuous hψ he s A).inv ≫
+      (DiscreteRep.tensorInductionFunctor V.toSubgroup V.isOpen' s).map Φ).toLinearMap =
+        PiTensorProduct.map (fun _ ↦ Φ.toLinearMap) ∘ₗ
+          (PiTensorProduct.reindex ℤ (fun _ ↦ A.V) e.symm).toLinearMap := by
+    refine PiTensorProduct.ext (MultilinearMap.ext fun m ↦ ?_)
+    -- The carriers of the composite are the tensor powers only after unfolding
+    -- `DiscreteRep.tensorInduced`, which `rw` and `simp` do not do, so the pure-tensor rules of
+    -- the two factors, and of the right-hand side, are composed as terms.
+    have hinv := DiscreteRep.tensorInducedMapIso_inv_apply_tprod V.isOpen' U.isOpen' φ.continuous
+      hψ he s A m
+    exact ((congrArg _ hinv).trans (Φ.tensorInduced_apply_tprod s _)).trans
+      ((congrArg _ (PiTensorProduct.reindex_tprod e.symm m)).trans
+        (PiTensorProduct.map_tprod _ _)).symm
+  -- `toSmoothDiscrete` keeps the underlying map.
+  change ((DiscreteRep.tensorInducedMapIso V.isOpen' U.isOpen' φ.continuous hψ he s A).inv ≫
+    (DiscreteRep.tensorInductionFunctor V.toSubgroup V.isOpen' s).map Φ).toLinearMap x = _
+  exact LinearMap.congr_fun h x
 
 end Comparison
 
@@ -268,16 +256,14 @@ private theorem resolutionComparison_differential :
       (coeffs V.toSubgroup)).hom.hom
         ((tensorComparisonHom φ ψ hψ he s (resolutionPullback ψ)).hom x)
   rw [smoothTensorInducedGradedResolutionDifferential_apply]
+  -- The carriers of the comparison are the tensor powers only after unfolding
+  -- `DiscreteRep.tensorInduced`, so `rw` cannot rewrite with `tensorComparisonHom_apply` here and
+  -- the square is composed as terms: relabel and pull back, then commute each with the slot sum.
   exact (tensorComparisonHom_apply φ ψ hψ he s _ _).trans <|
     (congrArg (PiTensorProduct.map fun _ ↦ (resolutionPullback ψ).toLinearMap) h'.symm).trans <|
       h.trans <| (congrArg _ (tensorComparisonHom_apply φ ψ hψ he s _ x).symm).trans
         (smoothTensorInducedGradedResolutionDifferential_apply V.toSubgroup V.isOpen' s
           (coeffs V.toSubgroup) _).symm
-
-/-- Every element of the trivial `𝔽₂` coefficients is its own additive inverse. -/
-private theorem trivialF2_add_self (K : Type u) [Group K] [TopologicalSpace K]
-    (a : (coeffs K).obj.V) : a + a = 0 := by
-  simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero K a
 
 /-- The comparison of the tensor-induced total resolutions lies over the comparison of the
 tensor-induced coefficients: it carries the augmentation of the contraction for `U` to that for
@@ -303,8 +289,11 @@ private theorem resolutionComparison_ι [LinearOrder (G ⧸ U.toSubgroup)]
     apply PiTensorProduct.ext
     apply MultilinearMap.ext
     intro m
-    simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply, LinearEquiv.coe_coe]
+    simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply]
     -- Both sides are the pure tensor of the augmented, pulled-back factors, relabelled along `e`.
+    -- The factor maps carry the semiring structure `Int.instRing.toSemiring` while the
+    -- `PiTensorProduct` lemmas are stated with `CommSemiring.toSemiring`, so `rw` and `simp` cannot
+    -- match them and the pure-tensor rules are applied as terms.
     refine ((congrArg _ ((congrArg _ (PiTensorProduct.map_tprod _ m)).trans
       (PiTensorProduct.reindex_tprod _ _))).trans (PiTensorProduct.map_tprod _ _)).trans ?_
     refine Eq.trans ?_ ((congrArg _ ((congrArg _ (PiTensorProduct.reindex_tprod _ m)).trans
@@ -369,26 +358,14 @@ private theorem coeffComparison_trivialF2Iso :
     rw [← hr]
     exact htprod _
   | add x y hx hy =>
+    -- The carrier of `x + y` is the tensor power only after unfolding `DiscreteRep.tensorInduced`,
+    -- so `simp` and `rw` cannot use `map_add` here and additivity is applied as terms.
     refine ((congrArg (trivialF2Equiv G) (map_add _ x y)).trans (map_add _ _ _)).trans ?_
     refine Eq.trans ?_ ((congrArg (trivialF2Equiv H) ((congrArg _ (map_add _ x y)).trans
       (map_add _ _ _))).trans (map_add _ _ _)).symm
     exact congrArg₂ (· + ·) hx hy
 
 end Resolution
-
-/-- A class read on a graded contracted complex, in two equal degrees. -/
-private theorem coeffMap_gradedCohomologyClass_degreeCast {R : Type} [Ring R] [TopologicalSpace R]
-    {X Y M : TopRep.{u} R G} {ℳ : ℤ → Submodule R M.V} {hρ : ∀ n g x, x ∈ ℳ n → M.ρ g x ∈ ℳ n}
-    {d : M ⟶ M} {hd : TauCeti.LinearMap.IsHomogeneous d.hom.toLinearMap ℳ ℳ 1} {hdd : d ≫ d = 0}
-    (c : TopRep.ResolutionContraction X (M.gradedCochainComplex ℳ hρ d hd hdd))
-    (b : X ⟶ Y) {k k' : ℕ} (h : k = k') {z z' : M.V} (hzz : z' = z) (hz : z ∈ ℳ k)
-    (hz' : z' ∈ ℳ k') (hinv : ∀ g, M.ρ g z = z) (hinv' : ∀ g, M.ρ g z' = z') (hdz : d.hom z = 0)
-    (hdz' : d.hom z' = 0) :
-    ContinuousCohomology.coeffMap b k' (c.gradedCohomologyClass z' hz' hinv' hdz') =
-      (ContinuousCohomology.degreeCast Y h).hom
-        (ContinuousCohomology.coeffMap b k (c.gradedCohomologyClass z hz hinv hdz)) := by
-  subst h hzz
-  simp
 
 variable [U.toSubgroup.FiniteIndex] [CompactSpace U.toSubgroup] [Fintype (G ⧸ U.toSubgroup)]
   [V.toSubgroup.FiniteIndex] [CompactSpace V.toSubgroup] [Fintype (H ⧸ V.toSubgroup)]
@@ -436,7 +413,8 @@ theorem trivialF2Map_evensNorm {n : ℕ} (x : continuousCohomology n (trivialF2 
       (isHomogeneous_resolutionComparison φ ψ hψ he s)
       (resolutionComparison_differential φ ψ hψ he s)
       (resolutionComparison_ι φ ψ hψ he s) _ _ _)).trans ?_
-  exact coeffMap_gradedCohomologyClass_degreeCast _ _ (by rw [Fintype.card_congr e])
+  exact TopRep.ResolutionContraction.coeffMap_gradedCohomologyClass_degreeCast _ _
+    (by rw [Fintype.card_congr e])
     (resolutionComparison_tprod φ ψ hψ he s z) _ _ _ _ _ _
 
 omit [V.toSubgroup.FiniteIndex] [CompactSpace V.toSubgroup] [Fintype (H ⧸ V.toSubgroup)] in
