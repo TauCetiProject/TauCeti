@@ -123,7 +123,9 @@ theorem signFiberEquiv_apply {x : X} (e : p ⁻¹' {x}) (f : signFiber R σ hσ 
     signFiberEquiv hfix hfib e f = (f : p ⁻¹' {x} → R) e :=
   (rfl)
 
-/-- Evaluation at the other point of the fibre is the negative of evaluation at `e`. -/
+/-- Evaluation at the other point of the fibre is the negative of evaluation at `e`. It has high
+priority so that `simp` applies it before unfolding the evaluation by `signFiberEquiv_apply`. -/
+@[simp high]
 theorem signFiberEquiv_fiberMap {x : X} (e : p ⁻¹' {x}) (f : signFiber R σ hσ x) :
     signFiberEquiv hfix hfib (Function.fiberMap σ hσ x e) f = -signFiberEquiv hfix hfib e f := by
   simp [mem_signFiber_iff.1 f.2]

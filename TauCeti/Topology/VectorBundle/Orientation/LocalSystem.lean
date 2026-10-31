@@ -113,7 +113,10 @@ theorem signLocalSystemFiberEquiv_apply {b : B} (o : Orientation ℝ (E b) ι)
         (proj ⁻¹' {b} : Set (VectorBundleOrientationCover F E ι)) → R) ⟨⟨b, o⟩, rfl⟩ :=
   signFiberEquiv_apply deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h) ⟨⟨b, o⟩, rfl⟩ _
 
-/-- Evaluation at the opposite orientation is the negative of evaluation at `o`. -/
+/-- Evaluation at the opposite orientation is the negative of evaluation at `o`. It has high
+priority so that `simp` applies it before unfolding the evaluation by
+`signLocalSystemFiberEquiv_apply`. -/
+@[simp high]
 theorem signLocalSystemFiberEquiv_neg {b : B} (o : Orientation ℝ (E b) ι)
     (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b)) :
     signLocalSystemFiberEquiv hι (-o) f = -signLocalSystemFiberEquiv hι o f := by
@@ -171,6 +174,7 @@ theorem signLocalSystemIso_inv_app_apply (o : VectorBundleOrientation F E ι) (b
 
 /-- The trivialization of the orientation local system given by the opposite orientation is the
 negative of the one given by `o`. -/
+@[simp]
 theorem signLocalSystemIso_neg_hom (o : VectorBundleOrientation F E ι) :
     (signLocalSystemIso (R := R) hι (-o)).hom = -(signLocalSystemIso hι o).hom := by
   ext ⟨b⟩ f
@@ -186,6 +190,7 @@ theorem signLocalSystemIso_neg_hom (o : VectorBundleOrientation F E ι) :
 
 /-- The inverse of the trivialization given by the opposite orientation is the negative of the
 inverse of the one given by `o`. -/
+@[simp]
 theorem signLocalSystemIso_neg_inv (o : VectorBundleOrientation F E ι) :
     (signLocalSystemIso (R := R) hι (-o)).inv = -(signLocalSystemIso hι o).inv :=
   Iso.inv_ext (by rw [signLocalSystemIso_neg_hom, Preadditive.neg_comp_neg, Iso.hom_inv_id])
