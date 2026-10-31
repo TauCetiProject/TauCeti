@@ -117,6 +117,7 @@ theorem IsIndependent.mono_right (hBA : B ⊆ A) (h : G.IsIndependent A) : G.IsI
   fun _ hx _ hy ↦ h (hBA hx) (hBA hy)
 
 /-- The empty set is independent. -/
+@[simp]
 protected theorem IsIndependent.empty : G.IsIndependent ∅ :=
   fun _ hx ↦ hx.elim
 
@@ -150,8 +151,9 @@ theorem hasCountableBorelColoring_iff_exists_cover :
     fun ⟨B, hB, hcov⟩ ↦ ?_⟩
   have hex : ∀ x, ∃ n, x ∈ B n := iUnion_eq_univ_iff.1 hcov
   refine ⟨fun x ↦ Nat.find (hex x), measurable_find hex fun n ↦ (hB n).1, fun x y hxy heq ↦ ?_⟩
+  beta_reduce at heq
   have hy := Nat.find_spec (hex y)
-  rw [← show Nat.find (hex x) = Nat.find (hex y) from heq] at hy
+  rw [← heq] at hy
   exact (hB _).2 (Nat.find_spec (hex x)) hy hxy
 
 /-- A coloring of a relation colors every subrelation. -/
