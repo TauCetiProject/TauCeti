@@ -125,34 +125,17 @@ instance [CompleteSpace E] : CompleteSpace (IsRestrictedFamily.addSubgroup E c) 
   refine Metric.complete_of_cauchySeq_tendsto fun A hA ↦ ?_
   have hcoeff (t : σ →₀ ℕ) : CauchySeq fun k ↦ (A k : (σ →₀ ℕ) → E) t :=
     (uniformContinuous_coeff t).comp_cauchySeq hA
-  choose a ha using fun t ↦ cauchySeq_tendsto_of_complete (hcoeff t)
-  -- The Cauchy estimates pass to the coefficientwise limit uniformly in the exponent.
-  have hunif : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t,
-      ‖(A k : (σ →₀ ℕ) → E) t - a t‖ * t.prod (c · ^ ·) ≤ ε := by
-    intro ε hε
-    obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hA ε hε
-    refine ⟨N, fun k hk t ↦ le_of_tendsto
-      (((tendsto_const_nhds.sub (ha t)).norm).mul_const (t.prod (c · ^ ·)))
-      (eventually_atTop.mpr ⟨N, fun l hl ↦ ?_⟩)⟩
-    have h := norm_coeff_mul_prod_le (A k - A l) t
-    rw [AddSubgroup.coe_sub, Pi.sub_apply] at h
-    exact h.trans ((dist_eq_norm _ _).symm.trans_le (hN k hk l hl).le)
-  -- A uniform limit of families vanishing at infinity again vanishes at infinity.
-  have hres : IsRestrictedFamily c a := by
-    rw [isRestrictedFamily_iff]
-    refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun t ↦
-      hb.trans_le (mul_nonneg (norm_nonneg _) (prod_pow_pos t).le), fun ε hε ↦ ?_⟩
-    obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
-    filter_upwards [(isRestrictedFamily_iff.mp (mem_addSubgroup.mp (A N).2)).eventually
-      (gt_mem_nhds (half_pos hε))] with t ht
-    calc
-      ‖a t‖ * t.prod (c · ^ ·) ≤ ‖(A N : (σ →₀ ℕ) → E) t‖ * t.prod (c · ^ ·) +
-          ‖(A N : (σ →₀ ℕ) → E) t - a t‖ * t.prod (c · ^ ·) := by
-        rw [← add_mul]
-        exact mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _) (prod_pow_pos t).le
-      _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le ht (hN N le_rfl t)
-      _ = ε := add_halves ε
-  refine ⟨⟨a, mem_addSubgroup.mpr hres⟩, Metric.tendsto_atTop.mpr fun ε hε ↦ ?_⟩
+  obtain ⟨a, hres, hunif⟩ := exists_weighted_coefficient_limit
+    (fun k ↦ (A k : (σ →₀ ℕ) → E)) hcoeff
+    (fun k ↦ isRestrictedFamily_iff.mp (mem_addSubgroup.mp (A k).2)) (by
+      intro ε hε
+      obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hA ε hε
+      refine ⟨N, fun k hk l hl t ↦ ?_⟩
+      have h := norm_coeff_mul_prod_le (A k - A l) t
+      rw [AddSubgroup.coe_sub, Pi.sub_apply] at h
+      exact h.trans_lt ((dist_eq_norm _ _).symm.trans_lt (hN k hk l hl)))
+  refine ⟨⟨a, mem_addSubgroup.mpr (isRestrictedFamily_iff.mpr hres)⟩,
+    Metric.tendsto_atTop.mpr fun ε hε ↦ ?_⟩
   obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
   refine ⟨N, fun k hk ↦ (?_ : _ ≤ ε / 2).trans_lt (half_lt_self hε)⟩
   rw [dist_eq_norm, norm_le_iff]
