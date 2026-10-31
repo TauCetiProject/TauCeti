@@ -67,6 +67,11 @@ over an empty complement is `0`, and the gap of `∅` is `0`. -/
 noncomputable def gap (E : Finset ι) (x : X) : ℝ :=
   max 0 ((⨅ i : E, ρ i x) - ⨆ i : {i // i ∉ E}, ρ i x)
 
+/-- The defining equation of `PartitionOfUnity.gap`. -/
+theorem gap_def (E : Finset ι) (x : X) :
+    ρ.gap E x = max 0 ((⨅ i : E, ρ i x) - ⨆ i : {i // i ∉ E}, ρ i x) :=
+  (rfl)
+
 /-- Gaps are nonnegative. -/
 theorem gap_nonneg (E : Finset ι) (x : X) : 0 ≤ ρ.gap E x :=
   le_max_left _ _
