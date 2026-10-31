@@ -115,7 +115,7 @@ theorem IsBridge.bridgeComponentOf_ne (he : G.IsBridge e) (h : G.IsLink e x y) :
     G.bridgeComponentOf x h.left_mem ≠ G.bridgeComponentOf y h.right_mem := by
   rw [Ne, bridgeComponentOf_eq_bridgeComponentOf_iff]
   exact fun hxy ↦ he.not_reachable_deleteEdges h
-    (hxy.mono (G.deleteEdges_anti_right (singleton_subset_iff.mpr he)))
+    (hxy.mono (G.deleteEdges_anti_right (singleton_subset_iff.mpr (mem_bridgeSet.mpr he))))
 
 /-- Every bridge component is a graph without bridges. -/
 theorem BridgeComponent.not_isBridge (C : G.BridgeComponent) (e : β) : ¬ C.1.IsBridge e :=
@@ -157,9 +157,9 @@ theorem edgeSet_bridgeForest : E(G.bridgeForest) = G.bridgeSet := by
   ext e
   refine ⟨fun he ↦ ?_, fun he ↦ ?_⟩
   · obtain ⟨C, D, h⟩ := exists_isLink_of_mem_edgeSet he
-    exact h.1
-  · obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet (IsBridge.mem_edgeSet he)
-    exact (IsBridge.isLink_bridgeForest he h).edge_mem
+    exact mem_bridgeSet.mpr h.1
+  · obtain ⟨x, y, h⟩ := exists_isLink_of_mem_edgeSet (IsBridge.mem_edgeSet (mem_bridgeSet.mp he))
+    exact (IsBridge.isLink_bridgeForest (mem_bridgeSet.mp he) h).edge_mem
 
 /-! ### Reachability -/
 
@@ -225,7 +225,7 @@ theorem isForest_bridgeForest (G : Graph α β) : G.bridgeForest.IsForest := by
   rw [hCD.isBridge_iff_not_reachable_deleteEdges, BridgeComponent.eq_bridgeComponentOf hx,
     BridgeComponent.eq_bridgeComponentOf hy,
     ← reachable_deleteEdges_iff_reachable_bridgeForest_deleteEdges
-      (singleton_subset_iff.mpr hbr)]
+      (singleton_subset_iff.mpr (mem_bridgeSet.mpr hbr))]
   exact hbr.not_reachable_deleteEdges h
 
 /-! ### Connected components -/

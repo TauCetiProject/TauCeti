@@ -125,7 +125,7 @@ theorem IsLink.not_isBridge_of_isLink_of_ne (he : G.IsLink e x y) (hf : G.IsLink
   exact ⟨hf, hfe⟩
 
 /-- The set of bridges of `G`. -/
-@[expose] def bridgeSet (G : Graph α β) : Set β := {e | G.IsBridge e}
+def bridgeSet (G : Graph α β) : Set β := {e | G.IsBridge e}
 
 @[simp]
 theorem mem_bridgeSet : e ∈ G.bridgeSet ↔ G.IsBridge e := Iff.rfl
