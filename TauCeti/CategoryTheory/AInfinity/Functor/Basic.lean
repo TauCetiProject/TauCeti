@@ -52,6 +52,8 @@ particular every `A∞` category has an identity `A∞` functor.
   path-compatible along its map of objects.
 * `TauCeti.AInfinityFunctor.homInclusion_map`: the map on a Hom module is the linear part of the
   `A∞` morphism of total algebras.
+* `TauCeti.AInfinityFunctor.homProjection_linearPart`: each component of the linear part of the
+  `A∞` morphism of total algebras is the map on the corresponding Hom module.
 * `TauCeti.AInfinityFunctor.map_mem`: the map on a Hom module preserves degrees.
 * `TauCeti.AInfinityFunctor.map_homDifferential`: the map on a Hom module is a chain map.
 * `TauCeti.AInfinityStrictFunctor.toAInfinityFunctor_map`: the map on Hom modules of a strict
@@ -200,6 +202,24 @@ theorem homInclusion_map (X Y : C) (f : homModule (R := R) X Y) :
     homInclusion (R := R) (C := InducedQuiver D ℱ.obj) ⟨X⟩ ⟨Y⟩ (ℱ.map X Y f) =
       ℱ.toAInfinityHom.linearPart (homInclusion X Y f) :=
   homInclusion_homProjection_of_mem_range (ℱ.linearPart_homInclusion_mem_range X Y f)
+
+/-- The component between `ℱ X` and `ℱ Y` of the linear part of the `A∞` morphism of total algebras
+underlying `ℱ` is the map of `ℱ` on the component between `X` and `Y`. -/
+theorem homProjection_linearPart (X Y : C) (x : TotalHom R C) :
+    homProjection (R := R) (C := InducedQuiver D ℱ.obj) ⟨X⟩ ⟨Y⟩
+        (ℱ.toAInfinityHom.linearPart x) =
+      ℱ.map X Y (homProjection X Y x) := by
+  induction x using totalHom_induction with
+  | zero => simp
+  | add x y hx hy => rw [map_add, map_add, hx, hy, map_add, map_add]
+  | homInclusion X' Y' f =>
+    rw [← homInclusion_map]
+    by_cases h : (X', Y') = (X, Y)
+    · obtain ⟨rfl, rfl⟩ := Prod.ext_iff.1 h
+      simp only [homProjection_homInclusion]
+    · have h' : ((⟨X'⟩ : InducedQuiver D ℱ.obj), (⟨Y'⟩ : InducedQuiver D ℱ.obj)) ≠ (⟨X⟩, ⟨Y⟩) :=
+        fun e ↦ h (by simpa using e)
+      rw [homProjection_homInclusion_of_ne h', homProjection_homInclusion_of_ne h, map_zero]
 
 /-- The map of an `A∞` functor on a Hom module preserves degrees. -/
 @[grind =>]

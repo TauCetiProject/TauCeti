@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Kernel.CutNorm
+public import TauCeti.Dynamics.Ergodic.MeasurePreserving
 public import TauCeti.MeasureTheory.Measure.MapRestrictDensity
 
 /-!
@@ -81,7 +82,7 @@ theorem rectIntegral_comap_eq_testIntegral [IsFiniteMeasure ν]
     (hf : MeasurePreserving f ν μ) (K : SymmKernel Ω μ) (S T : Set Ω') :
     (K.comap f hf.measurable ν).rectIntegral ν S T =
       K.testIntegral μ (mapRestrictDensity f ν μ S) (mapRestrictDensity f ν μ T) := by
-  let _ := isFiniteMeasure_of_measurePreserving hf
+  have := hf.isFiniteMeasure
   have hu : Measurable (mapRestrictDensity f ν μ S) := measurable_mapRestrictDensity f ν μ S
   have hv : Measurable (mapRestrictDensity f ν μ T) := measurable_mapRestrictDensity f ν μ T
   have hu1 : ∀ x, mapRestrictDensity f ν μ S x ∈ Icc (-1 : ℝ) 1 := fun x =>
@@ -94,7 +95,8 @@ theorem rectIntegral_comap_eq_testIntegral [IsFiniteMeasure ν]
       ∫ y in T, K (f x) (f y) ∂ν = K.partialIntegral μ (mapRestrictDensity f ν μ T) (f x) := by
     intro x
     rw [partialIntegral_def]
-    exact (integral_mapRestrictDensity_mul hf T (g := fun b => K (f x) b)
+    exact (integral_mapRestrictDensity_mul hf.aemeasurable hf.map_eq.le T
+      (g := fun b => K (f x) b)
       (K.measurable.comp (measurable_const.prodMk measurable_id)).aestronglyMeasurable).symm
   calc (K.comap f hf.measurable ν).rectIntegral ν S T
       = ∫ x in S, ∫ y in T, K (f x) (f y) ∂ν ∂ν := by
@@ -104,7 +106,7 @@ theorem rectIntegral_comap_eq_testIntegral [IsFiniteMeasure ν]
         simp only [hinner]
     _ = ∫ a, mapRestrictDensity f ν μ S a *
           K.partialIntegral μ (mapRestrictDensity f ν μ T) a ∂μ :=
-        (integral_mapRestrictDensity_mul hf S
+        (integral_mapRestrictDensity_mul hf.aemeasurable hf.map_eq.le S
           (K.measurable_partialIntegral μ hv).aestronglyMeasurable).symm
     _ = K.testIntegral μ (mapRestrictDensity f ν μ S) (mapRestrictDensity f ν μ T) :=
         (K.testIntegral_eq_integral_partialIntegral μ
