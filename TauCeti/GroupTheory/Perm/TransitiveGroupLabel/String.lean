@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
+import Std.Data.String.ToNat
 -- Exhaustive recognition checks compute with the table sizes and decimal rendering.
 import all TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 import all Init.Data.ToString.Basic
@@ -44,14 +45,9 @@ theorem transitiveGroupLabelString_def (n : ℕ) (j : TransitiveGroupIndex n) :
 theorem transitiveGroupLabelString_injective (n : ℕ) :
     Function.Injective (transitiveGroupLabelString n) := by
   intro j k h
-  have hn : n ≤ 5 := by
-    by_contra hn
-    have hj := j.isLt
-    have hz := numTransitiveGroups_eq_zero_of_five_lt (n := n) (by omega)
-    omega
-  interval_cases n
-  all_goals
-    fin_cases j <;> fin_cases k <;> first | rfl | exact absurd h (by decide +kernel)
+  apply Fin.val_injective
+  simpa only [transitiveGroupLabelString_def, String.append_right_inj,
+    Nat.toString_eq_repr, Nat.repr_inj, Nat.add_right_cancel_iff] using h
 
 /-- Recognize a literal `nTj` label in degree `n`, returning its zero-based reference-group index.
 Only the degrees supported by `numTransitiveGroups` are recognized. -/
