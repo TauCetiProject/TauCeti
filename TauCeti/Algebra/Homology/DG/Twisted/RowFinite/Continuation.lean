@@ -97,8 +97,7 @@ theorem continuation_iff (ν : P → Q →₀ A)
         (ν x).sum (fun y a ↦ (indQ y - indP x).negOnePow • (a • mQ.m y)) := by
     conv_lhs => rw [← Finsupp.sum_single (ν x), Finsupp.sum, map_sum]
     simp_rw [rowFiniteTwistedDifferential_single mQ.m _ (hν x _)]
-    rw [Finset.sum_add_distrib, hd]
-    rfl
+    rw [Finset.sum_add_distrib, hd, Finsupp.sum]
   rw [hD]
   simp only [Int.negOnePow_sub_sub_one, Units.neg_smul, Finsupp.sum, Finset.sum_neg_distrib]
   constructor
@@ -210,40 +209,45 @@ section Coefficients
 open BalancedTensorProduct
 
 variable {M : Type uM} [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
-  [IsScalarTower R Aᵐᵒᵖ M]
+
+/-- Tensor the finite-row substitution map with the identity on right coefficients. -/
+def tensorMap : BalancedTensorProduct R A M (P →₀ A) →ₗ[R]
+    BalancedTensorProduct R A M (Q →₀ A) :=
+  BalancedTensorProduct.map LinearMap.id ((Finsupp.linearCombination A ν.ν).restrictScalars R)
+    (fun _ _ ↦ rfl) (fun a f ↦ by simp only [LinearMap.restrictScalars_apply, map_smul])
+
+/-- On pure tensors, row substitution leaves the right coefficient unchanged. -/
+@[simp]
+theorem tensorMap_tmul (α : M) (g : P →₀ A) :
+    ν.tensorMap (tmul R A α g) =
+      tmul R A α (Finsupp.linearCombination A ν.ν g) := by
+  exact BalancedTensorProduct.map_tmul ..
+
+variable [IsScalarTower R Aᵐᵒᵖ M]
 
 /-- Continuation on coefficient vectors, obtained by tensoring the free left-module map. -/
 def coefficientMap : (P →₀ M) →ₗ[R] (Q →₀ M) :=
-  (finsuppScalarRight R A M Q).toLinearMap ∘ₗ
-    BalancedTensorProduct.map LinearMap.id ((Finsupp.linearCombination A ν.ν).restrictScalars R)
-      (fun _ _ ↦ rfl) (fun a f ↦ by simp only [LinearMap.restrictScalars_apply, map_smul]) ∘ₗ
-        (finsuppScalarRight R A M P).symm.toLinearMap
+  (finsuppScalarRight R A M Q).toLinearMap ∘ₗ ν.tensorMap ∘ₗ
+    (finsuppScalarRight R A M P).symm.toLinearMap
 
 /-- The coefficient map is the tensor map under the free-module tensor identification. -/
 @[simp]
 theorem coefficientMap_finsuppScalarRight (z : BalancedTensorProduct R A M (P →₀ A)) :
     ν.coefficientMap (finsuppScalarRight R A M P z) =
-      finsuppScalarRight R A M Q
-        (BalancedTensorProduct.map LinearMap.id
-          ((Finsupp.linearCombination A ν.ν).restrictScalars R)
-          (fun _ _ ↦ rfl) (fun a f ↦ by
-            simp only [LinearMap.restrictScalars_apply, map_smul]) z) := by
+      finsuppScalarRight R A M Q (ν.tensorMap z) := by
   simp [coefficientMap]
 
 /-- On pure tensors, continuation applies row substitution only to the free left factor. -/
 theorem coefficientMap_tmul (α : M) (g : P →₀ A) :
     ν.coefficientMap (finsuppScalarRight R A M P (tmul R A α g)) =
       finsuppScalarRight R A M Q (tmul R A α (Finsupp.linearCombination A ν.ν g)) := by
-  rw [coefficientMap_finsuppScalarRight]
-  exact congrArg (finsuppScalarRight R A M Q) (BalancedTensorProduct.map_tmul ..)
+  rw [coefficientMap_finsuppScalarRight, tensorMap_tmul]
 
 /-- The image of an elementary coefficient vector has precisely the specified finite row. -/
 theorem coefficientMap_single (x : P) (α : M) :
     ν.coefficientMap (Finsupp.single x α) =
       (ν.ν x).sum (fun y a ↦ Finsupp.single y (op a • α)) := by
-  have hsingle : Finsupp.single x α =
-      finsuppScalarRight R A M P (tmul R A α (Finsupp.single x 1)) := by simp
-  rw [hsingle, coefficientMap_tmul]
+  rw [single_eq_finsuppScalarRight_tmul R A M P x α, coefficientMap_tmul]
   simp [finsuppScalarRight_tmul]
 
 /-- The entry formula for an elementary coefficient vector, with no Koszul sign. -/
@@ -273,9 +277,8 @@ theorem coefficientMap_comp (μ : RowFiniteContinuationCocycle mQ mS) (hA : IsDG
     (ν.comp μ hA).coefficientMap (M := M) = μ.coefficientMap ∘ₗ ν.coefficientMap := by
   apply Finsupp.lhom_ext
   intro x α
-  have hsingle : Finsupp.single x α =
-      finsuppScalarRight R A M P (tmul R A α (Finsupp.single x 1)) := by simp
-  rw [hsingle, LinearMap.comp_apply, coefficientMap_tmul, coefficientMap_tmul,
+  rw [single_eq_finsuppScalarRight_tmul R A M P x α, LinearMap.comp_apply,
+    coefficientMap_tmul, coefficientMap_tmul,
     coefficientMap_tmul]
   simp only [Finsupp.linearCombination_single, one_smul, comp_ν]
 
@@ -325,11 +328,14 @@ theorem coefficientMap_differential (f : P →₀ M) :
     apply LinearMap.ext
     intro g
     exact ν.linearCombination_differential hA g
-  have hd := differential_naturality hM (mP.isDGLeftModule_rowFiniteTwistedDifferential hA)
-    hM (mQ.isDGLeftModule_rowFiniteTwistedDifferential hA)
-    LinearMap.id ((Finsupp.linearCombination A ν.ν).restrictScalars R)
-    (fun _ _ ↦ rfl) (fun a g ↦ by simp only [LinearMap.restrictScalars_apply, map_smul])
-    (LinearMap.isHomogeneous_id ℳ) rfl hgd
+  have hd : differential hM (mQ.isDGLeftModule_rowFiniteTwistedDifferential hA) ∘ₗ
+      ν.tensorMap = ν.tensorMap ∘ₗ
+        differential hM (mP.isDGLeftModule_rowFiniteTwistedDifferential hA) :=
+    differential_naturality hM (mP.isDGLeftModule_rowFiniteTwistedDifferential hA)
+      hM (mQ.isDGLeftModule_rowFiniteTwistedDifferential hA)
+      LinearMap.id ((Finsupp.linearCombination A ν.ν).restrictScalars R)
+      (fun _ _ ↦ rfl) (fun a g ↦ by simp only [LinearMap.restrictScalars_apply, map_smul])
+      (LinearMap.isHomogeneous_id ℳ) rfl hgd
   rw [← (finsuppScalarRight R A M P).apply_symm_apply f,
     coefficientMap_finsuppScalarRight, mQ.coefficientDifferential_finsuppScalarRight,
     mP.coefficientDifferential_finsuppScalarRight, coefficientMap_finsuppScalarRight]
