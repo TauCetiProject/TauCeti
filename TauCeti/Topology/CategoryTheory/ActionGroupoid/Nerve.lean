@@ -98,7 +98,8 @@ by recording the first point and the labels of the consecutive arrows of a strin
 first point `x` and labels `g` has `k`-th point `gₖ₋₁ ⋯ g₀ • x`. -/
 def nerveHomeomorph : ComposableArrows (ActionCategory G X) n ≃ₜ X × (Fin n → G) where
   toEquiv := nerveEquiv G X n
-  continuous_toFun := continuous_back_obj_zero.prodMk (continuous_pi continuous_label_succ)
+  continuous_toFun := (continuous_back_obj_zero.prodMk (continuous_pi continuous_label_succ)).congr
+    fun F ↦ (nerveEquiv_apply F).symm
   continuous_invFun := continuous_nerveEquiv_symm
 
 @[simp]
@@ -107,14 +108,16 @@ theorem toEquiv_nerveHomeomorph : (nerveHomeomorph G X n).toEquiv = nerveEquiv G
 @[simp]
 theorem nerveHomeomorph_apply (F : ComposableArrows (ActionCategory G X) n) :
     nerveHomeomorph G X n F =
-      ((F.obj 0).back, fun k ↦ (F.map (homOfLE k.castSucc_le_succ)).hom) := (rfl)
+      ((F.obj 0).back, fun k ↦ (F.map (homOfLE k.castSucc_le_succ)).hom) :=
+  nerveEquiv_apply F
 
 /-- The `i`-th point of the string with first point `x` and consecutive labels `g` is
 `gᵢ₋₁ ⋯ g₀ • x`. -/
 @[simp]
 theorem back_obj_nerveHomeomorph_symm (p : X × (Fin n → G)) (i : Fin (n + 1)) :
     (((nerveHomeomorph G X n).symm p).obj i).back =
-      (Fin.partialProd (fun k ↦ MulOpposite.op (p.2 k)) i).unop • p.1 := (rfl)
+      (Fin.partialProd (fun k ↦ MulOpposite.op (p.2 k)) i).unop • p.1 :=
+  back_obj_nerveEquiv_symm p i
 
 /-- The `k`-th consecutive label of the string with first point `x` and consecutive labels `g` is
 `gₖ`. -/

@@ -90,7 +90,7 @@ variable (G X n) in
 /-- The `n`-simplices of the nerve of an action category correspond to `X × Gⁿ`, by recording the
 first point and the labels of the consecutive arrows of a string. The string with first point `x`
 and labels `g` has `k`-th point `gₖ₋₁ ⋯ g₀ • x`. -/
-@[expose] def nerveEquiv : ComposableArrows (ActionCategory G X) n ≃ X × (Fin n → G) where
+def nerveEquiv : ComposableArrows (ActionCategory G X) n ≃ X × (Fin n → G) where
   toFun F := ((F.obj 0).back, fun k ↦ (F.map (homOfLE k.castSucc_le_succ)).hom)
   invFun p := ComposableArrows.mkOfObjOfMapSucc
     (fun i ↦ ((Fin.partialProd (fun k ↦ MulOpposite.op (p.2 k)) i).unop • p.1 : X))
