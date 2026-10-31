@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.SheafOfModules
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Projective
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Flat
 public import TauCeti.Algebra.Homology.CochainComplex.ProjectiveResolution
-public import TauCeti.Algebra.Homology.Monoidal.KFlat
+public import TauCeti.Algebra.Homology.Monoidal.KFlat.Basic
 
 /-!
 # Flat resolutions of bounded above complexes of sheaves of modules
