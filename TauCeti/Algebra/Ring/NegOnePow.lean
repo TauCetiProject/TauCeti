@@ -162,10 +162,11 @@ theorem negOnePowCast_sum {ι : Type uI} (s : Finset ι) (f : ι → ℤ) :
   | cons a s ha ih =>
       rw [Finset.sum_cons, Finset.prod_cons, negOnePowCast_add, ih]
 
-/-- **Telescoping an alternating sum of products.** In the `p`-th product
-`α 0 ⋯ α (p - 1) · β p ⋯ β (n - 1)`, replace the factor `β p` by `ε p` and add the product in
-which `α p` is replaced by `ε (p + 1)`. The alternating sum of these terms over `p < n`
-telescopes to its two boundary terms. -/
+/-- **Telescoping an alternating sum of products.** The `p`-th summand is
+`α 0 ⋯ α (p - 1) · (ε p · β p + α p · ε (p + 1)) · β (p + 1) ⋯ β (n - 1)`, that is, the factor
+`β p` of `α 0 ⋯ α (p - 1) · β p ⋯ β (n - 1)` is replaced by `ε p · β p + α p · ε (p + 1)`.
+Writing `u q = (-1) ^ q · α 0 ⋯ α (q - 1) · ε q · β q ⋯ β (n - 1)`, the signed `p`-th summand
+is `u p - u (p + 1)`, so the alternating sum over `p < n` telescopes to `u 0 - u n`. -/
 theorem sum_range_negOnePowCast_telescope (n : ℕ) (α β ε : ℕ → R) :
     ∑ p ∈ Finset.range n, negOnePowCast R (p : ℤ) * ((∏ i ∈ Finset.range p, α i) *
         (ε p * β p + α p * ε (p + 1)) * ∏ i ∈ Finset.Ico (p + 1) n, β i) =
