@@ -14,9 +14,9 @@ public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.TraceReduc
 # Assembling the trace of Popa–Zagier's explicit element
 
 The trace of the explicit element on positive even-degree period polynomials is a finite sum
-of fixed-trace weight sums. For determinant `n ≠ 0`, the formula is
+of fixed-trace weight sums. Writing `Tₙ` for this element, for determinant `n ≠ 0` the formula is
 
-`tr(T̃ₙ | W_w) = (1/12) ∑_{-4n ≤ t ≤ 4n} (∑_{det M = n, tr M = t} weight M) P_{w+2}(t,n)`.
+`tr(Tₙ | W_w) = (1/12) ∑_{-4n ≤ t ≤ 4n} (∑_{det M = n, tr M = t} weight M) P_{w+2}(t,n)`.
 
 Here `weight` is twelve times the coefficient in Popa–Zagier's equation (15), and `P` is the
 Dickson polynomial already used for binary-form traces. The inner sums have finite support:
