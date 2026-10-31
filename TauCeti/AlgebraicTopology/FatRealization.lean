@@ -211,6 +211,13 @@ theorem augment_ι (ε : X ⟶ (Functor.const _).obj Z) (n : SemiSimplexCategory
     (t : toTop.{u}.obj n) : augment ε (ι X n (x, t)) = ε.app (op n) x :=
   (rfl)
 
+/-- The augmentation of `‖X‖` induced by `ε` restricts along `‖φ‖` to the augmentation of `‖Y‖`
+induced by `φ ≫ ε`. -/
+@[reassoc (attr := simp)]
+theorem map_comp_augment {Y : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}} (φ : Y ⟶ X)
+    (ε : X ⟶ (Functor.const _).obj Z) : map φ ≫ augment ε = augment (φ ≫ ε) := by
+  ext; simp
+
 end Augment
 
 section OpenRestriction
@@ -228,6 +235,12 @@ theorem range_map :
   · rintro ⟨n, y, t, rfl⟩
     exact ⟨ι Y n (y, t), rfl⟩
 
+/-- If a simplex of `X` lies in the image of `φ`, so does each of its faces. -/
+private theorem map_mem_range {m n : SemiSimplexCategoryᵒᵖ} (f : m ⟶ n) {x : X.obj m}
+    (hx : x ∈ range (φ.app m)) : X.map f x ∈ range (φ.app n) := by
+  obtain ⟨y, rfl⟩ := hx
+  exact ⟨Y.map f y, NatTrans.naturality_apply φ f y⟩
+
 section PartialInv
 
 variable {φ} (hinj : ∀ n, Function.Injective (φ.app n))
@@ -243,17 +256,14 @@ private def partialInv : fatRealization X → Option (fatRealization Y) :=
     (fun p ↦ if hx : p.2.1 ∈ range (φ.app (op p.1)) then some (ι Y p.1 (hx.choose, p.2.2))
       else none) <| by
     rintro _ _ ⟨f, x, t⟩
-    have hiff : X.map f.op x ∈ range (φ.app (op _)) ↔ x ∈ range (φ.app (op _)) := by
-      refine ⟨hsat f.op x, ?_⟩
-      rintro ⟨y, rfl⟩
-      exact ⟨Y.map f.op y, NatTrans.naturality_apply φ f.op y⟩
     dsimp only
     split_ifs with hx' hx hx
-    · obtain ⟨y, hy⟩ := id hx
-      rw [hinj _ (hx.choose_spec.trans hy.symm),
-        hinj _ (hx'.choose_spec.trans (by rw [← hy, NatTrans.naturality_apply])), ι_map]
-    · exact absurd (hiff.mp hx') hx
-    · exact absurd (hiff.mpr hx) hx'
+    · -- The chosen preimage of the face `X(f) x` is the face of the chosen preimage of `x`.
+      have hchoose : hx'.choose = Y.map f.op hx.choose :=
+        hinj _ (by rw [hx'.choose_spec, NatTrans.naturality_apply, hx.choose_spec])
+      rw [hchoose, ι_map]
+    · exact absurd (hsat f.op x hx') hx
+    · exact absurd (map_mem_range φ f.op hx) hx'
     · rfl
 
 open scoped Classical in
@@ -316,18 +326,16 @@ variable {Z : TopCat.{u}} (ε : X ⟶ (Functor.const _).obj Z) {V : Set Z}
 part of `‖X‖` lying over `V` is exactly the image of `‖Y‖`. -/
 theorem preimage_augment_eq_range_map (hrange : ∀ n, range (φ.app n) = ε.app n ⁻¹' V) :
     augment ε ⁻¹' V = range (map φ) := by
-  rw [range_map]
   ext p
-  obtain ⟨n, x, t, rfl⟩ := ι_jointly_surjective X p
-  rw [mem_preimage, augment_ι, ← mem_preimage, ← hrange]
   constructor
-  · rintro ⟨y, rfl⟩
-    exact ⟨n, y, t, rfl⟩
-  · rintro ⟨k, y, s, h⟩
-    have h' := congrArg (augment ε) h
-    rw [augment_ι, augment_ι] at h'
-    rw [hrange, mem_preimage, ← h', ← mem_preimage, ← hrange]
-    exact ⟨y, rfl⟩
+  · intro hp
+    obtain ⟨n, x, t, rfl⟩ := ι_jointly_surjective X p
+    obtain ⟨y, rfl⟩ : x ∈ range (φ.app (op n)) := by rwa [hrange]
+    exact ⟨ι Y n (y, t), rfl⟩
+  · rintro ⟨q, rfl⟩
+    obtain ⟨n, y, t, rfl⟩ := ι_jointly_surjective Y q
+    rw [mem_preimage, ← ConcreteCategory.comp_apply, map_comp_augment, augment_ι]
+    exact (hrange (op n)).subset ⟨y, rfl⟩
 
 /-- If `φ` is levelwise an open embedding whose image is the preimage of `V` under an augmentation
 `ε`, then `‖φ‖` is an open embedding; by `preimage_augment_eq_range_map` its image is the part of
