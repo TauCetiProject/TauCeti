@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.VariationMeasure
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
 import Mathlib.MeasureTheory.Integral.CompactlySupported
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.Analysis.BoundedVariation.DerivativeMeasure
@@ -51,6 +52,9 @@ against this representation gives `|Du|(U) ≤ ∫_U ‖σ_u‖ d|Du|`, hence `�
   is `σ_u` almost everywhere.
 * `TauCeti.enorm_integral_divergenceCLM_mul_le_lintegral_enorm`: the pairing is bounded by
   `∫ ‖φ‖ d|Du|`.
+* `TauCeti.integrable_inner_polarDensity` and `TauCeti.dist_integral_inner_polarDensity_le`:
+  continuous compactly supported fields pair integrably with `Du`, with uniform error controlled
+  by the variation measure of a common compact support.
 * `TauCeti.polarDensity_congr_ae` and `TauCeti.polarDensity_const_sub`: `σ_u` only depends on `u`
   almost everywhere on `Ω`, and `σ_{c - u} = -σ_u` against an additive Haar measure.
 
@@ -366,5 +370,58 @@ theorem polarDensity_const_sub [μ.IsAddHaarMeasure] (c : ℝ) :
     simp [inner_neg_right, integral_neg]
   · rw [variationMeasure_eq_zero_of_not hu]
     simp [EventuallyEq]
+
+/-- A continuous field compactly supported in the domain pairs integrably with the derivative
+of a locally BV function, represented by its polar density against its variation measure. -/
+theorem integrable_inner_polarDensity
+    (hu : LocallyIntegrableOn u Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
+    {f : E → E} (hf : Continuous f) (hc : HasCompactSupport f) (hs : tsupport f ⊆ Ω) :
+    Integrable (fun x : Ω => ⟪f x, polarDensity μ Ω u x⟫) (variationMeasure μ Ω u) := by
+  let K := ((↑) : Ω → E) ⁻¹' tsupport f
+  have hK : IsCompact K :=
+    Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hc (by simpa using hs)
+  obtain ⟨C, hC⟩ := hc.exists_bound_of_continuousOn hf.continuousOn
+  refine (integrableOn_iff_integrable_of_support_subset (s := K) ?_).1 ?_
+  · intro x hx
+    by_contra hxK
+    exact hx (by simp [image_eq_zero_of_notMem_tsupport hxK])
+  · refine Measure.integrableOn_of_bounded hK.measure_lt_top.ne
+      ((hf.comp continuous_subtype_val).aestronglyMeasurable.inner
+        measurable_polarDensity.aestronglyMeasurable) (M := C) ?_
+    filter_upwards [ae_restrict_mem hK.measurableSet,
+      ae_restrict_of_ae (ae_norm_polarDensity_eq_one hu hfin)] with x hx hσ
+    exact (norm_inner_le_norm _ _).trans (by simpa [hσ] using hC x hx)
+
+/-- Uniformly close continuous fields supported in a fixed compact set have close derivative
+pairings, with constant the variation measure of that compact set. -/
+theorem dist_integral_inner_polarDensity_le
+    (hu : LocallyIntegrableOn u Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
+    {f g : E → E} (hf : Continuous f) (hg : Continuous g)
+    {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω)
+    (hfK : tsupport f ⊆ K) (hgK : tsupport g ⊆ K) {ε : ℝ}
+    (hε : ∀ x, dist (f x) (g x) ≤ ε) :
+    dist (∫ x : Ω, ⟪f x, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u)
+      (∫ x : Ω, ⟪g x, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u) ≤
+      ε * (variationMeasure μ Ω u).real (((↑) : Ω → E) ⁻¹' K) := by
+  have hfc : HasCompactSupport f := hK.of_isClosed_subset (isClosed_tsupport _) hfK
+  have hgc : HasCompactSupport g := hK.of_isClosed_subset (isClosed_tsupport _) hgK
+  rw [dist_eq_norm, ← integral_sub
+    (integrable_inner_polarDensity hu hfin hf hfc (hfK.trans hKΩ))
+    (integrable_inner_polarDensity hu hfin hg hgc (hgK.trans hKΩ))]
+  simp_rw [← inner_sub_left]
+  have hK' : IsCompact (((↑) : Ω → E) ⁻¹' K) :=
+    Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hK (by simpa using hKΩ)
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero
+    (s := ((↑) : Ω → E) ⁻¹' K) (fun x hx => by
+      simp [image_eq_zero_of_notMem_tsupport (fun h => hx (hfK h)),
+        image_eq_zero_of_notMem_tsupport (fun h => hx (hgK h))])]
+  refine norm_setIntegral_le_of_norm_le_const_ae hK'.measure_lt_top ?_
+  filter_upwards [ae_restrict_of_ae (ae_norm_polarDensity_eq_one hu hfin)] with x hx
+  exact (norm_inner_le_norm (f x - g x) (polarDensity μ Ω u x)).trans
+    (by simpa [hx, dist_eq_norm] using hε x)
 
 end TauCeti
