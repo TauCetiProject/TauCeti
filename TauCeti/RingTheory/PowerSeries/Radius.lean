@@ -47,8 +47,8 @@ formal multilinear series with the same coefficient norms. Through this comparis
 * `PowerSeries.radius_eq_liminf` and `PowerSeries.radius_inv_eq_limsup`: the Cauchy–Hadamard
   formula.
 * `PowerSeries.radius_map`: isometric coefficient maps preserve the radius.
-* `PowerSeries.radius_mk_pow`: over a ring with multiplicative norm and for `a ≠ 0`, the
-  geometric series `∑ aⁿ Xⁿ` has radius `‖a‖⁻¹`.
+* `PowerSeries.radius_mk_pow`: over a ring with multiplicative norm, the geometric series
+  `∑ aⁿ Xⁿ` has radius `‖a‖⁻¹`.
 
 ## References
 
@@ -105,6 +105,7 @@ theorem le_radius_of_bound (C : ℝ) {r : ℝ≥0} (h : ∀ n, ‖coeff n f‖ *
   simpa using le_radius_of_isRestricted hf
 
 /-- The radius is infinite exactly when the series is entire. -/
+@[simp]
 theorem radius_eq_top_iff : f.radius = ⊤ ↔ f.IsEntire := by
   refine ⟨fun h ↦ isEntire_iff.mpr fun r ↦ isRestricted_of_lt_radius (h ▸ enorm_lt_top),
     fun h ↦ ENNReal.eq_top_of_forall_nnreal_le fun r ↦ ?_⟩
@@ -189,10 +190,15 @@ theorem radius_inv_eq_limsup :
     f.radius⁻¹ = limsup (fun n ↦ ((‖coeff n f‖₊ ^ (1 / (n : ℝ)) : ℝ≥0) : ℝ≥0∞)) atTop := by
   simpa [ENNReal.inv_liminf] using congr($(radius_eq_liminf (f := f))⁻¹)
 
-/-- Over a ring with multiplicative norm and for `a ≠ 0`, the geometric series `∑ aⁿ Xⁿ` has
-radius `‖a‖⁻¹`: it is restricted at every smaller radius but not at `‖a‖⁻¹` itself. -/
-theorem radius_mk_pow [NormMulClass R] {a : R} (ha : a ≠ 0) :
+/-- Over a ring with multiplicative norm, the geometric series `∑ aⁿ Xⁿ` has radius `‖a‖⁻¹`.
+For `a ≠ 0` it is restricted at every smaller radius but not at `‖a‖⁻¹` itself; for `a = 0` it is
+the constant `1` and the radius is `∞`. -/
+theorem radius_mk_pow [NormMulClass R] (a : R) :
     (mk fun n ↦ a ^ n).radius = (‖a‖₊ : ℝ≥0∞)⁻¹ := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · rw [nnnorm_zero, ENNReal.coe_zero, ENNReal.inv_zero]
+    refine ENNReal.eq_top_of_forall_nnreal_le fun r ↦ le_radius_of_bound ‖(1 : R)‖ fun n ↦ ?_
+    cases n <;> simp
   have : Nontrivial R := ⟨⟨a, 0, ha⟩⟩
   have : NormOneClass R := NormMulClass.toNormOneClass
   have ha' : ‖a‖₊ ≠ 0 := nnnorm_ne_zero_iff.mpr ha
