@@ -135,16 +135,6 @@ private noncomputable def routeWeight (S : PairColorSystem κ V)
   ∏ q ∈ E, colorWeight S (c q) (g q.1.1) (g q.1.2)
 
 omit [Fintype ι] in
-/-- An ordered pair `q` other than `p` that meets the larger coordinate of `p` avoids its
-smaller coordinate. -/
-private lemma fst_ne_and_snd_ne_of_ne {p q : {p : ι × ι // p.1 < p.2}} (hqp : q ≠ p)
-    (hq : ¬(q.1.1 ≠ p.1.2 ∧ q.1.2 ≠ p.1.2)) : q.1.1 ≠ p.1.1 ∧ q.1.2 ≠ p.1.1 := by
-  obtain ⟨⟨a, b⟩, hab⟩ := q
-  obtain ⟨⟨i, j⟩, hij⟩ := p
-  simp only [ne_eq, Subtype.mk.injEq, Prod.mk.injEq] at *
-  grind
-
-omit [Fintype ι] in
 /-- With every coordinate except the two coordinates of `p` fixed by `h`, the weight of a set
 `E` of pairs not containing `p` is a function of the value at `p.1.1` times a function of the
 value at `p.1.2`. -/
@@ -163,7 +153,14 @@ private lemma routeWeight_update_update (S : PairColorSystem κ V)
     rw [update_of_ne h₁, update_of_ne h₂]
   · refine prod_congr rfl fun q hq ↦ ?_
     obtain ⟨hqE, hqj⟩ := mem_filter.mp hq
-    have hqi := fst_ne_and_snd_ne_of_ne (ne_of_mem_of_not_mem hqE hp) hqj
+    -- Two distinct strictly ordered pairs share at most one coordinate, so `q`, which meets
+    -- `p.1.2`, avoids `p.1.1`.
+    have hqi : q.1.1 ≠ p.1.1 ∧ q.1.2 ≠ p.1.1 := by
+      have hqp : q.1 ≠ p.1 := Subtype.coe_injective.ne (ne_of_mem_of_not_mem hqE hp)
+      have := q.2
+      have := p.2
+      rw [Ne, Prod.ext_iff] at hqp
+      grind
     -- Away from `p.1.1`, overwriting `p.1.1` and then `p.1.2` agrees with overwriting `p.1.2`.
     have key (l : ι) (hl : l ≠ p.1.1) :
         update (update h p.1.1 x) p.1.2 y l = update h p.1.2 y l := by
