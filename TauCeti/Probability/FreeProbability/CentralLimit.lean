@@ -9,6 +9,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Analysis.Real.Sqrt
 public import TauCeti.Combinatorics.NoncrossingPartition.Catalan
 public import TauCeti.Probability.Distributions.Semicircle.Moments
+public import TauCeti.Probability.FreeProbability.Cumulant.Bounds
 public import TauCeti.Probability.FreeProbability.Cumulant.Free
 
 /-!
@@ -16,15 +17,17 @@ public import TauCeti.Probability.FreeProbability.Cumulant.Free
 
 Let `φ : A →ₗ[𝕜] 𝕜` be a normalised linear functional on an algebra over `𝕜 = ℝ` or `ℂ`, and let
 `a 0, a 1, …` be freely independent centred elements of `A`, `φ (a j) = 0`, whose moments
-`φ (a j ^ k)` are bounded uniformly in `j` for each `k`, and whose average variance
-`N⁻¹ ∑_{j < N} φ (a j ^ 2)` tends to `σ²`. The *free central limit theorem* states that the
-moments of the normalised sums `S_N = (√N)⁻¹ • (a 0 + ⋯ + a (N - 1))` converge to those of the
-centred semicircle law of variance `σ²`:
+`φ (a j ^ k)` are bounded uniformly in `j` for each `k`. The *free central limit theorem* states
+that the odd moments of the normalised sums `S_N = (√N)⁻¹ • (a 0 + ⋯ + a (N - 1))` tend to `0`,
+and, if the average variance `N⁻¹ ∑_{j < N} φ (a j ^ 2)` tends to `σ² ∈ 𝕜`, that the even moments
+tend to the Catalan moments:
 
 `φ (S_N ^ (2k)) → σ² ^ k * catalan k` and `φ (S_N ^ (2k + 1)) → 0`.
 
-For identically distributed variables (equal moments `φ (a j ^ k) = φ (a 0 ^ k)`) the hypotheses
-reduce to centring of `a 0`, and the limit is the moment sequence of `semicircleReal 0 σ²`.
+When `σ²` is a real number `v ≥ 0`, these limits are the moments of the centred semicircle law
+`semicircleReal 0 v`. For identically distributed variables (equal moments
+`φ (a j ^ k) = φ (a 0 ^ k)`) whose variance `φ (a 0 ^ 2)` is a real number `v ≥ 0`, the hypotheses
+reduce to centring of `a 0`, and the limit is the moment sequence of `semicircleReal 0 v`.
 
 The proof is the cumulant proof. Since free cumulants are additive on free elements, the
 moment–cumulant formula gives
@@ -42,12 +45,10 @@ is not stated here.
 
 ## Main results
 
-* `TauCeti.norm_freeCumulant_const_le` — a free cumulant of a constant word is bounded by a
-  constant depending only on bounds for the moments of its letter.
 * `TauCeti.IsFreelyIndependentElements.tendsto_apply_inv_sqrt_smul_sum_pow_two_mul` and
   `TauCeti.IsFreelyIndependentElements.tendsto_apply_inv_sqrt_smul_sum_pow_two_mul_add_one` —
   the free central limit theorem: the even moments of `S_N` tend to `σ² ^ k * catalan k` and the
-  odd moments tend to `0`.
+  odd moments tend to `0`, the latter without any assumption on the variances.
 * `TauCeti.IsFreelyIndependentElements.tendsto_apply_inv_sqrt_smul_sum_pow_semicircleReal` — for a
   limiting variance `v ≥ 0`, the moments of `S_N` tend to those of `semicircleReal 0 v`.
 * `TauCeti.IsFreelyIndependentElements.tendsto_apply_inv_sqrt_smul_sum_pow_of_apply_pow_eq`
@@ -68,63 +69,25 @@ open Finset Filter Topology IncidenceAlgebra NNReal
 
 namespace TauCeti
 
-section Bound
-
-variable {R A α : Type*} [NormedCommRing R] [NormOneClass R] [Monoid A] [LinearOrder α]
-
-/-- *Uniform bound for free cumulants*: if the moments of `x` of order at most `#s` are bounded by
-`‖φ (x ^ k)‖ ≤ M k`, then the free cumulant of the constant word `(x, …, x)` along `s` is bounded
-by `∑_{π ∈ NC(s)} ‖μ(π, 1_s)‖ ∏_{B ∈ π} M #B`, which depends on `x` only through `M`. -/
-theorem norm_freeCumulant_const_le (φ : A → R) (x : A) {s : Finset α} {M : ℕ → ℝ}
-    (hM : ∀ k ≤ #s, ‖φ (x ^ k)‖ ≤ M k) :
-    ‖freeCumulant φ (fun _ => x) s‖ ≤
-      ∑ π : NoncrossingPartition s, ‖mu R π ⊤‖ * ∏ B ∈ π.1.parts, M #B := by
-  rw [freeCumulant_eq_sum_mu_mul_partitionMoment]
-  refine (norm_sum_le _ _).trans (sum_le_sum fun π _ => ?_)
-  rw [partitionMoment_const]
-  refine (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-  exact (Finset.norm_prod_le _ _).trans (prod_le_prod₀ (fun _ _ => norm_nonneg _)
-    fun B hB => hM _ (card_le_card (π.1.le hB)))
-
-end Bound
-
 section CentralLimit
 
 variable {𝕜 A : Type*} [RCLike 𝕜] [Semiring A] [Algebra 𝕜 A] {φ : A →ₗ[𝕜] 𝕜} {a : ℕ → A}
 
 /-- In the moment–cumulant expansion of `φ (((√N)⁻¹ • ∑_{j < N} a j) ^ n)`, the term of a
-noncrossing partition `π` tends to `σ² ^ #π` if `π` is a pairing, and to `0` otherwise. -/
-private theorem tendsto_inv_sqrt_pow_mul_prod_sum_freeCumulant (hcen : ∀ j, φ (a j) = 0)
-    (hbdd : ∀ k, ∃ M, ∀ j, ‖φ (a j ^ k)‖ ≤ M) {σ2 : 𝕜}
-    (hvar : Tendsto (fun N : ℕ => (N : 𝕜)⁻¹ * ∑ j ∈ range N, φ (a j ^ 2)) atTop (𝓝 σ2))
-    {n : ℕ} (π : NoncrossingPartition (univ : Finset (Fin n))) :
+noncrossing partition `π` that is not a pairing tends to `0`. -/
+private theorem tendsto_inv_sqrt_pow_mul_prod_sum_freeCumulant_of_not_isPairing
+    (hcen : ∀ j, φ (a j) = 0) (hbdd : ∀ k, ∃ M, ∀ j, ‖φ (a j ^ k)‖ ≤ M) {n : ℕ}
+    {π : NoncrossingPartition (univ : Finset (Fin n))} (hp : ¬π.1.IsPairing) :
     Tendsto (fun N : ℕ => (√(N : ℝ) : 𝕜)⁻¹ ^ n *
-        ∏ B ∈ π.1.parts, ∑ j ∈ range N, freeCumulant φ (fun _ => a j) B) atTop
-      (𝓝 (if π.1.IsPairing then σ2 ^ #π.1.parts else 0)) := by
+        ∏ B ∈ π.1.parts, ∑ j ∈ range N, freeCumulant φ (fun _ => a j) B) atTop (𝓝 0) := by
   by_cases h1 : ∃ B ∈ π.1.parts, #B = 1
   · -- A singleton part contributes the sum of the means, which vanish.
     obtain ⟨B, hB, hB1⟩ := h1
-    have hp : ¬π.1.IsPairing := fun hp => by
-      have := Finpartition.isPairing_iff.1 hp B hB
-      omega
     obtain ⟨i, rfl⟩ := card_eq_one.1 hB1
-    simp only [hp, ↓reduceIte]
     refine tendsto_const_nhds.congr fun N => ?_
     rw [prod_eq_zero hB (by simp [hcen]), mul_zero]
-  by_cases hp : π.1.IsPairing
-  · -- Each part of a pairing contributes the sum of the variances, and `(√N)⁻¹ ^ 2 = N⁻¹`.
-    have hn (x : 𝕜) : x ^ n = (x ^ 2) ^ #π.1.parts := by
-      rw [← pow_mul, ← (by simpa using hp.card_eq_two_mul : n = 2 * #π.1.parts)]
-    simp only [hp, ↓reduceIte]
-    refine (hvar.pow #π.1.parts).congr fun N => ?_
-    rw [prod_congr rfl fun B hB => sum_congr rfl fun j _ => by
-        rw [freeCumulant_const_of_card_eq_two φ _ (Finpartition.isPairing_iff.1 hp B hB), hcen,
-          sq (0 : 𝕜), mul_zero, sub_zero],
-      prod_const, hn, ← mul_pow, inv_pow, ← RCLike.ofReal_pow,
-      Real.sq_sqrt N.cast_nonneg, RCLike.ofReal_natCast]
   -- Otherwise every part has at least two positions and some part at least three, so `π` has
   -- fewer than `n / 2` parts, while the cumulants are bounded uniformly in `j`.
-  simp only [hp, ↓reduceIte]
   push Not at h1
   have hlt : 2 * #π.1.parts < n := by
     have hsum : ∑ B ∈ π.1.parts, #B = n := by simpa using π.1.sum_card_parts
@@ -160,6 +123,29 @@ private theorem tendsto_inv_sqrt_pow_mul_prod_sum_freeCumulant (hcen : ∀ j, φ
         rw [sum_const, card_range, nsmul_eq_mul]
     _ = (√(N : ℝ))⁻¹ ^ (n - 2 * #π.1.parts) * ∏ B ∈ π.1.parts, C B := by
         rw [prod_mul_distrib, prod_const, ← mul_assoc, Real.inv_sqrt_pow_mul_pow hN' hlt.le]
+
+/-- In the moment–cumulant expansion of `φ (((√N)⁻¹ • ∑_{j < N} a j) ^ n)`, the term of a
+noncrossing partition `π` tends to `σ² ^ #π` if `π` is a pairing, and to `0` otherwise. -/
+private theorem tendsto_inv_sqrt_pow_mul_prod_sum_freeCumulant (hcen : ∀ j, φ (a j) = 0)
+    (hbdd : ∀ k, ∃ M, ∀ j, ‖φ (a j ^ k)‖ ≤ M) {σ2 : 𝕜}
+    (hvar : Tendsto (fun N : ℕ => (N : 𝕜)⁻¹ * ∑ j ∈ range N, φ (a j ^ 2)) atTop (𝓝 σ2))
+    {n : ℕ} (π : NoncrossingPartition (univ : Finset (Fin n))) :
+    Tendsto (fun N : ℕ => (√(N : ℝ) : 𝕜)⁻¹ ^ n *
+        ∏ B ∈ π.1.parts, ∑ j ∈ range N, freeCumulant φ (fun _ => a j) B) atTop
+      (𝓝 (if π.1.IsPairing then σ2 ^ #π.1.parts else 0)) := by
+  by_cases hp : π.1.IsPairing
+  · -- Each part of a pairing contributes the sum of the variances, and `(√N)⁻¹ ^ 2 = N⁻¹`.
+    have hn (x : 𝕜) : x ^ n = (x ^ 2) ^ #π.1.parts := by
+      rw [← pow_mul, ← (by simpa using hp.card_eq_two_mul : n = 2 * #π.1.parts)]
+    simp only [hp, ↓reduceIte]
+    refine (hvar.pow #π.1.parts).congr fun N => ?_
+    rw [prod_congr rfl fun B hB => sum_congr rfl fun j _ => by
+        rw [freeCumulant_const_of_card_eq_two φ _ (Finpartition.isPairing_iff.1 hp B hB), hcen,
+          sq (0 : 𝕜), mul_zero, sub_zero],
+      prod_const, hn, ← mul_pow, inv_pow, ← RCLike.ofReal_pow,
+      Real.sq_sqrt N.cast_nonneg, RCLike.ofReal_natCast]
+  simpa only [hp, ↓reduceIte] using
+    tendsto_inv_sqrt_pow_mul_prod_sum_freeCumulant_of_not_isPairing hcen hbdd hp
 
 /-- The free central limit theorem with the number of noncrossing pairings of `n` points in the
 limit. -/
@@ -199,19 +185,22 @@ theorem IsFreelyIndependentElements.tendsto_apply_inv_sqrt_smul_sum_pow_two_mul
   simpa [NoncrossingPartition.card_isPairing_fin_eq_catalan] using
     h.tendsto_apply_inv_sqrt_smul_sum_pow hφ hcen hbdd hvar (2 * k)
 
-/-- *The free central limit theorem*, odd moments: under the hypotheses of
-`IsFreelyIndependentElements.tendsto_apply_inv_sqrt_smul_sum_pow_two_mul`,
-`φ (((√N)⁻¹ • ∑_{j < N} a j) ^ (2k + 1)) → 0`. -/
+/-- *The free central limit theorem*, odd moments: if the elements `a j` are freely independent
+for a normalised `φ`, centred, with moments `φ (a j ^ k)` bounded uniformly in `j` for each `k`,
+then `φ (((√N)⁻¹ • ∑_{j < N} a j) ^ (2k + 1)) → 0`. No convergence of the variances is needed. -/
 theorem IsFreelyIndependentElements.tendsto_apply_inv_sqrt_smul_sum_pow_two_mul_add_one
     (h : IsFreelyIndependentElements φ a) (hφ : φ 1 = 1) (hcen : ∀ j, φ (a j) = 0)
-    (hbdd : ∀ k, ∃ M, ∀ j, ‖φ (a j ^ k)‖ ≤ M) {σ2 : 𝕜}
-    (hvar : Tendsto (fun N : ℕ => (N : 𝕜)⁻¹ * ∑ j ∈ range N, φ (a j ^ 2)) atTop (𝓝 σ2))
-    (k : ℕ) :
+    (hbdd : ∀ k, ∃ M, ∀ j, ‖φ (a j ^ k)‖ ≤ M) (k : ℕ) :
     Tendsto (fun N : ℕ => φ (((√(N : ℝ) : 𝕜)⁻¹ • ∑ j ∈ range N, a j) ^ (2 * k + 1))) atTop
       (𝓝 0) := by
-  have h0 := NoncrossingPartition.card_isPairing_eq_zero
-    (s := (univ : Finset (Fin (2 * k + 1)))) (by simp)
-  simpa [h0] using h.tendsto_apply_inv_sqrt_smul_sum_pow hφ hcen hbdd hvar (2 * k + 1)
+  -- An odd number of positions has no pairing, so every term of the expansion tends to `0`.
+  have hp (π : NoncrossingPartition (univ : Finset (Fin (2 * k + 1)))) : ¬π.1.IsPairing :=
+    fun hp => by simpa using hp.even_card
+  have := tendsto_finsetSum univ fun π _ =>
+    tendsto_inv_sqrt_pow_mul_prod_sum_freeCumulant_of_not_isPairing hcen hbdd (hp π)
+  rw [sum_const_zero] at this
+  refine this.congr fun N => ?_
+  rw [smul_pow, map_smul, smul_eq_mul, h.apply_sum_pow_eq_sum_prod_sum_freeCumulant hφ, mul_sum]
 
 /-- *The free central limit theorem*: if the elements `a j` are freely independent for a
 normalised `φ`, centred, with moments `φ (a j ^ k)` bounded uniformly in `j` for each `k`, and
@@ -227,7 +216,7 @@ theorem IsFreelyIndependentElements.tendsto_apply_inv_sqrt_smul_sum_pow_semicirc
       (𝓝 ((∫ x, x ^ n ∂Probability.semicircleReal 0 v : ℝ) : 𝕜)) := by
   obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n
   · simpa using h.tendsto_apply_inv_sqrt_smul_sum_pow_two_mul hφ hcen hbdd hvar k
-  · simpa using h.tendsto_apply_inv_sqrt_smul_sum_pow_two_mul_add_one hφ hcen hbdd hvar k
+  · simpa using h.tendsto_apply_inv_sqrt_smul_sum_pow_two_mul_add_one hφ hcen hbdd k
 
 /-- *The free central limit theorem* for identically distributed elements: if the elements `a j`
 are freely independent for a normalised `φ` and have the moments of `a 0`, which is centred with
