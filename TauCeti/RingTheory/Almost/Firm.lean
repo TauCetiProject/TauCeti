@@ -273,19 +273,6 @@ section IsAlmostIso
 
 variable {S} {M N : Type*} [AddCommGroup M] [Module V M] [AddCommGroup N] [Module V N]
 
-/-- Tensoring with `m~` turns an almost isomorphism into a bijection: `m~` is flat and
-`m~ ⊗[V] −` kills almost zero modules. -/
-theorem IsAlmostIso.lTensor_bijective {f : M →ₗ[V] N} (hf : S.IsAlmostIso f) :
-    Function.Bijective (f.lTensor S.tilde) := by
-  have h₁ := (S.isAlmostZero_iff_subsingleton_tilde_tensor _).mp (isAlmostIso_iff.mp hf).1
-  have h₂ := (S.isAlmostZero_iff_subsingleton_tilde_tensor _).mp (isAlmostIso_iff.mp hf).2
-  refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun y ↦ ?_⟩
-  · obtain ⟨z, rfl⟩ :=
-      (Module.Flat.lTensor_exact S.tilde (LinearMap.exact_subtype_ker_map f) x).mp hx
-    rw [Subsingleton.elim z 0, map_zero]
-  · exact (lTensor_exact S.tilde f.exact_map_mkQ_range (Submodule.mkQ_surjective _) y).mp
-      (Subsingleton.elim _ _)
-
 /-- An almost isomorphism between firm modules is bijective. -/
 theorem IsAlmostIso.bijective_of_isFirm {f : M →ₗ[V] N} (hf : S.IsAlmostIso f) (hM : S.IsFirm M)
     (hN : S.IsFirm N) : Function.Bijective f := by

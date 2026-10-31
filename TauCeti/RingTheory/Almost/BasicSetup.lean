@@ -65,6 +65,8 @@ pseudouniformiser.
   map `m~ → m` is bijective.
 * `TauCeti.Almost.BasicSetup.isAlmostIso_subtype`: the inclusion `m → V` is an almost
   isomorphism.
+* `TauCeti.Almost.BasicSetup.IsAlmostIso.lTensor_bijective`: `m~ ⊗[V] −` turns an almost
+  isomorphism into a bijection.
 * `TauCeti.Almost.BasicSetup.flat_tilde_map`: `mW ⊗[W] mW ≅ W ⊗[V] m~` is flat, so basic setups
   base change (the isomorphism is `Ideal.baseChangeTensorSelfEquiv`, valid for every idempotent
   ideal); `TauCeti.Almost.BasicSetup.baseChange_away_eq_classical`: inverting an element of
@@ -410,6 +412,20 @@ theorem isAlmostIso_subtype : S.IsAlmostIso S.ideal.subtype := by
     rw [Submodule.ker_subtype]; infer_instance
   rw [isAlmostIso_iff, Submodule.range_subtype]
   exact ⟨S.isAlmostZero_of_subsingleton, S.isAlmostZero_quotient⟩
+
+variable {S} in
+/-- Tensoring with `m~` turns an almost isomorphism into a bijection: `m~` is flat and
+`m~ ⊗[V] −` kills almost zero modules. -/
+theorem IsAlmostIso.lTensor_bijective {f : M →ₗ[V] N} (hf : S.IsAlmostIso f) :
+    Function.Bijective (f.lTensor S.tilde) := by
+  have h₁ := (S.isAlmostZero_iff_subsingleton_tilde_tensor _).mp (isAlmostIso_iff.mp hf).1
+  have h₂ := (S.isAlmostZero_iff_subsingleton_tilde_tensor _).mp (isAlmostIso_iff.mp hf).2
+  refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun y ↦ ?_⟩
+  · obtain ⟨z, rfl⟩ :=
+      (Module.Flat.lTensor_exact S.tilde (LinearMap.exact_subtype_ker_map f) x).mp hx
+    rw [Subsingleton.elim z 0, map_zero]
+  · exact (lTensor_exact S.tilde f.exact_map_mkQ_range (Submodule.mkQ_surjective _) y).mp
+      (Subsingleton.elim _ _)
 
 end IsAlmostIso
 
