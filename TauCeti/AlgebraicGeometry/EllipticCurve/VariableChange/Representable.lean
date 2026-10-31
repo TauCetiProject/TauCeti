@@ -40,7 +40,7 @@ universe u
 
 open WeierstrassCurve WeierstrassCurve.VariableChange
 
-namespace WeierstrassCurve.VariableChange
+namespace TauCeti.WeierstrassChange
 
 namespace Universal
 
@@ -189,4 +189,4 @@ algebra; the representing equivalence is `pointsCorepresentableBy`. -/
 instance : (pointsFunctor.{u} ⋙ forget GrpCat).IsCorepresentable :=
   pointsCorepresentableBy.isCorepresentable
 
-end WeierstrassCurve.VariableChange
+end TauCeti.WeierstrassChange
