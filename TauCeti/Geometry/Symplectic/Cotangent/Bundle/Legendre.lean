@@ -11,8 +11,8 @@ import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CurveInTotalSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.FiberBundle.Trivialization
 import TauCeti.Topology.Algebra.Module.BilinearForm
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
@@ -339,7 +339,7 @@ private theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜
   let D : E → E →L[𝕜] 𝕜 := fderiv 𝕜 (fun u : E ↦ L (TotalSpace.mk' E v.proj u))
   let Hs : E →L[𝕜] E →L[𝕜] 𝕜 := fiberHessian L v
   have hD : HasFDerivAt D Hs (id v.2 : E) :=
-    (((contMDiff_iff_contDiff.1 (hL.comp (TauCeti.Manifold.contMDiff_totalSpaceMk v.proj))
+    (((contMDiff_iff_contDiff.1 (hL.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id v.proj))
       ).fderiv_right (m := 1) hn1).differentiable one_ne_zero _).hasFDerivAt
   have hline : HasDerivAt (fun r : 𝕜 ↦ D (v.2 + r • w)) (Hs w) 0 := by
     have h1 : HasDerivAt (fun r : 𝕜 ↦ (id v.2 : E) + r • (id w : E)) (id w : E) 0 := by
@@ -376,8 +376,8 @@ private theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜
       (1 : 𝕜 →L[𝕜] 𝕜).smulRight ((0 : E), eC.continuousLinearMapAt 𝕜 v.proj (fiberHessian L v w)) :=
     (hTγ.comp 0 hγ).mfderiv.symm.trans hFLγ.mfderiv
   have h := DFunLike.congr_fun hEq 1
-  rwa [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply,
-    ContinuousLinearMap.smulRight_apply, one_apply_eq_self, one_smul, one_smul] at h
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply,
+    one_apply_eq_self, one_smul] using h
 
 /-- **The differential of the Legendre map is invertible exactly where the fibre Hessian is.** In
 bundle charts the differential of `FL` is block lower triangular, keeping the base coordinate and
@@ -408,10 +408,8 @@ theorem isInvertible_mfderiv_legendreMap_iff (hL : ContMDiff I.tangent 𝓘(𝕜
       congrFun (eC.coe_continuousLinearEquivAt_eq hxC) _
     have h := mfderiv_legendreMap_vertical hL hn v hT (A.symm w)
     rw [← hA, A.apply_symm_apply] at h
-    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.inr_apply, h, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
-      hB]
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply,
+      ContinuousLinearEquiv.coe_coe, h, hB]
     -- `Hs` is the fibre Hessian, read as a bilinear form on the model space.
     rfl
   rw [hT]

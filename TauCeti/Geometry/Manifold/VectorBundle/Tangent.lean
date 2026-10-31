@@ -46,8 +46,6 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self` and
   `TauCeti.Manifold.symmL_trivializationAt_self`: the canonical trivialization at `x` and its
   inverse act as the identity on the fibre over `x`.
-* `TauCeti.Manifold.contMDiff_totalSpaceMk`: the inclusion of a tangent space into the tangent
-  bundle is smooth.
 * `TauCeti.Manifold.localFrame_trivializationAt_self`: consequently its local frame at `x` is the
   chosen basis of the model space.
 * `TauCeti.Manifold.inverse_mfderiv_extChartAt`: the inverse of the differential of an extended
@@ -183,21 +181,6 @@ theorem symmL_trivializationAt_self (x : M) (v : E) :
     (trivializationAt E (TangentSpace I) x).symmL 𝕜 x v = v := by
   rw [TangentBundle.symmL_trivializationAt_eq_core (mem_chart_source H x)]
   exact (tangentBundleCore I M).coordChange_self (achart H x) x (mem_chart_source H x) v
-
-/-- The inclusion `v ↦ (x, v)` of the tangent space at `x` into the tangent bundle is smooth: in the
-trivialization at `x` its fibre coordinate is `v` itself. -/
-theorem contMDiff_totalSpaceMk (x : M) {n : ℕ∞ω} :
-    ContMDiff 𝓘(𝕜, E) I.tangent n (fun v : E ↦ (TotalSpace.mk' E x v : TangentBundle I M)) := by
-  intro v
-  rw [contMDiffAt_totalSpace]
-  refine ⟨contMDiffAt_const, ?_⟩
-  have hcoord : (fun w : E ↦ (trivializationAt E (TangentSpace I) x (TotalSpace.mk' E x w)).2) =
-      fun w ↦ w := funext fun w ↦
-    (Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜)
-      (trivializationAt E (TangentSpace I) x)
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x) w).symm.trans
-      (continuousLinearMapAt_trivializationAt_self x w)
-  exact hcoord ▸ contMDiffAt_id
 
 /-- The differential of the extended chart at `x₀`, at a point `x` of its source, is inverted by
 the inverse of the canonical tangent-bundle trivialization at `x₀`.  This is the inverse form of
