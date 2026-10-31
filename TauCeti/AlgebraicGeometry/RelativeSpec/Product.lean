@@ -33,8 +33,6 @@ scheme `Spec_X A ×_X Spec_X A ⟶ Spec_X A`, are encoded by comultiplications `
   quasi-coherent algebras is their coproduct;
 * `TauCeti.AlgebraicGeometry.relativeSpecBinaryFanIsLimit`: the relative spectrum of a tensor
   product is the product of the relative spectra in affine schemes over `X`;
-* `TauCeti.AlgebraicGeometry.AffineSchemeOver.isPullback_of_binaryFan_isLimit`: a product of
-  affine schemes over `X` is their fibre product over `X`;
 * `CategoryTheory.CommMon.isPullback_relativeSpecMap_inl_inr`: the relative spectrum of
   `A ⊗ B` is the fibre product of the relative spectra of `A` and `B` over `X`.
 
@@ -87,17 +85,6 @@ def relativeSpecBinaryFanIsLimit (A B : QuasicoherentAlgebra X) :
   mapIsLimitOfPreservesOfIsLimit (relativeSpec X) _ _
     (BinaryCofan.IsColimit.op (QuasicoherentAlgebra.binaryCofanIsColimit A B))
 
-/-- A product of two affine schemes over `X` is their fibre product over `X` as schemes. -/
-theorem AffineSchemeOver.isPullback_of_binaryFan_isLimit {V W : AffineSchemeOver X}
-    (c : BinaryFan V W) (hc : IsLimit c) : IsPullback c.fst.left c.snd.left V.hom W.hom :=
-  have : PreservesFiniteLimits (MorphismProperty.Over.forget @IsAffineHom ⊤ X) := by
-    -- Mathlib's instance for `MorphismProperty.Over.forget` does not unify with this goal at
-    -- instance transparency, so it is applied directly.
-    apply MorphismProperty.Over.instPreservesFiniteLimitsTopOverForget
-  Over.isPullback_of_binaryFan_isLimit _
-    (mapIsLimitOfPreservesOfIsLimit (MorphismProperty.Over.forget _ _ X) _ _
-      (hc.ofIsoLimit (BinaryFan.ext (Iso.refl _) (by simp) (by simp))))
-
 /-- The relative spectrum of the tensor product `A ⊗ B` of quasi-coherent algebras is the
 fibre product `Spec_X A ×_X Spec_X B`, with projections the relative spectra of the
 inclusions `A ⟶ A ⊗ B ⟵ B`. -/
@@ -105,8 +92,13 @@ theorem _root_.CategoryTheory.CommMon.isPullback_relativeSpecMap_inl_inr
     (A B : CommMon X.Modules) [A.X.IsQuasicoherent] [B.X.IsQuasicoherent] :
     IsPullback (CommMon.relativeSpecMap (CommMon.inl A B))
       (CommMon.relativeSpecMap (CommMon.inr A B)) A.relativeSpecToBase B.relativeSpecToBase :=
-  AffineSchemeOver.isPullback_of_binaryFan_isLimit _
-    (relativeSpecBinaryFanIsLimit ⟨A, inferInstance⟩ ⟨B, inferInstance⟩)
+  have : PreservesFiniteLimits (MorphismProperty.Over.forget @IsAffineHom ⊤ X) := by
+    -- Mathlib's instance for `MorphismProperty.Over.forget` does not unify with this goal at
+    -- instance transparency, so it is applied directly.
+    apply MorphismProperty.Over.instPreservesFiniteLimitsTopOverForget
+  Over.isPullback_of_binaryFan_isLimit _
+    (mapIsLimitOfPreservesOfIsLimit (MorphismProperty.Over.forget _ _ X) _ _
+      (relativeSpecBinaryFanIsLimit ⟨A, inferInstance⟩ ⟨B, inferInstance⟩))
 
 end
 
