@@ -49,11 +49,18 @@ theorem map_mul_prod_betaMeasure {a b c : ℝ} (ha : 0 < a) (hb : 0 < b) (hc : 0
   have htwo : ∀ i : Fin 2, 0 < ![a, b] i := by
     intro i
     fin_cases i <;> assumption
-  have hins := congrArg (Measure.map (fun x : EuclideanSpace ℝ (Option (Fin 2)) ↦ x (some 0)))
-    (map_dirichletStickInsert_prod_betaMeasure_dirichletMeasure hshapes)
-  rw [Measure.map_map (by fun_prop) measurable_dirichletStickInsert,
-    map_eval_dirichletMeasure hshapes] at hins
-  simp [Finset.sum_filter, Fintype.sum_option, shapes, Fin.sum_univ_two, add_comm] at hins
+  have hins :
+      ((betaMeasure c (a + b)).prod (dirichletMeasure ![a, b])).map
+        (fun z ↦ (1 - z.1) * z.2 0) = betaMeasure a (b + c) := by
+    have h := congrArg
+      (Measure.map (fun x : EuclideanSpace ℝ (Option (Fin 2)) ↦ x (some 0)))
+      (map_dirichletStickInsert_prod_betaMeasure_dirichletMeasure hshapes)
+    rw [Measure.map_map (by fun_prop) measurable_dirichletStickInsert,
+      map_eval_dirichletMeasure hshapes] at h
+    simpa only [Function.comp_def, dirichletStickInsert_some, shapes, Option.elim_none,
+      Option.elim_some, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val_fin_one, ne_eq, Finset.sum_filter, ite_not, Fintype.sum_option,
+      reduceCtorEq, ↓reduceIte, Option.some.injEq, one_ne_zero, zero_add, add_comm c b] using h
   have := isProbabilityMeasure_dirichletMeasure htwo
   have := isProbabilityMeasureBeta ha hb
   have := isProbabilityMeasureBeta (add_pos ha hb) hc
@@ -74,7 +81,7 @@ theorem map_mul_prod_betaMeasure {a b c : ℝ} (ha : 0 < a) (hb : 0 < b) (hc : 0
           betaMeasure_map_one_sub, hmargin,
           Measure.prod_swap]
   rw [← hprod, Measure.map_map (by fun_prop) (by fun_prop)]
-  simpa only [Function.comp_def, dirichletStickInsert_some, mul_comm] using hins
+  simpa only [Function.comp_def, mul_comm] using hins
 
 end TauCeti.Probability
 
