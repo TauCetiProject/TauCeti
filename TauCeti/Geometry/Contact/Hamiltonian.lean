@@ -50,7 +50,8 @@ contact Hamiltonian vector field of a `C^(n+1)` function is a `C^n` vector field
 
 Unlike a symplectic Hamiltonian, a contact Hamiltonian is not conserved: along `X_f` it changes by
 `df(X_f) = (R_α f) f` (`TauCeti.SmoothForm.IsContactHamiltonianVectorField.mvfderiv_apply_self`).
-In particular `X_f` is tangent to `ξ` exactly where `f` vanishes.
+Since `α(X) = f`, a contact Hamiltonian vector field `X` of `f` is tangent to `ξ` exactly where `f`
+vanishes (`TauCeti.SmoothForm.IsContactHamiltonianVectorField.mem_kerDistribution_iff`).
 
 ## Main declarations
 
@@ -161,20 +162,12 @@ theorem mlieBracket_mem_kerDistribution (hX : α.IsContactHamiltonianVectorField
     (hY : ∀ y, Y y ∈ α.kerDistribution y) : mlieBracket I X Y x ∈ α.kerDistribution x := by
   -- The bracket formula `(L_X α)(Y) = X(α(Y)) - α([X, Y])`, where `α(Y) = 0` identically and
   -- `(L_X α)(Y) = (R_α f) α(Y) = 0`.
-  have h := mlieDerivForm_apply_vectorField (V := X) (X := fun _ ↦ Y) (α.mdifferentiableAt x)
-    (fun _ ↦ hYd)
-  have hY' : ∀ y, α.1 y (fun _ ↦ Y y) = 0 := fun y ↦ by
-    rw [← Matrix.vec_single_eq_const, ← mem_kerDistribution]
-    exact hY y
-  have hupd : Function.update (fun _ : Fin 1 ↦ Y x) 0 (mlieBracket I X Y x) =
-      ![mlieBracket I X Y x] := by
-    rw [Function.update_eq_const_of_subsingleton, Matrix.vec_single_eq_const]
-    rfl
-  have hd : mvfderiv I (fun y ↦ α.1 y (fun _ ↦ Y y)) x = 0 := by
-    rw [funext hY']
+  have h := mlieDerivForm_apply_one (V := X) (α.mdifferentiableAt x) hYd
+  have hd : mvfderiv I (fun y ↦ α.1 y ![Y y]) x = 0 := by
+    rw [funext fun y ↦ mem_kerDistribution.1 (hY y)]
     exact mvfderiv_const (0 : ℝ)
-  rw [hX.mlieDerivForm_apply_eq hXd, ContinuousAlternatingMap.smul_apply, hY', smul_zero, hd,
-    zero_apply, zero_sub, Fin.sum_univ_one, hupd, zero_eq_neg] at h
+  rw [hX.mlieDerivForm_apply_eq hXd, ContinuousAlternatingMap.smul_apply,
+    mem_kerDistribution.1 (hY x), smul_zero, hd, zero_apply, zero_sub, zero_eq_neg] at h
   exact mem_kerDistribution.2 h
 
 end IsContactHamiltonianVectorField
@@ -301,6 +294,7 @@ theorem isContactHamiltonianVectorField_iff_eq :
     hα.isContactHamiltonianVectorField_iff_contactFlat.1 hX x]
 
 /-- The contact Hamiltonian vector field of a constant `c` is `c R_α`. -/
+@[simp]
 theorem contactHamiltonianVectorField_const (c : ℝ) :
     α.contactHamiltonianVectorField (fun _ ↦ c) = c • α.reebVectorField := by
   funext x
