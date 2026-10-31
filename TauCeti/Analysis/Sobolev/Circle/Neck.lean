@@ -44,7 +44,7 @@ node `xy = 0`. This is the linear model of the Hardy decomposition at a node.
 
 * `TauCeti.CircleSobolev.norm_neckTransfer_apply_le`: `‖neckTransfer a u‖ ≤ ‖a‖ ‖u‖`.
 * `TauCeti.CircleSobolev.toContinuousMap_neckTransfer`: for `s > 1/2` the continuous function of
-  `neckTransfer a u` is `x ↦ ũ(a / x) - u₀`, where `ũ` is the disc function of `u`.
+  `neckTransfer a u` is `x ↦ diskFunction u (a / x) - u₀`.
 * `TauCeti.CircleSobolev.analyticOnNhd_neckTransfer`: `a ↦ neckTransfer a` is analytic on the open
   unit disc, as a map to the bounded operators on `H^s`.
 * `TauCeti.CircleSobolev.hasDerivAt_neckTransfer_zero`: its derivative at `0` is `u ↦ u₁ e^{-iθ}`.
@@ -134,7 +134,7 @@ private def neckTransferFun (ha : ‖a‖ ≤ 1) (u : CircleSobolev s E) : Circl
 
 /-- The **neck transfer** of the plumbing `xy = a`: the operator on `H^s` sending `u` to
 `∑_{n > 0} aⁿ uₙ e^{-inθ}`. On a nonnegative-frequency `u`, the boundary value of a holomorphic
-function `ũ` on the unit disc, it gives the values of `x ↦ ũ(a / x) - ũ(0)` on the unit circle
+function `U` on the unit disc, it gives the values of `x ↦ U(a / x) - U(0)` on the unit circle
 (`CircleSobolev.toContinuousMap_neckTransfer`). It is defined for `‖a‖ ≤ 1`, where its norm is at
 most `‖a‖` (`CircleSobolev.opNorm_neckTransfer_le`); for `‖a‖ > 1` it is the junk value `0`. -/
 def neckTransfer (a : ℂ) : CircleSobolev s E →L[ℂ] CircleSobolev s E :=
@@ -243,8 +243,8 @@ section Boundary
 variable {T : ℝ} [Fact (0 < T)] [CompleteSpace E]
 
 /-- **Boundary values of the neck transfer.** For `s > 1/2` and `‖a‖ ≤ 1`, the continuous function
-on the circle attached to `neckTransfer a u` is `x ↦ ũ(a / x) - u₀`, where `ũ` is the disc function
-of `u` and `x` is read as a point `fourier 1 x` of the unit circle. -/
+on the circle attached to `neckTransfer a u` is `x ↦ diskFunction u (a / x) - u₀`, where `x` is read
+as a point `fourier 1 x` of the unit circle. -/
 theorem toContinuousMap_neckTransfer (hs : 1 / 2 < s) (ha : ‖a‖ ≤ 1) (u : CircleSobolev s E)
     (x : AddCircle T) :
     toContinuousMap T hs (neckTransfer a u) x =
