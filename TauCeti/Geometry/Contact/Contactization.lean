@@ -24,8 +24,9 @@ with real coordinate `z`, carrying the one-form
 where `θ` is pulled back along the projection to `W`. Then `dα = ω`, pulled back along the same
 projection (`TauCeti.SmoothForm.mextDerivₗ_contactization`), and `α` is a contact form exactly when
 `ω` is nondegenerate (`TauCeti.SmoothForm.isContactForm_contactization_iff`). The proof is linear
-algebra on each tangent space `T_w W × ℝ`: the kernel of `α` is the graph `{(v, θ v)}` of `θ`,
-which the projection identifies with `T_w W`, and on it `dα` is `ω`.
+algebra on each tangent space `T_w W × ℝ`: the kernel of `α` is the graph `{(v, θ v)}` of `θ`
+(`TauCeti.SmoothForm.mem_kerDistribution_contactization`), which the projection identifies with
+`T_w W`, and on it `dα` is `ω`.
 
 For the cotangent bundle `W = T*Q` with its Liouville form `λ_Q`, this is the standard contact
 form `dz - λ_Q` of the space of one-jets `J¹Q = T*Q × ℝ`
@@ -114,19 +115,29 @@ theorem eval₂_mextDerivₗ_contactization (θ : SmoothForm I W ℝ 1) (p : W �
 
 /-- The exterior derivative of the contactization form, evaluated as a rough form on two tangent
 vectors, is `-dθ` on their components in `W`. -/
-private theorem mextDeriv_contactization_apply (θ : SmoothForm I W ℝ 1) (p : W × ℝ)
+theorem mextDeriv_contactization_apply (θ : SmoothForm I W ℝ 1) (p : W × ℝ)
     (v w : TangentSpace (I.prod 𝓘(ℝ)) p) :
     mextDeriv θ.contactization.1 p ![v, w] =
       (-mextDerivₗ I 1 θ).eval₂ p.1 (Manifold.tangentSpaceProdEquiv p v).1
         (Manifold.tangentSpaceProdEquiv p w).1 := by
   rw [← eval₂_mextDerivₗ_contactization, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
 
+/-- The kernel of the contactization form `dz - θ` at `(w, z)` is the graph of `θ_w`: a tangent
+vector `(v, c)` lies in it exactly when `c = θ_w(v)`. -/
+theorem mem_kerDistribution_contactization {θ : SmoothForm I W ℝ 1} {p : W × ℝ}
+    {v : TangentSpace (I.prod 𝓘(ℝ)) p} :
+    v ∈ θ.contactization.kerDistribution p ↔
+      NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v).2 =
+        θ.1 p.1 ![(Manifold.tangentSpaceProdEquiv p v).1] := by
+  rw [mem_kerDistribution, contactization_apply, sub_eq_zero]
+
 /-- The tangent vector `(v, θ_w(v))` at `(w, z)` lies in the kernel of the contactization form. -/
 private theorem contactization_apply_graph (θ : SmoothForm I W ℝ 1) (p : W × ℝ)
     (v : TangentSpace I p.1) :
     θ.contactization.1 p ![(Manifold.tangentSpaceProdEquiv p).symm
-      (v, (NormedSpace.fromTangentSpace p.2).symm (θ.1 p.1 ![v]))] = 0 := by
-  simp only [contactization_apply, ContinuousLinearEquiv.apply_symm_apply, sub_self]
+      (v, (NormedSpace.fromTangentSpace p.2).symm (θ.1 p.1 ![v]))] = 0 :=
+  mem_kerDistribution.1 <| mem_kerDistribution_contactization.2 <| by
+    simp only [ContinuousLinearEquiv.apply_symm_apply]
 
 /-- **Contactization.** For a one-form `θ` on `W`, the one-form `dz - θ` on `W × ℝ` is a contact
 form exactly when `-dθ` is nondegenerate, that is when `(W, -dθ)` is an exact symplectic
