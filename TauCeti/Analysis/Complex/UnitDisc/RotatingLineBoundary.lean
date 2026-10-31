@@ -90,11 +90,10 @@ variable {k : ℤ} {p : ℂ[X]}
 `w ^ (k / 2) ℝ` at each point `w` of the unit circle. -/
 theorem eval_eq_zpow_mul_conj_eval (hp : p ∈ conjReciprocalPolynomials k) {w : ℂ}
     (hw : ‖w‖ = 1) : p.eval w = w ^ k * conj (p.eval w) := by
-  obtain ⟨hp, hp'⟩ := mem_conjReciprocalPolynomials_iff.mp hp
   rcases lt_or_ge k 0 with hk | hk
-  · -- For `k < 0` every coefficient vanishes.
-    have : p = 0 := ext fun n => by simpa using hp n (by omega)
-    simp [this]
+  · rw [conjReciprocalPolynomials_eq_bot hk, Submodule.mem_bot] at hp
+    simp [hp]
+  obtain ⟨hp, hp'⟩ := mem_conjReciprocalPolynomials_iff.mp hp
   obtain ⟨m, rfl⟩ : ∃ m : ℕ, k = m := ⟨k.toNat, by omega⟩
   have hdeg : p.natDegree < m + 1 :=
     Nat.lt_succ_of_le (natDegree_le_iff_coeff_eq_zero.mpr fun n hn => hp n (by exact_mod_cast hn))
@@ -177,9 +176,8 @@ theorem exists_mem_conjReciprocalPolynomials_eqOn (hu : DiffContOnCl ℂ u (ball
       exact Finset.sum_congr rfl fun n _ => by rw [hpa, mul_comm]
     · intro n hn
       rw [← hpa, coeff_eq_zero_of_natDegree_lt (by simpa using hn), mul_zero]
-  refine hball.of_subset_closure ?_ p.differentiable.continuous.continuousOn ball_subset_closedBall
-    (by rw [closure_ball (0 : ℂ) one_ne_zero])
-  simpa [closure_ball (0 : ℂ) one_ne_zero] using hu.continuousOn
+  exact hball.of_subset_closure hu.continuousOn_ball p.differentiable.continuous.continuousOn
+    ball_subset_closedBall (by rw [closure_ball (0 : ℂ) one_ne_zero])
 
 /-! ### The Cauchy–Riemann kernel on the unit disc -/
 
@@ -232,32 +230,32 @@ theorem mem_unitDiscCauchyRiemannKernel_iff_exists_eval :
     exact ⟨fun z => p.eval z, p.differentiable.diffContOnCl,
       fun w hw => eval_eq_zpow_mul_conj_eval hp (by simpa using hw), rfl⟩
 
-/-- For a boundary condition of negative Maslov index, the only solution is zero. -/
-theorem unitDiscCauchyRiemannKernel_eq_bot (hk : k < 0) : unitDiscCauchyRiemannKernel k = ⊥ := by
-  refine (Submodule.eq_bot_iff _).mpr fun g hg => ?_
-  obtain ⟨p, hp, rfl⟩ := mem_unitDiscCauchyRiemannKernel_iff_exists_eval.mp hg
-  obtain ⟨hp, -⟩ := mem_conjReciprocalPolynomials_iff.mp hp
-  have : p = 0 := ext fun n => by simpa using hp n (by omega)
-  simp only [this, eval_zero]
-  rfl
-
 /-- Evaluation of complex polynomials at the points of the closed unit disc, as a real-linear
 map. -/
 private noncomputable def evalClosedDisc : ℂ[X] →ₗ[ℝ] (closedBall (0 : ℂ) 1 → ℂ) :=
   LinearMap.pi fun z : closedBall (0 : ℂ) 1 => (leval (z : ℂ)).restrictScalars ℝ
+
+@[simp]
+private theorem evalClosedDisc_apply (q : ℂ[X]) (z : closedBall (0 : ℂ) 1) :
+    evalClosedDisc q z = q.eval (z : ℂ) :=
+  rfl
 
 private theorem evalClosedDisc_injective : Function.Injective evalClosedDisc := by
   rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
   intro q hq
   refine eq_zero_of_infinite_isRoot q
     ((infinite_of_mem_nhds (0 : ℂ) (closedBall_mem_nhds 0 one_pos)).mono fun z hz => ?_)
-  simpa [evalClosedDisc] using congrFun hq ⟨z, hz⟩
+  simpa using congrFun hq ⟨z, hz⟩
 
 private theorem unitDiscCauchyRiemannKernel_eq_map :
     unitDiscCauchyRiemannKernel k = (conjReciprocalPolynomials k).map evalClosedDisc := by
   ext g
-  rw [Submodule.mem_map, mem_unitDiscCauchyRiemannKernel_iff_exists_eval]
-  rfl
+  simp only [Submodule.mem_map, mem_unitDiscCauchyRiemannKernel_iff_exists_eval, funext_iff,
+    evalClosedDisc_apply]
+
+/-- For a boundary condition of negative Maslov index, the only solution is zero. -/
+theorem unitDiscCauchyRiemannKernel_eq_bot (hk : k < 0) : unitDiscCauchyRiemannKernel k = ⊥ := by
+  rw [unitDiscCauchyRiemannKernel_eq_map, conjReciprocalPolynomials_eq_bot hk, Submodule.map_bot]
 
 /-- The solutions of the Cauchy–Riemann equation on the unit disc with boundary values on the line
 `w ^ (k / 2) ℝ` form a finite-dimensional real vector space. -/
