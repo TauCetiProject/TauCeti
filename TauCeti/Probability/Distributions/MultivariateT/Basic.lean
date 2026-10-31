@@ -34,6 +34,8 @@ the same rule as for Gaussian laws and leave the degrees of freedom unchanged.
 * `TauCeti.Probability.hasLaw_multivariateT_of_gaussian_chiSquared`: the random-variable
   construction from independent Gaussian and chi-squared variables.
 * `TauCeti.Probability.multivariateTMeasure_eq_bind`: the chi-squared mixture of Gaussian laws.
+* `TauCeti.Probability.multivariateTMeasure_smul_eq_bind_gammaMeasure`: the Gamma precision
+  mixture of Gaussian laws.
 * `TauCeti.Probability.map_affine_multivariateTMeasure`: closure under affine maps.
 * `TauCeti.Probability.ae_mem_affineRange_multivariateTMeasure`: concentration on
   `m + range S`.
@@ -161,6 +163,28 @@ theorem multivariateTMeasure_eq_bind (m : EuclideanSpace ℝ ι) {S : Matrix ι 
   filter_upwards [ae_pos_chiSquaredMeasure hν] with v hv
   rw [map_add_smul_multivariateGaussian 0 hS m, Real.sq_sqrt (div_pos hν hv).le, smul_zero,
     add_zero]
+
+/-- **Multivariate t laws as Gamma mixtures of Gaussian laws.** For `n, ρ > 0`, mixing the
+Gaussian laws `N(μ, τ⁻¹ • S)` over a Gamma precision `τ` of shape `n / 2` and rate `ρ / 2` gives
+the multivariate t law with location `μ`, scale `(ρ / n) • S` and `n` degrees of freedom. The
+case `ρ = n` is the usual precision representation of `multivariateTMeasure μ S n`. -/
+theorem multivariateTMeasure_smul_eq_bind_gammaMeasure (μ : EuclideanSpace ℝ ι)
+    {S : Matrix ι ι ℝ} (hS : S.PosSemidef) {n ρ : ℝ} (hn : 0 < n) (hρ : 0 < ρ) :
+    multivariateTMeasure μ ((ρ / n) • S) n =
+      (gammaMeasure (n / 2) (ρ / 2)).bind fun τ => multivariateGaussian μ (τ⁻¹ • S) := by
+  have hgamma : gammaMeasure (n / 2) (ρ / 2) = (gammaMeasure (n / 2) (1 / 2)).map (ρ⁻¹ * ·) := by
+    rw [gammaMeasure_map_const_mul (by positivity) (by norm_num) (inv_pos.mpr hρ)]
+    congr 1
+    field_simp
+  rw [multivariateTMeasure_eq_bind μ hn (hS.smul (div_pos hρ hn).le),
+    chiSquaredMeasure_eq_gammaMeasure hn, hgamma,
+    Measure.bind_map (g := fun τ => multivariateGaussian μ (τ⁻¹ • S)) (by fun_prop)
+      (measurable_multivariateGaussian.comp (measurable_const.prodMk (by fun_prop))).aemeasurable]
+  congr 1
+  funext w
+  rw [smul_smul, mul_inv, inv_inv]
+  congr 2
+  field_simp
 
 /-- **Affine images of multivariate t laws.** The image under `x ↦ L x + c` is the multivariate
 t law with location `L m + c`, scale `L * S * Lᵀ` and the same degrees of freedom. The matrix
