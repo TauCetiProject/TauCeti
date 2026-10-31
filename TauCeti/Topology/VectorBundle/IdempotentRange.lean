@@ -59,6 +59,11 @@ separation or finite-dimensionality is assumed of the base or the fibres.
   intertwining operator of a pair of projections.
 * M. F. Atiyah, *K-Theory*, Benjamin (1967), Chapter I, for sub-bundles of trivial bundles and
   their complements.
+* The subspace topology, the chart and atlas, and the vector-bundle packaging follow the
+  subbundles of distributions in `TauCeti/Geometry/Manifold/Distribution/VectorBundle.lean`:
+  `TauCeti.instTopologicalSpaceTotalSpaceDistribution`,
+  `TauCeti.IsDistributionFrameOn.trivialization`, `TauCeti.IsContMDiffDistribution.fiberBundle`
+  and `TauCeti.IsContMDiffDistribution.vectorBundle`.
 -/
 
 public section
@@ -242,6 +247,30 @@ noncomputable def rangeTrivialization :
 theorem mem_baseSet_rangeTrivialization :
     x₀ ∈ (rangeTrivialization hp hidem x₀ φ).baseSet :=
   isUnit_intertwiner_self hidem x₀
+
+/-- A point lies in the base set of the trivialization at `x₀` exactly when the intertwiner
+`p x * p x₀ + (1 - p x) * (1 - p x₀)` is invertible. -/
+theorem mem_baseSet_rangeTrivialization_iff {x : B} :
+    x ∈ (rangeTrivialization hp hidem x₀ φ).baseSet ↔
+      IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀)) :=
+  Iff.rfl
+
+/- The two evaluation lemmas below are not `simp` lemmas, so that the evaluations at the base point
+`x₀` stay in simp normal form. -/
+
+/-- The trivialization at `x₀` sends a vector `w` of the range of `p x` to `φ.symm (U x)⁻¹ w`,
+where `U x = p x * p x₀ + (1 - p x) * (1 - p x₀)`. -/
+theorem rangeTrivialization_apply (v : TotalSpace F' fun x ↦ (p x).range) :
+    rangeTrivialization hp hidem x₀ φ v = (v.proj, φ.symm ((p x₀).rangeRestrict
+      ((p v.proj * p x₀ + (1 - p v.proj) * (1 - p x₀))⁻¹ʳ v.2))) :=
+  (rfl)
+
+/-- The inverse of the trivialization at `x₀` sends `(x, v)` to `U x (φ v)` in the range of `p x`,
+where `U x = p x * p x₀ + (1 - p x) * (1 - p x₀)`. -/
+theorem rangeTrivialization_symm_apply (x : B) (v : F') :
+    (rangeTrivialization hp hidem x₀ φ).toOpenPartialHomeomorph.symm (x, v) =
+      ⟨x, (p x).rangeRestrict ((p x * p x₀ + (1 - p x) * (1 - p x₀)) (φ v))⟩ :=
+  (rfl)
 
 /-- At the base point `x₀`, the trivialization reads a vector of the range of `p x₀` through `φ`. -/
 @[simp]
