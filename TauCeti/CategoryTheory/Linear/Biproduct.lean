@@ -16,6 +16,9 @@ The universal property of a biproduct identifies morphisms out of it with famili
 morphisms out of its summands. In a linear category this is a linear equivalence, so finiteness
 and rank of the Hom module can be read summand by summand. Dually, morphisms into a biproduct
 are families of morphisms into its summands.
+
+Scalars also pull out of the morphism `biproduct.matrix m` between biproducts assembled from a
+matrix `m` of morphisms between the summands (`CategoryTheory.Limits.biproduct.matrix_smul`).
 -/
 
 public section

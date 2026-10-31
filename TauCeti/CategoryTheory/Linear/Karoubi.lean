@@ -73,6 +73,15 @@ instance instLinearKaroubi : Linear R (Karoubi C) where
     ext
     simp
 
+/- Mathlib's group structure `Karoubi.instAddCommGroupHom` uses `nsmulRec` and `zsmulRec`, so at
+`R = ℕ` and `R = ℤ` the instances above agree with Mathlib's canonical ones only propositionally.
+Instance search never selects them there: the canonical `NSMul.toSMul`, `ZSMul.toSMul`,
+`Linear.preadditiveNatLinear` and `Linear.preadditiveIntLinear` are found instead. -/
+example {P Q : Karoubi C} : (inferInstance : SMul ℕ (P ⟶ Q)) = NSMul.toSMul := rfl
+example {P Q : Karoubi C} : (inferInstance : SMul ℤ (P ⟶ Q)) = ZSMul.toSMul := rfl
+example : (inferInstance : Linear ℕ (Karoubi C)) = Linear.preadditiveNatLinear := rfl
+example : (inferInstance : Linear ℤ (Karoubi C)) = Linear.preadditiveIntLinear := rfl
+
 /-- The embedding of `C` into its idempotent completion is `R`-linear. -/
 instance instLinearToKaroubi : (toKaroubi C).Linear R where
 
