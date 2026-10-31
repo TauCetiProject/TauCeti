@@ -18,10 +18,9 @@ A set `Z ⊆ ℕ` is used as an oracle through its characteristic function, the 
 `Z.pairedJump` is the relative paired halting set `K₀^Z = {⟨x, e⟩ | Φ_e^Z(x)↓}`, with the input in
 the first coordinate of `Nat.pair`.
 
-The main results are that the jump is a strict upper bound in the Turing order and that it is
-complete for the sets c.e. in `Z`. The reductions to the jump proved here hard-wire an input into a
-program, so they are one-one reductions in the sense of Mathlib's `OneOneReducible`, and descend to
-Turing reducibility of the set oracles.
+The main results are that the jump is a strict upper bound in the Turing order and that every set
+c.e. in `Z` reduces to it. These reductions are one-one reductions in the sense of Mathlib's
+`OneOneReducible`, and descend to Turing reducibility of the set oracles.
 
 ## Main definitions
 
@@ -30,8 +29,8 @@ Turing reducibility of the set oracles.
 
 ## Main results
 
-* `Set.oneOneReducible_jump_of_recursiveIn`: the jump is one-one complete for the sets c.e. in
-  `Z`, the domains of partial functions recursive in `Z.oracle`.
+* `Set.oneOneReducible_jump_of_recursiveIn`: every set c.e. in `Z`, that is, the domain of a
+  partial function recursive in `Z.oracle`, reduces one-one to the jump.
 * `Set.oneOneEquiv_jump_pairedJump`: the diagonal and paired halting sets relative to `Z` are
   one-one equivalent.
 * `Set.oneOneReducible_jump`, `Set.turingReducible_jump`: `Z` reduces to its jump.
@@ -63,20 +62,21 @@ def pairedJump : Set ℕ :=
 variable {Z}
 
 /-- `e ∈ Z'` when the program numbered `e` halts on input `e` relative to `Z`. -/
+@[simp]
 theorem mem_jump {e : ℕ} : e ∈ Z.jump ↔ (Code.eval Z.oracle (ofNat Code e) e).Dom :=
   Iff.rfl
 
 /-- `n ∈ K₀^Z` when the program numbered by the second coordinate of `n` halts on the first
 coordinate relative to `Z`. -/
+@[simp]
 theorem mem_pairedJump {n : ℕ} :
     n ∈ Z.pairedJump ↔ (Code.eval Z.oracle (ofNat Code n.unpair.2) n.unpair.1).Dom :=
   Iff.rfl
 
 /-- `Nat.pair x e ∈ K₀^Z` when the program numbered `e` halts on input `x` relative to `Z`. -/
-@[simp]
 theorem pair_mem_pairedJump {x e : ℕ} :
     Nat.pair x e ∈ Z.pairedJump ↔ (Code.eval Z.oracle (ofNat Code e) x).Dom := by
-  simp [mem_pairedJump]
+  simp
 
 variable (Z)
 
@@ -99,8 +99,8 @@ theorem oneOneReducible_dom_eval_jump :
       Nat.Partrec.Code.eval_const]
     exact Iff.of_eq (congrArg Part.Dom (Part.bind_some _ _)).symm
 
-/-- **The jump is complete for the sets c.e. in `Z`.** The domain of every partial function
-recursive in the oracle of `Z` reduces one-one to the jump of `Z`. -/
+/-- **Every set c.e. in `Z` reduces one-one to the jump of `Z`:** the domain of every partial
+function recursive in the oracle of `Z` reduces one-one to `Z'`. -/
 theorem oneOneReducible_jump_of_recursiveIn {f : ℕ →. ℕ} (hf : Nat.RecursiveIn {Z.oracle} f) :
     OneOneReducible (fun x => (f x).Dom) (· ∈ Z.jump) := by
   obtain ⟨c, rfl⟩ := Code.exists_code.1 hf
@@ -140,10 +140,11 @@ theorem oneOneReducible_jump : OneOneReducible (· ∈ Z) (· ∈ Z.jump) := by
 theorem turingReducible_jump : TuringReducible Z.oracle Z.jump.oracle :=
   (oneOneReducible_jump Z).to_many_one.turingReducible_oracle
 
-/-- **The jump is not computable relative to `Z`.** If the oracle of `Z'` were recursive in the
-oracle of `Z`, the program halting on `e` exactly when `e ∉ Z'` would halt on its own number
-exactly when it does not. -/
+/-- **The jump is not computable relative to `Z`:** the oracle of `Z'` is not Turing reducible to
+the oracle of `Z`. -/
 theorem not_jump_turingReducible : ¬TuringReducible Z.jump.oracle Z.oracle := by
+  -- diagonalize: the program halting on `e` exactly when `e ∉ Z'` would halt on its own number
+  -- exactly when it does not
   intro h
   -- `1 - m` has a defined predecessor exactly when `m = 0`
   have hg : Nat.Partrec fun m => (Nat.ppred (1 - m) : Part ℕ) :=
