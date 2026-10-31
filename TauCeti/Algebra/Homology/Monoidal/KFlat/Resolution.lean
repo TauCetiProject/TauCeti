@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
-public import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
 public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
 import Mathlib.CategoryTheory.Abelian.Refinements
@@ -252,27 +251,12 @@ lemma isKFlat_stage (E : C → C) (p : ∀ X, E X ⟶ X)
     ∀ k, (stage E p K k).1.IsKFlat
   | 0 => isKFlat_of_d_eq_zero (graded (.up ℤ) fun n ↦ E (K.cycles n)) fun _ _ ↦ rfl
   | k + 1 => by
-    let φ := attachingMap (stage E p K k).2 fun n ↦ p (boundaryPairs (stage E p K k).2 n)
-    -- the mapping cone is an extension of the shifted cells by the previous stage, split in
-    -- each degree
-    have hS : (mappingCone.triangleRotateShortComplex φ).ShortExact :=
-      shortExact_of_degreewise_shortExact _ fun i ↦
-        (mappingCone.triangleRotateShortComplexSplitting φ i).shortExact
-    have (i : ℤ) : IsSplitMono ((mappingCone.triangleRotateShortComplex φ).f.f i) :=
-      (mappingCone.triangleRotateShortComplexSplitting φ i).isSplitMono_f
-    -- the third term is the shifted cell complex `(graded _ fun n ↦ E _)⟦1⟧`, whose degree `i`
-    -- term is definitionally `E _` in degree `i + 1` (`shiftFunctor_obj_X'` holds by `rfl`), so
-    -- the flatness instances of the cells apply to it as they stand
-    have : ∀ i, PreservesFiniteLimits
-        (tensorLeft ((mappingCone.triangleRotateShortComplex φ).X₃.X i)) := fun i ↦
-      inferInstanceAs (PreservesFiniteLimits (tensorLeft (E _)))
-    have : ∀ i, PreservesFiniteColimits
-        (tensorLeft ((mappingCone.triangleRotateShortComplex φ).X₃.X i)) := fun i ↦
-      inferInstanceAs (PreservesFiniteColimits (tensorLeft (E _)))
-    have : (mappingCone.triangleRotateShortComplex φ).X₃.IsKFlat :=
-      isKFlat_of_d_eq_zero _ fun i j ↦ (shiftFunctor_obj_d' _ 1 i j).trans (smul_zero _)
-    have : (mappingCone.triangleRotateShortComplex φ).X₁.IsKFlat := isKFlat_stage E p K k
-    exact hS.isKFlat_X₂
+    -- the next stage is the mapping cone of a morphism from the cell complex, which has zero
+    -- differentials, to the previous stage
+    have : IsKFlat (graded (.up ℤ) fun n ↦ E (boundaryPairs (stage E p K k).2 n)) :=
+      isKFlat_of_d_eq_zero _ fun _ _ ↦ rfl
+    have := isKFlat_stage E p K k
+    exact isKFlat_mappingCone _
 
 end KFlat
 
