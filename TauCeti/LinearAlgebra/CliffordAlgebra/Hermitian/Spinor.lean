@@ -10,20 +10,24 @@ public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
--- Private: the Fock model, its metric, the complex structure on `V`, anisotropy and the inner
--- automorphisms of endomorphism algebras are used only inside the proof.
+-- Private: the Fock model, its metric, the complex structure on `V`, anisotropy, the dimensions
+-- of Clifford and endomorphism algebras and the inner automorphisms of endomorphism algebras are
+-- used only inside the proof.
+import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import Mathlib.LinearAlgebra.GeneralLinearGroup.AlgEquiv
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
+import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Metric
 
 /-!
 # Compatible Hermitian metrics on spinor modules
 
-Let `V` be a Euclidean space of even dimension and `Q v = -‖v‖²`, the geometric sign convention
-under which Clifford multiplication satisfies `c(v)² = -‖v‖²`. A spinor module of `V` is a complex
-vector space `S` with an algebra isomorphism `ρ : Cl_ℂ(V) ≃ End_ℂ(S)` from the complexified
-Clifford algebra. This file proves that `S` carries a **positive definite Hermitian form `H` for
+Let `V` be a Euclidean space and `Q v = -‖v‖²`, the geometric sign convention under which
+Clifford multiplication satisfies `c(v)² = -‖v‖²`. A spinor module of `V` is a complex vector space
+`S` with an algebra isomorphism `ρ : Cl_ℂ(V) ≃ End_ℂ(S)` from the complexified Clifford algebra;
+one exists only in even dimension, since comparing dimensions gives `2 ^ dim V = (dim S)²`. This
+file proves that `S` carries a **positive definite Hermitian form `H` for
 which `ρ` is a `*`-representation**:
 
   `H (ρ a x) y = H x (ρ (a^*) y)`,
@@ -63,20 +67,39 @@ variable {V S : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteD
   {Q : QuadraticForm ℝ V} [AddCommGroup S] [Module ℂ S]
 
 open scoped ComplexOrder in
-/-- **Spinor modules carry compatible positive Hermitian metrics.** For an even-dimensional
-Euclidean space with `Q v = -‖v‖²` and an algebra isomorphism `ρ` from the complexified Clifford
-algebra onto the endomorphisms of `S`, there is a positive definite Hermitian form `H` on `S` with
+/-- **Spinor modules carry compatible positive Hermitian metrics.** For a Euclidean space with
+`Q v = -‖v‖²` and an algebra isomorphism `ρ` from the complexified Clifford algebra onto the
+endomorphisms of `S`, there is a positive definite Hermitian form `H` on `S` with
 `H (ρ a x) y = H x (ρ (conjStar Q a) y)` for every `a`.
 
 The form is unique up to a positive real scalar
-(`CliffordAlgebra.existsUnique_pos_mul_of_surjective`). Dimension zero, where `S` is a line, is
-included. -/
+(`CliffordAlgebra.existsUnique_pos_mul_of_surjective`). No parity hypothesis is needed: `ρ` forces
+`V` to have even dimension. Dimension zero, where `S` is a line, is included. -/
 theorem exists_sesqForm_map_eq_map_conjStar (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-    (hV : Even (finrank ℝ V)) (ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S) :
+    (ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S) :
     ∃ H : S →ₗ⋆[ℂ] S →ₗ[ℂ] ℂ, H.IsPosSemidef ∧ (∀ x, x ≠ 0 → H x x ≠ 0) ∧
       ∀ a x y, H (ρ a x) y = H x (ρ (conjStar Q a) y) := by
+  -- `V` has even dimension: `ρ` gives `2 ^ finrank ℝ V = (finrank ℂ S) ^ 2`.
+  obtain ⟨ℓ, hℓ⟩ : Even (finrank ℝ V) := by
+    have hdim := ρ.toLinearEquiv.finrank_eq
+    rw [finrank_eq_two_pow, finrank_baseChange] at hdim
+    have : Module.Finite ℂ (Module.End ℂ S) := Module.finite_of_finrank_pos (hdim ▸ by positivity)
+    have : Nontrivial S := by
+      by_contra h
+      rw [not_nontrivial_iff_subsingleton] at h
+      simp [finrank_zero_of_subsingleton (R := ℂ) (M := Module.End ℂ S)] at hdim
+    -- `S` is finite-dimensional, being the image of `End S` under evaluation at `x ≠ 0`.
+    obtain ⟨x, hx⟩ := exists_ne (0 : S)
+    obtain ⟨φ, hφ⟩ : ∃ φ : Dual ℂ S, φ x ≠ 0 := by
+      by_contra! h
+      exact hx ((forall_dual_apply_eq_zero_iff ℂ x).1 h)
+    have : Module.Finite ℂ S := Module.Finite.of_surjective (LinearMap.applyₗ x)
+      fun y ↦ ⟨(φ x)⁻¹ • φ.smulRight y, by simp [hφ]⟩
+    rw [finrank_linearMap] at hdim
+    obtain ⟨k, -, hk⟩ := (Nat.dvd_prime_pow Nat.prime_two).1 (Dvd.intro _ hdim.symm)
+    rw [hk, ← pow_add] at hdim
+    exact ⟨k, Nat.pow_right_injective le_rfl hdim⟩
   -- The Fock model of an orthogonal complex structure, with an orthonormal basis of `W`.
-  obtain ⟨ℓ, hℓ⟩ := hV
   obtain ⟨J, hJ⟩ := TauCeti.AlmostComplexStructure.exists_forall_norm_apply_eq (V := V) ⟨ℓ, hℓ⟩
   have hQJ (v : V) : Q (J v) = Q v := by rw [hQ, hQ, hJ]
   have hQnd : Q.Nondegenerate := QuadraticMap.Anisotropic.nondegenerate fun v hv ↦ by

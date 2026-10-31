@@ -22,8 +22,8 @@ product. In particular this applies to an algebra isomorphism onto the endomorph
 spinor space; see `CliffordAlgebra.existsUnique_pos_mul_inner_of_surjective`. The same holds
 relative to a positive definite compatible Hermitian form instead of an inner product
 (`CliffordAlgebra.existsUnique_pos_mul_of_surjective`). No existence of a compatible form is
-asserted here; for an algebra isomorphism onto `End S` with `Q v = -‖v‖ ^ 2` on an
-even-dimensional Euclidean space, it is `CliffordAlgebra.exists_sesqForm_map_eq_map_conjStar`.
+asserted here; for an algebra isomorphism onto `End S` with `Q v = -‖v‖ ^ 2` on a Euclidean
+space (necessarily of even dimension), it is `CliffordAlgebra.exists_sesqForm_map_eq_map_conjStar`.
 Surjectivity is essential: reducible modules can have independently rescaled metrics on
 multiplicity spaces.
 
