@@ -16,36 +16,40 @@ import TauCeti.RingTheory.Invariant.Basic
 Let a finite group `G` act freely on a commutative `A`-algebra `B` by `A`-algebra automorphisms
 with ring of invariants `A`; by Chase–Harrison–Rosenberg this says that `B` is a finite étale
 `G`-torsor over `A` (`TauCeti.Algebra.isFiniteEtaleTorsor_iff`), up to injectivity of `A → B`.
-This file proves finite Galois descent for modules: `A`-modules are the same as `B`-modules with
-a semilinear action of `G`.
+This file constructs the two comparison isomorphisms of finite Galois descent for modules: every
+`B`-module with semilinear `G`-action is the base change of its invariants, and, when `A → B` is
+injective, every `A`-module is the invariants of its base change.
 
 A *semilinear* action on a `B`-module `N` is a distributive action of `G` with
 `g • (b • n) = (g • b) • (g • n)` (Mathlib's `SMulDistribClass G B N`). Such an action is
 `A`-linear (`TauCeti.MulSemiringAction.smulCommClass_of_smulDistribClass`), so its invariants form
 the `A`-submodule `Nᴳ := (Representation.ofDistribMulAction A G N).invariants`. The statements
 assume the instance `SMulCommClass G A N` that this submodule needs, and the lemma supplies it
-where it is not already found. The two functors are
+where it is not already found. The two constructions are
 
   `N ↦ Nᴳ`  and  `M ↦ B ⊗[A] M`, with `G` acting on the left factor.
 
 Mathlib's action on the left factor of `B ⊗[A] M` asks for `SMulCommClass A G B`, the symmetric
-form of the standing assumption `SMulCommClass G A B`.
+form of `SMulCommClass G A B`; the statements about `B ⊗[A] M` assume both.
 
 The descent isomorphisms are
 
 * `B ⊗[A] Nᴳ ≃ₗ[B] N`, `b ⊗ n ↦ b • n`, for every `B`-module with semilinear action
   (`TauCeti.MulSemiringAction.baseChangeInvariantsEquiv`);
 * `M ≃ₗ[A] (B ⊗[A] M)ᴳ`, `m ↦ 1 ⊗ m`, for every `A`-module, when moreover `A → B` is injective
-  (`TauCeti.MulSemiringAction.invariantsBaseChangeEquiv`).
+  (`TauCeti.MulSemiringAction.invariantsBaseChangeEquiv`). This one only needs an element of
+  trace `1` in place of freeness, so it also covers non-free actions with `|G|` invertible.
 
 The first needs no injectivity of `A → B`. The second does: for `A = A₁ × A₂` acting on a torsor
 `B` over `A₁` through the first factor, the invariants of `B ⊗[A] A = B` are `A₁`, not `A`.
 
 Both proofs are explicit. Freeness gives elements `xᵢ, yᵢ ∈ B` with
 `∑ i, xᵢ * g • yᵢ = 1` for `g = 1` and `0` otherwise, and then every `n ∈ N` is
-`n = ∑ i, xᵢ • ∑ g, g • (yᵢ • n)`, which inverts the first map. For the second, an element
-`c ∈ B` of trace `∑ g, g • c = 1` (`TauCeti.MulSemiringAction.exists_sum_smul_eq_one`) gives the
-`A`-linear retraction `b ↦ ∑ g, g • (c * b)` of `A → B`, and every invariant `z ∈ B ⊗[A] M` is
+`n = ∑ i, xᵢ • ∑ g, g • (yᵢ • n)` (`TauCeti.MulSemiringAction.sum_smul_sum_smul_smul`), which
+inverts the first map. For the second, an element `c ∈ B` of trace `∑ g, g • c = 1`, which exists
+for a free action (`TauCeti.MulSemiringAction.exists_sum_smul_eq_one`), gives the `A`-linear
+retraction `b ↦ ∑ g, g • (c * b)` of `A → B` (`TauCeti.MulSemiringAction.traceCoord`), and every
+invariant `z ∈ B ⊗[A] M` is
 `z = ∑ g, g • (c • z)`, which is `1 ⊗ m` for the image `m` of `z` under that retraction.
 
 ## Main definitions
@@ -72,34 +76,37 @@ open TensorProduct
 
 namespace TauCeti.MulSemiringAction
 
-variable {A B G : Type*} [CommRing A] [CommRing B] [Algebra A B] [Group G]
+section SemilinearAction
+
+variable (A B G : Type*) [CommSemiring A] [Semiring B] [Algebra A B] [Monoid G]
   [MulSemiringAction G B] [SMulCommClass G A B]
 
-variable (A B G) in
 /-- A `B`-semilinear action of `G` on `N` is `A`-linear, since `G` fixes the image of `A`. Thus
 the invariants of `N` form an `A`-submodule. -/
-theorem smulCommClass_of_smulDistribClass (N : Type*) [AddCommGroup N] [Module A N] [Module B N]
+theorem smulCommClass_of_smulDistribClass (N : Type*) [AddCommMonoid N] [Module A N] [Module B N]
     [IsScalarTower A B N] [DistribMulAction G N] [SMulDistribClass G B N] :
     SMulCommClass G A N where
   smul_comm g a n := by
     rw [← algebraMap_smul B a n, smul_distrib_smul, smul_algebraMap, algebraMap_smul]
 
-section DualBasis
+end SemilinearAction
 
-variable {N : Type*} [AddCommGroup N] [Module B N] [DistribMulAction G N]
-  [SMulDistribClass G B N]
+section TensorProduct
 
-/-- The dual basis identity `n = ∑ i, xᵢ • ∑ g, g • (yᵢ • n)` for a `B`-module with semilinear
-action, where `∑ i, xᵢ * g • yᵢ` is the indicator function of `1`. -/
-private theorem sum_smul_sum_smul_smul [Fintype G] [DecidableEq G] {S : Finset (B × B)}
-    (hS : ∀ g : G, ∑ p ∈ S, p.1 * g • p.2 = (Pi.single 1 1 : G → B) g) (n : N) :
-    ∑ p ∈ S, p.1 • ∑ g : G, g • (p.2 • n) = n := by
-  simp only [Finset.smul_sum, smul_distrib_smul, smul_smul]
-  rw [Finset.sum_comm]
-  simp only [← Finset.sum_smul, hS]
-  simp [Pi.single_apply]
+variable (A B G : Type*) [CommSemiring A] [CommSemiring B] [Algebra A B] [Monoid G]
+  [MulSemiringAction G B] [SMulCommClass A G B] (M : Type*) [AddCommMonoid M] [Module A M]
 
-end DualBasis
+/-- The action of `G` on the left factor of `B ⊗[A] M` is `B`-semilinear. -/
+instance smulDistribClass_tensorProduct : SMulDistribClass G B (B ⊗[A] M) where
+  smul_distrib_smul g b z := by
+    induction z using TensorProduct.inductionOn with
+    | tmul x m => simp [smul_tmul', smul_mul']
+    | add x y hx hy => simp only [smul_add, hx, hy]
+
+end TensorProduct
+
+variable {A B G : Type*} [CommRing A] [CommRing B] [Algebra A B] [Group G]
+  [MulSemiringAction G B] [SMulCommClass G A B]
 
 section BaseChangeInvariants
 
@@ -140,9 +147,7 @@ private theorem bijective_liftBaseChange_subtype_invariants [Finite G] [Algebra.
   classical
   have := Fintype.ofFinite G
   obtain ⟨u, hu⟩ := (tensorToPi_surjective_iff (R := A)).mpr hG (Pi.single 1 1)
-  obtain ⟨S, rfl⟩ := TensorProduct.exists_finset u
-  have hS (g : G) : ∑ p ∈ S, p.1 * g • p.2 = (Pi.single 1 1 : G → B) g := by
-    simpa using congr_fun hu g
+  obtain ⟨S, hS⟩ := exists_finset_sum_mul_smul hu
   set φ := (Representation.ofDistribMulAction A G N).invariants.subtype.liftBaseChange B
   -- The explicit inverse `ψ`.
   set ψ : N → B ⊗[A] (Representation.ofDistribMulAction A G N).invariants :=
@@ -187,39 +192,11 @@ end BaseChangeInvariants
 
 section InvariantsBaseChange
 
-/-- `G` acts on the left factor of `B ⊗[A] M` through Mathlib's `TensorProduct.leftHasSMul`,
+/- `G` acts on the left factor of `B ⊗[A] M` through Mathlib's `TensorProduct.leftHasSMul`,
 which asks for the commutation of `A` and `G` in this order. -/
-local instance : SMulCommClass A G B := .symm _ _ _
+variable [SMulCommClass A G B]
 
 variable (A B G) (M : Type*) [AddCommGroup M] [Module A M]
-
-/-- The action of `G` on the left factor of `B ⊗[A] M` is `B`-semilinear. -/
-instance smulDistribClass_tensorProduct : SMulDistribClass G B (B ⊗[A] M) where
-  smul_distrib_smul g b z := by
-    induction z using TensorProduct.inductionOn with
-    | tmul x m => simp [smul_tmul', smul_mul']
-    | add x y hx hy => simp only [smul_add, hx, hy]
-
-variable {A B G} in
-/-- For a free action with ring of invariants `A ⊆ B`, some `c ∈ B` of trace `1` gives an
-`A`-linear retraction `b ↦ ∑ g, g • (c * b)` of `A → B`. -/
-private theorem exists_sum_smul_eq_one_and_retraction [Finite G] [FaithfulSMul A B]
-    [Algebra.IsInvariant A B G]
-    (hG : ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun b : B ↦ g • b - b) = ⊤) :
-    ∃ (_ : Fintype G) (c : B) (r : B →ₗ[A] A), ∑ g : G, g • c = 1 ∧
-      ∀ b, algebraMap A B (r b) = ∑ g : G, g • (c * b) := by
-  have := Fintype.ofFinite G
-  obtain ⟨c, hc⟩ := exists_sum_smul_eq_one hG
-  choose φ hφ using fun b : B ↦
-    Algebra.IsInvariant.isInvariant (A := A) _ (smul_sum_smul (G := G) · (c * b))
-  have inj := FaithfulSMul.algebraMap_injective A B
-  refine ⟨this, c,
-    { toFun := φ
-      map_add' b b' := inj <| by simp [hφ, mul_add, Finset.sum_add_distrib]
-      map_smul' a b := inj <| by
-        simp only [hφ, mul_smul_comm, smul_comm _ a, ← Finset.smul_sum]
-        simp only [RingHom.id_apply, smul_eq_mul, map_mul, hφ, Algebra.smul_def] },
-    hc, hφ⟩
 
 /-- The map `m ↦ 1 ⊗ m` from `M` to the invariants of `B ⊗[A] M`. -/
 private noncomputable def oneTmul :
@@ -229,12 +206,15 @@ private noncomputable def oneTmul :
 
 variable {A B G M}
 
-/-- For a free action of a finite group with ring of invariants `A ⊆ B`, the map `m ↦ 1 ⊗ m`
-identifies `M` with the invariants of `B ⊗[A] M`. -/
-private theorem bijective_oneTmul [Finite G] [FaithfulSMul A B] [Algebra.IsInvariant A B G]
-    (hG : ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun b : B ↦ g • b - b) = ⊤) :
+/-- For a finite group with ring of invariants `A ⊆ B` and an element of `B` of trace `1`, the map
+`m ↦ 1 ⊗ m` identifies `M` with the invariants of `B ⊗[A] M`. -/
+private theorem bijective_oneTmul [Fintype G] [FaithfulSMul A B] [Algebra.IsInvariant A B G]
+    (hc : ∃ c : B, ∑ g : G, g • c = 1) :
     Function.Bijective (oneTmul A B G M) := by
-  obtain ⟨_, c, r, hc, hr⟩ := exists_sum_smul_eq_one_and_retraction (A := A) hG
+  obtain ⟨c, hc⟩ := hc
+  -- The `A`-linear retraction `r : b ↦ ∑ g, g • (c * b)` of `A → B`.
+  set r : B →ₗ[A] A := traceCoord G c
+  have hr (b : B) : algebraMap A B (r b) = ∑ g : G, g • (c * b) := algebraMap_traceCoord c b
   have hr1 : r 1 = 1 := FaithfulSMul.algebraMap_injective A B <| by simp [hr, hc]
   -- The retraction `Φ : b ⊗ m ↦ r b • m` of `m ↦ 1 ⊗ m`.
   set Φ : B ⊗[A] M →ₗ[A] M := TensorProduct.lid A M ∘ₗ r.rTensor M
@@ -256,20 +236,19 @@ private theorem bijective_oneTmul [Finite G] [FaithfulSMul A B] [Algebra.IsInvar
           simp only [smul_distrib_smul, hz, ← Finset.sum_smul, hc, one_smul]
 
 variable (A B G M) in
-/-- **Galois descent of modules.** For a free action of a finite group `G` on `B` with ring of
-invariants `A`, and `A → B` injective, every `A`-module `M` is recovered as the invariants of
-its base change: `M ≃ₗ[A] (B ⊗[A] M)ᴳ`, `m ↦ 1 ⊗ m`, with `G` acting on the left factor. -/
-noncomputable def invariantsBaseChangeEquiv [Finite G] [FaithfulSMul A B]
-    [Algebra.IsInvariant A B G]
-    (hG : ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun b : B ↦ g • b - b) = ⊤) :
+/-- **Galois descent of modules.** For a finite group `G` acting on `B` with ring of invariants
+`A ⊆ B`, and an element of `B` of trace `1` (as for a free action, by `exists_sum_smul_eq_one`),
+every `A`-module `M` is recovered as the invariants of its base change:
+`M ≃ₗ[A] (B ⊗[A] M)ᴳ`, `m ↦ 1 ⊗ m`, with `G` acting on the left factor. -/
+noncomputable def invariantsBaseChangeEquiv [Fintype G] [FaithfulSMul A B]
+    [Algebra.IsInvariant A B G] (hc : ∃ c : B, ∑ g : G, g • c = 1) :
     M ≃ₗ[A] (Representation.ofDistribMulAction A G (B ⊗[A] M)).invariants :=
-  .ofBijective _ (bijective_oneTmul hG)
+  .ofBijective _ (bijective_oneTmul hc)
 
 @[simp]
-theorem coe_invariantsBaseChangeEquiv_apply [Finite G] [FaithfulSMul A B]
-    [Algebra.IsInvariant A B G]
-    (hG : ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun b : B ↦ g • b - b) = ⊤) (m : M) :
-    (invariantsBaseChangeEquiv A B G M hG m : B ⊗[A] M) = 1 ⊗ₜ m := (rfl)
+theorem coe_invariantsBaseChangeEquiv_apply [Fintype G] [FaithfulSMul A B]
+    [Algebra.IsInvariant A B G] (hc : ∃ c : B, ∑ g : G, g • c = 1) (m : M) :
+    (invariantsBaseChangeEquiv A B G M hc m : B ⊗[A] M) = 1 ⊗ₜ m := (rfl)
 
 end InvariantsBaseChange
 

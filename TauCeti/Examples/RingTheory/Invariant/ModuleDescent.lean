@@ -36,7 +36,9 @@ example (G A B : Type*) [Group G] [Finite G] [CommRing A] [CommRing B] [Algebra 
       Nonempty (M ≃ₗ[A] (Representation.ofDistribMulAction A G (B ⊗[A] M)).invariants) := by
   intro _ _
   obtain ⟨_, _, hG⟩ := Algebra.isFiniteEtaleTorsor_iff.mp ‹Algebra.IsFiniteEtaleTorsor G A B›
-  exact ⟨⟨baseChangeInvariantsEquiv A B G N hG⟩, ⟨invariantsBaseChangeEquiv A B G M hG⟩⟩
+  have := Fintype.ofFinite G
+  exact ⟨⟨baseChangeInvariantsEquiv A B G N hG⟩,
+    ⟨invariantsBaseChangeEquiv A B G M (exists_sum_smul_eq_one hG)⟩⟩
 
 /-- *Speiser's lemma*: for a finite Galois extension `L / K`, an `L`-vector space `V` with
 semilinear Galois action is `L ⊗[K] Vᴳ`, by `x ⊗ v ↦ x • v`. -/
