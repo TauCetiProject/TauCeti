@@ -11,8 +11,8 @@ public import TauCeti.LinearAlgebra.RootSystem.Opposition
 /-!
 # The lowest weight of an irreducible highest weight module
 
-Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form over an algebraically
-closed field of characteristic zero, let `H` be a splitting Cartan subalgebra, let `b` be a base of
+Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form over a field of
+characteristic zero, let `H` be a splitting Cartan subalgebra, let `b` be a base of
 its root system, and let `M` be an irreducible `L`-module carrying a highest weight vector of
 dominant integral weight `lam`. This file identifies `w₀ • lam` as the **lowest** weight of `M`,
 `w₀` being the longest element of the Weyl group.
@@ -73,8 +73,7 @@ theorem IsDominantIntegral.neg_longestElement_smul (hlam : IsDominantIntegral b 
 
 /-! ### The lowest weight -/
 
-variable [IsAlgClosed K]
-  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] {v : M}
+variable {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] {v : M}
   [_root_.LieModule.IsIrreducible K L M]
 
 /-- **`w₀ • lam` is the lowest weight of an irreducible highest weight module.** Every weight lies
@@ -92,7 +91,7 @@ theorem sub_longestElement_smul_mem_posRootCone_of_genWeightSpace_ne_bot
   have h2 := neg_smul_mem_posRootCone_longestElement h
   rwa [smul_sub, smul_smul_longestElement, neg_sub] at h2
 
-omit [IsAlgClosed K] [_root_.LieModule.IsIrreducible K L M] in
+omit [_root_.LieModule.IsIrreducible K L M] in
 /-- The weight underlying the difference of a weight and a root is the pointwise difference. -/
 private theorem coe_sub_root_rootSystem (x : Dual K H) (i : H.root) :
     ⇑(x - (IsKilling.rootSystem H).root i) = ⇑x - (i : H → K) :=

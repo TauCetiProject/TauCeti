@@ -146,6 +146,12 @@ theorem foldHom_mapV_surjective :
     Function.Surjective (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapV :=
   Quot.mk_surjective
 
+/-- A fold of a connected labelled graph remains connected. -/
+theorem connected_foldAt (hS : S.graph.Connected) :
+    (S.foldAt f₁ f₂ hsrc hlabel).graph.Connected :=
+  (S.foldHom f₁ f₂ hsrc hlabel).graphHom.connected_of_surjective
+    (S.foldHom_mapV_surjective f₁ f₂ hsrc hlabel) hS
+
 /-- Every dart of the fold comes from the original graph. -/
 theorem foldHom_mapE_surjective :
     Function.Surjective (S.foldHom f₁ f₂ hsrc hlabel).graphHom.mapE :=

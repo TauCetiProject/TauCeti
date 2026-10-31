@@ -77,7 +77,7 @@ theorem baseChangeHopfIdeal_centerDefiningIdeal
       (isCentralPoint_baseChangePointsMulEquiv_iff H A q).mpr hqcentral
     have hrestrictMem : baseChangePointsMulEquiv (K := K) A H q ∈
         centerPointsSubgroup H
-          (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A) :=
+          (CommAlgCat.restrictScalarsObj (algebraMap k K) A) :=
       (mem_centerPointsSubgroup_iff H _ _).mpr hrestrictCentral
     have hzero := (mem_quotientPointsSubgroup_iff B
       (baseChangeHopfIdeal (K := K) (centerDefiningIdeal H)) A q).mp

@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Complex.Module
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import TauCeti.LinearAlgebra.Complex.Eigenspace
+public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct
 
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -31,6 +32,11 @@ each argument, so it maps eigenvectors for `±i` in either argument into the eig
 Hence it sends two vectors of type `(0,1)` to a vector of type `(1,0)`, two vectors of type
 `(1,0)` to a vector of type `(0,1)`, and vanishes on a vector of type `(1,0)` and one of type
 `(0,1)`.
+
+A real-linear map `l : V → N` into a complex vector space extends complex-linearly to the
+complexification by `LinearMap.liftBaseChange`. It is complex-linear for `J` exactly when its
+extension vanishes on the vectors of type `(0,1)`, and conjugate-linear exactly when its extension
+vanishes on the vectors of type `(1,0)`.
 
 ## Main declarations
 
@@ -59,6 +65,9 @@ Hence it sends two vectors of type `(0,1)` to a vector of type `(1,0)`, two vect
 * `TauCeti.AlmostComplexStructure.bilinMap_baseChange_antiholomorphicPart_antiholomorphicPart`
   and `TauCeti.AlmostComplexStructure.bilinMap_baseChange_holomorphicPart_holomorphicPart`:
   `B(v^(0,1), w^(0,1)) = (B v w)^(1,0)` and `B(v^(1,0), w^(1,0)) = (B v w)^(0,1)`.
+* `TauCeti.AlmostComplexStructure.eigenspace_neg_I_le_ker_liftBaseChange_iff` and
+  `TauCeti.AlmostComplexStructure.eigenspace_I_le_ker_liftBaseChange_iff`: complex-linear and
+  conjugate-linear maps through their complex-linear extensions.
 -/
 
 public section
@@ -295,5 +304,58 @@ theorem bilinMap_baseChange_holomorphicPart_holomorphicPart
   linear_combination (norm := module) Complex.I_mul_I • (-(4 : ℂ)⁻¹ • (1 : ℂ) ⊗ₜ[ℝ] B v w)
 
 end AntiCommuting
+
+/-! ## Complex-linear extensions of real-linear maps
+
+A real-linear map `l : V → N` into a complex vector space extends complex-linearly to the
+complexification by `LinearMap.liftBaseChange`. The map `l` is complex-linear for `J`,
+`l (J v) = i • l v`, exactly when its extension vanishes on the vectors of type `(0,1)`, and
+conjugate-linear, `l (J v) = -i • l v`, exactly when it vanishes on the vectors of type `(1,0)`. -/
+
+section LiftBaseChange
+
+open Module.End
+
+variable {N : Type*} [AddCommGroup N] [Module ℂ N] [Module ℝ N] [IsScalarTower ℝ ℂ N]
+  (l : V →ₗ[ℝ] N)
+
+/-- The complex-linear extension of `l` on the `(1,0)`-part of `v` is `(l v - i • l (J v)) / 2`. -/
+@[simp]
+theorem liftBaseChange_holomorphicPart (v : V) :
+    l.liftBaseChange ℂ (J.holomorphicPart v) = (2 : ℂ)⁻¹ • (l v - Complex.I • l (J v)) := by
+  simp [holomorphicPart_apply]
+
+/-- The complex-linear extension of `l` on the `(0,1)`-part of `v` is `(l v + i • l (J v)) / 2`. -/
+@[simp]
+theorem liftBaseChange_antiholomorphicPart (v : V) :
+    l.liftBaseChange ℂ (J.antiholomorphicPart v) = (2 : ℂ)⁻¹ • (l v + Complex.I • l (J v)) := by
+  simp [antiholomorphicPart_apply]
+
+/-- A real-linear map is complex-linear for `J` exactly when its complex-linear extension vanishes
+on the vectors of type `(0,1)`. -/
+theorem eigenspace_neg_I_le_ker_liftBaseChange_iff :
+    eigenspace (J.toLinearMap.baseChange ℂ) (-Complex.I) ≤ LinearMap.ker (l.liftBaseChange ℂ) ↔
+      ∀ v, l (J v) = Complex.I • l v := by
+  refine ⟨fun h v ↦ ?_, fun hl X hX ↦ l.liftBaseChange_eq_zero_of_mem_eigenspace_baseChange
+    J.toLinearMap hl (by norm_num [Complex.ext_iff]) hX⟩
+  have hv := h (J.antiholomorphicPart_mem_eigenspace_baseChange_neg_I v)
+  rw [LinearMap.mem_ker, liftBaseChange_antiholomorphicPart, smul_eq_zero] at hv
+  have hv' := congrArg (Complex.I • ·) (eq_neg_of_add_eq_zero_right (hv.resolve_left (by simp)))
+  simpa [smul_smul] using hv'
+
+/-- A real-linear map is conjugate-linear for `J` exactly when its complex-linear extension
+vanishes on the vectors of type `(1,0)`. -/
+theorem eigenspace_I_le_ker_liftBaseChange_iff :
+    eigenspace (J.toLinearMap.baseChange ℂ) Complex.I ≤ LinearMap.ker (l.liftBaseChange ℂ) ↔
+      ∀ v, l (J v) = -Complex.I • l v := by
+  refine ⟨fun h v ↦ ?_, fun hl X hX ↦ l.liftBaseChange_eq_zero_of_mem_eigenspace_baseChange
+    J.toLinearMap hl (by norm_num [Complex.ext_iff]) hX⟩
+  have hv := h (J.holomorphicPart_mem_eigenspace_baseChange_I v)
+  rw [LinearMap.mem_ker, liftBaseChange_holomorphicPart, smul_eq_zero] at hv
+  have hv' := congrArg (Complex.I • ·) (sub_eq_zero.1 (hv.resolve_left (by simp)))
+  rw [neg_smul]
+  exact neg_eq_iff_eq_neg.1 (by simpa [smul_smul] using hv'.symm)
+
+end LiftBaseChange
 
 end TauCeti.AlmostComplexStructure

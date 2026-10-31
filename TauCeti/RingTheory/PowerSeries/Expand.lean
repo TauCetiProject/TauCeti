@@ -79,6 +79,17 @@ namespace PowerSeries
 
 variable {R : Type*} [CommRing R]
 
+/-- Recover the finite order of a series from the order of its expansion. -/
+theorem order_eq_of_order_expand_eq (p : ℕ) (hp : p ≠ 0) {f : R⟦X⟧} {n : ℕ}
+    (hf : (expand p hp f).order = (p * n : ℕ)) : f.order = n := by
+  have hf₀ : f ≠ 0 := by
+    intro h
+    rw [h, map_zero, order_zero] at hf
+    exact ENat.top_ne_natCast _ hf
+  rw [order_expand, nsmul_eq_mul, ← coe_toNat_order hf₀, ← Nat.cast_mul] at hf
+  have he : p * f.order.toNat = p * n := by exact_mod_cast hf
+  rw [← coe_toNat_order hf₀, Nat.mul_left_cancel (Nat.pos_of_ne_zero hp) he]
+
 /-- Substituting into an expanded series raises the substituted series to the expansion
 power. -/
 theorem subst_expand {σ : Type*} (p : ℕ) (hp : p ≠ 0) {a : MvPowerSeries σ R}

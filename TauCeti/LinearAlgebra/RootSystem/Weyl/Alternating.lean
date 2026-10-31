@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.Basic
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.Reflection
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.WeylGroup
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Numerator
 
 /-!

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.CyclicCohomology.Continuous
+public import TauCeti.RingTheory.CyclicCohomology.Continuous.Basic
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
 
 /-!

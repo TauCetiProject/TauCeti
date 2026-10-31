@@ -304,14 +304,9 @@ theorem isTorsionFree_quotient_range_glueRight :
 /-- The glued lattice has the sum of the two original signatures. -/
 theorem signature_glueAlongDiscriminant :
     (L.glueAlongDiscriminant M hL hM e).signature =
-      (L.sigPos + M.sigPos, L.sigNull + M.sigNull, L.sigNeg + M.sigNeg) := by
-  rw [← signature_orthogonalSum]
-  have hr : (L.glueAlongDiscriminant M hL hM e).radical = (L.orthogonalSum M).radical := by
-    ext x
-    simp only [mem_radical_iff, glueAlongDiscriminant_form]
-  have hn : (L.glueAlongDiscriminant M hL hM e).sigNull = (L.orthogonalSum M).sigNull :=
-    congrArg (fun S : Submodule ℚ (V × W) ↦ Module.finrank ℚ S) hr
-  simp only [signature, hn, sigPos, sigNeg, glueAlongDiscriminant_form]
+      (L.sigPos + M.sigPos, L.sigNull + M.sigNull, L.sigNeg + M.sigNeg) :=
+  (signature_eq_of_equivalent (glueAlongDiscriminant_form L M hL hM e ▸ .refl _)).trans
+    (signature_orthogonalSum L M)
 
 /-! ## Even unimodular overlattices are graph gluings -/
 
