@@ -8,13 +8,14 @@ module
 public import TauCeti.Combinatorics.Hypergraph.Triadic.ExceptionalPrediction
 import TauCeti.Combinatorics.Hypergraph.Polyad.Rank
 import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
+import TauCeti.Algebra.Order.Ring.Abs
+import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.Data.Fintype.BigOperators
 import TauCeti.Order.Hom.PowersetCard
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 import Mathlib.Data.Fin.Tuple.Reflection
 import Mathlib.Data.Rat.Cast.Order
 import Mathlib.Tactic.GCongr
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
@@ -277,7 +278,7 @@ private theorem card_filter_product_eq_card_filter_slice
       #{w ∈ (H.slice ψ s t h).support | Y w} := by
   symm
   refine card_nbij (fun w ↦ (w.1 0, w.1 1, w.1 2)) (fun w hw ↦ ?_)
-    fin_three_coords_injective.injOn (fun q hq ↦ ?_)
+    (Fin.injective_apply_zero_one_two.comp Subtype.val_injective).injOn (fun q hq ↦ ?_)
   · obtain ⟨hw, hY⟩ := mem_filter.1 hw
     obtain ⟨⟨h₀, h₁, h₂⟩, hR⟩ := (mem_slice_support ht h w).1 hw
     have e : ![w.1 0, w.1 1, w.1 2] = w.1 := FinVec.etaExpand_eq w.1
@@ -439,15 +440,6 @@ private theorem lowerRouteCountAt_eq_card_filter :
   rw [lowerRouteCountAt_def, lowerRouteMaps_eq_filter_piFinset]
   congr 1
   exact filter_congr fun g _ ↦ by simp [RouteHolds]
-
-/-- Replacing `b` by `c` inside `|a - d * b|` costs at most `|b - c|` when `0 ≤ d ≤ 1`. -/
-private theorem abs_sub_mul_le_of_le_one {a b c d : ℝ} (hd₀ : 0 ≤ d) (hd₁ : d ≤ 1) :
-    |a - d * c| ≤ |a - d * b| + |b - c| :=
-  calc |a - d * c| = |(a - d * b) + d * (b - c)| := by congr 1; ring
-    _ ≤ |a - d * b| + |d * (b - c)| := abs_add_le _ _
-    _ ≤ |a - d * b| + |b - c| := by
-      rw [abs_mul, abs_of_nonneg hd₀]
-      exact add_le_add_right (mul_le_of_le_one_left (abs_nonneg _) hd₁) _
 
 open Classical in
 /-- **Telescoping.** Replacing the top-color indicators of the triples of `s` by their relative

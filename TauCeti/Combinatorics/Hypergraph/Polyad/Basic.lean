@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Data.Matrix.Basic
+import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.Order.Partition.Finpartition
 
 /-!
@@ -81,14 +82,6 @@ theorem mem_polyadSupport {C : PairColorSystem κ V} {c₀ c₁ c₂ : Finset V}
         C.colorOfPair (x.1 1) (x.1 2) = some k₁₂ := by
   simp [polyadSupport]
 
-omit [Fintype V] [DecidableEq V] in
-/-- An injective triple is determined by its three coordinates. -/
-theorem fin_three_coords_injective :
-    Function.Injective fun x : {x : Fin 3 → V // Function.Injective x} ↦ (x.1 0, x.1 1, x.1 2) := by
-  intro x y h
-  simp only [Prod.mk.injEq] at h
-  exact Subtype.ext <| funext fun m ↦ by fin_cases m <;> simp [h.1, h.2.1, h.2.2]
-
 namespace Polyad3
 
 variable {S : PairSkeleton3 κ V}
@@ -112,7 +105,7 @@ theorem mem_support (P : Polyad3 S) (x : {x : Fin 3 → V // Function.Injective 
 theorem card_support_le (P : Polyad3 S) : #P.support ≤ #P.c₀ * #P.c₁ * #P.c₂ := by
   rw [mul_assoc, ← card_product, ← card_product]
   refine card_le_card_of_injOn (fun x ↦ (x.1 0, x.1 1, x.1 2)) (fun x hx ↦ ?_)
-    fin_three_coords_injective.injOn
+    (Fin.injective_apply_zero_one_two.comp Subtype.val_injective).injOn
   obtain ⟨h₀, h₁, h₂, -⟩ := (P.mem_support x).1 hx
   simp [h₀, h₁, h₂]
 
