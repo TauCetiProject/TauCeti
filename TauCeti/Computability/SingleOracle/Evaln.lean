@@ -29,6 +29,7 @@ the program relative to every oracle extending those answers.
 
 * `TauCeti.Oracle.Single.Code.Halt`: the output and use of a successful run.
 * `TauCeti.Oracle.Single.Code.evaln`: bounded evaluation against oracle answers.
+* `TauCeti.Oracle.Single.Code.stageUse`: the use of a run, or `0` when it fails.
 
 ## Main results
 
@@ -227,6 +228,10 @@ theorem evaln_bound : ∀ {k c n d}, evaln σ k c n = some d → n < k
       cases c <;> rw [evaln] at h <;> exact this h
     simpa [Option.bind_eq_some_iff] using Nat.lt_succ_of_le
 
+/-- A run at fuel `k` fails on every input at or above `k`. -/
+theorem evaln_eq_none_of_le {c : Code} (h : k ≤ n) : evaln σ k c n = none :=
+  Option.eq_none_iff_forall_ne_some.2 fun _ hd => (evaln_bound hd).not_ge h
+
 /-- Every input is a pairing `Nat.pair a m`, the form in which the clauses for `prec` and
 `rfind'` are stated. -/
 private theorem exists_eq_pair (n : ℕ) : ∃ a m, n = Nat.pair a m :=
@@ -303,6 +308,28 @@ theorem evaln_use_le : ∀ {k c n d}, evaln σ k c n = some d → d.use ≤ k
       obtain ⟨-, dx, hdx, ⟨-, rfl⟩ | ⟨-, d', hd', rfl⟩⟩ := evaln_succ_rfind'_eq_some.1 h
       · exact hf _ dx hdx
       · exact max_le (hf _ _ hdx) ((evaln_use_le hd').trans k.le_succ)
+
+/-- The **stage use** of the run of `c` on `n` with fuel `k` against the answers `σ`: the use of
+the run when it succeeds, and `0` when it fails. A successful run can also have use `0`, so the
+stage use does not record whether the run succeeded. -/
+def stageUse (σ : ℕ → Option ℕ) (k : ℕ) (c : Code) (n : ℕ) : ℕ :=
+  ((evaln σ k c n).map Halt.use).getD 0
+
+/-- The stage use of a successful run is its use. -/
+theorem stageUse_eq_of_evaln_eq_some {c : Code} (h : evaln σ k c n = some d) :
+    stageUse σ k c n = d.use := by
+  simp [stageUse, h]
+
+/-- The stage use of a failed run is `0`. -/
+theorem stageUse_eq_zero_of_evaln_eq_none {c : Code} (h : evaln σ k c n = none) :
+    stageUse σ k c n = 0 := by
+  simp [stageUse, h]
+
+/-- The stage use at fuel `k` is at most `k`. -/
+theorem stageUse_le {c : Code} : stageUse σ k c n ≤ k := by
+  cases h : evaln σ k c n with
+  | none => simp [stageUse_eq_zero_of_evaln_eq_none h]
+  | some d => exact (stageUse_eq_of_evaln_eq_some h).trans_le (evaln_use_le h)
 
 /-- **The use principle.** A successful run against the answers `σ` succeeds with the same output
 and use against any answers `τ` agreeing with `σ` below its use. -/
