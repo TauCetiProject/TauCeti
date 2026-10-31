@@ -11,11 +11,9 @@ public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Data.ENat.Lattice
 public import TauCeti.Geometry.Manifold.Instances.Cylinder
-public import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
 public import TauCeti.KnotTheory.SmoothCircle
 
-import Mathlib.Topology.LocalAtTarget
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.Torus.Exterior
 import TauCeti.Topology.Homotopy.HomotopyEquiv

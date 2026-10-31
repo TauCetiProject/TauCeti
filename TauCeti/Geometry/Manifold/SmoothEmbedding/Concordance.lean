@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+public import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Basic
 public import TauCeti.Topology.Homotopy.CollaredTrack
@@ -121,33 +122,14 @@ theorem concordant_iff_nonempty {f g : SmoothEmbedding I J n M N} :
 
 section AffineTime
 
-/-- The affine diffeomorphism `t ↦ a * t + b` of the real line. -/
-private def affineTime (n : ℕ∞ω) (a b : ℝ) (ha : a ≠ 0) : ℝ ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ)⟯ ℝ where
-  toFun t := a * t + b
-  invFun s := a⁻¹ * (s - b)
-  left_inv t := by field_simp; ring
-  right_inv s := by field_simp; ring
-  contMDiff_toFun := ((contDiff_const.mul contDiff_id).add contDiff_const).contMDiff
-  contMDiff_invFun := (contDiff_const.mul (contDiff_id.sub contDiff_const)).contMDiff
-
-@[simp]
-private theorem affineTime_apply (n : ℕ∞ω) (a b : ℝ) (ha : a ≠ 0) (t : ℝ) :
-    affineTime n a b ha t = a * t + b :=
-  (rfl)
-
-@[simp]
-private theorem affineTime_symm_apply (n : ℕ∞ω) (a b : ℝ) (ha : a ≠ 0) (s : ℝ) :
-    (affineTime n a b ha).symm s = a⁻¹ * (s - b) :=
-  (rfl)
-
 variable [IsManifold I n M] [IsManifold J n N]
 
 /-- The conjugate `TauCeti.conjTime T a b` of a smooth embedding `T` of `M × ℝ` into `N × ℝ` by the
 affine change of time `t ↦ a * t + b`, `a ≠ 0`, as a smooth embedding. -/
 def conjTime (T : SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ))
     (a b : ℝ) (ha : a ≠ 0) : SmoothEmbedding (I.prod 𝓘(ℝ)) (J.prod 𝓘(ℝ)) n (M × ℝ) (N × ℝ) :=
-  (T.compDiffeomorph ((Diffeomorph.refl I M n).prodCongr (affineTime n a b ha))).transDiffeomorph
-    ((Diffeomorph.refl J N n).prodCongr (affineTime n a b ha).symm)
+  (T.compDiffeomorph ((Diffeomorph.refl I M n).prodCongr (.smulAdd n a b ha))).transDiffeomorph
+    ((Diffeomorph.refl J N n).prodCongr (Diffeomorph.smulAdd n a b ha).symm)
 
 /-- The underlying map of the conjugate smooth embedding is the conjugate map. -/
 @[simp]
