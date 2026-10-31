@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 
 /-!
@@ -23,9 +24,10 @@ of the thrice-punctured sphere `S = ℂ ∖ {0, 1}`, for a symplectic vector spa
 In the coordinates `(s, t)` of the end `q` the perturbation is `β(±s) H_q(t) dt` with the cutoff
 `β(±s) = smoothTransition (±s - 1)`
 (`TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift_of_pos`), so its curvature there is the
-continuation curvature `±β'(±s - 1) H_q(t)` (`SymplecticForm.hamiltonianCurvature_continuation`),
-and the perturbation vanishes off the parts `±s > 1` of the ends. Since the curvature is a
-two-form (`SymplecticForm.hamiltonianCurvature_perturbationPullback`), its absolute integral over
+continuation curvature `±β'(±s - 1) H_q(t)`
+(`SymplecticForm.hamiltonianCurvature_pairOfPantsEndComponent`), and the perturbation vanishes
+off the parts `±s > 1` of the ends. Since the curvature is a two-form
+(`SymplecticForm.hamiltonianCurvature_perturbationPullback`), its absolute integral over
 `S` is the sum over the three ends of the integrals of `β'(±s - 1) |H_q(t)|` over half-cylinders,
 and the cutoff has total increase `∫ β' = 1`. Hence, if `|H_q| ≤ B_q`, then
 
@@ -139,16 +141,13 @@ private theorem contDiff_endChart (q : Puncture) : ContDiff ℝ 2 (endChart q) :
       Complex.equivRealProdCLM.symm.contDiff)
 
 omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
-/-- On the end `q`, where `±s > 0`, the pullback of the perturbation along the end chart is
-`β(±s) H_q(t) dt`. -/
-private theorem perturbationPullback_endChart (hH : ∀ q, Periodic (H q) 1) {q : Puncture}
-    {z : ℝ × ℝ} (hz : 0 < q.endSign * z.1) (v : ℝ × ℝ) (x : V) :
+/-- The pullback of the perturbation along the end chart of `q`, evaluated on a tangent vector
+`v`, is its component `TauCeti.Floer.pairOfPantsEndComponent` along `v` in the end coordinates. -/
+private theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
     perturbationPullback (endChart q)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        v z x =
-      v.2 * (smoothTransition (q.endSign * z.1 - 1) * H q z.2 x) := by
-  have hz' : 0 < q.endSign * (Complex.equivRealProdCLM.symm z).re := by simpa using hz
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
+      pairOfPantsEndComponent H q (Complex.equivRealProdCLM.symm v) := by
   -- A real-linear functional `L` on `ℂ` satisfies `L w = Re w · L 1 + Im w · L i`.
   have hL (L : ℂ →L[ℝ] ℝ) (w : ℂ) :
       (Complex.equivRealProdCLM w).1 * L 1 + (Complex.equivRealProdCLM w).2 * L Complex.I =
@@ -157,10 +156,10 @@ private theorem perturbationPullback_endChart (hH : ∀ q, Periodic (H q) 1) {q 
     conv_rhs => rw [hw]
     rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
     simp
+  funext z x
   rw [perturbationPullback_apply, fderiv_endChart_apply, endChart,
-    ContinuousLinearEquiv.symm_apply_apply, hL,
-    pairOfPantsPerturbation_cylindricalEndLift_of_pos (hH q) hz']
-  simp
+    ContinuousLinearEquiv.symm_apply_apply, hL, pairOfPantsEndComponent_def]
+  rfl
 
 variable [FiniteDimensional ℝ V]
 
@@ -178,22 +177,17 @@ private theorem hamiltonianCurvature_perturbationPullback_endChart (ω : Symplec
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           stdComplexLineImag) z x =
-      deriv smoothTransition (q.endSign * z.1 - 1) * q.endSign * H q z.2 x := by
-  have hc : Continuous fun z' : ℝ × ℝ => q.endSign * z'.1 := by fun_prop
-  have hU : ∀ᶠ z' in 𝓝 z, 0 < q.endSign * z'.1 := hc.continuousAt.eventually (lt_mem_nhds hz)
-  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (Ks' := fun _ _ ↦ 0)
-    (Kt' := fun w y ↦ smoothTransition (q.endSign * w.1 - 1) * H q w.2 y)
-    (hU.mono fun z' hz' ↦ funext fun x ↦ by simp [perturbationPullback_endChart hH hz'])
-    (hU.mono fun z' hz' ↦ funext fun x ↦ by simp [perturbationPullback_endChart hH hz'])]
-  have hβ : HasDerivAt (fun s ↦ smoothTransition (q.endSign * s - 1))
-      (deriv smoothTransition (q.endSign * z.1 - 1) * q.endSign) z.1 := by
-    simpa using ((hasDerivAt_id z.1).const_mul q.endSign |>.sub_const 1).smoothTransition
+      q.endSign * deriv smoothTransition (q.endSign * z.1 - 1) * H q z.2 x := by
   have hHt : DifferentiableAt ℝ (fun t ↦ H q t x) z.2 :=
     DifferentiableAt.comp (g := uncurry (H q)) (f := fun t : ℝ ↦ (t, x)) z.2
       ((hHs q).differentiable one_ne_zero (z.2, x))
       (differentiableAt_id.prodMk (differentiableAt_const x))
-  rw [ω.hamiltonianCurvature_continuation (β := fun s ↦ smoothTransition (q.endSign * s - 1))
-    hβ.differentiableAt hHt, hβ.deriv]
+  have h₁ : Complex.equivRealProdCLM.symm stdComplexLineReal = 1 := by
+    apply Complex.ext <;> simp [stdComplexLineReal_eq]
+  have hI : Complex.equivRealProdCLM.symm stdComplexLineImag = Complex.I := by
+    apply Complex.ext <;> simp [stdComplexLineImag_eq]
+  rw [perturbationPullback_endChart, perturbationPullback_endChart, h₁, hI,
+    ω.hamiltonianCurvature_pairOfPantsEndComponent (hH q) hz hHt]
 
 /-- **The curvature is supported on the ends.** At a point of `S` where the signed longitudinal
 coordinate of every end is less than `1`, the perturbation vanishes nearby, and so does its
@@ -296,7 +290,7 @@ private theorem setLIntegral_image_endChart_le (ω : SymplecticForm V)
           (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ Complex.I)
         rw [hamiltonianCurvature_perturbationPullback_endChart ω hH hHs hz'] at key
         rw [← Real.enorm_eq_ofReal_abs, ← enorm_mul, ← key, Real.enorm_eq_ofReal_abs, abs_mul,
-          abs_mul, abs_endSign, abs_of_nonneg (hψ _), mul_one, ← ENNReal.ofReal_mul (hψ _)]
+          abs_mul, abs_endSign, abs_of_nonneg (hψ _), one_mul, ← ENNReal.ofReal_mul (hψ _)]
         exact ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left (hB q _ _) (hψ _))
     _ = ∫⁻ s in {s | 1 / 2 < q.endSign * s},
         ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) * ENNReal.ofReal (B q) := by
