@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Amenable.Basic
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
+public import TauCeti.MeasureTheory.Function.Lp.Restriction
 public import TauCeti.RepresentationTheory.Compact.Haar
 
 /-!
@@ -103,17 +104,15 @@ a left-invariant mean on its `L∞`, and restricts to a left-invariant mean on `
 instance (priority := 100) Amenable.of_compactSpace : Amenable G := by
   borelize G
   -- Integration against normalized Haar measure, as a positive functional on `L∞`.
-  let M : Lp ℝ ∞ (haarProb G) →ₚ[ℝ] ℝ := PositiveLinearMap.mk₀
-    { toFun φ := ∫ x, φ x ∂haarProb G
-      map_add' φ ψ := by
-        rw [integral_congr_ae (Lp.coeFn_add φ ψ)]
-        exact integral_add ((Lp.memLp φ).integrable le_top) ((Lp.memLp ψ).integrable le_top)
-      map_smul' c φ := by
-        rw [integral_congr_ae (Lp.coeFn_smul c φ)]
-        exact integral_smul c _ }
-    fun φ hφ => integral_nonneg_of_ae ((Lp.coeFn_nonneg φ).2 hφ)
-  -- `M φ` is by definition the integral of `φ`; `PositiveLinearMap.mk₀` has no evaluation lemma.
-  have hM : M linftyOne = 1 := (integral_congr_ae coeFn_linftyOne).trans (by simp)
-  exact Amenable.of_lpTop M hM fun g φ => Lp.integral_leftTranslation g φ
+  let I := Set.setIntegralLp (𝕜 := ℝ) (F := ℝ) (p := ∞) (μ := haarProb G) Set.univ
+    (measure_lt_top _ _)
+  have hI (φ : Lp ℝ ∞ (haarProb G)) : I φ = ∫ x, φ x ∂haarProb G := by
+    rw [Set.setIntegralLp_apply, setIntegral_univ]
+  let M : Lp ℝ ∞ (haarProb G) →ₚ[ℝ] ℝ := PositiveLinearMap.mk₀ I.toLinearMap
+    fun φ hφ => (hI φ).trans_ge (integral_nonneg_of_ae ((Lp.coeFn_nonneg φ).2 hφ))
+  have hM : M linftyOne = 1 := (hI _).trans ((integral_congr_ae coeFn_linftyOne).trans (by simp))
+  refine Amenable.of_lpTop M hM fun g φ => ?_
+  -- `M φ` is by definition `I φ`; `PositiveLinearMap.mk₀` has no evaluation lemma.
+  exact (hI _).trans ((Lp.integral_leftTranslation g φ).trans (hI φ).symm)
 
 end TauCeti

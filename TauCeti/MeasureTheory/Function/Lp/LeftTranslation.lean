@@ -69,14 +69,8 @@ def leftTranslation : G →* (Lp E p μ ≃ₗᵢ[𝕜] Lp E p μ) where
     simp [DomMulAct.mk_one]
   map_mul' g h := by
     ext f : 1
-    rw [LinearIsometryEquiv.coe_mul, Function.comp_apply]
-    -- Compare representatives: Mathlib's `DomMulAct` action on `Lp` is pointwise precomposition.
-    refine Lp.ext ?_
-    filter_upwards [DomMulAct.smul_Lp_ae_eq (DomMulAct.mk (g * h)⁻¹) f,
-      DomMulAct.smul_Lp_ae_eq (DomMulAct.mk g⁻¹) (DomMulAct.mk h⁻¹ • f),
-      (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae
-        (DomMulAct.smul_Lp_ae_eq (DomMulAct.mk h⁻¹) f)] with x h₁ h₂ h₃
-    simp_all [mul_assoc]
+    change DomMulAct.mk (g * h)⁻¹ • f = DomMulAct.mk g⁻¹ • DomMulAct.mk h⁻¹ • f
+    rw [mul_inv_rev, DomMulAct.mk_mul, smul_smul]
 
 variable {μ p 𝕜}
 
