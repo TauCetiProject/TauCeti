@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.Tower.Quotient
+public import TauCeti.Algebra.Category.ModuleCat.Tower.LeftIdealCompletion
 public import TauCeti.Algebra.Lie.Current.LeftIdeal
 
 /-!
@@ -22,13 +22,19 @@ completed enveloping algebra is the inverse limit
 of the discrete left `U`-modules `Q_N = U / I_N`, that is the module of compatible families of
 classes. This file defines it as the limit of the tower of quotients `Q_0 ← Q_1 ← Q_2 ← ⋯`
 (`TauCeti.CurrentAlgebra.orderQuotientTower`), indexed by the natural numbers, which are cofinal
-among the orders. It is a left `U`-module. Its ring structure, in which `(xy)_N = x · y_N`, comes
-from extending the action of `U` on the smooth modules `Q_N` to `Û`, and is not constructed here.
-At `a = 1` and `Φ = -κ` it is the completion `Û_κ` of the level enveloping algebra.
+among the orders. It is a left `U`-module and a ring, in which `(xy)_N = x · y_N`: by the
+right-shift estimate `I_M b ⊆ I_N` each `Q_N` is smooth, so the action of `U` on `Q_N` extends to
+`Û`, and the general construction `TauCeti.ModuleTower.instRingLimQuotients` applies
+(`TauCeti.CurrentAlgebra.fact_exists_forall_mul_mem_orderLeftIdeal`). With this product the
+canonical map `U → Û` is a ring homomorphism (`TauCeti.ModuleTower.toLimQuotientsRingHom`), the
+kernels of the projections `Û → Q_N` are left ideals, and every smooth `U`-module is a module over
+`Û` (`TauCeti.ModuleTower.limModuleOfSmooth`). At `a = 1` and `Φ = -κ` it is the completion `Û_κ`
+of the level enveloping algebra.
 
 The completion carries the inverse limit topology of
 `TauCeti.Algebra.Category.ModuleCat.Tower.Topology`: the kernels of the projections `Û → Q_N`
-form a basis of neighbourhoods of zero, and it is Hausdorff and complete. The canonical map
+form a basis of neighbourhoods of zero, it is Hausdorff and complete, and it is a topological ring
+(`TauCeti.ModuleTower.instIsTopologicalRingLimQuotients`). The canonical map
 `U → Û` (`TauCeti.ModuleTower.toLimQuotients`) has dense range, induces on `U` the linear topology
 defined by the `I_N`, and has kernel the intersection of all `I_N`
 (`TauCeti.CurrentAlgebra.ker_toLimQuotients_orderLeftIdeal`).
@@ -45,6 +51,8 @@ and every `N` there is `M` such that `I_M x` lies in the kernel of the projectio
 
 ## Main results
 
+* `TauCeti.CurrentAlgebra.fact_exists_forall_mul_mem_orderLeftIdeal`: the left ideals `I_n` of
+  natural orders have right shifts, which makes `Û` a topological ring.
 * `TauCeti.CurrentAlgebra.ker_toLimQuotients_orderLeftIdeal`: the kernel of `U → Û` is the
   intersection of the `I_N`.
 * `TauCeti.CurrentAlgebra.exists_forall_limπ_smul_eq_zero`: the orbit maps of the action of `U` on
@@ -76,9 +84,21 @@ abbrev orderQuotientTower : ModuleTower UK :=
 
 /-- **The completed enveloping algebra** `Û = lim_n U / I_n` of the residue central extension of
 `Φ` at the central value `a`: the left `U`-module of compatible families of classes modulo the left
-ideals of high-order currents, with the inverse limit topology. -/
+ideals of high-order currents, with the inverse limit topology. It is a topological ring through
+`TauCeti.ModuleTower.instRingLimQuotients`, with `(xy)_n = x · y_n`. -/
 abbrev CompletedEnveloping : Type _ :=
   (orderQuotientTower Φ hΦ hΦs a).lim
+
+/-- **The right-shift estimate for natural orders**: for every `b ∈ U` and every natural `n` there
+is a natural `m` with `I_m b ⊆ I_n`. This is the input making the completed enveloping algebra a
+ring (`TauCeti.ModuleTower.instRingLimQuotients`) and a topological ring. -/
+instance fact_exists_forall_mul_mem_orderLeftIdeal :
+    Fact (∀ (b : UK) (n : ℕ), ∃ m : ℕ, ∀ x ∈ orderLeftIdeal Φ hΦ hΦs a m,
+      x * b ∈ orderLeftIdeal Φ hΦ hΦs a n) :=
+  ⟨fun b n ↦ by
+    obtain ⟨M, hM⟩ := exists_forall_mul_mem_orderLeftIdeal Φ hΦ hΦs a b n
+    exact ⟨M.toNat, fun x hx ↦
+      hM x (orderLeftIdeal_antitone Φ hΦ hΦs a (Int.self_le_toNat M) hx)⟩⟩
 
 /-- **The kernel of the canonical map** `U → Û` is the intersection of all the left ideals `I_N`.
 In particular `U` embeds in its completion exactly when the `I_N` intersect to zero. -/
