@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.HeckeRing.GLn.LeadingCoefficient
 public import TauCeti.NumberTheory.HeckeRing.GLn.PolynomialRing.LeadingExponent
 public import TauCeti.NumberTheory.HeckeRing.GLn.ProductSupport
-import TauCeti.Algebra.BigOperators.Fin
+import TauCeti.Algebra.Order.BigOperators.Dominance
 
 /-!
 # The `p`-local Hecke ring of `GL_n` is a polynomial ring
@@ -21,9 +21,9 @@ spherical Hecke algebra of `GL_n(ℚ_p)`, which is obtained from it by inverting
 `T(p, …, p)`.
 
 The proof is a leading-term argument. The monomial `∏ k, heckeGen k ^ e k` is a sum of diagonal
-double cosets `T(p ^ g)` that is triangular for the dominance order of exponent vectors, `a`
-dominating `g` when the two have the same total and every leading partial sum `∑_{j < k} a j` is
-at most that of `g`:
+double cosets `T(p ^ g)` that is triangular for the dominance order of exponent vectors
+(`TauCeti.Dominates`), `a` dominating `g` when the two have the same total and every leading
+partial sum `∑_{j < k} a j` is at most that of `g`:
 
 * the leading coset `T(p ^ leadingExponent e)` occurs with coefficient `1`;
 * every coset that occurs is `T(p ^ g)` for a monotone `g` dominated by `leadingExponent e`.
@@ -55,64 +55,11 @@ surjectivity by induction along the dominance order.
 
 public section
 
-open Finset
+open Finset TauCeti
 
 namespace HeckeRing.GLn
 
 variable {n : ℕ}
-
-/-- `a` dominates `g`: the two exponent vectors have the same total and every leading partial sum
-of `a` is at most that of `g`. For monotone vectors, `a` is the more spread out of the two. -/
-private def Dominates (a g : Fin n → ℕ) : Prop :=
-  ∑ i, g i = ∑ i, a i ∧ ∀ (k : ℕ) (hk : k ≤ n),
-    ∑ j : Fin k, a (Fin.castLE hk j) ≤ ∑ j : Fin k, g (Fin.castLE hk j)
-
-private lemma Dominates.refl (a : Fin n → ℕ) : Dominates a a :=
-  ⟨rfl, fun _ _ ↦ le_rfl⟩
-
-private lemma Dominates.trans {a g h : Fin n → ℕ} (hag : Dominates a g) (hgh : Dominates g h) :
-    Dominates a h :=
-  ⟨hgh.1.trans hag.1, fun k hk ↦ (hag.2 k hk).trans (hgh.2 k hk)⟩
-
-private lemma Dominates.add_right {a g : Fin n → ℕ} (h : Dominates a g) (f : Fin n → ℕ) :
-    Dominates (a + f) (g + f) := by
-  refine ⟨?_, fun k hk ↦ ?_⟩
-  · simp only [Pi.add_apply, sum_add_distrib, h.1]
-  · simpa only [Pi.add_apply, sum_add_distrib] using Nat.add_le_add_right (h.2 k hk) _
-
-private lemma Dominates.antisymm {a g : Fin n → ℕ} (hag : Dominates a g) (hga : Dominates g a) :
-    a = g :=
-  Fin.eq_of_forall_sum_castLE_eq fun k hk ↦ (hag.2 k hk).antisymm (hga.2 k hk)
-
-private lemma Dominates.of_add_right {a g f : Fin n → ℕ} (h : Dominates (g + f) (a + f)) :
-    Dominates g a := by
-  refine ⟨?_, fun k hk ↦ ?_⟩
-  · simpa only [Pi.add_apply, sum_add_distrib, Nat.add_right_cancel_iff] using h.1
-  · simpa only [Pi.add_apply, sum_add_distrib, Nat.add_le_add_iff_right] using h.2 k hk
-
-/-- The defects of the leading partial sums of `g` from its total, summed. It strictly decreases
-down the dominance order (`Dominates.defect_lt`), so induction on it is induction along that
-order. -/
-private def defect (g : Fin n → ℕ) : ℕ :=
-  ∑ k : Fin (n + 1), (∑ i, g i - ∑ j : Fin k, g (Fin.castLE (Nat.lt_succ_iff.1 k.isLt) j))
-
-private lemma Dominates.defect_lt {a g : Fin n → ℕ} (h : Dominates a g) (hne : a ≠ g) :
-    defect g < defect a := by
-  -- termwise, `∑ a - (partial sum of g) ≤ ∑ a - (partial sum of a)`, as `∑ g = ∑ a`
-  have key (k : ℕ) (hk : k ≤ n) :
-      ∑ j : Fin k, a (Fin.castLE hk j) ≤ ∑ j : Fin k, g (Fin.castLE hk j) ∧
-        ∑ j : Fin k, g (Fin.castLE hk j) ≤ ∑ i, a i :=
-    ⟨h.2 k hk, h.1 ▸ Fin.sum_castLE_le_sum hk g⟩
-  rw [defect, defect, h.1]
-  refine sum_lt_sum (fun k _ ↦ Nat.sub_le_sub_left (key k _).1 _) ?_
-  -- some partial sum is strict, since the partial sums determine the vector
-  by_contra! hle
-  refine hne (Fin.eq_of_forall_sum_castLE_eq fun k hk ↦ ?_)
-  have h₁ : ∑ i, a i - ∑ j : Fin k, a (Fin.castLE hk j) ≤
-      ∑ i, a i - ∑ j : Fin k, g (Fin.castLE hk j) :=
-    hle ⟨k, Nat.lt_succ_of_le hk⟩ (mem_univ _)
-  have := key k hk
-  omega
 
 variable [NeZero n]
 
@@ -166,11 +113,7 @@ private lemma IsTriangular.mul_diagElem {p : ℕ} (hp : p.Prime) {a f : Fin n �
       key (HeckeCosetModule.mem_support_iff.1 hD) (right_ne_zero_of_mul hDE)
     -- the occurring coset is the leading one, so `g + f` dominates `a + f`; as `a` dominates
     -- `g`, this forces `g = a`
-    have hEq := eq_of_diagCoset_eq (primePowDiag_pos n p hp.pos _)
-      (primePowDiag_pos n p hp.pos _) (isDvdChain_primePowDiag n p _ (ha.add hf))
-      (isDvdChain_primePowDiag n p _ hh) hE
-    obtain rfl : a + f = h :=
-      funext fun i ↦ Nat.pow_right_injective hp.two_le (by simpa using congrFun hEq i)
+    obtain rfl := eq_of_diagCoset_primePowDiag_eq hp.one_lt (ha.add hf) hh hE
     exact hne (by rw [hag.antisymm hgh.of_add_right])
   · rw [HeckeCosetModule.mul_def, HeckeCosetModule.mul_apply_eq_sum] at hE
     obtain ⟨D, hD, hDE⟩ := exists_ne_zero_of_sum_ne_zero hE
@@ -231,16 +174,6 @@ theorem exists_primePowDiag_of_prod_heckeGen_pow_apply_ne_zero {p : ℕ} (hp : p
         ∑ j : Fin k, g (Fin.castLE hk j) :=
   (isTriangular_prod_heckeGen_pow_univ hp e).2 D h
 
-omit [NeZero n] in
-/-- Distinct `p`-power diagonal cosets have distinct monotone exponent vectors. -/
-private lemma eq_of_diagCoset_primePowDiag_eq {p : ℕ} (hp : 1 < p) {g h : Fin n → ℕ}
-    (hg : Monotone g) (hh : Monotone h)
-    (heq : diagCoset (primePowDiag n p g) = diagCoset (primePowDiag n p h)) : g = h := by
-  have := eq_of_diagCoset_eq (primePowDiag_pos n p (by omega) g)
-    (primePowDiag_pos n p (by omega) h) (isDvdChain_primePowDiag n p g hg)
-    (isDvdChain_primePowDiag n p h hh) heq
-  exact funext fun i ↦ Nat.pow_right_injective hp (by simpa using congrFun this i)
-
 variable (n) in
 /-- **The generators are algebraically independent** (Shimura, Theorem 3.20): for `p` prime,
 evaluation of `ℤ[X₁, …, Xₙ]` at the generators `heckeGen k = T(1, …, 1, p, …, p)` is injective.
@@ -252,7 +185,7 @@ theorem evalHom_injective {p : ℕ} (hp : p.Prime) : Function.Injective (evalHom
   classical
   refine (injective_iff_map_eq_zero _).2 fun P hP ↦ ?_
   by_contra hP0
-  obtain ⟨d, hd, hmax⟩ := P.support.exists_max_image (fun d ↦ defect (leadingExponent ⇑d))
+  obtain ⟨d, hd, hmax⟩ := P.support.exists_max_image (fun d ↦ dominanceDefect (leadingExponent ⇑d))
     (MvPolynomial.support_nonempty.2 hP0)
   have h := congrArg (· (diagCoset (primePowDiag n p (leadingExponent ⇑d)))) hP
   rw [evalHom_apply, sum_eq_single_of_mem d hd, HeckeCosetModule.zero_apply,
@@ -266,7 +199,7 @@ theorem evalHom_injective {p : ℕ} (hp : p.Prime) : Function.Injective (evalHom
   obtain rfl := eq_of_diagCoset_primePowDiag_eq hp.one_lt (leadingExponent_monotone _) hg hgd
   rcases eq_or_ne (leadingExponent ⇑d') (leadingExponent ⇑d) with heq | heq
   · exact hne (DFunLike.coe_injective (leadingExponent_injective heq))
-  · exact (hmax d' hd').not_gt (hdom.defect_lt heq)
+  · exact (hmax d' hd').not_gt (hdom.dominanceDefect_lt heq)
 
 /-- Every generator `T(p ^ g)` of `R_p` is a polynomial in the `heckeGen k`. A coset `T(p ^ g)`
 with `g` monotone is the leading coset of a monomial, whose remaining cosets lie strictly below
@@ -275,7 +208,7 @@ private lemma pLocalSubring_le_evalHom_range {p : ℕ} (hp : p.Prime) :
     pLocalSubring n p ≤ (evalHom n p).range := by
   classical
   refine (pLocalSubring_le_iff n p _).2 fun g hg ↦ ?_
-  induction hm : defect g using Nat.strong_induction_on generalizing g with
+  induction hm : dominanceDefect g using Nat.strong_induction_on generalizing g with
   | _ m ih =>
   obtain ⟨e, rfl⟩ := exists_leadingExponent_eq_iff.2 hg
   set M : IntegralHeckeRing n := ∏ k, heckeGen n p k ^ e k
@@ -300,7 +233,7 @@ private lemma pLocalSubring_le_evalHom_range {p : ℕ} (hp : p.Prime) :
     (HeckeCosetModule.mem_support_iff.1 hD)
   have hne' : leadingExponent e ≠ h := by rintro rfl; exact hne rfl
   rw [← diagElem_def]
-  exact ih _ (hm ▸ hdom.defect_lt hne') h hh rfl
+  exact ih _ (hm ▸ hdom.dominanceDefect_lt hne') h hh rfl
 
 variable (n) in
 /-- **The generators generate `R_p`** (Shimura, Theorem 3.20): for `p` prime, the polynomials in
