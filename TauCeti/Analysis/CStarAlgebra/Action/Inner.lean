@@ -23,6 +23,9 @@ complex-time extension `τ_z a = exp (izh) a exp (-izh)`,
 `selfAdjoint.entireExtension_cstarAction`. At imaginary time `t * I` the dynamics is
 `a ↦ exp (-t h) a exp (t h)`, `selfAdjoint.entireExtension_cstarAction_mul_I`, the evolution that
 appears in the KMS condition at inverse temperature `t`.
+
+The generator of the inner dynamics is everywhere defined and is the inner derivation
+`a ↦ i [h, a]`, `selfAdjoint.generator_cstarAction`.
 -/
 
 public section
@@ -83,5 +86,34 @@ theorem isEntireAnalytic_cstarAction (h : selfAdjoint A) (a : A) :
     (cstarAction h).IsEntireAnalytic a := by
   rw [isEntireAnalytic_iff, entireExtension_cstarAction]
   exact ⟨differentiable_exp_smul_mul_mul_exp_neg_smul _ a, fun t => by simp⟩
+
+/-- The orbit `t ↦ exp (ith) a exp (-ith)` of the inner dynamics has derivative `i [h, a]` at
+time `0`. -/
+private theorem hasDerivAt_cstarAction_zero (h : selfAdjoint A) (a : A) :
+    HasDerivAt (fun t : ℝ => cstarAction h (Multiplicative.ofAdd t) a)
+      (I • ((h : A) * a - a * h)) 0 := by
+  have hexp (x : A) : HasDerivAt (fun t : ℝ => exp (t • x)) x 0 := by
+    simpa using hasDerivAt_exp_smul_const' (𝕂 := ℝ) x 0
+  -- in real time the orbit is `exp (t (i h)) a exp (t (-i h))`
+  have horbit : (fun t : ℝ => cstarAction h (Multiplicative.ofAdd t) a) =
+      fun t : ℝ => exp (t • (I • (h : A))) * a * exp (t • -(I • (h : A))) := by
+    ext t
+    simp only [cstarAction_apply, toAdd_ofAdd, neg_smul, smul_neg, ← Complex.coe_smul, smul_smul,
+      mul_comm I]
+  rw [horbit]
+  convert ((hexp _).fun_mul (hasDerivAt_const (0 : ℝ) a)).fun_mul (hexp _) using 1
+  simp [sub_eq_add_neg]
+
+/-- Every element lies in the domain of the generator of the inner dynamics. -/
+@[simp]
+theorem generator_cstarAction_domain (h : selfAdjoint A) : (cstarAction h).generator.domain = ⊤ :=
+  eq_top_iff.2 fun a _ => ((cstarAction h).mem_generator_domain_iff_differentiableAt a).2
+    (hasDerivAt_cstarAction_zero h a).differentiableAt
+
+/-- The generator of the inner dynamics of a self-adjoint element `h` is the inner derivation
+`a ↦ i [h, a]`. -/
+theorem generator_cstarAction (h : selfAdjoint A) (a : (cstarAction h).generator.domain) :
+    (cstarAction h).generator a = I • ((h : A) * a - a * h) :=
+  (cstarAction h).generator_eq_of_hasDerivAt a.2 (hasDerivAt_cstarAction_zero h a)
 
 end selfAdjoint
