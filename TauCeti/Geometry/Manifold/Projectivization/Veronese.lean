@@ -99,8 +99,9 @@ theorem contMDiff_map_comp_veronese
 theorem contMDiffOn_veroneseLocalLeftInverse (e : ℕ) (i : Fin (m + 1))
     (g : (Fin (n + 1) → 𝕜) →ₗ[𝕜] Fin (veroneseDim (m + 1) (e + 1)) → 𝕜) (r : ℕ∞ω) :
     ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin m → 𝕜) r (veroneseLocalLeftInverse e i g)
-      (linearProjectionDomain (veroneseLocalInverse 𝕜 e i ∘ₗ g)) :=
-  contMDiffOn_linearProjection _ r
+      (linearProjectionDomain (veroneseLocalInverse 𝕜 e i ∘ₗ g)) := by
+  rw [veroneseLocalLeftInverse_eq]
+  exact contMDiffOn_linearProjection _ r
 
 end NontriviallyNormedField
 

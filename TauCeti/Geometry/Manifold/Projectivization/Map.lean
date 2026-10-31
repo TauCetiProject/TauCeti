@@ -96,21 +96,22 @@ theorem contMDiffOn_of_contDiffOn {f : ℙ 𝕜 (Fin (m + 1) → 𝕜) → ℙ �
   -- Every point `y` of the affine open at `i` is `[Fin.insertNth i 1 z]` for its chart value `z`.
   have hchart {y} (hy : y ∈ affineOpen i) : (affineChart (K := 𝕜) i).symm (affineChart i y) = y :=
     (affineChart i).left_inv (by simpa using hy)
+  have hxs : (affineChart i).symm (affineChart i x) ∈ s := by rwa [hchart hi]
   have hxu : x ∈ affineOpen i ∩ affineChart i ⁻¹' t := by
-    refine ⟨hi, by rwa [mem_preimage, hchart hi], ?_⟩
-    rw [← hchart hi, affineChart_symm_apply, hf _ _ (by rwa [← affineChart_symm_apply, hchart hi]),
-      mk_mem_affineOpen_iff] at hj
-    exact hj
+    refine ⟨hi, hxs, (apply_affineChart_symm_mem_affineOpen_iff i j _ _
+      (hf _ _ (by rwa [affineChart_symm_apply] at hxs))).1 ?_⟩
+    rwa [hchart hi]
   refine (ContMDiffOn.contMDiffAt ?_ (hu.mem_nhds hxu)).contMDiffWithinAt
   refine ((contMDiff_affineChart_symm j r).comp_contMDiffOn (hratio.contMDiffOn.comp
     ((contMDiffOn_affineChart i r).mono inter_subset_left) fun _ hy ↦ hy.2)).congr ?_
   rintro y ⟨hyi, hys, hyj⟩
   obtain ⟨z, rfl⟩ : ∃ z, (affineChart i).symm z = y := ⟨_, hchart hyi⟩
-  rw [mem_preimage, (affineChart i).right_inv (by simp)] at hys hyj
-  rw [affineChart_symm_apply] at hys
-  have hzj : mk 𝕜 (w z) (hF₀ _ _ hys) ∈ (affineChart j).source := by simpa using hyj
+  rw [mem_preimage, (affineChart i).right_inv (by simp), affineChart_symm_apply] at hys
+  rw [mem_preimage, (affineChart i).right_inv (by simp)] at hyj
+  have hzj := (apply_affineChart_symm_mem_affineOpen_iff i j _ _ (hf _ _ hys)).2 hyj
   rw [Function.comp_apply, Function.comp_apply, (affineChart i).right_inv (by simp),
-    affineChart_symm_apply, hf _ _ hys, ← (affineChart j).left_inv hzj, affineChart_mk]
+    ← affineChart_apply_affineChart_symm i j _ _ (hf _ _ hys),
+    (affineChart j).left_inv (by rwa [affineChart_source])]
 
 /-- A map of projective spaces sending `[v]` to `[F v]`, for a map `F` of homogeneous coordinates
 which is `C^r` on the nonzero vectors and does not vanish there, is `C^r`; for `r = ω` it is

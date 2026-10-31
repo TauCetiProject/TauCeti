@@ -427,9 +427,25 @@ degree `e + 1` read through an injective linear map `f`, for a linear left inver
 is defined on `linearProjectionDomain (veroneseLocalInverse K e i ∘ₗ g)`, which contains the image
 of the affine open at `i` (`Projectivization.mapsTo_map_comp_veronese_linearProjectionDomain`),
 and inverts the Veronese map there (`Projectivization.leftInvOn_veroneseLocalLeftInverse`). -/
-@[expose] noncomputable def veroneseLocalLeftInverse (e : ℕ) (i : Fin (m + 1))
+noncomputable def veroneseLocalLeftInverse (e : ℕ) (i : Fin (m + 1))
     (g : M →ₗ[K] Fin (veroneseDim (m + 1) (e + 1)) → K) : ℙ K M → ℙ K (Fin (m + 1) → K) :=
   linearProjection (veroneseLocalInverse K e i ∘ₗ g)
+
+/-- The local left inverse of the Veronese map is the map induced by the linear map
+`veroneseLocalInverse K e i ∘ₗ g`. -/
+theorem veroneseLocalLeftInverse_eq (e : ℕ) (i : Fin (m + 1))
+    (g : M →ₗ[K] Fin (veroneseDim (m + 1) (e + 1)) → K) :
+    veroneseLocalLeftInverse e i g = linearProjection (veroneseLocalInverse K e i ∘ₗ g) :=
+  (rfl)
+
+/-- The local left inverse of the Veronese map in homogeneous coordinates, where
+`veroneseLocalInverse K e i ∘ g` does not vanish. -/
+@[simp]
+theorem veroneseLocalLeftInverse_mk (e : ℕ) (i : Fin (m + 1))
+    (g : M →ₗ[K] Fin (veroneseDim (m + 1) (e + 1)) → K) {w : M} (hw : w ≠ 0)
+    (h : veroneseLocalInverse K e i (g w) ≠ 0) :
+    veroneseLocalLeftInverse e i g (mk K w hw) = mk K (veroneseLocalInverse K e i (g w)) h :=
+  linearProjection_mk _ hw h
 
 variable {f : (Fin (veroneseDim (m + 1) (e + 1)) → K) →ₗ[K] M}
   {g : M →ₗ[K] Fin (veroneseDim (m + 1) (e + 1)) → K}
@@ -464,8 +480,9 @@ theorem leftInvOn_veroneseLocalLeftInverse (hf : Function.Injective f)
   intro y hy
   have hmem := mapsTo_map_comp_veronese_linearProjectionDomain hf hg i hy
   induction y using ind with | h v hv => ?_
-  simp only [Function.comp_apply, veronese_mk, map_mk, mk_mem_linearProjectionDomain_iff] at hmem ⊢
-  rw [veroneseLocalLeftInverse, linearProjection_mk _ _ hmem]
+  simp only [Function.comp_apply, veronese_mk, map_mk, mk_mem_linearProjectionDomain_iff,
+    LinearMap.comp_apply] at hmem ⊢
+  rw [veroneseLocalLeftInverse_mk _ _ _ _ hmem]
   exact (mk_eq_mk_iff' K _ _ _ _).2
     ⟨v i ^ e, (veroneseLocalInverse_comp_apply_veroneseMonomials hg i v).symm⟩
 

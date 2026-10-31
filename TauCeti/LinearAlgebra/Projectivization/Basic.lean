@@ -78,8 +78,7 @@ def linearProjectionDomain (G : V →ₗ[K] W) : Set (Projectivization K V) :=
 theorem mk_mem_linearProjectionDomain_iff (G : V →ₗ[K] W) {v : V} (hv : v ≠ 0) :
     mk K v hv ∈ linearProjectionDomain G ↔ G v ≠ 0 := by
   obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep K v hv
-  rw [linearProjectionDomain, Set.mem_ofPred_eq, ← ha, Units.smul_def, map_smul, ← Units.smul_def,
-    smul_ne_zero_iff_ne]
+  simp [linearProjectionDomain, ← ha, Units.smul_def]
 
 /-- The map `[v] ↦ [G v]` of projective spaces induced by a linear map `G`, on the set
 `Projectivization.linearProjectionDomain G` of points where `G` does not vanish; it sends the
@@ -96,7 +95,7 @@ theorem linearProjection_mk [Nonempty (Projectivization K W)] (G : V →ₗ[K] W
   have h' : G (mk K v hv).rep ≠ 0 := (mk_mem_linearProjectionDomain_iff G hv).2 h
   obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep K v hv
   simp only [linearProjection, h', ↓reduceDIte]
-  exact (mk_eq_mk_iff K _ _ _ _).2 ⟨a, by rw [← ha, Units.smul_def, Units.smul_def, map_smul]⟩
+  exact (mk_eq_mk_iff K _ _ _ _).2 ⟨a, by simp [← ha, Units.smul_def]⟩
 
 end LinearProjection
 
