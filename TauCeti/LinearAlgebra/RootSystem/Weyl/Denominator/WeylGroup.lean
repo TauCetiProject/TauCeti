@@ -37,6 +37,7 @@ its normalized form `∑_{w ∈ W} sgn(w) e^{w(λ + ρ) - ρ} / ∏_{α > 0} (1 
 
 ## Main results
 
+* `TauCeti.mapDomain_smul_weylDenominator_eq_prod`: `w Δ = ∏_{α > 0} (1 - e^{-w α})`.
 * `TauCeti.mapDomain_smul_weylDenominator`: `w Δ = (-1)^{ℓ} e^{∑_{β > 0, w⁻¹ β < 0} β} Δ`.
 * `TauCeti.mapDomain_smul_weylDenominator_eq_zsmul`: `w Δ = sgn(w) e^{ρ - w ρ} Δ`.
 * `TauCeti.coeff_weylDenominator_dotAction`: the coefficient function of `Δ` transforms by the
@@ -61,6 +62,20 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   (P : RootPairing ι R M N) [Finite ι] [CharZero R] (b : P.Base) (w : P.weylGroup)
 
+/-- **A Weyl-group element moves the Weyl denominator factor by factor**:
+`w Δ = ∏_{α > 0} (1 - e^{-w α})`. -/
+theorem mapDomain_smul_weylDenominator_eq_prod :
+    AddMonoidAlgebra.mapDomain (w • ·) (weylDenominator P b) =
+      ∏ i ∈ posRootsFinset P b, (1 - AddMonoidAlgebra.single (-(w • P.root i)) 1) := by
+  -- `(w • ·)` is the underlying function of `DistribSMul.toAddMonoidHom M w`, along which
+  -- `mapDomain` is a ring homomorphism.
+  have hring : AddMonoidAlgebra.mapDomain (R := ℤ) (w • ·) (weylDenominator P b) =
+      AddMonoidAlgebra.mapDomainRingHom ℤ (DistribSMul.toAddMonoidHom M w)
+        (weylDenominator P b) := rfl
+  rw [hring, weylDenominator_def, map_prod]
+  simp only [map_sub, map_one, AddMonoidAlgebra.mapDomainRingHom_apply,
+    AddMonoidAlgebra.mapDomain_single, DistribSMul.toAddMonoidHom_apply, smul_neg]
+
 /-- **A Weyl-group element sends the Weyl denominator to a signed monomial multiple of itself**:
 `w Δ = (-1)^{ℓ} e^{∑_{β > 0, w⁻¹ β < 0} β} Δ`, where `ℓ` is the number of positive roots `β` with
 `w⁻¹ β < 0`. -/
@@ -82,16 +97,9 @@ theorem mapDomain_smul_weylDenominator :
       abel
     rw [Finset.prod_congr rfl fun i _ ↦ hfactor (P.root i), Finset.prod_mul_distrib]
     simp_rw [← AddMonoidAlgebra.single_neg, AddMonoidAlgebra.prod_single, Finset.prod_const, F]
-  -- `w` acts on `ℤ[M]` as a ring homomorphism, so it moves each factor of `Δ` separately. The
-  -- function `(w • ·)` is the underlying function of `DistribSMul.toAddMonoidHom M w`.
-  have hring : AddMonoidAlgebra.mapDomain (R := ℤ) (w • ·) (weylDenominator P b) =
-      AddMonoidAlgebra.mapDomainRingHom ℤ (DistribSMul.toAddMonoidHom M w)
-        (weylDenominator P b) := rfl
-  rw [hring, weylDenominator_def, map_prod,
+  rw [mapDomain_smul_weylDenominator_eq_prod, weylDenominator_def,
     ← Finset.prod_sdiff (inversionsFinset_subset_posRootsFinset P b w)]
-  simp only [map_sub, map_one, AddMonoidAlgebra.mapDomainRingHom_apply,
-    AddMonoidAlgebra.mapDomain_single, DistribSMul.toAddMonoidHom_apply, smul_neg,
-    weylGroup_apply_root]
+  simp only [weylGroup_apply_root]
   rw [prod_posRootsFinset_sdiff_inversionsFinset_comp_weylGroupToPerm P b w F]
   -- On an inversion `α` of `w`, the factor `1 - e^{-w α}` is `1 - e^{β}` for `β = -w α`.
   have hflip : ∏ i ∈ inversionsFinset P b w,
