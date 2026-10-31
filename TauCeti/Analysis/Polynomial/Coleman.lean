@@ -9,6 +9,8 @@ public import TauCeti.RingTheory.Polynomial.Resultant.Coleman
 public import TauCeti.RingTheory.PowerSeries.Entire.Majorant
 import TauCeti.Algebra.Order.BigOperators.Antitone
 import TauCeti.Algebra.Order.BigOperators.ProdSubProd
+import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
 /-!
 # Coefficient bounds for Coleman's transform
@@ -128,21 +130,6 @@ private theorem prod_upRank (β : ℕ → ℝ) :
   rw [← image_upRank σ (fun x hx ↦ (mem_filter.1 hx).2) fun x _ y hy _ ↦ by simpa using hy,
     prod_image fun x hx y hy ↦ upRank_injOn σ (by simpa using hx) (by simpa using hy)]
 
-/-- At every gap, as many points move forward across it as move backward. -/
-private theorem card_cross_forward (c : ℕ) :
-    #{x : Fin L | (x : ℕ) < c ∧ c ≤ σ x} = #{x : Fin L | (σ x : ℕ) < c ∧ c ≤ x} := by
-  have hσ : #{x : Fin L | (σ x : ℕ) < c} = #{x : Fin L | (x : ℕ) < c} :=
-    card_equiv σ fun x ↦ by simp
-  have h₁ := card_filter_add_card_filter_not (s := {x : Fin L | (x : ℕ) < c})
-    fun x ↦ (σ x : ℕ) < c
-  have h₂ := card_filter_add_card_filter_not (s := {x : Fin L | (σ x : ℕ) < c})
-    fun x ↦ (x : ℕ) < c
-  simp only [filter_filter, not_lt] at h₁ h₂
-  have h₃ : #{x : Fin L | (σ x : ℕ) < c ∧ (x : ℕ) < c} =
-      #{x : Fin L | (x : ℕ) < c ∧ (σ x : ℕ) < c} := by
-    simp only [and_comm]
-  omega
-
 /-- **Charges at one gap.** If `σ` moves the points below `N` forward and the others backward,
 then for every `t`, at most as many backward moves cross the gap `c` at depth below `t` as
 forward moves of rank below `t`. -/
@@ -160,7 +147,8 @@ private theorem card_cross_backward_le {N : ℕ} (hfwd : ∀ x : Fin L, (x : ℕ
   have himage : P.image (upRank σ) = range #P := image_upRank σ hPpos hPclosed
   have hrank : ∀ x ∈ P, upRank σ x < #P := fun x hx ↦
     mem_range.1 (himage ▸ mem_image_of_mem _ hx)
-  have hflow := card_cross_forward σ c
+  have hflow : #{x : Fin L | (x : ℕ) < c ∧ c ≤ σ x} = #{x : Fin L | (σ x : ℕ) < c ∧ c ≤ x} := by
+    simpa only [not_le] using σ.card_filter_not_and_apply_eq fun x : Fin L ↦ c ≤ (x : ℕ)
   rcases le_or_gt #P t with hPt | htP
   · -- every forward move across the gap has rank below `t`
     calc #{x : Fin L | ((σ x : ℕ) < c ∧ c ≤ x) ∧ (x : ℕ) - c < t}
@@ -242,40 +230,13 @@ private theorem prod_prod_range_le_prod_pow_upRank {N : ℕ}
   rw [← prod_image (f := fun i ↦ ρ i) fun x hx y hy h ↦ hD hx hy h,
     ← prod_image (f := fun i ↦ ρ i) fun x hx y hy h ↦ hU hx hy h]
   refine prod_le_prod_of_card_filter_lt_le hρ₀ hρ ?_ fun k ↦ ?_
-  · rw [card_image_of_injOn hD, card_image_of_injOn hU, card_cross_forward σ c]
+  · rw [card_image_of_injOn hD, card_image_of_injOn hU]
+    simpa only [not_le] using (σ.card_filter_not_and_apply_eq fun x : Fin L ↦ c ≤ (x : ℕ)).symm
   · rw [filter_image, filter_image, card_image_of_injOn (hD.mono (filter_subset _ _)),
       card_image_of_injOn (hU.mono (filter_subset _ _)), filter_filter, filter_filter]
     exact card_cross_backward_le σ hfwd hbwd c k
 
 end Crossing
-
-section Sylvester
-
-variable {S : Type*} [Semiring S]
-
-/-- An entry of the Sylvester matrix in one of the first `n` columns, which carry the
-coefficients of the second polynomial. -/
-private theorem sylvester_apply_of_lt (f g : S[X]) {n m : ℕ} (i x : Fin (n + m))
-    (hx : (x : ℕ) < n) :
-    sylvester f g n m i x =
-      if (x : ℕ) ≤ i ∧ (i : ℕ) ≤ x + m then g.coeff (i - x) else 0 := by
-  obtain ⟨x, rfl⟩ : ∃ y : Fin n, Fin.castAdd m y = x := ⟨⟨x, hx⟩, rfl⟩
-  simp [sylvester]
-
-/-- An entry of the Sylvester matrix in one of the last `m` columns, which carry the
-coefficients of the first polynomial. -/
-private theorem sylvester_apply_of_le (f g : S[X]) {n m : ℕ} (i x : Fin (n + m))
-    (hx : n ≤ (x : ℕ)) :
-    sylvester f g n m i x =
-      if (x : ℕ) ≤ i + n ∧ (i : ℕ) ≤ x then f.coeff (i + n - x) else 0 := by
-  obtain ⟨x, rfl⟩ : ∃ y : Fin m, Fin.natAdd n y = x :=
-    ⟨⟨x - n, by omega⟩, Fin.ext (by simp; omega)⟩
-  simp only [sylvester, Matrix.of_apply, Fin.addCases_right, Set.mem_Icc, Fin.val_natAdd]
-  congr 1
-  · exact propext (by omega)
-  · congr 1; omega
-
-end Sylvester
 
 variable {R : Type*} [SeminormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
 
