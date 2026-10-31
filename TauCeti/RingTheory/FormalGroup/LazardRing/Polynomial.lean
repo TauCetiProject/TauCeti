@@ -34,6 +34,8 @@ The resulting isomorphism `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L` is graded when `x
 ## Main results
 
 * `TauCeti.LazardRing.adjoin_range_generator`: the generators `xₙ` generate `L` as a ring.
+* `TauCeti.LazardRing.hurewicz_injective`: the Hurewicz homomorphism `L →+* ℤ[b₁, b₂, …]` is
+  injective.
 * `TauCeti.LazardRing.mvPolynomialEquiv_mem_grading_iff`: the isomorphism carries the polynomials
   that are homogeneous of degree `n`, for `xₖ` of degree `2k`, onto `Lₙ`.
 
@@ -114,6 +116,23 @@ theorem mvPolynomialEquiv_X (n : ℕ+) : mvPolynomialEquiv (MvPolynomial.X n) = 
 theorem mvPolynomialEquiv_symm_generator (n : ℕ+) :
     mvPolynomialEquiv.symm (generator n) = MvPolynomial.X n := by
   rw [AlgEquiv.symm_apply_eq, mvPolynomialEquiv_X]
+
+/-- **The Hurewicz homomorphism of the Lazard ring is injective**: the homomorphism
+`L →+* ℤ[b₁, b₂, …]` classifying the additive formal group law transported along the strict
+coordinate `X + ∑ bᵢ X^(i + 1)` embeds `L` in `ℤ[b₁, b₂, …]`. -/
+theorem hurewicz_injective : Function.Injective hurewicz := by
+  -- Through `L ≃ ℤ[x₁, x₂, …]`, the Hurewicz homomorphism is evaluation at the images of the `xₙ`.
+  have h (p : MvPolynomial ℕ+ ℤ) :
+      hurewicz (mvPolynomialEquiv p) = MvPolynomial.aeval (hurewicz ∘ generator) p := by
+    induction p using MvPolynomial.induction_on with
+    | C a => simp
+    | add p q hp hq => rw [map_add, map_add, hp, hq, map_add]
+    | mul_X p n hp => rw [map_mul, map_mul, hp, map_mul, mvPolynomialEquiv_X, MvPolynomial.aeval_X,
+        Function.comp_apply]
+  intro x y hxy
+  apply mvPolynomialEquiv.symm.injective
+  apply algebraicIndependent_iff_injective_aeval.1 algebraicIndependent_hurewicz_generator
+  rw [← h, ← h, AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply, hxy]
 
 attribute [local instance] MvPolynomial.weightedGradedAlgebra
 

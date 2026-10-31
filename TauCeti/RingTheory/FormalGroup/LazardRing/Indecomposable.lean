@@ -90,6 +90,11 @@ theorem augmentation_coeff_formalGroup (d : Fin 2 →₀ ℕ) :
   rw [← coeff_map, ← FormalGroup.map_toPowerSeries, augmentation, map_lift,
     FormalGroup.𝔾ₐ_toPowerSeries]
 
+/-- The augmentation classifies the additive formal group law. -/
+@[simp]
+theorem map_augmentation : formalGroup.map augmentation = FormalGroup.𝔾ₐ :=
+  map_lift _
+
 /-- On polynomials in the `aᵢⱼ`, the augmentation is the constant coefficient. -/
 @[simp]
 theorem augmentation_mk (p : MvPolynomial (ℕ+ × ℕ+) ℤ) :
