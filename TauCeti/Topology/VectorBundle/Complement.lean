@@ -46,7 +46,7 @@ variable {𝕜 B F V : Type*} [RCLike 𝕜] [TopologicalSpace B]
   [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)]
   [FiberBundle F E] [VectorBundle 𝕜 F E]
 
-local instance : CompleteSpace V := FiniteDimensional.complete 𝕜 V
+private local instance : CompleteSpace V := FiniteDimensional.complete 𝕜 V
 
 variable (j : ∀ x, E x →L[𝕜] V)
   (hj : Continuous (fun p : TotalSpace F E ↦ j p.proj p.2))
