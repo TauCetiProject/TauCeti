@@ -22,9 +22,11 @@ onto the product of the ideals `J i`.
 
 ## Main results
 
-* `Submodule.exists_apply_eq_one_forall_smul_mem`: a finitely generated `R`-submodule `Λ`
-  splits off its image `I` under a `K`-linear functional `f` not vanishing on it: some `v`
+* `Submodule.exists_apply_eq_one_forall_smul_mem`: an `R`-submodule `Λ` splits off its image
+  `I` under a `K`-linear functional `f` when `I` is finitely generated and nonzero: some `v`
   has `f v = 1` and `x • v ∈ Λ` for all `x ∈ I`.
+* `Submodule.span_range_eq_span_of_forall_mem_iff`: if `Λ = ⊕ i, J i • y i` with every `J i`
+  nonzero, then `y` and `Λ` span the same `K`-subspace.
 * `Submodule.exists_pseudoBasis`: a finitely generated `R`-submodule spanning `V` has a
   pseudo-basis indexed by any finite type of cardinality `finrank K V`.
 
@@ -52,14 +54,14 @@ variable {R K V : Type*} [CommRing R] [IsDedekindDomain R] [Field K] [Algebra R 
 
 namespace Submodule
 
-/-- A finitely generated `R`-submodule `Λ` of a `K`-vector space splits off its image under a
-`K`-linear functional `f` that does not vanish on it: there is a vector `v` with `f v = 1` such
+/-- An `R`-submodule `Λ` of a `K`-vector space splits off its image under a `K`-linear functional
+`f` when that image is finitely generated and nonzero: there is a vector `v` with `f v = 1` such
 that `x • v ∈ Λ` for every `x` in the image `f '' Λ`, a nonzero fractional ideal of `R`. -/
-theorem exists_apply_eq_one_forall_smul_mem (Λ : Submodule R V) (hΛ : Λ.FG) (f : V →ₗ[K] K)
-    (hf : Λ.map (f.restrictScalars R) ≠ ⊥) :
+theorem exists_apply_eq_one_forall_smul_mem (Λ : Submodule R V) (f : V →ₗ[K] K)
+    (hI : (Λ.map (f.restrictScalars R)).FG) (hf : Λ.map (f.restrictScalars R) ≠ ⊥) :
     ∃ v : V, f v = 1 ∧ ∀ x ∈ Λ.map (f.restrictScalars R), x • v ∈ Λ := by
   set I := Λ.map (f.restrictScalars R)
-  let I' : FractionalIdeal R⁰ K := ⟨I, FractionalIdeal.isFractional_of_fg (hΛ.map _)⟩
+  let I' : FractionalIdeal R⁰ K := ⟨I, FractionalIdeal.isFractional_of_fg hI⟩
   have hcoe : (I' : Submodule R K) = I := rfl
   have hI' : I' ≠ 0 := fun h ↦ hf <| by rw [← hcoe, h, FractionalIdeal.coe_zero]
   have hmul : I * (I'⁻¹ : FractionalIdeal R⁰ K) = 1 := by
@@ -82,16 +84,17 @@ theorem exists_apply_eq_one_forall_smul_mem (Λ : Submodule R V) (hΛ : Λ.FG) (
   obtain ⟨v, hv, hv1⟩ := Submodule.mem_map.1 (hle (hmul ▸ Submodule.mem_one.2 ⟨1, map_one _⟩))
   exact ⟨v, hv1, hv⟩
 
-omit [IsDedekindDomain R] in
+omit [IsDedekindDomain R] [IsFractionRing R K] in
 /-- If `Λ = ⊕ i, J i • y i` with every `J i` nonzero, then `y` spans the same `K`-subspace as
 `Λ`. -/
-private theorem span_range_eq_span {m : ℕ} {Λ : Submodule R V} {y : Fin m → V}
-    {J : Fin m → Ideal R} (hJ : ∀ i, J i ≠ ⊥)
-    (hmem : ∀ x, x ∈ Λ ↔ ∃ c : Fin m → R, (∀ i, c i ∈ J i) ∧ ∑ i, c i • y i = x) :
+theorem span_range_eq_span_of_forall_mem_iff [FaithfulSMul R K] {ι : Type*} [Fintype ι]
+    {Λ : Submodule R V} {y : ι → V} {J : ι → Ideal R} (hJ : ∀ i, J i ≠ ⊥)
+    (hmem : ∀ x, x ∈ Λ ↔ ∃ c : ι → R, (∀ i, c i ∈ J i) ∧ ∑ i, c i • y i = x) :
     span K (Set.range y) = span K (Λ : Set V) := by
+  classical
   refine le_antisymm (span_le.2 <| Set.range_subset_iff.2 fun i ↦ ?_) (span_le.2 fun x hx ↦ ?_)
   · obtain ⟨b, hb, hb0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (hJ i)
-    have hsum : ∑ k, (Pi.single i b : Fin m → R) k • y k = b • y i := by
+    have hsum : ∑ k, (Pi.single i b : ι → R) k • y k = b • y i := by
       rw [Fintype.sum_eq_single i fun k hk ↦ by simp [hk]]
       simp
     have hbΛ : b • y i ∈ Λ := hsum ▸ (hmem _).2 ⟨_, fun k ↦ by
@@ -99,7 +102,8 @@ private theorem span_range_eq_span {m : ℕ} {Λ : Submodule R V} {y : Fin m →
       · subst hk
         simpa using hb
       · simp [hk], rfl⟩
-    have hb' : algebraMap R K b ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective R K)).2 hb0
+    have hb' : algebraMap R K b ≠ 0 :=
+      (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective R K)).2 hb0
     rw [← inv_smul_smul₀ hb' (y i), algebraMap_smul]
     exact smul_mem _ _ (subset_span hbΛ)
   · obtain ⟨c, -, rfl⟩ := (hmem x).1 hx
@@ -125,7 +129,7 @@ private theorem exists_linearIndependent_forall_mem_iff [FiniteDimensional K V]
   set I := Λ.map (f.restrictScalars R)
   have hI : I ≠ ⊥ := fun h ↦ by
     simpa [hf] using (Submodule.eq_bot_iff _).1 h _ (mem_map_of_mem (f := f.restrictScalars R) hl₀)
-  obtain ⟨v, hv1, hv⟩ := Λ.exists_apply_eq_one_forall_smul_mem hΛ f hI
+  obtain ⟨v, hv1, hv⟩ := Λ.exists_apply_eq_one_forall_smul_mem f (hΛ.map _) hI
   -- The kernel part `Λ'` has a smaller span, so the induction hypothesis applies to it.
   set Λ' := Λ ⊓ (LinearMap.ker f).restrictScalars R
   have hΛ' : Λ'.FG :=
@@ -156,7 +160,7 @@ private theorem exists_linearIndependent_forall_mem_iff [FiniteDimensional K V]
   refine ⟨m + 1, Fin.cons ((algebraMap R K a)⁻¹ • v) y', Fin.cons J₀ J',
     Fin.cases hJ₀ hJ', hli'.finCons fun hmem ↦ ?_, fun x ↦ ⟨fun hx ↦ ?_, ?_⟩⟩
   · -- `f` vanishes on the span of `y'` but not on `a⁻¹ v`.
-    have := ((span_range_eq_span hJ' hmem').trans_le hker) hmem
+    have := ((span_range_eq_span_of_forall_mem_iff hJ' hmem').trans_le hker) hmem
     simp [hv1, ha'] at this
   · -- Decompose `x = (f x) • v + (x - (f x) • v)` with the second summand in `Λ'`.
     have ht : f x ∈ I := Submodule.mem_map_of_mem (f := f.restrictScalars R) hx
@@ -188,7 +192,8 @@ theorem exists_pseudoBasis {ι : Type*} [Finite ι] (Λ : Submodule R V) (hΛ : 
     obtain ⟨s, hs⟩ := hΛ
     exact Module.finite_def.2 ⟨s, by rw [← span_span_of_tower R, hs, hspan]⟩
   obtain ⟨m, y, J, hJ, hli, hmem⟩ := exists_linearIndependent_forall_mem_iff (K := K) Λ hΛ
-  have hy : ⊤ ≤ span K (Set.range y) := ((span_range_eq_span hJ hmem).trans hspan).ge
+  have hy : ⊤ ≤ span K (Set.range y) :=
+    ((span_range_eq_span_of_forall_mem_iff hJ hmem).trans hspan).ge
   let B := Basis.mk hli hy
   have hBy : ∀ i, B i = y i := Basis.mk_apply hli hy
   have hB : ∀ x, x ∈ Λ ↔ ∀ j, B.repr x j ∈ IsLocalization.coeSubmodule K (J j) := fun x ↦ by
