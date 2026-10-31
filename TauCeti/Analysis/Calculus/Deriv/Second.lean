@@ -22,7 +22,8 @@ derivative of `f` at `c * x`. As for `deriv_comp_mul_left`, no differentiability
 since Mathlib's derivative is `0` wherever it is undefined. Mathlib's
 `iteratedDeriv_comp_const_smul` states the same formula under a `ContDiff` hypothesis.
 
-The second derivative of a quadratic polynomial `a + b s + c s ^ 2` is the constant `2 c`.
+The second derivative of a quadratic polynomial `a + b s + c s ^ 2` is the constant `2 c`, and
+the affine line `t ↦ a + t • b` has constant derivative `b` and vanishing second derivative.
 
 The second derivative of the square root of a quadratic polynomial `Q s = a + b s + c s ^ 2` is
 computed where `Q` is positive. Since `2 Q Q'' - Q' ^ 2` is the constant `4 a c - b ^ 2`, it is
@@ -33,6 +34,8 @@ computed where `Q` is positive. Since `2 Q Q'' - Q' ^ 2` is the constant `4 a c 
 * `TauCeti.iteratedDeriv_comp_mul_left`: the iterated derivatives of `fun x ↦ f (c * x)`, and
   `TauCeti.deriv_deriv_comp_mul_left` its second derivative.
 * `TauCeti.deriv_deriv_quadratic`: the second derivative of `s ↦ a + b s + c s ^ 2`.
+* `TauCeti.deriv_const_add_smul`, `TauCeti.iteratedDeriv_two_const_add_smul`: the first and
+  second derivatives of the affine line `t ↦ a + t • b`.
 * `TauCeti.deriv_deriv_sqrt_quadratic`: the second derivative of `s ↦ √(a + b s + c s ^ 2)`, and
   `TauCeti.deriv_deriv_sqrt_quadratic_zero` its value at `0`.
 -/
@@ -91,6 +94,23 @@ theorem deriv_deriv_quadratic (a b c t : 𝕜) :
   simp
 
 end Quadratic
+
+section AffineLine
+
+variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The derivative of the affine line `t ↦ a + t • b` is constantly `b`. -/
+theorem deriv_const_add_smul (a b : F) : deriv (fun t : 𝕜 ↦ a + t • b) = fun _ ↦ b :=
+  funext fun t ↦ by simpa using (((hasDerivAt_id t).smul_const b).const_add a).deriv
+
+/-- The second derivative of the affine line `t ↦ a + t • b` vanishes. -/
+@[simp]
+theorem iteratedDeriv_two_const_add_smul (a b : F) :
+    iteratedDeriv 2 (fun t : 𝕜 ↦ a + t • b) = 0 := by
+  simp only [iteratedDeriv_succ, iteratedDeriv_zero, deriv_const_add_smul, deriv_const',
+    Pi.zero_def]
+
+end AffineLine
 
 /-- The second derivative of the square root of a quadratic polynomial
 `Q s = a + b * s + c * s ^ 2` at a point `t` where `Q` is positive is
