@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.Newforms.Decomposition
-public import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne
 
 /-!
 # The newform associated with a good Hecke eigenform
@@ -23,8 +22,8 @@ eigensystem of `F`; the newform `g` is Miyake's primitive form attached to `F`.
 The existence of `g` is the theorem
 `Newform.exists_newform_comp_unitsMap_eq_and_eigenvalue_eq_of_forall_heckeTCuspNat_eq_smul`
 of `Newforms/Decomposition.lean`.
-Uniqueness is cross-level strong multiplicity one
-(`HeckeRing.GL2.Newform.level_eq_and_coe_eq_of_forall_notMem_prime_eigenvalue_eq`, Miyake,
+Uniqueness is `HeckeRing.GL2.Newform.level_eq_and_coe_eq_of_comp_unitsMap_eq` of
+`Newforms/StrongMultiplicityOne.lean`, a form of cross-level strong multiplicity one (Miyake,
 Theorem 4.6.19): two newforms whose nebentypes induce the same character at level `N` induce the
 same character at the least common multiple of their levels, since reduction from `N` to that
 multiple is onto on units. The span statement then follows from the spanning theorem
@@ -38,9 +37,6 @@ So the conclusion is membership in the span of the `V_d g`, not equality with on
 
 ## Main results
 
-* `HeckeRing.GL2.Newform.level_eq_and_coe_eq_of_comp_unitsMap_eq`: two newforms of levels
-  dividing `N`, with nebentypes inducing the same character modulo `N` and eigenvalues agreeing
-  at all but finitely many primes `p ∤ N`, have the same level and are the same function.
 * `HeckeRing.GL2.Newform.mem_span_levelRaise_of_comp_unitsMap_eq`: a good Hecke eigenvector
   of `S_k(N, χ)` with the eigenvalues of a newform `g` whose nebentypus induces `χ` lies in the
   span of the level-raises `V_d g`.
@@ -69,32 +65,6 @@ open TauCeti _root_.CuspForm
 variable {N : ℕ} {k : ℤ}
 
 namespace Newform
-
-/-- **Uniqueness of the newform with a given good eigensystem and nebentypus.** Let `g` and `g'`
-be newforms of levels `M` and `M'` dividing `N`, whose nebentypes induce the same character `χ`
-modulo `N`. If their eigenvalues agree at every prime `p ∤ N` outside a finite set `S`, then
-`M = M'` and `g` and `g'` are the same function. This is the uniqueness of the newform associated
-with a good Hecke eigenform (Diamond–Shurman, Theorem 5.8.3; Miyake, Corollary 4.6.20). -/
-theorem level_eq_and_coe_eq_of_comp_unitsMap_eq [NeZero N] {M M' : ℕ} [NeZero M] [NeZero M']
-    {χ : (ZMod N)ˣ →* ℂˣ} (g : Newform M k) (g' : Newform M' k) (hM : M ∣ N) (hM' : M' ∣ N)
-    (hgχ : g.χ.comp (ZMod.unitsMap hM) = χ) (hg'χ : g'.χ.comp (ZMod.unitsMap hM') = χ)
-    {S : Finset ℕ}
-    (h : ∀ (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N), p ∉ S →
-      g.eigenvalue ⟨p, hp.pos⟩ (hpN.coprime_dvd_right hM) =
-        g'.eigenvalue ⟨p, hp.pos⟩ (hpN.coprime_dvd_right hM')) :
-    M = M' ∧ ⇑g.toCuspForm = ⇑g'.toCuspForm := by
-  have hL : Nat.lcm M M' ∣ N := Nat.lcm_dvd hM hM'
-  -- both nebentypes induce `χ` at level `N`, and `(ZMod N)ˣ → (ZMod (lcm M M'))ˣ` is onto
-  have hχ : g.χ.comp (ZMod.unitsMap (Nat.dvd_lcm_left M M')) =
-      g'.χ.comp (ZMod.unitsMap (Nat.dvd_lcm_right M M')) := by
-    refine (MonoidHom.cancel_right (ZMod.unitsMap_surjective hL)).mp ?_
-    rw [MonoidHom.comp_assoc, MonoidHom.comp_assoc, ZMod.unitsMap_comp, ZMod.unitsMap_comp, hgχ,
-      hg'χ]
-  -- a prime outside `S` and outside the prime factors of `N` is prime to `N`
-  refine level_eq_and_coe_eq_of_forall_notMem_prime_eigenvalue_eq g g' hχ
-    (S := S ∪ N.primeFactors) fun p hp _ _ hpS ↦ ?_
-  simp only [Finset.mem_union, Nat.mem_primeFactors, not_or, not_and] at hpS
-  exact h p hp (hp.coprime_iff_not_dvd.mpr fun hpN ↦ hpS.2 hp hpN (NeZero.ne N)) hpS.1
 
 /-- **A good Hecke eigenvector lies in the oldspace of its newform.** Let `g` be a newform of
 level `M ∣ N` whose nebentypus induces `χ` modulo `N`. If `F ∈ S_k(N, χ)` satisfies
