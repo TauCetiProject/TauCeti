@@ -56,20 +56,30 @@ open TauCeti TauCeti.ContCohomology
 universe u
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [LocallyCompactSpace G] (U : OpenSubgroup G) [U.toSubgroup.FiniteIndex]
-  [CompactSpace U.toSubgroup] [Fintype (G ⧸ U.toSubgroup)]
+  (U : OpenSubgroup G) [CompactSpace U.toSubgroup] [Fintype (G ⧸ U.toSubgroup)]
 
 /-- **The Evens norm of a character at index two is its graph class:** for `U` of index two and a
 continuous homomorphism `α : U → 𝔽₂`, the norm `N_U^G` of the class of `α` is the class of the
 two-point graph cocycle of `α`, up to the transport of degrees from `2` to
-`Fintype.card (G ⧸ U) * 1`. -/
+`Fintype.card (G ⧸ U) * 1`. The finite index of `U` and the local compactness of `G`, which
+`graphClass` requires, are derived from the finite quotient and the compact open subgroup. -/
 theorem evensNorm_eq_graphClass (hU : U.toSubgroup.index = 2)
     (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hα : Continuous α) :
+    letI : U.toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+    letI : LocallyCompactSpace G :=
+      (isCompact_iff_compactSpace.2
+        ‹CompactSpace U.toSubgroup›).locallyCompactSpace_of_mem_nhds_of_group
+        (U.isOpen'.mem_nhds U.one_mem)
     U.evensNorm (homClass U.toSubgroup α hα) =
       (ContinuousCohomology.degreeCast (trivialF2 G)
         (by rw [mul_one, ← Nat.card_eq_fintype_card, ← Subgroup.index_eq_card, hU] :
           2 = Fintype.card (G ⧸ U.toSubgroup) * 1)).hom
         (graphClass U hU α hα) := by
+  let : U.toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  let : LocallyCompactSpace G :=
+    (isCompact_iff_compactSpace.2
+      ‹CompactSpace U.toSubgroup›).locallyCompactSpace_of_mem_nhds_of_group
+      (U.isOpen'.mem_nhds U.one_mem)
   obtain ⟨s, hs, -⟩ := Subgroup.index_eq_two_iff_exists_notMem_and.mp hU
   rw [homClass_eq_cochainClass, evensNorm_cochainClass U
     ⟨Set.range (U.toSubgroup.indexTwoTransversal s),
@@ -87,14 +97,26 @@ theorem evensNorm_eq_graphClass (hU : U.toSubgroup.index = 2)
 
 /-- **The index-two Evens norm is the Evens norm:** for `U` of index two, the explicit index-two
 norm `evensNormIndexTwo U hU`, defined by the graph cocycle, is the general Evens norm `N_U^G` on
-`H¹(U, 𝔽₂)`, up to the transport of degrees from `Fintype.card (G ⧸ U) * 1` to `2`. -/
+`H¹(U, 𝔽₂)`, up to the transport of degrees from `Fintype.card (G ⧸ U) * 1` to `2`. As in
+`evensNorm_eq_graphClass`, finite index and local compactness are derived from the other
+assumptions. -/
 theorem evensNormIndexTwo_eq (hU : U.toSubgroup.index = 2)
     (x : continuousCohomology 1 (trivialF2 U.toSubgroup)) :
+    letI : U.toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+    letI : LocallyCompactSpace G :=
+      (isCompact_iff_compactSpace.2
+        ‹CompactSpace U.toSubgroup›).locallyCompactSpace_of_mem_nhds_of_group
+        (U.isOpen'.mem_nhds U.one_mem)
     evensNormIndexTwo U hU x =
       (ContinuousCohomology.degreeCast (trivialF2 G)
         (by rw [mul_one, ← Nat.card_eq_fintype_card, ← Subgroup.index_eq_card, hU] :
           Fintype.card (G ⧸ U.toSubgroup) * 1 = 2)).hom
         (U.evensNorm x) := by
+  let : U.toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  let : LocallyCompactSpace G :=
+    (isCompact_iff_compactSpace.2
+      ‹CompactSpace U.toSubgroup›).locallyCompactSpace_of_mem_nhds_of_group
+      (U.isOpen'.mem_nhds U.one_mem)
   obtain ⟨α, hα, rfl⟩ := homClass_surjective U.toSubgroup x
   rw [evensNormIndexTwo_homClass, evensNorm_eq_graphClass U hU, ← CategoryTheory.comp_apply]
   simp
