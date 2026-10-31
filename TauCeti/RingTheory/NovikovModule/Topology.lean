@@ -418,6 +418,7 @@ theorem continuous_kernelProduct_left (b : NovikovModule R F₂) :
 
 /-- A kernel product is jointly continuous in its two inputs for the potential-cutoff
 topologies. -/
+@[fun_prop]
 theorem continuous_kernelProduct :
     Continuous fun p : NovikovModule R F₁ × NovikovModule R F₂ =>
       kernelProduct hn hfin p.1 p.2 := by
@@ -425,8 +426,8 @@ theorem continuous_kernelProduct :
     (LinearMap.toAddMonoidHom'.comp (kernelProduct hn hfin).toAddMonoidHom) ?_
     (fun a => (continuous_kernelProduct_right hn hfin a).continuousAt)
     (fun b => (continuous_kernelProduct_left hn hfin b).continuousAt)
-  change ContinuousAt (fun p : NovikovModule R F₁ × NovikovModule R F₂ =>
-    kernelProduct hn hfin p.1 p.2) (0, 0)
+  simp only [LinearMap.toAddMonoidHom', AddMonoidHom.coe_comp, AddMonoidHom.coe_mk,
+    ZeroHom.coe_mk, Function.comp_apply, LinearMap.toAddMonoidHom_coe]
   rw [ContinuousAt, map_zero, nhds_prod_eq]
   exact ((hasBasis_nhds_zero.prod hasBasis_nhds_zero).tendsto_iff hasBasis_nhds_zero).2
     fun D _ => ⟨((D - C) / 2, (D - C) / 2), ⟨trivial, trivial⟩, fun p hp => by
