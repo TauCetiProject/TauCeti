@@ -213,6 +213,16 @@ instance : One (quotients J hJ).lim where
 theorem toLimQuotients_one : toLimQuotients J hJ 1 = 1 :=
   (rfl)
 
+/-- The `n`-th coordinate of `1` is the class of `1 ∈ A`. -/
+@[simp]
+theorem coe_one_apply (n : ℕ) :
+    ((1 : (quotients J hJ).lim) : (quotients J hJ).Product) n = quotientsπ J hJ n 1 :=
+  coe_toLimQuotients_apply J hJ 1 n
+
+/-- The `n`-th coordinate of `1` is the class of `1 ∈ A`. -/
+theorem limπ_one (n : ℕ) : (quotients J hJ).limπ n 1 = quotientsπ J hJ n 1 :=
+  (limπ_apply _ n 1).trans (coe_one_apply n)
+
 variable {V : Type*} [AddCommGroup V] [Module A V]
 
 private theorem limSMul_one {v : V}
@@ -275,8 +285,7 @@ instance instRingLimQuotients : Ring (quotients J hJ).lim :=
       rw [limπ_mul, limSMul_one (exists_smul_quotients_eq_zero hJ _)]
     mul_one x := (quotients J hJ).lim_ext fun n ↦ by
       obtain ⟨b, hb⟩ := quotientsπ_surjective J hJ n ((quotients J hJ).limπ n x)
-      rw [limπ_mul_eq hb (by rw [← toLimQuotients_one, limπ_apply, coe_toLimQuotients_apply])
-        (fun a ha ↦ by rwa [mul_one]), mul_one, hb]
+      rw [limπ_mul_eq hb (limπ_one n).symm (fun a ha ↦ by rwa [mul_one]), mul_one, hb]
     left_distrib x y z := (quotients J hJ).lim_ext fun n ↦ by
       rw [limπ_mul, map_add, map_add, limπ_mul, limπ_mul,
         limSMul_add_right _ (exists_smul_quotients_eq_zero hJ _)
