@@ -62,6 +62,10 @@ torsion of a mapping cone of based complexes.
 
 * `HomologicalComplex.homotopyCofiber.fstX_inlX_add_sndX_inrX`: the projections and inclusions of
   the summands of a term of a mapping cone decompose its identity.
+* `HomologicalComplex.homotopyCofiber.XIsoBiprod_hom_snd`: under `XIsoBiprod`, the projection
+  `sndX` is the second biproduct projection.
+* `HomologicalComplex.homotopyCofiber.fstX_inlX_zero`: the term of the mapping cone of `F ⟶ 0` is
+  identified with a term of `F` by `fstX` and `inlX`.
 * `HomologicalComplex.homotopyCofiber.coneShortComplex_shortExact`: the short complex
   `G ⟶ homotopyCofiber φ ⟶ homotopyCofiber (F ⟶ 0)` is short exact.
 * `CategoryTheory.ShortComplex.Splitting.quasiIso_homotopyCofiberDesc`: the map from the mapping
@@ -213,6 +217,8 @@ end HomologicalComplex.homotopyCofiber
 
 namespace HomologicalComplex.homotopyCofiber
 
+open Limits ZeroObject
+
 variable {C ι : Type*} [Category* C] [Preadditive C] {c : ComplexShape ι} [DecidableRel c.Rel]
   {F G : HomologicalComplex C c} (φ : F ⟶ G) [HasHomotopyCofiber φ]
 
@@ -222,6 +228,26 @@ its identity. -/
 lemma fstX_inlX_add_sndX_inrX (i j : ι) (hij : c.Rel i j) :
     fstX φ i j hij ≫ inlX φ j i hij + sndX φ i ≫ inrX φ i = 𝟙 _ :=
   ext_from_X φ j i hij (by simp) (by simp)
+
+/-- In a degree `i` with `c.Rel i j`, the second projection `sndX` is the second biproduct
+projection under the identification `XIsoBiprod` of the term of the mapping cone with
+`F.X j ⊞ G.X i`. -/
+@[reassoc (attr := simp)]
+lemma XIsoBiprod_hom_snd (i j : ι) (hij : c.Rel i j) :
+    haveI := HasHomotopyCofiber.hasBinaryBiproduct φ _ _ hij
+    (XIsoBiprod φ i j hij).hom ≫ biprod.snd = sndX φ i := by
+  have := HasHomotopyCofiber.hasBinaryBiproduct φ _ _ hij
+  rw [← Category.id_comp (XIsoBiprod φ i j hij).hom, ← fstX_inlX_add_sndX_inrX φ i j hij]
+  simp
+
+/-- In the mapping cone of `F ⟶ 0`, the composite of the projection `fstX` and the inclusion
+`inlX` is the identity, as the other summand vanishes. -/
+lemma fstX_inlX_zero [HasZeroObject C] [HasHomotopyCofiber (0 : F ⟶ 0)] (i j : ι)
+    (hij : c.Rel i j) : fstX (0 : F ⟶ 0) i j hij ≫ inlX (0 : F ⟶ 0) j i hij = 𝟙 _ := by
+  have h₀ : IsZero ((0 : HomologicalComplex C c).X i) :=
+    (eval C c i).map_isZero (Limits.isZero_zero _)
+  rw [← fstX_inlX_add_sndX_inrX (0 : F ⟶ 0) i j hij, h₀.eq_of_tgt (sndX _ i) 0, zero_comp,
+    add_zero]
 
 end HomologicalComplex.homotopyCofiber
 

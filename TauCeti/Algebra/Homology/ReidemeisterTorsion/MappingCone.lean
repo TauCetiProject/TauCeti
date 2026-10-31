@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
-public import TauCeti.Algebra.Homology.HomotopyCofiber
+public import TauCeti.Algebra.Homology.ModuleCat.HomotopyCofiber
+public import TauCeti.Algebra.Homology.ModuleCat.Shift
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
 import TauCeti.LinearAlgebra.Alternating.Append
 
@@ -20,15 +21,17 @@ mapping cone. This file proves this transformation law.
 Let `C` be a based chain complex and let `D` be `C` shifted up by one degree with negated
 differentials: isomorphisms `e i : D.X (i + 1) ≃ C.X i` turn the differential of `D` into the
 negative of that of `C`, and carry the basis of `D.X (i + 1)` to that of `C.X i`. Then `D` is
-acyclic exactly when `C` is (`HomologicalComplex.acyclic_iff_of_shift`), and
-`τ(D) = ε · τ(C)⁻¹` with `ε = ∏ⱼ (-1) ^ (dim Bⱼ)`, where `Bⱼ ⊆ Cⱼ` is the space of boundaries
+acyclic exactly when `C` is (`HomologicalComplex.acyclic_iff_of_shift`, from
+`TauCeti.Algebra.Homology.ModuleCat.Shift`), and `τ(D) = ε · τ(C)⁻¹` with
+`ε = ∏ⱼ (-1) ^ (dim Bⱼ)`, where `Bⱼ ⊆ Cⱼ` is the space of boundaries
 (`HomologicalComplex.reidemeisterTorsion_eq_mul_inv_of_shift`). Indeed the brackets of `D` are
 those of `C` in the previous degree, up to the sign coming from the negated lifts, and they enter
 the torsion with the opposite exponents.
 
 The mapping cone `homotopyCofiber φ` of a chain map `φ : K ⟶ L` has the term
 `K.X (i - 1) ⊞ L.X i` in degree `i`. Bases of `K` and `L` give it the basis
-`HomologicalComplex.homotopyCofiber.basis`: the basis of `L.X i` followed by that of
+`HomologicalComplex.homotopyCofiber.basis`, from
+`TauCeti.Algebra.Homology.ModuleCat.HomotopyCofiber`: the basis of `L.X i` followed by that of
 `K.X (i - 1)`. The cone sits in the degreewise split short exact sequence
 `L ⟶ cone φ ⟶ cone (K ⟶ 0)`, whose last term is `K` shifted up by one degree with negated
 differentials, and whose bases are compatible. The multiplicativity of the torsion and the shift
@@ -42,12 +45,8 @@ in general not `±1`.
 
 ## Main declarations
 
-* `HomologicalComplex.acyclic_iff_of_shift`: a shifted complex is acyclic exactly when the
-  original one is.
 * `HomologicalComplex.reidemeisterTorsion_eq_mul_inv_of_shift`: the torsion of a shifted complex
   is, up to sign, the inverse of the torsion of the original complex.
-* `HomologicalComplex.homotopyCofiber.basis`: the basis of the mapping cone of a chain map of based
-  complexes.
 * `HomologicalComplex.reidemeisterTorsion_homotopyCofiber`: the torsion of a mapping cone.
 * `HomologicalComplex.reidemeisterTorsion_eq_mul_of_quasiIso`: the change of the torsion under a
   quasi-isomorphism of based complexes.
@@ -73,79 +72,9 @@ section Shift
 variable {C D : ChainComplex (ModuleCat F) ℤ} (e : ∀ i, D.X (i + 1) ≃ₗ[F] C.X i)
   (he : ∀ i x, e i ((D.d (i + 1 + 1) (i + 1)).hom x) = -(C.d (i + 1) i).hom (e (i + 1) x))
 
-include he in
-private theorem map_range_d_of_shift (i : ℤ) :
-    (LinearMap.range (D.d (i + 1 + 1) (i + 1)).hom).map (e i : D.X (i + 1) →ₗ[F] C.X i) =
-      LinearMap.range (C.d (i + 1) i).hom := by
-  have h : (e i : D.X (i + 1) →ₗ[F] C.X i) ∘ₗ (D.d (i + 1 + 1) (i + 1)).hom =
-      -((C.d (i + 1) i).hom ∘ₗ (e (i + 1) : D.X (i + 1 + 1) →ₗ[F] C.X (i + 1))) :=
-    LinearMap.ext (he i)
-  rw [← LinearMap.range_comp, h, LinearMap.range_neg,
-    LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)]
-
-/-- The isomorphism between the boundaries of `D` in degree `i + 1` and those of `C` in degree `i`
-induced by `e i`. -/
-private def boundaryEquiv (i : ℤ) :
-    LinearMap.range (D.d (i + 1 + 1) (i + 1)).hom ≃ₗ[F] LinearMap.range (C.d (i + 1) i).hom :=
-  ((e i).submoduleMap _).trans (LinearEquiv.ofEq _ _ (map_range_d_of_shift e he i))
-
-@[simp]
-private theorem coe_boundaryEquiv (i : ℤ) (x : LinearMap.range (D.d (i + 1 + 1) (i + 1)).hom) :
-    (boundaryEquiv e he i x : C.X i) = e i x :=
-  rfl
-
-include he in
-private theorem map_ker_d_of_shift (i : ℤ) :
-    (LinearMap.ker (D.d (i + 1 + 1) (i + 1)).hom).map
-        (e (i + 1) : D.X (i + 1 + 1) →ₗ[F] C.X (i + 1)) =
-      LinearMap.ker (C.d (i + 1) i).hom := by
-  ext y
-  rw [Submodule.map_equiv_eq_comap_symm, Submodule.mem_comap, LinearMap.mem_ker,
-    LinearMap.mem_ker, ← (e i).map_eq_zero_iff, he, neg_eq_zero]
-  simp
-
-include he in
-private theorem exactAt_iff_of_shift (i : ℤ) : D.ExactAt (i + 1 + 1) ↔ C.ExactAt (i + 1) := by
-  rw [D.exactAt_iff' (i + 1 + 1 + 1) (i + 1 + 1) (i + 1) (by simp) (by simp),
-    C.exactAt_iff' (i + 1 + 1) (i + 1) i (by simp) (by simp),
-    ShortComplex.moduleCat_exact_iff_ker_sub_range, ShortComplex.moduleCat_exact_iff_ker_sub_range]
-  dsimp only [sc', shortComplexFunctor'_obj_f, shortComplexFunctor'_obj_g]
-  rw [← Submodule.map_le_map_iff_of_injective (e (i + 1)).injective, map_ker_d_of_shift e he,
-    map_range_d_of_shift e he]
-
-include he in
-/-- If the terms of `D` are those of `C` shifted up by one degree, through isomorphisms
-`e i : D.X (i + 1) ≃ C.X i` under which the differentials of `D` become the negatives of those of
-`C`, then `D` is acyclic exactly when `C` is. -/
-theorem acyclic_iff_of_shift : D.Acyclic ↔ C.Acyclic := by
-  refine ⟨fun h j ↦ ?_, fun h j ↦ ?_⟩
-  · obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega⟩
-    exact (exactAt_iff_of_shift e he i).1 (h _)
-  · obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 + 1 := ⟨j - 2, by omega⟩
-    exact (exactAt_iff_of_shift e he i).2 (h _)
-
 variable {n m : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) F (C.X i))
   (d : ∀ i, Basis (Fin (m i)) F (D.X i)) (hm : ∀ i, m (i + 1) = n i)
   (hd : ∀ i k, e i (d (i + 1) k) = c i (Fin.cast (hm i) k))
-
-include hm in
-/-- A shifted complex is bounded exactly when the original one is. -/
-private theorem finite_setOf_ne_zero_iff_of_shift :
-    {i | m i ≠ 0}.Finite ↔ {i | n i ≠ 0}.Finite := by
-  have himage : {i | m i ≠ 0} = (· + 1) '' {i | n i ≠ 0} := by
-    ext i
-    refine ⟨fun hi ↦ ⟨i - 1, ?_, by simp⟩, ?_⟩
-    · have := hm (i - 1)
-      rw [sub_add_cancel] at this
-      simpa [← this] using hi
-    · rintro ⟨j, hj, rfl⟩
-      simpa [hm] using hj
-  rw [himage, Set.finite_image_iff (add_left_injective (1 : ℤ)).injOn]
-
-include hd in
-private theorem eq_reindex_map_of_shift (i : ℤ) :
-    c i = ((d (i + 1)).map (e i)).reindex (finCongr (hm i)) :=
-  Basis.eq_of_apply_eq fun k ↦ by simp [hd]
 
 include he hd in
 /-- The bracket of `C` in degree `j + 1`, computed with the images under `e` of boundary bases of
@@ -156,9 +85,10 @@ private theorem torsionBracket_of_shift {j : ℤ} (h : D.ExactAt (j + 1 + 1))
     (b₁ : Basis (Fin p) F (LinearMap.range (D.d (j + 1 + 1 + 1) (j + 1 + 1)).hom))
     (b₀ : Basis (Fin q) F (LinearMap.range (D.d (j + 1 + 1) (j + 1)).hom))
     (s : Fin q → D.X (j + 1 + 1)) (hs : ∀ k, (D.d (j + 1 + 1) (j + 1)).hom (s k) = b₀ k)
-    (hs' : ∀ k, (C.d (j + 1) j).hom (-e (j + 1) (s k)) = b₀.map (boundaryEquiv e he j) k) :
-    torsionBracket c h' (b₁.map (boundaryEquiv e he (j + 1))) (b₀.map (boundaryEquiv e he j))
-        (fun k ↦ -e (j + 1) (s k)) hs' =
+    (hs' : ∀ k, (C.d (j + 1) j).hom (-e (j + 1) (s k)) =
+      b₀.map (boundaryEquivOfShift e he j) k) :
+    torsionBracket c h' (b₁.map (boundaryEquivOfShift e he (j + 1)))
+        (b₀.map (boundaryEquivOfShift e he j)) (fun k ↦ -e (j + 1) (s k)) hs' =
       (-1) ^ q * torsionBracket d h b₁ b₀ s hs := by
   have : Module.Finite F (D.X (j + 1 + 1)) := .of_basis (d _)
   have hn : m (j + 1 + 1) = p + q := by
@@ -167,7 +97,9 @@ private theorem torsionBracket_of_shift {j : ℤ} (h : D.ExactAt (j + 1 + 1))
     rwa [finrank_eq_card_basis b₁, finrank_eq_card_basis b₀, finrank_eq_card_basis (d _),
       Fintype.card_fin, Fintype.card_fin, Fintype.card_fin, eq_comm] at this
   rw [torsionBracket_eq_det_append c h' _ _ _ hs' ((hm (j + 1)).symm.trans hn),
-    torsionBracket_eq_det_append d h _ _ _ hs hn, eq_reindex_map_of_shift e c d hm hd,
+    torsionBracket_eq_det_append d h _ _ _ hs hn,
+    show c (j + 1) = ((d (j + 1 + 1)).map (e (j + 1))).reindex (finCongr (hm (j + 1))) from
+      Basis.eq_of_apply_eq fun k ↦ by simp [hd],
     Basis.det_reindex, Basis.det_map]
   have hneg := ((d (j + 1 + 1)).det.domDomCongr (finCongr hn)).map_append_neg
     (fun k ↦ (b₁ k : D.X (j + 1 + 1))) s
@@ -191,7 +123,17 @@ theorem reidemeisterTorsion_eq_mul_inv_of_shift :
     D.reidemeisterTorsion d =
       (∏ᶠ j : ℤ, (-1 : F) ^ finrank F (LinearMap.range (C.d (j + 1) j).hom)) *
         (C.reidemeisterTorsion c)⁻¹ := by
-  have hfin := finite_setOf_ne_zero_iff_of_shift hm
+  -- A shifted complex is bounded exactly when the original one is.
+  have hfin : {i | m i ≠ 0}.Finite ↔ {i | n i ≠ 0}.Finite := by
+    have himage : {i | m i ≠ 0} = (· + 1) '' {i | n i ≠ 0} := by
+      ext i
+      refine ⟨fun hi ↦ ⟨i - 1, ?_, by simp⟩, ?_⟩
+      · have := hm (i - 1)
+        rw [sub_add_cancel] at this
+        simpa [← this] using hi
+      · rintro ⟨j, hj, rfl⟩
+        simpa [hm] using hj
+    rw [himage, Set.finite_image_iff (add_left_injective (1 : ℤ)).injOn]
   by_cases hn : {i | n i ≠ 0}.Finite
   swap
   · simp [reidemeisterTorsion_of_not_finite _ _ hn,
@@ -209,12 +151,12 @@ theorem reidemeisterTorsion_eq_mul_inv_of_shift :
     Function.surjInv (D.d (j + 1) j).hom.surjective_rangeRestrict (b' j k)
   have hs' (j : ℤ) (k) : (D.d (j + 1) j).hom (s' j k) = b' j k :=
     congrArg Subtype.val (Function.surjInv_eq (D.d (j + 1) j).hom.surjective_rangeRestrict _)
-  let b (j : ℤ) := (b' (j + 1)).map (boundaryEquiv e he j)
+  let b (j : ℤ) := (b' (j + 1)).map (boundaryEquivOfShift e he j)
   have hs (j : ℤ) (k) : (C.d (j + 1) j).hom (-e (j + 1) (s' (j + 1) k)) = b j k := by
     simp [b, ← he, hs']
   have hq (j : ℤ) : finrank F (LinearMap.range (D.d (j + 1 + 1) (j + 1)).hom) =
       finrank F (LinearMap.range (C.d (j + 1) j).hom) :=
-    (boundaryEquiv e he j).finrank_eq
+    (boundaryEquivOfShift e he j).finrank_eq
   have hε : Function.HasFiniteMulSupport fun j : ℤ ↦
       (-1 : F) ^ finrank F (LinearMap.range (C.d (j + 1) j).hom) :=
     hn.subset <| Function.mulSupport_subset_iff'.2 fun j hj ↦ by
@@ -244,98 +186,6 @@ section MappingCone
 
 open Limits ZeroObject
 
-namespace homotopyCofiber
-
-variable {K L : ChainComplex (ModuleCat F) ℤ} (φ : K ⟶ L)
-
-/-- The decomposition `(homotopyCofiber φ).X i ≃ L.X i × K.X j` of the term of the mapping cone in
-degree `i`, for `j = i - 1`. -/
-private def XEquiv {i j : ℤ} (hij : (ComplexShape.down ℤ).Rel i j) :
-    (X φ i : ModuleCat F) ≃ₗ[F] L.X i × K.X j :=
-  LinearEquiv.ofLinearMap ((sndX φ i).hom.prod (fstX φ i j hij).hom)
-    ((inrX φ i).hom.coprod (inlX φ j i hij).hom)
-    (by
-      have h₁ (x) := congr(($(inrX_sndX φ i)).hom x)
-      have h₂ (x) := congr(($(inrX_fstX φ i j hij)).hom x)
-      have h₃ (x) := congr(($(inlX_sndX φ j i hij)).hom x)
-      have h₄ (x) := congr(($(inlX_fstX φ j i hij)).hom x)
-      simp only [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_id, LinearMap.id_apply,
-        ModuleCat.hom_zero, LinearMap.zero_apply] at h₁ h₂ h₃ h₄
-      ext x <;> simp [h₁, h₂, h₃, h₄])
-    (by
-      ext x
-      simpa [add_comm] using congr(($(fstX_inlX_add_sndX_inrX φ i j hij)).hom x))
-
-variable {nK nL : ℤ → ℕ} (cK : ∀ i, Basis (Fin (nK i)) F (K.X i))
-  (cL : ∀ i, Basis (Fin (nL i)) F (L.X i))
-
-/-- The basis of the term `(homotopyCofiber φ).X i = K.X (i - 1) ⊞ L.X i` of the mapping cone of a
-chain map `φ : K ⟶ L` of based complexes: the basis `cL i` of `L.X i`, included by `inrX`, followed
-by the basis `cK (i - 1)` of `K.X (i - 1)`, included by `inlX`. -/
-def basis (i : ℤ) : Basis (Fin (nL i + nK (i - 1))) F (X φ i : ModuleCat F) :=
-  (((cL i).prod (cK (i - 1))).map
-    (XEquiv φ (by simp : (ComplexShape.down ℤ).Rel i (i - 1))).symm).reindex finSumFinEquiv
-
-/-- The first `nL i` vectors of the basis of the mapping cone in degree `i` are the images of the
-basis of `L.X i`. -/
-@[simp]
-theorem basis_castAdd (i : ℤ) (k : Fin (nL i)) :
-    basis φ cK cL i (Fin.castAdd (nK (i - 1)) k) = (inrX φ i).hom (cL i k) := by
-  simp [basis, XEquiv]
-
-/-- The last `nK (i - 1)` vectors of the basis of the mapping cone in degree `i` are the images of
-the basis of `K.X (i - 1)`. -/
-@[simp]
-theorem basis_natAdd (i : ℤ) (k : Fin (nK (i - 1))) :
-    basis φ cK cL i (Fin.natAdd (nL i) k) = (inlX φ (i - 1) i (by simp)).hom (cK (i - 1) k) := by
-  simp [basis, XEquiv]
-
-/-- In the mapping cone of `K ⟶ 0`, the composite of the projection `fstX` and the inclusion
-`inlX` is the identity, as the other summand vanishes. -/
-private theorem fstX_inlX_zero {i j : ℤ} (hij : (ComplexShape.down ℤ).Rel i j) :
-    fstX (0 : K ⟶ 0) i j hij ≫ inlX (0 : K ⟶ 0) j i hij = 𝟙 _ := by
-  have h₀ : IsZero ((0 : ChainComplex (ModuleCat F) ℤ).X i) :=
-    (eval _ _ i).map_isZero (Limits.isZero_zero _)
-  rw [← fstX_inlX_add_sndX_inrX (0 : K ⟶ 0) i j hij, h₀.eq_of_tgt (sndX _ i) 0, zero_comp,
-    add_zero]
-
-variable (K) in
-/-- The projection `fstX` identifies the term of the mapping cone of `K ⟶ 0` in degree `i` with
-`K.X j`, for `j = i - 1`. -/
-private def zeroEquiv {i j : ℤ} (hij : (ComplexShape.down ℤ).Rel i j) :
-    (homotopyCofiber (0 : K ⟶ 0)).X i ≃ₗ[F] K.X j :=
-  LinearEquiv.ofLinearMap (fstX (0 : K ⟶ 0) i j hij).hom (inlX (0 : K ⟶ 0) j i hij).hom
-    (by ext x; exact congr(($(inlX_fstX (0 : K ⟶ 0) j i hij)).hom x))
-    (by ext x; exact congr(($(fstX_inlX_zero hij)).hom x))
-
-variable (K) in
-/-- The negated differentials of the mapping cone of `K ⟶ 0` correspond under `zeroEquiv` to the
-differentials of `K`. -/
-private theorem zeroEquiv_d (i : ℤ) (x : (homotopyCofiber (0 : K ⟶ 0)).X (i + 1 + 1)) :
-    zeroEquiv K (by simp : (ComplexShape.down ℤ).Rel (i + 1) i)
-        (((homotopyCofiber (0 : K ⟶ 0)).d (i + 1 + 1) (i + 1)).hom x) =
-      -(K.d (i + 1) i).hom
-        (zeroEquiv K (by simp : (ComplexShape.down ℤ).Rel (i + 1 + 1) (i + 1)) x) :=
-  congr(($(d_fstX (0 : K ⟶ 0) (i + 1 + 1) (i + 1) i (by simp) (by simp))).hom x)
-
-/-- The basis of the term of the mapping cone of `K ⟶ 0` in degree `i` corresponding to the basis
-`cK (i - 1)` of `K.X (i - 1)`. -/
-private def zeroBasis (i : ℤ) : Basis (Fin (nK (i - 1))) F ((homotopyCofiber (0 : K ⟶ 0)).X i) :=
-  (cK (i - 1)).map (zeroEquiv K (by simp : (ComplexShape.down ℤ).Rel i (i - 1))).symm
-
-private theorem zeroEquiv_zeroBasis (i : ℤ) (k : Fin (nK (i + 1 - 1))) :
-    zeroEquiv K (by simp : (ComplexShape.down ℤ).Rel (i + 1) i) (zeroBasis cK (i + 1) k) =
-      cK i (Fin.cast (by simp) k) := by
-  -- The indices `i + 1 - 1` and `i` are only propositionally equal.
-  have key : ∀ a (ha : a = i) (k : Fin (nK a)) (h₁ : (ComplexShape.down ℤ).Rel (i + 1) a),
-      (fstX (0 : K ⟶ 0) (i + 1) i (by simp)).hom ((inlX (0 : K ⟶ 0) a (i + 1) h₁).hom (cK a k)) =
-        cK i (Fin.cast (by rw [ha]) k) := by
-    rintro a rfl k h₁
-    exact congr(($(inlX_fstX (0 : K ⟶ 0) _ _ h₁)).hom (cK a k))
-  exact key _ (by simp) k _
-
-end homotopyCofiber
-
 /-- The signs `(-1) ^ (dim Bⱼ · f j)`, where `Bⱼ` is the space of boundaries of a bounded based
 complex `K` in degree `j`, have finite multiplicative support. -/
 private theorem hasFiniteMulSupport_neg_one_pow_finrank_mul {K : ChainComplex (ModuleCat F) ℤ}
@@ -362,15 +212,16 @@ theorem reidemeisterTorsion_homotopyCofiber {K L : ChainComplex (ModuleCat F) �
       (L.reidemeisterTorsion cL * (K.reidemeisterTorsion cK)⁻¹) := by
   have hc : ∀ j, ∃ i, (ComplexShape.down ℤ).Rel i j := fun j ↦ ⟨j + 1, by simp⟩
   -- The mapping cone of `K ⟶ 0` is `K` shifted up by one degree, with negated differentials.
-  let e (i : ℤ) := zeroEquiv K (by simp : (ComplexShape.down ℤ).Rel (i + 1) i)
-  have he := zeroEquiv_d K
+  let e (i : ℤ) : (homotopyCofiber (0 : K ⟶ 0)).X (i + 1) ≃ₗ[F] K.X i :=
+    zeroEquiv K (by simp : (ComplexShape.down ℤ).Rel (i + 1) i)
+  have he (i : ℤ) := zeroEquiv_d K (i := i + 1 + 1) (j := i + 1) (k := i) (by simp) (by simp)
   have hm (i : ℤ) : nK (i + 1 - 1) = nK i := by simp
   have hshift := reidemeisterTorsion_eq_mul_inv_of_shift e he cK (zeroBasis cK) hm
     (zeroEquiv_zeroBasis cK)
   have hq (j : ℤ) : finrank F (LinearMap.range
       ((homotopyCofiber (0 : K ⟶ 0)).d (j + 1 + 1) (j + 1)).hom) =
       finrank F (LinearMap.range (K.d (j + 1) j).hom) :=
-    (boundaryEquiv e he j).finrank_eq
+    (boundaryEquivOfShift e he j).finrank_eq
   have hS := coneShortComplex_shortExact φ hc
   have h₃ := (acyclic_iff_of_shift e he).2 hK
   by_cases hL : L.Acyclic
@@ -383,7 +234,7 @@ theorem reidemeisterTorsion_homotopyCofiber {K L : ChainComplex (ModuleCat F) �
   -- The multiplicativity of the torsion in `L ⟶ cone φ ⟶ cone (K ⟶ 0)`.
   have hmul := reidemeisterTorsion_eq_mul_of_shortExact hS hL h₃ cL (zeroBasis cK) (basis φ cK cL)
     (fun i k ↦ basis_castAdd φ cK cL i k) (fun i k ↦ by
-      rw [basis_natAdd]
+      rw [basis_natAdd, zeroBasis_apply]
       have h₀ := inlX_mapArrowHom_f φ (0 : K ⟶ 0) hc (Arrow.homMk (𝟙 K) 0) (i - 1) i (by simp)
       have h := congr(($h₀).hom (cK (i - 1) k))
       simp only [Arrow.homMk_left, id_f] at h
