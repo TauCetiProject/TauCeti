@@ -15,7 +15,10 @@ Let `τ` be a point-norm continuous real action on a possibly nonunital C⋆-alg
 `P ∈ A`. The perturbation cocycle `Γ t` is the time-ordered exponential of the path
 `s ↦ i τ_s(P)` in the multiplier algebra `𝓜(ℂ, A)`, given by the norm-convergent Dyson series
 
-`Γ t = 1 + Σₙ iⁿ ∫_{0 ≤ s₁ ≤ ⋯ ≤ sₙ ≤ t} τ_{s₁}(P) ⋯ τ_{sₙ}(P) ds`.
+`Γ t = 1 + Σ_{n ≥ 1} iⁿ ∫_{0 ≤ s₁ ≤ ⋯ ≤ sₙ ≤ t} τ_{s₁}(P) ⋯ τ_{sₙ}(P) ds` for `t ≥ 0`.
+
+For `t < 0` the `n`-th term instead integrates over `t ≤ sₙ ≤ ⋯ ≤ s₁ ≤ 0`, with an extra
+factor `(-1)ⁿ`.
 
 It is the unique solution of `Γ' t = i Γ t τ_t(P)` with `Γ 0 = 1`. When `P` is self-adjoint,
 each `Γ t` is unitary, and the family satisfies the cocycle identity

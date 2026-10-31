@@ -64,7 +64,8 @@ variable {B : Type*} [NormedRing B] [NormedAlgebra ℝ B] {p : ℝ → B}
 
 /-- The `n`-th term of the Dyson series of `p`: `dysonTerm p 0 t = 1` and
 `dysonTerm p (n + 1) t = ∫ s in 0..t, dysonTerm p n s * p s`. It is the iterated integral of
-`p s₁ * ⋯ * p sₙ` over the simplex `0 ≤ s₁ ≤ ⋯ ≤ sₙ ≤ t`, oriented when `t < 0`. -/
+`p s₁ * ⋯ * p sₙ` over the simplex `0 ≤ s₁ ≤ ⋯ ≤ sₙ ≤ t` when `t ≥ 0`; when `t < 0` it is
+`(-1)ⁿ` times the integral over the reversed simplex `t ≤ sₙ ≤ ⋯ ≤ s₁ ≤ 0`. -/
 def dysonTerm (p : ℝ → B) : ℕ → ℝ → B
   | 0 => fun _ => 1
   | n + 1 => fun t => ∫ s in 0..t, dysonTerm p n s * p s
@@ -87,26 +88,8 @@ theorem continuous_dysonTerm (hp : Continuous p) (n : ℕ) : Continuous (dysonTe
   induction n with
   | zero => exact continuous_const
   | succ n ih =>
-    rw [show dysonTerm p (n + 1) = _ from funext (dysonTerm_succ p n)]
+    rw [funext (dysonTerm_succ p n)]
     exact continuous_primitive (fun _ _ => (ih.mul hp).intervalIntegrable _ _) 0
-
-/-- `|∫₀ᵗ |s|ⁿ ds| = |t|ⁿ⁺¹ / (n + 1)`, for either sign of `t`. -/
-private theorem abs_integral_abs_pow (n : ℕ) (t : ℝ) :
-    |∫ s in 0..t, |s| ^ n| = |t| ^ (n + 1) / (n + 1) := by
-  have hpos {u : ℝ} (hu : 0 ≤ u) : ∫ s in 0..u, |s| ^ n = ∫ s in 0..u, s ^ n :=
-    integral_congr fun s hs => by
-      rw [uIcc_of_le hu] at hs
-      simp only [abs_of_nonneg hs.1]
-  rcases le_total 0 t with ht | ht
-  · rw [hpos ht, integral_pow, abs_of_nonneg ht,
-      abs_of_nonneg (div_nonneg (by simpa using pow_nonneg ht _) (by positivity))]
-    simp
-  · have hneg : ∫ s in 0..t, |s| ^ n = -∫ s in 0..-t, |s| ^ n := by
-      simpa [integral_symm (a := -t)] using integral_comp_neg (a := 0) (b := t) (fun s => |s| ^ n)
-    have ht' : 0 ≤ -t := neg_nonneg.2 ht
-    rw [hneg, hpos ht', integral_pow, abs_neg, abs_of_nonpos ht,
-      abs_of_nonneg (div_nonneg (by simpa using pow_nonneg ht' _) (by positivity))]
-    simp
 
 /-- The factorial bound on the iterated integrals: if `‖p s‖ ≤ C` for `|s| ≤ R`, then
 `‖dysonTerm p n t‖ ≤ ‖1‖ * (C * |t|) ^ n / n!` for `|t| ≤ R`. -/
@@ -133,7 +116,11 @@ theorem norm_dysonTerm_le {R C : ℝ} (hC : ∀ s, |s| ≤ R → ‖p s‖ ≤ C
     refine (norm_integral_le_abs_of_norm_le
       (MeasureTheory.ae_restrict_of_forall_mem measurableSet_uIoc hbound)
       ((by fun_prop : Continuous fun s : ℝ => K * |s| ^ n).intervalIntegrable _ _)).trans_eq ?_
-    rw [integral_const_mul, abs_mul, abs_integral_abs_pow, abs_of_nonneg (by positivity),
+    have hint : |∫ s in 0..t, |s| ^ n| = |t| ^ (n + 1) / (n + 1) := by
+      have h := integral_pow_abs_sub_uIoc (a := 0) (b := t) (n := n)
+      simp only [sub_zero] at h
+      rw [abs_intervalIntegral_eq, h, abs_of_nonneg (by positivity)]
+    rw [integral_const_mul, abs_mul, hint, abs_of_nonneg (by positivity),
       Nat.factorial_succ]
     simp only [K]
     push_cast
@@ -166,7 +153,7 @@ variable [CompleteSpace B]
 /-- Each iterated integral is the primitive of the previous one multiplied by `p`. -/
 theorem hasDerivAt_dysonTerm_succ (hp : Continuous p) (n : ℕ) (t : ℝ) :
     HasDerivAt (dysonTerm p (n + 1)) (dysonTerm p n t * p t) t := by
-  rw [show dysonTerm p (n + 1) = _ from funext (dysonTerm_succ p n)]
+  rw [funext (dysonTerm_succ p n)]
   exact ((continuous_dysonTerm hp n).mul hp).integral_hasStrictDerivAt 0 t |>.hasDerivAt
 
 /-- The iterated integrals are summable at every time. -/
@@ -209,8 +196,7 @@ theorem hasDerivAt_dysonSeries (hp : Continuous p) (t : ℝ) :
     Metric.isOpen_ball (convex_ball (0 : ℝ) R).isPreconnected
     (fun n s _ => hasDerivAt_dysonTerm_succ hp n s) hbound ht
     ((summable_nat_add_iff 1).2 (summable_dysonTerm hp t)) ht
-  rw [show dysonSeries p t * p t = ∑' n, dysonTerm p n t * p t from
-    ((summable_dysonTerm hp t).tsum_mul_right (p t)).symm, hsplit]
+  rw [dysonSeries, ← (summable_dysonTerm hp t).tsum_mul_right, hsplit]
   exact h.const_add 1
 
 /-- The Dyson series of a continuous path is continuous. -/
