@@ -110,7 +110,8 @@ theorem integral_inner_vonMisesFisherNaturalMeasure_eq_zero (η θ : E)
 
 /-- The vector mean is the mean projection onto the unit direction times that direction.
 The formula also holds for the zero measure at negative concentration. -/
-theorem integral_coe_vonMisesFisherMeasure (m : sphere (0 : E) 1) (κ : ℝ) :
+theorem integral_coe_vonMisesFisherMeasure_eq_integral_inner_smul
+    (m : sphere (0 : E) 1) (κ : ℝ) :
     (∫ x : sphere (0 : E) 1, (x : E) ∂vonMisesFisherMeasure m κ) =
       (∫ x : sphere (0 : E) 1, ⟪(m : E), (x : E)⟫ ∂vonMisesFisherMeasure m κ) • (m : E) := by
   by_cases hκ : 0 ≤ κ
