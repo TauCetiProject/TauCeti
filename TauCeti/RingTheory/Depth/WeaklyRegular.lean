@@ -36,6 +36,8 @@ maximal ideal, and that it is infinite exactly when `M = 0`.
 * `Ideal.depth_eq_top_iff`: `I.depth M = ⊤` if and only if `I M = M`.
 * `Ideal.depth_eq_sSup_length_isWeaklyRegular`: `I.depth M` is the supremum of the lengths of
   weakly `M`-regular sequences in `I`.
+* `Ideal.exists_isWeaklyRegular_of_le_depth`: a module of depth at least `n` with respect to `I`
+  has a weakly regular sequence of length `n` in `I`.
 * `IsLocalRing.depth_eq_top_iff`: over a Noetherian local ring, `depth M = ⊤` if and only if
   `M = 0`.
 * `IsLocalRing.depth_eq_sSup_length_isWeaklyRegular`: over a Noetherian local ring, `depth M` is
@@ -140,6 +142,27 @@ theorem depth_eq_sSup_length_isWeaklyRegular (I : Ideal R) (M : ModuleCat.{v} R)
       fun ⟨rs, reg, mem, h⟩ ↦ ⟨rs, ⟨reg, fun htop ↦ hI ?_⟩, mem, h⟩⟩
     exact top_le_iff.1 <| htop.le.trans <| Submodule.smul_mono_left <| span_le.2 mem
 
+/-- Let `M` be a finite module over a Noetherian ring and `I` an ideal. If the depth of `M` with
+respect to `I` is at least `n`, then `M` has a weakly regular sequence of length `n` in `I`. -/
+theorem exists_isWeaklyRegular_of_le_depth (I : Ideal R) (M : ModuleCat.{v} R) [Module.Finite R M]
+    {n : ℕ} (h : (n : ℕ∞) ≤ I.depth M) :
+    ∃ rs : List R, rs.length = n ∧ (∀ r ∈ rs, r ∈ I) ∧ IsWeaklyRegular M rs := by
+  -- Some weakly regular sequence in `I` has length at least `n`.
+  obtain ⟨rs, hreg, hmem, hlen⟩ : ∃ rs : List R, IsWeaklyRegular M rs ∧
+      (∀ r ∈ rs, r ∈ I) ∧ n ≤ rs.length := by
+    rcases n with _ | n
+    · exact ⟨[], IsWeaklyRegular.nil R M, by simp, le_rfl⟩
+    by_contra! hcon
+    rw [depth_eq_sSup_length_isWeaklyRegular] at h
+    have hle : ((n + 1 : ℕ) : ℕ∞) ≤ n := h.trans <| sSup_le ?_
+    · exact absurd hle (by exact_mod_cast n.not_succ_le_self)
+    rintro _ ⟨rs, hrs, hmem, rfl⟩
+    exact_mod_cast Nat.le_of_lt_succ (hcon rs hrs hmem)
+  -- Its first `n` terms are again weakly regular.
+  rw [← List.take_append_drop n rs, isWeaklyRegular_append_iff] at hreg
+  exact ⟨rs.take n, List.length_take_of_le hlen, fun r hr ↦ hmem r (List.mem_of_mem_take hr),
+    hreg.1⟩
+
 end Ideal
 
 namespace IsLocalRing
@@ -166,21 +189,7 @@ theorem depth_eq_sSup_length_isWeaklyRegular (M : ModuleCat.{v} R) [Module.Finit
 sequence of length `n` in the maximal ideal. -/
 theorem exists_isWeaklyRegular_of_le_depth (M : ModuleCat.{v} R) [Module.Finite R M] {n : ℕ}
     (h : (n : ℕ∞) ≤ depth M) :
-    ∃ rs : List R, rs.length = n ∧ (∀ r ∈ rs, r ∈ maximalIdeal R) ∧ IsWeaklyRegular M rs := by
-  -- Some weakly regular sequence in the maximal ideal has length at least `n`.
-  obtain ⟨rs, hreg, hmem, hlen⟩ : ∃ rs : List R, IsWeaklyRegular M rs ∧
-      (∀ r ∈ rs, r ∈ maximalIdeal R) ∧ n ≤ rs.length := by
-    rcases n with _ | n
-    · exact ⟨[], IsWeaklyRegular.nil R M, by simp, le_rfl⟩
-    by_contra! hcon
-    rw [depth_eq_sSup_length_isWeaklyRegular] at h
-    have hle : ((n + 1 : ℕ) : ℕ∞) ≤ n := h.trans <| sSup_le ?_
-    · exact absurd hle (by exact_mod_cast n.not_succ_le_self)
-    rintro _ ⟨rs, hrs, hmem, rfl⟩
-    exact_mod_cast Nat.le_of_lt_succ (hcon rs hrs hmem)
-  -- Its first `n` terms are again weakly regular.
-  rw [← List.take_append_drop n rs, isWeaklyRegular_append_iff] at hreg
-  exact ⟨rs.take n, List.length_take_of_le hlen, fun r hr ↦ hmem r (List.mem_of_mem_take hr),
-    hreg.1⟩
+    ∃ rs : List R, rs.length = n ∧ (∀ r ∈ rs, r ∈ maximalIdeal R) ∧ IsWeaklyRegular M rs :=
+  (maximalIdeal R).exists_isWeaklyRegular_of_le_depth M h
 
 end IsLocalRing

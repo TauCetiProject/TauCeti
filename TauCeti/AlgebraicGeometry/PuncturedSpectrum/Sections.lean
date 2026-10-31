@@ -31,11 +31,13 @@ the punctured spectrum `Spec A ∖ {𝔪}`. This file gives conditions under whi
   down, these localizations have the dimension of `A`, so they have depth at least two by the
   `(S₂)` property of normal local domains.
 
-These statements compare finite étale covers of a punctured spectrum with finite `A`-algebras.
-When `A` has depth at least two, the first case recovers a finite étale `A`-algebra as the ring of
-sections of its spectrum over the preimage of the punctured spectrum, as in Stacks, Lemma 58.20.2
-(0BLK); the last case recovers a finite normal `A`-algebra in the same way, as in Stacks, Lemma
-58.20.3 (0BM9).
+These results are the section-recovery input used by Stacks, Lemmas 58.20.2 (0BLK) and 58.20.3
+(0BM9); no statement here mentions étale covers. When `A` has depth at least two, the first case
+recovers a finite étale `A`-algebra as the ring of sections of its spectrum over the preimage of
+the punctured spectrum, as needed for 0BLK. The last case is the corresponding step of a corrected
+form of 0BM9: Stacks omits the hypothesis that `B` is torsion-free over `A`, without which 0BM9 is
+false (for `B = A × A/𝔪` the sections over the preimage of the punctured spectrum are just `A`),
+so the theorem assumes `Module.IsTorsionFree A B`.
 
 ## Main results
 
