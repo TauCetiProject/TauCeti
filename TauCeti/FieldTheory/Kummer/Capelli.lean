@@ -91,13 +91,12 @@ private theorem exists_neg_four_mul_pow_four_eq_of_pow_four_eq (ha : ∀ b : K, 
   obtain ⟨s, hs, hγs⟩ : ∃ s : K, s ^ 2 = 1 ∧
       (algebraMap K _ y * root (X ^ 2 - C a) + algebraMap K _ x) ^ 2 =
         algebraMap K _ s * root (X ^ 2 - C a) := by
-    have : ((algebraMap K _ y * root (X ^ 2 - C a) + algebraMap K _ x) ^ 2 - root (X ^ 2 - C a)) *
-        ((algebraMap K _ y * root (X ^ 2 - C a) + algebraMap K _ x) ^ 2 +
-          root (X ^ 2 - C a)) = 0 := by
+    have : ((algebraMap K _ y * root (X ^ 2 - C a) + algebraMap K _ x) ^ 2) ^ 2 =
+        root (X ^ 2 - C a) ^ 2 := by
       linear_combination hγ - hβ
-    rcases mul_eq_zero.mp this with h | h
-    · exact ⟨1, one_pow 2, by rw [map_one, one_mul]; linear_combination h⟩
-    · exact ⟨-1, by ring, by rw [map_neg, map_one]; linear_combination h⟩
+    rcases sq_eq_sq_iff_eq_or_eq_neg.mp this with h | h
+    · exact ⟨1, one_pow 2, by rw [map_one, one_mul, h]⟩
+    · exact ⟨-1, by ring, by rw [map_neg, map_one, neg_one_mul, h]⟩
   -- Comparing coordinates in `1, β` gives `x² + ay² = 0` and `2xy = s`.
   obtain ⟨h₁, h₂⟩ := hind (x ^ 2 + a * y ^ 2) (2 * x * y - s) (by
     simp only [map_add, map_sub, map_mul, map_pow, map_ofNat]
