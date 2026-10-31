@@ -6,23 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.EffectiveEpi.Basic
-public import TauCeti.CategoryTheory.Action.Tannaka
+public import TauCeti.CategoryTheory.Action.Basic
 
 /-!
 # Effective epimorphic families of `G`-sets
 
-A family of maps `π a : X a ⟶ B` of `G`-sets is an effective epimorphic family in
-`Action (Type u) G` exactly when it is jointly surjective on underlying types
+For a monoid `G`, a family of maps `π a : X a ⟶ B` of `G`-sets is an effective epimorphic family
+in `Action (Type u) G` exactly when it is jointly surjective on underlying types
 (`Action.effectiveEpiFamily_iff`). This is the `G`-equivariant form of
 `CategoryTheory.Types.effectiveEpiFamily_iff`.
 
-A jointly surjective family is effective: a compatible family `e a : X a ⟶ W` descends to `B` by
-evaluating `e` at any preimage. Compatibility on elements follows from compatibility on maps of
-`G`-sets by testing against the orbit maps `CategoryTheory.Action.leftRegularHom` out of the left
-regular `G`-set, and the descended map is equivariant because preimages may be translated by `G`.
-Conversely, an effective epimorphic family is jointly epimorphic, and the two maps from `B` to the
-trivial `G`-set of propositions, constantly true and membership in the joint image, agree after
-composing with every `π a`; the joint image is `G`-stable, so the second map is equivariant.
+Effective epimorphic families are the covers of a topos, so this criterion translates categorical
+statements about covers of `G`-sets into statements about points: it is how finiteness conditions
+such as quasicompactness are computed for `G`-sets, and how covers of a `G`-set are constructed,
+for instance by the orbit maps `CategoryTheory.Action.leftRegularHom` of its points. For a jointly
+surjective family, `Action.effectiveEpiFamilyStructOfSurjective` provides the descent data
+explicitly.
 -/
 
 public section
@@ -33,11 +32,7 @@ open CategoryTheory
 
 namespace Action
 
-variable {α : Type*}
-
-section Monoid
-
-variable {G : Type u} [Monoid G] {B : Action (Type u) G} (X : α → Action (Type u) G)
+variable {α : Type*} {G : Type u} [Monoid G] {B : Action (Type u) G} (X : α → Action (Type u) G)
   (π : (a : α) → X a ⟶ B)
 
 /-- Compatibility of a family of maps of `G`-sets, tested on maps out of `G`-sets, implies
@@ -72,34 +67,42 @@ noncomputable def effectiveEpiFamilyStructOfSurjective
     simp only [← hm]
     exact congrArg m.hom hb.symm
 
-end Monoid
-
-variable {G : Type u} [Group G] {B : Action (Type u) G} (X : α → Action (Type u) G)
-  (π : (a : α) → X a ⟶ B)
+/-- The `G`-set of `G`-indexed families of propositions, with `g` acting by
+`(g • φ) m = φ (m * g)`. A point `b` of a `G`-set gives the family recording which translates of
+`b` satisfy a property, which is how `Action.effectiveEpiFamily_iff` tests membership. -/
+private def predicates : Action (Type u) G where
+  V := G → ULift.{u} Prop
+  ρ := (TypeCat.endEquiv _).toMonoidHom.comp
+    { toFun g φ m := φ (m * g)
+      map_one' := funext fun φ ↦ funext fun m ↦ congrArg φ (mul_one m)
+      map_mul' g h := funext fun φ ↦ funext fun m ↦ congrArg φ (mul_assoc m g h).symm }
 
 /-- In the category of `G`-sets, a family of maps is effective epimorphic if and only if it is
 jointly surjective. -/
 theorem effectiveEpiFamily_iff :
     EffectiveEpiFamily X π ↔ ∀ b : ToType B, ∃ a x, (π a).hom x = b := by
   refine ⟨fun _ ↦ ?_, fun hπ ↦ ⟨⟨effectiveEpiFamilyStructOfSurjective X π hπ⟩⟩⟩
-  -- Membership in the joint image is an equivariant map to the trivial `G`-set of propositions,
-  -- since the joint image is `G`-stable. It agrees with the constant map `True` after composing
-  -- with every `π a`. The two maps are built with `TypeCat.ofHom`, so their values are computed
-  -- by definitional unfolding.
-  have h := EffectiveEpiFamily.hom_ext X π (W := trivial G (ULift.{u} Prop))
-    ⟨TypeCat.ofHom fun _ ↦ ULift.up True, fun _ ↦ rfl⟩
-    ⟨TypeCat.ofHom fun b ↦ ULift.up (∃ a x, (π a).hom x = b), fun g ↦ by
+  -- Recording which translates of a point lie in the joint image is an equivariant map to
+  -- `predicates`. It agrees with the constant map `True` after composing with every `π a`, since
+  -- the joint image is `G`-stable. The two maps are built with `TypeCat.ofHom`, so their values
+  -- are computed by definitional unfolding.
+  have h := EffectiveEpiFamily.hom_ext X π (W := predicates)
+    ⟨TypeCat.ofHom fun _ _ ↦ ULift.up True, fun _ ↦ rfl⟩
+    ⟨TypeCat.ofHom fun b m ↦ ULift.up (∃ a x, (π a).hom x = B.ρ m b), fun g ↦ by
       ext b
-      refine congrArg ULift.up (propext ⟨fun ⟨a, x, hx⟩ ↦ ⟨a, (X a).ρ g⁻¹ x, ?_⟩,
-        fun ⟨a, x, hx⟩ ↦ ⟨a, (X a).ρ g x, ?_⟩⟩)
-      · rw [hom_comm_apply]
-        exact (congrArg (B.ρ g⁻¹) hx).trans (ρ_inv_self_apply g b)
-      · rw [hom_comm_apply, hx]
-        rfl⟩
+      funext m
+      change ULift.up (∃ a x, (π a).hom x = B.ρ m (B.ρ g b)) =
+        ULift.up (∃ a x, (π a).hom x = B.ρ (m * g) b)
+      rw [map_mul]
+      rfl⟩
     fun a ↦ by
       ext x
-      exact congrArg ULift.up (propext ⟨fun _ ↦ ⟨a, x, rfl⟩, fun _ ↦ True.intro⟩)
+      funext m
+      exact congrArg ULift.up
+        (propext ⟨fun _ ↦ ⟨a, (X a).ρ m x, hom_comm_apply _ m x⟩, fun _ ↦ True.intro⟩)
   intro b
-  exact (congrArg ULift.down (ConcreteCategory.congr_hom (congrArg Hom.hom h) b)).mp True.intro
+  have := congrFun (ConcreteCategory.congr_hom (congrArg Hom.hom h) b) 1
+  obtain ⟨a, x, hx⟩ := (congrArg ULift.down this).mp True.intro
+  exact ⟨a, x, hx.trans (by simp)⟩
 
 end Action
