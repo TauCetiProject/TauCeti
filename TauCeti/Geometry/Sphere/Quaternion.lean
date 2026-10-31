@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Quaternion
+public import TauCeti.Analysis.Quaternion.Basic
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 
 /-!
@@ -16,7 +16,7 @@ Let `E` be a real inner product space on which the quaternions act on the right,
 `ℍ^ι = PiLp 2 (fun _ : ι => ℍ)`, of real dimension `4 * Fintype.card ι`
 (`TauCeti.finrank_piLp_quaternion`), whose unit sphere is `S^{4k-1}` for `k = Fintype.card ι`.
 
-The quaternionic inner-product facts used here are developed in `TauCeti.Analysis.Quaternion`.
+The quaternionic inner-product facts used here are developed in `TauCeti.Analysis.Quaternion.Basic`.
 For a unit vector `x`, the three vectors `x <• i`, `x <• j`, `x <• k` are orthonormal and
 orthogonal to `x`: they are three pointwise orthonormal tangent vector fields on the unit sphere of
 `E`, and they are restrictions of real-linear maps of `E`, hence analytic. For `E = ℍ^ι` these are
