@@ -389,9 +389,11 @@ theorem hasDerivAt_heatCauchyPotential [CompleteSpace F] (hg : ContDiff ℝ 2 g)
     HasDerivAt (fun s => heatCauchyPotential g s x) (heatCauchyPotential (Δ g) t x) t := by
   have h := hasDerivAt_heatKernel_convolution ht hg.continuous.aestronglyMeasurable
     (ae_of_all _ h₀) x
-  rw [show heatKernel t ⋆ g = heatCauchyPotential g t from
-    funext fun x => (heatCauchyPotential_eq_convolution g ht x).symm,
-    laplacian_heatCauchyPotential hg h₁ h₂] at h
+  -- The derivative `Δ (heatKernel t ⋆ g) x` applies `Δ` to the whole time slice, so rewriting it
+  -- with `laplacian_heatCauchyPotential` needs the slices to agree as functions, not pointwise.
+  have hslice : heatKernel t ⋆ g = heatCauchyPotential g t :=
+    funext fun y => (heatCauchyPotential_eq_convolution g ht y).symm
+  rw [hslice, laplacian_heatCauchyPotential hg h₁ h₂] at h
   exact h.congr_of_eventuallyEq (Filter.eventually_of_mem (Ioi_mem_nhds ht)
     fun s hs => heatCauchyPotential_eq_convolution g hs x)
 

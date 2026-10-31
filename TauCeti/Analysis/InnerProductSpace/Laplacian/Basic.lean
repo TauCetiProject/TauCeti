@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import TauCeti.Analysis.Matrix.EuclideanLin
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Geometric invariance of the Laplacian
@@ -113,23 +114,12 @@ theorem laplacian_eq_traceL (f : E → F) (x : E) :
         (fderiv ℝ (fderiv ℝ f) x) := by
   simp [laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, iteratedFDeriv_two_apply]
 
-/-- The trace functional of `TauCeti.laplacian_eq_traceL` is bounded by the dimension. -/
-private theorem norm_traceL_apply_le (A : E →L[ℝ] E →L[ℝ] F) :
-    ‖(∑ i, (ContinuousLinearMap.apply ℝ F (stdOrthonormalBasis ℝ E i)).comp
-      (ContinuousLinearMap.apply ℝ (E →L[ℝ] F) (stdOrthonormalBasis ℝ E i))) A‖ ≤
-        Module.finrank ℝ E * ‖A‖ := by
-  simp only [FunLike.coe_sum, Finset.sum_apply]
-  calc _ ≤ ∑ _i : Fin (Module.finrank ℝ E), ‖A‖ := (norm_sum_le _ _).trans <|
-        Finset.sum_le_sum fun i _ => by
-          simpa using A.le_opNorm₂ (stdOrthonormalBasis ℝ E i) (stdOrthonormalBasis ℝ E i)
-    _ = Module.finrank ℝ E * ‖A‖ := by simp
-
 /-- The Laplacian is bounded by the dimension times the second Fréchet derivative:
 `‖Δ f x‖ ≤ dim E * ‖D²f x‖`. -/
 theorem norm_laplacian_le (f : E → F) (x : E) :
     ‖Δ f x‖ ≤ Module.finrank ℝ E * ‖fderiv ℝ (fderiv ℝ f) x‖ := by
-  rw [laplacian_eq_traceL]
-  exact norm_traceL_apply_le _
+  simpa [laplacian_eq_traceL] using (fderiv ℝ (fderiv ℝ f) x).norm_sum_apply_apply_le
+    Finset.univ fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le
 
 /-- Differences of the Laplacian are bounded by the dimension times the differences of the second
 Fréchet derivative: `‖Δ f x - Δ f y‖ ≤ dim E * ‖D²f x - D²f y‖`. -/
@@ -137,7 +127,8 @@ theorem norm_laplacian_sub_laplacian_le (f : E → F) (x y : E) :
     ‖Δ f x - Δ f y‖ ≤
       Module.finrank ℝ E * ‖fderiv ℝ (fderiv ℝ f) x - fderiv ℝ (fderiv ℝ f) y‖ := by
   rw [laplacian_eq_traceL, laplacian_eq_traceL, ← map_sub]
-  exact norm_traceL_apply_le _
+  simpa using (fderiv ℝ (fderiv ℝ f) x - fderiv ℝ (fderiv ℝ f) y).norm_sum_apply_apply_le
+    Finset.univ fun i _ ↦ ((stdOrthonormalBasis ℝ E).norm_eq_one i).le
 
 /-- The Laplacian of a function of class `C²` on an open set is continuous there. -/
 theorem _root_.ContDiffOn.continuousOn_laplacian {f : E → F} {s : Set E} (hf : ContDiffOn ℝ 2 f s)

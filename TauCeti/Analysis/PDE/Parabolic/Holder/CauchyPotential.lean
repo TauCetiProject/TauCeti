@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.HeatKernel.CauchyPotential
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
+import TauCeti.Analysis.Holder.Laplacian
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
@@ -58,66 +59,6 @@ open scoped NNReal BoundedContinuousFunction
 
 variable {α : ℝ≥0} {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {a b : ℝ}
-
-/-! ### The derivative fields of a `C_b^{2,α}` datum -/
-
-section Datum
-
-variable (g : CkHolderSpace 2 α E F)
-
-private theorem norm_apply_le_iteratedFDeriv_zero (y : E) : ‖g y‖ ≤ ‖g.iteratedFDeriv 0‖ := by
-  have h := (g.iteratedFDeriv 0).norm_coe_le_norm y
-  rw [← CkHolderSpace.iteratedFDeriv_eq] at h
-  simpa using h
-
-private theorem norm_fderiv_le_iteratedFDeriv_one (y : E) :
-    ‖fderiv ℝ g y‖ ≤ ‖g.iteratedFDeriv 1‖ := by
-  have h := (g.iteratedFDeriv 1).norm_coe_le_norm y
-  rw [← CkHolderSpace.iteratedFDeriv_eq] at h
-  simpa using h
-
-private theorem norm_fderiv_fderiv_le_iteratedFDeriv_two (y : E) :
-    ‖fderiv ℝ (fderiv ℝ g) y‖ ≤ ‖g.iteratedFDeriv 2‖ := by
-  have h := (g.iteratedFDeriv 2).norm_coe_le_norm y
-  rw [← CkHolderSpace.iteratedFDeriv_eq] at h
-  rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-  simpa using h
-
-private theorem contDiff_fderiv : ContDiff ℝ 1 (fderiv ℝ g) :=
-  g.contDiff.fderiv_right (by norm_num)
-
-/-- The curried second derivative is `α`-Hölder with the Hölder seminorm of `D²g`. -/
-private theorem holderWith_fderiv_fderiv :
-    HolderWith (nnHolderNorm α (iteratedFDeriv ℝ 2 g)) α (fderiv ℝ (fderiv ℝ g)) := by
-  have he : (fun x ↦ continuousMultilinearCurryFin2 ℝ E F (iteratedFDeriv ℝ 2 g x)) =
-      fderiv ℝ (fderiv ℝ g) := by
-    funext x
-    ext v w
-    simp [_root_.iteratedFDeriv_two_apply]
-  simpa [Function.comp_def, he] using
-    (continuousMultilinearCurryFin2 ℝ E F).isometry.lipschitzWith.holderWith.comp
-      g.memHolder_iteratedFDeriv.holderWith
-
-variable [FiniteDimensional ℝ E]
-
-private theorem norm_laplacian_le_iteratedFDeriv_two (y : E) :
-    ‖Δ (g : E → F) y‖ ≤ Module.finrank ℝ E * ‖g.iteratedFDeriv 2‖ :=
-  (norm_laplacian_le _ y).trans (mul_le_mul_of_nonneg_left
-    (norm_fderiv_fderiv_le_iteratedFDeriv_two g y) (Nat.cast_nonneg _))
-
-/-- The Laplacian of the datum is `α`-Hölder with `dim E` times the Hölder seminorm of `D²g`. -/
-private theorem holderWith_laplacian :
-    HolderWith (Module.finrank ℝ E * nnHolderNorm α (iteratedFDeriv ℝ 2 g)) α
-      (Δ (g : E → F)) := by
-  rw [← holderOnWith_univ]
-  refine HolderOnWith.of_dist_le fun x _ y _ ↦ ?_
-  rw [dist_eq_norm]
-  refine (norm_laplacian_sub_laplacian_le _ x y).trans ?_
-  rw [NNReal.coe_mul, NNReal.coe_natCast, mul_assoc]
-  exact mul_le_mul_of_nonneg_left
-    (by simpa [dist_eq_norm] using (holderWith_fderiv_fderiv g).dist_le x y) (Nat.cast_nonneg _)
-
-end Datum
 
 /-! ### The Cauchy potential of a bounded field on a slab -/
 
@@ -190,30 +131,30 @@ variable (hab : a < b) (ha : 0 ≤ a)
 space on `E × [a, b]`. -/
 private def potential (g : CkHolderSpace 2 α E F) : ParabolicC2HolderSpace α E F hab :=
   ParabolicC2HolderSpace.mk
-    (slabPotential g g.contDiff.continuous (norm_apply_le_iteratedFDeriv_zero g))
+    (slabPotential g g.contDiff.continuous g.norm_apply_le_iteratedFDeriv_zero)
     (slabPotential (fderiv ℝ g) (g.contDiff.continuous_fderiv two_ne_zero)
-      (norm_fderiv_le_iteratedFDeriv_one g))
+      g.norm_fderiv_le_iteratedFDeriv_one)
     (slabPotentialHolder (fderiv ℝ (fderiv ℝ g))
-      ((contDiff_fderiv g).continuous_fderiv one_ne_zero)
-      (norm_fderiv_fderiv_le_iteratedFDeriv_two g) (holderWith_fderiv_fderiv g))
+      (g.contDiff_fderiv.continuous_fderiv one_ne_zero)
+      g.norm_fderiv_fderiv_le_iteratedFDeriv_two g.holderWith_fderiv_fderiv)
     (slabPotentialHolder (Δ (g : E → F)) g.contDiff.continuous_laplacian
-      (norm_laplacian_le_iteratedFDeriv_two g) (holderWith_laplacian g))
+      g.norm_laplacian_le_iteratedFDeriv_two g.holderWith_laplacian)
     (fun t x ↦ by
       simp only [slabPotential_apply, space_slabMk, time_slabMk]
       exact hasFDerivAt_heatCauchyPotential
         (fun y ↦ (g.contDiff.differentiable two_ne_zero y).hasFDerivAt)
-        (g.contDiff.continuous_fderiv two_ne_zero) (norm_fderiv_le_iteratedFDeriv_one g) t x)
+        (g.contDiff.continuous_fderiv two_ne_zero) g.norm_fderiv_le_iteratedFDeriv_one t x)
     (fun t x ↦ by
       simp only [slabPotential_apply, slabPotentialHolder_apply, space_slabMk, time_slabMk]
       exact hasFDerivAt_heatCauchyPotential
-        (fun y ↦ ((contDiff_fderiv g).differentiable one_ne_zero y).hasFDerivAt)
-        ((contDiff_fderiv g).continuous_fderiv one_ne_zero)
-        (norm_fderiv_fderiv_le_iteratedFDeriv_two g) t x)
+        (fun y ↦ (g.contDiff_fderiv.differentiable one_ne_zero y).hasFDerivAt)
+        (g.contDiff_fderiv.continuous_fderiv one_ne_zero)
+        g.norm_fderiv_fderiv_le_iteratedFDeriv_two t x)
     (fun x t ↦ by
       rw [slabPotentialHolder_apply, space_slabMk, time_slabMk]
       refine ((hasDerivWithinAt_heatCauchyPotential g.contDiff
-        (norm_apply_le_iteratedFDeriv_zero g) (norm_fderiv_le_iteratedFDeriv_one g)
-        (norm_fderiv_fderiv_le_iteratedFDeriv_two g) (ha.trans t.2.1) x).mono
+        g.norm_apply_le_iteratedFDeriv_zero g.norm_fderiv_le_iteratedFDeriv_one
+        g.norm_fderiv_fderiv_le_iteratedFDeriv_two (ha.trans t.2.1) x).mono
           (Icc_subset_Ici_self.trans (Ici_subset_Ici.2 ha))).congr_of_mem (fun s hs ↦ ?_) t.2
       simp [timeExtension_def, projIcc_of_mem hab.le hs, slabPotential_apply])
 
@@ -232,14 +173,14 @@ private theorem norm_potential_le (g : CkHolderSpace 2 α E F) :
   have hm : 0 ≤ m := NNReal.coe_nonneg _
   have hH : 0 ≤ H := NNReal.coe_nonneg _
   have h₀ := norm_slabPotential_le (a := a) (b := b) g.contDiff.continuous
-    (norm_apply_le_iteratedFDeriv_zero g)
+    g.norm_apply_le_iteratedFDeriv_zero
   have h₁ := norm_slabPotential_le (a := a) (b := b) (g.contDiff.continuous_fderiv two_ne_zero)
-    (norm_fderiv_le_iteratedFDeriv_one g)
+    g.norm_fderiv_le_iteratedFDeriv_one
   have h₂ := norm_slabPotentialHolder_le (a := a) (b := b)
-    ((contDiff_fderiv g).continuous_fderiv one_ne_zero)
-    (norm_fderiv_fderiv_le_iteratedFDeriv_two g) (holderWith_fderiv_fderiv g)
+    (g.contDiff_fderiv.continuous_fderiv one_ne_zero)
+    g.norm_fderiv_fderiv_le_iteratedFDeriv_two g.holderWith_fderiv_fderiv
   have hΔ := norm_slabPotentialHolder_le (a := a) (b := b) g.contDiff.continuous_laplacian
-    (norm_laplacian_le_iteratedFDeriv_two g) (holderWith_laplacian g)
+    g.norm_laplacian_le_iteratedFDeriv_two g.holderWith_laplacian
   push_cast at h₂ hΔ
   have hS₀ := norm_nonneg (g.iteratedFDeriv 0)
   have hS₁ := norm_nonneg (g.iteratedFDeriv 1)
@@ -263,8 +204,8 @@ def heatCauchyPotentialL : CkHolderSpace 2 α E F →L[ℝ] ParabolicC2HolderSpa
         ext p
         simp only [potential_apply, ParabolicC2HolderSpace.add_apply, CkHolderSpace.coe_add]
         exact heatCauchyPotential_add g₁.contDiff.continuous
-          (norm_apply_le_iteratedFDeriv_zero g₁) g₂.contDiff.continuous
-          (norm_apply_le_iteratedFDeriv_zero g₂) _ _
+          g₁.norm_apply_le_iteratedFDeriv_zero g₂.contDiff.continuous
+          g₂.norm_apply_le_iteratedFDeriv_zero _ _
       map_smul' c g := by
         ext p
         simp only [potential_apply, ParabolicC2HolderSpace.smul_apply, CkHolderSpace.coe_smul,
@@ -320,8 +261,8 @@ theorem timeDerivL_heatCauchyPotentialL_eq_laplacian (g : CkHolderSpace 2 α E F
         (p : ParabolicSpaceTime E).space := by
   simp only [timeDerivL_heatCauchyPotentialL, heatCauchyPotentialL_apply, space_slabMk,
     time_slabMk, coe_slabTime]
-  rw [laplacian_heatCauchyPotential g.contDiff (norm_fderiv_le_iteratedFDeriv_one g)
-    (norm_fderiv_fderiv_le_iteratedFDeriv_two g)]
+  rw [laplacian_heatCauchyPotential g.contDiff g.norm_fderiv_le_iteratedFDeriv_one
+    g.norm_fderiv_fderiv_le_iteratedFDeriv_two]
 
 variable (hab ha) in
 /-- The operator norm of the Cauchy potential is at most `(1 + dim E) (1 + M_α)`, where
