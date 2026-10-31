@@ -47,6 +47,8 @@ reachability after deleting a set of vertices of `G` is reachability avoiding th
   along the bidirected arrow family.
 * `Graph.reachableAvoiding_bidirectedHom_iff`: reachability after deleting a set of vertices is
   reachability along the bidirected arrow family avoiding that set.
+* `TauCeti.ArrowWalk.internallyDisjoint_toGraphWalk_iff`: the identification preserves and
+  reflects internal disjointness.
 -/
 
 public section
@@ -282,6 +284,19 @@ theorem mem_support_toGraphWalk_iff (q : ArrowWalk G.BidirectedHom x y) {v : α}
     v ∈ q.toGraphWalk.support ↔ ∃ hv : v ∈ V(G), ⟨v, hv⟩ ∈ q.vertices := by
   simp [List.mem_unattach]
 
+/-- The walks in `G` of two directed walks are internally disjoint exactly when the directed walks
+are. -/
+@[simp]
+theorem internallyDisjoint_toGraphWalk_iff {p q : ArrowWalk G.BidirectedHom x y} :
+    p.toGraphWalk.InternallyDisjoint q.toGraphWalk ↔ p.InternallyDisjoint q := by
+  rw [Walk.internallyDisjoint_def, internallyDisjoint_def]
+  refine ⟨fun h v hp hq ↦ ?_, fun h v hp hq ↦ ?_⟩
+  · exact (h v ((mem_support_toGraphWalk_iff _).2 ⟨v.2, hp⟩)
+      ((mem_support_toGraphWalk_iff _).2 ⟨v.2, hq⟩)).imp Subtype.ext Subtype.ext
+  · obtain ⟨hv, hp'⟩ := (mem_support_toGraphWalk_iff _).1 hp
+    obtain ⟨_, hq'⟩ := (mem_support_toGraphWalk_iff _).1 hq
+    exact (h ⟨v, hv⟩ hp' hq').imp (congrArg Subtype.val) (congrArg Subtype.val)
+
 /-- A directed walk is determined by its walk in `G`. -/
 theorem toGraphWalk_injective :
     Function.Injective (toGraphWalk : ArrowWalk G.BidirectedHom x y → G.Walk x y) :=
@@ -324,5 +339,18 @@ theorem reachableAvoiding_bidirectedHom_iff {Y : Set α} {x y : V(G)} :
     fun ⟨p, _, hp⟩ ↦ ⟨p.toBidirected x.2, fun v hv ↦ hp v ?_⟩⟩
   rw [← Walk.vertices_toBidirected p x.2]
   exact List.mem_unattach.2 ⟨v.2, hv⟩
+
+/-- A set of actual vertices that the bidirected arrow family cannot avoid on its way from `x` to
+`y` separates `x` from `y` in `G`. -/
+theorem not_reachable_deleteVerts_map_subtype {X : Finset V(G)} {x y : V(G)}
+    (h : ¬ReachableAvoiding G.BidirectedHom (X : Set V(G)) x y) :
+    ¬(G.deleteVerts (X.map (Function.Embedding.subtype _) : Set α)).Reachable x y := by
+  rwa [← reachableAvoiding_bidirectedHom_iff, Finset.coe_map, Function.Embedding.coe_subtype,
+    Set.preimage_image_eq _ Subtype.val_injective]
+
+/-- No arrow of the bidirected arrow family runs between vertices that no edge joins. -/
+theorem isEmpty_bidirectedHom {s t : α} (hadj : ¬G.Adj s t) (hs : s ∈ V(G)) (ht : t ∈ V(G)) :
+    IsEmpty (G.BidirectedHom ⟨s, hs⟩ ⟨t, ht⟩) :=
+  ⟨fun e ↦ hadj ⟨e.1, e.2⟩⟩
 
 end Graph

@@ -29,11 +29,6 @@ no finiteness: each member of a packing visits a vertex of the separator other t
 Without the hypothesis that no edge joins `s` and `t`, no vertex separator exists, and a single
 edge from `s` to `t` could be repeated arbitrarily often in a packing.
 
-## Main definitions
-
-* `Graph.Walk.InternallyDisjoint`: two walks from `s` to `t` sharing no vertex other than `s` and
-  `t`.
-
 ## Main results
 
 * `Graph.card_le_sum_of_not_reachable_deleteVerts`: **weak duality** for vertex-capacitated
@@ -76,72 +71,6 @@ namespace Graph
 
 variable {α : Type u} {β : Type v} {G : Graph α β} {s t : α}
 
-/-! ### Internally disjoint walks -/
-
-namespace Walk
-
-variable {p q : G.Walk s t}
-
-/-- Two walks from `s` to `t` are *internally disjoint* when they share no vertex other than `s`
-and `t`. -/
-def InternallyDisjoint (p q : G.Walk s t) : Prop :=
-  ∀ v ∈ p.support, v ∈ q.support → v = s ∨ v = t
-
-theorem internallyDisjoint_def :
-    p.InternallyDisjoint q ↔ ∀ v ∈ p.support, v ∈ q.support → v = s ∨ v = t :=
-  Iff.rfl
-
-theorem InternallyDisjoint.symm (h : p.InternallyDisjoint q) : q.InternallyDisjoint p :=
-  fun v hq hp ↦ h v hp hq
-
-theorem internallyDisjoint_comm : p.InternallyDisjoint q ↔ q.InternallyDisjoint p :=
-  ⟨.symm, .symm⟩
-
-end Walk
-
-end Graph
-
-namespace TauCeti.ArrowWalk
-
-open Graph
-
-variable {α : Type u} {β : Type v} {G : Graph α β} {s t : V(G)}
-
-@[simp]
-theorem internallyDisjoint_toGraphWalk_iff {p q : ArrowWalk G.BidirectedHom s t} :
-    p.toGraphWalk.InternallyDisjoint q.toGraphWalk ↔ p.InternallyDisjoint q := by
-  rw [Walk.internallyDisjoint_def, internallyDisjoint_def]
-  refine ⟨fun h v hp hq ↦ ?_, fun h v hp hq ↦ ?_⟩
-  · exact (h v ((mem_support_toGraphWalk_iff _).2 ⟨v.2, hp⟩)
-      ((mem_support_toGraphWalk_iff _).2 ⟨v.2, hq⟩)).imp Subtype.ext Subtype.ext
-  · obtain ⟨hv, hp'⟩ := (mem_support_toGraphWalk_iff _).1 hp
-    obtain ⟨_, hq'⟩ := (mem_support_toGraphWalk_iff _).1 hq
-    exact (h ⟨v, hv⟩ hp' hq').imp (congrArg Subtype.val) (congrArg Subtype.val)
-
-end TauCeti.ArrowWalk
-
-namespace Graph
-
-variable {α : Type u} {β : Type v} {G : Graph α β} {s t : α}
-
-/-- Points reachable after deleting some vertices are actual vertices of `G`. -/
-private theorem mem_vertexSet_of_reachable_deleteVerts {X : Set α}
-    (h : (G.deleteVerts X).Reachable s t) : s ∈ V(G) ∧ t ∈ V(G) :=
-  ⟨(h.mono deleteVerts_le).left_mem, (h.mono deleteVerts_le).right_mem⟩
-
-/-- No arrow of the bidirected arrow family runs between vertices that no edge joins. -/
-private theorem isEmpty_bidirectedHom (hadj : ¬G.Adj s t) (hs : s ∈ V(G)) (ht : t ∈ V(G)) :
-    IsEmpty (G.BidirectedHom ⟨s, hs⟩ ⟨t, ht⟩) :=
-  ⟨fun e ↦ hadj ⟨e.1, e.2⟩⟩
-
-/-- A set of actual vertices that the bidirected arrow family cannot avoid on its way from `x` to
-`y` separates `x` from `y` in `G`. -/
-private theorem not_reachable_deleteVerts_map_subtype {X : Finset V(G)} {x y : V(G)}
-    (h : ¬ReachableAvoiding G.BidirectedHom (X : Set V(G)) x y) :
-    ¬(G.deleteVerts (X.map (Function.Embedding.subtype _) : Set α)).Reachable x y := by
-  rwa [← reachableAvoiding_bidirectedHom_iff, coe_map, Function.Embedding.coe_subtype,
-    Set.preimage_image_eq _ Subtype.val_injective]
-
 /-! ### Weak duality -/
 
 /-- **Weak duality for vertex-capacitated packings.** A family of `s`–`t` walks, from an actual
@@ -180,7 +109,7 @@ theorem card_le_encard_of_not_reachable_deleteVerts {ι : Type*} {P : ι → G.W
   choose g hg hgX using h
   have hinj : Function.Injective g := fun i j hij ↦ by
     by_contra hne
-    rcases hP hne (g i) (hg i) (hij ▸ hg j) with h | h
+    rcases Walk.internallyDisjoint_def.1 (hP hne) (g i) (hg i) (hij ▸ hg j) with h | h
     exacts [hsX (h ▸ hgX i), htX (h ▸ hgX i)]
   rw [← hinj.encard_range]
   exact Set.encard_le_encard (Set.range_subset_iff.2 hgX)
