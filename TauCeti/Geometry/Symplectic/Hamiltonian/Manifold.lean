@@ -61,7 +61,7 @@ surjective (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorFiel
 `{g ∘ φ, k ∘ φ} = {g, k} ∘ φ` there (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`).
 Along a curve where its differential is surjective, `φ` therefore maps integral curves of the
 Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.comp_isMIntegralCurve_hamiltonianVectorField`).
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField`).
 
 ## Main declarations
 
@@ -84,7 +84,7 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
 * `TauCeti.SmoothTwoForm.poissonBracket`: the Poisson bracket `{f, g} = σ(X_f, X_g)`, with
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`: `{f, g} = df(X_g)`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`,
-  `TauCeti.SmoothTwoForm.IsNondegenerate.comp_isMIntegralCurve_hamiltonianVectorField` and
+  `TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField` and
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`: naturality of Hamiltonian vector
   fields, their integral curves and Poisson brackets under maps pulling one form back to the
   other.
@@ -463,7 +463,7 @@ theorem poissonBracket_comp (hx : Function.Surjective (mfderiv I I₂ φ x)) {g 
 `σ₂` back to a nondegenerate form `σ`. If `γ` is an integral curve of the Hamiltonian vector field
 of `g ∘ φ`, along which the differential of `φ` is surjective and `g` is differentiable at the
 image points, then `φ ∘ γ` is an integral curve of the Hamiltonian vector field of `g`. -/
-theorem comp_isMIntegralCurve_hamiltonianVectorField {g : M₂ → ℝ} {γ : ℝ → M}
+theorem isMIntegralCurve_comp_hamiltonianVectorField {g : M₂ → ℝ} {γ : ℝ → M}
     (hsurj : ∀ t, Function.Surjective (mfderiv I I₂ φ (γ t)))
     (hg : ∀ t, MDifferentiableAt I₂ 𝓘(ℝ) g (φ (γ t)))
     (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (g ∘ φ))) :
