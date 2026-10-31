@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.Algebra.Structures
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import Mathlib.Topology.ShrinkingLemma
 public import TauCeti.Topology.Algebra.GroupAction.Cutoff
+public import TauCeti.Topology.LocallyFinite
 
 /-!
 # Smooth cutoff functions for proper actions on manifolds
@@ -99,12 +100,7 @@ private theorem exists_contMDiff_nonneg_finite_smul_inter_tsupport [ContinuousCo
   have hlf : LocallyFinite fun y ↦ tsupport (b y) :=
     (hOlf.closure.preimage_continuous hπ.continuous).subset fun y ↦
       (htsupp y).trans inter_subset_right
-  have hsupp : tsupport (fun x ↦ ∑ᶠ y, b y x) ⊆ ⋃ y, tsupport (b y) := by
-    refine (closure_mono fun x hx ↦ ?_).trans
-      ((hlf.subset fun y ↦ subset_tsupport _).closure_iUnion).subset
-    by_contra h
-    exact hx (finsum_eq_zero_of_forall_eq_zero fun y ↦
-      notMem_support.1 fun hy ↦ h (mem_iUnion.2 ⟨y, hy⟩))
+  have hsupp := (hlf.subset fun y ↦ subset_tsupport (b y)).tsupport_finsum_subset
   refine ⟨fun x ↦ ∑ᶠ y, b y x,
     contMDiff_finsum (fun y ↦ (b y).contMDiff) (hlf.subset fun y ↦ subset_tsupport _),
     fun x ↦ finsum_nonneg fun y ↦ (hb01 y x).1, fun K hK ↦ ?_, fun x ↦ ?_⟩
