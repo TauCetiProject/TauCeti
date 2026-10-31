@@ -49,8 +49,8 @@ theorem IsSemialgebraicOn.exists_ne_zero_polynomial_relation {σ : Type*}
       s.graphOn (fun x (_ : Unit) ↦ f x)) = ∅ := by
     have he : ⇑(Homeomorph.sumArrowHomeomorphProdArrow (X := ℝ) (ι := σ) (ι' := Unit)) =
         ⇑(Equiv.sumArrowEquivProdArrow σ Unit ℝ) := by
-      funext z
-      exact Homeomorph.sumArrowHomeomorphProdArrow_apply z
+      -- The homeomorphism's toEquiv is Equiv.sumArrowEquivProdArrow by definition.
+      rfl
     rw [← he, ← Homeomorph.preimage_interior, interior_graphOn, preimage_empty]
   obtain ⟨p, hp, hrel⟩ := hf.graph.exists_ne_zero_polynomial_of_interior_eq_empty hint
   let k : σ ⊕ Unit → Option σ := Sum.elim some (fun _ ↦ none)
