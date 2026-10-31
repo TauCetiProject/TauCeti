@@ -34,8 +34,7 @@ namespace TauCeti
 theorem meromorphic_completedRiemannZeta : Meromorphic completedRiemannZeta := by
   intro z
   have h₀ : AnalyticAt ℂ completedRiemannZeta₀ z := differentiable_completedZeta₀.analyticAt z
-  rw [show completedRiemannZeta = fun s ↦ completedRiemannZeta₀ s - 1 / s - 1 / (1 - s) from
-    funext completedRiemannZeta_eq]
+  rw [funext completedRiemannZeta_eq]
   fun_prop
 
 /-- Mathlib's completed Riemann zeta function is analytic away from `0` and `1`. -/
@@ -43,8 +42,7 @@ theorem analyticAt_completedRiemannZeta {s : ℂ} (h0 : s ≠ 0) (h1 : s ≠ 1) 
     AnalyticAt ℂ completedRiemannZeta s := by
   have h₀ : AnalyticAt ℂ completedRiemannZeta₀ s := differentiable_completedZeta₀.analyticAt s
   have h1' : 1 - s ≠ 0 := sub_ne_zero.2 h1.symm
-  rw [show completedRiemannZeta = fun s ↦ completedRiemannZeta₀ s - 1 / s - 1 / (1 - s) from
-    funext completedRiemannZeta_eq]
+  rw [funext completedRiemannZeta_eq]
   fun_prop (disch := assumption)
 
 /-- The completed Riemann zeta function has a simple pole at `0`. -/
