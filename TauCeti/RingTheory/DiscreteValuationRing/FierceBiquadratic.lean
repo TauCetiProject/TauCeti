@@ -17,9 +17,10 @@ import TauCeti.RingTheory.LocalRing.Quotient
 # A fierce biquadratic extension of a discrete valuation ring
 
 Let `A` be a discrete valuation ring of characteristic two with uniformizer `t` and residue field
-`k`, and let `s, u ∈ A` have residues that are `2`-independent over `k`: `s̄` is not a square in
-`k`, and `ū` is not a square in `k(√s̄)`, that is `ū ≠ a ^ 2 + s̄ b ^ 2` for all `a, b ∈ k`. For
-instance `A = k[t]` localized at `t`, or `A = k[[t]]`, with `k = 𝔽₂(s, u)`. Put
+`k`, and let `s, u ∈ A` have residues `s₀, u₀ ∈ k` that are `2`-independent over `k`: `s₀` is
+not a square in `k`, and `u₀` is not a square in `k(√s₀)`, that is `u₀ ≠ a ^ 2 + s₀ b ^ 2` for
+all `a, b ∈ k`. For instance `A = k[t]` localized at `t`, or `A = k[[t]]`, with `k = 𝔽₂(s, u)`.
+Put
 
 `B = A[y, z]`, with `y ^ 2 + t y = s` and `z ^ 2 + t z = u`.
 
@@ -27,7 +28,7 @@ Then:
 
 * `B` is a discrete valuation ring, finite free of rank `4` over `A`, and `t` is a uniformizer of
   `B`, so the ramification index is `e = 1`;
-* the residue field of `B` is `k(√s̄, √ū)`, purely inseparable of degree `4` over `k`;
+* the residue field of `B` is `k(√s₀, √u₀)`, purely inseparable of degree `4` over `k`;
 * the `A`-algebra automorphisms of `B` are the four translations `y ↦ y + ε t`, `z ↦ z + δ t`
   with `ε, δ ∈ {0, 1}`, and form a Klein four-group;
 * every automorphism acts trivially on the residue field, so the inertia group `G_0` is the whole
