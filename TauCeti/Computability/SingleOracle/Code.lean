@@ -36,14 +36,14 @@ program uniformly in the oracle.
   of programs and its inverse, packaged as a `Denumerable` instance.
 * `TauCeti.Oracle.Single.Code.eval`: the partial function computed by a program relative to an
   oracle.
-* `TauCeti.Oracle.Single.Code.embed`: the query-free program of an ordinary Mathlib code.
+* `Nat.Partrec.Code.toSingleOracleCode`: the query-free program of an ordinary Mathlib code.
 
 ## Main results
 
 * `TauCeti.Oracle.Single.Code.primrec₂_pair` and its neighbours: the program constructors are
   primitive recursive on numbers of programs.
-* `TauCeti.Oracle.Single.Code.eval_embed`: a query-free program computes the same function as the
-  ordinary code it comes from, relative to every oracle.
+* `TauCeti.Oracle.Single.Code.eval_toSingleOracleCode`: a query-free program computes the same
+  function as the ordinary code it comes from, relative to every oracle.
 * `TauCeti.Oracle.Single.Code.exists_code`: adequacy, `Nat.RecursiveIn {O} f ↔ ∃ c, eval O c = f`.
 * `TauCeti.Oracle.Single.Code.turingReducible_iff_exists_code`: the same for Turing
   reducibility.
@@ -223,9 +223,41 @@ def eval (O : ℕ →. ℕ) : Code → ℕ →. ℕ
 
 variable {O : ℕ →. ℕ}
 
+/-- The `zero` instruction returns `0`. -/
+@[simp]
+theorem eval_zero (n : ℕ) : eval O zero n = Part.some 0 :=
+  (rfl)
+
+/-- The `succ` instruction returns the successor of its input. -/
+@[simp]
+theorem eval_succ (n : ℕ) : eval O succ n = Part.some (n + 1) :=
+  (rfl)
+
+/-- The `left` instruction returns the first component of its unpaired input. -/
+@[simp]
+theorem eval_left (n : ℕ) : eval O left n = Part.some n.unpair.1 :=
+  (rfl)
+
+/-- The `right` instruction returns the second component of its unpaired input. -/
+@[simp]
+theorem eval_right (n : ℕ) : eval O right n = Part.some n.unpair.2 :=
+  (rfl)
+
 /-- The `oracle` instruction computes the oracle. -/
 @[simp]
 theorem eval_oracle : eval O oracle = O :=
+  (rfl)
+
+/-- `pair cf cg` pairs the outputs of `cf` and `cg`. -/
+@[simp]
+theorem eval_pair (cf cg : Code) (n : ℕ) :
+    eval O (pair cf cg) n = Nat.pair <$> eval O cf n <*> eval O cg n :=
+  (rfl)
+
+/-- `comp cf cg` runs `cg`, then `cf` on its output. -/
+@[simp]
+theorem eval_comp (cf cg : Code) (n : ℕ) :
+    eval O (comp cf cg) n = eval O cg n >>= eval O cf :=
   (rfl)
 
 /-- Primitive recursion at zero. -/
@@ -241,49 +273,13 @@ theorem eval_prec_succ (cf cg : Code) (a k : ℕ) :
   rw [eval, Nat.unpaired, Nat.unpair_pair]
   simp [Nat.unpaired]
 
-/-! ### Query-free programs -/
-
-/-- The query-free program of an ordinary Mathlib code: the same code, never using `oracle`. -/
-def embed : Nat.Partrec.Code → Code
-  | .zero => zero
-  | .succ => succ
-  | .left => left
-  | .right => right
-  | .pair cf cg => pair (embed cf) (embed cg)
-  | .comp cf cg => comp (embed cf) (embed cg)
-  | .prec cf cg => prec (embed cf) (embed cg)
-  | .rfind' cf => rfind' (embed cf)
-
-/-- `embed` is injective: distinct ordinary codes give distinct programs. -/
-theorem embed_injective : Function.Injective embed := by
-  intro c
-  induction c <;> intro d h <;> cases d <;> grind [embed]
-
-/-- The translation of ordinary codes into query-free programs is primitive recursive. -/
-theorem primrec_embed : Primrec embed := by
-  -- the recursive calls are the last two components of the data passed to each step
-  have h₂ {f : Code → Code → Code} (hf : Primrec₂ f) :
-      Primrec fun a : Nat.Partrec.Code × Nat.Partrec.Code × Nat.Partrec.Code × Code × Code =>
-        f a.2.2.2.1 a.2.2.2.2 :=
-    hf.comp (Primrec.fst.comp <| Primrec.snd.comp <| Primrec.snd.comp Primrec.snd)
-      (Primrec.snd.comp <| Primrec.snd.comp <| Primrec.snd.comp Primrec.snd)
-  refine (Nat.Partrec.Code.primrec_recOn (c := id) Primrec.id (Primrec.const zero)
-    (Primrec.const succ) (Primrec.const left) (Primrec.const right)
-    (pr := fun _ _ _ => pair) (h₂ primrec₂_pair) (co := fun _ _ _ => comp) (h₂ primrec₂_comp)
-    (pc := fun _ _ _ => prec) (h₂ primrec₂_prec) (rf := fun _ _ => rfind')
-    (primrec_rfind'.comp <| Primrec.snd.comp Primrec.snd)).of_eq fun c => ?_
-  induction c <;> simp_all [embed]
-
-/-- **Query-free programs.** Relative to every oracle, the program `embed c` computes the same
-function as the ordinary code `c`. -/
+/-- `rfind' cf` on `Nat.pair a m` searches for the least `n ≥ m` with output `0` from `cf` on
+`Nat.pair a n`. -/
 @[simp]
-theorem eval_embed (O : ℕ →. ℕ) (c : Nat.Partrec.Code) : eval O (embed c) = c.eval := by
-  induction c with
-  | zero | succ | left | right => rfl
-  | pair cf cg ihf ihg => rw [embed, eval, Nat.Partrec.Code.eval, ihf, ihg]
-  | comp cf cg ihf ihg => rw [embed, eval, Nat.Partrec.Code.eval, ihf, ihg]
-  | prec cf cg ihf ihg => rw [embed, eval, Nat.Partrec.Code.eval, ihf, ihg]
-  | rfind' cf ihf => rw [embed, eval, Nat.Partrec.Code.eval, ihf]
+theorem eval_rfind' (cf : Code) (a m : ℕ) :
+    eval O (rfind' cf) (Nat.pair a m) =
+      (Nat.rfind fun n => (fun m => m = 0) <$> eval O cf (Nat.pair a (n + m))).map (· + m) := by
+  rw [eval, Nat.unpaired, Nat.unpair_pair]
 
 /-! ### Adequacy -/
 
@@ -347,3 +343,68 @@ end Code
 end Oracle.Single
 
 end TauCeti
+
+/-! ### Query-free programs -/
+
+namespace Nat.Partrec.Code
+
+/-- The query-free program of an ordinary Mathlib code: the same code, never using `oracle`. -/
+def toSingleOracleCode : Nat.Partrec.Code → TauCeti.Oracle.Single.Code
+  | zero => .zero
+  | succ => .succ
+  | left => .left
+  | right => .right
+  | pair cf cg => .pair cf.toSingleOracleCode cg.toSingleOracleCode
+  | comp cf cg => .comp cf.toSingleOracleCode cg.toSingleOracleCode
+  | prec cf cg => .prec cf.toSingleOracleCode cg.toSingleOracleCode
+  | rfind' cf => .rfind' cf.toSingleOracleCode
+
+/-- `Nat.Partrec.Code.toSingleOracleCode` is injective: distinct ordinary codes give distinct
+programs. -/
+theorem toSingleOracleCode_injective : Function.Injective toSingleOracleCode := by
+  intro c
+  induction c <;> intro d h <;> cases d <;> grind [toSingleOracleCode]
+
+/-- The translation of ordinary codes into query-free programs is primitive recursive. -/
+theorem primrec_toSingleOracleCode : Primrec toSingleOracleCode := by
+  -- the recursive calls are the last two components of the data passed to each step
+  have h₂ {f : TauCeti.Oracle.Single.Code → TauCeti.Oracle.Single.Code →
+      TauCeti.Oracle.Single.Code} (hf : Primrec₂ f) :
+      Primrec fun a : Nat.Partrec.Code × Nat.Partrec.Code × Nat.Partrec.Code ×
+          TauCeti.Oracle.Single.Code × TauCeti.Oracle.Single.Code =>
+        f a.2.2.2.1 a.2.2.2.2 :=
+    hf.comp (Primrec.fst.comp <| Primrec.snd.comp <| Primrec.snd.comp Primrec.snd)
+      (Primrec.snd.comp <| Primrec.snd.comp <| Primrec.snd.comp Primrec.snd)
+  refine (primrec_recOn (c := id) _root_.Primrec.id
+    (_root_.Primrec.const TauCeti.Oracle.Single.Code.zero)
+    (_root_.Primrec.const TauCeti.Oracle.Single.Code.succ)
+    (_root_.Primrec.const TauCeti.Oracle.Single.Code.left)
+    (_root_.Primrec.const TauCeti.Oracle.Single.Code.right)
+    (pr := fun _ _ _ => .pair) (h₂ TauCeti.Oracle.Single.Code.primrec₂_pair)
+    (co := fun _ _ _ => .comp) (h₂ TauCeti.Oracle.Single.Code.primrec₂_comp)
+    (pc := fun _ _ _ => .prec) (h₂ TauCeti.Oracle.Single.Code.primrec₂_prec)
+    (rf := fun _ _ => .rfind')
+    (TauCeti.Oracle.Single.Code.primrec_rfind'.comp <| Primrec.snd.comp Primrec.snd)).of_eq
+    fun c => ?_
+  induction c <;> simp_all [toSingleOracleCode]
+
+end Nat.Partrec.Code
+
+namespace TauCeti.Oracle.Single.Code
+
+/-- **Query-free programs.** Relative to every oracle, the program `c.toSingleOracleCode` computes
+the same function as the ordinary code `c`. -/
+@[simp]
+theorem eval_toSingleOracleCode (O : ℕ →. ℕ) (c : Nat.Partrec.Code) :
+    eval O c.toSingleOracleCode = c.eval := by
+  induction c with
+  | zero | succ | left | right => rfl
+  | pair cf cg ihf ihg =>
+    rw [Nat.Partrec.Code.toSingleOracleCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
+  | comp cf cg ihf ihg =>
+    rw [Nat.Partrec.Code.toSingleOracleCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
+  | prec cf cg ihf ihg =>
+    rw [Nat.Partrec.Code.toSingleOracleCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
+  | rfind' cf ihf => rw [Nat.Partrec.Code.toSingleOracleCode, eval, Nat.Partrec.Code.eval, ihf]
+
+end TauCeti.Oracle.Single.Code
