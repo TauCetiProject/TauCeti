@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.LinearCombination
 public import TauCeti.Topology.MetricSpace.Ultra.ContinuousMaps
+import TauCeti.Analysis.Normed.Group.Ultra
 
 /-!
 # Orthonormal bases of nonarchimedean normed modules
@@ -22,6 +23,17 @@ norms of the terms `a i • e i`; over a ring the latter, weaker, condition woul
 *orthonormal basis* (`TauCeti.IsOrthonormalBasis R e`) is an orthonormal family whose span is
 dense. This is neither a Hamel basis nor an orthonormal basis of an inner product space: the
 vectors of `M` are the convergent infinite combinations of the `e i`.
+
+Perturbing each vector of an orthonormal family by norm less than one preserves
+orthonormality (`IsOrthonormalFamily.of_norm_sub_lt_one`). The bound can depend
+on the index; only finitely many errors occur in each linear combination.
+
+Over a ring satisfying the strong rank condition, a dense-range continuous linear map
+from a module with an `I`-indexed dense spanning family to a module with a `J`-indexed
+orthonormal family implies `#J ≤ #I` (`IsOrthonormalFamily.lift_mk_le_of_denseRange`).
+Consequently orthonormal bases of continuously linearly equivalent ultrametric modules
+have equally many vectors (`IsOrthonormalBasis.lift_mk_eq_of_continuousLinearEquiv`),
+without any completeness assumption.
 
 The model example is the family of unit coordinate vectors `single i 1` of `C₀(I, R)`
 (`TauCeti.isOrthonormalBasis_single_one`), and every orthonormal basis is of this form: over a
@@ -66,7 +78,7 @@ public section
 open Filter Topology ZeroAtInftyContinuousMap
 open scoped ENNReal NNReal ZeroAtInfty
 
-universe u
+universe u v
 
 namespace TauCeti
 
@@ -159,12 +171,78 @@ theorem map [SeminormedAddCommGroup N] [Module R N] (he : IsOrthonormalFamily R 
 
 end Seminormed
 
+/-- Perturbing each vector of an orthonormal family by less than one preserves
+orthonormality in an ultrametric module. No uniform bound strictly below one is needed. -/
+theorem of_norm_sub_lt_one [SeminormedRing R] [SeminormedAddCommGroup M] [Module R M]
+    [IsBoundedSMul R M] [IsUltrametricDist M] {e v : I → M}
+    (he : IsOrthonormalFamily R e) (hv : ∀ i, ‖e i - v i‖ < 1) :
+    IsOrthonormalFamily R v := by
+  intro s a
+  by_cases hzero : s.sup (fun i ↦ ‖a i‖₊) = 0
+  · have ha (i) (hi : i ∈ s) : ‖a i‖ = 0 := by
+      exact NNReal.coe_eq_zero.2 <| le_antisymm
+        (hzero ▸ Finset.le_sup (f := fun i ↦ ‖a i‖₊) hi) zero_le
+    have hsum : ‖∑ i ∈ s, a i • v i‖ ≤ 0 :=
+      IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg le_rfl fun i hi ↦ by
+        exact (norm_smul_le _ _).trans_eq (by rw [ha i hi, zero_mul])
+    exact hzero ▸ NNReal.coe_injective (le_antisymm hsum (norm_nonneg _))
+  · have hpos : 0 < s.sup (fun i ↦ ‖a i‖₊) := pos_iff_ne_zero.2 hzero
+    have herr : ‖∑ i ∈ s, a i • (e i - v i)‖₊ < s.sup (fun i ↦ ‖a i‖₊) := by
+      refine (s.nnnorm_sum_le_sup_nnnorm _).trans_lt ((s.sup_lt_iff hpos).2 ?_)
+      intro i hi
+      have hb : ‖e i - v i‖₊ < 1 := by exact_mod_cast hv i
+      have hsmul : ‖a i • (e i - v i)‖₊ ≤ ‖a i‖₊ * ‖e i - v i‖₊ := by
+        exact_mod_cast norm_smul_le (a i) (e i - v i)
+      by_cases ha : ‖a i‖₊ = 0
+      · exact hsmul.trans_lt (by simpa [ha] using hpos)
+      · exact (hsmul.trans_lt (by
+          simpa using mul_lt_mul_of_pos_left hb (pos_iff_ne_zero.2 ha))).trans_le
+          (Finset.le_sup (f := fun i ↦ ‖a i‖₊) hi)
+    have herr' : ‖(∑ i ∈ s, a i • e i) - ∑ i ∈ s, a i • v i‖ <
+        ‖∑ i ∈ s, a i • e i‖ := by
+      rw [← Finset.sum_sub_distrib]
+      simp only [← smul_sub]
+      exact_mod_cast (he s a).symm ▸ herr
+    rw [← he s a]
+    apply NNReal.coe_injective
+    simpa only [coe_nnnorm] using
+      (IsUltrametricDist.norm_eq_of_norm_sub_lt_left herr').symm
+
 /-- An orthonormal family over a normed ring is linearly independent. -/
 theorem linearIndependent [NormedRing R] [SeminormedAddCommGroup M] [Module R M] {e : I → M}
     (he : IsOrthonormalFamily R e) : LinearIndependent R e := by
   refine linearIndependent_iff'.2 fun s a h i hi ↦ ?_
   have : (s.sup fun i ↦ ‖a i‖₊) = 0 := by rw [← he s a, h, nnnorm_zero]
   exact nnnorm_eq_zero.1 (nonpos_iff_eq_zero.1 (this ▸ Finset.le_sup (f := fun i ↦ ‖a i‖₊) hi))
+
+/-- An orthonormal family in the target of a dense-range continuous linear map has
+cardinality at most that of any dense spanning family in the source. -/
+theorem lift_mk_le_of_denseRange {I : Type u} {J : Type v} [NormedRing R]
+    [StrongRankCondition R] [SeminormedAddCommGroup M] [Module R M]
+    [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N] [IsUltrametricDist N]
+    {b : I → M} {e : J → N} (he : IsOrthonormalFamily R e)
+    (hb : Dense (Submodule.span R (Set.range b) : Set M))
+    (f : M →L[R] N) (hf : DenseRange f) :
+    Cardinal.lift.{u} (Cardinal.mk J) ≤ Cardinal.lift.{v} (Cardinal.mk I) := by
+  classical
+  have hdP : DenseRange (Finsupp.linearCombination R b) := by
+    simpa only [DenseRange, ← LinearMap.coe_range, Finsupp.range_linearCombination] using hb
+  have hd : DenseRange (fun x : I →₀ R ↦ f (Finsupp.linearCombination R b x)) :=
+    hf.comp hdP f.continuous
+  have happrox (j : J) : ∃ x : I →₀ R,
+      ‖e j - f (Finsupp.linearCombination R b x)‖ < 1 := by
+    obtain ⟨y, ⟨x, rfl⟩, hy⟩ := Metric.mem_closure_iff.1 (hd (e j)) 1 zero_lt_one
+    exact ⟨x, by simpa only [dist_eq_norm] using hy⟩
+  choose x hx using happrox
+  have hli : LinearIndependent R (fun j ↦ f (Finsupp.linearCombination R b (x j))) :=
+    (he.of_norm_sub_lt_one hx).linearIndependent
+  have hxi : LinearIndependent R x :=
+    hli.of_comp (f.toLinearMap.comp (Finsupp.linearCombination R b))
+  have h := linearIndependent_le_basis
+    ((Finsupp.basisSingleOne (R := R) (ι := I)).reindex
+      (Equiv.ulift : ULift.{v} I ≃ I).symm)
+    (x ∘ (Equiv.ulift : ULift.{u} J ≃ J)) (hxi.comp _ Equiv.ulift.injective)
+  simpa only [Cardinal.mk_uLift] using h
 
 section LinearIsometry
 
@@ -230,6 +308,32 @@ end LinearIsometry
 end IsOrthonormalFamily
 
 namespace IsOrthonormalBasis
+
+section Cardinality
+
+variable {I : Type u} {J : Type v} [NormedRing R] [StrongRankCondition R]
+  [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M] [IsUltrametricDist M]
+  [SeminormedAddCommGroup N] [Module R N] [IsBoundedSMul R N] [IsUltrametricDist N]
+
+/-- Orthonormal bases of continuously linearly equivalent ultrametric modules have
+index types of equal cardinality, without assuming completeness. -/
+theorem lift_mk_eq_of_continuousLinearEquiv {b : I → M} {e : J → N}
+    (hb : IsOrthonormalBasis R b) (he : IsOrthonormalBasis R e) (f : M ≃L[R] N) :
+    Cardinal.lift.{v} (Cardinal.mk I) = Cardinal.lift.{u} (Cardinal.mk J) :=
+  le_antisymm
+    (hb.isOrthonormalFamily.lift_mk_le_of_denseRange he.dense_span
+      f.symm.toContinuousLinearMap f.symm.surjective.denseRange)
+    (he.isOrthonormalFamily.lift_mk_le_of_denseRange hb.dense_span
+      f.toContinuousLinearMap f.surjective.denseRange)
+
+/-- Any two orthonormal bases of an ultrametric module have index types of equal
+cardinality, without assuming completeness. -/
+theorem lift_mk_eq {b : I → M} {e : J → M}
+    (hb : IsOrthonormalBasis R b) (he : IsOrthonormalBasis R e) :
+    Cardinal.lift.{v} (Cardinal.mk I) = Cardinal.lift.{u} (Cardinal.mk J) :=
+  hb.lift_mk_eq_of_continuousLinearEquiv he (ContinuousLinearEquiv.refl R M)
+
+end Cardinality
 
 /-- The image of an orthonormal basis under a linear isometry equivalence is an orthonormal
 basis. -/
