@@ -84,6 +84,12 @@ theorem mem_kerDistribution {α : SmoothForm I M ℝ 1} {x : M} {v : TangentSpac
     v ∈ α.kerDistribution x ↔ α.1 x ![v] = 0 := by
   exact RoughForm.mem_ker
 
+/-- At each point, `kerDistribution α` is the kernel of the covector `α_x`. -/
+theorem kerDistribution_def (α : SmoothForm I M ℝ 1) (x : M) :
+    α.kerDistribution x = LinearMap.ker (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ) := by
+  ext v
+  rw [mem_kerDistribution, LinearMap.mem_ker, degreeOneEquiv_coe_apply]
+
 /-- A real one-form `α` is a **contact form** when, at every point `x`, the covector `α_x` is
 nonzero and `dα_x` restricts to a nondegenerate bilinear form on `ker α_x`. -/
 def IsContactForm (α : SmoothForm I M ℝ 1) : Prop :=
@@ -177,11 +183,7 @@ theorem isContactForm_neg_iff {α : SmoothForm I M ℝ 1} :
 theorem IsContactForm.finrank_kerDistribution_add_one [FiniteDimensional ℝ E]
     {α : SmoothForm I M ℝ 1} (hα : α.IsContactForm) (x : M) :
     finrank ℝ (α.kerDistribution x) + 1 = finrank ℝ E := by
-  have hk : α.kerDistribution x =
-      LinearMap.ker (degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ) := by
-    ext v
-    rw [mem_kerDistribution, LinearMap.mem_ker, degreeOneEquiv_coe_apply]
-  rw [hk]
+  rw [kerDistribution_def]
   exact Module.Dual.finrank_ker_add_one_of_ne_zero (hα x).ne_zero
 
 /-- The model space of a manifold carrying a contact form is odd-dimensional, as soon as the

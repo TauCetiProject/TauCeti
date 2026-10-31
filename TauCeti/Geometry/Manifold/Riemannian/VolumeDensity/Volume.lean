@@ -37,8 +37,9 @@ GTM 176 (2018), Proposition 2.44 and the discussion of the Riemannian density fo
 * `TauCeti.eq_riemannianVolume_iff`: this property characterizes the Riemannian volume.
 * `TauCeti.riemannianVolume_apply_of_subset`: the volume of a subset of a chart source is its
   chart volume.
-* `TauCeti.setLIntegral_riemannianVolume_of_subset`: integration over a subset of a chart source
-  in coordinates, and `TauCeti.setLIntegral_riemannianVolume_inter_preimage`, its form over the
+* `TauCeti.setLIntegral_riemannianVolume_of_subset`,
+  `TauCeti.setIntegral_riemannianVolume_of_subset`: integration over a subset of a chart source in
+  coordinates, and `TauCeti.setLIntegral_riemannianVolume_inter_preimage`, its form over the
   chart preimage of an open coordinate set.
 * `TauCeti.setLIntegral_comp_extChartAt_symm_le_mul_lintegral`: where the chart density is at
   least `m > 0`, coordinate integrals are at most `m⁻¹` times Riemannian integrals.
@@ -116,6 +117,19 @@ theorem setLIntegral_riemannianVolume_of_subset {α : M} {s : Set M}
           φ ((extChartAt I α).symm y) ∂(Module.finBasis ℝ E).addHaar := by
   rw [← Measure.restrict_restrict_of_subset hs, riemannianVolume_restrict_source,
     setLIntegral_chartRiemannianVolume α hs', inter_eq_left.2 (by rwa [extChartAt_source])]
+
+/-- **Integration in coordinates** against the Riemannian volume, for Bochner integrals: over a
+measurable subset of a chart source, the integral of `φ` is the coordinate integral of `φ` read in
+the chart weighted by the chart density. -/
+theorem setIntegral_riemannianVolume_of_subset {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {α : M} {s : Set M} (hs : s ⊆ (chartAt H α).source)
+    (hs' : MeasurableSet s) (φ : M → F) :
+    ∫ x in s, φ x ∂riemannianVolume I M =
+      ∫ y in (extChartAt I α) '' s,
+        chartVolumeDensity (I := I) α ((extChartAt I α).symm y) • φ ((extChartAt I α).symm y)
+          ∂(Module.finBasis ℝ E).addHaar := by
+  rw [← Measure.restrict_restrict_of_subset hs, riemannianVolume_restrict_source,
+    setIntegral_chartRiemannianVolume α hs', inter_eq_left.2 (by rwa [extChartAt_source])]
 
 /-- **Integration in coordinates over an open coordinate set**: for an open set `Ω` of the chart
 target, the integral of `φ` over the chart preimage of `Ω` is the integral over `Ω` of `φ` read in

@@ -86,6 +86,14 @@ theorem mem_compactlySupportedForms {k : ℕ} {φ : SmoothForm I M ℝ k} :
       IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.1) :=
   Iff.rfl
 
+/-- Transporting the degree of a smooth form preserves compact support. -/
+theorem cast_mem_compactlySupportedForms_iff {a b : ℕ} (h : a = b) {φ : SmoothForm I M ℝ a} :
+    LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q) h φ ∈
+        compactlySupportedForms I M b ↔
+      φ ∈ compactlySupportedForms I M a := by
+  cases h
+  rfl
+
 /-- On a compact manifold every smooth form is compactly supported. -/
 @[simp]
 theorem compactlySupportedForms_eq_top [CompactSpace M] (k : ℕ) :

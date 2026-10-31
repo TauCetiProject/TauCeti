@@ -65,6 +65,8 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   `TauCeti.Manifold.curveVelocity_eq_mfderiv_fst`: the two partial velocities of a two-parameter
   family `f : 𝕜 → 𝕜 → M` are the differential of the uncurried family in the coordinate
   directions.
+* `HasMFDerivAt.fst_curve` and `HasMFDerivAt.snd_curve`:
+  the components of a curve in a product move with the components of its velocity.
 * `TauCeti.Manifold.variationField`: the variation field `V(t) = ∂F/∂s (0, t)` of a two-parameter
   family `F : 𝕜 → 𝕜 → M`, the transverse velocity at `s = 0`; it vanishes where the curves near
   `s = 0` share a point (`TauCeti.Manifold.variationField_eq_zero`) and is the differential of the
@@ -664,3 +666,37 @@ theorem mfderiv_eq_zero_of_eqOn_Ici (h : EqOn γ (fun _ => p) (Ici a)) (ht : a <
 end TauCeti.Manifold
 
 end
+
+namespace HasMFDerivAt
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {t : 𝕜}
+
+section Prod
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {c : 𝕜 → M × M'}
+  {v : TangentSpace (I.prod I') (c t)}
+
+/-- The first component of a curve in a product moves with the first component of its
+velocity. -/
+theorem fst_curve
+    (hc : HasMFDerivAt 𝓘(𝕜, 𝕜) (I.prod I') c t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v)) :
+    HasMFDerivAt 𝓘(𝕜, 𝕜) I (Prod.fst ∘ c) t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v.1) :=
+  -- Both derivatives send `r` to `r • v.1`, read in `E`.
+  ((hasMFDerivAt_fst (c t)).comp t hc).congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
+
+/-- The second component of a curve in a product moves with the second component of its
+velocity. -/
+theorem snd_curve
+    (hc : HasMFDerivAt 𝓘(𝕜, 𝕜) (I.prod I') c t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v)) :
+    HasMFDerivAt 𝓘(𝕜, 𝕜) I' (Prod.snd ∘ c) t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight v.2) :=
+  -- Both derivatives send `r` to `r • v.2`, read in `E'`.
+  ((hasMFDerivAt_snd (c t)).comp t hc).congr_mfderiv (ContinuousLinearMap.ext fun _ ↦ rfl)
+
+end Prod
+
+end HasMFDerivAt

@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Codisc
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.EulerField
-public import TauCeti.Geometry.Symplectic.Liouville.Domain
+public import TauCeti.Geometry.Symplectic.Liouville.Completion
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Topology.FiberBundle.Separation
 
 /-!
 # The unit codisc bundle is a Liouville domain
@@ -29,10 +30,16 @@ Liouville domain on which the symplectic homology and the capacities of cotangen
 computed; its boundary is `S*M`, of restricted contact type
 (`TauCeti.CotangentBundle.isRestrictedContactType_cosphereBundle`).
 
+The flow of `p ∂_p` is the fibre dilation `p ↦ e^t p`, defined for all time, and it shrinks every
+covector into `D*M`. So `T*M` is the completion of `D*M`
+(`TauCeti.CotangentBundle.isLiouvilleCompletion_codiscBundle`): every covector outside `D*M` is
+`e^t p` for exactly one unit covector `p` and one time `t > 0`.
+
 ## Main results
 
 * `TauCeti.CotangentBundle.isLiouvilleDomain_codiscBundle`: `D*M` is a Liouville domain for the
   canonical symplectic form, with primitive `-λ`.
+* `TauCeti.CotangentBundle.isLiouvilleCompletion_codiscBundle`: `T*M` is its completion.
 
 ## References
 
@@ -79,6 +86,30 @@ theorem isLiouvilleDomain_codiscBundle [CompactSpace M] :
       rw [mvfderiv_apply_eq_mfderiv_apply,
         mfderiv_norm_snd_vectorBundleEulerField (snd_ne_zero_of_mem_cosphereBundle hz)]
       exact (mem_cosphereBundle.1 hz).symm ▸ one_pos
+
+/-- **The cotangent bundle is the completion of the unit codisc bundle.** For a compact smooth
+Riemannian manifold `M` without boundary, `T*M` is a completion of the Liouville domain `D*M`: the
+flow `p ↦ e^t p` of its Liouville field `p ∂_p` is defined for all time, and carries every
+covector into `D*M`. -/
+theorem isLiouvilleCompletion_codiscBundle [CompactSpace M] [T2Space M] :
+    IsLiouvilleCompletion (symplecticForm I M) (-liouvilleForm I M) (codiscBundle I M) where
+  toIsLiouvilleDomain := isLiouvilleDomain_codiscBundle
+  exists_isCompleteVectorField := by
+    have hc := isCompleteVectorField_vectorBundleEulerField (I := I)
+      (V := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (F := E →L[ℝ] ℝ)
+    refine ⟨vectorBundleEulerField I, ?_, hc, fun z ↦ ⟨-‖z.2‖, ?_⟩⟩
+    · rw [NegMemClass.coe_neg, symplecticForm_interior_vectorBundleEulerField]
+    -- The flow line of `z` is the fibre ray `t ↦ e^t z`.
+    have hflow := globalFlow_eq_of_isMIntegralCurve (contMDiff_vectorBundleEulerField (m := 1))
+      hc (isMIntegralCurve_vectorBundleEulerField z) (-‖z.2‖)
+    simp only [Real.exp_zero, one_smul] at hflow
+    rw [flowOf_apply, ← globalFlow_apply (contMDiff_vectorBundleEulerField (m := 1)) hc, hflow,
+      mem_codiscBundle]
+    -- This is `norm_smul`, supplied from the `NormedSpace` instance as in
+    -- `TauCeti.CotangentBundle.mfderiv_norm_snd_vectorBundleEulerField`.
+    rw [(NormedSpace.toNormSMulClass (𝕜 := ℝ) (E := TangentSpace I z.proj →L[ℝ] ℝ)).norm_smul,
+      Real.norm_of_nonneg (Real.exp_pos _).le, Real.exp_neg, inv_mul_le_one₀ (Real.exp_pos _)]
+    linarith [Real.add_one_le_exp ‖z.2‖]
 
 end CotangentBundle
 

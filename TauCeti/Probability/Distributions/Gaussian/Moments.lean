@@ -113,6 +113,14 @@ theorem integral_abs_sub_pow_gaussianReal (m : ℝ) (v : ℝ≥0) (n : ℕ) :
       rw [integral_abs_pow_mul_exp_neg_mul_sq n (inv_pos.mpr (mul_pos two_pos hv'))]
     _ = _ := gaussian_absolute_moment_algebra n hv'
 
+/-- The mean of the absolute value of a centered real Gaussian, the half-normal mean:
+`E|X| = √(2 * v / π)` for `X ∼ N(0, v)`. -/
+theorem integral_abs_gaussianReal (v : ℝ≥0) : ∫ x, |x| ∂gaussianReal 0 v = √(2 * v / π) := by
+  have h := integral_abs_sub_pow_gaussianReal 0 v 1
+  simp only [sub_zero, pow_one, Nat.cast_one] at h
+  rw [h, show ((1 : ℝ) + 1) / 2 = 1 by norm_num, Gamma_one, mul_one, ← sqrt_eq_rpow,
+    sqrt_div' _ pi_pos.le]
+
 /-- The integral of the `2n`th power about the mean of a real Gaussian distribution is
 `vⁿ (2n - 1)‼`. -/
 @[simp]

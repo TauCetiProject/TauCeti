@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Local.Basic
+public import TauCeti.AlgebraicTopology.Cohomology.ProdThomPair
 public import TauCeti.Topology.VectorBundle.EulerClass
 public import TauCeti.Topology.VectorBundle.Trivialization
 
@@ -39,6 +40,15 @@ these are the local Thom classes over trivializing open sets that the Mayer–Vi
 Milnor and Stasheff (§10) glues to a Thom class of a general oriented bundle. That gluing is not
 formalized here.
 
+The Thom pair of the trivial bundle is that of the product bundle `B × F`
+(`TauCeti.trivialThomPairIso`), whose cohomology is computed up to the rank in
+`TauCeti.AlgebraicTopology.Cohomology.ProdThomPair`. With coefficients `Hom(C(-; R), M)` for
+`k`-modules `R` and `M`, `R` projective, this gives the two facts about a trivializable bundle that
+the gluing uses: `Hⁿ(E, E₀) = 0` for `n < r`
+(`Bundle.Trivialization.isZero_singularCohomology_thomPair`), and a class of `Hʳ(E, E₀)`, for
+instance a Thom class, is determined by its restrictions to the fibres
+(`Bundle.Trivialization.singularCohomology_thomPair_ext`).
+
 ## Main definitions and results
 
 * `TauCeti.trivialThomPairMap`: the projection of the Thom pair of the trivial bundle onto the
@@ -57,6 +67,11 @@ formalized here.
   class.
 * `Bundle.Trivialization.exists_isThomClass_pullback_baseSet`: the restriction of a bundle to the
   base set of any trivialization has a Thom class.
+* `TauCeti.trivialThomPairIso`: the Thom pair of the trivial bundle is that of the product bundle.
+* `Bundle.Trivialization.isZero_singularCohomology_thomPair`: the relative cohomology of the Thom
+  pair of a trivializable bundle vanishes below the rank.
+* `Bundle.Trivialization.singularCohomology_thomPair_ext`: a class of a trivializable bundle in
+  degree the rank is determined by its restrictions to the fibres.
 
 ## References
 
@@ -117,6 +132,40 @@ theorem singularCohomologyMap_fiberThomPairMap_trivialThomPairMap (b : B) {n : �
 end Projection
 
 variable [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The Thom pair of the trivial bundle `Bundle.Trivial B F` is the Thom pair
+`(B × F, B × (F ∖ {0}))` of the product bundle, through `Bundle.Trivial.homeomorphProd`. -/
+def trivialThomPairIso :
+    thomPair F (Bundle.Trivial B F) ≅ prodThomPair B F :=
+  TopPair.ofSubsetIso (X := TopCat.of (TotalSpace F (Bundle.Trivial B F)))
+    (Y := TopCat.of (B × F)) (Bundle.Trivial.homeomorphProd B F) fun v ↦ by
+      simp [mem_zeroSectionCompl]
+
+omit [NormedSpace ℝ F] in
+@[simp]
+theorem trivialThomPairIso_hom_fst_apply
+    (v : TotalSpace F (Bundle.Trivial B F)) :
+    TopPair.Hom.fst (trivialThomPairIso B F).hom v = (v.1, v.2) := by
+  rw [trivialThomPairIso, TopPair.ofSubsetIso_hom]
+  exact TopPair.ofSubsetMap_fst_apply _ _ _
+
+omit [NormedSpace ℝ F] in
+@[simp]
+theorem trivialThomPairIso_inv_fst_apply (p : B × F) :
+    TopPair.Hom.fst (trivialThomPairIso B F).inv p = TotalSpace.mk' F p.1 p.2 := by
+  rw [trivialThomPairIso, TopPair.ofSubsetIso_inv]
+  exact TopPair.ofSubsetMap_fst_apply _ _ _
+
+omit [NormedSpace ℝ F] in
+/-- The identification of the Thom pair of the trivial bundle with that of the product bundle
+carries the fibre over `b` to the fibre over `b`. -/
+@[reassoc (attr := simp)]
+theorem fiberThomPairMap_comp_trivialThomPairIso_hom (b : B) :
+    fiberThomPairMap F (Bundle.Trivial B F) b ≫ (trivialThomPairIso B F).hom =
+      prodThomPairFiberMap F b := by
+  refine TopPair.hom_ext_of_fst _ (TopCat.ext fun (x : F) ↦ ?_)
+  exact (congrArg _ (fiberThomPairMap_fst_apply F _ b x)).trans
+    ((trivialThomPairIso_hom_fst_apply B F _).trans (prodThomPairFiberMap_fst_apply F b x).symm)
 
 /-- **Thom classes of the trivial bundle**: over a nonempty base, the pull-back of a class
 `u ∈ Hʳ(F, F ∖ {0})`, for `r = finrank ℝ F`, along the projection of the Thom pair onto the fibre
@@ -267,5 +316,46 @@ theorem exists_isThomClass_pullback_baseSet (K : Type w) [CommRing K] :
       IsThomClass F ((⇑(ContinuousMap.subtypeVal e.baseSet)) *ᵖ E) u :=
   (e.pullback (ContinuousMap.subtypeVal e.baseSet)).exists_isThomClass
     (Set.eq_univ_of_forall fun b ↦ b.2) K
+
+section ProdThomPair
+
+variable {K : Type*} [CommRing K] (R' M' : ModuleCat.{w} K) [Module.Projective K R']
+
+/-- **The relative cohomology of the Thom pair of a trivializable bundle vanishes below the
+rank**: for a trivialization of `E` over the whole base, `Hⁿ(E, E₀; R, M) = 0` for
+`n < dim F`. -/
+theorem isZero_singularCohomology_thomPair (he : e.baseSet = Set.univ) {n : ℕ}
+    (hn : n < finrank ℝ F) : IsZero ((thomPair F E).singularCohomology R' K M' n) :=
+  (isZero_singularCohomology_prodThomPair R' M' B F hn).of_iso
+    ((TopPair.singularCohomologyFunctor R' K M' n).mapIso
+      (e.thomPairIso ℝ he ≪≫ trivialThomPairIso B F).op).symm
+
+variable {R' M'} in
+/-- **Classes of a trivializable bundle in the top degree are determined on the fibres**: for a
+trivialization of `E` over the whole base, two classes of `Hʳ(E, E₀; R, M)`, `r = dim F`, whose
+restrictions to the fibre pair `(E_b, E_b ∖ {0})` over every point `b` agree, are equal. In
+particular a Thom class of `E` is determined by its restrictions to the fibres. -/
+theorem singularCohomology_thomPair_ext (he : e.baseSet = Set.univ)
+    {u v : (thomPair F E).singularCohomology R' K M' (finrank ℝ F)}
+    (h : ∀ b, TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ u =
+      TopPair.singularCohomologyMap (fiberThomPairMap F E b) _ v) : u = v := by
+  let φ := e.thomPairIso ℝ he ≪≫ trivialThomPairIso B F
+  have hφ (b : B) : prodThomPairFiberMap F b ≫ φ.inv =
+      (e.fiberPairIso ℝ (he ▸ Set.mem_univ b)).inv ≫ fiberThomPairMap F E b := by
+    rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp, Iso.trans_hom, ← Category.assoc,
+      e.fiberThomPairMap_comp_thomPairIso_hom ℝ he, Category.assoc,
+      fiberThomPairMap_comp_trivialThomPairIso_hom]
+  -- Transport `u` and `v` to the product bundle and compare them there, fibre by fibre.
+  have hφu (w : (thomPair F E).singularCohomology R' K M' (finrank ℝ F)) :
+      TopPair.singularCohomologyMap φ.hom _ (TopPair.singularCohomologyMap φ.inv _ w) = w := by
+    rw [← ConcreteCategory.comp_apply, ← TopPair.singularCohomologyMap_comp, Iso.hom_inv_id,
+      TopPair.singularCohomologyMap_id, ConcreteCategory.id_apply]
+  refine (hφu u).symm.trans ((congrArg _ (singularCohomology_prodThomPair_ext fun b ↦ ?_)).trans
+    (hφu v))
+  rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
+    ← TopPair.singularCohomologyMap_comp, hφ, TopPair.singularCohomologyMap_comp,
+    ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, h b]
+
+end ProdThomPair
 
 end Bundle.Trivialization
