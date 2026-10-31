@@ -33,12 +33,18 @@ general linear group, acts on `ℙ 𝕜 (Fin (n + 1) → 𝕜)` by analytic maps
 holomorphic maps of complex projective spaces induced by linear maps, and the projective linear
 transformations act on `ℂℙⁿ` by biholomorphisms.
 
+A linear map `G : 𝕜ᵐ⁺¹ → 𝕜ⁿ⁺¹` which is not injective still induces the map `[v] ↦ [G v]` on the
+open set where `G` does not vanish, and it is `C^r` there
+(`Projectivization.contMDiffOn_linearProjection`).
+
 ## Main declarations
 
 * `Projectivization.contMDiffOn_of_contDiffOn`, `Projectivization.contMDiff_of_contDiffOn`: a map
   of projective spaces given by a `C^r` map of homogeneous coordinates is `C^r`.
 * `Projectivization.contMDiff_map`: the map induced by an injective linear map is `C^r` for every
   `r`.
+* `Projectivization.contMDiffOn_linearProjection`: the map induced by a linear map is `C^r` where
+  the linear map does not vanish.
 * `Projectivization.mapDiffeomorph`: the `C^r` diffeomorphism induced by a linear equivalence.
 * `Projectivization.instContMDiffConstSMul`, `Projectivization.instContMDiffConstSMulPGL`: linear
   group actions on projective space are by analytic maps.
@@ -127,6 +133,18 @@ theorem contMDiff_map (f : (Fin (m + 1) → 𝕜) →ₗ[𝕜] Fin (n + 1) → �
     (⟨f, LinearMap.continuous_on_pi f⟩ : (Fin (m + 1) → 𝕜) →L[𝕜]
       Fin (n + 1) → 𝕜).contDiff.contDiffOn
     (fun _ hv ↦ (map_ne_zero_iff f hf).2 hv) fun _ _ ↦ map_mk _ _ _ _
+
+/-- The map `[w] ↦ [G w]` induced by a linear map `G` is `C^r` for every `r` on the open set
+`Projectivization.linearProjectionDomain G` where `G` does not vanish; for `r = ω` it is analytic
+there. -/
+theorem contMDiffOn_linearProjection (G : (Fin (m + 1) → 𝕜) →ₗ[𝕜] Fin (n + 1) → 𝕜) (r : ℕ∞ω) :
+    ContMDiffOn 𝓘(𝕜, Fin m → 𝕜) 𝓘(𝕜, Fin n → 𝕜) r (linearProjection G)
+      (linearProjectionDomain G) :=
+  contMDiffOn_of_contDiffOn (isOpen_linearProjectionDomain (LinearMap.continuous_on_pi G))
+    (⟨G, LinearMap.continuous_on_pi G⟩ : (Fin (m + 1) → 𝕜) →L[𝕜]
+      Fin (n + 1) → 𝕜).contDiff.contDiffOn
+    (fun _ hv h ↦ (mk_mem_linearProjectionDomain_iff G hv).1 h)
+    fun _ hv _ ↦ linearProjection_mk G hv _
 
 /-! ### Diffeomorphisms induced by linear equivalences -/
 

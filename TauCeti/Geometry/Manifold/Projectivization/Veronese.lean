@@ -26,8 +26,10 @@ analytic (`Projectivization.contMDiff_map_comp_veronese`); over `ℂ` it is holo
 For positive degree `e + 1` it is moreover an immersion. On the affine open where the `i`-th
 homogeneous coordinate is nonzero, the coordinates `y_(e e_i + e_j)` of the image of `[v]` are the
 coordinates of `v i ^ e • v` (`TauCeti.veroneseLocalInverse_veroneseMonomials`). Composed with a
-linear left inverse of `f`, they define an analytic map on an open neighbourhood of the image which
-is a left inverse of the Veronese map near `[v]`, so its differential is injective
+linear left inverse of `f`, they define an analytic map
+`Projectivization.veroneseLocalLeftInverse` on an open neighbourhood of the image which is a left
+inverse of the Veronese map near `[v]` (`Projectivization.leftInvOn_veroneseLocalLeftInverse`,
+`Projectivization.contMDiffOn_veroneseLocalLeftInverse`), so its differential is injective
 (`Projectivization.isImmersion_map_comp_veronese`). Since projective space is compact and the
 Veronese map of positive degree is injective, it is a closed embedding, and hence a closed analytic
 embedding (`Projectivization.isSmoothEmbedding_map_comp_veronese`,
@@ -39,6 +41,8 @@ embedding (`Projectivization.isSmoothEmbedding_map_comp_veronese`,
   of the vector, for every `r`.
 * `Projectivization.contMDiff_map_comp_veronese`: the Veronese map, read through an injective
   linear map, is `C^r` for every `r`, including the analytic order `ω`.
+* `Projectivization.contMDiffOn_veroneseLocalLeftInverse`: the local left inverses of the Veronese
+  map are `C^r` on their open domains.
 * `Projectivization.isImmersion_map_comp_veronese`: for positive degree it is an immersion.
 * `Projectivization.isClosedEmbedding_map_comp_veronese` and
   `Projectivization.isSmoothEmbedding_map_comp_veronese`: for positive degree it is a closed
@@ -61,6 +65,7 @@ namespace TauCeti
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {N : ℕ}
 
 /-- The vector of monomials of degree `d` of `v` is a `C^r` function of `v`, for every `r`. -/
+@[fun_prop]
 theorem contDiff_veroneseMonomials (d : ℕ) {r : ℕ∞ω} :
     ContDiff 𝕜 r (veroneseMonomials (N := N) (K := 𝕜) d) :=
   contDiff_pi.2 fun k ↦ by
@@ -89,6 +94,14 @@ theorem contMDiff_map_comp_veronese
     (fun _ hv ↦ (map_ne_zero_iff f hf).2 (veroneseMonomials_ne_zero d hv))
     fun _ _ ↦ by simp [map_mk]
 
+/-- The local left inverse `[w] ↦ [veroneseLocalInverse 𝕜 e i (g w)]` of the Veronese map is
+`C^r` for every `r` on its open domain; for `r = ω` it is analytic there. -/
+theorem contMDiffOn_veroneseLocalLeftInverse (e : ℕ) (i : Fin (m + 1))
+    (g : (Fin (n + 1) → 𝕜) →ₗ[𝕜] Fin (veroneseDim (m + 1) (e + 1)) → 𝕜) (r : ℕ∞ω) :
+    ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin m → 𝕜) r (veroneseLocalLeftInverse e i g)
+      (linearProjectionDomain (veroneseLocalInverse 𝕜 e i ∘ₗ g)) :=
+  contMDiffOn_linearProjection _ r
+
 end NontriviallyNormedField
 
 section RCLike
@@ -98,7 +111,8 @@ variable {𝕜 : Type*} [RCLike 𝕜] {m n d : ℕ}
 /-- **The Veronese map is an immersion.** For positive degree, the Veronese map read through an
 injective linear map `f` is a `C^r` immersion for every `r ≥ 1`. Near a point where the `i`-th
 homogeneous coordinate is nonzero, it has the analytic left inverse
-`[w] ↦ [veroneseLocalInverse 𝕜 (d - 1) i (g w)]`, for a linear left inverse `g` of `f`. -/
+`Projectivization.veroneseLocalLeftInverse`, `[w] ↦ [veroneseLocalInverse 𝕜 (d - 1) i (g w)]`
+for a linear left inverse `g` of `f`. -/
 theorem isImmersion_map_comp_veronese (hd : d ≠ 0)
     (f : (Fin (veroneseDim (m + 1) d) → 𝕜) →ₗ[𝕜] Fin (n + 1) → 𝕜) (hf : Injective f)
     {r : ℕ∞ω} (hr : 1 ≤ r) :
@@ -109,54 +123,15 @@ theorem isImmersion_map_comp_veronese (hd : d ≠ 0)
   intro x
   obtain ⟨i, hi⟩ := exists_mem_affineOpen x
   obtain ⟨g, hg⟩ := f.exists_leftInverse_of_injective (LinearMap.ker_eq_bot.2 hf)
-  -- The local inverse in homogeneous coordinates, and the open set where it does not vanish.
-  let G := veroneseLocalInverse 𝕜 e i ∘ₗ g
-  have hGf (v : Fin (m + 1) → 𝕜) : G (f (veroneseMonomials (e + 1) v)) = v i ^ e • v := by
-    rw [← veroneseLocalInverse_veroneseMonomials, LinearMap.comp_apply, ← LinearMap.comp_apply g,
-      hg, LinearMap.id_apply]
-  have hGrep (w : Fin (n + 1) → 𝕜) (hw : w ≠ 0) : ∃ a : 𝕜ˣ, G (mk 𝕜 w hw).rep = a • G w := by
-    obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep 𝕜 w hw
-    exact ⟨a, by rw [← ha, Units.smul_def, map_smul, Units.smul_def]⟩
-  let s : Set (ℙ 𝕜 (Fin (n + 1) → 𝕜)) := {y | G y.rep ≠ 0}
-  have hmem (w : Fin (n + 1) → 𝕜) (hw : w ≠ 0) : mk 𝕜 w hw ∈ s ↔ G w ≠ 0 := by
-    obtain ⟨a, ha⟩ := hGrep w hw
-    simp only [s, mem_ofPred_eq, ha, smul_ne_zero_iff_ne]
-  have hs : IsOpen s := by
-    rw [← isQuotientMap_mk'.isOpen_preimage]
-    convert isOpen_ne_fun ((LinearMap.continuous_on_pi G).comp continuous_subtype_val)
-      (continuous_const (y := (0 : Fin (m + 1) → 𝕜))) using 1
-    ext v
-    simp [mk'_eq_mk, hmem]
-  let ginv : ℙ 𝕜 (Fin (n + 1) → 𝕜) → ℙ 𝕜 (Fin (m + 1) → 𝕜) := fun y ↦
-    if h : G y.rep ≠ 0 then mk 𝕜 (G y.rep) h else x
-  have hginv (w : Fin (n + 1) → 𝕜) (hw : w ≠ 0) (h : G w ≠ 0) :
-      ginv (mk 𝕜 w hw) = mk 𝕜 (G w) h := by
-    have h' : G (mk 𝕜 w hw).rep ≠ 0 := (hmem w hw).2 h
-    obtain ⟨a, ha⟩ := hGrep w hw
-    simp only [ginv, ne_eq, h', not_false_eq_true, ↓reduceDIte]
-    exact (mk_eq_mk_iff' 𝕜 _ _ _ _).2 ⟨a, by rw [ha, Units.smul_def]⟩
-  have hginvs : ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin m → 𝕜) r ginv s :=
-    contMDiffOn_of_contDiffOn hs
-      (⟨G, LinearMap.continuous_on_pi G⟩ : (Fin (n + 1) → 𝕜) →L[𝕜]
-        Fin (m + 1) → 𝕜).contDiff.contDiffOn
-      (fun w hw h ↦ (hmem w hw).1 h) fun w hw h ↦ hginv w hw _
-  -- On the affine open at `i`, the image lies in `s` and `ginv` inverts the Veronese map.
-  have hloc (y) (hy : y ∈ affineOpen i) :
-      (map f hf ∘ veronese 𝕜 (e + 1)) y ∈ s ∧ ginv ((map f hf ∘ veronese 𝕜 (e + 1)) y) = y := by
-    induction y using ind with | h v hv => ?_
-    rw [mk_mem_affineOpen_iff] at hy
-    have hne : G (f (veroneseMonomials (e + 1) v)) ≠ 0 := by
-      rw [hGf]
-      exact smul_ne_zero (pow_ne_zero e hy) hv
-    simp only [comp_apply, veronese_mk, map_mk]
-    refine ⟨(hmem _ _).2 hne, ?_⟩
-    rw [hginv _ _ hne]
-    exact (mk_eq_mk_iff' 𝕜 _ _ _ _).2 ⟨v i ^ e, (hGf v).symm⟩
-  have hh := contMDiff_map_comp_veronese (𝕜 := 𝕜) (m := m) (d := e + 1) f hf r
-  exact (hh.contMDiffOn (s := univ)).isImmersionAt_of_comp_eventuallyEq_id isOpen_univ
-    (mem_univ x) hr (((hginvs _ (hloc x hi).1).contMDiffAt
-      (hs.mem_nhds (hloc x hi).1)).mdifferentiableAt hr0)
-    (Filter.eventuallyEq_of_mem ((isOpen_affineOpen i).mem_nhds hi) fun y hy ↦ (hloc y hy).2)
+  have hx := mapsTo_map_comp_veronese_linearProjectionDomain hf hg i hi
+  have hs := isOpen_linearProjectionDomain
+    (LinearMap.continuous_on_pi (veroneseLocalInverse 𝕜 e i ∘ₗ g))
+  exact ((contMDiff_map_comp_veronese f hf r).contMDiffOn (s := univ))
+    |>.isImmersionAt_of_comp_eventuallyEq_id isOpen_univ (mem_univ x) hr
+    (((contMDiffOn_veroneseLocalLeftInverse e i g r _ hx).contMDiffAt
+      (hs.mem_nhds hx)).mdifferentiableAt hr0)
+    (Filter.eventuallyEq_of_mem ((isOpen_affineOpen i).mem_nhds hi)
+      (leftInvOn_veroneseLocalLeftInverse hf hg i))
 
 /-- For positive degree, the Veronese map read through an injective linear map is a closed
 embedding: projective space is compact and the map is continuous and injective. -/

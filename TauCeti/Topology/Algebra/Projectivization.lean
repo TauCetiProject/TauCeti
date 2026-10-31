@@ -45,6 +45,8 @@ of projective space.
   `mk' K` is.
 * `Projectivization.continuous_mk`, `Projectivization.continuous_map`: `Projectivization.mk`
   and `Projectivization.map` are continuous.
+* `Projectivization.isOpen_linearProjectionDomain`: the points where a continuous linear map does
+  not vanish form an open set.
 * `Projectivization.mk'_eq_mk'_iff_forall_strongDual`: when continuous linear forms separate
   points, two nonzero vectors span the same line iff all the `2 × 2` minors
   `f v * g w - f w * g v` vanish.
@@ -111,6 +113,16 @@ theorem continuous_map {σ : K →+* L} {f : V →ₛₗ[σ] W} (hf : Function.I
   continuous_iff.2 <| continuous_mk (hfc.comp continuous_subtype_val) _
 
 end Map
+
+/-- The set of points at which a continuous linear map does not vanish, the domain of
+`Projectivization.linearProjection G`, is open. -/
+theorem isOpen_linearProjectionDomain {W : Type*} [AddCommGroup W] [Module K W]
+    [TopologicalSpace W] [T1Space W] {G : V →ₗ[K] W} (hG : Continuous G) :
+    IsOpen (linearProjectionDomain G) := by
+  rw [← isQuotientMap_mk'.isOpen_preimage]
+  convert (isOpen_compl_singleton (x := (0 : W))).preimage (hG.comp continuous_subtype_val) using 1
+  ext v
+  simp [mk'_eq_mk]
 
 variable [ContinuousConstSMul Kˣ V]
 

@@ -22,6 +22,10 @@ union of its unit translates (`Projectivization.preimage_image_mk'`). These two 
 from Zayn Blore's Mathlib pull request
 [mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117).
 
+A linear map `G : V →ₗ[K] W` induces the map `Projectivization.linearProjection G`, sending
+`[v]` to `[G v]` on the set `Projectivization.linearProjectionDomain G` of points where `G` does
+not vanish (`Projectivization.linearProjection_mk`).
+
 The file also records `Projectivization.submodule_map`: the line of the image of a projective
 point under an injective semilinear map is the image of its line.
 
@@ -57,6 +61,44 @@ theorem preimage_image_mk' (U : Set { v : V // v ≠ 0 }) :
     exact ⟨w, hw, a⁻¹, inv_smul_smul a w⟩
 
 end DivisionRing
+
+section LinearProjection
+
+variable {K V W : Type*} [DivisionRing K] [AddCommGroup V] [Module K V] [AddCommGroup W]
+  [Module K W]
+
+/-- The points `[v]` of `ℙ K V` with `G v ≠ 0`, for a linear map `G : V →ₗ[K] W`: the complement
+of the projectivized kernel of `G`, on which `G` induces the map
+`Projectivization.linearProjection G`. -/
+def linearProjectionDomain (G : V →ₗ[K] W) : Set (Projectivization K V) :=
+  {y | G y.rep ≠ 0}
+
+/-- The point `[v]` lies in the domain of `Projectivization.linearProjection G` iff `G v ≠ 0`. -/
+@[simp]
+theorem mk_mem_linearProjectionDomain_iff (G : V →ₗ[K] W) {v : V} (hv : v ≠ 0) :
+    mk K v hv ∈ linearProjectionDomain G ↔ G v ≠ 0 := by
+  obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep K v hv
+  rw [linearProjectionDomain, Set.mem_ofPred_eq, ← ha, Units.smul_def, map_smul, ← Units.smul_def,
+    smul_ne_zero_iff_ne]
+
+/-- The map `[v] ↦ [G v]` of projective spaces induced by a linear map `G`, on the set
+`Projectivization.linearProjectionDomain G` of points where `G` does not vanish; it sends the
+projectivized kernel of `G` to an arbitrary point. For surjective `G` it is the projection from
+the projectivized kernel. -/
+noncomputable def linearProjection [Nonempty (Projectivization K W)] (G : V →ₗ[K] W) :
+    Projectivization K V → Projectivization K W :=
+  open Classical in fun y ↦ if h : G y.rep = 0 then Classical.arbitrary _ else mk K (G y.rep) h
+
+/-- The map induced by a linear map `G` in homogeneous coordinates, where `G` does not vanish. -/
+@[simp]
+theorem linearProjection_mk [Nonempty (Projectivization K W)] (G : V →ₗ[K] W) {v : V}
+    (hv : v ≠ 0) (h : G v ≠ 0) : linearProjection G (mk K v hv) = mk K (G v) h := by
+  have h' : G (mk K v hv).rep ≠ 0 := (mk_mem_linearProjectionDomain_iff G hv).2 h
+  obtain ⟨a, ha⟩ := exists_smul_eq_mk_rep K v hv
+  simp only [linearProjection, h', ↓reduceDIte]
+  exact (mk_eq_mk_iff K _ _ _ _).2 ⟨a, by rw [← ha, Units.smul_def, Units.smul_def, map_smul]⟩
+
+end LinearProjection
 
 variable {K : Type*} [Field K] {ι : Type*}
 
