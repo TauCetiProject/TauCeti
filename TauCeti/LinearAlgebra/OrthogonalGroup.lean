@@ -24,6 +24,8 @@ corresponding Euclidean space.
 * `TauCeti.orthogonalGroupToLinearIsometryEquiv_mul_apply` and
   `TauCeti.orthogonalGroupToLinearIsometryEquiv_inv_apply`: products and inverses act by
   composites and inverses.
+* `TauCeti.det_orthogonalGroupToLinearIsometryEquiv`: the linear isometry has the determinant of
+  the matrix.
 * `TauCeti.continuous_orthogonalGroupToLinearIsometryEquiv`: the resulting linear maps depend
   continuously on the matrix, for the operator-norm topology.
 -/
@@ -110,6 +112,17 @@ theorem orthogonalGroupToLinearIsometryEquiv_injective :
   exact LinearMap.ext fun x => by
     simpa only [orthogonalGroupToLinearIsometryEquiv_apply, Matrix.toLpLin_apply] using
       _root_.LinearIsometryEquiv.congr_fun h x
+
+/-- The linear isometry equivalence of an orthogonal matrix has the determinant of the matrix. -/
+@[simp]
+theorem det_orthogonalGroupToLinearIsometryEquiv (A : Matrix.orthogonalGroup ι ℝ) :
+    LinearMap.det (orthogonalGroupToLinearIsometryEquiv A).toLinearIsometry.toLinearMap =
+      (A : Matrix ι ι ℝ).det := by
+  have : (orthogonalGroupToLinearIsometryEquiv A).toLinearIsometry.toLinearMap =
+      Matrix.toEuclideanLin (A : Matrix ι ι ℝ) := by
+    ext x
+    simp [Matrix.toLpLin_apply]
+  rw [this, LinearMap.det_toLpLin]
 
 /-- The linear map of an orthogonal matrix depends continuously on the matrix: the conversion to
 continuous linear endomorphisms of Euclidean space is continuous for the subspace topology on the
