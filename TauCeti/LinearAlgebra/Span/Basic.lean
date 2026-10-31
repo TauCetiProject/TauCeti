@@ -12,7 +12,6 @@ import Mathlib.Algebra.Algebra.Basic
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Module.Torsion.Field
 import Mathlib.Data.Fintype.BigOperators
-import Mathlib.RingTheory.Ideal.Span
 
 /-!
 # Finite spans and singleton spans
@@ -24,9 +23,6 @@ through the image of its generator, so a group element stabilizes the line throu
 exactly when it sends that vector to a multiple of itself. Finally, a submodule over a
 subring that is a direct sum `⊕ i, J i • y i` with nonzero ideal coefficients spans the same
 subspace over the larger field as the family `y`.
-
-A linear equivalence carries generators of a module to generators. A module linearly equivalent
-to a commutative semiring whose only unit is `1`, such as `ZMod 2`, has a unique generator.
 -/
 
 public section
@@ -135,31 +131,3 @@ theorem span_range_eq_span_of_forall_mem_iff [FaithfulSMul R K] {ι : Type*} [Fi
 end IdealCoefficients
 
 end Submodule
-
-namespace LinearEquiv
-
-section Generator
-
-variable {R M M' : Type*} [AddCommMonoid M] [AddCommMonoid M']
-
-/-- A linear equivalence carries generators to generators: `e x` spans the target exactly when
-`x` spans the source. -/
-@[simp]
-theorem span_singleton_apply_eq_top_iff [Semiring R] [Module R M] [Module R M'] (e : M ≃ₗ[R] M')
-    {x : M} : Submodule.span R {e x} = ⊤ ↔ Submodule.span R {x} = ⊤ := by
-  rw [← Set.image_singleton, Submodule.span_image_linearEquiv, Submodule.map_eq_top_iff]
-
-/-- **A module linearly equivalent to a ring with only one unit has a unique generator**: if `R` is
-a commutative semiring whose only unit is `1`, such as `ZMod 2`, and `M ≃ₗ[R] R`, then two vectors
-each spanning `M` are equal. -/
-theorem eq_of_span_singleton_eq_top [CommSemiring R] [Subsingleton Rˣ] [Module R M]
-    (φ : M ≃ₗ[R] R) {x y : M} (hx : Submodule.span R {x} = ⊤)
-    (hy : Submodule.span R {y} = ⊤) : x = y := by
-  have hunit {z : M} (hz : Submodule.span R {z} = ⊤) : IsUnit (φ z) :=
-    Ideal.span_singleton_eq_top.1 (φ.span_singleton_apply_eq_top_iff.2 hz)
-  exact φ.injective (by
-    simpa using congrArg Units.val (Subsingleton.elim (hunit hx).unit (hunit hy).unit))
-
-end Generator
-
-end LinearEquiv
