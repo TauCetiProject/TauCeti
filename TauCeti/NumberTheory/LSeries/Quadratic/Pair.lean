@@ -16,8 +16,9 @@ public import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
 are multiplicative and its L-series is the four-factor product on `Re s > 1`.
 For quadratic characters `χ` and `ψ`, possibly of different levels, the product
 `ζ(s) L(s, χ) L(s, ψ) L(s, χ.mul ψ)` has nonnegative real Dirichlet coefficients.
-The product character is kept at the least common multiple of the levels, not replaced by
-its primitive character: thus no Euler factors at primes dividing either level are discarded.
+The fourth factor is the L-function of the product character at the least common multiple
+of the levels, not of its primitive character. Its Euler factors at primes dividing that
+least common multiple are trivial.
 No primitivity, nontriviality, or distinctness assumption is needed.
 
 The local argument pairs `ζ * χ` with its twist by `ψ`. If `χ(p) = -1`, the first factor
@@ -144,8 +145,8 @@ theorem zetaMulPairCoeffs_nonneg {χ : DirichletCharacter ℂ M}
     zetaMulPairCoeffs_prime_pow_nonneg hχ hψ (Nat.prime_of_mem_primeFactors hp) _
 
 /-- On `Re s > 1` the four-factor product is the absolutely convergent Dirichlet series
-of `zetaMulPairCoeffs`. The fourth L-function is that of the actual product character,
-with its imprimitive Euler factors retained. -/
+of `zetaMulPairCoeffs`. The fourth L-function is `(χ.mul ψ).LFunction` at level
+`Nat.lcm M N`, not the L-function of its primitive character. -/
 theorem LSeriesHasSum_zetaMulPairCoeffs [NeZero M] [NeZero N]
     (χ : DirichletCharacter ℂ M) (ψ : DirichletCharacter ℂ N) {s : ℂ} (hs : 1 < s.re) :
     LSeriesHasSum (χ.zetaMulPairCoeffs ψ) s
