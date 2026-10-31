@@ -39,9 +39,9 @@ grid `1 ≤ u, v ≤ 2 d L`:
 * `|F(u + v β)| ≤ exp (O (L ^ (3 / 2) log L) - L ²)` by Schwarz's lemma
   (`TauCeti.exists_norm_schneider_auxiliary_le_exp_rpow`).
 
-By Liouville's inequality (`NumberField.one_le_norm_mul_house_pow`), these bounds force
-`y_{uv} = 0` once `M` is large. Then the real exponential polynomial `F` has `(2 d L)²` real zeros,
-whereas it has at most `D₁ D₂ - 1 = 2 d L² - 1` of them
+By Liouville's inequality (`NumberField.eq_zero_of_norm_le_exp_of_house_le_exp`), these bounds
+force `y_{uv} = 0` once `M` is large. Then the real exponential polynomial `F` has `(2 d L)²` real
+zeros, whereas it has at most `D₁ D₂ - 1 = 2 d L² - 1` of them
 (`TauCeti.card_lt_of_sum_eval_mul_exp_eq_zero`); this is the contradiction.
 
 ## Main results
@@ -108,32 +108,6 @@ private theorem sq_lt_mul_of_schneider_eq_zero {l β : ℝ} (hl : l ≠ 0) (hβ 
     _ ≤ ∑ _j ∈ s, D₁ := sum_le_sum fun j hj ↦ hdeg j (mem_filter.1 hj).2
     _ ≤ ∑ _j : Fin D₂, D₁ := sum_le_sum_of_subset (subset_univ s)
     _ = D₁ * D₂ := by rw [sum_const, card_univ, Fintype.card_fin, smul_eq_mul, mul_comm]
-
-/-- **Liouville's inequality for Schneider's values.** Let `K` be a number field of degree `d`,
-`σ : K →+* ℂ`, `y ∈ K` and `m ≠ 0` an integer with `m ^ N y` an algebraic integer. If
-`|σ y| ≤ exp A`, `house y ≤ exp B` and `|m| ^ N ≤ exp C` with `C + A + (d - 1) (C + B) < 0`,
-then `y = 0`. -/
-private theorem eq_zero_of_norm_le_of_house_le {K : Type*} [Field K] [NumberField K]
-    (σ : K →+* ℂ) {y : K} {m : ℤ} (hm : m ≠ 0) {N : ℕ} (hint : IsIntegral ℤ ((m : K) ^ N * y))
-    {A B C : ℝ} (hσ : ‖σ y‖ ≤ Real.exp A) (hy : NumberField.house y ≤ Real.exp B)
-    (hmC : |(m : ℝ)| ^ N ≤ Real.exp C) (h : C + A + (finrank ℚ K - 1 : ℕ) * (C + B) < 0) :
-    y = 0 := by
-  by_contra hy0
-  have hx0 : (m : K) ^ N * y ≠ 0 := mul_ne_zero (pow_ne_zero _ (Int.cast_ne_zero.2 hm)) hy0
-  have hσx : ‖σ ((m : K) ^ N * y)‖ ≤ Real.exp C * Real.exp A := by
-    rw [map_mul, map_pow, map_intCast, norm_mul, norm_pow, Complex.norm_intCast]
-    exact mul_le_mul hmC hσ (norm_nonneg _) (Real.exp_pos _).le
-  have hhx : NumberField.house ((m : K) ^ N * y) ≤ Real.exp C * Real.exp B := by
-    refine (NumberField.house_mul_le _ _).trans
-      (mul_le_mul ?_ hy (NumberField.house_nonneg _) (Real.exp_pos _).le)
-    rwa [NumberField.house_pow, NumberField.house_intCast, Int.cast_abs]
-  have hlt : Real.exp C * Real.exp A * (Real.exp C * Real.exp B) ^ (finrank ℚ K - 1) < 1 := by
-    rw [← Real.exp_add, ← Real.exp_add, ← Real.exp_nat_mul, ← Real.exp_add]
-    exact Real.exp_lt_one_iff.2 (by linarith)
-  refine absurd (lt_of_le_of_lt ?_ hlt) (lt_irrefl 1)
-  exact (one_le_norm_mul_house_pow hint hx0 σ).trans <| mul_le_mul hσx
-    (pow_le_pow_left₀ (NumberField.house_nonneg _) hhx _)
-    (pow_nonneg (NumberField.house_nonneg _) _) (by positivity)
 
 /-- The exponent in Liouville's inequality for Schneider's values is eventually negative: for
 real `c₄`, `c₅`, `c₆` and `e ≥ 0`, with `X = x ^ (3 / 2)`,
@@ -224,7 +198,7 @@ private theorem exists_schneider_auxiliary_mul_le_sq {K : Type*} [Field K] [Numb
   -- The value `y_{uv} ∈ K` vanishes by Liouville's inequality, hence so does `F(u + v σ β)`.
   have hσy := hc₄ M L _ _ (by omega) rfl rfl rfl (fun i j ↦ (a i j : ℂ))
     (fun i j ↦ by simpa only [Complex.norm_intCast] using ha i j) hzero u v hu hv
-  have hval := eq_zero_of_norm_le_of_house_le σ hm
+  have hval := eq_zero_of_norm_le_exp_of_house_le_exp σ hm
     (isIntegral_intCast_pow_mul_schneider_value (hint α (by simp)) (hint β (by simp))
       (hint γ (by simp)) a hu hv)
     (by rwa [RingHom.map_schneider_value σ hα hγ])

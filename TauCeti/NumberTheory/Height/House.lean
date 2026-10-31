@@ -69,6 +69,9 @@ of bounded degree and bounded house.
 * `NumberField.one_le_norm_mul_house_pow`: Liouville's inequality, a nonzero algebraic integer
   `x` of a number field of degree `d` satisfies `1 ≤ ‖σ x‖ ⌈x⌉ᵈ⁻¹` for every complex embedding
   `σ`.
+* `NumberField.eq_zero_of_norm_le_exp_of_house_le_exp`: Liouville's inequality in exponential
+  form, an element `y` of a number field with `m ^ N y` integral is zero once `‖σ y‖`, `⌈y⌉` and
+  `|m| ^ N` are small enough.
 * `TauCeti.inv_norm_le_pow_mul_house_pow_of_mem_rootSet`,
   `TauCeti.inv_norm_le_natDenominator_pow_mul_house_pow_of_mem_rootSet`,
   `TauCeti.inv_norm_le_natDenominator_pow_mul_house_pow`: every complex conjugate `z` of a
@@ -383,6 +386,34 @@ theorem _root_.NumberField.one_le_norm_mul_house_pow {K : Type*} [Field K] [Numb
     NumberField.RingOfIntegers.one_le_abs_norm (α := ⟨x, hx⟩) fun h ↦ h0 (congr_arg Subtype.val h)
   rw [← Real.norm_eq_abs, Rat.norm_cast_real] at h1
   exact h1.trans (NumberField.norm_norm_le_norm_mul_house_pow x σ)
+
+/-- **Liouville's inequality in exponential form.** Let `K` be a number field of degree `d`,
+`σ : K →+* ℂ`, `y ∈ K` and `m ≠ 0` an integer with `m ^ N y` an algebraic integer. If
+`‖σ y‖ ≤ exp A`, `⌈y⌉ ≤ exp B` and `|m| ^ N ≤ exp C` with `C + A + (d - 1) (C + B) < 0`,
+then `y = 0`. -/
+theorem _root_.NumberField.eq_zero_of_norm_le_exp_of_house_le_exp {K : Type*} [Field K]
+    [NumberField K] (σ : K →+* ℂ) {y : K} {m : ℤ} (hm : m ≠ 0) {N : ℕ}
+    (hint : IsIntegral ℤ ((m : K) ^ N * y)) {A B C : ℝ} (hσ : ‖σ y‖ ≤ Real.exp A)
+    (hy : NumberField.house y ≤ Real.exp B) (hmC : |(m : ℝ)| ^ N ≤ Real.exp C)
+    (h : C + A + (Module.finrank ℚ K - 1 : ℕ) * (C + B) < 0) :
+    y = 0 := by
+  by_contra hy0
+  have hx0 : (m : K) ^ N * y ≠ 0 := mul_ne_zero (pow_ne_zero _ (Int.cast_ne_zero.2 hm)) hy0
+  have hσx : ‖σ ((m : K) ^ N * y)‖ ≤ Real.exp C * Real.exp A := by
+    rw [map_mul, map_pow, map_intCast, norm_mul, norm_pow, Complex.norm_intCast]
+    exact mul_le_mul hmC hσ (norm_nonneg _) (Real.exp_pos _).le
+  have hhx : NumberField.house ((m : K) ^ N * y) ≤ Real.exp C * Real.exp B := by
+    refine (NumberField.house_mul_le _ _).trans
+      (mul_le_mul ?_ hy (NumberField.house_nonneg _) (Real.exp_pos _).le)
+    rwa [NumberField.house_pow, NumberField.house_intCast, Int.cast_abs]
+  have hlt :
+      Real.exp C * Real.exp A * (Real.exp C * Real.exp B) ^ (Module.finrank ℚ K - 1) < 1 := by
+    rw [← Real.exp_add, ← Real.exp_add, ← Real.exp_nat_mul, ← Real.exp_add]
+    exact Real.exp_lt_one_iff.2 (by linarith)
+  refine absurd (lt_of_le_of_lt ?_ hlt) (lt_irrefl 1)
+  exact (NumberField.one_le_norm_mul_house_pow hint hx0 σ).trans <| mul_le_mul hσx
+    (pow_le_pow_left₀ (NumberField.house_nonneg _) hhx _)
+    (pow_nonneg (NumberField.house_nonneg _) _) (by positivity)
 
 /-- A Liouville-type lower bound for the conjugates of a nonzero algebraic number: if `b ≠ 0`
 and `b x` is integral over `ℤ`, then every complex conjugate `z` of `x` satisfies
