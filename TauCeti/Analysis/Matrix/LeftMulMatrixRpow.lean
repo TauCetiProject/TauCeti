@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Adjoin.Basic
 import Mathlib.RingTheory.Adjoin.Polynomial.Basic
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.FiniteSpectrum
 import TauCeti.Analysis.SpecialFunctions.Pow.PolynomialIdentity
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Real powers through the left regular representation
@@ -44,6 +45,8 @@ group or a Spin group, as needed for polar decompositions.
 * `Algebra.leftMulMatrix_leftMulMatrixRpow`: the matrix of `a ^ t` is the real power `M ^ t` of
   the matrix `M` of `a`, and `Algebra.leftMulMatrixRpow_eq_iff` characterizes `a ^ t` by this.
 * `Algebra.leftMulMatrixRpow_mem_adjoin`: `a ^ t` is a polynomial in `a`.
+* `Algebra.leftMulMatrixRpow_of_not_nonneg`: `a ^ t = 0` when the matrix of `a` is not positive
+  semidefinite.
 * `Algebra.leftMulMatrixRpow_natCast` and `Algebra.leftMulMatrixRpow_add`: the natural powers and
   the group law.
 * `Algebra.bilin_leftMulMatrixRpow_eq_of_forall_pow`: a bilinear identity satisfied by all
@@ -70,10 +73,6 @@ semidefinite. -/
 noncomputable def leftMulMatrixRpow (a : A) (t : ℝ) : A :=
   Matrix.toLin B B (leftMulMatrix B a ^ t) 1
 
-/-- An element is the image of the unit under its left multiplication matrix. -/
-private theorem toLin_leftMulMatrix_one (y : A) : Matrix.toLin B B (leftMulMatrix B y) 1 = y := by
-  rw [leftMulMatrix_apply, Matrix.toLin_toMatrix, coe_lmul_eq_mul, LinearMap.mul_apply', mul_one]
-
 /-- If the matrix of `a` is self-adjoint, every functional calculus of it is the matrix of a fixed
 combination `∑ μ ∈ S, f μ • e μ` of polynomials `e μ` in `a`, with `S` the spectrum of the
 matrix. -/
@@ -92,7 +91,8 @@ private theorem exists_cfc_leftMulMatrix_eq (a : A) (ha : IsSelfAdjoint (leftMul
 
 /-- The real power of an element whose matrix is not positive semidefinite is `0`, because the
 functional calculus of `ℝ≥0` is zero off the positive semidefinite matrices. -/
-private theorem leftMulMatrixRpow_of_not_nonneg {a : A} (ha : ¬0 ≤ leftMulMatrix B a) (t : ℝ) :
+@[simp]
+theorem leftMulMatrixRpow_of_not_nonneg {a : A} (ha : ¬0 ≤ leftMulMatrix B a) (t : ℝ) :
     leftMulMatrixRpow B a t = 0 := by
   rw [leftMulMatrixRpow, CFC.rpow_def, cfc_apply_of_not_predicate _ ha, map_zero,
     LinearMap.zero_apply]
@@ -106,7 +106,7 @@ theorem leftMulMatrix_leftMulMatrixRpow (a : A) (t : ℝ) :
   by_cases hM : 0 ≤ leftMulMatrix B a
   · obtain ⟨S, e, -, -, he⟩ := exists_cfc_leftMulMatrix_eq B a hM.isSelfAdjoint
     rw [CFC.rpow_eq_cfc_real hM, he, leftMulMatrixRpow, CFC.rpow_eq_cfc_real hM, he,
-      toLin_leftMulMatrix_one]
+      toLin_leftMulMatrix, LinearMap.mulLeft_apply, mul_one]
   · rw [leftMulMatrixRpow_of_not_nonneg B hM, map_zero, CFC.rpow_def,
       cfc_apply_of_not_predicate _ hM]
 

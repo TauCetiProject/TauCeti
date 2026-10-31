@@ -43,6 +43,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   `LinearMap.exists_toMatrixRight'_comp_eq_fromBlocks`: a direct summand of `m → R` is presented
   by an idempotent matrix, and a split short exact sequence of such summands presents its middle
   term by the block-diagonal sum of the idempotent matrices of its outer terms.
+* `Algebra.toLin_leftMulMatrix`: the linear map of the left multiplication matrix of `x` is left
+  multiplication by `x`.
 * `Module.Basis.equivFun_list_prod_smul`: the coordinates of a product of linear automorphisms
   applied to a vector are the product of their matrices applied to its coordinates.
 
@@ -185,6 +187,18 @@ theorem exists_toMatrixRight'_comp_eq_fromBlocks [Fintype n] [DecidableEq n]
       simp [e, Matrix.vecMul_fromBlocks, hl', hr', hrf, hgσ, hgf, hrσ]
 
 end LinearMap
+
+namespace Algebra
+
+/-- The linear map of the left multiplication matrix of `x` in a basis `b` is left multiplication
+by `x`. -/
+@[simp]
+theorem toLin_leftMulMatrix {R S : Type*} [CommSemiring R] [Semiring S] [Algebra R S]
+    {m : Type*} [Fintype m] [DecidableEq m] (b : Module.Basis m R S) (x : S) :
+    Matrix.toLin b b (leftMulMatrix b x) = LinearMap.mulLeft R x := by
+  rw [← toMatrix_lmul_eq, Matrix.toLin_toMatrix]
+
+end Algebra
 
 namespace TauCeti.Algebra
 

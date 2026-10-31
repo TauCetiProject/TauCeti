@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Adjoint
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Complexification
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.CliffordGroup
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
-import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
 /-!
 # Real powers of positive Spin elements
