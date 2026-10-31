@@ -27,6 +27,9 @@ subgroup and a `Fin`-indexed form of finite generation.
 * `TauCeti.CommGroup.finite_torsion_of_fg` and `TauCeti.AddCommGroup.finite_torsion_of_fg`: the
   torsion subgroup of a finitely generated abelian group is finite, using Mathlib's
   `CommGroup.finite_of_fg_isMulTorsion`.
+* `TauCeti.CommGroup.exists_finiteIndex_isMulTorsionFree` and
+  `TauCeti.AddCommGroup.exists_finiteIndex_isAddTorsionFree`: a finitely generated abelian group
+  has a torsion-free subgroup of finite index.
 
 * `AddSubgroup.fg_of_addCommGroup` and `Subgroup.fg_of_commGroup`: a subgroup of a finitely
   generated commutative group is finitely generated. The argument is Noetherianity of `ℤ`, so the
@@ -202,6 +205,29 @@ theorem CommGroup.finite_torsion_of_fg (G : Type*) [CommGroup G] [Group.FG G] :
     Finite (_root_.CommGroup.torsion G) :=
   _root_.CommGroup.finite_of_fg_isMulTorsion _ fun P ↦
     (_root_.CommGroup.torsion G).subtype_injective.isOfFinOrder_iff.mp P.property
+
+/-- A finitely generated abelian group has a torsion-free subgroup of finite index, namely the
+subgroup of `n`-th powers, where `n` is the order of the torsion subgroup. -/
+@[to_additive TauCeti.AddCommGroup.exists_finiteIndex_isAddTorsionFree
+  /-- A finitely generated additive abelian group has a torsion-free subgroup of finite index,
+  namely the subgroup of `n`-th multiples, where `n` is the order of the torsion subgroup. -/]
+theorem CommGroup.exists_finiteIndex_isMulTorsionFree (G : Type*) [CommGroup G] [Group.FG G] :
+    ∃ K : Subgroup G, K.FiniteIndex ∧ IsMulTorsionFree K := by
+  have := CommGroup.finite_torsion_of_fg G
+  let n := Nat.card (_root_.CommGroup.torsion G)
+  refine ⟨(powMonoidHom n).range, Subgroup.finiteIndex_range_powMonoidHom_of_fg G Nat.card_pos.ne',
+    .of_not_isOfFinOrder ?_⟩
+  intro x hx hfin
+  obtain ⟨g, hg⟩ := x.2
+  -- `x = g ^ n` has finite order, so `g` is torsion and its `n`-th power is trivial
+  have hgn : IsOfFinOrder (g ^ n) := by
+    rw [← powMonoidHom_apply, hg, ← orderOf_pos_iff, Subgroup.orderOf_coe]
+    exact hfin.orderOf_pos
+  have hg' : g ∈ _root_.CommGroup.torsion G :=
+    (isOfFinOrder_pow.1 hgn).resolve_right Nat.card_pos.ne'
+  refine hx (Subtype.ext ?_)
+  rw [← hg, powMonoidHom_apply, OneMemClass.coe_one]
+  exact congrArg Subtype.val (pow_card_eq_one' (x := (⟨g, hg'⟩ : _root_.CommGroup.torsion G)))
 
 end TauCeti
 
