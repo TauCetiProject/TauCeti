@@ -58,7 +58,9 @@ On a compact manifold the scalar curvature of every smooth metric is bounded bel
   metric by a positive constant preserves and reflects positive scalar curvature.
 * `Bundle.ContMDiffRiemannianMetric.HasPositiveScalarCurvature.prodTangentSpace_of_nonneg`: the
   product of a metric of positive scalar curvature with one of nonnegative scalar curvature has
-  positive scalar curvature.
+  positive scalar curvature, and
+  `Bundle.ContMDiffRiemannianMetric.HasPositiveScalarCurvature.prodTangentSpace_of_nonneg_left`
+  the same with the factors swapped.
 * `Bundle.ContMDiffRiemannianMetric.exists_pos_hasPositiveScalarCurvature_prodTangentSpace_rescale`:
   a compact factor of positive scalar curvature, scaled down, dominates a factor whose scalar
   curvature is bounded below; more generally
@@ -229,6 +231,16 @@ theorem HasPositiveScalarCurvature.prodTangentSpace_of_nonneg (h : g.HasPositive
   fun p ↦ by
     rw [scalarCurvature_prodTangentSpace]
     exact add_pos_of_pos_of_nonneg (h p.1) (h₂ p.2)
+
+variable {g} in
+/-- The product of a metric of nonnegative scalar curvature with a metric of positive scalar
+curvature has positive scalar curvature. -/
+theorem HasPositiveScalarCurvature.prodTangentSpace_of_nonneg_left
+    (h₂ : g₂.HasPositiveScalarCurvature) (h : ∀ x, 0 ≤ g.scalarCurvature x) :
+    (g.prodTangentSpace g₂).HasPositiveScalarCurvature :=
+  fun p ↦ by
+    rw [scalarCurvature_prodTangentSpace]
+    exact add_pos_of_nonneg_of_pos (h p.1) (h₂ p.2)
 
 /-- **Shrinking a factor of uniformly positive scalar curvature.** Let `g₂` be a metric whose
 scalar curvature is at least `δ > 0`, and let `g` be a metric whose scalar curvature is bounded
