@@ -136,12 +136,12 @@ theorem forall_symmetricAlgebra_apply_eq_iff_mem (hρ : Function.Injective ρ) (
     (∀ p, (∀ h ∈ H, ρ.symmetricAlgebra h p = p) → ρ.symmetricAlgebra g p = p) ↔ g ∈ H := by
   let := ρ.symmetricAlgebraMulSemiringAction
   have := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
-  have hG := (ρ.isGaloisGroup_symmetricAlgebraInvariants_iff).2 hρ
+  have := (ρ.isGaloisGroup_symmetricAlgebraInvariants_iff).2 hρ
+  -- Mathlib's subgroup instance, for the `Sym(M)^G`-subalgebra with the same carrier.
   have : IsGaloisGroup H (FixedPoints.subalgebra R (SymmetricAlgebra R M) H)
-      (SymmetricAlgebra R M) :=
-    { faithful := have := hG.faithful; inferInstance
-      commutes := inferInstance
-      isInvariant := inferInstance }
+      (SymmetricAlgebra R M) := inferInstanceAs (IsGaloisGroup H
+    (FixedPoints.subalgebra ρ.symmetricAlgebraInvariants (SymmetricAlgebra R M) H)
+    (SymmetricAlgebra R M))
   refine Iff.trans ?_ (SetLike.ext_iff.1 (IsGaloisGroup.fixingSubgroup_range_algebraMap G
     ρ.symmetricAlgebraInvariants (FixedPoints.subalgebra R (SymmetricAlgebra R M) H)
     (SymmetricAlgebra R M) H) g)
@@ -161,7 +161,7 @@ theorem faithfulSMul_quotient_symmetricAlgebra (hρ : Function.Injective ρ) (H 
     FaithfulSMul (G ⧸ H) (FixedPoints.subalgebra R (SymmetricAlgebra R M) H) := by
   let := ρ.symmetricAlgebraMulSemiringAction
   have := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
-  have hG := (ρ.isGaloisGroup_symmetricAlgebraInvariants_iff).2 hρ
+  have := (ρ.isGaloisGroup_symmetricAlgebraInvariants_iff).2 hρ
   -- Mathlib's `IsGaloisGroup.quotient`, for the tower `Sym(M)^G ≤ Sym(M)^H ≤ Sym M`, with `G`
   -- acting on the `H`-invariants through `G ⧸ H`.
   let B := FixedPoints.subalgebra R (SymmetricAlgebra R M) H
@@ -169,10 +169,9 @@ theorem faithfulSMul_quotient_symmetricAlgebra (hρ : Function.Injective ρ) (H 
     fun p hp h ↦ (ρ.mem_symmetricAlgebraInvariants p).1 hp h).toAlgebra
   have : IsScalarTower ρ.symmetricAlgebraInvariants B (SymmetricAlgebra R M) :=
     .of_algebraMap_eq fun _ ↦ rfl
-  have : IsGaloisGroup H B (SymmetricAlgebra R M) :=
-    { faithful := have := hG.faithful; inferInstance
-      commutes := inferInstance
-      isInvariant := inferInstance }
+  have : IsGaloisGroup H B (SymmetricAlgebra R M) := inferInstanceAs (IsGaloisGroup H
+    (FixedPoints.subalgebra ρ.symmetricAlgebraInvariants (SymmetricAlgebra R M) H)
+    (SymmetricAlgebra R M))
   let := MulSemiringAction.compHom B (QuotientGroup.mk' H)
   have : IsScalarTower G (G ⧸ H) B := ⟨fun g q b ↦ by
     induction q using QuotientGroup.induction_on
