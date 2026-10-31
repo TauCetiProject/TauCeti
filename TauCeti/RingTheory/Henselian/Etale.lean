@@ -30,7 +30,9 @@ uniquely to the localisation.
 Consequently a *strictly Henselian* local ring, one whose residue field is separably closed, has
 no nonsplit finite étale covers (`TauCeti.IsFiniteEtaleSplit.of_henselianLocalRing`): a faithfully
 flat finite étale algebra has a `k`-point because `k` is separably closed, and this lifts to a
-section. Such rings need be neither fields nor reduced.
+section. Such rings need be neither fields nor reduced. As the spectrum of a local ring is
+connected, every finite étale algebra over a strictly Henselian local ring is moreover a finite
+product of copies of the base (`Algebra.IsFiniteSplit.of_henselianLocalRing`).
 
 ## Main results
 
@@ -40,6 +42,8 @@ section. Such rings need be neither fields nor reduced.
   arbitrary base `R` and a Henselian local `R`-algebra `S`.
 * `TauCeti.IsFiniteEtaleSplit.of_henselianLocalRing`: a Henselian local ring with separably
   closed residue field has no nonsplit finite étale covers.
+* `Algebra.IsFiniteSplit.of_henselianLocalRing`: over such a ring every finite étale algebra is a
+  finite product of copies of the base.
 
 ## References
 
@@ -158,5 +162,13 @@ instance IsFiniteEtaleSplit.of_henselianLocalRing (R : Type u) [CommRing R] [Hen
     have ⟨ψ⟩ := IsFiniteEtaleSplit.nonempty_algHom (ResidueField R) T
     have ⟨φ, _⟩ := (HenselianLocalRing.comp_bijective (R := R) (S := T)).2 ψ
     ⟨φ⟩
+
+/-- **Finite étale algebras over a strictly Henselian local ring split**: over a Henselian local
+ring `R` with separably closed residue field, every finite étale `R`-algebra is `R`-isomorphic to
+a finite product `Fin n → R` of copies of `R`. -/
+theorem _root_.Algebra.IsFiniteSplit.of_henselianLocalRing (R : Type u) [CommRing R]
+    [HenselianLocalRing R] [IsSepClosed (ResidueField R)] (T : Type*) [CommRing T] [Algebra R T]
+    [Algebra.Etale R T] [Module.Finite R T] : Algebra.IsFiniteSplit R T :=
+  .of_isFiniteEtaleSplit T
 
 end TauCeti
