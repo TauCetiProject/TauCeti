@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Analysis.AbsoluteValue.Action
 public import TauCeti.NumberTheory.NumberField.PlacesOver.FinitePlace
-public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
 
 import Mathlib.FieldTheory.Galois.IsGaloisGroup
 import Mathlib.NumberTheory.RamificationInertia.Galois
+import TauCeti.NumberTheory.NumberField.AutomorphismAction
 
 /-!
 # Conjugate absolute values over a finite place
@@ -25,9 +25,6 @@ of the transitivity of the Galois group on the primes of `𝓞 F` over a prime o
 `Ideal.exists_smul_eq_of_isGaloisGroup`. The absolute values over `v` are in general real powers of
 finite places of `F`, not finite places themselves, so the statement is not one about
 `FinitePlace F`.
-
-The action on absolute values restricts to Mathlib's action of `Gal(F/K)` on the infinite places of
-`F` (`NumberField.InfinitePlace.coe_smul`).
 
 ## Implementation notes
 
@@ -53,14 +50,6 @@ open AbsoluteValue IsDedekindDomain Pointwise
 
 namespace NumberField
 
-/-- Mathlib's action of the Galois group on the infinite places is the restriction of its action on
-absolute values. -/
-@[simp]
-theorem InfinitePlace.coe_smul {k K : Type*} [Field k] [Field K] [Algebra k K] (σ : K ≃ₐ[k] K)
-    (w : InfinitePlace K) :
-    (σ • w).1 = σ • w.1 :=
-  rfl
-
 variable {K F : Type*} [Field K] [Field F] [NumberField K] [NumberField F] [Algebra K F]
 
 /-- **Conjugate absolute values over a finite place.** Let `F / K` be a Galois extension of number
@@ -75,9 +64,10 @@ theorem exists_smul_eq_of_liesOver_finitePlace [IsGalois K F] (v : FinitePlace K
   obtain ⟨σ, hσ⟩ :=
     Ideal.exists_smul_eq_of_isGaloisGroup 𝔭.asIdeal 𝔓₁.asIdeal 𝔓₂.asIdeal (F ≃ₐ[K] F)
   refine ⟨σ, eq_of_liesOver_of_forall_apply_lt_one_iff (𝔭 := 𝔭) fun y ↦ ?_⟩
-  rw [← hw₂, ← hσ, Ideal.mem_pointwise_smul_iff_inv_smul_mem, hw₁, AbsoluteValue.smul_apply,
-    RingOfIntegers.coe_eq_algebraMap, RingOfIntegers.coe_eq_algebraMap, algebraMap.smul',
-    AlgEquiv.smul_def, AlgEquiv.aut_inv]
+  -- Transport the prime of `w₁` to the prime of `w₂` along `σ`.
+  rw [← hw₂, ← hσ, Ideal.mem_pointwise_smul_iff_inv_smul_mem, hw₁]
+  -- The action of `σ⁻¹` on `𝓞 F` is the restriction of its action on `F`.
+  simp only [AbsoluteValue.smul_apply, AlgEquiv.aut_inv, algebraMap_smul_eq_apply]
 
 /-- Let `F / K` be a Galois extension of number fields and `v` a finite place of `K`. The absolute
 values of `F` lying over `v` form a single orbit of `F ≃ₐ[K] F`. -/
