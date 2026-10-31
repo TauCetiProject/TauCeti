@@ -148,8 +148,8 @@ theorem toMatrix_chainShift (b : Basis (Σ i, Fin (len i)) R M) :
   rw [LinearMap.toMatrix_apply, chainShift_basis, Matrix.of_apply]
   split_ifs with h₁ h₂ h₂
   · obtain ⟨rfl, h₂⟩ := h₂
-    rw [b.repr_self, show (⟨j' + 1, h₁⟩ : Fin (len i)) = j from Fin.ext h₂.symm,
-      Finsupp.single_eq_same]
+    have hj : (⟨j' + 1, h₁⟩ : Fin (len i)) = j := Fin.ext h₂.symm
+    rw [b.repr_self, hj, Finsupp.single_eq_same]
   · rw [b.repr_self, Finsupp.single_apply, ite_eq_right_iff]
     rintro ⟨⟩
     exact absurd ⟨rfl, rfl⟩ h₂
