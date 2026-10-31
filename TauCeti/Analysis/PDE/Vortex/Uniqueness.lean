@@ -8,17 +8,17 @@ module
 public import TauCeti.Analysis.Complex.BranchLogRoot
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.WeakMaximumPrinciple
 public import TauCeti.Analysis.PDE.Vortex.ScalarEquation
-import Mathlib.Analysis.Calculus.ContDiff.WithLp
 
 /-!
 # Uniqueness of plane vortices with the same zeros
 
 In the coordinates of `TauCeti.Vortex.equation`, a field `x = (b₁, b₂, p, q)` has connection
-`a = i (b₁ ds + b₂ dt)` and section `α = 2 (p + i q)`. Let `x` and `y` be `C²` solutions of the
-plane vortex equation on the whole plane with `|α| → 1` at infinity, and suppose that their
-sections differ by a nowhere-vanishing `C²` factor, `α_x = h α_y`, while the zero set of `α_y` has
-empty interior. Then `x` is the phase gauge transform of `y` by a `C²` phase `f` with
-`h = exp (i f)` (`TauCeti.Vortex.exists_eq_phaseGauge_of_forall_section_eq_mul`).
+`a = i (b₁ ds + b₂ dt)` and section `α = 2 (p + i q)`. Let `x` and `y` be solutions of the plane
+vortex equation on the whole plane with differentiable connections, `C²` sections and `|α| → 1` at
+infinity, and suppose that their sections differ by a nowhere-vanishing `C²` factor, `α_x = h α_y`,
+while the zero set of `α_y` has empty interior. Then `x` is the phase gauge transform of `y` by a
+`C²` phase `f` with `h = exp (i f)`
+(`TauCeti.Vortex.exists_eq_phaseGauge_of_forall_section_eq_mul`).
 
 The argument is Taubes's. Away from the zeros of `α_y`, the scalar equations
 `Δ log |α|² = (|α|² - 1) / 4` of the two fields show that `w = log |h|²` satisfies
@@ -63,48 +63,52 @@ private theorem sq_add_sq_eq_norm_sq_mul {x y : ℂ → EuclideanSpace ℝ (Fin 
   rw [this, Complex.sq_norm]
 
 /-- **The scalar equation for the ratio of two vortex sections.** Let `x` and `y` solve the vortex
-equation near `z`, with sections related by `α_x = h α_y` near `z` for a `C²` factor `h` with
-`h z ≠ 0`. If `α_y (z) ≠ 0`, then `Δ log |h|² = (p_y² + q_y²) (|h|² - 1)` at `z`. -/
+equation near `z`, with connections differentiable and sections `C²` at `z`, and with sections
+related by `α_x = h α_y` near `z` for a `C²` factor `h` with `h z ≠ 0`. If `α_y (z) ≠ 0`, then
+`Δ log |h|² = (p_y² + q_y²) (|h|² - 1)` at `z`. -/
 theorem laplacian_log_norm_sq_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {h : ℂ → ℂ} {z : ℂ}
-    (hx : ContDiffAt ℝ 2 x z) (hy : ContDiffAt ℝ 2 y z)
+    (hxb₁ : DifferentiableAt ℝ (fun w ↦ x w 0) z) (hxb₂ : DifferentiableAt ℝ (fun w ↦ x w 1) z)
+    (hxp : ContDiffAt ℝ 2 (fun w ↦ x w 2) z) (hxq : ContDiffAt ℝ 2 (fun w ↦ x w 3) z)
+    (hyb₁ : DifferentiableAt ℝ (fun w ↦ y w 0) z) (hyb₂ : DifferentiableAt ℝ (fun w ↦ y w 1) z)
+    (hyp : ContDiffAt ℝ 2 (fun w ↦ y w 2) z) (hyq : ContDiffAt ℝ 2 (fun w ↦ y w 3) z)
     (hxsol : ∀ᶠ w in 𝓝 z, equation x w = 0) (hysol : ∀ᶠ w in 𝓝 z, equation y w = 0)
     (hh : ContDiffAt ℝ 2 h z) (hhz : h z ≠ 0)
     (hα : ∀ᶠ w in 𝓝 z, (x w 2 + x w 3 * I : ℂ) = h w * (y w 2 + y w 3 * I))
     (hyz : y z 2 ^ 2 + y z 3 ^ 2 ≠ 0) :
     Δ (fun w ↦ Real.log (‖h w‖ ^ 2)) z = (y z 2 ^ 2 + y z 3 ^ 2) * (‖h z‖ ^ 2 - 1) := by
-  have hxi := (contDiffAt_piLp _).1 hx
-  have hyi := (contDiffAt_piLp _).1 hy
   have hhz' : ‖h z‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 hhz)
   have hxz : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0 := by
     rw [sq_add_sq_eq_norm_sq_mul hα.self_of_nhds]
     exact mul_ne_zero hhz' hyz
   have hw : ContDiffAt ℝ 2 (fun w ↦ Real.log (‖h w‖ ^ 2)) z := (hh.norm_sq ℝ).log hhz'
   have hℓy : ContDiffAt ℝ 2 (fun w ↦ Real.log (4 * (y w 2 ^ 2 + y w 3 ^ 2))) z :=
-    (contDiffAt_const.mul (((hyi 2).pow 2).add ((hyi 3).pow 2))).log
+    (contDiffAt_const.mul ((hyp.pow 2).add (hyq.pow 2))).log
       (mul_ne_zero four_ne_zero hyz)
   -- Near `z`, `log |α_x|² = log |h|² + log |α_y|²`.
   have hev : (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =ᶠ[𝓝 z]
       (fun w ↦ Real.log (‖h w‖ ^ 2)) + fun w ↦ Real.log (4 * (y w 2 ^ 2 + y w 3 ^ 2)) := by
     have hy₀ : ∀ᶠ w in 𝓝 z, y w 2 ^ 2 + y w 3 ^ 2 ≠ 0 :=
-      (((hyi 2).continuousAt.pow 2).add ((hyi 3).continuousAt.pow 2)).eventually_ne hyz
+      ((hyp.continuousAt.pow 2).add (hyq.continuousAt.pow 2)).eventually_ne hyz
     filter_upwards [hα, hh.continuousAt.eventually_ne hhz, hy₀] with w hαw hhw hyw
     rw [Pi.add_apply, sq_add_sq_eq_norm_sq_mul hαw, mul_left_comm,
       Real.log_mul (pow_ne_zero 2 (norm_ne_zero_iff.2 hhw)) (mul_ne_zero four_ne_zero hyw)]
   have hΔ := (laplacian_congr_nhds hev).eq_of_nhds
   rw [hw.laplacian_add hℓy,
-    laplacian_log_normSq_of_equation_eq_zero ((hxi 0).differentiableAt two_ne_zero)
-      ((hxi 1).differentiableAt two_ne_zero) (hxi 2) (hxi 3) hxz hxsol,
-    laplacian_log_normSq_of_equation_eq_zero ((hyi 0).differentiableAt two_ne_zero)
-      ((hyi 1).differentiableAt two_ne_zero) (hyi 2) (hyi 3) hyz hysol,
+    laplacian_log_normSq_of_equation_eq_zero hxb₁ hxb₂ hxp hxq hxz hxsol,
+    laplacian_log_normSq_of_equation_eq_zero hyb₁ hyb₂ hyp hyq hyz hysol,
     sq_add_sq_eq_norm_sq_mul hα.self_of_nhds] at hΔ
   linarith
 
 /-- **Two vortices whose sections differ by a nonvanishing factor have sections of equal
-modulus.** Let `x` and `y` be `C²` solutions of the vortex equation on the plane with `|α| → 1` at
-infinity, whose sections satisfy `α_x = h α_y` for a nowhere-vanishing `C²` function `h`. If the
-zero set of `α_y` has empty interior, then `|h| = 1` everywhere. -/
+modulus.** Let `x` and `y` be solutions of the vortex equation on the plane with differentiable
+connections, `C²` sections and `|α| → 1` at infinity, whose sections satisfy `α_x = h α_y` for a
+nowhere-vanishing `C²` function `h`. If the zero set of `α_y` has empty interior, then `|h| = 1`
+everywhere. -/
 theorem norm_eq_one_of_forall_section_eq_mul {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {h : ℂ → ℂ}
-    (hx : ContDiff ℝ 2 x) (hy : ContDiff ℝ 2 y)
+    (hxb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hxb₂ : Differentiable ℝ (fun w ↦ x w 1))
+    (hxp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hxq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hyb₁ : Differentiable ℝ (fun w ↦ y w 0)) (hyb₂ : Differentiable ℝ (fun w ↦ y w 1))
+    (hyp : ContDiff ℝ 2 (fun w ↦ y w 2)) (hyq : ContDiff ℝ 2 (fun w ↦ y w 3))
     (hxsol : ∀ z, equation x z = 0) (hysol : ∀ z, equation y z = 0)
     (hxlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hylim : Tendsto (fun z ↦ 4 * (y z 2 ^ 2 + y z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
@@ -114,14 +118,15 @@ theorem norm_eq_one_of_forall_section_eq_mul {x y : ℂ → EuclideanSpace ℝ (
     ‖h z‖ = 1 := by
   have hh₀' (z : ℂ) : ‖h z‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 (hh₀ z))
   have hw : ContDiff ℝ 2 fun z ↦ Real.log (‖h z‖ ^ 2) := (hh.norm_sq ℝ).log hh₀'
-  have hyc (i : Fin 4) : Continuous fun z ↦ y z i := ((contDiff_piLp _).1 hy i).continuous
   -- The scalar equation for `w = log |h|²` holds off the zeros of `α_y`, hence everywhere.
   have hΔ : Δ (fun z ↦ Real.log (‖h z‖ ^ 2)) =
       fun z ↦ (y z 2 ^ 2 + y z 3 ^ 2) * (‖h z‖ ^ 2 - 1) :=
     hw.continuous_laplacian.ext_on hdense
-      ((((hyc 2).pow 2).add ((hyc 3).pow 2)).mul ((hh.continuous.norm.pow 2).sub continuous_const))
-      fun z hz ↦ laplacian_log_norm_sq_eq hx.contDiffAt hy.contDiffAt (.of_forall hxsol)
-        (.of_forall hysol) hh.contDiffAt (hh₀ z) (.of_forall hα) hz
+      (((hyp.continuous.pow 2).add (hyq.continuous.pow 2)).mul
+        ((hh.continuous.norm.pow 2).sub continuous_const))
+      fun z hz ↦ laplacian_log_norm_sq_eq (hxb₁ z) (hxb₂ z) hxp.contDiffAt hxq.contDiffAt
+        (hyb₁ z) (hyb₂ z) hyp.contDiffAt hyq.contDiffAt (.of_forall hxsol) (.of_forall hysol)
+        hh.contDiffAt (hh₀ z) (.of_forall hα) hz
   -- Since `log t` and `t - 1` have the same sign, `w Δ w ≥ 0`.
   have hsign (z : ℂ) : 0 ≤ Real.log (‖h z‖ ^ 2) * Δ (fun z ↦ Real.log (‖h z‖ ^ 2)) z := by
     have ht : 0 < ‖h z‖ ^ 2 := lt_of_le_of_ne (by positivity) (hh₀' z).symm
@@ -173,13 +178,17 @@ theorem eq_of_forall_section_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
   fin_cases i
   exacts [congrFun h₀ z, congrFun h₁ z, h₂ z, h₃ z]
 
-/-- **Uniqueness of plane vortices with the same zeros, modulo gauge.** Let `x` and `y` be `C²`
-solutions of the vortex equation on the plane with `|α| → 1` at infinity, whose sections satisfy
-`α_x = h α_y` for a nowhere-vanishing `C²` function `h`, and suppose the zero set of `α_y` has
-empty interior. Then `h = exp (i f)` for a `C²` real phase `f`, and `x` is the phase gauge
-transform of `y` by `f`. -/
+/-- **Uniqueness of plane vortices with the same zeros, modulo gauge.** Let `x` and `y` be
+solutions of the vortex equation on the plane with differentiable connections, `C²` sections and
+`|α| → 1` at infinity, whose sections satisfy `α_x = h α_y` for a nowhere-vanishing `C²` function
+`h`, and suppose the zero set of `α_y` has empty interior. Then `h = exp (i f)` for a `C²` real
+phase `f`, and `x` is the phase gauge transform of `y` by `f`. -/
 theorem exists_eq_phaseGauge_of_forall_section_eq_mul {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    {h : ℂ → ℂ} (hx : ContDiff ℝ 2 x) (hy : ContDiff ℝ 2 y)
+    {h : ℂ → ℂ}
+    (hxb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hxb₂ : Differentiable ℝ (fun w ↦ x w 1))
+    (hxp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hxq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hyb₁ : Differentiable ℝ (fun w ↦ y w 0)) (hyb₂ : Differentiable ℝ (fun w ↦ y w 1))
+    (hyp : ContDiff ℝ 2 (fun w ↦ y w 2)) (hyq : ContDiff ℝ 2 (fun w ↦ y w 3))
     (hxsol : ∀ z, equation x z = 0) (hysol : ∀ z, equation y z = 0)
     (hxlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hylim : Tendsto (fun z ↦ 4 * (y z 2 ^ 2 + y z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
@@ -187,13 +196,14 @@ theorem exists_eq_phaseGauge_of_forall_section_eq_mul {x y : ℂ → EuclideanSp
     (hα : ∀ z, (x z 2 + x z 3 * I : ℂ) = h z * (y z 2 + y z 3 * I))
     (hdense : Dense {z | y z 2 ^ 2 + y z 3 ^ 2 ≠ 0}) :
     ∃ f : ℂ → ℝ, ContDiff ℝ 2 f ∧ (∀ z, h z = exp (f z * I)) ∧ x = phaseGauge y f := by
-  have hnorm := norm_eq_one_of_forall_section_eq_mul hx hy hxsol hysol hxlim hylim hh hh₀ hα
-    hdense
+  have hnorm := norm_eq_one_of_forall_section_eq_mul hxb₁ hxb₂ hxp hxq hyb₁ hyb₂ hyp hyq hxsol
+    hysol hxlim hylim hh hh₀ hα hdense
   obtain ⟨f, hf, hhf⟩ := exists_contDiff_eq_exp_ofReal_mul_I hh hnorm
   refine ⟨f, hf, hhf, ?_⟩
   -- The gauge transform of `y` has the section of `x` and solves the vortex equation.
-  have hyd (z : ℂ) (i : Fin 4) : DifferentiableAt ℝ (fun w ↦ y w i) z :=
-    (((contDiff_piLp _).1 hy i).differentiable two_ne_zero) z
+  have hyd (z : ℂ) (i : Fin 4) : DifferentiableAt ℝ (fun w ↦ y w i) z := by
+    fin_cases i
+    exacts [hyb₁ z, hyb₂ z, hyp.differentiable two_ne_zero z, hyq.differentiable two_ne_zero z]
   have hsec (z : ℂ) : x z 2 = phaseGauge y f z 2 ∧ x z 3 = phaseGauge y f z 3 := by
     have h₂ := congrArg re (hα z)
     have h₃ := congrArg im (hα z)
@@ -202,15 +212,13 @@ theorem exists_eq_phaseGauge_of_forall_section_eq_mul {x y : ℂ → EuclideanSp
     rw [phaseGauge_apply_two, phaseGauge_apply_three]
     constructor <;> linarith
   have hfd : Continuous fun z ↦ fderiv ℝ f z := hf.continuous_fderiv two_ne_zero
-  have hxc (j : Fin 4) : Continuous fun z ↦ x z j := ((contDiff_piLp _).1 hx j).continuous
-  have hyc (j : Fin 4) : Continuous fun z ↦ y z j := ((contDiff_piLp _).1 hy j).continuous
-  refine eq_of_forall_section_eq (hxc 0) (hxc 1) ?_ ?_
+  refine eq_of_forall_section_eq hxb₁.continuous hxb₂.continuous ?_ ?_
     (fun z ↦ ⟨by simp [hxsol z], by simp [hxsol z]⟩) (fun z ↦ ?_)
     (fun z ↦ (hsec z).1) (fun z ↦ (hsec z).2) ?_
   · simp only [phaseGauge_apply_zero]
-    fun_prop
+    exact hyb₁.continuous.sub (hfd.clm_apply continuous_const)
   · simp only [phaseGauge_apply_one]
-    fun_prop
+    exact hyb₂.continuous.sub (hfd.clm_apply continuous_const)
   · have hsol := (equation_phaseGauge_eq_zero_iff (hyd z) hf.contDiffAt).2 (hysol z)
     exact ⟨by simp [hsol], by simp [hsol]⟩
   · -- `α_x` and `α_y` have the same modulus, so they have the same zeros.
