@@ -34,7 +34,7 @@ idempotent.
 * `TauCeti.signlessPreprojectiveCyclicQuotientEquiv` and
   `TauCeti.finrank_cyclicQuotient_signlessPreprojectiveAlgebra`: in that case the augmentation
   identifies the cyclic quotient with the module of vertex coefficients, of dimension the number of
-  vertices over a field.
+  vertices over a nontrivial ring.
 * `SimpleGraph.Coloring.preprojectiveMk_ofPath_mem_commutatorSubmodule`: for a two-coloured graph,
   the vanishing for paths of positive length transfers from the signless algebra to the additive
   preprojective algebra of every orientation.
@@ -120,25 +120,16 @@ theorem signlessPreprojectiveCyclicQuotientEquiv_mk
       signlessPreprojectiveAugmentation k x :=
   (rfl)
 
-end Signless
-
-section Field
-
-variable (k : Type w) [Field k] {R : Type u} [Quiver.{v} R] [HasReverse R] [Finite R]
-  [∀ x : R, Fintype (Quiver.Star x)]
-
 /-- **If every path of positive length is a sum of commutators, then the cyclic quotient of the
-signless algebra has dimension the number of vertices** over every field. -/
-theorem finrank_cyclicQuotient_signlessPreprojectiveAlgebra
-    (h : ∀ x : Quiver.TotalPath R, 0 < x.2.2.length →
-      signlessPreprojectiveMk k R (ofPath x) ∈
-        commutatorSubmodule k (signlessPreprojectiveAlgebra k R)) :
-    Module.finrank k (cyclicQuotient k (signlessPreprojectiveAlgebra k R)) = Nat.card R := by
+signless algebra has dimension the number of vertices** over every nontrivial commutative ring. -/
+theorem finrank_cyclicQuotient_signlessPreprojectiveAlgebra [Nontrivial k]
+    (h : ∀ x : Quiver.TotalPath R, 0 < x.2.2.length → π (ofPath x) ∈ commutatorSubmodule k Π) :
+    Module.finrank k (cyclicQuotient k Π) = Nat.card R := by
   have : Fintype R := Fintype.ofFinite R
   rw [(signlessPreprojectiveCyclicQuotientEquiv k h).finrank_eq,
     Module.finrank_fintype_fun_eq_card, Nat.card_eq_fintype_card]
 
-end Field
+end Signless
 
 section Preprojective
 

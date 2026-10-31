@@ -46,8 +46,8 @@ they are in `TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient`.
   degree of `Π⁺(Aₙ)` lies in `[Π⁺(Aₙ), Π⁺(Aₙ)]`.
 * `TauCeti.commutatorSubmodule_signlessPreprojectiveAlgebra_A_eq_ker`: the commutator submodule
   is the kernel of the augmentation.
-* `TauCeti.finrank_cyclicQuotient_signlessPreprojectiveAlgebra_A`: over a field, the cyclic
-  quotient of `Π⁺(Aₙ)` has dimension `n`.
+* `TauCeti.finrank_cyclicQuotient_signlessPreprojectiveAlgebra_A`: over a nontrivial commutative
+  ring, the cyclic quotient of `Π⁺(Aₙ)` has dimension `n`.
 * `TauCeti.preprojectiveMk_A_ofPath_mem_commutatorSubmodule` and
   `TauCeti.preprojectiveGrade_A_le_commutatorSubmodule`: the same vanishing in positive degrees for
   the preprojective algebra `Π(Q)` of every orientation `Q` of `Aₙ`.
@@ -125,15 +125,15 @@ theorem commutatorSubmodule_signlessPreprojectiveAlgebra_A_eq_ker :
   commutatorSubmodule_signlessPreprojectiveAlgebra_eq_ker k
     (signlessPreprojectiveMk_A_ofPath_mem_commutatorSubmodule k)
 
-end CommRing
-
-/-- **The cyclic quotient of the signless algebra of `Aₙ` has dimension `n`** over every field, one
-for each vertex. -/
-theorem finrank_cyclicQuotient_signlessPreprojectiveAlgebra_A [Field k] :
+/-- **The cyclic quotient of the signless algebra of `Aₙ` has dimension `n`** over every nontrivial
+commutative ring, one for each vertex. -/
+theorem finrank_cyclicQuotient_signlessPreprojectiveAlgebra_A [Nontrivial k] :
     Module.finrank k (cyclicQuotient k Π) = n := by
   rw [finrank_cyclicQuotient_signlessPreprojectiveAlgebra k
       (signlessPreprojectiveMk_A_ofPath_mem_commutatorSubmodule k),
     ← Nat.card_congr (vertexEquiv AG), Nat.card_fin, DynkinType.rank_A]
+
+end CommRing
 
 /-! ### Orientations -/
 

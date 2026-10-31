@@ -61,8 +61,8 @@ they are in `TauCeti.RepresentationTheory.Quiver.Preprojective.CyclicQuotient`.
   positive path degree of `Π⁺(Dₙ)` lies in `[Π⁺(Dₙ), Π⁺(Dₙ)]`.
 * `TauCeti.commutatorSubmodule_signlessPreprojectiveAlgebra_D_eq_ker`: if `2` is a unit, the
   commutator submodule is the kernel of the augmentation.
-* `TauCeti.finrank_cyclicQuotient_signlessPreprojectiveAlgebra_D`: over a field of characteristic
-  other than two, the cyclic quotient of `Π⁺(Dₙ)` has dimension `n`.
+* `TauCeti.finrank_cyclicQuotient_signlessPreprojectiveAlgebra_D`: over a nontrivial commutative
+  ring in which `2` is a unit, the cyclic quotient of `Π⁺(Dₙ)` has dimension `n`.
 * `TauCeti.preprojectiveMk_D_ofPath_mem_commutatorSubmodule` and
   `TauCeti.preprojectiveGrade_D_le_commutatorSubmodule`: the same vanishing in positive degrees for
   the preprojective algebra `Π(Q)` of every orientation `Q` of `Dₙ`.
@@ -145,22 +145,6 @@ private theorem forkSpan_pow_succ_mul_vertexIdempotent {t : ℕ} {w : Π}
   · obtain ⟨α, β, rfl⟩ := Submodule.mem_span_pair.mp hb
     rw [mul_assoc, add_mul, smul_mul_assoc, smul_mul_assoc, hturn, hturn]
   · rw [add_mul, ha, hb]
-
-omit hn hG in
-/-- A closed path of positive length which is a scalar multiple of its idempotent vanishes, since
-its augmentation does. -/
-private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_eq_algebraMap_mul {v : DoubledQuiver G}
-    (p : Path v v) (hp : 0 < p.length) {r : k}
-    (h : π (ofPath ⟨_, _, p⟩) = algebraMap k Π r * π (vertexIdempotent k v)) :
-    π (ofPath ⟨_, _, p⟩) = 0 := by
-  classical
-  -- The path has augmentation zero, while the right side has augmentation `r`.
-  have haug := signlessPreprojectiveAugmentation_mk k (ofPath ⟨_, _, p⟩)
-  rw [trivialCoeff_ofPath_of_length_pos hp, h] at haug
-  have hr : r = 0 := by
-    simpa [signlessPreprojectiveAugmentation_mk, trivialCoeff_vertexIdempotent] using
-      congrFun haug v
-  rw [h, hr, map_zero, zero_mul]
 
 /-- A closed path from a vertex `a` of the long arm through the branch node, with a word `w` in
 the leaf backtracks in its middle, is a sum of commutators when `2` is a unit: rotating its climb
@@ -322,15 +306,15 @@ theorem commutatorSubmodule_signlessPreprojectiveAlgebra_D_eq_ker (h2 : IsUnit (
   commutatorSubmodule_signlessPreprojectiveAlgebra_eq_ker k
     (signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k h2)
 
-end CommRing
-
-/-- **The cyclic quotient of the signless algebra of `Dₙ` has dimension `n`** over every field of
-characteristic other than two, one for each vertex. -/
-theorem finrank_cyclicQuotient_signlessPreprojectiveAlgebra_D [Field k] (h2 : (2 : k) ≠ 0) :
-    Module.finrank k (cyclicQuotient k Π) = n := by
+/-- **The cyclic quotient of the signless algebra of `Dₙ` has dimension `n`** over every
+nontrivial commutative ring in which `2` is a unit, one for each vertex. -/
+theorem finrank_cyclicQuotient_signlessPreprojectiveAlgebra_D [Nontrivial k]
+    (h2 : IsUnit (2 : k)) : Module.finrank k (cyclicQuotient k Π) = n := by
   rw [finrank_cyclicQuotient_signlessPreprojectiveAlgebra k
-      (signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k h2.isUnit),
+      (signlessPreprojectiveMk_D_ofPath_mem_commutatorSubmodule k h2),
     ← Nat.card_congr (vertexEquiv DG), Nat.card_fin, DynkinType.rank_D]
+
+end CommRing
 
 /-! ### Orientations -/
 
