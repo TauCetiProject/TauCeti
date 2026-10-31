@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.NovikovModule.Grading
 public import Mathlib.Algebra.Ring.NegOnePow
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Completed tensor products of Novikov modules
@@ -58,8 +59,6 @@ corresponding identity between kernels (`NovikovModule.kernelMap_kernelMap`).
 * `TauCeti.NovikovModule.tensor_mem_gradeBy`,
   `TauCeti.NovikovModule.degree_eq_of_tensorDifferential_ne_zero`: the tensor product adds degrees,
   and the tensor differential raises the total degree by one.
-* `TauCeti.NovikovModule.kernelMap_tensorDifferential_eq_add`: the map of the tensor differential
-  is the sum of the maps of its two Koszul summands.
 * `TauCeti.NovikovModule.kernelMap_tensorDifferential_tensor`: the Leibniz rule for the tensor
   differential.
 * `TauCeti.NovikovModule.kernelMap_tensorDifferential_kernelMap_tensorDifferential_tensor`,
@@ -279,6 +278,18 @@ theorem degree_eq_of_tensorDifferential_ne_zero {d₂ : S₂ → ℤ}
     rw [← h₂, hd₁ _ _ (left_ne_zero_of_mul h₁)]
     ring
 
+omit [DecidableEq S₁] in
+/-- The potential bound of the identity kernel on the second factor. -/
+private theorem potential_le_of_diagonal_one_ne_zero (p q : S₂)
+    (h : (if p = q then (1 : R) else 0) ≠ 0) : F₂ q ≤ F₂ p + 0 :=
+  potential_le_of_diagonal_ne_zero (s := fun _ => (1 : R)) h
+
+omit [DecidableEq S₂] in
+/-- The potential bound of the sign kernel `(-1)^(d₁)` on the first factor. -/
+private theorem potential_le_of_diagonal_sign_ne_zero (p q : S₁)
+    (h : (if p = q then ((d₁ p).negOnePow : R) else 0) ≠ 0) : F₁ q ≤ F₁ p + 0 :=
+  potential_le_of_diagonal_ne_zero (s := fun p => ((d₁ p).negOnePow : R)) h
+
 variable (hδ₁ : ∀ p q, δ₁ p q ≠ 0 → F₁ q ≤ F₁ p + C₁) (hδ₁fin : ∀ p, δ₁ p ∈ NovikovModule R F₁)
   (hδ₂ : ∀ p q, δ₂ p q ≠ 0 → F₂ q ≤ F₂ p + C₂) (hδ₂fin : ∀ p, δ₂ p ∈ NovikovModule R F₂)
 
@@ -288,8 +299,7 @@ include hδ₁ in
 private theorem potential_le_of_kernelTensor_one_ne_zero {p q : S₁ × S₂}
     (h : kernelTensor δ₁ (fun p₂ q₂ => if p₂ = q₂ then (1 : R) else 0) p q ≠ 0) :
     F₁ q.1 + F₂ q.2 ≤ F₁ p.1 + F₂ p.2 + (C₁ + 0) :=
-  potential_le_of_kernelTensor_ne_zero hδ₁
-    (fun _ _ h => potential_le_of_diagonal_ne_zero (s := fun _ => (1 : R)) h) h
+  potential_le_of_kernelTensor_ne_zero hδ₁ potential_le_of_diagonal_one_ne_zero h
 
 omit [DecidableEq S₂] in
 include hδ₂ in
@@ -297,8 +307,7 @@ include hδ₂ in
 private theorem potential_le_of_kernelTensor_sign_ne_zero {p q : S₁ × S₂}
     (h : kernelTensor (fun p₁ q₁ => if p₁ = q₁ then ((d₁ p₁).negOnePow : R) else 0) δ₂ p q ≠ 0) :
     F₁ q.1 + F₂ q.2 ≤ F₁ p.1 + F₂ p.2 + (0 + C₂) :=
-  potential_le_of_kernelTensor_ne_zero
-    (fun _ _ h => potential_le_of_diagonal_ne_zero (s := fun p => ((d₁ p).negOnePow : R)) h) hδ₂ h
+  potential_le_of_kernelTensor_ne_zero potential_le_of_diagonal_sign_ne_zero hδ₂ h
 
 include hδ₁ hδ₂ in
 /-- **Potential bound of the tensor differential.** Its constant is the larger of the constants
@@ -324,22 +333,6 @@ variable {C : ℝ}
   (hD : ∀ p q, tensorDifferential d₁ δ₁ δ₂ p q ≠ 0 → F₁ q.1 + F₂ q.2 ≤ F₁ p.1 + F₂ p.2 + C)
   (hDfin : ∀ p, tensorDifferential d₁ δ₁ δ₂ p ∈ NovikovModule R fun q : S₁ × S₂ => F₁ q.1 + F₂ q.2)
 
-/-- **The tensor differential splits into its Koszul summands.** Its kernel map is the sum of
-the kernel maps of `δ₁ ⊗ 1` and `(-1)^(d₁) ⊗ δ₂`, for any potential bounds of the summands. -/
-theorem kernelMap_tensorDifferential_eq_add {C' C'' : ℝ}
-    (hE₁ : ∀ p q, kernelTensor δ₁ (fun p₂ q₂ => if p₂ = q₂ then (1 : R) else 0) p q ≠ 0 →
-      F₁ q.1 + F₂ q.2 ≤ F₁ p.1 + F₂ p.2 + C')
-    (hE₁fin : ∀ p, kernelTensor δ₁ (fun p₂ q₂ => if p₂ = q₂ then (1 : R) else 0) p ∈
-      NovikovModule R fun q : S₁ × S₂ => F₁ q.1 + F₂ q.2)
-    (hE₂ : ∀ p q,
-      kernelTensor (fun p₁ q₁ => if p₁ = q₁ then ((d₁ p₁).negOnePow : R) else 0) δ₂ p q ≠ 0 →
-        F₁ q.1 + F₂ q.2 ≤ F₁ p.1 + F₂ p.2 + C'')
-    (hE₂fin : ∀ p,
-      kernelTensor (fun p₁ q₁ => if p₁ = q₁ then ((d₁ p₁).negOnePow : R) else 0) δ₂ p ∈
-        NovikovModule R fun q : S₁ × S₂ => F₁ q.1 + F₂ q.2) :
-    kernelMap hD hDfin = kernelMap hE₁ hE₁fin + kernelMap hE₂ hE₂fin :=
-  kernelMap_add hE₁ hE₁fin hE₂ hE₂fin hD hDfin
-
 include hδ₁ hδ₂ in
 /-- **The Leibniz rule for the tensor differential.** On the tensor product of a combination `a`
 of degree `i` with any `b`, the tensor differential is `δ₁ a ⊗ b + (-1)^i a ⊗ δ₂ b`. -/
@@ -348,25 +341,15 @@ theorem kernelMap_tensorDifferential_tensor {i : ℤ} {a : NovikovModule R F₁}
     kernelMap hD hDfin (tensor a b) =
       tensor (kernelMap hδ₁ hδ₁fin a) b +
         (i.negOnePow : R) • tensor a (kernelMap hδ₂ hδ₂fin b) := by
-  rw [kernelMap_tensorDifferential_eq_add hD hDfin
+  rw [show kernelMap hD hDfin = _ from kernelMap_add
       (fun _ _ => potential_le_of_kernelTensor_one_ne_zero hδ₁)
       (kernelTensor_mem hδ₁fin (diagonal_mem _))
       (fun _ _ => potential_le_of_kernelTensor_sign_ne_zero hδ₂)
-      (kernelTensor_mem (diagonal_mem _) hδ₂fin), LinearMap.add_apply,
-    kernelMap_kernelTensor_tensor hδ₁ hδ₁fin
-      (fun _ _ h => potential_le_of_diagonal_ne_zero (s := fun _ => (1 : R)) h) (diagonal_mem _),
-    kernelMap_kernelTensor_tensor
-      (fun _ _ h => potential_le_of_diagonal_ne_zero (s := fun p => ((d₁ p).negOnePow : R)) h)
-      (diagonal_mem _) hδ₂ hδ₂fin, kernelMap_eq_id]
-  -- On combinations of degree `i`, the diagonal sign kernel is multiplication by `(-1)^i`.
-  have hsign : kernelMap (fun _ _ h => potential_le_of_diagonal_ne_zero (F := F₁)
-      (s := fun p => ((d₁ p).negOnePow : R)) h) (diagonal_mem _) a = (i.negOnePow : R) • a := by
-    ext p₁
-    rw [kernelMap_diagonal_apply_val, Submodule.coe_smul, Pi.smul_apply, smul_eq_mul]
-    by_cases hp : a.val p₁ = 0
-    · simp [hp]
-    · rw [mem_gradeBy_iff.1 ha p₁ hp, mul_comm]
-  rw [hsign, LinearMap.map_smul₂, LinearMap.id_apply]
+      (kernelTensor_mem (diagonal_mem _) hδ₂fin) hD hDfin, LinearMap.add_apply,
+    kernelMap_kernelTensor_tensor hδ₁ hδ₁fin potential_le_of_diagonal_one_ne_zero (diagonal_mem _),
+    kernelMap_kernelTensor_tensor potential_le_of_diagonal_sign_ne_zero (diagonal_mem _) hδ₂ hδ₂fin,
+    kernelMap_eq_id, kernelMap_diagonal_eq_smul_of_mem_gradeBy (s := fun n : ℤ => (n.negOnePow : R))
+      _ _ ha, LinearMap.map_smul₂, LinearMap.id_apply]
 
 include hδ₁ hδ₂ in
 /-- **The tensor differential applied twice to a tensor product.** If `δ₁` raises the degree
@@ -383,9 +366,12 @@ theorem kernelMap_tensorDifferential_kernelMap_tensorDifferential_tensor
       (kernelMap_mem_gradeBy hδ₁ hδ₁fin hd ha),
     kernelMap_tensorDifferential_tensor hδ₁ hδ₁fin hδ₂ hδ₂fin hD hDfin ha]
   -- The cross terms cancel because `(-1)^(i+1) = -(-1)^i`, and `(-1)^i (-1)^i = 1`.
-  rw [Int.negOnePow_succ, smul_add, smul_smul, ← Int.cast_mul, ← Units.val_mul,
-    Int.units_mul_self, Units.val_one, Int.cast_one, one_smul, Units.val_neg, Int.cast_neg]
-  module
+  have hsq : ((i.negOnePow : ℤ) : R) * (i.negOnePow : R) = 1 := by
+    norm_cast
+    simp
+  rw [Int.negOnePow_succ]
+  push_cast
+  linear_combination (norm := module) hsq • tensor a (kernelMap hδ₂ hδ₂fin (kernelMap hδ₂ hδ₂fin b))
 
 include hδ₁ hδ₂ in
 /-- **The tensor differential squares to zero.** If `δ₁` raises the degree `d₁` by one and both

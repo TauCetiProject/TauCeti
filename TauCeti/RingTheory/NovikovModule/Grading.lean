@@ -22,7 +22,8 @@ homogeneous completed combinations, and likewise a supported bilinear kernel ext
 product with that shift. The coordinate matrix of a product kernel has the corresponding
 reference-degree shifts. These results apply to the supported kernel constructions
 `TauCeti.NovikovModule.kernelMap` and `TauCeti.NovikovModule.kernelProduct`; they do not require
-discrete or injective periods.
+discrete or injective periods. A diagonal kernel whose coefficient depends only on the degree
+acts on each homogeneous piece as a scalar.
 
 The coordinate construction follows `TauCeti.NovikovModule.coordinates`, and the coefficient
 pieces are `TauCeti.NovikovSeries.gradeBy`.
@@ -173,6 +174,25 @@ theorem kernelMap_mem_gradeBy (hd : ∀ p₁ p₀, m p₁ p₀ ≠ 0 → d₀ p�
   rw [hd p₁ p₀ (right_ne_zero_of_mul hp), ha p₁ (left_ne_zero_of_mul hp)]
 
 end Map
+
+section Diagonal
+
+variable [CommSemiring R] [DecidableEq S] {F : S → ℝ} {C : ℝ} {d : S → D} {s : D → R}
+
+/-- On homogeneous completed combinations of degree `k`, the diagonal kernel with coefficient
+`s (d p)` from `p` to itself is multiplication by `s k`. -/
+theorem kernelMap_diagonal_eq_smul_of_mem_gradeBy
+    (hm : ∀ p q, (if p = q then s (d p) else 0) ≠ 0 → F q ≤ F p + C)
+    (hmfin : ∀ p, (fun q => if p = q then s (d p) else 0) ∈ NovikovModule R F)
+    {k : D} {a : NovikovModule R F} (ha : a ∈ gradeBy R F d k) :
+    kernelMap hm hmfin a = s k • a := by
+  ext p
+  rw [kernelMap_diagonal_apply_val, Submodule.coe_smul, Pi.smul_apply, smul_eq_mul]
+  by_cases hp : a.val p = 0
+  · simp [hp]
+  · rw [mem_gradeBy_iff.1 ha p hp, mul_comm]
+
+end Diagonal
 
 section Kernel
 
