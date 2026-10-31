@@ -41,7 +41,7 @@ section BaseChange
 
 open scoped _root_.TensorProduct
 
-attribute [local instance] TauCeti.Algebra.TensorProduct.rightMulSemiringAction
+attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction
 
 variable (K L R : Type*) [Field K] [Field L] [Algebra K L] [IsGalois K L] [FiniteDimensional K L]
   [CommRing R] [Algebra K R]

@@ -128,7 +128,7 @@ theorem tensorToPi_map_toAlgHom (k : G) (z : A ⊗[R] A) (g : G) :
   | tmul a b => simp [mul_smul]
   | add x y hx hy => simp [hx, hy]
 
-attribute [local instance] TauCeti.Algebra.TensorProduct.rightMulSemiringAction in
+attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction in
 /-- `tensorToPi` commutes with base change along `R → A'`, with `G` acting on `A' ⊗[R] A`
 through the right factor: read through `A' ⊗[R] (A ⊗[R] A) ≃ (A' ⊗[R] A) ⊗[A'] (A' ⊗[R] A)`,
 the map `tensorToPi` for `A' ⊗[R] A` is `id ⊗ tensorToPi R A G` followed by

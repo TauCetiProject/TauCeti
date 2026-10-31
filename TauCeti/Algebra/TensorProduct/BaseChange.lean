@@ -38,7 +38,7 @@ with passing to the opposite algebra, and composes in stages:
   `(L ⊗[K] A) ⊗[L] M ≃ₐ[M] A ⊗[K] M`.
 * `TauCeti.Algebra.TensorProduct.baseChangeAutHom`: the base change `σ ↦ id ⊗ σ` of
   automorphisms of `L` along a commutative algebra `A`, acting on `A ⊗[K] L`.
-* `TauCeti.Algebra.TensorProduct.rightMulSemiringAction`: a monoid acting on `L` by
+* `Algebra.TensorProduct.rightMulSemiringAction`: a monoid acting on `L` by
   `K`-algebra endomorphisms acts on `A ⊗[K] L` through the right factor; for automorphisms of
   `L` it is `baseChangeAutHom` (`rightMulSemiringAction_smul_eq_baseChangeAutHom`).
 * `TauCeti.ScalarAut.semilinearMap`: the scalar action as a semilinear map over `L`.
@@ -332,60 +332,6 @@ theorem baseChangeAutHom_tmul (σ : L ≃ₐ[K] L) (a : A) (x : L) :
 
 end AutHom
 
-section RightAction
-
-variable {K : Type*} [CommSemiring K] (A L G : Type*) [CommSemiring A] [Algebra K A] [Semiring L]
-  [Algebra K L] [Monoid G] [MulSemiringAction G L] [SMulCommClass G K L]
-
-/-- A monoid acting on `L` by `K`-algebra endomorphisms acts on `A ⊗[K] L` through the right
-factor, by `A`-algebra endomorphisms: `g • (a ⊗ x) = a ⊗ (g • x)`.
-
-This is not a global instance: when `G` also acts on `A`, Mathlib's action through the left factor
-would make the action of `G` on `A ⊗[K] L` ambiguous. -/
-noncomputable abbrev rightMulSemiringAction : MulSemiringAction G (A ⊗[K] L) where
-  smul g := Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g)
-  one_smul := DFunLike.congr_fun (f := Algebra.TensorProduct.map (AlgHom.id A A)
-    (MulSemiringAction.toAlgHom K L (1 : G))) (g := AlgHom.id A _)
-    (Algebra.TensorProduct.ext' fun _ _ ↦ by simp)
-  mul_smul g h := DFunLike.congr_fun (f := Algebra.TensorProduct.map (AlgHom.id A A)
-    (MulSemiringAction.toAlgHom K L (g * h)))
-    (g := (Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g)).comp
-      (Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L h)))
-    (Algebra.TensorProduct.ext' fun _ _ ↦ by simp [mul_smul])
-  smul_zero _ := map_zero _
-  smul_add _ := map_add _
-  smul_one _ := map_one _
-  smul_mul _ := map_mul _
-
-attribute [local instance] rightMulSemiringAction
-
-variable {A L G}
-
-/-- The right-factor action of `g` is the `A`-algebra map `id ⊗ g`. -/
-theorem rightMulSemiringAction_smul_def (g : G) (z : A ⊗[K] L) :
-    g • z = Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g) z :=
-  rfl
-
-/-- The right-factor action on a pure tensor. -/
-@[simp]
-theorem rightMulSemiringAction_smul_tmul (g : G) (a : A) (x : L) :
-    g • (a ⊗ₜ[K] x) = a ⊗ₜ (g • x) :=
-  rfl
-
-/-- The right-factor action is by `A`-linear maps. -/
-instance rightMulSemiringAction_smulCommClass : SMulCommClass G A (A ⊗[K] L) where
-  smul_comm g a z := by
-    simp only [rightMulSemiringAction_smul_def, map_smul]
-
-/-- For `L`-automorphisms acting on `L`, the right-factor action is `baseChangeAutHom`. -/
-theorem rightMulSemiringAction_smul_eq_baseChangeAutHom (σ : L ≃ₐ[K] L) (z : A ⊗[K] L) :
-    σ • z = baseChangeAutHom A L σ z := by
-  induction z using TensorProduct.inductionOn with
-  | tmul a x => simp
-  | add x y hx hy => simp only [smul_add, map_add, hx, hy]
-
-end RightAction
-
 end Algebra.TensorProduct
 
 namespace ScalarAut
@@ -463,3 +409,62 @@ theorem baseChangeMap_smul {B : Type*} [Semiring B] [Algebra K B] (f : A →ₐ[
 end ScalarAut
 
 end TauCeti
+
+/-! The right-factor action lives in Mathlib's root `Algebra.TensorProduct` namespace, since its
+API is stated about the Mathlib type `A ⊗[K] L`. -/
+
+open scoped TensorProduct
+
+namespace Algebra.TensorProduct
+
+variable {K : Type*} [CommSemiring K] (A L G : Type*) [CommSemiring A] [Algebra K A] [Semiring L]
+  [Algebra K L] [Monoid G] [MulSemiringAction G L] [SMulCommClass G K L]
+
+/-- A monoid acting on `L` by `K`-algebra endomorphisms acts on `A ⊗[K] L` through the right
+factor, by `A`-algebra endomorphisms: `g • (a ⊗ x) = a ⊗ (g • x)`.
+
+This is not a global instance: when `G` also acts on `A`, Mathlib's action through the left factor
+would make the action of `G` on `A ⊗[K] L` ambiguous. -/
+noncomputable abbrev rightMulSemiringAction : MulSemiringAction G (A ⊗[K] L) where
+  smul g := Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g)
+  one_smul := DFunLike.congr_fun (f := Algebra.TensorProduct.map (AlgHom.id A A)
+    (MulSemiringAction.toAlgHom K L (1 : G))) (g := AlgHom.id A _)
+    (Algebra.TensorProduct.ext' fun _ _ ↦ by simp)
+  mul_smul g h := DFunLike.congr_fun (f := Algebra.TensorProduct.map (AlgHom.id A A)
+    (MulSemiringAction.toAlgHom K L (g * h)))
+    (g := (Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g)).comp
+      (Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L h)))
+    (Algebra.TensorProduct.ext' fun _ _ ↦ by simp [mul_smul])
+  smul_zero _ := map_zero _
+  smul_add _ := map_add _
+  smul_one _ := map_one _
+  smul_mul _ := map_mul _
+
+attribute [local instance] rightMulSemiringAction
+
+variable {A L G}
+
+/-- The right-factor action of `g` is the `A`-algebra map `id ⊗ g`. -/
+theorem rightMulSemiringAction_smul_def (g : G) (z : A ⊗[K] L) :
+    g • z = Algebra.TensorProduct.map (AlgHom.id A A) (MulSemiringAction.toAlgHom K L g) z :=
+  rfl
+
+/-- The right-factor action on a pure tensor. -/
+@[simp]
+theorem rightMulSemiringAction_smul_tmul (g : G) (a : A) (x : L) :
+    g • (a ⊗ₜ[K] x) = a ⊗ₜ (g • x) :=
+  rfl
+
+/-- The right-factor action is by `A`-linear maps. -/
+instance rightMulSemiringAction_smulCommClass : SMulCommClass G A (A ⊗[K] L) where
+  smul_comm g a z := by
+    simp only [rightMulSemiringAction_smul_def, map_smul]
+
+/-- For `L`-automorphisms acting on `L`, the right-factor action is `baseChangeAutHom`. -/
+theorem rightMulSemiringAction_smul_eq_baseChangeAutHom (σ : L ≃ₐ[K] L) (z : A ⊗[K] L) :
+    σ • z = TauCeti.Algebra.TensorProduct.baseChangeAutHom A L σ z := by
+  induction z using TensorProduct.inductionOn with
+  | tmul a x => simp
+  | add x y hx hy => simp only [smul_add, map_add, hx, hy]
+
+end Algebra.TensorProduct

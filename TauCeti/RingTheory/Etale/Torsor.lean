@@ -151,10 +151,10 @@ theorem rankAtStalk_eq_card [h : IsFiniteEtaleTorsor G A B] (p : PrimeSpectrum A
     Module.rankAtStalk_eq_finrank_of_free]
   simp [Nat.card_eq_fintype_card]
 
-attribute [local instance] TauCeti.Algebra.TensorProduct.rightMulSemiringAction in
+attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction in
 /-- **Base change of a torsor.** For every ring map `A → A'`, the base change `A' ⊗[A] B` of a
 finite étale `G`-torsor is a finite étale `G`-torsor over `A'`, with `G` acting on the right
-factor (`TauCeti.Algebra.TensorProduct.rightMulSemiringAction`). Geometrically, the pullback of a
+factor (`Algebra.TensorProduct.rightMulSemiringAction`). Geometrically, the pullback of a
 `G`-torsor `Spec B → Spec A` along `Spec A' → Spec A` is a `G`-torsor. -/
 instance baseChange (A' : Type*) [CommRing A'] [Algebra A A'] [h : IsFiniteEtaleTorsor G A B] :
     IsFiniteEtaleTorsor G A' (A' ⊗[A] B) := by
