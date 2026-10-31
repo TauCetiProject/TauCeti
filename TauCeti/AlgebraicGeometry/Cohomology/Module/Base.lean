@@ -106,6 +106,15 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyMapBaseLinear_add
   rw [Functor.map_add]
   rfl
 
+/-- The induced map on cohomology of a finite sum of morphisms of coefficient sheaves is the sum
+of the induced maps. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyMapBaseLinear_sum
+    {ι : Type*} (s : Finset ι) (f : ι → (M ⟶ N)) (i : ℕ) :
+    cohomologyMapBaseLinear R X (∑ j ∈ s, f j) i = ∑ j ∈ s, cohomologyMapBaseLinear R X (f j) i :=
+  map_sum (AddMonoidHom.mk' (cohomologyMapBaseLinear R X · i)
+    fun g h ↦ cohomologyMapBaseLinear_add R X g h i) f s
+
 variable {X} in
 /-- An isomorphism of sheaves of modules on a scheme over a commutative ring induces a linear
 equivalence over the base ring on cohomology. -/
