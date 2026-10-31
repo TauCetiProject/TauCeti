@@ -16,8 +16,9 @@ category `C` with coproducts, and let `R : C` be projective; for the usual singu
 with coefficients in `k`-modules, take `C := ModuleCat k` and `R := k`. The singular chains
 `Cₙ(X; R)` of a space are a coproduct of copies of `R`, hence projective
 (`SSet.projective_chainComplex_X_of_projective`), and so are the relative chains `Cₙ(X, A; R)` of a
-pair, which are a direct summand of `Cₙ(X; R)`. Applying `Hom(-, M)` to them is therefore exact in
-the coefficients, which gives short exact sequences of singular cochain complexes
+pair, which are a direct summand of `Cₙ(X; R)`. The functors `Hom(C(X; R), -)` and
+`Hom(C(X, A; R), -)` of the coefficients are therefore exact, which gives short exact sequences of
+singular cochain complexes
 
 `0 ⟶ C*(X; M₁) ⟶ C*(X; M₂) ⟶ C*(X; M₃) ⟶ 0`,
 `0 ⟶ C*(X, A; M₁) ⟶ C*(X, A; M₂) ⟶ C*(X, A; M₃) ⟶ 0`.
@@ -32,9 +33,10 @@ whose maps between the cohomology groups with the same degree are induced by the
 The Bockstein homomorphism is natural in continuous maps, respectively maps of pairs, and in
 morphisms of short exact sequences of coefficients.
 
-Exactness in the coefficients is the only input: `Hom(-, M)` is exact on chain complexes whose terms
-are projective (`ChainComplex.shortExact_map_linearYonedaObjFunctor`). It is not the long exact
-sequence of a pair, which instead uses that the chain sequence of a pair splits in each degree.
+Exactness in the coefficients is the only input: for a fixed chain complex `K` whose terms are
+projective, `Hom(K, -)` is exact (`ChainComplex.shortExact_map_linearYonedaObjFunctor`). It is not
+the long exact sequence of a pair, which instead uses that the chain sequence of a pair splits in
+each degree.
 
 ## Main declarations
 
