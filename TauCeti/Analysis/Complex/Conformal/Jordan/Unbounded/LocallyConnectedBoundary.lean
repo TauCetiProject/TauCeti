@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded
 
 import TauCeti.Analysis.Complex.Conformal.UpperHalfPlane.LocallyConnectedBoundary
 import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
+import TauCeti.Analysis.Normed.Field.Inversion
 
 /-!
 # Riemann maps of unbounded domains with locally connected inverted boundary

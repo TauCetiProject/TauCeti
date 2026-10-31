@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.Jordan.UpperHalfPlane
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 import Mathlib.Topology.Bornology.BoundedOperation
 import TauCeti.Analysis.Complex.PlaneSeparation.RiemannSphere
+import TauCeti.Analysis.Normed.Field.Inversion
 
 /-!
 # Unbounded Jordan domains
@@ -30,11 +31,6 @@ and tends to infinity at infinity.
   closure adds `0` to the inverted frontier.
 * `TauCeti.isJordanCurve_frontier_image_inv_sub`: the inversion of an unbounded Jordan domain about
   an exterior point is a bounded Jordan domain.
-* `TauCeti.isOpen_insert_zero_image_inv_sub`, `TauCeti.closure_insert_zero_image_inv_sub` and
-  `TauCeti.frontier_insert_zero_image_inv_sub`: an open set with bounded complement, inverted about
-  a point outside its closure and completed by `0`, is open, with the inverted closure and frontier
-  of the set together with `0`, respectively the inverted frontier.
-* `TauCeti.bijOn_add_inv_image_inv_sub`: `w ↦ q + w⁻¹` inverts the inversion about `q`.
 * `TauCeti.exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_infty`:
   Carathéodory's theorem on the closed upper half-plane for an unbounded Jordan domain, with
   infinity sent to infinity.
@@ -149,64 +145,6 @@ theorem frontier_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure U) (hUb : ¬
   rw [hV.frontier_eq, closure_image_inv_sub hq hUb, insert_sdiff_of_notMem _ hU0,
     hUo.frontier_eq, image_sdiff (f := fun z : ℂ => (z - q)⁻¹)
       (inv_injective.comp (sub_left_injective (b := q)))]
-
-/-- Inverting an open set `U` with bounded complement about a point `q` outside it, and adding `0`,
-the image of infinity, gives an open set: `U` contains a neighbourhood of infinity, which the
-inversion carries onto a punctured neighbourhood of `0`. -/
-theorem isOpen_insert_zero_image_inv_sub (hUo : IsOpen U) (hqU : q ∉ U)
-    (hUc : IsBounded Uᶜ) : IsOpen (insert 0 ((fun z : ℂ => (z - q)⁻¹) '' U)) := by
-  obtain ⟨R, hR, hRU⟩ := hUc.subset_ball_lt 0 q
-  rw [isOpen_iff_mem_nhds]
-  rintro w (rfl | hw)
-  · -- a point `w ≠ 0` with `‖w‖ < R⁻¹` is the image of `q + w⁻¹`, which lies outside `ball q R`
-    refine Filter.mem_of_superset (ball_mem_nhds 0 (inv_pos.mpr hR)) fun w hw => ?_
-    rcases eq_or_ne w 0 with rfl | hw0
-    · exact mem_insert _ _
-    refine mem_insert_of_mem _ ⟨q + w⁻¹, not_not.mp fun h => ?_, by simp⟩
-    have hRw : R < ‖w‖⁻¹ :=
-      (lt_inv_comm₀ hR (norm_pos_iff.mpr hw0)).mpr (by simpa using hw)
-    have hin := hRU h
-    rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_inv] at hin
-    exact lt_asymm hin hRw
-  · exact Filter.mem_of_superset
-      ((isOpen_image_inv_sub hUo hqU).mem_nhds hw) (subset_insert _ _)
-
-/-- Inverting an unbounded set `U` about a point `q` outside its closure and adding `0`, the image
-of infinity, does not change the closure of the inverted set. -/
-theorem closure_insert_zero_image_inv_sub (hq : q ∉ closure U) (hUb : ¬IsBounded U) :
-    closure (insert 0 ((fun z : ℂ => (z - q)⁻¹) '' U)) =
-      insert 0 ((fun z : ℂ => (z - q)⁻¹) '' closure U) := by
-  rw [← closure_image_inv_sub hq hUb]
-  refine (closure_mono (subset_insert _ _)).antisymm' (closure_minimal (insert_subset ?_
-    subset_closure) isClosed_closure)
-  rw [closure_image_inv_sub hq hUb]
-  exact mem_insert _ _
-
-/-- Inverting an open set `U` with bounded complement about a point `q` outside its closure, and
-adding `0`, the image of infinity, the frontier of the resulting open set is the inverted frontier
-of `U`. -/
-theorem frontier_insert_zero_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure U)
-    (hUc : IsBounded Uᶜ) :
-    frontier (insert 0 ((fun z : ℂ => (z - q)⁻¹) '' U)) =
-      (fun z : ℂ => (z - q)⁻¹) '' frontier U := by
-  have hUb : ¬IsBounded U := fun h =>
-    NormedSpace.unbounded_univ ℝ ℂ (by simpa using h.union hUc)
-  have h0 : (0 : ℂ) ∉ (fun z : ℂ => (z - q)⁻¹) '' closure U := by
-    rintro ⟨z, hz, hz0⟩
-    rw [inv_eq_zero, sub_eq_zero] at hz0
-    exact hq (hz0 ▸ hz)
-  rw [(isOpen_insert_zero_image_inv_sub hUo (fun h => hq (subset_closure h)) hUc).frontier_eq,
-    closure_insert_zero_image_inv_sub hq hUb, insert_sdiff_of_mem _ (mem_insert _ _),
-    sdiff_insert_of_notMem h0,
-    ← image_sdiff (f := fun z : ℂ => (z - q)⁻¹) (inv_injective.comp (sub_left_injective (b := q))),
-    ← hUo.frontier_eq]
-
-/-- The map `w ↦ q + w⁻¹` inverts the inversion `z ↦ (z - q)⁻¹`: it is a bijection from the
-inverted image of any set `S` back onto `S`. -/
-theorem bijOn_add_inv_image_inv_sub (S : Set ℂ) :
-    BijOn (fun w : ℂ => q + w⁻¹) ((fun z : ℂ => (z - q)⁻¹) '' S) S :=
-  BijOn.symm ⟨fun _ _ => by simp, fun _ _ => by simp⟩
-    (inv_injective.comp (sub_left_injective (b := q))).injOn.bijOn_image
 
 /-- Inverting the finite part of a spherical Jordan curve through infinity about a point off
 that curve gives a planar Jordan curve through `0`. No domain or frontier identification is

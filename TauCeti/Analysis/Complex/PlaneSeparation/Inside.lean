@@ -120,6 +120,7 @@ theorem IsJordanCurve.frontier_filledHull_sdiff {C : Set ℂ} (hC : IsJordanCurv
 /-- **A Jordan curve bounds its filled hull.** The frontier of `filledHull C` for a Jordan curve
 `C ⊆ ℂ` is `C`; equivalently (`frontier_compl`) the curve is the frontier of its outside
 `(filledHull C)ᶜ`. -/
+@[simp]
 theorem IsJordanCurve.frontier_filledHull {C : Set ℂ} (hC : IsJordanCurve C) :
     frontier (filledHull C) = C := by
   have hrank : (1 : Cardinal) < Module.rank ℝ ℂ := by
@@ -130,11 +131,13 @@ theorem IsJordanCurve.frontier_filledHull {C : Set ℂ} (hC : IsJordanCurve C) :
   exact hC.frontier_connectedComponentIn fun h => hx (subset_filledHull h)
 
 /-- The interior of the filled hull of a Jordan curve `C ⊆ ℂ` is its inside `filledHull C \ C`. -/
+@[simp]
 theorem IsJordanCurve.interior_filledHull {C : Set ℂ} (hC : IsJordanCurve C) :
     interior (filledHull C) = filledHull C \ C := by
   rw [← self_sdiff_frontier, hC.frontier_filledHull]
 
 /-- The closure of the inside `filledHull C \ C` of a Jordan curve `C ⊆ ℂ` is its filled hull. -/
+@[simp]
 theorem IsJordanCurve.closure_filledHull_sdiff {C : Set ℂ} (hC : IsJordanCurve C) :
     closure (filledHull C \ C) = filledHull C := by
   rw [closure_eq_self_union_frontier, hC.frontier_filledHull_sdiff, sdiff_union_self,

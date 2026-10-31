@@ -9,14 +9,18 @@ public import TauCeti.Analysis.Complex.Conformal.Jordan.Domain
 import TauCeti.Analysis.Complex.Conformal.Jordan.Approach
 import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
+import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Analysis.Normed.Module.FilledHull
 
 /-!
 # Carathéodory's theorem for both complementary domains of a Jordan curve
 
 A Jordan curve `C ⊆ ℂ` has exactly two complementary components: its inside `filledHull C \ C`
-and its outside `(filledHull C)ᶜ`. This file shows that each of them is a conformal image of a disc
-whose Riemann map extends to a homeomorphism of the closures, the bounding circle going onto `C`.
+and its outside `(filledHull C)ᶜ`. This file shows that the inside is a conformal image of the open
+unit disc and the outside a conformal image of the exterior `(closedBall 0 1)ᶜ` of the closed unit
+disc, and that these maps extend to homeomorphisms of the closed disc onto `filledHull C`, the
+closure of the inside, and of the closed exterior `(ball 0 1)ᶜ` onto `(filledHull C \ C)ᶜ`, the
+closure of the outside, the unit circle going onto `C` in both cases.
 
 * For the inside, the closed unit disc is homeomorphic to `filledHull C`, the closure of the inside,
   by a map that is holomorphic on the open disc and sends its centre to any prescribed point of the
@@ -159,9 +163,6 @@ theorem IsJordanCurve.exists_homeomorph_compl_ball_compl_filledHull_sdiff (hC : 
   obtain ⟨G, hGc, hGd, hGbij, hG0, E, hE⟩ :=
     exists_homeomorph_closedBall_closure_of_isJordanCurve_frontier_of_mem hJ.isOpen
       hJ.isConnected hJ.isBounded hJ.isJordanCurve_frontier (mem_insert 0 _)
-  have hpU := hC.notMem_closure_compl_filledHull hp
-  have hUb : ¬IsBounded (filledHull C)ᶜ := fun h =>
-    NormedSpace.unbounded_univ ℝ ℂ (by simpa using h.union hC.isBounded_compl_compl_filledHull)
   have h0 {S : Set ℂ} (hS : p ∉ S) : (0 : ℂ) ∉ (fun z : ℂ => (z - p)⁻¹) '' S := by
     rintro ⟨z, hz, hz0⟩
     rw [inv_eq_zero, sub_eq_zero] at hz0
@@ -169,7 +170,7 @@ theorem IsJordanCurve.exists_homeomorph_compl_ball_compl_filledHull_sdiff (hC : 
   /- The pieces of `W` and of its closure, away from `0`, are the inverted pieces of the closed
   outside. -/
   have hclW : closure W \ {0} = (fun z : ℂ => (z - p)⁻¹) '' (filledHull C \ C)ᶜ := by
-    rw [hW, closure_insert_zero_image_inv_sub hpU hUb, hC.closure_compl_filledHull,
+    rw [hW, closure_insert_zero_image_inv_sub, hC.closure_compl_filledHull,
       insert_sdiff_self_of_notMem (h0 (not_not_intro hp))]
   have hW0 : W \ {0} = (fun z : ℂ => (z - p)⁻¹) '' (filledHull C)ᶜ :=
     insert_sdiff_self_of_notMem (h0 fun h => h hp.1)
