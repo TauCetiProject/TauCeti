@@ -47,6 +47,7 @@ independently of `B`; for these choices it is natural in `B`.
 
 * `TauCeti.prodThomPair`: the pair `(B × F, B × (F ∖ {0}))`.
 * `TauCeti.prodThomPairMap`: the map of pairs induced by a continuous map of the bases.
+* `TauCeti.prodThomPairFiberMap`: the inclusion of the fibre pair `(F, F ∖ {0})` over a point.
 * `TauCeti.isZero_singularHomology_prodThomPair`: `Hₙ(B × F, B × (F ∖ {0})) = 0` for
   `n < dim F`.
 * `TauCeti.prodThomPairSingularHomologyIso`: `Hₙ₊ᵣ(B × F, B × (F ∖ {0})) ≅ Hₙ(B)`, `r = dim F`.
@@ -98,6 +99,37 @@ lemma prodThomPairMap_id : prodThomPairMap F (ContinuousMap.id B) = 𝟙 _ :=
 lemma prodThomPairMap_comp (g : C(B, B')) (g' : C(B', B'')) :
     prodThomPairMap F (g'.comp g) = prodThomPairMap F g ≫ prodThomPairMap F g' :=
   (TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (by ext <;> rfl)).symm
+
+/-- The inclusion `(F, F ∖ {0}) ⟶ (B × F, B × (F ∖ {0}))` of the fibre pair over `b` into the Thom
+pair of the product bundle. -/
+def prodThomPairFiberMap (b : B) :
+    TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) ⟶ prodThomPair B F :=
+  TopPair.ofSubsetMap (TopCat.ofHom ⟨fun x ↦ (b, x), by fun_prop⟩) fun _ hx ↦ hx
+
+@[simp]
+lemma prodThomPairFiberMap_fst_apply (b : B) (x : F) :
+    TopPair.Hom.fst (prodThomPairFiberMap F b) x = (b, x) :=
+  TopPair.ofSubsetMap_fst_apply _ _ _
+
+/-- The map of Thom pairs induced by a map of the bases carries the fibre over `b` to the fibre
+over `g b`. -/
+@[reassoc (attr := simp)]
+lemma prodThomPairFiberMap_comp_prodThomPairMap (b : B) (g : C(B, B')) :
+    prodThomPairFiberMap F b ≫ prodThomPairMap F g = prodThomPairFiberMap F (g b) :=
+  TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (by ext <;> rfl)
+
+/-- The projection `(pt × F, pt × (F ∖ {0})) ⟶ (F, F ∖ {0})` of the Thom pair of the product bundle
+over a point onto its fibre pair. -/
+def prodThomPairPUnitSnd :
+    prodThomPair PUnit.{w + 1} F ⟶ TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) :=
+  TopPair.ofSubsetMap (TopCat.ofHom ⟨Prod.snd, continuous_snd⟩) fun _ hp ↦ hp
+
+/-- Over a point, the projection to the fibre is a retraction of the fibre inclusion. -/
+theorem prodThomPairPUnitSnd_comp_prodThomPairFiberMap :
+    prodThomPairPUnitSnd F ≫ prodThomPairFiberMap F (PUnit.unit : PUnit.{w + 1}) = 𝟙 _ :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun p ↦
+    (prodThomPairFiberMap_fst_apply F _ _).trans
+      (congrArg (Prod.mk PUnit.unit) (TopPair.ofSubsetMap_fst_apply _ _ p)))
 
 end Defs
 

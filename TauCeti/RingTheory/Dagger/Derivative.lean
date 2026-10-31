@@ -7,6 +7,11 @@ module
 
 public import TauCeti.RingTheory.Dagger.WashnitzerAlgebra
 public import TauCeti.RingTheory.MvPowerSeries.HasseDeriv.GaussNorm
+public import Mathlib.RingTheory.Finiteness.Defs
+
+import TauCeti.RingTheory.Dagger.NoetherNormalization
+import TauCeti.RingTheory.Derivation.Ideal
+import TauCeti.RingTheory.Ideal.KrullIntersection
 
 /-!
 # Derivatives of overconvergent power series
@@ -58,6 +63,9 @@ The Hasse derivatives `∂^d` are `R`-linear endomorphisms of `W` satisfying
   are the polynomial ones.
 * `TauCeti.Dagger.washnitzerAlgebra.pderiv_primitive`: over a field of characteristic zero,
   `∂/∂Xᵢ` is a left inverse of the termwise primitive in `Xᵢ`.
+* `TauCeti.Dagger.washnitzerAlgebra.derivation_ext`: over a complete ultrametric field, two
+  derivations of `W` in finitely many variables into a finite module agreeing on the variables are
+  equal.
 
 ## References
 
@@ -260,6 +268,47 @@ theorem pderiv_primitive_of_ne {i j : σ} (hij : i ≠ j) (f : washnitzerAlgebra
   simpa only [coe_pderiv, coe_primitive] using MvPowerSeries.pderiv_primitive_of_ne hij f.1
 
 end Primitive
+
+section Ext
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+
+local notation "W" σ => washnitzerAlgebra σ K
+
+/-- **Derivations into finite modules are determined by the variables.** Two `K`-derivations of
+the Monsky–Washnitzer algebra in finitely many variables into a finite module are equal as soon as
+they agree on the variables. -/
+theorem derivation_ext {σ : Type*} [Finite σ] {M : Type*} [AddCommGroup M] [Module (W σ) M]
+    [Module K M] [Module.Finite (W σ) M]
+    {D₁ D₂ : Derivation K (W σ) M} (h : ∀ i, D₁ (X σ K i) = D₂ (X σ K i)) : D₁ = D₂ := by
+  rw [← sub_eq_zero]
+  set D := D₁ - D₂
+  have hX (i : σ) : D (X σ K i) = 0 := by simp [D, h]
+  have hpoly (p : MvPolynomial σ K) : D (ofMvPolynomial σ K p) = 0 := by
+    induction p using MvPolynomial.induction_on with
+    | C a => simp [← MvPolynomial.algebraMap_eq]
+    | add p q hp hq => simp [hp, hq]
+    | mul_X p i hp => simp [Derivation.leibniz, hp, hX]
+  ext g
+  -- `D g` lies in `m ^ n M` for every maximal ideal `m` and every `n`.
+  have hmem (m : Ideal (W σ)) (hm : m.IsMaximal) (n : ℕ) :
+      D g ∈ m ^ n • (⊤ : Submodule (W σ) M) := by
+    have : (m ^ (n + 1)).radical.IsMaximal := by
+      rwa [Ideal.radical_pow m n.succ_ne_zero, hm.isPrime.radical]
+    have : Module.Finite K ((W σ) ⧸ m ^ (n + 1)) :=
+      finite_quotient_of_isMaximal_radical (AlgHom.Finite.id K (W σ)) _
+    obtain ⟨p, hp⟩ := surjective_mkₐ_comp_ofMvPolynomial (m ^ (n + 1)) (Ideal.Quotient.mk _ g)
+    have hgp : g - ofMvPolynomial σ K p ∈ m ^ (n + 1) := Ideal.Quotient.eq.mp hp.symm
+    simpa [hpoly] using D.apply_mem_pow_smul_top_of_mem_pow_succ hgp
+  -- Powers of the maximal ideals separate the finite module `M`.
+  have hg : D g ∈ (⨅ (m : Ideal (W σ)) (_ : m.IsMaximal) (n : ℕ) (_ : 0 < n),
+      m ^ n • ⊤ : Submodule (W σ) M) := by
+    simp only [Submodule.mem_iInf]
+    exact fun m hm n _ ↦ hmem m hm n
+  rw [Ideal.iInf_isMaximal_pow_smul_eq_bot, Submodule.mem_bot] at hg
+  simpa using hg
+
+end Ext
 
 end washnitzerAlgebra
 
