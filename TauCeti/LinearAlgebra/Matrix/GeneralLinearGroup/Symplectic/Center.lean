@@ -119,6 +119,24 @@ theorem mem_center_iff (hm : m ≠ 0) (g : GLSymplecticFin m R) :
       (Matrix.scalar_commute c (fun r ↦ Commute.all c r)
         (h.val : Matrix (Fin (m + m)) (Fin (m + m)) R)).eq.symm
 
+/-- In positive rank over a nontrivial ring, the central quotient of the symplectic group is
+nontrivial: a long-root transvection with parameter one is not scalar. -/
+instance instNontrivialQuotientCenter [Nontrivial R] [NeZero m] :
+    Nontrivial (GLSymplecticFin m R ⧸ Subgroup.center (GLSymplecticFin m R)) := by
+  apply QuotientGroup.nontrivial_iff.mpr
+  intro htop
+  let i : Fin m := ⟨0, Nat.pos_of_ne_zero (NeZero.ne m)⟩
+  have hg : positiveLongRootTransvectionUnit i (1 : R) ∈
+      Subgroup.center (GLSymplecticFin m R) := htop ▸ Subgroup.mem_top _
+  obtain ⟨c, hc, -⟩ := (mem_center_iff (NeZero.ne m) _).mp hg
+  have hij : Fin.castAdd m i ≠ i.addNat m := by
+    simpa only [finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
+      Fin.natAdd_eq_addNat] using finSumFinEquiv_inl_ne_inr i i
+  have he := congrArg (fun M : Matrix (Fin (m + m)) (Fin (m + m)) R ↦
+    M (Fin.castAdd m i) (i.addNat m)) hc
+  simp [coe_positiveLongRootTransvectionUnit, TauCeti.coe_transvectionUnit,
+    Matrix.transvection, Matrix.scalar, Matrix.diagonal, hij] at he
+
 variable (m)
 
 /-- A square root of one acts by a scalar symplectic matrix. -/
