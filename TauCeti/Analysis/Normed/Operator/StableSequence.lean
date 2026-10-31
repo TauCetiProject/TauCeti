@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.CStarAlgebra.Basic
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
+public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+public import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Stable sequences, condition numbers and inverse bounds
@@ -16,10 +19,9 @@ notion that governs approximation methods such as the finite-section method: a s
 approximating matrices has uniformly bounded condition numbers
 `κ(aₙ) = ‖aₙ‖ ‖aₙ⁻¹‖` (`TauCeti.conditionNumber`) as soon as its norms are bounded.
 
-For a sequence of bounded operators, stability is equivalent to an eventual uniform lower bound
-`‖x‖ ≤ M ‖Aₙ x‖` when every space is finite-dimensional, and it passes to the adjoint sequence
-on Hilbert spaces. For a single operator on a Hilbert space, a lower bound `‖x‖ ≤ M ‖T x‖`
-together with injectivity of the adjoint gives invertibility with `‖T⁻¹‖ ≤ M`.
+Stability is invariant under `star`. For a sequence of bounded operators, stability is
+equivalent to an eventual uniform lower bound `‖x‖ ≤ M ‖Aₙ x‖` when every space is
+finite-dimensional.
 
 ## Main definitions
 
@@ -33,11 +35,8 @@ together with injectivity of the adjoint gives invertibility with `‖T⁻¹‖ 
   bounded condition numbers.
 * `TauCeti.isStableSequence_iff_exists_forall_norm_le`: for operators on finite-dimensional
   spaces, stability is an eventual uniform lower bound.
-* `ContinuousLinearMap.ringInverse_adjoint`: inversion commutes with the adjoint.
-* `TauCeti.isStableSequence_adjoint_iff`: a sequence of Hilbert-space operators is stable exactly
-  when the sequence of its adjoints is.
-* `ContinuousLinearMap.isUnit_and_norm_ringInverse_le_of_forall_norm_le`: an operator on a Hilbert
-  space that is bounded below by `M⁻¹` and has injective adjoint is invertible with `‖T⁻¹‖ ≤ M`.
+* `TauCeti.isStableSequence_star_iff`: a sequence in normed star rings is stable exactly when the
+  sequence of its stars is.
 
 ## References
 
@@ -49,65 +48,6 @@ together with injectivity of the adjoint gives invertibility with `‖T⁻¹‖ 
 public section
 
 open Filter
-
-namespace ContinuousLinearMap
-
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-
-/-- An invertible operator is bounded below by the reciprocal of the norm of its inverse. -/
-theorem norm_le_norm_ringInverse_mul_norm_apply {A : E →L[𝕜] E} (hA : IsUnit A) (x : E) :
-    ‖x‖ ≤ ‖Ring.inverse A‖ * ‖A x‖ := by
-  calc
-    ‖x‖ = ‖Ring.inverse A (A x)‖ := by
-      rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel A hA, one_apply_eq_self]
-    _ ≤ ‖Ring.inverse A‖ * ‖A x‖ := le_opNorm _ _
-
-/-- An invertible operator bounded below by `M⁻¹` has an inverse of norm at most `M`. -/
-theorem norm_ringInverse_le_of_forall_norm_le {A : E →L[𝕜] E} (hA : IsUnit A) {M : ℝ}
-    (hM : 0 ≤ M) (h : ∀ x, ‖x‖ ≤ M * ‖A x‖) : ‖Ring.inverse A‖ ≤ M := by
-  refine opNorm_le_bound _ hM fun y ↦ ?_
-  have hy := h (Ring.inverse A y)
-  rwa [← mul_apply_eq_comp, Ring.mul_inverse_cancel A hA, one_apply_eq_self] at hy
-
-end ContinuousLinearMap
-
-namespace ContinuousLinearMap
-
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [CompleteSpace E]
-
-/-- An operator on a Hilbert space that is bounded below by `M⁻¹` and whose adjoint is injective
-is invertible, and its inverse has norm at most `M`. -/
-theorem isUnit_and_norm_ringInverse_le_of_forall_norm_le {T : E →L[𝕜] E} {M : ℝ} (hM : 0 ≤ M)
-    (hT : ∀ x, ‖x‖ ≤ M * ‖T x‖) (hT' : Function.Injective (adjoint T)) :
-    IsUnit T ∧ ‖Ring.inverse T‖ ≤ M := by
-  have hinj : Function.Injective T := by
-    refine (injective_iff_map_eq_zero T).mpr fun x hx ↦ norm_le_zero_iff.mp ?_
-    simpa [hx] using hT x
-  have hanti : AntilipschitzWith (Real.toNNReal M) T :=
-    AddMonoidHomClass.antilipschitz_of_bound T fun x ↦ by
-      simpa [Real.coe_toNNReal _ hM] using hT x
-  have hclosed : IsClosed (T.range : Set E) := by
-    rw [LinearMap.coe_range]
-    exact hanti.isClosed_range T.uniformContinuous
-  have : CompleteSpace T.range := hclosed.completeSpace_coe
-  have hrange : T.range = ⊤ := by
-    rw [← Submodule.orthogonal_eq_bot_iff, orthogonal_range, LinearMap.ker_eq_bot]
-    exact hT'
-  have hunit : IsUnit T := isUnit_iff_bijective.mpr ⟨hinj, LinearMap.range_eq_top.mp hrange⟩
-  exact ⟨hunit, norm_ringInverse_le_of_forall_norm_le hunit hM hT⟩
-
-/-- The adjoint of an operator on a Hilbert space is invertible exactly when the operator is. -/
-@[simp]
-theorem isUnit_adjoint_iff {A : E →L[𝕜] E} : IsUnit (adjoint A) ↔ IsUnit A := by
-  simpa only [star_eq_adjoint] using isUnit_star (a := A)
-
-/-- Inversion commutes with the adjoint. -/
-theorem ringInverse_adjoint (A : E →L[𝕜] E) :
-    Ring.inverse (adjoint A) = adjoint (Ring.inverse A) := by
-  simpa only [star_eq_adjoint] using Ring.inverse_star A
-
-end ContinuousLinearMap
 
 namespace TauCeti
 
@@ -192,8 +132,8 @@ theorem IsStableSequence.exists_forall_norm_le {A : ∀ n, E n →L[𝕜] E n}
 
 /-- A sequence of operators on finite-dimensional spaces is stable exactly when its members are
 eventually uniformly bounded below. -/
-theorem isStableSequence_iff_exists_forall_norm_le [CompleteSpace 𝕜]
-    [∀ n, FiniteDimensional 𝕜 (E n)] {A : ∀ n, E n →L[𝕜] E n} :
+theorem isStableSequence_iff_exists_forall_norm_le [∀ n, FiniteDimensional 𝕜 (E n)]
+    {A : ∀ n, E n →L[𝕜] E n} :
     IsStableSequence A ↔ ∃ M : ℝ, ∀ᶠ n in atTop, ∀ x, ‖x‖ ≤ M * ‖A n x‖ := by
   refine ⟨IsStableSequence.exists_forall_norm_le, fun ⟨M, hM⟩ ↦ ⟨max M 0, hM.mono fun n h ↦ ?_⟩⟩
   have h' : ∀ x, ‖x‖ ≤ max M 0 * ‖A n x‖ := fun x ↦
@@ -201,27 +141,15 @@ theorem isStableSequence_iff_exists_forall_norm_le [CompleteSpace 𝕜]
   have hinj : Function.Injective (A n) := by
     refine (injective_iff_map_eq_zero (A n)).mpr fun x hx ↦ norm_le_zero_iff.mp ?_
     simpa [hx] using h' x
-  have : CompleteSpace (E n) := FiniteDimensional.complete 𝕜 (E n)
-  have hunit : IsUnit (A n) :=
-    ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.mpr <| (Module.End.isUnit_iff _).mpr
-      ⟨hinj, LinearMap.injective_iff_surjective.mp hinj⟩
+  -- The lower bound makes the algebraic inverse continuous, so no completeness is needed.
+  let e : E n ≃ₗ[𝕜] E n := LinearEquiv.ofBijective (A n : E n →ₗ[𝕜] E n)
+    ⟨hinj, LinearMap.injective_iff_surjective.mp hinj⟩
+  let e' : E n ≃L[𝕜] E n := e.toContinuousLinearEquivOfBounds ‖A n‖ (max M 0) (A n).le_opNorm
+    fun y ↦ (h' (e.symm y)).trans_eq (by rw [show A n (e.symm y) = y from e.apply_symm_apply y])
+  have hunit : IsUnit (A n) := ⟨(ContinuousLinearEquiv.unitsEquiv 𝕜 (E n)).symm e', rfl⟩
   exact ⟨hunit, ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le hunit
     (le_max_right _ _) h'⟩
 
 end Operator
-
-section Adjoint
-
-variable {𝕜 : Type*} {E : ℕ → Type*} [RCLike 𝕜] [∀ n, NormedAddCommGroup (E n)]
-  [∀ n, InnerProductSpace 𝕜 (E n)] [∀ n, CompleteSpace (E n)]
-
-/-- A sequence of Hilbert-space operators is stable exactly when the sequence of its adjoints
-is. -/
-theorem isStableSequence_adjoint_iff {A : ∀ n, E n →L[𝕜] E n} :
-    IsStableSequence (fun n ↦ ContinuousLinearMap.adjoint (A n)) ↔ IsStableSequence A := by
-  simp only [IsStableSequence, ContinuousLinearMap.isUnit_adjoint_iff,
-    ContinuousLinearMap.ringInverse_adjoint, LinearIsometryEquiv.norm_map]
-
-end Adjoint
 
 end TauCeti

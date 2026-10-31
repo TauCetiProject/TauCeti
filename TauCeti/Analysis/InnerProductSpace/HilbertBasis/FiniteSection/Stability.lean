@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.FiniteSection.Basic
 public import TauCeti.Analysis.Normed.Operator.StableSequence
 import Mathlib.Data.Nat.Bitwise

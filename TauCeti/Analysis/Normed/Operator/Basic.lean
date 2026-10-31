@@ -20,6 +20,11 @@ uniformly bounded, their values at the limiting argument converge, and the argum
 In particular, it supplies the common continuity step for
 `StronglyContinuousSemigroup.tendsto_realOperator_apply` and
 `StronglyContinuousGroup.tendsto_apply`.
+
+Finally, an invertible operator `A` on a normed space is bounded below by `‖A⁻¹‖⁻¹`
+(`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`), and conversely a lower bound
+`‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
+(`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`).
 -/
 
 public section
@@ -79,6 +84,27 @@ theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
       exact (T i).le_of_opNorm_le hi _
     · simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hg).const_mul C
   simpa only [map_sub, sub_add_cancel, zero_add] using hmove.add hz
+
+section Inverse
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- An invertible operator is bounded below by the reciprocal of the norm of its inverse. -/
+theorem norm_le_norm_ringInverse_mul_norm_apply {A : E →L[𝕜] E} (hA : IsUnit A) (x : E) :
+    ‖x‖ ≤ ‖Ring.inverse A‖ * ‖A x‖ := by
+  calc
+    ‖x‖ = ‖Ring.inverse A (A x)‖ := by
+      rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel A hA, one_apply_eq_self]
+    _ ≤ ‖Ring.inverse A‖ * ‖A x‖ := le_opNorm _ _
+
+/-- An invertible operator bounded below by `M⁻¹` has an inverse of norm at most `M`. -/
+theorem norm_ringInverse_le_of_forall_norm_le {A : E →L[𝕜] E} (hA : IsUnit A) {M : ℝ}
+    (hM : 0 ≤ M) (h : ∀ x, ‖x‖ ≤ M * ‖A x‖) : ‖Ring.inverse A‖ ≤ M := by
+  refine opNorm_le_bound _ hM fun y ↦ ?_
+  have hy := h (Ring.inverse A y)
+  rwa [← mul_apply_eq_comp, Ring.mul_inverse_cancel A hA, one_apply_eq_self] at hy
+
+end Inverse
 
 end ContinuousLinearMap
 
