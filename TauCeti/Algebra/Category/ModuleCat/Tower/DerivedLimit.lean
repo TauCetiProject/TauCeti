@@ -29,6 +29,12 @@ surjective, the derived limit is the termwise limit complex `lim K`: the inclusi
 `0 → lim K → ∏ₙ Kₙ → ∏ₙ Kₙ → 0` is then a short exact sequence of complexes. Under the resulting
 isomorphism `Rlim K ≅ lim K` the projections of `Rlim K` are the projections of the limit.
 
+The homotopy limit is the mapping cocone functor of the natural transformation `δ`
+(`TauCeti.mappingCoconeFunctor`), so it commutes with the shifts of complexes, and its projection
+`holim K → ∏ₙ Kₙ` is compatible with these isomorphisms. Through the localization this equips
+`Rlim` with `Functor.CommShift ℤ`, that is with coherent isomorphisms `Rlim (K⟦a⟧) ≅ (Rlim K)⟦a⟧`,
+compatible with the identification of `Rlim` with the homotopy limit.
+
 The key input is that products of modules are exact: the product functor `A ↦ ∏ₙ Aₙ` on towers
 (`TauCeti.ModuleTower.productFunctor`) preserves homology, hence quasi-isomorphisms of complexes,
 and a commutative square of quasi-isomorphisms induces a quasi-isomorphism of mapping cones.
@@ -50,7 +56,8 @@ with localization.
 * `TauCeti.ModuleTower.homotopyLimitTriangle`: the fibre triangle of `δ`, distinguished in the
   derived category (`TauCeti.ModuleTower.homotopyLimitTriangle_distinguished`).
 * `TauCeti.ModuleTower.derivedLimit`: the derived limit functor `Rlim`, with
-  `TauCeti.ModuleTower.derivedLimitFactors : Q ⋙ Rlim ≅ holim ⋙ Q`.
+  `TauCeti.ModuleTower.derivedLimitFactors : Q ⋙ Rlim ≅ holim ⋙ Q`, and its commutation with
+  the shifts, as a `Functor.CommShift ℤ` instance compatible with `derivedLimitFactors`.
 * `TauCeti.ModuleTower.derivedLimitπ`: the projections `Rlim K → Kₙ`, compatible with the
   transitions (`TauCeti.ModuleTower.derivedLimitπ_comp_transition`).
 * `TauCeti.ModuleTower.homotopyLimitLift`: the natural comparison map `lim K → holim K`, whose
@@ -113,29 +120,8 @@ variable (R)
 the shift chain map `δ : ∏ₙ Kₙ → ∏ₙ Kₙ`. It computes the derived limit `Rlim K`. -/
 @[expose]
 def homotopyLimitFunctor :
-    CochainComplex (ModuleTower.{v} R) ℤ ⥤ CochainComplex (ModuleCat.{v} R) ℤ where
-  obj K := mappingCocone ((complexShift R).app K)
-  map f := (mappingCone.map _ _ ((productComplexFunctor R).map f)
-    ((productComplexFunctor R).map f) ((complexShift R).naturality f).symm)⟦(-1 : ℤ)⟧'
-  map_id K := by
-    have h : mappingCone.map _ _ ((productComplexFunctor R).map (𝟙 K))
-        ((productComplexFunctor R).map (𝟙 K)) ((complexShift R).naturality (𝟙 K)).symm =
-          𝟙 _ := by
-      simp only [CategoryTheory.Functor.map_id]
-      exact mappingCone.map_id _
-    rw [h]
-    exact CategoryTheory.Functor.map_id _ _
-  map_comp f g := by
-    have h : mappingCone.map _ _ ((productComplexFunctor R).map (f ≫ g))
-        ((productComplexFunctor R).map (f ≫ g)) ((complexShift R).naturality (f ≫ g)).symm =
-          mappingCone.map _ _ ((productComplexFunctor R).map f)
-            ((productComplexFunctor R).map f) ((complexShift R).naturality f).symm ≫
-          mappingCone.map _ _ ((productComplexFunctor R).map g)
-            ((productComplexFunctor R).map g) ((complexShift R).naturality g).symm := by
-      simp only [CategoryTheory.Functor.map_comp]
-      exact mappingCone.map_comp _ _ _ _ _ _ _ _ _
-    rw [h]
-    exact CategoryTheory.Functor.map_comp _ _ _
+    CochainComplex (ModuleTower.{v} R) ℤ ⥤ CochainComplex (ModuleCat.{v} R) ℤ :=
+  mappingCoconeFunctor (complexShift R)
 
 theorem homotopyLimitFunctor_obj (K : CochainComplex (ModuleTower.{v} R) ℤ) :
     (homotopyLimitFunctor R).obj K = mappingCocone ((complexShift R).app K) :=
@@ -164,7 +150,20 @@ theorem homotopyLimitFunctor_map_comp_homotopyLimitFst
     {K L : CochainComplex (ModuleTower.{v} R) ℤ} (f : K ⟶ L) :
     (homotopyLimitFunctor R).map f ≫ homotopyLimitFst L =
       homotopyLimitFst K ≫ (productComplexFunctor R).map f :=
-  mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst _ _ _ _ _
+  mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst _ _ _ _
+    ((complexShift R).naturality f).symm
+
+variable (R) in
+/-- The shift chain maps `δ` commute with the shifts of complexes of towers. -/
+instance : NatTrans.CommShift (complexShift R) ℤ :=
+  inferInstanceAs (NatTrans.CommShift (NatTrans.mapHomologicalComplex (shiftNatTrans R) _) ℤ)
+
+/-- The homotopy limit commutes with the shifts, as the mapping cocone functor of the shift chain
+maps `δ` (`TauCeti.mappingCoconeFunctor`). For this structure the projection `holim K → ∏ₙ Kₙ`
+commutes with the shifts: it is the natural transformation `TauCeti.mappingCoconeFunctorFst`,
+whose compatibility with the shifts is an instance. -/
+noncomputable instance : (homotopyLimitFunctor R).CommShift ℤ :=
+  inferInstanceAs ((mappingCoconeFunctor (complexShift R)).CommShift ℤ)
 
 /-- The fibre triangle `holim K → ∏ₙ Kₙ → ∏ₙ Kₙ → (holim K)[1]` of the shift chain map, the
 mapping cocone triangle of `δ`. -/
@@ -324,6 +323,20 @@ def derivedLimitFactors :
     DerivedCategory.Q ⋙ derivedLimit R ≅ homotopyLimitFunctor R ⋙ DerivedCategory.Q :=
   Localization.Lifting.iso (DerivedCategory.Q (C := ModuleTower.{v} R))
     (HomologicalComplex.quasiIso (ModuleTower.{v} R) (ComplexShape.up ℤ)) _ _
+
+/-- The derived limit commutes with the shifts: `Rlim (K⟦a⟧) ≅ (Rlim K)⟦a⟧`, induced by the
+commutation of the homotopy limit with the shifts. -/
+noncomputable instance : (derivedLimit R).CommShift ℤ :=
+  Functor.commShiftOfLocalization DerivedCategory.Q
+    (HomologicalComplex.quasiIso (ModuleTower.{v} R) (ComplexShape.up ℤ)) ℤ
+    (homotopyLimitFunctor R ⋙ DerivedCategory.Q) (derivedLimit R)
+
+/-- The identification of the derived limit with the homotopy limit is compatible with the
+shifts. -/
+instance : NatTrans.CommShift (derivedLimitFactors R).hom ℤ :=
+  inferInstanceAs (NatTrans.CommShift (Localization.Lifting.iso DerivedCategory.Q
+    (HomologicalComplex.quasiIso (ModuleTower.{v} R) (ComplexShape.up ℤ))
+    (homotopyLimitFunctor R ⋙ DerivedCategory.Q) (derivedLimit R)).hom ℤ)
 
 end Derived
 
