@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Cohomology.FieldTower
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Basic
 
 /-!
-# Degrees and intersection numbers over a tower of base fields
+# Intersection numbers over a tower of base fields
 
 Let `κ / k` be an extension of fields and let `C` be a scheme over `κ`, regarded as a scheme over
 `k` through `Spec κ ⟶ Spec k`. The Euler-characteristic degree of a line bundle on `C` over `k` is
-`[κ : k]` times its degree over `κ`, because every cohomology dimension over `k` is `[κ : k]` times
-the corresponding dimension over `κ` (`Scheme.Modules.finrank_cohomology_eq_finrank_mul`). Hence
-the intersection number of a line-bundle class with a curve `ι : C ⟶ X` over `k` is `[κ : k]` times
-the intersection number over `κ`, and in particular `[κ : k]` divides it.
+`[κ : k]` times its degree over `κ` (`LineBundleClass.eulerDegree_eq_finrank_mul`), because every
+cohomology dimension over `k` is `[κ : k]` times the corresponding dimension over `κ`
+(`Scheme.Modules.finrank_cohomology_eq_finrank_mul`). Hence the intersection number of a
+line-bundle class with a curve `ι : C ⟶ X` over `k` is `[κ : k]` times the intersection number
+over `κ`, and in particular `[κ : k]` divides it.
 
 This is the divisibility axiom of the numerical type of a regular model. Let `Cᵢ` be a component
 of the special fibre of a regular model of a curve over a discrete valuation ring with residue
@@ -27,8 +27,6 @@ compatibly with its structure over `k`. Its weight is `wᵢ = [κᵢ : k]` and t
 
 ## Main results
 
-* `InvertibleSheaf.eulerDegree_eq_finrank_mul` and `LineBundleClass.eulerDegree_eq_finrank_mul`:
-  the degree over `k` is `[κ : k]` times the degree over `κ`.
 * `LineBundleClass.intersectionNumber_eq_finrank_mul`: the intersection number over `k` is
   `[κ : k]` times the intersection number over `κ`.
 * `LineBundleClass.finrank_dvd_intersectionNumber`: `[κ : k]` divides every intersection number
@@ -56,39 +54,7 @@ noncomputable section
 
 variable {k κ : Type u} [Field k] [Field κ] [Algebra k κ]
 
-namespace InvertibleSheaf
-
-variable {X : Scheme.{u}} [X.Over (Spec (.of k))] [X.Over (Spec (.of κ))]
-
-/-- **The degree over a tower of fields.** If the structure morphism of `X` to `Spec k` factors
-through `Spec κ`, then the degree over `k` of an invertible sheaf on `X` is `[κ : k]` times its
-degree over `κ`. -/
-theorem eulerDegree_eq_finrank_mul
-    (h : (X ↘ Spec (.of κ)) ≫ Spec.map (CommRingCat.ofHom (algebraMap k κ)) =
-      (X ↘ Spec (.of k))) (L : InvertibleSheaf X) :
-    L.eulerDegree k = finrank k κ * L.eulerDegree κ := by
-  rw [eulerDegree_def, eulerDegree_def, eulerCharBelow_eq_finrank_mul h,
-    eulerCharBelow_eq_finrank_mul h, mul_sub]
-
-end InvertibleSheaf
-
 namespace LineBundleClass
-
-section Degree
-
-variable {X : Scheme.{u}} [X.Over (Spec (.of k))] [X.Over (Spec (.of κ))]
-
-/-- **The degree over a tower of fields.** If the structure morphism of `X` to `Spec k` factors
-through `Spec κ`, then the degree over `k` of a line-bundle class on `X` is `[κ : k]` times its
-degree over `κ`. -/
-theorem eulerDegree_eq_finrank_mul
-    (h : (X ↘ Spec (.of κ)) ≫ Spec.map (CommRingCat.ofHom (algebraMap k κ)) =
-      (X ↘ Spec (.of k))) (a : LineBundleClass X) :
-    eulerDegree k a = finrank k κ * eulerDegree κ a := by
-  obtain ⟨L, rfl⟩ := mk_surjective a
-  rw [eulerDegree_mk, eulerDegree_mk, InvertibleSheaf.eulerDegree_eq_finrank_mul h]
-
-end Degree
 
 section IntersectionNumber
 
