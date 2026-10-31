@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Polynomial
 public import Mathlib.Algebra.Polynomial.Laurent
+-- Proof-only: membership in the equality locus of group homomorphisms.
+import TauCeti.Algebra.Group.Subgroup.Ker
 
 /-!
 # Graded formal coordinates
@@ -23,6 +25,10 @@ with conjugation by `X ↦ T^w X`. We make this comparison in Laurent polynomial
 is a unit. This proves closure under inversion over arbitrary graded rings, without dividing
 by integers or imposing conditions on torsion. The case `w = 2` is the homological grading of
 strict coordinate changes of complex-oriented formal groups.
+
+## References
+
+* D. C. Ravenel, *Complex Cobordism and Stable Homotopy Groups of Spheres*, Appendix A2.1.
 -/
 
 public section
@@ -75,9 +81,9 @@ def gradedSubgroup (w : ℕ) : Subgroup (FormalCoordinate A) :=
 @[simp]
 theorem mem_gradedSubgroup (w : ℕ) (φ : FormalCoordinate A) :
     φ ∈ gradedSubgroup 𝒜 w ↔ ∀ n, coeff n φ.toPowerSeries ∈ 𝒜 (w * (n - 1)) := by
-  simpa only [gradedSubgroup, MonoidHom.eqLocus, MonoidHom.eqLocusM, Subgroup.mem_mk,
-    Submonoid.mem_mk, Subsemigroup.mem_mk, Set.mem_ofPred_eq, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, MulAut.conj_apply, ← map_inv, inv_inv] using
+  rw [gradedSubgroup, MonoidHom.mem_eqLocus]
+  simpa only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, MulAut.conj_apply, ← map_inv,
+    inv_inv] using
     map_toLaurent_eq_conjugate_iff 𝒜 w φ
 
 /-- A strict coordinate is graded precisely when its freely specified coefficients are

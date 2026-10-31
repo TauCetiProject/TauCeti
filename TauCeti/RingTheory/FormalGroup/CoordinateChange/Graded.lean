@@ -19,6 +19,10 @@ since its inverse is graded as well. The case `w = 2` applies to complex orienta
 The proof expresses the grading through the map to Laurent polynomials and the action of
 homotheties. It applies to arbitrary graded coefficient rings, without commutativity of the
 formal group law or strictness of the coordinate.
+
+## References
+
+* D. C. Ravenel, *Complex Cobordism and Stable Homotopy Groups of Spheres*, Appendix A2.1.
 -/
 
 public section
@@ -39,19 +43,19 @@ theorem map_toLaurent_eq_homothety_smul_iff (F : FormalGroup A) (w : ℕ) :
         homothety (unitOfInvertible (LaurentPolynomial.T (w : ℤ) : LaurentPolynomial A))⁻¹ •
           F.map LaurentPolynomial.C ↔
       ∀ d : Fin 2 →₀ ℕ, coeff d F.toPowerSeries ∈ 𝒜 (w * (d.degree - 1)) := by
-  rw [homothety_smul, inv_inv, FormalGroup.ext_iff, MvPowerSeries.ext_iff]
-  refine forall_congr' fun d ↦ ?_
-  rw [coeff_rescale, map_toPowerSeries, map_toPowerSeries, coeff_map, coeff_map,
-    RingHom.comp_apply]
-  simp only [unitOfInvertible, Units.val_mk]
-  have hp : (LaurentPolynomial.T (w : ℤ) : LaurentPolynomial A) ^ (d.degree - 1) =
-      LaurentPolynomial.T (w * (d.degree - 1) : ℕ) := by
-    rw [LaurentPolynomial.T_pow]
-    congr 1
-    push_cast
-    ring
-  rw [hp, mul_comm, ← Polynomial.toLaurent_C_mul_T, Polynomial.toLaurent_inj,
-    toPolynomial_eq_monomial_iff]
+  rw [← F.map_toPolynomial_eq_rescale_iff (𝒜 := 𝒜) w]
+  have hinj : Function.Injective
+      (fun G : FormalGroup (Polynomial A) ↦ G.map Polynomial.toLaurent) := by
+    intro G H h
+    apply FormalGroup.ext
+    ext1 d
+    apply Polynomial.toLaurent_injective
+    simpa using congrArg (fun K ↦ coeff d K.toPowerSeries) h
+  rw [← hinj.eq_iff]
+  have hC : Polynomial.toLaurent.comp (Polynomial.C : A →+* Polynomial A) =
+      LaurentPolynomial.C := RingHom.ext Polynomial.toLaurent_C
+  simp only [map_comp, map_rescale, Polynomial.toLaurent_X_pow, homothety_smul, inv_inv,
+    unitOfInvertible, Units.val_mk, hC]
 
 /-- Changing by a graded coordinate preserves the homogeneous degrees of a formal group law.
 For homological degree two, take `w = 2`. -/
@@ -64,7 +68,9 @@ theorem coeff_smul_mem (F : FormalGroup A) (w : ℕ) (φ : TauCeti.FormalCoordin
   have hf := (F.map_toLaurent_eq_homothety_smul_iff (𝒜 := 𝒜) w).2 hF
   apply ((φ • F).map_toLaurent_eq_homothety_smul_iff (𝒜 := 𝒜) w).1 _ d
   rw [map_smul, hc, hf]
-  simp only [map_inv, mul_smul, smul_inv_smul, map_smul]
+  rw [homothety_smul, inv_inv, homothety_smul, inv_inv, map_smul]
+  exact ((F.map LaurentPolynomial.C).rescale_smul
+    (unitOfInvertible (LaurentPolynomial.T (w : ℤ))) (φ.map LaurentPolynomial.C)).symm
 
 /-- A graded coordinate change preserves and reflects the grading of formal group laws. -/
 @[simp]
