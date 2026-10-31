@@ -11,10 +11,11 @@ public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 
 /-!
-# Correlation coordinates and Lebesgue measure on correlation matrices
+# Correlation coordinates and their Lebesgue measure
 
-A correlation matrix is a symmetric matrix with unit diagonal, so it is determined by its
-strictly lower-triangular entries. `TauCeti.correlationCoordinates p` reconstructs the
+A correlation matrix is a positive-semidefinite symmetric matrix with unit diagonal. A
+symmetric matrix with unit diagonal is determined by its strictly lower-triangular entries, which
+serve as coordinates. `TauCeti.correlationCoordinates p` reconstructs the
 `p × p` symmetric matrix with unit diagonal from these entries; it is an affine map and a
 homeomorphism onto the unit-diagonal symmetric matrices.
 
@@ -55,8 +56,9 @@ determinant-zero locus, which is Lebesgue-null.
   `TauCeti.correlationLebesgue_setOf_posDef_lt_top` — the positive-definite correlation
   matrices have positive finite `correlationLebesgue` measure.
 * `TauCeti.correlationLebesgue_setOf_det_eq_zero`,
-  `TauCeti.volume_frontier_setOfPred_posDef_correlationCoordinates` — the singular correlation
-  matrices, and hence the boundary of the positive-definite region, are null.
+  `TauCeti.volume_frontier_setOfPred_posDef_correlationCoordinates` — the singular
+  unit-diagonal symmetric matrices, and hence the boundary of the positive-definite region, are
+  null.
 -/
 
 public section
@@ -78,29 +80,14 @@ section coordinates
 variable (p : ℕ)
 
 /-- The symmetric matrix with zero diagonal whose strictly lower-triangular entries are `x`; the
-linear part of `TauCeti.correlationCoordinates`. -/
+linear part of `TauCeti.correlationCoordinates`. Each coordinate is placed at the mirrored
+strictly upper-triangular position, the diagonal coordinates are zero, and
+`TauCeti.symmetricCoordinates` reconstructs the matrix. -/
 private def offDiagonalSymmetric :
-    (strictLowerTriangle p → ℝ) →ₗ[ℝ] selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) where
-  toFun x :=
-    ⟨Matrix.of fun i j =>
-        if h : j < i then x ⟨(i, j), h⟩ else if h : i < j then x ⟨(j, i), h⟩ else 0, by
-      refine Matrix.IsHermitian.ext fun i j => ?_
-      simp only [Matrix.of_apply, star_trivial]
-      rcases lt_trichotomy i j with h | rfl | h
-      · simp [h, not_lt.2 h.le]
-      · rfl
-      · simp [h, not_lt.2 h.le]⟩
-  map_add' x y := by
-    refine Subtype.ext ?_
-    ext i j
-    simp only [Matrix.of_apply, Submodule.coe_add, Matrix.add_apply, Pi.add_apply]
-    split_ifs <;> simp
-  map_smul' c x := by
-    refine Subtype.ext ?_
-    ext i j
-    simp only [Matrix.of_apply, Submodule.coe_smul, Matrix.smul_apply, Pi.smul_apply,
-      smul_eq_mul, RingHom.id_apply]
-    split_ifs <;> simp
+    (strictLowerTriangle p → ℝ) →ₗ[ℝ] selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) :=
+  (symmetricCoordinates p).symm.toLinearMap ∘ₗ
+    LinearMap.pi fun ij : upperTriangle p =>
+      if h : ij.1.1 < ij.1.2 then LinearMap.proj ⟨ij.1.swap, h⟩ else 0
 
 /-- The correlation-coordinate map: the symmetric matrix with unit diagonal whose strictly
 lower-triangular entries are `x`, reflected across the diagonal. It is affine, with linear part
@@ -119,11 +106,11 @@ theorem coe_correlationCoordinates_apply (x : strictLowerTriangle p → ℝ) (i 
   simp only [correlationCoordinates, ContinuousAffineMap.coe_add, Pi.add_apply,
     ContinuousLinearMap.coe_toContinuousAffineMap, LinearMap.coe_toContinuousLinearMap',
     ContinuousAffineMap.coe_const, Function.const_apply, Submodule.coe_add, Matrix.add_apply,
-    offDiagonalSymmetric, LinearMap.coe_mk, AddHom.coe_mk, Matrix.of_apply, Matrix.one_apply]
+    offDiagonalSymmetric, LinearMap.coe_comp, Function.comp_apply, Matrix.one_apply]
   rcases lt_trichotomy i j with h | rfl | h
-  · simp [h, h.ne, not_lt.2 h.le]
+  · simp [coe_symmetricCoordinates_symm_apply_of_le p _ h.le, h, h.ne, not_lt.2 h.le]
   · simp
-  · simp [h, h.ne']
+  · simp [coe_symmetricCoordinates_symm_apply_of_ge p _ h.le, h, h.ne']
 
 @[simp]
 theorem coe_correlationCoordinates_apply_of_lt (x : strictLowerTriangle p → ℝ) {i j : Fin p}
@@ -153,7 +140,7 @@ theorem coe_correlationCoordinates_zero :
   · simp [h, h.ne']
 
 /-- Shrinking the coordinates by `t` interpolates linearly between the identity matrix and the
-correlation matrix: `R (t • x) = t • R x + (1 - t) • 1`. -/
+unit-diagonal symmetric matrix `R x`: `R (t • x) = t • R x + (1 - t) • 1`. -/
 theorem coe_correlationCoordinates_smul (t : ℝ) (x : strictLowerTriangle p → ℝ) :
     (correlationCoordinates p (t • x) : Matrix (Fin p) (Fin p) ℝ) =
       t • (correlationCoordinates p x : Matrix (Fin p) (Fin p) ℝ) + (1 - t) • 1 := by
@@ -243,7 +230,7 @@ theorem measurableEmbedding_correlationCoordinates :
 
 end coordinates
 
-/-! ### Lebesgue measure on correlation matrices -/
+/-! ### Lebesgue measure on unit-diagonal symmetric matrices -/
 
 /-- Lebesgue measure on the unit-diagonal symmetric matrices: the pushforward of product Lebesgue
 measure on the strictly lower-triangular coordinates along `TauCeti.correlationCoordinates`. The
@@ -346,8 +333,8 @@ theorem closure_setOfPred_posDef_correlationCoordinates :
   exact Matrix.PosDef.posSemidef_add (Matrix.PosSemidef.smul hx ht.1.le)
     (Matrix.PosDef.one.smul (sub_pos.2 ht.2))
 
-/-- The determinant of a correlation matrix, as a polynomial in its strictly lower-triangular
-coordinates. -/
+/-- The determinant of the unit-diagonal symmetric matrix with given strictly lower-triangular
+coordinates, as a polynomial in those coordinates. -/
 private def correlationDetPolynomial : MvPolynomial (strictLowerTriangle p) ℝ :=
   (Matrix.of fun i j : Fin p =>
     if h : j < i then MvPolynomial.X ⟨(i, j), h⟩
@@ -363,7 +350,8 @@ private theorem eval_correlationDetPolynomial (x : strictLowerTriangle p → ℝ
     coe_correlationCoordinates_apply]
   split_ifs <;> simp
 
-/-- The singular correlation matrices form a null set in correlation coordinates. -/
+/-- The singular unit-diagonal symmetric matrices form a null set in correlation
+coordinates. -/
 theorem volume_setOfPred_det_correlationCoordinates_eq_zero :
     volume {x : strictLowerTriangle p → ℝ |
       (correlationCoordinates p x : Matrix (Fin p) (Fin p) ℝ).det = 0} = 0 := by
@@ -382,7 +370,7 @@ theorem volume_frontier_setOfPred_posDef_correlationCoordinates :
     (isOpen_setOfPred_posDef_correlationCoordinates p).interior_eq] at hx
   exact not_not.1 fun h => hx.2 (hx.1.posDef_iff_det_ne_zero.2 h)
 
-/-- The singular correlation matrices are `correlationLebesgue`-null. -/
+/-- The singular symmetric matrices are `correlationLebesgue`-null. -/
 theorem correlationLebesgue_setOf_det_eq_zero :
     correlationLebesgue p {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
       (A : Matrix (Fin p) (Fin p) ℝ).det = 0} = 0 := by
@@ -408,9 +396,10 @@ end posDef
 
 /-! ### Permutation and sign invariance
 
-Simultaneously permuting the rows and columns of a correlation matrix, or conjugating it by a
-diagonal sign matrix, permutes or changes the signs of its strict-lower coordinates. Both
-coordinate changes preserve Lebesgue measure, so `correlationLebesgue` is invariant. -/
+Simultaneously permuting the rows and columns of a unit-diagonal symmetric matrix, or
+conjugating it by a diagonal sign matrix, permutes or changes the signs of its strict-lower
+coordinates. Both coordinate changes preserve Lebesgue measure, so `correlationLebesgue` is
+invariant. -/
 
 section invariance
 
@@ -426,8 +415,9 @@ private theorem map_correlationLebesgue_of_comp_eq
     (h : ∀ x, T (correlationCoordinates p x) = correlationCoordinates p (f x)) :
     (correlationLebesgue p).map T = correlationLebesgue p := by
   have hR := (correlationCoordinates p).continuous.measurable
-  rw [correlationLebesgue, Measure.map_map hT hR, show T ∘ correlationCoordinates p =
-    correlationCoordinates p ∘ f from funext h, ← Measure.map_map hR hf.measurable, hf.map_eq]
+  have hcomp : T ∘ correlationCoordinates p = correlationCoordinates p ∘ f := funext h
+  rw [correlationLebesgue, Measure.map_map hT hR, hcomp, ← Measure.map_map hR hf.measurable,
+    hf.map_eq]
 
 /-- A strictly lower-triangular position is determined by its unordered pair of indices. -/
 private theorem injective_sym2_strictLowerTriangle :
