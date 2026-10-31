@@ -236,6 +236,11 @@ def algebraMapSplitting {N : Type t} [AddCommGroup N] [Module A N]
   toAlgHom := Algebra.ofId A E.Ring
   π_toAlgHom a := by simp
 
+@[simp]
+theorem algebraMapSplitting_toAlgHom {N : Type t} [AddCommGroup N] [Module A N]
+    (E : SquareZeroExtension.{w} A A N) : E.algebraMapSplitting.toAlgHom = Algebra.ofId A E.Ring :=
+  (rfl)
+
 section Trivial
 
 variable (A B M) [Module Bᵐᵒᵖ M] [IsCentralScalar B M] [Module A M] [IsScalarTower A B M]
@@ -265,6 +270,10 @@ theorem squareZero_ι (m : M) : (squareZero A B M).ι m = inr m :=
 def squareZeroSplitting : (squareZero A B M).Splitting where
   toAlgHom := inlAlgHom A B M
   π_toAlgHom b := fst_inl M b
+
+@[simp]
+theorem squareZeroSplitting_toAlgHom : (squareZeroSplitting A B M).toAlgHom = inlAlgHom A B M :=
+  (rfl)
 
 variable {A B M} {E : SquareZeroExtension.{max v t} A B M}
 
@@ -391,8 +400,13 @@ instance Exal.subsingleton_self : Subsingleton (Exal A A N) := by
   -- The trivial extension, which represents the zero class, needs `N` as a bimodule; since `A`
   -- is commutative, let `A` act on the right through its left action.
   let : Module Aᵐᵒᵖ N := Module.compHom N ((RingHom.id A).fromOpposite fun x y ↦ .all x y)
-  have : IsCentralScalar A N := ⟨fun _ _ ↦ rfl⟩
-  have : IsScalarTower A Aᵐᵒᵖ N := ⟨fun a b n ↦ mul_smul a b.unop n⟩
+  -- `op a` acts as `a`: by `compHom_smul_def`, `op a • n` is `fromOpposite (id A) (op a) • n`,
+  -- and `fromOpposite (id A)` is `id A ∘ unop` by definition.
+  have hop (a : A) (n : N) : MulOpposite.op a • n = a • n :=
+    MulAction.compHom_smul_def ((RingHom.id A).fromOpposite fun x y ↦ .all x y).toMonoidHom _ n
+  have : IsCentralScalar A N := ⟨hop⟩
+  have : IsScalarTower A Aᵐᵒᵖ N := ⟨fun a b n ↦ by
+    rw [← MulOpposite.op_unop b, hop, ← MulOpposite.op_smul, hop, smul_eq_mul, mul_smul]⟩
   refine ⟨fun x y ↦ ?_⟩
   obtain ⟨E, rfl⟩ := SquareZeroExtension.extensionClass_surjective x
   obtain ⟨F, rfl⟩ := SquareZeroExtension.extensionClass_surjective y
@@ -421,7 +435,7 @@ identified with `ℤ/2` by `m ↦ 2m`. -/
 theorem isEmpty_splitting_zmodFour : IsEmpty zmodFour.Splitting := by
   refine ⟨fun s ↦ ?_⟩
   have h := map_add s.toAlgHom 1 1
-  rw [show (1 + 1 : ZMod 2) = 0 from rfl, map_zero, map_one] at h
+  rw [(by decide : (1 + 1 : ZMod 2) = 0), map_zero, map_one] at h
   exact absurd h (by decide : (0 : ZMod 4) ≠ 1 + 1)
 
 /-- The extension `ℤ/4 → ℤ/2` has a nonzero class in `Exal_ℤ(ℤ/2, ℤ/2)`. -/
