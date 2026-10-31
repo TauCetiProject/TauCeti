@@ -48,13 +48,11 @@ noncomputable def projectivizationHomeomorph (𝕜 : Type*) [Field 𝕜] [Topolo
   toEquiv := Projectivization.equivSubmodule 𝕜 (Fin N → 𝕜)
   continuous_toFun := by
     apply Projectivization.continuous_iff.2
-    have hc : Continuous (fun v : {v : Fin N → 𝕜 // v ≠ 0} ↦
-        (⟨fun _ : Fin 1 ↦ v.1, linearIndependent_unique_iff.2 v.2⟩ :
-          finiteFullRankFrame 𝕜 1 N)) :=
-      (continuous_pi fun _ ↦ continuous_subtype_val).subtype_mk _
-    exact (continuous_frameSpan.comp hc).congr fun v ↦
-      (equivSubmodule_mk_frame
-        ⟨fun _ : Fin 1 ↦ v.1, linearIndependent_unique_iff.2 v.2⟩).symm
+    refine (continuous_frameSpan.comp
+      (finiteFullRankFrame.continuous_ofNeZero (𝕜 := 𝕜) (N := N))).congr fun v ↦ ?_
+    simpa only [Function.comp_apply, Equiv.toFun_as_coe, Projectivization.mk'_eq_mk,
+      finiteFullRankFrame.coe_ofNeZero] using
+      (equivSubmodule_mk_frame (finiteFullRankFrame.ofNeZero v)).symm
   continuous_invFun := by
     apply isQuotientMap_frameSpan.continuous_iff.2
     have hc := Projectivization.continuous_mk (K := 𝕜)
