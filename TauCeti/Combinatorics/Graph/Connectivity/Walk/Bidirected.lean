@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Basic
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
 public import TauCeti.Combinatorics.Network.Walk
 public import Mathlib.Data.Fintype.EquivFin
 
@@ -24,7 +24,8 @@ walks of its bidirected arrow family (`Graph.Walk.bidirectedEquiv`). The identif
 the length, the vertex sequence, and the edge sequence, hence paths. A directed cycle of the
 bidirected family corresponds to an undirected cycle exactly when it traverses no edge twice: the
 directed cycle `x → y → x` using the two opposite arrows of a single edge is not an undirected
-cycle. In particular, reachability in `G` is reachability along the bidirected arrow family.
+cycle. In particular, reachability in `G` is reachability along the bidirected arrow family, and
+reachability after deleting a set of vertices of `G` is reachability avoiding that set.
 
 ## Main definitions
 
@@ -38,10 +39,14 @@ cycle. In particular, reachability in `G` is reachability along the bidirected a
 * `Graph.Walk.vertices_toBidirected` and `Graph.Walk.edges_toBidirected`: the identification
   preserves vertex and edge sequences.
 * `Graph.Walk.isPath_toBidirected_iff`: it preserves and reflects paths.
+* `TauCeti.ArrowWalk.mem_support_toGraphWalk_iff`: the points on the walk of a directed walk are
+  the vertices it visits.
 * `Graph.Walk.isCycle_iff_isCycle_toBidirected_and_isTrail`: an undirected cycle is a directed
   cycle that is a trail.
 * `Graph.reachable_iff_nonempty_arrowWalk`: reachability between actual vertices is reachability
   along the bidirected arrow family.
+* `Graph.reachableAvoiding_bidirectedHom_iff`: reachability after deleting a set of vertices is
+  reachability along the bidirected arrow family avoiding that set.
 -/
 
 public section
@@ -271,6 +276,17 @@ theorem edges_toGraphWalk (q : ArrowWalk G.BidirectedHom x y) :
   conv_rhs => rw [← Walk.toBidirected_toGraphWalk q]
   rw [Walk.edges_toBidirected]
 
+/-- A point lies on the walk of a directed walk exactly when it is an actual vertex visited by the
+directed walk. -/
+theorem mem_support_toGraphWalk_iff (q : ArrowWalk G.BidirectedHom x y) {v : α} :
+    v ∈ q.toGraphWalk.support ↔ ∃ hv : v ∈ V(G), ⟨v, hv⟩ ∈ q.vertices := by
+  simp [List.mem_unattach]
+
+/-- A directed walk is determined by its walk in `G`. -/
+theorem toGraphWalk_injective :
+    Function.Injective (toGraphWalk : ArrowWalk G.BidirectedHom x y → G.Walk x y) :=
+  (Walk.bidirectedEquiv G x y).symm.injective
+
 /-- The walk of a directed walk is a path exactly when the directed walk is a directed path. -/
 @[simp]
 theorem isPath_toGraphWalk_iff (q : ArrowWalk G.BidirectedHom x y) :
@@ -297,5 +313,16 @@ theorem reachable_iff_nonempty_arrowWalk (x y : V(G)) :
     G.Reachable x y ↔ Nonempty (ArrowWalk G.BidirectedHom x y) := by
   rw [reachable_def, (Walk.bidirectedEquiv G x y).nonempty_congr]
   exact and_iff_right x.2
+
+/-- Two actual vertices are reachable after deleting a set `Y` of vertices of `G` exactly when a
+directed walk of the bidirected arrow family joins them avoiding `Y`. -/
+theorem reachableAvoiding_bidirectedHom_iff {Y : Set α} {x y : V(G)} :
+    ReachableAvoiding G.BidirectedHom (Subtype.val ⁻¹' Y) x y ↔
+      (G.deleteVerts Y).Reachable x y := by
+  rw [reachableAvoiding_def, reachable_deleteVerts_iff_exists_walk]
+  refine ⟨fun ⟨q, hq⟩ ↦ ⟨q.toGraphWalk, x.2, by simpa using hq⟩,
+    fun ⟨p, _, hp⟩ ↦ ⟨p.toBidirected x.2, fun v hv ↦ hp v ?_⟩⟩
+  rw [← Walk.vertices_toBidirected p x.2]
+  exact List.mem_unattach.2 ⟨v.2, hv⟩
 
 end Graph
