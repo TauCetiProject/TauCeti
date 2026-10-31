@@ -41,6 +41,8 @@ are built on top of this transport.
 
 ## Main results
 
+* `TauCeti.Place.equivOfRingEquiv_mapRingEquiv_adicOfIrreducible_X_sub_C`: conjugation carries the
+  place `t = a` to the place `t = σ a`.
 * `TauCeti.Place.equivOfRingEquiv_mapRingEquiv_markedPlace`: conjugation fixes the marked places.
 * `TauCeti.IsAlgebraicBelyiPair.of_mapRingEquiv`: the conjugate of an algebraic Belyi pair is an
   algebraic Belyi pair.
@@ -64,6 +66,19 @@ namespace Place
 
 variable {k k' : Type*} [Field k] [Field k'] (σ : k ≃+* k')
 
+/-- **Conjugation moves the place `t = a` to the place `t = σ a`**: the bijection between the
+places of `k(t)` and those of `k'(t)` induced by the coefficient map of `σ : k ≃+* k'` carries
+the zero of `t - a` to the zero of `t - σ a`. -/
+@[simp]
+theorem equivOfRingEquiv_mapRingEquiv_adicOfIrreducible_X_sub_C (a : k) :
+    equivOfRingEquiv σ (RatFunc.mapRingEquiv σ) (RatFunc.mapRingEquiv_algebraMap_const σ)
+      (adicOfIrreducible (Polynomial.irreducible_X_sub_C a)) =
+      adicOfIrreducible (Polynomial.irreducible_X_sub_C (σ a)) := by
+  refine ord_X_sub_C_pos_iff.mp ?_
+  rw [ord_equivOfRingEquiv, RatFunc.mapRingEquiv_symm, map_sub, RatFunc.mapRingEquiv_X,
+    RatFunc.mapRingEquiv_C, RingEquiv.symm_apply_apply]
+  exact ord_X_sub_C_pos_iff.mpr rfl
+
 /-- **Conjugation fixes the marked places**: the bijection between the places of `k(t)` and
 those of `k'(t)` induced by the coefficient map of `σ : k ≃+* k'` carries the marked place
 numbered `i` to the marked place numbered `i`. -/
@@ -74,19 +89,13 @@ theorem equivOfRingEquiv_mapRingEquiv_markedPlace (i : Fin 3) :
   have h0 {P : Place k' (RatFunc k')} (h : 0 < P.ord X) : P = markedPlace k' 0 := by
     rw [markedPlace_zero]
     exact ord_X_pos_iff.mp h
-  have h1 {P : Place k' (RatFunc k')} (h : 0 < P.ord (X - C 1)) : P = markedPlace k' 1 := by
-    rw [markedPlace_one]
-    exact ord_X_sub_C_pos_iff.mp h
   have h2 {P : Place k' (RatFunc k')} (h : P.ord X < 0) : P = markedPlace k' 2 := by
     rw [markedPlace_two]
     exact X_notMem_integers_iff_eq_infty.mp (by rwa [mem_integers_iff_ord_nonneg, not_le])
   fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk]
   · exact h0 (by simp [ord_adicOfIrreducible_X_self])
-  · -- `simp` would rewrite `C 1` to `1` inside the polynomial indexing the place, so rewrite.
-    refine h1 ?_
-    rw [ord_equivOfRingEquiv, RatFunc.mapRingEquiv_symm, map_sub, RatFunc.mapRingEquiv_X,
-      RatFunc.mapRingEquiv_C, map_one, markedPlace_one]
-    exact ord_X_sub_C_pos_iff.mpr rfl
+  · rw [markedPlace_one, markedPlace_one,
+      equivOfRingEquiv_mapRingEquiv_adicOfIrreducible_X_sub_C, map_one]
   · exact h2 (by simp [ord_infty])
 
 /-- **Conjugation preserves the three marked places as a set.** -/
