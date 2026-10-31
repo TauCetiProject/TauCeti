@@ -65,8 +65,10 @@ theorem smooth_of_grpObj_of_isAlgClosed_of_isReduced
     rw [← pointOfClosedPoint_apply f x hxc (IsLocalRing.closedPoint K),
       ← pointOfClosedPoint_apply f y hyc (IsLocalRing.closedPoint K)]
     exact congr(($h) (IsLocalRing.closedPoint K))
-  rw! [← he', ← e.hom.left.mem_preimage, Scheme.Hom.preimage_smoothLocus_eq,
-    show e.hom.left ≫ f = f from e.hom.w] at hy
+  -- `Over.w e.hom` has right-hand side `(Over.mk f).hom`, which is only definitionally `f`;
+  -- restate it with `f` so `rw!` can match `hy` syntactically.
+  have hef : e.hom.left ≫ f = f := Over.w e.hom
+  rw! [← he', ← e.hom.left.mem_preimage, Scheme.Hom.preimage_smoothLocus_eq, hef] at hy
   exact hx hy
 
 end TauCeti.AlgebraicGeometry
