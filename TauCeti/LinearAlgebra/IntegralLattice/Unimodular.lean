@@ -198,14 +198,26 @@ theorem isUnimodular_iff_isUnit_determinant :
   rw [L.isUnimodular_iff_discriminant_eq_one, L.discriminant_def,
     ← Int.isUnit_iff_natAbs_eq]
 
+omit [L.IsNondegenerate] in
 /-- In every carrier basis, unimodularity is equivalent to the Gram determinant having absolute
 value one. -/
 theorem isUnimodular_iff_natAbs_gramDet_eq_one {ι : Type v} [Fintype ι] [DecidableEq ι]
     (e : Basis ι ℤ L) :
     L.IsUnimodular ↔ (L.gramDet e).natAbs = 1 := by
-  rw [L.isUnimodular_iff_discriminant_eq_one,
-    L.discriminant_eq_natAbs_gramDet e]
+  by_cases hL : L.IsNondegenerate
+  · let : L.IsNondegenerate := hL
+    rw [L.isUnimodular_iff_discriminant_eq_one, L.discriminant_eq_natAbs_gramDet e]
+  · constructor
+    · intro h
+      exact (hL ⟨h.nondegenerate⟩).elim
+    · intro h
+      apply (hL ?_).elim
+      constructor
+      apply (L.gramDet_ne_zero_iff e).mp
+      intro hz
+      simp [hz] at h
 
+omit [L.IsNondegenerate] in
 /-- In every carrier basis, unimodularity is equivalent to the signed Gram determinant being a
 unit of `ℤ`; in particular, determinant `-1` is allowed. -/
 theorem isUnimodular_iff_isUnit_gramDet {ι : Type v} [Fintype ι] [DecidableEq ι]

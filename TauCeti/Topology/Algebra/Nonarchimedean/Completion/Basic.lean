@@ -198,7 +198,7 @@ private theorem isIntegral_of_isIntegral_topologicalClosure_coe {G : Subring A}
       ((G.map Completion.coeRingHom).topologicalClosure : Set (Completion A)) = (G : Set A) := by
     rw [coe_topologicalClosure_map_coeRingHom]
     exact preimage_closure_image_coe (G := G.toAddSubgroup) hG
-  obtain ⟨n, c, hcmem, hc⟩ := TauCeti.exists_pow_add_sum_eq_zero_of_isIntegral hb
+  obtain ⟨n, c, hcmem, hc⟩ := TauCeti.isIntegral_iff_exists_pow_add_sum_mul_eq_zero.mp hb
   choose! d hdG hd using fun (i : ℕ) (hi : i < n + 1) ↦
     exists_mem_coe_sub_mul_mem_topologicalClosure hG (hcmem i hi) ((b : Completion A) ^ i)
   obtain ⟨e, hedef⟩ : ∃ e : A, e = b ^ (n + 1) + ∑ i ∈ Finset.range (n + 1), d i * b ^ i := ⟨_, rfl⟩
@@ -216,8 +216,8 @@ private theorem isIntegral_of_isIntegral_topologicalClosure_coe {G : Subring A}
       + ((∑ i ∈ Finset.range n, d (i + 1) * b ^ (i + 1)) + (d 0 - e) * b ^ 0) = 0 := by
     rw [hedef, Finset.sum_range_succ']
     ring
-  refine TauCeti.isIntegral_of_pow_add_sum_eq_zero (n := n)
-    (c := fun i ↦ Nat.casesOn i (d 0 - e) fun j ↦ d (j + 1)) ?_ ?_
+  refine TauCeti.isIntegral_iff_exists_pow_add_sum_mul_eq_zero.mpr
+    ⟨n, fun i ↦ Nat.casesOn i (d 0 - e) fun j ↦ d (j + 1), ?_, ?_⟩
   · rintro (_ | j) hi
     · exact sub_mem (hdG 0 hi) heG
     · exact hdG (j + 1) hi

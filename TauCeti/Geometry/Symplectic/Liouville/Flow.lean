@@ -68,23 +68,23 @@ says that a symplectomorphism preserving the primitives carries the Liouville fi
 of `θ₂`. -/
 theorem mfderiv_apply_eq_of_interior_eq (ψ : M ≃ₘ⟮I, I₂⟯ M₂) (hσ₂ : σ₂.IsNondegenerate)
     (hσ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) (hα : mpullback I I₂ ψ α₂ = α)
-    (hZ : σ.1.interior Z = α) (hZ₂ : σ₂.1.interior Z₂ = α₂) (x : M) :
+    (hZ : RoughForm.interior Z σ.1 = α) (hZ₂ : RoughForm.interior Z₂ σ₂.1 = α₂) (x : M) :
     mfderiv I I₂ ψ x (Z x) = Z₂ (ψ x) := by
   rw [← sub_eq_zero]
   refine SmoothTwoForm.isNondegenerate_iff_separatingLeft.1 hσ₂ (ψ x) _ fun w ↦ ?_
   obtain ⟨v, rfl⟩ := (ψ.isInvertible_mfderiv (by simp) (x := x)).surjective w
   -- Both vectors pair with `dψ v` to `α v`: `σ₂(dψ Z, dψ v) = σ(Z, v) = α v`, and
   -- `α v = α₂(dψ v) = σ₂(Z₂, dψ v)`.
-  have h₁ : SmoothForm.eval₂ σ₂ (ψ x) (mfderiv I I₂ ψ x (Z x)) (mfderiv I I₂ ψ x v) =
+  have h₁ : SmoothBundleForm.eval₂ σ₂ (ψ x) (mfderiv I I₂ ψ x (Z x)) (mfderiv I I₂ ψ x v) =
       α x ![v] := by
-    rw [← SmoothForm.eval₂_mpullback ψ ψ.contMDiff, hσ, SmoothForm.eval₂_apply, ← hZ,
+    rw [← SmoothForm.eval₂_mpullback ψ ψ.contMDiff, hσ, SmoothBundleForm.eval₂_apply, ← hZ,
       RoughForm.interior_apply]
   have hv : (fun i ↦ mfderiv I I₂ ψ x (![v] i)) = ![mfderiv I I₂ ψ x v] := by
     ext i
     fin_cases i
     rfl
-  have h₂ : α x ![v] = SmoothForm.eval₂ σ₂ (ψ x) (Z₂ (ψ x)) (mfderiv I I₂ ψ x v) := by
-    rw [← hα, mpullback_apply, hv, ← hZ₂, RoughForm.interior_apply, SmoothForm.eval₂_apply]
+  have h₂ : α x ![v] = SmoothBundleForm.eval₂ σ₂ (ψ x) (Z₂ (ψ x)) (mfderiv I I₂ ψ x v) := by
+    rw [← hα, mpullback_apply, hv, ← hZ₂, RoughForm.interior_apply, SmoothBundleForm.eval₂_apply]
   rw [← SmoothForm.bilinFormAt_apply, map_sub, LinearMap.sub_apply, SmoothForm.bilinFormAt_apply,
     SmoothForm.bilinFormAt_apply, h₁, h₂, sub_self]
 
@@ -97,7 +97,7 @@ be a diffeomorphism with `ψ^*σ₂ = σ` and `ψ^*α₂ = α`, where `σ₂` is
 symplectomorphism preserving `θ` commutes with the local flow of the Liouville field of `θ`. -/
 theorem apply_flowOf_of_interior_eq (ψ : M ≃ₘ⟮I, I₂⟯ M₂) (hσ₂ : σ₂.IsNondegenerate)
     (hσ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) (hα : mpullback I I₂ ψ α₂ = α)
-    (hZ : σ.1.interior Z = α) (hZ₂ : σ₂.1.interior Z₂ = α₂)
+    (hZ : RoughForm.interior Z σ.1 = α) (hZ₂ : RoughForm.interior Z₂ σ₂.1 = α₂)
     (hZ₂' : CMDiff 1 (fun y ↦ (⟨y, Z₂ y⟩ : TangentBundle I₂ M₂))) (t : ℝ) (x : M) :
     ψ (flowOf Z t x) = flowOf Z₂ t (ψ x) :=
   ψ.apply_flowOf (by simp) hZ₂' (ψ.mfderiv_apply_eq_of_interior_eq hσ₂ hσ hα hZ hZ₂) t x
