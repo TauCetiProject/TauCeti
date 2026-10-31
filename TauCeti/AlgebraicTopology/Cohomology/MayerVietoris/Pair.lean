@@ -43,9 +43,6 @@ cochains (`SSetPair.quasiIso_cochainComplexMap`).
 
 ## Main definitions and results
 
-* `SSetPair.cochainComplexMap`: the map of relative cochain complexes induced by a map of pairs of
-  simplicial sets, a quasi-isomorphism when it is one on both components
-  (`SSetPair.quasiIso_cochainComplexMap`).
 * `SSetPair.shortExact_mayerVietorisCochainShortComplex`: the relative cochain Mayer–Vietoris
   sequence of a square of pairs of simplicial sets is short exact.
 * `SSetPair.mayerVietorisCochainToBiprod`, `SSetPair.mayerVietorisCochainFromBiprod` and
@@ -88,88 +85,10 @@ namespace SSetPair
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C}
   {k : Type*} [Ring k] [Linear k C] {M : C}
 
-/-! ### Relative cochains -/
-
-/-- The map of relative cochain complexes `Hom(C(Q; R), M) ⟶ Hom(C(P; R), M)` induced by a map
-`f : P ⟶ Q` of pairs of simplicial sets: precomposition with the relative chain map of `f`. -/
-abbrev cochainComplexMap {P Q : SSetPair.{w}} (f : P ⟶ Q) :
-    (Q.chainComplex R).linearYonedaObj k M ⟶ (P.chainComplex R).linearYonedaObj k M :=
-  (linearYonedaFunctor k M).map (chainComplexMap f R).op
-
-@[simp]
-lemma cochainComplexMap_id (P : SSetPair.{w}) :
-    cochainComplexMap (R := R) (k := k) (M := M) (𝟙 P) = 𝟙 _ := by
-  simp [cochainComplexMap]
-
-@[reassoc]
-lemma cochainComplexMap_comp {P Q S : SSetPair.{w}} (f : P ⟶ Q) (g : Q ⟶ S) :
-    cochainComplexMap (R := R) (k := k) (M := M) (f ≫ g) =
-      cochainComplexMap g ≫ cochainComplexMap f := by
-  simp [cochainComplexMap]
-
-/-- A map of pairs of simplicial sets which induces quasi-isomorphisms on the cochains of the
-subobjects and of the ambient simplicial sets induces a quasi-isomorphism on relative cochains. -/
-lemma quasiIso_cochainComplexMap {P Q : SSetPair.{w}} (f : P ⟶ Q)
-    [QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) f.left)]
-    [QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) f.right)] :
-    QuasiIso (cochainComplexMap (R := R) (k := k) (M := M) f) := by
-  -- `Hom(-, M)` carries the morphism of chain sequences `C(X) ⟶ C(Y) ⟶ C(Y, X)` induced by `f` to
-  -- a morphism between the short exact cochain sequences of `Q` and of `P`, whose first component
-  -- is the relative cochain map and whose other two are the cochain maps of the components.
-  have h := HomologicalComplex.HomologySequence.quasiIso_τ₁
-    ((linearYonedaFunctor k M).mapShortComplex.map
-      (ShortComplex.opMap (chainComplexShortComplexMap f R)))
-    (shortExact_map_linearYonedaFunctor k M (Q.shortExact_chainComplexShortComplex R))
-    (shortExact_map_linearYonedaFunctor k M (P.shortExact_chainComplexShortComplex R))
-    (by
-      rw [Functor.mapShortComplex_map_τ₂, ShortComplex.opMap_τ₂, chainComplexShortComplexMap_τ₂]
-      exact ‹QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) f.right)›)
-    (by
-      rw [Functor.mapShortComplex_map_τ₃, ShortComplex.opMap_τ₃, chainComplexShortComplexMap_τ₁]
-      exact ‹QuasiIso (SSet.cochainComplexMap (R := R) (k := k) (M := M) f.left)›)
-  rwa [Functor.mapShortComplex_map_τ₁, ShortComplex.opMap_τ₁, chainComplexShortComplexMap_τ₃] at h
-
 /-! ### The relative cochain Mayer–Vietoris sequence -/
 
-variable (R) {P₁ P₂ P₃ P₄ : SSetPair.{w}} {t : P₁ ⟶ P₂} {l : P₁ ⟶ P₃} {r : P₂ ⟶ P₄}
+variable (R k M) {P₁ P₂ P₃ P₄ : SSetPair.{w}} {t : P₁ ⟶ P₂} {l : P₁ ⟶ P₃} {r : P₂ ⟶ P₄}
   {b : P₃ ⟶ P₄}
-
-/-- In each degree, the last map `C(P₂) ⊞ C(P₃) ⟶ C(P₄)` of the relative Mayer–Vietoris sequence of
-a square of pairs of simplicial sets is a split epimorphism, when the square of ambient simplicial
-sets is a pushout with monomorphic top map. A section is the composite of a section
-`C(P₄) ⟶ C(P₄.right)` of the quotient map from ambient to relative chains, a section of the
-absolute Mayer–Vietoris sequence of the ambient simplicial sets, and the quotient maps to relative
-chains. -/
-lemma isSplitEpi_mayerVietoris_g_f (sqR : IsPushout t.right l.right r.right b.right)
-    [Mono t.right] (i : ℕ) :
-    IsSplitEpi ((biprod.desc (chainComplexMap r R) (chainComplexMap b R)).f i) := by
-  have hamb := (HomologicalComplex.shortExact_iff_degreewise_shortExact _).1
-    (SSet.shortExact_mayerVietoris R sqR) i
-  have : IsSplitEpi
-      ((biprod.desc (SSet.chainComplexMap r.right R) (SSet.chainComplexMap b.right R)).f i) :=
-    hamb.isSplitMono_f_iff_isSplitEpi_g.1
-      (SSet.isSplitMono_biprod_lift_chainComplexMap_f R (i := i))
-  -- The quotient maps to relative chains carry the last map of the absolute sequence to that of
-  -- the relative one.
-  have hπ : biprod.map (P₂.chainComplexπ R) (P₃.chainComplexπ R) ≫
-      biprod.desc (chainComplexMap r R) (chainComplexMap b R) =
-        biprod.desc (SSet.chainComplexMap r.right R) (SSet.chainComplexMap b.right R) ≫
-          P₄.chainComplexπ R := by
-    apply biprod.hom_ext' <;> simp [chainComplexπ_naturality]
-  have : IsSplitEpi ((P₄.chainComplexπ R).f i) :=
-    ((HomologicalComplex.shortExact_iff_degreewise_shortExact _).1
-      (P₄.shortExact_chainComplexShortComplex R) i).isSplitMono_f_iff_isSplitEpi_g.1
-        (inferInstanceAs (IsSplitMono ((SSet.chainComplexMap P₄.hom R).f i)))
-  exact IsSplitEpi.mk'
-    { section_ := section_ ((P₄.chainComplexπ R).f i) ≫
-        section_ ((biprod.desc (SSet.chainComplexMap r.right R)
-          (SSet.chainComplexMap b.right R)).f i) ≫
-        (biprod.map (P₂.chainComplexπ R) (P₃.chainComplexπ R)).f i
-      id := by
-        rw [Category.assoc, Category.assoc, ← HomologicalComplex.comp_f, hπ,
-          HomologicalComplex.comp_f, IsSplitEpi.id_assoc, IsSplitEpi.id] }
-
-variable (k M)
 
 /-- The relative cochain Mayer–Vietoris sequence
 `Hom(C(P₄), M) ⟶ Hom(C(P₂), M) ⊞ Hom(C(P₃), M) ⟶ Hom(C(P₁), M)` of a commutative square of pairs
@@ -436,13 +355,6 @@ lemma inr_singularCohomologyPairMayerVietorisFromBiprod (n : ℕ) :
 
 /-! #### Comparison with the square of singular pairs -/
 
-/-- The map induced on relative singular cohomology by a map of topological pairs is the one
-induced by the associated map of singular pairs. -/
-private lemma singularCohomologyMap_eq {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ) :
-    TopPair.singularCohomologyMap (R := R) (k := k) (M := M) f n =
-      HomologicalComplex.homologyMap (SSetPair.cochainComplexMap (TopPair.toSSetPair.map f)) n :=
-  congrArg (HomologicalComplex.homologyMap · n) (TopPair.singularCochainComplexMap_eq f)
-
 /-- The cohomology of `TopCat.smallSingularPair hCA hDB` is identified with that of
 `(A ∪ B, C ∪ D)` by `TopCat.smallSingularPairToUnion`. -/
 private lemma isIso_homologyMap_cochainComplexMap_smallSingularPairToUnion
@@ -475,12 +387,12 @@ private lemma homologyMap_smallSingularPairToUnion_comp_mayerVietorisCochainToBi
       ← HomologicalComplex.homologyMap_comp, ← SSetPair.cochainComplexMap_comp,
       toSmallSingularPair_comp_smallSingularPairToUnion _ _ _ _ _ Set.subset_union_left
         Set.subset_union_left,
-      singularCohomologyPairMayerVietorisToBiprod_fst, singularCohomologyMap_eq]
+      singularCohomologyPairMayerVietorisToBiprod_fst, TopPair.singularCohomologyMap_eq]
   · rw [Category.assoc, SSetPair.mayerVietorisCochainToBiprod_snd,
       ← HomologicalComplex.homologyMap_comp, ← SSetPair.cochainComplexMap_comp,
       toSmallSingularPair_comp_smallSingularPairToUnion _ _ _ _ _ Set.subset_union_right
         Set.subset_union_right,
-      singularCohomologyPairMayerVietorisToBiprod_snd, singularCohomologyMap_eq]
+      singularCohomologyPairMayerVietorisToBiprod_snd, TopPair.singularCohomologyMap_eq]
 
 private lemma mayerVietorisCochainFromBiprod_eq (n : ℕ) :
     SSetPair.mayerVietorisCochainFromBiprod R k M
@@ -490,7 +402,7 @@ private lemma mayerVietorisCochainFromBiprod_eq (n : ℕ) :
           (ContinuousMap.inclusion Set.inter_subset_right)
             fun _ hx ↦ Set.inter_subset_right hx)) n =
       singularCohomologyPairMayerVietorisFromBiprod R k M hCA hDB n := by
-  apply biprod.hom_ext' <;> simp [singularCohomologyMap_eq]
+  apply biprod.hom_ext' <;> simp [TopPair.singularCohomologyMap_eq]
 
 /-! #### The long exact sequence -/
 

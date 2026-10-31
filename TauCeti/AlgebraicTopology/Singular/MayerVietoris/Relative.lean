@@ -639,7 +639,8 @@ attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_
 
 /-- The pair formed by the singular simplices of `X` lying in `A` or in `B` and those lying in `C`
 or in `D`. For `A` and `B` open in `A ∪ B` and `C` and `D` open in `C ∪ D`, the small-chain theorem
-identifies its relative chains with those of `(A ∪ B, C ∪ D)`. -/
+shows that its comparison map `TopCat.smallSingularPairToUnion` to the singular pair of
+`(A ∪ B, C ∪ D)` induces an isomorphism on relative homology. -/
 abbrev smallSingularPair : SSetPair.{w} :=
   SSetPair.of (SSet.Subcomplex.homOfLE (smallSingularSubcomplex_mono X
     (U := ![C, D]) (U' := ![A, B]) (Fin.forall_fin_two.2 ⟨hCA, hDB⟩)))

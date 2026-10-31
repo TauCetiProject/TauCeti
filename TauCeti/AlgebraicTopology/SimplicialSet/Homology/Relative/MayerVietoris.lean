@@ -45,6 +45,7 @@ open sets `U ∩ V`, `U`, `V` and of `U` or `V`, the small-chain theorem turns t
 ## Main definitions and results
 
 * `SSetPair.shortExact_mayerVietoris`: the relative Mayer–Vietoris short complex is short exact.
+* `SSetPair.isSplitEpi_mayerVietoris_g_f`: in each degree its last map is a split epimorphism.
 * `SSetPair.mayerVietorisToBiprod`, `SSetPair.mayerVietorisFromBiprod`: the maps
   `Hₙ(P₁) ⟶ Hₙ(P₂) ⊞ Hₙ(P₃)` and `Hₙ(P₂) ⊞ Hₙ(P₃) ⟶ Hₙ(P₄)`.
 * `SSetPair.mayerVietorisδ`: the connecting morphism `Hₙ(P₄) ⟶ Hₘ(P₁)` for `m + 1 = n`.
@@ -139,6 +140,41 @@ theorem shortExact_mayerVietoris (sqL : IsPushout t.left l.left r.left b.left) [
   · exact CokernelCofork.isColimitBiprod (P₂.isColimitCokernelCoforkChainComplex R)
       (P₃.isColimitCokernelCoforkChainComplex R)
   · exact P₄.isColimitCokernelCoforkChainComplex R
+
+/-- In each degree, the last map `C(P₂) ⊞ C(P₃) ⟶ C(P₄)` of the relative Mayer–Vietoris sequence of
+a square of pairs of simplicial sets is a split epimorphism, when the square of ambient simplicial
+sets is a pushout with monomorphic top map. A section is the composite of a section
+`C(P₄) ⟶ C(P₄.right)` of the quotient map from ambient to relative chains, a section of the
+absolute Mayer–Vietoris sequence of the ambient simplicial sets, and the quotient maps to relative
+chains. -/
+lemma isSplitEpi_mayerVietoris_g_f (sqR : IsPushout t.right l.right r.right b.right)
+    [Mono t.right] (i : ℕ) :
+    IsSplitEpi ((biprod.desc (chainComplexMap r R) (chainComplexMap b R)).f i) := by
+  have hamb := (HomologicalComplex.shortExact_iff_degreewise_shortExact _).1
+    (SSet.shortExact_mayerVietoris R sqR) i
+  have : IsSplitEpi
+      ((biprod.desc (SSet.chainComplexMap r.right R) (SSet.chainComplexMap b.right R)).f i) :=
+    hamb.isSplitMono_f_iff_isSplitEpi_g.1
+      (SSet.isSplitMono_biprod_lift_chainComplexMap_f R (i := i))
+  -- The quotient maps to relative chains carry the last map of the absolute sequence to that of
+  -- the relative one.
+  have hπ : biprod.map (P₂.chainComplexπ R) (P₃.chainComplexπ R) ≫
+      biprod.desc (chainComplexMap r R) (chainComplexMap b R) =
+        biprod.desc (SSet.chainComplexMap r.right R) (SSet.chainComplexMap b.right R) ≫
+          P₄.chainComplexπ R := by
+    apply biprod.hom_ext' <;> simp [chainComplexπ_naturality]
+  have : IsSplitEpi ((P₄.chainComplexπ R).f i) :=
+    ((HomologicalComplex.shortExact_iff_degreewise_shortExact _).1
+      (P₄.shortExact_chainComplexShortComplex R) i).isSplitMono_f_iff_isSplitEpi_g.1
+        (inferInstanceAs (IsSplitMono ((SSet.chainComplexMap P₄.hom R).f i)))
+  exact IsSplitEpi.mk'
+    { section_ := section_ ((P₄.chainComplexπ R).f i) ≫
+        section_ ((biprod.desc (SSet.chainComplexMap r.right R)
+          (SSet.chainComplexMap b.right R)).f i) ≫
+        (biprod.map (P₂.chainComplexπ R) (P₃.chainComplexπ R)).f i
+      id := by
+        rw [Category.assoc, Category.assoc, ← HomologicalComplex.comp_f, hπ,
+          HomologicalComplex.comp_f, IsSplitEpi.id_assoc, IsSplitEpi.id] }
 
 /-! ### The long exact sequence -/
 
