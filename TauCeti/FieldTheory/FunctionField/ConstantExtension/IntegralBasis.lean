@@ -111,6 +111,22 @@ theorem constantSpanIntegers_le_iff {N : Submodule k' F'} :
   rw [constantSpanIntegers_def, Submodule.span_le, Set.image_subset_iff]
   rfl
 
+omit [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] in
+@[simp]
+theorem one_mem_constantSpanIntegers : (1 : F') ∈ constantSpanIntegers k' F' P := by
+  simpa using algebraMap_mem_constantSpanIntegers k' F' (one_mem P.integers)
+
+omit [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] in
+variable {P} in
+/-- `𝒪_P · k'` is closed under multiplication. -/
+theorem mul_mem_constantSpanIntegers {x y : F'} (hx : x ∈ constantSpanIntegers k' F' P)
+    (hy : y ∈ constantSpanIntegers k' F' P) : x * y ∈ constantSpanIntegers k' F' P := by
+  have hxy := Submodule.mul_mem_mul hx hy
+  rw [constantSpanIntegers_def, Submodule.span_mul_span] at hxy
+  refine Submodule.span_mono ?_ hxy
+  rintro _ ⟨_, ⟨f, hf, rfl⟩, _, ⟨g, hg, rfl⟩, rfl⟩
+  exact ⟨f * g, mul_mem hf hg, map_mul _ _ _⟩
+
 end ConstantSpan
 
 section FinrankEq
@@ -176,6 +192,15 @@ noncomputable def integralClosureSubmodule : Submodule k' F' where
 theorem mem_integralClosureSubmodule_iff {z : F'} :
     z ∈ integralClosureSubmodule k' F' P ↔ IsIntegral P.integers z :=
   (Iff.rfl)
+
+theorem one_mem_integralClosureSubmodule : (1 : F') ∈ integralClosureSubmodule k' F' P :=
+  isIntegral_one
+
+variable {P} in
+/-- `𝒪'_P` is closed under multiplication. -/
+theorem mul_mem_integralClosureSubmodule {x y : F'} (hx : x ∈ integralClosureSubmodule k' F' P)
+    (hy : y ∈ integralClosureSubmodule k' F' P) : x * y ∈ integralClosureSubmodule k' F' P :=
+  IsIntegral.mul hx hy
 
 /-- `𝒪'_P` consists of the functions regular at every place of `F' / k'` over `P`. -/
 theorem mem_integralClosureSubmodule_iff_forall_restrict_eq [Algebra.IsIntegral F F']
