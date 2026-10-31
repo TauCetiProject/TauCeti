@@ -68,7 +68,7 @@ invariant `w`, so cohomologous cocycles have the same norm.
   chain endomorphisms of the total resolution over the identity of the coefficients.
 * `TauCeti.smoothTensorInducedDiagonalClass_eq_of_sub_eq_d`: cohomologous cocycles have the same
   norm, when `2` generates a maximal ideal of the coefficient ring.
-* `TauCeti.smoothTensorInducedDiagonalClass_eq_degreeZeroClass`: in degree zero the norm of a
+* `Subgroup.smoothTensorInducedDiagonalClass_eq_degreeZeroClass`: in degree zero the norm of a
   cocycle with value `a` is the degree-zero class of the invariant tensor `a ⊗ ⋯ ⊗ a`.
 
 ## References
@@ -594,7 +594,7 @@ private theorem smoothTensorInducedGradedResolutionContraction_proj_tprod_const
 omit [Fintype (G ⧸ U)] in
 /-- The diagonal tensor `a ⊗ ⋯ ⊗ a` of the value `a = z(1)` of a `U`-invariant degree-zero cocycle
 `z` of the total resolution is `G`-invariant. -/
-theorem smoothTensorInduced_ρ_tprod_gradedResolutionProjection
+theorem _root_.Subgroup.smoothTensorInduced_ρ_tprod_gradedResolutionProjection
     {z : A.obj.gradedResolutionModule} (hz : z ∈ A.obj.gradedResolutionPiece (0 : ℕ))
     (hinv : ∀ u, A.obj.gradedResolutionTopRep.ρ u z = z)
     (hdz : A.obj.gradedResolutionDifferential z = 0) (g : G) :
@@ -625,14 +625,15 @@ theorem smoothTensorInduced_ρ_tprod_gradedResolutionProjection
 /-- **The norm of a degree-zero cocycle**: in degree zero the class of the diagonal tensor of a
 cocycle `z` is the degree-zero class of the diagonal tensor `a ⊗ ⋯ ⊗ a` of its value
 `a = z(1) ∈ A`, read through `H⁰(G, Ind⊗ A) = (Ind⊗ A)^G`. -/
-theorem smoothTensorInducedDiagonalClass_eq_degreeZeroClass (hA : ∀ a : A.obj.V, a + a = 0)
-    (z : A.obj.gradedResolutionModule) (hz : z ∈ A.obj.gradedResolutionPiece (0 : ℕ))
+theorem _root_.Subgroup.smoothTensorInducedDiagonalClass_eq_degreeZeroClass
+    (hA : ∀ a : A.obj.V, a + a = 0) (z : A.obj.gradedResolutionModule)
+    (hz : z ∈ A.obj.gradedResolutionPiece (0 : ℕ))
     (hinv : ∀ u, A.obj.gradedResolutionTopRep.ρ u z = z)
     (hdz : A.obj.gradedResolutionDifferential z = 0) :
     smoothTensorInducedDiagonalClass U hU s A hA z hz hinv hdz =
       ContinuousCohomology.degreeZeroClass _
         (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ A.obj.gradedResolutionProjection z)
-        (smoothTensorInduced_ρ_tprod_gradedResolutionProjection U hU s A hz hinv hdz) := by
+        (U.smoothTensorInduced_ρ_tprod_gradedResolutionProjection hU s A hz hinv hdz) := by
   let : LinearOrder (G ⧸ U) := LinearOrder.lift' _ (Fintype.equivFin (G ⧸ U)).injective
   rw [smoothTensorInducedDiagonalClass_eq]
   refine (TopRep.ResolutionContraction.gradedCohomologyClass_eq_degreeZeroClass.{u, v, max u w}

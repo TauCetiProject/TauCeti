@@ -158,7 +158,7 @@ theorem tensorNormCocycleClass_eq_degreeZeroClass
   have ha : (trivialF2 U.toSubgroup).gradedResolutionProjection
       ((trivialF2 U.toSubgroup).cochainToGradedResolution 0 z) = z.1 1 := by
     rw [TopRep.cochainToGradedResolution_apply, TopRep.gradedResolutionProjection_lof_zero]
-  rw [tensorNormCocycleClass_def, smoothTensorInducedDiagonalClass_eq_degreeZeroClass,
+  rw [tensorNormCocycleClass_def, Subgroup.smoothTensorInducedDiagonalClass_eq_degreeZeroClass,
     ContinuousCohomology.coeffMap_def]
   refine (ContinuousCohomology.map_degreeZeroClass (ContinuousMonoidHom.id G) _ _ _).trans ?_
   congr 1
