@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Chevalley
 
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+
 /-!
 # The root system of the pinned rational Lie algebra
 
@@ -175,11 +177,9 @@ theorem coe_rootEquiv_eq_iff {α : Fin t.numRoots}
 which is the index of `-α` in the pinned datum, is the negative of the root indexed by `α`. -/
 @[simp] theorem rootEquiv_reflectionPerm_self (α : Fin t.numRoots) :
     t.rootEquiv ht ((t.simplyConnectedRootDatum ht).reflectionPerm α α) = -t.rootEquiv ht α := by
-  apply Subtype.ext
-  rw [val_neg_root, coe_rootEquiv_eq_iff]
-  intro i
-  rw [Weight.coe_neg, Pi.neg_apply, rootEquiv_apply_cartanBasis, RootPairing.root_reflectionPerm,
-    RootPairing.reflection_apply_self, Pi.neg_apply, Int.cast_neg]
+  rw [← reflectionPerm_rationalRootSystem]
+  exact ((t.rationalRootSystemEquiv ht).toHom.indexEquiv_reflectionPerm α α).trans
+    (rootSystem_reflectionPerm_self_eq_neg _)
 
 /-- The numbered raising generator `eᵢ` is a root vector for the enumerated simple root
 `αᵢ`. -/
