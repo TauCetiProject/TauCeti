@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
 public import Mathlib.GroupTheory.Index
 
