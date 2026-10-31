@@ -18,9 +18,10 @@ K₁ ↪ Q₀ ↠ M,   K₂ ↪ Q₁ ↠ K₁,   …,   Kₙ ↪ Qₙ₋₁ ↠ 
 ```
 
 of an `R`-module `M` is *minimal* if every syzygy `Kᵢ₊₁` lies in `𝔪 • Qᵢ`. In the spliced complex
-`0 → Kₙ → Qₙ₋₁ → ⋯ → Q₀ → M → 0` the image of each differential is a syzygy (the maps `Qᵢ ↠ Kᵢ`
-are surjective), so minimality says exactly that every differential has image in `𝔪` times its
-target, i.e. that the differentials vanish after applying `k ⊗ -`. This is the form in which
+`0 → Kₙ → Qₙ₋₁ → ⋯ → Q₀ → M → 0` the image of each differential other than the augmentation
+`Q₀ ↠ M` is a syzygy (the maps `Qᵢ ↠ Kᵢ` are surjective), so minimality says exactly that every
+differential of the unaugmented complex `0 → Kₙ → Qₙ₋₁ → ⋯ → Q₀ → 0` has image in `𝔪` times its
+target, i.e. that these differentials vanish after applying `k ⊗ -`. This is the form in which
 minimality enters the proof that the projective dimension of `k` is at least the embedding
 dimension `dim_k 𝔪/𝔪²` (Stacks 00OA): a comparison map from a Koszul complex into a minimal
 resolution of `k` stays injective after applying `k ⊗ -`.
@@ -70,7 +71,8 @@ variable {R : Type u} [CommRing R] [IsLocalRing R]
 /-- A finite resolution `K₁ ↪ Q₀ ↠ X, K₂ ↪ Q₁ ↠ K₁, …` of modules over a local ring `(R, 𝔪)` is
 *minimal* if every syzygy lies in `𝔪` times the following resolving term: the image of each
 inclusion `Kᵢ₊₁ ↪ Qᵢ` is contained in `𝔪 • Qᵢ`. Equivalently, every differential of the spliced
-complex has image in `𝔪` times its target. -/
+unaugmented complex `0 → Kₙ → Qₙ₋₁ → ⋯ → Q₀` has image in `𝔪` times its target; the augmentation
+`Q₀ ↠ X` is excluded, being surjective. -/
 inductive IsMinimal : ∀ {X : ModuleCat.{v} R}, FiniteResolution E P X → Prop
   /-- A resolution of length zero is minimal. -/
   | base {X : ModuleCat.{v} R} (hX : P X) : IsMinimal (.base hX)
