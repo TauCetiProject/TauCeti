@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.Morse.Generic
 -- Private: used only inside proofs.
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.TangentGraphChart
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.MeasureTheory.Measure.Haar.Unique
@@ -29,7 +30,7 @@ exhaustions used to build CW models of affine varieties and Stein manifolds.
 The proof is local. Near a point `u₀`, let `R` be the image of the differential of `F` at `u₀`.
 The orthogonal projection of `F` to `R` is a local diffeomorphism, so in its coordinate `w ∈ R`
 the map becomes the graph `F = w + h(w)` with `h(w) ∈ Rᗮ`
-(`TauCeti.ContDiffOn.exists_openPartialHomeomorph_starProjection`). Writing `a = b + c` with
+(`ContDiffOn.exists_openPartialHomeomorph_starProjection`). Writing `a = b + c` with
 `b ∈ R` and `c ∈ Rᗮ`, Pythagoras (`Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal`) gives
 
 `‖F - a‖² = (‖w‖² + ‖h(w) - c‖²) - 2⟪b, w⟫ + ‖b‖²`.
@@ -98,7 +99,7 @@ private theorem exists_isOpen_ae_hasNondegenerateCriticalPointsOn_norm_sq_sub_co
     ∃ N, IsOpen N ∧ u₀ ∈ N ∧
       ∀ᵐ a ∂μ, HasNondegenerateCriticalPointsOn (fun u ↦ ‖F u - a‖ ^ 2) N := by
   obtain ⟨e₀, Φ, hu₀Φ, hΦU, hΦe, hΦd, hsymm⟩ :=
-    ContDiffOn.exists_openPartialHomeomorph_starProjection hF hU one_le_two hu₀ hinj
+    hF.exists_openPartialHomeomorph_starProjection hU one_le_two hu₀ hinj
   let R : Submodule ℝ V := LinearMap.range (fderiv ℝ F u₀ : E →ₗ[ℝ] V)
   -- In the coordinate `w`, the squared distance from `b + c` is the family `f c` perturbed by
   -- the linear form `2⟪b, e₀ ·⟫`, up to the constant `‖b‖²`.

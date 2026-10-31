@@ -13,6 +13,9 @@ public import TauCeti.Topology.Algebra.Module.BilinearForm
 -- inside the proof of `TauCeti.IsNondegenerateCriticalPoint.neg`.
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Add
+-- Private: invariance of criticality is used only inside the proof of
+-- `TauCeti.isNondegenerateCriticalPoint_comp_iff`.
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 
 /-!
 # Nondegenerate critical points
@@ -87,8 +90,6 @@ the notion be read off in any chart.
   `TauCeti.IsNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_fderiv_sq`: near a
   nondegenerate critical point the differential is bounded below by a multiple of the distance,
   and the Morse form of Łojasiewicz's inequality holds.
-* `TauCeti.fderiv_comp_eq_zero_iff_of_isInvertible`: criticality is invariant under a change of
-  coordinates with invertible differential.
 * `TauCeti.isNondegenerateCriticalPoint_comp_iff` and `TauCeti.IsNondegenerateCriticalPoint.comp`:
   nondegeneracy is invariant under a change of coordinates with invertible differential.
 * `TauCeti.IsNondegenerateCriticalPoint.neg` and `TauCeti.isNondegenerateCriticalPoint_neg`:
@@ -232,22 +233,9 @@ At a critical point the first-order term of the chain rule drops out, so the sec
 transforms as a bilinear form; this is `TauCeti.fderiv_fderiv_comp_apply_of_fderiv_eq_zero`, proved
 in `TauCeti.Analysis.Calculus.SecondDerivative` because it involves no nondegeneracy. It is why the
 Hessian at a critical point, and hence nondegeneracy, does not depend on the choice of chart.
+That criticality itself does not depend on it is `TauCeti.fderiv_comp_eq_zero_iff_of_isInvertible`
+in `TauCeti.Analysis.Calculus.FDeriv.Comp`.
 -/
-
-/-- **Criticality does not depend on the coordinates.** If `f` is differentiable at `φ b`, `φ` is
-differentiable at `b`, and the differential of `φ` at `b` is invertible, then `b` is a critical
-point of `f ∘ φ` exactly when `φ b` is a critical point of `f`. -/
-theorem fderiv_comp_eq_zero_iff_of_isInvertible {φ : F → E} {b : F}
-    (hf : DifferentiableAt ℝ f (φ b)) (hφ : DifferentiableAt ℝ φ b)
-    (hinv : (fderiv ℝ φ b).IsInvertible) :
-    fderiv ℝ (f ∘ φ) b = 0 ↔ fderiv ℝ f (φ b) = 0 := by
-  obtain ⟨e, he⟩ := hinv
-  -- The differential of `f ∘ φ` at `b` is that of `f` at `φ b` precomposed with the equivalence
-  -- `e`, so one vanishes exactly when the other does.
-  rw [fderiv_comp (x := b) hf hφ, ← he]
-  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]; ext u; simp⟩
-  ext u
-  simpa using congrArg (fun L : F →L[ℝ] ℝ ↦ L (e.symm u)) h
 
 /-- **Nondegeneracy of a critical point does not depend on the coordinates.** If `f` is `C²` at
 `φ b`, `φ` is `C²` at `b`, and the differential of `φ` at `b` is invertible, then `f ∘ φ` has a

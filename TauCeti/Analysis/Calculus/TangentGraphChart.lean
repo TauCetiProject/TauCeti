@@ -24,7 +24,7 @@ inner product space used to perturb distance functions along immersed submanifol
 
 ## Main results
 
-* `TauCeti.ContDiffOn.exists_openPartialHomeomorph_starProjection`: a chart `Φ` of `E` around
+* `ContDiffOn.exists_openPartialHomeomorph_starProjection`: a chart `Φ` of `E` around
   `u₀`, `C^n` with invertible differential on its source and with `C^n` inverse, in which the
   orthogonal projection of `F` onto its tangent space at `u₀` is a fixed linear isomorphism.
 
@@ -37,8 +37,6 @@ inner product space used to perturb distance functions along immersed submanifol
 public section
 
 open Function
-
-namespace TauCeti
 
 variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] {F : E → V} {U : Set E} {n : WithTop ℕ∞}
@@ -81,7 +79,8 @@ theorem ContDiffOn.exists_openPartialHomeomorph_starProjection (hF : ContDiffOn 
     exact (e₀.symm_apply_apply v).symm
   -- The inverse function theorem makes `σ` a chart near `u₀` with source inside `U`; a chart
   -- that is differentiable with differentiable inverse has invertible differential.
-  obtain ⟨Φ, hΦ, hu₀Φ, hΦU, hsymm⟩ := ContDiffOn.exists_openPartialHomeomorph hσC hU hu₀ hn hσ₀
+  obtain ⟨Φ, hΦ, hu₀Φ, hΦU, hsymm⟩ :=
+    TauCeti.ContDiffOn.exists_openPartialHomeomorph hσC hU hu₀ hn hσ₀
   have hsymm' : ∀ w ∈ Φ.target, ContDiffAt ℝ n Φ.symm w := fun w hw ↦
     hsymm.contDiffAt (Φ.open_target.mem_nhds hw)
   have hΦC : ∀ u ∈ Φ.source, ContDiffAt ℝ n Φ u := fun u hu ↦
@@ -91,5 +90,3 @@ theorem ContDiffOn.exists_openPartialHomeomorph_starProjection (hF : ContDiffOn 
     exact congrArg Subtype.val (e₀.apply_symm_apply _)
   · exact Φ.isInvertible_fderiv hu ((hΦC u hu).differentiableAt hn0)
       ((hsymm' _ (Φ.map_source hu)).differentiableAt hn0)
-
-end TauCeti
