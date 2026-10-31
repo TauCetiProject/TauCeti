@@ -27,13 +27,14 @@ the closures are taken in the `K`-points `Matrix n n K`, with the Zariski closur
 through Mathlib's `MvPolynomial.zeroLocus` and `MvPolynomial.vanishingIdeal`.
 
 Conversely, the elementary degenerations of Jordan types occur in orbit closures. Let `Y` be a
-matrix whose linear map has a Jordan-chain basis `c`, and let `i ≠ j` be two of its chains. With
-`M` the matrix of `c.joinEnds i j`, which links the end of chain `i` to the end of chain `j`, the
-matrices `Y + t • M` with `t ≠ 0` all lie in the conjugacy class of `Y + M`, so `Y` lies in its
-closure. For every `k` the rank of `(Y + M) ^ k` is the rank of `Y ^ k` plus one when
-`len j ≤ k ≤ len i`, and equals it otherwise. When `len j ≤ len i` the Jordan type of `Y + M`
-arises from that of `Y` by moving one box from the part `len j` to the part `len i`. Such moves
-generate the dominance order on partitions.
+matrix whose linear map has a Jordan-chain basis `c`, and let `i ≠ j` be two of its chains. With `M`
+the matrix of `c.joinEnds i j`, which links the end of chain `i` to the end of chain `j`, the
+matrices `Y + t • M` with `t ≠ 0` all lie in the conjugacy class of `Y + M`. So `Y` lies in the
+closure of that class in the usual topology over a topological field in which `0` is not isolated,
+such as `ℂ`, and in its Zariski closure over any infinite field. For every `k` the rank of
+`(Y + M) ^ k` is the rank of `Y ^ k` plus one when `len j ≤ k ≤ len i`, and equals it otherwise.
+When `len j ≤ len i` the Jordan type of `Y + M` arises from that of `Y` by moving one box from the
+part `len j` to the part `len i`. Such moves generate the dominance order on partitions.
 
 ## Main results
 
@@ -41,8 +42,9 @@ generate the dominance order on partitions.
   `Matrix.rank_pow_le_of_mem_closure_orbit`: on the Zariski closure, and on the topological
   closure, of the conjugacy class of `X`, the rank of every power is at most that of `X`.
 * `Matrix.mem_closure_orbit_add_toMatrix'_joinEnds` and
-  `Matrix.mem_zeroLocus_vanishingIdeal_orbit_add_toMatrix'_joinEnds`: `Y` lies in the closure, and
-  over an infinite field in the Zariski closure, of the conjugacy class of `Y + M`.
+  `Matrix.mem_zeroLocus_vanishingIdeal_orbit_add_toMatrix'_joinEnds`: `Y` lies in the closure of
+  the conjugacy class of `Y + M` over a topological field in which `0` is not isolated, and in its
+  Zariski closure over an infinite field.
 * `Matrix.rank_pow_add_smul_toMatrix'_joinEnds`: the ranks of the powers of `Y + t • M`.
 
 ## References

@@ -18,8 +18,9 @@ a one-variable polynomial with infinitely many roots, so it also vanishes at `t 
 
 This is the algebraic form of a degeneration argument: a point that is the limit at `t = 0` of a
 family `x + t • v` lying in `S` for `t ≠ 0` is in the Zariski closure of `S`, over any infinite
-field. Over a topological field the corresponding statement for the usual closure is the
-continuity of `t ↦ x + t • v`.
+field. The analogue for the usual closure needs a topological field in which `0` is not isolated:
+then `x` is the limit of the points `x + t • v` as `t → 0` with `t ≠ 0`, by continuity of
+`t ↦ x + t • v`. Over a discrete field, for instance, it fails.
 
 ## Main results
 

@@ -49,13 +49,15 @@ the kernel-dimension formulas only need a division ring.
 ## Elementary degenerations
 
 For chains `i ≠ j` of lengths `m = len i` and `r = len j`, adding `t • joinEnds i j` to `f` links
-the end of chain `i` to the end of chain `j`. When `r ≤ m` and `t ≠ 0` the result has Jordan
-chains of lengths `m + 1` and `r - 1` in place of `m` and `r` (the second one disappearing when
-`r = 1`), as the rank formula shows, and at `t = 0` it is `f` again. So `f` is a limit of
-conjugates of an endomorphism whose Jordan type is obtained from that of `f` by moving one box
-from a shorter part to a longer one. These moves generate the dominance order on partitions, and
-this family is the degeneration behind the description of nilpotent orbit closures by dominance.
-When `m < r` the rank formula shows that the perturbation does not change the Jordan type.
+the end of chain `i` to the end of chain `j`. When `r ≤ m` and `t ≠ 0` the result has Jordan chains
+of lengths `m + 1` and `r - 1` in place of `m` and `r` (the second one disappearing when `r = 1`),
+as the rank formula shows, and at `t = 0` it is `f` again. So, over a topological field in which `0`
+is not isolated, `f` is a limit of conjugates of an endomorphism whose Jordan type is obtained from
+that of `f` by moving one box from a shorter part to a longer one. These moves generate the
+dominance order on partitions, and this family is the degeneration behind the description of
+nilpotent orbit closures by dominance. Over an infinite field the same family puts `f` in the
+Zariski closure of that conjugacy class. When `m < r` the rank formula shows that the perturbation
+does not change the Jordan type.
 
 ## Implementation notes
 
@@ -486,6 +488,7 @@ variable [Semiring K] [AddCommMonoid V] [Module K V] {f : End K V} {ι : Type*}
 
 /-- The coordinate of depth `b` in a Jordan-chain basis vanishes on the range of `f ^ k` when
 `b < k`. -/
+@[simp]
 theorem basis_coord_comp_pow_eq_zero (c : f.JordanChainBasis ι) {p : Σ i, Fin (c.len i)}
     {k : ℕ} (hk : (p.2 : ℕ) < k) : c.basis.coord p ∘ₗ f ^ k = 0 := by
   refine c.basis.ext fun q => ?_
@@ -551,6 +554,7 @@ theorem mul_joinEnds (c : f.JordanChainBasis ι) (i j : ι) : f * c.joinEnds i j
     Nat.sub_add_cancel (c.len_pos j), c.pow_len_apply_head, smul_zero, LinearMap.zero_apply]
 
 /-- For distinct chains `i ≠ j`, the endomorphism `joinEnds i j` squares to zero. -/
+@[simp]
 theorem joinEnds_mul_joinEnds (c : f.JordanChainBasis ι) {i j : ι} (hij : i ≠ j) :
     c.joinEnds i j * c.joinEnds i j = 0 := by
   ext x
@@ -561,6 +565,7 @@ theorem joinEnds_mul_joinEnds (c : f.JordanChainBasis ι) {i j : ι} (hij : i �
   exact hij (congrArg Sigma.fst h)
 
 /-- The endomorphism `joinEnds i j` vanishes on the range of `f ^ k` once `len i ≤ k`. -/
+@[simp]
 theorem joinEnds_mul_pow_of_le (c : f.JordanChainBasis ι) (i j : ι) {k : ℕ} (hk : c.len i ≤ k) :
     c.joinEnds i j * f ^ k = 0 := by
   ext x
