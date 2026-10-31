@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Reduction
 public import TauCeti.RingTheory.Affinoid.PowerBounded
+import TauCeti.RingTheory.Affinoid.IntegralEquation
 import TauCeti.RingTheory.Affinoid.ValueGroup
 
 /-!
@@ -22,9 +23,14 @@ The forward implication uses the value-group exponent to rescale a power of an e
 supremum seminorm one. This criterion does not require reducedness of either algebra; it is
 not a claim of injectivity on the original algebras.
 
+An integral homomorphism induces an integral map on canonical reductions. A power-bounded `f`
+satisfies an integral equation whose coefficients have supremum seminorm at most `|f|sup ^ k`
+(`TauCeti.IsAffinoidAlgebra.exists_monic_aeval_eq_zero_supSeminorm_coeff_le`), so at most one,
+and the reduction of that equation is an integral equation for the residue class of `f`.
+
 ## References
 
-* Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §6.3.1.
+* Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §§6.3.1 and 6.3.5.
 -/
 
 public section
@@ -159,5 +165,44 @@ theorem injective_reductionMap_iff_supSeminorm_eq (f : A →ₐ[K] B)
     exact (h ⟨u, hu⟩ hnorm).ne hc
   · intro h a ha
     rwa [h] at ha
+
+/-- An integral homomorphism of affinoid algebras restricts to an integral map of power-bounded
+subrings: every power-bounded element of `B` is integral over the image of `A°`. -/
+theorem isIntegral_powerBoundedMap (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K A)
+    (hB : IsAffinoidAlgebra K B) (hf : f.toRingHom.IsIntegral) :
+    (f.powerBoundedMap hA hB).IsIntegral := by
+  intro b
+  let := f.toRingHom.toAlgebra
+  have : IsScalarTower K A B := IsScalarTower.of_algebraMap_eq fun c ↦ (f.commutes c).symm
+  have : Algebra.IsIntegral A B := ⟨hf⟩
+  -- An integral equation of `b` over `A` whose coefficients have `|·|sup ≤ 1`.
+  obtain ⟨p, hp, hpb, hc⟩ := hA.exists_monic_aeval_eq_zero_supSeminorm_coeff_le hB (b : B)
+  have hb : supSeminorm K (b : B) ≤ 1 :=
+    hB.isPowerBounded_iff_supSeminorm_le_one.mp (mem_powerBoundedSubring.mp b.2)
+  have hlifts : p ∈ Polynomial.lifts (powerBoundedSubring A).subtype :=
+    (Polynomial.lifts_iff_coeff_lifts p).mpr fun i ↦
+      ⟨⟨p.coeff i, mem_powerBoundedSubring.mpr <| hA.isPowerBounded_iff_supSeminorm_le_one.mpr <|
+        (hc i).trans (pow_le_one₀ (supSeminorm_nonneg _) hb)⟩, rfl⟩
+  obtain ⟨q, hqp, -, hq⟩ := Polynomial.lifts_and_natDegree_eq_and_monic hlifts hp
+  refine ⟨q, hq, Subtype.val_injective ?_⟩
+  have hcomp : (powerBoundedSubring B).subtype.comp (f.powerBoundedMap hA hB) =
+      f.toRingHom.comp (powerBoundedSubring A).subtype := (rfl)
+  rw [← Subring.coe_subtype, Polynomial.hom_eval₂, hcomp, ← Polynomial.eval₂_map, hqp,
+    map_zero]
+  exact hpb
+
+/-- **Integral homomorphisms are integral on canonical reductions.** An integral homomorphism of
+affinoid algebras induces an integral map `Ã → B̃` of canonical reductions. -/
+theorem isIntegral_reductionMap (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K A)
+    (hB : IsAffinoidAlgebra K B) (hf : f.toRingHom.IsIntegral) :
+    (f.reductionMap hA hB).IsIntegral := by
+  have hcomp : (f.reductionMap hA hB).comp (Ideal.Quotient.mk _) =
+      (Ideal.Quotient.mk _).comp (f.powerBoundedMap hA hB) :=
+    RingHom.ext (f.reductionMap_mk hA hB)
+  have h := (f.isIntegral_powerBoundedMap hA hB hf).trans _
+    (Ideal.Quotient.mk (topologicallyNilpotentIdeal B))
+    (RingHom.isIntegral_of_surjective _ Ideal.Quotient.mk_surjective)
+  rw [← hcomp] at h
+  exact RingHom.IsIntegral.tower_top _ _ h
 
 end AlgHom
