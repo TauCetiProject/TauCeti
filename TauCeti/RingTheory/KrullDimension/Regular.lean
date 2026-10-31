@@ -16,7 +16,8 @@ minimal prime gives `dim (R ⧸ (x)) + 1 = dim R`. This is the ring form of Math
 `Module.supportDim_quotSMulTop_succ_eq_of_notMem_minimalPrimes_of_mem_jacobson`. Applied to a
 two-dimensional Noetherian local ring, it says that dividing out a non-zero-divisor of `𝔪`
 leaves a curve, a ring of dimension one, and in a local domain, where the only minimal prime is
-`0`, that applies to every nonzero element of `𝔪`.
+`0`, that applies to every nonzero element of `𝔪`. Conversely, in a local ring an element with
+`dim (R ⧸ (x)) + 1 = dim R` lies in `𝔪`.
 
 Over a Noetherian ring, each element of the Jacobson radical of the annihilator of a finite
 module lowers the dimension of its support by at most one, so `dim M ≤ dim M ⧸ (r₁, …, rₙ) M + n`
@@ -67,6 +68,17 @@ theorem ringKrullDim_quotient_span_singleton_eq_one {R : Type*} [CommRing R] [Is
       (Module.Flat.isSMulRegular_of_nonZeroDivisors hfnd) hf
   rw [hd, ← Nat.cast_two, Nat.cast_succ, ENat.WithBot.add_one_cancel] at hkey
   exact hkey
+
+/-- In a local ring, an element `x` with `dim R ⧸ (x) + 1 = dim R` lies in the maximal ideal:
+otherwise `R ⧸ (x)` is the zero ring, of dimension `⊥`. -/
+theorem mem_maximalIdeal_of_ringKrullDim_quotient_span_singleton_add_one_eq {R : Type*}
+    [CommRing R] [IsLocalRing R] {x : R} (hx : ringKrullDim (R ⧸ span {x}) + 1 = ringKrullDim R) :
+    x ∈ maximalIdeal R := by
+  by_contra hxm
+  have : Subsingleton (R ⧸ span {x}) :=
+    Ideal.Quotient.subsingleton_iff.mpr (span_singleton_eq_top.mpr (by simpa using hxm))
+  rw [ringKrullDim_eq_bot_of_subsingleton, WithBot.bot_add] at hx
+  exact not_subsingleton R (ringKrullDim_eq_bot_iff_subsingleton.mp hx.symm)
 
 end TauCeti
 

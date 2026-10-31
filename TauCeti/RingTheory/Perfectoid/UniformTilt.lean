@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Perfection
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.RingTheory.Huber.Uniform
 import Mathlib.Algebra.CharP.Lemmas
+import Mathlib.LinearAlgebra.SModEq.Pow
 
 /-!
 # The tilt of a complete uniform Tate ring
@@ -59,6 +60,8 @@ this sense have the same limit.
 * `TauCeti.Perfectoid.uniformTilt.coeff_add`: the limit formula for the coordinates of a sum.
 * `TauCeti.Perfectoid.uniformTilt.coeff_add_sub_mem`: for `x, y` with power-bounded zeroth
   coordinates, `(x + y)⁽ⁱ⁾ - x⁽ⁱ⁾ - y⁽ⁱ⁾ ∈ p • B°`.
+* `TauCeti.Perfectoid.uniformTilt.coeff_add_sub_mem_of_forall_mem`: for a closed subring
+  `A ⊆ B°` and `x, y` with all coordinates in `A`, `(x + y)⁽ⁱ⁾ - x⁽ⁱ⁾ - y⁽ⁱ⁾ ∈ p • A`.
 * `TauCeti.Perfectoid.uniformTilt.coeff_add_of_charP`: in characteristic `p` the addition is
   coordinatewise.
 * `TauCeti.Perfectoid.uniformTilt.perfectRing` and `TauCeti.Perfectoid.uniformTilt.charP`: the tilt
@@ -629,6 +632,53 @@ theorem coeff_add_sub_mem {x y : uniformTilt p B} (hx : coeff p B 0 x ∈ powerB
   rw [coeff_add_eq]
   simp only [coeff_apply]
   linear_combination he
+
+/-- **The coordinates are additive modulo `p` on a closed subring of `B°`**: if all coordinates of
+`x` and `y` lie in a closed subring `A ⊆ B°`, then `(x + y)⁽ⁱ⁾ - x⁽ⁱ⁾ - y⁽ⁱ⁾ ∈ p • A`. -/
+theorem coeff_add_sub_mem_of_forall_mem {A : Subring B} (hA : IsClosed (A : Set B))
+    (hAB : A ≤ powerBoundedSubring B) {x y : uniformTilt p B} (hx : ∀ n, coeff p B n x ∈ A)
+    (hy : ∀ n, coeff p B n y ∈ A) (i : ℕ) :
+    coeff p B i (x + y) - coeff p B i x - coeff p B i y ∈ (p : B) • (A : Set B) := by
+  set s : ℕ → B := fun m ↦ (coeff p B (i + m) x + coeff p B (i + m) y) ^ p ^ m with hs
+  -- consecutive terms of the defining sequence differ by `p ^ (m + 1) * d m` with `d m ∈ A`:
+  -- in `A`, `(a + b) ^ p ≡ a ^ p + b ^ p` modulo `p`, hence `(a + b) ^ p ^ (m + 1)` and
+  -- `(a ^ p + b ^ p) ^ p ^ m` are congruent modulo `p ^ (m + 1)`
+  have hd : ∀ m, ∃ d : A, s (m + 1) - s m = (p : B) ^ (m + 1) * d := fun m ↦ by
+    set a : A := ⟨_, hx (i + m + 1)⟩
+    set b : A := ⟨_, hy (i + m + 1)⟩
+    obtain ⟨r, hr⟩ := exists_add_pow_prime_eq hp.out a b
+    have hmod : (a + b) ^ p ≡ a ^ p + b ^ p [SMOD Ideal.span {(p : A)}] := by
+      rw [SModEq.sub_mem, hr, Ideal.mem_span_singleton]
+      exact ⟨a * b * r, by ring⟩
+    have h := SModEq.pow_pow_add_one (Ideal.subset_span rfl) hmod m
+    rw [SModEq.sub_mem, Ideal.span_singleton_pow, Ideal.mem_span_singleton, ← pow_mul,
+      ← pow_succ'] at h
+    obtain ⟨d, hd⟩ := h
+    refine ⟨d, ?_⟩
+    simpa [hs, a, b, ← add_assoc] using congrArg Subtype.val hd
+  choose d hd using hd
+  set f : ℕ → B := fun m ↦ (p : B) ^ m * d m with hf_def
+  have hf : ∀ m, f m ∈ A := fun m ↦ mul_mem (pow_mem (natCast_mem _ p) m) (d m).2
+  have hfs : Summable f := NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <| by
+    rw [Nat.cofinite_eq_atTop]
+    exact IsUniform.isBounded_powerBoundedSubring.tendsto_mul hpn.out
+      (Eventually.of_forall fun m ↦ hAB (d m).2)
+  -- telescoping: `s m = s 0 + p * ∑_{j < m} f j`
+  have htel : ∀ m, s m = s 0 + p * ∑ j ∈ Finset.range m, f j := fun m ↦ by
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      rw [Finset.sum_range_succ]
+      simp only [hf_def]
+      linear_combination hd m + ih
+  have hlim : coeff p B i (x + y) = s 0 + p * ∑' m, f m :=
+    tendsto_nhds_unique (coeff_add x y i) <| (tendsto_const_nhds.add
+      (hfs.hasSum.tendsto_sum_nat.const_mul _)).congr fun m ↦ (htel m).symm
+  refine Set.mem_smul_set.mpr ⟨∑' m, f m, hA.mem_of_tendsto hfs.hasSum.tendsto_sum_nat
+    (Eventually.of_forall fun n ↦ A.sum_mem fun m _ ↦ hf m), ?_⟩
+  rw [smul_eq_mul, hlim]
+  simp only [hs, add_zero, pow_zero, pow_one]
+  ring
 
 /-- **In characteristic `p` the addition is coordinatewise.** -/
 @[simp]

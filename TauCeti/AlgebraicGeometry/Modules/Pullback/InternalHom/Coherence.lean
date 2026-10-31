@@ -20,6 +20,13 @@ If the comparison along `f` is invertible, the composition criterion identifies 
 along `f ≫ g` with invertibility of the pullback along `f` of the comparison along `g`. This
 allows invertibility to be checked on open covers.
 
+Composed with the identification `f^* 𝒪_Y ≅ 𝒪_X`, the comparison at the structure sheaf is the
+base-change map `f^* 𝓗om(M, 𝒪_Y) ⟶ 𝓗om(f^* M, 𝒪_X)` of linear functionals. It is compatible with
+composites and with replacing `f` by an equal morphism, and it carries the pullback of evaluation
+at a global section `s` of `M` to evaluation at the pulled-back section of `f^* M`. These are the
+inputs for the naturality, in the test scheme, of descriptions of points by sections or by linear
+functionals.
+
 The equations use Mathlib's `Scheme.Modules.pullbackId` and `pullbackComp`, and the canonical
 tensor comparison of module pullback. For finite locally free sources they also describe the
 coherence of the resulting internal-Hom base-change isomorphisms.
@@ -124,6 +131,87 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_com
     (NatTrans.isIso_iff_isIso_app _).mp hpre _
   have h := congrArg IsIso (pullbackIhomComparison_comp f g M N)
   simpa only [isIso_comp_left_iff, isIso_comp_right_iff] using (Iff.of_eq h).symm
+
+section Unit
+
+/-- The base-change map `f^* 𝓗om(M, 𝒪_Y) ⟶ 𝓗om(f^* M, 𝒪_X)` of linear functionals, the
+internal-Hom comparison at the structure sheaf followed by `f^* 𝒪_Y ≅ 𝒪_X`, is compatible with
+composites: along `f ≫ g` it is the pullback along `f` of the map along `g` followed by the map
+along `f`, through the composition isomorphism of pullback. -/
+@[reassoc]
+theorem _root_.AlgebraicGeometry.Scheme.Hom.pullbackIhomComparison_app_unit_comp
+    (f : X ⟶ Y) (g : Y ⟶ Z) (M : Z.Modules) [M.IsQuasicoherent] :
+    (Scheme.Modules.pullbackComp f g).inv.app ((ihom M).obj (𝟙_ Z.Modules)) ≫
+        (Scheme.Modules.pullback f).map ((pullbackIhomComparison M g).app (𝟙_ Z.Modules) ≫
+          (ihom ((Scheme.Modules.pullback g).obj M)).map
+            (Scheme.Modules.pullbackObjUnitIso g).hom) ≫
+        (pullbackIhomComparison ((Scheme.Modules.pullback g).obj M) f).app (𝟙_ Y.Modules) ≫
+        (ihom ((Scheme.Modules.pullback f).obj ((Scheme.Modules.pullback g).obj M))).map
+          (Scheme.Modules.pullbackObjUnitIso f).hom =
+      (pullbackIhomComparison M (f ≫ g)).app (𝟙_ Z.Modules) ≫
+        (ihom ((Scheme.Modules.pullback (f ≫ g)).obj M)).map
+          (Scheme.Modules.pullbackObjUnitIso (f ≫ g)).hom ≫
+        (pre ((Scheme.Modules.pullbackComp f g).hom.app M)).app (𝟙_ X.Modules) := by
+  have hn := (pullbackIhomComparison ((Scheme.Modules.pullback g).obj M) f).naturality
+    (Scheme.Modules.pullbackObjUnitIso g).hom
+  dsimp only [Functor.comp_obj, Functor.comp_map] at hn
+  have hu : (Scheme.Modules.pullback f).map (Scheme.Modules.pullbackObjUnitIso g).hom ≫
+      (Scheme.Modules.pullbackObjUnitIso f).hom =
+        (Scheme.Modules.pullbackComp f g).hom.app (𝟙_ Z.Modules) ≫
+          (Scheme.Modules.pullbackObjUnitIso (f ≫ g)).hom := by
+    rw [← Scheme.Modules.pullbackObjUnitIso_comp, Iso.hom_inv_id_app_assoc]
+  -- Move the structure-sheaf comparison along `g` past the comparison along `f`, combine the two
+  -- structure-sheaf comparisons, and apply the coherence `pullbackIhomComparison_comp`.
+  rw [Functor.map_comp, Category.assoc, reassoc_of% hn]
+  simp only [← Functor.map_comp, hu]
+  simp only [Functor.map_comp]
+  rw [pullbackIhomComparison_comp_assoc, Iso.inv_hom_id_app_assoc]
+  exact congrArg (_ ≫ ·) ((pre _).naturality _).symm
+
+/-- The base-change map of linear functionals is unchanged, up to the canonical identifications,
+when the scheme morphism is replaced by an equal one. -/
+@[reassoc]
+theorem pullbackIhomComparison_app_unit_congr {f f' : X ⟶ Y} (h : f = f') (M : Y.Modules)
+    [M.IsQuasicoherent] :
+    (pullbackIhomComparison M f').app (𝟙_ Y.Modules) ≫
+        (ihom ((Scheme.Modules.pullback f').obj M)).map
+          (Scheme.Modules.pullbackObjUnitIso f').hom ≫
+        (pre ((Scheme.Modules.pullbackCongr h).hom.app M)).app (𝟙_ X.Modules) =
+      (Scheme.Modules.pullbackCongr h).inv.app ((ihom M).obj (𝟙_ Y.Modules)) ≫
+        (pullbackIhomComparison M f).app (𝟙_ Y.Modules) ≫
+        (ihom ((Scheme.Modules.pullback f).obj M)).map
+          (Scheme.Modules.pullbackObjUnitIso f).hom := by
+  subst h
+  simp [Scheme.Modules.pullbackCongr]
+
+/-- **Evaluation at a section commutes with pullback.** For a global section `s : 𝒪_Y ⟶ M`, the
+pullback along `f` of evaluation `𝓗om(M, 𝒪_Y) ⟶ 𝒪_Y` at `s`, followed by `f^* 𝒪_Y ≅ 𝒪_X`, is the
+base-change map `f^* 𝓗om(M, 𝒪_Y) ⟶ 𝓗om(f^* M, 𝒪_X)` followed by evaluation at the pulled-back
+section `𝒪_X ≅ f^* 𝒪_Y ⟶ f^* M`. -/
+@[reassoc]
+theorem _root_.AlgebraicGeometry.Scheme.Hom.pullback_map_evaluation_comp_pullbackObjUnitIso_hom
+    (f : X ⟶ Y) (M : Y.Modules) [M.IsQuasicoherent] (s : 𝟙_ Y.Modules ⟶ M) :
+    (Scheme.Modules.pullback f).map ((λ_ _).inv ≫ s ▷ (ihom M).obj (𝟙_ Y.Modules) ≫
+        (ihom.ev M).app (𝟙_ Y.Modules)) ≫ (Scheme.Modules.pullbackObjUnitIso f).hom =
+      (pullbackIhomComparison M f).app (𝟙_ Y.Modules) ≫
+        (ihom ((Scheme.Modules.pullback f).obj M)).map (Scheme.Modules.pullbackObjUnitIso f).hom ≫
+        (λ_ _).inv ≫
+        ((Scheme.Modules.pullbackObjUnitIso f).inv ≫ (Scheme.Modules.pullback f).map s) ▷
+          (ihom ((Scheme.Modules.pullback f).obj M)).obj (𝟙_ X.Modules) ≫
+        (ihom.ev ((Scheme.Modules.pullback f).obj M)).app (𝟙_ X.Modules) := by
+  -- Move the base-change map past the section and evaluate, using the characterization
+  -- `whiskerLeft_pullbackIhomComparison_app_comp_ev` of the comparison by evaluation.
+  rw [leftUnitor_inv_naturality_assoc, leftUnitor_inv_naturality_assoc,
+    whisker_exchange_assoc, whisker_exchange_assoc, ihom.ev_naturality,
+    whiskerLeft_pullbackIhomComparison_app_comp_ev_assoc]
+  dsimp only [Functor.comp_obj]
+  -- Oplax left unitality of pullback, whose unit comparison is `f^* 𝒪_Y ≅ 𝒪_X`, and naturality
+  -- of the tensor comparison in the section reduce both sides to the same pulled-back composite.
+  rw [left_unitality (Scheme.Modules.pullback f), Scheme.Modules.pullback_η]
+  simp only [comp_whiskerRight, Category.assoc, hom_inv_whiskerRight_assoc, δ_natural_left_assoc,
+    IsIso.hom_inv_id_assoc, Functor.map_comp]
+
+end Unit
 
 end
 

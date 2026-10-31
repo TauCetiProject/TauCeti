@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Algebraic.Defs
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.PowerSeries.Binomial
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
@@ -25,7 +27,9 @@ Mathlib substitutes a power series `b` with nilpotent constant coefficient into 
 Over a ring without zero divisors, substituting a series `φ` of zero constant coefficient
 multiplies orders: `ord (f (φ)) = ord φ * ord f`. Mathlib records only the inequality
 `PowerSeries.le_order_subst`. The equality shows that substitution of a nonzero such `φ` is
-injective, which is what extends it to Laurent series by passing to fraction fields.
+injective, which is what extends it to Laurent series by passing to fraction fields. Injectivity
+of polynomial evaluation means such a `φ` is transcendental; over a field `K` it follows that the
+power series algebraic over `K` are the constants.
 
 Substitution of series of zero constant coefficient is compatible with congruences modulo
 powers of `X`, in both the substituted series and the series substituted into. This makes
@@ -70,6 +74,9 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.subst_eq_zero_iff`: substitution of a nonzero `φ` of zero constant coefficient
   has trivial kernel.
 * `PowerSeries.toNat_order_ne_zero`: such a `φ` has positive integer order.
+* `PowerSeries.transcendental_of_constantCoeff_eq_zero`: such a `φ` is transcendental over the
+  coefficients.
+* `PowerSeries.isIntegrallyClosedIn`: a field `K` is integrally closed in `K⟦X⟧`.
 * `PowerSeries.coeff_one_subst`: linear coefficients multiply under substitution.
 * `PowerSeries.coeff_succ_subst_X_mul`: the `(n + 1)`-st coefficient of `f (X * M)` is
   `[X^n](M * g (X * M))`, where `g` is the shift of `f`.
@@ -192,6 +199,15 @@ theorem subst_eq_zero_iff (hφ : constantCoeff φ = 0) (hφ₀ : φ ≠ 0) {f : 
   have h₁ : φ.order ≠ ⊤ := order_eq_top.not.mpr hφ₀
   rw [← order_eq_top, ← order_eq_top (φ := f), order_subst hφ]
   exact WithTop.mul_eq_top_iff.trans (by tauto)
+
+/-- A nonzero power series `φ` of zero constant coefficient is transcendental over the
+coefficients: evaluating a polynomial at `φ` is substituting `φ` into it, which is injective. -/
+theorem transcendental_of_constantCoeff_eq_zero (hφ : constantCoeff φ = 0) (hφ₀ : φ ≠ 0) :
+    Transcendental R φ := by
+  rintro ⟨q, hq, hq0⟩
+  rw [← subst_coe (.of_constantCoeff_zero' hφ), subst_eq_zero_iff hφ hφ₀,
+    Polynomial.coe_eq_zero_iff] at hq0
+  exact hq hq0
 
 section Algebra
 
@@ -411,6 +427,15 @@ theorem AlgHom.apply_eq_subst {K : Type*} [Field K] (σ : K⟦X⟧ →ₐ[K] K�
     σ f = f.subst (σ X) := by
   let hσ : HasSubst (σ X) := .of_constantCoeff_zero' σ.constantCoeff_apply_X
   rw [← coe_substAlgHom hσ, ← algHom_eq_substAlgHom hσ]
+
+/-- A field `K` is integrally closed in `K⟦X⟧`: the power series algebraic over `K` are the
+constants. A series `f` algebraic over `K` gives the algebraic series `f - C (constantCoeff f)`
+of zero constant coefficient, which therefore vanishes. -/
+instance PowerSeries.isIntegrallyClosedIn (K : Type*) [Field K] : IsIntegrallyClosedIn K K⟦X⟧ :=
+  isIntegrallyClosedIn_iff.mpr ⟨(algebraMap K K⟦X⟧).injective, fun {f} hf ↦
+    ⟨constantCoeff f, Eq.symm <| sub_eq_zero.mp <| not_not.mp fun hne ↦
+      transcendental_of_constantCoeff_eq_zero (by simp) hne
+        (hf.sub isIntegral_algebraMap).isAlgebraic⟩⟩
 
 end Field
 

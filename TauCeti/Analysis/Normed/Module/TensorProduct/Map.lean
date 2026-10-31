@@ -58,6 +58,14 @@ variable {𝕜 E E' F F' : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
 
+/-- The linear map induced on algebraic tensors by `B.bilinearComp f g`, the bilinear map
+`(x, y) ↦ B (f x) (g y)`, is the one induced by `B` evaluated on `map f g u`. -/
+theorem lift_bilinearComp {G : Type*} [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (B : E' →L[𝕜] F' →L[𝕜] G) (f : E →L[𝕜] E') (g : F →L[𝕜] F') (u : E ⊗[𝕜] F) :
+    lift (B.bilinearComp f g).toLinearMap₁₂ u =
+      lift B.toLinearMap₁₂ (map f.toLinearMap g.toLinearMap u) :=
+  (LinearMap.congr_fun (lift_comp_map B.toLinearMap₁₂ f.toLinearMap g.toLinearMap) u).symm
+
 /-- The projective seminorm of `map f g u` is at most `‖f‖ * ‖g‖` times that of `u`. -/
 theorem projectiveSeminorm_map_le (f : E →L[𝕜] E') (g : F →L[𝕜] F') (u : E ⊗[𝕜] F) :
     projectiveSeminorm 𝕜 E' F' (map f.toLinearMap g.toLinearMap u) ≤

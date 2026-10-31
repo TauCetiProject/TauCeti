@@ -22,8 +22,12 @@ over `ℚ` and take a nearby root (`IsAlgebraic.mem_closure_setOf_isAlgebraic`).
 Separability is what makes `ℂ_p` fail to be spherically complete, so that the closed unit disc
 over `ℂ_p` has points of type (4).
 
+The file also records the norm `‖p‖ = p⁻¹ < 1` of `p` in `ℂ_[p]`.
+
 ## Main results
 
+* `PadicComplex.norm_p`: `‖p‖ = p⁻¹` in `ℂ_[p]`.
+* `PadicComplex.norm_p_lt_one`: `‖p‖ < 1` in `ℂ_[p]`.
 * `PadicComplex.dense_setOf_isAlgebraic`: the algebraic numbers are dense in `ℂ_[p]`.
 * `PadicComplex.separableSpace`: `ℂ_[p]` is a separable space.
 
@@ -38,6 +42,16 @@ public section
 namespace PadicComplex
 
 variable (p : ℕ) [Fact p.Prime]
+
+/-- The norm of `p` in `ℂ_[p]` is `p⁻¹`. -/
+@[simp]
+theorem norm_p : ‖(p : ℂ_[p])‖ = (p : ℝ)⁻¹ := by
+  rw [← map_natCast (algebraMap ℚ_[p] ℂ_[p]) p, norm_algebraMap', Padic.norm_p]
+
+/-- `‖p‖ < 1` in `ℂ_[p]`. -/
+theorem norm_p_lt_one : ‖(p : ℂ_[p])‖ < 1 := by
+  rw [norm_p]
+  exact inv_lt_one_of_one_lt₀ (mod_cast (Fact.out : p.Prime).one_lt)
 
 /-- **The algebraic numbers are dense in `ℂ_[p]`.** -/
 theorem dense_setOf_isAlgebraic : Dense {x : ℂ_[p] | IsAlgebraic ℚ x} := by

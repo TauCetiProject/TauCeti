@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
-public import TauCeti.GroupTheory.GroupAction.Stabilizer
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.FinTwo
 import Mathlib.Algebra.Group.Torsion
 
