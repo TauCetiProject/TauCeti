@@ -21,7 +21,7 @@ transport of compactly supported Hamiltonians along symplectomorphisms needs.
 * `Diffeomorph.tsupport_comp_symm`: `tsupport (F ∘ ψ⁻¹) = ψ(tsupport F)`.
 * `Diffeomorph.tsupport_comp_symm_subset_interior_image`: support in the interior of a set is
   transported to support in the interior of its image.
-* `Diffeomorph.tsupport_comp_symm_subset_interior`: support away from the boundary of the
+* `Diffeomorph.tsupport_comp_symm_subset_interior_manifold`: support away from the boundary of the
   manifold is transported to support away from the boundary.
 -/
 
@@ -57,7 +57,7 @@ theorem tsupport_comp_symm_subset_interior_image (ψ : M ≃ₘ^n⟮I, J⟯ N) {
 
 /-- A function supported away from the boundary of `M`, transported along a diffeomorphism `ψ`,
 is supported away from the boundary of `N`. -/
-theorem tsupport_comp_symm_subset_interior (hn : n ≠ 0) (ψ : M ≃ₘ^n⟮I, J⟯ N) {F : M → α}
+theorem tsupport_comp_symm_subset_interior_manifold (hn : n ≠ 0) (ψ : M ≃ₘ^n⟮I, J⟯ N) {F : M → α}
     (h : tsupport F ⊆ I.interior M) : tsupport (F ∘ ψ.symm) ⊆ J.interior N := by
   rw [ψ.tsupport_comp_symm, ← ψ.image_interior hn]
   exact image_mono h

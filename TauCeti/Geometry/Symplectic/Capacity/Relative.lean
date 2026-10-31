@@ -8,9 +8,9 @@ module
 public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
+import TauCeti.Basic.ENNReal.Real
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.Diffeomorph.Support
-import TauCeti.Geometry.Symplectic.Capacity.HoferZehnder
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 
 /-!
@@ -228,7 +228,7 @@ theorem IsRelContractibleHZAdmissible.comp_symm (hσ₂ : σ₂.IsNondegenerate)
       tsupport_subset_interior :=
         ψ.tsupport_comp_symm_subset_interior_image hF.tsupport_subset_interior
       tsupport_subset_interior_manifold :=
-        ψ.tsupport_comp_symm_subset_interior (by simp) hF.tsupport_subset_interior_manifold
+        ψ.tsupport_comp_symm_subset_interior_manifold (by simp) hF.tsupport_subset_interior_manifold
       isMaxOn := ?_
       eq_of_isMIntegralCurve := ?_ }
   · rintro _ ⟨z, hz, rfl⟩

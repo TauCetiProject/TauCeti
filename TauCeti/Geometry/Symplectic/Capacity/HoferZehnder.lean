@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
+import TauCeti.Basic.ENNReal.Real
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.Diffeomorph.Support
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
@@ -59,10 +60,6 @@ and upper bounds for it are what Floer-theoretic spectral invariants of cotangen
 
 ## Main results
 
-* `TauCeti.iSup₂_ofReal_iSup_eq_ofReal_mul` and `TauCeti.iSup₂_ofReal_iSup_eq_of_comp`: the
-  supremum of the maxima of a class of functions scales with a rescaling of the class and is
-  unchanged by a reparametrization of it. Conformality and symplectic invariance of capacities
-  defined by such suprema reduce to these.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isContractibleHZAdmissible_smul_smul_iff`: `cF` is
   admissible for `cσ` exactly when `F` is admissible for `σ`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.contractibleHZCapacity_smul`: conformality.
@@ -87,50 +84,6 @@ open Set
 open scoped ContDiff ENNReal Manifold
 
 namespace TauCeti
-
-/-! ### Suprema of maxima -/
-
-section SupremumOfMaxima
-
-variable {α β : Type*}
-
-/-- **Rescaling a class of functions.** If, for `c > 0`, the functions satisfying `Q` are exactly
-the `c • F` with `F` satisfying `P`, then the supremum of their maxima is `c` times that for `P`. -/
-theorem iSup₂_ofReal_iSup_eq_ofReal_mul {P Q : (α → ℝ) → Prop} {c : ℝ} (hc : 0 < c)
-    (h : ∀ F, Q (c • F) ↔ P F) :
-    ⨆ (F : α → ℝ) (_ : Q F), ENNReal.ofReal (⨆ x, F x) =
-      ENNReal.ofReal c * ⨆ (F : α → ℝ) (_ : P F), ENNReal.ofReal (⨆ x, F x) := by
-  -- The maximum of `c • F` is `c` times the maximum of `F`.
-  have hmax (F : α → ℝ) :
-      ENNReal.ofReal (⨆ x, (c • F) x) = ENNReal.ofReal c * ENNReal.ofReal (⨆ x, F x) := by
-    simp only [Pi.smul_apply, smul_eq_mul, ← Real.mul_iSup_of_nonneg hc.le,
-      ENNReal.ofReal_mul hc.le]
-  refine le_antisymm (iSup₂_le fun F hF ↦ ?_) ?_
-  · have hF' : F = c • (c⁻¹ • F) := by rw [smul_smul, mul_inv_cancel₀ hc.ne', one_smul]
-    rw [hF'] at hF ⊢
-    rw [hmax]
-    gcongr
-    exact le_iSup₂ (f := fun F (_ : P F) ↦ ENNReal.ofReal (⨆ x, F x)) _ ((h _).1 hF)
-  · simp only [ENNReal.mul_iSup]
-    refine iSup₂_le fun F hF ↦ ?_
-    rw [← hmax]
-    exact le_iSup₂ (f := fun F (_ : Q F) ↦ ENNReal.ofReal (⨆ x, F x)) _ ((h F).2 hF)
-
-/-- **Reparametrizing a class of functions.** If surjections `f : α → β` and `g : β → α` carry
-the functions satisfying `P` to functions satisfying `Q` by `F ↦ F ∘ g`, and back by
-`G ↦ G ∘ f`, then the suprema of the maxima of the two classes agree. -/
-theorem iSup₂_ofReal_iSup_eq_of_comp {P : (α → ℝ) → Prop} {Q : (β → ℝ) → Prop} {f : α → β}
-    {g : β → α} (hf : f.Surjective) (hg : g.Surjective) (hPQ : ∀ F, P F → Q (F ∘ g))
-    (hQP : ∀ G, Q G → P (G ∘ f)) :
-    ⨆ (G : β → ℝ) (_ : Q G), ENNReal.ofReal (⨆ y, G y) =
-      ⨆ (F : α → ℝ) (_ : P F), ENNReal.ofReal (⨆ x, F x) := by
-  refine le_antisymm (iSup₂_le fun G hG ↦ ?_) (iSup₂_le fun F hF ↦ ?_)
-  · rw [← hf.iSup_comp G]
-    exact le_iSup₂ (f := fun F (_ : P F) ↦ ENNReal.ofReal (⨆ x, F x)) (G ∘ f) (hQP G hG)
-  · rw [← hg.iSup_comp F]
-    exact le_iSup₂ (f := fun G (_ : Q G) ↦ ENNReal.ofReal (⨆ y, G y)) (F ∘ g) (hPQ F hF)
-
-end SupremumOfMaxima
 
 namespace SmoothTwoForm
 
@@ -263,7 +216,7 @@ theorem IsContractibleHZAdmissible.comp_symm (hσ₂ : σ₂.IsNondegenerate)
       tsupport_subset_interior :=
         ψ.tsupport_comp_symm_subset_interior_image hF.tsupport_subset_interior
       tsupport_subset_interior_manifold :=
-        ψ.tsupport_comp_symm_subset_interior (by simp) hF.tsupport_subset_interior_manifold
+        ψ.tsupport_comp_symm_subset_interior_manifold (by simp) hF.tsupport_subset_interior_manifold
       nonneg := fun y ↦ hF.nonneg _
       exists_isOpen_eqOn_zero := ?_
       exists_isOpen_isMaxOn := ?_
