@@ -355,7 +355,7 @@ theorem map_formalCharacter_eq_sum_div_prod [Fintype (IsKilling.rootSystem H).we
       ∑ w : (IsKilling.rootSystem H).weylGroup, f (AddMonoidAlgebra.single (w • lam) 1) /
         ∏ i ∈ posRootsFinset (IsKilling.rootSystem H) b,
           (1 - f (AddMonoidAlgebra.single (-(w • (IsKilling.rootSystem H).root i)) 1)) := by
-  rw [sum_map_single_div_prod_eq_map_weylNumerator_div _ b f hf,
+  rw [RootPairing.sum_map_single_div_prod_eq_map_weylNumerator_div _ b f hf,
     ← formalCharacter_mul_weylDenominator_eq_weylNumerator hv hgen, map_mul,
     mul_div_cancel_right₀ _ hf]
 

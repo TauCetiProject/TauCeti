@@ -27,16 +27,17 @@ the inclusion of `ℤ[M]` into a fraction field gives the identity of rational f
 regular point.
 
 Each `w` contributes exactly one normalized term: the denominator `∏_{α > 0} (1 - e^{-w α})` is
-the image `w Δ` of `Δ` under `w` (`TauCeti.mapDomain_smul_weylDenominator_eq_prod`), and
+the image `w Δ` of `Δ` under `w` (`RootPairing.mapDomain_smul_weylDenominator_eq_prod`), and
 `e^{w λ} Δ = sgn(w) e^{w ⬝ λ} (w Δ)` (`TauCeti.single_smul_mul_weylDenominator`), so the sign and
 the shift `ρ - w ρ` that every inverted factor `1 - e^{β} = -e^{β} (1 - e^{-β})` produces are
 absorbed into the dot action. In particular `w Δ` does not vanish when `Δ` does not
-(`TauCeti.map_mapDomain_smul_weylDenominator_ne_zero`): it is `Δ` times a signed exponential.
+(`RootPairing.map_mapDomain_smul_weylDenominator_ne_zero`): it is `Δ` times a signed exponential.
 
 ## Main results
 
-* `TauCeti.map_mapDomain_smul_weylDenominator_ne_zero`: `f (w Δ) ≠ 0` when `f Δ ≠ 0`.
-* `TauCeti.sum_map_single_div_prod_eq_map_weylNumerator_div`: **the fixed-point sum is the
+* `RootPairing.map_single_div_map_mapDomain_smul_weylDenominator`: the fixed-point term of `w`
+  is its normalized term, `f(e^{w λ}) / f(w Δ) = sgn(w) f(e^{w ⬝ λ}) / f(Δ)`.
+* `RootPairing.sum_map_single_div_prod_eq_map_weylNumerator_div`: **the fixed-point sum is the
   normalized quotient**,
   `∑_{w ∈ W} f(e^{w λ}) / ∏_{α > 0} (1 - f(e^{-w α})) = f(N(λ)) / f(Δ)`.
 
@@ -50,29 +51,15 @@ absorbed into the dot action. In particular `w Δ` does not vanish when `Δ` doe
 
 public section
 
-namespace TauCeti
+namespace RootPairing
 
-open RootPairing
+open TauCeti
 
 universe u v w x y
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   (P : RootPairing ι R M N) [Finite ι] [CharZero R] (b : P.Base)
-
-/-- **The moved Weyl denominator does not vanish where the Weyl denominator does not**: for a ring
-homomorphism `f` into a ring without zero divisors, if `f Δ ≠ 0` then `f (w Δ) ≠ 0`, since `w Δ` is
-`Δ` times a signed exponential, a unit of `ℤ[M]`. -/
-theorem map_mapDomain_smul_weylDenominator_ne_zero {S : Type y} [Semiring S] [NoZeroDivisors S]
-    (f : AddMonoidAlgebra ℤ M →+* S) (hf : f (weylDenominator P b) ≠ 0) (w : P.weylGroup) :
-    f (AddMonoidAlgebra.mapDomain (w • ·) (weylDenominator P b)) ≠ 0 := by
-  have := nontrivial_of_ne _ _ hf
-  rw [mapDomain_smul_weylDenominator, map_mul]
-  refine mul_ne_zero (IsUnit.ne_zero (IsUnit.map f ?_)) hf
-  refine IsUnit.of_mul_eq_one
-    (AddMonoidAlgebra.single (-∑ i ∈ inversionsFinset P b w⁻¹, P.root i)
-      ((-1) ^ (inversionsFinset P b w⁻¹).card)) ?_
-  simp [AddMonoidAlgebra.single_mul_single, ← mul_pow, AddMonoidAlgebra.one_def]
 
 variable {F : Type y} [Field F] (f : AddMonoidAlgebra ℤ M →+* F)
 
@@ -109,4 +96,4 @@ theorem sum_map_single_div_prod_eq_map_weylNumerator_div [Fintype P.weylGroup]
     simp [mapDomain_smul_weylDenominator_eq_prod, map_prod]
   rw [hden, map_single_div_map_mapDomain_smul_weylDenominator P b f hf]
 
-end TauCeti
+end RootPairing
