@@ -78,46 +78,13 @@ theorem isLatticeWord_readingWord_iff (T : SkewSemistandardYoungTableau inner ou
       ∀ k x, ∑ r ∈ range (x + 1), T.rowCount r (k + 1) ≤ ∑ r ∈ range x, T.rowCount r k := by
   constructor
   · intro h k x
-    -- The prefix ending just before the first letter at most `k` of row `x`.
-    have hab := YoungDiagram.rowLen_le_of_le T.le x
-    have hr := T.sum_range_rowCount_le x (k + 1)
-    have hlt : ∀ {j}, inner.rowLen x ≤ j → j < outer.rowLen x →
-        (T x j < k + 1 ↔ j - inner.rowLen x < ∑ l ∈ range (k + 1), T.rowCount x l) :=
-      fun hi ho => T.apply_lt_iff hi ho
-    generalize ∑ l ∈ range (k + 1), T.rowCount x l = r at hr hlt
-    set q := (T.rowReadingWord x).take (outer.rowLen x - inner.rowLen x - r) with hq_def
-    have hq : q = ((List.range' (inner.rowLen x + r)
-        (outer.rowLen x - inner.rowLen x - r)).map (T x)).reverse := by
-      rw [hq_def, rowReadingWord_def, List.take_reverse, List.length_map, List.length_range',
-        ← List.map_drop, List.drop_range']
-      congr 3 <;> omega
-    have hpre : (List.range x).flatMap T.rowReadingWord ++ q <+: T.readingWord := by
-      rw [← T.flatMap_range_rowReadingWord (Nat.le_add_left _ (x + 1)), List.range_add,
-        List.flatMap_append, List.range_succ, List.flatMap_append, List.flatMap_singleton,
-        List.append_assoc]
-      exact (List.prefix_append_right_inj _).mpr ((List.take_prefix _ _).trans
-        (List.prefix_append _ _))
-    have hk : q.count k = 0 := by
-      rw [hq, List.count_reverse, List.count_map_range', card_eq_zero, filter_eq_empty_iff]
-      intro j hj hjk
-      rw [mem_Ico] at hj
-      have := (hlt (j := j) (by omega) (by omega)).not.mpr (by omega)
-      omega
-    have hk₁ : q.count (k + 1) = T.rowCount x (k + 1) := by
-      rw [hq, List.count_reverse, List.count_map_range', rowCount_def]
-      congr 1
-      ext j
-      simp only [mem_filter, mem_Ico]
-      constructor
-      · rintro ⟨hj, hjk⟩
-        exact ⟨⟨by omega, by omega⟩, hjk⟩
-      · rintro ⟨hj, hjk⟩
-        refine ⟨⟨not_lt.mp fun hjr => ?_, by omega⟩, hjk⟩
-        have := (hlt hj.1 hj.2).mpr (by omega)
-        omega
-    have := List.isLatticeWord_iff.mp h _ hpre k
+    -- The rows above `x`, followed by the letters of row `x` larger than `k`, form a prefix.
+    have := List.isLatticeWord_iff.mp h _ (T.flatMap_range_append_prefix_readingWord_of_prefix
+      (List.take_prefix (outer.rowLen x - inner.rowLen x - ∑ l ∈ range (k + 1), T.rowCount x l)
+        (T.rowReadingWord x))) k
     rw [List.count_append, List.count_append, count_flatMap_range_rowReadingWord,
-      count_flatMap_range_rowReadingWord, hk, hk₁] at this
+      count_flatMap_range_rowReadingWord, count_take_rowReadingWord, count_take_rowReadingWord,
+      ite_eq_right (Nat.not_succ_le_self k), ite_eq_left le_rfl] at this
     rw [sum_range_succ]
     omega
   · refine fun h => List.isLatticeWord_iff.mpr fun p hp k => ?_
@@ -151,37 +118,16 @@ theorem sum_range_rowCount_symm_botEquiv (T : SemistandardYoungTableau μ) (i x 
   simp only [botEquiv_symm_apply]
   rw [T.filter_lt_eq_range, card_range]
 
-private theorem rowCount_symm_botEquiv (T : SemistandardYoungTableau μ) (r i : ℕ) :
-    ((botEquiv μ).symm T).rowCount r i = #{c ∈ range (μ.rowLen r) | T r c = i} := by
-  rw [rowCount_def, YoungDiagram.rowLen_bot, ← range_eq_Ico]
-  simp only [botEquiv_symm_apply]
-
-/-- The letters `i` of row `r` in the columns from `j` on are among all its letters `i`. -/
-private theorem card_filter_le_rowCount_symm_botEquiv (T : SemistandardYoungTableau μ)
-    (r j i : ℕ) :
-    #{c ∈ range (μ.rowLen r) | j ≤ c ∧ T r c = i} ≤ ((botEquiv μ).symm T).rowCount r i := by
+/-- Every letter `i` of a row `r` above row `k` lies in a column at least `j`, when `j` is at most
+the number of letters at most `i` in row `k`: by column strictness, the letter below it is larger
+than `i`. -/
+theorem rowCount_symm_botEquiv_le_card_filter (T : SemistandardYoungTableau μ) {r k j i : ℕ}
+    (hr : r < k) (hj : j ≤ T.rowCountLt k (i + 1)) :
+    ((botEquiv μ).symm T).rowCount r i ≤ #{c ∈ range (μ.rowLen r) | j ≤ c ∧ T r c = i} := by
   rw [rowCount_symm_botEquiv]
-  exact card_le_card fun c hc => mem_filter.mpr ⟨(mem_filter.mp hc).1, (mem_filter.mp hc).2.2⟩
-
-private theorem contentFromCol_eq_sum (T : SemistandardYoungTableau μ) (j i : ℕ) {N : ℕ}
-    (hN : μ.colLen 0 ≤ N) :
-    T.contentFromCol j i = ∑ r ∈ range N, #{c ∈ range (μ.rowLen r) | j ≤ c ∧ T r c = i} := by
-  rw [contentFromCol_def, YoungDiagram.card_filter_cells μ _ hN]
-
-/-- Column strictness, for a cell given by a bound on its column. -/
-private theorem col_strict_of_lt_rowLen (T : SemistandardYoungTableau μ) {r r' c : ℕ}
-    (h : r' < r) (hc : c < μ.rowLen r) : T r' c < T r c :=
-  T.col_strict h (YoungDiagram.mem_iff_lt_rowLen.mpr hc)
-
-/-- A letter at least `i` in a row above row `k` lies in a column at least the number of letters
-at most `i` in row `k`: by column strictness, the letter below it is larger than `i`. -/
-private theorem rowCountLt_le_of_lt (T : SemistandardYoungTableau μ) {r k c i : ℕ} (hr : r < k)
-    (hi : i ≤ T r c) : T.rowCountLt k (i + 1) ≤ c := by
-  refine not_lt.mp fun hlt => ?_
-  have hck := hlt.trans_le (T.rowCountLt_le_rowLen k (i + 1))
-  have := T.col_strict_of_lt_rowLen hr hck
-  have := (T.lt_rowCountLt_iff hck).mp hlt
-  omega
+  refine card_le_card fun c hc => ?_
+  rw [mem_filter] at hc ⊢
+  exact ⟨hc.1, hj.trans (T.rowCountLt_le_of_lt hr hc.2.ge), hc.2⟩
 
 /-- A `λ`-Yamanouchi tableau satisfies the row-count condition at `(i, x)`: it is Stembridge's
 condition at the first column of row `x` not holding a letter at most `i`. Left of that column,
@@ -217,9 +163,8 @@ private theorem rowLen_add_sum_rowCount_le_of_isYamanouchi {lam : YoungDiagram}
     rw [contentFromCol_eq_sum T P i hN, ← sum_range_ite_lt _ (by omega : x ≤ μ.colLen 0 + x + 1)]
     refine sum_congr rfl fun r _ => ?_
     split_ifs with hr
-    · rw [rowCount_symm_botEquiv]
-      refine congrArg card (filter_congr fun c hc => ⟨fun h => h.2, fun h => ⟨?_, h⟩⟩)
-      exact T.rowCountLt_le_of_lt hr h.ge
+    · exact le_antisymm (T.card_filter_le_rowCount_symm_botEquiv r P i)
+        (T.rowCount_symm_botEquiv_le_card_filter hr le_rfl)
     · refine card_eq_zero.mpr (filter_eq_empty_iff.mpr fun c hc ⟨hPc, hc'⟩ => ?_)
       rw [mem_range] at hc
       have hle : T x c ≤ T r c := by
@@ -263,19 +208,15 @@ private theorem rowLen_add_contentFromCol_le_of_lt {lam : YoungDiagram}
     refine le_trans ?_ (sum_le_sum_of_subset (range_subset_range.mpr (by omega :
       k + 1 ≤ k + 1 + 1 + μ.colLen 0)))
     rw [sum_range_succ]
-    refine add_le_add (sum_le_sum fun r hr => ?_) ?_
-    · rw [rowCount_symm_botEquiv]
-      refine card_le_card fun c' hc' => ?_
-      rw [mem_filter, mem_range] at hc' ⊢
-      have := T.rowCountLt_le_of_lt (mem_range.mp hr) hc'.2.ge
-      exact ⟨hc'.1, by omega, hc'.2⟩
-    · rw [← Nat.card_Ico]
-      refine card_le_card fun c' hc' => ?_
-      rw [mem_Ico] at hc'
-      have hc'k : c' < μ.rowLen k := hc'.2.trans_le hP
-      have h₁ := (T.lt_rowCountLt_iff hc'k).mp hc'.2
-      have h₂ := T.row_weak (by omega : c₁ < c') (YoungDiagram.mem_iff_lt_rowLen.mpr hc'k)
-      exact mem_filter.mpr ⟨mem_range.mpr hc'k, hc'.1, by omega⟩
+    refine add_le_add (sum_le_sum fun r hr =>
+      T.rowCount_symm_botEquiv_le_card_filter (mem_range.mp hr) hjP) ?_
+    rw [← Nat.card_Ico]
+    refine card_le_card fun c' hc' => ?_
+    rw [mem_Ico] at hc'
+    have hc'k : c' < μ.rowLen k := hc'.2.trans_le hP
+    have h₁ := (T.lt_rowCountLt_iff hc'k).mp hc'.2
+    have h₂ := T.row_weak (by omega : c₁ < c') (YoungDiagram.mem_iff_lt_rowLen.mpr hc'k)
+    exact mem_filter.mpr ⟨mem_range.mpr hc'k, hc'.1, by omega⟩
   omega
 
 /-- The row-count condition implies Stembridge's condition at every column `j` and letter `i`.
@@ -350,14 +291,12 @@ private theorem isYamanouchi_of_rowLen_add_sum_rowCount_le {lam : YoungDiagram}
       refine le_trans ?_ (sum_le_sum_of_subset (range_subset_range.mpr
         (by omega : k' + 1 ≤ N)))
       refine sum_le_sum fun r hr => ?_
-      rw [rowCount_symm_botEquiv]
-      refine card_le_card fun c' hc' => ?_
-      rw [mem_filter, mem_range] at hc' ⊢
-      refine ⟨hc'.1, ?_, hc'.2⟩
       rcases (Nat.lt_succ_iff.mp (mem_range.mp hr)).lt_or_eq with hr | rfl
-      · have := T.rowCountLt_le_of_lt hr hc'.2.ge
-        omega
-      · exact not_lt.mp fun hc'j => hleft c' hc'j hc'.1 hc'.2
+      · exact T.rowCount_symm_botEquiv_le_card_filter hr hjP
+      · rw [rowCount_symm_botEquiv]
+        refine card_le_card fun c' hc' => ?_
+        rw [mem_filter, mem_range] at hc' ⊢
+        exact ⟨hc'.1, not_lt.mp fun hc'j => hleft c' hc'j hc'.1 hc'.2, hc'.2⟩
     have := h i (k' + 1)
     omega
 
@@ -375,12 +314,11 @@ theorem apply_lt_colLen_zero_of_rowLen_add_content_eq
     {lam ν : YoungDiagram} {T : SemistandardYoungTableau μ}
     (h : ∀ i, lam.rowLen i + SemistandardYoungTableau.content T i = ν.rowLen i) {i c : ℕ}
     (hc : (i, c) ∈ μ) : T i c < ν.colLen 0 := by
-  have hpos : 0 < SemistandardYoungTableau.content T (T i c) := by
-    rw [SemistandardYoungTableau.content_apply]
-    exact card_pos.mpr ⟨(i, c), mem_filter.mpr ⟨(YoungDiagram.mem_cells _).mpr hc, rfl⟩⟩
-  have := h (T i c)
-  exact YoungDiagram.lt_colLen_zero_of_mem (j := 0)
-    (YoungDiagram.mem_iff_lt_rowLen.mpr (by omega))
+  simpa using ((botEquiv μ).symm T).apply_lt_colLen_zero_of_content_le (ν := ν)
+    (fun k => by
+      rw [← content_botEquiv, Equiv.apply_symm_apply, ← h k]
+      exact Nat.le_add_left _ _)
+    (by rw [YoungDiagram.rowLen_bot]; exact Nat.zero_le c) (YoungDiagram.mem_iff_lt_rowLen.mp hc)
 
 end SemistandardYoungTableau
 
@@ -443,19 +381,11 @@ def lrTableauEquivYamanouchi (lam ν μ : YoungDiagram) :
       exact S.1.rowLen_add_sum_range_rowCount_succ_le i x
     · rw [content_botEquiv, ← (toYamanouchi S).sum_range_rowCount_eq_content i le_rfl]
       simp only [rowCount_toYamanouchi]
-      rw [S.1.sum_range_rowCount_of_forall_lt fun j hj hj' => ?_]
-      · have := YoungDiagram.rowLen_le_of_le S.1.le i
-        omega
-      · -- The letters of `S` are rows of `μ`.
-        have hpos : 0 < S.1.content (S.1 i j) := by
-          rw [content_apply]
-          refine card_pos.mpr ⟨(i, j), mem_filter.mpr ⟨?_, rfl⟩⟩
-          rw [mem_sdiff, YoungDiagram.mem_cells, YoungDiagram.mem_cells,
-            YoungDiagram.mem_iff_lt_rowLen, YoungDiagram.mem_iff_lt_rowLen, not_lt]
-          exact ⟨hj', hj⟩
-        rw [congrFun S.2.1] at hpos
-        exact YoungDiagram.lt_colLen_zero_of_mem (j := 0)
-          (YoungDiagram.mem_iff_lt_rowLen.mpr hpos)⟩
+      -- The letters of `S` are rows of `μ`.
+      rw [S.1.sum_range_rowCount_of_forall_lt fun j hj hj' =>
+        S.1.apply_lt_colLen_zero_of_content_le (fun k => (congrFun S.2.1 k).le) hj hj']
+      have := YoungDiagram.rowLen_le_of_le S.1.le i
+      omega⟩
   invFun T := ⟨ofYamanouchi T, by
     refine ⟨funext fun k => ?_, (ofYamanouchi T).isLatticeWord_readingWord_iff.mpr fun k x => ?_⟩
     · rw [← (ofYamanouchi T).sum_range_rowCount_eq_content k le_rfl]

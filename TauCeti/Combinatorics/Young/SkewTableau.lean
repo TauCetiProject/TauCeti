@@ -169,6 +169,20 @@ theorem sum_content (T : SkewSemistandardYoungTableau inner outer) :
   rw [content, Multiset.toFinsupp_toMultiset, Multiset.card_map, ← Finset.card_def,
     Finset.card_sdiff_of_subset (YoungDiagram.cells_subset_iff.mpr T.le)]
 
+/-- When the content of a skew tableau is bounded by the row lengths of `ν`, every entry is a row
+of `ν`: the letter of a skew cell has positive content. -/
+theorem apply_lt_colLen_zero_of_content_le (T : SkewSemistandardYoungTableau inner outer)
+    {ν : YoungDiagram} (h : ∀ k, T.content k ≤ ν.rowLen k) {i j : ℕ}
+    (hi : inner.rowLen i ≤ j) (ho : j < outer.rowLen i) : T i j < ν.colLen 0 := by
+  have hpos : 0 < T.content (T i j) := by
+    rw [content_apply]
+    refine Finset.card_pos.mpr ⟨(i, j), Finset.mem_filter.mpr ⟨?_, rfl⟩⟩
+    rw [Finset.mem_sdiff, YoungDiagram.mem_cells, YoungDiagram.mem_cells,
+      YoungDiagram.mem_iff_lt_rowLen, YoungDiagram.mem_iff_lt_rowLen, not_lt]
+    exact ⟨ho, hi⟩
+  exact YoungDiagram.lt_colLen_zero_of_mem (j := 0)
+    (YoungDiagram.mem_iff_lt_rowLen.mpr (hpos.trans_le (h _)))
+
 /-! ### The reading word -/
 
 /-- The entries of row `i` of a skew tableau, read from right to left. -/
@@ -360,6 +374,41 @@ theorem count_rowReadingWord (T : SkewSemistandardYoungTableau inner outer) (i k
   rw [rowReadingWord_def, List.count_reverse, List.count_map_range', rowCount,
     Nat.add_sub_cancel' (YoungDiagram.rowLen_le_of_le T.le i)]
 
+/-- Row `x` of the reading word starts with the letters of the row that are at least `m`: these
+are read before the `∑_{l < m} rowCount x l` letters below `m`. -/
+theorem count_take_rowReadingWord (T : SkewSemistandardYoungTableau inner outer) (x m a : ℕ) :
+    ((T.rowReadingWord x).take
+        (outer.rowLen x - inner.rowLen x - ∑ l ∈ range m, T.rowCount x l)).count a =
+      if m ≤ a then T.rowCount x a else 0 := by
+  have hr := T.sum_range_rowCount_le x m
+  have hlt : ∀ {j}, inner.rowLen x ≤ j → j < outer.rowLen x →
+      (T x j < m ↔ j - inner.rowLen x < ∑ l ∈ range m, T.rowCount x l) :=
+    fun hi ho => T.apply_lt_iff hi ho
+  generalize ∑ l ∈ range m, T.rowCount x l = r at hr hlt ⊢
+  -- The letters read first are those in the columns from `inner.rowLen x + r` on.
+  have hq : (T.rowReadingWord x).take (outer.rowLen x - inner.rowLen x - r) =
+      ((List.range' (inner.rowLen x + r) (outer.rowLen x - inner.rowLen x - r)).map
+        (T x)).reverse := by
+    simp [rowReadingWord_def, List.take_reverse, ← List.map_drop, List.drop_range']
+    congr 2 <;> omega
+  rw [hq, List.count_reverse, List.count_map_range', rowCount_def]
+  split_ifs with ha
+  · congr 1
+    ext j
+    simp only [mem_filter, mem_Ico]
+    constructor
+    · rintro ⟨hj, rfl⟩
+      exact ⟨⟨by omega, by omega⟩, rfl⟩
+    · rintro ⟨hj, rfl⟩
+      refine ⟨⟨not_lt.mp fun hjr => ?_, by omega⟩, rfl⟩
+      have := (hlt hj.1 hj.2).mpr (by omega)
+      omega
+  · refine card_eq_zero.mpr (filter_eq_empty_iff.mpr ?_)
+    rintro j hj rfl
+    rw [mem_Ico] at hj
+    have := (hlt (j := j) (by omega) (by omega)).not.mpr (by omega)
+    omega
+
 /-- The rows above row `x` of the reading word contain the letter `k` as often as the rows above
 row `x` of the tableau do. -/
 theorem count_flatMap_range_rowReadingWord (T : SkewSemistandardYoungTableau inner outer)
@@ -380,6 +429,14 @@ theorem flatMap_range_rowReadingWord (T : SkewSemistandardYoungTableau inner out
     obtain ⟨r, -, rfl⟩ := List.mem_map.mp hr
     simp [rowReadingWord_def, YoungDiagram.rowLen_eq_zero_of_colLen_le (Nat.le_add_right _ r)]
   rw [readingWord_def, List.range_add, List.flatMap_append, hnil, List.append_nil]
+
+/-- The rows above row `x`, followed by a prefix of row `x`, form a prefix of the reading word. -/
+theorem flatMap_range_append_prefix_readingWord_of_prefix
+    (T : SkewSemistandardYoungTableau inner outer) {x : ℕ} {q : List ℕ}
+    (hq : q <+: T.rowReadingWord x) :
+    (List.range x).flatMap T.rowReadingWord ++ q <+: T.readingWord := by
+  rw [← T.flatMap_range_rowReadingWord (Nat.le_add_left _ (x + 1))]
+  simpa [List.range_add, List.range_succ] using hq.trans (List.prefix_append _ _)
 
 /-- **The reading word has the content of the tableau**: it contains each letter `k` as often as
 the tableau does. -/
@@ -555,3 +612,24 @@ theorem content_botEquiv {μ : YoungDiagram} (T : SkewSemistandardYoungTableau �
 end SkewSemistandardYoungTableau
 
 end TauCeti
+
+namespace SemistandardYoungTableau
+
+open Finset TauCeti TauCeti.SkewSemistandardYoungTableau
+
+variable {μ : YoungDiagram}
+
+/-- The skew tableau of straight shape attached to a tableau `T` holds the letter `i` in its row
+`r` as often as `T` does. -/
+theorem rowCount_symm_botEquiv (T : SemistandardYoungTableau μ) (r i : ℕ) :
+    ((botEquiv μ).symm T).rowCount r i = #{c ∈ range (μ.rowLen r) | T r c = i} := by
+  rw [rowCount_def, YoungDiagram.rowLen_bot, ← range_eq_Ico]
+  simp only [botEquiv_symm_apply]
+
+/-- The letters `i` of row `r` in the columns from `j` on are among all its letters `i`. -/
+theorem card_filter_le_rowCount_symm_botEquiv (T : SemistandardYoungTableau μ) (r j i : ℕ) :
+    #{c ∈ range (μ.rowLen r) | j ≤ c ∧ T r c = i} ≤ ((botEquiv μ).symm T).rowCount r i := by
+  rw [rowCount_symm_botEquiv]
+  exact card_le_card fun c hc => mem_filter.mpr ⟨(mem_filter.mp hc).1, (mem_filter.mp hc).2.2⟩
+
+end SemistandardYoungTableau
