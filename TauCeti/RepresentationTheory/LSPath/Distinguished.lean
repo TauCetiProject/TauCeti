@@ -86,8 +86,9 @@ variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing �
 variable (S p) in
 /-- A timed presentation `p` is *distinguished* for a set `S` of velocities if it has duration
 `1`, runs along each of its segments `(d, v)` at a constant velocity `d⁻¹ • v` lying in `S`, and
-changes velocity at each break. For `S = W λ` this is the parametrization of a
-Lakshmibai–Seshadri path of shape `λ` by its directions and breaks. -/
+changes velocity at each break. For `S = W λ`, the parametrization of a Lakshmibai–Seshadri path
+of shape `λ` by its directions and breaks is distinguished. The converse fails, because no LS chain
+condition is imposed. -/
 structure IsDistinguished : Prop where
   /-- Every duration is positive. -/
   isTimed : IsTimed p
