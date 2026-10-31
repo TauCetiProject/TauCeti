@@ -115,6 +115,11 @@ theorem eq_zero_of_forall_mem_potentialFiltration (ha : ∀ C, a ∈ potentialFi
     a = 0 :=
   Subtype.ext <| funext fun s => ha (F s - 1) s (sub_one_lt _)
 
+/-- Each `U_C` is closed under multiplication by a ground-ring scalar. -/
+theorem smul_mem_potentialFiltration (c : R) (ha : a ∈ potentialFiltration R F C) :
+    c • a ∈ potentialFiltration R F C := fun s hs => by
+  simp [ha s hs]
+
 /-- A completed combination differs from its truncation above `C` by an element of `U_C`. -/
 theorem sub_ofFinsupp_trunc_mem_potentialFiltration (C : ℝ) (a : NovikovModule R F) :
     a - ofFinsupp F (trunc C a) ∈ potentialFiltration R F C := fun s hs => by
@@ -226,13 +231,11 @@ instance : NonarchimedeanAddGroup (NovikovModule R F) where
 /-- Multiplication by a fixed ground-ring scalar is continuous in the potential-cutoff
 topology. -/
 instance : ContinuousConstSMul R (NovikovModule R F) where
-  continuous_const_smul c := continuous_iff_continuousAt.2 fun a =>
-    ((hasBasis_nhds a).tendsto_iff (hasBasis_nhds (c • a))).2 fun C _ =>
-      ⟨C, trivial, fun b hb s hs => by
-        have hbs := hb s hs
-        simp only [AddSubgroupClass.coe_sub, SetLike.val_smul, Pi.sub_apply,
-          Pi.smul_apply, smul_eq_mul] at hbs ⊢
-        rw [← mul_sub, hbs, mul_zero]⟩
+  continuous_const_smul c := by
+    refine continuous_of_continuousAt_zero (DistribSMul.toAddMonoidHom (NovikovModule R F) c) ?_
+    rw [ContinuousAt, map_zero]
+    exact (hasBasis_nhds_zero.tendsto_iff hasBasis_nhds_zero).2 fun C _ =>
+      ⟨C, trivial, fun _ ha => smul_mem_potentialFiltration c ha⟩
 
 /-- The coefficient of a completed combination at a generator is locally constant in the
 potential-cutoff topology. -/
@@ -422,16 +425,17 @@ topologies. -/
 theorem continuous_kernelProduct :
     Continuous fun p : NovikovModule R F₁ × NovikovModule R F₂ =>
       kernelProduct hn hfin p.1 p.2 := by
-  refine continuous_of_continuousAt_zero₂
-    (LinearMap.toAddMonoidHom'.comp (kernelProduct hn hfin).toAddMonoidHom) ?_
+  let B := LinearMap.toAddMonoidHom'.comp (kernelProduct hn hfin).toAddMonoidHom
+  have hB : ∀ a b, B a b = kernelProduct hn hfin a b := fun _ _ => rfl
+  refine continuous_of_continuousAt_zero₂ B ?_
     (fun a => (continuous_kernelProduct_right hn hfin a).continuousAt)
     (fun b => (continuous_kernelProduct_left hn hfin b).continuousAt)
-  simp only [LinearMap.toAddMonoidHom', AddMonoidHom.coe_comp, AddMonoidHom.coe_mk,
-    ZeroHom.coe_mk, Function.comp_apply, LinearMap.toAddMonoidHom_coe]
-  rw [ContinuousAt, map_zero, nhds_prod_eq]
+  rw [ContinuousAt, nhds_prod_eq]
+  change Tendsto _ _ (𝓝 (B 0 0))
+  rw [map_zero]
   exact ((hasBasis_nhds_zero.prod hasBasis_nhds_zero).tendsto_iff hasBasis_nhds_zero).2
     fun D _ => ⟨((D - C) / 2, (D - C) / 2), ⟨trivial, trivial⟩, fun p hp => by
-      simpa [add_halves] using kernelProduct_mem_potentialFiltration hn hfin hp.1 hp.2⟩
+      simpa [hB, add_halves] using kernelProduct_mem_potentialFiltration hn hfin hp.1 hp.2⟩
 
 end KernelProduct
 
