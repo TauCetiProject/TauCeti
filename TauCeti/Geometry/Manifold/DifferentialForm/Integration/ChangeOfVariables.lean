@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 /-!
 # Change of variables for top-form integrals
@@ -62,101 +61,6 @@ variable {E H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Finite
   [IsManifold I 1 M]
   [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J 1 N] {k : ℕ}
-
-omit [FiniteDimensional ℝ E] in
-/-- The coefficient of a pullback in a preferred chart of the source is the determinant of the
-coordinate expression of the map times the coefficient of the form in a preferred chart of the
-target. Derivatives are taken within the model range, so boundary and corner points are
-included. -/
-theorem RoughForm.inChartAt_mpullback_apply_basis_eq_det_mul (φ : RoughForm J N ℝ k)
-    (b : Module.Basis (Fin k) ℝ E) {f : M → N} {β : M} {α : N} {x : M}
-    (hx : x ∈ (extChartAt I β).source) (hfx : f x ∈ (extChartAt J α).source)
-    (hf : MDifferentiableAt I J f x) :
-    (mpullback I J f φ).inChartAt β (extChartAt I β x) b =
-      (fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I)
-        (extChartAt I β x)).det * φ.inChartAt α (extChartAt J α (f x)) b := by
-  have hz := (extChartAt I β).map_source hx
-  have hfz : MDifferentiableAt I J f ((extChartAt I β).symm (extChartAt I β x)) := by
-    rwa [(extChartAt I β).left_inv hx]
-  have hg : MDifferentiableWithinAt 𝓘(ℝ, E) J (f ∘ (extChartAt I β).symm) (range I)
-      (extChartAt I β x) :=
-    hfz.comp_mdifferentiableWithinAt _ (mdifferentiableWithinAt_extChartAt_symm hz)
-  have hgα : (f ∘ (extChartAt I β).symm) (extChartAt I β x) ∈ (extChartAt J α).source := by
-    simpa only [Function.comp_apply, (extChartAt I β).left_inv hx] using hfx
-  have hw : (mpullback I J f φ).inChartAt β (extChartAt I β x) =
-      mpullbackWithin 𝓘(ℝ, E) J (f ∘ (extChartAt I β).symm) (range I) φ (extChartAt I β x) := by
-    rw [RoughForm.inChartAt_mpullback φ f β hz hfz]
-    ext v
-    rw [mpullbackWithin_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply]
-    -- The two sides differ only by unfolding `Function.comp`.
-    rfl
-  rw [hw, RoughForm.mpullbackWithin_eq_compContinuousLinearMap φ α hgα hg
-    (I.uniqueDiffOn.uniqueDiffWithinAt (extChartAt_target_subset_range β hz)),
-    ContinuousAlternatingMap.compContinuousLinearMap_apply_basis]
-  simp only [Function.comp_apply, (extChartAt I β).left_inv hx]
-
-/-- If `f` preserves the orientations of two lifts with the same model orientation, then the
-chart signs of the lifts compensate the sign of the coordinate Jacobian of `f` between any two
-preferred charts. -/
-theorem Manifold.OrientationLift.signAt_mul_signAt_mul_det_pos
-    (l : OrientationLift I M (Fin k)) (l' : OrientationLift J N (Fin k))
-    (hl : l'.modelOrientation = l.modelOrientation) {f : M → N} {x : M}
-    (hf : MDifferentiableAt I J f x)
-    (ho : Manifold.Orientation.IsOrientationPreservingAt (Manifold.Orientation.mk l)
-      (Manifold.Orientation.mk l') f x)
-    {β : M} {α : N} (hx : x ∈ (chartAt H β).source) (hfx : f x ∈ (chartAt H' α).source) :
-    0 < (l.signAt β x : ℝ) * (l'.signAt α (f x) : ℝ) *
-      (fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I)
-        (extChartAt I β x)).det := by
-  obtain ⟨e, he, hp⟩ := (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).mp ho
-  rw [Manifold.Orientation.orientationAt_mk, Manifold.Orientation.orientationAt_mk] at hp
-  -- The tangent spaces are the model space `E`; restate `hp` there, where the tangent
-  -- orientations can be rewritten to the signed model orientations they equal.
-  obtain ⟨A, hA⟩ : ∃ A : E ≃ₗ[ℝ] E, A = e.toLinearEquiv := ⟨_, rfl⟩
-  replace hp : _root_.Orientation.map (Fin k) A
-      (l.orientationAt x : _root_.Orientation ℝ E (Fin k)) =
-        (l'.orientationAt (f x) : _root_.Orientation ℝ E (Fin k)) := by
-    subst hA
-    exact hp
-  rw [orientationAt_eq, orientationAt_eq] at hp
-  rw [chartOrientation_eq_ite, chartOrientation_eq_ite, hl,
-    ← _root_.Orientation.intCast_units_smul_eq_ite,
-    ← _root_.Orientation.intCast_units_smul_eq_ite] at hp
-  have h₁ := (_root_.Orientation.map_units_smul_eq_iff_det_mul_pos l.modelOrientation
-    A _ _ l.card_eq).mp hp
-  have h₂ := l.compatible β x x hx (mem_chart_source H x)
-  have h₃ := l'.compatible (f x) α (f x) (mem_chart_source H' (f x)) hfx
-  rw [← tangentCoordChange_def] at h₂ h₃
-  -- The tangent spaces at `x` and `f x` are the model space `E`, so the manifold derivative of
-  -- `f` is an endomorphism `D` of `E`, which composes with the tangent coordinate changes.
-  obtain ⟨D, hD₀⟩ : ∃ D : E →L[ℝ] E, D = mfderiv I J f x := ⟨_, rfl⟩
-  have hD : fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I)
-      (extChartAt I β x) = tangentCoordChange J (f x) α (f x) ∘L D ∘L
-        tangentCoordChange I β x x := by
-    subst hD₀
-    exact hf.fderivWithin_extChartAt_comp_extChartAt_symm
-      (by simpa only [extChartAt_source] using hx) (by simpa only [extChartAt_source] using hfx)
-  have hdet : LinearMap.det (D : E →ₗ[ℝ] E) = LinearMap.det (A : E →ₗ[ℝ] E) := by
-    subst hD₀ hA
-    rw [← he]
-    rfl
-  rw [hD, signAt_of_mem _ hx, signAt_of_mem _ hfx, ContinuousLinearMap.det,
-    ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.toLinearMap_comp,
-    LinearMap.det_comp, LinearMap.det_comp, hdet]
-  simp only [Units.coe_map] at h₁
-  -- Multiply the three positive quantities; the signs at `x` and at `f x` appear squared.
-  have ha := Int.isUnit_mul_self (l.sign x ⟨x, mem_chart_source H x⟩).isUnit
-  have hc := Int.isUnit_mul_self (l'.sign (f x) ⟨f x, mem_chart_source H' (f x)⟩).isUnit
-  generalize (l.sign x ⟨x, mem_chart_source H x⟩ : ℤ) = a at h₁ h₂ ha
-  generalize (l'.sign (f x) ⟨f x, mem_chart_source H' (f x)⟩ : ℤ) = c at h₁ h₃ hc
-  have ha' : (a : ℝ) * a = 1 := by exact_mod_cast ha
-  have hc' : (c : ℝ) * c = 1 := by exact_mod_cast hc
-  have hprod := mul_pos (mul_pos h₁ h₂) h₃
-  convert hprod using 1
-  linear_combination
-    (-((l.sign β ⟨x, hx⟩ : ℤ) : ℝ) * (l'.sign α ⟨f x, hfx⟩ : ℤ) *
-      (tangentCoordChange J (f x) α (f x)).det * LinearMap.det (A : E →ₗ[ℝ] E) *
-      (tangentCoordChange I β x x).det) * ((c : ℝ) * c * ha' + hc')
 
 section ChartPiece
 
@@ -380,8 +284,6 @@ theorem integralTopForm_mpullback_of_isOrientationReversingAt (f : M ≃ₜ N)
     (φ : RoughForm J N ℝ k) : integralTopForm o (mpullback I J f φ) = -integralTopForm o' φ := by
   rw [← integralTopForm_neg]
   refine integralTopForm_mpullback_of_isOrientationPreservingAt f hf (fun x ↦ ?_) φ
-  obtain ⟨e, he, h⟩ := (Manifold.Orientation.isOrientationReversingAt_iff _ _ _ _).mp (ho x)
-  exact (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).mpr
-    ⟨e, he, by rw [h, Manifold.Orientation.orientationAt_neg]⟩
+  exact (Manifold.Orientation.isOrientationPreservingAt_neg_right o o' f x).2 (ho x)
 
 end TauCeti
