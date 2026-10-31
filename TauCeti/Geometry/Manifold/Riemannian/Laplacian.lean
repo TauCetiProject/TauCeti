@@ -334,6 +334,39 @@ theorem divergence_smul_function (f : M → ℝ) (X : (x : M) → TangentSpace I
   rw [h_trace]
   simp only [smul_eq_mul, divergence]
 
+/-- Divergence is additive over a finite family of vector fields, at a point where every field is
+differentiable. -/
+theorem divergence_finsetSum {ι : Type*} (s : Finset ι) (X : ι → (x : M) → TangentSpace I x)
+    (x : M)
+    (hX : ∀ i ∈ s, MDifferentiableAt I I.tangent (fun y ↦ (⟨y, X i y⟩ : TangentBundle I M)) x) :
+    divergence I (fun y ↦ ∑ i ∈ s, X i y) x = ∑ i ∈ s, divergence I (X i) x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    simp only [Finset.sum_empty]
+    exact divergence_zero I x
+  | insert i s hi h =>
+    simp only [Finset.mem_insert, forall_eq_or_imp] at hX
+    simp only [Finset.sum_insert hi, ← h hX.2]
+    exact divergence_add I (X i) (fun y ↦ ∑ j ∈ s, X j y) x hX.1
+      (MDifferentiableAt.sum_section hX.2)
+
+/-- The divergence vanishes off the topological support of a vector field, since the field is zero
+near such a point. No regularity of the field is needed. -/
+theorem divergence_eq_zero_of_notMem_tsupport {X : (x : M) → TangentSpace I x} {x : M}
+    (hx : x ∉ tsupport (α := E) X) : divergence I X x = 0 := by
+  have h : (fun y ↦ (X y : E)) =ᶠ[nhds x] 0 := notMem_tsupport_iff_eventuallyEq.1 hx
+  have hT : (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) =ᶠ[nhds x]
+      fun y ↦ (⟨y, (0 : (x : M) → TangentSpace I x) y⟩ : TangentBundle I M) :=
+    h.mono fun y hy ↦ congrArg (TotalSpace.mk' E y) hy
+  have h0 : MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, (0 : (x : M) → TangentSpace I x) y⟩ : TangentBundle I M)) x :=
+    mdifferentiableAt_zeroSection ..
+  have hcov := (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv
+  rw [divergence_def, hcov.congr_of_eventuallyEq (h0.congr_of_eventuallyEq hT) h0 Filter.univ_mem h,
+    hcov.zero]
+  simp
+
 /-- The Hessian of a constant function is zero. -/
 @[simp]
 theorem hessian_const (c : ℝ) (x : M) (v w : TangentSpace I x) :

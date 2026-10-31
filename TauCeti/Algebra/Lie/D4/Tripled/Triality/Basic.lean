@@ -121,6 +121,20 @@ private theorem trialityModuleEquiv_latticeBasis (a : Fin 24) :
 
 /-! ## The triality automorphism of the carrier -/
 
+/-- The triality symmetry carries each weight component of the tripled lattice to the component of
+the weight relabelled by the triality permutation. -/
+private theorem d4TripledWeight_of_repr_ne_zero (a b : Fin 24)
+    (hab : latticeBasis.repr (trialitySymmetry.moduleEquiv.toAddEquiv.invariantRestrict
+      lattice.toAddSubgroup trialityModuleEquiv_mem_lattice_iff (latticeBasis b)) a ≠ 0)
+    (k : Fin 4) :
+    d4TripledWeight a (trialityPermD4 k) = d4TripledWeight b k := by
+  obtain rfl := AddEquiv.eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial
+    trialitySymmetry.moduleEquiv.toAddEquiv lattice.toAddSubgroup
+    trialityModuleEquiv_mem_lattice_iff latticeBasis d4TripledTrialityPerm (fun _ => 1)
+    trialityModuleEquiv_latticeBasis hab
+  exact d4TripledWeight_d4TripledTrialityPerm_apply b k
+
+
 private noncomputable def toralTrialityAutomorphism :
     Aut (kostantToralGroupScheme
       (TauCeti.serreRootGenerator weightTable.cartanMatrix)
@@ -133,8 +147,7 @@ private noncomputable def toralTrialityAutomorphism :
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis d4TripledWeight
     trialitySymmetry.rootPerm trialitySymmetry.moduleEquiv trialityModuleEquiv_mem_lattice_iff
     trialityModuleEquiv_rep_ι_serreRootGenerator trialitySymmetry.rootPerm.surjective
-    d4TripledTrialityPerm (fun _ => 1) trialityModuleEquiv_latticeBasis trialityPermD4
-    d4TripledWeight_d4TripledTrialityPerm_apply
+    trialityPermD4 d4TripledWeight_of_repr_ne_zero
 
 /-- **The triality automorphism of the tripled type-`D₄` carrier**, characterized on the numbered
 simple-root subgroups by `rootSubgroup_comp_trialityAutomorphism_hom` and on the represented
@@ -257,8 +270,7 @@ private theorem map_points_conj_trialityMatrix (A : Type v) [CommRing A] :
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis d4TripledWeight
     trialitySymmetry.rootPerm trialitySymmetry.moduleEquiv trialityModuleEquiv_mem_lattice_iff
     trialityModuleEquiv_rep_ι_serreRootGenerator trialitySymmetry.rootPerm.surjective
-    d4TripledTrialityPerm (fun _ => 1) trialityModuleEquiv_latticeBasis trialityPermD4
-    d4TripledWeight_d4TripledTrialityPerm_apply A
+    trialityPermD4 d4TripledWeight_of_repr_ne_zero A
 
 /-- **Triality on matrix-valued points of the tripled carrier**, given by conjugation by the
 triality permutation matrix. -/
@@ -318,7 +330,7 @@ theorem trialityPoints_weightTorusPoints (A : Type v) [CommRing A] (s : Fin 4 �
     rw [hwt, ← torusCharacter_mulEquivArrowCongr trialityPermD4 s (d4TripledWeight i)]
     exact congrArg (fun z => torusCharacter z (d4TripledWeight i))
       (funext fun k => by rw [MulEquiv.arrowCongr_apply, MulEquiv.refl_apply])
-  have hconj := kostantNumberedSymmetryMatrix_conj_diagGL
+  have hconj := kostantNumberedSymmetryMatrix_conj_diagGL_of_monomial
     lattice.toAddSubgroup latticeBasis trialitySymmetry.moduleEquiv
     trialityModuleEquiv_mem_lattice_iff d4TripledTrialityPerm (fun _ => 1)
     trialityModuleEquiv_latticeBasis A (fun i => torusCharacter s (d4TripledWeight i))
@@ -345,8 +357,7 @@ theorem schemePointsMulEquiv_trialityAutomorphism_comp_carrierι
       rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis d4TripledWeight
       trialitySymmetry.rootPerm trialitySymmetry.moduleEquiv trialityModuleEquiv_mem_lattice_iff
       trialityModuleEquiv_rep_ι_serreRootGenerator trialitySymmetry.rootPerm.surjective
-      d4TripledTrialityPerm (fun _ => 1) trialityModuleEquiv_latticeBasis trialityPermD4
-      d4TripledWeight_d4TripledTrialityPerm_apply A p
+      trialityPermD4 d4TripledWeight_of_repr_ne_zero A p
 
 /-- **Triality on matrix-valued points is natural in the value ring**: it commutes with the map on
 points induced by any ring homomorphism, in particular with every Frobenius map of the carrier. -/
