@@ -90,7 +90,8 @@ private theorem rpow_neg_le_zpow_neg (hS : ∀ p ∈ S, p.Prime) {C : ℝ} (hC :
   have : Fact (p : ℕ).Prime := ⟨hS p p.2⟩
   have hx0 : (x : ℚ) ≠ 0 := x.ne_zero
   have hy0 : (y : ℚ) ≠ 0 := y.ne_zero
-  rcases lt_or_gt_of_ne (show padicValRat p (x : ℚ) ≠ 0 by omega) with hneg | hpos
+  have hv0 : padicValRat p (x : ℚ) ≠ 0 := by omega
+  rcases lt_or_gt_of_ne hv0 with hneg | hpos
   · -- `v_p(x) < 0`: then `v_p(y) = v_p(x)`, and `z = -x / y` has `z - 1 = -1 / y`
     have hyx := padicValRat.eq_of_add_eq_one_of_neg hxy hneg
     have hdiv : ∀ q : ℕ, q.Prime →
@@ -127,15 +128,17 @@ private theorem rpow_neg_le_zpow_neg (hS : ∀ p ∈ S, p.Prime) {C : ℝ} (hC :
       rw [Units.val_div_eq_div_val, Units.val_neg]
       field_simp
       linarith
+    have hvN : padicValRat p (x : ℚ) = -(N : ℤ) := by omega
     rwa [hsub, padicNorm.neg, padicNorm.eq_zpow_of_nonzero (inv_ne_zero hy0), padicValRat.inv,
-      neg_neg, hyx, show padicValRat p (x : ℚ) = -(N : ℤ) by omega, Rat.cast_zpow,
-      Rat.cast_natCast] at h
+      neg_neg, hyx, hvN, Rat.cast_zpow, Rat.cast_natCast] at h
   · -- `v_p(x) > 0`: then `v_p(y) = 0`, and `z = y` has `z - 1 = -x`
     have hy1 : (y : ℚ) ≠ 1 := fun h ↦ hx0 (by linarith)
     have h := rpow_neg_le_padicNorm_sub_one hS hC hLB p hy
       (padicValRat.eq_zero_of_add_eq_one_of_pos hxy hpos) hy1 hNy
-    rwa [show (y : ℚ) - 1 = -x by linarith, padicNorm.neg, padicNorm.eq_zpow_of_nonzero hx0,
-      show padicValRat p (x : ℚ) = (N : ℤ) by omega, Rat.cast_zpow, Rat.cast_natCast] at h
+    have hsub : (y : ℚ) - 1 = -x := by linarith
+    have hvN : padicValRat p (x : ℚ) = (N : ℤ) := by omega
+    rwa [hsub, padicNorm.neg, padicNorm.eq_zpow_of_nonzero hx0, hvN, Rat.cast_zpow,
+      Rat.cast_natCast] at h
 
 /-- **The exponent bound for the rational `S`-unit equation** (Evertse, Theorem 5.17). Let `S` be
 a finite set of primes and `C ≥ 0` a constant such that for every `p ∈ S`, every sign `ε` and every
