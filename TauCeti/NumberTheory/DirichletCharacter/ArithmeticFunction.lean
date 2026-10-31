@@ -58,9 +58,7 @@ theorem toArithmeticFunction_pmul_mul (χ : DirichletCharacter R M)
   apply Finset.sum_congr rfl
   intro d hd
   have hdn := (Nat.mem_divisorsAntidiagonal.mp hd).1
-  have hd0 : d.1 ≠ 0 ∧ d.2 ≠ 0 := by
-    exact ⟨fun h ↦ hn (by simpa [h] using hdn.symm),
-      fun h ↦ hn (by simpa [h] using hdn.symm)⟩
+  have hd0 := Nat.ne_zero_of_mem_divisorsAntidiagonal hd
   simp only [pmul_apply, ← χ.apply_eq_toArithmeticFunction_apply hn,
     ← χ.apply_eq_toArithmeticFunction_apply hd0.1,
     ← χ.apply_eq_toArithmeticFunction_apply hd0.2]
