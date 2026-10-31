@@ -56,9 +56,31 @@ theorem superdiagonalShift_last_apply (d : ℕ) (j : Fin (d + 1)) :
 
 end Shift
 
+section Semiring
+
+variable [Semiring A] {d : ℕ}
+
+/-- Row multiplication by a multiple of the superdiagonal shift: the first entry vanishes. -/
+theorem vecMul_smul_superdiagonalShift_zero (v : Fin (d + 1) → A) (s : A) :
+    (v ᵥ* (s • superdiagonalShift (d + 1))) 0 = 0 := by
+  simp [vecMul, dotProduct, superdiagonalShift_apply]
+
+/-- Row multiplication by a multiple of the superdiagonal shift moves each entry one place to
+the right. -/
+theorem vecMul_smul_superdiagonalShift_succ (v : Fin (d + 1) → A) (s : A) (j : Fin d) :
+    (v ᵥ* (s • superdiagonalShift (d + 1))) j.succ = v j.castSucc * s := by
+  simp only [vecMul, dotProduct, Matrix.smul_apply, superdiagonalShift_apply, Fin.val_succ,
+    smul_eq_mul, mul_ite, mul_one, mul_zero]
+  rw [Fintype.sum_eq_single j.castSucc fun k hk ↦ ite_eq_right_iff.2 fun h ↦ absurd ?_ hk]
+  · simp
+  · rw [Fin.ext_iff, Fin.val_castSucc]
+    omega
+
+end Semiring
+
 section Ring
 
-variable [Ring A] {d : ℕ}
+variable [Ring A]
 
 /-- Subtracting a multiple of the superdiagonal shift from the identity gives an upper
 unitriangular matrix. -/
@@ -76,22 +98,6 @@ theorem isUnit_one_sub_smul_superdiagonalShift (n : ℕ) (s : A) :
   have h := (isUpperUnitriangular_one_sub_smul_superdiagonalShift n s).isNilpotent_sub_one
   rw [← sub_add_cancel (1 - s • superdiagonalShift n) 1]
   exact h.isUnit_add_one
-
-/-- Row multiplication by a multiple of the superdiagonal shift: the first entry vanishes. -/
-theorem vecMul_smul_superdiagonalShift_zero (v : Fin (d + 1) → A) (s : A) :
-    (v ᵥ* (s • superdiagonalShift (d + 1))) 0 = 0 := by
-  simp [vecMul, dotProduct, superdiagonalShift_apply]
-
-/-- Row multiplication by a multiple of the superdiagonal shift moves each entry one place to
-the right. -/
-theorem vecMul_smul_superdiagonalShift_succ (v : Fin (d + 1) → A) (s : A) (j : Fin d) :
-    (v ᵥ* (s • superdiagonalShift (d + 1))) j.succ = v j.castSucc * s := by
-  simp only [vecMul, dotProduct, Matrix.smul_apply, superdiagonalShift_apply, Fin.val_succ,
-    smul_eq_mul, mul_ite, mul_one, mul_zero]
-  rw [Fintype.sum_eq_single j.castSucc fun k hk ↦ ite_eq_right_iff.2 fun h ↦ absurd ?_ hk]
-  · simp
-  · rw [Fin.ext_iff, Fin.val_castSucc]
-    omega
 
 end Ring
 

@@ -30,7 +30,11 @@ open Matrix
 
 namespace TauCeti
 
-variable {A : Type*} [Ring A] {d : ℕ}
+variable {A : Type*} {d : ℕ}
+
+section ZeroOne
+
+variable [Zero A] [One A]
 
 /-- The lower unitriangular matrix of size `d + 1` which agrees with the identity except in its
 last row, where it is `(b 0, …, b (d - 1), 1)`. Multiplying by it on the left adds `b k` times
@@ -62,6 +66,12 @@ theorem lastRowTransvection_zero : lastRowTransvection d (0 : Fin d → A) = 1 :
     | cast j => simp [one_apply, (Fin.castSucc_lt_last j).ne']
   · rfl
 
+end ZeroOne
+
+section Semiring
+
+variable [Semiring A]
+
 /-- The row operations `lastRowTransvection` compose by adding their multipliers. -/
 theorem lastRowTransvection_mul_lastRowTransvection (b b' : Fin d → A) :
     lastRowTransvection d b * lastRowTransvection d b' = lastRowTransvection d (b + b') := by
@@ -76,12 +86,6 @@ theorem lastRowTransvection_mul_lastRowTransvection (b b' : Fin d → A) :
     | last => simp [one_apply, Fin.castSucc_ne_last]
     | cast j => simp [one_apply]
   · simp [lastRowTransvection_apply, hi]
-
-/-- The elementary matrices `lastRowTransvection d b` are units, with inverse
-`lastRowTransvection d (-b)`. -/
-theorem isUnit_lastRowTransvection (b : Fin d → A) : IsUnit (lastRowTransvection d b) :=
-  isUnit_iff_exists.2 ⟨lastRowTransvection d (-b), by
-    simp [lastRowTransvection_mul_lastRowTransvection]⟩
 
 /-- Right multiplication by `diagonal (1, …, 1, x)` scales the last column by `x`. -/
 theorem lastRowTransvection_mul_diagonal (b : Fin d → A) (x : A) :
@@ -99,5 +103,13 @@ theorem lastRowTransvection_mul_diagonal (b : Fin d → A) (x : A) :
   · induction i using Fin.lastCases with
     | last => exact absurd rfl hi
     | cast i => simp [diagonal_apply, one_apply]
+
+end Semiring
+
+/-- The elementary matrices `lastRowTransvection d b` are units, with inverse
+`lastRowTransvection d (-b)`. -/
+theorem isUnit_lastRowTransvection [Ring A] (b : Fin d → A) : IsUnit (lastRowTransvection d b) :=
+  isUnit_iff_exists.2 ⟨lastRowTransvection d (-b), by
+    simp [lastRowTransvection_mul_lastRowTransvection]⟩
 
 end TauCeti
