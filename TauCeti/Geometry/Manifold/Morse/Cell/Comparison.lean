@@ -386,8 +386,8 @@ variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [
   [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {n : ℕ} {ι : Type u} {f : M → ℝ} {c ε : ℝ}
 
 /-- **The handle-to-cell comparison is a homotopy equivalence relative to the lower sublevel.**
-Let `f` be smooth and let `ψ i` be finitely many charts with pairwise disjoint sources, each
-containing the closed ball of radius `√(2ε)` about `0`, in which
+Let `f` be smooth and let `ψ i` be finitely many charts with pairwise disjoint sources, whose
+targets contain the closed ball of radius `√(2ε)` about `0`, in which
 `f = c - Σ_{j < k i} yⱼ² + Σ_{j ≥ k i} yⱼ²`. If the band `f⁻¹[c - ε, c + ε]` is compact and its
 critical points lie in the charts, then the comparison map
 `Φ : M_{c-ε} ∪_α ⨆ᵢ D^{k i} → M_{c+ε}` has a left inverse `g` such that `Φ ∘ g` is homotopic to
