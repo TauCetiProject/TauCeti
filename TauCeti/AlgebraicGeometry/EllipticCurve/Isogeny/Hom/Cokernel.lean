@@ -30,12 +30,13 @@ when the source is finitely generated), division gives the rational cokernel/ker
 its image contains `deg(f) · E₂(F)`.
 
 Since `f̂ ∘ f` is multiplication by `deg f`, the cokernel/kernel ratios of `f` and `f̂` multiply to
-that of `[deg f]` on `E₁(F)`:
+that of `[deg f]` on `E₁(F)`. In cross-multiplied form,
 
 `#coker([deg f]) · #ker(f) · #ker(f̂) = #coker(f̂) · #coker(f) · #E₁(F)[deg f]`.
 
-This holds over every field, again with no finiteness hypothesis. Over a local field, at a place
-prime to `deg f`, the ratio for `[deg f]` is `1`, so the ratios of `f` and `f̂` are inverse.
+This holds over every field, again with no finiteness hypothesis; when the six quantities are
+finite it is the ratio identity. Over a local field, at a place prime to `deg f`, the ratio for
+`[deg f]` is `1`, so the ratios of `f` and `f̂` are inverse.
 
 This is the torsion factor in the kernel/cokernel proof of Cassels' isogeny invariance of the
 BSD quotient. The regulator, period, local, and Tate–Shafarevich factors are not treated here.
@@ -134,17 +135,11 @@ theorem index_range_div_card_ker [Finite (AddCommGroup.torsion W₁.Point)] (hf 
   apply (div_eq_div_iff hK hT).mpr
   exact_mod_cast f.index_range_mul_card_torsion hf
 
-/-- `f̂ ∘ f` acts on points as multiplication by `deg f`. -/
-@[simp]
-theorem dual_pointMapHom_comp_pointMapHom :
-    f.dual.pointMapHom.comp f.pointMapHom = nsmulAddMonoidHom f.degree := by
-  ext P
-  simp [dual_pointMap_pointMap]
-
 /-- **The cokernel/kernel ratios of a morphism and of its dual multiply to that of multiplication
 by the degree**: on the points over any field,
 `#coker([deg f]) · #ker(f) · #ker(f̂) = #coker(f̂) · #coker(f) · #E₁(F)[deg f]`. No finiteness is
-required: infinite orders and indices are read as `0`. -/
+required: infinite orders and indices are read as `0`. When all of them are finite, dividing out
+gives the identity of ratios. -/
 theorem index_range_nsmul_mul_card_ker_mul_card_ker_dual :
     (nsmulAddMonoidHom (α := W₁.Point) f.degree).range.index *
         (Nat.card f.pointMapHom.ker * Nat.card f.dual.pointMapHom.ker) =

@@ -12,31 +12,31 @@ import TauCeti.GroupTheory.Index.Quotient
 /-!
 # Kernels and cokernels of a composite
 
-For a homomorphism `f : A →* B` write `z(f) = [B : f(A)] / #ker(f)` for the ratio of the order of
-its cokernel to the order of its kernel. For homomorphisms `f : A →* B` and `g : B →* C` this ratio
-is multiplicative,
+For homomorphisms `f : A →* B` and `g : B →* C` of arbitrary groups, this file proves the
+cross-multiplied index identity
 
-`z(g ∘ f) = z(g) · z(f)`,
+`[C : gf(A)] · #ker(f) · #ker(g) = [C : g(B)] · [B : f(A)] · #ker(g ∘ f)`,
 
-which is the count along the kernel–cokernel exact sequence
+where `[B : f(A)]` is the cardinality of the coset space `B ⧸ f(A)`. It needs no finiteness
+hypothesis: infinite orders and indices are read as `0`, and either both sides are `0` or all six
+quantities are finite. The images need not be normal.
 
-`1 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 1`.
+When the kernels and indices are finite, write `z(f) = [B : f(A)] / #ker(f)`. Dividing out gives
+`z(g ∘ f) = z(g) · z(f)`. For abelian groups the indices are the orders of the cokernels, and this
+is the count along the kernel–cokernel exact sequence
 
-Here it is stated without division, as
-`[C : gf(A)] · #ker(f) · #ker(g) = [C : g(B)] · [B : f(A)] · #ker(g ∘ f)`, which needs no
-finiteness hypothesis: infinite orders and indices are read as `0`, and either both sides are `0`
-or all six quantities are finite. Neither the groups nor the cokernels need be commutative.
+`0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 0`.
 
 For an isogeny `φ : E → E'` with dual `φ̂`, the composite `φ̂ ∘ φ` is multiplication by `deg φ`,
-so on the points over a field this gives `z([deg φ]) = z(φ̂) · z(φ)`. Ratios of this kind over
-local fields are the local factors in Cassels' proof that the Birch–Swinnerton-Dyer quotient is
-an isogeny invariant.
+so on the points over a field this gives `z([deg φ]) = z(φ̂) · z(φ)` whenever the kernels and
+cokernels involved are finite. Ratios of this kind over local fields are the local factors in
+Cassels' proof that the Birch–Swinnerton-Dyer quotient is an isogeny invariant.
 
 ## Main results
 
 * `MonoidHom.index_range_comp_mul_card_ker_mul_card_ker` and its additive form
-  `AddMonoidHom.index_range_comp_mul_card_ker_mul_card_ker`: the multiplicativity of
-  `#coker / #ker` along a composite.
+  `AddMonoidHom.index_range_comp_mul_card_ker_mul_card_ker`: the cross-multiplied index identity
+  for a composite.
 
 ## References
 
@@ -51,21 +51,24 @@ namespace MonoidHom
 
 variable {A B C : Type*} [Group A] [Group B] [Group C]
 
-/-- **`#coker / #ker` is multiplicative along a composite**: for `f : A →* B` and `g : B →* C`,
-`[C : gf(A)] · #ker(f) · #ker(g) = [C : g(B)] · [B : f(A)] · #ker(g ∘ f)`. No finiteness is
-required: infinite orders and indices are read as `0`. -/
+/-- **The index identity for a composite**: for `f : A →* B` and `g : B →* C`,
+`[C : gf(A)] · #ker(f) · #ker(g) = [C : g(B)] · [B : f(A)] · #ker(g ∘ f)`, with subgroup indices
+counting cosets. No finiteness is required: infinite orders and indices are read as `0`. When all
+of them are finite, this says `[B : f(A)] / #ker(f)` is multiplicative along the composite. -/
 @[to_additive AddMonoidHom.index_range_comp_mul_card_ker_mul_card_ker
-  /-- **`#coker / #ker` is multiplicative along a composite**: for `f : A →+ B` and
-  `g : B →+ C`, `[C : gf(A)] · #ker(f) · #ker(g) = [C : g(B)] · [B : f(A)] · #ker(g ∘ f)`. No
-  finiteness is required: infinite orders and indices are read as `0`. -/]
+  /-- **The index identity for a composite**: for `f : A →+ B` and `g : B →+ C`,
+  `[C : gf(A)] · #ker(f) · #ker(g) = [C : g(B)] · [B : f(A)] · #ker(g ∘ f)`, with subgroup
+  indices counting cosets. No finiteness is required: infinite orders and indices are read as
+  `0`. When all of them are finite, this says `[B : f(A)] / #ker(f)` is multiplicative along the
+  composite. -/]
 theorem index_range_comp_mul_card_ker_mul_card_ker (f : A →* B) (g : B →* C) :
     (g.comp f).range.index * (Nat.card f.ker * Nat.card g.ker) =
       g.range.index * f.range.index * Nat.card (g.comp f).ker := by
   -- The image of `f(A)` in `B ⧸ ker g` has the same index as `gf(A)` has in `g(B)`.
   have hrange : (g.comp f).range.index =
       (f.range.map (QuotientGroup.mk' g.ker)).index * g.range.index := by
-    rw [range_comp, Subgroup.index_map, Subgroup.index_map, QuotientGroup.ker_mk',
-      range_eq_top_of_surjective _ (QuotientGroup.mk'_surjective _), Subgroup.index_top, mul_one]
+    rw [range_comp, Subgroup.index_map, Subgroup.index_map]
+    simp [range_eq_top_of_surjective _ (QuotientGroup.mk'_surjective _)]
   -- The kernel of `g ∘ f` is the preimage of `ker g`, counted by the quotient-index formula.
   have hker := TauCeti.index_range_mul_card_comap_mul (f := f) (S := g.ker)
   rw [comap_ker] at hker
