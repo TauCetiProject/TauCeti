@@ -15,6 +15,7 @@ import Mathlib.Algebra.Homology.HomologySequence
 import Mathlib.RingTheory.Flat.CategoryTheory
 import Mathlib.RingTheory.Flat.Tensor
 import TauCeti.CategoryTheory.Abelian.LeftDerived
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.LinearAlgebra.End.TensorProduct
 
@@ -47,7 +48,8 @@ resolution `P` of `M`. The terms of `P` are flat, so a short exact sequence
 `0 → X₁ → X₂ → X₃ → 0` gives a short exact sequence of complexes `Xᵢ ⊗ P`, and its long exact
 homology sequence relates the groups `Torₙ(Xᵢ, M)`. We record the vanishing statements it gives:
 `Torₙ(X₂, M)` vanishes with `Torₙ(X₁, M)` and `Torₙ(X₃, M)`
-(`CategoryTheory.ShortComplex.ShortExact.isZero_Tor_X₂`), `Torₙ₊₁(X₃, M)` vanishes with
+(`CategoryTheory.ShortComplex.ShortExact.isZero_Tor_X₂`), in particular `Torₙ(X × Y, M)` vanishes
+with `Torₙ(X, M)` and `Torₙ(Y, M)` (`ModuleCat.isZero_Tor_prod`), `Torₙ₊₁(X₃, M)` vanishes with
 `Torₙ₊₁(X₂, M)` and `Torₙ(X₁, M)` (`CategoryTheory.ShortComplex.ShortExact.isZero_Tor_succ_X₃`),
 and `Tor₁(X₃, M)` vanishes with `Tor₁(X₂, M)` when `X₁ ⊗ M → X₂ ⊗ M` is injective
 (`CategoryTheory.ShortComplex.ShortExact.isZero_Tor_one_X₃`). Flat modules have vanishing higher
@@ -202,29 +204,24 @@ private lemma shortExact_tensorResolutionShortComplex (P : ProjectiveResolution 
 /-- `Tor_{n+1}(X, M)` vanishes exactly when `X ⊗ P` is exact in degree `n + 1`. -/
 private lemma isZero_Tor_succ_iff (P : ProjectiveResolution M) (X : ModuleCat.{u} A) (n : ℕ) :
     IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj X).obj M) ↔
-      ∀ y : X ⊗[A] P.complex.X (n + 1), (P.complex.d (n + 1) n).hom.lTensor X y = 0 →
-        ∃ z, (P.complex.d (n + 2) (n + 1)).hom.lTensor X z = y := by
+      ∀ y : (X ⊗ P.complex.X (n + 1) : ModuleCat.{u} A),
+        (P.complex.d (n + 1) n).hom.lTensor X y = 0 →
+        ∃ z : (X ⊗ P.complex.X (n + 2) : ModuleCat.{u} A),
+          (P.complex.d (n + 2) (n + 1)).hom.lTensor X z = y := by
   rw [isZero_Tor_iff P, ← HomologicalComplex.exactAt_iff_isZero_homology,
     HomologicalComplex.exactAt_iff' _ (n + 2) (n + 1) n (by simp) (by simp),
     ShortComplex.moduleCat_exact_iff]
-  simp [ModuleCat.hom_whiskerLeft]
-  -- The two sides differ only in the binder type: the carrier of `X ⊗ Q` in `ModuleCat A` is
-  -- `X ⊗[A] Q` by definition (`ModuleCat.MonoidalCategory.tensorObj`).
-  rfl
+  simp only [HomologicalComplex.shortComplexFunctor'_obj_X₁,
+    HomologicalComplex.shortComplexFunctor'_obj_X₂, HomologicalComplex.shortComplexFunctor'_obj_f,
+    HomologicalComplex.shortComplexFunctor'_obj_g, Functor.mapHomologicalComplex_obj_X,
+    Functor.mapHomologicalComplex_obj_d, curriedTensor_obj_obj, curriedTensor_obj_map,
+    hom_whiskerLeft]
 
 /-- **Flat modules are `Tor`-acyclic.** If `X` is flat, then `Tor_{n+1}(X, M) = 0` for every
 module `M`. -/
 theorem isZero_Tor_succ_of_flat (X M : ModuleCat.{u} A) [Module.Flat A X] (n : ℕ) :
     IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj X).obj M) :=
   Functor.isZero_leftDerived_succ ((tensoringLeft _).obj X) M n
-
-/-- `lTensor` and `rTensor` commute pointwise: both composites are `TensorProduct.map f g`. -/
-private lemma lTensor_rTensor_apply {X Y Q R : Type*} [AddCommGroup X] [Module A X]
-    [AddCommGroup Y] [Module A Y] [AddCommGroup Q] [Module A Q] [AddCommGroup R] [Module A R]
-    (f : X →ₗ[A] Y) (g : Q →ₗ[A] R) (x : X ⊗[A] Q) :
-    g.lTensor Y (f.rTensor Q x) = f.rTensor R (g.lTensor X x) := by
-  rw [← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor, ← LinearMap.rTensor_comp_lTensor,
-    LinearMap.comp_apply]
 
 /-- **`Tor` of a quotient by a directed union.** If `N` is a directed family of submodules of `X`
 and `Tor_{n+1}(X ⧸ N i, M)` vanishes for every `i`, then `Tor_{n+1}(X ⧸ ⨆ i, N i, M)` vanishes. -/
@@ -242,7 +239,7 @@ theorem isZero_Tor_succ_quotient_iSup {X : ModuleCat.{u} A} {ι : Type*} [Nonemp
   -- generated `N₀ ≤ K`, and `N₀` lies in a single `N i`.
   obtain ⟨y, rfl⟩ := LinearMap.rTensor_surjective _ K.mkQ_surjective y
   have hy' : K.mkQ.rTensor _ (d₁.lTensor X y) = 0 := by
-    rwa [← lTensor_rTensor_apply]
+    rwa [← LinearMap.lTensor_rTensor_apply]
   obtain ⟨t, ht⟩ := (rTensor_exact _ (LinearMap.exact_subtype_mkQ K)
     K.mkQ_surjective _).1 hy'
   obtain ⟨N₀, hN₀, hle, t, rfl⟩ := Submodule.exists_fg_le_eq_rTensor_inclusion t
@@ -251,13 +248,13 @@ theorem isZero_Tor_succ_quotient_iSup {X : ModuleCat.{u} A} {ι : Type*} [Nonemp
     hN.directedOn_range (by rwa [sSup_range])
   -- In `(X ⧸ N i) ⊗ P` the image of `y` is a cycle, hence a boundary.
   obtain ⟨z, hz⟩ := h i ((N i).mkQ.rTensor _ y) (by
-    rw [lTensor_rTensor_apply, ← ht]
+    rw [LinearMap.lTensor_rTensor_apply, ← ht]
     have h0 : (N i).mkQ ∘ₗ K.subtype ∘ₗ Submodule.inclusion hle = 0 := by
       ext x
       exact (Submodule.Quotient.mk_eq_zero _).2 (hi x.2)
     simp only [← LinearMap.rTensor_comp_apply, h0, LinearMap.rTensor_zero, LinearMap.zero_apply])
   refine ⟨(Submodule.factor (le_iSup N i)).rTensor _ z, ?_⟩
-  rw [lTensor_rTensor_apply, hz, ← LinearMap.rTensor_comp_apply, Submodule.factor_comp_mk]
+  rw [LinearMap.lTensor_rTensor_apply, hz, ← LinearMap.rTensor_comp_apply, Submodule.factor_comp_mk]
 
 end ModuleCat
 
@@ -328,3 +325,24 @@ theorem isZero_Tor_one_X₃ (h₂ : IsZero (((Tor (ModuleCat.{u} A) 1).obj S.X�
   exact (hT.homology_exact₃ 1 0 rfl).isZero_X₂ (h₂.eq_of_src _ _) hδ
 
 end CategoryTheory.ShortComplex.ShortExact
+
+namespace ModuleCat
+
+open CategoryTheory Limits
+
+universe u
+
+variable {A : Type u} [CommRing A]
+
+/-- **`Tor` of a product**: if `Torₙ(X, M)` and `Torₙ(Y, M)` vanish then so does
+`Torₙ(X × Y, M)`, by half exactness along `0 → X → X × Y → Y → 0`. -/
+theorem isZero_Tor_prod {X Y : ModuleCat.{u} A} (M : ModuleCat.{u} A) {n : ℕ}
+    (hX : IsZero (((Tor (ModuleCat.{u} A) n).obj X).obj M))
+    (hY : IsZero (((Tor (ModuleCat.{u} A) n).obj Y).obj M)) :
+    IsZero (((Tor (ModuleCat.{u} A) n).obj (of A (X × Y))).obj M) :=
+  (shortComplex_shortExact
+    (shortComplexOfCompEqZero (LinearMap.inl A X Y) (LinearMap.snd A X Y)
+      (LinearMap.snd_comp_inl _ _ _))
+    Function.Exact.inl_snd LinearMap.inl_injective LinearMap.snd_surjective).isZero_Tor_X₂ M hX hY
+
+end ModuleCat

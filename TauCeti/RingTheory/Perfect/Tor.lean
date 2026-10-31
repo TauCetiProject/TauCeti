@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tor
 public import TauCeti.Algebra.Category.ModuleCat.Quotient
+public import TauCeti.RingTheory.Ideal.Radical
 public import TauCeti.RingTheory.Perfect.TensorProduct
 
 /-!
@@ -31,8 +32,9 @@ radical in a perfect ring, and the Mayer–Vietoris sequence
 `A ⧸ I` and `A ⧸ J` and `Tor` in one degree lower of `A ⧸ (I ⊓ J)`, where `I ⊓ J` is again radical.
 By induction on the degree this covers the radical of a finitely generated ideal, a finite sum of
 Frobenius-root ideals, and a general radical ideal is the directed union of such radicals
-(`ModuleCat.isZero_Tor_succ_quotient_iSup`). In degree one, the injectivity of `I ⊗[A] C → C`
-(`TauCeti.subtype_rTensor_injective_of_isRadical`) applies directly.
+(`Ideal.iSup_radical_fg`, `ModuleCat.isZero_Tor_succ_quotient_iSup`). In degree one, the
+injectivity of `I ⊗[A] C → C` (`TauCeti.subtype_rTensor_injective_of_isRadical`) applies
+directly.
 
 ## Main results
 
@@ -98,29 +100,13 @@ theorem isZero_Tor_succ_quotient_of_isRadical [ExpChar C p] [PerfectRing C p] {I
         rw [Ideal.radical_sup, (r₁.sup p r₂).radical]
         -- `Tor` of `A ⧸ √N₁ × A ⧸ √N₂` vanishes, and `Tor` of `A ⧸ (√N₁ ⊓ √N₂)` vanishes in one
         -- degree lower by induction.
-        have hprod := ModuleCat.shortComplex_shortExact
-          (ModuleCat.shortComplexOfCompEqZero
-            (LinearMap.inl A (A ⧸ Ideal.radical N₁) (A ⧸ Ideal.radical N₂))
-            (LinearMap.snd A (A ⧸ Ideal.radical N₁) (A ⧸ Ideal.radical N₂))
-            (LinearMap.snd_comp_inl _ _ _))
-          Function.Exact.inl_snd LinearMap.inl_injective LinearMap.snd_surjective
         exact (Submodule.shortExact_quotientInfSupShortComplex (Ideal.radical N₁)
-          (Ideal.radical N₂)).isZero_Tor_succ_X₃ _ (hprod.isZero_Tor_X₂ _ h₁ h₂) (ih (r₁.inf r₂))
+          (Ideal.radical N₂)).isZero_Tor_succ_X₃ _ (ModuleCat.isZero_Tor_prod _ h₁ h₂)
+          (ih (r₁.inf r₂))
     -- A radical ideal is the directed union of the radicals of its finitely generated subideals.
-    let ι := {N : Ideal A // Submodule.FG N ∧ N ≤ I}
-    let K (N : ι) : Submodule A A := Ideal.radical N.1
-    have : Nonempty ι := ⟨⟨⊥, Submodule.fg_bot, bot_le⟩⟩
-    have hdir : Directed (· ≤ ·) K := fun N₁ N₂ ↦
-      ⟨⟨N₁.1 ⊔ N₂.1, N₁.2.1.sup N₂.2.1, sup_le N₁.2.2 N₂.2.2⟩,
-        Ideal.radical_mono le_sup_left, Ideal.radical_mono le_sup_right⟩
-    have hsup : ⨆ N, K N = I := by
-      refine le_antisymm (iSup_le fun N ↦ hI.radical_le_iff.mpr N.2.2) fun x hx ↦ ?_
-      exact Submodule.mem_iSup_of_mem (⟨Ideal.span {x}, Submodule.fg_span_singleton x,
-        (Ideal.span_singleton_le_iff_mem I).mpr hx⟩ : ι)
-        (Ideal.le_radical (Ideal.mem_span_singleton_self x))
+    have : Nonempty {N : Ideal A // N.FG ∧ N ≤ I} := ⟨⟨⊥, Submodule.fg_bot, bot_le⟩⟩
     have key := ModuleCat.isZero_Tor_succ_quotient_iSup (M := ModuleCat.of A C)
-      (X := ModuleCat.of A A) hdir (n + 1) fun N ↦ fg N.2.1
-    rw [hsup] at key
-    exact key
+      (X := ModuleCat.of A A) I.directed_radical_fg (n + 1) fun N ↦ fg N.2.1
+    rwa [Ideal.iSup_radical_fg, hI.radical] at key
 
 end TauCeti
