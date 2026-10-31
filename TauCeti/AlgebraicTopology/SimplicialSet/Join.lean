@@ -39,6 +39,7 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
 * `SSet.join.joinFiberZeroIso`, `SSet.join.joinFiberOneIso`: the parts of `K ⋆ L` over the vertices
   `0` and `1` are `K` and `L`, through the inverses of the inclusions.
 * `SSet.join.map`: the functoriality of the join in both variables.
+* `SSet.join.edgeMk`: the edge of `K ⋆ L` from a vertex of `K` to a vertex of `L`.
 
 ## Main results
 
@@ -636,6 +637,36 @@ def isoOfIsTerminal (hK : Limits.IsTerminal K) (hL : Limits.IsTerminal L) : join
 @[simp]
 lemma isoOfIsTerminal_hom (hK : Limits.IsTerminal K) (hL : Limits.IsTerminal L) :
     (isoOfIsTerminal hK hL).hom = π K L :=
+  (rfl)
+
+/-- The edge of the join `K ⋆ L` from a vertex `x` of `K` to a vertex `y` of `L`: the join data on
+`Δ[1]` splitting its vertices as `{0}` and `{1}`, with the constant maps at `x` and `y`. -/
+def edgeMk (x : K _⦋0⦌) (y : L _⦋0⦌) : (join K L).Edge ((inl K L).app _ x) ((inr K L).app _ y) :=
+  Edge.mk (objEquiv.symm ⟨𝟙 Δ[1], const x, const y⟩)
+    (objEquiv.injective (by
+      rw [SimplicialObject.δ, objEquiv_map, inl, homEquiv_symm_app]
+      refine JoinData.ext ?_ (fun _ _ _ _ ↦ ?_) (fun _ _ _ hz ↦ by simp at hz)
+      · -- Both maps `Δ[0] ⟶ Δ[1]` pick the vertex `0`.
+        apply yonedaEquiv.injective
+        refine stdSimplex.ext _ _ fun j ↦ ?_
+        fin_cases j
+        rfl
+      · -- Both sides are images of `x` under maps to `⦋0⦌`, which are unique.
+        exact congrArg (fun f ↦ K.map f x) (Subsingleton.elim _ _)))
+    (objEquiv.injective (by
+      rw [SimplicialObject.δ, objEquiv_map, inr, homEquiv_symm_app]
+      refine JoinData.ext ?_ (fun _ _ _ hz ↦ by simp at hz) (fun _ _ _ _ ↦ ?_)
+      · -- Both maps `Δ[0] ⟶ Δ[1]` pick the vertex `1`.
+        apply yonedaEquiv.injective
+        refine stdSimplex.ext _ _ fun j ↦ ?_
+        fin_cases j
+        rfl
+      · -- Both sides are images of `y` under maps to `⦋0⦌`, which are unique.
+        exact congrArg (fun f ↦ L.map f y) (Subsingleton.elim _ _)))
+
+/-- The join data of the edge `edgeMk x y` on `Δ[1]`. -/
+lemma objEquiv_edgeMk_edge (x : K _⦋0⦌) (y : L _⦋0⦌) :
+    objEquiv (edgeMk x y).edge = ⟨𝟙 Δ[1], const x, const y⟩ :=
   (rfl)
 
 end join
