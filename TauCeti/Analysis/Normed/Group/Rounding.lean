@@ -34,6 +34,12 @@ of `c` then become non-strict ones (`zpowCeil_lt_zpow_iff`), which is what makes
 ball of the rounded norm a principal multiple of the closed unit ball. This is the input to
 Serre's reduction of orthonormalisability to freeness of a residue module.
 
+`zpowCeilNormedAddCommGroup` installs this rounded norm while retaining the original uniformity
+and topology definitionally. Thus completeness and continuous linear maps are unchanged.
+Ultrametricity and contractive scalar actions with discrete scalar norms can be installed
+explicitly using `isUltrametricDist_zpowCeilNormedAddCommGroup` and
+`isBoundedSMul_zpowCeilNormedAddCommGroup`.
+
 ## Main definitions
 
 * `TauCeti.zpowCeil c x`: the least element of `c ^ ℤ ∪ {0}` that is at least `x`.
@@ -293,6 +299,77 @@ noncomputable def zpowCeilAddGroupNorm (M : Type*) [NormedAddGroup M] [IsUltrame
 @[simp]
 theorem zpowCeilAddGroupNorm_apply {M : Type*} [NormedAddGroup M] [IsUltrametricDist M]
     (m : M) : zpowCeilAddGroupNorm hc₀ hc₁ M m = zpowCeil c ‖m‖ := (rfl)
+
+section CompatibleNorm
+
+open scoped Uniformity
+
+variable {M : Type*} [NormedAddCommGroup M] [IsUltrametricDist M]
+
+/-- Rounding an ultrametric norm preserves its uniformity. -/
+theorem zpowCeilAddGroupNorm_uniformity :
+    𝓤 M = @uniformity M (zpowCeilAddGroupNorm hc₀ hc₁ M).toNormedAddCommGroup.toUniformSpace := by
+  let g := ‹NormedAddCommGroup M›
+  let n := (zpowCeilAddGroupNorm hc₀ hc₁ M).toNormedAddCommGroup
+  -- Keep the original norm implicit and name the second metric explicitly.
+  let := g
+  have hd (x y : M) : @dist M n.toDist x y = zpowCeil c ‖-x + y‖ :=
+    zpowCeilAddGroupNorm_apply hc₀ hc₁ _
+  have hupper (x : M) : zpowCeil c ‖x‖ ≤ c⁻¹ * ‖x‖ := by
+    exact (le_inv_mul_iff₀ hc₀).2 (mul_zpowCeil_le hc₀ hc₁ (norm_nonneg x))
+  have hf : @UniformContinuous M M g.toUniformSpace n.toUniformSpace id := by
+    apply @LipschitzWith.uniformContinuous M M g.toPseudoEMetricSpace n.toPseudoEMetricSpace
+      ⟨c⁻¹, inv_nonneg.mpr hc₀.le⟩ id
+    apply @LipschitzWith.of_dist_le_mul M M g.toPseudoMetricSpace n.toPseudoMetricSpace
+      ⟨c⁻¹, inv_nonneg.mpr hc₀.le⟩ id
+    intro x y
+    rw [id_eq, hd, dist_eq_norm_neg_add]
+    exact hupper (-x + y)
+  have hg : @UniformContinuous M M n.toUniformSpace g.toUniformSpace id := by
+    apply @LipschitzWith.uniformContinuous M M n.toPseudoEMetricSpace g.toPseudoEMetricSpace 1 id
+    apply @LipschitzWith.of_dist_le_mul M M n.toPseudoMetricSpace g.toPseudoMetricSpace 1 id
+    intro x y
+    simpa only [id_eq, hd, NNReal.coe_one, one_mul, dist_eq_norm_neg_add] using
+      le_zpowCeil hc₀ hc₁ ‖-x + y‖
+  apply le_antisymm
+  · intro s hs
+    exact @uniformContinuous_def M M g.toUniformSpace n.toUniformSpace id |>.mp hf s hs
+  · intro s hs
+    exact @uniformContinuous_def M M n.toUniformSpace g.toUniformSpace id |>.mp hg s hs
+
+/-- The rounded norm with the original uniformity and topology retained definitionally.
+In particular, completeness and continuity are unchanged. -/
+noncomputable abbrev zpowCeilNormedAddCommGroup : NormedAddCommGroup M :=
+  { (zpowCeilAddGroupNorm hc₀ hc₁ M).toNormedAddCommGroup with
+    toMetricSpace :=
+      (zpowCeilAddGroupNorm hc₀ hc₁ M).toNormedAddCommGroup.toMetricSpace.replaceUniformity
+        (zpowCeilAddGroupNorm_uniformity hc₀ hc₁) }
+
+/-- The norm in the rounded structure is the rounding of the original norm. -/
+@[simp]
+theorem norm_zpowCeilNormedAddCommGroup (m : M) :
+    @norm M (zpowCeilNormedAddCommGroup hc₀ hc₁).toNorm m = zpowCeil c ‖m‖ := (rfl)
+
+/-- The compatible rounded norm is ultrametric. -/
+theorem isUltrametricDist_zpowCeilNormedAddCommGroup :
+    letI := zpowCeilNormedAddCommGroup (M := M) hc₀ hc₁
+    IsUltrametricDist M := by
+  have hadd := zpowCeil_norm_add_le_max (M := M) hc₀ hc₁
+  let := zpowCeilNormedAddCommGroup (M := M) hc₀ hc₁
+  exact IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm hadd
+
+/-- Rounding preserves a contractive scalar action when the scalar norms already lie in
+`c ^ ℤ ∪ {0}`. Without this hypothesis the original scalar norm need not act contractively. -/
+theorem isBoundedSMul_zpowCeilNormedAddCommGroup {R : Type*} [SeminormedRing R]
+    [Module R M] [IsBoundedSMul R M] (hR : ∀ a : R, zpowCeil c ‖a‖ = ‖a‖) :
+    letI := zpowCeilNormedAddCommGroup (M := M) hc₀ hc₁
+    IsBoundedSMul R M := by
+  have hs (a : R) (m : M) : zpowCeil c ‖a • m‖ ≤ ‖a‖ * zpowCeil c ‖m‖ := by
+    simpa only [hR] using zpowCeil_norm_smul_le hc₀ hc₁ a m
+  let := zpowCeilNormedAddCommGroup (M := M) hc₀ hc₁
+  exact IsBoundedSMul.of_norm_smul_le (α := R) (β := M) hs
+
+end CompatibleNorm
 
 end BaseLtOne
 
