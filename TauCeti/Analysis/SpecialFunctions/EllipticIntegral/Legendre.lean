@@ -20,9 +20,9 @@ This file defines Legendre's incomplete elliptic integrals of the first, second 
 (DLMF 19.2.4, 19.2.5, 19.2.7), as functions of a real amplitude `φ`, a real modulus `k` and a real
 characteristic `α2` (written `α²` in prose; it may be negative):
 
-* `Real.legendreF φ k = ∫ θ in 0..φ, (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2)`;
-* `Real.legendreE φ k = ∫ θ in 0..φ, (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2)`;
-* `Real.legendrePi φ k α2` is the integral over `[0, φ]` of
+* `TauCeti.Real.legendreF φ k = ∫ θ in 0..φ, (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2)`;
+* `TauCeti.Real.legendreE φ k = ∫ θ in 0..φ, (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2)`;
+* `TauCeti.Real.legendrePi φ k α2` is the integral over `[0, φ]` of
   `(1 - α2 * sin θ ^ 2)⁻¹ * (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2)`;
 
 together with the complete integrals `legendreK k`, `legendreEc k` and `legendrePic k α2`, their
@@ -62,9 +62,9 @@ public section
 
 noncomputable section
 
-namespace Real
+namespace TauCeti.Real
 
-open TauCeti Filter MeasureTheory intervalIntegral Set
+open _root_.Real Filter MeasureTheory intervalIntegral Set
 open scoped Topology
 
 /-! ### Definitions -/
@@ -455,4 +455,4 @@ theorem legendrePic_pos {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) : 0 < leg
 theorem legendrePic_neg_modulus (k α2 : ℝ) : legendrePic (-k) α2 = legendrePic k α2 :=
   legendrePi_neg_modulus _ k α2
 
-end Real
+end TauCeti.Real
