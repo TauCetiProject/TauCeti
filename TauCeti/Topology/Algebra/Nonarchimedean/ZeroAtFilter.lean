@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Filter.ZeroAndBoundedAtFilter
-public import TauCeti.Topology.Algebra.Nonarchimedean.OpenAddSubgroupBasis
+public import TauCeti.Topology.Algebra.Nonarchimedean.OpenSubgroupBasis
 
 /-!
 # Cofinite convergence in a nonarchimedean group is a finiteness condition

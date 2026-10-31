@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.Module
+import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -19,6 +20,10 @@ This decomposition applies to any real module structure compatible with the comp
 For a real-linear map `L` into a complex module, its defect from complex linearity
 `e ↦ L e + I • L (I * e)` is conjugate-linear and is therefore determined by its value at `1`.
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
+
+Likewise an `ℝ`-algebra map out of the complex plane is determined by its value at `I`, so a
+conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds everywhere once it holds
+at `I` (`Units.conj_complexAlgHom_apply`).
 -/
 
 public section
@@ -72,3 +77,17 @@ lemma re_smul_add_im_smul {V : Type*} [AddCommGroup V] [Module ℝ V] [Module �
       ((LinearMap.toSpanSingleton ℂ V v).restrictScalars ℝ) z).symm
 
 end Complex
+
+namespace Units
+
+/-- **Conjugation of an `ℝ`-algebra map out of `ℂ` is detected on `Complex.I`.** If `g` agrees with
+the `w`-conjugate of `f` at `i` then it agrees with it everywhere: conjugation by `w` is an
+`ℝ`-algebra automorphism, and `ℝ`-algebra maps out of `ℂ` are determined by their value at `i`. -/
+theorem conj_complexAlgHom_apply {A : Type*} [Semiring A] [Algebra ℝ A] (w : Aˣ)
+    (f g : ℂ →ₐ[ℝ] A) (h : g Complex.I = (w : A) * f Complex.I * ((w⁻¹ : Aˣ) : A)) (z : ℂ) :
+    g z = (w : A) * f z * ((w⁻¹ : Aˣ) : A) := by
+  have hfg : g = (MulSemiringAction.toAlgHom ℝ A (ConjAct.toConjAct w)).comp f :=
+    Complex.algHom_ext (by simpa [ConjAct.units_smul_def] using h)
+  simpa [ConjAct.units_smul_def] using DFunLike.congr_fun hfg z
+
+end Units

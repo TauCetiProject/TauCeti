@@ -28,6 +28,12 @@ contact together whenever `f` vanishes nowhere.
 For an alternating `B`, the hyperplane `ker a` carries a nondegenerate alternating form, so it has
 even dimension and `V` has odd dimension (`Module.Dual.IsContact.odd_finrank`).
 
+Contact covectors arise on hyperplanes transverse to a vector. If `B` is nondegenerate and
+alternating, `L : U → V` is injective and `z` is a vector outside the range of `L` which together
+with it spans `V`, then `u ↦ B z (L u)` is contact for the restriction `B (L ·) (L ·)` of `B` to
+`U` (`Module.Dual.isContact_comp_compl₁₂`). This is the pointwise reason why the primitive
+`ι_Z ω` of a symplectic form restricts to a contact form on a hypersurface transverse to `Z`.
+
 For an alternating `B` and a contact covector `a`, the bilinear form `B + a ⊗ a`,
 `(v, w) ↦ B v w + a v * a w`, is left-separating
 (`Module.Dual.IsContact.separatingLeft_add_smulRight`), so in finite dimension `v ↦ B v + a(v) a`
@@ -52,6 +58,8 @@ pointwise form of the Reeb vector field of a contact form and of its rescaling l
   under nonzero rescaling of `a` and of `B`.
 * `Module.Dual.IsContact.even_finrank_ker`, `Module.Dual.IsContact.odd_finrank`: the dimension
   count.
+* `Module.Dual.isContact_comp_compl₁₂`: the covector `B z` restricted to a hyperplane transverse to
+  `z` is contact for the restriction of a nondegenerate alternating `B`.
 * `Module.Dual.IsContact.separatingLeft_add_smulRight`: `B + a ⊗ a` is left-separating.
 * `Module.Dual.IsContact.add_smulRight_apply_eq_self_iff`: the preimage of `a` under
   `v ↦ B v + a(v) a`.
@@ -146,6 +154,61 @@ theorem IsContact.odd_finrank [FiniteDimensional K V] (hB : B.IsAlt) (h : a.IsCo
     Odd (finrank K V) := by
   rw [← finrank_ker_add_one_of_ne_zero h.ne_zero]
   exact (h.even_finrank_ker hB).add_one
+
+/-! ### Hyperplanes transverse to a vector -/
+
+/-- **Transverse hyperplanes of a nondegenerate alternating form carry contact covectors.** Let
+`B` be a nondegenerate alternating form on `V`, let `L : U → V` be injective, and let `z` be a
+vector outside the range of `L` which together with it spans `V`, so that `L` identifies `U` with
+a hyperplane transverse to `z`. Then the covector `u ↦ B z (L u)` on `U` is contact for the
+restricted form `B (L ·) (L ·)`.
+
+This is the linear algebra behind hypersurfaces of contact type: when `ι_Z ω = α` for a vector
+field `Z` transverse to a hypersurface, the restriction of `α` to the hypersurface is a contact
+form. -/
+theorem isContact_comp_compl₁₂ {U : Type*} [AddCommGroup U] [Module K U] (hB : B.IsAlt)
+    (hB' : B.SeparatingLeft) {L : U →ₗ[K] V} (hL : Function.Injective L) {z : V}
+    (hz : z ∉ LinearMap.range L) (hLz : LinearMap.range L ⊔ K ∙ z = ⊤) :
+    IsContact ((B z).comp L) (B.compl₁₂ L L) := by
+  have hdecomp (v : V) : ∃ u : U, ∃ c : K, L u + c • z = v := by
+    obtain ⟨_, ⟨u, rfl⟩, _, hw, h⟩ := Submodule.mem_sup.1 (hLz ▸ Submodule.mem_top : v ∈ _)
+    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hw
+    exact ⟨u, c, h⟩
+  have hzL (u : U) : B (L u) z = -B z (L u) := (hB.neg_eq z (L u)).symm
+  -- The covector does not vanish: otherwise `B z` would vanish on `range L` and on `z`.
+  have hne : (B z).comp L ≠ 0 := by
+    intro h
+    refine hz (hB' z (fun v ↦ ?_) ▸ Submodule.zero_mem _)
+    obtain ⟨u, c, rfl⟩ := hdecomp v
+    simpa [hB z] using LinearMap.congr_fun h u
+  refine (isContact_iff_of_isRefl (B := B.compl₁₂ L L)
+    fun x y hxy ↦ hB.isRefl (L x) (L y) hxy).2 ⟨hne, ?_⟩
+  intro u hu huw
+  simp only [LinearMap.comp_apply, LinearMap.compl₁₂_apply] at hu huw
+  obtain ⟨u₁, hu₁⟩ : ∃ u₁, B z (L u₁) ≠ 0 := by
+    by_contra! h
+    exact hne (LinearMap.ext h)
+  -- `B (L u)` vanishes on `ker (B z)`, so it is the multiple `c • B z`.
+  set c := B (L u) (L u₁) / B z (L u₁)
+  have hc : L u - c • z = 0 := by
+    refine hB' _ fun v ↦ ?_
+    obtain ⟨w, d, rfl⟩ := hdecomp v
+    have hw := huw (w - (B z (L w) / B z (L u₁)) • u₁) (by
+      simp [div_mul_cancel₀ _ hu₁])
+    simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, smul_eq_mul,
+      map_add, hzL, hu, hB z] at hw ⊢
+    rw [sub_eq_zero] at hw
+    rw [hw]
+    simp only [c]
+    field_simp
+    ring
+  -- Hence `L u` is a multiple of `z`, which lies outside `range L` unless the multiple is zero.
+  have hc0 : c = 0 := by
+    by_contra hc0
+    refine hz ⟨c⁻¹ • u, ?_⟩
+    rw [map_smul, sub_eq_zero.1 hc, smul_smul, inv_mul_cancel₀ hc0, one_smul]
+  rw [hc0, zero_smul, sub_zero] at hc
+  exact hL (hc.trans (map_zero L).symm)
 
 /-! ### The contact flat map -/
 
