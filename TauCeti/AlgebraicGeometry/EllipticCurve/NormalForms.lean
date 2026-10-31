@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
+public import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
 
 /-!
 # Normal forms: transport, changes of variables, and elementary consequences
@@ -172,7 +173,7 @@ variable [Invertible (2 : R)] [Invertible (3 : R)]
 equation are integral polynomials in the invariants `c₄` and `c₆` of `W`. -/
 theorem exists_variableChange_smul_eq_c₄_c₆ :
     ∃ C : VariableChange R, (↑C.u⁻¹ : R) = 6 ∧
-      C • W = { a₁ := 0, a₂ := 0, a₃ := 0, a₄ := -27 * W.c₄, a₆ := -54 * W.c₆ } := by
+      C • W = shortCurve (-27 * W.c₄) (-54 * W.c₆) := by
   have h6 : (6 : R) * (⅟2 * ⅟3) = 1 := by
     rw [show (6 : R) = 2 * 3 by norm_num, mul_mul_mul_comm, mul_invOf_self, mul_invOf_self,
       mul_one]
@@ -188,14 +189,8 @@ theorem exists_variableChange_smul_eq_c₄_c₆ :
     rw [← c₆_of_isShortNF, variableChange_c₆, hu, inv_one, Units.val_one, one_pow, one_mul]
   have : V.IsShortNF := W.toShortNF_spec
   clear_value V
-  ext
-  · simp [variableChange_a₁]
-  · simp [variableChange_a₂]
-  · simp [variableChange_a₃]
-  · simp [variableChange_a₄, u, h₄]
-    ring
-  · simp [variableChange_a₆, u, h₆]
-    ring
+  rw [← shortCurve_a₄_a₆ V, smul_shortCurve, h₄, h₆]
+  congr 1 <;> simp [u] <;> ring
 
 end IntegralShortNF
 

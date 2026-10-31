@@ -273,7 +273,9 @@ private lemma eq_zero_of_aeval_eq_X_pow_mul_aeval {R : Type*} [CommSemiring R]
     (h : aeval (![X 0 ^ 4, X 0 ^ 6 * X 1] : Fin 2 → MvPolynomial (Fin 2) R) α =
       X 0 ^ 6 * aeval ![X 0 ^ 4, X 0 ^ 6 * X 1] β) :
     α = 0 ∧ β = 0 := by
-  set g : Fin 2 → MvPolynomial (Fin 2) R := ![X 0 ^ 4, X 0 ^ 6 * X 1]
+  -- The substitution sends the monomial with exponent `d` to the one with exponent `A d`, and
+  -- `A d + (6, 0)` is never of the form `A d'`. Comparing coefficients at `A d` gives `α = 0`,
+  -- and then comparing them at `A d + (6, 0)` gives `β = 0`.
   set A := Finsupp.linearCombination ℕ expo
   have hA (d : Fin 2 →₀ ℕ) : A d 0 = 4 * d 0 + 6 * d 1 ∧ A d 1 = d 1 := by
     simp [A, linearCombination_expo_apply]
@@ -284,46 +286,33 @@ private lemma eq_zero_of_aeval_eq_X_pow_mul_aeval {R : Type*} [CommSemiring R]
     rw [(hA d).2, (hA d').2] at h1
     ext i
     fin_cases i <;> simp <;> omega
-  have hg : g = fun i ↦ AddMonoidAlgebra.single (expo i) 1 := by
-    funext i
-    fin_cases i <;> simp [g, ← single_eq_monomial, X]
-  -- The substitution maps the monomial with exponent `d` to the one with exponent `A d`.
-  have hcoeff (p : MvPolynomial (Fin 2) R) (d : Fin 2 →₀ ℕ) :
-      (aeval g p).coeff (A d) = p.coeff d := by
-    rw [hg, TauCeti.aeval_single_eq_mapDomainAlgHom, AddMonoidAlgebra.mapDomainAlgHom_apply,
-      AddMonoidAlgebra.coeff_mapDomain]
-    exact Finsupp.mapDomain_apply_of_injective hAinj _ _
-  have hzero (p : MvPolynomial (Fin 2) R) {m : Fin 2 →₀ ℕ} (hm : m ∉ Set.range A) :
-      (aeval g p).coeff m = 0 := by
-    rw [hg, TauCeti.aeval_single_eq_mapDomainAlgHom, AddMonoidAlgebra.mapDomainAlgHom_apply,
-      AddMonoidAlgebra.coeff_mapDomain]
-    exact Finsupp.mapDomain_of_notMem_range _ _ hm
-  have hX : (X 0 ^ 6 : MvPolynomial (Fin 2) R) = monomial (.single 0 6) 1 := X_pow_eq_monomial
-  constructor
-  · ext d
-    rw [← hcoeff, h, hX, coeff_monomial_mul']
-    split_ifs with h6
-    · rw [hzero, mul_zero, AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply]
-      rintro ⟨d', hd'⟩
-      have h0 := DFunLike.congr_fun hd' 0
-      have h1 := DFunLike.congr_fun hd' 1
-      have h6' : 6 ≤ A d 0 := by simpa using h6
-      simp only [Finsupp.tsub_apply, (hA d).1, (hA d).2, (hA d').1, (hA d').2] at h0 h1 h6'
-      simp at h0 h1
-      omega
-    · rw [AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply]
-  · ext d
-    have hle : Finsupp.single (0 : Fin 2) 6 ≤ A d + .single 0 6 := le_add_self
-    have h' := congrArg (fun p : MvPolynomial (Fin 2) R ↦ p.coeff (A d + .single 0 6)) h
-    simp only [hX, coeff_monomial_mul', hle, ↓reduceIte, add_tsub_cancel_right, one_mul,
-      hcoeff] at h'
-    rw [AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply, ← h', hzero]
-    rintro ⟨d', hd'⟩
-    have h0 := DFunLike.congr_fun hd' 0
-    have h1 := DFunLike.congr_fun hd' 1
+  have hshift (d d' : Fin 2 →₀ ℕ) : A d + .single 0 6 ≠ A d' := fun hd ↦ by
+    have h0 := DFunLike.congr_fun hd 0
+    have h1 := DFunLike.congr_fun hd 1
     simp only [Finsupp.add_apply, (hA d).1, (hA d).2, (hA d').1, (hA d').2] at h0 h1
     simp at h0 h1
     omega
+  have hg : (![X 0 ^ 4, X 0 ^ 6 * X 1] : Fin 2 → MvPolynomial (Fin 2) R) =
+      fun i ↦ monomial (expo i) 1 := by
+    funext i
+    fin_cases i <;> simp [monomial_single_add, ← X_pow_eq_monomial]
+  have hX : (X 0 ^ 6 : MvPolynomial (Fin 2) R) = monomial (.single 0 6) 1 := X_pow_eq_monomial
+  rw [hg, hX] at h
+  constructor
+  · ext d
+    rw [← TauCeti.coeff_aeval_monomial_linearCombination hAinj, h, coeff_monomial_mul',
+      AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply]
+    split_ifs with h6
+    · rw [TauCeti.coeff_aeval_monomial_of_notMem_range, mul_zero]
+      rintro ⟨d', hd'⟩
+      exact hshift d' d (by rw [hd', tsub_add_cancel_of_le h6])
+    · rfl
+  · ext d
+    have h' := congrArg (·.coeff (A d + .single 0 6)) h
+    simp only [coeff_monomial_mul', le_add_self, ↓reduceIte, add_tsub_cancel_right, one_mul] at h'
+    rw [AddMonoidAlgebra.coeff_zero, Finsupp.zero_apply,
+      ← TauCeti.coeff_aeval_monomial_linearCombination hAinj, ← h',
+      TauCeti.coeff_aeval_monomial_of_notMem_range _ fun ⟨d', hd'⟩ ↦ hshift d d' hd'.symm]
 
 /-- The Weierstrass curve with `a₁ = x`, `a₆ = -y` and all other coefficients zero, over the
 polynomial ring `(ℤ/6)[x, y]`. Its invariants are `c₄ = x⁴`, `c₆ = -x⁶` and `Δ = x⁶y`, since the
@@ -362,9 +351,12 @@ private lemma mem_adjoin_of_six_mul_mem
   have hs (γ : MvPolynomial (Fin 2) ℤ) : mod6Curve.specialize (aeval ![curve.c₄, curve.Δ] γ) =
       aeval ![X 0 ^ 4, X 0 ^ 6 * X 1] (MvPolynomial.map ψ γ) :=
     DFunLike.congr_fun hspec γ
-  have h := congrArg mod6Curve.specialize hαβ
-  rw [map_mul, map_add, map_mul, hs, hs, specialize_c₆, mod6Curve_c₆, map_ofNat,
-    six_eq_zero, zero_mul, eq_comm, neg_mul, ← sub_eq_add_neg, sub_eq_zero] at h
+  have h : aeval (![X 0 ^ 4, X 0 ^ 6 * X 1] : Fin 2 → MvPolynomial (Fin 2) (ZMod 6))
+      (MvPolynomial.map ψ α) =
+      X 0 ^ 6 * aeval ![X 0 ^ 4, X 0 ^ 6 * X 1] (MvPolynomial.map ψ β) := by
+    have h := congrArg mod6Curve.specialize hαβ
+    simp only [map_mul, map_add, map_ofNat, hs, specialize_c₆, mod6Curve_c₆] at h
+    linear_combination -h + mod6Curve.specialize f * six_eq_zero
   obtain ⟨hα, hβ⟩ := eq_zero_of_aeval_eq_X_pow_mul_aeval h
   have hψ (n : ℤ) : ψ n = 0 ↔ 6 ∣ n := by
     simpa using ZMod.intCast_zmod_eq_zero_iff_dvd n 6
@@ -388,23 +380,19 @@ theorem IsIntegralModularForm.six_pow_mul_mem_adjoin (hf : IsIntegralModularForm
   -- `y² = x³ - 27c₄x - 54c₆`, the base change of the curve `W₀` with this equation over
   -- `ℤ[c₄, c₆]`.
   set φ := MvPolynomial.map (σ := Coeff) (Int.castRingHom ℚ)
-  have hinv {n : ℚ} (hn : n ≠ 0) : C n⁻¹ * C n = (1 : MvPolynomial Coeff ℚ) := by
-    rw [← map_mul, inv_mul_cancel₀ hn, map_one]
-  let : Invertible (2 : MvPolynomial Coeff ℚ) :=
-    ⟨C 2⁻¹, by rw [← map_ofNat C, hinv two_ne_zero],
-      by rw [← map_ofNat C, mul_comm, hinv two_ne_zero]⟩
-  let : Invertible (3 : MvPolynomial Coeff ℚ) :=
-    ⟨C 3⁻¹, by rw [← map_ofNat C, hinv three_ne_zero],
-      by rw [← map_ofNat C, mul_comm, hinv three_ne_zero]⟩
+  let invC (n : ℚ) (hn : n ≠ 0) : Invertible (C n : MvPolynomial Coeff ℚ) :=
+    letI := invertibleOfNonzero hn
+    Invertible.map C n
+  let : Invertible (2 : MvPolynomial Coeff ℚ) := (invC 2 two_ne_zero).copy 2 (map_ofNat C 2).symm
+  let : Invertible (3 : MvPolynomial Coeff ℚ) := (invC 3 three_ne_zero).copy 3 (map_ofNat C 3).symm
   obtain ⟨C, hu, hC⟩ := exists_variableChange_smul_eq_c₄_c₆ (Universal.curve.map φ)
-  set W₀ : WeierstrassCurve (MvPolynomial Coeff ℤ) :=
-    ⟨0, 0, 0, -27 * Universal.curve.c₄, -54 * Universal.curve.c₆⟩
+  set W₀ := shortCurve (-27 * Universal.curve.c₄) (-54 * Universal.curve.c₆)
   have hW₀ : C • Universal.curve.map φ = W₀.map φ := by
-    rw [hC]
-    ext : 1 <;> simp [W₀, map_ofNat φ]
+    rw [hC, map_shortCurve]
+    simp [map_ofNat φ]
   have h := hf.specialize_smul (Universal.curve.map φ) C
-  rw [hW₀, hu, specialize_map, specialize_map, specialize_curve, RingHom.comp_apply,
-    RingHom.comp_apply, RingHom.id_apply] at h
+  simp only [hW₀, hu, specialize_map, specialize_curve, RingHom.coe_comp, Function.comp_apply,
+    RingHom.id_apply] at h
   have hφ : φ (W₀.specialize f) = φ (6 ^ k * f) := by
     rw [h, map_mul, map_pow, map_ofNat]
   have hW₀f : W₀.specialize f = aeval (fun i ↦ W₀.specialize (X i)) f :=
@@ -414,7 +402,8 @@ theorem IsIntegralModularForm.six_pow_mul_mem_adjoin (hf : IsIntegralModularForm
   refine Algebra.adjoin_le ?_ ((Algebra.adjoin_range_eq_range_aeval ℤ _).ge ⟨f, rfl⟩)
   rintro _ ⟨i, rfl⟩
   rw [SetLike.mem_coe]
-  cases i <;> simp only [specialize_X]
+  cases i <;> simp only [specialize_X, W₀, shortCurve_a₁, shortCurve_a₂, shortCurve_a₃,
+    shortCurve_a₄, shortCurve_a₆]
   iterate 3 exact zero_mem _
   · exact mul_mem (neg_mem (ofNat_mem _ 27)) (Algebra.subset_adjoin (by simp))
   · exact mul_mem (neg_mem (ofNat_mem _ 54)) (Algebra.subset_adjoin (by simp))
