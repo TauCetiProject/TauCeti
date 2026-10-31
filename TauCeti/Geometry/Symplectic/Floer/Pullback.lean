@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
-import TauCeti.LinearAlgebra.Determinant.Prod
 
 /-!
 # Pulling back Hamiltonian perturbation data along changes of domain coordinates
@@ -163,15 +162,6 @@ variable {φ : ℝ × ℝ → ℝ × ℝ} {Ks Kt : ℝ × ℝ → V → ℝ} {u 
 
 section Pointwise
 
-omit [FiniteDimensional ℝ V] in
-/-- The bilinear expansion `SymplecticForm.apply_smul_add_smul` with coefficients the images of
-the coordinate directions under a linear map `B` of the plane: the coefficient is `det B`. -/
-private lemma apply_smul_add_smul_det (ω : SymplecticForm V) (B : ℝ × ℝ →L[ℝ] ℝ × ℝ) (x y : V) :
-    ω ((B stdComplexLineReal).1 • x + (B stdComplexLineReal).2 • y)
-        ((B stdComplexLineImag).1 • x + (B stdComplexLineImag).2 • y) = B.det * ω x y := by
-  rw [ω.apply_smul_add_smul, ContinuousLinearMap.det, LinearMap.det_finTwoProd]
-  simp only [ContinuousLinearMap.coe_coe, stdComplexLineReal_eq, stdComplexLineImag_eq]
-
 /-- The Hamiltonian vector field of a component of the pullback `φ^*K` is the corresponding
 combination of the Hamiltonian vector fields of `K_s` and `K_t` at `φ w`. -/
 theorem hamiltonianVectorField_perturbationPullback (ω : SymplecticForm V)
@@ -225,7 +215,7 @@ theorem floerEnergyDensity_perturbationPullback (ω : SymplecticForm V)
   rw [floerEnergyDensity_def, floerEnergyDensity_def,
     ω.perturbedFDeriv_perturbationPullback hφ hu hKs hKt]
   simp only [ContinuousLinearMap.comp_apply, hP]
-  exact ω.apply_smul_add_smul_det _ _ _
+  exact ω.apply_smul_add_smul_det (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) _ _
 
 /-- **The curvature is a two-form.** For a `C²` change of coordinates `φ`, the curvature of the
 pulled-back datum `φ^*K` is the Jacobian determinant of `φ` times the curvature of `K` at `φ w`.
@@ -248,7 +238,7 @@ theorem hamiltonianCurvature_perturbationPullback (ω : SymplecticForm V)
       (perturbationPullback φ Ks Kt stdComplexLineImag w) x =
         (fderiv ℝ φ w).det * ω.poissonBracket (Ks (φ w)) (Kt (φ w)) x := by
     simp only [poissonBracket_def, ω.hamiltonianVectorField_perturbationPullback hKs' hKt']
-    exact ω.apply_smul_add_smul_det _ _ _
+    exact ω.apply_smul_add_smul_det (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) _ _
   -- The derivative terms scale by `det dφ`: the second derivatives of `φ` cancel by `hsymm`,
   -- after expanding the derivatives of `K_s` and `K_t` on the columns of `dφ_w`.
   have hκ (κ : ℝ × ℝ →L[ℝ] ℝ) (e : ℝ × ℝ) : κ (fderiv ℝ φ w e) =
