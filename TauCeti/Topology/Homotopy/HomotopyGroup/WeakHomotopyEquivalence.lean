@@ -17,7 +17,8 @@ components and a bijection `π_n(X, x) → π_n(Y, f x)` for every `n ≥ 1` and
 `ContinuousMap.IsWeakHomotopyEquivalence` on Mathlib's cubical homotopy groups and proves its
 closure properties: homotopy equivalences are weak homotopy equivalences, the predicate depends
 only on the homotopy class of the map, and it is closed under composition, under left and right
-cancellation, and under retracts.
+cancellation, and under retracts. In a commuting square whose two parallel maps are weak homotopy
+equivalences, the other two maps have the same connectivity.
 
 Whitehead's theorem, that a weak homotopy equivalence between spaces of CW type is a homotopy
 equivalence, is `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv` in
@@ -45,6 +46,10 @@ equivalence, is `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv` in
   a weak homotopy equivalence.
 * `ContinuousMap.isWeakHomotopyEquivalence_of_contractibleSpace`: every map between contractible
   spaces is a weak homotopy equivalence.
+* `ContinuousMap.IsWeakHomotopyEquivalence.forall_surjective_map_iff_of_comp_eq`,
+  `ContinuousMap.IsWeakHomotopyEquivalence.forall_injective_map_iff_of_comp_eq`: in a square
+  `g ∘ i = j ∘ f` with `f` and `g` weak homotopy equivalences, `j` induces surjections
+  (injections) on a homotopy group at every base point exactly when `i` does.
 
 ## References
 
@@ -222,6 +227,108 @@ theorem mapOfEq_bijective (hf : f.IsWeakHomotopyEquivalence) {x : X} {y : Y}
     (hxy : f x = y) : Function.Bijective (FundamentalGroup.mapOfEq f hxy) := by
   subst hxy
   exact (HomotopyGroup.bijective_map_iff_bijective_mapOfEq f rfl).1 (hf.bijective 1 x)
+
+/-! ### Squares of weak homotopy equivalences
+
+Let `g ∘ i = j ∘ f` for maps `i : X → X'` and `j : Y → Y'`, where `f : X → Y` and `g : X' → Y'`
+are weak homotopy equivalences. Then `i` and `j` have the same connectivity: each of the
+following properties holds for `i` exactly when it holds for `j`. Every point of the target is
+joined by a path to a point of the image, and the induced map on a given homotopy group is
+surjective, or injective, at every base point. -/
+
+section Square
+
+variable {X' Y' : Type*} [TopologicalSpace X'] [TopologicalSpace Y'] {g : C(X', Y')}
+  {i : C(X, X')} {j : C(Y, Y')}
+
+/-- In a square `g ∘ i = j ∘ f` whose maps `f` and `g` are weak homotopy equivalences, every point
+of `Y'` is joined to a point of the image of `j` exactly when every point of `X'` is joined to a
+point of the image of `i`. -/
+theorem forall_exists_joined_iff_of_comp_eq (hf : f.IsWeakHomotopyEquivalence)
+    (hg : g.IsWeakHomotopyEquivalence) (hi : g.comp i = j.comp f) :
+    (∀ y', ∃ y, Joined (j y) y') ↔ ∀ x', ∃ x, Joined (i x) x' := by
+  have hgi (x : X) : g (i x) = j (f x) := DFunLike.congr_fun hi x
+  refine ⟨fun h x' ↦ ?_, fun h y' ↦ ?_⟩
+  · obtain ⟨y, hy⟩ := h (g x')
+    obtain ⟨x, hx⟩ := hf.exists_joined y
+    refine ⟨x, hg.joined_iff.1 ?_⟩
+    rw [hgi]
+    exact (hx.map j.continuous).trans hy
+  · obtain ⟨x', hx'⟩ := hg.exists_joined y'
+    obtain ⟨x, hx⟩ := h x'
+    refine ⟨f x, ?_⟩
+    rw [← hgi]
+    exact (hx.map g.continuous).trans hx'
+
+/-- In a square `g ∘ i = j ∘ f` whose maps `f` and `g` are weak homotopy equivalences, the map
+`π_N(Y, f x) → π_N(Y', j (f x))` induced by `j` is surjective exactly when the map
+`π_N(X, x) → π_N(X', i x)` induced by `i` is. -/
+theorem surjective_map_iff_of_comp_eq (hf : f.IsWeakHomotopyEquivalence)
+    (hg : g.IsWeakHomotopyEquivalence) (hi : g.comp i = j.comp f) (N : Type*) [Finite N]
+    (x : X) :
+    Function.Surjective (HomotopyGroup.map (N := N) j (rfl : j (f x) = j (f x))) ↔
+      Function.Surjective (HomotopyGroup.map (N := N) i (rfl : i x = i x)) := by
+  have hjx : j (f x) = g (i x) := (DFunLike.congr_fun hi x).symm
+  have hsq : HomotopyGroup.map (N := N) g rfl ∘ HomotopyGroup.map i rfl =
+      HomotopyGroup.map j hjx ∘ HomotopyGroup.map f (rfl : f x = f x) := by
+    rw [HomotopyGroup.map_comp_map_of_comp_eq hi rfl rfl hjx,
+      HomotopyGroup.map_comp_map_of_comp_eq rfl hjx rfl hjx]
+  -- The map induced by `j` lands in `π_N(Y', g (i x))` once composed along the square.
+  have hbase : ∀ {z : Y'} (h : j (f x) = z), Function.Surjective (HomotopyGroup.map (N := N) j h) ↔
+      Function.Surjective (HomotopyGroup.map (N := N) j (rfl : j (f x) = j (f x))) := by
+    rintro _ rfl
+    rfl
+  rw [← hbase hjx, ← Function.Surjective.of_comp_iff _ (hf.map_bijective N x).surjective, ← hsq,
+    Function.Surjective.of_comp_iff' (hg.map_bijective N (i x))]
+
+/-- In a square `g ∘ i = j ∘ f` whose maps `f` and `g` are weak homotopy equivalences, the map
+`π_N(Y, f x) → π_N(Y', j (f x))` induced by `j` is injective exactly when the map
+`π_N(X, x) → π_N(X', i x)` induced by `i` is. -/
+theorem injective_map_iff_of_comp_eq (hf : f.IsWeakHomotopyEquivalence)
+    (hg : g.IsWeakHomotopyEquivalence) (hi : g.comp i = j.comp f) (N : Type*) [Finite N]
+    (x : X) :
+    Function.Injective (HomotopyGroup.map (N := N) j (rfl : j (f x) = j (f x))) ↔
+      Function.Injective (HomotopyGroup.map (N := N) i (rfl : i x = i x)) := by
+  have hjx : j (f x) = g (i x) := (DFunLike.congr_fun hi x).symm
+  have hsq : HomotopyGroup.map (N := N) g rfl ∘ HomotopyGroup.map i rfl =
+      HomotopyGroup.map j hjx ∘ HomotopyGroup.map f (rfl : f x = f x) := by
+    rw [HomotopyGroup.map_comp_map_of_comp_eq hi rfl rfl hjx,
+      HomotopyGroup.map_comp_map_of_comp_eq rfl hjx rfl hjx]
+  -- The map induced by `j` lands in `π_N(Y', g (i x))` once composed along the square.
+  have hbase : ∀ {z : Y'} (h : j (f x) = z), Function.Injective (HomotopyGroup.map (N := N) j h) ↔
+      Function.Injective (HomotopyGroup.map (N := N) j (rfl : j (f x) = j (f x))) := by
+    rintro _ rfl
+    rfl
+  rw [← hbase hjx, ← Function.Injective.of_comp_iff' _ (hf.map_bijective N x), ← hsq,
+    Function.Injective.of_comp_iff (hg.map_bijective N (i x)).injective]
+
+/-- In a square `g ∘ i = j ∘ f` whose maps `f` and `g` are weak homotopy equivalences, `j` induces
+surjections `π_N(Y, y) → π_N(Y', j y)` at every point `y` exactly when `i` induces surjections
+`π_N(X, x) → π_N(X', i x)` at every point `x`. -/
+theorem forall_surjective_map_iff_of_comp_eq (hf : f.IsWeakHomotopyEquivalence)
+    (hg : g.IsWeakHomotopyEquivalence) (hi : g.comp i = j.comp f) (N : Type*) [Finite N] :
+    (∀ y, Function.Surjective (HomotopyGroup.map (N := N) j (rfl : j y = j y))) ↔
+      ∀ x, Function.Surjective (HomotopyGroup.map (N := N) i (rfl : i x = i x)) := by
+  refine ⟨fun h x ↦ (hf.surjective_map_iff_of_comp_eq hg hi N x).1 (h (f x)), fun h y ↦ ?_⟩
+  -- Move the base point along a path from a point of the image of `f`.
+  obtain ⟨x, ⟨γ⟩⟩ := hf.exists_joined y
+  exact (TauCeti.surjective_map_iff_of_path j γ).1
+    ((hf.surjective_map_iff_of_comp_eq hg hi N x).2 (h x))
+
+/-- In a square `g ∘ i = j ∘ f` whose maps `f` and `g` are weak homotopy equivalences, `j` induces
+injections `π_N(Y, y) → π_N(Y', j y)` at every point `y` exactly when `i` induces injections
+`π_N(X, x) → π_N(X', i x)` at every point `x`. -/
+theorem forall_injective_map_iff_of_comp_eq (hf : f.IsWeakHomotopyEquivalence)
+    (hg : g.IsWeakHomotopyEquivalence) (hi : g.comp i = j.comp f) (N : Type*) [Finite N] :
+    (∀ y, Function.Injective (HomotopyGroup.map (N := N) j (rfl : j y = j y))) ↔
+      ∀ x, Function.Injective (HomotopyGroup.map (N := N) i (rfl : i x = i x)) := by
+  refine ⟨fun h x ↦ (hf.injective_map_iff_of_comp_eq hg hi N x).1 (h (f x)), fun h y ↦ ?_⟩
+  -- Move the base point along a path from a point of the image of `f`.
+  obtain ⟨x, ⟨γ⟩⟩ := hf.exists_joined y
+  exact (TauCeti.injective_map_iff_of_path j γ).1
+    ((hf.injective_map_iff_of_comp_eq hg hi N x).2 (h x))
+
+end Square
 
 end IsWeakHomotopyEquivalence
 
