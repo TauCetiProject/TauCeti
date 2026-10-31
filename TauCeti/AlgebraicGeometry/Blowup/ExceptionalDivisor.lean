@@ -193,6 +193,7 @@ theorem isEffectiveCartier_comap_blowupToBase : (I.comap I.blowupToBase).IsEffec
 
 /-- **The blowup is its own lift.** The lift of the blowup morphism `Bl_I X ⟶ X` through itself,
 given by the universal property, is the identity. -/
+@[simp]
 theorem blowupLift_eq_id :
     I.blowupLift I.blowupToBase I.isEffectiveCartier_comap_blowupToBase = 𝟙 _ :=
   (I.eq_blowupLift _ (Category.id_comp _)).symm
