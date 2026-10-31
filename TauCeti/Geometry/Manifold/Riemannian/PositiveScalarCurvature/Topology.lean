@@ -159,16 +159,20 @@ depends jointly continuously on the metric `g`, in the chart C∞ topology, and 
 theorem continuous_scalarCurvature_chartCInfty :
     Continuous (fun q : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) × M ↦
       q.1.scalarCurvature q.2) :=
-  -- The product topology with the finer chart C∞ factor is finer.
-  continuous_le_dom (inf_le_inf_right _ (induced_mono (antitone_chartCkTopology le_top)))
+  -- Precompose the chart C² statement with the identity, continuous from the finer chart C∞
+  -- topology; the two topologies on the metric factor are passed explicitly.
+  @Continuous.comp _ _ _ (@instTopologicalSpaceProd _ _ chartCInftyTopology _)
+    (@instTopologicalSpaceProd _ _ chartC2Topology _) _ _ _
     continuous_scalarCurvature_chartC2
+    (@Continuous.prodMap _ _ _ _ chartC2Topology _ chartCInftyTopology _ _ _
+      (continuous_id_of_le chartCInftyTopology_le_chartC2Topology) continuous_id)
 
 /-- **Positive scalar curvature is C∞-open.** On a compact manifold without boundary, the smooth
 Riemannian metrics of positive scalar curvature form an open set in the chart C∞ topology. -/
 theorem isOpen_setOf_hasPositiveScalarCurvature_chartCInfty [CompactSpace M] :
     IsOpen {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) |
       g.HasPositiveScalarCurvature} :=
-  isOpen_setOf_hasPositiveScalarCurvature_chartC2.mono (antitone_chartCkTopology le_top)
+  isOpen_setOf_hasPositiveScalarCurvature_chartC2.mono chartCInftyTopology_le_chartC2Topology
 
 end ChartCInfty
 
@@ -195,11 +199,6 @@ that is compact in the chart C∞ topology are bounded below by a common positiv
 theorem IsCompact.exists_pos_forall_le_scalarCurvature_chartCInfty [CompactSpace M]
     {K : Set (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))} (hK : IsCompact K)
     (hpos : ∀ g ∈ K, g.HasPositiveScalarCurvature) :
-    ∃ ε : ℝ, 0 < ε ∧ ∀ g ∈ K, ∀ x, ε ≤ g.scalarCurvature x := by
-  -- `K` is also compact in the coarser chart C² topology. The two topologies on one carrier are
-  -- passed explicitly, since instance search would supply the chart C∞ topology to both.
-  have hK₂ := @IsCompact.image _ _ ContMDiffRiemannianMetric.chartCInftyTopology
-    ContMDiffRiemannianMetric.chartC2Topology K id hK
-    (continuous_id_of_le (ContMDiffRiemannianMetric.antitone_chartCkTopology le_top))
-  rw [image_id] at hK₂
-  exact hK₂.exists_pos_forall_le_scalarCurvature_chartC2 hpos
+    ∃ ε : ℝ, 0 < ε ∧ ∀ g ∈ K, ∀ x, ε ≤ g.scalarCurvature x :=
+  -- `K` is also compact in the coarser chart C² topology.
+  (hK.chartCk_of_le (k := 2) le_top).exists_pos_forall_le_scalarCurvature_chartC2 hpos

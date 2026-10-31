@@ -27,12 +27,13 @@ derivative is jointly continuous in the metric and the chart variable
 fixed point is continuous, and these evaluations separate metrics. The topologies decrease as
 `k` grows (`antitone_chartCkTopology`), so a quantity that is continuous in the chart C²
 topology, such as a second-order curvature expression, is continuous in every chart Cᵏ topology
-with `2 ≤ k`.
+with `2 ≤ k`. Likewise a set of metrics compact in a chart Cˡ topology is compact in every chart
+Cᵏ topology with `k ≤ l` (`IsCompact.chartCk_of_le`).
 
 The chart C² topology `chartC2Topology` and the chart C∞ topology `chartCInftyTopology` are the
 cases `k = 2` and `k = ⊤`. They are selected by `open scoped TauCeti.MetricC2` and
 `open scoped TauCeti.MetricCInfty` respectively, rather than by global instances, so that they
-can coexist on the same carrier.
+can coexist on the same carrier; the C∞ one is finer (`chartCInftyTopology_le_chartC2Topology`).
 
 This construction uses the compact-open derivative convention of M. Hirsch,
 *Differential Topology*, GTM 33, Chapter 2, §1, also used by
@@ -252,6 +253,22 @@ abbrev chartCInftyTopology :
   chartCkTopology ⊤
 
 end ChartCk
+
+/-- The chart C∞ topology is finer than the chart C² topology. -/
+theorem chartCInftyTopology_le_chartC2Topology :
+    chartCInftyTopology (I := I) (M := M) ≤ chartC2Topology :=
+  antitone_chartCkTopology le_top
+
+/-- A set of metrics that is compact in a chart Cˡ topology is compact in every coarser chart Cᵏ
+topology, `k ≤ l`. The two topologies on the same carrier are given explicitly, since instance
+search would supply only one of them. -/
+theorem _root_.IsCompact.chartCk_of_le {k l : ℕ∞}
+    {K : Set (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))}
+    (hK : @IsCompact _ (chartCkTopology l) K) (hkl : k ≤ l) :
+    @IsCompact _ (chartCkTopology k) K := by
+  have h := @IsCompact.image _ _ (chartCkTopology l) (chartCkTopology k) K id hK
+    (continuous_id_of_le (antitone_chartCkTopology hkl))
+  rwa [image_id] at h
 
 end Bundle.ContMDiffRiemannianMetric
 
