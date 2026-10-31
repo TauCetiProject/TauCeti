@@ -16,8 +16,8 @@ for the σ-algebra of a stopping time when `u` is progressively measurable with 
 pseudo-metrizable Borel space (`MeasureTheory.measurable_stoppedValue`).
 
 When time is countable, neither progressive measurability nor a topology on the values is needed:
-the stopped value is pieced together from the countably many events `{τ = i}`. This file proves
-that
+the stopped value is pieced together from the countably many events `{τ = i}`, as recorded by the
+preimage decomposition `MeasureTheory.stoppedValue_preimage_eq`. This file proves that
 
 * `stoppedValue u τ` is measurable whenever `τ` and every `u i` are
   (`MeasureTheory.measurable_stoppedValue_of_countable`), which applies to processes, such as the
@@ -40,7 +40,7 @@ variable {Ω ι β : Type*} [Nonempty ι] {m : MeasurableSpace Ω} {u : ι → �
 
 /-- The preimage of a set under a stopped value, decomposed along the values of the stopping
 time. -/
-private theorem stoppedValue_preimage_eq (t : Set β) :
+theorem stoppedValue_preimage_eq (t : Set β) :
     stoppedValue u τ ⁻¹' t =
       (⋃ i : ι, {ω | τ ω = i} ∩ u i ⁻¹' t) ∪
         ({ω | τ ω = ⊤} ∩ u (⊤ : WithTop ι).untopA ⁻¹' t) := by

@@ -26,24 +26,24 @@ Every statement below is restricted to `{τ < ∞}`, so the arbitrary values of 
 off that event never enter. This file proves the property in the following forms.
 
 * As a law on an event of `𝓕_τ`
-  (`MeasureTheory.markovChainLaw_restrict_map_stoppedValue_shift_iterate`): restricted to
+  (`MeasureTheory.Measure.markovChainLaw_restrict_map_stoppedValue_shift_iterate`): restricted to
   `A ∩ {τ < ∞}` with `A ∈ 𝓕_τ`, the future path has the law of the chain whose initial measure is
   the law of `X τ` restricted to the same event. When `X τ` is a fixed state `y` there, as at an
   entrance time of `{y}`, this law is a multiple of `ℙ_y`
-  (`MeasureTheory.markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul`).
+  (`MeasureTheory.Measure.markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul`).
 * As an identity of probabilities
-  (`MeasureTheory.markovChainLaw_inter_preimage_stoppedValue_shift_iterate`):
+  (`MeasureTheory.Measure.markovChainLaw_inter_preimage_stoppedValue_shift_iterate`):
   `ℙ(A ∩ {τ < ∞} ∩ {θ_τ X ∈ B}) = ∫_{A ∩ {τ < ∞}} ℙ_{X τ}(B)`.
 * As identities of conditional expectations given `𝓕_τ`, for integrable test functions
-  (`MeasureTheory.condExp_stoppedValue_shift_iterate_markovChainLaw`) and for events
+  (`MeasureTheory.Measure.condExp_stoppedValue_shift_iterate_markovChainLaw`) and for events
   (`MeasureTheory.Measure.condExp_indicator_stoppedValue_shift_iterate_markovChainLaw`).
 * For an almost surely finite stopping time, without the restriction to `{τ < ∞}`
-  (`MeasureTheory.markovChainLaw_restrict_map_stoppedValue_shift_iterate_of_ae_ne_top` and
-  `MeasureTheory.condExp_stoppedValue_shift_iterate_markovChainLaw_of_ae_ne_top`).
+  (`MeasureTheory.Measure.markovChainLaw_restrict_map_stoppedValue_shift_iterate_of_ae_ne_top` and
+  `MeasureTheory.Measure.condExp_stoppedValue_shift_iterate_markovChainLaw_of_ae_ne_top`).
 
 The proof decomposes `{τ < ∞}` into the events `{τ = n}`. An event of `𝓕_τ` meets `{τ = n}` in an
 event of the history up to time `n`, on which the Markov property at the fixed time `n`
-(`MeasureTheory.markovChainLaw_restrict_map_shift_iterate`) identifies the law of the
+(`MeasureTheory.Measure.markovChainLaw_restrict_map_shift_iterate`) identifies the law of the
 future path; the path law is additive in the initial measure, which reassembles the pieces.
 
 ## References
