@@ -116,41 +116,29 @@ variable [DiscreteTopology G] [μ.IsOpenPosMeasure]
 namespace Mean
 
 variable (μ) in
-/-- The functional `[f] ↦ m f` on `L∞(G, μ)` induced by a mean `m` on a discrete group. -/
-private def lpTopFunctional (m : Mean G) : Lp ℝ ∞ μ →ₚ[ℝ] ℝ where
-  toLinearMap := m.toPositiveLinearMap.toLinearMap ∘ₗ
-    (UCB.discreteAlgEquiv G).symm.toLinearMap ∘ₗ
-    (toLpTopLinearIsometryEquiv μ ℝ).symm.toLinearEquiv.toLinearMap
-  monotone' _ _ h := OrderHomClass.mono m
-    (UCB.discreteAlgEquiv_symm_le_discreteAlgEquiv_symm_iff.2
-      ((toLpTopLinearIsometryEquiv_symm_le_symm_iff μ).2 h))
-
-private theorem lpTopFunctional_apply (m : Mean G) (φ : Lp ℝ ∞ μ) :
-    lpTopFunctional μ m φ =
-      m ((UCB.discreteAlgEquiv G).symm ((toLpTopLinearIsometryEquiv μ ℝ).symm φ)) :=
-  rfl
-
-variable (μ) in
 /-- On a discrete group, means on `UCB G` correspond to positive linear functionals `M` on
 `L∞(G, μ)` with `M 1 = 1`, for any measure `μ` charging every point. A mean `m` corresponds to
 `[f] ↦ m f`, and the inverse is the restriction `TauCeti.Mean.ofLpTop`. -/
 def lpTopEquiv : Mean G ≃ {M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ // M linftyOne = 1} where
-  toFun m := ⟨lpTopFunctional μ m, by
+  toFun m := ⟨{
+      toLinearMap := m.toPositiveLinearMap.toLinearMap ∘ₗ ((UCB.discreteLinearIsometryEquiv G).trans
+        (toLpTopLinearIsometryEquiv μ ℝ)).symm.toLinearEquiv.toLinearMap
+      monotone' := fun _ _ h => OrderHomClass.mono m (by simpa using h) }, by
     have h₁ : (toLpTopLinearIsometryEquiv μ ℝ).symm linftyOne = 1 := by
       rw [LinearIsometryEquiv.symm_apply_eq, coe_toLpTopLinearIsometryEquiv, toLpTop_one]
-    simp [lpTopFunctional_apply, h₁]⟩
+    exact (congrArg m (by simp [h₁])).trans m.map_one⟩
   invFun M := ofLpTop M.1 M.2
-  left_inv m := ext fun f => by
-    rw [ofLpTop_apply, lpTopFunctional_apply, toLpTopLinearIsometryEquiv_symm_toLpTop,
-      ← UCB.discreteAlgEquiv_apply, AlgEquiv.symm_apply_apply]
-  right_inv M := Subtype.ext (PositiveLinearMap.ext fun φ => by simp [lpTopFunctional_apply])
+  left_inv m := ext fun f => (ofLpTop_apply _ _ f).trans
+    (congrArg m (by simpa using (UCB.discreteAlgEquiv G).symm_apply_apply f))
+  right_inv M := Subtype.ext (PositiveLinearMap.ext fun φ =>
+    (ofLpTop_apply M.1 M.2 _).trans (congrArg M.1 (by simp)))
 
 /-- The functional corresponding to a mean `m` evaluates `m` on the bounded function
 representing a class in `L∞`. -/
 theorem lpTopEquiv_apply (m : Mean G) (φ : Lp ℝ ∞ μ) :
     (lpTopEquiv μ m).1 φ =
       m ((UCB.discreteAlgEquiv G).symm ((toLpTopLinearIsometryEquiv μ ℝ).symm φ)) :=
-  lpTopFunctional_apply m φ
+  congrArg m (by simp)
 
 /-- The functional corresponding to a mean `m` takes the value `m f` at the class of `f`. -/
 @[simp]

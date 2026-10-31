@@ -47,6 +47,8 @@ counting measure, or of a Haar measure on a discrete group, consists of all boun
 * `BoundedContinuousFunction.norm_toLpTop`: `‖[f]‖ = ‖f‖` when `μ` is positive on open sets.
 * `BoundedContinuousFunction.toLpTop_le_toLpTop_iff`: for such `μ`, the map is an order
   embedding on real-valued functions.
+* `MeasureTheory.ae_eq_top_of_discreteTopology`: on a discrete space, for a measure charging
+  every point, almost everywhere means everywhere.
 * `BoundedContinuousFunction.toLpTop_surjective`: on a discrete space, for a measure charging
   every point, every class in `L∞` is the class of a bounded function.
 * `BoundedContinuousFunction.toLpTop_one`: the constant function one goes to the constant one.
@@ -58,6 +60,13 @@ noncomputable section
 
 open MeasureTheory Filter
 open scoped ENNReal BoundedContinuousFunction
+
+/-- On a discrete space, a measure positive on nonempty open sets charges every point, so
+almost everywhere means everywhere. -/
+theorem MeasureTheory.ae_eq_top_of_discreteTopology {α : Type*} [TopologicalSpace α]
+    [DiscreteTopology α] [MeasurableSpace α] (μ : Measure α) [μ.IsOpenPosMeasure] :
+    ae μ = ⊤ :=
+  ae_eq_top.2 fun x => (isOpen_discrete {x}).measure_ne_zero μ (Set.singleton_nonempty x)
 
 namespace BoundedContinuousFunction
 
@@ -136,11 +145,8 @@ bounded function. -/
 theorem toLpTop_surjective :
     Function.Surjective (toLpTop μ 𝕜 : (α →ᵇ E) →L[𝕜] Lp E ∞ μ) := by
   intro φ
-  -- Singletons are open, so the only `μ`-null set is empty and a.e. bounds hold everywhere.
-  have hae : ae μ = ⊤ := ae_eq_top.2 fun x =>
-    (isOpen_discrete {x}).measure_ne_zero μ (Set.singleton_nonempty x)
   have h := ae_le_lpNorm_exponent_top (Lp.memLp φ)
-  rw [hae, eventually_top] at h
+  rw [ae_eq_top_of_discreteTopology, eventually_top] at h
   exact ⟨ofNormedAddCommGroupDiscrete φ _ h, Lp.ext (coeFn_toLpTop μ _)⟩
 
 variable (𝕜) in
@@ -159,6 +165,15 @@ theorem coe_toLpTopLinearIsometryEquiv :
 theorem toLpTop_toLpTopLinearIsometryEquiv_symm (φ : Lp E ∞ μ) :
     toLpTop μ 𝕜 ((toLpTopLinearIsometryEquiv μ 𝕜).symm φ) = φ :=
   (toLpTopLinearIsometryEquiv μ 𝕜).apply_symm_apply φ
+
+/-- The bounded function representing a class in `L∞` is its coercion to a function. -/
+@[simp]
+theorem coe_toLpTopLinearIsometryEquiv_symm (φ : Lp E ∞ μ) :
+    ⇑((toLpTopLinearIsometryEquiv μ 𝕜).symm φ) = ⇑φ := by
+  have h := coeFn_toLpTop μ (𝕜 := 𝕜) ((toLpTopLinearIsometryEquiv μ 𝕜).symm φ)
+  rw [toLpTop_toLpTopLinearIsometryEquiv_symm, Filter.EventuallyEq,
+    ae_eq_top_of_discreteTopology, eventually_top] at h
+  exact funext fun x => (h x).symm
 
 @[simp]
 theorem toLpTopLinearIsometryEquiv_symm_toLpTop (f : α →ᵇ E) :
