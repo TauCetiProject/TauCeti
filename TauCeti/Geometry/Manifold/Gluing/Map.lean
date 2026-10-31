@@ -16,7 +16,7 @@ smooth map on its glued manifold. `TopCat.GlueData.IsCompatible.descContMDiffMap
 existing topological colimit, not a new quotient or a choice of representatives.
 `TopCat.GlueData.IsCompatible.contMDiffMapEquiv` expresses its universal property as an
 equivalence with families agreeing on the overlaps. Descent commutes with postcomposition.
-`TopCat.GlueData.IsCompatible.mapContMDiff` constructs maps between compatible gluings
+`TopCat.GlueData.IsCompatible.mapContMDiffMap` constructs maps between compatible gluings
 piecewise, with identity and composition laws. Map regularity `m` may be any `m ≤ n`, where
 `n` is the regularity of the compatible gluing and its piece manifolds.
 
@@ -25,8 +25,8 @@ to be `ℂ` gives the holomorphic universal property on exactly the same carrier
 
 ## References
 
-* John M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 1, for smooth
-  maps defined on an open cover.
+* John M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 2,
+  Corollary 2.8 (Gluing Lemma for Smooth Maps).
 * The topological descent is Mathlib's `CategoryTheory.Limits.Multicoequalizer.desc`.
 -/
 
@@ -62,6 +62,26 @@ variable [∀ i, ChartedSpace H (D.U i)] [∀ ij, ChartedSpace H (D.V ij)]
   {N : Type u} [TopologicalSpace N] [ChartedSpace H' N]
   (h : D.IsCompatible I n) {m : ℕ∞ω} (hm : m ≤ n)
 
+private noncomputable def descContinuous
+    (f : ∀ i, C^m⟮I, D.U i; I', N⟯)
+    (hf : ∀ i j (x : D.V (i, j)), f i (D.f i j x) = f j (D.f j i (D.t i j x))) :
+    D.toGlueData.glued ⟶ TopCat.of N :=
+  Multicoequalizer.desc D.toGlueData.diagram (TopCat.of N)
+    (fun (i : D.J) ↦ TopCat.ofHom (X := D.U i) ⟨f i, (f i).contMDiff.continuous⟩)
+    (by rintro ⟨i, j⟩; ext x; exact hf i j x)
+
+omit [∀ ij, ChartedSpace H (D.V ij)] in
+private theorem descContinuous_ι
+    (f : ∀ i, C^m⟮I, D.U i; I', N⟯)
+    (hf : ∀ i j (x : D.V (i, j)), f i (D.f i j x) = f j (D.f j i (D.t i j x)))
+    (i : D.J) (x : D.U i) :
+    descContinuous f hf (D.toGlueData.ι i x) = f i x := by
+  unfold descContinuous
+  exact ConcreteCategory.congr_hom
+    (Multicoequalizer.π_desc D.toGlueData.diagram (TopCat.of N)
+      (fun (i : D.J) ↦ TopCat.ofHom (X := D.U i) ⟨f i, (f i).contMDiff.continuous⟩)
+      (by rintro ⟨i, j⟩; ext x; exact hf i j x) i) x
+
 /-- Descend smooth maps on the pieces which agree on every overlap to the glued manifold.
 The underlying continuous map is supplied by the topological colimit. -/
 noncomputable def descContMDiffMap
@@ -70,15 +90,9 @@ noncomputable def descContMDiffMap
     letI := D.chartedSpace H
     C^m⟮I, D.toGlueData.glued; I', N⟯ := by
   letI := D.chartedSpace H
-  let F : D.toGlueData.glued ⟶ TopCat.of N :=
-    Multicoequalizer.desc D.toGlueData.diagram (TopCat.of N)
-      (fun (i : D.J) ↦ TopCat.ofHom (X := D.U i) ⟨f i, (f i).contMDiff.continuous⟩)
-      (by rintro ⟨i, j⟩; ext x; exact hf i j x)
-  refine ⟨F, (h.contMDiff_iff hm).mpr fun i ↦ ?_⟩
-  have hi := Multicoequalizer.π_desc D.toGlueData.diagram (TopCat.of N)
-    (fun (i : D.J) ↦ TopCat.ofHom (X := D.U i) ⟨f i, (f i).contMDiff.continuous⟩)
-    (by rintro ⟨i, j⟩; ext x; exact hf i j x) i
-  have heq : F ∘ D.toGlueData.ι i = f i := funext (ConcreteCategory.congr_hom hi)
+  refine ⟨descContinuous f hf, (h.contMDiff_iff hm).mpr fun i ↦ ?_⟩
+  have heq : descContinuous f hf ∘ D.toGlueData.ι i = f i :=
+    funext (descContinuous_ι f hf i)
   rw [heq]
   exact (f i).contMDiff
 
@@ -89,10 +103,8 @@ theorem descContMDiffMap_ι
     (hf : ∀ i j (x : D.V (i, j)), f i (D.f i j x) = f j (D.f j i (D.t i j x)))
     (i : D.J) (x : D.U i) :
     h.descContMDiffMap hm f hf (D.toGlueData.ι i x) = f i x := by
-  exact ConcreteCategory.congr_hom
-    (Multicoequalizer.π_desc D.toGlueData.diagram (TopCat.of N)
-      (fun (i : D.J) ↦ TopCat.ofHom (X := D.U i) ⟨f i, (f i).contMDiff.continuous⟩)
-      (by rintro ⟨i, j⟩; ext x; exact hf i j x) i) x
+  -- The bundled constructor retains descContinuous as its underlying function.
+  exact descContinuous_ι f hf i x
 
 /-- The smooth universal property of compatible open gluing: smooth maps on the glued
 manifold are equivalent to smooth maps on the pieces agreeing on overlaps. -/
@@ -162,7 +174,7 @@ variable {D' : TopCat.GlueData.{u}} [∀ i, ChartedSpace H' (D'.U i)]
 /-- A family of smooth maps into pieces of another compatible gluing induces a smooth map
 of glued manifolds, provided the images of identified points are identified. The index map
 need not be injective or surjective. -/
-noncomputable def mapContMDiff (a : D.J → D'.J)
+noncomputable def mapContMDiffMap (a : D.J → D'.J)
     (f : ∀ i, C^m⟮I, D.U i; I', D'.U (a i)⟯)
     (hf : ∀ i j (x : D.V (i, j)),
       D'.toGlueData.ι (a i) (f i (D.f i j x)) =
@@ -177,34 +189,55 @@ noncomputable def mapContMDiff (a : D.J → D'.J)
 
 /-- The map induced between gluings has the prescribed value on each piece. -/
 @[simp]
-theorem mapContMDiff_ι (a : D.J → D'.J)
+theorem mapContMDiffMap_ι (a : D.J → D'.J)
     (f : ∀ i, C^m⟮I, D.U i; I', D'.U (a i)⟯)
     (hf : ∀ i j (x : D.V (i, j)),
       D'.toGlueData.ι (a i) (f i (D.f i j x)) =
         D'.toGlueData.ι (a j) (f j (D.f j i (D.t i j x))))
     (i : D.J) (x : D.U i) :
-    h.mapContMDiff hm h' a f hf (D.toGlueData.ι i x) = D'.toGlueData.ι (a i) (f i x) := by
+    h.mapContMDiffMap hm h' a f hf (D.toGlueData.ι i x) = D'.toGlueData.ι (a i) (f i x) := by
   let := D'.chartedSpace H'
   exact h.descContMDiffMap_ι hm _ hf i x
 
 /-- Identity piece maps induce the identity map of the glued manifold. -/
 @[simp]
-theorem mapContMDiff_id :
-    h.mapContMDiff hm h id (fun i ↦ ContMDiffMap.id (I := I) (M := D.U i))
+theorem mapContMDiffMap_id :
+    h.mapContMDiffMap hm h id (fun i ↦ ContMDiffMap.id (I := I) (M := D.U i))
       (fun i j x ↦ (D.glue_condition_apply i j x).symm) =
         (letI := D.chartedSpace H; ContMDiffMap.id (I := I) (M := D.toGlueData.glued)) := by
   let := D.chartedSpace H
   apply D.contMDiffMap_ext
   intro i x
-  exact h.mapContMDiff_ι hm h _ _ _ i x
+  exact h.mapContMDiffMap_ι hm h _ _ _ i x
 
 variable {D'' : TopCat.GlueData.{u}} [∀ i, ChartedSpace H'' (D''.U i)]
   [∀ ij, ChartedSpace H'' (D''.V ij)] [∀ i, IsManifold I'' n (D''.U i)]
 
+include hm h' in
+omit [∀ ij, ChartedSpace H (D.V ij)] [∀ i, IsManifold I n (D.U i)] in
+/-- Composing two families of piece maps preserves agreement of their images on overlaps. -/
+theorem mapContMDiffMap_comp_compatible (h'' : D''.IsCompatible I'' n)
+    (a : D.J → D'.J) (b : D'.J → D''.J)
+    (f : ∀ i, C^m⟮I, D.U i; I', D'.U (a i)⟯)
+    (g : ∀ j, C^m⟮I', D'.U j; I'', D''.U (b j)⟯)
+    (hf : ∀ i j (x : D.V (i, j)),
+      D'.toGlueData.ι (a i) (f i (D.f i j x)) =
+        D'.toGlueData.ι (a j) (f j (D.f j i (D.t i j x))))
+    (hg : ∀ i j (x : D'.V (i, j)),
+      D''.toGlueData.ι (b i) (g i (D'.f i j x)) =
+        D''.toGlueData.ι (b j) (g j (D'.f j i (D'.t i j x))))
+    (i j : D.J) (x : D.V (i, j)) :
+    D''.toGlueData.ι (b (a i)) (g (a i) (f i (D.f i j x))) =
+      D''.toGlueData.ι (b (a j)) (g (a j) (f j (D.f j i (D.t i j x)))) := by
+  let := D'.chartedSpace H'
+  let := D''.chartedSpace H''
+  have heq := congrArg (h'.mapContMDiffMap hm h'' b g hg) (hf i j x)
+  simpa only [mapContMDiffMap_ι] using heq
+
 /-- Composition of piece maps induces composition on the glued manifolds. The overlap
 condition on the composite follows from those of the two families. -/
 @[simp]
-theorem mapContMDiff_comp (h'' : D''.IsCompatible I'' n)
+theorem mapContMDiffMap_comp (h'' : D''.IsCompatible I'' n)
     (a : D.J → D'.J) (b : D'.J → D''.J)
     (f : ∀ i, C^m⟮I, D.U i; I', D'.U (a i)⟯)
     (g : ∀ j, C^m⟮I', D'.U j; I'', D''.U (b j)⟯)
@@ -217,17 +250,17 @@ theorem mapContMDiff_comp (h'' : D''.IsCompatible I'' n)
     letI := D.chartedSpace H
     letI := D'.chartedSpace H'
     letI := D''.chartedSpace H''
-    (h'.mapContMDiff hm h'' b g hg).comp (h.mapContMDiff hm h' a f hf) =
-      h.mapContMDiff hm h'' (b ∘ a) (fun i ↦ (g (a i)).comp (f i))
-        (fun i j x ↦ by
-          have heq := congrArg (h'.mapContMDiff hm h'' b g hg) (hf i j x)
-          simpa only [mapContMDiff_ι, ContMDiffMap.comp_apply, Function.comp_apply] using heq) := by
+    (h'.mapContMDiffMap hm h'' b g hg).comp (h.mapContMDiffMap hm h' a f hf) =
+      h.mapContMDiffMap hm h'' (b ∘ a) (fun i ↦ (g (a i)).comp (f i))
+        (mapContMDiffMap_comp_compatible hm h' h'' a b f g hf hg) := by
   let := D.chartedSpace H
   let := D'.chartedSpace H'
   let := D''.chartedSpace H''
   apply D.contMDiffMap_ext
   intro i x
-  simp only [ContMDiffMap.comp_apply, mapContMDiff_ι, Function.comp_apply]
+  rw [h.mapContMDiffMap_ι hm h'' (b ∘ a) (fun i ↦ (g (a i)).comp (f i))
+    (mapContMDiffMap_comp_compatible hm h' h'' a b f g hf hg) i x]
+  simp only [ContMDiffMap.comp_apply, mapContMDiffMap_ι, Function.comp_apply]
 
 end Maps
 
