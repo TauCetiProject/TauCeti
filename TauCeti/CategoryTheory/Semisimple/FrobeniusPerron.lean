@@ -40,6 +40,11 @@ epimorphisms. A nonzero object `X` has Frobenius–Perron dimension at least `1`
 coevaluation embeds the unit into `X ⊗ Xᘁ`, whose dimension is the square of that of `X`. So the
 Frobenius–Perron dimension vanishes exactly on zero objects.
 
+The **Frobenius–Perron dimension of the category**, `TauCeti.frobeniusPerronGlobalDim k C`, is the
+sum of the squared Frobenius–Perron dimensions of the simple classes. It is the Frobenius–Perron
+counterpart of the global dimension of a pivotal structure, which it bounds in absolute value over
+`ℂ`; the two agree exactly for pseudo-unitary categories.
+
 ## Main declarations
 
 * `TauCeti.SplitK0.frobeniusPerronChar k C`: the Frobenius–Perron character.
@@ -61,6 +66,8 @@ Frobenius–Perron dimension vanishes exactly on zero objects.
 * `TauCeti.one_le_frobeniusPerronDim`, `TauCeti.frobeniusPerronDim_eq_zero_iff` and
   `TauCeti.frobeniusPerronDim_pos_iff`: it is at least one on nonzero objects, and vanishes
   exactly on zero objects.
+* `TauCeti.frobeniusPerronGlobalDim k C`: the Frobenius–Perron dimension of the category, the sum
+  of the squared Frobenius–Perron dimensions of the simple classes.
 
 ## References
 
@@ -344,6 +351,26 @@ theorem frobeniusPerronDim_eq_zero_iff (X : C) : frobeniusPerronDim k X = 0 ↔ 
 /-- An object has positive Frobenius–Perron dimension exactly when it is nonzero. -/
 theorem frobeniusPerronDim_pos_iff (X : C) : 0 < frobeniusPerronDim k X ↔ ¬IsZero X := by
   rw [(frobeniusPerronDim_nonneg k X).lt_iff_ne', Ne, frobeniusPerronDim_eq_zero_iff]
+
+variable (C) in
+/-- The **Frobenius–Perron dimension of a fusion category**: the sum, over the simple classes, of
+the squared Frobenius–Perron dimensions of their chosen representatives. -/
+def frobeniusPerronGlobalDim [Fintype (SimpleClasses C)] : ℝ :=
+  ∑ S : SimpleClasses C, frobeniusPerronDim k S.repr ^ 2
+
+/-- The defining formula of the Frobenius–Perron dimension of a fusion category. -/
+theorem frobeniusPerronGlobalDim_def [Fintype (SimpleClasses C)] :
+    frobeniusPerronGlobalDim k C = ∑ S : SimpleClasses C, frobeniusPerronDim k S.repr ^ 2 :=
+  (rfl)
+
+/-- The Frobenius–Perron dimension of a fusion category is at least one: the class of the tensor
+unit contributes `1`. -/
+theorem one_le_frobeniusPerronGlobalDim [Fintype (SimpleClasses C)] :
+    1 ≤ frobeniusPerronGlobalDim k C := by
+  have h := Finset.single_le_sum (f := fun S : SimpleClasses C ↦ frobeniusPerronDim k S.repr ^ 2)
+    (fun S _ ↦ sq_nonneg _) (Finset.mem_univ (SimpleClasses.classOf (𝟙_ C)))
+  rwa [frobeniusPerronDim_eq_of_iso k (SimpleClasses.classOfReprIso (𝟙_ C)),
+    frobeniusPerronDim_tensorUnit, one_pow] at h
 
 end Dim
 

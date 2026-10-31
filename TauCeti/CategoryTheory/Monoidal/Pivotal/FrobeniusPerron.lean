@@ -27,6 +27,9 @@ categorical dimensions is required.
 
 * `TauCeti.norm_leftDim_le_frobeniusPerronDim`: the left categorical dimension bound.
 * `TauCeti.norm_rightDim_le_frobeniusPerronDim`: the right categorical dimension bound.
+* `TauCeti.SplitK0.rightDimChar_apply_eq_conj` and `TauCeti.norm_rightDim_eq_norm_leftDim`: the
+  right dimension character is the complex conjugate of the left one, so the two categorical
+  dimensions of an object have the same absolute value.
 
 ## References
 
@@ -36,7 +39,7 @@ categorical dimensions is required.
 
 public section
 
-open CategoryTheory CategoryTheory.Limits MonoidalCategory
+open CategoryTheory CategoryTheory.Limits MonoidalCategory ComplexConjugate
 
 namespace TauCeti
 
@@ -61,5 +64,19 @@ theorem norm_rightDim_le_frobeniusPerronDim (X : C) :
     ‖endAlgEquivOfSimple ℂ (𝟙_ C) (End.of (rightDim X))‖ ≤ frobeniusPerronDim ℂ X := by
   simpa only [SplitK0.rightDimChar_of] using
     SplitK0.norm_ringHom_of_le_frobeniusPerronDim ℂ (SplitK0.rightDimChar ℂ C) X
+
+/-- In a complex pivotal fusion category, the right dimension character is the complex conjugate
+of the left dimension character, since characters of the Grothendieck ring are ⋆-characters. -/
+theorem SplitK0.rightDimChar_apply_eq_conj (x : SplitK0 C) :
+    SplitK0.rightDimChar ℂ C x = conj (SplitK0.leftDimChar ℂ C x) := by
+  rw [← SplitK0.leftDimChar_dual, SplitK0.ringHom_apply_dual ℂ]
+
+/-- In a complex pivotal fusion category, the left and right categorical dimensions of an object
+have the same absolute value. -/
+theorem norm_rightDim_eq_norm_leftDim (X : C) :
+    ‖endAlgEquivOfSimple ℂ (𝟙_ C) (End.of (rightDim X))‖ =
+      ‖endAlgEquivOfSimple ℂ (𝟙_ C) (End.of (leftDim X))‖ := by
+  rw [← SplitK0.rightDimChar_of, ← SplitK0.leftDimChar_of, SplitK0.rightDimChar_apply_eq_conj,
+    RCLike.norm_conj]
 
 end TauCeti
