@@ -73,7 +73,11 @@ import TauCeti.Data.Set.PowersetCard
   over a pair of finite types, to the values of its summand at the two points where it is
   supported, and at the four cells of a rectangle.
 * `Finset.filter_ne_product_of_disjoint` says that every pair in the product of disjoint finsets
-  has distinct coordinates.
+  has distinct coordinates, `Finset.card_filter_ne_product` counts the pairs with distinct
+  coordinates in any product by their first coordinate, `Finset.card_filter_ne_product_comm`
+  says that this count is symmetric in the two factors, and
+  `Finset.card_filter_ne_product_mul_card_le` bounds the proportion of these pairs in a
+  subproduct of the product of two equal or disjoint finsets.
 * `TauCeti.sum_piecewise_eq_sum_update_of_card_eq_succ` reindexes a sum of `Finset.piecewise` terms
   over the subsets of size one less than `card ι` as a sum of `Function.update` terms over `ι`. It
   is what turns a formula indexed by "all but one point" into one indexed by the omitted point, as
@@ -194,6 +198,42 @@ theorem filter_ne_product_of_disjoint {s t : Finset α} [DecidableEq α] (hst : 
     (s ×ˢ t).filter (fun p => p.1 ≠ p.2) = s ×ˢ t :=
   filter_true_of_mem fun _ hp =>
     hst.forall_ne_finset (mem_product.mp hp).1 (mem_product.mp hp).2
+
+/-- Counting the pairs with distinct coordinates in `s ×ˢ t` by their first coordinate: each
+`u ∈ s` is paired with the elements of `t` other than `u`. -/
+theorem card_filter_ne_product {α : Type*} [DecidableEq α] (s t : Finset α) :
+    #{p ∈ s ×ˢ t | p.1 ≠ p.2} = ∑ u ∈ s, #(t.erase u) := by
+  rw [card_filter, sum_product]
+  refine sum_congr rfl fun u _ ↦ ?_
+  rw [← card_filter, filter_ne]
+
+/-- Exchanging the two factors of a product preserves the number of pairs with distinct
+coordinates. -/
+theorem card_filter_ne_product_comm {α : Type*} [DecidableEq α] (s t : Finset α) :
+    #{p ∈ t ×ˢ s | p.1 ≠ p.2} = #{p ∈ s ×ˢ t | p.1 ≠ p.2} := by
+  apply card_equiv (Equiv.prodComm α α)
+  simp [and_comm, ne_comm]
+
+/-- If `s` and `t` are equal or disjoint, then for `s' ⊆ s` and `t' ⊆ t` the pairs with distinct
+coordinates in `s' ×ˢ t'` are at most a `#s' / #s`-fraction of those in `s ×ˢ t`. For
+overlapping `s ≠ t` this can fail: take `s = {a, b}`, `t = {b, c}`, `s' = {a}` and `t' = t`. -/
+theorem card_filter_ne_product_mul_card_le {α : Type*} [DecidableEq α] {s t s' t' : Finset α}
+    (hst : s = t ∨ Disjoint s t) (hs' : s' ⊆ s) (ht' : t' ⊆ t) :
+    #{p ∈ s' ×ˢ t' | p.1 ≠ p.2} * #s ≤ #s' * #{p ∈ s ×ˢ t | p.1 ≠ p.2} := by
+  obtain rfl | hst := hst
+  · -- Each `u ∈ s'` has at most `#s - 1` partners in `t' ⊆ s`.
+    have h₁ : #{p ∈ s' ×ˢ t' | p.1 ≠ p.2} ≤ #s' * (#s - 1) := by
+      rw [card_filter_ne_product, ← smul_eq_mul, ← sum_const]
+      exact sum_le_sum fun u hu ↦
+        (card_erase_of_mem (hs' hu)) ▸ card_le_card (erase_subset_erase u ht')
+    have h₂ : #{p ∈ s ×ˢ s | p.1 ≠ p.2} = #s * (#s - 1) := by
+      rw [card_filter_ne_product, sum_congr rfl fun u hu ↦ card_erase_of_mem hu, sum_const,
+        smul_eq_mul]
+    rw [h₂, ← mul_assoc, mul_right_comm]
+    exact Nat.mul_le_mul_right _ h₁
+  · rw [filter_ne_product_of_disjoint (hst.mono hs' ht'), filter_ne_product_of_disjoint hst,
+      card_product, card_product, mul_right_comm, mul_assoc]
+    exact Nat.mul_le_mul_left _ (Nat.mul_le_mul_left _ (card_le_card ht'))
 
 /-- **The symmetric difference and the intersection account for both cardinalities.** The
 symmetric difference is the union minus the intersection, and the union and the intersection
