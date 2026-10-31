@@ -60,6 +60,8 @@ diffeomorphisms.
   of the image.
 * `LinearMap.eq_of_apply_eq_of_eqOn_orthogonal`: linear maps agreeing on a vector and
   its orthogonal complement are equal, without a unit-norm assumption.
+* `LinearMap.exists_linearIsometry_range_eq`: the range of an injective linear map out of a
+  finite-dimensional inner product space is the range of a linear isometry out of that space.
 * `LinearIsometryEquiv.eq_extendOrthogonalComplement`: a linear isometry equals the
   extension if it agrees on the unit vector and its orthogonal complement.
 * `LinearIsometryEquiv.eq_refl_or_eq_neg`: the only real linear isometry equivalences of `ℝ`
@@ -156,6 +158,22 @@ theorem eq_of_apply_eq_of_eqOn_orthogonal {f g : E →ₗ[𝕜] F} (hx : f x = g
   · exact eqOn_span' (by simpa only [Set.eqOn_singleton] using hx)
   · intro v hv
     exact h ⟨v, hv⟩
+
+/-- The range of an injective linear map out of a finite-dimensional inner product space is the
+range of a linear isometry out of the same space. -/
+theorem exists_linearIsometry_range_eq [FiniteDimensional 𝕜 E] {G : Type*} [NormedAddCommGroup G]
+    [InnerProductSpace 𝕜 G] (A : E →ₗ[𝕜] G) (hA : Function.Injective A) :
+    ∃ ι : E →ₗᵢ[𝕜] G, Set.range ι = Set.range A := by
+  set L := range A
+  have hL : Module.finrank 𝕜 L = Module.finrank 𝕜 E := finrank_range_of_inj hA
+  -- Identify `E` with `range A` through orthonormal bases of the same size.
+  let e : E ≃ₗᵢ[𝕜] L :=
+    (stdOrthonormalBasis 𝕜 E).repr.trans ((stdOrthonormalBasis 𝕜 L).reindex (finCongr hL)).repr.symm
+  refine ⟨L.subtypeₗᵢ.comp e.toLinearIsometry, Set.Subset.antisymm ?_ ?_⟩
+  · rintro _ ⟨z, rfl⟩
+    exact mem_range.1 (e z).2
+  · rintro _ ⟨x, rfl⟩
+    exact ⟨e.symm ⟨A x, x, rfl⟩, by simp⟩
 
 end LinearMap
 
