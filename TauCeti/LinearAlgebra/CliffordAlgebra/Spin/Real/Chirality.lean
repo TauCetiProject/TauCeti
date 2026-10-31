@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.HalfSpin
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Neg
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Four
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Neg
 -- Private: the coordinate restriction of an algebra map out of a product and the injectivity of
 -- ring maps out of a simple ring are used only inside proofs.
 import Mathlib.RingTheory.SimpleRing.Basic
@@ -29,11 +26,9 @@ oriented four-dimensional real inner product space `V` instead use the negative-
 (`CliffordAlgebra.chirality`) into the half-spinors `W⁺` and `W⁻`. This file determines which
 factor acts on which half.
 
-A positively oriented orthonormal basis `b` of `V` is an isometry from the negated coordinate form
-`-realCliffordForm n 0` to `Q` (`OrthonormalBasis.negRealCliffordFormIsometryEquiv`). Composing
-it with the comparison `CliffordAlgebra.spinGroupEquivNeg` of the Spin groups of a form and of its
-negative gives the frame comparison `OrthonormalBasis.realSpinGroupEquiv` of the coordinate Spin
-group with `spinGroup Q`, which on even parts is the even Clifford algebra equivalence
+The half-spinors are compared with the coordinate model along a positively oriented orthonormal
+basis `b` of `V`, through the frame comparison `OrthonormalBasis.realSpinGroupEquiv` of the
+coordinate Spin group with `spinGroup Q` and its even Clifford algebra counterpart
 `OrthonormalBasis.realEvenCliffordEquiv`. The comparison depends on the frame; the results below
 hold for every positively oriented frame.
 
@@ -57,19 +52,8 @@ converse directions. They hold for the Fock model of an oriented four-space, whe
 have complex dimension two
 (`TauCeti.AlmostComplexStructure.finrank_positiveHalfSpinors_realFockAction`).
 
-## Main definitions
-
-* `OrthonormalBasis.negRealCliffordFormIsometryEquiv b hQ`: the coordinates of an orthonormal
-  basis `b`, as an isometry from `-realCliffordForm n 0` to a form `Q v = -‖v‖²`.
-* `OrthonormalBasis.realSpinGroupEquiv b hQ`: the induced comparison of the compact Spin group
-  `spinGroup (realCliffordForm n 0)` with `spinGroup Q`.
-* `OrthonormalBasis.realEvenCliffordEquiv b hQ`: the corresponding equivalence of the even
-  Clifford algebras.
-
 ## Main results
 
-* `OrthonormalBasis.spinVectorAction_realSpinGroupEquiv`: the Spin comparison intertwines the
-  vector actions through the coordinates of `b`.
 * `CliffordAlgebra.chirality_eq_realEvenCliffordEquiv`: for a positively oriented `b`, the
   chirality element has quaternion-pair coordinates `(-1, 1)`.
 * `CliffordAlgebra.halfSpinRep_one_realSpinGroupEquiv_eq_one_iff`,
@@ -93,103 +77,11 @@ noncomputable section
 open Module Module.End CliffordAlgebra TauCeti
 open scoped Quaternion
 
-namespace OrthonormalBasis
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : QuadraticForm ℝ V}
-  {n : ℕ} (b : OrthonormalBasis (Fin n) ℝ V) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-
-/-- The coordinates of an orthonormal basis `b`, `x ↦ ∑ i, x i • b i`, as an isometry from the
-negated positive-definite coordinate form `-realCliffordForm n 0` to a form `Q v = -‖v‖²`. -/
-def negRealCliffordFormIsometryEquiv : (-realCliffordForm n 0).IsometryEquiv Q where
-  toLinearEquiv := b.toBasis.equivFun.symm
-  map_app' x := by
-    rw [hQ, ← b.repr.norm_map, EuclideanSpace.real_norm_sq_eq,
-      realCliffordForm_zero_eq_weightedSumSquares_one]
-    simp [QuadraticMap.weightedSumSquares_apply, sq]
-
-/-- `OrthonormalBasis.negRealCliffordFormIsometryEquiv` sends `x` to `∑ i, x i • b i`. -/
-theorem negRealCliffordFormIsometryEquiv_apply (x : Fin (n + 0) → ℝ) :
-    b.negRealCliffordFormIsometryEquiv hQ x = ∑ i, x i • b i :=
-  (b.toBasis.equivFun_symm_apply x).trans (by simp)
-
-/-- `OrthonormalBasis.negRealCliffordFormIsometryEquiv` sends the `i`-th coordinate vector to
-`b i`. -/
-@[simp]
-theorem negRealCliffordFormIsometryEquiv_single (i : Fin n) :
-    b.negRealCliffordFormIsometryEquiv hQ (Pi.single i 1) = b i := by
-  simp [negRealCliffordFormIsometryEquiv_apply, Pi.single_apply]
-
-/-- The inverse of `OrthonormalBasis.negRealCliffordFormIsometryEquiv` takes the coordinates
-`b.repr v` of a vector `v`. -/
-@[simp]
-theorem negRealCliffordFormIsometryEquiv_symm_apply (v : V) (i : Fin n) :
-    (b.negRealCliffordFormIsometryEquiv hQ).symm v i = b.repr v i :=
-  (congrFun (b.toBasis.equivFun_apply v) i).trans (b.coe_toBasis_repr_apply v i)
-
-/-- The comparison of the compact Spin group of the positive-definite coordinate form with the Spin
-group of a form `Q v = -‖v‖²`, along the orthonormal basis `b`: the isomorphism
-`CliffordAlgebra.spinGroupEquivNeg` followed by the coordinates of `b`. -/
-def realSpinGroupEquiv : spinGroup (realCliffordForm n 0) ≃* spinGroup Q :=
-  (spinGroupEquivNeg (realCliffordForm n 0)).trans
-    (b.negRealCliffordFormIsometryEquiv hQ).spinGroupEquiv
-
-/-- The Spin comparison `OrthonormalBasis.realSpinGroupEquiv` is compatible with the vector
-actions: a coordinate Spin element and its image rotate coordinates and vectors in the same way. -/
-@[simp]
-theorem spinVectorAction_realSpinGroupEquiv (s : spinGroup (realCliffordForm n 0))
-    (x : Fin (n + 0) → ℝ) :
-    spinVectorAction Q (b.realSpinGroupEquiv hQ s) (b.negRealCliffordFormIsometryEquiv hQ x) =
-      b.negRealCliffordFormIsometryEquiv hQ (spinVectorAction (realCliffordForm n 0) s x) := by
-  rw [realSpinGroupEquiv, MulEquiv.trans_apply, QuadraticMap.IsometryEquiv.spinGroupEquiv_apply]
-  exact (QuadraticMap.Isometry.spinGroupMap_spinVectorAction _ _ x).trans
-    (congrArg _ (LinearEquiv.congr_fun (spinVectorAction_spinGroupEquivNeg _ s) x))
-
-/-- The comparison of the even Clifford algebras of the positive-definite coordinate form and of
-a form `Q v = -‖v‖²`, along the orthonormal basis `b`. It sends a bivector `eᵢ eⱼ` to
-`-c(bᵢ) c(bⱼ)` (`OrthonormalBasis.realEvenCliffordEquiv_ι`). -/
-def realEvenCliffordEquiv : even (realCliffordForm n 0) ≃ₐ[ℝ] even Q :=
-  (evenEquivEvenNeg (realCliffordForm n 0)).trans
-    (evenEquivOfIsometry (b.negRealCliffordFormIsometryEquiv hQ))
-
-/-- `OrthonormalBasis.realEvenCliffordEquiv` sends a bivector `m n` to `-c(m') c(n')`, where `m'`
-and `n'` are the vectors with coordinates `m` and `n` in the basis `b`. -/
-@[simp]
-theorem realEvenCliffordEquiv_ι (x y : Fin (n + 0) → ℝ) :
-    b.realEvenCliffordEquiv hQ ((even.ι (realCliffordForm n 0)).bilin x y) =
-      -(even.ι Q).bilin (b.negRealCliffordFormIsometryEquiv hQ x)
-        (b.negRealCliffordFormIsometryEquiv hQ y) := by
-  rw [realEvenCliffordEquiv, AlgEquiv.trans_apply, evenEquivEvenNeg_apply, evenToNeg_ι, map_neg,
-    evenEquivOfIsometry_ι]
-
-/-- On even parts, the Spin comparison `OrthonormalBasis.realSpinGroupEquiv` is the even Clifford
-algebra comparison `OrthonormalBasis.realEvenCliffordEquiv`. -/
-@[simp]
-theorem spinGroupToEven_realSpinGroupEquiv (s : spinGroup (realCliffordForm n 0)) :
-    spinGroupToEven Q (b.realSpinGroupEquiv hQ s) =
-      b.realEvenCliffordEquiv hQ (spinGroupToEven (realCliffordForm n 0) s) := by
-  apply Subtype.ext
-  rw [coe_spinGroupToEven_apply, realSpinGroupEquiv, MulEquiv.trans_apply,
-    QuadraticMap.IsometryEquiv.spinGroupEquiv_apply, QuadraticMap.Isometry.coe_spinGroupMap_apply,
-    coe_spinGroupEquivNeg_apply, realEvenCliffordEquiv, AlgEquiv.trans_apply,
-    coe_evenEquivOfIsometry_apply, equivOfIsometry_apply]
-
-end OrthonormalBasis
-
 namespace CliffordAlgebra
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (finrank ℝ V = 4)]
   {Q : QuadraticForm ℝ V} (o : Orientation ℝ V (Fin 4)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
   (b : OrthonormalBasis (Fin 4) ℝ V)
-
-/-- The element `-(e₀ e₁)(e₂ e₃)` of the even Clifford algebra of the positive-definite
-coordinate form has quaternion-pair coordinates `(-1, 1)`. -/
-private theorem realCliffordFourZeroEvenEquivQuaternionProd_symm_neg_one_one :
-    realCliffordFourZeroEvenEquivQuaternionProd.symm (-1, 1) =
-      -((even.ι (realCliffordForm 4 0)).bilin (Pi.single 0 1) (Pi.single 1 1) *
-        (even.ι (realCliffordForm 4 0)).bilin (Pi.single 2 1) (Pi.single 3 1)) := by
-  rw [AlgEquiv.symm_apply_eq, map_neg, map_mul, realCliffordFourZeroEvenEquivQuaternionProd_ι,
-    realCliffordFourZeroEvenEquivQuaternionProd_ι]
-  ext <;> simp [QuaternionAlgebra.mk_mul_mk]
 
 include hQ in
 /-- **The chirality element has quaternion-pair coordinates `(-1, 1)`**: for every positively
@@ -267,8 +159,8 @@ theorem halfSpinRep_one_realSpinGroupEquiv_eq_one_iff
   have hφ : φ (1, 0) = 1 := by
     simp only [φ, AlgHom.comp_apply, AlgHom.prod_apply, AlgHom.fst_apply, AlgHom.snd_apply]
     rw [quaternionProd_zero_one, map_smul, map_add, map_one,
-      quaternionProdAction_neg_one_one o hQ b ρ hb, map_one, ← two_smul ℝ (1 : Module.End ℂ _),
-      smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+      quaternionProdAction_neg_one_one o hQ b ρ hb, map_one]
+    module
   have h : quaternionProdAction o hQ b ρ 1
       ((realSpinFourEquivQuaternionUnitaryProd s).1, (realSpinFourEquivQuaternionUnitaryProd s).2) =
         AlgHom.prodFirst φ hφ (realSpinFourEquivQuaternionUnitaryProd s).2 := by
@@ -294,8 +186,8 @@ theorem halfSpinRep_neg_one_realSpinGroupEquiv_eq_one_iff
   let φ := quaternionProdAction o hQ b ρ (-1)
   have hφ : φ (1, 0) = 1 := by
     rw [quaternionProd_one_zero, map_smul, map_sub, map_one,
-      quaternionProdAction_neg_one_one o hQ b ρ hb, map_neg, map_one, sub_neg_eq_add,
-      ← two_smul ℝ (1 : Module.End ℂ _), smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+      quaternionProdAction_neg_one_one o hQ b ρ hb, map_neg, map_one]
+    module
   have hinj : Function.Injective (AlgHom.prodFirst φ hφ) :=
     (AlgHom.prodFirst φ hφ).toRingHom.injective
   rw [halfSpinRep_realSpinGroupEquiv, AlgHom.map_eq_map_fst φ hφ, ← AlgHom.prodFirst_apply φ hφ,

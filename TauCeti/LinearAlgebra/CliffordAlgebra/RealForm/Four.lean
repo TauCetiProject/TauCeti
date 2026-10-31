@@ -30,6 +30,8 @@ the model.
 * `TauCeti.realCliffordFourZeroEvenEquivQuaternionProd` identifies `Cl⁺(4,0)` with `ℍ × ℍ`.
 * `TauCeti.realCliffordFourZeroEvenEquivQuaternionProd_ι` gives its bilinear-generator
   coordinates.
+* `TauCeti.realCliffordFourZeroEvenEquivQuaternionProd_symm_neg_one_one` identifies the element
+  with coordinates `(-1, 1)` as `-(e₀ e₁)(e₂ e₃)`.
 * `TauCeti.realCliffordFourZeroEvenEquivQuaternionProd_reverseEven` identifies reversal with
   componentwise quaternion conjugation.
 * `TauCeti.realCliffordFourZeroQuaternionEquiv` identifies the underlying quadratic space of
@@ -189,6 +191,17 @@ theorem realCliffordFourZeroEvenEquivQuaternionProd_ι (m n : Fin 4 → ℝ) :
   simp only [realCliffordFormNegIsometry_four_zero,
     realCliffordZeroFourAugmentedIsometry_apply]
   ext <;> simp [realCliffordZeroThreeEquivQuaternionProd_ι] <;> ring
+
+/-- The element with quaternion-pair coordinates `(-1, 1)` is `-(e₀ e₁)(e₂ e₃)` in the even
+Clifford algebra of the positive-definite four-dimensional real form. -/
+theorem realCliffordFourZeroEvenEquivQuaternionProd_symm_neg_one_one :
+    realCliffordFourZeroEvenEquivQuaternionProd.symm (-1, 1) =
+      -((CliffordAlgebra.even.ι (realCliffordForm 4 0)).bilin (Pi.single 0 1) (Pi.single 1 1) *
+        (CliffordAlgebra.even.ι (realCliffordForm 4 0)).bilin (Pi.single 2 1)
+          (Pi.single 3 1)) := by
+  rw [AlgEquiv.symm_apply_eq, map_neg, map_mul, realCliffordFourZeroEvenEquivQuaternionProd_ι,
+    realCliffordFourZeroEvenEquivQuaternionProd_ι]
+  ext <;> simp [QuaternionAlgebra.mk_mul_mk]
 
 /-- In the compact four-dimensional quaternion-pair model, Clifford reversal is componentwise
 quaternion conjugation. -/
