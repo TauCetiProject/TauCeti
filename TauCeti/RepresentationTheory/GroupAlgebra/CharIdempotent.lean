@@ -86,7 +86,8 @@ variable [Group H] [Fintype H]
 open scoped Classical in
 /-- The **character idempotent** `e_χ = (#H)⁻¹ ∑_{a ∈ H} χ(a)⁻¹ a` of a character `χ : H →* Oˣ` of a
 finite group, an element of the group algebra `O[H]`. The factor `(#H)⁻¹` is `Ring.inverse (#H)`,
-so `e_χ` is an idempotent exactly in the intended case where `#H` is a unit of `O`.
+so `e_χ` is `0` unless `#H` is a unit of `O`, and is idempotent in that intended case
+(`TauCeti.isIdempotentElem_charIdempotent`).
 
 It is `(#H)⁻¹` times the character sum `TauCeti.subgroupCharSum` of `χ⁻¹` over the whole group;
 `TauCeti.charIdempotent_eq_sum` expands it as a sum over `H`. -/
@@ -130,9 +131,9 @@ theorem charIdempotent_mul_single (χ : H →* Oˣ) (h : H) :
 theorem isIdempotentElem_charIdempotent (hH : IsUnit (Nat.card H : O)) (χ : H →* Oˣ) :
     IsIdempotentElem (charIdempotent χ) := by
   classical
-  have hn : Ring.inverse (Nat.card H : O) * (Nat.card H : O) = 1 := Ring.inverse_mul_cancel _ hH
-  rw [IsIdempotentElem, charIdempotent, smul_mul_smul_comm, subgroupCharSum_mul_self,
-    Subgroup.card_top, ← Nat.cast_smul_eq_nsmul O, smul_smul, mul_assoc, hn, mul_one]
+  rw [IsIdempotentElem, charIdempotent, smul_mul_smul_comm, subgroupCharSum_mul_self]
+  simp only [Subgroup.card_top, ← Nat.cast_smul_eq_nsmul O, smul_smul, mul_assoc,
+    Ring.inverse_mul_cancel _ hH, mul_one]
 
 /-- **Character idempotents of distinct characters are orthogonal** over a domain:
 `e_χ e_ψ = 0` for `χ ≠ ψ`. Unlike idempotence, this needs no assumption on the order of `H`. -/
@@ -206,11 +207,14 @@ with enough roots of unity in which `#H` is a unit, `∑_χ e_χ = 1`. -/
 theorem sum_charIdempotent (hH : IsUnit (Nat.card H : O)) :
     ∑ χ : H →* Oˣ, charIdempotent χ = 1 := by
   classical
+  -- Column orthogonality: the inverse character values at `a` sum to `#H` or `0`.
+  have hcol (a : H) :
+      ∑ χ : H →* Oˣ, (((χ a)⁻¹ : Oˣ) : O) = if a = 1 then (Nat.card H : O) else 0 := by
+    simp [← map_inv]
   simp_rw [charIdempotent_eq_sum, ← Finset.smul_sum]
   rw [Finset.sum_comm]
-  simp_rw [← Finset.sum_smul, ← map_inv, CommGroup.sum_monoidHom_apply_eq_ite, inv_eq_one, ite_smul,
-    zero_smul, Finset.sum_ite_eq', Finset.mem_univ, ite_true, smul_smul,
-    Ring.inverse_mul_cancel _ hH, one_smul, of_apply, one_def]
+  simp only [← Finset.sum_smul, hcol, ite_smul, zero_smul, Finset.sum_ite_eq', Finset.mem_univ,
+    ite_true, smul_smul, Ring.inverse_mul_cancel _ hH, one_smul, of_apply, one_def]
 
 /-- **The character idempotents form a complete orthogonal family of idempotents** of `O[H]`,
 for a finite commutative group `H` and a domain `O` with enough roots of unity in which `#H` is a
