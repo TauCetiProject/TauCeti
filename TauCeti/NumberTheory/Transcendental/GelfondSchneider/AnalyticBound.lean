@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Complex.Schwarz
 
-import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.ExponentialBounds
+import TauCeti.Algebra.CharZero.RatCast
 
 /-!
 # The analytic bound for Schneider's auxiliary function
@@ -54,19 +54,6 @@ public section
 open Finset Metric
 
 namespace TauCeti
-
-/-- The grid points `u + v β`, `1 ≤ u, v ≤ L`, are pairwise distinct when `β` is irrational. -/
-private theorem injOn_grid {β : ℂ} (hβ : ∀ q : ℚ, (q : ℂ) ≠ β) (L : ℕ) :
-    Set.InjOn (fun p : ℕ × ℕ ↦ (p.1 : ℂ) + p.2 * β) ↑(Icc 1 L ×ˢ Icc 1 L) := by
-  rintro ⟨u, v⟩ - ⟨u', v'⟩ - h
-  simp only at h
-  obtain rfl | hv := eq_or_ne v v'
-  · simpa using h
-  refine absurd ?_ (hβ (((u : ℚ) - u') / ((v' : ℚ) - v)))
-  have hv' : (v' : ℂ) - v ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hv.symm)
-  push_cast
-  rw [div_eq_iff hv']
-  linear_combination h
 
 /-- The trivial bound for Schneider's auxiliary function on a disc: if `‖a_{ij}‖ ≤ A`, `1 ≤ T`
 and `‖w‖ ≤ T`, then `‖F w‖ ≤ D₁ D₂ A T ^ D₁ exp (D₂ ‖λ‖ T)`. -/
@@ -115,8 +102,11 @@ theorem norm_schneider_auxiliary_le {β : ℂ} (hβ : ∀ q : ℚ, (q : ℂ) ≠
   -- The `L²` zeros of `F` on the grid.
   set s : Finset ℂ := (Icc 1 L ×ˢ Icc 1 L).image fun p : ℕ × ℕ ↦ (p.1 : ℂ) + p.2 * β
   have hs : #s = L ^ 2 := by
-    rw [card_image_of_injOn (injOn_grid hβ L), card_product, Nat.card_Icc, Nat.add_sub_cancel,
-      sq]
+    have hinj : Set.InjOn (fun p : ℕ × ℕ ↦ (p.1 : ℂ) + p.2 * β) ↑(Icc 1 L ×ˢ Icc 1 L) := by
+      rintro ⟨u, v⟩ - ⟨u', v'⟩ - h
+      simpa using ratCast_add_ratCast_mul_injective hβ (a₁ := (u, v)) (a₂ := (u', v'))
+        (by simpa using h)
+    rw [card_image_of_injOn hinj, card_product, Nat.card_Icc, Nat.add_sub_cancel, sq]
   have hk : ∀ x ∈ s, ((1 : ℕ) : ℕ∞) ≤ analyticOrderAt f x := by
     simp only [s, mem_image, mem_product, mem_Icc, Prod.exists]
     rintro _ ⟨u, v, ⟨⟨hu₁, hu⟩, hv₁, hv⟩, rfl⟩
