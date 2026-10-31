@@ -12,9 +12,9 @@ public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
 # Leading monomials for a monomial order
 
 This file collects facts about leading monomials of multivariate polynomials for a monomial order
-`m` on `σ →₀ ℕ`: the degree of a monomial multiple, the cancellation of leading terms by an
-S-polynomial, the behaviour of leading data under a change of coefficients, and algebraic
-independence from leading monomials.
+`m` on `σ →₀ ℕ`: comparisons of degrees with their `WithBot` forms, the degree of a monomial
+multiple, the cancellation of leading terms by an S-polynomial, the behaviour of leading data
+under a change of coefficients, and algebraic independence from leading monomials.
 
 The product `X^a * b`, normalized to leading coefficient one when `b` has a unit leading
 coefficient, differs from another such product of the same degree by a monomial multiple of
@@ -31,6 +31,10 @@ the images of the generators of the Lazard ring in a polynomial ring.
 
 ## Main results
 
+* `MonomialOrder.toWithBotSyn_withBotDegree_le_toSyn_degree`: the `WithBot` degree of a polynomial
+  is at most its degree.
+* `MonomialOrder.withBotDegree_sub_lt`: if `q` has degree at most that of `f ≠ 0` and the same
+  coefficient of `X^(deg f)`, then `f - q` has smaller degree than `f`.
 * `MonomialOrder.toSyn_degree_monomial_mul_le`: `c X^a * b` has degree at most `a + deg b`.
 * `MonomialOrder.monomial_one_mul_sub_smul_eq_monomial_mul_sPolynomial`: if `b₀` has a unit
   leading coefficient, then `X^a * b` minus `lc b` times the product of `b₀` of the same degree
@@ -51,6 +55,27 @@ open MvPolynomial
 namespace MonomialOrder
 
 variable {σ R : Type*} (m : MonomialOrder σ)
+
+/-- The `WithBot` degree of a polynomial is at most its degree. -/
+theorem toWithBotSyn_withBotDegree_le_toSyn_degree [CommSemiring R] (p : MvPolynomial σ R) :
+    m.toWithBotSyn (m.withBotDegree p) ≤ m.toSyn (m.degree p) := by
+  classical
+  rw [withBotDegree_eq]
+  split_ifs <;> simp [toWithBotSyn_apply_coe]
+
+/-- If `q` has degree at most that of `f ≠ 0` and the same coefficient of `X^(deg f)`, then
+`f - q` has smaller degree than `f`. -/
+theorem withBotDegree_sub_lt [CommRing R] {f q : MvPolynomial σ R} (hf : f ≠ 0)
+    (hq : m.toWithBotSyn (m.withBotDegree q) ≤ m.toWithBotSyn (m.withBotDegree f))
+    (hqf : q.coeff (m.degree f) = m.leadingCoeff f) :
+    m.toWithBotSyn (m.withBotDegree (f - q)) < m.toWithBotSyn (m.withBotDegree f) := by
+  refine lt_of_le_of_ne ?_ fun heq ↦ ?_
+  · simpa [sub_eq_add_neg] using
+      (m.withBotDegree_add_le f (-q)).trans (max_le le_rfl (by rwa [withBotDegree_neg]))
+  rw [EmbeddingLike.apply_eq_iff_eq, withBotDegree_eq_withBotDegree_iff] at heq
+  have := m.degree_mem_support fun h0 ↦ hf (heq.2.1 h0)
+  rw [heq.1, mem_support_iff, coeff_sub, hqf, leadingCoeff, sub_self] at this
+  exact this rfl
 
 /-- A monomial multiple `c X^a * b` has degree at most `a + deg b`. -/
 theorem toSyn_degree_monomial_mul_le [CommSemiring R] (a : σ →₀ ℕ) (c : R)

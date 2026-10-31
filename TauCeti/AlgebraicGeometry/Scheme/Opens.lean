@@ -19,6 +19,8 @@ This file records general-purpose facts about open subsets of schemes.
   subset of any nonempty scheme.
 * `AlgebraicGeometry.IsAffineOpen.presheaf_map_fromSpec_appIso_hom` identifies restriction of
   structure-sheaf sections along the affine chart `Spec Γ(X, U)`.
+* `AlgebraicGeometry.Scheme.Hom.iSup_affineOpens_le_preimage_eq_top`: the affine opens of `X`
+  which a morphism `X ⟶ Y` maps into an affine open of `Y` cover `X`.
 * `AlgebraicGeometry.Scheme.Hom.appLE_eq_id_of_eq_id` identifies the restriction maps of a scheme
   endomorphism equal to the identity.
 * `AlgebraicGeometry.Scheme.forall_affineOpens_map_of_le`: a condition on the restrictions of a
@@ -64,6 +66,18 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_sup_eq_top {Y : Scheme.{u}}
     (f : X ⟶ Y) {U V : Y.Opens} (hUV : U ⊔ V = ⊤) :
     f ⁻¹ᵁ U ⊔ f ⁻¹ᵁ V = ⊤ := by
   rw [← f.preimage_sup, hUV, f.preimage_top]
+
+/-- For a morphism `f : X ⟶ Y`, the affine opens of `X` which `f` maps into an affine open of `Y`
+cover `X`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.iSup_affineOpens_le_preimage_eq_top {Y : Scheme.{u}}
+    (f : X ⟶ Y) :
+    ⨆ V : {V : X.affineOpens // ∃ U : Y.affineOpens, V.1 ≤ f ⁻¹ᵁ U.1}, V.1.1 = ⊤ := by
+  refine eq_top_iff.2 fun x _ ↦ ?_
+  obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
+    Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f x)) isOpen_univ
+  obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
+    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (f ⁻¹ᵁ U).2
+  exact Opens.mem_iSup.2 ⟨⟨⟨V, hV⟩, ⟨U, hU⟩, hVU⟩, hxV⟩
 
 /-- On a scheme with affine diagonal, for instance a separated one, a nonempty finite intersection
 of affine opens is affine. -/

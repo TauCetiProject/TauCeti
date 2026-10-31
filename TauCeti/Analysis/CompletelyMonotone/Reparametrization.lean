@@ -81,39 +81,6 @@ theorem comp_const_mul (hf : IsCompletelyMonotone f) {c : ℝ} (hc : 0 ≤ c) :
   rw [key]
   exact mul_nonneg (pow_nonneg hc n) hsign
 
-/-- Completely monotone functions are closed under shifting the argument by a nonnegative
-constant: if `f` is completely monotone and `0 ≤ a`, then `t ↦ f (t + a)` is completely
-monotone. The alternating derivative is unchanged, evaluated at the shifted point. -/
-theorem comp_add_const (hf : IsCompletelyMonotone f) {a : ℝ} (ha : 0 ≤ a) :
-    IsCompletelyMonotone (fun t => f (t + a)) := by
-  have hmaps : Set.MapsTo (· + a) (Ici (0 : ℝ)) (Ici 0) := fun t ht =>
-    mem_Ici.mpr (add_nonneg (mem_Ici.mp ht) ha)
-  have hset : a +ᵥ Ici (0 : ℝ) = Ici a := by
-    ext x
-    simp only [Set.mem_vadd_set, mem_Ici, vadd_eq_add]
-    constructor
-    · rintro ⟨y, hy, rfl⟩; linarith
-    · intro hx; exact ⟨x - a, by linarith, by ring⟩
-  refine ⟨hf.contDiffOn.comp (by fun_prop) hmaps, fun n t ht => ?_⟩
-  have hval := congrFun
-    (iteratedDerivWithin_comp_add_const (f := f) (n := n) (s := Ici (0 : ℝ)) a) t
-  simp only [hset] at hval
-  rw [hval]
-  have hta : a ≤ t + a := by linarith
-  rcases eq_or_lt_of_le (show (0 : ℝ) ≤ t + a by linarith) with h0 | h0
-  · -- boundary case `t + a = 0`, forcing `t = a = 0`
-    have hta0 : t + a = (0 : ℝ) := h0.symm
-    have ha0 : a = 0 := by linarith
-    subst ha0
-    simpa [hta0] using hf.neg_one_pow_mul_iteratedDerivWithin_nonneg n (le_of_eq hta0.symm)
-  · -- interior case `t + a > 0`, where the within-derivatives agree with the ordinary one
-    have hcat : ContDiffAt ℝ (n : WithTop ℕ∞) f (t + a) :=
-      (hf.contDiffOn.contDiffAt
-        (Filter.mem_of_superset (isOpen_Ioi.mem_nhds h0) Ioi_subset_Ici_self)).of_le
-        (by exact_mod_cast le_top)
-    rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici a) hcat (mem_Ici.mpr hta)]
-    exact hf.neg_one_pow_mul_iteratedDeriv_nonneg n h0
-
 /-- Iterated derivatives within `[0, ∞)` are compatible with a nonnegative shift of the
 argument. -/
 theorem iteratedDerivWithin_Ici_comp_add_const (n : ℕ) (hs : ContDiffOn ℝ n f (Ici 0)) {a t : ℝ}
@@ -136,6 +103,18 @@ theorem iteratedDerivWithin_Ici_comp_add_const (n : ℕ) (hs : ContDiffOn ℝ n 
     rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici a) hcat
         (mem_Ici.mpr (by linarith)),
       iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Ici 0) hcat (mem_Ici.mpr h0.le)]
+
+/-- Completely monotone functions are closed under shifting the argument by a nonnegative
+constant: if `f` is completely monotone and `0 ≤ a`, then `t ↦ f (t + a)` is completely
+monotone. The alternating derivative is unchanged, evaluated at the shifted point. -/
+theorem comp_add_const (hf : IsCompletelyMonotone f) {a : ℝ} (ha : 0 ≤ a) :
+    IsCompletelyMonotone (fun t => f (t + a)) := by
+  have hmaps : Set.MapsTo (· + a) (Ici (0 : ℝ)) (Ici 0) := fun t ht =>
+    mem_Ici.mpr (add_nonneg (mem_Ici.mp ht) ha)
+  refine ⟨hf.contDiffOn.comp (by fun_prop) hmaps, fun n t ht => ?_⟩
+  rw [iteratedDerivWithin_Ici_comp_add_const n
+    (hf.contDiffOn.of_le (by exact_mod_cast le_top)) ha ht]
+  exact hf.neg_one_pow_mul_iteratedDerivWithin_nonneg n (add_nonneg ht ha)
 
 /-- The forward difference of a completely monotone function, with the sign reversed, is again
 completely monotone: every alternating derivative `(-1)ⁿ f⁽ⁿ⁾` is itself completely monotone,

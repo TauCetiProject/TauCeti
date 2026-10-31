@@ -53,6 +53,8 @@ cells `TauCeti.stackCells` of the stack in the ambient space.
 * `TauCeti.stackCells`: the ambient sections and sectors of a stack over a subset of `α ^ n`.
 * `TauCeti.image_cylinder_sectionSet_comp`, `TauCeti.image_cylinder_sectorSet_comp`,
   `TauCeti.stackCells_comp`: ambient stack cells pull back along arbitrary base maps.
+* `TauCeti.stackCells_inclusion`: restricting a stack to a subset of its base cuts each ambient
+  cell down to the part lying over that subset.
 * `TauCeti.sUnion_stackCells`, `TauCeti.pairwiseDisjoint_stackCells`,
   `TauCeti.isConnected_of_mem_stackCells`: the ambient cells of a stack partition the cylinder
   over its base, and over a connected base they are connected.
@@ -537,6 +539,53 @@ theorem stackCells_comp :
     · exact Or.inr ⟨j, image_cylinder_sectorSet_comp θ f j⟩
 
 end Map
+
+section Restrict
+
+variable {D : Set (Fin n → α)} (h : D ⊆ C)
+
+omit [LinearOrder α] in
+/-- Restricting the base of the cylinder from `C` to a subset `D` cuts the image of a subset of
+the cylinder over `C` down to the points lying over `D`. -/
+theorem image_cylinder_preimage_inclusion (A : Set (C × α)) :
+    cylinder D '' (Prod.map (inclusion h) id ⁻¹' A) = cylinder C '' A ∩ Fin.tail ⁻¹' D := by
+  ext y
+  simp only [mem_image_cylinder, mem_inter_iff, mem_preimage, Prod.map_apply, inclusion_mk,
+    id_eq]
+  exact ⟨fun ⟨hD, hA⟩ ↦ ⟨⟨h hD, hA⟩, hD⟩, fun ⟨⟨_, hA⟩, hD⟩ ↦ ⟨hD, hA⟩⟩
+
+variable (θ : Fin k → C → α)
+
+omit [LinearOrder α] in
+/-- A section of a stack restricted to a smaller base `D` is the part of the original section
+lying over `D`. -/
+theorem image_cylinder_sectionSet_inclusion (i : Fin k) :
+    cylinder D '' sectionSet (fun i ↦ θ i ∘ inclusion h) i =
+      cylinder C '' sectionSet θ i ∩ Fin.tail ⁻¹' D := by
+  rw [sectionSet_comp, image_cylinder_preimage_inclusion]
+
+/-- A sector of a stack restricted to a smaller base `D` is the part of the original sector lying
+over `D`, including either unbounded sector. -/
+theorem image_cylinder_sectorSet_inclusion (j : Fin (k + 1)) :
+    cylinder D '' sectorSet (fun i ↦ θ i ∘ inclusion h) j =
+      cylinder C '' sectorSet θ j ∩ Fin.tail ⁻¹' D := by
+  rw [sectorSet_comp, image_cylinder_preimage_inclusion]
+
+/-- The cells of a stack restricted to a smaller base `D` are the parts of the original cells
+lying over `D`. -/
+theorem stackCells_inclusion :
+    stackCells D (fun i ↦ θ i ∘ inclusion h) = (· ∩ Fin.tail ⁻¹' D) '' stackCells C θ := by
+  ext E
+  simp only [mem_stackCells, mem_image]
+  constructor
+  · rintro (⟨i, rfl⟩ | ⟨j, rfl⟩)
+    · exact ⟨_, Or.inl ⟨i, rfl⟩, (image_cylinder_sectionSet_inclusion h θ i).symm⟩
+    · exact ⟨_, Or.inr ⟨j, rfl⟩, (image_cylinder_sectorSet_inclusion h θ j).symm⟩
+  · rintro ⟨E, (⟨i, rfl⟩ | ⟨j, rfl⟩), rfl⟩
+    · exact Or.inl ⟨i, image_cylinder_sectionSet_inclusion h θ i⟩
+    · exact Or.inr ⟨j, image_cylinder_sectorSet_inclusion h θ j⟩
+
+end Restrict
 
 /-- For pointwise strictly monotone `θ` with values in a densely ordered type without endpoints,
 every cell of the stack over `C` lies over the whole of `C`. -/

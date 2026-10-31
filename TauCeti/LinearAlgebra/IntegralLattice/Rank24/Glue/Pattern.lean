@@ -8,6 +8,8 @@ module
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Data.List.FinRange
 public import Mathlib.GroupTheory.SpecificGroups.Alternating
+public import TauCeti.GroupTheory.Perm.SumCongr
+import TauCeti.Data.List.Rotate
 
 /-!
 # Conway--Sloane glue-generator patterns
@@ -23,6 +25,13 @@ even-permutation seed leaves the expanded set unchanged. These equalities let a 
 checked decoder and additive closure use any such seed without changing the glue subgroup.
 Digits remain natural numbers here: their admissibility depends on the ordered component
 alphabets and must be checked when decoding, rather than assumed by pattern expansion.
+
+Each pattern also records its seed `GluePattern.seed` as a function of the positions, and the
+subgroup `GluePattern.symmetries` of coordinate permutations it indicates: the identity for a
+literal word, the rotations of the marked block (fixing the prefix and suffix) for a cyclic
+pattern, and the alternating group for an even-permutation pattern. The expansion is exactly the
+orbit of the seed under these permutations (`GluePattern.mem_expand_iff_exists_mem_symmetries`),
+so it is invariant under them (`GluePattern.ofFn_comp_mem_expand_iff`).
 
 The examples include the three rotations of the `D₈³` seed, the fixed-prefix `E₆⁴` pattern,
 and all twelve even permutations of the `D₆⁴` seed.
@@ -50,7 +59,7 @@ inductive GluePattern where
 namespace GluePattern
 
 /-- The number of component labels in every word of a pattern. -/
-def length : GluePattern → ℕ
+@[expose] def length : GluePattern → ℕ
   | literal word => word.length
   | cyclic pre block post => pre.length + block.length + post.length
   | @evenPermutations n _ => n
@@ -203,6 +212,113 @@ theorem card_expand_d6_fourth :
     apply Equiv.ext
     intro i
     exact Fin.ext (congrFun (List.ofFn_injective h) i)
+
+/-! ### Seeds and indicated coordinate permutations -/
+
+/-- The seed of a pattern as a function of its positions: the literal word, the unrotated cyclic
+word, or the word whose positions are evenly permuted. -/
+def seed : (p : GluePattern) → Fin p.length → ℕ
+  | literal word => word.get
+  | cyclic pre block post => Fin.append (Fin.append pre.get block.get) post.get
+  | evenPermutations word => word
+
+/-- The coordinate permutations indicated by a pattern: only the identity for a literal word,
+the rotations of the marked block (fixing the prefix and suffix) for a cyclic pattern, and the
+even permutations of all positions for an even-permutation pattern. -/
+def symmetries : (p : GluePattern) → Subgroup (Equiv.Perm (Fin p.length))
+  | literal _ => ⊥
+  | cyclic _ block _ =>
+    Subgroup.zpowers (Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate block.length)) 1)
+  | evenPermutations _ => alternatingGroup _
+
+/-- The seed of a literal pattern lists its word. -/
+@[simp]
+theorem seed_literal (word : List ℕ) : (literal word).seed = word.get :=
+  (rfl)
+
+/-- The seed of a cyclic pattern is its unrotated word. -/
+@[simp]
+theorem seed_cyclic (pre block post : List ℕ) :
+    (cyclic pre block post).seed = Fin.append (Fin.append pre.get block.get) post.get :=
+  (rfl)
+
+/-- The seed of an even-permutation pattern is its word. -/
+@[simp]
+theorem seed_evenPermutations {n : ℕ} (word : Fin n → ℕ) :
+    (evenPermutations word).seed = word :=
+  (rfl)
+
+/-- A literal pattern indicates no coordinate permutation other than the identity. -/
+@[simp]
+theorem symmetries_literal (word : List ℕ) : (literal word).symmetries = ⊥ :=
+  (rfl)
+
+/-- A cyclic pattern indicates the rotations of its marked block. -/
+@[simp]
+theorem symmetries_cyclic (pre block post : List ℕ) :
+    (cyclic pre block post).symmetries =
+      Subgroup.zpowers
+        (Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate block.length)) 1) :=
+  (rfl)
+
+/-- An even-permutation pattern indicates the even permutations of its positions. -/
+@[simp]
+theorem symmetries_evenPermutations {n : ℕ} (word : Fin n → ℕ) :
+    (evenPermutations word).symmetries = alternatingGroup (Fin n) :=
+  (rfl)
+
+/-- Rotating the marked block of a cyclic seed `k` times rotates the block of the listed word. -/
+theorem ofFn_seed_cyclic_comp_pow (pre block post : List ℕ) (k : ℕ) :
+    List.ofFn ((cyclic pre block post).seed ∘
+        ⇑(Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate block.length)) 1 ^ k)) =
+      pre ++ block.rotate k ++ post := by
+  -- The positions of the seed are indexed by `(cyclic pre block post).length`, which is only
+  -- definitionally the sum of the three block lengths; state the computation on the sum.
+  have h : List.ofFn (Fin.append (Fin.append pre.get block.get) post.get ∘
+      ⇑(Equiv.Perm.finSumPerm (Equiv.Perm.finSumPerm 1 (finRotate block.length)) 1 ^ k)) =
+        pre ++ block.rotate k ++ post := by
+    simp only [Equiv.Perm.finSumPerm_pow, one_pow, Fin.append_comp_finSumPerm,
+      Equiv.Perm.coe_one, Function.comp_id, List.ofFn_fin_append, List.ofFn_get,
+      List.ofFn_comp_finRotate_pow]
+  exact h
+
+/-- **A pattern expands to the orbit of its seed** under its indicated coordinate
+permutations. -/
+theorem mem_expand_iff_exists_mem_symmetries (p : GluePattern) (word : List ℕ) :
+    word ∈ p.expand ↔ ∃ g ∈ p.symmetries, List.ofFn (p.seed ∘ g) = word := by
+  cases p with
+  | literal w =>
+    simp only [expand_literal, Finset.mem_singleton, symmetries_literal, Subgroup.mem_bot,
+      exists_eq_left, Equiv.Perm.coe_one, Function.comp_id, eq_comm]
+    exact iff_of_eq (congrArg (word = ·) (List.ofFn_get w).symm)
+  | cyclic pre block post =>
+    rw [mem_expand_cyclic_iff, symmetries_cyclic]
+    constructor
+    · rintro ⟨b, hb, rfl⟩
+      obtain ⟨k, rfl⟩ := (List.mem_cyclicPermutations_iff.mp hb).symm
+      exact ⟨_, Subgroup.npow_mem_zpowers _ k, ofFn_seed_cyclic_comp_pow pre block post k⟩
+    · rintro ⟨g, hg, rfl⟩
+      obtain ⟨k, rfl⟩ := (Submonoid.mem_powers_iff _ _).mp (mem_powers_iff_mem_zpowers.mpr hg)
+      exact ⟨_, List.mem_cyclicPermutations_iff.mpr (List.IsRotated.forall block k),
+        (ofFn_seed_cyclic_comp_pow pre block post k).symm⟩
+  | evenPermutations w =>
+    rw [mem_expand_evenPermutations_iff, symmetries_evenPermutations]
+    exact ⟨fun ⟨σ, h⟩ ↦ ⟨σ.val, σ.2, h⟩, fun ⟨g, hg, h⟩ ↦ ⟨⟨g, hg⟩, h⟩⟩
+
+/-- **The expansion of a pattern is invariant under its indicated coordinate permutations**:
+permuting the positions of a word by a symmetry of the pattern does not change whether the word
+is an expansion. -/
+theorem ofFn_comp_mem_expand_iff (p : GluePattern) (f : Fin p.length → ℕ)
+    {g : Equiv.Perm (Fin p.length)} (hg : g ∈ p.symmetries) :
+    List.ofFn (f ∘ g) ∈ p.expand ↔ List.ofFn f ∈ p.expand := by
+  simp only [mem_expand_iff_exists_mem_symmetries, List.ofFn_inj]
+  constructor
+  · rintro ⟨h, hh, hfg⟩
+    refine ⟨h * g⁻¹, mul_mem hh (inv_mem hg), ?_⟩
+    rw [Equiv.Perm.coe_mul, ← Function.comp_assoc, hfg, Function.comp_assoc,
+      Equiv.Perm.coe_inv, Equiv.self_comp_symm, Function.comp_id]
+  · rintro ⟨h, hh, rfl⟩
+    exact ⟨h * g, mul_mem hh hg, rfl⟩
 
 end GluePattern
 

@@ -175,7 +175,7 @@ homeomorphic to `D² × S¹` through `(z, w) ↦ (z / ‖w‖, w / ‖w‖)`. -/
 def unknotExteriorHomeomorph : knotExterior (Φ := unknotSolidTorus) ≃ₜ SolidTorus :=
   ((toComplexProd.subtype fun _ ↦ mem_knotExterior_unknotSolidTorus_iff).trans
     (sphereProdFstLeHomeomorph ℂ ℂ)).trans
-    ((Homeomorph.refl _).prodCongr Circle.homeomorphSphere.symm)
+    SolidTorus.homeomorphBallSphere.symm
 
 /- In the next three proofs `mem_ofPred_eq` is excluded: it rewrites the set-builder subtype of
 `TauCeti.sphereProdFstLeHomeomorph`, after which its coordinate simp lemmas no longer match. -/

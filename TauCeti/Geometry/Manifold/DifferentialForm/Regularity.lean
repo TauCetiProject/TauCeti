@@ -38,8 +38,10 @@ differentiation commutes with this extension.
   pulls back along a chart to a `C^n` section.
 * `TauCeti.contMDiffOn_mextDerivWithin`, `TauCeti.isSmoothBundleForm_mextDeriv`: the exterior
   derivative lowers regularity by one.
-* `TauCeti.mextDeriv_mem_smoothForms`: the exterior derivative preserves smooth forms.
+* `TauCeti.mextDeriv_mem_smoothBundleForms`: the exterior derivative preserves smooth forms.
 * `TauCeti.mextDerivₗ`: the exterior derivative as a linear map on smooth fixed-coefficient forms.
+* `TauCeti.mdifferentiableAt_ofFunction`: the `0`-form of a differentiable function is a
+  differentiable section.
 
 ## References
 
@@ -213,10 +215,11 @@ theorem IsSmoothForm.continuous_mextDeriv [IsManifold I 2 M]
       (n := 0) (by simp))
 
 /-- The exterior derivative of a smooth fixed-coefficient form is smooth. -/
-theorem mextDeriv_mem_smoothForms [IsManifold I 2 M] {φ : RoughForm I M F k}
-    (hφ : φ ∈ smoothForms I M F k) : mextDeriv φ ∈ smoothForms I M F (k + 1) :=
-  mem_smoothForms.mpr <| isSmoothBundleForm_mextDeriv (n := ∞) φ
-    (mem_smoothForms.mp hφ) (by simp)
+theorem mextDeriv_mem_smoothBundleForms [IsManifold I 2 M] {φ : RoughForm I M F k}
+    (hφ : φ ∈ smoothBundleForms I F (Bundle.Trivial M F) k) :
+    mextDeriv φ ∈ smoothBundleForms I F (Bundle.Trivial M F) (k + 1) :=
+  mem_smoothBundleForms.mpr <| isSmoothBundleForm_mextDeriv (n := ∞) φ
+    (mem_smoothBundleForms.mp hφ) (by simp)
 
 section Regularity
 
@@ -373,6 +376,24 @@ theorem isSmoothForm_ofFunction_iff [IsManifold I 1 M] {n : WithTop ℕ∞} {f :
   exact ⟨fun h x ↦ (key x).1 (h.contDiffWithinAt_inChartAt_self x),
     fun h ↦ IsSmoothForm.of_contDiffWithinAt_inChartAt_self fun x ↦ (key x).2 (h x)⟩
 
+/-- The `0`-form of a function differentiable at a point is a section differentiable there. -/
+theorem mdifferentiableAt_ofFunction [IsManifold I 1 M] {f : M → F} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ, F) f x) :
+    MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 0]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 0]→L[ℝ] F) y (RoughForm.ofFunction I f y)) x := by
+  rw [mdifferentiableAt_section]
+  -- Alternating maps of degree zero ignore the change of tangent coordinates.
+  have heq : (fun y ↦ (trivializationAt (E [⋀^Fin 0]→L[ℝ] F)
+      (fun y ↦ TangentSpace I y [⋀^Fin 0]→L[ℝ] F) x ⟨y, RoughForm.ofFunction I f y⟩).2) =
+      fun y ↦ ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E F (Fin 0) (f y) := by
+    funext y
+    ext v
+    simp [FiberBundle.trivializationAt_continuousAlternatingMap_apply,
+      ContinuousAlternatingMap.inCoordinates]
+  rw [heq]
+  exact ((ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E F (Fin 0)).toContinuousLinearEquiv
+    : F →L[ℝ] E [⋀^Fin 0]→L[ℝ] F).mdifferentiableAt.comp x hf
+
 end Regularity
 
 /-- Every zero-dimensional form is smooth: its coordinate functions have singleton domain. -/
@@ -411,14 +432,14 @@ variable (I) in
 /-- The exterior derivative as a real linear map on smooth fixed-coefficient forms. -/
 def mextDerivₗ [IsManifold I 2 M] (k : ℕ) :
     SmoothForm I M F k →ₗ[ℝ] SmoothForm I M F (k + 1) where
-  toFun φ := ⟨mextDeriv φ.1, mextDeriv_mem_smoothForms φ.2⟩
+  toFun φ := ⟨mextDeriv φ.1, mextDeriv_mem_smoothBundleForms φ.2⟩
   map_add' φ ψ := by
     apply Subtype.ext
     funext x
     apply mextDeriv_add
-    · simpa using φ.1.differentiableWithinAt_inChartAt (s := Set.univ) (x := x)
+    · simpa using RoughForm.differentiableWithinAt_inChartAt φ.1 (s := Set.univ) (x := x)
         (φ.mdifferentiableAt x).mdifferentiableWithinAt
-    · simpa using ψ.1.differentiableWithinAt_inChartAt (s := Set.univ) (x := x)
+    · simpa using RoughForm.differentiableWithinAt_inChartAt ψ.1 (s := Set.univ) (x := x)
         (ψ.mdifferentiableAt x).mdifferentiableWithinAt
   map_smul' c φ := Subtype.ext (mextDeriv_smul c φ.1)
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Basic
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Oscillator
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Oscillator.Basic
 
 /-!
 # The harmonic oscillator as a generated canonical transformation
