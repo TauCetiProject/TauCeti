@@ -107,9 +107,15 @@ private theorem continuous_intertwiner (hp : Continuous p) (x₀ : B) :
   (hp.mul continuous_const).add ((continuous_const.sub hp).mul continuous_const)
 
 omit [TopologicalSpace B] in
+/-- At the base point, the intertwiner is the identity. -/
+private theorem intertwiner_self (hidem : ∀ x, IsIdempotentElem (p x)) (x₀ : B) :
+    p x₀ * p x₀ + (1 - p x₀) * (1 - p x₀) = 1 := by
+  rw [(hidem x₀).eq, (hidem x₀).one_sub.eq, add_sub_cancel]
+
+omit [TopologicalSpace B] in
 private theorem isUnit_intertwiner_self (hidem : ∀ x, IsIdempotentElem (p x)) (x₀ : B) :
     IsUnit (p x₀ * p x₀ + (1 - p x₀) * (1 - p x₀)) := by
-  rw [(hidem x₀).eq, (hidem x₀).one_sub.eq, add_sub_cancel]
+  rw [intertwiner_self hidem x₀]
   exact isUnit_one
 
 variable [CompleteSpace F]
@@ -211,16 +217,14 @@ theorem rangeTrivialization_symm_apply (x : B) (v : F') :
 theorem rangeTrivialization_apply_self (w : (p x₀).range) :
     rangeTrivialization hp hidem x₀ φ ⟨x₀, w⟩ = (x₀, φ.symm w) := by
   refine Prod.ext rfl (congrArg φ.symm (Subtype.ext ?_))
-  rw [ContinuousLinearMap.coe_codRestrict_apply, (hidem x₀).eq, (hidem x₀).one_sub.eq,
-    add_sub_cancel, Ring.inverse_one, one_apply_eq_self, apply_coe_range (hidem x₀)]
+  simp [intertwiner_self hidem x₀, apply_coe_range (hidem x₀)]
 
 /-- At the base point `x₀`, the inverse of the trivialization is `φ`. -/
 @[simp]
 theorem rangeTrivialization_symm_apply_self (v : F') :
     (rangeTrivialization hp hidem x₀ φ).toOpenPartialHomeomorph.symm (x₀, v) = ⟨x₀, φ v⟩ := by
   refine congrArg (TotalSpace.mk x₀) (Subtype.ext ?_)
-  rw [ContinuousLinearMap.coe_codRestrict_apply, (hidem x₀).eq, (hidem x₀).one_sub.eq,
-    add_sub_cancel, one_apply_eq_self, apply_coe_range (hidem x₀)]
+  simp [intertwiner_self hidem x₀, apply_coe_range (hidem x₀)]
 
 /-- The trivialization at `x₀` is linear on every fibre. -/
 instance isLinear_rangeTrivialization : (rangeTrivialization hp hidem x₀ φ).IsLinear 𝕜 where

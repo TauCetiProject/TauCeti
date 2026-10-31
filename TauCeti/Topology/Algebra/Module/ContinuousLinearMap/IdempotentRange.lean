@@ -68,8 +68,9 @@ private theorem mul_intertwiner (hp : IsIdempotentElem p) (hq : IsIdempotentElem
 private theorem inverse_intertwiner_mul (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
     (hU : IsUnit (intertwiner p q)) :
     (intertwiner p q)⁻¹ʳ * q = p * (intertwiner p q)⁻¹ʳ := by
-  rw [← mul_one ((intertwiner p q)⁻¹ʳ * q), ← Ring.mul_inverse_cancel _ hU, ← mul_assoc,
-    mul_assoc _ q, mul_intertwiner hp hq, ← mul_assoc, Ring.inverse_mul_cancel _ hU, one_mul]
+  have h := congr((intertwiner p q)⁻¹ʳ * $(mul_intertwiner hp hq) * (intertwiner p q)⁻¹ʳ)
+  simpa only [mul_assoc, Ring.mul_inverse_cancel _ hU, Ring.inverse_mul_cancel_left _ _ hU,
+    mul_one] using h
 
 private theorem apply_intertwiner (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) (v : M) :
     q (intertwiner p q v) = intertwiner p q (p v) :=
