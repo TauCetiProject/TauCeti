@@ -8,9 +8,7 @@ module
 public import TauCeti.Probability.Distributions.SkewNormal.Construction
 public import Mathlib.Probability.Moments.Variance
 import TauCeti.Probability.Distributions.Chi.Gaussian
-import TauCeti.Probability.Distributions.Chi.Moments
 import TauCeti.Probability.Distributions.Gaussian.Moments
-import TauCeti.Probability.Distributions.Tilted
 
 /-!
 # Moments and transforms of the skew-normal distribution
@@ -19,8 +17,8 @@ Write `Φ = cdf (gaussianReal 0 1)` and `δ = α / √(1 + α ^ 2)`. The skew-no
 location `m`, scale `s > 0` and shape `α` is the law of `m + s * (δ * |Z₁| + √(1 - δ ^ 2) * Z₂)`
 for independent standard Gaussians `Z₁` and `Z₂` (`map_prod_gaussianReal_eq_skewNormalMeasure`).
 Its moments and transforms split accordingly into a half-normal factor and a Gaussian factor. The
-half-normal factor has moment-generating function `E[exp (u * |Z₁|)] = 2 * exp (u ^ 2 / 2) * Φ(u)`,
-and so
+half-normal factor has moment-generating function `E[exp (u * |Z₁|)] = 2 * exp (u ^ 2 / 2) * Φ(u)`
+(`integral_exp_mul_abs_gaussianReal`) and mean `√(2 / π)` (`integral_abs_gaussianReal`), and so
 
 * `M(t) = 2 * exp (m * t + s ^ 2 * t ^ 2 / 2) * Φ(δ * s * t)` for every real `t`;
 * `K(t) = log 2 + m * t + s ^ 2 * t ^ 2 / 2 + log Φ(δ * s * t)`;
@@ -28,7 +26,6 @@ and so
 
 ## Main results
 
-* `integral_exp_mul_abs_gaussianReal` — the half-normal moment-generating function;
 * `integrableExpSet_id_skewNormalMeasure` — every exponential moment is finite;
 * `mgf_id_skewNormalMeasure` and `cgf_id_skewNormalMeasure` — the moment- and
   cumulant-generating functions;
@@ -56,43 +53,6 @@ namespace Probability
 
 variable {s : ℝ}
 
-/-! ### The half-normal factor -/
-
-/-- Every exponential moment of the absolute value of a standard Gaussian is finite. -/
-theorem integrable_exp_mul_abs_gaussianReal (u : ℝ) :
-    Integrable (fun x => exp (u * |x|)) (gaussianReal 0 1) := by
-  have hmap := gaussianReal_map_abs (v := 1) one_ne_zero
-  rw [NNReal.coe_one, sqrt_one] at hmap
-  have h := integrable_exp_mul_id_chiMeasure 1 1 u
-  rwa [← hmap, integrable_map_measure (by fun_prop) (by fun_prop)] at h
-
-/-- **The moment-generating function of the half-normal law.** For a standard Gaussian `Z`,
-`E[exp (u * |Z|)] = 2 * exp (u ^ 2 / 2) * Φ(u)`. -/
-theorem integral_exp_mul_abs_gaussianReal (u : ℝ) :
-    ∫ x, exp (u * |x|) ∂gaussianReal 0 1 = 2 * exp (u ^ 2 / 2) * cdf (gaussianReal 0 1) u := by
-  -- Completing the square: `φ(x) * exp (u * x) = exp (u ^ 2 / 2) * N(u, 1)(x)`.
-  have htilt (x : ℝ) :
-      gaussianPDFReal 0 1 x * exp (u * x) = exp (u ^ 2 / 2) * gaussianPDFReal u 1 x := by
-    have h := gaussianPDFReal_mul_exp_div_mgf 0 1 u x
-    simp only [zero_mul, NNReal.coe_one, one_mul, zero_add] at h
-    rw [← h]
-    field_simp
-  have heven : (fun x => gaussianPDFReal 0 1 x * exp (u * |x|)) =
-      fun x => (fun y => gaussianPDFReal 0 1 y * exp (u * y)) |x| := by
-    funext x
-    simp [gaussianPDFReal, sq_abs]
-  have hIoi : ∫ x in Ioi 0, gaussianPDFReal u 1 x = cdf (gaussianReal 0 1) u := by
-    rw [← sub_zero u, ← div_one (u - 0), ← sqrt_one, ← NNReal.coe_one,
-      ← measureReal_Ioi_gaussianReal_eq_cdf _ one_ne_zero, measureReal_def,
-      gaussianReal_apply_eq_integral _ one_ne_zero, ENNReal.toReal_ofReal
-        (setIntegral_nonneg measurableSet_Ioi fun x _ => gaussianPDFReal_nonneg _ _ x)]
-    simp
-  simp_rw [integral_gaussianReal_eq_integral_smul one_ne_zero, smul_eq_mul]
-  rw [heven, integral_comp_abs (f := fun y => gaussianPDFReal 0 1 y * exp (u * y))]
-  simp_rw [htilt]
-  rw [integral_const_mul, hIoi]
-  ring
-
 /-! ### Exponential moments -/
 
 /-- In the Gaussian construction, the exponential weight `exp (t * x)` splits into a function of
@@ -104,22 +64,22 @@ private theorem exp_mul_skewNormal_construction (m s δ c t : ℝ) (z : ℝ × �
   ring_nf
 
 /-- Every exponential moment of a skew-normal law is finite. -/
-theorem integrable_exp_mul_skewNormalMeasure (m s α t : ℝ) :
+theorem integrable_exp_mul_id_skewNormalMeasure (m s α t : ℝ) :
     Integrable (fun x => exp (t * x)) (skewNormalMeasure m s α) := by
   rcases le_or_gt s 0 with hs | hs
   · simp [skewNormalMeasure_of_nonpos hs]
   rw [← map_prod_gaussianReal_eq_skewNormalMeasure hs m α,
     integrable_map_measure (by fun_prop) (by fun_prop)]
   simp only [Function.comp_def, exp_mul_skewNormal_construction]
-  exact ((integrable_exp_mul_abs_gaussianReal _).const_mul _).mul_prod
-    (integrable_exp_mul_gaussianReal _)
+  exact ((integrable_exp_mul_abs (X := fun x : ℝ => x) (integrable_exp_mul_gaussianReal _)
+    (integrable_exp_mul_gaussianReal _)).const_mul _).mul_prod (integrable_exp_mul_gaussianReal _)
 
 /-- **The exponential-integrability domain of a skew-normal law is all of `ℝ`.** -/
 @[simp]
 theorem integrableExpSet_id_skewNormalMeasure (m s α : ℝ) :
     integrableExpSet id (skewNormalMeasure m s α) = univ := by
   ext t
-  simpa [integrableExpSet] using integrable_exp_mul_skewNormalMeasure m s α t
+  simpa [integrableExpSet] using integrable_exp_mul_id_skewNormalMeasure m s α t
 
 /-- **The skew-normal moment-generating function.** For `s > 0` and `δ = α / √(1 + α ^ 2)`,
 `M(t) = 2 * exp (m * t + s ^ 2 * t ^ 2 / 2) * Φ(δ * s * t)` for every real `t`. -/
@@ -127,13 +87,8 @@ theorem mgf_id_skewNormalMeasure (hs : 0 < s) (m α t : ℝ) :
     mgf id (skewNormalMeasure m s α) t =
       2 * exp (m * t + s ^ 2 * t ^ 2 / 2) *
         cdf (gaussianReal 0 1) (α / √(1 + α ^ 2) * s * t) := by
-  have hδ1 : (α / √(1 + α ^ 2)) ^ 2 ≤ 1 := by
-    rw [← sin_arctan]
-    exact sin_sq_le_one _
+  have hδ := sq_div_sqrt_one_add_sq_add_sq_sqrt_one_sub_sq α
   set δ := α / √(1 + α ^ 2)
-  have hδ : δ ^ 2 + √(1 - δ ^ 2) ^ 2 = 1 := by
-    rw [sq_sqrt (sub_nonneg.mpr hδ1)]
-    ring
   have hgauss (u : ℝ) : ∫ x, exp (u * x) ∂gaussianReal 0 1 = exp (u ^ 2 / 2) := by
     simpa [mgf] using congrFun (mgf_id_gaussianReal (μ := 0) (v := 1)) u
   rw [mgf, ← map_prod_gaussianReal_eq_skewNormalMeasure hs m α,
@@ -159,13 +114,6 @@ theorem cgf_id_skewNormalMeasure (hs : 0 < s) (m α t : ℝ) :
     (cdf_gaussianReal_pos 0 one_ne_zero _).ne', log_mul two_ne_zero (exp_pos _).ne', log_exp]
 
 /-! ### Mean and variance -/
-
-/-- The mean of the absolute value of a standard Gaussian is `√(2 / π)`. -/
-private theorem integral_abs_gaussianReal : ∫ x, |x| ∂gaussianReal 0 1 = √(2 / π) := by
-  have h := integral_abs_sub_pow_gaussianReal 0 1 1
-  simp only [sub_zero, pow_one, NNReal.coe_one, mul_one, Nat.cast_one] at h
-  rw [h, show ((1 : ℝ) + 1) / 2 = 1 by norm_num, Gamma_one, ← sqrt_eq_rpow, sqrt_div' _ pi_pos.le]
-  ring
 
 /-- The location-free, unit-scale part `δ * |z.1| + c * z.2` of the skew-normal construction is
 square-integrable for two standard Gaussian coordinates. -/
@@ -236,13 +184,8 @@ theorem integral_id_skewNormalMeasure (hs : 0 < s) (m α : ℝ) :
 @[simp]
 theorem variance_id_skewNormalMeasure (hs : 0 < s) (m α : ℝ) :
     Var[id; skewNormalMeasure m s α] = s ^ 2 * (1 - 2 * (α / √(1 + α ^ 2)) ^ 2 / π) := by
-  have hδ1 : (α / √(1 + α ^ 2)) ^ 2 ≤ 1 := by
-    rw [← sin_arctan]
-    exact sin_sq_le_one _
+  have hδ := sq_div_sqrt_one_add_sq_add_sq_sqrt_one_sub_sq α
   set δ := α / √(1 + α ^ 2)
-  have hδ : δ ^ 2 + √(1 - δ ^ 2) ^ 2 = 1 := by
-    rw [sq_sqrt (sub_nonneg.mpr hδ1)]
-    ring
   have hLp := memLp_skewNormal_construction δ √(1 - δ ^ 2)
   rw [← map_prod_gaussianReal_eq_skewNormalMeasure hs m α, variance_id_map (by fun_prop),
     variance_const_add (by fun_prop), variance_const_mul, variance_eq_sub hLp]

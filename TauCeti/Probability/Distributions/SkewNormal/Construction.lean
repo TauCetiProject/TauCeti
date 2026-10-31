@@ -29,7 +29,9 @@ a scaled half-normal part and an independent Gaussian part.
 * `map_prod_gaussianReal_eq_skewNormalMeasure` — the product of two standard Gaussian laws,
   pushed forward by `z ↦ m + s * (δ * |z.1| + √(1 - δ ^ 2) * z.2)`, is `skewNormalMeasure m s α`;
 * `hasLaw_skewNormalMeasure_of_indepFun` — the same statement for independent standard Gaussian
-  random variables.
+  random variables;
+* `sqrt_one_sub_sq_div_sqrt_one_add_sq` and `sq_div_sqrt_one_add_sq_add_sq_sqrt_one_sub_sq` — the
+  coefficients `δ` and `√(1 - δ ^ 2)` are the sine and cosine of `arctan α`.
 
 ## References
 
@@ -56,9 +58,16 @@ variable {s : ℝ}
 /-- The complementary coefficient of the skew-normal construction:
 `√(1 - δ ^ 2) = 1 / √(1 + α ^ 2)` for `δ = α / √(1 + α ^ 2)`. These are the sine and cosine of
 `arctan α`. -/
-private theorem sqrt_one_sub_sq_div_sqrt_one_add_sq (α : ℝ) :
+theorem sqrt_one_sub_sq_div_sqrt_one_add_sq (α : ℝ) :
     √(1 - (α / √(1 + α ^ 2)) ^ 2) = (√(1 + α ^ 2))⁻¹ := by
   rw [← sin_arctan, ← cos_sq', sqrt_sq (cos_arctan_pos α).le, cos_arctan, one_div]
+
+/-- The two coefficients of the skew-normal construction, `δ = α / √(1 + α ^ 2)` and
+`√(1 - δ ^ 2)`, have squares summing to `1`: they are the sine and cosine of `arctan α`. -/
+theorem sq_div_sqrt_one_add_sq_add_sq_sqrt_one_sub_sq (α : ℝ) :
+    (α / √(1 + α ^ 2)) ^ 2 + √(1 - (α / √(1 + α ^ 2)) ^ 2) ^ 2 = 1 := by
+  rw [sqrt_one_sub_sq_div_sqrt_one_add_sq, ← sin_arctan, ← one_div, ← cos_arctan,
+    sin_sq_add_cos_sq]
 
 /-- Completing the square: the joint density of `Z₁ = z` and `δ * |z| + √w * Z₂ = y`, for
 `δ ^ 2 + w = 1`, is symmetric in `y` and `|z|`. -/
@@ -81,12 +90,8 @@ private theorem integral_gaussianPDFReal_mul_gaussianPDFReal_abs {δ : ℝ} {w :
     ∫ z, gaussianPDFReal 0 1 z * gaussianPDFReal (δ * |z|) w y =
       2 * gaussianPDFReal 0 1 y * cdf (gaussianReal 0 1) (δ * y / √(w : ℝ)) := by
   simp_rw [gaussianPDFReal_mul_gaussianPDFReal_abs hw hδw y]
-  rw [integral_const_mul, integral_comp_abs (f := gaussianPDFReal (δ * y) w)]
-  have hIoi :
-      ∫ z in Ioi 0, gaussianPDFReal (δ * y) w z = (gaussianReal (δ * y) w).real (Ioi 0) := by
-    rw [measureReal_def, gaussianReal_apply_eq_integral _ hw, ENNReal.toReal_ofReal
-      (setIntegral_nonneg measurableSet_Ioi fun z _ => gaussianPDFReal_nonneg _ _ z)]
-  rw [hIoi, measureReal_Ioi_gaussianReal_eq_cdf _ hw, sub_zero]
+  rw [integral_const_mul, integral_comp_abs (f := gaussianPDFReal (δ * y) w),
+    integral_Ioi_gaussianPDFReal_eq_cdf _ hw, sub_zero]
   ring
 
 /-- The lower-integral form of `integral_gaussianPDFReal_mul_gaussianPDFReal_abs`. -/
@@ -114,9 +119,7 @@ private theorem map_prod_gaussianReal_eq_skewNormalMeasure_zero_one (α : ℝ) :
     ((gaussianReal 0 1).prod (gaussianReal 0 1)).map
         (fun z : ℝ × ℝ => α / √(1 + α ^ 2) * |z.1| + √(1 - (α / √(1 + α ^ 2)) ^ 2) * z.2) =
       skewNormalMeasure 0 1 α := by
-  have hδ1 : (α / √(1 + α ^ 2)) ^ 2 ≤ 1 := by
-    rw [← sin_arctan]
-    exact sin_sq_le_one _
+  have hδc2 := sq_div_sqrt_one_add_sq_add_sq_sqrt_one_sub_sq α
   set δ := α / √(1 + α ^ 2)
   set c := √(1 - δ ^ 2)
   have hα : 0 < √(1 + α ^ 2) := sqrt_pos.mpr (by positivity)
@@ -128,9 +131,7 @@ private theorem map_prod_gaussianReal_eq_skewNormalMeasure_zero_one (α : ℝ) :
   have hw0 : w ≠ 0 := by
     rw [← NNReal.coe_ne_zero, hw]
     positivity
-  have hδw : δ ^ 2 + w = 1 := by
-    rw [hw, sq_sqrt (sub_nonneg.mpr hδ1)]
-    ring
+  have hδw : δ ^ 2 + w = 1 := by rw [hw, hδc2]
   have hδc : δ / √(w : ℝ) = α := by
     rw [hw, sqrt_sq hc0.le, hc, div_inv_eq_mul]
     exact div_mul_cancel₀ α hα.ne'
@@ -138,6 +139,7 @@ private theorem map_prod_gaussianReal_eq_skewNormalMeasure_zero_one (α : ℝ) :
   have hfiber (z : ℝ) : (gaussianReal 0 1).map (fun x => δ * |z| + c * x) =
       gaussianReal (δ * |z|) w := by
     have h := gaussianReal_map_const_mul (μ := 0) (v := 1) c
+    -- Exhibit the affine map as a composition so that `Measure.map_map` can split it.
     rw [show (fun x => δ * |z| + c * x) = (δ * |z| + ·) ∘ (c * ·) from rfl,
       ← Measure.map_map (by fun_prop) (by fun_prop), h, gaussianReal_map_const_add, mul_zero,
       zero_add, mul_one]
@@ -176,6 +178,7 @@ theorem map_prod_gaussianReal_eq_skewNormalMeasure (hs : 0 < s) (m α : ℝ) :
         (fun z : ℝ × ℝ =>
           m + s * (α / √(1 + α ^ 2) * |z.1| + √(1 - (α / √(1 + α ^ 2)) ^ 2) * z.2)) =
       skewNormalMeasure m s α := by
+  -- Exhibit the map as an affine map after the standard construction, for `Measure.map_map`.
   rw [show (fun z : ℝ × ℝ =>
         m + s * (α / √(1 + α ^ 2) * |z.1| + √(1 - (α / √(1 + α ^ 2)) ^ 2) * z.2)) =
       (fun x => m + s * x) ∘
@@ -190,11 +193,12 @@ theorem map_prod_gaussianReal_eq_skewNormalMeasure (hs : 0 < s) (m α : ℝ) :
 `m + s * (δ * |Z₁| + √(1 - δ ^ 2) * Z₂)` is skew-normal with location `m`, scale `s` and
 shape `α`. -/
 theorem hasLaw_skewNormalMeasure_of_indepFun {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-    [IsFiniteMeasure P] {Z₁ Z₂ : Ω → ℝ} (h₁ : HasLaw Z₁ (gaussianReal 0 1) P)
+    {Z₁ Z₂ : Ω → ℝ} (h₁ : HasLaw Z₁ (gaussianReal 0 1) P)
     (h₂ : HasLaw Z₂ (gaussianReal 0 1) P) (hindep : Z₁ ⟂ᵢ[P] Z₂) (hs : 0 < s) (m α : ℝ) :
     HasLaw
       (fun ω => m + s * (α / √(1 + α ^ 2) * |Z₁ ω| + √(1 - (α / √(1 + α ^ 2)) ^ 2) * Z₂ ω))
       (skewNormalMeasure m s α) P :=
+  have := h₁.isProbabilityMeasure
   (HasLaw.mk (by fun_prop) (map_prod_gaussianReal_eq_skewNormalMeasure hs m α)).fun_comp
     (hindep.hasLaw_prod h₁ h₂)
 

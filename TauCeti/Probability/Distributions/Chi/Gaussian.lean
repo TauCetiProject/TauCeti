@@ -8,6 +8,8 @@ module
 public import TauCeti.Probability.Distributions.Chi.Basic
 public import TauCeti.Probability.Distributions.Gaussian.ChiSquared
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
+public import Mathlib.Probability.CDF
+import TauCeti.Probability.Distributions.Gaussian.Cdf
 
 /-!
 # Gaussian constructions of chi laws
@@ -23,7 +25,9 @@ For independent centered real Gaussians with common positive variance, the Eucli
 scale equal to the square root of that variance. Dimensions one, two, and three give the
 half-normal, Rayleigh, and Maxwell–Boltzmann constructions, respectively. The scalar
 absolute-value identity is also provided directly. These identifications allow the density,
-moments, and quantiles of chi laws to be used for Gaussian radii.
+moments, and quantiles of chi laws to be used for Gaussian radii. The half-normal
+moment-generating function `E[exp (u * |Z|)] = 2 * exp (u ^ 2 / 2) * Φ(u)`, for a standard
+Gaussian `Z` and `Φ = cdf (gaussianReal 0 1)`, is computed directly by completing the square.
 
 The proofs reuse `map_sum_sq_pi_gaussianReal` and Mathlib's orthonormal-basis representation
 `stdGaussian_eq_map_pi_orthonormalBasis`.
@@ -122,6 +126,30 @@ theorem gaussianReal_map_abs (hv : v ≠ 0) :
     (g := fun x : ℝ ↦ |x|) (f := fun x : Unit → ℝ ↦ x ()) (by fun_prop) (by fun_prop)
   rw [(measurePreserving_eval (fun _ : Unit ↦ gaussianReal 0 v) ()).map_eq] at hmap
   simpa only [Fintype.card_unit, Nat.cast_one] using hmap.trans h
+
+/-- **The moment-generating function of the half-normal law.** For a standard Gaussian `Z`,
+`E[exp (u * |Z|)] = 2 * exp (u ^ 2 / 2) * Φ(u)`. -/
+theorem integral_exp_mul_abs_gaussianReal (u : ℝ) :
+    ∫ x, Real.exp (u * |x|) ∂gaussianReal 0 1 =
+      2 * Real.exp (u ^ 2 / 2) * cdf (gaussianReal 0 1) u := by
+  -- Completing the square: `φ(x) * exp (u * x) = exp (u ^ 2 / 2) * N(u, 1)(x)`.
+  have htilt (x : ℝ) :
+      gaussianPDFReal 0 1 x * Real.exp (u * x) =
+        Real.exp (u ^ 2 / 2) * gaussianPDFReal u 1 x := by
+    simp only [gaussianPDFReal, NNReal.coe_one, mul_one, sub_zero]
+    rw [mul_assoc, ← Real.exp_add, mul_left_comm, ← Real.exp_add]
+    congr 2
+    ring
+  have heven : (fun x => gaussianPDFReal 0 1 x * Real.exp (u * |x|)) =
+      fun x => (fun y => gaussianPDFReal 0 1 y * Real.exp (u * y)) |x| := by
+    funext x
+    simp [gaussianPDFReal, sq_abs]
+  simp_rw [integral_gaussianReal_eq_integral_smul one_ne_zero, smul_eq_mul]
+  rw [heven, integral_comp_abs (f := fun y => gaussianPDFReal 0 1 y * Real.exp (u * y))]
+  simp_rw [htilt]
+  rw [integral_const_mul, integral_Ioi_gaussianPDFReal_eq_cdf _ one_ne_zero]
+  simp only [sub_zero, NNReal.coe_one, Real.sqrt_one, div_one]
+  ring
 
 end TauCeti.Probability
 
