@@ -75,18 +75,6 @@ namespace KInjectiveDGCategory
 
 variable [Linear R C]
 
-variable {C} in
-/-- Including an object of `H⁰` of the K-injective complexes into `H⁰` of all cochain complexes
-gives the image of the class of its underlying complex under the comparison
-`TauCeti.homotopyCategoryToDGHomotopyCategory` with Mathlib's homotopy category. -/
-theorem homotopyCategoryToDGHomotopyCategory_obj_eq
-    (X : DGHomotopyCategory R (KInjectiveDGCategory C)) :
-    (homotopyCategoryToDGHomotopyCategory R C).obj
-        ((HomotopyCategory.quotient C _).obj (DGHomotopyCategory.underlying R X).obj) =
-      (DGFullSubcategory.inclusion (R := R)).mapDGHomotopyCategory.obj X := by
-  obtain ⟨X, rfl⟩ := DGHomotopyCategory.of_surjective R X
-  simp
-
 variable [HasDerivedCategory.{w} C]
 
 /-- The comparison functor from the homotopy category `H⁰` of the K-injective complexes to the
@@ -96,9 +84,9 @@ of a closed degree-zero morphism to `Qh` of the corresponding homotopy class of 
 def toDerivedCategory : DGHomotopyCategory R (KInjectiveDGCategory C) ⥤ DerivedCategory C where
   obj X := Qh.obj ((HomotopyCategory.quotient C _).obj (DGHomotopyCategory.underlying R X).obj)
   map {X Y} f := Qh.map ((homotopyCategoryToDGHomotopyCategory R C).preimage
-    (eqToHom (homotopyCategoryToDGHomotopyCategory_obj_eq R X) ≫
+    (eqToHom (DGFullSubcategory.homotopyCategoryToDGHomotopyCategory_obj_eq R X) ≫
       (DGFullSubcategory.inclusion (R := R)).mapDGHomotopyCategory.map f ≫
-        eqToHom (homotopyCategoryToDGHomotopyCategory_obj_eq R Y).symm))
+        eqToHom (DGFullSubcategory.homotopyCategoryToDGHomotopyCategory_obj_eq R Y).symm))
   map_id X := by simp
   map_comp f g := by
     rw [← Functor.map_comp, ← Functor.preimage_comp]
@@ -117,9 +105,9 @@ identified with a morphism of Mathlib's homotopy category. -/
 theorem toDerivedCategory_map {X Y : DGHomotopyCategory R (KInjectiveDGCategory C)}
     (f : X ⟶ Y) :
     (toDerivedCategory R C).map f = Qh.map ((homotopyCategoryToDGHomotopyCategory R C).preimage
-      (eqToHom (homotopyCategoryToDGHomotopyCategory_obj_eq R X) ≫
+      (eqToHom (DGFullSubcategory.homotopyCategoryToDGHomotopyCategory_obj_eq R X) ≫
         (DGFullSubcategory.inclusion (R := R)).mapDGHomotopyCategory.map f ≫
-          eqToHom (homotopyCategoryToDGHomotopyCategory_obj_eq R Y).symm)) :=
+          eqToHom (DGFullSubcategory.homotopyCategoryToDGHomotopyCategory_obj_eq R Y).symm)) :=
   (rfl)
 
 /-- The comparison functor sends the class of the closed degree-zero morphism `Cochain.ofHom f`
@@ -160,9 +148,9 @@ instance : (toDerivedCategory R C).Full where
       (DGHomotopyCategory.underlying R Y).property
     obtain ⟨h, rfl⟩ := (CochainComplex.IsKInjective.Qh_map_bijective _ _).surjective g
     obtain ⟨f, hf⟩ := (DGFullSubcategory.inclusion (R := R)).mapDGHomotopyCategory.map_surjective
-      (eqToHom (homotopyCategoryToDGHomotopyCategory_obj_eq R X).symm ≫
+      (eqToHom (DGFullSubcategory.homotopyCategoryToDGHomotopyCategory_obj_eq R X).symm ≫
         (homotopyCategoryToDGHomotopyCategory R C).map h ≫
-          eqToHom (homotopyCategoryToDGHomotopyCategory_obj_eq R Y))
+          eqToHom (DGFullSubcategory.homotopyCategoryToDGHomotopyCategory_obj_eq R Y))
     refine ⟨f, ?_⟩
     rw [toDerivedCategory_map, hf]
     congr 1
