@@ -8,10 +8,10 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Analysis.Calculus.Morse.Generic
 -- Private: used only inside proofs.
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
-import TauCeti.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Calculus.TangentGraphChart
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 
 /-!
@@ -28,8 +28,9 @@ exhaustions used to build CW models of affine varieties and Stein manifolds.
 
 The proof is local. Near a point `u₀`, let `R` be the image of the differential of `F` at `u₀`.
 The orthogonal projection of `F` to `R` is a local diffeomorphism, so in its coordinate `w ∈ R`
-the map becomes the graph `F = w + h(w)` with `h(w) ∈ Rᗮ`. Writing `a = b + c` with `b ∈ R` and
-`c ∈ Rᗮ`, Pythagoras gives
+the map becomes the graph `F = w + h(w)` with `h(w) ∈ Rᗮ`
+(`TauCeti.ContDiffOn.exists_openPartialHomeomorph_starProjection`). Writing `a = b + c` with
+`b ∈ R` and `c ∈ Rᗮ`, Pythagoras (`Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal`) gives
 
 `‖F - a‖² = (‖w‖² + ‖h(w) - c‖²) - 2⟪b, w⟫ + ‖b‖²`.
 
@@ -61,76 +62,31 @@ variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {F : E → V} {U : Set E}
 
-/-- Pythagoras for the squared distance from `b + c`, where `b ∈ R` and `c ∈ Rᗮ`: the
-components of `v - (b + c)` along `R` and `Rᗮ` are `P v - b` and `v - P v - c`, where `P` is the
-orthogonal projection to `R`. -/
-private theorem norm_sub_add_sq_eq (R : Submodule ℝ V) (v : V) (b : R) (c : Rᗮ) :
-    ‖v - (b + c)‖ ^ 2 = ‖R.starProjection v‖ ^ 2 + ‖v - R.starProjection v - c‖ ^ 2 -
-      2 * ⟪(b : V), R.starProjection v⟫_ℝ + ‖(b : V)‖ ^ 2 := by
-  have hperp : v - R.starProjection v - c ∈ Rᗮ :=
-    Rᗮ.sub_mem (R.sub_starProjection_mem_orthogonal v) c.2
-  have hsplit : v - (b + c) = (R.starProjection v - b) + (v - R.starProjection v - c) := by abel
-  rw [hsplit, norm_add_sq_real,
-    R.inner_right_of_mem_orthogonal (R.sub_mem (R.starProjection_apply_mem v) b.2) hperp,
-    norm_sub_sq_real, real_inner_comm]
-  ring
-
-/-- **Graph coordinates.** Near a point `u₀` at which its differential is injective, a `C²` map
-`F` into an inner product space is a graph over its tangent space `R` at `u₀`: there is a chart
-`Φ` of `E` around `u₀`, `C²` with invertible differential on its source and with `C²` inverse, in
-which the orthogonal projection of `F` to `R` is a fixed linear isomorphism `e₀ : E ≃ R`. -/
-private theorem exists_graph_chart (hU : IsOpen U) (hF : ContDiffOn ℝ 2 F U) {u₀ : E}
-    (hu₀ : u₀ ∈ U) (hinj : Injective (fderiv ℝ F u₀)) :
-    ∃ (R : Submodule ℝ V) (e₀ : E ≃L[ℝ] R) (Φ : OpenPartialHomeomorph E E),
-      u₀ ∈ Φ.source ∧ Φ.source ⊆ U ∧
-      (∀ u ∈ Φ.source, (e₀ (Φ u) : V) = R.starProjection (F u)) ∧
-      (∀ u ∈ Φ.source, ContDiffAt ℝ 2 Φ u ∧ (fderiv ℝ Φ u).IsInvertible) ∧
-      ∀ w ∈ Φ.target, ContDiffAt ℝ 2 Φ.symm w := by
-  -- The tangent space `R` at `u₀`, and the orthogonal projection `Pr` to it.
-  set R : Submodule ℝ V := LinearMap.range (fderiv ℝ F u₀ : E →ₗ[ℝ] V)
-  set Pr : V →L[ℝ] R := R.orthogonalProjectionOnto
-  -- At `u₀` the differential of `Pr ∘ F` is an isomorphism `e₀` onto `R`.
-  have hPr : ∀ v, Pr (fderiv ℝ F u₀ v) = ⟨fderiv ℝ F u₀ v, LinearMap.mem_range_self _ v⟩ :=
-    fun v ↦ R.orthogonalProjectionOnto_mem_subspace_eq_self ⟨_, LinearMap.mem_range_self _ v⟩
-  have hbij : Bijective (Pr ∘L fderiv ℝ F u₀) := by
-    refine ⟨fun v w h ↦ hinj ?_, fun ⟨r, v, hv⟩ ↦ ⟨v, ?_⟩⟩
-    · simpa [hPr] using h
-    · simp only [ContinuousLinearMap.coe_comp, comp_apply, hPr]
-      exact Subtype.ext hv
-  let e₀ : E ≃L[ℝ] R :=
-    (LinearEquiv.ofBijective (Pr ∘L fderiv ℝ F u₀ : E →ₗ[ℝ] R) hbij).toContinuousLinearEquiv
-  -- The coordinate `σ = e₀⁻¹ ∘ Pr ∘ F` on `E`, whose differential at `u₀` is the identity.
-  set σ : E → E := fun u ↦ e₀.symm (Pr (F u))
-  have hσC : ContDiffOn ℝ 2 σ U := (e₀.symm.contDiff.comp Pr.contDiff).comp_contDiffOn hF
-  have hσd : ∀ u ∈ U, HasFDerivAt σ ((e₀.symm : R →L[ℝ] E) ∘L Pr ∘L fderiv ℝ F u) u :=
-    fun u hu ↦ e₀.symm.hasFDerivAt.comp u (Pr.hasFDerivAt.comp u
-      ((hF.differentiableOn (by norm_num) u hu).differentiableAt (hU.mem_nhds hu)).hasFDerivAt)
-  have hσ₀ : HasFDerivAt σ ((ContinuousLinearEquiv.refl ℝ E : E ≃L[ℝ] E) : E →L[ℝ] E) u₀ := by
-    convert hσd u₀ hu₀ using 1
-    ext v
-    exact (e₀.symm_apply_apply v).symm
-  -- The inverse function theorem makes `σ` a chart near `u₀`; restrict its source to the open
-  -- set `N` where the differential of `σ` stays invertible.
-  let Φ₀ := (hσC.contDiffAt (hU.mem_nhds hu₀)).toOpenPartialHomeomorph σ hσ₀ two_ne_zero
-  set N := U ∩ fderiv ℝ σ ⁻¹' {T | T.IsInvertible}
-  have hN : IsOpen N := (hσC.continuousOn_fderiv_of_isOpen hU (by norm_num)).isOpen_inter_preimage
-    hU ContinuousLinearMap.isOpen_setOfPred_isInvertible
-  let Φ := Φ₀.restrOpen N hN
-  have hΦs : Φ.source = Φ₀.source ∩ N := Φ₀.restrOpen_source N hN
-  refine ⟨R, e₀, Φ, ?_, ?_, fun u _ ↦ ?_, fun u hu ↦ ?_, fun w hw ↦ ?_⟩
-  · rw [hΦs]
-    exact ⟨ContDiffAt.mem_toOpenPartialHomeomorph_source _ _ _, hu₀, _, hσ₀.fderiv.symm⟩
-  · rw [hΦs]
-    exact fun u hu ↦ hu.2.1
-  · rw [R.starProjection_apply]
-    exact congrArg Subtype.val (e₀.apply_symm_apply _)
-  · rw [hΦs] at hu
-    exact ⟨hσC.contDiffAt (hU.mem_nhds hu.2.1), hu.2.2⟩
-  · have hs : Φ.symm w ∈ Φ₀.source ∩ N := hΦs ▸ Φ.map_target hw
-    obtain ⟨T, hT⟩ := hs.2.2
-    refine Φ.contDiffAt_symm hw (f₀' := T) ?_ (hσC.contDiffAt (hU.mem_nhds hs.2.1))
-    rw [hT]
-    exact (hσd _ hs.2.1).differentiableAt.hasFDerivAt
+/-- Change of parameters for
+`TauCeti.exists_isOpen_ae_hasNondegenerateCriticalPointsOn_norm_sq_sub_comp`. The splitting
+`a = b + c` along `V = R ⊕ Rᗮ` and the Riesz isomorphism `b ↦ 2⟪b, e₀ ·⟫` identify `V` with
+`(E →L[ℝ] ℝ) × Rᗮ` and preserve null sets. So a property of almost every pair `(L, c)` holds, for
+almost every `a`, at the pair coming from the splitting of `a`. -/
+private theorem ae_exists_add_eq_of_ae_prod [MeasurableSpace V] [BorelSpace V] (μ : Measure V)
+    [μ.IsAddHaarMeasure] {R : Submodule ℝ V} (e₀ : E ≃L[ℝ] R)
+    [MeasurableSpace ((E →L[ℝ] ℝ) × Rᗮ)] [BorelSpace ((E →L[ℝ] ℝ) × Rᗮ)]
+    (ν : Measure ((E →L[ℝ] ℝ) × Rᗮ)) [ν.IsAddHaarMeasure] {p : (E →L[ℝ] ℝ) × Rᗮ → Prop}
+    (hp : ∀ᵐ q ∂ν, p q) :
+    ∀ᵐ a ∂μ, ∃ (b : R) (c : Rᗮ) (L : E →L[ℝ] ℝ), a = (b : V) + c ∧
+      (∀ w, L w = 2 * ⟪(b : V), (e₀ w : V)⟫_ℝ) ∧ p (L, c) := by
+  let S : (R × Rᗮ) ≃L[ℝ] V :=
+    (Submodule.prodEquivOfIsCompl R Rᗮ R.isCompl_orthogonal).toContinuousLinearEquiv
+  let D : R ≃L[ℝ] (E →L[ℝ] ℝ) :=
+    ((LinearEquiv.smulOfNeZero ℝ R 2 two_ne_zero).toContinuousLinearEquiv.trans
+      (toDual ℝ R).toContinuousLinearEquiv).trans
+      (e₀.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ))
+  let T : V ≃L[ℝ] (E →L[ℝ] ℝ) × Rᗮ := S.symm.trans (D.prodCongr (ContinuousLinearEquiv.refl ℝ _))
+  filter_upwards [(T.toContinuousAddEquiv.quasiMeasurePreserving_addHaar μ ν).ae hp] with a ha
+  refine ⟨(S.symm a).1, (S.symm a).2, D (S.symm a).1, ?_, fun w ↦ by simp [D], ?_⟩
+  · conv_lhs => rw [← S.apply_symm_apply a]
+    simp [S, Submodule.coe_prodEquivOfIsCompl']
+  · have hTa : T a = (D (S.symm a).1, (S.symm a).2) := by simp [T]
+    simpa [hTa] using ha
 
 /-- The local form of `TauCeti.ae_hasNondegenerateCriticalPointsOn_norm_sq_sub_comp`: a point
 at which the differential is injective has an open neighbourhood on which the squared distance
@@ -141,7 +97,9 @@ private theorem exists_isOpen_ae_hasNondegenerateCriticalPointsOn_norm_sq_sub_co
     (hinj : Injective (fderiv ℝ F u₀)) :
     ∃ N, IsOpen N ∧ u₀ ∈ N ∧
       ∀ᵐ a ∂μ, HasNondegenerateCriticalPointsOn (fun u ↦ ‖F u - a‖ ^ 2) N := by
-  obtain ⟨R, e₀, Φ, hu₀Φ, hΦU, hΦe, hΦd, hsymm⟩ := exists_graph_chart hU hF hu₀ hinj
+  obtain ⟨e₀, Φ, hu₀Φ, hΦU, hΦe, hΦd, hsymm⟩ :=
+    ContDiffOn.exists_openPartialHomeomorph_starProjection hF hU one_le_two hu₀ hinj
+  let R : Submodule ℝ V := LinearMap.range (fderiv ℝ F u₀ : E →ₗ[ℝ] V)
   -- In the coordinate `w`, the squared distance from `b + c` is the family `f c` perturbed by
   -- the linear form `2⟪b, e₀ ·⟫`, up to the constant `‖b‖²`.
   let f : Rᗮ → E → ℝ := fun c w ↦ ‖(e₀ w : V)‖ ^ 2 + ‖F (Φ.symm w) - e₀ w - c‖ ^ 2
@@ -157,42 +115,23 @@ private theorem exists_isOpen_ae_hasNondegenerateCriticalPointsOn_norm_sq_sub_co
   borelize ((E →L[ℝ] ℝ) × Rᗮ)
   have hgood := ae_hasNondegenerateCriticalPointsOn_sub_prod
     (addHaar : Measure ((E →L[ℝ] ℝ) × Rᗮ)) Φ.open_target hf
-  -- The splitting `a = b + c` and the Riesz isomorphism `b ↦ 2⟪b, e₀ ·⟫` identify `V` with the
-  -- parameter space, preserving null sets.
-  let S : (R × Rᗮ) ≃L[ℝ] V :=
-    (Submodule.prodEquivOfIsCompl R Rᗮ R.isCompl_orthogonal).toContinuousLinearEquiv
-  let D : R ≃L[ℝ] (E →L[ℝ] ℝ) :=
-    ((LinearEquiv.smulOfNeZero ℝ R 2 two_ne_zero).toContinuousLinearEquiv.trans
-      (toDual ℝ R).toContinuousLinearEquiv).trans
-      (e₀.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ))
-  have hD : ∀ (b : R) (w : E), D b w = 2 * ⟪(b : V), (e₀ w : V)⟫_ℝ := fun b w ↦ by
-    simp [D]
-  let T : V ≃L[ℝ] (E →L[ℝ] ℝ) × Rᗮ := S.symm.trans (D.prodCongr (ContinuousLinearEquiv.refl ℝ _))
-  have hT : ∀ᵐ a ∂μ,
-      HasNondegenerateCriticalPointsOn (fun w ↦ f (T a).2 w - (T a).1 w) Φ.target :=
-    (T.toContinuousAddEquiv.quasiMeasurePreserving_addHaar μ addHaar).ae hgood
   refine ⟨Φ.source, Φ.open_source, hu₀Φ, ?_⟩
-  filter_upwards [hT] with a ha
-  set b := (S.symm a).1
-  set c := (S.symm a).2
-  have hab : a = b + c := by
-    conv_lhs => rw [← S.apply_symm_apply a]
-    rfl
-  have ha' : HasNondegenerateCriticalPointsOn (fun w ↦ f c w - D b w) Φ.target := ha
+  filter_upwards [ae_exists_add_eq_of_ae_prod μ e₀ _ hgood] with a ⟨b, c, L, hab, hL, ha⟩
   -- The squared distance agrees on the source of `Φ` with `g ∘ Φ`.
-  set g : E → ℝ := fun w ↦ f c w - D b w + ‖(b : V)‖ ^ 2
+  set g : E → ℝ := fun w ↦ f c w - L w + ‖(b : V)‖ ^ 2
   have hev : ∀ u ∈ Φ.source, ‖F u - a‖ ^ 2 = g (Φ u) := fun u hu ↦ by
-    simp only [g, f, Φ.left_inv hu, hD, hΦe u hu, hab, norm_sub_add_sq_eq]
+    simp only [g, f, Φ.left_inv hu, hL, hΦe u hu, hab,
+      Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal _ _ b.2 c.2]
   refine hasNondegenerateCriticalPointsOn_iff.2 fun u hu hcrit ↦ ?_
   have hev' : (fun u ↦ ‖F u - a‖ ^ 2) =ᶠ[𝓝 u] g ∘ Φ :=
     eventually_of_mem (Φ.open_source.mem_nhds hu) hev
   obtain ⟨hΦu, Tu, hTu⟩ := hΦd u hu
   have hgu : ContDiffAt ℝ 2 g (Φ u) := by
     have h := ((hf c (Φ u) (Φ.map_source hu)).comp (Φ u)
-      ((contDiffAt_const (c := c)).prodMk contDiffAt_id)).sub (D b).contDiff.contDiffAt
+      ((contDiffAt_const (c := c)).prodMk contDiffAt_id)).sub L.contDiff.contDiffAt
     exact h.add contDiffAt_const
   -- Criticality passes to `g` at `Φ u`, since the differential of `Φ` there is invertible.
-  have hgcrit : fderiv ℝ (fun w ↦ f c w - D b w) (Φ u) = 0 := by
+  have hgcrit : fderiv ℝ (fun w ↦ f c w - L w) (Φ u) = 0 := by
     have h := hcrit
     rw [hev'.fderiv_eq, fderiv_comp u (hgu.differentiableAt (by norm_num))
       (hΦu.differentiableAt (by norm_num)), ← hTu] at h
@@ -200,7 +139,7 @@ private theorem exists_isOpen_ae_hasNondegenerateCriticalPointsOn_norm_sq_sub_co
     simpa [g, fderiv_add_const] using congrArg (fun L : E →L[ℝ] ℝ ↦ L (Tu.symm v)) h
   have hnd : IsNondegenerateCriticalPoint g (Φ u) :=
     (isNondegenerateCriticalPoint_add_const_iff _).2
-      (hasNondegenerateCriticalPointsOn_iff.1 ha' (Φ.map_source hu) hgcrit)
+      (hasNondegenerateCriticalPointsOn_iff.1 ha (Φ.map_source hu) hgcrit)
   exact (hnd.comp hΦu ⟨Tu, hTu⟩).congr_of_eventuallyEq hev'.symm
 
 /-- **The squared distance from almost every point is Morse along an immersion.** If `F` is `C²`
