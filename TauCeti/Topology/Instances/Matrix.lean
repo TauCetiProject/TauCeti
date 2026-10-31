@@ -34,10 +34,10 @@ Square matrices over a commutative topological ring `R` with open units again ha
 (`Matrix.instIsOpenUnits`). The invertible matrices are the preimage of the open set of units of
 `R` under the continuous determinant, and the inverse `A⁻¹ = (det A)⁻¹ • adj A` is continuous on
 them because the inverse of the determinant is. Over a nonarchimedean local field `E`, which has
-open units because it is a topological field, this says that `GL_n(E)` with the topology of the
-unit group is the open subspace `{det ≠ 0}` of the matrices `M_n(E)`. The hypothesis on `R`
-cannot be dropped: over the adeles, inversion is not continuous on the units for the subspace
-topology, already for `n = 1`.
+open units because it is a Hausdorff topological field, this says that `GL_n(E)` with the
+topology of the unit group is the open subspace `{det ≠ 0}` of the matrices `M_n(E)`. The
+hypothesis on `R` cannot be dropped: over the adeles, inversion is not continuous on the units
+for the subspace topology, already for `n = 1`.
 
 The Kronecker product of two continuously varying matrices is continuous in the product topology.
 
