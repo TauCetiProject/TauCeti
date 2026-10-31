@@ -176,7 +176,7 @@ theorem of_flat_of_formallyUnramified [Module.Flat B C] [EssFiniteType A B] [Ess
   -- By faithful flatness it suffices to compare the extensions to `C`, where `𝔪_A C = 𝔪_C`.
   rw [← Ideal.comap_map_eq_self_of_faithfullyFlat (B := C) ((IsLocalRing.maximalIdeal A).map _),
     Ideal.map_map, ← IsScalarTower.algebraMap_eq, map_maximalIdeal]
-  exact ((IsLocalRing.local_hom_TFAE (algebraMap B C)).out 1 5).mp ‹_›
+  exact IsLocalRing.maximalIdeal_comap _
 
 end FlatDescent
 
