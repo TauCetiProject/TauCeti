@@ -39,6 +39,11 @@ actual vertex set.
   `k`-edge-connected exactly when it stays connected after deleting fewer than `k` edges.
 * `Graph.IsLink.isBridge_iff_not_isEdgeReachable_two`: an edge is a bridge exactly when its ends
   are not `2`-edge-reachable.
+* `Graph.isEdgeConnected_two_iff_forall_reachable_and_forall_not_isBridge`: a multigraph is
+  `2`-edge-connected exactly when its actual vertices are pairwise reachable and it has no bridge.
+  `Graph.forall_reachable_isEdgeReachable_two_iff_forall_not_isBridge` is the componentwise form,
+  and `Graph.preconnected_and_forall_not_isBridge_ofSimpleGraph_iff` compares the criterion on
+  `Graph.ofSimpleGraph` with Mathlib's `SimpleGraph.isEdgeConnected_two_iff_forall_not_isBridge`.
 * `Graph.isEdgeReachable_ofSimpleGraph_iff`, `Graph.isEdgeConnected_ofSimpleGraph_iff`: agreement
   with the simple-graph predicates.
 * `Graph.isEdgeReachable_iff_le_edgeReachability`, `Graph.isEdgeConnected_iff_le_edgeConnectivity`:
@@ -209,6 +214,42 @@ theorem IsLink.isBridge_iff_not_isEdgeReachable_two (h : G.IsLink e x y) :
     · exact hre
     · exact IsLink.reachable (e := e) (by simpa [deleteEdges_isLink] using ⟨h, hfe.symm⟩)
 
+/-- In a multigraph without bridges, any two vertices reachable from each other are
+`2`-edge-reachable. -/
+theorem Reachable.isEdgeReachable_two (h : ∀ e, ¬ G.IsBridge e) (hxy : G.Reachable x y) :
+    G.IsEdgeReachable 2 x y := by
+  intro F hF
+  obtain rfl | ⟨f, rfl⟩ := encard_le_one_iff_eq.mp (ENat.lt_two_iff.mp hF)
+  · simpa using hxy
+  · exact (reachable_deleteEdges_iff_of_not_isBridge (h f)).mpr hxy
+
+/-- Any two vertices of a multigraph reachable from each other are `2`-edge-reachable exactly when
+the multigraph has no bridge; that is, every connected component is `2`-edge-connected exactly when
+there is no bridge. -/
+theorem forall_reachable_isEdgeReachable_two_iff_forall_not_isBridge :
+    (∀ ⦃x y⦄, G.Reachable x y → G.IsEdgeReachable 2 x y) ↔ ∀ e, ¬ G.IsBridge e := by
+  refine ⟨fun h e he ↦ ?_, fun h _ _ ↦ Reachable.isEdgeReachable_two h⟩
+  obtain ⟨x, y, hl⟩ := exists_isLink_of_mem_edgeSet he.mem_edgeSet
+  exact he.not_isEdgeReachable_two hl (h hl.reachable)
+
+/-- A multigraph is `2`-edge-connected exactly when any two of its actual vertices are reachable
+from each other and it has no bridge. No finiteness is assumed; when there is no actual vertex,
+both sides hold. -/
+theorem isEdgeConnected_two_iff_forall_reachable_and_forall_not_isBridge :
+    G.IsEdgeConnected 2 ↔
+      (∀ ⦃x⦄, x ∈ V(G) → ∀ ⦃y⦄, y ∈ V(G) → G.Reachable x y) ∧ ∀ e, ¬ G.IsBridge e := by
+  rw [← isEdgeConnected_one, ← forall_reachable_isEdgeReachable_two_iff_forall_not_isBridge]
+  refine ⟨fun h ↦ ⟨h.anti one_le_two, fun x y hxy ↦ h hxy.left_mem hxy.right_mem⟩,
+    fun ⟨h₁, h₂⟩ x hx y hy ↦ h₂ (h₁.isEdgeReachable hx hy |>.reachable one_ne_zero)⟩
+
+/-- A multigraph with an actual vertex is `2`-edge-connected exactly when it is connected and has
+no bridge. -/
+theorem isEdgeConnected_two_iff_connected_and_forall_not_isBridge (hV : V(G).Nonempty) :
+    G.IsEdgeConnected 2 ↔ G.Connected ∧ ∀ e, ¬ G.IsBridge e := by
+  rw [isEdgeConnected_two_iff_forall_reachable_and_forall_not_isBridge,
+    connected_iff_forall_reachable, and_iff_right hV]
+  exact and_congr_left' ⟨fun h _ _ hx hy ↦ h hx hy, fun h _ hx _ hy ↦ h hx hy⟩
+
 /-! ### Graphs from simple graphs -/
 
 /-- Edge reachability in `Graph.ofSimpleGraph H` is simple-graph edge reachability in `H`. -/
@@ -222,6 +263,18 @@ theorem isEdgeReachable_ofSimpleGraph_iff (H : SimpleGraph α) (k : ℕ) (x y : 
 theorem isEdgeConnected_ofSimpleGraph_iff (H : SimpleGraph α) (k : ℕ) :
     (Graph.ofSimpleGraph H).IsEdgeConnected k ↔ H.IsEdgeConnected k := by
   simp [isEdgeConnected_def, SimpleGraph.IsEdgeConnected]
+
+/-- On `Graph.ofSimpleGraph H`, the multigraph bridge criterion for `2`-edge-connectivity agrees
+with Mathlib's simple-graph criterion `SimpleGraph.isEdgeConnected_two_iff_forall_not_isBridge`.
+The simple-graph criterion needs no separate reachability condition because
+`SimpleGraph.IsBridge` also holds for a non-edge joining distinct components, whereas multigraph
+bridges are actual edges. -/
+theorem preconnected_and_forall_not_isBridge_ofSimpleGraph_iff (H : SimpleGraph α) :
+    (H.Preconnected ∧ ∀ e, ¬ (Graph.ofSimpleGraph H).IsBridge e) ↔ ∀ e, ¬ H.IsBridge e := by
+  rw [← SimpleGraph.isEdgeConnected_two_iff_forall_not_isBridge, ← Nat.cast_ofNat,
+    ← isEdgeConnected_ofSimpleGraph_iff,
+    isEdgeConnected_two_iff_forall_reachable_and_forall_not_isBridge]
+  simp [SimpleGraph.Preconnected]
 
 /-! ### Numerical invariants -/
 
