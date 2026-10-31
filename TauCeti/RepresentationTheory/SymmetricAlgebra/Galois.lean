@@ -55,6 +55,8 @@ A faithful action on `V` gives a faithful contragredient action on `V*` by
 * E. Artin, *Galois Theory*, Notre Dame Mathematical Lectures 2 (1942), for the fixed-field
   theorem behind the Galois correspondence of a finite group of automorphisms.
 * R. Kane, *Reflection Groups and Invariant Theory*, CMS Books in Mathematics, Springer (2001).
+* L. Smith, *Polynomial Invariants of Finite Groups*, A K Peters (1995), Chapter 1, for the
+  fraction field of the invariant ring as the invariant subfield of the rational functions.
 * The Galois theory used here is Mathlib's `IsGaloisGroup` API (Thomas Browning), in
   `Mathlib.RingTheory.IsGaloisGroup` and `Mathlib.FieldTheory.Galois.IsGaloisGroup`.
 -/
