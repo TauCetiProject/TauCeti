@@ -53,12 +53,6 @@ namespace TauCeti.ModularForm
 
 /-! ### Certified numerical inequalities -/
 
-/-- `150 ≤ e^t` for `t ≥ 7`, from the Taylor polynomial of degree four. -/
-private theorem le_exp_of_seven_le {t : ℝ} (ht : 7 ≤ t) : 150 ≤ Real.exp t := by
-  refine le_trans ?_ ((Real.sum_le_exp_of_nonneg (x := 7) (by norm_num) 5).trans
-    (Real.exp_le_exp.2 ht))
-  norm_num [Finset.sum_range_succ, Nat.factorial]
-
 /-- **The level-two numerical inequality.** The bound
 `2 A^{1/24} exp ((2A + 2A^{1/2}) / (1 - A)) < 1` for `0 < A ≤ e^{-π √31}`. -/
 theorem level_two_bound_lt_one {A : ℝ} (hA : 0 < A) (hAt : A ≤ Real.exp (-(π * √31))) :
@@ -68,10 +62,13 @@ theorem level_two_bound_lt_one {A : ℝ} (hA : 0 < A) (hAt : A ≤ Real.exp (-(�
   have ht : (17.49 : ℝ) ≤ π * √31 := by nlinarith
   -- The small terms: `A ≤ A^{1/2} ≤ e^{-7} ≤ 1/150`.
   have hsqrt : A ^ (1 / 2 : ℝ) ≤ 1 / 150 := by
+    have h : (150 : ℝ) ≤ Real.exp 7 :=
+      le_trans (by norm_num [Finset.sum_range_succ, Nat.factorial])
+        (Real.sum_le_exp_of_nonneg (x := 7) (by norm_num) 5)
     refine (Real.rpow_le_exp_neg_mul hA.le hAt (by norm_num)).trans ?_
-    rw [Real.exp_neg]
-    exact (inv_anti₀ (by norm_num)
-      (le_exp_of_seven_le (t := 1 / 2 * (π * √31)) (by linarith))).trans_eq (one_div 150).symm
+    refine (Real.exp_le_exp.2 (by linarith : -(1 / 2 * (π * √31)) ≤ -7)).trans ?_
+    rw [Real.exp_neg, one_div]
+    exact inv_anti₀ (by norm_num) h
   have hA1 : A ≤ 1 := hAt.trans (Real.exp_le_one_iff.2 (by linarith))
   have hAsqrt : A ≤ A ^ (1 / 2 : ℝ) := by
     simpa using Real.rpow_le_rpow_of_exponent_ge hA hA1 (by norm_num : (1 / 2 : ℝ) ≤ 1)
@@ -105,10 +102,13 @@ theorem level_three_bound_lt_one {A : ℝ} (hA : 0 < A) (hAt : A ≤ Real.exp (-
   have ht : (22.43 : ℝ) ≤ π * √51 := by nlinarith
   -- The small terms: `A ≤ A^{1/3} ≤ e^{-7} ≤ 1/150`.
   have hcbrt : A ^ (1 / 3 : ℝ) ≤ 1 / 150 := by
+    have h : (150 : ℝ) ≤ Real.exp 7 :=
+      le_trans (by norm_num [Finset.sum_range_succ, Nat.factorial])
+        (Real.sum_le_exp_of_nonneg (x := 7) (by norm_num) 5)
     refine (Real.rpow_le_exp_neg_mul hA.le hAt (by norm_num)).trans ?_
-    rw [Real.exp_neg]
-    exact (inv_anti₀ (by norm_num)
-      (le_exp_of_seven_le (t := 1 / 3 * (π * √51)) (by linarith))).trans_eq (one_div 150).symm
+    refine (Real.exp_le_exp.2 (by linarith : -(1 / 3 * (π * √51)) ≤ -7)).trans ?_
+    rw [Real.exp_neg, one_div]
+    exact inv_anti₀ (by norm_num) h
   have hA1 : A ≤ 1 := hAt.trans (Real.exp_le_one_iff.2 (by linarith))
   have hAcbrt : A ≤ A ^ (1 / 3 : ℝ) := by
     simpa using Real.rpow_le_rpow_of_exponent_ge hA hA1 (by norm_num : (1 / 3 : ℝ) ≤ 1)
@@ -134,11 +134,6 @@ theorem level_three_bound_lt_one {A : ℝ} (hA : 0 < A) (hAt : A ≤ Real.exp (-
 
 /-! ### The level-two and level-three estimates -/
 
-/-- `Im τ ≥ √N / 2` means `|q| ≤ e^{-π √N}`. -/
-private theorem norm_exp_le_of_sqrt_div_two_le {N : ℝ} {τ : ℂ} (hτ : √N / 2 ≤ τ.im) :
-    ‖cexp (2 * π * I * τ)‖ ≤ Real.exp (-(π * √N)) :=
-  (UpperHalfPlane.norm_exp_two_pi_I_mul_le hτ).trans_eq (by ring_nf)
-
 /-- The bound `|g_{(0, 1/2)}(τ)| ≤ 2 A^{1/12} exp (2A / (1 - A))`. -/
 private theorem norm_siegelFunction_zero_half_le {τ : ℂ} (hτ : 0 < τ.im) :
     ‖siegelFunction ![0, 1 / 2] τ‖ ≤ 2 * ‖cexp (2 * π * I * τ)‖ ^ (1 / 12 : ℝ) *
@@ -157,7 +152,8 @@ theorem norm_siegelFunction_zero_half_lt_one {τ : ℂ} (hτ : √31 / 2 ≤ τ.
   have hq : ‖cexp (2 * π * I * τ)‖ < 1 := UpperHalfPlane.norm_exp_two_pi_I_lt_one ⟨τ, hτ₀⟩
   have hA : 0 < ‖cexp (2 * π * I * τ)‖ := norm_pos_iff.2 (Complex.exp_ne_zero _)
   have h₀ := norm_siegelFunction_zero_half_le hτ₀
-  have hAt := norm_exp_le_of_sqrt_div_two_le hτ
+  have hAt : ‖cexp (2 * π * I * τ)‖ ≤ Real.exp (-(π * √31)) :=
+    (UpperHalfPlane.norm_exp_two_pi_I_mul_le hτ).trans_eq (by ring_nf)
   generalize ‖cexp (2 * π * I * τ)‖ = A at hq hA h₀ hAt
   refine h₀.trans_lt (lt_of_le_of_lt ?_ (level_two_bound_lt_one hA hAt))
   have h₁ : A ^ (1 / 12 : ℝ) ≤ A ^ (1 / 24 : ℝ) :=
@@ -179,7 +175,8 @@ theorem norm_siegelFunction_zero_half_mul_lt_one {τ : ℂ} (hτ : √31 / 2 ≤
     refine (norm_siegelFunction_le_of_le_half hr.le hτ₀).trans_eq ?_
     rw [hr, bernoulliFun_two]
     norm_num
-  have hAt := norm_exp_le_of_sqrt_div_two_le hτ
+  have hAt : ‖cexp (2 * π * I * τ)‖ ≤ Real.exp (-(π * √31)) :=
+    (UpperHalfPlane.norm_exp_two_pi_I_mul_le hτ).trans_eq (by ring_nf)
   generalize ‖cexp (2 * π * I * τ)‖ = A at hA h₀ h₁ hAt
   refine lt_of_le_of_lt ?_ (level_two_bound_lt_one hA hAt)
   have hpow : A ^ (1 / 12 : ℝ) * A ^ (-(1 / 24) : ℝ) = A ^ (1 / 24 : ℝ) := by
@@ -222,7 +219,8 @@ theorem norm_siegelFunction_zero_third_mul_mul_lt_one {τ : ℂ} (hτ : √51 / 
     ring
   have h₁ := norm_siegelFunction_le_of_third hr hτ₀
   have h₂ := norm_siegelFunction_le_of_third hr' hτ₀
-  have hAt := norm_exp_le_of_sqrt_div_two_le hτ
+  have hAt : ‖cexp (2 * π * I * τ)‖ ≤ Real.exp (-(π * √51)) :=
+    (UpperHalfPlane.norm_exp_two_pi_I_mul_le hτ).trans_eq (by ring_nf)
   generalize ‖cexp (2 * π * I * τ)‖ = A at hA h₀ h₁ h₂ hAt
   refine lt_of_le_of_lt ?_ (level_three_bound_lt_one hA hAt)
   have hpow : A ^ (1 / 12 : ℝ) * A ^ (-(1 / 36) : ℝ) * A ^ (-(1 / 36) : ℝ) =
