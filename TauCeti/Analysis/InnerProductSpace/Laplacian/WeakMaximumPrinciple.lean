@@ -33,6 +33,10 @@ actually uses is the **weak maximum principle**, which relaxes `0 < Δ f` to the
   function attains a maximum (resp. minimum) on the frontier.
 * `InnerProductSpace.HarmonicOnNhd.eq_zero_of_tendsto_cocompact`: a harmonic function on a
   nontrivial finite-dimensional space that tends to zero at infinity vanishes identically.
+* `TauCeti.nonpos_of_tendsto_cocompact_of_laplacian_nonneg`,
+  `TauCeti.eq_zero_of_tendsto_cocompact_of_mul_laplacian_nonneg`: the same Liouville argument for
+  a real `C²` function satisfying only the sign condition `0 ≤ f · Δ f`, as differences of
+  solutions of monotone semilinear equations do.
 -/
 
 public section
@@ -178,6 +182,46 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.eq_zero_of_tendsto_cocompact {F :
     (fun y hy => (abs_lt.1 (hfr hy)).1.le) hxB
   rw [Real.dist_eq, sub_zero]
   exact abs_le.2 ⟨hge, hle⟩
+
+/-- **A function vanishing at infinity that is subharmonic where positive is nonpositive.** If a
+`C²` function `f` on a nontrivial finite-dimensional real inner product space satisfies
+`0 ≤ Δ f x` wherever `0 < f x`, and `f x → 0` as `x → ∞`, then `f ≤ 0` everywhere. -/
+theorem nonpos_of_tendsto_cocompact_of_laplacian_nonneg {f : E → ℝ} (hf : ContDiff ℝ 2 f)
+    (hpos : ∀ x, 0 < f x → 0 ≤ Δ f x) (h : Filter.Tendsto f (Filter.cocompact E) (𝓝 0))
+    (x : E) : f x ≤ 0 := by
+  by_contra! hx
+  -- Apply the weak maximum principle on the compact superlevel set `{f ≥ f x / 2}`, where `f` is
+  -- positive and hence subharmonic, and on whose frontier `f = f x / 2`.
+  set K := {y | f x / 2 ≤ f y}
+  have hKc : IsClosed K := isClosed_le continuous_const hf.continuous
+  obtain ⟨t, ht, htK⟩ := Filter.mem_cocompact.1 (h (Iio_mem_nhds (half_pos hx)))
+  have hK : IsCompact K := ht.of_isClosed_subset hKc fun y hy => by
+    by_contra hyt
+    exact (htK hyt : f y < f x / 2).not_ge hy
+  have hle := le_of_laplacian_nonneg_le_frontier hK hf.continuous.continuousOn
+    (fun _ _ => hf.contDiffAt)
+    (fun y hy => hpos y ((half_pos hx).trans_le (interior_subset hy : f x / 2 ≤ f y)))
+    (fun y hy => (frontier_le_subset_eq continuous_const hf.continuous hy).ge)
+    (half_le_self hx.le : f x / 2 ≤ f x)
+  linarith
+
+/-- **Liouville theorem under the sign condition `f · Δ f ≥ 0`.** A `C²` function on a nontrivial
+finite-dimensional real inner product space which tends to zero at infinity and satisfies
+`0 ≤ f x * Δ f x` everywhere vanishes identically. The sign condition holds for solutions of
+`Δ f = c f` with `c ≥ 0`, and for differences of solutions of semilinear equations `Δ u = F(x, u)`
+with `F` nondecreasing in `u`. -/
+theorem eq_zero_of_tendsto_cocompact_of_mul_laplacian_nonneg {f : E → ℝ} (hf : ContDiff ℝ 2 f)
+    (hsign : ∀ x, 0 ≤ f x * Δ f x) (h : Filter.Tendsto f (Filter.cocompact E) (𝓝 0)) :
+    f = 0 := by
+  funext x
+  refine le_antisymm (nonpos_of_tendsto_cocompact_of_laplacian_nonneg hf
+    (fun y hy => (mul_nonneg_iff_of_pos_left hy).1 (hsign y)) h x) ?_
+  have hneg := nonpos_of_tendsto_cocompact_of_laplacian_nonneg (f := -f) hf.neg (fun y hy => by
+    rw [laplacian_neg, Pi.neg_apply]
+    have := hsign y
+    rw [Pi.neg_apply, neg_pos] at hy
+    nlinarith) (by rw [← neg_zero]; exact h.neg) x
+  simpa using hneg
 
 end Nontrivial
 
