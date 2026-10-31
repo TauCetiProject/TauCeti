@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.DerivedCategory.FullyFaithful
 public import Mathlib.Algebra.Homology.DerivedCategory.ShortExact
 public import TauCeti.Algebra.Homology.DerivedCategory.Perfect
 public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian.Frobenius
+public import TauCeti.CategoryTheory.Triangulated.TriangleIso
 public import TauCeti.CategoryTheory.Triangulated.VerdierLocalization
 
 /-!
@@ -65,22 +66,6 @@ namespace DerivedCategory
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 
-/-- A triangle transported along isomorphisms of its vertices is distinguished. -/
-private lemma distinguished_of_iso {T : Triangle (DerivedCategory C)} (hT : T ∈ distTriang _)
-    {A₁ A₂ A₃ : DerivedCategory C} (e₁ : T.obj₁ ≅ A₁) (e₂ : T.obj₂ ≅ A₂) (e₃ : T.obj₃ ≅ A₃) :
-    Triangle.mk (e₁.inv ≫ T.mor₁ ≫ e₂.hom) (e₂.inv ≫ T.mor₂ ≫ e₃.hom)
-      (e₃.inv ≫ T.mor₃ ≫ (shiftFunctor _ (1 : ℤ)).map e₁.hom) ∈ distTriang _ :=
-  isomorphic_distinguished _ hT _ (Triangle.isoMk _ _ e₁.symm e₂.symm e₃.symm (by simp) (by simp)
-    (by simp [← Functor.map_comp]))
-
-/-- A triangle transported along an isomorphism of its first vertex is distinguished. -/
-private lemma distinguished_of_iso₁ {T : Triangle (DerivedCategory C)} (hT : T ∈ distTriang _)
-    {A₁ : DerivedCategory C} (e₁ : T.obj₁ ≅ A₁) :
-    Triangle.mk (e₁.inv ≫ T.mor₁) T.mor₂ (T.mor₃ ≫ (shiftFunctor _ (1 : ℤ)).map e₁.hom) ∈
-      distTriang _ :=
-  isomorphic_distinguished _ hT _ (Triangle.isoMk _ _ e₁.symm (Iso.refl _) (Iso.refl _) (by simp)
-    (by simp) (by simp [← Functor.map_comp]))
-
 section Cycles
 
 variable {P : CochainComplex C ℤ} (hP : P.IsTotallyAcyclicProjective)
@@ -107,7 +92,7 @@ private noncomputable abbrev cyclesSESTriangle (m m' : ℤ) (hm : m + 1 = m') :
 
 private lemma cyclesSESTriangle_distinguished (m m' : ℤ) (hm : m + 1 = m') :
     cyclesSESTriangle hP m m' hm ∈ distTriang _ :=
-  distinguished_of_iso (triangleOfSES_distinguished
+  distinguished_mk_of_iso (triangleOfSES_distinguished
     ((shortExact_mk_cycles hP m m' hm).map_of_exact (CochainComplex.singleFunctor C m)))
     ((singleFunctorIsoCompQ C m).app (P.cycles m)).symm
     ((singleFunctorIsoCompQ C m).app (P.X m)).symm
@@ -137,7 +122,7 @@ private noncomputable abbrev cyclesTriangle (m m' : ℤ) (hm : m + 1 = m') :
 
 private lemma cyclesTriangle_distinguished (m m' : ℤ) (hm : m + 1 = m') :
     cyclesTriangle hP m m' hm ∈ distTriang _ :=
-  distinguished_of_iso₁ (inv_rot_of_distTriang _ (cyclesSESTriangle_distinguished hP m m' hm))
+  distinguished_mk_of_iso₁ (inv_rot_of_distTriang _ (cyclesSESTriangle_distinguished hP m m' hm))
     (cyclesShiftIso hP m m' hm)
 
 /-- The second morphism of `cyclesTriangle` is the inclusion of the cycles placed in degree `m`. -/
@@ -176,17 +161,16 @@ private lemma eq_zero_of_cyclesTriangle_mor₁_comp_eq_zero (m m' : ℤ) (hm : m
   rw [singleFunctor_hom_eq_zero_of_projective hm₀ k]
   exact comp_zero
 
-/-- **The first cycle step**: a morphism from `Z⁰` to `Y` in degree zero which vanishes on the
-first morphism of `cyclesTriangle` factors through the inclusion `Z⁰ ⟶ P⁰`. -/
-private lemma exists_eq_iCycles_comp_of_cyclesTriangle_mor₁_comp_eq_zero {Y : C}
-    (h : (singleFunctor C 0).obj (P.cycles 0) ⟶ (singleFunctor C 0).obj Y)
-    (hh : (cyclesTriangle hP 0 1 (zero_add 1)).mor₁ ≫ h = 0) :
-    ∃ k : P.X 0 ⟶ Y, h = (singleFunctor C 0).map (P.iCycles 0 ≫ k) := by
-  obtain ⟨k, rfl⟩ :=
-    Triangle.yoneda_exact₂ _ (cyclesTriangle_distinguished hP 0 1 (zero_add 1)) h hh
-  obtain ⟨k₀, rfl⟩ := (singleFunctor C 0).map_surjective k
-  exact ⟨k₀, (congrArg (· ≫ (singleFunctor C 0).map k₀)
-    (cyclesTriangle_mor₂ hP 0 1 (zero_add 1))).trans ((singleFunctor C 0).map_comp _ _).symm⟩
+/-- **The first cycle step**: a morphism from `Zᵐ` to `Y`, both placed in degree `m`, which
+vanishes on the first morphism of `cyclesTriangle` factors through the inclusion `Zᵐ ⟶ Pᵐ`. -/
+private lemma exists_eq_iCycles_comp_of_cyclesTriangle_mor₁_comp_eq_zero (m m' : ℤ)
+    (hm : m + 1 = m') {Y : C} (h : (singleFunctor C m).obj (P.cycles m) ⟶ (singleFunctor C m).obj Y)
+    (hh : (cyclesTriangle hP m m' hm).mor₁ ≫ h = 0) :
+    ∃ k : P.X m ⟶ Y, h = (singleFunctor C m).map (P.iCycles m ≫ k) := by
+  obtain ⟨k, rfl⟩ := Triangle.yoneda_exact₂ _ (cyclesTriangle_distinguished hP m m' hm) h hh
+  obtain ⟨k₀, rfl⟩ := (singleFunctor C m).map_surjective k
+  exact ⟨k₀, (congrArg (· ≫ (singleFunctor C m).map k₀)
+    (cyclesTriangle_mor₂ hP m m' hm)).trans ((singleFunctor C m).map_comp _ _).symm⟩
 
 end Cycles
 
@@ -203,6 +187,13 @@ variable {P : CochainComplex C ℤ} (hP : P.IsTotallyAcyclicProjective)
 private noncomputable def cyclesHom (k : ℕ) : cyclesObj P (k + 1) ⟶ cyclesObj P k :=
   ObjectProperty.homMk (cyclesTriangle hP k (k + 1 : ℕ) (Nat.cast_succ k).symm).mor₁
 
+/-- The image of `cyclesHom` in the derived category is the first morphism of `cyclesTriangle`;
+this holds by definition, since `cyclesHom` is built with `ObjectProperty.homMk`. -/
+private lemma ι_map_cyclesHom (k : ℕ) :
+    DerivedCategory.Bounded.ι.map (cyclesHom hP k) =
+      (cyclesTriangle hP k (k + 1 : ℕ) (Nat.cast_succ k).symm).mor₁ :=
+  rfl
+
 /-- The composite `δₖ : Zᵏ[-k] ⟶ Z⁰` of the morphisms `cyclesHom`. -/
 private noncomputable def cyclesδ : (k : ℕ) → cyclesObj P k ⟶ cyclesObj P 0
   | 0 => 𝟙 _
@@ -215,7 +206,7 @@ private lemma trW_cyclesHom (k : ℕ) :
   have := hP.projective k
   exact TauCeti.DerivedCategory.Bounded.perfect_trW_of_distinguished
     (Z := (TauCeti.DerivedCategory.Bounded.singleFunctor C k).obj (P.X k)) (cyclesHom hP k) _ _
-    (cyclesTriangle_distinguished hP k _ (Nat.cast_succ k).symm)
+    (by rw [ι_map_cyclesHom]; exact cyclesTriangle_distinguished hP k _ (Nat.cast_succ k).symm)
     (TauCeti.DerivedCategory.Bounded.perfect_singleFunctor_obj C k inferInstance)
 
 private lemma trW_cyclesδ : ∀ k, (TauCeti.DerivedCategory.Bounded.perfect C).trW (cyclesδ hP k)
@@ -244,7 +235,9 @@ private lemma exists_eq_cyclesδ_comp {Y : C} : ∀ (k : ℕ)
     obtain ⟨φ, hφ⟩ := exists_eq_cyclesδ_comp k (ObjectProperty.homMk h')
     refine ⟨φ, ?_⟩
     rw [cyclesδ, Category.assoc, ← hφ]
-    exact ObjectProperty.hom_ext _ hh'
+    apply DerivedCategory.Bounded.ι.map_injective
+    rw [Functor.map_comp, ι_map_cyclesHom, hh']
+    rfl
 
 /-- A morphism from `Z⁰` to an object of `C` in degree zero which is killed by some `δₖ` factors
 through the inclusion `Z⁰ ⟶ P⁰`. -/
@@ -257,13 +250,17 @@ private lemma exists_eq_iCycles_comp_of_cyclesδ_comp_eq_zero {Y : C} : ∀ (k :
       rw [hf, Functor.map_zero, comp_zero, Functor.map_zero]⟩
   | 1, f, hf => by
     have h := congrArg DerivedCategory.Bounded.ι.map hf
-    rw [cyclesδ, cyclesδ, Category.comp_id, Functor.map_comp, Functor.map_zero] at h
-    exact exists_eq_iCycles_comp_of_cyclesTriangle_mor₁_comp_eq_zero hP _ h
+    rw [cyclesδ, cyclesδ, Category.comp_id, Functor.map_comp, Functor.map_zero,
+      ι_map_cyclesHom] at h
+    -- `Z⁰` sits in degree `((0 : ℕ) : ℤ)` and `Y` in degree `0`; these agree since
+    -- `Nat.cast_zero` holds by `rfl`.
+    exact exists_eq_iCycles_comp_of_cyclesTriangle_mor₁_comp_eq_zero hP ((0 : ℕ) : ℤ)
+      ((0 + 1 : ℕ) : ℤ) (Nat.cast_succ 0).symm _ h
   | k + 2, f, hf => by
     refine exists_eq_iCycles_comp_of_cyclesδ_comp_eq_zero (k + 1) f ?_
     rw [cyclesδ, Category.assoc] at hf
     have h := congrArg DerivedCategory.Bounded.ι.map hf
-    rw [Functor.map_comp, Functor.map_zero] at h
+    rw [Functor.map_comp, Functor.map_zero, ι_map_cyclesHom] at h
     exact DerivedCategory.Bounded.ι.map_injective (by
       rw [Functor.map_zero]
       exact eq_zero_of_cyclesTriangle_mor₁_comp_eq_zero hP (k + 1 : ℕ) (k + 2 : ℕ)
