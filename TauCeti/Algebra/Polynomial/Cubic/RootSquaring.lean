@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.Polynomial.Tschirnhaus
 import Mathlib.Algebra.CubicDiscriminant
-import Mathlib.Algebra.MvPolynomial.Equiv
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.RingTheory.Polynomial.Basic
 
