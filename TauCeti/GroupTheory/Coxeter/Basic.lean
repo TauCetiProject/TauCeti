@@ -114,6 +114,6 @@ theorem commute_simple_of_eq_two {i i' : B} (h : M i i' = 2) :
     Commute (cs.simple i) (cs.simple i') := by
   have h2 := cs.simple_mul_simple_pow i i'
   rw [h, pow_two, ← eq_inv_iff_mul_eq_one, mul_inv_rev, inv_simple, inv_simple] at h2
-  exact h2
+  exact (commute_iff_eq _ _).mpr h2
 
 end CoxeterSystem
