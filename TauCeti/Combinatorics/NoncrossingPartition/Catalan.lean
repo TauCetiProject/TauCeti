@@ -333,25 +333,6 @@ private theorem part_subset_filter_between (hP : P.IsNoncrossing) (hm : ∀ y �
   exact (hm z hzs).lt_of_ne fun h => hzm (h ▸ P.mem_part_self.2 hms)
 
 /-- Let `x` be the last position of the part of the first position `m` of a noncrossing partition.
-Then the part of `m` is its part in the restriction to the positions before `x`, with `x`
-adjoined. -/
-private theorem part_eq_insert_part_restrict (hm : ∀ y ∈ s, m ≤ y) (hxm : x ∈ P.part m)
-    (hmax : ∀ y ∈ P.part m, y ≤ x) :
-    P.part m = insert x ((P.restrict (filter_subset (· < x) s)).part m) := by
-  ext y
-  rw [mem_insert]
-  by_cases hmx : m < x
-  · have hmt : m ∈ {y ∈ s | y < x} := mem_filter.2 ⟨P.part_nonempty.1 ⟨x, hxm⟩, hmx⟩
-    rw [Finpartition.part_restrict _ _ hmt, mem_inter, mem_filter]
-    refine ⟨fun hy => (hmax y hy).eq_or_lt.imp id fun hyx => ⟨hy, P.part_subset m hy, hyx⟩, ?_⟩
-    rintro (rfl | ⟨hy, -⟩)
-    exacts [hxm, hy]
-  · have hmt : m ∉ {y ∈ s | y < x} := fun h => hmx (mem_filter.1 h).2
-    rw [(P.restrict _).part_eq_empty.2 hmt, or_iff_left (notMem_empty y)]
-    refine ⟨fun hy => le_antisymm (hmax y hy) ?_, by rintro rfl; exact hxm⟩
-    exact (not_lt.1 hmx).trans (hm y (P.part_subset m hy))
-
-/-- Let `x` be the last position of the part of the first position `m` of a noncrossing partition.
 Then its parts other than the part of `m` are those of its restriction to the positions before `x`
 and those of its restriction to the positions after `x`. -/
 private theorem filter_parts_eq_union (hP : P.IsNoncrossing) (hm : ∀ y ∈ s, m ≤ y)
@@ -428,8 +409,8 @@ theorem sum_mul_prod_eq_sum_mul_sum {M : Type*} [CommSemiring M] (hs : s.Nonempt
   have hxm : x ∈ P.1.part (s.min' hs) := hP ▸ lastOfFirstPart_mem hs P
   have hmax (y) (hy : y ∈ P.1.part (s.min' hs)) : y ≤ x := hP ▸ le_lastOfFirstPart hs P hy
   simp only [coe_fiberEquiv_fst, coe_fiberEquiv_snd]
-  rw [part_eq_insert_part_restrict hm hxm hmax, filter_parts_eq_union P.2 hm hxm hmax, prod_union,
-    mul_assoc]
+  rw [P.1.part_eq_insert_part_restrict (fun y hy => hm y (P.1.part_subset _ hy)) hxm hmax,
+    filter_parts_eq_union P.2 hm hxm hmax, prod_union, mul_assoc]
   -- The parts before `x` and the parts after `x` are disjoint, as no part is empty.
   refine disjoint_left.2 fun B hB hB' => ?_
   obtain ⟨a, ha⟩ := (P.1.restrict _).nonempty_of_mem_parts (mem_filter.1 hB).1

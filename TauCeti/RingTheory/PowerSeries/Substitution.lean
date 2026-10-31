@@ -48,8 +48,9 @@ with `h ^ 2 = 0` substitutes by the first-order Taylor formula `f (X + h) = f + 
 right-hand side is multiplicative in `f` by the Leibniz rule.
 
 The coefficients of `f (X * M)` satisfy a shift recurrence: the coefficient of degree `n + 1` is
-the coefficient of degree `n` of `M` times the shift `(f - f(0)) / X` substituted at `X * M`. This
-proves functional equations of generating functions such as `M = C (X * M)` coefficientwise.
+`[X^n](M * g (X * M))`, the coefficient of degree `n` of the product of `M` with `g (X * M)`, where
+`g = (f - f(0)) / X` is the shift of `f`. This proves functional equations of generating functions
+such as `M = C (X * M)` coefficientwise.
 
 This file also records that the substitution `X ↦ (1 + X) ^ u - 1`, for a binomial series
 `(1 + X) ^ u`, is legitimate: it is the change of variable relating the power-series coordinates
@@ -70,8 +71,8 @@ of a completed group algebra attached to two topological generators.
   has trivial kernel.
 * `PowerSeries.toNat_order_ne_zero`: such a `φ` has positive integer order.
 * `PowerSeries.coeff_one_subst`: linear coefficients multiply under substitution.
-* `PowerSeries.coeff_succ_subst_X_mul`: the `(n + 1)`-st coefficient of `f (X * M)` is the
-  `n`-th coefficient of `M` times the shift of `f` substituted at `X * M`.
+* `PowerSeries.coeff_succ_subst_X_mul`: the `(n + 1)`-st coefficient of `f (X * M)` is
+  `[X^n](M * g (X * M))`, where `g` is the shift of `f`.
 * `PowerSeries.X_pow_dvd_subst`: substitution preserves divisibility by `X ^ n`.
 * `PowerSeries.X_pow_dvd_subst_sub_subst`: substitution respects congruence modulo `X ^ n` of
   the substituted series.

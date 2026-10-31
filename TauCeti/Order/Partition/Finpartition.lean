@@ -35,7 +35,8 @@ a point in a product over the parts, the parts of a restriction, the
 monotonicity of `Finpartition.part` under refinement and the characterization of refinement by
 the parts through each point, the parts through a point of the finest and the coarsest partitions,
 the count of the parts by points singled out in each part (in a linear order, the first or the last
-point of each part), the coarse parent
+point of each part), the part of a point in a linear order as its part before the last point of that
+part with the last point adjoined, the coarse parent
 `Finpartition.refinementParent` of a part of a finer partition, together with decomposition and
 summation formulas for the fine parts below a coarse part and for sums over points of functions of
 the fine and coarse parts through them, the fact that a set with at most two elements has no finite
@@ -558,6 +559,24 @@ theorem card_filter_forall_mem_part_ge : #{x ∈ s | ∀ y ∈ P.part x, x ≤ y
   refine ⟨B.min' hne, ⟨B.min'_mem hne, fun y hy => ?_⟩, fun x ⟨hxB, hx⟩ => ?_⟩
   · exact B.min'_le y (P.part_eq_of_mem hB (B.min'_mem hne) ▸ hy)
   · exact le_antisymm (hx _ (P.part_eq_of_mem hB hxB ▸ B.min'_mem hne)) (B.min'_le x hxB)
+
+/-- If `m` is the first and `x` the last point of the part of `m`, then the part of `m` is its part
+in the restriction to the points before `x`, with `x` adjoined. -/
+theorem part_eq_insert_part_restrict {m x : α} (hm : ∀ y ∈ P.part m, m ≤ y) (hxm : x ∈ P.part m)
+    (hmax : ∀ y ∈ P.part m, y ≤ x) :
+    P.part m = insert x ((P.restrict (filter_subset (· < x) s)).part m) := by
+  ext y
+  rw [mem_insert]
+  by_cases hmx : m < x
+  · have hmt : m ∈ {y ∈ s | y < x} := mem_filter.2 ⟨P.part_nonempty.1 ⟨x, hxm⟩, hmx⟩
+    rw [part_restrict _ _ hmt, mem_inter, mem_filter]
+    refine ⟨fun hy => (hmax y hy).eq_or_lt.imp id fun hyx => ⟨hy, P.part_subset m hy, hyx⟩, ?_⟩
+    rintro (rfl | ⟨hy, -⟩)
+    exacts [hxm, hy]
+  · have hmt : m ∉ {y ∈ s | y < x} := fun h => hmx (mem_filter.1 h).2
+    rw [(P.restrict _).part_eq_empty.2 hmt, or_iff_left (notMem_empty y)]
+    refine ⟨fun hy => le_antisymm (hmax y hy) ?_, by rintro rfl; exact hxm⟩
+    exact (not_lt.1 hmx).trans (hm y hy)
 
 end LinearOrder
 
