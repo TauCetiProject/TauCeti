@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.HoffmanWielandt
+public import TauCeti.Analysis.InnerProductSpace.HoffmanWielandt.Basic
+public import TauCeti.Analysis.InnerProductSpace.HoffmanWielandt.Singular
 public import TauCeti.Analysis.Matrix.SpectralMeasure
 
 /-!
