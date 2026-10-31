@@ -21,7 +21,7 @@ submonoid `S`:
 * `LocalizedModule.bijective_map_lsmul`: multiplication by an element of `S` becomes bijective
   after localizing at `S`.
 * `LocalizedModule.equivLocalization`: the localization of `R` itself as a module is
-  `Localization S`.
+  `Localization S`, sending `mk r s` to `Localization.mk r s`.
 * `LinearMap.exists_comp_eq_lsmul_of_comp_localizedModule_map_eq_id`: if `M` is finitely
   presented and `N` is finitely generated, a left inverse of the localization `iₛ` of
   `i : N → M` descends to a map `φ : M → N` with `φ ∘ i` multiplication by some element of `S`.
@@ -61,6 +61,22 @@ theorem bijective_map_lsmul {s : R} (hs : s ∈ S) :
 noncomputable def equivLocalization : LocalizedModule S R ≃ₗ[Localization S] Localization S :=
   (IsLocalizedModule.iso S (Algebra.linearMap R (Localization S))).extendScalarsOfIsLocalization
     S _
+
+/-- `equivLocalization` sends the fraction `r / s` to the same fraction in `Localization S`. -/
+@[simp]
+theorem equivLocalization_mk (r : R) (s : S) :
+    equivLocalization S (mk r s) = Localization.mk r s := by
+  rw [equivLocalization, LinearEquiv.extendScalarsOfIsLocalization_apply,
+    IsLocalizedModule.iso_apply_mk, Module.End.algebraMap_isUnit_inv_apply_eq_iff,
+    Algebra.linearMap_apply, Localization.mk_eq_mk', IsLocalization.smul_mk',
+    IsLocalization.mk'_mul_cancel_left]
+
+/-- The inverse of `equivLocalization` sends the fraction `r / s` to the same fraction in
+`LocalizedModule S R`. -/
+@[simp]
+theorem equivLocalization_symm_mk (r : R) (s : S) :
+    (equivLocalization S).symm (Localization.mk r s) = mk r s :=
+  (equivLocalization S).symm_apply_eq.mpr (equivLocalization_mk S r s).symm
 
 end LocalizedModule
 
