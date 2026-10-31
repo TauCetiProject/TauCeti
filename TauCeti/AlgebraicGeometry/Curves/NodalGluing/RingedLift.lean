@@ -19,10 +19,9 @@ of the holomorphic sheafed spaces of the glued curves (`Iso.sheafedSpaceIso`). T
 the converse: an isomorphism of these sheafed spaces whose section maps fix the constants comes
 from a unique analytic nodal isomorphism. Descent and lifting are mutually inverse, so actual
 nodal isomorphisms are exactly the `ℂ`-linear isomorphisms of the ringed glued curves.
+The section maps of such an isomorphism are evaluation at image points
+(`quotientSheafSectionsEquiv_app_apply`, in the ringed descent file).
 
-* `quotientSheafSectionsEquiv_app_apply`: a morphism with local stalk maps whose section maps
-  fix the constants acts on sections by evaluation at the image points. The stalks are local
-  rings, and the kernel of evaluation at a point, a surjection onto `ℂ`, is their maximal ideal.
 * `Iso.ofSheafedSpaceIso` constructs the nodal isomorphism. Nodes are preserved because they are
   recognized by their stalks (`mem_nodeSet_iff_of_isIso_stalkMap`), so the underlying
   homeomorphism lifts to the normalizations (`liftHomeomorph`). A chart coordinate at an image
@@ -58,96 +57,6 @@ open scoped Manifold ContDiff
 namespace TauCeti.NodalGluing
 
 open holomorphicStructureSheaf
-
-section Model
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [TopologicalSpace H]
-  {I : ModelWithCorners ℂ E H}
-  {ι : Type} {Flag : Type*} {X : ι → Type} [∀ i, TopologicalSpace (X i)]
-  [∀ i, ChartedSpace H (X i)] {d : FlagPairData ι Flag X}
-  {ι' : Type} {Flag' : Type*} {X' : ι' → Type} [∀ i, TopologicalSpace (X' i)]
-  [∀ i, ChartedSpace H (X' i)] {d' : FlagPairData ι' Flag' X'}
-
-/-- Evaluating a quotient germ through a branch over its base point evaluates the section. -/
-private theorem eval_quotientStalkBranch_germ (z : GluedCurve d) (x : Σ i, X i)
-    (hx : Quotient.mk _ x = z) (V : Opens (GluedCurve d)) (hz : z ∈ V)
-    (s : (sheafedSpace I d).presheaf.obj (op V)) :
-    eval I (Σ i, X i) x (quotientStalkBranch I (gluedRelSetoid d) z x hx
-      (((sheafedSpace I d).presheaf.germ V z hz).hom s)) =
-      (quotientSheafSectionsEquiv I _ V s).1
-        ⟨x, by rw [Opens.mem_map, TopCat.quotientMk_apply, hx]; exact hz⟩ :=
-  (congrArg _ (quotientStalkBranch_germ I _ z x hx V hz s)).trans (eval_germ _ _ _ _ _ _)
-
-/-- Evaluation of a quotient germ through a branch over its base point is surjective. -/
-private theorem eval_comp_quotientStalkBranch_surjective (z : GluedCurve d) (x : Σ i, X i)
-    (hx : Quotient.mk _ x = z) :
-    Function.Surjective ((eval I (Σ i, X i) x).comp
-      (quotientStalkBranch I (gluedRelSetoid d) z x hx)) := fun c ↦
-  ⟨((sheafedSpace I d).presheaf.germ ⊤ z (Set.mem_univ z)).hom (algebraMap ℂ _ c),
-    (eval_quotientStalkBranch_germ z x hx ⊤ _ _).trans
-      (quotientSheafSectionsEquiv_algebraMap I _ ⊤ c _)⟩
-
-/-- **Section maps of `ℂ`-linear local morphisms are pullbacks.** Let `f` be a morphism of
-nodal sheafed spaces whose stalk maps are local and whose section maps fix the constants. Then
-the section `f` assigns to `g` takes, at a lift of a point `z`, the value of `g` at a lift of the
-image of `z`. Here only the source curve needs finitely many Hausdorff-separated flags, so that
-its stalks are local rings. -/
-theorem quotientSheafSectionsEquiv_app_apply [∀ i, T2Space (X i)] [Finite Flag]
-    (f : sheafedSpace I d ⟶ sheafedSpace I d') [∀ z, IsLocalHom (f.hom.stalkMap z).hom]
-    (hf : ∀ (U : Opens (GluedCurve d')) (c : ℂ), (f.hom.c.app (op U)).hom (algebraMap ℂ _ c) =
-      algebraMap ℂ ((sheafedSpace I d).presheaf.obj (op ((Opens.map f.hom.base).obj U))) c)
-    (U : Opens (GluedCurve d')) (g : (sheafedSpace I d').presheaf.obj (op U))
-    (x : (Opens.map (TopCat.quotientMk (gluedRelSetoid d))).obj ((Opens.map f.hom.base).obj U))
-    (y : Σ i, X' i) (hy : Quotient.mk _ y = f.hom.base (Quotient.mk _ x.1)) :
-    (quotientSheafSectionsEquiv I _ _ ((f.hom.c.app (op U)).hom g)).1 x =
-      (quotientSheafSectionsEquiv I _ U g).1
-        ⟨y, by rw [Opens.mem_map, TopCat.quotientMk_apply, hy]; exact x.2⟩ := by
-  set z : GluedCurve d := Quotient.mk (gluedRelSetoid d) x.1 with hzdef
-  have hz : f.hom.base z ∈ U := x.2
-  set c := (quotientSheafSectionsEquiv I _ U g).1
-    ⟨y, by rw [Opens.mem_map, TopCat.quotientMk_apply, hy]; exact x.2⟩
-  -- The germ of `g - c` at the image point vanishes there, so it is not a unit.
-  set γ := ((sheafedSpace I d').presheaf.germ U (f.hom.base z) hz).hom (g - algebraMap ℂ _ c)
-  have hγ : ¬ IsUnit γ := fun hu ↦ (hu.map ((eval I (Σ i, X' i) y).comp
-    (quotientStalkBranch I (gluedRelSetoid d') _ y hy))).ne_zero <|
-      (eval_quotientStalkBranch_germ _ y hy U hz _).trans (by
-        rw [map_sub, AddSubgroupClass.coe_sub, holomorphicStructureSheaf.sub_apply,
-          quotientSheafSectionsEquiv_algebraMap, sub_self])
-  -- Its image under the local stalk map lies in the maximal ideal, which is the kernel of
-  -- evaluation at `x`.
-  have hmem : (f.hom.stalkMap z).hom γ ∈ IsLocalRing.maximalIdeal _ :=
-    fun hu ↦ hγ (isUnit_of_map_unit (f.hom.stalkMap z).hom _ hu)
-  rw [← IsLocalRing.ker_eq_maximalIdeal _
-    (eval_comp_quotientStalkBranch_surjective z x.1 hzdef.symm), RingHom.mem_ker] at hmem
-  refine sub_eq_zero.mp (Eq.trans ?_ hmem)
-  refine Eq.symm ((congrArg (eval I (Σ i, X i) x.1 ∘ quotientStalkBranch I _ z x.1 _)
-    (PresheafedSpace.stalkMap_germ_apply f.hom U z hz _)).trans
-      ((eval_quotientStalkBranch_germ z x.1 hzdef.symm _ hz _).trans ?_))
-  rw [map_sub, hf U c, map_sub, AddSubgroupClass.coe_sub, holomorphicStructureSheaf.sub_apply,
-    quotientSheafSectionsEquiv_algebraMap]
-
-namespace Iso
-
-/-- The descended section maps of a nodal isomorphism fix the constants. -/
-theorem sheafedSpaceHom_app_algebraMap (e : Iso I ω d d') (U : Opens (GluedCurve d'))
-    (c : ℂ) : (e.sheafedSpaceHom.hom.c.app (op U)).hom (algebraMap ℂ _ c) =
-      algebraMap ℂ ((sheafedSpace I d).presheaf.obj
-        (op ((Opens.map e.sheafedSpaceHom.hom.base).obj U))) c :=
-  quotientSheaf_ext _ _ fun x ↦ (pullbackSection_apply e U _ x).trans
-    ((quotientSheafSectionsEquiv_algebraMap _ _ U c _).trans
-      (quotientSheafSectionsEquiv_algebraMap _ _ _ c x).symm)
-
-/-- The descended isomorphism of nodal sheafed spaces fixes the constants. -/
-theorem sheafedSpaceIso_hom_app_algebraMap (e : Iso I ω d d') (U : Opens (GluedCurve d'))
-    (c : ℂ) : (e.sheafedSpaceIso.hom.hom.c.app (op U)).hom (algebraMap ℂ _ c) =
-      algebraMap ℂ ((sheafedSpace I d).presheaf.obj
-        (op ((Opens.map e.sheafedSpaceIso.hom.hom.base).obj U))) c := by
-  rw [sheafedSpaceIso_hom]
-  exact e.sheafedSpaceHom_app_algebraMap U c
-
-end Iso
-
-end Model
 
 variable {ι Flag : Type} {X : ι → Type} [∀ i, TopologicalSpace (X i)]
   [∀ i, ChartedSpace ℂ (X i)] [∀ i, IsManifold 𝓘(ℂ) 1 (X i)]
