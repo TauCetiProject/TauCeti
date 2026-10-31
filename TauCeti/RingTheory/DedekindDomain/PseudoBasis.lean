@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Basic
+public import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Pseudo-bases of lattices over a Dedekind domain
@@ -25,8 +26,6 @@ onto the product of the ideals `J i`.
 * `Submodule.exists_apply_eq_one_forall_smul_mem`: an `R`-submodule `Λ` splits off its image
   `I` under a `K`-linear functional `f` when `I` is finitely generated and nonzero: some `v`
   has `f v = 1` and `x • v ∈ Λ` for all `x ∈ I`.
-* `Submodule.span_range_eq_span_of_forall_mem_iff`: if `Λ = ⊕ i, J i • y i` with every `J i`
-  nonzero, then `y` and `Λ` span the same `K`-subspace.
 * `Submodule.exists_pseudoBasis`: a finitely generated `R`-submodule spanning `V` has a
   pseudo-basis indexed by any finite type of cardinality `finrank K V`.
 
@@ -83,33 +82,6 @@ theorem exists_apply_eq_one_forall_smul_mem (Λ : Submodule R V) (f : V →ₗ[K
     exact Λ.smul_mem r hl
   obtain ⟨v, hv, hv1⟩ := Submodule.mem_map.1 (hle (hmul ▸ Submodule.mem_one.2 ⟨1, map_one _⟩))
   exact ⟨v, hv1, hv⟩
-
-omit [IsDedekindDomain R] [IsFractionRing R K] in
-/-- If `Λ = ⊕ i, J i • y i` with every `J i` nonzero, then `y` spans the same `K`-subspace as
-`Λ`. -/
-theorem span_range_eq_span_of_forall_mem_iff [FaithfulSMul R K] {ι : Type*} [Fintype ι]
-    {Λ : Submodule R V} {y : ι → V} {J : ι → Ideal R} (hJ : ∀ i, J i ≠ ⊥)
-    (hmem : ∀ x, x ∈ Λ ↔ ∃ c : ι → R, (∀ i, c i ∈ J i) ∧ ∑ i, c i • y i = x) :
-    span K (Set.range y) = span K (Λ : Set V) := by
-  classical
-  refine le_antisymm (span_le.2 <| Set.range_subset_iff.2 fun i ↦ ?_) (span_le.2 fun x hx ↦ ?_)
-  · obtain ⟨b, hb, hb0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (hJ i)
-    have hsum : ∑ k, (Pi.single i b : ι → R) k • y k = b • y i := by
-      rw [Fintype.sum_eq_single i fun k hk ↦ by simp [hk]]
-      simp
-    have hbΛ : b • y i ∈ Λ := hsum ▸ (hmem _).2 ⟨_, fun k ↦ by
-      by_cases hk : k = i
-      · subst hk
-        simpa using hb
-      · simp [hk], rfl⟩
-    have hb' : algebraMap R K b ≠ 0 :=
-      (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective R K)).2 hb0
-    rw [← inv_smul_smul₀ hb' (y i), algebraMap_smul]
-    exact smul_mem _ _ (subset_span hbΛ)
-  · obtain ⟨c, -, rfl⟩ := (hmem x).1 hx
-    exact sum_mem fun i _ ↦ by
-      rw [← algebraMap_smul K]
-      exact smul_mem _ _ (subset_span ⟨i, rfl⟩)
 
 /-- The induction behind `Submodule.exists_pseudoBasis`: a finitely generated `R`-submodule of a
 finite-dimensional `K`-vector space is `⊕ i, J i • y i` for a `K`-linearly independent family `y`
