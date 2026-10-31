@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.CoweightLattice
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Affine
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Affine.Basic
 
 /-!
 # The extended affine Weyl group

@@ -36,6 +36,8 @@ translates of `f` times a `1`-periodic remainder analytic at `∞`.
   nonzero form is nonzero.
 * `TauCeti.ModularForm.qExpansion_one_norm_order_eq`: the `q`-expansion order of the norm at
   `∞` splits as the order of `f` plus the order of the remainder.
+* `TauCeti.ModularForm.qExpansion_order_le_qExpansion_norm_order`: the order of the
+  `q`-expansion of `f` at `∞` is bounded by that of its norm.
 * `TauCeti.ModularForm.qExpansion_one_normRest_ne_zero`: the remainder's `q`-expansion is a
   nonzero power series.
 
@@ -49,8 +51,9 @@ needs `f` to be a modular form.
   [Mathlib PR #39088](https://github.com/leanprover-community/mathlib4/pull/39088)
   (Chris Birkbeck) — the upstream drafts this file ports onto the current Mathlib pin.
 * [Mathlib PR #39000](https://github.com/leanprover-community/mathlib4/pull/39000)
-  (Chris Birkbeck) — the source of `qExpansion_one_norm_order_eq`, whose proof moved here
-  from the Sturm-bound development.
+  (Chris Birkbeck) — the source of `qExpansion_one_norm_order_eq` and
+  `qExpansion_order_le_qExpansion_norm_order`, whose proofs moved here from the
+  Sturm-bound development.
 -/
 
 public noncomputable section
@@ -354,7 +357,8 @@ public lemma normRest_ne_zero (hf : (⇑f : ℍ → ℂ) ≠ 0) : normRest f ≠
 No discreteness hypothesis is needed here. Discreteness is what converts `𝒢.strictWidthInfty`
 into `Subgroup.integerCuspWidth 𝒢` — see
 `Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty` — and that conversion
-belongs to the Sturm-bound inequality derived from this identity, not to the identity.
+belongs to the order comparison `qExpansion_order_le_qExpansion_norm_order` derived from this
+identity, not to the identity itself.
 
 Not `@[simp]`: `ModularForm.coe_norm` is itself an unconditional simp lemma, so the
 left-hand side is not in simp normal form — it simplifies on to the raw coset product. -/
@@ -381,6 +385,25 @@ public lemma qExpansion_one_norm_order_eq :
       (isBoundedAtImInfty_galoisProd hf_bdd)) (analyticAt_cuspFunction_normRest f)
   rw [h_qexp, PowerSeries.order_mul,
     qExpansion_one_galoisProd_order_eq hn_pos hf_n_per hf_bdd (ModularFormClass.holo f)]
+
+/-- The order of the `q`-expansion of `f` at the cusp `∞` (width `𝒢.strictWidthInfty`) is at
+most the order of the `q`-expansion of its norm down to `𝒮ℒ` at `∞`: enough vanishing of `f`
+at `∞` propagates to the norm. -/
+public lemma qExpansion_order_le_qExpansion_norm_order [DiscreteTopology 𝒢.strictPeriods] :
+    (qExpansion 𝒢.strictWidthInfty f).order ≤
+      (qExpansion 1 (_root_.ModularForm.norm 𝒮ℒ f)).order := by
+  obtain ⟨m', hm'_pos, hnRw⟩ :=
+    Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty (𝒢 := 𝒢)
+  have hf_w_per : Function.Periodic (⇑f ∘ ofComplex) 𝒢.strictWidthInfty :=
+    SlashInvariantFormClass.periodic_comp_ofComplex f 𝒢.strictWidthInfty_mem_strictPeriods
+  rw [qExpansion_one_norm_order_eq f]
+  refine le_trans ?_ le_self_add
+  rw [hnRw]
+  exact qExpansion_order_le_qExpansion_nat_mul_order
+    Subgroup.strictWidthInfty_pos_of_finiteRelIndex
+    hm'_pos hf_w_per (OnePoint.isBoundedAt_infty_iff.mp
+      (ModularFormClass.bdd_at_cusps f
+        Subgroup.isCusp_infty_of_finiteRelIndex)) (ModularFormClass.holo f)
 
 /-- The `q`-expansion of `normRest f` is a nonzero power series whenever `f` is nonzero.
 

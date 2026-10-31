@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.UnitWeight
+public import TauCeti.RingTheory.MvPowerSeries.Rescale
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
 /-!
@@ -21,6 +23,13 @@ The comparison below is an algebra equivalence continuous in both directions. Ov
 base it identifies the completed Huber Tate algebra with the Banach algebra of restricted series.
 This allows normed-ring results, including Weierstrass division, to be transported to the completed
 topological algebra without changing its topology.
+
+More generally, let each weight set be a single multiplicative unit `uᵢ`
+(`TauCeti.IsNormMulUnit`), and let `cᵢ = ‖uᵢ‖⁻¹`. The Huber condition `aᵥ ∈ uᵛ · U` says that
+`u⁻ᵛ aᵥ ∈ U`, and `‖u⁻ᵛ aᵥ‖ = ‖aᵥ‖ cᵛ`
+(`MvPowerSeries.norm_coeff_rescale_units_inv`). So the Huber ring with the weights `{uᵢ}` is the
+Gauss-normed ring at the radii `c`, again with the same topology. Radii that are not inverse
+norms of multiplicative units of `R` are not reached by such singleton weights.
 
 Over a nontrivially normed field the Gauss-normed algebra is itself a Tate ring, at any positive
 polyradii: a constant of norm strictly between `0` and `1` is a pseudouniformiser.
@@ -38,6 +47,12 @@ type or norm is introduced here.
 * `TauCeti.Huber.restrictedMvPowerSeriesGaussAlgEquiv` and
   `TauCeti.Huber.restrictedMvPowerSeriesCompletionGaussAlgEquiv`: the same comparisons as
   coefficient-algebra equivalences.
+* `TauCeti.Huber.isWeightedRestricted_units_iff_isRestricted`: for weights given by
+  multiplicative units `uᵢ` with `‖uᵢ‖ * cᵢ = 1`, weighted restrictedness is restrictedness at
+  the radii `c`.
+* `TauCeti.Huber.weightedRestrictedGaussAlgEquiv`: the identity algebra equivalence between the
+  Huber ring with these weights and the Gauss-normed ring at the radii `c`, continuous in both
+  directions.
 * `TauCeti.Huber.IsTateRing.isRestricted_subring`: over a nontrivially normed field with an
   ultrametric norm, the Gauss-normed algebra of restricted series is a Tate ring.
 
@@ -245,6 +260,113 @@ theorem continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm :
     continuous_restrictedMvPowerSeriesGaussEquiv_symm
 
 end Complete
+
+section UnitWeight
+
+/-! ### Weights given by multiplicative units
+
+Let each `u i` be a multiplicative unit (`TauCeti.IsNormMulUnit`) and let `‖u i‖ * c i = 1`.
+The Huber ring with the weights `Tᵢ = {u i}` and the Gauss-normed ring at the radii `c` then
+have the same underlying power series and the same topology. -/
+
+variable (u : Fin n → Rˣ) (hu : ∀ i, IsNormMulUnit (u i : R)) {c : Fin n → ℝ}
+  (hc : ∀ i, ‖(u i : R)‖ * c i = 1)
+
+omit [NonarchimedeanRing R] in
+include hu hc in
+/-- **Unit weights encode radii.** A series is restricted for the weights `Tᵢ = {u i}` exactly
+when it is restricted at the radii `c`. -/
+theorem isWeightedRestricted_units_iff_isRestricted {f : MvPowerSeries (Fin n) R} :
+    IsWeightedRestricted (fun i ↦ ({(u i : R)} : Set R)) f ↔ MvPowerSeries.IsRestricted c f := by
+  rw [isWeightedRestricted_units_iff, isWeightedRestricted_one_weight_iff,
+    tendsto_zero_iff_norm_tendsto_zero, MvPowerSeries.IsRestricted]
+  simp only [MvPowerSeries.norm_coeff_rescale_units_inv u hu hc]
+
+include hu hc in
+/-- The Huber subring with the unit weights `Tᵢ = {u i}` is Mathlib's subring of series
+restricted at the radii `c`. This is an equality of subrings; their topologies are compared
+below. -/
+theorem weightedRestrictedSubring_units_eq_isRestricted_subring :
+    weightedRestrictedSubring (fun i ↦ ({(u i : R)} : Set R)) (isWeightFamily_units u) =
+      MvPowerSeries.IsRestricted.subring (R := R) c := by
+  ext f
+  rw [mem_weightedRestrictedSubring, MvPowerSeries.IsRestricted.mem_subring]
+  exact isWeightedRestricted_units_iff_isRestricted u hu hc
+
+/-- The identity on underlying series identifies the Huber ring with the unit weights
+`Tᵢ = {u i}` with the Gauss-normed ring of series restricted at the radii `c`, as
+coefficient algebras. -/
+noncomputable def weightedRestrictedGaussAlgEquiv :
+    weightedRestrictedSubring (fun i ↦ ({(u i : R)} : Set R)) (isWeightFamily_units u) ≃ₐ[R]
+      MvPowerSeries.IsRestricted.subring (R := R) c :=
+  AlgEquiv.ofRingEquiv
+    (f := RingEquiv.subringCongr (weightedRestrictedSubring_units_eq_isRestricted_subring u hu hc))
+    fun r ↦ Subtype.ext (by simp)
+
+/-- The unit-weight Gauss comparison preserves the underlying formal power series. -/
+@[simp]
+theorem coe_weightedRestrictedGaussAlgEquiv
+    (f : weightedRestrictedSubring (fun i ↦ ({(u i : R)} : Set R)) (isWeightFamily_units u)) :
+    (weightedRestrictedGaussAlgEquiv u hu hc f : MvPowerSeries (Fin n) R) = f := by
+  simp [weightedRestrictedGaussAlgEquiv, RingEquiv.coe_subringCongr_apply]
+
+/-- The inverse unit-weight Gauss comparison preserves the underlying formal power series. -/
+@[simp]
+theorem coe_weightedRestrictedGaussAlgEquiv_symm
+    (f : MvPowerSeries.IsRestricted.subring (R := R) c) :
+    ((weightedRestrictedGaussAlgEquiv u hu hc).symm f : MvPowerSeries (Fin n) R) = f := by
+  simp [weightedRestrictedGaussAlgEquiv, RingEquiv.coe_subringCongr_apply]
+
+/-- The unit-weight Gauss comparison sends the Huber constant `r` to the constant `r`. -/
+@[simp]
+theorem weightedRestrictedGaussAlgEquiv_weightedC (r : R) :
+    weightedRestrictedGaussAlgEquiv u hu hc (weightedC _ (isWeightFamily_units u) r) =
+      algebraMap R _ r :=
+  Subtype.ext (by simp)
+
+/-- The unit-weight Gauss comparison sends the Huber variable `Xᵢ` to the variable `Xᵢ`. -/
+@[simp]
+theorem weightedRestrictedGaussAlgEquiv_weightedX (i : Fin n) :
+    weightedRestrictedGaussAlgEquiv u hu hc (weightedX _ (isWeightFamily_units u) i) =
+      ⟨MvPowerSeries.X i, MvPowerSeries.isRestricted_X _ i⟩ :=
+  Subtype.ext (by simp)
+
+variable [∀ i, Fact (0 < c i)]
+
+/-- The unit-weight Gauss comparison is continuous from the Huber topology to the Gauss norm
+topology: coefficients of `f(u⁻¹ X)` in a small ball give a small Gauss norm. -/
+theorem continuous_weightedRestrictedGaussAlgEquiv :
+    Continuous (weightedRestrictedGaussAlgEquiv u hu hc) := by
+  refine continuous_of_continuousAt_zero (weightedRestrictedGaussAlgEquiv u hu hc) ?_
+  rw [ContinuousAt, map_zero, NormedAddGroup.tendsto_nhds_zero]
+  intro ε hε
+  let U := IsUltrametricDist.ball_openAddSubgroup R (half_pos hε)
+  filter_upwards [(hasBasis_nhds_zero_weightedTopology (isWeightFamily_units u)).mem_of_mem
+    (i := U) trivial] with f hf
+  refine lt_of_le_of_lt ((MvPowerSeries.norm_le_iff (half_pos hε).le).mpr fun ν ↦ ?_)
+    (half_lt_self hε)
+  have h := (mem_weightedNhd_units_iff u).mp hf ν
+  rw [coe_weightedRestrictedGaussAlgEquiv,
+    ← MvPowerSeries.norm_coeff_rescale_units_inv u hu hc]
+  exact (mem_ball_zero_iff.mp h).le
+
+/-- The inverse unit-weight Gauss comparison is continuous: a small Gauss norm places every
+coefficient of `f(u⁻¹ X)` in any prescribed open additive subgroup. -/
+theorem continuous_weightedRestrictedGaussAlgEquiv_symm :
+    Continuous (weightedRestrictedGaussAlgEquiv u hu hc).symm := by
+  refine continuous_of_continuousAt_zero (weightedRestrictedGaussAlgEquiv u hu hc).symm ?_
+  rw [ContinuousAt, map_zero,
+    (hasBasis_nhds_zero_weightedTopology (isWeightFamily_units u)).tendsto_right_iff]
+  intro U _
+  obtain ⟨ε, hε, hU⟩ := NormedAddGroup.nhds_zero_basis_norm_lt.mem_iff.mp
+    (U.isOpen.mem_nhds U.zero_mem)
+  filter_upwards [NormedAddGroup.nhds_zero_basis_norm_lt.mem_of_mem hε] with f hf
+  refine (mem_weightedNhd_units_iff u).mpr fun ν ↦ hU ?_
+  rw [Set.mem_ofPred_eq, coe_weightedRestrictedGaussAlgEquiv_symm,
+    MvPowerSeries.norm_coeff_rescale_units_inv u hu hc]
+  exact (MvPowerSeries.norm_coeff_mul_prod_le f ν).trans_lt hf
+
+end UnitWeight
 
 section Tate
 

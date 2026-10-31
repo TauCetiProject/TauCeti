@@ -8,12 +8,16 @@ module
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 public import Mathlib.RingTheory.Regular.RegularSequence
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Defs
+public import Mathlib.LinearAlgebra.Dual.Defs
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.RingTheory.Regular.Free
 import Mathlib.RingTheory.UniqueFactorizationDomain.Kaplansky
 import TauCeti.RingTheory.KrullDimension.Regular
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
+import TauCeti.RingTheory.Regular.LinearMap
 import TauCeti.RingTheory.Regular.RegularSequence
+import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
 /-!
 # Regular local rings of dimension two
@@ -30,6 +34,12 @@ integrally closed. This is the dimension-two case of the theorem of Auslander an
 regular local rings are factorial; it supplies the normality of the base needed for going down
 from finite algebras over a two-dimensional regular local ring.
 
+The same criterion shows that the dual `N* = Hom(N, A)` of a finite module is free: a regular
+sequence `x, y` on `A` stays weakly regular on `Hom(N, A)`. Hence over a regular local ring of
+dimension at most two every finite reflexive module is free. This is the step of the structure
+theory of finitely generated modules over such rings, for instance over the Iwasawa algebra
+`O⟦T⟧`, that handles the torsion-free part.
+
 ## Main results
 
 * `TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular`: a finite module on which a pair
@@ -38,6 +48,10 @@ from finite algebras over a two-dimensional regular local ring.
   maximal ideal is principal.
 * `TauCeti.IsRegularLocalRing.uniqueFactorizationMonoid_of_ringKrullDim_le_two`: a regular local
   ring of dimension at most two is a unique factorization domain.
+* `TauCeti.IsRegularLocalRing.free_dual`: over a regular local ring of dimension at most two, the
+  dual of a finite module is free.
+* `TauCeti.IsRegularLocalRing.free_of_isReflexive`: over a regular local ring of dimension at most
+  two, a finite reflexive module is free.
 
 ## References
 
@@ -46,11 +60,13 @@ from finite algebras over a two-dimensional regular local ring.
 * H. Matsumura, *Commutative Ring Theory*, Theorem 20.3 (Auslander–Buchsbaum): regular local
   rings are unique factorization domains.
 * Kaplansky's criterion, `UniqueFactorizationMonoid.iff_exists_prime_mem_of_isPrime` in Mathlib.
+* [The Stacks Project, Lemma 15.24.10](https://stacks.math.columbia.edu/tag/0AV5), the depth of a
+  module of homomorphisms.
 -/
 
 public section
 
-open IsLocalRing Ideal RingTheory.Sequence TauCeti.IsLocalRing
+open IsLocalRing Ideal RingTheory.Sequence TauCeti.IsLocalRing Module
 
 namespace TauCeti.IsRegularLocalRing
 
@@ -166,5 +182,26 @@ theorem uniqueFactorizationMonoid_of_ringKrullDim_le_two (hdim : ringKrullDim A 
   · obtain ⟨f, rfl⟩ := (isPrincipal_of_ne_maximalIdeal hdim.le hpm).principal
     have hf0 : f ≠ 0 := by rintro rfl; simp at hp0
     exact ⟨f, mem_span_singleton_self f, (span_singleton_prime hf0).mp hp⟩
+
+/-- Over a regular local ring of dimension at most two, the dual `Hom(N, A)` of a finite module `N`
+is free. In dimension two a regular system of parameters `x, y` is a regular sequence on `A`, so
+it is weakly regular on `Hom(N, A)`; in smaller dimension `A` is a principal ideal domain. -/
+theorem free_dual (hdim : ringKrullDim A ≤ 2) (N : Type*) [AddCommGroup N] [Module A N]
+    [Module.Finite A N] : Module.Free A (Dual A N) := by
+  rcases hdim.lt_or_eq with hlt | hdim
+  · have := valuationRing_of_ringKrullDim_le_one (Order.le_of_lt_succ hlt)
+    infer_instance
+  obtain ⟨x, y, hxy⟩ := exists_span_pair_eq_maximalIdeal hdim
+  have hreg : IsRegular A [x, y] := isRegular_of_ofList_eq_maximalIdeal
+    (by simpa [ofList_cons, ofList_singleton, ← span_insert] using hxy)
+    (by simp [spanFinrank_maximalIdeal_eq_two hdim])
+  exact free_of_isWeaklyRegular hdim hxy (hreg.toIsWeaklyRegular.linearMap (by simp))
+
+/-- **Reflexive modules are free in dimension two.** Over a regular local ring of dimension at
+most two, a finite reflexive module is free, being isomorphic to the dual of its dual. -/
+theorem free_of_isReflexive (hdim : ringKrullDim A ≤ 2) (N : Type*) [AddCommGroup N] [Module A N]
+    [Module.Finite A N] [IsReflexive A N] : Module.Free A N :=
+  have := free_dual hdim (Dual A N)
+  .of_equiv (evalEquiv A N).symm
 
 end TauCeti.IsRegularLocalRing

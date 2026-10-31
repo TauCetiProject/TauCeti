@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Algebra.BigOperators.Finprod
-public import TauCeti.GroupTheory.GroupAction.Stabilizer
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ConjAct
 public import TauCeti.NumberTheory.BinaryQuadraticForm.OfMatrix
 public import TauCeti.NumberTheory.HurwitzClassNumber

@@ -20,6 +20,7 @@ The valuation dictionary `FinitePlace.mk_apply_le_one_iff` and
 `FinitePlace.mk_apply_eq_one_iff` compares the finite-place absolute value with the adic valuation.
 These comparisons follow Ralf Stephan's `ArithmeticHeights/SUnit.lean` in
 `rwst/Subspace-Theorems` at `e443c2479e19f7665b31d8e94e2317c8ced1ca06` (Apache 2.0).
+`FinitePlace.mk_apply_le_one_iff_algebraMap_mem` reads integrality in the adic completion instead.
 
 The file also records that a number field always *has* a finite place: the finite places are the
 height one primes of its ring of integers, and that ring is a Dedekind domain which is not a
@@ -37,6 +38,9 @@ of `w` is the `e * f`-th power of that of `v`.
 
 `NumberField.HeightOneSpectrum.log_adicAbv` reads the logarithm of the `v`-adic absolute value
 as minus the `v`-adic order times `log N(v)`, the form in which valuations enter height estimates.
+
+`NumberField.FinitePlace.finprod_comp_mk` reindexes a product over the finite places by the
+height one primes of the ring of integers.
 
 Finally, `NumberField.FinitePlace.hasFiniteMulSupport_iSup` records that the maximum of the
 finite-place absolute values of the coordinates of a nonzero finite tuple is `1` at all but
@@ -72,6 +76,13 @@ theorem mk_apply_le_one_iff (v : HeightOneSpectrum (𝓞 K)) (x : K) :
   norm_cast
   exact WithZeroMulInt.toNNReal_le_one_iff (HeightOneSpectrum.one_lt_absNorm_nnreal v)
 
+/-- An element is integral at a prime iff its finite-place absolute value is at most one, read in
+the completion: its image lies in the ring of integers of the adic completion. -/
+theorem mk_apply_le_one_iff_algebraMap_mem (v : HeightOneSpectrum (𝓞 K)) (x : K) :
+    mk v x ≤ 1 ↔ algebraMap K (v.adicCompletion K) x ∈ v.adicCompletionIntegers K := by
+  rw [mk_apply_le_one_iff, HeightOneSpectrum.mem_adicCompletionIntegers]
+  simp [HeightOneSpectrum.algebraMap_adicCompletion]
+
 /-- An element has valuation one at a prime iff its finite-place absolute value is one. -/
 theorem mk_apply_eq_one_iff (v : HeightOneSpectrum (𝓞 K)) (x : K) :
     mk v x = 1 ↔ v.valuation K x = 1 := by
@@ -101,6 +112,12 @@ theorem mk_apply_algebraMap {L : Type*} [Field L] [NumberField L] [Algebra K L]
       mk v x ^ (w.asIdeal.ramificationIdx (𝓞 K) * w.asIdeal.inertiaDeg (𝓞 K)) := by
   simpa only [equivHeightOneSpectrum_symm_apply, ← mk_apply] using
     equivHeightOneSpectrum_symm_apply_algebraMap v w x
+
+/-- A product over the finite places of a number field, reindexed by the height one primes of its
+ring of integers. -/
+theorem finprod_comp_mk {M : Type*} [CommMonoid M] (f : FinitePlace K → M) :
+    ∏ᶠ v : HeightOneSpectrum (𝓞 K), f (mk v) = ∏ᶠ w, f w :=
+  finprod_comp_equiv equivHeightOneSpectrum.symm
 
 /-- For a nonzero tuple over a number field, the maximum of the finite-place absolute values of
 its coordinates is `1` at all but finitely many finite places. -/

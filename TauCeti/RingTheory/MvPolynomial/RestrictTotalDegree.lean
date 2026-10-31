@@ -22,7 +22,8 @@ at most `m` lies in the `m`-th one, and that the `m`-th one is spanned by those 
 a linear statement about polynomials of bounded degree reduces to monomials. These monomials form
 a basis whose coordinates are the coefficients, giving finite coordinates on tuples of
 bounded-degree polynomials; evaluating such tuples is faithful over an infinite integral domain,
-by Mathlib's `MvPolynomial.funext`. As a spanning family, the monomials may be
+by Mathlib's `MvPolynomial.funext`. Raising the degree bound leaves the evaluation unchanged and
+zero-pads the coordinates. As a spanning family, the monomials may be
 replaced by products `∏ᵢ Sₖᵢ(Xᵢ)` of the members of a polynomial sequence `S` in the separate
 variables, for instance the integer-valued binomial polynomials.
 
@@ -39,6 +40,8 @@ variables, for instance the integer-valued binomial polynomials.
   bounded-degree polynomials.
 * `MvPolynomial.boundedEvaluation`, `MvPolynomial.boundedEvaluation_injective`: evaluation of such
   tuples as vector-valued functions is linear, and injective over an infinite integral domain.
+* `MvPolynomial.boundedCoefficientEquiv_inclusion_comp`: raising the degree bound extends the
+  finite coefficient coordinates by zero.
 * `MvPolynomial.span_prod_aeval_X_le`: products of a triangular family of one-variable polynomials
   in the separate variables lie in the span of the products of the original family.
 * `Polynomial.Sequence.span_prod_aeval_X_eq_restrictTotalDegree`: the products `∏ᵢ Sₖᵢ(Xᵢ)` of
@@ -160,6 +163,43 @@ functions they define: the evaluation map is faithful. -/
 theorem boundedEvaluation_injective {R : Type*} [CommRing R] [IsDomain R] [Infinite R]
     (d : ℕ) : Function.Injective (boundedEvaluation σ R J d) := fun _ _ h =>
   _root_.funext fun j => Subtype.ext <| MvPolynomial.funext fun x => congrFun (congrFun h x) j
+
+/-- Raising the degree bound from `d` to `d'` does not change the function defined by a tuple of
+bounded-degree polynomials. -/
+@[simp] theorem boundedEvaluation_inclusion_comp {d d' : ℕ} (h : d ≤ d')
+    (v : J → restrictTotalDegree σ R d) :
+    boundedEvaluation σ R J d' (Submodule.inclusion (restrictTotalDegree_mono σ R h) ∘ v) =
+      boundedEvaluation σ R J d v := (rfl)
+
+/-- Raising the degree bound from `d` to `d'` zero-pads the finite coefficient coordinates: they
+are extended by zero along the inclusion of index types, so the new coordinates at exponents of
+degree above `d` vanish. -/
+theorem boundedCoefficientEquiv_inclusion_comp [Finite σ] {d d' : ℕ} (h : d ≤ d')
+    (v : J → restrictTotalDegree σ R d) :
+    boundedCoefficientEquiv σ R J d' (Submodule.inclusion (restrictTotalDegree_mono σ R h) ∘ v) =
+      Function.ExtendByZero.linearMap R R (Prod.map (id : J → J)
+          (Subtype.impEmbedding (fun s : σ →₀ ℕ => s.degree ≤ d) (fun s => s.degree ≤ d')
+            fun _ hs => hs.trans h))
+        (boundedCoefficientEquiv σ R J d v) := by
+  have hinj : Function.Injective (Prod.map (id : J → J)
+      (Subtype.impEmbedding (fun s : σ →₀ ℕ => s.degree ≤ d) (fun s => s.degree ≤ d')
+        fun _ hs => hs.trans h)) :=
+    Function.injective_id.prodMap (Subtype.impEmbedding _ _ _).injective
+  ext ⟨j, s, hs'⟩
+  by_cases hs : s.degree ≤ d
+  · convert (hinj.extend_apply (boundedCoefficientEquiv σ R J d v)
+      (0 : J × {s : σ →₀ ℕ // s.degree ≤ d'} → R) (j, ⟨s, hs⟩)).symm using 1
+    · simp
+    · -- The index `(j, ⟨s, hs'⟩)` is the image of `(j, ⟨s, hs⟩)` by definition.
+      rw [Function.ExtendByZero.linearMap_apply]
+      rfl
+  · rw [Function.ExtendByZero.linearMap_apply, Function.extend_apply' _ _ _ ?_, Pi.zero_apply,
+      boundedCoefficientEquiv_apply, Function.comp_apply, Submodule.coe_inclusion]
+    · refine coeff_eq_zero_of_totalDegree_lt ?_
+      rw [← Finsupp.degree_apply]
+      exact ((mem_restrictTotalDegree σ d _).1 (v j).2).trans_lt (not_le.1 hs)
+    · rintro ⟨⟨j', s', hs''⟩, he⟩
+      exact hs (by cases he; exact hs'')
 
 end Coordinates
 

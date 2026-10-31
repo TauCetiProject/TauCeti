@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.Instances.Quotient
 public import Mathlib.Geometry.Manifold.LocalInvariantProperties
+public import TauCeti.Geometry.Manifold.ContMDiff.Groupoid
 public import TauCeti.Topology.Algebra.ConstMulAction
 public import TauCeti.Topology.IsLocalHomeomorph
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
@@ -68,6 +69,8 @@ here.
   smaller groupoid.
 * `TauCeti.contMDiffOn_of_mem_smulGroupoid`: for an action by `C^n` maps, every member of
   `smulGroupoid G X` is `C^n` on its source.
+* `TauCeti.smulGroupoid_le_contMDiffGroupoid`: for an action by `C^n` maps, `smulGroupoid G X` is
+  contained in the groupoid `TauCeti.contMDiffGroupoid I n X` of `C^n` local diffeomorphisms.
 * `TauCeti.isManifold_of_hasGroupoid_smulGroupoid`: a (G, X)-manifold is a `C^n` manifold when `G`
   acts by `C^n` maps on the `C^n` manifold `X`.
 * `TauCeti.contMDiffOn_of_mem_atlas_of_hasGroupoid_smulGroupoid`: each `X`-valued chart of such a
@@ -207,18 +210,23 @@ theorem contMDiffOn_of_mem_smulGroupoid {e : OpenPartialHomeomorph X X}
   obtain ⟨g, hg⟩ := smulPregroupoid_property.1 he.1 x hx
   exact ((contMDiff_const_smul g).contMDiffAt.congr_of_eventuallyEq hg).contMDiffWithinAt
 
+variable (I n G X) in
+/-- When `G` acts on `X` by `C^n` maps, every member of `smulGroupoid G X` is a `C^n` local
+diffeomorphism of `X`. -/
+theorem smulGroupoid_le_contMDiffGroupoid : smulGroupoid G X ≤ contMDiffGroupoid I n X :=
+  fun _ he ↦ mem_contMDiffGroupoid_iff.2 ⟨contMDiffOn_of_mem_smulGroupoid he,
+    contMDiffOn_of_mem_smulGroupoid ((smulGroupoid G X).symm he)⟩
+
 variable (I n G) in
 /-- A (G, X)-manifold, for an action of `G` by `C^n` maps on a `C^n` manifold `X` modelled on `I`,
 is a `C^n` manifold for the composite charts `ChartedSpace.comp H X M`. -/
 theorem isManifold_of_hasGroupoid_smulGroupoid [IsManifold I n X] (M : Type*)
     [TopologicalSpace M] [ChartedSpace X M] [HasGroupoid M (smulGroupoid G X)] :
     letI := ChartedSpace.comp H X M
-    IsManifold I n M := by
-  let := ChartedSpace.comp H X M
-  refine { StructureGroupoid.HasGroupoid.comp (smulGroupoid G X) fun e he ↦ ?_ with }
-  rw [isLocalStructomorphOn_contDiffGroupoid_iff]
-  exact ⟨contMDiffOn_of_mem_smulGroupoid he,
-    contMDiffOn_of_mem_smulGroupoid ((smulGroupoid G X).symm he)⟩
+    IsManifold I n M :=
+  haveI := hasGroupoid_of_le ‹HasGroupoid M (smulGroupoid G X)›
+    (smulGroupoid_le_contMDiffGroupoid I n G X)
+  isManifold_of_hasGroupoid_contMDiffGroupoid I n M
 
 end Smooth
 

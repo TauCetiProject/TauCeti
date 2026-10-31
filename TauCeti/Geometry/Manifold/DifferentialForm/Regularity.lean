@@ -36,8 +36,8 @@ differentiation commutes with this extension.
   manifold, `C^n` regularity of chart expressions transfers between overlapping charts.
 * `TauCeti.contMDiffAt_mpullback_extChartAt`: a flat form that is `C^n` within the model range
   pulls back along a chart to a `C^n` section.
-* `TauCeti.contMDiffOn_mextDerivWithin`, `TauCeti.isSmoothBundleForm_mextDeriv`: the exterior
-  derivative lowers regularity by one.
+* `TauCeti.contMDiffOn_mextDerivWithin`, `TauCeti.isSmoothBundleForm_mextDeriv`,
+  `TauCeti.isSmoothForm_mextDeriv`: the exterior derivative lowers regularity by one.
 * `TauCeti.mextDeriv_mem_smoothBundleForms`: the exterior derivative preserves smooth forms.
 * `TauCeti.exists_mextDeriv_eq_of_forall_eventuallyEq_add_const`: a global function which near
   every point differs by a constant from a local primitive of a `1`-form is itself a primitive.
@@ -108,6 +108,16 @@ theorem differentiableWithinAt_inChartAt [IsManifold I 1 M]
     (by
       rw [extChartAt_to_inv]
       exact (φ.inCoordinates_eq_inChartAt (mem_extChartAt_source x)).symm)
+
+/-- On a boundaryless manifold, a section differentiable at `x` has a coordinate expression in the
+chart centred at `x` that is differentiable at the chart image of `x`. -/
+theorem differentiableAt_inChartAt [IsManifold I 1 M] [I.Boundaryless]
+    (φ : RoughForm I M F k) {x : M}
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) x) :
+    DifferentiableAt ℝ (φ.inChartAt x) (extChartAt I x x) := by
+  have h := φ.differentiableWithinAt_inChartAt (s := univ) hφ.mdifferentiableWithinAt
+  rwa [preimage_univ, univ_inter, I.range_eq_univ, differentiableWithinAt_univ] at h
 
 /-- Section regularity within a subset implies flat regularity in the chart centred at the
 point. The derivative set is the inverse image of the subset intersected with the model range. -/
@@ -207,14 +217,19 @@ theorem isSmoothBundleForm_mextDeriv [IsManifold I 2 M] {p n : WithTop ℕ∞}
   exact contMDiffOn_mextDerivWithin φ (hφ.of_le hnp).contMDiffOn
     (uniqueMDiffOn_univ (I := I)) (by simp)
 
+/-- The exterior derivative takes `C^p` forms to `C^n` forms when `n + 1 ≤ p`. -/
+theorem isSmoothForm_mextDeriv [IsManifold I 2 M] {p n : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I p φ) (hnp : n + 1 ≤ p) :
+    IsSmoothForm I n (mextDeriv φ) := by
+  rw [isSmoothForm_def]
+  exact (isSmoothBundleForm_def n _).mp
+    (isSmoothBundleForm_mextDeriv φ ((isSmoothBundleForm_def p _).mpr hφ.contMDiff) hnp)
+
 /-- The exterior derivative of a `C¹` form is a continuous section. -/
 theorem IsSmoothForm.continuous_mextDeriv [IsManifold I 2 M]
     {φ : RoughForm I M F k} (hφ : IsSmoothForm I 1 φ) :
-    IsSmoothForm I 0 (mextDeriv φ) := by
-  rw [isSmoothForm_def]
-  exact (isSmoothBundleForm_def 0 _).mp
-    (isSmoothBundleForm_mextDeriv φ ((isSmoothBundleForm_def 1 _).mpr hφ.contMDiff)
-      (n := 0) (by simp))
+    IsSmoothForm I 0 (mextDeriv φ) :=
+  isSmoothForm_mextDeriv hφ (by simp)
 
 /-- The exterior derivative of a smooth fixed-coefficient form is smooth. -/
 theorem mextDeriv_mem_smoothBundleForms [IsManifold I 2 M] {φ : RoughForm I M F k}
