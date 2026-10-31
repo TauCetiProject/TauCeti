@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.BaseChange
 public import Mathlib.RingTheory.Flat.Equalizer
 public import TauCeti.LinearAlgebra.TensorProduct.Kernel
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # Extension of scalars of a homomorphism of Lie algebras
@@ -26,10 +27,22 @@ preservation of surjectivity, that comparison is what lets a question about an i
 `A ⊗[R] L` be moved to one about `L`; its first use is the identification of a quotient of
 `A ⊗[R] L` with the extension of a quotient of `L`.
 
+A homomorphism `f : L →ₗ⁅R⁆ L'` into a Lie algebra `L'` that is already a Lie algebra over `A`
+also extends `A`-linearly to `A ⊗[R] L`, by `a ⊗ x ↦ a • f x`: this is the universal property of
+extension of scalars, and its underlying map is `LinearMap.liftBaseChange`.  When `f` exhibits
+`L'` as the base change of `L` in Mathlib's sense `IsBaseChange`, the extension is bijective, so
+`A ⊗[R] L` and `L'` are isomorphic as Lie algebras over `A`.  This is how a Lie subalgebra over
+`R` of a Lie algebra over `A` is recognised as an `R`-form of it, for instance a real form of a
+complex Lie algebra.
+
 ## Main definitions
 
 * `LieHom.baseChange`: the extension of scalars `A ⊗[R] L →ₗ⁅A⁆ A ⊗[R] L'` of a homomorphism of
   Lie algebras.
+* `LieHom.liftBaseChange`: the extension `A ⊗[R] L →ₗ⁅A⁆ L'` of a homomorphism into a Lie algebra
+  over `A`.
+* `IsBaseChange.lieEquiv`: if `f` is a base change, the Lie algebra equivalence
+  `A ⊗[R] L ≃ₗ⁅A⁆ L'` it induces.
 
 ## Main results
 
@@ -128,3 +141,72 @@ theorem ker_baseChange_of_surjective (hf : Function.Surjective f) :
   exact LinearMap.ker_baseChange_of_surjective A (f : L →ₗ[R] L') hf
 
 end LieHom
+
+section LiftBaseChange
+
+variable {R A L L' : Type*} [CommRing R] [CommRing A] [Algebra R A]
+  [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra A L'] [LieAlgebra R L']
+  [IsScalarTower R A L']
+
+namespace LieHom
+
+variable (A) (f : L →ₗ⁅R⁆ L')
+
+/-- **Extension of scalars of a homomorphism into a Lie algebra over `A`.**  A homomorphism of Lie
+algebras over `R` from `L` into a Lie algebra `L'` over the `R`-algebra `A` extends to the
+homomorphism of Lie algebras over `A` sending `a ⊗ x` to `a • f x`.  Its underlying linear map is
+`LinearMap.liftBaseChange`. -/
+def liftBaseChange : A ⊗[R] L →ₗ⁅A⁆ L' where
+  __ := (f : L →ₗ[R] L').liftBaseChange A
+  map_lie' {x y} := by
+    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom]
+    induction x with
+    | add x₁ x₂ h₁ h₂ => simp only [add_lie, map_add, h₁, h₂]
+    | tmul a x =>
+      induction y with
+      | add y₁ y₂ h₁ h₂ => simp only [lie_add, map_add, h₁, h₂]
+      | tmul b y =>
+        simp only [LieAlgebra.ExtendScalars.bracket_tmul, LinearMap.liftBaseChange_tmul,
+          LieHom.coe_toLinearMap, map_lie, smul_lie, lie_smul, mul_smul]
+        exact smul_comm a b _
+
+@[simp]
+theorem coe_liftBaseChange :
+    ((liftBaseChange A f : A ⊗[R] L →ₗ⁅A⁆ L') : A ⊗[R] L →ₗ[A] L') =
+      (f : L →ₗ[R] L').liftBaseChange A :=
+  (rfl)
+
+@[simp]
+theorem liftBaseChange_tmul (a : A) (x : L) : liftBaseChange A f (a ⊗ₜ[R] x) = a • f x :=
+  (rfl)
+
+end LieHom
+
+namespace IsBaseChange
+
+variable {f : L →ₗ⁅R⁆ L'} (h : IsBaseChange A (f : L →ₗ[R] L'))
+
+/-- **A base change of Lie algebras is an isomorphism from the extension of scalars.**  If `f`
+exhibits `L'` as the base change of `L` along `R → A`, then `a ⊗ x ↦ a • f x` is an isomorphism
+of Lie algebras over `A` from `A ⊗[R] L` onto `L'`.  Its underlying linear equivalence is
+`IsBaseChange.equiv`. -/
+noncomputable def lieEquiv : A ⊗[R] L ≃ₗ⁅A⁆ L' :=
+  LieEquiv.ofBijective (f.liftBaseChange A) h.liftBaseChange_bijective
+
+@[simp]
+theorem lieEquiv_tmul (a : A) (x : L) : h.lieEquiv (a ⊗ₜ[R] x) = a • f x :=
+  (rfl)
+
+@[simp]
+theorem lieEquiv_symm_apply (x : L) : h.lieEquiv.symm (f x) = 1 ⊗ₜ[R] x := by
+  rw [LieEquiv.symm_apply_eq, lieEquiv_tmul, one_smul]
+
+theorem toLinearEquiv_lieEquiv : h.lieEquiv.toLinearEquiv = h.equiv := by
+  ext t
+  induction t with
+  | tmul a x => simp
+  | add t₁ t₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+
+end IsBaseChange
+
+end LiftBaseChange
