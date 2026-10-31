@@ -9,9 +9,9 @@ public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import TauCeti.RingTheory.GradedAlgebra.Cotangent
-import Mathlib.RingTheory.KrullDimension.Field
-import Mathlib.RingTheory.KrullDimension.Polynomial
-import Mathlib.RingTheory.Localization.AtPrime.Basic
+import Mathlib.Algebra.Module.SpanRankOperations
+import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Ideal
+import TauCeti.RingTheory.Ideal.Cotangent.Localization
 
 /-!
 # Connected graded algebras that are regular at the vertex
@@ -21,14 +21,17 @@ consists of the scalars. Write `A₊` for the irrelevant ideal, the vertex of `S
 ring `A_{A₊}` is regular of dimension `n`, then `A` is a polynomial algebra over `k` on `n`
 homogeneous elements of positive degree.
 
-The proof lifts generators of the maximal ideal of `A_{A₊}` to `A`. Since every element outside
-`A₊` has a nonzero constant term (`TauCeti.GradedAlgebra.exists_sub_algebraMap_mem_irrelevant`),
-the lifts span the `k`-vector space `A₊ ⧸ A₊²`. So whenever the maximal ideal of `A_{A₊}` is
-finitely generated, the cotangent space `A₊ ⧸ A₊²` is finite-dimensional, of dimension at most the
-minimal number of generators of that maximal ideal. In the regular case this number is `n`, while
-`A` has Krull dimension at least `n`, the dimension of its localization, and at most the dimension
-of its cotangent space (`TauCeti.GradedAlgebra.ringKrullDim_le_finrank_cotangent`). So the
-cotangent space has dimension exactly `n`, and `A` is a polynomial algebra on `n` homogeneous
+Every element of `A` is a scalar modulo `A₊`
+(`TauCeti.GradedAlgebra.exists_sub_algebraMap_mem_irrelevant`), so `A ⧸ A₊` is `k` and `A₊` is
+maximal. Localization then identifies the cotangent space `A₊ ⧸ A₊²` with the cotangent space of
+`A_{A₊}` (`Ideal.cotangentLocalizationEquiv`), compatibly with the identification of `k` with the
+residue field. So whenever the maximal ideal of `A_{A₊}` is finitely generated, the cotangent space
+`A₊ ⧸ A₊²` is finite-dimensional, of dimension the minimal number of generators of that maximal
+ideal (`IsLocalRing.spanFinrank_maximalIdeal_eq_finrank_cotangentSpace_of_fg`). In the regular
+case this number is `n`, while `A` has Krull dimension at least `n`, the dimension of its
+localization, and at most the dimension of its cotangent space
+(`TauCeti.GradedAlgebra.ringKrullDim_le_finrank_cotangent`). So the cotangent space has dimension
+exactly `n`, and `A` is a polynomial algebra on `n` homogeneous
 generators (`TauCeti.GradedAlgebra.exists_bijective_aeval_of_finrank_cotangent_le`).
 
 No Noetherian hypothesis on `A` is needed: finite generation is a consequence.
@@ -56,106 +59,55 @@ vertex, it is a polynomial algebra on homogeneous basic invariants.
 
 public section
 
-open DirectSum IsLocalRing Submodule
+open IsLocalRing
 
 namespace TauCeti.GradedAlgebra
 
 variable {k A : Type*} [Field k] [CommRing A] [Algebra k A] (𝒜 : ℕ → Submodule k A)
   [GradedAlgebra 𝒜]
 
-/-- If `u * x` lies in the ideal spanned by elements `aᵢ ∈ A₊`, where `x ∈ A₊` and `u ∉ A₊`,
-then `x` is a `k`-linear combination of the `aᵢ` modulo `A₊²`: write `u` and the coefficients
-as scalars plus elements of `A₊`, and note that the constant term of `u` is nonzero. -/
-private theorem mem_span_sup_of_mul_mem (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra k A)) {n : ℕ}
-    {a : Fin n → A} (ha : ∀ i, a i ∈ HomogeneousIdeal.irrelevant 𝒜) {u x : A}
-    (hu : u ∉ HomogeneousIdeal.irrelevant 𝒜) (hx : x ∈ HomogeneousIdeal.irrelevant 𝒜)
-    (hux : u * x ∈ Ideal.span (Set.range a)) :
-    x ∈ span k (Set.range a) ⊔
-      ((HomogeneousIdeal.irrelevant 𝒜).toIdeal ^ 2).restrictScalars k := by
-  set m := (HomogeneousIdeal.irrelevant 𝒜).toIdeal
-  obtain ⟨r, hr⟩ := (mem_span_range_iff_exists_fun A).1 hux
-  obtain ⟨c, hc⟩ := exists_sub_algebraMap_mem_irrelevant 𝒜 h𝒜 u
-  choose d hd using fun i ↦ exists_sub_algebraMap_mem_irrelevant 𝒜 h𝒜 (r i)
-  have hc0 : c ≠ 0 := by
-    rintro rfl
-    exact hu (by simpa using hc)
-  have hsq {y z : A} (hy : y ∈ m) (hz : z ∈ m) : y * z ∈ m ^ 2 := by
-    rw [pow_two]
-    exact Ideal.mul_mem_mul hy hz
-  -- `c x = ∑ dᵢ aᵢ + (∑ (rᵢ - dᵢ) aᵢ - (u - c) x)`, and the bracket lies in `A₊²`.
-  have hx' : x = c⁻¹ • ∑ i, d i • a i +
-      c⁻¹ • (∑ i, (r i - algebraMap k A (d i)) * a i - (u - algebraMap k A c) * x) := by
-    rw [← smul_add, eq_inv_smul_iff₀ hc0]
-    simp only [smul_eq_mul, Algebra.smul_def, sub_mul, Finset.sum_sub_distrib] at hr ⊢
-    rw [hr]
-    ring
-  rw [hx']
-  refine add_mem_sup (smul_mem _ _ (sum_mem fun i _ ↦ smul_mem _ _ (subset_span ⟨i, rfl⟩)))
-    (smul_mem _ _ (sub_mem (sum_mem fun i _ ↦ hsq (hd i) (ha i)) (hsq hc hx)))
-
-/-- If the maximal ideal of the localization of a connected graded algebra at the irrelevant ideal
-`A₊` is finitely generated, then there are `spanFinrank` many elements of `A₊` spanning `A₊`
-modulo `A₊²` over `k`. -/
-private theorem exists_irrelevant_le_span_sup (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra k A))
-    (P : Ideal A) [P.IsPrime] (hP : P = (HomogeneousIdeal.irrelevant 𝒜).toIdeal)
-    (hfg : (maximalIdeal (Localization.AtPrime P)).FG) :
-    ∃ a : Fin (maximalIdeal (Localization.AtPrime P)).spanFinrank → A,
-      (∀ i, a i ∈ HomogeneousIdeal.irrelevant 𝒜) ∧
-      (HomogeneousIdeal.irrelevant 𝒜).toIdeal.restrictScalars k ≤
-        span k (Set.range a) ⊔ ((HomogeneousIdeal.irrelevant 𝒜).toIdeal ^ 2).restrictScalars k := by
+/-- In a connected graded algebra the scalars map onto `A ⧸ A₊`: every element is its constant
+term modulo `A₊`. -/
+private theorem surjective_algebraMap_quotient (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra k A))
+    (P : Ideal A) (hP : P = (HomogeneousIdeal.irrelevant 𝒜).toIdeal) :
+    Function.Surjective (algebraMap k (A ⧸ P)) := by
   subst hP
-  set m := (HomogeneousIdeal.irrelevant 𝒜).toIdeal
-  -- Generators of the maximal ideal of `A_{A₊}`, written as fractions `aᵢ / uᵢ`.
-  obtain ⟨s, hcard, hspan⟩ := Submodule.FG.exists_span_finset_card_eq_spanFinrank hfg
-  generalize spanFinrank (maximalIdeal (Localization.AtPrime m)) = n at hcard ⊢
-  let e := s.equivFinOfCardEq hcard
-  choose a u hau using fun i ↦
-    IsLocalization.exists_mk'_eq m.primeCompl ((e.symm i : s) : Localization.AtPrime m)
-  have hmax : maximalIdeal (Localization.AtPrime m) ≤
-      (Ideal.span (Set.range a)).map (algebraMap A (Localization.AtPrime m)) := by
-    rw [← hspan, span_le]
-    intro y hy
-    rw [show y = (e.symm (e ⟨y, hy⟩) : _) by rw [Equiv.symm_apply_apply], ← hau, SetLike.mem_coe,
-      IsLocalization.mk'_mem_iff]
-    exact Ideal.mem_map_of_mem _ (subset_span ⟨_, rfl⟩)
-  have ha (i) : a i ∈ m := by
-    have hy : (e.symm i : Localization.AtPrime m) ∈ maximalIdeal _ :=
-      hspan ▸ subset_span (e.symm i).2
-    rwa [← hau, IsLocalization.mk'_mem_iff,
-      IsLocalization.AtPrime.to_map_mem_maximal_iff (Localization.AtPrime m) m] at hy
-  refine ⟨a, ha, fun x hx ↦ ?_⟩
-  have hx' : algebraMap A (Localization.AtPrime m) x ∈ maximalIdeal _ :=
-    (IsLocalization.AtPrime.to_map_mem_maximal_iff _ m x).2 hx
-  obtain ⟨w, hw, hwx⟩ :=
-    (IsLocalization.algebraMap_mem_map_algebraMap_iff m.primeCompl _ _ x).1 (hmax hx')
-  exact mem_span_sup_of_mul_mem 𝒜 h𝒜 ha hw hx hwx
+  intro y
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective y
+  obtain ⟨c, hc⟩ := exists_sub_algebraMap_mem_irrelevant 𝒜 h𝒜 a
+  exact ⟨c, (Ideal.Quotient.eq.2 hc).symm⟩
 
-/-- If the maximal ideal of the localization of a connected graded algebra at the irrelevant ideal
-`A₊` is finitely generated, then the cotangent space `A₊ ⧸ A₊²` is spanned over `k` by
-`spanFinrank` many elements. -/
-private theorem exists_span_toCotangent_eq_top (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra k A))
-    (P : Ideal A) [P.IsPrime] (hP : P = (HomogeneousIdeal.irrelevant 𝒜).toIdeal)
-    (hfg : (maximalIdeal (Localization.AtPrime P)).FG) :
-    ∃ v : Fin (maximalIdeal (Localization.AtPrime P)).spanFinrank →
-        (HomogeneousIdeal.irrelevant 𝒜).toIdeal.Cotangent,
-      span k (Set.range v) = ⊤ := by
-  set m := (HomogeneousIdeal.irrelevant 𝒜).toIdeal
-  obtain ⟨a, ha, hle⟩ := exists_irrelevant_le_span_sup 𝒜 h𝒜 P hP hfg
-  refine ⟨fun i ↦ m.toCotangent ⟨a i, ha i⟩, eq_top_iff.2 fun y _ ↦ ?_⟩
-  obtain ⟨x, rfl⟩ := Ideal.toCotangent_surjective _ y
-  -- Write `x = ∑ cᵢ aᵢ + w` with `w ∈ A₊²`.
-  obtain ⟨z, hz, w, hw, hzw⟩ := mem_sup.1 (hle x.2)
-  obtain ⟨c, rfl⟩ := (mem_span_range_iff_exists_fun k).1 hz
-  have hx : m.toCotangent x = m.toCotangent (∑ i, c i • ⟨a i, ha i⟩) := by
-    have hw' : w ∈ m ^ 2 := hw
-    rw [Ideal.toCotangent_eq]
-    convert hw' using 1
-    rw [← hzw]
-    simp
-  rw [hx, map_sum]
-  exact sum_mem fun i _ ↦ by
-    rw [LinearMap.map_smul_of_tower]
-    exact smul_mem _ _ (subset_span ⟨i, rfl⟩)
+/-- The irrelevant ideal of a connected graded algebra over a field is maximal, since the quotient
+`A ⧸ A₊` is the field `k`. -/
+private theorem isMaximal_of_eq_irrelevant (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra k A))
+    (P : Ideal A) [P.IsPrime] (hP : P = (HomogeneousIdeal.irrelevant 𝒜).toIdeal) :
+    P.IsMaximal :=
+  Ideal.Quotient.maximal_of_isField P <| MulEquiv.isField (Field.toIsField k)
+    (RingEquiv.ofBijective (algebraMap k (A ⧸ P))
+      ⟨(algebraMap k _).injective, surjective_algebraMap_quotient 𝒜 h𝒜 P hP⟩).symm.toMulEquiv
+
+/-- The cotangent space `A₊ ⧸ A₊²` over `k` has the same rank as the cotangent space of the
+localization `A_{A₊}` over its residue field: localization identifies the two cotangent spaces
+(`Ideal.cotangentLocalizationEquiv`), semilinearly for the identification of `k` with the residue
+field. -/
+private theorem rank_cotangent_eq (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra k A))
+    (P : Ideal A) [P.IsPrime] (hP : P = (HomogeneousIdeal.irrelevant 𝒜).toIdeal) :
+    Module.rank k (HomogeneousIdeal.irrelevant 𝒜).toIdeal.Cotangent =
+      Module.rank (ResidueField (Localization.AtPrime P))
+        (CotangentSpace (Localization.AtPrime P)) := by
+  have := isMaximal_of_eq_irrelevant 𝒜 h𝒜 P hP
+  have he := (IsLocalization.AtPrime.equivQuotMaximalIdeal P (Localization.AtPrime P)).bijective
+  subst hP
+  refine rank_eq_of_equiv_equiv (R' := ResidueField (Localization.AtPrime _))
+    (fun c : k ↦ IsLocalization.AtPrime.equivQuotMaximalIdeal _ _ (algebraMap k _ c))
+    (Ideal.cotangentLocalizationEquiv _ (Localization.AtPrime _)).toAddEquiv
+    (he.comp ⟨(algebraMap k _).injective, surjective_algebraMap_quotient 𝒜 h𝒜 _ rfl⟩)
+    fun c x ↦ ?_
+  -- `c` acts on `A₊ ⧸ A₊²` through its image in `A ⧸ A₊`.
+  have hc : c • x = algebraMap k (A ⧸ (HomogeneousIdeal.irrelevant 𝒜).toIdeal) c • x := by
+    rw [IsScalarTower.algebraMap_apply k A, algebraMap_smul, algebraMap_smul]
+  rw [LinearEquiv.coe_toAddEquiv, hc]
+  exact Ideal.cotangentLocalizationEquiv_smul _ _ _ _
 
 /-- If the maximal ideal of the localization of a connected graded algebra at the irrelevant ideal
 `A₊` is finitely generated, then the cotangent space `A₊ ⧸ A₊²` is finite-dimensional over `k`. -/
@@ -163,9 +115,15 @@ theorem finite_cotangent_of_fg (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebr
     (P : Ideal A) [P.IsPrime] (hP : P = (HomogeneousIdeal.irrelevant 𝒜).toIdeal)
     (hfg : (maximalIdeal (Localization.AtPrime P)).FG) :
     Module.Finite k (HomogeneousIdeal.irrelevant 𝒜).toIdeal.Cotangent := by
-  classical
-  obtain ⟨v, hv⟩ := exists_span_toCotangent_eq_top 𝒜 h𝒜 P hP hfg
-  exact ⟨⟨Finset.univ.image v, by rwa [Finset.coe_image, Finset.coe_univ, Set.image_univ]⟩⟩
+  have : Module.Finite (Localization.AtPrime P) (maximalIdeal (Localization.AtPrime P)) :=
+    Module.Finite.iff_fg.2 hfg
+  have : Module.Finite (Localization.AtPrime P) (CotangentSpace (Localization.AtPrime P)) :=
+    Module.Finite.of_surjective _ (Ideal.toCotangent_surjective _)
+  have : Module.Finite (ResidueField (Localization.AtPrime P))
+      (CotangentSpace (Localization.AtPrime P)) :=
+    Module.Finite.of_restrictScalars_finite (Localization.AtPrime P) _ _
+  rw [← Module.rank_lt_aleph0_iff, rank_cotangent_eq 𝒜 h𝒜 P hP]
+  exact Module.rank_lt_aleph0 _ _
 
 /-- If the maximal ideal of the localization of a connected graded algebra at the irrelevant ideal
 `A₊` is finitely generated, then the dimension of the cotangent space `A₊ ⧸ A₊²` over `k` is at
@@ -175,9 +133,8 @@ theorem finrank_cotangent_le_spanFinrank (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ :
     (hfg : (maximalIdeal (Localization.AtPrime P)).FG) :
     Module.finrank k (HomogeneousIdeal.irrelevant 𝒜).toIdeal.Cotangent ≤
       (maximalIdeal (Localization.AtPrime P)).spanFinrank := by
-  obtain ⟨v, hv⟩ := exists_span_toCotangent_eq_top 𝒜 h𝒜 P hP hfg
-  have := finrank_range_le_card (R := k) v
-  rwa [Set.finrank, hv, finrank_top, Fintype.card_fin] at this
+  rw [spanFinrank_maximalIdeal_eq_finrank_cotangentSpace_of_fg hfg, Module.finrank,
+    rank_cotangent_eq 𝒜 h𝒜 P hP, Module.finrank]
 
 /-- **A connected graded algebra regular at its vertex is a polynomial algebra.** Let `A` be an
 `ℕ`-graded algebra over a field `k` whose degree-zero part consists of the scalars. If its
