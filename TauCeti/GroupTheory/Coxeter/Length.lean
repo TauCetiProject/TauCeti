@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Coxeter.Length
+import Mathlib.Data.Fintype.Lattice
 
 /-!
 # The parity and the functoriality of the length function of a Coxeter system
@@ -15,7 +16,8 @@ changes the length of an element by exactly one (`CoxeterSystem.length_mul_mod_t
 the parity of the length. This file packages that pairing as an explicit equivalence
 `TauCeti.lengthParityEquiv` between the elements of even length and the elements of odd length, and
 records its two immediate consequences: the two parity classes are equinumerous, and a Coxeter
-group with at least one simple reflection has even order.
+group with at least one simple reflection has even order. The same fact shows that an element of
+maximal length in a finite Coxeter group has every simple reflection as a left descent.
 
 Finally, the length function is transported along the two canonical constructions on Coxeter
 systems, `CoxeterSystem.reindex` and `CoxeterSystem.map`: relabelling the simple reflections or
@@ -31,6 +33,8 @@ pushing the system through a group isomorphism leaves lengths unchanged.
 * `TauCeti.natCard_length_even_eq_natCard_length_odd`: as many elements have even length as odd
   length, provided there is at least one simple reflection.
 * `TauCeti.even_natCard_of_nonempty_index`: hence a Coxeter group of positive rank has even order.
+* `TauCeti.exists_forall_isLeftDescent`: a finite Coxeter group has an element of which every simple
+  reflection is a left descent.
 * `CoxeterSystem.wordProd_map`: a word for `CoxeterSystem.map` is the image of the word for the
   original system.
 * `TauCeti.length_reindex` and `TauCeti.length_map`: the length function is unchanged by
@@ -114,6 +118,20 @@ theorem even_natCard_of_nonempty_index [Nonempty B] : Even (Nat.card W) := by
   have hne : cs.simple i ≠ 1 := fun h => by simpa [h] using cs.length_simple i
   obtain ⟨k, hk⟩ := orderOf_eq_prime (cs.simple_sq i) hne ▸ orderOf_dvd_natCard (cs.simple i)
   exact ⟨k, by omega⟩
+
+/-! ### An element with every simple reflection as a left descent -/
+
+/-- **A finite Coxeter group has an element of which every simple reflection is a left descent.**
+Any element of maximal length will do: left multiplication by a simple reflection changes the
+length by one, so it cannot raise it. (There is exactly one such element, the longest element `w₀`,
+but uniqueness is not proved here.) -/
+theorem exists_forall_isLeftDescent [Finite W] : ∃ w : W, ∀ i, cs.IsLeftDescent w i := by
+  obtain ⟨w, hw⟩ := Finite.exists_max cs.length
+  refine ⟨w, fun i ↦ ?_⟩
+  rcases cs.length_simple_mul w i with h | h
+  · have := hw (cs.simple i * w)
+    omega
+  · exact cs.isLeftDescent_iff.mpr h
 
 /-! ### Transport along a reindexing or a group isomorphism -/
 

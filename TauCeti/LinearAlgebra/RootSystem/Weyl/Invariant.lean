@@ -47,6 +47,9 @@ the second is the whole proof.
 
 ## Main results
 
+* `TauCeti.isWeylInvariant_of_forall_coeff_reflection`: invariance under the simple reflections of
+  a base is Weyl invariance.
+
 * `TauCeti.IsWeylInvariant.mul_isDotAlternating`: **an invariant element times an alternating
   element is alternating.**
 * `TauCeti.isWeylInvariant_zero`, `TauCeti.isWeylInvariant_one`, `TauCeti.IsWeylInvariant.add`,
@@ -194,6 +197,29 @@ def weylInvariantSubring : Subring (AddMonoidAlgebra ℤ M) where
 lemma mem_weylInvariantSubring : f ∈ weylInvariantSubring P ↔ IsWeylInvariant P f := Iff.rfl
 
 end Closure
+
+/-! ### Invariance under the simple reflections -/
+
+section Reflections
+
+variable [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] (b : P.Base)
+
+/-- **Invariance under the simple reflections is Weyl invariance**: the simple reflections of a
+base generate the Weyl group, so coefficients constant along each simple reflection are constant
+along every Weyl orbit. -/
+theorem isWeylInvariant_of_forall_coeff_reflection {f : AddMonoidAlgebra ℤ M}
+    (hf : ∀ i ∈ b.support, ∀ x, f.coeff (P.reflection i x) = f.coeff x) :
+    IsWeylInvariant P f := by
+  refine (isWeylInvariant_iff P f).mpr fun w ↦ ?_
+  obtain ⟨l, rfl⟩ := exists_wordProd_eq P b w
+  induction l with
+  | nil => simp
+  | cons i l ih =>
+    intro x
+    rw [wordProd_cons, mul_smul, RootPairing.weylGroup.ofIdx_smul,
+      RootPairing.Equiv.reflection_smul, hf i i.2, ih]
+
+end Reflections
 
 /-! ### Invariant multiples of alternating elements -/
 
