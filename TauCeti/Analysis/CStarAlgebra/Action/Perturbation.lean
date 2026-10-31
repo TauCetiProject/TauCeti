@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.CStarAlgebra.Action.Generator.Basic
 public import TauCeti.Analysis.CStarAlgebra.Action.Multiplier
 public import TauCeti.Analysis.ODE.DysonSeries
 
@@ -22,9 +23,12 @@ factor `(-1)ⁿ`.
 
 It is the unique solution of `Γ' t = i Γ t τ_t(P)` with `Γ 0 = 1`. When `P` is self-adjoint,
 each `Γ t` is unitary, and the family satisfies the cocycle identity
-`Γ (s + t) = Γ s τ_s(Γ t)` for the induced action on multipliers. These cocycles are the
-input for the perturbed dynamics `a ↦ Γ t τ_t(a) Γ t⋆` with generator `δ + i[P, ·]`; that
-dynamics is not constructed in this file.
+`Γ (s + t) = Γ s τ_s(Γ t)` for the induced action on multipliers.
+
+For self-adjoint `P`, conjugating by these cocycles gives the perturbed dynamics
+`CStarAction.perturb`, acting at time `t` by `a ↦ Γ t τ_t(a) Γ t⋆` on `A`. Its generator has
+the same domain as the generator `δ` of `τ` and equals `δ + i[P, ·]` there
+(`CStarAction.generator_perturb`).
 
 A multiplier-valued cocycle is used so that `A` need not be unital; the path itself is
 norm-continuous because `P` lies in `A`.
@@ -37,17 +41,20 @@ norm-continuous because `P` lies in `A`.
 * `TauCeti.CStarAction.perturbationCocycle_mem_unitary`: unitarity for self-adjoint `P`.
 * `TauCeti.CStarAction.perturbationCocycle_add`: the cocycle identity.
 * `TauCeti.CStarAction.perturbationCocycle_neg`: `Γ (-t) = τ_{-t}(Γ t⋆)`.
+* `TauCeti.CStarAction.perturb`: the perturbed dynamics `a ↦ Γ t τ_t(a) Γ t⋆`.
+* `TauCeti.CStarAction.generator_perturb`: its generator is `δ + i[P, ·]`, with the domain of `δ`.
 
 ## References
 
 * Bratteli--Robinson, *Operator Algebras and Quantum Statistical Mechanics 2*, second edition,
-  Section 5.4.1, for the perturbation cocycle and its Dyson expansion.
+  Section 5.4.1, for the perturbation cocycle, its Dyson expansion and the perturbed dynamics.
 -/
 
 public section
 
 noncomputable section
 
+open Complex
 open scoped MultiplierAlgebra
 
 namespace TauCeti.CStarAction
@@ -152,5 +159,141 @@ theorem perturbationCocycle_neg {P : A} (hP : IsSelfAdjoint P) (t : ℝ) :
     rw [← one_mul (α.multiplier _ _), ← Unitary.star_mul_self_of_mem hu, mul_assoc, ← h,
       mul_one]
   rw [ofAdd_neg, ← multiplier_symm_apply, ← h', StarAlgEquiv.symm_apply_apply]
+
+/-- The cocycle of the zero perturbation is the identity. -/
+@[simp]
+theorem perturbationCocycle_zero_left : α.perturbationCocycle 0 = 1 := by
+  have h0 : ((0 : A) : 𝓜(ℂ, A)) = 0 := map_zero (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := A))
+  exact (α.eq_perturbationCocycle 0 rfl fun t =>
+    (hasDerivAt_const t (1 : 𝓜(ℂ, A))).congr_deriv (by simp [h0])).symm
+
+/-! ### The perturbed dynamics -/
+
+variable {P}
+
+/-- The perturbation of a real C⋆-dynamics `α` by a self-adjoint `P`, acting at time `t` by
+`a ↦ Γ t α_t(a) Γ t⋆`, where `Γ` is the perturbation cocycle. -/
+def perturb (hP : IsSelfAdjoint P) : CStarAction (Multiplicative ℝ) A where
+  toMonoidHom :=
+    { toFun := fun t => (α t).trans (DoubleCentralizer.conjStarAlgAut
+        ⟨α.perturbationCocycle P t.toAdd, α.perturbationCocycle_mem_unitary hP t.toAdd⟩)
+      map_one' := by
+        ext a
+        apply DoubleCentralizer.coe_injective (𝕜 := ℂ)
+        simp [one_apply]
+      map_mul' := fun s t => by
+        ext a
+        apply DoubleCentralizer.coe_injective (𝕜 := ℂ)
+        have h := α.multiplier_coe s (DoubleCentralizer.conjStarAlgAut
+          ⟨α.perturbationCocycle P t.toAdd, α.perturbationCocycle_mem_unitary hP t.toAdd⟩
+          (α t a))
+        simp only [StarAlgEquiv.trans_apply, StarAlgEquiv.mul_apply,
+          DoubleCentralizer.coe_conjStarAlgAut_apply] at h ⊢
+        rw [← h, toAdd_mul, perturbationCocycle_add, ofAdd_toAdd, mul_apply,
+          ← multiplier_coe, map_mul (α.multiplier s), map_mul (α.multiplier s),
+          map_star (α.multiplier s), star_mul]
+        simp only [mul_assoc] }
+  continuous_orbit a := by
+    have hc := DoubleCentralizer.isometry_coe (𝕜 := ℂ) (A := A)
+    rw [hc.isEmbedding.continuous_iff]
+    have hΓ := (α.continuous_perturbationCocycle P).comp continuous_toAdd
+    refine ((hΓ.mul (hc.continuous.comp
+      (α.continuous_orbit a))).mul hΓ.star).congr fun t => ?_
+    simp
+
+theorem perturb_apply (hP : IsSelfAdjoint P) (t : Multiplicative ℝ) (a : A) :
+    α.perturb hP t a = DoubleCentralizer.conjStarAlgAut
+      ⟨α.perturbationCocycle P t.toAdd, α.perturbationCocycle_mem_unitary hP t.toAdd⟩ (α t a) :=
+  (rfl)
+
+/-- The perturbed dynamics, seen in the multiplier algebra. -/
+@[simp]
+theorem coe_perturb_apply (hP : IsSelfAdjoint P) (t : ℝ) (a : A) :
+    ((α.perturb hP (Multiplicative.ofAdd t) a : A) : 𝓜(ℂ, A)) =
+      α.perturbationCocycle P t * (α (Multiplicative.ofAdd t) a : 𝓜(ℂ, A)) *
+        star (α.perturbationCocycle P t) := by
+  simp [perturb_apply]
+
+/-- The derivative of the perturbation cocycle at time zero. -/
+private theorem hasDerivAt_perturbationCocycle_zero :
+    HasDerivAt (α.perturbationCocycle P) (I • (P : 𝓜(ℂ, A))) 0 := by
+  simpa [one_apply] using α.hasDerivAt_perturbationCocycle P 0
+
+private theorem star_I_smul_coe (hP : IsSelfAdjoint P) :
+    star (I • (P : 𝓜(ℂ, A))) = -(I • (P : 𝓜(ℂ, A))) := by
+  have hs : star (P : 𝓜(ℂ, A)) = P :=
+    (map_star (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := A)) P).symm.trans
+      (congrArg _ hP.star_eq)
+  rw [star_smul, hs, star_def, conj_I, neg_smul]
+
+/-- The perturbed orbit of a generator-domain element has derivative `δ(a) + i(Pa - aP)` at zero. -/
+private theorem hasDerivAt_perturb_zero (hP : IsSelfAdjoint P) (a : α.generator.domain) :
+    HasDerivAt (fun t : ℝ => α.perturb hP (Multiplicative.ofAdd t) (a : A))
+      (α.generator a + I • (P * a - a * P)) 0 := by
+  have hΓ := α.hasDerivAt_perturbationCocycle_zero (P := P)
+  refine DoubleCentralizer.hasDerivAt_coe_iff.mp ?_
+  simp only [coe_perturb_apply]
+  convert (hΓ.mul (DoubleCentralizer.hasDerivAt_coe_iff.mpr (α.hasDerivAt_zero a))).mul hΓ.star
+    using 1
+  rw [star_I_smul_coe hP]
+  simp only [Pi.mul_apply, perturbationCocycle_zero, ofAdd_zero, one_apply, star_one, mul_one,
+    one_mul]
+  simp only [← DoubleCentralizer.coeHom_apply (𝕜 := ℂ), map_add, map_sub, map_smul, map_mul,
+    mul_neg, smul_mul_assoc, mul_smul_comm, smul_sub]
+  abel
+
+/-- The perturbed dynamics has the same generator domain as the original dynamics. -/
+@[simp]
+theorem mem_generator_perturb_domain_iff (hP : IsSelfAdjoint P) (a : A) :
+    a ∈ (α.perturb hP).generator.domain ↔ a ∈ α.generator.domain := by
+  refine ⟨fun ha => ?_, fun ha => ?_⟩
+  · -- Undo the unitary conjugation: `α_t(a) = Γ t⋆ (Γ t α_t(a) Γ t⋆) Γ t`.
+    rw [mem_generator_domain_iff_differentiableAt]
+    have hΓ := α.hasDerivAt_perturbationCocycle_zero (P := P)
+    have hb := DoubleCentralizer.hasDerivAt_coe_iff.mpr
+      ((α.perturb hP).hasDerivAt_zero ⟨a, ha⟩)
+    have h := (hΓ.star.mul hb).mul hΓ
+    refine (DoubleCentralizer.hasDerivAt_coe_iff (d := (α.perturb hP).generator ⟨a, ha⟩ -
+      I • (P * a - a * P))).mp ?_ |>.differentiableAt
+    convert h using 1
+    · funext t
+      have hu := α.perturbationCocycle_mem_unitary hP t
+      simp only [Pi.mul_apply, coe_perturb_apply, ← mul_assoc, Unitary.star_mul_self_of_mem hu,
+        one_mul]
+      rw [mul_assoc, Unitary.star_mul_self_of_mem hu, mul_one]
+    · rw [star_I_smul_coe hP]
+      simp only [Pi.mul_apply, perturbationCocycle_zero, ofAdd_zero, one_apply, star_one,
+        mul_one, one_mul, coe_perturb_apply]
+      simp only [← DoubleCentralizer.coeHom_apply (𝕜 := ℂ), map_sub, map_smul,
+        map_mul, neg_mul, smul_mul_assoc, mul_smul_comm, smul_sub]
+      abel
+  · rw [mem_generator_domain_iff_differentiableAt]
+    exact (α.hasDerivAt_perturb_zero hP ⟨a, ha⟩).differentiableAt
+
+/-- The generator of the perturbed dynamics is `δ + i[P, ·]` on the domain of `δ`. -/
+theorem generator_perturb_apply (hP : IsSelfAdjoint P) (a : α.generator.domain) :
+    (α.perturb hP).generator ⟨a, (α.mem_generator_perturb_domain_iff hP a).2 a.property⟩ =
+      α.generator a + I • (P * a - a * P) :=
+  generator_eq_of_hasDerivAt _ _ (α.hasDerivAt_perturb_zero hP a)
+
+/-- The generator of the perturbed dynamics is the bounded perturbation `δ + i[P, ·]`, with the
+same domain as `δ`. -/
+theorem generator_perturb (hP : IsSelfAdjoint P) :
+    (α.perturb hP).generator =
+      (I • (LinearMap.mulLeft ℂ P - LinearMap.mulRight ℂ P)) +ᵥ α.generator := by
+  refine LinearPMap.ext ?_ fun a _ ha => ?_
+  · ext a
+    rw [LinearPMap.vadd_domain]
+    exact α.mem_generator_perturb_domain_iff hP a
+  · rw [LinearPMap.vadd_apply]
+    exact (α.generator_perturb_apply hP ⟨a, ha⟩).trans (by simp [add_comm])
+
+/-- Perturbing by zero recovers the original dynamics. -/
+@[simp]
+theorem perturb_zero : α.perturb (IsSelfAdjoint.zero A) = α := by
+  ext t a
+  apply DoubleCentralizer.coe_injective (𝕜 := ℂ)
+  rw [← ofAdd_toAdd t, coe_perturb_apply]
+  simp
 
 end TauCeti.CStarAction
