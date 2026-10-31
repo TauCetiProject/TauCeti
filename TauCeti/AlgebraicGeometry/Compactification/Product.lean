@@ -26,8 +26,9 @@ when `f` and the structure map of the second compactification are flat
 (`Compactification.prod_isSchemeTheoreticallyDominant`). The interior map factors as the base
 change of one dense open immersion along a flat map followed by the base change of the other,
 and Mathlib's `AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_isPullback` applies to each.
-Over the spectrum of a field every morphism is flat and instance search supplies both
-hypotheses, so products of dense compactifications are dense there.
+Over the spectrum of a field every structure morphism to the base is flat, so instance search
+supplies the hypotheses on `f` and the second structure map, and products of dense
+compactifications are dense there.
 
 ## References
 
@@ -173,6 +174,7 @@ instance {C₁ C₂ : Compactification f} {D₁ D₂ : Compactification g} (h : 
 
 /-- The product of the identity compactifications of two proper morphisms is the identity
 compactification of their fibre product. -/
+@[simp]
 theorem identity_prod_identity [IsProper f] [IsProper g] :
     (identity f).prod (identity g) = identity (pullback.fst f g ≫ f) := by
   -- Both sides are built by `ofHom` on the same ambient scheme and proper map.
