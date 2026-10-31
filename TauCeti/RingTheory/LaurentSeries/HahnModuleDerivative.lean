@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.HahnSeries.Bilinear
 public import TauCeti.RingTheory.LaurentSeries.Derivative
 public import TauCeti.RingTheory.LaurentSeries.Lattice
+-- Proof-only: exchanging the factors of a sum over an antidiagonal.
+import TauCeti.Data.Finset.MulAntidiagonal
 
 /-!
 # The derivative and residue pairing of module-valued Laurent series
@@ -151,14 +153,6 @@ private theorem sum_antidiagonal_derivative {M : Type*} [AddCommMonoid M] (x : H
     obtain ⟨hi, hj, hij⟩ := Finset.mem_antidiagonal.1 hij
     exact Finset.mem_antidiagonal.2 ⟨⟨i, hi, rfl⟩, hj, by omega⟩
 
-/-- A sum over an antidiagonal may be indexed with the two factors exchanged. -/
-private theorem sum_antidiagonal_swap {M : Type*} [AddCommMonoid M] {s t : Set ℤ}
-    (hs : s.IsPWO) (ht : t.IsPWO) (n : ℤ) (f : ℤ → ℤ → M) :
-    ∑ ij ∈ Finset.antidiagonal hs ht n, f ij.1 ij.2 =
-      ∑ ij ∈ Finset.antidiagonal ht hs n, f ij.2 ij.1 :=
-  Finset.sum_equiv (Equiv.prodComm ℤ ℤ) (fun _ ↦ Finset.swap_mem_antidiagonal.symm)
-    fun _ _ ↦ rfl
-
 /-- **The Leibniz rule** `D Φ(x, y) = Φ(D x, y) + Φ(x, D y)` for the coefficientwise extension of
 a biadditive map `Φ : V → W → M`. -/
 theorem derivative_convolutionAddMonoidHom {W M : Type*} [AddCommGroup W] [Module R W]
@@ -174,10 +168,10 @@ theorem derivative_convolutionAddMonoidHom {W M : Type*} [AddCommGroup W] [Modul
     coeff_convolutionAddMonoidHom_right' (isPWO_image_sub_one_support y)
       (support_derivative_subset y), Finset.smul_sum,
     sum_antidiagonal_derivative x _ fun v j ↦ Φ v (((of R).symm y).coeff j),
-    sum_antidiagonal_swap _ _ _ fun i w ↦ Φ (((of R).symm x).coeff i)
+    Finset.sum_antidiagonal_swap _ _ _ fun i w ↦ Φ (((of R).symm x).coeff i)
       (((of R).symm (derivative R y)).coeff w),
     sum_antidiagonal_derivative y _ fun w i ↦ Φ (((of R).symm x).coeff i) w,
-    sum_antidiagonal_swap _ _ _ fun j i ↦ Φ (((of R).symm x).coeff i)
+    Finset.sum_antidiagonal_swap _ _ _ fun j i ↦ Φ (((of R).symm x).coeff i)
       (j • ((of R).symm y).coeff j), ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun ij hij ↦ ?_
   obtain ⟨-, -, hij⟩ := Finset.mem_antidiagonal.1 hij
