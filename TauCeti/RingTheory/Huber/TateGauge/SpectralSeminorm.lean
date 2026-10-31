@@ -43,6 +43,8 @@ uniformization of a Tate Huber pair.
   definition.
 * `TauCeti.Huber.spectralSeminorm_rpow`: change of radius.
 * `TauCeti.Huber.spectralSeminorm_lt_one_iff`: `|x|_sp < 1` iff `x` is topologically nilpotent.
+* `TauCeti.Huber.spectralSeminorm_lt_pow_iff`: `|x|_sp < r ^ n` iff `ϖ ^ (-n) x` is topologically
+  nilpotent.
 * `TauCeti.Huber.spectralSeminorm_le_one_of_isPowerBounded`.
 * `TauCeti.Huber.spectralSeminorm_eq_zero_iff`: the kernel of the spectral seminorm.
 * `TauCeti.Huber.spectralSeminorm_one`: `|1|_sp = 1` for a nonzero Hausdorff ring.
@@ -162,6 +164,14 @@ theorem spectralSeminorm_lt_one_iff {x : A} :
       ← isPowMul_spectralSeminorm d x (Nat.one_le_iff_ne_zero.mpr hn0)]
     exact (spectralSeminorm_le_tateNorm d _).trans_lt hn
 
+/-- **The open balls of radius `r ^ n` are the sets `ϖ ^ n A°°`**: `|x|_sp < r ^ n` exactly when
+`ϖ ^ (-n) x` is topologically nilpotent. -/
+theorem spectralSeminorm_lt_pow_iff (n : ℕ) {x : A} :
+    spectralSeminorm d x < d.radius ^ n ↔
+      IsTopologicallyNilpotent (((d.pseudoUniformizer ^ (-(n : ℤ)) : Aˣ) : A) * x) := by
+  rw [← spectralSeminorm_lt_one_iff d, spectralSeminorm_zpow_mul, zpow_neg, zpow_natCast,
+    inv_mul_lt_iff₀ (pow_pos d.radius_pos _), mul_one]
+
 /-- **Power-bounded elements have spectral seminorm at most one.** -/
 theorem spectralSeminorm_le_one_of_isPowerBounded {x : A} (hx : IsPowerBounded x) :
     spectralSeminorm d x ≤ 1 := by
@@ -187,8 +197,7 @@ topologically nilpotent for every `n ≥ 0`. -/
 theorem spectralSeminorm_eq_zero_iff {x : A} :
     spectralSeminorm d x = 0 ↔
       ∀ n : ℕ, IsTopologicallyNilpotent (((d.pseudoUniformizer ^ (-(n : ℤ)) : Aˣ) : A) * x) := by
-  simp_rw [← spectralSeminorm_lt_one_iff d, spectralSeminorm_zpow_mul, zpow_neg, zpow_natCast,
-    inv_mul_lt_iff₀ (pow_pos d.radius_pos _), mul_one]
+  simp_rw [← spectralSeminorm_lt_pow_iff d]
   refine ⟨fun h n ↦ h ▸ pow_pos d.radius_pos n, fun h ↦ ?_⟩
   by_contra! hx
   obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one ((apply_nonneg _ x).lt_of_ne' hx) d.radius_lt_one
