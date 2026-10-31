@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Analysis.Normed.Ring.Lemmas
+public import Mathlib.Analysis.SpecialFunctions.Log.Summable
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
 
 /-!
@@ -16,7 +17,8 @@ For `f` with summable norms, the infinite product `∏' i, (1 + f i)` in a norme
 has norm at most `exp (∑' i, ‖f i‖)`. Each finite partial product is bounded by
 `∏ (1 + ‖f i‖) ≤ exp (∑ ‖f i‖)`, and the bound passes to the limit. This is the estimate used to
 bound theta products and Siegel functions on the upper half-plane by elementary functions of
-`|q|`.
+`|q|`. The same argument, from Mathlib's `Finset.norm_prod_one_add_sub_one_le`, bounds the distance
+`‖∏' i, (1 + f i) - 1‖` by `exp (∑' i, ‖f i‖) - 1`, which controls such a product near the identity.
 -/
 
 public section
@@ -38,6 +40,17 @@ theorem norm_tprod_one_add_le_exp_tsum {f : ι → R} (hf : Summable fun i ↦ �
       _ ≤ Real.exp (∑' i, ‖f i‖) :=
           Real.exp_le_exp.2 (hf.sum_le_tsum s fun _ _ ↦ norm_nonneg _)
   · rw [tprod_eq_one_of_not_multipliable h, norm_one]
+    exact Real.one_le_exp (tsum_nonneg fun _ ↦ norm_nonneg _)
+
+/-- In a normed commutative ring, `‖∏' i, (1 + f i) - 1‖ ≤ exp (∑' i, ‖f i‖) - 1` whenever the
+norms `‖f i‖` are summable. -/
+theorem norm_tprod_one_add_sub_one_le {f : ι → R} (hf : Summable fun i ↦ ‖f i‖) :
+    ‖∏' i, (1 + f i) - 1‖ ≤ Real.exp (∑' i, ‖f i‖) - 1 := by
+  by_cases h : Multipliable fun i ↦ 1 + f i
+  · refine le_of_tendsto' ((h.hasProd.sub_const 1).norm) fun s ↦ ?_
+    exact (s.norm_prod_one_add_sub_one_le f).trans <| sub_le_sub_right
+      (Real.exp_le_exp.2 (hf.sum_le_tsum s fun _ _ ↦ norm_nonneg _)) 1
+  · rw [tprod_eq_one_of_not_multipliable h, sub_self, norm_zero, sub_nonneg]
     exact Real.one_le_exp (tsum_nonneg fun _ ↦ norm_nonneg _)
 
 end TauCeti
