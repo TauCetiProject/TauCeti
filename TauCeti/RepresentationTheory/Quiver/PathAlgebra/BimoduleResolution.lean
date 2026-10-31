@@ -29,7 +29,7 @@ x ⊗ y ↦ x y.
 Both terms on the left are projective bimodules, so this is a projective resolution of `A` of
 length one, and `A` has projective dimension at most one as a bimodule; through it the Hochschild
 cohomology of a path algebra is computed by a two-term complex. The middle term is the tensor
-product `A ⊗_{kQ₀} A` over the semisimple subalgebra of vertices, and the left one is
+product `A ⊗_{kQ₀} A` over the vertex subalgebra `kQ₀ ≅ ∏ᵥ k`, and the left one is
 `A ⊗_{kQ₀} kQ₁ ⊗_{kQ₀} A` for the bimodule `kQ₁` spanned by the arrows. A path algebra is the
 tensor algebra of `kQ₁` over `kQ₀`, and the sequence is the standard resolution of a tensor
 algebra; it underlies the small resolution of a semifree differential graded path algebra, such as
@@ -103,11 +103,21 @@ tensor `eⱼ ⊗ eᵢ` in the enveloping algebra. -/
 noncomputable def arrowTensorIdempotent (b : Σ i j : Q, i ⟶ j) : 𝒜ᵉ :=
   ε b.2.1 ⊗ₜ[k] op (ε b.1)
 
+omit [Finite Q] in
+/-- The arrow idempotent attached to `b : i ⟶ j` is the pure tensor `eⱼ ⊗ eᵢ`. -/
+theorem arrowTensorIdempotent_def (b : Σ i j : Q, i ⟶ j) :
+    arrowTensorIdempotent k Q b = ε b.2.1 ⊗ₜ[k] op (ε b.1) := (rfl)
+
 /-- The element `b ⊗ eᵢ - eⱼ ⊗ b` of the enveloping algebra attached to an arrow `b : i ⟶ j`;
 right multiplication by it is the component at `b` of the differential of the standard
 resolution. -/
 noncomputable def arrowTensorBoundary (b : Σ i j : Q, i ⟶ j) : 𝒜ᵉ :=
   ofArrow b.2.2 ⊗ₜ[k] op (ε b.1) - ε b.2.1 ⊗ₜ[k] op (ofArrow b.2.2)
+
+/-- The boundary element attached to `b : i ⟶ j` is `b ⊗ eᵢ - eⱼ ⊗ b`. -/
+theorem arrowTensorBoundary_def (b : Σ i j : Q, i ⟶ j) :
+    arrowTensorBoundary k Q b = ofArrow b.2.2 ⊗ₜ[k] op (ε b.1) - ε b.2.1 ⊗ₜ[k] op (ofArrow b.2.2) :=
+  (rfl)
 
 /-- The pure tensor `eⱼ ⊗ eᵢ` attached to an arrow is idempotent. -/
 theorem isIdempotentElem_arrowTensorIdempotent (b : Σ i j : Q, i ⟶ j) :
@@ -180,6 +190,18 @@ private noncomputable def actOne : 𝒜ᵉ →ₗ[k] 𝒜 :=
 private theorem actOne_tmul (x : 𝒜) (y : 𝒜ᵐᵒᵖ) : actOne (x ⊗ₜ[k] y) = x * y.unop := by
   simp [actOne]
 
+omit [Finite Q] in
+/-- A vertex idempotent absorbs a second copy of itself in a right-associated product. -/
+private theorem vertexIdempotent_mul_vertexIdempotent_mul (v : Q) (y : 𝒜) :
+    ε v * (ε v * y) = ε v * y := by
+  rw [← mul_assoc, vertexIdempotent_mul_self]
+
+omit [Finite Q] in
+/-- A path absorbs the vertex idempotent at its source in a right-associated product. -/
+private theorem ofPath_mul_vertexIdempotent_mul {a b : Q} (p : Quiver.Path a b) (y : 𝒜) :
+    ofPath ⟨a, b, p⟩ * (ε a * y) = ofPath ⟨a, b, p⟩ * y := by
+  rw [← mul_assoc, ofPath_mul_vertexIdempotent]
+
 section Homotopy
 
 variable [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
@@ -203,6 +225,12 @@ private theorem arrowTensorProj_mul_arrowTensorIdempotent (b : Σ i j : Q, i ⟶
   rw [arrowTensorProj_apply, arrowTensorProj_apply]
   congr 2
   rw [mul_assoc, (isIdempotentElem_arrowTensorIdempotent k Q b).eq]
+
+/-- The projection onto the component of an arrow `b : i ⟶ j` only sees `x eⱼ ⊗ eᵢ y`. -/
+private theorem arrowTensorProj_tmul (b : Σ i j : Q, i ⟶ j) (x y : 𝒜) :
+    arrowTensorProj b (x ⊗ₜ[k] op y) = arrowTensorProj b ((x * ε b.2.1) ⊗ₜ[k] op (ε b.1 * y)) := by
+  rw [← arrowTensorProj_mul_arrowTensorIdempotent, arrowTensorIdempotent,
+    Algebra.TensorProduct.tmul_mul_tmul, ← op_mul]
 
 /-- The homotopy on the elements `x ⊗ q` of the enveloping algebra, for a path `q`: the sum, over
 the factorizations `q = q'' c q'` with `c` an arrow, of `x q'' ⊗ q'` in the component of `c`. It is
@@ -247,6 +275,11 @@ variable (k Q)
 the bimodule `kQ ⊗_{kQ₀} kQ`. -/
 noncomputable def vertexTensorIdempotent : 𝒜ᵉ :=
   ∑ v : Q, ε v ⊗ₜ[k] op (ε v)
+
+omit [Finite Q] in
+/-- The vertex idempotent of the enveloping algebra is the sum `∑ᵥ eᵥ ⊗ eᵥ`. -/
+theorem vertexTensorIdempotent_def :
+    vertexTensorIdempotent k Q = ∑ v : Q, ε v ⊗ₜ[k] op (ε v) := (rfl)
 
 variable {k Q}
 
@@ -399,11 +432,9 @@ theorem coe_arrowTensorDifferential_lof_tmul (b : Σ i j : Q, i ⟶ j) (x y : �
       (DirectSum.lof 𝒜ᵉ _ _ b ⟨_, tmul_mem_span_arrowTensorIdempotent b x y⟩) : 𝒜ᵉ) =
       (x * ofArrow b.2.2) ⊗ₜ[k] op (ε b.1 * y) - (x * ε b.2.1) ⊗ₜ[k] op (ofArrow b.2.2 * y) := by
   obtain ⟨i, j, b⟩ := b
-  rw [coe_arrowTensorDifferential_lof, arrowTensorBoundary, mul_sub,
-    Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, ← op_mul, ← op_mul,
-    mul_assoc x, ← mul_assoc _ _ y, vertexIdempotent_mul_self, mul_assoc x,
-    vertexIdempotent_mul_self,
-    ← mul_assoc _ _ y, ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath, ofPath_mul_vertexIdempotent]
+  rw [coe_arrowTensorDifferential_lof, arrowTensorBoundary, mul_sub]
+  simp [← op_mul, mul_assoc, vertexIdempotent_mul_vertexIdempotent_mul,
+    ofPath_mul_vertexIdempotent_mul]
 
 /-- **The standard sequence is a complex**: multiplication kills the image of the differential. -/
 theorem vertexTensorMul_comp_arrowTensorDifferential :
@@ -436,10 +467,10 @@ private theorem coe_arrowTensorDifferential_homotopyPath {s t : Q} (q : Quiver.P
       ZeroMemClass.coe_zero, sub_self]
   | @cons t t' q c ih =>
     rw [homotopyPath_cons, map_add, Submodule.coe_add, ih,
-      coe_arrowTensorDifferential_arrowTensorProj, arrowTensorBoundary, mul_sub,
-      Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, ← op_mul,
-      ← op_mul, vertexIdempotent_mul_ofPath, ofArrow_mul_ofPath, mul_assoc x, ofArrow_mul_ofPath,
-      mul_assoc x, ofArrow_eq_ofPath, ofPath_mul_vertexIdempotent]
+      coe_arrowTensorDifferential_arrowTensorProj, arrowTensorBoundary, mul_sub]
+    simp only [Algebra.TensorProduct.tmul_mul_tmul, ← op_mul, mul_assoc, ofArrow_eq_ofPath,
+      ofPath_mul_ofPath_of_comp, Quiver.Path.comp_toPath_eq_cons, vertexIdempotent_mul_ofPath,
+      ofPath_mul_vertexIdempotent]
     abel
 
 /-- **The homotopy composed with the differential is minus the identity.** -/
@@ -460,24 +491,15 @@ private theorem homotopy_arrowTensorDifferential (w : arrowTensorBimodule k Q) :
     obtain ⟨i, j, c⟩ := b
     simp only [LinearMap.comp_apply, LinearMap.mulRight_apply, LinearMap.neg_apply,
       LinearMap.restrictScalars_apply]
-    rw [arrowTensorBoundary, mul_sub, Algebra.TensorProduct.tmul_mul_tmul,
-      Algebra.TensorProduct.tmul_mul_tmul, ← op_mul, ← op_mul]
+    rw [arrowTensorBoundary, mul_sub, map_sub, arrowTensorProj_tmul]
+    simp only [Algebra.TensorProduct.tmul_mul_tmul, ← op_mul]
     by_cases ht : t = i
     · subst ht
-      rw [vertexIdempotent_mul_ofPath, ofArrow_mul_ofPath, map_sub, homotopy_tmul, homotopy_tmul,
-        homotopyPath_cons, mul_assoc, ofArrow_eq_ofPath, vertexIdempotent_mul_ofPath,
-        ← ofArrow_eq_ofPath, sub_add_cancel_left, neg_inj,
-        ← arrowTensorProj_mul_arrowTensorIdempotent ⟨_, _, c⟩ (x ⊗ₜ _),
-        ← arrowTensorProj_mul_arrowTensorIdempotent ⟨_, _, c⟩ ((x * ε j) ⊗ₜ _),
-        arrowTensorIdempotent, Algebra.TensorProduct.tmul_mul_tmul,
-        Algebra.TensorProduct.tmul_mul_tmul, mul_assoc, vertexIdempotent_mul_self]
-    · rw [vertexIdempotent_mul_ofPath_of_ne _ (Ne.symm ht), ofArrow_eq_ofPath,
-        ofPath_mul_ofPath_of_not_composable ht, op_zero, TensorProduct.tmul_zero,
-        TensorProduct.tmul_zero, sub_zero, map_zero, eq_comm, neg_eq_zero,
-        ← arrowTensorProj_mul_arrowTensorIdempotent, arrowTensorIdempotent,
-        Algebra.TensorProduct.tmul_mul_tmul, ← op_mul,
-        vertexIdempotent_mul_ofPath_of_ne _ (Ne.symm ht), op_zero, TensorProduct.tmul_zero,
-        map_zero]
+      rw [vertexIdempotent_mul_ofPath, ofArrow_mul_ofPath, homotopy_tmul, homotopy_tmul,
+        homotopyPath_cons]
+      simp [mul_assoc]
+    · simp [vertexIdempotent_mul_ofPath_of_ne ⟨s, t, q⟩ (Ne.symm ht),
+        ofPath_mul_ofPath_of_not_composable (x := ⟨i, j, c.toPath⟩) (y := ⟨s, t, q⟩) ht]
 
 /-- **The differential composed with the homotopy** is `u ↦ (μ u ⊗ 1)(∑ᵥ eᵥ ⊗ eᵥ) - u` on
 `kQ ⊗_{kQ₀} kQ`, for `μ` the multiplication map; the elements of `kQ ⊗_{kQ₀} kQ` are the
