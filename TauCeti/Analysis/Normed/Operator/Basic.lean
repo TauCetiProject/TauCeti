@@ -20,6 +20,14 @@ uniformly bounded, their values at the limiting argument converge, and the argum
 In particular, it supplies the common continuity step for
 `StronglyContinuousSemigroup.tendsto_realOperator_apply` and
 `StronglyContinuousGroup.tendsto_apply`.
+
+Finally, an operator bounded below is injective
+(`ContinuousLinearMap.injective_of_forall_norm_le`), an invertible operator `A` on a normed space
+cancels against its inverse (`ContinuousLinearMap.ringInverse_apply_apply`,
+`ContinuousLinearMap.apply_ringInverse_apply`) and is bounded below by `‖A⁻¹‖⁻¹`
+(`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`), and conversely a lower bound
+`‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
+(`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`).
 -/
 
 public section
@@ -79,6 +87,43 @@ theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
       exact (T i).le_of_opNorm_le hi _
     · simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hg).const_mul C
   simpa only [map_sub, sub_add_cancel, zero_add] using hmove.add hz
+
+section Inverse
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- An operator bounded below, `‖x‖ ≤ M ‖f x‖`, is injective. -/
+theorem injective_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {f : E →L[𝕜] F} {M : ℝ} (h : ∀ x, ‖x‖ ≤ M * ‖f x‖) : Function.Injective f := by
+  refine (injective_iff_map_eq_zero f).mpr fun x hx ↦ norm_le_zero_iff.mp ?_
+  simpa [hx] using h x
+
+/-- The inverse of an invertible operator undoes the operator. -/
+@[simp]
+theorem ringInverse_apply_apply {A : E →L[𝕜] E} (hA : IsUnit A) (x : E) :
+    Ring.inverse A (A x) = x := by
+  rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel A hA, one_apply_eq_self]
+
+/-- An invertible operator undoes its inverse. -/
+@[simp]
+theorem apply_ringInverse_apply {A : E →L[𝕜] E} (hA : IsUnit A) (y : E) :
+    A (Ring.inverse A y) = y := by
+  rw [← mul_apply_eq_comp, Ring.mul_inverse_cancel A hA, one_apply_eq_self]
+
+/-- An invertible operator is bounded below by the reciprocal of the norm of its inverse. -/
+theorem norm_le_norm_ringInverse_mul_norm_apply {A : E →L[𝕜] E} (hA : IsUnit A) (x : E) :
+    ‖x‖ ≤ ‖Ring.inverse A‖ * ‖A x‖ := by
+  calc
+    ‖x‖ = ‖Ring.inverse A (A x)‖ := by rw [ringInverse_apply_apply hA]
+    _ ≤ ‖Ring.inverse A‖ * ‖A x‖ := le_opNorm _ _
+
+/-- An invertible operator bounded below by `M⁻¹` has an inverse of norm at most `M`. -/
+theorem norm_ringInverse_le_of_forall_norm_le {A : E →L[𝕜] E} (hA : IsUnit A) {M : ℝ}
+    (hM : 0 ≤ M) (h : ∀ x, ‖x‖ ≤ M * ‖A x‖) : ‖Ring.inverse A‖ ≤ M := by
+  refine opNorm_le_bound _ hM fun y ↦ ?_
+  simpa only [apply_ringInverse_apply hA] using h (Ring.inverse A y)
+
+end Inverse
 
 end ContinuousLinearMap
 
