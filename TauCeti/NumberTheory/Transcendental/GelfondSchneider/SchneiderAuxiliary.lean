@@ -122,6 +122,52 @@ private theorem schneider_exponent_le {D₁ D₂ B : ℕ} (i : Fin D₁) (j : Fi
   have := i.is_lt
   linarith
 
+section CommRing
+
+variable {K : Type*} [CommRing K]
+
+/-- One term of Schneider's value `y_{uv}`, multiplied by `m ^ N` with `i + u j + v j ≤ N`, is an
+algebraic integer when `m α`, `m β` and `m γ` are. -/
+private theorem isIntegral_intCast_pow_mul_schneider_term {m : ℤ} {α β γ : K}
+    (hα : IsIntegral ℤ ((m : K) * α)) (hβ : IsIntegral ℤ ((m : K) * β))
+    (hγ : IsIntegral ℤ ((m : K) * γ)) {i j u v N : ℕ} (h : i + u * j + v * j ≤ N) :
+    IsIntegral ℤ ((m : K) ^ N * (((u : K) + v * β) ^ i * (α ^ (u * j) * γ ^ (v * j)))) := by
+  obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le h
+  have hw : IsIntegral ℤ ((m : K) * ((u : K) + v * β)) := by
+    rw [mul_add, mul_left_comm]
+    exact ((isIntegral_intCast m).mul (isIntegral_natCast u)).add
+      ((isIntegral_natCast v).mul hβ)
+  have key : (m : K) ^ (i + u * j + v * j + r) *
+      (((u : K) + v * β) ^ i * (α ^ (u * j) * γ ^ (v * j))) =
+      (m : K) ^ r * ((m : K) * ((u : K) + v * β)) ^ i *
+        (((m : K) * α) ^ (u * j) * ((m : K) * γ) ^ (v * j)) := by
+    rw [mul_pow, mul_pow, mul_pow]
+    ring
+  rw [key]
+  exact (((isIntegral_intCast m).pow r).mul (hw.pow i)).mul ((hα.pow _).mul (hγ.pow _))
+
+/-- **Denominators of Schneider's values.** If `m α`, `m β` and `m γ` are algebraic integers,
+then for `u, v ≤ B` the multiple
+`m ^ (D₁ + 2 B D₂) ∑_{i, j} a_{ij} (u + v β) ^ i α ^ (u j) γ ^ (v j)` is an algebraic integer for
+all integers `a_{ij}`, `i < D₁`, `j < D₂`. -/
+theorem isIntegral_intCast_pow_mul_schneider_value {m : ℤ} {α β γ : K}
+    (hα : IsIntegral ℤ ((m : K) * α)) (hβ : IsIntegral ℤ ((m : K) * β))
+    (hγ : IsIntegral ℤ ((m : K) * γ)) {D₁ D₂ B : ℕ} (a : Fin D₁ → Fin D₂ → ℤ) {u v : ℕ}
+    (hu : u ≤ B) (hv : v ≤ B) :
+    IsIntegral ℤ ((m : K) ^ (D₁ + 2 * B * D₂) *
+      ∑ i, ∑ j, (a i j : K) * ((u : K) + v * β) ^ (i : ℕ) * (α ^ (u * j) * γ ^ (v * j))) := by
+  rw [mul_sum]
+  refine IsIntegral.sum _ fun i _ ↦ ?_
+  rw [mul_sum]
+  refine IsIntegral.sum _ fun j _ ↦ ?_
+  have hk := schneider_exponent_le i j hu hv
+  rw [show (m : K) ^ (D₁ + 2 * B * D₂) * ((a i j : K) * ((u : K) + v * β) ^ (i : ℕ) *
+      (α ^ (u * j) * γ ^ (v * j))) = (a i j : K) * ((m : K) ^ (D₁ + 2 * B * D₂) *
+      (((u : K) + v * β) ^ (i : ℕ) * (α ^ (u * j) * γ ^ (v * j)))) by ring]
+  exact (isIntegral_intCast _).mul (isIntegral_intCast_pow_mul_schneider_term hα hβ hγ hk)
+
+end CommRing
+
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- Bounds on the houses of two factors bound the house of their product. -/
@@ -150,27 +196,6 @@ private theorem house_schneider_entry_le {x y z w : K} {L H : ℝ} (hx : house x
   obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le hn
   rw [Nat.add_sub_cancel_left, mul_pow]
   ring
-
-omit [NumberField K] in
-/-- One term of Schneider's value `y_{uv}`, multiplied by `m ^ N` with `i + u j + v j ≤ N`, is an
-algebraic integer when `m α`, `m β` and `m γ` are. -/
-private theorem isIntegral_intCast_pow_mul_schneider_term {m : ℤ} {α β γ : K}
-    (hα : IsIntegral ℤ ((m : K) * α)) (hβ : IsIntegral ℤ ((m : K) * β))
-    (hγ : IsIntegral ℤ ((m : K) * γ)) {i j u v N : ℕ} (h : i + u * j + v * j ≤ N) :
-    IsIntegral ℤ ((m : K) ^ N * (((u : K) + v * β) ^ i * (α ^ (u * j) * γ ^ (v * j)))) := by
-  obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le h
-  have hw : IsIntegral ℤ ((m : K) * ((u : K) + v * β)) := by
-    rw [mul_add, mul_left_comm]
-    exact ((isIntegral_intCast m).mul (isIntegral_natCast u)).add
-      ((isIntegral_natCast v).mul hβ)
-  have key : (m : K) ^ (i + u * j + v * j + r) *
-      (((u : K) + v * β) ^ i * (α ^ (u * j) * γ ^ (v * j))) =
-      (m : K) ^ r * ((m : K) * ((u : K) + v * β)) ^ i *
-        (((m : K) * α) ^ (u * j) * ((m : K) * γ) ^ (v * j)) := by
-    rw [mul_pow, mul_pow, mul_pow]
-    ring
-  rw [key]
-  exact (((isIntegral_intCast m).pow r).mul (hw.pow i)).mul ((hα.pow _).mul (hγ.pow _))
 
 /-- **Schneider's auxiliary function, algebraic form** (Evertse, Lemma 4.22). Let `K` be a number
 field of degree `d` and `α, β, γ ∈ K`. There is `c > 0` such that for all integers `L ≥ 3` and
@@ -342,27 +367,6 @@ theorem house_schneider_value_le {α β γ : K} {H A : ℝ} (hH : 1 ≤ H) (hα 
   simp only [sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul]
   push_cast
   ring
-
-omit [NumberField K] in
-/-- **Denominators of Schneider's values.** If `m α`, `m β` and `m γ` are algebraic integers,
-then for `u, v ≤ B` the multiple
-`m ^ (D₁ + 2 B D₂) ∑_{i, j} a_{ij} (u + v β) ^ i α ^ (u j) γ ^ (v j)` is an algebraic integer for
-all integers `a_{ij}`, `i < D₁`, `j < D₂`. -/
-theorem isIntegral_intCast_pow_mul_schneider_value {m : ℤ} {α β γ : K}
-    (hα : IsIntegral ℤ ((m : K) * α)) (hβ : IsIntegral ℤ ((m : K) * β))
-    (hγ : IsIntegral ℤ ((m : K) * γ)) {D₁ D₂ B : ℕ} (a : Fin D₁ → Fin D₂ → ℤ) {u v : ℕ}
-    (hu : u ≤ B) (hv : v ≤ B) :
-    IsIntegral ℤ ((m : K) ^ (D₁ + 2 * B * D₂) *
-      ∑ i, ∑ j, (a i j : K) * ((u : K) + v * β) ^ (i : ℕ) * (α ^ (u * j) * γ ^ (v * j))) := by
-  rw [mul_sum]
-  refine IsIntegral.sum _ fun i _ ↦ ?_
-  rw [mul_sum]
-  refine IsIntegral.sum _ fun j _ ↦ ?_
-  have hk := schneider_exponent_le i j hu hv
-  rw [show (m : K) ^ (D₁ + 2 * B * D₂) * ((a i j : K) * ((u : K) + v * β) ^ (i : ℕ) *
-      (α ^ (u * j) * γ ^ (v * j))) = (a i j : K) * ((m : K) ^ (D₁ + 2 * B * D₂) *
-      (((u : K) + v * β) ^ (i : ℕ) * (α ^ (u * j) * γ ^ (v * j)))) by ring]
-  exact (isIntegral_intCast _).mul (isIntegral_intCast_pow_mul_schneider_term hα hβ hγ hk)
 
 /-- The explicit bound of `house_schneider_value_le` with `A = exp (c₁ E)` and `B = c L + 1`,
 where `E = D₁ log L + D₂ L`, is at most `exp (C E)` for a constant `C` depending only on `c₁`, `c`
