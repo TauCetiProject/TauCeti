@@ -169,8 +169,8 @@ theorem mapsTo_analyticPoints_of_isOpenImmersion (f : Y ⟶ X) [IsOpenImmersion 
     rwa [Set.mem_preimage, ← ConcreteCategory.comp_apply, ← comp_base, e.hom_inv_id]
   rw [analyticPoints_restrict] at hy'
   -- `e` followed by the inclusion of `X|_{f(Y)}` is `f`, and that inclusion is `f` on points
-  exact (congrArg (· ∈ X.analyticPoints)
-    (congrArg (fun g ↦ g.base y) (IsOpenImmersion.isoRestrict_hom_ofRestrict f))).mp hy'
+  rwa [← IsOpenImmersion.isoRestrict_hom_ofRestrict f, comp_base, ConcreteCategory.comp_apply,
+    ofRestrict_base]
 
 /-- **Open immersions identify analytic points**: a point of the source of an open immersion is
 analytic exactly when its image is. -/

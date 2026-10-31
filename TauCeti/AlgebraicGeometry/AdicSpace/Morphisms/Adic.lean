@@ -52,8 +52,8 @@ homomorphism is. Adic morphisms are thus the morphisms that restrict to the anal
 * `TauCeti.AdicSpace.IsAdic.of_comp`: if `f ≫ g` is adic, then `f` is adic.
 * `TauCeti.AdicSpace.IsAdic.of_analyticPoints_eq_univ`: every morphism into an adic space all of
   whose points are analytic is adic.
-* `TauCeti.AdicSpace.isAdic_homMk_presentationLimitPreAdicSpaceComap_iff`: a morphism of affinoid
-  adic spaces induced by a morphism of Huber pairs is adic exactly when its ring homomorphism is.
+* `TauCeti.AdicSpace.IsAdic.iff_isAdicHom`: a morphism of affinoid adic spaces induced by a
+  morphism of Huber pairs is adic exactly when its ring homomorphism is.
 
 ## References
 
@@ -202,7 +202,7 @@ private theorem IsAdic.mapsTo_analyticPoints {f : X ⟶ Y} (hf : IsAdic f) :
     hsheaf, eU, eV, hfac⟩ := hf x
   have hx' : (⟨x, hxU⟩ : X.obj.restrict U.isOpenEmbedding) ∈
       (X.obj.restrict U.isOpenEmbedding).analyticPoints := by
-    rw [analyticPoints_restrict]
+    simp only [analyticPoints_restrict, Opens.coe_inclusion']
     exact hx
   -- follow `x` around the chart square
   have h : Set.MapsTo (X.obj.ofRestrict U.isOpenEmbedding ≫ f.hom).base
@@ -238,7 +238,12 @@ private theorem isAdic_of_mapsTo_analyticPoints {f : X ⟶ Y}
   have hrange : Set.range (X.obj.ofRestrict U.isOpenEmbedding ≫ f.hom).base ⊆
       Set.range (Y.obj.ofRestrict V.isOpenEmbedding).base := by
     rintro _ ⟨⟨y, hy⟩, rfl⟩
-    exact ⟨⟨f.hom.base y, hUV hy⟩, rfl⟩
+    refine ⟨⟨f.hom.base y, hUV hy⟩, ?_⟩
+    -- by `comp_base`, `ofRestrict_base` and `Opens.coe_inclusion'` both sides are `f y`; these
+    -- are `rfl`-lemmas that `rw` and `simp` cannot apply here, since the subtype carrying `y` is
+    -- the carrier of the restriction, which unfolds to the open only at default transparency
+    change f.hom.base y = f.hom.base y
+    rfl
   let l := IsOpenImmersion.lift (Y.obj.ofRestrict V.isOpenEmbedding)
     (X.obj.ofRestrict U.isOpenEmbedding ≫ f.hom) hrange
   have hl : l ≫ Y.obj.ofRestrict V.isOpenEmbedding = X.obj.ofRestrict U.isOpenEmbedding ≫ f.hom :=
@@ -286,15 +291,13 @@ instance IsAdic.isMultiplicative : IsAdic.{u}.IsMultiplicative where
 theorem IsAdic.of_isOpenImmersion (f : X ⟶ Y) [PreAdicSpace.IsOpenImmersion f.hom] : IsAdic f :=
   (isAdic_iff_mapsTo_analyticPoints f).mpr (mapsTo_analyticPoints_of_isOpenImmersion f.hom)
 
-/-- **Being adic is invariant under isomorphisms**: isomorphisms are open immersions, hence adic,
-and adic morphisms are stable under composition. -/
+/-- **Being adic is invariant under isomorphisms.** -/
 instance IsAdic.respectsIso : IsAdic.{u}.RespectsIso :=
   MorphismProperty.respectsIso_of_isStableUnderComposition fun _ _ f (_ : IsIso f) ↦
     have : IsIso f.hom := (ObjectProperty.ι _).map_isIso f
     IsAdic.of_isOpenImmersion f
 
-/-- **Cancellation**: if `f ≫ g` is adic, then so is `f`. A point over a non-analytic point is
-non-analytic, so if `g (f x)` is analytic then so is `f x`. -/
+/-- **Cancellation**: if `f ≫ g` is adic, then so is `f`. -/
 theorem IsAdic.of_comp {f : X ⟶ Y} {g : Y ⟶ Z} (h : IsAdic (f ≫ g)) : IsAdic f :=
   (isAdic_iff_mapsTo_analyticPoints f).mpr fun _ hx ↦ preimage_analyticPoints_subset g.hom
     ((isAdic_iff_mapsTo_analyticPoints (f ≫ g)).mp h hx)
@@ -311,7 +314,7 @@ theorem IsAdic.of_analyticPoints_eq_univ (f : X ⟶ Y) (hY : Y.obj.analyticPoint
 complete and Hausdorff, between pairs whose adic spectra are adic spaces, the morphism
 `Spa(B, B⁺) ⟶ Spa(A, A⁺)` induced by `φ` is adic exactly when the ring homomorphism of `φ` is
 adic. -/
-theorem isAdic_homMk_presentationLimitPreAdicSpaceComap_iff {A : Type u} [CommRing A]
+theorem IsAdic.iff_isAdicHom {A : Type u} [CommRing A]
     [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A] {B : Type u} [CommRing B]
     [UniformSpace B] [IsUniformAddGroup B] [IsTopologicalRing B] [CompleteSpace B] [T2Space B]
     [IsHuberRing B] {S : Pair A} {T : Pair B} (P : PairOfDefinition A) (P' : PairOfDefinition B)
