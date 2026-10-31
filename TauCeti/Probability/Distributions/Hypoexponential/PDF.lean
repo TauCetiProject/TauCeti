@@ -137,6 +137,16 @@ theorem hypoexponentialPDFReal_eq_sum_gammaPDFReal (hr : ∀ i, 0 < r i) (hx : 0
   rw [div_mul_comm, gammaPDFReal_nat_div_pow (mem_Icc.1 hk).1 (hr i).ne' hx.le]
   ring
 
+/-- For positive rates, the density is almost everywhere the combination of Erlang densities with
+the weights `A ρ k / ρ ^ k`; the two sides differ only at `0`. -/
+theorem hypoexponentialPDFReal_ae_eq_sum_gammaPDFReal (hr : ∀ i, 0 < r i) :
+    hypoexponentialPDFReal r =ᵐ[volume] fun x ↦ ∑ ρ ∈ univ.image r, ∑ k ∈ Icc 1 #{i | r i = ρ},
+      hypoexponentialCoeff r ρ k / ρ ^ k * gammaPDFReal k ρ x := by
+  filter_upwards [(volume : Measure ℝ).ae_ne 0] with x hx
+  rcases hx.lt_or_gt with hx | hx
+  · simp [hypoexponentialPDFReal_of_nonpos r hx.le, gammaPDFReal, hx.not_ge]
+  · exact hypoexponentialPDFReal_eq_sum_gammaPDFReal hr hx
+
 /-! ### Identification with the law -/
 
 section Law
@@ -294,13 +304,9 @@ private theorem ae_rnDeriv_hypoexponentialMeasure [Nonempty ι] (hr : ∀ i, 0 <
 
 private theorem hypoexponentialPDFReal_ae_eq_erlangExpansion (hr : ∀ i, 0 < r i) :
     hypoexponentialPDFReal r =ᵐ[volume] erlangExpansion r := by
-  filter_upwards [(volume : Measure ℝ).ae_ne 0] with x hx
-  rcases hx.lt_or_gt with hx | hx
-  · rw [hypoexponentialPDFReal_of_nonpos r hx.le]
-    exact (sum_eq_zero fun p _ ↦ by simp [gammaPDFReal, hx.not_ge]).symm
-  · rw [hypoexponentialPDFReal_eq_sum_gammaPDFReal hr hx]
-    unfold erlangExpansion poles
-    rw [sum_sigma]
+  filter_upwards [hypoexponentialPDFReal_ae_eq_sum_gammaPDFReal hr] with x hx
+  unfold erlangExpansion poles
+  rw [hx, sum_sigma]
 
 /-- A nonempty hypoexponential law with positive rates has density `hypoexponentialPDF r`. -/
 theorem hypoexponentialMeasure_eq_withDensity [Nonempty ι] (hr : ∀ i, 0 < r i) :
@@ -387,14 +393,12 @@ end Law
 
 /-! ### Distinct and equal rates -/
 
-/-- **Distinct rates.** For pairwise distinct positive rates, the density at `x > 0` is
-`∑ i, r i * exp (-(r i * x)) * ∏ j ≠ i, r j / (r j - r i)`. -/
-theorem hypoexponentialPDFReal_of_injective [DecidableEq ι] (hr : ∀ i, 0 < r i)
-    (hinj : Function.Injective r) (hx : 0 < x) :
-    hypoexponentialPDFReal r x =
-      ∑ i, r i * exp (-(r i * x)) * ∏ j ∈ univ.erase i, r j / (r j - r i) := by
-  rw [hypoexponentialPDFReal_of_pos hr hx, sum_image fun i _ j _ h ↦ hinj h]
-  refine sum_congr rfl fun i _ ↦ ?_
+/-- With pairwise distinct rates, every pole `r i` is simple, so the Erlang terms attached to it
+collapse to the single term of order one, with weight `∏ j ≠ i, r j / (r j - r i)`. -/
+theorem sum_hypoexponentialCoeff_div_pow_mul_of_injective [DecidableEq ι]
+    (hinj : Function.Injective r) {i : ι} (hi : r i ≠ 0) (f : ℕ → ℝ) :
+    ∑ k ∈ Icc 1 #{j | r j = r i}, hypoexponentialCoeff r (r i) k / r i ^ k * f k =
+      (∏ j ∈ univ.erase i, r j / (r j - r i)) * f 1 := by
   have hfilter : ({j | r j = r i} : Finset ι) = {i} := by
     ext j
     simp [hinj.eq_iff]
@@ -405,7 +409,19 @@ theorem hypoexponentialPDFReal_of_injective [DecidableEq ι] (hr : ∀ i, 0 < r 
   rw [hfilter, card_singleton, hne] at hA
   rw [hfilter, card_singleton, Icc_self, sum_singleton, hA,
     ← mul_prod_erase univ r (mem_univ i), prod_div_distrib]
-  simp only [Nat.sub_self, pow_zero, Nat.factorial_zero, Nat.cast_one, mul_one, div_one]
+  field_simp
+
+/-- **Distinct rates.** For pairwise distinct positive rates, the density at `x > 0` is
+`∑ i, r i * exp (-(r i * x)) * ∏ j ≠ i, r j / (r j - r i)`. -/
+theorem hypoexponentialPDFReal_of_injective [DecidableEq ι] (hr : ∀ i, 0 < r i)
+    (hinj : Function.Injective r) (hx : 0 < x) :
+    hypoexponentialPDFReal r x =
+      ∑ i, r i * exp (-(r i * x)) * ∏ j ∈ univ.erase i, r j / (r j - r i) := by
+  rw [hypoexponentialPDFReal_eq_sum_gammaPDFReal hr hx, sum_image fun i _ j _ h ↦ hinj h]
+  refine sum_congr rfl fun i _ ↦ ?_
+  rw [sum_hypoexponentialCoeff_div_pow_mul_of_injective hinj (hr i).ne' fun k ↦
+    gammaPDFReal k (r i) x]
+  simp [gammaPDFReal, hx.le]
   ring
 
 /-- **Equal rates.** With a common positive rate `ρ`, the density of a nonempty family away from
