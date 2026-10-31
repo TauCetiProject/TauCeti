@@ -76,7 +76,7 @@ namespace TauCeti.Probability
 
 variable {m : ℝ} {v : ℝ≥0} {s : Set ℝ} {l r : EReal}
 
-/-! ### Moment-generating function -/
+/-! ### Moment- and cumulant-generating functions -/
 
 /-- The moment-generating function of the Gaussian law `N(m, v)` conditioned on any set `s`:
 `exp (m t + v t² / 2)` times the ratio of the masses of `s` under `N(m + v t, v)` and `N(m, v)`.
@@ -111,19 +111,25 @@ theorem memLp_id_truncatedNormalMeasure (m : ℝ) (v : ℝ≥0) (s : Set ℝ) (p
     MemLp id p (truncatedNormalMeasure m v s) :=
   memLp_of_mem_interior_integrableExpSet (by simp) p
 
-/-! ### Mean, variance and cumulant-generating function of an interval truncation -/
-
-/-- The cumulant-generating function of a normal law of positive variance truncated to an
-interval with extended bounds `l < r`. -/
-theorem cgf_id_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l < r)
-    (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s) (t : ℝ) :
+/-- The cumulant-generating function of the Gaussian law `N(m, v)` conditioned on a set `s` of
+nonzero Gaussian mass. -/
+theorem cgf_id_truncatedNormalMeasure (hs : gaussianReal m v s ≠ 0) (t : ℝ) :
     cgf id (truncatedNormalMeasure m v s) t =
       m * t + v * t ^ 2 / 2 + log ((gaussianReal (m + v * t) v).real s) -
         log ((gaussianReal m v).real s) := by
-  rw [cgf, mgf_id_truncatedNormalMeasure,
-    log_div (by positivity [(measureReal_gaussianReal_pos (m + v * t) hv hlr hs₁).ne'])
-      (measureReal_gaussianReal_pos m hv hlr hs₁).ne',
-    log_mul (exp_pos _).ne' (measureReal_gaussianReal_pos (m + v * t) hv hlr hs₁).ne', log_exp]
+  -- Gaussian laws with the same variance have the same null sets, so `s` keeps nonzero mass
+  -- under the shifted law.
+  have hs' : gaussianReal (m + v * t) v s ≠ 0 := by
+    rcases eq_or_ne v 0 with rfl | hv
+    · simpa using hs
+    · exact fun h => hs ((gaussianReal_absolutelyContinuous m hv).trans
+        (gaussianReal_absolutelyContinuous' _ hv) h)
+  have hZ : (gaussianReal m v).real s ≠ 0 := (measureReal_ne_zero_iff ..).2 hs
+  have hZ' : (gaussianReal (m + v * t) v).real s ≠ 0 := (measureReal_ne_zero_iff ..).2 hs'
+  rw [cgf, mgf_id_truncatedNormalMeasure, log_div (mul_ne_zero (exp_pos _).ne' hZ') hZ,
+    log_mul (exp_pos _).ne' hZ', log_exp]
+
+/-! ### Mean and variance of an interval truncation -/
 
 /-- The derivative of the moment-generating function of an interval truncation. -/
 private theorem hasDerivAt_mgf_id_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l < r)
