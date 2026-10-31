@@ -48,6 +48,10 @@ Passing a finite-dimensional operator to continuous linear maps preserves its ad
 (`LinearMap.toContinuousLinearMap_star`) and its normality
 (the instance `LinearMap.isStarNormal_toContinuousLinearMap`).
 
+Forgetting a linear isometric equivalence to an isometric embedding and then to a linear map gives
+the linear map of its underlying linear equivalence
+(`LinearIsometryEquiv.toLinearMap_toLinearIsometry`).
+
 -/
 
 public section
@@ -169,6 +173,13 @@ theorem adjoint_apply_apply (f : E →ₗᵢ[𝕜] F) (x : E) :
 end LinearIsometry
 
 namespace LinearIsometryEquiv
+
+/-- The linear map underlying the isometric embedding of a linear isometric equivalence is the
+linear map underlying its linear equivalence. -/
+theorem toLinearMap_toLinearIsometry {R E F : Type*} [Semiring R]
+    [SeminormedAddCommGroup E] [Module R E] [SeminormedAddCommGroup F] [Module R F]
+    (e : E ≃ₗᵢ[R] F) : e.toLinearIsometry.toLinearMap = e.toLinearEquiv :=
+  (rfl)
 
 /-- The adjoint of an isometric isomorphism, viewed as a linear map, is its inverse.
 

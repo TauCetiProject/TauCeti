@@ -29,8 +29,11 @@ perturbation theory.
 ## Main declarations
 
 * `LinearMap.operatorAbsEquiv`: the modulus of an injective map, as a linear automorphism.
+* `LinearMap.isUnit_operatorAbs`: the modulus of an injective map is invertible.
 * `LinearMap.polarIsometry`: the canonical polar factor `A |A|⁻¹` of an injective map, as an
   isometric embedding.
+* `LinearMap.polarFactor_mul_self_of_adjoint_eq_neg`: the polar factor of an injective
+  skew-adjoint endomorphism is a complex structure, `U² = -1`.
 * `LinearMap.coe_polarIsometry`: the isometric factor is `LinearMap.polarFactor`, so the
   factorization `A = W |A|` and the equality of ranges come from the polar-factor API.
 * `LinearMap.IsPositive.eq_operatorAbs_of_comp_eq`, `LinearMap.eq_polarIsometry_of_comp_eq`:
@@ -83,6 +86,11 @@ theorem operatorAbsEquiv_symm_operatorAbs_apply (x : E) :
     (A.operatorAbsEquiv hA).symm (A.operatorAbs x) = x :=
   (A.operatorAbsEquiv hA).symm_apply_apply x
 
+include hA in
+/-- The modulus of an injective map is invertible. -/
+theorem isUnit_operatorAbs : IsUnit A.operatorAbs :=
+  (Module.End.isUnit_iff _).mpr (A.operatorAbsEquiv hA).bijective
+
 /-- The isometric polar factor `A |A|⁻¹` of an injective map `A`: the canonical polar factor
 `A.polarFactor`, bundled as an isometric embedding. -/
 noncomputable def polarIsometry : E →ₗᵢ[𝕜] F where
@@ -126,6 +134,28 @@ theorem eq_polarIsometry_of_comp_eq {C : E →ₗ[𝕜] E} (hC : C.IsPositive) (
   ext y
   obtain ⟨x, rfl⟩ := (A.operatorAbsEquiv hA).surjective y
   simpa using congr($hWC x)
+
+/-- **Polar factors of skew-adjoint maps.** The canonical polar factor `U` of an injective
+skew-adjoint endomorphism `A` squares to `-1`: it is an orthogonal complex structure. -/
+theorem polarFactor_mul_self_of_adjoint_eq_neg {A : E →ₗ[𝕜] E} (hA : Function.Injective A)
+    (hS : A.adjoint = -A) : A.polarFactor * A.polarFactor = -1 := by
+  -- With `P = |A|`, `P² = A† A = -A²`, and `U` commutes with `P`, so
+  -- `U² P² = (U P)² = A² = -P²`; cancel the invertible `P²`.
+  have hP := A.isUnit_operatorAbs hA
+  have hUP : A.polarFactor * A.operatorAbs = A := A.polarFactor_comp_operatorAbs
+  have hPP := operatorAbs_mul_self_of_adjoint_eq_neg hS
+  have hc := (commute_polarFactor_operatorAbs_of_commute
+    (commute_operatorAbs_of_adjoint_eq_neg hS)).eq
+  generalize A.polarFactor = U at *
+  generalize A.operatorAbs = P at *
+  rw [← hUP] at hPP
+  have h : U * U * (P * P) = -1 * (P * P) :=
+    calc U * U * (P * P) = U * (U * P) * P := by simp only [mul_assoc]
+      _ = U * P * (U * P) := by
+        conv_lhs => rw [hc]
+        simp only [mul_assoc]
+      _ = -1 * (P * P) := by rw [hPP, neg_one_mul, neg_neg]
+  exact (hP.mul hP).mul_left_inj.mp h
 
 /-- **Inverse-coordinate bound.** If `A` satisfies the lower frame bound `‖x‖ ≤ c ‖A x‖`, then the
 inverse of its modulus satisfies `‖|A|⁻¹ y‖ ≤ c ‖y‖`.  For `ε > 0`, the frame bound
