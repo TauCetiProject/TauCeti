@@ -15,6 +15,9 @@ This file records the projection `id - f(·) • x` that this splitting defines,
 count for the trace of `ker f` on a subspace on which `f` does not vanish.
 A codimension-one subspace, even in an infinite-dimensional ambient space, is the kernel
 of a nonzero functional.
+Over a field, a linearly independent family of vectors has a biorthogonal family of functionals,
+and on a finite-dimensional space a linearly independent family of functionals has a biorthogonal
+family of vectors.
 
 ## Main results
 
@@ -27,6 +30,10 @@ of a nonzero functional.
   codimension one.
 * `Submodule.exists_dual_ker_eq_of_finrank_quotient_eq_one`: every codimension-one subspace
   is the kernel of a nonzero functional.
+* `LinearIndependent.exists_dual_forall_apply_eq_ite`: a linearly independent family of vectors
+  has a biorthogonal family of functionals, `f i (v j) = if i = j then 1 else 0`.
+* `LinearIndependent.exists_forall_apply_eq_ite_of_dual`: on a finite-dimensional space, a linearly
+  independent family of functionals has a biorthogonal family of vectors.
 -/
 
 public section
@@ -98,3 +105,35 @@ theorem exists_dual_ker_eq_of_finrank_quotient_eq_one (W : Submodule K V)
     simp
 
 end Submodule
+
+namespace LinearIndependent
+
+open Module
+
+variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V] [DecidableEq ι]
+
+/-- A linearly independent family of vectors has a **biorthogonal family of functionals**:
+`f i (v j)` is `1` for `i = j` and `0` otherwise. The functional `f i` extends the `i`-th
+coordinate on the span of the family. -/
+theorem exists_dual_forall_apply_eq_ite {v : ι → V} (hv : LinearIndependent K v) :
+    ∃ f : ι → Dual K V, ∀ i j, f i (v j) = if i = j then 1 else 0 := by
+  choose f hf using fun i ↦ LinearMap.exists_extend ((Finsupp.lapply i).comp hv.repr)
+  refine ⟨f, fun i j ↦ ?_⟩
+  have hj : v j ∈ Submodule.span K (Set.range v) := Submodule.subset_span ⟨j, rfl⟩
+  have := LinearMap.congr_fun (hf i) ⟨v j, hj⟩
+  rw [LinearMap.comp_apply, Submodule.subtype_apply] at this
+  rw [this, LinearMap.comp_apply, hv.repr_eq_single j _ rfl,
+    Finsupp.lapply_apply, Finsupp.single_apply]
+  exact if_congr eq_comm rfl rfl
+
+/-- On a finite-dimensional space, a linearly independent family of functionals has a
+**biorthogonal family of vectors**: `f i (v j)` is `1` for `i = j` and `0` otherwise. -/
+theorem exists_forall_apply_eq_ite_of_dual [FiniteDimensional K V] {f : ι → Dual K V}
+    (hf : LinearIndependent K f) :
+    ∃ v : ι → V, ∀ i j, f i (v j) = if i = j then 1 else 0 := by
+  obtain ⟨g, hg⟩ := hf.exists_dual_forall_apply_eq_ite
+  refine ⟨fun j ↦ (evalEquiv K V).symm (g j), fun i j ↦ ?_⟩
+  rw [apply_evalEquiv_symm_apply, hg]
+  exact if_congr eq_comm rfl rfl
+
+end LinearIndependent
