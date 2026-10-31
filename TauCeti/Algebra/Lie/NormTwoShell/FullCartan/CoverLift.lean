@@ -48,6 +48,9 @@ No splitting of `Y` into central and coroot summands is used, and `Y` may have t
 
 ## Main definitions
 
+* `Matrix.FullShellLieAlgebra.signedCongr`: the linear equivalence `H_y ↦ H_(γ y)`,
+  `x_a ↦ s(a) x_(e a)` for a bijection `e` of norm-two shells and signs `s`, of which the two
+  actions below are instances.
 * `Matrix.FullShellLieAlgebra.coverEquiv`: the action `H_y ↦ H_(γ y)`, `x_a ↦ s_φ(a) x_(g a)`.
 * `Matrix.FullShellLieAlgebra.coverLieEquiv`: the same map as an isomorphism of Lie algebras, for
   positive definite Gram matrices with even diagonal.
@@ -64,8 +67,11 @@ No splitting of `Y` into central and coroot summands is used, and `Y` may have t
   functoriality.
 * `Matrix.FullShellLieAlgebra.reindex_cartan`, `Matrix.FullShellLieAlgebra.reindex_root`,
   `Matrix.FullShellLieAlgebra.reindex_eq_coverEquiv`,
-  `Matrix.FullShellLieAlgebra.reindex_toFull`, `Matrix.FullShellLieAlgebra.reindex_lie`: the
-  corresponding statements for relabellings.
+  `Matrix.FullShellLieAlgebra.reindex_toFull`, `Matrix.FullShellLieAlgebra.reindex_rootBracket`,
+  `Matrix.FullShellLieAlgebra.reindex_lie`: the corresponding statements for relabellings.
+* `Matrix.FullShellLieAlgebra.reindex_root_single`,
+  `Matrix.FullShellLieAlgebra.reindex_root_neg_single`: the pinned action preserves the simple
+  root vectors.
 * `Matrix.FullShellLieAlgebra.reindex_pow`, `Matrix.FullShellLieAlgebra.reindex_iterate_eq_id`:
   powers of the pinned action of a diagram automorphism.
 
@@ -90,10 +96,75 @@ open TauCeti Module
 
 attribute [local instance] trivialMulDistribMulAction
 
-variable {I J K : Type*} [Fintype I] [LinearOrder I] [Fintype J] [LinearOrder J] [Fintype K]
-  [LinearOrder K] {B : Matrix I I ℤ} {B' : Matrix J J ℤ} {B'' : Matrix K K ℤ}
-  {Y Y' Y'' : Type*} [AddCommGroup Y] [AddCommGroup Y'] [AddCommGroup Y'']
+variable {I J K : Type*} [Fintype I] [Fintype J] [Fintype K] {B : Matrix I I ℤ}
+  {B' : Matrix J J ℤ} {B'' : Matrix K K ℤ} {Y Y' Y'' : Type*} [AddCommGroup Y] [AddCommGroup Y']
+  [AddCommGroup Y'']
   (D : ShellCartanDatum B Y) (D' : ShellCartanDatum B' Y') (D'' : ShellCartanDatum B'' Y'')
+
+section SignedCongr
+
+variable (γ : Y ≃ₗ[ℤ] Y') (e : B.normTwoShell ≃ B'.normTwoShell) (s : B.normTwoShell → ℤˣ)
+
+/-- **Signed relabelling of a full shell Lie algebra.** For a linear equivalence `γ : Y ≃ₗ[ℤ] Y'`
+of full Cartan lattices, a bijection `e` of norm-two shells and signs `s`, the linear equivalence
+`FullShellLieAlgebra D ≃ₗ[ℤ] FullShellLieAlgebra D'` sending the Cartan vector `H_y` to `H_(γ y)`
+and the root vector `x_a` to `s(a) x_(e a)`. Both `Matrix.FullShellLieAlgebra.coverEquiv` and
+`Matrix.FullShellLieAlgebra.reindex` are of this form. -/
+noncomputable def signedCongr : FullShellLieAlgebra D ≃ₗ[ℤ] FullShellLieAlgebra D' :=
+  equivProd D ≪≫ₗ
+    γ.prodCongr (Finsupp.basisSingleOne.equiv (Finsupp.basisSingleOne.unitsSMul (s ∘ e.symm)) e) ≪≫ₗ
+    (equivProd D').symm
+
+/-- A signed relabelling sends the Cartan vector `H_y` to `H_(γ y)`. -/
+@[simp]
+theorem signedCongr_cartan (y : Y) : signedCongr D D' γ e s (cartan D y) = cartan D' (γ y) := by
+  apply (equivProd D').injective
+  simp [signedCongr]
+
+/-- A signed relabelling sends the root vector `x_a` to `s(a) x_(e a)`. -/
+@[simp]
+theorem signedCongr_root (a : B.normTwoShell) :
+    signedCongr D D' γ e s (root D a) = s a • root D' (e a) := by
+  apply (equivProd D').injective
+  simp only [signedCongr, LinearEquiv.trans_apply, equivProd_root, LinearEquiv.prodCongr_apply,
+    map_zero, LinearEquiv.apply_symm_apply, map_zsmul_unit, Prod.smul_mk, smul_zero]
+  rw [← congrFun Finsupp.coe_basisSingleOne a, Basis.equiv_apply, Basis.unitsSMul_apply,
+    Function.comp_apply, Equiv.symm_apply_apply, Finsupp.coe_basisSingleOne]
+
+/-- The inverse of a signed relabelling sends the Cartan vector `H_y` to `H_(γ⁻¹ y)`. -/
+@[simp]
+theorem signedCongr_symm_cartan (y : Y') :
+    (signedCongr D D' γ e s).symm (cartan D' y) = cartan D (γ.symm y) := by
+  rw [LinearEquiv.symm_apply_eq, signedCongr_cartan, LinearEquiv.apply_symm_apply]
+
+/-- The inverse of a signed relabelling sends the root vector `x_b` to `s(e⁻¹ b) x_(e⁻¹ b)`. -/
+@[simp]
+theorem signedCongr_symm_root (b : B'.normTwoShell) :
+    (signedCongr D D' γ e s).symm (root D' b) = s (e.symm b) • root D (e.symm b) := by
+  rw [LinearEquiv.symm_apply_eq, map_zsmul_unit, signedCongr_root, Equiv.apply_symm_apply,
+    smul_smul, Int.units_mul_self, one_smul]
+
+variable {D D' γ e s} [LinearOrder I] in
+/-- **A signed relabelling extends a matching map of shell algebras.** If a linear map
+`f : ShellLieAlgebra B →ₗ[ℤ] ShellLieAlgebra B'` sends `H_h` to `H_(g h)` and `x_a` to
+`s(a) x_(e a)`, and `γ` carries each coroot `h∨` of `D` to the coroot `(g h)∨` of `D'`, then the
+signed relabelling extends `f` along `toFull`. -/
+theorem signedCongr_toFull (g : (I → ℤ) → (J → ℤ)) {f : ShellLieAlgebra B →ₗ[ℤ] ShellLieAlgebra B'}
+    (hc : ∀ h, γ (D.coroot h) = D'.coroot (g h))
+    (hcartan : ∀ h, f (ShellLieAlgebra.cartan B h) = ShellLieAlgebra.cartan B' (g h))
+    (hroot : ∀ a, f (ShellLieAlgebra.root B a) = s a • ShellLieAlgebra.root B' (e a))
+    (x : ShellLieAlgebra B) :
+    signedCongr D D' γ e s (toFull D x) = toFull D' (f x) := by
+  have key : (signedCongr D D' γ e s).toLinearMap ∘ₗ toFull D = toFull D' ∘ₗ f :=
+    (ShellLieAlgebra.basis B).ext fun i => by
+      classical
+      rcases i with i | a <;>
+        simp [ShellLieAlgebra.basis_inl, ShellLieAlgebra.basis_inr, hc, hcartan, hroot]
+  exact congr($key x)
+
+end SignedCongr
+
+variable [LinearOrder I] [LinearOrder J] [LinearOrder K]
 
 section CoverEquiv
 
@@ -109,36 +180,27 @@ sending the Cartan vector `H_y` to `H_(γ y)` and the root vector `x_a` to `s_φ
 the kernel `ℤˣ` and lies over `g`, and `γ` is compatible with the coroots and root weights
 (`Matrix.FullShellLieAlgebra.coverEquiv_lie`). -/
 noncomputable def coverEquiv : FullShellLieAlgebra D ≃ₗ[ℤ] FullShellLieAlgebra D' :=
-  equivProd D ≪≫ₗ
-    γ.prodCongr (Finsupp.basisSingleOne.equiv (Finsupp.basisSingleOne.unitsSMul fun b =>
-        SignCover.sectionSign φ ((normTwoShellEquivOfIsometry g hg).symm b))
-      (normTwoShellEquivOfIsometry g hg)) ≪≫ₗ
-    (equivProd D').symm
+  signedCongr D D' γ (normTwoShellEquivOfIsometry g hg) fun a => SignCover.sectionSign φ a
 
 /-- The action of a sign-cover lift sends the Cartan vector `H_y` to `H_(γ y)`. -/
 @[simp]
 theorem coverEquiv_cartan (y : Y) :
-    coverEquiv D D' φ g hg γ (cartan D y) = cartan D' (γ y) := by
-  apply (equivProd D').injective
-  simp [coverEquiv]
+    coverEquiv D D' φ g hg γ (cartan D y) = cartan D' (γ y) :=
+  signedCongr_cartan ..
 
 /-- The action of a sign-cover lift sends the root vector `x_a` to `s_φ(a) x_(g a)`. -/
 @[simp]
 theorem coverEquiv_root (a : B.normTwoShell) :
     coverEquiv D D' φ g hg γ (root D a) =
-      SignCover.sectionSign φ a • root D' (normTwoShellEquivOfIsometry g hg a) := by
-  apply (equivProd D').injective
-  simp only [coverEquiv, LinearEquiv.trans_apply, equivProd_root, LinearEquiv.prodCongr_apply,
-    map_zero, LinearEquiv.apply_symm_apply, map_zsmul_unit, Prod.smul_mk, smul_zero]
-  rw [← congrFun Finsupp.coe_basisSingleOne a, Basis.equiv_apply, Basis.unitsSMul_apply,
-    Equiv.symm_apply_apply, Finsupp.coe_basisSingleOne]
+      SignCover.sectionSign φ a • root D' (normTwoShellEquivOfIsometry g hg a) :=
+  signedCongr_root ..
 
 /-- The inverse of the action of a sign-cover lift sends the Cartan vector `H_y` to
 `H_(γ⁻¹ y)`. -/
 @[simp]
 theorem coverEquiv_symm_cartan (y : Y') :
-    (coverEquiv D D' φ g hg γ).symm (cartan D' y) = cartan D (γ.symm y) := by
-  rw [LinearEquiv.symm_apply_eq, coverEquiv_cartan, LinearEquiv.apply_symm_apply]
+    (coverEquiv D D' φ g hg γ).symm (cartan D' y) = cartan D (γ.symm y) :=
+  signedCongr_symm_cartan ..
 
 /-- The inverse of the action of a sign-cover lift sends the root vector `x_b` to
 `s_φ(g⁻¹ b) x_(g⁻¹ b)`. -/
@@ -146,9 +208,8 @@ theorem coverEquiv_symm_cartan (y : Y') :
 theorem coverEquiv_symm_root (b : B'.normTwoShell) :
     (coverEquiv D D' φ g hg γ).symm (root D' b) =
       SignCover.sectionSign φ ((normTwoShellEquivOfIsometry g hg).symm b) •
-        root D ((normTwoShellEquivOfIsometry g hg).symm b) := by
-  rw [LinearEquiv.symm_apply_eq, map_zsmul_unit, coverEquiv_root, Equiv.apply_symm_apply,
-    smul_smul, Int.units_mul_self, one_smul]
+        root D ((normTwoShellEquivOfIsometry g hg).symm b) :=
+  signedCongr_symm_root ..
 
 variable {D D' φ g γ}
 
@@ -157,13 +218,10 @@ variable {D D' φ g γ}
 `Matrix.ShellLieAlgebra.coverEquiv φ g` on the shell algebras along `toFull`. -/
 theorem coverEquiv_toFull (hc : ∀ h, γ (D.coroot h) = D'.coroot (g h))
     (x : ShellLieAlgebra B) :
-    coverEquiv D D' φ g hg γ (toFull D x) = toFull D' (ShellLieAlgebra.coverEquiv φ g hg x) := by
-  have key : (coverEquiv D D' φ g hg γ).toLinearMap ∘ₗ toFull D =
-      toFull D' ∘ₗ (ShellLieAlgebra.coverEquiv φ g hg).toLinearMap :=
-    (ShellLieAlgebra.basis B).ext fun i => by
-      classical
-      rcases i with i | a <;> simp [ShellLieAlgebra.basis_inl, ShellLieAlgebra.basis_inr, hc]
-  exact congr($key x)
+    coverEquiv D D' φ g hg γ (toFull D x) = toFull D' (ShellLieAlgebra.coverEquiv φ g hg x) :=
+  signedCongr_toFull g (f := (ShellLieAlgebra.coverEquiv φ g hg).toLinearMap) hc
+    (fun h => ShellLieAlgebra.coverEquiv_cartan φ g hg h)
+    (fun a => ShellLieAlgebra.coverEquiv_root φ g hg a) x
 
 /-- **The image of a root bracket** under the action of a compatible triple `(φ, g, γ)`:
 `⁅x_a, x_b⁆ ↦ s_φ(a) s_φ(b) ⁅x_(g a), x_(g b)⁆`. -/
@@ -287,27 +345,52 @@ compatible with the coroots and root weights (`Matrix.FullShellLieAlgebra.reinde
 diagram automorphism `e = σ` it is the pinned automorphism of the full algebra attached to `σ` and
 `γ`. -/
 noncomputable def reindex : FullShellLieAlgebra D ≃ₗ[ℤ] FullShellLieAlgebra D' :=
-  equivProd D ≪≫ₗ
-    γ.prodCongr (Finsupp.basisSingleOne.equiv (Finsupp.basisSingleOne.unitsSMul fun b =>
-        inversionSign B e ((normTwoShellCongr he).symm b)) (normTwoShellCongr he)) ≪≫ₗ
-    (equivProd D').symm
+  signedCongr D D' γ (normTwoShellCongr he) fun a => inversionSign B e a
 
 /-- The pinned action of a relabelling sends the Cartan vector `H_y` to `H_(γ y)`. -/
 @[simp]
-theorem reindex_cartan (y : Y) : reindex D D' e he γ (cartan D y) = cartan D' (γ y) := by
-  apply (equivProd D').injective
-  simp [reindex]
+theorem reindex_cartan (y : Y) : reindex D D' e he γ (cartan D y) = cartan D' (γ y) :=
+  signedCongr_cartan ..
 
 /-- The pinned action of a relabelling rescales the root vector `x_a` by the inversion sign and
 moves it to the relabelled root: `x_a ↦ σ_e(a) x_(a ∘ e.symm)`. -/
 @[simp]
 theorem reindex_root (a : B.normTwoShell) :
-    reindex D D' e he γ (root D a) = inversionSign B e a • root D' (normTwoShellCongr he a) := by
-  apply (equivProd D').injective
-  simp only [reindex, LinearEquiv.trans_apply, equivProd_root, LinearEquiv.prodCongr_apply,
-    map_zero, LinearEquiv.apply_symm_apply, map_zsmul_unit, Prod.smul_mk, smul_zero]
-  rw [← congrFun Finsupp.coe_basisSingleOne a, Basis.equiv_apply, Basis.unitsSMul_apply,
-    Equiv.symm_apply_apply, Finsupp.coe_basisSingleOne]
+    reindex D D' e he γ (root D a) = inversionSign B e a • root D' (normTwoShellCongr he a) :=
+  signedCongr_root ..
+
+/-- The inverse of the pinned action of a relabelling sends the Cartan vector `H_y` to
+`H_(γ⁻¹ y)`. -/
+@[simp]
+theorem reindex_symm_cartan (y : Y') :
+    (reindex D D' e he γ).symm (cartan D' y) = cartan D (γ.symm y) :=
+  signedCongr_symm_cartan ..
+
+/-- The inverse of the pinned action of a relabelling sends the root vector `x_b` to
+`σ_e(b ∘ e) x_(b ∘ e)`. -/
+@[simp]
+theorem reindex_symm_root (b : B'.normTwoShell) :
+    (reindex D D' e he γ).symm (root D' b) =
+      inversionSign B e ((normTwoShellCongr he).symm b) • root D ((normTwoShellCongr he).symm b) :=
+  signedCongr_symm_root ..
+
+/-- The pinned action of a relabelling sends the simple root vector `x_(αᵢ)` to `x_(α_(e i))`. -/
+theorem reindex_root_single [DecidableEq I] [DecidableEq J] (i : I)
+    (hi : Pi.single i 1 ∈ B.normTwoShell) (hi' : Pi.single (e i) 1 ∈ B'.normTwoShell) :
+    reindex D D' e he γ (root D ⟨Pi.single i 1, hi⟩) = root D' ⟨Pi.single (e i) 1, hi'⟩ := by
+  rw [reindex_root, inversionSign_single, one_smul]
+  congr 1
+  exact Subtype.ext <| by rw [coe_normTwoShellCongr_apply, Pi.single_comp_equiv, Equiv.symm_symm]
+
+/-- The pinned action of a relabelling sends the simple root vector `x_(-αᵢ)` to
+`x_(-α_(e i))`. -/
+theorem reindex_root_neg_single [DecidableEq I] [DecidableEq J] (i : I)
+    (hi : -Pi.single i 1 ∈ B.normTwoShell) (hi' : -Pi.single (e i) 1 ∈ B'.normTwoShell) :
+    reindex D D' e he γ (root D ⟨-Pi.single i 1, hi⟩) = root D' ⟨-Pi.single (e i) 1, hi'⟩ := by
+  rw [reindex_root, inversionSign_neg, inversionSign_single, one_smul]
+  congr 1
+  exact Subtype.ext <| by
+    rw [coe_normTwoShellCongr_apply, Pi.neg_comp, Pi.single_comp_equiv, Equiv.symm_symm]
 
 /-- **The pinned action of a relabelling is the action of the relabelled sign cover.** For a
 symmetric `B`, `Matrix.FullShellLieAlgebra.reindex D D' e he γ` is the action
@@ -329,13 +412,20 @@ of `D` to the coroot `(h ∘ e.symm)∨` of `D'`, then the pinned action on the 
 the pinned action `Matrix.ShellLieAlgebra.reindex e he` on the shell algebras along `toFull`. -/
 theorem reindex_toFull (hc : ∀ h, γ (D.coroot h) = D'.coroot (h ∘ e.symm))
     (x : ShellLieAlgebra B) :
-    reindex D D' e he γ (toFull D x) = toFull D' (ShellLieAlgebra.reindex e he x) := by
-  have key : (reindex D D' e he γ).toLinearMap ∘ₗ toFull D =
-      toFull D' ∘ₗ (ShellLieAlgebra.reindex e he).toLinearMap :=
-    (ShellLieAlgebra.basis B).ext fun i => by
-      classical
-      rcases i with i | a <;> simp [ShellLieAlgebra.basis_inl, ShellLieAlgebra.basis_inr, hc]
-  exact congr($key x)
+    reindex D D' e he γ (toFull D x) = toFull D' (ShellLieAlgebra.reindex e he x) :=
+  signedCongr_toFull (· ∘ e.symm) (f := (ShellLieAlgebra.reindex e he).toLinearMap) hc
+    (fun h => ShellLieAlgebra.reindex_cartan e he h)
+    (fun a => ShellLieAlgebra.reindex_root e he a) x
+
+/-- **The pinned action of a relabelling of a root bracket**, for symmetric `B`, when `γ` carries
+coroots to coroots: `⁅x_a, x_b⁆ ↦ σ_e(a) σ_e(b) ⁅x_(a ∘ e.symm), x_(b ∘ e.symm)⁆`. -/
+theorem reindex_rootBracket (hB : B.IsSymm) (hc : ∀ h, γ (D.coroot h) = D'.coroot (h ∘ e.symm))
+    (a b : B.normTwoShell) :
+    reindex D D' e he γ (rootBracket D a b) =
+      (inversionSign B e a * inversionSign B e b) •
+        rootBracket D' (normTwoShellCongr he a) (normTwoShellCongr he b) := by
+  rw [← toFull_rootBracket, reindex_toFull e he hc, ShellLieAlgebra.reindex_rootBracket e he hB,
+    map_zsmul_unit, toFull_rootBracket]
 
 /-- **The pinned action of a relabelling preserves the bracket**, for symmetric `B`, when `γ`
 carries coroots to coroots, `γ (h∨) = (h ∘ e.symm)∨`, and root weights to root weights,
@@ -343,9 +433,12 @@ carries coroots to coroots, `γ (h∨) = (h ∘ e.symm)∨`, and root weights to
 theorem reindex_lie (hB : B.IsSymm) (hc : ∀ h, γ (D.coroot h) = D'.coroot (h ∘ e.symm))
     (hw : ∀ a y, D'.weight (a ∘ e.symm) (γ y) = D.weight a y) (x y : FullShellLieAlgebra D) :
     reindex D D' e he γ ⁅x, y⁆ = ⁅reindex D D' e he γ x, reindex D D' e he γ y⁆ := by
+  have hfun (h : I → ℤ) : LinearEquiv.funCongrLeft ℤ ℤ e.symm h = h ∘ e.symm :=
+    funext fun j => by
+      rw [LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply, Function.comp_apply]
   rw [reindex_eq_coverEquiv D D' e he γ hB]
   exact coverEquiv_lie _ (fun u => by simp) (fun x => by simp [funext_iff, LinearMap.funLeft_apply])
-    (fun h => by rw [hc]; rfl) (fun a y => hw a y) x y
+    (fun h => by rw [hc, hfun]) (fun a y => by rw [hfun, hw]) x y
 
 variable (D) in
 /-- **The identity relabels the full algebra by the identity.** -/
@@ -372,8 +465,8 @@ theorem reindex_trans (hB : B.IsSymm) (f : J ≃ K) (hf : B'.reindex f f = B'')
     inversionSign_trans B e hB f]
   congr 2
   apply Subtype.ext
-  rw [coe_normTwoShellCongr_apply, coe_normTwoShellCongr_apply, coe_normTwoShellCongr_apply]
-  rfl
+  rw [coe_normTwoShellCongr_apply, coe_normTwoShellCongr_apply, coe_normTwoShellCongr_apply,
+    Equiv.symm_trans, Equiv.coe_trans, Function.comp_assoc]
 
 /-- **The pinned action of a relabelling as an isomorphism of Lie algebras.** For positive definite
 `B` with even diagonal and `γ` compatible with the coroots and root weights, the pinned action
