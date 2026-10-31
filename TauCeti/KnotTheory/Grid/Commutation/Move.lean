@@ -243,7 +243,7 @@ theorem reverse_oppositeTurnRow (C : ColumnCommutationData G) :
 /-- Reversing validated commutation data twice recovers the original data. -/
 @[simp]
 theorem reverse_reverse (C : ColumnCommutationData G) :
-    cast (congrArg ColumnCommutationData (by simp)) C.reverse.reverse = C := by
+    _root_.cast (congrArg ColumnCommutationData (by simp)) C.reverse.reverse = C := by
   rw [eq_comm, eq_cast_iff_heq]
   apply HEq.symm
   apply hext (by simp) <;> simp
