@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Invariant.Free
 public import Mathlib.RingTheory.IsTensorProduct
 import Mathlib.RingTheory.TensorProduct.IncludeLeftSubRight
 public import TauCeti.RingTheory.Invariant.Basic
+public import TauCeti.Algebra.TensorProduct.BaseChange
 
 /-!
 # Finite étale torsors under a finite group
@@ -52,8 +53,10 @@ the perfectoid cover of an analytic adic space by a tower of finite étale torso
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.isGaloisGroup`: over a nonzero ring, `G` is a Galois group
   of `B` over `A` in Mathlib's sense.
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.rankAtStalk_eq_card`: a torsor has constant rank `|G|`.
-* `TauCeti.Algebra.IsFiniteEtaleTorsor.of_isPushout`: the base change `A' ⊗[A] B` of a torsor, with
-  `G` acting compatibly, is a torsor over `A'`.
+* `TauCeti.Algebra.IsFiniteEtaleTorsor.baseChange`: the base change `A' ⊗[A] B` of a torsor, with
+  `G` acting on the right factor, is a torsor over `A'`.
+* `TauCeti.Algebra.IsFiniteEtaleTorsor.of_isPushout`: the same for any base change `B'` of `B`
+  along `A → A'` (`Algebra.IsPushout A A' B B'`) with a compatible action of `G`.
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.of_surjective`: if `B` is a `G`-torsor and `B'` a
   `G'`-torsor over `A`, an `A`-algebra map `B → B'` equivariant along a surjection `π : G' → G`
   makes `B'` a torsor over `B` under the kernel of `π`.
@@ -207,6 +210,20 @@ theorem of_isPushout [h : IsFiniteEtaleTorsor G A B]
       Ideal.span_le]
     rintro _ ⟨_, ⟨b, rfl⟩, rfl⟩
     exact Ideal.subset_span ⟨algebraMap B B' b, by simp [hG]⟩
+
+variable (A') in
+/-- **Base change of a finite étale torsor to `A' ⊗[A] B`.** If `B` is a finite étale `G`-torsor
+over `A`, then `A' ⊗[A] B`, with `G` acting on the right factor
+(`TauCeti.Algebra.TensorProduct.rightMulSemiringAction`), is a finite étale `G`-torsor over
+`A'`. -/
+theorem baseChange [IsFiniteEtaleTorsor G A B] :
+    letI := TensorProduct.rightMulSemiringAction (K := A) A' B G
+    haveI := TensorProduct.smulCommClass_rightMulSemiringAction (K := A) A' B G
+    IsFiniteEtaleTorsor G A' (A' ⊗[A] B) :=
+  letI := TensorProduct.rightMulSemiringAction (K := A) A' B G
+  haveI := TensorProduct.smulCommClass_rightMulSemiringAction (K := A) A' B G
+  letI := Algebra.TensorProduct.rightAlgebra (R := A) (A := A') (B := B)
+  of_isPushout (A := A) (B := B) fun g b ↦ TensorProduct.rightMulSemiringAction_smul_tmul g 1 b
 
 end BaseChange
 
