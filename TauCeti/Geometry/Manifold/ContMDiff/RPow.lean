@@ -20,6 +20,7 @@ real power `u ^ p` of a positive function.
 
 * `ContMDiffAt.rpow_const_of_ne`, `ContMDiff.rpow_const_of_ne`: `x ↦ u x ^ p` is `C^n` where `u`
   does not vanish.
+* `ContMDiff.of_rpow_const`: a positive function is `C^n` if some nonzero real power of it is.
 -/
 
 public section
@@ -41,3 +42,10 @@ theorem ContMDiffAt.rpow_const_of_ne (hu : ContMDiffAt I 𝓘(ℝ) n u x) (h : u
 theorem ContMDiff.rpow_const_of_ne (hu : ContMDiff I 𝓘(ℝ) n u) (h : ∀ x, u x ≠ 0) (p : ℝ) :
     ContMDiff I 𝓘(ℝ) n (fun y ↦ u y ^ p) :=
   fun x ↦ (hu x).rpow_const_of_ne (h x) p
+
+/-- A positive real function is `C^n` if some nonzero real power `x ↦ u x ^ p` of it is, since
+`u = (u ^ p) ^ p⁻¹`. -/
+theorem ContMDiff.of_rpow_const {p : ℝ} (hp : p ≠ 0) (hu : ∀ x, 0 < u x)
+    (hf : ContMDiff I 𝓘(ℝ) n fun x ↦ u x ^ p) : ContMDiff I 𝓘(ℝ) n u :=
+  (hf.rpow_const_of_ne (fun y ↦ (Real.rpow_pos_of_pos (hu y) p).ne') p⁻¹).congr fun y ↦
+    (Real.rpow_rpow_inv (hu y).le hp).symm

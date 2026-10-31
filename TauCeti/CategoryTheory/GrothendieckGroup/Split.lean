@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.GrothendieckGroup.IsoClassModel
 public import TauCeti.CategoryTheory.GrothendieckGroup.ObjectCodeMonoid
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 public import Mathlib.CategoryTheory.Adjunction.Limits
@@ -34,7 +35,8 @@ The last section identifies `SplitK0 C` with Mathlib's group completion
 `Algebra.GrothendieckAddGroup` of the additive monoid of isomorphism classes under `⊞`, built in
 `TauCeti/CategoryTheory/GrothendieckGroup/ObjectCodeMonoid.lean`. That monoid structure is carried
 by `TauCeti.ObjectCode C` itself, so the identification is an isomorphism of additive groups in
-the same small universe.
+the same small universe. The final section presents split `K₀` over every model of the
+isomorphism classes, so that it does not depend on the skeleton used to build it.
 
 ## Main definitions
 
@@ -52,6 +54,10 @@ the same small universe.
 * `TauCeti.SplitK0.map₂`: the biadditive map induced by a bifunctor preserving zero morphisms and
   binary biproducts in each variable.
 * `TauCeti.SplitK0.ofCode`: the class map on the monoid of isomorphism classes of objects.
+* `TauCeti.splitObjectRelations C`: the biproduct relations as integral combinations of objects,
+  and `TauCeti.SplitK0.isoClassModelEquiv m`: the canonical isomorphism from `SplitK0 C` to the
+  group they present over a model `m` of the isomorphism classes of `C`
+  (`TauCeti.IsoClassModel`), such as a chosen skeleton.
 
 ## Main results
 
@@ -610,5 +616,64 @@ lemma grothendieckAddGroupEquiv_symm_of (X : C) :
 end SplitK0
 
 end IsoClasses
+
+section IsoClassModel
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] [HasBinaryBiproducts C]
+
+variable (C) in
+/-- The biproduct relations `[X ⊞ Y] - [X] - [Y]` as integral combinations of objects of `C`,
+before passing to isomorphism classes. Their codes are the relations `TauCeti.splitRelations C`,
+so they present split `K₀` over every model of the isomorphism classes of `C`. -/
+def splitObjectRelations : Set (FreeAbelianGroup C) :=
+  {r | ∃ X Y : C, r = .of (X ⊞ Y) - .of X - .of Y}
+
+/-- Membership in the family of object-level biproduct relations. -/
+@[simp]
+lemma mem_splitObjectRelations_iff {r : FreeAbelianGroup C} :
+    r ∈ splitObjectRelations C ↔ ∃ X Y : C, r = .of (X ⊞ Y) - .of X - .of Y := (Iff.rfl)
+
+variable [EssentiallySmall.{w} C]
+
+/-- The codes of the object-level biproduct relations are the biproduct relations presenting
+split `K₀`. -/
+lemma image_splitObjectRelations :
+    FreeAbelianGroup.map objectCode '' splitObjectRelations C = splitRelations C := by
+  ext r
+  simp [splitRelation_def, freeOf_def, eq_comm]
+
+namespace SplitK0
+
+variable {I J : Type*}
+
+/-- Split `K₀` presented over a model `m` of the isomorphism classes of `C`: the canonical
+isomorphism from `SplitK0 C` to the free abelian group on the index type of `m` modulo the codes
+of the biproduct relations. It preserves the class of every object, so split `K₀` does not depend
+on the skeleton used to build it. -/
+noncomputable def isoClassModelEquiv (m : IsoClassModel C I) :
+    SplitK0 C ≃+ m.K0 (splitObjectRelations C) :=
+  IsoClassModel.K0.presentedK0Equiv m image_splitObjectRelations
+
+@[simp]
+lemma isoClassModelEquiv_of (m : IsoClassModel C I) (X : C) :
+    isoClassModelEquiv m (of X) = IsoClassModel.K0.of X :=
+  IsoClassModel.K0.presentedK0Equiv_of _ X
+
+@[simp]
+lemma isoClassModelEquiv_symm_of (m : IsoClassModel C I) (X : C) :
+    (isoClassModelEquiv m).symm (IsoClassModel.K0.of X) = of X :=
+  IsoClassModel.K0.presentedK0Equiv_symm_of _ X
+
+/-- The presentations of split `K₀` over two models differ by the canonical isomorphism
+`TauCeti.IsoClassModel.K0.equiv` between them. -/
+@[simp]
+lemma isoClassModelEquiv_trans_equiv (m : IsoClassModel C I) (m' : IsoClassModel C J) :
+    (isoClassModelEquiv m).trans (IsoClassModel.K0.equiv m m' (splitObjectRelations C)) =
+      isoClassModelEquiv m' :=
+  AddEquiv.toAddMonoidHom_injective (hom_ext fun X => by simp)
+
+end SplitK0
+
+end IsoClassModel
 
 end TauCeti

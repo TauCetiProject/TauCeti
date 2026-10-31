@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
-public import TauCeti.Geometry.Manifold.Flow.Basic
+public import TauCeti.Geometry.Manifold.Flow.Related
 
 /-!
 # Diffeomorphisms intertwine maximal flows
@@ -66,23 +66,13 @@ theorem mfderiv_symm_apply_eq_of_mfderiv_apply_eq
   obtain ⟨x, rfl⟩ := ψ.toEquiv.surjective y
   rw [coe_toEquiv, ← hXY x, ψ.mfderiv_symm_apply_mfderiv_apply hn, ψ.symm_apply_apply]
 
-/-- A diffeomorphism carrying `X` to `Y` sends integral curves of `X` through `x` to integral
-curves of `Y` through `ψ x`, so it enlarges no maximal interval of existence. -/
-private theorem maximalIntegralCurveInterval_subset
-    (hXY : ∀ x, mfderiv I I' ψ x (X x) = Y (ψ x)) (x : M) :
-    maximalIntegralCurveInterval X x ⊆ maximalIntegralCurveInterval Y (ψ x) := by
-  intro t ht
-  obtain ⟨γ, a, b, hγ, hγ0, h0, hta, -⟩ := exists_isMIntegralCurveOn_maximalIntegralCurve_eq ht
-  exact (hγ.map_of_mfderiv_eq (fun s _ ↦ ψ.mdifferentiable hn (γ s)) (fun s _ ↦ hXY (γ s))
-    ).subset_maximalIntegralCurveInterval h0 (by rw [comp_apply, hγ0]) hta
-
 /-- **Related vector fields have the same maximal intervals.** If a diffeomorphism `ψ` carries `X`
 to `Y`, the maximal interval of existence of `Y` through `ψ x` is that of `X` through `x`. -/
 theorem maximalIntegralCurveInterval_apply
     (hXY : ∀ x, mfderiv I I' ψ x (X x) = Y (ψ x)) (x : M) :
     maximalIntegralCurveInterval Y (ψ x) = maximalIntegralCurveInterval X x := by
-  refine Subset.antisymm ?_ (ψ.maximalIntegralCurveInterval_subset hn hXY x)
-  have h := ψ.symm.maximalIntegralCurveInterval_subset hn
+  refine Subset.antisymm ?_ ((ψ.mdifferentiable hn).maximalIntegralCurveInterval_subset hXY x)
+  have h := (ψ.symm.mdifferentiable hn).maximalIntegralCurveInterval_subset
     (ψ.mfderiv_symm_apply_eq_of_mfderiv_apply_eq hn hXY) (ψ x)
   rwa [ψ.symm_apply_apply] at h
 
@@ -101,15 +91,12 @@ domain both sides are the junk value `ψ x`. -/
 theorem apply_flowOf (hY : CMDiff 1 (fun y ↦ (⟨y, Y y⟩ : TangentBundle I' M')))
     (hXY : ∀ x, mfderiv I I' ψ x (X x) = Y (ψ x)) (t : ℝ) (x : M) :
     ψ (flowOf X t x) = flowOf Y t (ψ x) := by
-  rw [TauCeti.flowOf_apply, TauCeti.flowOf_apply]
-  by_cases ht : t ∈ maximalIntegralCurveInterval X x
-  · obtain ⟨γ, a, b, hγ, hγ0, h0, hta, heq⟩ :=
-      exists_isMIntegralCurveOn_maximalIntegralCurve_eq ht
-    have hψγ := hγ.map_of_mfderiv_eq (fun s _ ↦ ψ.mdifferentiable hn (γ s))
-      fun s _ ↦ hXY (γ s)
-    rw [heq]
-    exact ((hψγ.eqOn_maximalIntegralCurve hY h0 (by rw [comp_apply, hγ0])) hta).symm
-  · rw [maximalIntegralCurve_eq_of_not_mem ht, maximalIntegralCurve_eq_of_not_mem
-      (by rwa [ψ.maximalIntegralCurveInterval_apply hn hXY])]
+  by_cases ht : (t, x) ∈ flowDomain X
+  · exact (ψ.mdifferentiable hn).apply_flowOf hY hXY ht
+  · rw [TauCeti.flowOf_apply, TauCeti.flowOf_apply,
+      maximalIntegralCurve_eq_of_not_mem (mt mem_flowDomain.mpr ht),
+      maximalIntegralCurve_eq_of_not_mem
+        (by simpa only [ψ.maximalIntegralCurveInterval_apply hn hXY] using
+          mt mem_flowDomain.mpr ht)]
 
 end Diffeomorph

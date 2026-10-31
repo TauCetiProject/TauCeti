@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.GroupHomology
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.ChangeOfGroups
+import TauCeti.RepresentationTheory.Rep.CoinvariantsTensor
 
 /-!
 # The singular cohomology of the base of a contractible free cover is group cohomology
@@ -92,7 +93,8 @@ variable {E B : TopCat.{u}} {p : E ⟶ B} {G : Type u} [Group G] [MulAction G E]
 /-- Pulling back along `p` identifies the `M`-valued singular `n`-cochains of the base with the
 `G`-invariant cochains of the total space: by `singularChainsRepCoinvariantsTensorIso`, they are
 the `M`-valued maps on the coinvariants `(k ⊗ Cₙ(E))_G`, which are the morphisms
-`k ⊗ Cₙ(E) ⟶ M` of representations to the trivial representation (`Rep.coinvariantsAdjunction`). -/
+`k ⊗ Cₙ(E) ⟶ M` of representations to the trivial representation
+(`Rep.coinvariantsHomLinearEquiv`). -/
 private def singularCochainLinearEquiv (n : ℕ) :
     haveI := hG.toContinuousConstSMul
     (((singularChains k).obj B).X n ⟶ ModuleCat.of k M) ≃ₗ[k]
@@ -101,9 +103,7 @@ private def singularCochainLinearEquiv (n : ℕ) :
   Linear.homCongr k
       (HomologicalComplex.Hom.isoApp (hG.singularChainsRepCoinvariantsTensorIso k) n).symm
       (Iso.refl _) ≪≫ₗ
-    { (Rep.coinvariantsAdjunction k G).homEquiv _ (ModuleCat.of k M) with
-      map_add' _ _ := by ext; simp [Rep.add_hom, Adjunction.homEquiv_unit]
-      map_smul' _ _ := by ext; simp [Rep.smul_hom, Adjunction.homEquiv_unit] } ≪≫ₗ
+    Rep.coinvariantsHomLinearEquiv M _ ≪≫ₗ
     Linear.homCongr k (λ_ _) (Iso.refl _)
 
 /-- The pulled-back cochain evaluates a chain of the total space on its image in the base. -/
@@ -119,7 +119,12 @@ private lemma singularCochainLinearEquiv_apply_hom_apply (n : ℕ)
   -- `singularChainsRepCoinvariantsTensorIso` are taken of `Rep.trivial k G k ⊗ Cₙ(E)`, and of
   -- `Rep.of (singularChainsRepresentation k E G n)` rather than `(singularChainsRep k E G).X n`.
   -- These objects agree only by definition, so the composite is not type-correct at reducible
-  -- transparency and those lemmas do not fire on it.
+  -- transparency and those lemmas do not fire on it. The middle step is evaluated by
+  -- `Rep.coinvariantsHomLinearEquiv_apply_hom_apply`, applied up to definitional equality.
+  change (Rep.coinvariantsHomLinearEquiv M (Rep.trivial k G k ⊗ (singularChainsRep k E G).X n)
+    ((HomologicalComplex.Hom.isoApp (hG.singularChainsRepCoinvariantsTensorIso k) n).hom ≫
+      f ≫ 𝟙 _)).hom ((λ_ (Rep.of (singularChainsRepresentation k E G n))).inv.hom c) = _
+  refine (Rep.coinvariantsHomLinearEquiv_apply_hom_apply M _ _).trans ?_
   change f ((HomologicalComplex.Hom.isoApp (hG.singularChainsRepCoinvariantsTensorIso k) n).hom
     (Rep.coinvariantsTensorMk _ _ 1 c)) = _
   exact congrArg f.hom

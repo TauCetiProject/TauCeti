@@ -105,6 +105,12 @@ theorem finsuppScalarRight_tmul_single (m : M) (x : P) (a : A) :
   classical
   simp
 
+/-- An elementary coefficient vector is the image of its basis tensor. -/
+theorem single_eq_finsuppScalarRight_tmul (x : P) (m : M) :
+    Finsupp.single x m =
+      finsuppScalarRight R A M P (tmul R A m (Finsupp.single x 1)) := by
+  simp
+
 /-- The inverse sends an elementary coefficient vector to its basis tensor. -/
 @[simp]
 theorem finsuppScalarRight_symm_single (x : P) (m : M) :

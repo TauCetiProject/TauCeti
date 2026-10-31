@@ -201,9 +201,7 @@ theorem contMDiffAt_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Function.P
       (fun p : ℂ × M => pairOfPantsPerturbation H p.1 p.2) ((w : ℂ), x) := by
   simp only [pairOfPantsPerturbation]
   refine contMDiffAt_finsetSum fun q _ => ?_
-  have hw : (w : ℂ) ≠ q.endCenter := by
-    rcases q.endCenter_eq_zero_or_eq_one with h | h <;> rw [h]
-    exacts [w.2.1, w.2.2]
+  have hw : (w : ℂ) ≠ q.endCenter := ne_endCenter w.2 q
   have hc : ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℝ) n
       (fun p : ℂ × M => smoothTransition (q.endSign * (q.endCoord p.1).re - 1)) ((w : ℂ), x) :=
     (smoothTransition.contDiff.contDiffAt.comp (w : ℂ)

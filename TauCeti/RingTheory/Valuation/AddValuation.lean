@@ -14,13 +14,15 @@ public import Mathlib.RingTheory.Valuation.Basic
 An additive valuation turns products into sums. Mathlib records this for a product of two
 elements (`AddValuation.map_mul`) and for powers (`AddValuation.map_pow`); this file records the
 finite-product form, which is what a valuation computation on a factorised element such as
-`f'(x) = ∏ (x - σ x)` uses. It also records that an additive valuation taking integer values on
+`f'(x) = ∏ (x - σ x)` uses, and that signs `(-1) ^ k`, as in determinant and coefficient
+formulas, have valuation zero. It also records that an additive valuation taking integer values on
 nonzero elements, such as a discrete valuation normalised at a uniformiser, is infinite only at
 zero.
 
 ## Main results
 
 * `AddValuation.map_prod`: `v (∏ i ∈ s, f i) = ∑ i ∈ s, v (f i)`.
+* `AddValuation.map_neg_one_pow`: `v ((-1) ^ k) = 0`.
 * `AddValuation.eq_zero_of_eq_top_of_forall_ne_zero`: an additive valuation taking integer
   values on nonzero elements is infinite only at zero.
 -/
@@ -42,6 +44,11 @@ theorem map_prod {ι : Type*} (s : Finset ι) (f : ι → R) :
   | cons a s ha ih => rw [Finset.prod_cons, Finset.sum_cons, v.map_mul, ih]
 
 section Ring
+
+/-- A sign `(-1) ^ k` has valuation zero. -/
+theorem map_neg_one_pow {R : Type*} [Ring R] (v : AddValuation R Γ₀) (k : ℕ) :
+    v ((-1) ^ k) = 0 := by
+  rw [v.map_pow, v.map_neg, v.map_one, smul_zero]
 
 variable {R Γ : Type*} [Ring R] [AddCancelCommMonoid Γ] [LinearOrder Γ] [IsOrderedAddMonoid Γ]
   [IntCast Γ] {v : AddValuation R (WithTop Γ)}
