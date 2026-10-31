@@ -32,8 +32,9 @@ algebra homomorphism from `Module.End ℝ V` to the endomorphisms of `V × Stron
 fields (`TauCeti.InfinitesimalAction.cotangentLinear`). Then:
 
 * the infinitesimal cotangent lift takes values in `sp(V × StrongDual ℝ V)`
-  (`TauCeti.cotangentLiftLieHom_mem_skewAdjointLieSubalgebra`), and `μ_A(x) = ½ ω(A_{T*V} x, x)`
-  is the linear symplectic moment map along it;
+  (`TauCeti.cotangentLiftLieHom_mem_skewAdjointLieSubalgebra`), giving a Lie algebra
+  homomorphism into it (`TauCeti.cotangentLiftSpLieHom`), and `μ_A(x) = ½ ω(A_{T*V} x, x)` is the
+  linear symplectic moment map along it (`TauCeti.cotangentMomentMap_apply_eq_linearMomentMap`);
 * `μ` is a moment map of this action (`TauCeti.isMomentMap_cotangentMomentMap`), and it is the
   contraction of the Liouville form with the generating vector fields,
   `⟨μ, A⟩ = λ(A_{T*V})` (`TauCeti.cotangentLiouvilleForm_cotangentLiftLieHom`);
@@ -51,6 +52,8 @@ this is the angular momentum.
 
 * `TauCeti.cotangentMomentMap`: the moment map `⟨μ(q, p), A⟩ = p(A q)`.
 * `TauCeti.cotangentLiftLieHom`: the infinitesimal cotangent lift `(q, p) ↦ (A q, -(p ∘ A))`.
+* `TauCeti.cotangentLiftSpLieHom`: the infinitesimal cotangent lift as a Lie algebra homomorphism
+  into `sp(V × StrongDual ℝ V)`.
 * `TauCeti.InfinitesimalAction.cotangentLinear`: the cotangent-lifted linear action of `gl(V)`.
 * `TauCeti.isMomentMap_cotangentMomentMap`: `μ` is a moment map of this action.
 
@@ -169,7 +172,7 @@ theorem InfinitesimalAction.cotangentLinear_apply (A : Module.End ℝ V) (x : V 
 
 /-- The infinitesimal cotangent lift as a Lie algebra homomorphism into
 `sp(V × StrongDual ℝ V)`. -/
-private def cotangentLiftSpLieHom :
+def cotangentLiftSpLieHom :
     Module.End ℝ V →ₗ⁅ℝ⁆
       skewAdjointLieSubalgebra (strongDualCotangentSymplecticForm (V := V)).toBilinForm where
   toFun A := ⟨cotangentLiftLieHom V A, cotangentLiftLieHom_mem_skewAdjointLieSubalgebra A⟩
@@ -178,13 +181,13 @@ private def cotangentLiftSpLieHom :
   map_lie' {A B} := Subtype.ext <| LieHom.map_lie _ A B
 
 @[simp]
-private theorem coe_cotangentLiftSpLieHom (A : Module.End ℝ V) :
+theorem coe_cotangentLiftSpLieHom (A : Module.End ℝ V) :
     (cotangentLiftSpLieHom A : Module.End ℝ (V × StrongDual ℝ V)) = cotangentLiftLieHom V A :=
   (rfl)
 
 /-- The cotangent moment map is the linear symplectic moment map `½ ω(Ã x, x)` of the cotangent
 lift `Ã` of `A`. -/
-private theorem cotangentMomentMap_apply_eq_linearMomentMap (x : V × StrongDual ℝ V)
+theorem cotangentMomentMap_apply_eq_linearMomentMap (x : V × StrongDual ℝ V)
     (A : Module.End ℝ V) :
     cotangentMomentMap x A =
       strongDualCotangentSymplecticForm.linearMomentMap x (cotangentLiftSpLieHom A) := by
