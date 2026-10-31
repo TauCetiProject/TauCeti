@@ -22,7 +22,7 @@ Let `σ` be a smooth two-form on a manifold `M` and `W ⊆ M`. A function `F : M
 
 * `F` is smooth, nonnegative, and its support is compact and contained in the interior of `W`
   and in the interior of the manifold `M`;
-* `F` attains its maximum on a nonempty open set;
+* `F` vanishes on a nonempty open subset of `W` and attains its maximum on a nonempty open set;
 * the Hamiltonian vector field `X_F` (with `ι_{X_F} σ = dF`) has no **fast contractible** periodic
   orbits: every integral curve `γ` of `X_F` that is `T`-periodic for some `0 < T ≤ 1`, and whose
   loop `ℝ/Tℤ → W` is contractible in `W`, is constant.
@@ -92,9 +92,11 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 /-- A function `F` is **`HZ°`-admissible** for a subset `W` of a manifold with two-form `σ` when it
 is smooth and nonnegative, its support is compact and lies in the interiors of `W` and of `M`, it
-attains its maximum on a nonempty open set, and its Hamiltonian vector field has no nonconstant
-`T`-periodic orbit with `0 < T ≤ 1` whose loop is contractible in `W`. These are the
-Hamiltonians whose maxima define the `π₁`-sensitive Hofer–Zehnder capacity. -/
+vanishes on a nonempty open subset of `W`, it attains its maximum on a nonempty open set, and its
+Hamiltonian vector field has no nonconstant `T`-periodic orbit with `0 < T ≤ 1` whose loop is
+contractible in `W`. These are the Hamiltonians whose maxima define the `π₁`-sensitive
+Hofer–Zehnder capacity. On a closed manifold with `W = M` the support conditions are vacuous,
+and the vanishing condition is what excludes positive constants. -/
 structure IsContractibleHZAdmissible (σ : SmoothTwoForm I M) (W : Set M) (F : M → ℝ) : Prop where
   /-- An admissible Hamiltonian is smooth. -/
   contMDiff : ContMDiff I 𝓘(ℝ) ∞ F
@@ -106,6 +108,8 @@ structure IsContractibleHZAdmissible (σ : SmoothTwoForm I M) (W : Set M) (F : M
   tsupport_subset_interior_manifold : tsupport F ⊆ I.interior M
   /-- An admissible Hamiltonian is nonnegative. -/
   nonneg : ∀ x, 0 ≤ F x
+  /-- An admissible Hamiltonian vanishes on a nonempty open subset of `W`. -/
+  exists_isOpen_eqOn_zero : ∃ U : Set M, IsOpen U ∧ U.Nonempty ∧ U ⊆ W ∧ EqOn F 0 U
   /-- An admissible Hamiltonian attains its maximum on a nonempty open set. -/
   exists_isOpen_isMaxOn : ∃ U : Set M, IsOpen U ∧ U.Nonempty ∧ ∀ x ∈ U, IsMaxOn F univ x
   /-- **No fast contractible periodic orbits.** A `T`-periodic orbit of the Hamiltonian vector
@@ -152,6 +156,9 @@ private theorem IsContractibleHZAdmissible.smul_smul (hσ : σ.IsNondegenerate) 
   tsupport_subset_interior_manifold :=
     (tsupport_smul_subset_right (fun _ ↦ c) F).trans hF.tsupport_subset_interior_manifold
   nonneg x := mul_nonneg hc.le (hF.nonneg x)
+  exists_isOpen_eqOn_zero := by
+    obtain ⟨U, hU, hUne, hUW, hzero⟩ := hF.exists_isOpen_eqOn_zero
+    exact ⟨U, hU, hUne, hUW, fun x hx ↦ by simp [hzero hx]⟩
   exists_isOpen_isMaxOn := by
     obtain ⟨U, hU, hUne, hmax⟩ := hF.exists_isOpen_isMaxOn
     exact ⟨U, hU, hUne, fun x hx ↦ isMaxOn_iff.2 fun y hy ↦
@@ -228,12 +235,17 @@ theorem IsContractibleHZAdmissible.comp_symm (hσ₂ : σ₂.IsNondegenerate)
       tsupport_subset_interior := ?_
       tsupport_subset_interior_manifold := ?_
       nonneg := fun y ↦ hF.nonneg _
+      exists_isOpen_eqOn_zero := ?_
       exists_isOpen_isMaxOn := ?_
       eq_of_isMIntegralCurve := ?_ }
   · rw [hsupp, ← ψ.coe_toHomeomorph, ← ψ.toHomeomorph.image_interior]
     exact image_mono hF.tsupport_subset_interior
   · rw [hsupp, ← Diffeomorph.image_interior (by simp) ψ]
     exact image_mono hF.tsupport_subset_interior_manifold
+  · obtain ⟨U, hU, hUne, hUW, hzero⟩ := hF.exists_isOpen_eqOn_zero
+    refine ⟨ψ '' U, ψ.toHomeomorph.isOpenMap U hU, hUne.image ψ, image_mono hUW, ?_⟩
+    rintro _ ⟨x, hx, rfl⟩
+    simpa using hzero hx
   · obtain ⟨U, hU, hUne, hmax⟩ := hF.exists_isOpen_isMaxOn
     refine ⟨ψ '' U, ψ.toHomeomorph.isOpenMap U hU, hUne.image ψ, ?_⟩
     rintro _ ⟨x, hx, rfl⟩
