@@ -65,6 +65,8 @@ constructions on Tate affinoids, such as completed tensor products, apply to non
   `Spa(A, A⁺)` are the points of its analytic locus `Spa(A, A⁺)ᵃ`.
 * `TauCeti.PreAdicSpace.preimage_analyticPoints_subset`: a point over an analytic point is
   analytic.
+* `TauCeti.PreAdicSpace.mem_analyticPoints_iff_of_isOpenImmersion`: open immersions, in particular
+  isomorphisms, preserve and reflect analytic points.
 * `TauCeti.PreAdicSpace.analyticPoints_analyticLocus`: every point of `X_a` is analytic.
 * `TauCeti.PreAdicSpace.isIso_analyticLocus_ι_iff`: `X_a ⟶ X` is an isomorphism exactly when
   every point of `X` is analytic.
@@ -149,6 +151,26 @@ theorem preimage_analyticPoints_eq_iff_mapsTo (f : Y ⟶ X) :
       Set.MapsTo f.base Y.analyticPoints X.analyticPoints :=
   ⟨fun h ↦ Set.mapsTo_iff_subset_preimage.mpr h.ge,
     fun h ↦ (preimage_analyticPoints_subset f).antisymm (Set.mapsTo_iff_subset_preimage.mp h)⟩
+
+/-- **Open immersions preserve analytic points**: for an open immersion `f : Y ⟶ X` of pre-adic
+spaces, a point of `Y` is analytic exactly when its image in `X` is. This applies in particular to
+isomorphisms and to the inclusion of an open subspace. -/
+@[simp]
+theorem mem_analyticPoints_iff_of_isOpenImmersion (f : Y ⟶ X) [IsOpenImmersion f] {y : Y} :
+    f.base y ∈ X.analyticPoints ↔ y ∈ Y.analyticPoints := by
+  refine ⟨fun h ↦ preimage_analyticPoints_subset f h, fun h ↦ ?_⟩
+  -- `f` is an isomorphism `e` onto the restriction of `X` to the image of `f`, followed by the
+  -- inclusion of that open subspace
+  set e := IsOpenImmersion.isoRestrict f
+  have hy : e.inv.base (e.hom.base y) = y := by
+    rw [← ConcreteCategory.comp_apply, ← comp_base, e.hom_inv_id]
+    rfl
+  have he : e.hom.base y ∈ (X.restrict f.isOpenEmbedding).analyticPoints :=
+    preimage_analyticPoints_subset e.inv (by rwa [Set.mem_preimage, hy])
+  have hf := congrArg (fun k ↦ k.base y) (IsOpenImmersion.isoRestrict_hom_ofRestrict f)
+  simp only [comp_base, ofRestrict_base] at hf
+  rw [analyticPoints_restrict] at he
+  exact hf ▸ he
 
 end Morphisms
 
