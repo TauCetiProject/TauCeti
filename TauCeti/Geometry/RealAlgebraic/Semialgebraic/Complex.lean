@@ -11,7 +11,7 @@ public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
 /-!
 # Complex polynomial equations in real coordinates
 
-A complex polynomial equation in complex coordinates `z` and their conjugates `z̄` becomes two
+A complex polynomial equation in complex coordinates `z` and their conjugates `star z` becomes two
 real polynomial equations, its real and imaginary parts, in the real coordinates `Re z` and `Im z`.
 So the subsets of complex coordinate spaces cut out by such equations are semialgebraic once
 complex coordinates are split into their real and imaginary parts. This is how complex algebraic
@@ -64,14 +64,15 @@ theorem isSemialgebraic_setOf_eval_ofReal_eq_zero (r : MvPolynomial σ ℂ) :
   rw [h]
   exact (isSemialgebraic_eval_eq_zero _).inter (isSemialgebraic_eval_eq_zero _)
 
-/-- The zero set of a polynomial `q(z, z̄)` in complex coordinates `z : κ → ℂ` and their
+/-- The zero set of a polynomial `q(z, star z)` in complex coordinates `z : κ → ℂ` and their
 conjugates is semialgebraic in the real coordinates `a : κ ⊕ κ → ℝ`, where
 `z k = a (Sum.inl k) + a (Sum.inr k) * I`. -/
 theorem isSemialgebraic_setOf_eval_sumElim_star_eq_zero (q : MvPolynomial (κ ⊕ κ) ℂ) :
     IsSemialgebraic {a : κ ⊕ κ → ℝ |
       eval (Sum.elim (fun k ↦ (a (.inl k) : ℂ) + a (.inr k) * I)
         (fun k ↦ star ((a (.inl k) : ℂ) + a (.inr k) * I))) q = 0} := by
-  -- Substitute `z = x + y I` and `z̄ = x - y I` to obtain a complex polynomial in real variables.
+  -- Substitute `z = x + y I` and `star z = x - y I` to obtain a complex polynomial in real
+  -- variables.
   let L : κ ⊕ κ → MvPolynomial (κ ⊕ κ) ℂ :=
     Sum.elim (fun k ↦ X (.inl k) + X (.inr k) * C I) (fun k ↦ X (.inl k) - X (.inr k) * C I)
   have h (a : κ ⊕ κ → ℝ) :
