@@ -50,6 +50,8 @@ and with `c` circles has sum `(q + q⁻¹) ^ c` (`TauCeti.OrientedPDCode.enhance
 
 ## Main results
 
+* `TauCeti.Khovanov.sum_T_labelingQuantumDegree`: the labellings of `k` circles, counted by quantum
+  degree, give `(q + q⁻¹) ^ k`.
 * `TauCeti.OrientedPDCode.enhancedStateSum_eq_sum`: the sum over enhanced states as a sum over
   states, with `(q + q⁻¹) ^ k` for a state with `k` circles.
 * `TauCeti.OrientedPDCode.eval₂_neg_genericUnit_jonesStateWeight`: at `t ^ (1/2) = -q` the Jones
@@ -115,6 +117,24 @@ theorem labelingQuantumDegree_eq (l : ι → Bool) :
   rw [labelingQuantumDegree_def, Finset.natCast_card_filter, Finset.mul_sum, Fintype.card,
     Finset.cast_card, ← Finset.sum_sub_distrib]
   exact Finset.sum_congr rfl fun i _ ↦ by cases l i <;> simp
+
+/-- The quantum degree of a labelling of `k` circles lies between `-k` and `k`. -/
+theorem abs_labelingQuantumDegree_le (l : ι → Bool) :
+    |labelingQuantumDegree ι l| ≤ Fintype.card ι := by
+  have h := Finset.card_filter_le (Finset.univ : Finset ι) (fun i ↦ l i = true)
+  rw [Finset.card_univ] at h
+  rw [labelingQuantumDegree_eq, abs_le]
+  constructor <;> omega
+
+/-- **The graded count of labellings**: labelling `k` circles by `1` or `X` in all possible ways
+gives `∑ q ^ (quantum degree) = (q + q⁻¹) ^ k`. -/
+theorem sum_T_labelingQuantumDegree [DecidableEq ι] :
+    ∑ l : ι → Bool, (T (labelingQuantumDegree ι l) : ℤ[T;T⁻¹]) =
+      (T 1 + T (-1)) ^ Fintype.card ι := by
+  simp_rw [labelingQuantumDegree_def, T_sum]
+  rw [← Fintype.prod_sum fun _ (b : Bool) ↦ (T (bif b then -1 else 1) : ℤ[T;T⁻¹]),
+    ← Finset.card_univ, ← Finset.prod_const]
+  simp [add_comm]
 
 variable {σ τ : Type*} [Fintype σ] [Fintype τ] [DecidableEq τ]
 
@@ -185,16 +205,6 @@ theorem enhancedStateSum_def (D : OrientedPDCode n) :
     D.enhancedStateSum = ∑ e : D.toPDCode.EnhancedState,
       (D.stateCochainDegree e.1).negOnePow • T (D.enhancedQuantumDegree e) := (rfl)
 
-/-- Labelling the `k` circles of a state by `1` or `X` in all possible ways contributes
-`(q + q⁻¹) ^ k`. -/
-private theorem sum_T_labelDegree (D : PDCode n) (s : Fin n → Bool) :
-    ∑ l : D.ResolvedCircle s → Bool, (T (Khovanov.labelingQuantumDegree _ l) : ℤ[T;T⁻¹]) =
-      (T 1 + T (-1)) ^ D.stateLoopCount s := by
-  simp_rw [Khovanov.labelingQuantumDegree_def, T_sum]
-  rw [← Fintype.prod_sum fun _ (b : Bool) ↦ (T (bif b then -1 else 1) : ℤ[T;T⁻¹]),
-    ← PDCode.card_resolvedCircle, ← Finset.card_univ, ← Finset.prod_const]
-  simp [add_comm]
-
 /-- **The enhanced state sum as a sum over states**: the labels of the `k` circles of a state
 contribute `(q + q⁻¹) ^ k` to the signed monomial `(-1) ^ (|S| - n₋) q ^ (|S| + n₊ - 2 n₋)` of
 the state. -/
@@ -205,7 +215,7 @@ theorem enhancedStateSum_eq_sum (D : OrientedPDCode n) :
   rw [enhancedStateSum_def, Fintype.sum_sigma]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
   simp_rw [enhancedQuantumDegree_def, T_add, ← smul_mul_assoc, ← Finset.mul_sum,
-    sum_T_labelDegree]
+    Khovanov.sum_T_labelingQuantumDegree, PDCode.card_resolvedCircle]
 
 /-- The cochain degree of a state is the sum over the crossings of `1` for a `B`-smoothing, minus
 `1` for a negative crossing. -/
