@@ -176,6 +176,13 @@ theorem coe_levelEmbedding (n : ℕ+) (f : K⸨X⸩) :
     (levelEmbedding K n f : HahnSeries ℚ K) = ramifiedEmbedding K n f :=
   (rfl)
 
+/-- The parameter `t` is the level-`n` image of `u ^ n`. -/
+theorem levelEmbedding_single_self (n : ℕ+) :
+    levelEmbedding K n (HahnSeries.single (n : ℤ) 1) = single K 1 1 :=
+  Subtype.ext <| by
+    rw [coe_levelEmbedding, ramifiedEmbedding_single, coe_single, Int.cast_natCast,
+      div_self (by exact_mod_cast n.ne_zero)]
+
 /-- The transition map `X ↦ X ^ d` from level `n` to level `n * d` commutes with the level
 embeddings into the Puiseux field. -/
 @[simp]
