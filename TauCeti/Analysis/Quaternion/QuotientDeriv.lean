@@ -29,6 +29,8 @@ The order of multiplication is part of every statement.
 * `TauCeti.LeftQuotientDifferentiableAt`, `TauCeti.LeftQuotientDifferentiableOn` and their right
   counterparts: some slope exists at the point, respectively at every point of the set.
 * `TauCeti.HasLeftQuotientFDerivAt.unique`: a left slope is unique, and likewise on the right.
+* `TauCeti.LeftQuotientDifferentiableAt.hasLeftQuotientFDerivAt` and its right counterpart: when a
+  slope exists, it is `fderiv ℝ f q 1`.
 * `TauCeti.hasLeftQuotientFDerivAt_iff_tendsto_inv_mul` and
   `TauCeti.hasRightQuotientFDerivAt_iff_tendsto_mul_inv`: the quotient limits
   `h⁻¹ * (f (q + h) - f q) → b` and `(f (q + h) - f q) * h⁻¹ → a` along `𝓝[≠] 0`.
@@ -183,6 +185,28 @@ theorem RightQuotientDifferentiableAt.differentiableAt (hf : RightQuotientDiffer
     DifferentiableAt ℝ f q :=
   hf.elim fun _ ha ↦ ha.differentiableAt
 
+/-- If `f` has some left slope at `q`, then that slope is `fderiv ℝ f q 1`. -/
+theorem LeftQuotientDifferentiableAt.hasLeftQuotientFDerivAt
+    (hf : LeftQuotientDifferentiableAt f q) : HasLeftQuotientFDerivAt f q (fderiv ℝ f q 1) := by
+  obtain ⟨b, hb⟩ := hf
+  rwa [hb.fderiv_apply, one_mul]
+
+/-- If `f` has some right slope at `q`, then that slope is `fderiv ℝ f q 1`. -/
+theorem RightQuotientDifferentiableAt.hasRightQuotientFDerivAt
+    (hf : RightQuotientDifferentiableAt f q) : HasRightQuotientFDerivAt f q (fderiv ℝ f q 1) := by
+  obtain ⟨a, ha⟩ := hf
+  rwa [ha.fderiv_apply, mul_one]
+
+theorem leftQuotientDifferentiableAt_iff_hasLeftQuotientFDerivAt_fderiv :
+    LeftQuotientDifferentiableAt f q ↔ HasLeftQuotientFDerivAt f q (fderiv ℝ f q 1) :=
+  ⟨LeftQuotientDifferentiableAt.hasLeftQuotientFDerivAt,
+    HasLeftQuotientFDerivAt.leftQuotientDifferentiableAt⟩
+
+theorem rightQuotientDifferentiableAt_iff_hasRightQuotientFDerivAt_fderiv :
+    RightQuotientDifferentiableAt f q ↔ HasRightQuotientFDerivAt f q (fderiv ℝ f q 1) :=
+  ⟨RightQuotientDifferentiableAt.hasRightQuotientFDerivAt,
+    HasRightQuotientFDerivAt.rightQuotientDifferentiableAt⟩
+
 theorem LeftQuotientDifferentiableOn.mono {s t : Set ℍ} (hf : LeftQuotientDifferentiableOn f t)
     (hst : s ⊆ t) : LeftQuotientDifferentiableOn f s :=
   fun q hq ↦ hf q (hst hq)
@@ -299,17 +323,24 @@ theorem hasRightQuotientFDerivAt_id (q : ℍ) : HasRightQuotientFDerivAt id q 1 
 
 /-! ### Limit characterisations -/
 
+/-- The punctured remainder form of a Fréchet derivative: `f` has derivative `L` at `x` exactly
+when `‖f (x + h) - f x - L h‖ / ‖h‖ → 0` as `h → 0`, `h ≠ 0`. -/
+private theorem hasFDerivAt_iff_tendsto_norm_div_nhdsNE {𝕜 E F : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {L : E →L[𝕜] F} {x : E} :
+    HasFDerivAt f L x ↔ Tendsto (fun h ↦ ‖f (x + h) - f x - L h‖ / ‖h‖) (𝓝[≠] 0) (𝓝 0) := by
+  -- The remainder vanishes at `h = 0`, so the point `0` can be removed from the filter.
+  rw [hasFDerivAt_iff_isLittleO_nhds_zero, ← nhdsWithin_univ, ← Set.union_compl_self {0},
+    ← Set.insert_eq, Asymptotics.isLittleO_insert (by simp),
+    ← Asymptotics.isLittleO_norm_left, ← Asymptotics.isLittleO_norm_right,
+    Asymptotics.isLittleO_iff_tendsto (by simp +contextual)]
+
 /-- **Remainder form of the left quotient derivative.** `f` has left slope `b` at `q` exactly
 when `‖f (q + h) - f q - h * b‖ / ‖h‖ → 0` as `h → 0`, `h ≠ 0`. -/
 theorem hasLeftQuotientFDerivAt_iff_tendsto_norm_div :
     HasLeftQuotientFDerivAt f q b ↔
       Tendsto (fun h ↦ ‖f (q + h) - f q - h * b‖ / ‖h‖) (𝓝[≠] 0) (𝓝 0) := by
-  -- The remainder vanishes at `h = 0`, so the point `0` can be removed from the filter.
-  rw [hasLeftQuotientFDerivAt_iff_hasFDerivAt, hasFDerivAt_iff_isLittleO_nhds_zero,
-    ← nhdsWithin_univ, ← Set.union_compl_self {0}, ← Set.insert_eq,
-    Asymptotics.isLittleO_insert (by simp),
-    ← Asymptotics.isLittleO_norm_left, ← Asymptotics.isLittleO_norm_right,
-    Asymptotics.isLittleO_iff_tendsto (by simp +contextual)]
+  rw [hasLeftQuotientFDerivAt_iff_hasFDerivAt, hasFDerivAt_iff_tendsto_norm_div_nhdsNE]
   simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply']
 
 /-- **Remainder form of the right quotient derivative.** `f` has right slope `a` at `q` exactly
@@ -317,12 +348,7 @@ when `‖f (q + h) - f q - a * h‖ / ‖h‖ → 0` as `h → 0`, `h ≠ 0`. -/
 theorem hasRightQuotientFDerivAt_iff_tendsto_norm_div :
     HasRightQuotientFDerivAt f q a ↔
       Tendsto (fun h ↦ ‖f (q + h) - f q - a * h‖ / ‖h‖) (𝓝[≠] 0) (𝓝 0) := by
-  -- The remainder vanishes at `h = 0`, so the point `0` can be removed from the filter.
-  rw [hasRightQuotientFDerivAt_iff_hasFDerivAt, hasFDerivAt_iff_isLittleO_nhds_zero,
-    ← nhdsWithin_univ, ← Set.union_compl_self {0}, ← Set.insert_eq,
-    Asymptotics.isLittleO_insert (by simp),
-    ← Asymptotics.isLittleO_norm_left, ← Asymptotics.isLittleO_norm_right,
-    Asymptotics.isLittleO_iff_tendsto (by simp +contextual)]
+  rw [hasRightQuotientFDerivAt_iff_hasFDerivAt, hasFDerivAt_iff_tendsto_norm_div_nhdsNE]
   simp only [ContinuousLinearMap.mul_apply']
 
 /-- **The left quotient limit.** `f` has left slope `b` at `q` exactly when
