@@ -59,10 +59,12 @@ theorem map_restrict_prodMk_eq_prod_of_indep (hm : m ≤ mΩ) (hX : Measurable[m
     (μ.restrict A).map (fun ω ↦ (X ω, Y ω)) = ((μ.restrict A).map X).prod (μ.map Y) := by
   have hX' : Measurable X := hX.mono hm le_rfl
   refine (Measure.prod_eq fun s t hs ht ↦ ?_).symm
-  rw [Measure.map_apply (hX'.prodMk hY) (hs.prod ht), Measure.map_apply hX' hs,
-    Measure.map_apply hY ht, Measure.restrict_apply ((hX'.prodMk hY) (hs.prod ht)),
-    Measure.restrict_apply (hX' hs), Set.mk_preimage_prod, Set.inter_right_comm, Set.inter_comm,
-    (Indep_iff _ _ μ).1 hindep _ _ ⟨t, ht, rfl⟩ ((hX hs).inter hA), mul_comm]
+  simp only [Measure.map_apply (hX'.prodMk hY) (hs.prod ht), Measure.map_apply hX' hs,
+    Measure.map_apply hY ht, Measure.restrict_apply' (hm A hA), Set.mk_preimage_prod]
+  -- The event `{X ∈ s} ∩ A` lies in `m`, so it is independent of `{Y ∈ t}`.
+  rw [mul_comm, ← (Indep_iff _ _ μ).1 hindep _ _ ⟨t, ht, rfl⟩ ((hX hs).inter hA)]
+  congr 1
+  ac_rfl
 
 /-- **Freezing the known variable.** If `X` is `m`-measurable and `Y` is independent of `m`, the
 conditional expectation of `f (X, Y)` given `m` is almost everywhere the integral of

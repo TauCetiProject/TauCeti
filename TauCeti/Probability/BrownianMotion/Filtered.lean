@@ -29,6 +29,8 @@ produce a new Brownian motion.
   filtration.
 * `ProbabilityTheory.IsPreBrownianReal.isFilteredPreBrownianReal_natural`: the natural
   filtration.
+* `ProbabilityTheory.IsPreBrownianReal.hasLaw_sub_of_le`: for `s ≤ t`, the increment
+  `W_t - W_s` has law `N(0, t - s)`.
 * `MeasureTheory.Adapted.isFilteredPreBrownianReal`: the characterization by Gaussian increments
   independent of the past.
 
@@ -80,6 +82,13 @@ theorem isFilteredPreBrownianReal_natural (hB : IsPreBrownianReal B P)
       simp [add_tsub_cancel_of_le hst]
     rw [this, ← MeasurableSpace.comap_comp]
     exact MeasurableSpace.comap_mono (measurable_pi_apply _).comap_le
+
+/-- For `s ≤ t`, the increment `B t - B s` of a pre-Brownian motion has law `N(0, t - s)`. -/
+theorem hasLaw_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s ≤ t) :
+    HasLaw (B t - B s) (gaussianReal 0 (t - s)) P := by
+  convert hB.hasLaw_sub t s using 2
+  ext
+  simp [Real.nndist_eq, hst]
 
 end ProbabilityTheory.IsPreBrownianReal
 

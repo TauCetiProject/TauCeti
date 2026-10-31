@@ -95,11 +95,7 @@ theorem condExp_comp_geometricBrownianMotion (hW : IsFilteredPreBrownianReal ℱ
     rw [geometricBrownianMotion_eq_mul s μ σ W u t ω, hF_def, Pi.sub_apply]
   -- The increment `W_t - W_u ∼ N(0, t - u)` is the image of `N(0, 1)` under `z ↦ √(t - u) z`.
   have hlaw : P.map (W t - W u) = (gaussianReal 0 1).map (√((t - u : ℝ≥0) : ℝ) * ·) := by
-    have hinc : HasLaw (W t - W u) (gaussianReal 0 (t - u)) P := by
-      convert (hW.shift u).hasLaw_eval (t - u) using 1
-      ext ω
-      simp [add_tsub_cancel_of_le hut]
-    rw [hinc.map_eq, gaussianReal_map_const_mul, mul_zero, mul_one]
+    rw [(hW.hasLaw_sub_of_le hut).map_eq, gaussianReal_map_const_mul, mul_zero, mul_one]
     congr
     ext
     simp
@@ -140,10 +136,9 @@ theorem callValue_eq_condExp_geometricBrownianMotion (hW : IsFilteredPreBrownian
     (fun ω ↦ callValue (geometricBrownianMotion s r σ W u ω) r σ K (t - u)) =ᵐ[P]
       fun ω ↦ exp (-r * (t - u)) *
         P[fun ω ↦ (geometricBrownianMotion s r σ W t ω - K)⁺ | ℱ u] ω := by
-  have hint : Integrable (fun ω ↦ (geometricBrownianMotion s r σ W t ω - K)⁺) P := by
-    have := (hW.hasLaw_eval 0).isProbabilityMeasure
-    have := (hW.integrable_geometricBrownianMotion s r σ t).sub (integrable_const K)
-    simpa only [posPart_def, Pi.sub_apply] using this.pos_part
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  have hint : Integrable (fun ω ↦ (geometricBrownianMotion s r σ W t ω - K)⁺) P :=
+    ((hW.integrable_geometricBrownianMotion s r σ t).sub (integrable_const K)).pos_part
   have hh : Measurable fun x : ℝ ↦ (x - K)⁺ :=
     (by fun_prop : Continuous fun x : ℝ ↦ (x - K)⁺).measurable
   filter_upwards [hW.riskNeutralPrice_eq_condExp_geometricBrownianMotion s r σ hh hut hint]
@@ -160,10 +155,9 @@ theorem putValue_eq_condExp_geometricBrownianMotion (hW : IsFilteredPreBrownianR
     (fun ω ↦ putValue (geometricBrownianMotion s r σ W u ω) r σ K (t - u)) =ᵐ[P]
       fun ω ↦ exp (-r * (t - u)) *
         P[fun ω ↦ (K - geometricBrownianMotion s r σ W t ω)⁺ | ℱ u] ω := by
-  have hint : Integrable (fun ω ↦ (K - geometricBrownianMotion s r σ W t ω)⁺) P := by
-    have := (hW.hasLaw_eval 0).isProbabilityMeasure
-    have := (integrable_const K).sub (hW.integrable_geometricBrownianMotion s r σ t)
-    simpa only [posPart_def, Pi.sub_apply] using this.pos_part
+  have := (hW.hasLaw_eval 0).isProbabilityMeasure
+  have hint : Integrable (fun ω ↦ (K - geometricBrownianMotion s r σ W t ω)⁺) P :=
+    ((integrable_const K).sub (hW.integrable_geometricBrownianMotion s r σ t)).pos_part
   have hh : Measurable fun x : ℝ ↦ (K - x)⁺ :=
     (by fun_prop : Continuous fun x : ℝ ↦ (K - x)⁺).measurable
   filter_upwards [hW.riskNeutralPrice_eq_condExp_geometricBrownianMotion s r σ hh hut hint]
