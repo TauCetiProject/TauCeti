@@ -167,16 +167,16 @@ theorem integral_pi_sum_mul {ι ι' : Type*} [Fintype ι] [Fintype ι'] {α : ι
 /-- **Exponential-moment bound over a half-space.** For a nonnegative weight `g` on `ℝ` and
 `0 ≤ l` such that `exp (-(l * x)) * g x` is integrable, the integral of `∏ i, g (x i)` over the
 half-space `∑ i, x i ≤ s` of `ι → ℝ` is at most
-`exp (l * s) * (∫ x, exp (-(l * x)) * g x) ^ card ι`.
-
-On the half-space `1 ≤ exp (l * (s - ∑ i, x i))`, and after multiplying by this factor the
-integrand splits into a product over the coordinates, whose integral over all of `ι → ℝ` is the
-`card ι`-th power of a one-dimensional integral. No integrability of `g` itself is assumed. -/
+`exp (l * s) * (∫ x, exp (-(l * x)) * g x) ^ card ι`. No integrability of `g` itself is
+assumed. -/
 theorem setIntegral_prod_le_exp_mul_pow {ι : Type*} [Fintype ι] {g : ℝ → ℝ}
     (hg : ∀ x, 0 ≤ g x) {l : ℝ} (hl : 0 ≤ l)
     (hint : Integrable fun x ↦ Real.exp (-(l * x)) * g x) (s : ℝ) :
     ∫ x in {x : ι → ℝ | ∑ i, x i ≤ s}, ∏ i, g (x i) ≤
       Real.exp (l * s) * (∫ x, Real.exp (-(l * x)) * g x) ^ Fintype.card ι := by
+  -- On the half-space `1 ≤ exp (l * (s - ∑ i, x i))`. After multiplying by this factor the
+  -- integrand `F` splits into a product over the coordinates, whose integral over all of
+  -- `ι → ℝ` is the `card ι`-th power of a one-dimensional integral.
   set F : (ι → ℝ) → ℝ := fun x ↦ Real.exp (l * s) * ∏ i, (Real.exp (-(l * x i)) * g (x i))
   have hF : Integrable F := (Integrable.fintype_prod fun _ ↦ hint).const_mul _
   have hF₀ : ∀ x, 0 ≤ F x := fun x ↦

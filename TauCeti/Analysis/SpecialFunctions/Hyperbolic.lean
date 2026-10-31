@@ -128,12 +128,13 @@ theorem _root_.Real.four_mul_sinh_half_sq (r : ℝ) :
   rw [Real.sinh_eq]
   ring
 
-/-- `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`. The two sides are the power series
-`∑ x ^ (2 k + 1) / (2 k + 1)!` and `∑ x ^ (2 k + 1) / (6 ^ k * k !)`, compared termwise by
-`Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`. The constant `6` is sharp: the cubic
-terms agree. -/
+/-- `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`, the odd companion of `Real.cosh_le_exp_half_sq`.
+The constant `6` is sharp: the cubic terms of the two power series agree. -/
 theorem _root_.Real.sinh_le_mul_exp_sq_div_six {x : ℝ} (hx : 0 ≤ x) :
     Real.sinh x ≤ x * Real.exp (x ^ 2 / 6) := by
+  -- Compare the power series `∑ x ^ (2 k + 1) / (2 k + 1)!` and
+  -- `∑ x ^ (2 k + 1) / (6 ^ k * k !)` termwise, using
+  -- `Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one`.
   rw [Real.sinh_eq_tsum, Real.exp_eq_exp_ℝ, NormedSpace.exp_eq_tsum ℝ, ← tsum_mul_left]
   refine x.hasSum_sinh.summable.tsum_le_tsum (fun k ↦ ?_)
     ((NormedSpace.expSeries_summable' (x ^ 2 / 6)).mul_left x)
@@ -147,11 +148,12 @@ theorem _root_.Real.sinh_le_mul_exp_sq_div_six {x : ℝ} (hx : 0 ≤ x) :
   exact Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one k
 
 /-- `(1 - exp (-l)) / l ≤ exp (-(l / 2) + l ^ 2 / 24)` for every real `l`. For `l ≠ 0` the
-left side is `∫₀¹ exp (-l x) dx = exp (-(l / 2)) * (2 * sinh (l / 2) / l)`, and the factor
-`2 * sinh (l / 2) / l` is even in `l`, so `Real.sinh_le_mul_exp_sq_div_six` at `|l| / 2` bounds it
-by `exp (l ^ 2 / 24)`. At `l = 0` the left side is `0`. -/
+left side is the exponential moment `∫₀¹ exp (-l x) dx`; at `l = 0` it is `0`. -/
 theorem _root_.Real.one_sub_exp_neg_div_le_exp (l : ℝ) :
     (1 - Real.exp (-l)) / l ≤ Real.exp (-(l / 2) + l ^ 2 / 24) := by
+  -- Write the left side as `exp (-(l / 2)) * (2 * sinh (l / 2) / l)`. The factor
+  -- `2 * sinh (l / 2) / l` is even in `l`, so `Real.sinh_le_mul_exp_sq_div_six` at `|l| / 2`
+  -- bounds it by `exp (l ^ 2 / 24)`.
   have h1 : 1 - Real.exp (-l) = Real.exp (-(l / 2)) * (2 * Real.sinh (l / 2)) := by
     have ha : Real.exp (-(l / 2)) * Real.exp (l / 2) = 1 := by rw [← Real.exp_add]; simp
     have hb : Real.exp (-l) = Real.exp (-(l / 2)) ^ 2 := by rw [← Real.exp_nat_mul]; ring_nf
