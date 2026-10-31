@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
 import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.Flat.TorsionFree
+import Mathlib.RingTheory.Localization.BaseChange
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.Etale.AdjoinRoot
 
@@ -65,7 +66,7 @@ public section
 
 universe u v w
 
-open Polynomial
+open Polynomial TensorProduct
 
 namespace TauCeti
 
@@ -206,47 +207,31 @@ variable (f : A) (e : ℕ) (Af Cf : Type*) [CommRing Af] [Algebra A Af] [IsLocal
   [IsScalarTower A (standardTameCover A f e) Cf] [Algebra Af Cf] [IsScalarTower A Af Cf]
 
 /-- Localizing the standard cover `A[x]/(x^e − f)` away from `f` gives the standard cover of
-`A_f` along the image of `f`. -/
+`A_f` along the image of `f`. It composes the base change of `AdjoinRoot`
+(`AdjoinRoot.tensorAlgEquiv`) with the pushout square of the localization. -/
 noncomputable def standardTameCoverAwayAlgEquiv :
     standardTameCover Af (algebraMap A Af f) e ≃ₐ[Af] Cf :=
-  have hφ : (X ^ e - C (algebraMap A Af f)).eval₂ (Algebra.ofId Af Cf : Af →+* Cf)
-      (algebraMap (standardTameCover A f e) Cf (AdjoinRoot.root (X ^ e - C f))) = 0 := by
-    simp [← map_pow, ← AdjoinRoot.algebraMap_eq, ← IsScalarTower.algebraMap_apply]
-  let φ := AdjoinRoot.liftAlgHom _ (Algebra.ofId Af Cf) _ hφ
-  let i := Algebra.ofId A (standardTameCover Af (algebraMap A Af f) e)
-  have hψ₀ : (X ^ e - C f).eval₂ (i : A →+* standardTameCover Af (algebraMap A Af f) e)
-      (AdjoinRoot.root (X ^ e - C (algebraMap A Af f))) = 0 := by
-    simp [i, IsScalarTower.algebraMap_apply A Af (standardTameCover Af _ e)]
-  let ψ₀ := AdjoinRoot.liftAlgHom _ i _ hψ₀
-  have hu : IsUnit (ψ₀ (algebraMap A (standardTameCover A f e) f)) := by
-    rw [AlgHom.commutes,
-      IsScalarTower.algebraMap_apply A Af (standardTameCover Af (algebraMap A Af f) e)]
-    exact (IsLocalization.Away.algebraMap_isUnit (S := Af) f).map _
-  let ψ₁ : Cf →ₐ[A] standardTameCover Af (algebraMap A Af f) e :=
-    IsLocalization.Away.liftAlgHom _ hu
-  have hψ₁ : ψ₁.toRingHom.comp (algebraMap Af Cf) = algebraMap Af _ :=
-    IsLocalization.ringHom_ext (Submonoid.powers f) <| RingHom.ext fun a ↦ by
-      simp only [RingHom.comp_apply, ← IsScalarTower.algebraMap_apply A Af Cf,
-        AlgHom.toRingHom_eq_coe, RingHom.coe_coe, AlgHom.commutes]
-      exact IsScalarTower.algebraMap_apply A Af _ a
-  let ψ : Cf →ₐ[Af] standardTameCover Af (algebraMap A Af f) e :=
-    { ψ₁ with commutes' := fun a ↦ congr($hψ₁ a) }
-  AlgEquiv.ofAlgHom φ ψ
-    (AlgHom.restrictScalars_injective A <| IsLocalization.algHom_ext
-      (Submonoid.powers (algebraMap A (standardTameCover A f e) f)) <|
-      AdjoinRoot.algHom_ext (by
-        -- `Algebra.algHom` is an alias of `IsScalarTower.toAlgHom`, so its simp lemmas do not fire
-        have h : Algebra.algHom A (standardTameCover A f e) Cf (AdjoinRoot.root _) =
-            algebraMap _ Cf (AdjoinRoot.root _) := rfl
-        simp [ψ, ψ₁, ψ₀, φ, h]))
-    (AdjoinRoot.algHom_ext (by simp [ψ, ψ₁, ψ₀, φ]))
+  have : IsLocalization
+      (Algebra.algebraMapSubmonoid (standardTameCover A f e) (.powers f)) Cf := by
+    rw [Algebra.algebraMapSubmonoid, Submonoid.map_powers]
+    infer_instance
+  have := (Algebra.isPushout_of_isLocalization (.powers f) Af (standardTameCover A f e) Cf).symm
+  (AdjoinRoot.mapAlgEquiv (Algebra.TensorProduct.rid A Af Af) _ _
+      (by simp [Algebra.smul_def])).symm.trans <|
+    (AdjoinRoot.tensorAlgEquiv (T := Af) (X ^ e - C f) _ rfl).symm.trans
+      (Algebra.IsPushout.equiv A Af _ Cf)
 
 /-- The isomorphism `A_f[x]/(x^e − f) ≃ A[x]/(x^e − f)_f` sends the root to the root. -/
 @[simp]
 theorem standardTameCoverAwayAlgEquiv_root :
     standardTameCoverAwayAlgEquiv f e Af Cf (AdjoinRoot.root _) =
       algebraMap (standardTameCover A f e) Cf (AdjoinRoot.root _) := by
-  simp [standardTameCoverAwayAlgEquiv]
+  have h : (AdjoinRoot.tensorAlgEquiv (T := Af) (X ^ e - C f) _ rfl).symm (AdjoinRoot.root _) =
+      (1 : Af) ⊗ₜ[A] AdjoinRoot.root _ := by
+    rw [AlgEquiv.symm_apply_eq, AdjoinRoot.tensorAlgEquiv_root]
+  rw [standardTameCoverAwayAlgEquiv, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
+    AdjoinRoot.symm_mapAlgEquiv, AdjoinRoot.coe_mapAlgEquiv, AdjoinRoot.map_root, h,
+    Algebra.IsPushout.equiv_tmul, map_one, one_mul]
 
 variable {e} in
 include f in
