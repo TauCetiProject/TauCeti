@@ -235,10 +235,9 @@ def of : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] FullCrossedProduct α μ whe
     rw [map_star]
     exact Completion.coe_star _
 
-/-- An element of the dense subalgebra of the completion is the image of the underlying element
-of the twisted convolution algebra. -/
-private theorem coe_eq_of (f : FullConvolutionAlgebra α μ) :
-    ((f : Completion (FullConvolutionAlgebra α μ)) : FullCrossedProduct α μ) = of α μ (ofFull f) :=
+/-- The image of `f` under the completion map of `FullConvolutionAlgebra α μ` is `of α μ f`. -/
+theorem coe_toFull_eq_of (f : ConvolutionAlgebra α μ) :
+    ((toFull f : Completion (FullConvolutionAlgebra α μ)) : FullCrossedProduct α μ) = of α μ f :=
   (rfl)
 
 /-- The norm of the image of `f` in the full crossed product is its full seminorm `‖f‖ᵤ`. -/
@@ -265,7 +264,7 @@ prove it on the twisted convolution algebra. -/
 @[elab_as_elim]
 theorem induction_on {p : FullCrossedProduct α μ → Prop} (x : FullCrossedProduct α μ)
     (hp : IsClosed {x | p x}) (ih : ∀ f, p (of α μ f)) : p x :=
-  Completion.induction_on (p := p) x hp fun f => coe_eq_of f ▸ ih (ofFull f)
+  Completion.induction_on (p := p) x hp fun f => coe_toFull_eq_of (ofFull f) ▸ ih (ofFull f)
 
 /-- If `A` has a faithful representation on a Hilbert space `H : Type v` and `μ` is inner regular
 for compact sets on sets of finite measure, the canonical map from the twisted convolution algebra
@@ -308,7 +307,7 @@ private def integratedFullCLM : FullConvolutionAlgebra α μ →L[ℂ] (H →L[�
 private theorem fromCompletion_integratedFullCLM_of (f : ConvolutionAlgebra α μ) :
     (integratedFullCLM μ P).fromCompletion (of α μ f) = P.integratedStarAlgHom μ f := by
   have h := ContinuousLinearMap.fromCompletion_apply_coe (integratedFullCLM μ P) (toFull f)
-  rw [coe_eq_of, ofFull_toFull] at h
+  rw [coe_toFull_eq_of] at h
   simpa [integratedFullCLM] using h
 
 variable (μ) in
