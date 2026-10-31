@@ -239,12 +239,18 @@ theorem _root_.WeakFEPair.toWeakFEPair_toFEPairWithLevel_g (Q : WeakFEPair E) {N
     (hN : 0 < N) : EqOn (Q.toFEPairWithLevel N hN).toWeakFEPair.g Q.g (Ioi 0) := fun x hx ↦ by
   simp [indicator_of_mem (mem_Ioi.mpr (div_pos hx hN)), mul_div_cancel₀ _ hN.ne']
 
+/-- The root-number rescalings by `N ^ k` and `N ^ (-k)` cancel; both round trips compose them. -/
+private theorem mul_ofReal_rpow_mul_ofReal_rpow_neg (z : ℂ) {N : ℝ} (hN : 0 < N) (k : ℝ) :
+    z * ↑(N ^ k) * ↑(N ^ (-k)) = z := by
+  rw [mul_assoc, ← ofReal_mul, ← Real.rpow_add hN, add_neg_cancel, Real.rpow_zero, ofReal_one,
+    mul_one]
+
 /-- Transporting a weak pair presented at level `N` returns its root number. -/
 theorem _root_.WeakFEPair.toWeakFEPair_toFEPairWithLevel_ε (Q : WeakFEPair E) {N : ℝ}
     (hN : 0 < N) : (Q.toFEPairWithLevel N hN).toWeakFEPair.ε = Q.ε := by
-  rw [toWeakFEPair_ε, WeakFEPair.toFEPairWithLevel_ε, WeakFEPair.toFEPairWithLevel_k,
-    WeakFEPair.toFEPairWithLevel_N, mul_assoc, ← ofReal_mul, ← Real.rpow_add hN, add_neg_cancel,
-    Real.rpow_zero, ofReal_one, mul_one]
+  simp only [toWeakFEPair_ε, WeakFEPair.toFEPairWithLevel_ε, WeakFEPair.toFEPairWithLevel_k,
+    WeakFEPair.toFEPairWithLevel_N]
+  exact mul_ofReal_rpow_mul_ofReal_rpow_neg Q.ε hN Q.k
 
 /-- Presenting the transport of a pair at its own level returns the pair. -/
 @[simp]
@@ -253,8 +259,8 @@ theorem toFEPairWithLevel_toWeakFEPair :
   refine ext (fun t ht ↦ ?_) (fun t ht ↦ ?_) rfl ?_ rfl rfl rfl
   · exact indicator_of_mem ht _
   · simp [indicator_of_mem ht, mul_div_cancel_left₀ _ P.hN.ne']
-  · rw [WeakFEPair.toFEPairWithLevel_ε, toWeakFEPair_ε, toWeakFEPair_k, mul_assoc, ← ofReal_mul,
-      ← Real.rpow_add P.hN, neg_add_cancel, Real.rpow_zero, ofReal_one, mul_one]
+  · simp only [WeakFEPair.toFEPairWithLevel_ε, toWeakFEPair_ε, toWeakFEPair_k]
+    simpa only [neg_neg] using mul_ofReal_rpow_mul_ofReal_rpow_neg P.ε P.hN (-P.k)
 
 /-- The pair read backwards at the same level: `g (1 / (N t)) = (ε⁻¹ N ^ k) t ^ k f t`. -/
 def symm : FEPairWithLevel E where
@@ -317,8 +323,9 @@ def Λ : ℂ → E := P.toWeakFEPair.Λ
 @[simp]
 theorem toWeakFEPair_Λ : P.toWeakFEPair.Λ = P.Λ := (rfl)
 
-/-- A weak pair presented at any level keeps its completed function: the presentation changes its
-functions only at nonpositive inputs, which the Mellin transform does not see. -/
+/-- A weak pair presented at any level keeps its completed function: presentation followed by
+transport changes both functions only at nonpositive inputs, which the Mellin transform does not
+see. -/
 @[simp]
 theorem _root_.WeakFEPair.toFEPairWithLevel_Λ (Q : WeakFEPair E) {N : ℝ} (hN : 0 < N) :
     (Q.toFEPairWithLevel N hN).Λ = Q.Λ := by
