@@ -55,17 +55,6 @@ complex numbers, exactly as the underlying argument principle is.
 * `TauCeti.argumentPrinciple_windingNumber_of_analyticOnNhd` — the holomorphic case, with the orders
   read off by `analyticOrderNatAt`.
 
-## Coordination with upstream Mathlib
-
-Per the *Coordination with upstream Mathlib* section of `ConformalMapping/README.md`, layer L0
-overlaps [mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the
-in-progress human-curated Riemann-mapping-theorem effort, which proves an argument principle
-internally as a private lemma
-(`circleIntegral_logDeriv_eq_finsum_analyticOrderNatAdd`). **This file is therefore a temporary
-shim**: once the corresponding Mathlib lemmas land, these statements should be backed by them — or
-deleted and their consumers refactored — rather than maintained as an independent re-proof. What
-Tau Ceti adds at L0 is named, discoverable API, not first proof.
-
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Ch. 4 §5.

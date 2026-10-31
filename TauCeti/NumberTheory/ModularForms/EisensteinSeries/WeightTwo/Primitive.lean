@@ -209,12 +209,6 @@ theorem mem_primitiveG2Subspace_iff {f : ModularForm Γ(N) 2} :
     f ∈ primitiveG2Subspace N ↔ ∃ W ∈ primitiveG2Weights N, weightedG2MF W = f := by
   simp only [primitiveG2Subspace, Submodule.mem_map, weightedG2MFₗ_apply]
 
-/-- Each series `G₂^W` with `W ∈ primitiveG2Weights N` lies in the primitive weight-two
-Eisenstein subspace. -/
-theorem weightedG2MF_mem_primitiveG2Subspace {W : (Fin 2 → ZMod N) → ℂ}
-    (hW : W ∈ primitiveG2Weights N) : weightedG2MF W ∈ primitiveG2Subspace N :=
-  mem_primitiveG2Subspace_iff.mpr ⟨W, hW, rfl⟩
-
 /-- A subspace containing the series `G₂^W` for all `W ∈ primitiveG2Weights N` contains the
 primitive weight-two Eisenstein subspace. -/
 theorem primitiveG2Subspace_le {V : Submodule ℂ (ModularForm Γ(N) 2)}
@@ -303,7 +297,7 @@ theorem sup_primitiveG2Subspace_cuspFormSubmodule_eq_top :
   have hcusp : f - weightedG2MF W ∈ cuspFormSubmodule Γ(N) 2 :=
     (mem_cuspFormSubmodule_iff_constantTermAt_eq_zero _).mpr fun γ ↦ (hconst γ).trans hzero
   simpa using Submodule.add_mem_sup
-    (weightedG2MF_mem_primitiveG2Subspace ⟨hW.2, hmass⟩) hcusp
+    (mem_primitiveG2Subspace_iff.mpr ⟨W, ⟨hW.2, hmass⟩, rfl⟩) hcusp
 
 /-- **The weight-two cusp–Eisenstein decomposition at level `Γ(N)`**: the primitive weight-two
 Eisenstein subspace is a complement of the cusp forms in `M₂(Γ(N))`. -/

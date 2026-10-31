@@ -57,6 +57,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   along the left or right cosets of a subgroup.
 * `QuotientGroup.eq_subgroupOf`: two elements of a subgroup `H` lie in the same left coset of
   `N.subgroupOf H` exactly when they lie in the same left coset of `N`.
+* `QuotientGroup.nontrivial_subgroupOf_of_inf_eq_bot`: `H ⧸ (Z ∩ H)` is nontrivial when `H`
+  contains a nontrivial subgroup meeting `Z` trivially.
 * `QuotientGroup.out_mul_out_mul_inv_mem`: the defect of the representatives chosen by
   `Quotient.out` from preserving multiplication lies in the subgroup.
 -/
@@ -217,6 +219,13 @@ theorem _root_.QuotientGroup.eq_subgroupOf {H N : Subgroup G} {x y : H} :
       ((x : G) : G ⧸ N) = ((y : G) : G ⧸ N) := by
   rw [QuotientGroup.eq, QuotientGroup.eq, Subgroup.mem_subgroupOf, Subgroup.coe_mul,
     Subgroup.coe_inv]
+
+/-- If `H` contains a subgroup `U ≠ 1` meeting `Z` trivially, then `H ⧸ (Z ∩ H)` is nontrivial,
+since otherwise `U ≤ H ≤ Z`. -/
+theorem _root_.QuotientGroup.nontrivial_subgroupOf_of_inf_eq_bot {H U Z : Subgroup G}
+    (hUH : U ≤ H) (hZU : Z ⊓ U = ⊥) (hU : U ≠ ⊥) : Nontrivial (H ⧸ Z.subgroupOf H) := by
+  rw [QuotientGroup.nontrivial_iff, Ne, Subgroup.subgroupOf_eq_top]
+  exact fun h ↦ hU (eq_bot_iff.mpr (hZU ▸ le_inf (hUH.trans h) le_rfl))
 
 /-- The representatives chosen by `Quotient.out` preserve multiplication up to an element of the
 normal subgroup: `q.out * r.out * (q * r).out⁻¹ ∈ N`. -/

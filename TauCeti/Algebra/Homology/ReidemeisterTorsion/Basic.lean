@@ -10,10 +10,10 @@ import Mathlib.Algebra.FiniteSupport.Basic
 import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import Mathlib.Algebra.Ring.NegOnePow
-import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Biprod
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
+import TauCeti.Algebra.Homology.ShortComplex.Splitting
 public import TauCeti.LinearAlgebra.Basis.Exact
 import TauCeti.LinearAlgebra.Alternating.Append
 import TauCeti.LinearAlgebra.Basis.Semilinear
@@ -73,11 +73,15 @@ degree `j`. To prove it, the boundaries of `C₂` in each degree are given the b
 boundaries of `C₁` followed by lifts of the boundaries of `C₃`, using that the boundaries form a
 short exact sequence `0 → B₁,ⱼ → B₂,ⱼ → B₃,ⱼ → 0` when `C₃` is acyclic.
 
-In particular the torsion of a direct sum `C₁ ⊞ C₃`, based in each degree by the basis of `C₁`
-followed by the basis of `C₃` (`HomologicalComplex.biprodXBasis`), is `ε · τ(C₁) · τ(C₃)` with the
-same sign (`HomologicalComplex.reidemeisterTorsion_biprod`). The biproduct is the middle term of the
-split short exact sequence `0 → C₁ → C₁ ⊞ C₃ → C₃ → 0`, and it is acyclic exactly when both
-summands are, so this holds for all complexes.
+When the short exact sequence splits, no acyclicity is needed
+(`HomologicalComplex.reidemeisterTorsion_eq_mul_of_splitting`): the homology of `C₁` and `C₃` is a
+retract of that of `C₂` (`CategoryTheory.ShortComplex.Splitting.acyclic_X₁`,
+`CategoryTheory.ShortComplex.Splitting.acyclic_X₃`), so `C₂` is acyclic exactly when `C₁` and `C₃`
+are, and otherwise both sides are `0`. In particular the torsion of a direct sum `C₁ ⊞ C₃`, based
+in each degree by the basis of `C₁` followed by the basis of `C₃`
+(`HomologicalComplex.biprodXBasis`), is `ε · τ(C₁) · τ(C₃)` with the same sign
+(`HomologicalComplex.reidemeisterTorsion_biprod`), since the biproduct is the middle term of the
+split short exact sequence `0 → C₁ → C₁ ⊞ C₃ → C₃ → 0`.
 
 The torsion is compatible with scalar extension along a homomorphism of fields `φ : F →+* K`
 (`HomologicalComplex.map_reidemeisterTorsion`): if `D` is a complex over `K` with bases `e i` in
@@ -113,6 +117,8 @@ be compared componentwise along the field homomorphisms between them.
   under an isomorphism of complexes, in terms of the determinants of its matrices.
 * `HomologicalComplex.reidemeisterTorsion_eq_mul_of_shortExact`: the multiplicativity of the
   torsion in a based short exact sequence of acyclic complexes.
+* `HomologicalComplex.reidemeisterTorsion_eq_mul_of_splitting`: the multiplicativity of the
+  torsion in a based split short exact sequence, with no acyclicity hypothesis.
 * `HomologicalComplex.reidemeisterTorsion_biprod`: the torsion of a direct sum of based complexes.
 * `HomologicalComplex.map_reidemeisterTorsion`: the torsion of the scalar extension of a based
   complex along a homomorphism of fields is the image of its torsion.
@@ -301,14 +307,6 @@ theorem reidemeisterTorsion_ne_zero (hn : {i | n i ≠ 0}.Finite) (h : C.Acyclic
 theorem reidemeisterTorsion_eq_zero_iff (hn : {i | n i ≠ 0}.Finite) :
     C.reidemeisterTorsion c = 0 ↔ ¬C.Acyclic :=
   ⟨fun h₀ h ↦ C.reidemeisterTorsion_ne_zero c hn h h₀, C.reidemeisterTorsion_of_not_acyclic c⟩
-
-include c in
-/-- The boundaries vanish in a degree where the complex vanishes. -/
-private theorem finrank_range_d_eq_zero {j : ℤ} (hj : n j = 0) :
-    finrank F (LinearMap.range (C.d (j + 1) j).hom) = 0 := by
-  have : Module.Finite F (C.X j) := .of_basis (c j)
-  have hle := Submodule.finrank_le (LinearMap.range (C.d (j + 1) j).hom)
-  rwa [finrank_eq_card_basis (c j), Fintype.card_fin, hj, Nat.le_zero] at hle
 
 include c in
 /-- The determinant of one basis of the boundaries with respect to another is `1` in a degree
@@ -677,16 +675,6 @@ private theorem reidemeisterTorsion_eq_mul_of_not_finite {C₁ C₂ C₃ : Chain
     simp [reidemeisterTorsion_of_not_finite C₃ c₃ hn₃]
   · simp [reidemeisterTorsion_of_not_finite C₁ c₁ hn₁]
 
-/-- The Koszul sign of the multiplicativity formula has finite support when `C₁` is bounded,
-since its factor in degree `j` is `1` whenever the boundaries of `C₁` vanish in degree `j`. -/
-private theorem hasFiniteMulSupport_neg_one_pow_finrank {C₁ C₃ : ChainComplex (ModuleCat F) ℤ}
-    {n₁ : ℤ → ℕ} (c₁ : ∀ i, Basis (Fin (n₁ i)) F (C₁.X i)) (hn₁ : {i | n₁ i ≠ 0}.Finite) :
-    Function.HasFiniteMulSupport fun j : ℤ ↦
-      (-1 : F) ^ (finrank F (LinearMap.range (C₃.d (j + 1 + 1) (j + 1)).hom) *
-        finrank F (LinearMap.range (C₁.d (j + 1) j).hom)) :=
-  hn₁.subset <| Function.mulSupport_subset_iff'.2 fun j hj ↦ by
-    simp [finrank_range_d_eq_zero C₁ c₁ (j := j) (by simpa using hj)]
-
 /-- **Multiplicativity of the torsion.** Let `0 → C₁ → C₂ → C₃ → 0` be a short exact sequence of
 chain complexes of vector spaces, with `C₁` and `C₃` acyclic, and with compatible bases: the basis
 `c₂ i` of `C₂ᵢ` is the image of the basis `c₁ i` of `C₁ᵢ` followed by lifts of the basis `c₃ i` of
@@ -733,7 +721,12 @@ theorem reidemeisterTorsion_eq_mul_of_shortExact {S : ShortComplex (ChainComplex
     (chosenLift S.X₁ c₁) (chosenLift_spec S.X₁ c₁)
   have hτ₃ := hasFiniteMulSupport_torsionBracket (c := c₃) hn₃ h₃ (chosenBasis S.X₃ c₃)
     (fun j k ↦ (S.g.f (j + 1)).hom (t j k)) ht
-  have hε := hasFiniteMulSupport_neg_one_pow_finrank (C₃ := S.X₃) c₁ hn₁
+  -- The Koszul sign is `1` in every degree where `C₁` vanishes.
+  have hε : Function.HasFiniteMulSupport fun j : ℤ ↦
+      (-1 : F) ^ (finrank F (LinearMap.range (S.X₃.d (j + 1 + 1) (j + 1)).hom) *
+        finrank F (LinearMap.range (S.X₁.d (j + 1) j).hom)) := by
+    simpa only [Nat.mul_comm] using hasFiniteMulSupport_neg_one_pow_finrank_mul S.X₁ c₁ hn₁
+      fun j ↦ finrank F (LinearMap.range (S.X₃.d (j + 1 + 1) (j + 1)).hom)
   rw [reidemeisterTorsion_eq_finprod hn (hS.acyclic_X₂ h₁ h₃) β s hs,
     reidemeisterTorsion_eq_finprod hn₁ h₁ (chosenBasis S.X₁ c₁) (chosenLift S.X₁ c₁)
       (chosenLift_spec S.X₁ c₁),
@@ -748,9 +741,30 @@ theorem reidemeisterTorsion_eq_mul_of_shortExact {S : ShortComplex (ChainComplex
 
 end ShortExact
 
-section Biprod
+section Splitting
 
-/-! ### Direct sums -/
+/-! ### Split short exact sequences and direct sums -/
+
+/-- **Torsion of a split short exact sequence.** Let `0 → C₁ → C₂ → C₃ → 0` be a split short exact
+sequence of chain complexes of vector spaces, with compatible bases: the basis `c₂ i` of `C₂ᵢ` is
+the image of the basis `c₁ i` of `C₁ᵢ` followed by lifts of the basis `c₃ i` of `C₃ᵢ`. Then
+`τ(C₂) = ε · τ(C₁) · τ(C₃)`, with the sign `ε = ∏ⱼ (-1) ^ (dim B₃,ⱼ₊₁ · dim B₁,ⱼ)` given by the
+dimensions of the boundaries `Bₖ,ⱼ ⊆ Cₖ,ⱼ`. This holds for all complexes: when `C₁` or `C₃` is
+not acyclic, neither is `C₂`, and both sides are `0`. -/
+theorem reidemeisterTorsion_eq_mul_of_splitting
+    {S : ShortComplex (ChainComplex (ModuleCat F) ℤ)} (σ : S.Splitting) {n₁ n₃ : ℤ → ℕ}
+    (c₁ : ∀ i, Basis (Fin (n₁ i)) F (S.X₁.X i)) (c₃ : ∀ i, Basis (Fin (n₃ i)) F (S.X₃.X i))
+    (c₂ : ∀ i, Basis (Fin (n₁ i + n₃ i)) F (S.X₂.X i))
+    (hc₁ : ∀ i k, c₂ i (Fin.castAdd (n₃ i) k) = (S.f.f i).hom (c₁ i k))
+    (hc₃ : ∀ i k, (S.g.f i).hom (c₂ i (Fin.natAdd (n₁ i) k)) = c₃ i k) :
+    S.X₂.reidemeisterTorsion c₂ =
+      (∏ᶠ j : ℤ, (-1 : F) ^ (finrank F (LinearMap.range (S.X₃.d (j + 1 + 1) (j + 1)).hom) *
+        finrank F (LinearMap.range (S.X₁.d (j + 1) j).hom))) *
+      (S.X₁.reidemeisterTorsion c₁ * S.X₃.reidemeisterTorsion c₃) := by
+  by_cases h : S.X₁.Acyclic ∧ S.X₃.Acyclic
+  · exact reidemeisterTorsion_eq_mul_of_shortExact σ.shortExact h.1 h.2 c₁ c₃ c₂ hc₁ hc₃
+  rw [reidemeisterTorsion_of_not_acyclic _ _ fun h₂ ↦ h ⟨σ.acyclic_X₁ h₂, σ.acyclic_X₃ h₂⟩]
+  rcases not_and_or.1 h with h | h <;> simp [reidemeisterTorsion_of_not_acyclic _ _ h]
 
 variable {C₁ C₃ : ChainComplex (ModuleCat F) ℤ} {n₁ n₃ : ℤ → ℕ}
 
@@ -764,20 +778,11 @@ theorem reidemeisterTorsion_biprod (c₁ : ∀ i, Basis (Fin (n₁ i)) F (C₁.X
     (C₁ ⊞ C₃).reidemeisterTorsion (fun i ↦ (biprodXBasis (c₁ i) (c₃ i)).reindex finSumFinEquiv) =
       (∏ᶠ j : ℤ, (-1 : F) ^ (finrank F (LinearMap.range (C₃.d (j + 1 + 1) (j + 1)).hom) *
         finrank F (LinearMap.range (C₁.d (j + 1) j).hom))) *
-      (C₁.reidemeisterTorsion c₁ * C₃.reidemeisterTorsion c₃) := by
-  by_cases h : C₁.Acyclic ∧ C₃.Acyclic
-  · -- `C₁ ⟶ C₁ ⊞ C₃ ⟶ C₃` is a split short exact sequence with compatible bases.
-    have hsnd (i : ℤ) (x : C₃.X i) :
-        ((Limits.biprod.snd : C₁ ⊞ C₃ ⟶ C₃).f i).hom
-          (((Limits.biprod.inr : C₃ ⟶ C₁ ⊞ C₃).f i).hom x) = x := by
-      rw [← ModuleCat.comp_apply, biprod_inr_snd_f, ModuleCat.id_apply]
-    exact reidemeisterTorsion_eq_mul_of_shortExact
-      (ShortComplex.Splitting.ofHasBinaryBiproduct C₁ C₃).shortExact h.1 h.2 c₁ c₃ _
-      (by simp) (by simp [hsnd])
-  · rw [reidemeisterTorsion_of_not_acyclic _ _ (by rwa [acyclic_biprod_iff])]
-    rcases not_and_or.1 h with h | h <;> simp [reidemeisterTorsion_of_not_acyclic _ _ h]
+      (C₁.reidemeisterTorsion c₁ * C₃.reidemeisterTorsion c₃) :=
+  reidemeisterTorsion_eq_mul_of_splitting (ShortComplex.Splitting.ofHasBinaryBiproduct C₁ C₃) c₁ c₃
+    _ (by simp) (by simp [← ModuleCat.comp_apply])
 
-end Biprod
+end Splitting
 
 section ScalarExtension
 

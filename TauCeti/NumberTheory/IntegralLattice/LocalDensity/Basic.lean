@@ -552,6 +552,31 @@ theorem localDensity_transpose_mul_mul {A P : Matrix n n ℤ_[p]} (hP : IsUnit P
     (Pᵀ * A * P).localDensity = A.localDensity := by
   simp only [localDensity, localDensityCount_transpose_mul_mul hP]
 
+/-- **The local density count does not depend on the indexing**: reindexing the Gram matrix `A`
+along an equivalence leaves the count unchanged. -/
+theorem localDensityCount_reindex {m : Type*} [Fintype m] [DecidableEq m] (e : n ≃ m)
+    (A : Matrix n n ℤ_[p]) (r : ℕ) :
+    (reindex e e A).localDensityCount r = A.localDensityCount r := by
+  rw [localDensityCount_def, localDensityCount_def,
+    ← natCard_isometryMatrices_reindex e (A.map _), reindex_apply, reindex_apply, submatrix_map]
+
+/-- **The local density does not depend on the indexing**: reindexing the Gram matrix `A` along
+an equivalence leaves it unchanged. -/
+theorem localDensity_reindex {m : Type*} [Fintype m] [DecidableEq m] (e : n ≃ m)
+    (A : Matrix n n ℤ_[p]) :
+    (reindex e e A).localDensity = A.localDensity := by
+  simp only [localDensity, localDensityCount_reindex, Fintype.card_congr e]
+
+/-- **Reindexing a diagonal Gram matrix**: an equivalence of index types matching the diagonal
+entries `d' (e i) = d i` leaves the local density of the diagonal matrix unchanged. -/
+theorem localDensity_diagonal_congr {m : Type*} [Fintype m] [DecidableEq m] (e : n ≃ m)
+    {d : n → ℤ_[p]} {d' : m → ℤ_[p]} (h : ∀ i, d' (e i) = d i) :
+    (diagonal d).localDensity = (diagonal d').localDensity := by
+  rw [← localDensity_reindex e.symm (diagonal d'), reindex_apply, Equiv.symm_symm,
+    submatrix_diagonal_equiv]
+  congr 2
+  exact funext fun i => (h i).symm
+
 /-- **The normalized local density count is the local density from level `2 e + 1` on.** If `A`
 is symmetric and `2 det A ∣ p ^ e`, then for every `r > 2 e` the normalized count
 `#{X ∈ Mₙ(ℤ/pʳ) : Xᵀ A X = A} / p ^ (r * n.choose 2)` equals `α_p(A)`. -/
@@ -591,6 +616,14 @@ theorem localDensity_pos {A : Matrix n n ℤ_[p]} (hA : Aᵀ = A) (hdet : A.det 
   rw [← localDensityCount_div_pow_of_det_ne_zero hA hdet (Nat.lt_succ_self _)]
   exact div_pos (Nat.cast_pos.mpr (localDensityCount_pos A _))
     (pow_pos (Nat.cast_pos.mpr (Fact.out : p.Prime).pos) _)
+
+/-- **The local density in rank `0` is `1`**: the empty Gram matrix has exactly one solution of
+`Xᵀ A X = A` at every level. -/
+@[simp]
+theorem localDensity_of_isEmpty [IsEmpty n] (A : Matrix n n ℤ_[p]) : A.localDensity = 1 := by
+  rw [← localDensityCount_div_pow_of_det_ne_zero (Subsingleton.elim _ _) (by simp)
+    (Nat.lt_succ_self _), localDensityCount_def, Nat.card_unique, Fintype.card_eq_zero]
+  simp
 
 /-! ### Primes not dividing `2 det A` -/
 

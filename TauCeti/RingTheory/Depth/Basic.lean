@@ -13,6 +13,8 @@ public import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 public import TauCeti.RingTheory.Ideal.AssociatedPrime.Localization
 public import TauCeti.RingTheory.KrullDimension.Quotient
 public import TauCeti.RingTheory.Regular.LinearMap
+import Mathlib.RingTheory.Flat.Localization
+import TauCeti.RingTheory.Localization.Module
 
 /-!
 # Basic depth of modules
@@ -51,6 +53,9 @@ The regular-sequence transfer lemmas for linear maps live in
   themselves.
 * `IsLocalRing.depth_hom_ge`: depth at least one or two passes from the target
   module to the module of linear maps (Stacks, Lemma 15.24.10 (0AV5)).
+* `IsLocalRing.mem_span_singleton_of_forall_mul_mem_of_two_le_depth`: in a Noetherian local ring
+  of depth at least two, `𝔪 c ⊆ (b)` for a nonzerodivisor `b` forces `c ∈ (b)`, so the maximal
+  ideal is not an associated prime of `R ⧸ (b)`.
 * `IsLocalRing.depth_le_ringKrullDim_quotient_of_isAssociatedPrime`: the depth of a finite module
   is at most `dim (R ⧸ p)` for every associated prime `p` of the module (Matsumura, Theorem 17.2).
 * `IsLocalRing.depth_eq_zero_iff_nontrivial_linearMap` and
@@ -62,6 +67,8 @@ The regular-sequence transfer lemmas for linear maps live in
   combines the depth-zero criterion with
   `TauCeti.maximalIdeal_mem_associatedPrimes_localizedModule_iff` from
   `TauCeti.RingTheory.Ideal.AssociatedPrime.Localization`.
+* `TauCeti.depth_localizedModule_quotSMulTop_add_one`: dividing a finite module by an `M`-regular
+  element of a prime `p` lowers the depth of the localization at `p` by exactly one.
 
 The two quotient-depth results, together with Mathlib's
 `Module.supportDim_add_length_eq_supportDim_of_isRegular`, make Cohen–Macaulayness stable under
@@ -389,6 +396,37 @@ theorem depth_hom_ge {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing
     exact le_sSup ⟨scalars.take (predecessor + 1), homRegular, prefixMembership,
       by simp [List.length_take, Nat.min_eq_left length]⟩
 
+/-- In a Noetherian local ring `R` of depth at least two, the maximal ideal is not an associated
+prime of `R ⧸ (b)` for a nonzerodivisor `b`: if `𝔪 c ⊆ (b)`, then `c ∈ (b)`. -/
+theorem mem_span_singleton_of_forall_mul_mem_of_two_le_depth {R : Type u} [CommRing R]
+    [IsLocalRing R] [IsNoetherianRing R] (hdepth : 2 ≤ depth (ModuleCat.of R R)) {b c : R}
+    (hb : IsSMulRegular R b) (hc : ∀ z ∈ maximalIdeal R, z * c ∈ Ideal.span {b}) :
+    c ∈ Ideal.span {b} := by
+  by_cases hbm : b ∈ maximalIdeal R
+  swap
+  · rw [Ideal.span_singleton_eq_top.2 (notMem_maximalIdeal.1 hbm)]
+    exact Submodule.mem_top
+  have hspan (x : R) : x ∈ b • (⊤ : Submodule R R) ↔ x ∈ Ideal.span {b} := by
+    rw [← Submodule.ideal_span_singleton_smul, smul_eq_mul, Ideal.mul_top]
+  -- `depth (R ⧸ (b)) + 1 = depth R ≥ 2`, so no nonzero map `R ⧸ 𝔪 → R ⧸ (b)` exists
+  have hdepth' : depth (ModuleCat.of R (QuotSMulTop b R)) ≠ 0 := fun h ↦ by
+    have h1 := depth_quotSMulTop_succ_eq_depth hb hbm
+    rw [h, zero_add] at h1
+    exact absurd (h1 ▸ hdepth) (by decide)
+  have : Subsingleton (R ⧸ maximalIdeal R →ₗ[R] QuotSMulTop b R) :=
+    not_nontrivial_iff_subsingleton.1 (mt depth_eq_zero_iff_nontrivial_linearMap.2 hdepth')
+  -- the map `r ↦ r c` is such a map, and it sends `1` to the class of `c`
+  let g : R ⧸ maximalIdeal R →ₗ[R] QuotSMulTop b R :=
+    (maximalIdeal R).liftQ (LinearMap.toSpanSingleton R _ (Submodule.Quotient.mk c))
+      fun z hz ↦ by
+        rw [LinearMap.mem_ker, LinearMap.toSpanSingleton_apply, ← Submodule.Quotient.mk_smul,
+          Submodule.Quotient.mk_eq_zero, hspan]
+        exact hc z hz
+  have hg : g (Submodule.Quotient.mk 1) = 0 := by
+    rw [Subsingleton.elim g 0, LinearMap.zero_apply]
+  rwa [Submodule.liftQ_apply, LinearMap.toSpanSingleton_apply, one_smul,
+    Submodule.Quotient.mk_eq_zero, hspan] at hg
+
 end IsLocalRing
 
 namespace RingEquiv
@@ -437,5 +475,21 @@ theorem one_le_depth_localizedModule_iff {p : Ideal R} [p.IsPrime] :
     1 ≤ depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl M)) ↔
       p ∉ associatedPrimes R M := by
   rw [Order.one_le_iff_ne_zero, Ne, depth_localizedModule_eq_zero_iff]
+
+
+/-- Let `M` be a finite module over a Noetherian ring and `a` an `M`-regular element of a prime
+`p`. Dividing by `a` lowers the depth of the localization at `p` by exactly one:
+`depth (M ⧸ a M)_p + 1 = depth M_p`. -/
+theorem depth_localizedModule_quotSMulTop_add_one [Module.Finite R M] {a : R}
+    (reg : IsSMulRegular M a) (p : Ideal R) [p.IsPrime] (ha : a ∈ p) :
+    depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl (QuotSMulTop a M))) +
+      1 = depth (ModuleCat.of (Localization.AtPrime p) (LocalizedModule p.primeCompl M)) := by
+  let Rₚ := Localization.AtPrime p
+  have hmax : algebraMap R Rₚ a ∈ maximalIdeal Rₚ :=
+    (IsLocalization.AtPrime.to_map_mem_maximal_iff Rₚ p a).2 ha
+  -- Localization commutes with the quotient by `a`.
+  rw [IsLocalRing.depth_eq_of_linearEquiv (localizedQuotSMulTopEquiv M a p.primeCompl)]
+  exact depth_quotSMulTop_succ_eq_depth (reg.of_isLocalizedModule (S := Rₚ) p.primeCompl
+    (LocalizedModule.mkLinearMap p.primeCompl M)) hmax
 
 end TauCeti

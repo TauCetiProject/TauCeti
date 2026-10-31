@@ -44,6 +44,8 @@ Jordan constituents of different scales is not covered here.
   `p ^ (v_p(c) * (n + 1).choose 2)`.
 * `Matrix.tendsto_localDensityCount_smul_div`: if the normalized counts of `A` converge to `α`,
   those of `c • A` converge to `p ^ (v_p(c) * (n + 1).choose 2) * α`.
+* `Matrix.localDensity_smul`: rescaling a nonsingular symmetric matrix multiplies its density
+  by `p ^ (v_p(c) * (n + 1).choose 2)`.
 * `Matrix.tendsto_localDensityCount_smul_div_of_card_eq_two_mul_add_one`,
   `Matrix.tendsto_localDensityCount_smul_div_of_card_eq_two_mul_add_two`: the local density at an
   odd prime of `c • A` for `A` with unit determinant, in odd and in even rank.
@@ -120,6 +122,20 @@ theorem tendsto_localDensityCount_smul_div {c : ℤ_[p]} (hc : c ≠ 0) {A : Mat
       (𝓝 ((p : ℚ) ^ (c.valuation * (Fintype.card n + 1).choose 2) * α)) := by
   rw [← tendsto_add_atTop_iff_nat c.valuation]
   simpa only [localDensityCount_smul_div_pow hc] using h.const_mul _
+
+/-- **Rescaling a nonsingular symmetric Gram matrix multiplies its local density** by
+`p ^ (v_p(c) * (n + 1).choose 2)`. This holds at every prime, including `2`. -/
+theorem localDensity_smul {c : ℤ_[p]} (hc : c ≠ 0) {A : Matrix n n ℤ_[p]}
+    (hA : Aᵀ = A) (hdet : A.det ≠ 0) :
+    (c • A).localDensity =
+      (p : ℚ) ^ (c.valuation * (Fintype.card n + 1).choose 2) * A.localDensity := by
+  have hs : (c • A)ᵀ = c • A := by simp [hA]
+  have hd : (c • A).det ≠ 0 := by
+    rw [det_smul]
+    exact mul_ne_zero (pow_ne_zero _ hc) hdet
+  exact tendsto_nhds_unique (tendsto_localDensityCount_div_of_det_ne_zero hs hd)
+    (tendsto_localDensityCount_smul_div hc
+      (tendsto_localDensityCount_div_of_det_ne_zero hA hdet))
 
 /-- **The local density at an odd prime of a lattice with one Jordan constituent, in odd rank.**
 If `p` is odd, `A` is a symmetric `(2m + 1) × (2m + 1)` matrix over `ℤ_p` with unit determinant,

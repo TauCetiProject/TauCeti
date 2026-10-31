@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 /-!
@@ -34,6 +35,8 @@ vector space.
 
 ## Main results
 
+* `TauCeti.IsAdaptedPseudoGradient.mem_Ioo_of_mem_unstableSet_inter_stableSet`: the points of a
+  trajectory from `a` to `b` have values strictly between `f b` and `f a`.
 * `TauCeti.IsAdaptedPseudoGradient.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet`: a
   trajectory from `a` to `b` crosses each value strictly between `f b` and `f a` exactly once.
 * `TauCeti.IsAdaptedPseudoGradient.span_mtangentConeAt_unstableSet_inter_stableSet_sup_ker_eq_top`:
@@ -94,6 +97,38 @@ private theorem surjective_fderiv_comp_chartAt_symm (hd : MDifferentiableAt 𝓘
   exact LinearMap.surjective_of_ne_zero
     (key _ (hX.fderiv_comp_chartAt_symm_apply_lt_zero hd hab hy))
 
+/-- **`f` strictly decreases along a connecting trajectory.** A trajectory from a critical point
+`a` to a different critical point `b` meets no critical point, so `f` is strictly antitone along
+it. -/
+theorem strictAnti_flow_of_mem_unstableSet_inter_stableSet
+    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+    (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
+    StrictAnti fun t ↦ f (hX.flow t y) :=
+  hX.strictAnti_comp (fun _ ↦ hf _)
+    (hX.isMIntegralCurve_flow y) fun t ↦ hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet
+      hab (hX.flow.isInvariant_unstableSet_inter_stableSet a b t hy)
+
+/-- **Connecting trajectories lie strictly between the critical values of their ends.** A point
+`y` on a trajectory from a critical point `a` to a different critical point `b` satisfies
+`f b < f y < f a`. -/
+theorem mem_Ioo_of_mem_unstableSet_inter_stableSet
+    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+    (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
+    f y ∈ Ioo (f b) (f a) := by
+  have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy
+  -- Compare `y` with its images at times `1` and `-1`, which lie on the same trajectory.
+  have hb : f b ≤ f (hX.flow 1 y) := Flow.le_of_mem_stableSet_of_antitone
+    ((Flow.apply_mem_stableSet_iff _ 1).2 hy.2) hf.continuous.continuousAt
+    (hX.antitone_flow hf _)
+  have ha : f (hX.flow (-1) y) ≤ f a := Flow.le_of_mem_unstableSet_of_antitone
+    ((Flow.apply_mem_unstableSet_iff _ (-1)).2 hy.1) hf.continuous.continuousAt
+    (hX.antitone_flow hf _)
+  have h₁ : f (hX.flow 1 y) < f y := by
+    simpa only [Flow.map_zero_apply] using hanti zero_lt_one
+  have h₂ : f y < f (hX.flow (-1) y) := by
+    simpa only [Flow.map_zero_apply] using hanti (neg_lt_zero.2 zero_lt_one)
+  exact ⟨hb.trans_lt h₁, h₂.trans_le ha⟩
+
 /-- **A trajectory crosses each intermediate level exactly once.** Along a trajectory from a
 critical point `a` to a different critical point `b`, the function `f` strictly decreases from
 `f a` to `f b`, so it takes each value `c` with `f b < c < f a` at exactly one time. -/
@@ -105,11 +140,7 @@ theorem existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet
   have hfc : Continuous f := hf.continuous
   have hγ : Continuous fun t ↦ f (hX.flow t y) :=
     hfc.comp (hX.contMDiff_flow_uncurry.continuous.comp (continuous_id.prodMk continuous_const))
-  -- The trajectory never meets a critical point, so `f` is strictly antitone along it.
-  have hanti : StrictAnti fun t ↦ f (hX.flow t y) :=
-    hX.strictAnti_comp (fun _ ↦ hf _)
-      (hX.isMIntegralCurve_flow y) fun t ↦ hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet
-        hab (hX.flow.isInvariant_unstableSet_inter_stableSet a b t hy)
+  have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hf hab hy
   have hbot : Tendsto (fun t ↦ f (hX.flow t y)) atBot (𝓝 (f a)) :=
     (hfc.tendsto a).comp (Flow.mem_unstableSet.1 hy.1)
   have htop : Tendsto (fun t ↦ f (hX.flow t y)) atTop (𝓝 (f b)) :=

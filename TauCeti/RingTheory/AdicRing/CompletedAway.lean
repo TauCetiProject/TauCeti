@@ -14,6 +14,8 @@ public import TauCeti.RingTheory.AdicCompletion.Algebra
 public import TauCeti.RingTheory.AdicCompletion.Noetherian
 public import TauCeti.RingTheory.AdicRing.Basic
 
+import TauCeti.RingTheory.Localization.Away.Quotient
+
 /-!
 # The completed localisation of an adic ring
 
@@ -26,7 +28,16 @@ sheaf of `Spf A`.
 The ring `A_{f}` is an adic ring of finite ideal type with ideal of definition `I A_{f}`. The
 canonical map `A → A_{f}` is continuous and sends `f` to a unit, and it is universal with this
 property among continuous ring homomorphisms into complete Hausdorff linearly topologised rings.
-When `A` is noetherian, `A_{f}` is noetherian and flat over `A`.
+When `A` is noetherian, `A_{f}` is noetherian and flat over `A`. Modulo `I ^ n` nothing is
+completed: `A_{f} ⧸ I ^ n A_{f}` is the localisation of `A ⧸ I ^ n` away from the image of `f`,
+the ring of sections over `D(f)` of the thickening `Spec (A ⧸ I ^ n)`. This identifies the
+reductions of `A_{f}` with the sections of the thickenings that define the formal spectrum.
+
+For `g` in the radical of `f A + I`, that is, when `f` divides a power of `g` modulo `I` (so that
+`D(g) ⊆ D(f)` in the formal spectrum), the image of `f` in `A_{g}` is a unit, and the universal
+property gives the restriction map `A_{f} → A_{g}`. Conversely `f` becomes a unit in `A_{g}` only
+for such `g`, so there is no `A`-algebra homomorphism `A_{f} → A_{g}` otherwise. The restriction
+maps are the restriction maps of the structure sheaf of `Spf A` on basic open sets.
 
 The completion is formed with the chosen ideal of definition `TauCeti.IsAdicRing.ideal A`. The
 image of `A` in `A_{f}` is not dense in general; the image of `A_f` is, and a continuous ring
@@ -39,6 +50,10 @@ inverse of `f`.
   topology of `I A_{f}`.
 * `TauCeti.AdicRing.CompletedAway.lift`: the continuous ring homomorphism `A_{f} → B` extending a
   continuous ring homomorphism `A → B` that sends `f` to a unit.
+* `TauCeti.AdicRing.CompletedAway.quotientPowEquiv`: the isomorphism of `A`-algebras
+  `A_{f} ⧸ I ^ n A_{f} ≃ (A ⧸ I ^ n)_f`.
+* `TauCeti.AdicRing.CompletedAway.restrict`: the restriction map `A_{f} → A_{g}` for `g` in the
+  radical of `f A + I`.
 
 ## Main results
 
@@ -52,6 +67,21 @@ inverse of `f`.
 * `TauCeti.AdicRing.CompletedAway.existsUnique_lift`: the universal property of `A_{f}`.
 * `TauCeti.AdicRing.CompletedAway.isNoetherianRing`, `TauCeti.AdicRing.CompletedAway.flat`: for
   noetherian `A`, the ring `A_{f}` is noetherian and flat over `A`.
+* `TauCeti.AdicRing.CompletedAway.quotientPowEquiv_algebraMap`: the isomorphism
+  `quotientPowEquiv` is induced by the reduction `A_f → (A ⧸ I ^ n)_f`.
+* `TauCeti.AdicRing.CompletedAway.quotient_algHom_subsingleton`: there is at most one
+  `A`-algebra homomorphism out of `A_{f} ⧸ I ^ n A_{f}`, so `quotientPowEquiv` is the unique
+  isomorphism and, for `m ≤ n`, is compatible with the reduction from `I ^ n` to `I ^ m`.
+* `TauCeti.AdicRing.CompletedAway.isUnit_algebraMap_iff`: `f` is a unit in `A_{g}` if and only if
+  `g` lies in the radical of `f A + I`.
+* `TauCeti.AdicRing.CompletedAway.subsingleton_iff`: `A_{f}` is the zero ring if and only if `f`
+  is nilpotent modulo `I`.
+* `TauCeti.AdicRing.CompletedAway.restrict_unique`, `TauCeti.AdicRing.CompletedAway.restrict_self`,
+  `TauCeti.AdicRing.CompletedAway.restrict_comp_restrict`: the restriction map is the unique
+  continuous `A`-algebra homomorphism, and restriction maps satisfy the identity and composition
+  laws.
+* `TauCeti.AdicRing.CompletedAway.nonempty_algHom_iff`: there is an `A`-algebra homomorphism
+  `A_{f} → A_{g}` if and only if `g` lies in the radical of `f A + I`.
 
 ## References
 
@@ -146,15 +176,11 @@ theorem algebraMap_mem_pow_iff (n : ℕ) {x : Localization.Away f} :
 
 /-- The image of `A_f` in the completed localisation `A_{f}` is dense. -/
 theorem denseRange_algebraMap :
-    DenseRange (algebraMap (Localization.Away f) (CompletedAway A f)) := by
-  refine fun x ↦ mem_closure_iff_nhds.mpr fun U hU ↦ ?_
-  obtain ⟨n, -, hn⟩ := ((isAdic A f).hasBasis_nhds x).mem_iff.mp hU
-  obtain ⟨y, hy⟩ : ∃ y, x - algebraMap (Localization.Away f) (CompletedAway A f) y ∈
-      (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n := by
-    rw [map_algebraMap_eq, ← Ideal.map_pow]
-    exact AdicCompletion.exists_sub_algebraMap_mem_map_pow (fg_map A f) n x
-  refine ⟨_, hn ⟨_, neg_mem hy, ?_⟩, y, rfl⟩
-  simp only [neg_sub, add_sub_cancel]
+    DenseRange (algebraMap (Localization.Away f) (CompletedAway A f)) :=
+  letI : TopologicalSpace (AdicCompletion ((IsAdicRing.ideal A).map
+      (algebraMap A (Localization.Away f))) (Localization.Away f)) :=
+    inferInstanceAs (TopologicalSpace (CompletedAway A f))
+  AdicCompletion.denseRange_algebraMap (fg_map A f) (map_algebraMap_eq A f ▸ isAdic A f)
 
 /-- Two continuous ring homomorphisms out of the completed localisation `A_{f}` into a Hausdorff
 ring are equal as soon as they agree on the image of `A`. -/
@@ -274,6 +300,199 @@ instance flat [IsNoetherianRing A] : Module.Flat A (CompletedAway A f) :=
       (I := (IsAdicRing.ideal A).map (algebraMap A (Localization.Away f)))
   have : Module.Flat A (Localization.Away f) := IsLocalization.flat _ (Submonoid.powers f)
   Module.Flat.trans A (Localization.Away f) (CompletedAway A f)
+
+section Quotient
+
+/-- Modulo `I ^ n`, the completed localisation is the ordinary localisation:
+`A_{f} ⧸ I ^ n A_{f}` is isomorphic as an `A`-algebra to the localisation of `A ⧸ I ^ n` away from
+the image of `f` (EGA I, Ch. 0, 7.6.2 and 7.6.15). -/
+noncomputable def quotientPowEquiv (n : ℕ) :
+    (CompletedAway A f ⧸ (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n) ≃ₐ[A]
+      Localization.Away (Ideal.Quotient.mk (IsAdicRing.ideal A ^ n) f) :=
+  (((Ideal.quotientEquivAlgOfEq (Localization.Away f)
+    (J := ((IsAdicRing.ideal A).map (algebraMap A (Localization.Away f)) ^ n).map
+      (algebraMap (Localization.Away f) (CompletedAway A f)))
+    (by rw [map_algebraMap_eq, ← Ideal.map_pow])).trans
+    ((AdicCompletion.quotientMapPowAlgEquiv (fg_map A f) n).trans
+      (Ideal.quotientEquivAlgOfEq (Localization.Away f)
+        (Ideal.map_pow _ _ _).symm))).restrictScalars A).trans
+    ((IsLocalization.algEquiv (Submonoid.powers (Ideal.Quotient.mk (IsAdicRing.ideal A ^ n) f))
+      (Localization.Away f ⧸ (IsAdicRing.ideal A ^ n).map (algebraMap A (Localization.Away f)))
+      (Localization.Away (Ideal.Quotient.mk (IsAdicRing.ideal A ^ n) f))).restrictScalars A)
+
+/-- On the image of `A_f`, the isomorphism `A_{f} ⧸ I ^ n A_{f} ≃ (A ⧸ I ^ n)_f` is the map
+`A_f → (A ⧸ I ^ n)_f` induced by the reduction `A → A ⧸ I ^ n`. -/
+@[simp]
+theorem quotientPowEquiv_algebraMap (n : ℕ) (x : Localization.Away f) :
+    quotientPowEquiv A f n (algebraMap (Localization.Away f)
+        (CompletedAway A f ⧸ (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n) x) =
+      Localization.awayMap (Ideal.Quotient.mk (IsAdicRing.ideal A ^ n)) f x := by
+  -- both sides are ring homomorphisms out of `A_f` agreeing on `A`
+  have h := IsLocalization.ringHom_ext (Submonoid.powers f)
+    (j := (quotientPowEquiv A f n).toRingHom.comp (algebraMap (Localization.Away f)
+      (CompletedAway A f ⧸ (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n)))
+    (k := Localization.awayMap (Ideal.Quotient.mk (IsAdicRing.ideal A ^ n)) f)
+    (RingHom.ext fun a ↦ ?_)
+  · exact congr($h x)
+  · simp [← IsScalarTower.algebraMap_apply, IsLocalization.Away.map,
+      IsScalarTower.algebraMap_apply A (A ⧸ IsAdicRing.ideal A ^ n)]
+
+/-- There is at most one `A`-algebra homomorphism out of `A_{f} ⧸ I ^ n A_{f}`: it is a
+localisation of a quotient of `A`. In particular `quotientPowEquiv` is the only `A`-algebra
+isomorphism `A_{f} ⧸ I ^ n A_{f} ≃ (A ⧸ I ^ n)_f`, and these isomorphisms are compatible with the
+reductions from `I ^ n` to `I ^ m` for `m ≤ n`. -/
+instance quotient_algHom_subsingleton (n : ℕ) {B : Type*} [Semiring B] [Algebra A B] :
+    Subsingleton ((CompletedAway A f ⧸
+      (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n) →ₐ[A] B) := by
+  refine ⟨fun g₁ g₂ ↦ AlgHom.ext fun x ↦ ?_⟩
+  obtain ⟨y, rfl⟩ := (quotientPowEquiv A f n).symm.surjective x
+  -- transported to `(A ⧸ I ^ n)_f`, both maps are ring homomorphisms agreeing on `A`
+  have h := IsLocalization.ringHom_ext
+    (Submonoid.powers (Ideal.Quotient.mk (IsAdicRing.ideal A ^ n) f))
+    (j := (g₁.comp (quotientPowEquiv A f n).symm.toAlgHom).toRingHom)
+    (k := (g₂.comp (quotientPowEquiv A f n).symm.toAlgHom).toRingHom)
+    (Ideal.Quotient.ringHom_ext (RingHom.ext fun a ↦ ?_))
+  · exact congr($h y)
+  · simp [← Ideal.Quotient.algebraMap_eq, ← IsScalarTower.algebraMap_apply]
+
+end Quotient
+
+section Restriction
+
+variable {A f} {g k : A}
+
+/-- If `g` lies in the radical of `f A + I`, that is if `f` divides a power of `g` modulo the
+ideal of definition `I`, then `f` becomes a unit in the completed localisation `A_{g}`. -/
+theorem isUnit_algebraMap_of_mem_radical
+    (h : g ∈ (Ideal.span {f} ⊔ IsAdicRing.ideal A).radical) :
+    IsUnit (algebraMap A (CompletedAway A g) f) := by
+  obtain ⟨n, hn⟩ := h
+  obtain ⟨a, i, hi, hai⟩ := Ideal.mem_span_singleton_sup.mp hn
+  have := (isAdic A g).isAdicComplete
+  -- the image of `i` lies in the ideal of definition of `A_{g}`, hence in its Jacobson radical
+  have hi' :=
+    IsAdicComplete.le_jacobson_bot _ (Ideal.mem_map_of_mem (algebraMap A (CompletedAway A g)) hi)
+  obtain ⟨u, hu⟩ := (isUnit_algebraMap_self A g).pow n
+  have hunit := Ideal.mem_jacobson_bot.mp (neg_mem hi') ↑u⁻¹
+  have hai' := congrArg (algebraMap A (CompletedAway A g)) hai
+  rw [map_add, map_mul, map_pow, ← hu] at hai'
+  refine isUnit_of_mul_isUnit_right (x := algebraMap A (CompletedAway A g) a) ?_
+  have : algebraMap A (CompletedAway A g) a * algebraMap A (CompletedAway A g) f =
+      u * (-algebraMap A (CompletedAway A g) i * ↑u⁻¹ + 1) := by
+    linear_combination hai' + algebraMap A (CompletedAway A g) i * u.mul_inv
+  rw [this]
+  exact u.isUnit.mul hunit
+
+/-- If `f` becomes a unit in the completed localisation `A_{g}`, then `g` lies in the radical of
+`f A + I`. -/
+theorem mem_radical_of_isUnit_algebraMap
+    (h : IsUnit (algebraMap A (CompletedAway A g) f)) :
+    g ∈ (Ideal.span {f} ⊔ IsAdicRing.ideal A).radical := by
+  set J := (IsAdicRing.ideal A).map (algebraMap A (Localization.Away g))
+  set K := Ideal.span {f} ⊔ IsAdicRing.ideal A
+  -- approximate the inverse `v` of `f` in `A_{g}` modulo `I A_{g}` by some `y ∈ A_g`
+  obtain ⟨v, hv⟩ := h.exists_right_inv
+  have hopen : IsOpen ((v - ·) ⁻¹'
+      ((IsAdicRing.ideal A).map (algebraMap A (CompletedAway A g)) : Set (CompletedAway A g))) :=
+    (by simpa using (isAdic_iff.mp (isAdic A g)).1 1 : IsOpen _).preimage
+      (continuous_const.sub continuous_id)
+  obtain ⟨y, hy⟩ := (denseRange_algebraMap A g).exists_mem_open hopen ⟨v, by simp⟩
+  -- then `f y - 1` lies in `I A_g`
+  have hfy : algebraMap A (Localization.Away g) f * y - 1 ∈ J := by
+    rw [← pow_one J, ← algebraMap_mem_pow_iff A g 1, pow_one]
+    have : algebraMap (Localization.Away g) (CompletedAway A g)
+        (algebraMap A (Localization.Away g) f * y - 1) =
+          -algebraMap A (CompletedAway A g) f *
+            (v - algebraMap (Localization.Away g) (CompletedAway A g) y) := by
+      rw [map_sub, map_mul, map_one, ← IsScalarTower.algebraMap_apply]
+      linear_combination hv
+    exact this ▸ Ideal.mul_mem_left _ _ hy
+  -- hence `f A + I` generates the unit ideal of `A_g`
+  have htop : K.map (algebraMap A (Localization.Away g)) = ⊤ := by
+    rw [Ideal.map_sup, Ideal.map_span, Set.image_singleton, Ideal.eq_top_iff_one]
+    exact Ideal.mem_span_singleton_sup.mpr ⟨y, _, neg_mem hfy, by ring⟩
+  by_contra hg
+  refine (IsLocalization.map_algebraMap_ne_top_iff_disjoint (Submonoid.powers g)
+    (Localization.Away g) K.radical).mpr
+    ((Ideal.disjoint_powers_iff_notMem g K.radical_isRadical).mpr hg) (top_unique ?_)
+  exact htop ▸ Ideal.map_mono Ideal.le_radical
+
+/-- The image of `f` in the completed localisation `A_{g}` is a unit if and only if `g` lies in
+the radical of `f A + I`. -/
+theorem isUnit_algebraMap_iff :
+    IsUnit (algebraMap A (CompletedAway A g) f) ↔
+      g ∈ (Ideal.span {f} ⊔ IsAdicRing.ideal A).radical :=
+  ⟨mem_radical_of_isUnit_algebraMap, isUnit_algebraMap_of_mem_radical⟩
+
+/-- The completed localisation `A_{f}` is the zero ring if and only if `f` lies in the radical of
+the ideal of definition, that is, if and only if `f` is nilpotent modulo `I`. -/
+theorem subsingleton_iff :
+    Subsingleton (CompletedAway A f) ↔ f ∈ (IsAdicRing.ideal A).radical := by
+  rw [← subsingleton_iff_zero_eq_one, ← isUnit_zero_iff, ← map_zero (algebraMap A _),
+    isUnit_algebraMap_iff, Ideal.span_singleton_eq_bot.mpr rfl, bot_sup_eq]
+
+/-- Two continuous `A`-algebra homomorphisms out of the completed localisation `A_{f}` into a
+Hausdorff topological `A`-algebra are equal. -/
+theorem algHom_ext {B : Type*} [Semiring B] [Algebra A B] [TopologicalSpace B]
+    [T2Space B] {g₁ g₂ : CompletedAway A f →ₐ[A] B} (hg₁ : Continuous g₁)
+    (hg₂ : Continuous g₂) :
+    g₁ = g₂ :=
+  AlgHom.toRingHom_injective <| ringHom_ext A f hg₁ hg₂ <| by
+    rw [AlgHom.comp_algebraMap, AlgHom.comp_algebraMap]
+
+/-- The **restriction map** `A_{f} → A_{g}` of completed localisations, for `g` in the radical of
+`f A + I`, that is, for `D(g) ⊆ D(f)` in the formal spectrum. It is the unique continuous
+`A`-algebra homomorphism `A_{f} → A_{g}`, see `CompletedAway.restrict_unique`. -/
+noncomputable def restrict (h : g ∈ (Ideal.span {f} ⊔ IsAdicRing.ideal A).radical) :
+    CompletedAway A f →ₐ[A] CompletedAway A g where
+  toRingHom := lift (algebraMap A (CompletedAway A g)) (continuous_algebraMap A g)
+    (isUnit_algebraMap_of_mem_radical h)
+  commutes' := lift_algebraMap _ _ _
+
+/-- The restriction map of completed localisations is continuous. -/
+theorem continuous_restrict (h : g ∈ (Ideal.span {f} ⊔ IsAdicRing.ideal A).radical) :
+    Continuous (restrict h) :=
+  continuous_lift _ (continuous_algebraMap A g) _
+
+/-- The restriction map of completed localisations is the unique continuous `A`-algebra
+homomorphism `A_{f} → A_{g}`. -/
+theorem restrict_unique (h : g ∈ (Ideal.span {f} ⊔ IsAdicRing.ideal A).radical)
+    {φ : CompletedAway A f →ₐ[A] CompletedAway A g} (hφ : Continuous φ) :
+    φ = restrict h :=
+  algHom_ext hφ (continuous_restrict h)
+
+/-- There is an `A`-algebra homomorphism `A_{f} → A_{g}` if and only if `g` lies in the radical
+of `f A + I`, so restriction maps exist only in the direction `D(g) ⊆ D(f)`. -/
+theorem nonempty_algHom_iff :
+    Nonempty (CompletedAway A f →ₐ[A] CompletedAway A g) ↔
+      g ∈ (Ideal.span {f} ⊔ IsAdicRing.ideal A).radical :=
+  ⟨fun ⟨φ⟩ ↦ mem_radical_of_isUnit_algebraMap <| by
+    simpa using (isUnit_algebraMap_self A f).map φ, fun h ↦ ⟨restrict h⟩⟩
+
+/-- The restriction map from `A_{f}` to itself is the identity. -/
+@[simp]
+theorem restrict_self (h : f ∈ (Ideal.span {f} ⊔ IsAdicRing.ideal A).radical) :
+    restrict h = AlgHom.id A (CompletedAway A f) :=
+  (restrict_unique h continuous_id).symm
+
+/-- Restriction maps of completed localisations compose: for `D(k) ⊆ D(g) ⊆ D(f)`, restricting
+from `A_{f}` to `A_{g}` and then to `A_{k}` is restricting from `A_{f}` to `A_{k}`. -/
+theorem restrict_comp_restrict
+    (hfg : g ∈ (Ideal.span {f} ⊔ IsAdicRing.ideal A).radical)
+    (hgk : k ∈ (Ideal.span {g} ⊔ IsAdicRing.ideal A).radical)
+    (hfk : k ∈ (Ideal.span {f} ⊔ IsAdicRing.ideal A).radical) :
+    (restrict hgk).comp (restrict hfg) = restrict hfk :=
+  restrict_unique hfk ((continuous_restrict hgk).comp (continuous_restrict hfg))
+
+/-- Restriction maps of completed localisations compose, evaluated at an element. -/
+theorem restrict_restrict
+    (hfg : g ∈ (Ideal.span {f} ⊔ IsAdicRing.ideal A).radical)
+    (hgk : k ∈ (Ideal.span {g} ⊔ IsAdicRing.ideal A).radical)
+    (hfk : k ∈ (Ideal.span {f} ⊔ IsAdicRing.ideal A).radical) (x : CompletedAway A f) :
+    restrict hgk (restrict hfg x) = restrict hfk x :=
+  DFunLike.congr_fun (restrict_comp_restrict hfg hgk hfk) x
+
+end Restriction
 
 end CompletedAway
 

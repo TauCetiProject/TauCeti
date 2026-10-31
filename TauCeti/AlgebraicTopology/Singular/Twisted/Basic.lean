@@ -561,6 +561,14 @@ lemma ιTwistedChainComplex_twistedChainComplexCoefficientMap_f (η : L ⟶ K) (
       η.app (initialVertex σ) ≫ ιTwistedChainComplex K k σ :=
   ιTwistedChains_twistedChainsCoefficientMap_app η _ σ
 
+/-- A morphism of local coefficient systems acts on the summand of a simplex through its component
+at the initial vertex, evaluated at an element. -/
+lemma twistedChainComplexCoefficientMap_f_ι_apply (η : L ⟶ K) (k : ℕ)
+    (σ : (TopCat.toSSet.obj X) _⦋k⦌) (v : L.obj (initialVertex σ)) :
+    ((twistedChainComplexCoefficientMap η).f k).hom ((ιTwistedChainComplex L k σ).hom v) =
+      (ιTwistedChainComplex K k σ).hom ((η.app (initialVertex σ)).hom v) :=
+  congrArg (fun f ↦ f.hom v) (ιTwistedChainComplex_twistedChainComplexCoefficientMap_f η k σ)
+
 /-- The identity morphism of a coefficient system induces the identity of twisted chain
 complexes. -/
 @[simp]

@@ -229,6 +229,14 @@ theorem limπ_comp_limLift {P : Type*} [AddCommGroup P] [Module R P]
     F.limπ n ∘ₗ F.limLift f hf = f n :=
   (rfl)
 
+/-- The kernel of the map `P → lim A` induced by a compatible family of maps `fₙ : P → Aₙ` is the
+intersection of the kernels of the `fₙ`. -/
+@[simp]
+theorem ker_limLift {P : Type*} [AddCommGroup P] [Module R P]
+    (f : ∀ n, P →ₗ[R] F.obj (op n)) (hf : ∀ n, F.transition n ∘ₗ f (n + 1) = f n) :
+    LinearMap.ker (F.limLift f hf) = ⨅ n, LinearMap.ker (f n) := by
+  rw [limLift, LinearMap.ker_codRestrict, LinearMap.ker_pi]
+
 /-- The cone over a tower with vertex `lim A` and the projections `lim A → Aₙ`. -/
 @[expose]
 def limCone : Limits.Cone F where
@@ -266,6 +274,11 @@ theorem transitionOfLE_comp_limπ {n k : ℕ} (h : n ≤ k) :
     F.transitionOfLE h ∘ₗ F.limπ k = F.limπ n := by
   ext x
   exact F.transitionOfLE_coe_lim x h
+
+/-- The kernels of the projections `lim A → Aₙ` decrease as `n` grows. -/
+theorem ker_limπ_antitone : Antitone fun n ↦ LinearMap.ker (F.limπ n) := fun n k h x hx ↦ by
+  rw [LinearMap.mem_ker] at hx ⊢
+  rw [← F.transitionOfLE_comp_limπ h, LinearMap.comp_apply, hx, map_zero]
 
 /-- If a compatible family of linear maps `fₙ : P → Aₙ` consists of bijections from some index
 `N` on, then the induced map `P → lim A` is bijective. -/
