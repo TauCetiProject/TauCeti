@@ -41,8 +41,8 @@ transported to `Mod C A` along the fully faithful functor `Mod.toBimod` by Mathl
 ## Main statements
 
 * `Mod.tensorπ_whiskerLeft_hom`, `Mod.tensorπ_whiskerRight_hom`, `Mod.tensorπ_associator_hom_hom`,
-  `Mod.tensorπ_leftUnitor_hom_hom` and `Mod.tensorπ_rightUnitor_hom_hom`: the monoidal structure
-  on representatives in `M.X ⊗ N.X`.
+  `Mod.tensorπ_associator_inv_hom`, `Mod.tensorπ_leftUnitor_hom_hom` and
+  `Mod.tensorπ_rightUnitor_hom_hom`: the monoidal structure on representatives in `M.X ⊗ N.X`.
 * The instance `(Mod.toBimod (A := A)).Monoidal`: `Mod.toBimod` is a monoidal functor, with
   structure maps `Mod.toBimod_μ`, `Mod.toBimod_δ`, `Mod.toBimod_ε` and `Mod.toBimod_η`.
 
@@ -158,8 +158,25 @@ theorem tensorπ_condition (M N : Mod C A) :
       (α_ M.X A N.X).hom ≫ M.X ◁ γ[A, N.X] ≫ tensorπ M N :=
   (coequalizer.condition _ _).trans (Category.assoc _ _ _)
 
+/-- In `M ⊗_A N`, a scalar acting on `M` may be moved, through the braiding, to act on `N`. -/
+@[reassoc]
+theorem smul_whiskerRight_tensorπ (M N : Mod C A) :
+    γ[A, M.X] ▷ N.X ≫ tensorπ M N =
+      (β_ A M.X).hom ▷ N.X ≫ (α_ M.X A N.X).hom ≫ M.X ◁ γ[A, N.X] ≫ tensorπ M N := by
+  rw [← tensorπ_condition, ← comp_whiskerRight_assoc, Iso.hom_inv_id_assoc]
+
 instance (M N : Mod C A) : Epi (tensorπ M N) :=
   inferInstanceAs (Epi (coequalizer.π _ _))
+
+/-- Tensoring on the right preserves the coequalizer defining `M ⊗_A N`, so the whiskered quotient
+map is still an epimorphism. -/
+instance (M N : Mod C A) (X : C) : Epi (tensorπ M N ▷ X) :=
+  inferInstanceAs (Epi ((tensorRight X).map (coequalizer.π _ _)))
+
+/-- Tensoring on the left preserves the coequalizer defining `M ⊗_A N`, so the whiskered quotient
+map is still an epimorphism. -/
+instance (M N : Mod C A) (X : C) : Epi (X ◁ tensorπ M N) :=
+  inferInstanceAs (Epi ((tensorLeft X).map (coequalizer.π _ _)))
 
 /-- Morphisms out of `M ⊗_A N` are determined by their composites with the quotient map. -/
 @[ext]
@@ -180,6 +197,22 @@ theorem tensorπ_tensorDesc {M N : Mod C A} {Z : C} (f : M.X ⊗ N.X ⟶ Z)
     (hf : ((β_ A M.X).inv ≫ γ[A,M.X]) ▷ N.X ≫ f = (α_ M.X A N.X).hom ≫ M.X ◁ γ[A,N.X] ≫ f) :
     tensorπ M N ≫ tensorDesc f hf = f :=
   coequalizer.π_desc _ _
+
+/-- The factorization through the balanced tensor product, whiskered on the left, restricts to the
+whiskered morphism. -/
+@[reassoc (attr := simp)]
+theorem whiskerLeft_tensorπ_tensorDesc {M N : Mod C A} {Z : C} (f : M.X ⊗ N.X ⟶ Z)
+    (hf : ((β_ A M.X).inv ≫ γ[A,M.X]) ▷ N.X ≫ f = (α_ M.X A N.X).hom ≫ M.X ◁ γ[A,N.X] ≫ f)
+    (X : C) : X ◁ tensorπ M N ≫ X ◁ tensorDesc f hf = X ◁ f := by
+  rw [← whiskerLeft_comp, tensorπ_tensorDesc]
+
+/-- The factorization through the balanced tensor product, whiskered on the right, restricts to
+the whiskered morphism. -/
+@[reassoc (attr := simp)]
+theorem tensorπ_tensorDesc_whiskerRight {M N : Mod C A} {Z : C} (f : M.X ⊗ N.X ⟶ Z)
+    (hf : ((β_ A M.X).inv ≫ γ[A,M.X]) ▷ N.X ≫ f = (α_ M.X A N.X).hom ≫ M.X ◁ γ[A,N.X] ≫ f)
+    (X : C) : tensorπ M N ▷ X ≫ tensorDesc f hf ▷ X = f ▷ X := by
+  rw [← comp_whiskerRight, tensorπ_tensorDesc]
 
 /-- The scalars act on `M ⊗_A N` through `M`. -/
 @[reassoc (attr := simp)]
@@ -260,6 +293,15 @@ theorem tensorπ_associator_hom_hom (M N P : Mod C A) :
   -- rather than `N ⊗ P`, which `rw` does not unfold.
   exact congrArg (fun f ↦ (α_ M.X N.X P.X).hom ≫ M.X ◁ tensorπ N P ≫ f)
     (π_toBimodTensorObjIso_hom_hom M (N ⊗ P))
+
+/-- The inverse associator of `M ⊗_A (N ⊗_A P)` acts on representatives in `M.X ⊗ N.X ⊗ P.X` as
+the inverse associator of the underlying objects. -/
+@[reassoc]
+theorem tensorπ_associator_inv_hom (M N P : Mod C A) :
+    M.X ◁ tensorπ N P ≫ tensorπ M (N ⊗ P) ≫ (α_ M N P).inv.hom =
+      (α_ M.X N.X P.X).inv ≫ tensorπ M N ▷ P.X ≫ tensorπ (M ⊗ N) P := by
+  rw [Iso.eq_inv_comp, ← tensorπ_associator_hom_hom_assoc, ← comp_hom', Iso.hom_inv_id, id_hom',
+    Category.comp_id]
 
 omit [HasCoequalizers C] [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorLeft X)]
   [∀ X : C, PreservesColimitsOfSize.{0, 0} (tensorRight X)] in
