@@ -133,7 +133,8 @@ theorem orbit_inf_fixingSubgroup_image_Iio_eq_compl {k : ℕ} (H : Subgroup M)
       (⟨b i, hbi⟩ : SubMulAction.ofFixingSubgroup H s) ⟨y, hy⟩
     have hgs : ((g : H) : M) ∈ fixingSubgroup M s := (mem_fixingSubgroup_iff M).mpr fun x hx ↦
       (mem_fixingSubgroup_iff H).mp g.2 x hx
-    exact ⟨⟨(g : H), (g : H).2, hgs⟩, congrArg Subtype.val hg⟩
+    refine ⟨⟨(g : H), (g : H).2, hgs⟩, ?_⟩
+    simpa [SubMulAction.val_smul_of_tower, Subgroup.smul_def] using congrArg Subtype.val hg
 
 /-- For `k` distinct points under a `k`-transitive subgroup `H`, the `i`-th basic orbit has
 `Nat.card α - i` points, so the first `k` basic orbits have lengths `n, n - 1, …, n - k + 1`
