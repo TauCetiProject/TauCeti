@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.Complex.Polynomial.Basic
-public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 public import TauCeti.RepresentationTheory.ClassicalGroups.SpecialLinear
+public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.CentralCharacter
+public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
+public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Weight.HighestWeight
 
 /-!
 # Weyl modules restricted to the special linear group
@@ -36,13 +38,22 @@ already exhaust the restrictions.  On the bundled representations, where there i
 rewrite, that invariance is stated outright as `TauCeti.rationalWeylSLFDRep_shift`.
 
 Over `ℂ`, these restrictions are irreducible exactly when the shape has at most `n` rows.
-In particular every rational Weyl module restricts irreducibly. Exhaustion and distinctness
-of the irreducible rational representations of `SL n ℂ` are separate classification statements.
-The irreducibility and simplicity statements here concern the complex Weyl modules used in that
-classification. The underlying restriction theorem `Representation.isIrreducible_comp_toGL_iff`
-is available over any algebraically closed field. Algebraic closure enters through that
-restriction theorem; `TauCeti.isIrreducible_weylRepOfShape_iff` for the original `GL` module
-requires only a field of characteristic zero.
+In particular every rational Weyl module restricts irreducibly. The underlying restriction theorem
+`Representation.isIrreducible_comp_toGL_iff` is available over any algebraically closed field.
+Algebraic closure enters through that restriction theorem;
+`TauCeti.isIrreducible_weylRepOfShape_iff` for the original `GL` module requires only a field of
+characteristic zero.
+
+Conversely, over an algebraically closed field of characteristic zero the restriction sees the
+class of `λ` modulo the constant weights and nothing less: `V_λ` and `V_λ'` restrict to equivalent
+representations of `SL n k` exactly when `λ' = λ + m·(1, …, 1)`
+(`TauCeti.nonempty_equiv_rationalWeylSLRep_iff`). Scalar matrices act on `V_λ` by the power
+`∑ᵢ λᵢ` of the scalar, so by `Representation.nonempty_equiv_comp_toGL_iff` an equivalence of the
+restrictions is an equivalence of `GL n k`-representations between a determinant twist
+`det ^ t ⊗ V_λ` and `V_λ'`; comparing highest weights gives `λ' = λ + t·(1, …, 1)`. Equivalently,
+the Weyl modules of distinct Young diagrams with at most `n - 1` rows restrict to non-isomorphic
+representations of `SL n k` (`TauCeti.nonempty_equiv_weylSLRepOfShape_iff`). That every irreducible
+rational representation of `SL n k` is one of these restrictions is a separate statement.
 
 ## Main definitions
 
@@ -62,6 +73,11 @@ requires only a field of characteristic zero.
   exactly when the shape has at most `n` rows.
 * `TauCeti.simple_rationalWeylSLFDRep`: every rational Weyl module over `ℂ` stays simple
   on restriction.
+* `TauCeti.nonempty_equiv_rationalWeylSLRep_iff` and
+  `TauCeti.nonempty_iso_rationalWeylSLFDRep_iff`: **the restrictions of `V_λ` and `V_λ'` to
+  `SL n k` are isomorphic exactly when `λ` and `λ'` differ by a constant weight.**
+* `TauCeti.nonempty_equiv_weylSLRepOfShape_iff`: Young diagrams with at most `n - 1` rows are
+  recovered from the restrictions of their Weyl modules to `SL n k`.
 
 ## References
 
@@ -224,5 +240,83 @@ instance simple_rationalWeylSLFDRep (n : ℕ) (l : DominantWeight n) :
   (FDRep.simple_iff_isIrreducible _).mpr (isIrreducible_rationalWeylSLRep n l)
 
 end Complex
+
+/-! ## Distinct restrictions -/
+
+section Classification
+
+open CategoryTheory
+
+variable (k : Type u) [Field k] [IsAlgClosed k] [CharZero k] {n : ℕ}
+
+/-- **The restrictions of rational Weyl modules to `SL n k` are isomorphic exactly when the dominant
+weights differ by a constant weight.** Over an algebraically closed field of characteristic zero,
+`V_λ` and `V_λ'` restrict to equivalent representations of `SL n k` exactly when
+`λ' = λ + m·(1, …, 1)` for an integer `m`. -/
+theorem nonempty_equiv_rationalWeylSLRep_iff {l l' : DominantWeight n} :
+    Nonempty ((rationalWeylSLRep k n l).Equiv (rationalWeylSLRep k n l')) ↔
+      ∃ m : ℤ, l' = l.shift m := by
+  refine ⟨fun h => ?_, fun ⟨m, hm⟩ => ?_⟩
+  · rcases Nat.eq_zero_or_pos n with rfl | hn
+    · exact ⟨0, Subsingleton.elim _ _⟩
+    have : NeZero (Fintype.card (Fin n) : k) := ⟨by simpa using hn.ne'⟩
+    have := nontrivial_weylModuleOfShape k n l.detShiftShape l.colLen_zero_detShiftShape_le
+    -- Scalar matrices act on `V_λ` by the power `∑ᵢ λᵢ`, so the equivalence of restrictions is a
+    -- `GL n k`-equivalence between a determinant twist of `V_λ` and `V_λ'`.
+    obtain ⟨t, -, ⟨e⟩⟩ := (Representation.nonempty_equiv_comp_toGL_iff
+      (apply_scalar_eq_zpow_smul_of_weightSpace_ne_bot
+        (weightSpace_rationalWeylRep_self_ne_bot k l))
+      (apply_scalar_eq_zpow_smul_of_weightSpace_ne_bot
+        (weightSpace_rationalWeylRep_self_ne_bot k l'))).mp h
+    -- The twist moves every weight of `V_λ` by `t`, so its highest weight is `λ + t·(1, …, 1)`.
+    have hdom (a : Fin n → ℤ)
+        (ha : weightSpace (W := ↥(weylModuleOfShape k n l.detShiftShape).toSubmodule)
+          (rationalWeylRep k n l) (a - fun _ => t) ≠ ⊥) (m : ℕ) :
+        ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, a j ≤
+          ∑ j ∈ Finset.univ.filter fun j : Fin n => (j : ℕ) < m, (l.1 j + t) := by
+      have h := sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot ha m
+      simp only [Pi.sub_apply, Finset.sum_sub_distrib] at h
+      rw [Finset.sum_add_distrib]
+      linarith
+    have hl : weightSpace (W := ↥(weylModuleOfShape k n l.detShiftShape).toSubmodule)
+        (Representation.charTwist ((Matrix.GeneralLinearGroup.det : GL (Fin n) k →* kˣ) ^ t)
+          (rationalWeylRep k n l)) (fun j => l.1 j + t) ≠ ⊥ := by
+      have h : ((fun j => l.1 j + t) - fun _ => t) = l.1 := by
+        funext j
+        simp
+      rw [weightSpace_charTwist_detPow, h]
+      exact weightSpace_rationalWeylRep_self_ne_bot k l
+    have key := e.eq_of_forall_sum_filter_lt_le hl
+      (fun a ha => hdom a (by rwa [weightSpace_charTwist_detPow] at ha))
+      (weightSpace_rationalWeylRep_self_ne_bot k l')
+      (fun _ ha => sum_le_sum_of_weightSpace_rationalWeylRep_ne_bot ha)
+    exact ⟨t, Subtype.ext (funext fun i => by
+      rw [DominantWeight.shift_apply, ← key])⟩
+  · subst hm
+    exact ⟨FDRep.isoToEquiv (eqToIso (rationalWeylSLFDRep_shift k n l m).symm)⟩
+
+/-- **The bundled restrictions of rational Weyl modules to `SL n k` are isomorphic exactly when the
+dominant weights differ by a constant weight**, over an algebraically closed field of
+characteristic zero. -/
+theorem nonempty_iso_rationalWeylSLFDRep_iff {l l' : DominantWeight n} :
+    Nonempty (rationalWeylSLFDRep k n l ≅ rationalWeylSLFDRep k n l') ↔
+      ∃ m : ℤ, l' = l.shift m := by
+  refine ⟨fun ⟨i⟩ => (nonempty_equiv_rationalWeylSLRep_iff k).mp ⟨FDRep.isoToEquiv i⟩, ?_⟩
+  rintro ⟨m, rfl⟩
+  exact ⟨eqToIso (rationalWeylSLFDRep_shift k n l m).symm⟩
+
+/-- **A Young diagram with at most `n - 1` rows is recovered from the restriction of its Weyl module
+to `SL n k`**, over an algebraically closed field of characteristic zero. The row bound on both
+diagrams is needed: adding a full column of height `n` to a diagram does not change the restriction,
+since it twists the `GL n k`-module by the determinant. -/
+theorem nonempty_equiv_weylSLRepOfShape_iff {μ ν : YoungDiagram} (hμ : μ.colLen 0 ≤ n - 1)
+    (hν : ν.colLen 0 ≤ n - 1) :
+    Nonempty ((weylSLRepOfShape k n μ).Equiv (weylSLRepOfShape k n ν)) ↔ μ = ν := by
+  rw [← DominantWeight.detShiftShape_weightOfShape hμ,
+    ← DominantWeight.detShiftShape_weightOfShape hν, ← rationalWeylSLRep_eq_weylSLRepOfShape,
+    ← rationalWeylSLRep_eq_weylSLRepOfShape, nonempty_equiv_rationalWeylSLRep_iff,
+    DominantWeight.detShiftShape_eq_detShiftShape_iff]
+
+end Classification
 
 end TauCeti

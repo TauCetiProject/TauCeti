@@ -141,7 +141,7 @@ theorem map_connectedComponentsIdempotent_eq_one
     g.ofConv (PrimeSpectrum.connectedComponentsIdempotent C) = 1 := by
   rw [rationalComponentMap_apply] at hC
   rw [← hC, PrimeSpectrum.connectedComponentsIdempotent_mk]
-  exact TauCeti.AlgHom.map_connectedComponentIdempotent_kernelPoint_eq_one g.ofConv
+  exact AlgHom.map_connectedComponentIdempotent_kernelPoint_eq_one g.ofConv
 
 /-- A rational point evaluates every other component idempotent to zero. -/
 theorem map_connectedComponentsIdempotent_eq_zero

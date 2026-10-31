@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.MultiquadraticSplitting
--- `LegendreEvenPrimeDiscriminant` supplies the supplementary law for the radicand `2`, used
+-- `Legendre.PrimeDiscriminant.Even` supplies the supplementary law for the radicand `2`, used
 -- only inside a proof below, so it is not re-exported.
-import TauCeti.NumberTheory.Multiquadratic.Legendre.EvenPrimeDiscriminant
+import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Even
 import TauCeti.NumberTheory.Multiquadratic.Dyadic.Decomposition
 import TauCeti.NumberTheory.Multiquadratic.Prime.Radicands
 import TauCeti.NumberTheory.NumberField.Internal.PrimeDivisibility

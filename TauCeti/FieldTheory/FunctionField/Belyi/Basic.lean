@@ -9,6 +9,8 @@ public import TauCeti.FieldTheory.FunctionField.Place.Extension.Unramified
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Equiv
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
+import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Order
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -55,6 +57,8 @@ automorphism of `k(t)` permutes the three marked places
 * `TauCeti.isAlgebraicBelyiPair_ratFunc`: `k(t)` over itself is an algebraic Belyi pair.
 * `TauCeti.IsAlgebraicBelyiPair.of_equiv_equiv` and `TauCeti.IsAlgebraicBelyiPair.of_algEquiv`:
   transport along isomorphisms.
+* `TauCeti.IsAlgebraicBelyiPair.of_isScalarTower`: a finite extension of an algebraic Belyi pair
+  that is unramified over the places outside the three marked fibres is an algebraic Belyi pair.
 
 ## References
 
@@ -126,6 +130,16 @@ variable (k) in
 theorem range_markedPlace : Set.range (markedPlace k) = zeroOneInfty k := by
   ext P
   simp [mem_zeroOneInfty_iff, Fin.exists_fin_succ, eq_comm]
+
+/-- Away from `0`, `1` and `∞`, the function `t (t - 1)` is a unit. -/
+theorem valuation_X_mul_X_sub_one_of_notMem_zeroOneInfty {P : Place k (RatFunc k)}
+    (hP : P ∉ zeroOneInfty k) : P.valuation (RatFunc.X * (RatFunc.X - 1)) = 1 := by
+  simp only [mem_zeroOneInfty_iff, not_or] at hP
+  have h1 := ord_X_sub_C_eq_zero_of_ne (1 : k) hP.2.1 hP.2.2
+  rw [map_one RatFunc.C] at h1
+  have hX1 : (RatFunc.X - 1 : RatFunc k) ≠ 0 := by simpa using RatFunc.X_sub_C_ne_zero (1 : k)
+  rw [map_mul, valuation_eq_exp_neg_ord _ RatFunc.X_ne_zero, valuation_eq_exp_neg_ord _ hX1,
+    ord_X_eq_zero_of_ne hP.1 hP.2.2, h1, neg_zero, WithZero.exp_zero, one_mul]
 
 end Place
 
@@ -203,5 +217,24 @@ degree one, is an algebraic Belyi pair. -/
 theorem isAlgebraicBelyiPair_ratFunc : IsAlgebraicBelyiPair k (RatFunc k) where
   isIntegrallyClosedIn := isIntegrallyClosedIn_ratFunc
   ramificationIdx_eq_one {P} _ := Place.ramificationIdx_self P
+
+variable {E : Type*} [Field E] [Algebra k E] [Algebra (RatFunc k) E]
+  [IsScalarTower k (RatFunc k) E] [FiniteDimensional (RatFunc k) E] [Algebra E F]
+  [IsScalarTower k E F] [IsScalarTower (RatFunc k) E F]
+
+/-- **Composing a Belyi map with a cover unramified over its unmarked fibres**: if `E / k(t)` is an
+algebraic Belyi pair and `F / E` is a finite extension, with exact constant field `k`, in which
+every place of `F` over a place of `k(t)` other than `t = 0`, `t = 1` and `t = ∞` is unramified
+over `E`, then `F / k(t)` is an algebraic Belyi pair. -/
+theorem IsAlgebraicBelyiPair.of_isScalarTower (hE : IsAlgebraicBelyiPair k E)
+    (hF : IsIntegrallyClosedIn k F)
+    (h : ∀ P : Place k F, P.restrict k (RatFunc k) ∉ Place.zeroOneInfty k →
+      Place.ramificationIdx E P = 1) :
+    IsAlgebraicBelyiPair k F where
+  isIntegrallyClosedIn := hF
+  ramificationIdx_eq_one {P} hP := by
+    have : Algebra.IsIntegral E F := .tower_top (RatFunc k)
+    rw [Place.ramificationIdx_restrict_mul (k₁ := k) (F₁ := E) P, h P hP, one_mul]
+    exact hE.ramificationIdx_eq_one (by rwa [Place.restrict_restrict])
 
 end TauCeti
