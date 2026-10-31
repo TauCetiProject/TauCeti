@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Projective.MinimalResolution.Basic
-public import TauCeti.CategoryTheory.Exact.Resolution.ProjectiveResolution
+public import TauCeti.Algebra.Category.ModuleCat.Projective.FiniteResolution
 
 /-!
 # Bounded minimal free chain resolutions
@@ -88,20 +88,11 @@ theorem exists_projectiveResolution_finite_free_minimal {R : Type u} [CommRing R
       ∀ i, LinearMap.range (F.complex.d (i + 1) i).hom ≤ maximalIdeal R • ⊤ := by
   obtain ⟨r, hr, hmin⟩ :=
     TauCeti.exists_minimal_finiteProjectiveResolution_of_hasProjectiveDimensionLE hM
-  have hP : TauCeti.finiteProjectiveModules R ≤ isProjective (ModuleCat.{u} R) := fun Q hQ ↦
-    have := (TauCeti.finiteProjectiveModules_iff.mp hQ).2
-    inferInstanceAs (Projective Q)
+  have hP := TauCeti.finiteProjectiveModules_le_categoricalProjective R
   refine ⟨r.toProjectiveResolution hP, fun i ↦ ?_, fun i hi ↦
-    (r.isZero_term_of_length_lt (by omega)).of_iso (r.toProjectiveResolutionXIso hP i),
+    r.isZero_toProjectiveResolution_X_of_length_lt hP (by omega),
     fun i ↦ ?_⟩
-  · have hterm : TauCeti.finiteProjectiveModules R (r.term i) := by
-      by_cases hi : i ≤ r.length
-      · exact r.prop_term_of_le_length hi
-      · exact (TauCeti.finiteProjectiveModules R).prop_of_isZero
-          (r.isZero_term_of_length_lt (by omega))
-    have : Module.Finite R (r.term i) := (TauCeti.finiteProjectiveModules_iff.mp hterm).1
-    have : Module.Finite R ((r.toProjectiveResolution hP).complex.X i) :=
-      Module.Finite.equiv (r.toProjectiveResolutionXIso hP i).toLinearEquiv.symm
+  · have := r.finite_toProjectiveResolution_X hP i
     exact ⟨inferInstance, Module.free_of_flat_of_isLocalRing⟩
   · simp only [TauCeti.ExactStructure.FiniteResolution.toProjectiveResolution_complex_d,
       ModuleCat.hom_comp]
