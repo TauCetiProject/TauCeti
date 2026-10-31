@@ -103,16 +103,16 @@ theorem exists_refinement_polyadEnergy_add_le [Fintype κ] [Fintype κ₂] (S : 
   obtain ⟨κ', _, T, π, hcard, hV, hπ, hrev, hA⟩ :=
     S.exists_bounded_refinement_subpolyads (fun i : Polyad3 S × Fin r ↦ i.1) fun i ↦ Q i.1 i.2
   let e := Fintype.equivFin κ'
-  let T' : PairSkeleton3 (Fin (Fintype.card κ')) V := ⟨T.vertexPart, T.pairColors.relabel e⟩
+  let T' := T.relabel e
   have hT'T (x y) (h : Polyad3.ofTriple T' x = Polyad3.ofTriple T' y) :
       Polyad3.ofTriple T x = Polyad3.ofTriple T y :=
-    Polyad3.ofTriple_eq_ofTriple_of_le (S := T) (T := T') le_rfl e.symm (fun p ↦ by simp [T']) h
+    Polyad3.ofTriple_relabel_eq_ofTriple_relabel_iff e |>.1 h
   have hT'S (x y) (h : Polyad3.ofTriple T' x = Polyad3.ofTriple T' y) :
       Polyad3.ofTriple S x = Polyad3.ofTriple S y :=
     Polyad3.ofTriple_eq_ofTriple_of_le (S := S) (T := T) hV.le π (fun p ↦ (hπ p).symm)
       (hT'T x y h)
   refine ⟨Fintype.card κ', T', π ∘ e.symm, hcard.trans (Nat.mul_le_mul_left _
-    (Nat.pow_le_pow_right two_pos ?_)), hV, fun p ↦ by simp [T', hπ],
+    (Nat.pow_le_pow_right two_pos ?_)), (T.relabel_vertexPart e).trans hV, fun p ↦ by simp [T', hπ],
     fun c ↦ by simp [T', hrev], ?_⟩
   · rw [Fintype.card_prod, Fintype.card_fin]
     calc 6 * (Fintype.card (Polyad3 S) * r)
@@ -170,12 +170,11 @@ private theorem exists_refinement_iterate [Fintype κ] [Fintype κ₂] (S : Pair
   induction j with
   | zero =>
     let e := Fintype.equivFin κ₂
-    refine ⟨_, ⟨S.vertexPart, S.pairColors.relabel e⟩, e.symm, le_rfl, rfl, fun p ↦ by simp,
+    refine ⟨_, S.relabel e, e.symm, le_rfl, S.relabel_vertexPart e, fun p ↦ by simp,
       fun c ↦ by simp, Or.inr ?_⟩
     rw [Nat.cast_zero, zero_mul, zero_add]
     exact H.polyadEnergy_mono_of_refines fun x y ↦
-      Polyad3.ofTriple_eq_ofTriple_of_le (S := S) (T := ⟨S.vertexPart, S.pairColors.relabel e⟩)
-        le_rfl e.symm fun p ↦ by simp
+      (Polyad3.ofTriple_relabel_eq_ofTriple_relabel_iff e).1
   | succ j ih =>
     obtain ⟨m, T, π, hm, hV, hπ, hrev, hT⟩ := ih
     by_cases hgood : (∑ P : Polyad3 T with ¬H.IsTopRegularOverPolyad P η r,

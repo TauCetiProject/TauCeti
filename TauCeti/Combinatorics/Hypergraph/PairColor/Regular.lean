@@ -35,6 +35,7 @@ schedule `F : ℕ → ℝ` at the lower complexity, the number of vertex cells p
 * `TauCeti.PairSkeleton3.IsPairColorRegular`: every pair of vertex cells is regular.
 * `TauCeti.PairSkeleton3.isPairColorRegular_bot`: the partition into singletons is regular.
 * `TauCeti.PairSkeleton3.LowerSkeletonRegular`: regularity at the lower complexity.
+* `TauCeti.PairSkeleton3.relabel`: renaming the pair palette along an equivalence.
 
 ## References
 
@@ -223,6 +224,20 @@ theorem LowerSkeletonRegular.isPairColorRegular [Fintype κ] {F : ℕ → ℝ}
     (h : S.LowerSkeletonRegular F) (hε : F (#S.vertexPart.parts + Fintype.card κ) ≤ ε) :
     S.IsPairColorRegular ε :=
   IsPairColorRegular.mono h hε
+
+variable (S) in
+/-- Rename the pair palette of a lower skeleton along an equivalence, keeping its vertex cells. -/
+def relabel {κ' : Type*} (e : κ ≃ κ') : PairSkeleton3 κ' V :=
+  ⟨S.vertexPart, S.pairColors.relabel e⟩
+
+@[simp]
+theorem relabel_vertexPart {κ' : Type*} (e : κ ≃ κ') : (S.relabel e).vertexPart = S.vertexPart :=
+  (rfl)
+
+@[simp]
+theorem relabel_pairColors {κ' : Type*} (e : κ ≃ κ') :
+    (S.relabel e).pairColors = S.pairColors.relabel e :=
+  (rfl)
 
 end PairSkeleton3
 
