@@ -201,12 +201,7 @@ theorem labelledCopyCount_top :
       (Fintype.card V).factorial * #(G.cliqueFinset (Fintype.card V)) := by
     rw [← Nat.card_congr (Equiv.sigmaFiberEquiv f), Nat.card_sigma]
     simp only [hcard, Finset.sum_const, Finset.card_univ, Fintype.card_coe, smul_eq_mul, mul_comm]
-  rw [← card_injective_hom_eq_labelledCopyCount, ← key]
-  exact Nat.card_congr
-    { toFun := fun φ => ⟨φ.1, φ.2⟩
-      invFun := fun c => ⟨c.toHom, c.injective⟩
-      left_inv := fun _ => rfl
-      right_inv := fun _ => rfl }
+  rw [labelledCopyCount, Fintype.card_eq_nat_card, key]
 
 /-- Every homomorphism out of a complete graph is injective, so the homomorphisms from the complete
 graph on `V` to `G` are again counted by `(card V)!` orderings of each `card V`-clique of `G`. -/

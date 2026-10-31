@@ -163,6 +163,7 @@ theorem injHomDensity_le_one : injHomDensity F G ≤ 1 := by
 
 /-- The homomorphism density of an edgeless pattern in a nonempty host is `1`: every vertex map is
 a homomorphism, and the power `|V(G)| ^ |V(F)|` counts them. -/
+@[simp]
 theorem homDensityFin_bot_left [Nonempty W] : homDensityFin (⊥ : SimpleGraph V) G = 1 := by
   rw [homDensityFin_def, G.card_bot_hom, Nat.cast_pow]
   exact div_self (pow_ne_zero _ (Nat.cast_ne_zero.2 Fintype.card_ne_zero))
@@ -170,6 +171,7 @@ theorem homDensityFin_bot_left [Nonempty W] : homDensityFin (⊥ : SimpleGraph V
 /-- The injective homomorphism density in a complete host with at least `|V(F)|` vertices is `1`:
 every vertex embedding is a homomorphism, and the falling factorial `(|V(G)|)_{|V(F)|}` counts
 them. -/
+@[simp]
 theorem injHomDensity_top_right (h : Fintype.card V ≤ Fintype.card W) :
     injHomDensity F (⊤ : SimpleGraph W) = 1 := by
   rw [injHomDensity_def, F.card_injective_hom_top]
