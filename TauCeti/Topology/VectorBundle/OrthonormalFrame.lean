@@ -109,14 +109,14 @@ variable [CompleteSpace V]
 precomposition: `op g` carries the frame `φ` to `φ ∘ g`. -/
 instance : MulAction (unitary (V →L[ℝ] V))ᵐᵒᵖ (OrthonormalFrameBundle F E V) where
   smul g p := ⟨p.proj, (Unitary.linearIsometryEquiv g.unop).trans p.frame⟩
-  one_smul p := by
-    change (⟨p.proj, _⟩ : OrthonormalFrameBundle F E V) = ⟨p.proj, p.frame⟩
-    rw [mk_eq_mk_iff, unop_one, map_one, LinearIsometryEquiv.one_def,
-      LinearIsometryEquiv.refl_trans]
-  mul_smul g h p := by
-    change (⟨p.proj, _⟩ : OrthonormalFrameBundle F E V) = ⟨p.proj, _⟩
-    rw [mk_eq_mk_iff, unop_mul, map_mul, LinearIsometryEquiv.mul_def]
-    exact (LinearIsometryEquiv.trans_assoc _ _ _).symm
+  -- By the definition of `smul`, both sides of each action law are frames over `p.proj`, so
+  -- `mk_eq_mk_iff` reduces the law to an identity of linear isometric equivalences. In
+  -- `mul_smul`, the frame of `h • p` is by definition the composite that `trans_assoc` expects.
+  one_smul p := mk_eq_mk_iff.2 <| by
+    rw [unop_one, map_one, LinearIsometryEquiv.one_def, LinearIsometryEquiv.refl_trans]
+  mul_smul g h p := mk_eq_mk_iff.2 <| by
+    rw [unop_mul, map_mul, LinearIsometryEquiv.mul_def]
+    exact LinearIsometryEquiv.trans_assoc _ _ _
 
 /-- The action preserves the base point. -/
 @[simp]
