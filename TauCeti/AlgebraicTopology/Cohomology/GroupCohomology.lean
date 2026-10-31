@@ -288,7 +288,7 @@ include hb in
 `p : E ⟶ B` and `q : F ⟶ C`, a map `f : E ⟶ F` equivariant along any group homomorphism
 `φ : G →* H` and lying over `b : B ⟶ C`, pulling an `M`-valued cochain of `C` back along `b` and
 then along `p` is pulling it back along `q` and then along `f`, viewed as the change-of-group map
-`MonoidHom.linearYonedaObjCochainMap` of invariant cochains with the identity on the trivial
+`MonoidHom.linearYonedaObjMap` of invariant cochains with the identity on the trivial
 coefficients `M`. -/
 @[reassoc]
 lemma singularCochainComplexMap_comp_singularCochainComplexIsoLinearYonedaObj_hom :
@@ -297,7 +297,7 @@ lemma singularCochainComplexMap_comp_singularCochainComplexIsoLinearYonedaObj_ho
     TopCat.singularCochainComplexMap (R := ModuleCat.of k k) (k := k) (M := ModuleCat.of k M) b ≫
         (hG.singularCochainComplexIsoLinearYonedaObj k M).hom =
       (hH.singularCochainComplexIsoLinearYonedaObj k M).hom ≫
-        φ.linearYonedaObjCochainMap (A := Rep.trivial k H M) (B := Rep.trivial k G M)
+        φ.linearYonedaObjMap (A := Rep.trivial k H M) (B := Rep.trivial k G M)
           (𝟙 (Rep.trivial k G M)) (singularChainsRepResMap k f hf) := by
   have := hG.toContinuousConstSMul
   have := hH.toContinuousConstSMul
@@ -314,13 +314,13 @@ lemma singularCochainComplexMap_comp_singularCochainComplexIsoLinearYonedaObj_ho
   -- complexes and `linearYonedaObj` complexes, which agree only by unfolding, so the comparison
   -- lemmas are applied in term mode rather than by `simp`.
   have hY (w : Rep.of (singularChainsRepresentation k F H n) ⟶ Rep.trivial k H M) :
-      (((φ.linearYonedaObjCochainMap (A := Rep.trivial k H M) (B := Rep.trivial k G M)
+      (((φ.linearYonedaObjMap (A := Rep.trivial k H M) (B := Rep.trivial k G M)
         (𝟙 (Rep.trivial k G M)) (singularChainsRepResMap k f hf)).f n) w).hom c =
         w.hom (((singularChains k).map f).f n c) :=
     -- The cochain map precomposes with the pushforward `f_*` of chains; composing morphisms of
     -- representations and evaluating is evaluating in turn.
     (congrArg (fun t : (singularChainsRep k E G).X n ⟶ Rep.trivial k G M ↦ t.hom c)
-      (φ.linearYonedaObjCochainMap_f_hom_apply (A := Rep.trivial k H M) (B := Rep.trivial k G M)
+      (φ.linearYonedaObjMap_f_apply (A := Rep.trivial k H M) (B := Rep.trivial k G M)
         (𝟙 (Rep.trivial k G M)) (singularChainsRepResMap k f hf) n w)).trans
       (congrArg w.hom (singularChainsRepResMap_f_hom_apply k f hf n c))
   exact (hG.singularCochainComplexIsoLinearYonedaObj_hom_f_hom_apply k M n _ c).trans <|
