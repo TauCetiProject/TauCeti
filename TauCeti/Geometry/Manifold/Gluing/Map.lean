@@ -16,6 +16,8 @@ smooth map on its glued manifold. `TopCat.GlueData.IsCompatible.descContMDiffMap
 existing topological colimit, not a new quotient or a choice of representatives.
 `TopCat.GlueData.IsCompatible.contMDiffMapEquiv` expresses its universal property as an
 equivalence with families agreeing on the overlaps. Descent commutes with postcomposition.
+Descent and this equivalence require target manifolds in the same universe as the glue data,
+since they use the colimit in `TopCat.{u}`. Extensionality has no target-universe restriction.
 `TopCat.GlueData.IsCompatible.mapContMDiffMap` constructs maps between compatible gluings
 piecewise, with identity and composition laws. Map regularity `m` may be any `m ≤ n`, where
 `n` is the regularity of the compatible gluing and its piece manifolds.
@@ -82,7 +84,8 @@ private theorem descContinuous_ι
       (fun (i : D.J) ↦ TopCat.ofHom (X := D.U i) ⟨f i, (f i).contMDiff.continuous⟩)
       (by rintro ⟨i, j⟩; ext x; exact hf i j x) i) x
 
-/-- Descend smooth maps on the pieces which agree on every overlap to the glued manifold.
+/-- Descend smooth maps on the pieces which agree on every overlap to a map from the glued
+manifold into a manifold in the same universe as `D`.
 The underlying continuous map is supplied by the topological colimit. -/
 noncomputable def descContMDiffMap
     (f : ∀ i, C^m⟮I, D.U i; I', N⟯)
@@ -106,8 +109,9 @@ theorem descContMDiffMap_ι
   -- The bundled constructor retains descContinuous as its underlying function.
   exact descContinuous_ι f hf i x
 
-/-- The smooth universal property of compatible open gluing: smooth maps on the glued
-manifold are equivalent to smooth maps on the pieces agreeing on overlaps. -/
+/-- The smooth universal property of compatible open gluing: smooth maps from the glued
+manifold into a manifold in the same universe as `D` are equivalent to smooth maps on the
+pieces agreeing on overlaps. -/
 noncomputable def contMDiffMapEquiv :
     letI := D.chartedSpace H
     C^m⟮I, D.toGlueData.glued; I', N⟯ ≃
@@ -149,7 +153,8 @@ variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
   {P : Type u} [TopologicalSpace P] [ChartedSpace H'' P]
 
 /-- Descent is natural in the target: postcomposing the descended map is the same as
-postcomposing all its piece maps and then descending. -/
+postcomposing all its piece maps and then descending. Both targets lie in the same universe
+as `D`. -/
 @[simp]
 theorem comp_descContMDiffMap (g : C^m⟮I', N; I'', P⟯)
     (f : ∀ i, C^m⟮I, D.U i; I', N⟯)
@@ -197,6 +202,8 @@ theorem mapContMDiffMap_ι (a : D.J → D'.J)
     (i : D.J) (x : D.U i) :
     h.mapContMDiffMap hm h' a f hf (D.toGlueData.ι i x) = D'.toGlueData.ι (a i) (f i x) := by
   let := D'.chartedSpace H'
+  -- By definition, mapContMDiffMap descends the maps ι (a i) ∘ f i;
+  -- the bundled constructors coerce to these functions, evaluated as ι (a i) (f i x).
   exact h.descContMDiffMap_ι hm _ hf i x
 
 /-- Identity piece maps induce the identity map of the glued manifold. -/
