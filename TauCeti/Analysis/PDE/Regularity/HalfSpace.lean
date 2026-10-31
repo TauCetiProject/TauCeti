@@ -238,21 +238,115 @@ private theorem sum_smul_inner_sub_sum_smul_inner_proj
   exact Finset.sum_congr rfl fun j _ => by ring
 
 omit [DecidableEq ι] in
-/-- **A bounded Lipschitz factor keeps an `L²` weak derivative.** If `g ∈ L²(Ω)` has a weak
-derivative `g' ∈ L²(Ω)` in the direction `v` and `ψ` is bounded and Lipschitz on `Ω`, then `ψ g`
-has a weak derivative in the direction `v` that lies in `L²(Ω)`, by the Leibniz rule
-`TauCeti.HasWeakLineDerivOn.lipschitzOnWith_smul`. -/
-private theorem exists_hasWeakLineDerivOn_lipschitzOnWith_smul
-    {ψ g g' : EuclideanSpace ℝ ι → ℝ} {L : ℝ≥0} {M : ℝ} {v : EuclideanSpace ℝ ι}
-    (hψ : LipschitzOnWith L ψ Omega) (hψb : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖ψ x‖ ≤ M)
-    (hg : MemLp g 2 (mu.restrict Omega)) (hg' : MemLp g' 2 (mu.restrict Omega))
-    (h : HasWeakLineDerivOn mu Omega g g' v) :
-    ∃ G : Lp ℝ 2 (mu.restrict Omega), HasWeakLineDerivOn mu Omega (fun x => ψ x • g x) G v := by
+/-- The coefficients `x ↦ ⟪p, a(x) q⟫` of a coefficient field that is `K`-Lipschitz on `Ω` as a
+bilinear form are `K ‖p‖ ‖q‖`-Lipschitz on `Ω`. -/
+private theorem lipschitzOnWith_matrixBilinearForm_apply_apply
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    (p q : EuclideanSpace ℝ ι) :
+    LipschitzOnWith (K * ‖p‖₊ * ‖q‖₊) (fun x => matrixBilinearForm (a x) p q) Omega := by
+  -- This is `x ↦ a x` followed by evaluation at `p` and then at `q`.
+  have h := ((ContinuousLinearMap.lipschitzWith_apply q).comp
+    (ContinuousLinearMap.lipschitzWith_apply p)).comp_lipschitzOnWith hK
+  have hc : ‖q‖₊ * ‖p‖₊ * K = K * ‖p‖₊ * ‖q‖₊ := by ring
+  rwa [hc] at h
+
+/-- A coefficient field that is uniformly elliptic and bounded on `Ω` bounds the coefficients
+`⟪p, a(x) q⟫` by `Λ ‖p‖ ‖q‖` on `Ω`. -/
+private theorem norm_matrixBilinearForm_apply_apply_le
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (p q : EuclideanSpace ℝ ι) {x : EuclideanSpace ℝ ι}
+    (hx : x ∈ (Omega : Set (EuclideanSpace ℝ ι))) :
+    ‖matrixBilinearForm (a x) p q‖ ≤ Lam * ‖p‖ * ‖q‖ := by
+  simpa only [Real.norm_eq_abs, matrixBilinearForm_apply] using ha.upper_bound hx p q
+
+/-- **The normal second derivative.** Let `ν ≠ 0`, let `a` be uniformly elliptic and bounded on
+`Ω`, with `x ↦ a(x)` Lipschitz on `Ω` as a bilinear form, and let `u ∈ H¹(Ω)` satisfy
+`a(u, φ) = ∫_Ω f φ` for every test function `φ`. If every first derivative `∂_y u` has an
+`L²(Ω)` weak derivative in every direction orthogonal to `ν`, then `∂_ν u` has an `L²(Ω)` weak
+derivative in the direction `ν`. -/
+private theorem exists_hasWeakLineDerivOn_inner_gradient_normal (hν : ν ≠ 0)
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    {f : Lp ℝ 2 (mu.restrict Omega)} {U : W1p mu Omega 2}
+    (hU : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 U (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x in Omega, f x * φ x ∂mu)
+    (htan : ∀ y τ, ⟪τ, ν⟫_ℝ = 0 → ∃ G : Lp ℝ 2 (mu.restrict Omega),
+      HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient U x, y⟫_ℝ) G τ) :
+    ∃ G : Lp ℝ 2 (mu.restrict Omega),
+      HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient U x, ν⟫_ℝ) G ν := by
+  set b := EuclideanSpace.basisFun ι ℝ
+  set ν' : EuclideanSpace ℝ ι := (‖ν‖ ^ 2)⁻¹ • ν
+  set P : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι := fun z => z - (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν
+  have hN : 0 < ‖ν‖ ^ 2 := pow_pos (norm_pos_iff.2 hν) 2
   have hΩm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
-  have hm := ((memLp_top_of_bound (hψ.continuousOn.aestronglyMeasurable hΩm) M
-    ((ae_restrict_mem hΩm).mono hψb)).smul (r := 2) hg').add
-    ((hψ.memLp_lineDeriv Omega.isOpen v).smul (r := 2) hg)
-  exact ⟨hm.toLp _, (h.lipschitzOnWith_smul hψ).congr_ae_deriv hm.coeFn_toLp.symm⟩
+  have hP : ∀ z, ⟪P z, ν⟫_ℝ = 0 := fun z => by
+    rw [inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq,
+      div_mul_cancel₀ _ hN.ne', sub_self]
+  -- Weak derivatives commute, so a tangential derivative of `∂_ν u` is a derivative of the
+  -- tangential first derivative in the direction `ν`.
+  have hswap : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∃ G : Lp ℝ 2 (mu.restrict Omega),
+      HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient U x, τ⟫_ℝ) G ν := fun τ hτ => by
+    have hfd : ∀ z, HasWeakLineDerivOn mu Omega (W1p.value U)
+        (fun x => ⟪W1p.gradient U x, z⟫_ℝ) z := fun z => by
+      simpa only [innerSL_apply_apply] using (W1p.hasWeakFDerivOn U).hasWeakLineDerivOn z
+    obtain ⟨G, hG⟩ := htan ν τ hτ
+    exact ⟨G, (hfd ν).comm hG (hfd τ)⟩
+  -- The coefficients `β p q = ⟪p, a q⟫` are bounded and Lipschitz on `Ω`.
+  set β : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι → EuclideanSpace ℝ ι → ℝ :=
+    fun p q x => matrixBilinearForm (a x) p q
+  have hβL := lipschitzOnWith_matrixBilinearForm_apply_apply hK
+  have hgrad : ∀ z, MemLp (fun x => ⟪W1p.gradient U x, z⟫_ℝ) 2 (mu.restrict Omega) := fun z =>
+    (Lp.memLp (W1p.gradient U)).inner_const z
+  -- A coefficient times a first derivative with an `L²` weak derivative in a direction `v` has
+  -- an `L²` weak derivative in that direction.
+  have hprod : ∀ p q z v, (∃ G₀ : Lp ℝ 2 (mu.restrict Omega),
+      HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient U x, z⟫_ℝ) G₀ v) →
+      ∃ G : Lp ℝ 2 (mu.restrict Omega),
+        HasWeakLineDerivOn mu Omega (fun x => β p q x • ⟪W1p.gradient U x, z⟫_ℝ) G v := by
+    rintro p q z v ⟨G₀, hG₀⟩
+    exact hG₀.exists_lp_lipschitzOnWith_smul (hβL p q)
+      (fun x hx => norm_matrixBilinearForm_apply_apply_le ha p q hx) (hgrad z) (Lp.memLp G₀)
+  -- The normal derivative of `W = ∑ⱼ ⟪ν', a eⱼ⟫ ∂ⱼu`, from the equation.
+  choose G hG using fun i j => hprod (b i) (b j) (b j) (P (b i)) (htan (b j) (P (b i)) (hP (b i)))
+  have hW := hasWeakLineDerivOn_sum_smul_inner_gradient (fun p q => (hβL p q).continuousOn)
+    hU (G := fun i j => G i j) hG
+  -- Subtracting the tangential parts leaves `⟪ν', a ν'⟫ ∂_ν u`.
+  choose T hT using fun j => hprod ν' (b j) (P (b j)) ν (hswap (P (b j)) (hP (b j)))
+  have hR := hW.sub (HasWeakLineDerivOn.sum Finset.univ fun j _ => hT j)
+  have hRc : ∀ x, (∑ j, β ν' (b j) x • ⟪W1p.gradient U x, b j⟫_ℝ) -
+      ∑ j, β ν' (b j) x • ⟪W1p.gradient U x, P (b j)⟫_ℝ =
+        β ν' ν' x * ⟪W1p.gradient U x, ν⟫_ℝ := fun x =>
+    sum_smul_inner_sub_sum_smul_inner_proj (matrixBilinearForm (a x)) (W1p.gradient U x)
+  -- Ellipticity: `⟪ν', a ν'⟫ ≥ λ ‖ν'‖² > 0` on `Ω`, so its reciprocal is bounded and Lipschitz.
+  set m : ℝ := lam * ‖ν'‖ ^ 2
+  have hm : 0 < m := mul_pos ha.pos (pow_pos (norm_pos_iff.2 (smul_ne_zero
+    (inv_ne_zero hN.ne') hν)) 2)
+  have hcm : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), m ≤ β ν' ν' x := fun x hx => by
+    simpa only [m, β, matrixBilinearForm_self] using ha.lower_bound hx ν'
+  set r : EuclideanSpace ℝ ι → ℝ := fun x => (β ν' ν' x)⁻¹
+  have hrL : LipschitzOnWith (K * ‖ν'‖₊ * ‖ν'‖₊ / ⟨m, hm.le⟩ ^ 2) r Omega :=
+    (hβL ν' ν').inv_of_le_norm hm fun x hx =>
+      (hcm x hx).trans (Real.le_norm_self (β ν' ν' x))
+  have hrb : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖r x‖ ≤ m⁻¹ := fun x hx => by
+    have hx' := hm.trans_le (hcm x hx)
+    rw [Real.norm_eq_abs, abs_inv, abs_of_pos hx']
+    exact inv_anti₀ hm (hcm x hx)
+  -- Multiplying by `⟪ν', a ν'⟫⁻¹` gives the normal second derivative.
+  have hRm : MemLp (fun x => (∑ j, β ν' (b j) x • ⟪W1p.gradient U x, b j⟫_ℝ) -
+      ∑ j, β ν' (b j) x • ⟪W1p.gradient U x, P (b j)⟫_ℝ) 2 (mu.restrict Omega) := by
+    simp only [hRc]
+    exact (memLp_top_of_bound ((hβL ν' ν').continuousOn.aestronglyMeasurable hΩm)
+      (Lam * ‖ν'‖ * ‖ν'‖) ((ae_restrict_mem hΩm).mono fun x hx =>
+        norm_matrixBilinearForm_apply_apply_le ha ν' ν' hx)).mul (hgrad ν)
+  have hR'm : MemLp (fun x => -(f x + ∑ i, ∑ j, G i j x) - ∑ j, T j x) 2
+      (mu.restrict Omega) :=
+    ((Lp.memLp f).add (memLp_finsetSum _ fun i _ => memLp_finsetSum _ fun j _ =>
+      Lp.memLp (G i j))).neg.sub (memLp_finsetSum _ fun j _ => Lp.memLp (T j))
+  obtain ⟨G', hG'⟩ := hR.exists_lp_lipschitzOnWith_smul hrL hrb hRm hR'm
+  refine ⟨G', hG'.congr_ae ?_⟩
+  filter_upwards [ae_restrict_mem hΩm] with x hx
+  refine (congrArg (fun t => (β ν' ν' x)⁻¹ • t) (hRc x)).trans ?_
+  rw [smul_eq_mul, ← mul_assoc, inv_mul_cancel₀ (hm.trans_le (hcm x hx)).ne', one_mul]
 
 /-- **Second derivatives up to the boundary.** Let `ν ≠ 0` and let `Ω` be mapped into itself by
 every translation orthogonal to `ν`, as a half-space `{x | c < ⟪x, ν⟫}` or a slab is. Let `a` be
@@ -269,11 +363,8 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo (hν : 
     ∃ G : Lp ℝ 2 (mu.restrict Omega),
       HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient (u : W1p mu Omega 2) x, y⟫_ℝ) G w := by
   set U : W1p mu Omega 2 := (u : W1p mu Omega 2)
-  set b := EuclideanSpace.basisFun ι ℝ
-  set ν' : EuclideanSpace ℝ ι := (‖ν‖ ^ 2)⁻¹ • ν
   set P : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι := fun z => z - (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν
   have hN : 0 < ‖ν‖ ^ 2 := pow_pos (norm_pos_iff.2 hν) 2
-  have hΩm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
   -- `D y w`: the derivative `∂_y u` has a weak derivative in the direction `w` in `L²(Ω)`.
   let D : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι → Prop := fun y w =>
     ∃ G : Lp ℝ 2 (mu.restrict Omega),
@@ -311,75 +402,9 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_gradient_of_mapsTo (hν : 
     obtain ⟨G, -, hG⟩ :=
       ha.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzOnWith_of_mapsTo (hΩ τ hτ) hK hu y
     exact ⟨G, hG⟩
-  -- The coefficients `β p q = ⟪p, a q⟫` are bounded and Lipschitz on `Ω`.
-  set β : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι → EuclideanSpace ℝ ι → ℝ :=
-    fun p q x => matrixBilinearForm (a x) p q
-  have hβL : ∀ p q, LipschitzOnWith (K * ‖p‖₊ * ‖q‖₊) (β p q) Omega := fun p q => by
-    -- `β p q` is `x ↦ a x` followed by evaluation at `p` and then at `q`.
-    have h := ((ContinuousLinearMap.lipschitzWith_apply q).comp
-      (ContinuousLinearMap.lipschitzWith_apply p)).comp_lipschitzOnWith hK
-    have hc : ‖q‖₊ * ‖p‖₊ * K = K * ‖p‖₊ * ‖q‖₊ := by ring
-    rwa [hc] at h
-  have hβb : ∀ p q, ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖β p q x‖ ≤ Lam * ‖p‖ * ‖q‖ :=
-    fun p q x hx => by
-      simpa only [β, Real.norm_eq_abs, matrixBilinearForm_apply] using ha.upper_bound hx p q
-  have hgrad : ∀ z, MemLp (fun x => ⟪W1p.gradient U x, z⟫_ℝ) 2 (mu.restrict Omega) := fun z =>
-    (Lp.memLp (W1p.gradient U)).inner_const z
-  -- A coefficient times a first derivative with an `L²` weak derivative in a direction `v` has
-  -- an `L²` weak derivative in that direction.
-  have hprod : ∀ p q z v, D z v → ∃ G : Lp ℝ 2 (mu.restrict Omega),
-      HasWeakLineDerivOn mu Omega (fun x => β p q x • ⟪W1p.gradient U x, z⟫_ℝ) G v := by
-    rintro p q z v ⟨G₀, hG₀⟩
-    exact exists_hasWeakLineDerivOn_lipschitzOnWith_smul (hβL p q) (hβb p q) (hgrad z)
-      (Lp.memLp G₀) hG₀
-  -- The normal derivative of `W = ∑ⱼ ⟪ν', a eⱼ⟫ ∂ⱼu`, from the equation.
-  choose G hG using fun i j => hprod (b i) (b j) (b j) (P (b i)) (htan (b j) (hP (b i)))
-  have hUφ : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 U (W1p.ofTestFunctionₗ mu Omega 2 φ) =
-      ∫ x in Omega, f x * φ x ∂mu := fun φ => by
-    rw [(isWeakSolutionDirichlet_iff f u).1 hu ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩]
-    refine integral_congr_ae ?_
-    filter_upwards [testFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-    rw [W1p.value_ofTestFunctionₗ, hx]
-  have hW := hasWeakLineDerivOn_sum_smul_inner_gradient (fun p q => (hβL p q).continuousOn)
-    hUφ (G := fun i j => G i j) hG
-  -- Subtracting the tangential parts leaves `⟪ν', a ν'⟫ ∂_ν u`.
-  choose T hT using fun j => hprod ν' (b j) (P (b j)) ν (hsymm (htan ν (hP (b j))))
-  have hR := hW.sub (HasWeakLineDerivOn.sum Finset.univ fun j _ => hT j)
-  have hRc : ∀ x, (∑ j, β ν' (b j) x • ⟪W1p.gradient U x, b j⟫_ℝ) -
-      ∑ j, β ν' (b j) x • ⟪W1p.gradient U x, P (b j)⟫_ℝ =
-        β ν' ν' x * ⟪W1p.gradient U x, ν⟫_ℝ := fun x =>
-    sum_smul_inner_sub_sum_smul_inner_proj (matrixBilinearForm (a x)) (W1p.gradient U x)
-  -- Ellipticity: `⟪ν', a ν'⟫ ≥ λ ‖ν'‖² > 0` on `Ω`, so its reciprocal is bounded and Lipschitz.
-  set m : ℝ := lam * ‖ν'‖ ^ 2
-  have hm : 0 < m := mul_pos ha.pos (pow_pos (norm_pos_iff.2 (smul_ne_zero
-    (inv_ne_zero hN.ne') hν)) 2)
-  have hcm : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), m ≤ β ν' ν' x := fun x hx => by
-    simpa only [m, β, matrixBilinearForm_self] using ha.lower_bound hx ν'
-  set r : EuclideanSpace ℝ ι → ℝ := fun x => (β ν' ν' x)⁻¹
-  have hrL : LipschitzOnWith (K * ‖ν'‖₊ * ‖ν'‖₊ / ⟨m, hm.le⟩ ^ 2) r Omega :=
-    (hβL ν' ν').inv_of_le_norm hm fun x hx =>
-      (hcm x hx).trans (Real.le_norm_self (β ν' ν' x))
-  have hrb : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖r x‖ ≤ m⁻¹ := fun x hx => by
-    have hx' := hm.trans_le (hcm x hx)
-    rw [Real.norm_eq_abs, abs_inv, abs_of_pos hx']
-    exact inv_anti₀ hm (hcm x hx)
-  -- The normal second derivative.
-  have hνν : D ν ν := by
-    have hRm : MemLp (fun x => (∑ j, β ν' (b j) x • ⟪W1p.gradient U x, b j⟫_ℝ) -
-        ∑ j, β ν' (b j) x • ⟪W1p.gradient U x, P (b j)⟫_ℝ) 2 (mu.restrict Omega) := by
-      simp only [hRc]
-      exact (memLp_top_of_bound ((hβL ν' ν').continuousOn.aestronglyMeasurable hΩm)
-        (Lam * ‖ν'‖ * ‖ν'‖) ((ae_restrict_mem hΩm).mono fun x hx => hβb ν' ν' x hx)).mul
-        (hgrad ν)
-    have hR'm : MemLp (fun x => -(f x + ∑ i, ∑ j, G i j x) - ∑ j, T j x) 2
-        (mu.restrict Omega) :=
-      ((Lp.memLp f).add (memLp_finsetSum _ fun i _ => memLp_finsetSum _ fun j _ =>
-        Lp.memLp (G i j))).neg.sub (memLp_finsetSum _ fun j _ => Lp.memLp (T j))
-    obtain ⟨G', hG'⟩ := exists_hasWeakLineDerivOn_lipschitzOnWith_smul hrL hrb hRm hR'm hR
-    refine ⟨G', hG'.congr_ae ?_⟩
-    filter_upwards [ae_restrict_mem hΩm] with x hx
-    refine (congrArg (fun t => (β ν' ν' x)⁻¹ • t) (hRc x)).trans ?_
-    rw [smul_eq_mul, ← mul_assoc, inv_mul_cancel₀ (hm.trans_le (hcm x hx)).ne', one_mul]
+  -- The normal direction: the equation and ellipticity.
+  have hνν : D ν ν := exists_hasWeakLineDerivOn_inner_gradient_normal hν ha hK
+    hu.energyFormH1_ofTestFunctionₗ fun y _ hτ => htan y hτ
   -- Every first derivative has a normal derivative, and then a derivative in every direction.
   have hyν : ∀ y, D y ν := fun y => by
     have h := hadd (hsmul (⟪y, ν⟫_ℝ / ‖ν‖ ^ 2) hνν) (hsymm (htan ν (hP y)))

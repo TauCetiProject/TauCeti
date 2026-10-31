@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
+import TauCeti.Analysis.Calculus.Rademacher
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.Mollification.Lipschitz
-import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 
 /-!
 # The product rule for weak derivatives
@@ -46,10 +45,12 @@ fields that are merely Lipschitz, such as those produced by flattening a `C²` b
 mollifies a Lipschitz extension of `ψ` by normalized bumps `ρₙ` of radius `1 / (n + 1)` and
 applies the smooth rule to `ψₙ = ρₙ ⋆ ψ`. The factors `ψₙ` converge to `ψ` uniformly, while
 `∂_v ψₙ = ρₙ ⋆ ∂_v ψ` stays bounded by the Lipschitz constant and converges to `∂_v ψ` almost
-everywhere by the Lebesgue differentiation theorem; these estimates are
-`LipschitzWith.norm_fderiv_normed_convolution_apply_le` and
-`LipschitzWith.ae_tendsto_fderiv_normed_convolution_apply`. Dominated convergence passes the
-identity tested against a fixed `φ` to the limit.
+everywhere by the Lebesgue differentiation theorem. Dominated convergence then passes the
+identity tested against a fixed `φ` to the limit
+(`LipschitzWith.tendsto_integral_normed_convolution_smul` and
+`LipschitzWith.tendsto_integral_fderiv_normed_convolution_apply_smul`). For a factor that is also
+bounded, an `Lᵖ` weak derivative of `u` gives one of `ψ u`
+(`TauCeti.HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul`).
 
 ## Why this is the localization tool
 
@@ -73,6 +74,8 @@ explicit, non-asymptotic formula is the point.
 * `TauCeti.HasWeakLineDerivOn.lipschitzWith_smul` and
   `TauCeti.HasWeakLineDerivOn.lipschitzOnWith_smul`: the rule in a direction `v` for a Lipschitz
   factor, with its almost-everywhere directional derivative.
+* `TauCeti.HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul`: a bounded Lipschitz factor keeps
+  an `Lᵖ` weak derivative in `Lᵖ`.
 * `TauCeti.HasWeakFDerivOn.contDiffOn_smul_gradient`,
   `TauCeti.HasWeakFDerivOn.contDiff_smul_gradient`: the form consumed by `TauCeti.W1p`, where a
   weak derivative of a scalar function is recorded by its Riesz representative and the rule reads
@@ -222,7 +225,7 @@ end General
 section Lipschitz
 
 open Filter Topology Metric ContinuousLinearMap
-open scoped NNReal Convolution
+open scoped ENNReal NNReal Convolution
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -262,26 +265,11 @@ theorem HasWeakLineDerivOn.lipschitzWith_smul (h : HasWeakLineDerivOn μ Ω u u'
   set ρ : ℕ → ContDiffBump (0 : E) := leibnizBump
   set ψn : ℕ → E → ℝ := fun n => (ρ n).normed μ ⋆[lsmul ℝ ℝ, μ] ψ
   have hρ : Tendsto (fun n => (ρ n).rOut) atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
-  have hρ1 : ∀ n, (ρ n).rOut ≤ 1 := fun n => by
-    simp only [ρ, leibnizBump]
-    exact div_le_one_of_le₀ (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]) (by positivity)
+  have h'ρ : ∀ᶠ n in atTop, (ρ n).rOut ≤ 2 * (ρ n).rIn :=
+    Eventually.of_forall fun n => le_of_eq (by simp only [ρ, leibnizBump]; field_simp)
   have hsmooth : ∀ n, ContDiff ℝ ∞ (ψn n) := fun n =>
     (ρ n).hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ)
       (ρ n).contDiff_normed hψ.continuous.locallyIntegrable
-  -- The mollified factors converge to `ψ` and stay within `K` of it.
-  have hval : ∀ x, Tendsto (fun n => ψn n x) atTop (𝓝 (ψ x)) := fun x =>
-    (ContDiffBump.tendstoUniformly_normed_convolution hρ hψ.uniformContinuous).tendsto_at x
-  have hvalb : ∀ n x, ‖ψn n x‖ ≤ ‖ψ x‖ + K := fun n x => by
-    have hd := hψ.dist_normed_convolution_le (μ := μ) (ρ n) x
-    have hK : (K : ℝ) * (ρ n).rOut ≤ K := mul_le_of_le_one_right K.2 (hρ1 n)
-    linarith [norm_le_norm_add_norm_sub' (ψn n x) (ψ x), dist_eq_norm (ψn n x) (ψ x)]
-  -- Their derivatives are the mollified almost-everywhere derivatives of `ψ`, bounded by
-  -- `K ‖v‖` and converging to `ψ'` almost everywhere.
-  have hderivb : ∀ n x, ‖fderiv ℝ (ψn n) x v‖ ≤ K * ‖v‖ := fun n x =>
-    hψ.norm_fderiv_normed_convolution_apply_le (ρ n) x v
-  have hderivt : ∀ᵐ x ∂μ, Tendsto (fun n => fderiv ℝ (ψn n) x v) atTop (𝓝 (ψ' x)) :=
-    hψ.ae_tendsto_fderiv_normed_convolution_apply hρ (C := 2)
-      (Eventually.of_forall fun n => le_of_eq (by simp only [ρ, leibnizBump]; field_simp)) v
   rw [hasWeakLineDerivOn_iff_testFunction]
   refine ⟨h.completeSpace, hu1,
     (h.locallyIntegrableOn_deriv.continuousOn_smul hΩ hψ.continuous.continuousOn).add hu2,
@@ -295,50 +283,33 @@ theorem HasWeakLineDerivOn.lipschitzWith_smul (h : HasWeakLineDerivOn μ Ω u u'
   have hw₂ : Integrable w₂ μ := integrable_smul_of_locallyIntegrableOn h.locallyIntegrableOn_deriv φ
   have hw₃ : Integrable w₃ μ := integrable_smul_of_locallyIntegrableOn h.locallyIntegrableOn φ
   have hK : IsCompact (tsupport (φ : E → ℝ)) := φ.hasCompactSupport.isCompact
-  have hw₁0 : ∀ x ∉ tsupport (φ : E → ℝ), w₁ x = 0 := fun x hx => by
-    simp [w₁, lineDeriv_of_notMem_tsupport hx]
-  have hw₂0 : ∀ x ∉ tsupport (φ : E → ℝ), w₂ x = 0 := fun x hx => by
-    simp [w₂, image_eq_zero_of_notMem_tsupport hx]
-  have hw₂c : ∀ f : E → ℝ, Continuous f → Integrable (fun x => f x • w₂ x) μ := fun f hf =>
-    (hw₂.integrableOn.continuousOn_smul hf.continuousOn hK).integrable_of_forall_notMem_eq_zero
-      fun x hx => by simp [hw₂0 x hx]
-  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn hψ.continuous.continuousOn
-  -- Dominated convergence for the two terms carrying the factor itself.
-  have hlim : ∀ w : E → F, Integrable w μ → (∀ x ∉ tsupport (φ : E → ℝ), w x = 0) →
-      Tendsto (fun n => ∫ x, ψn n x • w x ∂μ) atTop (𝓝 (∫ x, ψ x • w x ∂μ)) := by
-    intro w hw hw0
-    refine tendsto_integral_of_dominated_convergence (fun x => (M + K) * ‖w x‖)
-      (fun n => ((hsmooth n).continuous.aestronglyMeasurable.smul hw.1))
-      (hw.norm.const_mul _) (fun n => Eventually.of_forall fun x => ?_)
-      (Eventually.of_forall fun x => (hval x).smul_const (w x))
-    by_cases hx : x ∈ tsupport (φ : E → ℝ)
-    · rw [norm_smul]
-      exact mul_le_mul_of_nonneg_right ((hvalb n x).trans (by linarith [hM x hx]))
-        (norm_nonneg _)
-    · simp [hw0 x hx]
-  have hlim₃ : Tendsto (fun n => ∫ x, fderiv ℝ (ψn n) x v • w₃ x ∂μ) atTop
-      (𝓝 (∫ x, ψ' x • w₃ x ∂μ)) :=
-    tendsto_integral_of_dominated_convergence (fun x => (K * ‖v‖) * ‖w₃ x‖)
-      (fun n => (((hsmooth n).continuous_fderiv (by simp)).clm_apply
-        continuous_const).aestronglyMeasurable.smul hw₃.1)
-      (hw₃.norm.const_mul _)
-      (fun n => Eventually.of_forall fun x => by
-        rw [norm_smul]; exact mul_le_mul_of_nonneg_right (hderivb n x) (norm_nonneg _))
-      (hderivt.mono fun x hx => hx.smul_const (w₃ x))
+  -- `w₁` and `w₂` vanish off the support of `φ`, so they stay integrable against continuous
+  -- factors.
+  have hwc : ∀ w : E → F, Integrable w μ → (∀ x ∉ tsupport (φ : E → ℝ), w x = 0) →
+      ∀ f : E → ℝ, Continuous f → Integrable (fun x => f x • w x) μ := fun w hw hw0 f hf =>
+    (hw.integrableOn.continuousOn_smul hf.continuousOn hK).integrable_of_forall_notMem_eq_zero
+      fun x hx => by simp [hw0 x hx]
+  have hw₁c := hwc w₁ hw₁ fun x hx => by simp [w₁, lineDeriv_of_notMem_tsupport hx]
+  have hw₂c := hwc w₂ hw₂ fun x hx => by simp [w₂, image_eq_zero_of_notMem_tsupport hx]
   -- The Leibniz identity for each smooth factor `ψn n`.
   have heq : ∀ n, ∫ x, ψn n x • w₁ x ∂μ =
       -(∫ x, ψn n x • w₂ x ∂μ + ∫ x, fderiv ℝ (ψn n) x v • w₃ x ∂μ) := fun n => by
     have hn := (h.contDiff_smul (hsmooth n)).integral_lineDeriv_smul_eq_neg_integral_smul φ
     have h₃ : Integrable (fun x => fderiv ℝ (ψn n) x v • w₃ x) μ :=
       hw₃.bdd_smul (K * ‖v‖) (((hsmooth n).continuous_fderiv (by simp)).clm_apply
-        continuous_const).aestronglyMeasurable (Eventually.of_forall (hderivb n))
+        continuous_const).aestronglyMeasurable
+        (Eventually.of_forall fun x => hψ.norm_fderiv_normed_convolution_apply_le (ρ n) x v)
     rw [← integral_add (hw₂c _ (hsmooth n).continuous) h₃]
     convert hn using 2
     · ext x; simp only [w₁, smul_comm (ψn n x)]
     · refine integral_congr_ae (Eventually.of_forall fun x => ?_)
       simp only [w₂, w₃, smul_add, smul_comm ((φ : E → ℝ) x)]
-  have hlimit := tendsto_nhds_unique (hlim w₁ hw₁ hw₁0)
-    (((hlim w₂ hw₂ hw₂0).add hlim₃).neg.congr fun n => (heq n).symm)
+  -- Pass to the limit on both sides by dominated convergence.
+  have hlimit := tendsto_nhds_unique
+    (hψ.tendsto_integral_normed_convolution_smul hρ hw₁ (hw₁c ψ hψ.continuous))
+    (((hψ.tendsto_integral_normed_convolution_smul hρ hw₂ (hw₂c ψ hψ.continuous)).add
+      (hψ.tendsto_integral_fderiv_normed_convolution_apply_smul hρ h'ρ v hw₃)).neg.congr
+        fun n => (heq n).symm)
   have h₃ : Integrable (fun x => ψ' x • w₃ x) μ :=
     hw₃.bdd_smul (K * ‖v‖) hψ'm.aestronglyMeasurable (Eventually.of_forall hψ'b)
   rw [← integral_add (hw₂c ψ hψ.continuous) h₃] at hlimit
@@ -364,6 +335,21 @@ theorem HasWeakLineDerivOn.lipschitzOnWith_smul (h : HasWeakLineDerivOn μ Ω u 
       simp only [← hgψ hx]
   · exact (ae_restrict_mem Ω.isOpen.measurableSet).mono fun x hx => by
       simp only [← hgψ hx, (hnear x hx).lineDeriv_eq]
+
+/-- **A bounded Lipschitz factor keeps an `Lᵖ` weak derivative.** If `u ∈ Lᵖ(Ω)` has a weak
+derivative `u' ∈ Lᵖ(Ω)` in the direction `v` and `ψ` is bounded and Lipschitz on `Ω`, then `ψ u`
+has a weak derivative in the direction `v` that lies in `Lᵖ(Ω)`, namely `ψ u' + (∂_v ψ) u` from
+`TauCeti.HasWeakLineDerivOn.lipschitzOnWith_smul`. -/
+theorem HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul {p : ℝ≥0∞} {M : ℝ}
+    (h : HasWeakLineDerivOn μ Ω u u' v) (hψ : LipschitzOnWith K ψ Ω)
+    (hψb : ∀ x ∈ (Ω : Set E), ‖ψ x‖ ≤ M) (hu : MemLp u p (μ.restrict Ω))
+    (hu' : MemLp u' p (μ.restrict Ω)) :
+    ∃ G : Lp F p (μ.restrict Ω), HasWeakLineDerivOn μ Ω (fun x => ψ x • u x) G v := by
+  have hΩm : MeasurableSet (Ω : Set E) := Ω.isOpen.measurableSet
+  have hm := ((memLp_top_of_bound (hψ.continuousOn.aestronglyMeasurable hΩm) M
+    ((ae_restrict_mem hΩm).mono hψb)).smul (r := p) hu').add
+    ((hψ.memLp_lineDeriv Ω.isOpen v).smul (r := p) hu)
+  exact ⟨hm.toLp _, (h.lipschitzOnWith_smul hψ).congr_ae_deriv hm.coeFn_toLp.symm⟩
 
 end Lipschitz
 
