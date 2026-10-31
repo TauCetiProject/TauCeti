@@ -106,9 +106,10 @@ private lemma singleExtProjOrth_shift (a : ℤ) :
     ⟨(shiftFunctor _ (-a)).mapIso e ≪≫
       ((singleFunctors C).shiftIso (-a) (n + a) n (by lia)).app X⟩⟩⟩
 
-/-- **Perfect objects receive no morphisms from high syzygies**: for a perfect object `K` of the
-bounded derived category there is `n₀` such that every morphism to `K` from an object of `C`
-without higher extensions by projectives, placed in a degree `n ≥ n₀`, vanishes. -/
+/-- **Perfect objects receive no morphisms from Ext-orthogonal objects in high degrees**: for a
+perfect object `K` of the bounded derived category there is `n₀` such that every morphism to `K`
+from an object of `C` without higher extensions by projectives, placed in a degree `n ≥ n₀`,
+vanishes. -/
 theorem exists_singleHom_eq_zero_of_perfect {K : DerivedCategory.Bounded C}
     (hK : TauCeti.DerivedCategory.Bounded.perfect C K) :
     ∃ n₀ : ℤ, ∀ n ≥ n₀, ∀ X : C, (∀ i : ℕ, (isProjective C).extLeftOrthogonal (i + 1) X) →

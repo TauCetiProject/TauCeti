@@ -15,10 +15,11 @@ objects. An object `Y` is *eventually right orthogonal* to `S` if it lies in the
 of `S n` for all `n` large enough, and *eventually left orthogonal* if it lies in the left
 orthogonal of `S n` for all `n` large enough.
 
-Both classes are closed under isomorphisms and retracts, contain the zero objects, and satisfy
-the two-out-of-three property for distinguished triangles, since each right or left orthogonal
-does and finitely many bounds have a maximum. If shifting moves `S n` into `S (n + c)` for some
-`c` depending on the shift, they are also stable under shifts, hence triangulated subcategories.
+Both classes are closed under isomorphisms and retracts, contain the zero objects, and are closed
+under extensions in distinguished triangles (`IsTriangulatedClosed₂`), since each right or left
+orthogonal is and finitely many bounds have a maximum. If shifting moves `S n` into `S (n + c)`
+for some `c` depending on the shift, they are also stable under shifts, hence triangulated
+subcategories.
 
 A typical family is given by the objects of an abelian category placed in degree `n` (or `-n`)
 of its derived category: vanishing statements for morphisms to or from objects in sufficiently

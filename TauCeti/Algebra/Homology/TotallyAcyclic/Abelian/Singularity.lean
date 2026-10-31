@@ -65,56 +65,92 @@ namespace DerivedCategory
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 
+/-- A triangle transported along isomorphisms of its vertices is distinguished. -/
+private lemma distinguished_of_iso {T : Triangle (DerivedCategory C)} (hT : T ∈ distTriang _)
+    {A₁ A₂ A₃ : DerivedCategory C} (e₁ : T.obj₁ ≅ A₁) (e₂ : T.obj₂ ≅ A₂) (e₃ : T.obj₃ ≅ A₃) :
+    Triangle.mk (e₁.inv ≫ T.mor₁ ≫ e₂.hom) (e₂.inv ≫ T.mor₂ ≫ e₃.hom)
+      (e₃.inv ≫ T.mor₃ ≫ (shiftFunctor _ (1 : ℤ)).map e₁.hom) ∈ distTriang _ :=
+  isomorphic_distinguished _ hT _ (Triangle.isoMk _ _ e₁.symm e₂.symm e₃.symm (by simp) (by simp)
+    (by simp [← Functor.map_comp]))
+
+/-- A triangle transported along an isomorphism of its first vertex is distinguished. -/
+private lemma distinguished_of_iso₁ {T : Triangle (DerivedCategory C)} (hT : T ∈ distTriang _)
+    {A₁ : DerivedCategory C} (e₁ : T.obj₁ ≅ A₁) :
+    Triangle.mk (e₁.inv ≫ T.mor₁) T.mor₂ (T.mor₃ ≫ (shiftFunctor _ (1 : ℤ)).map e₁.hom) ∈
+      distTriang _ :=
+  isomorphic_distinguished _ hT _ (Triangle.isoMk _ _ e₁.symm (Iso.refl _) (Iso.refl _) (by simp)
+    (by simp) (by simp [← Functor.map_comp]))
+
+/-- A projective object placed in a positive degree `n` has no nonzero morphisms to an object
+placed in degree zero: Mathlib's `from_singleFunctor_obj_eq_zero_of_projective`, transported along
+`singleFunctorIsoCompQ`. -/
+private lemma singleFunctor_hom_eq_zero_of_projective {Q : C} [Projective Q] {n : ℤ} (hn : 0 < n)
+    {Y : C} (f : (singleFunctor C n).obj Q ⟶ (singleFunctor C 0).obj Y) : f = 0 := by
+  rw [← cancel_epi ((singleFunctorIsoCompQ C n).inv.app Q),
+    ← cancel_mono ((singleFunctorIsoCompQ C 0).hom.app Y), comp_zero, zero_comp]
+  exact from_singleFunctor_obj_eq_zero_of_projective _ 0 hn
+
 section Cycles
 
 variable {P : CochainComplex C ℤ} (hP : P.IsTotallyAcyclicProjective)
 include hP
 
-/-- The rotated triangle of the short exact sequence `0 ⟶ Zᵐ ⟶ Pᵐ ⟶ Zᵐ' ⟶ 0` of cycles, placed in
-degree `m`. -/
+/-- The triangle `Zᵐ ⟶ Pᵐ ⟶ Zᵐ' ⟶ Zᵐ[1]` of the short exact sequence of cycles, with its vertices
+placed in degree `m` by `singleFunctor C m`: the triangle `triangleOfSES` transported along
+`singleFunctorIsoCompQ`. -/
 private noncomputable abbrev cyclesSESTriangle (m m' : ℤ) (hm : m + 1 = m') :
     Triangle (DerivedCategory C) :=
-  have hS := P.cyclesShortComplex_shortExact m m' hm (hP.acyclic m')
-  (triangleOfSES ((P.cyclesShortComplex_def m m' ▸ hS).map_of_exact
-    (HomologicalComplex.single C (.up ℤ) m))).invRotate
+  have hS :
+      (ShortComplex.mk (P.iCycles m) (P.toCycles m m') (P.iCycles_toCycles m m')).ShortExact :=
+    P.cyclesShortComplex_def m m' ▸ P.cyclesShortComplex_shortExact m m' hm (hP.acyclic m')
+  let T := triangleOfSES (hS.map_of_exact (CochainComplex.singleFunctor C m))
+  let e := singleFunctorIsoCompQ C m
+  Triangle.mk ((e.app (P.cycles m)).hom ≫ T.mor₁ ≫ (e.app (P.X m)).inv)
+    ((e.app (P.X m)).hom ≫ T.mor₂ ≫ (e.app (P.cycles m')).inv)
+    ((e.app (P.cycles m')).hom ≫ T.mor₃ ≫ (shiftFunctor _ (1 : ℤ)).map (e.app (P.cycles m)).inv)
 
-/-- The first vertex of `cyclesSESTriangle` is isomorphic to `Zᵐ'` placed in degree `m'`. -/
+private lemma cyclesSESTriangle_distinguished (m m' : ℤ) (hm : m + 1 = m') :
+    cyclesSESTriangle hP m m' hm ∈ distTriang _ :=
+  have hS :
+      (ShortComplex.mk (P.iCycles m) (P.toCycles m m') (P.iCycles_toCycles m m')).ShortExact :=
+    P.cyclesShortComplex_def m m' ▸ P.cyclesShortComplex_shortExact m m' hm (hP.acyclic m')
+  distinguished_of_iso
+    (triangleOfSES_distinguished (hS.map_of_exact (CochainComplex.singleFunctor C m)))
+    ((singleFunctorIsoCompQ C m).app (P.cycles m)).symm
+    ((singleFunctorIsoCompQ C m).app (P.X m)).symm
+    ((singleFunctorIsoCompQ C m).app (P.cycles m')).symm
+
+/-- The first morphism of `cyclesSESTriangle` is the inclusion of the cycles placed in degree `m`,
+by naturality of `singleFunctorIsoCompQ`. -/
+private lemma cyclesSESTriangle_mor₁ (m m' : ℤ) (hm : m + 1 = m') :
+    (cyclesSESTriangle hP m m' hm).mor₁ = (singleFunctor C m).map (P.iCycles m) :=
+  NatIso.naturality_2 (singleFunctorIsoCompQ C m) (P.iCycles m)
+
+/-- The first vertex `Zᵐ'[-1]` of the inverse rotation of `cyclesSESTriangle`, as `Zᵐ'` placed in
+degree `m'`. -/
 private noncomputable def cyclesShiftIso (m m' : ℤ) (hm : m + 1 = m') :
-    (cyclesSESTriangle hP m m' hm).obj₁ ≅ (singleFunctor C m').obj (P.cycles m') :=
-  -- The vertex is `(Q.obj ((single m).obj Zᵐ'))⟦-1⟧`, and `singleFunctor C m` is
-  -- `single m ⋙ Q` by definition (`DerivedCategory.singleFunctorIsoCompQ` is the identity).
+    (cyclesSESTriangle hP m m' hm).invRotate.obj₁ ≅ (singleFunctor C m').obj (P.cycles m') :=
   ((singleFunctors C).shiftIso (-1) m' m (by lia)).app (P.cycles m')
 
 /-- The distinguished triangle `Zᵐ' ⟶ Zᵐ ⟶ Pᵐ` of the derived category obtained from the short
 exact sequence `0 ⟶ Zᵐ ⟶ Pᵐ ⟶ Zᵐ' ⟶ 0` of cycles, with `Zᵐ'` placed in degree `m' = m + 1` and
 `Zᵐ`, `Pᵐ` in degree `m`. -/
-private noncomputable def cyclesTriangle (m m' : ℤ) (hm : m + 1 = m') :
+private noncomputable abbrev cyclesTriangle (m m' : ℤ) (hm : m + 1 = m') :
     Triangle (DerivedCategory C) :=
-  Triangle.mk ((cyclesShiftIso hP m m' hm).inv ≫ (cyclesSESTriangle hP m m' hm).mor₁)
-    (cyclesSESTriangle hP m m' hm).mor₂
-    ((cyclesSESTriangle hP m m' hm).mor₃ ≫
+  Triangle.mk ((cyclesShiftIso hP m m' hm).inv ≫ (cyclesSESTriangle hP m m' hm).invRotate.mor₁)
+    (cyclesSESTriangle hP m m' hm).invRotate.mor₂
+    ((cyclesSESTriangle hP m m' hm).invRotate.mor₃ ≫
       (shiftFunctor _ (1 : ℤ)).map (cyclesShiftIso hP m m' hm).hom)
 
 private lemma cyclesTriangle_distinguished (m m' : ℤ) (hm : m + 1 = m') :
     cyclesTriangle hP m m' hm ∈ distTriang _ :=
-  have hS := P.cyclesShortComplex_shortExact m m' hm (hP.acyclic m')
-  isomorphic_distinguished _ (inv_rot_of_distTriang _ (triangleOfSES_distinguished
-    ((P.cyclesShortComplex_def m m' ▸ hS).map_of_exact (HomologicalComplex.single C (.up ℤ) m)))) _
-    (Triangle.isoMk (cyclesTriangle hP m m' hm) (cyclesSESTriangle hP m m' hm)
-      (cyclesShiftIso hP m m' hm).symm (Iso.refl _) (Iso.refl _) (by simp [cyclesTriangle])
-      (by simp only [cyclesTriangle, Triangle.mk_mor₂, Iso.refl_hom, Category.comp_id,
-        Category.id_comp])
-      (by
-        simp only [cyclesTriangle, Triangle.mk_mor₃, Iso.refl_hom, Category.id_comp,
-          Category.assoc, ← Functor.map_comp, Iso.symm_hom, Iso.hom_inv_id]
-        rw [CategoryTheory.Functor.map_id, Category.comp_id]))
+  distinguished_of_iso₁ (inv_rot_of_distTriang _ (cyclesSESTriangle_distinguished hP m m' hm))
+    (cyclesShiftIso hP m m' hm)
 
-/-- The second morphism of `cyclesTriangle` is the inclusion of the cycles. -/
+/-- The second morphism of `cyclesTriangle` is the inclusion of the cycles placed in degree `m`. -/
 private lemma cyclesTriangle_mor₂ (m m' : ℤ) (hm : m + 1 = m') :
     (cyclesTriangle hP m m' hm).mor₂ = (singleFunctor C m).map (P.iCycles m) :=
-  -- `singleFunctor C m` is `single m ⋙ Q` by definition (`singleFunctorIsoCompQ` is the identity),
-  -- so the image under `Q` of the inclusion of the cycles placed in degree `m` is this morphism.
-  rfl
+  cyclesSESTriangle_mor₁ hP m m' hm
 
 /-- **Extension along a cycle step**: for `m ≥ 0`, every morphism from `Zᵐ'` in degree `m'` to an
 object in degree zero factors through the first morphism of `cyclesTriangle`, since
@@ -124,14 +160,13 @@ private lemma exists_eq_cyclesTriangle_mor₁_comp (m m' : ℤ) (hm : m + 1 = m'
     ∃ h' : (singleFunctor C m).obj (P.cycles m) ⟶ (singleFunctor C 0).obj Y,
       h = (cyclesTriangle hP m m' hm).mor₁ ≫ h' := by
   have := hP.projective m
-  let e : (cyclesTriangle hP m m' hm).invRotate.obj₁ ≅ (singleFunctor C m').obj (P.X m) :=
-    ((singleFunctors C).shiftIso (-1) m' m (by lia)).app (P.X m)
   refine Triangle.yoneda_exact₂ _
     (inv_rot_of_distTriang _ (cyclesTriangle_distinguished hP m m' hm)) h ?_
-  -- `singleFunctor C n` is `single n ⋙ Q` by definition, so Mathlib's vanishing lemma applies.
+  -- The source is `Pᵐ` placed in degree `m'`, which has no morphisms to `Y` in degree zero.
+  let e : (cyclesTriangle hP m m' hm).invRotate.obj₁ ≅ (singleFunctor C m').obj (P.X m) :=
+    ((singleFunctors C).shiftIso (-1) m' m (by lia)).app (P.X m)
   have h0 : e.inv ≫ (cyclesTriangle hP m m' hm).invRotate.mor₁ ≫ h = 0 :=
-    from_singleFunctor_obj_eq_zero_of_projective (L := (CochainComplex.singleFunctor C 0).obj Y)
-      _ 0 (by lia)
+    singleFunctor_hom_eq_zero_of_projective (by lia) _
   calc _ = e.hom ≫ e.inv ≫ (cyclesTriangle hP m m' hm).invRotate.mor₁ ≫ h :=
         (e.hom_inv_id_assoc _).symm
     _ = 0 := by rw [h0]; exact comp_zero
@@ -144,9 +179,8 @@ private lemma eq_zero_of_cyclesTriangle_mor₁_comp_eq_zero (m m' : ℤ) (hm : m
     (hh : (cyclesTriangle hP m m' hm).mor₁ ≫ h = 0) : h = 0 := by
   have := hP.projective m
   obtain ⟨k, rfl⟩ := Triangle.yoneda_exact₂ _ (cyclesTriangle_distinguished hP m m' hm) h hh
-  -- `singleFunctor C m` is `single m ⋙ Q` by definition, so Mathlib's vanishing lemma applies.
-  rw [from_singleFunctor_obj_eq_zero_of_projective (L := (CochainComplex.singleFunctor C 0).obj Y)
-    k 0 hm₀]
+  -- `Pᵐ` placed in degree `m > 0` has no morphisms to `Y` in degree zero.
+  rw [singleFunctor_hom_eq_zero_of_projective hm₀ k]
   exact comp_zero
 
 /-- **The first cycle step**: a morphism from `Z⁰` to `Y` in degree zero which vanishes on the
@@ -195,13 +229,6 @@ private lemma trW_cyclesδ : ∀ k, (TauCeti.DerivedCategory.Bounded.perfect C).
   | 0 => MorphismProperty.id_mem _ _
   | k + 1 => MorphismProperty.comp_mem _ _ _ (trW_cyclesHom hP k) (trW_cyclesδ k)
 
-omit [HasDerivedCategory C] in
-/-- The cycles of a totally acyclic complex of projectives have no higher extensions by
-projectives. -/
-private lemma extLeftOrthogonal_cycles [HasExt.{w'} C] (k : ℤ) (i : ℕ) :
-    (isProjective C).extLeftOrthogonal (i + 1) (P.cycles k) :=
-  ObjectProperty.extLeftOrthogonal_iff.2 fun Q (_ : Projective Q) x ↦ hP.ext_cycles_eq_zero Q i k x
-
 /-- Every morphism from `Z⁰` to a perfect object is killed by `δₖ` for `k` large. -/
 private lemma exists_cyclesδ_comp_eq_zero (K : DerivedCategory.Bounded C)
     (hK : TauCeti.DerivedCategory.Bounded.perfect C K) (a : cyclesObj P 0 ⟶ K) :
@@ -210,7 +237,7 @@ private lemma exists_cyclesδ_comp_eq_zero (K : DerivedCategory.Bounded C)
   obtain ⟨n₀, hn₀⟩ := exists_singleHom_eq_zero_of_perfect hK
   refine ⟨n₀.toNat, DerivedCategory.Bounded.ι.map_injective ?_⟩
   rw [Functor.map_zero]
-  exact hn₀ _ (by lia) _ (extLeftOrthogonal_cycles hP _) _
+  exact hn₀ _ (by lia) _ (hP.extLeftOrthogonal_cycles _) _
 
 /-- Every morphism from `Zᵏ[-k]` to an object of `C` in degree zero extends along `δₖ`. -/
 private lemma exists_eq_cyclesδ_comp {Y : C} : ∀ (k : ℕ)
@@ -325,6 +352,8 @@ variable (C : Type u) [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 
 /-- The functor from Gorenstein-projective objects to the singularity category, placing an
 object in degree zero. -/
+-- Exposed so that `toSingularityCategoryFunctor_map` can be stated: its two sides have the same
+-- type only after unfolding the definition on objects.
 @[expose] noncomputable def toSingularityCategoryFunctor :
     GorensteinProjective C ⥤ TauCeti.SingularityCategory C :=
   (isGorensteinProjective C).ι ⋙ DerivedCategory.Bounded.singleFunctor C 0 ⋙
@@ -355,6 +384,8 @@ theorem toSingularityCategoryFunctor_map {X Y : GorensteinProjective C} (f : X �
 /-- **Chen's functor** from the stable category of Gorenstein-projective objects to the
 singularity category, induced by placing an object in degree zero. It is well defined because
 projective objects vanish in the singularity category. -/
+-- Exposed so that `toSingularityCategory_map_projectiveStableFunctor_map` can be stated, as for
+-- `toSingularityCategoryFunctor`.
 @[expose] noncomputable def toSingularityCategory :
     (exactStructure C).ProjectiveStableCategory ⥤ TauCeti.SingularityCategory C :=
   (exactStructure C).projectiveStableIdeal.lift (toSingularityCategoryFunctor C)
@@ -363,6 +394,10 @@ projective objects vanish in the singularity category. -/
       exact (TauCeti.SingularityCategory.map_eq_zero_iff_of_isGorensteinProjective X.property
         f.hom).2 ((exactStructure_isProjective_factorsThrough_iff f).1
           ((ExactStructure.mem_projectiveStableIdeal_iff _).1 hf))
+
+instance : (toSingularityCategory C).Additive := by
+  unfold toSingularityCategory
+  infer_instance
 
 /-- Chen's functor restricts to placing objects in degree zero along the quotient functor. -/
 theorem projectiveStableFunctor_comp_toSingularityCategory :

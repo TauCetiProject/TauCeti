@@ -30,6 +30,8 @@ middle terms and `Ext¹(-, Q)`-orthogonal ends is a totally acyclic complex of p
 
 ## Main results
 
+* `CochainComplex.IsTotallyAcyclicProjective.extLeftOrthogonal_cycles`: the cycles of a totally
+  acyclic complex of projectives have no higher extensions by projectives.
 * `CochainComplex.isTotallyAcyclicProjective_splice`: a splice of short exact sequences with
   projective middle terms and ends without extensions by projectives is totally acyclic.
 * `CategoryTheory.isGorensteinProjective_X₂_of_shortExact`: Gorenstein-projective objects are
@@ -79,6 +81,20 @@ lemma isTotallyAcyclicProjective_splice (hproj : ∀ n, Projective (S n).X₂)
     ((e (m + 1)).inv ≫ ψ)
   exact ⟨g, by rw [splice_d, Category.assoc, Category.assoc, hg, Iso.hom_inv_id_assoc]⟩
 
+namespace IsTotallyAcyclicProjective
+
+variable {P : CochainComplex C ℤ} (hP : P.IsTotallyAcyclicProjective)
+include hP
+
+omit hS in
+/-- The cycles of a totally acyclic complex of projectives lie in the `Ext`-left-orthogonal of
+the projective objects in every positive degree. -/
+theorem extLeftOrthogonal_cycles (k : ℤ) (i : ℕ) :
+    (isProjective C).extLeftOrthogonal (i + 1) (P.cycles k) :=
+  ObjectProperty.extLeftOrthogonal_iff.2 fun Q (_ : Projective Q) x ↦ hP.ext_cycles_eq_zero Q i k x
+
+end IsTotallyAcyclicProjective
+
 end CochainComplex
 
 namespace CategoryTheory
@@ -94,8 +110,7 @@ the objects without extensions by projectives. -/
 private noncomputable abbrev toCompleteResolution {P : CochainComplex C ℤ}
     (hP : P.IsTotallyAcyclicProjective) :
     ((isProjective C).extLeftOrthogonalExactStructure 1).CompleteResolution where
-  Z n := ⟨P.cycles n, ObjectProperty.extLeftOrthogonal_iff.2 fun Q (_ : Projective Q) x ↦
-    hP.ext_cycles_eq_zero Q 0 n x⟩
+  Z n := ⟨P.cycles n, hP.extLeftOrthogonal_cycles n 0⟩
   X n := ⟨P.X n, have := hP.projective n; (isProjective C).extLeftOrthogonal_of_projective _ 0⟩
   ι n := ObjectProperty.homMk (P.iCycles n)
   π n := ObjectProperty.homMk (P.toCycles n (n + 1))
