@@ -57,16 +57,7 @@ This is the measure counterpart of Mathlib's `ProbabilityTheory.Kernel.compProd_
 theorem compProd_restrict_left (μ : Measure W) [SFinite μ] (κ : Kernel W Z) [IsSFiniteKernel κ]
     {s : Set W} (hs : MeasurableSet s) :
     μ.restrict s ⊗ₘ κ = (μ ⊗ₘ κ).restrict (s ×ˢ Set.univ) := by
-  ext t ht
-  rw [restrict_apply ht, compProd_apply ht, compProd_apply (ht.inter (hs.prod .univ)),
-    ← lintegral_indicator hs]
-  refine lintegral_congr fun a => ?_
-  by_cases ha : a ∈ s
-  · have hfib : Prod.mk a ⁻¹' (t ∩ s ×ˢ Set.univ) = Prod.mk a ⁻¹' t := by
-      ext b; simp [ha]
-    rw [Set.indicator_of_mem ha, hfib]
-  · have hfib : Prod.mk a ⁻¹' (t ∩ s ×ˢ Set.univ) = ∅ := by
-      ext b; simp [ha]
-    rw [Set.indicator_of_notMem ha, hfib, measure_empty]
+  rw [compProd, compProd, ← Kernel.restrict_const hs, ← Kernel.restrict_apply _ (hs.prod .univ),
+    Kernel.compProd_restrict_left]
 
 end MeasureTheory.Measure
