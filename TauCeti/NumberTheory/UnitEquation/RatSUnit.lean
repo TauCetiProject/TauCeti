@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.NumberField.SUnits.Rat.Structure
 
 import TauCeti.Analysis.SpecialFunctions.Log.AddMulLog
-import TauCeti.NumberTheory.Padics.PadicValRat
 
 /-!
 # The exponent bound for the rational `S`-unit equation
@@ -185,7 +184,8 @@ theorem abs_padicValRat_le_of_add_eq_one (hS : ∀ p ∈ S, p.Prime) {C : ℝ} (
         (hq.trans (max_eq_right h)).symm hNpos.ne'
   rw [max_eq_right hN1, ← Real.rpow_intCast, Int.cast_neg, Int.cast_natCast] at key
   -- `q ^ (-N) ≤ 2 ^ (-N)`, since `q ≥ 2`
-  exact le_max_of_le_right (Real.le_mul_log_of_rpow_neg_le_rpow_neg hC one_lt_two hN1
+  exact le_max_of_le_right (Real.le_mul_log_of_rpow_neg_le_rpow_neg hC one_lt_two
+    (zero_lt_one.trans_le hN1)
     (key.trans (Real.rpow_le_rpow_of_nonpos two_pos hq2 (by linarith))))
 
 end TauCeti

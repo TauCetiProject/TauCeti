@@ -24,7 +24,7 @@ with an exponentially small upper bound. Taking logarithms gives `x ≤ b + b * 
 
 * `Real.le_two_mul_add_of_le_add_mul_log`: `x ≤ a + b * log x` implies
   `x ≤ 2 * a + 2 * b * (log (2 * b) - 1)`.
-* `Real.le_mul_log_of_rpow_neg_le_rpow_neg`: `(e * x) ^ (-C) ≤ q ^ (-x)` with `1 ≤ x` and `1 < q`
+* `Real.le_mul_log_of_rpow_neg_le_rpow_neg`: `(e * x) ^ (-C) ≤ q ^ (-x)` with `0 < x` and `1 < q`
   implies `x ≤ 2 * C / log q * log (2 * C / log q)`.
 
 ## References
@@ -52,16 +52,15 @@ theorem le_two_mul_add_of_le_add_mul_log {a b x : ℝ} (hb : 0 ≤ b) (hx : 0 < 
     field_simp
   nlinarith [mul_le_mul_of_nonneg_left hlog hb.le]
 
-/-- If `0 ≤ C`, `1 ≤ x`, `1 < q` and `(e * x) ^ (-C) ≤ q ^ (-x)`, then
+/-- If `0 ≤ C`, `0 < x`, `1 < q` and `(e * x) ^ (-C) ≤ q ^ (-x)`, then
 `x ≤ 2 * C / log q * log (2 * C / log q)`. Taking logarithms gives
 `x * log q ≤ C * (1 + log x)`, which `Real.le_two_mul_add_of_le_add_mul_log` solves. -/
-theorem le_mul_log_of_rpow_neg_le_rpow_neg {C q x : ℝ} (hC : 0 ≤ C) (hq : 1 < q) (hx : 1 ≤ x)
+theorem le_mul_log_of_rpow_neg_le_rpow_neg {C q x : ℝ} (hC : 0 ≤ C) (hq : 1 < q) (hx : 0 < x)
     (h : (exp 1 * x) ^ (-C) ≤ q ^ (-x)) : x ≤ 2 * C / log q * log (2 * C / log q) := by
-  have hx0 : 0 < x := zero_lt_one.trans_le hx
   have hlogq : 0 < log q := log_pos hq
   -- taking logarithms: `x * log q ≤ C * (1 + log x)`
   have hlog := log_le_log (by positivity) h
-  rw [log_rpow (by positivity), log_rpow (by positivity), log_mul (by positivity) hx0.ne',
+  rw [log_rpow (by positivity), log_rpow (by positivity), log_mul (by positivity) hx.ne',
     log_exp] at hlog
   -- with `b = C / log q`, `x ≤ b + b * log x`
   have hxb : x ≤ C / log q + C / log q * log x := by
@@ -69,6 +68,6 @@ theorem le_mul_log_of_rpow_neg_le_rpow_neg {C q x : ℝ} (hC : 0 ≤ C) (hq : 1 
     linarith
   have h2b : 2 * C / log q = 2 * (C / log q) := mul_div_assoc _ _ _
   rw [h2b]
-  linarith [le_two_mul_add_of_le_add_mul_log (div_nonneg hC hlogq.le) hx0 hxb]
+  linarith [le_two_mul_add_of_le_add_mul_log (div_nonneg hC hlogq.le) hx hxb]
 
 end Real
