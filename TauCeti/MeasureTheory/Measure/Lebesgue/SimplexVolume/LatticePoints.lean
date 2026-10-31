@@ -7,16 +7,17 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Lebesgue.SimplexVolume.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-import TauCeti.Order.Interval.Set.RealGrid
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Real
 
 /-!
 # Counting grid points in a cube simplex
 
-For positive integers `d j`, the number of tuples `I j ∈ {0, …, d j}` with
+For natural numbers `d j`, the number of tuples `I j ∈ {0, …, d j}` with
 `∑ j, I j / d j ≤ t` is bounded below by
-`simplexVolume m t * ∏ j, d j`. For `t > 0` it is bounded above by the same quantity times
-`(1 + max 1 t⁻¹ * ∑ j, (d j)⁻¹) ^ m`. Thus the volume estimates for a cube simplex give
-counts of the coefficient conditions imposing a prescribed weighted index on a polynomial.
+`simplexVolume m t * ∏ j, d j`. For positive `d j` and `t > 0` it is bounded above by the
+same quantity times `(1 + max 1 t⁻¹ * ∑ j, (d j)⁻¹) ^ m`. Thus the volume estimates for a
+cube simplex bound the number of coefficient conditions imposing a prescribed weighted index
+on a polynomial.
 
 The proofs cover the simplex by the half-open grid boxes with admissible lower corners.
 These boxes are disjoint and have volume `(∏ j, d j)⁻¹`; their union is contained in a
@@ -49,6 +50,15 @@ private theorem gridBox_eq_pi_Ico {m : ℕ} (d : Fin m → ℕ) (I : ∀ j, Fin 
     gridBox d I = univ.pi (fun j ↦ Ico ((I j : ℝ) / d j) (((I j : ℝ) + 1) / d j)) := by
   simp [gridBox, Real.gridCell_eq_Ico, div_eq_mul_inv]
 
+private theorem measurableSet_gridBox {m : ℕ} (d : Fin m → ℕ)
+    (I : ∀ j, Fin (d j + 1)) : MeasurableSet (gridBox d I) :=
+  MeasurableSet.univ_pi fun _ ↦ Real.measurableSet_gridCell _ _
+
+private theorem volume_gridBox_ne_top {m : ℕ} (d : Fin m → ℕ)
+    (I : ∀ j, Fin (d j + 1)) : volume (gridBox d I) ≠ ⊤ := by
+  simp only [gridBox_eq_pi_Ico, Real.volume_pi_Ico]
+  exact ENNReal.prod_ne_top fun _ _ ↦ ENNReal.ofReal_ne_top
+
 private theorem volume_gridBox {m : ℕ} {d : Fin m → ℕ} (I : ∀ j, Fin (d j + 1)) :
     volume.real (gridBox d I) = (∏ j, (d j : ℝ))⁻¹ := by
   rw [gridBox_eq_pi_Ico, measureReal_def, Real.volume_pi_Ico_toReal]
@@ -69,22 +79,21 @@ private theorem volume_gridBox_union {m : ℕ} (d : Fin m → ℕ)
     (s : Finset (∀ j, Fin (d j + 1))) :
     volume.real (⋃ I ∈ s, gridBox d I) = s.card / ∏ j, (d j : ℝ) := by
   rw [measureReal_biUnion_finset ((gridBox_disjoint d).set_pairwise _)
-    (fun _ _ ↦ by
-      rw [gridBox_eq_pi_Ico]
-      exact MeasurableSet.pi (Set.to_countable _) (fun _ _ ↦ measurableSet_Ico))
-    (fun _ _ ↦ by
-      simp only [gridBox_eq_pi_Ico, Real.volume_pi_Ico]
-      exact ENNReal.prod_ne_top fun _ _ ↦ ENNReal.ofReal_ne_top)]
+    (fun I _ ↦ measurableSet_gridBox d I) (fun I _ ↦ volume_gridBox_ne_top d I)]
   simp [volume_gridBox, div_eq_mul_inv]
 
 /-- The volume of a cube simplex, multiplied by the grid density, is at most the number of
-admissible grid points. Every point of the simplex lies in the box of its coordinatewise
-rounded-down grid point. This includes `t = 0` and dimension zero. -/
-theorem simplexVolume_mul_prod_le_ncard {m : ℕ} (d : Fin m → ℕ) (hd : ∀ j, 0 < d j)
-    (t : ℝ) :
+admissible grid points. This includes zero grid denominators, `t = 0`, and dimension zero. -/
+theorem simplexVolume_mul_prod_le_ncard {m : ℕ} (d : Fin m → ℕ) (t : ℝ) :
     simplexVolume m t * ∏ j, (d j : ℝ) ≤
       ({I : ∀ j, Fin (d j + 1) | ∑ j, (I j : ℝ) / d j ≤ t}.ncard : ℝ) := by
   classical
+  by_cases hzero : ∃ j, d j = 0
+  · obtain ⟨j, hj⟩ := hzero
+    rw [Finset.prod_eq_zero (Finset.mem_univ j) (by simp [hj]), mul_zero]
+    exact Nat.cast_nonneg _
+  have hd : ∀ j, 0 < d j := fun j ↦ Nat.pos_of_ne_zero (fun hj ↦ hzero ⟨j, hj⟩)
+  -- Every simplex point lies in the box of its coordinatewise rounded-down grid point.
   let s := {I : ∀ j, Fin (d j + 1) | ∑ j, (I j : ℝ) / d j ≤ t}.toFinset
   have hcover : Icc (0 : Fin m → ℝ) 1 ∩ {x | ∑ j, x j ≤ t} ⊆
       ⋃ I ∈ s, gridBox d I := by
@@ -103,9 +112,7 @@ theorem simplexVolume_mul_prod_le_ncard {m : ℕ} (d : Fin m → ℕ) (hd : ∀ 
         (lt_div_iff₀ (Nat.cast_pos.mpr (hd j))).mpr (by
           simpa [I, mul_comm] using Nat.lt_floor_add_one ((d j : ℝ) * x j))⟩
   have hfinite : volume (⋃ I ∈ s, gridBox d I) ≠ ⊤ :=
-    measure_biUnion_ne_top s.finite_toSet fun I _ ↦ by
-      simp only [gridBox_eq_pi_Ico, Real.volume_pi_Ico]
-      exact ENNReal.prod_ne_top fun _ _ ↦ ENNReal.ofReal_ne_top
+    measure_biUnion_ne_top s.finite_toSet fun I _ ↦ volume_gridBox_ne_top d I
   have hv := measureReal_mono (μ := volume) hcover hfinite
   rw [← simplexVolume_def, volume_gridBox_union d] at hv
   simpa only [Set.ncard_eq_toFinset_card', s] using
@@ -161,6 +168,12 @@ private theorem gridBox_subset_dilate {m : ℕ} {d : Fin m → ℕ} (hd : ∀ j,
     ext j
     simp [Pi.smul_apply, smul_eq_mul, div_eq_mul_inv, mul_left_comm, hr0.ne']
 
+private theorem volume_real_smul_simplex {m : ℕ} {r : ℝ} (hr : 0 ≤ r) (t : ℝ) :
+    volume.real (r • (Icc (0 : Fin m → ℝ) 1 ∩ {x | ∑ j, x j ≤ t})) =
+      r ^ m * simplexVolume m t := by
+  rw [measureReal_def, Measure.addHaar_smul_of_nonneg volume hr, ENNReal.toReal_mul]
+  simp [Module.finrank_fintype_fun_eq_card, simplexVolume_def, measureReal_def, pow_nonneg hr]
+
 /-- For a positive threshold, the number of admissible grid points is at most the volume
 prediction times an explicit dilation error. The error tends to one as all the `d j` grow. -/
 theorem ncard_le_simplexVolume_mul_pow_mul_prod {m : ℕ} (d : Fin m → ℕ)
@@ -183,10 +196,7 @@ theorem ncard_le_simplexVolume_mul_pow_mul_prod {m : ℕ} (d : Fin m → ℕ)
       (measure_ne_top_of_subset inter_subset_left isCompact_Icc.measure_ne_top)
   -- Disjoint boxes turn the volume comparison into the required cardinality bound.
   have hv := measureReal_mono (μ := volume) hcover hfinite
-  rw [volume_gridBox_union d, measureReal_def, Measure.addHaar_smul,
-    ENNReal.toReal_mul, ENNReal.toReal_ofReal (abs_nonneg _),
-    abs_pow, abs_of_pos hr0, Module.finrank_fintype_fun_eq_card, Fintype.card_fin,
-    ← measureReal_def, ← simplexVolume_def] at hv
+  rw [volume_gridBox_union d, volume_real_smul_simplex hr0.le] at hv
   have hcount := (div_le_iff₀ (Finset.prod_pos fun j _ ↦ Nat.cast_pos.mpr (hd j))).mp hv
   simpa only [Set.ncard_eq_toFinset_card', s, r, mul_comm (r ^ m)] using hcount
 
