@@ -26,8 +26,8 @@ coordinate `i` to another coordinate.
   `Pi.single i d`.
 * `Fintype.exists_ne_pos_of_apply_lt_sum`: an exponent vector whose `i`-th entry is less than its
   degree has another positive entry.
-* `Pi.induction_on_single_of_sum_eq`: induction over the exponent vectors of degree `d`, moving
-  one unit at a time to the coordinate `i`.
+* `Pi.induction_on_single_of_sum_eq`: induction over the exponent vectors of degree `d`, starting
+  from `Pi.single i d` and moving one unit at a time from the coordinate `i` to another coordinate.
 -/
 
 public section
@@ -71,9 +71,9 @@ theorem Fintype.exists_ne_pos_of_apply_lt_sum [Fintype ι] {α : ι → ℕ} {i 
       Nat.le_zero.mp (h j (ne_of_mem_erase hj)), zero_add]
   omega
 
-/-- Induction over the exponent vectors of degree `d`, moving one unit at a time to the
-coordinate `i`: a property of the pure power `d e_i` which transfers from `β + e_i` to `β + e_j`
-holds for every exponent vector of degree `d`. -/
+/-- Induction over the exponent vectors of degree `d`, starting from the pure power `d e_i` and
+moving one unit at a time from the coordinate `i` to another coordinate `j`: a property of `d e_i`
+which transfers from `β + e_i` to `β + e_j` holds for every exponent vector of degree `d`. -/
 theorem Pi.induction_on_single_of_sum_eq [Fintype ι] [DecidableEq ι] {d : ℕ} (i : ι)
     {P : (ι → ℕ) → Prop}
     (hsingle : P (Pi.single i d))
