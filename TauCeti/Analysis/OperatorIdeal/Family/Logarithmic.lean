@@ -16,8 +16,9 @@ logarithmically. Its gauge is
 
 `‖T‖_(1,∞) = sup_(N ≥ 1) (log (1 + N))⁻¹ ∑_(j < N) aⱼ(T)`,
 
-with value `∞` outside the ideal. This is the domain of the Dixmier traces, which are generalized
-limits of the logarithmic means `(log (1 + N))⁻¹ K_N(T)`.
+with value `∞` outside the ideal. This is the domain of the Dixmier traces: on a positive
+endomorphism `T` in the ideal, a Dixmier trace is a generalized limit of the logarithmic means
+`(log (1 + N))⁻¹ K_N(T)`, and it extends linearly to all endomorphisms in the ideal.
 
 The four operator-ideal laws follow from those of the Ky Fan gauges, each of which is subadditive,
 homogeneous and satisfies the two-sided ideal inequality. The gauge dominates the operator norm
@@ -224,11 +225,9 @@ theorem finiteSubmodule_traceClass_le_logarithmic :
 
 /-- **Finite-rank operators lie in `L^(1,∞)`.** -/
 theorem mem_finiteSubmodule_logarithmic_of_rank_le {T : E →L[𝕜] F} {n : ℕ} (hT : T.rank ≤ n) :
-    T ∈ ((logarithmic.{u, v, w} 𝕜).operatorGauge E F).finiteSubmodule := by
-  refine finiteSubmodule_traceClass_le_logarithmic E F <|
-    (mem_finiteSubmodule_traceClass_iff T).2 <| summable_of_ne_finset_zero (s := Finset.range n)
-      fun k hk ↦ ContinuousLinearMap.singularValue_eq_zero_of_rank_le ?_
-  exact hT.trans (by exact_mod_cast not_lt.1 (Finset.mem_range.not.1 hk))
+    T ∈ ((logarithmic.{u, v, w} 𝕜).operatorGauge E F).finiteSubmodule :=
+  finiteSubmodule_traceClass_le_logarithmic E F <| (mem_finiteSubmodule_traceClass_iff T).2 <|
+    (T.nuclearENorm_ne_top_iff_summable).1 (T.nuclearENorm_ne_top_of_rank_le hT)
 
 /-- The logarithmic gauge is lower semicontinuous in the operator-norm topology. -/
 theorem lowerSemicontinuous_gauge_logarithmic :
