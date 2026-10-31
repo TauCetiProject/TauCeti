@@ -39,6 +39,8 @@ In particular any filling along the meridian with a matrix gluing is the ambient
   gluing induced by a matrix `A` is the slope of the `(A₀₀, A₁₀)` curve.
 * `TauCeti.IsSolidTorusNeighborhood.fillingSlope_torusHomeomorph_eq_iff`: two matrix gluings
   have the same filling slope exactly when their first columns agree up to sign.
+* `TauCeti.IsSolidTorusNeighborhood.exists_fillingSlope_torusHomeomorph_eq`: every slope is the
+  filling slope of a matrix gluing.
 * `TauCeti.DehnFilling.nonempty_homeomorph_of_gluing_eq_torusHomeomorph`: two fillings along the
   same slope with matrix gluings are homeomorphic.
 
@@ -84,6 +86,30 @@ theorem fillingSlope_torusHomeomorph_eq_iff (h : IsSolidTorusNeighborhood f Φ)
     ← h.framedBoundaryTorus.coord.injective.eq_iff, ← h.framedBoundaryTorus.coord.injective.eq_iff,
     map_neg, FramedBoundaryTorus.coord_torusCurveClass, FramedBoundaryTorus.coord_torusCurveClass,
     Prod.neg_mk, Prod.mk.injEq, Prod.mk.injEq]
+
+/-- **Every slope is the filling slope of a matrix gluing.** A primitive class with coordinates
+`(p, q)` in the framing of `Φ` is the first column of an invertible integral matrix
+`[[p, -b], [q, a]]`, with `a p + b q = 1`, and gluing the solid torus by the homeomorphism of
+`S¹ × S¹` that this matrix induces sends its meridian to the class. -/
+theorem exists_fillingSlope_torusHomeomorph_eq (h : IsSolidTorusNeighborhood f Φ)
+    (s : Slope h.framedBoundaryTorus.H) :
+    ∃ A : GL (Fin 2) ℤ, h.fillingSlope A.torusHomeomorph = s := by
+  induction s using Slope.induction_on with
+  | h v hv =>
+    set c := h.framedBoundaryTorus.coord v with hc
+    have hcop : IsCoprime c.1 c.2 :=
+      isPrimitive_prod_iff.1 ((h.framedBoundaryTorus.coord.isPrimitive_iff).2 hv)
+    obtain ⟨a, b, hab⟩ := hcop
+    let M : Matrix.SpecialLinearGroup (Fin 2) ℤ :=
+      ⟨!![c.1, -b; c.2, a], by rw [Matrix.det_fin_two_of]; linear_combination hab⟩
+    have hM : ((Matrix.SpecialLinearGroup.toGL M : GL (Fin 2) ℤ) : Matrix (Fin 2) (Fin 2) ℤ) =
+        !![c.1, -b; c.2, a] :=
+      rfl
+    refine ⟨Matrix.SpecialLinearGroup.toGL M, ?_⟩
+    rw [fillingSlope_torusHomeomorph]
+    refine Slope.mk_eq_mk _ _ (Or.inl (h.framedBoundaryTorus.coord.injective ?_))
+    rw [FramedBoundaryTorus.coord_torusCurveClass, ← hc, hM]
+    simp
 
 end IsSolidTorusNeighborhood
 

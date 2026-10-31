@@ -7,8 +7,7 @@ module
 
 public import TauCeti.LowDimTopology.DehnSurgery.Link.Filling
 public import TauCeti.LowDimTopology.DehnSurgery.Uniqueness
-public import TauCeti.Topology.Category.TopCat.ClosedEmbedding
-public import TauCeti.Topology.Category.TopCat.DisjointOpens
+public import TauCeti.Topology.CWComplex.Abstract.Hausdorff
 
 /-!
 # Existence of Dehn fillings
@@ -29,10 +28,9 @@ cobase change of a closed embedding in `TopCat`:
 * both maps into the pushout are closed embeddings
   (`TauCeti.TopCat.isClosedEmbedding_of_isPushout`), the boundary torus of the exterior and the
   boundary tori of the solid tori being compact and embedded;
-* the pushout is Hausdorff (`TauCeti.TopCat.t2Space_of_isPushout`), since the boundary inclusion
-  extends disjoint open sets: an open subset `U` of `S¹ × S¹` is the trace of the open collar
-  `{(w, z) | 1 / 2 < ‖w‖, (w / ‖w‖, z) ∈ U}`, as for the boundary sphere of a disk
-  (`TauCeti.TopCat.extendsDisjointOpens_diskBoundaryInclusion`);
+* the pushout is Hausdorff, as an attachment of cells `D² × S¹` along their boundary tori
+  (`HomotopicalAlgebra.AttachCells.t2Space`), since the boundary inclusion extends disjoint open
+  sets (`TauCeti.SolidTorus.extendsDisjointOpens_boundaryInclusion`);
 * it is compact when the ambient space is.
 
 Every slope is the filling slope of a gluing induced by an invertible integral matrix
@@ -51,8 +49,6 @@ with coordinates `(p, q)` extends to a basis, by a matrix `[[p, -b], [q, a]]` wi
 
 ## Main results
 
-* `TauCeti.IsSolidTorusNeighborhood.exists_fillingSlope_torusHomeomorph_eq`: every slope is the
-  filling slope of a matrix gluing.
 * `TauCeti.IsSolidTorusNeighborhood.exists_dehnFilling`: a knot exterior has a Dehn filling along
   every slope.
 * `TauCeti.IsSolidTorusLinkNeighborhood.exists_linkDehnFilling`: the exterior of a link with
@@ -79,15 +75,20 @@ section Attach
 
 variable {ι : Type} {E : Type} [TopologicalSpace E]
 
+/-- The boundary inclusion `S¹ × S¹ → D² × S¹` of a solid torus, as a map of `TopCat`. -/
+private abbrev boundaryInclusionHom : TopCat.of (Circle × Circle) ⟶ TopCat.of SolidTorus :=
+  TopCat.ofHom ⟨SolidTorus.boundaryInclusion, SolidTorus.isEmbedding_boundaryInclusion.continuous⟩
+
+private theorem isClosedEmbedding_boundaryInclusionHom :
+    IsClosedEmbedding boundaryInclusionHom :=
+  boundaryInclusionHom.hom.continuous.isClosedEmbedding
+    SolidTorus.isEmbedding_boundaryInclusion.injective
+
 /-- The boundary inclusions `S¹ × S¹ → D² × S¹` of a family of solid tori, as a map of `TopCat`. -/
 private def sigmaBoundaryInclusion (ι : Type) :
     TopCat.of (Σ _ : ι, Circle × Circle) ⟶ TopCat.of (Σ _ : ι, SolidTorus) :=
   TopCat.ofHom ⟨Sigma.map id fun _ ↦ SolidTorus.boundaryInclusion,
     Continuous.sigma_map fun _ ↦ SolidTorus.isEmbedding_boundaryInclusion.continuous⟩
-
-private theorem sigmaBoundaryInclusion_apply (i : ι) (q : Circle × Circle) :
-    sigmaBoundaryInclusion ι ⟨i, q⟩ = ⟨i, SolidTorus.boundaryInclusion q⟩ :=
-  rfl
 
 /-- Attaching maps `e i` of the boundary tori of a family of solid tori, as a map of `TopCat`. -/
 private def sigmaAttach (e : ι → C(Circle × Circle, E)) :
@@ -104,55 +105,6 @@ private theorem isPushout_attach (e : ι → C(Circle × Circle, E)) :
       (pushout.inl (sigmaAttach e) (sigmaBoundaryInclusion ι))
       (pushout.inr (sigmaAttach e) (sigmaBoundaryInclusion ι)) :=
   .of_hasPushout _ _
-
-/-- The boundary inclusion of the solid tori extends disjoint open sets: an open subset `U` of the
-boundary tori is the trace of the open collar of points `(w, z)` with `1 / 2 < ‖w‖` and
-`(w / ‖w‖, z) ∈ U`, and collars over disjoint sets are disjoint. -/
-private theorem extendsDisjointOpens_sigmaBoundaryInclusion :
-    TopCat.extendsDisjointOpens (sigmaBoundaryInclusion ι) := by
-  -- The coordinates of the boundary tori in `ℂ × S¹`.
-  let μ (q : Circle × Circle) : ℂ × Circle := ((q.1 : ℂ), q.2)
-  have hμ : IsEmbedding μ := IsEmbedding.subtypeVal.prodMap IsEmbedding.id
-  -- The radial projection onto the boundary torus, continuous away from the core.
-  let N : Set SolidTorus := {p | 1 / 2 < ‖(p.1 : ℂ)‖}
-  let ρ (p : SolidTorus) : ℂ × Circle := (‖(p.1 : ℂ)‖⁻¹ • (p.1 : ℂ), p.2)
-  have hN : IsOpen N := isOpen_lt continuous_const (continuous_subtype_val.comp continuous_fst).norm
-  have hρ : ContinuousOn ρ N := by
-    have hw : Continuous fun p : SolidTorus ↦ (p.1 : ℂ) :=
-      continuous_subtype_val.comp continuous_fst
-    refine ContinuousOn.prodMk ((ContinuousOn.inv₀ hw.norm.continuousOn fun p hp ↦ ?_).smul
-      hw.continuousOn) continuous_snd.continuousOn
-    exact (lt_trans (by norm_num) hp).ne'
-  have hρμ (q : Circle × Circle) : ρ (SolidTorus.boundaryInclusion q) = μ q := by
-    simp [ρ, μ]
-  -- An open subset `U` of the `i`-th boundary torus extends to an open collar in the `i`-th solid
-  -- torus, whose points project into `U`.
-  have collar (U : Set (Circle × Circle)) (hU : IsOpen U) :
-      ∃ U' : Set SolidTorus, IsOpen U' ∧ SolidTorus.boundaryInclusion ⁻¹' U' = U ∧
-        ∀ p ∈ U', ∃ q ∈ U, μ q = ρ p := by
-    obtain ⟨W, hW, rfl⟩ := hμ.isInducing.isOpen_iff.1 hU
-    refine ⟨N ∩ ρ ⁻¹' W, hρ.isOpen_inter_preimage hN hW, ?_, ?_⟩
-    · ext q
-      simp [N, hρμ, show (2⁻¹ : ℝ) < 1 by norm_num]
-    · rintro p ⟨hp, hpW⟩
-      have h₁ : ‖‖(p.1 : ℂ)‖⁻¹ • (p.1 : ℂ)‖ = 1 := by
-        rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (lt_trans (by norm_num) hp).ne']
-      exact ⟨(⟨_, mem_sphere_zero_iff_norm.2 h₁⟩, p.2), hpW, rfl⟩
-  have hμinj : Injective μ := hμ.injective
-  rw [TopCat.extendsDisjointOpens_iff]
-  intro U V hU hV hUV
-  choose U' hU' hU'U hU'ρ using fun i ↦ collar _ (isOpen_sigma_iff.1 hU i)
-  choose V' hV' hV'V hV'ρ using fun i ↦ collar _ (isOpen_sigma_iff.1 hV i)
-  refine ⟨{p | p.2 ∈ U' p.1}, {p | p.2 ∈ V' p.1}, isOpen_sigma_iff.2 hU', isOpen_sigma_iff.2 hV',
-    disjoint_left.2 fun p hpU hpV ↦ ?_, ?_, ?_⟩
-  · obtain ⟨q, hq, hqp⟩ := hU'ρ p.1 p.2 hpU
-    obtain ⟨q', hq', hq'p⟩ := hV'ρ p.1 p.2 hpV
-    obtain rfl := hμinj (hqp.trans hq'p.symm)
-    exact disjoint_left.1 hUV hq hq'
-  · ext ⟨i, q⟩
-    exact Set.ext_iff.1 (hU'U i) q
-  · ext ⟨i, q⟩
-    exact Set.ext_iff.1 (hV'V i) q
 
 private theorem range_inl_union_range_inr (e : ι → C(Circle × Circle, E)) :
     range (pushout.inl (sigmaAttach e) (sigmaBoundaryInclusion ι)) ∪
@@ -180,30 +132,48 @@ private theorem inl_eq_inr_iff {e : ι → C(Circle × Circle, E)}
   Types.pushoutCocone_inl_eq_inr_iff_of_isColimit
     ((forget TopCat).map_isPushout (isPushout_attach e)).isColimit he x p
 
-variable [Finite ι]
+/-- The space obtained by attaching solid tori to `E` along the maps `e i`, as an attachment of
+cells `D² × S¹` along their boundary tori. -/
+private def attachCells (e : ι → C(Circle × Circle, E)) :
+    HomotopicalAlgebra.AttachCells.{0} (fun _ : Unit ↦ boundaryInclusionHom)
+      (pushout.inl (sigmaAttach e) (sigmaBoundaryInclusion ι)) where
+  ι := ι
+  π _ := ()
+  cofan₁ := TopCat.sigmaCofan fun _ ↦ TopCat.of (Circle × Circle)
+  cofan₂ := TopCat.sigmaCofan fun _ ↦ TopCat.of SolidTorus
+  isColimit₁ := TopCat.sigmaCofanIsColimit _
+  isColimit₂ := TopCat.sigmaCofanIsColimit _
+  m := sigmaBoundaryInclusion ι
+  hm _ := rfl
+  g₁ := sigmaAttach e
+  g₂ := pushout.inr (sigmaAttach e) (sigmaBoundaryInclusion ι)
+  isPushout := isPushout_attach e
 
+/-- The boundary inclusions of a family of solid tori form a closed embedding, as a coproduct of
+closed embeddings. -/
 private theorem isClosedEmbedding_sigmaBoundaryInclusion :
     IsClosedEmbedding (sigmaBoundaryInclusion ι) :=
-  (sigmaBoundaryInclusion ι).hom.continuous.isClosedEmbedding fun ⟨i, q⟩ ⟨j, q'⟩ hq ↦ by
-    rw [sigmaBoundaryInclusion_apply, sigmaBoundaryInclusion_apply, Sigma.mk.inj_iff] at hq
-    obtain ⟨rfl, hq⟩ := hq
-    rw [SolidTorus.isEmbedding_boundaryInclusion.injective (eq_of_heq hq)]
+  (TopCat.isClosedEmbedding_iff _).1 <|
+    MorphismProperty.IsStableUnderColimitsOfShape.condition
+      (Discrete.functor fun _ : ι ↦ TopCat.of (Circle × Circle))
+      (Discrete.functor fun _ : ι ↦ TopCat.of SolidTorus) _ _
+      (TopCat.sigmaCofanIsColimit _) (TopCat.sigmaCofanIsColimit _)
+      (Discrete.natTrans fun _ ↦ boundaryInclusionHom)
+      (fun _ ↦ (TopCat.isClosedEmbedding_iff _).2 isClosedEmbedding_boundaryInclusionHom) _
+      fun _ ↦ rfl
 
 private theorem isClosedEmbedding_inl (e : ι → C(Circle × Circle, E)) :
     IsClosedEmbedding (pushout.inl (sigmaAttach e) (sigmaBoundaryInclusion ι)) :=
   TopCat.isClosedEmbedding_of_isPushout (isPushout_attach e)
     isClosedEmbedding_sigmaBoundaryInclusion
 
-/-- The space obtained by attaching finitely many solid tori to a Hausdorff space is Hausdorff. -/
+/-- The space obtained by attaching solid tori to a Hausdorff space is Hausdorff. -/
 private theorem t2Space_attach [T2Space E] (e : ι → C(Circle × Circle, E)) :
-    T2Space (attach e) := by
-  have : T2Space (TopCat.of E) := inferInstanceAs (T2Space E)
-  have : T2Space (TopCat.of (Σ _ : ι, SolidTorus)) := inferInstanceAs (T2Space (Σ _ : ι, _))
-  have : RegularSpace (TopCat.of (Σ _ : ι, SolidTorus)) :=
-    inferInstanceAs (RegularSpace (Σ _ : ι, _))
-  exact TopCat.t2Space_of_isPushout (isPushout_attach e)
-    extendsDisjointOpens_sigmaBoundaryInclusion
-    isClosedEmbedding_sigmaBoundaryInclusion.isClosed_range
+    T2Space (attach e) :=
+  (attachCells e).t2Space (fun _ ↦ SolidTorus.extendsDisjointOpens_boundaryInclusion)
+    fun _ ↦ isClosedEmbedding_boundaryInclusionHom
+
+variable [Finite ι]
 
 /-- The space obtained by attaching finitely many solid tori to a compact space is compact. -/
 private theorem compactSpace_attach [CompactSpace E] (e : ι → C(Circle × Circle, E)) :
@@ -223,37 +193,11 @@ private theorem isClosedEmbedding_inr [T2Space E] {e : ι → C(Circle × Circle
 
 end Attach
 
-/-! ### Every slope is the filling slope of a matrix gluing -/
+/-! ### Dehn fillings of knot exteriors -/
 
 namespace IsSolidTorusNeighborhood
 
 variable {X : Type} [TopologicalSpace X] [T2Space X] {f : Circle → X} {Φ : SolidTorus → X}
-
-/-- **Every slope is the filling slope of a matrix gluing.** A primitive class with coordinates
-`(p, q)` in the framing of `Φ` is the first column of an invertible integral matrix
-`[[p, -b], [q, a]]`, with `a p + b q = 1`, and gluing the solid torus by the homeomorphism of
-`S¹ × S¹` that this matrix induces sends its meridian to the class. -/
-theorem exists_fillingSlope_torusHomeomorph_eq (h : IsSolidTorusNeighborhood f Φ)
-    (s : Slope h.framedBoundaryTorus.H) :
-    ∃ A : GL (Fin 2) ℤ, h.fillingSlope A.torusHomeomorph = s := by
-  induction s using Slope.induction_on with
-  | h v hv =>
-    set c := h.framedBoundaryTorus.coord v with hc
-    have hcop : IsCoprime c.1 c.2 :=
-      isPrimitive_prod_iff.1 ((h.framedBoundaryTorus.coord.isPrimitive_iff).2 hv)
-    obtain ⟨a, b, hab⟩ := hcop
-    let M : Matrix.SpecialLinearGroup (Fin 2) ℤ :=
-      ⟨!![c.1, -b; c.2, a], by rw [Matrix.det_fin_two_of]; linear_combination hab⟩
-    have hM : ((Matrix.SpecialLinearGroup.toGL M : GL (Fin 2) ℤ) : Matrix (Fin 2) (Fin 2) ℤ) =
-        !![c.1, -b; c.2, a] :=
-      rfl
-    refine ⟨Matrix.SpecialLinearGroup.toGL M, ?_⟩
-    rw [fillingSlope_torusHomeomorph]
-    refine Slope.mk_eq_mk _ _ (Or.inl (h.framedBoundaryTorus.coord.injective ?_))
-    rw [FramedBoundaryTorus.coord_torusCurveClass, ← hc, hM]
-    simp
-
-/-! ### Dehn fillings of knot exteriors -/
 
 /-- The attaching map of the filling solid torus of a knot exterior along a gluing `g`: the point
 `q` of the boundary torus of the solid torus goes to the point `Φ (g q)` of the boundary torus of
@@ -373,13 +317,12 @@ def linkDehnFillingSpace (h : IsSolidTorusLinkNeighborhood f Φ)
     (g : ι → Circle × Circle ≃ₜ Circle × Circle) : TopCat :=
   attach (h.fillingAttach g)
 
-variable [Finite ι]
-
-/-- A Dehn filling space of the exterior of a link with finitely many components in a Hausdorff
-space is Hausdorff. -/
+/-- A Dehn filling space of a link exterior in a Hausdorff space is Hausdorff. -/
 instance (h : IsSolidTorusLinkNeighborhood f Φ) (g : ι → Circle × Circle ≃ₜ Circle × Circle) :
     T2Space (h.linkDehnFillingSpace g) :=
   t2Space_attach (h.fillingAttach g)
+
+variable [Finite ι]
 
 /-- A Dehn filling space of the exterior of a link with finitely many components in a compact
 space is compact. -/

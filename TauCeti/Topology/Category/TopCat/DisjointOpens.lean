@@ -22,7 +22,8 @@ subspace of the square of the Sierpiński space `Prop`. So these are the maps wi
 property with respect to the map from that space to a point, and the general theory of lifting
 properties shows that they are stable under cobase change, coproducts and transfinite composition.
 In particular a relative cell complex in `TopCat` whose cells extend disjoint open sets extends
-disjoint open sets.
+disjoint open sets. A map with a continuous retraction on a neighbourhood of its range extends
+disjoint open sets (`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn`).
 
 The application is to Hausdorffness of cell complexes: two points separated by open sets stay
 separated after a map which extends disjoint open sets.
@@ -155,6 +156,28 @@ theorem extendsDisjointOpens_iff {X Y : TopCat.{u}} (f : X ⟶ Y) :
     refine ⟨⟨⟨classify hU' hV' hUV', ?_, TopCat.isTerminalPUnit.hom_ext _ _⟩⟩⟩
     exact hom_ext_classifier (by rw [← preimage_setOf_fst, setOf_classify_fst, hU])
       (by rw [← preimage_setOf_snd, setOf_classify_snd, hV])
+
+/-- A map `m : X ⟶ Y` of `TopCat` extends disjoint open sets if it has a continuous retraction
+near its range, read through an inducing map `μ : X → Z`: a map `ρ : Y → Z` continuous on an open
+neighbourhood `N` of the range of `m`, sending `N` into the range of `μ`, with `ρ ∘ m = μ`. An open
+subset `μ ⁻¹' W` of `X` is then the trace of the open set `N ∩ ρ ⁻¹' W`, and these sets are
+disjoint over disjoint sets. For the boundary sphere of a disk, `ρ` is the radial projection. -/
+theorem extendsDisjointOpens_of_continuousOn {X Y : TopCat.{u}} {Z : Type*} [TopologicalSpace Z]
+    (m : X ⟶ Y) {μ : X → Z} (hμ : IsInducing μ) {N : Set Y} (hN : IsOpen N) {ρ : Y → Z}
+    (hρ : ContinuousOn ρ N) (hmN : ∀ x, m x ∈ N) (hρN : Set.MapsTo ρ N (Set.range μ))
+    (hρm : ∀ x, ρ (m x) = μ x) : extendsDisjointOpens m := by
+  rw [extendsDisjointOpens_iff]
+  intro U V hU hV hUV
+  obtain ⟨W, hW, rfl⟩ := hμ.isOpen_iff.1 hU
+  obtain ⟨W', hW', rfl⟩ := hμ.isOpen_iff.1 hV
+  refine ⟨N ∩ ρ ⁻¹' W, N ∩ ρ ⁻¹' W', hρ.isOpen_inter_preimage hN hW,
+    hρ.isOpen_inter_preimage hN hW', Set.disjoint_left.2 fun y hy hy' ↦ ?_, ?_, ?_⟩
+  · obtain ⟨x, hx⟩ := hρN hy.1
+    exact Set.disjoint_left.1 hUV (show μ x ∈ W from hx ▸ hy.2) (show μ x ∈ W' from hx ▸ hy'.2)
+  · ext x
+    simp [hmN, hρm]
+  · ext x
+    simp [hmN, hρm]
 
 /-- If two points of a Hausdorff space `X` are mapped by `f : X ⟶ Y` to distinct points and `f`
 extends disjoint open sets, then their images are separated by disjoint open sets of `Y`. -/
