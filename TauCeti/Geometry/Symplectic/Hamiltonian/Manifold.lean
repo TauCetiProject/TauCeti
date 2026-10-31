@@ -252,6 +252,12 @@ theorem contMDiff_hamiltonianVectorField {n : WithTop ℕ∞} (hn : n ≤ ∞)
   ((σ.contMDiff_flat.clm_bundle_inverse h.isInvertible_flat).of_le hn).clm_bundle_apply
     hf.contMDiff_totalSpaceMk_mvfderiv
 
+/-- The Hamiltonian vector field of a `C²` function is differentiable. -/
+theorem mdifferentiable_hamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f) :
+    MDifferentiable I I.tangent (fun y ↦ (σ.hamiltonianVectorField f y : TangentBundle I M)) :=
+  (h.contMDiff_hamiltonianVectorField (n := 1) (by simp) (by norm_num [hf])).mdifferentiable
+    one_ne_zero
+
 end IsNondegenerate
 
 /-! ### The Poisson bracket -/

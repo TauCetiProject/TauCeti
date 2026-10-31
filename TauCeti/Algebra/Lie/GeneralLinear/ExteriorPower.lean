@@ -21,6 +21,9 @@ vectors indexed by a finite set `S` of coordinates in a way read off from `S`: t
 it whenever `S` contains `i` as soon as it contains `j`. Over a nontrivial ring, for `d ≤ n`, this
 makes the wedge of the first `d` standard basis vectors in `Kⁿ` a highest-weight vector.
 
+These exterior powers are the fundamental modules of `gl_n` in highest-weight theory; the action
+of `sl₉` on `⋀³(K⁹)` also enters Vinberg's `ℤ/3`-graded model of `E₈`.
+
 ## Main definitions
 
 * `exteriorPower.glLieMap`: the action of matrices on an exterior power.
@@ -36,12 +39,6 @@ makes the wedge of the first `d` standard basis vectors in `Kⁿ` a highest-weig
   wedge of a set of standard basis vectors.
 * `exteriorPower.isGlHighestWeightVector_firstBasisWedge`: over a nontrivial ring, the first basis
   wedge is a highest-weight vector when `d ≤ n`.
-
-## Roadmap context
-
-The [highest-weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md)
-uses these exterior modules in two places: Layer 9 constructs the fundamental `gl_n` modules,
-while Layer 8 uses the `sl₉` action on `⋀³(K⁹)` in the Vinberg model of `E₈`.
 -/
 
 public section

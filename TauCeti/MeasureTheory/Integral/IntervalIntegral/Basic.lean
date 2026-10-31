@@ -28,6 +28,9 @@ not belong to any particular application.
   for a measure without mass at points is interval integrable between any two points of `[a, b]`.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
   with interval integrals, with no integrability assumption.
+* `MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max`: if `f` is locally integrable
+  on `[c, ∞)`, then its constant extension `x ↦ f (max x c)` is interval integrable on every
+  interval.
 -/
 
 public section
@@ -123,3 +126,20 @@ theorem ContinuousLinearEquiv.intervalIntegral_comp_comm {𝕜 E F : Type*} [RCL
     (L : E ≃L[𝕜] F) (f : ℝ → E) :
     ∫ x in a..b, L (f x) ∂μ = L (∫ x in a..b, f x ∂μ) := by
   simp_rw [intervalIntegral, L.integral_comp_comm, map_sub]
+
+/-- If `f` is locally integrable on `[c, ∞)` for a locally finite measure, then its constant
+extension `x ↦ f (max x c)` to all of `ℝ` is interval integrable between any two points. -/
+theorem MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max {E : Type*}
+    [NormedAddCommGroup E] {f : ℝ → E} {μ : Measure ℝ} [IsLocallyFiniteMeasure μ] {c : ℝ}
+    (hf : LocallyIntegrableOn f (Ici c) μ) (a b : ℝ) :
+    IntervalIntegrable (fun x ↦ f (max x c)) μ a b := by
+  suffices h : ∀ x, IntervalIntegrable (fun x ↦ f (max x c)) μ c x from (h a).symm.trans (h b)
+  intro x
+  rcases le_total c x with hx | hx
+  · refine IntegrableOn.intervalIntegrable ?_
+    rw [uIcc_of_le hx]
+    exact (hf.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).congr_fun
+      (fun y hy ↦ by rw [max_eq_left hy.1]) measurableSet_Icc
+  · refine (intervalIntegrable_const (c := f c)).congr fun y hy ↦ ?_
+    rw [uIoc_of_ge hx] at hy
+    simp only [max_eq_right hy.2]
