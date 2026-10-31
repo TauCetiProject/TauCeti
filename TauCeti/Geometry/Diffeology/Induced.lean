@@ -31,11 +31,15 @@ smooth spaces, such as the coarse spaces of finite quotient charts, to open subs
   quotient, for instance the orbit space of a group action, this says that the subspace
   diffeology on a subset of the quotient is the quotient diffeology of its preimage.
 
+An injective map whose source carries the induced diffeology is an induction
+(`TauCeti.Diffeology.IsInduction`), the diffeological counterpart of an embedding: it is a
+diffeomorphism onto its image with the subspace diffeology.
+
 ## References
 
 * P. Iglesias-Zemmour, *Diffeology*, Mathematical Surveys and Monographs **185**, American
-  Mathematical Society (2013), Chapter 1 for pullbacks of diffeologies and subspace diffeologies,
-  and Chapter 2 for the D-topology.
+  Mathematical Society (2013), Chapter 1 for pullbacks of diffeologies, subspace diffeologies and
+  inductions, and Chapter 2 for the D-topology.
 -/
 
 public noncomputable section
@@ -195,5 +199,67 @@ theorem IsSubduction.restrictPreimage [DiffeologicalSpace Q] {q : X → Q} (hq :
     refine ⟨v, hv, hzv, subset_univ v, lift', isPlotOn_subtype_iff.mpr
       (hlift.congr fun y hy ↦ by simp [hlift' y hy]), fun y hy ↦ Subtype.ext ?_⟩
     simpa [hlift' y hy] using hq' hy
+
+/-! ### Inductions -/
+
+section Induction
+
+variable [DiffeologicalSpace Y] [DiffeologicalSpace Z]
+
+/-- A map of diffeological spaces is an induction if it is injective and its source carries the
+diffeology induced by it: a map into the source is a plot exactly when its composite with the
+induction is a plot. Inductions are the embeddings of diffeological spaces: an induction is a
+diffeomorphism onto its image with the subspace diffeology (`IsInduction.dSmooth_ofInjective` and
+`IsInduction.dSmooth_ofInjective_symm`). See Iglesias-Zemmour, *Diffeology*, Chapter 1. -/
+structure IsInduction (f : Y → X) : Prop where
+  /-- An induction is injective. -/
+  injective : Injective f
+  /-- A map into the source of an induction is a plot exactly when its composite with the
+  induction is a plot. -/
+  isPlot_iff {n : ℕ} {p : 𝔼ⁿ → Y} :
+    _root_.Diffeology.IsPlot p ↔ _root_.Diffeology.IsPlot (f ∘ p)
+
+/-- A map is an induction exactly when it is injective and its source carries the diffeology
+induced by it. -/
+theorem isInduction_iff_eq_inducedDiffeology {f : Y → X} :
+    IsInduction f ↔ Injective f ∧ ‹DiffeologicalSpace Y› = inducedDiffeology f :=
+  ⟨fun hf ↦ ⟨hf.injective, by
+      ext; exact hf.isPlot_iff.trans (isPlot_inducedDiffeology_iff f).symm⟩,
+    fun ⟨hf, h⟩ ↦ ⟨hf, fun {_ _} ↦ by rw [h]; exact isPlot_inducedDiffeology_iff f⟩⟩
+
+/-- An induction is smooth. -/
+theorem IsInduction.dSmooth {f : Y → X} (hf : IsInduction f) : _root_.Diffeology.DSmooth f :=
+  fun _ _ hp ↦ hf.isPlot_iff.mp hp
+
+/-- A map into the source of an induction is smooth exactly when its composite with the
+induction is smooth. -/
+theorem IsInduction.dSmooth_iff {f : Y → X} (hf : IsInduction f) {g : Z → Y} :
+    _root_.Diffeology.DSmooth g ↔ _root_.Diffeology.DSmooth (f ∘ g) :=
+  ⟨hf.dSmooth.comp, fun h _ _ hp ↦ hf.isPlot_iff.mpr (h _ _ hp)⟩
+
+/-- A composite of inductions is an induction. -/
+theorem IsInduction.comp {f : Y → X} {g : Z → Y} (hf : IsInduction f) (hg : IsInduction g) :
+    IsInduction (f ∘ g) :=
+  ⟨hf.injective.comp hg.injective, fun {_ _} ↦ hg.isPlot_iff.trans hf.isPlot_iff⟩
+
+/-- The inclusion of a subtype with its subspace diffeology is an induction. -/
+theorem isInduction_subtype_val {P : X → Prop} : IsInduction (Subtype.val : Subtype P → X) :=
+  ⟨Subtype.val_injective, isPlot_subtype_iff⟩
+
+/-- An induction is smooth as a map onto its image with the subspace diffeology. -/
+theorem IsInduction.dSmooth_ofInjective {f : Y → X} (hf : IsInduction f) :
+    _root_.Diffeology.DSmooth (Equiv.ofInjective f hf.injective) :=
+  hf.dSmooth.subtype_mk fun y ↦ mem_range_self y
+
+/-- The inverse of an induction, defined on its image with the subspace diffeology, is smooth.
+Thus an induction is a diffeomorphism onto its image. -/
+theorem IsInduction.dSmooth_ofInjective_symm {f : Y → X} (hf : IsInduction f) :
+    _root_.Diffeology.DSmooth (Equiv.ofInjective f hf.injective).symm := by
+  refine fun _ p hp ↦ hf.isPlot_iff.mpr ?_
+  convert isPlot_subtype_iff.mp hp using 1
+  ext z
+  exact Equiv.apply_ofInjective_symm hf.injective (p z)
+
+end Induction
 
 end TauCeti.Diffeology
