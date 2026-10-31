@@ -45,7 +45,9 @@ angle `2θ`. The sign is forced by the Clifford relations:
   product `ι a * ι b` goes to `(a₀ + a₁ i) (b₀ - b₁ i)`.
 * `CliffordAlgebra.coe_realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_apply` and
   `CliffordAlgebra.realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_symm_apply`: the two
-  directions of the identification of `SO(2)` with the circle, in the complex coordinate.
+  directions of the identification of `SO(2)` with the circle, in the complex coordinate, with
+  the coordinate forms `realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_symm_apply_zero`
+  and `realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_symm_apply_one`.
 * `realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_spinToSpecialOrthogonal`:
   the Spin projection, which is the covering map `realCliffordSpinProjectionZero 2`, becomes
   `z ↦ z²`.
@@ -165,9 +167,9 @@ private theorem norm_planeValue (x : realCliffordSpinGroupZero 2) :
   have hx := coe_mem_evenOdd_zero x
   have h := congrArg planeValue (spinGroup.mul_star_self_of_mem x.2)
   rw [planeValue_mul_of_mem_even hx, star_def, involute_eq_of_mem_even hx,
-    planeValue_reverse_of_mem_even hx, mul_conj, planeValue_one, ofReal_eq_one,
-    normSq_eq_norm_sq, pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero] at h
-  exact h
+    planeValue_reverse_of_mem_even hx] at h
+  simpa [mul_conj, planeValue_one, normSq_eq_norm_sq, ← ofReal_pow,
+    pow_eq_one_iff_of_nonneg (norm_nonneg _)] using h
 
 /-- In complex coordinates, a Spin element `x` acts on the plane by multiplication by the square
 of its value. -/
@@ -223,9 +225,7 @@ private theorem ι_single_mul_ι_mem_realCliffordSpinGroupZero (z : Circle) :
     ι _ (Pi.single 0 1 : Fin (2 + 0) → ℝ) * ι _ (planeCoord.symm (conj (z : ℂ))) ∈
       realCliffordSpinGroupZero 2 :=
   ι_mul_ι_mem_spinGroup_of_norm_mul_norm_eq_one _ _ (by
-    rw [realCliffordForm_two_apply, realCliffordForm_two_apply, LinearEquiv.apply_symm_apply,
-      planeCoord_single_zero, map_one, one_mul, normSq_conj, normSq_eq_norm_sq, Circle.norm_coe,
-      one_pow])
+    simp [realCliffordForm_two_apply, normSq_eq_norm_sq])
 
 private theorem spinTwoToCircle_surjective : Function.Surjective spinTwoToCircle := fun z ↦
   ⟨⟨_, ι_single_mul_ι_mem_realCliffordSpinGroupZero z⟩, Circle.ext (by
@@ -372,8 +372,8 @@ theorem coe_realCliffordSpinTwoContinuousMulEquivCircle_symm_apply (z : Circle) 
   rw [hz]
   -- Reduce the coercion of the anonymous Spin element to its Clifford value.
   dsimp only
-  rw [hw, map_sub, map_smul, map_smul, mul_sub, mul_smul_comm, mul_smul_comm, ι_sq_scalar,
-    realCliffordForm_zero_single_one, map_one, Algebra.algebraMap_eq_smul_one]
+  simp [hw, mul_sub, ι_sq_scalar, realCliffordForm_zero_single_one,
+    Algebra.algebraMap_eq_smul_one]
 
 /-- The circle coordinate of a special orthogonal transformation `g` is the complex coordinate of
 `g e₀`. -/
@@ -389,6 +389,35 @@ theorem coe_realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_apply
     circleContinuousMulEquivSpecialOrthogonal_apply, planeCoord_circleToSpecialOrthogonal_apply,
     planeCoord_single_zero, mul_one]
 
+private theorem planeCoord_realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_symm_apply
+    (z : Circle) (m : Fin (2 + 0) → ℝ) :
+    planeCoord ((realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle.symm z :
+        (Fin (2 + 0) → ℝ) ≃ₗ[ℝ] (Fin (2 + 0) → ℝ)) m) = z * planeCoord m := by
+  rw [realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_symm_eq,
+    planeCoord_circleToSpecialOrthogonal_apply]
+
+/-- The first coordinate of the rotation of `m` by a point `z` of the circle is
+`Re z * m₀ - Im z * m₁`. -/
+@[simp]
+theorem realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_symm_apply_zero (z : Circle)
+    (m : Fin (2 + 0) → ℝ) :
+    (realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle.symm z :
+        (Fin (2 + 0) → ℝ) ≃ₗ[ℝ] (Fin (2 + 0) → ℝ)) m 0 =
+      (z : ℂ).re * m 0 - (z : ℂ).im * m 1 := by
+  simpa [planeCoord_apply] using congrArg re
+    (planeCoord_realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_symm_apply z m)
+
+/-- The second coordinate of the rotation of `m` by a point `z` of the circle is
+`Im z * m₀ + Re z * m₁`. -/
+@[simp]
+theorem realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_symm_apply_one (z : Circle)
+    (m : Fin (2 + 0) → ℝ) :
+    (realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle.symm z :
+        (Fin (2 + 0) → ℝ) ≃ₗ[ℝ] (Fin (2 + 0) → ℝ)) m 1 =
+      (z : ℂ).im * m 0 + (z : ℂ).re * m 1 := by
+  simpa [planeCoord_apply, add_comm] using congrArg im
+    (planeCoord_realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_symm_apply z m)
+
 /-- The special orthogonal transformation attached to a point `z` of the circle is multiplication
 by `z` in the complex coordinate `m ↦ m₀ + m₁ i`. -/
 theorem realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_symm_apply (z : Circle)
@@ -398,9 +427,7 @@ theorem realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_symm_apply (z :
       ((realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle.symm z :
         (Fin (2 + 0) → ℝ) ≃ₗ[ℝ] (Fin (2 + 0) → ℝ)) m 1 : ℂ) * I =
       z * ((m 0 : ℂ) + m 1 * I) := by
-  rw [← planeCoord_apply, ← planeCoord_apply,
-    realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_symm_eq,
-    planeCoord_circleToSpecialOrthogonal_apply]
+  apply Complex.ext <;> simp [add_comm]
 
 /-- **The real Spin double cover in dimension two is the squaring map of the circle.** Under the
 identifications of `Spin(2)` and `SO(2)` with the circle group, the Spin projection is `z ↦ z²`:
