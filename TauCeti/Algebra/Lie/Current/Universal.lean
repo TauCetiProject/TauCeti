@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Current.ContinuousCohomology
 public import TauCeti.Algebra.Lie.Current.Perfect
+public import TauCeti.Algebra.Lie.Extension.Topology
 public import TauCeti.Algebra.Lie.Perfect
 
 import TauCeti.Algebra.Lie.Killing.Basic
@@ -21,8 +22,10 @@ with values in an arbitrary vector space with trivial action, receives a unique 
 map from the scalar residue extension over the identity on currents.
 
 The existence theorem gives its full coordinate formula `(u, t) ↦ (u, t • z - f u)` with
-`f` a continuous one-cochain. In particular it supplies the continuity estimate needed to
-topologize this map: the correction vanishes on some high-order current subspace. The
+`f` a continuous one-cochain: the correction vanishes on some high-order current subspace.
+Consequently the unique map is continuous for the topologies of
+`TauCeti.Algebra.Lie.Extension.Topology`, in which the central kernels are discrete
+(`TauCeti.CurrentAlgebra.continuous_of_proj_comp_eq`). The
 coefficient space need not be finite-dimensional. Uniqueness holds among all Lie algebra
 maps over currents, without prescribing their restriction to the central kernel.
 
@@ -114,6 +117,40 @@ theorem existsUnique_residueExtensionLift
   simp only [bracket_ofTwoCocycle, hv₁, lie_zero, trivial_lie_zero, map_zero,
     sub_zero, add_zero]
   exact of_zero c
+
+/-- **The universal map is continuous.** Every Lie algebra map over the identity on currents
+from the nonzero scalar residue extension to an extension represented by a continuous two-cocycle
+with arbitrary trivial coefficients is continuous, for the topologies in which the central kernels
+are discrete. -/
+theorem continuous_of_proj_comp_eq
+    (hspan : ∀ Ψ : LinearMap.BilinForm K L, Ψ.lieInvariant L → ∃ t : K, Ψ = t • Φ)
+    (hne : ∃ x y z : L, Φ ⁅x, y⁆ z ≠ 0) (c : twoCocycle K C TZ)
+    (hc : (c : twoCochain K C TZ) ∈ continuousTwoCocycle K C TZ)
+    {F : ofTwoCocycle cΦ →ₗ⁅K⁆ ofTwoCocycle c}
+    (hF : (ofTwoCocycle.proj c).comp F = ofTwoCocycle.proj cΦ) : Continuous F := by
+  obtain ⟨z, f, N, hN, G, hG⟩ := exists_residueExtensionLift hΦ hΦs hspan hne c hc
+  obtain ⟨_, -, huniq⟩ := existsUnique_residueExtensionLift hΦ hΦs hspan hne c hc
+  have hv (v : ofTwoCocycle cΦ) : (ofProd c).symm (G v) = (((ofProd cΦ).symm v).1,
+      (TrivialLieModule.equiv K C Z).symm
+        ((TrivialLieModule.equiv K C K ((ofProd cΦ).symm v).2) • z) -
+        f ((ofProd cΦ).symm v).1) := by
+    obtain ⟨⟨u, t⟩, rfl⟩ := (ofProd cΦ).surjective v
+    simp [hG]
+  -- `F` is the explicit map `G`, whose central coordinate is locally constant because `f`
+  -- vanishes on an open subgroup of currents.
+  have hGp : (ofTwoCocycle.proj c).comp G = ofTwoCocycle.proj cΦ :=
+    LieHom.ext fun v ↦ by simp [hv]
+  rw [(huniq F hF).trans (huniq G hGp).symm]
+  let : TopologicalSpace TZ := ⊥
+  have : DiscreteTopology TZ := ⟨rfl⟩
+  have hf := mem_continuousOneCochain_iff_continuous.mp
+    (mem_continuousOneCochain_iff_orderSubmodule.mpr ⟨N, hN⟩)
+  have hp := (ofTwoCocycle.continuous_iff.mp (continuous_id' (X := ofTwoCocycle cΦ))).1
+  refine ofTwoCocycle.continuous_iff.mpr ⟨by simpa [hv] using hp, ?_⟩
+  rw [IsLocallyConstant.iff_continuous]
+  simp only [hv]
+  exact ((ofTwoCocycle.isLocallyConstant_snd cΦ).comp fun t ↦ (TrivialLieModule.equiv K C Z).symm
+    (TrivialLieModule.equiv K C K t • z)).continuous.sub (hf.comp hp)
 
 /-- For a simple Lie algebra over an algebraically closed field of characteristic zero,
 the Killing residue extension has a unique map over currents into every continuous
