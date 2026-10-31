@@ -29,15 +29,18 @@ in the copyright header. J. Xu is acknowledged for the surrounding LutzNagell de
 authors `Universal.lean` and co-authors `DivisionPolynomialOmega.lean` at the same revision — as
 context for this port, not as an author of the declarations above.
 
-**Adaptations:** converted to this repository's module system, placed in the root namespace
-next to Mathlib's `normEDS_four`, and restated for Mathlib's current names — the source predates
-the rename of `compl₂EDS` to `complEDS₂` and of `normEDS_mul_compl₂EDS` to
+**Adaptations:** converted to this repository's module system, placed in the `TauCeti`
+namespace as `TauCeti.normEDS_six` (its arguments are ring elements, so no Mathlib type's
+namespace would give it dot notation), and restated for Mathlib's current names — the source
+predates the rename of `compl₂EDS` to `complEDS₂` and of `normEDS_mul_compl₂EDS` to
 `normEDS_mul_complEDS₂`. The source unfolds `compl₂EDS` and re-evaluates it at `3` from the
 `preNormEDS` values; Mathlib now has the `@[simp]` lemma `complEDS₂_three`, so that evaluation is
 done by `simp`.
 -/
 
 public section
+
+namespace TauCeti
 
 variable {R : Type*} [CommRing R] (b c d : R)
 
@@ -49,5 +52,7 @@ theorem normEDS_six : normEDS b c d 6 = (normEDS b c d 5 - d ^ 2) * b * c := by
   have h := normEDS_mul_complEDS₂ b c d 3
   simp [normEDS, Int.even_iff] at h ⊢
   linear_combination -h
+
+end TauCeti
 
 end
