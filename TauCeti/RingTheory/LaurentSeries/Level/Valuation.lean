@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.RamificationInertia.Ramification
 public import Mathlib.RingTheory.Valuation.Extension
 public import TauCeti.RingTheory.LaurentSeries.Level.Basis
 public import TauCeti.RingTheory.LaurentSeries.ValuationRing
+public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 public import TauCeti.RingTheory.Valuation.Discrete.Order
 
 /-!
@@ -233,15 +234,9 @@ theorem map_maximalIdeal :
 /-- The ramification index of the level over `K⸨X⸩` is `d`. -/
 theorem ramificationIdx_maximalIdeal :
     (maximalIdeal (valuation K d).valuationSubring).ramificationIdx
-      (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).valuationSubring = d := by
-  have hm : maximalIdeal (valuation K d).valuationSubring ≠ ⊥ :=
-    IsDiscreteValuationRing.not_a_field _
-  have hmap : (maximalIdeal (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).valuationSubring).map
-      (Algebra.algebraMap _ (valuation K d).valuationSubring) ≠ ⊥ := by
-    rw [map_maximalIdeal, ← Ideal.zero_eq_bot]
-    exact pow_ne_zero _ hm
-  rw [Ideal.IsDedekindDomain.ramificationIdx_eq_multiplicity _ _ hmap, map_maximalIdeal,
-    multiplicity_pow_self_of_prime (Ideal.prime_of_isPrime hm inferInstance)]
+      (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).valuationSubring = d :=
+  TauCeti.IsDiscreteValuationRing.ramificationIdx_eq_of_map_maximalIdeal_eq_pow
+    (map_maximalIdeal K d)
 
 variable {K d} in
 /-- Every integer of the level is congruent modulo `u` to the image of an integer of `K⸨X⸩`,
