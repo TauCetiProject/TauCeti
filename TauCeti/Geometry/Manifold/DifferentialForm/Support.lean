@@ -114,6 +114,12 @@ theorem isCompact_tsupport_add [ContinuousAdd F] {φ ψ : RoughForm I X F k}
   -- function with the fixed codomain from which `HasCompactSupport.add` infers its argument.
   HasCompactSupport.add (f := (show X → E [⋀^Fin k]→L[ℝ] F from φ)) hφ hψ
 
+/-- A pullback vanishes at every point where the form vanishes at the image point. -/
+theorem mpullback_apply_eq_zero {f : X → Y} {φ : RoughForm I' Y F k} {x : X} (h : φ (f x) = 0) :
+    mpullback I I' f φ x = 0 := by
+  ext v
+  simp [mpullback_apply, h]
+
 /-- The topological support of a pullback is contained in the preimage of the original support. -/
 theorem tsupport_mpullback_subset_preimage {f : X → Y} (hf : Continuous f)
     (φ : RoughForm I' Y F k) :
@@ -124,10 +130,7 @@ theorem tsupport_mpullback_subset_preimage {f : X → Y} (hf : Continuous f)
   intro x hx
   apply subset_tsupport (α := E' [⋀^Fin k]→L[ℝ] F) φ
   intro hφ
-  apply hx
-  ext v
-  simp [mpullback_apply, hφ]
-  rfl
+  exact hx (mpullback_apply_eq_zero hφ)
 
 /-- Pullback by a proper map preserves compact topological support. -/
 theorem isCompact_tsupport_mpullback {f : X → Y} (hf : IsProperMap f)
