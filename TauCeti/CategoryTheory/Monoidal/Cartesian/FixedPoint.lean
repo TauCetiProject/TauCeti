@@ -68,11 +68,13 @@ theorem isFixedPoint_iff_forall_smul [ModObj G X] {x : 𝟙_ C ⟶ X} :
   · rw [isFixedPoint_iff, ← Category.id_comp (orbitMap G x), comp_orbitMap, h]
 
 /-- A test-object point of `G` fixes the restriction of a fixed point. -/
+@[simp]
 theorem IsFixedPoint.smul_eq [ModObj G X] {x : 𝟙_ C ⟶ X} (hx : IsFixedPoint G x) {T : C}
     (g : T ⟶ G) : g • (toUnit T ≫ x) = toUnit T ≫ x :=
   isFixedPoint_iff_forall_smul.mp hx g
 
 /-- A global point of `G` fixes a fixed point. -/
+@[simp]
 theorem IsFixedPoint.smul_eq_self [ModObj G X] {x : 𝟙_ C ⟶ X} (hx : IsFixedPoint G x)
     (g : 𝟙_ C ⟶ G) : g • x = x := by
   simpa only [toUnit_unit, Category.id_comp] using hx.smul_eq g
