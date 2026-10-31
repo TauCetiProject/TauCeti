@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
 public import Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms
+public import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
 
 /-!
 # Normal forms: transport, changes of variables, and elementary consequences
@@ -27,6 +28,10 @@ change of variables carrying one short equation to another is a pure scaling
 `(x, y) ↦ (u²x, u³y)`: its `r`, `s` and `t` vanish, so it acts on the coefficients by
 `(a₄, a₆) ↦ (u⁻⁴a₄, u⁻⁶a₆)`. This is the only freedom left in a short equation, and it is what a
 canonical short equation has to normalise away.
+
+**An integral short equation.** When `2` and `3` are invertible, completing the square and the
+cube and then scaling by `u⁻¹ = 6` carries any curve to `y² = x³ - 27c₄x - 54c₆`, an equation
+whose coefficients are polynomials in `c₄` and `c₆` with integer coefficients.
 
 **Split quadratic part.** If `a₃ = a₄ = 0` and `T² + a₁ T - a₂ = (T - α) (T - β)`, the
 equation factors as `(y - α x) (y - β x) = x³ + a₆`. This identity holds over any commutative
@@ -56,6 +61,8 @@ re-established by hand at every such crossing.
 * `WeierstrassCurve.variableChange_a₄_of_isShortNF` and
   `WeierstrassCurve.variableChange_a₆_of_isShortNF`: it acts on the coefficients by
   `(a₄, a₆) ↦ (u⁻⁴a₄, u⁻⁶a₆)`.
+* `WeierstrassCurve.exists_variableChange_smul_eq_c₄_c₆`: when `2` and `3` are invertible, a
+  change of variables with `u⁻¹ = 6` carries every curve to `y² = x³ - 27c₄x - 54c₆`.
 * `WeierstrassCurve.Affine.equation_iff_mul`: factor the equation when the quadratic part
   splits and `a₃ = a₄ = 0`.
 * `WeierstrassCurve.y_eq_zero_of_order_two`: in a characteristic-≠-2 normal form, an affine
@@ -151,6 +158,41 @@ lemma variableChange_a₆_of_isShortNF (h2 : IsRegular (2 : R)) (h3 : IsRegular 
   ring
 
 end ShortNF
+
+/-! ### An integral short equation after inverting `2` and `3`
+
+Completing the square and the cube moves `W` to a short equation with `a₄ = -c₄ / 48` and
+`a₆ = -c₆ / 864`; scaling it by `u⁻¹ = 6` clears these denominators. -/
+
+section IntegralShortNF
+
+variable [Invertible (2 : R)] [Invertible (3 : R)]
+
+/-- When `2` and `3` are invertible, every Weierstrass curve is carried to the short equation
+`y² = x³ - 27c₄x - 54c₆` by a change of variables with `u⁻¹ = 6`. The coefficients of this
+equation are integral polynomials in the invariants `c₄` and `c₆` of `W`. -/
+theorem exists_variableChange_smul_eq_c₄_c₆ :
+    ∃ C : VariableChange R, (↑C.u⁻¹ : R) = 6 ∧
+      C • W = shortCurve (-27 * W.c₄) (-54 * W.c₆) := by
+  have h6 : (6 : R) * (⅟2 * ⅟3) = 1 := by
+    rw [show (6 : R) = 2 * 3 by norm_num, mul_mul_mul_comm, mul_invOf_self, mul_invOf_self,
+      mul_one]
+  let u : Rˣ := ⟨6, ⅟2 * ⅟3, h6, by rw [mul_comm, h6]⟩
+  have hu : W.toShortNF.u = 1 := by simp [toShortNF, toCharNeTwoNF, VariableChange.mul_def]
+  refine ⟨⟨u⁻¹, 0, 0, 0⟩ * W.toShortNF, by simp [VariableChange.mul_def, hu, u], ?_⟩
+  -- The short equation `V` has the invariants of `W`, which are `-48 a₄` and `-864 a₆`.
+  rw [mul_smul]
+  set V := W.toShortNF • W
+  have h₄ : W.c₄ = -48 * V.a₄ := by
+    rw [← c₄_of_isShortNF, variableChange_c₄, hu, inv_one, Units.val_one, one_pow, one_mul]
+  have h₆ : W.c₆ = -864 * V.a₆ := by
+    rw [← c₆_of_isShortNF, variableChange_c₆, hu, inv_one, Units.val_one, one_pow, one_mul]
+  have : V.IsShortNF := W.toShortNF_spec
+  clear_value V
+  rw [← shortCurve_a₄_a₆ V, smul_shortCurve, h₄, h₆]
+  congr 1 <;> simp [u] <;> ring
+
+end IntegralShortNF
 
 /-- With `a₃ = a₄ = 0` and `T² + a₁ T - a₂ = (T - α) (T - β)`, the Weierstrass equation reads
 `(y - α x) (y - β x) = x³ + a₆`. The constant coefficient is arbitrary and the roots may

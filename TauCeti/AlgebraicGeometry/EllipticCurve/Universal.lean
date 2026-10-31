@@ -56,6 +56,8 @@ commutative ring is the base change of that curve.
   of `pointedCurve` — the universal curve really is pointed.
 * `WeierstrassCurve.map_specialize`: every Weierstrass curve is a specialization of the universal
   one.
+* `WeierstrassCurve.specialize_curve`, `specialize_map`: `specialize` is the identity on the
+  universal curve and is natural in the base.
 * `WeierstrassCurve.specialize_Δ`, `specialize_c₄`, `specialize_c₆`: `specialize` sends the
   discriminant and the invariants `c₄`, `c₆` of the universal curve to those of `W`.
 * `WeierstrassCurve.specialize_mk_smul`: the scaling `(u, 0, 0, 0)` multiplies the coordinate
@@ -386,6 +388,17 @@ lemma specialize_X (i : Coeff) :
 /-- Every Weierstrass curve is a specialization of the universal Weierstrass curve. -/
 @[simp]
 lemma map_specialize : Universal.curve.map W.specialize = W := by ext <;> simp
+
+/-- The specialization at the universal Weierstrass curve is the identity homomorphism. -/
+@[simp]
+lemma specialize_curve : Universal.curve.specialize = RingHom.id _ :=
+  MvPolynomial.ringHom_ext (fun n ↦ by simp) fun i ↦ by cases i <;> simp
+
+/-- Specialization is natural in the base: the specialization at `W.map f` is `f` composed with
+the specialization at `W`. -/
+lemma specialize_map {S : Type*} [CommRing S] (f : R →+* S) :
+    (W.map f).specialize = f.comp W.specialize :=
+  MvPolynomial.ringHom_ext (fun n ↦ by simp) fun i ↦ by cases i <;> simp
 
 /-- `specialize` sends the discriminant of the universal curve to the discriminant of `W`. -/
 @[simp]
