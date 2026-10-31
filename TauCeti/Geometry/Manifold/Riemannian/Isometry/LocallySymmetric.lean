@@ -105,6 +105,7 @@ theorem mfderiv_derivCurvatureTensor (hf : IsLocalRiemannianIsometry I J f) (x :
 
 /-- A local Riemannian isometry preserves the covariant derivative of the Ricci tensor:
 `(∇_{df_x v} Ric)(df_x u, df_x w) = (∇_v Ric)(u, w)`. -/
+@[simp]
 theorem derivRicciTensor_mfderiv (hf : IsLocalRiemannianIsometry I J f) (x : M)
     (u w v : TangentSpace I x) :
     (leviCivitaConnection J N).derivRicciTensor (f x) (mfderiv I J f x u) (mfderiv I J f x w)

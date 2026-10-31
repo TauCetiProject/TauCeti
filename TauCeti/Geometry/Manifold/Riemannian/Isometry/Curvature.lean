@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # Curvature under Riemannian isometries
@@ -135,18 +134,6 @@ theorem curvatureOperator_mpullback (hf : IsLocalRiemannianIsometry I J f)
     (hf.mfderiv_curvatureOperator_mpullback hX hY hZ x).symm).symm
 
 variable [T2Space M] [T2Space N]
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle J ∞ F (fun y : N ↦ TangentSpace J y)] in
-/-- Every tangent vector `u` at `x` is the value at `x` of the pullback of a smooth vector field
-on `N`, namely of any smooth field taking the value `df_x u` at `f x`. -/
-theorem exists_contMDiff_mpullback_apply_eq (hf : IsLocalRiemannianIsometry I J f) {x : M}
-    (u : TangentSpace I x) :
-    ∃ X : Π y : N, TangentSpace J y,
-      CMDiff ∞ (T% X) ∧ mpullback I J f X x = u ∧ X (f x) = mfderiv I J f x u := by
-  obtain ⟨X, hX, hXu⟩ := exists_contMDiff_section_eq J F (mfderiv I J f x u)
-  exact ⟨X, hX, (hf.mpullback_apply_eq_iff X u).2 hXu, hXu⟩
 
 /-- **Naturality of the Riemann curvature tensor under local Riemannian isometries:**
 `df_x (R(u, v) w) = R(df_x u, df_x v) (df_x w)`. -/
