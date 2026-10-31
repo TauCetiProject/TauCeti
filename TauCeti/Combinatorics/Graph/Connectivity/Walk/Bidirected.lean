@@ -66,6 +66,15 @@ instance [Finite E(G)] (x y : V(G)) : Finite (G.BidirectedHom x y) :=
   Finite.of_injective (fun e ↦ (⟨e.1, e.2.edge_mem⟩ : E(G))) fun _ _ h ↦
     Subtype.ext (Subtype.mk.inj h)
 
+/-- Changing the endpoints of a bidirected arrow does not change its underlying edge. -/
+@[simp]
+theorem BidirectedHom.fst_cast {x y x' y' : V(G)} (a : G.BidirectedHom x y)
+    (hx : x = x') (hy : y = y') :
+    (@Quiver.Hom.cast G.vertexSet (Quiver.mk G.BidirectedHom) x y x' y' hx hy a).1 = a.1 := by
+  cases hx
+  cases hy
+  rfl
+
 variable {G}
 
 /-- The arrow of the bidirected arrow family given by an edge linking `x` to `y`. -/
@@ -195,6 +204,18 @@ theorem bidirectedEquiv_apply {x y : V(G)} (p : G.Walk x y) :
 theorem bidirectedEquiv_symm_apply {x y : V(G)} (q : ArrowWalk G.BidirectedHom x y) :
     (bidirectedEquiv G x y).symm q = q.toGraphWalk :=
   (rfl)
+
+/-- Changing the endpoints of a directed walk before forgetting directions changes the endpoints
+of the resulting graph walk by the underlying equalities. -/
+@[simp]
+theorem _root_.TauCeti.ArrowWalk.toGraphWalk_cast {x y x' y' : V(G)}
+    (q : ArrowWalk G.BidirectedHom x y) (hx : x = x') (hy : y = y') :
+    @TauCeti.ArrowWalk.toGraphWalk α β G x' y'
+      (@Quiver.Path.cast G.vertexSet (Quiver.mk G.BidirectedHom) x y x' y' hx hy q) =
+      q.toGraphWalk.copy (congrArg Subtype.val hx) (congrArg Subtype.val hy) := by
+  cases hx
+  cases hy
+  simp
 
 /-! ### Transport of lengths, vertices, edges, paths, and cycles -/
 
