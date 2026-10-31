@@ -47,8 +47,6 @@ functions form the approximate identity of `C_c(G, A)` used to construct the cro
 
 ## Main statements
 
-* `TauCeti.CStarAction.ConvolutionAlgebra.ofConv_mul_smulRight_apply`: the formula for
-  `f ⋆ (φ ⊗ e)` after the substitution `r = s * t⁻¹`.
 * `TauCeti.CStarAction.ConvolutionAlgebra.tendsto_smulRight_mul`: `(φ ⊗ e) ⋆ f → f`.
 * `TauCeti.CStarAction.ConvolutionAlgebra.tendsto_mul_smulRight`: `f ⋆ (φ ⊗ e) → f`.
 * `TauCeti.CStarAction.ConvolutionAlgebra.isApproximateUnit_map_smulRight`: the elementary
@@ -127,27 +125,6 @@ private theorem three_mul_mul_lt {ε m : ℝ} (hε : 0 < ε) (hm : 0 ≤ m) :
   rw [mul_div_assoc', mul_div_mul_left _ _ three_ne_zero, div_mul_eq_mul_div,
     div_lt_iff₀ (by positivity)]
   nlinarith
-
-/-- The right product with an elementary function, after substituting `r = s * t⁻¹`:
-`(f ⋆ (φ ⊗ e)) s = ∫ t, φ t • c(t) • (f (s * t⁻¹) * α (s * t⁻¹) e) ∂μ`. -/
-theorem ofConv_mul_smulRight_apply [IsTopologicalGroup G] [LocallyCompactSpace G]
-    [BorelSpace G] [μ.IsHaarMeasure] (f : ConvolutionAlgebra α μ)
-    (φ : C_c(G, ℝ)) (e : A) (s : G) :
-    (f * smulRight φ e).ofConv s = ∫ t, φ t • (Measure.modularCharacter t : ℝ) •
-      (f.ofConv (s * t⁻¹) * α (s * t⁻¹) e) ∂μ := by
-  set g := f.ofConv
-  have hinv := integral_inv_eq_integral_modularCharacter_smul (μ := μ)
-    (f := fun t => φ t • (g (s * t⁻¹) * α (s * t⁻¹) e)) (by fun_prop)
-    φ.hasCompactSupport.smul_right
-  simp only [inv_inv] at hinv
-  calc (f * smulRight φ e).ofConv s = ∫ r, φ (r⁻¹ * s) • (g r * α r e) ∂μ := by
-        simp only [ofConv_mul, convolution_apply, ofConv_smulRight_apply, g]
-        congr 1 with r
-        rw [← Complex.coe_smul, map_smul, Complex.coe_smul, mul_smul_comm]
-    _ = ∫ t, φ t⁻¹ • (g (s * t) * α (s * t) e) ∂μ := by
-        rw [← integral_mul_left_eq_self _ s]
-        simp [mul_inv_rev, mul_assoc]
-    _ = _ := by rw [hinv]; simp_rw [smul_comm (Measure.modularCharacter _ : ℝ) (φ _)]
 
 variable [PartialOrder A] [IsTopologicalGroup G] [LocallyCompactSpace G]
   [OpensMeasurableSpace G]
