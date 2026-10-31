@@ -127,12 +127,12 @@ variable {T : Type*} [AddGroup T]
 /-- The affine equivalence of an additive group with linear part `A` and translation
 part `t`, sending `x` to `A x + t`.
 
-Its inverse sends `y` to `A⁻¹ (y - t)`. It is an additive homomorphism only when `t = 0`. As an
-affine self-map of the `ℤ`-module `T` it is the affine equivalence with linear part
-`A.toIntLinearEquiv` and base points `0` and `t` (so `0 ↦ t`), which Mathlib provides as
-`AffineEquiv.ofLinearEquiv`, and it is the element of the group `AffineEquiv` with those data. It is
-recorded here as a permutation of `T`, because the iterates, the order and the action of `ZMod m`
-below are those of the underlying permutation. -/
+Its inverse sends `y` to `A⁻¹ (y - t)`. It is an additive homomorphism only when `t = 0`. When `T`
+is moreover an additive commutative group, hence a `ℤ`-module, it is, as an affine self-map of `T`,
+the affine equivalence with linear part `A.toIntLinearEquiv` and base points `0` and `t`
+(so `0 ↦ t`), which Mathlib provides as `AffineEquiv.ofLinearEquiv`, and it is the element of the
+group `AffineEquiv` with those data. It is recorded here as a permutation of `T`, because the
+iterates, the order and the action of `ZMod m` below are those of the underlying permutation. -/
 def affineEquiv (A : T ≃+ T) (t : T) : T ≃ T :=
   (A : T ≃ T).trans (Equiv.addRight t)
 
