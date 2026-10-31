@@ -65,6 +65,21 @@ namespace MonomialOrder
 
 variable {σ R : Type*} (m : MonomialOrder σ)
 
+/-- Two monomial orders give the same leading exponent of `f` if every other exponent in its
+support remains strictly below its original leading exponent. -/
+theorem degree_eq_of_forall_lt [CommSemiring R] (n : MonomialOrder σ)
+    (f : MvPolynomial σ R)
+    (h : ∀ a ∈ f.support, a ≠ m.degree f → a ≺[n] m.degree f) :
+    n.degree f = m.degree f := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  apply n.toSyn.injective
+  refine le_antisymm (n.degree_le_iff.2 fun a ha ↦ ?_)
+    (n.le_degree (m.degree_mem_support hf))
+  rcases eq_or_ne a (m.degree f) with rfl | hne
+  · exact le_rfl
+  · exact (h a ha hne).le
+
 /-- The `WithBot` degree of a polynomial is at most its degree. -/
 theorem toWithBotSyn_withBotDegree_le_toSyn_degree [CommSemiring R] (p : MvPolynomial σ R) :
     m.toWithBotSyn (m.withBotDegree p) ≤ m.toSyn (m.degree p) := by
