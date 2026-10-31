@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
-public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
 public import TauCeti.LinearAlgebra.Projectivization.OnePoint
