@@ -67,9 +67,9 @@ reconstruction from hom-space dimensions returns to the finite-dimensional `k`-a
   finitely generated semisimple module `M` to a simple module `S` number `#End(S) ^ [M : S]`.
 * `TauCeti.natCard_linearMap_pi_eq_prod_pow`: maps from `M` into a finite product of simple
   modules `N i` number `∏ i, #End(N i) ^ [M : N i]`.
-* `TauCeti.IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq`: over any ring,
+* `IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq`: over any ring,
   finitely generated semisimple modules with the same Jordan-Hölder multiplicities are isomorphic.
-* `TauCeti.IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq`: over any ring,
+* `IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq`: over any ring,
   finite semisimple modules `M` and `N` with `#Hom(M, N) · #Hom(N, M) = #End(M) · #End(N)` are
   isomorphic.
 * `TauCeti.finrank_linearMap_pos_iff_exists_nonempty_linearEquiv`: the multiplicity is positive
@@ -324,7 +324,7 @@ variable {R : Type u} [Ring R]
 /-- A finitely generated semisimple module is a finite product of quotients of the ring by maximal
 left ideals. This is `IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp` with each simple summand
 replaced by an isomorphic cyclic module, so that all the factors live in the universe of `R`. -/
-theorem IsSemisimpleModule.exists_linearEquiv_pi_quotient (M : Type v) [AddCommGroup M]
+theorem _root_.IsSemisimpleModule.exists_linearEquiv_pi_quotient (M : Type v) [AddCommGroup M]
     [Module R M] [IsSemisimpleModule R M] [Module.Finite R M] :
     ∃ (n : ℕ) (m : Fin n → Ideal R), (∀ i, (m i).IsMaximal) ∧
       Nonempty (M ≃ₗ[R] ∀ i, R ⧸ m i) := by
@@ -396,7 +396,7 @@ module is isomorphic to a quotient of `R`.
 Over a semisimple ring this is `TauCeti.nonempty_linearEquiv_pi_of_natCard_eq`, where the simple
 modules are indexed by the simple left ideals of `R`; in general a simple module need not embed in
 `R`, and the factors are matched by isomorphism directly. -/
-theorem IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq
+theorem _root_.IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq
     (M : Type v) (N : Type w) [AddCommGroup M] [Module R M] [IsSemisimpleModule R M]
     [Module.Finite R M] [AddCommGroup N] [Module R N] [IsSemisimpleModule R N]
     [Module.Finite R N]
@@ -445,7 +445,7 @@ Writing `a_S` and `b_S` for the multiplicities of a simple module `S` in `M` and
 `∏ q_S ^ (a_S ^ 2)` and `∏ q_S ^ (b_S ^ 2)`, so the hypothesis says `∏ q_S ^ ((a_S - b_S) ^ 2) = 1`.
 This form of the comparison applies when only maps between `M` and `N` themselves can be counted,
 for instance when `M` and `N` are reductions of lattices whose hom modules are known. -/
-theorem IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq
+theorem _root_.IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq
     (M : Type v) (N : Type w) [AddCommGroup M] [Module R M] [IsSemisimpleModule R M]
     [Finite M] [AddCommGroup N] [Module R N] [IsSemisimpleModule R N] [Finite N]
     (h : Nat.card (M →ₗ[R] N) * Nat.card (N →ₗ[R] M) =

@@ -156,6 +156,12 @@ private theorem signlessArrow_fork_eq_zero {i j : ℕ}
     signlessArrow k G i j = 0 :=
   signlessArrow_eq_zero k fun _ _ hij => h ((hG _ _).1 hij)
 
+omit hn in
+/-- The long arm has no step away from the branch node beyond its far end. -/
+private theorem forkUp_self_eq_zero : forkUp k G c c = 0 := by
+  simp only [forkUp, Nat.sub_self, Nat.zero_sub]
+  exact signlessArrow_fork_eq_zero k hG (by omega)
+
 /-- **The ladder relations of the long arm.** At every vertex of the long arm other than the
 branch node, the backtrack away from the branch node cancels the backtrack towards it. -/
 private theorem forkDown_mul_forkUp_add (w : ℕ) :
@@ -218,23 +224,19 @@ private theorem forkTurn_add_eq_neg_forkDown_mul_forkUp :
 private theorem forkTurn_add_pow_eq_zero :
     (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (c + 1) = 0 := by
   -- The backtrack into the long arm is nilpotent, since the long arm has `c` rungs.
-  have hq : (forkDown k G c 0 * forkUp k G c 0) ^ (c + 1) = 0 := by
-    refine pow_d_mul_u_eq_zero (forkDown_mul_forkUp_add k hn hG) ?_
-    exact signlessArrow_fork_eq_zero k hG (by omega)
+  have hq : (forkDown k G c 0 * forkUp k G c 0) ^ (c + 1) = 0 :=
+    pow_d_mul_u_eq_zero (forkDown_mul_forkUp_add k hn hG) (forkUp_self_eq_zero k hG)
   rw [forkTurn_add_eq_neg_forkDown_mul_forkUp k hn hG, neg_pow, hq, mul_zero]
 
 /-- The first long-arm arrow kills the `c`-th power of the sum of the leaf backtracks. -/
 private theorem forkUp_mul_forkTurn_add_pow_eq_zero (hc : 0 < c) :
     forkUp k G c 0 * (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ c = 0 := by
   have hrel (r : ℕ) := forkDown_mul_forkUp_add k hn hG r
-  have hend : forkUp k G c c = 0 := by
-    simp only [forkUp, Nat.sub_self, Nat.zero_sub]
-    exact signlessArrow_fork_eq_zero k hG (by omega)
   have hshift : (forkDown k G c 1 * forkUp k G c 1) ^ c = 0 := by
     have h := pow_d_mul_u_eq_zero
       (u := fun r => forkUp k G c (r + 1)) (d := fun r => forkDown k G c (r + 1))
       (fun r => hrel (r + 1)) (N := c - 1)
-      (by simpa only [Nat.sub_add_cancel hc] using hend)
+      (by simpa only [Nat.sub_add_cancel hc] using forkUp_self_eq_zero k hG)
     simpa only [zero_add, Nat.sub_add_cancel hc] using h
   have hu : forkUp k G c 0 * (forkDown k G c 0 * forkUp k G c 0) ^ c = 0 := by
     rw [← mul_pow_mul, eq_neg_of_add_eq_zero_right (hrel 0), neg_pow, hshift,

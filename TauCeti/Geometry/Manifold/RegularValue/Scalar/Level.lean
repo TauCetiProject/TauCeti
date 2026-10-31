@@ -517,4 +517,25 @@ theorem range_mfderiv_coe_scalarRegularLevel [IsManifold I 1 M] (x : {x : M // f
   rw [LinearMap.finrank_range_of_inj (hι.mfderiv_injective one_ne_zero)]
   omega
 
+/-- **Two defining functions of a regular level have the same tangent kernels.** If the regular
+level `f⁻¹(c)` of a function which is `C¹` near the level is contained in the level `g⁻¹(c')` of a
+second function, then `ker dg_x = ker df_x` at each of its points `x` which is a regular point of
+`g`. -/
+theorem ker_mfderiv_eq_of_forall_eq_imp [IsManifold I 1 M]
+    (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(ℝ) 1 f x) (hreg : IsRegularValue I 𝓘(ℝ) f c)
+    {g : M → ℝ} {c' : ℝ} (hfg : ∀ x, f x = c → g x = c') {x : M} (hx : f x = c)
+    (hgx : IsRegularPoint I 𝓘(ℝ) g x) :
+    (mfderiv I 𝓘(ℝ) g x).ker = (mfderiv I 𝓘(ℝ) f x).ker := by
+  let := scalarRegularLevelChartedSpace hf hreg
+  -- The tangent space of the level, the range of the differential of its inclusion, is `ker df`
+  -- and lies in `ker dg`, since `g` is constant on the level.
+  have hle : (mfderiv I 𝓘(ℝ) f x).ker ≤ (mfderiv I 𝓘(ℝ) g x).ker := by
+    rw [← range_mfderiv_coe_scalarRegularLevel hf hreg (⟨x, hx⟩ : {x : M // f x = c})]
+    exact range_mfderiv_le_ker_mfderiv_of_eventually_eq
+      (.of_forall fun y : {x : M // f x = c} ↦ hfg y y.2)
+  refine (Submodule.eq_of_le_of_finrank_eq hle ?_).symm
+  have hf' := (hreg.isRegularPoint hx).finrank_ker_mfderiv_add_finrank
+  have hg' := hgx.finrank_ker_mfderiv_add_finrank
+  omega
+
 end TauCeti

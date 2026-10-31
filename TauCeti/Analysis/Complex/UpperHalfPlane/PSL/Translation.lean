@@ -21,6 +21,8 @@ parabolic stabilizers with the translations used in cusp coordinates.
 ## Main results
 
 * `TauCeti.UpperHalfPlane.upperRightHom_smul`: `upperRightHom x` acts as `z ↦ x + z`.
+* `TauCeti.UpperHalfPlane.psl2zToPSL2R_T`: the image of `T` in `PSL(2, ℝ)` is the translation
+  `z ↦ z + 1`.
 * `TauCeti.UpperHalfPlane.smul_zpow_smul`: conjugating to a translation turns the action of
   integer powers into translation by integer multiples.
 * `TauCeti.UpperHalfPlane.smulDeriv_upperRightHom`: a translation has derivative `1`.
@@ -42,6 +44,15 @@ theorem upperRightHom_smul (x : ℝ) (z : ℍ) : upperRightHom x • z = x +ᵥ 
   apply UpperHalfPlane.coe_injective
   rw [coe_specialLinearGroup_apply]
   simp [Matrix.SpecialLinearGroup.transvection_coe, coe_vadd, add_comm]
+
+/-- The image of `T` in `PSL(2, ℝ)` is the translation `z ↦ z + 1`. -/
+theorem psl2zToPSL2R_T :
+    psl2zToPSL2R (_root_.ModularGroup.T : PSL(2, ℤ)) = upperRightHom 1 := by
+  rw [psl2zToPSL2R_mk, sl2zToPSL2R_apply, upperRightHom_apply]
+  congr 1
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [_root_.ModularGroup.coe_T, Matrix.SpecialLinearGroup.transvection_coe]
 
 /-- A transformation conjugating an element to a translation sends its integer-power action
 to translation by the corresponding integer multiple. -/
