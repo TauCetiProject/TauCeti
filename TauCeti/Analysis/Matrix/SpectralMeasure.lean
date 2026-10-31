@@ -281,9 +281,8 @@ theorem integral_spectralMeasure_of_charpoly_eq_X_pow_mul {E : Type*} [NormedAdd
         ((k : ℝ) / Fintype.card n) • f 0 := by
   have hm : ((Fintype.card m : ℕ) : ℝ) ≠ 0 := by simp
   rw [integral_spectralMeasure, integral_spectralMeasure,
-    hA.sum_comp_eigenvalues_of_charpoly_eq_X_pow_mul hB h f, ← Nat.cast_smul_eq_nsmul ℝ k,
-    smul_add, smul_smul, smul_smul, add_comm]
-  congr 2 <;> field_simp
+    hA.sum_comp_eigenvalues_of_charpoly_eq_X_pow_mul hB h f]
+  match_scalars <;> field_simp
 
 /-- If the characteristic polynomial of a complex Hermitian matrix `A` of size `card n` is `X ^ k`
 times that of a complex Hermitian matrix `B` of size `card m`, then the resolvent transforms of

@@ -176,8 +176,8 @@ theorem IsHermitian.map_eigenvalues_of_charpoly_eq_X_pow_mul {A : Matrix ι ι �
   apply Multiset.map_injective (RCLike.ofReal_injective (K := 𝕜))
   rw [Multiset.map_map, ← hA.roots_charpoly_eq_eigenvalues, h,
     roots_mul ((monic_X_pow k).mul B.charpoly_monic).ne_zero, roots_X_pow,
-    hB.roots_charpoly_eq_eigenvalues, Multiset.map_add, Multiset.map_replicate, Multiset.map_map,
-    Multiset.nsmul_singleton, RCLike.ofReal_zero]
+    hB.roots_charpoly_eq_eigenvalues]
+  simp [Multiset.map_map, Multiset.nsmul_singleton]
 
 open Polynomial in
 /-- If the characteristic polynomial of a Hermitian matrix `A` is `X ^ k` times that of a
