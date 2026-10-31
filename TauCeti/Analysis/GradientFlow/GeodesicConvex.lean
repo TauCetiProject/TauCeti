@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.GradientFlow.Slope
+public import TauCeti.Data.EReal.Operations
 public import TauCeti.Topology.MetricSpace.CATZero
 
 /-!
@@ -50,9 +51,10 @@ along the curve and survives reversing the curve. Convexity along every geodesic
 these, and restricts to every piece of a geodesic. Geodesic convexity, which only provides some
 geodesic for each pair of points, is stable under positive multiples and under adding an energy
 that is convex along every geodesic; it need not be stable under sums or suprema of two geodesically
-convex energies, whose witnessing geodesics may differ. Sums are taken for energies that never
-take the value `⊥`, so that the effective domain of a sum is the intersection of the effective
-domains.
+convex energies, whose witnessing geodesics may differ. The sums for convexity along every
+geodesic and for geodesic convexity are taken for energies that never take the value `⊥`, so that
+the effective domain of a sum is the intersection of the effective domains; sums along a fixed
+curve need no such assumption.
 
 ## Main definitions
 
@@ -180,30 +182,12 @@ theorem convexAlongGeodesics_dist_sq [IsCATZeroSpace X] (z : X) :
 
 /-! ### Endpoints, restriction and stability -/
 
-/-- The right-hand side of the convexity inequality is `≠ ⊤` when both endpoint values are. -/
-private theorem convexAlong_rhs_ne_top {a b : EReal} (ha : a ≠ ⊤) (hb : b ≠ ⊤) {s t r : ℝ}
-    (hs : 0 ≤ s) (ht : 0 ≤ t) : (s : EReal) * a + (t : EReal) * b - (r : EReal) ≠ ⊤ := by
-  rw [sub_eq_add_neg, ← EReal.coe_neg]
-  exact EReal.add_ne_top (EReal.add_ne_top (by simp [EReal.mul_ne_top, hs, ha])
-    (by simp [EReal.mul_ne_top, ht, hb])) (EReal.coe_ne_top _)
-
-/-- The sum of the right-hand sides of two convexity inequalities along one curve is the
-right-hand side for the sum of the energies. -/
-private theorem convexAlong_rhs_add (a b a' b' : EReal) {s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t)
-    (r r' : ℝ) :
-    (s : EReal) * a + (t : EReal) * b - (r : EReal) + ((s : EReal) * a' + (t : EReal) * b' - r') =
-      (s : EReal) * (a + a') + (t : EReal) * (b + b') - ((r + r' : ℝ) : EReal) := by
-  rw [EReal.left_distrib_of_nonneg_of_ne_top (EReal.coe_nonneg.2 hs) (EReal.coe_ne_top _),
-    EReal.left_distrib_of_nonneg_of_ne_top (EReal.coe_nonneg.2 ht) (EReal.coe_ne_top _)]
-  simp only [sub_eq_add_neg, ← EReal.coe_neg]
-  rw [neg_add, EReal.coe_add]
-  abel
-
 /-- **The effective domain is convex along a curve of convexity.** If `φ` is `m`-convex along `γ`
 and both endpoint values are `≠ ⊤`, then so is `φ (γ t)` for every `t ∈ [0, 1]`. -/
 theorem ConvexAlong.apply_ne_top (h : ConvexAlong m φ γ) (h₀ : φ (γ 0) ≠ ⊤) (h₁ : φ (γ 1) ≠ ⊤)
     {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : φ (γ t) ≠ ⊤ :=
-  ne_top_of_le_ne_top (convexAlong_rhs_ne_top h₀ h₁ (sub_nonneg.2 ht.2) ht.1) (h t ht)
+  ne_top_of_le_ne_top
+    (EReal.coe_mul_add_coe_mul_sub_coe_ne_top h₀ h₁ (sub_nonneg.2 ht.2) ht.1) (h t ht)
 
 /-- Convexity along a curve is unchanged by running the curve backwards. -/
 theorem ConvexAlong.reverse (h : ConvexAlong m φ γ) : ConvexAlong m φ fun t ↦ γ (1 - t) := by
@@ -222,7 +206,7 @@ theorem ConvexAlong.add (hφ : ConvexAlong m φ γ) (hψ : ConvexAlong m' ψ γ)
   calc (φ + ψ) (γ t) = φ (γ t) + ψ (γ t) := rfl
     _ ≤ _ := add_le_add (hφ t ht) (hψ t ht)
     _ = _ := by
-      rw [convexAlong_rhs_add _ _ _ _ (sub_nonneg.2 ht.2) ht.1]
+      rw [EReal.coe_mul_add_coe_mul_sub_add_sub_comm _ _ _ _ (sub_nonneg.2 ht.2) ht.1]
       congr 2
       ring
 
@@ -321,10 +305,14 @@ theorem GeodesicallyConvex.const_mul (h : GeodesicallyConvex m φ) {c : ℝ} (hc
     exact hd (EReal.coe_mul_top_of_pos hc)
   exact fun _ _ hx hy ↦ (h (hne hx) (hne hy)).imp fun _ hγ ↦ ⟨hγ.1, hγ.2.const_mul hc.le⟩
 
-/-- **Positive multiple of an energy convex along geodesics.** If `φ` is `m`-convex along
-geodesics and `c > 0`, then `c φ` is `(c m)`-convex along geodesics. -/
-theorem ConvexAlongGeodesics.const_mul (h : ConvexAlongGeodesics m φ) {c : ℝ} (hc : 0 < c) :
+/-- **Nonnegative multiple of an energy convex along geodesics.** If `φ` is `m`-convex along
+geodesics and `c ≥ 0`, then `c φ` is `(c m)`-convex along geodesics. For `c = 0` this is the zero
+energy, which is convex along every curve. -/
+theorem ConvexAlongGeodesics.const_mul (h : ConvexAlongGeodesics m φ) {c : ℝ} (hc : 0 ≤ c) :
     ConvexAlongGeodesics (c * m) fun x ↦ (c : EReal) * φ x := by
+  rcases hc.eq_or_lt with rfl | hc
+  · intro _ _ _ _ _ _ t _
+    simp
   have hne {d : EReal} (hd : (c : EReal) * d ≠ ⊤) : d ≠ ⊤ := by
     rintro rfl
     exact hd (EReal.coe_mul_top_of_pos hc)
