@@ -220,6 +220,37 @@ noncomputable def algEquivAppPreimageSpecExtension {X : Scheme.{u}} [IsIntegral 
       key]
     rfl⟩ (ConcreteCategory.bijective_of_isIso ι)
 
+open CategoryTheory in
+/-- The underlying ring homomorphism of `algEquivAppPreimageSpecExtension` identifies `L` with the
+global sections of `Spec L` and then restricts them to the preimage of `U`. -/
+theorem algEquivAppPreimageSpecExtension_toRingHom {X : Scheme.{u}} [IsIntegral X] (L : Type u)
+    [Field L] [Algebra X.functionField L] {U : X.Opens} [Nonempty U] [Algebra Γ(X, U) L]
+    [IsScalarTower Γ(X, U) X.functionField L] :
+    letI := ((Spec.map (CommRingCat.ofHom (algebraMap X.functionField L)) ≫
+      X.fromSpecStalk (genericPoint X)).app U).hom.toAlgebra
+    (algEquivAppPreimageSpecExtension L (U := U) : L →+* _) =
+      ((Scheme.ΓSpecIso (.of L)).inv ≫ (Spec (.of L)).presheaf.map (homOfLE (le_top :
+        (Spec.map (CommRingCat.ofHom (algebraMap X.functionField L)) ≫
+          X.fromSpecStalk (genericPoint X)) ⁻¹ᵁ U ≤ ⊤)).op).hom := by
+  unfold algEquivAppPreimageSpecExtension
+  rfl
+
+open CategoryTheory in
+/-- `algEquivAppPreimageSpecExtension` sends `a : L` to the restriction of the corresponding global
+section of `Spec L` to the preimage of `U`. This is not a `simp` lemma: `simp` rewrites the
+preimage `(f ≫ g) ⁻¹ᵁ U` occurring in the type of its left-hand side. -/
+theorem algEquivAppPreimageSpecExtension_apply {X : Scheme.{u}} [IsIntegral X] (L : Type u)
+    [Field L] [Algebra X.functionField L] {U : X.Opens} [Nonempty U] [Algebra Γ(X, U) L]
+    [IsScalarTower Γ(X, U) X.functionField L] (a : L) :
+    letI := ((Spec.map (CommRingCat.ofHom (algebraMap X.functionField L)) ≫
+      X.fromSpecStalk (genericPoint X)).app U).hom.toAlgebra
+    algEquivAppPreimageSpecExtension L (U := U) a =
+      (Spec (.of L)).presheaf.map (homOfLE (le_top :
+        (Spec.map (CommRingCat.ofHom (algebraMap X.functionField L)) ≫
+          X.fromSpecStalk (genericPoint X)) ⁻¹ᵁ U ≤ ⊤)).op
+        ((Scheme.ΓSpecIso (.of L)).inv a) :=
+  RingHom.congr_fun (algEquivAppPreimageSpecExtension_toRingHom L) a
+
 end Scheme
 
 end AlgebraicGeometry
