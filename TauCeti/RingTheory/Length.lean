@@ -65,6 +65,8 @@ applies to the quotients appearing here without any further appeal to defeq.
   radical of `I` is the maximal ideal of a noetherian local ring. It is in the namespace of `Ideal`
   rather than that of `TauCeti` because its first explicit argument is an ideal, so that a consumer
   reads it as `I.isFiniteLength_quotient_of_radical_eq_maximalIdeal`.
+* `Ideal.isFiniteLength_quotient_smul_top_of_radical_eq_maximalIdeal`: `M ⧸ I M` has finite
+  length for a finite module `M` when the radical of `I` is the maximal ideal.
 -/
 
 public section
@@ -335,6 +337,20 @@ theorem isFiniteLength_quotient_of_radical_eq_maximalIdeal (I : Ideal A)
     isArtinianRing_iff_isNilpotent_maximalIdeal (A ⧸ I) |>.mpr hnil
   exact ⟨inferInstance,
     isArtinian_of_surjective_algebraMap (Ideal.Quotient.mk_surjective (I := I))⟩
+
+/-- **A finite module modulo a maximal-primary ideal has finite length.** Let `(A, 𝔪)` be a
+noetherian local ring, `I` an ideal whose radical is `𝔪` and `M` a finite `A`-module. Then
+`M ⧸ I M` is a finite module over the Artinian ring `A ⧸ I`, so it has finite length over `A`. -/
+theorem isFiniteLength_quotient_smul_top_of_radical_eq_maximalIdeal (I : Ideal A)
+    (hI : I.radical = maximalIdeal A) (M : Type*) [AddCommGroup M] [Module A M]
+    [Module.Finite A M] : IsFiniteLength A (M ⧸ (I • ⊤ : Submodule A M)) := by
+  have hA := isFiniteLength_iff_isNoetherian_isArtinian.mp
+    (isFiniteLength_quotient_of_radical_eq_maximalIdeal I hI)
+  have : IsArtinianRing (A ⧸ I) := isArtinian_of_tower A hA.2
+  have : Module.Finite (A ⧸ I) (M ⧸ (I • ⊤ : Submodule A M)) :=
+    Module.Finite.of_restrictScalars_finite A _ _
+  exact isFiniteLength_iff_isNoetherian_isArtinian.mpr
+    ⟨inferInstance, isArtinian_of_surjective_algebraMap (R := A ⧸ I) Ideal.Quotient.mk_surjective⟩
 
 end NoetherianLocalRing
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.Tensor
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.RingTheory.Flat.Extensions
 
 /-!
@@ -137,14 +138,12 @@ theorem of_exact_of_lTensor_quotient_injective {N : Type*} {P : Type*} {Q : Type
   obtain ⟨z', rfl⟩ := LinearMap.lTensor_surjective I hg z
   -- `rTensor P I.subtype z'` is killed by `lTensor R g`, so it is the image of some `w`.
   have h1 : LinearMap.lTensor R g (LinearMap.rTensor P I.subtype z') = 0 := by
-    simpa only [← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor,
-      LinearMap.rTensor_comp_lTensor] using hz
+    rwa [LinearMap.lTensor_rTensor_comm]
   obtain ⟨w, hw⟩ := ((_root_.lTensor_exact R hexact hg) _).mp h1
   -- The image of `w` in `(R ⧸ I) ⊗ N` is killed by `id ⊗ f`, hence zero, so `w` comes from
   -- `I ⊗ N`.
   have h2 : LinearMap.lTensor (R ⧸ I) f (LinearMap.rTensor N I.mkQ w) = 0 := by
-    rw [← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor, ← LinearMap.rTensor_comp_lTensor,
-      LinearMap.comp_apply, hw, ← LinearMap.comp_apply, ← LinearMap.rTensor_comp, hqι,
+    rw [LinearMap.lTensor_rTensor_comm, hw, ← LinearMap.comp_apply, ← LinearMap.rTensor_comp, hqι,
       LinearMap.rTensor_zero, LinearMap.zero_apply]
   obtain ⟨z₀, hz₀⟩ := ((_root_.rTensor_exact N (LinearMap.exact_subtype_mkQ I)
       I.mkQ_surjective) _).mp
@@ -152,8 +151,7 @@ theorem of_exact_of_lTensor_quotient_injective {N : Type*} {P : Type*} {Q : Type
   -- Flatness of `P` makes `I ⊗ P → R ⊗ P` injective, so `z'` is the image of `z₀`.
   have h4 : LinearMap.lTensor I f z₀ = z' :=
     rTensor_preserves_injective_linearMap I.subtype I.injective_subtype <| by
-      simpa only [← hz₀, ← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor,
-        LinearMap.rTensor_comp_lTensor] using hw
+      rw [← LinearMap.lTensor_rTensor_comm, hz₀, hw]
   rw [← h4, ← LinearMap.comp_apply, ← LinearMap.lTensor_comp, hgf, LinearMap.lTensor_zero,
     LinearMap.zero_apply]
 
