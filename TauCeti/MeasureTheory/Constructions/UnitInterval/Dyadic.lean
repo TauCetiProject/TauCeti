@@ -184,8 +184,15 @@ theorem mem_dyadicCell_iff {n : ℕ} {x : I} : x ∈ dyadicCell n ↔ ∃ k, dya
 @[simp]
 theorem dyadicCell_zero : dyadicCell 0 = ∅ :=
   Set.eq_empty_of_forall_notMem fun x hx => (two_pow_le_dyadicNum _ x).not_gt (by
-    rw [show dyadicNum _ x = 0 from hx]
+    rw [mem_dyadicCell.1 hx]
     positivity)
+
+/-- The halves of a positively numbered dyadic cell lie one level below it. -/
+theorem log_two_mul_add {n e : ℕ} (hn : 0 < n) (he : e < 2) :
+    Nat.log 2 (2 * n + e) = Nat.log 2 n + 1 := by
+  rw [Nat.log_of_one_lt_of_le one_lt_two (by omega)]
+  congr 2
+  omega
 
 /-- Distinct dyadic cells of the same level are disjoint. -/
 theorem disjoint_dyadicCell {m n : ℕ} (h : Nat.log 2 m = Nat.log 2 n) (hmn : m ≠ n) :
@@ -216,7 +223,13 @@ theorem mem_dyadicCell_div_two {n : ℕ} {x : I} (hn : 2 ≤ n) (hx : x ∈ dyad
     have := Nat.log_pos one_lt_two hn
     omega
   refine mem_dyadicCell_iff.2 ⟨Nat.log 2 n - 1, ?_⟩
-  rw [← dyadicNum_add_div _ 1 x, ← hk, pow_one, show dyadicNum _ x = n from hx]
+  rw [← dyadicNum_add_div _ 1 x, ← hk, pow_one, mem_dyadicCell.1 hx]
+
+/-- A point of either half of the dyadic cell numbered `n` lies in that cell. -/
+theorem mem_dyadicCell_of_mem_two_mul_add {n e : ℕ} (hn : 0 < n) (he : e < 2) {x : I}
+    (hx : x ∈ dyadicCell (2 * n + e)) : x ∈ dyadicCell n := by
+  have h := mem_dyadicCell_div_two (by omega) hx
+  rwa [show (2 * n + e) / 2 = n by omega] at h
 
 /-- The dyadic cell numbered `n < 2 * N` is measurable for the dyadic filtration at step `N`. -/
 theorem measurableSet_dyadicFiltration_dyadicCell {N n : ℕ} (hn : n < 2 * N) :
@@ -274,6 +287,16 @@ theorem dyadicAtom_eq_iff {N n : ℕ} (hn : n ∈ Set.Ico N (2 * N)) {x : I} :
   rw [← hx] at hn
   rw [← ha, ← hx, eq_of_dyadicNum_mem_Ico hka hn]
 
+/-- For `N ≤ n < 2 * N`, the fibre of `dyadicAtom N` over `n` is the dyadic cell numbered `n`. -/
+theorem preimage_dyadicAtom_singleton_of_mem {N n : ℕ} (hn : n ∈ Set.Ico N (2 * N)) :
+    dyadicAtom N ⁻¹' {n} = dyadicCell n :=
+  Set.ext fun _ => dyadicAtom_eq_iff hn
+
+/-- For `0 < N`, the fibre of `dyadicAtom N` over `n ∉ [N, 2 * N)` is empty. -/
+theorem preimage_dyadicAtom_singleton_of_notMem {N n : ℕ} (hN : 0 < N)
+    (hn : n ∉ Set.Ico N (2 * N)) : dyadicAtom N ⁻¹' {n} = ∅ :=
+  Set.eq_empty_of_forall_notMem fun x hx => hn (hx ▸ dyadicAtom_mem_Ico hN x)
+
 @[fun_prop]
 theorem measurable_dyadicAtom (N : ℕ) : Measurable (dyadicAtom N) := by
   unfold dyadicAtom dyadicNum
@@ -321,11 +344,10 @@ theorem dyadicFiltration_eq_comap_dyadicAtom {N : ℕ} (hN : 0 < N) :
     rw [MeasurableSpace.map_def, ← Set.biUnion_preimage_singleton]
     refine MeasurableSet.biUnion s.to_countable fun n _ => ?_
     by_cases hn : n ∈ Set.Ico N (2 * N)
-    · have : dyadicAtom N ⁻¹' {n} = dyadicCell n := Set.ext fun x => dyadicAtom_eq_iff hn
-      rw [this]
+    · rw [preimage_dyadicAtom_singleton_of_mem hn]
       exact measurableSet_dyadicFiltration_dyadicCell hn.2
-    · convert @MeasurableSet.empty _ (dyadicFiltration N)
-      exact Set.eq_empty_of_forall_notMem fun x hx => hn (hx ▸ dyadicAtom_mem_Ico hN x)
+    · rw [preimage_dyadicAtom_singleton_of_notMem hN hn]
+      exact @MeasurableSet.empty _ (dyadicFiltration N)
 
 /-- The dyadic cells generate the σ-algebra of the unit interval. -/
 theorem iSup_dyadicFiltration :
@@ -374,28 +396,28 @@ theorem tendsto_ae_condExp_dyadicFiltration {f : I → ℝ} (hf : Integrable f) 
 /-- **Dyadic conditional expectations are averages over the atoms.** For `0 < N`, the conditional
 expectation of an integrable function with respect to the dyadic filtration at step `N` is a.e. its
 average over the atom containing the point, the dyadic cell numbered `dyadicAtom N x`. -/
-theorem condExp_dyadicFiltration_ae_eq {N : ℕ} (hN : 0 < N) {f : I → ℝ} (hf : Integrable f) :
+theorem condExp_dyadicFiltration_ae_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] {N : ℕ} (hN : 0 < N) {f : I → E} (hf : Integrable f) :
     volume[f | dyadicFiltration N] =ᵐ[volume]
       fun x => ⨍ y in dyadicCell (dyadicAtom N x), f y := by
-  have hmeas : Measurable[MeasurableSpace.comap (dyadicAtom N) ⊤]
+  have hmeas : StronglyMeasurable[MeasurableSpace.comap (dyadicAtom N) ⊤]
       fun x => ⨍ y in dyadicCell (dyadicAtom N x), f y :=
-    (measurable_from_top (f := fun n => ⨍ y in dyadicCell n, f y)).comp (comap_measurable _)
+    (StronglyMeasurable.of_discrete (f := fun n : ℕ => ⨍ y in dyadicCell n, f y)).comp_measurable
+      (comap_measurable _)
   -- The average takes only the `N` values of the atoms, so it is bounded.
   have hint : Integrable fun x => ⨍ y in dyadicCell (dyadicAtom N x), f y :=
-    Integrable.of_bound (hmeas.mono (measurable_dyadicAtom N).comap_le le_rfl).aestronglyMeasurable
+    Integrable.of_bound (hmeas.mono (measurable_dyadicAtom N).comap_le).aestronglyMeasurable
       (∑ n ∈ Finset.Ico N (2 * N), ‖⨍ y in dyadicCell n, f y‖) (ae_of_all _ fun x =>
         Finset.single_le_sum (f := fun n => ‖⨍ y in dyadicCell n, f y‖)
           (fun _ _ => norm_nonneg _) (Finset.mem_Ico.2 (dyadicAtom_mem_Ico hN x)))
   rw [dyadicFiltration_eq_comap_dyadicAtom hN]
   refine (MeasureTheory.ae_eq_condExp_of_forall_setIntegral_fiber_eq (measurable_dyadicAtom N) hf
-    hint hmeas.stronglyMeasurable.aestronglyMeasurable fun n => ?_).symm
+    hint hmeas.aestronglyMeasurable fun n => ?_).symm
   by_cases hn : n ∈ Set.Ico N (2 * N)
-  · have hfib : dyadicAtom N ⁻¹' {n} = dyadicCell n := Set.ext fun x => dyadicAtom_eq_iff hn
-    rw [hfib, setIntegral_congr_fun (measurableSet_dyadicCell n) fun x hx =>
-      congrArg (fun m => ⨍ y in dyadicCell m, f y) ((dyadicAtom_eq_iff hn).2 hx),
+  · rw [preimage_dyadicAtom_singleton_of_mem hn,
+      setIntegral_congr_fun (measurableSet_dyadicCell n) fun x hx =>
+        congrArg (fun m => ⨍ y in dyadicCell m, f y) ((dyadicAtom_eq_iff hn).2 hx),
       setIntegral_const, measure_smul_setAverage _ (measure_ne_top _ _)]
-  · have hfib : dyadicAtom N ⁻¹' {n} = ∅ :=
-      Set.eq_empty_of_forall_notMem fun x hx => hn (hx ▸ dyadicAtom_mem_Ico hN x)
-    simp [hfib]
+  · simp [preimage_dyadicAtom_singleton_of_notMem hN hn]
 
 end TauCeti.unitInterval

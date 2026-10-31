@@ -77,19 +77,6 @@ theorem haarFun_of_ne_zero {n : ℕ} (hn : n ≠ 0) :
     haarFun n = (dyadicCell (2 * n)).indicator 1 - (dyadicCell (2 * n + 1)).indicator 1 :=
   funext fun _ => ite_eq_right hn
 
-/-- The halves of a positively numbered dyadic cell lie one level below it. -/
-private theorem log_two_mul_add {n e : ℕ} (hn : 0 < n) (he : e < 2) :
-    Nat.log 2 (2 * n + e) = Nat.log 2 n + 1 := by
-  rw [Nat.log_of_one_lt_of_le one_lt_two (by omega)]
-  congr 2
-  omega
-
-/-- A point of either half of the dyadic cell numbered `n` lies in that cell. -/
-private theorem mem_dyadicCell_of_mem_two_mul_add {n e : ℕ} (hn : 0 < n) (he : e < 2) {x : I}
-    (hx : x ∈ dyadicCell (2 * n + e)) : x ∈ dyadicCell n := by
-  have h := mem_dyadicCell_div_two (by omega) hx
-  rwa [show (2 * n + e) / 2 = n by omega] at h
-
 /-- For `0 < n`, the Haar function `hₙ` vanishes outside the dyadic cell numbered `n`. -/
 theorem haarFun_eq_zero {n : ℕ} (hn : 0 < n) {x : I} (hx : x ∉ dyadicCell n) : haarFun n x = 0 := by
   have h0 : x ∉ dyadicCell (2 * n + 0) := mt (mem_dyadicCell_of_mem_two_mul_add hn two_pos) hx
@@ -162,8 +149,8 @@ theorem condExp_haarFun {n : ℕ} (hn : 0 < n) :
   rw [Pi.zero_def, integral_zero]
   by_cases hj : j = n
   · subst hj
-    rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx =>
-      haarFun_eq_zero hn fun hc => hx ((dyadicAtom_eq_iff hmem).2 hc), integral_haarFun hn]
+    rw [preimage_dyadicAtom_singleton_of_mem hmem, setIntegral_eq_integral_of_forall_compl_eq_zero
+      fun x hx => haarFun_eq_zero hn hx, integral_haarFun hn]
   · exact (setIntegral_eq_zero_of_forall_eq_zero fun x (hx : dyadicAtom n x = j) =>
       haarFun_eq_zero hn fun hc => hj (hx.symm.trans ((dyadicAtom_eq_iff hmem).2 hc))).symm
 
@@ -366,9 +353,10 @@ def haarBasis (hp : p ≠ ∞) : SchauderBasis ℝ (Lp ℝ p (volume : Measure I
           dyadicProj_succ_haarFun, dyadicProj_haarFun_self, sub_zero]⟩
       e_ne_zero := haarFun_toLp_ne_zero }
 
+@[simp]
 theorem haarBasis_apply (hp : p ≠ ∞) (n : ℕ) :
     haarBasis p hp n = (memLp_haarFun p n).toLp (haarFun n) :=
-  (rfl)
+  congrFun (SchauderBasis.RankOneDecomposition.basis_coe _) n
 
 /-- The `n`-th vector of the Haar basis is a.e. the Haar function `hₙ`. -/
 theorem coeFn_haarBasis (hp : p ≠ ∞) (n : ℕ) : haarBasis p hp n =ᵐ[volume] haarFun n :=
