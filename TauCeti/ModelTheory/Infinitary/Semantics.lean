@@ -226,6 +226,22 @@ theorem BoundedFormulaInf.realize_exs {φ : L.BoundedFormulaInf ι α n} {v : α
     · rintro ⟨xs, h⟩
       exact ⟨Fin.init xs, xs (Fin.last n), by rwa [Fin.snoc_init_self]⟩
 
+/-- Quantifying the last `k` slots existentially realizes as existential quantification over the
+valuations `ys` of those slots, appended to the valuation of the remaining slots. -/
+@[simp]
+theorem BoundedFormulaInf.realize_exsLast {k : ℕ} {φ : L.BoundedFormulaInf ι α (n + k)}
+    {v : α → M} {xs : Fin n → M} :
+    (BoundedFormulaInf.exsLast φ).Realize v xs ↔
+      ∃ ys : Fin k → M, φ.Realize v (Fin.append xs ys) := by
+  induction k with
+  | zero => simp [Fin.append_right_nil xs _ rfl, Unique.exists_iff]
+  | succ k ih =>
+    simp only [BoundedFormulaInf.exsLast_succ, ih, BoundedFormulaInf.realize_ex, ← Fin.append_snoc]
+    constructor
+    · rintro ⟨ys, y, h⟩; exact ⟨_, h⟩
+    · rintro ⟨ys, h⟩
+      exact ⟨Fin.init ys, ys (Fin.last k), by rwa [Fin.snoc_init_self]⟩
+
 end AllsExs
 
 /-- Realization of an `L_{∞ω}` sentence in a structure. -/
