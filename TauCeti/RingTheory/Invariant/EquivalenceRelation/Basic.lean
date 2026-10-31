@@ -202,11 +202,21 @@ variable (t) in
 /-- The map `A ⊗[C] A → B`, `x ⊗ y ↦ s x * t y`, of `A`-algebras, where `C = {a : s a = t a}` is the
 ring of invariants. When `t` defines an equivalence relation with a basis coming from `A`, it is
 the isomorphism `RingHom.IsSpecEquivRel.tensorProductEquiv`. -/
-@[expose] noncomputable def tensorProductMap : A ⊗[(algebraMap A B).eqLocus t] A →ₐ[A] B :=
+noncomputable def tensorProductMap : A ⊗[(algebraMap A B).eqLocus t] A →ₐ[A] B :=
   Algebra.TensorProduct.lift (Algebra.ofId A B)
     (AlgHom.mk t fun c ↦ by
       simpa [IsScalarTower.algebraMap_apply _ A B, Algebra.algebraMap_ofSubsemiring_apply] using
         (mem_eqLocus.mp c.2).symm) fun _ _ ↦ .all _ _
+
+variable (t) in
+/-- The map `A ⊗[C] A → B` is the lift of `Algebra.ofId A B` and of `t`, viewed as a map of
+`C`-algebras. -/
+theorem tensorProductMap_def :
+    tensorProductMap t = Algebra.TensorProduct.lift (Algebra.ofId A B)
+      (AlgHom.mk t fun c ↦ by
+        simpa [IsScalarTower.algebraMap_apply _ A B, Algebra.algebraMap_ofSubsemiring_apply] using
+          (mem_eqLocus.mp c.2).symm) fun _ _ ↦ .all _ _ :=
+  (rfl)
 
 /-- The map `A ⊗[C] A → B` sends `x ⊗ y` to `s x * t y`. -/
 @[simp]

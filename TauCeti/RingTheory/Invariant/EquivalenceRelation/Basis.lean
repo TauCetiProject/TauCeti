@@ -163,7 +163,8 @@ form a basis of `B` over `A`, then `x ⊗ y ↦ s x * t y` is an isomorphism of 
 noncomputable def tensorProductEquiv : A ⊗[(algebraMap A B).eqLocus t] A ≃ₐ[A] B :=
   -- `tensorProductMap t` carries the basis `1 ⊗ aᵢ` of `A ⊗[C] A` over `A` to the basis `t aᵢ` of
   -- `B`
-  .ofBijective (tensorProductMap t) <| lift_bijective_of_basis _ (h.basis b hb) b (by simp [hb])
+  .ofBijective (tensorProductMap t) <| tensorProductMap_def t ▸
+    lift_bijective_of_basis _ (h.basis b hb) b (by simp [hb])
 
 /-- The isomorphism `RingHom.IsSpecEquivRel.tensorProductEquiv` is
 `RingHom.IsSpecEquivRel.tensorProductMap`. -/
