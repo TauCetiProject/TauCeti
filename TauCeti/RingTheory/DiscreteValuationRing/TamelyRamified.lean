@@ -14,6 +14,8 @@ import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Smooth.Fiber
+import TauCeti.RingTheory.Ideal.LiesOver
+import TauCeti.RingTheory.IntegralClosure.Map
 import TauCeti.RingTheory.RamificationInertia.Bijective
 
 /-!
@@ -160,16 +162,6 @@ section IntegralClosure
 
 variable {A L : Type*} [CommRing A] [IsLocalRing A] [Field L] [Algebra A L]
 
-/-- Transport of the data at a maximal ideal over the closed point along an isomorphism of
-`A`-algebras. -/
-private theorem exists_map_algEquiv {B C : Type*} [CommRing B] [CommRing C] [Algebra A B]
-    [Algebra A C] (e : B ≃ₐ[A] C) (P : Ideal B) [P.IsMaximal] [P.LiesOver (maximalIdeal A)] :
-    ∃ (Q : Ideal C) (_ : Q.IsMaximal) (_ : Q.LiesOver (maximalIdeal A)),
-      Q.ramificationIdx A = P.ramificationIdx A ∧
-        Nonempty ((B ⧸ P) ≃ₐ[A ⧸ maximalIdeal A] (C ⧸ Q)) :=
-  ⟨P.map e, inferInstance, inferInstance, Ideal.ramificationIdx_map_algEquiv e P,
-    ⟨Ideal.Quotient.algEquivOfEqMap _ e rfl⟩⟩
-
 /-- Tameness at the maximal ideals over the closed point transfers along an isomorphism of
 `A`-algebras. -/
 private theorem forall_tame_of_algEquiv {B C : Type*} [CommRing B] [CommRing C] [Algebra A B]
@@ -180,12 +172,12 @@ private theorem forall_tame_of_algEquiv {B C : Type*} [CommRing B] [CommRing C] 
     (P : Ideal B) [P.IsMaximal] [P.LiesOver (maximalIdeal A)] :
     Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ P) ∧
       IsUnit ((P.ramificationIdx A : ℕ) : A ⧸ maximalIdeal A) := by
-  obtain ⟨Q, _, _, hQ, ⟨σ⟩⟩ := exists_map_algEquiv e P
+  let σ := Ideal.Quotient.algEquivOfEqMap (maximalIdeal A) e (Q := P.map e) rfl
   let := Ideal.Quotient.field (maximalIdeal A)
   let := Ideal.Quotient.field P
-  let := Ideal.Quotient.field Q
-  have := (h Q).1
-  exact ⟨.of_algHom _ _ σ.toAlgHom, hQ ▸ (h Q).2⟩
+  let := Ideal.Quotient.field (P.map e)
+  have := (h (P.map e)).1
+  exact ⟨.of_algHom _ _ σ.toAlgHom, Ideal.ramificationIdx_map_algEquiv e P ▸ (h (P.map e)).2⟩
 
 /-- Unramifiedness at the maximal ideals over the closed point transfers along an isomorphism of
 `A`-algebras. -/
@@ -195,12 +187,12 @@ private theorem forall_unramified_of_algEquiv {B C : Type*} [CommRing B] [CommRi
       Q.ramificationIdx A = 1 ∧ Algebra.IsSeparable (A ⧸ maximalIdeal A) (C ⧸ Q))
     (P : Ideal B) [P.IsMaximal] [P.LiesOver (maximalIdeal A)] :
     P.ramificationIdx A = 1 ∧ Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ P) := by
-  obtain ⟨Q, _, _, hQ, ⟨σ⟩⟩ := exists_map_algEquiv e P
+  let σ := Ideal.Quotient.algEquivOfEqMap (maximalIdeal A) e (Q := P.map e) rfl
   let := Ideal.Quotient.field (maximalIdeal A)
   let := Ideal.Quotient.field P
-  let := Ideal.Quotient.field Q
-  have := (h Q).2
-  exact ⟨hQ ▸ (h Q).1, .of_algHom _ _ σ.toAlgHom⟩
+  let := Ideal.Quotient.field (P.map e)
+  have := (h (P.map e)).2
+  exact ⟨Ideal.ramificationIdx_map_algEquiv e P ▸ (h (P.map e)).1, .of_algHom _ _ σ.toAlgHom⟩
 
 variable (B : Type*) [CommRing B] [Algebra A B] [Algebra B L] [IsScalarTower A B L]
   [IsIntegralClosure B A L]
@@ -362,36 +354,10 @@ section Tower
 variable {A M L : Type*} [CommRing A] [Field M] [Field L] [Algebra A M]
   [Algebra A L] [Algebra M L] [IsScalarTower A M L]
 
-variable (A M L) in
-/-- The inclusion of the integral closure of `A` in `M` into the integral closure of `A` in `L`,
-induced by `M → L`. -/
-private noncomputable abbrev algebraIntegralClosure :
-    Algebra (integralClosure A M) (integralClosure A L) :=
-  (IsScalarTower.toAlgHom A M L).mapIntegralClosure.toAlgebra
-
-attribute [local instance] algebraIntegralClosure
-
-/-- The algebra structure `algebraIntegralClosure` is compatible with `A` and `L`, integral and
-injective. -/
-private theorem tower_facts :
-    IsScalarTower A (integralClosure A M) (integralClosure A L) ∧
-    IsScalarTower (integralClosure A M) (integralClosure A L) L ∧
-    Algebra.IsIntegral (integralClosure A M) (integralClosure A L) ∧
-    FaithfulSMul (integralClosure A M) (integralClosure A L) := by
-  have : IsScalarTower A (integralClosure A M) (integralClosure A L) :=
-    .of_algebraMap_eq' (IsScalarTower.toAlgHom A M L).mapIntegralClosure.comp_algebraMap.symm
-  refine ⟨this, .of_algebraMap_eq fun _ ↦ rfl,
-    ⟨fun x ↦ (IsIntegralClosure.isIntegral A L x).tower_top⟩,
-    (faithfulSMul_iff_algebraMap_injective _ _).mpr fun x y h ↦ ?_⟩
-  exact Subtype.ext ((algebraMap M L).injective (congrArg Subtype.val h))
-
-/-- The residue rings of a tower of ideals `p ⊆ Q ⊆ P` form a tower of algebras. -/
-private theorem isScalarTower_quotient {B C : Type*} [CommRing B] [CommRing C] [Algebra A B]
-    [Algebra B C] [Algebra A C] [IsScalarTower A B C] (p : Ideal A) (Q : Ideal B) (P : Ideal C)
-    [Q.LiesOver p] [P.LiesOver Q] [P.LiesOver p] : IsScalarTower (A ⧸ p) (B ⧸ Q) (C ⧸ P) :=
-  .of_algebraMap_eq <| by
-    rintro ⟨x⟩
-    exact congrArg (Ideal.Quotient.mk P) (IsScalarTower.algebraMap_apply A B C x)
+attribute [local instance] integralClosure.algebraOfIsScalarTower
+  integralClosure.isScalarTower_bot_of_isScalarTower
+  integralClosure.isScalarTower_top_of_isScalarTower integralClosure.isIntegral_of_isScalarTower
+  integralClosure.faithfulSMul_of_isScalarTower
 
 /-- **Tame ramification in towers.** Let `M ⊆ L` be fields over the local ring `A` such that the
 integral closure `A_M` of `A` in `M` is a discrete valuation ring. If `M` is tamely ramified with
@@ -400,7 +366,6 @@ respect to `A`. -/
 theorem IsTamelyRamifiedWRT.trans [IsLocalRing A] [IsDiscreteValuationRing (integralClosure A M)]
     (hM : IsTamelyRamifiedWRT A M) (hL : IsTamelyRamifiedWRT (integralClosure A M) L) :
     IsTamelyRamifiedWRT A L := by
-  obtain ⟨_, _, _, _⟩ := tower_facts (A := A) (M := M) (L := L)
   have : IsIntegralClosure (integralClosure A L) (integralClosure A M) L :=
     IsIntegralClosure.tower_top (R := A)
   rw [isTamelyRamifiedWRT_iff_of_isIntegralClosure (integralClosure A L)] at hL
@@ -415,7 +380,8 @@ theorem IsTamelyRamifiedWRT.trans [IsLocalRing A] [IsDiscreteValuationRing (inte
   let := Ideal.Quotient.field (maximalIdeal A)
   let := Ideal.Quotient.field (maximalIdeal (integralClosure A M))
   let := Ideal.Quotient.field P
-  have := isScalarTower_quotient (maximalIdeal A) (maximalIdeal (integralClosure A M)) P
+  have := Ideal.Quotient.isScalarTower_quotient_of_liesOver (maximalIdeal A)
+    (maximalIdeal (integralClosure A M)) P
   refine ⟨.trans _ (integralClosure A M ⧸ maximalIdeal (integralClosure A M)) _, ?_⟩
   rw [Ideal.ramificationIdx_tower (q := maximalIdeal (integralClosure A M)), Nat.cast_mul]
   refine heM.mul (isUnit_iff_ne_zero.mpr fun h ↦ isUnit_iff_ne_zero.mp heL ?_)
@@ -429,7 +395,6 @@ to `A`. -/
 theorem IsUnramifiedWRT.trans [IsLocalRing A] [IsDiscreteValuationRing (integralClosure A M)]
     (hM : IsUnramifiedWRT A M) (hL : IsUnramifiedWRT (integralClosure A M) L) :
     IsUnramifiedWRT A L := by
-  obtain ⟨_, _, _, _⟩ := tower_facts (A := A) (M := M) (L := L)
   have : IsIntegralClosure (integralClosure A L) (integralClosure A M) L :=
     IsIntegralClosure.tower_top (R := A)
   rw [isUnramifiedWRT_iff_of_isIntegralClosure (integralClosure A L)] at hL
@@ -443,7 +408,8 @@ theorem IsUnramifiedWRT.trans [IsLocalRing A] [IsDiscreteValuationRing (integral
   let := Ideal.Quotient.field (maximalIdeal A)
   let := Ideal.Quotient.field (maximalIdeal (integralClosure A M))
   let := Ideal.Quotient.field P
-  have := isScalarTower_quotient (maximalIdeal A) (maximalIdeal (integralClosure A M)) P
+  have := Ideal.Quotient.isScalarTower_quotient_of_liesOver (maximalIdeal A)
+    (maximalIdeal (integralClosure A M)) P
   rw [Ideal.ramificationIdx_tower (q := maximalIdeal (integralClosure A M)), heM, heL]
   exact ⟨rfl, .trans _ (integralClosure A M ⧸ maximalIdeal (integralClosure A M)) _⟩
 
@@ -463,11 +429,11 @@ private theorem exists_tower_bot (Q : Ideal (integralClosure A M)) [Q.IsMaximal]
       (_ : P.LiesOver (maximalIdeal A)),
       IsScalarTower (A ⧸ maximalIdeal A) (integralClosure A M ⧸ Q) (integralClosure A L ⧸ P) ∧
         Q.ramificationIdx A ∣ P.ramificationIdx A := by
-  obtain ⟨_, _, _, _⟩ := tower_facts (A := A) (M := M) (L := L)
   have : IsDedekindDomain (integralClosure A M) := integralClosure.isDedekindDomain A K M
   obtain ⟨P, _, _⟩ := Ideal.exists_maximal_ideal_liesOver_of_isIntegral (S := integralClosure A L) Q
   have : P.LiesOver (maximalIdeal A) := .trans P Q (maximalIdeal A)
-  exact ⟨P, ‹_›, ‹_›, this, isScalarTower_quotient _ Q P, Ideal.ramificationIdx_below_dvd Q P⟩
+  exact ⟨P, ‹_›, ‹_›, this, Ideal.Quotient.isScalarTower_quotient_of_liesOver _ Q P,
+    Ideal.ramificationIdx_below_dvd Q P⟩
 
 include K in
 /-- Let `M` be a finite separable extension of the fraction field `K` of a discrete valuation ring
