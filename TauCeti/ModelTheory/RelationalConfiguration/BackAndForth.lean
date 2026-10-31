@@ -7,7 +7,6 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.ModelTheory.BackAndForth.AllLevels
-public import TauCeti.ModelTheory.BackAndForth.Countable
 
 /-!
 # Back-and-forth levels of relational configurations
