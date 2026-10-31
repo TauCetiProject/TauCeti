@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Embedding.Shift
+public import TauCeti.Algebra.Homology.Embedding.Restriction.Shift
 public import TauCeti.KnotTheory.Khovanov.Resolution.Cube
 public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 
@@ -92,7 +92,9 @@ theorem khovanovComplex_d (i l : ℤ) :
           (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplex.d
             (i + D.negativeCrossingCount) (l + D.negativeCrossingCount) ≫
               eqToHom (D.khovanovComplex_X hD R j l).symm := by
-  rfl
+  exact restriction_d_eq (c := ComplexShape.up' (1 : ℤ))
+    (c' := ComplexShape.up' (1 : ℤ)) _
+    (ComplexShape.embeddingUp'Add (1 : ℤ) (D.negativeCrossingCount : ℤ)) rfl rfl
 
 /-- Comparison with the native cochain shift of the quantum-shifted bracket. The comparison
 multiplies cochain degree `i` by `(-1)^(i * n₋)`. -/
@@ -122,6 +124,7 @@ theorem khovanovComplexShiftIso_hom_f (i : ℤ) :
   erw [Preadditive.zsmul_comp, Category.id_comp]
   simp only [Functor.mapIso_hom, eqToIso.hom]
   erw [CochainComplex.shiftFunctor_map_f', HomologicalComplex.eqToHom_f]
+  -- Both equality transports have the same endpoints; proof irrelevance identifies them.
   rfl
 
 /-- The inverse shift comparison carries the same degreewise sign. -/
@@ -132,14 +135,14 @@ theorem khovanovComplexShiftIso_inv_f (i : ℤ) :
         eqToHom (by
           rw [CochainComplex.shiftFunctor_obj_X', PDCode.khovanovBracket_apply,
             khovanovComplex_X]) := by
-  -- The restriction functor uses `up' 1`; `erw` identifies it with the cochain shape `up ℤ`.
-  dsimp only [khovanovComplexShiftIso, Iso.trans, Iso.app]
-  erw [HomologicalComplex.comp_f, CochainComplex.restrictionAddIsoShift_inv_app_f]
-  rw [Units.smul_def]
-  erw [Preadditive.comp_zsmul, Category.comp_id]
-  simp only [Functor.mapIso_inv, eqToIso.inv]
-  erw [CochainComplex.shiftFunctor_map_f', HomologicalComplex.eqToHom_f]
-  rfl
+  rw [← cancel_mono ((D.khovanovComplexShiftIso hD R j).hom.f i)]
+  calc
+    _ = 𝟙 _ := by
+      simpa only [HomologicalComplex.comp_f, HomologicalComplex.id_f] using
+        congrArg (fun f ↦ f.f i) (D.khovanovComplexShiftIso hD R j).inv_hom_id
+    _ = _ := by
+      rw [khovanovComplexShiftIso_hom_f]
+      simp [Units.smul_def, smul_smul, ← Units.val_mul]
 
 /-- The normalized cube vertex is precisely the quantum piece shifted by the state's
 `stateQuantumShift`. -/
@@ -237,7 +240,7 @@ def khovanovComplexXIso (i : ℤ) :
 
 /-- On a state summand, the term comparison is the quantum-piece identification. -/
 @[reassoc (attr := simp)]
-theorem khovanovComplexι_comp_XIso_hom {i : ℤ}
+theorem khovanovComplexι_comp_khovanovComplexXIso_hom {i : ℤ}
     (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
     D.khovanovComplexι hD R j S ≫ (D.khovanovComplexXIso hD R j i).hom =
       eqToHom (D.resolutionCube_obj_normalized hD R j S.1) ≫

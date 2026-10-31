@@ -38,24 +38,26 @@ noncomputable def restrictionAddIsoShift :
     (fun K ↦ Hom.isoOfComponents (fun i ↦ (i * k).negOnePow • Iso.refl (K.X (i + k)))
       (fun i j hij ↦ by
         obtain rfl : j = i + 1 := hij.symm
-        -- Restriction keeps `K.d`; the native shift multiplies it by the sign of `k`.
-        have hd : ((i * k).negOnePow • 𝟙 (K.X (i + k))) ≫
+        -- Mathlib's restriction uses `up' 1` whereas the native shift uses `up ℤ`.
+        -- Their definitional shape equality prevents simp from rewriting this mixed goal;
+        -- expose the component identities and the formulas of `restriction_d` and
+        -- `shiftFunctor_obj_d'` before applying preadditivity.
+        change ((i * k).negOnePow • 𝟙 (K.X (i + k))) ≫
               (k.negOnePow • K.d (i + k) (i + 1 + k)) =
             K.d (i + k) (i + 1 + k) ≫
-              (((i + 1) * k).negOnePow • 𝟙 (K.X (i + 1 + k))) := by
-          simp only [Units.smul_def, Preadditive.zsmul_comp, Preadditive.comp_zsmul,
-            Category.id_comp, Category.comp_id, smul_smul,
-            ← Units.val_mul, ← Int.negOnePow_add]
-          have hsign : k + i * k = (i + 1) * k := by ring
-          rw [hsign]
-        exact hd))
+              (((i + 1) * k).negOnePow • 𝟙 (K.X (i + 1 + k)))
+        simp only [Units.smul_def, Preadditive.zsmul_comp, Preadditive.comp_zsmul,
+          Category.id_comp, Category.comp_id, smul_smul,
+          ← Units.val_mul, ← Int.negOnePow_add]
+        have hsign : k + i * k = (i + 1) * k := by ring
+        rw [hsign]))
     (fun {K L} f ↦ by
       ext i
-      -- Both functors act on the component `f.f (i + k)`; the scalar sign is central.
-      have hf : f.f (i + k) ≫ ((i * k).negOnePow • 𝟙 (L.X (i + k))) =
-          ((i * k).negOnePow • 𝟙 (K.X (i + k))) ≫ f.f (i + k) := by
-        simp [Units.smul_def]
-      exact hf)
+      -- As above, the mixed shape goal needs its component identities exposed before
+      -- simp can use preadditivity. Both functors preserve the component `f.f (i + k)`.
+      change f.f (i + k) ≫ ((i * k).negOnePow • 𝟙 (L.X (i + k))) =
+          ((i * k).negOnePow • 𝟙 (K.X (i + k))) ≫ f.f (i + k)
+      simp [Units.smul_def])
 
 /-- The forward comparison multiplies degree `i` by `(-1)^(i * k)`. -/
 @[simp]
