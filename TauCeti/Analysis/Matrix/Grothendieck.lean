@@ -43,10 +43,13 @@ which inherit the scalar bound `C`. Applying the real inequality twice gives `16
 
 ## Main declarations
 
+* `Matrix.abs_sum_sum_mul_mul_le_mul_sq`: the scalar bound rescaled to scalars bounded by `M`.
 * `Matrix.innerProductSup_le_mul_sq_add`: the absorption inequality.
 * `Matrix.innerProductSup_le_eight_mul`: `Γ(a) ≤ 8 * C`.
 * `Matrix.abs_sum_sum_mul_inner_le_eight_mul`: the real Grothendieck inequality in any real inner
   product space.
+* `Matrix.abs_sum_sum_map_mul_mul_mul_le`: real-linear images of a rotated `RCLike` matrix inherit
+  its scalar bound.
 * `Matrix.norm_sum_sum_mul_inner_le_sixteen_mul`: the Grothendieck inequality over `RCLike`
   scalars, in any inner product space.
 
@@ -64,8 +67,9 @@ namespace Matrix
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ]
 
-/-- The scalar bound for unit-ball scalars rescales to scalars bounded by `M`. -/
-private theorem abs_sum_sum_mul_mul_le_mul_sq (a : Matrix ι κ ℝ) {C : ℝ}
+/-- A bound `C` on `|∑ i, ∑ j, a i j * s i * t j|` for scalars of absolute value at most one
+rescales to the bound `C * M ^ 2` for scalars of absolute value at most `M > 0`. -/
+theorem abs_sum_sum_mul_mul_le_mul_sq (a : Matrix ι κ ℝ) {C : ℝ}
     (h : ∀ (s : ι → ℝ) (t : κ → ℝ), (∀ i, |s i| ≤ 1) → (∀ j, |t j| ≤ 1) →
       |∑ i, ∑ j, a i j * s i * t j| ≤ C)
     {M : ℝ} (hM : 0 < M) {s : ι → ℝ} {t : κ → ℝ} (hs : ∀ i, |s i| ≤ M)
@@ -172,9 +176,11 @@ theorem abs_sum_sum_mul_inner_le_eight_mul {E : Type*} [NormedAddCommGroup E]
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 
-/-- A real-linear image `φ (ω * a i j)` of a rotated `RCLike` matrix inherits the scalar bound of
-`a` on real unit-ball scalars, for `φ = re` or `φ = im`. -/
-private theorem abs_sum_sum_map_mul_mul_mul_le (a : Matrix ι κ 𝕜) {C : ℝ}
+/-- If `‖∑ i, ∑ j, a i j * s i * t j‖ ≤ C` for all scalars of norm at most one, then for every
+`ω` of norm at most one and every real-linear functional `φ` with `|φ z| ≤ ‖z‖` (such as `re` or
+`im`), the real matrix `φ (ω * a i j)` satisfies the same bound `C` on real scalars of absolute
+value at most one. -/
+theorem abs_sum_sum_map_mul_mul_mul_le (a : Matrix ι κ 𝕜) {C : ℝ}
     (h : ∀ (s : ι → 𝕜) (t : κ → 𝕜), (∀ i, ‖s i‖ ≤ 1) → (∀ j, ‖t j‖ ≤ 1) →
       ‖∑ i, ∑ j, a i j * s i * t j‖ ≤ C)
     {ω : 𝕜} (hω : ‖ω‖ ≤ 1) (φ : 𝕜 →L[ℝ] ℝ) (hφ : ∀ z, |φ z| ≤ ‖z‖) {s : ι → ℝ}
@@ -184,6 +190,7 @@ private theorem abs_sum_sum_map_mul_mul_mul_le (a : Matrix ι κ 𝕜) {C : ℝ}
       φ (ω * ∑ i, ∑ j, a i j * (s i : 𝕜) * (t j : 𝕜)) := by
     simp only [Finset.mul_sum, map_sum]
     refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+    -- Write the summand as a real scalar action, so that the real-linearity of `φ` applies.
     rw [show ω * (a i j * (s i : 𝕜) * (t j : 𝕜)) = (s i * t j) • (ω * a i j) by
       simp only [RCLike.real_smul_eq_coe_mul, RCLike.ofReal_mul]; ring, map_smul, smul_eq_mul]
     ring
@@ -204,17 +211,11 @@ theorem norm_sum_sum_mul_inner_le_sixteen_mul {E : Type*} [NormedAddCommGroup E]
     {u : ι → E} {v : κ → E} (hu : ∀ i, ‖u i‖ ≤ 1) (hv : ∀ j, ‖v j‖ ≤ 1) :
     ‖∑ i, ∑ j, a i j * ⟪u i, v j⟫_𝕜‖ ≤ 16 * C := by
   set z := ∑ i, ∑ j, a i j * ⟪u i, v j⟫_𝕜
-  -- Rotate `z` onto the nonnegative real axis by `ω = ‖z‖⁻¹ * conj z`.
-  set ω : 𝕜 := (‖z‖ : 𝕜)⁻¹ * (starRingEnd 𝕜) z
-  have hω : ‖ω‖ ≤ 1 := by
-    rw [norm_mul, norm_inv, RCLike.norm_ofReal, abs_norm, RCLike.norm_conj]
-    exact inv_mul_le_one_of_le₀ le_rfl (norm_nonneg z)
+  -- Rotate `z` onto the nonnegative real axis by a unit scalar `ω`.
+  obtain ⟨ω, hω₁, hz⟩ := RCLike.exists_norm_eq_mul_self z
+  have hω : ‖ω‖ ≤ 1 := hω₁.le
   have hωz : ‖z‖ = RCLike.re (ω * z) := by
-    rw [mul_assoc, RCLike.conj_mul, ← RCLike.ofReal_pow, ← RCLike.ofReal_inv,
-      ← RCLike.ofReal_mul, RCLike.ofReal_re]
-    rcases eq_or_ne ‖z‖ 0 with hz | hz
-    · simp [hz]
-    · field_simp
+    rw [← hz, RCLike.ofReal_re]
   -- Regard `E` as a real inner product space and split the real part of the rotated sum.
   let _ : InnerProductSpace ℝ E := InnerProductSpace.rclikeToReal 𝕜 E
   have hre (x y : E) : ⟪x, y⟫_ℝ = RCLike.re ⟪x, y⟫_𝕜 := real_inner_eq_re_inner 𝕜 x y
