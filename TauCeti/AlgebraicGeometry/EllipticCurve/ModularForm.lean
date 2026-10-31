@@ -32,7 +32,6 @@ integral modular form lies in `ℤ[c₄, c₆, Δ]`, is the remaining inclusion 
 
 ## Main definitions
 
-* `WeierstrassCurve.coefficientWeight`: the weights `1, 2, 3, 4, 6` of `a₁, a₂, a₃, a₄, a₆`.
 * `WeierstrassCurve.IsIntegralModularForm`: the predicate of being an integral modular form of
   weight `k`.
 
@@ -43,8 +42,6 @@ integral modular form lies in `ℤ[c₄, c₆, Δ]`, is the remaining inclusion 
 * `WeierstrassCurve.isIntegralModularForm_c₄`, `isIntegralModularForm_c₆`,
   `isIntegralModularForm_Δ`: the invariants `c₄`, `c₆` and `Δ` of the universal curve are
   integral modular forms of weights `4`, `6` and `12`.
-* `WeierstrassCurve.specialize_mk_smul`: the scaling `(u, 0, 0, 0)` multiplies the coordinate
-  `aᵢ` by `u⁻ⁱ`.
 * `WeierstrassCurve.IsIntegralModularForm.isWeightedHomogeneous`: an integral modular form of
   weight `k` is weighted homogeneous of weight `k`; in particular a nonzero integral modular form
   has a unique weight (`WeierstrassCurve.IsIntegralModularForm.inj_right`).
@@ -64,27 +61,6 @@ public section
 namespace WeierstrassCurve
 
 open MvPolynomial Universal
-
-/-- The weight of a coefficient of a Weierstrass curve: `aᵢ` has weight `i`, so that `a₁`, `a₂`,
-`a₃`, `a₄`, `a₆` have weights `1`, `2`, `3`, `4`, `6`. The scaling `(x, y) ↦ (u²x, u³y)` divides
-`aᵢ` by `uⁱ`, and the invariants `c₄`, `c₆`, `Δ` are weighted homogeneous of weights `4`, `6`,
-`12` for these weights. -/
-def coefficientWeight : Coeff → ℕ
-  | .A₁ => 1
-  | .A₂ => 2
-  | .A₃ => 3
-  | .A₄ => 4
-  | .A₆ => 6
-
-@[simp] lemma coefficientWeight_A₁ : coefficientWeight .A₁ = 1 := (rfl)
-
-@[simp] lemma coefficientWeight_A₂ : coefficientWeight .A₂ = 2 := (rfl)
-
-@[simp] lemma coefficientWeight_A₃ : coefficientWeight .A₃ = 3 := (rfl)
-
-@[simp] lemma coefficientWeight_A₄ : coefficientWeight .A₄ = 4 := (rfl)
-
-@[simp] lemma coefficientWeight_A₆ : coefficientWeight .A₆ = 6 := (rfl)
 
 /-- A polynomial `f` in the coefficients of the universal Weierstrass curve is an *integral
 modular form of weight `k`* if `f(C • W) = u⁻ᵏ f(W)` for every Weierstrass curve `W` and every
@@ -163,17 +139,6 @@ theorem isIntegralModularForm_c₆ : IsIntegralModularForm 6 Universal.curve.c�
 theorem isIntegralModularForm_Δ : IsIntegralModularForm 12 Universal.curve.Δ :=
   fun R _ W C ↦ by rw [specialize_Δ, specialize_Δ, variableChange_Δ]
 
-/-- The scaling `(x, y) ↦ (u²x, u³y)`, the change of variables `(u, 0, 0, 0)`, multiplies the
-coordinate `aᵢ` by `u⁻ⁱ`. -/
-theorem specialize_mk_smul {R : Type*} [CommRing R] (u : Rˣ) (W : WeierstrassCurve R)
-    (f : MvPolynomial Coeff ℤ) :
-    ((⟨u, 0, 0, 0⟩ : VariableChange R) • W).specialize f =
-      aeval (fun i ↦ ↑u⁻¹ ^ coefficientWeight i * W.specialize (X i)) f := by
-  refine congrFun (congrArg DFunLike.coe (ringHom_ext (fun n ↦ ?_) fun i ↦ ?_)) f
-  · rw [eq_intCast C, map_intCast, map_intCast]
-  · cases i <;> simp [variableChange_a₁, variableChange_a₂, variableChange_a₃,
-      variableChange_a₄, variableChange_a₆]
-
 /-- **The weight of an integral modular form.** An integral modular form of weight `k` is
 weighted homogeneous of weight `k` for the weights `coefficientWeight`. -/
 theorem IsIntegralModularForm.isWeightedHomogeneous (hf : IsIntegralModularForm k f) :
@@ -193,11 +158,10 @@ theorem IsIntegralModularForm.isWeightedHomogeneous (hf : IsIntegralModularForm 
       ((⟨v⁻¹, 0, 0, 0⟩ : VariableChange _) • W).specialize g =
         (aeval fun i ↦ C (2 ^ coefficientWeight i) * X i).toRingHom
           (MvPolynomial.map (Int.castRingHom ℚ) g) := by
-    rw [← RingHom.comp_apply]
-    refine congrFun (congrArg DFunLike.coe (ringHom_ext (fun n ↦ ?_) fun i ↦ ?_)) g
-    · rw [eq_intCast C, map_intCast, map_intCast]
-    · cases i <;> simp [W, hv, variableChange_a₁, variableChange_a₂, variableChange_a₃,
-        variableChange_a₄, variableChange_a₆]
+    rw [specialize_mk_smul, inv_inv, hv, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, aeval_def,
+      aeval_def, eval₂_map,
+      RingHom.ext_int (algebraMap ℤ _) ((algebraMap ℚ _).comp (Int.castRingHom ℚ))]
+    simp only [hW, map_X, map_pow]
   have h := hf.specialize_smul W ⟨v⁻¹, 0, 0, 0⟩
   rw [hvW, hW, inv_inv, hv, ← map_pow] at h
   have hφ : φ.IsWeightedHomogeneous coefficientWeight k :=
