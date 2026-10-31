@@ -46,6 +46,9 @@ supports in `S` for sheaves of `R`-modules; this is developed in
   morphisms `R_{V,U} ⟶ F` and sections of `F` over `V` restricting to zero along `i`;
 * `TauCeti.CategoryTheory.relativeFreeModuleYonedaSequence_shortExact`: the sequence
   `0 ⟶ R_U ⟶ R_V ⟶ R_{V,U} ⟶ 0` is short exact for a monomorphism `i`;
+* `TauCeti.CategoryTheory.relativeFreeModuleYonedaSheafMap`: the map `R_{V',U'} ⟶ R_{V,U}` induced
+  by a commutative square, and `TauCeti.CategoryTheory.isIso_relativeFreeModuleYonedaSheafMap_iff`,
+  its Yoneda criterion for being an isomorphism in terms of sections restricting to zero;
 * `TauCeti.CategoryTheory.relativeFreeModuleYonedaExtZeroEquiv`: the `R`-linear identification of
   `Ext⁰(R_{V,U}, F)` with the sections of `F` over `V` restricting to zero along `i`.
 
@@ -257,6 +260,46 @@ lemma coe_relativeFreeModuleYonedaSheafHomEquiv_map_comp (F : Sheaf J (ModuleCat
     coe_relativeFreeModuleYonedaSheafHomEquiv_apply,
     cokernel_π_relativeFreeModuleYonedaSheafMap_assoc,
     freeModuleYonedaSheafSectionsEquiv_naturality_left]
+
+/-- The map of relative free sheaves induced by a commutative square is an isomorphism if and only
+if, for every sheaf of `R`-modules `F`, restriction along `b` is a bijection from the sections over
+`V` vanishing along `i` to the sections over `V'` vanishing along `i'`. -/
+theorem isIso_relativeFreeModuleYonedaSheafMap_iff :
+    IsIso (relativeFreeModuleYonedaSheafMap J R i' i a b w) ↔
+      ∀ (F : Sheaf J (ModuleCat.{v} R)) (s : F.obj.obj (op V')),
+        s ∈ LinearMap.ker (F.obj.map i'.op).hom →
+          ∃! t : F.obj.obj (op V),
+            t ∈ LinearMap.ker (F.obj.map i.op).hom ∧ F.obj.map b.op t = s := by
+  set f := relativeFreeModuleYonedaSheafMap J R i' i a b w
+  -- both directions compare precomposition with `f` and restriction along `b` through
+  -- `relativeFreeModuleYonedaSheafHomEquiv`
+  have key (F : Sheaf J (ModuleCat.{v} R)) (g : relativeFreeModuleYonedaSheaf J R i ⟶ F)
+      (g' : relativeFreeModuleYonedaSheaf J R i' ⟶ F) :
+      f ≫ g = g' ↔ F.obj.map b.op (relativeFreeModuleYonedaSheafHomEquiv J R i F g) =
+        relativeFreeModuleYonedaSheafHomEquiv J R i' F g' := by
+    rw [← coe_relativeFreeModuleYonedaSheafHomEquiv_map_comp, Subtype.coe_inj,
+      (relativeFreeModuleYonedaSheafHomEquiv J R i' F).injective.eq_iff]
+  constructor
+  · intro _ F s hs
+    let g' := (relativeFreeModuleYonedaSheafHomEquiv J R i' F).symm ⟨s, hs⟩
+    refine ⟨relativeFreeModuleYonedaSheafHomEquiv J R i F (inv f ≫ g'),
+      ⟨(relativeFreeModuleYonedaSheafHomEquiv J R i F _).2, ?_⟩, ?_⟩
+    · simpa [g'] using (key F (inv f ≫ g') g').1 (IsIso.hom_inv_id_assoc f g')
+    · rintro t ⟨ht, hts⟩
+      have h : f ≫ (relativeFreeModuleYonedaSheafHomEquiv J R i F).symm ⟨t, ht⟩ = g' :=
+        (key F _ g').2 (by simpa [g'] using hts)
+      rw [← h, IsIso.inv_hom_id_assoc, LinearEquiv.apply_symm_apply]
+  · intro h
+    refine isIso_of_coyoneda_map_bijective f fun F ↦ ⟨fun g₁ g₂ hg ↦ ?_, fun g' ↦ ?_⟩
+    · set s := relativeFreeModuleYonedaSheafHomEquiv J R i' F (f ≫ g₂)
+      apply (relativeFreeModuleYonedaSheafHomEquiv J R i F).injective
+      exact Subtype.ext <| (h F s s.2).unique
+        ⟨(relativeFreeModuleYonedaSheafHomEquiv J R i F g₁).2, (key F g₁ _).1 hg⟩
+        ⟨(relativeFreeModuleYonedaSheafHomEquiv J R i F g₂).2, (key F g₂ _).1 rfl⟩
+    · obtain ⟨t, ⟨ht, hts⟩, -⟩ := h F _ (relativeFreeModuleYonedaSheafHomEquiv J R i' F g').2
+      refine ⟨(relativeFreeModuleYonedaSheafHomEquiv J R i F).symm ⟨t, ht⟩, (key F _ g').2 ?_⟩
+      rw [LinearEquiv.apply_symm_apply]
+      exact hts
 
 end map
 
