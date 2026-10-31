@@ -30,6 +30,15 @@ cell contained in it (`TauCeti.mem_intrinsicInterior_or_of_mem`), and the intrin
 cell avoiding `S` meets no other cell of smaller or equal dimension
 (`TauCeti.eq_or_finrank_lt_of_mem_intrinsicInterior`).
 
+If `s` has the same affine span as `t` and contains the part of `t` in an open set `U`, then the
+intrinsic interior points of `t` in `U` are intrinsic interior points of `s`
+(`TauCeti.intrinsicInterior_inter_subset_of_affineSpan_eq`). From an intrinsic interior point,
+every small move along the affine span stays in the set
+(`TauCeti.eventually_add_smul_mem_of_mem_intrinsicInterior`). The intrinsic frontier of a closed
+set consists of its points outside its intrinsic interior (`IsClosed.sdiff_intrinsicInterior`).
+These are the tools for computing intrinsic interiors and frontiers of concrete cells, such as the
+bands of `TauCeti/Analysis/Convex/RegionBetween.lean`.
+
 A closed bounded convex set `C` of a real normed space, with a point `c` of its intrinsic
 interior, is homeomorphic to the closed unit ball of the direction `V` of its affine span
 (`TauCeti.convexClosedBallHomeomorph`). Translating by `-c` turns `C` into a closed bounded convex
@@ -103,6 +112,25 @@ theorem intrinsicInterior_mono_of_affineSpan_eq (hst : s ⊆ t)
     (h : affineSpan 𝕜 s = affineSpan 𝕜 t) : intrinsicInterior 𝕜 s ⊆ intrinsicInterior 𝕜 t := by
   rw [intrinsicInterior, intrinsicInterior, h]
   exact image_mono (interior_mono (preimage_mono hst))
+
+/-- If `s` has the same affine span as `t` and contains the part `t ∩ U` of `t` in an open set
+`U`, then the intrinsic interior points of `t` in `U` are intrinsic interior points of `s`. -/
+theorem intrinsicInterior_inter_subset_of_affineSpan_eq {U : Set P} (hU : IsOpen U)
+    (htU : t ∩ U ⊆ s) (h : affineSpan 𝕜 s = affineSpan 𝕜 t) :
+    intrinsicInterior 𝕜 t ∩ U ⊆ intrinsicInterior 𝕜 s := by
+  rintro _ ⟨⟨y, hy, rfl⟩, hyU⟩
+  rw [intrinsicInterior, h]
+  have hsub : interior ((↑) ⁻¹' t) ∩ (↑) ⁻¹' U ⊆ ((↑) ⁻¹' s : Set (affineSpan 𝕜 t)) :=
+    fun z hz ↦ htU ⟨(interior_subset hz.1 : z ∈ (↑) ⁻¹' t), hz.2⟩
+  exact ⟨y, interior_maximal hsub (isOpen_interior.inter (hU.preimage continuous_subtype_val))
+    ⟨hy, hyU⟩, rfl⟩
+
+/-- The intrinsic frontier of a closed set consists of its points outside its intrinsic
+interior. -/
+theorem _root_.IsClosed.sdiff_intrinsicInterior (hs : IsClosed s) :
+    s \ intrinsicInterior 𝕜 s = intrinsicFrontier 𝕜 s := by
+  rw [← intrinsicClosure_sdiff_intrinsicInterior,
+    (hs.preimage continuous_subtype_val).intrinsicClosure]
 
 end AffineSpan
 
@@ -234,6 +262,14 @@ theorem setOf_add_mem_mem_nhds_of_mem_intrinsicInterior (hc : c ∈ intrinsicInt
   refine Filter.mem_of_superset
     (hφ.continuousAt.preimage_mem_nhds (hφ0 ▸ isOpen_interior.mem_nhds hy)) fun v hv ↦ ?_
   simpa [φ, add_comm] using interior_subset hv
+
+/-- From a point `c` of the intrinsic interior of `C`, every sufficiently small move `ε • v` along
+a direction `v` of the affine span of `C` stays in `C`. -/
+theorem eventually_add_smul_mem_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior ℝ C)
+    {v : E} (hv : v ∈ (affineSpan ℝ C).direction) : ∀ᶠ ε in 𝓝 (0 : ℝ), c + ε • v ∈ C := by
+  have hcont : Continuous fun ε : ℝ ↦ (ε • ⟨v, hv⟩ : (affineSpan ℝ C).direction) := by fun_prop
+  simpa using (hcont.tendsto' 0 0 (zero_smul ℝ _)).eventually
+    (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)
 
 /-- **A closed bounded convex set is a ball around each intrinsic interior point.** For a closed
 bounded convex set `C` of a real normed space and a point `c` of its intrinsic interior, the closed
