@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.BaseExists
 public import TauCeti.Algebra.Lie.HighestWeight.TracePower
 public import TauCeti.Algebra.Lie.Killing.ChevalleyRestriction
-public import TauCeti.Algebra.Lie.Sl2.Weyl.Automorphism
 
 /-!
 # Chevalley's restriction theorem
@@ -20,13 +19,11 @@ form is nondegenerate, and `H` a splitting Cartan subalgebra. Restricting polyno
 it restricts to an isomorphism from the invariants `S(L)^L` onto the Weyl invariants `S(H)^W`
 (`TauCeti.linearInvariants H`). It has three parts.
 
-* **Weyl invariance.** For a nonzero root `α` with `sl₂` triple `(α^∨, e, f)`, the inner
-  automorphism `σ = exp(ad e) exp(-ad f) exp(ad e)` (`TauCeti.weylAut`) acts on `H` by the
-  coreflection `h ↦ h - α(h) • α^∨`, and it preserves the Killing form, so it commutes with the
-  Killing-orthogonal projection `L → H` defining the restriction. An invariant is fixed by `σ`,
-  so its restriction is fixed by the coreflection; the coreflections generate the Weyl group.
-* **Injectivity** on `S(L)^L` is `TauCeti.lieCartanRestriction_injOn_lieInvariants`: it rests on
-  the density of the conjugates of `H` under the inner automorphisms.
+* **Weyl invariance.** The restriction of an invariant is fixed by the coreflection of every root
+  (`TauCeti.map_coreflection_lieCartanRestriction`), and the coreflections generate the Weyl
+  group.
+* **Injectivity** on `S(L)^L` is `LieSubalgebra.lieCartanRestriction_injOn_lieInvariants`: it rests
+  on the density of the conjugates of `H` under the inner automorphisms.
 * **Surjectivity.** The Weyl invariants form a graded subalgebra, and in each degree `m` they are
   spanned by the power sums `∑_μ dim L(λ)_μ · t_μ ^ m` of the weights of the irreducible modules
   `L(λ)`, `λ` dominant integral
@@ -36,20 +33,18 @@ it restricts to an isomorphism from the invariants `S(L)^L` onto the Weyl invari
 
 ## Main definitions
 
-* `TauCeti.lieChevalleyRestrictionIso H`: the isomorphism `S(L)^L ≃ₐ[K] S(H)^W` given by
+* `LieSubalgebra.lieChevalleyRestrictionIso H`: the isomorphism `S(L)^L ≃ₐ[K] S(H)^W` given by
   restriction to `H`.
 
 ## Main results
 
-* `TauCeti.map_coreflection_lieCartanRestriction`: the coreflection of a root fixes the
-  restriction of an invariant.
 * `TauCeti.lieCartanRestriction_mem_linearInvariants`: the restriction of an invariant is a Weyl
   invariant.
-* `TauCeti.linearInvariants_inf_homogeneousSubmodule_le_map_lieInvariants`: a homogeneous Weyl
-  invariant of degree `m` is the restriction of an invariant of degree `m`.
-* `TauCeti.map_lieInvariants_lieCartanRestriction`: the image of `S(L)^L` is `S(H)^W`.
-* `TauCeti.lieChevalleyRestrictionIso_mem_homogeneousSubmodule_iff`: the isomorphism preserves
-  degrees in both directions.
+* `LieSubalgebra.linearInvariants_inf_homogeneousSubmodule_le_map_lieInvariants`: a homogeneous
+  Weyl invariant of degree `m` is the restriction of an invariant of degree `m`.
+* `LieSubalgebra.map_lieInvariants_lieCartanRestriction`: the image of `S(L)^L` is `S(H)^W`.
+* `LieSubalgebra.lieChevalleyRestrictionIso_mem_homogeneousSubmodule_iff`: the isomorphism
+  preserves degrees in both directions.
 
 ## References
 
@@ -71,49 +66,6 @@ variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
 section Weyl
 
 variable [IsTriangularizable K H L]
-
-variable {H} in
-/-- **The coreflections fix the restriction of an invariant.** For a root `α`, the coreflection
-`h ↦ h - α(h) • α^∨` of `H` fixes the restriction `TauCeti.lieCartanRestriction H p` of every
-invariant `p ∈ S(L)^L`. On `H` it is the inner automorphism `exp(ad e) exp(-ad f) exp(ad e)` of an
-`sl₂` triple of `α`, which fixes `p`. -/
-theorem map_coreflection_lieCartanRestriction (i : H.root) {p : _root_.SymmetricAlgebra K L}
-    (hp : p ∈ lieInvariants K L L) :
-    _root_.SymmetricAlgebra.map K ((rootSystem H).coreflection i).toLinearMap
-        (lieCartanRestriction H p) =
-      lieCartanRestriction H p := by
-  let := ratLieAlgebra K L
-  have hα : (i : Weight K H L).IsNonZero := (Finset.mem_filter.mp i.2).2
-  obtain ⟨h, e, f, t, heα, hfα⟩ := exists_isSl2Triple_of_weight_isNonZero hα
-  have he := isNilpotent_ad_of_mem_rootSpace H (χ := ⇑(i : Weight K H L)) hα heα
-  have hf := isNilpotent_ad_of_mem_rootSpace H (χ := ⇑(-(i : Weight K H L))) hα.neg hfα
-  set σ := weylAut t he hf
-  set s := (rootSystem H).coreflection i
-  -- on `H`, the Weyl automorphism is the coreflection
-  have hσ (y : H) : σ y = (s y : L) := by
-    have hye : ⁅(y : L), e⁆ = (i : Weight K H L) y • e := lie_eq_smul_of_mem_rootSpace heα y
-    have hyf : ⁅(y : L), f⁆ = -((i : Weight K H L) y • f) := by
-      simpa using lie_eq_smul_of_mem_rootSpace hfα y
-    rw [weylAut_apply_of_lie_eq_smul he hf t hye hyf, t.h_eq_coroot hα heα hfα,
-      RootPairing.coreflection_apply]
-    simp
-  -- `σ` preserves the Killing form, so it commutes with the Killing-orthogonal projection
-  have hπ (x : L) : killingCartanProjection H (σ x) = s (killingCartanProjection H x) := by
-    refine ((eq_killingCartanProjection_iff H).mpr fun y ↦ ?_).symm
-    have hy : σ (s y : L) = y := by rw [hσ, RootPairing.coreflection_same]
-    rw [← hσ, ← hy, killingForm_of_equiv_apply, killingForm_of_equiv_apply,
-      killingForm_killingCartanProjection]
-  -- hence restriction to `H` intertwines `σ` with the coreflection
-  have hcomm : (_root_.SymmetricAlgebra.map K s.toLinearMap).comp (lieCartanRestriction H) =
-      (lieCartanRestriction H).comp (_root_.SymmetricAlgebra.map K σ.toLinearEquiv.toLinearMap) :=
-    _root_.SymmetricAlgebra.algHom_ext (LinearMap.ext fun x ↦ by simp [hπ])
-  have hfix := map_apply_of_mem_intLieAlgebra (t.ofLinearEquiv_weylAut_mem_intLieAlgebra he hf) hp
-  have hcoe : ((LinearMap.GeneralLinearGroup.ofLinearEquiv σ.toLinearEquiv :
-      LinearMap.GeneralLinearGroup K L) : Module.End K L) = σ.toLinearEquiv.toLinearMap :=
-    LinearMap.ext fun x ↦ by simp
-  rw [hcoe] at hfix
-  conv_rhs => rw [← hfix]
-  rw [← AlgHom.comp_apply, hcomm, AlgHom.comp_apply]
 
 variable {H} in
 /-- **The restriction of an invariant is a Weyl invariant**: for `p ∈ S(L)^L`, the restriction
@@ -139,6 +91,15 @@ theorem lieCartanRestriction_mem_linearInvariants {p : _root_.SymmetricAlgebra K
   | mul x y hx hy ihx ihy => rw [← MulMemClass.mk_mul_mk (hx := hx) (hy := hy), mul_smul, ihx, ihy]
 
 end Weyl
+
+end TauCeti
+
+namespace LieSubalgebra
+
+open LieAlgebra LieAlgebra.IsKilling _root_.LieModule Module TauCeti TauCeti.SymmetricAlgebra
+
+variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+  [FiniteDimensional K L] [IsKilling K L] (H : LieSubalgebra K L) [H.IsCartanSubalgebra]
 
 /-! ### Surjectivity onto the Weyl invariants -/
 
@@ -228,4 +189,4 @@ theorem lieChevalleyRestrictionIso_mem_homogeneousSubmodule_iff {p : lieInvarian
 
 end Surjective
 
-end TauCeti
+end LieSubalgebra
