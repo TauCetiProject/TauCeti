@@ -11,10 +11,6 @@ public import Mathlib.CategoryTheory.Subobject.Limits
 /-!
 # Image subobjects in abelian categories
 
-In a balanced category with images, precomposing with an epimorphism does not change an image
-subobject (`imageSubobject_comp_eq_of_epi`). Hence the direct image of the image subobject of `f`
-along `g` is the image subobject of `f ≫ g` (`Subobject.exists_obj_imageSubobject`).
-
 In an abelian category, a morphism `a : A ⟶ Y` factors through the image subobject of
 `f : X ⟶ Y` exactly when, after precomposition with an epimorphism, it lifts along `f`
 (`imageSubobject_factors_iff_up_to_refinements`). This is the subobject form of the
@@ -31,28 +27,7 @@ universe v u
 
 namespace CategoryTheory
 
-variable {C : Type u} [Category.{v} C] {X Y : C}
-
-section Balanced
-
-variable [Balanced C] [HasImages C] [HasEqualizers C]
-
-/-- Precomposing with an epimorphism does not change the image subobject. -/
-lemma imageSubobject_comp_eq_of_epi {X' : C} (h : X' ⟶ X) [Epi h] (f : X ⟶ Y) :
-    imageSubobject (h ≫ f) = imageSubobject f := by
-  have := isIso_of_mono_of_epi (Subobject.ofLE _ _ (imageSubobject_comp_le h f))
-  exact le_antisymm (imageSubobject_comp_le h f)
-    (Subobject.le_of_comm (inv (Subobject.ofLE _ _ (imageSubobject_comp_le h f))) (by simp))
-
-/-- The direct image of the image subobject of `f` along `g` is the image subobject of `f ≫ g`. -/
-lemma Subobject.exists_obj_imageSubobject (f : X ⟶ Y) {Z : C} (g : Y ⟶ Z) :
-    (Subobject.exists g).obj (imageSubobject f) = imageSubobject (f ≫ g) := by
-  rw [Subobject.exists_eq_imageSubobject,
-    ← imageSubobject_comp_eq_of_epi (factorThruImageSubobject f), imageSubobject_arrow_comp_assoc]
-
-end Balanced
-
-variable [Abelian C]
+variable {C : Type u} [Category.{v} C] [Abelian C] {X Y : C}
 
 /-- A morphism factors through the image subobject of `f` if and only if it lifts along `f`
 up to refinements. -/

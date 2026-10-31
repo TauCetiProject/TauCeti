@@ -19,12 +19,14 @@ Let `K` be a homological complex and let `S i` be a subobject of `K.X i` for eve
 such that every differential `K.d i j` maps `S i` into `S j`. Then
 `HomologicalComplex.ofSubobjects K S hS` is the complex with terms `S i` and the restricted
 differentials, and `HomologicalComplex.ofSubobjectsι K S hS` is its inclusion into `K`, a
-monomorphism of complexes.
+monomorphism of complexes. A morphism of complexes into `K` whose components factor through the
+subobjects `S i` lifts uniquely to this subcomplex (`HomologicalComplex.ofSubobjectsLift`).
 
-In an abelian category, this subcomplex is exact in degree `j` exactly when every element of
-`S j` which is a cycle in `K` is the differential of an element of `S i`
-(`HomologicalComplex.exactAt_ofSubobjects_iff`). This is how acyclic subcomplexes are built degree
-by degree.
+In an abelian category, this subcomplex is exact in degree `j` exactly when the intersection of
+`S j` with the cycles of `K` is contained in the image of `S i` under the differential
+(`HomologicalComplex.exactAt_ofSubobjects_iff`). In terms of generalized elements, every cycle of
+`K` in `S j` is the differential of an element of `S i` up to an epimorphic refinement. This is
+how acyclic subcomplexes are built degree by degree.
 -/
 
 public section
@@ -87,6 +89,30 @@ instance (i : ι) : Mono ((K.ofSubobjectsι S hS).f i) := by
 instance : Mono (K.ofSubobjectsι S hS) :=
   mono_of_mono_f _ inferInstance
 
+variable {K S} in
+/-- A morphism of complexes `f : L ⟶ K` whose components factor through the subobjects `S i`
+lifts to the subcomplex `K.ofSubobjects S hS`. -/
+noncomputable def ofSubobjectsLift {L : HomologicalComplex C c} (f : L ⟶ K)
+    (hf : ∀ i, (S i).Factors (f.f i)) : L ⟶ K.ofSubobjects S hS where
+  f i := (S i).factorThru _ (hf i) ≫ (K.ofSubobjectsXIso S hS i).inv
+  comm' i j _ := by
+    rw [← cancel_mono ((K.ofSubobjectsι S hS).f j)]
+    simp [← Hom.comm]
+
+@[reassoc (attr := simp)]
+lemma ofSubobjectsLift_ofSubobjectsι {L : HomologicalComplex C c} (f : L ⟶ K)
+    (hf : ∀ i, (S i).Factors (f.f i)) :
+    ofSubobjectsLift hS f hf ≫ K.ofSubobjectsι S hS = f := by
+  ext i
+  simp [ofSubobjectsLift]
+
+/-- The lift `ofSubobjectsLift hS f hf` is the unique morphism whose composite with the
+inclusion `K.ofSubobjectsι S hS` is `f`. -/
+lemma ofSubobjectsLift_unique {L : HomologicalComplex C c} (f : L ⟶ K)
+    (hf : ∀ i, (S i).Factors (f.f i)) (g : L ⟶ K.ofSubobjects S hS)
+    (hg : g ≫ K.ofSubobjectsι S hS = f) : g = ofSubobjectsLift hS f hf := by
+  rw [← cancel_mono (K.ofSubobjectsι S hS), hg, ofSubobjectsLift_ofSubobjectsι]
+
 lemma isZero_ofSubobjects_X [HasZeroObject C] (i : ι) (h : S i = ⊥) :
     IsZero ((K.ofSubobjects S hS).X i) := by
   refine IsZero.of_iso ?_ (K.ofSubobjectsXIso S hS i)
@@ -98,8 +124,8 @@ end HasZeroMorphisms
 variable [Abelian C] (K : HomologicalComplex C c) (S : ∀ i, Subobject (K.X i))
   (hS : ∀ i j, c.Rel i j → (S j).Factors ((S i).arrow ≫ K.d i j))
 
-/-- The subcomplex `K.ofSubobjects S hS` is exact in degree `j` if and only if every element of
-`S j` which is a cycle of `K` is the differential of an element of `S i`. -/
+/-- The subcomplex `K.ofSubobjects S hS` is exact in degree `j` if and only if the intersection
+of `S j` with the cycles of `K` is contained in the image of `S i` under the differential. -/
 lemma exactAt_ofSubobjects_iff {i j k : ι} (hij : c.Rel i j) (hjk : c.Rel j k) :
     (K.ofSubobjects S hS).ExactAt j ↔
       S j ⊓ kernelSubobject (K.d j k) ≤ (Subobject.exists (K.d i j)).obj (S i) := by

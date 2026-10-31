@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Homology.HomologicalComplex.OfSubobjects
 
 import Mathlib.CategoryTheory.Abelian.Exact
 import TauCeti.CategoryTheory.Generator.Abelian
+import TauCeti.CategoryTheory.Subobject.Image
 
 /-!
 # Small acyclic subcomplexes of acyclic complexes
@@ -19,16 +20,16 @@ import TauCeti.CategoryTheory.Generator.Abelian
 Let `C` be an abelian category with coproducts indexed by `Type w`, whose subobject lattices are
 `w`-small, and let `G` be a separator of `C`; every Grothendieck abelian category is an example.
 We show that acyclic cochain complexes are exhausted by bounded above acyclic subcomplexes whose
-terms have bounded size (`CochainComplex.exists_bounded_acyclic_subcomplex`).
+terms have bounded size (`CategoryTheory.IsSeparator.exists_bounded_acyclic_subcomplex`).
 
 More precisely, there is a sequence of objects `B : ℕ → C` such that, given an acyclic complex
 `M` and a morphism `ψ : G ⟶ M.X n`, there is an acyclic subcomplex `N` of `M`, concentrated in
 degrees `≤ n + 1`, through which `ψ` factors and whose terms are quotients of objects `B j`.
 In particular, every nonzero acyclic complex contains a nonzero such subcomplex
-(`CochainComplex.exists_bounded_nonzero_acyclic_subcomplex`). As the quotients of a fixed object
-are indexed by its subobjects, these subcomplexes form an essentially small family. This bound is
-the input of the transfinite constructions of K-injective resolutions and of the injective model
-structure on unbounded complexes over a Grothendieck abelian category.
+(`CategoryTheory.IsSeparator.exists_bounded_nonzero_acyclic_subcomplex`). As the quotients of a
+fixed object are indexed by its subobjects, these subcomplexes form an essentially small family.
+This bound is the input of the transfinite constructions of K-injective resolutions and of the
+injective model structure on unbounded complexes over a Grothendieck abelian category.
 
 The subcomplex is built downwards from degree `n`: if its term in degree `k` is the image of a
 morphism from `B j`, then by acyclicity the cycles it contains are boundaries, and the term in
@@ -112,12 +113,13 @@ private lemma generator_snd_eq_zero (m : ℤ) (hm : n + 2 ≤ m) :
   obtain ⟨t, rfl⟩ : ∃ t : ℕ, m = n + 2 + t := ⟨(m - (n + 2)).toNat, by omega⟩
   induction t with
   | zero =>
-    rw [show n + 2 + ((0 : ℕ) : ℤ) = n + 1 + 1 by omega, generator_add_one _ _ _ _ (by omega),
-      generator_add_one _ _ _ _ le_rfl, generator_self]
+    have hm : n + 2 + ((0 : ℕ) : ℤ) = n + 1 + 1 := by omega
+    rw [hm, generator_add_one _ _ _ _ (by omega), generator_add_one _ _ _ _ le_rfl,
+      generator_self]
     exact (Category.assoc _ _ _).trans (by rw [M.d_comp_d, comp_zero])
   | succ t ih =>
-    rw [show n + 2 + ((t + 1 : ℕ) : ℤ) = n + 2 + t + 1 by omega,
-      generator_add_one _ _ _ _ (by omega)]
+    have hm : n + 2 + ((t + 1 : ℕ) : ℤ) = n + 2 + t + 1 := by omega
+    rw [hm, generator_add_one _ _ _ _ (by omega)]
     simp [ih (by omega)]
 
 omit hG hM in
@@ -141,8 +143,10 @@ private lemma exists_term_of_le {k : ℤ} (hk : n ≤ k) :
 private lemma exists_term_of_le' {k : ℤ} (hk : k ≤ n) :
     (Subobject.exists (M.d (k - 1) k)).obj (term hG hM n ψ (k - 1)) =
       term hG hM n ψ k ⊓ kernelSubobject (M.d k (k + 1)) := by
-  rw [show term hG hM n ψ (k - 1) = imageSubobject (exists_step hG hM k _).choose from
-    imageSubobject_snd_congr (generator_sub_one hG hM n ψ hk), Subobject.exists_obj_imageSubobject]
+  have hterm : term hG hM n ψ (k - 1) =
+      imageSubobject (exists_step hG hM k (generator hG hM n ψ k).2).choose :=
+    imageSubobject_snd_congr (generator_sub_one hG hM n ψ hk)
+  rw [hterm, Subobject.exists_obj_imageSubobject]
   exact (exists_step hG hM k _).choose_spec
 
 private lemma term_eq_bot (m : ℤ) (hm : n + 2 ≤ m) : term hG hM n ψ m = ⊥ :=
@@ -157,7 +161,8 @@ private lemma factors_term (i j : ℤ) (hij : (ComplexShape.up ℤ).Rel i j) :
     by_cases hi : n ≤ i
     · exact (exists_term_of_le _ _ _ _ hi).le
     · obtain ⟨k, rfl⟩ : ∃ k, i = k - 1 := ⟨i + 1, by omega⟩
-      rw [show k - 1 + 1 = k by omega, exists_term_of_le' _ _ _ _ (by omega)]
+      have hk : k - 1 + 1 = k := by omega
+      rw [hk, exists_term_of_le' _ _ _ _ (by omega)]
       exact inf_le_left
   refine Subobject.factors_of_le _ hle ?_
   rw [Subobject.exists_eq_imageSubobject]
@@ -169,12 +174,20 @@ private lemma term_inf_kernelSubobject_le (j : ℤ) :
   by_cases hj : j ≤ n
   · exact (exists_term_of_le' _ _ _ _ hj).ge
   · obtain ⟨k, rfl⟩ : ∃ k, j = k + 1 := ⟨j - 1, by omega⟩
-    rw [show k + 1 - 1 = k by omega, ← exists_term_of_le _ _ _ _ (by omega)]
+    have hk : k + 1 - 1 = k := by omega
+    rw [hk, ← exists_term_of_le _ _ _ _ (by omega)]
     exact inf_le_left
 
 end AcyclicSubcomplex
 
-open AcyclicSubcomplex in
+end CochainComplex
+
+namespace CategoryTheory.IsSeparator
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [LocallySmall.{w} C]
+  [WellPowered.{w} C]
+
+open CochainComplex CochainComplex.AcyclicSubcomplex in
 /-- Let `G` be a separator of `C`. There is a sequence of objects `B j` of `C` such that for every
 acyclic complex `M` and every morphism `ψ : G ⟶ M.X n`, there is an acyclic subcomplex `N` of `M`,
 concentrated in degrees `≤ n + 1`, through which `ψ` factors, and whose terms are all quotients
@@ -207,7 +220,7 @@ theorem exists_bounded_nonzero_acyclic_subcomplex {G : C} (hG : IsSeparator G) :
       ∃ (N : CochainComplex C ℤ) (i : N ⟶ M) (_ : Mono i) (n : ℤ),
         ¬ IsZero N ∧ N.Acyclic ∧ N.IsStrictlyLE n ∧
           ∀ m, ∃ (j : ℕ) (p : B j ⟶ N.X m), Epi p := by
-  obtain ⟨B, hB⟩ := exists_bounded_acyclic_subcomplex hG
+  obtain ⟨B, hB⟩ := hG.exists_bounded_acyclic_subcomplex
   refine ⟨B, fun M hM hMz ↦ ?_⟩
   obtain ⟨n, hn⟩ : ∃ n, ¬ IsZero (M.X n) := by
     by_contra! h
@@ -224,4 +237,4 @@ theorem exists_bounded_nonzero_acyclic_subcomplex {G : C} (hG : IsSeparator G) :
   refine ⟨N, i, hi, n + 1, fun hNz ↦ hψ ?_, hN, hN', hNB⟩
   rw [← hψ', ((HomologicalComplex.eval C _ n).map_isZero hNz).eq_of_tgt ψ' 0, zero_comp]
 
-end CochainComplex
+end CategoryTheory.IsSeparator
