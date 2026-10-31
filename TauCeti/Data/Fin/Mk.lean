@@ -18,6 +18,10 @@ compare `Fin` values. Here every side condition is an inequality or equation of 
 that does not occur in the left-hand side, so `simp (disch := omega)` can use the lemmas to compute
 these maps on explicit points of a `Fin` type of variable size.
 
+The `succAbove` lemmas are `@[simp]`. The `finRotate` lemmas are not: Mathlib's simp lemma
+`finRotate_apply` already rewrites their left-hand side to `⟨k, _⟩ + 1`, so they are passed to
+`simp only` explicitly.
+
 ## Main results
 
 * `Fin.finRotate_mk` and `Fin.finRotate_mk_of_eq`: the cyclic successor of `⟨k, _⟩` below and at
@@ -43,11 +47,13 @@ theorem finRotate_mk_of_eq {n k : ℕ} (h : k = n) :
   exact finRotate_last'
 
 /-- `succAbove` fixes the values below the skipped point. -/
+@[simp]
 theorem succAbove_mk_of_lt {n p i : ℕ} (hp : p < n + 1) (hi : i < n) (h : i < p) :
     (⟨p, hp⟩ : Fin (n + 1)).succAbove ⟨i, hi⟩ = ⟨i, by omega⟩ :=
   succAbove_of_castSucc_lt _ _ h
 
 /-- `succAbove` shifts the values at or above the skipped point up by one. -/
+@[simp]
 theorem succAbove_mk_of_le {n p i : ℕ} (hp : p < n + 1) (hi : i < n) (h : p ≤ i) :
     (⟨p, hp⟩ : Fin (n + 1)).succAbove ⟨i, hi⟩ = ⟨i + 1, by omega⟩ :=
   succAbove_of_le_castSucc _ _ h
