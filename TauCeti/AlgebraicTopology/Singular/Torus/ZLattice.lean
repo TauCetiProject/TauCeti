@@ -28,7 +28,7 @@ multiplicative, so its Pontryagin product lives on `TopCat.of (Multiplicative (E
 the same topological space as `E / L`. The Pontryagin map `⋀ⁿ H₁(E / L; ℤ) → Hₙ(E / L; ℤ)`
 (`TopCat.pontryaginExteriorPower`) is bijective
 (`Submodule.bijective_pontryaginExteriorPower_orbitRelQuotient`): the circle coordinates of a
-lattice basis (`Module.Basis.quotientLatticeEquiv`) identify `E / L` with the torus `ι → S¹`
+lattice basis (`Module.Basis.orbitRelQuotientLatticeEquiv`) identify `E / L` with the torus `ι → S¹`
 as topological groups, and for the torus this is `TauCeti.bijective_pontryaginExteriorPower_torus`.
 Composing with the exterior powers of `H₁(E / L; ℤ) ≃ L`
 (`AddSubgroup.orbitRelQuotientFirstHomologyEquiv`) gives the isomorphism. Its inverse sends
@@ -159,29 +159,17 @@ section CircleCoordinates
 
 variable {ι : Type} [Fintype ι] (b : Module.Basis ι ℤ L)
 
-/-- Circle coordinates on the quotient `E / L`: the identification
-`Module.Basis.quotientLatticeEquiv` of `E ⧸ L` with the additive torus, read on the orbit space
-through `Submodule.orbitRelQuotientAddEquiv` and on the unit circles through
-`TauCeti.unitAddTorusEquivPiCircle`. -/
-private def circleCoord : AddAction.orbitRel.Quotient L E ≃+ Additive (ι → Circle) :=
-  haveI : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
-  L.orbitRelQuotientAddEquiv.trans
-    ((Module.Basis.quotientLatticeEquiv (L := L.toAddSubgroup) b).trans
-      unitAddTorusEquivPiCircle).toAddEquiv
-
-private theorem continuous_circleCoord : Continuous (circleCoord L b) :=
-  haveI : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
-  ((Module.Basis.quotientLatticeEquiv (L := L.toAddSubgroup) b).trans
-    unitAddTorusEquivPiCircle).continuous.comp L.continuous_orbitRelQuotientAddEquiv
-
-/-- Circle coordinates, as a continuous homomorphism from the multiplicative form of `E / L`. -/
+/-- Circle coordinates, as a continuous homomorphism from the multiplicative form of `E / L`: the
+identification `Module.Basis.orbitRelQuotientLatticeEquiv` of `E / L` with the additive torus, read
+on the unit circles through `TauCeti.unitAddTorusEquivPiCircle`. -/
 private def circleCoordMul :
     Multiplicative (AddAction.orbitRel.Quotient L E) →ₜ* (ι → ULift Circle) where
-  toMonoidHom := (MonoidHom.compLeft MulEquiv.ulift.symm.toMonoidHom ι).comp
-    (circleCoord L b).toMultiplicative.toMonoidHom
+  toMonoidHom := (MonoidHom.compLeft MulEquiv.ulift.symm.toMonoidHom ι).comp <| MulEquiv.toMonoidHom
+    (b.orbitRelQuotientLatticeEquiv.trans unitAddTorusEquivPiCircle).toAddEquiv.toMultiplicative
   continuous_toFun := continuous_pi fun i ↦ continuous_uliftUp.comp <|
     (continuous_apply i).comp <| continuous_toMul.comp <|
-      (continuous_circleCoord L b).comp continuous_toAdd
+      (b.orbitRelQuotientLatticeEquiv.trans unitAddTorusEquivPiCircle).continuous.comp
+        continuous_toAdd
 
 end CircleCoordinates
 
@@ -200,7 +188,8 @@ theorem bijective_pontryaginExteriorPower_orbitRelQuotient (n : ℕ) :
   have : IsIso f := (TopCat.isIso_iff_isHomeomorph f).2 <|
     (isHomeomorph_iff_continuous_bijective (X := AddAction.orbitRel.Quotient L E)).2
       ⟨(circleCoordMul L b).continuous,
-        (Equiv.piCongrRight fun _ ↦ Equiv.ulift.symm).bijective.comp (circleCoord L b).bijective⟩
+        (Equiv.piCongrRight fun _ ↦ Equiv.ulift.symm).bijective.comp
+          (b.orbitRelQuotientLatticeEquiv.trans unitAddTorusEquivPiCircle).bijective⟩
   exact TopCat.bijective_pontryaginExteriorPower_of_isIso f
     (bijective_pontryaginExteriorPower_torus ℤ _ n)
 

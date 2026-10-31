@@ -41,6 +41,7 @@ quotient `L / cL` has `c ^ n` elements when `L` has rank `n`, so it is finite fo
 * `QuotientAddGroup.instCompactSpaceOfIsZLattice`: the additive quotient is compact.
 * `Module.Basis.latticeCircleCoordinates`: the continuous homomorphism of circle coordinates.
 * `Module.Basis.quotientLatticeEquiv`: the quotient is a product of additive circles.
+* `Module.Basis.orbitRelQuotientLatticeEquiv`: the same circle coordinates on the orbit space.
 * `Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype`: if `L ∩ V` is a full lattice in `V`,
   then `V / (L ∩ V) → E / L` is a closed embedding.
 * `ZLattice.card_quotient_smul_submoduleOf`: `L / cL` has `c ^ n` elements for a full lattice
@@ -70,8 +71,8 @@ instance QuotientAddGroup.instCompactSpaceOfIsZLattice {E : Type*} [NormedAddCom
     [IsZLattice ℝ L.toIntSubmodule] : CompactSpace (E ⧸ L) :=
   -- Reuse the compact orbit space above. The quotient by L.toIntSubmodule is the quotient
   -- by L: toIntSubmodule retains L as its underlying additive subgroup.
-  L.toIntSubmodule.orbitRelQuotientAddEquiv.surjective.compactSpace
-    L.toIntSubmodule.continuous_orbitRelQuotientAddEquiv
+  L.toIntSubmodule.orbitRelQuotientContinuousAddEquiv.surjective.compactSpace
+    (map_continuous L.toIntSubmodule.orbitRelQuotientContinuousAddEquiv)
 
 noncomputable section
 
@@ -153,6 +154,32 @@ theorem quotientLatticeEquiv_symm_apply (x : ι → ℝ) :
   ext i
   simp only [ContinuousAddEquiv.apply_symm_apply, quotientLatticeEquiv_apply_mk,
     ← Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
+
+end Module.Basis
+
+namespace Module.Basis
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {L : Submodule ℤ E} [DiscreteTopology L] [IsZLattice ℝ L] {ι : Type*} [Fintype ι]
+  (b : Basis ι ℤ L)
+
+/-- A lattice basis identifies the orbit space `E / L` of translation by the lattice with a product
+of additive circles: `Module.Basis.quotientLatticeEquiv`, read on the orbit space through
+`Submodule.orbitRelQuotientContinuousAddEquiv`. -/
+def orbitRelQuotientLatticeEquiv : AddAction.orbitRel.Quotient L E ≃ₜ+ UnitAddTorus ι :=
+  haveI : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
+  L.orbitRelQuotientContinuousAddEquiv.trans (quotientLatticeEquiv (L := L.toAddSubgroup) b)
+
+/-- The `i`-th circle coordinate of the orbit of `x` is the `i`-th real basis coordinate of `x`
+modulo one. -/
+@[simp]
+theorem orbitRelQuotientLatticeEquiv_apply_mk (x : E) (i : ι) :
+    b.orbitRelQuotientLatticeEquiv (_root_.Quotient.mk (AddAction.orbitRel L E) x) i =
+      ((b.ofZLatticeBasis ℝ L).repr x i : UnitAddCircle) :=
+  haveI : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
+  (congrArg (fun y ↦ quotientLatticeEquiv (L := L.toAddSubgroup) b y i)
+    (L.orbitRelQuotientContinuousAddEquiv_mk x)).trans
+    (quotientLatticeEquiv_apply_mk (L := L.toAddSubgroup) b x i)
 
 end Module.Basis
 

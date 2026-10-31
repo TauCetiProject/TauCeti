@@ -118,8 +118,7 @@ by `AddCircle.toCircle`. -/
 @[simp]
 theorem toMul_unitAddTorusEquivPiCircle_apply {ι : Type*} (x : UnitAddTorus ι) (i : ι) :
     (unitAddTorusEquivPiCircle x).toMul i = AddCircle.toCircle (x i) := by
-  change AddCircle.homeomorphCircle one_ne_zero (x i) = _
-  rw [AddCircle.homeomorphCircle_apply]
+  simp [unitAddTorusEquivPiCircle, AddCircle.homeomorphCircle_apply]
 
 /-- The inverse of the torus isomorphism `TauCeti.unitAddTorusEquivPiCircle` reads each coordinate
 through `AddCircle.homeomorphCircle.symm`. -/
@@ -127,7 +126,7 @@ through `AddCircle.homeomorphCircle.symm`. -/
 theorem unitAddTorusEquivPiCircle_symm_apply {ι : Type*} (z : ι → Circle) (i : ι) :
     unitAddTorusEquivPiCircle.symm (Additive.ofMul z) i =
       (AddCircle.homeomorphCircle one_ne_zero).symm (z i) := by
-  change (AddCircle.homeomorphCircle one_ne_zero).symm (z i) = _
-  rfl
+  rw [Homeomorph.eq_symm_apply, AddCircle.homeomorphCircle_apply,
+    ← toMul_unitAddTorusEquivPiCircle_apply, ContinuousAddEquiv.apply_symm_apply, toMul_ofMul]
 
 end TauCeti
