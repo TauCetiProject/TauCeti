@@ -363,8 +363,8 @@ private theorem lintegral_enorm_le_mul_measure_preimage [MeasurableSpace E] (lam
   rw [← lintegral_indicator_const (measurable_subtype_coe hU)]
   refine lintegral_mono fun x => ?_
   by_cases hx : (x : E) ∈ U
-  · simpa [indicator_of_mem (show x ∈ ((↑) : Ω → E) ⁻¹' U from hx)] using hψ x
-  · simp [indicator_of_notMem (show x ∉ ((↑) : Ω → E) ⁻¹' U from hx),
+  · simpa [indicator_of_mem (Set.mem_preimage.2 hx)] using hψ x
+  · simp [indicator_of_notMem fun h => hx (Set.mem_preimage.1 h),
       image_eq_zero_of_notMem_tsupport fun h => hx (hψU h)]
 
 omit hT [FiniteDimensional ℝ E] in

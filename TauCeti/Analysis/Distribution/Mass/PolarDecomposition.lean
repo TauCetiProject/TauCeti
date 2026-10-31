@@ -146,8 +146,8 @@ private theorem exists_le_one [ContinuousMapClass 𝓕 𝓓(Ω, F) ℝ] :
     (enorm_apply_postcompCLM_le hT (b i))
   have hloc (i) : LocallyIntegrable (h i) lam := locallyIntegrable_iff.2 fun K hK =>
     Measure.integrableOn_of_bounded hK.measure_lt_top.ne (hm i).aestronglyMeasurable
-      (M := ‖b i‖) (ae_restrict_of_ae ((hle i).mono fun x hx =>
-        NNReal.coe_le_coe.2 (ENNReal.coe_le_coe.1 hx)))
+      (M := ‖b i‖) (ae_restrict_of_ae ((hle i).mono fun x hx => by
+        rwa [enorm_le_coe, ← NNReal.coe_le_coe, coe_nnnorm, coe_nnnorm] at hx))
   -- Assemble them along the coordinate functionals of `b`.
   let c (i) : StrongDual ℝ F := LinearMap.toContinuousLinearMap (b.coord i)
   set τ : Ω → StrongDual ℝ F := fun x => ∑ i, h i x • c i with hτ
