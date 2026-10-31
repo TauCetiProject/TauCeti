@@ -18,7 +18,10 @@ summands, since `SameRay` is transitive through a nonzero vector.
 
 Two distinct points of a finite orbit of a linear group action never lie in the same ray. This is
 what makes the velocity of each segment of a path with velocities in a Weyl orbit recoverable from
-the segment alone.
+the segment alone: if no two distinct points of a set `S ∌ 0` lie in the same ray, a segment `v`
+traversed in a positive time `d` at a velocity `d⁻¹ • v ∈ S` determines `d`
+(`Set.Pairwise.eq_of_snd_eq_of_inv_smul_mem`), and a list of such segments determines its list
+of durations (`Set.Pairwise.eq_of_map_snd_eq_of_inv_smul_mem`).
 -/
 
 public section
@@ -92,3 +95,47 @@ theorem SameRay.eq_of_mem_orbit (h : SameRay R y z) (hy : y ∈ MulAction.orbit 
   rw [← hrz, hr1, one_smul]
 
 end Orbit
+
+section Duration
+
+variable {R M : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M]
+  [Module R M] {S : Set M}
+
+/-- If no two distinct points of a set `S ∌ 0` lie in the same ray, a pair `(d, v)` with `0 < d`
+and `d⁻¹ • v ∈ S` is determined by `v`: a segment traversed at a velocity in `S` determines its
+duration. -/
+theorem Set.Pairwise.eq_of_snd_eq_of_inv_smul_mem (hS : S.Pairwise fun u v ↦ ¬ SameRay R u v)
+    (h0 : (0 : M) ∉ S) {x y : R × M} (hx : 0 < x.1 ∧ x.1⁻¹ • x.2 ∈ S)
+    (hy : 0 < y.1 ∧ y.1⁻¹ • y.2 ∈ S) (h : x.2 = y.2) : x = y := by
+  obtain ⟨d, v⟩ := x
+  obtain ⟨e, w⟩ := y
+  dsimp only at hx hy h
+  subst h
+  have hv : v ≠ 0 := by
+    rintro rfl
+    exact h0 (by simpa using hx.2)
+  -- Both velocities are positive multiples of `v`, hence equal.
+  have hde : d⁻¹ • v = e⁻¹ • v := by
+    by_contra hne
+    exact hS hx.2 hy.2 hne
+      ((SameRay.rfl.pos_smul_left (inv_pos.2 hx.1)).pos_smul_right (inv_pos.2 hy.1))
+  rw [inv_inj.1 (smul_left_injective R hv hde)]
+
+/-- If no two distinct points of a set `S ∌ 0` lie in the same ray, a list of pairs `(d, v)` with
+`0 < d` and `d⁻¹ • v ∈ S` is determined by its second components: segments traversed at velocities
+in `S` determine their durations. -/
+theorem Set.Pairwise.eq_of_map_snd_eq_of_inv_smul_mem
+    (hS : S.Pairwise fun u v ↦ ¬ SameRay R u v) (h0 : (0 : M) ∉ S) {p q : List (R × M)}
+    (hp : ∀ x ∈ p, 0 < x.1 ∧ x.1⁻¹ • x.2 ∈ S) (hq : ∀ x ∈ q, 0 < x.1 ∧ x.1⁻¹ • x.2 ∈ S)
+    (h : p.map Prod.snd = q.map Prod.snd) : p = q := by
+  induction p generalizing q with
+  | nil => exact (List.map_eq_nil_iff.1 h.symm).symm
+  | cons x p ih =>
+    cases q with
+    | nil => simp at h
+    | cons y q =>
+      rw [List.map_cons, List.map_cons, List.cons.injEq] at h
+      rw [List.forall_mem_cons] at hp hq
+      rw [hS.eq_of_snd_eq_of_inv_smul_mem h0 hp.1 hq.1 h.1, ih hp.2 hq.2 h.2]
+
+end Duration

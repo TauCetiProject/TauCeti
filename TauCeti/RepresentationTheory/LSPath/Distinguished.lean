@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.OrbitRay
 public import TauCeti.RepresentationTheory.LSPath.CentralShift
 
 /-!
@@ -25,15 +25,17 @@ both its segments and its durations can be read off the path. If `0 ∈ S`, then
 only distinguished presentation is the constant path `[(1, 0)]` of duration `1`. In both cases a
 path has at most one distinguished presentation (`TauCeti.PLPath.IsDistinguished.unique`). Distinct
 points of a finite Weyl orbit never lie in the same ray, so this applies to `S = W λ` for every
-weight `λ`, including `λ = 0` (`RootPairing.pairwise_not_sameRay_orbit_weylGroup`).
+weight `λ`, including `λ = 0` (`RootPairing.pairwise_not_sameRay_orbit_weylGroup`, in
+`TauCeti/LinearAlgebra/RootSystem/Weyl/OrbitRay.lean`).
 
 Adding the linear path `t ↦ t χ` to a timed presentation (`TauCeti.PLPath.shiftTimed`) is not
 well defined on reparametrization classes (`TauCeti.PLPath.not_exists_shiftTimed_on_paths`).
 Applied to the distinguished presentation it is: `TauCeti.PLPath.shiftDistinguished S χ π` shifts
 the distinguished presentation of `π` for `S`. It sends velocities `u ∈ S` to `u + χ`; for a weight
 `χ` fixed by the Weyl group, `w λ + χ = w (λ + χ)`, so it carries paths with velocities in `W λ` to
-paths with velocities in `W (λ + χ)`. Shifts compose additively, shifting by `-χ` undoes shifting
-by `χ`, and a linear form annihilating `χ` sees the same minimum height.
+paths with velocities in `W (λ + χ)` (`RootPairing.mapsTo_add_orbit_weylGroup`). Shifts compose
+additively, shifting by `-χ` undoes shifting by `χ`, and a linear form annihilating `χ` sees the
+same minimum height.
 
 ## Main definitions
 
@@ -60,8 +62,6 @@ by `χ`, and a linear form annihilating `χ` sees the same minimum height.
   is the straight path along `u + χ`.
 * `TauCeti.PLPath.endpoint_shiftDistinguished`, `TauCeti.PLPath.minHeight_shiftDistinguished`:
   the endpoint moves by `χ`, and the minimum height for a form annihilating `χ` is unchanged.
-* `RootPairing.pairwise_not_sameRay_orbit_weylGroup`, `RootPairing.mapsTo_add_orbit_weylGroup`:
-  the hypotheses of these results for `S = W λ` and the shift by a Weyl-invariant `χ`.
 
 ## References
 
@@ -98,40 +98,6 @@ structure IsDistinguished : Prop where
 omit [IsStrictOrderedRing 𝕜] in
 theorem IsDistinguished.mono (hp : IsDistinguished S p) (hST : S ⊆ T) : IsDistinguished T p :=
   ⟨hp.isTimed, hp.duration_eq_one, fun x hx ↦ hST (hp.slope_mem x hx), hp.isChain_slope⟩
-
-/-- A segment of positive duration whose velocity lies in a set `S ∌ 0` without two distinct
-points in the same ray determines its duration. -/
-private theorem eq_of_snd_eq (hS : S.Pairwise fun u v ↦ ¬ SameRay 𝕜 u v) (h0 : (0 : V) ∉ S)
-    {x y : 𝕜 × V} (hx : 0 < x.1 ∧ x.1⁻¹ • x.2 ∈ S) (hy : 0 < y.1 ∧ y.1⁻¹ • y.2 ∈ S)
-    (h : x.2 = y.2) : x = y := by
-  obtain ⟨d, v⟩ := x
-  obtain ⟨e, w⟩ := y
-  dsimp only at hx hy h
-  subst h
-  have hv : v ≠ 0 := by
-    rintro rfl
-    exact h0 (by simpa using hx.2)
-  -- Both velocities are positive multiples of `v`, hence equal.
-  have hde : d⁻¹ • v = e⁻¹ • v := by
-    by_contra hne
-    exact hS hx.2 hy.2 hne
-      ((SameRay.rfl.pos_smul_left (inv_pos.2 hx.1)).pos_smul_right (inv_pos.2 hy.1))
-  rw [inv_inj.1 (smul_left_injective 𝕜 hv hde)]
-
-/-- Timed presentations with velocities in a set `S ∌ 0` without two distinct points in the same
-ray are determined by their segments. -/
-private theorem eq_of_map_snd_eq (hS : S.Pairwise fun u v ↦ ¬ SameRay 𝕜 u v) (h0 : (0 : V) ∉ S)
-    (hp : ∀ x ∈ p, 0 < x.1 ∧ x.1⁻¹ • x.2 ∈ S) (hq : ∀ x ∈ q, 0 < x.1 ∧ x.1⁻¹ • x.2 ∈ S)
-    (h : p.map Prod.snd = q.map Prod.snd) : p = q := by
-  induction p generalizing q with
-  | nil => exact (List.map_eq_nil_iff.1 h.symm).symm
-  | cons x p ih =>
-    cases q with
-    | nil => simp at h
-    | cons y q =>
-      rw [List.map_cons, List.map_cons, List.cons.injEq] at h
-      rw [List.forall_mem_cons] at hp hq
-      rw [eq_of_snd_eq hS h0 hp.1 hq.1 h.1, ih hp.2 hq.2 h.2]
 
 /-- The straight path along `u ∈ S`, traversed in time `1`, is distinguished for `S`. -/
 theorem isDistinguished_singleton {u : V} (hu : u ∈ S) : IsDistinguished S [((1 : 𝕜), u)] :=
@@ -189,7 +155,8 @@ theorem IsDistinguished.unique (hp : IsDistinguished S p) (hq : IsDistinguished 
   have h' := congrArg PLPath.segments h
   rw [segments_ofSegments, segments_ofSegments, (hp.isReduced hS h0).normalize_eq,
     (hq.isReduced hS h0).normalize_eq] at h'
-  exact eq_of_map_snd_eq hS h0 (fun x hx ↦ ⟨isTimed_iff.1 hp.isTimed x hx, hp.slope_mem x hx⟩)
+  exact hS.eq_of_map_snd_eq_of_inv_smul_mem h0
+    (fun x hx ↦ ⟨isTimed_iff.1 hp.isTimed x hx, hp.slope_mem x hx⟩)
     (fun x hx ↦ ⟨isTimed_iff.1 hq.isTimed x hx, hq.slope_mem x hx⟩) h'
 
 variable (S π) in
@@ -223,6 +190,7 @@ theorem ofSegments_distinguished (h : HasDistinguished S π) :
 
 /-- The distinguished presentation of the path presented by a distinguished presentation `p` is
 `p` itself. -/
+@[simp]
 theorem distinguished_ofSegments (hp : IsDistinguished S p)
     (hS : S.Pairwise fun u v ↦ ¬ SameRay 𝕜 u v) :
     distinguished S (ofSegments 𝕜 (p.map Prod.snd)) = p :=
@@ -313,33 +281,9 @@ theorem endpoint_shiftDistinguished (h : HasDistinguished S π) (χ : V) :
 
 /-- A linear form annihilating `χ` has the same minimum height on `π` and on its central shift by
 `χ`. In a weight space this applies to every simple coroot when `χ` is a central weight. -/
+@[simp]
 theorem minHeight_shiftDistinguished {f : Module.Dual 𝕜 V} {χ : V} (hχ : f χ = 0)
     (h : HasDistinguished S π) : (shiftDistinguished S χ π).minHeight f = π.minHeight f := by
   rw [shiftDistinguished, minHeight_ofSegments_shiftTimed hχ, ofSegments_distinguished h]
 
 end TauCeti.PLPath
-
-/-! ### Weyl orbits -/
-
-namespace RootPairing
-
-variable {ι 𝕜 V N : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V]
-  [Module 𝕜 V] [AddCommGroup N] [Module 𝕜 N] (P : RootPairing ι 𝕜 V N)
-
-/-- No two distinct weights of a finite Weyl orbit lie in the same ray. So a path with
-velocities in `W λ` has at most one distinguished presentation for `W λ`. -/
-theorem pairwise_not_sameRay_orbit_weylGroup [Finite P.weylGroup] (lam : V) :
-    (MulAction.orbit P.weylGroup lam).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v :=
-  fun _ hu _ hv huv h ↦ huv (h.eq_of_mem_orbit hu hv (Set.finite_range _))
-
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
-/-- Adding a weight `χ` fixed by the Weyl group maps the Weyl orbit `W λ` to `W (λ + χ)`, since
-`w λ + χ = w (λ + χ)`. So the central shift by `χ` transports paths with velocities in `W λ` to
-paths with velocities in `W (λ + χ)`. -/
-theorem mapsTo_add_orbit_weylGroup {χ : V} (hχ : ∀ w : P.weylGroup, w • χ = χ) (lam : V) :
-    Set.MapsTo (· + χ) (MulAction.orbit P.weylGroup lam)
-      (MulAction.orbit P.weylGroup (lam + χ)) := by
-  rintro _ ⟨w, rfl⟩
-  exact ⟨w, by simp only [smul_add, hχ]⟩
-
-end RootPairing
