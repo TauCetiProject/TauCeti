@@ -32,8 +32,9 @@ Carlson's normal form of Legendre's integrals, the complete integral of the seco
 The integral converges absolutely when `x, y, z` lie in `Complex.slitPlane ∪ {0}` and at most
 one of them is `0`. Since the integrand is symmetric in `x, y, z`, the convergence theorem
 `Complex.integrableOn_carlsonRGIntegrand` is stated with the possibly vanishing argument
-in the first position. Outside this domain `carlsonRG` is a totalized value and carries no
-meaning.
+in the first position. The integral may also converge for some arguments outside this domain
+(for example `R_G(0, 0, z) = z^(1/2) / 2` for `z ∈ slitPlane`), which this file does not treat;
+wherever the integral fails to converge, `carlsonRG` is a totalized value.
 
 ## Main results
 
@@ -83,7 +84,8 @@ noncomputable def carlsonRGIntegrand (x y z : ℂ) (t : ℝ) : ℂ :=
 (x / (t + x) + y / (t + y) + z / (t + z)) t dt`, the integral of `carlsonRGIntegrand`.
 
 The integral converges when `x, y, z ∈ slitPlane ∪ {0}` with at most one of them `0`
-(`integrableOn_carlsonRGIntegrand`); elsewhere the value is a totalized junk value. -/
+(`integrableOn_carlsonRGIntegrand`); wherever the integral fails to converge, the value is a
+totalized junk value. -/
 noncomputable def carlsonRG (x y z : ℂ) : ℂ :=
   (1 / 4 : ℂ) * ∫ t in Ioi (0 : ℝ), carlsonRGIntegrand x y z t
 
