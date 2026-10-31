@@ -16,6 +16,10 @@ import Mathlib.Algebra.Order.Hom.Lattice
 
 This file records general facts about the finite places of a number field.
 
+The nonzero values of a finite place are exactly the integer powers of its prime norm
+(`apply_eq_absNorm_zpow`, `exists_ne_zero_apply_eq_absNorm_zpow`), using Mathlib's
+`HeightOneSpectrum.valuation_surjective` for attainment.
+
 The valuation dictionary `FinitePlace.mk_apply_le_one_iff` and
 `FinitePlace.mk_apply_eq_one_iff` compares the finite-place absolute value with the adic valuation.
 These comparisons follow Ralf Stephan's `ArithmeticHeights/SUnit.lean` in
@@ -68,6 +72,24 @@ end TauCeti
 namespace NumberField.FinitePlace
 
 variable {K : Type*} [Field K] [NumberField K]
+
+/-- Every nonzero finite-place value is an integer power of the norm of its prime. -/
+theorem apply_eq_absNorm_zpow (v : FinitePlace K) {x : K} (hx : x ≠ 0) :
+    v x = (v.maximalIdeal.asIdeal.absNorm : ℝ) ^
+      WithZero.log (v.maximalIdeal.valuation K x) := by
+  rw [← norm_embedding_eq, norm_embedding, HeightOneSpectrum.adicAbv_def,
+    WithZeroMulInt.toNNReal_neg_apply _ ((v.maximalIdeal.valuation K).ne_zero_iff.mpr hx),
+    NNReal.coe_zpow, NNReal.coe_natCast]
+
+/-- Every integer power of the prime norm occurs as a nonzero finite-place value. -/
+theorem exists_ne_zero_apply_eq_absNorm_zpow (v : FinitePlace K) (n : ℤ) :
+    ∃ x : K, x ≠ 0 ∧ v x = (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ n := by
+  obtain ⟨x, hx⟩ := v.maximalIdeal.valuation_surjective K (WithZero.exp n)
+  have hx0 : x ≠ 0 := (v.maximalIdeal.valuation K).ne_zero_iff.mp (by
+    rw [hx]
+    exact WithZero.exp_ne_zero)
+  refine ⟨x, hx0, ?_⟩
+  rw [v.apply_eq_absNorm_zpow hx0, hx, WithZero.log_exp]
 
 /-- An element is integral at a prime iff its finite-place absolute value is at most one. -/
 theorem mk_apply_le_one_iff (v : HeightOneSpectrum (𝓞 K)) (x : K) :
