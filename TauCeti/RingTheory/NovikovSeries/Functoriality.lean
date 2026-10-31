@@ -28,7 +28,8 @@ injectivity of the period maps is needed.
 The pushforward moves the period neighbourhood `U_C` into `U'_(c * C)`, so it is continuous for the
 period topologies. Since `c > 0`, it preserves nonnegative and strictly positive supports, and it
 restricts to a ring homomorphism of the nonnegative subrings which maps the positive ideal into the
-positive ideal.
+positive ideal. Likewise, when `φ` has finite kernel, the restriction along `φ` moves `U'_(c * C)`
+into `U_C` and is continuous.
 
 For a subgroup `K ≤ H`, with the restricted period map `N.comp K.subtype`, the pushforward along
 the inclusion makes `Nov(R, H, N)` an algebra over `Nov(R, K, N|K)`; its algebra map keeps every
@@ -59,6 +60,8 @@ covering and of its base.
 * `TauCeti.NovikovSeries.map_mem_periodFiltration`: the pushforward sends `U_C` into `U'_(c * C)`.
 * `TauCeti.NovikovSeries.continuous_map` and `TauCeti.NovikovSeries.continuous_mapRingHom`: the
   pushforward is continuous for the period topologies.
+* `TauCeti.NovikovSeries.comap_mem_periodFiltration` and `TauCeti.NovikovSeries.continuous_comap`:
+  the restriction sends `U'_(c * C)` into `U_C`, and is continuous for the period topologies.
 * `TauCeti.NovikovSeries.mapNonnegSubring_mem_posIdeal`: the pushforward maps the positive ideal
   into the positive ideal.
 * `TauCeti.NovikovSeries.map_unitsOneSubSingle`: the pushforward sends the unit `1 - r e^g` to
@@ -276,6 +279,30 @@ theorem continuous_map : Continuous (map ρ φ hφ) := by
   simpa [mul_div_cancel₀ C hc.ne'] using map_mem_periodFiltration ρ φ _ hc.le hcφ ha
 
 end Topology
+
+section ComapTopology
+
+variable [AddGroup H] [AddZeroClass H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [AddCommGroup R]
+  (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h) (hker : (φ.ker : Set H).Finite)
+
+/-- If `φ` rescales periods by `c > 0`, the restriction sends the period neighbourhood
+`U'_(c * C)` into `U_C`. -/
+theorem comap_mem_periodFiltration {c C : ℝ} (hc : 0 < c) (hcφ : ∀ h, N' (φ h) = c * N h)
+    {b : NovikovSeries R H' N'} (hb : b ∈ periodFiltration R N' (c * C)) :
+    comap φ hφ hker b ∈ periodFiltration R N C :=
+  mem_periodFiltration.2 fun _ hh =>
+    coeff_comap_eq_zero_of_lt φ hφ hker hc hcφ (mem_periodFiltration.1 hb) hh
+
+/-- The restriction of Novikov series is continuous for the period topologies. -/
+@[fun_prop]
+theorem continuous_comap : Continuous (comap (R := R) φ hφ hker) := by
+  obtain ⟨c, hc, hcφ⟩ := id hφ
+  refine continuous_of_continuousAt_zero (comap φ hφ hker) ?_
+  rw [ContinuousAt, map_zero]
+  exact (hasBasis_nhds_zero.tendsto_iff hasBasis_nhds_zero).2 fun C _ =>
+    ⟨c * C, trivial, fun b hb => comap_mem_periodFiltration φ hφ hker hc hcφ hb⟩
+
+end ComapTopology
 
 section NonnegSupport
 

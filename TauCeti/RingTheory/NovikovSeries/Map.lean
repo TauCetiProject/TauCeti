@@ -35,7 +35,8 @@ the period cutoff `C` to series vanishing below `c * C`.
 When `φ` has finite kernel, a Novikov series on `H'` also restricts along `φ` by precomposing its
 coefficients (`TauCeti.NovikovSeries.comap`), sending series vanishing below `c * C` to series
 vanishing below `C`. Restricting a pushforward along an injective `φ` gives back the series with
-`ρ` applied to its coefficients.
+`ρ` applied to its coefficients. Restriction keeps a monomial `r e^(φ h)` as `r e^h` when `φ` is
+injective, and kills a monomial whose exponent is not in the range of `φ`.
 
 ## Main definitions
 
@@ -72,6 +73,8 @@ vanishing below `C`. Restricting a pushforward along an injective `φ` gives bac
 * `TauCeti.NovikovSeries.comap_comap` and `TauCeti.NovikovSeries.comap_map_of_injective`: the
   composition law of restriction, and restriction of a pushforward along an injective
   homomorphism.
+* `TauCeti.NovikovSeries.comap_single_of_injective` and
+  `TauCeti.NovikovSeries.comap_single_of_notMem_range`: restriction of monomials.
 
 ## References
 
@@ -420,6 +423,21 @@ theorem coeff_comap_eq_zero_of_lt {c C : ℝ} (hc : 0 < c) (hcφ : ∀ h, N' (φ
     {b : NovikovSeries R H' N'} (hb : ∀ h', N' h' < c * C → b.coeff h' = 0) {h : H}
     (hh : N h < C) : (comap φ hφ hker b).coeff h = 0 :=
   hb _ ((hcφ h).symm ▸ mul_lt_mul_of_pos_left hh hc)
+
+/-- Restricting the monomial `r e^(φ h)` along an injective `φ` gives the monomial `r e^h`. -/
+theorem comap_single_of_injective (hinj : Injective φ) (h : H) (r : R) :
+    comap φ hφ hker (single (φ h) r) = single h r := by
+  ext g
+  rw [coeff_comap]
+  by_cases hg : g = h
+  · rw [hg, coeff_single_same, coeff_single_same]
+  · rw [coeff_single_of_ne (hinj.ne hg) r, coeff_single_of_ne hg r]
+
+/-- Restricting a monomial whose exponent is not in the range of `φ` gives zero. -/
+theorem comap_single_of_notMem_range {g : H'} (hg : g ∉ Set.range φ) (r : R) :
+    comap φ hφ hker (single g r) = 0 := by
+  ext h
+  rw [coeff_comap, coeff_zero, coeff_single_of_ne (fun hh => hg ⟨h, hh⟩) r]
 
 /-- Restricting along the identity exponent homomorphism is the identity. -/
 @[simp]
