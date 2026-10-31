@@ -44,6 +44,7 @@ namespace PadicComplex
 variable (p : ℕ) [Fact p.Prime]
 
 /-- The norm of `p` in `ℂ_[p]` is `p⁻¹`. -/
+@[simp]
 theorem norm_p : ‖(p : ℂ_[p])‖ = (p : ℝ)⁻¹ := by
   rw [← map_natCast (algebraMap ℚ_[p] ℂ_[p]) p, norm_algebraMap', Padic.norm_p]
 
