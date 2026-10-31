@@ -7,7 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Mixture.Basic
 public import TauCeti.Probability.Distributions.MultivariateT.Basic
-import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
 # The density of a multivariate t law
@@ -34,7 +33,6 @@ Gamma integral, which produces the closed form above.
 
 ## Main results
 
-* `TauCeti.Probability.multivariateTMeasure_eq_bind`: the chi-squared mixture of Gaussian laws;
 * `TauCeti.Probability.multivariateTMeasure_eq_withDensity`: the density presentation;
 * `TauCeti.Probability.lintegral_multivariateTPDF_eq_one` and
   `TauCeti.Probability.integral_multivariateTPDFReal_eq_one`: normalization;
@@ -108,17 +106,12 @@ theorem multivariateTPDFReal_of_not_posDef (m : EuclideanSpace ℝ ι) (ν : ℝ
     (x : EuclideanSpace ℝ ι) : multivariateTPDFReal m S ν x = 0 := by
   rw [multivariateTPDFReal, ite_eq_right fun h => hS h.2]
 
-/-- The quadratic form of the inverse of a positive-definite matrix is nonnegative. -/
-private theorem inner_inv_toEuclideanLin_nonneg (hS : S.PosDef) (y : EuclideanSpace ℝ ι) :
-    0 ≤ ⟪y, S⁻¹.toEuclideanLin y⟫ := by
-  simpa [EuclideanSpace.inner_eq_star_dotProduct, Matrix.ofLp_toLpLin,
-    Matrix.toLin'_apply, dotProduct_comm] using hS.inv.posSemidef.dotProduct_mulVec_nonneg y.ofLp
-
 /-- For positive degrees of freedom and positive-definite scale, the density is positive
 everywhere. -/
 theorem multivariateTPDFReal_pos (m : EuclideanSpace ℝ ι) (hν : 0 < ν) (hS : S.PosDef)
     (x : EuclideanSpace ℝ ι) : 0 < multivariateTPDFReal m S ν x := by
-  have hq := inner_inv_toEuclideanLin_nonneg hS (x - m)
+  have hq := (Matrix.isPositive_toEuclideanLin_iff.mpr hS.inv.posSemidef).inner_nonneg_right
+    (x - m)
   have hdet := hS.det_pos
   rw [multivariateTPDFReal_of_posDef m hν hS]
   positivity
@@ -153,34 +146,6 @@ theorem measurable_multivariateTPDFReal (m : EuclideanSpace ℝ ι) (S : Matrix 
 theorem measurable_multivariateTPDF (m : EuclideanSpace ℝ ι) (S : Matrix ι ι ℝ) (ν : ℝ) :
     Measurable (multivariateTPDF m S ν) :=
   (measurable_multivariateTPDFReal m S ν).ennreal_ofReal
-
-/-! ### The chi-squared mixture of Gaussian laws -/
-
-/-- For valid parameters, the multivariate t law is a chi-squared mixture of Gaussian laws: given
-that the chi-squared factor takes the value `v`, the variable is Gaussian with mean `m` and
-covariance `(ν / v) • S`. -/
-theorem multivariateTMeasure_eq_bind (m : EuclideanSpace ℝ ι) (hν : 0 < ν) (hS : S.PosSemidef) :
-    multivariateTMeasure m S ν =
-      (chiSquaredMeasure ν).bind fun v => multivariateGaussian m ((ν / v) • S) := by
-  have := isProbabilityMeasure_chiSquaredMeasure hν.le
-  have hmix : Measurable fun z : EuclideanSpace ℝ ι × ℝ => m + √(ν / z.2) • z.1 := by fun_prop
-  have hK : Measurable fun v : ℝ => (multivariateGaussian 0 S).map fun z => m + √(ν / v) • z :=
-    TauCeti.MeasureTheory.measurable_map_of_measurable_uncurry
-      (f := fun v z => m + √(ν / v) • z) (by fun_prop)
-  have hbind : multivariateTMeasure m S ν =
-      (chiSquaredMeasure ν).bind fun v => (multivariateGaussian 0 S).map fun z => m + √(ν / v) • z
-      := by
-    ext s hs
-    rw [multivariateTMeasure_of_posSemidef m hν hS, Measure.map_apply hmix hs,
-      Measure.prod_apply_symm (hmix hs), Measure.bind_apply hs hK.aemeasurable]
-    refine lintegral_congr fun v => ?_
-    rw [Measure.map_apply (by fun_prop) hs]
-    rfl
-  rw [hbind]
-  refine Measure.bind_congr_right ?_
-  filter_upwards [ae_pos_chiSquaredMeasure hν] with v hv
-  rw [map_add_smul_multivariateGaussian 0 hS m, Real.sq_sqrt (div_pos hν hv).le, smul_zero,
-    add_zero]
 
 /-! ### The density of the law -/
 
@@ -228,9 +193,10 @@ private theorem chiSquaredPDFReal_mul_componentDensity (m : EuclideanSpace ℝ �
   set d : ℝ := (Fintype.card ι : ℝ) with hd_def
   have e1 : ((ν / v) ^ Fintype.card ι * S.det) ^ (-(1 : ℝ) / 2) =
       ν ^ (-(d / 2)) * v ^ (d / 2) * S.det ^ (-(1 : ℝ) / 2) := by
-    rw [Real.mul_rpow (by positivity) hS.det_pos.le, ← Real.rpow_natCast_mul (by positivity),
-      Real.div_rpow hν.le hv.le, ← hd_def, show d * (-(1 : ℝ) / 2) = -(d / 2) by ring,
-      Real.rpow_neg hv.le, div_inv_eq_mul]
+    have := hS.det_pos
+    simp (disch := positivity) only [Real.mul_rpow, ← Real.rpow_natCast_mul, Real.div_rpow,
+      neg_div, mul_one_div, Real.rpow_neg, ← hd_def]
+    field_simp
   have e2 : v ^ (ν / 2 - 1) * v ^ (d / 2) = v ^ ((ν + d) / 2 - 1) := by
     rw [← Real.rpow_add hv]
     congr 1
@@ -249,10 +215,10 @@ private theorem integral_chiSquaredPDFReal_mul_componentDensity (m : EuclideanSp
     (hν : 0 < ν) (hS : S.PosDef) (x : EuclideanSpace ℝ ι) :
     ∫ v, chiSquaredPDFReal ν v * componentDensity m S ν v x = multivariateTPDFReal m S ν x := by
   set q := ⟪x - m, S⁻¹.toEuclideanLin (x - m)⟫ with hq_def
-  have hq : 0 ≤ q := inner_inv_toEuclideanLin_nonneg hS (x - m)
+  have hq : 0 ≤ q :=
+    (Matrix.isPositive_toEuclideanLin_iff.mpr hS.inv.posSemidef).inner_nonneg_right (x - m)
   have hD := hS.det_pos
   set d : ℝ := (Fintype.card ι : ℝ) with hd_def
-  have hb : 0 < 1 + q / ν := by positivity
   -- The integrand vanishes on the negative half-line, and the point `0` is Lebesgue-null.
   rw [← setIntegral_eq_integral_of_ae_compl_eq_zero (s := Ioi 0)]
   swap
@@ -261,22 +227,11 @@ private theorem integral_chiSquaredPDFReal_mul_componentDensity (m : EuclideanSp
   rw [setIntegral_congr_fun measurableSet_Ioi
       fun v hv => chiSquaredPDFReal_mul_componentDensity m hν hS x hv,
     integral_const_mul, Real.integral_rpow_mul_exp_neg_mul_Ioi (by positivity) (by positivity),
-    multivariateTPDFReal_of_posDef m hν hS, ← hq_def, ← hd_def]
+    multivariateTPDFReal_of_posDef m hν hS, ← hq_def, ← hd_def, one_div_div]
   -- It remains to compare the two closed forms, written with nonnegative real powers.
-  rw [show 1 / ((1 + q / ν) / 2) = 2 / (1 + q / ν) by field_simp,
-    Real.div_rpow zero_le_two hb.le, Real.rpow_neg hb.le,
-    Real.mul_rpow zero_le_two pi_pos.le, Real.mul_rpow hν.le pi_pos.le,
-    show (ν + d) / 2 = ν / 2 + d / 2 by ring, Real.rpow_add two_pos,
-    show -d / 2 = -(d / 2) by ring, Real.rpow_neg zero_le_two, Real.rpow_neg pi_pos.le,
-    Real.rpow_neg hν.le, show -(1 : ℝ) / 2 = -(1 / 2) by ring, Real.rpow_neg hD.le,
-    ← Real.sqrt_eq_rpow]
   have : 0 < Real.Gamma (ν / 2) := Real.Gamma_pos_of_pos (by positivity)
-  have : 0 < (2 : ℝ) ^ (d / 2) := by positivity
-  have : 0 < (2 : ℝ) ^ (ν / 2) := by positivity
-  have : 0 < π ^ (d / 2) := by positivity
-  have : 0 < ν ^ (d / 2) := by positivity
-  have : 0 < (1 + q / ν) ^ (ν / 2 + d / 2) := by positivity
-  have : 0 < √S.det := by positivity
+  simp (disch := positivity) only [neg_div, Real.rpow_neg, Real.mul_rpow, Real.div_rpow,
+    add_div ν d, Real.rpow_add, Real.sqrt_eq_rpow]
   field_simp
 
 /-- The chi-squared mixture of the Gaussian component densities is the multivariate t density. -/
