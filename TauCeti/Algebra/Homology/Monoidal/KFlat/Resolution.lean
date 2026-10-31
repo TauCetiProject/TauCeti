@@ -128,7 +128,7 @@ public lemma comp_homologyMap_inr_eq_zero [∀ n, Epi (e n)] {n : ℤ} {X : C}
   have hzero : z ≫ e n ≫ pullback.fst _ _ ≫ P.homologyπ n ≫
       homologyMap (mappingCone.inr (attachingMap f e)) n = 0 := by
     rw [← Category.assoc (e n),
-      ← P.toGradedCycles_cyclesMap_fromGraded_assoc (fun n ↦ e n ≫ pullback.fst _ _) n,
+      ← P.iCyclesIso_inv_cyclesMap_fromGraded_assoc (fun n ↦ e n ≫ pullback.fst _ _) n,
       ← homologyπ_naturality_assoc, ← homologyMap_comp, hcells, comp_zero, comp_zero, comp_zero]
   have hz' : π₃ ≫ π₂ ≫ x = z ≫ e n ≫ pullback.fst _ _ := by
     simpa using hz =≫ pullback.fst _ _

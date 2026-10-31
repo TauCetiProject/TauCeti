@@ -12,9 +12,9 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 
 A family of objects `E i` forms a homological complex `HomologicalComplex.graded c E` with zero
 differentials. It has homology in every degree, and each of its terms consists of cycles
-(`HomologicalComplex.toGradedCycles`). Hence a family of morphisms `e i : E i ⟶ K.cycles i` into
-the cycles of a complex `K` defines a morphism of complexes `K.fromGraded e`, which induces
-`e i` on cycles (`HomologicalComplex.toGradedCycles_cyclesMap_fromGraded`). It is surjective on
+(Mathlib's `HomologicalComplex.iCyclesIso`). Hence a family of morphisms `e i : E i ⟶ K.cycles i`
+into the cycles of a complex `K` defines a morphism of complexes `K.fromGraded e`, which induces
+`e i` on cycles (`HomologicalComplex.iCyclesIso_inv_cyclesMap_fromGraded`). It is surjective on
 homology when every `e i` is an epimorphism (`HomologicalComplex.epi_homologyMap_fromGraded`).
 Such morphisms are the first step in the construction of resolutions by attaching cells.
 -/
@@ -41,17 +41,6 @@ instance hasHomology_graded (E : ι → C) (i : ι) : (graded c E).HasHomology i
 
 variable {c}
 
-/-- The morphism from a term of a complex with zero differentials to its cycles. -/
-abbrev toGradedCycles (E : ι → C) (i : ι) : E i ⟶ (graded c E).cycles i :=
-  (graded c E).liftCycles (𝟙 (E i)) (c.next i) rfl (comp_zero ..)
-
-/-- The morphism from a term of a complex with zero differentials to its cycles is a section of
-the inclusion of the cycles. -/
-@[reassoc]
-lemma toGradedCycles_iCycles (E : ι → C) (i : ι) :
-    toGradedCycles E i ≫ (graded c E).iCycles i = 𝟙 (E i) :=
-  liftCycles_i ..
-
 variable (K : HomologicalComplex C c) [∀ i, K.HasHomology i] {E : ι → C}
   (e : ∀ i, E i ⟶ K.cycles i)
 
@@ -64,17 +53,18 @@ abbrev fromGraded : graded c E ⟶ K where
 
 /-- On cycles, the morphism `K.fromGraded e` is given by `e`. -/
 @[reassoc]
-lemma toGradedCycles_cyclesMap_fromGraded (i : ι) :
-    toGradedCycles E i ≫ cyclesMap (K.fromGraded e) i = e i := by
+lemma iCyclesIso_inv_cyclesMap_fromGraded (i : ι) :
+    ((graded c E).iCyclesIso i (c.next i) rfl rfl).inv ≫ cyclesMap (K.fromGraded e) i = e i := by
   simp [← cancel_mono (K.iCycles i)]
 
 /-- If every `e i` is an epimorphism, then `K.fromGraded e` is surjective on homology. -/
 lemma epi_homologyMap_fromGraded [∀ i, Epi (e i)] (i : ι) :
     Epi (homologyMap (K.fromGraded e) i) := by
-  have : Epi ((toGradedCycles E i ≫ (graded c E).homologyπ i) ≫
+  have : Epi ((((graded c E).iCyclesIso i (c.next i) rfl rfl).inv ≫ (graded c E).homologyπ i) ≫
       homologyMap (K.fromGraded e) i) := by
-    rw [Category.assoc, homologyπ_naturality, reassoc_of% toGradedCycles_cyclesMap_fromGraded]
+    rw [Category.assoc, homologyπ_naturality, reassoc_of% iCyclesIso_inv_cyclesMap_fromGraded]
     infer_instance
-  exact epi_of_epi (toGradedCycles E i ≫ (graded c E).homologyπ i) _
+  exact epi_of_epi (((graded c E).iCyclesIso i (c.next i) rfl rfl).inv ≫
+    (graded c E).homologyπ i) _
 
 end HomologicalComplex
