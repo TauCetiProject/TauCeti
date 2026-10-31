@@ -12,6 +12,7 @@ import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.RingTheory.Finiteness.Finsupp
 import Mathlib.RingTheory.TensorProduct.Finite
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # Top exterior powers of a short exact sequence
@@ -27,9 +28,9 @@ subspace comes first.
 The value does not depend on the lifts because the `a` vectors `f uᵢ` already exhaust the
 `a`-dimensional subspace `range f = ker g`: changing a lift by an element of that subspace adds an
 exterior product with `a + 1` factors in an `a`-dimensional space, which vanishes
-(`TauCeti.exteriorPower.ιMulti_eq_of_sub_mem`). The map is constructed from a choice of linear
-section of `g`, and the characterization `TauCeti.exteriorPower.shortExactEquiv_tmul_ιMulti`
-shows that the choice does not matter.
+(`Submodule.ιMulti_eq_of_sub_mem`). The map is constructed from a choice of linear section of
+`g`, and the characterization `TauCeti.exteriorPower.shortExactEquiv_tmul_ιMulti` shows that the
+choice does not matter.
 
 This is the determinant-line identity `det V ≅ det U ⊗ det W`. It is the linear-algebra input for
 comparing determinant lines along exact sequences, such as the kernel/cokernel sequence of a
@@ -38,10 +39,6 @@ of the quotient.
 
 ## Main declarations
 
-* `TauCeti.exteriorPower.ιMulti_eq_zero_of_finrank_lt`: an exterior product vanishes when more of
-  its factors than the dimension of a finite-dimensional subspace lie in that subspace.
-* `TauCeti.exteriorPower.ιMulti_eq_of_sub_mem`: an exterior product with at least `dim P` factors
-  in a subspace `P` is unchanged when its other factors are moved by vectors of `P`.
 * `TauCeti.exteriorPower.shortExactEquiv`: the isomorphism `⋀ᵃ U ⊗ ⋀ᶜ W ≃ ⋀ᵃ⁺ᶜ V`.
 * `TauCeti.exteriorPower.shortExactEquiv_tmul_ιMulti`: its value on exterior products, for
   arbitrary lifts.
@@ -62,48 +59,6 @@ namespace exteriorPower
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
 
-/-- An exterior product vanishes as soon as more of its factors than the dimension of a
-finite-dimensional subspace lie in that subspace. -/
-theorem ιMulti_eq_zero_of_finrank_lt {n : ℕ} {x : Fin n → V} (P : Submodule K V)
-    [FiniteDimensional K P] (s : Finset (Fin n)) (hs : finrank K P < s.card)
-    (hx : ∀ i ∈ s, x i ∈ P) : ιMulti K n x = 0 := by
-  refine (ιMulti K n).map_linearDependent x fun hli ↦ hs.not_ge ?_
-  have hli' : LinearIndependent K (fun i : s ↦ (⟨x i, hx i i.2⟩ : P)) :=
-    LinearIndependent.of_comp P.subtype (hli.comp _ Subtype.val_injective)
-  simpa using hli'.fintype_card_le_finrank
-
-/-- Let `P` be a finite-dimensional subspace and `s` a set of at least `dim P` indices at which
-the factors of an exterior product lie in `P`. Then moving the factors at the other indices by
-vectors of `P` does not change the product. -/
-theorem ιMulti_eq_of_sub_mem {n : ℕ} {x x' : Fin n → V} (P : Submodule K V)
-    [FiniteDimensional K P] (s : Finset (Fin n)) (hs : finrank K P ≤ s.card)
-    (hx : ∀ i ∈ s, x i ∈ P) (heq : ∀ i ∈ s, x' i = x i) (hsub : ∀ i ∉ s, x i - x' i ∈ P) :
-    ιMulti K n x = ιMulti K n x' := by
-  classical
-  -- Replace the factors of `x` by those of `x'` one index at a time.
-  suffices ∀ t : Finset (Fin n), ιMulti K n (t.piecewise x' x) = ιMulti K n x by
-    simpa using (this Finset.univ).symm
-  intro t
-  induction t using Finset.induction_on with
-  | empty => simp
-  | insert j t hj ih =>
-    set y := t.piecewise x' x
-    have hyj : y j = x j := Finset.piecewise_eq_of_notMem _ _ _ hj
-    rw [Finset.piecewise_insert, ← ih]
-    by_cases hjs : j ∈ s
-    · rw [heq j hjs, ← hyj, Function.update_eq_self]
-    -- The factors at `s` and the factor `x j - x' j` at `j` are `card s + 1` vectors of `P`.
-    have hzero : ιMulti K n (Function.update y j (x j - x' j)) = 0 := by
-      refine ιMulti_eq_zero_of_finrank_lt P (insert j s) ?_ fun i hi ↦ ?_
-      · rw [Finset.card_insert_of_notMem hjs]
-        omega
-      · rcases Finset.mem_insert.1 hi with rfl | hi
-        · simpa using hsub i hjs
-        · rw [Function.update_of_ne (ne_of_mem_of_not_mem hi hjs)]
-          by_cases hit : i ∈ t <;> simp [y, hit, heq i hi, hx i hi]
-    rw [AlternatingMap.map_update_sub, sub_eq_zero, ← hyj, Function.update_eq_self] at hzero
-    exact hzero.symm
-
 variable {U W : Type*} [AddCommGroup U] [Module K U] [AddCommGroup W] [Module K W]
   {f : U →ₗ[K] V} {g : V →ₗ[K] W}
 
@@ -123,7 +78,7 @@ private theorem shortExactWedge_tmul_ιMulti [FiniteDimensional K U] (hfg : Func
   simp only [shortExactWedge, lift.tmul, LinearMap.compl₁₂_apply, map_apply_ιMulti,
     wedge_ιMulti]
   -- The first `dim U` factors exhaust `range f = ker g`, and the lifts agree modulo `ker g`.
-  refine ιMulti_eq_of_sub_mem (LinearMap.range f) (Finset.univ.map (Fin.castAddEmb c))
+  refine (LinearMap.range f).ιMulti_eq_of_sub_mem (Finset.univ.map (Fin.castAddEmb c))
     (by simpa using LinearMap.finrank_range_le f) (by simp) (by simp) fun i hi ↦ ?_
   obtain ⟨j, rfl⟩ : ∃ j, Fin.natAdd (finrank K U) j = i := by
     induction i using Fin.addCases with
