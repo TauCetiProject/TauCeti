@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ConnectedSum.Smooth
-public import TauCeti.Geometry.Manifold.Orientation.Pullback
+public import TauCeti.Geometry.Manifold.Orientation.OpenSubset
 public import TauCeti.Geometry.Manifold.Orientation.Inversion
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
@@ -79,16 +78,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
   (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) I 1 e₁) (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) I 1 e₂)
 
-variable {h₁ h₂} in
-/-- The restriction of an orientation of `M` to the open subset `U`, the pullback along the
-inclusion. -/
-private def restrictOrientation {X : Type*} [TopologicalSpace X] [ChartedSpace H X]
-    [IsManifold I 1 X] (o : Manifold.Orientation I X ι) (U : Opens X) :
-    Manifold.Orientation I U ι :=
-  o.pullback contMDiff_subtype_val
-    (fun x ↦ (isLocalDiffeomorph_subtype_val (n := 1) x).isInvertible_mfderiv one_ne_zero)
-    o.card_eq
-
 /-- The derivative of the quotient map of the connected sum at a point of the first punctured
 summand, read through the inclusion of that summand into the disjoint union. -/
 private def derivInl (x : puncture e₁) :
@@ -143,9 +132,9 @@ private def auxOrientation (z : puncture e₁ ⊕ puncture e₂) :
   letI := chartedSpace (H := H) h₁ h₂
   match z with
   | .inl x => _root_.Orientation.map ι (derivInl h₁ h₂ d₁ d₂ x).toLinearEquiv
-      ((restrictOrientation o₁ (puncture e₁)).orientationAt x)
+      ((o₁.restrict (puncture e₁)).orientationAt x)
   | .inr y => _root_.Orientation.map ι (derivInr h₁ h₂ d₁ d₂ y).toLinearEquiv
-      ((restrictOrientation o₂ (puncture e₂)).orientationAt y)
+      ((o₂.restrict (puncture e₂)).orientationAt y)
 
 variable (oE : Manifold.Orientation 𝓘(ℝ, E) E ι)
 
@@ -172,7 +161,7 @@ private theorem auxOrientation_inl_eq_inr
     funext fun w ↦ by
       simpa only [comp_apply, mk_inl, mk_inr] using inl_eq_inr (e₁ := e₁) (e₂ := e₂) (w : E) (hP w)
         (ρ₁ w).2 (ρ₂ w).2
-  let oP := restrictOrientation oE P
+  let oP := oE.restrict P
   let w₀ : P := ⟨v, mem_puncture.2 hv⟩
   have hv' : inversion (0 : E) 1 v ≠ 0 := by simpa [inversion_eq_center one_ne_zero] using hv
   -- `ρ₁` and `ρ₂` are differentiable at `w₀` and preserve orientation from `oP`.
@@ -186,14 +175,14 @@ private theorem auxOrientation_inl_eq_inr
     ((ContMDiffAt.subtypeVal_comp_iff (puncture e₂) ρ₂ w₀).mp
       (d₂.contMDiff.contMDiffAt.comp w₀ hinv)).mdifferentiableAt one_ne_zero
   have hval₁ : IsOrientationPreservingAt oP o₁ (e₁ ∘ Subtype.val) w₀ :=
-    (he₁ v hv).comp (isOrientationPreservingAt_pullback _ _ _ _ w₀)
+    (he₁ v hv).comp (isOrientationPreservingAt_restrict oE P w₀)
   have hval₂ : IsOrientationPreservingAt oP o₂ ((e₂ ∘ inversion 0 1) ∘ Subtype.val) w₀ :=
-    ((he₂ _ hv').comp (isOrientationReversingAt_inversion oE hv)).comp
-      (isOrientationPreservingAt_pullback _ _ _ _ w₀)
-  have hρ₁ : IsOrientationPreservingAt oP (restrictOrientation o₁ (puncture e₁)) ρ₁ w₀ :=
-    (isOrientationPreservingAt_pullback _ _ _ _ (ρ₁ w₀)).of_comp hval₁ hρ₁d
-  have hρ₂ : IsOrientationPreservingAt oP (restrictOrientation o₂ (puncture e₂)) ρ₂ w₀ :=
-    (isOrientationPreservingAt_pullback _ _ _ _ (ρ₂ w₀)).of_comp hval₂ hρ₂d
+    ((he₂ _ hv').comp (isOrientationReversingAt_inversion oE one_ne_zero hv)).comp
+      (isOrientationPreservingAt_restrict oE P w₀)
+  have hρ₁ : IsOrientationPreservingAt oP (o₁.restrict (puncture e₁)) ρ₁ w₀ :=
+    (isOrientationPreservingAt_restrict o₁ _ (ρ₁ w₀)).of_comp hval₁ hρ₁d
+  have hρ₂ : IsOrientationPreservingAt oP (o₂.restrict (puncture e₂)) ρ₂ w₀ :=
+    (isOrientationPreservingAt_restrict o₂ _ (ρ₂ w₀)).of_comp hval₂ hρ₂d
   obtain ⟨A, hA, hAo⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 hρ₁
   obtain ⟨B, hB, hBo⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 hρ₂
   -- The two transports of `oP` agree, being derivatives of the same map `P → M # N`.
@@ -275,12 +264,12 @@ def orientation (he₁ : ∀ v ≠ 0, IsOrientationPreservingAt oE o₁ e₁ v)
       rcases z with x | y
       · exact ((isLocalDiffeomorph_sumInl (n := 1) x).comp
           (hg := isLocalDiffeomorph_mk (n := 1) h₁ h₂ d₁ d₂ _)).eventually_mapOrientation_eq
-          (restrictOrientation o₁ (puncture e₁)) (tangentOrientation h₁ h₂ d₁ d₂ o₁ o₂)
+          (o₁.restrict (puncture e₁)) (tangentOrientation h₁ h₂ d₁ d₂ o₁ o₂)
           (.of_forall fun x' ↦ ⟨derivInl h₁ h₂ d₁ d₂ x', coe_derivInl h₁ h₂ d₁ d₂ x',
             (tangentOrientation_mk h₁ h₂ d₁ d₂ he₁ he₂ (.inl x')).symm⟩)
       · exact ((isLocalDiffeomorph_sumInr (n := 1) y).comp
           (hg := isLocalDiffeomorph_mk (n := 1) h₁ h₂ d₁ d₂ _)).eventually_mapOrientation_eq
-          (restrictOrientation o₂ (puncture e₂)) (tangentOrientation h₁ h₂ d₁ d₂ o₁ o₂)
+          (o₂.restrict (puncture e₂)) (tangentOrientation h₁ h₂ d₁ d₂ o₁ o₂)
           (.of_forall fun y' ↦ ⟨derivInr h₁ h₂ d₁ d₂ y', coe_derivInr h₁ h₂ d₁ d₂ y',
             (tangentOrientation_mk h₁ h₂ d₁ d₂ he₁ he₂ (.inr y')).symm⟩)⟩
 
@@ -297,8 +286,8 @@ theorem isOrientationPreservingAt_inl {o : Manifold.Orientation I (puncture e₁
     IsOrientationPreservingAt o (orientation h₁ h₂ d₁ d₂ o₁ o₂ oE he₁ he₂) (inl e₁ e₂) x := by
   let := chartedSpace (H := H) h₁ h₂
   have := isManifold (n := 1) h₁ h₂ d₁ d₂
-  obtain rfl : o = restrictOrientation o₁ (puncture e₁) := (eq_pullback_iff _ _ _ _).2 ho
-  rw [show inl e₁ e₂ = mk e₁ e₂ ∘ Sum.inl from funext fun x ↦ (mk_inl e₁ e₂ x).symm,
+  obtain rfl : o = o₁.restrict (puncture e₁) := eq_restrict_iff.2 ho
+  rw [← mk_comp_inl,
     isOrientationPreservingAt_iff_of_coe_eq _ _ _ x _ (coe_derivInl h₁ h₂ d₁ d₂ x), orientation,
     orientationAt_ofVectorBundleOrientation]
   exact (tangentOrientation_mk h₁ h₂ d₁ d₂ he₁ he₂ (.inl x)).symm
@@ -313,8 +302,8 @@ theorem isOrientationPreservingAt_inr {o : Manifold.Orientation I (puncture e₂
     IsOrientationPreservingAt o (orientation h₁ h₂ d₁ d₂ o₁ o₂ oE he₁ he₂) (inr e₁ e₂) y := by
   let := chartedSpace (H := H) h₁ h₂
   have := isManifold (n := 1) h₁ h₂ d₁ d₂
-  obtain rfl : o = restrictOrientation o₂ (puncture e₂) := (eq_pullback_iff _ _ _ _).2 ho
-  rw [show inr e₁ e₂ = mk e₁ e₂ ∘ Sum.inr from funext fun y ↦ (mk_inr e₁ e₂ y).symm,
+  obtain rfl : o = o₂.restrict (puncture e₂) := eq_restrict_iff.2 ho
+  rw [← mk_comp_inr,
     isOrientationPreservingAt_iff_of_coe_eq _ _ _ y _ (coe_derivInr h₁ h₂ d₁ d₂ y), orientation,
     orientationAt_ofVectorBundleOrientation]
   exact (tangentOrientation_mk h₁ h₂ d₁ d₂ he₁ he₂ (.inr y)).symm
