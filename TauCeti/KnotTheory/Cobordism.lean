@@ -721,6 +721,12 @@ def transConcordance : KnotCobordism K₀ K₂ :=
   transConcordanceOfWidth C (width_pos (S := S)) width_le mem_range_toFun_iff_of_width
 
 variable (S) in
+/-- The embedding of the composite of `S` and `C` is the gluing of `S` with the rescaled `C`. -/
+private theorem toFun_transConcordance :
+    (S.transConcordance C).toFun = glueFun C S (width_pos (S := S)) :=
+  rfl
+
+variable (S) in
 /-- Composing a knot cobordism with a concordance keeps its surface. -/
 theorem carrier_transConcordance : (S.transConcordance C).carrier = S.carrier :=
   (rfl)
@@ -741,14 +747,14 @@ theorem exists_range_toFun_transConcordance :
         (fun q : Circle × ℝ ↦ ((C q).1, 1 - c + c * (C q).2)) '' (univ ×ˢ Ioi 0) := by
   refine ⟨width S, width_pos, width_le, ?_⟩
   have hc := width_pos (S := S)
-  change range (glueFun C S width_pos) = _
+  rw [toFun_transConcordance]
   ext p
   constructor
   · rintro ⟨x, rfl⟩
     by_cases hx : (S.toFun x).2 ≤ 1 - width S
     · rw [glueFun_of_le C width_pos hx]
       exact Or.inl ⟨mem_range_self x, hx⟩
-    · obtain ⟨z, hz⟩ := fst_mem_range_of_le mem_range_toFun_iff_of_width
+    · obtain ⟨z, hz⟩ := fst_mem_range_of_le (S := S) mem_range_toFun_iff_of_width
         (x := x) (by linarith)
       have hS : S.toFun x = (K₁ z, (S.toFun x).2) := Prod.ext hz.symm rfl
       rw [glueFun_of_eq C width_pos mem_range_toFun_iff_of_width hS (by linarith)]
@@ -805,8 +811,7 @@ theorem exists_range_toFun_transKnotCobordism (C : SmoothEmbedding.Concordance K
   have hr (A : Set (sphere (0 : E) 1 × ℝ)) : (fun p ↦ (p.1, 1 - p.2)) '' A =
       (fun p : sphere (0 : E) 1 × ℝ ↦ (p.1, 1 - p.2)) ⁻¹' A :=
     congrFun (image_eq_preimage_of_inverse hrr hrr) A
-  change range (S.symm.transConcordance C.symm).symm.toFun = _
-  rw [KnotCobordism.range_toFun_symm, h, KnotCobordism.range_toFun_symm, hr, hr]
+  rw [transKnotCobordism, KnotCobordism.range_toFun_symm, h, KnotCobordism.range_toFun_symm, hr, hr]
   ext p
   simp only [mem_preimage, mem_union, mem_inter_iff, mem_ofPred_eq, sub_sub_cancel,
     sub_le_sub_iff_left]
@@ -815,12 +820,14 @@ theorem exists_range_toFun_transKnotCobordism (C : SmoothEmbedding.Concordance K
     have hs : (0 : ℝ) < s := hs
     dsimp only at he
     rw [symm_apply, Prod.ext_iff] at he
-    refine ⟨(z, 1 - s), ⟨mem_univ _, show 1 - s < 1 by linarith⟩, Prod.ext he.1 ?_⟩
+    have hs₁ : 1 - s < 1 := by linarith
+    refine ⟨(z, 1 - s), ⟨mem_univ _, hs₁⟩, Prod.ext he.1 ?_⟩
     dsimp only at he ⊢
     linarith [he.2]
   · rintro ⟨⟨z, u⟩, ⟨-, hu⟩, rfl⟩
     have hu : u < 1 := hu
-    refine ⟨(z, 1 - u), ⟨mem_univ _, show (0 : ℝ) < 1 - u by linarith⟩, ?_⟩
+    have hu₀ : (0 : ℝ) < 1 - u := by linarith
+    refine ⟨(z, 1 - u), ⟨mem_univ _, hu₀⟩, ?_⟩
     dsimp only
     rw [symm_apply, sub_sub_cancel]
     exact Prod.ext rfl (by dsimp only; ring)
