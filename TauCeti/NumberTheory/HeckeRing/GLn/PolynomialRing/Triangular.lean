@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.HeckeRing.GLn.LeadingCoefficient
 public import TauCeti.NumberTheory.HeckeRing.GLn.ProductSupport
 public import TauCeti.NumberTheory.HeckeRing.GLn.PolynomialRing.Injective
 public import TauCeti.NumberTheory.HeckeRing.GLn.PolynomialRing.LeadingExponent
+import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # The triangular expansion of Hecke monomials and Shimura's Theorem 3.20
@@ -34,6 +35,11 @@ statements to products of arbitrary elements with a leading term shows that the 
   induction, because the sum of all leading partial sums strictly increases down the order and
   is bounded by `(n + 1)` times the total.
 
+The partial sums are the prefix sums `TauCeti.prefixSum`, and the two order facts used, that
+prefix sums determine a vector and that the sum of all prefix sums detects equality along the
+order, are `TauCeti.eq_of_forall_prefixSum_eq` and
+`TauCeti.eq_of_prefixSum_le_of_sum_range_prefixSum_le`.
+
 ## Main results
 
 * `HeckeRing.GLn.prod_heckeGen_pow_apply_diagCoset_leadingExponent`: the coset
@@ -54,66 +60,13 @@ statements to products of arbitrary elements with a leading term shows that the 
 
 public section
 
-open Finset HeckeRing
+open Finset HeckeRing TauCeti
 
 namespace HeckeRing.GLn
 
 attribute [local instance] commSemiringIntegralHeckeRingLocal
 
 variable {n : ℕ}
-
-/-! ### The order by leading partial sums -/
-
-/-- `g` lies below `f`: every leading partial sum of `g` is at least that of `f`. -/
-private def Dominates (f g : Fin n → ℕ) : Prop :=
-  ∀ (k : ℕ) (hk : k ≤ n), ∑ j : Fin k, f (Fin.castLE hk j) ≤ ∑ j : Fin k, g (Fin.castLE hk j)
-
-private lemma Dominates.refl (f : Fin n → ℕ) : Dominates f f := fun _ _ ↦ le_rfl
-
-private lemma Dominates.trans {f g h : Fin n → ℕ} (hfg : Dominates f g) (hgh : Dominates g h) :
-    Dominates f h :=
-  fun k hk ↦ (hfg k hk).trans (hgh k hk)
-
-private lemma Dominates.add {f f' g g' : Fin n → ℕ} (hf : Dominates f g) (hf' : Dominates f' g') :
-    Dominates (f + f') (g + g') := fun k hk ↦ by
-  simpa only [Pi.add_apply, Finset.sum_add_distrib] using add_le_add (hf k hk) (hf' k hk)
-
-/-- Leading partial sums determine a vector. -/
-private lemma Dominates.antisymm {f g : Fin n → ℕ} (hfg : Dominates f g) (hgf : Dominates g f) :
-    f = g := by
-  have hsum (k : ℕ) (hk : k ≤ n) :
-      ∑ j : Fin k, f (Fin.castLE hk j) = ∑ j : Fin k, g (Fin.castLE hk j) :=
-    le_antisymm (hfg k hk) (hgf k hk)
-  funext i
-  have h := hsum (i + 1) i.2
-  rw [Fin.sum_univ_castSucc, Fin.sum_univ_castSucc] at h
-  have hlast : Fin.castLE i.2 (Fin.last i) = i := Fin.ext rfl
-  have hcast (j : Fin i) : Fin.castLE i.2 j.castSucc = Fin.castLE i.2.le j := Fin.ext rfl
-  simp only [hlast, hcast, hsum i i.2.le] at h
-  exact Nat.add_left_cancel h
-
-/-- The sum of all leading partial sums of `g`; it strictly increases down the order. -/
-private def prefixMeasure (g : Fin n → ℕ) : ℕ :=
-  ∑ k : Fin (n + 1), ∑ j : Fin k, g (Fin.castLE (Nat.lt_succ_iff.mp k.2) j)
-
-private lemma Dominates.prefixMeasure_le {f g : Fin n → ℕ} (h : Dominates f g) :
-    prefixMeasure f ≤ prefixMeasure g :=
-  Finset.sum_le_sum fun k _ ↦ h k _
-
-private lemma Dominates.eq_of_prefixMeasure_le {f g : Fin n → ℕ} (h : Dominates f g)
-    (hle : prefixMeasure g ≤ prefixMeasure f) : f = g := by
-  have heq := (Finset.sum_eq_sum_iff_of_le fun (k : Fin (n + 1)) _ ↦
-    h k (Nat.lt_succ_iff.mp k.2)).mp (le_antisymm h.prefixMeasure_le hle)
-  exact h.antisymm fun k hk ↦ (heq ⟨k, Nat.lt_succ_of_le hk⟩ (Finset.mem_univ _)).ge
-
-/-- Every leading partial sum is at most the total, so `prefixMeasure` is bounded. -/
-private lemma prefixMeasure_le (g : Fin n → ℕ) : prefixMeasure g ≤ (n + 1) * ∑ i, g i := by
-  calc prefixMeasure g ≤ ∑ _k : Fin (n + 1), ∑ i, g i := Finset.sum_le_sum fun k _ ↦ by
-        calc ∑ j : Fin k, g (Fin.castLE _ j)
-            = ∑ i ∈ univ.map (Fin.castLEEmb (Nat.lt_succ_iff.mp k.2)), g i := by
-              rw [Finset.sum_map]; rfl
-          _ ≤ ∑ i, g i := Finset.sum_le_sum_of_subset (Finset.subset_univ _)
-    _ = (n + 1) * ∑ i, g i := by simp
 
 /-! ### Elements with a leading term -/
 
@@ -122,10 +75,10 @@ variable [NeZero n]
 variable (p : ℕ)
 
 /-- `x` is supported on cosets `T(p ^ g)` with `g` monotone, of the same total as `f`, and lying
-below `f`. -/
+below `f`: every prefix sum of `g` is at least that of `f`. -/
 private def IsBelow (f : Fin n → ℕ) (x : IntegralHeckeRing n) : Prop :=
   ∀ D, x D ≠ 0 → ∃ g : Fin n → ℕ, Monotone g ∧ D = diagCoset (primePowDiag n p g) ∧
-    ∑ i, g i = ∑ i, f i ∧ Dominates f g
+    ∑ i, g i = ∑ i, f i ∧ ∀ k ≤ n, prefixSum k f ≤ prefixSum k g
 
 /-- `x` lies below `f` and has coefficient `1` at `T(p ^ f)`. -/
 private def IsLeading (f : Fin n → ℕ) (x : IntegralHeckeRing n) : Prop :=
@@ -149,14 +102,14 @@ private lemma eq_of_structureConstants_apply_ne_zero (hp : p.Prime) {f f' : Fin 
   obtain rfl := eq_of_diagCoset_primePowDiag_eq n hp.one_lt (hf.add hf') hh' hD
   -- `f + f'` lies below `g + g'`, while `g` and `g'` lie below `f` and `f'`
   have key (k : ℕ) (hk : k ≤ n) :
-      ∑ j : Fin k, g (Fin.castLE hk j) ≤ ∑ j : Fin k, f (Fin.castLE hk j) ∧
-        ∑ j : Fin k, g' (Fin.castLE hk j) ≤ ∑ j : Fin k, f' (Fin.castLE hk j) := by
+      prefixSum k g = prefixSum k f ∧ prefixSum k g' = prefixSum k f' := by
     have := hdom k hk
     have := hfg k hk
     have := hfg' k hk
-    simp only [Finset.sum_add_distrib] at *
+    simp only [Finset.sum_add_distrib, sum_castLE_eq_prefixSum] at *
     omega
-  rw [hfg.antisymm fun k hk ↦ (key k hk).1, hfg'.antisymm fun k hk ↦ (key k hk).2]
+  rw [eq_of_forall_prefixSum_eq fun k hk ↦ (key k hk).1,
+    eq_of_forall_prefixSum_eq fun k hk ↦ (key k hk).2]
   exact ⟨rfl, rfl⟩
 
 /-- A product of an element below `f` and an element below `f'` lies below `f + f'`. -/
@@ -173,9 +126,13 @@ private lemma IsBelow.mul (hp : p.Prime) {f f' : Fin n → ℕ} {x y : IntegralH
     exact right_ne_zero_of_mul (right_ne_zero_of_mul hD₂')
   obtain ⟨h, hh, rfl, hsum, hdom⟩ :=
     exists_primePowDiag_of_diagElem_mul_apply_ne_zero hp hg hg' hsc
-  refine ⟨h, hh, rfl, ?_, (hfg.add hfg').trans fun k hk ↦ ?_⟩
+  refine ⟨h, hh, rfl, ?_, fun k hk ↦ ?_⟩
   · simp only [hsum, Finset.sum_add_distrib, hgsum, hgsum', Pi.add_apply]
-  · simpa only [Pi.add_apply] using hdom k hk
+  · calc prefixSum k (f + f') ≤ prefixSum k (g + g') := by
+          rw [prefixSum_add, prefixSum_add]
+          exact add_le_add (hfg k hk) (hfg' k hk)
+      _ ≤ prefixSum k h := by
+          simpa only [← sum_castLE_eq_prefixSum hk, Pi.add_apply] using hdom k hk
 
 /-- The coefficient of `T(p ^ (f + f'))` in a product of an element below `f` and an element
 below `f'` is the product of their coefficients at `T(p ^ f)` and `T(p ^ f')`. -/
@@ -217,7 +174,7 @@ omit [NeZero n] in
 private lemma isLeading_diagElem {f : Fin n → ℕ} (hf : Monotone f) :
     IsLeading p f (diagElem (primePowDiag n p f)) := by
   classical
-  refine ⟨fun D hD ↦ ⟨f, hf, ?_, rfl, Dominates.refl f⟩, ?_⟩
+  refine ⟨fun D hD ↦ ⟨f, hf, ?_, rfl, fun _ _ ↦ le_rfl⟩, ?_⟩
   · rw [diagElem_def, HeckeCosetModule.single_apply] at hD
     exact (ite_ne_right_iff.mp hD).1.symm
   · rw [diagElem_def, HeckeCosetModule.single_apply, ite_eq_left_iff.mpr fun h ↦ (h rfl).elim]
@@ -225,8 +182,8 @@ private lemma isLeading_diagElem {f : Fin n → ℕ} (hf : Monotone f) :
 omit [NeZero n] in
 private lemma isLeading_one : IsLeading p (0 : Fin n → ℕ) 1 := by
   have h : primePowDiag n p 0 = fun _ ↦ 1 := funext fun i ↦ by simp [primePowDiag_apply]
-  have h1 := isLeading_diagElem (p := p) (monotone_const (β := ℕ) (c := 0) (α := Fin n))
-  rwa [show (fun _ : Fin n ↦ (0 : ℕ)) = 0 from rfl, h, diagElem_one] at h1
+  have h1 := isLeading_diagElem (p := p) (f := (0 : Fin n → ℕ)) monotone_const
+  rwa [h, diagElem_one] at h1
 
 private lemma isLeading_heckeGen_pow (hp : p.Prime) (k : Fin n) (m : ℕ) :
     IsLeading p (leadingExponent (Pi.single k m)) (heckeGen n p k ^ m) := by
@@ -268,8 +225,9 @@ theorem exists_primePowDiag_of_prod_heckeGen_pow_apply_ne_zero (hp : p.Prime) (e
     ∃ g : Fin n → ℕ, Monotone g ∧ D = diagCoset (primePowDiag n p g) ∧
       ∑ i, g i = ∑ i, leadingExponent e i ∧
       ∀ (k : ℕ) (hk : k ≤ n), ∑ j : Fin k, leadingExponent e (Fin.castLE hk j) ≤
-        ∑ j : Fin k, g (Fin.castLE hk j) :=
-  (isLeading_prod_heckeGen_pow hp e).1 D h
+        ∑ j : Fin k, g (Fin.castLE hk j) := by
+  obtain ⟨g, hg, hD, hsum, hdom⟩ := (isLeading_prod_heckeGen_pow hp e).1 D h
+  exact ⟨g, hg, hD, hsum, fun k hk ↦ by simpa only [sum_castLE_eq_prefixSum] using hdom k hk⟩
 
 /-! ### Shimura's Theorem 3.20 -/
 
@@ -285,7 +243,7 @@ theorem evalHom_injective (hp : p.Prime) : Function.Injective (evalHom n p) := b
   by_contra hne
   -- a monomial whose leading vector is maximal
   obtain ⟨s, hs, hmin⟩ := Finset.exists_min_image R.support
-    (fun d : Fin n →₀ ℕ ↦ prefixMeasure (leadingExponent ⇑d))
+    (fun d : Fin n →₀ ℕ ↦ ∑ k ∈ range (n + 1), prefixSum k (leadingExponent ⇑d))
     (MvPolynomial.support_nonempty.mpr hne)
   have h0 : evalHom n p R (diagCoset (primePowDiag n p (leadingExponent ⇑s))) = 0 := by
     rw [hR, HeckeCosetModule.zero_apply]
@@ -296,10 +254,10 @@ theorem evalHom_injective (hp : p.Prime) : Function.Injective (evalHom n p) := b
     rw [smul_eq_mul]
     by_contra hc
     obtain ⟨g, hg, hD, -, hdom⟩ :=
-      exists_primePowDiag_of_prod_heckeGen_pow_apply_ne_zero hp d (right_ne_zero_of_mul hc)
+      (isLeading_prod_heckeGen_pow hp d).1 _ (right_ne_zero_of_mul hc)
     obtain rfl := eq_of_diagCoset_primePowDiag_eq n hp.one_lt (leadingExponent_monotone _) hg hD
     exact hds (DFunLike.coe_injective (leadingExponent_injective
-      (Dominates.eq_of_prefixMeasure_le hdom (hmin d hd))))
+      (eq_of_prefixSum_le_of_sum_range_prefixSum_le hdom (hmin d hd))))
   · exact fun hs' ↦ (hs' hs).elim
 
 /-- The `p`-local Hecke ring lies in the image of the presentation: every monotone `p`-power
@@ -309,7 +267,8 @@ theorem pLocalSubring_le_evalHom_range (hp : p.Prime) :
   classical
   rw [pLocalSubring_le_iff]
   intro g hg
-  induction hN : (n + 1) * ∑ i, g i - prefixMeasure g using Nat.strong_induction_on
+  induction hN : (n + 1) * ∑ i, g i - ∑ k ∈ range (n + 1), prefixSum k g
+    using Nat.strong_induction_on
     generalizing g with
   | _ N ih =>
   -- the monomial whose leading coset is `T(p ^ g)`
@@ -334,11 +293,16 @@ theorem pLocalSubring_le_evalHom_range (hp : p.Prime) :
   -- the remaining cosets lie strictly below `g`
   obtain ⟨hDT, hDx⟩ := Finset.mem_erase.mp hD
   obtain ⟨h, hh, rfl, hhsum, hdom⟩ := hx.1 D (HeckeCosetModule.mem_support_iff.mp hDx)
-  have hlt : prefixMeasure g < prefixMeasure h :=
-    lt_of_le_of_ne hdom.prefixMeasure_le fun heq ↦
-      hDT (by rw [(hdom.eq_of_prefixMeasure_le heq.ge).symm])
-  have hmem := ih ((n + 1) * ∑ i, h i - prefixMeasure h)
-    (by have := prefixMeasure_le h; rw [hhsum] at this ⊢; omega) h hh rfl
+  have hlt : ∑ k ∈ range (n + 1), prefixSum k g < ∑ k ∈ range (n + 1), prefixSum k h :=
+    lt_of_le_of_ne (sum_le_sum fun k hk ↦ hdom k (Nat.lt_succ_iff.mp (mem_range.mp hk)))
+      fun heq ↦ hDT (by rw [(eq_of_prefixSum_le_of_sum_range_prefixSum_le hdom heq.ge).symm])
+  -- every prefix sum is at most the total, which bounds the measure
+  have hle : ∑ k ∈ range (n + 1), prefixSum k h ≤ (n + 1) * ∑ i, h i := by
+    calc ∑ k ∈ range (n + 1), prefixSum k h ≤ ∑ _k ∈ range (n + 1), ∑ i, h i :=
+          sum_le_sum fun k _ ↦ prefixSum_le_sum k fun i ↦ Nat.zero_le (h i)
+      _ = (n + 1) * ∑ i, h i := by simp
+  have hmem := ih ((n + 1) * ∑ i, h i - ∑ k ∈ range (n + 1), prefixSum k h)
+    (by rw [hhsum] at hle ⊢; omega) h hh rfl
   rw [← HeckeCosetModule.smul_single_one, ← diagElem_def]
   exact Subring.zsmul_mem _ hmem _
 

@@ -43,6 +43,8 @@ Chris Birkbeck), on top of the matrix-level Smith normal form
 * `diagCosetEquiv`: that bijection as an equivalence, the canonical index of the double
   cosets.
 * `span_diagElem_eq_top`: the elements `T(a₁,...,aₙ)` span the Hecke ring.
+* `diagElem_mul_diagElem`: `T(a) · T(b)` is the structure-constant family of the
+  representatives of `T(a)` and `T(b)`.
 * `diagElem_mul_of_mulMap_eq`: the product criterion `T(a) · T(b) = T(c)`, given that the
   coset decomposition multiplies into `T(c)` alone and does so with multiplicity at most one.
   The `GL_n` reading of `HeckeCosetModule.mul_single_single_of_mulMap_eq`, which carries the
@@ -438,6 +440,15 @@ variable {n}
 -- The multiplication this section is about needs the arithmetic Hecke triple, whose
 -- instance carries `NeZero n`.
 variable [NeZero n]
+
+/-- The product of two diagonal basis elements is the structure-constant family of their
+representatives: the case `a = b = 1` of `HeckeCosetModule.single_mul_single`. -/
+theorem diagElem_mul_diagElem (a b : Fin n → ℕ) :
+    diagElem a * diagElem b =
+      HeckeCosetModule.structureConstants ℤ (SLnZ n) (SLnZ n) (SLnZ n)
+        (diagCoset a).rep (diagCoset b).rep := by
+  rw [diagElem_def, diagElem_def, HeckeCosetModule.single_mul_single]
+  exact (one_smul ℤ _).trans (one_smul ℤ _)
 
 /-- **The product criterion for diagonal Hecke elements.** If every pair in the coset
 decomposition of `T(a) · T(b)` multiplies into the single double coset `T(c)`, and `T(c)`

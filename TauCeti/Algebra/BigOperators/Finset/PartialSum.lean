@@ -30,6 +30,12 @@ This file contains basic facts about finite partial sums.
   distributive scalar actions commute with prefix sums.
 * `TauCeti.prefixSum_le_of_sum_le`: a tuple with smaller total sum and larger tail has smaller
   prefix sums.
+* `TauCeti.sum_castLE_eq_prefixSum`: a prefix sum is the sum over the first `k` indices.
+* `TauCeti.prefixSum_le_sum`: a prefix sum of a nonnegative tuple is at most its total sum.
+* `TauCeti.eq_of_forall_prefixSum_eq`: prefix sums determine a tuple.
+* `TauCeti.eq_of_prefixSum_le_of_sum_range_prefixSum_le`: when the prefix sums of `x` are bounded
+  by those of `y`, the sum of all prefix sums detects equality, so it strictly increases along
+  the prefix-sum order.
 * `TauCeti.eq_zero_of_forall_sum_Iic_eq_zero`: a finite sequence whose inclusive partial sums
   all vanish is zero.
 -/
@@ -122,6 +128,41 @@ theorem prefixSum_le_of_sum_le [Preorder M] [IsOrderedCancelAddMonoid M] {k : �
     ← sum_filter_add_sum_filter_not univ (fun i : Fin n ↦ (i : ℕ) < k) y] at hsum
   rw [prefixSum_def, prefixSum_def]
   exact le_of_add_le_add_right (hsum.trans (add_le_add le_rfl htail))
+
+/-- A prefix sum of length `k ≤ n` is the sum over the first `k` indices, embedded by
+`Fin.castLE`. -/
+theorem sum_castLE_eq_prefixSum {k : ℕ} (hk : k ≤ n) (x : Fin n → M) :
+    ∑ j : Fin k, x (Fin.castLE hk j) = prefixSum k x := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    have hlast : Fin.castLE hk (Fin.last k) = ⟨k, hk⟩ := Fin.ext (Fin.val_last k)
+    rw [Fin.sum_univ_castSucc, prefixSum_succ hk, ← ih (Nat.le_of_succ_le hk), hlast]
+    simp only [Fin.castLE_castSucc]
+
+/-- A prefix sum of a nonnegative tuple is at most its total sum. -/
+theorem prefixSum_le_sum [Preorder M] [IsOrderedAddMonoid M] (k : ℕ) {x : Fin n → M}
+    (hx : 0 ≤ x) : prefixSum k x ≤ ∑ i, x i :=
+  sum_le_univ_sum_of_nonneg hx
+
+/-- **Prefix sums determine a tuple.** -/
+theorem eq_of_forall_prefixSum_eq [IsLeftCancelAdd M] {x y : Fin n → M}
+    (h : ∀ k ≤ n, prefixSum k x = prefixSum k y) : x = y := by
+  funext i
+  have hi := h (i + 1) i.isLt
+  rw [prefixSum_succ i.isLt, prefixSum_succ i.isLt, h i i.isLt.le] at hi
+  exact add_left_cancel hi
+
+/-- If every prefix sum of `x` is at most that of `y` and the sum of all prefix sums of `y` is at
+most that of `x`, then `x = y`. -/
+theorem eq_of_prefixSum_le_of_sum_range_prefixSum_le [PartialOrder M]
+    [IsOrderedCancelAddMonoid M] {x y : Fin n → M} (h : ∀ k ≤ n, prefixSum k x ≤ prefixSum k y)
+    (hsum : ∑ k ∈ range (n + 1), prefixSum k y ≤ ∑ k ∈ range (n + 1), prefixSum k x) :
+    x = y := by
+  have h' (k : ℕ) (hk : k ∈ range (n + 1)) : prefixSum k x ≤ prefixSum k y :=
+    h k (Nat.lt_succ_iff.mp (mem_range.mp hk))
+  have heq := (sum_eq_sum_iff_of_le h').mp ((sum_le_sum h').antisymm hsum)
+  exact eq_of_forall_prefixSum_eq fun k hk ↦ heq k (mem_range.mpr (Nat.lt_succ_of_le hk))
 
 /-- Prefix sums of length `k` only see the coordinates below `k`. -/
 theorem prefixSum_congr {k : ℕ} {x y : Fin n → M} (h : ∀ i : Fin n, (i : ℕ) < k → x i = y i) :
