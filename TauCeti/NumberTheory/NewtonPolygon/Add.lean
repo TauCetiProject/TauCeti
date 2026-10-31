@@ -6,15 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NewtonPolygon.Basic
+public import TauCeti.RingTheory.PowerSeries.Valuation
 
 /-!
 # Newton polygons of sums
 
 The coefficient heights of a sum satisfy the ultrametric inequality
-`min (v (coeff n f)) (v (coeff n g)) ≤ v (coeff n (f + g))`. Passing to lower convex envelopes,
-the Newton polygon of `f + g` lies above the lower convex envelope of the pointwise minimum of
-the Newton polygons of `f` and `g`, and hence above every common convex lower bound of the two
-polygons. These are the lower bounds used to control the Newton polygon of a perturbation.
+`min (v (coeff n f)) (v (coeff n g)) ≤ v (coeff n (f + g))`
+(`PowerSeries.min_addValuation_coeff_le_addValuation_coeff_add`). Passing to lower convex
+envelopes, the Newton polygon of `f + g` lies above the lower convex envelope of the pointwise
+minimum of the Newton polygons of `f` and `g`, and hence above every common convex lower bound of
+the two polygons. These are the lower bounds used to control the Newton polygon of a perturbation.
 
 The pointwise minimum of the two polygons is generally not convex, and it is not a lower bound
 for the polygon of the sum. For example, over a field the polygons of `1` and `X ^ 2` are both
@@ -51,17 +53,12 @@ namespace PowerSeries
 
 variable {R : Type*} [Ring R] {v : AddValuation R (WithTop ℝ)} {f g : R⟦X⟧}
 
-/-- The ultrametric inequality for the coefficient heights of a sum. -/
-private theorem addValuation_coeff_inf_le_addValuation_coeff_add :
-    ((fun n => v (coeff n f)) ⊓ fun n => v (coeff n g)) ≤ fun n => v (coeff n (f + g)) :=
-  fun n => by simpa only [Pi.inf_apply, map_add] using v.map_add (coeff n f) (coeff n g)
-
 /-- A sum of power series with admissible coefficient heights has admissible coefficient
 heights. -/
 theorem isAdmissible_addValuation_coeff_add (hf : IsAdmissible fun n => v (coeff n f))
     (hg : IsAdmissible fun n => v (coeff n g)) :
     IsAdmissible fun n => v (coeff n (f + g)) :=
-  (hf.inf hg).mono addValuation_coeff_inf_le_addValuation_coeff_add
+  (hf.inf hg).mono fun n => min_addValuation_coeff_le_addValuation_coeff_add v f g n
 
 /-- For power series with admissible coefficient heights, the Newton polygon of a sum lies above
 the lower convex envelope of the pointwise minimum of the Newton polygons of the summands. -/
@@ -70,7 +67,8 @@ theorem lowerConvexEnvelope_inf_le_newtonPolygon_add (hf : IsAdmissible fun n =>
     lowerConvexEnvelope (f.newtonPolygon v ⊓ g.newtonPolygon v) ≤ (f + g).newtonPolygon v := by
   simp only [newtonPolygon_def]
   rw [lowerConvexEnvelope_inf_lowerConvexEnvelope hf hg]
-  exact lowerConvexEnvelope_mono (hf.inf hg) addValuation_coeff_inf_le_addValuation_coeff_add
+  exact lowerConvexEnvelope_mono (hf.inf hg)
+    fun n => min_addValuation_coeff_le_addValuation_coeff_add v f g n
 
 /-- For power series with admissible coefficient heights, a convex sequence lying below the
 Newton polygons of both summands lies below the Newton polygon of their sum. -/
