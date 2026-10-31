@@ -200,12 +200,16 @@ private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_fork
         obtain ⟨y, rfl⟩ := Submodule.mem_one.1 hw
         have hform : ε • (algebraMap ℤ Π y * π (vertexIdempotent k (vertex G a))) =
             algebraMap k Π ((ε * y : ℤ) : k) * π (vertexIdempotent k (vertex G a)) := by
-          rw [map_intCast, eq_intCast, zsmul_eq_mul, Int.cast_mul, mul_assoc]
+          simp [zsmul_eq_mul, mul_assoc]
+        have hpath : π (ofPath ⟨_, _, p⟩) =
+            algebraMap k Π ((ε * y : ℤ) : k) * π (vertexIdempotent k (vertex G a)) := by
+          rw [hz, hD, mul_smul_comm, hform]
+        -- The path has augmentation zero, while the right side has augmentation `ε * y`.
         have haug := signlessPreprojectiveAugmentation_mk k (ofPath ⟨_, _, p⟩)
-        rw [trivialCoeff_ofPath_of_length_pos hp, hz, hD, mul_smul_comm, hform, map_mul,
-          AlgHom.commutes, signlessPreprojectiveAugmentation_mk,
-          trivialCoeff_vertexIdempotent] at haug
-        have hN : ((ε * y : ℤ) : k) = 0 := by simpa using congrFun haug (vertex G a)
+        rw [trivialCoeff_ofPath_of_length_pos hp, hpath] at haug
+        have hN : ((ε * y : ℤ) : k) = 0 := by
+          simpa [signlessPreprojectiveAugmentation_mk, trivialCoeff_vertexIdempotent] using
+            congrFun haug (vertex G a)
         rw [hform, hN, map_zero, zero_mul]
         exact zero_mem _
     · -- Rotating the climb out of the branch node to the end leaves `w` times a power of `q`.
@@ -222,12 +226,13 @@ private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_fork
               (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (h + 1) := by
         rw [ladderValley_mul_ladderValley_zero_eq_pow hud,
           eq_neg_of_add_eq_zero_left (forkDown_mul_forkUp_add_forkTurn k hn hG),
-          neg_pow (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)), ← mul_assoc, ← pow_add,
-          zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one]
+          neg_pow (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)), ← mul_assoc, ← pow_add]
+        simp [zsmul_eq_mul]
       have hWX : w * D * ladderValley (forkUp k G c) (forkDown k G c) 0 0 (h + 1) =
           ε • ((-1 : ℤ) ^ ((h + 1).choose 2 + (h + 1))) •
             (w * (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (h + 1)) := by
-        rw [hD, mul_smul_comm, smul_mul_assoc, mul_assoc, mul_assoc, heX, hYX, mul_smul_comm]
+        rw [hD]
+        simp only [mul_smul_comm, smul_mul_assoc, mul_assoc, heX, hYX]
       have hsum : forkTurn k G c (c + 1) + forkTurn k G c (c + 2) ∈ forkSpan k G c :=
         add_mem (Submodule.subset_span (by simp)) (Submodule.subset_span (by simp))
       have hlow : w * (forkTurn k G c (c + 1) + forkTurn k G c (c + 2)) ^ (h + 1) ∈

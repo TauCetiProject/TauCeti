@@ -130,8 +130,8 @@ theorem mul_add_pow_mem_commutatorSubmodule {B : Type*} [Ring B] {k : Type*} [Se
     | succ i =>
       -- The word ends with `x`, since the alternating word before it ends with `y`.
       have heq : x * (x + y) ^ (2 * (i + 1)) = x * (x + y) ^ (2 * i + 1) * x := by
-        rw [show 2 * (i + 1) = 2 * i + 1 + 1 by omega, pow_succ, ← mul_assoc, mul_add, hodd,
-          mul_assoc _ y y, hy, mul_zero, add_zero]
+        rw [show 2 * (i + 1) = 2 * i + 1 + 1 by omega, pow_succ, ← mul_assoc, mul_add, hodd]
+        simp [mul_assoc, hy]
       have hrot := mul_sub_mul_mem_commutatorSubmodule k B (x * (x + y) ^ (2 * i + 1)) x
       rwa [← heq, ← mul_assoc x x, hx, zero_mul, sub_zero] at hrot
   · -- The word and its rotation sum to the next power of `s`.
