@@ -82,13 +82,15 @@ private theorem inverse_intertwiner_apply (hp : IsIdempotentElem p) (hq : IsIdem
 
 private theorem intertwiner_mem_range (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
     (w : p.range) : intertwiner p q w ∈ q.range :=
-  ⟨intertwiner p q w, show q _ = _ by rw [apply_intertwiner hp hq, apply_coe_range hp]⟩
+  ⟨intertwiner p q w,
+    (apply_intertwiner hp hq w).trans congr(intertwiner p q $(apply_coe_range hp w))⟩
 
 private theorem inverse_intertwiner_mem_range (hp : IsIdempotentElem p)
     (hq : IsIdempotentElem q) (hU : IsUnit (intertwiner p q)) (w : q.range) :
     (intertwiner p q)⁻¹ʳ w ∈ p.range :=
   ⟨(intertwiner p q)⁻¹ʳ w,
-    show p _ = _ by rw [← inverse_intertwiner_apply hp hq hU, apply_coe_range hq]⟩
+    (inverse_intertwiner_apply hp hq hU w).symm.trans
+      congr((intertwiner p q)⁻¹ʳ $(apply_coe_range hq w))⟩
 
 /-- **Intertwined projections have isomorphic ranges.** For idempotents `p` and `q` such that
 `U = q * p + (1 - q) * (1 - p)` is invertible, `U` restricts to an isomorphism from the range
