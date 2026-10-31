@@ -441,6 +441,21 @@ private theorem fst_mem_range_of_le
     (hx : 1 - 2 * c ≤ (S.toFun x).2) : (S.toFun x).1 ∈ range K₁ :=
   (hS (S.toFun x) hx).1 (mem_range_self x)
 
+variable (S) in
+/-- The points of the surface of `S` lying above a given height form an open set. -/
+private theorem isOpen_lt_snd_toFun (a : ℝ) : IsOpen {y : S.carrier | a < (S.toFun y).2} :=
+  isOpen_lt continuous_const (continuous_snd.comp S.isSmoothEmbedding.isEmbedding.continuous)
+
+/-- Near a point of `S` above height `1 - 2 c`, `S` is recovered from the parameters of its
+points. -/
+private theorem eventuallyEq_prodMap_collarParam
+    (hS : ∀ p : sphere (0 : E) 1 × ℝ, 1 - 2 * c ≤ p.2 →
+      (p ∈ range S.toFun ↔ p.1 ∈ range K₁)) {x : S.carrier}
+    (hx : 1 - 2 * c < (S.toFun x).2) :
+    Prod.map K₁ id ∘ collarParam S =ᶠ[𝓝 x] S.toFun :=
+  eventuallyEq_of_mem ((isOpen_lt_snd_toFun S _).mem_nhds hx) fun _ hy ↦
+    prodMap_collarParam (fst_mem_range_of_le hS (le_of_lt hy))
+
 /-- On the cylinder over `K₁`, the parameters of a point depend smoothly on it: the point is
 `K₁ z` in its first coordinate, and `K₁` is an immersion and a topological embedding. -/
 private theorem contMDiffAt_collarParam
@@ -450,8 +465,7 @@ private theorem contMDiffAt_collarParam
     ContMDiffAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ (collarParam S) x := by
   have hΦ := S.isSmoothEmbedding.isImmersion.contMDiff
   have hev : (K₁ ∘ fun y ↦ Function.invFun K₁ (S.toFun y).1) =ᶠ[𝓝 x] fun y ↦ (S.toFun y).1 :=
-    eventuallyEq_of_mem ((isOpen_lt continuous_const (continuous_snd.comp hΦ.continuous)).mem_nhds
-      hx) fun y hy ↦ Function.invFun_eq (fst_mem_range_of_le hS (le_of_lt hy))
+    (eventuallyEq_prodMap_collarParam hS hx).fun_comp Prod.fst
   have hz : ContMDiffAt ((𝓡 1).prod 𝓘(ℝ)) (𝓡 1) ∞
       (fun y ↦ Function.invFun K₁ (S.toFun y).1) x := by
     refine (ContMDiffAt.iff_comp_isImmersionAt (K₁.isImmersion.isImmersionAt _)).2 ⟨?_, ?_⟩
@@ -467,10 +481,7 @@ private theorem injective_mfderiv_collarParam
       (p ∈ range S.toFun ↔ p.1 ∈ range K₁)) {x : S.carrier}
     (hx : 1 - 2 * c < (S.toFun x).2) :
     Function.Injective (mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) (collarParam S) x) := by
-  have hΦ := S.isSmoothEmbedding.isImmersion.contMDiff
-  have hev : (Prod.map K₁ id ∘ collarParam S) =ᶠ[𝓝 x] S.toFun :=
-    eventuallyEq_of_mem ((isOpen_lt continuous_const (continuous_snd.comp hΦ.continuous)).mem_nhds
-      hx) fun y hy ↦ prodMap_collarParam (fst_mem_range_of_le hS (le_of_lt hy))
+  have hev := eventuallyEq_prodMap_collarParam hS hx
   have hK : ContMDiff ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞ (Prod.map K₁ (id : ℝ → ℝ)) :=
     K₁.contMDiff.prodMap contMDiff_id
   have h := ((S.isSmoothEmbedding.isImmersion.isImmersionAt x).congr_of_eventuallyEq
@@ -514,6 +525,15 @@ private theorem glueFun_of_eq (hc : 0 < c)
     exact Prod.ext (Function.leftInverse_invFun K₁.isEmbedding.injective z) rfl
   rw [glueFun_of_le_snd C hc hS (by rw [hx]; exact ht), hcp, rescale_apply]
 
+/-- The rescaled annulus of `C` over the times `s > 0` lies on the glued surface. -/
+private theorem mem_range_glueFun_of_pos (hc : 0 < c)
+    (hS : ∀ p : sphere (0 : E) 1 × ℝ, 1 - 2 * c ≤ p.2 →
+      (p ∈ range S.toFun ↔ p.1 ∈ range K₁)) (z : Circle) {s : ℝ} (hs : 0 < s) :
+    ((C (z, s)).1, 1 - c + c * (C (z, s)).2) ∈ range (glueFun C S hc) := by
+  obtain ⟨x, hx⟩ := (hS (K₁ z, 1 - c + c * s) (by dsimp only; nlinarith)).2 (mem_range_self z)
+  have ht : (1 - c + c * s - (1 - c)) / c = s := by field_simp; ring
+  exact ⟨x, by rw [glueFun_of_eq C hc hS hx (by nlinarith), ht]⟩
+
 /-- Gluing in the concordance keeps the heights above `1 - c` above `1 - c`, and those below it
 below it. -/
 private theorem lt_snd_glueFun_iff (hc : 0 < c)
@@ -534,7 +554,7 @@ private theorem isImmersionAt_glueFun (hc : 0 < c)
   · exact (hΦ.isImmersionAt x).congr_of_eventuallyEq <| eventuallyEq_of_mem
       ((isOpen_lt hcont continuous_const).mem_nhds hx) fun y hy ↦ (glueFun_of_le C hc hy.le).symm
   have hx' : 1 - 2 * c < (S.toFun x).2 := by linarith
-  have hU : IsOpen {y | 1 - 2 * c < (S.toFun y).2} := isOpen_lt continuous_const hcont
+  have hU := isOpen_lt_snd_toFun S (1 - 2 * c)
   have hsm : ContMDiffOn ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞
       (rescale C hc ∘ collarParam S) {y | 1 - 2 * c < (S.toFun y).2} := fun y hy ↦
     ((rescale C hc).contMDiff.contMDiffAt.comp y (contMDiffAt_collarParam hS hy)).contMDiffWithinAt
@@ -676,14 +696,9 @@ private def transConcordanceOfWidth (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
       have h0 : (0 : ℝ) ∉ Ioo 0 1 := fun h ↦ lt_irrefl _ h.1
       have hs : 0 < s :=
         (C.isCollaredTrack.lt_snd_apply_iff z h0).1 (by rw [hzs]; dsimp only; linarith)
-      obtain ⟨x, hx⟩ := (hS (K₁ z, 1 - c + c * s) (by dsimp only; nlinarith)).2
-        (mem_range_self z)
-      have hcp : collarParam S x = (z, 1 - c + c * s) := by
-        rw [collarParam, hx]
-        exact Prod.ext (Function.leftInverse_invFun K₁.isEmbedding.injective z) rfl
+      obtain ⟨x, hx⟩ := mem_range_glueFun_of_pos C hc hS z hs
       refine ⟨⟨x, ?_⟩, hle⟩
-      have ht : (1 - c + c * s - (1 - c)) / c = s := by field_simp; ring
-      rw [glueFun_of_le_snd C hc hS (by rw [hx]; nlinarith), hcp, rescale_apply, ht, hzs]
+      rw [hx, hzs]
       refine Prod.ext rfl ?_
       field_simp
       ring
@@ -762,12 +777,7 @@ theorem exists_range_toFun_transConcordance :
         ⟨mem_univ _, div_pos (by linarith) hc⟩, rfl⟩
   · rintro (⟨⟨x, rfl⟩, hx⟩ | ⟨⟨z, s⟩, ⟨-, hs⟩, rfl⟩)
     · exact ⟨x, glueFun_of_le C width_pos hx⟩
-    · have hs : (0 : ℝ) < s := hs
-      obtain ⟨x, hx⟩ := (mem_range_toFun_iff_of_width (S := S) (K₁ z, 1 - width S + width S * s)
-        (by dsimp only; nlinarith)).2 (mem_range_self z)
-      refine ⟨x, ?_⟩
-      have ht : (1 - width S + width S * s - (1 - width S)) / width S = s := by field_simp; ring
-      rw [glueFun_of_eq C width_pos mem_range_toFun_iff_of_width hx (by nlinarith), ht]
+    · exact mem_range_glueFun_of_pos C width_pos mem_range_toFun_iff_of_width z hs
 
 end Concordance
 
