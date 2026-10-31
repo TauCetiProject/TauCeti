@@ -390,16 +390,16 @@ theorem rightDualTensorIso_hom_f (X Y : Center C) :
   -- Both sides are characterized by their composites with the evaluation of the tensor product
   -- pairing, and the evaluations of the centre are computed in `C`.
   refine ExactPairing.rightHom_ext (X := X.1 ⊗ Y.1) (Y := Y.1ᘁ ⊗ X.1ᘁ) ?_
+  -- Writing the evaluation of the tensor product pairing of the centre with explicit structure
+  -- morphisms lets the `Center.*_f` lemmas compute it in `C`.
+  have e : ε_ (X ⊗ Y) (Yᘁ ⊗ Xᘁ) = (α_ _ _ _).hom ≫ (Yᘁ : Center C) ◁ (α_ _ _ _).inv ≫
+      (Yᘁ : Center C) ◁ ε_ X Xᘁ ▷ Y ≫ (Yᘁ : Center C) ◁ (λ_ Y).hom ≫ ε_ Y Yᘁ := by
+    simp [ExactPairing.tensor_evaluation, monoidalComp]
   have h := congrArg Hom.f (TauCeti.rightDualTensorIso_hom_whiskerRight_evaluation X Y)
   refine Eq.trans ?_ (TauCeti.rightDualTensorIso_hom_whiskerRight_evaluation X.1 Y.1).symm
-  simp only [ExactPairing.tensor_evaluation, monoidalComp] at h ⊢
-  simp only [tensor_fst, rightDual_fst, whiskerRight_tensor, MonoidalCoherence.assoc_iso,
-    MonoidalCoherence.whiskerLeft_iso, MonoidalCoherence.assoc'_iso,
-    MonoidalCoherence.whiskerRight_iso, MonoidalCoherence.refl_iso, whiskerRightIso_refl,
-    Iso.refl_trans, Iso.trans_hom, whiskerLeftIso_hom, Iso.symm_hom, MonoidalCoherence.left_iso,
-    Iso.trans_refl, Category.assoc, Category.id_comp, pentagon_hom_hom_inv_hom_hom_assoc, comp_f,
-    associator_inv_f, whiskerRight_f, associator_hom_f, whiskerLeft_f, evaluation_f,
-    leftUnitor_hom_f] at h ⊢
+  simp only [e, comp_f, whiskerRight_f, whiskerLeft_f, associator_hom_f, associator_inv_f,
+    leftUnitor_hom_f, evaluation_f] at h
+  rw [ExactPairing.tensor_evaluation]
   refine Eq.trans ?_ h
   monoidal
 
@@ -453,13 +453,8 @@ theorem doubleRightDualFunctor_ε_f :
     (ε (doubleRightDualFunctor (Center C))).f = ε (doubleRightDualFunctor C) := by
   -- In both categories, the unit comparison is the inverse identification of the right dual of
   -- the unit with the unit, followed by the mate of that identification.
-  have hZ := (doubleRightDualFunctor_ε (Center C)).trans (congrArg _
-    (@TauCeti.rightAdjointMate_eq_rightMate (Center C) _ _ _ _ (RightRigidCategory.rightDual _)
-      (RightRigidCategory.rightDual _) _).symm)
-  have hC := (doubleRightDualFunctor_ε C).trans (congrArg _
-    (@TauCeti.rightAdjointMate_eq_rightMate C _ _ _ _ (RightRigidCategory.rightDual _)
-      (RightRigidCategory.rightDual _) _).symm)
-  rw [hZ, hC, comp_f, rightAdjointMate_f, rightDualIso_exactPairingUnit_inv_f,
+  rw [doubleRightDualFunctor_ε_eq_rightAdjointMate, doubleRightDualFunctor_ε_eq_rightAdjointMate,
+    comp_f, rightAdjointMate_f, rightDualIso_exactPairingUnit_inv_f,
     rightDualIso_exactPairingUnit_hom_f]
   -- The two sides differ only in how the right duals of the units are written.
   rfl
