@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.Connected.Clopen
+import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
 # Connected prime spectra and idempotents
@@ -61,10 +62,8 @@ theorem connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one [Nontrivial R
 zero and one. -/
 instance connectedSpace_primeSpectrum_of_isLocalRing [IsLocalRing R] :
     ConnectedSpace (PrimeSpectrum R) :=
-  connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one.mpr fun e he ↦
-    (IsLocalRing.isUnit_or_isUnit_one_sub_self e).symm.imp
-      (fun h ↦ sub_eq_self.mp ((IsIdempotentElem.iff_eq_one_of_isUnit h).mp he.one_sub))
-      (fun h ↦ (IsIdempotentElem.iff_eq_one_of_isUnit h).mp he)
+  connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one.mpr fun _ he ↦
+    he.eq_zero_or_eq_one_of_isLocalRing
 
 end TauCeti
 
