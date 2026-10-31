@@ -43,6 +43,8 @@ From the universal property, continuous linear maps `f : V → V'`, `g : W → W
 * `TauCeti.Huber.banachTensorTopology A V W`: the tensor topology on `V ⊗[A] W`.
 * `TauCeti.Huber.banachTensorUniformSpace A V W`: its additive uniformity.
 * `TauCeti.Huber.BanachModule.CompletedTensor A V W`: the completed tensor product `V ⊗̂_A W`.
+* `TauCeti.Huber.BanachModule.CompletedTensor.equivCompletion`: the identification of `V ⊗̂_A W`
+  with Mathlib's `UniformSpace.Completion (V ⊗[A] W)`.
 * `TauCeti.Huber.BanachModule.CompletedTensor.toCompletion`: the map `V ⊗[A] W → V ⊗̂_A W`.
 * `TauCeti.Huber.BanachModule.CompletedTensor.tmul`: the bilinear map `(v, w) ↦ v ⊗ w`.
 * `TauCeti.Huber.BanachModule.CompletedTensor.lift`: the continuous linear map `V ⊗̂_A W → M`
@@ -216,6 +218,19 @@ instance continuousSMul [IsTopologicalRing A] : ContinuousSMul A (CompletedTenso
 noncomputable def toCompletion : V ⊗[A] W →ₗ[A] CompletedTensor A V W :=
   (Completion.toComplL : V ⊗[A] W →L[A] Completion (V ⊗[A] W)).toLinearMap
 
+/-- The identification of `V ⊗̂_A W` with Mathlib's `UniformSpace.Completion (V ⊗[A] W)` for the
+uniformity `banachTensorUniformSpace A V W`. -/
+def equivCompletion :
+    CompletedTensor A V W ≃ @Completion (V ⊗[A] W) (banachTensorUniformSpace A V W) :=
+  Equiv.refl _
+
+/-- Under `equivCompletion`, `toCompletion` is Mathlib's canonical map `Completion.coe'`. -/
+@[simp]
+theorem equivCompletion_toCompletion (x : V ⊗[A] W) :
+    equivCompletion A V W (toCompletion A V W x) =
+      @Completion.coe' _ (banachTensorUniformSpace A V W) x :=
+  (rfl)
+
 /-- The map into the completion is continuous for the tensor topology. -/
 theorem continuous_toCompletion :
     Continuous[banachTensorTopology A V W, _] (toCompletion A V W) :=
@@ -233,6 +248,14 @@ noncomputable def tmul : V →ₗ[A] W →ₗ[A] CompletedTensor A V W :=
 @[simp]
 theorem toCompletion_tmul (v : V) (w : W) :
     toCompletion A V W (v ⊗ₜ[A] w) = tmul A V W v w :=
+  (rfl)
+
+/-- Under `equivCompletion`, the elementary tensor `v ⊗ w` of `V ⊗̂_A W` is the image of `v ⊗ₜ w`
+under Mathlib's canonical map `Completion.coe'`. -/
+@[simp]
+theorem equivCompletion_tmul (v : V) (w : W) :
+    equivCompletion A V W (tmul A V W v w) =
+      @Completion.coe' _ (banachTensorUniformSpace A V W) (v ⊗ₜ[A] w) :=
   (rfl)
 
 /-- The map `(v, w) ↦ v ⊗ w` into `V ⊗̂_A W` is continuous. -/
