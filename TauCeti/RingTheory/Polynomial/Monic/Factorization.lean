@@ -25,6 +25,10 @@ monic, also over `ℚ` by Gauss's lemma.
 
 ## Main results
 
+* `Polynomial.Monic.monic_of_mem_normalizedFactors`: a normalized irreducible factor of a monic
+  polynomial is monic.
+* `Polynomial.Monic.prod_toFinset_normalizedFactors_of_squarefree`: a squarefree monic
+  polynomial is the product of its distinct normalized irreducible factors.
 * `Polynomial.Monic.exists_finset_prod_eq_of_squarefree`: a squarefree monic polynomial is the
   product of a finite set of monic irreducible polynomials.
 * `Polynomial.Monic.exists_finset_prod_eq_of_discr_ne_zero`: the same conclusion for a monic
@@ -40,30 +44,39 @@ namespace Polynomial.Monic
 variable {R : Type*} [CommRing R] [IsDomain R] [NormalizationMonoid R]
   [UniqueFactorizationMonoid R[X]] {f : R[X]}
 
+/-- A normalized irreducible factor of a monic polynomial is monic: its leading coefficient is
+a normalized unit. -/
+theorem monic_of_mem_normalizedFactors (hf : f.Monic) {g : R[X]}
+    (hg : g ∈ normalizedFactors f) : g.Monic := by
+  have hu : IsUnit g.leadingCoeff := by
+    obtain ⟨h, hh⟩ := dvd_of_mem_normalizedFactors hg
+    exact IsUnit.of_mul_eq_one h.leadingCoeff
+      (by rw [← leadingCoeff_mul, ← hh, hf.leadingCoeff])
+  rw [Monic, ← normalize_normalized_factor g hg, leadingCoeff_normalize,
+    normalize_eq_one.mpr hu]
+
+/-- A squarefree monic polynomial is the product of its distinct normalized irreducible
+factors. -/
+theorem prod_toFinset_normalizedFactors_of_squarefree [DecidableEq R[X]] (hf : f.Monic)
+    (hsq : Squarefree f) : ∏ g ∈ (normalizedFactors f).toFinset, g = f := by
+  have hf0 : f ≠ 0 := hf.ne_zero
+  -- Squarefreeness makes the factor multiset duplicate-free, so it is its own `toFinset`.
+  rw [Finset.prod_eq_multiset_prod, Multiset.toFinset_val,
+    ((squarefree_iff_nodup_normalizedFactors hf0).mp hsq).dedup, Multiset.map_id']
+  have hprod := monic_multiset_prod_of_monic (normalizedFactors f) id
+    fun _ hg ↦ monic_of_mem_normalizedFactors hf hg
+  rw [Multiset.map_id] at hprod
+  exact eq_of_monic_of_associated hprod hf (prod_normalizedFactors hf0)
+
 /-- A squarefree monic polynomial is the product of a finite set of monic irreducible
 polynomials, namely its normalized irreducible factors. -/
 theorem exists_finset_prod_eq_of_squarefree (hf : f.Monic) (hsq : Squarefree f) :
     ∃ s : Finset R[X], (∀ g ∈ s, g.Monic ∧ Irreducible g) ∧ ∏ g ∈ s, g = f := by
   classical
-  have hf0 : f ≠ 0 := hf.ne_zero
-  -- A normalized factor divides `f`, so its leading coefficient is a normalized unit, hence `1`.
-  have hmon : ∀ g ∈ normalizedFactors f, g.Monic := by
-    intro g hg
-    have hu : IsUnit g.leadingCoeff := by
-      obtain ⟨h, hh⟩ := dvd_of_mem_normalizedFactors hg
-      exact IsUnit.of_mul_eq_one h.leadingCoeff
-        (by rw [← leadingCoeff_mul, ← hh, hf.leadingCoeff])
-    rw [Monic, ← normalize_normalized_factor g hg, leadingCoeff_normalize,
-      normalize_eq_one.mpr hu]
-  refine ⟨(normalizedFactors f).toFinset, fun g hg ↦ ?_, ?_⟩
-  · rw [Multiset.mem_toFinset] at hg
-    exact ⟨hmon g hg, irreducible_of_normalized_factor g hg⟩
-  · -- Squarefreeness makes the factor multiset duplicate-free, so it is its own `toFinset`.
-    rw [Finset.prod_eq_multiset_prod, Multiset.toFinset_val,
-      ((squarefree_iff_nodup_normalizedFactors hf0).mp hsq).dedup, Multiset.map_id']
-    have hprod := monic_multiset_prod_of_monic (normalizedFactors f) id hmon
-    rw [Multiset.map_id] at hprod
-    exact eq_of_monic_of_associated hprod hf (prod_normalizedFactors hf0)
+  refine ⟨(normalizedFactors f).toFinset, fun g hg ↦ ?_,
+    hf.prod_toFinset_normalizedFactors_of_squarefree hsq⟩
+  rw [Multiset.mem_toFinset] at hg
+  exact ⟨monic_of_mem_normalizedFactors hf hg, irreducible_of_normalized_factor g hg⟩
 
 /-- A monic polynomial with nonzero discriminant is the product of a finite set of monic
 irreducible polynomials. Over `ℤ` this is the factorization of a monic `f` with `disc f ≠ 0`

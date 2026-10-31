@@ -182,7 +182,7 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
   refine (cutNorm_le_integral_abs _ _).trans ?_
   have hint : Integrable (fun z : (κ × κ) × (κ × κ) =>
       |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb) π z.1 z.2|) (π.prod π) :=
-    (SymmKernel.integrable_uncurry _ _).abs
+    (SymmKernel.integrable_uncurry _).abs
   calc ∫ z, |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb) π z.1 z.2| ∂_
       ≤ ∫ z, B.indicator (1 : ((κ × κ) × (κ × κ)) → ℝ) z ∂_ :=
         integral_mono hint ((integrable_const (1 : ℝ)).indicator hBmeas) hle

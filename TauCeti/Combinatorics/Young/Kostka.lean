@@ -53,6 +53,7 @@ highest-weight tableau `SemistandardYoungTableau.highestWeight μ` is `μ.rowLen
   are finite, so the Kostka number counts them faithfully.
 * `TauCeti.finite_boundedSSYT`: likewise the tableaux of a fixed shape written in a finite alphabet,
   `TauCeti.BoundedSSYT`, are finite.
+* `TauCeti.BoundedSSYT.content_eq_zero`: a tableau in a finite alphabet uses no other letter.
 * `TauCeti.BoundedSSYT.isEmpty_of_lt_colLen`: a shape taller than its alphabet admits no tableau.
 * `TauCeti.kostkaNumber_self`: `K_{μ μ} = 1`.
 * `TauCeti.kostkaNumber_eq_zero_of_not_dominates`: `K_{μ ν} = 0` unless `μ` dominates `ν`.
@@ -206,6 +207,14 @@ variable {n : ℕ} {μ : YoungDiagram}
 alphabet. -/
 theorem entry_lt (T : BoundedSSYT n μ) {i c : ℕ} (h : (i, c) ∈ μ) : T.1 i c < n :=
   T.2 i c h
+
+/-- A tableau written in the alphabet `{0, …, n - 1}` uses no letter outside that alphabet. -/
+theorem content_eq_zero (T : BoundedSSYT n μ) {i : ℕ} (hi : n ≤ i) :
+    T.1.content i = 0 := by
+  rw [SemistandardYoungTableau.content_apply, Finset.card_eq_zero, Finset.filter_eq_empty_iff]
+  intro c hc hci
+  have := entry_lt T ((YoungDiagram.mem_cells _).mp hc)
+  omega
 
 /-- **A shape taller than its alphabet admits no tableau**: entries increase strictly down a
 column, so a column of more than `n` cells cannot be filled from an `n`-letter alphabet. -/

@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Algebraic.Basic
 public import Mathlib.RingTheory.Algebraic.Integral
+import Mathlib.RingTheory.Polynomial.Basic
 
 /-!
 # Transcendental elements under translations and algebra maps
@@ -15,11 +17,14 @@ Adding a base-ring constant to a transcendental element preserves transcendence,
 arbitrary commutative ring and in an arbitrary ring algebra. So does applying an injective algebra
 homomorphism, the transcendental counterpart of Mathlib's `isAlgebraic_algHom_iff`.
 An algebraic extension of scalars without zero divisors also preserves transcendence
-under an injective algebra map into a common overring.
+under an injective algebra map into a common overring, and so does a nonconstant polynomial
+with coefficients in a field, mapped into a nontrivial algebra (`Transcendental.aeval_map`).
 Dually, every root in `A` of a polynomial over `R` is algebraic over `R`
 (`isAlgebraic_of_mem_aroots`).
 The kernel of an algebra map into a field algebraic over the base field is a maximal ideal
 (`AlgHom.ker_isMaximal_of_isAlgebraic`).
+Every element of a finite-dimensional left ideal of an algebra over a field is algebraic
+(`Submodule.isAlgebraic_of_mem`).
 -/
 
 public section
@@ -42,6 +47,25 @@ theorem AlgHom.ker_isMaximal_of_isAlgebraic {F A E : Type*} [Field F] [CommRing 
     simp [RingHom.mem_ker, Subtype.ext_iff]
   rw [← hker]
   exact RingHom.ker_isMaximal_of_surjective _ ψ.rangeRestrict_surjective
+
+namespace Submodule
+
+/-- Every element of a finite-dimensional left ideal of an algebra over a field, given as a scalar
+submodule closed under left multiplication, is algebraic. -/
+theorem isAlgebraic_of_mem {K B : Type*} [Field K] [Ring B] [Algebra K B] (J : Submodule K B)
+    [FiniteDimensional K J] (hJ : ∀ (b : B) {y : B}, y ∈ J → b * y ∈ J) {x : B} (hxJ : x ∈ J) :
+    IsAlgebraic K x := by
+  -- `p ↦ p (x) * x` maps the infinite-dimensional `K[X]` into `J`, so it has a nonzero kernel.
+  let φ : K[X] →ₗ[K] J := LinearMap.codRestrict J
+    (LinearMap.mulRight K x ∘ₗ (aeval x).toLinearMap) fun p ↦ hJ _ hxJ
+  obtain ⟨p, hp, hp0⟩ : ∃ p, φ p = 0 ∧ p ≠ 0 := by
+    by_contra! h
+    exact Polynomial.not_finite (Module.Finite.of_injective φ
+      ((injective_iff_map_eq_zero φ).2 h))
+  have hpx : aeval x p * x = 0 := congrArg Subtype.val hp
+  exact ⟨p * X, mul_ne_zero hp0 X_ne_zero, by rw [map_mul, aeval_X, hpx]⟩
+
+end Submodule
 
 namespace Transcendental
 
@@ -71,5 +95,15 @@ theorem algebraMap_of_isAlgebraic {R S A B : Type*}
     [FaithfulSMul A B] {x : A} (hx : Transcendental R x) :
     Transcendental S (algebraMap A B x) :=
   ((transcendental_algebraMap_iff (FaithfulSMul.algebraMap_injective A B)).2 hx).extendScalars S
+
+/-- A nonconstant polynomial with coefficients in a field `K`, mapped into a nontrivial
+`K`-algebra `R`, carries an element transcendental over `R` to a transcendental element. -/
+theorem aeval_map [Nontrivial R] {K : Type*} [Field K] [Algebra K R] (hx : Transcendental R x)
+    {q : K[X]} (hq : 0 < q.natDegree) :
+    Transcendental R (Polynomial.aeval x (q.map (algebraMap K R))) :=
+  hx.aeval _ (by rw [natDegree_map]; exact hq.ne') (by
+    rw [leadingCoeff_map]
+    exact IsUnit.mem_nonZeroDivisors <|
+      (leadingCoeff_ne_zero.mpr (ne_zero_of_natDegree_gt hq)).isUnit.map _)
 
 end Transcendental

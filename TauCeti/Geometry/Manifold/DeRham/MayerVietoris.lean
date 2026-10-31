@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.Map
 public import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 public import TauCeti.Algebra.Homology.ModuleCat.Biprod
+public import TauCeti.Geometry.Manifold.DeRham.DegreeZero
+import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import Mathlib.Geometry.Manifold.Metrizable
 import Mathlib.Geometry.Manifold.PartitionOfUnity
@@ -43,6 +45,11 @@ The connecting map is natural: a smooth map `U ⊔ V → U' ⊔ V'` carrying `U`
 (`TauCeti.deRhamCohomology.mayerVietorisδ_naturality`). In particular the connecting map commutes
 with restriction to a smaller cover (`TauCeti.deRhamCohomology.mayerVietorisδ_naturality_of_le`).
 
+Exactness of the long exact sequence at its two ends adjacent to the connecting map makes it
+computable from the cohomology of `U` and `V`: it is injective when `U` and `V` have no
+cohomology in degree `k`, surjective when they have none in degree `k + 1`, and it vanishes on
+constant classes in degree zero, which are restrictions of constant classes on `U`.
+
 ## Main definitions and results
 
 * `TauCeti.SmoothForm.injective_mayerVietoris`, `TauCeti.SmoothForm.exact_mayerVietoris` and
@@ -57,6 +64,11 @@ with restriction to a smaller cover (`TauCeti.deRhamCohomology.mayerVietorisδ_n
   `dα` and `dβ`, which `TauCeti.deRhamCohomology.mayerVietorisδ_mk` takes as input, exists.
 * `TauCeti.deRhamCohomology.mayerVietorisδ_naturality` and
   `TauCeti.deRhamCohomology.mayerVietorisδ_naturality_of_le`: naturality of the connecting map.
+* `TauCeti.deRhamCohomology.mayerVietorisδ_injective`,
+  `TauCeti.deRhamCohomology.mayerVietorisδ_surjective` and
+  `TauCeti.deRhamCohomology.mayerVietorisδEquiv`: the connecting map is an isomorphism when `U`
+  and `V` have no cohomology in degrees `k` and `k + 1`.
+* `TauCeti.deRhamCohomology.mayerVietorisδ_const`: the connecting map kills constant classes.
 
 ## References
 
@@ -142,7 +154,7 @@ theorem exact_mayerVietoris (U V : Opens M) :
       · exact dite_eq_right hy
     have hγ : IsSmoothForm I ∞ γ :=
       IsSmoothForm.of_mpullback_inclusion_sup (hγU ▸ α.isSmoothForm) (hγV ▸ β.isSmoothForm)
-    exact ⟨⟨γ, hγ.mem_smoothForms⟩, Subtype.ext ((coe_mpullback _ _ _).trans hγU),
+    exact ⟨⟨γ, hγ.mem_smoothBundleForms⟩, Subtype.ext ((coe_mpullback _ _ _).trans hγU),
       Subtype.ext ((coe_mpullback _ _ _).trans hγV)⟩
   · rintro ⟨φ, rfl, rfl⟩
     rw [← LinearMap.comp_apply, ← LinearMap.comp_apply, ← mpullback_comp, ← mpullback_comp]
@@ -185,7 +197,7 @@ variable [IsManifold I ∞ M] (hρ : ContMDiff I 𝓘(ℝ) ∞ ρ) (hρV : tsupp
 private def cutoffLeft (φ : SmoothForm I (U ⊓ V : Opens M) F k) : SmoothForm I U F k :=
   ⟨RoughForm.extendByZero U fun y : (U ⊓ V : Opens M) ↦ ρ (Opens.inclusion inf_le_sup y) • φ.1 y,
     (φ.isSmoothForm.extendByZero_smul inf_le_left (hρ.comp (contMDiff_inclusion le_sup_left))
-      fun _ hx ↦ eventually_eq_zero_of_tsupport_subset hρV hx).mem_smoothForms⟩
+      fun _ hx ↦ eventually_eq_zero_of_tsupport_subset hρV hx).mem_smoothBundleForms⟩
 
 /-- The cut-off form `(ρ - 1) φ` on `U ⊓ V`, extended by zero to a smooth form on `V`. -/
 private def cutoffRight (φ : SmoothForm I (U ⊓ V : Opens M) F k) : SmoothForm I V F k :=
@@ -193,7 +205,7 @@ private def cutoffRight (φ : SmoothForm I (U ⊓ V : Opens M) F k) : SmoothForm
       fun y : (U ⊓ V : Opens M) ↦ (ρ (Opens.inclusion inf_le_sup y) - 1) • φ.1 y,
     (φ.isSmoothForm.extendByZero_smul inf_le_right
       ((hρ.comp (contMDiff_inclusion le_sup_right)).sub contMDiff_const)
-      fun _ hx ↦ eventually_sub_one_eq_zero_of_tsupport_subset hρU hx).mem_smoothForms⟩
+      fun _ hx ↦ eventually_sub_one_eq_zero_of_tsupport_subset hρU hx).mem_smoothBundleForms⟩
 
 /-- A form `φ` on `U ⊓ V` is the difference `ρ φ - (ρ - 1) φ` of the restrictions of its two
 cut-off forms. -/
@@ -238,7 +250,7 @@ private theorem mpullback_extendByZero_mextDeriv_cutoff (φ : closedForms I (U �
         (eventually_sub_one_eq_zero_of_tsupport_subset hρU hx)]
   refine ⟨rfl, congrArg _ ?_⟩
   -- Since `φ` is closed, `d((ρ - 1) φ) = d(ρ φ) - dφ = d(ρ φ)`.
-  let ρφ : SmoothForm I (U ⊓ V : Opens M) ℝ k := ⟨_, hρφ.mem_smoothForms⟩
+  let ρφ : SmoothForm I (U ⊓ V : Opens M) ℝ k := ⟨_, hρφ.mem_smoothBundleForms⟩
   have hsub : (fun y : (U ⊓ V : Opens M) ↦ (ρ (Opens.inclusion inf_le_sup y) - 1) • φ.1.1 y) =
       (ρφ - φ.1).1 := by
     funext y
@@ -261,7 +273,7 @@ theorem exists_closedForms_coe_eq_extendByZero_mextDeriv (φ : closedForms I (U 
     IsSmoothForm.of_mpullback_inclusion_sup
       (hU ▸ (mextDerivₗ I k (cutoffLeft hρ hρV φ.1)).isSmoothForm)
       (hV ▸ (mextDerivₗ I k (cutoffRight hρ hρU φ.1)).isSmoothForm)
-  let σ : SmoothForm I (U ⊔ V : Opens M) ℝ (k + 1) := ⟨_, hσ.mem_smoothForms⟩
+  let σ : SmoothForm I (U ⊔ V : Opens M) ℝ (k + 1) := ⟨_, hσ.mem_smoothBundleForms⟩
   -- It is closed, since its restrictions to `U` and to `V` are exact.
   refine ⟨⟨σ, (mem_closedForms_iff_mextDerivₗ_eq_zero I σ).mpr <|
     SmoothForm.injective_mayerVietoris U V ?_⟩, rfl⟩
@@ -583,6 +595,81 @@ theorem mayerVietorisδ_naturality_of_le {U V U' V' : Opens M} (hU : U ≤ U') (
   mayerVietorisδ_naturality _ _ (fun _ hx ↦ hU hx) (fun _ hx ↦ hV hx) _ _ (fun _ ↦ rfl) c
 
 end Naturality
+
+section Acyclic
+
+open CategoryTheory Limits
+
+omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] in
+/-- The middle term of the Mayer–Vietoris short exact sequence has no homology in degree `k`
+when `U` and `V` have no de Rham cohomology in degree `k`. -/
+private theorem isZero_homology_mayerVietoris_middle {U V : Opens M}
+    (hU : Subsingleton (deRhamCohomology I U k)) (hV : Subsingleton (deRhamCohomology I V k)) :
+    IsZero ((mayerVietorisShortComplex (I := I) U V).X₂.homology k) :=
+  ((HomologicalComplex.exactAt_biprod_iff _ _ k).mpr
+    ⟨(HomologicalComplex.exactAt_iff_isZero_homology _ _).mpr
+      (@ModuleCat.isZero_of_subsingleton _ _ _ hU),
+    (HomologicalComplex.exactAt_iff_isZero_homology _ _).mpr
+      (@ModuleCat.isZero_of_subsingleton _ _ _ hV)⟩).isZero_homology
+
+/-- The Mayer–Vietoris connecting map `H^k(U ⊓ V) → H^{k+1}(U ⊔ V)` is injective when `U` and `V`
+have no de Rham cohomology in degree `k`. -/
+theorem mayerVietorisδ_injective {U V : Opens M}
+    (hU : Subsingleton (deRhamCohomology I U k)) (hV : Subsingleton (deRhamCohomology I V k)) :
+    Function.Injective (mayerVietorisδ I U V k) := by
+  have h := isZero_homology_mayerVietoris_middle hU hV
+  refine (ModuleCat.mono_iff_injective (ModuleCat.ofHom (mayerVietorisδ I U V k))).mp ?_
+  rw [ofHom_mayerVietorisδ]
+  exact ((mayerVietorisShortComplex_shortExact (I := I) U V).homology_exact₃ k (k + 1) rfl).mono_g
+    (h.eq_of_src _ _)
+
+/-- The Mayer–Vietoris connecting map `H^k(U ⊓ V) → H^{k+1}(U ⊔ V)` is surjective when `U` and `V`
+have no de Rham cohomology in degree `k + 1`. -/
+theorem mayerVietorisδ_surjective {U V : Opens M}
+    (hU : Subsingleton (deRhamCohomology I U (k + 1)))
+    (hV : Subsingleton (deRhamCohomology I V (k + 1))) :
+    Function.Surjective (mayerVietorisδ I U V k) := by
+  have h := isZero_homology_mayerVietoris_middle hU hV
+  refine (ModuleCat.epi_iff_surjective (ModuleCat.ofHom (mayerVietorisδ I U V k))).mp ?_
+  rw [ofHom_mayerVietorisδ]
+  exact ((mayerVietorisShortComplex_shortExact (I := I) U V).homology_exact₁ k (k + 1) rfl).epi_f
+    (h.eq_of_tgt _ _)
+
+/-- When `U` and `V` have no de Rham cohomology in degrees `k` and `k + 1`, the Mayer–Vietoris
+connecting map is a linear equivalence `H^k(U ⊓ V) ≃ H^{k+1}(U ⊔ V)`. -/
+def mayerVietorisδEquiv {U V : Opens M}
+    (hUk : Subsingleton (deRhamCohomology I U k)) (hVk : Subsingleton (deRhamCohomology I V k))
+    (hUk' : Subsingleton (deRhamCohomology I U (k + 1)))
+    (hVk' : Subsingleton (deRhamCohomology I V (k + 1))) :
+    deRhamCohomology I (U ⊓ V : Opens M) k ≃ₗ[ℝ] deRhamCohomology I (U ⊔ V : Opens M) (k + 1) :=
+  LinearEquiv.ofBijective (mayerVietorisδ I U V k)
+    ⟨mayerVietorisδ_injective hUk hVk, mayerVietorisδ_surjective hUk' hVk'⟩
+
+/-- The equivalence `TauCeti.deRhamCohomology.mayerVietorisδEquiv` is the connecting map. -/
+@[simp]
+theorem mayerVietorisδEquiv_apply {U V : Opens M}
+    (hUk : Subsingleton (deRhamCohomology I U k)) (hVk : Subsingleton (deRhamCohomology I V k))
+    (hUk' : Subsingleton (deRhamCohomology I U (k + 1)))
+    (hVk' : Subsingleton (deRhamCohomology I V (k + 1)))
+    (c : deRhamCohomology I (U ⊓ V : Opens M) k) :
+    mayerVietorisδEquiv hUk hVk hUk' hVk' c = mayerVietorisδ I U V k c :=
+  (rfl)
+
+end Acyclic
+
+/-- The degree-zero Mayer–Vietoris connecting map sends the class of a constant function on
+`U ⊓ V` to zero. -/
+@[simp]
+theorem mayerVietorisδ_const (U V : Opens M) (r : ℝ) :
+    mayerVietorisδ I U V 0 (const I (U ⊓ V : Opens M) r) = 0 := by
+  -- The constant function `r` on `U ⊓ V` is the restriction of the closed constant form `r` on `U`.
+  let α := (closedFormsZeroEquiv I U).symm (LocallyConstant.const U r)
+  rw [const_eq_mk, mayerVietorisδ_mk U V _ α.1 0 ?_ 0 ?_ ?_, map_zero]
+  · rw [map_zero, sub_zero]
+    refine Subtype.ext ?_
+    simp [α, coe_closedFormsZeroEquiv_symm_apply, mpullback_ofFunction]
+  · rw [Submodule.coe_zero, map_zero, (mem_closedForms_iff_mextDerivₗ_eq_zero I α.1).mp α.2]
+  · rw [Submodule.coe_zero, map_zero, map_zero]
 
 end deRhamCohomology
 

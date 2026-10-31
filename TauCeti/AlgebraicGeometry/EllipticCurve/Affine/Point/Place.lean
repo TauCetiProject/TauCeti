@@ -29,7 +29,11 @@ over an algebraically closed base that every place has degree one, so that point
 *all* nonzero primes.
 
 When `W` is elliptic, Mathlib's `Affine.equation_iff_nonsingular` identifies the solutions of
-`W.Equation` with the affine points in `W.toAffine.Point`, namely the points other than `0`.
+`W.Equation` with the affine points in `W.toAffine.Point`, namely the points other than `0`. This
+file is thus the affine half of the point–place dictionary; `Affine/FunctionField/PointPlace.lean`
+packages the valuation at infinity and these affine primes as one type of normalized places, and
+`WeierstrassCurve.Affine.pointEquivDegreeOnePlace` there extends the affine equivalence to the
+whole point group.
 
 ## Main definitions
 
@@ -65,20 +69,6 @@ the function field, taking values in `ℤᵐ⁰` and normalised so that a unifor
 `WithZero.exp (-1)`; the order of vanishing is its negative logarithm. Mathlib's `Valuation` API —
 multiplicativity, the ultrametric inequality, vanishing exactly at `0`, and the existence of a
 uniformiser — comes with it.
-
-## Roadmap
-
-`TauCetiRoadmap/EllipticCurves/README.md`, **Layer 0** (the function field, places, and divisors),
-whose §Places asks for the affine places as the maximal ideals of the coordinate ring together with
-an API of `ord_v` and uniformisers, and for the point–place dictionary: "for elliptic `W`,
-`W.toAffine.Point` is in bijection with the degree-`1` places: `O ↦ infinityPlace`, and an affine
-nonsingular `(x₀, y₀) ↦` the maximal ideal `(X − x₀, Y − y₀)`". This is the affine half of that
-dictionary at the level of equation solutions; for elliptic `W`, `equation_iff_nonsingular`
-identifies its domain with the nonzero affine points. The downstream file
-`Affine/FunctionField/PointPlace.lean` packages the valuation at infinity and these affine primes
-as one type of normalized places, and `pointEquivDegreeOnePlace` extends this affine equivalence to
-the whole point group. The layer seeds no declaration this competes with, and records that the
-design is coordinated with D. Angdinata's in-flight upstream `CoordinateRing` work.
 
 ## Provenance
 

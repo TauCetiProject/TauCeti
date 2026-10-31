@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
-public import TauCeti.LinearAlgebra.BilinearForm.Multilinear
+public import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 
 /-!
 # Recognizing a second exterior power
@@ -30,9 +30,29 @@ comparing the index set `{(i, j) | i < j}` with Mathlib's index set of two-eleme
 * `LinearMap.IsAlt.exteriorSquareEquiv_ιMulti`: the isomorphism sends `x ∧ y` to `ω x y`.
 * `LinearMap.IsAlt.exteriorSquareEquiv_symm_apply`: its inverse sends the basis vector indexed by
   `i < j` to `b i ∧ b j`.
+* `exteriorPower.ιMulti_two_add_right` and `exteriorPower.ιMulti_two_smul_right`: the wedge
+  `u ∧ w` of two vectors is linear in `w`.
 -/
 
 public section
+
+namespace exteriorPower
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- The wedge `u ∧ w` is additive in `w`. -/
+theorem ιMulti_two_add_right (u w w' : M) :
+    ιMulti R 2 ![u, w + w'] = ιMulti R 2 ![u, w] + ιMulti R 2 ![u, w'] := by
+  apply Subtype.ext
+  simp [ExteriorAlgebra.ιMulti_apply, Matrix.vecTail, mul_add]
+
+/-- The wedge `u ∧ w` is homogeneous in `w`. -/
+theorem ιMulti_two_smul_right (u w : M) (c : R) :
+    ιMulti R 2 ![u, c • w] = c • ιMulti R 2 ![u, w] := by
+  apply Subtype.ext
+  simp [ExteriorAlgebra.ιMulti_apply, Matrix.vecTail]
+
+end exteriorPower
 
 namespace LinearMap.IsAlt
 

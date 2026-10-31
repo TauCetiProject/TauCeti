@@ -239,7 +239,7 @@ theorem isZero_Tor_succ_quotient_iSup {X : ModuleCat.{u} A} {ι : Type*} [Nonemp
   -- generated `N₀ ≤ K`, and `N₀` lies in a single `N i`.
   obtain ⟨y, rfl⟩ := LinearMap.rTensor_surjective _ K.mkQ_surjective y
   have hy' : K.mkQ.rTensor _ (d₁.lTensor X y) = 0 := by
-    rwa [← LinearMap.lTensor_rTensor_apply]
+    rwa [← LinearMap.lTensor_rTensor_comm]
   obtain ⟨t, ht⟩ := (rTensor_exact _ (LinearMap.exact_subtype_mkQ K)
     K.mkQ_surjective _).1 hy'
   obtain ⟨N₀, hN₀, hle, t, rfl⟩ := Submodule.exists_fg_le_eq_rTensor_inclusion t
@@ -248,13 +248,13 @@ theorem isZero_Tor_succ_quotient_iSup {X : ModuleCat.{u} A} {ι : Type*} [Nonemp
     hN.directedOn_range (by rwa [sSup_range])
   -- In `(X ⧸ N i) ⊗ P` the image of `y` is a cycle, hence a boundary.
   obtain ⟨z, hz⟩ := h i ((N i).mkQ.rTensor _ y) (by
-    rw [LinearMap.lTensor_rTensor_apply, ← ht]
+    rw [LinearMap.lTensor_rTensor_comm, ← ht]
     have h0 : (N i).mkQ ∘ₗ K.subtype ∘ₗ Submodule.inclusion hle = 0 := by
       ext x
       exact (Submodule.Quotient.mk_eq_zero _).2 (hi x.2)
     simp only [← LinearMap.rTensor_comp_apply, h0, LinearMap.rTensor_zero, LinearMap.zero_apply])
   refine ⟨(Submodule.factor (le_iSup N i)).rTensor _ z, ?_⟩
-  rw [LinearMap.lTensor_rTensor_apply, hz, ← LinearMap.rTensor_comp_apply, Submodule.factor_comp_mk]
+  rw [LinearMap.lTensor_rTensor_comm, hz, ← LinearMap.rTensor_comp_apply, Submodule.factor_comp_mk]
 
 end ModuleCat
 

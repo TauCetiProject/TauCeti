@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded
 
 import TauCeti.Analysis.Complex.Conformal.UpperHalfPlane.LocallyConnectedBoundary
 import TauCeti.Analysis.Complex.Conformal.ImageSimplyConnected
+import TauCeti.Analysis.Normed.Field.Inversion
 
 /-!
 # Riemann maps of unbounded domains with locally connected inverted boundary
@@ -85,14 +86,9 @@ theorem exists_bijOn_upperHalfPlaneSet_of_locallyConnectedSpace_frontier_image_i
     exact hqU ((sub_eq_zero.mp (inv_eq_zero.mp hzinv)) ▸ hz)
   have hgne : ∀ z ∈ upperHalfPlaneSet, g z ≠ 0 := fun z hz hgz =>
     hzero (hgz ▸ hgV.mapsTo hz)
-  have hκ : BijOn (fun w : ℂ => q + w⁻¹) ((fun z : ℂ => (z - q)⁻¹) '' U) U := by
-    refine ⟨?_, ((add_right_injective q).comp inv_injective).injOn,
-      fun z hz => ⟨_, ⟨z, hz, rfl⟩, by simp⟩⟩
-    rintro _ ⟨z, hz, rfl⟩
-    simpa using hz
   refine ⟨fun z => q + (g z)⁻¹, g,
-    (differentiableOn_const q).add (hgd.inv hgne), hκ.comp hgV, hgc, hgd, ?_, hgne,
-    hgK, hgR, hg0⟩
+    (differentiableOn_const q).add (hgd.inv hgne), (bijOn_add_inv_image_inv_sub U).comp hgV, hgc,
+    hgd, ?_, hgne, hgK, hgR, hg0⟩
   intro z hz
   simp only [add_sub_cancel_left]
   simp

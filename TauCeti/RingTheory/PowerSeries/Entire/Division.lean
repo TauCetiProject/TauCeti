@@ -73,6 +73,8 @@ operators, whose Fredholm determinants are entire series.
   `a` exactly when it is `X - a` times an entire series.
 * `PowerSeries.IsEntire.exists_eq_X_sub_C_pow_mul`: if the Hasse derivatives of order less than
   `h` of an entire series vanish at `a`, then it is `(X - a)ʰ` times an entire series.
+* `PowerSeries.IsEntire.evalAt_hasseDeriv_mul_of_forall_lt`: if the Hasse derivatives of order
+  less than `k` of an entire series `f` vanish at `a`, then `(Δᵏ (f g))(a) = (Δᵏ f)(a) g(a)`.
 * `PowerSeries.divByMonic_modByMonic_unique`: over an ultrametric ring with `‖1‖ = 1`, a division
   with entire quotient and remainder of degree less than `d` is this one.
 * `PowerSeries.IsEntire.coe_mul_divByMonic_cancel_left`: over an ultrametric ring with
@@ -443,6 +445,17 @@ theorem IsEntire.exists_eq_X_sub_C_pow_mul (hf : f.IsEntire)
       simpa [hg.evalAt_hasseDeriv_X_sub_C_pow_mul, hasseDeriv_zero] using hzero h h.lt_succ_self
     obtain ⟨q, hq, rfl⟩ := (hg.evalAt_eq_zero_iff).mp hga
     exact ⟨q, hq, by ring⟩
+
+/-- If the Hasse derivatives of order less than `k` of an entire series `f` vanish at `a`, then
+the Hasse derivative of order `k` of `f * g` at `a` is that of `f` times `g(a)`. -/
+theorem IsEntire.evalAt_hasseDeriv_mul_of_forall_lt {g : R⟦X⟧} (hf : f.IsEntire) (hg : g.IsEntire)
+    {a : R} {k : ℕ} (hk : ∀ j < k, (PowerSeries.hasseDeriv j f).evalAt a = 0) :
+    (PowerSeries.hasseDeriv k (f * g)).evalAt a =
+      (PowerSeries.hasseDeriv k f).evalAt a * g.evalAt a := by
+  obtain ⟨f₁, hf₁, rfl⟩ := hf.exists_eq_X_sub_C_pow_mul hk
+  rw [mul_assoc, (hf₁.mul hg).evalAt_hasseDeriv_X_sub_C_pow_mul,
+    hf₁.evalAt_hasseDeriv_X_sub_C_pow_mul]
+  simp [hf₁.evalAt_mul hg]
 
 section Ultrametric
 
