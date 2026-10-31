@@ -137,15 +137,15 @@ private lemma sepSet_finite [Finite ι] [Archimedean R] (x : N) : (sepSet b x).F
     · exact h.le
     · exact h.1.le
 
-variable [P.IsCrystallographic]
-
 /-- At most one of the two affine roots of a wall is positive. -/
 private lemma not_isAffinePos_and (j₀ : ι) (c : ℤ) :
     ¬ (IsAffinePos b (j₀, c) ∧ IsAffinePos b (P.reflectionPerm j₀ j₀, -c)) := by
-  have := TauCeti.height_reflectionPerm P b j₀ j₀
-  simp only [pairingIn_same] at this
+  let := P.indexNeg
+  have : b.height (P.reflectionPerm j₀ j₀) = -b.height j₀ := b.height_reflectionPerm_self j₀
   simp only [IsAffinePos]
   omega
+
+variable [P.IsCrystallographic]
 
 /-- **The descent step.** Let `s` be the affine reflection in the hyperplane `αⱼ₀ = c`, and suppose
 that `s` permutes the positive affine roots other than the two affine roots `±(αⱼ₀ - c)` of its
@@ -210,29 +210,6 @@ private lemma isAffinePos_wallPerm_simple [Finite ι] [P.IsReduced] {i : ι} (hi
 
 variable [Finite ι] [Nonempty ι] [P.IsReduced] [P.IsIrreducible]
 
-/-- The heights of the roots lie between `-ht(θ)` and `ht(θ)`, and only `θ` and `-θ` attain these
-bounds. -/
-private lemma height_bounds (j : ι) :
-    -b.height b.highestRoot ≤ b.height j ∧ b.height j ≤ b.height b.highestRoot ∧
-      (b.height j = b.height b.highestRoot → j = b.highestRoot) ∧
-      (b.height j = -b.height b.highestRoot →
-        j = P.reflectionPerm b.highestRoot b.highestRoot) := by
-  have hneg (l : ι) : b.height (P.reflectionPerm l l) = -b.height l := by
-    rw [TauCeti.height_reflectionPerm P b l l, pairingIn_same]
-    ring
-  have h₁ := b.height_le_height_highestRoot (P.reflectionPerm j j)
-  rw [hneg] at h₁
-  refine ⟨by omega, b.height_le_height_highestRoot j, fun h ↦ ?_, fun h ↦ ?_⟩
-  · by_contra hne
-    exact (b.height_lt_height_highestRoot hne).ne h
-  · by_contra hne
-    have hne' : P.reflectionPerm j j ≠ b.highestRoot := fun h' ↦ hne <| P.root.injective <| by
-      rw [root_reflectionPerm, reflection_apply_self, ← h', root_reflectionPerm,
-        reflection_apply_self, neg_neg]
-    have := b.height_lt_height_highestRoot hne'
-    rw [hneg] at this
-    omega
-
 /-- The reflection in the wall `θ = 1` permutes the positive affine roots other than `±(θ - 1)`. -/
 private lemma isAffinePos_wallPerm_highestRoot {p : ι × ℤ} (hp₁ : p ≠ (b.highestRoot, 1))
     (hp₂ : p ≠ (P.reflectionPerm b.highestRoot b.highestRoot, -1)) :
@@ -240,13 +217,16 @@ private lemma isAffinePos_wallPerm_highestRoot {p : ι × ℤ} (hp₁ : p ≠ (b
   obtain ⟨j, k⟩ := p
   simp only [wallPerm, mul_one, IsAffinePos, TauCeti.height_reflectionPerm P b b.highestRoot j]
   have hθ : 0 < b.height b.highestRoot := b.isPos_highestRoot
-  obtain ⟨hlo, hhi, htop, hbot⟩ := height_bounds b j
-  obtain ⟨hlo', hhi', -, -⟩ := height_bounds b (P.reflectionPerm b.highestRoot j)
+  have hlo := b.neg_height_highestRoot_le_height j
+  have hhi := b.height_le_height_highestRoot j
+  have hlo' := b.neg_height_highestRoot_le_height (P.reflectionPerm b.highestRoot j)
+  have hhi' := b.height_le_height_highestRoot (P.reflectionPerm b.highestRoot j)
   rw [TauCeti.height_reflectionPerm P b b.highestRoot j] at hlo' hhi'
   have h₀ := b.height_ne_zero j
-  have htop' : b.height j = b.height b.highestRoot → k ≠ 1 := fun h hk ↦ hp₁ (by rw [htop h, hk])
-  have hbot' : b.height j = -b.height b.highestRoot → k ≠ -1 :=
-    fun h hk ↦ hp₂ (by rw [hbot h, hk])
+  have htop' : b.height j = b.height b.highestRoot → k ≠ 1 := fun h hk ↦ hp₁ <| by
+    rw [hk, not_ne_iff.mp fun hne ↦ (b.height_lt_height_highestRoot hne).ne h]
+  have hbot' : b.height j = -b.height b.highestRoot → k ≠ -1 := fun h hk ↦ hp₂ <| by
+    rw [hk, not_ne_iff.mp fun hne ↦ (b.neg_height_highestRoot_lt_height hne).ne' h]
   set m := P.pairingIn ℤ j b.highestRoot
   have hm₁ : m ≤ 2 := by nlinarith
   have hm₂ : -2 ≤ m := by nlinarith
