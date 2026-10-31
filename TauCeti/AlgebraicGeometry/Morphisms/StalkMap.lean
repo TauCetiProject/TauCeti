@@ -16,7 +16,9 @@ public import TauCeti.AlgebraicGeometry.Restrict
 public import TauCeti.RingTheory.Etale.Locus
 public import TauCeti.RingTheory.QuasiFinite.Localization
 public import TauCeti.RingTheory.Unramified.LocalRing
+import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.RingTheory.Flat.Tower
 import TauCeti.RingTheory.Unramified.Normal
 
 /-!
@@ -33,6 +35,14 @@ shows that both conditions only depend on the stalk map `f.stalkMap x`:
 * for `f` locally of finite presentation, `f` is étale at `x` iff `f.stalkMap x` is flat and
   formally unramified (`AlgebraicGeometry.Scheme.Hom.etaleAt_iff_stalkMap`, Stacks, Lemma
   29.37.15 (02GU), conditions (1) and (4)).
+
+Both stalk conditions descend along flat morphisms: for `g : X' ⟶ X` with flat stalk map at
+`x'`, if the stalk map of `g ≫ f` at `x'` is flat (resp. formally unramified, with `f` and
+`g ≫ f` locally of finite type), then so is the stalk map of `f` at `g x'`. Hence if `f` is locally
+of finite presentation, `g` is flat and surjective and `g ≫ f` is étale, then `f` is étale
+(`AlgebraicGeometry.Etale.of_comp_surjective`). For an étale surjective `g` this is the statement
+of Stacks, Lemma 35.31.1 (036W), that étaleness is étale local on the source, for `f` locally of
+finite presentation.
 
 When the local ring of `Y` at `f x` is a Dedekind domain, for instance a discrete valuation ring,
 and the local ring of `X` at `x` is a domain but not a field, flatness of the stalk map is
@@ -80,6 +90,7 @@ neighbourhood of `x`. For étaleness the stalk condition is first turned into `A
 * [The Stacks Project, Definition 29.36.1 (02G4)](https://stacks.math.columbia.edu/tag/02G4)
 * [The Stacks Project, Definition 29.37.1 (02GI)](https://stacks.math.columbia.edu/tag/02GI)
 * [The Stacks Project, Lemma 29.37.15 (02GU)](https://stacks.math.columbia.edu/tag/02GU)
+* [The Stacks Project, Lemma 35.31.1 (036W)](https://stacks.math.columbia.edu/tag/036W)
 * [The Stacks Project, Lemma 58.21.4 (0BMB)](https://stacks.math.columbia.edu/tag/0BMB)
 -/
 
@@ -217,6 +228,59 @@ theorem etaleAt_iff_stalkMap (f : X ⟶ Y) [LocallyOfFinitePresentation f] (x : 
     (hV.primeIdealOf ⟨x, hxV⟩).asIdeal
   exact HasRingHomProperty.exists_ι_comp_of_away @Etale hU hV hVU hxV r hrx
     (RingHom.etale_algebraMap.mpr hr)
+
+/-- Flatness of stalk maps descends along flat morphisms: if `g` has flat stalk map at `x'` and
+`g ≫ f` has flat stalk map at `x'`, then `f` has flat stalk map at `g x'`. -/
+theorem flat_stalkMap_of_comp {X' : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y) (x' : X')
+    (hg : (g.stalkMap x').hom.Flat) (h : ((g ≫ f).stalkMap x').hom.Flat) :
+    (f.stalkMap (g x')).hom.Flat := by
+  have h' : ((g.stalkMap x').hom.comp (f.stalkMap (g x')).hom).Flat := by
+    rw [← CommRingCat.hom_comp, ← Scheme.Hom.stalkMap_comp]
+    -- The stalks at `(g ≫ f) x'` and `f (g x')` agree definitionally, but not reducibly.
+    exact h
+  algebraize [(f.stalkMap (g x')).hom, (g.stalkMap x').hom,
+    (g.stalkMap x').hom.comp (f.stalkMap (g x')).hom]
+  -- The algebra structure is that of the stalk map, which is a local homomorphism.
+  have : IsLocalHom (algebraMap (X.presheaf.stalk (g x')) (X'.presheaf.stalk x')) :=
+    inferInstanceAs (IsLocalHom (g.stalkMap x').hom)
+  have : Module.FaithfullyFlat (X.presheaf.stalk (g x')) (X'.presheaf.stalk x') :=
+    .of_flat_of_isLocalHom
+  exact Module.Flat.of_faithfullyFlat_of_flat _ _ (X'.presheaf.stalk x')
+
+/-- Formal unramifiedness of stalk maps descends along flat morphisms: for `f` and `g ≫ f` locally
+of finite type, if `g` has flat stalk map at `x'` and `g ≫ f` has formally unramified stalk map at
+`x'`, then `f` has formally unramified stalk map at `g x'`. -/
+theorem formallyUnramified_stalkMap_of_comp {X' : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y)
+    [LocallyOfFiniteType f] [LocallyOfFiniteType (g ≫ f)] (x' : X')
+    (hg : (g.stalkMap x').hom.Flat) (h : ((g ≫ f).stalkMap x').hom.FormallyUnramified) :
+    (f.stalkMap (g x')).hom.FormallyUnramified := by
+  have h' : ((g.stalkMap x').hom.comp (f.stalkMap (g x')).hom).FormallyUnramified := by
+    rw [← CommRingCat.hom_comp, ← Scheme.Hom.stalkMap_comp]
+    -- The stalks at `(g ≫ f) x'` and `f (g x')` agree definitionally, but not reducibly.
+    exact h
+  have he : ((g.stalkMap x').hom.comp (f.stalkMap (g x')).hom).EssFiniteType := by
+    rw [← CommRingCat.hom_comp, ← Scheme.Hom.stalkMap_comp]
+    -- As above, the two stalks of `Y` agree definitionally.
+    exact LocallyOfFiniteType.stalkMap (g ≫ f) x'
+  have := LocallyOfFiniteType.stalkMap f (g x')
+  algebraize [(f.stalkMap (g x')).hom, (g.stalkMap x').hom,
+    (g.stalkMap x').hom.comp (f.stalkMap (g x')).hom]
+  -- The algebra structures are those of the stalk maps, which are local homomorphisms.
+  have : IsLocalHom (algebraMap (X.presheaf.stalk (g x')) (X'.presheaf.stalk x')) :=
+    inferInstanceAs (IsLocalHom (g.stalkMap x').hom)
+  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f (g x'))) (X.presheaf.stalk (g x'))) :=
+    inferInstanceAs (IsLocalHom (f.stalkMap (g x')).hom)
+  exact Algebra.FormallyUnramified.of_flat_of_formallyUnramified (C := X'.presheaf.stalk x')
+
+/-- **Étaleness descends along flat morphisms.** Let `f` be locally of finite presentation and
+`g : X' ⟶ X` a morphism with flat stalk map at `x'` such that `g ≫ f` is étale. Then `f` is étale
+on an open neighbourhood of `g x'`. -/
+theorem exists_etale_of_etale_comp {X' : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y)
+    [LocallyOfFinitePresentation f] [Etale (g ≫ f)] (x' : X') (hg : (g.stalkMap x').hom.Flat) :
+    ∃ U : X.Opens, g x' ∈ U ∧ Etale (U.ι ≫ f) :=
+  (etaleAt_iff_stalkMap f (g x')).mpr
+    ⟨flat_stalkMap_of_comp g f x' hg (Flat.stalkMap _ _),
+      formallyUnramified_stalkMap_of_comp g f x' hg (FormallyUnramified.stalkMap _ _)⟩
 
 /-- **Purity in dimension one.** Let `f` be locally of finite presentation, for instance locally
 of finite type with `Y` locally Noetherian, and let `x : X` be a point at which the local ring of
@@ -363,5 +427,20 @@ theorem exists_appLE_quasiFiniteAt_iff (f : X ⟶ Y) (x : X) :
     this, hqf.quasiFiniteAt hV hU hVU hxV⟩
 
 end Scheme.Hom
+
+/-- **Étaleness descends along flat surjections.** Let `f` be locally of finite presentation and
+`g` flat and surjective. If `g ≫ f` is étale, then `f` is étale. For an étale surjective `g`, this
+is Stacks, Lemma 35.31.1 (036W) for `f` locally of finite presentation. -/
+@[stacks 036W "for `f` locally of finite presentation, with `g` flat and surjective"]
+theorem Etale.of_comp_surjective {X' : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y) [Flat g]
+    [Surjective g] [LocallyOfFinitePresentation f] [Etale (g ≫ f)] : Etale f := by
+  have H (x : X) : ∃ U : X.Opens, x ∈ U ∧ Etale (U.ι ≫ f) := by
+    obtain ⟨x', rfl⟩ := g.surjective x
+    exact g.exists_etale_of_etale_comp f x' (Flat.stalkMap g x')
+  choose U hxU hU using H
+  -- Instance search does not derive this from `HasRingHomProperty @Etale RingHom.Etale` by itself.
+  have : IsZariskiLocalAtSource @Etale.{u} := HasRingHomProperty.instIsZariskiLocalAtSource
+  exact IsZariskiLocalAtSource.of_iSup_eq_top U
+    (eq_top_iff.mpr fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨x, hxU x⟩) hU
 
 end AlgebraicGeometry
