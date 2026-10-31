@@ -78,7 +78,6 @@ open List
 
 variable [DecidableEq α]
 
-
 /-- If the reduced word of `g` begins with the formal inverse of `x`, then left multiplication by
 `x` cancels that prefix. -/
 theorem toWord_mk_mul_of_invRev_prefix {x : List (α × Bool)} {g : FreeGroup α}
@@ -86,12 +85,13 @@ theorem toWord_mk_mul_of_invRev_prefix {x : List (α × Bool)} {g : FreeGroup α
   obtain ⟨y, hy⟩ := h
   have hred : IsReduced y := isReduced_toWord.infix ⟨invRev x, [], by rw [append_nil, hy]⟩
   have hmul : mk x * g = mk y := by
-    rw [← mk_toWord (x := g), ← hy, ← mul_mk, ← mul_assoc, ← inv_mk, mul_inv_cancel, one_mul]
+    rw [← mk_toWord (x := g), ← hy, ← mul_mk, ← inv_mk]
+    exact mul_inv_cancel_left _ _
   rw [hmul, toWord_mk, hred.reduce_eq, ← hy, drop_left' invRev_length]
 
 omit [DecidableEq α] in
 /-- In a reduced word, a letter is never followed by its inverse. -/
-private theorem ne_inv_of_isReduced_cons_cons {a b : α × Bool} {l : List (α × Bool)}
+theorem ne_inv_of_isReduced_cons_cons {a b : α × Bool} {l : List (α × Bool)}
     (h : IsReduced (a :: b :: l)) : b ≠ (a.1, !a.2) := by
   rintro rfl
   simpa using (isReduced_cons_cons.1 h).1 rfl

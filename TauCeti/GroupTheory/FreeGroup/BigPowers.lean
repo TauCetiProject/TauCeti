@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.List.Infix
 public import TauCeti.GroupTheory.BigPowers
 public import TauCeti.GroupTheory.FreeGroup.Centralizer
 public import TauCeti.GroupTheory.FreeGroup.CyclicallyReduced
@@ -63,33 +64,23 @@ reduced. Its prefixes are the prefixes of the attracting ray of `u`. -/
 private def ray (u : FreeGroup α) (m : ℕ) : List (α × Bool) :=
   conjugator u.toWord ++ (replicate m (reduceCyclically u.toWord)).flatten
 
-private theorem length_reduceCyclically_pos {u : FreeGroup α} (hu : u ≠ 1) :
-    0 < (reduceCyclically u.toWord).length :=
-  length_pos_iff.2 (mt reduceCyclically_toWord_eq_nil_iff.1 hu)
-
 private theorem length_ray (u : FreeGroup α) (m : ℕ) :
     (ray u m).length = (conjugator u.toWord).length + m * (reduceCyclically u.toWord).length := by
   simp [ray, length_flatten, map_replicate]
 
 private theorem le_length_ray {u : FreeGroup α} (hu : u ≠ 1) (m : ℕ) : m ≤ (ray u m).length := by
   rw [length_ray]
-  nlinarith [length_reduceCyclically_pos hu]
+  nlinarith [length_reduceCyclically_toWord_pos_iff.2 hu]
 
 private theorem toWord_pow_eq_ray (u : FreeGroup α) {m : ℕ} (hm : m ≠ 0) :
     (u ^ m).toWord = ray u m ++ invRev (conjugator u.toWord) := by
   simp [ray, toWord_pow, reduce_flatten_replicate isReduced_toWord, hm]
 
-omit [DecidableEq α] in
-private theorem flatten_replicate_prefix (v : List (α × Bool)) {m n : ℕ} (h : m ≤ n) :
-    (replicate m v).flatten <+: (replicate n v).flatten := by
-  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le h
-  rw [replicate_add, flatten_append]
-  exact prefix_append _ _
-
 /-- The length-`L` prefix of the ray does not depend on how many copies of `v` follow `c`. -/
 private theorem take_ray {u : FreeGroup α} (hu : u ≠ 1) {L m : ℕ} (h : L ≤ m) :
     (ray u m).take L = (ray u L).take L := by
-  have hp : ray u L <+: ray u m := (prefix_append_right_inj _).2 (flatten_replicate_prefix _ h)
+  have hp : ray u L <+: ray u m :=
+    (prefix_append_right_inj _).2 (flatten_replicate_prefix_flatten_replicate _ h)
   rw [eq_comm, prefix_iff_eq_take.1 hp, take_take, Nat.min_eq_left (le_length_ray hu L)]
 
 /-- For `m ≥ L`, the reduced word of `u ^ m` begins with the length-`L` prefix of the ray. -/
@@ -109,7 +100,7 @@ private theorem mk_take_ray_add {u : FreeGroup α} (hu : u ≠ 1) {n j m : ℕ}
     (hn : n + j * (reduceCyclically u.toWord).length ≤ (ray u m).length) :
     mk ((ray u m).take (n + j * (reduceCyclically u.toWord).length)) =
       u ^ j * mk ((ray u m).take n) := by
-  have hv := length_reduceCyclically_pos hu
+  have hv := length_reduceCyclically_toWord_pos_iff.2 hu
   rw [length_ray] at hn
   set c := conjugator u.toWord
   set v := reduceCyclically u.toWord
@@ -121,16 +112,19 @@ private theorem mk_take_ray_add {u : FreeGroup α} (hu : u ≠ 1) {n j m : ℕ}
   -- Both prefixes are `c` followed by a prefix of the periodic part.
   have hlong : (ray u (j + d)).take (c.length + k + j * v.length) =
       c ++ (replicate j v).flatten ++ (replicate d v).flatten.take k := by
-    rw [show c.length + k + j * v.length = c.length + ((replicate j v).flatten.length + k) by
-      rw [hlen]; ring, ray, replicate_add, flatten_append, take_length_add_append,
+    have hidx : c.length + k + j * v.length = c.length + ((replicate j v).flatten.length + k) := by
+      rw [hlen]; ring
+    rw [hidx, ray, replicate_add, flatten_append, take_length_add_append,
       take_length_add_append, append_assoc]
   have hshort : (ray u (j + d)).take (c.length + k) = c ++ (replicate d v).flatten.take k := by
     have hk : k ≤ ((replicate d v).flatten).length := by rw [hlen]; nlinarith
     rw [ray, take_length_add_append, prefix_iff_eq_take.1
-      (flatten_replicate_prefix v (Nat.le_add_left d j)), take_take, Nat.min_eq_left hk]
+      (flatten_replicate_prefix_flatten_replicate v (Nat.le_add_left d j)), take_take,
+      Nat.min_eq_left hk]
   have hu' : u = mk c * mk v * (mk c)⁻¹ := by
     rw [inv_mk, mul_mk, mul_mk, conj_conjugator_reduceCyclically, mk_toWord]
-  rw [hlong, hshort, ← mul_mk, ← mul_mk, ← mul_mk, ← pow_mk, hu', conj_pow]
+  rw [hlong, hshort]
+  simp only [← mul_mk, ← pow_mk, hu', conj_pow]
   group
 
 /-- If the rays of two nonidentity elements agree for long enough, the elements commute: with
@@ -143,8 +137,8 @@ private theorem commute_of_take_ray_eq {u u' : FreeGroup α} (hu : u ≠ 1) (hu'
   set p := (reduceCyclically u.toWord).length
   set q := (reduceCyclically u'.toWord).length
   set n := (conjugator u.toWord).length + (conjugator u'.toWord).length
-  have hp := length_reduceCyclically_pos hu
-  have hq := length_reduceCyclically_pos hu'
+  have hp := length_reduceCyclically_toWord_pos_iff.2 hu
+  have hq := length_reduceCyclically_toWord_pos_iff.2 hu'
   have hLu := length_ray u L
   have hLu' := length_ray u' L
   -- Every prefix of length at most `L` of the two rays agrees.
