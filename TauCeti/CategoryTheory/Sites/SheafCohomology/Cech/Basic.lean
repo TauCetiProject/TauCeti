@@ -220,6 +220,12 @@ theorem cechComplexFunctor_obj_d_comp_π (n : ℕ) (k : Fin (n + 2) → ι) :
   -- the coface map `δ m` unfolds to a `Pi.lift`
   exact (Preadditive.zsmul_comp _ _ _).trans <| congrArg _ <| Pi.lift_comp_π _ _
 
+/-- The Čech complex of an empty family is zero in every degree: its terms are products indexed
+by the empty type of maps `Fin (n + 1) → ι`. -/
+theorem isZero_cechComplexFunctor_obj_X [IsEmpty ι] (n : ℕ) :
+    IsZero (((cechComplexFunctor U).obj P).X n) :=
+  (IsZero.iff_id_eq_zero _).2 <| Pi.hom_ext _ _ fun (a : Fin (n + 1) → ι) ↦ isEmptyElim (a 0)
+
 /-! ### Maps of presheaves -/
 
 /-- A morphism of presheaves `α : P ⟶ Q` acts on the Čech complexes factorwise: the factor of
@@ -277,6 +283,24 @@ theorem cechComplexMap_comp {ι' : Type w} {W : ι' → C}
   simp only [cechComplexMap, CategoryTheory.Functor.map_comp, NatTrans.rightOp_comp,
     Functor.whiskerRight_comp]
   exact (alternatingCofaceMapComplex A).map_comp _ _
+
+/-- `cechComplexMap` is natural in the presheaf: for `α : P ⟶ Q`, applying `α` and then
+restricting along a morphism of families is restricting and then applying `α`. -/
+@[reassoc]
+theorem cechComplexMap_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q)
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    (cechComplexFunctor V).map α ≫ cechComplexMap Q φ =
+      cechComplexMap P φ ≫ (cechComplexFunctor U).map α := by
+  ext n : 1
+  refine Pi.hom_ext _ _ fun (a : Fin (n + 1) → ι) ↦ ?_
+  -- both sides restrict the factor indexed by `φ.f ∘ a` and apply `α`, in either order
+  exact ((Category.assoc _ _ _).trans <| (_ ≫= cechComplexMap_f_π Q φ n a).trans <|
+    (Category.assoc _ _ _).symm.trans <|
+      (cechComplexFunctor_map_f_π V P α n (φ.f ∘ a) =≫ _).trans <|
+        (Category.assoc _ _ _).trans <| _ ≫= (α.naturality _).symm).trans <|
+    ((Category.assoc _ _ _).trans <| (_ ≫= cechComplexFunctor_map_f_π U P α n a).trans <|
+      (Category.assoc _ _ _).symm.trans <|
+        (cechComplexMap_f_π P φ n a =≫ _).trans (Category.assoc _ _ _)).symm
 
 /-- A morphism of families which is the identity on indices, given by morphisms
 `φ i : U i ⟶ W i`, induces an isomorphism of Čech complexes `Č(W, P) ⟶ Č(U, P)` as soon as `P`
