@@ -22,9 +22,7 @@ a commutative square.
 For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of cochain complexes in an abelian category,
 the first map lifts to the mapping cocone of the second, and this lift `X₁ ⟶ mappingCocone S.g`
 is a quasi-isomorphism. This is dual to Mathlib's `mappingCone.quasiIso_descShortComplex`, which
-compares the mapping cone of the first map with the third term. The proof does not compare
-connecting maps: the lift is the kernel of a degreewise epimorphism onto the mapping cocone of
-`𝟙 X₃`, which is contractible.
+compares the mapping cone of the first map with the third term.
 
 ## Main results
 
@@ -189,7 +187,9 @@ private lemma shortExact_lift_toId (hS : S.ShortExact) :
 `X₁ ⟶ mappingCocone S.g` of `S.f` is a quasi-isomorphism. -/
 theorem quasiIso_lift_of_shortExact (hS : S.ShortExact) :
     QuasiIso (lift S.g S.f 0 (by simp)) := by
-  -- The long exact homology sequence of the short exact sequence
+  -- The proof does not compare connecting maps: the lift is the kernel of a degreewise
+  -- epimorphism onto the mapping cocone of `𝟙 X₃`, which is contractible. We use the long exact
+  -- homology sequence of the short exact sequence
   -- `X₁ ⟶ mappingCocone S.g ⟶ mappingCocone (𝟙 X₃)`, whose third term is acyclic.
   have hT := shortExact_lift_toId hS
   have hC := acyclic_mappingCocone_id S.X₃

@@ -53,9 +53,9 @@ with localization.
   `TauCeti.ModuleTower.derivedLimitFactors : Q ⋙ Rlim ≅ holim ⋙ Q`.
 * `TauCeti.ModuleTower.derivedLimitπ`: the projections `Rlim K → Kₙ`, compatible with the
   transitions (`TauCeti.ModuleTower.derivedLimitπ_comp_transition`).
-* `TauCeti.ModuleTower.homotopyLimitLift`: the natural comparison map `lim K → holim K`, a
-  quasi-isomorphism when every term has vanishing `lim¹`
-  (`TauCeti.ModuleTower.quasiIso_homotopyLimitLift`).
+* `TauCeti.ModuleTower.homotopyLimitLift`: the natural comparison map `lim K → holim K`, whose
+  projections are the inclusion of `lim K` and zero, a quasi-isomorphism when every term has
+  vanishing `lim¹` (`TauCeti.ModuleTower.quasiIso_homotopyLimitLift`).
 * `TauCeti.ModuleTower.derivedLimitIsoLimComplex`: the isomorphism `Rlim K ≅ lim K` in that case,
   compatible with the projections
   (`TauCeti.ModuleTower.derivedLimitIsoLimComplex_inv_comp_derivedLimitπ`).
@@ -253,6 +253,14 @@ theorem homotopyLimitLift_comp_homotopyLimitFst (K : CochainComplex (ModuleTower
     homotopyLimitLift K ≫ homotopyLimitFst K = (limComplexι R).app K :=
   mappingCocone.lift_fst _ _ _ _
 
+/-- The comparison map `lim K → holim K` has vanishing second component in the mapping cocone
+of `δ`. -/
+@[simp, reassoc]
+theorem homotopyLimitLift_f_snd_v (K : CochainComplex (ModuleTower.{v} R) ℤ) (p q : ℤ)
+    (hpq : p + -1 = q) :
+    (homotopyLimitLift K).f p ≫ (mappingCocone.snd ((complexShift R).app K)).v p q hpq = 0 :=
+  (mappingCocone.lift_f_snd_v _ _ _ _ p q hpq).trans (HomComplex.Cochain.zero_v ..)
+
 /-- The comparison map `lim K → holim K` is natural in the complex of towers `K`. -/
 @[reassoc]
 theorem homotopyLimitLift_naturality {K L : CochainComplex (ModuleTower.{v} R) ℤ} (f : K ⟶ L) :
@@ -272,16 +280,13 @@ theorem homotopyLimitLift_naturality {K L : CochainComplex (ModuleTower.{v} R) �
   · have h := HomologicalComplex.congr_hom hfst p
     simp only [HomologicalComplex.comp_f] at h
     exact (Category.assoc _ _ _).trans (h.trans (Category.assoc _ _ _).symm)
-  · have h₀ (M : CochainComplex (ModuleTower.{v} R) ℤ) :
-        (homotopyLimitLift M).f p ≫ (mappingCocone.snd _).v p (p + -1) rfl = 0 :=
-      (mappingCocone.lift_f_snd_v _ _ _ _ p (p + -1) rfl).trans (HomComplex.Cochain.zero_v ..)
-    have h₁ : ((limComplexFunctor R).map f).f p ≫ (homotopyLimitLift L).f p ≫
+  · have h₁ : ((limComplexFunctor R).map f).f p ≫ (homotopyLimitLift L).f p ≫
         (mappingCocone.snd _).v p (p + -1) rfl = 0 := by
-      rw [h₀, Limits.comp_zero]
+      rw [homotopyLimitLift_f_snd_v, Limits.comp_zero]
     have h₂ : (homotopyLimitLift K).f p ≫ ((homotopyLimitFunctor R).map f).f p ≫
         (mappingCocone.snd _).v p (p + -1) rfl = 0 := by
       -- `(homotopyLimitFunctor R).map f` is the shifted mapping cone map only up to unfolding.
-      erw [hsnd p, reassoc_of% (h₀ K), Limits.zero_comp]
+      erw [hsnd p, homotopyLimitLift_f_snd_v_assoc K p (p + -1) rfl, Limits.zero_comp]
     exact (Category.assoc _ _ _).trans (h₁.trans (h₂.symm.trans (Category.assoc _ _ _).symm))
 
 /-- For a complex of towers whose terms have vanishing `lim¹`, for instance towers with surjective

@@ -139,9 +139,8 @@ def limι : limFunctor.{v} R ⟶ productFunctor.{v} R where
 @[reassoc]
 theorem limι_app_comp_shiftNatTrans_app (F : ModuleTower.{v} R) :
     (limι R).app F ≫ (shiftNatTrans R).app F = 0 := by
-  ext ⟨x, hx⟩ : 2
-  rw [lim_eq_ker] at hx
-  exact hx
+  ext x : 2
+  exact (exact_lim_subtype_shift F).apply_apply_eq_zero x
 
 variable {R} in
 /-- For a tower with vanishing `lim¹`, `0 → lim A → ∏ₙ Aₙ → ∏ₙ Aₙ → 0` is short exact, the second
@@ -149,14 +148,8 @@ map being the shift `δ`. This applies to towers with surjective transitions
 (`TauCeti.ModuleTower.subsingleton_limOne_of_surjective`). -/
 theorem shortExact_limι_shiftNatTrans {F : ModuleTower.{v} R} (hF : Subsingleton F.limOne) :
     (ShortComplex.mk _ _ (limι_app_comp_shiftNatTrans_app R F)).ShortExact where
-  exact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2 fun y ↦ by
-    -- The maps are `ModuleCat.ofHom` of the subtype and the shift; `lim_eq_ker` is not a
-    -- definitional unfolding available here, so the membership is restated by hand.
-    change F.shift y = 0 ↔ ∃ x : F.lim, (x : F.Product) = y
-    refine ⟨fun h ↦ ⟨⟨y, by rw [lim_eq_ker]; exact h⟩, rfl⟩, ?_⟩
-    rintro ⟨⟨x, hx⟩, rfl⟩
-    rw [lim_eq_ker] at hx
-    exact hx
+  exact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2
+    (exact_lim_subtype_shift F)
   mono_f := (ModuleCat.mono_iff_injective _).2 F.lim.injective_subtype
   epi_g := (ModuleCat.epi_iff_surjective _).2 (F.subsingleton_limOne_iff.1 hF)
 
