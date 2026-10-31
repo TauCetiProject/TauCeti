@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
+import Mathlib.Order.Filter.EventuallyConst
 
 /-!
 # Sequences of sets with summable consecutive symmetric differences
@@ -36,15 +37,12 @@ theorem ae_eventually_mem_iff_mem_liminf {s : ℕ → Set α}
     (hs : ∑' n, μ (s (n + 1) ∆ s n) ≠ ∞) :
     ∀ᵐ x ∂μ, ∀ᶠ n in atTop, x ∈ s n ↔ x ∈ liminf s atTop := by
   filter_upwards [ae_eventually_notMem hs] with x hx
-  obtain ⟨N, hN⟩ := eventually_atTop.1 hx
-  have hconst (n : ℕ) (hn : N ≤ n) : x ∈ s n ↔ x ∈ s N := by
-    induction n, hn using Nat.le_induction with
-    | base => rfl
-    | succ n hn ih =>
+  obtain ⟨N, hN⟩ := eventuallyConst_atTop.1 <| (eventuallyConst_atTop_nat (f := (x ∈ s ·))).2 <|
+    (eventually_atTop.1 hx).imp fun N hN n hn ↦ propext <| by
       have := hN n hn
       rw [mem_symmDiff] at this
-      rw [← ih]
       tauto
+  have hconst (n : ℕ) (hn : N ≤ n) : x ∈ s n ↔ x ∈ s N := Iff.of_eq (hN n hn)
   have hlim : x ∈ liminf s atTop ↔ x ∈ s N := by
     rw [mem_liminf_iff_eventually_mem]
     refine ⟨fun h ↦ ?_, fun h ↦ eventually_atTop.2 ⟨N, fun n hn ↦ (hconst n hn).2 h⟩⟩

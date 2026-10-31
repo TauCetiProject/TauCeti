@@ -6,17 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.AtomlessStandardBorel.Transport
-public import Mathlib.MeasureTheory.Constructions.UnitInterval
 import Mathlib.MeasureTheory.Integral.Indicator
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 
 /-!
 # Allocating disjoint sets of prescribed mass in a laminar family
 
-Let `μ` be an atomless finite measure on a standard Borel space. First, `μ` takes every value
-between `0` and `μ s` on measurable subsets of a measurable set `s` (Sierpiński's theorem).
-
-The main result is a Hall-type theorem for a graded laminar family. Each member `A i` has a
+Let `μ` be an atomless measure on a standard Borel space. The main result is a Hall-type
+theorem for a graded laminar family of sets of finite measure. Each member `A i` has a
 level `lvl i`. Distinct members of one level are disjoint, and a member of a deeper level lies
 inside or is disjoint from each member of a shallower level. If every member `A i` has room for
 its own demand `m i` together with the demands of all members strictly below it, then there are
@@ -26,9 +23,10 @@ family may be infinitely deep.
 The proof follows Pratelli. For each `n` the demands of levels below `n` are allocated. To pass
 to `n + 1`, the members of level `n` take any sets of the right mass; then, from level `n - 1`
 up to level `0`, each member gives up what the members below it now occupy and takes the same
-mass from free room in its own set. A member loses at most the mass newly demanded below it,
-so each allocated set changes by summable amounts, and the Borel--Cantelli lemma lets the
-allocations converge.
+mass from free room in its own set, chosen by Sierpiński's theorem
+`MeasureTheory.Measure.exists_subset_measure_eq_of_nullSingleton`. A member loses at most the
+mass newly demanded below it, so each allocated set changes by summable amounts, and the
+Borel--Cantelli lemma lets the allocations converge.
 
 This is the allocation step in Pratelli's proof that Monge's infimum equals Kantorovich's
 minimum for continuous costs and atomless sources: the members are the source sides of
@@ -37,7 +35,6 @@ transport plan puts on its rectangle.
 
 ## Main statements
 
-* `MeasureTheory.Measure.exists_subset_measure_eq_of_nullSingleton`: Sierpiński's theorem;
 * `MeasureTheory.Measure.exists_disjoint_subset_measure_eq_of_laminar`: the laminar
   allocation theorem.
 
@@ -67,28 +64,6 @@ private theorem below_trans {i j k : ι} (hj : j ∈ below A lvl i) (hk : k ∈ 
     k ∈ below A lvl i :=
   ⟨hj.1.trans hk.1, hk.2.trans hj.2⟩
 
-/-- Splitting the demands up to level `n` into those below `n` and those at `n`. -/
-private theorem tsum_indicator_le_eq (B : Set ι) (n : ℕ) :
-    ∑' j, (B ∩ {j | lvl j ≤ n}).indicator m j =
-      ∑' j, (B ∩ {j | lvl j < n}).indicator m j +
-        ∑' j, (B ∩ {j | lvl j = n}).indicator m j := by
-  classical
-  rw [← ENNReal.tsum_add]
-  refine tsum_congr fun j ↦ ?_
-  by_cases hB : j ∈ B
-  · simp only [indicator_apply, mem_inter_iff, hB, true_and, mem_ofPred_eq]
-    split_ifs <;> first | (exfalso; omega) | simp
-  · simp [hB]
-
-/-- Summing the demands on `B` level by level recovers the total demand on `B`. -/
-private theorem tsum_tsum_indicator_eq (B : Set ι) :
-    ∑' n, ∑' j, (B ∩ {j | lvl j = n}).indicator m j = ∑' j, B.indicator m j := by
-  classical
-  rw [ENNReal.tsum_comm]
-  refine tsum_congr fun j ↦ ?_
-  rw [tsum_eq_single (lvl j) fun n hn ↦ by simp [Ne.symm hn]]
-  by_cases hB : j ∈ B <;> simp [hB]
-
 private theorem below_inter_subset {n ℓ : ℕ} {i : ι} (hi : lvl i = ℓ) :
     below A lvl i ∩ {j | lvl j ≤ n} ⊆ {j | ℓ + 1 ≤ lvl j ∧ lvl j ≤ n} :=
   fun _ hj ↦ ⟨hi ▸ hj.1.1, hj.2⟩
@@ -96,27 +71,6 @@ private theorem below_inter_subset {n ℓ : ℕ} {i : ι} (hi : lvl i = ℓ) :
 end Combinatorics
 
 variable {X : Type*} [MeasurableSpace X]
-
-/-- **Sierpiński's theorem.** An atomless finite measure on a standard Borel space takes every
-value between `0` and `μ s` on measurable subsets of a measurable set `s`. -/
-theorem exists_subset_measure_eq_of_nullSingleton [StandardBorelSpace X] (μ : Measure X)
-    [IsFiniteMeasure μ] [NullSingletonClass μ] {s : Set X} (hs : MeasurableSet s)
-    {a : ℝ≥0∞} (ha : a ≤ μ s) : ∃ t ⊆ s, MeasurableSet t ∧ μ t = a := by
-  rcases eq_or_ne (μ s) 0 with h0 | h0
-  · exact ⟨∅, empty_subset s, MeasurableSet.empty, by simp [le_zero_iff.1 (h0 ▸ ha)]⟩
-  have hμs : μ s ≠ ∞ := measure_ne_top μ s
-  obtain ⟨T, hT⟩ := exists_measurePreserving_of_nullSingleton_of_measure_univ_eq
-    (μ.restrict s) (μ s • (volume : Measure unitInterval)) (by simp)
-  have hr : (a / μ s).toReal ∈ unitInterval :=
-    ⟨ENNReal.toReal_nonneg, ENNReal.toReal_le_of_le_ofReal zero_le_one
-      (by simpa using ENNReal.div_le_of_le_mul (by simpa using ha))⟩
-  refine ⟨s ∩ T ⁻¹' Iic ⟨_, hr⟩, inter_subset_left,
-    hs.inter (hT.measurable measurableSet_Iic), ?_⟩
-  rw [inter_comm, ← Measure.restrict_apply' hs,
-    hT.measure_preimage measurableSet_Iic.nullMeasurableSet, Measure.smul_apply,
-    unitInterval.volume_Iic, smul_eq_mul,
-    ENNReal.ofReal_toReal (ENNReal.div_ne_top (ne_top_of_le_ne_top hμs ha) h0),
-    ENNReal.mul_div_cancel h0 hμs]
 
 section Laminar
 
@@ -176,13 +130,11 @@ private theorem occupied_subset (hW : IsAlloc μ A m {i | ℓ + 1 ≤ lvl i ∧ 
     (hi : lvl i = ℓ) : occupied A lvl n W i ⊆ A i :=
   iUnion₂_subset fun j hj ↦ (hW.subset j (below_inter_subset hi hj)).trans hj.1.2
 
-variable [IsFiniteMeasure μ]
-
 /-- A member loses at most the demand newly added at level `n` below it: its old set is
 disjoint from the old sets below it, which the new sets below it still cover. -/
 private theorem measure_inter_occupied_le (hZ : IsAlloc μ A m {j | lvl j < n} Z)
     (hW : IsAlloc μ A m {j | ℓ + 1 ≤ lvl j ∧ lvl j ≤ n} W) (hi : lvl i = ℓ) (hℓn : ℓ < n)
-    (hcov : ∀ j, ℓ + 1 ≤ lvl j → lvl j < n → Z j ⊆ W j ∪ occupied A lvl n W j) :
+    (hAi : μ (A i) ≠ ∞) (hcov : ∀ j, ℓ + 1 ≤ lvl j → lvl j < n → Z j ⊆ W j ∪ occupied A lvl n W j) :
     μ (Z i ∩ occupied A lvl n W i) ≤
       ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j := by
   set V := ⋃ j ∈ below A lvl i ∩ {j | lvl j < n}, Z j
@@ -199,23 +151,30 @@ private theorem measure_inter_occupied_le (hZ : IsAlloc μ A m {j | lvl j < n} Z
   calc μ (Z i ∩ occupied A lvl n W i) ≤ μ (occupied A lvl n W i \ V) :=
         measure_mono fun x hx ↦ ⟨hx.2, fun hxV ↦ disjoint_left.1 hZV hx.1 hxV⟩
     _ = μ (occupied A lvl n W i) - μ V :=
-        measure_sdiff hVU (hZ.measurableSet_biUnion hVsub).nullMeasurableSet (measure_ne_top _ _)
+        measure_sdiff hVU (hZ.measurableSet_biUnion hVsub).nullMeasurableSet
+          (ne_top_of_le_ne_top hAi (measure_mono (hVU.trans (occupied_subset hW hi))))
     _ ≤ ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j := by
         rw [occupied, hW.measure_biUnion (below_inter_subset hi),
-          hZ.measure_biUnion hVsub, tsum_indicator_le_eq]
-        exact tsub_le_iff_left.2 le_rfl
+          hZ.measure_biUnion hVsub, tsub_le_iff_left, ← ENNReal.tsum_add]
+        refine ENNReal.tsum_le_tsum fun j ↦ ?_
+        by_cases hj : j ∈ below A lvl i
+        · rcases lt_trichotomy (lvl j) n with h | h | h
+          · simp [hj, h, h.le, h.ne]
+          · simp [hj, h]
+          · simp [hj, not_le.2 h, not_lt.2 h.le, h.ne']
+        · simp [hj]
 
 /-- The free room in `A i`, outside its old set and the new sets below it, holds what it lost. -/
 private theorem measure_inter_occupied_le_sdiff (hZ : IsAlloc μ A m {j | lvl j < n} Z)
     (hW : IsAlloc μ A m {j | ℓ + 1 ≤ lvl j ∧ lvl j ≤ n} W) (hi : lvl i = ℓ) (hℓn : ℓ < n)
-    (hm : ∀ i, m i + ∑' j, (below A lvl i).indicator m j ≤ μ (A i)) :
+    (hAi : μ (A i) ≠ ∞) (hm : ∀ i, m i + ∑' j, (below A lvl i).indicator m j ≤ μ (A i)) :
     μ (Z i ∩ occupied A lvl n W i) ≤ μ (A i \ (Z i ∪ occupied A lvl n W i)) := by
   have hi' : i ∈ {j | lvl j < n} := by simpa [hi] using hℓn
   have hU := measurableSet_occupied hW hi
-  have hUA := occupied_subset hW hi
-  rw [measure_sdiff (union_subset (hZ.subset i hi') hUA)
-    ((hZ.measurableSet i hi').union hU).nullMeasurableSet (measure_ne_top _ _)]
-  refine ENNReal.le_sub_of_add_le_left (measure_ne_top _ _) ?_
+  have hZUA := union_subset (hZ.subset i hi') (occupied_subset hW hi)
+  have hZU : μ (Z i ∪ occupied A lvl n W i) ≠ ∞ := ne_top_of_le_ne_top hAi (measure_mono hZUA)
+  rw [measure_sdiff hZUA ((hZ.measurableSet i hi').union hU).nullMeasurableSet hZU]
+  refine ENNReal.le_sub_of_add_le_left hZU ?_
   rw [measure_union_add_inter _ hU, hZ.measure_eq i hi', occupied,
     hW.measure_biUnion (below_inter_subset hi)]
   exact (add_le_add le_rfl (ENNReal.tsum_le_tsum fun j ↦
@@ -223,11 +182,11 @@ private theorem measure_inter_occupied_le_sdiff (hZ : IsAlloc μ A m {j | lvl j 
 
 end Reallocation
 
-variable [StandardBorelSpace X] [IsFiniteMeasure μ] [NullSingletonClass μ]
-  (hA : ∀ i, MeasurableSet (A i))
+variable [StandardBorelSpace X] [NullSingletonClass μ]
+  (hA : ∀ i, MeasurableSet (A i)) (hAfin : ∀ i, μ (A i) ≠ ∞)
   (hlvl : ∀ i j, i ≠ j → lvl i = lvl j → Disjoint (A i) (A j))
   (hlam : ∀ i j, lvl i < lvl j → A j ⊆ A i ∨ Disjoint (A i) (A j))
-include hA hlvl hlam
+include hA hAfin hlvl hlam
 
 /-- Reallocating one more level. Each member `i` of level `ℓ` gives up the part of its old set
 now occupied below it and takes the same mass from the free room of `A i`. -/
@@ -242,7 +201,8 @@ private theorem reallocated_of_succ
   choose! G hGsub hGm hGμ using fun i (hi : lvl i = ℓ) ↦
     exists_subset_measure_eq_of_nullSingleton μ
       ((hA i).diff ((hZ.measurableSet i (hZi hi)).union (measurableSet_occupied hW hi)))
-      (measure_inter_occupied_le_sdiff hZ hW hi hℓn hm)
+      (ne_top_of_le_ne_top (hAfin i) (measure_mono sdiff_subset))
+      (measure_inter_occupied_le_sdiff hZ hW hi hℓn (hAfin i) hm)
   -- The new sets: members of level `ℓ` are reallocated, deeper members keep their sets.
   set W' : ι → Set X := fun i ↦ if lvl i = ℓ then (Z i \ U i) ∪ G i else W i
   have hW'ℓ {i : ι} (hi : lvl i = ℓ) : W' i = (Z i \ U i) ∪ G i := by simp [W', hi]
@@ -275,10 +235,15 @@ private theorem reallocated_of_succ
     · exact hW'A h.symm
     · exact hW'gt h ▸ hW.subset i ⟨h, hi.2⟩
   · rcases hi.1.eq_or_lt with h | h
-    · rw [hW'ℓ h.symm, measure_union (Disjoint.mono (sdiff_subset.trans subset_union_left)
-        (hGsub i h.symm) disjoint_sdiff_right) (hGm i h.symm),
-        hGμ i h.symm, measure_sdiff_add_inter _ (measurableSet_occupied hW h.symm),
-        hZ.measure_eq i (hZi h.symm)]
+    · have hi' := h.symm
+      have hZG : Disjoint (Z i \ U i) (G i) :=
+        Disjoint.mono (sdiff_subset.trans subset_union_left) (hGsub i hi') disjoint_sdiff_right
+      calc μ (W' i) = μ (Z i \ U i) + μ (G i) := by
+            rw [hW'ℓ hi', measure_union hZG (hGm i hi')]
+        _ = μ (Z i \ U i) + μ (Z i ∩ U i) := by rw [hGμ i hi']
+        _ = m i := by
+            rw [measure_sdiff_add_inter _ (measurableSet_occupied hW hi'),
+              hZ.measure_eq i (hZi hi')]
     · exact hW'gt h ▸ hW.measure_eq i ⟨h, hi.2⟩
   · rcases hi.1.eq_or_lt with h | h <;> rcases hj.1.eq_or_lt with h' | h'
     · exact (hlvl i j hij (h.symm.trans h')).mono (hW'A h.symm) (hW'A h'.symm)
@@ -311,7 +276,7 @@ private theorem reallocated_of_succ
         _ ≤ 2 * ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j := by
             rw [hGμ i hi', ← two_mul]
             gcongr
-            exact measure_inter_occupied_le hZ hW hi' hℓn hcov
+            exact measure_inter_occupied_le hZ hW hi' hℓn (hAfin i) hcov
     · exact hW'gt h ▸ hchg i h hin
 
 /-- One pass of the reallocation. Given an allocation `Z` of the levels below `n`, the members
@@ -324,9 +289,9 @@ private theorem exists_isAlloc_succ
       μ (W i ∆ Z i) ≤ 2 * ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j := by
   have hP : Reallocated μ A lvl m n Z 0 := by
     refine Nat.decreasingInduction (motive := fun ℓ _ ↦ Reallocated μ A lvl m n Z ℓ)
-      (fun ℓ hℓn ih ↦ reallocated_of_succ hA hlvl hlam hm hZ hℓn ih) ?_ (Nat.zero_le n)
+      (fun ℓ hℓn ih ↦ reallocated_of_succ hA hAfin hlvl hlam hm hZ hℓn ih) ?_ (Nat.zero_le n)
     choose W hWA hWm hWμ using fun i ↦
-      exists_subset_measure_eq_of_nullSingleton μ (hA i) (le_self_add.trans (hm i))
+      exists_subset_measure_eq_of_nullSingleton μ (hA i) (hAfin i) (le_self_add.trans (hm i))
     refine ⟨W, ⟨fun i _ ↦ hWm i, fun i _ ↦ hWA i, fun i _ ↦ hWμ i, ?_⟩,
       fun i h h' ↦ by omega, fun i h h' ↦ by omega⟩
     intro i hi j hj hij
@@ -345,7 +310,7 @@ private theorem exists_isAlloc_seq
       IsAlloc μ A m {i | lvl i < n + 1} W ∧ ∀ i, lvl i < n →
         μ (W i ∆ Z i) ≤ 2 * ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j := by
     by_cases hZ : IsAlloc μ A m {i | lvl i < n} Z
-    · obtain ⟨W, hW⟩ := exists_isAlloc_succ hA hlvl hlam hm hZ
+    · obtain ⟨W, hW⟩ := exists_isAlloc_succ hA hAfin hlvl hlam hm hZ
       exact ⟨W, fun _ ↦ hW⟩
     · exact ⟨Z, fun h ↦ absurd h hZ⟩
   choose F hF using step
@@ -360,18 +325,18 @@ private theorem exists_isAlloc_seq
 
 end Laminar
 
-/-- **Allocation in a graded laminar family.** Let `μ` be an atomless finite measure on a
-standard Borel space, and let `A i` be measurable sets carrying levels `lvl i`, such that distinct
-members of one level are disjoint and a member of a deeper level lies inside or is disjoint
-from each member of a shallower level. If each `A i` has room for the demand `m i` together with
-the demands of all members strictly below it, then there are pairwise disjoint measurable sets
-`Z i ⊆ A i` with `μ (Z i) = m i`.
+/-- **Allocation in a graded laminar family.** Let `μ` be an atomless measure on a standard
+Borel space, and let `A i` be measurable sets of finite measure carrying levels `lvl i`, such
+that distinct members of one level are disjoint and a member of a deeper level lies inside or is
+disjoint from each member of a shallower level. If each `A i` has room for the demand `m i`
+together with the demands of all members strictly below it, then there are pairwise disjoint
+measurable sets `Z i ⊆ A i` with `μ (Z i) = m i`.
 
 The family may be infinitely deep. This is the allocation of source sets in Pratelli's proof that
 Monge's infimum equals Kantorovich's minimum for continuous costs. -/
 theorem exists_disjoint_subset_measure_eq_of_laminar [StandardBorelSpace X] (μ : Measure X)
-    [IsFiniteMeasure μ] [NullSingletonClass μ] {ι : Type*} [Countable ι] {A : ι → Set X}
-    (hA : ∀ i, MeasurableSet (A i)) (lvl : ι → ℕ)
+    [NullSingletonClass μ] {ι : Type*} [Countable ι] {A : ι → Set X}
+    (hA : ∀ i, MeasurableSet (A i)) (hAfin : ∀ i, μ (A i) ≠ ∞) (lvl : ι → ℕ)
     (hlvl : ∀ i j, i ≠ j → lvl i = lvl j → Disjoint (A i) (A j))
     (hlam : ∀ i j, lvl i < lvl j → A j ⊆ A i ∨ Disjoint (A i) (A j)) (m : ι → ℝ≥0∞)
     (hm : ∀ i, m i + ∑' j : {j | lvl i < lvl j ∧ A j ⊆ A i}, m j ≤ μ (A i)) :
@@ -380,7 +345,7 @@ theorem exists_disjoint_subset_measure_eq_of_laminar [StandardBorelSpace X] (μ 
   have hm' (i : ι) : m i + ∑' j, (below A lvl i).indicator m j ≤ μ (A i) := by
     rw [← tsum_subtype]
     exact hm i
-  obtain ⟨Zs, hZs⟩ := exists_isAlloc_seq hA hlvl hlam hm'
+  obtain ⟨Zs, hZs⟩ := exists_isAlloc_seq hA hAfin hlvl hlam hm'
   -- The stages of `i` from the first stage allocating `i` on, and their limit.
   set Y : ι → ℕ → Set X := fun i l ↦ Zs (l + (lvl i + 1)) i
   have hYlt (i : ι) (l : ℕ) : i ∈ {j | lvl j < l + (lvl i + 1)} := (by omega : lvl i < _)
@@ -399,7 +364,7 @@ theorem exists_disjoint_subset_measure_eq_of_laminar [StandardBorelSpace X] (μ 
   · -- The stages of `i` change by summable amounts, so they converge almost everywhere.
     have hsum : ∑' l, μ (Y i (l + 1) ∆ Y i l) ≠ ∞ := by
       refine ne_top_of_le_ne_top
-        (ENNReal.mul_ne_top (ENNReal.ofNat_ne_top (n := 2)) (measure_ne_top μ (A i))) ?_
+        (ENNReal.mul_ne_top (ENNReal.ofNat_ne_top (n := 2)) (hAfin i)) ?_
       calc ∑' l, μ (Y i (l + 1) ∆ Y i l)
           ≤ ∑' l, 2 * ∑' j, (below A lvl i ∩ {j | lvl j = l + (lvl i + 1)}).indicator m j :=
             ENNReal.tsum_le_tsum fun l ↦ by
@@ -409,12 +374,16 @@ theorem exists_disjoint_subset_measure_eq_of_laminar [StandardBorelSpace X] (μ 
             ENNReal.tsum_comp_le_tsum_of_injective (add_left_injective _)
               (fun n ↦ 2 * ∑' j, (below A lvl i ∩ {j | lvl j = n}).indicator m j)
         _ = 2 * ∑' j, (below A lvl i).indicator m j := by
-            rw [ENNReal.tsum_mul_left, tsum_tsum_indicator_eq]
+            rw [ENNReal.tsum_mul_left, ← ENNReal.tsum_fiberwise _ lvl]
+            refine congrArg (2 * ·) (tsum_congr fun n ↦ ?_)
+            rw [tsum_subtype, indicator_indicator, inter_comm]
+            rfl
         _ ≤ 2 * μ (A i) := by
             gcongr
             exact le_add_self.trans (hm' i)
-    have h := tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure (L := atTop)
-      (MeasurableSet.measurableSet_liminf (hYm i)) (hYm i)
+    have h := tendsto_measure_of_ae_tendsto_indicator atTop
+      (MeasurableSet.measurableSet_liminf (hYm i)) (hYm i) (hA i) (hAfin i)
+      (.of_forall fun l ↦ (hZs _).1.subset i (hYlt i l))
       (TauCeti.MeasureTheory.ae_eventually_mem_iff_mem_liminf hsum)
     have hYμ (l : ℕ) : μ (Y i l) = m i := (hZs _).1.measure_eq i (hYlt i l)
     simp only [hYμ] at h
