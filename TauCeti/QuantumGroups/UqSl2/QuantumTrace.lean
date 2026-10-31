@@ -17,11 +17,6 @@ endomorphism `φ` induced by this identification are the twisted traces `tr_V(K�
 `tr_V(K φ)`. This file proves that they coincide, for every module and every module
 endomorphism, as soon as `q - q⁻¹ ≠ 0`; no finiteness, genericity or semisimplicity is needed.
 
-The proof is a commutator computation. The defining relation gives
-`K - K⁻¹ = (q - q⁻¹)(EF - FE)` on `V`, and since `φ` commutes with `E`,
-`(EF - FE) φ = E (F φ) - (F φ) E` is the commutator of the endomorphisms `E` and `F φ`, whose
-trace vanishes.
-
 ## Main results
 
 * `TauCeti.UqSl2.trace_lsmul_k_comp_eq_trace_lsmul_kInv_comp`: `tr_V(K φ) = tr_V(K⁻¹ φ)` for
@@ -49,6 +44,7 @@ theorem trace_lsmul_k_comp_eq_trace_lsmul_kInv_comp (hq : q - q⁻¹ ≠ 0)
       LinearMap.trace ℂ V (Algebra.lsmul ℂ ℂ V (kInv q) ∘ₗ φ.restrictScalars ℂ) := by
   set ρ := Algebra.lsmul ℂ ℂ V (A := UqSl2 q)
   set ψ := φ.restrictScalars ℂ
+  -- We show that `(K - K⁻¹) φ` is a multiple of a commutator of endomorphisms of `V`.
   -- The defining relation, transported to `V`: `K - K⁻¹ = (q - q⁻¹) [E, F]`.
   have hrel : ρ (k q) - ρ (kInv q) = (q - q⁻¹) • ⁅ρ (e q), ρ (f q)⁆ := by
     have h := congrArg ρ (e_mul_f_sub_f_mul_e (q := q))
