@@ -51,8 +51,9 @@ any ordering of the circles or parenthesization of the tensor product, and it is
   carries two `X`s.
 * `TauCeti.Khovanov.isHomogeneous_fiberwiseMul`: the merge map along `f : σ → τ` has quantum
   degree `|τ| - |σ|`; in particular merging two circles into one has degree `-1`.
-* `TauCeti.Khovanov.isHomogeneous_reindex`: relabelling the circle factors preserves quantum
-  degree.
+* `TauCeti.Khovanov.isHomogeneous_reindex`,
+  `TauCeti.Khovanov.map_reindex_circleQuantumGrading_piece`: relabelling the circle factors
+  preserves quantum degree, and carries each quantum piece onto the piece of the same degree.
 
 ## References
 
@@ -294,6 +295,18 @@ theorem isHomogeneous_reindex (e : σ ≃ τ) :
   classical
   simpa only [toLinearMap_fiberwiseMul_equiv, Fintype.card_congr e, sub_self] using
     (isHomogeneous_fiberwiseMul (R := R) e)
+
+omit [DecidableEq τ] in
+/-- Reindexing the circle factors carries each quantum piece onto the piece of the same
+degree. -/
+theorem map_reindex_circleQuantumGrading_piece (e : σ ≃ τ) (p : ℤ) :
+    ((circleQuantumGrading R σ).piece p).map (reindex R (fun _ ↦ R[ε]) e).toLinearMap =
+      (circleQuantumGrading R τ).piece p := by
+  classical
+  refine le_antisymm (Submodule.map_le_iff_le_comap.2 fun x hx ↦ ?_) fun x hx ↦ ?_
+  · simpa using (isHomogeneous_reindex (R := R) e).map_mem hx
+  · refine ⟨reindex R (fun _ ↦ R[ε]) e.symm x, ?_, by simp [← reindex_symm]⟩
+    simpa using (isHomogeneous_reindex (R := R) e.symm).map_mem hx
 
 end Grading
 
