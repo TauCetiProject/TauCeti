@@ -53,69 +53,6 @@ open MvPolynomial
 
 variable {K W W' V I J L : Type*}
 
-section ParameterEquiv
-
-variable {ο ι : Type*} {k : ℕ}
-
-/-- The parameters of a linear layer, indexed by matrix positions, form its weight matrix. -/
-def linearParameterEquiv (K ο ι : Type*) : (ο × ι → K) ≃ Matrix ο ι K :=
-  (Equiv.curry ο ι K).trans Matrix.of
-
-/-- The weight matrix read off from linear-layer parameters. -/
-@[simp] theorem linearParameterEquiv_apply (p : ο × ι → K) (o : ο) (i : ι) :
-    linearParameterEquiv K ο ι p o i = p (o, i) := (rfl)
-
-/-- Linear-layer parameters read off from a weight matrix. -/
-@[simp] theorem linearParameterEquiv_symm_apply (A : Matrix ο ι K) (q : ο × ι) :
-    (linearParameterEquiv K ο ι).symm A q = A q.1 q.2 := (rfl)
-
-/-- The parameters of a dense affine layer, indexed by matrix positions and then by output
-coordinates, form its weight matrix and bias vector. -/
-def denseParameterEquiv (K ο ι : Type*) : (ο × ι ⊕ ο → K) ≃ Matrix ο ι K × (ο → K) :=
-  (Equiv.sumArrowEquivProdArrow (ο × ι) ο K).trans
-    ((linearParameterEquiv K ο ι).prodCongr (Equiv.refl _))
-
-/-- The weight matrix read off from dense-layer parameters. -/
-@[simp] theorem denseParameterEquiv_apply_fst (p : ο × ι ⊕ ο → K) (o : ο) (i : ι) :
-    (denseParameterEquiv K ο ι p).1 o i = p (Sum.inl (o, i)) := (rfl)
-
-/-- The bias vector read off from dense-layer parameters. -/
-@[simp] theorem denseParameterEquiv_apply_snd (p : ο × ι ⊕ ο → K) (o : ο) :
-    (denseParameterEquiv K ο ι p).2 o = p (Sum.inr o) := (rfl)
-
-/-- Dense-layer parameters at a matrix position are the corresponding weight. -/
-@[simp] theorem denseParameterEquiv_symm_apply_inl (p : Matrix ο ι K × (ο → K)) (q : ο × ι) :
-    (denseParameterEquiv K ο ι).symm p (Sum.inl q) = p.1 q.1 q.2 := (rfl)
-
-/-- Dense-layer parameters at an output coordinate are the corresponding bias. -/
-@[simp] theorem denseParameterEquiv_symm_apply_inr (p : Matrix ο ι K × (ο → K)) (o : ο) :
-    (denseParameterEquiv K ο ι).symm p (Sum.inr o) = p.2 o := (rfl)
-
-/-- The parameters of an affine convolution, indexed by filter positions and one shared bias,
-form its filter and bias. -/
-def affineConvolutionParameterEquiv (K : Type*) (k : ℕ) :
-    (Fin k ⊕ Unit → K) ≃ (Fin k → K) × K :=
-  (Equiv.sumArrowEquivProdArrow (Fin k) Unit K).trans
-    ((Equiv.refl _).prodCongr (Equiv.funUnique Unit K))
-
-/-- The filter read off from affine-convolution parameters. -/
-@[simp] theorem affineConvolutionParameterEquiv_apply_fst (p : Fin k ⊕ Unit → K) (j : Fin k) :
-    (affineConvolutionParameterEquiv K k p).1 j = p (Sum.inl j) := (rfl)
-
-/-- The shared bias read off from affine-convolution parameters. -/
-@[simp] theorem affineConvolutionParameterEquiv_apply_snd (p : Fin k ⊕ Unit → K) :
-    (affineConvolutionParameterEquiv K k p).2 = p (Sum.inr ()) := (rfl)
-
-/-- Affine-convolution parameters at a filter position are the corresponding weight. -/
-@[simp] theorem affineConvolutionParameterEquiv_symm_apply_inl (p : (Fin k → K) × K)
-    (j : Fin k) : (affineConvolutionParameterEquiv K k).symm p (Sum.inl j) = p.1 j := (rfl)
-
-/-- The shared-bias parameter of an affine convolution is its bias. -/
-@[simp] theorem affineConvolutionParameterEquiv_symm_apply_inr (p : (Fin k → K) × K)
-    (u : Unit) : (affineConvolutionParameterEquiv K k).symm p (Sum.inr u) = p.2 := (rfl)
-
-end ParameterEquiv
-
 variable [CommSemiring K]
 
 section Basic
@@ -142,7 +79,7 @@ section Basic
 
 /-- Pairing two polynomial models with the same parameters and inputs realizes the pair of
 their outputs, indexed by the sum of the output types. -/
-theorem polynomialRealization_sumElim (P : J → MvPolynomial (W ⊕ I) K)
+@[simp] theorem polynomialRealization_sumElim (P : J → MvPolynomial (W ⊕ I) K)
     (Q : L → MvPolynomial (W ⊕ I) K) :
     polynomialRealization (Sum.elim P Q) =
       fun w x => Sum.elim (polynomialRealization P w x) (polynomialRealization Q w x) := by
@@ -167,7 +104,7 @@ theorem polynomialReparametrize_apply (R : W → MvPolynomial W' K)
 
 /-- A reparametrized polynomial model realizes the original model at the evaluated
 polynomial parameters. -/
-theorem polynomialRealization_polynomialReparametrize (R : W → MvPolynomial W' K)
+@[simp] theorem polynomialRealization_polynomialReparametrize (R : W → MvPolynomial W' K)
     (P : J → MvPolynomial (W ⊕ I) K) :
     polynomialRealization (polynomialReparametrize R P) =
       fun w' => polynomialRealization P fun i => eval w' (R i) := by
@@ -193,7 +130,7 @@ theorem polynomialCompose_apply (P : J → MvPolynomial (W ⊕ I) K)
 
 /-- Composition by polynomial substitution realizes the composite of the two realization
 maps, after splitting the parameters into those of `P` and those of `Q`. -/
-theorem polynomialRealization_polynomialCompose (P : J → MvPolynomial (W ⊕ I) K)
+@[simp] theorem polynomialRealization_polynomialCompose (P : J → MvPolynomial (W ⊕ I) K)
     (Q : L → MvPolynomial (V ⊕ J) K) :
     polynomialRealization (polynomialCompose P Q) =
       compose (polynomialRealization P) (polynomialRealization Q) ∘
@@ -234,7 +171,7 @@ theorem polynomialLinear_apply (o : ο) :
       ∑ i, X (Sum.inl (o, i)) * X (Sum.inr i) := (rfl)
 
 /-- The polynomial linear layer realizes matrix evaluation of its weight matrix. -/
-theorem polynomialRealization_polynomialLinear :
+@[simp] theorem polynomialRealization_polynomialLinear :
     polynomialRealization (polynomialLinear : ο → MvPolynomial (ο × ι ⊕ ι) K) =
       Matrix.mulVec ∘ linearParameterEquiv K ο ι := by
   funext p x o
@@ -258,7 +195,7 @@ theorem polynomialDense_apply (o : ο) :
       ∑ i, X (Sum.inl (Sum.inl (o, i))) * X (Sum.inr i) + X (Sum.inl (Sum.inr o)) := (rfl)
 
 /-- The polynomial dense layer realizes the dense affine layer. -/
-theorem polynomialRealization_polynomialDense :
+@[simp] theorem polynomialRealization_polynomialDense :
     polynomialRealization (polynomialDense : ο → MvPolynomial ((ο × ι ⊕ ο) ⊕ ι) K) =
       dense ∘ denseParameterEquiv K ο ι := by
   funext p x o
@@ -328,7 +265,7 @@ theorem polynomialConvolution_apply (h : n = s * (m - 1) + k) (i : Fin m) :
       ∑ j, X (Sum.inl j) * X (Sum.inr (convolutionIndex h i j)) := (rfl)
 
 /-- The polynomial convolution realizes valid convolution. -/
-theorem polynomialRealization_polynomialConvolution (h : n = s * (m - 1) + k) :
+@[simp] theorem polynomialRealization_polynomialConvolution (h : n = s * (m - 1) + k) :
     polynomialRealization (polynomialConvolution (K := K) h) = convolution h := by
   funext w x i
   simp [polynomialConvolution]
@@ -347,7 +284,7 @@ theorem polynomialAffineConvolution_apply (h : n = s * (m - 1) + k) (i : Fin m) 
         X (Sum.inl (Sum.inr ())) := (rfl)
 
 /-- The polynomial affine convolution realizes the affine convolution. -/
-theorem polynomialRealization_polynomialAffineConvolution (h : n = s * (m - 1) + k) :
+@[simp] theorem polynomialRealization_polynomialAffineConvolution (h : n = s * (m - 1) + k) :
     polynomialRealization (polynomialAffineConvolution (K := K) h) =
       affineConvolution h ∘ affineConvolutionParameterEquiv K k := by
   funext p x i
