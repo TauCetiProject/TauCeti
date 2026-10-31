@@ -9,6 +9,7 @@ public import Mathlib.Algebra.EuclideanDomain.Int
 public import Mathlib.Algebra.Module.Lattice
 public import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
+public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 import Mathlib.Algebra.Module.LocalizedModule.Int
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
@@ -53,6 +54,10 @@ space over the fraction field.
   submodule is a localization at the nonzero divisors.
 * `Submodule.IsLattice.exists_ne_zero_smul_mem`: some nonzero multiple of every ambient
   vector lies in a free full lattice submodule.
+* `Submodule.IsLattice.exists_ne_zero_forall_smul_mem`: a single nonzero scalar multiplies a
+  finitely generated submodule into a free full lattice submodule.
+* `Submodule.IsLattice.exists_maximalIdeal_pow_smul_le`: over a discrete valuation ring, a power
+  of the maximal ideal multiplies a finitely generated submodule into a full lattice.
 * `TensorProduct.rationalizationEquiv_baseChange_unitTmulEquiv`: rationalizing that
   unit-tensor lattice returns the scalar extension one started from.
 
@@ -424,5 +429,39 @@ theorem exists_ne_zero_smul_mem (S : Submodule R V') [Module.Free R S] [S.IsLatt
   rw [Submonoid.smul_def] at hr
   rw [hr]
   exact x.2
+
+variable (K) in
+/-- **Clearing denominators.** A single nonzero scalar multiplies a finitely generated submodule
+into a free full lattice submodule. -/
+theorem exists_ne_zero_forall_smul_mem (S : Submodule R V') [Module.Free R S] [S.IsLattice K]
+    {M : Submodule R V'} (hM : M.FG) : ∃ r : R, r ≠ 0 ∧ ∀ x ∈ M, r • x ∈ S := by
+  obtain ⟨t, rfl⟩ := hM
+  have := isLocalizedModule_subtype K S
+  -- A common denominator `b` of the generators clears the denominators of their span.
+  obtain ⟨b, hb⟩ := IsLocalizedModule.exist_integer_multiples_of_finset (nonZeroDivisors R)
+    S.subtype t
+  have hle : span R (t : Set V') ≤ S.comap ((b : R) • LinearMap.id) := span_le.mpr fun v hv ↦ by
+    simpa [IsLocalizedModule.IsInteger] using hb v hv
+  exact ⟨b, nonZeroDivisors.coe_ne_zero b, fun x hx ↦ by simpa using hle hx⟩
+
+variable (K) in
+/-- **Commensurability over a discrete valuation ring.** A power of the maximal ideal multiplies a
+finitely generated submodule into a full lattice. -/
+theorem exists_maximalIdeal_pow_smul_le [IsDiscreteValuationRing R] (S : Submodule R V')
+    [S.IsLattice K] {M : Submodule R V'} (hM : M.FG) :
+    ∃ n : ℕ, IsLocalRing.maximalIdeal R ^ n • M ≤ S := by
+  have : Module.IsTorsionFree R K :=
+    Module.isTorsionFree_iff_algebraMap_injective.2 (IsFractionRing.injective R K)
+  obtain ⟨r, hr0, hr⟩ := exists_ne_zero_forall_smul_mem K S hM
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible R
+  -- The ideal `(r)` is a power `(ϖ ^ n) = 𝔪 ^ n` of the maximal ideal.
+  obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
+    (Ideal.span_singleton_eq_bot.not.mpr hr0) hϖ
+  have hm : IsLocalRing.maximalIdeal R ^ n = Ideal.span {r} := by
+    rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, hn]
+  refine ⟨n, Submodule.smul_le.mpr fun s hs x hx ↦ ?_⟩
+  obtain ⟨c, rfl⟩ := Ideal.mem_span_singleton'.mp (hm ▸ hs)
+  rw [mul_smul]
+  exact S.smul_mem c (hr x hx)
 
 end Submodule.IsLattice
