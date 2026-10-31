@@ -45,11 +45,17 @@ theorem span_range_toCotangent_eq_top_iff :
     -- `I.subtype ∘ g` is `f` by the definition of `g`.
     rw [Submodule.map_span, ← Set.range_comp]
     rfl
-  -- A submodule of `I` maps onto `I ⧸ I²` exactly when together with `I²` it is all of `I`.
-  rw [hrange, Submodule.span_image, ← (Submodule.comap_injective_of_surjective
-      I.toCotangent_surjective).eq_iff, Submodule.comap_map_eq, Submodule.comap_top,
-    ← (Submodule.map_injective_of_injective I.injective_subtype).eq_iff, Submodule.map_sup, hsub,
-    map_toCotangent_ker, Submodule.map_top, Submodule.range_subtype]
+  -- A submodule of `I` maps onto `I ⧸ I²` exactly when together with the kernel it is all of `I`.
+  have hsurj : Submodule.span R (I.toCotangent '' Set.range g) = ⊤ ↔
+      Submodule.span R (Set.range g) ⊔ LinearMap.ker I.toCotangent = ⊤ := by
+    rw [Submodule.span_image, ← (Submodule.comap_injective_of_surjective
+      I.toCotangent_surjective).eq_iff, Submodule.comap_map_eq, Submodule.comap_top]
+  -- Pushed forward along the inclusion `I → R`, the kernel is `I²` and `span g` is `(f)`.
+  have hmap : Submodule.span R (Set.range g) ⊔ LinearMap.ker I.toCotangent = ⊤ ↔
+      span (Set.range f) ⊔ I ^ 2 = I := by
+    rw [← (Submodule.map_injective_of_injective I.injective_subtype).eq_iff, Submodule.map_sup,
+      hsub, map_toCotangent_ker, Submodule.map_top, Submodule.range_subtype]
+  rw [hrange, hsurj, hmap]
   refine ⟨fun h ↦ h.ge, fun h ↦ le_antisymm (sup_le ?_ (pow_le_self two_ne_zero)) h⟩
   exact span_le.2 (Set.range_subset_iff.2 hf)
 
