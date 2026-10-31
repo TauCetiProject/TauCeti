@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.FixedDetMatrices
+public import TauCeti.NumberTheory.Divisors
 public import TauCeti.NumberTheory.ModularForms.Cusps.Rat.Slash
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.Diagonal.QExpansion
 public import TauCeti.NumberTheory.ModularForms.HeckeSlash.UpperTri.QExpansion
@@ -284,23 +285,6 @@ theorem heckeSlashLevelOne_eq_sum_heckeSlashUpperTri_slash (f : ℍ → ℂ) :
     fun p ↦ heckeSlashUpperTri k p.2 f ∣[k] (natDiagGL 2 ![p.1, 1] : GL (Fin 2) ℚ),
     Int.natAbs_natCast]
 
-/-- Regrouping the coefficients of `∑_{ad = n} (U_d f) ∣[k] diag(a, 1)` by divisors of
-`gcd(m, n)`: the pair `(a, d)` contributes at index `m` exactly when `a ∣ m`, and then
-`d (m / a) = mn / a²`. -/
-private theorem sum_divisorsAntidiagonal_ite_eq (c : ℕ → ℂ) (m : ℕ) :
-    ∑ p ∈ n.divisorsAntidiagonal,
-        (if p.1 ∣ m then (p.1 : ℂ) ^ (k - 1) * c (p.2 * (m / p.1)) else 0) =
-      ∑ d ∈ (m.gcd n).divisors, (d : ℂ) ^ (k - 1) * c (m * n / d ^ 2) := by
-  rw [Nat.sum_divisorsAntidiagonal fun a b ↦
-      if a ∣ m then (a : ℂ) ^ (k - 1) * c (b * (m / a)) else 0, ← Finset.sum_filter]
-  have hs : {a ∈ n.divisors | a ∣ m} = (m.gcd n).divisors := by
-    ext a
-    simp [Nat.dvd_gcd_iff, NeZero.ne n, Nat.gcd_eq_zero_iff, and_comm]
-  rw [hs]
-  refine Finset.sum_congr rfl fun a ha ↦ ?_
-  have ha' := Nat.dvd_gcd_iff.mp (Nat.dvd_of_mem_divisors ha)
-  rw [Nat.div_mul_div_comm ha'.2 ha'.1, ← sq, mul_comm n m]
-
 local notation "𝕢" => Function.Periodic.qParam
 
 /-- **The `q`-expansion of the level-one Hecke slash sum.** For a `1`-periodic holomorphic `f`
@@ -329,28 +313,30 @@ theorem hasSum_qExpansion_heckeSlashLevelOne {f : ℍ → ℂ}
       using h
   rw [heckeSlashLevelOne_eq_sum_heckeSlashUpperTri_slash, Finset.sum_apply]
   refine (hasSum_sum h).congr_fun fun m ↦ ?_
-  rw [← Finset.sum_smul,
-    sum_divisorsAntidiagonal_ite_eq k n fun j ↦ (qExpansion 1 f).coeff j]
+  rw [← Finset.sum_smul, Nat.sum_divisorsAntidiagonal_ite_dvd (NeZero.ne n) m
+    fun a j ↦ (a : ℂ) ^ (k - 1) * (qExpansion 1 f).coeff j]
 
 /-- **The coefficient formula for `Tₙ` on `M_k(SL(2, ℤ))`**:
 `aₘ(Tₙ f) = ∑_{d ∣ (m, n)} d^(k-1) a_{mn/d²}(f)` for every `m`. -/
 theorem qExpansion_coeff_heckeTLevelOne (f : ModularForm 𝒮ℒ k) (m : ℕ) :
     (qExpansion 1 (heckeTLevelOne k n f)).coeff m =
-      ∑ d ∈ (m.gcd n).divisors, (d : ℂ) ^ (k - 1) * (qExpansion 1 f).coeff (m * n / d ^ 2) :=
-  (ModularFormClass.qExpansion_coeff_unique one_pos one_mem_strictPeriods_SL
-    (f := heckeTLevelOne k n f) (hasSum_qExpansion_heckeSlashLevelOne k n
-      (SlashInvariantFormClass.periodic_comp_ofComplex f one_mem_strictPeriods_SL)
-      (ModularFormClass.holo f) (ModularFormClass.bdd_at_infty f)) m).symm
+      ∑ d ∈ (m.gcd n).divisors, (d : ℂ) ^ (k - 1) * (qExpansion 1 f).coeff (m * n / d ^ 2) := by
+  have h τ := hasSum_qExpansion_heckeSlashLevelOne k n
+    (SlashInvariantFormClass.periodic_comp_ofComplex f one_mem_strictPeriods_SL)
+    (ModularFormClass.holo f) (ModularFormClass.bdd_at_infty f) τ
+  simp only [← coe_heckeTLevelOne] at h
+  exact (ModularFormClass.qExpansion_coeff_unique one_pos one_mem_strictPeriods_SL h m).symm
 
 /-- **The coefficient formula for `Tₙ` on `S_k(SL(2, ℤ))`**:
 `aₘ(Tₙ f) = ∑_{d ∣ (m, n)} d^(k-1) a_{mn/d²}(f)` for every `m`. -/
 theorem qExpansion_coeff_heckeTCuspLevelOne (f : CuspForm 𝒮ℒ k) (m : ℕ) :
     (qExpansion 1 (heckeTCuspLevelOne k n f)).coeff m =
-      ∑ d ∈ (m.gcd n).divisors, (d : ℂ) ^ (k - 1) * (qExpansion 1 f).coeff (m * n / d ^ 2) :=
-  (ModularFormClass.qExpansion_coeff_unique one_pos one_mem_strictPeriods_SL
-    (f := heckeTCuspLevelOne k n f) (hasSum_qExpansion_heckeSlashLevelOne k n
-      (SlashInvariantFormClass.periodic_comp_ofComplex f one_mem_strictPeriods_SL)
-      (ModularFormClass.holo f) (ModularFormClass.bdd_at_infty f)) m).symm
+      ∑ d ∈ (m.gcd n).divisors, (d : ℂ) ^ (k - 1) * (qExpansion 1 f).coeff (m * n / d ^ 2) := by
+  have h τ := hasSum_qExpansion_heckeSlashLevelOne k n
+    (SlashInvariantFormClass.periodic_comp_ofComplex f one_mem_strictPeriods_SL)
+    (ModularFormClass.holo f) (ModularFormClass.bdd_at_infty f) τ
+  simp only [← coe_heckeTCuspLevelOne] at h
+  exact (ModularFormClass.qExpansion_coeff_unique one_pos one_mem_strictPeriods_SL h m).symm
 
 /-- The first coefficient of `Tₙ f` is the `n`-th coefficient of `f`: `a₁(Tₙ f) = aₙ(f)`. -/
 theorem qExpansion_coeff_one_heckeTLevelOne (f : ModularForm 𝒮ℒ k) :

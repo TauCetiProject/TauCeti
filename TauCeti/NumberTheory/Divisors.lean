@@ -14,6 +14,9 @@ For `N ≠ 0`, the divisors `d` of `N` with `a = N + d` (respectively `a = N - d
 and such a divisor exists exactly when `a - N` divides `N` (respectively `N - a` divides `a`).
 These lemmas evaluate the corresponding indicator sums over `N.divisors`.
 
+`Nat.sum_divisorsAntidiagonal_ite_dvd` regroups a sum over the factor pairs `(a, b)` of `n`,
+restricted to `a ∣ m`, as a sum over the divisors of `gcd(m, n)`.
+
 `TauCeti.nontrivialDivisorEquiv` identifies divisors greater than one with the subtype of
 `N.divisors` omitting the unit divisor.
 -/
@@ -65,6 +68,22 @@ theorem sum_divisors_ite_eq_sub {N : ℕ} (hN : N ≠ 0) (a : ℕ) (f : ℕ → 
       rw [had]
       have h' := Nat.dvd_of_mem_divisors hd
       rwa [hN', Nat.dvd_add_self_right] at h'
+
+/-- Regrouping a sum over the factor pairs `(a, b)` of `n ≠ 0`, restricted to `a ∣ m`, by the
+divisors `d` of `gcd(m, n)`: the pair `(d, n / d)` contributes `f d (m * n / d ^ 2)`, since
+`(n / d) * (m / d) = m * n / d ^ 2`. -/
+theorem sum_divisorsAntidiagonal_ite_dvd {n : ℕ} (hn : n ≠ 0) (m : ℕ) (f : ℕ → ℕ → M) :
+    ∑ p ∈ n.divisorsAntidiagonal, (if p.1 ∣ m then f p.1 (p.2 * (m / p.1)) else 0) =
+      ∑ d ∈ (m.gcd n).divisors, f d (m * n / d ^ 2) := by
+  rw [Nat.sum_divisorsAntidiagonal fun a b ↦ if a ∣ m then f a (b * (m / a)) else 0,
+    ← Finset.sum_filter]
+  have hs : {a ∈ n.divisors | a ∣ m} = (m.gcd n).divisors := by
+    ext a
+    simp [Nat.dvd_gcd_iff, hn, Nat.gcd_eq_zero_iff, and_comm]
+  rw [hs]
+  refine Finset.sum_congr rfl fun a ha ↦ ?_
+  have ha' := Nat.dvd_gcd_iff.mp (Nat.dvd_of_mem_divisors ha)
+  rw [Nat.div_mul_div_comm ha'.2 ha'.1, ← sq, mul_comm n m]
 
 end Nat
 
