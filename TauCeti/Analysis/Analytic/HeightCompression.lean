@@ -8,8 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Arsinh
 import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 
 /-!
 # Analytic compressions of the height coordinate
@@ -65,6 +63,7 @@ theorem sinh_normalizedArsinh_div (s : ℝ) : sinh (normalizedArsinh s) / sinh 1
 theorem normalizedArsinh_sinh_div (t : ℝ) : normalizedArsinh (sinh t / sinh 1) = t := by
   rw [normalizedArsinh_apply, mul_div_cancel₀ _ (sinh_pos_iff.2 one_pos).ne', arsinh_sinh]
 
+/-- `β` is strictly increasing. -/
 theorem normalizedArsinh_strictMono : StrictMono normalizedArsinh := by
   rw [funext normalizedArsinh_apply]
   exact arsinh_strictMono.comp (strictMono_mul_left_of_pos (sinh_pos_iff.2 one_pos))
@@ -97,24 +96,29 @@ theorem abs_normalizedArsinh_lt_one_iff {s : ℝ} : |normalizedArsinh s| < 1 ↔
   rw [abs_lt, abs_lt, ← normalizedArsinh_neg, normalizedArsinh_lt_normalizedArsinh,
     normalizedArsinh_lt_normalizedArsinh]
 
+/-- `β` is smooth, indeed `C^n` for every `n`, including `n = ω`. -/
 @[fun_prop]
 theorem contDiff_normalizedArsinh {n : WithTop ℕ∞} : ContDiff ℝ n normalizedArsinh := by
   rw [funext normalizedArsinh_apply]
   fun_prop
 
+/-- `β` is analytic at every point. -/
 @[fun_prop]
 theorem analyticAt_normalizedArsinh (s : ℝ) : AnalyticAt ℝ normalizedArsinh s :=
   contDiff_normalizedArsinh.contDiffAt.analyticAt
 
+/-- The derivative of `β` at `s` is `sinh 1 / √(1 + (sinh 1 * s)²)`. -/
 theorem hasDerivAt_normalizedArsinh (s : ℝ) :
     HasDerivAt normalizedArsinh (sinh 1 / √(1 + (sinh 1 * s) ^ 2)) s := by
   rw [funext normalizedArsinh_apply]
   simpa [div_eq_inv_mul] using ((hasDerivAt_id s).const_mul (sinh 1)).arsinh
 
+/-- The derivative of `β` at `s` is `sinh 1 / √(1 + (sinh 1 * s)²)`. -/
 theorem deriv_normalizedArsinh (s : ℝ) :
     deriv normalizedArsinh s = sinh 1 / √(1 + (sinh 1 * s) ^ 2) :=
   (hasDerivAt_normalizedArsinh s).deriv
 
+/-- The derivative of `β` is everywhere positive. -/
 theorem deriv_normalizedArsinh_pos (s : ℝ) : 0 < deriv normalizedArsinh s := by
   rw [deriv_normalizedArsinh]
   exact div_pos (sinh_pos_iff.2 one_pos) (sqrt_pos.2 (by positivity))
@@ -159,12 +163,18 @@ theorem baseScaling_symm_apply (p : E × 𝕜) :
 
 variable {hh}
 
+/-- The base scaling `(u, t) ↦ (h t • u, t)` is analytic at every point `(u, t)` at whose
+height `t` the scaling function `h` is analytic. -/
+@[fun_prop]
 theorem analyticAt_baseScaling {p : E × 𝕜} (hp : AnalyticAt 𝕜 h p.2) :
     AnalyticAt 𝕜 (baseScaling hh) p := by
   rw [funext (baseScaling_apply hh)]
   have : AnalyticAt 𝕜 (fun q : E × 𝕜 ↦ h q.2) p := hp.comp analyticAt_snd
   exact (this.smul analyticAt_fst).prod analyticAt_snd
 
+/-- The inverse `(u, t) ↦ ((h t)⁻¹ • u, t)` of the base scaling is analytic at every point
+`(u, t)` at whose height `t` the scaling function `h` is analytic. -/
+@[fun_prop]
 theorem analyticAt_baseScaling_symm {p : E × 𝕜} (hp : AnalyticAt 𝕜 h p.2) :
     AnalyticAt 𝕜 (baseScaling hh).symm p := by
   rw [funext (baseScaling_symm_apply hh)]
@@ -237,6 +247,9 @@ theorem mapsTo_heightCompression_comp_baseScaling [NormedSpace ℝ E] {h γ : �
 
 variable [InnerProductSpace ℝ E]
 
+/-- On a real inner product space, the height compression is `C^n` for every `n`, including
+`n = ω`. -/
+@[fun_prop]
 theorem contDiff_heightCompression {n : WithTop ℕ∞} : ContDiff ℝ n (heightCompression E) := by
   rw [funext heightCompression_apply]
   have hpos (p : E × ℝ) : 0 < √(1 + ‖p.1‖ ^ 2) := sqrt_pos.2 (by positivity)
@@ -246,6 +259,9 @@ theorem contDiff_heightCompression {n : WithTop ℕ∞} : ContDiff ℝ n (height
   exact contDiff_fst.prodMk (contDiff_normalizedArsinh.comp
     (contDiff_snd.div this fun p ↦ (hpos p).ne'))
 
+/-- On a real inner product space, the inverse of the height compression is `C^n` for every `n`,
+including `n = ω`. -/
+@[fun_prop]
 theorem contDiff_heightCompression_symm {n : WithTop ℕ∞} :
     ContDiff ℝ n (heightCompression E).symm := by
   rw [funext heightCompression_symm_apply]
@@ -254,9 +270,14 @@ theorem contDiff_heightCompression_symm {n : WithTop ℕ∞} :
       (by positivity : (0 : ℝ) < 1 + ‖p.1‖ ^ 2).ne'
   exact contDiff_fst.prodMk (this.mul (by fun_prop))
 
+/-- On a real inner product space, the height compression is analytic at every point. -/
+@[fun_prop]
 theorem analyticAt_heightCompression (p : E × ℝ) : AnalyticAt ℝ (heightCompression E) p :=
   contDiff_heightCompression.contDiffAt.analyticAt
 
+/-- On a real inner product space, the inverse of the height compression is analytic at every
+point. -/
+@[fun_prop]
 theorem analyticAt_heightCompression_symm (p : E × ℝ) :
     AnalyticAt ℝ (heightCompression E).symm p :=
   contDiff_heightCompression_symm.contDiffAt.analyticAt
