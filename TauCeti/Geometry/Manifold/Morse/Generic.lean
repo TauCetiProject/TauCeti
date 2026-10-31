@@ -35,9 +35,6 @@ gives a function Morse on all of `K`.
 
 ## Main results
 
-* `TauCeti.isMorseOn_iff_of_mem_maximalAtlas`: a smooth function is Morse on a subset of a chart
-  source exactly when its coordinate expression has only nondegenerate critical points on the
-  chart image of that subset.
 * `TauCeti.dense_setOf_isMorseOn`: for a compact set `K`, the smooth functions which are Morse on
   `K` are dense in the weak Whitney topology.
 * `TauCeti.dense_setOf_isMorse`: on a compact manifold, **Morse functions are dense**.
@@ -62,29 +59,6 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M]
-
-/-- **Morse in a chart.** On a boundaryless manifold, a smooth function `f` is Morse on a subset
-`s` of the source of a chart `e` of the smooth maximal atlas exactly when its coordinate expression
-`f ∘ (e.extend I).symm` has only nondegenerate critical points on `e.extend I '' s`. -/
-theorem isMorseOn_iff_of_mem_maximalAtlas {f : M → ℝ}
-    (hf : ContMDiff I 𝓘(ℝ) ∞ f) {e : OpenPartialHomeomorph M H}
-    (he : e ∈ IsManifold.maximalAtlas I ∞ M) {s : Set M} (hs : s ⊆ e.source) :
-    IsMorseOn I f s ↔
-      HasNondegenerateCriticalPointsOn (f ∘ (e.extend I).symm) (e.extend I '' s) := by
-  have he₂ : e ∈ IsManifold.maximalAtlas I 2 M := IsManifold.maximalAtlas_subset_of_le (by simp) he
-  have he₁ : e ∈ IsManifold.maximalAtlas I 1 M := IsManifold.maximalAtlas_subset_of_le (by simp) he
-  have hmd (x : M) : MDifferentiableAt I 𝓘(ℝ) f x := (hf x).mdifferentiableAt (by simp)
-  -- Criticality and nondegeneracy at a point of the chart source may be read in the chart `e`.
-  have hcrit {x : M} (hx : x ∈ e.source) :
-      x ∈ criticalPoints I f ↔ fderiv ℝ (f ∘ (e.extend I).symm) (e.extend I x) = 0 :=
-    mem_criticalPoints.trans (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he₁ hx (hmd x))
-  rw [isMorseOn_iff_criticalPoints, hasNondegenerateCriticalPointsOn_iff]
-  refine ⟨fun h ↦ ?_, fun h ↦ ⟨hf.contMDiffOn, fun x hx hx₀ ↦ ?_⟩⟩
-  · rintro _ ⟨x, hx, rfl⟩ hx₀
-    exact (isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas he₂ (hs hx)).1
-      (h.2 x hx ((hcrit (hs hx)).2 hx₀))
-  · exact (isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas he₂ (hs hx)).2
-      (h (mem_image_of_mem _ hx) ((hcrit (hs hx)).1 hx₀))
 
 section WeakWhitney
 
@@ -129,7 +103,7 @@ private theorem exists_isOpen_forall_exists_isMorseOn (c : M) :
   have hβW {y : M} (hy : y ∈ W) : β y = 1 := interior_subset hy.2
   refine ⟨W, hWo, ⟨mem_chart_source H c, mem_interior_iff_mem_nhds.2 β.eventuallyEq_one⟩,
     fun g A hA hgA 𝒰 h𝒰 ↦ ?_⟩
-  have he : e ∈ IsManifold.maximalAtlas I ∞ M := IsManifold.chart_mem_maximalAtlas c
+  have he : e ∈ IsManifold.maximalAtlas I 2 M := IsManifold.chart_mem_maximalAtlas c
   have hφe : e.extend I = φ := rfl
   -- The chart image of `W`, an open subset of the chart target.
   set U := φ '' W
@@ -154,8 +128,8 @@ private theorem exists_isOpen_forall_exists_isMorseOn (c : M) :
       ⟨(bumpPerturbation β g a).contMDiff.contMDiffOn, haA⟩⟩
   obtain ⟨a, ⟨ha𝒰, haA⟩, haU⟩ := (hnear.and_frequently (mem_closure_iff_frequently.1
     ((dense_setOfPred_hasNondegenerateCriticalPointsOn_sub hUo hgU) 0))).exists
-  refine ⟨_, ha𝒰, haA, (isMorseOn_iff_of_mem_maximalAtlas
-    (bumpPerturbation β g a).contMDiff he hWs).2 ?_⟩
+  refine ⟨_, ha𝒰, haA, (isMorseOn_iff_of_mem_maximalAtlas he
+    (fun y _ ↦ (bumpPerturbation β g a).contMDiff y) hWs).2 ?_⟩
   rw [hφe]
   -- On `U` the coordinate expression of the perturbation is `g ∘ φ.symm - a`.
   have hloc {z : E} (hz : z ∈ U) :
