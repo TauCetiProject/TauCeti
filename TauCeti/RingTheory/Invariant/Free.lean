@@ -13,6 +13,7 @@ import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
+import TauCeti.Algebra.Group.Action.MulDistribMulAction
 import TauCeti.RingTheory.Invariant.Basic
 import TauCeti.RingTheory.FiniteType.PointSeparation
 
@@ -250,7 +251,6 @@ theorem exists_finset_sum_mul_smul [DecidableEq G] {u : A ⊗[R] A}
 private theorem sum_sum_smul_mul [Fintype G] [DecidableEq G] {S : Finset (A × A)}
     (hS : ∀ g : G, ∑ p ∈ S, p.1 * g • p.2 = (Pi.single 1 1 : G → A) g) (b : A) :
     ∑ p ∈ S, (∑ g : G, g • (p.2 * b)) * p.1 = b := by
-  have : SMulDistribClass G A A := ⟨smul_mul'⟩
   simpa only [smul_eq_mul, mul_comm (Prod.fst _)] using sum_smul_sum_smul_smul hS b
 
 section Invariant

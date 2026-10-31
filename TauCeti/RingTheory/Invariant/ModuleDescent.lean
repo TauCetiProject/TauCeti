@@ -8,6 +8,8 @@ module
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.RingTheory.Invariant.Free
 import Mathlib.LinearAlgebra.TensorProduct.Lift
+import TauCeti.Algebra.Group.Action.MulDistribMulAction
+import TauCeti.RepresentationTheory.NormInvariants
 import TauCeti.RingTheory.Invariant.Basic
 
 /-!
@@ -113,27 +115,17 @@ section BaseChangeInvariants
 variable (A B G) (N : Type*) [AddCommGroup N] [Module A N] [Module B N] [IsScalarTower A B N]
   [DistribMulAction G N] [SMulDistribClass G B N] [SMulCommClass G A N]
 
-/-- The trace `n ↦ ∑ g, g • n`, as an `A`-linear map into the invariants. -/
-private noncomputable def trace [Fintype G] :
-    N →ₗ[A] (Representation.ofDistribMulAction A G N).invariants :=
-  (Representation.ofDistribMulAction A G N).norm.codRestrict _ fun n ↦
-    (Representation.mem_invariants _ _).mpr fun g ↦ by
-      rw [Representation.ofDistribMulAction_apply_apply,
-        Representation.norm_ofDistribMulAction_eq]
-      exact smul_sum_smul g n
-
-private theorem coe_trace [Fintype G] (n : N) : (trace A G N n : N) = ∑ g : G, g • n := by
-  rw [trace, LinearMap.codRestrict_apply, Representation.norm_ofDistribMulAction_eq]
-
 omit [SMulCommClass G A B] in
 /-- The trace of `b • m` for an invariant `m` is `a • m`, where `a ∈ A` is the trace of `b`. -/
 private theorem trace_smul_of_mem_invariants [Fintype G] [Algebra.IsInvariant A B G] (b : B)
     {m : N} (hm : m ∈ (Representation.ofDistribMulAction A G N).invariants) :
-    ∃ a : A, algebraMap A B a = ∑ g : G, g • b ∧ trace A G N (b • m) = a • ⟨m, hm⟩ := by
+    ∃ a : A, algebraMap A B a = ∑ g : G, g • b ∧
+      (Representation.ofDistribMulAction A G N).normInvariants (b • m) = a • ⟨m, hm⟩ := by
   obtain ⟨a, ha⟩ := Algebra.IsInvariant.isInvariant (A := A) _ (smul_sum_smul (G := G) · b)
   refine ⟨a, ha, Subtype.ext ?_⟩
   have hm' (g : G) : g • m = m := by simpa using hm g
-  simp only [coe_trace, smul_distrib_smul, hm', Submodule.coe_smul, ← algebraMap_smul B a m, ha,
+  simp only [Representation.coe_normInvariants_apply, Representation.norm_ofDistribMulAction_eq,
+    smul_distrib_smul, hm', Submodule.coe_smul, ← algebraMap_smul B a m, ha,
     Finset.sum_smul]
 
 variable {A B G N}
@@ -151,17 +143,17 @@ private theorem bijective_liftBaseChange_subtype_invariants [Finite G] [Algebra.
   set φ := (Representation.ofDistribMulAction A G N).invariants.subtype.liftBaseChange B
   -- The explicit inverse `ψ`.
   set ψ : N → B ⊗[A] (Representation.ofDistribMulAction A G N).invariants :=
-    fun n ↦ ∑ p ∈ S, p.1 ⊗ₜ trace A G N (p.2 • n)
+    fun n ↦ ∑ p ∈ S, p.1 ⊗ₜ (Representation.ofDistribMulAction A G N).normInvariants (p.2 • n)
   have hψ (z) : ψ (φ z) = z := by
     induction z using TensorProduct.inductionOn with
     | tmul b m =>
-      have key (p : B × B) : p.1 ⊗ₜ[A] trace A G N (p.2 • φ (b ⊗ₜ m)) =
+      have key (p : B × B) :
+          p.1 ⊗ₜ[A] (Representation.ofDistribMulAction A G N).normInvariants (p.2 • φ (b ⊗ₜ m)) =
           (p.1 * ∑ g : G, g • (p.2 * b)) ⊗ₜ m := by
         obtain ⟨a, ha, h⟩ := trace_smul_of_mem_invariants A B G N (p.2 * b) m.2
         simp only [φ, LinearMap.liftBaseChange_tmul, Submodule.subtype_apply, smul_smul, h,
           tmul_smul, smul_tmul', Algebra.smul_def, ← ha, mul_comm _ p.1]
       -- The dual basis identity for `B` itself, acting on itself by multiplication.
-      have : SMulDistribClass G B B := ⟨fun g x y ↦ smul_mul' g x y⟩
       have hb := sum_smul_sum_smul_smul hS b
       simp only [smul_eq_mul] at hb
       simp only [ψ, key, ← sum_tmul, hb]
@@ -169,7 +161,8 @@ private theorem bijective_liftBaseChange_subtype_invariants [Finite G] [Algebra.
       simp only [ψ, map_add, smul_add, tmul_add, Finset.sum_add_distrib] at hx hy ⊢
       rw [hx, hy]
   refine ⟨Function.LeftInverse.injective hψ, fun n ↦ ⟨ψ n, ?_⟩⟩
-  simp only [ψ, map_sum, φ, LinearMap.liftBaseChange_tmul, Submodule.subtype_apply, coe_trace]
+  simp only [ψ, map_sum, φ, LinearMap.liftBaseChange_tmul, Submodule.subtype_apply,
+    Representation.coe_normInvariants_apply, Representation.norm_ofDistribMulAction_eq]
   exact sum_smul_sum_smul_smul hS n
 
 variable (A B G N) in
