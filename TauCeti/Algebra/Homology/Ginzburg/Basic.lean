@@ -86,6 +86,17 @@ variable {Q : Type u} [Quiver.{v} Q]
 
 instance instQuiverGinzburgQuiver : Quiver (GinzburgQuiver Q) := ⟨GinzburgHom Q⟩
 
+/-- To prove a property of Ginzburg-quiver arrows, it suffices to check doubled arrows and
+adjoined loops. -/
+@[elab_as_elim]
+theorem GinzburgQuiver.hom_induction
+    {motive : ∀ {i j : GinzburgQuiver Q}, (i ⟶ j) → Prop}
+    (double : ∀ {i j : Q} (a : (i ⟶ j) ⊕ (j ⟶ i)), motive (GinzburgHom.double a))
+    (loop : ∀ i : Q, motive (GinzburgHom.loop i)) :
+    ∀ {i j : GinzburgQuiver Q} (a : i ⟶ j), motive a
+  | _, _, .double a => double a
+  | _, _, .loop i => loop i
+
 instance instFiniteGinzburgQuiver [Finite Q] : Finite (GinzburgQuiver Q) :=
   inferInstanceAs (Finite Q)
 
@@ -141,15 +152,17 @@ theorem ginzburgTwoAdamsDegree_loop (i : Q) : ginzburgTwoAdamsDegree (GinzburgHo
 
 /-- The cohomological degree pulled back along `TauCeti.ginzburgOf` is the constant weight `0`.
 This is `TauCeti.ginzburgTwoDegree_double` for an arrow of `Quiver.Symmetrify Q`, whose type is
-only definitionally the sum type that lemma is stated for. -/
-private theorem ginzburgTwoDegree_ginzburgOf_map {a b : Symmetrify Q} (e : a ⟶ b) :
+only definitionally the sum type that lemma is stated for. Not a `simp` lemma:
+`TauCeti.ginzburgOf_map` already normalizes its argument. -/
+theorem ginzburgTwoDegree_ginzburgOf_map {a b : Symmetrify Q} (e : a ⟶ b) :
     ginzburgTwoDegree (ginzburgOf.map e) = 0 :=
   ginzburgTwoDegree_double e
 
 /-- The Adams degree pulled back along `TauCeti.ginzburgOf` is the constant weight `1`.  This is
 `TauCeti.ginzburgTwoAdamsDegree_double` for an arrow of `Quiver.Symmetrify Q`, whose type is only
-definitionally the sum type that lemma is stated for. -/
-private theorem ginzburgTwoAdamsDegree_ginzburgOf_map {a b : Symmetrify Q} (e : a ⟶ b) :
+definitionally the sum type that lemma is stated for. Not a `simp` lemma:
+`TauCeti.ginzburgOf_map` already normalizes its argument. -/
+theorem ginzburgTwoAdamsDegree_ginzburgOf_map {a b : Symmetrify Q} (e : a ⟶ b) :
     ginzburgTwoAdamsDegree (ginzburgOf.map e) = 1 :=
   ginzburgTwoAdamsDegree_double e
 

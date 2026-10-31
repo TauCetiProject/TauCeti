@@ -36,6 +36,8 @@ Fields and Codes*, 2nd ed., Definition 1.4.4 through Definition 1.4.10.
 
 ## Main results
 
+* `TauCeti.mem_riemannRochSpace_of_pow_mem`: if `f ^ n ∈ L(D)` and `D < n (E + 1)`, then
+  `f ∈ L(E)`.
 * `TauCeti.one_mem_riemannRochSpace_iff`: `1 ∈ L(D)` exactly when `D` is effective.
 * `TauCeti.mul_mem_riemannRochSpace_add`: multiplication maps `L(A) × L(B)` into `L(A + B)`.
 * `TauCeti.riemannRochSpace_mul_le_riemannRochSpace_add` and
@@ -120,6 +122,23 @@ theorem mem_riemannRochSpace_iff_neg_le_ord {D : Divisor k F} {f : F} (hf : f �
   refine forall_congr' fun P ↦ ?_
   rw [P.valuation_eq_exp_neg_ord hf, WithZero.exp_le_exp]
   omega
+
+/-- **Roots of functions in a Riemann–Roch space.** If `f ^ n ∈ L(D)` for some `n ≥ 1` and
+`D < n (E + 1)` at every place, then `f ∈ L(E)`: the pole orders of `f` are those of `f ^ n`
+divided by `n`. For instance `E = ⌊D / n⌋`. -/
+theorem mem_riemannRochSpace_of_pow_mem {n : ℕ} (hn : 0 < n) {D E : Divisor k F}
+    (hDE : ∀ P : Place k F, D.coeff P < n * (E.coeff P + 1)) {f : F}
+    (hf : f ^ n ∈ riemannRochSpace D) : f ∈ riemannRochSpace E := by
+  rcases eq_or_ne f 0 with rfl | h0
+  · exact zero_mem _
+  rw [mem_riemannRochSpace_iff_neg_le_ord h0]
+  intro P
+  -- `n · ord_P f = ord_P (f ^ n) ≥ -D(P) > -n (E(P) + 1)`.
+  have hord := (mem_riemannRochSpace_iff_neg_le_ord (pow_ne_zero n h0)).mp hf P
+  rw [P.ord_pow] at hord
+  have := hDE P
+  have hn' : (0 : ℤ) < n := by exact_mod_cast hn
+  nlinarith
 
 /-- Membership in `L(nP)` for a single place `P`: a nonzero function lies in `L(nP)` exactly when
 its order at `P` is at least `-n` and it is regular at every other place. -/

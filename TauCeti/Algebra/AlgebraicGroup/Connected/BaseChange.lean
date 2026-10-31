@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 import TauCeti.Algebra.TensorProduct.CommonOverfield
 import TauCeti.RingTheory.Idempotents.Connected.ScalarExtension
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Geometric connectedness under base change
@@ -83,7 +84,7 @@ theorem geometricallyConnectedCommHopfAlgProperty.connectedSpace_tensorProduct
   have hΩ : ConnectedSpace (PrimeSpectrum ((H : Type v) ⊗[k] d.Ω)) :=
     (PrimeSpectrum.homeomorphOfRingEquiv
       (d.comparison H)).connectedSpace_iff.mp hextended
-  exact connectedSpace_primeSpectrum_of_injective (d.map H).toRingHom (d.map_injective H)
+  exact (d.map H).toRingHom.connectedSpace_primeSpectrum_of_injective (d.map_injective H)
 
 /-- **Geometric connectedness is preserved by extension of the base field.**
 
@@ -120,7 +121,7 @@ theorem geometricallyConnectedCommHopfAlgProperty.of_baseChange
   have hΩ : ConnectedSpace (PrimeSpectrum ((H : Type v) ⊗[k] d.Ω)) :=
     (PrimeSpectrum.homeomorphOfRingEquiv (d.comparison H)).connectedSpace_iff.mp
       (hH.connectedSpace_tensorProduct K d.Ω (CommHopfAlgCat.baseChange (K := K) H))
-  exact connectedSpace_primeSpectrum_of_injective (d.map H).toRingHom (d.map_injective H)
+  exact (d.map H).toRingHom.connectedSpace_primeSpectrum_of_injective (d.map_injective H)
 
 /-- Geometric connectedness is equivalent before and after extension of the base field. -/
 theorem geometricallyConnectedCommHopfAlgProperty.baseChange_iff

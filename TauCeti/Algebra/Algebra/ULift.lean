@@ -62,4 +62,11 @@ theorem uliftAutEquiv_symm_apply
     (e : ULift.{t} A ≃ₐ[ULift.{t} R] ULift.{t} A) (x : A) :
     uliftAutEquiv.symm e x = (e (ULift.up x)).down := (rfl)
 
+/-- The inverse automorphism transport intertwines the up map with evaluation. -/
+theorem uliftAutEquiv_symm_apply_up
+    (e : ULift.{t} A ≃ₐ[ULift.{t} R] ULift.{t} A) (x : A) :
+    ULift.ringEquiv.symm (uliftAutEquiv.symm e x) = e (ULift.ringEquiv.symm x) := by
+  apply ULift.down_injective
+  exact uliftAutEquiv_symm_apply e x
+
 end AlgEquiv

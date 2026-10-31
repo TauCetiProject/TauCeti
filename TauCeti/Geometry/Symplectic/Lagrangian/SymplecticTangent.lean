@@ -111,7 +111,7 @@ vector on which `σ` pairs to zero with every pushed-forward tangent vector is i
 theorem hasSymplecticTangentImages_iff :
     hσ.HasSymplecticTangentImages J f ↔
       ∀ x (v : TangentSpace J x),
-        (∀ w, SmoothForm.eval₂ σ (f x) (mfderiv J I f x v) (mfderiv J I f x w) = 0) →
+        (∀ w, SmoothBundleForm.eval₂ σ (f x) (mfderiv J I f x v) (mfderiv J I f x w) = 0) →
           mfderiv J I f x v = 0 := by
   refine forall_congr' fun x ↦ ?_
   simp only [SymplecticForm.isSymplectic_iff_disjoint, Submodule.disjoint_def,

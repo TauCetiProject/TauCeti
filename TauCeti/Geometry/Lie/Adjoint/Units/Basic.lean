@@ -128,7 +128,7 @@ theorem groupLieAlgebra_units_ad_apply (x y : R) :
       x * y - y * x := by
   -- For units the model space, and hence `GroupLieAlgebra`, is definitionally the ambient algebra
   -- `R`; the displayed casts expose that identification to the generic tangent-adjoint theorem.
-  let _ : T2Space Rˣ := t2Space_of_lieGroup (I := 𝓘(ℝ, R)) (n := ∞)
+  let _ : T2Space Rˣ := ModelWithCorners.t2Space_of_lieGroup 𝓘(ℝ, R) ∞
   have hgeom := hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero
     (I := 𝓘(ℝ, R)) (G := Rˣ)
     (x : GroupLieAlgebra 𝓘(ℝ, R) Rˣ) (y : GroupLieAlgebra 𝓘(ℝ, R) Rˣ)
@@ -182,7 +182,7 @@ theorem unitsLieAlgebraEquiv_Ad (g : Rˣ)
   have ht := tangentAd_units (R := R) g
     (show R from leftInvariantDerivationLieEquivGroupLieAlgebra
       (I := 𝓘(ℝ, R)) (G := Rˣ)
-      (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, R)) (n := ∞) (by simp) (1 : Rˣ)) X)
+      BoundarylessManifold.isInteriorPoint X)
   rw [ht] at hR
   simpa only [unitsLieAlgebraEquiv_apply,
     leftInvariantDerivationLieEquivGroupLieAlgebra_apply] using hR
@@ -196,7 +196,7 @@ noncomputable def unitsLieAlgebraLieEquiv :
   { unitsLieAlgebraEquiv (R := R) with
     map_lie' := by
       intro X Y
-      let _ : T2Space Rˣ := t2Space_of_lieGroup (I := 𝓘(ℝ, R)) (n := ∞)
+      let _ : T2Space Rˣ := ModelWithCorners.t2Space_of_lieGroup 𝓘(ℝ, R) ∞
       let e := leftInvariantDerivationLieEquivGroupLieAlgebra
         (I := 𝓘(ℝ, R)) (G := Rˣ) BoundarylessManifold.isInteriorPoint
       have hmap := e.map_lie X Y

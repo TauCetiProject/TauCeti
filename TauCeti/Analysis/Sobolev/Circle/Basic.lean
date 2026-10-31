@@ -370,6 +370,13 @@ theorem norm_sq_eq_tsum (a : CircleSobolev s E) :
     ‖a‖ ^ 2 = ∑' n, weight (2 * s) n * ‖a.coeff n‖ ^ 2 :=
   (hasSum_norm_sq a).tsum_eq.symm
 
+/-- Parseval's identity for `H^s` in `ℝ≥0∞`: the squared norm is the weighted sum of the squared
+coefficient norms. -/
+theorem ofReal_norm_sq_eq_tsum (a : CircleSobolev s E) :
+    ENNReal.ofReal (‖a‖ ^ 2) = ∑' n, ENNReal.ofReal (weight (2 * s) n * ‖a.coeff n‖ ^ 2) := by
+  rw [← (hasSum_norm_sq a).tsum_eq, ENNReal.ofReal_tsum_of_nonneg
+    (fun n ↦ by positivity [weight_nonneg (2 * s) n]) (hasSum_norm_sq a).summable]
+
 /-- A coefficientwise bound of weighted norms gives the corresponding bound on the norms, possibly
 between different orders. -/
 theorem norm_le_of_forall_le {a : CircleSobolev s E} {b : CircleSobolev t E} {C : ℝ}

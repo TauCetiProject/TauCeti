@@ -53,7 +53,7 @@ variable (hK : multiplicativeTypeCommHopfAlgProperty k K) (f : H.obj ⟶ K.obj)
 private noncomputable def geometricKernelCoordinateIsoAux
     (p : CommHopfAlgCat.geometricCharacterGroup H.obj →*
       CommHopfAlgCat.geometricCharacterGroup K.obj)
-    (hp : p = TauCeti.GroupLike.map
+    (hp : p = BialgHom.mapGroupLike
       (CommHopfAlgCat.baseChangeMap (K := AlgebraicClosure k) f).hom) :
     CommHopfAlgCat.baseChange (K := AlgebraicClosure k)
         (CommHopfAlgCat.quotient K.obj (CommHopfAlgCat.kernelHopfIdeal f)) ≅
@@ -79,7 +79,7 @@ private noncomputable def geometricKernelCoordinateIsoAux
 private theorem geometricKernelCoordinateIsoAux_comp
     (p : CommHopfAlgCat.geometricCharacterGroup H.obj →*
       CommHopfAlgCat.geometricCharacterGroup K.obj)
-    (hp : p = TauCeti.GroupLike.map
+    (hp : p = BialgHom.mapGroupLike
       (CommHopfAlgCat.baseChangeMap (K := AlgebraicClosure k) f).hom) :
     CommHopfAlgCat.baseChangeMap (K := AlgebraicClosure k)
         (CommHopfAlgCat.mkQuotient K.obj (CommHopfAlgCat.kernelHopfIdeal f)) ≫

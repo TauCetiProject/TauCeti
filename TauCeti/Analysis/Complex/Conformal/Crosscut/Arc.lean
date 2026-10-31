@@ -77,17 +77,6 @@ come from `TauCeti.IsJordanCurve.exists_pos_forall_exists_diam_le` of
 `TauCeti.exists_frontier_inter_closure_image_ball_inter_sphere_eq_pair_dist_le_of_isBounded`. What
 remains after this file is the separation argument choosing between the two boundary arcs.
 
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself, and the
-pinned Mathlib has no boundary correspondence for conformal maps and no Jordan-curve vocabulary. So
-this file is new Lean formalization rather than a temporary shim. Through
-`Conformal/Crosscut/Image.lean` it consumes the L0–L3 shim
-`TauCeti.isOpen_image_of_differentiableOn_of_injOn`, to be refactored onto Mathlib's open mapping
-API once the upstream work lands. No Mathlib source is vendored.
-
 ## References
 
 * C. Carathéodory, *Über die gegenseitige Beziehung der Ränder bei der konformen Abbildung*,
