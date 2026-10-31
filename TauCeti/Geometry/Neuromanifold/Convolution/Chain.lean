@@ -95,8 +95,8 @@ def denseParameters (A : ConvolutionSpec K L) (p : A.Parameters) : A.toMLPSpec.P
 @[simp] theorem denseParameters_zeroBias (A : ConvolutionSpec K L) (w : A.Weights) :
     A.denseParameters (A.zeroBias w) = A.toMLPSpec.zeroBias (A.denseWeights w) := by
   funext i
-  simp only [denseParameters_apply, zeroBias_apply, MLPSpec.zeroBias_apply, denseWeights_apply]
-  rfl
+  simp only [denseParameters_apply, zeroBias_apply, MLPSpec.zeroBias_apply, denseWeights_apply,
+    Pi.zero_def]
 
 end Parameters
 
