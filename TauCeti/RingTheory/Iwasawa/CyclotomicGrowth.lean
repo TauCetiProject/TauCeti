@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Charpoly
 
 import Mathlib.RingTheory.PowerSeries.Inverse
+import TauCeti.RingTheory.PowerSeries.Evaluation
 
 /-!
 # The cyclotomic factors on a quotient of the Iwasawa algebra by a distinguished polynomial
@@ -26,24 +27,22 @@ index `e`, so that `p = u ϖ ^ e` with `u` a unit. Write
 
 for the cyclotomic factors of `ω_{n+1} = (1 + T) ^ p ^ (n + 1) - 1`. This file shows that once
 `n > d e`, the factor `ξ_{n+1}` acts on `O⟦T⟧ ⧸ (F)` as `p` times a unit: in `O⟦T⟧ ⧸ (F)` the class
-`t` of `T` satisfies `t ^ d ∈ I`, hence `p ∣ t ^ (d e)`, so `(1 + t) ^ p ^ n ≡ 1` modulo `p ^ 2`
-and `ξ_{n+1}(t) ≡ p` modulo `p ^ 2`
-(`Polynomial.sq_dvd_eval_cyclotomic_prime_pow_comp_X_add_one_sub`). When `p` lies in the Jacobson
-radical of `O`, the element `1 + p c` is a unit.
+`t` of `T` satisfies `t ^ d ∈ I`, hence `p ∣ t ^ (d e)`
+(`Polynomial.IsDistinguishedAt.natCast_dvd_pow_of_aeval_eq_zero`), so `(1 + t) ^ p ^ n ≡ 1`
+modulo `p ^ 2` and `ξ_{n+1}(t) ≡ p` modulo `p ^ 2`
+(`Polynomial.IsDistinguishedAt.sq_dvd_aeval_cyclotomic_prime_pow_comp_X_add_one_sub`). When `p`
+lies in the Jacobson radical of `O`, the element `1 + p c` is a unit.
 
 When `O` is moreover `I`-adically complete, `O⟦T⟧ ⧸ (F)` is free of rank `d` over `O`, so the
 determinant of multiplication by `ξ_{n+1}`, its norm over `O`, is associated to `p ^ d`, and that of
-the transition `ω_n / ω_{n₀} = ξ_{n₀+1} ⋯ ξ_n` is associated to `p ^ (d (n - n₀))` for `n₀ > d e`.
+the product `ξ_{n₀+1} ⋯ ξ_n` is associated to `p ^ (d (n - n₀))` for `n₀ > d e`. For `n₀ ≤ n`
+this product is the transition `ω_n / ω_{n₀}`; for `n < n₀` it is empty, equal to `1`.
 Over a discrete valuation ring this says that these determinants have `ϖ`-valuation `e d` per
 step; this is the horizontal input to Iwasawa's formula for the orders of the quotients
 `M / ω_n M` of a finitely generated torsion `O⟦T⟧`-module `M`.
 
 ## Main results
 
-* `Polynomial.IsDistinguishedAt.natCast_dvd_pow_of_aeval_eq_zero`: a root `t` of `F` in an
-  `O`-algebra satisfies `p ∣ t ^ (d e)`.
-* `Polynomial.IsDistinguishedAt.sq_dvd_aeval_cyclotomic_prime_pow_comp_X_add_one_sub`: at such a
-  root, `ξ_{n+1}(t) ≡ p` modulo `p ^ 2` for `n > d e`.
 * `Polynomial.IsDistinguishedAt.exists_mk_cyclotomic_prime_pow_comp_X_add_one_eq_mul_unit`: on
   `O⟦T⟧ ⧸ (F)`, `ξ_{n+1}` is `p` times a unit for `n > d e`.
 * `Polynomial.IsDistinguishedAt.associated_norm_mk_cyclotomic_prime_pow_comp_X_add_one`: its norm
@@ -62,35 +61,7 @@ public section
 
 namespace Polynomial.IsDistinguishedAt
 
-variable {O : Type*} [CommRing O] {I : Ideal O} {F : O[X]} {p e : ℕ}
-
-/-- If `F` is distinguished at `I` and `I ^ e ⊆ (p)`, then every root `t` of `F` in an `O`-algebra
-satisfies `p ∣ t ^ (deg F * e)`. -/
-theorem natCast_dvd_pow_of_aeval_eq_zero (hF : F.IsDistinguishedAt I)
-    (hI : I ^ e ≤ Ideal.span {(p : O)}) {S : Type*} [CommRing S] [Algebra O S] {t : S}
-    (ht : aeval t F = 0) : (p : S) ∣ t ^ (F.natDegree * e) := by
-  have h := hF.toIsWeaklyEisensteinAt.pow_natDegree_le_of_aeval_zero_of_monic_mem_map ht
-    hF.monic F.natDegree natDegree_map_le
-  have h' : t ^ (F.natDegree * e) ∈ (Ideal.span {(p : O)}).map (algebraMap O S) := by
-    rw [pow_mul]
-    exact Ideal.map_mono hI (Ideal.map_pow (algebraMap O S) I e ▸ Ideal.pow_mem_pow h e)
-  rwa [Ideal.map_span, Set.image_singleton, map_natCast, Ideal.mem_span_singleton] at h'
-
-variable [hp : Fact p.Prime]
-
-/-- If `F` is distinguished at `I` and `I ^ e ⊆ (p)`, then at every root `t` of `F` in an
-`O`-algebra, `ξ_{n+1}(t) = Φ_{p ^ (n + 1)}(1 + t)` is congruent to `p` modulo `p ^ 2` for every
-`n > deg F * e`. -/
-theorem sq_dvd_aeval_cyclotomic_prime_pow_comp_X_add_one_sub (hF : F.IsDistinguishedAt I)
-    (hI : I ^ e ≤ Ideal.span {(p : O)}) {S : Type*} [CommRing S] [Algebra O S] {t : S}
-    (ht : aeval t F = 0) {n : ℕ} (hn : F.natDegree * e < n) :
-    (p : S) ^ 2 ∣ aeval t ((cyclotomic (p ^ (n + 1)) O).comp (X + 1)) - p := by
-  have hdvd : (p : S) ∣ t ^ p ^ (F.natDegree * e) :=
-    (hF.natCast_dvd_pow_of_aeval_eq_zero hI ht).trans
-      (pow_dvd_pow _ (Nat.lt_pow_self hp.out.one_lt).le)
-  rw [aeval_def, eval₂_eq_eval_map, Polynomial.map_comp, map_cyclotomic, Polynomial.map_add,
-    map_X, Polynomial.map_one]
-  exact sq_dvd_eval_cyclotomic_prime_pow_comp_X_add_one_sub p hdvd hn
+variable {O : Type*} [CommRing O] {I : Ideal O} {F : O[X]} {p e : ℕ} [hp : Fact p.Prime]
 
 /-- **The cyclotomic factors act on `O⟦T⟧ ⧸ (F)` as `p` times units.** If `F` is distinguished at
 `I`, `I ^ e ⊆ (p)` and `p` lies in the Jacobson radical of `O`, then for every `n > deg F * e` the
@@ -107,8 +78,8 @@ theorem exists_mk_cyclotomic_prime_pow_comp_X_add_one_eq_mul_unit (hF : F.IsDist
   -- class of `T`.
   have hmk (g : O[X]) :
       Ideal.Quotient.mk J (g : PowerSeries O) = aeval (Ideal.Quotient.mk J PowerSeries.X) g := by
-    rw [← Ideal.Quotient.mkₐ_eq_mk O, aeval_algHom_apply, aeval_def, PowerSeries.algebraMap_eq,
-      eval₂_C_X_eq_coe]
+    simpa only [Ideal.Quotient.mkₐ_eq_mk] using
+      PowerSeries.algHom_coe_eq_aeval (Ideal.Quotient.mkₐ O J) g
   have hroot : aeval (Ideal.Quotient.mk J PowerSeries.X) F = 0 := by
     rw [← hmk, Ideal.Quotient.eq_zero_iff_mem]
     exact Ideal.mem_span_singleton_self _
@@ -144,9 +115,9 @@ theorem associated_norm_mk_cyclotomic_prime_pow_comp_X_add_one [IsAdicComplete I
 
 /-- **The determinant of a cyclotomic transition on `O⟦T⟧ ⧸ (F)` grows by `p ^ deg F` per
 level.** Under the hypotheses of `associated_norm_mk_cyclotomic_prime_pow_comp_X_add_one`, for
-`n₀ > deg F * e` the norm over `O` of the class of
-`ω_n / ω_{n₀} = ξ_{n₀+1} ξ_{n₀+2} ⋯ ξ_n` in `O⟦T⟧ ⧸ (F)` is associated to
-`p ^ (deg F * (n - n₀))`. -/
+`n₀ > deg F * e` the norm over `O` of the class of the product `ξ_{n₀+1} ξ_{n₀+2} ⋯ ξ_n` in
+`O⟦T⟧ ⧸ (F)` is associated to `p ^ (deg F * (n - n₀))`. For `n₀ ≤ n` this product is the
+transition `ω_n / ω_{n₀}`; for `n < n₀` it is the empty product `1` and both sides are units. -/
 theorem associated_norm_mk_prod_cyclotomic_prime_pow_comp_X_add_one [IsAdicComplete I O]
     (hF : F.IsDistinguishedAt I) (hI : I ^ e ≤ Ideal.span {(p : O)})
     (hpO : (p : O) ∈ (⊥ : Ideal O).jacobson) {n₀ : ℕ} (hn₀ : F.natDegree * e < n₀) (n : ℕ) :
