@@ -34,6 +34,12 @@ with it spans `V`, then `u ↦ B z (L u)` is contact for the restriction `B (L �
 `U` (`Module.Dual.isContact_comp_compl₁₂`). This is the pointwise reason why the primitive
 `ι_Z ω` of a symplectic form restricts to a contact form on a hypersurface transverse to `Z`.
 
+The **symplectization form** `((s, v), (t, w)) ↦ s * a w - t * a v + B v w` on `K × V`
+(`Module.Dual.symplectizationForm`) is nondegenerate exactly when `a` is contact for `B`
+(`Module.Dual.isContact_iff_nondegenerate_symplectizationForm`). This is the pointwise linear
+algebra of the symplectization: up to the factor `eᵗ`, it is the value of `d(eᵗ α)` at a point
+`(t, x)` of `ℝ × M`, with `a = α_x` and `B = dα_x`.
+
 For an alternating `B` and a contact covector `a`, the bilinear form `B + a ⊗ a`,
 `(v, w) ↦ B v w + a v * a w`, is left-separating
 (`Module.Dual.IsContact.separatingLeft_add_smulRight`), so in finite dimension `v ↦ B v + a(v) a`
@@ -60,6 +66,9 @@ pointwise form of the Reeb vector field of a contact form and of its rescaling l
   count.
 * `Module.Dual.isContact_comp_compl₁₂`: the covector `B z` restricted to a hyperplane transverse to
   `z` is contact for the restriction of a nondegenerate alternating `B`.
+* `Module.Dual.symplectizationForm`,
+  `Module.Dual.isContact_iff_nondegenerate_symplectizationForm`: the symplectization form, which
+  is nondegenerate exactly for contact covectors.
 * `Module.Dual.IsContact.separatingLeft_add_smulRight`: `B + a ⊗ a` is left-separating.
 * `Module.Dual.IsContact.add_smulRight_apply_eq_self_iff`: the preimage of `a` under
   `v ↦ B v + a(v) a`.
@@ -209,6 +218,104 @@ theorem isContact_comp_compl₁₂ {U : Type*} [AddCommGroup U] [Module K U] (hB
     rw [map_smul, sub_eq_zero.1 hc, smul_smul, inv_mul_cancel₀ hc0, one_smul]
   rw [hc0, zero_smul, sub_zero] at hc
   exact hL (hc.trans (map_zero L).symm)
+
+/-! ### The symplectization form -/
+
+/-- The **symplectization form** of a covector `a` and a bilinear form `B` on `V`: the bilinear
+form `((s, v), (t, w)) ↦ s * a w - t * a v + B v w` on `K × V`. Up to the positive factor `eᵗ`, it
+is the value of `d(eᵗ α)` at a point `(t, x)` of `ℝ × M`, for a one-form `α` on a manifold `M`,
+with `a = α_x` and `B = dα_x`. -/
+def symplectizationForm (a : Module.Dual K V) (B : LinearMap.BilinForm K V) :
+    LinearMap.BilinForm K (K × V) :=
+  LinearMap.mk₂ K (fun x y ↦ x.1 * a y.2 - y.1 * a x.2 + B x.2 y.2)
+    (fun x x' y ↦ by simp only [Prod.fst_add, Prod.snd_add, map_add, LinearMap.add_apply]; ring)
+    (fun c x y ↦ by
+      simp only [Prod.smul_fst, Prod.smul_snd, map_smul, LinearMap.smul_apply, smul_eq_mul]; ring)
+    (fun x y y' ↦ by simp only [Prod.fst_add, Prod.snd_add, map_add]; ring)
+    (fun c x y ↦ by simp only [Prod.smul_fst, Prod.smul_snd, map_smul, smul_eq_mul]; ring)
+
+@[simp]
+theorem symplectizationForm_apply (x y : K × V) :
+    a.symplectizationForm B x y = x.1 * a y.2 - y.1 * a x.2 + B x.2 y.2 :=
+  (rfl)
+
+/-- The symplectization form of an alternating form is alternating. -/
+theorem isAlt_symplectizationForm (hB : B.IsAlt) : (a.symplectizationForm B).IsAlt := fun x ↦ by
+  simp [hB x.2]
+
+/-- Swapping the arguments of the symplectization form of `a` and `B` gives the symplectization
+form of `-a` and of the swapped form `B.flip`. -/
+theorem flip_symplectizationForm :
+    LinearMap.flip (a.symplectizationForm B) = (-a).symplectizationForm (LinearMap.flip B) := by
+  refine LinearMap.ext₂ fun x y ↦ ?_
+  simp only [LinearMap.flip_apply, symplectizationForm_apply, LinearMap.neg_apply]
+  ring
+
+/-- The symplectization form of `a` and `B` is left-separating exactly when `a` is nonzero and the
+restriction of `B` to `ker a` is left-separating. -/
+theorem separatingLeft_symplectizationForm_iff :
+    (a.symplectizationForm B).SeparatingLeft ↔
+      a ≠ 0 ∧ (B.restrict (LinearMap.ker a)).SeparatingLeft := by
+  constructor
+  · intro h
+    -- If `a = 0`, then `(1, 0)` is orthogonal to everything.
+    have ha : a ≠ 0 := fun ha ↦ one_ne_zero <| congrArg Prod.fst <|
+      h ((1 : K), (0 : V)) fun y ↦ by simp [ha]
+    refine ⟨ha, fun v hv ↦ ?_⟩
+    obtain ⟨u, hu⟩ : ∃ u, a u ≠ 0 := by
+      by_contra! h'
+      exact ha (LinearMap.ext h')
+    -- `B v` vanishes on `ker a`, so it is the multiple `c • a`, and `(-c, v)` is orthogonal to
+    -- everything.
+    set c := B v u / a u
+    have hBv (w : V) : B v w = c * a w := by
+      have hw : w - (a w / a u) • u ∈ LinearMap.ker a := by
+        rw [LinearMap.mem_ker, map_sub, map_smul, smul_eq_mul, div_mul_cancel₀ _ hu, sub_self]
+      have := hv ⟨_, hw⟩
+      simp only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply, map_sub,
+        map_smul, smul_eq_mul] at this
+      rw [sub_eq_zero] at this
+      rw [this]
+      simp only [c]
+      ring
+    have h0 := h (-c, v) fun y ↦ by
+      simp only [symplectizationForm_apply, LinearMap.mem_ker.1 v.2, hBv]
+      ring
+    exact Subtype.ext (congrArg Prod.snd h0)
+  · rintro ⟨ha, hr⟩ x hx
+    obtain ⟨u, hu⟩ : ∃ u, a u ≠ 0 := by
+      by_contra! h'
+      exact ha (LinearMap.ext h')
+    -- Testing against `(1, 0)` shows `a x.2 = 0`.
+    have hx₂ : a x.2 = 0 := by simpa using hx ((1 : K), (0 : V))
+    -- Testing against `(0, w)` for `w ∈ ker a` shows `x.2 = 0`.
+    have hx₂' : x.2 = 0 := congrArg Subtype.val <| hr ⟨x.2, hx₂⟩ fun w ↦ by
+      simpa [LinearMap.mem_ker.1 w.2] using hx ((0 : K), (w : V))
+    -- Testing against `(0, u)` shows `x.1 = 0`.
+    have hx₁ : x.1 = 0 := by
+      have := hx ((0 : K), u)
+      simp only [symplectizationForm_apply, hx₂', map_zero, mul_zero, sub_zero,
+        LinearMap.zero_apply, add_zero] at this
+      exact (mul_eq_zero.1 this).resolve_right hu
+    exact Prod.ext hx₁ hx₂'
+
+/-- **Symplectization of a contact covector.** The symplectization form
+`((s, v), (t, w)) ↦ s * a w - t * a v + B v w` on `K × V` is nondegenerate exactly when `a` is
+contact for `B`. This is the pointwise reason why `d(eᵗ α)` is a symplectic form on `ℝ × M`
+exactly when `α` is a contact form on `M`. -/
+theorem isContact_iff_nondegenerate_symplectizationForm :
+    a.IsContact B ↔ (a.symplectizationForm B).Nondegenerate := by
+  -- Right separation is left separation of the swapped form, which is again a symplectization.
+  have hright : (a.symplectizationForm B).SeparatingRight ↔
+      a ≠ 0 ∧ (B.restrict (LinearMap.ker a)).SeparatingRight := by
+    rw [← LinearMap.flip_separatingLeft, flip_symplectizationForm,
+      separatingLeft_symplectizationForm_iff, LinearMap.ker_neg, neg_ne_zero,
+      ← LinearMap.flip_separatingLeft (B := B.restrict _)]
+    rfl
+  rw [isContact_def]
+  exact ⟨fun ⟨ha, hl, hr⟩ ↦ ⟨separatingLeft_symplectizationForm_iff.2 ⟨ha, hl⟩, hright.2 ⟨ha, hr⟩⟩,
+    fun ⟨hl, hr⟩ ↦ ⟨(separatingLeft_symplectizationForm_iff.1 hl).1,
+      (separatingLeft_symplectizationForm_iff.1 hl).2, (hright.1 hr).2⟩⟩
 
 /-! ### The contact flat map -/
 
