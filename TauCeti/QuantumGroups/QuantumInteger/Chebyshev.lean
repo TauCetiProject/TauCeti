@@ -5,7 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import TauCeti.QuantumGroups.QuantumInteger.Basic
 public import TauCeti.RingTheory.Polynomial.Chebyshev.Divisibility
+
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Quantum integers at a loop parameter
@@ -24,9 +29,13 @@ index by one, and transfers the polynomial identities of
 `TauCeti/RingTheory/Polynomial/Chebyshev/Divisibility.lean` to it. Note that `[0] = 0` for every
 `δ`, so nonvanishing hypotheses on quantum integers concern the indices `n ≥ 1` only.
 
+Since Mathlib's polynomials are noncomputable, so is `qInt`; the evaluator `TauCeti.qIntAux`
+computes the same values from the three-term recurrence.
+
 ## Main definitions
 
 * `TauCeti.qInt R δ n`: the quantum integer `[n]` at the loop parameter `δ`.
+* `TauCeti.qIntAux δ n`: a computable evaluator, equal to `qInt R δ n` by `qIntAux_eq_qInt`.
 
 ## Main results
 
@@ -39,12 +48,22 @@ index by one, and transfers the polynomial identities of
   `(-1)^(n+1) n`; in characteristic zero these never vanish for `n ≥ 1`, while in characteristic
   `p` they vanish at `n = p`.
 * `RingHom.map_qInt`: quantum integers commute with ring homomorphisms.
+* `TauCeti.qInt_add_inv_eq_sum`, `TauCeti.sub_inv_mul_qInt_add_inv`: for a unit `u`,
+  `[n] = Σ_{j < n} u^j u^(-(n-1-j))` and `(u - u⁻¹) [n] = uⁿ - u⁻ⁿ` at `δ = u + u⁻¹`.
+* `TauCeti.qInt_add_inv_eq_quantumInteger`: comparison with the field quantum integer
+  `TauCeti.quantumInteger`.
+* `TauCeti.qInt_add_inv_eq_zero_iff`: without zero divisors, for a unit `u ≠ ±1`, `[n] = 0` at
+  `δ = u + u⁻¹` iff `u^(2n) = 1`.
+* `TauCeti.exists_qInt_eq_zero_iff`: over an algebraically closed field of characteristic zero,
+  some `[n]` with `n ≥ 1` vanishes iff `δ = ζ + ζ⁻¹` for a root of unity `ζ ≠ ±1`.
 
 ## References
 
 * L. H. Kauffman and S. L. Lins, *Temperley–Lieb Recoupling Theory and Invariants of
   3-Manifolds*, Annals of Mathematics Studies 134, Princeton University Press, 1994, for the
   quantum integers as functions of the loop value.
+* P. Tingley, *A minus sign that used to annoy me but now I know why it is there*,
+  arXiv:1002.0555, for the convention `δ = q + q⁻¹`.
 -/
 
 public section
@@ -137,3 +156,151 @@ theorem map_qInt (f : R →+* R') (δ : R) (n : ℕ) :
   rw [qInt_def, qInt_def, ← eval_map_apply, map_S]
 
 end RingHom
+
+namespace TauCeti
+
+/-! ### A computable evaluator -/
+
+section Aux
+
+variable {R : Type*} [CommRing R]
+
+/-- A **computable evaluator for the quantum integers**: `qIntAux δ n` iterates
+`([k], [k + 1]) ↦ ([k + 1], δ [k + 1] - [k])` starting from `([0], [1]) = (0, 1)`, and so agrees
+with the noncomputable `qInt R δ n` (`qIntAux_eq_qInt`). The body is exposed so that values can
+be computed by evaluation or by `decide` in other modules. -/
+@[expose]
+def qIntAux (δ : R) (n : ℕ) : R :=
+  ((fun p : R × R ↦ (p.2, δ * p.2 - p.1))^[n] (0, 1)).1
+
+/-- The computable evaluator `qIntAux` computes the quantum integers. -/
+@[simp]
+theorem qIntAux_eq_qInt (δ : R) (n : ℕ) : qIntAux δ n = qInt R δ n := by
+  have key : ∀ n : ℕ, (fun p : R × R ↦ (p.2, δ * p.2 - p.1))^[n] (0, 1) =
+      (qInt R δ n, qInt R δ (n + 1)) := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n ih => rw [Function.iterate_succ_apply', ih, qInt_add_two]
+  rw [qIntAux, key]
+
+end Aux
+
+/-! ### The interface with a unit `u` such that `δ = u + u⁻¹` -/
+
+section Units
+
+variable {R : Type*} [CommRing R]
+
+/-- The first-order recurrence `[n + 1] = u⁻¹ [n] + uⁿ` at `δ = u + u⁻¹`. -/
+theorem qInt_add_inv_add_one (u : Rˣ) (n : ℕ) :
+    qInt R (u + ↑u⁻¹) (n + 1) = ↑u⁻¹ * qInt R (u + ↑u⁻¹) n + (u : R) ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [qInt_add_two]
+    linear_combination (u : R) * ih + qInt R (u + ↑u⁻¹) n * u.mul_inv
+
+/-- **The quantum integer as a Laurent sum**: at `δ = u + u⁻¹` for a unit `u`,
+`[n] = Σ_{j < n} u^j (u⁻¹)^(n - 1 - j) = u^(n-1) + u^(n-3) + ⋯ + u^(1-n)`. -/
+theorem qInt_add_inv_eq_sum (u : Rˣ) (n : ℕ) :
+    qInt R (u + ↑u⁻¹) n = ∑ j ∈ Finset.range n, (u : R) ^ j * (↑u⁻¹ : R) ^ (n - 1 - j) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [qInt_add_inv_add_one, ih, Finset.sum_range_succ, Finset.mul_sum]
+    congr 1
+    · refine Finset.sum_congr rfl fun j hj ↦ ?_
+      rw [Finset.mem_range] at hj
+      rw [show n + 1 - 1 - j = (n - 1 - j) + 1 by omega, pow_succ]
+      ring
+    · simp
+
+/-- **The `q`-side characterization of the quantum integers**: at `δ = u + u⁻¹` for a unit `u`,
+`(u - u⁻¹) [n] = uⁿ - u⁻ⁿ`. -/
+theorem sub_inv_mul_qInt_add_inv (u : Rˣ) (n : ℕ) :
+    ((u : R) - ↑u⁻¹) * qInt R (u + ↑u⁻¹) n = (u : R) ^ n - (↑u⁻¹ : R) ^ n := by
+  rw [qInt_add_inv_eq_sum, (Commute.all _ _).mul_geom_sum₂]
+
+/-- If some quantum integer vanishes at `δ = u + u⁻¹`, then `u` is a root of unity:
+`[n] = 0` forces `u ^ (2 * n) = 1`. -/
+theorem pow_two_mul_eq_one_of_qInt_add_inv_eq_zero {u : Rˣ} {n : ℕ}
+    (h : qInt R (u + ↑u⁻¹) n = 0) : u ^ (2 * n) = 1 := by
+  have h' := sub_inv_mul_qInt_add_inv u n
+  rw [h, mul_zero, eq_comm, sub_eq_zero, ← Units.val_pow_eq_pow_val,
+    ← Units.val_pow_eq_pow_val, Units.val_inj, inv_pow] at h'
+  rw [two_mul, pow_add, mul_eq_one_iff_eq_inv]
+  exact h'
+
+/-- In a ring without zero divisors, for a unit `u ≠ ±1`, the quantum integer `[n]` at
+`δ = u + u⁻¹` vanishes exactly when `u ^ (2 * n) = 1`. -/
+theorem qInt_add_inv_eq_zero_iff [NoZeroDivisors R] {u : Rˣ} (hu₁ : u ≠ 1) (hu₂ : u ≠ -1)
+    (n : ℕ) :
+    qInt R (u + ↑u⁻¹) n = 0 ↔ u ^ (2 * n) = 1 := by
+  refine ⟨pow_two_mul_eq_one_of_qInt_add_inv_eq_zero, fun h ↦ ?_⟩
+  have hsub : (u : R) - ↑u⁻¹ ≠ 0 := by
+    intro h0
+    have hsq : (u : R) * u = 1 := by
+      have h1 := u.mul_inv
+      rwa [← sub_eq_zero.1 h0] at h1
+    rcases mul_self_eq_one_iff.1 hsq with h1 | h1
+    · exact hu₁ (Units.val_eq_one.1 h1)
+    · exact hu₂ (Units.ext (by simpa using h1))
+  have h' := sub_inv_mul_qInt_add_inv u n
+  rw [two_mul, pow_add, mul_eq_one_iff_eq_inv, ← inv_pow] at h
+  rw [← Units.val_pow_eq_pow_val, ← Units.val_pow_eq_pow_val, h, sub_self] at h'
+  exact (mul_eq_zero.1 h').resolve_left hsub
+
+end Units
+
+/-- At a parameter `q` of a field with `q - q⁻¹ ≠ 0`, the quantum integer at `δ = q + q⁻¹` is the
+field quantum integer `[n]_q = (qⁿ - q⁻ⁿ) / (q - q⁻¹)`. -/
+theorem qInt_add_inv_eq_quantumInteger {K : Type*} [Field K] {q : K} (hq : q - q⁻¹ ≠ 0)
+    (n : ℕ) : qInt K (q + q⁻¹) n = quantumInteger q n := by
+  have h := sub_inv_mul_qInt_add_inv (Units.mk0 q (ne_zero_of_sub_inv_ne_zero hq)) n
+  simp only [Units.val_mk0, Units.val_inv_eq_inv_val] at h
+  exact mul_left_cancel₀ hq (h.trans (sub_inv_mul_quantumInteger_natCast hq n).symm)
+
+/-- **The root-of-unity dictionary.** Over an algebraically closed field of characteristic zero,
+some quantum integer `[n]` with `n ≥ 1` vanishes at `δ` iff `δ = ζ + ζ⁻¹` for a root of unity
+`ζ ≠ ±1`. The exclusions are needed: `[n] = n` at `δ = 2` and `[n] = (-1)^(n+1) n` at `δ = -2`
+(`qInt_two_left`, `qInt_neg_two_left`) never vanish in characteristic zero. -/
+theorem exists_qInt_eq_zero_iff (K : Type*) [Field K] [IsAlgClosed K] [CharZero K] (δ : K) :
+    (∃ n : ℕ, 1 ≤ n ∧ qInt K δ n = 0) ↔
+      ∃ ζ : Kˣ, (∃ m : ℕ, 0 < m ∧ ζ ^ m = 1) ∧ ζ ≠ 1 ∧ ζ ≠ -1 ∧
+        δ = (ζ : K) + ((ζ⁻¹ : Kˣ) : K) := by
+  constructor
+  · rintro ⟨n, hn, h⟩
+    -- `δ = ζ + ζ⁻¹` for a root `ζ` of `X² - δ X + 1`, which is nonzero since the roots multiply
+    -- to `1`.
+    obtain ⟨z, hz⟩ := IsAlgClosed.exists_root (C 1 * X ^ 2 + C (-δ) * X + C 1)
+      (by rw [degree_quadratic one_ne_zero]; decide)
+    have hz' : z * z - δ * z + 1 = 0 := by
+      simp only [IsRoot, eval_add, eval_mul, eval_C, eval_pow, eval_X] at hz
+      linear_combination hz
+    have hz0 : z ≠ 0 := by
+      rintro rfl
+      simp at hz'
+    set ζ := Units.mk0 z hz0
+    have hδ : δ = (ζ : K) + ((ζ⁻¹ : Kˣ) : K) := by
+      simp only [ζ, Units.val_mk0, Units.val_inv_eq_inv_val]
+      field_simp
+      linear_combination -hz'
+    have hn0 : (n : K) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
+    have hζ₁ : ζ ≠ 1 := by
+      rintro hζ
+      rw [hζ, Units.val_one, inv_one, Units.val_one, one_add_one_eq_two] at hδ
+      rw [hδ, qInt_two_left] at h
+      exact hn0 h
+    have hζ₂ : ζ ≠ -1 := by
+      rintro hζ
+      rw [hζ, inv_neg, inv_one, Units.val_neg, Units.val_one, ← neg_add, one_add_one_eq_two]
+        at hδ
+      rw [hδ, qInt_neg_two_left] at h
+      exact mul_ne_zero (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero)) hn0 h
+    rw [hδ] at h
+    exact ⟨ζ, ⟨2 * n, by omega, pow_two_mul_eq_one_of_qInt_add_inv_eq_zero h⟩, hζ₁, hζ₂, hδ⟩
+  · rintro ⟨ζ, ⟨m, hm, hζm⟩, hζ₁, hζ₂, rfl⟩
+    exact ⟨m, hm, (qInt_add_inv_eq_zero_iff hζ₁ hζ₂ m).2 (by rw [pow_mul', hζm, one_pow])⟩
+
+end TauCeti
