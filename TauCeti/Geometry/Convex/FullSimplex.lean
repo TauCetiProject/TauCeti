@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Ball
 import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 public import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
+import Mathlib.LinearAlgebra.Finsupp.Pi
+import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
 # The full-dimensional standard simplex
@@ -19,7 +21,9 @@ zeroth weight, equal to one minus the sum of the coordinates. The face inclusion
 from Mathlib's maps of barycentric simplices. The bridge reuses
 `AbstractSimplicialComplex.realizationTopHomeomorphCoordinateSimplex` and
 `AbstractSimplicialComplex.realizationTopHomeomorphStdSimplex`; `finRotate` moves the omitted
-last coordinate to the zeroth position.
+last coordinate to the zeroth position. Every map of barycentric simplices induced by a map of
+vertices, read on full-dimensional simplices, is the restriction of a `C^ω` map of the ambient
+Euclidean spaces; for the face inclusions such an affine map is `simplexFaceAmbient`.
 
 This is the full-dimensional simplex convention used in Lee, *Introduction to Smooth Manifolds*,
 Chapter 18. The barycentric simplex, its topology, and its maps are those of Mathlib.
@@ -27,7 +31,7 @@ Chapter 18. The barycentric simplex, its topology, and its maps are those of Mat
 
 public section
 
-open scoped BigOperators
+open scoped BigOperators ContDiff
 open Convexity
 
 namespace TauCeti
@@ -179,5 +183,35 @@ theorem simplexFaceAmbient_coe {p : ℕ} (i : Fin (p + 2)) (x : fullSimplex p) :
   | p j =>
     rw [fullSimplexEquivStdSimplex_simplexFace_succAbove, Fin.insertNth_apply_succAbove]
     cases j using Fin.cases <;> simp
+
+/-- A map of barycentric simplices, read on the full-dimensional simplices through
+`fullSimplexEquivStdSimplex`, is the restriction of a `C^ω` map of the ambient Euclidean
+spaces. -/
+theorem exists_contDiff_fullSimplexEquivStdSimplex_symm_map {m n : ℕ}
+    (f : Fin (m + 1) → Fin (n + 1)) :
+    ∃ A : EuclideanSpace ℝ (Fin m) → EuclideanSpace ℝ (Fin n), ContDiff ℝ ω A ∧
+      ∀ x : fullSimplex m, A x =
+        ((fullSimplexEquivStdSimplex n).symm ((fullSimplexEquivStdSimplex m x).map f)).val := by
+  classical
+  -- The barycentric weights of a point of `Δᵐ`, extended affinely to all of `ℝᵐ`.
+  let w : EuclideanSpace ℝ (Fin m) → Fin (m + 1) → ℝ := fun x ↦ Fin.cons (1 - ∑ k, x k) fun k ↦ x k
+  have hw : ContDiff ℝ ω w := by
+    refine contDiff_pi.2 fun i ↦ ?_
+    cases i using Fin.cases with
+    | zero =>
+      simpa [w] using contDiff_const.sub
+        (ContDiff.sum fun k _ ↦ (EuclideanSpace.proj k : EuclideanSpace ℝ (Fin m) →L[ℝ] ℝ).contDiff)
+    | succ k => simpa [w] using (EuclideanSpace.proj k : EuclideanSpace ℝ (Fin m) →L[ℝ] ℝ).contDiff
+  let L := LinearMap.toContinuousLinearMap (FunOnFinite.linearMap ℝ ℝ f)
+  refine ⟨fun x ↦ (EuclideanSpace.equiv (Fin n) ℝ).symm fun j ↦ L (w x) j.succ, ?_, fun x ↦ ?_⟩
+  · exact (EuclideanSpace.equiv (Fin n) ℝ).symm.contDiff.comp
+      (contDiff_pi.2 fun j ↦ contDiff_pi.1 (L.contDiff.comp hw) j.succ)
+  · ext j
+    rw [fullSimplexEquivStdSimplex_symm_apply, StdSimplex.weights_map_apply]
+    simp only [L, LinearMap.coe_toContinuousLinearMap', PiLp.continuousLinearEquiv_symm_apply,
+      WithLp.ofLp_toLp]
+    rw [FunOnFinite.linearMap_apply_apply]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    cases i using Fin.cases <;> simp [w]
 
 end TauCeti
