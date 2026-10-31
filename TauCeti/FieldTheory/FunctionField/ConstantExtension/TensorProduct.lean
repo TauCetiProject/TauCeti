@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.LinearDisjoint
 public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Basis
+public import TauCeti.RingTheory.Localization.FractionRing
 
 /-!
 # A constant field extension as a tensor product
@@ -96,7 +97,6 @@ theorem isFractionRing_tensorProduct_of_constantCompositum_eq_top {A : Type*} [C
     Module.Flat.rTensor_preserves_injective_linearMap (IsScalarTower.toAlgHom k A F).toLinearMap
       (IsFractionRing.injective A F)
   have hψ : Function.Injective (algebraMap (A ⊗[k] k') F') := hπ.injective.comp hρ
-  have : FaithfulSMul (A ⊗[k] k') F' := (faithfulSMul_iff_algebraMap_injective _ _).mpr hψ
   -- `F ⊗[k] k'` is the localization of `A ⊗[k] k'` at the nonzero elements of `A`
   let _ : Algebra (A ⊗[k] k') (F ⊗[k] k') := (ρ : A ⊗[k] k' →+* F ⊗[k] k').toAlgebra
   have : IsScalarTower A (A ⊗[k] k') (F ⊗[k] k') := .of_algebraMap_eq fun a ↦ by
@@ -105,19 +105,16 @@ theorem isFractionRing_tensorProduct_of_constantCompositum_eq_top {A : Type*} [C
       (F ⊗[k] k') :=
     IsLocalization.tensorProduct_tensorProduct k k' (nonZeroDivisors A) F
       (by ext; simp [RingHom.algebraMap_toAlgebra, ρ])
-  refine .of_field _ _ fun z ↦ ?_
-  obtain ⟨t, rfl⟩ := hπ.surjective z
-  obtain ⟨⟨r, s, hs⟩, rfl⟩ :=
-    IsLocalization.mk'_surjective (Algebra.algebraMapSubmonoid (A ⊗[k] k') (nonZeroDivisors A)) t
-  refine ⟨r, s, ?_⟩
-  have : Nontrivial A := (IsFractionRing.nontrivial_iff_nontrivial A F).mpr inferInstance
-  have hs0 : algebraMap (A ⊗[k] k') F' s ≠ 0 := by
-    obtain ⟨a, ha, rfl⟩ := hs
-    refine (map_ne_zero_iff _ hψ).mpr ((map_ne_zero_iff _ ?_).mpr (nonZeroDivisors.ne_zero ha))
-    exact Algebra.TensorProduct.includeLeft_injective (S := k) (algebraMap k k').injective
-  rw [eq_div_iff hs0]
-  have := congrArg π (IsLocalization.mk'_spec (F ⊗[k] k') r ⟨s, hs⟩)
-  simpa only [map_mul, RingHom.algebraMap_toAlgebra, AlgHom.coe_toRingHom, AlgHom.comp_apply,
-    RingHom.coe_coe] using this
+  -- `F'` is the fraction field of the field `F ⊗[k] k'`, through the bijection `π`
+  let _ : Field (F ⊗[k] k') :=
+    (Algebra.TensorProduct.isField_of_isAlgebraic k F k' (.inr inferInstance)).toField
+  let _ : Algebra (F ⊗[k] k') F' := (π : F ⊗[k] k' →+* F').toAlgebra
+  have : IsScalarTower (A ⊗[k] k') (F ⊗[k] k') F' := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsFractionRing (F ⊗[k] k') F' :=
+    .of_algEquiv (AlgEquiv.ofBijective (Algebra.ofId (F ⊗[k] k') F') hπ)
+  have : NoZeroDivisors (A ⊗[k] k') := hψ.noZeroDivisors _ (map_zero _) (map_mul _)
+  exact IsFractionRing.of_isLocalization_of_isFractionRing
+    (Algebra.algebraMapSubmonoid (A ⊗[k] k') (nonZeroDivisors A)) (F ⊗[k] k') F'
+    (IsLocalization.le_nonZeroDivisors_of_nontrivial _ (F ⊗[k] k'))
 
 end TauCeti
