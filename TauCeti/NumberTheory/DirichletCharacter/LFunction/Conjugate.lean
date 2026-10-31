@@ -78,6 +78,15 @@ theorem LFunction_inv_conj {s : ℂ} (hs : s ≠ 1 ∨ χ ≠ 1) :
     exact congrFun (hleft.ext_on (dense_compl_singleton 1) hright
       (fun z hz ↦ LFunction_inv_conj_of_ne_one χ hz)) s
 
+/-- Reflection interchanges the zeros of the continued L-functions of inverse characters. -/
+@[simp]
+theorem LFunction_inv_conj_eq_zero_iff (s : ℂ) :
+    χ⁻¹.LFunction (conj s) = 0 ↔ χ.LFunction s = 0 := by
+  by_cases h : s = 1 ∧ χ = 1
+  · rcases h with ⟨rfl, rfl⟩
+    simp
+  · rw [LFunction_inv_conj χ (not_and_or.mp h), map_eq_zero]
+
 /-- The derivatives of the continued L-functions of inverse characters satisfy the same
 reflection identity wherever the L-functions are holomorphic. -/
 theorem deriv_LFunction_inv_conj {s : ℂ} (hs : s ≠ 1 ∨ χ ≠ 1) :
@@ -131,8 +140,6 @@ theorem deriv_LFunction_im_eq_zero_of_isQuadratic (hχ : χ.IsQuadratic) (x : �
 @[simp]
 theorem LFunction_conj_eq_zero_iff_of_isQuadratic (hχ : χ.IsQuadratic) (s : ℂ) :
     χ.LFunction (conj s) = 0 ↔ χ.LFunction s = 0 := by
-  by_cases hs : s = 1
-  · simp [hs]
-  · rw [LFunction_conj_of_isQuadratic hχ (.inl hs), map_eq_zero]
+  simpa only [hχ.inv] using LFunction_inv_conj_eq_zero_iff χ s
 
 end DirichletCharacter
