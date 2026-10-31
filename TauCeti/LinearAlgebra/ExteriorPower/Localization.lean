@@ -67,8 +67,9 @@ theorem exteriorPowerEquiv_symm_ιMulti (h : IsBaseChange A f) (n : ℕ) (m : Fi
   apply (h.exteriorPowerEquiv n).injective
   simp
 
-/-- The comparison map `⋀[R]^n M → ⋀[A]^n N`, `x ↦ 1 ⊗ x`, exhibits `⋀[A]^n N` as the base change
-of `⋀[R]^n M` to `A`. -/
+/-- The comparison map `⋀[R]^n M → ⋀[A]^n N`, `x ↦ h.exteriorPowerEquiv n (1 ⊗ x)`, which sends
+`m₁ ∧ ⋯ ∧ mₙ` to `f m₁ ∧ ⋯ ∧ f mₙ`, exhibits `⋀[A]^n N` as the base change of `⋀[R]^n M` to
+`A`. -/
 theorem exteriorPower (h : IsBaseChange A f) (n : ℕ) :
     IsBaseChange A ((h.exteriorPowerEquiv n).toLinearMap.restrictScalars R ∘ₗ
       TensorProduct.mk R A (⋀[R]^n M) 1) :=

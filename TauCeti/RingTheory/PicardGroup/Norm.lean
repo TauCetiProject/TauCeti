@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.ExteriorPower.Invertible
 public import TauCeti.LinearAlgebra.ExteriorPower.Localization
 public import TauCeti.RingTheory.Norm.Projective
-import Mathlib.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.TensorProduct.Hom
 
 /-!
