@@ -32,7 +32,7 @@ open AlgebraicGeometry CategoryTheory TopologicalSpace
 
 universe u
 
-namespace IsLocalRing
+namespace TauCeti.IsLocalRing
 
 variable (R : Type u) [CommRing R] [IsLocalRing R]
 
@@ -65,4 +65,4 @@ theorem purityHolds_iff :
   · intro h
     exact ⟨h⟩
 
-end IsLocalRing
+end TauCeti.IsLocalRing
