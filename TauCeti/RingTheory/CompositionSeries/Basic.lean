@@ -8,16 +8,21 @@ module
 public import Mathlib.RingTheory.SimpleModule.Basic
 
 /-!
-# Transporting a composition series along a linear map
+# Transporting a composition series along a semilinear map
 
-An injective semilinear map `f : M →ₛₗ[σ] N` carries the submodules of `M` to submodules of `N`
-and preserves coverings (`Submodule.map_covBy_of_injective`), and a surjective one pulls the
-submodules of `N` back and preserves coverings (`Submodule.comap_covBy_of_surjective`), so each
-carries a composition series to a composition series: `TauCeti.mapCompositionSeriesOfInjective`
-and `TauCeti.comapCompositionSeriesOfSurjective`.  That the transported series keeps the *factors*
-themselves, and not just their number, is the identification of subquotients
-`TauCeti.mapSubquotientEquivOfInjective`, respectively
-`TauCeti.comapSubquotientEquivOfSurjective`, of `TauCeti.Algebra.Module.Submodule.Quotient`.
+Let `σ : R →+* R₂` be a surjective ring homomorphism (`[RingHomSurjective σ]`). An injective
+semilinear map `f : M →ₛₗ[σ] N` carries the submodules of `M` to submodules of `N` and preserves
+coverings (`Submodule.map_covBy_of_injective`), and a surjective one pulls the submodules of `N`
+back and preserves coverings (`Submodule.comap_covBy_of_surjective`), so each carries a
+composition series of `R`-submodules to one of `R₂`-submodules:
+`TauCeti.mapCompositionSeriesOfInjective` and `TauCeti.comapCompositionSeriesOfSurjective`.
+This file records only how the transported series is built (its length, terms and endpoints).
+
+For a linear map `f : M →ₗ[R] N` over a single ring (the case `σ = RingHom.id R`), the transported
+series also keeps the *factors* themselves, and not just their number: this is the identification
+of subquotients `TauCeti.mapSubquotientEquivOfInjective`, respectively
+`TauCeti.comapSubquotientEquivOfSurjective`, of `TauCeti.Algebra.Module.Submodule.Quotient`, which
+are stated only for such linear maps.
 
 Taking `f` to be a linear equivalence, this is what makes an invariant read off a composition
 series an invariant of the isomorphism class of the ambient module; the Jordan-Hölder
@@ -28,16 +33,16 @@ two one-sided forms, for the inclusion of a submodule and the projection onto a 
 ## Main definitions
 
 * `TauCeti.mapCompositionSeriesOfInjective`: the image of a composition series under an injective
-  linear map.
+  semilinear map.
 * `TauCeti.comapCompositionSeriesOfSurjective`: the preimage of a composition series under a
-  surjective linear map.
+  surjective semilinear map.
 
 ## References
 
 The two transports are exactly the anonymous `let`s inside the proof of Mathlib's
 `Module.length_eq_add_of_exact` (`Mathlib/RingTheory/Length.lean`, by Andrew Yang), packaged here
-as named definitions with an API so that they can be shown to preserve the factors themselves and
-not just their number.
+as named definitions with an API so that, for linear maps, they can be shown to preserve the
+factors themselves and not just their number.
 -/
 
 public section
