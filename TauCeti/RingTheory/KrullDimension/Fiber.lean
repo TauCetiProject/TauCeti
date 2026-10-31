@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 public import Mathlib.RingTheory.QuasiFinite.Basic
 import Mathlib.RingTheory.Artinian.Algebra
+import Mathlib.RingTheory.KrullDimension.Field
 import Mathlib.RingTheory.Nakayama
 
 /-!
@@ -46,13 +47,13 @@ set-theoretic fibre of `Spec S → Spec R` over `p`. Mathlib's
   is at most that of `R` plus a bound on the Krull dimensions of all fibres.
 * `TauCeti.ringKrullDim_quotient_map_maximalIdeal_eq_zero`: the closed fibre `S ⧸ 𝔪S` of a finite
   nonzero algebra over a local ring `(R, 𝔪)` has Krull dimension zero.
-* `TauCeti.ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq`: a flat local homomorphism whose
-  closed fibre is a field, such as the completion of a Noetherian local ring, preserves the Krull
-  dimension.
 * `TauCeti.ringKrullDim_le_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal`: for a local
   homomorphism of Noetherian local rings, `dim S ≤ dim R + dim S ⧸ 𝔪_R S`.
 * `TauCeti.ringKrullDim_eq_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal`: equality
-  holds when the homomorphism is flat, since flat algebras satisfy going down.
+  holds when the homomorphism satisfies going down, for instance when it is flat.
+* `TauCeti.ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq`: a flat local homomorphism whose
+  closed fibre is a field, such as the completion of a Noetherian local ring, preserves the Krull
+  dimension.
 * `TauCeti.ringKrullDim_quotient_map_maximalIdeal_quotient`: dividing the base by an ideal `J`
   with `R ⧸ J` local does not change the closed fibre.
 
@@ -199,19 +200,6 @@ theorem ringKrullDim_quotient_map_maximalIdeal_eq_zero [IsLocalRing R] [Module.F
   exact ringKrullDimZero_iff_ringKrullDim_eq_zero.mp inferInstance
 
 open IsLocalRing in
-/-- Along a flat homomorphism of local rings under which the maximal ideal of `R` generates the
-maximal ideal of `S`, so that the closed fibre is a field, the Krull dimensions of `R` and `S`
-agree. -/
-theorem ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq [IsLocalRing R] [IsLocalRing S]
-    [IsNoetherianRing R] [IsNoetherianRing S] [Module.Flat R S]
-    (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
-    ringKrullDim S = ringKrullDim R := by
-  have : IsLocalHom (algebraMap R S) := ((local_hom_TFAE (algebraMap R S)).out 1 3).mpr h.le
-  rw [← maximalIdeal_height_eq_ringKrullDim, ← maximalIdeal_height_eq_ringKrullDim,
-    Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown (maximalIdeal R) (maximalIdeal S), h,
-    Ideal.map_quotient_self, Ideal.height_bot, add_zero]
-
-open IsLocalRing in
 /-- For a local homomorphism of Noetherian local rings `R → S`, the Krull dimension of `S` is at
 most the Krull dimension of `R` plus that of the closed fibre `S ⧸ 𝔪_R S`. -/
 @[stacks 00OM "for the maximal ideals"]
@@ -228,25 +216,36 @@ theorem ringKrullDim_le_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal 
   exact (Ideal.isPrime_map_quotientMk_of_isPrime hle).ne_top
 
 open IsLocalRing in
-/-- **The dimension formula for flat local homomorphisms.** For a flat local homomorphism
-`R → S` of Noetherian local rings, the Krull dimension of `S` is the Krull dimension of `R` plus
-that of the closed fibre `S ⧸ 𝔪_R S`. -/
+/-- **The dimension formula for local homomorphisms with going down.** For a local homomorphism
+`R → S` of Noetherian local rings satisfying going down, for instance a flat one, the Krull
+dimension of `S` is the Krull dimension of `R` plus that of the closed fibre `S ⧸ 𝔪_R S`. -/
 @[stacks 00ON]
 theorem ringKrullDim_eq_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal [IsLocalRing R]
     [IsLocalRing S] [IsNoetherianRing R] [IsNoetherianRing S] [IsLocalHom (algebraMap R S)]
-    [Module.Flat R S] :
+    [Algebra.HasGoingDown R S] :
     ringKrullDim S = ringKrullDim R + ringKrullDim (S ⧸ (maximalIdeal R).map (algebraMap R S)) := by
   set I := (maximalIdeal R).map (algebraMap R S)
-  have hle : I ≤ maximalIdeal S :=
-    Ideal.map_le_iff_le_comap.mpr (maximalIdeal_comap (algebraMap R S)).ge
-  have : Nontrivial (S ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr (ne_top_of_le_ne_top
-    (maximalIdeal.isMaximal S).ne_top hle)
+  have : Nontrivial (S ⧸ I) :=
+    Ideal.Quotient.nontrivial_iff.mpr (map_maximalIdeal_lt_top (algebraMap R S)).ne
   have : IsLocalRing (S ⧸ I) := .of_surjective' _ Ideal.Quotient.mk_surjective
   -- The image of `𝔪_S` in the closed fibre is its maximal ideal, whose height is its dimension.
   have h := Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown (maximalIdeal R) (maximalIdeal S)
   rw [map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective] at h
   rw [← maximalIdeal_height_eq_ringKrullDim, ← maximalIdeal_height_eq_ringKrullDim,
     ← maximalIdeal_height_eq_ringKrullDim, h, WithBot.coe_add]
+
+open IsLocalRing in
+/-- Along a flat homomorphism of local rings under which the maximal ideal of `R` generates the
+maximal ideal of `S`, so that the closed fibre is a field, the Krull dimensions of `R` and `S`
+agree. -/
+theorem ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq [IsLocalRing R] [IsLocalRing S]
+    [IsNoetherianRing R] [IsNoetherianRing S] [Module.Flat R S]
+    (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
+    ringKrullDim S = ringKrullDim R := by
+  have : IsLocalHom (algebraMap R S) := ((local_hom_TFAE (algebraMap R S)).out 1 3).mpr h.le
+  rw [ringKrullDim_eq_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal (R := R), h,
+    ringKrullDim_eq_zero_of_isField ((Ideal.Quotient.maximal_ideal_iff_isField_quotient _).mp
+      (maximalIdeal.isMaximal S)), add_zero]
 
 open IsLocalRing in
 /-- Dividing the base of a local `R`-algebra `S` by an ideal `J`, with `R ⧸ J` local, does not

@@ -33,9 +33,10 @@ Cartier divisors.
 
 The fibre ring can also be reached from the fibre over a prime `p` of `R`: for a prime `Q` of
 `κ(p) ⊗[R] B` lying over the prime `q` of `B`, the local ring `(κ(p) ⊗[R] B)_Q` is
-`B_q ⧸ p B_q` (Mathlib's `Ideal.Fiber.algEquivAux₂`), compatibly with the maps from `B`
-(`Ideal.Fiber.algEquivAux₂_algebraMap_one_tmul`). So the criterion applies to the local rings of
-the fibre ring at all its primes
+`B_q ⧸ p B_q` (`Ideal.Fiber.localizationAtPrimeEquivQuotientMap`, from Mathlib's
+`Ideal.Fiber.algEquivAux₂`), compatibly with the maps from `B`
+(`Ideal.Fiber.localizationAtPrimeEquivQuotientMap_algebraMap_one_tmul`). So the criterion applies
+to the local rings of the fibre ring at all its primes
 (`Module.Flat.exists_isSMulRegular_and_map_eq_span_singleton_iff_fiber`), which is how it is
 read off the local rings of the scheme-theoretic fibre `X ×_S Spec κ(s)`.
 
@@ -233,8 +234,7 @@ theorem exists_isSMulRegular_and_map_eq_span_singleton_iff_fiber [IsNoetherianRi
   rw [exists_isSMulRegular_and_eq_span_singleton_iff (𝔪 := p) hjac]
   -- Transport along `(κ(p) ⊗[R] B)_Q ≅ B_r ⧸ p B_r`, which is compatible with the maps from `B`.
   let e : Localization.AtPrime Q ≃+* Br ⧸ p.map (algebraMap R Br) :=
-    (Ideal.Fiber.algEquivAux₂ p Q).toRingEquiv.trans (Ideal.quotEquivOfEq (by
-      rw [Ideal.map_map, ← IsScalarTower.algebraMap_eq]))
+    Ideal.Fiber.localizationAtPrimeEquivQuotientMap p Q
   have he : (J.map (algebraMap B Br)).map (Ideal.Quotient.mk (p.map (algebraMap R Br))) =
       ((J.map (includeRight : B →ₐ[R] p.Fiber B)).map
         (algebraMap (p.Fiber B) (Localization.AtPrime Q))).map e := by
