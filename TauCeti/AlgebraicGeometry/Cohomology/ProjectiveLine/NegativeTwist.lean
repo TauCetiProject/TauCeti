@@ -72,25 +72,6 @@ local notation "𝒜" => SymmetricAlgebra.homogeneousSubmodule R (Fin 2 → R)
 
 /-! ### Forms of degree `k + l` modulo `X₀ᵏ` and `X₁ᵏ` -/
 
-/-- A product of coordinates is a monomial in the two coordinates, whose exponents count the
-factors. -/
-private theorem prod_map_coord (L : List (Fin 2)) :
-    (L.map (coord R)).prod = coord R 0 ^ L.count 0 * coord R 1 ^ L.count 1 ∧
-      L.length = L.count 0 + L.count 1 := by
-  induction L with
-  | nil => simp
-  | cons a L ih =>
-    obtain ⟨h₁, h₂⟩ := ih
-    fin_cases a
-    · simp only [Fin.zero_eta, Fin.isValue, List.map_cons, List.prod_cons, h₁,
-        List.count_cons_self, List.length_cons, h₂, ne_eq, zero_ne_one, not_false_eq_true,
-        List.count_cons_of_ne]
-      exact ⟨by ring, by omega⟩
-    · simp only [Fin.mk_one, Fin.isValue, List.map_cons, List.prod_cons, h₁,
-        List.count_cons_self, List.length_cons, h₂, ne_eq, one_ne_zero, not_false_eq_true,
-        List.count_cons_of_ne]
-      exact ⟨by ring, by omega⟩
-
 /-- For `k = l + m + 2`, a form of degree `k + l` is `X₀ᵏ a + X₁ᵏ b + (X₀X₁)ˡ⁺¹ c` with `a` and `b`
 of degree `l` and `c` of degree `m`: a monomial `X₀ᵅ X₁ᵝ` of degree `k + l` with `α, β < k` has
 `α, β ≥ l + 1`. -/
@@ -111,13 +92,19 @@ private theorem exists_eq_coord_pow_mul_add_coord_pow_mul_add {m k l : ℕ} (hk 
     rw [← funext (Pi.basisFun_apply R (Fin 2)), (Pi.basisFun R (Fin 2)).span_eq]
   rw [SymmetricAlgebra.homogeneousSubmodule_eq_span_of_span R _ _ he, Submodule.span_le]
   rintro _ ⟨L, hL, rfl⟩
-  obtain ⟨hprod, hlen⟩ := prod_map_coord R L
   have hcoord (i : Fin 2) :
       _root_.SymmetricAlgebra.ι R (Fin 2 → R) (Pi.single i 1) = coord R i := by
     fin_cases i <;> simp [ι_eq_smul_coord_add_smul_coord R 0]
-  rw [SetLike.mem_coe, List.map_congr_left fun i _ ↦ hcoord i, hprod]
-  generalize L.count 0 = α at hprod hlen
-  generalize L.count 1 = β at hprod hlen
+  -- the product is `X₀ᵅ X₁ᵝ`, where `α` and `β` count the factors, so `α + β = k + l`
+  have hlen : L.count 0 + L.count 1 = k + l := by
+    rw [← hL, ← Multiset.coe_card, ← Multiset.sum_count_eq_card (s := Finset.univ) (by simp),
+      Fin.sum_univ_two, Multiset.coe_count, Multiset.coe_count]
+  rw [SetLike.mem_coe, List.map_congr_left fun i _ ↦ hcoord i, Finset.prod_list_map_count,
+    Finset.prod_subset (Finset.subset_univ _) fun i _ hi ↦ by
+      rw [List.count_eq_zero_of_not_mem (by simpa using hi), pow_zero],
+    Fin.prod_univ_two]
+  generalize L.count 0 = α at hlen
+  generalize L.count 1 = β at hlen
   by_cases hα : k ≤ α
   · refine Submodule.mem_sup_left (Submodule.mem_sup_left ⟨coord R 0 ^ (α - k) * coord R 1 ^ β,
       coord_pow_mul_coord_pow_mem R (by omega), ?_⟩)
@@ -156,45 +143,6 @@ private theorem eq_zero_of_coord_pow_mul_eq {m k k' j' : ℕ} (hk' : j' + m + 2 
   · rfl
 
 /-! ### The comparison map -/
-
-/-- On every open of the projective line, the restriction of the constant global function `r`
-takes the value `r` in every localization. -/
-private theorem val_map_baseRingToGlobalSections (r : R) (U : (projectiveLine R).Opens) (x : U) :
-    ((((projectiveLine R).presheaf.map U.leTop.op
-      (baseRingToGlobalSections R (projectiveLine R) r)).1 x).val) = algebraMap R _ r := by
-  obtain ⟨i, hi⟩ : ∃ i, x.1 ∈ Proj.basicOpen 𝒜 (coord R i) := by
-    have hx : x.1 ∈ (⊤ : (projectiveLine R).Opens) := trivial
-    rwa [← iSup_basicOpen_coord_eq_top R, TopologicalSpace.Opens.mem_iSup] at hx
-  -- on the chart `D₊(Xᵢ)` containing `x`, the constant `r` is the fraction `r / 1`
-  have hres : (projectiveLine R).presheaf.map (homOfLE le_top).op
-      (baseRingToGlobalSections R (projectiveLine R) r) =
-        Proj.awayToSection 𝒜 (coord R i) (algebraMap R _ r) := by
-    rw [baseRingToGlobalSections_apply]
-    exact (awayToSection_algebraMap R i r).symm
-  -- restricting a section keeps its values, which is `Proj.res_apply`, true by `rfl`
-  have hx : ((((projectiveLine R).presheaf.map U.leTop.op
-      (baseRingToGlobalSections R (projectiveLine R) r)).1 x).val) =
-        ((((projectiveLine R).presheaf.map (homOfLE le_top).op
-          (baseRingToGlobalSections R (projectiveLine R) r)).1 ⟨x.1, hi⟩).val) := rfl
-  refine hx.trans ((congrArg (fun s : Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i)) ↦
-    (s.1 ⟨x.1, hi⟩).val) hres).trans ?_)
-  refine (ProjectiveSpectrum.Proj.awayToSection_apply 𝒜 (coord R i)
-    ((algebraMap R (HomogeneousLocalization.Away 𝒜 (coord R i))) r) ⟨x.1, hi⟩).trans ?_
-  have hR (L : Type u) [CommRing L] [Algebra (_root_.SymmetricAlgebra R (Fin 2 → R)) L]
-      [Algebra R L] [IsScalarTower R (_root_.SymmetricAlgebra R (Fin 2 → R)) L] :
-      algebraMap R L r = algebraMap _ L (algebraMap R (_root_.SymmetricAlgebra R (Fin 2 → R)) r) :=
-    IsScalarTower.algebraMap_apply _ _ _ r
-  rw [HomogeneousLocalization.val_algebraMap, hR, hR]
-  exact IsLocalization.map_eq _ _
-
-private theorem coord_mul_coord_pow_mem (k : ℕ) : (coord R 0 * coord R 1) ^ k ∈ 𝒜 (k * 2) := by
-  simpa [mul_comm] using SetLike.pow_mem_graded k
-    (SetLike.mul_mem_graded (coord_mem R 0) (coord_mem R 1))
-
-private theorem inf_le_basicOpen_coord_mul_coord_pow {k : ℕ} (hk : 0 < k) :
-    Proj.basicOpen 𝒜 (coord R 0) ⊓ Proj.basicOpen 𝒜 (coord R 1) ≤
-      Proj.basicOpen 𝒜 ((coord R 0 * coord R 1) ^ k) := by
-  rw [Proj.basicOpen_pow _ _ _ hk, Proj.basicOpen_mul]
 
 /-- The section `c / (X₀X₁)ᵐ⁺¹` of `𝒪(-(m + 2))` over the overlap of the standard charts. -/
 private noncomputable def overlapSection (m : ℕ) (c : 𝒜 m) :
@@ -343,10 +291,8 @@ theorem cohomologyOneTwistingSheafLinearEquiv_symm_apply (m : ℕ) (c : 𝒜 m) 
     (cohomologyOneTwistingSheafLinearEquiv R m).symm c =
       mayerVietorisBoundaryLinear _ _ _ (basicOpen_coord_sup_eq_top R)
         (Proj.twistingSheaf.const (i := (m + 1) * 2) (j := m) (by push_cast; ring) c.1
-          ((coord R 0 * coord R 1) ^ (m + 1)) c.2
-          (by simpa [mul_comm] using SetLike.pow_mem_graded (m + 1)
-                (SetLike.mul_mem_graded (coord_mem R 0) (coord_mem R 1))) _
-          (by rw [Proj.basicOpen_pow _ _ _ m.succ_pos, Proj.basicOpen_mul])) :=
+          ((coord R 0 * coord R 1) ^ (m + 1)) c.2 (coord_mul_coord_pow_mem R (m + 1)) _
+          (inf_le_basicOpen_coord_mul_coord_pow R m.succ_pos)) :=
   (rfl)
 
 /-- **For `n ≤ -2`, the first cohomology of `𝒪(n)` on the projective line is a free module**,

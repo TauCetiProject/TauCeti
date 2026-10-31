@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import Mathlib.FieldTheory.RatFunc.AsPolynomial
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.RegularLocalRing.Polynomial
+public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Integral
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
@@ -89,7 +90,9 @@ function `X₁ / X₀` on that chart going to `X`.
 * `TauCeti.AlgebraicGeometry.projectiveLine.chartSectionsEquiv_awayToSection`: on the chart
   `D₊(Xᵢ)`, `chartSectionsEquiv` agrees with the chart isomorphism on the fractions
   `Proj.awayToSection a`, and `TauCeti.AlgebraicGeometry.projectiveLine.awayToSection_algebraMap`:
-  the constants restrict to the fractions `c / 1`.
+  the constants restrict to the fractions `c / 1`, and
+  `TauCeti.AlgebraicGeometry.projectiveLine.val_map_baseRingToGlobalSections`: on every open, the
+  constant global function `r` takes the value `r` in every localization.
 * `TauCeti.AlgebraicGeometry.projectiveLine.isIntegral`: `ℙ¹_R` is integral over a domain.
 * `TauCeti.AlgebraicGeometry.projectiveLine.isRegularLocalRing_stalk`: its local rings are
   regular over a regular ring.
@@ -147,6 +150,11 @@ theorem coord_pow_mul_coord_pow_mem {a b d : ℕ} (h : a + b = d) :
     coord R 0 ^ a * coord R 1 ^ b ∈ 𝒜 d := by
   simpa [← h] using SetLike.mul_mem_graded (SetLike.pow_mem_graded a (coord_mem R 0))
     (SetLike.pow_mem_graded b (coord_mem R 1))
+
+/-- The power `(X₀X₁)ᵏ` is a form of degree `2k`. -/
+theorem coord_mul_coord_pow_mem (k : ℕ) : (coord R 0 * coord R 1) ^ k ∈ 𝒜 (k * 2) := by
+  simpa [mul_comm] using SetLike.pow_mem_graded k
+    (SetLike.mul_mem_graded (coord_mem R 0) (coord_mem R 1))
 
 /-- Each homogeneous coordinate is a nonzerodivisor, even over a nonreduced base ring. -/
 theorem coord_mem_nonZeroDivisors (i : Fin 2) : coord R i ∈ nonZeroDivisors _ := by
@@ -383,6 +391,12 @@ theorem basicOpen_coord_sup_eq_top :
   have hp : p ∈ (⊤ : (projectiveLine R).Opens) := trivial
   rwa [← iSup_basicOpen_coord_eq_top R, TopologicalSpace.Opens.mem_iSup, Fin.exists_fin_two] at hp
 
+/-- The overlap `D₊(X₀) ⊓ D₊(X₁)` of the standard charts lies in `D₊((X₀X₁)ᵏ)` for `k > 0`. -/
+theorem inf_le_basicOpen_coord_mul_coord_pow {k : ℕ} (hk : 0 < k) :
+    Proj.basicOpen 𝒜 (coord R 0) ⊓ Proj.basicOpen 𝒜 (coord R 1) ≤
+      Proj.basicOpen 𝒜 ((coord R 0 * coord R 1) ^ k) := by
+  rw [Proj.basicOpen_pow _ _ _ hk, Proj.basicOpen_mul]
+
 /-- The two polynomial chart ranges cover the projective line. -/
 theorem range_polynomialChartι_union_range_polynomialChartι :
     Set.range (polynomialChartι R 0) ∪ Set.range (polynomialChartι R 1) = Set.univ := by
@@ -600,6 +614,38 @@ theorem awayToSection_algebraMap (i : Fin 2) (c : R) :
       (congrFun (congrArg DFunLike.coe Polynomial.algebraMap_eq) c).trans <|
         h.symm.trans (congrArg _ ?_)
   exact (ConcreteCategory.congr_hom (Scheme.Hom.appLE_map _ _ _) _).symm
+
+/-- On every open of the projective line, the restriction of the constant global function `r`
+takes the value `r` in every localization. -/
+theorem val_map_baseRingToGlobalSections (r : R) (U : (projectiveLine R).Opens) (x : U) :
+    ((((projectiveLine R).presheaf.map U.leTop.op
+      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).1 x).val) =
+        algebraMap R _ r := by
+  obtain ⟨i, hi⟩ : ∃ i, x.1 ∈ Proj.basicOpen 𝒜 (coord R i) := by
+    have hx : x.1 ∈ (⊤ : (projectiveLine R).Opens) := trivial
+    rwa [← iSup_basicOpen_coord_eq_top R, TopologicalSpace.Opens.mem_iSup] at hx
+  -- on the chart `D₊(Xᵢ)` containing `x`, the constant `r` is the fraction `r / 1`
+  have hres : (projectiveLine R).presheaf.map (homOfLE le_top).op
+      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r) =
+        Proj.awayToSection 𝒜 (coord R i) (algebraMap R _ r) := by
+    rw [Scheme.Modules.baseRingToGlobalSections_apply]
+    exact (awayToSection_algebraMap R i r).symm
+  -- restricting a section keeps its values, which is `Proj.res_apply`, true by `rfl`
+  have hx : ((((projectiveLine R).presheaf.map U.leTop.op
+      (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).1 x).val) =
+        ((((projectiveLine R).presheaf.map (homOfLE le_top).op
+          (Scheme.Modules.baseRingToGlobalSections R (projectiveLine R) r)).1 ⟨x.1, hi⟩).val) :=
+    rfl
+  refine hx.trans ((congrArg (fun s : Γ(projectiveLine R, Proj.basicOpen 𝒜 (coord R i)) ↦
+    (s.1 ⟨x.1, hi⟩).val) hres).trans ?_)
+  refine (ProjectiveSpectrum.Proj.awayToSection_apply 𝒜 (coord R i)
+    ((algebraMap R (HomogeneousLocalization.Away 𝒜 (coord R i))) r) ⟨x.1, hi⟩).trans ?_
+  have hR (L : Type u) [CommRing L] [Algebra (_root_.SymmetricAlgebra R (Fin 2 → R)) L]
+      [Algebra R L] [IsScalarTower R (_root_.SymmetricAlgebra R (Fin 2 → R)) L] :
+      algebraMap R L r = algebraMap _ L (algebraMap R (_root_.SymmetricAlgebra R (Fin 2 → R)) r) :=
+    IsScalarTower.algebraMap_apply _ _ _ r
+  rw [HomogeneousLocalization.val_algebraMap, hR, hR]
+  exact IsLocalization.map_eq _ _
 
 /-! ### Smoothness -/
 
