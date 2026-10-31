@@ -126,13 +126,10 @@ include h in
 /-- Rotating both balls by the same linear isometry of `E` keeps them complementary, since the
 rotation commutes with the inversion in the unit sphere. -/
 theorem comp_linearIsometryEquiv (R : E ≃ₗᵢ[ℝ] E) : IsComplementaryBall (s ∘ R) (s' ∘ R) where
-  isOpenEmbedding := h.isOpenEmbedding.comp R.toHomeomorph.isOpenEmbedding
-  range_eq := by
-    rw [range_comp, R.surjective.range_eq, image_univ, h.range_eq, Function.comp_apply, map_zero]
+  isOpenEmbedding := h.isOpenEmbedding.comp_linearIsometryEquiv R
+  range_eq := by simp [range_comp, R.surjective.range_eq, h.range_eq]
   apply_eq_inversion w hw := by
-    have hR := LinearIsometry.map_inversion R.toLinearIsometry 0 1 w
-    simp only [LinearIsometryEquiv.coe_toLinearIsometry, map_zero] at hR
-    rw [Function.comp_apply, Function.comp_apply, hR]
+    rw [Function.comp_apply, Function.comp_apply, R.map_inversion_zero]
     exact h.apply_eq_inversion _ (by simpa using hw)
 
 /-- A complementary ball of `s` parametrizes the punctured summand `N ∖ {s 0}` of a connected sum

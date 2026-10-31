@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ConnectedSum.Smooth
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 import TauCeti.Geometry.Euclidean.Inversion
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.ContMDiff.Sum
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Order.Filter.Basic
 
 /-!
@@ -494,12 +494,6 @@ theorem puncture_comp_linearIsometryEquiv (e : E → M) : puncture (e ∘ R) = p
   ext x
   simp
 
-omit [T1Space M] in
-/-- A ball precomposed with a linear isometry of `E` is again an open embedding. -/
-theorem isOpenEmbedding_comp_linearIsometryEquiv {e : E → M} (h : IsOpenEmbedding e) :
-    IsOpenEmbedding (e ∘ R) :=
-  h.comp R.toHomeomorph.isOpenEmbedding
-
 variable {e₁ : E → M} {e₂ : E → N}
 
 /-- Points of the punctured summands are glued as soon as they are the images of a nonzero vector
@@ -510,10 +504,6 @@ private theorem inl_eq_inr_of_eq {x : puncture e₁} {y : puncture e₂} (v : E)
   have hy' : y = ⟨e₂ (inversion 0 1 v), hy ▸ y.2⟩ := Subtype.ext hy.symm
   rw [hx', hy']
   exact inl_eq_inr v hv _ _
-
-/-- A linear isometry commutes with the inversion in the unit sphere. -/
-private theorem apply_inversion_zero_one (v : E) : R (inversion 0 1 v) = inversion 0 1 (R v) := by
-  simpa using LinearIsometry.map_inversion R.toLinearIsometry 0 1 v
 
 variable (e₁ e₂)
 
@@ -527,11 +517,11 @@ def compLinearIsometryEquivHomeomorph :
     (inl (e₁ ∘ R) (e₂ ∘ R) ∘ Opens.inclusion (puncture_comp_linearIsometryEquiv R e₁).ge)
     (inr (e₁ ∘ R) (e₂ ∘ R) ∘ Opens.inclusion (puncture_comp_linearIsometryEquiv R e₂).ge)
     fun v hv _ _ ↦ inl_eq_inr_of_eq (R.symm v) (by simpa using hv) (by simp)
-      (by simp [apply_inversion_zero_one])
+      (by simp [LinearIsometryEquiv.map_inversion_zero])
   invFun := lift (inl e₁ e₂ ∘ Opens.inclusion (puncture_comp_linearIsometryEquiv R e₁).le)
     (inr e₁ e₂ ∘ Opens.inclusion (puncture_comp_linearIsometryEquiv R e₂).le)
     fun v hv _ _ ↦ inl_eq_inr_of_eq (R v) (by simpa using hv) (by simp)
-      (by simp [apply_inversion_zero_one])
+      (by simp [LinearIsometryEquiv.map_inversion_zero])
   left_inv p := by obtain ⟨x | y, rfl⟩ := mk_surjective e₁ e₂ p <;> simp
   right_inv p := by obtain ⟨x | y, rfl⟩ := mk_surjective (e₁ ∘ R) (e₂ ∘ R) p <;> simp
   continuous_toFun := continuous_lift _ _ _
@@ -553,6 +543,18 @@ theorem compLinearIsometryEquivHomeomorph_inr (y : puncture e₂) :
       inr (e₁ ∘ R) (e₂ ∘ R) ⟨y, by simp⟩ :=
   lift_inr _ _ _ y
 
+@[simp]
+theorem compLinearIsometryEquivHomeomorph_symm_inl (x : puncture (e₁ ∘ R)) :
+    (compLinearIsometryEquivHomeomorph R e₁ e₂).symm (inl (e₁ ∘ R) (e₂ ∘ R) x) =
+      inl e₁ e₂ ⟨x, by simpa using x.2⟩ :=
+  lift_inl _ _ _ x
+
+@[simp]
+theorem compLinearIsometryEquivHomeomorph_symm_inr (y : puncture (e₂ ∘ R)) :
+    (compLinearIsometryEquivHomeomorph R e₁ e₂).symm (inr (e₁ ∘ R) (e₂ ∘ R) y) =
+      inr e₁ e₂ ⟨y, by simpa using y.2⟩ :=
+  lift_inr _ _ _ y
+
 /-- Read on the disjoint union of the punctured summands, the rotation of the balls is the identity
 of each punctured summand. -/
 theorem compLinearIsometryEquivHomeomorph_comp_mk :
@@ -567,7 +569,7 @@ theorem compLinearIsometryEquivHomeomorph_symm_comp_mk :
     (compLinearIsometryEquivHomeomorph R e₁ e₂).symm ∘ mk (e₁ ∘ R) (e₂ ∘ R) = mk e₁ e₂ ∘
       Sum.map (Opens.inclusion (puncture_comp_linearIsometryEquiv R e₁).le)
         (Opens.inclusion (puncture_comp_linearIsometryEquiv R e₂).le) := by
-  ext (x | y) <;> simp [Homeomorph.symm_apply_eq]
+  ext (x | y) <;> simp
 
 section Smooth
 
@@ -576,31 +578,19 @@ variable {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : �
   {e₁ e₂} (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
   (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₁) (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₂)
 
-/-- A linear isometry of `E`, as a `C^n` diffeomorphism of `E`. -/
-private def linearIsometryEquivDiffeomorph : E ≃ₘ^n⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E where
-  toEquiv := R.toEquiv
-  contMDiff_toFun := R.contDiff.contMDiff
-  contMDiff_invFun := R.symm.contDiff.contMDiff
-
-omit [T1Space M] [IsManifold I n M] in
-/-- A ball precomposed with a linear isometry of `E` is again a `C^n` local diffeomorphism. -/
-theorem isLocalDiffeomorph_comp_linearIsometryEquiv {e : E → M}
-    (d : IsLocalDiffeomorph 𝓘(ℝ, E) I n e) : IsLocalDiffeomorph 𝓘(ℝ, E) I n (e ∘ R) := fun v ↦
-  ((linearIsometryEquivDiffeomorph (n := n) R).isLocalDiffeomorph v).comp (hg := d (R v))
-
 include h₁ h₂ d₁ d₂ in
 /-- Read on the punctured summands, both directions of the rotation of the balls are inclusions
 of open subsets, so they are `C^n` for the charts of the connected sums. -/
 private theorem contMDiff_compLinearIsometryEquivHomeomorph :
     letI := chartedSpace (H := H) h₁ h₂
-    letI := chartedSpace (H := H) (isOpenEmbedding_comp_linearIsometryEquiv R h₁)
-      (isOpenEmbedding_comp_linearIsometryEquiv R h₂)
+    letI := chartedSpace (H := H) (h₁.comp_linearIsometryEquiv R)
+      (h₂.comp_linearIsometryEquiv R)
     ContMDiff I I n (compLinearIsometryEquivHomeomorph R e₁ e₂) ∧
       ContMDiff I I n (compLinearIsometryEquivHomeomorph R e₁ e₂).symm := by
-  let h₁' := isOpenEmbedding_comp_linearIsometryEquiv R h₁
-  let h₂' := isOpenEmbedding_comp_linearIsometryEquiv R h₂
-  let d₁' := isLocalDiffeomorph_comp_linearIsometryEquiv R d₁
-  let d₂' := isLocalDiffeomorph_comp_linearIsometryEquiv R d₂
+  let h₁' := h₁.comp_linearIsometryEquiv R
+  let h₂' := h₂.comp_linearIsometryEquiv R
+  let d₁' := d₁.comp_linearIsometryEquiv R
+  let d₂' := d₂.comp_linearIsometryEquiv R
   let := chartedSpace (H := H) h₁ h₂
   let := chartedSpace (H := H) h₁' h₂'
   have := isManifold h₁ h₂ d₁ d₂
@@ -620,12 +610,12 @@ diffeomorphisms, the homeomorphism `TauCeti.ConnectedSum.compLinearIsometryEquiv
 `C^n` diffeomorphism for the charts of the connected sums. -/
 def compLinearIsometryEquivDiffeomorph :
     letI := chartedSpace (H := H) h₁ h₂
-    letI := chartedSpace (H := H) (isOpenEmbedding_comp_linearIsometryEquiv R h₁)
-      (isOpenEmbedding_comp_linearIsometryEquiv R h₂)
+    letI := chartedSpace (H := H) (h₁.comp_linearIsometryEquiv R)
+      (h₂.comp_linearIsometryEquiv R)
     ConnectedSum e₁ e₂ ≃ₘ^n⟮I, I⟯ ConnectedSum (e₁ ∘ R) (e₂ ∘ R) :=
   letI := chartedSpace (H := H) h₁ h₂
-  letI := chartedSpace (H := H) (isOpenEmbedding_comp_linearIsometryEquiv R h₁)
-    (isOpenEmbedding_comp_linearIsometryEquiv R h₂)
+  letI := chartedSpace (H := H) (h₁.comp_linearIsometryEquiv R)
+    (h₂.comp_linearIsometryEquiv R)
   { toEquiv := (compLinearIsometryEquivHomeomorph R e₁ e₂).toEquiv
     contMDiff_toFun := (contMDiff_compLinearIsometryEquivHomeomorph R h₁ h₂ d₁ d₂).1
     contMDiff_invFun := (contMDiff_compLinearIsometryEquivHomeomorph R h₁ h₂ d₁ d₂).2 }
@@ -633,10 +623,26 @@ def compLinearIsometryEquivDiffeomorph :
 @[simp]
 theorem coe_compLinearIsometryEquivDiffeomorph :
     letI := chartedSpace (H := H) h₁ h₂
-    letI := chartedSpace (H := H) (isOpenEmbedding_comp_linearIsometryEquiv R h₁)
-      (isOpenEmbedding_comp_linearIsometryEquiv R h₂)
+    letI := chartedSpace (H := H) (h₁.comp_linearIsometryEquiv R)
+      (h₂.comp_linearIsometryEquiv R)
     ⇑(compLinearIsometryEquivDiffeomorph R h₁ h₂ d₁ d₂) =
       compLinearIsometryEquivHomeomorph R e₁ e₂ :=
+  (rfl)
+
+@[simp]
+theorem toHomeomorph_compLinearIsometryEquivDiffeomorph :
+    letI := chartedSpace (H := H) h₁ h₂
+    letI := chartedSpace (H := H) (h₁.comp_linearIsometryEquiv R) (h₂.comp_linearIsometryEquiv R)
+    (compLinearIsometryEquivDiffeomorph R h₁ h₂ d₁ d₂).toHomeomorph =
+      compLinearIsometryEquivHomeomorph R e₁ e₂ :=
+  (rfl)
+
+@[simp]
+theorem coe_compLinearIsometryEquivDiffeomorph_symm :
+    letI := chartedSpace (H := H) h₁ h₂
+    letI := chartedSpace (H := H) (h₁.comp_linearIsometryEquiv R) (h₂.comp_linearIsometryEquiv R)
+    ⇑(compLinearIsometryEquivDiffeomorph R h₁ h₂ d₁ d₂).symm =
+      (compLinearIsometryEquivHomeomorph R e₁ e₂).symm :=
   (rfl)
 
 end Smooth

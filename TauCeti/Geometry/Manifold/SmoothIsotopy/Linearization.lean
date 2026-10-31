@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.ContMDiff.Prod
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Basic
 
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
+
 /-!
 # Linearizing an embedding at a fixed point
 
@@ -89,18 +91,13 @@ private theorem isSmoothEmbedding_linearizationMotion_of_ne_zero (hf : ContDiff 
     (hf0 : f 0 = 0) (hemb : IsSmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, F) n f) {t : ℝ} (ht : t ≠ 0) :
     IsSmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, F) n (fun x => linearizationMotion f (t, x)) := by
   let dilate : E ≃L[ℝ] E := ContinuousLinearEquiv.smulLeft (Units.mk0 t ht)
-  -- Dilation by `t⁻¹` of the target, as a `C^n` diffeomorphism; Mathlib's
-  -- `ContinuousLinearEquiv.toDiffeomorph` only provides the `C^∞` one.
-  let shrink : F ≃ₘ^n⟮𝓘(ℝ, F), 𝓘(ℝ, F)⟯ F :=
-    { toEquiv := (ContinuousLinearEquiv.smulLeft (Units.mk0 t ht)⁻¹ : F ≃L[ℝ] F).toEquiv
-      contMDiff_toFun := (ContinuousLinearEquiv.smulLeft (Units.mk0 t ht)⁻¹ :
-        F ≃L[ℝ] F).contDiff.contMDiff
-      contMDiff_invFun := (ContinuousLinearEquiv.smulLeft (Units.mk0 t ht)⁻¹ :
-        F ≃L[ℝ] F).symm.contDiff.contMDiff }
+  -- Dilation by `t⁻¹` of the target, as a `C^n` diffeomorphism.
+  let shrink : F ≃ₘ^n⟮𝓘(ℝ, F), 𝓘(ℝ, F)⟯ F := Diffeomorph.ofContinuousLinearEquiv n
+    (ContinuousLinearEquiv.smulLeft (Units.mk0 t ht)⁻¹ : F ≃L[ℝ] F)
   have h : (fun x => linearizationMotion f (t, x)) = shrink ∘ f ∘ dilate := by
     funext x
-    simp [linearizationMotion_of_ne_zero hf hf0 ht, shrink, dilate, ← Diffeomorph.coe_toEquiv,
-      Units.smul_def]
+    simp [linearizationMotion_of_ne_zero hf hf0 ht, shrink, dilate,
+      Units.smul_def, ContinuousLinearEquiv.smulLeft]
   rw [h]
   exact isSmoothEmbedding_diffeomorph_comp
     (isSmoothEmbedding_comp_continuousLinearEquiv dilate hemb) shrink

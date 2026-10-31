@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
+
 /-!
 # Cancelling local diffeomorphisms from compositions
 
@@ -20,6 +22,11 @@ surjective local diffeomorphism, such as the orbit projection of a free properly
 action, this characterises the `C^m` maps out of its target. The same holds for maps out of a
 product `A × B` whose second factor is the target of `p`, precomposed with `Prod.map id p`; this
 characterises the `C^m` maps `A × B → N`, such as flows on a quotient manifold.
+
+Precomposing an open embedding or a `C^n` local diffeomorphism out of a normed space `E` with a
+linear isometry of `E` gives again an open embedding or a `C^n` local diffeomorphism
+(`Topology.IsOpenEmbedding.comp_linearIsometryEquiv`,
+`IsLocalDiffeomorph.comp_linearIsometryEquiv`).
 
 ## Main results
 
@@ -138,5 +145,26 @@ theorem _root_.IsLocalDiffeomorph.contMDiff_comp_prodMap_iff {m : ℕ∞ω} {g :
   exact ((hp x).contMDiffAt_comp_prodMap_iff hm).1 (hg (y.1, x))
 
 end Prod
+
+section LinearIsometryEquiv
+
+/-- A map out of a normed space `E` which is an open embedding remains one when precomposed with
+a linear isometry of `E`. -/
+theorem _root_.Topology.IsOpenEmbedding.comp_linearIsometryEquiv {X : Type*}
+    [TopologicalSpace X] {e : E → X} (h : Topology.IsOpenEmbedding e) (R : E ≃ₗᵢ[𝕜] E) :
+    Topology.IsOpenEmbedding (e ∘ R) :=
+  h.comp R.toHomeomorph.isOpenEmbedding
+
+/-- A `C^n` local diffeomorphism out of a normed space `E` remains one when precomposed with a
+linear isometry of `E`. -/
+theorem _root_.IsLocalDiffeomorph.comp_linearIsometryEquiv {e : E → M}
+    (d : IsLocalDiffeomorph 𝓘(𝕜, E) I n e) (R : E ≃ₗᵢ[𝕜] E) :
+    IsLocalDiffeomorph 𝓘(𝕜, E) I n (e ∘ R) := fun v ↦ by
+  have hR := (Diffeomorph.ofContinuousLinearEquiv n R.toContinuousLinearEquiv).isLocalDiffeomorph v
+  simp only [Diffeomorph.coe_ofContinuousLinearEquiv,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv] at hR
+  exact hR.comp (hg := d (R v))
+
+end LinearIsometryEquiv
 
 end TauCeti

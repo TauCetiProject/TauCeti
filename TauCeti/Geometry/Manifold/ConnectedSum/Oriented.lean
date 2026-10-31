@@ -10,26 +10,23 @@ public import TauCeti.Geometry.Manifold.ConnectedSum.Sphere
 public import TauCeti.Geometry.Manifold.ConnectedSum.Topology
 import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.InnerProductSpace.Reflection
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.Orientation.CoordinateBall
 
 /-!
 # The oriented connected sum of connected oriented manifolds
 
 The connected sum `TauCeti.ConnectedSum e₁ e₂` takes its coordinate balls `e₁ : E → M` and
-`e₂ : E → N` as data. For connected oriented manifolds `M` and `N` without boundary, modelled on a
-finite-dimensional real inner product space `E`, its diffeomorphism type depends on the balls only
-through their orientation behaviour at the centres
+`e₂ : E → N` as data. For connected, Hausdorff, σ-compact oriented manifolds `M` and `N` without
+boundary, modelled on a finite-dimensional real inner product space `E`, its diffeomorphism type
+depends on the balls only through their orientation behaviour at the centres
 (`TauCeti.ConnectedSum.nonempty_diffeomorph_of_isOrientationPreservingAt`). This file picks the
-balls, so that the oriented connected sum `M # N` becomes a manifold determined by the two oriented
-summands alone.
+balls, so that for such summands the oriented connected sum `M # N` becomes a manifold determined
+up to diffeomorphism by the two oriented summands alone.
 
-* **Coordinate balls exist.** Every point of a smooth manifold without boundary modelled on `E` is
-  the centre of a coordinate ball: an open embedding `E → M` which is a smooth local
-  diffeomorphism (`TauCeti.ConnectedSum.exists_isOpenEmbedding_isLocalDiffeomorph`), the inverse of
-  a chart precomposed with a diffeomorphism of `E` onto a small ball. When `E` is nontrivial, the
-  ball can be chosen to preserve any given orientations of `E` and of `M` at its centre
-  (`TauCeti.ConnectedSum.exists_isOpenEmbedding_isLocalDiffeomorph_isOrientationPreservingAt`):
-  otherwise it reverses them, and precomposing with a reflection of `E` corrects it.
+* **Choosing the balls.** Every point of a smooth manifold without boundary modelled on a
+  nontrivial `E` is the centre of a coordinate ball which preserves any given orientations of `E`
+  and of the manifold at its centre
+  (`Manifold.Orientation.exists_isOpenEmbedding_isLocalDiffeomorph_isOrientationPreservingAt`).
 * **The oriented connected sum.** For orientations `oM` of `M` and `oN` of `N`,
   `TauCeti.OrientedConnectedSum oM oN` is the connected sum along a chosen ball of `M` and a chosen
   ball of `N` which, for some orientation of `E`, respectively preserve and reverse the
@@ -55,8 +52,6 @@ summands alone.
 
 ## Main results
 
-* `TauCeti.ConnectedSum.exists_isOpenEmbedding_isLocalDiffeomorph_isOrientationPreservingAt`:
-  oriented coordinate balls exist at every point.
 * `TauCeti.OrientedConnectedSum.nonempty_diffeomorph_connectedSum`: the oriented connected sum is
   diffeomorphic to the connected sum along any two balls with the right orientation behaviour.
 * `TauCeti.OrientedConnectedSum.nonempty_diffeomorph_comm`: `M # N ≃ N # M`.
@@ -81,89 +76,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   {N : Type*} [TopologicalSpace N] [ChartedSpace E N] [IsManifold 𝓘(ℝ, E) ∞ N]
   {ι : Type*} [Fintype ι]
 
-namespace ConnectedSum
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
-/-- **Coordinate balls exist.** Every point `x` of a `C^n` manifold without boundary modelled on a
-real inner product space `E` is the centre `e 0` of an open embedding `e : E → M` which is a `C^n`
-local diffeomorphism. -/
-theorem exists_isOpenEmbedding_isLocalDiffeomorph {n : ℕ∞} [IsManifold 𝓘(ℝ, E) n M]
-    (x : M) :
-    ∃ e : E → M, e 0 = x ∧ IsOpenEmbedding e ∧ IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) n e := by
-  set c := chartAt E x
-  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.mp c.open_target (c x)
-    (c.map_source (mem_chart_source E x))
-  -- A diffeomorphism of `E` onto a ball about `c x` inside the chart target.
-  let b := OpenPartialHomeomorph.univBall (c x) r
-  have hb (v : E) : b v ∈ c.target := hball <| by
-    rw [← OpenPartialHomeomorph.univBall_target (c x) hr]
-    exact b.map_source (by simp [b])
-  let φ := b.trans c.symm
-  have hφ : φ.source = univ := by
-    rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.univBall_source,
-      OpenPartialHomeomorph.symm_source, univ_inter]
-    exact eq_univ_of_forall hb
-  refine ⟨φ, ?_, φ.isOpenEmbedding hφ, fun v ↦ ?_⟩
-  · simp [φ, b, c]
-  · let Φ := PartialDiffeomorph.ofOpenPartialHomeomorph (n := n) b
-      OpenPartialHomeomorph.contDiff_univBall.contDiffOn
-      (by rw [OpenPartialHomeomorph.univBall_target _ hr]
-          exact OpenPartialHomeomorph.contDiffOn_univBall_symm)
-    have hΦ : Φ.toPartialEquiv = b.toPartialEquiv :=
-      PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv _ _ _
-    have hbv : IsLocalDiffeomorphAt 𝓘(ℝ, E) 𝓘(ℝ, E) n b v :=
-      isLocalDiffeomorphAt_of_eqOn (Φ := Φ) (by simp [hΦ, b]) fun y _ ↦ by
-        rw [hΦ, OpenPartialHomeomorph.coe_toPartialEquiv]
-    exact hbv.comp (hg := c.isLocalDiffeomorphAt_symm_of_mem_maximalAtlas
-      (IsManifold.chart_mem_maximalAtlas x) (hb v))
-
-/-- A linear isometry of `E` of determinant `-1` reverses every orientation of `E` at `0`. -/
-private theorem isOrientationReversingAt_of_det_eq_neg_one
-    (oE : Manifold.Orientation 𝓘(ℝ, E) E ι) {R : E ≃ₗᵢ[ℝ] E}
-    (hR : (LinearEquiv.det R.toLinearEquiv : ℝ) = -1) : oE.IsOrientationReversingAt oE R 0 :=
-  Manifold.Orientation.isOrientationReversingAt_of_det_neg oE R.toContinuousLinearEquiv
-    (by rw [← LinearEquiv.coe_det]; exact hR.trans_lt (by norm_num)) 0
-
-/-- Precomposing a ball which reverses orientations at its centre with a linear isometry of
-determinant `-1` gives a ball which preserves them. -/
-private theorem isOrientationPreservingAt_comp_of_det_eq_neg_one
-    {oE : Manifold.Orientation 𝓘(ℝ, E) E ι} {oM : Manifold.Orientation 𝓘(ℝ, E) M ι}
-    {e : E → M} (he : oE.IsOrientationReversingAt oM e 0) {R : E ≃ₗᵢ[ℝ] E}
-    (hR : (LinearEquiv.det R.toLinearEquiv : ℝ) = -1) :
-    oE.IsOrientationPreservingAt oM (e ∘ R) 0 :=
-  Manifold.Orientation.IsOrientationReversingAt.comp (by simpa using he)
-    (isOrientationReversingAt_of_det_eq_neg_one oE hR)
-
-/-- Precomposing a ball which preserves orientations at its centre with a linear isometry of
-determinant `-1` gives a ball which reverses them. -/
-private theorem isOrientationReversingAt_comp_of_det_eq_neg_one
-    {oE : Manifold.Orientation 𝓘(ℝ, E) E ι} {oM : Manifold.Orientation 𝓘(ℝ, E) M ι}
-    {e : E → M} (he : oE.IsOrientationPreservingAt oM e 0) {R : E ≃ₗᵢ[ℝ] E}
-    (hR : (LinearEquiv.det R.toLinearEquiv : ℝ) = -1) :
-    oE.IsOrientationReversingAt oM (e ∘ R) 0 :=
-  Manifold.Orientation.IsOrientationPreservingAt.comp_reversing (by simpa using he)
-    (isOrientationReversingAt_of_det_eq_neg_one oE hR)
-
-/-- **Oriented coordinate balls exist.** If `E` is nontrivial, every point `x` of a smooth manifold
-without boundary modelled on `E` is the centre `e 0` of an open embedding `e : E → M`, a smooth
-local diffeomorphism, which preserves given orientations of `E` and of `M` at `0`. -/
-theorem exists_isOpenEmbedding_isLocalDiffeomorph_isOrientationPreservingAt [Nontrivial E]
-    (oE : Manifold.Orientation 𝓘(ℝ, E) E ι) (oM : Manifold.Orientation 𝓘(ℝ, E) M ι) (x : M) :
-    ∃ e : E → M, e 0 = x ∧ IsOpenEmbedding e ∧ IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ e ∧
-      oE.IsOrientationPreservingAt oM e 0 := by
-  obtain ⟨e, he0, he, de⟩ := exists_isOpenEmbedding_isLocalDiffeomorph (E := E) (n := ⊤) x
-  obtain hp | hr := oE.isOrientationPreservingAt_or_isOrientationReversingAt oM e 0
-    ((de 0).mfderivToContinuousLinearEquiv (by simp))
-    ((de 0).mfderivToContinuousLinearEquiv_coe _)
-  · exact ⟨e, he0, he, de, hp⟩
-  -- A reversing ball is corrected by a reflection of `E`.
-  obtain ⟨R, hR⟩ := exists_det_eq_neg_one (F := E)
-  exact ⟨e ∘ R, by simpa using he0, isOpenEmbedding_comp_linearIsometryEquiv R he,
-    isLocalDiffeomorph_comp_linearIsometryEquiv R de,
-    isOrientationPreservingAt_comp_of_det_eq_neg_one hr hR⟩
-
-end ConnectedSum
-
 namespace OrientedConnectedSum
 
 variable [Nontrivial E] [Nonempty M] [Nonempty N]
@@ -181,11 +93,11 @@ private theorem exists_balls : ∃ p : (E → M) × (E → N),
   let oE : Manifold.Orientation 𝓘(ℝ, E) E ι := Manifold.Orientation.model
     ((finBasisOfFinrankEq ℝ E hι.symm).reindex (Fintype.equivFin ι).symm).orientation hι
   obtain ⟨e₁, -, h₁, d₁, hf₁⟩ :=
-    ConnectedSum.exists_isOpenEmbedding_isLocalDiffeomorph_isOrientationPreservingAt oE oM
+    Manifold.Orientation.exists_isOpenEmbedding_isLocalDiffeomorph_isOrientationPreservingAt oE oM
       (Classical.arbitrary M)
   obtain ⟨e₂, -, h₂, d₂, hf₂⟩ :=
-    ConnectedSum.exists_isOpenEmbedding_isLocalDiffeomorph_isOrientationPreservingAt oE (-oN)
-      (Classical.arbitrary N)
+    Manifold.Orientation.exists_isOpenEmbedding_isLocalDiffeomorph_isOrientationPreservingAt oE
+      (-oN) (Classical.arbitrary N)
   exact ⟨(e₁, e₂), h₁, h₂, d₁, d₂, oE, hf₁, by simpa using hf₂⟩
 
 /-- The coordinate ball of `M` along which the oriented connected sum of `M` and `N` is formed. -/
@@ -221,8 +133,9 @@ variable [Nontrivial E] [Nonempty M] [Nonempty N] [T1Space M] [T1Space N]
 
 /-- The **oriented connected sum** `M # N` of the oriented manifolds `(M, oM)` and `(N, oN)`: the
 connected sum along a ball of `M` and a ball of `N` which, for some orientation of `E`, preserve
-and reverse the orientations at their centres. For connected summands it does not depend on the
-balls (`TauCeti.OrientedConnectedSum.nonempty_diffeomorph_connectedSum`). -/
+and reverse the orientations at their centres. For connected, Hausdorff, σ-compact summands it
+does not depend on the balls, up to diffeomorphism
+(`TauCeti.OrientedConnectedSum.nonempty_diffeomorph_connectedSum`). -/
 def OrientedConnectedSum (oM : Manifold.Orientation 𝓘(ℝ, E) M ι)
     (oN : Manifold.Orientation 𝓘(ℝ, E) N ι) : Type _ :=
   ConnectedSum (OrientedConnectedSum.ballLeft oM oN) (OrientedConnectedSum.ballRight oM oN)
@@ -291,17 +204,17 @@ theorem nonempty_diffeomorph_connectedSum {e₁ : E → M} {e₂ : E → N} (h�
   -- The balls `e₁` and `e₂` use the opposite orientation of `E` from the chosen balls: rotating
   -- both by a reflection of `E` brings them to the orientation of the chosen balls.
   obtain ⟨R, hR⟩ := exists_det_eq_neg_one (F := E)
-  have h₁' := ConnectedSum.isOpenEmbedding_comp_linearIsometryEquiv R h₁
-  have h₂' := ConnectedSum.isOpenEmbedding_comp_linearIsometryEquiv R h₂
+  have h₁' := h₁.comp_linearIsometryEquiv R
+  have h₂' := h₂.comp_linearIsometryEquiv R
   have hf₂' : oE₀.IsOrientationReversingAt oN (e₂ ∘ R) 0 :=
-    ConnectedSum.isOrientationReversingAt_comp_of_det_eq_neg_one (by simpa using hf₂) hR
+    Manifold.Orientation.isOrientationReversingAt_comp_of_det_eq_neg_one (by simpa using hf₂) hR
   let := ConnectedSum.chartedSpace (H := E) h₁' h₂'
   obtain ⟨φ⟩ := ConnectedSum.nonempty_diffeomorph_of_isOrientationPreservingAt
     (isOpenEmbedding_ballLeft oM oN) (isOpenEmbedding_ballRight oM oN) h₁' h₂'
     (isLocalDiffeomorph_ballLeft oM oN) (isLocalDiffeomorph_ballRight oM oN)
-    (ConnectedSum.isLocalDiffeomorph_comp_linearIsometryEquiv R d₁)
-    (ConnectedSum.isLocalDiffeomorph_comp_linearIsometryEquiv R d₂) oE₀ oE₀ oM (-oN) hl
-    (ConnectedSum.isOrientationPreservingAt_comp_of_det_eq_neg_one (by simpa using hf₁) hR)
+    (d₁.comp_linearIsometryEquiv R) (d₂.comp_linearIsometryEquiv R) oE₀ oE₀ oM (-oN) hl
+    (Manifold.Orientation.isOrientationPreservingAt_comp_of_det_eq_neg_one (by simpa using hf₁)
+      hR)
     (by simpa using hr) (by simpa using hf₂')
   let := ConnectedSum.chartedSpace (H := E) (isOpenEmbedding_ballLeft oM oN)
     (isOpenEmbedding_ballRight oM oN)
@@ -357,14 +270,13 @@ theorem nonempty_diffeomorph_orientedConnectedSum {s s' : E → N} (h : IsComple
     ((ds 0).mfderivToContinuousLinearEquiv_coe _)
   · -- The ball `s` preserves orientations: rotate the sphere's two balls by a reflection.
     obtain ⟨R, hR⟩ := exists_det_eq_neg_one (F := E)
-    have hsR := ConnectedSum.isOpenEmbedding_comp_linearIsometryEquiv R hs
+    have hsR := hs.comp_linearIsometryEquiv R
     let := ConnectedSum.chartedSpace (H := E) he hsR
     obtain ⟨φ⟩ := OrientedConnectedSum.nonempty_diffeomorph_connectedSum oM oN he hsR de
-      (ConnectedSum.isLocalDiffeomorph_comp_linearIsometryEquiv R ds) oE hl
-      (ConnectedSum.isOrientationReversingAt_comp_of_det_eq_neg_one hp hR)
+      (ds.comp_linearIsometryEquiv R) oE hl
+      (Manifold.Orientation.isOrientationReversingAt_comp_of_det_eq_neg_one (by simpa using hp) hR)
     exact ⟨φ.trans ((h.comp_linearIsometryEquiv R).connectedSumDiffeomorph he hsR de
-      (ConnectedSum.isLocalDiffeomorph_comp_linearIsometryEquiv R ds)
-      (ConnectedSum.isLocalDiffeomorph_comp_linearIsometryEquiv R ds'))⟩
+      (ds.comp_linearIsometryEquiv R) (ds'.comp_linearIsometryEquiv R))⟩
   · let := ConnectedSum.chartedSpace (H := E) he hs
     obtain ⟨φ⟩ := OrientedConnectedSum.nonempty_diffeomorph_connectedSum oM oN he hs de ds oE hl hr
     exact ⟨φ.trans (h.connectedSumDiffeomorph he hs de ds ds')⟩
@@ -378,9 +290,9 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {n : ℕ} 
   {X : Type*} [TopologicalSpace X] [T2Space X] [SigmaCompactSpace X] [PreconnectedSpace X]
   [Nonempty X] [ChartedSpace (EuclideanSpace ℝ (Fin n)) X] [IsManifold (𝓡 n) ∞ X]
 
-/-- **`M # Sⁿ ≃ M`**: the oriented connected sum of a connected, Hausdorff, σ-compact smooth
-`n`-manifold `M`, for `n ≥ 1`, with the unit sphere `Sⁿ`, is diffeomorphic to `M`, for all
-orientations of `M` and of the sphere. -/
+/-- **`X # Sⁿ ≃ X`**: the oriented connected sum of a connected, Hausdorff, σ-compact smooth
+`n`-manifold `X`, for `n ≥ 1`, with the unit sphere `Sⁿ`, is diffeomorphic to `X`, for all
+orientations of `X` and of the sphere. -/
 theorem nonempty_diffeomorph_sphere (oX : Manifold.Orientation (𝓡 n) X ι)
     (oS : Manifold.Orientation (𝓡 n) (sphere (0 : F) 1) ι) :
     Nonempty (OrientedConnectedSum oX oS ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ X) := by
