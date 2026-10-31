@@ -21,8 +21,8 @@ cells may be compact convex polytopes, each proper face of which is a finite uni
 lower-dimensional cells of the family. Such a family has a simplicial subdivision: a geometric
 simplicial complex `K` with `|K| = ⋃ i, P i` in which every cell is triangulated by finitely many
 simplices of `K` and every simplex of `K` lies in a cell
-(`Geometry.SimplicialComplex.exists_subdivision`). The complex is locally finite
-(`Geometry.SimplicialComplex.locallyFinite_convexHull_of_finite_restrict`).
+(`Geometry.SimplicialComplex.exists_subdivision`). The complex is locally finite, by the
+criterion `Geometry.SimplicialComplex.locallyFinite_convexHull_of_finite_restrict`.
 
 The construction retains a prescribed triangulation `L` of part of the frontiers of the cells
 (`Geometry.SimplicialComplex.exists_subdivision_extending`): it suffices that `L` meets every cell
@@ -31,15 +31,17 @@ the frontier of a cell the smaller cells do not. The resulting `K` contains `L` 
 simplex with all its vertices in `|L|`.
 
 The proof is by induction on the dimension of the cells. A cell contained in the frontier of
-another one has strictly smaller dimension (`finrank_vectorSpan_lt_of_disjoint_intrinsicInterior`).
+another one has strictly smaller dimension
+(`TauCeti.finrank_vectorSpan_lt_of_disjoint_intrinsicInterior`).
 Once the cells of dimension `< n` are triangulated, the frontier of each `n`-dimensional cell is a
 subcomplex, and each such cell is triangulated by coning its frontier to a point of its intrinsic
 interior. These cones are glued to the complex built so far
-(`Geometry.SimplicialComplex.exists_extension_of_intrinsicFrontier_subset_space`); two
-`n`-dimensional cells meet only inside smaller cells, so the cones meet properly.
+(`Geometry.SimplicialComplex.exists_extension_of_intrinsicFrontier_subset_space`); two distinct
+`n`-dimensional cells meet only inside `|L|` and smaller cells, so the cones meet properly.
 
-The hypotheses imply that two cells meet in a union of common smaller cells and points of `|L|`,
-so this need not be assumed.
+The hypotheses imply that two cells meet in a union of points of `|L|` and of cells contained in
+both of them (`TauCeti.mem_intrinsicInterior_or_of_mem`); for two distinct cells of the same
+dimension these common cells are smaller. So this need not be assumed.
 
 ## Main results
 
@@ -50,9 +52,6 @@ so this need not be assumed.
   of compact convex cells, extending a prescribed triangulation `L`.
 * `Geometry.SimplicialComplex.exists_subdivision`: a locally finite simplicial subdivision of a
   locally finite family of compact convex cells.
-* `Geometry.SimplicialComplex.locallyFinite_convexHull_of_finite_restrict`: a complex whose
-  simplices lie in the cells of a locally finite family, finitely many in each, is locally
-  finite.
 
 ## References
 
@@ -68,34 +67,6 @@ public section
 open Finset Set
 
 namespace Geometry.SimplicialComplex
-
-section LocallyFinite
-
-variable {𝕜 E ι : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddCommGroup E] [Module 𝕜 E]
-  [TopologicalSpace E]
-
-/-- A complex whose simplices are those of a locally finite complex `L` or lie in the cells of a
-locally finite family of convex sets, with finitely many simplices in each cell, is locally
-finite. -/
-theorem locallyFinite_convexHull_of_finite_restrict {K L : SimplicialComplex 𝕜 E}
-    {P : ι → Set E} (hPv : ∀ i, Convex 𝕜 (P i)) (hP : LocallyFinite P)
-    (hL : LocallyFinite fun σ : L.faces => convexHull 𝕜 (σ : Set E))
-    (hfin : ∀ i, (K.restrict (P i)).faces.Finite)
-    (hK : ∀ s ∈ K.faces, s ∈ L.faces ∨ ∃ i, (s : Set E) ⊆ P i) :
-    LocallyFinite fun σ : K.faces => convexHull 𝕜 (σ : Set E) := by
-  intro x
-  obtain ⟨U, hU, hUf⟩ := hL x
-  obtain ⟨V, hV, hVf⟩ := hP x
-  refine ⟨U ∩ V, Filter.inter_mem hU hV, Set.Finite.of_finite_image
-    (((hUf.image Subtype.val).union (hVf.biUnion fun i _ => hfin i)).subset ?_)
-    Subtype.val_injective.injOn⟩
-  rintro _ ⟨σ, ⟨y, hyσ, hyU, hyV⟩, rfl⟩
-  rcases hK σ.1 σ.2 with hσ | ⟨i, hσi⟩
-  · exact .inl ⟨⟨σ.1, hσ⟩, ⟨y, hyσ, hyU⟩, rfl⟩
-  · exact .inr (Set.mem_biUnion (x := i) ⟨y, (hPv i).convexHull_subset_iff.2 hσi hyσ, hyV⟩
-      (mem_restrict_faces.2 ⟨σ.2, hσi⟩))
-
-end LocallyFinite
 
 variable {E ι J : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
@@ -197,55 +168,7 @@ theorem exists_extension_of_intrinsicFrontier_subset_space (L : SimplicialComple
 
 section Cells
 
-variable {P : ι → Set E} {S : Set E}
-
-/-- A point of a cell lies in its intrinsic interior, in `S`, or in the intrinsic interior of a
-smaller-dimensional cell contained in it, when the frontier of every cell is covered by `S` and
-the other cells contained in it. -/
-private theorem mem_intrinsicInterior_or_of_mem (hPv : ∀ i, Convex ℝ (P i))
-    (hPne : ∀ i, (P i).Nonempty)
-    (hri : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (P i)) (intrinsicInterior ℝ (P j)))
-    (hfr : ∀ i, intrinsicFrontier ℝ (P i) ⊆ S ∪ ⋃ (j) (_ : j ≠ i ∧ P j ⊆ P i), P j)
-    {i : ι} {x : E} (hx : x ∈ P i) :
-    x ∈ intrinsicInterior ℝ (P i) ∨ x ∈ S ∨ ∃ k, Module.finrank ℝ (vectorSpan ℝ (P k)) <
-      Module.finrank ℝ (vectorSpan ℝ (P i)) ∧ P k ⊆ P i ∧ x ∈ intrinsicInterior ℝ (P k) := by
-  induction hn : Module.finrank ℝ (vectorSpan ℝ (P i)) using Nat.strong_induction_on
-    generalizing i with
-  | _ n ih =>
-  by_cases hxi : x ∈ intrinsicInterior ℝ (P i)
-  · exact .inl hxi
-  have hxf : x ∈ intrinsicFrontier ℝ (P i) := by
-    rw [← intrinsicClosure_sdiff_intrinsicInterior]
-    exact ⟨subset_intrinsicClosure hx, hxi⟩
-  rcases hfr i hxf with hxS | hx'
-  · exact .inr (.inl hxS)
-  simp only [mem_iUnion, exists_prop] at hx'
-  obtain ⟨j, ⟨hji, hjP⟩, hxj⟩ := hx'
-  -- the cell `P j` lies in the frontier of `P i`, so it has smaller dimension
-  have hj : _ < n :=
-    hn ▸ finrank_vectorSpan_lt_of_disjoint_intrinsicInterior (hPv j) (hPne j) hjP (hri hji)
-  rcases ih _ hj hxj rfl with h | h | ⟨k, hk, hkj, hxk⟩
-  · exact .inr (.inr ⟨j, hj, hjP, h⟩)
-  · exact .inr (.inl h)
-  · exact .inr (.inr ⟨k, hk.trans hj, hkj.trans hjP, hxk⟩)
-
-/-- Under the hypotheses of `mem_intrinsicInterior_or_of_mem`, if the intrinsic interiors of the
-cells avoid `S`, the intrinsic interior of a cell meets no other cell of smaller or equal
-dimension. -/
-private theorem eq_or_finrank_lt_of_mem_intrinsicInterior (hPv : ∀ i, Convex ℝ (P i))
-    (hPne : ∀ i, (P i).Nonempty)
-    (hri : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (P i)) (intrinsicInterior ℝ (P j)))
-    (hfr : ∀ i, intrinsicFrontier ℝ (P i) ⊆ S ∪ ⋃ (j) (_ : j ≠ i ∧ P j ⊆ P i), P j)
-    (hS : ∀ i, Disjoint (intrinsicInterior ℝ (P i)) S) {i j : ι} {x : E}
-    (hxi : x ∈ intrinsicInterior ℝ (P i)) (hxj : x ∈ P j) :
-    i = j ∨ Module.finrank ℝ (vectorSpan ℝ (P i)) < Module.finrank ℝ (vectorSpan ℝ (P j)) := by
-  rcases mem_intrinsicInterior_or_of_mem hPv hPne hri hfr hxj with h | h | ⟨k, hk, -, hxk⟩
-  · by_contra hij
-    exact Set.disjoint_left.1 (hri fun h => hij (.inl h)) hxi h
-  · exact (Set.disjoint_left.1 (hS i) hxi h).elim
-  · rcases eq_or_ne i k with rfl | hik
-    · exact .inr hk
-    · exact (Set.disjoint_left.1 (hri hik) hxi hxk).elim
+variable {P : ι → Set E}
 
 /-- The inductive step of `exists_subdivision_extending`: a subdivision of the cells of
 dimension `< n` extends to one of the cells of dimension `≤ n`. -/
@@ -270,7 +193,7 @@ private theorem exists_subdivision_lt_succ {L K : SimplicialComplex ℝ E}
         ∃ k, Module.finrank ℝ (vectorSpan ℝ (P k)) < n + 1 ∧ (s : Set E) ⊆ P k := by
   have hmeet {i j : ι} {x : E} (hxi : x ∈ intrinsicInterior ℝ (P i)) (hxj : x ∈ P j) :
       i = j ∨ Module.finrank ℝ (vectorSpan ℝ (P i)) < Module.finrank ℝ (vectorSpan ℝ (P j)) :=
-    eq_or_finrank_lt_of_mem_intrinsicInterior hPv hPne hri hfr hLi hxi hxj
+    TauCeti.eq_or_finrank_lt_of_mem_intrinsicInterior hPv hPne hri hfr hLi hxi hxj
   have hLK : ∀ i, L.restrict (P i) ≤ K.restrict (P i) := fun i s hs =>
     mem_restrict_faces.2 ⟨(hKL ▸ restrict_le : L ≤ K) (mem_restrict_faces.1 hs).1,
       (mem_restrict_faces.1 hs).2⟩
@@ -289,8 +212,8 @@ private theorem exists_subdivision_lt_succ {L K : SimplicialComplex ℝ E}
       · exact space_mono (hLK i) (hL i ⟨intrinsicFrontier_subset (hPc i).isClosed hx, hxL⟩)
       simp only [mem_iUnion, exists_prop] at hx'
       obtain ⟨j, ⟨hji, hjP⟩, hxj⟩ := hx'
-      have hj := finrank_vectorSpan_lt_of_disjoint_intrinsicInterior (hPv j) (hPne j) hjP
-        (hri hji)
+      have hj := TauCeti.finrank_vectorSpan_lt_of_disjoint_intrinsicInterior (hPv j) (hPne j)
+        hjP (hri hji)
       exact space_mono (restrict_mono hjP) ((hKP j (by omega)).1.symm ▸ hxj))
     (fun ⟨i, hi⟩ => by
       rw [hKs, Set.disjoint_union_right, Set.disjoint_iUnion₂_right]
@@ -300,7 +223,8 @@ private theorem exists_subdivision_lt_succ {L K : SimplicialComplex ℝ E}
       have hi := i.2
       have hj := j.2
       rw [hKs]
-      rcases mem_intrinsicInterior_or_of_mem hPv hPne hri hfr hxi with h | h | ⟨k, hk, -, hxk⟩
+      rcases TauCeti.mem_intrinsicInterior_or_of_mem hPv hPne hri hfr hxi with
+        h | h | ⟨k, hk, -, hxk⟩
       · rcases hmeet h hxj with h' | h' <;> [exact (hij h').elim; omega]
       · exact .inl h
       · exact .inr (mem_iUnion₂.2 ⟨k, by omega, intrinsicInterior_subset hxk⟩))

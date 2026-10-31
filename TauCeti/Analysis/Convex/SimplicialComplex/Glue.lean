@@ -18,7 +18,9 @@ complex, `Geometry.SimplicialComplex.glue K h`, whose faces are the faces of all
 as the convex hulls of a face of `K i` and a face of `K j` always meet inside the convex hull of
 their common vertices. Its underlying space is the union of the spaces `|K i|`, and if each `K i`
 is finite and the spaces `|K i|` form a locally finite family, its simplices form a locally finite
-family.
+family. More generally, a complex is locally finite when its simplices lie in a locally finite
+complex or in the cells of a locally finite family of convex sets, finitely many in each cell
+(`locallyFinite_convexHull_of_finite_restrict`).
 
 The compatibility condition is checked geometrically when the complexes triangulate sets which
 meet along common faces. Suppose every point of `|K i| ∩ |K j|` lies in a set `F` which is an
@@ -46,6 +48,9 @@ coning a triangulation of its boundary, and the pieces are glued.
   every `K i`.
 * `Geometry.SimplicialComplex.locallyFinite_convexHull_glue`: gluing a locally finite family of
   finite complexes gives a locally finite complex.
+* `Geometry.SimplicialComplex.locallyFinite_convexHull_of_finite_restrict`: a complex whose
+  simplices lie in a locally finite complex or in the cells of a locally finite family of convex
+  sets, finitely many in each cell, is locally finite.
 * `Geometry.SimplicialComplex.convexHull_inter_convexHull_subset_of_isExtreme`: complexes
   agreeing on common extreme subsets covering the intersection of their spaces meet properly.
 * `Geometry.SimplicialComplex.restrict_glue`: gluing along common faces does not change the
@@ -126,6 +131,34 @@ theorem locallyFinite_convexHull_glue [TopologicalSpace E] (hfin : ∀ i, (K i).
   exact mem_biUnion (x := i) ⟨y, convexHull_subset_space hi hyσ, hyU⟩ hi
 
 end OrderedRing
+
+section LocallyFinite
+
+variable {𝕜 E ι : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddCommGroup E] [Module 𝕜 E]
+  [TopologicalSpace E]
+
+/-- A complex whose simplices are those of a locally finite complex `L` or lie in the cells of a
+locally finite family of convex sets, with finitely many simplices in each cell, is locally
+finite. -/
+theorem locallyFinite_convexHull_of_finite_restrict {K L : SimplicialComplex 𝕜 E}
+    {P : ι → Set E} (hPv : ∀ i, Convex 𝕜 (P i)) (hP : LocallyFinite P)
+    (hL : LocallyFinite fun σ : L.faces => convexHull 𝕜 (σ : Set E))
+    (hfin : ∀ i, (K.restrict (P i)).faces.Finite)
+    (hK : ∀ s ∈ K.faces, s ∈ L.faces ∨ ∃ i, (s : Set E) ⊆ P i) :
+    LocallyFinite fun σ : K.faces => convexHull 𝕜 (σ : Set E) := by
+  intro x
+  obtain ⟨U, hU, hUf⟩ := hL x
+  obtain ⟨V, hV, hVf⟩ := hP x
+  refine ⟨U ∩ V, Filter.inter_mem hU hV, Set.Finite.of_finite_image
+    (((hUf.image Subtype.val).union (hVf.biUnion fun i _ => hfin i)).subset ?_)
+    Subtype.val_injective.injOn⟩
+  rintro _ ⟨σ, ⟨y, hyσ, hyU, hyV⟩, rfl⟩
+  rcases hK σ.1 σ.2 with hσ | ⟨i, hσi⟩
+  · exact .inl ⟨⟨σ.1, hσ⟩, ⟨y, hyσ, hyU⟩, rfl⟩
+  · exact .inr (Set.mem_biUnion (x := i) ⟨y, (hPv i).convexHull_subset_iff.2 hσi hyσ, hyV⟩
+      (mem_restrict_faces.2 ⟨σ.2, hσi⟩))
+
+end LocallyFinite
 
 section LinearOrderedField
 

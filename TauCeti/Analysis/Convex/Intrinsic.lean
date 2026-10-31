@@ -21,9 +21,14 @@ an intrinsic interior point. No convexity is needed.
 
 A nonempty convex subset of `t` whose intrinsic interior misses that of `t`, such as a convex piece
 of the intrinsic frontier of `t`, has strictly smaller dimension
-(`finrank_vectorSpan_lt_of_disjoint_intrinsicInterior`): equal dimensions would force equal affine
-spans, and the intrinsic interior is monotone on sets with a common affine span
-(`intrinsicInterior_mono_of_affineSpan_eq`).
+(`TauCeti.finrank_vectorSpan_lt_of_disjoint_intrinsicInterior`): equal dimensions would force
+equal affine spans, and the intrinsic interior is monotone on sets with a common affine span
+(`TauCeti.intrinsicInterior_mono_of_affineSpan_eq`). Consequently, in a family of nonempty convex
+cells with pairwise disjoint intrinsic interiors whose intrinsic frontiers are covered by a set
+`S` and the smaller cells, every point of a cell lies in `S` or in the intrinsic interior of a
+cell contained in it (`TauCeti.mem_intrinsicInterior_or_of_mem`), and the intrinsic interior of a
+cell avoiding `S` meets no other cell of smaller or equal dimension
+(`TauCeti.eq_or_finrank_lt_of_mem_intrinsicInterior`).
 
 A closed bounded convex set `C` of a real normed space, with a point `c` of its intrinsic
 interior, is homeomorphic to the closed unit ball of the direction `V` of its affine span
@@ -86,6 +91,8 @@ theorem IsCompact.exists_lineMap_mem_intrinsicFrontier (hC : IsCompact C) (hp : 
 
 end Ray
 
+namespace TauCeti
+
 section AffineSpan
 
 variable {𝕜 V P : Type*} [Ring 𝕜] [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace P]
@@ -121,9 +128,62 @@ theorem finrank_vectorSpan_lt_of_disjoint_intrinsicInterior (hs : Convex ℝ s) 
   obtain ⟨x, hx⟩ := hsne.intrinsicInterior hs
   exact Set.disjoint_left.1 hd hx (intrinsicInterior_mono_of_affineSpan_eq hst hspan hx)
 
+section Cells
+
+variable {ι : Type*} {P : ι → Set E} {S : Set E}
+
+/-- A point of a cell lies in its intrinsic interior, in `S`, or in the intrinsic interior of a
+smaller-dimensional cell contained in it, when the frontier of every cell is covered by `S` and
+the other cells contained in it. -/
+theorem mem_intrinsicInterior_or_of_mem (hPv : ∀ i, Convex ℝ (P i))
+    (hPne : ∀ i, (P i).Nonempty)
+    (hri : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (P i)) (intrinsicInterior ℝ (P j)))
+    (hfr : ∀ i, intrinsicFrontier ℝ (P i) ⊆ S ∪ ⋃ (j) (_ : j ≠ i ∧ P j ⊆ P i), P j)
+    {i : ι} {x : E} (hx : x ∈ P i) :
+    x ∈ intrinsicInterior ℝ (P i) ∨ x ∈ S ∨ ∃ k, Module.finrank ℝ (vectorSpan ℝ (P k)) <
+      Module.finrank ℝ (vectorSpan ℝ (P i)) ∧ P k ⊆ P i ∧ x ∈ intrinsicInterior ℝ (P k) := by
+  induction hn : Module.finrank ℝ (vectorSpan ℝ (P i)) using Nat.strong_induction_on
+    generalizing i with
+  | _ n ih =>
+  by_cases hxi : x ∈ intrinsicInterior ℝ (P i)
+  · exact .inl hxi
+  have hxf : x ∈ intrinsicFrontier ℝ (P i) := by
+    rw [← intrinsicClosure_sdiff_intrinsicInterior]
+    exact ⟨subset_intrinsicClosure hx, hxi⟩
+  rcases hfr i hxf with hxS | hx'
+  · exact .inr (.inl hxS)
+  simp only [mem_iUnion, exists_prop] at hx'
+  obtain ⟨j, ⟨hji, hjP⟩, hxj⟩ := hx'
+  -- the cell `P j` lies in the frontier of `P i`, so it has smaller dimension
+  have hj : _ < n :=
+    hn ▸ finrank_vectorSpan_lt_of_disjoint_intrinsicInterior (hPv j) (hPne j) hjP (hri hji)
+  rcases ih _ hj hxj rfl with h | h | ⟨k, hk, hkj, hxk⟩
+  · exact .inr (.inr ⟨j, hj, hjP, h⟩)
+  · exact .inr (.inl h)
+  · exact .inr (.inr ⟨k, hk.trans hj, hkj.trans hjP, hxk⟩)
+
+/-- Under the hypotheses of `TauCeti.mem_intrinsicInterior_or_of_mem`, if the intrinsic
+interiors of the cells avoid `S`, the intrinsic interior of a cell meets no other cell of smaller
+or equal dimension. -/
+theorem eq_or_finrank_lt_of_mem_intrinsicInterior (hPv : ∀ i, Convex ℝ (P i))
+    (hPne : ∀ i, (P i).Nonempty)
+    (hri : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (P i)) (intrinsicInterior ℝ (P j)))
+    (hfr : ∀ i, intrinsicFrontier ℝ (P i) ⊆ S ∪ ⋃ (j) (_ : j ≠ i ∧ P j ⊆ P i), P j)
+    (hS : ∀ i, Disjoint (intrinsicInterior ℝ (P i)) S) {i j : ι} {x : E}
+    (hxi : x ∈ intrinsicInterior ℝ (P i)) (hxj : x ∈ P j) :
+    i = j ∨ Module.finrank ℝ (vectorSpan ℝ (P i)) < Module.finrank ℝ (vectorSpan ℝ (P j)) := by
+  rcases mem_intrinsicInterior_or_of_mem hPv hPne hri hfr hxj with h | h | ⟨k, hk, -, hxk⟩
+  · by_contra hij
+    exact Set.disjoint_left.1 (hri fun h => hij (.inl h)) hxi h
+  · exact (Set.disjoint_left.1 (hS i) hxi h).elim
+  · rcases eq_or_ne i k with rfl | hik
+    · exact .inr hk
+    · exact (Set.disjoint_left.1 (hri hik) hxi hxk).elim
+
+end Cells
+
 end FiniteDimensional
 
-namespace TauCeti
 
 open Bornology Metric Topology
 open scoped Pointwise
