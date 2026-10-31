@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Quaternion
 public import TauCeti.Algebra.Central.Quaternion
+public import TauCeti.Analysis.Calculus.FDeriv.Remainder
 
 /-!
 # One-sided quotient derivatives of quaternionic functions
@@ -147,6 +148,11 @@ theorem unique (hb : HasLeftQuotientFDerivAt f q b) (hc : HasLeftQuotientFDerivA
     b = c := by
   simpa using DFunLike.congr_fun (hb.hasFDerivAt.unique hc.hasFDerivAt) 1
 
+/-- A left slope depends only on the germ of the function at the point. -/
+theorem congr_of_eventuallyEq (hf : HasLeftQuotientFDerivAt f q b) (h : g =ᶠ[𝓝 q] f) :
+    HasLeftQuotientFDerivAt g q b :=
+  hf.hasFDerivAt.congr_of_eventuallyEq h
+
 end HasLeftQuotientFDerivAt
 
 namespace HasRightQuotientFDerivAt
@@ -174,6 +180,11 @@ theorem fderiv_apply (hf : HasRightQuotientFDerivAt f q a) (h : ℍ) :
 theorem unique (ha : HasRightQuotientFDerivAt f q a) (hc : HasRightQuotientFDerivAt f q c) :
     a = c := by
   simpa using DFunLike.congr_fun (ha.hasFDerivAt.unique hc.hasFDerivAt) 1
+
+/-- A right slope depends only on the germ of the function at the point. -/
+theorem congr_of_eventuallyEq (hf : HasRightQuotientFDerivAt f q a) (h : g =ᶠ[𝓝 q] f) :
+    HasRightQuotientFDerivAt g q a :=
+  hf.hasFDerivAt.congr_of_eventuallyEq h
 
 end HasRightQuotientFDerivAt
 
@@ -322,18 +333,6 @@ theorem hasRightQuotientFDerivAt_id (q : ℍ) : HasRightQuotientFDerivAt id q 1 
   exact h
 
 /-! ### Limit characterisations -/
-
-/-- The punctured remainder form of a Fréchet derivative: `f` has derivative `L` at `x` exactly
-when `‖f (x + h) - f x - L h‖ / ‖h‖ → 0` as `h → 0`, `h ≠ 0`. -/
-private theorem hasFDerivAt_iff_tendsto_norm_div_nhdsNE {𝕜 E F : Type*}
-    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {L : E →L[𝕜] F} {x : E} :
-    HasFDerivAt f L x ↔ Tendsto (fun h ↦ ‖f (x + h) - f x - L h‖ / ‖h‖) (𝓝[≠] 0) (𝓝 0) := by
-  -- The remainder vanishes at `h = 0`, so the point `0` can be removed from the filter.
-  rw [hasFDerivAt_iff_isLittleO_nhds_zero, ← nhdsWithin_univ, ← Set.union_compl_self {0},
-    ← Set.insert_eq, Asymptotics.isLittleO_insert (by simp),
-    ← Asymptotics.isLittleO_norm_left, ← Asymptotics.isLittleO_norm_right,
-    Asymptotics.isLittleO_iff_tendsto (by simp +contextual)]
 
 /-- **Remainder form of the left quotient derivative.** `f` has left slope `b` at `q` exactly
 when `‖f (q + h) - f q - h * b‖ / ‖h‖ → 0` as `h → 0`, `h ≠ 0`. -/
