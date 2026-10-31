@@ -8,13 +8,14 @@ module
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
-public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
-public import TauCeti.RingTheory.RegularLocalRing.OfQuotient
+public import Mathlib.RingTheory.RegularLocalRing.Defs
 import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Localization.BaseChange
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.Etale.AdjoinRoot
+import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
+import TauCeti.RingTheory.RegularLocalRing.OfQuotient
 
 /-!
 # Standard tamely ramified covers
