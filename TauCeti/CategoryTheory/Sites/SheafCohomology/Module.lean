@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
 public import Mathlib.CategoryTheory.Sites.Abelian
 import TauCeti.Algebra.Homology.Ext.Basic
+import TauCeti.CategoryTheory.Yoneda
 
 /-!
 # Free sheaves of modules on objects of a site and relative `Ext`
@@ -269,37 +270,11 @@ theorem isIso_relativeFreeModuleYonedaSheafMap_iff :
       ∀ (F : Sheaf J (ModuleCat.{v} R)) (s : F.obj.obj (op V')),
         s ∈ LinearMap.ker (F.obj.map i'.op).hom →
           ∃! t : F.obj.obj (op V),
-            t ∈ LinearMap.ker (F.obj.map i.op).hom ∧ F.obj.map b.op t = s := by
-  set f := relativeFreeModuleYonedaSheafMap J R i' i a b w
-  -- both directions compare precomposition with `f` and restriction along `b` through
-  -- `relativeFreeModuleYonedaSheafHomEquiv`
-  have key (F : Sheaf J (ModuleCat.{v} R)) (g : relativeFreeModuleYonedaSheaf J R i ⟶ F)
-      (g' : relativeFreeModuleYonedaSheaf J R i' ⟶ F) :
-      f ≫ g = g' ↔ F.obj.map b.op (relativeFreeModuleYonedaSheafHomEquiv J R i F g) =
-        relativeFreeModuleYonedaSheafHomEquiv J R i' F g' := by
-    rw [← coe_relativeFreeModuleYonedaSheafHomEquiv_map_comp, Subtype.coe_inj,
-      (relativeFreeModuleYonedaSheafHomEquiv J R i' F).injective.eq_iff]
-  constructor
-  · intro _ F s hs
-    let g' := (relativeFreeModuleYonedaSheafHomEquiv J R i' F).symm ⟨s, hs⟩
-    refine ⟨relativeFreeModuleYonedaSheafHomEquiv J R i F (inv f ≫ g'),
-      ⟨(relativeFreeModuleYonedaSheafHomEquiv J R i F _).2, ?_⟩, ?_⟩
-    · simpa [g'] using (key F (inv f ≫ g') g').1 (IsIso.hom_inv_id_assoc f g')
-    · rintro t ⟨ht, hts⟩
-      have h : f ≫ (relativeFreeModuleYonedaSheafHomEquiv J R i F).symm ⟨t, ht⟩ = g' :=
-        (key F _ g').2 (by simpa [g'] using hts)
-      rw [← h, IsIso.inv_hom_id_assoc, LinearEquiv.apply_symm_apply]
-  · intro h
-    refine isIso_of_coyoneda_map_bijective f fun F ↦ ⟨fun g₁ g₂ hg ↦ ?_, fun g' ↦ ?_⟩
-    · set s := relativeFreeModuleYonedaSheafHomEquiv J R i' F (f ≫ g₂)
-      apply (relativeFreeModuleYonedaSheafHomEquiv J R i F).injective
-      exact Subtype.ext <| (h F s s.2).unique
-        ⟨(relativeFreeModuleYonedaSheafHomEquiv J R i F g₁).2, (key F g₁ _).1 hg⟩
-        ⟨(relativeFreeModuleYonedaSheafHomEquiv J R i F g₂).2, (key F g₂ _).1 rfl⟩
-    · obtain ⟨t, ⟨ht, hts⟩, -⟩ := h F _ (relativeFreeModuleYonedaSheafHomEquiv J R i' F g').2
-      refine ⟨(relativeFreeModuleYonedaSheafHomEquiv J R i F).symm ⟨t, ht⟩, (key F _ g').2 ?_⟩
-      rw [LinearEquiv.apply_symm_apply]
-      exact hts
+            t ∈ LinearMap.ker (F.obj.map i.op).hom ∧ F.obj.map b.op t = s :=
+  isIso_iff_existsUnique_of_homEquiv _ (fun F ↦ F.obj.map b.op)
+    (fun F ↦ (relativeFreeModuleYonedaSheafHomEquiv J R i F).toEquiv)
+    (fun F ↦ (relativeFreeModuleYonedaSheafHomEquiv J R i' F).toEquiv)
+    (coe_relativeFreeModuleYonedaSheafHomEquiv_map_comp J R i' i a b w)
 
 end map
 

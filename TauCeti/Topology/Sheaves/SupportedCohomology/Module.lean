@@ -471,6 +471,19 @@ lemma supportedModuleHPresheafMap_app_supportedModuleHPresheafMap_app {T : Close
     supportedModuleHPresheafMap_app_apply, ← Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀,
     ← NatTrans.comp_app, Closeds.supportedFreeModuleSheafFunctorMap_comp]
 
+@[simp]
+lemma supportedModuleHPresheafMap_refl (Z : Closeds X) (n : ℕ) :
+    F.supportedModuleHPresheafMap (le_refl Z) n = 𝟙 _ := by
+  ext W x
+  exact F.supportedModuleHPresheafMap_refl_app_apply Z n (op W) x
+
+@[reassoc (attr := simp)]
+lemma supportedModuleHPresheafMap_comp {T : Closeds X} (hZS : Z ≤ S) (hST : S ≤ T) (n : ℕ) :
+    F.supportedModuleHPresheafMap hZS n ≫ F.supportedModuleHPresheafMap hST n =
+      F.supportedModuleHPresheafMap (hZS.trans hST) n := by
+  ext W x
+  exact F.supportedModuleHPresheafMap_app_supportedModuleHPresheafMap_app hZS hST n (op W) x
+
 /-- Under `supportedModuleHZeroEquiv`, enlarging the support in degree zero is the inclusion of
 `Γ_Z(W, F)` in `Γ_S(W, F)`. -/
 lemma coe_supportedModuleHZeroEquiv_supportedModuleHPresheafMap_app (hZS : Z ≤ S) (W : Opens X)
