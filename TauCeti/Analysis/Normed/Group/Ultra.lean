@@ -16,7 +16,7 @@ In an ultrametric seminormed group, `‖x / y‖ ≤ max ‖x‖ ‖y‖`; addit
 `IsUltrametricDist.norm_mul_le_max` and `IsUltrametricDist.norm_add_le_max`. Measured from a
 common point `y`, the triangle inequality reads `‖x - z‖ ≤ max ‖x - y‖ ‖z - y‖`. If
 `‖x - y‖ < ‖x‖` then `‖x‖ = ‖y‖`: an element and a strictly smaller perturbation of it have the
-same norm.
+same norm, and if `x` and `y - x` both have norm at most `C`, so does `y`.
 
 A separable ultrametric additive group with a strictly decreasing sequence of norms `‖cₙ‖`
 bounded away from `0` is not spherically complete: there are decreasing closed balls of radii
@@ -52,6 +52,14 @@ theorem norm_eq_of_norm_div_lt_left {x y : S} (h : ‖x / y‖ < ‖x‖) : ‖x
   have h' := norm_eq_of_mul_norm_lt_max (x := x) (y := y⁻¹)
     ((div_eq_mul_inv x y ▸ h).trans_le (le_max_left _ _))
   rwa [norm_inv'] at h'
+
+/-- In an ultrametric group, if `x` and the quotient `y / x` both have norm at most `C`, so
+does `y`. -/
+@[to_additive /-- In an ultrametric additive group, if `x` and the difference `y - x` both have
+norm at most `C`, so does `y`. -/]
+theorem norm_le_of_norm_div_le {x y : S} {C : ℝ} (hx : ‖x‖ ≤ C) (h : ‖y / x‖ ≤ C) : ‖y‖ ≤ C := by
+  rw [← div_mul_cancel y x]
+  exact (norm_mul_le_max _ _).trans (max_le h hx)
 
 /-- The ultrametric triangle inequality for quotients, measured from a common point `y`:
 `‖x / z‖ ≤ max ‖x / y‖ ‖z / y‖`. -/

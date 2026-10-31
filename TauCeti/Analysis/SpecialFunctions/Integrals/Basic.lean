@@ -25,6 +25,7 @@ Interval integrals of elementary functions in closed form or as series, continui
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
   binomial expansion `TauCeti.cos_pow_mul_cexp` of `cosᵏ θ exp (n θ i)` into characters.
+* `TauCeti.integral_pow_mul_sub`: `∫ x in p..r, xⁿ (x - p)` as a binomial sum in powers of `r - p`.
 * `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
 * `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
@@ -113,6 +114,27 @@ theorem integral_cos_pow_mul_cexp (k : ℕ) (n : ℤ) :
       Complex.exp (((2 * m - k + n : ℤ) : ℂ) * θ * Complex.I)).intervalIntegrable _ _]
   refine Finset.sum_congr rfl fun m _ => ?_
   rw [intervalIntegral.integral_const_mul, integral_cexp_intCast_mul_mul_I]
+
+/-- The integral of `x ^ n` against the linear weight `x - p` vanishing at `p`, over `[p, r]`, as
+a binomial sum. -/
+theorem integral_pow_mul_sub (p r : ℝ) (n : ℕ) :
+    ∫ x in p..r, x ^ n * (x - p) =
+      ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) / (k + 2) * p ^ (n - k) * (r - p) ^ (k + 2) := by
+  have hexp (x : ℝ) : x ^ n * (x - p) =
+      ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) * p ^ (n - k) * (x - p) ^ (k + 1) := by
+    conv_lhs => rw [show x = (x - p) + p by ring, add_pow, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    ring
+  simp_rw [hexp]
+  rw [intervalIntegral.integral_finsetSum fun k _ ↦
+    Continuous.intervalIntegrable (by fun_prop) _ _]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [intervalIntegral.integral_const_mul,
+    intervalIntegral.integral_comp_sub_right (fun x ↦ x ^ (k + 1)), integral_pow, sub_self,
+    zero_pow (Nat.succ_ne_zero _)]
+  push_cast
+  field_simp
+  ring
 
 /-! ### Integrands depending only on `sin² θ`
 
