@@ -35,6 +35,10 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `ZMod.exists_odd_unitOfCoprime_eq` refines it to an odd such number. The odd form is what a
   statement about the Kronecker symbol, which agrees with the Jacobi symbol only at odd
   arguments, needs: its consumer is `DirichletCharacter.conductor_dvd_iff_forall_odd`.
+* `ZMod.exists_isCoprime_mul_intCast_eq` — a unit modulo `d` lifts to an integer coprime to
+  `n d`, for every `n ≠ 0`. Its consumers move a diamond label across `diag(1, n)` in
+  `TauCeti/NumberTheory/HeckeRing/GL2/Gamma1/CoprimeCosets.lean` and
+  `TauCeti/NumberTheory/HeckeRing/GL2/Gamma1/CoprimeMul.lean`.
 * `ZMod.unitOfCoprime_mul` — `ZMod.unitOfCoprime` is multiplicative in its numerator.
 * `ZMod.unitsMap_unitOfCoprime` — `ZMod.unitsMap` sends the class of `a` modulo `n` to the
   class of `a` modulo a divisor of `n`.
@@ -172,6 +176,25 @@ theorem ZMod.exists_odd_unitOfCoprime_eq [NeZero d] (u : (ZMod d)ˣ) :
     Nat.not_coprime_of_dvd_of_dvd one_lt_two hme.two_dvd hd.two_dvd hm
   refine ⟨m + d, Nat.coprime_add_self_left.mpr hm, hme.add_odd hd, Units.ext ?_⟩
   simp [ZMod.coe_unitOfCoprime]
+
+/-- **A unit modulo `d` lifts to an integer coprime to `n d`**, for every `n ≠ 0`. For `d ≠ 0`
+this is the surjectivity of `ZMod.unitsMap` from `ZMod (n d)`; for `d = 0` the unit is `±1`. -/
+theorem ZMod.exists_isCoprime_mul_intCast_eq (n : ℕ) [NeZero n] (u : (ZMod d)ˣ) :
+    ∃ t : ℤ, IsCoprime t ((n * d : ℕ) : ℤ) ∧ ((t : ℤ) : ZMod d) = u := by
+  rcases eq_or_ne d 0 with rfl | hd
+  · obtain ⟨t, ht⟩ := ZMod.intCast_surjective (u : ZMod 0)
+    refine ⟨t, ?_, ht⟩
+    rw [mul_zero]
+    exact Int.isCoprime_iff_gcd_eq_one.mpr (Int.isUnit_intCast_iff_gcd_eq_one.mp (ht ▸ u.isUnit))
+  · have : NeZero d := ⟨hd⟩
+    obtain ⟨e, he⟩ := ZMod.unitsMap_surjective (Dvd.intro_left n rfl : d ∣ n * d) u
+    refine ⟨(e : ZMod (n * d)).val,
+      Nat.isCoprime_iff_coprime.mpr (ZMod.val_coe_unit_coprime e), ?_⟩
+    have := congrArg Units.val he
+    rw [ZMod.unitsMap_def, Units.coe_map, MonoidHom.coe_ofClass, ZMod.castHom_apply,
+      ZMod.cast_eq_val] at this
+    rw [Int.cast_natCast]
+    exact this
 
 -- Deliberately not `@[simp]`: the right-hand side needs coprimality proofs for `m` and `n`
 -- separately, which `simp` cannot synthesise from the left-hand side, so Mathlib's `simpNF`
