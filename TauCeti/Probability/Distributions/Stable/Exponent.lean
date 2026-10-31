@@ -142,6 +142,17 @@ theorem stableCharacteristicExponent_neg_skew (α β u : ℝ) :
           Complex.I_im, Complex.I_re, mul_one, zero_mul, add_zero, Complex.conj_im]
         ring
 
+/-- Scaling the argument by `b` is scaling by `|b|` with the skewness multiplied by the sign of
+`b`. At `b = 0` both sides are the value zero at the origin. -/
+theorem stableCharacteristicExponent_mul (α β b u : ℝ) :
+    stableCharacteristicExponent α β (b * u) =
+      stableCharacteristicExponent α (Real.sign b * β) (|b| * u) := by
+  rcases lt_trichotomy b 0 with hb | rfl | hb
+  · rw [Real.sign_of_neg hb, abs_of_neg hb, neg_one_mul, stableCharacteristicExponent_neg_skew,
+      neg_mul, neg_neg]
+  · simp
+  · rw [Real.sign_of_pos hb, abs_of_pos hb, one_mul]
+
 /-- The imaginary part of the stable exponent is linear in the skewness parameter: it is `β`
 times the imaginary part of the totally skewed exponent. -/
 theorem stableCharacteristicExponent_im_eq_mul (α β u : ℝ) :
