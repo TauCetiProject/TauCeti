@@ -66,8 +66,6 @@ construction and their gcd is defined.
   `TauCeti.isAChain_snoc_iff` for the extension of a chain by one cover.
 * `TauCeti.IsAChain.exists_mul_sub_eq_intCast`: along an `a`-chain from `x` to `y`,
   `a (f (x λ) - f (y λ))` is an integer for every integral linear form `f`.
-* `TauCeti.reflection_smul_eq_of_minimalCosetRepCovBy_of_coroot'_neg`: a cover `y ⋖ x` with
-  `⟨x λ, αᵢ^∨⟩ < 0 ≤ ⟨y λ, αᵢ^∨⟩` is given by the simple reflection, `y λ = sᵢ (x λ)`.
 * `TauCeti.IsAChain.exists_mul_coroot'_eq_intCast`: **an `a`-chain from `x` to `y` with
   `⟨x λ, αᵢ^∨⟩ < 0 ≤ ⟨y λ, αᵢ^∨⟩` has `a ⟨x λ, αᵢ^∨⟩ ∈ ℤ`**.
 * `TauCeti.exists_sum_coroot'_eq_intCast_of_isAChain`,
@@ -304,24 +302,6 @@ theorem bondGcd_eq_zero_iff (hlam : lam ∈ dominantChamber P b)
 
 /-! ### Integrality along `a`-chains -/
 
-/-- **An `a`-chain step changes integral pairings by `a`-integral amounts.** If `y ⋖ x` is a cover
-of `W / W_λ` and `a` times its bond is an integer, then `a (f (x λ) - f (y λ))` is an integer for
-every integral linear form `f` on the weight lattice. Indeed `x λ - y λ = -b_λ(x, y) β` for the
-positive root label `β` of the cover. -/
-theorem exists_mul_sub_eq_intCast_of_minimalCosetRepCovBy (hlam : lam ∈ dominantChamber P b)
-    {x y : P.weylGroup}
-    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x)
-    (ha : ∃ z : ℤ, a * P.reflectionBond b (x • lam) (y • lam) = z) (f : Module.Dual ℤ M) :
-    ∃ z : ℤ, a * (f (x • lam) - f (y • lam) : ℤ) = z := by
-  obtain ⟨β, ⟨hβ, hβx⟩, -⟩ := existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam h
-  obtain ⟨z, hz⟩ := ha
-  rw [reflectionBond_eq_neg_coroot' hβ hβx (smul_ne_smul_of_minimalCosetRepCovBy hlam h)] at hz
-  refine ⟨-(z * f (P.root β)), ?_⟩
-  rw [← hβx, P.reflection_apply, map_sub, sub_sub_cancel, LinearMap.map_smul, smul_eq_mul]
-  push_cast at hz ⊢
-  rw [← hz]
-  ring
-
 /-- **Integral linear forms on the two ends of an `a`-chain differ by an `a`-integral amount.** If
 `C : x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` is an `a`-chain of `W / W_λ`, then `a (f (x₀ λ) - f (x_l λ))` is an
 integer for every integral linear form `f` on the weight lattice, for instance for the pairing
@@ -346,53 +326,6 @@ theorem IsAChain.exists_mul_sub_eq_intCast (hlam : lam ∈ dominantChamber P b)
     rw [Int.cast_add, ← hz₁, ← hz₂]
     simp only [Int.cast_sub]
     ring
-
-/-- **A cover leaving the negative side of a simple wall is the simple reflection.** If `y ⋖ x` is
-a cover of `W / W_λ` and `αᵢ` is a simple root with `⟨x λ, αᵢ^∨⟩ < 0 ≤ ⟨y λ, αᵢ^∨⟩`, then
-`y λ = sᵢ (x λ)`. By the reflection test the minimal representative `v` of `sᵢ x` lies strictly
-below `x`; since `sᵢ` does not shorten `y`, the lifting property gives `y ≤ v`, and the cover
-forces `y = v`. -/
-theorem reflection_smul_eq_of_minimalCosetRepCovBy_of_coroot'_neg
-    (hlam : lam ∈ dominantChamber P b) {x y : P.weylGroup}
-    (h : (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) y x) (i : b.support)
-    (hx : P.coroot' i (x • lam) < 0) (hy : 0 ≤ P.coroot' i (y • lam)) :
-    P.reflection i (x • lam) = y • lam := by
-  set cs := weylCoxeterSystem P b
-  have hi : b.IsPos i := b.isPos_of_mem_support i.2
-  have hsmul (w : P.weylGroup) :
-      (RootPairing.weylGroup.ofIdx P i * w) • lam = P.reflection i (w • lam) := by
-    rw [mul_smul, RootPairing.weylGroup.ofIdx_smul, Equiv.reflection_smul]
-  -- The minimal representative `v` of `sᵢ x` lies strictly below `x`.
-  obtain ⟨v, ⟨hv, hvlam⟩, -⟩ :=
-    existsUnique_isMinimalCosetRep_smul_eq hlam (RootPairing.weylGroup.ofIdx P i * x)
-  have hvx := bruhatLE_and_ne_of_isMinimalCosetRep_of_coroot'_neg hlam hv hvlam hi hx
-  -- `sᵢ` does not shorten `y`: the minimal representative `u` of `sᵢ y` lies above `y`.
-  have hydesc : ¬cs.IsLeftDescent y i := by
-    obtain ⟨u, ⟨hu, hulam⟩, -⟩ :=
-      existsUnique_isMinimalCosetRep_smul_eq hlam (RootPairing.weylGroup.ofIdx P i * y)
-    have hyu : cs.BruhatLE y u := by
-      rcases hy.lt_or_eq with hpos | hzero
-      · exact (bruhatLE_and_ne_of_isMinimalCosetRep_of_coroot'_pos hlam
-          h.isMinimalCosetRep_left hulam hi hpos).1
-      · obtain rfl := eq_of_isMinimalCosetRep_of_coroot'_eq_zero hlam h.isMinimalCosetRep_left hu
-          hulam hzero.symm
-        exact cs.bruhatLE_refl u
-    have hus := bruhatLE_of_isMinimalCosetRep_of_smul_eq hlam hu hulam
-    rw [CoxeterSystem.IsLeftDescent, weylCoxeterSystem_simple]
-    exact (hyu.trans hus).length_le.not_gt
-  -- By the lifting property `y ≤ sᵢ x`, hence `y ≤ v`.
-  have hysx : cs.BruhatLE y (cs.simple i * x) := by
-    have := h.bruhatLE.inv.bruhatLE_mul_simple (i := i)
-      (by rwa [CoxeterSystem.isRightDescent_inv_iff])
-    rwa [← cs.inv_simple, ← mul_inv_rev, cs.bruhatLE_inv_iff] at this
-  have hyv : cs.BruhatLE y v := by
-    refine h.isMinimalCosetRep_left.bruhatLE_of_bruhatLE_mul cs
-      ((inv_mul_mem_parabolic_wallIndices_iff hlam (u := v)
-        (w := RootPairing.weylGroup.ofIdx P i * x)).mpr hvlam.symm) ?_
-    rwa [mul_inv_cancel_left, ← weylCoxeterSystem_simple]
-  -- The cover forces `v = y`.
-  have hvy := (h.eq_or_eq v hv hyv hvx.1).resolve_right hvx.2
-  rw [← hsmul, ← hvlam, hvy]
 
 /-- **Littelmann's integrality at a simple wall.** Let `C : x₀ ⋗ ⋯ ⋗ x_l` be an `a`-chain of
 `W / W_λ` and `αᵢ` a simple root with `⟨x₀ λ, αᵢ^∨⟩ < 0 ≤ ⟨x_l λ, αᵢ^∨⟩`. Then `a ⟨x₀ λ, αᵢ^∨⟩`
