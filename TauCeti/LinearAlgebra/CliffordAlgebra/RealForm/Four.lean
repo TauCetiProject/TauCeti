@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 public import TauCeti.Algebra.Central.Quaternion
 public import TauCeti.Algebra.Quaternion.NormForm
 public import TauCeti.Algebra.Subalgebra.Center
+import TauCeti.RingTheory.Semisimple.BasicAlgebra
 
 /-!
 # The compact four-dimensional even Clifford algebra
@@ -210,11 +211,9 @@ theorem isEmpty_realCliffordFourZeroEven_algEquiv_matrix_prod :
   have : IsReduced (Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ) :=
     isReduced_of_injective (f.symm.trans realCliffordFourZeroEvenEquivQuaternionProd)
       (AlgEquiv.injective _)
-  have hN : IsNilpotent ((Matrix.single 0 1 1, 0) :
-      Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ) :=
-    ⟨2, by simp [sq, Matrix.single_mul_single_of_ne]⟩
-  have h01 := congrArg (fun x ↦ x.1 0 1) (IsReduced.eq_zero _ hN)
-  simp at h01
+  have : IsReduced (Matrix (Fin 2) (Fin 2) ℝ) :=
+    isReduced_of_injective ((RingHom.id _).prod (RingHom.id _)) fun _ _ h ↦ congrArg Prod.fst h
+  exact zero_ne_one ((Matrix.subsingleton_of_isReduced (m := Fin 2) (A := ℝ)).elim 0 1)
 
 /-- The quaternion-pair coordinates of the image of a product of two compact
 four-dimensional Clifford generators. -/
