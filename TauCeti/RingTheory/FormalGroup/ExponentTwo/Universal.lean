@@ -118,6 +118,13 @@ private theorem forall_ne_two_pow_or_exists (n : ℕ) :
 theorem coeff_succ_log (i : Index) : PowerSeries.coeff (i.1 + 1) log.toPowerSeries = X i := by
   simp [log, logCoeffs, i.2]
 
+/-- The coefficient of `X^(n + 2)` in the universal normalised logarithm is the generator
+`a_(n + 1)` when `n + 2` is not a power of two. -/
+private theorem coeff_add_two_log {n : ℕ} (hn : ∀ k : ℕ, n + 1 + 1 ≠ 2 ^ k) :
+    PowerSeries.coeff (n + 1 + 1) log.toPowerSeries =
+      X ⟨n.succPNat, by simpa [Nat.succPNat_coe] using hn⟩ := by
+  rw [← coeff_succ_log, Nat.succPNat_coe]
+
 /-- The universal normalised logarithm has linear coefficient `1`. -/
 @[simp]
 theorem coeff_one_log : PowerSeries.coeff 1 log.toPowerSeries = 1 :=
@@ -183,7 +190,7 @@ private theorem toPowerSeries_map_log_eq (f : ExponentTwoLazardRing →+* R) {g 
   · simp [h₁]
   · rw [FormalCoordinate.toPowerSeries_map, PowerSeries.coeff_map]
     obtain hn | ⟨k, hk0, hk⟩ := forall_ne_two_pow_or_exists n
-    · exact (congrArg f (coeff_succ_log ⟨n.succPNat, hn⟩)).trans (hX ⟨n.succPNat, hn⟩)
+    · rw [coeff_add_two_log hn, hX, Nat.succPNat_coe, Nat.succ_eq_add_one]
     · rw [hk, coeff_two_pow_log hk0, hp k hk0, map_zero]
 
 /-- The homomorphism classifying `F`, sending `aᵢ` to the coefficient of `X^(i + 1)` in the
@@ -275,9 +282,9 @@ theorem coeff_log_mem_grading (n : ℕ) :
   · rw [zero_add, coeff_one_log]
     exact SetLike.GradedOne.one_mem (A := grading)
   · obtain hn | ⟨k, hk0, hk⟩ := forall_ne_two_pow_or_exists n
-    · have h := X_mem_grading ⟨n.succPNat, hn⟩
-      rw [← coeff_succ_log] at h
-      exact h
+    · rw [coeff_add_two_log hn, Nat.add_sub_cancel]
+      convert X_mem_grading _ using 2
+      exact (Nat.succPNat_coe n).symm
     · rw [hk, coeff_two_pow_log hk0]
       exact zero_mem _
 
