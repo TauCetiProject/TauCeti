@@ -90,7 +90,8 @@ omit [CharZero K] [IsAlgClosed K] [IsKilling K L] [FiniteDimensional K L]
 /-- A weight space is trivial exactly when its dimension is zero. -/
 private theorem weightSpace_eq_bot_iff_finrank_eq_zero (ψ : H → K) :
     weightSpace M ψ = ⊥ ↔ finrank K (weightSpace M ψ) = 0 := by
-  rw [← LieSubmodule.toSubmodule_eq_bot, ← Submodule.finrank_eq_zero, finrank_toSubmodule]
+  rw [← LieSubmodule.toSubmodule_eq_bot, ← Submodule.finrank_eq_zero,
+    LieSubmodule.finrank_toSubmodule]
 
 /-! ### The `α`-string as a module over the `sl₂` triple attached to `α` -/
 
@@ -188,7 +189,7 @@ private theorem finrank_weightSpace_eq_finrank_eigenspace_restrict {n : ℤ} (h�
       (fun i ↦ (weightSpace M (i • ⇑α + χ)).toSubmodule) g
       (fun i (_ : i ∈ Set.Ioo p q) m hm ↦ hWle i hm) hj
       fun i _ hij ↦ fun hcon ↦ hij (hginj hcon),
-    finrank_toSubmodule]
+    LieSubmodule.finrank_toSubmodule]
 
 end Chain
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.Pi
 public import Mathlib.MeasureTheory.Integral.Prod
 public import TauCeti.MeasureTheory.Constructions.Pi
@@ -36,6 +37,9 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
   identity.
 * `TauCeti.integral_pi_sum_mul`: Fubini over a sum of index types, for a product of a function of
   each block of coordinates.
+* `TauCeti.setIntegral_prod_le_exp_mul_pow`: the exponential-moment (Chernoff) bound for the
+  integral of `∏ i, g (x i)` over the half-space `∑ i, x i ≤ s`, by the `card ι`-th power of the
+  one-dimensional integral of `exp (-(l * x)) * g x`.
 -/
 
 public section
@@ -159,5 +163,39 @@ theorem integral_pi_sum_mul {ι ι' : Type*} [Fintype ι] [Fintype ι'] {α : ι
       (∫ y, f y ∂Measure.pi fun i => μ (.inl i)) * ∫ y, g y ∂Measure.pi fun i => μ (.inr i) := by
   rw [← (measurePreserving_sumPiEquivProdPi_symm μ).integral_comp']
   exact integral_prod_mul f g
+
+/-- **Exponential-moment bound over a half-space.** For a nonnegative weight `g` on `ℝ` and
+`0 ≤ l` such that `exp (-(l * x)) * g x` is integrable, the integral of `∏ i, g (x i)` over the
+half-space `∑ i, x i ≤ s` of `ι → ℝ` is at most
+`exp (l * s) * (∫ x, exp (-(l * x)) * g x) ^ card ι`. No integrability of `g` itself is
+assumed. -/
+theorem setIntegral_prod_le_exp_mul_pow {ι : Type*} [Fintype ι] {g : ℝ → ℝ}
+    (hg : ∀ x, 0 ≤ g x) {l : ℝ} (hl : 0 ≤ l)
+    (hint : Integrable fun x ↦ Real.exp (-(l * x)) * g x) (s : ℝ) :
+    ∫ x in {x : ι → ℝ | ∑ i, x i ≤ s}, ∏ i, g (x i) ≤
+      Real.exp (l * s) * (∫ x, Real.exp (-(l * x)) * g x) ^ Fintype.card ι := by
+  -- On the half-space `1 ≤ exp (l * (s - ∑ i, x i))`. After multiplying by this factor the
+  -- integrand `F` splits into a product over the coordinates, whose integral over all of
+  -- `ι → ℝ` is the `card ι`-th power of a one-dimensional integral.
+  set F : (ι → ℝ) → ℝ := fun x ↦ Real.exp (l * s) * ∏ i, (Real.exp (-(l * x i)) * g (x i))
+  have hF : Integrable F := (Integrable.fintype_prod fun _ ↦ hint).const_mul _
+  have hF₀ : ∀ x, 0 ≤ F x := fun x ↦
+    mul_nonneg (Real.exp_pos _).le (Finset.prod_nonneg fun i _ ↦ mul_nonneg (Real.exp_pos _).le
+      (hg _))
+  have hS : MeasurableSet {x : ι → ℝ | ∑ i, x i ≤ s} :=
+    measurableSet_le (by fun_prop) measurable_const
+  calc ∫ x in {x : ι → ℝ | ∑ i, x i ≤ s}, ∏ i, g (x i)
+      ≤ ∫ x in {x : ι → ℝ | ∑ i, x i ≤ s}, F x := by
+        refine integral_mono_of_nonneg (.of_forall fun x ↦ Finset.prod_nonneg fun i _ ↦ hg _)
+          hF.integrableOn (ae_restrict_of_forall_mem hS fun x (hx : ∑ i, x i ≤ s) ↦ ?_)
+        -- `F x = exp (l * (s - ∑ i, x i)) * ∏ i, g (x i)`, and the exponent is nonnegative.
+        simp only [F, Finset.prod_mul_distrib, ← Real.exp_sum, ← mul_assoc, ← Real.exp_add]
+        refine le_mul_of_one_le_left (Finset.prod_nonneg fun i _ ↦ hg _) (Real.one_le_exp ?_)
+        rw [Finset.sum_neg_distrib, ← Finset.mul_sum]
+        nlinarith
+    _ ≤ ∫ x, F x := setIntegral_le_integral hF (.of_forall hF₀)
+    _ = _ := by
+      rw [integral_const_mul,
+        integral_fintype_prod_volume_eq_pow fun x ↦ Real.exp (-(l * x)) * g x]
 
 end TauCeti
