@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.SU2.SymmetricPower
-import TauCeti.Topology.Circle.Basic
+import TauCeti.Algebra.Field.Basic
 import TauCeti.Topology.Circle.Metric
 
 /-!
@@ -118,7 +118,7 @@ quotient of the Weyl numerator by the Weyl denominator. -/
 theorem character_symPower_torusHom_eq_div {z : Circle} (hz : (z : ℂ) ^ 2 ≠ 1) :
     (symPower d).character (torusHom z)
       = ((z : ℂ) ^ (d + 1) - ((z : ℂ)⁻¹) ^ (d + 1)) / ((z : ℂ) - (z : ℂ)⁻¹) :=
-  eq_div_of_mul_eq (circle_sub_inv_ne_zero hz)
+  eq_div_of_mul_eq ((sub_inv_eq_zero_iff z.coe_ne_zero).not.mpr hz)
     (by rw [mul_comm]; exact sub_inv_mul_character_symPower_torusHom d z)
 
 /-- **The character at the two points where the Weyl denominator vanishes.**  At `z = ±1` every one

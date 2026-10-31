@@ -56,6 +56,8 @@ multiplicative form `normResidue K L : Kˣ / N_{L/K}(Lˣ) ≃* Gal(L/K)^ab` is c
   for every embedding.
 * `TauCeti.ClassFieldTheory.index_normGroup_of_isMulCommutative`: the norm group of a finite
   abelian extension has index equal to the degree.
+* `TauCeti.ClassFieldTheory.comap_normUnits_normGroup`: for a tower `E/F/K` with `E/K` abelian,
+  `N_{F/K}⁻¹(N_{E/K}(Eˣ)) = N_{E/F}(Eˣ)`.
 
 ## References
 
@@ -209,5 +211,43 @@ theorem powerSubgroup_le_normGroup_of_exponent_dvd {n : ℕ}
     (normResidue K L).symm.surjective.comp (QuotientGroup.mk'_surjective _)
   rw [← QuotientGroup.eq_one_iff, QuotientGroup.mk_pow]
   exact Monoid.exponent_dvd_iff_forall_pow_eq_one.mp ((MonoidHom.exponent_dvd hsurj).trans hn) _
+
+/-! ### Norm groups in a tower -/
+
+section Tower
+
+variable {K} (F : Type) [Field F] [ValuativeRel F] [TopologicalSpace F]
+  [IsNonarchimedeanLocalField F] [Algebra K F] (E : Type*) [Field E] [Algebra K E] [Algebra F E]
+  [IsScalarTower K F E] [FiniteDimensional K E] [FiniteDimensional F E] [IsAbelianGalois K E]
+
+/-- **Norm groups in a tower of abelian extensions.** For finite extensions `E/F/K` of a
+nonarchimedean local field `K` with `E/K` abelian, an element of `Fˣ` is a norm from `E` exactly
+when its norm to `K` is a norm from `E`: `N_{F/K}⁻¹(N_{E/K}(Eˣ)) = N_{E/F}(Eˣ)`. -/
+theorem comap_normUnits_normGroup :
+    (normGroup K E).comap (Algebra.normUnits K : Fˣ →* Kˣ) = normGroup F E := by
+  have : FiniteDimensional K F := .left K F E
+  have := IsAbelianGalois.tower_bot K F E
+  have := IsAbelianGalois.tower_top K F E
+  -- `⊇` is the transitivity of the norm, and both sides have index `[E : F]`.
+  have hle : normGroup F E ≤ (normGroup K E).comap (Algebra.normUnits K) := fun x hx ↦ by
+    obtain ⟨y, rfl⟩ := mem_normGroup_iff_exists_normUnits.1 hx
+    exact mem_normGroup_iff_exists_normUnits.2 ⟨y, Units.ext (by simp [Algebra.norm_norm])⟩
+  have hrange : (Algebra.normUnits K : Fˣ →* Kˣ).range = normGroup K F :=
+    Subgroup.ext fun _ ↦ mem_normGroup_iff_exists_normUnits.symm
+  -- `[Fˣ : N_{F/K}⁻¹(N_{E/K}(Eˣ))] = [N_{F/K}(Fˣ) : N_{E/K}(Eˣ)] = [E : F]`.
+  have hindex : ((normGroup K E).comap (Algebra.normUnits K : Fˣ →* Kˣ)).index =
+      Module.finrank F E := by
+    have hmul := Subgroup.relIndex_mul_index
+      (AlgHom.normGroup_le_normGroup (IsScalarTower.toAlgHom K F E))
+    rw [index_normGroup_of_isMulCommutative, index_normGroup_of_isMulCommutative,
+      ← Module.finrank_mul_finrank K F E, mul_comm] at hmul
+    rw [Subgroup.index_comap, hrange]
+    exact Nat.eq_of_mul_eq_mul_left Module.finrank_pos hmul
+  have : ((normGroup K E).comap (Algebra.normUnits K : Fˣ →* Kˣ)).FiniteIndex :=
+    ⟨hindex ▸ Module.finrank_pos.ne'⟩
+  exact (Subgroup.eq_of_index_dvd_index hle
+    (by rw [hindex, index_normGroup_of_isMulCommutative])).symm
+
+end Tower
 
 end TauCeti.ClassFieldTheory

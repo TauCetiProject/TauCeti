@@ -13,7 +13,8 @@ public import Mathlib.Topology.Bases
 
 In an ultrametric seminormed group, `‖x / y‖ ≤ max ‖x‖ ‖y‖`; additively,
 `‖x - y‖ ≤ max ‖x‖ ‖y‖`, and likewise for `‖·‖₊`. These are the companions of Mathlib's
-`IsUltrametricDist.norm_mul_le_max` and `IsUltrametricDist.norm_add_le_max`. Consequently, if
+`IsUltrametricDist.norm_mul_le_max` and `IsUltrametricDist.norm_add_le_max`. Measured from a
+common point `y`, the triangle inequality reads `‖x - z‖ ≤ max ‖x - y‖ ‖z - y‖`. If
 `‖x - y‖ < ‖x‖` then `‖x‖ = ‖y‖`: an element and a strictly smaller perturbation of it have the
 same norm.
 
@@ -51,6 +52,14 @@ theorem norm_eq_of_norm_div_lt_left {x y : S} (h : ‖x / y‖ < ‖x‖) : ‖x
   have h' := norm_eq_of_mul_norm_lt_max (x := x) (y := y⁻¹)
     ((div_eq_mul_inv x y ▸ h).trans_le (le_max_left _ _))
   rwa [norm_inv'] at h'
+
+/-- The ultrametric triangle inequality for quotients, measured from a common point `y`:
+`‖x / z‖ ≤ max ‖x / y‖ ‖z / y‖`. -/
+@[to_additive /-- The ultrametric triangle inequality for differences, measured from a common
+point `y`: `‖x - z‖ ≤ max ‖x - y‖ ‖z - y‖`. -/]
+theorem norm_div_le_max_norm_div (x y z : S) : ‖x / z‖ ≤ max ‖x / y‖ ‖z / y‖ := by
+  rw [norm_div_rev z y, ← div_mul_div_cancel x y z]
+  exact norm_mul_le_max _ _
 
 section SphericalCompleteness
 

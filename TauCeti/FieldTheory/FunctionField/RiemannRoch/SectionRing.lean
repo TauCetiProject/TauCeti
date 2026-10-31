@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Basic
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Principal
-public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra
+public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Basic
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Veronese
 

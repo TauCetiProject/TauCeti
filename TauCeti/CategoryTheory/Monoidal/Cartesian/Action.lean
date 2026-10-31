@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Mod
 public import TauCeti.CategoryTheory.Monoidal.Grp.Translation
+public import TauCeti.CategoryTheory.Monoidal.Mod.Basic
 
 /-!
 # Orbit morphisms and translations for internal actions
@@ -127,3 +128,24 @@ theorem orbitMap_smul (g : 𝟙_ C ⟶ G) (x : 𝟙_ C ⟶ X) :
   simp [orbitMap, TauCeti.rightTranslation_hom, comp_smul, SemigroupAction.mul_smul]
 
 end TauCeti
+
+namespace CategoryTheory.Functor
+
+open scoped Obj
+
+variable {C D : Type*} [Category C] [Category D]
+  [CartesianMonoidalCategory C] [CartesianMonoidalCategory D]
+  (F : C ⥤ D) [F.Monoidal] (G X : C) [MonObj G] [ModObj G X]
+
+/-- A monoidal functor between cartesian categories preserves orbit morphisms, with
+the base point transported by its unit comparison. -/
+theorem map_orbitMap (x : 𝟙_ C ⟶ X) :
+    letI := F.modObjObj G X
+    F.map (TauCeti.orbitMap G x) =
+      TauCeti.orbitMap (F.obj G) (LaxMonoidal.ε F ≫ F.map x) := by
+  let := F.modObjObj G X
+  simp only [TauCeti.orbitMap, Hom.smul_def, modObjObj_smul]
+  rw [Monoidal.toUnit_ε_assoc, ← F.map_comp, ← F.map_id G,
+    Monoidal.lift_μ_assoc, ← F.map_comp]
+
+end CategoryTheory.Functor

@@ -106,7 +106,7 @@ section MarkovChain
 
 open ProbabilityTheory
 
-variable (ν : Measure α) [IsProbabilityMeasure ν] (κ : Kernel α α) [IsMarkovKernel κ]
+variable (ν : Measure α) [SFinite ν] (κ : Kernel α α) [IsMarkovKernel κ]
 
 /-- **A homogeneous Markov chain is Markov exchangeable.** Its finite path masses factor as an
 initial weight times a product of transition weights, and such a product depends on the path only

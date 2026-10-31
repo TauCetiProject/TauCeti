@@ -468,86 +468,41 @@ generator `al` makes the rewrite directly traceable to the displayed source rela
 recorded counts are those of this transcription, not figures quoted from the source: `11`
 generators, the ten displayed ones and `al`, and `136` relators, two rewrites of each of the
 `66 + 2` source relators. No structural property of the resulting `PresentedGroup` is asserted
-here. -/
+here.
+
+Generator order (starting at index zero): `ab`, `ac`, `ad`, `ae`, `af`, `ag`, `ah`, `ai`, `aj`,
+`ak`, `al`.
+
+Source: H. K. Kim and G. O. Michler, Construction of Fischer's sporadic group Fi24' inside
+GL_8671(13), arXiv:0906.1064v1 (2009); presentation originally due to J. I. Hall and L. H.
+Soicher.
+
+Source locator: Kim--Michler, Lemma 6.2 and Theorem 6.3, arXiv:0906.1064v1; Hall--Soicher,
+Presentations of some 3-transposition groups, Communications in Algebra 23 (1995), 2517-2559,
+doi:10.1080/00927879508825358
+
+Generator convention: Source generators are a,b,c,d,e,f,g,h,i,j,k,l. Target indices 0 through 10
+denote ab,ac,ad,ae,af,ag,ah,ai,aj,ak,al. All source generators are involutions. With transversal
+{1,a}, an even-position source letter x rewrites as `(a*x)^-1` and an odd-position source letter
+rewrites as `a*x`; the source letter a contributes no target letter.
+
+Transcription notes: Expand the source diagram into 78 Coxeter relators and append its two
+displayed relations. The twelve square relations eliminate the redundant half of the Schreier
+generators and then rewrite trivially. Each of the 66 off-diagonal Coxeter relators and each of
+the two displayed relations contributes its rewrite and the rewrite of its conjugate by a, for
+`2*(66+2)=136` relators. Retain al rather than eliminating it with the first displayed relation,
+so every target relator remains a direct rewrite of a source relator. The independent
+source-to-Lean read-through checked all 80 source relators and the Reidemeister--Schreier rewrite
+producing the 136 target relators. -/
 def fi24PrimePresentation : GroupPresentation where
-  generatorNames := ["ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al"]
-  source := "H. K. Kim and G. O. Michler, Construction of Fischer's sporadic group Fi24' inside \
-    GL_8671(13), arXiv:0906.1064v1 (2009); presentation originally due to J. I. Hall and L. H. \
-    Soicher"
-  sourceLocator := "Kim--Michler, Lemma 6.2 and Theorem 6.3, arXiv:0906.1064v1; Hall--Soicher, \
-    Presentations of some 3-transposition groups, Communications in Algebra 23 (1995), \
-    2517-2559, doi:10.1080/00927879508825358"
-  generatorConvention := "Source generators are a,b,c,d,e,f,g,h,i,j,k,l. Target indices 0 \
-    through 10 denote ab,ac,ad,ae,af,ag,ah,ai,aj,ak,al. All source generators are involutions. \
-    With transversal {1,a}, an even-position source letter x rewrites as (a*x)^-1 and an \
-    odd-position source letter rewrites as a*x; the source letter a contributes no target letter."
-  transcriptionNotes := "Expand the source diagram into 78 Coxeter relators and append its two \
-    displayed relations. The twelve square relations eliminate the redundant half of the \
-    Schreier generators and then rewrite trivially. Each of the 66 off-diagonal Coxeter relators \
-    and each of the two displayed relations contributes its rewrite and the rewrite of its \
-    conjugate by a, for 2*(66+2)=136 relators. Retain al rather than eliminating it with the first \
-    displayed relation, so every target relator remains a direct rewrite of a source relator. The \
-    independent source-to-Lean read-through checked all 80 source relators and the \
-    Reidemeister--Schreier rewrite producing the 136 target relators."
-  expectedGeneratorCount := 11
+  generatorCount := 11
   expectedRelatorCount := 136
   transcribed := fi24PrimeRelators
 
-/-- The generator names recorded for `Fi₂₄'`. The row's body is sealed, so this is what lets a
-consumer see that it is an eleven-generator presentation and what each index names. -/
+/-- The presentation of `Fi₂₄'` has eleven generators. Their names and order are documented in
+`fi24PrimePresentation`. -/
 @[simp]
-theorem fi24PrimePresentation_generatorNames :
-    fi24PrimePresentation.generatorNames =
-      ["ab", "ac", "ad", "ae", "af", "ag", "ah", "ai", "aj", "ak", "al"] := by
-  simp only [fi24PrimePresentation]
-
-/-- The source recorded for `Fi₂₄'`. The row's body is sealed, so this equation is what publishes
-the citation itself, rather than only the row's name, to a downstream audit. -/
-theorem fi24PrimePresentation_source :
-    fi24PrimePresentation.source = "H. K. Kim and G. O. Michler, Construction of Fischer's \
-      sporadic group Fi24' inside GL_8671(13), arXiv:0906.1064v1 (2009); presentation originally \
-      due to J. I. Hall and L. H. Soicher" := by
-  simp only [fi24PrimePresentation]
-
-/-- The locator recorded for `Fi₂₄'`, pointing at the presentation inside its source. -/
-theorem fi24PrimePresentation_sourceLocator :
-    fi24PrimePresentation.sourceLocator = "Kim--Michler, Lemma 6.2 and Theorem 6.3, \
-      arXiv:0906.1064v1; Hall--Soicher, Presentations of some 3-transposition groups, \
-      Communications in Algebra 23 (1995), 2517-2559, doi:10.1080/00927879508825358" := by
-  simp only [fi24PrimePresentation]
-
-/-- The generator convention recorded for `Fi₂₄'`, fixing which Schreier generator each relator
-index names and how a source letter is rewritten. -/
-theorem fi24PrimePresentation_generatorConvention :
-    fi24PrimePresentation.generatorConvention = "Source generators are a,b,c,d,e,f,g,h,i,j,k,l. \
-      Target indices 0 through 10 denote ab,ac,ad,ae,af,ag,ah,ai,aj,ak,al. All source generators \
-      are involutions. With transversal {1,a}, an even-position source letter x rewrites as \
-      (a*x)^-1 and an odd-position source letter rewrites as a*x; the source letter a contributes \
-      no target letter." := by
-  simp only [fi24PrimePresentation]
-
-/-- The transcription notes recorded for `Fi₂₄'`, including the arithmetic behind the relator
-count and the completed independent read-through. -/
-theorem fi24PrimePresentation_transcriptionNotes :
-    fi24PrimePresentation.transcriptionNotes = "Expand the source diagram into 78 Coxeter \
-      relators and append its two displayed relations. The twelve square relations eliminate the \
-      redundant half of the Schreier generators and then rewrite trivially. Each of the 66 \
-      off-diagonal Coxeter relators and each of the two displayed relations contributes its \
-      rewrite and the rewrite of its conjugate by a, for 2*(66+2)=136 relators. Retain al rather \
-      than eliminating it with the first displayed relation, so every target relator remains a \
-      direct rewrite of a source relator. The independent source-to-Lean read-through checked all \
-      80 source relators and the Reidemeister--Schreier rewrite producing the 136 target \
-      relators." := by
-  simp only [fi24PrimePresentation]
-
-/-- The generator count of this row: the ten Schreier generators `ab, …, ak` that Kim--Michler
-display, together with the eleventh generator `al` that this transcription retains instead of
-eliminating it with the source relation `l = (abcdefh)⁹`. With
-`TauCeti.Sporadic.fi24PrimePresentation_generatorNames` this is what makes
-`TauCeti.Sporadic.fi24PrimePresentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem fi24PrimePresentation_expectedGeneratorCount :
-    fi24PrimePresentation.expectedGeneratorCount = 11 := by
+theorem fi24PrimePresentation_generatorCount : fi24PrimePresentation.generatorCount = 11 := by
   simp only [fi24PrimePresentation]
 
 /-- The relator count obtained by rewriting each of the `66` off-diagonal Coxeter relators and each
@@ -566,18 +521,17 @@ The row's body is sealed, so this is the equation that characterizes what it tra
 `TauCeti.Sporadic.fi24PrimeRelators_def` and the `_def` equations it cites determine every one of
 them from the eleven-edge source diagram, which is the form in which the source displays the
 presentation. Letters rather than relator expressions are compared because the index type of a
-relator depends on the generator-name list while the letters do not. -/
+relator depends on the generator count while the letters do not. -/
 theorem fi24PrimePresentation_relatorLetters :
     fi24PrimePresentation.relatorLetters =
       fi24PrimeRelators.map fun r => r.toWord.map fun letter => (letter.1.val, letter.2) := by
   simp only [GroupPresentation.relatorLetters_def, GroupPresentation.relators_def,
     fi24PrimePresentation, List.map_map, Function.comp_def]
-  rfl
 
-/-- The generator and relator counts recorded for `Fi₂₄'` agree with the rewritten data. -/
+/-- The relator count recorded for `Fi₂₄'` agrees with the rewritten data. -/
 theorem fi24PrimePresentation_matchesMetadata : fi24PrimePresentation.matchesMetadata := by
   rw [GroupPresentation.matchesMetadata_iff]
-  exact ⟨rfl, length_fi24PrimeRelators⟩
+  exact length_fi24PrimeRelators
 
 /-! ## Letter counts
 
@@ -877,7 +831,7 @@ source generator `x` at index `i + 1`, to the product `a x` in the source presen
 theorem coe_fi24PrimeGroupMulEquivCommutator_of (i : Fin 11) :
     (fi24PrimeGroupMulEquivCommutator
         (PresentedGroup.of
-          (Fin.cast (by simp [GroupPresentation.generatorCount, fi24PrimePresentation]) i)) :
+          (Fin.cast (by simp [fi24PrimePresentation]) i)) :
       Fi24AutomorphismGroup) =
       PresentedGroup.of 0 * PresentedGroup.of i.succ := by
   -- The generic evaluation lemma gives `a x` for `x = fi24SchreierEquiv.symm i`, which is `i + 1`

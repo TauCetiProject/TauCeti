@@ -157,8 +157,9 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
   -- (`localMultiplicity_eq_analyticOrderNatAt`); applying the same identity at each `x'` of the
   -- chart ball makes the summand of the planar count at `z` equal to
   -- `localMultiplicity f (e.symm z)`. The zeros of `F - w` in a closed disc are finite
-  -- (`finite_setOf_mem_and_eq_zero_of_isCompact`), and reindexing the count along `e.symm` turns
-  -- it into a sum over the fibre of `y' = e'.symm w` inside the chart neighbourhood. Finally
+  -- (`AnalyticOnNhd.finite_setOf_mem_and_eq_zero_of_isCompact`), and reindexing the count along
+  -- `e.symm` turns it into a sum over the fibre of `y' = e'.symm w` inside the chart
+  -- neighbourhood. Finally
   -- `¬ EventuallyConst f (𝓝 x)` says the count is positive by `localMultiplicity_pos_iff`, so
   -- each such fibre is nonempty.
   -- The neighbourhood on which `f` is differentiable, taken open.
@@ -271,10 +272,9 @@ private theorem exists_nhds_localMultiplicity_fiber_sum_of_charts
       have hz0 : e' (f (e.symm (e x))) - e' y' ≠ 0 := by
         rw [e.left_inv hx]
         exact sub_ne_zero.mpr hne'
-      have hfin := finite_setOf_mem_and_eq_zero_of_isCompact
-        (g := fun z : ℂ ↦ e' (f (e.symm z)) - e' y') (U := Metric.closedBall (e x) r)
-        (K := Metric.closedBall (e x) r) han ((convex_closedBall _ _).isPreconnected)
-        (Metric.mem_closedBall_self (le_of_lt hr)) hz0 (isCompact_closedBall _ _) subset_rfl
+      have hfin := han.finite_setOf_mem_and_eq_zero_of_isCompact
+        (convex_closedBall _ _).isPreconnected (Metric.mem_closedBall_self (le_of_lt hr)) hz0
+        (isCompact_closedBall _ _) subset_rfl
       refine hfin.subset fun z hz => ?_
       have hz : z ∈ Metric.closedBall (e x) r ∧ e' (f (e.symm z)) = e' y' := by
         simpa only [Set.mem_ofPred_eq] using hz

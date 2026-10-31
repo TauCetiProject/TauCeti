@@ -32,7 +32,9 @@ permutations transported along injections with disjoint ranges, a fiber-preservi
 carrying one finite family to another with the same equality pattern
 (`TauCeti.exists_perm_apply_eq_of_eq_iff`), the fact that a permutation
 is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
-types, and the factorization of an invariant function
+types, the relabelling of a two-argument family invariant under a permutation of its first argument
+paired with a map on its second (`Equiv.Perm.apply_inv_eq_comp_of_apply_apply_eq`), transport of
+cycle quotients along conjugating equivalences, and the factorization of an invariant function
 through a map on whose fibres the permutation is a single cycle, and a correction by a power of
 a cycle for a permutation commuting with it. Points over distinct classes of the cycle quotient are
 distinct (`Equiv.Perm.ne_of_sameCycle_out`), and precomposing with `σ` does not change a sum over a
@@ -257,6 +259,14 @@ theorem IsCycleOn.permCongr {σ : Perm α} {β : Type*} (e : α ≃ β) {s : Set
   · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
     exact (sameCycle_permCongr σ e).2 (h.2 hx hy)
 
+/-- If a two-argument family `F` is invariant under applying `σ` to its first argument together
+with `f` to its second, then relabelling the first argument by `σ⁻¹` is the same as precomposing
+every member of the family with `f`. -/
+theorem apply_inv_eq_comp_of_apply_apply_eq {β γ : Sort*} (F : α → β → γ) (f : β → β)
+    (hF : ∀ a b, F (σ a) (f b) = F a b) : (fun a => F (σ⁻¹ a)) = fun a => F a ∘ f := by
+  funext a b
+  simpa using (hF (σ⁻¹ a) b).symm
+
 end Equiv.Perm
 
 namespace Equiv
@@ -273,6 +283,56 @@ theorem isCycleOn_mulRight_univ_iff {G : Type*} [Group G] {a : G} :
     exact ⟨k, by simpa using hk⟩
   · obtain ⟨k, hk⟩ := h (x⁻¹ * y)
     exact ⟨k, by simp [hk]⟩
+
+end Equiv
+
+namespace Equiv
+
+section CycleQuotient
+
+open Equiv.Perm
+
+/-- An equivalence conjugating two permutations transports their cycle quotients. -/
+def sameCycleQuotientCongr {α β : Type*} (e : α ≃ β)
+    {σ : Equiv.Perm α} {τ : Equiv.Perm β} (h : τ = e.permCongr σ) :
+    Quotient (SameCycle.setoid σ) ≃ Quotient (SameCycle.setoid τ) :=
+  Quotient.congr e fun _ _ => by
+    rw [h]
+    exact (sameCycle_permCongr σ e).symm
+
+/-- Cycle-quotient transport sends a class to the class of its transported representative. -/
+@[simp] theorem sameCycleQuotientCongr_mk {α β : Type*} (e : α ≃ β)
+    {σ : Equiv.Perm α} {τ : Equiv.Perm β} (h : τ = e.permCongr σ) (x : α) :
+    sameCycleQuotientCongr e h (Quotient.mk _ x) = Quotient.mk _ (e x) := (rfl)
+
+/-- Identity conjugacy induces identity transport of cycle quotients. -/
+@[simp] theorem Perm.sameCycleQuotientCongr_refl {α : Type*} (σ : Equiv.Perm α) :
+    sameCycleQuotientCongr (Equiv.refl α) (σ := σ) (by ext x; simp) =
+      Equiv.refl _ := by
+  ext q
+  induction q using Quotient.inductionOn with
+  | _ x => rfl
+
+/-- Inverting cycle-quotient transport reverses the conjugating equivalence. -/
+@[simp] theorem sameCycleQuotientCongr_symm {α β : Type*} (e : α ≃ β)
+    {σ : Equiv.Perm α} {τ : Equiv.Perm β} (h : τ = e.permCongr σ) :
+    (sameCycleQuotientCongr e h).symm =
+      sameCycleQuotientCongr e.symm (by ext x; simp [h]) := by
+  ext q
+  induction q using Quotient.inductionOn with
+  | _ x => rfl
+
+/-- Transport of cycle quotients respects composition of conjugating equivalences. -/
+theorem sameCycleQuotientCongr_trans {α β γ : Type*} (e : α ≃ β) (f : β ≃ γ)
+    {σ : Equiv.Perm α} {τ : Equiv.Perm β} {υ : Equiv.Perm γ}
+    (he : τ = e.permCongr σ) (hf : υ = f.permCongr τ) :
+    (sameCycleQuotientCongr e he).trans (sameCycleQuotientCongr f hf) =
+      sameCycleQuotientCongr (e.trans f) (by ext x; simp [hf, he]) := by
+  ext q
+  induction q using Quotient.inductionOn with
+  | _ x => rfl
+
+end CycleQuotient
 
 end Equiv
 
@@ -385,6 +445,14 @@ theorem sameCycle_toPerm_iff {α : Type*} (f : α → α) (hf : Function.Involut
           f a = f (f b) := congrArg f h
           _ = b := hf b
       simpa using this
+
+/-- Two points of an involutive permutation lie in one cycle exactly when they coincide or
+one is the image of the other. -/
+theorem _root_.Function.Involutive.sameCycle_iff {α : Type*} {f : Equiv.Perm α}
+    (hf : Function.Involutive f) (x y : α) :
+    f.SameCycle x y ↔ x = y ∨ x = f y := by
+  have he : Function.Involutive.toPerm f hf = f := Equiv.ext fun _ ↦ rfl
+  exact he ▸ sameCycle_toPerm_iff _ hf x y
 
 variable {α : Type*} [Fintype α] [DecidableEq α]
 

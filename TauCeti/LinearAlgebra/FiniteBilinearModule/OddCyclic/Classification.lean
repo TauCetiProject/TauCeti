@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Basic
+import TauCeti.NumberTheory.LegendreSymbol.QuadraticCongruence
 
 /-!
 # Classification of odd cyclic quadratic modules
@@ -15,6 +17,8 @@ an `oddCyclic` module. For a nondegenerate module, the coefficient is prime to i
 Two such cyclic forms are isometric exactly when their coefficients differ by a unit square
 modulo the order. Both the presentation and the coefficient criterion apply to degenerate
 forms and to the trivial group.
+At an odd prime power `p^e`, coefficients prime to `p` with the same Legendre symbol therefore
+give isometric generators, since their product is then a square modulo `p^e`.
 
 These results identify the cyclic constituents of odd-primary discriminant forms and their
 change-of-generator relation. They do not assert an orthogonal decomposition of a general
@@ -101,5 +105,43 @@ theorem nonempty_isometry_oddCyclic_iff (m : ℕ) (hm : Odd m) (θ η : ℤ) :
       rw [hu]
       ring
     exact ⟨cyclicIsometryOfGenerator m _ _ e hgen⟩
+
+/-- Two odd cyclic generators of order `p^0 = 1` are isometric: both are trivial. -/
+theorem nonempty_isometry_oddCyclic_of_eq_zero {p : ℕ} (hp : Odd p) {e : ℕ} (he : e = 0)
+    (a b : ℤ) : Nonempty (Isometry (oddCyclic (p ^ e) hp.pow a) (oddCyclic (p ^ e) hp.pow b)) := by
+  subst he
+  have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
+  exact (nonempty_isometry_oddCyclic_iff _ _ a b).2 ⟨1, Subsingleton.elim _ _⟩
+
+/-- Odd cyclic generators `q_a^{(p)}(p^e)` and `q_b^{(p)}(p^e)` with the same Legendre symbol are
+isometric: `ab` is then a square modulo `p^e`. -/
+theorem nonempty_isometry_oddCyclic_of_legendreSym_eq {p : ℕ} [Fact p.Prime] (hp : Odd p) (e : ℕ)
+    {a b : ℤ} (ha : IsCoprime (p : ℤ) a) (hb : IsCoprime (p : ℤ) b)
+    (h : legendreSym p a = legendreSym p b) :
+    Nonempty (Isometry (oddCyclic (p ^ e) hp.pow a) (oddCyclic (p ^ e) hp.pow b)) := by
+  rcases Nat.eq_zero_or_pos e with rfl | he
+  · exact nonempty_isometry_oddCyclic_of_eq_zero hp rfl a b
+  have hp2 : p ≠ 2 := by rintro rfl; exact Nat.not_even_iff_odd.2 hp even_two
+  have hab0 : ((a * b : ℤ) : ZMod p) ≠ 0 :=
+    ((ZMod.coe_int_isUnit_iff_isCoprime _ p).2 (ha.mul_right hb)).ne_zero
+  -- `ab` has `1 + (ab/p) = 2` square roots modulo `p^e`.
+  have hcount := TauCeti.ZMod.natCard_sqrts_prime_pow_eq_legendreSym_add_one hp2 he.ne' hab0
+  rw [legendreSym.mul, h, ← sq,
+    legendreSym.sq_one p ((ZMod.coe_int_isUnit_iff_isCoprime b p).2 hb).ne_zero] at hcount
+  obtain ⟨⟨x, hx⟩⟩ := (Nat.card_pos_iff.1 (by omega : 0 < Nat.card
+    {x : ZMod (p ^ e) // x ^ 2 = ((a * b : ℤ) : ZMod (p ^ e))})).1
+  have hbu : IsUnit (b : ZMod (p ^ e)) :=
+    (ZMod.coe_int_isUnit_iff_isCoprime b (p ^ e)).2 (by simpa using hb.pow_left)
+  have hxu : IsUnit x := by
+    have hau : IsUnit (a : ZMod (p ^ e)) :=
+      (ZMod.coe_int_isUnit_iff_isCoprime a (p ^ e)).2 (by simpa using ha.pow_left)
+    have : IsUnit (x ^ 2) := by rw [hx]; push_cast; exact hau.mul hbu
+    exact isUnit_pow_iff two_ne_zero |>.1 this
+  refine (nonempty_isometry_oddCyclic_iff _ _ a b).2 ⟨hxu.unit * hbu.unit⁻¹, ?_⟩
+  have hinv : (b : ZMod (p ^ e)) * ↑hbu.unit⁻¹ = 1 := by
+    simpa only [IsUnit.unit_spec] using hbu.unit.mul_inv
+  push_cast at hx ⊢
+  rw [mul_pow, IsUnit.unit_spec, hx]
+  linear_combination (-(a : ZMod (p ^ e)) * (b * ↑hbu.unit⁻¹ + 1)) * hinv
 
 end TauCeti.FiniteQuadraticModule

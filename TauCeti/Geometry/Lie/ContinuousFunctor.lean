@@ -32,7 +32,7 @@ open scoped ContDiff Manifold
 
 namespace ContinuousMonoidHom
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -90,11 +90,11 @@ theorem lieMap_comp
 
 /-- A continuous homomorphism intertwines Lie-group exponentials through its Lie map. -/
 theorem map_lieExp (f : G →ₜ* G') (X : LeftInvariantDerivation I G) :
-    let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
-    let _ : T2Space G' := t2Space_of_lieGroup (I := I') (n := ∞)
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
+    let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
     f (_root_.lieExp X) = _root_.lieExp (lieMap (I := I) (I' := I') f X) := by
-  let _ : T2Space G := t2Space_of_lieGroup (I := I) (n := ∞)
-  let _ : T2Space G' := t2Space_of_lieGroup (I := I') (n := ∞)
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
   dsimp only
   rw [lieMap, ← ContinuousMonoidHom.coe_toContMDiffMonoidMorphism
     (I := I) (I' := I') f]
