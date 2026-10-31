@@ -50,6 +50,9 @@ several do.
   to a finite-dimensional algebra of the same finrank is an algebra equivalence. It is the
   algebra analogue of Mathlib's `LinearMap.linearEquivOfInjective`, with injectivity supplied by
   the division-ring source.
+* `AlgHom.range_comp_left_of_injective`, `AlgHom.range_comp_left_eq_of_adjoin_eq_top` and
+  `AlgHom.range_comp_right_of_surjective`: ranges of composition maps on algebra homomorphisms,
+  characterized by lifting values and by vanishing on a kernel.
 
 ## Implementation notes
 
@@ -166,3 +169,62 @@ theorem AlgHom.algEquivOfFinrankEq_apply (f : L →ₐ[K] M)
   AlgEquiv.ofBijective_apply f _ x
 
 end FinrankEq
+
+/-! ### Ranges of composition maps -/
+
+section Ranges
+
+variable {k A R S : Type*} [CommSemiring k]
+  [Semiring A] [Algebra k A] [Semiring R] [Algebra k R] [Semiring S] [Algebra k S]
+
+/-- A homomorphism lifts through an injective coefficient map exactly when all its values lie
+in the image. -/
+theorem AlgHom.range_comp_left_of_injective (ψ : R →ₐ[k] S) (hψ : Function.Injective ψ) :
+    Set.range (fun x : A →ₐ[k] R ↦ ψ.comp x) =
+      {x | ∀ a, x a ∈ Set.range ψ} := by
+  ext x
+  constructor
+  · rintro ⟨y, rfl⟩ a
+    exact ⟨y a, rfl⟩
+  · intro hx
+    let y := (AlgEquiv.ofInjective ψ hψ).symm.toAlgHom.comp (x.codRestrict ψ.range hx)
+    refine ⟨y, ?_⟩
+    ext a
+    exact congrArg Subtype.val ((AlgEquiv.ofInjective ψ hψ).apply_symm_apply
+      (⟨x a, hx a⟩ : ψ.range))
+
+/-- Lifting through an injective coefficient map can be tested on any algebra generating family. -/
+theorem AlgHom.range_comp_left_eq_of_adjoin_eq_top (ψ : R →ₐ[k] S)
+    (hψ : Function.Injective ψ) {ι : Type*} {a : ι → A}
+    (ha : Algebra.adjoin k (Set.range a) = ⊤) :
+    Set.range (fun x : A →ₐ[k] R ↦ ψ.comp x) =
+      {x | ∀ i, x (a i) ∈ Set.range ψ} := by
+  rw [AlgHom.range_comp_left_of_injective ψ hψ]
+  ext x
+  constructor
+  · exact fun hx i ↦ hx (a i)
+  · intro hx b
+    have hle : Algebra.adjoin k (Set.range a) ≤ ψ.range.comap x :=
+      Algebra.adjoin_le (by rintro _ ⟨i, rfl⟩; exact hx i)
+    exact hle (ha ▸ Algebra.mem_top)
+
+end Ranges
+
+/-- Precomposition by a surjection has image the homomorphisms vanishing on its kernel. -/
+theorem AlgHom.range_comp_right_of_surjective {k A B R : Type*}
+    [CommSemiring k] [Ring A] [Algebra k A] [Ring B] [Algebra k B]
+    [Ring R] [Algebra k R] (φ : B →ₐ[k] A) (hφ : Function.Surjective φ) :
+    Set.range (fun x : A →ₐ[k] R ↦ x.comp φ) =
+      {x | ∀ b ∈ RingHom.ker φ, x b = 0} := by
+  ext x
+  constructor
+  · rintro ⟨y, rfl⟩ b hb
+    simp only [AlgHom.comp_apply, RingHom.mem_ker.mp hb, map_zero]
+  · intro hx
+    let g : {g : B →+* R // RingHom.ker φ ≤ RingHom.ker g} := ⟨x.toRingHom, hx⟩
+    let y := φ.toRingHom.liftOfSurjective hφ g
+    have hy (b : B) : y (φ b) = x b :=
+      RingHom.liftOfSurjective_comp_apply φ.toRingHom hφ g b
+    refine ⟨{ y with commutes' := ?_ }, AlgHom.ext hy⟩
+    intro c
+    exact (congrArg y (φ.commutes c)).symm.trans ((hy _).trans (x.commutes c))

@@ -68,8 +68,8 @@ finite-dimensionality of `Z` is needed, as no basis of `Z` is used.
   residue class is linear in the form.
 * `TauCeti.CurrentAlgebra.smul_residueClass_eq_zero_iff`: a multiple of the residue class of a
   nonzero form vanishes only when the scalar does.
-* `TauCeti.CurrentAlgebra.residueClass_inj`: over a characteristic-zero domain, distinct invariant
-  symmetric forms have distinct residue classes.
+* `TauCeti.CurrentAlgebra.residueClass_inj`: distinct invariant symmetric forms have distinct
+  residue classes over every commutative ring.
 * `TauCeti.CurrentAlgebra.exists_eq_smul_twoCochainOfBilinear_add_d₁₂`: every continuous
   2-cocycle is a multiple of the residue cocycle plus a continuous coboundary.
 * `TauCeti.CurrentAlgebra.exists_eq_smul_residueClass`: the residue class spans continuous second
@@ -233,25 +233,34 @@ theorem residueClass_ne_zero [IsDomain R] [CharZero R] {Φ : LinearMap.BilinForm
     residueClass R L Φ hΦ hΦs ≠ 0 := by
   simpa using (smul_residueClass_eq_zero_iff hΦ hΦs hΦ0 1).not.mpr one_ne_zero
 
-open TauCeti.LieModule in
-/-- **A continuous class determines its form.** Over a characteristic-zero domain, two invariant
+/-- **A continuous class determines its form.** Over every commutative ring, two invariant
 symmetric forms have the same residue class exactly when they are equal. -/
 @[simp]
-theorem residueClass_inj [IsDomain R] [CharZero R] {Φ Ψ : LinearMap.BilinForm R L}
+theorem residueClass_inj {Φ Ψ : LinearMap.BilinForm R L}
     (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (hΨ : Ψ.lieInvariant L) (hΨs : Ψ.IsSymm) :
     residueClass R L Φ hΦ hΦs = residueClass R L Ψ hΨ hΨs ↔ Φ = Ψ := by
   refine ⟨fun h ↦ ?_, fun h ↦ by subst h; rfl⟩
-  -- The residue class of `Φ - Ψ`, written `Φ + (-1) • Ψ`, vanishes, so `Φ - Ψ` is zero.
-  have hΨ' : (-1 : R) • Ψ ∈ invariantForms R L L :=
-    Submodule.smul_mem _ _ (mem_invariantForms_iff.mpr ⟨hΨ, hΨs⟩)
-  have hD : Φ + (-1 : R) • Ψ ∈ invariantForms R L L :=
-    add_mem (mem_invariantForms_iff.mpr ⟨hΦ, hΦs⟩) hΨ'
-  by_contra hne
-  refine residueClass_ne_zero (mem_invariantForms_iff.mp hD).1 (mem_invariantForms_iff.mp hD).2
-    (fun h0 ↦ hne (LinearMap.ext₂ fun x y ↦ by
-      linear_combination (by simpa using LinearMap.congr_fun₂ h0 x y : Φ x y + -Ψ x y = 0))) ?_
-  rw [residueClass_add hΦ hΦs (mem_invariantForms_iff.mp hΨ').1 (mem_invariantForms_iff.mp hΨ').2,
-    residueClass_smul (-1) hΨ hΨs, h, neg_one_smul, add_neg_cancel]
+  rw [residueClass_eq_mk, residueClass_eq_mk, continuousSecondCohomologyMk_eq_iff] at h
+  obtain ⟨f, -, hf⟩ := h
+  set eC := TrivialLieModule.equiv R (currentAlgebra R L) R
+  have hval (u v : currentAlgebra R L) :
+      -eC (f ⁅u, v⁆) = residuePairing R L Φ u v - residuePairing R L Ψ u v := by
+    simpa [d₁₂_apply_apply_ofTrivial, eC, trivial_lie_zero] using congrArg (fun c ↦ eC (c u v)) hf
+  -- A coboundary with trivial coefficients takes the same value on `(X⁻¹ ⊗ x, X ⊗ y)` and
+  -- `(1 ⊗ x, 1 ⊗ y)`, since their brackets agree. The residue cocycle of `Φ - Ψ` takes the
+  -- values `(Φ - Ψ)(x, y)` and `0` there.
+  refine LinearMap.ext₂ fun x y ↦ ?_
+  set a₁ : currentAlgebra R L := HahnSeries.single (-1) 1 ⊗ₜ x
+  set b₁ : currentAlgebra R L := HahnSeries.single 1 1 ⊗ₜ y
+  set a₀ : currentAlgebra R L := HahnSeries.single 0 1 ⊗ₜ x
+  set b₀ : currentAlgebra R L := HahnSeries.single 0 1 ⊗ₜ y
+  have hab : ⁅a₁, b₁⁆ = ⁅a₀, b₀⁆ := by
+    simp [a₁, b₁, a₀, b₀, _root_.LieAlgebra.ExtendScalars.bracket_tmul,
+      HahnSeries.single_mul_single]
+  have h₁ := hval a₁ b₁
+  rw [hab, hval a₀ b₀] at h₁
+  simp [a₁, b₁, a₀, b₀, residuePairing_tmul, LaurentSeries.residuePairing_single] at h₁
+  linear_combination -h₁
 
 section Coefficients
 

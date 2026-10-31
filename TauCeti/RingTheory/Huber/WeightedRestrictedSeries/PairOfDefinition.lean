@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Completion.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Monomial
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 public import Mathlib.Data.Finsupp.Weight
 
@@ -55,6 +56,8 @@ completion and need no argument here.
 
 ## Main results
 
+* `TauCeti.Huber.PairOfDefinition.weighted_ringOfDefinition_one_weight_eq_top`: with trivial
+  weights, a pair whose ring of definition is the whole ring retains this property.
 * `TauCeti.Huber.PairOfDefinition.exists_sum_weightedRingOfDefinitionC_mul`: the decomposition of
   a series over generators of `I`, with restricted cofactors.
 * `TauCeti.Huber.PairOfDefinition.weightedIdeal_one_pow`: `(I⟨X⟩_T) ^ n = Iⁿ⟨X⟩_T`, from which
@@ -233,6 +236,12 @@ theorem coe_weightedRingOfDefinitionC (P : PairOfDefinition A) (hT : IsWeightFam
     (a : P.ringOfDefinition) :
     ((P.weightedRingOfDefinitionC hT a : P.weightedRingOfDefinition hT) :
       weightedRestrictedSubring T hT) = weightedC T hT (a : A) := (rfl)
+
+/-- `A₀⟨X⟩_T` contains the weighted variables `t Xᵢ` with `t ∈ Tᵢ`. -/
+theorem weightedC_mul_weightedX_mem_weightedRingOfDefinition (P : PairOfDefinition A)
+    (hT : IsWeightFamily T) {i : Fin k} {t : A} (ht : t ∈ T i) :
+    weightedC T hT t * weightedX T hT i ∈ P.weightedRingOfDefinition hT :=
+  weightedC_mul_weightedX_mem_weightedSubring ht
 
 /-- `Iⁿ⟨X⟩_T`, an **ideal of `A₀⟨X⟩_T`**: the series all of whose coefficients meet the `Iⁿ`
 bound. The ideal of definition of `A⟨X⟩_T` is the case `n = 1`; the general `n` is named because
@@ -455,6 +464,14 @@ def weighted (P : PairOfDefinition A) (hT : IsWeightFamily T) :
 @[simp]
 theorem weighted_ringOfDefinition (P : PairOfDefinition A) (hT : IsWeightFamily T) :
     (P.weighted hT).ringOfDefinition = P.weightedRingOfDefinition hT := (rfl)
+
+/-- With trivial weights, a ring of definition equal to the whole coefficient ring gives
+all restricted series as the ring of definition of the weighted pair. -/
+theorem weighted_ringOfDefinition_one_weight_eq_top (P : PairOfDefinition A)
+    (hP : P.ringOfDefinition = ⊤) :
+    (P.weighted (k := k) isWeightFamily_one_weight).ringOfDefinition = ⊤ := by
+  ext f
+  simp [weighted_ringOfDefinition, mem_weightedNhd, weightMul_one_weight, hP]
 
 /-- Membership in the ideal of definition of the pair `(A₀⟨X⟩_T, I⟨X⟩_T)` is membership in
 `I⟨X⟩_T`.

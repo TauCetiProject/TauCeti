@@ -12,7 +12,7 @@ module
 -- instance that makes `L ⊗[K] A` central simple over `L` visible to instance search from this
 -- import alone; `TauCeti.Algebra.TensorProduct.BaseChange` supplies the compatibility of the scalar
 -- extension with `⊗` and with `ᵐᵒᵖ`; `Module.FaithfullyFlat` is the hypothesis of
--- `TauCeti.IsSimpleRing.of_baseChange`, and the free-module instance that supplies it over a field
+-- `IsSimpleRing.of_baseChange`, and the free-module instance that supplies it over a field
 -- is what proves `TauCeti.isSimpleRing_baseChange_iff`.
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.Algebra.Central.BaseChange
@@ -20,7 +20,7 @@ public import TauCeti.Algebra.CentralSimple.Degree
 public import TauCeti.Algebra.TensorProduct.BaseChange
 -- Non-public: none of these appears in the type of an exported declaration.
 -- `Module.finrank_baseChange` is used only inside the proof of `TauCeti.Algebra.deg_baseChange`;
--- the quotient algebra `RingCon.mkₐ` only inside the proof of `TauCeti.IsSimpleRing.of_baseChange`;
+-- the quotient algebra `RingCon.mkₐ` only inside the proof of `IsSimpleRing.of_baseChange`;
 -- and the complex numbers and the real quaternions only by the worked examples at the end of the
 -- file (`TauCeti.Algebra.Central.Quaternion` re-exports `Mathlib.Algebra.Quaternion`, hence the
 -- `ℍ[·]` notation there).
@@ -37,7 +37,7 @@ assembles the statement that the scalar extension `L ⊗[K] A` is central simple
 the degree bookkeeping that goes with it.
 
 Both halves are already available. Simplicity is a statement about `L ⊗[K] A` as a ring, so
-`TauCeti.IsSimpleRing.tensorProduct_of_isCentral_right` applies with `L` the simple factor and `A`
+`IsSimpleRing.tensorProduct_of_isCentral_right` applies with `L` the simple factor and `A`
 the central simple one; centrality over `L` is `TauCeti.Algebra.IsCentral.baseChange`, in
 `TauCeti/Algebra/Central/BaseChange.lean`. Both are instances, so instance search sees `L ⊗[K] A` as
 a central simple `L`-algebra with no glue at all.
@@ -46,7 +46,7 @@ a central simple `L`-algebra with no glue at all.
 
 * `TauCeti.Algebra.deg_baseChange`: base change **preserves the degree**,
   `deg L (L ⊗[K] A) = deg K A`.
-* `TauCeti.IsSimpleRing.of_baseChange`: base change **detects simplicity**: if `L ⊗[K] A` is a
+* `IsSimpleRing.of_baseChange`: base change **detects simplicity**: if `L ⊗[K] A` is a
   simple ring for some faithfully flat `K`-algebra `L` (for instance any nontrivial `L` when `K`
   is a field), then `A` is a simple ring.
 * `TauCeti.isSimpleRing_baseChange_iff`: for a central `K`-algebra `A` over a field `K` and a
@@ -125,10 +125,10 @@ along a faithfully flat `K`-algebra `L` is a simple ring, then `A` is a simple r
 nor `A` needs to be commutative. When `K` is a field every nontrivial `L` is faithfully flat, so
 the hypothesis is automatic there.
 
-This is the converse of `TauCeti.IsSimpleRing.tensorProduct_of_isCentral_right`, with no centrality
+This is the converse of `IsSimpleRing.tensorProduct_of_isCentral_right`, with no centrality
 hypothesis at all. Together with `TauCeti.Algebra.IsCentral.of_baseChange` it says that central
 simplicity over `K` is detected by central simplicity of `L ⊗[K] A` over `L`. -/
-theorem _root_.TauCeti.IsSimpleRing.of_baseChange [IsSimpleRing (L ⊗[K] A)] : IsSimpleRing A := by
+theorem _root_.IsSimpleRing.of_baseChange [IsSimpleRing (L ⊗[K] A)] : IsSimpleRing A := by
   -- A proper two-sided ideal `I` of `A` gives a nontrivial quotient `A ⧸ I`, hence a surjection
   -- `L ⊗[K] A → L ⊗[K] (A ⧸ I)` onto a nontrivial ring, which simplicity of `L ⊗[K] A` forces to
   -- be injective; every `x ∈ I` then has `1 ⊗ₜ x = 0`, and `x = 0` by faithful flatness.
@@ -167,8 +167,8 @@ variable (K L A : Type*) [Field K] [Ring L] [IsSimpleRing L] [Algebra K L]
 /-- **Simplicity passes both ways along a scalar extension.** Over a field `K`, a central
 `K`-algebra `A` is simple exactly when its scalar extension along a simple `K`-algebra `L` (for
 instance a field extension) is simple. The forward direction is the instance
-`TauCeti.IsSimpleRing.tensorProduct_of_isCentral_right` and the converse is
-`TauCeti.IsSimpleRing.of_baseChange`; this is the companion of
+`IsSimpleRing.tensorProduct_of_isCentral_right` and the converse is
+`IsSimpleRing.of_baseChange`; this is the companion of
 `TauCeti.Algebra.isCentral_baseChange_iff`. -/
 @[simp]
 theorem isSimpleRing_baseChange_iff : IsSimpleRing (L ⊗[K] A) ↔ IsSimpleRing A :=
