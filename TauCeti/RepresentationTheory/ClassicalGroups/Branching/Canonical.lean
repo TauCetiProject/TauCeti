@@ -78,6 +78,22 @@ theorem finrank_intertwiningMap_rationalWeylRep_comp_glBlockSucc
     (fun j : DominantWeight n => if m = j then (1 : ℕ) else 0)]
   simp only [Finset.sum_ite_eq]
 
+
+/-- An interlacing weight `μ` has a nonzero intertwiner from `V_μ` to the restriction of `V_λ` to
+`GL n ℂ`: the summand `V_μ` of the branching decomposition occurs. -/
+theorem exists_intertwiningMap_rationalWeylRep_comp_glBlockSucc_ne_zero
+    {l : DominantWeight (n + 1)} {m : DominantWeight n} (hm : m ∈ interlacingWeights l) :
+    ∃ f : IntertwiningMap (rationalWeylRep ℂ n m)
+      ((rationalWeylRep ℂ (n + 1) l).comp (glBlockSucc ℂ n)), f ≠ 0 := by
+  -- Fix the additive groups of the two submodule carriers before inferring the additive
+  -- group structure on their space of intertwining maps.
+  let _ : AddCommGroup (weylModuleOfShape ℂ n m.detShiftShape).toSubmodule := inferInstance
+  let _ : AddCommGroup (weylModuleOfShape ℂ (n + 1) l.detShiftShape).toSubmodule := inferInstance
+  have hdim : finrank ℂ (IntertwiningMap (rationalWeylRep ℂ n m)
+      ((rationalWeylRep ℂ (n + 1) l).comp (glBlockSucc ℂ n))) = 1 := by
+    simp [finrank_intertwiningMap_rationalWeylRep_comp_glBlockSucc, hm]
+  have := Module.nontrivial_of_finrank_eq_succ hdim
+  exact exists_ne 0
 /-- An interlacing dominant weight specifies a unique subrepresentation of the restricted Weyl
 module isomorphic to its Weyl module. The subspace is independent of any branching equivalence. -/
 theorem existsUnique_subrepresentation_rationalWeylRep_comp_glBlockSucc
