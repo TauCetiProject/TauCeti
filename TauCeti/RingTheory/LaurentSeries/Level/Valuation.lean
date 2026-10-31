@@ -145,40 +145,26 @@ theorem mem_valuationSubring_iff {x : Level K d} :
 
 variable (K d)
 
-/-- The congruence-component coordinates of the integers of the level over the integers of
-`K⸨X⸩`. -/
-private noncomputable def integerEquivFun :
-    (valuation K d).valuationSubring ≃ₗ[(Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).valuationSubring]
-      (Fin d → (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).valuationSubring) where
-  toFun x r := ⟨contract d (ringEquivLaurentSeries K d x) r, contract_mem_valuationSubring x.2 r⟩
-  invFun a := ⟨∑ r, (a r : K⸨X⸩) • parameter K d ^ (r : ℕ),
-    sum_smul_parameter_pow_mem_valuationSubring a⟩
-  map_add' x y := by
-    ext r
-    simp
-  map_smul' c x := by
-    ext r : 2
-    simp only [RingHom.id_apply, Pi.smul_apply]
-    -- The scalar action of the base integers on the level integers is the restriction of the
-    -- `K⸨X⸩`-action on the level.
-    change contract d (ringEquivLaurentSeries K d ((c : K⸨X⸩) • (x : Level K d))) r =
-      (c : K⸨X⸩) * contract d (ringEquivLaurentSeries K d x) r
-    simp_rw [← basis_repr_apply, map_smul, Finsupp.smul_apply, smul_eq_mul]
-  left_inv x := by
-    ext : 1
-    simp_rw [← basis_repr_apply, ← basis_apply]
-    exact (basis K d).sum_repr x
-  right_inv a := by
-    ext r : 2
-    simp_rw [← basis_repr_apply, ← basis_apply]
-    exact congrFun ((basis K d).repr_sum_self fun r ↦ (a r : K⸨X⸩)) r
+/-- The integers of the level are the `K⟦t⟧`-span of the basis `1, u, ..., u ^ (d - 1)` of the
+level over `K⸨X⸩`. -/
+private noncomputable def spanBasisEquiv :
+    Submodule.span (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).valuationSubring (Set.range (basis K d)) ≃ₗ[
+      (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).valuationSubring] (valuation K d).valuationSubring :=
+  have h (x : Level K d) : x ∈ Submodule.span _ (Set.range (basis K d)) ↔
+      x ∈ (valuation K d).valuationSubring := by
+    rw [Basis.mem_span_iff_repr_mem, mem_valuationSubring_iff]
+    simp [basis_repr_apply]
+  { toFun x := ⟨x, (h x).mp x.2⟩
+    invFun x := ⟨x, (h x).mpr x.2⟩
+    map_add' _ _ := rfl
+    map_smul' c x := Subtype.ext (Algebra.smul_def (c : K⸨X⸩) (x : Level K d)) }
 
 /-- The basis `1, u, ..., u ^ (d - 1)` of the integers of the level over the integers of
 `K⸨X⸩`. -/
 noncomputable def integerBasis :
     Basis (Fin d) (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).valuationSubring
       (valuation K d).valuationSubring :=
-  .ofEquivFun (integerEquivFun K d)
+  (basis K d).restrictScalars _ |>.map (spanBasisEquiv K d)
 
 variable {K d}
 
@@ -186,13 +172,14 @@ variable {K d}
 @[simp]
 theorem coe_integerBasis (r : Fin d) :
     (integerBasis K d r : Level K d) = parameter K d ^ (r : ℕ) := by
-  simp [integerBasis, integerEquivFun, Pi.single_apply, apply_ite Subtype.val, ite_smul]
+  simp [integerBasis, spanBasisEquiv]
 
 /-- The integral coordinates are the congruence components. -/
 @[simp]
 theorem coe_integerBasis_repr (x : (valuation K d).valuationSubring) (r : Fin d) :
     ((integerBasis K d).repr x r : K⸨X⸩) = contract d (ringEquivLaurentSeries K d x) r := by
-  simp [integerBasis, integerEquivFun]
+  rw [← basis_repr_apply]
+  exact (basis K d).restrictScalars_repr_apply _ ((spanBasisEquiv K d).symm x) r
 
 variable (K d)
 
@@ -271,15 +258,9 @@ theorem ringEquivLaurentSeries_mem_powerSeries_as_subring_iff {x : Level K d} :
 
 /-- The integers of the level, identified with the power series `K⟦u⟧` inside `K⸨u⸩`. -/
 private noncomputable def valuationSubringEquiv :
-    (valuation K d).valuationSubring ≃+* powerSeries_as_subring K where
-  toFun x := ⟨ringEquivLaurentSeries K d x,
-    ringEquivLaurentSeries_mem_powerSeries_as_subring_iff.mpr x.2⟩
-  invFun f := ⟨(ringEquivLaurentSeries K d).symm f,
-    ringEquivLaurentSeries_mem_powerSeries_as_subring_iff.mp (by simp)⟩
-  left_inv x := by simp
-  right_inv f := by simp
-  map_mul' x y := by ext; simp
-  map_add' x y := by ext; simp
+    (valuation K d).valuationSubring ≃+* powerSeries_as_subring K :=
+  (ringEquivLaurentSeries K d).restrict _ _ fun _ ↦
+    ringEquivLaurentSeries_mem_powerSeries_as_subring_iff.symm
 
 /-- The residue field of the level is canonically the coefficient field `K`. -/
 noncomputable def residueFieldEquiv : ResidueField (valuation K d).valuationSubring ≃+* K :=
