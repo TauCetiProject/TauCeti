@@ -145,6 +145,9 @@ symplectic form: it lies in `sp(V × StrongDual ℝ V)`. -/
 theorem cotangentLiftLieHom_mem_skewAdjointLieSubalgebra (A : Module.End ℝ V) :
     cotangentLiftLieHom V A ∈
       skewAdjointLieSubalgebra (strongDualCotangentSymplecticForm (V := V)).toBilinForm := by
+  -- `skewAdjointLieSubalgebra B` is defined as `B.skewAdjointSubmodule` with a bracket-closure
+  -- proof attached, so membership in it is definitionally membership in that submodule. Mathlib
+  -- has no rewrite lemma for this, so cross the wrapper to use `mem_skewAdjointSubmodule`.
   change _ ∈ LinearMap.skewAdjointSubmodule _
   rw [LinearMap.mem_skewAdjointSubmodule]
   intro x y
