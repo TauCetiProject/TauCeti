@@ -41,11 +41,11 @@ so `h_c(u)` is a product of root subgroup elements. The identity is proved in tw
   `u` is a square, descends to `A`.
 
 No condition on the coordinates of the root is needed, in contrast with the torus values
-`α(s)` that conjugation over `A` itself reaches, which cover every unit only when those coordinates
-are setwise coprime: that fails at the rank-one row `(2)` and at the long simple roots of `B₂` and
-`Cₙ`. When every Cartan index carries such a root pair, the whole torus lies in the elementary
-group, and the Borel-type join of the torus with all root subgroups collapses to the elementary
-group.
+`α(s)` that conjugation over `A` itself reaches: these cover every unit of every value ring
+exactly when those coordinates are setwise coprime, which fails at the rank-one row `(2)` and at
+the long simple roots of `B₂` and `Cₙ`. When every Cartan index carries such a root pair, the
+whole torus lies in the elementary group, and the Borel-type join of the torus with all root
+subgroups collapses to the elementary group.
 
 Nothing here identifies the elementary group with the points of the toral closure group scheme,
 which is a separate statement that this file does not use or prove: the comparison is between two
@@ -107,46 +107,48 @@ private theorem kostantRootSubgroupParam_mul_mul_eq_of_sq
     (hT : IsSl2Triple (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)))
       (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))
       (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
+    (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
     (hα : ∀ j', ⁅h j', e i⁆ = (α j' : ℚ) • e i)
     (hαneg : ∀ j', ⁅h j', e j⁆ = -((α j' : ℚ) • e j)) (B : CommAlgCat.{w} ℤ) (v : Bˣ) :
-    kostantRootSubgroupParam e h ρ M hM i (hnil i) B (Multiplicative.ofAdd ((v ^ 2 : Bˣ) : B)) *
-        kostantRootSubgroupParam e h ρ M hM j (hnil j) B
+    kostantRootSubgroupParam e h ρ M hM i hi B (Multiplicative.ofAdd ((v ^ 2 : Bˣ) : B)) *
+        kostantRootSubgroupParam e h ρ M hM j hj B
           (Multiplicative.ofAdd (-(((v ^ 2)⁻¹ : Bˣ) : B))) *
-        kostantRootSubgroupParam e h ρ M hM i (hnil i) B
+        kostantRootSubgroupParam e h ρ M hM i hi B
           (Multiplicative.ofAdd ((v ^ 2 : Bˣ) : B)) =
       kostantCoordinateCocharacter M b wt B c (v ^ 2) *
-        kostantWeylGL e h ρ M hM (hnil i) (hnil j) B := by
+        kostantWeylGL e h ρ M hM hi hj B := by
   have hc : α c = 2 := rootWeight_apply_coroot_eq_two e h ρ hT (hα c)
   have hαneg' : ∀ j', ⁅h j', e j⁆ = (((-α) j' : ℤ) : ℚ) • e j := fun j' => by
     rw [hαneg j', Pi.neg_apply, Int.cast_neg, neg_smul]
   set d := kostantCoordinateCocharacter M b wt B c v
   have hd : d = kostantTorusPoints M b wt B (Pi.mulSingle c v) :=
     kostantCoordinateCocharacter_apply M b wt B c v
-  have hxi : ∀ t : B, d * kostantRootSubgroupParam e h ρ M hM i (hnil i) B
+  have hxi : ∀ t : B, d * kostantRootSubgroupParam e h ρ M hM i hi B
       (Multiplicative.ofAdd t) * d⁻¹ =
-        kostantRootSubgroupParam e h ρ M hM i (hnil i) B
+        kostantRootSubgroupParam e h ρ M hM i hi B
           (Multiplicative.ofAdd (((v ^ 2 : Bˣ) : B) * t)) := fun t => by
-    rw [hd, kostantTorusPoints_conj_kostantRootSubgroupParam e h ρ M hM b wt hwt hα (hnil i),
+    rw [hd, kostantTorusPoints_conj_kostantRootSubgroupParam e h ρ M hM b wt hwt hα hi,
       torusCharacter_mulSingle, hc, toAdd_ofAdd, zpow_ofNat]
-  have hxj : ∀ t : B, d * kostantRootSubgroupParam e h ρ M hM j (hnil j) B
+  have hxj : ∀ t : B, d * kostantRootSubgroupParam e h ρ M hM j hj B
       (Multiplicative.ofAdd t) * d⁻¹ =
-        kostantRootSubgroupParam e h ρ M hM j (hnil j) B
+        kostantRootSubgroupParam e h ρ M hM j hj B
           (Multiplicative.ofAdd ((((v ^ 2)⁻¹ : Bˣ) : B) * t)) := fun t => by
-    rw [hd, kostantTorusPoints_conj_kostantRootSubgroupParam e h ρ M hM b wt hwt hαneg' (hnil j),
+    rw [hd, kostantTorusPoints_conj_kostantRootSubgroupParam e h ρ M hM b wt hwt hαneg' hj,
       torusCharacter_mulSingle, Pi.neg_apply, hc, toAdd_ofAdd, zpow_neg, zpow_ofNat]
   -- The Weyl element inverts the coroot: `n h_c(v)⁻¹ n⁻¹ = h_c(v)`.
-  have hw : kostantWeylGL e h ρ M hM (hnil i) (hnil j) B * d⁻¹ *
-      (kostantWeylGL e h ρ M hM (hnil i) (hnil j) B)⁻¹ = d := by
+  have hw : kostantWeylGL e h ρ M hM hi hj B * d⁻¹ *
+      (kostantWeylGL e h ρ M hM hi hj B)⁻¹ = d := by
     rw [hd, ← map_inv, ← Pi.mulSingle_inv, kostantWeylGL_conj_kostantTorusPoints e h ρ M hM
-      (hnil i) (hnil j) hT hα hαneg b wt hwt, weylReflectTorusPoint_apply,
+      hi hj hT hα hαneg b wt hwt, weylReflectTorusPoint_apply,
       torusCharacter_mulSingle, hc, ← Pi.mulSingle_mul]
     congr 2
     group
-  have hconj : d * kostantWeylGL e h ρ M hM (hnil i) (hnil j) B * d⁻¹ =
-      kostantRootSubgroupParam e h ρ M hM i (hnil i) B (Multiplicative.ofAdd ((v ^ 2 : Bˣ) : B)) *
-        kostantRootSubgroupParam e h ρ M hM j (hnil j) B
+  have hconj : d * kostantWeylGL e h ρ M hM hi hj B * d⁻¹ =
+      kostantRootSubgroupParam e h ρ M hM i hi B (Multiplicative.ofAdd ((v ^ 2 : Bˣ) : B)) *
+        kostantRootSubgroupParam e h ρ M hM j hj B
           (Multiplicative.ofAdd (-(((v ^ 2)⁻¹ : Bˣ) : B))) *
-        kostantRootSubgroupParam e h ρ M hM i (hnil i) B
+        kostantRootSubgroupParam e h ρ M hM i hi B
           (Multiplicative.ofAdd ((v ^ 2 : Bˣ) : B)) := by
     rw [kostantWeylGL_eq_kostantRootSubgroupParam_mul]
     have hsplit : ∀ x y z : LinearMap.GeneralLinearGroup B (B ⊗[ℤ] M),
@@ -154,11 +156,11 @@ private theorem kostantRootSubgroupParam_mul_mul_eq_of_sq
       group
     rw [hsplit, hxi, hxj, mul_one, mul_neg, mul_one]
   rw [← hconj, map_pow]
-  calc d * kostantWeylGL e h ρ M hM (hnil i) (hnil j) B * d⁻¹
-      = d * (kostantWeylGL e h ρ M hM (hnil i) (hnil j) B * d⁻¹ *
-          (kostantWeylGL e h ρ M hM (hnil i) (hnil j) B)⁻¹) *
-          kostantWeylGL e h ρ M hM (hnil i) (hnil j) B := by group
-    _ = d ^ 2 * kostantWeylGL e h ρ M hM (hnil i) (hnil j) B := by rw [hw, sq]
+  calc d * kostantWeylGL e h ρ M hM hi hj B * d⁻¹
+      = d * (kostantWeylGL e h ρ M hM hi hj B * d⁻¹ *
+          (kostantWeylGL e h ρ M hM hi hj B)⁻¹) *
+          kostantWeylGL e h ρ M hM hi hj B := by group
+    _ = d ^ 2 * kostantWeylGL e h ρ M hM hi hj B := by rw [hw, sq]
 
 /-- **Chevalley's rank-one identity** `xᵢ(u) xⱼ(-u⁻¹) xᵢ(u) = h_c(u) n`, over every value ring
 and at every unit `u`. Here `(eᵢ, eⱼ)` is a root pair whose `sl₂` triple has Cartan index `c`,
@@ -170,14 +172,16 @@ theorem kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kos
     (hT : IsSl2Triple (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)))
       (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))
       (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
+    (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+    (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
     (hα : ∀ j', ⁅h j', e i⁆ = (α j' : ℚ) • e i)
     (hαneg : ∀ j', ⁅h j', e j⁆ = -((α j' : ℚ) • e j)) (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
-    kostantRootSubgroupParam e h ρ M hM i (hnil i) A (Multiplicative.ofAdd (u : A)) *
-        kostantRootSubgroupParam e h ρ M hM j (hnil j) A
+    kostantRootSubgroupParam e h ρ M hM i hi A (Multiplicative.ofAdd (u : A)) *
+        kostantRootSubgroupParam e h ρ M hM j hj A
           (Multiplicative.ofAdd (-((u⁻¹ : Aˣ) : A))) *
-        kostantRootSubgroupParam e h ρ M hM i (hnil i) A (Multiplicative.ofAdd (u : A)) =
+        kostantRootSubgroupParam e h ρ M hM i hi A (Multiplicative.ofAdd (u : A)) =
       kostantCoordinateCocharacter M b wt A c u *
-        kostantWeylGL e h ρ M hM (hnil i) (hnil j) A := by
+        kostantWeylGL e h ρ M hM hi hj A := by
   -- The identity holds at a square `v²` by `kostantRootSubgroupParam_mul_mul_eq_of_sq`. In
   -- general, adjoin a square root of `u` along the injective map `A → A[X] ⧸ (X² - u)`, and use
   -- that scalar extension along it is injective on automorphisms of the free lattice.
@@ -219,7 +223,7 @@ theorem kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kos
     mapScalarExtensionAutomorphisms_kostantRootSubgroupParam,
     mapScalarExtensionAutomorphisms_kostantCoordinateCocharacter,
     mapScalarExtensionAutomorphisms_kostantWeylGL, toAdd_ofAdd, toAdd_ofAdd, hu, hu', hr]
-  exact kostantRootSubgroupParam_mul_mul_eq_of_sq e h ρ M hM hnil b wt hwt hT hα hαneg B r
+  exact kostantRootSubgroupParam_mul_mul_eq_of_sq e h ρ M hM b wt hwt hT hi hj hα hαneg B r
 
 /-- **Every coroot value lies in the elementary group.** By Chevalley's rank-one identity,
 `h_c(u) = xᵢ(u) xⱼ(-u⁻¹) xᵢ(u) n⁻¹` is a product of root subgroup elements, for every unit `u`
@@ -236,7 +240,7 @@ theorem kostantCoordinateCocharacter_mem_kostantElementarySubgroup
       kostantElementarySubgroup e h ρ M hM hnil A := by
   rw [eq_mul_inv_iff_mul_eq.2
     (kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL
-      e h ρ M hM hnil b wt hwt hT hα hαneg A u).symm]
+      e h ρ M hM b wt hwt hT (hnil i) (hnil j) hα hαneg A u).symm]
   exact mul_mem (mul_mem (mul_mem
     (kostantRootSubgroupParam_mem_kostantElementarySubgroup e h ρ M hM hnil A i _)
     (kostantRootSubgroupParam_mem_kostantElementarySubgroup e h ρ M hM hnil A j _))
