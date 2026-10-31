@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.ProdL2
-public import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.EquivEven
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
@@ -27,8 +25,9 @@ This file complexifies that comparison and computes it on volume elements. The c
 algebra of `Q` is `Cℓ(ℂ ⊗ V, Q_ℂ)`, and `toEven (Q.baseChange ℂ)` lands in the even part of
 `Cℓ((ℂ ⊗ V) × ℂ, Q'(Q_ℂ))`. The quadratic isometry
 `CliffordAlgebra.EquivEven.complexProdIsometryEquiv` between `ℂ ⊗ (V ⊕ ℝ)` with `Q₁_ℂ` and
-`(ℂ ⊗ V) × ℂ` with `Q'(Q_ℂ)` (distributing the tensor product over the product) identifies the
-target with the complexified Clifford algebra of `V ⊕ ℝ`. The resulting map
+`(ℂ ⊗ V) × ℂ` with `Q'(Q_ℂ)` (distributing the tensor product over the product), set up with the
+rest of the dimension-raising dictionary in `TauCeti.LinearAlgebra.CliffordAlgebra.Even.EquivEven`,
+identifies the target with the complexified Clifford algebra of `V ⊕ ℝ`. The resulting map
 `ψ : Cℓ(ℂ ⊗ V, Q_ℂ) → Cℓ(ℂ ⊗ (V ⊕ ℝ), Q₁_ℂ)` sends `c(v)` to `c(e₀) c(v)`.
 
 The main result pins the normalized volume elements of `CliffordAlgebra.complexVolume` against
@@ -50,14 +49,8 @@ stable under the image of `ψ`, since that image is even, and for the orientatio
 acts through `ψ` on the negative half-spinors `E⁻` with `ω_ℂ = 1`, and on the positive
 half-spinors `E⁺` with `ω_ℂ = -1`.
 
-## Main definitions
-
-* `CliffordAlgebra.EquivEven.complexProdIsometryEquiv`: the quadratic isometry
-  `ℂ ⊗ (V ⊕ ℝ) ≃ (ℂ ⊗ V) × ℂ` from `Q₁_ℂ` to `Q'(Q_ℂ)`.
-
 ## Main results
 
-* `CliffordAlgebra.EquivEven.equivOfIsometry_toEven_ι`: `ψ(c(v)) = c(e₀) c(v)`.
 * `CliffordAlgebra.EquivEven.equivOfIsometry_toEven_complexVolume`: `ψ(ω_ℂ) = -Γ_(V ⊕ ℝ)` for the
   orientation `(e₁, …, eₙ, e₀)`.
 * `CliffordAlgebra.EquivEven.equivOfIsometry_toEven_complexVolume_of_cons`: `ψ(ω_ℂ) = Γ_(V ⊕ ℝ)`
@@ -86,129 +79,10 @@ namespace EquivEven
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {Q : QuadraticForm ℝ V} {Q₁ : QuadraticForm ℝ (WithLp 2 (V × ℝ))}
 
-/-- For the negative-metric convention `Q v = -‖v‖²`, the form `Q' Q` on the `L²` product
-`V ⊕ ℝ` is again `x ↦ -‖x‖²`, so `Q₁ x = -‖x‖²` satisfies the hypothesis
-`Q₁ x = Q' Q (WithLp.ofLp x)` of the results below. -/
-theorem Q'_ofLp_eq_neg_norm_sq (hQ : ∀ v, Q v = -‖v‖ ^ 2) (x : WithLp 2 (V × ℝ)) :
-    Q' Q (WithLp.ofLp x) = -‖x‖ ^ 2 := by
-  simp only [Q'_apply, hQ, WithLp.prod_norm_sq_eq_of_L2, WithLp.ofLp_fst, WithLp.ofLp_snd,
-    Real.norm_eq_abs, sq_abs]
-  ring
-
-/-! ### Complexifying `V ⊕ ℝ` -/
-
-/-- The linear equivalence `ℂ ⊗ (V ⊕ ℝ) ≃ (ℂ ⊗ V) × ℂ`, `z ⊗ (m, r) ↦ (z ⊗ m, r z)`. -/
-private def complexProdEquiv : ℂ ⊗[ℝ] WithLp 2 (V × ℝ) ≃ₗ[ℂ] (ℂ ⊗[ℝ] V) × ℂ :=
-  (WithLp.linearEquiv 2 ℝ (V × ℝ)).baseChange ℝ ℂ _ _ ≪≫ₗ
-    TensorProduct.prodRight ℝ ℂ ℂ V ℝ ≪≫ₗ
-    (LinearEquiv.refl ℂ _).prodCongr (TensorProduct.AlgebraTensorModule.rid ℝ ℂ ℂ)
-
-private theorem complexProdEquiv_tmul (z : ℂ) (x : WithLp 2 (V × ℝ)) :
-    complexProdEquiv (z ⊗ₜ x) = (z ⊗ₜ (WithLp.ofLp x).1, (WithLp.ofLp x).2 • z) := by
-  simp [complexProdEquiv]
-
 variable (hQ₁ : ∀ x, Q₁ x = Q' Q (WithLp.ofLp x))
 include hQ₁
 
-/-- **The complexification of `V ⊕ ℝ`**: when `Q₁` is the form `Q₁ (m, r) = Q m - r²` on the
-`L²` product `V ⊕ ℝ`, the map `z ⊗ (m, r) ↦ (z ⊗ m, r z)` is a quadratic isometry from
-`ℂ ⊗ (V ⊕ ℝ)` with `Q₁_ℂ` onto `(ℂ ⊗ V) × ℂ` with `Q'(Q_ℂ)`, the form Mathlib's
-`CliffordAlgebra.toEven` uses for `Q_ℂ`. -/
-def complexProdIsometryEquiv : (Q₁.baseChange ℂ).IsometryEquiv (Q' (Q.baseChange ℂ)) where
-  toLinearEquiv := complexProdEquiv
-  map_app' := by
-    have h : (Q' (Q.baseChange ℂ)).comp complexProdEquiv.toLinearMap = Q₁.baseChange ℂ := by
-      ext x
-      simp [complexProdEquiv_tmul, hQ₁, Algebra.smul_def]
-    exact fun x ↦ congr($h x)
-
-@[simp]
-theorem complexProdIsometryEquiv_tmul (z : ℂ) (x : WithLp 2 (V × ℝ)) :
-    complexProdIsometryEquiv hQ₁ (z ⊗ₜ x) = (z ⊗ₜ (WithLp.ofLp x).1, (WithLp.ofLp x).2 • z) :=
-  complexProdEquiv_tmul z x
-
-/-- The Clifford algebra equivalence induced by `complexProdIsometryEquiv` sends `v(z ⊗ m)`, the
-generator of `(z ⊗ m, 0)`, to the generator of `z ⊗ (m, 0)`. This is not a `simp` lemma, because
-`simp` rewrites `equivOfIsometry e x` to `map e.toIsometry x` by `equivOfIsometry_apply`. -/
-theorem equivOfIsometry_v (z : ℂ) (m : V) :
-    equivOfIsometry (complexProdIsometryEquiv hQ₁).symm (v (Q.baseChange ℂ) (z ⊗ₜ m)) =
-      ι (Q₁.baseChange ℂ) (z ⊗ₜ WithLp.toLp 2 (m, 0)) := by
-  rw [v, LinearMap.comp_apply, LinearMap.inl_apply, equivOfIsometry_apply, map_apply_ι]
-  exact congrArg _ ((QuadraticMap.IsometryEquiv.symm_apply_eq _).2 (by simp))
-
-/-- The Clifford algebra equivalence induced by `complexProdIsometryEquiv` sends `e₀`, the
-generator of `(0, 1)`, to the generator of `1 ⊗ (0, 1)`. Like
-`CliffordAlgebra.EquivEven.equivOfIsometry_v`, this is not a `simp` lemma. -/
-theorem equivOfIsometry_e0 :
-    equivOfIsometry (complexProdIsometryEquiv hQ₁).symm (e0 (Q.baseChange ℂ)) =
-      ι (Q₁.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (0, 1)) := by
-  rw [e0, equivOfIsometry_apply, map_apply_ι]
-  exact congrArg _ ((QuadraticMap.IsometryEquiv.symm_apply_eq _).2 (by simp))
-
-/-- **The complexified dimension-raising map on generators**: `ψ(c(z ⊗ m)) = c(e₀) c(z ⊗ m)`,
-where `e₀ = 1 ⊗ (0, 1)` and `m` is included in `V ⊕ ℝ` as `(m, 0)`. -/
-theorem equivOfIsometry_toEven_ι (z : ℂ) (m : V) :
-    equivOfIsometry (complexProdIsometryEquiv hQ₁).symm
-        (toEven (Q.baseChange ℂ) (ι (Q.baseChange ℂ) (z ⊗ₜ m))) =
-      ι (Q₁.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (0, 1)) *
-        ι (Q₁.baseChange ℂ) (z ⊗ₜ WithLp.toLp 2 (m, 0)) := by
-  rw [toEven_ι, map_mul, equivOfIsometry_e0, equivOfIsometry_v]
-
 /-! ### The volume elements -/
-
-/-- The polar form of `Q₁ (m, r) = Q m - r²` is `((m, r), (m', r')) ↦ B_Q(m, m') - r r'`. -/
-private theorem associated_apply_eq (x y : WithLp 2 (V × ℝ)) :
-    QuadraticMap.associated Q₁ x y =
-      QuadraticMap.associated Q (WithLp.ofLp x).1 (WithLp.ofLp y).1 -
-        (WithLp.ofLp x).2 * (WithLp.ofLp y).2 := by
-  rw [show Q₁ = (Q' Q).comp (WithLp.linearEquiv 2 ℝ (V × ℝ)).toLinearMap from
-    QuadraticMap.ext hQ₁, QuadraticMap.associated_comp, QuadraticMap.associated_prod]
-  simp [sub_eq_add_neg]
-
-/-- Appending `e₀` to a `Q`-orthogonal basis of `V` gives a `Q₁`-orthogonal basis of `V ⊕ ℝ`. -/
-private theorem isOrthoᵢ_associated_prod {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V)
-    (hQb : (QuadraticMap.associated Q).IsOrthoᵢ b.toBasis) {κ : Type*} [Fintype κ]
-    (e : ι ⊕ Fin 1 ≃ κ) :
-    (QuadraticMap.associated Q₁).IsOrthoᵢ
-      ((b.prod (OrthonormalBasis.singleton (Fin 1) ℝ)).reindex e).toBasis := by
-  rw [LinearMap.isOrthoᵢ_def] at hQb ⊢
-  intro i j hij
-  have hij' : e.symm i ≠ e.symm j := e.symm.injective.ne hij
-  simp only [OrthonormalBasis.coe_toBasis, OrthonormalBasis.reindex_apply,
-    associated_apply_eq hQ₁]
-  generalize e.symm i = p, e.symm j = q at hij'
-  rcases p with p | p <;> rcases q with q | q
-  · simpa using hQb p q (Sum.inl.inj_iff.not.1 hij')
-  · simp
-  · simp
-  · exact absurd (congrArg Sum.inr (Subsingleton.elim p q)) hij'
-
-/-- The complexified dimension-raising map on an ordered product of an odd number of real
-vectors: `ψ(c(m₁) ⋯ c(mₙ)) = c(e₀) c(m₁) ⋯ c(mₙ)`. -/
-private theorem equivOfIsometry_toEven_prod {l : List V} (hl : Odd l.length) :
-    equivOfIsometry (complexProdIsometryEquiv hQ₁).symm
-        (toEven (Q.baseChange ℂ) ((l.map fun m ↦ ι (Q.baseChange ℂ) (1 ⊗ₜ m)).prod)) =
-      ι (Q₁.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (0, 1)) *
-        (l.map fun m ↦ ι (Q₁.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (m, 0))).prod := by
-  have h := coe_toEven_of_mem_odd (prod_map_ι_mem_evenOdd_one_of_odd_length
-    (Q := Q.baseChange ℂ) (l := l.map ((1 : ℂ) ⊗ₜ ·)) (by simpa using hl))
-  rw [map_inl_prod_map_ι] at h
-  simp only [List.map_map, Function.comp_def] at h
-  rw [h, map_mul, equivOfIsometry_e0, map_list_prod, List.map_map]
-  simp only [Function.comp_def, equivOfIsometry_v]
-
-/-- The same product with `c(e₀)` moved to the end: `ψ(c(m₁) ⋯ c(mₙ)) = -c(m₁) ⋯ c(mₙ) c(e₀)`
-for `n` odd. -/
-private theorem equivOfIsometry_toEven_prod_eq_neg_mul {l : List V} (hl : Odd l.length) :
-    equivOfIsometry (complexProdIsometryEquiv hQ₁).symm
-        (toEven (Q.baseChange ℂ) ((l.map fun m ↦ ι (Q.baseChange ℂ) (1 ⊗ₜ m)).prod)) =
-      -((l.map fun m ↦ ι (Q₁.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (m, 0))).prod *
-        ι (Q₁.baseChange ℂ) (1 ⊗ₜ WithLp.toLp 2 (0, 1))) := by
-  have h := coe_toEven_prod_map_ι_of_odd_length (Q := Q.baseChange ℂ)
-    (l := l.map ((1 : ℂ) ⊗ₜ ·)) (by simpa using hl)
-  simp only [List.map_map, Function.comp_def] at h
-  rw [h, map_neg, map_mul, equivOfIsometry_e0, map_list_prod, List.map_map]
-  simp only [Function.comp_def, equivOfIsometry_v]
 
 variable [FiniteDimensional ℝ V] {n : ℕ} [Fact (finrank ℝ V = n)]
   [Fact (finrank ℝ (WithLp 2 (V × ℝ)) = n + 1)]
@@ -225,9 +99,11 @@ theorem equivOfIsometry_toEven_complexVolume (hn : Odd n) (b : OrthonormalBasis 
     equivOfIsometry (complexProdIsometryEquiv hQ₁).symm
         (toEven (Q.baseChange ℂ) (complexVolume Q o)) = -complexVolume Q₁ o' := by
   have hexp : (n + 1 + 1) / 2 = (n + 1) / 2 := by obtain ⟨k, rfl⟩ := hn; omega
-  rw [complexVolume_eq o b hb hQb, complexVolume_eq o' _ ho' (isOrthoᵢ_associated_prod hQ₁ b hQb _),
+  rw [complexVolume_eq o b hb hQb,
+    complexVolume_eq o' _ ho' (isOrthoᵢ_associated_prod_singleton hQ₁ b hQb _),
     hexp, map_smul, Subalgebra.coe_smul, map_smul,
-    equivOfIsometry_toEven_prod_eq_neg_mul hQ₁ (by simpa using hn), List.finRange_succ_last]
+    equivOfIsometry_toEven_prod_eq_neg_mul_of_odd_length hQ₁ (by simpa using hn),
+    List.finRange_succ_last]
   simp [Function.comp_def, smul_neg, finSumFinEquiv_symm_apply_castSucc]
 
 /-- **Putting `e₀` first removes the sign**: for `n` odd, a positively oriented orthonormal basis
@@ -249,9 +125,10 @@ theorem equivOfIsometry_toEven_complexVolume_of_cons (hn : Odd n)
   have hes (i : Fin n) : e.symm i.succ = Sum.inl i :=
     (Equiv.symm_apply_eq _).2 (Fin.ext (by simp [e]))
   have hexp : (n + 1 + 1) / 2 = (n + 1) / 2 := by obtain ⟨k, rfl⟩ := hn; omega
-  rw [complexVolume_eq o b hb hQb, complexVolume_eq o' _ ho' (isOrthoᵢ_associated_prod hQ₁ b hQb _),
+  rw [complexVolume_eq o b hb hQb,
+    complexVolume_eq o' _ ho' (isOrthoᵢ_associated_prod_singleton hQ₁ b hQb _),
     hexp, map_smul, Subalgebra.coe_smul, map_smul,
-    equivOfIsometry_toEven_prod hQ₁ (by simpa using hn), List.finRange_succ]
+    equivOfIsometry_toEven_prod_of_odd_length hQ₁ (by simpa using hn), List.finRange_succ]
   simp [Function.comp_def, he0, hes]
 
 /-! ### Restricting modules along the dimension-raising map -/
