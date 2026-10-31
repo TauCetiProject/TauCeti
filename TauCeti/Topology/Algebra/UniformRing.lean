@@ -6,7 +6,6 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.RingTheory.RingHom.Flat
-public import Mathlib.Topology.Algebra.UniformMulAction
 public import Mathlib.Topology.Algebra.UniformRing
 public import TauCeti.Topology.Algebra.Star.Completion
 
