@@ -82,6 +82,9 @@ variable (κ) in
 never revisits with positive probability has period zero. -/
 noncomputable def period (x : α) : ℕ := Nat.setGcd (κ.returnLengths x)
 
+/-- The defining equation of the period: the gcd of the return lengths. -/
+theorem period_def : κ.period x = Nat.setGcd (κ.returnLengths x) := (rfl)
+
 /-- The period divides every return length. -/
 theorem period_dvd_of_mem_returnLengths (h : n ∈ κ.returnLengths x) : κ.period x ∣ n :=
   Nat.setGcd_dvd_of_mem h
@@ -93,7 +96,7 @@ theorem dvd_period_iff {d : ℕ} : d ∣ κ.period x ↔ ∀ n ∈ κ.returnLeng
 
 /-- A state has period zero exactly when it has no return length. -/
 theorem period_eq_zero_iff : κ.period x = 0 ↔ κ.returnLengths x = ∅ := by
-  rw [period, Nat.setGcd_eq_zero_iff, Set.eq_empty_iff_forall_notMem]
+  rw [period_def, Nat.setGcd_eq_zero_iff, Set.eq_empty_iff_forall_notMem]
   refine ⟨fun h n hn ↦ hn.1.ne' (h hn), fun h n hn ↦ (h n hn).elim⟩
 
 /-- A state that the chain can revisit in one step has period one. -/
@@ -188,6 +191,7 @@ theorem IsAperiodic.eventually_pos_pow_apply_singleton [IsIrreducible Measure.co
   eventually_pos_pow_apply_singleton_of_period_eq_one (h x) hxy
 
 /-- The return lengths of `x` under a deterministic kernel are the positive periods of `x`. -/
+@[simp]
 theorem returnLengths_deterministic {f : α → α} (hf : Measurable f) (x : α) :
     (deterministic f hf).returnLengths x = {n | 0 < n ∧ Function.IsPeriodicPt f n x} := by
   ext n
@@ -196,6 +200,7 @@ theorem returnLengths_deterministic {f : α → α} (hf : Measurable f) (x : α)
 
 /-- The period of `x` under the deterministic kernel of `f` is the minimal period of `x`
 under `f`. In particular a point that is not periodic has period zero. -/
+@[simp]
 theorem period_deterministic {f : α → α} (hf : Measurable f) (x : α) :
     (deterministic f hf).period x = Function.minimalPeriod f x := by
   refine Nat.dvd_antisymm ?_ (dvd_period_iff.mpr fun n hn ↦ ?_)

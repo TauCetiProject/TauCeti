@@ -53,6 +53,7 @@ theorem one_def : (1 : Kernel α α) = Kernel.id := (rfl)
 
 /-- The `n`-th power of the deterministic kernel of `f` is the deterministic kernel of the
 `n`-th iterate of `f`. -/
+@[simp]
 theorem deterministic_pow {f : α → α} (hf : Measurable f) (n : ℕ) :
     deterministic f hf ^ n = deterministic f^[n] (hf.iterate n) := by
   induction n with
