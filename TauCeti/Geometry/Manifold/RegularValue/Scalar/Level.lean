@@ -531,7 +531,8 @@ theorem ker_mfderiv_eq_of_forall_eq_imp [IsManifold I 1 M]
   -- and lies in `ker dg`, since `g` is constant on the level.
   have hle : (mfderiv I 𝓘(ℝ) f x).ker ≤ (mfderiv I 𝓘(ℝ) g x).ker := by
     rw [← range_mfderiv_coe_scalarRegularLevel hf hreg (⟨x, hx⟩ : {x : M // f x = c})]
-    exact range_mfderiv_le_ker_mfderiv_of_forall_eq (fun y : {x : M // f x = c} ↦ hfg y y.2) _
+    exact range_mfderiv_le_ker_mfderiv_of_eventually_eq
+      (.of_forall fun y : {x : M // f x = c} ↦ hfg y y.2)
   refine (Submodule.eq_of_le_of_finrank_eq hle ?_).symm
   have hf' := (hreg.isRegularPoint hx).finrank_ker_mfderiv_add_finrank
   have hg' := hgx.finrank_ker_mfderiv_add_finrank
