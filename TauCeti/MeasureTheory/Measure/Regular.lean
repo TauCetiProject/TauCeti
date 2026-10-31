@@ -56,6 +56,12 @@ measures given only through a domination bound, such as the variation of a sum o
 * `MeasureTheory.NullMeasurableSet.exists_isSigmaCompact_subset_ae_eq`: a null measurable set
   contains a σ-compact subset of full measure.
 
+## Provenance
+
+The proof of `MeasureTheory.Measure.InnerRegularWRT.add` is adapted from the anonymous
+`InnerRegular (μ + ν)` instance in Mathlib's `Mathlib/MeasureTheory/Measure/Regular.lean`,
+generalized from compact sets to any property of sets stable under binary unions.
+
 ## References
 
 * W. Rudin, *Real and Complex Analysis*, 3rd ed., McGraw-Hill (1987), §2.18 and Theorem 6.11.
@@ -94,7 +100,7 @@ namespace MeasureTheory.Measure
 variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α}
 
 /-- If two measures are inner regular for a property `p` of sets stable under binary unions, then
-so is their sum. -/
+so is their sum. The proof is adapted from Mathlib's `InnerRegular (μ + ν)` instance. -/
 theorem InnerRegularWRT.add {p q : Set α → Prop} (hp : ∀ s t, p s → p t → p (s ∪ t))
     (hμ : μ.InnerRegularWRT p q) (hν : ν.InnerRegularWRT p q) : (μ + ν).InnerRegularWRT p q := by
   intro U hU r hr
