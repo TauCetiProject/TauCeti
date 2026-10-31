@@ -38,6 +38,9 @@ of `w` is the `e * f`-th power of that of `v`.
 `NumberField.HeightOneSpectrum.log_adicAbv` reads the logarithm of the `v`-adic absolute value
 as minus the `v`-adic order times `log N(v)`, the form in which valuations enter height estimates.
 
+`NumberField.FinitePlace.finprod_comp_mk` reindexes a product over the finite places by the
+height one primes of the ring of integers.
+
 Finally, `NumberField.FinitePlace.hasFiniteMulSupport_iSup` records that the maximum of the
 finite-place absolute values of the coordinates of a nonzero finite tuple is `1` at all but
 finitely many finite places, and `NumberField.FinitePlace.hasFiniteMulSupport_max_one` and
@@ -101,6 +104,12 @@ theorem mk_apply_algebraMap {L : Type*} [Field L] [NumberField L] [Algebra K L]
       mk v x ^ (w.asIdeal.ramificationIdx (𝓞 K) * w.asIdeal.inertiaDeg (𝓞 K)) := by
   simpa only [equivHeightOneSpectrum_symm_apply, ← mk_apply] using
     equivHeightOneSpectrum_symm_apply_algebraMap v w x
+
+/-- A product over the finite places of a number field, reindexed by the height one primes of its
+ring of integers. -/
+theorem finprod_comp_mk {M : Type*} [CommMonoid M] (f : FinitePlace K → M) :
+    ∏ᶠ v : HeightOneSpectrum (𝓞 K), f (mk v) = ∏ᶠ w, f w :=
+  finprod_comp_equiv equivHeightOneSpectrum.symm
 
 /-- For a nonzero tuple over a number field, the maximum of the finite-place absolute values of
 its coordinates is `1` at all but finitely many finite places. -/
