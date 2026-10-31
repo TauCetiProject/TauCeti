@@ -126,16 +126,17 @@ lemma π_app {n : SimplexCategoryᵒᵖ} (σ : (slice p).obj n) :
 /-- The map to the slice given by a map `τ : X ⋆ K ⟶ C` extending `p`: a simplex `x` of `X` goes to
 the restriction of `τ` along `x ⋆ K`. -/
 private def ofHom (τ : {τ : join X K ⟶ C // join.inr X K ≫ τ = p}) : X ⟶ slice p where
-  app n := ↾fun x ↦ (functor p).map (yonedaEquiv.symm x).op τ
+  app n := ↾fun x ↦ objEquiv.symm ⟨join.map (yonedaEquiv.symm x) (𝟙 K) ≫ τ.1,
+    by rw [join.inr_map_assoc, Category.id_comp, τ.2]⟩
   naturality n m f := by
     ext x
     induction n using Opposite.rec with | op n
     induction m using Opposite.rec with | op m
     -- Both sides are the restrictions of `τ` along `Δ[m] ⋆ K ⟶ Δ[n] ⋆ K ⟶ X ⋆ K`.
-    refine Subtype.ext (?_ : join.map (yonedaEquiv.symm (X.map f x)) (𝟙 K) ≫ τ.1 =
-      join.map (stdSimplex.map f.unop) (𝟙 K) ≫ join.map (yonedaEquiv.symm x) (𝟙 K) ≫ τ.1)
-    rw [← join.map_comp_assoc, Category.comp_id, yonedaEquiv_symm_naturality_left,
-      Quiver.Hom.op_unop]
+    refine objEquiv.injective (Subtype.ext ?_)
+    simp only [TypeCat.Fun.toFun_apply, ConcreteCategory.comp_apply, TypeCat.ofHom_apply]
+    rw [objEquiv_map_coe, Equiv.apply_symm_apply, Equiv.apply_symm_apply, ← join.map_comp_assoc,
+      Category.comp_id, yonedaEquiv_symm_naturality_left, Quiver.Hom.op_unop]
 
 /-- A map `F : X ⟶ C_{/p}` sends each simplex `g : Δ[a] ⟶ X` to a map `Δ[a] ⋆ K ⟶ C`,
 compatibly with precomposition by maps of standard simplices. -/
@@ -246,8 +247,8 @@ private lemma inr_comp_toHom (F : X ⟶ slice p) : join.inr X K ≫ toHom F = p 
   ext n k
   induction n using Opposite.rec with | op n
   induction n using SimplexCategory.rec with | _ n
-  rw [TypeCat.Fun.toFun_apply, TypeCat.Fun.toFun_apply, NatTrans.comp_app,
-    ConcreteCategory.comp_apply, toHom_app, value_of_eq_comp_inr F _ (yonedaEquiv.symm k)
+  simp only [TypeCat.Fun.toFun_apply, NatTrans.comp_app, ConcreteCategory.comp_apply]
+  rw [toHom_app, value_of_eq_comp_inr F _ (yonedaEquiv.symm k)
     (by rw [join.homEquiv_symm_objEquiv, yonedaEquiv_symm_comp]), yonedaEquiv_symm_comp,
     Equiv.apply_symm_apply]
 
@@ -267,12 +268,13 @@ noncomputable def homEquiv : (X ⟶ slice p) ≃ {τ : join X K ⟶ C // join.in
     induction n using Opposite.rec with | op n
     refine objEquiv.injective (Subtype.ext ?_)
     dsimp only
-    rw [TypeCat.Fun.toFun_apply, TypeCat.Fun.toFun_apply, ofHom_app_coe]
+    simp only [TypeCat.Fun.toFun_apply]
+    rw [ofHom_app_coe]
     ext m s
     induction m using Opposite.rec with | op m
     induction m using SimplexCategory.rec with | _ m
-    rw [TypeCat.Fun.toFun_apply, TypeCat.Fun.toFun_apply, NatTrans.comp_app,
-      ConcreteCategory.comp_apply, toHom_app, value_of_eq_comp_map F _ (yonedaEquiv.symm s) _
+    simp only [TypeCat.Fun.toFun_apply, NatTrans.comp_app, ConcreteCategory.comp_apply]
+    rw [toHom_app, value_of_eq_comp_map F _ (yonedaEquiv.symm s) _
       (by rw [join.homEquiv_symm_objEquiv, yonedaEquiv_symm_comp]), Equiv.apply_symm_apply,
       yonedaEquiv_symm_comp, Equiv.apply_symm_apply]
   right_inv τ := by
@@ -281,7 +283,8 @@ noncomputable def homEquiv : (X ⟶ slice p) ≃ {τ : join X K ⟶ C // join.in
     induction m using Opposite.rec with | op m
     induction m using SimplexCategory.rec with | _ m
     dsimp only
-    rw [TypeCat.Fun.toFun_apply, TypeCat.Fun.toFun_apply, toHom_app]
+    simp only [TypeCat.Fun.toFun_apply]
+    rw [toHom_app]
     rcases join.exists_eq_comp_inr_or_exists_eq_comp_map
       (join.homEquiv.symm (join.objEquiv s)) with ⟨k, hk⟩ | ⟨t, g, ht⟩
     · rw [value_of_eq_comp_inr _ _ k hk, ← whisker_eq k τ.2, ← Category.assoc, ← hk,
@@ -309,9 +312,9 @@ lemma homEquiv_comp_coe (f : Y ⟶ X) (F : X ⟶ slice p) :
     ext n y
     induction n using Opposite.rec with | op n
     refine objEquiv.injective (Subtype.ext ?_)
-    rw [TypeCat.Fun.toFun_apply, TypeCat.Fun.toFun_apply, NatTrans.comp_app,
-      ConcreteCategory.comp_apply, homEquiv_symm_app_coe, homEquiv_symm_app_coe,
-      ← join.map_comp_assoc, Category.comp_id, yonedaEquiv_symm_comp]
+    simp only [TypeCat.Fun.toFun_apply, NatTrans.comp_app, ConcreteCategory.comp_apply]
+    rw [homEquiv_symm_app_coe, homEquiv_symm_app_coe, ← join.map_comp_assoc, Category.comp_id,
+      yonedaEquiv_symm_comp]
   rw [this, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
 
 variable (p) in
@@ -338,8 +341,8 @@ lemma comp_π (F : X ⟶ slice p) : F ≫ π p = join.inl X K ≫ (homEquiv F).1
   conv_lhs => rw [← homEquiv.symm_apply_apply F]
   ext n x
   induction n using Opposite.rec with | op n
-  rw [TypeCat.Fun.toFun_apply, TypeCat.Fun.toFun_apply, NatTrans.comp_app,
-    ConcreteCategory.comp_apply, π_app, homEquiv_symm_app_coe, join.inl_map_assoc,
+  simp only [TypeCat.Fun.toFun_apply, NatTrans.comp_app, ConcreteCategory.comp_apply]
+  rw [π_app, homEquiv_symm_app_coe, join.inl_map_assoc, ← Category.assoc, yonedaEquiv_comp,
     yonedaEquiv_comp, Equiv.apply_symm_apply]
 
 end slice
