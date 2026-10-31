@@ -91,6 +91,7 @@ noncomputable def functionalEquationSum : MvPowerSeries τ K →+ MvPowerSeries 
   map_add' h₁ h₂ := by ext d; simp [mul_add, Finset.sum_add_distrib]; rfl
 
 /-- The coefficient of `X^d` in `∑_{i ≥ 1} sᵢ (σⁱ h)(X ^ (pⁱ))`. -/
+@[simp]
 theorem coeff_functionalEquationSum (h : MvPowerSeries τ K) (d : τ →₀ ℕ) :
     coeff d (functionalEquationSum p σ s h) = ∑ i ∈ Finset.Icc 1 d.degree,
       s i * coeff d (expand (p ^ i) (NeZero.ne _) (map (σ ^ i) h)) :=
@@ -98,6 +99,7 @@ theorem coeff_functionalEquationSum (h : MvPowerSeries τ K) (d : τ →₀ ℕ)
 
 /-- In one variable, the coefficient of `Xⁿ` in `∑_{i ≥ 1} sᵢ (σⁱ f)(X ^ (pⁱ))` is the sum of
 `sᵢ σⁱ(f_(n / pⁱ))` over the `1 ≤ i ≤ n` with `pⁱ ∣ n`. -/
+@[simp]
 theorem powerSeries_coeff_functionalEquationSum (f : PowerSeries K) (n : ℕ) :
     PowerSeries.coeff n (functionalEquationSum p σ s f : PowerSeries K) =
       ∑ i ∈ Finset.Icc 1 n,
