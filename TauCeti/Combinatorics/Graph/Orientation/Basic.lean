@@ -24,6 +24,7 @@ reverses every arrow while preserving its edge identity.
 
 * `Graph.Orientation`: an ordering of the ends of every actual edge.
 * `Graph.Orientation.ofEdgeEnds`: an arbitrary orientation available for every multigraph.
+* `Graph.Orientation.ofHead`: the orientation with prescribed heads.
 * `Graph.Orientation.reverse`: reversal of every chosen edge direction.
 * `Graph.Orientation.Hom`: the associated explicit arrow family.
 * `Graph.Orientation.totalHomEquiv`: the total arrows are equivalent to the actual edges.
@@ -84,6 +85,32 @@ theorem head_eq_of_tail_eq {o₁ o₂ : Orientation G} {e : G.edgeSet}
 /-- Two orientations are equal when they choose the same tail for every edge. -/
 theorem ext_of_tail {o₁ o₂ : Orientation G} (h : ∀ e, o₁.tail e = o₂.tail e) : o₁ = o₂ :=
   ext h fun _ ↦ head_eq_of_tail_eq (h _)
+
+/-- Two orientations choosing the same head for an edge also choose the same tail. -/
+theorem tail_eq_of_head_eq {o₁ o₂ : Orientation G} {e : G.edgeSet}
+    (h : o₁.head e = o₂.head e) : o₁.tail e = o₂.tail e :=
+  Subtype.ext <| (o₁.isLink e).symm.right_unique <| h ▸ (o₂.isLink e).symm
+
+/-- Two orientations are equal when they choose the same head for every edge. -/
+theorem ext_of_head {o₁ o₂ : Orientation G} (h : ∀ e, o₁.head e = o₂.head e) : o₁ = o₂ :=
+  ext (fun _ ↦ tail_eq_of_head_eq (h _)) h
+
+/-- The orientation choosing a prescribed incident vertex as the head of every edge; the tail is
+the other end, which is the head itself for a loop. -/
+noncomputable def ofHead (head : G.edgeSet → G.vertexSet) (h : ∀ e, G.Inc e.1 (head e).1) :
+    Orientation G where
+  tail e := ⟨(h e).other, (h e).isLink_other.right_mem⟩
+  head := head
+  isLink e := (h e).isLink_other.symm
+
+@[simp]
+theorem ofHead_head (head : G.edgeSet → G.vertexSet) (h : ∀ e, G.Inc e.1 (head e).1)
+    (e : G.edgeSet) : (ofHead head h).head e = head e :=
+  (rfl)
+
+@[simp]
+theorem ofHead_self (o : Orientation G) : ofHead o.head o.head_inc = o :=
+  ext_of_head fun _ ↦ rfl
 
 /-- Two orientations either agree on an edge or orient it in opposite directions. -/
 theorem tail_eq_and_head_eq_or_tail_eq_and_head_eq (o₁ o₂ : Orientation G) (e : G.edgeSet) :

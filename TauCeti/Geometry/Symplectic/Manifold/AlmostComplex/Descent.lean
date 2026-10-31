@@ -5,46 +5,48 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
-public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
 # Descending almost complex structures along local diffeomorphisms
 
 Let `q : M → N` be a surjective smooth local diffeomorphism, for instance the projection of a
-covering space onto its base, and let `J` be a smooth almost complex structure on `M`. Suppose that
-`J` is consistent with `q`: whenever two tangent vectors `v ∈ T_x M` and `w ∈ T_y M` have the same
-image under `dq`, so do `J v` and `J w`. Then there is exactly one smooth almost complex structure
-`J'` on `N` with `dq ∘ J = J' ∘ dq`. At `q x` it is `dq_x ∘ J_x ∘ (dq_x)⁻¹`; consistency makes
-this independent of the point `x` over `q x`, and near each point of `N` it is read through a
-smooth local inverse of `q`, which gives smoothness.
+manifold onto its quotient by a free properly discontinuous group action. A smooth almost complex
+structure `J` on `M` descends to `N` when it is compatible with the identifications that `q`
+makes: whenever two tangent vectors `v` at `x` and `v'` at `x'` have the same image under the
+differentials of `q`, so do `J v` and `J v'`. The descended structure
+`TauCeti.SmoothAlmostComplexStructure.descend` is then the unique almost complex structure `K` on
+`N` making every differential of `q` complex linear, `K (dq v) = dq (J v)`. Smoothness is checked
+through a smooth local inverse of `q`, so completeness of the source model space is not required.
 
-Consistency holds in particular when every two points of a fiber of `q` are related by a
-deck transformation `g` (`q ∘ g = q`) whose differential intertwines `J`
-(`TauCeti.SmoothAlmostComplexStructure.mfderiv_apply_eq_of_deck`). This is how an
-almost complex structure built on a cover, invariant under the deck transformations, is put on the
-quotient. Tameness, invariance and compatibility with a two-form descend along with `J`: they hold
-for `J'` and a form `Ω` on `N` exactly when they hold for `J` and the pullback `q^* Ω`.
+The usual source of the compatibility hypothesis is a family of deck transformations: if every
+pair of points in a fibre of `q` is related by a chain of maps `g` with `q ∘ g = q` whose
+differentials commute with `J`, then `J` descends
+(`TauCeti.SmoothAlmostComplexStructure.mfderiv_apply_eq_of_eqvGen`).
+
+Tameness, invariance and compatibility with a two-form `σ` on `N` can all be checked upstairs,
+against the pullback `q^* σ`, because `q` is surjective and its differentials are bijective.
 
 ## Main definitions
 
-* `TauCeti.SmoothAlmostComplexStructure.descend J hq hsurj hJ`: the descent of `J` along a
-  surjective local diffeomorphism `q`.
+* `TauCeti.SmoothAlmostComplexStructure.descend`: the almost complex structure on `N` induced by
+  a `q`-compatible almost complex structure on `M`.
 
 ## Main results
 
-* `TauCeti.SmoothAlmostComplexStructure.descend_apply_mfderiv`: `J' (q x) (dq_x v) = dq_x (J x v)`.
+* `TauCeti.SmoothAlmostComplexStructure.descend_apply_mfderiv`: every differential of `q` is
+  complex linear for `J` and its descent.
 * `TauCeti.SmoothAlmostComplexStructure.eq_descend_iff`: the descent is the only almost complex
-  structure on `N` with this property.
-* `TauCeti.SmoothAlmostComplexStructure.mfderiv_apply_eq_of_deck`: deck transformations
-  intertwining `J` make `J` consistent with `q`.
+  structure with this property.
+* `TauCeti.SmoothAlmostComplexStructure.mfderiv_apply_eq_of_deck`,
+  `TauCeti.SmoothAlmostComplexStructure.mfderiv_apply_eq_of_eqvGen`: deck transformations commuting
+  with `J` give the compatibility hypothesis on the equivalence relation they generate.
 * `TauCeti.SmoothAlmostComplexStructure.tames_descend_iff`,
   `TauCeti.SmoothAlmostComplexStructure.invariant_descend_iff`,
-  `TauCeti.SmoothAlmostComplexStructure.compatible_descend_iff`: a two-form `Ω` on `N` tames, is
-  invariant under or is compatible with the descent exactly when `q^* Ω` has the same relation
-  with `J`.
+  `TauCeti.SmoothAlmostComplexStructure.compatible_descend_iff`: tameness, invariance and
+  compatibility of the descent with `σ` are those of `J` with `q^* σ`.
 
 ## References
 
@@ -54,9 +56,7 @@ for `J'` and a form `Ω` on `N` exactly when they hold for `J` and the pullback 
   Section 2.2 (almost complex structures).
 -/
 
-public section
-
-noncomputable section
+public noncomputable section
 
 open Bundle Function Filter
 open scoped Manifold Topology ContDiff
@@ -64,47 +64,121 @@ open scoped Manifold Topology ContDiff
 namespace TauCeti.SmoothAlmostComplexStructure
 
 variable {E H M E' H' N : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' ∞ N]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N]
   {q : M → N}
 
-section Descend
+section Deck
 
-variable (J : SmoothAlmostComplexStructure I M) (hq : IsLocalDiffeomorph I I' ∞ q)
-  (hsurj : Surjective q)
+/-- Deck transformations commuting with `J` make `J` compatible with the identifications of `q`:
+if `q` is differentiable with injective differentials, `g` satisfies `q ∘ g = q`, sends `x` to
+`x'` and its differential at `x` commutes with `J`, then
+any two tangent vectors at `x` and `x'` with the same image under the differentials of `q` are sent
+by `J` to two vectors with the same image. -/
+theorem mfderiv_apply_eq_of_deck (hq : MDifferentiable I I' q)
+    (hinj : ∀ x : M, Injective (mfderiv I I' q x))
+    (J : SmoothAlmostComplexStructure I M) {g : M → M} {x x' : M} (hgx : g x = x')
+    (hg : MDifferentiableAt I I g x) (hqg : q ∘ g = q)
+    (hgJ : ∀ v, mfderiv I I g x (J x v) = J (g x) (mfderiv I I g x v))
+    (v : TangentSpace I x) (v' : TangentSpace I x')
+    (hvv' : mfderiv I I' q x v = mfderiv I I' q x' v') :
+    mfderiv I I' q x (J x v) = mfderiv I I' q x' (J x' v') := by
+  subst hgx
+  -- The chain rule for `q ∘ g = q` identifies `dq_x` with `dq_{g x} ∘ dg_x`.
+  have hchain (w : TangentSpace I x) :
+      mfderiv I I' q x w = mfderiv I I' q (g x) (mfderiv I I g x w) := by
+    have h := mfderiv_comp x (hq (g x)) hg
+    rw [hqg] at h
+    -- After rewriting, `ContinuousLinearMap.comp_apply` closes the goal definitionally; it
+    -- cannot be used by `rw` because the tangent spaces at `q x` and `q (g x)` differ
+    -- syntactically.
+    rw [h]
+    rfl
+  -- Injectivity of `dq_{g x}` identifies `v'` with `dg_x v`.
+  have hv' : v' = mfderiv I I g x v :=
+    (hinj (g x)) (by rw [← hvv', hchain])
+  rw [hv', hchain, hgJ]
 
-/-- The endomorphism `dq_x ∘ J_x ∘ (dq_x)⁻¹` of `T_z N`, at a chosen point `x` over `z`. The casts
-identify the tangent spaces at `q x` and `z`, which are equal. -/
-private def descendEndomorphism (z : N) : TangentSpace I' z →L[ℝ] TangentSpace I' z :=
-  (tangentSpaceCast I' (q (surjInv hsurj z)) z : TangentSpace I' (q (surjInv hsurj z)) →L[ℝ] _) ∘L
-    mfderiv I I' q (surjInv hsurj z) ∘L J.toEndomorphism (surjInv hsurj z) ∘L
-    (mfderiv I I' q (surjInv hsurj z)).inverse ∘L
-    (tangentSpaceCast I' z (q (surjInv hsurj z)) : TangentSpace I' z →L[ℝ] _)
+/-- Deck transformations commuting with `J` make `J` compatible with the identifications of `q`
+along the equivalence relation they generate: if each step `R x x'` is realized by a map `g` with
+`q ∘ g = q`, `g x = x'` and differential at `x` commuting with `J`, then for points related by
+`Relation.EqvGen R`, tangent vectors with the same image under the differentials of `q` are sent by
+`J` to vectors with the same image. When the generated relation contains the fibres of `q`, this is
+the hypothesis of `TauCeti.SmoothAlmostComplexStructure.descend`. -/
+theorem mfderiv_apply_eq_of_eqvGen (hq : IsLocalDiffeomorph I I' ∞ q)
+    (J : SmoothAlmostComplexStructure I M) {R : M → M → Prop}
+    (hR : ∀ x x', R x x' → ∃ g : M → M, g x = x' ∧ MDifferentiableAt I I g x ∧ q ∘ g = q ∧
+      ∀ v, mfderiv I I g x (J x v) = J (g x) (mfderiv I I g x v))
+    {x x' : M} (hxx' : Relation.EqvGen R x x') (v : TangentSpace I x) (v' : TangentSpace I x')
+    (hvv' : mfderiv I I' q x v = mfderiv I I' q x' v') :
+    mfderiv I I' q x (J x v) = mfderiv I I' q x' (J x' v') := by
+  induction hxx' with
+  | rel x x' h =>
+    obtain ⟨g, hgx, hg, hqg, hgJ⟩ := hR x x' h
+    exact mfderiv_apply_eq_of_deck (hq.mdifferentiable (by simp))
+      (fun y ↦ (hq.isInvertible_mfderiv (by simp) y).injective) J hgx hg hqg hgJ v v' hvv'
+  | refl x => rw [((hq x).isInvertible_mfderiv (by simp)).injective hvv']
+  | symm x x' _ ih => exact (ih v' v hvv'.symm).symm
+  | trans x x' x'' _ _ ih ih' =>
+    -- Pass through the tangent vector at `x'` with the same image as `v`.
+    obtain ⟨w, hw⟩ := ((hq x').isInvertible_mfderiv (by simp)).surjective (mfderiv I I' q x v)
+    exact (ih v w hw.symm).trans (ih' w v' (hw.trans hvv'))
 
-variable {J hsurj}
-variable (hJ : ∀ (x y : M), q x = q y → ∀ (v : TangentSpace I x) (w : TangentSpace I y),
-  mfderiv I I' q x v = mfderiv I I' q y w → mfderiv I I' q x (J x v) = mfderiv I I' q y (J y w))
+end Deck
 
-omit [IsManifold I' ∞ N] in
-include hq hJ in
+variable (hq : IsLocalDiffeomorph I I' ∞ q) (hsurj : Surjective q)
+  (J : SmoothAlmostComplexStructure I M)
+  (hJ : ∀ ⦃x x' : M⦄ (v : TangentSpace I x) (v' : TangentSpace I x'), q x = q x' →
+    mfderiv I I' q x v = mfderiv I I' q x' v' →
+      mfderiv I I' q x (J x v) = mfderiv I I' q x' (J x' v'))
+
+/-- The endomorphism `dq_x ∘ J_x ∘ dq_x⁻¹` of the tangent space at `y`, read at the chosen preimage
+`x` of `y`. Tangent spaces of `N` are all the model space, so this is an endomorphism of the tangent
+space at `y` even though it is built at `q x`. -/
+private def descendEndomorphism (y : N) : TangentSpace I' y →L[ℝ] TangentSpace I' y :=
+  (mfderiv I I' q (surjInv hsurj y)).comp ((J.toEndomorphism (surjInv hsurj y)).comp
+    (hq.mfderivToContinuousLinearEquiv (by simp) (surjInv hsurj y)).symm.toContinuousLinearMap)
+
+private theorem descendEndomorphism_apply (y : N) (w : TangentSpace I' y) :
+    descendEndomorphism hq hsurj J y w =
+      mfderiv I I' q (surjInv hsurj y) (J (surjInv hsurj y)
+        ((hq.mfderivToContinuousLinearEquiv (by simp) (surjInv hsurj y)).symm w)) :=
+  (rfl)
+
+include hJ in
 private theorem descendEndomorphism_apply_mfderiv (x : M) (v : TangentSpace I x) :
-    descendEndomorphism J hsurj (q x) (mfderiv I I' q x v) = mfderiv I I' q x (J x v) := by
-  set y := surjInv hsurj (q x)
-  have hy : q y = q x := surjInv_eq hsurj (q x)
-  have hinv := hq.isInvertible_mfderiv (by simp) y
-  -- The vector `(dq_y)⁻¹ (dq_x v)` has the same image as `v`.
-  exact hJ y x hy _ v (hinv.self_apply_inverse _)
+    descendEndomorphism hq hsurj J (q x) (mfderiv I I' q x v) = mfderiv I I' q x (J x v) := by
+  set x₀ := surjInv hsurj (q x)
+  set D := hq.mfderivToContinuousLinearEquiv (by simp) x₀
+  have hx₀ : q x₀ = q x := surjInv_eq hsurj (q x)
+  have hD : mfderiv I I' q x₀ (D.symm (mfderiv I I' q x v)) = mfderiv I I' q x v := by
+    rw [← IsLocalDiffeomorph.mfderivToContinuousLinearEquiv_coe hq (by simp) x₀]
+    exact D.apply_symm_apply _
+  rw [descendEndomorphism_apply]
+  exact hJ _ v hx₀ hD
 
-variable [FiniteDimensional ℝ E'] [T2Space N]
+include hJ in
+private theorem descendEndomorphism_comp_square (y : N) :
+    (descendEndomorphism hq hsurj J y).comp (descendEndomorphism hq hsurj J y) =
+      -ContinuousLinearMap.id ℝ _ := by
+  obtain ⟨x, rfl⟩ := hsurj y
+  ext w
+  obtain ⟨v, rfl⟩ := (hq.isInvertible_mfderiv (by simp) x).surjective w
+  simp only [ContinuousLinearMap.comp_apply, descendEndomorphism_apply_mfderiv hq hsurj J hJ,
+    apply_apply, map_neg, _root_.neg_apply, ContinuousLinearMap.id_apply]
 
-include hq hJ in
+variable [FiniteDimensional ℝ E'] [IsManifold I' ∞ N] [T2Space N]
+
+include hJ in
 private theorem contMDiff_descendEndomorphism :
     ContMDiff I' (I'.prod 𝓘(ℝ, E' →L[ℝ] E')) ∞
-      (fun z ↦ TotalSpace.mk' (E' →L[ℝ] E')
-        (E := fun z : N ↦ TangentSpace I' z →L[ℝ] TangentSpace I' z) z
-        (descendEndomorphism J hsurj z)) := by
+      (fun y ↦ TotalSpace.mk' (E' →L[ℝ] E')
+        (E := fun y : N ↦ TangentSpace I' y →L[ℝ] TangentSpace I' y) y
+        (descendEndomorphism hq hsurj J y)) := by
   refine (Manifold.contMDiff_hom_iff _).2 fun V hV z₀ ↦ ?_
   obtain ⟨x₀, rfl⟩ := hsurj z₀
   have hx₀ := hq x₀
@@ -135,115 +209,76 @@ private theorem contMDiff_descendEndomorphism :
     -- The base points `q (s z)` and `z` agree, so `h` is the claim.
     exact h.symm
   have key (y : M) (v : TangentSpace I y) (hy : q y = z) (hv : mfderiv I I' q y v = V z) :
-      (⟨z, descendEndomorphism J hsurj z (V z)⟩ : TangentBundle I' N) =
+      (⟨z, descendEndomorphism hq hsurj J z (V z)⟩ : TangentBundle I' N) =
         ⟨q y, mfderiv I I' q y (J y v)⟩ := by
     subst hy
-    rw [← hv, descendEndomorphism_apply_mfderiv hq hJ]
+    rw [← hv, descendEndomorphism_apply_mfderiv hq hsurj J hJ]
   exact key (s z) _ hqs hchain
 
-variable (J hsurj) in
-/-- The descent of a smooth almost complex structure `J` on `M` along a surjective smooth local
-diffeomorphism `q : M → N`, when `J` is consistent with `q`: tangent vectors with the same image
-under `dq` have `J`-images with the same image. It is the unique almost complex structure `J'` on
-`N` with `J' (q x) (dq_x v) = dq_x (J x v)` (`TauCeti.SmoothAlmostComplexStructure.eq_descend_iff`).
--/
+/-- The almost complex structure on `N` induced by a smooth almost complex structure `J` on `M`
+along a surjective smooth local diffeomorphism `q : M → N`, provided that `J` respects the
+identifications of `q`: tangent vectors with the same image under the differentials of `q` are
+sent by `J` to vectors with the same image. It is characterized by `K (dq v) = dq (J v)`
+(`TauCeti.SmoothAlmostComplexStructure.descend_apply_mfderiv`,
+`TauCeti.SmoothAlmostComplexStructure.eq_descend_iff`). -/
 def descend : SmoothAlmostComplexStructure I' N where
-  toEndomorphism := ⟨descendEndomorphism J hsurj, contMDiff_descendEndomorphism hq hJ⟩
-  square_neg z := by
-    obtain ⟨x, rfl⟩ := hsurj z
-    ext u
-    obtain ⟨v, rfl⟩ := (hq.isInvertible_mfderiv (by simp) x).surjective u
-    simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, _root_.neg_apply,
-      ContinuousLinearMap.id_apply, ContMDiffSection.coeFn_mk]
-    rw [descendEndomorphism_apply_mfderiv hq hJ, descendEndomorphism_apply_mfderiv hq hJ,
-      apply_apply, map_neg]
+  toEndomorphism := ⟨descendEndomorphism hq hsurj J, contMDiff_descendEndomorphism hq hsurj J hJ⟩
+  square_neg := descendEndomorphism_comp_square hq hsurj J hJ
 
-variable {hq hJ}
-
-/-- The descent of `J` intertwines the differential of `q`: `J' (q x) (dq_x v) = dq_x (J x v)`. -/
+/-- Every differential of `q` is complex linear for `J` and its descent:
+`K (dq v) = dq (J v)`. -/
 @[simp]
 theorem descend_apply_mfderiv (x : M) (v : TangentSpace I x) :
-    descend J hq hsurj hJ (q x) (mfderiv I I' q x v) = mfderiv I I' q x (J x v) :=
-  descendEndomorphism_apply_mfderiv hq hJ x v
+    descend hq hsurj J hJ (q x) (mfderiv I I' q x v) = mfderiv I I' q x (J x v) :=
+  descendEndomorphism_apply_mfderiv hq hsurj J hJ x v
 
-/-- The descent of `J` is the only almost complex structure `K` on `N` with
-`K (q x) (dq_x v) = dq_x (J x v)`. -/
-theorem eq_descend_iff {K : SmoothAlmostComplexStructure I' N} :
-    K = descend J hq hsurj hJ ↔
+/-- The descent of `J` is the only almost complex structure on `N` for which every differential of
+`q` is complex linear. -/
+theorem eq_descend_iff (K : SmoothAlmostComplexStructure I' N) :
+    K = descend hq hsurj J hJ ↔
       ∀ (x : M) (v : TangentSpace I x),
         K (q x) (mfderiv I I' q x v) = mfderiv I I' q x (J x v) := by
-  refine ⟨fun h x v ↦ h ▸ descend_apply_mfderiv x v, fun h ↦ ext fun z u ↦ ?_⟩
-  obtain ⟨x, rfl⟩ := hsurj z
-  obtain ⟨v, rfl⟩ := (hq.isInvertible_mfderiv (by simp) x).surjective u
+  refine ⟨fun h x v ↦ by rw [h, descend_apply_mfderiv], fun h ↦ ext fun y w ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := hsurj y
+  obtain ⟨v, rfl⟩ := (hq.isInvertible_mfderiv (by simp) x).surjective w
   rw [h, descend_apply_mfderiv]
 
-end Descend
+variable (σ : SmoothTwoForm I' N)
 
-omit [IsManifold I' ∞ N] in
-/-- A smooth almost complex structure is consistent with a smooth map `q` when the differential
-`dq` is injective at every point and every two points of each fiber of `q` are related by a deck
-transformation `g`, a map with `q ∘ g = q`, whose differential intertwines `J`. -/
-theorem mfderiv_apply_eq_of_deck {J : SmoothAlmostComplexStructure I M}
-    (hq : MDifferentiable I I' q)
-    (hdeck : ∀ x y : M, q x = q y → ∃ g : M → M, g x = y ∧ q ∘ g = q ∧
-      MDifferentiableAt I I g x ∧
-        ∀ v : TangentSpace I x, mfderiv I I g x (J x v) = J y (mfderiv I I g x v))
-    (hinj : ∀ y : M, Injective (mfderiv I I' q y))
-    (x y : M) (hxy : q x = q y) (v : TangentSpace I x) (w : TangentSpace I y)
-    (hvw : mfderiv I I' q x v = mfderiv I I' q y w) :
-    mfderiv I I' q x (J x v) = mfderiv I I' q y (J y w) := by
-  obtain ⟨g, rfl, hqg, hg, hgJ⟩ := hdeck x y hxy
-  -- The chain rule for `q ∘ g = q`: `dq_(g x) ∘ dg_x = dq_x`.
-  have hchain (u : TangentSpace I x) :
-      mfderiv I I' q (g x) (mfderiv I I g x u) = mfderiv I I' q x u := by
-    rw [← mfderiv_comp_apply x (hq (g x)) hg, hqg]
-  have hw : mfderiv I I g x v = w := hinj (g x) ((hchain v).trans hvw)
-  rw [← hchain, hgJ, hw]
-
-section Forms
-
-variable {J : SmoothAlmostComplexStructure I M} {hq : IsLocalDiffeomorph I I' ∞ q}
-  {hsurj : Surjective q} [FiniteDimensional ℝ E'] [T2Space N]
-  {hJ : ∀ (x y : M), q x = q y → ∀ (v : TangentSpace I x) (w : TangentSpace I y),
-    mfderiv I I' q x v = mfderiv I I' q y w → mfderiv I I' q x (J x v) = mfderiv I I' q y (J y w)}
-  {Ω : SmoothTwoForm I' N}
-
-/-- A two-form `Ω` on `N` tames the descent of `J` exactly when its pullback `q^* Ω` tames `J`. -/
+/-- The descent of `J` is tamed by a two-form `σ` exactly when `J` is tamed by `q^* σ`. -/
 theorem tames_descend_iff :
-    Ω.Tames (descend J hq hsurj hJ) ↔
-      SmoothTwoForm.Tames (SmoothForm.mpullback q hq.contMDiff Ω) J := by
-  simp only [SmoothTwoForm.tames_iff, SmoothForm.eval₂_mpullback]
-  refine ⟨fun h x v hv ↦ ?_, fun h z u hu ↦ ?_⟩
-  · rw [← descend_apply_mfderiv]
-    exact h (q x) _ ((hq.isInvertible_mfderiv (by simp) x).injective.ne_iff' (map_zero _) |>.2 hv)
-  · obtain ⟨x, rfl⟩ := hsurj z
-    obtain ⟨v, rfl⟩ := (hq.isInvertible_mfderiv (by simp) x).surjective u
-    simp only [descend_apply_mfderiv]
-    exact h x v fun hv ↦ hu (by rw [hv, map_zero])
+    σ.Tames (descend hq hsurj J hJ) ↔
+      SmoothTwoForm.Tames (SmoothForm.mpullback q hq.contMDiff σ) J := by
+  simp only [SmoothTwoForm.tames_iff, SmoothForm.eval₂_mpullback,
+    ← descend_apply_mfderiv hq hsurj J hJ]
+  refine ⟨fun h x v hv ↦ h _ _ ?_, fun h y w hw ↦ ?_⟩
+  · exact fun h0 ↦ hv ((hq.isInvertible_mfderiv (by simp) x).injective
+      (h0.trans (map_zero _).symm))
+  · obtain ⟨x, rfl⟩ := hsurj y
+    obtain ⟨v, rfl⟩ := (hq.isInvertible_mfderiv (by simp) x).surjective w
+    exact h x v fun h0 ↦ hw (by rw [h0, map_zero])
 
-/-- A two-form `Ω` on `N` is invariant under the descent of `J` exactly when its pullback `q^* Ω`
-is invariant under `J`. -/
+/-- The descent of `J` leaves a two-form `σ` invariant exactly when `J` leaves `q^* σ`
+invariant. -/
 theorem invariant_descend_iff :
-    Ω.Invariant (descend J hq hsurj hJ) ↔
-      SmoothTwoForm.Invariant (SmoothForm.mpullback q hq.contMDiff Ω) J := by
-  simp only [SmoothTwoForm.invariant_iff, SmoothForm.eval₂_mpullback]
-  refine ⟨fun h x v w ↦ ?_, fun h z u u' ↦ ?_⟩
-  · rw [← descend_apply_mfderiv, ← descend_apply_mfderiv]
-    exact h (q x) _ _
-  · obtain ⟨x, rfl⟩ := hsurj z
-    obtain ⟨v, rfl⟩ := (hq.isInvertible_mfderiv (by simp) x).surjective u
-    obtain ⟨w, rfl⟩ := (hq.isInvertible_mfderiv (by simp) x).surjective u'
-    simp only [descend_apply_mfderiv]
-    exact h x v w
+    σ.Invariant (descend hq hsurj J hJ) ↔
+      SmoothTwoForm.Invariant (SmoothForm.mpullback q hq.contMDiff σ) J := by
+  simp only [SmoothTwoForm.invariant_iff, SmoothForm.eval₂_mpullback,
+    ← descend_apply_mfderiv hq hsurj J hJ]
+  refine ⟨fun h x v w ↦ h _ _ _, fun h y w w' ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := hsurj y
+  obtain ⟨v, rfl⟩ := (hq.isInvertible_mfderiv (by simp) x).surjective w
+  obtain ⟨v', rfl⟩ := (hq.isInvertible_mfderiv (by simp) x).surjective w'
+  exact h x v v'
 
-/-- A two-form `Ω` on `N` is compatible with the descent of `J` exactly when its pullback `q^* Ω`
-is compatible with `J`. -/
+/-- The descent of `J` is compatible with a two-form `σ` exactly when `J` is compatible with
+`q^* σ`. -/
 theorem compatible_descend_iff :
-    Ω.Compatible (descend J hq hsurj hJ) ↔
-      SmoothTwoForm.Compatible (SmoothForm.mpullback q hq.contMDiff Ω) J :=
-  ⟨fun h ↦ ⟨invariant_descend_iff.1 h.invariant, tames_descend_iff.1 h.tames⟩,
-    fun h ↦ ⟨invariant_descend_iff.2 h.invariant, tames_descend_iff.2 h.tames⟩⟩
-
-end Forms
+    σ.Compatible (descend hq hsurj J hJ) ↔
+      SmoothTwoForm.Compatible (SmoothForm.mpullback q hq.contMDiff σ) J :=
+  ⟨fun h ↦ ⟨(invariant_descend_iff hq hsurj J hJ σ).1 h.invariant,
+      (tames_descend_iff hq hsurj J hJ σ).1 h.tames⟩,
+    fun h ↦ ⟨(invariant_descend_iff hq hsurj J hJ σ).2 h.invariant,
+      (tames_descend_iff hq hsurj J hJ σ).2 h.tames⟩⟩
 
 end TauCeti.SmoothAlmostComplexStructure
