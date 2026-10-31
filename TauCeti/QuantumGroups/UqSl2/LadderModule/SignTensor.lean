@@ -125,14 +125,17 @@ def signTensorEquiv :
     (homOfVec (signTensorLinearEquiv q m ε).toLinearMap
       (fun j _ => signTensorLinearEquiv_e_smul j) (fun j _ => signTensorLinearEquiv_f_smul j)
       (fun j _ => signTensorLinearEquiv_k_smul j))
-    (signTensorLinearEquiv q m ε).bijective).symm
+    (by
+      convert (signTensorLinearEquiv q m ε).bijective
+      exact funext (homOfVec_apply _ _ _ _))).symm
 
 /-- The inverse of `signTensorEquiv` sends `v_j` to `w ⊗ v_j`. -/
 @[simp]
 theorem signTensorEquiv_symm_vec (j : ℤ) :
     (signTensorEquiv q m ε).symm (vec q m (-ε) j) =
-      tmul ℂ (UqSl2 q) (vec q 0 (-1) 0) (vec q m ε j) :=
-  signTensorLinearEquiv_vec j
+      tmul ℂ (UqSl2 q) (vec q 0 (-1) 0) (vec q m ε j) := by
+  rw [signTensorEquiv, LinearEquiv.symm_symm, LinearEquiv.ofBijective_apply, homOfVec_apply,
+    LinearEquiv.coe_coe, signTensorLinearEquiv_vec]
 
 /-- `signTensorEquiv` sends `w ⊗ v_j` to `v_j`. -/
 @[simp]
@@ -195,14 +198,17 @@ def tensorSignEquiv :
     (homOfVec (tensorSignLinearEquiv q m ε).toLinearMap
       (fun j _ => tensorSignLinearEquiv_e_smul j) (fun j _ => tensorSignLinearEquiv_f_smul j)
       (fun j _ => tensorSignLinearEquiv_k_smul j))
-    (tensorSignLinearEquiv q m ε).bijective).symm
+    (by
+      convert (tensorSignLinearEquiv q m ε).bijective
+      exact funext (homOfVec_apply _ _ _ _))).symm
 
 /-- The inverse of `tensorSignEquiv` sends `v_j` to `(-1)^j v_j ⊗ w`. -/
 @[simp]
 theorem tensorSignEquiv_symm_vec (j : ℤ) :
     (tensorSignEquiv q m ε).symm (vec q m (-ε) j) =
-      (-1 : ℂ) ^ j • tmul ℂ (UqSl2 q) (vec q m ε j) (vec q 0 (-1) 0) :=
-  tensorSignLinearEquiv_vec j
+      (-1 : ℂ) ^ j • tmul ℂ (UqSl2 q) (vec q m ε j) (vec q 0 (-1) 0) := by
+  rw [tensorSignEquiv, LinearEquiv.symm_symm, LinearEquiv.ofBijective_apply, homOfVec_apply,
+    LinearEquiv.coe_coe, tensorSignLinearEquiv_vec]
 
 /-- `tensorSignEquiv` sends `v_j ⊗ w` to `(-1)^j v_j`. -/
 @[simp]

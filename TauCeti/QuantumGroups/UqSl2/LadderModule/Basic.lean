@@ -514,7 +514,7 @@ theorem map_smul_of_vec (φ : LadderModule q m ε →ₗ[ℂ] V) (a : UqSl2 q)
 
 /-- A complex-linear map out of `L_m^ε` commuting with `E`, `F` and `K` on the ladder vectors
 `v₀, …, v_m` is `UqSl2 q`-linear. -/
-@[expose] def homOfVec (φ : LadderModule q m ε →ₗ[ℂ] V)
+def homOfVec (φ : LadderModule q m ε →ₗ[ℂ] V)
     (he : ∀ j : ℕ, j ≤ m → φ (e q • vec q m ε j) = e q • φ (vec q m ε j))
     (hf : ∀ j : ℕ, j ≤ m → φ (f q • vec q m ε j) = f q • φ (vec q m ε j))
     (hk : ∀ j : ℕ, j ≤ m → φ (k q • vec q m ε j) = k q • φ (vec q m ε j)) :
@@ -532,7 +532,7 @@ theorem homOfVec_apply (φ : LadderModule q m ε →ₗ[ℂ] V)
     (hf : ∀ j : ℕ, j ≤ m → φ (f q • vec q m ε j) = f q • φ (vec q m ε j))
     (hk : ∀ j : ℕ, j ≤ m → φ (k q • vec q m ε j) = k q • φ (vec q m ε j))
     (x : LadderModule q m ε) : homOfVec φ he hf hk x = φ x :=
-  rfl
+  (rfl)
 
 /-- The `UqSl2 q`-module map `L_m^ε → V` determined by a vector `v` of weight `ε q^m` killed by
 `E` and by `F^(m+1)`. It sends `v_j` to `F^j v / ([1]_q ⋯ [j]_q)`. -/
