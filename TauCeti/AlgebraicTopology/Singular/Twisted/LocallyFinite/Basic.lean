@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
 public import Mathlib.Topology.Compactness.LocallyFinite
+public import Mathlib.Topology.Maps.Proper.Basic
+public import TauCeti.Topology.LocallyFinite
 
 /-!
 # Locally finite singular chains and Borel–Moore homology
@@ -17,13 +19,16 @@ vertex of `σ`, such that every point of `X` has a neighbourhood meeting the ima
 many simplices with nonzero coefficient. Unlike the ordinary twisted chains of
 `TauCeti.LocalCoefficientSystem.twistedChainComplex`, infinitely many coefficients may be nonzero.
 
-The boundary of such a chain is computed one face at a time. The coefficient of the boundary on a
-`k`-simplex `ρ` is the sum, over the `(k + 1)`-simplices `σ` having `ρ` as a face, of the
-transported coefficients of `σ`; local finiteness at a point of the image of `ρ` makes this sum
-finite. Every simplex contributing to the boundary near a point is a face of a simplex of the
-original chain near that point, so the boundary is again locally finite. The boundary is described
-through the coefficients `twistedChainComplexCoeff` of the ordinary twisted boundary, and it squares
-to zero because the ordinary twisted boundary does.
+A map `A` of twisted chains that moves each simplex along a proper map (`IsProperlySupported`)
+extends to locally finite chains by applying it simplex by simplex (`extend`): the coefficient of
+the extension on `ρ` is the sum over all `σ` of the coefficient on `ρ` of `A` applied to the chain
+supported on `σ`. Properness makes this sum finite and the result locally finite, and extension
+takes composites to composites (`extendFun_extendFun`).
+
+The boundary of a locally finite chain is the extension of the twisted boundary, which only
+involves faces. The coefficient of the boundary on a `k`-simplex `ρ` is the sum, over the
+`(k + 1)`-simplices `σ` having `ρ` as a face, of the transported coefficients of `σ`. It squares to
+zero because the ordinary twisted boundary does.
 
 Borel–Moore homology with local coefficients is the homology of this complex. Finite chains are
 locally finite, and including them is a chain map from the twisted chain complex; on a compact space
@@ -33,6 +38,8 @@ every locally finite chain is finite, so this inclusion is an isomorphism there.
 
 * `TauCeti.LocalCoefficientSystem.IsLocallyFiniteChain`: local finiteness of a family of simplex
   coefficients, and `locallyFiniteChains` the module of locally finite chains.
+* `TauCeti.LocalCoefficientSystem.IsProperlySupported`: maps of twisted chains moving simplices
+  along a proper map, and `extend` their extension to locally finite chains.
 * `TauCeti.LocalCoefficientSystem.locallyFiniteBoundary`: the boundary of locally finite chains,
   with `locallyFiniteBoundary_comp_locallyFiniteBoundary` stating that it squares to zero.
 * `TauCeti.LocalCoefficientSystem.locallyFiniteChainComplex` and `borelMooreHomology`: the complex
@@ -68,28 +75,6 @@ namespace LocalCoefficientSystem
 
 variable {R : Type u} [Ring R] {X : TopCat.{v}}
 variable (L : LocalCoefficientSystem.{u, v, max v w} R X)
-
-section Boundary
-
-variable {k : ℕ}
-
-/-- The component of the twisted boundary from the summand of a `(k + 1)`-simplex `σ` to the
-summand of a `k`-simplex `ρ`. -/
-private abbrev boundaryCoeff (ρ : (TopCat.toSSet.obj X) _⦋k⦌)
-    (σ : (TopCat.toSSet.obj X) _⦋k + 1⦌) : L.obj (initialVertex σ) ⟶ L.obj (initialVertex ρ) :=
-  ιTwistedChainComplex L (k + 1) σ ≫ (twistedChainComplex L).d (k + 1) k ≫
-    twistedChainComplexCoeff L ρ
-
-/-- A boundary component vanishes unless `ρ` is a face of `σ`. -/
-private lemma exists_map_δ_eq_of_boundaryCoeff_apply_ne_zero {ρ : (TopCat.toSSet.obj X) _⦋k⦌}
-    {σ : (TopCat.toSSet.obj X) _⦋k + 1⦌} {x : L.obj (initialVertex σ)}
-    (h : (boundaryCoeff L ρ σ).hom x ≠ 0) :
-    ∃ i : Fin (k + 2), (TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ = ρ := by
-  by_contra! hne
-  exact h (by
-    simp [boundaryCoeff, ιTwistedChainComplex_d_twistedChainComplexCoeff_of_forall_ne L hne])
-
-end Boundary
 
 section LocallyFinite
 
@@ -185,20 +170,212 @@ lemma mem_locallyFiniteChains
 
 end LocallyFinite
 
+section Extension
+
+/-! A map `A` of twisted chains which moves each simplex along a proper map extends to locally
+finite chains by applying it simplex by simplex: the coefficient of the extension on `ρ` is the sum
+over all `σ` of the coefficient on `ρ` of `A` applied to the chain supported on `σ`. Extension takes
+composites to composites. The locally finite boundary below is the extension of the twisted
+boundary. -/
+
+variable {L} {Y Z : TopCat.{v}} {K : LocalCoefficientSystem.{u, v, max v w} R Y}
+  {J : LocalCoefficientSystem.{u, v, max v w} R Z} {a b e : ℕ}
+
+/-- The coefficient on `ρ` of the image under `A` of the chain supported on `σ`. -/
+def matrixCoeff (A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b)
+    (ρ : (TopCat.toSSet.obj Y) _⦋b⦌) (σ : (TopCat.toSSet.obj X) _⦋a⦌) :
+    L.obj (initialVertex σ) →ₗ[R] K.obj (initialVertex ρ) :=
+  (ιTwistedChainComplex L a σ ≫ A ≫ twistedChainComplexCoeff K ρ).hom
+
+/-- The coefficient on `ρ` of `A` applied to the chain supported on `σ` with coefficient `x`. -/
+lemma matrixCoeff_apply (A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b)
+    (ρ : (TopCat.toSSet.obj Y) _⦋b⦌) (σ : (TopCat.toSSet.obj X) _⦋a⦌)
+    (x : L.obj (initialVertex σ)) :
+    matrixCoeff A ρ σ x =
+      (twistedChainComplexCoeff K ρ).hom (A.hom ((ιTwistedChainComplex L a σ).hom x)) :=
+  (rfl)
+
+/-- A map of twisted chains moves simplices along `g` when the image of a chain supported on a
+simplex `σ` only involves simplices whose image lies in the image of `σ` under `g`. -/
+@[expose]
+def MovesAlong (g : X ⟶ Y)
+    (A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b) : Prop :=
+  ∀ ρ σ (x : L.obj (initialVertex σ)), matrixCoeff A ρ σ x ≠ 0 →
+    Set.range (TopCat.simplexMap ρ) ⊆ g.hom '' Set.range (TopCat.simplexMap σ)
+
+/-- A map of twisted chains is properly supported when it moves simplices along a proper map. -/
+@[expose]
+def IsProperlySupported
+    (A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b) : Prop :=
+  ∃ g : X ⟶ Y, IsProperMap g.hom ∧ MovesAlong g A
+
+/-- The coefficients of the chain obtained by applying `A` simplex by simplex. -/
+def extendFun (A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b)
+    (c : ∀ σ : (TopCat.toSSet.obj X) _⦋a⦌, L.obj (initialVertex σ))
+    (ρ : (TopCat.toSSet.obj Y) _⦋b⦌) : K.obj (initialVertex ρ) :=
+  ∑ᶠ σ, matrixCoeff A ρ σ (c σ)
+
+/-- The coefficient on `ρ` of the chain obtained by applying `A` simplex by simplex is the sum of
+the coefficients on `ρ` of the images of the chains supported on single simplices. -/
+lemma extendFun_apply (A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b)
+    (c : ∀ σ : (TopCat.toSSet.obj X) _⦋a⦌, L.obj (initialVertex σ))
+    (ρ : (TopCat.toSSet.obj Y) _⦋b⦌) :
+    extendFun A c ρ = ∑ᶠ σ, matrixCoeff A ρ σ (c σ) :=
+  (rfl)
+
+/-- Summing the coefficients of `A` against the coefficients of a twisted chain `y` gives the
+coefficients of `A y`. -/
+lemma finsum_matrixCoeff (A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b)
+    (y : (twistedChainComplex L).X a) (ρ : (TopCat.toSSet.obj Y) _⦋b⦌) :
+    ∑ᶠ σ, matrixCoeff A ρ σ ((twistedChainComplexCoeff L σ).hom y) =
+      (twistedChainComplexCoeff K ρ).hom (A.hom y) := by
+  have h := map_finsum ((twistedChainComplexCoeff K ρ).hom ∘ₗ A.hom)
+    (f := fun σ ↦ (ιTwistedChainComplex L a σ).hom ((twistedChainComplexCoeff L σ).hom y))
+    ((finite_support_twistedChainComplexCoeff L y).subset fun σ hσ h ↦
+      hσ (by simp only [h, map_zero]))
+  simp only [LinearMap.comp_apply, finsum_ιTwistedChainComplex_twistedChainComplexCoeff] at h
+  simp only [matrixCoeff_apply]
+  exact h.symm
+
+/-- The coefficients of a composite are the sums of products of the coefficients. -/
+private lemma matrixCoeff_comp_apply
+    (A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b)
+    (B : (twistedChainComplex K).X b ⟶ (twistedChainComplex J).X e)
+    (ρ : (TopCat.toSSet.obj Z) _⦋e⦌) (σ : (TopCat.toSSet.obj X) _⦋a⦌)
+    (x : L.obj (initialVertex σ)) :
+    matrixCoeff (A ≫ B) ρ σ x =
+      ∑ᶠ τ, matrixCoeff B ρ τ (matrixCoeff A τ σ x) :=
+  (finsum_matrixCoeff B (A.hom ((ιTwistedChainComplex L a σ).hom x)) ρ).symm
+
+/-- Applying `A` to a chain supported on one simplex gives a chain with finitely many nonzero
+coefficients. -/
+private lemma finite_setOf_matrixCoeff_ne_zero
+    (A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b)
+    (σ : (TopCat.toSSet.obj X) _⦋a⦌) (x : L.obj (initialVertex σ)) :
+    {ρ | matrixCoeff A ρ σ x ≠ 0}.Finite :=
+  (finite_support_twistedChainComplexCoeff K (A.hom ((ιTwistedChainComplex L a σ).hom x))).subset
+    fun _ hρ ↦ hρ
+
+/-- Composites of maps moving simplices along `g` and `g'` move simplices along `g ≫ g'`. -/
+private lemma MovesAlong.comp {g : X ⟶ Y} {g' : Y ⟶ Z}
+    {A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b}
+    {B : (twistedChainComplex K).X b ⟶ (twistedChainComplex J).X e}
+    (hA : MovesAlong g A) (hB : MovesAlong g' B) : MovesAlong (g ≫ g') (A ≫ B) := by
+  intro ρ σ x hx
+  rw [matrixCoeff_comp_apply] at hx
+  obtain ⟨τ, hτ⟩ := not_forall.1 (mt finsum_eq_zero_of_forall_eq_zero hx)
+  refine (hB ρ τ _ hτ).trans ?_
+  rw [TopCat.hom_comp, ContinuousMap.coe_comp, Set.image_comp]
+  exact Set.image_mono (hA τ σ x fun h ↦ hτ (by simp only [h, map_zero]))
+
+/-- Composites of properly supported maps are properly supported. -/
+lemma IsProperlySupported.comp
+    {A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b}
+    {B : (twistedChainComplex K).X b ⟶ (twistedChainComplex J).X e}
+    (hA : IsProperlySupported A) (hB : IsProperlySupported B) : IsProperlySupported (A ≫ B) :=
+  let ⟨g, hg, hgA⟩ := hA
+  let ⟨g', hg', hgB⟩ := hB
+  ⟨g ≫ g', by simpa using hg'.comp hg, hgA.comp hgB⟩
+
+variable {A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b}
+  {c : ∀ σ : (TopCat.toSSet.obj X) _⦋a⦌, L.obj (initialVertex σ)}
+
+/-- Each coefficient of the extension of a properly supported map to a locally finite chain is a
+finite sum. -/
+private lemma IsProperlySupported.finite_support (hA : IsProperlySupported A)
+    (hc : IsLocallyFiniteChain L c) (ρ : (TopCat.toSSet.obj Y) _⦋b⦌) :
+    (Function.support fun σ ↦ matrixCoeff A ρ σ (c σ)).Finite := by
+  obtain ⟨g, hg, hgA⟩ := hA
+  refine (hc.finite_setOf_inter_nonempty (hg.isCompact_preimage
+    (isCompact_singleton (x := TopCat.simplexMap ρ (toTopInitialVertex _))))).subset
+    fun σ hσ ↦ ?_
+  obtain ⟨z, hz, hgz⟩ := hgA ρ σ (c σ) hσ ⟨_, rfl⟩
+  exact ⟨fun h ↦ hσ (by simp only [h, map_zero]), z, hz, hgz⟩
+
+/-- The extension of a properly supported map to a locally finite chain is locally finite. -/
+private lemma IsProperlySupported.isLocallyFiniteChain_extendFun (hA : IsProperlySupported A)
+    (hc : IsLocallyFiniteChain L c) : IsLocallyFiniteChain K (extendFun A c) := by
+  obtain ⟨g, hg, hgA⟩ := hA
+  have himg := (isLocallyFiniteChain_iff_locallyFinite.1 hc).image_of_isClosedMap hg.isClosedMap
+    fun _ ↦ hg.isCompact_preimage isCompact_singleton
+  rw [isLocallyFiniteChain_iff]
+  intro y
+  obtain ⟨V, hV, hfin⟩ := himg y
+  refine ⟨V, hV, (hfin.biUnion fun σ _ ↦ finite_setOf_matrixCoeff_ne_zero A σ (c σ)).subset ?_⟩
+  rintro ρ ⟨hρ, z, hz, hzV⟩
+  obtain ⟨σ, hσ⟩ := not_forall.1 (mt finsum_eq_zero_of_forall_eq_zero hρ)
+  obtain ⟨w, hw, rfl⟩ := hgA ρ σ (c σ) hσ hz
+  have hcσ : c σ ≠ 0 := fun h ↦ hσ (by simp only [h, map_zero])
+  exact Set.mem_biUnion (x := σ) ⟨_, ⟨w, ⟨hcσ, hw⟩, rfl⟩, hzV⟩ hσ
+
+/-- The extension of a properly supported map to locally finite chains, applying it simplex by
+simplex. -/
+def extend (hA : IsProperlySupported A) :
+    locallyFiniteChains L a →ₗ[R] locallyFiniteChains K b where
+  toFun c := ⟨extendFun A c, mem_locallyFiniteChains.2 <|
+    hA.isLocallyFiniteChain_extendFun (mem_locallyFiniteChains.1 c.2)⟩
+  map_add' c c' := Subtype.ext <| funext fun ρ ↦ by
+    simp only [Submodule.coe_add, Pi.add_apply, extendFun, map_add]
+    exact finsum_add_distrib (hA.finite_support (mem_locallyFiniteChains.1 c.2) ρ)
+      (hA.finite_support (mem_locallyFiniteChains.1 c'.2) ρ)
+  map_smul' r c := Subtype.ext <| funext fun ρ ↦ by
+    simp only [SetLike.val_smul, Pi.smul_apply, extendFun, map_smul, RingHom.id_apply]
+    exact (smul_finsum' r (hA.finite_support (mem_locallyFiniteChains.1 c.2) ρ)).symm
+
+/-- The underlying coefficients of the extension of a properly supported map. -/
+@[simp]
+lemma coe_extend (hA : IsProperlySupported A) (c : locallyFiniteChains L a) :
+    (extend hA c : ∀ ρ : (TopCat.toSSet.obj Y) _⦋b⦌, K.obj (initialVertex ρ)) = extendFun A c :=
+  (rfl)
+
+/-- Extending a composite is the composite of the extensions. -/
+lemma extendFun_extendFun
+    {B : (twistedChainComplex K).X b ⟶ (twistedChainComplex J).X e}
+    (hA : IsProperlySupported A) (hB : IsProperlySupported B) (hc : IsLocallyFiniteChain L c) :
+    extendFun B (extendFun A c) = extendFun (A ≫ B) c := by
+  obtain ⟨g, hg, hgA⟩ := hA
+  obtain ⟨g', hg', hgB⟩ := hB
+  funext ρ
+  -- Every nonzero term involves a simplex `σ` of `c` meeting the fibre of `g' ∘ g` over a point
+  -- of `ρ`; there are finitely many of them.
+  set S := (hc.finite_setOf_inter_nonempty ((hg'.comp hg).isCompact_preimage
+    (isCompact_singleton (x := TopCat.simplexMap ρ (toTopInitialVertex _))))).toFinset
+  have hsupp : ∀ τ σ, matrixCoeff B ρ τ (matrixCoeff A τ σ (c σ)) ≠ 0 → σ ∈ S := by
+    intro τ σ h
+    have hA' : matrixCoeff A τ σ (c σ) ≠ 0 := fun h' ↦ h (by simp only [h', map_zero])
+    obtain ⟨q, hq, hgq⟩ := hgB ρ τ _ h ⟨_, rfl⟩
+    obtain ⟨z, hz, rfl⟩ := hgA τ σ (c σ) hA' hq
+    exact (Set.Finite.mem_toFinset _).2 ⟨fun h' ↦ hA' (by simp only [h', map_zero]), z, hz, hgq⟩
+  have hτ : ∀ σ ∈ S, (Function.support fun τ ↦
+      matrixCoeff B ρ τ (matrixCoeff A τ σ (c σ))).Finite := fun σ _ ↦
+    (finite_setOf_matrixCoeff_ne_zero A σ (c σ)).subset fun τ hτ h ↦ hτ (by simp only [h, map_zero])
+  simp only [extendFun]
+  rw [finsum_congr fun τ ↦ map_finsum _
+      (IsProperlySupported.finite_support ⟨g, hg, hgA⟩ hc τ),
+    finsum_congr fun τ ↦ finsum_eq_sum_of_support_subset _ fun σ hσ ↦ hsupp τ σ hσ,
+    ← sum_finsum_comm _ _ hτ, finsum_eq_sum_of_support_subset _ fun σ hσ ↦ ?_]
+  · exact Finset.sum_congr rfl fun σ _ ↦ (matrixCoeff_comp_apply A B ρ σ (c σ)).symm
+  · rw [Function.mem_support, matrixCoeff_comp_apply] at hσ
+    obtain ⟨τ, hτ⟩ := not_forall.1 (mt finsum_eq_zero_of_forall_eq_zero hσ)
+    exact hsupp τ σ hτ
+
+/-- The twisted boundary moves simplices along the identity: it only involves faces. -/
+lemma isProperlySupported_d (k : ℕ) :
+    IsProperlySupported ((twistedChainComplex L).d (k + 1) k) := by
+  refine ⟨𝟙 X, isProperMap_id, fun ρ σ x hx ↦ ?_⟩
+  obtain ⟨i, rfl⟩ :
+      ∃ i : Fin (k + 2), (TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ = ρ := by
+    by_contra! hne
+    exact hx (by
+      simp [matrixCoeff, ιTwistedChainComplex_d_twistedChainComplexCoeff_of_forall_ne L hne])
+  rw [TopCat.hom_id, ContinuousMap.coe_id, Set.image_id]
+  exact TopCat.range_simplexMap_map_subset _ σ
+
+end Extension
+
 section LocallyFiniteBoundary
 
 variable {L} {k : ℕ}
-
-/-- The terms of the boundary of a locally finite chain on a fixed simplex have finite support. -/
-private lemma finite_support_boundaryCoeff
-    {c : ∀ σ : (TopCat.toSSet.obj X) _⦋k + 1⦌, L.obj (initialVertex σ)}
-    (hc : IsLocallyFiniteChain L c) (ρ : (TopCat.toSSet.obj X) _⦋k⦌) :
-    (Function.support fun σ ↦ (boundaryCoeff L ρ σ).hom (c σ)).Finite := by
-  refine (hc.finite_setOf_mem_range (TopCat.simplexMap ρ (toTopInitialVertex _))).subset
-    fun σ hσ ↦ ?_
-  obtain ⟨i, rfl⟩ := exists_map_δ_eq_of_boundaryCoeff_apply_ne_zero L hσ
-  refine ⟨fun h ↦ hσ ?_, TopCat.range_simplexMap_map_subset _ σ ⟨_, rfl⟩⟩
-  simp [h]
 
 variable (L) in
 /-- The coefficients of the boundary of a family of coefficients on singular `(k + 1)`-simplices.
@@ -206,46 +383,24 @@ The coefficient on a `k`-simplex `ρ` is the sum, over all `(k + 1)`-simplices `
 coefficient on `ρ` of the twisted boundary of the chain supported on `σ` with coefficient `c σ`. -/
 def locallyFiniteBoundaryFun (c : ∀ σ : (TopCat.toSSet.obj X) _⦋k + 1⦌, L.obj (initialVertex σ))
     (ρ : (TopCat.toSSet.obj X) _⦋k⦌) : L.obj (initialVertex ρ) :=
-  ∑ᶠ σ, (twistedChainComplexCoeff L ρ).hom (((twistedChainComplex L).d (k + 1) k).hom
-    ((ιTwistedChainComplex L (k + 1) σ).hom (c σ)))
+  extendFun ((twistedChainComplex L).d (k + 1) k) c ρ
 
-private lemma locallyFiniteBoundaryFun_eq
-    (c : ∀ σ : (TopCat.toSSet.obj X) _⦋k + 1⦌, L.obj (initialVertex σ))
-    (ρ : (TopCat.toSSet.obj X) _⦋k⦌) :
-    locallyFiniteBoundaryFun L c ρ = ∑ᶠ σ, (boundaryCoeff L ρ σ).hom (c σ) :=
+/-- The locally finite boundary is the extension of the twisted boundary. -/
+lemma extendFun_d (c : ∀ σ : (TopCat.toSSet.obj X) _⦋k + 1⦌, L.obj (initialVertex σ)) :
+    extendFun ((twistedChainComplex L).d (k + 1) k) c = locallyFiniteBoundaryFun L c :=
   (rfl)
 
 /-- The boundary of a locally finite chain is locally finite. -/
 lemma IsLocallyFiniteChain.locallyFiniteBoundaryFun
     {c : ∀ σ : (TopCat.toSSet.obj X) _⦋k + 1⦌, L.obj (initialVertex σ)}
     (hc : IsLocallyFiniteChain L c) :
-    IsLocallyFiniteChain L (locallyFiniteBoundaryFun L c) := by
-  rw [isLocallyFiniteChain_iff] at hc ⊢
-  intro x
-  obtain ⟨U, hU, hfin⟩ := hc x
-  refine ⟨U, hU, (hfin.biUnion fun σ _ ↦ Set.finite_range fun i : Fin (k + 2) ↦
-    (TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ).subset ?_⟩
-  rintro ρ ⟨hρ, y, hy, hyU⟩
-  obtain ⟨σ, hσ⟩ : ∃ σ, (boundaryCoeff L ρ σ).hom (c σ) ≠ 0 := by
-    by_contra! h
-    exact hρ (by rw [locallyFiniteBoundaryFun_eq]; exact finsum_eq_zero_of_forall_eq_zero h)
-  obtain ⟨i, rfl⟩ := exists_map_δ_eq_of_boundaryCoeff_apply_ne_zero L hσ
-  exact Set.mem_biUnion (x := σ) ⟨fun h ↦ hσ (by simp [h]),
-    y, TopCat.range_simplexMap_map_subset _ σ hy, hyU⟩ ⟨i, rfl⟩
+    IsLocallyFiniteChain L (locallyFiniteBoundaryFun L c) :=
+  (isProperlySupported_d k).isLocallyFiniteChain_extendFun hc
 
 variable (L k) in
 /-- The boundary of locally finite singular `(k + 1)`-chains with coefficients in `L`. -/
-def locallyFiniteBoundary : locallyFiniteChains L (k + 1) →ₗ[R] locallyFiniteChains L k where
-  toFun c := ⟨locallyFiniteBoundaryFun L c,
-    (mem_locallyFiniteChains.1 c.2).locallyFiniteBoundaryFun⟩
-  map_add' c c' := Subtype.ext <| funext fun ρ ↦ by
-    simp only [Submodule.coe_add, Pi.add_apply, locallyFiniteBoundaryFun_eq, map_add]
-    exact finsum_add_distrib (finite_support_boundaryCoeff c.2 ρ)
-      (finite_support_boundaryCoeff c'.2 ρ)
-  map_smul' a c := Subtype.ext <| funext fun ρ ↦ by
-    simp only [SetLike.val_smul, Pi.smul_apply, locallyFiniteBoundaryFun_eq, map_smul,
-      RingHom.id_apply]
-    exact (smul_finsum' a (finite_support_boundaryCoeff c.2 ρ)).symm
+def locallyFiniteBoundary : locallyFiniteChains L (k + 1) →ₗ[R] locallyFiniteChains L k :=
+  extend (isProperlySupported_d k)
 
 /-- The underlying coefficients of the boundary of a locally finite chain. -/
 @[simp]
@@ -262,67 +417,19 @@ lemma locallyFiniteBoundaryFun_apply
     (ρ : (TopCat.toSSet.obj X) _⦋k⦌) :
     locallyFiniteBoundaryFun L c ρ =
       ∑ᶠ σ, (twistedChainComplexCoeff L ρ).hom (((twistedChainComplex L).d (k + 1) k).hom
-        ((ιTwistedChainComplex L (k + 1) σ).hom (c σ))) :=
-  (rfl)
-
-/-- Composing boundary components through all intermediate simplices gives the corresponding
-component of the square of the twisted boundary, which vanishes. -/
-private lemma finsum_boundaryCoeff_boundaryCoeff (ρ : (TopCat.toSSet.obj X) _⦋k⦌)
-    (σ : (TopCat.toSSet.obj X) _⦋k + 1 + 1⦌) (x : L.obj (initialVertex σ)) :
-    ∑ᶠ τ, (boundaryCoeff L ρ τ).hom ((boundaryCoeff L τ σ).hom x) = 0 := by
-  have h := d_ιTwistedChainComplex_apply L σ x
-  simp_rw [← map_zsmul] at h
-  calc ∑ᶠ τ, (boundaryCoeff L ρ τ).hom ((boundaryCoeff L τ σ).hom x)
-      = ∑ᶠ τ, (boundaryCoeff L ρ τ).hom ((twistedChainComplexCoeff L τ).hom
-          (∑ i : Fin (k + 1 + 2), (ιTwistedChainComplex L (k + 1)
-            ((TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ)).hom
-              ((L.map (vertexTransport (SimplexCategory.δ i).op σ)).hom ((-1 : ℤ) ^ (i : ℕ) • x))))
-        := by
-        simp only [boundaryCoeff, ModuleCat.hom_comp, LinearMap.comp_apply]
-        rw [h]
-    _ = ∑ i : Fin (k + 1 + 2), (boundaryCoeff L ρ
-          ((TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ)).hom
-            ((L.map (vertexTransport (SimplexCategory.δ i).op σ)).hom ((-1 : ℤ) ^ (i : ℕ) • x)) :=
-        finsum_twistedChainComplexCoeff_sum L (fun τ ↦ (boundaryCoeff L ρ τ).hom.toAddMonoidHom)
-          _ _ _
-    _ = (twistedChainComplexCoeff L ρ).hom (((twistedChainComplex L).d (k + 1) k).hom
-          (((twistedChainComplex L).d (k + 1 + 1) (k + 1)).hom
-            ((ιTwistedChainComplex L (k + 1 + 1) σ).hom x))) := by
-        simp only [boundaryCoeff, ModuleCat.hom_comp, LinearMap.comp_apply, h, map_sum]
-    _ = 0 := by
-        rw [← LinearMap.comp_apply (((twistedChainComplex L).d (k + 1) k).hom),
-          ← ModuleCat.hom_comp, HomologicalComplex.d_comp_d]
-        simp
+        ((ιTwistedChainComplex L (k + 1) σ).hom (c σ))) := by
+  simp only [locallyFiniteBoundaryFun, extendFun, matrixCoeff_apply]
 
 /-- The boundary of locally finite chains squares to zero. -/
 @[simp]
 lemma locallyFiniteBoundary_comp_locallyFiniteBoundary :
     locallyFiniteBoundary L k ∘ₗ locallyFiniteBoundary L (k + 1) = 0 := by
-  refine LinearMap.ext fun ⟨c, hc⟩ ↦ Subtype.ext <| funext fun ρ ↦ ?_
-  simp only [LinearMap.comp_apply, LinearMap.zero_apply, ZeroMemClass.coe_zero, Pi.zero_apply,
-    coe_locallyFiniteBoundary]
-  set F := (hc.finite_setOf_mem_range (TopCat.simplexMap ρ (toTopInitialVertex _))).toFinset
-  have hzero : ∀ τ σ, (boundaryCoeff L τ σ).hom (c σ) = 0 →
-      (boundaryCoeff L ρ τ).hom ((boundaryCoeff L τ σ).hom (c σ)) = 0 := fun τ σ h ↦ by
-    rw [h, map_zero]
-  -- Every nonzero term involves a simplex `σ` of the chain through the initial vertex of `ρ`.
-  have hsupp : ∀ τ σ, (boundaryCoeff L ρ τ).hom ((boundaryCoeff L τ σ).hom (c σ)) ≠ 0 →
-      σ ∈ F := fun τ σ h ↦ by
-    obtain ⟨i, hi⟩ := exists_map_δ_eq_of_boundaryCoeff_apply_ne_zero L h
-    have h' : (boundaryCoeff L τ σ).hom (c σ) ≠ 0 := fun h' ↦ h (hzero τ σ h')
-    obtain ⟨j, rfl⟩ := exists_map_δ_eq_of_boundaryCoeff_apply_ne_zero L h'
-    refine (Set.Finite.mem_toFinset _).2 ⟨fun hσ ↦ h' (by simp [hσ]), ?_⟩
-    rw [← hi]
-    exact TopCat.range_simplexMap_map_subset _ σ (TopCat.range_simplexMap_map_subset _ _ ⟨_, rfl⟩)
-  simp_rw [locallyFiniteBoundaryFun_eq]
-  rw [finsum_congr fun τ ↦ map_finsum _ (finite_support_boundaryCoeff hc τ),
-    finsum_congr fun τ ↦ finsum_eq_sum_of_support_subset _ fun σ hσ ↦ hsupp τ σ hσ,
-    ← sum_finsum_comm]
-  · exact Finset.sum_eq_zero fun σ _ ↦ finsum_boundaryCoeff_boundaryCoeff ρ σ (c σ)
-  · refine fun σ _ ↦ (Set.finite_range fun j : Fin (k + 1 + 2) ↦
-      (TopCat.toSSet.obj X).map (SimplexCategory.δ j).op σ).subset fun τ hτ ↦ ?_
-    exact exists_map_δ_eq_of_boundaryCoeff_apply_ne_zero L (x := c σ) fun h' ↦
-      hτ (hzero τ σ h')
+  refine LinearMap.ext fun ⟨c, hc⟩ ↦ Subtype.ext ?_
+  rw [LinearMap.comp_apply, coe_locallyFiniteBoundary, coe_locallyFiniteBoundary, ← extendFun_d,
+    ← extendFun_d, extendFun_extendFun (isProperlySupported_d _) (isProperlySupported_d _) hc,
+    HomologicalComplex.d_comp_d]
+  funext ρ
+  simp [extendFun, matrixCoeff_apply]
 
 end LocallyFiniteBoundary
 
