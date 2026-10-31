@@ -12,7 +12,6 @@ import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.Flow.Diffeomorph
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
-import TauCeti.Geometry.Symplectic.Lagrangian.SymplecticTangent
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 
 /-!
@@ -218,7 +217,8 @@ theorem IsContractibleHZAdmissible.comp_symm (hσ₂ : σ₂.IsNondegenerate)
     have h := hσ.mfderiv_hamiltonianVectorField_comp hσ₂ ψ.contMDiff hψ
       (ψ.isInvertible_mfderiv (by simp) (x := x)).surjective (g := F ∘ ψ.symm)
       (((hF.contMDiff.comp ψ.symm.contMDiff) (ψ x)).mdifferentiableAt (by simp))
-    rwa [show (F ∘ ψ.symm) ∘ ψ = F from funext fun x ↦ by simp] at h
+    rwa [Function.comp_assoc, ← Diffeomorph.coe_trans, Diffeomorph.self_trans_symm,
+      Diffeomorph.coe_refl, Function.comp_id] at h
   have hsupp : tsupport (F ∘ ψ.symm) = ψ '' tsupport F := by
     rw [ψ.image_eq_preimage_symm, ← ψ.symm.coe_toHomeomorph,
       ← tsupport_comp_eq_preimage F ψ.symm.toHomeomorph]
@@ -264,8 +264,8 @@ theorem IsNondegenerate.contractibleHZCapacity_image (hσ₂ : σ₂.IsNondegene
     (contractibleHZCapacity_le_iff.2 fun F hF ↦ ?_)
   · have h := hF.comp_symm hσ ψ.symm
       (SmoothForm.mpullback_symm_eq_of_mpullback_eq hψ)
-    rw [show ⇑ψ.symm.symm = ψ from funext fun x ↦ ψ.symm.injective (by simp),
-      ψ.symm_image_image] at h
+    rw [← Diffeomorph.toEquiv_coe_symm ψ.symm, Diffeomorph.symm_toEquiv, Equiv.symm_symm,
+      Diffeomorph.coe_toEquiv, ψ.symm_image_image] at h
     have hsup : ⨆ x, (F ∘ ψ) x = ⨆ y, F y := ψ.surjective.iSup_comp F
     exact hsup ▸ h.ofReal_iSup_le_contractibleHZCapacity
   · have hsup : ⨆ y, (F ∘ ψ.symm) y = ⨆ x, F x := ψ.symm.surjective.iSup_comp F
