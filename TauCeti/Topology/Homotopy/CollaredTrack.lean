@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Field
 public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.LocalAtTarget
+public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 
 /-!
 # Collared tracks
@@ -49,6 +50,14 @@ in the product region.
   `TauCeti.IsCollaredTrack.stack`: the constant, reversed and stacked tracks are collared tracks.
 * `TauCeti.IsCollaredTrack.isEmbedding_stack`: the stack of two collared tracks which are
   topological embeddings is a topological embedding.
+* `TauCeti.IsCollaredTrack.isClosedEmbedding`: a continuous injective collared track with compact
+  source and Hausdorff target is a closed embedding.
+* `TauCeti.IsCollaredTrack.snd_apply_mem_Icc_iff`: a collared track meets the closed slab
+  `N × [0, 1]` exactly over `M × [0, 1]`.
+* `TauCeti.IsCollaredTrack.exists_pos_range_inter_snd_le` and
+  `TauCeti.IsCollaredTrack.exists_pos_range_inter_le_snd`: over a compact source, the image of a
+  continuous collared track is the cylinder over the image of `f` at all heights at most some
+  `ε > 0`, and the cylinder over the image of `g` at all heights at least `1 - ε`.
 
 ## References
 
@@ -130,6 +139,13 @@ theorem snd_apply_mem_Ioo_iff (hF : IsCollaredTrack f g F) (x : M) {t : ℝ} :
   have h0 : (0 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.1
   have h1 : (1 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.2
   simp only [mem_Ioo, hF.lt_snd_apply_iff x h0, hF.snd_apply_lt_iff x h1]
+
+/-- A collared track meets the closed slab `N × [0, 1]` exactly over `M × [0, 1]`. -/
+theorem snd_apply_mem_Icc_iff (hF : IsCollaredTrack f g F) (x : M) {t : ℝ} :
+    (F (x, t)).2 ∈ Icc 0 1 ↔ t ∈ Icc 0 1 := by
+  have h0 : (0 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.1
+  have h1 : (1 : ℝ) ∉ Ioo 0 1 := fun h => lt_irrefl _ h.2
+  simp only [mem_Icc, ← not_lt, hF.snd_apply_lt_iff x h0, hF.lt_snd_apply_iff x h1]
 
 /-- Pushing a collared track from `f` to `g` forward along a map `e` of the target gives a
 collared track from `e ∘ f` to `e ∘ g`. -/
@@ -398,6 +414,98 @@ theorem isEmbedding_stack (hF : IsCollaredTrack f g F) (hG : IsCollaredTrack g h
         funext fun p => hF.stack_eqOn_upper hG p.2
       rw [heq]
       exact hG3.comp IsEmbedding.subtypeVal
+
+/-- A continuous injective collared track with compact source `M` and Hausdorff target `N` is a
+closed embedding. -/
+theorem isClosedEmbedding [CompactSpace M] [T2Space N]
+    (hF : IsCollaredTrack f g F) (hc : Continuous F) (hinj : Function.Injective F) :
+    IsClosedEmbedding F := by
+  -- Outside `[0, 1]` the track is a product, so it moves no time level across `0` or `1`, and
+  -- the preimage of a bounded set of times lies in a compact slab `M × [a, b]`.
+  have hproper : IsProperMap (Prod.snd ∘ F) := by
+    refine isProperMap_iff_isCompact_preimage.2 ⟨continuous_snd.comp hc, fun K hK => ?_⟩
+    obtain ⟨a, ha⟩ := hK.bddBelow
+    obtain ⟨b, hb⟩ := hK.bddAbove
+    refine (isCompact_univ.prod (isCompact_Icc (a := min a 0) (b := max b 1))).of_isClosed_subset
+      (hK.isClosed.preimage (continuous_snd.comp hc)) ?_
+    rintro ⟨x, t⟩ hp
+    have hlo : a ≤ (F (x, t)).2 := ha hp
+    have hhi : (F (x, t)).2 ≤ b := hb hp
+    refine ⟨mem_univ x, le_of_not_gt fun ht => ?_, le_of_not_gt fun ht => ?_⟩
+    · rw [hF.apply_of_nonpos x (ht.le.trans (min_le_right _ _))] at hlo
+      exact (ht.trans_le (min_le_left _ _)).not_ge hlo
+    · rw [hF.apply_of_one_le x ((le_max_right _ _).trans ht.le)] at hhi
+      exact ((le_max_left _ _).trans_lt ht).not_ge hhi
+  exact .of_continuous_injective_isClosedMap hc hinj
+    (isProperMap_of_comp_of_t2 hc continuous_snd hproper).isClosedMap
+
+/-- Over a compact source, the image of a continuous collared track from `f` is the cylinder over
+the image of `f` up to some positive height `ε`: its points of height at most `ε` are exactly the
+points of `range f ×ˢ Iic ε`. The collar width of the track alone does not give this, since points
+of the middle of the track may come down to low heights; compactness keeps them above a positive
+height. -/
+theorem exists_pos_range_inter_snd_le [CompactSpace M] (hF : IsCollaredTrack f g F)
+    (hc : Continuous F) :
+    ∃ ε > 0, range F ∩ {p | p.2 ≤ ε} = range f ×ˢ Iic ε := by
+  obtain ⟨ε₀, hε₀, hF₀⟩ := hF.exists_pos_apply_eq_left
+  obtain ⟨ε₁, hε₁, hF₁⟩ := hF.exists_pos_apply_eq_right
+  -- On the compact slab `M × [ε₀, 1 - ε₁]` the track has positive height, bounded below by `δ`.
+  obtain ⟨δ, hδ, hδF⟩ : ∃ δ > 0, ∀ x t, t ∈ Icc ε₀ (1 - ε₁) → δ ≤ (F (x, t)).2 := by
+    have hK : IsCompact ((univ : Set M) ×ˢ Icc ε₀ (1 - ε₁)) := isCompact_univ.prod isCompact_Icc
+    rcases ((univ : Set M) ×ˢ Icc ε₀ (1 - ε₁)).eq_empty_or_nonempty with he | hne
+    · refine ⟨1, one_pos, fun x t ht => ?_⟩
+      have hmem : (x, t) ∈ (univ : Set M) ×ˢ Icc ε₀ (1 - ε₁) := ⟨mem_univ x, ht⟩
+      simp [he] at hmem
+    · obtain ⟨⟨x₀, t₀⟩, hp, hmin⟩ := hK.exists_isMinOn hne (continuous_snd.comp hc).continuousOn
+      refine ⟨(F (x₀, t₀)).2, ?_, fun x t ht => isMinOn_iff.1 hmin (x, t) ⟨mem_univ x, ht⟩⟩
+      exact ((hF.snd_apply_mem_Ioo_iff x₀).2
+        ⟨hε₀.trans_le hp.2.1, hp.2.2.trans_lt (by linarith)⟩).1
+  refine ⟨min ε₀ (δ / 2), lt_min hε₀ (half_pos hδ), ?_⟩
+  ext ⟨y, s⟩
+  simp only [mem_inter_iff, mem_range, mem_ofPred_eq, mem_prod, mem_Iic]
+  constructor
+  · rintro ⟨⟨⟨x, t⟩, hxt⟩, hs⟩
+    -- A point of height at most `min ε₀ (δ / 2)` comes from the initial collar.
+    have ht : t ≤ ε₀ := by
+      by_contra! ht
+      rcases le_or_gt t (1 - ε₁) with ht' | ht'
+      · have hδs := hδF x t ⟨ht.le, ht'⟩
+        rw [hxt] at hδs
+        linarith [min_le_right ε₀ (δ / 2)]
+      · rw [hF₁ x t ht'.le, Prod.mk.injEq] at hxt
+        linarith [min_le_left ε₀ (δ / 2)]
+    rw [hF₀ x t ht, Prod.mk.injEq] at hxt
+    exact ⟨⟨x, hxt.1⟩, hs⟩
+  · rintro ⟨⟨x, rfl⟩, hs⟩
+    exact ⟨⟨(x, s), hF₀ x s (hs.trans (min_le_left _ _))⟩, hs⟩
+
+/-- Over a compact source, the image of a continuous collared track to `g` is the cylinder over
+the image of `g` from some height `1 - ε`, `ε > 0`, on: its points of height at least `1 - ε` are
+exactly the points of `range g ×ˢ Ici (1 - ε)`. -/
+theorem exists_pos_range_inter_le_snd [CompactSpace M] (hF : IsCollaredTrack f g F)
+    (hc : Continuous F) :
+    ∃ ε > 0, range F ∩ {p | 1 - ε ≤ p.2} = range g ×ˢ Ici (1 - ε) := by
+  -- Apply `exists_pos_range_inter_snd_le` to the reversed track and reflect heights back.
+  have hrev : TauCeti.reverseTime F = fun p => ((F (p.1, 1 - p.2)).1, 1 - (F (p.1, 1 - p.2)).2) :=
+    funext fun p => reverseTime_apply F p.1 p.2
+  have hc' : Continuous (TauCeti.reverseTime F) := by
+    rw [hrev]
+    fun_prop
+  obtain ⟨ε, hε, h⟩ := hF.reverseTime.exists_pos_range_inter_snd_le hc'
+  refine ⟨ε, hε, ?_⟩
+  have hmem (y : N) (s : ℝ) : (y, 1 - s) ∈ range (TauCeti.reverseTime F) ↔ (y, s) ∈ range F := by
+    rw [hrev]
+    constructor
+    · rintro ⟨⟨x, t⟩, hxt⟩
+      simp only [Prod.mk.injEq, sub_right_inj] at hxt
+      exact ⟨(x, 1 - t), Prod.ext hxt.1 hxt.2⟩
+    · rintro ⟨⟨x, t⟩, hxt⟩
+      exact ⟨(x, 1 - t), by simp [hxt]⟩
+  ext ⟨y, s⟩
+  have hys := congrArg (fun S : Set (N × ℝ) => (y, 1 - s) ∈ S) h
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_prod, mem_Iic, hmem, eq_iff_iff,
+    sub_le_comm (a := (1 : ℝ)) (b := s)] at hys
+  simpa only [mem_inter_iff, mem_ofPred_eq, mem_prod, mem_Ici] using hys
 
 end IsCollaredTrack
 

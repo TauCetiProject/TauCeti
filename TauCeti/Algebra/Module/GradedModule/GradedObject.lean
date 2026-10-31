@@ -14,8 +14,8 @@ public import TauCeti.Algebra.Module.GradedModule.Internal
 # Internal gradings and graded objects
 
 This file compares the two presentations of a graded module used by the `DGAInfinity` roadmap.
-An `InternalGrading R M` presents all degrees inside one total module `M`, while a
-`CategoryTheory.GradedObject ℤ (ModuleCat R)` presents the homogeneous modules separately.
+An `InternalGrading R M ι` presents all degrees inside one total module `M`, while a
+`CategoryTheory.GradedObject ι (ModuleCat R)` presents the homogeneous modules separately.
 
 The categorical total of the graded-object presentation of an internal grading is
 canonically isomorphic to the original module. Conversely, a graded object has a canonical
@@ -44,24 +44,26 @@ universe u v
 
 namespace InternalGrading
 
+variable {ι : Type} [DecidableEq ι]
+
 section ToGradedObject
 
 variable {R : Type u} {M : Type v} [Ring R] [AddCommGroup M] [Module R M]
 
 /-- The homogeneous pieces of an internal grading, regarded as a Mathlib graded object. -/
-abbrev toGradedObject (G : InternalGrading R M) :
-    GradedObject ℤ (ModuleCat.{v} R) :=
+abbrev toGradedObject (G : InternalGrading R M ι) :
+    GradedObject ι (ModuleCat.{v} R) :=
   fun p ↦ ModuleCat.of R (G.piece p)
 
 /-- The categorical total of the graded-object presentation is the original total module. -/
-noncomputable def totalIso (G : InternalGrading R M) :
+noncomputable def totalIso (G : InternalGrading R M ι) :
     ∐ G.toGradedObject ≅ ModuleCat.of R M :=
   ModuleCat.coprodIsoDirectSum G.toGradedObject ≪≫
     (DirectSum.decomposeLinearEquiv G.piece).symm.toModuleIso
 
 /-- On a homogeneous piece, the total comparison is the inclusion into the original module. -/
 @[reassoc (attr := simp)]
-theorem ι_totalIso_hom (G : InternalGrading R M) (p : ℤ) :
+theorem ι_totalIso_hom (G : InternalGrading R M ι) (p : ι) :
     Sigma.ι G.toGradedObject p ≫ G.totalIso.hom = ModuleCat.ofHom (G.piece p).subtype := by
   rw [totalIso, Iso.trans_hom, ← Category.assoc, ModuleCat.ι_coprodIsoDirectSum_hom]
   ext x
@@ -71,35 +73,35 @@ end ToGradedObject
 
 section OfGradedObject
 
-variable (R : Type u) [Ring R] (X : GradedObject ℤ (ModuleCat.{v} R))
+variable (R : Type u) [Ring R] (X : GradedObject ι (ModuleCat.{v} R))
 
 /-- The copy of the degree-`p` component inside the external direct sum of a graded object. -/
-abbrev gradedObjectPiece (p : ℤ) : Submodule R (⨁ q : ℤ, X q) :=
-  LinearMap.range (DirectSum.lof R ℤ (fun q ↦ X q) p)
+abbrev gradedObjectPiece (p : ι) : Submodule R (⨁ q : ι, X q) :=
+  LinearMap.range (DirectSum.lof R ι (fun q ↦ X q) p)
 
 /-- A component of a graded object is linearly equivalent to its copy in the external direct sum. -/
-noncomputable def gradedObjectPieceEquiv (p : ℤ) : X p ≃ₗ[R] gradedObjectPiece R X p :=
-  LinearEquiv.ofInjective (DirectSum.lof R ℤ (fun q ↦ X q) p) (DirectSum.of_injective _)
+noncomputable def gradedObjectPieceEquiv (p : ι) : X p ≃ₗ[R] gradedObjectPiece R X p :=
+  LinearEquiv.ofInjective (DirectSum.lof R ι (fun q ↦ X q) p) (DirectSum.of_injective _)
 
 /-- The canonical component equivalence agrees with the direct-sum inclusion. -/
 @[simp]
-theorem gradedObjectPieceEquiv_apply (p : ℤ) (x : X p) :
-    ((gradedObjectPieceEquiv R X p x : gradedObjectPiece R X p) : ⨁ q : ℤ, X q) =
-      DirectSum.lof R ℤ (fun q ↦ X q) p x := by
+theorem gradedObjectPieceEquiv_apply (p : ι) (x : X p) :
+    ((gradedObjectPieceEquiv R X p x : gradedObjectPiece R X p) : ⨁ q : ι, X q) =
+      DirectSum.lof R ι (fun q ↦ X q) p x := by
   rw [gradedObjectPieceEquiv]
   exact LinearEquiv.ofInjective_apply _ x
 
 private noncomputable def gradedObjectPiecesEquiv :
-    (⨁ p : ℤ, X p) ≃ₗ[R] (⨁ p : ℤ, gradedObjectPiece R X p) :=
+    (⨁ p : ι, X p) ≃ₗ[R] (⨁ p : ι, gradedObjectPiece R X p) :=
   DirectSum.congrLinearEquiv fun p ↦ gradedObjectPieceEquiv R X p
 
-private theorem gradedObjectPiecesEquiv_lof (p : ℤ) (x : X p) :
-    gradedObjectPiecesEquiv R X (DirectSum.lof R ℤ (fun q ↦ X q) p x) =
-      DirectSum.lof R ℤ (fun q ↦ gradedObjectPiece R X q) p
+private theorem gradedObjectPiecesEquiv_lof (p : ι) (x : X p) :
+    gradedObjectPiecesEquiv R X (DirectSum.lof R ι (fun q ↦ X q) p x) =
+      DirectSum.lof R ι (fun q ↦ gradedObjectPiece R X q) p
         ((gradedObjectPieceEquiv R X p).toLinearMap x) := by
   -- Expose the bundled linear map so Mathlib's direct-sum application lemmas can rewrite it.
   change (gradedObjectPiecesEquiv R X).toLinearMap
-    (DirectSum.lof R ℤ (fun q ↦ X q) p x) = _
+    (DirectSum.lof R ι (fun q ↦ X q) p x) = _
   rw [gradedObjectPiecesEquiv, DirectSum.congrLinearEquiv_toLinearMap, DirectSum.lmap_lof]
 
 private theorem gradedObjectPiecesEquiv_symm_eq_coeLinearMap :
@@ -121,7 +123,7 @@ private theorem gradedObjectPiecesEquiv_symm_eq_coeLinearMap :
 
 /-- The external direct sum of a graded object carries the internal grading by its canonical
 component copies. -/
-noncomputable def ofGradedObject : InternalGrading R (⨁ p : ℤ, X p) where
+noncomputable def ofGradedObject : InternalGrading R (⨁ p : ι, X p) ι where
   piece := gradedObjectPiece R X
   isInternal := by
     -- `IsInternal` uses additive recomposition; its linear version has the same underlying map.
@@ -130,7 +132,7 @@ noncomputable def ofGradedObject : InternalGrading R (⨁ p : ℤ, X p) where
     exact (gradedObjectPiecesEquiv R X).symm.bijective
 
 @[simp]
-theorem ofGradedObject_piece (p : ℤ) :
+theorem ofGradedObject_piece (p : ι) :
     (ofGradedObject R X).piece p = gradedObjectPiece R X p :=
   (rfl)
 
@@ -144,18 +146,18 @@ noncomputable def ofGradedObjectToGradedObjectIso :
 
 /-- The underlying element of the inverse comparison is the canonical direct-sum inclusion. -/
 @[simp]
-theorem ofGradedObjectToGradedObjectIso_inv_apply (p : ℤ) (x : X p) :
-    ((ofGradedObjectToGradedObjectIso R X).inv p x : ⨁ q : ℤ, X q) =
-      DirectSum.lof R ℤ (fun q ↦ X q) p x := by
+theorem ofGradedObjectToGradedObjectIso_inv_apply (p : ι) (x : X p) :
+    ((ofGradedObjectToGradedObjectIso R X).inv p x : ⨁ q : ι, X q) =
+      DirectSum.lof R ι (fun q ↦ X q) p x := by
   rw [ofGradedObjectToGradedObjectIso]
   exact gradedObjectPieceEquiv_apply R X p x
 
 /-- Applying the forward comparison and then including its component recovers the original
 element of the external direct sum. -/
 @[simp]
-theorem ofGradedObjectToGradedObjectIso_hom_apply (p : ℤ)
+theorem ofGradedObjectToGradedObjectIso_hom_apply (p : ι)
     (x : (ofGradedObject R X).toGradedObject p) :
-    DirectSum.lof R ℤ (fun q ↦ X q) p
+    DirectSum.lof R ι (fun q ↦ X q) p
         ((ofGradedObjectToGradedObjectIso R X).hom p x) = x := by
   have hx : (ofGradedObjectToGradedObjectIso R X).inv p
       ((ofGradedObjectToGradedObjectIso R X).hom p x) = x := by
@@ -168,7 +170,7 @@ theorem ofGradedObjectToGradedObjectIso_hom_apply (p : ℤ)
       _ = x := ModuleCat.id_apply _ x
   calc
     _ = ((ofGradedObjectToGradedObjectIso R X).inv p
-        ((ofGradedObjectToGradedObjectIso R X).hom p x) : ⨁ q : ℤ, X q) :=
+        ((ofGradedObjectToGradedObjectIso R X).hom p x) : ⨁ q : ι, X q) :=
       (ofGradedObjectToGradedObjectIso_inv_apply R X p _).symm
     _ = x := congrArg Subtype.val hx
 

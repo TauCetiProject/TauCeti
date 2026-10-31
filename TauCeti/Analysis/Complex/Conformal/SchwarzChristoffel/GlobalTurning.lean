@@ -111,11 +111,13 @@ theorem schwarzChristoffelEdgeAngle_sub_eq_neg_pi_mul_sum_Ioc
         exact and_congr (ha.lt_iff_lt) (ha.le_iff_le)
       · simp
 
+omit [LocallyFiniteOrder ι] in
 /-- Strictly ordered prevertices carrying negative exponents have strictly increasing
 Schwarz--Christoffel edge angles. -/
 theorem schwarzChristoffelEdgeAngle_comp_strictMono (a e : ι → ℝ)
     (ha : StrictMono a) (he : ∀ i, e i < 0) :
     StrictMono (fun i ↦ schwarzChristoffelEdgeAngle a e (a i)) := by
+  let : LocallyFiniteOrder ι := Fintype.toLocallyFiniteOrder
   intro i j hij
   have hdiff := schwarzChristoffelEdgeAngle_sub_eq_neg_pi_mul_sum_Ioc a e ha hij.le
   have hsum : ∑ k ∈ Finset.Ioc i j, e k < 0 := by
@@ -124,6 +126,7 @@ theorem schwarzChristoffelEdgeAngle_comp_strictMono (a e : ι → ℝ)
     · exact ⟨j, Finset.mem_Ioc.mpr ⟨hij, le_rfl⟩⟩
   nlinarith [Real.pi_pos]
 
+omit [LocallyFiniteOrder ι] in
 /-- Under the closing condition `∑ i, e i = -2`, the edge-angle increase along any nonempty
 proper index interval lies strictly between zero and `2π`.
 
@@ -138,6 +141,7 @@ theorem schwarzChristoffelEdgeAngle_sub_mem_Ioo_two_pi
   have hj := (schwarzChristoffelEdgeAngle_mem_Ioc a e he hsum j).2
   exact ⟨sub_pos.mpr (schwarzChristoffelEdgeAngle_comp_strictMono a e ha he hij), by linarith⟩
 
+omit [LocallyFiniteOrder ι] in
 /-- Under negative exponents summing to `-2`, the direction constants on the intervals following
 distinct finite prevertices are distinct.  Thus no two of those directed sides have the same
 orientation; the repeated direction occurs only across the two ends of the compactified real

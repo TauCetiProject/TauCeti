@@ -66,6 +66,8 @@ finiteness instances they use.
   kernels;
 * `TauCeti.gromovWassersteinEDist_comp_prodMap_eq_zero` — a measured kernel and its pullback along
   a measure-preserving map are at distance `0`;
+* `TauCeti.gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap` — the same conclusion when the
+  source kernel agrees almost everywhere with the pullback;
 * `TauCeti.gromovWassersteinEDist_self`, `TauCeti.gromovWassersteinEDist_comm` and
   `TauCeti.gromovWassersteinEDist_triangle` — the axioms of an extended pseudodistance, the
   triangle inequality for a standard Borel third carrier, from the general form
@@ -382,6 +384,44 @@ theorem gromovWassersteinEDist_comp_prodMap_eq_zero [SFinite μ] {f : X → Y}
   refine nonpos_iff_eq_zero.mp ((gromovWassersteinEDist_le_eLpNorm (MeasurePreserving.id μ) hf
     (hωY.comp_quasiMeasurePreserving (hf.prod hf).quasiMeasurePreserving) hωY p).trans_eq ?_)
   simp [Prod.map_def]
+
+/-- A kernel agreeing almost everywhere with a pullback along a measure-preserving map is at
+Gromov–Wasserstein distance `0` from the original measured kernel. -/
+theorem gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap [SFinite μ] {f : X → Y}
+    {ω : X × X → Z} (hf : MeasurePreserving f μ ν)
+    (hωY : AEStronglyMeasurable ωY (ν.prod ν))
+    (hω : ω =ᵐ[μ.prod μ] ωY ∘ Prod.map f f) (p : ℝ≥0∞) :
+    gromovWassersteinEDist p μ ω ν ωY = 0 := by
+  have hωm : AEStronglyMeasurable ω (μ.prod μ) :=
+    (hωY.comp_quasiMeasurePreserving (hf.prod hf).quasiMeasurePreserving).congr hω.symm
+  have hzero : (fun q : X × X ↦ edist (ω q) (ωY (f q.1, f q.2))) =ᵐ[μ.prod μ]
+      (fun _ ↦ (0 : ℝ≥0∞)) := by
+    filter_upwards [hω] with q hq
+    simp only [Function.comp_apply, Prod.map_def] at hq
+    simp [hq]
+  refine nonpos_iff_eq_zero.mp ((gromovWassersteinEDist_le_eLpNorm
+    (MeasurePreserving.id μ) hf hωm hωY p).trans_eq ?_)
+  simpa only [id_eq, Prod.mk.eta, eLpNorm_fun_zero] using eLpNorm_congr_ae (p := p) hzero
+
+/-- A kernel on a coupling that agrees almost everywhere with the pullback along the first
+projection is at Gromov–Wasserstein distance `0` from the first measured kernel. -/
+theorem gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_fst [SFinite π]
+    (hπ : IsCoupling π μ ν) (hωX : AEStronglyMeasurable ωX (μ.prod μ))
+    {ω : (X × Y) × (X × Y) → Z} (hω : ω =ᵐ[π.prod π] ωX ∘ Prod.map Prod.fst Prod.fst)
+    (p : ℝ≥0∞) :
+    gromovWassersteinEDist p π ω μ ωX = 0 := by
+  exact gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap
+    hπ.measurePreserving_fst hωX hω p
+
+/-- A kernel on a coupling that agrees almost everywhere with the pullback along the second
+projection is at Gromov–Wasserstein distance `0` from the second measured kernel. -/
+theorem gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap_snd [SFinite π]
+    (hπ : IsCoupling π μ ν) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
+    {ω : (X × Y) × (X × Y) → Z} (hω : ω =ᵐ[π.prod π] ωY ∘ Prod.map Prod.snd Prod.snd)
+    (p : ℝ≥0∞) :
+    gromovWassersteinEDist p π ω ν ωY = 0 := by
+  exact gromovWassersteinEDist_eq_zero_of_ae_eq_comp_prodMap
+    hπ.measurePreserving_snd hωY hω p
 
 /-- A measured kernel is at Gromov–Wasserstein distance `0` from itself. -/
 @[simp]

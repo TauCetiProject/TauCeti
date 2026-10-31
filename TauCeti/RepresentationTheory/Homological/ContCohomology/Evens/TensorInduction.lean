@@ -40,9 +40,68 @@ namespace TauCeti.ContCohomology
 
 universe u
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2) (s : G) (hs : s ∉ U)
-  (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hα : Continuous α)
+variable {G : Type u} [Group G] [TopologicalSpace G]
+
+section Transversal
+
+variable (U : OpenSubgroup G) (hU : U.toSubgroup.index = 2) (s : G) (hs : s ∉ U)
+  (α : U.toSubgroup →* Multiplicative (ZMod 2))
+
+private noncomputable def twoTransversal : U.toSubgroup.LeftTransversal :=
+  ⟨Set.range (U.toSubgroup.indexTwoTransversal s),
+    Subgroup.isComplement_range_left (Subgroup.indexTwoTransversal_mk hU hs)⟩
+
+private theorem twoTransversal_rep :
+    U.toSubgroup.leftTransversalRep (twoTransversal U hU s hs) =
+      U.toSubgroup.indexTwoTransversal s :=
+  Subgroup.leftTransversalRep_range _ _ (Subgroup.indexTwoTransversal_mk hU hs)
+
+private noncomputable abbrev wordCoord (g : G) (i : G ⧸ U.toSubgroup) : U.toSubgroup :=
+  (U.toSubgroup.monomialHom (twoTransversal U hU s hs) g).left i
+
+private noncomputable abbrev wordValue (g : G) (i : G ⧸ U.toSubgroup) : ZMod 2 :=
+  Multiplicative.toAdd (α (wordCoord U hU s hs g i))
+
+private theorem wordValue_def (g : G) (i : G ⧸ U.toSubgroup) :
+    wordValue U hU s hs α g i =
+      Multiplicative.toAdd (α ((U.toSubgroup.monomialHom (twoTransversal U hU s hs) g).left i)) :=
+  (rfl)
+
+private theorem wordValue_one (g : G) :
+    wordValue U hU s hs α g (QuotientGroup.mk 1) = evensB1 U.toSubgroup s α g := by
+  rw [← evensExtend_lWord_mk_one hU hs,
+    evensExtend_of_mem (lWord_mem _ _ (Subgroup.indexTwoTransversal_mk hU hs) _ _)]
+  simp only [wordValue, wordCoord, Subgroup.monomialHom_left, twoTransversal_rep]
+
+private theorem wordValue_s (g : G) :
+    wordValue U hU s hs α g (QuotientGroup.mk s) = evensBs U.toSubgroup s α g := by
+  rw [← evensExtend_lWord_mk hU hs,
+    evensExtend_of_mem (lWord_mem _ _ (Subgroup.indexTwoTransversal_mk hU hs) _ _)]
+  simp only [wordValue, wordCoord, Subgroup.monomialHom_left, twoTransversal_rep]
+
+private theorem wordValue_inv (g : G) (i : G ⧸ U.toSubgroup) :
+    wordValue U hU s hs α g⁻¹ i = wordValue U hU s hs α g (g • i) := by
+  have hw : wordCoord U hU s hs g⁻¹ i = (wordCoord U hU s hs g (g • i))⁻¹ := by
+    apply Subtype.ext
+    simp only [wordCoord, Subgroup.monomialHom_left, Subgroup.coe_mk, Subgroup.coe_inv]
+    exact lWord_inv U.toSubgroup _ i g
+  exact (congrArg (fun x : U.toSubgroup ↦ Multiplicative.toAdd (α x)) hw).trans
+    (by simp only [map_inv, toAdd_inv, CharTwo.neg_eq])
+
+end Transversal
+
+variable [IsTopologicalGroup G] (U : OpenSubgroup G)
+
+-- The differential and homotopy use the direct-sum module action. Selecting it here keeps the
+-- indexed tensor carrier identical to that of the tensor-induced resolution.
+private noncomputable local instance : Module ℤ (trivialF2 U.toSubgroup).gradedResolutionModule :=
+  @DirectSum.instModule ℤ _ ℕ
+    (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V)
+    (fun _ ↦ inferInstance) (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).hV2)
+
+section Character
+
+variable (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hα : Continuous α)
 
 private noncomputable abbrev characterCochain :=
   inhomogeneousCochain1 (fun x ↦ Multiplicative.toAdd (α x)) (continuous_toAdd.comp hα)
@@ -77,16 +136,6 @@ private theorem characterTotal_differential :
         (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V) 2) hd).trans
           (map_zero _))
 
-private noncomputable def twoTransversal : U.toSubgroup.LeftTransversal :=
-  ⟨Set.range (U.toSubgroup.indexTwoTransversal s),
-    Subgroup.isComplement_range_left (Subgroup.indexTwoTransversal_mk hU hs)⟩
-
-omit [IsTopologicalGroup G] in
-private theorem twoTransversal_rep :
-    U.toSubgroup.leftTransversalRep (twoTransversal U hU s hs) =
-      U.toSubgroup.indexTwoTransversal s :=
-  Subgroup.leftTransversalRep_range _ _ (Subgroup.indexTwoTransversal_mk hU hs)
-
 private noncomputable abbrev characterPrimitive :
     (trivialF2 U.toSubgroup).gradedResolutionModule :=
   (trivialF2 U.toSubgroup).gradedResolutionHomotopy (characterTotal U α hα)
@@ -98,12 +147,62 @@ private theorem characterPrimitive_eq :
   exact (trivialF2 U.toSubgroup).gradedResolutionHomotopy_lof_succ
     0 (characterCochain U α hα).val
 
--- The differential and homotopy use the direct-sum module action. Selecting it here keeps the
--- indexed tensor carrier identical to that of the tensor-induced resolution.
-private noncomputable local instance : Module ℤ (trivialF2 U.toSubgroup).gradedResolutionModule :=
-  @DirectSum.instModule ℤ _ ℕ
-    (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).V)
-    (fun _ ↦ inferInstance) (fun n ↦ (TopRep.resolutionX (trivialF2 U.toSubgroup) (n + 1)).hV2)
+private theorem characterPrimitive_homotopy :
+    (trivialF2 U.toSubgroup).gradedResolutionHomotopy (characterPrimitive U α hα) = 0 := by
+  rw [characterPrimitive_eq]
+  exact (trivialF2 U.toSubgroup).gradedResolutionHomotopy_lof_zero _
+
+private theorem characterTotal_projection :
+    (trivialF2 U.toSubgroup).gradedResolutionProjection (characterTotal U α hα) = 0 := by
+  exact (trivialF2 U.toSubgroup).gradedResolutionProjection_lof_succ
+    0 (characterCochain U α hα).val
+
+private theorem characterPrimitive_homotopy_action (x : U.toSubgroup) :
+    (trivialF2 U.toSubgroup).gradedResolutionHomotopy
+        ((trivialF2 U.toSubgroup).gradedResolutionRepresentation x
+          (characterPrimitive U α hα)) = 0 := by
+  rw [characterPrimitive_eq]
+  exact (congrArg (trivialF2 U.toSubgroup).gradedResolutionHomotopy
+    ((trivialF2 U.toSubgroup).gradedResolutionRepresentation_lof 0 x _)).trans
+      ((trivialF2 U.toSubgroup).gradedResolutionHomotopy_lof_zero _)
+
+private theorem characterPrimitive_projection_action (x : U.toSubgroup) :
+    (trivialF2 U.toSubgroup).gradedResolutionProjection
+        ((trivialF2 U.toSubgroup).gradedResolutionRepresentation x
+          (characterPrimitive U α hα)) =
+      (trivialF2Equiv U.toSubgroup).symm (Multiplicative.toAdd (α x)) := by
+  rw [characterPrimitive_eq]
+  refine (congrArg (trivialF2 U.toSubgroup).gradedResolutionProjection
+    ((trivialF2 U.toSubgroup).gradedResolutionRepresentation_lof 0 x _)).trans ?_
+  refine ((trivialF2 U.toSubgroup).gradedResolutionProjection_lof_zero _).trans ?_
+  refine ((trivialF2 U.toSubgroup).resolutionX_succ_ρ_apply_apply 0 x _ 1).trans ?_
+  rw [trivialF2_ρ_apply_apply, mul_one]
+  exact (inhomogeneousCochain1_apply
+    (fun x ↦ Multiplicative.toAdd (α x)) (continuous_toAdd.comp hα) 1 x⁻¹).trans
+      (congrArg (trivialF2Equiv U.toSubgroup).symm
+        (by simp [map_inv, toAdd_inv, CharTwo.neg_eq]))
+
+private theorem characterTotal_action (x : U.toSubgroup) :
+    (trivialF2 U.toSubgroup).gradedResolutionRepresentation x (characterTotal U α hα) =
+      characterTotal U α hα :=
+  ((trivialF2 U.toSubgroup).gradedResolutionTopRep_ρ_apply x _).symm.trans
+    (characterTotal_invariant U α hα x)
+
+private theorem projection_action_augmentation (x : U.toSubgroup) (a : (trivialF2 U.toSubgroup).V) :
+    (trivialF2 U.toSubgroup).gradedResolutionProjection
+        ((trivialF2 U.toSubgroup).gradedResolutionRepresentation x
+          ((trivialF2 U.toSubgroup).gradedResolutionAugmentation a)) = a := by
+  rw [← TopRep.gradedResolutionAugmentation_equivariant, trivialF2_ρ_apply_apply,
+    TopRep.gradedResolutionProjection_augmentation]
+
+private theorem projection_action_primitive_action (x y : U.toSubgroup) :
+    trivialF2Equiv U.toSubgroup ((trivialF2 U.toSubgroup).gradedResolutionProjection
+      ((trivialF2 U.toSubgroup).gradedResolutionRepresentation x
+        ((trivialF2 U.toSubgroup).gradedResolutionRepresentation y
+          (characterPrimitive U α hα)))) =
+      Multiplicative.toAdd (α x) + Multiplicative.toAdd (α y) := by
+  rw [← Module.End.mul_apply, ← map_mul, characterPrimitive_projection_action,
+    AddEquiv.apply_symm_apply, map_mul, toAdd_mul]
 
 open scoped Classical in
 private noncomputable def twoTensor
@@ -116,8 +215,7 @@ private theorem twoTensor_zero_left
   classical
   exact (PiTensorProduct.tprod ℤ).map_coord_zero (QuotientGroup.mk 1) (by simp)
 
-include s hs in
-private theorem twoTensor_zero_right
+private theorem twoTensor_zero_right (s : G) (hs : s ∉ U)
     (x : (trivialF2 U.toSubgroup).gradedResolutionModule) : twoTensor U x 0 = 0 := by
   classical
   exact (PiTensorProduct.tprod ℤ).map_coord_zero (QuotientGroup.mk s)
@@ -129,9 +227,8 @@ private theorem twoTensor_self
   classical
   simp [twoTensor]
 
-include hU hs in
-private theorem twoTensor_slotHomotopy [Fintype (G ⧸ U.toSubgroup)]
-    [LinearOrder (G ⧸ U.toSubgroup)]
+private theorem twoTensor_slotHomotopy (hU : U.toSubgroup.index = 2) (s : G) (hs : s ∉ U)
+    [Fintype (G ⧸ U.toSubgroup)] [LinearOrder (G ⧸ U.toSubgroup)]
     (hlt : (QuotientGroup.mk 1 : G ⧸ U.toSubgroup) < QuotientGroup.mk s)
     (x y : (trivialF2 U.toSubgroup).gradedResolutionModule) :
     PiTensorProduct.slotHomotopy (G ⧸ U.toSubgroup)
@@ -155,19 +252,8 @@ private theorem twoTensor_slotHomotopy [Fintype (G ⧸ U.toSubgroup)]
     rcases eq_mk_one_or_eq_mk_of_index_two hU hs i with rfl | rfl <;>
       simp [hlt, hlt.ne, hlt.ne']
 
-private theorem characterPrimitive_homotopy :
-    (trivialF2 U.toSubgroup).gradedResolutionHomotopy (characterPrimitive U α hα) = 0 := by
-  rw [characterPrimitive_eq]
-  exact (trivialF2 U.toSubgroup).gradedResolutionHomotopy_lof_zero _
-
-private theorem characterTotal_projection :
-    (trivialF2 U.toSubgroup).gradedResolutionProjection (characterTotal U α hα) = 0 := by
-  exact (trivialF2 U.toSubgroup).gradedResolutionProjection_lof_succ
-    0 (characterCochain U α hα).val
-
-include hU hs in
-private theorem twoTensor_diagonal_homotopy [Fintype (G ⧸ U.toSubgroup)]
-    [LinearOrder (G ⧸ U.toSubgroup)]
+private theorem twoTensor_diagonal_homotopy (hU : U.toSubgroup.index = 2) (s : G) (hs : s ∉ U)
+    [Fintype (G ⧸ U.toSubgroup)] [LinearOrder (G ⧸ U.toSubgroup)]
     (hlt : (QuotientGroup.mk 1 : G ⧸ U.toSubgroup) < QuotientGroup.mk s) :
     PiTensorProduct.slotHomotopy (G ⧸ U.toSubgroup)
         ((trivialF2 U.toSubgroup).gradedResolutionAugmentation ∘ₗ
@@ -177,6 +263,11 @@ private theorem twoTensor_diagonal_homotopy [Fintype (G ⧸ U.toSubgroup)]
       twoTensor U (characterPrimitive U α hα) (characterTotal U α hα) := by
   rw [← twoTensor_self, twoTensor_slotHomotopy U hU s hs hlt,
     characterTotal_projection, map_zero, twoTensor_zero_left, add_zero]
+
+end Character
+
+variable (hU : U.toSubgroup.index = 2) (s : G) (hs : s ∉ U)
+  (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hα : Continuous α)
 
 open scoped Classical in
 private theorem twoTensor_action (g : G)
@@ -217,77 +308,50 @@ private theorem twoTensor_action (g : G)
         smul_mk_of_notMem_of_index_two hU hs (mt U.toSubgroup.inv_mem_iff.mp hg),
         mk_ne_mk_one_of_notMem hs, ↓reduceIte]
 
-private theorem characterPrimitive_homotopy_action (x : U.toSubgroup) :
-    (trivialF2 U.toSubgroup).gradedResolutionHomotopy
-        ((trivialF2 U.toSubgroup).gradedResolutionRepresentation x
-          (characterPrimitive U α hα)) = 0 := by
-  rw [characterPrimitive_eq]
-  exact (congrArg (trivialF2 U.toSubgroup).gradedResolutionHomotopy
-    ((trivialF2 U.toSubgroup).gradedResolutionRepresentation_lof 0 x _)).trans
-      ((trivialF2 U.toSubgroup).gradedResolutionHomotopy_lof_zero _)
-
-private theorem characterPrimitive_projection_action (x : U.toSubgroup) :
-    (trivialF2 U.toSubgroup).gradedResolutionProjection
-        ((trivialF2 U.toSubgroup).gradedResolutionRepresentation x
-          (characterPrimitive U α hα)) =
-      (trivialF2Equiv U.toSubgroup).symm (Multiplicative.toAdd (α x)) := by
-  rw [characterPrimitive_eq]
-  refine (congrArg (trivialF2 U.toSubgroup).gradedResolutionProjection
-    ((trivialF2 U.toSubgroup).gradedResolutionRepresentation_lof 0 x _)).trans ?_
-  refine ((trivialF2 U.toSubgroup).gradedResolutionProjection_lof_zero _).trans ?_
-  refine ((trivialF2 U.toSubgroup).resolutionX_succ_ρ_apply_apply 0 x _ 1).trans ?_
-  rw [trivialF2_ρ_apply_apply, mul_one]
-  exact (inhomogeneousCochain1_apply
-    (fun x ↦ Multiplicative.toAdd (α x)) (continuous_toAdd.comp hα) 1 x⁻¹).trans
-      (congrArg (trivialF2Equiv U.toSubgroup).symm
-        (by simp [map_inv, toAdd_inv, CharTwo.neg_eq]))
-
-private noncomputable abbrev wordCoord (g : G) (i : G ⧸ U.toSubgroup) : U.toSubgroup :=
-  (U.toSubgroup.monomialHom (twoTransversal U hU s hs) g).left i
-
-private noncomputable abbrev wordValue (g : G) (i : G ⧸ U.toSubgroup) : ZMod 2 :=
-  Multiplicative.toAdd (α (wordCoord U hU s hs g i))
-
-omit [IsTopologicalGroup G] in
-private theorem wordValue_def (g : G) (i : G ⧸ U.toSubgroup) :
-    wordValue U hU s hs α g i =
-      Multiplicative.toAdd (α ((U.toSubgroup.monomialHom (twoTransversal U hU s hs) g).left i)) :=
-  (rfl)
-
-omit [IsTopologicalGroup G] in
-private theorem wordValue_one (g : G) :
-    wordValue U hU s hs α g (QuotientGroup.mk 1) = evensB1 U.toSubgroup s α g := by
-  rw [← evensExtend_lWord_mk_one hU hs,
-    evensExtend_of_mem (lWord_mem _ _ (Subgroup.indexTwoTransversal_mk hU hs) _ _)]
-  simp only [wordValue, wordCoord, Subgroup.monomialHom_left, twoTransversal_rep]
-
-omit [IsTopologicalGroup G] in
-private theorem wordValue_s (g : G) :
-    wordValue U hU s hs α g (QuotientGroup.mk s) = evensBs U.toSubgroup s α g := by
-  rw [← evensExtend_lWord_mk hU hs,
-    evensExtend_of_mem (lWord_mem _ _ (Subgroup.indexTwoTransversal_mk hU hs) _ _)]
-  simp only [wordValue, wordCoord, Subgroup.monomialHom_left, twoTransversal_rep]
-
-omit [IsTopologicalGroup G] in
-private theorem wordValue_inv (g : G) (i : G ⧸ U.toSubgroup) :
-    wordValue U hU s hs α g⁻¹ i = wordValue U hU s hs α g (g • i) := by
-  have hw : wordCoord U hU s hs g⁻¹ i = (wordCoord U hU s hs g (g • i))⁻¹ := by
-    apply Subtype.ext
-    simp only [wordCoord, Subgroup.monomialHom_left, Subgroup.coe_mk, Subgroup.coe_inv]
-    exact lWord_inv U.toSubgroup _ i g
-  exact (congrArg (fun x : U.toSubgroup ↦ Multiplicative.toAdd (α x)) hw).trans
-    (by simp only [map_inv, toAdd_inv, CharTwo.neg_eq])
-
 private noncomputable abbrev characterCoeff : SmoothDiscreteTopRep ℤ U.toSubgroup :=
   ⟨trivialF2 U.toSubgroup, isSmoothDiscrete_trivialF2 U.toSubgroup⟩
+
+private local instance [Finite (G ⧸ U.toSubgroup)] : U.toSubgroup.FiniteIndex :=
+  Subgroup.finiteIndex_of_finite_quotient
+
+private noncomputable abbrev tensorAction :=
+  U.toSubgroup.tensorInducedRepresentation (twoTransversal U hU s hs)
+    (trivialF2 U.toSubgroup).gradedResolutionRepresentation
+
+-- These are the same native actions through the smooth/discrete dictionary, but typeclass
+-- search does not unfold its carrier presentation before falling back to the integer action.
+private noncomputable local instance [CompactSpace U.toSubgroup] : Module ℤ
+    ((ofSmoothDiscrete ℤ U.toSubgroup).obj
+      (smoothGradedResolutionFunctor.obj (characterCoeff U))).V :=
+  ((ofSmoothDiscrete ℤ U.toSubgroup).obj
+    (smoothGradedResolutionFunctor.obj (characterCoeff U))).module
+
+private noncomputable local instance : Module ℤ (trivialF2 G).V := (trivialF2 G).hV2
+
+private theorem tensorAction_smooth [CompactSpace U.toSubgroup] [U.toSubgroup.FiniteIndex] (g : G)
+    (z : ((smoothTensorInducedGradedResolutionFunctor U.toSubgroup U.isOpen'
+      (twoTransversal U hU s hs)).obj (characterCoeff U)).obj.V) :
+    ((smoothTensorInducedGradedResolutionFunctor U.toSubgroup U.isOpen'
+      (twoTransversal U hU s hs)).obj (characterCoeff U)).obj.ρ g z =
+      tensorAction U hU s hs g z := by
+  have hρ : ((ofSmoothDiscrete ℤ U.toSubgroup).obj
+      (smoothGradedResolutionFunctor.obj (characterCoeff U))).ρ =
+        (trivialF2 U.toSubgroup).gradedResolutionRepresentation := by
+    apply MonoidHom.ext
+    intro x
+    apply LinearMap.ext
+    intro y
+    exact (ofSmoothDiscrete_obj_ρ_apply ℤ U.toSubgroup _ x y).trans
+      ((smoothGradedResolutionFunctor_obj_obj_ρ_apply (characterCoeff U) x y).trans
+        ((trivialF2 U.toSubgroup).gradedResolutionTopRep_ρ_apply x y))
+  exact (smoothTensorInducedGradedResolutionFunctor_obj_ρ_apply
+    U.toSubgroup U.isOpen' (twoTransversal U hU s hs) (characterCoeff U) g z).trans
+      (congrArg (fun ρ ↦ U.toSubgroup.tensorInducedRepresentation
+        (twoTransversal U hU s hs) ρ g z) hρ)
 
 section TensorRead
 
 variable [Fintype (G ⧸ U.toSubgroup)]
-
-omit [Fintype (G ⧸ U.toSubgroup)] in
-private local instance [Finite (G ⧸ U.toSubgroup)] : U.toSubgroup.FiniteIndex :=
-  Subgroup.finiteIndex_of_finite_quotient
 
 private noncomputable def tensorRead
     (z : ⨂[ℤ] _ : G ⧸ U.toSubgroup, (trivialF2 U.toSubgroup).gradedResolutionModule) : ZMod 2 :=
@@ -332,40 +396,11 @@ private theorem tensorRead_twoTensor
     (fun i hi ↦ ((eq_mk_one_or_eq_mk_of_index_two hU hs i).elim hi.1 hi.2).elim)
   simpa only [mk_ne_mk_one_of_notMem hs, ↓reduceIte] using hp
 
-omit [Fintype (G ⧸ U.toSubgroup)] in
-private theorem characterTotal_action (x : U.toSubgroup) :
-    (trivialF2 U.toSubgroup).gradedResolutionRepresentation x (characterTotal U α hα) =
-      characterTotal U α hα :=
-  ((trivialF2 U.toSubgroup).gradedResolutionTopRep_ρ_apply x _).symm.trans
-    (characterTotal_invariant U α hα x)
-
-omit [Fintype (G ⧸ U.toSubgroup)] in
-private theorem projection_action_augmentation (x : U.toSubgroup) (a : (trivialF2 U.toSubgroup).V) :
-    (trivialF2 U.toSubgroup).gradedResolutionProjection
-        ((trivialF2 U.toSubgroup).gradedResolutionRepresentation x
-          ((trivialF2 U.toSubgroup).gradedResolutionAugmentation a)) = a := by
-  rw [← TopRep.gradedResolutionAugmentation_equivariant, trivialF2_ρ_apply_apply,
-    TopRep.gradedResolutionProjection_augmentation]
-
-omit [Fintype (G ⧸ U.toSubgroup)] in
-private theorem projection_action_primitive_action (x y : U.toSubgroup) :
-    trivialF2Equiv U.toSubgroup ((trivialF2 U.toSubgroup).gradedResolutionProjection
-      ((trivialF2 U.toSubgroup).gradedResolutionRepresentation x
-        ((trivialF2 U.toSubgroup).gradedResolutionRepresentation y
-          (characterPrimitive U α hα)))) =
-      Multiplicative.toAdd (α x) + Multiplicative.toAdd (α y) := by
-  rw [← Module.End.mul_apply, ← map_mul, characterPrimitive_projection_action,
-    AddEquiv.apply_symm_apply, map_mul, toAdd_mul]
-
 private noncomputable abbrev tensorHomotopy [LinearOrder (G ⧸ U.toSubgroup)] :=
   PiTensorProduct.slotHomotopy (G ⧸ U.toSubgroup)
     ((trivialF2 U.toSubgroup).gradedResolutionAugmentation ∘ₗ
       (trivialF2 U.toSubgroup).gradedResolutionProjection)
     (trivialF2 U.toSubgroup).gradedResolutionHomotopy
-
-private noncomputable abbrev tensorAction :=
-  U.toSubgroup.tensorInducedRepresentation (twoTransversal U hU s hs)
-    (trivialF2 U.toSubgroup).gradedResolutionRepresentation
 
 private theorem tensorRead_graph [LinearOrder (G ⧸ U.toSubgroup)]
     (hlt : (QuotientGroup.mk 1 : G ⧸ U.toSubgroup) < QuotientGroup.mk s) (g h : G) :
@@ -376,7 +411,7 @@ private theorem tensorRead_graph [LinearOrder (G ⧸ U.toSubgroup)]
       evensGraphCochain U.toSubgroup s α (g, h) := by
   classical
   let := Subgroup.normal_of_index_eq_two hU
-  rw [twoTensor_diagonal_homotopy U hU s hs α hα hlt,
+  rw [twoTensor_diagonal_homotopy U α hα hU s hs hlt,
     twoTensor_action U hU s hs]
   by_cases hg : g ∈ U
   -- If `g` preserves the cosets, the second homotopy leaves a constant in the first factor.
@@ -428,38 +463,6 @@ private theorem tensorRead_graph [LinearOrder (G ⧸ U.toSubgroup)]
       ring
 
 variable [CompactSpace U.toSubgroup]
-
--- These are the same native actions through the smooth/discrete dictionary, but typeclass
--- search does not unfold its carrier presentation before falling back to the integer action.
-private noncomputable local instance : Module ℤ
-    ((ofSmoothDiscrete ℤ U.toSubgroup).obj
-      (smoothGradedResolutionFunctor.obj (characterCoeff U))).V :=
-  ((ofSmoothDiscrete ℤ U.toSubgroup).obj
-    (smoothGradedResolutionFunctor.obj (characterCoeff U))).module
-
-private noncomputable local instance : Module ℤ (trivialF2 G).V := (trivialF2 G).hV2
-
-omit [Fintype (G ⧸ U.toSubgroup)] in
-private theorem tensorAction_smooth [U.toSubgroup.FiniteIndex] (g : G)
-    (z : ((smoothTensorInducedGradedResolutionFunctor U.toSubgroup U.isOpen'
-      (twoTransversal U hU s hs)).obj (characterCoeff U)).obj.V) :
-    ((smoothTensorInducedGradedResolutionFunctor U.toSubgroup U.isOpen'
-      (twoTransversal U hU s hs)).obj (characterCoeff U)).obj.ρ g z =
-      tensorAction U hU s hs g z := by
-  have hρ : ((ofSmoothDiscrete ℤ U.toSubgroup).obj
-      (smoothGradedResolutionFunctor.obj (characterCoeff U))).ρ =
-        (trivialF2 U.toSubgroup).gradedResolutionRepresentation := by
-    apply MonoidHom.ext
-    intro x
-    apply LinearMap.ext
-    intro y
-    exact (ofSmoothDiscrete_obj_ρ_apply ℤ U.toSubgroup _ x y).trans
-      ((smoothGradedResolutionFunctor_obj_obj_ρ_apply (characterCoeff U) x y).trans
-        ((trivialF2 U.toSubgroup).gradedResolutionTopRep_ρ_apply x y))
-  exact (smoothTensorInducedGradedResolutionFunctor_obj_ρ_apply
-    U.toSubgroup U.isOpen' (twoTransversal U hU s hs) (characterCoeff U) g z).trans
-      (congrArg (fun ρ ↦ U.toSubgroup.tensorInducedRepresentation
-        (twoTransversal U hU s hs) ρ g z) hρ)
 
 private noncomputable abbrev tensorContraction [LinearOrder (G ⧸ U.toSubgroup)] :=
   smoothTensorInducedGradedResolutionContraction U.toSubgroup U.isOpen'

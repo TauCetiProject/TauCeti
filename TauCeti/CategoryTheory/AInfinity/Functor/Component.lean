@@ -65,9 +65,7 @@ noncomputable def component {n : ℕ} (X : Fin (n + 1) → C) :
     MultilinearMap R
       (fun i : Fin n ↦ homModule (R := R) (X i.rev.castSucc) (X i.rev.succ))
       (homModule (R := R) (ℱ.obj (X 0)) (ℱ.obj (X (Fin.last n)))) :=
-  (homProjection (R := R) (C := InducedQuiver D ℱ.obj) ⟨X 0⟩ ⟨X (Fin.last n)⟩).compMultilinearMap
-    ((ℱ.toAInfinityHom.component n).compLinearMap fun i ↦
-      homInclusion (R := R) (X i.rev.castSucc) (X i.rev.succ))
+  (ℱ.toAInfinityHom.component n).restrictToPath (fun x ↦ ⟨x⟩) X
 
 /-- Evaluating a functor component means including every input into the source total module,
 applying the stored total-algebra component, and projecting to the Hom module between the image
@@ -77,8 +75,8 @@ theorem component_apply {n : ℕ} (X : Fin (n + 1) → C)
     ℱ.component X f =
       homProjection (R := R) (C := InducedQuiver D ℱ.obj) ⟨X 0⟩ ⟨X (Fin.last n)⟩
         (ℱ.toAInfinityHom.component n fun i ↦
-          homInclusion (X i.rev.castSucc) (X i.rev.succ) (f i)) :=
-  (rfl)
+          homInclusion (X i.rev.castSucc) (X i.rev.succ) (f i)) := by
+  exact MultilinearMap.restrictToPath_apply (ℱ.toAInfinityHom.component n) (fun x ↦ ⟨x⟩) X f
 
 /-- **A path component is the stored total component.**  Including the value of the component on
 a composable string into the total module of the induced target category recovers the component
@@ -90,9 +88,7 @@ theorem homInclusion_component {n : ℕ} (X : Fin (n + 1) → C)
         (ℱ.component X f) =
       ℱ.toAInfinityHom.component n fun i ↦
         homInclusion (X i.rev.castSucc) (X i.rev.succ) (f i) := by
-  rw [component_apply]
-  exact homInclusion_homProjection_of_mem_range
-    ((ℱ.isPathCompatible_component n).mem_range_homInclusion X f)
+  exact (ℱ.isPathCompatible_component n).homInclusion_restrictToPath X f
 
 /-- The component of a functor in arity zero is zero. -/
 @[simp]
@@ -121,6 +117,7 @@ theorem component_mem_piece {n : ℕ} (X : Fin (n + 1) → C) (d : Fin n → ℤ
     (fun i ↦ homInclusion (X i.rev.castSucc) (X i.rev.succ) (f i))
     hf'
   rw [(𝒸.induced ℱ.obj).grading_eq] at h
+  rw [component_apply]
   exact homProjection_mem_piece h ⟨X 0⟩ ⟨X (Fin.last n)⟩
 
 /-- The arity-`n` component of an `A∞` functor is homogeneous of degree `1 - n` between
