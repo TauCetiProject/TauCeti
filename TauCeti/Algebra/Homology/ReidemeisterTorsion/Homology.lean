@@ -85,37 +85,6 @@ section Bracket
 
 variable {j : ℤ}
 
-/-- A cycle of degree `j + 1`, as an element of the kernel of `d : Cⱼ₊₁ → Cⱼ`. -/
-private def toKer (j : ℤ) (y : C.cycles (j + 1)) : LinearMap.ker (C.d (j + 1) j).hom :=
-  ⟨C.iCycles (j + 1) y, by
-    rw [LinearMap.mem_ker, ← ModuleCat.comp_apply, iCycles_d]
-    rfl⟩
-
-/-- The homology class of an element of the kernel of `d : Cⱼ₊₁ → Cⱼ`. -/
-private def kerClass (j : ℤ) : LinearMap.ker (C.d (j + 1) j).hom →ₗ[F] C.homology (j + 1) :=
-  C.moduleCatHomologyClass ((ComplexShape.down ℤ).next_eq' rfl) (Submodule.subtype _)
-    fun z ↦ LinearMap.mem_ker.1 z.2
-
-private theorem kerClass_toKer (j : ℤ) (y : C.cycles (j + 1)) :
-    kerClass j (toKer j y) = C.homologyπ (j + 1) y := by
-  rw [kerClass, moduleCatHomologyClass_apply]
-  congr 1
-  exact C.moduleCat_iCycles_injective _ (C.iCycles_moduleCatCyclesMk _ _ _ _ _)
-
-/-- The sequence `Bⱼ₊₁ → Zⱼ₊₁ → Hⱼ₊₁` is exact. -/
-private theorem exact_inclusion_kerClass (j : ℤ) :
-    Function.Exact (Submodule.inclusion (LinearMap.range_le_ker_iff.2 (by
-      rw [← ModuleCat.hom_comp, C.d_comp_d, ModuleCat.hom_zero]) :
-        LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom ≤ LinearMap.ker (C.d (j + 1) j).hom))
-      (kerClass j) := by
-  intro z
-  rw [kerClass, C.moduleCatHomologyClass_eq_zero_iff _ _ _ (ChainComplex.prev ℤ (j + 1))]
-  constructor
-  · rintro ⟨y, hy⟩
-    exact ⟨⟨_, y, rfl⟩, Subtype.ext hy⟩
-  · rintro ⟨⟨_, y, rfl⟩, rfl⟩
-    exact ⟨y, rfl⟩
-
 variable {p m q : ℕ}
   (b₁ : Basis (Fin p) F (LinearMap.range (C.d (j + 1 + 1) (j + 1)).hom))
   (h : Basis (Fin m) F (C.homology (j + 1)))
@@ -126,8 +95,10 @@ variable {p m q : ℕ}
 /-- The basis `(b₁, y)` of the cycles `Zⱼ₊₁` made of a basis `b₁` of the boundaries `Bⱼ₊₁`
 followed by cycles `y` representing a basis `h` of the homology `Hⱼ₊₁`. -/
 private def cyclesBasis : Basis (Fin p ⊕ Fin m) F (LinearMap.ker (C.d (j + 1) j).hom) :=
-  Basis.ofExactLift (Submodule.inclusion_injective _) (exact_inclusion_kerClass j) b₁ h
-    (toKer j ∘ y) fun k ↦ by rw [Function.comp_apply, kerClass_toKer, hy]
+  Basis.ofExactLift (Submodule.inclusion_injective _)
+    (C.exact_inclusion_moduleCatKerHomologyClass ((ComplexShape.down ℤ).next_eq' rfl)
+      (ChainComplex.prev ℤ (j + 1))) b₁ h (C.moduleCatCyclesToKer (j + 1) j ∘ y) fun k ↦ by
+    rw [Function.comp_apply, moduleCatKerHomologyClass_moduleCatCyclesToKer, hy]
 
 /-- The basis `(b₁, y, s)` of `Cⱼ₊₁` made of a basis `b₁` of the boundaries `Bⱼ₊₁`, cycles `y`
 representing a basis `h` of the homology `Hⱼ₊₁`, and lifts `s` of a basis `b₀` of the
@@ -167,8 +138,7 @@ theorem torsionBracketWithHomology_eq_det_append (hn : n (j + 1) = p + m + q) :
   ext k
   obtain ⟨k, rfl⟩ := (finCongr hn.symm).surjective k
   induction k using Fin.addCases with
-  | left k => induction k using Fin.addCases <;> simp [bracketBasis, cyclesBasis, finSumSumEquiv,
-      toKer]
+  | left k => induction k using Fin.addCases <;> simp [bracketBasis, cyclesBasis, finSumSumEquiv]
   | right k => simp [bracketBasis, finSumSumEquiv]
 
 /-- Reindexing the boundary bases of a bracket along equalities of their lengths does not change
@@ -386,8 +356,8 @@ theorem reidemeisterTorsionWithHomology_eq_mul_finprod_det
     (finprod_mul_distrib (hasFiniteMulSupport_torsionBracketWithHomology hn _ _ _ _ _) hD)
   have hinv : (c (j + 1)).det (c' (j + 1)) = ((c' (j + 1)).det (c (j + 1)))⁻¹ :=
     eq_inv_of_mul_eq_one_left <| by rw [Basis.det_mul_det, Basis.det_self]
-  rw [torsionBracketWithHomology_eq_det_mul c (c' := c'), mul_zpow, mul_comm, hinv, inv_zpow',
-    Int.negOnePow_succ, Units.val_neg, neg_neg]
+  rw [torsionBracketWithHomology_eq_det_mul c (c' := c'), hinv]
+  simp [mul_zpow, Int.negOnePow_succ, mul_comm]
 
 /-- The basis-change formula for the homology bases: replacing the bases `h i` of the homology
 groups `Hᵢ(C)` by `h' i` multiplies the torsion `τ(C, c, h)` by `∏ᵢ [h'ᵢ / hᵢ] ^ ((-1) ^ (i + 1))`,
@@ -427,9 +397,10 @@ theorem reidemeisterTorsionWithHomology_eq_mul_finprod_det_homology
     hshift]
   refine (finprod_congr fun j ↦ ?_).trans
     (finprod_mul_distrib (hasFiniteMulSupport_torsionBracketWithHomology hn _ _ _ _ _) hD)
-  rw [torsionBracketWithHomology_eq_mul c _ (h (j + 1)) (chosenCycle C h (j + 1))
-      (chosenCycle_spec C h (j + 1)), Basis.det_self, Basis.det_self, one_mul, mul_one, mul_zpow,
-    Int.negOnePow_succ, Int.negOnePow_succ, neg_neg]
+  rw [torsionBracketWithHomology_eq_mul c (chosenBoundaryBasis C c (j + 1)) (h (j + 1))
+    (chosenCycle C h (j + 1)) (chosenCycle_spec C h (j + 1)) (chosenBoundaryBasis C c j)
+    (chosenBoundaryLift C c j) (chosenBoundaryLift_spec C c j)]
+  simp [Basis.det_self, mul_zpow, Int.negOnePow_succ]
 
 end BasisChange
 
