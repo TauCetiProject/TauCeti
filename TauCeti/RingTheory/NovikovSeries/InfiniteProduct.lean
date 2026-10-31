@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Order.Filter.Cofinite
+public import Mathlib.Order.Northcott
 public import TauCeti.RingTheory.NovikovSeries.Functoriality
 public import TauCeti.RingTheory.NovikovSeries.TopologicalRing
 public import Mathlib.Topology.Algebra.InfiniteSum.Group
@@ -193,7 +193,7 @@ private theorem finite_cutoffs_eulerProduct (hfin : Tendsto (fun i => N (γ i)) 
     (r : ι → R) (m : ι → ℤ) (D : ℝ) :
     {i | ((↑(unitsOneSubSingle (hγ i) (r i) ^ m i) : nonnegSubring R N) : NovikovSeries R H N) -
       1 ∉ periodFiltration R N D}.Finite :=
-  (hfin.finite_setOf_lt D).subset fun i hi => lt_of_not_ge fun hD => hi <|
+  (((northcott_iff_tendsto _).2 hfin).finite_le D).subset fun i hi => le_of_not_ge fun hD => hi <|
     antitone_periodFiltration hD <|
       coe_zpow_unitsOneSubSingle_sub_one_mem_periodFiltration (hγ i) (r i) (m i)
 
@@ -236,7 +236,8 @@ theorem eulerProduct_mul_eulerProduct (hfin : Tendsto (fun i => N (γ i)) cofini
     (hasProd_eulerProduct hfin r m').multipliable, eulerProduct]
   simp [zpow_add]
 
-/-- The Euler product is a unit, with inverse the Euler product with the opposite exponents. -/
+/-- The Euler product is a unit. Its inverse is the Euler product with the opposite exponents, by
+`TauCeti.NovikovSeries.eulerProduct_mul_eulerProduct`. -/
 theorem isUnit_eulerProduct (hfin : Tendsto (fun i => N (γ i)) cofinite atTop) (r : ι → R)
     (m : ι → ℤ) : IsUnit (eulerProduct γ hγ r m) :=
   IsUnit.of_mul_eq_one _ <| by rw [eulerProduct_mul_eulerProduct hfin, add_neg_cancel,
@@ -254,13 +255,8 @@ theorem mapRingHom_eulerProduct {H' : Type*} [AddCommMonoid H'] {N' : H' →+ �
   rw [eulerProduct, (hasProd_eulerProduct hfin r m).multipliable.map_tprod _
     (continuous_mapRingHom ρ φ hφ), eulerProduct]
   refine tprod_congr fun i => ?_
-  have hu : Units.map (mapNonnegSubring ρ φ hφ : nonnegSubring R N →* nonnegSubring S N')
-      (unitsOneSubSingle (hγ i) (r i)) = unitsOneSubSingle (hγ' i) (ρ (r i)) :=
-    Units.ext <| Subtype.ext <| by
-      have h1 : map (ρ : R →+ S) φ hφ 1 = 1 := by simpa using map_one (mapRingHom ρ φ hφ)
-      simp [h1]
-  rw [← hu, ← map_zpow, Units.coe_map, MonoidHom.coe_ofClass, coe_mapNonnegSubring,
-    mapRingHom_apply]
+  rw [← map_unitsOneSubSingle ρ φ hφ (hγ i) (hγ' i), ← map_zpow, Units.coe_map,
+    MonoidHom.coe_ofClass, coe_mapNonnegSubring, mapRingHom_apply]
 
 end EulerProduct
 

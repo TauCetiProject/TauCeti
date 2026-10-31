@@ -61,6 +61,8 @@ covering and of its base.
   pushforward is continuous for the period topologies.
 * `TauCeti.NovikovSeries.mapNonnegSubring_mem_posIdeal`: the pushforward maps the positive ideal
   into the positive ideal.
+* `TauCeti.NovikovSeries.map_unitsOneSubSingle`: the pushforward sends the unit `1 - r e^g` to
+  the unit `1 - ρ r e^(φ g)`.
 * `TauCeti.NovikovSeries.comap_subtype_algebraMap_mul`: the projection formula for restriction
   of coefficients to a subgroup `K`.
 
@@ -312,6 +314,16 @@ theorem mapNonnegSubring_mem_posIdeal {a : nonnegSubring R N} (ha : a ∈ posIde
   rw [mem_posIdeal, coe_mapNonnegSubring]
   exact exists_pos_mem_periodFiltration_iff.1
     ⟨c * C, mul_pos hc hC, map_mem_periodFiltration (ρ : R →+ S) φ _ hc.le hcφ haC⟩
+
+/-- The pushforward sends the unit `1 - r e^g` of the nonnegative subring to the unit
+`1 - ρ r e^(φ g)`. -/
+@[simp]
+theorem map_unitsOneSubSingle {g : H} (hg : 0 < N g) (hg' : 0 < N' (φ g)) (r : R) :
+    Units.map (mapNonnegSubring ρ φ hφ : nonnegSubring R N →* nonnegSubring S N')
+      (unitsOneSubSingle hg r) = unitsOneSubSingle hg' (ρ r) :=
+  Units.ext <| Subtype.ext <| by
+    have h1 : map (ρ : R →+ S) φ hφ 1 = 1 := by simpa using map_one (mapRingHom ρ φ hφ)
+    simp [h1]
 
 end TopologyRing
 

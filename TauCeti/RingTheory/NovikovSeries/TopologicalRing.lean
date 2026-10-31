@@ -83,6 +83,9 @@ ideals of it, so it is linearly topologized. For an `S`-algebra of coefficients 
 * `TauCeti.NovikovSeries.one_sub_single_mul_tsum` and
   `TauCeti.NovikovSeries.tsum_mul_one_sub_single`: the two inverse identities of the monomial
   geometric series `∑ₖ rᵏ e^(k • g)` for `N g > 0`.
+* `TauCeti.NovikovSeries.unitsOneSubSingle_mem_principalUnitGroup_posIdeal` and
+  `TauCeti.NovikovSeries.unitsOneSubSingle_mem_principalUnitGroup_periodIdeal`: `1 - r e^g` is a
+  principal unit for the positive ideal and for the ideal of series above the period `N g`.
 * `TauCeti.NovikovSeries.coe_zpow_unitsOneSubSingle_sub_one_mem_periodFiltration`: every integer
   power of `1 - r e^g` is congruent to `1` above the period `N g`.
 * The instances `CompleteSpace`, `IsLinearTopology` and `Algebra` on the nonnegative subring.
@@ -357,6 +360,12 @@ theorem coe_inv_unitsOneSubSingle {g : H} (hg : 0 < N g) (r : R) :
       ∑' k : ℕ, single (k • g) (r ^ k) := by
   simp [unitsOneSubSingle]
 
+/-- The unit `1 - r e^g` is a principal unit for the positive ideal. -/
+theorem unitsOneSubSingle_mem_principalUnitGroup_posIdeal {g : H} (hg : 0 < N g) (r : R) :
+    unitsOneSubSingle hg r ∈ (posIdeal R N).principalUnitGroup := by
+  rw [Ideal.mem_principalUnitGroup, val_unitsOneSubSingle, sub_sub_cancel_left]
+  exact neg_mem (single_mem_posIdeal hg r)
+
 /-! ### The nonnegative subring as a complete linearly topologized algebra -/
 
 /-- The nonnegative subring is complete, being closed in the complete ring of Novikov series. -/
@@ -388,14 +397,18 @@ theorem mem_periodIdeal {a : nonnegSubring R N} :
     a ∈ periodIdeal R N C ↔ (a : NovikovSeries R H N) ∈ periodFiltration R N C :=
   Iff.rfl
 
+/-- The unit `1 - r e^g` is a principal unit for the ideal `periodIdeal R N (N g)`. -/
+theorem unitsOneSubSingle_mem_principalUnitGroup_periodIdeal {g : H} (hg : 0 < N g) (r : R) :
+    unitsOneSubSingle hg r ∈ (periodIdeal R N (N g)).principalUnitGroup := by
+  simpa using neg_mem (single_mem_periodFiltration (R := R) (N := N) g r)
+
 /-- Every integer power of `1 - r e^g` is congruent to `1` above the period `N g`. -/
 theorem coe_zpow_unitsOneSubSingle_sub_one_mem_periodFiltration {g : H} (hg : 0 < N g) (r : R)
     (m : ℤ) :
     ((↑(unitsOneSubSingle hg r ^ m) : nonnegSubring R N) : NovikovSeries R H N) - 1 ∈
       periodFiltration R N (N g) := by
-  have h : unitsOneSubSingle hg r ∈ (periodIdeal R N (N g)).principalUnitGroup := by
-    simpa using neg_mem (single_mem_periodFiltration (R := R) (N := N) g r)
-  simpa using Ideal.mem_principalUnitGroup.1 (zpow_mem h m)
+  simpa using Ideal.mem_principalUnitGroup.1
+    (zpow_mem (unitsOneSubSingle_mem_principalUnitGroup_periodIdeal hg r) m)
 
 /-- The nonnegative subring is linearly topologized: the ideals `periodIdeal R N C` form a basis
 of neighbourhoods of `0`. This is what makes power series evaluable at its topologically nilpotent

@@ -216,8 +216,8 @@ theorem hasSum_log_one_sub (ha : IsTopologicallyNilpotent a) :
     have hsign : (-1 : ℚ) ^ (n + 1 + 1) * (-1) ^ (n + 1) = -1 := by
       rw [← pow_add]
       exact Odd.neg_one_pow ⟨n + 1, by ring⟩
-    rw [sub_sub_cancel_left, hneg, smul_smul, div_mul_eq_mul_div, hsign, neg_div, one_div,
-      neg_smul]
+    rw [sub_sub_cancel_left, hneg, smul_smul, div_mul_eq_mul_div, hsign]
+    simp [div_eq_mul_inv]
   · simp
 
 end IsTopologicallyNilpotent

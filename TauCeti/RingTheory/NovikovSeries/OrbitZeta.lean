@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Order.Filter.Cofinite
 public import TauCeti.RingTheory.NovikovSeries.ExpLog
 public import TauCeti.RingTheory.NovikovSeries.InfiniteProduct
 
@@ -102,12 +103,18 @@ def orbitZeta (K : Type*) [CommRing K] [Algebra ℚ K] (N : H →+ ℝ) (γ : ι
     (ε : ι → ℕ → ℤ) : NovikovSeries K H N :=
   NormedSpace.exp (orbitLog K N γ ε)
 
+/-- The `(k + 1)`-fold iterate of an orbit of class `g` has period `(k + 1) * N g`. -/
+private theorem period_succ_nsmul (g : H) (k : ℕ) : N ((k + 1) • g) = ((k : ℝ) + 1) * N g := by
+  rw [map_nsmul, nsmul_eq_mul]
+  push_cast
+  ring
+
 /-- The term of the orbit logarithm of the `(k + 1)`-fold iterate of an orbit of class `g` lies
 above the period `N g` when `N g ≥ 0`. -/
 private theorem single_iterate_mem_periodFiltration {g : H} (hg : 0 ≤ N g) (k : ℕ) (q : ℚ) :
     (single ((k + 1) • g) (algebraMap ℚ K q) : NovikovSeries K H N) ∈ periodFiltration K N (N g) :=
   antitone_periodFiltration (by
-    rw [map_nsmul, nsmul_eq_mul, Nat.cast_add, Nat.cast_one]
+    rw [period_succ_nsmul]
     nlinarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]) (single_mem_periodFiltration _ _)
 
 /-- The orbit logarithm converges in the period topology when only finitely many periods lie below
@@ -122,12 +129,13 @@ theorem hasSum_orbitLog (hpos : ∀ i, 0 < N (γ i))
   obtain ⟨c, hc, hcγ⟩ := hfin.exists_gt_forall_le hpos
   -- A term below the cutoff `C` comes from an orbit of period below `C`, iterated fewer than
   -- `C / c` times.
-  refine ((hfin.finite_setOf_lt C).prod (Set.finite_Iio ⌈C / c⌉₊)).subset ?_
+  refine ((((northcott_iff_tendsto _).2 hfin).finite_le C).prod
+    (Set.finite_Iio ⌈C / c⌉₊)).subset ?_
   rintro ⟨i, k⟩ hik
   have hlt : ((k : ℝ) + 1) * N (γ i) < C := by
     refine lt_of_not_ge fun hC =>
       hik (antitone_periodFiltration ?_ (single_mem_periodFiltration _ _))
-    rwa [map_nsmul, nsmul_eq_mul, Nat.cast_add, Nat.cast_one]
+    rwa [period_succ_nsmul]
   have hk : (k : ℝ) < C / c := by
     rw [lt_div_iff₀ hc]
     nlinarith [hcγ i, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
@@ -212,9 +220,8 @@ theorem orbitZeta_eq_eulerProduct (hpos : ∀ i, 0 < N (γ i))
   -- `u i = 1 - σ i e^(γ i)` is a principal unit for the positive ideal; `ℓ i` is the multiple
   -- `-(ε i 1 * σ i) • log (u i)` of its logarithm.
   let u (i : ι) := unitsOneSubSingle (hpos i) ((σ i : ℤ) : K)
-  have hu (i : ι) : u i ∈ (posIdeal K N).principalUnitGroup := by
-    rw [Ideal.mem_principalUnitGroup, val_unitsOneSubSingle, sub_sub_cancel_left]
-    exact neg_mem (single_mem_posIdeal (hpos i) ((σ i : ℤ) : K))
+  have hu (i : ι) : u i ∈ (posIdeal K N).principalUnitGroup :=
+    unitsOneSubSingle_mem_principalUnitGroup_posIdeal (hpos i) _
   let ℓ (i : ι) : posIdeal K N := (-(ε i 1 * σ i) : ℤ) •
     ((expMulEquiv K N).symm ⟨u i, hu i⟩).toAdd
   have hℓ (i : ι) : ((ℓ i : nonnegSubring K N) : NovikovSeries K H N) =
