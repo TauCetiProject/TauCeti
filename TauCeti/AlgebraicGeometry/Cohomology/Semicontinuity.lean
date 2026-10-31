@@ -70,14 +70,6 @@ variable {R : Type u} [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
   (M : X.Modules) [M.IsQuasicoherent] {U V : X.Opens} (hU : IsAffineOpen U)
   (hV : IsAffineOpen V) (hInter : IsAffineOpen (U ⊓ V)) (hUV : U ⊔ V = ⊤)
 
-/-- The concrete base change `X ×_R R'`, with its canonical structure over `Spec R'` given by the
-second projection, as a pullback square of the shape the base-change theorems take. -/
-private lemma isPullback_pullback_fst (R' : Type u) [CommRing R'] [Algebra R R'] :
-    IsPullback (pullback.fst (X ↘ Spec (.of R)) (Spec.map (CommRingCat.ofHom (algebraMap R R'))))
-      (pullback (X ↘ Spec (.of R)) (Spec.map (CommRingCat.ofHom (algebraMap R R'))) ↘
-        Spec (.of R')) (X ↘ Spec (.of R)) (Spec.map (CommRingCat.ofHom (algebraMap R R'))) :=
-  .of_hasPullback _ _
-
 section Fiber
 
 variable (p : PrimeSpectrum R) {Y : Scheme.{u}} [Y.Over (Spec (.of p.asIdeal.ResidueField))]
@@ -122,7 +114,9 @@ theorem exists_notMem_subsingleton_cohomology_one_away [Module.Finite R (Cohomol
   obtain ⟨f, hf, hsub⟩ := LocalizedModule.exists_subsingleton_away (M := Cohomology M 1) p.asIdeal
   refine ⟨f, hf, ?_⟩
   obtain ⟨e⟩ := nonempty_linearEquiv_tensor_cohomology_one_pullback
-    (isPullback_pullback_fst (R := R) (X := X) (Localization.Away f)) M hU hV hInter hUV
+    (Y := pullback (X ↘ Spec (.of R))
+      (Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away f)))))
+    (IsPullback.of_hasPullback _ _) M hU hV hInter hUV
   -- `H¹` after base change to `R_f` is `R_f ⊗_R H¹(X, M)`, the localization of `H¹(X, M)` at `f`.
   exact (e.symm.toEquiv.trans (LocalizedModule.equivTensorProduct (Submonoid.powers f)
     (Cohomology M 1)).symm.toEquiv).subsingleton
@@ -139,7 +133,7 @@ theorem upperSemicontinuous_finrank_cohomology_one_fiber [Module.Finite R (Cohom
         (Spec.map (CommRingCat.ofHom (algebraMap R p.asIdeal.ResidueField))))).obj M) 1) := by
   convert Module.upperSemicontinuous_finrank_fiber (R := R) (Cohomology M 1) using 2 with p
   exact finrank_cohomology_one_pullback_eq_finrank_fiber M hU hV hInter hUV p
-    (isPullback_pullback_fst _)
+    (IsPullback.of_hasPullback _ _)
 
 include hU hV hInter hUV in
 /-- **`H¹` vanishes if it vanishes on the closed fibres.** On a two-affine cover with affine
@@ -151,7 +145,7 @@ theorem subsingleton_cohomology_one_iff_forall_isMaximal [Module.Finite R (Cohom
         (Spec.map (CommRingCat.ofHom (algebraMap R p.asIdeal.ResidueField))))).obj M) 1) := by
   refine Iff.trans ?_ (forall_congr' fun p ↦ imp_congr_right fun _ ↦
     (subsingleton_cohomology_one_pullback_iff_notMem_support M hU hV hInter hUV p
-      (isPullback_pullback_fst _)).symm)
+      (IsPullback.of_hasPullback _ _)).symm)
   rw [← Module.support_eq_empty_iff (R := R), Set.eq_empty_iff_forall_notMem]
   refine ⟨fun h p _ ↦ h p, fun h p hp ↦ ?_⟩
   -- The support is closed under specialization, so it meets the closed points if nonempty.
