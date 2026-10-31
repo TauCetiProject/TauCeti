@@ -42,6 +42,8 @@ chain-rule argument while replacing the global exponent hypothesis with the loca
   `O(‖a - b‖ ‖b‖ ^ (p - 3))` between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.
 * `laplacian_norm_rpow_of_ne`: the radial Laplacian formula
   `Δ ‖x‖^p = p (p + dim E - 2) ‖x‖^(p-2)` away from zero.
+* `ContDiffAt.laplacian_comp_norm`: the Laplacian of a radial function,
+  `Δ F(‖x‖) = F''(‖x‖) + (dim E - 1) F'(‖x‖) / ‖x‖` away from zero.
 * `laplacian_inner_mul_norm_rpow_of_ne`: the dipole formula
   `Δ (⟪a, x⟫ ‖x‖^p) = p (p + dim E) ⟪a, x⟫ ‖x‖^(p-2)` away from zero.
 * `harmonicAt_norm_rpow_two_sub_finrank`, `harmonicAt_inner_mul_norm_rpow_neg_finrank`: the
@@ -324,6 +326,27 @@ theorem laplacian_norm_rpow_of_ne (p : ℝ) {x : E} (hx : x ≠ 0) :
       _ = ‖x‖ ^ ((p - 4) + 2) := (Real.rpow_add hnorm _ _).symm
       _ = ‖x‖ ^ (p - 2) := by ring_nf
   rw [mul_assoc (p * (p - 2)), hrpow]
+  ring
+
+open Gradient in
+/-- **The radial Laplacian.** Away from the origin, a radial function `x ↦ F ‖x‖` has Laplacian
+`F'' (‖x‖) + (dim E - 1) F' (‖x‖) / ‖x‖`. Only the regularity of `F` at `‖x‖` is used. -/
+theorem _root_.ContDiffAt.laplacian_comp_norm {F : ℝ → ℝ} {x : E} (hF : ContDiffAt ℝ 2 F ‖x‖)
+    (hx : x ≠ 0) :
+    Δ (fun y : E ↦ F ‖y‖) x =
+      deriv (deriv F) ‖x‖ + (Module.finrank ℝ E - 1) * deriv F ‖x‖ / ‖x‖ := by
+  have hnorm : 0 < ‖x‖ := norm_pos_iff.mpr hx
+  have hΔ : Δ (fun y : E ↦ ‖y‖) x = (Module.finrank ℝ E - 1) / ‖x‖ := by
+    have h := laplacian_norm_rpow_of_ne 1 hx
+    rw [show (1 : ℝ) - 2 = -1 by norm_num, Real.rpow_neg_one] at h
+    simp only [Real.rpow_one] at h
+    rw [h, div_eq_mul_inv]
+    ring
+  have hgrad : ‖∇ (fun y : E ↦ ‖y‖) x‖ = 1 := by
+    rw [norm_gradient_eq_norm_fderiv, (hasFDerivAt_norm_of_ne hx).fderiv, norm_smul,
+      innerSL_apply_norm, norm_inv, norm_norm, inv_mul_cancel₀ hnorm.ne']
+  rw [show (fun y : E ↦ F ‖y‖) = F ∘ fun y : E ↦ ‖y‖ from rfl,
+    hF.laplacian_comp (contDiffAt_norm ℝ hx), hgrad, hΔ]
   ring
 
 /-- The Laplacian of the dipole-type product `x ↦ ⟪a, x⟫ ‖x‖ ^ p` away from the origin is
