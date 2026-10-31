@@ -83,10 +83,10 @@ theorem globalClassField_normSubgroup (N : GlobalNormSubgroups K) :
   let _ := N.2
   exact (globalAbelianExistence N.1.isOpen).choose_spec.2
 
-/-- A prescribed global norm subgroup is normal, so `C_K / N` is a group. -/
-instance GlobalNormSubgroups.normal (N : GlobalNormSubgroups K) : N.1.toSubgroup.Normal := by
-  rw [← globalClassField_normSubgroup N]
-  infer_instance
+-- Instance search does not find commutativity through the idele-class quotient abbreviation.
+-- Supply it locally so Mathlib's generic subgroup normality instance applies.
+local instance : IsMulCommutative (IdeleClassGroup (𝓞 K) K) :=
+  ⟨⟨fun a b ↦ mul_comm a b⟩⟩
 
 /-- The attached layer is characterized by its norm subgroup among finite abelian layers. -/
 @[simp]
