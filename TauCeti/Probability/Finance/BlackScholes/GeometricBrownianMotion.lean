@@ -24,7 +24,7 @@ the stock price under that measure. Together with `TauCeti.BlackScholes.riskNeut
 and `TauCeti.BlackScholes.riskNeutralPrice_put`, this gives the closed-form call and put prices
 as the discounted expected payoffs `e^{-r t} E[(S_t - K)⁺]` and `e^{-r t} E[(K - S_t)⁺]`. The
 discounted stock `e^{-r t} S_t` is a martingale by
-`TauCeti.Probability.IsFilteredPreBrownianReal.martingale_geometricBrownianMotion`.
+`TauCeti.Probability.IsFilteredPreBrownianReal.martingale_discounted_geometricBrownianMotion`.
 
 ## Main declarations
 
