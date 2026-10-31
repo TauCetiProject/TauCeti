@@ -15,10 +15,25 @@ public import TauCeti.RingTheory.PowerSeries.Entire.GoodZero
 /-!
 # Multiplicity of a Fredholm zero and the Riesz summand
 
-The complementary Fredholm factor of a Riesz splitting is a unit at its chosen scalar.
-Over a complete ultrametric field, the finite factor is a power of `1 - a⁻¹ X` whose
-exponent is the dimension of the projector's range. Consequently a good zero of order `h`
-has a generalised eigenspace of dimension `h`.
+The complementary Fredholm factor of a Riesz splitting is a unit at its chosen scalar, so the
+finite factor carries the whole good zero of the Fredholm series. Over a coefficient ring, a good
+zero of order `h` therefore forces the finite projective range of the Riesz projector to have
+constant rank `h` on `Spec R`, and its Fredholm factor to be exactly `(1 - a⁻¹ X) ^ h`. Ranks are
+computed at the points of `Spec R` algebraically, so nilpotent coefficient information is not
+discarded. Over a complete ultrametric field, the finite factor is a power of `1 - a⁻¹ X` whose
+exponent is the dimension of the projector's range even without a good-zero hypothesis, and a good
+zero of order `h` has a generalised eigenspace of dimension `h`.
+
+## Main results
+
+* `ContinuousLinearMap.IsRieszProjection.isGoodZero_charPowerSeries_matrixCoeff_mul`: the finite
+  Fredholm factor has a good zero of the same order.
+* `ContinuousLinearMap.IsRieszProjection.rankAtStalk_range`: the range has constant rank `h`.
+* `ContinuousLinearMap.IsRieszProjection.charPowerSeries_matrixCoeff_mul_eq_pow`,
+  `ContinuousLinearMap.IsRieszProjection.charPowerSeries_matrixCoeff_eq_pow_mul`: the finite
+  factor is `(1 - a⁻¹ X) ^ h`, and the Fredholm series splits off this factor.
+* `ContinuousLinearMap.IsRieszProjection.finrank_range`: over a field, the generalised eigenspace
+  has dimension `h`.
 
 ## References
 
@@ -55,6 +70,124 @@ theorem isUnit_evalAt_charPowerSeries_complement (hE : IsRieszProjection u a h E
   simp only [sub_apply, one_apply_eq_self, smul_apply, mul_apply_eq_comp, add_apply, comp_apply]
   abel
 
+/-- The Fredholm factor on the finite Riesz summand inherits the good zero of the Fredholm series,
+with the same order, because the complementary factor is a unit there. -/
+theorem isGoodZero_charPowerSeries_matrixCoeff_mul (hE : IsRieszProjection u a h E)
+    (hu : u.IsRowCompact) (hH : u.matrixCoeff.charPowerSeries.IsGoodZero a h) :
+    (u * E).matrixCoeff.charPowerSeries.IsGoodZero a h := by
+  rw [hu.charPowerSeries_matrixCoeff_eq_mul_of_commute hE.isIdempotentElem hE.commute] at hH
+  exact ((hu.comp_clm E).isEntire_charPowerSeries.isGoodZero_mul_iff_of_isUnit
+    (hu.comp_clm (1 - E)).isEntire_charPowerSeries
+    (hE.isUnit_evalAt_charPowerSeries_complement hu)).mp hH
+
+/-- On the finite projective range of a Riesz projection at `a`, the restriction `f` of `u`
+differs from `μ = a⁻¹` by a nilpotent endomorphism, and the Fredholm factor `H_(uE)` is the
+reversed characteristic polynomial `det (1 - X f)`. The additive group of the range is fixed
+first, so that its endomorphisms form a ring. -/
+private theorem exists_charPowerSeries_eq_projectiveCharpolyRev (hE : IsRieszProjection u a h E)
+    (hu : u.IsRowCompact) {μ : R} (hμa : μ * a = 1) :
+    letI : AddCommGroup E.range := inferInstance
+    ∃ (_ : Module.Finite R E.range) (_ : Module.Projective R E.range)
+      (f : Module.End R E.range), IsNilpotent (f - μ • 1) ∧
+        (u * E).matrixCoeff.charPowerSeries = (f.projectiveCharpolyRev : PowerSeries R) := by
+  -- Fix the additive group before forming endomorphisms of the range, so their ring
+  -- structure uses the same additive monoid as the submodule and its normed structure.
+  let : AddCommGroup E.range := inferInstance
+  have := (hE.isRowCompact hu).finite_range_of_isIdempotentElem hE.isIdempotentElem
+  -- Restrict to the finite range, presented as a retract by the projector E.
+  let v : E.range →L[R] E.range := u.restrict hE.mapsTo_range
+  have hfix (x : E.range) : E x = x :=
+    (LinearMap.IsIdempotentElem.mem_range_iff
+      (ContinuousLinearMap.IsIdempotentElem.toLinearMap hE.isIdempotentElem)).mp x.property
+  have hri : E.rangeRestrict.comp E.range.subtypeL = .id R E.range := by
+    exact ContinuousLinearMap.ext fun x ↦ Subtype.ext (hfix x)
+  have hM : TauCeti.HasPr R E.range :=
+    (isPrCompact_iff_isRowCompact.2 hu).hasPr_source.of_retract
+      E.range.subtypeL E.rangeRestrict hri
+  have := (hE.isRowCompact hu).projective_range_of_isIdempotentElem hE.isIdempotentElem
+  have hv := isPrCompact_of_finite (R := R) (M := E.range) (L := E.range) hM hM v
+  let f : Module.End R E.range := v.toLinearMap
+  refine ⟨inferInstance, inferInstance, f, ?_, ?_⟩
+  · -- On this range, nilpotence of 1 - a u is equivalent to nilpotence of u - μ.
+    have hC : IsNilpotent ((1 : Module.End R E.range) - a • f) := by
+      refine ⟨h, ?_⟩
+      have hrestrict : (1 : Module.End R E.range) - a • f =
+          ((1 - a • u : C₀(I, R) →L[R] C₀(I, R)) : Module.End R C₀(I, R)).restrict
+            hE.mapsTo_range_one_sub_smul := by
+        ext x
+        rfl
+      rw [hrestrict]
+      refine (Module.End.pow_restrict h
+        (fun x hx ↦ hE.mapsTo_range_one_sub_smul hx)).trans ?_
+      ext x : 1
+      apply Subtype.ext
+      have hx := congr($(hE.pow_mul_eq_zero) (x : C₀(I, R)))
+      simpa only [LinearMap.coe_restrict_apply, ← toLinearMap_pow, coe_coe,
+        mul_apply_eq_comp, hfix, zero_apply, LinearMap.zero_apply, ZeroMemClass.coe_zero] using hx
+    have hscale : f - μ • (1 : Module.End R E.range) =
+        (-μ) • ((1 : Module.End R E.range) - a • f) := by
+      rw [smul_sub, smul_smul, neg_mul, hμa]
+      module
+    rw [hscale]
+    exact hC.smul _
+  · have hext : E.range.subtypeL.comp (v.comp E.rangeRestrict) = u * E := by
+      ext x
+      rfl
+    -- Presentation independence transports the finite characteristic-polynomial formula.
+    have hchar := charPowerSeries_eq_projectiveCharpolyRev (R := R) (M := E.range) hM v
+    rw [← hext, ← hv.charPowerSeries_eq hri, hchar]
+
+/-- **Constant rank of the Riesz summand.** At a good zero of order `h` the range of a Riesz
+projection, a finitely generated projective module, has rank `h` at every point of `Spec R`.
+Ranks are computed algebraically, so nilpotent coefficients are retained; at order zero the range
+is zero. -/
+theorem rankAtStalk_range (hE : IsRieszProjection u a h E) (hu : u.IsRowCompact)
+    (hH : u.matrixCoeff.charPowerSeries.IsGoodZero a h) (p : PrimeSpectrum R) :
+    Module.rankAtStalk (R := R) E.range p = h := by
+  rcases Nat.eq_zero_or_pos h with rfl | hh
+  · have hE0 := hE.eq_zero_of_order_zero
+    have : Subsingleton E.range := ⟨by rintro ⟨_, x, rfl⟩ ⟨_, y, rfl⟩; simp [hE0]⟩
+    simp
+  have ha := hH.isUnit hu.isEntire_charPowerSeries (Matrix.constantCoeff_charPowerSeries _) hh
+  -- fix the additive group of the range, as in the statement of the restriction lemma
+  let : AddCommGroup E.range := inferInstance
+  obtain ⟨_, _, f, hf, hchar⟩ :=
+    hE.exists_charPowerSeries_eq_projectiveCharpolyRev hu (Ring.inverse_mul_cancel a ha)
+  have hP := (hE.isGoodZero_charPowerSeries_matrixCoeff_mul hu hH).isUnit_evalAt_hasseDeriv
+  rw [hchar, PowerSeries.evalAt_hasseDeriv_coe] at hP
+  exact f.rankAtStalk_eq_of_isNilpotent_sub_smul (Ring.inverse_mul_cancel a ha) hf hP p
+
+/-- **The determinant of the Riesz summand.** At a good zero of order `h`, the Fredholm factor on
+the finite Riesz summand is exactly `(1 - a⁻¹ X) ^ h`, with `a⁻¹ = Ring.inverse a`, over any
+coefficient ring. At order zero the factor is one, even when the scalar is not a unit. -/
+theorem charPowerSeries_matrixCoeff_mul_eq_pow (hE : IsRieszProjection u a h E)
+    (hu : u.IsRowCompact) (hH : u.matrixCoeff.charPowerSeries.IsGoodZero a h) :
+    (u * E).matrixCoeff.charPowerSeries =
+      (1 - PowerSeries.C (Ring.inverse a) * PowerSeries.X) ^ h := by
+  rcases Nat.eq_zero_or_pos h with rfl | hh
+  · simp [hE.eq_zero_of_order_zero]
+  have ha := hH.isUnit hu.isEntire_charPowerSeries (Matrix.constantCoeff_charPowerSeries _) hh
+  let : AddCommGroup E.range := inferInstance
+  obtain ⟨_, _, f, hf, hchar⟩ :=
+    hE.exists_charPowerSeries_eq_projectiveCharpolyRev hu (Ring.inverse_mul_cancel a ha)
+  have hP := hE.isGoodZero_charPowerSeries_matrixCoeff_mul hu hH
+  simp_rw [hchar, PowerSeries.isGoodZero_iff, PowerSeries.evalAt_hasseDeriv_coe] at hP
+  rw [hchar, f.projectiveCharpolyRev_eq_pow_of_isNilpotent_sub_smul_of_isUnit
+    (Ring.inverse_mul_cancel a ha) hf hP.1 hP.2]
+  simp
+
+/-- **Factorisation along a Riesz splitting.** At a good zero of order `h`, the Fredholm series
+factors as `(1 - a⁻¹ X) ^ h`, with `a⁻¹ = Ring.inverse a`, times the Fredholm factor of the
+complementary summand, which is a unit at `a`
+(`ContinuousLinearMap.IsRieszProjection.isUnit_evalAt_charPowerSeries_complement`). -/
+theorem charPowerSeries_matrixCoeff_eq_pow_mul (hE : IsRieszProjection u a h E)
+    (hu : u.IsRowCompact) (hH : u.matrixCoeff.charPowerSeries.IsGoodZero a h) :
+    u.matrixCoeff.charPowerSeries =
+      (1 - PowerSeries.C (Ring.inverse a) * PowerSeries.X) ^ h *
+        (u * (1 - E)).matrixCoeff.charPowerSeries := by
+  rw [← hE.charPowerSeries_matrixCoeff_mul_eq_pow hu hH,
+    hu.charPowerSeries_matrixCoeff_eq_mul_of_commute hE.isIdempotentElem hE.commute]
+
 end Ring
 
 section Field
@@ -75,52 +208,10 @@ theorem charPowerSeries_matrixCoeff_mul_eq_pow_finrank (hE : IsRieszProjection u
       simp [ha]
     have hzero : E = 0 := by simpa only [hC, one_pow, one_mul] using hE.pow_mul_eq_zero
     simp [ha, hzero]
-  -- Fix the additive group before forming endomorphisms of the range, so their ring
-  -- structure uses the same additive monoid as the submodule and its normed structure.
   let : AddCommGroup E.range := inferInstance
-  have := (hE.isRowCompact hu).finite_range_of_isIdempotentElem hE.isIdempotentElem
-  -- Restrict to the finite range, presented as a retract by the projector E.
-  let v : E.range →L[K] E.range := u.restrict hE.mapsTo_range
-  have hfix (x : E.range) : E x = x :=
-    (LinearMap.IsIdempotentElem.mem_range_iff
-      (ContinuousLinearMap.IsIdempotentElem.toLinearMap hE.isIdempotentElem)).mp x.property
-  have hri : E.rangeRestrict.comp E.range.subtypeL = .id K E.range := by
-    exact ContinuousLinearMap.ext fun x ↦ Subtype.ext (hfix x)
-  have hM : TauCeti.HasPr K E.range :=
-    (isPrCompact_iff_isRowCompact.2 hu).hasPr_source.of_retract
-      E.range.subtypeL E.rangeRestrict hri
-  have hv := isPrCompact_of_finite (R := K) (M := E.range) (L := E.range) hM hM v
-  let f : Module.End K E.range := v.toLinearMap
-  -- On this range, nilpotence of 1 - a u is equivalent to nilpotence of u - a⁻¹.
-  have hnil : IsNilpotent (f - a⁻¹ • (1 : Module.End K E.range)) := by
-    have hC : IsNilpotent ((1 : Module.End K E.range) - a • f) := by
-      refine ⟨h, ?_⟩
-      have hrestrict : (1 : Module.End K E.range) - a • f =
-          ((1 - a • u : C₀(I, K) →L[K] C₀(I, K)) : Module.End K C₀(I, K)).restrict
-            hE.mapsTo_range_one_sub_smul := by
-        ext x
-        rfl
-      rw [hrestrict]
-      refine (Module.End.pow_restrict h
-        (fun x hx ↦ hE.mapsTo_range_one_sub_smul hx)).trans ?_
-      ext x : 1
-      apply Subtype.ext
-      have hx := congr($(hE.pow_mul_eq_zero) (x : C₀(I, K)))
-      simpa only [LinearMap.coe_restrict_apply, ← toLinearMap_pow, coe_coe,
-        mul_apply_eq_comp, hfix, zero_apply, LinearMap.zero_apply, ZeroMemClass.coe_zero] using hx
-    have hscale : f - a⁻¹ • (1 : Module.End K E.range) =
-        (-a⁻¹) • ((1 : Module.End K E.range) - a • f) := by
-      simp only [smul_sub, smul_smul, neg_mul, inv_mul_cancel₀ ha, neg_smul, one_smul]
-      module
-    rw [hscale]
-    exact hC.smul _
-  have hext : E.range.subtypeL.comp (v.comp E.rangeRestrict) = u * E := by
-    ext x
-    rfl
-  -- Presentation independence transports the finite characteristic-polynomial formula.
-  have hchar := charPowerSeries_eq_projectiveCharpolyRev (R := K) (M := E.range) hM v
-  rw [← hext, ← hv.charPowerSeries_eq hri, hchar,
-    LinearMap.projectiveCharpolyRev_eq_pow_of_isNilpotent_sub_smul f _ hnil]
+  obtain ⟨_, _, f, hf, hchar⟩ :=
+    hE.exists_charPowerSeries_eq_projectiveCharpolyRev hu (inv_mul_cancel₀ ha)
+  rw [hchar, LinearMap.projectiveCharpolyRev_eq_pow_of_isNilpotent_sub_smul f _ hf]
   simp
 
 /-- The dimension of the Riesz summand equals the order of the Fredholm zero, including
@@ -128,43 +219,10 @@ order zero. No discrete-valuation or spherical-completeness hypothesis is needed
 theorem finrank_range (hE : IsRieszProjection u a h E) (hu : u.IsRowCompact)
     (hH : u.matrixCoeff.charPowerSeries.IsGoodZero a h) :
     Module.finrank K E.range = h := by
-  by_cases hh : h = 0
-  · subst h
-    have hrange : E.range = ⊥ := by
-      rw [hE.eq_zero_of_order_zero]
-      exact LinearMap.range_zero
-    rw [hrange]
-    exact finrank_bot K C₀(I, K)
-  have ha : a ≠ 0 :=
-    (hH.isUnit hu.isEntire_charPowerSeries (Matrix.constantCoeff_charPowerSeries _)
-      (Nat.pos_of_ne_zero hh)).ne_zero
-  let n := Module.finrank K E.range
-  let S := (u * (1 - E)).matrixCoeff.charPowerSeries
-  have hS : S.IsEntire := (hu.comp_clm (1 - E)).isEntire_charPowerSeries
-  have hSa : IsUnit (S.evalAt a) := hE.isUnit_evalAt_charPowerSeries_complement hu
-  -- Rewrite the normalised finite factor in the coordinate centred at a.
-  have hlinear : (1 - PowerSeries.C a⁻¹ * PowerSeries.X : PowerSeries K) =
-      (PowerSeries.X - PowerSeries.C a) * PowerSeries.C (-a⁻¹) := by
-    have hmul : PowerSeries.C a * PowerSeries.C a⁻¹ = (1 : PowerSeries K) := by
-      rw [← map_mul, mul_inv_cancel₀ ha, map_one]
-    rw [map_neg]
-    linear_combination -hmul
-  have hfactor : u.matrixCoeff.charPowerSeries =
-      (PowerSeries.X - PowerSeries.C a) ^ n * (PowerSeries.C ((-a⁻¹) ^ n) * S) := by
-    rw [hu.charPowerSeries_matrixCoeff_eq_mul_of_commute hE.isIdempotentElem hE.commute,
-      hE.charPowerSeries_matrixCoeff_mul_eq_pow_finrank hu, hlinear, mul_pow,
-      ← map_pow, mul_assoc]
-  have hG : (PowerSeries.C ((-a⁻¹) ^ n) * S).IsEntire :=
-    (PowerSeries.isEntire_C _).mul hS
-  have hGa : IsUnit ((PowerSeries.C ((-a⁻¹) ^ n) * S).evalAt a) := by
-    rw [(PowerSeries.isEntire_C _).evalAt_mul hS, PowerSeries.evalAt_C,
-      Algebra.algebraMap_self_apply]
-    exact (isUnit_iff_ne_zero.mpr (pow_ne_zero n (neg_ne_zero.mpr (inv_ne_zero ha)))).mul hSa
-  have horder : ((PowerSeries.X - PowerSeries.C a) ^ n *
-      (PowerSeries.C ((-a⁻¹) ^ n) * S)).IsGoodZero a n :=
-    hG.isGoodZero_X_sub_C_pow_mul_iff.mpr hGa
-  rw [← hfactor] at horder
-  exact (hH.unique horder).symm
+  have hr := hE.rankAtStalk_range hu hH ⟨⊥, Ideal.isPrime_bot⟩
+  let : AddCommGroup E.range := inferInstance
+  rw [Module.rankAtStalk_eq_finrank_of_free] at hr
+  exact hr
 
 /-- Every stabilised generalised eigenspace has dimension equal to the order of the
 corresponding Fredholm zero. -/
@@ -174,13 +232,6 @@ theorem finrank_ker_pow (hE : IsRieszProjection u a h E) (hu : u.IsRowCompact)
       Module.End K C₀(I, K))) = h := by
   rw [hE.ker_pow_eq hn, ← hE.range_eq_ker]
   exact hE.finrank_range hu hH
-
-/-- The finite factor in a Riesz splitting has the precise exponent given by the order of
-the Fredholm zero. At order zero the factor is one, even when the scalar is zero. -/
-theorem charPowerSeries_matrixCoeff_mul_eq_pow (hE : IsRieszProjection u a h E)
-    (hu : u.IsRowCompact) (hH : u.matrixCoeff.charPowerSeries.IsGoodZero a h) :
-    (u * E).matrixCoeff.charPowerSeries = (1 - PowerSeries.C a⁻¹ * PowerSeries.X) ^ h := by
-  rw [hE.charPowerSeries_matrixCoeff_mul_eq_pow_finrank hu, hE.finrank_range hu hH]
 
 end Field
 

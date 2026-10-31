@@ -11,8 +11,8 @@ public import Mathlib.Algebra.Algebra.Operations
 /-!
 # Positive-degree action on concentrated graded modules
 
-A graded module concentrated in a single internal degree is annihilated by positive-degree
-scalars. Concentration is preserved by graded surjections.
+A graded module concentrated in a single internal degree is its own piece in that degree, and is
+annihilated by positive-degree scalars. Concentration is preserved by graded surjections.
 Such modules are the test targets for detecting the generating degrees of minimal
 projective resolution terms via Ext. The algebra itself need not be nonnegatively graded.
 
@@ -32,6 +32,17 @@ universe uk uA v
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A}
+
+/-- A graded module concentrated in degree `p` is its own degree-`p` piece. -/
+theorem piece_eq_top_of_concentrated {N : GradedModuleCat.{v} 𝒜} {p : ℤ}
+    (hN : ∀ q, q ≠ p → N.grading.piece q = ⊥) : N.grading.piece p = ⊤ := by
+  refine top_unique ?_
+  rw [← N.grading.isInternal.submodule_iSup_eq_top]
+  refine iSup_le fun q => ?_
+  rcases eq_or_ne q p with rfl | hq
+  · exact le_rfl
+  · rw [hN q hq]
+    exact bot_le
 
 /-- Positive-degree scalars annihilate any module concentrated in one internal degree. -/
 theorem positive_smul_top_eq_bot_of_concentrated (N : GradedModuleCat.{v} 𝒜) (p : ℤ)

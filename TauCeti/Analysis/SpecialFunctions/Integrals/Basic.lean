@@ -18,6 +18,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 
 ## Main declarations
 
+* `TauCeti.intervalIntegrable_sub_rpow`, `TauCeti.integral_sub_rpow`:
+  `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
 * `TauCeti.integral_one_div_sqrt_one_sub_sq`: `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`
   for `a, b ∈ (-1, 1)`.
 * `TauCeti.integral_exp_mul`: `∫ x in a..b, exp (c x) = (exp (c b) - exp (c a)) / c` for
@@ -40,6 +42,18 @@ public section
 open scoped Nat
 
 namespace TauCeti
+
+/-- The weight `(b - x)^r`, singular at `x = b`, is interval integrable between `a` and `b` for
+`r > -1`. -/
+theorem intervalIntegrable_sub_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
+    IntervalIntegrable (fun x => (b - x) ^ r) MeasureTheory.volume a b := by
+  simpa using (intervalIntegral.intervalIntegrable_rpow' hr (a := b - a) (b := 0)).comp_sub_left b
+
+/-- `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`. -/
+theorem integral_sub_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
+    ∫ x in a..b, (b - x) ^ r = (b - a) ^ (r + 1) / (r + 1) := by
+  rw [intervalIntegral.integral_comp_sub_left (fun x => x ^ r), sub_self,
+    integral_rpow (Or.inl hr), Real.zero_rpow (by linarith : r + 1 ≠ 0), sub_zero]
 
 /-- The integral of `1 / √(1 - x²)` is `arcsin`, between any two points of `(-1, 1)`. -/
 theorem integral_one_div_sqrt_one_sub_sq {a b : ℝ} (ha : a ∈ Set.Ioo (-1) 1)
