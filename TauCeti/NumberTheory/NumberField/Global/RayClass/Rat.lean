@@ -61,6 +61,7 @@ and a class with positive sign is determined by its residue.
 * `TauCeti.GlobalNumberFields.ratModulus_dvd_ratModulus_iff` and
   `TauCeti.GlobalNumberFields.ratFiniteModulus_dvd_ratModulus_iff`: divisibility of the moduli
   `(d)·∞` and `(d)` into `(n)·∞` is `d ∣ n`.
+* `TauCeti.GlobalNumberFields.exists_dvd_ratModulus`: every modulus of `ℚ` divides some `(N)·∞`.
 * `TauCeti.GlobalNumberFields.ratFiniteModulusEquivZMod_classMap`: the transition map from
   `(n)·∞` to `(d)` is reduction modulo `d` followed by the quotient by `±1`.
 * `TauCeti.GlobalNumberFields.ratFiniteModulusEquivZMod_idealClass`: the ray class modulo `(n)` of
@@ -231,6 +232,13 @@ theorem ratModulus_dvd_ratModulus_iff {d : ℕ} {hd : d ≠ 0} :
   rw [Modulus.dvd_iff, ratModulus_finitePart, ratModulus_finitePart, ratModulus_infinitePart,
     ratModulus_infinitePart, Ideal.span_singleton_dvd_span_singleton_iff_dvd,
     NumberField.RingOfIntegers.natCast_dvd_natCast, and_iff_left (Finset.Subset.refl _)]
+
+/-- **Every modulus of `ℚ` divides a modulus `(N)·∞`**: the absolute norm `N` of its finite part
+lies in that finite part, and the real place is the only infinite place of `ℚ`. -/
+theorem exists_dvd_ratModulus (𝔪 : Modulus ℚ) : ∃ (N : ℕ) (hN : N ≠ 0), 𝔪 ∣ ratModulus N hN :=
+  ⟨Ideal.absNorm 𝔪.finitePart, Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot,
+    Modulus.dvd_iff.mpr ⟨Ideal.dvd_span_singleton.mpr (Ideal.absNorm_mem _),
+      fun _ _ ↦ Finset.mem_singleton.mpr (Subtype.ext (Subsingleton.elim _ _))⟩⟩
 
 /-- **The transition map from `(n)·∞` to `(d)·∞` is reduction modulo `d` on `(ZMod n)ˣ`.** -/
 theorem ratModulusEquivZMod_classMap {d : ℕ} {hd : d ≠ 0} (h : ratModulus d hd ∣ ratModulus n hn)
