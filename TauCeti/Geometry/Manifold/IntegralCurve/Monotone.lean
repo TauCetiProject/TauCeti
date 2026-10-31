@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Slope
+import TauCeti.Analysis.Calculus.Deriv.LevelCrossing
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
@@ -26,6 +27,11 @@ If instead `df(v) = 0` along an integral curve defined on an open preconnected s
 `f` is constant along it. This is the conservation statement behind first integrals of a vector
 field.
 
+If `df(v) > 0` is only known at the points of `γ` on a level `f⁻¹(c)`, then `γ` crosses that level
+only upwards: once `f (γ a) ≥ c`, it stays in `{f > c}` at every later time, and once
+`f (γ b) ≤ c`, it was in `{f < c}` at every earlier time. This is how the trajectories of a vector
+field pointing out of a domain `{f ≤ c}` along its boundary are shown never to re-enter it.
+
 ## Main declarations
 
 * `IsMIntegralCurve.antitone_comp`: `f` is antitone along `γ`.
@@ -33,6 +39,8 @@ field.
   at which `df(v) < 0`.
 * `IsMIntegralCurveOn.apply_eq_of_mvfderiv_apply_eq_zero`: `f` is constant along `γ` when
   `df(v) = 0` along it.
+* `IsMIntegralCurveOn.lt_apply_of_le_apply`, `IsMIntegralCurveOn.apply_lt_of_apply_le`: `γ` crosses
+  a level of `f` only upwards when `df(v) > 0` along that level.
 -/
 
 public section
@@ -90,5 +98,34 @@ theorem apply_eq_of_mvfderiv_apply_eq_zero {s : Set ℝ} (hγ : IsMIntegralCurve
   exact hs.is_const_of_deriv_eq_zero hs'
     (fun u hu ↦ (hd u hu).differentiableAt.differentiableWithinAt) (fun u hu ↦ (hd u hu).deriv)
     ht ht₀
+
+variable {s : Set ℝ} {c a b : ℝ}
+
+/-- **Integral curves cross a level only upwards.** Let `γ` be an integral curve of `v` on an open
+set containing `[a, b]`, with `f ∘ γ` continuous on `[a, b]`, and suppose that `f` is
+differentiable with `df(v) > 0` at every point `γ t`, `t ∈ [a, b]`, of the level `f⁻¹(c)`. If
+`c ≤ f (γ a)`, then `c < f (γ t)` for every `t ∈ (a, b]`. -/
+theorem lt_apply_of_le_apply (hγ : IsMIntegralCurveOn γ v s) (hs : IsOpen s) (hab : Icc a b ⊆ s)
+    (hf : ContinuousOn (f ∘ γ) (Icc a b))
+    (hvf : ∀ t ∈ Icc a b, f (γ t) = c →
+      MDifferentiableAt I 𝓘(ℝ) f (γ t) ∧ 0 < mvfderiv I f (γ t) (v (γ t)))
+    (ha : c ≤ f (γ a)) : ∀ ⦃t⦄, t ∈ Ioc a b → c < f (γ t) :=
+  TauCeti.lt_image_of_deriv_pos_boundary (g := f ∘ γ) (g' := fun t ↦ mvfderiv I f (γ t) (v (γ t)))
+    hf (fun _ ht hft ↦
+      ⟨TauCeti.Manifold.hasDerivAt_comp_curve (hvf _ ht hft).1
+        ((hγ.isMIntegralCurveAt (hs.mem_nhds (hab ht))).hasMFDerivAt), (hvf _ ht hft).2⟩) ha
+
+/-- **Integral curves cross a level only upwards, looking backwards.** Let `γ` be an integral curve
+of `v` on an open set containing `[a, b]`, with `f ∘ γ` continuous on `[a, b]`, and suppose that
+`f` is differentiable with `df(v) > 0` at every point `γ t`, `t ∈ [a, b]`, of the level `f⁻¹(c)`.
+If `f (γ b) ≤ c`, then `f (γ t) < c` for every `t ∈ [a, b)`. -/
+theorem apply_lt_of_apply_le (hγ : IsMIntegralCurveOn γ v s) (hs : IsOpen s) (hab : Icc a b ⊆ s)
+    (hf : ContinuousOn (f ∘ γ) (Icc a b))
+    (hvf : ∀ t ∈ Icc a b, f (γ t) = c →
+      MDifferentiableAt I 𝓘(ℝ) f (γ t) ∧ 0 < mvfderiv I f (γ t) (v (γ t)))
+    (hb : f (γ b) ≤ c) : ∀ ⦃t⦄, t ∈ Ico a b → f (γ t) < c := fun _ ht ↦ not_le.1 fun hct ↦
+  (hγ.lt_apply_of_le_apply hs ((Icc_subset_Icc_left ht.1).trans hab)
+    (hf.mono (Icc_subset_Icc_left ht.1)) (fun u hu ↦ hvf u (Icc_subset_Icc_left ht.1 hu)) hct
+    ⟨ht.2, le_rfl⟩).not_ge hb
 
 end IsMIntegralCurveOn

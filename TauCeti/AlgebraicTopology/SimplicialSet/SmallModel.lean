@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.KanComplex
-public import TauCeti.AlgebraicTopology.SimplicialSet.NerveCodiscrete
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Codiscrete
 
 /-!
 # Small models of simplicial homotopy types
