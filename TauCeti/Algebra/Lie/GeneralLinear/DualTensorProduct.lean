@@ -51,6 +51,7 @@ noncomputable def dualStandardCoeff (s : Fin n) : Module.Dual K (Fin n → K) �
     (equivFinsuppOfBasisLeft (Pi.basisFun K (Fin n)).dualBasis).toLinearMap
 
 /-- The coefficient of `f ⊗ m` at `e*ₛ` is `f (Pi.single s 1) • m`. -/
+@[simp]
 theorem dualStandardCoeff_tmul (s : Fin n) (f : Module.Dual K (Fin n → K)) (m : M) :
     dualStandardCoeff M s (f ⊗ₜ m) = f (Pi.single s 1) • m := by
   simp [dualStandardCoeff]
@@ -74,7 +75,7 @@ theorem exists_dualStandardCoeff_ne_zero_of_ne_zero {x : Module.Dual K (Fin n �
 /-- The coefficients of `∑ᵣ e*ᵣ ⊗ mᵣ` are the `mᵣ`. -/
 theorem dualStandardCoeff_sum_dualBasis_tmul (m : Fin n → M) (s : Fin n) :
     dualStandardCoeff M s (∑ r, (Pi.basisFun K (Fin n)).dualBasis r ⊗ₜ m r) = m s := by
-  simp [dualStandardCoeff_tmul, Pi.single_apply]
+  simp
 
 variable [LieRingModule (Matrix (Fin n) (Fin n) K) M] [LieModule K (Matrix (Fin n) (Fin n) K) M]
 
