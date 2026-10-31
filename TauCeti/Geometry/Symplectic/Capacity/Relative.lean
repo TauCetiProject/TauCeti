@@ -19,9 +19,9 @@ import TauCeti.Geometry.Symplectic.Manifold.Rescale
 Let `σ` be a smooth two-form on a manifold `M`, and let `V, Z ⊆ M`. A function `F : M → ℝ` is
 **`(V, Z)`-admissible** (`TauCeti.SmoothTwoForm.IsRelContractibleHZAdmissible`) when
 
-* `F` is smooth, and its support is compact and contained in the interior of `V` and in the
-  interior of the manifold `M`;
-* `F` attains its maximum at every point of `Z`;
+* `F` is smooth, nonnegative, and its support is compact and contained in the interior of `V`
+  and in the interior of the manifold `M`;
+* `F` vanishes on a nonempty open subset of `V` and attains its maximum at every point of `Z`;
 * the Hamiltonian vector field `X_F` has no **fast contractible** periodic orbits: every integral
   curve `γ` of `X_F` that is `T`-periodic for some `0 < T ≤ 1`, and whose loop `ℝ/Tℤ → M` is
   contractible in the whole manifold `M`, is constant.
@@ -93,11 +93,14 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {σ : SmoothTwoForm I M} {V Z : Set M} {F : M → ℝ}
 
-/-- A function `F` is **`(V, Z)`-admissible** for a manifold with two-form `σ` when it is smooth,
-its support is compact and lies in the interiors of `V` and of `M`, it attains its maximum at
-every point of `Z`, and its Hamiltonian vector field has no nonconstant `T`-periodic orbit with
-`0 < T ≤ 1` whose loop is contractible in `M`. These are the Hamiltonians whose maxima define the
-relative `π₁`-sensitive Hofer–Zehnder capacity `c°_HZ(V, Z)`. -/
+/-- A function `F` is **`(V, Z)`-admissible** for a manifold with two-form `σ` when it is smooth
+and nonnegative, its support is compact and lies in the interiors of `V` and of `M`, it vanishes
+on a nonempty open subset of `V`, it attains its maximum at every point of `Z`, and its
+Hamiltonian vector field has no nonconstant `T`-periodic orbit with `0 < T ≤ 1` whose loop is
+contractible in `M`. These are the Hamiltonians whose maxima define the relative
+`π₁`-sensitive Hofer–Zehnder capacity `c°_HZ(V, Z)`. On a closed manifold with `V = M` the
+support conditions are vacuous, and the vanishing condition is what excludes positive
+constants. -/
 structure IsRelContractibleHZAdmissible (σ : SmoothTwoForm I M) (V Z : Set M) (F : M → ℝ) :
     Prop where
   /-- An admissible Hamiltonian is smooth. -/
@@ -108,6 +111,10 @@ structure IsRelContractibleHZAdmissible (σ : SmoothTwoForm I M) (V Z : Set M) (
   tsupport_subset_interior : tsupport F ⊆ interior V
   /-- An admissible Hamiltonian is supported away from the boundary of the manifold. -/
   tsupport_subset_interior_manifold : tsupport F ⊆ I.interior M
+  /-- An admissible Hamiltonian is nonnegative. -/
+  nonneg : ∀ x, 0 ≤ F x
+  /-- An admissible Hamiltonian vanishes on a nonempty open subset of `V`. -/
+  exists_isOpen_eqOn_zero : ∃ U : Set M, IsOpen U ∧ U.Nonempty ∧ U ⊆ V ∧ EqOn F 0 U
   /-- An admissible Hamiltonian attains its maximum at every point of `Z`. -/
   isMaxOn : ∀ z ∈ Z, IsMaxOn F univ z
   /-- **No fast contractible periodic orbits.** A `T`-periodic orbit of the Hamiltonian vector
@@ -124,6 +131,10 @@ theorem IsRelContractibleHZAdmissible.mono {V' Z' : Set M} (hV : V ⊆ V') (hZ :
   isCompact_tsupport := hF.isCompact_tsupport
   tsupport_subset_interior := hF.tsupport_subset_interior.trans (interior_mono hV)
   tsupport_subset_interior_manifold := hF.tsupport_subset_interior_manifold
+  nonneg := hF.nonneg
+  exists_isOpen_eqOn_zero := by
+    obtain ⟨U, hU, hUne, hUV, hzero⟩ := hF.exists_isOpen_eqOn_zero
+    exact ⟨U, hU, hUne, hUV.trans hV, hzero⟩
   isMaxOn z hz := hF.isMaxOn z (hZ hz)
   eq_of_isMIntegralCurve := hF.eq_of_isMIntegralCurve
 
@@ -181,6 +192,10 @@ private theorem IsRelContractibleHZAdmissible.smul_smul (hσ : σ.IsNondegenerat
     (tsupport_smul_subset_right (fun _ ↦ c) F).trans hF.tsupport_subset_interior
   tsupport_subset_interior_manifold :=
     (tsupport_smul_subset_right (fun _ ↦ c) F).trans hF.tsupport_subset_interior_manifold
+  nonneg x := mul_nonneg hc.le (hF.nonneg x)
+  exists_isOpen_eqOn_zero := by
+    obtain ⟨U, hU, hUne, hUV, hzero⟩ := hF.exists_isOpen_eqOn_zero
+    exact ⟨U, hU, hUne, hUV, fun x hx ↦ by simp [hzero hx]⟩
   isMaxOn z hz := isMaxOn_iff.2 fun y hy ↦
     mul_le_mul_of_nonneg_left (isMaxOn_iff.1 (hF.isMaxOn z hz) y hy) hc.le
   eq_of_isMIntegralCurve := by
@@ -229,8 +244,14 @@ theorem IsRelContractibleHZAdmissible.comp_symm (hσ₂ : σ₂.IsNondegenerate)
         ψ.tsupport_comp_symm_subset_interior_image hF.tsupport_subset_interior
       tsupport_subset_interior_manifold :=
         ψ.tsupport_comp_symm_subset_interior_manifold (by simp) hF.tsupport_subset_interior_manifold
+      nonneg := fun y ↦ hF.nonneg _
+      exists_isOpen_eqOn_zero := ?_
       isMaxOn := ?_
       eq_of_isMIntegralCurve := ?_ }
+  · obtain ⟨U, hU, hUne, hUV, hzero⟩ := hF.exists_isOpen_eqOn_zero
+    refine ⟨ψ '' U, ψ.toHomeomorph.isOpenMap U hU, hUne.image ψ, image_mono hUV, ?_⟩
+    rintro _ ⟨x, hx, rfl⟩
+    simpa using hzero hx
   · rintro _ ⟨z, hz, rfl⟩
     refine isMaxOn_iff.2 fun y hy ↦ ?_
     simpa using isMaxOn_iff.1 (hF.isMaxOn z hz) (ψ.symm y) hy
