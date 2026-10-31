@@ -24,8 +24,8 @@ variable, so atomic formulas are cylinders or constant conditions; implication, 
 conjunction and disjunction, and quantification over the countable carrier preserve Borelness.
 In particular model classes of `L_{ω₁ω}` sentences are Borel, hence standard Borel subspaces when
 the language has countably many relation symbols. Model classes are closed under isomorphism of
-the decoded structures, across carriers, and a structure transported to any bijective carrier
-lies in the model class of each sentence it satisfies.
+the decoded structures, across carriers, and by `Equiv.realize_encodeVia` a structure transported
+to any bijective carrier lies in the model class of each sentence it satisfies.
 
 This is the easy direction of the López–Escobar theorem, which conversely presents every
 isomorphism-invariant Borel set of configurations on `ℕ` as a model class; see Gao, *Invariant
@@ -48,8 +48,6 @@ Descriptive Set Theory*, and Kechris, *Classical Descriptive Set Theory*.
   standard Borel.
 * `FirstOrder.Language.Equiv.mem_modelsOf_iff`: model classes are invariant under isomorphism of
   the decoded structures.
-* `Equiv.encodeVia_mem_modelsOf_iff`: a structure transported to the carrier `V` lies in the model
-  class of exactly the sentences it satisfies.
 -/
 
 public section
@@ -169,18 +167,3 @@ theorem mem_modelsOf_iff {c : RelationalConfiguration L V} {d : RelationalConfig
   @StrongHomClass.realize_sentenceInf L ι V W c.toStructure d.toStructure _ _ _ e φ
 
 end FirstOrder.Language.Equiv
-
-namespace Equiv
-
-open TauCeti RelationalConfiguration
-
-variable {L : Language.{u, v}} [L.IsRelational] {M : Type w} {V : Type w'} {ι : Type uι}
-variable [L.Structure M]
-
-/-- A structure transported along a bijection of carriers lies in the model class of exactly the
-sentences it satisfies. -/
-theorem encodeVia_mem_modelsOf_iff (e : M ≃ V) {φ : L.SentenceInf ι} :
-    e.encodeVia (L := L) ∈ modelsOf φ ↔ φ.Realize M :=
-  e.realize_encodeVia φ
-
-end Equiv
