@@ -11,6 +11,7 @@ import TauCeti.RingTheory.FormalGroup.AddInv
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Classification
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # Formal group laws of infinite height are additive
@@ -104,19 +105,9 @@ private theorem le_order_addError {g : PowerSeries R} {n : ℕ} (hg : n ≤ g.or
 private theorem homogeneousComponent_addError_smul_X_pow (c : R) (n : ℕ) :
     homogeneousComponent n (addError F (c • PowerSeries.X ^ n)) =
       ((c • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n - MvPolynomial.X 0 ^ n -
-        MvPolynomial.X 1 ^ n) : MvPolynomial (Fin 2) R) : MvPowerSeries (Fin 2) R) := by
-  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-  have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
-  simp only [addError, PowerSeries.subst_smul hF, PowerSeries.subst_smul (hX _),
-    PowerSeries.subst_pow hF, PowerSeries.subst_pow (hX _), PowerSeries.subst_X hF,
-    PowerSeries.subst_X (hX _), map_sub, _root_.map_smul,
-    homogeneousComponent_pow_of_constantCoeff_eq_zero F.zero_constantCoeff,
-    homogeneousComponent_pow_of_constantCoeff_eq_zero (constantCoeff_X _),
-    homogeneousComponent_one_X,
-    homogeneousComponent_one_eq_X_add_X F.lin_coeff_X F.lin_coeff_Y]
-  rw [MvPolynomial.smul_eq_C_mul, ← MvPolynomial.coeToMvPowerSeries.ringHom_apply]
-  simp only [map_mul, map_sub, map_pow, map_add, MvPolynomial.coeToMvPowerSeries.ringHom_apply,
-    MvPolynomial.coe_X, MvPolynomial.coe_C, MvPowerSeries.smul_eq_C_mul, mul_sub]
+        MvPolynomial.X 1 ^ n) : MvPolynomial (Fin 2) R) : MvPowerSeries (Fin 2) R) :=
+  PowerSeries.homogeneousComponent_subst_smul_X_pow_sub F.zero_constantCoeff F.lin_coeff_X
+    F.lin_coeff_Y c n
 
 /-- The additivity defect of `g` at substitutable `x, y` is `g(F(x, y)) - g(x) - g(y)`. -/
 private theorem subst_addError {σ : Type*} {x y : MvPowerSeries σ R}

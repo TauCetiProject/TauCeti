@@ -86,6 +86,13 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.homogeneousComponent_subst_of_le_order`: if `f` has order at least `n`, the
   degree-`n` homogeneous component of `f (φ)` is `c φ₁ ^ n`, for `c` the coefficient of `Xⁿ` in
   `f` and `φ₁` the linear part of `φ`.
+* `PowerSeries.homogeneousComponent_subst_eq_C_mul_X_pow`,
+  `PowerSeries.homogeneousComponent_subst_eq_C_mul_X_pow'`: for `φ = X + ⋯`, the degree-`n`
+  parts of `f (φ)` and of `φ (f)` are `c Xⁿ` when `f` has order at least `n` (and `n ≥ 1` for
+  `φ (f)`), for `c` the coefficient of `Xⁿ` in `f`.
+* `PowerSeries.homogeneousComponent_subst_smul_X_pow_sub`: for a two-variable series `f` with
+  linear part `X + Y`, the degree-`n` part of `c f(X, Y)ⁿ - c Xⁿ - c Yⁿ` is
+  `c ((X + Y)ⁿ - Xⁿ - Yⁿ)`.
 * `PowerSeries.coeff_subst_update_add_X_pow_mul`: perturbing one entry `a s` of a substituted
   family by `X ^ m * r` changes coefficients only from degree `m` on, and in degree `m` only
   through the linear term `Xₛ` of the multivariate series.
@@ -312,6 +319,66 @@ theorem homogeneousComponent_subst_of_le_order {σ : Type*} {φ : MvPowerSeries 
   simp only [add_zero, mul_one] at hmul hpow
   rw [subst_mul hφ', subst_pow hφ', subst_X hφ', hmul, hpow]
   simp [mul_comm, constantCoeff_subst_of_constantCoeff_zero hφ, coeff_mul_X_pow']
+
+/-- The degree-`n` part of `f (φ)` is `a Xⁿ` when `f` has order at least `n` and coefficient `a`
+of `Xⁿ`, and `φ = X + ⋯`. -/
+theorem homogeneousComponent_subst_eq_C_mul_X_pow {f : R⟦X⟧} {φ : S⟦X⟧} {n : ℕ}
+    (hn : n ≤ f.order) (hφ : constantCoeff φ = 0) (hφ₁ : coeff 1 φ = 1) :
+    MvPowerSeries.homogeneousComponent n (f.subst φ) =
+      MvPowerSeries.C (algebraMap R S (coeff n f)) * MvPowerSeries.X () ^ n := by
+  rw [homogeneousComponent_subst_of_le_order hφ hn,
+    MvPowerSeries.homogeneousComponent_one_eq_C_mul_X]
+  simp [← coeff_def, hφ₁]
+
+/-- The degree-`n` part of `φ (f)` is `a Xⁿ` when `f` has order at least `n ≥ 1` and coefficient
+`a` of `Xⁿ`, and `φ = X + ⋯`: the terms of `φ` of degree at least two contribute in degree at
+least `2 n`. -/
+theorem homogeneousComponent_subst_eq_C_mul_X_pow' {f : S⟦X⟧} {φ : R⟦X⟧} {n : ℕ}
+    (hn₀ : n ≠ 0) (hn : n ≤ f.order) (hφ : constantCoeff φ = 0) (hφ₁ : coeff 1 φ = 1) :
+    MvPowerSeries.homogeneousComponent n (φ.subst f) =
+      MvPowerSeries.C (coeff n f) * MvPowerSeries.X () ^ n := by
+  have hf₀ : constantCoeff f = 0 := by
+    rw [← coeff_zero_eq_constantCoeff_apply]
+    exact coeff_of_lt_order 0 ((Nat.cast_lt.mpr (Nat.pos_of_ne_zero hn₀)).trans_le hn)
+  have hS : HasSubst f := .of_constantCoeff_zero' hf₀
+  have h₂ : (2 : ℕ∞) ≤ (φ - X).order := nat_le_order _ 2 fun i hi ↦ by
+    interval_cases i <;> simp [hφ, hφ₁]
+  have hrest : ((n + 1 : ℕ) : ℕ∞) ≤ ((φ - X).subst f).order := by
+    refine le_trans ?_ (le_order_subst _ hS _)
+    rw [← order_eq_order]
+    calc ((n + 1 : ℕ) : ℕ∞) ≤ (n : ℕ∞) * 2 := by exact_mod_cast (by omega : n + 1 ≤ n * 2)
+      _ ≤ _ := mul_le_mul' hn h₂
+  have hsplit : φ.subst f = (φ - X).subst f + f.subst X := by
+    rw [subst_sub hS, subst_X hS, X_subst, sub_add_cancel]
+  rw [hsplit, map_add, MvPowerSeries.homogeneousComponent_of_lt_order_eq_zero
+    ((Nat.cast_lt.mpr (Nat.lt_succ_self _)).trans_le hrest), _root_.zero_add,
+    homogeneousComponent_subst_eq_C_mul_X_pow hn constantCoeff_X coeff_one_X,
+    Algebra.algebraMap_self, RingHom.id_apply]
+
+/-- The lowest-degree part of the additivity defect `c f(X, Y)ⁿ - c Xⁿ - c Yⁿ` of `c Xⁿ` along a
+two-variable series `f` with zero constant coefficient and linear part `X + Y` is
+`c ((X + Y)ⁿ - Xⁿ - Yⁿ)`. -/
+theorem homogeneousComponent_subst_smul_X_pow_sub {f : MvPowerSeries (Fin 2) S}
+    (h₀ : MvPowerSeries.constantCoeff f = 0)
+    (hX : MvPowerSeries.coeff (Finsupp.single 0 1) f = 1)
+    (hY : MvPowerSeries.coeff (Finsupp.single 1 1) f = 1) (c : R) (n : ℕ) :
+    MvPowerSeries.homogeneousComponent n ((c • X ^ n : R⟦X⟧).subst f -
+        (c • X ^ n : R⟦X⟧).subst (MvPowerSeries.X 0 : MvPowerSeries (Fin 2) S) -
+        (c • X ^ n : R⟦X⟧).subst (MvPowerSeries.X 1 : MvPowerSeries (Fin 2) S)) =
+      ((c • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n - MvPolynomial.X 0 ^ n -
+        MvPolynomial.X 1 ^ n) : MvPolynomial (Fin 2) S) : MvPowerSeries (Fin 2) S) := by
+  have hn : (n : ℕ∞) ≤ (c • X ^ n : R⟦X⟧).order :=
+    nat_le_order _ _ fun i hi ↦ by simp [coeff_X_pow, hi.ne]
+  rw [map_sub, map_sub, homogeneousComponent_subst_of_le_order h₀ hn,
+    homogeneousComponent_subst_of_le_order (MvPowerSeries.constantCoeff_X 0) hn,
+    homogeneousComponent_subst_of_le_order (MvPowerSeries.constantCoeff_X 1) hn,
+    MvPowerSeries.homogeneousComponent_one_eq_X_add_X hX hY,
+    MvPowerSeries.homogeneousComponent_one_X, MvPowerSeries.homogeneousComponent_one_X]
+  rw [← MvPolynomial.coeToMvPowerSeries.ringHom_apply]
+  simp only [coeff_smul, coeff_X_pow_self, smul_eq_mul, mul_one]
+  simp only [Algebra.smul_def, MvPolynomial.algebraMap_apply, map_mul, map_sub, map_pow, map_add,
+    MvPolynomial.coeToMvPowerSeries.ringHom_apply, MvPolynomial.coe_C, MvPolynomial.coe_X,
+    mul_sub]
 
 end Algebra
 

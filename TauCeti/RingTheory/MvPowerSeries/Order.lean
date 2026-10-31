@@ -239,7 +239,7 @@ end Subst
 
 section TruncTotal
 
-variable {σ τ R : Type*} [Finite σ] [CommRing R]
+variable {σ R : Type*} [Finite σ] [CommSemiring R]
 
 /-- The degree-`n` homogeneous component of a power series, read off from its truncation as a
 polynomial. -/
@@ -253,32 +253,40 @@ theorem coe_homogeneousComponent_truncTotal (n : ℕ) (f : MvPowerSeries σ R) :
   · exact coeff_truncTotal f (by omega)
   · rfl
 
+end TruncTotal
+
+section SubstTruncTotal
+
+variable {σ τ R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
 /-- **The lowest-degree component of a substitution, as a polynomial.** If `f` has order at least
 `n` and the series `a i` have zero constant coefficient and linear parts `l i`, the degree-`n`
 component of `f(a)` is the degree-`n` part of `f` evaluated at the polynomials `l i`. -/
-theorem homogeneousComponent_subst_eq_aeval {f : MvPowerSeries σ R} {n : ℕ} (hn : n ≤ f.order)
-    {a : σ → MvPowerSeries τ R} (ha : HasSubst a) (ha₀ : ∀ i, constantCoeff (a i) = 0)
-    {l : σ → MvPolynomial τ R} (hl : ∀ i, homogeneousComponent 1 (a i) = l i) :
+theorem homogeneousComponent_subst_eq_aeval [Finite σ] {f : MvPowerSeries σ R} {n : ℕ}
+    (hn : n ≤ f.order) {a : σ → MvPowerSeries τ S} (ha : HasSubst a)
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) {l : σ → MvPolynomial τ S}
+    (hl : ∀ i, homogeneousComponent 1 (a i) = l i) :
     homogeneousComponent n (f.subst a) =
       (MvPolynomial.aeval l (MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f)) :
-        MvPowerSeries τ R) := by
+        MvPowerSeries τ S) := by
   rw [homogeneousComponent_subst_of_le_order hn ha ha₀, ← coe_homogeneousComponent_truncTotal,
     subst_coe]
   simp_rw [hl]
-  simpa using (MvPolynomial.comp_aeval_apply (MvPolynomial.coeToMvPowerSeries.algHom R)
+  simpa using (MvPolynomial.comp_aeval_apply
+    ((MvPolynomial.coeToMvPowerSeries.algHom S).restrictScalars R)
     (MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f)) (f := l)).symm
 
-end TruncTotal
-
 /-- Substituting series without constant coefficient does not lower the order. -/
-theorem order_le_order_subst {σ τ R : Type*} [CommRing R] {a : σ → MvPowerSeries τ R}
-    (ha : HasSubst a) (ha₀ : ∀ i, constantCoeff (a i) = 0) (f : MvPowerSeries σ R) :
+theorem order_le_order_subst {a : σ → MvPowerSeries τ S} (ha : HasSubst a)
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) (f : MvPowerSeries σ R) :
     f.order ≤ (f.subst a).order := by
   refine le_trans ?_ (le_order_subst ha f)
   calc f.order = 1 * f.order := (one_mul _).symm
     _ ≤ (⨅ i, (a i).order) * f.order := by
       gcongr
       exact le_iInf fun i ↦ one_le_order_iff_constCoeff_eq_zero.mpr (ha₀ i)
+
+end SubstTruncTotal
 
 section Perturbation
 
