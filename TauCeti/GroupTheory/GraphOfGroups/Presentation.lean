@@ -103,7 +103,7 @@ def mk : 𝔸.π₁TreeCover →* π₁Tree 𝔸 T :=
 theorem mk_surjective : Function.Surjective (mk : 𝔸.π₁TreeCover →* π₁Tree 𝔸 T) :=
   QuotientGroup.mk'_surjective _
 
-theorem mk_eq_one_iff {r : 𝔸.π₁TreeCover} :
+@[simp] theorem mk_eq_one_iff {r : 𝔸.π₁TreeCover} :
     (mk r : π₁Tree 𝔸 T) = 1 ↔ r ∈ Subgroup.normalClosure (𝔸.π₁TreeRels T) :=
   QuotientGroup.eq_one_iff r
 
@@ -140,7 +140,7 @@ theorem edge_mul_of_ω (e : Γ.E) (c : 𝔸.edgeGroup (Γ.toGeomEdge e)) :
   rw [← edge_mul_of_ω_mul_edge_inv, inv_mul_cancel_right]
 
 /-- The darts of `T` are trivial in `π₁(𝔸, T)`. -/
-theorem edge_eq_one {e : Γ.E} (he : e ∈ T) : (edge T e : π₁Tree 𝔸 T) = 1 :=
+@[simp] theorem edge_eq_one {e : Γ.E} (he : e ∈ T) : (edge T e : π₁Tree 𝔸 T) = 1 :=
   mk_eq_one_of_mem (Or.inr ⟨e, he, rfl⟩)
 
 /-- Two homomorphisms out of `π₁(𝔸, T)` agree when they agree on every vertex group and on every
@@ -174,20 +174,20 @@ variable (φ : ∀ v, 𝔸.vertexGroup v →* H) (h : Γ.E → H) (hT : ∀ e �
   (hrev : ∀ e, h (Γ.rev e) = (h e)⁻¹)
   (hrel : ∀ e c, h e * φ (Γ.tgt e) (𝔸.ω e c) * (h e)⁻¹ = φ (Γ.src e) (𝔸.α e c))
 
-theorem lift_mk (r : 𝔸.π₁TreeCover) :
+@[simp] theorem lift_mk (r : 𝔸.π₁TreeCover) :
     lift φ h hT hrev hrel (mk r) =
       Monoid.Coprod.lift (Monoid.CoprodI.lift φ) (FreeGroup.lift h) r :=
   QuotientGroup.lift_mk' ..
 
 @[simp] theorem lift_of (v : Γ.V) (a : 𝔸.vertexGroup v) :
     lift φ h hT hrev hrel (of T v a) = φ v a := by
-  simp [of, lift_mk]
+  simp [of]
 
 @[simp] theorem lift_comp_of (v : Γ.V) : (lift φ h hT hrev hrel).comp (of T v) = φ v :=
   MonoidHom.ext (lift_of φ h hT hrev hrel v)
 
 @[simp] theorem lift_edge (e : Γ.E) : lift φ h hT hrev hrel (edge T e) = h e := by
-  simp [edge, lift_mk]
+  simp [edge]
 
 end lift
 
