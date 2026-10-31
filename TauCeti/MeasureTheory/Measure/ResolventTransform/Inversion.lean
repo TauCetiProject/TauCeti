@@ -8,10 +8,9 @@ module
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-import TauCeti.Analysis.SpecialFunctions.Integrals.HalfLineRational
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.FunProp

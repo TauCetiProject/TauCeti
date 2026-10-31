@@ -34,6 +34,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_sin_pow_even_eq_ascPochhammer`: the Wallis integral
   `∫ x in 0..π/2, sin²ⁿ x = (π/2) (1/2)ₙ / n!`, with the rising factorial `(1/2)ₙ`.
 * `TauCeti.integral_pow_mul_sub`: `∫ x in p..r, xⁿ (x - p)` as a binomial sum in powers of `r - p`.
+* `Real.integral_div_sub_sq_add_sq`: the integral of the Poisson kernel `η / ((t - x)² + η²)`
+  over an interval is a difference of arctangents.
 * `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
 * `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
@@ -290,6 +292,14 @@ theorem integral_comp_sin_sq_add_int_mul_pi (G : ℝ → ℝ)
 end TauCeti
 
 namespace Real
+
+/-- The integral of the Poisson kernel `η / ((t - x)² + η²)` over `[a, b]` is a difference of
+arctangents: a translate of Mathlib's `integral_div_sq_add_sq`. For `η = 0` both sides vanish. -/
+theorem integral_div_sub_sq_add_sq (a b t η : ℝ) :
+    ∫ x in a..b, η / ((t - x) ^ 2 + η ^ 2) = arctan ((b - t) / η) - arctan ((a - t) / η) := by
+  simp_rw [← neg_sub _ t, neg_sq, add_comm _ (η ^ 2)]
+  rw [intervalIntegral.integral_comp_sub_right (fun x => η / (η ^ 2 + x ^ 2)),
+    integral_div_sq_add_sq]
 
 /-- Termwise integration of the exponential series `e^{κ cos θ} = ∑ₖ κᵏ cosᵏ θ / k!` against the
 Fourier character `exp (n θ i)` over `[-π, π]`. -/

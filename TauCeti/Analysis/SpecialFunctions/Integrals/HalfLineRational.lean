@@ -29,8 +29,6 @@ comes for free from the limits of these antiderivatives at infinity.
 * `TauCeti.integrableOn_sq_div_sq_add_sq_mul_sq_add_sq`: the integrand is integrable on
   `(0, ∞)`;
 * `TauCeti.integral_Ioi_sq_div_sq_add_sq_mul_sq_add_sq`: the value of the integral.
-* `Real.integral_div_sub_sq_add_sq`: the same antiderivative integrates the Poisson kernel
-  `η / ((t - x)² + η²)` over an interval to a difference of arctangents.
 -/
 
 public section
@@ -129,25 +127,3 @@ theorem integral_Ioi_sq_div_sq_add_sq_mul_sq_add_sq {a c : ℝ} (ha : 0 ≤ a) (
     sub_zero]
 
 end TauCeti
-
-namespace Real
-
-/-- The integral of the Poisson kernel `η / ((t - x)² + η²)` over `[a, b]` is a difference of
-arctangents. For `η = 0` both sides vanish. -/
-theorem integral_div_sub_sq_add_sq (a b t η : ℝ) :
-    ∫ x in a..b, η / ((t - x) ^ 2 + η ^ 2) = arctan ((b - t) / η) - arctan ((a - t) / η) := by
-  rcases eq_or_ne η 0 with rfl | hη
-  · simp
-  have hpos (x : ℝ) : 0 < (t - x) ^ 2 + η ^ 2 := by positivity
-  have hderiv (x : ℝ) :
-      HasDerivAt (fun x => arctan ((x - t) / η)) (η / ((t - x) ^ 2 + η ^ 2)) x := by
-    convert ((TauCeti.hasDerivAt_mul_arctan_div η (x - t)).comp_sub_const x t).const_mul η⁻¹
-      using 1
-    · ext y
-      rw [inv_mul_cancel_left₀ hη]
-    · field_simp
-      ring
-  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun x _ => hderiv x)]
-  exact (continuous_const.div (by fun_prop) fun x => (hpos x).ne').intervalIntegrable _ _
-
-end Real
