@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Normed.Module.Basic
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.MetricSpace.Pseudo.Basic
-import TauCeti.Order.Filter.Cofinite.Seq
+import TauCeti.Analysis.Normed.Group.NullSequence
 
 /-!
 # Totally bounded sets lie in the closed convex hull of a null sequence
@@ -46,34 +46,7 @@ public section
 open Filter Metric Set Topology
 open scoped Pointwise
 
-variable {E : Type*} [SeminormedAddCommGroup E]
-
-/-- Countably many finite sets, the `k`-th inside the closed ball of radius `r k → 0` about the
-origin, together with one further finite set, lie in the range of a single sequence tending
-to `0`. -/
-private lemma exists_tendsto_zero_union_iUnion_subset_range {A : Set E} {B : ℕ → Set E}
-    {r : ℕ → ℝ} (hA : A.Finite) (hB : ∀ k, (B k).Finite) (hBr : ∀ k, ∀ z ∈ B k, ‖z‖ ≤ r k)
-    (hr : Tendsto r atTop (𝓝 0)) :
-    ∃ x : ℕ → E, Tendsto x atTop (𝓝 0) ∧ A ∪ ⋃ k, B k ⊆ range x := by
-  set S := A ∪ ⋃ k, B k
-  have : Countable S := (hA.countable.union (countable_iUnion fun k ↦ (hB k).countable)).to_subtype
-  -- Only the finitely many sets `B k` with `k < K` meet the complement of `ball 0 ε`.
-  have hS : Tendsto ((↑) : S → E) cofinite (𝓝 0) := by
-    intro U hU
-    obtain ⟨ε, hε, hεU⟩ := Metric.mem_nhds_iff.1 hU
-    obtain ⟨K, hK⟩ := eventually_atTop.1 (hr.eventually (gt_mem_nhds hε))
-    rw [mem_map, mem_cofinite]
-    refine ((hA.union (finite_iUnion fun k : Fin K ↦ hB k)).preimage
-      Subtype.val_injective.injOn).subset ?_
-    rintro ⟨z, hzA | hzB⟩ hzU
-    · exact Or.inl hzA
-    obtain ⟨k, hk⟩ := mem_iUnion.1 hzB
-    refine Or.inr (mem_iUnion.2 ⟨⟨k, not_le.1 fun hKk ↦ hzU (hεU ?_)⟩, hk⟩)
-    exact mem_ball_zero_iff.2 ((hBr k z hk).trans_lt (hK k hKk))
-  obtain ⟨x, hx, hSx⟩ := hS.exists_seq_tendsto_range_subset (pure_le_nhds 0)
-  exact ⟨x, hx, Subtype.range_coe (s := S) ▸ hSx⟩
-
-variable [NormedSpace ℝ E] {s : Set E}
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {s : Set E}
 
 /-- A convex set containing `0` contains `c n` for every `n` once it contains `2 • c 0` and the
 rescaled increments `2 ^ (k + 2) • (c (k + 1) - c k)`: `c n` is the sub-convex combination of
@@ -140,7 +113,7 @@ theorem TotallyBounded.exists_tendsto_zero_subset_closure_convexHull (hs : Total
   choose c hcN hcdist using hc
   -- The rescaled first approximations and increments range over finite sets, the `k`-th
   -- increments having norm at most `8 * (1/2)^k`; list them all in one null sequence `x`.
-  obtain ⟨x, hx, hsub⟩ := exists_tendsto_zero_union_iUnion_subset_range
+  obtain ⟨x, hx, hsub⟩ := TauCeti.exists_tendsto_zero_union_iUnion_subset_range
     (A := (fun y ↦ (2 : ℝ) • c 0 y) '' s)
     (B := fun k ↦ (fun y ↦ (2 : ℝ) ^ (k + 2) • (c (k + 1) y - c k y)) '' s)
     (((hNfin 0).image fun a ↦ (2 : ℝ) • a).subset <| by
