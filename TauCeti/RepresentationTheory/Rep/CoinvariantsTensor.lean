@@ -25,7 +25,9 @@ any monoid. For a representation `A` of a group, a morphism of representations `
 turn the same as a morphism `X ⟶ Homₖ(A, N)` into the internal hom
 (`Rep.MonoidalClosed.linearHomEquiv`). The composite `k`-linear equivalence is
 `Rep.coinvariantsTensorHomLinearEquiv`; it sends `f` to `x ↦ (a ↦ f ⟦a ⊗ x⟧)` and is natural in
-`X`.
+all three variables: in `X`, in `N` (postcomposition with a linear map corresponds to the induced
+map of internal homs) and, contravariantly, in `A` (precomposition with the map induced by
+`f : A ⟶ A'` corresponds to Mathlib's `MonoidalClosed.pre f`).
 
 ## Main definitions
 
@@ -40,6 +42,9 @@ turn the same as a morphism `X ⟶ Homₖ(A, N)` into the internal hom
 * `MonoidHom.coinvariantsTensorMap_naturality`: naturality in the representations.
 * `Rep.coinvariantsTensorHomLinearEquiv_comp`: naturality of
   `Rep.coinvariantsTensorHomLinearEquiv` in the representation.
+* `Rep.coinvariantsTensorHomLinearEquiv_comp_ofHom`,
+  `Rep.coinvariantsTensorHomLinearEquiv_coinvariantsTensor_map_app_comp`: its naturality in the
+  module and in the coefficient representation.
 
 ## References
 
@@ -197,6 +202,42 @@ theorem coinvariantsTensorHomLinearEquiv_comp {X X' : Rep.{u} k G} (g : X ⟶ X'
     ((coinvariantsFunctor k G).map ((tensorLeft A).map g) ≫ f)) =
       g ≫ (ihom.adjunction A).homEquiv _ _ ((coinvariantsAdjunction k G).homEquiv _ _ f)
   rw [Adjunction.homEquiv_naturality_left, Adjunction.homEquiv_naturality_left]
+
+/-- **The correspondence is natural in the module**: postcomposing a map out of `(A ⊗ X)_G` with a
+linear map `g : N →ₗ[k] N'` corresponds to postcomposing with the map `Homₖ(A, N) ⟶ Homₖ(A, N')`
+induced by `g`. -/
+theorem coinvariantsTensorHomLinearEquiv_comp_ofHom {N' : Type u} [AddCommGroup N']
+    [Module k N'] {X : Rep.{u} k G} (f : ((coinvariantsTensor k G).obj A).obj X ⟶ ModuleCat.of k N)
+    (g : N →ₗ[k] N') :
+    coinvariantsTensorHomLinearEquiv A N' X (f ≫ ModuleCat.ofHom g) =
+      coinvariantsTensorHomLinearEquiv A N X f ≫
+        (Rep.ihom A).map ((trivialFunctor k G).map (ModuleCat.ofHom g)) := by
+  -- This is the naturality of the hom-equivalences of the coinvariants and internal-hom
+  -- adjunctions in their second variable; `Rep.ihom A` is the right adjoint of `A ⊗ -`.
+  change (ihom.adjunction A).homEquiv _ _ ((coinvariantsAdjunction k G).homEquiv _ _
+    (f ≫ ModuleCat.ofHom g)) =
+      (ihom.adjunction A).homEquiv _ _ ((coinvariantsAdjunction k G).homEquiv _ _ f) ≫
+        (ihom A).map ((trivialFunctor k G).map (ModuleCat.ofHom g))
+  rw [Adjunction.homEquiv_naturality_right, Adjunction.homEquiv_naturality_right]
+
+/-- **The correspondence is natural in the coefficient representation**: precomposing a map out
+of `(A' ⊗ X)_G` with the map `(A ⊗ X)_G ⟶ (A' ⊗ X)_G` induced by `f : A ⟶ A'` corresponds to
+postcomposing with the map `Homₖ(A', N) ⟶ Homₖ(A, N)` given by precomposition with `f`. -/
+theorem coinvariantsTensorHomLinearEquiv_coinvariantsTensor_map_app_comp {A' : Rep.{u} k G}
+    {X : Rep.{u} k G} (f : A ⟶ A')
+    (φ : ((coinvariantsTensor k G).obj A').obj X ⟶ ModuleCat.of k N) :
+    coinvariantsTensorHomLinearEquiv A N X (((coinvariantsTensor k G).map f).app X ≫ φ) =
+      coinvariantsTensorHomLinearEquiv A' N X φ ≫
+        (MonoidalClosed.pre f).app (Rep.trivial k G N) := by
+  -- `(- ⊗ X)_G` sends `f` to the map of coinvariants induced by `f ▷ X`, so this is the
+  -- naturality of the coinvariants adjunction in its first variable followed by the description
+  -- of `MonoidalClosed.pre` on curried maps.
+  change (ihom.adjunction A).homEquiv _ _ ((coinvariantsAdjunction k G).homEquiv _ _
+    ((coinvariantsFunctor k G).map (f ▷ X) ≫ φ)) =
+      (ihom.adjunction A').homEquiv _ _ ((coinvariantsAdjunction k G).homEquiv _ _ φ) ≫
+        (MonoidalClosed.pre f).app (Rep.trivial k G N)
+  rw [Adjunction.homEquiv_naturality_left]
+  exact (MonoidalClosed.curry_pre_app f _).symm
 
 end Group
 

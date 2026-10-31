@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Basic
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.Basic
+public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
 public import TauCeti.RepresentationTheory.Rep.CoinvariantsTensor
 
 /-!
@@ -30,12 +31,28 @@ between the group homology of `A` and the group cohomology of `Homₖ(A, N)`. It
 with local coefficients, computed from twisted chains of the form `(A ⊗ P)_G`, is compared with
 group cohomology.
 
+Both identifications are natural in the module `N` and, contravariantly, in the representation
+`A`. A linear map `g : N →ₗ[k] N'` acts on `Hom((A ⊗ P)_G, -)` by postcomposition and on
+`Hⁿ(G, Homₖ(A, -))` through the induced map of internal homs
+(`Rep.groupCohomologyIhomIso_inv_naturality_right`). A morphism `f : A ⟶ A'` acts on
+`Hom((- ⊗ P)_G, N)` by precomposition with the induced map of coinvariants and on
+`Hⁿ(G, Homₖ(-, N))` through Mathlib's `MonoidalClosed.pre f`, precomposition with `f`
+(`Rep.groupCohomologyIhomIso_inv_naturality_left`).
+
 ## Main definitions
 
 * `HomologicalComplex.coinvariantsTensorObjLinearYonedaObjIso`: the isomorphism of cochain
   complexes `Hom((A ⊗ P)_G, N) ≅ Hom_G(P, Homₖ(A, N))`.
 * `Rep.groupCohomologyIhomIso`: `Hⁿ(G, Homₖ(A, N)) ≅ Hⁿ(Hom((A ⊗ P)_G, N))` for a projective
   resolution `P` of `k`.
+
+## Main results
+
+* `HomologicalComplex.coinvariantsTensorObjLinearYonedaObjIso_hom_naturality_right`,
+  `HomologicalComplex.coinvariantsTensorObjLinearYonedaObjIso_hom_naturality_left`: the
+  isomorphism of cochain complexes is natural in the module and in the representation.
+* `Rep.groupCohomologyIhomIso_inv_naturality_right`,
+  `Rep.groupCohomologyIhomIso_inv_naturality_left`: so is the identification of group cohomology.
 
 ## References
 
@@ -86,6 +103,48 @@ theorem coinvariantsTensorObjLinearYonedaObjIso_inv_f_apply (i : α)
       (Rep.coinvariantsTensorHomLinearEquiv A N (P.X i)).symm φ :=
   (rfl)
 
+/-- **The isomorphism is natural in the module**: postcomposition with a linear map
+`g : N →ₗ[k] N'` on `Hom((A ⊗ P)_G, -)` corresponds to postcomposition with the induced map
+`Homₖ(A, N) ⟶ Homₖ(A, N')` on `Hom_G(P, -)`. -/
+@[reassoc]
+theorem coinvariantsTensorObjLinearYonedaObjIso_hom_naturality_right {N' : Type u}
+    [AddCommGroup N'] [Module k N'] (g : N →ₗ[k] N') :
+    (P.coinvariantsTensorObj A).linearYonedaObjMap k (ModuleCat.ofHom g) ≫
+        (P.coinvariantsTensorObjLinearYonedaObjIso A N').hom =
+      (P.coinvariantsTensorObjLinearYonedaObjIso A N).hom ≫ P.linearYonedaObjMap k
+        ((Rep.ihom A).map ((Rep.trivialFunctor k G).map (ModuleCat.ofHom g))) := by
+  ext i : 1
+  refine ModuleCat.hom_ext <| LinearMap.ext fun f ↦ ?_
+  -- In degree `i` both sides send `f` to the morphism corresponding to `f ≫ g`. The coefficient
+  -- maps are postcomposition (`linearYonedaObjMap_f_hom_apply`), but `simp` cannot use this on
+  -- the composite, whose components are typed in different presentations of the cochain modules.
+  exact (congrArg ((P.coinvariantsTensorObjLinearYonedaObjIso A N').hom.f i).hom
+      ((P.coinvariantsTensorObj A).linearYonedaObjMap_f_hom_apply k (ModuleCat.ofHom g) i f)).trans
+    ((Rep.coinvariantsTensorHomLinearEquiv_comp_ofHom f g).trans
+      (P.linearYonedaObjMap_f_hom_apply k _ i _).symm)
+
+/-- **The isomorphism is natural in the coefficient representation**: precomposition with the
+map `(A ⊗ P)_G ⟶ (A' ⊗ P)_G` induced by `f : A ⟶ A'` on `Hom(-, N)` corresponds to
+postcomposition with the map `Homₖ(A', N) ⟶ Homₖ(A, N)` given by precomposition with `f`. -/
+@[reassoc]
+theorem coinvariantsTensorObjLinearYonedaObjIso_hom_naturality_left {A' : Rep.{u} k G}
+    (f : A ⟶ A') :
+    (TauCeti.ChainComplex.linearYonedaFunctor k (ModuleCat.of k N)).map
+        ((NatTrans.mapHomologicalComplex ((Rep.coinvariantsTensor k G).map f) _).app P).op ≫
+        (P.coinvariantsTensorObjLinearYonedaObjIso A N).hom =
+      (P.coinvariantsTensorObjLinearYonedaObjIso A' N).hom ≫
+        P.linearYonedaObjMap k ((MonoidalClosed.pre f).app (Rep.trivial k G N)) := by
+  ext i : 1
+  refine ModuleCat.hom_ext <| LinearMap.ext fun φ ↦ ?_
+  -- In degree `i` both sides send `φ` to the morphism corresponding to the precomposition of `φ`
+  -- with the map induced by `f`; as above, the component maps are applied through `congrArg`.
+  exact (congrArg ((P.coinvariantsTensorObjLinearYonedaObjIso A N).hom.f i).hom
+      (TauCeti.ChainComplex.linearYonedaFunctor_map_f_hom_apply (k := k) (ModuleCat.of k N)
+        ((NatTrans.mapHomologicalComplex ((Rep.coinvariantsTensor k G).map f) _).app P).op i
+          φ)).trans
+    ((Rep.coinvariantsTensorHomLinearEquiv_coinvariantsTensor_map_app_comp f φ).trans
+      (P.linearYonedaObjMap_f_hom_apply k _ i _).symm)
+
 end HomologicalComplex
 
 namespace Rep
@@ -101,5 +160,54 @@ def groupCohomologyIhomIso (n : ℕ) (P : ProjectiveResolution (Rep.trivial k G 
       ((P.complex.coinvariantsTensorObj A).linearYonedaObj k (ModuleCat.of k N)).homology n :=
   groupCohomologyIso _ n P ≪≫ (HomologicalComplex.homologyFunctor _ _ n).mapIso
     (P.complex.coinvariantsTensorObjLinearYonedaObjIso A N).symm
+
+/-- The inverse of `Rep.groupCohomologyIhomIso` is the cohomology of the comparison of cochain
+complexes followed by the inverse of `groupCohomologyIso`. -/
+theorem groupCohomologyIhomIso_inv (n : ℕ) (P : ProjectiveResolution (Rep.trivial k G k)) :
+    (groupCohomologyIhomIso A N n P).inv =
+      HomologicalComplex.homologyMap (P.complex.coinvariantsTensorObjLinearYonedaObjIso A N).hom n ≫
+        (groupCohomologyIso _ n P).inv :=
+  (rfl)
+
+/-- **Group cohomology with coefficients in an internal hom is natural in the module**: for a
+linear map `g : N →ₗ[k] N'`, the inverses of the identifications `Rep.groupCohomologyIhomIso`
+carry the map on the cohomology of `Hom((A ⊗ P)_G, -)` given by postcomposition with `g` to
+Mathlib's map `groupCohomology.map (MonoidHom.id G)` induced by `Homₖ(A, N) ⟶ Homₖ(A, N')`. -/
+@[reassoc]
+theorem groupCohomologyIhomIso_inv_naturality_right {N' : Type u} [AddCommGroup N'] [Module k N']
+    (g : N →ₗ[k] N') (n : ℕ) (P : ProjectiveResolution (Rep.trivial k G k)) :
+    HomologicalComplex.homologyMap
+        ((P.complex.coinvariantsTensorObj A).linearYonedaObjMap k (ModuleCat.ofHom g)) n ≫
+        (groupCohomologyIhomIso A N' n P).inv =
+      (groupCohomologyIhomIso A N n P).inv ≫ groupCohomology.map (MonoidHom.id G)
+        ((Rep.ihom A).map ((Rep.trivialFunctor k G).map (ModuleCat.ofHom g))) n := by
+  rw [groupCohomologyIhomIso_inv, groupCohomologyIhomIso_inv,
+    ← HomologicalComplex.homologyMap_comp_assoc,
+    HomologicalComplex.coinvariantsTensorObjLinearYonedaObjIso_hom_naturality_right,
+    HomologicalComplex.homologyMap_comp_assoc, Category.assoc]
+  exact congrArg (_ ≫ ·) (TauCeti.Rep.groupCohomologyIso_inv_naturality _ P n)
+
+/-- **Group cohomology with coefficients in an internal hom is natural in the coefficient
+representation**: for a morphism `f : A ⟶ A'`, the inverses of the identifications
+`Rep.groupCohomologyIhomIso` carry the map on the cohomology of `Hom(-, N)` given by precomposition
+with `(A ⊗ P)_G ⟶ (A' ⊗ P)_G` to Mathlib's map `groupCohomology.map (MonoidHom.id G)` induced by
+the precomposition map `Homₖ(A', N) ⟶ Homₖ(A, N)`. -/
+@[reassoc]
+theorem groupCohomologyIhomIso_inv_naturality_left {A' : Rep.{u} k G} (f : A ⟶ A') (n : ℕ)
+    (P : ProjectiveResolution (Rep.trivial k G k)) :
+    HomologicalComplex.homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k
+        (ModuleCat.of k N)).map ((NatTrans.mapHomologicalComplex
+          ((Rep.coinvariantsTensor k G).map f) _).app P.complex).op) n ≫
+        (groupCohomologyIhomIso A N n P).inv =
+      (groupCohomologyIhomIso A' N n P).inv ≫ groupCohomology.map (MonoidHom.id G)
+        ((MonoidalClosed.pre f).app (Rep.trivial k G N)) n := by
+  rw [groupCohomologyIhomIso_inv, groupCohomologyIhomIso_inv]
+  -- The source of the precomposition map is `(linearYonedaFunctor k N).obj (op _)`, which is
+  -- `linearYonedaObj` only by unfolding, so the two squares are pasted in term mode.
+  exact (HomologicalComplex.homologyMap_comp_assoc _ _ n _).symm.trans <|
+    (congrArg (fun φ ↦ HomologicalComplex.homologyMap φ n ≫ _)
+      (HomologicalComplex.coinvariantsTensorObjLinearYonedaObjIso_hom_naturality_left A P.complex N
+        f)).trans <| (HomologicalComplex.homologyMap_comp_assoc _ _ n _).trans
+        (congrArg (_ ≫ ·) (TauCeti.Rep.groupCohomologyIso_inv_naturality _ P n))
 
 end Rep

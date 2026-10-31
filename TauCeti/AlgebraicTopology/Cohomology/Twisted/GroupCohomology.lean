@@ -37,10 +37,25 @@ trivial representation `A = k` the fibres `(k ⊗ k[p⁻¹ x])_G` of `L_A` are c
 `IsQuotientCoveringMap.singularCohomologyIsoGroupCohomology` of untwisted singular cohomology.
 This is the cohomological counterpart of `IsQuotientCoveringMap.twistedHomologyIsoGroupHomology`.
 
+The identification is natural in both coefficient variables. A linear map `g : N →ₗ[k] N'` acts on
+twisted cochains by postcomposition and on `Hⁿ(G, Homₖ(A, -))` through the induced map of internal
+homs (`IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology_hom_naturality_right`). A
+morphism of representations `f : A ⟶ A'` induces a morphism of associated local systems
+`L_A ⟶ L_A'` (`IsQuotientCoveringMap.associatedLocalSystemMap`), hence a map
+`Hⁿ(B; L_A', N) ⟶ Hⁿ(B; L_A, N)`, which corresponds to the map on `Hⁿ(G, Homₖ(-, N))` given by
+precomposition with `f`
+(`IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology_hom_naturality_left`).
+
 ## Main definitions
 
 * `IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology`: for contractible `E`, the twisted
   cohomology `Hⁿ(B; L_A, N)` is the group cohomology `Hⁿ(G, Homₖ(A, N))`.
+
+## Main results
+
+* `IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology_hom_naturality_right`,
+  `IsQuotientCoveringMap.twistedCohomologyIsoGroupCohomology_hom_naturality_left`: the
+  identification is natural in the module of values and in the representation.
 
 ## References
 
@@ -80,5 +95,85 @@ def twistedCohomologyIsoGroupCohomology [ContractibleSpace E] (n : ℕ) :
       ((ChainComplex.linearYonedaFunctor k (ModuleCat.of k N)).mapIso
         (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).op) ≪≫
     (Rep.groupCohomologyIhomIso A N n (singularChainsResolution k E G)).symm
+
+/-- The comparison `Hⁿ(B; L_A, N) ≅ Hⁿ(G, Homₖ(A, N))` is the cohomology of the comparison of
+cochains induced by `IsQuotientCoveringMap.coinvariantsTensorSingularChainsRepIsoTwisted`, followed
+by the inverse of `Rep.groupCohomologyIhomIso` for the resolution by singular chains of `E`. -/
+lemma twistedCohomologyIsoGroupCohomology_hom_eq [ContractibleSpace E] (n : ℕ) :
+    haveI := hG.toContinuousConstSMul
+    haveI := hG.isCancelSMul
+    (hG.twistedCohomologyIsoGroupCohomology k A N n).hom =
+      HomologicalComplex.homologyMap ((ChainComplex.linearYonedaFunctor k (ModuleCat.of k N)).map
+          (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).hom.op) n ≫
+        (Rep.groupCohomologyIhomIso A N n (singularChainsResolution k E G)).inv :=
+  (rfl)
+
+variable {N' : Type u} [AddCommGroup N'] [Module k N']
+
+/-- **The twisted cohomology of the base of a contractible free cover is naturally group
+cohomology, in the module of values**: for a `k`-linear map `g : N →ₗ[k] N'`, the identifications
+`Hⁿ(B; L_A, N) ≅ Hⁿ(G, Homₖ(A, N))` and `Hⁿ(B; L_A, N') ≅ Hⁿ(G, Homₖ(A, N'))` carry the map on
+twisted cohomology given by postcomposing cochains with `g` to Mathlib's map
+`groupCohomology.map (MonoidHom.id G)` induced by the map `Homₖ(A, N) ⟶ Homₖ(A, N')` of internal
+homs. -/
+@[reassoc]
+theorem twistedCohomologyIsoGroupCohomology_hom_naturality_right [ContractibleSpace E]
+    (g : N →ₗ[k] N') (n : ℕ) :
+    HomologicalComplex.homologyMap ((hG.associatedLocalSystem k A).twistedChainComplex
+        |>.linearYonedaObjMap k (ModuleCat.ofHom g)) n ≫
+        (hG.twistedCohomologyIsoGroupCohomology k A N' n).hom =
+      (hG.twistedCohomologyIsoGroupCohomology k A N n).hom ≫ groupCohomology.map (MonoidHom.id G)
+        ((Rep.ihom A).map ((Rep.trivialFunctor k G).map (ModuleCat.ofHom g))) n := by
+  have := hG.toContinuousConstSMul
+  have := hG.isCancelSMul
+  -- Postcomposition with `g` commutes with precomposition with the comparison of chains, and
+  -- `Rep.groupCohomologyIhomIso` is natural in the module.
+  have hcochains := (HomologicalComplex.homologyMap_comp _ _ n).symm.trans <|
+    (congrArg (HomologicalComplex.homologyMap · n)
+      (ChainComplex.linearYonedaObjMap_comp_linearYonedaFunctor_map k
+        (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).hom (ModuleCat.ofHom g))).trans
+      (HomologicalComplex.homologyMap_comp _ _ n)
+  rw [twistedCohomologyIsoGroupCohomology_hom_eq, twistedCohomologyIsoGroupCohomology_hom_eq]
+  -- The complex of `singularChainsResolution k E G` is `singularChainsRep k E G` only by
+  -- unfolding, so the two squares are pasted in term mode.
+  exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _) hcochains).trans <|
+    (Category.assoc _ _ _).trans <|
+    (congrArg (_ ≫ ·) (Rep.groupCohomologyIhomIso_inv_naturality_right A N g n
+      (singularChainsResolution k E G))).trans (Category.assoc _ _ _).symm
+
+variable {A} {A' : Rep.{u} k G}
+
+/-- **The twisted cohomology of the base of a contractible free cover is naturally group
+cohomology, in the representation**: for a morphism of representations `f : A ⟶ A'`, the
+identifications `Hⁿ(B; L_A', N) ≅ Hⁿ(G, Homₖ(A', N))` and `Hⁿ(B; L_A, N) ≅ Hⁿ(G, Homₖ(A, N))`
+carry the map on twisted cohomology induced by the morphism of associated local systems
+`IsQuotientCoveringMap.associatedLocalSystemMap` to Mathlib's map
+`groupCohomology.map (MonoidHom.id G)` induced by precomposition with `f`,
+`Homₖ(A', N) ⟶ Homₖ(A, N)`. -/
+@[reassoc]
+theorem twistedCohomologyIsoGroupCohomology_hom_naturality_left [ContractibleSpace E]
+    (f : A ⟶ A') (n : ℕ) :
+    twistedCohomologyCoefficientMap k (ModuleCat.of k N) (hG.associatedLocalSystemMap k f) n ≫
+        (hG.twistedCohomologyIsoGroupCohomology k A N n).hom =
+      (hG.twistedCohomologyIsoGroupCohomology k A' N n).hom ≫
+        groupCohomology.map (MonoidHom.id G) ((MonoidalClosed.pre f).app (Rep.trivial k G N))
+          n := by
+  have := hG.toContinuousConstSMul
+  have := hG.isCancelSMul
+  -- Dualizing the naturality of the comparison of chains: precomposition with the map of
+  -- coinvariant chains induced by `f` corresponds to precomposition with the map of twisted
+  -- chains induced by the morphism of associated local systems.
+  have hchains := congrArg (fun φ ↦ (ChainComplex.linearYonedaFunctor k (ModuleCat.of k N)).map
+    φ.op) (hG.coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality k f)
+  simp only [op_comp, Functor.map_comp] at hchains
+  have hcochains := (HomologicalComplex.homologyMap_comp _ _ n).symm.trans <|
+    (congrArg (HomologicalComplex.homologyMap · n) hchains.symm).trans
+      (HomologicalComplex.homologyMap_comp _ _ n)
+  rw [twistedCohomologyIsoGroupCohomology_hom_eq, twistedCohomologyIsoGroupCohomology_hom_eq]
+  -- As above, the two squares are pasted in term mode.
+  exact (Category.assoc _ _ _).symm.trans <| (congrArg (· ≫ _) hcochains).trans <|
+    (Category.assoc _ _ _).trans <|
+    (congrArg (_ ≫ ·) (Rep.groupCohomologyIhomIso_inv_naturality_left A N f n
+      (singularChainsResolution k E G))).trans (Category.assoc _ _ _).symm
 
 end IsQuotientCoveringMap
