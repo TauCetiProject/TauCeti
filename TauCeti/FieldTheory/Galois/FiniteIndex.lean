@@ -42,8 +42,11 @@ of moduli are shown to be finite over `ℚ`: the stabilizer of an object in a fi
   `M^U` is the index of its stabilizer in `U`.
 * `IntermediateField.isSeparable_fixedField_of_isIntegral`: every element integral over `M^U` is
   separable over it.
-* `IntermediateField.finiteDimensional_fixedField_of_relIndex_ne_zero`: for `V ≤ U` of finite
-  index, `M^V / M^U` is finite.
+* `IntermediateField.isSeparable_extendScalars_fixedField`: for `V ≤ U`, an integral
+  `M^V / M^U` is separable.
+* `IntermediateField.finiteDimensional_fixedField_of_relIndex_ne_zero` and
+  `IntermediateField.isSeparable_fixedField_of_relIndex_ne_zero`: for `V ≤ U` of finite index,
+  `M^V / M^U` is finite and separable.
 * `IntermediateField.relfinrank_fixedField_dvd_relIndex` and
   `IntermediateField.relfinrank_fixedField_le_relIndex`: its degree divides, and is at most,
   `[U : V]`.
@@ -56,6 +59,9 @@ of moduli are shown to be finite over `ℚ`: the stabilizer of an object in a fi
   proof bounds degrees by orbit polynomials and concludes with a primitive element.
 * B. Köck, *Belyi's theorem revisited*, Beiträge zur Algebra und Geometrie 45 (2004), (1.6) Lemma,
   for subgroups of finite index in `Aut(ℂ)`.
+* The minimal-polynomial argument follows the shape of
+  `TauCeti.FiniteField.map_minpoly_eq_prod_orbit` in `TauCeti/FieldTheory/Finite/MinpolyOrbit.lean`,
+  which treats the Frobenius orbit over a finite base field.
 -/
 
 public section
@@ -228,8 +234,9 @@ theorem finite_orbit_of_mem_fixedField {y : M} (hy : y ∈ fixedField V) (h : V.
   rw [← index_stabilizer]
   exact ne_zero_of_dvd_ne_zero h (Subgroup.index_dvd_of_le (subgroupOf_le_stabilizer hy))
 
--- The integral elements of `M^V` over `M^U` with `V ≤ U` form a separable extension.
-private theorem isSeparable_extendScalars_fixedField (hVU : V ≤ U)
+/-- **Fixed fields form separable extensions**: for `V ≤ U`, if `M^V` is integral over `M^U`, then
+it is separable over `M^U`, whatever the characteristic. -/
+theorem isSeparable_extendScalars_fixedField (hVU : V ≤ U)
     [Algebra.IsIntegral (fixedField U) (extendScalars (fixedField_le hVU))] :
     Algebra.IsSeparable (fixedField U) (extendScalars (fixedField_le hVU)) :=
   ⟨fun y ↦ by
@@ -261,6 +268,13 @@ theorem finiteDimensional_fixedField_of_relIndex_ne_zero (hVU : V ≤ U) (h : V.
     minpoly_eq, minpoly_eq] at hn
   exact hn.not_ge (Nat.le_of_dvd (Nat.pos_of_ne_zero h)
     (natDegree_minpoly_fixedField_dvd_relIndex (α : E).2))
+
+/-- **A subgroup of finite index has a separable fixed field**: if `V ≤ U` has finite index, then
+`M^V` is a separable extension of `M^U`. -/
+theorem isSeparable_fixedField_of_relIndex_ne_zero (hVU : V ≤ U) (h : V.relIndex U ≠ 0) :
+    Algebra.IsSeparable (fixedField U) (extendScalars (fixedField_le hVU)) :=
+  have := finiteDimensional_fixedField_of_relIndex_ne_zero hVU h
+  isSeparable_extendScalars_fixedField hVU
 
 /-- **The degree of the fixed field of a subgroup of finite index divides the index**: for
 `V ≤ U`, the degree `[M^V : M^U]` divides `[U : V]`. If `[U : V]` is infinite the statement says
