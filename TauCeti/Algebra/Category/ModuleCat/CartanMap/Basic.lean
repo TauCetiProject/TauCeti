@@ -202,7 +202,7 @@ theorem finiteProjectiveModules_le_isProjective :
   exact (ExactStructure.abelian_isProjective_iff M).2 inferInstance
 
 /-- A finitely generated projective module is a projective object of `ModuleCat R`. -/
-theorem finiteProjectiveModules_le_categoricalProjective :
+theorem finiteProjectiveModules_le_categoryTheory_isProjective :
     finiteProjectiveModules R ≤ CategoryTheory.isProjective (ModuleCat.{u} R) := fun M hM ↦
   (ExactStructure.abelian_isProjective_iff M).mp (finiteProjectiveModules_le_isProjective R M hM)
 

@@ -88,7 +88,7 @@ theorem exists_projectiveResolution_finite_free_minimal {R : Type u} [CommRing R
       ∀ i, LinearMap.range (F.complex.d (i + 1) i).hom ≤ maximalIdeal R • ⊤ := by
   obtain ⟨r, hr, hmin⟩ :=
     TauCeti.exists_minimal_finiteProjectiveResolution_of_hasProjectiveDimensionLE hM
-  have hP := TauCeti.finiteProjectiveModules_le_categoricalProjective R
+  have hP := TauCeti.finiteProjectiveModules_le_categoryTheory_isProjective R
   refine ⟨r.toProjectiveResolution hP, fun i ↦ ?_, fun i hi ↦
     r.isZero_toProjectiveResolution_X_of_length_lt hP (by omega),
     fun i ↦ ?_⟩

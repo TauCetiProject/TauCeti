@@ -75,7 +75,7 @@ theorem exists_projectiveResolution_finite {R : Type u} [Ring R] [IsNoetherianRi
     ∃ F : ProjectiveResolution M,
       (∀ i, Module.Finite R (F.complex.X i)) ∧ ∀ i, n < i → IsZero (F.complex.X i) := by
   obtain ⟨r, hr⟩ := TauCeti.exists_finiteProjectiveResolution_of_hasProjectiveDimensionLE hM
-  have hP := TauCeti.finiteProjectiveModules_le_categoricalProjective R
+  have hP := TauCeti.finiteProjectiveModules_le_categoryTheory_isProjective R
   exact ⟨r.toProjectiveResolution hP, r.finite_toProjectiveResolution_X hP, fun i hi ↦
     r.isZero_toProjectiveResolution_X_of_length_lt hP (by omega)⟩
 
