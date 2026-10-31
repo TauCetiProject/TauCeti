@@ -19,8 +19,9 @@ topologically nilpotent; `B` is not assumed perfectoid. Its *tilt* is the multip
 `Perfection B p`), with coordinatewise multiplication and the *limit addition*
 `(x + y)⁽ⁱ⁾ = lim_{m → ∞} (x⁽ⁱ⁺ᵐ⁾ + y⁽ⁱ⁺ᵐ⁾) ^ p ^ m`.
 This file constructs that addition and shows that it makes `B♭` a perfect commutative ring of
-characteristic `p` (when `B ≠ 0`). Coordinatewise addition is not the ring structure, as it does
-not in general preserve compatible systems; when `p = 0` in `B` the two additions agree.
+characteristic `p` (when `B ≠ 0`), functorial in continuous ring homomorphisms `g : B → C`.
+Coordinatewise addition is not the ring structure, as it does not in general preserve compatible
+systems; when `p = 0` in `B` the two additions agree.
 
 The type synonym `TauCeti.Perfectoid.uniformTilt p B` carries the ring structure, so that it does
 not clash with Mathlib's coordinatewise ring structure on `Perfection B p` when `B` has
@@ -50,6 +51,8 @@ this sense have the same limit.
   `uniformTilt.instCommRing`), with the multiplication of `Perfection B p` and the limit addition.
 * `TauCeti.Perfectoid.uniformTilt.coeff n : uniformTilt p B →* B`: the `n`-th coordinate.
 * `TauCeti.Perfectoid.uniformTilt.mk`: the element with a given compatible system of coordinates.
+* `TauCeti.Perfectoid.uniformTilt.map g hg : uniformTilt p B →+* uniformTilt p C`: the ring
+  homomorphism `g♭`, `(x⁽ⁿ⁾)ₙ ↦ (g x⁽ⁿ⁾)ₙ`, induced by a continuous ring homomorphism `g : B → C`.
 
 ## Main results
 
@@ -60,11 +63,13 @@ this sense have the same limit.
   coordinatewise.
 * `TauCeti.Perfectoid.uniformTilt.perfectRing` and `TauCeti.Perfectoid.uniformTilt.charP`: the tilt
   is perfect, and of characteristic `p` when `B` is nonzero.
+* `TauCeti.Perfectoid.uniformTilt.coeff_map`, `TauCeti.Perfectoid.uniformTilt.map_id` and
+  `TauCeti.Perfectoid.uniformTilt.map_comp`: `g♭` acts coordinatewise, and tilting is a functor.
 
 ## References
 
 * K. S. Kedlaya, *Nonarchimedean geometry of Witt vectors and the tilting equivalence*, in
-  *Perfectoid Spaces: Lectures from the 2017 Arizona Winter School*, Lemma 2.7.1(a).
+  *Perfectoid Spaces: Lectures from the 2017 Arizona Winter School*, Lemma 2.7.1(a) and (d).
 * P. Scholze, *Étale cohomology of diamonds*, Definition 3.9 and Lemma 3.10.
 * P. Scholze, *Perfectoid spaces*, Lemma 3.4 and Proposition 5.17.
 -/
@@ -691,6 +696,55 @@ instance charP [Nontrivial B] : CharP (uniformTilt p B) p := by
   rw [coeff_apply, h]
   exact tendsto_nhds_unique (tendsto_tiltLim isUnit_one hconst N)
     (hpn.out.comp (tendsto_atTop_mono (fun m ↦ (Nat.lt_pow_self hp.out.one_lt).le) tendsto_id))
+
+section Map
+
+variable {C D : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C]
+  [IsTateRing C] [CompleteSpace C] [T2Space C] [IsUniform C]
+  [Fact (IsTopologicallyNilpotent (p : C))]
+  [CommRing D] [UniformSpace D] [IsUniformAddGroup D] [IsTopologicalRing D]
+  [IsTateRing D] [CompleteSpace D] [T2Space D] [IsUniform D]
+  [Fact (IsTopologicallyNilpotent (p : D))]
+
+/-- **Functoriality of the tilt**: a continuous ring homomorphism `g : B → C` induces the ring
+homomorphism `g♭ : B♭ → C♭`, `(x⁽ⁿ⁾)ₙ ↦ (g x⁽ⁿ⁾)ₙ` (Kedlaya, *Arizona Winter School notes*,
+Lemma 2.7.1(d)). Continuity of `g` is what makes `g♭` additive for the limit addition. -/
+noncomputable def map (g : B →+* C) (hg : Continuous g) : uniformTilt p B →+* uniformTilt p C :=
+  { (Perfection.mapMonoidHom p g.toMonoidHom : uniformTilt p B →* uniformTilt p C) with
+    map_zero' := ext fun n ↦
+      (Perfection.coeffMonoidHom_mapMonoidHom p g.toMonoidHom (0 : uniformTilt p B) n).trans
+        (map_zero g)
+    map_add' := fun x y ↦ ext fun n ↦ by
+      -- both sides are the limit of `(g x⁽ⁿ⁺ᵐ⁾ + g y⁽ⁿ⁺ᵐ⁾) ^ p ^ m`
+      refine tendsto_nhds_unique ((hg.tendsto _).comp (coeff_add x y n))
+        ((coeff_add _ _ n).congr fun m ↦ ?_)
+      simp only [Function.comp_apply, map_pow, map_add]
+      rfl }
+
+/-- The coordinates of `g♭ x` are the images under `g` of the coordinates of `x`; for `n = 0` this
+is `(g♭ x)♯ = g x♯`. -/
+@[simp]
+theorem coeff_map (g : B →+* C) (hg : Continuous g) (x : uniformTilt p B) (n : ℕ) :
+    coeff p C n (map g hg x) = g (coeff p B n x) :=
+  Perfection.coeffMonoidHom_mapMonoidHom p g.toMonoidHom x n
+
+/-- The identity of `B` induces the identity of the tilt. -/
+@[simp]
+theorem map_id : map (RingHom.id B) continuous_id = RingHom.id (uniformTilt p B) :=
+  RingHom.ext fun _ ↦ ext fun _ ↦ by simp
+
+/-- Tilting is functorial: `(g₂ ∘ g₁)♭ = g₂♭ ∘ g₁♭`. -/
+theorem map_comp (g₁ : B →+* C) (hg₁ : Continuous g₁) (g₂ : C →+* D) (hg₂ : Continuous g₂) :
+    map (g₂.comp g₁) (hg₂.comp hg₁) = (map g₂ hg₂).comp (map (p := p) g₁ hg₁) :=
+  RingHom.ext fun _ ↦ ext fun _ ↦ by simp
+
+/-- Pointwise form of `uniformTilt.map_comp`. -/
+@[simp]
+theorem map_map (g₁ : B →+* C) (hg₁ : Continuous g₁) (g₂ : C →+* D) (hg₂ : Continuous g₂)
+    (x : uniformTilt p B) : map g₂ hg₂ (map g₁ hg₁ x) = map (g₂.comp g₁) (hg₂.comp hg₁) x :=
+  ext fun _ ↦ by simp
+
+end Map
 
 end uniformTilt
 

@@ -9,11 +9,6 @@ public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialLinear
 public import TauCeti.RepresentationTheory.CharacterTwist
 public import TauCeti.RepresentationTheory.Irreducible
-public import TauCeti.RepresentationTheory.ClassicalGroups.Rational
-import Mathlib.Analysis.Complex.Polynomial.Basic
-import Mathlib.RingTheory.RootsOfUnity.Complex
-import TauCeti.RingTheory.MvPolynomial.Homogeneous
-import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Restriction from `GL` to `SL`, and extension back
@@ -38,22 +33,18 @@ characteristic divides `|ι|`, and that hypothesis cannot be dropped: over an al
 field of characteristic `2`, the determinant of `GL₂` followed by the inverse of the Frobenius is a
 character that is trivial on `SL₂` but on which the scalar `z` acts by `z ^ 1`.
 
-Conversely, a representation of `SL` extends to `GL` once its determinant-one scalar matrices act
-through a power character `ζ ↦ ζ ^ a`: send `s * z`, for `s` of determinant one and `z` scalar, to
-`z ^ a • ρ s`. Two such splittings of the same matrix differ by a determinant-one scalar matrix,
-which is what makes this well defined, and the extension is unique among those on which `z` acts by
-`z ^ a` (`Representation.existsUnique_comp_toGL_eq_and_apply_scalar`). On an irreducible
-representation over an algebraically closed field whose characteristic does not divide `|ι|`, such
-an `a` always exists, by Schur's lemma applied to a primitive root of unity
-(`Representation.IsIrreducible.exists_forall_apply_eq_pow_smul_one`).
+Conversely, a representation `ρ` of `SL` extends to `GL` as soon as the determinant-one scalar
+matrices act on it by a power character `z ↦ z ^ a`: the operator `z ^ a • ρ s` on
+`toGL s * scalar z` does not depend on the factorization, because two factorizations differ by a
+determinant-one scalar matrix (`Representation.extendToGL`). Every finite-dimensional irreducible
+`ρ` has such a character when the characteristic does not divide `|ι|`, by Schur's lemma applied to
+the scalar matrix of a primitive `|ι|`-th root of unity
+(`Representation.IsIrreducible.exists_forall_apply_eq_zpow_smul`).
 
-Over `ℂ` the extension preserves rationality. A representation of `SL n ℂ` is rational
-(`TauCeti.IsRationalSLRep`) when its matrix entries in some basis are polynomials in the matrix
-entries; no determinant denominator is needed, since `det = 1`. If `g = c • s` with `c ^ n = det g`,
-the entries of `ρ g = c ^ a • ρ s` are `c ^ a` times polynomials in the entries of `c⁻¹ • g`. Since
-the roots of unity act by `ζ ^ a`, only the homogeneous components of degree `k ≡ a` modulo `n`
-contribute, and for those `c ^ a * c⁻¹ ^ k` is an integer power of `det g`
-(`TauCeti.IsRationalRep.of_comp_toGL`).
+## Main definitions
+
+* `Representation.extendToGL`: the extension to `GL` of a representation of `SL` on which the
+  determinant-one scalar matrices act by `z ↦ z ^ a`, with every scalar matrix acting by `z ^ a`.
 
 ## Main results
 
@@ -68,18 +59,14 @@ contribute, and for those `c ^ a * c⁻¹ ^ k` is an integer power of `det g`
 * `Representation.nonempty_equiv_comp_toGL_iff`: two representations of `GL` with scalar central
   characters restrict to equivalent representations of `SL` exactly when one is equivalent to a
   determinant twist of the other.
-* `Representation.IsIrreducible.exists_forall_apply_eq_pow_smul_one`: the determinant-one scalar
-  matrices act on an irreducible representation of `SL` through a power of the scalar.
-* `Representation.existsUnique_comp_toGL_eq_and_apply_scalar`: a representation of `SL` on which
-  the determinant-one scalar matrices act through `ζ ↦ ζ ^ a` extends uniquely to `GL` with scalar
-  matrices acting through `z ↦ z ^ a`.
-* `TauCeti.IsRationalSLRep`: rational representations of `SL n ℂ`, with
-  `TauCeti.IsRationalRep.comp_toGL` restricting rational representations of `GL n ℂ`, and
-  `TauCeti.isRationalSLRep_iff_forall_exists_eval` checking rationality against any basis, and
-  `TauCeti.IsRationalSLRep.of_surjective` and `Representation.Equiv.isRationalSLRep_iff`
-  transporting it to quotients and along equivalences.
-* `TauCeti.IsRationalRep.of_comp_toGL`: a representation of `GL n ℂ` with rational restriction to
-  `SL n ℂ` and scalar matrices acting through `z ↦ z ^ a` is rational.
+* `Representation.extendToGL_comp_toGL` and `Representation.extendToGL_scalar`: the extension
+  restricts to the original representation, and scalar matrices act on it by `z ↦ z ^ a`.
+* `Representation.existsUnique_comp_toGL_eq_and_apply_scalar`: the extension with a prescribed
+  scalar character is unique.
+* `Representation.isIrreducible_extendToGL_iff`: the extension is irreducible exactly when the
+  original representation is.
+* `Representation.IsIrreducible.exists_forall_apply_eq_zpow_smul`: on an irreducible
+  representation of `SL`, the determinant-one scalar matrices act by a power character.
 
 ## References
 
@@ -247,408 +234,197 @@ section Extension
 open Matrix
 
 variable {ι K V : Type*} [Fintype ι] [DecidableEq ι] [Field K]
-  [AddCommGroup V] [Module K V] {ρ : Representation K (SpecialLinearGroup ι K) V} {a : ℤ}
+  [AddCommMonoid V] [Module K V]
 
-/-- Two splittings of an invertible matrix as a determinant-one matrix times a scalar matrix give
-the same operator `z ^ a • ρ s`, when determinant-one scalar matrices `ζ` act by `ζ ^ a`. -/
-private theorem pow_smul_apply_eq_of_toGL_mul_scalar_eq
-    (H : ∀ (s : SpecialLinearGroup ι K) (ζ : K), (s : Matrix ι ι K) = scalar ι ζ →
-      ρ s = ζ ^ a • 1)
+/-- If the determinant-one scalar matrices act on `ρ` by `z ↦ z ^ a`, two factorizations of the
+same invertible matrix as a determinant-one matrix times a scalar matrix give the same operator
+`z ^ a • ρ s`. -/
+private theorem zpow_smul_eq_of_toGL_mul_scalar_eq {ρ : Representation K (SpecialLinearGroup ι K) V}
+    {a : ℤ} (ha : ∀ (s : SpecialLinearGroup ι K) (z : Kˣ),
+      SpecialLinearGroup.toGL s = GeneralLinearGroup.scalar ι z →
+        ∀ v, ρ s v = ((z ^ a : Kˣ) : K) • v)
     {s s' : SpecialLinearGroup ι K} {z z' : Kˣ}
     (h : SpecialLinearGroup.toGL s * GeneralLinearGroup.scalar ι z =
       SpecialLinearGroup.toGL s' * GeneralLinearGroup.scalar ι z') :
-    ((z : K) ^ a) • ρ s = ((z' : K) ^ a) • ρ s' := by
-  have ht : ((s'⁻¹ * s : SpecialLinearGroup ι K) : Matrix ι ι K) =
-      scalar ι ((z' : K) * (z⁻¹ : Kˣ)) := by
-    have h' : SpecialLinearGroup.toGL (s'⁻¹ * s) =
-        GeneralLinearGroup.scalar ι (z' * z⁻¹) := by
-      simp only [map_mul, map_inv]
-      rw [inv_mul_eq_iff_eq_mul, ← mul_assoc, ← h]
-      group
-    have := congrArg Units.val h'
-    rwa [SpecialLinearGroup.coe_GL_coe_matrix, GeneralLinearGroup.coe_scalar, Units.val_mul] at this
-  have hs : ρ s = ((z' : K) * (z⁻¹ : Kˣ)) ^ a • ρ s' := by
-    calc ρ s = ρ (s' * (s'⁻¹ * s)) := by rw [mul_inv_cancel_left]
-      _ = ρ s' * ρ (s'⁻¹ * s) := map_mul ..
-      _ = _ := by rw [H _ _ ht, mul_smul_comm, mul_one]
-  rw [hs, smul_smul, ← mul_zpow]
-  congr 2
-  simp [mul_left_comm (z : K)]
+    ((z ^ a : Kˣ) : K) • ρ s = ((z' ^ a : Kˣ) : K) • ρ s' := by
+  have hu : SpecialLinearGroup.toGL (s'⁻¹ * s) = GeneralLinearGroup.scalar ι (z' * z⁻¹) := by
+    rw [map_mul, map_inv, map_mul, map_inv, inv_mul_eq_iff_eq_mul, ← mul_assoc,
+      eq_mul_inv_iff_mul_eq, h]
+  have hs : s = s' * (s'⁻¹ * s) := by group
+  ext v
+  conv_lhs => rw [hs, map_mul]
+  simp only [LinearMap.smul_apply, Module.End.mul_apply, ha _ _ hu, map_smul, smul_smul]
+  rw [← Units.val_mul, ← mul_zpow, mul_comm z, inv_mul_cancel_right]
 
-variable [IsAlgClosed K]
+variable [IsAlgClosed K] (ρ : Representation K (SpecialLinearGroup ι K) V) (a : ℤ)
+  (ha : ∀ (s : SpecialLinearGroup ι K) (z : Kˣ),
+    SpecialLinearGroup.toGL s = GeneralLinearGroup.scalar ι z →
+      ∀ v, ρ s v = ((z ^ a : Kˣ) : K) • v)
 
-/-- **The determinant-one scalar matrices act on an irreducible representation of `SL` through a
-power of the scalar.** Over an algebraically closed field whose characteristic does not divide
-`|ι|`, the determinant-one scalar matrices are the `|ι|`-th roots of unity `ζ`, a cyclic group
-generated by a primitive root `ζ₀`. By Schur's lemma the central element `ζ₀` acts by a scalar,
-which is again an `|ι|`-th root of unity, hence a power `ζ₀ ^ a`; then every `ζ` acts by `ζ ^ a`. -/
-theorem IsIrreducible.exists_forall_apply_eq_pow_smul_one [NeZero (Fintype.card ι : K)]
-    [FiniteDimensional K V] [ρ.IsIrreducible] :
-    ∃ a : ℕ, ∀ (s : SpecialLinearGroup ι K) (ζ : K), (s : Matrix ι ι K) = scalar ι ζ →
-      ρ s = ζ ^ a • 1 := by
-  have : NeZero (Fintype.card ι) := .of_neZero_natCast K
-  have := IsIrreducible.nontrivial (ρ := ρ) inferInstance
-  obtain ⟨ζ₀, hζ₀⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K (Fintype.card ι)
-  let z₀ : SpecialLinearGroup ι K := ⟨scalar ι ζ₀, by simp [hζ₀.pow_eq_one]⟩
-  have hpow (j : ℕ) : ((z₀ ^ j : SpecialLinearGroup ι K) : Matrix ι ι K) = scalar ι (ζ₀ ^ j) := by
-    rw [SpecialLinearGroup.coe_pow, SpecialLinearGroup.coe_mk, map_pow]
-  -- Schur's lemma: the central element `z₀` acts by a scalar `χ`.
-  obtain ⟨χ, hχ⟩ := IsIrreducible.exists_forall_apply_eq_smul (ρ z₀) fun g v => by
-    have hz : z₀ * g = g * z₀ := SpecialLinearGroup.ext _ _ fun i j => by
-      rw [SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mk,
-        scalar_commute ζ₀ (Commute.all ζ₀)]
-    rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul, hz]
-  have hρz₀ : ρ z₀ = χ • 1 := LinearMap.ext hχ
-  have hρpow (j : ℕ) : ρ (z₀ ^ j) = (χ ^ j) • 1 := by
-    rw [map_pow, hρz₀, smul_pow, one_pow]
-  -- The scalar `χ` is a root of unity, since `z₀ ^ |ι| = 1`.
-  have hχn : χ ^ Fintype.card ι = 1 := by
-    obtain ⟨v, hv⟩ := exists_ne (0 : V)
-    have h1 : z₀ ^ Fintype.card ι = 1 := SpecialLinearGroup.ext _ _ fun i j => by
-      rw [hpow, hζ₀.pow_eq_one, map_one, SpecialLinearGroup.coe_one]
-    refine smul_left_injective K hv ?_
-    simpa [h1] using (LinearMap.congr_fun (hρpow (Fintype.card ι)) v).symm
-  obtain ⟨a, -, ha⟩ := hζ₀.eq_pow_of_pow_eq_one hχn
-  refine ⟨a, fun s ζ hs => ?_⟩
-  have hζ : ζ ^ Fintype.card ι = 1 := by
-    simpa [hs] using s.prop
-  obtain ⟨j, -, rfl⟩ := hζ₀.eq_pow_of_pow_eq_one hζ
-  have hsj : s = z₀ ^ j := SpecialLinearGroup.ext _ _ fun i k => by rw [hpow, hs]
-  rw [hsj, hρpow, ← ha, ← pow_mul, ← pow_mul, mul_comm]
-
-variable (ρ a) in
-/-- The operator `z ^ a • ρ s` for a chosen splitting `g = s * z` of an invertible matrix into a
-determinant-one matrix and a scalar matrix. -/
-private noncomputable def extendAux (g : GL ι K) : Module.End K V :=
-  ((g.exists_toGL_mul_scalar_eq.choose_spec.choose : K) ^ a) •
+/-- The operator `z ^ a • ρ s` attached to the chosen factorization `g = toGL s * scalar z`. This
+is an implementation detail of `Representation.extendToGL`, whose interface is
+`Representation.extendToGL_toGL_mul_scalar`. -/
+private noncomputable def extendToGLFun (g : GL ι K) : Module.End K V :=
+  ((g.exists_toGL_mul_scalar_eq.choose_spec.choose ^ a : Kˣ) : K) •
     ρ g.exists_toGL_mul_scalar_eq.choose
 
-private theorem extendAux_eq
-    (H : ∀ (s : SpecialLinearGroup ι K) (ζ : K), (s : Matrix ι ι K) = scalar ι ζ →
-      ρ s = ζ ^ a • 1)
-    {g : GL ι K} {s : SpecialLinearGroup ι K} {z : Kˣ}
+variable {ρ a}
+
+include ha in
+private theorem extendToGLFun_eq {g : GL ι K} {s : SpecialLinearGroup ι K} {z : Kˣ}
     (h : SpecialLinearGroup.toGL s * GeneralLinearGroup.scalar ι z = g) :
-    extendAux ρ a g = ((z : K) ^ a) • ρ s :=
-  pow_smul_apply_eq_of_toGL_mul_scalar_eq H
+    extendToGLFun ρ a g = ((z ^ a : Kˣ) : K) • ρ s :=
+  zpow_smul_eq_of_toGL_mul_scalar_eq ha
     (g.exists_toGL_mul_scalar_eq.choose_spec.choose_spec.trans h.symm)
 
-/-- **Extending a representation of `SL` to `GL`.** Over an algebraically closed field, a
-representation `ρ` of the special linear group on which every determinant-one scalar matrix `ζ`
-acts by `ζ ^ a` extends uniquely to a representation of the general linear group on which every
-scalar matrix `z` acts by `z ^ a`. The extension sends `s * z`, for `s` of determinant one and `z`
-scalar, to `z ^ a • ρ s`. -/
-theorem existsUnique_comp_toGL_eq_and_apply_scalar
-    (H : ∀ (s : SpecialLinearGroup ι K) (ζ : K), (s : Matrix ι ι K) = scalar ι ζ →
-      ρ s = ζ ^ a • 1) :
-    ∃! ρ' : Representation K (GL ι K) V, ρ'.comp SpecialLinearGroup.toGL = ρ ∧
-      ∀ z : Kˣ, ρ' (GeneralLinearGroup.scalar ι z) = ((z ^ a : Kˣ) : K) • 1 := by
-  let ρ' : Representation K (GL ι K) V :=
-    { toFun := extendAux ρ a
-      map_one' := by rw [extendAux_eq H (s := 1) (z := 1) (by simp), map_one]; simp
-      map_mul' g h := by
-        obtain ⟨s, z, rfl⟩ := g.exists_toGL_mul_scalar_eq
-        obtain ⟨t, w, rfl⟩ := h.exists_toGL_mul_scalar_eq
-        have hst : SpecialLinearGroup.toGL (s * t) * GeneralLinearGroup.scalar ι (z * w) =
-            SpecialLinearGroup.toGL s * GeneralLinearGroup.scalar ι z *
-              (SpecialLinearGroup.toGL t * GeneralLinearGroup.scalar ι w) := by
-          rw [map_mul, map_mul]
-          simp only [mul_assoc]
-          rw [← mul_assoc (GeneralLinearGroup.scalar ι z),
-            GeneralLinearGroup.scalar_commute z (SpecialLinearGroup.toGL t), mul_assoc]
-        rw [extendAux_eq H hst, extendAux_eq H rfl, extendAux_eq H rfl, map_mul, Units.val_mul,
-          mul_zpow, smul_mul_smul_comm] }
-  refine ⟨ρ', ⟨MonoidHom.ext fun s => ?_, fun z => ?_⟩, fun σ ⟨hσ, hσz⟩ => MonoidHom.ext
-    fun g => ?_⟩
-  · exact (extendAux_eq (ρ := ρ) (a := a) H (s := s) (z := 1) (mul_one _)).trans (by simp)
-  · exact (extendAux_eq (ρ := ρ) (a := a) H (s := 1) (z := z) (by simp)).trans (by simp)
-  · obtain ⟨s, z, rfl⟩ := g.exists_toGL_mul_scalar_eq
-    rw [map_mul, hσz, ← MonoidHom.comp_apply, hσ, mul_smul_comm, mul_one,
-      Units.val_zpow_eq_zpow_val]
-    exact (extendAux_eq H rfl).symm
+variable (ρ a)
+
+/-- **The extension of a representation of `SL` to `GL`.** Over an algebraically closed field,
+every invertible matrix factors as `toGL s * scalar z` with `s` of determinant one
+(`Matrix.GeneralLinearGroup.exists_toGL_mul_scalar_eq`). If the determinant-one scalar matrices
+act on `ρ` by `z ↦ z ^ a`, then `toGL s * scalar z ↦ z ^ a • ρ s` does not depend on the
+factorization, and it is a representation of `GL ι K` restricting to `ρ`
+(`Representation.extendToGL_comp_toGL`) on which every scalar matrix `z` acts by `z ^ a`
+(`Representation.extendToGL_scalar`). -/
+noncomputable def extendToGL : Representation K (GL ι K) V where
+  toFun := extendToGLFun ρ a
+  map_one' := by
+    rw [extendToGLFun_eq ha (s := 1) (z := 1) (by rw [map_one, map_one, one_mul]), one_zpow,
+      Units.val_one, one_smul, map_one]
+  map_mul' g h := by
+    obtain ⟨s, z, rfl⟩ := g.exists_toGL_mul_scalar_eq
+    obtain ⟨t, w, rfl⟩ := h.exists_toGL_mul_scalar_eq
+    rw [extendToGLFun_eq ha rfl, extendToGLFun_eq ha rfl,
+      extendToGLFun_eq ha (s := s * t) (z := z * w) (by
+        rw [map_mul, map_mul, mul_assoc, ← mul_assoc (SpecialLinearGroup.toGL t),
+          ← GeneralLinearGroup.scalar_commute z (SpecialLinearGroup.toGL t)]
+        simp only [mul_assoc]),
+      map_mul, mul_zpow, Units.val_mul, smul_mul_smul_comm, mul_smul]
+
+/-- On a factorization `toGL s * scalar z`, the extension acts by `z ^ a • ρ s`. -/
+theorem extendToGL_toGL_mul_scalar (s : SpecialLinearGroup ι K) (z : Kˣ) :
+    extendToGL ρ a ha (SpecialLinearGroup.toGL s * GeneralLinearGroup.scalar ι z) =
+      ((z ^ a : Kˣ) : K) • ρ s :=
+  extendToGLFun_eq ha rfl
+
+/-- **The extension restricts to the original representation** on `SL ι K`. -/
+@[simp]
+theorem extendToGL_comp_toGL : (extendToGL ρ a ha).comp SpecialLinearGroup.toGL = ρ := by
+  ext s v
+  have h := extendToGL_toGL_mul_scalar ρ a ha s 1
+  rw [map_one, mul_one] at h
+  simp [h]
+
+/-- The extension acts on a determinant-one matrix by the original representation. -/
+@[simp]
+theorem extendToGL_toGL (s : SpecialLinearGroup ι K) :
+    extendToGL ρ a ha (SpecialLinearGroup.toGL s) = ρ s :=
+  congrArg (· s) (extendToGL_comp_toGL ρ a ha)
+
+/-- **A scalar matrix `z` acts on the extension by `z ^ a`.** -/
+@[simp]
+theorem extendToGL_scalar (z : Kˣ) (v : V) :
+    extendToGL ρ a ha (GeneralLinearGroup.scalar ι z) v = ((z ^ a : Kˣ) : K) • v := by
+  have h := extendToGL_toGL_mul_scalar ρ a ha 1 z
+  rw [map_one, one_mul] at h
+  simp [h]
+
+include ha in
+/-- **Extending a representation of `SL` to `GL` with a prescribed scalar character is unique.**
+Over an algebraically closed field, a representation of `SL` on which the determinant-one scalar
+matrices act by `z ↦ z ^ a` extends uniquely to a representation of `GL` on which every scalar
+matrix acts by `z ↦ z ^ a`. The extension is `Representation.extendToGL`. -/
+theorem existsUnique_comp_toGL_eq_and_apply_scalar :
+    ∃! σ : Representation K (GL ι K) V, σ.comp SpecialLinearGroup.toGL = ρ ∧
+      ∀ (z : Kˣ) (v : V), σ (GeneralLinearGroup.scalar ι z) v = ((z ^ a : Kˣ) : K) • v := by
+  refine ⟨extendToGL ρ a ha, ⟨extendToGL_comp_toGL ρ a ha, extendToGL_scalar ρ a ha⟩,
+    fun σ ⟨hσ, hσz⟩ => MonoidHom.ext fun g => LinearMap.ext fun v => ?_⟩
+  obtain ⟨s, z, rfl⟩ := g.exists_toGL_mul_scalar_eq
+  rw [map_mul, Module.End.mul_apply, hσz, map_smul, ← MonoidHom.comp_apply, hσ,
+    extendToGL_toGL_mul_scalar, LinearMap.smul_apply]
 
 end Extension
+
+section ExtensionIrreducible
+
+open Matrix
+
+variable {ι K V : Type*} [Fintype ι] [DecidableEq ι] [Field K] [IsAlgClosed K]
+  [AddCommGroup V] [Module K V]
+
+/-- The extension is irreducible exactly when the original representation of `SL ι K` is: both
+have the same invariant subspaces, since every scalar matrix acts on the extension by a scalar. -/
+@[simp]
+theorem isIrreducible_extendToGL_iff (ρ : Representation K (SpecialLinearGroup ι K) V) (a : ℤ)
+    (ha : ∀ (s : SpecialLinearGroup ι K) (z : Kˣ),
+      SpecialLinearGroup.toGL s = GeneralLinearGroup.scalar ι z →
+        ∀ v, ρ s v = ((z ^ a : Kˣ) : K) • v) :
+    (extendToGL ρ a ha).IsIrreducible ↔ ρ.IsIrreducible := by
+  let e : Subrepresentation (extendToGL ρ a ha) ≃o Subrepresentation ρ :=
+    { toFun S := ⟨S.toSubmodule, fun s v hv => by
+        simpa using S.apply_mem_toSubmodule (SpecialLinearGroup.toGL s) hv⟩
+      invFun S := ⟨S.toSubmodule, fun g v hv => by
+        obtain ⟨s, z, rfl⟩ := g.exists_toGL_mul_scalar_eq
+        rw [extendToGL_toGL_mul_scalar, LinearMap.smul_apply]
+        exact S.toSubmodule.smul_mem _ (S.apply_mem_toSubmodule s hv)⟩
+      left_inv _ := rfl
+      right_inv _ := rfl
+      map_rel_iff' := Iff.rfl }
+  exact e.isSimpleOrder_iff
+
+/-- **The determinant-one scalar matrices act on an irreducible representation of `SL` by a power
+character.** Let `ρ` be a finite-dimensional irreducible representation of `SL ι K` over an
+algebraically closed field whose characteristic does not divide `|ι|`. The scalar matrices of
+determinant one are the `|ι|`-th roots of unity `z`, and they act by `z ↦ z ^ a` for some `a`. This
+is the hypothesis of `Representation.extendToGL`. -/
+theorem IsIrreducible.exists_forall_apply_eq_zpow_smul [FiniteDimensional K V]
+    [NeZero (Fintype.card ι : K)] (ρ : Representation K (SpecialLinearGroup ι K) V)
+    [ρ.IsIrreducible] :
+    ∃ a : ℤ, ∀ (s : SpecialLinearGroup ι K) (z : Kˣ),
+      SpecialLinearGroup.toGL s = GeneralLinearGroup.scalar ι z →
+        ∀ v, ρ s v = ((z ^ a : Kˣ) : K) • v := by
+  have : NeZero (Fintype.card ι) := .of_neZero_natCast K
+  have := IsIrreducible.nontrivial (ρ := ρ) inferInstance
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K (Fintype.card ι)
+  let u : Kˣ := (hζ.isUnit (NeZero.ne _)).unit
+  have hu : IsPrimitiveRoot u (Fintype.card ι) := IsPrimitiveRoot.coe_units_iff.mp hζ
+  -- The scalar matrix `u` has determinant `u ^ |ι| = 1`, so it lies in `SL ι K`.
+  let s₀ : SpecialLinearGroup ι K :=
+    ⟨GeneralLinearGroup.scalar ι u, by
+      rw [← GeneralLinearGroup.val_det_apply, GeneralLinearGroup.det_scalar, hu.pow_eq_one,
+        Units.val_one]⟩
+  have hs₀ : SpecialLinearGroup.toGL s₀ = GeneralLinearGroup.scalar ι u := Units.ext rfl
+  -- It is central, so it acts by a scalar `c`, which is an `|ι|`-th root of unity.
+  obtain ⟨c, hc⟩ := IsIrreducible.exists_forall_apply_eq_smul (ρ s₀) fun g v => by
+    have hcomm : s₀ * g = g * s₀ := SpecialLinearGroup.toGL_injective <| by
+      rw [map_mul, map_mul, hs₀, GeneralLinearGroup.scalar_commute]
+    rw [← Module.End.mul_apply, ← map_mul, hcomm, map_mul, Module.End.mul_apply]
+  have hpow : ∀ (j : ℕ) (v : V), ρ (s₀ ^ j) v = c ^ j • v := fun j => by
+    induction j with
+    | zero => simp
+    | succ j ih => intro v; rw [pow_succ, map_mul, Module.End.mul_apply, hc, map_smul, ih,
+        smul_smul, pow_succ, mul_comm]
+  have hcN : c ^ Fintype.card ι = 1 := by
+    obtain ⟨v, hv⟩ := exists_ne (0 : V)
+    have h1 : s₀ ^ Fintype.card ι = 1 := SpecialLinearGroup.toGL_injective <| by
+      rw [map_pow, hs₀, ← map_pow, hu.pow_eq_one, map_one, map_one]
+    have h := hpow (Fintype.card ι) v
+    rw [h1, map_one, Module.End.one_apply] at h
+    exact (smul_left_injective K hv (h.symm.trans (one_smul K v).symm) :)
+  obtain ⟨a, -, ha⟩ := hζ.eq_pow_of_pow_eq_one hcN
+  refine ⟨a, fun s z hs v => ?_⟩
+  -- Every determinant-one scalar matrix is a power of the scalar matrix of `u`.
+  have hzN : z ^ Fintype.card ι = 1 := by
+    have h := congrArg GeneralLinearGroup.det hs
+    rwa [SpecialLinearGroup.coeToGL_det, GeneralLinearGroup.det_scalar, eq_comm] at h
+  obtain ⟨j, -, hj⟩ := hζ.eq_pow_of_pow_eq_one (by rw [← Units.val_pow_eq_pow_val, hzN,
+    Units.val_one])
+  obtain rfl : u ^ j = z := Units.ext (by rw [Units.val_pow_eq_pow_val]; exact hj)
+  have hsj : s = s₀ ^ j := SpecialLinearGroup.toGL_injective <| by
+    rw [hs, map_pow, map_pow, hs₀]
+  rw [hsj, hpow, ← ha, zpow_natCast, Units.val_pow_eq_pow_val, ← hj, ← pow_mul, ← pow_mul,
+    mul_comm]
+
+end ExtensionIrreducible
 
 end Representation
-
-open Matrix MvPolynomial TauCeti.Matrix.GeneralLinearGroup
-
-namespace TauCeti
-
-variable {n : ℕ} {W : Type*}
-
-section Defs
-
-variable [AddCommMonoid W] [Module ℂ W]
-
-/-- **A rational representation** of `SL n ℂ`: in some basis of the carrier, every matrix entry
-of `ρ s` is a polynomial in the entries of `s`. On the special linear group the determinant is `1`,
-so allowing a power of the determinant in the denominator, as `TauCeti.IsRationalRep` does on
-`GL n ℂ`, would change nothing: rational and polynomial representations of `SL n ℂ` coincide. The
-carrier is forced to be finite-dimensional (`TauCeti.IsRationalSLRep.finite`). -/
-def IsRationalSLRep (ρ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) W) : Prop :=
-  ∃ (b : Module.Basis (Fin (Module.finrank ℂ W)) ℂ W)
-    (P : Fin (Module.finrank ℂ W) → Fin (Module.finrank ℂ W) → MvPolynomial (Fin n × Fin n) ℂ),
-    ∀ (s : SpecialLinearGroup (Fin n) ℂ) (i j : Fin (Module.finrank ℂ W)),
-      LinearMap.toMatrix b b (ρ s) i j
-        = MvPolynomial.eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) (P i j)
-
-/-- The coordinate-entry form of `TauCeti.IsRationalSLRep`, as a lemma. -/
-theorem isRationalSLRep_iff (ρ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) W) :
-    IsRationalSLRep ρ ↔ ∃ (b : Module.Basis (Fin (Module.finrank ℂ W)) ℂ W)
-      (P : Fin (Module.finrank ℂ W) → Fin (Module.finrank ℂ W) → MvPolynomial (Fin n × Fin n) ℂ),
-      ∀ (s : SpecialLinearGroup (Fin n) ℂ) (i j : Fin (Module.finrank ℂ W)),
-        LinearMap.toMatrix b b (ρ s) i j
-          = MvPolynomial.eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) (P i j) :=
-  (Iff.rfl)
-
-/-- The carrier of a rational representation of `SL n ℂ` is finite-dimensional. -/
-theorem IsRationalSLRep.finite {ρ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) W}
-    (h : IsRationalSLRep ρ) : Module.Finite ℂ W := by
-  obtain ⟨b, -⟩ := h
-  exact Module.Finite.of_basis b
-
-/-- **Rationality on `SL n ℂ` is basis independent.** A representation of `SL n ℂ` is rational
-exactly when, against *any* chosen basis, each matrix entry is a polynomial function of the entries
-of `s`. -/
-theorem isRationalSLRep_iff_forall_exists_eval
-    {ρ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) W}
-    {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℂ W) :
-    IsRationalSLRep ρ ↔ ∀ i j, ∃ P : MvPolynomial (Fin n × Fin n) ℂ,
-      ∀ s : SpecialLinearGroup (Fin n) ℂ,
-        LinearMap.toMatrix b b (ρ s) i j =
-          eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) P := by
-  let x (p : Fin n × Fin n) (s : SpecialLinearGroup (Fin n) ℂ) : ℂ :=
-    (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2
-  -- The polynomial functions on `SL n ℂ`, as a subalgebra of all functions.
-  let A : Subalgebra ℂ (SpecialLinearGroup (Fin n) ℂ → ℂ) := (aeval x).range
-  have hA {f : SpecialLinearGroup (Fin n) ℂ → ℂ} : f ∈ A ↔ ∃ P : MvPolynomial (Fin n × Fin n) ℂ,
-      ∀ s, f s = eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) P := by
-    have heval (P : MvPolynomial (Fin n × Fin n) ℂ) (s : SpecialLinearGroup (Fin n) ℂ) :
-        aeval x P s = eval (fun p => x p s) P := by
-      simpa [aeval_eq_eval] using comp_aeval_apply x (Pi.evalAlgHom ℂ (fun _ => ℂ) s) P
-    refine ⟨fun ⟨P, hP⟩ => ⟨P, fun s => hP ▸ heval P s⟩, fun ⟨P, hP⟩ => ⟨P, funext fun s => ?_⟩⟩
-    exact (heval P s).trans (hP s).symm
-  constructor
-  · rintro ⟨b₀, P, hP⟩ i j
-    exact hA.mp (Representation.toMatrix_mem_of_toMatrix_mem A b₀ b ρ
-      (fun p l => hA.mpr ⟨P p l, fun s => hP s p l⟩) i j)
-  · intro h
-    let e : ι ≃ Fin (Module.finrank ℂ W) :=
-      Fintype.equivFinOfCardEq (Module.finrank_eq_card_basis b).symm
-    choose P hP using fun q : Fin (Module.finrank ℂ W) × Fin (Module.finrank ℂ W) =>
-      hA.mp (Representation.toMatrix_mem_of_toMatrix_mem A b (b.reindex e) ρ
-        (fun i j => hA.mpr (h i j)) q.1 q.2)
-    exact ⟨b.reindex e, fun i j => P (i, j), fun s i j => hP (i, j) s⟩
-
-/-- **A quotient of a rational representation of `SL n ℂ` is rational.** -/
-theorem IsRationalSLRep.of_surjective {V : Type*} [AddCommMonoid V] [Module ℂ V]
-    {ρ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) W}
-    {σ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) V} (h : IsRationalSLRep ρ)
-    (f : Representation.IntertwiningMap ρ σ) (hf : Function.Surjective f) :
-    IsRationalSLRep σ := by
-  -- `Module.finBasis` needs an additive group; over the field `ℂ` one is recovered from the module
-  -- structure, with negation `(-1) • ·`, extending the given `AddCommMonoid`.
-  let _ : AddCommGroup V := Module.addCommMonoidToAddCommGroup ℂ
-  obtain ⟨b, P, hP⟩ := h
-  have : Module.Finite ℂ W := Module.Finite.of_basis b
-  have : Module.Finite ℂ V := Module.Finite.of_surjective f.toLinearMap hf
-  let A : Subalgebra ℂ (SpecialLinearGroup (Fin n) ℂ → ℂ) :=
-    (aeval fun (p : Fin n × Fin n) (s : SpecialLinearGroup (Fin n) ℂ) =>
-      (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2).range
-  have hA (Q : MvPolynomial (Fin n × Fin n) ℂ) :
-      (fun s : SpecialLinearGroup (Fin n) ℂ =>
-        eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) Q) ∈ A :=
-    ⟨Q, funext fun s => by
-      simpa [aeval_eq_eval] using comp_aeval_apply _ (Pi.evalAlgHom ℂ (fun _ => ℂ) s) Q⟩
-  refine (isRationalSLRep_iff_forall_exists_eval (Module.finBasis ℂ V)).mpr fun i j => ?_
-  obtain ⟨Q, hQ⟩ := Representation.toMatrix_mem_of_toMatrix_mem_of_surjective A b
-    (Module.finBasis ℂ V) f hf (fun p l => (funext fun s => hP s p l) ▸ hA (P p l)) i j
-  refine ⟨Q, fun s => ?_⟩
-  rw [← congrFun hQ s]
-  simpa [aeval_eq_eval] using comp_aeval_apply
-    (fun (p : Fin n × Fin n) (s : SpecialLinearGroup (Fin n) ℂ) =>
-      (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) (Pi.evalAlgHom ℂ (fun _ => ℂ) s) Q
-
-/-- **Rationality of a representation of `SL n ℂ` is invariant under equivalence.** -/
-theorem _root_.Representation.Equiv.isRationalSLRep_iff {V : Type*} [AddCommMonoid V]
-    [Module ℂ V] {ρ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) W}
-    {σ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) V} (e : ρ.Equiv σ) :
-    IsRationalSLRep ρ ↔ IsRationalSLRep σ :=
-  ⟨fun h => h.of_surjective e.toIntertwiningMap e.toLinearEquiv.surjective,
-    fun h => h.of_surjective e.symm.toIntertwiningMap e.symm.toLinearEquiv.surjective⟩
-
-/-- **The restriction of a rational representation of `GL n ℂ` to `SL n ℂ` is rational**: the
-determinant in the denominator of each matrix entry is `1` on `SL n ℂ`. -/
-theorem IsRationalRep.comp_toGL {ρ : Representation ℂ (GL (Fin n) ℂ) W} (h : IsRationalRep ρ) :
-    IsRationalSLRep (ρ.comp SpecialLinearGroup.toGL) := by
-  obtain ⟨b, P, m, hP⟩ := (isRationalRep_iff ρ).mp h
-  refine ⟨b, P, fun s i j => ?_⟩
-  simpa using hP (SpecialLinearGroup.toGL s) i j
-
-end Defs
-
-section Extension
-
-variable [AddCommGroup W] [Module ℂ W]
-
-/-- On `SL n ℂ`, a matrix coefficient of a representation of `GL n ℂ` on which the scalar
-matrices act through `z ↦ z ^ a`, given by a polynomial `P` in the matrix entries, only involves
-the homogeneous components of `P` of degree `k` with `n ∣ a - k`, that is `k ≡ a` modulo `n`.
-Scaling by a primitive `n`-th root of unity `ζ` multiplies the coefficient by `ζ ^ a` and the
-degree `k` component by `ζ ^ k`; averaging over the powers of `ζ` keeps only the components with
-`ζ ^ k = ζ ^ a`. -/
-private theorem eval_eq_sum_homogeneousComponent_of_apply_scalar [NeZero n]
-    {ρ : Representation ℂ (GL (Fin n) ℂ) W} {a : ℤ}
-    (ha : ∀ z : ℂˣ, ρ (GeneralLinearGroup.scalar (Fin n) z) = ((z ^ a : ℂˣ) : ℂ) • 1)
-    {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℂ W) {i j : ι}
-    {P : MvPolynomial (Fin n × Fin n) ℂ}
-    (hP : ∀ s : SpecialLinearGroup (Fin n) ℂ,
-      LinearMap.toMatrix b b (ρ (SpecialLinearGroup.toGL s)) i j =
-        eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) P)
-    (s : SpecialLinearGroup (Fin n) ℂ) :
-    eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) P =
-      ∑ k ∈ (Finset.range (P.totalDegree + 1)).filter (fun k : ℕ => (n : ℤ) ∣ a - k),
-        eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) (homogeneousComponent k P) := by
-  set ζ := Complex.exp (2 * Real.pi * Complex.I / n)
-  have hζ : IsPrimitiveRoot ζ n := Complex.isPrimitiveRoot_exp n (NeZero.ne n)
-  have hζ0 : ζ ≠ 0 := hζ.ne_zero (NeZero.ne n)
-  set x := fun p : Fin n × Fin n => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2
-  have hpow (m : ℕ) : (ζ ^ m) ^ n = 1 := by
-    rw [← pow_mul, mul_comm, pow_mul, hζ.pow_eq_one, one_pow]
-  -- The determinant-one scalar matrix `ζ ^ m` multiplies the coefficient by `(ζ ^ m) ^ a`.
-  have hscal (m : ℕ) : eval ((ζ ^ m) • x) P = (ζ ^ m) ^ a * eval x P := by
-    have hm0 : ζ ^ m ≠ 0 := pow_ne_zero _ hζ0
-    let t : SpecialLinearGroup (Fin n) ℂ := ⟨scalar (Fin n) (ζ ^ m), by simp [hpow]⟩
-    have ht : SpecialLinearGroup.toGL t =
-        GeneralLinearGroup.scalar (Fin n) (Units.mk0 (ζ ^ m) hm0) :=
-      Units.ext (by
-        rw [SpecialLinearGroup.coe_GL_coe_matrix, GeneralLinearGroup.coe_scalar, Units.val_mk0])
-    have hts : (fun p : Fin n × Fin n =>
-        ((t * s : SpecialLinearGroup (Fin n) ℂ) : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) =
-          (ζ ^ m) • x := by
-      funext p
-      rw [SpecialLinearGroup.coe_mul]
-      simp [t, x, scalar_apply]
-    rw [← hts, ← hP (t * s), ← hP s, map_mul, map_mul, ht, ha]
-    simp
-  have hsum (y : Fin n × Fin n → ℂ) : eval y P =
-      ∑ k ∈ Finset.range (P.totalDegree + 1), eval y (homogeneousComponent k P) := by
-    conv_lhs => rw [← sum_homogeneousComponent P]
-    rw [map_sum]
-  -- Average the transformation law over the powers of `ζ`, using `ζ ^ r = ζ⁻¹ ^ a` for a natural
-  -- number `r ≡ -a` modulo `n`.
-  obtain ⟨r, hr⟩ : ∃ r : ℕ, (n : ℤ) ∣ a + r :=
-    ⟨((-a) % n).toNat, -((-a) / n), by
-      rw [Int.toNat_of_nonneg (Int.emod_nonneg _ (Int.natCast_ne_zero.mpr (NeZero.ne n))),
-        Int.emod_def]
-      ring⟩
-  have hterm (m : ℕ) : (ζ ^ m) ^ r * eval ((ζ ^ m) • x) P = eval x P := by
-    obtain ⟨q, hq⟩ := hr
-    rw [hscal, ← mul_assoc, ← zpow_natCast, ← zpow_add₀ (pow_ne_zero _ hζ0), add_comm, hq,
-      zpow_mul, zpow_natCast, hpow, one_zpow, one_mul]
-  have hmean : ∑ m : Fin n, (ζ ^ (m : ℕ)) ^ r * eval ((ζ ^ (m : ℕ)) • x) P =
-      n * eval x P := by
-    simp [hterm]
-  have hexpand (m : ℕ) : (ζ ^ m) ^ r * eval ((ζ ^ m) • x) P =
-      ∑ k ∈ Finset.range (P.totalDegree + 1),
-        (ζ ^ (k + r)) ^ m * eval x (homogeneousComponent k P) := by
-    rw [hsum, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun k _ => ?_
-    rw [(homogeneousComponent_isHomogeneous k P).eval_smul, smul_eq_mul]
-    ring
-  refine mul_left_cancel₀ (Nat.cast_ne_zero.mpr (NeZero.ne n)) ?_
-  rw [← hmean, Finset.sum_congr rfl fun (m : Fin n) _ => hexpand m, Finset.sum_comm]
-  simp_rw [← Finset.sum_mul, hζ.sum_pow_pow_eq, Finset.sum_filter, Finset.mul_sum, ite_mul,
-    zero_mul, mul_ite, mul_zero]
-  -- `n ∣ k + r` exactly when `n ∣ a - k`, since `n ∣ a + r`.
-  refine Finset.sum_congr rfl fun k _ => if_congr ?_ rfl rfl
-  rw [← Int.natCast_dvd_natCast, Nat.cast_add, show a - k = a + r - (k + r) by ring]
-  exact (dvd_sub_right hr).symm
-
-/-- On `GL n ℂ`, a matrix coefficient of a representation on which the scalar matrices act through
-`z ↦ z ^ a`, and whose restriction to `SL n ℂ` is given by a polynomial `P` in the matrix entries,
-is a sum of integer powers of `det g` times homogeneous components of `P`. Write `g = c • s` with
-`c ^ n = det g` and `s` of determinant one; then `ρ g = c ^ a • ρ s`, only the components of degree
-`k ≡ a` modulo `n` contribute, and for those `c ^ a * c⁻¹ ^ k = det g ^ ((a - k) / n)`. -/
-private theorem toMatrix_apply_eq_sum_det_zpow_mul_eval [NeZero n]
-    {ρ : Representation ℂ (GL (Fin n) ℂ) W} {a : ℤ}
-    (ha : ∀ z : ℂˣ, ρ (GeneralLinearGroup.scalar (Fin n) z) = ((z ^ a : ℂˣ) : ℂ) • 1)
-    {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι ℂ W) {i j : ι}
-    {P : MvPolynomial (Fin n × Fin n) ℂ}
-    (hP : ∀ s : SpecialLinearGroup (Fin n) ℂ,
-      LinearMap.toMatrix b b (ρ (SpecialLinearGroup.toGL s)) i j =
-        eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) P)
-    (g : GL (Fin n) ℂ) :
-    LinearMap.toMatrix b b (ρ g) i j =
-      ∑ k ∈ (Finset.range (P.totalDegree + 1)).filter (fun k : ℕ => (n : ℤ) ∣ a - k),
-        ((Matrix.GeneralLinearGroup.det g ^ ((a - k) / n) : ℂˣ) : ℂ) *
-          eval (fun p => (g : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) (homogeneousComponent k P) := by
-  have hn : n ≠ 0 := NeZero.ne n
-  obtain ⟨c, hc⟩ := IsAlgClosed.exists_pow_nat_eq ((g : Matrix (Fin n) (Fin n) ℂ).det)
-    (Nat.pos_of_ne_zero hn)
-  have hc0 : c ≠ 0 := by
-    rintro rfl
-    exact Matrix.GeneralLinearGroup.det_ne_zero g (by rw [← hc, zero_pow hn])
-  let s : SpecialLinearGroup (Fin n) ℂ := ⟨c⁻¹ • (g : Matrix (Fin n) (Fin n) ℂ), by
-    rw [Matrix.det_smul, Fintype.card_fin, ← hc, inv_pow, inv_mul_cancel₀ (pow_ne_zero _ hc0)]⟩
-  have hg : SpecialLinearGroup.toGL s * GeneralLinearGroup.scalar (Fin n) (Units.mk0 c hc0) = g :=
-    Units.ext <| by
-      simp only [Units.val_mul, SpecialLinearGroup.coe_GL_coe_matrix, GeneralLinearGroup.coe_scalar]
-      ext
-      simp [s, scalar_apply, mul_right_comm _ _ c, hc0]
-  have hρg : ρ g = (c ^ a) • ρ (SpecialLinearGroup.toGL s) := by
-    rw [← hg, map_mul, ha, mul_smul_comm, mul_one, Units.val_zpow_eq_zpow_val, Units.val_mk0]
-  rw [hρg, map_smul, Matrix.smul_apply, smul_eq_mul, hP,
-    eval_eq_sum_homogeneousComponent_of_apply_scalar ha b hP s, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun k hk => ?_
-  have hdvd : (n : ℤ) ∣ a - k := (Finset.mem_filter.mp hk).2
-  have hentries : (fun p : Fin n × Fin n => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) =
-      c⁻¹ • fun p => (g : Matrix (Fin n) (Fin n) ℂ) p.1 p.2 := by
-    funext p
-    rw [Pi.smul_apply, SpecialLinearGroup.coe_mk, Matrix.smul_apply]
-  have hpow :
-      c ^ a * c⁻¹ ^ k = ((Matrix.GeneralLinearGroup.det g ^ ((a - k) / n) : ℂˣ) : ℂ) := by
-    rw [Units.val_zpow_eq_zpow_val, Matrix.GeneralLinearGroup.val_det_apply, ← hc,
-      ← zpow_natCast c n, ← zpow_mul, Int.mul_ediv_cancel' hdvd, zpow_sub₀ hc0]
-    simp [div_eq_mul_inv]
-  rw [hentries, (homogeneousComponent_isHomogeneous k P).eval_smul, smul_eq_mul, ← mul_assoc, hpow]
-
-/-- **A representation of `GL n ℂ` is rational once its restriction to `SL n ℂ` is rational and
-the scalar matrices act through a power `z ↦ z ^ a` of the scalar.** Writing `g = c • s` with
-`c ^ n = det g` and `s` of determinant one, the matrix entries of `ρ g = c ^ a • ρ s` are
-polynomials in the entries of `c⁻¹ • g`, times `c ^ a`. Only the homogeneous components of
-degree `k ≡ a` modulo `n` contribute, because the determinant-one scalar matrices act by `ζ ^ a`,
-and for those `c ^ a * c⁻¹ ^ k` is an integer power of `c ^ n = det g`. -/
-theorem IsRationalRep.of_comp_toGL {ρ : Representation ℂ (GL (Fin n) ℂ) W}
-    (h : IsRationalSLRep (ρ.comp SpecialLinearGroup.toGL)) {a : ℤ}
-    (ha : ∀ z : ℂˣ, ρ (GeneralLinearGroup.scalar (Fin n) z) = ((z ^ a : ℂˣ) : ℂ) • 1) :
-    IsRationalRep ρ := by
-  obtain ⟨b, P, hP⟩ := h
-  refine (isRationalRep_iff_forall_mem_rationalFunctions b).mpr fun i j => ?_
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · -- `GL (Fin 0) ℂ` is trivial, so every matrix entry is constant.
-    have hconst : (fun g : GL (Fin 0) ℂ => LinearMap.toMatrix b b (ρ g) i j) =
-        algebraMap ℂ (GL (Fin 0) ℂ → ℂ) ((1 : Matrix (Fin (Module.finrank ℂ W))
-          (Fin (Module.finrank ℂ W)) ℂ) i j) := by
-      funext g
-      rw [Subsingleton.elim g 1, map_one, LinearMap.toMatrix_one, Pi.algebraMap_apply,
-        Algebra.algebraMap_self, RingHom.id_apply]
-    rw [hconst]
-    exact Subalgebra.algebraMap_mem _ _
-  have : NeZero n := ⟨hn.ne'⟩
-  have hfun : (fun g : GL (Fin n) ℂ => LinearMap.toMatrix b b (ρ g) i j) =
-      ∑ k ∈ (Finset.range ((P i j).totalDegree + 1)).filter (fun k : ℕ => (n : ℤ) ∣ a - k),
-        (fun g : GL (Fin n) ℂ =>
-          ((Matrix.GeneralLinearGroup.det g ^ ((a - k) / n) : ℂˣ) : ℂ)) *
-          fun g : GL (Fin n) ℂ => eval (fun p => (g : Matrix (Fin n) (Fin n) ℂ) p.1 p.2)
-            (homogeneousComponent k (P i j)) := by
-    funext g
-    rw [toMatrix_apply_eq_sum_det_zpow_mul_eval ha b (fun s => hP s i j) g, Finset.sum_apply]
-    rfl
-  rw [hfun]
-  refine Subalgebra.sum_mem _ fun k _ => Subalgebra.mul_mem _ (det_zpow_mem_rationalFunctions _)
-    (polynomialFunctions_le_rationalFunctions (mem_polynomialFunctions.mpr ⟨_, fun _ => rfl⟩))
-
-end Extension
-
-end TauCeti

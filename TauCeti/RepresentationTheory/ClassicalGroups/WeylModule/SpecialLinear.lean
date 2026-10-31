@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.Complex.Polynomial.Basic
+public import TauCeti.RepresentationTheory.ClassicalGroups.Rational.SpecialLinear
 public import TauCeti.RepresentationTheory.ClassicalGroups.SpecialLinear
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.CentralCharacter
+public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Classification
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Weight.HighestWeight
-import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Classification
 
 /-!
 # Weyl modules restricted to the special linear group
@@ -55,12 +56,15 @@ restrictions is an equivalence of `GL n k`-representations between a determinant
 the Weyl modules of distinct Young diagrams with at most `n - 1` rows restrict to non-isomorphic
 representations of `SL n k` (`TauCeti.nonempty_equiv_weylSLRepOfShape_iff`).
 
-Over `ℂ` these restrictions exhaust the irreducible rational representations of `SL n ℂ`
-(`TauCeti.IsRationalSLRep.existsUnique_nonempty_equiv_weylSLRepOfShape`): each is the restriction
-of the Weyl module of exactly one Young diagram with at most `n - 1` rows. Such a representation
-extends to an irreducible rational representation of `GL n ℂ`
-(`TauCeti.IsRationalRep.of_comp_toGL`), which is a rational Weyl module by
-`TauCeti.IsRationalRep.exists_nonempty_equiv_rationalWeylRep`.
+Over `ℂ` these restrictions are all the irreducible rational representations of `SL n ℂ`
+(`TauCeti.IsRationalSLRep.exists_nonempty_equiv_rationalWeylSLRep`). The determinant-one scalar
+matrices act on an irreducible `ρ` by a power character `z ↦ z ^ a`, so `ρ` extends to a
+representation `Representation.extendToGL` of `GL n ℂ`, which is irreducible and again rational
+(`TauCeti.IsRationalSLRep.isRationalRep_extendToGL`). The classification for `GL n ℂ` makes the
+extension some `V_λ`, and restricting back gives `ρ`. Together with the injectivity above, this is
+the theorem of the highest weight for `SL n ℂ`: the irreducible rational representations are
+indexed by the Young diagrams with at most `n - 1` rows, equivalently by the dominant weights modulo
+the constant weights (`TauCeti.IsRationalSLRep.existsUnique_nonempty_equiv_weylSLRepOfShape`).
 
 ## Main definitions
 
@@ -86,11 +90,13 @@ extends to an irreducible rational representation of `GL n ℂ`
 * `TauCeti.nonempty_equiv_weylSLRepOfShape_iff`: Young diagrams with at most `n - 1` rows are
   recovered from the restrictions of their Weyl modules to `SL n k`.
 * `TauCeti.isRationalSLRep_weylSLRepOfShape`: the restricted Weyl modules are rational.
-* `TauCeti.IsRationalSLRep.exists_nonempty_equiv_weylSLRepOfShape` and
-  `TauCeti.IsRationalSLRep.existsUnique_nonempty_equiv_weylSLRepOfShape`: **every irreducible
-  rational representation of `SL n ℂ` is the restricted Weyl module of exactly one Young diagram
-  with at most `n - 1` rows**, with `FDRep.existsUnique_nonempty_iso_weylSLFDRepOfShape` its
-  bundled form.
+* `TauCeti.isRationalSLRep_rationalWeylSLRep`: the restrictions of the rational Weyl modules are
+  rational.
+* `TauCeti.IsRationalSLRep.exists_nonempty_equiv_rationalWeylSLRep`: **every irreducible rational
+  representation of `SL n ℂ` is the restriction of a rational Weyl module.**
+* `TauCeti.IsRationalSLRep.existsUnique_nonempty_equiv_weylSLRepOfShape` and
+  `FDRep.existsUnique_nonempty_iso_weylSLFDRepOfShape`: **the highest-weight classification for
+  `SL n ℂ`**, by the Young diagrams with at most `n - 1` rows.
 
 ## References
 
@@ -332,12 +338,18 @@ theorem nonempty_equiv_weylSLRepOfShape_iff {μ ν : YoungDiagram} (hμ : μ.col
 
 end Classification
 
-/-! ## The classification of the irreducible rational representations -/
+/-! ## The irreducible rational representations of `SL n ℂ` -/
 
 section RationalClassification
 
-variable {n : ℕ} {W : Type*} [AddCommGroup W] [Module ℂ W]
-  {ρ : Representation ℂ (Matrix.SpecialLinearGroup (Fin n) ℂ) W}
+open CategoryTheory
+
+variable {n : ℕ}
+
+/-- The restriction of a rational Weyl module to `SL n ℂ` is rational. -/
+theorem isRationalSLRep_rationalWeylSLRep (l : DominantWeight n) :
+    IsRationalSLRep (rationalWeylSLRep ℂ n l) :=
+  (isRationalRep_rationalWeylRep n l).comp_toGL
 
 /-- The Weyl module of a shape is a rational representation of `SL n ℂ`. -/
 @[simp]
@@ -347,45 +359,44 @@ theorem isRationalSLRep_weylSLRepOfShape (n : ℕ) (μ : YoungDiagram) :
 
 namespace IsRationalSLRep
 
-/-- **Every irreducible rational representation of `SL n ℂ` is the restriction of a Weyl
-module**, of a Young diagram with at most `n - 1` rows. The determinant-one scalar matrices act
-through a power `ζ ↦ ζ ^ a`, so the representation extends to a rational representation of
-`GL n ℂ`, irreducible because the scalar matrices act by scalars. That extension is a rational
-Weyl module `V_λ`, by the highest-weight classification for `GL n ℂ`, and `V_λ` restricts to the
-Weyl module of the polynomial part of `λ`. -/
-theorem exists_nonempty_equiv_weylSLRepOfShape (hρ : IsRationalSLRep ρ) [ρ.IsIrreducible] :
-    ∃ μ : YoungDiagram, μ.colLen 0 ≤ n - 1 ∧ Nonempty (ρ.Equiv (weylSLRepOfShape ℂ n μ)) := by
+variable {W : Type*} [AddCommGroup W] [Module ℂ W]
+  {ρ : Representation ℂ (Matrix.SpecialLinearGroup (Fin n) ℂ) W}
+
+/-- **Every irreducible rational representation of `SL n ℂ` is the restriction of a rational Weyl
+module**: it is equivalent to the restriction `TauCeti.rationalWeylSLRep` of `V_λ` for some
+dominant weight `λ`. -/
+theorem exists_nonempty_equiv_rationalWeylSLRep (hρ : IsRationalSLRep ρ) [ρ.IsIrreducible] :
+    ∃ l : DominantWeight n, Nonempty (ρ.Equiv (rationalWeylSLRep ℂ n l)) := by
   have := hρ.finite
-  obtain ⟨a, ha⟩ : ∃ a : ℤ, ∀ (s : Matrix.SpecialLinearGroup (Fin n) ℂ) (ζ : ℂ),
-      (s : Matrix (Fin n) (Fin n) ℂ) = Matrix.scalar (Fin n) ζ → ρ s = ζ ^ a • 1 := by
+  obtain ⟨a, ha⟩ : ∃ a : ℤ, ∀ (s : Matrix.SpecialLinearGroup (Fin n) ℂ) (z : ℂˣ),
+      Matrix.SpecialLinearGroup.toGL s = Matrix.GeneralLinearGroup.scalar (Fin n) z →
+        ∀ v, ρ s v = ((z ^ a : ℂˣ) : ℂ) • v := by
     rcases Nat.eq_zero_or_pos n with rfl | hn
-    · -- `SL (Fin 0) ℂ` is trivial.
-      exact ⟨0, fun s ζ _ => by rw [Subsingleton.elim s 1, map_one, zpow_zero, one_smul]⟩
-    · have : NeZero (Fintype.card (Fin n) : ℂ) := ⟨by simp [hn.ne']⟩
-      obtain ⟨a, ha⟩ := Representation.IsIrreducible.exists_forall_apply_eq_pow_smul_one (ρ := ρ)
-      exact ⟨a, fun s ζ hs => by rw [zpow_natCast]; exact ha s ζ hs⟩
-  obtain ⟨ρ', ⟨hcomp, hscalar⟩, -⟩ :=
-    Representation.existsUnique_comp_toGL_eq_and_apply_scalar ha
-  have hρ' : IsRationalRep ρ' := IsRationalRep.of_comp_toGL (hcomp ▸ hρ) hscalar
-  have : ρ'.IsIrreducible :=
-    (Representation.isIrreducible_comp_toGL_iff ρ').mp (hcomp ▸ inferInstance)
-  obtain ⟨l, ⟨e⟩⟩ := hρ'.exists_nonempty_equiv_rationalWeylRep
-  refine ⟨l.detShiftShape, l.colLen_zero_detShiftShape_le_pred, ⟨?_⟩⟩
-  rw [← rationalWeylSLRep_eq_weylSLRepOfShape, ← hcomp]
-  exact Representation.Equiv.mk e.toLinearEquiv fun s => LinearMap.ext fun v => by
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, rationalWeylSLRep_apply]
-    exact Representation.IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap
-      (Matrix.SpecialLinearGroup.toGL s) v
+    · refine ⟨0, fun s z _ v => ?_⟩
+      rw [Subsingleton.elim s 1, map_one, zpow_zero, Units.val_one, one_smul, Module.End.one_apply]
+    · have : NeZero (Fintype.card (Fin n) : ℂ) := ⟨by simpa using hn.ne'⟩
+      exact Representation.IsIrreducible.exists_forall_apply_eq_zpow_smul ρ
+  have : (ρ.extendToGL a ha).IsIrreducible :=
+    (Representation.isIrreducible_extendToGL_iff ρ a ha).mpr ‹_›
+  obtain ⟨l, ⟨e⟩⟩ := (hρ.isRationalRep_extendToGL a ha).exists_nonempty_equiv_rationalWeylRep
+  refine ⟨l, ⟨Representation.Equiv.mk e.toLinearEquiv fun s => LinearMap.ext fun v => ?_⟩⟩
+  simpa [rationalWeylSLRep_apply] using Representation.IntertwiningMap.isIntertwining _ _
+    e.toIntertwiningMap (Matrix.SpecialLinearGroup.toGL s) v
 
 /-- **The highest-weight classification of the irreducible rational representations of
 `SL n ℂ`**: an irreducible rational representation is equivalent to the restriction of the Weyl
-module of exactly one Young diagram with at most `n - 1` rows. -/
+module of exactly one Young diagram with at most `n - 1` rows. Equivalently, by
+`TauCeti.nonempty_equiv_rationalWeylSLRep_iff`, it is the restriction of `V_λ` for a dominant
+weight `λ` determined up to the constant weights `m·(1, …, 1)`. -/
 theorem existsUnique_nonempty_equiv_weylSLRepOfShape (hρ : IsRationalSLRep ρ)
     [ρ.IsIrreducible] :
     ∃! μ : YoungDiagram, μ.colLen 0 ≤ n - 1 ∧ Nonempty (ρ.Equiv (weylSLRepOfShape ℂ n μ)) := by
-  obtain ⟨μ, hμ, ⟨e⟩⟩ := hρ.exists_nonempty_equiv_weylSLRepOfShape
-  exact ⟨μ, ⟨hμ, ⟨e⟩⟩, fun ν ⟨hν, ⟨e'⟩⟩ =>
-    ((nonempty_equiv_weylSLRepOfShape_iff ℂ hμ hν).mp ⟨e.symm.trans e'⟩).symm⟩
+  obtain ⟨l, ⟨e⟩⟩ := hρ.exists_nonempty_equiv_rationalWeylSLRep
+  rw [rationalWeylSLRep_eq_weylSLRepOfShape] at e
+  refine ⟨l.detShiftShape, ⟨l.colLen_zero_detShiftShape_le_pred, ⟨e⟩⟩,
+    fun μ ⟨hμ, ⟨e'⟩⟩ => ?_⟩
+  exact (nonempty_equiv_weylSLRepOfShape_iff ℂ hμ l.colLen_zero_detShiftShape_le_pred).mp
+    ⟨e'.symm.trans e⟩
 
 end IsRationalSLRep
 
@@ -399,9 +410,9 @@ open CategoryTheory TauCeti
 
 variable {n : ℕ}
 
-/-- **The highest-weight classification for `SL n ℂ` in `FDRep`**: a simple finite-dimensional
-representation of `SL n ℂ` whose action is rational is isomorphic to the restricted Weyl module of
-exactly one Young diagram with at most `n - 1` rows. -/
+/-- **The highest-weight classification in `FDRep`**: a simple finite-dimensional representation
+of `SL n ℂ` whose action is rational is isomorphic to the restricted Weyl module of exactly one
+Young diagram with at most `n - 1` rows. -/
 theorem existsUnique_nonempty_iso_weylSLFDRepOfShape
     (V : FDRep ℂ (Matrix.SpecialLinearGroup (Fin n) ℂ)) [Simple V] (hV : IsRationalSLRep V.ρ) :
     ∃! μ : YoungDiagram, μ.colLen 0 ≤ n - 1 ∧ Nonempty (V ≅ weylSLFDRepOfShape ℂ n μ) := by

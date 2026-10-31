@@ -21,6 +21,8 @@ curvature:
 * `OrthonormalBasis.sum_sum_inner_mul_inner_mul_inner`: the two-basis expansion
   `⟪x, T y⟫ = ∑ᵢ ∑ⱼ ⟪x, uᵢ⟫ ⟪uᵢ, T vⱼ⟫ ⟪vⱼ, y⟫`.
 * `OrthonormalBasis.sum_inner_self`: `∑ i, ⟪b i, b i⟫ = card ι`, the trace of the identity.
+* `OrthonormalBasis.inner_eq_sum_repr`: the inner product in coordinates,
+  `⟪x, y⟫ = ∑ i, conj (b.repr x i) * b.repr y i`.
 -/
 
 public section
@@ -28,7 +30,7 @@ public section
 namespace OrthonormalBasis
 
 open InnerProductSpace
-open scoped InnerProductSpace
+open scoped InnerProductSpace ComplexConjugate
 
 variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [Fintype ι]
@@ -43,6 +45,12 @@ theorem sum_apply_mul_inner {F : Type*} [FunLike F E 𝕜] [LinearMapClass F �
 /-- The vectors of an orthonormal basis have unit length, so `∑ i, ⟪b i, b i⟫ = card ι`. -/
 theorem sum_inner_self (b : OrthonormalBasis ι 𝕜 E) : ∑ i, ⟪b i, b i⟫_𝕜 = Fintype.card ι := by
   simp [inner_self_eq_norm_sq_to_K, b.orthonormal.1]
+
+/-- The inner product in the coordinates of an orthonormal basis:
+`⟪x, y⟫ = ∑ i, conj (b.repr x i) * b.repr y i`. -/
+theorem inner_eq_sum_repr (b : OrthonormalBasis ι 𝕜 E) (x y : E) :
+    ⟪x, y⟫_𝕜 = ∑ i, conj (b.repr x i) * b.repr y i := by
+  simp [← b.sum_inner_mul_inner x y, b.repr_apply_apply]
 
 variable {F κ : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [Fintype κ]
 

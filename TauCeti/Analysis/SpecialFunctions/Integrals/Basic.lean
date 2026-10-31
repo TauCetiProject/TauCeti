@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
+public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
@@ -17,6 +18,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 
 ## Main declarations
 
+* `TauCeti.intervalIntegrable_sub_rpow`, `TauCeti.integral_sub_rpow`:
+  `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
 * `TauCeti.integral_one_div_sqrt_one_sub_sq`: `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`
   for `a, b ∈ (-1, 1)`.
 * `TauCeti.integral_exp_mul`: `∫ x in a..b, exp (c x) = (exp (c b) - exp (c a)) / c` for
@@ -25,6 +28,9 @@ Interval integrals of elementary functions in closed form or as series, continui
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
   binomial expansion `TauCeti.cos_pow_mul_cexp` of `cosᵏ θ exp (n θ i)` into characters.
+* `TauCeti.integral_sin_pow_even_eq_ascPochhammer`: the Wallis integral
+  `∫ x in 0..π/2, sin²ⁿ x = (π/2) (1/2)ₙ / n!`, with the rising factorial `(1/2)ₙ`.
+* `TauCeti.integral_pow_mul_sub`: `∫ x in p..r, xⁿ (x - p)` as a binomial sum in powers of `r - p`.
 * `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
 * `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
@@ -36,6 +42,18 @@ public section
 open scoped Nat
 
 namespace TauCeti
+
+/-- The weight `(b - x)^r`, singular at `x = b`, is interval integrable between `a` and `b` for
+`r > -1`. -/
+theorem intervalIntegrable_sub_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
+    IntervalIntegrable (fun x => (b - x) ^ r) MeasureTheory.volume a b := by
+  simpa using (intervalIntegral.intervalIntegrable_rpow' hr (a := b - a) (b := 0)).comp_sub_left b
+
+/-- `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`. -/
+theorem integral_sub_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
+    ∫ x in a..b, (b - x) ^ r = (b - a) ^ (r + 1) / (r + 1) := by
+  rw [intervalIntegral.integral_comp_sub_left (fun x => x ^ r), sub_self,
+    integral_rpow (Or.inl hr), Real.zero_rpow (by linarith : r + 1 ≠ 0), sub_zero]
 
 /-- The integral of `1 / √(1 - x²)` is `arcsin`, between any two points of `(-1, 1)`. -/
 theorem integral_one_div_sqrt_one_sub_sq {a b : ℝ} (ha : a ∈ Set.Ioo (-1) 1)
@@ -113,6 +131,58 @@ theorem integral_cos_pow_mul_cexp (k : ℕ) (n : ℤ) :
       Complex.exp (((2 * m - k + n : ℤ) : ℂ) * θ * Complex.I)).intervalIntegrable _ _]
   refine Finset.sum_congr rfl fun m _ => ?_
   rw [intervalIntegral.integral_const_mul, integral_cexp_intCast_mul_mul_I]
+
+/-- The Wallis integral over a quarter period: `∫ x in 0..π/2, sin²ⁿ x = (π/2) (1/2)ₙ / n!`, where
+`(1/2)ₙ = (1/2)(3/2)⋯(n - 1/2)` is the rising factorial. This is the form in which it enters
+hypergeometric series. -/
+theorem integral_sin_pow_even_eq_ascPochhammer (n : ℕ) :
+    ∫ x in (0 : ℝ)..Real.pi / 2, Real.sin x ^ (2 * n) =
+      Real.pi / 2 * ((ascPochhammer ℝ n).eval (1 / 2) / n !) := by
+  have hprod : ∏ i ∈ Finset.range n, (2 * (i : ℝ) + 1) / (2 * i + 2) =
+      (ascPochhammer ℝ n).eval (1 / 2) / n ! := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      rw [Finset.prod_range_succ, ih, ascPochhammer_succ_eval, Nat.factorial_succ]
+      push_cast
+      field_simp
+      ring
+  -- the substitution `x ↦ π - x` shows that both halves of `[0, π]` contribute equally
+  have hsymm : ∫ x in Real.pi / 2..Real.pi, Real.sin x ^ (2 * n) =
+      ∫ x in (0 : ℝ)..Real.pi / 2, Real.sin x ^ (2 * n) := by
+    have := intervalIntegral.integral_comp_sub_left (fun x => Real.sin x ^ (2 * n)) Real.pi
+      (a := 0) (b := Real.pi / 2)
+    simp only [Real.sin_pi_sub, sub_zero] at this
+    rw [this]
+    ring_nf
+  have hint (u v : ℝ) :
+      IntervalIntegrable (fun x => Real.sin x ^ (2 * n)) MeasureTheory.volume u v :=
+    (Real.continuous_sin.pow _).intervalIntegrable u v
+  have hadd := intervalIntegral.integral_add_adjacent_intervals (hint 0 (Real.pi / 2))
+    (hint (Real.pi / 2) Real.pi)
+  rw [hsymm, integral_sin_pow_even, hprod] at hadd
+  linarith
+
+/-- The integral of `x ^ n` against the linear weight `x - p` vanishing at `p`, over `[p, r]`, as
+a binomial sum. -/
+theorem integral_pow_mul_sub (p r : ℝ) (n : ℕ) :
+    ∫ x in p..r, x ^ n * (x - p) =
+      ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) / (k + 2) * p ^ (n - k) * (r - p) ^ (k + 2) := by
+  have hexp (x : ℝ) : x ^ n * (x - p) =
+      ∑ k ∈ Finset.range (n + 1), (n.choose k : ℝ) * p ^ (n - k) * (x - p) ^ (k + 1) := by
+    conv_lhs => rw [show x = (x - p) + p by ring, add_pow, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    ring
+  simp_rw [hexp]
+  rw [intervalIntegral.integral_finsetSum fun k _ ↦
+    Continuous.intervalIntegrable (by fun_prop) _ _]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [intervalIntegral.integral_const_mul,
+    intervalIntegral.integral_comp_sub_right (fun x ↦ x ^ (k + 1)), integral_pow, sub_self,
+    zero_pow (Nat.succ_ne_zero _)]
+  push_cast
+  field_simp
+  ring
 
 /-! ### Integrands depending only on `sin² θ`
 

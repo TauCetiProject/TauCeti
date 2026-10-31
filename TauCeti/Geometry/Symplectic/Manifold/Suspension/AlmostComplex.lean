@@ -62,6 +62,7 @@ structure is compatible with `Ω`.
   coordinates `(s, t, x)`.
 * `TauCeti.SmoothMappingTorus.eval₂_suspensionForm_suspensionAlmostComplexStructure`:
   `Ω(w, J w) = a² + b² + σ(v, K v)`.
+* `TauCeti.SmoothMappingTorus.tames_suspensionAlmostComplexStructure`: vertical tameness descends.
 * `TauCeti.SmoothMappingTorus.compatible_suspensionAlmostComplexStructure`: a family of
   `σ`-compatible structures descends to an `Ω`-compatible structure.
 
@@ -272,6 +273,17 @@ theorem eval₂_suspensionForm_suspensionAlmostComplexStructure (s t : ℝ) (x :
       a ^ 2 + b ^ 2 + σ.eval₂ x v (K ((s, t), x) v) := by
   rw [suspensionAlmostComplexStructure_mk, eval₂_suspensionForm_mk]
   ring
+
+/-- If the fibre form tames every vertical structure, the suspension form tames the descended
+block structure. -/
+theorem tames_suspensionAlmostComplexStructure
+    (htame : ∀ (p : (ℝ × ℝ) × M) (v : TangentSpace I p.2), v ≠ 0 →
+      0 < σ.eval₂ p.2 v (K p v)) :
+    (suspensionForm φ σ hσ).Tames (suspensionAlmostComplexStructure φ hK hs ht) := by
+  refine (SmoothAlmostComplexStructure.tames_descend_iff _ _ _ _ _).2 ?_
+  rw [mpullback_suspensionCover_suspensionForm]
+  exact SmoothAlmostComplexStructure.tames_prodFamily _ K hK
+    (SymplecticForm.compatible_constSmooth_iff.2 stdSymplecticForm_compatible_product).tames htame
 
 /-- If every member of the vertical family is compatible with the nondegenerate form `σ`, the
 descended block structure is compatible with `Ω = ds ∧ dt + σ_v`. -/

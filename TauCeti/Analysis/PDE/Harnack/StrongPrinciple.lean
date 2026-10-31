@@ -20,9 +20,8 @@ the strong maximum and minimum principles: two ordered harmonic functions that m
 interior point agree everywhere, and a harmonic function with a local extremum there is constant
 on the preconnected set.  For the latter, the comparison principle first gives constancy on a disk.
 
-This is the planar harmonic case of Lane C, item 13 in the PDE roadmap.  The local vanishing input
-is the zero case of Harnack's inequality; see Evans, *Partial Differential Equations*, Chapter 2,
-Section 2.2.
+The local vanishing input is the zero case of Harnack's inequality; see Evans, *Partial
+Differential Equations*, Chapter 2, Section 2.2.
 
 ## Main declarations
 

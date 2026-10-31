@@ -232,6 +232,14 @@ theorem val_inv_unitT (i : ℕ) :
     (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) = T q i - algebraMap R _ ((q : R) - ↑q⁻¹) :=
   (rfl)
 
+/-- The inverse of a generator satisfies the quadratic relation with parameter `q⁻¹`. -/
+theorem val_inv_unitT_mul_self (i : ℕ) :
+    (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) * ↑(unitT q i)⁻¹ =
+      -((q : R) - ↑q⁻¹) • (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) + 1 := by
+  simp only [val_inv_unitT, sub_mul, mul_sub, T_mul_self, Algebra.smul_def, map_neg, neg_mul]
+  rw [← Algebra.commutes ((q : R) - ↑q⁻¹) (T q i)]
+  abel
+
 /-- Each generator of the infinite type-A Hecke algebra is a unit. -/
 theorem isUnit_T (i : ℕ) : IsUnit (T q i) := (unitT q i).isUnit
 
