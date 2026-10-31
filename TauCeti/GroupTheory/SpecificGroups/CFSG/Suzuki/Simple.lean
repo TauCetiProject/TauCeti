@@ -44,11 +44,14 @@ normal and contains `U`, so it is all of `G`, and `Z` lies in the centre of `G`,
 
 ## Main definitions and results
 
-* `TauCeti.Suzuki.unipotentSubgroup` and `TauCeti.Suzuki.borelSubgroup`: the subgroups `U` and
-  `B = H U` of `GL₄(𝔽_q)`.
+The subgroups `U` and `B = H U`, `TauCeti.Suzuki.unipotentSubgroup` and
+`TauCeti.Suzuki.borelSubgroup`, are defined in the files on the generators and on the torus.
+
 * `TauCeti.Suzuki.mem_borelSubgroupOf_or_mem_doubleCoset`: the Bruhat decomposition
   `Sz(q) = B ∪ B w B`.
-* `TauCeti.Suzuki.titsSystem`: the Tits system `(B, ⟨w⟩)` of rank one on `Sz(q)`.
+* `TauCeti.Suzuki.titsSystem`: the Tits system `(B, ⟨w⟩)` of rank one on `Sz(q)`, whose only
+  simple reflection is the class of `w` (`TauCeti.Suzuki.titsSystem_simple`), so that it is
+  irreducible (`TauCeti.Suzuki.isIrreducible_titsSystem`).
 * `TauCeti.Suzuki.normalCore_titsSystem_subgroupB`: the normal core of its `B` is trivial.
 * `TauCeti.Suzuki.isSimpleGroup_suzukiGroup`: `Sz(q)` is simple for `m ≠ 0`.
 * `TauCeti.SuzukiLieIndex.isSimpleGroup_group`: the candidate group of every valid Suzuki index
@@ -74,128 +77,7 @@ namespace Suzuki
 
 variable (m : ℕ)
 
-/-! ## The unipotent and Borel subgroups -/
-
-/-- The unipotent subgroup `U = {u(a, b)}` of `GL₄(𝔽_(2^(2m+1)))`, consisting of the standard
-unipotent generators of the Suzuki group. -/
-def unipotentSubgroup : Subgroup (GL (Fin 4) (GaloisField 2 (2 * m + 1))) where
-  carrier := {g | ∃ a b, unipotent m a b = g}
-  mul_mem' := by
-    rintro _ _ ⟨a, b, rfl⟩ ⟨c, d, rfl⟩
-    exact ⟨_, _, (unipotent_mul_unipotent m a b c d).symm⟩
-  one_mem' := ⟨0, 0, unipotent_zero_zero m⟩
-  inv_mem' := by
-    rintro _ ⟨a, b, rfl⟩
-    exact ⟨_, _, (unipotent_inv m a b).symm⟩
-
-variable {m}
-
-/-- The unipotent subgroup consists of the standard unipotent generators. -/
-@[simp]
-theorem mem_unipotentSubgroup {g : GL (Fin 4) (GaloisField 2 (2 * m + 1))} :
-    g ∈ unipotentSubgroup m ↔ ∃ a b, unipotent m a b = g :=
-  Iff.rfl
-
-variable (m)
-
-/-- The unipotent subgroup lies in the Suzuki group. -/
-theorem unipotentSubgroup_le_suzukiGroup : unipotentSubgroup m ≤ suzukiGroup m := by
-  rintro _ ⟨a, b, rfl⟩
-  exact unipotent_mem_suzukiGroup a b
-
-/-- The torus normalizes the unipotent subgroup. -/
-theorem torus_mul_mul_inv_mem_unipotentSubgroup (κ : (GaloisField 2 (2 * m + 1))ˣ)
-    {g : GL (Fin 4) (GaloisField 2 (2 * m + 1))} (hg : g ∈ unipotentSubgroup m) :
-    torus m κ * g * (torus m κ)⁻¹ ∈ unipotentSubgroup m := by
-  obtain ⟨a, b, rfl⟩ := hg
-  exact ⟨_, _, (torus_mul_unipotent_mul_torus_inv m κ a b).symm⟩
-
-/-- The Borel subgroup `B = H U` of `GL₄(𝔽_(2^(2m+1)))`, consisting of the products `h(κ) u(a, b)`
-of a torus element and a standard unipotent generator. -/
-def borelSubgroup : Subgroup (GL (Fin 4) (GaloisField 2 (2 * m + 1))) where
-  carrier := {g | ∃ κ a b, torus m κ * unipotent m a b = g}
-  mul_mem' := by
-    rintro _ _ ⟨κ, a, b, rfl⟩ ⟨μ, c, d, rfl⟩
-    -- `h(κ) u h(μ) u' = h(κ μ) (h(μ)⁻¹ u h(μ)) u'`.
-    obtain ⟨a', b', h⟩ := torus_mul_mul_inv_mem_unipotentSubgroup m μ⁻¹ ⟨a, b, rfl⟩
-    refine ⟨κ * μ, a' + c, b' + d + a' * c ^ 2 ^ (m + 1), ?_⟩
-    rw [← unipotent_mul_unipotent, h, map_mul, map_inv]
-    group
-  one_mem' := ⟨1, 0, 0, by simp⟩
-  inv_mem' := by
-    rintro _ ⟨κ, a, b, rfl⟩
-    -- `(h(κ) u)⁻¹ = h(κ)⁻¹ (h(κ) u⁻¹ h(κ)⁻¹)`.
-    obtain ⟨a', b', h⟩ := torus_mul_mul_inv_mem_unipotentSubgroup m κ
-      (inv_mem (⟨a, b, rfl⟩ : unipotent m a b ∈ unipotentSubgroup m))
-    refine ⟨κ⁻¹, a', b', ?_⟩
-    rw [h, map_inv]
-    group
-
-variable {m}
-
-/-- The Borel subgroup consists of the products of a torus element and a standard unipotent
-generator. -/
-@[simp]
-theorem mem_borelSubgroup {g : GL (Fin 4) (GaloisField 2 (2 * m + 1))} :
-    g ∈ borelSubgroup m ↔ ∃ κ a b, torus m κ * unipotent m a b = g :=
-  Iff.rfl
-
-variable (m)
-
-/-- The unipotent subgroup lies in the Borel subgroup. -/
-theorem unipotentSubgroup_le_borelSubgroup : unipotentSubgroup m ≤ borelSubgroup m := by
-  rintro _ ⟨a, b, rfl⟩
-  exact ⟨1, a, b, by simp⟩
-
-/-- The Borel subgroup lies in the Suzuki group. -/
-theorem borelSubgroup_le_suzukiGroup : borelSubgroup m ≤ suzukiGroup m := by
-  rintro _ ⟨κ, a, b, rfl⟩
-  exact mul_mem (torus_mem_suzukiGroup m κ) (unipotent_mem_suzukiGroup a b)
-
-/-- **The Borel subgroup normalizes the unipotent subgroup.** -/
-theorem borelSubgroup_le_normalizer :
-    borelSubgroup m ≤ Subgroup.normalizer (unipotentSubgroup m : Set _) := by
-  have htorus (κ : (GaloisField 2 (2 * m + 1))ˣ) :
-      torus m κ ∈ Subgroup.normalizer (unipotentSubgroup m : Set _) := by
-    refine Subgroup.mem_normalizer_iff.mpr fun g ↦
-      ⟨torus_mul_mul_inv_mem_unipotentSubgroup m κ, fun hg ↦ ?_⟩
-    simpa [map_inv, mul_assoc] using torus_mul_mul_inv_mem_unipotentSubgroup m κ⁻¹ hg
-  rintro _ ⟨κ, a, b, rfl⟩
-  exact mul_mem (htorus κ) (Subgroup.le_normalizer ⟨a, b, rfl⟩)
-
-/-- **The Weyl element conjugates `u(a, b)` into the Borel subgroup only when `u(a, b) = 1`.** -/
-theorem weyl_mul_unipotent_mul_weyl_mem_borelSubgroup_iff {a b : GaloisField 2 (2 * m + 1)} :
-    weyl m * unipotent m a b * weyl m ∈ borelSubgroup m ↔ a = 0 ∧ b = 0 := by
-  refine ⟨fun ⟨κ, c, d, h⟩ ↦ ?_, fun ⟨ha, hb⟩ ↦ ⟨1, 0, 0, by simp [ha, hb]⟩⟩
-  -- Elements of `B` are lower triangular, while the last column of `w u(a, b) w` is the reversed
-  -- first column `(u₃₀, a^(1+θ) + b, a, 1)` of `u(a, b)`.
-  have h23 := congrArg
-    (fun g : GL (Fin 4) (GaloisField 2 (2 * m + 1)) ↦
-      (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 2 3) h
-  have h13 := congrArg
-    (fun g : GL (Fin 4) (GaloisField 2 (2 * m + 1)) ↦
-      (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 1 3) h
-  simp [Matrix.mul_apply, Fin.sum_univ_four, Matrix.diagonal_apply] at h23 h13
-  refine ⟨h23.symm, ?_⟩
-  simpa [← h23] using h13.symm
-
 /-! ## The Tits system of rank one -/
-
-/-- The unipotent subgroup `U`, inside the Suzuki group. -/
-abbrev unipotentSubgroupOf : Subgroup (suzukiGroup m) :=
-  (unipotentSubgroup m).subgroupOf (suzukiGroup m)
-
-/-- The Borel subgroup `B = H U`, inside the Suzuki group. -/
-abbrev borelSubgroupOf : Subgroup (suzukiGroup m) :=
-  (borelSubgroup m).subgroupOf (suzukiGroup m)
-
-/-- The Weyl generator, as an element of the Suzuki group. -/
-abbrev weylOf : suzukiGroup m :=
-  ⟨weyl m, weyl_mem_suzukiGroup⟩
-
-/-- The Weyl generator is an involution in the Suzuki group. -/
-theorem weylOf_mul_weylOf : weylOf m * weylOf m = 1 :=
-  Subtype.ext (weyl_mul_weyl m)
 
 /-- **The rank-one Bruhat decomposition** `Sz(q) = B ∪ B w B`, for `m ≠ 0`. -/
 theorem mem_borelSubgroupOf_or_mem_doubleCoset (hm : m ≠ 0) (g : suzukiGroup m) :
@@ -211,12 +93,14 @@ theorem mem_borelSubgroupOf_or_mem_doubleCoset (hm : m ≠ 0) (g : suzukiGroup m
   by_cases h : ((g : GL (Fin 4) (GaloisField 2 (2 * m + 1))) :
       Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 0 3 = 0
   · obtain ⟨κ, a, b, hκ⟩ := SuzukiLieIndex.exists_eq_torus_mul_unipotent hg h
-    exact Or.inl ⟨κ, a, b, hκ.symm⟩
+    exact Or.inl (mem_borelSubgroup.mpr ⟨κ, a, b, hκ.symm⟩)
   · obtain ⟨a, b, κ, c, d, hκ⟩ :=
       SuzukiLieIndex.exists_eq_unipotent_mul_weyl_mul_torus_mul_unipotent hg h
     refine Or.inr (DoubleCoset.mem_doubleCoset.mpr
-      ⟨⟨_, unipotent_mem_suzukiGroup a b⟩, ⟨1, a, b, by simp⟩,
-        ⟨_, borelSubgroup_le_suzukiGroup m ⟨κ, c, d, rfl⟩⟩, ⟨κ, c, d, rfl⟩, Subtype.ext hκ⟩)
+      ⟨⟨_, unipotent_mem_suzukiGroup a b⟩,
+        unipotentSubgroup_le_borelSubgroup m (mem_unipotentSubgroup.mpr ⟨a, b, rfl⟩),
+        ⟨_, borelSubgroup_le_suzukiGroup m (mem_borelSubgroup.mpr ⟨κ, c, d, rfl⟩)⟩,
+        mem_borelSubgroup.mpr ⟨κ, c, d, rfl⟩, Subtype.ext hκ⟩)
 
 /-- **The Tits system of rank one on `Sz(q)`**, for `m ≠ 0`: `B = H U` is the Borel subgroup and
 `N` is the group of order two generated by the Weyl element `w`. -/
@@ -228,7 +112,9 @@ def titsSystem (hm : m ≠ 0) : TitsSystem (suzukiGroup m) :=
         with rfl | rfl
       · exact Or.inl (one_mem _)
       · exact Or.inr (by simp [one_mem]))
-    ⟨⟨_, unipotent_mem_suzukiGroup 1 0⟩, ⟨1, 1, 0, by simp⟩, fun h ↦ one_ne_zero
+    ⟨⟨_, unipotent_mem_suzukiGroup 1 0⟩,
+      unipotentSubgroup_le_borelSubgroup m (mem_unipotentSubgroup.mpr ⟨1, 0, rfl⟩),
+      fun h ↦ one_ne_zero
       ((weyl_mul_unipotent_mul_weyl_mem_borelSubgroup_iff m).mp
         (by simpa using Subgroup.mem_subgroupOf.mp h)).1⟩
     (mem_borelSubgroupOf_or_mem_doubleCoset m hm)
@@ -244,45 +130,18 @@ theorem titsSystem_subgroupN (hm : m ≠ 0) :
     (titsSystem m hm).subgroupN = Subgroup.zpowers (weylOf m) :=
   TitsSystem.ofRankOne_subgroupN
 
+/-- The only simple reflection of the Tits system of `Sz(q)` is the class of the Weyl element. -/
+@[simp]
+theorem titsSystem_simple (hm : m ≠ 0) :
+    (titsSystem m hm).simple = {QuotientGroup.mk ⟨weylOf m, by
+      rw [titsSystem_subgroupN]; exact Subgroup.mem_zpowers _⟩} :=
+  TitsSystem.ofRankOne_simple
+
+/-- **The Tits system of `Sz(q)` is irreducible**, having a single simple reflection. -/
+theorem isIrreducible_titsSystem (hm : m ≠ 0) : (titsSystem m hm).IsIrreducible :=
+  TitsSystem.isIrreducible_ofRankOne
+
 /-! ## Simplicity -/
-
-/-- The unipotent subgroup is a `2`-group: each of its elements has order dividing four. -/
-theorem isPGroup_unipotentSubgroupOf : IsPGroup 2 (unipotentSubgroupOf m) := fun g ↦ by
-  obtain ⟨a, b, hg⟩ := Subgroup.mem_subgroupOf.mp g.2
-  refine ⟨2, Subtype.ext (Subtype.ext ?_)⟩
-  simp [← hg, unipotent_pow_four]
-
-/-- The Borel subgroup normalizes the unipotent subgroup, inside the Suzuki group. -/
-theorem borelSubgroupOf_le_normalizer :
-    borelSubgroupOf m ≤ Subgroup.normalizer (unipotentSubgroupOf m : Set (suzukiGroup m)) :=
-  fun x hx ↦ Subgroup.mem_normalizer_iff.mpr fun g ↦ by
-    simpa [Subgroup.mem_subgroupOf] using
-      Subgroup.mem_normalizer_iff.mp (borelSubgroup_le_normalizer m hx) g
-
-/-- **The conjugates of the unipotent subgroup generate the Suzuki group.** The Weyl element is
-`u(1, 1)⁻¹ (w u(0, 1) w⁻¹) u(1, 0)⁻¹`, by the rank-one Bruhat relation at the parameter `1`. -/
-theorem normalClosure_unipotentSubgroupOf :
-    Subgroup.normalClosure (unipotentSubgroupOf m : Set (suzukiGroup m)) = ⊤ := by
-  set X := Subgroup.normalClosure (unipotentSubgroupOf m : Set (suzukiGroup m))
-  have hU (a b : GaloisField 2 (2 * m + 1)) : (⟨_, unipotent_mem_suzukiGroup a b⟩ :
-      suzukiGroup m) ∈ X :=
-    Subgroup.subset_normalClosure (Subgroup.mem_subgroupOf.mpr ⟨a, b, rfl⟩)
-  have hrel : weyl m = (unipotent m 1 1)⁻¹ * (weyl m * unipotent m 0 1 * (weyl m)⁻¹) *
-      (unipotent m 1 0)⁻¹ := by
-    have h := weyl_mul_unipotent_zero_mul_weyl m 1 one_ne_zero
-    simp only [one_pow, div_one, inv_one, Units.mk0_one, map_one, mul_one] at h
-    rw [weyl_inv, h]
-    group
-  have hw : weylOf m ∈ X := by
-    have h := mul_mem (mul_mem (inv_mem (hU 1 1))
-      ((Subgroup.normalClosure_normal).conj_mem _ (hU 0 1) (weylOf m))) (inv_mem (hU 1 0))
-    convert h using 1
-    exact Subtype.ext hrel
-  refine eq_top_iff.mpr fun g _ ↦ ?_
-  have hle : suzukiGroup m ≤ X.map (suzukiGroup m).subtype :=
-    suzukiGroup_le_iff.mpr ⟨fun a b ↦ ⟨_, hU a b, rfl⟩, ⟨_, hw, rfl⟩⟩
-  obtain ⟨x, hx, hxg⟩ := hle g.2
-  rwa [Subtype.ext hxg] at hx
 
 /-- **The normal core of the Borel subgroup of `Sz(q)` is trivial.** -/
 theorem normalCore_titsSystem_subgroupB (hm : m ≠ 0) :
@@ -292,7 +151,7 @@ theorem normalCore_titsSystem_subgroupB (hm : m ≠ 0) :
   -- The Weyl element conjugates an element of `Z ∩ U` into `B`, so that element is trivial.
   have hZU : ∀ y ∈ Z, y ∈ unipotentSubgroupOf m → y = 1 := by
     intro y hyZ hyU
-    obtain ⟨a, b, hy⟩ := Subgroup.mem_subgroupOf.mp hyU
+    obtain ⟨a, b, hy⟩ := mem_unipotentSubgroup.mp (Subgroup.mem_subgroupOf.mp hyU)
     have h := Subgroup.normalCore_le _
       ((Subgroup.normalCore_normal _).conj_mem y hyZ (weylOf m))
     rw [Subgroup.mem_subgroupOf] at h
@@ -328,7 +187,7 @@ theorem isSimpleGroup_suzukiGroup (hm : m ≠ 0) : IsSimpleGroup (suzukiGroup m)
       ((g : GL (Fin 4) (GaloisField 2 (2 * m + 1))) :
         Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 0 0) h⟩⟩
   refine ⟨fun H _ ↦ ?_⟩
-  rcases (titsSystem m hm).le_normalCore_or_eq_top_of_normal TitsSystem.isIrreducible_ofRankOne
+  rcases (titsSystem m hm).le_normalCore_or_eq_top_of_normal (isIrreducible_titsSystem m hm)
     (by simpa using borelSubgroupOf_le_normalizer m) (normalClosure_unipotentSubgroupOf m) H
     with h | h
   · rw [normalCore_titsSystem_subgroupB] at h

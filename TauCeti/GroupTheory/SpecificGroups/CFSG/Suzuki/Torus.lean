@@ -35,6 +35,9 @@ fixed points, consume the torus in `TauCeti.GroupTheory.SpecificGroups.CFSG.Suzu
 
 * `TauCeti.Suzuki.torusMatrix`: the diagonal torus matrix `h(κ)`.
 * `TauCeti.Suzuki.torus`: the torus as a homomorphism `𝔽_q^× →* GL₄(𝔽_q)`.
+* `TauCeti.Suzuki.borelSubgroup`: the Borel subgroup `B = H U`, the join of the range of the torus
+  and the unipotent subgroup, and `TauCeti.Suzuki.borelSubgroupOf`, the same subgroup inside the
+  Suzuki group.
 
 ## Main results
 
@@ -45,6 +48,11 @@ fixed points, consume the torus in `TauCeti.GroupTheory.SpecificGroups.CFSG.Suzu
 * `TauCeti.Suzuki.weyl_mul_unipotent_zero_mul_weyl`: the rank-one Bruhat relation.
 * `TauCeti.Suzuki.torus_mem_suzukiGroup`: every torus element is a product of the standard
   generators.
+* `TauCeti.Suzuki.mem_borelSubgroup`: the Borel subgroup consists of the products `h(κ) u(a, b)`.
+* `TauCeti.Suzuki.weyl_mul_unipotent_mul_weyl_mem_borelSubgroup_iff`: the Weyl element
+  conjugates `u(a, b)` into the Borel subgroup only when `u(a, b) = 1`.
+* `TauCeti.Suzuki.normalClosure_unipotentSubgroupOf`: the conjugates of the unipotent subgroup
+  generate the Suzuki group.
 
 ## References
 
@@ -215,6 +223,108 @@ theorem torus_mem_suzukiGroup (κ : (GaloisField 2 (2 * m + 1))ˣ) :
     (mul_mem (mul_mem weyl_mem_suzukiGroup (unipotent_mem_suzukiGroup _ _))
       weyl_mem_suzukiGroup)) (inv_mem (unipotent_mem_suzukiGroup _ _)))
     (inv_mem weyl_mem_suzukiGroup)
+
+/-! ## The Borel subgroup -/
+
+/-- The torus normalizes the unipotent subgroup. -/
+theorem torus_mul_mul_inv_mem_unipotentSubgroup (κ : (GaloisField 2 (2 * m + 1))ˣ)
+    {g : GL (Fin 4) (GaloisField 2 (2 * m + 1))} (hg : g ∈ unipotentSubgroup m) :
+    torus m κ * g * (torus m κ)⁻¹ ∈ unipotentSubgroup m := by
+  obtain ⟨a, b, rfl⟩ := mem_unipotentSubgroup.mp hg
+  exact mem_unipotentSubgroup.mpr ⟨_, _, (torus_mul_unipotent_mul_torus_inv m κ a b).symm⟩
+
+/-- The range of the torus normalizes the unipotent subgroup. -/
+theorem range_torus_le_normalizer :
+    (torus m).range ≤ Subgroup.normalizer (unipotentSubgroup m : Set _) := by
+  rintro _ ⟨κ, rfl⟩
+  refine Subgroup.mem_normalizer_iff.mpr fun g ↦
+    ⟨torus_mul_mul_inv_mem_unipotentSubgroup m κ, fun hg ↦ ?_⟩
+  simpa [map_inv, mul_assoc] using torus_mul_mul_inv_mem_unipotentSubgroup m κ⁻¹ hg
+
+/-- The Borel subgroup `B = H U` of `GL₄(𝔽_(2^(2m+1)))`, the join of the range of the torus and
+the unipotent subgroup. Since the torus normalizes the unipotent subgroup, it consists of the
+products `h(κ) u(a, b)` (`TauCeti.Suzuki.mem_borelSubgroup`). -/
+def borelSubgroup : Subgroup (GL (Fin 4) (GaloisField 2 (2 * m + 1))) :=
+  (torus m).range ⊔ unipotentSubgroup m
+
+variable {m} in
+/-- The Borel subgroup consists of the products of a torus element and a standard unipotent
+generator. -/
+@[simp]
+theorem mem_borelSubgroup {g : GL (Fin 4) (GaloisField 2 (2 * m + 1))} :
+    g ∈ borelSubgroup m ↔ ∃ κ a b, torus m κ * unipotent m a b = g := by
+  rw [← SetLike.mem_coe, borelSubgroup,
+    Subgroup.coe_mul_of_left_le_normalizer_right _ _ (range_torus_le_normalizer m)]
+  simp [Set.mem_mul]
+
+/-- The unipotent subgroup lies in the Borel subgroup. -/
+theorem unipotentSubgroup_le_borelSubgroup : unipotentSubgroup m ≤ borelSubgroup m :=
+  le_sup_right
+
+/-- The Borel subgroup lies in the Suzuki group. -/
+theorem borelSubgroup_le_suzukiGroup : borelSubgroup m ≤ suzukiGroup m := by
+  refine sup_le ?_ (unipotentSubgroup_le_suzukiGroup m)
+  rintro _ ⟨κ, rfl⟩
+  exact torus_mem_suzukiGroup m κ
+
+/-- **The Borel subgroup normalizes the unipotent subgroup.** -/
+theorem borelSubgroup_le_normalizer :
+    borelSubgroup m ≤ Subgroup.normalizer (unipotentSubgroup m : Set _) :=
+  sup_le (range_torus_le_normalizer m) Subgroup.le_normalizer
+
+/-- **The Weyl element conjugates `u(a, b)` into the Borel subgroup only when `u(a, b) = 1`.** -/
+theorem weyl_mul_unipotent_mul_weyl_mem_borelSubgroup_iff {a b : GaloisField 2 (2 * m + 1)} :
+    weyl m * unipotent m a b * weyl m ∈ borelSubgroup m ↔ a = 0 ∧ b = 0 := by
+  refine ⟨fun h ↦ ?_, fun ⟨ha, hb⟩ ↦ mem_borelSubgroup.mpr ⟨1, 0, 0, by simp [ha, hb]⟩⟩
+  obtain ⟨κ, c, d, h⟩ := mem_borelSubgroup.mp h
+  -- Elements of `B` are lower triangular, while the last column of `w u(a, b) w` is the reversed
+  -- first column `(u₃₀, a^(1+θ) + b, a, 1)` of `u(a, b)`.
+  have h23 := congrArg
+    (fun g : GL (Fin 4) (GaloisField 2 (2 * m + 1)) ↦
+      (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 2 3) h
+  have h13 := congrArg
+    (fun g : GL (Fin 4) (GaloisField 2 (2 * m + 1)) ↦
+      (g : Matrix (Fin 4) (Fin 4) (GaloisField 2 (2 * m + 1))) 1 3) h
+  simp [Matrix.mul_apply, Fin.sum_univ_four, Matrix.diagonal_apply] at h23 h13
+  refine ⟨h23.symm, ?_⟩
+  simpa [← h23] using h13.symm
+
+/-- The Borel subgroup `B = H U`, inside the Suzuki group. -/
+abbrev borelSubgroupOf : Subgroup (suzukiGroup m) :=
+  (borelSubgroup m).subgroupOf (suzukiGroup m)
+
+/-- The Borel subgroup normalizes the unipotent subgroup, inside the Suzuki group. -/
+theorem borelSubgroupOf_le_normalizer :
+    borelSubgroupOf m ≤ Subgroup.normalizer (unipotentSubgroupOf m : Set (suzukiGroup m)) :=
+  fun x hx ↦ Subgroup.mem_normalizer_iff.mpr fun g ↦ by
+    simpa [Subgroup.mem_subgroupOf] using
+      Subgroup.mem_normalizer_iff.mp (borelSubgroup_le_normalizer m hx) g
+
+/-- **The conjugates of the unipotent subgroup generate the Suzuki group.** The Weyl element is
+`u(1, 1)⁻¹ (w u(0, 1) w⁻¹) u(1, 0)⁻¹`, by the rank-one Bruhat relation at the parameter `1`. -/
+theorem normalClosure_unipotentSubgroupOf :
+    Subgroup.normalClosure (unipotentSubgroupOf m : Set (suzukiGroup m)) = ⊤ := by
+  set X := Subgroup.normalClosure (unipotentSubgroupOf m : Set (suzukiGroup m))
+  have hU (a b : GaloisField 2 (2 * m + 1)) : (⟨_, unipotent_mem_suzukiGroup a b⟩ :
+      suzukiGroup m) ∈ X :=
+    Subgroup.subset_normalClosure
+      (Subgroup.mem_subgroupOf.mpr (mem_unipotentSubgroup.mpr ⟨a, b, rfl⟩))
+  have hrel : weyl m = (unipotent m 1 1)⁻¹ * (weyl m * unipotent m 0 1 * (weyl m)⁻¹) *
+      (unipotent m 1 0)⁻¹ := by
+    have h := weyl_mul_unipotent_zero_mul_weyl m 1 one_ne_zero
+    simp only [one_pow, div_one, inv_one, Units.mk0_one, map_one, mul_one] at h
+    rw [weyl_inv, h]
+    group
+  have hw : weylOf m ∈ X := by
+    have h := mul_mem (mul_mem (inv_mem (hU 1 1))
+      ((Subgroup.normalClosure_normal).conj_mem _ (hU 0 1) (weylOf m))) (inv_mem (hU 1 0))
+    convert h using 1
+    exact Subtype.ext hrel
+  refine eq_top_iff.mpr fun g _ ↦ ?_
+  have hle : suzukiGroup m ≤ X.map (suzukiGroup m).subtype :=
+    suzukiGroup_le_iff.mpr ⟨fun a b ↦ ⟨_, hU a b, rfl⟩, ⟨_, hw, rfl⟩⟩
+  obtain ⟨x, hx, hxg⟩ := hle g.2
+  rwa [Subtype.ext hxg] at hx
 
 end Suzuki
 
