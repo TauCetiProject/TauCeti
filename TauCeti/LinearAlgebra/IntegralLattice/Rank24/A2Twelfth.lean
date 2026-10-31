@@ -43,12 +43,12 @@ table subgroup has order `729` and is a quadratic Lagrangian of the glue-word mo
 order and Lagrangian conditions needed to glue twelve `A₂` root lattices along it.
 
 Each nonzero label of `ℤ/3` names a coset of `A₂` of minimum norm `2/3`, so the minimum norm of a
-glue word is two thirds of its Hamming weight (`sum_glueMinimum_a2Twelfth`).  Nonzero ternary Golay
-words have weight at least `6`, hence every nonzero word of the table subgroup has minimum norm
-at least `4`.  Gluing the orthogonal sum `R` of twelve `A₂` root lattices along the table subgroup
-by `TauCeti.DynkinType.gluedLattice` therefore gives a positive definite even unimodular lattice
-`a2TwelfthLattice` of rank `24`, whose carrier is the set of dual vectors of `R` with glue word in
-the Golay code, and whose norm-`2` vectors span exactly `R`.
+glue word is two thirds of its Hamming weight (`TauCeti.DynkinType.sum_glueMinimum_A_two`).
+Nonzero ternary Golay words have weight at least `6`, hence every nonzero word of the table
+subgroup has minimum norm at least `4`.  Gluing the orthogonal sum `R` of twelve `A₂` root
+lattices along the table subgroup by `TauCeti.DynkinType.gluedLattice` therefore gives a positive
+definite even unimodular lattice `a2TwelfthLattice` of rank `24`, whose carrier is the set of dual
+vectors of `R` with glue word in the Golay code, and whose norm-`2` vectors span exactly `R`.
 
 ## Main declarations
 
@@ -278,22 +278,6 @@ theorem mem_a2TwelfthGlueSubgroup_iff {w : a2TwelfthGlueModule} :
 
 /-! ### The glued lattice -/
 
-/-- **The minimum norm of an `A₂¹²` glue word is two thirds of its Hamming weight**: the coset of
-a nonzero label of the `A₂` alphabet `ℤ/3` has minimum norm `2/3`. -/
-theorem sum_glueMinimum_a2Twelfth (w : Fin 12 → ZMod 3) :
-    ∑ i, (A 2).glueMinimum (isSimplyLaced_A 2) (w i) = 2 / 3 * hammingNorm w := by
-  have h (a : ZMod 3) :
-      (A 2).glueMinimum (isSimplyLaced_A 2) a = if a = 0 then 0 else 2 / 3 := by
-    rw [glueMinimum_A]
-    by_cases ha : a = 0
-    · simp [ha]
-    · have hlt : a.val < 3 := ZMod.val_lt a
-      have hne : a.val ≠ 0 := (ZMod.val_eq_zero a).not.mpr ha
-      obtain h | h : a.val = 1 ∨ a.val = 2 := by omega
-      all_goals simp only [ha, h, ↓reduceIte]; norm_num
-  simp only [h, hammingNorm, Finset.sum_ite, Finset.sum_const_zero, Finset.sum_const,
-    nsmul_eq_mul, zero_add, mul_comm]
-
 /-- **Every nonzero word of the `A₂¹²` table subgroup has minimum norm at least `4`**: its
 ternary image is a nonzero word of the extended ternary Golay code, so it has weight at least
 `6`, and the minimum norm is two thirds of the weight. -/
@@ -315,7 +299,7 @@ theorem four_le_sum_glueMinimum_of_mem_a2TwelfthGlueSubgroup {w : a2TwelfthGlueM
   have h6 : (6 : ℚ) ≤ hammingNorm (β := fun _ : Fin 12 ↦ ZMod 3) w := by
     exact_mod_cast (by omega : 6 ≤ hammingNorm (β := fun _ : Fin 12 ↦ ZMod 3) w)
   exact (by linarith : (4 : ℚ) ≤ 2 / 3 * hammingNorm (β := fun _ : Fin 12 ↦ ZMod 3) w).trans_eq
-    (sum_glueMinimum_a2Twelfth w).symm
+    (sum_glueMinimum_A_two (isSimplyLaced_A 2) w).symm
 
 /-- The orthogonal sum `A₂¹²` of twelve `A₂` root lattices. -/
 noncomputable abbrev a2TwelfthRootLattice : IntegralLattice (Fin 12 → Fin (A 2).rank → ℚ) :=

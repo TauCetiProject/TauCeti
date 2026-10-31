@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.InformationTheory.Hamming
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.CosetMinimum
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.OrthogonalSum
@@ -48,7 +49,9 @@ For a glue word `w = (w_i)` of a finite family `t` of components, the coset of t
 `μ(w) = ∑ i, μ_(t i)(w_i)`, again attained (`TauCeti.DynkinType.isLeast_sum_glueMinimum`): a
 shortest vector of the word's coset is a family of shortest vectors of the label cosets, by
 `TauCeti.IntegralLattice.isLeast_form_self_pi`.  The two label-level consequences pass to words:
-half of `μ(w)` is the quadratic value of `w`, and `μ(w) = 0` only for the zero word.
+half of `μ(w)` is the quadratic value of `w`, and `μ(w) = 0` only for the zero word.  For words
+over the `A₂` alphabet `ℤ/3`, every nonzero label has shortest norm `2/3`, so `μ(w)` is two
+thirds of the Hamming weight of `w` (`sum_glueMinimum_A_two`).
 
 ## Main declarations
 
@@ -63,6 +66,8 @@ half of `μ(w)` is the quadratic value of `w`, and `μ(w) = 0` only for the zero
 * `TauCeti.DynkinType.quadratic_pi_glueAlphabet_eq_sum_glueMinimum_div_two`:
   `q(w) = μ(w) / 2 mod ℤ`.
 * `TauCeti.DynkinType.sum_glueMinimum_eq_zero_iff`: `μ(w) = 0` exactly when `w = 0`.
+* `TauCeti.DynkinType.sum_glueMinimum_A_two`: over `A₂`, `μ(w)` is two thirds of the Hamming
+  weight of `w`.
 
 ## References
 
@@ -301,6 +306,21 @@ theorem sum_glueMinimum_eq_zero_iff {w : ∀ i, (t i).glueAlphabet (ht i)} :
     ∑ i, (t i).glueMinimum (ht i) (w i) = 0 ↔ w = 0 := by
   rw [Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦ (t i).glueMinimum_nonneg (ht i) (w i), funext_iff]
   simp only [Finset.mem_univ, true_imp_iff, glueMinimum_eq_zero_iff _ (hv _), Pi.zero_apply]
+
+/-- **The shortest norm of an `A₂` glue word is two thirds of its Hamming weight**: the coset of
+a nonzero label of the `A₂` alphabet `ℤ/3` has shortest norm `2/3`. -/
+theorem sum_glueMinimum_A_two (ht : (A 2).IsSimplyLaced) (w : ι → ZMod 3) :
+    ∑ i, (A 2).glueMinimum ht (w i) = 2 / 3 * hammingNorm w := by
+  have h (a : ZMod 3) : (A 2).glueMinimum ht a = if a = 0 then 0 else 2 / 3 := by
+    rw [glueMinimum_A]
+    by_cases ha : a = 0
+    · simp [ha]
+    · have hlt : a.val < 3 := ZMod.val_lt a
+      have hne : a.val ≠ 0 := (ZMod.val_eq_zero a).not.mpr ha
+      obtain h | h : a.val = 1 ∨ a.val = 2 := by omega
+      all_goals simp only [ha, h, ↓reduceIte]; norm_num
+  simp only [h, hammingNorm, Finset.sum_ite, Finset.sum_const_zero, Finset.sum_const,
+    nsmul_eq_mul, zero_add, mul_comm]
 
 end GlueWord
 
