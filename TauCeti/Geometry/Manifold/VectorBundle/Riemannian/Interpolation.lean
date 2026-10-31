@@ -63,9 +63,10 @@ def convexCombinationFun (g h : ContMDiffRiemannianMetric IB n F V) (f : B → �
       ⟨(TauCeti.Manifold.mem_symmetricBilinearSections _).2 fun x v w ↦ by
           simp [g.symm x v w, h.symm x v w],
         fun x v hv ↦ by
-          simpa using (TauCeti.Manifold.convex_positiveDefiniteBilinearSections
-            g.toBilinearSection_mem h.toBilinearSection_mem (sub_nonneg.2 (hf₁ x)) (hf₀ x)
-            (sub_add_cancel 1 (f x))).2 x v hv⟩)
+          simpa using ((TauCeti.Manifold.mem_positiveDefiniteBilinearSections _).1
+            (TauCeti.Manifold.convex_positiveDefiniteBilinearSections
+              g.toBilinearSection_mem h.toBilinearSection_mem (sub_nonneg.2 (hf₁ x)) (hf₀ x)
+              (sub_add_cancel 1 (f x)))).2 x v hv⟩)
 
 /-- The inner product of a metric interpolated with a varying weight is the weighted sum of
 inner products. -/
