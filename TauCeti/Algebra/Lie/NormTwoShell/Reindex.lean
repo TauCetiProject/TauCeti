@@ -144,8 +144,8 @@ theorem reindex_rootBracket (hB : B.IsSymm) (a b : B.normTwoShell) :
       (inversionSign B e a * inversionSign B e b) •
         rootBracket B' (normTwoShellCongr he a) (normTwoShellCongr he b) := by
   rw [reindex_eq_coverEquiv e he hB,
-    coverEquiv_rootBracket _ _ (SignCover.coe_monoidHom_reindex_inl e hB he)
-      (SignCover.coe_monoidHom_reindex_right e hB he),
+    coverEquiv_rootBracket _ _ (fun u => by simp)
+      (fun x => by simp [funext_iff, LinearMap.funLeft_apply]),
     SignCover.sectionSign_reindex, SignCover.sectionSign_reindex,
     normTwoShellEquivOfIsometry_funCongrLeft he, normTwoShellEquivOfIsometry_funCongrLeft he]
 
@@ -153,8 +153,8 @@ theorem reindex_rootBracket (hB : B.IsSymm) (a b : B.normTwoShell) :
 theorem reindex_lie (hB : B.IsSymm) (x y : ShellLieAlgebra B) :
     reindex e he ⁅x, y⁆ = ⁅reindex e he x, reindex e he y⁆ := by
   rw [reindex_eq_coverEquiv e he hB]
-  exact coverEquiv_lie _ _ (SignCover.coe_monoidHom_reindex_inl e hB he)
-    (SignCover.coe_monoidHom_reindex_right e hB he) x y
+  exact coverEquiv_lie _ _ (fun u => by simp)
+    (fun x => by simp [funext_iff, LinearMap.funLeft_apply]) x y
 
 /-- **The identity relabels the signed shell Lie algebra by the identity.** -/
 @[simp]
