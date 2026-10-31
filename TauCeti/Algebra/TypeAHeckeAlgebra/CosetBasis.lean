@@ -30,16 +30,6 @@ the decomposition `Hₙ₊₁ = Hₙ + Hₙ Tₙ₋₁ Hₙ`
 (`TauCeti.InfiniteTypeAHeckeAlgebra.toSubmodule_stage_add_two`). These coordinates are the ones in
 which Jones computes the Ocneanu trace recursively, one strand at a time.
 
-The proof does not use the combinatorics of permutations. Right multiplication by a generator
-`T i` of `Hₙ₊₁` takes each representative into the left `Hₙ`-span of the representatives
-(`TauCeti.InfiniteTypeAHeckeAlgebra.cosetRep_mul_T_of_add_one_lt`,
-`TauCeti.InfiniteTypeAHeckeAlgebra.cosetRep_succ_mul_T`,
-`TauCeti.InfiniteTypeAHeckeAlgebra.cosetRep_mul_T_self` and
-`TauCeti.InfiniteTypeAHeckeAlgebra.cosetRep_mul_T_succ`), so the sums above form a right ideal of
-`Hₙ₊₁` containing `1`, hence all of `Hₙ₊₁`. Both sides are free `R`-modules of rank
-`(n + 1) * n! = (n + 1)!` (`TauCeti.InfiniteTypeAHeckeAlgebra.finrank_stage`), and a surjective
-linear map between finite free modules of the same rank over a commutative ring is bijective.
-
 ## Main definitions
 
 * `TauCeti.InfiniteTypeAHeckeAlgebra.cosetRep`: the descending product `T (n - 1) * ⋯ * T m`.
@@ -52,8 +42,9 @@ linear map between finite free modules of the same rank over a commutative ring 
 * `TauCeti.InfiniteTypeAHeckeAlgebra.cosetEquiv_smul` and
   `TauCeti.InfiniteTypeAHeckeAlgebra.cosetEquiv_symm_mul`: `cosetEquiv` is `Hₙ`-linear for left
   multiplication, so the representatives form a basis of `Hₙ₊₁` as a left `Hₙ`-module.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.cosetEquiv_symm_inclusion`: an element of `Hₙ` has the single
-  coordinate `1` at the representative `cosetRep q n n = 1`.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.cosetEquiv_symm_inclusion`: an element `b` of `Hₙ` has
+  coordinate `b` at the representative `cosetRep q n n = 1`, and coordinate zero at every other
+  index.
 
 ## References
 
@@ -140,6 +131,14 @@ theorem cosetRep_mul_T_succ {n m j : ℕ} (hm : m ≤ j) (hj : j + 2 ≤ n) :
 end CosetRep
 
 section CosetEquiv
+
+/- The proof does not use the combinatorics of permutations. Right multiplication by a generator
+`T i` of `Hₙ₊₁` takes each representative into the left `Hₙ`-span of the representatives
+(`cosetRep_mul_T_of_add_one_lt`, `cosetRep_succ_mul_T`, `cosetRep_mul_T_self` and
+`cosetRep_mul_T_succ`), so the sums `∑ m, a m * cosetRep q n m` form a right ideal of `Hₙ₊₁`
+containing `1`, hence all of `Hₙ₊₁`. Both sides are free `R`-modules of rank
+`(n + 1) * n! = (n + 1)!` (`finrank_stage`), and a surjective linear map between finite free
+modules of the same rank over a commutative ring is bijective. -/
 
 variable (R q) in
 /-- The sum `∑ m, a m * cosetRep q n m` with coefficients in the stage of the first `n` strands. -/
