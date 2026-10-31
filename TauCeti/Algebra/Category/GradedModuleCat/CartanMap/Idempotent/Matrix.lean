@@ -8,10 +8,11 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ExtEuler.Matrix
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Coefficients
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.FiniteLength
 
 /-!
-# The graded Cartan matrix of an algebra with split degree-zero part
+# The graded Cartan matrix in idempotent bases
 
 Let `A` be a nonnegatively graded finite-dimensional algebra whose degree-zero piece is spanned by
 a complete family of orthogonal nonzero idempotents `eᵢ`, as for the path-length grading of the
@@ -24,6 +25,12 @@ In these bases the graded Cartan matrix has no hypotheses left: the coefficient 
 `(i, j)` entry is `dim_k(eᵢ A eⱼ ∩ 𝒜 p)`, the graded multiplicity of `Sᵢ{p}` in `A eⱼ`. The
 entries have no negative powers of `q` and constant term `δᵢⱼ`, so the matrix is congruent to
 the identity modulo `q`.
+
+Over a field that does not split the simple modules, let the degree-zero piece instead be a
+semisimple ring and let the `eᵢ` be primitive with pairwise nonisomorphic left ideals `A eᵢ`. In
+the bases `TauCeti.gradedIdempotentProjectiveBasisOfPrimitive` and
+`TauCeti.gradedIdempotentHeadBasisOfPrimitive`, the corner dimension `dim_k(eᵢ A eⱼ ∩ 𝒜 p)` is
+then `dim_k End_A(Sᵢ)` times the coefficient of `qᵖ`.
 
 The two bases are also the input of the projective/simple duality and of the relation between the
 graded Cartan matrix and the q-Euler matrix: `TauCeti.gradedIdempotentProjectiveBasis_apply`
@@ -39,6 +46,9 @@ supplies the hypothesis, that the projective basis vectors are the classes `[A e
   coefficients vanish.
 * `TauCeti.coeff_zero_gradedCartanMatrix_gradedIdempotentProjectiveBasis`: the constant term of
   the `(i, j)` entry is `δᵢⱼ`.
+* `TauCeti.finrank_end_mul_coeff_gradedCartanMatrix_gradedIdempotentProjectiveBasisOfPrimitive`:
+  for primitive idempotents over a semisimple degree-zero part, `dim_k End_A(Sᵢ)` times the
+  coefficient of `qᵖ` in the `(i, j)` entry is `dim_k(eᵢ A eⱼ ∩ 𝒜 p)`.
 * `TauCeti.isUnit_det_gradedCartanMatrix_gradedIdempotentProjectiveBasis`: if every pair of graded
   heads `(Sᵢ, Sⱼ)` is graded Euler-admissible, the graded Cartan matrix has unit determinant.
   Contrapositively, a graded Cartan determinant that is not a unit of `ℤ[q,q⁻¹]` exhibits a pair
@@ -59,6 +69,7 @@ noncomputable section
 namespace TauCeti
 
 open CategoryTheory
+open scoped Pointwise
 
 universe uk uA uI
 
@@ -110,6 +121,53 @@ theorem coeff_zero_gradedCartanMatrix_gradedIdempotentProjectiveBasis [Decidable
         exact lt_irrefl 0
           (pos_of_mem_cornerSubmodule_inf he.toOrthogonalIdempotents hneg hspan hij hx hx₀)
     rw [hbot, finrank_bot, Nat.cast_zero]
+
+/-! ### Primitive idempotents over a semisimple degree-zero part -/
+
+section Primitive
+
+variable [IsSemisimpleRing (𝒜 0)] (hprim : ∀ i, IsPrimitiveIdempotent (e i))
+  (hnoniso : Pairwise fun i j =>
+    IsEmpty ((Ideal.span {e i} : Ideal A) ≃ₗ[A] (Ideal.span {e j} : Ideal A)))
+
+/-- **The graded Cartan matrix in the canonical bases over a nonsplitting field.** For a complete
+family of orthogonal primitive idempotents `eᵢ` of degree zero with pairwise nonisomorphic left
+ideals, over a nonnegatively graded algebra with semisimple degree-zero part, take the projective
+basis `[A eⱼ]` and the head basis `[Sᵢ]`. The coefficient of `qᵖ` in the `(i, j)` entry of the
+graded Cartan matrix, multiplied by `dim_k End_A(Sᵢ)`, is `dim_k(eᵢ A eⱼ ∩ 𝒜 p)`. -/
+theorem finrank_end_mul_coeff_gradedCartanMatrix_gradedIdempotentProjectiveBasisOfPrimitive
+    (i j : I) (p : ℤ) :
+    (Module.finrank k (Module.End A (gradedPositiveMulQuotient 𝒜 (he₀ i))) : ℤ) *
+        (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso)
+          (gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim hnoniso) i j).coeff p =
+      Module.finrank k ↥(cornerSubmodule k (e i) (e j) ⊓ 𝒜 p) := by
+  let S (i : I) : (gradedFiniteModules 𝒜).FullSubcategory :=
+    ⟨gradedPositiveMulQuotient 𝒜 (he₀ i), gradedFiniteModules_gradedPositiveMulQuotient 𝒜 (he₀ i)⟩
+  have hne : Pairwise fun i j => (S j).obj.smulGradedDimension (e i) = 0 := fun _ _ hij =>
+    smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg (hprim _) (he₀ _) (hprim _)
+      (hnoniso hij.symm)
+  have hself (i : I) : (S i).obj.smulGradedDimension (e i) ≠ 0 :=
+    smulGradedDimension_gradedPositiveMulQuotient_self_ne_zero hneg (he.idem i) (he₀ i)
+      (hprim i).ne_zero
+  have hS := isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent
+    hneg he he₀ hprim
+  -- The head basis is the simple-class basis of the heads.
+  have hbasis : gradedSimpleClassBasisOfNeZero S he.idem he₀ hne hself hS =
+      gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim hnoniso :=
+    Module.Basis.eq_of_apply_eq fun i => by
+      rw [gradedSimpleClassBasisOfNeZero_apply, gradedIdempotentHeadBasisOfPrimitive_apply]
+  -- The weight `dim_k(eᵢ • (Sᵢ)₀)` is the constant term of `gdim(eᵢ • Sᵢ) = dim_k End_A(Sᵢ)`.
+  have hd : (Module.finrank k ↥(e i • (S i).obj.grading.piece 0) : ℤ) =
+      Module.finrank k (Module.End A (gradedPositiveMulQuotient 𝒜 (he₀ i))) := by
+    simpa [GradedModuleCat.coeff_smulGradedDimension] using congrArg (·.coeff 0)
+      (smulGradedDimension_gradedPositiveMulQuotient_self hneg (hprim i) (he₀ i))
+  rw [← hd, ← hbasis]
+  exact finrank_smul_simple_piece_zero_mul_coeff_gradedCartanMatrix S he.idem he₀ hne hself hS _
+    (he.idem j) (hI j) j
+    (gradedIdempotentProjectiveBasisOfPrimitive_apply he he₀ hI hprim hnoniso j) i
+    (fun _ hp => gradedPositiveMulQuotient_piece_eq_bot hneg (he.idem i) (he₀ i) hp) p
+
+end Primitive
 
 /-! ### Unimodularity -/
 
