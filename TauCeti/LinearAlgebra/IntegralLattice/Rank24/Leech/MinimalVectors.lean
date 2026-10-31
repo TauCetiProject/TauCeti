@@ -72,18 +72,12 @@ namespace TauCeti
 
 open BinaryGolay IntegralLattice
 
-/-! ### Binary digits -/
-
-private theorem zmod_two_cases (z : ZMod 2) : z = 0 ∨ z = 1 := by
-  fin_cases z
-  · exact Or.inl rfl
-  · exact Or.inr rfl
-
 /-! ### The three shapes -/
 
-/-- **A Leech minimal vector of the first shape**, in congruence coordinates: the integer vector
-equal to `4s` at `i`, to `4t` at `j` and to `0` elsewhere, for signs `s t : ℤˣ`. Halved, it is
-the Leech lattice vector `2s eᵢ + 2t eⱼ`. -/
+/-- **The first shape of Leech minimal vectors**, in congruence coordinates: the integer vector
+equal to `4s` at `i`, to `4t` at `j` (unless `j = i`) and to `0` elsewhere, for signs
+`s t : ℤˣ`. For `i ≠ j`, halved, it is the Leech lattice vector `2s eᵢ + 2t eⱼ` of norm `4`
+(`TauCeti.leechPairVector_mem`). -/
 def leechPairVector (i j : Fin 24) (s t : ℤˣ) : Fin 24 → ℤ :=
   fun k ↦ if k = i then 4 * (s : ℤ) else if k = j then 4 * (t : ℤ) else 0
 
@@ -93,7 +87,7 @@ theorem leechPairVector_apply (i j : Fin 24) (s t : ℤˣ) (k : Fin 24) :
     leechPairVector i j s t k = if k = i then 4 * (s : ℤ) else if k = j then 4 * (t : ℤ) else 0 :=
   (rfl)
 
-/-- **A Leech minimal vector of the second shape**, in congruence coordinates: for binary words
+/-- **The second shape of Leech minimal vectors**, in congruence coordinates: for binary words
 `c` and `d`, the integer vector equal to `2` where `c` is `1` and `d` is `0`, to `-2` where both
 are `1`, and to `0` where `c` is `0`. For `c` an octad and `d` an even subword of `c`, this is the
 vector `±2` on the octad with minus signs on `d`. -/
@@ -106,10 +100,11 @@ theorem leechOctadVector_apply (c d : Fin 24 → ZMod 2) (k : Fin 24) :
     leechOctadVector c d k = 2 * (c k).val * (1 - 2 * (d k).val) :=
   (rfl)
 
-/-- **A Leech minimal vector of the third shape**, in congruence coordinates: for a binary word `c`
+/-- **The third shape of Leech minimal vectors**, in congruence coordinates: for a binary word `c`
 and a coordinate `j`, the integer vector whose coordinate `k ≠ j` is `-1` where `c` is `1` and
 `1` where `c` is `0`, and whose coordinate `j` is `3` where `c` is `1` and `-3` where `c` is
-`0`. -/
+`0`. For `c` a Golay codeword, halved, it is a Leech lattice vector of norm `4`
+(`TauCeti.leechOddVector_mem`). -/
 def leechOddVector (c : Fin 24 → ZMod 2) (j : Fin 24) : Fin 24 → ℤ :=
   fun k ↦ (if k = j then -3 else 1) * (1 - 2 * (c k).val)
 
@@ -171,7 +166,7 @@ private theorem two_mul_add_one_mem {b : Fin 24 → ℤ} (hb : (fun i ↦ (b i :
 
 /-- A vector of the first shape, with `i ≠ j`, halves into the Leech lattice and has
 `∑ aᵢ² = 32`. -/
-private theorem leechPairVector_mem {i j : Fin 24} (hij : i ≠ j) (s t : ℤˣ) :
+theorem leechPairVector_mem {i j : Fin 24} (hij : i ≠ j) (s t : ℤˣ) :
     (fun k ↦ (leechPairVector i j s t k : ℚ) / 2) ∈ leechLattice.carrier ∧
       ∑ k, leechPairVector i j s t k ^ 2 = 32 := by
   set b : Fin 24 → ℤ := fun k ↦ if k = i then 2 * (s : ℤ) else if k = j then 2 * (t : ℤ) else 0
@@ -202,7 +197,7 @@ private theorem leechPairVector_mem {i j : Fin 24} (hij : i ≠ j) (s t : ℤˣ)
 
 /-- A vector of the second shape, on an octad `c` with signs `d` of even weight inside it,
 halves into the Leech lattice and has `∑ aᵢ² = 32`. -/
-private theorem leechOctadVector_mem {c d : Fin 24 → ZMod 2} (hc : c ∈ code)
+theorem leechOctadVector_mem {c d : Fin 24 → ZMod 2} (hc : c ∈ code)
     (hc8 : hammingNorm c = 8) (hdc : ∀ k, c k = 0 → d k = 0) (hd : Even (hammingNorm d)) :
     (fun k ↦ (leechOctadVector c d k : ℚ) / 2) ∈ leechLattice.carrier ∧
       ∑ k, leechOctadVector c d k ^ 2 = 32 := by
@@ -216,10 +211,11 @@ private theorem leechOctadVector_mem {c d : Fin 24 → ZMod 2} (hc : c ∈ code)
       (2 * b k) ^ 2 = 4 * ((c k).val : ℤ) := by
     intro k
     simp only [b]
-    rcases zmod_two_cases (c k) with h | h
+    rcases eq_zero_or_one_of_sq_eq_self (ZMod.pow_card (c k)) with h | h
     · rw [h, hdc k h]
       decide
-    · rcases zmod_two_cases (d k) with h' | h' <;> rw [h, h'] <;> decide
+    · rcases eq_zero_or_one_of_sq_eq_self (ZMod.pow_card (d k)) with h' | h' <;> rw [h, h'] <;>
+        decide
   have hred : (fun k ↦ (b k : ZMod 2)) = c := funext fun k ↦ (hcoord k).1.1
   have hsum : ∑ k, b k = 8 - 2 * (hammingNorm d : ℤ) := by
     simp only [fun k ↦ (hcoord k).1.2, sum_sub_distrib, ← mul_sum, ← Nat.cast_sum,
@@ -238,7 +234,7 @@ private theorem leechOctadVector_mem {c d : Fin 24 → ZMod 2} (hc : c ∈ code)
 
 /-- A vector of the third shape, attached to a Golay codeword `c` and a coordinate `j`, halves
 into the Leech lattice and has `∑ aᵢ² = 32`. -/
-private theorem leechOddVector_mem {c : Fin 24 → ZMod 2} (hc : c ∈ code) (j : Fin 24) :
+theorem leechOddVector_mem {c : Fin 24 → ZMod 2} (hc : c ∈ code) (j : Fin 24) :
     (fun k ↦ (leechOddVector c j k : ℚ) / 2) ∈ leechLattice.carrier ∧
       ∑ k, leechOddVector c j k ^ 2 = 32 := by
   set b : Fin 24 → ℤ := fun k ↦ if k = j then -2 + 3 * ((c k).val : ℤ) else -((c k).val : ℤ)
@@ -279,15 +275,6 @@ private theorem leechOddVector_mem {c : Fin 24 → ZMod 2} (hc : c ∈ code) (j 
 
 /-! ### Every minimal vector has one of the three shapes -/
 
-/-- An integer with `0 < x²` and `x² ≤ 2` is a sign. -/
-private theorem exists_units_eq_of_sq_le_two {x : ℤ} (h0 : x ≠ 0) (h2 : x ^ 2 ≤ 2) :
-    ∃ s : ℤˣ, (s : ℤ) = x := by
-  have h1 : x ≤ 1 := by nlinarith
-  have h1' : -1 ≤ x := by nlinarith
-  rcases (by omega : x = 1 ∨ x = -1) with rfl | rfl
-  · exact ⟨1, rfl⟩
-  · exact ⟨-1, rfl⟩
-
 /-- **The even class with zero reduction**: if `b = 2w` has `∑ bᵢ² = 8`, then `2b` is a vector of
 the first shape. -/
 private theorem two_mul_mem_leechPairVectors {b : Fin 24 → ℤ}
@@ -303,7 +290,8 @@ private theorem two_mul_mem_leechPairVectors {b : Fin 24 → ℤ}
     (by rw [hw2]; norm_num)
   have hi0 : w i ≠ 0 := fun h ↦ hi (by rw [h]; ring)
   have hile : w i ^ 2 ≤ 2 := hw2 ▸ single_le_sum hnonneg (mem_univ i)
-  obtain ⟨s, hs⟩ := exists_units_eq_of_sq_le_two hi0 hile
+  obtain ⟨s, hs⟩ := Int.isUnit_iff.2 <|
+    sq_eq_one_iff.1 (Int.sq_eq_one_of_sq_le_three (by linarith) hi0)
   have hrest : ∑ k ∈ univ.erase i, w k ^ 2 = 1 := by
     have := add_sum_erase univ (fun k ↦ w k ^ 2) (mem_univ i)
     rw [hw2, ← hs, ← Units.val_pow_eq_pow_val, Int.units_sq] at this
@@ -314,7 +302,8 @@ private theorem two_mul_mem_leechPairVectors {b : Fin 24 → ℤ}
     (f := fun k ↦ w k ^ 2) (by rw [hrest]; norm_num)
   have hj0 : w j ≠ 0 := fun h ↦ hj' (by rw [h]; ring)
   have hjle : w j ^ 2 ≤ 1 := hrest ▸ single_le_sum (fun k _ ↦ sq_nonneg (w k)) hj
-  obtain ⟨t, ht⟩ := exists_units_eq_of_sq_le_two hj0 (by linarith)
+  obtain ⟨t, ht⟩ := Int.isUnit_iff.2 <|
+    sq_eq_one_iff.1 (Int.sq_eq_one_of_sq_le_three (by linarith) hj0)
   have hji : j ≠ i := ne_of_mem_erase hj
   have hrest' : ∑ k ∈ (univ.erase i).erase j, w k ^ 2 = 0 := by
     have := add_sum_erase (univ.erase i) (fun k ↦ w k ^ 2) hj
@@ -563,7 +552,7 @@ private def octadSignsEquiv (c : Octad) :
       exact hnorm ▸ t.2.2⟩
   left_inv d := by
     refine Subtype.ext (funext fun k ↦ ?_)
-    rcases zmod_two_cases (d.1 k) with h | h <;> simp [h]
+    rcases eq_zero_or_one_of_sq_eq_self (ZMod.pow_card (d.1 k)) with h | h <;> simp [h]
   right_inv t := by
     refine Subtype.ext (Finset.ext fun k ↦ ?_)
     by_cases h : k ∈ t.1 <;> simp [h]
@@ -621,7 +610,9 @@ theorem ncard_leechOctadVectors : leechOctadVectors.ncard = 97152 := by
 private def oddParam : code × Fin 24 → Fin 24 → ℤ :=
   fun p ↦ leechOddVector p.1 p.2
 
-private theorem leechOddVector_sq (c : Fin 24 → ZMod 2) (j k : Fin 24) :
+/-- The squared coordinates of a vector of the third shape: `9` at the distinguished coordinate
+and `1` elsewhere. -/
+theorem leechOddVector_sq (c : Fin 24 → ZMod 2) (j k : Fin 24) :
     leechOddVector c j k ^ 2 = if k = j then 9 else 1 := by
   by_cases hk : k = j
   · subst hk
@@ -678,7 +669,8 @@ theorem disjoint_leechPairVectors_leechOctadVectors :
     have : c = 0 := funext h0
     simp [this] at hc8
   have h2 : leechOctadVector c d k = 2 ∨ leechOctadVector c d k = -2 := by
-    rw [leechOctadVector_apply, (zmod_two_cases (c k)).resolve_left hk]
+    rw [leechOctadVector_apply,
+      (eq_zero_or_one_of_sq_eq_self (ZMod.pow_card (c k))).resolve_left hk]
     generalize d k = x
     revert x
     decide
@@ -691,7 +683,7 @@ theorem disjoint_leechPairVectors_leechOctadVectors :
   omega
 
 /-- The coordinates of a vector of the third shape are odd. -/
-private theorem odd_leechOddVector (c : Fin 24 → ZMod 2) (j k : Fin 24) :
+theorem odd_leechOddVector (c : Fin 24 → ZMod 2) (j k : Fin 24) :
     Odd (leechOddVector c j k) := by
   by_cases hk : k = j
   · subst hk
