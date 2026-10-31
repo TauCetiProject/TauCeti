@@ -84,19 +84,6 @@ noncomputable def quotientInclusion (hJ : IsAdic J) :
     PrimeSpectrum.Top (A ⧸ J) ⟶ TopCat.of (carrier A) :=
   TopCat.ofHom ⟨_, (homeomorphSpecQuotient hJ).symm.continuous⟩
 
-@[simp]
-theorem coe_quotientInclusion_apply (hJ : IsAdic J) (q : PrimeSpectrum (A ⧸ J)) :
-    (quotientInclusion hJ q : PrimeSpectrum A) = PrimeSpectrum.comap (Ideal.Quotient.mk J) q :=
-  coe_homeomorphSpecQuotient_symm_apply hJ q
-
-/-- For ideals of definition `J ≤ K`, the quotient inclusion of `Spec (A ⧸ K)` factors through
-the closed immersion `Spec (A ⧸ K) → Spec (A ⧸ J)`. -/
-theorem quotientInclusion_comap_factor (hJ : IsAdic J) (hK : IsAdic K) (hJK : J ≤ K)
-    (q : PrimeSpectrum (A ⧸ K)) :
-    quotientInclusion hJ (PrimeSpectrum.comap (Ideal.Quotient.factor hJK) q) =
-      quotientInclusion hK q :=
-  homeomorphSpecQuotient_symm_comap_factor hJ hK hJK q
-
 /-- The structure sheaf of `Spec (A ⧸ J)`, for an ideal of definition `J`, transported to the
 underlying space of `Spf A` along `quotientInclusion`. Its sections over an open `U` of `Spf A`
 are the sections of the structure sheaf of `Spec (A ⧸ J)` over the corresponding open. -/
@@ -110,7 +97,7 @@ private theorem map_quotientInclusion_subset (hJ : IsAdic J) (hK : IsAdic K) (hJ
       PrimeSpectrum.comap (Ideal.Quotient.factor hJK) ⁻¹'
         ((Opens.map (quotientInclusion hJ)).obj U).1 := by
   intro q hq
-  simpa [quotientInclusion_comap_factor hJ hK hJK] using hq
+  simpa [quotientInclusion, homeomorphSpecQuotient_symm_comap_factor hJ hK hJK] using hq
 
 /-- For ideals of definition `J ≤ K`, the reduction map `O_J → O_K` between the transported
 structure sheaves, induced on sections by the quotient map `A ⧸ J → A ⧸ K`. -/
