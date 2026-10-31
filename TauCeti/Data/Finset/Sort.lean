@@ -26,6 +26,9 @@ Consecutive entries of the sorted list of `s` are the pairs of positions of `s` 
 `s` strictly between them, so a chain condition on the sorted list is a condition on such adjacent
 pairs.
 
+Mapping the sorted list of `s` along an embedding that is strictly antitone on `s` gives the
+sorted list of the image in reversed order.
+
 Moving the points of a finset `B` of `Fin n` along the rotation `finRotate n` (`i ↦ i + 1`, the
 last position going to `0`) commutes with sorting up to a cyclic rotation of the list.
 -/
@@ -118,6 +121,17 @@ theorem isChain_map_sort_iff {γ : Type*} {r : γ → γ → Prop} {g : α → �
     obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem (hmem.2 hz)
     rw [hl.getElem_le_getElem_iff, hl.getElem_le_getElem_iff]
     omega
+
+/-- For an embedding `e` that is strictly antitone on `s`, mapping the increasing list of `s` along
+`e` gives the decreasing list of the image of `s`, the reverse of its increasing list. -/
+theorem _root_.StrictAntiOn.map_finsetSort {e : α ↪ β} (he : StrictAntiOn e s) :
+    s.sort.map e = (s.map e).sort.reverse := by
+  have hgt : (s.sort.map e).SortedGT := by
+    rw [List.sortedGT_iff_pairwise, List.pairwise_map]
+    exact (sortedLT_sort s).pairwise.imp_of_mem fun hx hy hxy =>
+      he ((mem_sort _).1 hx) ((mem_sort _).1 hy) hxy
+  rw [List.SortedLT.eq_of_mem_iff (sortedLT_sort (s.map e)) hgt.reverse fun x => by simp,
+    List.reverse_reverse]
 
 /-- Sorting a finset `B` of `Fin n` and then moving its points along `finRotate n` gives a cyclic
 rotation of the sorted list of the moved points: the order is unchanged except that the last
