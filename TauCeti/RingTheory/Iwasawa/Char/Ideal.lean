@@ -49,7 +49,7 @@ ideal `Λ` and Fitting ideal `(p, T)`.
   pseudo-isomorphism, and in particular under linear equivalence (`LinearEquiv.charIdeal_eq`).
 * `TauCeti.Iwasawa.charIdeal_eq_top_iff`: `char_A(M) = A` iff `M` is pseudo-null.
 * `TauCeti.Iwasawa.charIdeal_quotient_of_height_eq_one`: `char_A(A ⧸ 𝔭) = 𝔭` for a prime `𝔭` of
-  height one in a noetherian domain.
+  height one.
 * `TauCeti.Iwasawa.charIdeal_isPrincipal`: over a unique factorization domain the characteristic
   ideal is principal.
 * `TauCeti.Iwasawa.charIdeal_quotient_span_singleton`: over a noetherian unique factorization
@@ -154,16 +154,18 @@ instance charIdeal_isPrincipal [IsDomain A] [UniqueFactorizationMonoid A] :
     exact Finsupp.mem_support_iff.mp h𝔭 (charDivisor_apply_of_height_ne_one hne)
   exact UniqueFactorizationMonoid.isPrincipal_of_height_eq_one h
 
-/-- For a prime `𝔭` of height one in a noetherian domain, the characteristic ideal of `A ⧸ 𝔭` is
+/-- For a prime `𝔭` of height one in a commutative ring, the characteristic ideal of `A ⧸ 𝔭` is
 `𝔭`. -/
-theorem charIdeal_quotient_of_height_eq_one [IsDomain A] [IsNoetherianRing A] {𝔭 : Ideal A}
-    [𝔭.IsPrime] (h : 𝔭.height = 1) : charIdeal A (A ⧸ 𝔭) = 𝔭 := by
+@[simp]
+theorem charIdeal_quotient_of_height_eq_one {𝔭 : Ideal A} [𝔭.IsPrime] (h : 𝔭.height = 1) :
+    charIdeal A (A ⧸ 𝔭) = 𝔭 := by
   rw [charIdeal_def, charDivisor_quotient_of_height_eq_one h, Finsupp.prod_single_index (by simp),
     pow_one]
 
 open scoped Pointwise in
 /-- **The characteristic ideal of a cyclic torsion module.** Over a noetherian unique
 factorization domain, the characteristic ideal of `A ⧸ (f)` is `(f)` for every `f ≠ 0`. -/
+@[simp]
 theorem charIdeal_quotient_span_singleton [IsDomain A] [IsNoetherianRing A]
     [UniqueFactorizationMonoid A] {f : A} (hf : f ≠ 0) :
     charIdeal A (A ⧸ Ideal.span {f}) = Ideal.span {f} := by

@@ -52,8 +52,8 @@ on the pseudo-null modules.
 * `TauCeti.Iwasawa.IsPseudoIsomorphism.charDivisor_eq`: `div_A` is invariant under
   pseudo-isomorphism, and in particular under linear equivalence (`LinearEquiv.charDivisor_eq`).
 * `TauCeti.Iwasawa.charDivisor_eq_zero_iff`: `div_A(M) = 0` iff `M` is pseudo-null.
-* `TauCeti.Iwasawa.charDivisor_quotient_of_height_eq_one`: for a prime `𝔭` of height one in a
-  noetherian domain, `div_A(A ⧸ 𝔭) = [𝔭]`.
+* `TauCeti.Iwasawa.charDivisor_quotient_of_height_eq_one`: for a prime `𝔭` of height one,
+  `div_A(A ⧸ 𝔭) = [𝔭]`.
 
 The examples at the end of the file are over `Λ = ℤ_p⟦T⟧`: the nonzero module `Λ ⧸ (p, T) = 𝔽_p`
 has characteristic divisor zero, while that of `Λ ⧸ (p)` is positive at the height-one prime `(p)`.
@@ -207,30 +207,26 @@ theorem charDivisor_eq_add_of_exact [IsNoetherianRing A] [Module.Finite A N]
       (LocalizedModule.map_exact _ f g hfg)
   · simp [charDivisor_apply_of_height_ne_one hht]
 
-/-- **The divisor of a prime of height one.** For a prime `𝔭` of height one in a noetherian domain,
+/-- **The divisor of a prime of height one.** For a prime `𝔭` of height one in a commutative ring,
 the characteristic divisor of `A ⧸ 𝔭` is the prime divisor `[𝔭]`: the only height-one prime
 containing `𝔭` is `𝔭` itself, and `(A ⧸ 𝔭)_𝔭` is the residue field of `A_𝔭`, of length one. -/
-theorem charDivisor_quotient_of_height_eq_one [IsDomain A] [IsNoetherianRing A] {𝔭 : Ideal A}
-    [𝔭.IsPrime] (h : 𝔭.height = 1) :
+@[simp]
+theorem charDivisor_quotient_of_height_eq_one {𝔭 : Ideal A} [𝔭.IsPrime] (h : 𝔭.height = 1) :
     charDivisor A (A ⧸ 𝔭) = Finsupp.single ⟨𝔭, inferInstance⟩ 1 := by
-  have hM : Module.IsTorsion A (A ⧸ 𝔭) := fun x ↦ by
-    obtain ⟨a, ha𝔭, ha⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (𝔭.ne_bot_of_height_eq_one h)
-    obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ x
-    refine ⟨⟨a, mem_nonZeroDivisors_of_ne_zero ha⟩, ?_⟩
-    rw [Submonoid.smul_def, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
-      smul_eq_mul]
-    exact 𝔭.mul_mem_right _ ha𝔭
+  have hloc : localLength A (A ⧸ 𝔭) = Finsupp.single ⟨𝔭, inferInstance⟩ 1 := by
+    ext 𝔮
+    by_cases h𝔮 : 𝔮 = ⟨𝔭, inferInstance⟩
+    · subst h𝔮
+      simp [localLength, h]
+    · rw [Finsupp.single_eq_of_ne h𝔮]
+      by_contra hne
+      obtain ⟨hsupp, hht⟩ := localLength_ne_zero hne
+      rw [Module.mem_support_iff_of_finite, Ideal.annihilator_quotient] at hsupp
+      have : 𝔭.FiniteHeight := by simp [𝔭.finiteHeight_iff, h]
+      exact h𝔮 (PrimeSpectrum.ext (𝔭.eq_of_le_of_height_le hsupp (hht.trans h.symm).le).symm)
+  rw [charDivisor, dite_eq_left (by rw [hloc, Finsupp.fun_support_eq]; exact Finset.finite_toSet _)]
   ext 𝔮
-  by_cases h𝔮 : 𝔮 = ⟨𝔭, inferInstance⟩
-  · subst h𝔮
-    rw [Finsupp.single_eq_same, ← Nat.cast_inj (R := ℕ∞), coe_charDivisor_apply hM h, Nat.cast_one]
-    exact Ideal.length_localizedModule_quotient_eq_one 𝔭
-  · rw [Finsupp.single_eq_of_ne h𝔮]
-    refine Finsupp.notMem_support_iff.mp fun hmem ↦ h𝔮 ?_
-    obtain ⟨hsupp, hht⟩ := (mem_support_charDivisor hM).mp hmem
-    rw [Module.mem_support_iff_of_finite, Ideal.annihilator_quotient] at hsupp
-    have : 𝔭.FiniteHeight := by simp [𝔭.finiteHeight_iff, h]
-    exact PrimeSpectrum.ext (𝔭.eq_of_le_of_height_le hsupp (hht.trans h.symm).le).symm
+  simp [Finsupp.ofSupportFinite_coe, hloc]
 
 end TauCeti.Iwasawa
 
