@@ -127,10 +127,6 @@ value. -/
 private theorem PrimitiveSpace.eq_graph (e : PrimitiveSpace φ) :
     e = graph φ (fun _ ↦ Prod.snd (α := M) (β := F) e) (proj φ e) := rfl
 
-private theorem PrimitiveSpace.graph_eq_graph_iff {y z : M} :
-    graph φ g y = graph φ h z ↔ y = z ∧ g y = h z :=
-  Prod.ext_iff
-
 private theorem PrimitiveSpace.isOpen_image_graph (hg : IsPrimitiveOn φ g U) :
     IsOpen (graph φ g '' U) :=
   TopologicalSpace.GenerateOpen.basic _ ⟨g, U, hg, rfl⟩
@@ -141,24 +137,9 @@ private theorem PrimitiveSpace.continuousOn_graph [IsManifold I 1 M] (hg : IsPri
   refine fun y hy ↦ ContinuousAt.continuousWithinAt ?_
   refine TopologicalSpace.tendsto_nhds_generateFrom_iff.mpr ?_
   rintro _ ⟨h, V, hh, rfl⟩ ⟨w, hwV, hw⟩
-  obtain ⟨rfl, hwy⟩ := graph_eq_graph_iff.mp hw
+  obtain ⟨rfl, hwy⟩ := Prod.ext_iff.mp hw
   filter_upwards [(hg.isOpen_setOf_eq hh).mem_nhds ⟨hy, hwV, hwy.symm⟩] with z hz
-  exact ⟨z, hz.2.1, graph_eq_graph_iff.mpr ⟨rfl, hz.2.2.symm⟩⟩
-
-/-- The part of the graph of `g` over `U` lying over `W` is the graph over `W ∩ U`. -/
-private theorem PrimitiveSpace.preimage_proj_inter_image_graph (W : Set M) :
-    proj φ ⁻¹' W ∩ graph φ g '' U = graph φ g '' (W ∩ U) := by
-  ext e
-  constructor
-  · rintro ⟨heW, y, hyU, rfl⟩
-    exact ⟨y, ⟨heW, hyU⟩, rfl⟩
-  · rintro ⟨y, ⟨hyW, hyU⟩, rfl⟩
-    exact ⟨hyW, y, hyU, rfl⟩
-
-private theorem PrimitiveSpace.injOn_proj_image_graph : (graph φ g '' U).InjOn (proj φ) := by
-  rintro _ ⟨y, -, rfl⟩ _ ⟨z, -, rfl⟩ hyz
-  rw [proj_graph, proj_graph] at hyz
-  rw [hyz]
+  exact ⟨z, hz.2.1, Prod.ext_iff.mpr ⟨rfl, hz.2.2.symm⟩⟩
 
 variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] [CompleteSpace F]
 
@@ -185,10 +166,11 @@ private theorem PrimitiveSpace.isCoveringMap_proj {r : ℕ∞} (hr : 1 ≤ r) (h
   let sheet (x : M) (i : WithDiscreteTopology F) : Set (PrimitiveSpace φ) :=
     graph φ (fun y ↦ g x y + c i) '' U x
   refine IsCoveringMap.mk _ _ (fun x ↦ (hgU x).1.trivializationDiscrete (sheet x) (U x)
-    (fun i W hWU ↦ ⟨fun hW ↦ ?_, fun hW ↦ ?_⟩) (fun _ ↦ injOn_proj_image_graph)
+    (fun i W hWU ↦ ⟨fun hW ↦ ?_, fun hW ↦ ?_⟩) (fun _ ↦ InjOn.image_of_comp (injOn_id _))
     (fun i y hy ↦ ⟨_, mem_image_of_mem _ hy, proj_graph y⟩) (fun i j hij ↦ ?_) ?_) hxU
   · -- an open subset of `U x` has open preimage in each sheet
-    rw [preimage_proj_inter_image_graph, inter_eq_left.mpr hWU]
+    rw [← LeftInvOn.image_inter' (fun _ _ ↦ rfl : LeftInvOn (proj φ) (graph φ _) (U x)),
+      inter_eq_left.mpr hWU]
     exact isOpen_image_graph (((hgU x).add_const (c i)).mono hW hWU)
   · -- conversely, an open trace on a sheet comes from an open subset of `U x`
     convert (continuousOn_graph ((hgU x).add_const (c i))).isOpen_inter_preimage (hgU x).1 hW
@@ -199,13 +181,14 @@ private theorem PrimitiveSpace.isCoveringMap_proj {r : ℕ∞} (hr : 1 ≤ r) (h
   · -- distinct translates have disjoint graphs
     refine disjoint_left.mpr ?_
     rintro _ ⟨y, -, rfl⟩ ⟨z, -, hzy⟩
-    obtain ⟨rfl, hzy⟩ := graph_eq_graph_iff.mp hzy
+    obtain ⟨rfl, hzy⟩ := Prod.ext_iff.mp hzy
     exact hij (WithTopology.ofTopology_injective _ (add_left_cancel hzy).symm)
   · -- every point over `U x` lies on the sheet through its value
     intro e he
     refine mem_iUnion.mpr ⟨WithTopology.toTopology _ (Prod.snd (α := M) (β := F) e -
       g x (proj φ e)), proj φ e, he, ?_⟩
-    refine (graph_eq_graph_iff.mpr ⟨rfl, ?_⟩).trans (eq_graph e).symm
+    refine Prod.ext_iff.mpr ⟨rfl, ?_⟩
+    change g x (proj φ e) + c _ = Prod.snd (α := M) (β := F) e
     simp only [c, WithTopology.ofTopology_toTopology, add_sub_cancel]
 
 /-! ### Exactness on simply connected manifolds -/
@@ -226,29 +209,21 @@ theorem exists_mextDeriv_eq_of_simplyConnectedSpace [SimplyConnectedSpace M] {r 
   set f : M → F := fun y ↦ Prod.snd (α := M) (β := F) (s y) with hf_def
   have hsf (y : M) : s y = PrimitiveSpace.graph φ f y := by
     rw [PrimitiveSpace.eq_graph (s y)]
-    exact PrimitiveSpace.graph_eq_graph_iff.mpr ⟨congrFun hs y, rfl⟩
+    exact Prod.ext_iff.mpr ⟨congrFun hs y, rfl⟩
   -- Near each point `x`, `f` differs by a constant from a local primitive `g` of `φ`.
-  have hloc (x : M) : ∃ g : M → F, ContMDiff I 𝓘(ℝ, F) r g ∧
-      (∀ᶠ y in 𝓝 x, f y = g y + (f x - g x)) ∧
-      mextDeriv (RoughForm.ofFunction I g) x = φ x := by
-    obtain ⟨g, hg, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn hr hφ hclosed x
-    refine ⟨g, hg, ?_, hgU.2.2 x hxU⟩
-    have hmem : s x ∈ PrimitiveSpace.graph φ (fun y ↦ g y + (f x - g x)) '' U :=
-      ⟨x, hxU, by rw [hsf, PrimitiveSpace.graph_eq_graph_iff]; exact ⟨rfl, by abel⟩⟩
-    filter_upwards [s.continuous.continuousAt.preimage_mem_nhds
-      ((PrimitiveSpace.isOpen_image_graph (hgU.add_const (f x - g x))).mem_nhds hmem)]
-      with y hy
-    obtain ⟨w, -, hw⟩ := hy
-    rw [hsf, PrimitiveSpace.graph_eq_graph_iff] at hw
-    obtain ⟨rfl, hw⟩ := hw
-    exact hw.symm
-  refine ⟨RoughForm.ofFunction I f, isSmoothForm_ofFunction_iff.mpr fun x ↦ ?_, funext fun x ↦ ?_⟩
-  · obtain ⟨g, hg, hfg, -⟩ := hloc x
-    exact ((hg x).add contMDiffAt_const).congr_of_eventuallyEq hfg
-  · obtain ⟨g, hg, hfg, hdg⟩ := hloc x
-    rw [← hdg]
-    exact mextDeriv_ofFunction_eq_of_eventuallyEq_add_const
-      ((hg x).mdifferentiableAt (by simpa using (zero_lt_one.trans_le hr).ne')) hfg
+  refine exists_mextDeriv_eq_of_forall_eventuallyEq_add_const
+    (by simpa using (zero_lt_one.trans_le hr).ne') (f := f) fun x ↦ ?_
+  obtain ⟨g, hg, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn hr hφ hclosed x
+  refine ⟨g, f x - g x, hg x, ?_, hgU.2.2 x hxU⟩
+  have hmem : s x ∈ PrimitiveSpace.graph φ (fun y ↦ g y + (f x - g x)) '' U :=
+    ⟨x, hxU, by rw [hsf]; exact Prod.ext_iff.mpr ⟨rfl, show g x + (f x - g x) = f x by abel⟩⟩
+  filter_upwards [s.continuous.continuousAt.preimage_mem_nhds
+    ((PrimitiveSpace.isOpen_image_graph (hgU.add_const (f x - g x))).mem_nhds hmem)]
+    with y hy
+  obtain ⟨w, -, hw⟩ := hy
+  rw [hsf] at hw
+  obtain ⟨rfl, hw⟩ := Prod.ext_iff.mp hw
+  exact hw.symm
 
 variable (I M) in
 /-- On a simply connected manifold every closed smooth real `1`-form is exact. -/

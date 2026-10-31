@@ -39,6 +39,8 @@ differentiation commutes with this extension.
 * `TauCeti.contMDiffOn_mextDerivWithin`, `TauCeti.isSmoothBundleForm_mextDeriv`: the exterior
   derivative lowers regularity by one.
 * `TauCeti.mextDeriv_mem_smoothForms`: the exterior derivative preserves smooth forms.
+* `TauCeti.exists_mextDeriv_eq_of_forall_eventuallyEq_add_const`: local primitives of a `1`-form
+  which differ by constants glue to a global primitive.
 * `TauCeti.mextDerivₗ`: the exterior derivative as a linear map on smooth fixed-coefficient forms.
 
 ## References
@@ -372,6 +374,21 @@ theorem isSmoothForm_ofFunction_iff [IsManifold I 1 M] {n : WithTop ℕ∞} {f :
       |>.comp_contDiffWithinAt_iff
   exact ⟨fun h x ↦ (key x).1 (h.contDiffWithinAt_inChartAt_self x),
     fun h ↦ IsSmoothForm.of_contDiffWithinAt_inChartAt_self fun x ↦ (key x).2 (h x)⟩
+
+/-- **Local primitives glue to a global one.** If near every point `x` the function `f` differs by
+a constant from a function `g` which is `C^r` at `x` (`r ≠ 0`) with `d g = φ` at `x`, then the
+`0`-form of `f` is a `C^r` primitive of `φ`. -/
+theorem exists_mextDeriv_eq_of_forall_eventuallyEq_add_const [IsManifold I 1 M]
+    {r : WithTop ℕ∞} (hr : r ≠ 0) {φ : RoughForm I M F 1} {f : M → F}
+    (hloc : ∀ x, ∃ g : M → F, ∃ c : F, ContMDiffAt I 𝓘(ℝ, F) r g x ∧
+      (∀ᶠ y in 𝓝 x, f y = g y + c) ∧ mextDeriv (RoughForm.ofFunction I g) x = φ x) :
+    ∃ ψ : RoughForm I M F 0, IsSmoothForm I r ψ ∧ mextDeriv ψ = φ := by
+  refine ⟨RoughForm.ofFunction I f, isSmoothForm_ofFunction_iff.mpr fun x ↦ ?_, funext fun x ↦ ?_⟩
+  · obtain ⟨g, c, hg, hfg, -⟩ := hloc x
+    exact (hg.add contMDiffAt_const).congr_of_eventuallyEq hfg
+  · obtain ⟨g, c, hg, hfg, hdg⟩ := hloc x
+    rw [← hdg]
+    exact mextDeriv_ofFunction_eq_of_eventuallyEq_add_const (hg.mdifferentiableAt hr) hfg
 
 end Regularity
 
