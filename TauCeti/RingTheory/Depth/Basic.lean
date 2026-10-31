@@ -52,6 +52,8 @@ The regular-sequence transfer lemmas for linear maps live in
   the target of a surjection with kernel `x M`.
 * `IsLocalRing.depth_add_length_eq_depth_of_isRegular`: dividing a finite module by an `M`-regular
   sequence `r₁, …, rₙ` lowers the depth by exactly `n`.
+* `IsLocalRing.depth_eq_depth_of_surjective`: along a surjective homomorphism of local rings
+  `R → T`, a finite `T`-module has the same depth over `R` as over `T`.
 * `RingEquiv.depth_self_eq`: isomorphic Noetherian local rings have the same depth over
   themselves.
 * `IsLocalRing.depth_hom_ge`: depth at least one or two passes from the target
@@ -416,6 +418,44 @@ theorem depth_hom_ge {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing
           using bound_le_two))
     exact le_sSup ⟨scalars.take (predecessor + 1), homRegular, prefixMembership,
       by simp [List.length_take, Nat.min_eq_left length]⟩
+
+/-- Depth is unchanged under restriction of scalars along a surjective homomorphism of local rings
+`R → T`: a finite `T`-module `M` has the same depth over `R` as over `T`. The `M`-regular
+sequences in the maximal ideal of `T` are exactly the images of those in the maximal ideal of
+`R`. -/
+theorem depth_eq_depth_of_surjective [IsNoetherianRing R] {T : Type*} [CommRing T]
+    [IsLocalRing T] [Algebra R T] [Small.{v} T] [Module T M] [IsScalarTower R T M]
+    [Module.Finite T M] (hsurj : Function.Surjective (algebraMap R T)) :
+    depth (ModuleCat.of R M) = depth (ModuleCat.of T M) := by
+  have : IsLocalHom (algebraMap R T) := .of_surjective _ hsurj
+  have : IsNoetherianRing T := isNoetherianRing_of_surjective R T (algebraMap R T) hsurj
+  have : Module.Finite R T := .of_surjective (Algebra.linearMap R T) hsurj
+  have : Module.Finite R M := .trans T M
+  cases subsingleton_or_nontrivial M
+  · rw [depth_eq_top_of_subsingleton, depth_eq_top_of_subsingleton]
+  -- A sequence in `R` is `M`-regular in `𝔪_R` exactly when its image is `M`-regular in `𝔪_T`.
+  have key (rs : List R) : (IsRegular M (rs.map (algebraMap R T)) ∧
+      ∀ t ∈ rs.map (algebraMap R T), t ∈ maximalIdeal T) ↔
+      (IsRegular M rs ∧ ∀ r ∈ rs, r ∈ maximalIdeal R) := by
+    have hmem : (∀ t ∈ rs.map (algebraMap R T), t ∈ maximalIdeal T) ↔
+        ∀ r ∈ rs, r ∈ maximalIdeal R := by
+      simp only [List.mem_map, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
+      exact forall₂_congr fun r _ ↦ by rw [← Ideal.mem_comap, maximalIdeal_comap]
+    rw [hmem, and_congr_left_iff]
+    intro hm
+    rw [isRegular_iff_isWeaklyRegular_of_subset_maximalIdeal hm,
+      isRegular_iff_isWeaklyRegular_of_subset_maximalIdeal (hmem.2 hm),
+      isWeaklyRegular_map_algebraMap_iff]
+  rw [depth_eq_sSup_length_isRegular, depth_eq_sSup_length_isRegular]
+  congr 1
+  ext n
+  refine ⟨fun ⟨rs, h, hm, hn⟩ ↦ ?_, fun ⟨ts, h, hm, hn⟩ ↦ ?_⟩
+  · obtain ⟨h, hm⟩ := (key rs).2 ⟨h, hm⟩
+    exact ⟨_, h, hm, by rw [List.length_map, hn]⟩
+  · obtain ⟨rs, rfl⟩ : ∃ rs : List R, rs.map (algebraMap R T) = ts :=
+      ⟨ts.map (Function.surjInv hsurj), by simp⟩
+    obtain ⟨h, hm⟩ := (key rs).1 ⟨h, hm⟩
+    exact ⟨rs, h, hm, by rw [← hn, List.length_map]⟩
 
 /-- In a Noetherian local ring `R` of depth at least two, the maximal ideal is not an associated
 prime of `R ⧸ (b)` for a nonzerodivisor `b`: if `𝔪 c ⊆ (b)`, then `c ∈ (b)`. -/
