@@ -156,6 +156,22 @@ instance instMonoidalPreadditive [Preadditive C] [MonoidalPreadditive C] :
 
 end Karoubi
 
+end CategoryTheory.Idempotents
+
+end
+
+-- The strong monoidal structure on `toKaroubi C` stays unexposed: its unit and tensorator are
+-- characterized by the projection lemmas below.
+public section
+
+namespace CategoryTheory.Idempotents
+
+open MonoidalCategory
+
+universe v u
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
+
 /-- The embedding of a monoidal category into its idempotent completion is strong monoidal, with
 unit and tensorator whose underlying morphisms are identities. -/
 instance toKaroubiMonoidal : (toKaroubi C).Monoidal :=
@@ -173,17 +189,19 @@ instance toKaroubiMonoidal : (toKaroubi C).Monoidal :=
       right_unitality := by intros; ext; simp }
 
 @[simp]
-theorem toKaroubi_ε_f : (Functor.LaxMonoidal.ε (toKaroubi C)).f = 𝟙 (𝟙_ C) := rfl
+theorem toKaroubi_ε_f : (Functor.LaxMonoidal.ε (toKaroubi C)).f = 𝟙 (𝟙_ C) := (rfl)
 
 @[simp]
-theorem toKaroubi_η_f : (Functor.OplaxMonoidal.η (toKaroubi C)).f = 𝟙 (𝟙_ C) := rfl
+theorem toKaroubi_η_f : (Functor.OplaxMonoidal.η (toKaroubi C)).f = 𝟙 (𝟙_ C) := (rfl)
 
 @[simp]
 theorem toKaroubi_μ_f (X Y : C) : (Functor.LaxMonoidal.μ (toKaroubi C) X Y).f = 𝟙 (X ⊗ Y) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem toKaroubi_δ_f (X Y : C) : (Functor.OplaxMonoidal.δ (toKaroubi C) X Y).f = 𝟙 (X ⊗ Y) :=
-  rfl
+  (rfl)
 
 end CategoryTheory.Idempotents
+
+end
