@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
+public import Mathlib.RingTheory.MvPolynomial.Homogeneous
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Lowest-degree homogeneous components of powers, products and substitutions
@@ -20,7 +22,16 @@ constant coefficient, the degree-`p` component of `f(a)` only depends on the deg
 of `f` and on the linear parts of the `a i`, into which it is substituted
 (`MvPowerSeries.homogeneousComponent_subst_of_le_order`). This is how the lowest-degree term of an
 expression such as `f(F(X, Y), Z)`, for a formal group law `F(X, Y) = X + Y + ⋯`, is read off as
-the polynomial `f_p(X + Y, Z)`.
+the polynomial `f_p(X + Y, Z)`. In finitely many variables `f_p` is a polynomial, the degree-`p`
+part of the truncation of `f`, and the degree-`p` component of `f(a)` is its evaluation at the
+linear parts of the `a i` (`MvPowerSeries.homogeneousComponent_subst_eq_aeval`). Substituting
+series without constant coefficient does not lower the order
+(`MvPowerSeries.order_le_order_subst`).
+
+Perturbing one entry `a s` by a series `e` of order at least `n ≥ 1` changes `f(a)` by `c e`, where
+`c` is the coefficient of `Xₛ` in `f`, up to terms of degree greater than `n`
+(`MvPowerSeries.le_order_subst_update_add_sub`). For a formal group law this says that
+`F(x + e, y) ≡ F(x, y) + e` to lowest order.
 
 A common lower bound on the orders of two series bounds the orders of their sum and difference
 (`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`).
@@ -225,6 +236,135 @@ theorem homogeneousComponent_subst_of_le_order {f : MvPowerSeries σ R} {p : ℕ
     · rw [zero_smul]
 
 end Subst
+
+section TruncTotal
+
+variable {σ τ R : Type*} [Finite σ] [CommRing R]
+
+/-- The degree-`n` homogeneous component of a power series, read off from its truncation as a
+polynomial. -/
+theorem coe_homogeneousComponent_truncTotal (n : ℕ) (f : MvPowerSeries σ R) :
+    ((MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f) : MvPolynomial σ R) :
+      MvPowerSeries σ R) = homogeneousComponent n f := by
+  ext d
+  rw [MvPolynomial.coeff_coe, MvPolynomial.coeff_homogeneousComponent,
+    coeff_homogeneousComponent]
+  split_ifs with hd
+  · exact coeff_truncTotal f (by omega)
+  · rfl
+
+/-- **The lowest-degree component of a substitution, as a polynomial.** If `f` has order at least
+`n` and the series `a i` have zero constant coefficient and linear parts `l i`, the degree-`n`
+component of `f(a)` is the degree-`n` part of `f` evaluated at the polynomials `l i`. -/
+theorem homogeneousComponent_subst_eq_aeval {f : MvPowerSeries σ R} {n : ℕ} (hn : n ≤ f.order)
+    {a : σ → MvPowerSeries τ R} (ha : HasSubst a) (ha₀ : ∀ i, constantCoeff (a i) = 0)
+    {l : σ → MvPolynomial τ R} (hl : ∀ i, homogeneousComponent 1 (a i) = l i) :
+    homogeneousComponent n (f.subst a) =
+      (MvPolynomial.aeval l (MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f)) :
+        MvPowerSeries τ R) := by
+  rw [homogeneousComponent_subst_of_le_order hn ha ha₀, ← coe_homogeneousComponent_truncTotal,
+    subst_coe]
+  simp_rw [hl]
+  simpa using (MvPolynomial.comp_aeval_apply (MvPolynomial.coeToMvPowerSeries.algHom R)
+    (MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f)) (f := l)).symm
+
+end TruncTotal
+
+/-- Substituting series without constant coefficient does not lower the order. -/
+theorem order_le_order_subst {σ τ R : Type*} [CommRing R] {a : σ → MvPowerSeries τ R}
+    (ha : HasSubst a) (ha₀ : ∀ i, constantCoeff (a i) = 0) (f : MvPowerSeries σ R) :
+    f.order ≤ (f.subst a).order := by
+  refine le_trans ?_ (le_order_subst ha f)
+  calc f.order = 1 * f.order := (one_mul _).symm
+    _ ≤ (⨅ i, (a i).order) * f.order := by
+      gcongr
+      exact le_iInf fun i ↦ one_le_order_iff_constCoeff_eq_zero.mpr (ha₀ i)
+
+section Perturbation
+
+variable {σ τ R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+
+/-- **The lowest-order effect of perturbing a substitution.** Let the series `a t` have zero
+constant coefficient, and perturb the entry `a s` by a series `e` of order at least `n ≥ 1`. Then
+`f(a)` changes by `c e`, where `c` is the coefficient of `Xₛ` in `f`, up to terms of degree greater
+than `n`. -/
+theorem le_order_subst_update_add_sub [DecidableEq σ] (f : MvPowerSeries σ R)
+    {a : σ → MvPowerSeries τ S} (ha : HasSubst a) (ha₀ : ∀ t, constantCoeff (a t) = 0) (s : σ)
+    {e : MvPowerSeries τ S} {n : ℕ} (hn : n ≠ 0) (he : n ≤ e.order) :
+    ((n + 1 : ℕ) : ℕ∞) ≤ (f.subst (Function.update a s (a s + e)) - f.subst a -
+      algebraMap R S (coeff (Finsupp.single s 1) f) • e).order := by
+  set b := Function.update a s (a s + e) with hb_def
+  have he₀ : constantCoeff e = 0 := one_le_order_iff_constCoeff_eq_zero.mp <|
+    (Nat.one_le_cast.mpr (Nat.one_le_iff_ne_zero.mpr hn)).trans he
+  have hb₀ (t : σ) : constantCoeff (b t) = 0 := by
+    rcases eq_or_ne t s with rfl | ht
+    · simp [b, ha₀, he₀]
+    · simp [b, ht, ha₀]
+  have hb : HasSubst b := by
+    refine ⟨fun t ↦ by simp [hb₀ t], fun d ↦ ((ha.coeff_zero d).union
+      (Set.finite_singleton s)).subset fun t ht ↦ ?_⟩
+    rcases eq_or_ne t s with rfl | hts
+    · exact Or.inr rfl
+    · exact Or.inl (by simpa [b, hts] using ht)
+  -- each monomial splits as a power of the perturbed entry times a factor `c d` not involving it
+  set c : (σ →₀ ℕ) → MvPowerSeries τ S := fun d ↦ (d.erase s).prod fun t k ↦ a t ^ k
+  have hprod (x : σ → MvPowerSeries τ S) (hx : ∀ t ≠ s, x t = a t) (d : σ →₀ ℕ) :
+      (d.prod fun t k ↦ x t ^ k) = x s ^ d s * c d := by
+    rw [← Finsupp.mul_prod_erase' d s _ fun _ ↦ pow_zero _]
+    congr 1
+    exact Finsupp.prod_congr fun t ht ↦ by rw [hx t (by rintro rfl; simp at ht)]
+  -- so the monomials in `b` and in `a` differ by `e` times `Q d`
+  set Q : (σ →₀ ℕ) → MvPowerSeries τ S := fun d ↦
+    (∑ i ∈ Finset.range (d s), b s ^ i * a s ^ (d s - 1 - i)) * c d
+  have hQ (d : σ →₀ ℕ) : (d.prod fun t k ↦ b t ^ k) = (d.prod fun t k ↦ a t ^ k) + e * Q d := by
+    rw [hprod b (fun t ht ↦ Function.update_of_ne ht _ _) d, hprod a (fun _ _ ↦ rfl) d]
+    have hbs : b s - a s = e := by rw [hb_def, Function.update_self, add_sub_cancel_left]
+    have hpow := geom_sum₂_mul (b s) (a s) (d s)
+    rw [hbs] at hpow
+    linear_combination -(c d) * hpow
+  -- only the monomial `Xₛ` contributes a constant coefficient to `Q`
+  have hQ₀ (d : σ →₀ ℕ) : constantCoeff (Q d) = if d = Finsupp.single s 1 then 1 else 0 := by
+    have hgeom : constantCoeff (∑ i ∈ Finset.range (d s), b s ^ i * a s ^ (d s - 1 - i)) =
+        (d s : S) * 0 ^ (d s - 1) := by
+      simp [map_sum, hb₀, ha₀, geom_sum₂_self]
+    simp only [Q, map_mul, hgeom]
+    split_ifs with hd
+    · subst hd
+      simp [c]
+    · by_cases h₁ : d.erase s = 0
+      · have h₀ : d s ≠ 1 := fun h₀ ↦ hd <| by
+          rw [← Finsupp.single_add_erase s d, h₁, h₀, add_zero]
+        rcases Nat.lt_or_gt_of_ne h₀ with h₀ | h₀
+        · simp [show d s = 0 by omega]
+        · simp [zero_pow (show d s - 1 ≠ 0 by omega)]
+      · obtain ⟨t, ht⟩ := Finsupp.support_nonempty_iff.mpr h₁
+        have hc : constantCoeff (c d) = 0 := by
+          simp only [c, Finsupp.prod, map_prod, map_pow, ha₀]
+          exact Finset.prod_eq_zero ht (zero_pow (Finsupp.mem_support_iff.mp ht))
+        simp [hc]
+  -- below degree `n + 1`, multiplying `e` by `Q d` scales it by the constant coefficient of `Q d`
+  have hmul (q : MvPowerSeries τ S) {m : τ →₀ ℕ} (hm : m.degree < n + 1) :
+      coeff m (e * q) = constantCoeff q * coeff m e := by
+    have hq : (1 : ℕ∞) ≤ (q - C (constantCoeff q)).order :=
+      one_le_order_iff_constCoeff_eq_zero.mpr (by simp)
+    have hlt : (m.degree : ℕ∞) < (e * (q - C (constantCoeff q))).order :=
+      lt_of_lt_of_le (by exact_mod_cast hm) ((add_le_add he hq).trans le_order_mul)
+    have h := coeff_of_lt_order hlt
+    rw [mul_sub, map_sub, coeff_mul_C, sub_eq_zero] at h
+    rw [h, mul_comm]
+  refine nat_le_order fun m hm ↦ ?_
+  have hfin := coeff_subst_finite ha f m
+  rw [map_sub, map_sub, coeff_subst hb, coeff_subst ha, coeff_smul, sub_eq_zero, sub_eq_iff_eq_add']
+  simp_rw [hQ, map_add, hmul _ hm, hQ₀, smul_add]
+  rw [finsum_add_distrib hfin, add_right_inj, finsum_eq_single _ (Finsupp.single s 1)]
+  · simp [Algebra.smul_def]
+  · intro d hd
+    simp [hd]
+  · refine (Set.finite_singleton (Finsupp.single s 1)).subset fun d hd ↦ ?_
+    by_contra h
+    exact hd (by simp [show d ≠ Finsupp.single s 1 from h])
+
+end Perturbation
 
 open Finsupp
 

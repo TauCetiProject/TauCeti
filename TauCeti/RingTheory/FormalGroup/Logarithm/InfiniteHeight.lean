@@ -160,13 +160,8 @@ private noncomputable def leadingError (n : ℕ) (g : PowerSeries R) : MvPolynom
   MvPolynomial.homogeneousComponent n (truncTotal (n + 1) (addError F g))
 
 private theorem coe_leadingError (n : ℕ) (g : PowerSeries R) :
-    (leadingError F n g : MvPowerSeries (Fin 2) R) = homogeneousComponent n (addError F g) := by
-  ext d
-  rw [MvPolynomial.coeff_coe, leadingError, MvPolynomial.coeff_homogeneousComponent,
-    coeff_homogeneousComponent]
-  split_ifs with hd
-  · exact coeff_truncTotal _ (by omega)
-  · rfl
+    (leadingError F n g : MvPowerSeries (Fin 2) R) = homogeneousComponent n (addError F g) :=
+  coe_homogeneousComponent_truncTotal n (addError F g)
 
 /-- If the additivity defect of `g` vanishes below degree `n`, its degree-`n` part at a family `x`
 of series without constant term is the polynomial `leadingError F n g` evaluated at the linear
@@ -176,11 +171,8 @@ private theorem homogeneousComponent_subst_addError {τ : Type*} {n : ℕ} {g : 
     (hx₀ : ∀ i, constantCoeff (x i) = 0) {l : Fin 2 → MvPolynomial τ R}
     (hl : ∀ i, homogeneousComponent 1 (x i) = l i) :
     homogeneousComponent n ((addError F g).subst x) =
-      (MvPolynomial.aeval l (leadingError F n g) : MvPowerSeries τ R) := by
-  rw [homogeneousComponent_subst_of_le_order hn hx hx₀, ← coe_leadingError, subst_coe]
-  simp_rw [hl]
-  simpa using (MvPolynomial.comp_aeval_apply (MvPolynomial.coeToMvPowerSeries.algHom R)
-    (leadingError F n g) (f := l)).symm
+      (MvPolynomial.aeval l (leadingError F n g) : MvPowerSeries τ R) :=
+  homogeneousComponent_subst_eq_aeval hn hx hx₀ hl
 
 variable {F}
 

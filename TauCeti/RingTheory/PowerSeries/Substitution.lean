@@ -325,26 +325,10 @@ theorem hasSubst_pair {f g : S⟦X⟧} (hf : constantCoeff f = 0) (hg : constant
   MvPowerSeries.hasSubst_of_constantCoeff_zero fun s ↦ by
     fin_cases s <;> simp [← constantCoeff_eq, hf, hg]
 
-/-- Perturbing `f` by `X ^ m * r` in `f ^ i * c` changes the coefficient of degree `m` by
-`i * 0 ^ (i - 1) * r(0) * c(0)`, and no coefficient of lower degree. -/
-private theorem coeff_add_X_pow_mul_pow_mul {f : S⟦X⟧} (hf : constantCoeff f = 0) (r c : S⟦X⟧)
-    {m n : ℕ} (hm : m ≠ 0) (hn : n ≤ m) (i : ℕ) :
-    coeff n ((f + X ^ m * r) ^ i * c) = coeff n (f ^ i * c) +
-      if n = m then (i : S) * 0 ^ (i - 1) * constantCoeff r * constantCoeff c else 0 := by
-  have hfr : constantCoeff (f + X ^ m * r) = 0 := by simp [hf, hm]
-  have h : (f + X ^ m * r) ^ i * c - f ^ i * c =
-      X ^ m * ((∑ k ∈ Finset.range i, (f + X ^ m * r) ^ k * f ^ (i - 1 - k)) * r * c) := by
-    rw [← sub_mul, ← geom_sum₂_mul, add_sub_cancel_left]
-    ring
-  rw [← sub_eq_iff_eq_add', ← map_sub, h, coeff_X_pow_mul']
-  by_cases hnm : n = m
-  · -- the constant coefficient of the geometric sum is `i * 0 ^ (i - 1)`
-    simp [hnm, map_sum, hf, hfr, geom_sum₂_self, mul_assoc]
-  · simp [hnm, show ¬ m ≤ n by omega]
-
 /-- Perturbing the entry `a s` of a substituted family `a` by `X ^ m * r` leaves the
 coefficients of degree below `m` unchanged, and changes the coefficient of degree `m` by
-`r(0)` times the coefficient of `Xₛ` in `G`. -/
+`r(0)` times the coefficient of `Xₛ` in `G`. This is the one-variable case of
+`MvPowerSeries.le_order_subst_update_add_sub`. -/
 theorem coeff_subst_update_add_X_pow_mul [DecidableEq σ] (G : MvPowerSeries σ R)
     {a : σ → S⟦X⟧} (ha : MvPowerSeries.HasSubst a) (ha₀ : ∀ t, constantCoeff (a t) = 0) (s : σ)
     (r : S⟦X⟧) {m n : ℕ} (hm : m ≠ 0) (hn : n ≤ m) :
@@ -352,54 +336,20 @@ theorem coeff_subst_update_add_X_pow_mul [DecidableEq σ] (G : MvPowerSeries σ 
       if n = m then
         algebraMap R S (MvPowerSeries.coeff (Finsupp.single s 1) G) * constantCoeff r
       else 0 := by
-  set b := Function.update a s (a s + X ^ m * r) with hb_def
-  have hb : MvPowerSeries.HasSubst b := by
-    refine ⟨fun t ↦ ?_, fun d ↦ ((ha.coeff_zero d).union (Set.finite_singleton s)).subset
-      fun t ht ↦ ?_⟩
-    · rcases eq_or_ne t s with rfl | ht
-      · simp [b, ← constantCoeff_eq, ha₀, hm]
-      · simp [b, ht, ← constantCoeff_eq, ha₀]
-    · rcases eq_or_ne t s with rfl | hts
-      · exact Or.inr rfl
-      · exact Or.inl (by simpa [b, hts] using ht)
-  -- each monomial splits as a power of the perturbed entry times a factor `c d` not involving it
-  set c : (σ →₀ ℕ) → S⟦X⟧ := fun d ↦ (d.erase s).prod fun t e ↦ a t ^ e
-  have hprod (x : σ → S⟦X⟧) (hx : ∀ t ≠ s, x t = a t) (d : σ →₀ ℕ) :
-      (d.prod fun t e ↦ x t ^ e) = x s ^ d s * c d := by
-    rw [← Finsupp.mul_prod_erase' d s _ fun _ ↦ pow_zero _]
-    congr 1
-    exact Finsupp.prod_congr fun t ht ↦ by rw [hx t (by rintro rfl; simp at ht)]
-  have key (d : σ →₀ ℕ) : coeff n (d.prod fun t e ↦ b t ^ e) =
-      coeff n (d.prod fun t e ↦ a t ^ e) +
-        if n = m then (d s : S) * 0 ^ (d s - 1) * constantCoeff r * constantCoeff (c d) else 0 := by
-    rw [hprod b (fun t ht ↦ Function.update_of_ne ht _ _) d, hprod a (fun _ _ ↦ rfl) d,
-      hb_def, Function.update_self]
-    exact coeff_add_X_pow_mul_pow_mul (ha₀ s) r (c d) hm hn (d s)
-  -- only the monomial `Xₛ` feels the perturbation in degree `m`
-  have hw (d : σ →₀ ℕ) (hd : d ≠ Finsupp.single s 1) :
-      (d s : S) * 0 ^ (d s - 1) * constantCoeff r * constantCoeff (c d) = 0 := by
-    by_cases h₁ : d.erase s = 0
-    · have h₀ : d s ≠ 1 := fun h₀ ↦ hd <| by
-        rw [← Finsupp.single_add_erase s d, h₁, h₀, add_zero]
-      rcases Nat.lt_or_gt_of_ne h₀ with h₀ | h₀
-      · simp [show d s = 0 by omega]
-      · simp [zero_pow (show d s - 1 ≠ 0 by omega)]
-    · obtain ⟨t, ht⟩ := Finsupp.support_nonempty_iff.mpr h₁
-      have hc : constantCoeff (c d) = 0 := by
-        simp only [c, Finsupp.prod, map_prod, map_pow, ha₀]
-        exact Finset.prod_eq_zero ht (zero_pow (Finsupp.mem_support_iff.mp ht))
-      simp [hc]
-  have hA := MvPowerSeries.coeff_subst_finite ha G (Finsupp.single () n)
-  rw [coeff, MvPowerSeries.coeff_subst hb, MvPowerSeries.coeff_subst ha]
-  rw [← coeff_def Finsupp.single_eq_same] at hA ⊢
-  simp_rw [key, smul_add]
-  rw [finsum_add_distrib hA, add_right_inj, finsum_eq_single _ (Finsupp.single s 1)]
-  · split_ifs <;> simp [c, Algebra.smul_def]
-  · intro d hd
-    simp [hw d hd]
-  · refine (Set.finite_singleton (Finsupp.single s 1)).subset fun d hd ↦ ?_
-    by_contra h
-    exact hd (by simp [hw d h])
+  have he : (m : ℕ∞) ≤ (X ^ m * r : S⟦X⟧).order :=
+    nat_le_order _ _ fun i hi ↦ by simp [coeff_X_pow_mul', show ¬m ≤ i by omega]
+  rw [order_eq_order] at he
+  have h := MvPowerSeries.coeff_of_lt_order (d := Finsupp.single () n)
+    ((show ((Finsupp.single () n).degree : ℕ∞) < ((m + 1 : ℕ) : ℕ∞) by
+      rw [Finsupp.degree_single]
+      exact_mod_cast Nat.lt_succ_of_le hn).trans_le
+      (MvPowerSeries.le_order_subst_update_add_sub G ha ha₀ s hm he))
+  rw [map_sub, map_sub, MvPowerSeries.coeff_smul, sub_eq_zero, sub_eq_iff_eq_add'] at h
+  rw [← coeff_def Finsupp.single_eq_same] at h
+  rw [h, coeff_X_pow_mul']
+  by_cases hnm : n = m
+  · simp [hnm]
+  · simp [hnm, show ¬m ≤ n by omega]
 
 end Perturbation
 
