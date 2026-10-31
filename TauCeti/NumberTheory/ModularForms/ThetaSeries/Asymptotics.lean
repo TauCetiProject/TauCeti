@@ -122,11 +122,7 @@ positive integer `c`, `Θ_L(a/c + τ) = ∑_{y ∈ L/cL} e(a ‖y‖² / (2c)) �
 theorem thetaSeries_vadd_eq_sum (hL : IsEven L) (a : ℤ) (c : ℕ) [NeZero c] (τ : ℍ) :
     thetaSeries L (((a : ℝ) / c) +ᵥ τ) = ∑ y : L ⧸ ((c : ℝ) • L).submoduleOf L,
       gaussTerm L hL a c 0 y * thetaCoset ((c : ℝ) • L) ((Quotient.out y : L) : E) τ := by
-  have hle : (c : ℝ) • L ≤ L := fun x hx ↦ by
-    obtain ⟨u, hu, rfl⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mp hx
-    rw [Nat.cast_smul_eq_nsmul]
-    exact L.nsmul_mem hu c
-  rw [← (hasSum_thetaCoset_out L hle _).tsum_eq, tsum_fintype]
+  rw [← (hasSum_thetaCoset_out L (natCast_smul_le L c) _).tsum_eq, tsum_fintype]
   refine Finset.sum_congr rfl fun y _ ↦ ?_
   have hc : (c : ℝ) ≠ 0 := NeZero.ne _
   rw [thetaCoset_vadd_eq_mul _ _ (fun w hw ↦ ?_)]
@@ -199,9 +195,10 @@ theorem tendsto_pow_mul_thetaSeries_nhdsGT (hk : finrank ℝ E = 2 * k) (a : ℤ
   have hvadd : ofComplex (a / c + I * t) = ((a : ℝ) / c) +ᵥ ofComplex (I * t) := by
     have him' : 0 < (a / c + I * t : ℂ).im := by simpa using ht
     ext
-    rw [coe_vadd, ofComplex_apply_of_im_pos him', ofComplex_apply_of_im_pos him]
+    rw [coe_vadd, ofComplex_apply_of_im_pos him', ofComplex_apply_of_im_pos him,
+      UpperHalfPlane.coe_mk]
     push_cast
-    rfl
+    ring
   rw [Function.comp_apply, hvadd, ofComplex_apply_of_im_pos him, mul_pow]
   field_simp [pow_ne_zero k I_ne_zero]
 
