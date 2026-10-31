@@ -32,7 +32,9 @@ the weak `p`-norm of `(cᵢ xᵢ)ᵢ` is at most `‖c‖ₛ` times the weak `q`
 `1 / p = 1 / s + 1 / q`.
 These are the finite-family estimates used for absolutely summing operators.
 
-At exponent `1` the weak norm controls unconditional summability. The finite subfamilies of an
+The weak norm is continuous, being dominated by the strong norm. At exponent `1` it is the least
+upper bound for the norms `‖∑ i, c i • x i‖` over scalar coefficients of norm at most one, and it
+controls unconditional summability. The finite subfamilies of an
 unconditionally summable family have uniformly bounded weak `L¹` norms, by the uniform boundedness
 principle on the complete dual. Conversely, in a complete space, finite blocks whose weak `L¹`
 norms are summable assemble into an unconditionally summable family.
@@ -127,6 +129,13 @@ theorem weakLpNorm_comp_equiv {κ : Type*} [Fintype κ] (e : κ ≃ ι) (x : ι 
       (hn f).trans_le (norm_eval_le_weakLpNorm p x f)
   · exact (weakLpNorm_le_iff p _ (apply_nonneg _ _)).2 fun f ↦
       (hn f).symm.trans_le (norm_eval_le_weakLpNorm p (x ∘ e) f)
+
+/-- The weak `Lᵖ` norm is continuous, being dominated by the strong `Lᵖ` norm. -/
+theorem continuous_weakLpNorm : Continuous (weakLpNorm (𝕜 := 𝕜) (ι := ι) (E := E) p) :=
+  Seminorm.continuous_of_le (q := (normSeminorm 𝕜 (PiLp p fun _ : ι ↦ E)).comp
+      (PiLp.continuousLinearEquiv p 𝕜 fun _ : ι ↦ E).symm.toLinearMap)
+    (continuous_norm.comp (PiLp.continuousLinearEquiv p 𝕜 fun _ : ι ↦ E).symm.continuous)
+    fun x ↦ weakLpNorm_le_norm p x
 
 /-- **Hölder's inequality for weak norms.** Multiplying a finite family by scalar weights `c`
 multiplies its weak norm by at most the `ℓˢ` norm of the weights, when `1 / p = 1 / s + 1 / q`
@@ -236,6 +245,35 @@ theorem weakLpNorm_top (x : ι → E) :
     weakLpNorm (𝕜 := 𝕜) ∞ x = ‖WithLp.toLp ∞ x‖ :=
   le_antisymm (weakLpNorm_le_norm ∞ x)
     (Real.iSup_le (norm_le_weakLpNorm ∞ x) (apply_nonneg _ _))
+
+/-- A combination of a finite family with scalar coefficients of norm at most one has norm at
+most the weak `L¹` norm of the family. -/
+theorem norm_sum_smul_le_weakLpNorm_one (x : ι → E) {c : ι → 𝕜} (hc : ∀ i, ‖c i‖ ≤ 1) :
+    ‖∑ i, c i • x i‖ ≤ weakLpNorm (𝕜 := 𝕜) 1 x := by
+  refine norm_le_dual_bound (𝕜 := 𝕜) _ (apply_nonneg _ _) fun f ↦ ?_
+  calc
+    ‖f (∑ i, c i • x i)‖ ≤ ∑ i, ‖f (x i)‖ := by
+      rw [map_sum]
+      refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+      rw [map_smul, smul_eq_mul, norm_mul]
+      exact mul_le_of_le_one_left (norm_nonneg _) (hc i)
+    _ = ‖WithLp.toLp 1 (fun i ↦ f (x i))‖ := by simp [PiLp.norm_eq_of_L1]
+    _ ≤ weakLpNorm (𝕜 := 𝕜) 1 x * ‖f‖ := norm_eval_le_weakLpNorm 1 x f
+
+/-- **The weak `L¹` norm by signs.** The weak `L¹` norm of a finite family is the least upper
+bound for the norms of its combinations with scalar coefficients of norm at most one. -/
+theorem weakLpNorm_one_le_iff (x : ι → E) {C : ℝ} :
+    weakLpNorm (𝕜 := 𝕜) 1 x ≤ C ↔ ∀ c : ι → 𝕜, (∀ i, ‖c i‖ ≤ 1) → ‖∑ i, c i • x i‖ ≤ C := by
+  refine ⟨fun h c hc ↦ (norm_sum_smul_le_weakLpNorm_one x hc).trans h, fun h ↦ ?_⟩
+  refine (weakLpNorm_le_iff_unitBall 1 x).2 fun f hf ↦ ?_
+  -- Rotate each value `f (x i)` onto the nonnegative real axis.
+  choose c hc hfc using fun i ↦ RCLike.exists_norm_eq_mul_self (f (x i))
+  calc
+    ‖WithLp.toLp 1 (fun i ↦ f (x i))‖ = RCLike.re (f (∑ i, c i • x i)) := by
+      simp only [PiLp.norm_eq_of_L1, map_sum, map_smul, smul_eq_mul, ← hfc, RCLike.ofReal_re]
+    _ ≤ ‖f (∑ i, c i • x i)‖ := RCLike.re_le_norm _
+    _ ≤ ‖f‖ * ‖∑ i, c i • x i‖ := f.le_opNorm _
+    _ ≤ C := (mul_le_of_le_one_left (norm_nonneg _) hf).trans (h c fun i ↦ (hc i).le)
 
 end RCLike
 
