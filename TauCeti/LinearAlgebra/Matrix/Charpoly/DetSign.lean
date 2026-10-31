@@ -96,14 +96,6 @@ theorem sign_det_aeval (A : Matrix n n ℝ) (f : ℝ[X]) (h : (aeval A f).det �
   rw [hdet, sign_mul, sign_pos hc, one_mul, ← signHom_apply, map_multiset_prod, Multiset.map_map]
   simp
 
-/-- If `det (f(A)) ≠ 0`, then `f` does not vanish at any real characteristic root of `A`. -/
-private theorem eval_ne_zero_of_det_aeval_ne_zero (A : Matrix n n ℝ) (f : ℝ[X])
-    (h : (aeval A f).det ≠ 0) {x : ℝ} (hx : x ∈ A.charpoly.roots) : f.eval x ≠ 0 := by
-  obtain ⟨c, -, hdet⟩ := A.exists_det_aeval_eq_mul_prod_roots f
-  intro hx0
-  rw [hdet, Multiset.prod_eq_zero (Multiset.mem_map.2 ⟨x, hx, hx0⟩), mul_zero] at h
-  exact h rfl
-
 /-- **The sign of an iterate.** If `1 - A ^ k` is invertible for a real square matrix `A`, then
 `sgn det (1 - A ^ k) = (-1) ^ i₊ * (-1) ^ ((k + 1) i₋)`, where `i₊` and `i₋` count the real
 characteristic roots of `A` in `(1, ∞)` and in `(-∞, -1)`, with algebraic multiplicity. -/

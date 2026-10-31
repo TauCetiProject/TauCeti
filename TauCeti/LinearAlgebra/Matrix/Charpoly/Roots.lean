@@ -8,9 +8,13 @@ module
 public import Mathlib.Data.Multiset.Fintype
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+import Mathlib.FieldTheory.IsAlgClosed.Spectrum
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
 
 /-!
-# Characteristic roots of matrices over algebraically closed fields
+# Characteristic roots of matrices
+
+Over any field, if `p(A)` is invertible then `p` does not vanish at any characteristic root of `A`.
 
 Over an algebraically closed field, the characteristic polynomial of a square matrix of positive
 size has a root. This file records that fact as a `Nonempty` instance on the root multiset, so that
@@ -23,6 +27,8 @@ with algebraic multiplicity. Mathlib's `Matrix.det_eq_prod_roots_charpoly` is th
 
 ## Main results
 
+* `Matrix.eval_ne_zero_of_det_aeval_ne_zero`: if `det (p(A)) ≠ 0`, then `p(λ) ≠ 0` for every
+  characteristic root `λ` of `A`.
 * `Matrix.nonempty_roots_charpoly` — a square matrix of positive size over an algebraically closed
   field has a characteristic root.
 * `Matrix.det_aeval_eq_prod_roots_charpoly`: `det (p(A)) = ∏ p(λ)` over the characteristic roots
@@ -34,6 +40,17 @@ public section
 open Polynomial
 
 namespace Matrix
+
+/-- If `det (p(A)) ≠ 0` for a square matrix `A` over a field, then `p` does not vanish at any
+characteristic root of `A`: by spectral mapping, `p(λ)` is in the spectrum of `p(A)`. -/
+theorem eval_ne_zero_of_det_aeval_ne_zero {n K : Type*} [Fintype n] [DecidableEq n] [Field K]
+    (A : Matrix n n K) (p : K[X]) (h : (aeval A p).det ≠ 0) {x : K} (hx : x ∈ A.charpoly.roots) :
+    p.eval x ≠ 0 := by
+  intro hx0
+  have hmem : p.eval x ∈ spectrum K (aeval A p) := spectrum.subset_polynomial_aeval A p
+    ⟨x, mem_spectrum_iff_isRoot_charpoly.2 (isRoot_of_mem_roots hx), rfl⟩
+  rw [hx0, spectrum.zero_mem_iff, isUnit_iff_isUnit_det] at hmem
+  exact hmem (isUnit_iff_ne_zero.2 h)
 
 variable {n K : Type*} [Fintype n] [DecidableEq n] [Nonempty n] [Field K] [IsAlgClosed K]
   [DecidableEq K]
