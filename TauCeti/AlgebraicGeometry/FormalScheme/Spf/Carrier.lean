@@ -126,8 +126,8 @@ section Quotient
 
 /-- For an ideal of definition `J` of `A`, the quotient map `A → A ⧸ J` identifies the underlying
 space of `Spf A` with `Spec (A ⧸ J)` (EGA I, Ch. I, 10.1.2). For an ideal of definition `I`, this
-applies to every power `J = I ^ (n + 1)`, by `IsAdic.pow`. The inverse sends a prime of `A ⧸ J` to
-its preimage in `A`. -/
+applies to every power `J = I ^ (n + 1)`, by `is_ideal_adic_pow`. The inverse sends a prime of
+`A ⧸ J` to its preimage in `A`. -/
 noncomputable def homeomorphSpecQuotient (hJ : IsAdic J) :
     carrier A ≃ₜ PrimeSpectrum (A ⧸ J) :=
   ((isClosedEmbedding_comap_of_surjective _ _ Ideal.Quotient.mk_surjective).isEmbedding

@@ -55,7 +55,6 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   openness and containment of one of its powers in a fixed ideal of definition.
 * `IsAdic.radical_eq`, `IsAdic.le_radical`, and `IsAdic.radical` : ideals of definition have
   the same radical, and a finitely generated radical is the largest ideal of definition.
-* `IsAdic.pow` : nonzero powers of an ideal of definition are ideals of definition.
 
 ## Provenance
 
@@ -178,11 +177,6 @@ theorem isAdic_iff_isOpen_and_exists_pow_le {J : Ideal R} (hI : IsAdic I) :
       refine ⟨k * n, subset_trans ?_ hn⟩
       rw [pow_mul]
       exact Ideal.pow_right_mono hk n
-
-/-- Every nonzero power of an ideal of definition is again an ideal of definition. -/
-theorem pow (hI : IsAdic I) {n : ℕ} (hn : n ≠ 0) : IsAdic (I ^ n) :=
-  hI.isAdic_iff_isOpen_and_exists_pow_le.mpr
-    ⟨hI.isOpen_pow n, 1, by simpa using Ideal.pow_le_self hn⟩
 
 /-- The radical of an ideal of definition is again an ideal of definition whenever that
 radical is finitely generated, in particular over a noetherian ring (EGA I, Ch. 0, 7.1.7). -/
