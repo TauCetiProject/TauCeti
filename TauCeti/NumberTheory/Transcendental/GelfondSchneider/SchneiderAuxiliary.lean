@@ -151,6 +151,27 @@ private theorem house_schneider_entry_le {x y z w : K} {L H : ℝ} (hx : house x
   rw [Nat.add_sub_cancel_left, mul_pow]
   ring
 
+omit [NumberField K] in
+/-- One term of Schneider's value `y_{uv}`, multiplied by `m ^ N` with `i + u j + v j ≤ N`, is an
+algebraic integer when `m α`, `m β` and `m γ` are. -/
+private theorem isIntegral_intCast_pow_mul_schneider_term {m : ℤ} {α β γ : K}
+    (hα : IsIntegral ℤ ((m : K) * α)) (hβ : IsIntegral ℤ ((m : K) * β))
+    (hγ : IsIntegral ℤ ((m : K) * γ)) {i j u v N : ℕ} (h : i + u * j + v * j ≤ N) :
+    IsIntegral ℤ ((m : K) ^ N * (((u : K) + v * β) ^ i * (α ^ (u * j) * γ ^ (v * j)))) := by
+  obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le h
+  have hw : IsIntegral ℤ ((m : K) * ((u : K) + v * β)) := by
+    rw [mul_add, mul_left_comm]
+    exact ((isIntegral_intCast m).mul (isIntegral_natCast u)).add
+      ((isIntegral_natCast v).mul hβ)
+  have key : (m : K) ^ (i + u * j + v * j + r) *
+      (((u : K) + v * β) ^ i * (α ^ (u * j) * γ ^ (v * j))) =
+      (m : K) ^ r * ((m : K) * ((u : K) + v * β)) ^ i *
+        (((m : K) * α) ^ (u * j) * ((m : K) * γ) ^ (v * j)) := by
+    rw [mul_pow, mul_pow, mul_pow]
+    ring
+  rw [key]
+  exact (((isIntegral_intCast m).pow r).mul (hw.pow i)).mul ((hα.pow _).mul (hγ.pow _))
+
 /-- **Schneider's auxiliary function, algebraic form** (Evertse, Lemma 4.22). Let `K` be a number
 field of degree `d` and `α, β, γ ∈ K`. There is `c > 0` such that for all integers `L ≥ 3` and
 `D₁, D₂` with `D₁ D₂ ≥ 2 d L²` there are integers `a_{ij}`, `i < D₁`, `j < D₂`, not all zero,
@@ -208,11 +229,16 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
     simp only [w]
     push_cast
     ring
+  have hep (p q) : e p q = (m : K) ^ N * (w p ^ (q.1 : ℕ) *
+      (α ^ (((p.1 : ℕ) + 1) * q.2) * γ ^ (((p.2 : ℕ) + 1) * q.2))) := by
+    obtain ⟨r, hNr, hr⟩ := hNk p q
+    simp only [e]
+    rw [hNr, hr]
+    simp only [k, mul_pow]
+    ring
   have he (p q) : IsIntegral ℤ (e p q) := by
-    have hmw : IsIntegral ℤ ((m : K) * w p) := by
-      rw [hmw_eq]
-      exact (isIntegral_intCast _).add ((isIntegral_natCast _).mul hmβ)
-    exact (((isIntegral_intCast _).pow _).mul (hmw.pow _)).mul ((hmα.pow _).mul (hmγ.pow _))
+    rw [hep]
+    exact isIntegral_intCast_pow_mul_schneider_term hmα hmβ hmγ (hk p q)
   have hwH (p : Fin L × Fin L) : house ((m : K) * w p) ≤ L * H := by
     have hu : ((p.1 : ℕ) + 1 : ℝ) ≤ L := by exact_mod_cast p.1.is_lt
     have hv : ((p.2 : ℕ) + 1 : ℝ) ≤ L := by exact_mod_cast p.2.is_lt
@@ -256,16 +282,10 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
     obtain ⟨v, rfl⟩ := Nat.exists_eq_add_of_le' hv₁
     set p : Fin L × Fin L := (⟨u, by omega⟩, ⟨v, by omega⟩)
     have hrow := sum_mul_intCast_eq_zero_of_mulVec_eq_zero hax p
-    have hep (q) : (a' p q : K) = (m : K) ^ N * (w p ^ (q.1 : ℕ) *
-        (α ^ ((u + 1) * q.2) * γ ^ ((v + 1) * q.2))) := by
-      -- The coercion of the algebraic integer `a' p q = ⟨e p q, _⟩` to `K` is `e p q`.
-      change e p q = _
-      obtain ⟨r, hNr, hr⟩ := hNk p q
-      simp only [e]
-      rw [hNr, hr]
-      simp only [k, p, mul_pow]
-      ring
-    simp only [hep, Fintype.sum_prod_type] at hrow
+    -- The coercion of the algebraic integer `a' p q = ⟨e p q, _⟩` to `K` is `e p q`.
+    have ha'p (q) : (a' p q : K) = (m : K) ^ N * (w p ^ (q.1 : ℕ) *
+        (α ^ ((u + 1) * q.2) * γ ^ ((v + 1) * q.2))) := hep p q
+    simp only [ha'p, Fintype.sum_prod_type] at hrow
     have hm0 : (m : K) ^ N ≠ 0 := pow_ne_zero _ (Int.cast_ne_zero.2 hm)
     refine (mul_eq_zero.mp ?_).resolve_left hm0
     rw [← hrow, mul_sum]
@@ -322,27 +342,6 @@ theorem house_schneider_value_le {α β γ : K} {H A : ℝ} (hH : 1 ≤ H) (hα 
   simp only [sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul]
   push_cast
   ring
-
-omit [NumberField K] in
-/-- One term of Schneider's value `y_{uv}`, multiplied by `m ^ N` with `i + u j + v j ≤ N`, is an
-algebraic integer when `m α`, `m β` and `m γ` are. -/
-private theorem isIntegral_intCast_pow_mul_schneider_term {m : ℤ} {α β γ : K}
-    (hα : IsIntegral ℤ ((m : K) * α)) (hβ : IsIntegral ℤ ((m : K) * β))
-    (hγ : IsIntegral ℤ ((m : K) * γ)) {i j u v N : ℕ} (h : i + u * j + v * j ≤ N) :
-    IsIntegral ℤ ((m : K) ^ N * (((u : K) + v * β) ^ i * (α ^ (u * j) * γ ^ (v * j)))) := by
-  obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le h
-  have hw : IsIntegral ℤ ((m : K) * ((u : K) + v * β)) := by
-    rw [mul_add, mul_left_comm]
-    exact ((isIntegral_intCast m).mul (isIntegral_natCast u)).add
-      ((isIntegral_natCast v).mul hβ)
-  have key : (m : K) ^ (i + u * j + v * j + r) *
-      (((u : K) + v * β) ^ i * (α ^ (u * j) * γ ^ (v * j))) =
-      (m : K) ^ r * ((m : K) * ((u : K) + v * β)) ^ i *
-        (((m : K) * α) ^ (u * j) * ((m : K) * γ) ^ (v * j)) := by
-    rw [mul_pow, mul_pow, mul_pow]
-    ring
-  rw [key]
-  exact (((isIntegral_intCast m).pow r).mul (hw.pow i)).mul ((hα.pow _).mul (hγ.pow _))
 
 omit [NumberField K] in
 /-- **Denominators of Schneider's values.** If `m α`, `m β` and `m γ` are algebraic integers,
@@ -546,15 +545,6 @@ theorem map_pow_mul_pow_eq_exp {R : Type*} [Semiring R] (σ : R →+* ℂ) {l : 
   congr 1
   push_cast
   ring
-
-/-- For `i < D₁`, `j < D₂` and `u, v ≤ B`, the total degree `i + u j + v j` of a term of
-Schneider's value `y_{uv}` in `u + v β`, `α` and `γ` is at most `D₁ + 2 B D₂`. -/
-private theorem schneider_exponent_le {D₁ D₂ B : ℕ} (i : Fin D₁) (j : Fin D₂) {u v : ℕ}
-    (hu : u ≤ B) (hv : v ≤ B) : (i : ℕ) + u * j + v * j ≤ D₁ + 2 * B * D₂ := by
-  have h₁ : u * (j : ℕ) ≤ B * D₂ := Nat.mul_le_mul hu j.is_lt.le
-  have h₂ : v * (j : ℕ) ≤ B * D₂ := Nat.mul_le_mul hv j.is_lt.le
-  have := i.is_lt
-  linarith
 
 variable {K : Type*} [Field K] [NumberField K]
 
