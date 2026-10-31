@@ -193,13 +193,6 @@ theorem typeAShellEquiv_chevalleyF (k : Fin r) :
 
 /-! ### The bracket -/
 
-/-- The interval-root sign as a power of `-1`. -/
-private theorem specialLinearRootSign_eq_negOnePow (i j : Fin (r + 1)) :
-    specialLinearRootSign r ℤ i j =
-      (((if i < j then 0 else ((i : ℕ) - j - 1 : ℕ)) : ℤ).negOnePow : ℤ) := by
-  rw [specialLinearRootSign_def]
-  split_ifs <;> simp [Int.coe_negOnePow_natCast]
-
 /-- **The ordered sign along a chain of two roots** `ε_p - ε_q` and `ε_q - ε_t` is the product of
 the signs of the three signed matrix units involved. -/
 private theorem negOnePow_orderedSignForm_middle {p q t : Fin (r + 1)} (hpq : p ≠ q)
