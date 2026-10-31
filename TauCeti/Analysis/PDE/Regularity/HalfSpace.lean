@@ -142,7 +142,7 @@ private theorem hasWeakLineDerivOn_sum_smul_inner_gradient
       refine integral_congr_ae ?_
       filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
       rw [W1p.gradient_ofTestFunctionₗ, hx,
-        bilin_eq_inner_mul_sum_add_sum_sum b (matrixBilinearForm (a x)) ν]
+        b.bilin_eq_inner_mul_sum_add_sum_sum (matrixBilinearForm (a x)) ν]
       simp only [inner_gradient_left, (hφ x).lineDeriv_eq_fderiv, smul_eq_mul, Finset.mul_sum,
         ν', P, b]
     rw [← hU φ, energyFormH1_zero_zero_eq_setIntegral, hpt,
@@ -231,7 +231,7 @@ private theorem exists_hasWeakLineDerivOn_inner_gradient_normal (hν : ν ≠ 0)
   have hRc : ∀ x, (∑ j, β ν' (b j) x • ⟪W1p.gradient U x, b j⟫_ℝ) -
       ∑ j, β ν' (b j) x • ⟪W1p.gradient U x, P (b j)⟫_ℝ =
         β ν' ν' x * ⟪W1p.gradient U x, ν⟫_ℝ := fun x =>
-    sum_smul_inner_sub_sum_smul_inner_proj b (matrixBilinearForm (a x)) ν (W1p.gradient U x)
+    b.sum_smul_inner_sub_sum_smul_inner_proj (matrixBilinearForm (a x)) ν (W1p.gradient U x)
   -- Ellipticity: `⟪ν', a ν'⟫ ≥ λ ‖ν'‖² > 0` on `Ω`, so its reciprocal is bounded and Lipschitz.
   set m : ℝ := lam * ‖ν'‖ ^ 2
   have hm : 0 < m := mul_pos ha.pos (pow_pos (norm_pos_iff.2 (smul_ne_zero

@@ -49,6 +49,11 @@ theorem real_inner_sub_div_norm_sq_smul_self_eq_zero {E : Type*} [NormedAddCommG
   rw [inner_sub_left, real_inner_smul_left, real_inner_self_eq_norm_sq,
     div_mul_cancel₀ _ (pow_pos (norm_pos_iff.2 hν) 2).ne', sub_self]
 
+end TauCeti
+
+namespace OrthonormalBasis
+
+open scoped InnerProductSpace
 
 /-- Splitting a bilinear form along `ν` and the hyperplane orthogonal to it: for an orthonormal
 basis `(eᵢ)`,
@@ -98,4 +103,4 @@ theorem sum_smul_inner_sub_sum_smul_inner_proj {ι E : Type*} [Fintype ι] [Norm
   simp only [sub_sub_cancel]
   exact Finset.sum_congr rfl fun j _ => by ring
 
-end TauCeti
+end OrthonormalBasis
