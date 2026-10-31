@@ -497,7 +497,7 @@ theorem range_mfderiv_coe_regularLevel [IsManifold I 1 M] (x : {x : M // f x = c
   have hx := hreg.isRegularPoint x.2
   -- At a point of the level, regularity gives `dim F ≤ dim E`, so `n + dim F = dim E`.
   have hdim := hx.finrank_ker_mfderiv_add_finrank
-  refine hx.range_mfderiv_eq_ker_mfderiv (g := Subtype.val) (fun y ↦ y.2)
+  refine hx.range_mfderiv_eq_ker_mfderiv (g := Subtype.val) (.of_forall fun y ↦ y.2)
     ((isImmersionOfComplement_coe_regularLevel le_rfl hf hreg hn x).mfderiv_injective
       one_ne_zero) ?_
   rw [finrank_fin_fun]
