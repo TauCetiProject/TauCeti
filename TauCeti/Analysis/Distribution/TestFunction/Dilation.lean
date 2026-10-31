@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TestFunction.Divergence
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 
 /-!
 # Dilation of test functions
 
 Dilating the support of a test function by a nonzero real scalar amounts to precomposing with
-its inverse. The derivative and divergence acquire the inverse scalar. These formulas transport
-the test-field pairings that define distributional variation and perimeter under dilations.
+its inverse. The derivative, gradient and divergence acquire the inverse scalar. These formulas
+transport the test-field pairings that define distributional variation and perimeter under
+dilations, and the homogeneous Sobolev norms of test functions.
 -/
 
 public section
@@ -23,7 +25,7 @@ noncomputable section
 namespace TauCeti
 
 open Set TestFunction TopologicalSpace
-open scoped Distributions
+open scoped Distributions Gradient
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω V : Opens E} {r : ℝ}
@@ -80,5 +82,14 @@ theorem divergenceCLM_dilateTestFunction [FiniteDimensional ℝ E]
       r⁻¹ • dilateTestFunction hr hVO (divergenceCLM φ) := by
   ext y
   simp
+
+/-- The gradient of a dilated real test function acquires the inverse dilation factor. -/
+@[simp]
+theorem gradient_dilateTestFunction {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+    [CompleteSpace H] {Ω V : Opens H} (hr : r ≠ 0) (hVO : MapsTo (fun x : H => r • x) V Ω)
+    (φ : 𝓓(V, ℝ)) (y : H) :
+    ∇ (dilateTestFunction hr hVO φ : H → ℝ) y = r⁻¹ • ∇ (φ : H → ℝ) (r⁻¹ • y) := by
+  apply (InnerProductSpace.toDual ℝ H).injective
+  simp [toDual_gradient]
 
 end TauCeti
