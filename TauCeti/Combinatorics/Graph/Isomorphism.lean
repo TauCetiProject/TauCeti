@@ -49,14 +49,14 @@ namespace Iso
 attribute [simp] map_isLink_iff
 
 /-- The identity isomorphism of a multigraph. -/
-@[refl, expose]
+@[refl]
 def refl (G : Graph α β) : Iso G G where
   vertexEquiv := Equiv.refl G.vertexSet
   edgeEquiv := Equiv.refl G.edgeSet
   map_isLink_iff _ _ _ := Iff.rfl
 
 /-- The composite of two multigraph isomorphisms. -/
-@[trans, expose]
+@[trans]
 def trans (f : Iso G H) (g : Iso H K) : Iso G K where
   vertexEquiv := f.vertexEquiv.trans g.vertexEquiv
   edgeEquiv := f.edgeEquiv.trans g.edgeEquiv
@@ -64,7 +64,7 @@ def trans (f : Iso G H) (g : Iso H K) : Iso G K where
     (f.vertexEquiv x) (f.vertexEquiv y)).trans (f.map_isLink_iff e x y)
 
 /-- The inverse of a multigraph isomorphism. -/
-@[symm, expose]
+@[symm]
 def symm (f : Iso G H) : Iso H G where
   vertexEquiv := f.vertexEquiv.symm
   edgeEquiv := f.edgeEquiv.symm
