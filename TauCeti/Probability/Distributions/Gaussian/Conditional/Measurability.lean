@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Gaussian.Conditional.Basic
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Measurability of conditional Gaussian parameters
@@ -26,10 +27,6 @@ public section
 open MeasureTheory ProbabilityTheory
 
 variable {ι κ : Type*} [Fintype κ] [DecidableEq κ]
-
-local instance {m n : Type*} [Finite m] [Finite n] :
-    SecondCountableTopology (Matrix m n ℝ) :=
-  inferInstanceAs (SecondCountableTopology (m → n → ℝ))
 
 namespace Matrix
 

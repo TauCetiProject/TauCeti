@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.CovariancePseudoInverse
+public import TauCeti.LinearAlgebra.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.SchurComplement
 public import TauCeti.Analysis.Matrix.PosSemidef.Block
 
@@ -42,7 +43,8 @@ theorem PosSemidef.toBlocks₁₂_mul_covariancePseudoInverse_mul
   apply Matrix.toEuclideanLin.injective
   apply LinearMap.ext
   intro x
-  have hD := isMoorePenroseInverse_covariancePseudoInverse hS.toBlocks₂₂
+  have hD := isMoorePenroseInverse_covariancePseudoInverse (hS.submatrix Sum.inr)
+  rw [← toBlocks₂₂_eq_submatrix] at hD
   have hker : S.toBlocks₂₂.toEuclideanLin
       (S.toBlocks₂₂.covariancePseudoInverse.toEuclideanLin (S.toBlocks₂₂.toEuclideanLin x) - x) =
       0 := by
