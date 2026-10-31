@@ -301,8 +301,9 @@ private theorem exists_harmonicOnNhd_ball_ae_eq (hu : LocallyIntegrableOn u Ω �
     (hu.integrableOn_compact_subset hxΩ (isCompact_closedBall x _)).integrable_indicator
       measurableSet_closedBall
   set φ : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking hR
-  have hφR : ∀ n, (φ n).rOut ≤ R := fun n ↦
-    div_le_self hR.le (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)])
+  have hφR : ∀ n, (φ n).rOut ≤ R := fun n ↦ by
+    simp only [φ, ContDiffBump.rOut_shrinking]
+    exact div_le_self hR.le (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)])
   have hφ0 : Tendsto (fun n ↦ (φ n).rOut) atTop (𝓝 0) := ContDiffBump.tendsto_rOut_shrinking hR
   set U : ℕ → E → ℝ := fun n ↦ (φ n).normed μ ⋆[lsmul ℝ ℝ, μ] f
   -- Each mollification is harmonic on `ball x (2R)`, where it only sees `u` on `K ⊆ Ω`.

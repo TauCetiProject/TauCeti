@@ -35,7 +35,7 @@ variable {X : Type*} {c : X} {R : ℝ}
 /-- The bumps of outer radius `R / (n + 1)` and inner radius half of that. Their radii shrink to
 zero while the outer radius stays twice the inner one, as Lebesgue differentiation along
 normalized bump convolutions requires. -/
-@[expose] noncomputable def shrinking (hR : 0 < R) (n : ℕ) : ContDiffBump c where
+noncomputable def shrinking (hR : 0 < R) (n : ℕ) : ContDiffBump c where
   rIn := R / (2 * (n + 1))
   rOut := R / (n + 1)
   rIn_pos := by positivity
@@ -45,13 +45,13 @@ normalized bump convolutions requires. -/
 @[simp]
 theorem rIn_shrinking (hR : 0 < R) (n : ℕ) :
     (shrinking hR n : ContDiffBump c).rIn = R / (2 * (n + 1)) :=
-  rfl
+  (rfl)
 
 /-- The outer radius of `ContDiffBump.shrinking`. -/
 @[simp]
 theorem rOut_shrinking (hR : 0 < R) (n : ℕ) :
     (shrinking hR n : ContDiffBump c).rOut = R / (n + 1) :=
-  rfl
+  (rfl)
 
 /-- The outer radius of `ContDiffBump.shrinking` is twice its inner radius. -/
 theorem rOut_shrinking_eq_two_mul_rIn (hR : 0 < R) (n : ℕ) :

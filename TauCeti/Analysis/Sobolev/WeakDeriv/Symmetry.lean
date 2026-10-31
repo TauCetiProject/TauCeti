@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
@@ -23,6 +24,8 @@ test functions commute (`TestFunction.lineDerivOp_comm`).
 ## Main declarations
 
 * `TauCeti.HasWeakLineDerivOn.comm`: weak derivatives in two directions commute.
+* `TauCeti.W1p.hasWeakLineDerivOn_inner_gradient_comm`: the same for the first derivatives
+  `⟪∇u, y⟫` of a Sobolev function `u ∈ W^{1,p}(Ω)`.
 -/
 
 public section
@@ -30,7 +33,9 @@ public section
 namespace TauCeti
 
 open LineDeriv MeasureTheory TopologicalSpace
-open scoped Distributions
+open scoped Distributions InnerProductSpace
+
+section Comm
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace E] {μ : Measure E} {Ω : Opens E}
@@ -55,5 +60,25 @@ theorem HasWeakLineDerivOn.comm (h₁ : HasWeakLineDerivOn μ Ω u u₁ v)
     _ = ∫ x, lineDeriv ℝ (φ : E → ℝ) x w • u₁ x ∂μ := by
         simp only [TestFunction.lineDerivOp_apply]
     _ = -∫ x, (φ : E → ℝ) x • u₁₂ x ∂μ := h₁₂.integral_lineDeriv_smul_eq_neg_integral_smul φ
+
+end Comm
+
+section W1p
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+  {Ω : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- **Second derivatives of a Sobolev function are symmetric.** If `∂_y u = ⟪∇u, y⟫` has the weak
+derivative `G` in the direction `w`, then `∂_w u` has the weak derivative `G` in the direction
+`y`. -/
+theorem W1p.hasWeakLineDerivOn_inner_gradient_comm {U : W1p μ Ω p} {y w : E} {G : E → ℝ}
+    (hG : HasWeakLineDerivOn μ Ω (fun x => ⟪W1p.gradient U x, y⟫_ℝ) G w) :
+    HasWeakLineDerivOn μ Ω (fun x => ⟪W1p.gradient U x, w⟫_ℝ) G y := by
+  have hfd : ∀ z, HasWeakLineDerivOn μ Ω (W1p.value U) (fun x => ⟪W1p.gradient U x, z⟫_ℝ) z :=
+    fun z => by simpa only [innerSL_apply_apply] using (W1p.hasWeakFDerivOn U).hasWeakLineDerivOn z
+  exact (hfd y).comm hG (hfd w)
+
+end W1p
 
 end TauCeti
