@@ -22,9 +22,11 @@ together they form a noncrossing partition of the interlaced sequence. The posit
 between the bars after `x` and `y` are those of `Set.uIoc x y`, so a chord of `Q` joining these
 two bars crosses no chord of `P` exactly when `Set.uIoc x y` contains both or neither of any two
 positions in a common part of `P`. The *Kreweras complement* `K(P)` puts two bars in a common
-part exactly under this condition. It is the largest partition of the bars complementary to `P`
-(`Finpartition.le_kreweras_iff`), and it is noncrossing (`Finpartition.isNoncrossing_kreweras`),
-so it is the largest complementary noncrossing partition. The complement reverses refinement and
+part exactly under this condition. It is the largest partition of the bars no part of which
+crosses a part of `P` (`Finpartition.le_kreweras_iff`), and it is noncrossing
+(`Finpartition.isNoncrossing_kreweras`). So for noncrossing `P` it is the largest noncrossing
+partition of the bars complementary to `P`
+(`TauCeti.NoncrossingPartition.isGreatest_kreweras`). The complement reverses refinement and
 exchanges the partition into singletons with the partition into one part, and a noncrossing
 partition `P` of a nonempty set `s` and its complement have `#s + 1` parts in total.
 
@@ -40,7 +42,7 @@ of two free families in terms of the cumulants and moments of the two families.
 ## Main results
 
 * `Finpartition.mem_part_kreweras_iff` — the bars after `x` and `y` lie in a common part of
-  `K(P)` exactly when `Set.uIoc x y` is a union of parts of `P`.
+  `K(P)` exactly when `Set.uIoc x y ∩ s` is a union of parts of `P`.
 * `Finpartition.le_kreweras_iff` — a partition `Q` of the bars is finer than `K(P)` exactly when
   no part of `Q` crosses a part of `P` in the interlaced order.
 * `Finpartition.isNoncrossing_kreweras` — the Kreweras complement of any finite partition is
@@ -95,7 +97,8 @@ noncomputable def kreweras (P : Finpartition s) : Finpartition s :=
   open Classical in ofSetSetoid (krewerasSetoid P) s
 
 /-- The bars after positions `x` and `y` of `s` lie in a common part of the Kreweras complement of
-`P` exactly when `Set.uIoc x y` is a union of parts of `P`. -/
+`P` exactly when `Set.uIoc x y ∩ s` is a union of parts of `P`, that is, when `Set.uIoc x y`
+contains both or neither of any two positions in a common part of `P`. -/
 theorem mem_part_kreweras_iff {x y : α} :
     y ∈ P.kreweras.part x ↔
       x ∈ s ∧ y ∈ s ∧ ∀ a, ∀ b ∈ P.part a, a ∈ Set.uIoc x y → b ∈ Set.uIoc x y := by
@@ -107,7 +110,8 @@ of `Q` crosses a part of `P` in the interlaced order of positions and bars: ther
 `a, b` in a common part of `P` and bars `x', y'` after `x, y` in a common part of `Q` with
 `a < x' < b < y'` or `x' < a < y' < b`, that is, with `a ≤ x < b ≤ y` or `x < a ≤ y < b`. Together
 with `isNoncrossing_kreweras`, this makes `K(P)` the largest noncrossing partition of the bars
-complementary to `P`. -/
+complementary to `P` when `P` is noncrossing (`TauCeti.NoncrossingPartition.isGreatest_kreweras`).
+-/
 theorem le_kreweras_iff :
     Q ≤ P.kreweras ↔ ∀ x, ∀ y ∈ Q.part x, ∀ a, ∀ b ∈ P.part a,
       ¬(a ≤ x ∧ x < b ∧ b ≤ y) ∧ ¬(x < a ∧ a ≤ y ∧ y < b) := by
