@@ -33,6 +33,8 @@ complex of projective objects.
 
 ## Main results
 
+* `DerivedCategory.singleFunctor_hom_eq_zero_of_projective`: a projective object placed in degree
+  `n` has no nonzero morphisms to objects placed in lower degrees.
 * `DerivedCategory.exists_homSingle_eq_zero_of_perfect`: a perfect object has no morphisms to
   objects of `C` placed in sufficiently negative degrees.
 * `DerivedCategory.exists_singleHom_eq_zero_of_perfect`: a perfect object has no morphisms from
@@ -53,6 +55,15 @@ universe w' w v u
 namespace DerivedCategory
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
+
+/-- A projective object placed in degree `n` has no nonzero morphisms to an object placed in a
+lower degree `m < n`: Mathlib's `from_singleFunctor_obj_eq_zero_of_projective`, transported along
+`singleFunctorIsoCompQ`. -/
+theorem singleFunctor_hom_eq_zero_of_projective {Q : C} [Projective Q] {m n : ℤ} (hmn : m < n)
+    {Y : C} (f : (singleFunctor C n).obj Q ⟶ (singleFunctor C m).obj Y) : f = 0 := by
+  rw [← cancel_epi ((singleFunctorIsoCompQ C n).inv.app Q),
+    ← cancel_mono ((singleFunctorIsoCompQ C m).hom.app Y), comp_zero, zero_comp]
+  exact from_singleFunctor_obj_eq_zero_of_projective _ m hmn
 
 variable (C) in
 /-- The objects of `C` placed in degree `-n`, up to isomorphism. -/
@@ -78,13 +89,10 @@ theorem exists_homSingle_eq_zero_of_perfect {X : DerivedCategory.Bounded C}
   obtain ⟨n₀, h⟩ := ObjectProperty.eventuallyLeftOrthogonal_iff.1
     (TauCeti.DerivedCategory.Bounded.perfect_le_inverseImage_ι
     (ObjectProperty.eventuallyLeftOrthogonal (singleNeg C))
-    (fun P hP ↦ ObjectProperty.eventuallyLeftOrthogonal_iff.2 ⟨1, fun n hn Y f ⟨m, W, hm, ⟨e⟩⟩ ↦ by
-      have := hP
-      have := from_singleFunctor_obj_eq_zero_of_projective
-        ((singleFunctorIsoCompQ C 0).inv.app P ≫ f ≫ e.hom ≫
-          (singleFunctorIsoCompQ C m).hom.app W) m (by lia)
-      rw [← cancel_mono e.hom, zero_comp]
-      simpa using this⟩) X hX)
+    (fun P (_ : Projective P) ↦ ObjectProperty.eventuallyLeftOrthogonal_iff.2
+      ⟨1, fun n hn Y f ⟨m, W, hm, ⟨e⟩⟩ ↦ by
+        rw [← cancel_mono e.hom, zero_comp]
+        exact singleFunctor_hom_eq_zero_of_projective (by lia) _⟩) X hX)
   exact ⟨-n₀, fun n hn W f ↦ h (-n) (by lia) f ⟨n, W, by lia, ⟨Iso.refl _⟩⟩⟩
 
 section ExtOrthogonal

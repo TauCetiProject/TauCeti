@@ -81,29 +81,25 @@ private lemma distinguished_of_iso₁ {T : Triangle (DerivedCategory C)} (hT : T
   isomorphic_distinguished _ hT _ (Triangle.isoMk _ _ e₁.symm (Iso.refl _) (Iso.refl _) (by simp)
     (by simp) (by simp [← Functor.map_comp]))
 
-/-- A projective object placed in a positive degree `n` has no nonzero morphisms to an object
-placed in degree zero: Mathlib's `from_singleFunctor_obj_eq_zero_of_projective`, transported along
-`singleFunctorIsoCompQ`. -/
-private lemma singleFunctor_hom_eq_zero_of_projective {Q : C} [Projective Q] {n : ℤ} (hn : 0 < n)
-    {Y : C} (f : (singleFunctor C n).obj Q ⟶ (singleFunctor C 0).obj Y) : f = 0 := by
-  rw [← cancel_epi ((singleFunctorIsoCompQ C n).inv.app Q),
-    ← cancel_mono ((singleFunctorIsoCompQ C 0).hom.app Y), comp_zero, zero_comp]
-  exact from_singleFunctor_obj_eq_zero_of_projective _ 0 hn
-
 section Cycles
 
 variable {P : CochainComplex C ℤ} (hP : P.IsTotallyAcyclicProjective)
 include hP
+
+omit [HasDerivedCategory C] in
+/-- `HomologicalComplex.cyclesShortComplex_shortExact` with the short complex of cycles written out,
+via `HomologicalComplex.cyclesShortComplex_def`, so that its terms are the cycles themselves. -/
+private lemma shortExact_mk_cycles (m m' : ℤ) (hm : m + 1 = m') :
+    (ShortComplex.mk (P.iCycles m) (P.toCycles m m') (P.iCycles_toCycles m m')).ShortExact :=
+  P.cyclesShortComplex_def m m' ▸ P.cyclesShortComplex_shortExact m m' hm (hP.acyclic m')
 
 /-- The triangle `Zᵐ ⟶ Pᵐ ⟶ Zᵐ' ⟶ Zᵐ[1]` of the short exact sequence of cycles, with its vertices
 placed in degree `m` by `singleFunctor C m`: the triangle `triangleOfSES` transported along
 `singleFunctorIsoCompQ`. -/
 private noncomputable abbrev cyclesSESTriangle (m m' : ℤ) (hm : m + 1 = m') :
     Triangle (DerivedCategory C) :=
-  have hS :
-      (ShortComplex.mk (P.iCycles m) (P.toCycles m m') (P.iCycles_toCycles m m')).ShortExact :=
-    P.cyclesShortComplex_def m m' ▸ P.cyclesShortComplex_shortExact m m' hm (hP.acyclic m')
-  let T := triangleOfSES (hS.map_of_exact (CochainComplex.singleFunctor C m))
+  let T := triangleOfSES ((shortExact_mk_cycles hP m m' hm).map_of_exact
+    (CochainComplex.singleFunctor C m))
   let e := singleFunctorIsoCompQ C m
   Triangle.mk ((e.app (P.cycles m)).hom ≫ T.mor₁ ≫ (e.app (P.X m)).inv)
     ((e.app (P.X m)).hom ≫ T.mor₂ ≫ (e.app (P.cycles m')).inv)
@@ -111,11 +107,8 @@ private noncomputable abbrev cyclesSESTriangle (m m' : ℤ) (hm : m + 1 = m') :
 
 private lemma cyclesSESTriangle_distinguished (m m' : ℤ) (hm : m + 1 = m') :
     cyclesSESTriangle hP m m' hm ∈ distTriang _ :=
-  have hS :
-      (ShortComplex.mk (P.iCycles m) (P.toCycles m m') (P.iCycles_toCycles m m')).ShortExact :=
-    P.cyclesShortComplex_def m m' ▸ P.cyclesShortComplex_shortExact m m' hm (hP.acyclic m')
-  distinguished_of_iso
-    (triangleOfSES_distinguished (hS.map_of_exact (CochainComplex.singleFunctor C m)))
+  distinguished_of_iso (triangleOfSES_distinguished
+    ((shortExact_mk_cycles hP m m' hm).map_of_exact (CochainComplex.singleFunctor C m)))
     ((singleFunctorIsoCompQ C m).app (P.cycles m)).symm
     ((singleFunctorIsoCompQ C m).app (P.X m)).symm
     ((singleFunctorIsoCompQ C m).app (P.cycles m')).symm
@@ -451,7 +444,8 @@ instance : (toSingularityCategory C).Faithful where
     rw [← sub_eq_zero, ← Functor.map_sub, ExactStructure.projectiveStableFunctor_map_eq_zero_iff,
       exactStructure_isProjective_factorsThrough_iff,
       ← TauCeti.SingularityCategory.map_eq_zero_iff_of_isGorensteinProjective X.as.property]
-    have : (g₁ - g₂).hom = g₁.hom - g₂.hom := (isGorensteinProjective C).ι.map_sub
+    have : (g₁ - g₂).hom = g₁.hom - g₂.hom := by
+      simpa using (isGorensteinProjective C).ι.map_sub (f := g₁) (g := g₂)
     rw [this, Functor.map_sub, Functor.map_sub, h, sub_self]
 
 /-- **Chen's theorem**: the functor from the stable category of Gorenstein-projective objects of an
