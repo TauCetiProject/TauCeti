@@ -177,26 +177,15 @@ ranges over `[-1/2, 1/2)`. -/
 theorem injOn_cylindricalEndLift (q : Puncture) :
     InjOn q.cylindricalEndLift {z | z.im ∈ Ico (-1 / 2 : ℝ) (1 / 2)} := by
   intro a ha b hb hab
-  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift a
-  obtain ⟨l, hl⟩ := q.exists_endCoord_cylindricalEndLift b
-  rw [hab, hl] at hk
-  have hre := congrArg Complex.re hk
-  have him := congrArg Complex.im hk
-  simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im, Complex.intCast_re,
-    Complex.intCast_im, Complex.I_re, Complex.I_im, mul_zero, mul_one, sub_zero, add_zero]
-    at hre him
   replace ha : -1 / 2 ≤ a.im ∧ a.im < 1 / 2 := ha
   replace hb : -1 / 2 ≤ b.im ∧ b.im < 1 / 2 := hb
-  -- The angular coordinates differ by the integer `l - k`, of absolute value less than one.
-  have hkl : l - k = 0 := by
-    have h₁ : ((l - k : ℤ) : ℝ) < 1 := by push_cast; linarith
-    have h₂ : (-1 : ℝ) < ((l - k : ℤ) : ℝ) := by push_cast; linarith
-    have h₁' : l - k < 1 := by exact_mod_cast h₁
-    have h₂' : -1 < l - k := by exact_mod_cast h₂
-    omega
-  have hlk : (l : ℝ) = k := by exact_mod_cast sub_eq_zero.1 hkl
-  rw [hlk] at him
-  exact Complex.ext (by linarith) (by linarith)
+  rw [cylindricalEndLift_eq, cylindricalEndLift_eq, add_right_inj,
+    mul_right_inj' q.endScale_ne_zero] at hab
+  have hπ := Real.pi_pos
+  have him (z : ℂ) : (-(2 * (π : ℂ)) * z).im = -(2 * π) * z.im := by simp
+  have h := Complex.exp_inj_of_neg_pi_lt_of_le_pi (by rw [him]; nlinarith)
+    (by rw [him]; nlinarith) (by rw [him]; nlinarith) (by rw [him]; nlinarith) hab
+  exact mul_left_cancel₀ (by simp [Real.pi_ne_zero]) h
 
 /-- The longitudinal coordinate is smooth away from the center of the end. -/
 theorem contDiffAt_re_endCoord (q : Puncture) {w : ℂ} (hw : w ≠ q.endCenter)

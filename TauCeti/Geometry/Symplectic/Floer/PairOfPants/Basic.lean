@@ -28,8 +28,6 @@ along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results ar
 * `TauCeti.Floer.contMDiffAt_pairOfPantsPerturbation`: the perturbation is smooth on `S × M`.
 * `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift_of_pos`: on the whole end `q`, where
   `±s > 0`, its pullback is `β(±s) H_q(t) dt`, that is `K_s = 0` and `K_t = β(±s) H_q(t)`.
-* `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift`: on the part `±s ≥ 2` of the end `q`
-  its pullback is `H_q(t) dt`, that is `K_s = 0` and `K_t = H_q(t)`.
 * `TauCeti.Floer.exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero`: it is supported
   in the parts `±s > 1` of the three ends, so it vanishes off the ends.
 
@@ -118,17 +116,6 @@ theorem pairOfPantsPerturbation_cylindricalEndLift_of_pos {q : Puncture}
         hz (by linarith) (r.cylindricalEndLift_endCoord hw).symm
     simp [hc]
   · simp
-
-/-- **The perturbation is `H_q(t) dt` far out on each end.** On the part `±s ≥ 2` of the end `q`,
-the pullback of the perturbation along the end lift `φ` sends a tangent vector `v` of the
-cylinder to `Im v · H_q(t)`: its `ds` component (`v = 1`) vanishes and its `dt` component
-(`v = i`) is `H_q(t)`. -/
-theorem pairOfPantsPerturbation_cylindricalEndLift {q : Puncture}
-    (hH : Function.Periodic (H q) 1) {z : ℂ} (hz : 2 ≤ q.endSign * z.re) (x : M) (v : ℂ) :
-    pairOfPantsPerturbation H (q.cylindricalEndLift z) x (deriv q.cylindricalEndLift z * v) =
-      v.im * H q z.im x := by
-  rw [pairOfPantsPerturbation_cylindricalEndLift_of_pos hH (by linarith),
-    smoothTransition.one_of_one_le (by linarith), one_mul]
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]

@@ -134,13 +134,9 @@ private theorem fderiv_endChart_apply (q : Puncture) (z v : ℝ × ℝ) :
   simp [mul_comm]
 
 private theorem contDiff_endChart (q : Puncture) : ContDiff ℝ 2 (endChart q) := by
-  have h : ContDiff ℂ 2 q.cylindricalEndLift := by
-    rw [show q.cylindricalEndLift =
-        fun z => q.endCenter + q.endScale * Complex.exp (-(2 * (π : ℂ)) * z) from
-      funext q.cylindricalEndLift_eq]
-    fun_prop
   exact Complex.equivRealProdCLM.contDiff.comp
-    ((h.restrict_scalars ℝ).comp Complex.equivRealProdCLM.symm.contDiff)
+    (((q.contDiff_cylindricalEndLift 2).restrict_scalars ℝ).comp
+      Complex.equivRealProdCLM.symm.contDiff)
 
 omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
 /-- On the end `q`, where `±s > 0`, the pullback of the perturbation along the end chart is
