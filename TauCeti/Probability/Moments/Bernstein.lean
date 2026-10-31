@@ -9,6 +9,7 @@ public import Mathlib.Probability.Moments.Basic
 public import Mathlib.Probability.Independence.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.Analysis.SpecialFunctions.Exp.QuadraticBound
+import TauCeti.Probability.Moments.Basic
 
 /-!
 # Bernstein's inequality
@@ -22,12 +23,14 @@ for large `ε` it decays exponentially at rate `3 / (2 b)`.
 
 ## Main results
 
-* `TauCeti.mgf_le_exp_of_ae_le`: if `E X = 0`, `E X² < ∞` and `X ≤ b` almost surely, then
-  `E exp (t X) ≤ exp (E X² * t ^ 2 / (2 * (1 - t * b / 3)))` for `0 ≤ t` with `t * b < 3`;
-* `TauCeti.mgf_sum_le_exp_of_ae_le`: the same bound for an independent sum, with `E X²` replaced
-  by `v`;
-* `TauCeti.measureReal_sum_ge_le_of_ae_le`: **Bernstein's inequality** for the upper tail;
-* `TauCeti.measureReal_abs_sum_ge_le_of_abs_le`: the two-sided form
+* `MeasureTheory.MemLp.mgf_le_exp_of_ae_le`: if `E X = 0`, `E X² < ∞` and `X ≤ b` almost
+  surely, then `E exp (t X) ≤ exp (E X² * t ^ 2 / (2 * (1 - t * b / 3)))` for `0 ≤ t` with
+  `t * b < 3`;
+* `ProbabilityTheory.iIndepFun.mgf_sum_le_exp_of_ae_le`: the same bound for an independent sum,
+  with `E X²` replaced by `v`;
+* `ProbabilityTheory.iIndepFun.measureReal_sum_ge_le_of_ae_le`: **Bernstein's inequality** for the
+  upper tail;
+* `ProbabilityTheory.iIndepFun.measureReal_abs_sum_ge_le_of_abs_le`: the two-sided form
   `P(|S| ≥ ε) ≤ 2 * exp (-ε ^ 2 / (2 * (v + b * ε / 3)))` when `|Xᵢ| ≤ b`.
 
 ## References
@@ -41,9 +44,9 @@ public section
 
 open MeasureTheory ProbabilityTheory Real
 
-namespace TauCeti
-
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
+
+namespace MeasureTheory.MemLp
 
 /-- **Bernstein's moment-generating-function bound.** If `X` has mean zero, a finite second
 moment and `X ≤ b` almost surely, then for `0 ≤ t` with `t * b < 3`,
@@ -78,6 +81,10 @@ theorem mgf_le_exp_of_ae_le [IsProbabilityMeasure μ] {X : Ω → ℝ} {b t : �
         simp only [k]
         ring
 
+end MeasureTheory.MemLp
+
+namespace ProbabilityTheory.iIndepFun
+
 /-- **Bernstein's moment-generating-function bound for independent sums.** If the `Xᵢ`, `i ∈ s`,
 are independent with mean zero, finite second moments and `Xᵢ ≤ b` almost surely, then for
 `0 ≤ t` with `t * b < 3` the moment-generating function of `∑ i ∈ s, Xᵢ` at `t` is at most
@@ -100,22 +107,7 @@ theorem mgf_sum_le_exp_of_ae_le {ι : Type*} {X : ι → Ω → ℝ} (h_indep : 
     exact (Finset.sum_coe_sort s (fun i ↦ X i ω)).symm
   rw [hprod, Finset.sum_mul, Finset.sum_div, exp_sum]
   exact Finset.prod_le_prod₀ (fun i _ ↦ mgf_nonneg)
-    (fun i hi ↦ mgf_le_exp_of_ae_le (hX i hi) (hmean i hi) (hb i hi) ht htb)
-
-/-- If square-integrable random variables have vanishing total second moment, their sum vanishes
-almost surely. -/
-private theorem ae_sum_eq_zero_of_sum_integral_sq_eq_zero {ι : Type*} {X : ι → Ω → ℝ}
-    {s : Finset ι} (hX : ∀ i ∈ s, MemLp (X i) 2 μ) (hv : ∑ i ∈ s, ∫ ω, X i ω ^ 2 ∂μ = 0) :
-    ∀ᵐ ω ∂μ, ∑ i ∈ s, X i ω = 0 := by
-  have hsq : ∀ i ∈ s, ∫ ω, X i ω ^ 2 ∂μ = 0 :=
-    (Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦ integral_nonneg fun ω ↦ sq_nonneg _).1 hv
-  have hae : ∀ i ∈ s, ∀ᵐ ω ∂μ, X i ω = 0 := fun i hi ↦ by
-    have h := (integral_eq_zero_iff_of_nonneg_ae (ae_of_all _ fun ω ↦ sq_nonneg (X i ω))
-      (hX i hi).integrable_sq).1 (hsq i hi)
-    filter_upwards [h] with ω hω
-    simpa using hω
-  filter_upwards [(Filter.eventually_all_finset s).2 hae] with ω hω
-  exact Finset.sum_eq_zero hω
+    (fun i hi ↦ (hX i hi).mgf_le_exp_of_ae_le (hmean i hi) (hb i hi) ht htb)
 
 /-- **Bernstein's inequality.** Let the `Xᵢ`, `i ∈ s`, be independent with mean zero, finite
 second moments and `Xᵢ ≤ b` almost surely, and let `v = ∑ i ∈ s, E Xᵢ²`. Then for `0 ≤ ε`,
@@ -132,7 +124,7 @@ theorem measureReal_sum_ge_le_of_ae_le {ι : Type*} {X : ι → Ω → ℝ} (h_i
   · simp
   rcases hv0.eq_or_lt with hv | hv
   · -- Zero variance: the sum vanishes almost surely, so the event is null.
-    have hzero := ae_sum_eq_zero_of_sum_integral_sq_eq_zero hX hv.symm
+    have hzero := TauCeti.ae_sum_eq_zero_of_sum_integral_sq_eq_zero hX hv.symm
     have hnull : μ.real {ω | ε ≤ ∑ i ∈ s, X i ω} = 0 := by
       rw [measureReal_eq_zero_iff]
       refine measure_mono_null (fun ω hω ↦ ?_) (ae_iff.1 hzero)
@@ -161,7 +153,7 @@ theorem measureReal_sum_ge_le_of_ae_le {ι : Type*} {X : ι → Ω → ℝ} (h_i
         measure_ge_le_exp_mul_mgf ε ht (integrable_exp_mul_of_le t _ ht hS_meas hS_le)
     _ ≤ exp (-t * ε) * exp (v * t ^ 2 / (2 * (1 - t * b / 3))) := by
         gcongr
-        exact mgf_sum_le_exp_of_ae_le h_indep hX hmean hb ht htb
+        exact h_indep.mgf_sum_le_exp_of_ae_le hX hmean hb ht htb
     _ = exp (-ε ^ 2 / (2 * (v + b * ε / 3))) := by
         rw [← exp_add]
         congr 1
@@ -191,10 +183,10 @@ theorem measureReal_abs_sum_ge_le_of_abs_le {ι : Type*} {X : ι → Ω → ℝ}
   -- The lower tail is the upper tail of the negated family.
   have hneg_indep : iIndepFun (fun i ω ↦ -X i ω) μ :=
     h_indep.comp (fun _ ↦ Neg.neg) fun _ ↦ measurable_neg
-  have hlow := measureReal_sum_ge_le_of_ae_le hneg_indep (s := s) (b := b)
+  have hlow := hneg_indep.measureReal_sum_ge_le_of_ae_le (s := s) (b := b)
     (fun i hi ↦ (hL2 i hi).neg) (fun i hi ↦ by simpa [integral_neg] using hmean i hi)
     (fun i hi ↦ by filter_upwards [hb i hi] with ω hω using (neg_le_abs _).trans hω) hε
-  have hupper := measureReal_sum_ge_le_of_ae_le h_indep hL2 hmean hup hε
+  have hupper := h_indep.measureReal_sum_ge_le_of_ae_le hL2 hmean hup hε
   simp only [neg_sq, Finset.sum_neg_distrib] at hlow
   calc μ.real {ω | ε ≤ |∑ i ∈ s, X i ω|}
       ≤ μ.real ({ω | ε ≤ ∑ i ∈ s, X i ω} ∪ {ω | ε ≤ -∑ i ∈ s, X i ω}) := by
@@ -205,4 +197,4 @@ theorem measureReal_abs_sum_ge_le_of_abs_le {ι : Type*} {X : ι → Ω → ℝ}
         · exact Or.inl h
     _ ≤ _ := (measureReal_union_le _ _).trans (by linarith)
 
-end TauCeti
+end ProbabilityTheory.iIndepFun
