@@ -25,8 +25,10 @@ that
 * every element of `G` lies in `B` or in the double coset `B n B`.
 
 Then `TauCeti.TitsSystem.ofRankOne` is a Tits system with `B`, `N` and the single simple reflection
-`n (B ∩ N)`. Its Coxeter system is irreducible, having only one generator, so Tits's simplicity
-theorem applies to it.
+`n (B ∩ N)`. Its Coxeter system is irreducible, having only one generator, which is the
+irreducibility hypothesis of Tits's simplicity theorem
+`TauCeti.TitsSystem.le_normalCore_or_eq_top_of_normal`. Applying that theorem additionally requires
+`G` to be perfect and a solvable subgroup normalized by `B` whose conjugates generate `G`.
 
 These are the Tits systems of the finite groups of Lie rank one, such as `SL₂(q)`, the unitary
 groups `SU₃(q)`, the Suzuki groups and the Ree groups `²G₂(q)`, where `B` is the stabilizer of a
@@ -83,7 +85,7 @@ def ofRankOne (hn : (n : G) * n ∈ B) (hN : ∀ x ∈ N, x ∈ B ∨ (n : G)⁻
       exact Subgroup.subset_closure rfl
   exists_simpleRep_sq_mem s hs := ⟨n, hs.symm, Subgroup.mem_subgroupOf.mpr hn⟩
   mul_doubleCoset_subset s hs := ⟨n, hs.symm, fun w ↦
-    DoubleCoset.doubleCoset_mul_doubleCoset_subset_union B hn (hN w w.2) hbruhat⟩
+    B.doubleCoset_mul_doubleCoset_subset_union hn (hN w w.2) hbruhat⟩
   exists_conj_not_mem s hs := by
     obtain ⟨b, hb, hnb⟩ := hconj
     exact ⟨n, hs.symm, ⟨b, hb⟩, hnb⟩

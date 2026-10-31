@@ -11,6 +11,8 @@ public import TauCeti.GroupTheory.TitsSystem.NormalSubgroup
 public import TauCeti.GroupTheory.TitsSystem.RankOne
 public import Mathlib.GroupTheory.Nilpotent
 
+import TauCeti.GroupTheory.Commutator
+
 /-!
 # The Suzuki groups are simple
 
@@ -51,7 +53,7 @@ The subgroups `U` and `B = H U`, `TauCeti.Suzuki.unipotentSubgroup` and
 * `TauCeti.Suzuki.titsSystem`: the Tits system `(B, ⟨w⟩)` of rank one on `Sz(q)`, whose only
   simple reflection is the class of `w` (`TauCeti.Suzuki.titsSystem_simple`), so that it is
   irreducible (`TauCeti.Suzuki.isIrreducible_titsSystem`).
-* `TauCeti.Suzuki.normalCore_titsSystem_subgroupB`: the normal core of its `B` is trivial.
+* `TauCeti.Suzuki.normalCore_borelSubgroupOf`: the normal core of the Borel subgroup is trivial.
 * `TauCeti.Suzuki.isSimpleGroup_suzukiGroup`: `Sz(q)` is simple for `m ≠ 0`.
 * `TauCeti.SuzukiLieIndex.isSimpleGroup_group`: the candidate group of every valid Suzuki index
   is simple.
@@ -143,28 +145,22 @@ theorem isIrreducible_titsSystem (hm : m ≠ 0) : (titsSystem m hm).IsIrreducibl
 /-! ## Simplicity -/
 
 /-- **The normal core of the Borel subgroup of `Sz(q)` is trivial.** -/
-theorem normalCore_titsSystem_subgroupB (hm : m ≠ 0) :
-    (titsSystem m hm).subgroupB.normalCore = ⊥ := by
-  rw [titsSystem_subgroupB]
+theorem normalCore_borelSubgroupOf : (borelSubgroupOf m).normalCore = ⊥ := by
   set Z := (borelSubgroupOf m).normalCore
-  -- The Weyl element conjugates an element of `U ∩ Z` into `B`, so that element is trivial.
-  have hZU : unipotentSubgroupOf m ⊓ Z = ⊥ := by
-    refine eq_bot_iff.mpr fun y ⟨hyU, hyZ⟩ ↦ Subgroup.mem_bot.mpr ?_
+  have : Z.Normal := Subgroup.normalCore_normal _
+  -- The Weyl element conjugates an element of `Z ∩ U` into `B`, so that element is trivial.
+  have hZU : Z ⊓ unipotentSubgroupOf m = ⊥ := by
+    refine eq_bot_iff.mpr fun y ⟨hyZ, hyU⟩ ↦ Subgroup.mem_bot.mpr ?_
     obtain ⟨a, b, hy⟩ := mem_unipotentSubgroup.mp (Subgroup.mem_subgroupOf.mp hyU)
-    have h := Subgroup.normalCore_le _
-      ((Subgroup.normalCore_normal _).conj_mem y hyZ (weylOf m))
+    have h := Subgroup.normalCore_le _ (this.conj_mem y hyZ (weylOf m))
     rw [Subgroup.mem_subgroupOf] at h
     simp only [Subgroup.coe_mul, InvMemClass.coe_inv, weyl_inv, ← hy] at h
     obtain ⟨rfl, rfl⟩ := (weyl_mul_unipotent_mul_weyl_mem_borelSubgroup_iff m).mp h
     exact Subtype.ext (by simp [← hy])
-  -- Hence `⁅U, Z⁆ ≤ U ⊓ Z` is trivial, as `Z` is normal and normalizes `U`: `Z` commutes with `U`.
-  have hcomm : unipotentSubgroupOf m ≤ Subgroup.centralizer (Z : Set (suzukiGroup m)) := by
-    have : Z.Normal := Subgroup.normalCore_normal _
-    refine Subgroup.commutator_eq_bot_iff_le_centralizer.mp (eq_bot_iff.mpr ?_)
-    rw [← hZU]
-    exact le_inf (Subgroup.le_normalizer_iff_commutator_le_left.mp
-      ((Subgroup.normalCore_le _).trans (borelSubgroupOf_le_normalizer m)))
-      (Subgroup.commutator_le_right _ _)
+  -- Hence `Z`, which is normal and normalizes `U`, commutes with `U`.
+  have hcomm : unipotentSubgroupOf m ≤ Subgroup.centralizer (Z : Set (suzukiGroup m)) :=
+    Subgroup.le_centralizer_iff.mp (le_centralizer_of_le_normalizer_of_inf_eq_bot
+      ((Subgroup.normalCore_le _).trans (borelSubgroupOf_le_normalizer m)) hZU)
   -- The centralizer of the normal subgroup `Z` is normal and contains `U`, so it is everything.
   have htop : Subgroup.centralizer (Z : Set (suzukiGroup m)) = ⊤ :=
     eq_top_iff.mpr ((normalClosure_unipotentSubgroupOf m).symm.le.trans
@@ -185,7 +181,7 @@ theorem isSimpleGroup_suzukiGroup (hm : m ≠ 0) : IsSimpleGroup (suzukiGroup m)
   rcases (titsSystem m hm).le_normalCore_or_eq_top_of_normal (isIrreducible_titsSystem m hm)
     (by simpa using borelSubgroupOf_le_normalizer m) (normalClosure_unipotentSubgroupOf m) H
     with h | h
-  · rw [normalCore_titsSystem_subgroupB] at h
+  · rw [titsSystem_subgroupB, normalCore_borelSubgroupOf] at h
     exact Or.inl (le_bot_iff.mp h)
   · exact Or.inr h
 

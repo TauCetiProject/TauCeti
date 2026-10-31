@@ -20,7 +20,7 @@ rank one.
 
 ## Main statements
 
-* `DoubleCoset.doubleCoset_mul_doubleCoset_subset_union`: in a two-cell decomposition
+* `Subgroup.doubleCoset_mul_doubleCoset_subset_union`: in a two-cell decomposition
   `G = B ∪ B n B` with `n² ∈ B`, the product `(B n B) (B w B)` lies in `B (n w) B ∪ B w B`.
 
 ## References
@@ -32,7 +32,9 @@ public section
 
 open scoped Pointwise
 
-namespace DoubleCoset
+open DoubleCoset
+
+namespace Subgroup
 
 variable {G : Type*} [Group G]
 
@@ -63,4 +65,4 @@ theorem doubleCoset_mul_doubleCoset_subset_union (B : Subgroup G) {n w : G} (hn 
       rw [hc]
       group
 
-end DoubleCoset
+end Subgroup
