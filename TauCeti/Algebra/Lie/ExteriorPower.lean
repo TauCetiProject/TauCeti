@@ -23,6 +23,8 @@ commutators to commutators, hence defines a Lie algebra representation.
 
 * `exteriorPower.lieMap_apply_ιMulti`: the action on a decomposable wedge is the sum of the terms
   obtained by applying the endomorphism to one factor.
+* `exteriorPower.lieMap_two_apply_ιMulti`: on two-vectors this is the derivation rule
+  `f (u ∧ w) = f u ∧ w + u ∧ f w`.
 -/
 
 public section
@@ -136,5 +138,11 @@ theorem lieMap_apply_ιMulti (d : ℕ) (f : Module.End K V) (v : Fin d → V) :
     lieMap d f (ιMulti K d v) =
       ∑ i : Fin d, ιMulti K d (Function.update v i (f (v i))) := by
   rw [lieMap, ← LieHom.coe_toLinearMap, actionLinear_apply_ιMulti]
+
+/-- On two-vectors an endomorphism acts by the derivation rule `f (u ∧ w) = f u ∧ w + u ∧ f w`. -/
+theorem lieMap_two_apply_ιMulti (f : Module.End K V) (u w : V) :
+    lieMap 2 f (ιMulti K 2 ![u, w]) = ιMulti K 2 ![f u, w] + ιMulti K 2 ![u, f w] := by
+  rw [lieMap_apply_ιMulti, Fin.sum_univ_two]
+  congr 2 <;> ext i <;> fin_cases i <;> rfl
 
 end exteriorPower

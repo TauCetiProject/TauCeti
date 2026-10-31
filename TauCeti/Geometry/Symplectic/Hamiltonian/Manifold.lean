@@ -12,9 +12,11 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
+import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Symplectic.Manifold.Rescale
 
 /-!
 # Hamiltonian vector fields on symplectic manifolds
@@ -31,7 +33,9 @@ of a nondegenerate form is invertible, so `X_f` is then the unique Hamiltonian v
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isHamiltonianVectorField_iff_eq`). Smoothness of the
 inverse flat maps makes the Hamiltonian vector field of a `C^(n+1)` function a `C^n` vector field
 (`TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField`), which is the regularity
-needed to integrate it to a Hamiltonian flow.
+needed to integrate it to a Hamiltonian flow. Rescaling the form by `c ≠ 0` rescales the
+Hamiltonian vector field by `c⁻¹`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`).
 
 Since `σ` is alternating, `df(X) = σ(X, X) = 0` for a Hamiltonian vector field `X` of `f`: the
 Hamiltonian is constant along the integral curves of `X`, which is conservation of energy
@@ -64,6 +68,7 @@ surjective (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorFiel
   uniqueness of the Hamiltonian vector field.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField`: a `C^(n+1)`
   Hamiltonian has a `C^n` Hamiltonian vector field.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`: `X^{cσ}_f = c⁻¹ X^σ_f`.
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
   of energy along integral curves on open preconnected sets of times, with the global case
   `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurve`.
@@ -257,6 +262,23 @@ theorem mdifferentiable_hamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f) 
     MDifferentiable I I.tangent (fun y ↦ (σ.hamiltonianVectorField f y : TangentBundle I M)) :=
   (h.contMDiff_hamiltonianVectorField (n := 1) (by simp) (by norm_num [hf])).mdifferentiable
     one_ne_zero
+
+/-- **Hamiltonian vector fields of a rescaled form.** For a nondegenerate form `σ` and `c ≠ 0`,
+`X^{cσ}_f = c⁻¹ X^σ_f`. -/
+theorem hamiltonianVectorField_smul {c : ℝ} (hc : c ≠ 0) (f : M → ℝ) :
+    (c • σ).hamiltonianVectorField f = c⁻¹ • σ.hamiltonianVectorField f := by
+  refine ((h.smul c hc).isHamiltonianVectorField_iff_eq.1 (isHamiltonianVectorField_iff.2
+    fun x v ↦ ?_)).symm
+  rw [SmoothForm.eval₂_smul, Pi.smul_apply, SmoothBundleForm.eval₂_smul_left,
+    h.eval₂_hamiltonianVectorField, smul_inv_smul₀ hc]
+
+/-- Rescaling the form and the Hamiltonian by the same `c ≠ 0` leaves the Hamiltonian vector
+field unchanged: `X^{cσ}_{cf} = X^σ_f`. -/
+theorem hamiltonianVectorField_smul_smul {c : ℝ} (hc : c ≠ 0) (f : M → ℝ) :
+    (c • σ).hamiltonianVectorField (c • f) = σ.hamiltonianVectorField f := by
+  funext x
+  rw [hamiltonianVectorField_const_smul, h.hamiltonianVectorField_smul hc, Pi.smul_apply,
+    smul_inv_smul₀ hc]
 
 end IsNondegenerate
 

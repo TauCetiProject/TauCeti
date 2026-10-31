@@ -12,6 +12,7 @@ public import Mathlib.Dynamics.BirkhoffSum.Basic
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.Logic.Function.Iterate
 public import TauCeti.RepresentationTheory.Cyclic.Automorphism
+import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Tactic.Abel
 
 /-!
@@ -20,7 +21,10 @@ import Mathlib.Tactic.Abel
 Let `T` be an additive commutative group, `A : T ≃+ T` an additive automorphism of `T`, and
 `t : T`. The affine automorphism of `T` with linear part `A` and translation part `t` is the map
 `x ↦ A x + t`. It is a bijection of the underlying type, written `AddEquiv.affineEquiv A t`, but an
-additive homomorphism only when `t = 0`.
+additive homomorphism only when `t = 0`. Its basic algebra (composition, inverse, and the fact that
+it determines its linear and translation parts) holds over any additive group. Conjugating it by
+the translation by `b` changes the translation part `t` to `t + (b - A b)`
+(`AddEquiv.conj_addRight_affineEquiv`).
 
 Iterating the affine automorphism accumulates its translations: the `k`-th iterate is the `k`-th
 iterate of the linear part followed by the partial norm
@@ -45,6 +49,18 @@ automorphism itself (`AddEquiv.affineAddAction_one_vadd`). The affine automorphi
 (`AddEquiv.orderOf_affineEquiv_eq_iff`), which for an affine automorphism means that each of those
 iterates has a nontrivial linear part or a nonzero partial norm.
 
+A point `x` is fixed by the `k`-th iterate exactly when `x - A^k x` is the `k`-th partial norm, so
+the `k`-th iterate has a fixed point exactly when that partial norm lies in the image of
+`1 - A^k` (`AddEquiv.exists_affineEquiv_iterate_apply_eq_self_iff`). Consequently the action of
+`ZMod m` is faithful exactly when the affine automorphism has exact order `m`
+(`AddEquiv.faithfulVAdd_affineAddAction_iff`), and it is free, that is every point has trivial
+stabilizer, exactly when for every `0 < k < m` the `k`-th partial norm does not lie in the image of
+`1 - A^k` (`AddEquiv.affineAddAction_free_iff`). For composite `m` every such `k` must be checked;
+for prime `m` the generator suffices (`AddEquiv.affineAddAction_free_iff_of_prime`). Up to
+conjugation by translations, the translation parts of norm zero are classified by degree-one group
+cohomology, as shown in
+`TauCeti.RepresentationTheory.Homological.GroupCohomology.CyclicAutomorphism`.
+
 ## Main definitions
 
 * `AddEquiv.affineEquiv A t`: the affine equivalence `x ↦ A x + t` of `T`, with linear part `A` and
@@ -56,6 +72,11 @@ iterates has a nontrivial linear part or a nonzero partial norm.
 
 ## Main results
 
+* `AddEquiv.affineEquiv_inj`, `AddEquiv.affineEquiv_mul_affineEquiv`, `AddEquiv.affineEquiv_inv`:
+  the affine equivalence determines its linear and translation parts, and affine equivalences are
+  closed under composition and inversion.
+* `AddEquiv.conj_addRight_affineEquiv`: conjugation by the translation by `b` changes the
+  translation part `t` to `t + (b - A b)`.
 * `AddEquiv.affineEquiv_iterate_apply`: the `k`-th iterate of the affine equivalence is the
   `k`-th iterate of its linear part plus the `k`-th partial norm of its translation part.
 * `AddEquiv.partialNorm_def`: the partial norm as its defining finite sum.
@@ -76,25 +97,42 @@ iterates has a nontrivial linear part or a nonzero partial norm.
 * `AddEquiv.affineAddAction_vadd`, `AddEquiv.affineAddAction_one_vadd`: the residue `k` of `ZMod m`
   acts by the `k`-th iterate of the affine equivalence, and the residue `1` by the affine
   equivalence itself.
+* `AddEquiv.affineEquiv_iterate_apply_eq_self_iff`,
+  `AddEquiv.exists_affineEquiv_iterate_apply_eq_self_iff`: `x` is fixed by the `k`-th iterate
+  exactly when `x - A^k x` is the `k`-th partial norm, so the `k`-th iterate has a fixed point
+  exactly when that partial norm lies in the image of `1 - A^k`.
+* `AddEquiv.faithfulVAdd_affineAddAction_iff`: the action of `ZMod m` is faithful exactly when the
+  affine equivalence has exact order `m`.
+* `AddEquiv.affineAddAction_free_iff`, `AddEquiv.affineAddAction_free_iff_of_prime`: the action of
+  `ZMod m` is free exactly when no partial norm of order `0 < k < m` lies in the image of
+  `1 - A^k`; for prime `m`, exactly when `t` does not lie in the image of `1 - A`.
+
+## References
+
+* W. P. Barth, K. Hulek, C. A. M. Peters, A. Van de Ven, *Compact Complex Surfaces*, second
+  edition, Springer (2004), Chapter V, section *Logarithmic transformations*, for the cyclic
+  quotients of tori by affine automorphisms.
 -/
 
 public section
 
 namespace AddEquiv
 
-variable {T : Type*} [AddCommGroup T]
-
 /-! ### The affine equivalence -/
 
-/-- The affine equivalence of an additive commutative group with linear part `A` and translation
+section AddGroup
+
+variable {T : Type*} [AddGroup T]
+
+/-- The affine equivalence of an additive group with linear part `A` and translation
 part `t`, sending `x` to `A x + t`.
 
-Its inverse sends `y` to `A⁻¹ (y - t)`. It is an additive homomorphism only when `t = 0`. As an
-affine self-map of the `ℤ`-module `T` it is the affine equivalence with linear part
-`A.toIntLinearEquiv` and base points `0` and `t` (so `0 ↦ t`), which Mathlib provides as
-`AffineEquiv.ofLinearEquiv`, and it is the element of the group `AffineEquiv` with those data. It is
-recorded here as a permutation of `T`, because the iterates, the order and the action of `ZMod m`
-below are those of the underlying permutation. -/
+Its inverse sends `y` to `A⁻¹ (y - t)`. It is an additive homomorphism only when `t = 0`. When `T`
+is moreover an additive commutative group, hence a `ℤ`-module, it is, as an affine self-map of `T`,
+the affine equivalence with linear part `A.toIntLinearEquiv` and base points `0` and `t`
+(so `0 ↦ t`), which Mathlib provides as `AffineEquiv.ofLinearEquiv`, and it is the element of the
+group `AffineEquiv` with those data. It is recorded here as a permutation of `T`, because the
+iterates, the order and the action of `ZMod m` below are those of the underlying permutation. -/
 def affineEquiv (A : T ≃+ T) (t : T) : T ≃ T :=
   (A : T ≃ T).trans (Equiv.addRight t)
 
@@ -108,6 +146,56 @@ theorem affineEquiv_apply (A : T ≃+ T) (t x : T) : affineEquiv A t x = A x + t
 theorem affineEquiv_symm_apply (A : T ≃+ T) (t y : T) :
     (affineEquiv A t).symm y = A.symm (y - t) := by
   simp [affineEquiv, sub_eq_add_neg]
+
+/-- An affine equivalence determines its linear part and its translation part. -/
+@[simp]
+theorem affineEquiv_inj {A B : T ≃+ T} {t s : T} :
+    affineEquiv A t = affineEquiv B s ↔ A = B ∧ t = s := by
+  refine ⟨fun h ↦ ?_, fun ⟨hAB, hts⟩ ↦ hAB ▸ hts ▸ rfl⟩
+  -- Evaluating at `0` recovers the translation part, and then the linear part.
+  have hts : t = s := by simpa using Equiv.congr_fun h 0
+  subst hts
+  exact ⟨AddEquiv.ext fun x ↦ by simpa using Equiv.congr_fun h x, rfl⟩
+
+/-- The affine equivalence with zero translation part is the linear part. -/
+@[simp]
+theorem affineEquiv_zero (A : T ≃+ T) : affineEquiv A 0 = A.toEquiv := by
+  ext x
+  simp
+
+/-- The affine equivalence with trivial linear part is a translation. -/
+@[simp]
+theorem refl_affineEquiv (t : T) : affineEquiv (AddEquiv.refl T) t = Equiv.addRight t := by
+  ext x
+  simp
+
+/-- The composite of two affine equivalences is affine: its linear part is the composite of the
+linear parts. -/
+@[simp]
+theorem affineEquiv_mul_affineEquiv (A B : T ≃+ T) (t s : T) :
+    affineEquiv A t * affineEquiv B s = affineEquiv (B.trans A) (A s + t) := by
+  ext x
+  simp [add_assoc]
+
+/-- The inverse of an affine equivalence is affine, with linear part `A⁻¹`. -/
+@[simp]
+theorem affineEquiv_inv (A : T ≃+ T) (t : T) :
+    (affineEquiv A t)⁻¹ = affineEquiv A.symm (-A.symm t) := by
+  ext x
+  simp [Equiv.Perm.inv_def, sub_eq_add_neg]
+
+end AddGroup
+
+variable {T : Type*} [AddCommGroup T]
+
+/-- **Conjugation by a translation.** Conjugating `x ↦ A x + t` by the translation by `b` gives
+the affine equivalence with the same linear part and translation part `t + (b - A b)`. -/
+theorem conj_addRight_affineEquiv (A : T ≃+ T) (t b : T) :
+    MulAut.conj (Equiv.addRight b) (affineEquiv A t) = affineEquiv A (t + (b - A b)) := by
+  ext x
+  simp only [MulAut.conj_apply, Equiv.Perm.mul_apply, Equiv.Perm.inv_def, Equiv.coe_addRight,
+    Equiv.addRight_symm, affineEquiv_apply, map_add, map_neg]
+  abel
 
 /-! ### The partial norm of a translation part -/
 
@@ -295,6 +383,96 @@ theorem affineAddAction_one_vadd (A : T ≃+ T) (t : T) (hA : (⇑A)^[m] = id)
     (1 : ZMod m) +ᵥ x = affineEquiv A t x := by
   simp only [AddAction.compHom_vadd_def, MonoidHom.coe_toAdditiveRight, Function.comp_apply,
     TauCeti.zmodMonoidHomEquiv_symm_apply_ofAdd_one, ofMul_vadd, Equiv.Perm.smul_def]
+
+end Periodic
+
+/-! ### Fixed points of the iterates -/
+
+/-- **Fixed points of an iterate.** A point `x` is fixed by the `k`-th iterate of `x ↦ A x + t`
+exactly when `x - A^k x` is the `k`-th partial norm of `t`. -/
+theorem affineEquiv_iterate_apply_eq_self_iff (A : T ≃+ T) (t x : T) (k : ℕ) :
+    (⇑(affineEquiv A t))^[k] x = x ↔ x - (⇑A)^[k] x = partialNorm A k t := by
+  rw [affineEquiv_iterate_apply, sub_eq_iff_eq_add', eq_comm]
+
+/-- **The fixed-point criterion.** The `k`-th iterate of `x ↦ A x + t` has a fixed point exactly
+when the `k`-th partial norm of `t` lies in the image of `1 - A^k`. -/
+theorem exists_affineEquiv_iterate_apply_eq_self_iff (A : T ≃+ T) (t : T) (k : ℕ) :
+    (∃ x, (⇑(affineEquiv A t))^[k] x = x) ↔ ∃ b, b - (⇑A)^[k] b = partialNorm A k t :=
+  exists_congr fun x ↦ affineEquiv_iterate_apply_eq_self_iff A t x k
+
+/-! ### Faithfulness and freeness of the action of `ZMod m` -/
+
+section Periodic
+
+variable {m : ℕ} [NeZero m]
+
+/-- **Faithfulness.** The action of `ZMod m` by the iterates of `x ↦ A x + t` is faithful exactly
+when the affine equivalence has exact order `m`. -/
+theorem faithfulVAdd_affineAddAction_iff (A : T ≃+ T) (t : T) (hA : (⇑A)^[m] = id)
+    (hN : partialNorm A m t = 0) :
+    letI := affineAddAction (m := m) A t hA hN
+    FaithfulVAdd (ZMod m) T ↔ orderOf (affineEquiv A t) = m := by
+  let := affineAddAction (m := m) A t hA hN
+  rw [orderOf_eq_iff (Nat.pos_of_neZero m)]
+  refine ⟨fun hF ↦ ⟨(affineEquiv_pow_eq_one_iff_of_iterate_eq_id A t m hA).2 hN,
+    fun k hkm hk hpow ↦ ?_⟩, fun ⟨_, h⟩ ↦ ⟨fun {g₁ g₂} hg ↦ ?_⟩⟩
+  · -- The residue of `k` would act trivially, although it is nonzero.
+    have hk0 : ((k : ℕ) : ZMod m) = 0 := hF.eq_of_vadd_eq_vadd fun x ↦ by
+      rw [affineAddAction_vadd, affineAddAction_vadd, ZMod.val_natCast, Nat.mod_eq_of_lt hkm,
+        ZMod.val_zero, ← Equiv.Perm.coe_pow, hpow]
+      rfl
+    rw [ZMod.natCast_eq_zero_iff] at hk0
+    exact Nat.not_dvd_of_pos_of_lt hk hkm hk0
+  · -- The difference `g₁ - g₂` acts trivially, so its value is a period smaller than `m`.
+    have hfix (x : T) : (g₁ - g₂) +ᵥ x = x := by
+      rw [sub_eq_add_neg, add_comm, add_vadd, hg, ← add_vadd, neg_add_cancel, zero_vadd]
+    have hpow : affineEquiv A t ^ (g₁ - g₂).val = 1 := by
+      ext x
+      rw [Equiv.Perm.coe_pow, ← affineAddAction_vadd A t hA hN, hfix, Equiv.Perm.one_apply]
+    rw [← sub_eq_zero, ← ZMod.val_eq_zero]
+    by_contra hval
+    exact h _ (ZMod.val_lt _) (Nat.pos_of_ne_zero hval) hpow
+
+/-- **Freeness.** The action of `ZMod m` by the iterates of `x ↦ A x + t` is free, that is every
+point has trivial stabilizer, exactly when for every `0 < k < m` the `k`-th partial norm of `t`
+does not lie in the image of `1 - A^k`. For composite `m`, checking the generator alone does not
+suffice. -/
+theorem affineAddAction_free_iff (A : T ≃+ T) (t : T) (hA : (⇑A)^[m] = id)
+    (hN : partialNorm A m t = 0) :
+    letI := affineAddAction (m := m) A t hA hN
+    (∀ (g : ZMod m) (x : T), g +ᵥ x = x → g = 0) ↔
+      ∀ k, 0 < k → k < m → ∀ b, b - (⇑A)^[k] b ≠ partialNorm A k t := by
+  let := affineAddAction (m := m) A t hA hN
+  refine ⟨fun h k hk hkm b hb ↦ ?_, fun h g x hx ↦ ?_⟩
+  · have hk0 := h (k : ZMod m) b (by
+      rw [affineAddAction_vadd, ZMod.val_natCast, Nat.mod_eq_of_lt hkm,
+        affineEquiv_iterate_apply_eq_self_iff]
+      exact hb)
+    rw [ZMod.natCast_eq_zero_iff] at hk0
+    exact Nat.not_dvd_of_pos_of_lt hk hkm hk0
+  · rw [affineAddAction_vadd, affineEquiv_iterate_apply_eq_self_iff] at hx
+    by_contra hg
+    exact h g.val (ZMod.val_pos.2 hg) (ZMod.val_lt g) x hx
+
+/-- **Freeness in prime order.** For `m` prime, the action of `ZMod m` by the iterates of
+`x ↦ A x + t` is free exactly when the affine equivalence has no fixed point, that is when `t`
+does not lie in the image of `1 - A`: every nonzero residue generates `ZMod m`. -/
+theorem affineAddAction_free_iff_of_prime (A : T ≃+ T) (t : T) (hA : (⇑A)^[m] = id)
+    (hN : partialNorm A m t = 0) (hm : m.Prime) :
+    letI := affineAddAction (m := m) A t hA hN
+    (∀ (g : ZMod m) (x : T), g +ᵥ x = x → g = 0) ↔ ∀ b, b - A b ≠ t := by
+  rw [affineAddAction_free_iff]
+  refine ⟨fun h b hb ↦ h 1 one_pos hm.one_lt b (by simpa using hb), fun h k hk hkm b hb ↦ h b ?_⟩
+  -- A point of period `k` and of period `m` has period `gcd k m = 1`, so it is fixed.
+  have hkb : Function.IsPeriodicPt (affineEquiv A t) k b :=
+    (affineEquiv_iterate_apply_eq_self_iff A t b k).2 hb
+  have hmb : Function.IsPeriodicPt (affineEquiv A t) m b := by
+    rw [Function.IsPeriodicPt, Function.IsFixedPt,
+      (affineEquiv_iterate_eq_id_iff A t m).2 ⟨hA, hN⟩, id]
+  have h1 := hkb.gcd hmb
+  rw [(Nat.coprime_of_lt_prime hk.ne' hkm hm).symm.gcd_eq_one, Function.IsPeriodicPt,
+    Function.IsFixedPt, affineEquiv_iterate_apply_eq_self_iff] at h1
+  simpa using h1
 
 end Periodic
 

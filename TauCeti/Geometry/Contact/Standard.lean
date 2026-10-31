@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import TauCeti.Geometry.Contact.Flat
+public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Manifold.Distribution
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 public import Mathlib.Analysis.InnerProductSpace.PiL2
@@ -24,8 +26,14 @@ Its exterior derivative is `dα = -dx ∧ dy`, and its kernel is the standard co
 the nondegeneracy of `dα` on the kernel.
 
 The constant vector field `∂_z` (`TauCeti.standardReebField`) satisfies the Reeb equations
-`α(∂_z) = 1` and `ι_{∂_z} dα = 0`, so it is the vector field corresponding to `α` itself under the
-contact flat equivalence (`TauCeti.contactFlatEquiv_symm_standardContactForm`).
+`α(∂_z) = 1` and `ι_{∂_z} dα = 0`, so it is the Reeb vector field of `α`
+(`TauCeti.reebVectorField_standardContactForm`). Equivalently, it is the vector field
+corresponding to `α` itself under the contact flat equivalence
+(`TauCeti.contactFlatEquiv_symm_standardContactForm`).
+
+The Reeb field depends on the contact form, not only on the distribution: the form `eˣ (dz - x dy)`
+has the same kernel but Reeb vector field `e^(-x) (∂_y + (x + 1) ∂_z)`
+(`TauCeti.reebVectorField_of_eq_exp_smul_standardContactForm`).
 
 The form is assembled from the constant forms `dz` and `dy` and the coordinate function `x`, so its
 exterior derivative is computed by the Leibniz rule `d(x dy) = dx ∧ dy`.
@@ -209,6 +217,44 @@ theorem contactFlatEquiv_symm_standardContactForm :
       isContactForm_standardContactForm.contactFlat_apply_eq_iff.2
         ⟨standardContactForm_apply_standardReebField p,
           mextDeriv_standardContactForm_standardReebField p⟩]
+
+/-- The Reeb vector field of the standard contact form `dz - x dy` is `∂_z`. -/
+theorem reebVectorField_standardContactForm (p : ℝ × ℝ × ℝ) :
+    standardContactForm.reebVectorField p = standardReebField p :=
+  (isContactForm_standardContactForm.eq_reebVectorField_iff.2
+    ⟨standardContactForm_apply_standardReebField p,
+      mextDeriv_standardContactForm_standardReebField p⟩).symm
+
+/-- The Reeb vector field of the contact form `eˣ (dz - x dy)` is `e^(-x) (∂_y + (x + 1) ∂_z)`.
+This form has the same kernel as `dz - x dy`, but a different Reeb field. Here `β` is the one-form
+`eˣ (dz - x dy)`, given through its values. -/
+theorem reebVectorField_of_eq_exp_smul_standardContactForm
+    {β : SmoothForm 𝓘(ℝ, ℝ × ℝ × ℝ) (ℝ × ℝ × ℝ) ℝ 1}
+    (hβ : ∀ q : ℝ × ℝ × ℝ, β.1 q = Real.exp q.1 • standardContactForm.1 q) (p : ℝ × ℝ × ℝ) :
+    (β.reebVectorField p : ℝ × ℝ × ℝ) = Real.exp (-p.1) • (0, 1, p.1 + 1) := by
+  have hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ × ℝ) 𝓘(ℝ, ℝ) 1 (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1) p :=
+    (Real.contDiff_exp.comp contDiff_fst).contMDiff.contMDiffAt
+  -- The rescaling law, with the correction `y = e^(-x) (∂_y + x ∂_z)` in the contact plane.
+  obtain ⟨y, hy⟩ : ∃ y : TangentSpace 𝓘(ℝ, ℝ × ℝ × ℝ) p,
+      y = Real.exp (-p.1) • ((0, 1, p.1) : ℝ × ℝ × ℝ) := ⟨_, rfl⟩
+  have key := (isContactForm_standardContactForm.reebVectorField_eq_inv_smul_add_iff hf
+    (Real.exp_pos _).ne' hβ y).2 ⟨?_, fun w hw ↦ ?_⟩
+  · rw [key, hy, reebVectorField_standardContactForm, standardReebField_apply]
+    -- The tangent space of `ℝ × ℝ × ℝ` carries the vector operations of `ℝ × ℝ × ℝ` by
+    -- definition. Restate the goal there, where the `Prod` simp lemmas apply.
+    change (Real.exp p.1)⁻¹ • ((0, 0, 1) : ℝ × ℝ × ℝ) +
+      Real.exp (-p.1) • ((0, 1, p.1) : ℝ × ℝ × ℝ) = Real.exp (-p.1) • ((0, 1, p.1 + 1) : ℝ × ℝ × ℝ)
+    refine Prod.ext ?_ (Prod.ext ?_ ?_) <;> simp [Real.exp_neg]
+    ring
+  · rw [standardContactForm_apply, hy]
+    simp only [Prod.smul_snd, Prod.smul_fst, smul_eq_mul, mul_one]
+    ring
+  · have hd : HasFDerivAt (fun q : ℝ × ℝ × ℝ ↦ Real.exp q.1)
+        (Real.exp p.1 • ContinuousLinearMap.fst ℝ ℝ (ℝ × ℝ)) p :=
+      (Real.hasDerivAt_exp p.1).comp_hasFDerivAt p hasFDerivAt_fst
+    rw [mextDeriv_standardContactForm_apply, mvfderiv_eq_fderiv, hd.fderiv, hy, Real.exp_neg]
+    simp [NormedSpace.fromTangentSpace_apply]
+    field_simp
 
 section InnerProductSpace
 

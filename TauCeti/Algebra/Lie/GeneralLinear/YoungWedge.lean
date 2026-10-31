@@ -146,7 +146,7 @@ theorem isGlHighestWeightVector_basisWedge_ofRowLens [Nontrivial R] {a : ι → 
     IsGlHighestWeightVector (fun i => (a i : R))
       (basisWedge R (ofRowLens a m) (card_ofRowLens_of_le hm)) := by
   have hweight : (fun i => ((rowLen (ofRowLens a m) i : ℕ) : R)) = fun i => ((a i : ℕ) : R) :=
-    funext fun i => by rw [rowLen_ofRowLens_of_le hm]
+    funext fun i => by rw [rowLen_ofRowLens_of_le (hm i)]
   rw [← hweight]
   exact isGlHighestWeightVector_basisWedge _ (isRowLowerSet_ofRowLens ha m)
 

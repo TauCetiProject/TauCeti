@@ -27,6 +27,8 @@ This file supplements Mathlib's basic moment-generating-function API.
 * `TauCeti.mgf_id_conv`: the moment-generating function of a convolution of two s-finite measures
   on `ℝ` is the product of their moment-generating functions.  This is the transform side of
   `MeasureTheory.Measure.conv`, the companion of `MeasureTheory.charFun_conv`.
+* `TauCeti.ae_sum_eq_zero_of_sum_integral_sq_eq_zero`: a finite sum of square-integrable random
+  variables whose second moments sum to zero vanishes almost surely.
 -/
 
 public section
@@ -83,5 +85,20 @@ theorem mgf_id_conv {μ ν : Measure ℝ} [SFinite μ] [SFinite ν] :
   rw [Measure.conv, mgf_id_map (by fun_prop), mgf]
   simp only [mul_add, Real.exp_add]
   exact integral_prod_mul (L := ℝ) (fun x ↦ Real.exp (t * x)) fun y ↦ Real.exp (t * y)
+
+/-- If square-integrable random variables have vanishing total second moment, their sum vanishes
+almost surely. -/
+theorem ae_sum_eq_zero_of_sum_integral_sq_eq_zero {ι : Type*} {X : ι → Ω → ℝ}
+    {s : Finset ι} (hX : ∀ i ∈ s, MemLp (X i) 2 μ) (hv : ∑ i ∈ s, ∫ ω, X i ω ^ 2 ∂μ = 0) :
+    ∀ᵐ ω ∂μ, ∑ i ∈ s, X i ω = 0 := by
+  have hsq : ∀ i ∈ s, ∫ ω, X i ω ^ 2 ∂μ = 0 :=
+    (Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦ integral_nonneg fun ω ↦ sq_nonneg _).1 hv
+  have hae : ∀ i ∈ s, ∀ᵐ ω ∂μ, X i ω = 0 := fun i hi ↦ by
+    have h := (integral_eq_zero_iff_of_nonneg_ae (ae_of_all _ fun ω ↦ sq_nonneg (X i ω))
+      (hX i hi).integrable_sq).1 (hsq i hi)
+    filter_upwards [h] with ω hω
+    simpa using hω
+  filter_upwards [(Filter.eventually_all_finset s).2 hae] with ω hω
+  exact Finset.sum_eq_zero hω
 
 end TauCeti

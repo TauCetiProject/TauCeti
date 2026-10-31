@@ -49,11 +49,9 @@ changes across a rectangle move into marking counts.
 
 ## References
 
-This supplies a prerequisite for `TauCetiRoadmap/CombinatorialHeegaardFloer/README.md`, Lane G.2,
-"Gradings. The `J`-function, `M_O`, `M_X`, `A`; integer-valuedness of `A`; grading-change formulas
-across a rectangle." The placement of the markings at the centres of their squares, and hence the
-half-open shape of the domain they are counted in, follows Ozsváth--Stipsicz--Szabó, *Grid
-Homology for Knots and Links*, Chapters 3.1--3.2 and 4.1.
+The placement of the markings at the centres of their squares, and hence the half-open shape of
+the domain they are counted in, follows Ozsváth--Stipsicz--Szabó, *Grid Homology for Knots and
+Links*, Chapters 3.1--3.2 and 4.1.
 -/
 
 public section

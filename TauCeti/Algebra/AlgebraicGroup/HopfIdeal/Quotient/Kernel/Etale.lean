@@ -92,8 +92,8 @@ theorem algebraEtale_quotient_kernelHopfIdeal_iff [Algebra.FiniteType k K] (f : 
     Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal) ↔
       Function.Injective (derivationCompLieHom (B := k) f.hom) := by
   rw [HopfAlgebra.algebraEtale_iff_finrank_lie_eq_zero, finrank_kernelLie]
-  rw [← finrank_toSubmodule, Submodule.finrank_eq_zero, LieSubmodule.toSubmodule_eq_bot,
-    LieHom.ker_eq_bot]
+  rw [← LieSubmodule.finrank_toSubmodule, Submodule.finrank_eq_zero,
+    LieSubmodule.toSubmodule_eq_bot, LieHom.ker_eq_bot]
 
 end TauCeti.CommHopfAlgCat
 

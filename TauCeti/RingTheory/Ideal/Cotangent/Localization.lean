@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.Ideal.Cotangent
+public import Mathlib.RingTheory.RegularLocalRing.Defs
 
 /-!
 # Cotangent spaces and localization at a maximal ideal
@@ -14,7 +15,9 @@ public import Mathlib.RingTheory.Ideal.Cotangent
 Let `p` be a maximal ideal of a commutative ring `R`, and let `Rₚ` be a localization of `R` at
 `p`. The map from `R` to `Rₚ` identifies the cotangent space `p / p²` with the cotangent space
 `pRₚ / (pRₚ)²` of the local ring `Rₚ`. This file constructs that identification and proves that
-it is semilinear for the canonical equivalence between the two residue fields.
+it is semilinear for the canonical equivalence between the two residue fields. So the two
+cotangent spaces have the same dimension, and when `Rₚ` is Noetherian its regularity can be read
+off from the dimension of `p / p²` over `R / p`.
 
 This is the localization bridge used to compare the augmentation-ideal model of the tangent
 space of an affine group with the Zariski tangent space of its spectrum at the identity.
@@ -25,6 +28,10 @@ space of an affine group with the Zariski tangent space of its spectrum at the i
   space.
 * `Ideal.cotangentLocalizationEquiv_smul`: the equivalence is semilinear for the canonical
   residue-field equivalence.
+* `Ideal.finrank_cotangent_eq_finrank_cotangentSpace`: the two cotangent spaces have the same
+  dimension over their residue fields.
+* `Ideal.isRegularLocalRing_iff_finrank_cotangent`: a Noetherian `Rₚ` is regular exactly when
+  `p / p²` has dimension `dim Rₚ`.
 
 ## References
 
@@ -88,5 +95,25 @@ theorem cotangentLocalizationEquiv_smul (r : R ⧸ p) (x : p.Cotangent) :
   obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
   simp [← Ideal.Quotient.algebraMap_eq,
     IsScalarTower.algebraMap_apply R Rₚ (Rₚ ⧸ maximalIdeal Rₚ)]
+
+/-- Localization at a maximal ideal `p` preserves the dimension of the cotangent space: `p / p²`
+over `R / p` has the dimension of the cotangent space of `Rₚ` over its residue field. -/
+theorem finrank_cotangent_eq_finrank_cotangentSpace :
+    Module.finrank (R ⧸ p) p.Cotangent =
+      Module.finrank (IsLocalRing.ResidueField Rₚ) (CotangentSpace Rₚ) := by
+  have h := lift_rank_eq_of_equiv_equiv (R' := IsLocalRing.ResidueField Rₚ)
+    (M' := CotangentSpace Rₚ) (IsLocalization.AtPrime.equivQuotMaximalIdeal p Rₚ)
+    (cotangentLocalizationEquiv p Rₚ).toAddEquiv
+    (IsLocalization.AtPrime.equivQuotMaximalIdeal p Rₚ).bijective
+    (cotangentLocalizationEquiv_smul p Rₚ)
+  rw [Module.finrank, Module.finrank, ← Cardinal.toNat_lift, h, Cardinal.toNat_lift]
+
+/-- A Noetherian localization `Rₚ` at a maximal ideal `p` is a regular local ring if and only if
+`p / p²` has dimension `dim Rₚ` over `R / p`. -/
+theorem isRegularLocalRing_iff_finrank_cotangent [IsNoetherianRing Rₚ] :
+    IsRegularLocalRing Rₚ ↔
+      (Module.finrank (R ⧸ p) p.Cotangent : WithBot ℕ∞) = ringKrullDim Rₚ := by
+  rw [IsRegularLocalRing.iff_finrank_cotangentSpace,
+    finrank_cotangent_eq_finrank_cotangentSpace p Rₚ]
 
 end Ideal

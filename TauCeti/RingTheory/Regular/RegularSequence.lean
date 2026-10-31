@@ -7,8 +7,6 @@ module
 
 public import TauCeti.RingTheory.Depth.Basic
 public import Mathlib.RingTheory.Regular.RegularSequence
-import Mathlib.Algebra.Module.LocalizedModule.Submodule
-import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Ideal.AssociatedPrime.Finiteness
 
 /-!
@@ -38,6 +36,8 @@ extend sections of `M~` across `V(I)` (Stacks, Lemma 31.5.11 (0E9I)).
   sequence `a, b`, the power `bʲ` is regular on `M ⧸ aⁿ M`.
 * `Ideal.exists_mem_isSMulRegular_iff`: `I` contains an `M`-regular element if and only if it lies
   in no associated prime of `M`.
+* `IsLocalRing.exists_isSMulRegular_of_depth_ne_zero`: over a Noetherian local ring, a finite
+  module of nonzero depth has a regular element in the maximal ideal.
 * `TauCeti.exists_isWeaklyRegular_of_le_depth_localizedModule`: if `depth M_p ≥ n` at every prime
   `p ⊇ I`, then `I` contains a weakly `M`-regular sequence of length `n`.
 
@@ -119,6 +119,15 @@ theorem Ideal.exists_mem_isSMulRegular_iff (I : Ideal R) :
         exact hreg
     exact h p hp hle
 
+/-- Over a Noetherian local ring, a finite module of nonzero depth has a regular element in the
+maximal ideal. -/
+theorem IsLocalRing.exists_isSMulRegular_of_depth_ne_zero [IsLocalRing R] [Small.{v} R]
+    (h : depth (ModuleCat.of R M) ≠ 0) : ∃ a ∈ maximalIdeal R, IsSMulRegular M a := by
+  refine (maximalIdeal R).exists_mem_isSMulRegular_iff.2 fun p hp hle ↦ h ?_
+  rw [depth_eq_zero_iff_maximalIdeal_mem_associatedPrimes,
+    (maximalIdeal.isMaximal R).eq_of_le hp.isPrime.ne_top hle]
+  exact hp
+
 namespace TauCeti
 
 /-- Let `M` be a finite module over a Noetherian ring and `I` an ideal. If `depth M_p ≥ n` for
@@ -138,20 +147,8 @@ theorem exists_isWeaklyRegular_of_le_depth_localizedModule (I : Ideal R) (n : �
       exact (Nat.cast_add_one_ne_zero n) (nonpos_iff_eq_zero.1 hdepth)
     -- Dividing by `a` lowers the depth of each localization at a prime `p ⊇ I` by exactly one.
     obtain ⟨rs, hlen, hmem, hrs⟩ := @ih (QuotSMulTop a M) _ _ _ fun p _ hle ↦ by
-      let Rₚ := Localization.AtPrime p
-      let e : LocalizedModule p.primeCompl (QuotSMulTop a M) ≃ₗ[Rₚ]
-          QuotSMulTop (algebraMap R Rₚ a) (LocalizedModule p.primeCompl M) :=
-        (localizedQuotientEquiv _ _).symm ≪≫ₗ Submodule.quotEquivOfEq _ _ (by
-          rw [Submodule.localized, ← Submodule.ideal_span_singleton_smul,
-            Submodule.localized'_smul, Ideal.localized'_eq_map, Submodule.localized'_top,
-            Ideal.map_span, Set.image_singleton, Submodule.ideal_span_singleton_smul])
-      have hmax : algebraMap R Rₚ a ∈ maximalIdeal Rₚ :=
-        (IsLocalization.AtPrime.to_map_mem_maximal_iff Rₚ p a).2 (hle haI)
-      have hsucc := depth_quotSMulTop_succ_eq_depth (reg.of_isLocalizedModule (S := Rₚ)
-        p.primeCompl (LocalizedModule.mkLinearMap p.primeCompl M)) hmax
       have hdepth := h p hle
-      rw [← hsucc, Nat.cast_add_one] at hdepth
-      rw [IsLocalRing.depth_eq_of_linearEquiv e]
+      rw [← depth_localizedModule_quotSMulTop_add_one reg p (hle haI), Nat.cast_add_one] at hdepth
       exact (ENat.add_le_add_iff_right ENat.one_ne_top).1 hdepth
     exact ⟨a :: rs, by simp [hlen], List.forall_mem_cons.2 ⟨haI, hmem⟩,
       (isWeaklyRegular_cons_iff M a rs).2 ⟨reg, hrs⟩⟩

@@ -41,6 +41,7 @@ is a principal logarithm.
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
 * `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
 * `TauCeti.exists_norm_div_ofReal_add_mul_le`, `TauCeti.continuousOn_div_ofReal_add`
+* `TauCeti.exists_norm_inv_ofReal_add_le` -- `(t + p)⁻¹ = O((1 + t)⁻¹)` for `p ∈ slitPlane`
 -/
 
 public section
@@ -193,6 +194,14 @@ theorem continuousOn_div_ofReal_add {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) (a 
     ContinuousOn (fun t : ℝ => a / ((t : ℂ) + x)) (Set.Ioi 0) := fun _ ht =>
   (continuousAt_const.div (Complex.continuous_ofReal.add continuous_const).continuousAt
     (slitPlane_ne_zero (ofReal_add_mem_slitPlane_of_mem_union hx ht))).continuousWithinAt
+
+/-- For `p ∈ slitPlane`, the reciprocal `(t + p)⁻¹` is `O((1 + t)⁻¹)` uniformly in `t ≥ 0`. -/
+theorem exists_norm_inv_ofReal_add_le {p : ℂ} (hp : p ∈ slitPlane) :
+    ∃ C, 0 < C ∧ ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + p)⁻¹‖ ≤ C * (1 + t)⁻¹ := by
+  obtain ⟨c, hc, h⟩ := exists_pos_mul_one_add_le_norm_ofReal_add hp
+  refine ⟨c⁻¹, inv_pos.mpr hc, fun t ht => ?_⟩
+  rw [norm_inv, ← mul_inv]
+  exact inv_anti₀ (by positivity) (h t ht)
 
 end TauCeti
 

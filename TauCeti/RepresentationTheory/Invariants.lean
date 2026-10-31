@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Irreducible
 import Mathlib.Algebra.Category.ModuleCat.Free
@@ -77,6 +78,8 @@ first variable: its invariants are `Tor'ₙ(N, M^G)`.
 * `Representation.averageMap_apply`: the same identity evaluated at a vector.
 * `Representation.averageMap_comp_ρ`: the averaging projection does not see the action.
 * `Representation.IntertwiningMap.map_averageMap`: intertwining maps commute with averaging.
+* `Convex.averageMap_mem`: an invariant convex set contains the average of the orbit of each of
+  its points, which is a fixed point.
 * `Representation.range_norm_eq_invariants`: the group sum `Representation.norm ρ` has the
   invariants as its range.
 * `Representation.range_norm_eq_invariants_of_projective`: the same conclusion without
@@ -168,6 +171,23 @@ theorem range_norm_eq_invariants : LinearMap.range ρ.norm = ρ.invariants := by
   rw [smul_smul, mul_invOf_self, one_smul]
 
 end Representation
+
+namespace Convex
+
+/-- **The orbit average lies in an invariant convex set.** If a finite group `G`, whose order is
+invertible in the linearly ordered field `𝕜`, acts linearly on `V` preserving a convex set `s`,
+then `s` contains the average `|G|⁻¹ ∑ g, ρ g v` of the orbit of each of its points `v`. This
+average is fixed by `G` (`Representation.averageMap_invariant`), so a nonempty invariant convex set
+contains a fixed point. -/
+theorem averageMap_mem {𝕜 G V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [Group G]
+    [Fintype G] [Invertible (Fintype.card G : 𝕜)] [AddCommGroup V] [Module 𝕜 V]
+    {ρ : Representation 𝕜 G V} {s : Set V} (hs : Convex 𝕜 s)
+    (hρs : ∀ g, Set.MapsTo (ρ g) s s) {v : V} (hv : v ∈ s) : ρ.averageMap v ∈ s := by
+  rw [Representation.averageMap_apply, Finset.smul_sum]
+  refine hs.sum_mem (fun _ _ ↦ invOf_nonneg.2 (Nat.cast_nonneg _)) ?_ fun g _ ↦ hρs g hv
+  rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_invOf_self]
+
+end Convex
 
 namespace Representation
 

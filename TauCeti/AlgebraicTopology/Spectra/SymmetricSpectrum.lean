@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Spectra.SmashPow
 public import TauCeti.CategoryTheory.Monoidal.DayConvolution.Module
+public import TauCeti.CategoryTheory.Monoidal.Mod.InternalHom
 public import TauCeti.CategoryTheory.Monoidal.Mod.Bimodule
 
 /-!
@@ -27,6 +28,13 @@ maps `S^p ∧ X_q → X_(p+q)`, compatible with the unit `S⁰ ≅ S^0` and with
 spheres. These iterated structure maps and their laws are developed in
 `TauCeti.CategoryTheory.Monoidal.DayConvolution.Module`, through the generic
 `CategoryTheory.Mod.dayStructureMap` API.
+
+As the sphere monoid is commutative and Day convolution is closed, symmetric spectra have internal
+function spectra `Hom_S(X, Y) = (Mod.internalHom X).obj Y`: the equalizer of the two maps
+`Hom(X, Y) ⇉ Hom(S ⊗ X, Y)` of internal homs of symmetric sequences given by the actions on `X`
+and on `Y`, with the sphere acting through `X`. Spectrum maps `X ⊗ K ⟶ Y` out of the Day
+convolution of `X` with a symmetric sequence `K` are the maps of symmetric sequences
+`K ⟶ Hom_S(X, Y)` (`Mod.ihomAdjunction`).
 
 The commutative sphere action also gives a native sphere bimodule via
 `CategoryTheory.Mod.toBimod`: the right action is obtained by swapping the sphere and
@@ -69,6 +77,13 @@ noncomputable example : IsCommMonObj SymmetricSequence.sphere := inferInstance
 `X` with an action `S ⊗ X ⟶ X` for the Day convolution product, satisfying the unit and
 associativity laws. -/
 abbrev SymmetricSpectrum := Mod SymmetricSequence.{0} SymmetricSequence.sphere
+
+/- The function spectrum `Hom_S(X, Y)` of symmetric spectra, through `Mod.internalHom`. -/
+noncomputable example (X Y : SymmetricSpectrum) : SymmetricSpectrum := (Mod.internalHom X).obj Y
+
+/- Spectrum maps `X ⊗ K ⟶ Y` are the maps of symmetric sequences `K ⟶ Hom_S(X, Y)`. -/
+noncomputable example (X : SymmetricSpectrum) : Mod.tensorLeft X ⊣ Mod.ihom X :=
+  Mod.ihomAdjunction X
 
 /- The native bimodule adapter applies to the actual sphere-module carrier. -/
 noncomputable example :
