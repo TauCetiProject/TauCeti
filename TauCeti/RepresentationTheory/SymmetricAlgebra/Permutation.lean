@@ -203,8 +203,9 @@ theorem coe_esymmSymmetricAlgebraInvariantsEquiv_X_eq_sum (hn : Fintype.card σ 
         SymmetricAlgebra.ι K _ ((MonoidAlgebra.basis σ K).dualBasis j) := by
   simp [coe_esymmSymmetricAlgebraInvariantsEquiv_X, esymm]
 
-/-- The elementary symmetric invariant of degree one is the coefficient sum `e₁ = ∑ᵢ xᵢ`, the
-invariant linear form spanning the dual of the trivial summand. -/
+/-- The elementary symmetric invariant of degree one is the coefficient sum `e₁ = ∑ᵢ xᵢ`, which
+spans the invariant linear forms. When `Fintype.card σ` is invertible in `K`, so that `K[σ]` splits
+off the trivial summand spanned by `∑ᵢ i`, it spans the dual of that summand. -/
 theorem coe_esymmSymmetricAlgebraInvariantsEquiv_X_zero (hn : Fintype.card σ = n + 1) :
     (esymmSymmetricAlgebraInvariantsEquiv K σ hn (X 0) :
         SymmetricAlgebra K (Module.Dual K K[σ])) =

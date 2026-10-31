@@ -144,33 +144,31 @@ private noncomputable def esymmStandardAlgHom (hn : Fintype.card σ = n + 1) :
     MvPolynomial (Fin n) K →ₐ[K] (standardRepresentation K σ).dual.symmetricAlgebraInvariants :=
   aeval fun i ↦ restrictInvariants K (esymmSymmetricAlgebraInvariantsEquiv K σ hn (X i.succ))
 
-/-- The algebra map killing `X₀` and shifting the remaining variables down by one. -/
-private noncomputable abbrev dropZero : MvPolynomial (Fin (n + 1)) K →ₐ[K] MvPolynomial (Fin n) K :=
-  aeval (Fin.cases 0 X)
-
-private theorem dropZero_comp_rename_succ :
-    (dropZero K).comp (rename Fin.succ) = AlgHom.id K (MvPolynomial (Fin n) K) :=
-  algHom_ext fun i ↦ by simp
+private theorem killCompl_succ_X_zero :
+    killCompl (Fin.succ_injective n) (X 0 : MvPolynomial (Fin (n + 1)) K) = 0 := by
+  simp [killCompl]
 
 /-- Restricting an invariant of `K[σ]` to the trace-zero hyperplane is the same as killing `e₁`
 and mapping the remaining elementary symmetric invariants to their restrictions. -/
-private theorem esymmStandardAlgHom_comp_dropZero (hn : Fintype.card σ = n + 1) :
-    (esymmStandardAlgHom K hn).comp (dropZero K) =
+private theorem esymmStandardAlgHom_comp_killCompl (hn : Fintype.card σ = n + 1) :
+    (esymmStandardAlgHom K hn).comp (killCompl (Fin.succ_injective n)) =
       (restrictInvariants K).comp (esymmSymmetricAlgebraInvariantsEquiv K σ hn).toAlgHom := by
   refine algHom_ext fun i ↦ ?_
   induction i using Fin.cases with
   | zero =>
     refine Subtype.ext ?_
-    rw [AlgHom.comp_apply, AlgHom.comp_apply, aeval_X, Fin.cases_zero, map_zero,
+    rw [AlgHom.comp_apply, AlgHom.comp_apply, killCompl_succ_X_zero, map_zero,
       AlgEquiv.coe_toAlgHom, coe_restrictInvariants,
       coe_esymmSymmetricAlgebraInvariantsEquiv_X_zero, SymmetricAlgebra.map_apply_ι,
       dualRestrict_augmentationSubrepresentation_sumCoords, map_zero, ZeroMemClass.coe_zero]
-  | succ i => simp [esymmStandardAlgHom]
+  | succ i =>
+    rw [AlgHom.comp_apply, ← rename_X Fin.succ, killCompl_rename_app]
+    simp [esymmStandardAlgHom]
 
 private theorem esymmStandardAlgHom_eq_comp_rename (hn : Fintype.card σ = n + 1) :
     esymmStandardAlgHom K hn = ((restrictInvariants K).comp
       (esymmSymmetricAlgebraInvariantsEquiv K σ hn).toAlgHom).comp (rename Fin.succ) := by
-  rw [← esymmStandardAlgHom_comp_dropZero, AlgHom.comp_assoc, dropZero_comp_rename_succ,
+  rw [← esymmStandardAlgHom_comp_killCompl, AlgHom.comp_assoc, killCompl_comp_rename,
     AlgHom.comp_id]
 
 private theorem surjective_esymmStandardAlgHom (h : IsUnit (Fintype.card σ : K))
@@ -179,8 +177,8 @@ private theorem surjective_esymmStandardAlgHom (h : IsUnit (Fintype.card σ : K)
   rw [← map_symmetricAlgebraInvariants_dualRestrict_augmentation K σ h] at hq
   obtain ⟨p, hp, rfl⟩ := hq
   obtain ⟨P, hP⟩ := (esymmSymmetricAlgebraInvariantsEquiv K σ hn).surjective ⟨p, hp⟩
-  refine ⟨dropZero K P, Subtype.ext ?_⟩
-  rw [← AlgHom.comp_apply, esymmStandardAlgHom_comp_dropZero, AlgHom.comp_apply,
+  refine ⟨killCompl (Fin.succ_injective n) P, Subtype.ext ?_⟩
+  rw [← AlgHom.comp_apply, esymmStandardAlgHom_comp_killCompl, AlgHom.comp_apply,
     AlgEquiv.coe_toAlgHom, hP, coe_restrictInvariants]
   rfl
 
@@ -226,9 +224,8 @@ private theorem injective_esymmStandardAlgHom (hn : Fintype.card σ = n + 1) :
   have hPQ : rename Fin.succ P = Q * X 0 := by
     refine ψ.injective (Subtype.ext ?_)
     rw [map_mul, Subalgebra.coe_mul, hQ, he₁, ha]
-  have := congrArg (dropZero K) hPQ
-  rwa [← AlgHom.comp_apply, dropZero_comp_rename_succ, AlgHom.id_apply, map_mul, aeval_X,
-    Fin.cases_zero, mul_zero] at this
+  have := congrArg (killCompl (Fin.succ_injective n)) hPQ
+  rwa [killCompl_rename_app, map_mul, killCompl_succ_X_zero, mul_zero] at this
 
 /-- **The invariants of the reflection representation of `S_σ` form a polynomial algebra.** Let
 `σ` have `n + 1` elements, with `n + 1` invertible in `K`. The invariant polynomial
