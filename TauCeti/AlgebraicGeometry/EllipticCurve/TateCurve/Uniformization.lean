@@ -190,6 +190,21 @@ theorem tateUniformizationBaseChange_eq_some_iff (q : Kˣ) (hq : ‖(q : K)‖ <
     tateUniformizationBaseChange, ← cast_inj (congrArg (fun W : WeierstrassCurve L ↦
       W.toAffine.Point) e), cast_cast, cast_eq, Point.cast_some e]
 
+/-- Inverting the multiplicative parameter negates its image on the base-changed Tate curve. -/
+@[simp]
+theorem tateUniformizationBaseChange_inv (q : Kˣ) (hq : ‖(q : K)‖ < 1)
+    (x : Lˣ ⧸ Subgroup.zpowers (Units.map (algebraMap K L : K →* L) q)) :
+    tateUniformizationBaseChange L q hq x⁻¹ = -tateUniformizationBaseChange L q hq x := by
+  -- transport along an equality of curves commutes with negation
+  have cast_neg : ∀ {V V' : WeierstrassCurve L} (h : V = V') (P : V.toAffine.Point),
+      cast (congrArg (fun W : WeierstrassCurve L ↦ W.toAffine.Point) h) (-P) =
+        -cast (congrArg (fun W : WeierstrassCurve L ↦ W.toAffine.Point) h) P := by
+    rintro _ _ rfl P
+    rfl
+  rw [tateUniformizationBaseChange, tateUniformization_inv,
+    cast_neg (baseChange_tateCurveAt L q hq).symm]
+  rfl
+
 /-- **The Tate uniformisation is compatible with base change from `K`**: moving the image of a
 class of `Kˣ / q^ℤ` to `L` gives the image of the class it defines in `Lˣ / q^ℤ`. -/
 theorem tateUniformizationBaseChange_tateParameterBaseChange (q : Kˣ) (hq : ‖(q : K)‖ < 1)
