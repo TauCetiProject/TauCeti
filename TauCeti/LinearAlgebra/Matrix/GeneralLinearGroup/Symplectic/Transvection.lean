@@ -183,6 +183,19 @@ theorem symplecticTransvectionHom_apply (v : Fin (m + m) → R) (c : Multiplicat
     symplecticTransvectionHom v c = symplecticTransvection v c.toAdd :=
   (rfl)
 
+/-- Rescaling the vector by a nonzero scalar does not change the group of transvections along it. -/
+theorem range_symplecticTransvectionHom_smul {K : Type u} [Field K] {a : K} (ha : a ≠ 0)
+    (v : Fin (m + m) → K) :
+    (symplecticTransvectionHom (a • v)).range = (symplecticTransvectionHom v).range := by
+  ext g
+  simp only [MonoidHom.mem_range, symplecticTransvectionHom_apply, symplecticTransvection_smul]
+  constructor
+  · rintro ⟨c, rfl⟩
+    exact ⟨Multiplicative.ofAdd (a ^ 2 * c.toAdd), rfl⟩
+  · rintro ⟨c, rfl⟩
+    refine ⟨Multiplicative.ofAdd ((a ^ 2)⁻¹ * c.toAdd), ?_⟩
+    rw [toAdd_ofAdd, ← mul_assoc, mul_inv_cancel₀ (pow_ne_zero 2 ha), one_mul]
+
 /-- **Conjugating a symplectic transvection** by a symplectic matrix `g` moves its vector by `g`:
 `g τ_{v,c} g⁻¹ = τ_{g v,c}`. -/
 theorem mul_symplecticTransvection_mul_inv (g : GLSymplecticFin m R) (v : Fin (m + m) → R)
@@ -230,6 +243,11 @@ private theorem single_inr_vecMul_JFin (i : Fin m) :
   simp only [EmbeddingLike.apply_eq_iff_eq]
   cases b <;> simp [J, one_apply, eq_comm]
 
+/-- A scaled rank-one matrix of two coordinate vectors is a matrix unit. -/
+private theorem smul_vecMulVec_single_single (a b : Fin (m + m)) (c : R) :
+    c • vecMulVec (Pi.single a (1 : R)) (Pi.single b 1) = Matrix.single a b c := by
+  rw [← single_eq_single_vecMulVec_single, smul_single, smul_eq_mul, mul_one]
+
 /-- The positive long-root element `x_{2eᵢ}(c)` is the transvection along the `i`-th upper
 coordinate vector with parameter `-c`. -/
 theorem positiveLongRootTransvectionUnit_eq_symplecticTransvection (i : Fin m) (c : R) :
@@ -238,7 +256,7 @@ theorem positiveLongRootTransvectionUnit_eq_symplecticTransvection (i : Fin m) (
   refine Subtype.ext (Units.ext ?_)
   rw [coe_positiveLongRootTransvectionUnit, coe_transvectionUnit_eq_one_add_single,
     coe_symplecticTransvection, single_inl_vecMul_JFin, vecMulVec_neg, smul_neg, ← neg_smul,
-    neg_neg, ← single_eq_single_vecMulVec_single, smul_single, smul_eq_mul, mul_one]
+    neg_neg, smul_vecMulVec_single_single]
 
 /-- The negative long-root element `x_{-2eᵢ}(c)` is the transvection along the `i`-th lower
 coordinate vector with parameter `c`. -/
@@ -247,8 +265,7 @@ theorem negativeLongRootTransvectionUnit_eq_symplecticTransvection (i : Fin m) (
       symplecticTransvection (Pi.single (finSumFinEquiv (Sum.inr i)) 1) c := by
   refine Subtype.ext (Units.ext ?_)
   rw [coe_negativeLongRootTransvectionUnit, coe_transvectionUnit_eq_one_add_single,
-    coe_symplecticTransvection, single_inr_vecMul_JFin, ← single_eq_single_vecMulVec_single,
-    smul_single, smul_eq_mul, mul_one]
+    coe_symplecticTransvection, single_inr_vecMul_JFin, smul_vecMulVec_single_single]
 
 /-- **Three transvections along a totally isotropic plane.** If `ω(u, w) = 0`, then
 `τ_{u+w,c} τ_{u,-c} τ_{w,-c} = 1 + c (u (wᵀ J) + w (uᵀ J))`. -/
@@ -289,6 +306,16 @@ theorem coe_symplecticTransvection_add_mul_mul {u w : Fin (m + m) → R}
   simp only [Subgroup.coe_mul, Units.val_mul, coe_symplecticTransvection, hsum]
   exact (congrArg (· * (1 + (-c) • Q)) h1).trans h2
 
+/-- Two elementary transvection matrices multiply without a cross term when the column of the
+first differs from the row of the second. -/
+private theorem one_add_single_mul_one_add_single {a b a' b' : Fin (m + m)} (h : b ≠ a')
+    (c c' : R) :
+    (1 + Matrix.single a b c) * (1 + Matrix.single a' b' c') =
+      1 + Matrix.single a b c + Matrix.single a' b' c' := by
+  rw [Matrix.add_mul, Matrix.mul_add, Matrix.mul_add, Matrix.one_mul, Matrix.mul_one,
+    Matrix.one_mul, single_mul_single_of_ne (c := c) a b a' h c', add_zero]
+  abel
+
 /-- The difference short-root element `x_{eᵢ-eⱼ}(c)` is a product of three transvections, along
 the `i`-th upper and `j`-th lower coordinate vectors and their sum. -/
 theorem differenceShortRootUnit_eq_symplecticTransvection {i j : Fin m} (hij : i ≠ j) (c : R) :
@@ -300,11 +327,12 @@ theorem differenceShortRootUnit_eq_symplecticTransvection {i j : Fin m} (hij : i
   refine Subtype.ext (Units.ext ?_)
   rw [coe_differenceShortRootUnit_eq_one_add_single_sub_single,
     coe_symplecticTransvection_add_mul_mul (by
-      rw [dotProduct_mulVec, single_inl_vecMul_JFin, neg_dotProduct, single_dotProduct,
-        Pi.single_eq_of_ne (finSumFinEquiv.injective.ne (Sum.inr_injective.ne hij)), mul_zero,
-        neg_zero]), single_inl_vecMul_JFin, single_inr_vecMul_JFin, vecMulVec_neg,
-    ← single_eq_single_vecMulVec_single, ← single_eq_single_vecMulVec_single, smul_add,
-    smul_neg, smul_single, smul_single, smul_eq_mul, mul_one, sub_eq_add_neg, add_assoc]
+      -- Keep the coordinates as `finSumFinEquiv` images, so that injectivity compares them.
+      rw [dotProduct_mulVec, single_inl_vecMul_JFin]
+      simp [-finSumFinEquiv_apply_right, hij.symm])]
+  simp only [single_inl_vecMul_JFin, single_inr_vecMul_JFin, vecMulVec_neg, smul_add, smul_neg,
+    smul_vecMulVec_single_single]
+  abel
 
 /-- The positive-sum short-root element `x_{eᵢ+eⱼ}(c)` is a product of three transvections, along
 the `i`-th and `j`-th upper coordinate vectors and their sum. -/
@@ -318,20 +346,15 @@ theorem positiveSumShortRootUnit_eq_symplecticTransvection {i j : Fin m} (hij : 
   -- The isotropic-plane identity with parameter `-c`, whose doubly negated parameters simplify.
   have hprod := coe_symplecticTransvection_add_mul_mul (R := R) (m := m)
     (u := Pi.single (finSumFinEquiv (Sum.inl i)) 1) (w := Pi.single (finSumFinEquiv (Sum.inl j)) 1)
-    (by rw [dotProduct_mulVec, single_inl_vecMul_JFin, neg_dotProduct, single_dotProduct,
-      Pi.single_eq_of_ne (finSumFinEquiv_inr_ne_inl i j), mul_zero, neg_zero]) (-c)
+    (by
+      rw [dotProduct_mulVec, single_inl_vecMul_JFin]
+      simp [-finSumFinEquiv_apply_left, -finSumFinEquiv_apply_right]) (-c)
   rw [neg_neg] at hprod
-  have hzero : (Matrix.single (finSumFinEquiv (Sum.inl i)) (finSumFinEquiv (Sum.inr j)) c *
-      Matrix.single (finSumFinEquiv (Sum.inl j)) (finSumFinEquiv (Sum.inr i)) c :
-        Matrix (Fin (m + m)) (Fin (m + m)) R) = 0 := by
-    apply single_mul_single_of_ne
-    exact (finSumFinEquiv_inl_ne_inr j j).symm
   rw [coe_positiveSumShortRootUnit, Units.val_mul, coe_transvectionUnit_eq_one_add_single,
-    coe_transvectionUnit_eq_one_add_single, Matrix.add_mul, Matrix.mul_add, Matrix.mul_add,
-    Matrix.one_mul, Matrix.mul_one, Matrix.one_mul, hzero, add_zero, hprod,
-    single_inl_vecMul_JFin, single_inl_vecMul_JFin, vecMulVec_neg, vecMulVec_neg,
-    ← single_eq_single_vecMulVec_single, ← single_eq_single_vecMulVec_single, ← neg_add,
-    smul_neg, ← neg_smul, neg_neg, smul_add, smul_single, smul_single, smul_eq_mul, mul_one]
+    coe_transvectionUnit_eq_one_add_single,
+    one_add_single_mul_one_add_single (finSumFinEquiv_inl_ne_inr j j).symm, hprod]
+  simp only [single_inl_vecMul_JFin, vecMulVec_neg, smul_add, smul_neg, neg_smul, neg_neg,
+    smul_vecMulVec_single_single]
   abel
 
 /-- The negative-sum short-root element `x_{-eᵢ-eⱼ}(c)` is a product of three transvections, along
@@ -343,20 +366,13 @@ theorem negativeSumShortRootUnit_eq_symplecticTransvection {i j : Fin m} (hij : 
         symplecticTransvection (Pi.single (finSumFinEquiv (Sum.inr i)) 1) (-c) *
         symplecticTransvection (Pi.single (finSumFinEquiv (Sum.inr j)) 1) (-c) := by
   refine Subtype.ext (Units.ext ?_)
-  have hzero : (Matrix.single (finSumFinEquiv (Sum.inr i)) (finSumFinEquiv (Sum.inl j)) c *
-      Matrix.single (finSumFinEquiv (Sum.inr j)) (finSumFinEquiv (Sum.inl i)) c :
-        Matrix (Fin (m + m)) (Fin (m + m)) R) = 0 := by
-    apply single_mul_single_of_ne
-    exact (finSumFinEquiv_inr_ne_inl j j).symm
   rw [coe_negativeSumShortRootUnit, Units.val_mul, coe_transvectionUnit_eq_one_add_single,
-    coe_transvectionUnit_eq_one_add_single, Matrix.add_mul, Matrix.mul_add, Matrix.mul_add,
-    Matrix.one_mul, Matrix.mul_one, Matrix.one_mul, hzero, add_zero,
+    coe_transvectionUnit_eq_one_add_single,
+    one_add_single_mul_one_add_single (finSumFinEquiv_inr_ne_inl j j).symm,
     coe_symplecticTransvection_add_mul_mul (by
-      rw [dotProduct_mulVec, single_inr_vecMul_JFin, single_dotProduct,
-        Pi.single_eq_of_ne (finSumFinEquiv_inl_ne_inr i j), mul_zero]),
-    single_inr_vecMul_JFin, single_inr_vecMul_JFin, ← single_eq_single_vecMulVec_single,
-    ← single_eq_single_vecMulVec_single, smul_add, smul_single, smul_single, smul_eq_mul,
-    mul_one]
+      rw [dotProduct_mulVec, single_inr_vecMul_JFin]
+      simp [-finSumFinEquiv_apply_left, -finSumFinEquiv_apply_right])]
+  simp only [single_inr_vecMul_JFin, smul_add, smul_vecMulVec_single_single]
   abel
 
 /-- A subgroup containing every symplectic transvection contains every standard root element. -/

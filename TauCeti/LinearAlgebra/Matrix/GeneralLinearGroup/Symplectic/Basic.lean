@@ -296,12 +296,14 @@ theorem JFin_mul_self : JFin m R * JFin m R = -1 := by
 
 /-- The transported alternating form is antisymmetric, which is Mathlib's `Matrix.J_transpose` read
 through the reindexing. -/
+@[simp]
 theorem JFin_transpose : (JFin m R)ᵀ = -JFin m R := by
   rw [JFin, Matrix.transpose_submatrix, Matrix.J_transpose, Matrix.submatrix_neg, Pi.neg_apply,
     Pi.neg_apply]
 
 variable {m R} in
 /-- The transported alternating form vanishes on the diagonal: `vᵀ J v = 0`. -/
+@[simp]
 theorem dotProduct_JFin_mulVec_self (v : Fin (m + m) → R) : v ⬝ᵥ (JFin m R *ᵥ v) = 0 := by
   -- Read the form in `Fin m ⊕ Fin m` coordinates, where `J` is the block matrix `[0, -1; 1, 0]`.
   have hv : v = (v ∘ finSumFinEquiv) ∘ finSumFinEquiv.symm := by

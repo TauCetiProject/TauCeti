@@ -60,18 +60,6 @@ universe u
 
 variable {K : Type u} [Field K] {m : ℕ}
 
-/-- Rescaling the vector by a nonzero scalar does not change the group of transvections along it. -/
-theorem range_symplecticTransvectionHom_smul {a : K} (ha : a ≠ 0) (v : Fin (m + m) → K) :
-    (symplecticTransvectionHom (a • v)).range = (symplecticTransvectionHom v).range := by
-  ext g
-  simp only [MonoidHom.mem_range, symplecticTransvectionHom_apply, symplecticTransvection_smul]
-  constructor
-  · rintro ⟨c, rfl⟩
-    exact ⟨Multiplicative.ofAdd (a ^ 2 * c.toAdd), rfl⟩
-  · rintro ⟨c, rfl⟩
-    refine ⟨Multiplicative.ofAdd ((a ^ 2)⁻¹ * c.toAdd), ?_⟩
-    rw [toAdd_ofAdd, ← mul_assoc, mul_inv_cancel₀ (pow_ne_zero 2 ha), one_mul]
-
 /-- **The symplectic transvections along a point `p` of projective space**: the group of
 transvections `τ_{v,c}` along a nonzero vector `v` on the line `p`. It does not depend on the
 choice of `v` (`TauCeti.GLSymplecticFin.transvectionSubgroup_mk`). -/
