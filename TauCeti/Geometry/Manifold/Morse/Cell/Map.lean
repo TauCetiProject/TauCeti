@@ -19,9 +19,11 @@ Let `ψ` be a chart of `M` with values in `ℝⁿ` in which a function `f` has t
 `f = c - Σ_{j < k} yⱼ² + Σ_{j ≥ k} yⱼ²`,
 
 and suppose the target of `ψ` contains the closed ball of radius `√ε` about `0`, for some
-`0 < ε`. Passing the level `c` attaches the cell `{‖y‖² ≤ ε, yⱼ = 0 for j ≥ k}` of the negative
-coordinates, read in `M` through `ψ` (Milnor, *Morse Theory*, Theorem 3.2). This file
-parametrizes that cell by the unit disc `D^k ⊆ ℝᵏ`:
+`0 < ε`. When the centre of `ψ` is the only critical point of `f` in the compact region
+`f⁻¹[c - ε, c + ε]` and `ε` is small, Milnor's *Morse Theory*, Theorem 3.2, shows that passing
+the level `c` attaches, up to homotopy, the cell `{‖y‖² ≤ ε, yⱼ = 0 for j ≥ k}` of the negative
+coordinates, read in `M` through `ψ`. The constructions here use only the chart hypotheses. This
+file parametrizes that cell by the unit disc `D^k ⊆ ℝᵏ`:
 
 `χ(w) = ψ⁻¹(√ε • (w, 0))`,
 
@@ -40,23 +42,24 @@ the map induced on the pushout by the inclusion of `M_{c-ε}` and the characteri
 
 ## Main definitions
 
-* `TauCeti.morseCellMap`: the parametrization `w ↦ ψ⁻¹(√ε • (w, 0))` of the cell of a normal-form
-  chart.
-* `TauCeti.morseCharacteristicMap`: the characteristic map `D^k ⟶ M_{c+ε}` of the cell.
-* `TauCeti.morseAttachingMap`: the attaching map `∂D^k ⟶ M_{c-ε}` of the cell.
+* `OpenPartialHomeomorph.morseCellMap`: the parametrization `w ↦ ψ⁻¹(√ε • (w, 0))` of the cell
+  of a normal-form chart.
+* `OpenPartialHomeomorph.morseCharacteristicMap`: the characteristic map `D^k ⟶ M_{c+ε}` of the
+  cell.
+* `OpenPartialHomeomorph.morseAttachingMap`: the attaching map `∂D^k ⟶ M_{c-ε}` of the cell.
 
 ## Main results
 
-* `TauCeti.morseCellMap_image_closedBall`: the image of the unit disc is the cell
+* `OpenPartialHomeomorph.morseCellMap_image_closedBall`: the image of the unit disc is the cell
   `{‖ψ x‖² ≤ ε, (ψ x)ⱼ = 0 for j ≥ k}`.
-* `TauCeti.closedBall_inter_preimage_morseCellMap_sublevel`: a point of the disc lands in
-  `M_{c-ε}` exactly when it lies on the boundary sphere.
-* `TauCeti.preimage_morseCharacteristicMap_sublevel`: the characteristic map is a map of pairs
-  `(D^k, ∂D^k) → (M_{c+ε}, M_{c-ε})`.
-* `TauCeti.isClosedEmbedding_morseCharacteristicMap`: the characteristic map is a closed
-  embedding.
-* `TauCeti.morseAttachingMap_comp_sublevelInclusion`: the attaching map is the restriction of the
-  characteristic map to the boundary sphere.
+* `OpenPartialHomeomorph.closedBall_inter_preimage_morseCellMap_sublevel`: a point of the disc
+  lands in `M_{c-ε}` exactly when it lies on the boundary sphere.
+* `OpenPartialHomeomorph.preimage_morseCharacteristicMap_sublevel`: the characteristic map is a
+  map of pairs `(D^k, ∂D^k) → (M_{c+ε}, M_{c-ε})`.
+* `OpenPartialHomeomorph.isClosedEmbedding_morseCharacteristicMap`: the characteristic map is a
+  closed embedding.
+* `OpenPartialHomeomorph.morseAttachingMap_comp_sublevelInclusion`: the attaching map is the
+  restriction of the characteristic map to the boundary sphere.
 
 ## References
 
@@ -74,7 +77,9 @@ open LinearIsometry (piLpExtendByZero piLpExtendByZero_castLEEmb_apply
 
 universe u
 
-namespace TauCeti
+namespace OpenPartialHomeomorph
+
+open TauCeti
 
 variable {M : Type u} [TopologicalSpace M] {n k : ℕ}
   {ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} {f : M → ℝ} {c ε : ℝ}
@@ -82,13 +87,13 @@ variable {M : Type u} [TopologicalSpace M] {n k : ℕ}
 
 /-- The parametrization `w ↦ ψ⁻¹(√ε • (w, 0))` of the cell `{‖y‖² ≤ ε, yⱼ = 0 for j ≥ k}` of a
 chart `ψ`, where `(w, 0)` extends `w ∈ ℝᵏ` by zero onto the first `k` coordinates of `ℝⁿ`. On the
-unit disc it is the characteristic map of the cell; see `TauCeti.morseCellMap_image_closedBall`.
--/
+unit disc it is the characteristic map of the cell; see
+`OpenPartialHomeomorph.morseCellMap_image_closedBall`. -/
 def morseCellMap (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (hk : k ≤ n) (ε : ℝ)
     (w : EuclideanSpace ℝ (Fin k)) : M :=
   ψ.symm (√ε • piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk) w)
 
-/-- `TauCeti.morseCellMap ψ hk ε w` is `ψ⁻¹(√ε • (w, 0))`. -/
+/-- `OpenPartialHomeomorph.morseCellMap ψ hk ε w` is `ψ⁻¹(√ε • (w, 0))`. -/
 theorem morseCellMap_def (hk : k ≤ n) (w : EuclideanSpace ℝ (Fin k)) :
     morseCellMap ψ hk ε w = ψ.symm (√ε • piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk) w) :=
   (rfl)
@@ -304,4 +309,4 @@ theorem range_morseCharacteristicMap (hk : k ≤ n) (hε : 0 < ε) :
   · obtain ⟨w, hw, hwx⟩ := hx
     exact ⟨ULift.up ⟨w, hw⟩, Subtype.ext hwx⟩
 
-end TauCeti
+end OpenPartialHomeomorph
