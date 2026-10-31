@@ -169,6 +169,48 @@ private theorem prod_pow_mul_sub_prime {p : ℕ} (hp : p.Prime) :
     ∏ q ∈ p.primeFactors, (q : ℤ) ^ (p.factorization q - 1) * (q - c q) = p - c p := by
   simp [hp.primeFactors, hp.factorization_self]
 
+/-! ### The character at `2` and `3` -/
+
+variable {D : ℤ}
+
+/-- The character of a fundamental discriminant takes values at most `1`. -/
+private theorem fundamentalDiscriminantChar_le_one (hD : Int.IsFundamentalDiscr D)
+    (x : ZMod D.natAbs) : fundamentalDiscriminantChar D hD x ≤ 1 := by
+  rcases fundamentalDiscriminantChar_isQuadratic hD x with h | h | h <;> simp [h]
+
+/-- `χ_D(2) = 1` iff `D ≡ 1 (mod 8)`, that is, iff `2` splits. -/
+private theorem fundamentalDiscriminantChar_two_eq_one_iff (hD : Int.IsFundamentalDiscr D) :
+    fundamentalDiscriminantChar D hD (2 : ℕ) = 1 ↔ D % 8 = 1 := by
+  have := hD.emod_four_eq_zero_or_one
+  rw [Nat.cast_ofNat, fundamentalDiscriminantChar_two, ZMod.χ₈_int_eq_if_mod_eight]
+  split_ifs <;> simp <;> omega
+
+/-- For `D = -4`, `χ_D(2) = 0` and `χ_D(3) = -1`. -/
+private theorem fundamentalDiscriminantChar_two_three_of_eq_neg_four
+    (hD : Int.IsFundamentalDiscr D) (h : D = -4) :
+    fundamentalDiscriminantChar D hD (2 : ℕ) = 0 ∧
+      fundamentalDiscriminantChar D hD (3 : ℕ) = -1 := by
+  subst h
+  refine ⟨?_, ?_⟩
+  · rw [Nat.cast_ofNat, fundamentalDiscriminantChar_two, ZMod.χ₈_int_eq_if_mod_eight]
+    norm_num
+  · rw [← Int.cast_natCast, fundamentalDiscriminantChar_natCast_eq_legendreSym _ (by decide),
+      legendreSym.mod]
+    norm_num [legendreSym.at_two, ZMod.χ₈_nat_eq_if_mod_eight]
+
+/-- For `D = -3`, `χ_D(2) = -1` and `χ_D(3) = 0`. -/
+private theorem fundamentalDiscriminantChar_two_three_of_eq_neg_three
+    (hD : Int.IsFundamentalDiscr D) (h : D = -3) :
+    fundamentalDiscriminantChar D hD (2 : ℕ) = -1 ∧
+      fundamentalDiscriminantChar D hD (3 : ℕ) = 0 := by
+  subst h
+  refine ⟨?_, ?_⟩
+  · rw [Nat.cast_ofNat, fundamentalDiscriminantChar_two, ZMod.χ₈_int_eq_if_mod_eight]
+    norm_num
+  · rw [← Int.cast_natCast, fundamentalDiscriminantChar_natCast_eq_legendreSym _ (by decide),
+      legendreSym.eq_zero_iff]
+    decide
+
 /-! ### Class number one -/
 
 variable {K : Type*} [Field K] [NumberField K]
@@ -183,19 +225,9 @@ theorem card_pic_intAddMulOrder_eq_one_iff [IsTotallyComplex K] (hK : finrank �
     Nat.card (Pic (intAddMulOrder K f)) = 1 ↔ Nat.card (ClassGroup (𝓞 K)) = 1 ∧
       (f = 1 ∨ (f = 2 ∧ NumberField.discr K % 8 = 1) ∨
         (NumberField.discr K = -3 ∧ (f = 2 ∨ f = 3)) ∨ (NumberField.discr K = -4 ∧ f = 2)) := by
-  set c : ℕ → ℤ := fun p ↦
-    fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p
-  have hc : ∀ p, c p ≤ 1 := fun p ↦ by
-    rcases fundamentalDiscriminantChar_isQuadratic (isFundamentalDiscr_discr hK) (p : ZMod _)
-      with h | h | h <;> simp [c, h]
-  -- The values `χ_D(2) = χ₈(D)` and `χ_D(3) = (D / 3)`.
-  have hc2 : c 2 = if NumberField.discr K % 2 = 0 then 0
-      else if NumberField.discr K % 8 = 1 ∨ NumberField.discr K % 8 = 7 then 1 else -1 := by
-    simp only [c, Nat.cast_ofNat, fundamentalDiscriminantChar_two, ZMod.χ₈_int_eq_if_mod_eight]
-  have hc3 : c 3 = legendreSym 3 (NumberField.discr K) := by
-    simp only [c, ← Int.cast_natCast (R := ZMod _),
-      fundamentalDiscriminantChar_natCast_eq_legendreSym _ (by decide : 3 ≠ 2)]
-  have hD4 := (isFundamentalDiscr_discr hK).emod_four_eq_zero_or_one
+  have hD := isFundamentalDiscr_discr hK
+  set c : ℕ → ℤ := fun p ↦ fundamentalDiscriminantChar (NumberField.discr K) hD p
+  have hc : ∀ p, c p ≤ 1 := fun p ↦ fundamentalDiscriminantChar_le_one hD p
   have key : (Nat.card (Pic (intAddMulOrder K f)) : ℤ) *
       (Units.map ((intAddMulOrder K f).toRingOfIntegers.val :
         (intAddMulOrder K f).toRingOfIntegers →* 𝓞 K)).range.index =
@@ -217,32 +249,28 @@ theorem card_pic_intAddMulOrder_eq_one_iff [IsTotallyComplex K] (hK : finrank �
     -- The local factors multiply to the unit index `2`, `3` or `1`.
     simp only [hf1, ↓reduceIte] at key
     split_ifs at key with h4 h3 <;> push_cast at key
-    · refine Or.inr (Or.inr (Or.inr ⟨h4, eq_two_of_prod_eq_two hc ?_ ?_ hf key.symm⟩))
-      · rw [hc2, h4]; norm_num
-      · rw [hc3, h4, legendreSym.mod]
-        norm_num [legendreSym.at_two, ZMod.χ₈_nat_eq_if_mod_eight]
-    · refine Or.inr (Or.inr (Or.inl ⟨h3, eq_two_or_eq_three_of_prod_eq_three hc ?_ ?_ hf
-        key.symm⟩))
-      · rw [hc2, h3]; norm_num
-      · rw [hc3, h3, legendreSym.eq_zero_iff]
-        decide
+    · obtain ⟨h20, h3⟩ := fundamentalDiscriminantChar_two_three_of_eq_neg_four hD h4
+      exact Or.inr (Or.inr (Or.inr ⟨h4, eq_two_of_prod_eq_two hc h20 h3 hf key.symm⟩))
+    · obtain ⟨h2, h30⟩ := fundamentalDiscriminantChar_two_three_of_eq_neg_three hD h3
+      exact Or.inr (Or.inr (Or.inl ⟨h3,
+        eq_two_or_eq_three_of_prod_eq_three hc h2 h30 hf key.symm⟩))
     · obtain ⟨rfl, h21⟩ := eq_two_of_prod_eq_one hc hf key.symm
-      refine Or.inr (Or.inl ⟨rfl, ?_⟩)
-      rw [hc2] at h21
-      split_ifs at h21 <;> omega
+      exact Or.inr (Or.inl ⟨rfl, (fundamentalDiscriminantChar_two_eq_one_iff hD).mp h21⟩)
   · rintro ⟨hh, hcase⟩
     rw [hh, Nat.cast_one, one_mul] at key
     -- In each case the product of the local factors equals the unit index.
     suffices (Nat.card (Pic (intAddMulOrder K f)) : ℤ) = 1 by exact_mod_cast this
     rcases hcase with rfl | ⟨rfl, h8⟩ | ⟨h3, rfl | rfl⟩ | ⟨h4, rfl⟩
     · simpa using key
-    · have h21 : c 2 = 1 := by rw [hc2, ite_eq_right (by omega), ite_eq_left (Or.inl h8)]
+    · have h21 : c 2 = 1 := (fundamentalDiscriminantChar_two_eq_one_iff hD).mpr h8
       have h4 : NumberField.discr K ≠ -4 := by omega
       have h3 : NumberField.discr K ≠ -3 := by omega
       simpa [prod_pow_mul_sub_prime Nat.prime_two, h21, h4, h3] using key
-    · simpa [prod_pow_mul_sub_prime Nat.prime_two, hc2, h3] using key
-    · have h30 : legendreSym 3 (-3) = 0 := (legendreSym.eq_zero_iff _ _).mpr (by decide)
-      simpa [prod_pow_mul_sub_prime Nat.prime_three, hc3, h3, h30] using key
-    · simpa [prod_pow_mul_sub_prime Nat.prime_two, hc2, h4] using key
+    · have h2 : c 2 = -1 := (fundamentalDiscriminantChar_two_three_of_eq_neg_three hD h3).1
+      simpa [prod_pow_mul_sub_prime Nat.prime_two, h2, h3] using key
+    · have h30 : c 3 = 0 := (fundamentalDiscriminantChar_two_three_of_eq_neg_three hD h3).2
+      simpa [prod_pow_mul_sub_prime Nat.prime_three, h30, h3] using key
+    · have h20 : c 2 = 0 := (fundamentalDiscriminantChar_two_three_of_eq_neg_four hD h4).1
+      simpa [prod_pow_mul_sub_prime Nat.prime_two, h20, h4] using key
 
 end TauCeti.GlobalNumberFields.NumberFieldOrder
