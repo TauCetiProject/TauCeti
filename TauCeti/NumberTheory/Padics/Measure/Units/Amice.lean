@@ -36,30 +36,6 @@ namespace AbstractMeasure
 
 variable {p : ℕ} [Fact p.Prime]
 
-/-- Integral measures on the unit group are the integral series killed by psi.
-The map is the Amice transform of inclusion along `Units.val`. -/
-def unitsMeasureAmiceEquiv : D(ℤ_[p]ˣ, ℤ_[p]) ≃ₗ[ℤ_[p]] LinearMap.ker (TauCeti.psiSeries p) :=
-  unitsMeasureEquivKerPsi.trans <| amiceTransformEquiv.ofSubmodules _ _ (by
-    rw [Submodule.map_equiv_eq_comap_symm]
-    ext F
-    simp only [Submodule.mem_comap, LinearMap.mem_ker]
-    rw [TauCeti.psiSeries_apply, map_eq_zero_iff _ injective_amiceTransform]
-    simp only [LinearEquiv.coe_coe])
-
-/-- The underlying series is the included measure's Amice transform, with no scalar
-factor or derivative. -/
-@[simp]
-theorem unitsMeasureAmiceEquiv_apply (ν : D(ℤ_[p]ˣ, ℤ_[p])) :
-    (unitsMeasureAmiceEquiv ν : ℤ_[p]⟦X⟧) =
-      amiceTransform (map ⟨Units.val, Units.continuous_val⟩ ν) := by
-  simp [unitsMeasureAmiceEquiv]
-
-/-- The inverse restricts the inverse Amice transform to the intrinsic unit group. -/
-@[simp]
-theorem unitsMeasureAmiceEquiv_symm_apply (F : LinearMap.ker (TauCeti.psiSeries p)) :
-    unitsMeasureAmiceEquiv.symm F = restrictUnits (amiceTransformEquiv.symm (F : ℤ_[p]⟦X⟧)) := by
-  simp [unitsMeasureAmiceEquiv]
-
 /-- The unit-measure Amice equivalence is a homeomorphism for the weak measure topology
 and the coefficientwise p-adic topology on the series kernel. -/
 theorem isHomeomorph_unitsMeasureAmiceEquiv_weak :

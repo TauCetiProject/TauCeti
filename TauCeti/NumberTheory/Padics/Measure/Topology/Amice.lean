@@ -97,19 +97,6 @@ theorem isHomeomorph_amiceTransformEquiv_weak :
   exact ⟨continuous_amiceTransformEquiv_weak,
     continuous_induced_rng.mpr (continuous_pi continuous_amiceTransformEquiv_symm_apply)⟩
 
-/-- Psi on measures is continuous for the weak topologies. This statement does not
-require complete or ultrametric coefficients. -/
-theorem continuous_psiMeasure_weak {R : Type*} [NormedCommRing R] :
-    @Continuous _ _ (WeakTopology (X := ℤ_[p]) (R := R) (E := R))
-      (WeakTopology (X := ℤ_[p]) (R := R) (E := R)) (psiMeasure (p := p) (R := R)) := by
-  let : TopologicalSpace D(ℤ_[p], R) := WeakTopology
-  have heval : Continuous (fun μ : D(ℤ_[p], R) ↦ fun f : C(ℤ_[p], R) ↦ μ f) :=
-    continuous_induced_dom
-  refine continuous_induced_rng.mpr <| continuous_pi fun f ↦ ?_
-  simpa only [psiMeasure_apply, Function.comp_def] using
-    (continuous_apply (pMultiplesIndicator (p := p) (R := R) *
-      f.comp (PadicInt.divideByP p))).comp heval
-
 end AbstractMeasure
 
 namespace TauCeti

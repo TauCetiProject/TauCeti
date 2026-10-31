@@ -17,8 +17,9 @@ Restriction to the clopen unit locus, transported along `PadicInt.unitsHomeomorp
 map. In the other order their composite is the ambient unit projector `unitRestriction`.
 Consequently the measures on the unit group identify with the kernel of `psiMeasure` on ambient
 measures. This lets intrinsic unit-group tests and ambient Amice calculations describe the same
-measure. The comparison is linear: additive convolution on `ℤ_p` and multiplicative convolution
-on `ℤ_pˣ` are different operations.
+measure. For integral coefficients, `unitsMeasureAmiceEquiv` identifies these measures with the
+kernel of series psi via the Amice transform. Both comparisons are linear: additive convolution on
+`ℤ_p` and multiplicative convolution on `ℤ_pˣ` are different operations.
 
 The construction uses the existing clopen restriction and pushforward APIs. Coefficients may be
 any normed commutative ring, including the zero ring; no completeness or ultrametricity is needed.
@@ -31,7 +32,7 @@ any normed commutative ring, including the zero ring; no completeness or ultrame
 
 public noncomputable section
 
-open ContinuousMap
+open ContinuousMap PowerSeries
 
 namespace AbstractMeasure
 
@@ -131,6 +132,30 @@ theorem unitsMeasureEquivKerPsi_symm_apply
   have h := congrArg (restrictUnits (R := R))
     (congrArg Subtype.val (unitsMeasureEquivKerPsi.apply_symm_apply μ))
   simpa only [unitsMeasureEquivKerPsi_apply, restrictUnits_map_unitsVal] using h
+
+/-- Integral measures on the unit group are the integral series killed by psi.
+The map is the Amice transform of inclusion along `Units.val`. -/
+def unitsMeasureAmiceEquiv : D(ℤ_[p]ˣ, ℤ_[p]) ≃ₗ[ℤ_[p]] LinearMap.ker (TauCeti.psiSeries p) :=
+  unitsMeasureEquivKerPsi.trans <| amiceTransformEquiv.ofSubmodules _ _ (by
+    rw [Submodule.map_equiv_eq_comap_symm]
+    ext F
+    simp only [Submodule.mem_comap, LinearMap.mem_ker]
+    rw [TauCeti.psiSeries_apply, map_eq_zero_iff _ injective_amiceTransform]
+    simp only [LinearEquiv.coe_coe])
+
+/-- The underlying series is the included measure's Amice transform, with no scalar
+factor or derivative. -/
+@[simp]
+theorem unitsMeasureAmiceEquiv_apply (ν : D(ℤ_[p]ˣ, ℤ_[p])) :
+    (unitsMeasureAmiceEquiv ν : ℤ_[p]⟦X⟧) =
+      amiceTransform (map ⟨Units.val, Units.continuous_val⟩ ν) := by
+  simp [unitsMeasureAmiceEquiv]
+
+/-- The inverse restricts the inverse Amice transform to the intrinsic unit group. -/
+@[simp]
+theorem unitsMeasureAmiceEquiv_symm_apply (F : LinearMap.ker (TauCeti.psiSeries p)) :
+    unitsMeasureAmiceEquiv.symm F = restrictUnits (amiceTransformEquiv.symm (F : ℤ_[p]⟦X⟧)) := by
+  simp [unitsMeasureAmiceEquiv]
 
 -- Restriction discards the nonunit atom even though its location is nonzero.
 example : restrictUnits (dirac ℤ (1 : ℤ_[3]) + 2 • dirac ℤ (3 : ℤ_[3])) =
