@@ -62,6 +62,8 @@ partial zeta function has a simple pole at `s = 1` with the common residue
   case, in which it is `ζ_K(s)`.
 * `TauCeti.LFunctions.finiteEulerCorrection_eq_one_iff`: at a real `s > 0` the correction is `1`
   exactly when the finite part of `𝔪` is trivial.
+* `TauCeti.LFunctions.sum_LSeries_rayClassCoeff_eq_dedekindZeta_iff`: at a real `s > 1` the sum
+  over the ray classes is `ζ_K(s)` exactly when the finite part of `𝔪` is trivial.
 * `TauCeti.LFunctions.exists_differentiableOn_eq_LSeries_rayClassCoeff_sub`:
   `ζ(s, c) - κ_𝔪 / (s - 1)` extends holomorphically from `Re s > 1` to
   `Re s > 1 - 1 / [K : ℚ]`.
@@ -130,6 +132,14 @@ theorem rayClassCoeff_idealClass {𝔪 : Modulus K} (J : integralIdealsPrimeTo �
     rayClassCoeff 𝔪 (idealClass 𝔪 J) ⟨J, hJ⟩ = 1 := by
   rw [rayClassCoeff_apply_of_isCoprimeTo _ (Modulus.mem_integralIdealsPrimeTo.mp J.2),
     ite_eq_left rfl]
+
+/-- The class indicator vanishes at an ideal prime to the modulus lying in another class. -/
+@[simp]
+theorem rayClassCoeff_apply_of_idealClass_ne {𝔪 : Modulus K} {c : RayClassGroup 𝔪}
+    {I : (Ideal (𝓞 K))⁰} (hI : (I : Ideal (𝓞 K)) ∈ integralIdealsPrimeTo 𝔪)
+    (hc : idealClass 𝔪 ⟨I, hI⟩ ≠ c) : rayClassCoeff 𝔪 c I = 0 := by
+  rw [rayClassCoeff_apply_of_isCoprimeTo c (Modulus.mem_integralIdealsPrimeTo.mp hI),
+    ite_eq_right hc]
 
 /-- The class indicator takes values in `{0, 1}`, so it is bounded by `1`. -/
 theorem norm_rayClassCoeff_le_one (𝔪 : Modulus K) (c : RayClassGroup 𝔪) (I : (Ideal (𝓞 K))⁰) :
@@ -273,6 +283,17 @@ theorem sum_LSeries_rayClassCoeff_one [Fintype (RayClassGroup (Modulus.one K))] 
     ∑ c : RayClassGroup (Modulus.one K), LSeries (normCoeff K (rayClassCoeff (Modulus.one K) c)) s =
       dedekindZeta K s := by
   rw [sum_LSeries_rayClassCoeff _ hs, finiteEulerCorrection_one, mul_one]
+
+/-- **The sum over the ray classes is `ζ_K` only for a trivial finite part.** At a real `s > 1`
+the Dirichlet series of the ray classes of `𝔪` sum to `ζ_K(s)` exactly when `𝔪.support` is
+empty; one prime dividing the finite part of `𝔪` already breaks the equality. -/
+theorem sum_LSeries_rayClassCoeff_eq_dedekindZeta_iff (𝔪 : Modulus K)
+    [Fintype (RayClassGroup 𝔪)] {s : ℝ} (hs : 1 < s) :
+    ∑ c : RayClassGroup 𝔪, LSeries (normCoeff K (rayClassCoeff 𝔪 c)) s = dedekindZeta K s ↔
+      𝔪.support = ∅ := by
+  have hs' : 1 < (s : ℂ).re := by rwa [Complex.ofReal_re]
+  rw [sum_LSeries_rayClassCoeff 𝔪 hs', mul_eq_left₀ (dedekindZeta_ne_zero_of_one_lt_re hs'),
+    finiteEulerCorrection_eq_one_iff 𝔪 (zero_lt_one.trans hs)]
 
 /-- **The partial sums of the coefficients of a ray class are the ray class ideal counts**: the
 norm coefficients of `rayClassCoeff 𝔪 c` up to `n` add up to the number of ideals of class `c`
