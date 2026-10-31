@@ -96,11 +96,11 @@ private theorem torsionBracket_of_shift {j : ℤ} (h : D.ExactAt (j + 1 + 1))
       (by simp)).1 h
     rwa [finrank_eq_card_basis b₁, finrank_eq_card_basis b₀, finrank_eq_card_basis (d _),
       Fintype.card_fin, Fintype.card_fin, Fintype.card_fin, eq_comm] at this
+  -- The basis of `C.X (j + 1)` is the transport along `e` of the basis of `D.X (j + 1 + 1)`.
+  have hc : c (j + 1) = ((d (j + 1 + 1)).map (e (j + 1))).reindex (finCongr (hm (j + 1))) :=
+    Basis.eq_of_apply_eq fun k ↦ by simp [hd]
   rw [torsionBracket_eq_det_append c h' _ _ _ hs' ((hm (j + 1)).symm.trans hn),
-    torsionBracket_eq_det_append d h _ _ _ hs hn,
-    show c (j + 1) = ((d (j + 1 + 1)).map (e (j + 1))).reindex (finCongr (hm (j + 1))) from
-      Basis.eq_of_apply_eq fun k ↦ by simp [hd],
-    Basis.det_reindex, Basis.det_map]
+    torsionBracket_eq_det_append d h _ _ _ hs hn, hc, Basis.det_reindex, Basis.det_map]
   have hneg := ((d (j + 1 + 1)).det.domDomCongr (finCongr hn)).map_append_neg
     (fun k ↦ (b₁ k : D.X (j + 1 + 1))) s
   have hcast : (finCongr hn : Fin (m (j + 1 + 1)) → Fin (p + q)) = Fin.cast hn := rfl
@@ -158,9 +158,8 @@ theorem reidemeisterTorsion_eq_mul_inv_of_shift :
       finrank F (LinearMap.range (C.d (j + 1) j).hom) :=
     (boundaryEquivOfShift e he j).finrank_eq
   have hε : Function.HasFiniteMulSupport fun j : ℤ ↦
-      (-1 : F) ^ finrank F (LinearMap.range (C.d (j + 1) j).hom) :=
-    hn.subset <| Function.mulSupport_subset_iff'.2 fun j hj ↦ by
-      simp [finrank_range_d_eq_zero C c (j := j) (by simpa using hj)]
+      (-1 : F) ^ finrank F (LinearMap.range (C.d (j + 1) j).hom) := by
+    simpa using hasFiniteMulSupport_neg_one_pow_finrank_mul C c hn fun _ ↦ 1
   have hτ : Function.HasFiniteMulSupport fun j : ℤ ↦
       (torsionBracket c (hC (j + 1)) (b (j + 1)) (b j) _ (hs j) ^ (j.negOnePow : ℤ))⁻¹ :=
     (hn.preimage (add_left_injective (1 : ℤ)).injOn).subset <|
@@ -176,8 +175,8 @@ theorem reidemeisterTorsion_eq_mul_inv_of_shift :
     (b' (j + 1)) (s' (j + 1)) (hs' (j + 1)) (hs j)
   rw [Equiv.coe_addRight, hβ, ← hq j]
   rcases Int.units_eq_one_or j.negOnePow with hj | hj
-  · simp only [Int.negOnePow_succ, hj, Units.val_neg, Units.val_one, zpow_neg, zpow_one, mul_inv]
-    rw [← inv_pow, inv_neg_one, ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+  · simp [Int.negOnePow_succ, hj]
+    field_simp
   · simp [Int.negOnePow_succ, hj, ← mul_assoc, ← mul_pow]
 
 end Shift
@@ -272,10 +271,9 @@ theorem reidemeisterTorsion_eq_mul_of_quasiIso {K L : ChainComplex (ModuleCat F)
       (∏ᶠ j : ℤ, (-1 : F) ^ (finrank F (LinearMap.range (K.d (j + 1) j).hom) *
         (finrank F (LinearMap.range (L.d (j + 1) j).hom) + 1))) = 1 := by
     rw [← finprod_mul_distrib hsupp hsupp]
-    exact (finprod_congr fun j ↦ by rw [← pow_add, ← two_mul, pow_mul, neg_one_sq,
-      one_pow]).trans finprod_one
-  rw [reidemeisterTorsion_homotopyCofiber φ cK cL hK, ← mul_assoc, ← mul_assoc, hε,
-    one_mul, mul_assoc, inv_mul_cancel₀ (reidemeisterTorsion_ne_zero K cK hn hK), mul_one]
+    simp [← mul_pow]
+  rw [reidemeisterTorsion_homotopyCofiber φ cK cL hK]
+  simp [← mul_assoc, hε, reidemeisterTorsion_ne_zero K cK hn hK]
 
 end MappingCone
 
