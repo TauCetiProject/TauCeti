@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.Subalgebra
-public import Mathlib.Algebra.Star.Unitary
+public import TauCeti.Algebra.Star.Unitary
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Complement
 
 /-!
@@ -54,26 +54,7 @@ namespace TauCeti.InfiniteTypeAHeckeAlgebra.UnitCircle
 
 open MulOpposite
 
-variable {R : Type*} [CommRing R] {q : Rˣ}
-
-/-- The inverse of a generator satisfies the quadratic relation with parameter `q⁻¹`. -/
-private theorem val_inv_unitT_mul_self (i : ℕ) :
-    (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) * ↑(unitT q i)⁻¹ =
-      -((q : R) - ↑q⁻¹) • (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) + 1 := by
-  simp only [val_inv_unitT, sub_mul, mul_sub, T_mul_self, Algebra.smul_def, map_neg, neg_mul]
-  rw [← Algebra.commutes ((q : R) - ↑q⁻¹) (T q i)]
-  abel
-
-variable [StarRing R] [hq : Fact ((q : R) ∈ unitary R)]
-
-private theorem star_q : star (q : R) = ↑q⁻¹ :=
-  (Units.inv_eq_of_mul_eq_one_left (Unitary.star_mul_self_of_mem hq.out)).symm
-
-private theorem star_q_inv : star (↑q⁻¹ : R) = q := by
-  rw [← star_q, star_star]
-
-private theorem star_param : star ((q : R) - ↑q⁻¹) = -((q : R) - ↑q⁻¹) := by
-  rw [star_sub, star_q, star_q_inv, neg_sub]
+variable {R : Type*} [CommRing R] {q : Rˣ} [StarRing R] [hq : Fact ((q : R) ∈ unitary R)]
 
 /-- The conjugate-linear map sending each generator to its inverse, bundled as a ring
 homomorphism into the opposite algebra. The target algebra structure is twisted by scalar
@@ -86,8 +67,8 @@ private def conjugateInverse :
     (fun i ↦ unop_injective <| by
       simp only [unop_mul, unop_op, unop_add, unop_one, Algebra.smul_def,
         Algebra.compHom_algebraMap_apply, starRingEnd_apply, MulOpposite.algebraMap_apply,
-        star_param]
-      rw [val_inv_unitT_mul_self, Algebra.smul_def, Algebra.commutes])
+        Units.star_sub_inv_of_mem_unitary hq.out]
+      rw [val_inv_unitT_mul_self, neg_sub, Algebra.smul_def, Algebra.commutes])
     (fun i ↦ unop_injective <| by
       have h : unitT q i * unitT q (i + 1) * unitT q i =
           unitT q (i + 1) * unitT q i * unitT q (i + 1) :=
@@ -117,7 +98,8 @@ private theorem conjugateInverse_involutive (x : InfiniteTypeAHeckeAlgebra R q) 
   induction hx using Algebra.adjoin_induction with
   | mem x hx =>
     obtain ⟨i, rfl⟩ := hx
-    simp [conjugateInverse_T, conjugateInverse_algebraMap, star_q, star_q_inv]
+    simp [conjugateInverse_T, conjugateInverse_algebraMap,
+      Units.star_eq_inv_of_mem_unitary hq.out, Units.star_inv_eq_of_mem_unitary hq.out]
     abel
   | algebraMap r => simp [conjugateInverse_algebraMap]
   | add x y _ _ hx hy => simp [map_add, hx, hy]
@@ -182,8 +164,7 @@ theorem braidHom_mem_unitary {n : ℕ} (b : BraidGroup n) :
 @[simp]
 theorem star_braidHom {n : ℕ} (b : BraidGroup n) :
     star (braidHom R q n b : InfiniteTypeAHeckeAlgebra R q) = ↑(braidHom R q n b)⁻¹ :=
-  (Units.inv_eq_of_mul_eq_one_left
-    (Unitary.star_mul_self_of_mem (braidHom_mem_unitary b))).symm
+  Units.star_eq_inv_of_mem_unitary (braidHom_mem_unitary b)
 
 section UniversalProperty
 
@@ -250,7 +231,8 @@ involution. -/
 theorem signCharacter_star (x : InfiniteTypeAHeckeAlgebra R q) :
     signCharacter R q (star x) = star (signCharacter R q x) :=
   map_star_iff.mpr (fun i ↦ by
-    simpa only [signCharacter_T, ← star_q, Unitary.coe_neg, Unitary.coe_star] using
+    simpa only [signCharacter_T, ← Units.star_eq_inv_of_mem_unitary hq.out, Unitary.coe_neg,
+      Unitary.coe_star] using
       (-star ⟨(q : R), hq.out⟩ : unitary R).prop) x
 
 end TauCeti.InfiniteTypeAHeckeAlgebra.UnitCircle
