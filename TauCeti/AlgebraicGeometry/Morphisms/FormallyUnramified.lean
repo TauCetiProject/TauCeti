@@ -9,9 +9,11 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
+public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
 import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 import TauCeti.CategoryTheory.MorphismProperty.Limits
 import TauCeti.RingTheory.Unramified.Fiber
+import TauCeti.RingTheory.Unramified.Tower
 
 /-!
 # The fibre criterion for formal unramifiedness, and equalizers
@@ -40,11 +42,22 @@ exactly when it is universally injective
 (`AlgebraicGeometry.FormallyUnramified.mono_iff_universallyInjective`): its diagonal is an open
 immersion, which is an isomorphism exactly when it is surjective.
 
+Formal unramifiedness is a property of the stalk maps
+(`AlgebraicGeometry.FormallyUnramified.iff_formallyUnramified_stalkMap`), with no finiteness
+hypothesis, because it is the vanishing of the quasi-coherent sheaf of relative differentials.
+It is local on the source for the smooth topology: if `f` is smooth and surjective and `f ≫ g`
+is formally unramified, then so is `g` (`AlgebraicGeometry.FormallyUnramified.of_comp_surjective`).
+At a point `x` the stalk map of `f` is a flat local homomorphism, hence faithfully flat, and
+formally smooth, so `Algebra.FormallyUnramified.of_formallySmooth_of_faithfullyFlat` descends
+formal unramifiedness from the stalk map of `f ≫ g` at `x` to that of `g` at `f x`.
+
 ## References
 
 * The Stacks Project, Tag 02G8 (the fibre criterion for unramified morphisms).
 * The Stacks Project, Tag 05VH (an unramified universally injective morphism is a
   monomorphism).
+* The Stacks Project, Tag 036W (étaleness is étale local on the source), whose formal
+  unramifiedness step is `AlgebraicGeometry.FormallyUnramified.of_comp_surjective`.
 -/
 
 public section
@@ -177,5 +190,38 @@ theorem FormallyUnramified.mono_iff_universallyInjective (f : X ⟶ Y) [Formally
   -- the diagonal of `f` is an open immersion, and it is surjective as `f` is universally injective
   rw [← pullback.isIso_diagonal_iff, isIso_iff_isOpenImmersion_and_surjective]
   exact ⟨inferInstance, (UniversallyInjective.iff_diagonal f).1 hf⟩
+
+/-- A morphism whose stalk maps are all formally unramified is formally unramified. No
+finiteness hypothesis is needed. -/
+theorem FormallyUnramified.of_stalkMap (f : X ⟶ Y)
+    (H : ∀ x, (f.stalkMap x).hom.FormallyUnramified) : FormallyUnramified f :=
+  HasRingHomProperty.of_stalkMap RingHom.FormallyUnramified.ofLocalizationPrime H
+
+/-- A morphism is formally unramified exactly when all its stalk maps are formally
+unramified. -/
+theorem FormallyUnramified.iff_formallyUnramified_stalkMap {f : X ⟶ Y} :
+    FormallyUnramified f ↔ ∀ x, (f.stalkMap x).hom.FormallyUnramified :=
+  ⟨fun _ ↦ stalkMap f, of_stalkMap f⟩
+
+/-- **Formal unramifiedness is local on the source for the smooth topology.** If `f` is smooth
+and surjective and `f ≫ g` is formally unramified, then `g` is formally unramified. -/
+theorem FormallyUnramified.of_comp_surjective {Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    [Smooth f] [Surjective f] [FormallyUnramified (f ≫ g)] : FormallyUnramified g := by
+  refine of_stalkMap g fun y ↦ ?_
+  obtain ⟨x, rfl⟩ := f.surjective y
+  have hfg : ((f.stalkMap x).hom.comp (g.stalkMap (f x)).hom).FormallyUnramified := by
+    rw [← CommRingCat.hom_comp, ← Scheme.Hom.stalkMap_comp]
+    exact stalkMap (f ≫ g) x
+  have hf : (f.stalkMap x).hom.FormallySmooth :=
+    f.mem_smoothLocus.mp (f.smoothLocus_eq_top.ge (Set.mem_univ x))
+  have hff := Flat.stalkMap f x
+  algebraize [(g.stalkMap (f x)).hom, (f.stalkMap x).hom,
+    (f.stalkMap x).hom.comp (g.stalkMap (f x)).hom]
+  -- The stalk map of the flat morphism `f` is a flat local homomorphism, so faithfully flat.
+  have : IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
+    inferInstanceAs (IsLocalHom (f.stalkMap x).hom)
+  have : Module.FaithfullyFlat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) :=
+    .of_flat_of_isLocalHom
+  exact Algebra.FormallyUnramified.of_formallySmooth_of_faithfullyFlat _ _ (X.presheaf.stalk x)
 
 end AlgebraicGeometry

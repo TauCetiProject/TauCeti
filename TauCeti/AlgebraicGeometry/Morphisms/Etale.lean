@@ -11,13 +11,14 @@ public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 import Mathlib.AlgebraicGeometry.Morphisms.FlatMono
 import Mathlib.AlgebraicGeometry.Morphisms.IsIso
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 import TauCeti.AlgebraicGeometry.RationalPoint.Affine
 import TauCeti.RingTheory.TotallySplit
 
 /-!
-# Étale morphisms: open immersions, and rational points of finite schemes over a field
+# Étale morphisms: open immersions, source locality, and rational points over a field
 
 A morphism of schemes is an open immersion exactly when it is étale and universally injective
 (`AlgebraicGeometry.isOpenImmersion_iff_etale_and_universallyInjective`): an unramified
@@ -26,6 +27,14 @@ presentation is an open immersion (Mathlib's `AlgebraicGeometry.IsOpenImmersion.
 In particular an étale morphism that is universally injective and surjective, for instance an
 étale universal homeomorphism, is an isomorphism
 (`AlgebraicGeometry.isIso_of_etale_of_universallyInjective_of_surjective`).
+
+Étaleness is local on the source for the smooth topology, for morphisms locally of finite
+presentation: if `f` is smooth and surjective, `f ≫ g` is étale and `g` is locally of finite
+presentation, then `g` is étale (`AlgebraicGeometry.Etale.of_comp_surjective`; Stacks, Tag 036W,
+under this extra hypothesis on `g`). Writing étale as flat, formally unramified and locally of
+finite presentation, the flat and formally unramified parts descend along `f`
+(`AlgebraicGeometry.Flat.of_comp_surjective`,
+`AlgebraicGeometry.FormallyUnramified.of_comp_surjective`).
 
 Let `f : X ⟶ Spec R` be a morphism from an affine scheme to the spectrum of a commutative ring.
 Then `f` is étale exactly when `Γ(X, ⊤)` is an étale `R`-algebra. Its points with values in
@@ -50,6 +59,10 @@ monoidal category `Over (Spec K)`, as for the points of group schemes over `Spec
   the étale universally injective morphisms.
 * `AlgebraicGeometry.isIso_of_etale_of_universallyInjective_of_surjective`: an étale universally
   injective surjective morphism is an isomorphism.
+* `AlgebraicGeometry.Etale.of_comp_surjective`: if `f` is smooth and surjective and `f ≫ g` is
+  étale, then `g` is étale, provided `g` is locally of finite presentation.
+* `AlgebraicGeometry.Etale.comp_iff_of_surjective`: for `f` étale and surjective and `g` locally of
+  finite presentation, `f ≫ g` is étale exactly when `g` is.
 * `AlgebraicGeometry.Scheme.Hom.etale_iff_algebraEtale`: for affine `X`, `f : X ⟶ Spec R` is
   étale exactly when `Γ(X, ⊤)` is an étale `R`-algebra.
 * `AlgebraicGeometry.Scheme.Hom.etale_of_finrank_le_natCard`: a finite morphism `f : X ⟶ Spec K`
@@ -85,6 +98,20 @@ theorem isIso_of_etale_of_universallyInjective_of_surjective {Y : Scheme.{u}} (f
     [Etale f] [UniversallyInjective f] [Surjective f] : IsIso f :=
   (isIso_iff_isOpenImmersion_and_surjective f).2
     ⟨.of_etale_of_universallyInjective f, ‹_›⟩
+
+/-- **Étaleness is local on the source for the smooth topology** (Stacks, Tag 036W, for `g`
+locally of finite presentation). If `f` is smooth and surjective, `f ≫ g` is étale and `g` is
+locally of finite presentation, then `g` is étale. -/
+theorem Etale.of_comp_surjective {Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) [Smooth f]
+    [Surjective f] [Etale (f ≫ g)] [LocallyOfFinitePresentation g] : Etale g :=
+  iff_flat_and_formallyUnramified.mpr
+    ⟨.of_comp_surjective f g, .of_comp_surjective f g, ‹_›⟩
+
+/-- For `f` étale and surjective and `g` locally of finite presentation, `f ≫ g` is étale exactly
+when `g` is. -/
+theorem Etale.comp_iff_of_surjective {Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) [Etale f]
+    [Surjective f] [LocallyOfFinitePresentation g] : Etale (f ≫ g) ↔ Etale g :=
+  ⟨fun _ ↦ of_comp_surjective f g, fun _ ↦ inferInstance⟩
 
 /-- A morphism `f : X ⟶ Spec R` from an affine scheme is étale exactly when its coordinate ring
 `Γ(X, ⊤)` is an étale `R`-algebra, for the `R`-algebra structure given by the map of global
