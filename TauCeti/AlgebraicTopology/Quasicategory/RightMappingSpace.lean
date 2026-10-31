@@ -95,8 +95,10 @@ opposite to the last vertex is the constant simplex at `x` and its last vertex i
 theorem mem_rightMappingSpace_iff {n : ℕ} (σ : X _⦋n + 1⦌) :
     σ ∈ (X.rightMappingSpace x y).obj (op ⦋n⦌) ↔
       X.δ (Fin.last (n + 1)) σ = X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op x ∧
-        X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ (Fin.last _)).op σ = y :=
-  Iff.rfl
+        X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ (Fin.last _)).op σ = y := by
+  change X.map (joinVertexInl ⦋n⦌).op σ = _ ∧ X.map (joinVertexInr ⦋n⦌).op σ = y ↔ _
+  rw [joinVertexInl_mk, joinVertexInr_mk]
+  rfl
 
 namespace rightMappingSpace
 
@@ -248,6 +250,7 @@ theorem hornFilling [X.Quasicategory] (hi : i ≠ 0)
       have h := ((mem_rightMappingSpace_iff _).1 (hornFace_mem σ₀ 0 hi.symm)).2
       rw [← liftFace_castSucc σ₀ 0 hi.symm h0, ← hface _ h0, SimplicialObject.δ,
         ← Functor.map_comp_apply, ← op_comp] at h
+      rw [← joinVertexInr_mk] at h ⊢
       exact (congrArg (fun g ↦ X.map g.op t) (joinVertexInr_comp_δ_castSucc 0)).symm.trans h
   let s : (X.rightMappingSpace x y : SSet.{u}) _⦋n + 1⦌ := ⟨t, hmem⟩
   refine ⟨yonedaEquiv.symm s, horn.hom_ext _ _ fun j hj ↦ Subtype.ext ?_⟩

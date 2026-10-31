@@ -65,11 +65,10 @@ private theorem tensorHomOf_last {m n : SimplexCategory} (f : m ⟶ n) :
 /-- The join `m ⋆ ⦋0⦌` with a final vertex, as an endofunctor of `SimplexCategory`: the
 restriction of the join `- ⊗ ⦋0⦌` of `AugmentedSimplexCategory`. It sends `⦋n⦌` to `⦋n + 1⦌` and
 extends a monotone map by sending the final vertex to the final vertex. -/
--- The bodies of `joinVertex`, `joinVertexInl` and `joinVertexInr` are exposed so that
--- `joinVertex.obj ⦋n⦌` is definitionally `⦋n + 1⦌` downstream: the simplices of
--- `joinVertex.op ⋙ X` are then literally simplices of `X`, and its subcomplexes can be described
--- by face and vertex conditions in `X` up to `Iff.rfl`. The functor laws are those of the join,
--- which hold here by definitional unfolding of `tensorHom` on `.of` objects.
+-- The body of `joinVertex` is exposed so that `joinVertex.obj ⦋n⦌` is definitionally `⦋n + 1⦌`
+-- downstream: the simplices of `joinVertex.op ⋙ X` are then literally simplices of `X`, so its
+-- subcomplexes can be described by face and vertex conditions in `X`. The functor laws are those
+-- of the join, which hold here by definitional unfolding of `tensorHom` on `.of` objects.
 @[expose]
 def joinVertex : SimplexCategory ⥤ SimplexCategory where
   obj m := ⦋m.len + 1⦌
@@ -112,12 +111,10 @@ theorem joinVertex_map_σ {n : ℕ} (i : Fin (n + 1)) :
     ((joinVertex_map_last (σ i)).trans Fin.predAbove_right_last.symm)
 
 /-- The inclusion of `m` into `m ⋆ ⦋0⦌` as the face opposite to the final vertex. -/
-@[expose]
 def joinVertexInl (m : SimplexCategory) : m ⟶ joinVertex.obj m :=
   δ (Fin.last (m.len + 1))
 
 /-- The final vertex of `m ⋆ ⦋0⦌`. -/
-@[expose]
 def joinVertexInr (m : SimplexCategory) : ⦋0⦌ ⟶ joinVertex.obj m :=
   const ⦋0⦌ ⦋m.len + 1⦌ (Fin.last _)
 
