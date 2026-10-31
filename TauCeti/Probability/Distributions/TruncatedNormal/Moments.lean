@@ -24,7 +24,7 @@ Gaussian law shifts its mean, so
 
 (`mgf_id_truncatedNormalMeasure`). In particular the exponential moments are finite for every
 `t`, so `integrableExpSet id` is the whole line and every polynomial moment is finite. For an
-interval with finite bounds `l < r` at positive variance, write `s₀ = √v`, `α = (l - m) / s₀`,
+interval with finite bounds `l ≤ r` at positive variance, write `s₀ = √v`, `α = (l - m) / s₀`,
 `β = (r - m) / s₀`, `Φ` for the standard Gaussian cdf and `Z = Φ β - Φ α`; then the mgf is
 `exp (m t + v t² / 2) * (Φ (β - s₀ t) - Φ (α - s₀ t)) / Z`.
 
@@ -215,10 +215,10 @@ theorem variance_id_truncatedNormalMeasure (hv : v ≠ 0) (hlr : l < r)
 /-! ### Finite bounds in standardized form -/
 
 /-- The moment-generating function of a normal law of positive variance truncated to an
-interval with finite bounds `l < r`: with `s₀ = √v`, `α = (l - m) / s₀`, `β = (r - m) / s₀` and
+interval with finite bounds `l ≤ r`: with `s₀ = √v`, `α = (l - m) / s₀`, `β = (r - m) / s₀` and
 `Φ` the standard Gaussian cdf, it is
 `exp (m t + v t² / 2) * (Φ (β - s₀ t) - Φ (α - s₀ t)) / (Φ β - Φ α)`. -/
-theorem mgf_id_truncatedNormalMeasure_eq_cdf_zero_one {l r : ℝ} (hv : v ≠ 0) (hlr : l < r)
+theorem mgf_id_truncatedNormalMeasure_eq_cdf_zero_one {l r : ℝ} (hv : v ≠ 0) (hlr : l ≤ r)
     (hs₁ : Ioo l r ⊆ s) (hs₂ : s ⊆ Icc l r) (t : ℝ) :
     mgf id (truncatedNormalMeasure m v s) t =
       exp (m * t + v * t ^ 2 / 2) *
@@ -233,8 +233,8 @@ theorem mgf_id_truncatedNormalMeasure_eq_cdf_zero_one {l r : ℝ} (hv : v ≠ 0)
     rw [hvσ]
     field_simp
     ring
-  rw [mgf_id_truncatedNormalMeasure, measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr.le hs₁ hs₂,
-    measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr.le hs₁ hs₂, hshift, hshift]
+  rw [mgf_id_truncatedNormalMeasure, measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr hs₁ hs₂,
+    measureReal_gaussianReal_eq_cdf_zero_one _ hv hlr hs₁ hs₂, hshift, hshift]
 
 /-- The mean of a normal law of positive variance truncated to an interval with finite bounds
 `l < r`: with `s₀ = √v`, `α = (l - m) / s₀`, `β = (r - m) / s₀`, `φ` and `Φ` the standard Gaussian
