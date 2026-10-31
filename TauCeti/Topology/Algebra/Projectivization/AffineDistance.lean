@@ -92,6 +92,7 @@ theorem affineChartInvOneAddDistSq_affineChart_symm (z : Fin n → 𝕜) :
 /-- **The function in homogeneous coordinates.** For a nonzero vector `v`, with `v'` its
 coordinates other than the `i`-th one,
 `F [v] = ‖v i‖² / (‖v i‖² + ‖v' - v i • a‖²)`. Both sides vanish when `v i = 0`. -/
+@[simp]
 theorem affineChartInvOneAddDistSq_mk (v : Fin (n + 1) → 𝕜) (hv : v ≠ 0) :
     affineChartInvOneAddDistSq i a (mk 𝕜 v hv) = ‖v i‖ ^ 2 /
       (‖v i‖ ^ 2 + ‖WithLp.toLp 2 (fun j ↦ v (i.succAbove j)) - v i • a‖ ^ 2) := by
