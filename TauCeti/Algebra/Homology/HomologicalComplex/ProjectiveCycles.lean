@@ -23,8 +23,10 @@ shape, possibly unbounded in both directions or cyclic.
   `TauCeti.Algebra.Homology.Split`.)
 * In an abelian category, a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes with `X₃`
   exact at a degree `j` which is the target of a relation induces a short exact sequence of cycles
-  in degree `j`. When the cycles of `X₂` in degree `j` are projective, those of `X₁` are syzygies
-  of those of `X₃`, and their projective dimension drops by one.
+  in degree `j`. When the cycles of `X₂` in degree `j` have projective dimension `< n`, those of
+  `X₁` do as soon as those of `X₃` have projective dimension `< n + 1`. In particular, when the
+  cycles of `X₂` are projective, those of `X₁` are syzygies of those of `X₃`, and their projective
+  dimension drops by one.
 * With enough projectives, and when every index is both the source and the target of a relation
   of the shape, every complex receives a degreewise epimorphism from a contractible complex with
   projective terms, the mapping cone of the identity of a complex with zero differential made of
@@ -73,14 +75,15 @@ end Homotopy
 variable [Abelian C]
 
 /-- Let `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` be a short exact sequence of complexes and `i → j` a relation of
-the shape, where `X₃` is exact at `j` and the cycles of `X₂` in degree `j` are projective. It gives
-a short exact sequence `0 ⟶ Z(X₁) ⟶ Z(X₂) ⟶ Z(X₃) ⟶ 0` of cycles in degree `j`, so the cycles of
-`X₁` have projective dimension `< m + 1` when those of `X₃` have projective dimension `< m + 2`. -/
+the shape, where `X₃` is exact at `j`. It gives a short exact sequence
+`0 ⟶ Z(X₁) ⟶ Z(X₂) ⟶ Z(X₃) ⟶ 0` of cycles in degree `j`, so the cycles of `X₁` have projective
+dimension `< n` when those of `X₂` have projective dimension `< n` and those of `X₃` have
+projective dimension `< n + 1`. -/
 lemma CategoryTheory.ShortComplex.ShortExact.hasProjectiveDimensionLT_cycles_X₁
     {S : ShortComplex (HomologicalComplex C c)} (hS : S.ShortExact) {i j : ι} (hij : c.Rel i j)
-    (h₃ : S.X₃.ExactAt j) (h₂ : Projective (S.X₂.cycles j)) (m : ℕ)
-    (hZ : HasProjectiveDimensionLT (S.X₃.cycles j) (m + 2)) :
-    HasProjectiveDimensionLT (S.X₁.cycles j) (m + 1) := by
+    (h₃ : S.X₃.ExactAt j) (n : ℕ) (h₂ : HasProjectiveDimensionLT (S.X₂.cycles j) n)
+    (hZ : HasProjectiveDimensionLT (S.X₃.cycles j) (n + 1)) :
+    HasProjectiveDimensionLT (S.X₁.cycles j) n := by
   have := hS.mono_f
   have : Epi (S.g.f i) :=
     ((HomologicalComplex.shortExact_iff_degreewise_shortExact S).mp hS i).epi_g
@@ -89,8 +92,7 @@ lemma CategoryTheory.ShortComplex.ShortExact.hasProjectiveDimensionLT_cycles_X�
       HomologicalComplex.cyclesMap_zero] : HomologicalComplex.cyclesMap S.f j ≫
         HomologicalComplex.cyclesMap S.g j = 0)).ShortExact :=
     { exact := HomologicalComplex.cycles_left_exact S hS.exact j }
-  exact hT.hasProjectiveDimensionLT_X₁ (m + 1)
-    (hasProjectiveDimensionLT_of_ge _ 1 (m + 1) (by lia)) hZ
+  exact hT.hasProjectiveDimensionLT_X₁ n h₂ hZ
 
 /-- In an abelian category with enough projectives, every complex is the target of a morphism
 which is an epimorphism in every degree, from a contractible complex with projective terms. The

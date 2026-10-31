@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Homotopy
-public import TauCeti.Algebra.Homology.ProjectiveCycles
+public import TauCeti.Algebra.Homology.HomologicalComplex.ProjectiveCycles
 public import TauCeti.Algebra.Homology.Split
 public import TauCeti.Algebra.Homology.Periodic.HomotopicallyProjective
 
@@ -89,8 +89,9 @@ private lemma nonempty_homotopy_zero_of_hasProjectiveDimensionLT_succ (m : ℕ) 
     have : QuasiIso π := ⟨fun i ↦ (quasiIsoAt_iff_exactAt π i (hQ.acyclic i)).mpr (hL i)⟩
     have hN : (kernel π).Acyclic := hS.acyclic_X₁ this
     have hNZ (j : ZMod n) : HasProjectiveDimensionLT ((kernel π).cycles j) (m + 1) :=
-      hS.hasProjectiveDimensionLT_cycles_X₁ (sub_add_cancel j 1) (hL j)
-        (hQ.projective_cycles (sub_add_cancel j 1)) m (hZ j)
+      have := hQ.projective_cycles (sub_add_cancel j 1)
+      hS.hasProjectiveDimensionLT_cycles_X₁ (sub_add_cancel j 1) (hL j) (m + 1)
+        (hasProjectiveDimensionLT_of_ge _ 1 (m + 1) (by lia)) (hZ j)
     have : ∀ i, Projective ((K⟦(-1 : ℤ)⟧).X i) := fun i ↦
       inferInstanceAs (Projective (K.X _))
     exact nonempty_homotopy_zero_of_epi π hQ (ih hN hNZ) f
