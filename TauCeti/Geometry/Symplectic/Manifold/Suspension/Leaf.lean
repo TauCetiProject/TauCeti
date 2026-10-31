@@ -85,18 +85,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [Top
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} {C : Type*} [TopologicalSpace C]
   [ChartedSpace H' C] {u : C → UnitAddCircle × SmoothMappingTorus φ}
 
-omit [IsManifold I ∞ M] in
-/-- If the tangent image `du e` of a map `u` into `X_φ = (ℝ / ℤ) × Y_φ` lies in the horizontal
-plane `span(∂_s, T)`, then the tangent image of `e` under the mapping torus component of `u` lies
-in the line spanned by `T`. -/
-theorem mfderiv_snd_comp_mem_span_of_mem_suspensionHorizontalSubspace {c : C}
-    (hu : MDifferentiableAt I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c) {e : TangentSpace I' c}
-    (hH : mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c e ∈ suspensionHorizontalSubspace φ (u c)) :
-    mfderiv I' (𝓘(ℝ).prod I) (Prod.snd ∘ u) c e ∈ ℝ ∙ timeVectorField φ (u c).2 := by
-  have h := mem_suspensionHorizontalSubspace_iff.1 hH
-  rw [Manifold.tangentSpaceProdEquiv_apply] at h
-  rwa [mfderiv_comp c mdifferentiableAt_snd hu, mfderiv_snd]
-
 /-- **Horizontal curves lie in one leaf.** Let `u` be a differentiable map from a preconnected
 manifold into `X_φ = (ℝ / ℤ) × Y_φ` whose tangent images all lie in the horizontal plane
 `span(∂_s, T)`. Then the image of `u` lies in the product `(ℝ / ℤ) × γ` of the circle with the
@@ -208,7 +196,7 @@ structure of block form along the image of `u` whose vertical restriction is tam
 the vertical area `∫_C u^* ω_v` vanishes, then for every value `(s, [t, x])` of `u`, the point `x`
 is periodic for `φ`: its least period is positive. -/
 theorem minimalPeriod_pos_of_integralTopForm_eq_zero [I'.Boundaryless] [CompactSpace C]
-    [PreconnectedSpace C] (h2 : 2 ≤ Module.finrank ℝ E')
+    [PreconnectedSpace C]
     (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u)
     (ho : ∀ c (b : Module.Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
       b.orientation = o.orientationAt c)
@@ -224,7 +212,8 @@ theorem minimalPeriod_pos_of_integralTopForm_eq_zero [I'.Boundaryless] [CompactS
       (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
     (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
     {c : C} {t : ℝ} {x : M} (hc : (u c).2 = mk φ t x) : 0 < minimalPeriod φ x :=
-  minimalPeriod_pos_of_mfderiv_mem_suspensionHorizontalSubspace h2 (hu.mdifferentiable (by simp))
+  minimalPeriod_pos_of_mfderiv_mem_suspensionHorizontalSubspace
+    (by rw [← o.card_eq, Fintype.card_fin]) (hu.mdifferentiable (by simp))
     ((integralTopForm_mpullback_mpullback_snd_fiberForm_eq_zero_iff hu ho hhol hS hV htame).1 h0)
     hinj hc
 
