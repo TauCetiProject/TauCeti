@@ -67,8 +67,10 @@ and these are exactly the morphisms of right DG modules `M ⟶ N`.
   signed right action.
 * `TauCeti.DGRightModuleCat.toDGFunctor_of_isDGRightModule_dgMap_v_apply`: the DG module of the
   free rank-one module is the representable module.
-* `TauCeti.DGRightModuleCat.dgApp_toDGFunctorMap_v_apply`: the component of the DG natural
-  transformation of a morphism is the morphism on homogeneous pieces.
+* `TauCeti.DGRightModuleCat.dgApp_toDGFunctorMap` and
+  `TauCeti.DGRightModuleCat.dgApp_toDGFunctorMap_v_apply`: the component of the DG natural
+  transformation of a morphism is its chain map of underlying complexes, which is the morphism
+  on homogeneous pieces.
 * `TauCeti.DGRightModuleCat.singleObjFunctor` is `Functor.Full` and `Functor.Faithful`.
 
 ## Implementation notes
@@ -324,7 +326,10 @@ noncomputable def toDGFunctorMap (φ : M ⟶ N) : M.toDGFunctor ⟶ N.toDGFuncto
       exact δ_ofHom _)
     (fun n f ↦ naturality_toCochainMap φ n f)
 
-private theorem dgApp_toDGFunctorMap (φ : M ⟶ N) (X : (DGSingleObj h)ᵒᵖ) :
+/-- The component of the DG natural transformation of a morphism `φ` of right DG modules is the
+chain map of underlying complexes induced by `φ`. -/
+@[simp]
+theorem dgApp_toDGFunctorMap (φ : M ⟶ N) (X : (DGSingleObj h)ᵒᵖ) :
     DGNatTrans.dgApp (R := R) (toDGFunctorMap φ) X = Cochain.ofHom (toCochainMap φ) :=
   DGNatTrans.dgApp_ofDGApp _ _ _ X
 
@@ -379,7 +384,6 @@ theorem singleObjFunctor_map (φ : M ⟶ N) :
 
 /-- The component of the DG natural transformation of a morphism `φ` of right DG modules is `φ`
 on elements of every degree. -/
-@[simp]
 theorem dgApp_toDGFunctorMap_v_apply (φ : M ⟶ N) (X : (DGSingleObj h)ᵒᵖ) (p : ℤ)
     (x : M.toCochainComplex.X p) :
     (gradedCochainComplexXEquiv p
