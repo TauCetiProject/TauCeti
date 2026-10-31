@@ -266,6 +266,7 @@ section Free
 variable {R : Type u} [CommRing R] [IsLocalRing R] [Small.{v} R]
 
 /-- The depth of a product of two modules over a local ring is the minimum of their depths. -/
+@[simp]
 theorem depth_prod (M N : Type v) [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] :
     depth (ModuleCat.of R (M × N)) = depth (ModuleCat.of R M) ⊓ depth (ModuleCat.of R N) := by
   have hM := depth_min_snd_trd_add_one_le_fst_of_exact (LinearMap.inl R M N)
