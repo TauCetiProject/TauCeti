@@ -161,6 +161,21 @@ theorem successiveVisit_lt_succ (h : successiveVisit X a k ω ≠ ⊤) :
   rw [visitCount_succ_of_eq (x := fun i => X i ω) hx, hc] at hcount
   exact (lt_irrefl _) hcount
 
+/-- The indices of the existing visits are as many as the times at which the process is at `a`:
+`k ↦ successiveVisit X a k ω` enumerates the visit times. -/
+theorem encard_setOf_successiveVisit_ne_top :
+    {k | successiveVisit X a k ω ≠ ⊤}.encard = {n | X n ω = a}.encard := by
+  have hinj : Set.InjOn (visitCount (fun i => X i ω) a) {n | X n ω = a} := by
+    intro n hn m hm h
+    have hn' := successiveVisit_eq_coe_iff.mpr ⟨hn, rfl⟩
+    have hm' : successiveVisit X a (visitCount (fun i => X i ω) a n) ω = m :=
+      successiveVisit_eq_coe_iff.mpr ⟨hm, h.symm⟩
+    exact_mod_cast hn'.symm.trans hm'
+  rw [← hinj.encard_image]
+  congr 1
+  ext k
+  simp only [Set.mem_ofPred_eq, Set.mem_image, ne_eq, successiveVisit_eq_top_iff, not_not]
+
 private theorem successiveVisit_eq_hittingAfter_of_counts {s : ℕ}
     (h : ∀ m, k < visitCount (fun i => X i ω) a (m + 1) ↔
       ∃ j ∈ Set.Icc s m, X j ω = a) :
