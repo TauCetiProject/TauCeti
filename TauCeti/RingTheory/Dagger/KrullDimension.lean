@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Dagger.NoetherNormalization
 public import Mathlib.RingTheory.KrullDimension.Basic
 import Mathlib.RingTheory.KrullDimension.Field
 import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
+import TauCeti.RingTheory.Dagger.Preparation
 import TauCeti.RingTheory.KrullDimension.Basic
 public import TauCeti.RingTheory.KrullDimension.Integral
 import TauCeti.RingTheory.KrullDimension.Quotient
@@ -27,15 +28,34 @@ For the dimension calculation, setting one variable to zero gives the lower boun
 of variables and Weierstrass division make every quotient by a nonzero principal ideal finite
 over an overconvergent algebra in one fewer variable, giving the upper bound.
 
+Every maximal ideal of `K⟨X₁, …, Xₙ⟩†` moreover has height `n`, so the algebra is
+equidimensional. Writing `K⟨X, Y⟩†` for the algebra in one more variable `Y`, a nonzero maximal
+ideal `M` of `K⟨X, Y⟩†` contains, after a change of variables, the evaluation at `Y` of a
+Weierstrass polynomial `ω ∈ K⟨X⟩†[Y]`. Then `K⟨X, Y⟩† ⧸ (ω) ≅ K⟨X⟩†[Y] ⧸ (ω)` is finite free over
+`K⟨X⟩†`, so going down bounds the height of the image of `M` below by that of a maximal ideal of
+`K⟨X⟩†`, and quotienting by the non-zero-divisor `ω` lowers heights by one.
+
+## Main results
+
+* `TauCeti.Dagger.washnitzerAlgebra.ringKrullDim_eq_natCard`: `K⟨X⟩†` in the variables `σ` has
+  Krull dimension `Nat.card σ`.
+* `Ideal.height_eq_natCard_of_isMaximal_washnitzerAlgebra`: every maximal ideal of `K⟨X⟩†` in the
+  variables `σ` has height `Nat.card σ`.
+* `Ideal.ringKrullDim_localization_atPrime_of_isMaximal_washnitzerAlgebra`: the localization of
+  `K⟨X⟩†` at a maximal ideal has Krull dimension `Nat.card σ`.
+* `TauCeti.Dagger.IsDaggerAlgebra.exists_ringKrullDim_eq_finite_injective`: a nonzero dagger
+  algebra is finite over an overconvergent algebra in `dim A` variables.
+
 ## References
 
 * E. Grosse-Klönne, *Rigid analytic spaces with overconvergent structure sheaf*,
   J. reine angew. Math. 519 (2000), §1.4(2) and Proposition 1.5.
 * Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §6.1.2.
 
-The dimension induction follows `TauCeti.MvPowerSeries.ringKrullDim_isRestricted_subring`
-in `TauCeti.RingTheory.MvPowerSeries.TateAlgebra.KrullDimension`, using overconvergent
-Weierstrass division in place of division in a complete Tate algebra.
+The dimension and height inductions follow `TauCeti.MvPowerSeries.ringKrullDim_isRestricted_subring`
+and `Ideal.height_eq_natCard_of_isMaximal_isRestricted_subring` in
+`TauCeti.RingTheory.MvPowerSeries.TateAlgebra.KrullDimension`, using overconvergent Weierstrass
+preparation and division in place of division in a complete Tate algebra.
 -/
 
 public section
@@ -109,6 +129,36 @@ theorem ringKrullDim_eq_natCard_of_isIntegral {σ : Type*} [Finite σ]
     [FaithfulSMul (W σ) A] : ringKrullDim A = Nat.card σ := by
   rw [ringKrullDim_eq_of_isIntegral_of_faithfulSMul (R := W σ), ringKrullDim_eq_natCard]
 
+open scoped nonZeroDivisors in
+/-- The inductive step for heights: if every maximal ideal of `K⟨X⟩†` has height at least the
+number `n` of variables, then every maximal ideal of `K⟨X, Y⟩†` has height at least `n + 1`. -/
+private theorem natCard_add_one_le_height_option {σ : Type*} [Finite σ]
+    (IH : ∀ (p : Ideal (W σ)) [p.IsMaximal], Nat.card σ ≤ p.height)
+    (M : Ideal (W (Option σ))) [M.IsMaximal] : Nat.card (Option σ) ≤ M.height := by
+  -- `M ≠ 0`, since `K⟨X, Y⟩†` has positive dimension and so is not a field.
+  have hM : M ≠ ⊥ := by
+    rintro rfl
+    have := ringKrullDim_eq_zero_of_isField (Ring.isField_iff_maximal_bot.mpr ‹_›)
+    rw [ringKrullDim_eq_natCard, Finite.card_option] at this
+    exact Nat.succ_ne_zero (Nat.card σ) (by exact_mod_cast this)
+  obtain ⟨f, hfM, hf⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hM
+  obtain ⟨E, s, ω, hd, hm, v, hv⟩ := exists_associated_polynomialToOption f hf
+  let N : Ideal (W (Option σ)) := M.comap E
+  have : N.IsMaximal := Ideal.comap_isMaximal_of_surjective E E.surjective
+  -- `K⟨X, Y⟩† ⧸ (ω) ≅ K⟨X⟩†[Y] ⧸ (ω)` is finite free over `K⟨X⟩†`, so it is integral with going
+  -- down; as `ω` is a non-zero-divisor, `N` has height at least one more than some maximal ideal
+  -- of `K⟨X⟩†`.
+  have : Module.Free (W σ) (AdjoinRoot ω) := hm.monic.free_adjoinRoot
+  have : Module.Finite (W σ) (AdjoinRoot ω) := hm.monic.finite_adjoinRoot
+  have : Algebra.IsIntegral (W σ) (AdjoinRoot ω) := Algebra.IsIntegral.of_finite _ _
+  have hg : polynomialToOption ω ∈ (W (Option σ))⁰ :=
+    mem_nonZeroDivisors_of_ne_zero fun h ↦ hm.ne_zero (polynomialToOption_injective (by simpa))
+  obtain ⟨p, _, hp⟩ := N.exists_isMaximal_height_add_one_le_of_ringEquiv_quotient (R := W σ)
+    (Ideal.mem_comap.mpr (hv ▸ M.mul_mem_right _ hfM)) hg
+    (polynomialQuotientEquiv hd hm).toRingEquiv
+  rw [← RingEquiv.height_comap E M, Finite.card_option, Nat.cast_add, Nat.cast_one]
+  exact le_trans (by gcongr; exact IH p) hp
+
 end washnitzerAlgebra
 
 namespace IsDaggerAlgebra
@@ -147,3 +197,41 @@ theorem ringKrullDim_le_presentationDim : ringKrullDim A ≤ presentationDim K A
 end IsDaggerAlgebra
 
 end TauCeti.Dagger
+
+namespace Ideal
+
+open TauCeti.Dagger
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+
+/-- **Heights of maximal ideals of Monsky–Washnitzer algebras.** Over a complete ultrametric
+normed field, every maximal ideal of `K⟨X₁, …, Xₙ⟩†` has height `n`, its Krull dimension. -/
+@[simp]
+theorem height_eq_natCard_of_isMaximal_washnitzerAlgebra {σ : Type*} [Finite σ]
+    (M : Ideal (washnitzerAlgebra σ K)) [M.IsMaximal] : M.height = Nat.card σ := by
+  refine le_antisymm ?_ ?_
+  · have := Ideal.height_le_ringKrullDim_of_ne_top (Ideal.IsPrime.ne_top' (I := M))
+    rw [washnitzerAlgebra.ringKrullDim_eq_natCard] at this
+    exact_mod_cast this
+  revert M
+  induction σ using Finite.induction_empty_option with
+  | of_equiv e H =>
+    intro M _
+    let e' : washnitzerAlgebra _ K ≃+* washnitzerAlgebra _ K :=
+      (washnitzerAlgebra.renameAlgEquiv (R := K) e).toRingEquiv
+    have := H (M.comap e')
+    rwa [RingEquiv.height_comap, Nat.card_congr e] at this
+  | h_empty => simp
+  | h_option IH => exact washnitzerAlgebra.natCard_add_one_le_height_option IH
+
+/-- **Monsky–Washnitzer algebras are equidimensional.** The localization of `K⟨X₁, …, Xₙ⟩†` at
+any maximal ideal has Krull dimension `n`. -/
+@[simp]
+theorem ringKrullDim_localization_atPrime_of_isMaximal_washnitzerAlgebra {σ : Type*} [Finite σ]
+    (M : Ideal (washnitzerAlgebra σ K)) [M.IsMaximal] :
+    ringKrullDim (Localization.AtPrime M) = Nat.card σ := by
+  rw [IsLocalization.AtPrime.ringKrullDim_eq_height M (Localization.AtPrime M),
+    height_eq_natCard_of_isMaximal_washnitzerAlgebra]
+  norm_cast
+
+end Ideal
