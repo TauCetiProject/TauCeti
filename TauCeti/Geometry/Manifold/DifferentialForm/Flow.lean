@@ -271,7 +271,7 @@ theorem mpullback_globalFlow_eq_exp_smul {c : ℝ}
   simp only [mul_zero, neg_zero, Real.exp_zero, one_smul] at hconst
   have hP0 : P 0 = α x := by
     have h : mpullback I I (ψ 0) α = α := by
-      rw [show ψ 0 = id from funext ψ.map_zero_apply, mpullback_id]
+      rw [ψ.map_zero, mpullback_id]
     exact congrFun h x
   have hPt : P t = Real.exp (c * t) • P 0 := by
     rw [← hconst, smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
