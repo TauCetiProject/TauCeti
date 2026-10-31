@@ -63,9 +63,11 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 deleted-coordinate chart of the simplex. -/
 @[simp]
 theorem dirichletChart_logisticNormalChart (r : ι) (z : EuclideanSpace ℝ {i // i ≠ r}) :
-    dirichletChart r (fun j : {i // i ≠ r} ↦ logisticNormalChart r z j) =
-      logisticNormalChart r z :=
-  (dirichletChart_eq_self_iff r _).2 (sum_logisticNormalChart r z)
+    dirichletChart r (fun j : {i // i ≠ r} ↦
+      Real.exp (z.ofLp j) / (1 + ∑ k, Real.exp (z.ofLp k))) =
+      logisticNormalChart r z := by
+  simpa only [logisticNormalChart_apply_coe] using
+    (dirichletChart_eq_self_iff r _).2 (sum_logisticNormalChart r z)
 
 /-- The coordinates of the logistic chart away from the reference category lie in the chart
 region of the simplex. -/
@@ -97,7 +99,7 @@ private theorem injective_logisticNormalChart_coords (r : ι) :
       fun j : {i // i ≠ r} ↦ logisticNormalChart r (WithLp.toLp 2 y) j) := by
   intro y y' h
   have h' := congrArg (dirichletChart r) h
-  simp only [dirichletChart_logisticNormalChart] at h'
+  simp only [logisticNormalChart_apply_coe, dirichletChart_logisticNormalChart] at h'
   exact WithLp.toLp_injective 2 (logisticNormalChart_injective r h')
 
 /-- In coordinates away from the reference category, the derivative of the logistic chart at a
@@ -276,8 +278,9 @@ private theorem jacobian_mul_logisticNormalChartPDF (y : {i // i ≠ r} → ℝ)
     Finset.prod_pos fun i _ ↦ logisticNormalChart_pos r _ i
   rw [logisticNormalChartPDF_def, ← ENNReal.ofReal_mul hprod.le,
     logisticNormalChartPDFReal_of_mem m S
-      (logisticNormalChart_coords_mem_dirichletChartRegion r _),
-    dirichletChart_logisticNormalChart, logisticNormalLogRatio_chart,
+      (logisticNormalChart_coords_mem_dirichletChartRegion r _)]
+  simp only [logisticNormalChart_apply_coe]
+  rw [dirichletChart_logisticNormalChart, logisticNormalLogRatio_chart,
     mul_div_cancel₀ _ hprod.ne', multivariateGaussianPDF_def]
 
 /-- **The chart density of the logistic-normal law.** For positive-definite log-ratio
