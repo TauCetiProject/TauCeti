@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Block
-public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.Finiteness.Projective
+public import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Finitely generated projective modules from idempotent matrices
@@ -206,14 +206,10 @@ theorem exists_linearEquiv_range_vecMulLinear :
       Nonempty (P ≃ₗ[A] LinearMap.range e.vecMulLinear) := by
   obtain ⟨n, f, g, hf, hg, hfg⟩ := exists_comp_eq_id_of_projective A P
   -- `e` is the matrix of the idempotent endomorphism `g ∘ f` of the row vectors.
-  have he : (LinearMap.toMatrixRight' (g ∘ₗ f)).vecMulLinear = g ∘ₗ f :=
-    LinearMap.ext fun v ↦ by
-      rw [Matrix.vecMulLinear_apply, ← Matrix.toLinearMapRight'_apply,
-        LinearEquiv.symm_apply_apply]
-  refine ⟨n, LinearMap.toMatrixRight' (g ∘ₗ f), ?_, ?_⟩
-  · rw [IsIdempotentElem, ← LinearMap.toMatrixRight'_comp, LinearMap.comp_assoc,
-      ← LinearMap.comp_assoc f g f, hfg, LinearMap.id_comp]
-  · rw [he, range_comp_of_range_eq_top g (range_eq_top.2 hf)]
-    exact ⟨LinearEquiv.ofInjective g hg⟩
+  refine ⟨n, (g ∘ₗ f).toMatrixRight', isIdempotentElem_toMatrixRight'_comp hfg, ?_⟩
+  have he : (g ∘ₗ f).toMatrixRight'.vecMulLinear = g ∘ₗ f :=
+    LinearMap.ext (vecMul_toMatrixRight' _)
+  rw [he, range_comp_of_range_eq_top g (range_eq_top.2 hf)]
+  exact ⟨LinearEquiv.ofInjective g hg⟩
 
 end Module.Finite

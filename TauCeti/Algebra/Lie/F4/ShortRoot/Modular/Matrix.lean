@@ -371,7 +371,9 @@ private theorem f4ShortRootSignedSimpleAdjoint_basis_of_weight_ne_zero
   · exact f4ShortRootSignedSimpleAdjoint_basis_root_of_coeff_eq_zero k b β hβ hb hcoeff
   · exact f4ShortRootSignedSimpleAdjoint_basis_root_of_coeff_ne_zero k b β hβ hb hcoeff
 
-private theorem f4ShortRootSignedSimpleAdjoint_basis (k : Fin 4 ⊕ Fin 4) (b : Fin 26) :
+/-- The signed simple-root adjoint action sends each canonical short-root ideal basis vector
+to the scalar multiple specified by the sparse root table. -/
+theorem f4ShortRootSignedSimpleAdjoint_basis (k : Fin 4 ⊕ Fin 4) (b : Fin 26) :
     f4ShortRootSignedSimpleAdjoint k (f4ShortRootLieIdealBasis b) =
       (f4SimpleRootCoeff k b : ZMod 2) •
         f4ShortRootLieIdealBasis (f4SimpleRootTarget k b) := by

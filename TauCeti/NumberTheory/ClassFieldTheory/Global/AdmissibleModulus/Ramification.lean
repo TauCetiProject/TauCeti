@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.AdmissibleModulus.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalArtin.Compatibility
-public import TauCeti.NumberTheory.ClassFieldTheory.Local.Conductor
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.Conductor.Basic
 public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
 
 /-!

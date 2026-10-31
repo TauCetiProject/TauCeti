@@ -65,6 +65,10 @@ comparisons change when both endpoints are multiplied by the same simple reflect
   Bruhat order.
 * `CoxeterSystem.BruhatLE.bruhatLE_mul_simple`: the lifting property in the form `u ≤ w * s` when
   `u ≤ w` and `s` lengthens `u`.
+* `CoxeterSystem.BruhatLE.simple_mul_of_isLeftDescent`,
+  `CoxeterSystem.BruhatLE.simple_mul_of_not_isLeftDescent` and
+  `CoxeterSystem.BruhatLE.bruhatLE_simple_mul`: the left-multiplication forms of the lifting
+  property.
 * `CoxeterSystem.IsMinimalCosetRep.bruhatLE_mul` and
   `CoxeterSystem.isMinimalCosetRep_iff_forall_bruhatLE_mul`: a minimal representative of a left
   coset of a standard parabolic subgroup is the Bruhat-least element of that coset.
@@ -498,6 +502,30 @@ theorem BruhatLE.bruhatLE_mul_simple (h : cs.BruhatLE u w) {i : B}
     rw [hprod, cs.not_isRightDescent_iff.mp hu] at hle
     rw [List.length_append, List.length_singleton] at hσlen
     omega
+
+/-! The left-multiplication forms of the lifting property follow by inversion. -/
+
+/-- At a left descent of the upper endpoint, left multiplication of the lower endpoint by the
+same simple reflection remains below the original upper endpoint. -/
+theorem BruhatLE.simple_mul_of_isLeftDescent (h : cs.BruhatLE u w) (i : B)
+    (hw : cs.IsLeftDescent w i) : cs.BruhatLE (cs.simple i * u) w := by
+  simpa only [mul_inv_rev, cs.inv_simple, inv_inv] using
+    (h.inv.mul_simple_of_isRightDescent i (cs.isRightDescent_inv_iff.mpr hw)).inv
+
+/-- At a left ascent of the upper endpoint, left multiplication of both endpoints by the same
+simple reflection preserves Bruhat order. -/
+theorem BruhatLE.simple_mul_of_not_isLeftDescent (h : cs.BruhatLE u w) (i : B)
+    (hw : ¬cs.IsLeftDescent w i) : cs.BruhatLE (cs.simple i * u) (cs.simple i * w) := by
+  simpa only [mul_inv_rev, cs.inv_simple, inv_inv] using
+    (h.inv.mul_simple_of_not_isRightDescent i
+      (cs.isRightDescent_inv_iff.not.mpr hw)).inv
+
+/-- **Lifting property, lower left form.** If `u ≤ w` and the simple reflection `s i` lengthens
+`u` on the left, then `u ≤ s i * w`. -/
+theorem BruhatLE.bruhatLE_simple_mul (h : cs.BruhatLE u w) {i : B}
+    (hu : ¬cs.IsLeftDescent u i) : cs.BruhatLE u (cs.simple i * w) := by
+  simpa only [mul_inv_rev, cs.inv_simple, inv_inv] using
+    (h.inv.bruhatLE_mul_simple (cs.isRightDescent_inv_iff.not.mpr hu)).inv
 
 end
 

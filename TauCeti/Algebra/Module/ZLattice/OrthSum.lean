@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import TauCeti.Algebra.Module.ZLattice.Determinant
+public import TauCeti.Algebra.Module.ZLattice.Shell
+import Mathlib.Data.Set.Card.Arithmetic
 
 /-!
 # The orthogonal direct sum of two lattices
@@ -26,6 +28,13 @@ When `L` and `M` are full lattices in finite-dimensional spaces, so is `L ⊕ M`
 The Gram matrix of the product basis is block diagonal, so covolumes and determinants multiply:
 `covolume (L ⊕ M) = covolume L * covolume M` and `det (L ⊕ M) = det L * det M`.
 
+Since `‖(x, y)‖² = ‖x‖² + ‖y‖²`, a vector of `L ⊕ M` of squared norm `t` is a pair of vectors of
+`L` and `M` of squared norms `s` and `t - s`, where `s ≤ t` runs over the finitely many squared
+norms represented by `L`. The representation numbers of `L ⊕ M` are therefore the convolution
+`r_{L ⊕ M}(t) = ∑_s r_L(s) * r_M(t - s)` of those of the summands; for even `L` this is the finite
+sum `r_{L ⊕ M}(2m) = ∑_{i ≤ m} r_L(2i) * r_M(2(m - i))`, and for integral `L` the sum
+`r_{L ⊕ M}(n) = ∑_{i ≤ n} r_L(i) * r_M(n - i)`.
+
 Orthogonal direct sums build integral, even or unimodular lattices of large rank from small ones,
 for instance the even unimodular lattice `E₈ ⊕ E₈` of rank `16`.
 
@@ -39,12 +48,19 @@ for instance the even unimodular lattice `E₈ ⊕ E₈` of rank `16`.
 * `ZLattice.isIntegral_orthSum_iff`, `ZLattice.isEven_orthSum_iff`,
   `ZLattice.isUnimodular_orthSum_iff`: `L ⊕ M` is integral, even or unimodular if and only if
   both `L` and `M` are.
+* `ZLattice.representationNumber_orthSum`, `ZLattice.representationNumber_orthSum_eq_sum`: the
+  representation numbers of `L ⊕ M` are the convolution of those of `L` and `M`, summed over the
+  squared norms `s ≤ t` represented by `L`, or over any finite set containing them.
+* `ZLattice.IsEven.representationNumber_orthSum`,
+  `ZLattice.IsIntegral.representationNumber_orthSum`: the convolution as a sum over
+  `Finset.range` for even and for integral `L`.
 * `ZLattice.covolume_orthSum`, `ZLattice.det_orthSum`: covolumes and determinants of full lattices
   multiply under orthogonal direct sums.
 
 ## References
 
 * W. Ebeling, *Lattices and Codes*, 3rd ed., Springer, 2013, Chapter 1.
+* J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 2, §2.3.
 -/
 
 public section
@@ -146,6 +162,99 @@ theorem isUnimodular_orthSum_iff :
   simp only [isUnimodular_iff_eq_dual, dual_orthSum, orthSum_inj]
 
 end Predicates
+
+/-! ### Representation numbers of an orthogonal direct sum -/
+
+section RepresentationNumber
+
+omit [InnerProductSpace ℝ E] [InnerProductSpace ℝ F]
+
+variable {L : Submodule ℤ E} {M : Submodule ℤ F} {t : ℝ}
+
+/-- The shell of squared norm `t` of `L ⊕ M` is the union, over the squared norms `s ≤ t`
+represented by `L`, of the pairs of a vector of `L` of squared norm `s` and a vector of `M` of
+squared norm `t - s`. Any set `S` containing those squared norms may index the union. -/
+theorem shell_orthSum_eq_biUnion {S : Set ℝ} (hS : representedNormsLE L t ⊆ S) :
+    shell (orthSum L M) t = ⋃ s ∈ S, ofLp ⁻¹' (shell L s ×ˢ shell M (t - s)) := by
+  ext x
+  simp only [mem_shell, mem_orthSum, prod_norm_sq_eq_of_L2, Set.mem_iUnion, Set.mem_preimage,
+    Set.mem_prod, ofLp_fst, ofLp_snd, exists_prop]
+  refine ⟨fun ⟨⟨hx₁, hx₂⟩, hx⟩ ↦ ⟨‖x.fst‖ ^ 2, hS (norm_sq_mem_representedNormsLE hx₁ ?_),
+    ⟨hx₁, rfl⟩, hx₂, by rw [← hx, add_sub_cancel_left]⟩, ?_⟩
+  · rw [← hx]
+    exact le_add_of_nonneg_right (by positivity)
+  · rintro ⟨s, -, ⟨hx₁, hs⟩, hx₂, ht⟩
+    exact ⟨⟨hx₁, hx₂⟩, by rw [hs, ht, add_sub_cancel]⟩
+
+variable [ProperSpace E] [ProperSpace F] [DiscreteTopology L] [DiscreteTopology M]
+
+/-- The representation numbers of an orthogonal direct sum are the convolution of those of the
+summands: `r_{L ⊕ M}(t) = ∑_{s ∈ S} r_L(s) * r_M(t - s)` for any finite set `S` of real numbers
+containing the squared norms `s ≤ t` represented by `L`. -/
+theorem representationNumber_orthSum_eq_sum {S : Finset ℝ} (hS : representedNormsLE L t ⊆ S) :
+    representationNumber (orthSum L M) t =
+      ∑ s ∈ S, representationNumber L s * representationNumber M (t - s) := by
+  have hdisj : (S : Set ℝ).PairwiseDisjoint fun s ↦
+      (ofLp ⁻¹' (shell L s ×ˢ shell M (t - s)) : Set (WithLp 2 (E × F))) :=
+    fun s _ s' _ hss' ↦ Set.disjoint_left.mpr fun _ hx hx' ↦
+      hss' ((mem_shell.mp hx.1).2.symm.trans (mem_shell.mp hx'.1).2)
+  have hfin (s : ℝ) : (ofLp ⁻¹' (shell L s ×ˢ shell M (t - s)) : Set (WithLp 2 (E × F))).Finite :=
+    ((finite_shell L s).prod (finite_shell M _)).preimage (ofLp_injective 2).injOn
+  rw [representationNumber_def, shell_orthSum_eq_biUnion hS,
+    Set.Finite.ncard_biUnion (S : Set ℝ).toFinite (fun s _ ↦ hfin s) hdisj, finsum_mem_coe_finset]
+  refine Finset.sum_congr rfl fun s _ ↦ ?_
+  rw [Set.ncard_preimage_of_injective_subset_range (ofLp_injective 2)
+      (by simp [(ofLp_surjective 2).range_eq]), Set.ncard_prod, representationNumber_def,
+    representationNumber_def]
+
+variable (L M) in
+/-- The representation numbers of an orthogonal direct sum are the convolution of those of the
+summands, summed over the finite set of squared norms `s ≤ t` represented by `L`:
+`r_{L ⊕ M}(t) = ∑_{s ≤ t represented by L} r_L(s) * r_M(t - s)`. -/
+theorem representationNumber_orthSum (t : ℝ) :
+    representationNumber (orthSum L M) t =
+      ∑ s ∈ (finite_representedNormsLE L t).toFinset,
+        representationNumber L s * representationNumber M (t - s) :=
+  representationNumber_orthSum_eq_sum (by simp)
+
+/-- For an even lattice `L`, the representation numbers of `L ⊕ M` at even integers are the
+convolution `r_{L ⊕ M}(2m) = ∑_{i ≤ m} r_L(2i) * r_M(2(m - i))`. -/
+theorem IsEven.representationNumber_orthSum (hL : IsEven L) (m : ℕ) :
+    representationNumber (orthSum L M) (2 * m) =
+      ∑ i ∈ Finset.range (m + 1),
+        representationNumber L (2 * i) * representationNumber M (2 * (m - i : ℕ)) := by
+  rw [representationNumber_orthSum_eq_sum (S := (Finset.range (m + 1)).image fun i : ℕ ↦ 2 * i),
+    Finset.sum_image fun i _ j _ h ↦ by simpa using h]
+  · refine Finset.sum_congr rfl fun i hi ↦ ?_
+    rw [Nat.cast_sub (Finset.mem_range_succ_iff.mp hi), mul_sub]
+  · intro s hs
+    obtain ⟨hst, hs⟩ := mem_representedNormsLE.mp hs
+    obtain ⟨k, rfl⟩ : ∃ k : ℕ, s = 2 * k := by
+      by_contra hk
+      exact hs.ne_empty (hL.shell_eq_empty hk)
+    have hkm : k ≤ m := by exact_mod_cast (by linarith : (k : ℝ) ≤ m)
+    exact Finset.mem_coe.mpr (Finset.mem_image_of_mem _ (Finset.mem_range_succ_iff.mpr hkm))
+
+variable [InnerProductSpace ℝ E] in
+/-- For an integral lattice `L`, the representation numbers of `L ⊕ M` at natural numbers are the
+convolution `r_{L ⊕ M}(n) = ∑_{i ≤ n} r_L(i) * r_M(n - i)`. -/
+theorem IsIntegral.representationNumber_orthSum (hL : IsIntegral L) (n : ℕ) :
+    representationNumber (orthSum L M) n =
+      ∑ i ∈ Finset.range (n + 1),
+        representationNumber L i * representationNumber M (n - i : ℕ) := by
+  rw [representationNumber_orthSum_eq_sum (S := (Finset.range (n + 1)).image fun i : ℕ ↦ (i : ℝ)),
+    Finset.sum_image fun i _ j _ h ↦ by simpa using h]
+  · refine Finset.sum_congr rfl fun i hi ↦ ?_
+    rw [Nat.cast_sub (Finset.mem_range_succ_iff.mp hi)]
+  · intro s hs
+    obtain ⟨hst, hs⟩ := mem_representedNormsLE.mp hs
+    obtain ⟨k, rfl⟩ : ∃ k : ℕ, s = k := by
+      by_contra hk
+      exact hs.ne_empty (hL.shell_eq_empty hk)
+    have hkn : k ≤ n := by exact_mod_cast hst
+    exact Finset.mem_coe.mpr (Finset.mem_image_of_mem _ (Finset.mem_range_succ_iff.mpr hkn))
+
+end RepresentationNumber
 
 /-! ### Full lattices -/
 

@@ -38,10 +38,7 @@ The argument has three steps.
   extension `φ#Tr` recovers `φ` on either corner.
 
 Applied to the algebra `Matrix ι ι A`, the conjugation statements cover conjugation of idempotent
-matrices by invertible matrices. They also give invariance under *algebraic equivalence*: if
-`e = x y` and `f = y x` are idempotent matrices, then, after replacing `x` by `e x f` and `y` by
-`f y e`, the block matrix `w = !![1 - e, x; y, 1 - f]` satisfies `w² = 1` and conjugates `e ⊕ 0`
-to `0 ⊕ f`.
+matrices by invertible matrices.
 
 ## Main results
 
@@ -51,14 +48,13 @@ to `0 ⊕ f`.
 * `TauCeti.cyclicCohomology.evenPairing_eval_algebraMap_eq` and
   `TauCeti.cyclicCohomology.evenPairing_units_conj`: the corresponding invariances of the even
   pairing.
-* `TauCeti.cyclicCohomology.evenPairing_matrixExtension_eq_of_mul_eq`: invariance of the even
-  pairing of idempotent matrices under algebraic equivalence.
+* `TauCeti.cyclicCohomology.evenPairing_matrixExtension_eq_of_mul_eq`: Murray–von Neumann
+  invariance, for idempotent matrices `e = a * b` and `f = b * a` of possibly different sizes.
 
 ## References
 
 * A. Connes, *Noncommutative Geometry*, Chapter III, §3.
 * J.-L. Loday, *Cyclic Homology*, §8.3.
-* J. Rosenberg, *Algebraic K-Theory and Its Applications*, §1.2.
 -/
 
 public section
@@ -184,60 +180,41 @@ theorem evenPairing_units_conj (u : Aˣ) {e : A} (he : IsIdempotentElem e)
   simp only [LinearMap.coe_comp, Function.comp_apply, evenPairing_mk]
   rw [apply_const_units_conj (even_two_mul m) φ.1.2 hb u he]
 
-section AlgebraicEquivalence
-
-variable {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
-
-/-- Bordering an idempotent matrix by a zero block does not change its even pairing. -/
-private theorem evenPairing_fromBlocks_zero_matrixExtension {e : Matrix ι ι A}
-    (he : IsIdempotentElem e) (m : ℕ) (c : cyclicCohomology R A M (2 * m)) :
-    evenPairing (Matrix.fromBlocks e 0 0 (0 : Matrix κ κ A)) (he.fromBlocks_zero₁₂_zero₂₁ .zero) m
-        (matrixExtension M (ι ⊕ κ) (2 * m) c) =
-      evenPairing e he m (matrixExtension M ι (2 * m) c) := by
-  rw [evenPairing_fromBlocks_matrixExtension he .zero, evenPairing_zero, LinearMap.zero_apply,
-    add_zero]
-
-/-- **Invariance of the even pairing under algebraic equivalence.** If `e = x y` and `f = y x` for
-idempotent matrices `e` and `f` and rectangular matrices `x` and `y`, then `e` and `f` have the
-same even pairing with every cyclic cohomology class. -/
-theorem evenPairing_matrixExtension_eq_of_mul_eq {e : Matrix ι ι A} {f : Matrix κ κ A}
-    (he : IsIdempotentElem e) (hf : IsIdempotentElem f) {x : Matrix ι κ A} {y : Matrix κ ι A}
-    (hxy : x * y = e) (hyx : y * x = f) (m : ℕ) (c : cyclicCohomology R A M (2 * m)) :
+/-- **Murray–von Neumann invariance of the even pairing.** If idempotent matrices `e` and `f`,
+possibly of different sizes, factor as `e = a * b` and `f = b * a` through rectangular matrices,
+then they have the same even pairing with every cyclic cohomology class of `A`. -/
+theorem evenPairing_matrixExtension_eq_of_mul_eq {ι κ : Type*} [Fintype ι] [DecidableEq ι]
+    [Fintype κ] [DecidableEq κ] {e : Matrix ι ι A} {f : Matrix κ κ A} (he : IsIdempotentElem e)
+    (hf : IsIdempotentElem f) {a : Matrix ι κ A} {b : Matrix κ ι A} (hab : a * b = e)
+    (hba : b * a = f) (m : ℕ) (c : cyclicCohomology R A M (2 * m)) :
     evenPairing e he m (matrixExtension M ι (2 * m) c) =
       evenPairing f hf m (matrixExtension M κ (2 * m) c) := by
-  subst hxy hyx
-  -- Idempotence of `x y` and `y x`, as rewriting rules on left-associated alternating words.
-  have h₁' : x * y * x * y = x * y := by rw [Matrix.mul_assoc (x * y), he.eq]
-  have h₂' : y * x * y * x = y * x := by rw [Matrix.mul_assoc (y * x), hf.eq]
-  -- The block matrix `w = !![1 - x y, x y x; y x y, 1 - y x]` is an involution conjugating
-  -- `x y ⊕ 0` to `0 ⊕ y x`.
-  set w := Matrix.fromBlocks (1 - x * y) (x * y * x) (y * x * y) (1 - y * x)
-  have hww : w * w = 1 := by
-    rw [Matrix.fromBlocks_multiply, ← Matrix.fromBlocks_one]
-    congr 1 <;> simp only [Matrix.mul_sub, Matrix.sub_mul, Matrix.one_mul, Matrix.mul_one,
-      ← Matrix.mul_assoc, h₁', h₂'] <;> abel
-  let u : (Matrix (ι ⊕ κ) (ι ⊕ κ) A)ˣ := ⟨w, w, hww, hww⟩
-  have hconj : (u : Matrix (ι ⊕ κ) (ι ⊕ κ) A) * Matrix.fromBlocks (x * y) 0 0 0 *
-      (↑u⁻¹ : Matrix (ι ⊕ κ) (ι ⊕ κ) A) = Matrix.fromBlocks 0 0 0 (y * x) := by
-    simp only [u, Units.val_mk, Units.inv_mk]
-    rw [Matrix.fromBlocks_multiply, Matrix.fromBlocks_multiply]
-    congr 1 <;> simp only [Matrix.mul_sub, Matrix.sub_mul, Matrix.one_mul, Matrix.mul_one,
-      Matrix.mul_zero, Matrix.zero_mul, add_zero, ← Matrix.mul_assoc, h₁', h₂'] <;> abel
-  -- `evenPairing` depends on a proof that its argument is idempotent, so `hconj` cannot rewrite
-  -- the conclusion of `evenPairing_units_conj` directly; generalize the conjugate instead.
-  have key : ∀ (g : Matrix (ι ⊕ κ) (ι ⊕ κ) A) (hg : IsIdempotentElem g),
-      (u : Matrix (ι ⊕ κ) (ι ⊕ κ) A) * Matrix.fromBlocks (x * y) 0 0 0 *
-        (↑u⁻¹ : Matrix (ι ⊕ κ) (ι ⊕ κ) A) = g →
-        evenPairing (R := R) (M := M) g hg m =
-          evenPairing _ (he.fromBlocks_zero₁₂_zero₂₁ .zero) m := by
-    rintro _ _ rfl
-    exact evenPairing_units_conj u _ _ m
-  rw [← evenPairing_fromBlocks_zero_matrixExtension (κ := κ) he,
-    ← key _ (IsIdempotentElem.zero.fromBlocks_zero₁₂_zero₂₁ hf) hconj,
-    evenPairing_fromBlocks_matrixExtension .zero hf, evenPairing_zero, LinearMap.zero_apply,
-    zero_add]
-
-end AlgebraicEquivalence
+  -- Replacing `a` by `e * a` and `b` by `b * e` keeps both products, and makes `e ⊕ 0` and
+  -- `0 ⊕ f` conjugate by the involution `!![1 - e, e * a; b * e, 1 - f]`.
+  have hab' : e * a * (b * e) = e := by
+    rw [Matrix.mul_assoc, ← Matrix.mul_assoc a, hab, he.eq, he.eq]
+  have hba' : b * e * (e * a) = f := by
+    rw [Matrix.mul_assoc, ← Matrix.mul_assoc e, he.eq, ← hab, ← Matrix.mul_assoc,
+      ← Matrix.mul_assoc, hba, Matrix.mul_assoc, hba, hf.eq]
+  have hw := Matrix.fromBlocks_one_sub_mul_self_of_mul_eq hab' hba'
+    (by rw [← Matrix.mul_assoc, he.eq]) (by rw [Matrix.mul_assoc, he.eq])
+  let u : (Matrix (ι ⊕ κ) (ι ⊕ κ) A)ˣ := ⟨_, _, hw, hw⟩
+  have hconj : (u : Matrix (ι ⊕ κ) (ι ⊕ κ) A) * Matrix.fromBlocks e 0 0 0 *
+      (↑(u⁻¹) : Matrix (ι ⊕ κ) (ι ⊕ κ) A) =
+      Matrix.fromBlocks 0 0 0 f :=
+    Matrix.fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_of_mul_eq hab' hba'
+      (by rw [Matrix.mul_assoc, he.eq])
+  have h0ι : IsIdempotentElem (0 : Matrix ι ι A) := .zero
+  have h0κ : IsIdempotentElem (0 : Matrix κ κ A) := .zero
+  have hE := he.fromBlocks_zero₁₂_zero₂₁ h0κ
+  have hF := h0ι.fromBlocks_zero₁₂_zero₂₁ hf
+  have h := evenPairing_units_conj (R := R) (M := M) u hE (hconj ▸ hF) m
+  simp only [hconj] at h
+  have h₁ := evenPairing_fromBlocks_matrixExtension he h0κ m c
+  have h₂ := evenPairing_fromBlocks_matrixExtension h0ι hf m c
+  rw [evenPairing_zero, LinearMap.zero_apply, add_zero] at h₁
+  rw [evenPairing_zero, LinearMap.zero_apply, zero_add] at h₂
+  rw [← h₁, ← h₂, h]
 
 end cyclicCohomology
 

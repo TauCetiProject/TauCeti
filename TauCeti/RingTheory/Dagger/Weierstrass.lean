@@ -72,56 +72,34 @@ private theorem exists_mul_add_eq_series_of_isRestricted {ρ r : ℝ} [Fact (0 <
     ∃ (q : W') (R : PowerSeries W),
       (∀ m, s ≤ m → PowerSeries.coeff m R = 0) ∧
         optionSeries q * optionSeries g + R = optionSeries f := by
-  have hr : 1 < r := hρ.trans_le hρr
   -- The split polyradius: `r` in the separated variable and `ρ` in the others. Its coefficient
-  -- polyradius `fun i ↦ c (some i)` reduces to `fun _ ↦ ρ` by unfolding `splitRadius`, so the
-  -- iterated ring of `restrictedOptionEquiv (c := c)` is the ring of power series
-  -- containing `G`.
+  -- polyradius `fun i ↦ c (some i)` reduces to `fun _ ↦ ρ` by unfolding `splitRadius`.
   let c : Option σ → ℝ := splitRadius r ρ
   let _ : ∀ i, Fact (0 < c i) := fun i ↦ ⟨splitRadius_pos Fact.out hρr i⟩
-  have hc (i) : 0 ≤ c i := (Fact.out : 0 < c i).le
-  -- Lift `f` and `g` to the split polyradius.
-  let gC : IsRestricted.subring (R := K) c := ⟨g, isRestricted_of_le hgr hc (splitRadius_le hρr)⟩
-  let fC : IsRestricted.subring (R := K) c := ⟨f, isRestricted_of_le hf hc (splitRadius_le hρr)⟩
-  let F : PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)) :=
-    (restrictedOptionEquiv (c := c) fC).1
-  have hFr : PowerSeries.IsRestricted r F := (restrictedOptionEquiv (c := c) fC).2
-  have hGC : ((restrictedOptionEquiv (c := c) gC).1 :
-      PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ))) = G := by
-    ext m : 1
-    exact Subtype.ext ((coeff_restrictedOptionEquiv (c := c) gC m).trans (hG m).symm)
-  have hGr : PowerSeries.IsRestricted r G := hGC ▸ (restrictedOptionEquiv (c := c) gC).2
+  let fC : IsRestricted.subring (R := K) c :=
+    ⟨f, isRestricted_of_le hf (fun i ↦ (Fact.out : 0 < c i).le) (splitRadius_le hρr)⟩
+  have hGmap : PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype G =
+      optionEquivLeft σ K (g : MvPowerSeries (Option σ) K) := PowerSeries.ext hG
   -- Divide at the fixed radius `r` over the Banach ring of radius-`ρ` series.
   obtain ⟨Q, R, hQ, hR, hQR⟩ := (PowerSeries.isMulDistinguished_iff_isUnit.mpr
-    ⟨hd, hu⟩).exists_mul_add_eq (zero_lt_one.trans hr) hGr hFr
-  rw [mul_comm] at hQR
+    ⟨hd, hu⟩).exists_mul_add_eq (zero_lt_one.trans (hρ.trans_le hρr))
+    (isRestricted_of_map_subtype_eq_optionEquivLeft hρr hgr hGmap) (restrictedOptionEquiv fC).2
   -- Pull `Q` and `R` back to the overconvergent algebras and compare formal series.
-  let q : W' := washnitzerAlgebra.ofRestricted hρ (le_splitRadius hρr)
-    ((restrictedOptionEquiv (c := c)).symm ⟨Q, hQ⟩)
   let φ : IsRestricted.subring (R := K) (fun _ : σ ↦ ρ) →+* W :=
     washnitzerAlgebra.ofRestricted hρ fun _ ↦ le_rfl
-  let Rw := PowerSeries.map φ R
-  have hQmap : PowerSeries.map ((washnitzerAlgebra σ K).val :
-      washnitzerAlgebra σ K →+* MvPowerSeries σ K) (optionSeries q) =
-      PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype Q := by
-    rw [washnitzerAlgebra.map_val_optionSeries]
-    simp only [q, washnitzerAlgebra.coe_ofRestricted]
-    rw [coe_restrictedOptionEquiv_symm (c := c)]
-    exact (optionEquivLeft σ K).apply_symm_apply _
-  have hRmap : PowerSeries.map ((washnitzerAlgebra σ K).val :
-      washnitzerAlgebra σ K →+* MvPowerSeries σ K) Rw =
-      PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype R := by
-    ext m : 1
-    simp [Rw, φ, Subalgebra.val_apply]
-  have hGmap : PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype G =
-      optionEquivLeft σ K (g : MvPowerSeries (Option σ) K) := by
-    ext m : 1
-    exact hG m
-  refine ⟨q, Rw, fun m hm ↦ by simp [Rw, hR m hm], ?_⟩
-  apply washnitzerAlgebra.map_val_injective
-  rw [map_add, map_mul, hQmap, hRmap, washnitzerAlgebra.map_val_optionSeries,
-    washnitzerAlgebra.map_val_optionSeries, ← hGmap, ← map_mul, ← map_add, hQR]
-  exact map_subtype_restrictedOptionEquiv (c := c) fC
+  refine ⟨washnitzerAlgebra.ofRestricted hρ (le_splitRadius hρr)
+    ((restrictedOptionEquiv (c := c)).symm ⟨Q, hQ⟩), PowerSeries.map φ R,
+    fun m hm ↦ by simp [hR m hm], washnitzerAlgebra.map_val_injective ?_⟩
+  have hRw : PowerSeries.map ((washnitzerAlgebra σ K).val : W →+* MvPowerSeries σ K)
+      (PowerSeries.map φ R) =
+        PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype R :=
+    PowerSeries.ext fun m ↦ by simp [φ]
+  have h := congrArg (PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype) hQR
+  -- `RingHom.map_add` and `RingHom.map_mul`: the generic `map_add` searches `AddHomClass` slowly.
+  rw [RingHom.map_add, RingHom.map_mul, hGmap, map_subtype_restrictedOptionEquiv fC] at h
+  simp only [RingHom.map_add, RingHom.map_mul, washnitzerAlgebra.map_val_optionSeries, hRw,
+    washnitzerAlgebra.coe_ofRestricted, coe_restrictedOptionEquiv_symm, AlgEquiv.apply_symm_apply]
+  linear_combination h
 
 private theorem exists_mul_add_eq_series {g : W'} {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s

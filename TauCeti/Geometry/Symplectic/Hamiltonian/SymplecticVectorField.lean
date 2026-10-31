@@ -27,8 +27,9 @@ manifold, a smooth function `f` has the smooth Hamiltonian vector field `X_f`, w
 The sequence below uses `f ↦ -X_f`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.negHamiltonianₗ`, defined on smooth `0`-forms). This sign
 follows the identity `X_{{f, g}} = -[X_f, X_g]`, valid for closed `σ` with the bracket
-`{f, g} = df(X_g)`, under which `f ↦ -X_f` respects Lie brackets; brackets themselves are not
-treated in this file. These maps
+`{f, g} = df(X_g)`, under which `f ↦ -X_f` respects Lie brackets
+(`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_poissonBracket`); brackets
+themselves are not treated in this file. These maps
 form the exact sequence
 
 `0 → H⁰_dR(M) → C^∞(M) → {symplectic vector fields} → H¹_dR(M) → 0`.
@@ -103,7 +104,7 @@ variable {σ}
 /-- A smooth vector field is symplectic exactly when its contraction is closed. -/
 @[simp]
 theorem mem_symplecticVectorFields_iff {X : Cₛ^∞⟮I; E, TangentSpace I (M := M)⟯} :
-    X ∈ σ.symplecticVectorFields ↔ mextDeriv (σ.1.interior X) = 0 := by
+    X ∈ σ.symplecticVectorFields ↔ mextDeriv (RoughForm.interior X σ.1) = 0 := by
   rw [symplecticVectorFields, Submodule.mem_comap, mem_closedForms, coe_interiorₗ]
 
 /-- For a closed two-form, a smooth vector field is symplectic exactly when its Lie derivative

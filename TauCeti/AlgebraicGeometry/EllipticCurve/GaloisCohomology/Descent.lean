@@ -82,13 +82,69 @@ namespace WeierstrassCurve
 
 open TauCeti TauCeti.ContCohomology
 
-variable {K : Type*} [Field K] [DecidableEq K] (W : WeierstrassCurve K) [W.IsElliptic] (m : ℕ)
-  (hm : IsUnit (m : K))
+variable {K : Type*} [Field K]
+
+/-! ### The map `H¹(G_K, E[m]) → H¹(G_K, E)[m]` -/
+
+section TorsionCoeffInclH1
+
+variable (W : WeierstrassCurve K) (m : ℕ)
+
+/-- **The map `H¹(G_K, E[m]) → H¹(G_K, E)[m]`**, the last map of the `m`-descent sequence: the
+map induced by the inclusion `E(Kˢ)[m] → E(Kˢ)`, which lands in the `m`-torsion because `m` kills
+`E(Kˢ)[m]`. It is surjective (`WeierstrassCurve.torsionCoeffInclH1_surjective`), with kernel the
+image of the Kummer map (`WeierstrassCurve.exact_kummerClassMap_torsionCoeffInclH1`). -/
+def torsionCoeffInclH1 :
+    H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) →+
+      AddSubgroup.torsionBy (H1 (AbsoluteGaloisGroup K) W.PointCoeff) m :=
+  (explicitCoeff1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) (W.torsionCoeffIncl m)
+      continuous_of_discreteTopology).codRestrict _ fun c => by
+    rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul,
+      nsmul_H1_eq_zero (fun P => AddSubgroup.torsionBy.nsmul P) c, map_zero]
+
+@[simp]
+theorem coe_torsionCoeffInclH1 (c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :
+    (W.torsionCoeffInclH1 m c : H1 (AbsoluteGaloisGroup K) W.PointCoeff) =
+      explicitCoeff1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) (W.torsionCoeffIncl m)
+        continuous_of_discreteTopology c :=
+  (rfl)
+
+variable [W.IsElliptic] (hm : IsUnit (m : K))
+include hm
+
+/-- **The image of `H¹(G_K, E[m]) → H¹(G_K, E)` is the `m`-torsion of `H¹(G_K, E)`**, the last
+exactness statement of the `m`-descent sequence. -/
+theorem range_explicitCoeff1_torsionCoeffIncl :
+    (explicitCoeff1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) (W.torsionCoeffIncl m)
+        continuous_of_discreteTopology).range =
+      AddSubgroup.torsionBy (H1 (AbsoluteGaloisGroup K) W.PointCoeff) m := by
+  rw [← kummerShortExact_inclDistribMulActionHom W m hm,
+    (W.kummerShortExact m hm).explicitLongExact_H1B]
+  ext c
+  rw [AddMonoidHom.mem_ker, AddSubgroup.torsionBy.nsmul_iff,
+    explicitCoeff1_eq_nsmul _ _ _ _ fun P => by
+      rw [DiscreteShortExact.projDistribMulActionHom_apply, kummerShortExact_proj,
+        nsmulAddMonoidHom_apply]]
+
+/-- **`H¹(G_K, E[m]) → H¹(G_K, E)[m]` is surjective**, the right end of the `m`-descent
+sequence. -/
+theorem torsionCoeffInclH1_surjective : Function.Surjective (W.torsionCoeffInclH1 m) :=
+  fun ⟨_, hc⟩ => by
+    obtain ⟨d, rfl⟩ := (range_explicitCoeff1_torsionCoeffIncl W m hm).ge hc
+    exact ⟨d, rfl⟩
+
+end TorsionCoeffInclH1
+
+section Kummer
+
+variable [DecidableEq K]
 
 /-! ### The Kummer cocycle -/
 
-omit [W.IsElliptic] in
-variable {W m} in
+section KummerCocycle
+
+variable {W : WeierstrassCurve K} {m : ℕ}
+
 /-- **The Kummer difference is `m`-torsion**: if `m • Q` is the image of a point of `E(K)`, then
 `σ Q - Q` is killed by `m`, because `G_K` fixes `m • Q`. -/
 theorem smul_sub_mem_torsionCoeff {P : W.toAffine.Point} {Q : W.PointCoeff}
@@ -96,24 +152,18 @@ theorem smul_sub_mem_torsionCoeff {P : W.toAffine.Point} {Q : W.PointCoeff}
     σ • Q - Q ∈ AddSubgroup.torsionBy W.PointCoeff m := by
   rw [AddSubgroup.torsionBy.nsmul_iff, nsmul_sub, smul_comm, hQ, smul_basePointCoeff, sub_self]
 
-omit [W.IsElliptic] in
-variable {W m} in
 /-- **The Kummer cocycle** `σ ↦ σ Q - Q` attached to a point `Q` of `E(Kˢ)` with `m • Q` in
 `E(K)`. -/
 def kummerCocycle {P : W.toAffine.Point} {Q : W.PointCoeff} (hQ : m • Q = W.basePointCoeff P) :
     AbsoluteGaloisGroup K → W.TorsionCoeff m :=
   fun σ => ⟨σ • Q - Q, smul_sub_mem_torsionCoeff hQ σ⟩
 
-omit [W.IsElliptic] in
-variable {W m} in
 @[simp]
 theorem coe_kummerCocycle {P : W.toAffine.Point} {Q : W.PointCoeff}
     (hQ : m • Q = W.basePointCoeff P) (σ : AbsoluteGaloisGroup K) :
     (kummerCocycle hQ σ : W.PointCoeff) = σ • Q - Q :=
   (rfl)
 
-omit [W.IsElliptic] in
-variable {W m} in
 /-- **The Kummer cocycle is a continuous `1`-cocycle**: its image in `E(Kˢ)` is the coboundary
 of `Q`. -/
 theorem kummerCocycle_mem_Z1 {P : W.toAffine.Point} {Q : W.PointCoeff}
@@ -122,6 +172,10 @@ theorem kummerCocycle_mem_Z1 {P : W.toAffine.Point} {Q : W.PointCoeff}
   mem_Z1_of_injective_comp_eq_d0 (φ := (AddSubgroup.torsionBy W.PointCoeff m).subtype)
     Subtype.val_injective (fun _ _ ↦ rfl) fun σ => by
     rw [AddSubgroup.coe_subtype, coe_kummerCocycle]
+
+end KummerCocycle
+
+variable (W : WeierstrassCurve K) [W.IsElliptic] (m : ℕ) (hm : IsUnit (m : K))
 
 /-! ### The Kummer map -/
 
@@ -137,18 +191,6 @@ def kummerMap : W.toAffine.Point →+ H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff
 theorem kummerMap_apply (P : W.toAffine.Point) :
     W.kummerMap m hm P = (W.kummerShortExact m hm).explicitDelta0 (W.basePointEquivInvariants P) :=
   (rfl)
-
-variable {W m} in
-/-- **The Kummer class of `P` is represented by `σ ↦ σ Q - Q`**, for any `Q ∈ E(Kˢ)` with
-`m • Q = P` (Silverman X.4). Such a `Q` exists because `E(Kˢ)` is divisible by `m`. -/
-theorem kummerMap_eq_H1pi {P : W.toAffine.Point} {Q : W.PointCoeff}
-    (hQ : m • Q = W.basePointCoeff P) :
-    W.kummerMap m hm P =
-      H1pi (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
-        ⟨kummerCocycle hQ, kummerCocycle_mem_Z1 hQ⟩ :=
-  (W.kummerMap_apply m hm P).trans <| (W.kummerShortExact m hm).explicitDelta0_apply _ (b := Q)
-    (by rw [kummerShortExact_proj, nsmulAddMonoidHom_apply, coe_basePointEquivInvariants, hQ])
-    fun σ => by rw [kummerShortExact_incl, AddSubgroup.coe_subtype, coe_kummerCocycle]
 
 /-- **Multiplication by `m` on the invariants of `E(Kˢ)` is multiplication by `m` on `E(K)`.**
 This is the commuting square that turns exactness of the long exact sequence at
@@ -168,12 +210,28 @@ theorem ker_kummerMap : (W.kummerMap m hm).ker = (nsmulAddMonoidHom m).range :=
     (W.basePointEquivInvariants).injective (W.basePointEquivInvariants).surjective
     (W.explicitCoeff0_basePointEquivInvariants m hm)
 
-variable {W m} in
+section Implicit
+
+variable {W m}
+
+/-- **The Kummer class of `P` is represented by `σ ↦ σ Q - Q`**, for any `Q ∈ E(Kˢ)` with
+`m • Q = P` (Silverman X.4). Such a `Q` exists because `E(Kˢ)` is divisible by `m`. -/
+theorem kummerMap_eq_H1pi {P : W.toAffine.Point} {Q : W.PointCoeff}
+    (hQ : m • Q = W.basePointCoeff P) :
+    W.kummerMap m hm P =
+      H1pi (AbsoluteGaloisGroup K) (W.TorsionCoeff m)
+        ⟨kummerCocycle hQ, kummerCocycle_mem_Z1 hQ⟩ :=
+  (W.kummerMap_apply m hm P).trans <| (W.kummerShortExact m hm).explicitDelta0_apply _ (b := Q)
+    (by rw [kummerShortExact_proj, nsmulAddMonoidHom_apply, coe_basePointEquivInvariants, hQ])
+    fun σ => by rw [kummerShortExact_incl, AddSubgroup.coe_subtype, coe_kummerCocycle]
+
 /-- **A point has trivial Kummer class exactly when it is divisible by `m` in `E(K)`.** -/
 theorem kummerMap_eq_zero_iff {P : W.toAffine.Point} :
     W.kummerMap m hm P = 0 ↔ ∃ Q : W.toAffine.Point, m • Q = P := by
   rw [← AddMonoidHom.mem_ker, ker_kummerMap, AddMonoidHom.mem_range]
   rfl
+
+end Implicit
 
 /-! ### The Kummer map on `E(K) ⧸ m E(K)` -/
 
@@ -195,7 +253,7 @@ theorem kummerClassMap_mk (P : W.toAffine.Point) :
 theorem kummerClassMap_injective : Function.Injective (W.kummerClassMap m hm) :=
   (QuotientAddGroup.injective_lift_iff _ _ _).2 (W.ker_kummerMap m hm).symm
 
-/-! ### Exactness at `H¹(G_K, E[m])` and at `H¹(G_K, E)` -/
+/-! ### Exactness at `H¹(G_K, E[m])` -/
 
 /-- **The image of the Kummer map is the kernel of `H¹(G_K, E[m]) → H¹(G_K, E)`.** -/
 theorem range_kummerMap :
@@ -204,52 +262,6 @@ theorem range_kummerMap :
         continuous_of_discreteTopology).ker := by
   rw [← kummerShortExact_inclDistribMulActionHom W m hm]
   exact (W.kummerShortExact m hm).range_explicitDelta0_comp (W.basePointEquivInvariants).surjective
-
-omit [DecidableEq K] in
-include hm in
-/-- **The image of `H¹(G_K, E[m]) → H¹(G_K, E)` is the `m`-torsion of `H¹(G_K, E)`**, the last
-exactness statement of the `m`-descent sequence. -/
-theorem range_explicitCoeff1_torsionCoeffIncl :
-    (explicitCoeff1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) (W.torsionCoeffIncl m)
-        continuous_of_discreteTopology).range =
-      AddSubgroup.torsionBy (H1 (AbsoluteGaloisGroup K) W.PointCoeff) m := by
-  rw [← kummerShortExact_inclDistribMulActionHom W m hm,
-    (W.kummerShortExact m hm).explicitLongExact_H1B]
-  ext c
-  rw [AddMonoidHom.mem_ker, AddSubgroup.torsionBy.nsmul_iff,
-    explicitCoeff1_eq_nsmul _ _ _ _ fun P => by
-      rw [DiscreteShortExact.projDistribMulActionHom_apply, kummerShortExact_proj,
-        nsmulAddMonoidHom_apply]]
-
-omit [DecidableEq K] [W.IsElliptic] in
-/-- **The map `H¹(G_K, E[m]) → H¹(G_K, E)[m]`**, the last map of the `m`-descent sequence: the
-map induced by the inclusion `E(Kˢ)[m] → E(Kˢ)`, which lands in the `m`-torsion because `m` kills
-`E(Kˢ)[m]`. It is surjective (`WeierstrassCurve.torsionCoeffInclH1_surjective`), with kernel the
-image of the Kummer map (`WeierstrassCurve.exact_kummerClassMap_torsionCoeffInclH1`). -/
-def torsionCoeffInclH1 :
-    H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) →+
-      AddSubgroup.torsionBy (H1 (AbsoluteGaloisGroup K) W.PointCoeff) m :=
-  (explicitCoeff1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) (W.torsionCoeffIncl m)
-      continuous_of_discreteTopology).codRestrict _ fun c => by
-    rw [AddSubgroup.torsionBy.nsmul_iff, ← map_nsmul,
-      nsmul_H1_eq_zero (fun P => AddSubgroup.torsionBy.nsmul P) c, map_zero]
-
-omit [DecidableEq K] [W.IsElliptic] in
-@[simp]
-theorem coe_torsionCoeffInclH1 (c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :
-    (W.torsionCoeffInclH1 m c : H1 (AbsoluteGaloisGroup K) W.PointCoeff) =
-      explicitCoeff1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m) (W.torsionCoeffIncl m)
-        continuous_of_discreteTopology c :=
-  (rfl)
-
-omit [DecidableEq K] in
-include hm in
-/-- **`H¹(G_K, E[m]) → H¹(G_K, E)[m]` is surjective**, the right end of the `m`-descent
-sequence. -/
-theorem torsionCoeffInclH1_surjective : Function.Surjective (W.torsionCoeffInclH1 m) :=
-  fun ⟨_, hc⟩ => by
-    obtain ⟨d, rfl⟩ := (range_explicitCoeff1_torsionCoeffIncl W m hm).ge hc
-    exact ⟨d, rfl⟩
 
 /-- **The `m`-descent sequence is exact at `H¹(G_K, E[m])`**: the kernel of
 `H¹(G_K, E[m]) → H¹(G_K, E)[m]` is the image of `E(K) ⧸ m E(K)` under the Kummer map. Together with
@@ -262,5 +274,7 @@ theorem exact_kummerClassMap_torsionCoeffInclH1 :
   have := (W.kummerShortExact m hm).exact_lift_explicitDelta0_comp
     (W.basePointEquivInvariants).surjective (W.ker_kummerMap m hm).ge
   rwa [kummerShortExact_inclDistribMulActionHom] at this
+
+end Kummer
 
 end WeierstrassCurve

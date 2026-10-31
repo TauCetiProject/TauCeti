@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.EuclideanFour
+public import TauCeti.Analysis.Complex.Euclidean.Four
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 import Mathlib.Geometry.Manifold.Algebra.SMul
