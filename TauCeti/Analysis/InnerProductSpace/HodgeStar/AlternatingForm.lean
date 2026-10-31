@@ -21,7 +21,9 @@ wedge product of forms `ContinuousAlternatingMap.wedge`, `⟨·, ·⟩` is the G
 `TauCeti.alternatingFormInner` and `vol` is `Orientation.volumeForm`. This is the identity that
 turns the `L²` pairing of forms on an oriented Riemannian manifold into an integral of a top
 form. The star is an isometry, satisfies `⋆⋆ = (-1) ^ (k l)` on `k`-forms, and changes sign
-with the orientation.
+with the orientation. In an even middle degree, such as two-forms in dimension four, it is a
+self-adjoint involution whose `±1` eigenspaces are the self-dual and anti-self-dual forms; when
+the degree is positive, each has half the dimension of the `k`-forms.
 
 In an arbitrary basis `b`, with dual basis `b*` for the inner product, the star is computed by
 `(⋆α)(w) = ∑ α(b_{i₁}, …, b_{iₖ}) vol(b*_{i₁}, …, b*_{iₖ}, w₁, …, wₗ)`
@@ -38,6 +40,11 @@ metric this expresses the star through the inverse metric and the volume of the 
 * `Orientation.wedge_formHodgeStar_apply`: `α ∧ ⋆β = ⟨α, β⟩ vol`.
 * `Orientation.formHodgeStar_formHodgeStar`: `⋆⋆α = (-1) ^ (k l) α`.
 * `Orientation.alternatingFormInner_formHodgeStar`: the star preserves the inner product of forms.
+* `Orientation.alternatingFormInner_formHodgeStar_left`: in an even middle degree the star is an
+  involution and is self-adjoint.
+* `Orientation.two_mul_finrank_eigenspace_formHodgeStar_one`: in an even positive middle degree
+  `k` of an `n`-dimensional space, the self-dual forms have dimension `n.choose k / 2`; likewise
+  the anti-self-dual forms.
 * `Orientation.formHodgeStar_apply_eq_sum`: the star in an arbitrary basis.
 * `Orientation.formHodgeStar_apply_eq_volumeForm_mul_sum`: the star through the inverse Gram
   matrix of an arbitrary basis.
@@ -141,6 +148,54 @@ theorem formHodgeStar_neg_orientation {k l : ℕ} (hkl : k + l = finrank ℝ V)
     (α : V [⋀^Fin k]→L[ℝ] ℝ) : (-o).formHodgeStar hkl α = -o.formHodgeStar hkl α := by
   obtain ⟨a, rfl⟩ := (alternatingFormEquiv V k).surjective α
   simp
+
+/-! ### The even middle degree -/
+
+/-- In an even middle degree, `k + k = finrank ℝ V` with `k` even, the Hodge star of forms is an
+involution, `⋆⋆α = α`. -/
+@[simp]
+theorem formHodgeStar_formHodgeStar_of_even {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
+    (α : V [⋀^Fin k]→L[ℝ] ℝ) : o.formHodgeStar hkk (o.formHodgeStar hkk α) = α := by
+  rw [formHodgeStar_formHodgeStar, (hk.mul_right k).neg_one_pow, one_smul]
+
+/-- In an even middle degree the Hodge star of forms is self-adjoint: `⟨⋆α, β⟩ = ⟨α, ⋆β⟩`. -/
+theorem alternatingFormInner_formHodgeStar_left {k : ℕ} (hk : Even k)
+    (hkk : k + k = finrank ℝ V) (α β : V [⋀^Fin k]→L[ℝ] ℝ) :
+    alternatingFormInner V k (o.formHodgeStar hkk α) β =
+      alternatingFormInner V k α (o.formHodgeStar hkk β) := by
+  conv_lhs => rw [← o.formHodgeStar_formHodgeStar_of_even hk hkk β]
+  exact o.alternatingFormInner_formHodgeStar hkk α (o.formHodgeStar hkk β)
+
+/-- In a middle degree, the eigenspaces of the Hodge star of forms are those of the Hodge star of
+`⋀ᵏ V`, read along `TauCeti.alternatingFormEquiv`. -/
+theorem eigenspace_formHodgeStar {k : ℕ} (hkk : k + k = finrank ℝ V) (μ : ℝ) :
+    Module.End.eigenspace (o.formHodgeStar hkk : Module.End ℝ (V [⋀^Fin k]→L[ℝ] ℝ)) μ =
+      (Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) μ).map
+        (alternatingFormEquiv V k : ⋀[ℝ]^k V →ₗ[ℝ] V [⋀^Fin k]→L[ℝ] ℝ) := by
+  ext α
+  obtain ⟨a, rfl⟩ := (alternatingFormEquiv V k).surjective α
+  simp only [Module.End.mem_eigenspace_iff, LinearEquiv.coe_coe,
+    formHodgeStar_alternatingFormEquiv, Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply,
+    ← map_smul, (alternatingFormEquiv V k).injective.eq_iff]
+
+/-- In an even positive middle degree, the self-dual forms make up half of the `k`-forms: twice
+the dimension of the `+1` eigenspace of the Hodge star of forms is `n.choose k`. For two-forms in
+dimension four, the self-dual two-forms have dimension three. -/
+theorem two_mul_finrank_eigenspace_formHodgeStar_one {k : ℕ} (hk : Even k) (hk₀ : 0 < k)
+    (hkk : k + k = finrank ℝ V) :
+    2 * finrank ℝ (Module.End.eigenspace
+      (o.formHodgeStar hkk : Module.End ℝ (V [⋀^Fin k]→L[ℝ] ℝ)) 1) = n.choose k := by
+  rw [eigenspace_formHodgeStar, LinearEquiv.finrank_map_eq,
+    o.two_mul_finrank_eigenspace_hodgeStar_one hk hk₀ hkk]
+
+/-- In an even positive middle degree, the anti-self-dual forms make up half of the `k`-forms:
+twice the dimension of the `-1` eigenspace of the Hodge star of forms is `n.choose k`. -/
+theorem two_mul_finrank_eigenspace_formHodgeStar_neg_one {k : ℕ} (hk : Even k) (hk₀ : 0 < k)
+    (hkk : k + k = finrank ℝ V) :
+    2 * finrank ℝ (Module.End.eigenspace
+      (o.formHodgeStar hkk : Module.End ℝ (V [⋀^Fin k]→L[ℝ] ℝ)) (-1)) = n.choose k := by
+  rw [eigenspace_formHodgeStar, LinearEquiv.finrank_map_eq,
+    o.two_mul_finrank_eigenspace_hodgeStar_neg_one hk hk₀ hkk]
 
 /-- **The Hodge star of forms in an arbitrary basis**: if `b` is a basis of `V` and `b*` its dual
 basis for the inner product, then `(⋆α)(w₁, …, wₗ)` is the sum over the increasing `k`-tuples
