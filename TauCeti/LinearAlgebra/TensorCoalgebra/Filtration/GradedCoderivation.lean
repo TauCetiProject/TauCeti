@@ -54,16 +54,8 @@ theorem gradedCoderiv_filtration_add_le (G : InternalGrading R M)
   induction z using PiTensorProduct.induction_on with
   | smul_tprod a x =>
       rw [map_smul, map_smul, gradedCoderiv_of_tprod]
-      apply Submodule.smul_mem
-      refine Submodule.sum_mem _ fun p hp ↦ Submodule.sum_mem _ fun d hd ↦ ?_
-      by_cases hdj : d ≤ j
-      · rw [hF _ (subword_mem_filtration R M x p hdj), splice_zero]
-        exact zero_mem _
-      by_cases hfit : p + d ≤ k.1
-      · rw [splice_eq_of_tprod R _ _ (by omega) hfit (by omega)]
-        exact of_mem_filtration R M (k := ⟨k.1 + 1 - d, by omega⟩) (by dsimp only; omega) _
-      · rw [splice_eq_zero_of_block_lt_add R _ _ (by omega)]
-        exact zero_mem _
+      exact Submodule.smul_mem _ _ (Submodule.sum_mem _ fun p _ ↦ Submodule.sum_mem _ fun d _ ↦
+        splice_apply_subword_mem_filtration R F hF _ hk x _ _ _ _)
   | add x y hx hy =>
       rw [map_add, map_add]
       exact add_mem hx hy

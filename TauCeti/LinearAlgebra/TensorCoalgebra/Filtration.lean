@@ -32,6 +32,8 @@ length at most `n + 1` only through its top component.
 
 * `TauCeti.ReducedTensorWords.iSup_filtration_eq_top` and
   `TauCeti.ReducedTensorWords.exists_mem_filtration`: the filtration is exhaustive.
+* `TauCeti.ReducedTensorWords.pow_apply_eq_zero_of_filtration_lowering`: a map lowering the
+  filtration kills the words of length at most `n` after `n` applications.
 * `TauCeti.ReducedTensorWords.exists_pow_apply_eq_zero_of_filtration_lowering`: a map lowering
   tensor length is locally nilpotent, also after composition with a length-preserving map.
 * `TauCeti.ReducedTensorWords.ofLetter_mem_filtration` and
@@ -114,21 +116,27 @@ theorem exists_mem_filtration (z : ReducedTensorWords R M) : ∃ n : ℕ, z ∈ 
     trivial
   exact (Submodule.mem_iSup_of_directed _ (filtration_monotone R M).directed_le).1 hz
 
+/-- A map strictly lowering the tensor-length filtration kills the words of length at most `n`
+after `n` applications. -/
+theorem pow_apply_eq_zero_of_filtration_lowering (f : Module.End R (ReducedTensorWords R M))
+    (hf : ∀ n, Submodule.map f (filtration R M (n + 1)) ≤ filtration R M n) {n : ℕ}
+    {z : ReducedTensorWords R M} (hz : z ∈ filtration R M n) : (f ^ n) z = 0 := by
+  induction n generalizing z with
+  | zero =>
+      rw [filtration_zero] at hz
+      have : z = 0 := hz
+      simp [this]
+  | succ n ih =>
+      have hfz : f z ∈ filtration R M n := hf n ⟨z, hz, rfl⟩
+      simpa only [pow_succ, Module.End.mul_apply] using ih hfz
+
 /-- A map strictly lowering the tensor-length filtration is locally nilpotent. -/
 theorem exists_pow_apply_eq_zero_of_filtration_lowering
     (f : Module.End R (ReducedTensorWords R M))
     (hf : ∀ n, Submodule.map f (filtration R M (n + 1)) ≤ filtration R M n)
     (z : ReducedTensorWords R M) : ∃ n, (f ^ n) z = 0 := by
   obtain ⟨n, hn⟩ := exists_mem_filtration R M z
-  refine ⟨n, ?_⟩
-  induction n generalizing z with
-  | zero =>
-      rw [filtration_zero] at hn
-      have : z = 0 := hn
-      simp [this]
-  | succ n ih =>
-      have hfz : f z ∈ filtration R M n := hf n ⟨z, hn, rfl⟩
-      simpa only [pow_succ, Module.End.mul_apply] using ih (f z) hfz
+  exact ⟨n, pow_apply_eq_zero_of_filtration_lowering R M f hf hn⟩
 
 /-- Composing a strictly length-lowering map with a length-preserving map remains locally
 nilpotent. -/
@@ -268,6 +276,12 @@ theorem lengthProj_of_of_ne {m n : {n : ℕ // 0 < n}} (h : m ≠ n) (x : Tensor
 theorem lengthProj_lengthProj (n : {n : ℕ // 0 < n}) (z : ReducedTensorWords R M) :
     lengthProj R M n (lengthProj R M n z) = lengthProj R M n z := by
   rw [lengthProj_apply R M n z, lengthProj_of_self]
+
+/-- Precomposing with the same length projection twice is precomposing with it once. -/
+theorem comp_lengthProj_comp_lengthProj {N : Type*} [AddCommMonoid N] [Module R N]
+    (f : ReducedTensorWords R M →ₗ[R] N) (n : {n : ℕ // 0 < n}) :
+    (f ∘ₗ lengthProj R M n) ∘ₗ lengthProj R M n = f ∘ₗ lengthProj R M n :=
+  LinearMap.ext fun z ↦ by simp only [LinearMap.comp_apply, lengthProj_lengthProj]
 
 /-- Projections onto two different lengths are orthogonal. -/
 theorem lengthProj_lengthProj_of_ne {m n : {n : ℕ // 0 < n}} (h : m ≠ n)

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.BarDifferential
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hochschild.Basic
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Minimal
+public import TauCeti.LinearAlgebra.TensorCoalgebra.Exp
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Filtration.CoalgHom
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Filtration.GradedCoderivation
 
@@ -39,6 +40,14 @@ inductive step of Kadeishvili's obstruction theory: if the operations `m₃, …
 then the gauge transformation by `φ` keeps `m₃, …, mₙ₋₁` zero and kills `mₙ`, and it is
 `A∞` isomorphic to the original algebra through a morphism whose linear part is the identity.
 
+Over a `ℚ`-algebra a degree-zero Hochschild **cocycle** `φ` without unary component also
+integrates to an `A∞` automorphism of the structure itself (`TauCeti.AInfinityAlgebra.expHom`).
+Since `δφ = [m, φ]` is the letter component of the commutator of the bar differential `b` with
+the coderivation `D` of `φ`, the cocycle condition says that `b` and `D` commute, so `b` commutes
+with the exponential `exp D = ∑ Dʳ / r!`, which is a coalgebra automorphism fixing every letter
+(`TauCeti.ReducedTensorWords.expCoderiv`).  Its Taylor map is `letter + φ` on the words on which
+`D ∘ D` vanishes.
+
 ## Main definitions
 
 * `TauCeti.AInfinityAlgebra.comapBarEquiv`: the `A∞` structure pulled back along a degree-zero
@@ -47,6 +56,8 @@ then the gauge transformation by `φ` keeps `m₃, …, mₙ₋₁` zero and kil
 * `TauCeti.AInfinityAlgebra.gauge`: the gauge transformation of an `A∞` structure by a degree-zero
   cochain without unary component, and `TauCeti.AInfinityAlgebra.gaugeHom` the `A∞` isomorphism
   to the original structure, with linear part the identity.
+* `TauCeti.AInfinityAlgebra.expHom`: over a `ℚ`-algebra, the `A∞` automorphism whose bar map is
+  the exponential of the coderivation of a degree-zero Hochschild cocycle without unary component.
 
 ## Main results
 
@@ -67,6 +78,9 @@ then the gauge transformation by `φ` keeps `m₃, …, mₙ₋₁` zero and kil
   `TauCeti.AInfinityAlgebra.IsMinimal.isMinimal_gauge`: for a minimal algebra, the gauge
   transformation adds `δφ` on the words of length at most `2 e + 1`, keeps the operations of
   arity at most `e + 1`, and is minimal.
+* `TauCeti.AInfinityAlgebra.commute_barDifferential_coderiv`: the coderivation of a degree-zero
+  Hochschild cocycle commutes with the bar differential, and
+  `TauCeti.AInfinityAlgebra.isIso_expHom`: its exponential is an `A∞` automorphism.
 
 ## References
 
@@ -454,6 +468,53 @@ theorem IsMinimal.isMinimal_gauge (h𝒜 : 𝒜.IsMinimal) : (𝒜.gauge φ hφ 
     h𝒜.m_one]
 
 end Gauge
+
+/-! ### Exponentials of Hochschild cocycles -/
+
+section Exp
+
+variable [Algebra ℚ R] (𝒜 : AInfinityAlgebra R A) {φ : ReducedTensorWords R A →ₗ[R] A}
+  (hφ : LinearMap.IsHomogeneous φ (gradedPiece (𝒜.grading.shift 1)) (𝒜.grading.shift 1).piece 0)
+  (hφ₁ : φ ∘ₗ ofLetter R A = 0) (hδ : 𝒜.hochschildDifferential 0 φ = 0)
+
+omit [Algebra ℚ R] in
+include hφ hδ in
+/-- **The coderivation of a Hochschild cocycle commutes with the bar differential**: for a
+degree-zero cochain `φ`, the commutator of the bar differential with the coderivation of `φ` is
+the coderivation of `δφ = [m, φ]`. -/
+theorem commute_barDifferential_coderiv : Commute 𝒜.barDifferential (coderiv R φ) := by
+  have h := 𝒜.gradedCoderiv_hochschildDifferential hφ
+  rw [hδ, gradedCoderiv_zero_left, gradedCoderiv_zero, negOnePowCast_zero, one_smul, eq_comm] at h
+  exact sub_eq_zero.1 h
+
+/-- **The exponential of a Hochschild cocycle**: over a `ℚ`-algebra, the `A∞` endomorphism of `𝒜`
+whose bar map is the exponential `exp D = ∑ Dʳ / r!` of the coderivation `D` of a degree-zero
+Hochschild cocycle `φ` without unary component.  It is an automorphism with linear part the
+identity (`TauCeti.AInfinityAlgebra.isIso_expHom`). -/
+noncomputable def expHom : AInfinityHom 𝒜 𝒜 where
+  barMap := expCoderiv R φ
+  isCoalgHom_barMap := isCoalgHom_expCoderiv hφ₁
+  isHomogeneous_barMap := isHomogeneous_expCoderiv _ hφ hφ₁
+  barDifferential_comp_barMap :=
+    (commute_expCoderiv hφ₁ (𝒜.commute_barDifferential_coderiv hφ hδ)).eq
+
+@[simp]
+theorem barMap_expHom : (𝒜.expHom hφ hφ₁ hδ).barMap = expCoderiv R φ := (rfl)
+
+/-- The linear part of the exponential of a Hochschild cocycle is the identity. -/
+@[simp]
+theorem linearPart_expHom : (𝒜.expHom hφ hφ₁ hδ).linearPart = LinearMap.id := by
+  rw [← AInfinityHom.letter_comp_barMap_comp_ofLetter, barMap_expHom,
+    expCoderiv_comp_ofLetter hφ₁]
+  exact LinearMap.ext fun a ↦ by rw [LinearMap.comp_apply, letter_ofLetter, LinearMap.id_apply]
+
+/-- **The exponential of a Hochschild cocycle is an `A∞` automorphism.** -/
+theorem isIso_expHom : (𝒜.expHom hφ hφ₁ hδ).IsIso :=
+  AInfinityHom.isIso_of_linearPart_bijective _ <| by
+    rw [linearPart_expHom]
+    exact Function.bijective_id
+
+end Exp
 
 end AInfinityAlgebra
 
