@@ -33,6 +33,8 @@ divisible by `8`.
 
 ## Main statements
 
+* `ZLattice.tendsto_tsum_mul_thetaTerm_atImInfty`: a theta sum weighted by coefficients of norm at
+  most `1` tends at `i∞` to the sum of the weights of the vectors `v ∈ L` with `γ + v = 0`.
 * `ZLattice.isBoundedAtImInfty_thetaCoset`, `ZLattice.isBoundedAtImInfty_thetaSeries`: the theta
   series are bounded at `i∞`.
 * `ZLattice.tendsto_thetaSeries_atImInfty`, `ZLattice.valueAtInfty_thetaSeries`: `Θ_L(τ) → 1` as
@@ -83,24 +85,35 @@ theorem isBoundedAtImInfty_thetaSeries : IsBoundedAtImInfty (thetaSeries L) := b
   simpa using isBoundedAtImInfty_thetaCoset L 0
 
 open Classical in
-/-- The theta series of `γ + L` tends at `i∞` to the number of vectors `v ∈ L` with `γ + v = 0`,
-by dominated convergence: the term of such a `v` is constantly `1`, and every other term tends
-to `0`. -/
-private theorem tendsto_thetaCoset_atImInfty_tsum_ite (γ : E) :
-    Tendsto (thetaCoset L γ) atImInfty (𝓝 (∑' v : L, if γ + (v : E) = 0 then 1 else 0)) := by
-  refine (tendsto_tsum_of_dominated_convergence
-    (summable_exp_neg_mul_norm_add_sq L (c := π * 1) (by positivity) γ) (fun v => ?_) ?_).congr
-    fun τ => (thetaCoset_apply L γ τ).symm
+/-- **Weighted theta sums at `i∞`.** For weights `w v` of norm at most `1`, the weighted theta
+sum `∑_{v ∈ L} w v exp (π i ‖γ + v‖² τ)` tends at `i∞` to the sum of the weights of the vectors
+`v ∈ L` with `γ + v = 0`, by dominated convergence: the term of such a `v` is constantly `w v`,
+and every other term tends to `0`. -/
+theorem tendsto_tsum_mul_thetaTerm_atImInfty (γ : E) (w : L → ℂ) (hw : ∀ v, ‖w v‖ ≤ 1) :
+    Tendsto (fun τ : ℍ => ∑' v : L, w v * cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ))
+      atImInfty (𝓝 (∑' v : L, if γ + (v : E) = 0 then w v else 0)) := by
+  refine tendsto_tsum_of_dominated_convergence
+    (summable_exp_neg_mul_norm_add_sq L (c := π * 1) (by positivity) γ) (fun v => ?_) ?_
   · split_ifs with hv
     · simp [hv]
     rw [tendsto_zero_iff_norm_tendsto_zero]
+    refine squeeze_zero (fun _ => norm_nonneg _)
+      (fun τ => (norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _) (hw v))) ?_
     simp_rw [norm_exp_pi_mul_I_mul_ofReal_mul, UpperHalfPlane.coe_im]
     exact Real.tendsto_exp_atBot.comp <|
       (tendsto_comap : Tendsto UpperHalfPlane.im atImInfty atTop).const_mul_atTop_of_neg
         (neg_lt_zero.mpr (mul_pos Real.pi_pos (pow_pos (norm_pos_iff.mpr hv) 2)))
   · filter_upwards [(UpperHalfPlane.atImInfty_mem {τ : ℍ | 1 ≤ τ.im}).mpr ⟨1, fun _ h => h⟩]
       with τ hτ v
-    exact norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) hτ
+    exact (norm_mul_le _ _).trans <| (mul_le_of_le_one_left (norm_nonneg _) (hw v)).trans <|
+      norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) hτ
+
+open Classical in
+/-- The theta series of `γ + L` tends at `i∞` to the number of vectors `v ∈ L` with `γ + v = 0`. -/
+private theorem tendsto_thetaCoset_atImInfty_tsum_ite (γ : E) :
+    Tendsto (thetaCoset L γ) atImInfty (𝓝 (∑' v : L, if γ + (v : E) = 0 then 1 else 0)) :=
+  (tendsto_tsum_mul_thetaTerm_atImInfty L γ (fun _ => 1) fun _ => norm_one.le).congr fun τ => by
+    simp [thetaCoset_apply]
 
 /-- The theta series of a discrete subgroup tends to `1` at `i∞`: every term except the term
 `exp 0 = 1` of the zero vector tends to `0`. -/
