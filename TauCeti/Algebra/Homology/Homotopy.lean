@@ -57,6 +57,9 @@ coboundaries to homotopies.
 `Homotopy.cyclesMap_sub_eq` expresses the difference of the maps on cycles induced by
 homotopic maps as a factorization through a term of the target complex. In particular, these
 maps agree after passing to a stable category that kills that term.
+
+`Homotopy.acyclic` says that a contractible complex, one whose identity is null-homotopic, is
+acyclic.
 -/
 
 @[expose] public section
@@ -81,6 +84,14 @@ theorem cyclesMap_sub_eq {C : Type u} [Category.{v} C] [Preadditive C]
     HomologicalComplex.toCycles_i]
   rw [h.comm i]
   simp [dNext, prevD, Preadditive.comp_add, ← Category.assoc]
+
+/-- A contractible complex is acyclic. -/
+lemma acyclic {C : Type u} [Category.{v} C] [Preadditive C] [CategoryWithHomology C]
+    {ι : Type*} {c : ComplexShape ι} {K : HomologicalComplex C c} (h : Homotopy (𝟙 K) 0) :
+    K.Acyclic := fun i ↦ by
+  rw [HomologicalComplex.exactAt_iff_isZero_homology, IsZero.iff_id_eq_zero]
+  simpa only [HomologicalComplex.homologyMap_id, HomologicalComplex.homologyMap_zero] using
+    h.homologyMap_eq i
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] {ι : Type*} {c : ComplexShape ι}
   {K L M L' M' : HomologicalComplex C c}

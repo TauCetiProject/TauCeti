@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomologySequenceLemmas
+public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.Algebra.Homology.ProjectiveCycles
 public import TauCeti.Algebra.Homology.Periodic.HomotopicallyProjective
 
@@ -32,9 +32,9 @@ degreewise epimorphism `π : Q ⟶ L` from a contractible complex with projectiv
 `< m`. Given `f : K ⟶ L`, lift it degreewise along `π` to `g : Kⁱ ⟶ Qⁱ`. The failure of `g` to
 commute with the differentials is a chain map `K⟦-1⟧ ⟶ N`, null-homotopic by induction, and the
 homotopy corrects `g` into a chain map `K ⟶ Q` lifting `f`. Since `Q` is contractible, `f` is
-null-homotopic. No positivity of the period is needed. At period zero, where `ZMod 0` is integer
-indexing, this is the K-projectivity of unbounded complexes of projectives in finite global
-dimension.
+null-homotopic (`TauCeti.PeriodicComplex.nonempty_homotopy_zero_of_epi`). No positivity of the
+period is needed. At period zero, where `ZMod 0` is integer indexing, this is the
+K-projectivity of unbounded complexes of projectives in finite global dimension.
 
 ## Main results
 
@@ -62,67 +62,6 @@ open CategoryTheory CategoryTheory.Limits HomologicalComplex
 
 variable {C : Type u} [Category.{v} C] [Abelian C] {n : ℕ}
 
-/-- The inductive step: given a degreewise epimorphism `π : Q ⟶ L` from a contractible complex
-onto `L`, if every morphism `K⟦-1⟧ ⟶ ker π` is null-homotopic, then so is every `f : K ⟶ L`. -/
-private lemma nonempty_homotopy_zero_of_epi {K L Q : CochainComplex C (ZMod n)}
-    [∀ i, Projective (K.X i)] (π : Q ⟶ L) [∀ i, Epi (π.f i)] (hQ : Homotopy (𝟙 Q) 0)
-    (hN : ∀ u : K⟦(-1 : ℤ)⟧ ⟶ kernel π, Nonempty (Homotopy u 0)) (f : K ⟶ L) :
-    Nonempty (Homotopy f 0) := by
-  -- Lift `f` degreewise along `π`.
-  let g (i : ZMod n) : K.X i ⟶ Q.X i := Projective.factorThru (f.f i) (π.f i)
-  have hg (i : ZMod n) : g i ≫ π.f i = f.f i := Projective.factorThru_comp _ _
-  have hgX (a b : ZMod n) (h : a = b) :
-      (K.XIsoOfEq h).hom ≫ g b = g a ≫ (Q.XIsoOfEq h).hom := by
-    subst h
-    simp
-  -- The failure of `g` to commute with the differentials, as a chain map out of `K⟦-1⟧`.
-  let u : K⟦(-1 : ℤ)⟧ ⟶ Q :=
-    { f i := g (i + ((-1 : ℤ) : ZMod n)) ≫ Q.d _ i - K.d _ i ≫ g i
-      comm' := by
-        rintro i _ rfl
-        have hd (a b : ZMod n) (h : a = b) :
-            K.d (i + ((-1 : ℤ) : ZMod n)) a ≫ g a ≫ Q.d a (i + 1) =
-              K.d (i + ((-1 : ℤ) : ZMod n)) b ≫ g b ≫ Q.d b (i + 1) := by
-          subst h
-          rfl
-        simp [hd i (i + 1 + ((-1 : ℤ) : ZMod n)) (by push_cast; ring)] }
-  have hu : u ≫ π = 0 := by
-    ext i
-    simp only [u, comp_f, Preadditive.sub_comp, Category.assoc, ← π.comm, hg,
-      reassoc_of% hg, f.comm, sub_self, zero_f]
-  obtain ⟨H⟩ := hN (kernel.lift π u hu)
-  -- A null-homotopy of `u` whose components are killed by `π`.
-  let H' : Homotopy u 0 :=
-    (Homotopy.ofEq (kernel.lift_ι π u hu).symm).trans
-      ((H.compRight (kernel.ι π)).trans (Homotopy.ofEq zero_comp))
-  have hH' (i j : ZMod n) : H'.hom i j ≫ π.f j = 0 := by
-    simp [H', ← comp_f]
-  let e (i : ZMod n) : K.X i ⟶ (K⟦(-1 : ℤ)⟧).X (i + 1) :=
-    (K.XIsoOfEq (by push_cast; ring)).hom
-  -- The corrected lift of `f`, a chain map `K ⟶ Q`.
-  let g' : K ⟶ Q :=
-    { f i := g i - e i ≫ H'.hom (i + 1) i
-      comm' := by
-        rintro i _ rfl
-        have H₁ := H'.comm (i + 1)
-        rw [dNext_eq _ (show (ComplexShape.up (ZMod n)).Rel (i + 1) (i + 1 + 1) from rfl),
-          prevD_eq _ (show (ComplexShape.up (ZMod n)).Rel i (i + 1) from rfl)] at H₁
-        have H₂ := congr(e i ≫ $H₁)
-        simp only [u, e, zero_f, add_zero, Preadditive.comp_sub, Preadditive.comp_add,
-          shiftFunctor_obj_d', Int.reduceNeg, Int.negOnePow_neg, Int.negOnePow_one,
-          Units.neg_smul, one_smul, Preadditive.neg_comp, Preadditive.comp_neg,
-          XIsoOfEq_hom_comp_d_assoc, reassoc_of% hgX] at H₂
-        simp only [Preadditive.sub_comp, Preadditive.comp_sub, Category.assoc, e]
-        rw [XIsoOfEq_hom_comp_d, ← K.d_comp_XIsoOfEq_hom
-          (show i + 1 = i + 1 + 1 + ((-1 : ℤ) : ZMod n) by push_cast; ring), Category.assoc] at H₂
-        rw [sub_eq_sub_iff_sub_eq_sub, H₂]
-        abel }
-  have hg' : g' ≫ π = f := by
-    ext i
-    simp [g', hg, hH']
-  exact ⟨(Homotopy.ofEq (by simp [hg'])).trans
-    (((hQ.compLeft g').compRight π).trans (Homotopy.ofEq (by simp)))⟩
-
 variable [EnoughProjectives C]
 
 /-- The induction on the projective dimension of the cycles of the target. -/
@@ -148,9 +87,9 @@ private lemma nonempty_homotopy_zero_of_hasProjectiveDimensionLT_succ (m : ℕ) 
       { exact := ShortComplex.exact_of_f_is_kernel _ (kernelIsKernel π) }
     have : QuasiIso π := ⟨fun i ↦ (quasiIsoAt_iff_exactAt π i (hQ.acyclic i)).mpr (hL i)⟩
     have hN : (kernel π).Acyclic := hS.acyclic_X₁ this
-    have hNZ := hS.hasProjectiveDimensionLT_cycles_X₁ (fun j ↦ ⟨j - 1, sub_add_cancel j 1⟩) hL
-      (fun j ↦ hQ.projective_cycles (show (ComplexShape.up (ZMod n)).Rel (j - 1) j from
-        sub_add_cancel j 1)) m hZ
+    have hNZ (j : ZMod n) : HasProjectiveDimensionLT ((kernel π).cycles j) (m + 1) :=
+      hS.hasProjectiveDimensionLT_cycles_X₁ (sub_add_cancel j 1) (hL j)
+        (hQ.projective_cycles (sub_add_cancel j 1)) m (hZ j)
     have : ∀ i, Projective ((K⟦(-1 : ℤ)⟧).X i) := fun i ↦
       inferInstanceAs (Projective (K.X _))
     exact nonempty_homotopy_zero_of_epi π hQ (ih hN hNZ) f

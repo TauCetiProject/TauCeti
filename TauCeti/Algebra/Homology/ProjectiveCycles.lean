@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Algebra.Homology.HomotopyCofiber
 public import TauCeti.Algebra.Homology.Split
@@ -17,17 +16,19 @@ This file collects the facts about cycles of complexes in an abelian category th
 show that complexes of projectives are homotopically projective in finite global dimension. The
 complexes may have any shape, possibly unbounded in both directions or cyclic.
 
-* A contractible complex is acyclic, and its cycles are retracts of its terms; so they are
-  projective when the terms are.
+* The cycles of a contractible complex are retracts of its terms; so they are projective when
+  the terms are. (A contractible complex is acyclic, `Homotopy.acyclic`.)
 * Conversely, an acyclic complex whose cycles are projective is contractible: for a relation
   `i → j`, the short exact sequence `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0` splits, and the complex is homotopy
   equivalent to its homology, which vanishes.
-* A short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes with `X₃` acyclic induces short exact
-  sequences of cycles. When the cycles of `X₂` are projective, the cycles of `X₁` are syzygies of
-  those of `X₃`, and their projective dimension drops by one.
-* With enough projectives, every complex receives a degreewise epimorphism from a contractible
-  complex with projective terms, the mapping cone of the identity of a complex with zero
-  differential made of projective presentations of the terms.
+* A short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes with `X₃` exact at a degree `j`
+  which is the target of a relation induces a short exact sequence of cycles in degree `j`. When
+  the cycles of `X₂` in degree `j` are projective, those of `X₁` are syzygies of those of `X₃`,
+  and their projective dimension drops by one.
+* With enough projectives, and when every index is both the source and the target of a relation
+  of the shape, every complex receives a degreewise epimorphism from a contractible complex with
+  projective terms, the mapping cone of the identity of a complex with zero differential made of
+  projective presentations of the terms.
 
 Iterating the last two points replaces an acyclic complex by acyclic complexes whose cycles have
 smaller and smaller projective dimension, until the cycles are projective.
@@ -39,8 +40,9 @@ smaller and smaller projective dimension, until the cycles are projective.
   whose cycles are projective is contractible.
 * `CategoryTheory.ShortComplex.ShortExact.hasProjectiveDimensionLT_cycles_X₁`: dimension shifting
   for the cycles of a short exact sequence of complexes.
-* `HomologicalComplex.exists_projective_contractible_epi_f`: every complex is the target of a
-  degreewise epimorphism from a contractible complex with projective terms.
+* `HomologicalComplex.exists_projective_contractible_epi_f`: when every index is both the source
+  and the target of a relation, every complex is the target of a degreewise epimorphism from a
+  contractible complex with projective terms.
 
 ## References
 
@@ -58,12 +60,6 @@ namespace Homotopy
 
 variable {K : HomologicalComplex C c} (h : Homotopy (𝟙 K) 0)
 include h
-
-/-- A contractible complex is acyclic. -/
-lemma acyclic : K.Acyclic := fun i ↦ by
-  rw [HomologicalComplex.exactAt_iff_isZero_homology, IsZero.iff_id_eq_zero]
-  simpa only [HomologicalComplex.homologyMap_id, HomologicalComplex.homologyMap_zero] using
-    h.homologyMap_eq i
 
 /-- In a contractible complex, the cycles in degree `j` are a retract of the term in degree `i`
 for every relation `i → j`; in particular they are projective when that term is. -/
@@ -111,27 +107,25 @@ theorem nonempty_homotopy_id_zero_of_projective_cycles (hZ : ∀ i, Projective (
 
 end HomologicalComplex.Acyclic
 
-/-- Let `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` be a short exact sequence of complexes, where `X₃` is acyclic and
-the cycles of `X₂` are projective. In every degree it gives a short exact sequence
-`0 ⟶ Z(X₁) ⟶ Z(X₂) ⟶ Z(X₃) ⟶ 0` of cycles, so the cycles of `X₁` have projective dimension
-`< m + 1` when those of `X₃` have projective dimension `< m + 2`. Every index must be the target
-of a relation of the shape. -/
+/-- Let `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` be a short exact sequence of complexes and `i → j` a relation of
+the shape, where `X₃` is exact at `j` and the cycles of `X₂` in degree `j` are projective. It gives
+a short exact sequence `0 ⟶ Z(X₁) ⟶ Z(X₂) ⟶ Z(X₃) ⟶ 0` of cycles in degree `j`, so the cycles of
+`X₁` have projective dimension `< m + 1` when those of `X₃` have projective dimension `< m + 2`. -/
 lemma CategoryTheory.ShortComplex.ShortExact.hasProjectiveDimensionLT_cycles_X₁
-    {S : ShortComplex (HomologicalComplex C c)} (hS : S.ShortExact) (hc : ∀ j, ∃ i, c.Rel i j)
-    (h₃ : S.X₃.Acyclic) (h₂ : ∀ j, Projective (S.X₂.cycles j)) (m : ℕ)
-    (hZ : ∀ j, HasProjectiveDimensionLT (S.X₃.cycles j) (m + 2)) (j : ι) :
+    {S : ShortComplex (HomologicalComplex C c)} (hS : S.ShortExact) {i j : ι} (hij : c.Rel i j)
+    (h₃ : S.X₃.ExactAt j) (h₂ : Projective (S.X₂.cycles j)) (m : ℕ)
+    (hZ : HasProjectiveDimensionLT (S.X₃.cycles j) (m + 2)) :
     HasProjectiveDimensionLT (S.X₁.cycles j) (m + 1) := by
-  obtain ⟨i, hij⟩ := hc j
   have := hS.mono_f
   have : Epi (S.g.f i) :=
     ((HomologicalComplex.shortExact_iff_degreewise_shortExact S).mp hS i).epi_g
-  have := HomologicalComplex.epi_cyclesMap_of_exactAt S.g hij (h₃ j)
+  have := HomologicalComplex.epi_cyclesMap_of_exactAt S.g hij h₃
   have hT : (ShortComplex.mk _ _ (by rw [← HomologicalComplex.cyclesMap_comp, S.zero,
       HomologicalComplex.cyclesMap_zero] : HomologicalComplex.cyclesMap S.f j ≫
         HomologicalComplex.cyclesMap S.g j = 0)).ShortExact :=
     { exact := HomologicalComplex.cycles_left_exact S hS.exact j }
   exact hT.hasProjectiveDimensionLT_X₁ (m + 1)
-    (hasProjectiveDimensionLT_of_ge _ 1 (m + 1) (by lia)) (hZ j)
+    (hasProjectiveDimensionLT_of_ge _ 1 (m + 1) (by lia)) hZ
 
 /-- In an abelian category with enough projectives, every complex is the target of a morphism
 which is an epimorphism in every degree, from a contractible complex with projective terms. The

@@ -49,6 +49,9 @@ underlying module, and is not contractible, so it is not homotopically projectiv
   terms and zero differential is homotopically projective.
 * `TauCeti.PeriodicComplex.IsHomotopicallyProjective.of_splitting`: homotopically projective
   complexes are closed under extensions that split in every degree.
+* `TauCeti.PeriodicComplex.nonempty_homotopy_zero_of_epi`: a morphism from a complex of
+  projectives to `L` is null-homotopic when `L` is covered by a contractible complex `Q` and
+  every morphism from the shift of the source to the kernel of `Q ⟶ L` is null-homotopic.
 
 The proofs follow Joël Riou's treatment of K-projective complexes in
 `Mathlib.Algebra.Homology.HomotopyCategory.KProjective` and
@@ -176,6 +179,80 @@ theorem IsHomotopicallyProjective.of_splitting (S : ShortComplex (CochainComplex
   simpa using (subcategoryAcyclic C n).leftOrthogonal.ext_of_isTriangulatedClosed₂ _ hT
     (by simpa using IsHomotopicallyProjective.leftOrthogonal S.X₁)
     (by simpa using IsHomotopicallyProjective.leftOrthogonal S.X₃)
+
+/-- The difference `Kⁱ ⟶ Qⁱ⁺¹` between the components of a morphism `u : K⟦-1⟧ ⟶ Q` and of its
+null-homotopy `H`, read off on `K` through the identification `(K⟦-1⟧)ⁱ⁺¹ = Kⁱ`: the sign comes
+from the differential of `K⟦-1⟧`. -/
+private lemma shift_neg_one_homotopy_comm {K Q : CochainComplex C (ZMod n)}
+    {u : K⟦(-1 : ℤ)⟧ ⟶ Q} (H : Homotopy u 0) (i : ZMod n) :
+    (K.XIsoOfEq (by push_cast; ring) : K.X i ≅ (K⟦(-1 : ℤ)⟧).X (i + 1)).hom ≫ u.f (i + 1) =
+      -(K.d i (i + 1) ≫
+          (K.XIsoOfEq (by push_cast; ring) : K.X (i + 1) ≅ (K⟦(-1 : ℤ)⟧).X (i + 1 + 1)).hom ≫
+            H.hom (i + 1 + 1) (i + 1)) +
+        (K.XIsoOfEq (by push_cast; ring) : K.X i ≅ (K⟦(-1 : ℤ)⟧).X (i + 1)).hom ≫
+          H.hom (i + 1) i ≫ Q.d i (i + 1) := by
+  rw [H.comm (i + 1), dNext_eq (i' := i + 1 + 1) _ rfl, prevD_eq (j' := i) _ rfl]
+  simp [shiftFunctor_obj_d', XIsoOfEq_hom_comp_d_assoc]
+
+/-- A morphism `f : K ⟶ L` from a periodic complex of projectives is null-homotopic as soon as
+`L` is the target of a degreewise epimorphism `π : Q ⟶ L` from a contractible complex such that
+every morphism `K⟦-1⟧ ⟶ ker π` is null-homotopic. -/
+lemma nonempty_homotopy_zero_of_epi {K L Q : CochainComplex C (ZMod n)}
+    [∀ i, Projective (K.X i)] (π : Q ⟶ L) [∀ i, Epi (π.f i)] (hQ : Homotopy (𝟙 Q) 0)
+    (hN : ∀ u : K⟦(-1 : ℤ)⟧ ⟶ kernel π, Nonempty (Homotopy u 0)) (f : K ⟶ L) :
+    Nonempty (Homotopy f 0) := by
+  -- Lift `f` degreewise along `π`.
+  let g (i : ZMod n) : K.X i ⟶ Q.X i := Projective.factorThru (f.f i) (π.f i)
+  have hg (i : ZMod n) : g i ≫ π.f i = f.f i := Projective.factorThru_comp _ _
+  have hgX (a b : ZMod n) (h : a = b) :
+      (K.XIsoOfEq h).hom ≫ g b = g a ≫ (Q.XIsoOfEq h).hom := by
+    subst h
+    simp
+  -- The failure of `g` to commute with the differentials, as a chain map out of `K⟦-1⟧`.
+  let u : K⟦(-1 : ℤ)⟧ ⟶ Q :=
+    { f i := g (i + ((-1 : ℤ) : ZMod n)) ≫ Q.d _ i - K.d _ i ≫ g i
+      comm' := by
+        rintro i _ rfl
+        have hd (a b : ZMod n) (h : a = b) :
+            K.d (i + ((-1 : ℤ) : ZMod n)) a ≫ g a ≫ Q.d a (i + 1) =
+              K.d (i + ((-1 : ℤ) : ZMod n)) b ≫ g b ≫ Q.d b (i + 1) := by
+          subst h
+          rfl
+        simp [hd i (i + 1 + ((-1 : ℤ) : ZMod n)) (by push_cast; ring)] }
+  have hu : u ≫ π = 0 := by
+    ext i
+    simp only [u, comp_f, Preadditive.sub_comp, Category.assoc, ← π.comm, hg,
+      reassoc_of% hg, f.comm, sub_self, zero_f]
+  obtain ⟨H⟩ := hN (kernel.lift π u hu)
+  -- A null-homotopy of `u` whose components are killed by `π`.
+  let H' : Homotopy u 0 :=
+    (Homotopy.ofEq (kernel.lift_ι π u hu).symm).trans
+      ((H.compRight (kernel.ι π)).trans (Homotopy.ofEq zero_comp))
+  have hH' (i j : ZMod n) : H'.hom i j ≫ π.f j = 0 := by
+    simp [H', ← comp_f]
+  let e (i : ZMod n) : K.X i ⟶ (K⟦(-1 : ℤ)⟧).X (i + 1) :=
+    (K.XIsoOfEq (by push_cast; ring)).hom
+  -- On `K`, the component of `u` in degree `i + 1` is the failure of `g` to commute with `d`.
+  have he (i : ZMod n) :
+      e i ≫ u.f (i + 1) = g i ≫ Q.d i (i + 1) - K.d i (i + 1) ≫ g (i + 1) := by
+    simp [u, e, Preadditive.comp_sub, XIsoOfEq_hom_comp_d_assoc, reassoc_of% hgX]
+  -- The corrected lift of `f`, a chain map `K ⟶ Q`.
+  let g' : K ⟶ Q :=
+    { f i := g i - e i ≫ H'.hom (i + 1) i
+      comm' := by
+        rintro i _ rfl
+        have H₂ : e i ≫ u.f (i + 1) = -(K.d i (i + 1) ≫ e (i + 1) ≫ H'.hom (i + 1 + 1) (i + 1)) +
+            e i ≫ H'.hom (i + 1) i ≫ Q.d i (i + 1) :=
+          shift_neg_one_homotopy_comm H' i
+        rw [he] at H₂
+        simp only [Preadditive.sub_comp, Preadditive.comp_sub, Category.assoc, e]
+        rw [sub_eq_sub_iff_sub_eq_sub, H₂]
+        abel }
+  have hg' : g' ≫ π = f := by
+    ext i
+    simp [g', hg, hH']
+  exact ⟨(Homotopy.ofEq (by simp [hg'])).trans
+    (((hQ.compLeft g').compRight π).trans (Homotopy.ofEq (by simp)))⟩
 
 namespace IsHomotopicallyProjective
 
