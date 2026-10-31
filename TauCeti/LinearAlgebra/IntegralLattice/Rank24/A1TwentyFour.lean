@@ -307,6 +307,13 @@ noncomputable def a1TwentyFourthLattice : IntegralLattice (Fin 24 → Fin (A 1).
   gluedLattice (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1) (fun _ ↦ valid_A.mpr le_rfl)
     a1TwentyFourGlueSubgroup isLagrangian_a1TwentyFourGlueSubgroup.isIsotropic
 
+/-- The named `A₁²⁴` lattice is gluing along the checked binary glue subgroup. -/
+theorem a1TwentyFourthLattice_def :
+    a1TwentyFourthLattice =
+      gluedLattice (fun _ : Fin 24 ↦ A 1) (fun _ ↦ isSimplyLaced_A 1)
+        (fun _ ↦ valid_A.mpr le_rfl) a1TwentyFourGlueSubgroup
+        isLagrangian_a1TwentyFourGlueSubgroup.isIsotropic := (rfl)
+
 /-- **The carrier of `A₁²⁴`**: a vector lies in the glued lattice exactly when it lies in the
 dual of the orthogonal sum of twenty-four `A₁` root lattices and the glue word of its
 discriminant class, read in Golay coordinates, is a word of the extended binary Golay code. -/
