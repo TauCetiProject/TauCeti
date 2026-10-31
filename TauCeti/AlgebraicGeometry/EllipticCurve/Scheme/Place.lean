@@ -38,8 +38,6 @@ place at infinity, where `x` has a pole; the complement of `D₊(Z)` is the sing
   of the place of a point is its local ring;
 * `WeierstrassCurve.degree_projModelCodimensionOnePointEquivPlace`: the degree of the place of a
   point is its residue degree.
-* `WeierstrassCurve.isCurveOver_projModel` and `WeierstrassCurve.projModelCurve`: `E` is a curve
-  over `K`, and a regular proper curve.
 * `WeierstrassCurve.projModelZeroPoint`: the zero section `O`, as a codimension-one point.
 * `WeierstrassCurve.projModelCodimensionOnePointEquivPlace_projModelZeroPoint`: the place of `O` is
   the place at infinity.
@@ -126,15 +124,6 @@ theorem degree_projModelCodimensionOnePointEquivPlace (y : CodimensionOnePoint W
       (W.projModel ↘ Spec (.of K)).residueDegree (y : W.projModel) := by
   rw [projModelCodimensionOnePointEquivPlace_apply, Place.degree_equivOfRingEquiv,
     Scheme.toPlace_degree_eq_residueDegree]
-
-/-- The projective model of an elliptic curve is a curve over the base field: an integral scheme,
-proper and of dimension one. -/
-instance isCurveOver_projModel : W.projModel.IsCurveOver K where
-  topologicalKrullDim_eq_one := topologicalKrullDim_projModel W
-
-/-- The projective model of an elliptic curve, as a regular proper curve over the base field. -/
-noncomputable abbrev projModelCurve : RegularProperCurveCat K :=
-  .of W.projModel
 
 /-- The zero section `O` of the projective model of an elliptic curve, as a codimension-one point:
 a rational point of a curve has codimension one. -/
