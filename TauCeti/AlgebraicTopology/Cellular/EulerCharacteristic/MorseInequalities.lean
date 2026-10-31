@@ -117,18 +117,7 @@ end Relative
 
 section Absolute
 
-variable (C : Set X) [CWComplex C] (M : ModuleCat.{w} k)
-
-/-- The ordinary singular homology of a CW complex has the dimension of its singular homology
-relative to the empty subspace. -/
-private theorem finrank_singularHomology_eq_complexBasePair (i : ℕ) :
-    finrank k (((AlgebraicTopology.singularHomologyFunctor.{w} (ModuleCat.{w} k) i).obj M).obj
-        (TopCat.of C)) =
-      finrank k ((complexBasePair C).singularHomology M i : ModuleCat k) :=
-  (asIso
-    ((complexBasePair C).singularHomologyπ (C := ModuleCat.{w} k) M i)).toLinearEquiv.finrank_eq
-
-variable [Module.Finite k M]
+variable (C : Set X) [CWComplex C] (M : ModuleCat.{w} k) [Module.Finite k M]
 
 /-- **The weak Morse inequality for a CW complex.**  In a degree with finitely many cells, the
 singular homology has dimension at most the number of cells times `dim M`. -/

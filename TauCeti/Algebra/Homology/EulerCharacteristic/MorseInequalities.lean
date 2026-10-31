@@ -13,21 +13,23 @@ import Mathlib.Tactic.LinearCombination
 # The Morse inequalities for chain complexes of vector spaces
 
 Let `K` be a chain complex of vector spaces indexed by `ℕ`, with differentials `Kᵢ₊₁ ⟶ Kᵢ`, and
-write `cᵢ = dim Kᵢ`, `bᵢ = dim Hᵢ(K)` and `qᵢ = dim im (Kᵢ₊₁ ⟶ Kᵢ)`.  Rank--nullity gives
-`cᵢ = bᵢ + qᵢ + qᵢ₋₁`, and this file draws the three numerical consequences that are known as
-the Morse inequalities when `K` is the cellular chain complex of a CW model of a manifold whose
-cells correspond to the critical points of a Morse function.
+write `cᵢ = dim Kᵢ`, `bᵢ = dim Hᵢ(K)` and `qᵢ = dim im (Kᵢ₊₁ ⟶ Kᵢ)`, with `q₋₁ = 0`.  When `Kᵢ`
+is finite-dimensional, rank--nullity gives `cᵢ = bᵢ + qᵢ + qᵢ₋₁`, and this file draws the three
+numerical consequences that are known as the Morse inequalities when `K` is the cellular chain
+complex of a CW model of a manifold whose cells correspond to the critical points of a Morse
+function.  Since `finrank` is `0` on infinite-dimensional spaces, each needs finite-dimensional
+terms.
 
-* **Weak inequalities.**  `bᵢ ≤ cᵢ`, which holds for any homological complex and is proved with
-  the other dimension bounds for complexes of vector spaces
-  (`HomologicalComplex.finrank_homology_le_finrank_X`).
-* **Strong inequalities.**  For every `n`,
+* **Weak inequalities.**  `bᵢ ≤ cᵢ` whenever `Kᵢ` is finite-dimensional, which holds for any
+  homological complex and is proved with the other dimension bounds for complexes of vector
+  spaces (`HomologicalComplex.finrank_homology_le_finrank_X`).
+* **Strong inequalities.**  For every `n` such that `K₀, …, Kₙ` are finite-dimensional,
   `bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`
   (`ChainComplex.sum_range_neg_one_pow_mul_finrank_homology_le`).
-* **The Morse polynomial identity.**  If `Kₙ₊₁ ⟶ Kₙ` vanishes, then
-  `∑ᵢ₌₀ⁿ cᵢ tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)` in `ℕ[t]`, where `Q(t) = ∑ᵢ₌₀ⁿ⁻¹ qᵢ tⁱ` records the
-  ranks of the differentials (`ChainComplex.sum_range_monomial_finrank_X_eq`).  Without the
-  vanishing hypothesis the identity holds after adding `qₙ tⁿ⁺¹` to the left side
+* **The Morse polynomial identity.**  If `K₀, …, Kₙ` are finite-dimensional and `Kₙ₊₁ ⟶ Kₙ`
+  vanishes, then `∑ᵢ₌₀ⁿ cᵢ tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)` in `ℕ[t]`, where `Q(t) = ∑ᵢ₌₀ⁿ⁻¹ qᵢ tⁱ`
+  records the ranks of the differentials (`ChainComplex.sum_range_monomial_finrank_X_eq`).
+  Without the vanishing hypothesis the identity holds after adding `qₙ tⁿ⁺¹` to the left side
   (`ChainComplex.sum_range_monomial_finrank_X_add_monomial_eq`).
 
 The polynomial identity implies the strong inequalities, since the alternating partial sums of
