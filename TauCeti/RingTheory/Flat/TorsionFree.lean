@@ -7,9 +7,8 @@ module
 
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import TauCeti.LinearAlgebra.TensorProduct.Kernel
-import Mathlib.LinearAlgebra.TensorProduct.Quotient
-import Mathlib.RingTheory.DedekindDomain.Basic
 import TauCeti.LinearAlgebra.Submodule.Primitive
+import TauCeti.LinearAlgebra.TensorProduct.Quotient
 
 /-!
 # Kernels that commute with every base change over a principal ideal domain
@@ -67,28 +66,20 @@ private theorem mem_range_of_prime_smul_mem_range [Module.IsTorsionFree R N] {π
   set p := Ideal.span {π}
   obtain ⟨m, hm⟩ := hn
   -- `1 ⊗ m` lies in the kernel of `f` reduced modulo `π`.
-  have h₁ : Ideal.Quotient.mk p 1 ⊗ₜ[R] m ∈ ker (f.baseChange (R ⧸ p)) := by
+  have h₁ : (1 : R ⧸ p) ⊗ₜ[R] m ∈ ker (f.baseChange (R ⧸ p)) := by
     have hπp : Ideal.Quotient.mk p π = 0 :=
       Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton_self π)
     rw [mem_ker, baseChange_tmul, hm, ← smul_tmul, Algebra.smul_def,
       Ideal.Quotient.algebraMap_eq, hπp, zero_mul, zero_tmul]
-  -- Hence, read in `M ⧸ π • M`, the class of `m` is the class of an element `k` of `ker f`.
-  have h₂ : ∀ x ∈ (ker f).baseChange (R ⧸ p),
-      quotTensorEquivQuotSMul M p x ∈ (ker f).map (p • (⊤ : Submodule R M)).mkQ := by
-    rintro _ ⟨x, rfl⟩
-    induction x with
-    | tmul a k =>
-      obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective a
-      rw [baseChange_tmul, quotTensorEquivQuotSMul_mk_tmul]
-      exact Submodule.mem_map_of_mem (Submodule.smul_mem _ r k.2)
-    | add x y hx hy => rw [map_add, map_add]; exact add_mem hx hy
-  obtain ⟨k, hk, hkm⟩ := h₂ _ (h h₁)
-  rw [quotTensorEquivQuotSMul_mk_tmul, one_smul, Submodule.mkQ_apply, Submodule.Quotient.eq,
-    Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists] at hkm
-  obtain ⟨m', -, hm'⟩ := hkm
-  -- So `π • n = f m = π • f m'` for `m - k = π • m'`, and `n = f m'` as `N` is torsion-free.
+  -- Hence `1 ⊗ m = 1 ⊗ k` for some `k ∈ ker f`, that is, `k - m = π • m'` for some `m'`.
+  obtain ⟨x, hx⟩ := h h₁
+  obtain ⟨k, rfl⟩ := exists_one_tmul_eq p x
+  rw [baseChange_tmul, ← sub_eq_zero, ← tmul_sub, one_tmul_eq_zero_iff_exists_smul_eq] at hx
+  obtain ⟨m', hm'⟩ := hx
+  -- So `π • n = f m = π • f (-m')`, and `n = f (-m')` as `N` is torsion-free.
   refine ⟨-m', smul_right_injective N hπ.ne_zero ?_⟩
-  simp only [map_neg, smul_neg, ← map_smul, hm', map_sub, mem_ker.1 hk, zero_sub, neg_neg, hm]
+  simp only [map_neg, smul_neg, ← map_smul, hm', map_sub, Submodule.subtype_apply, mem_ker.1 k.2,
+    zero_sub, neg_neg, hm]
 
 /-- Over a principal ideal domain, for a linear map `f : M →ₗ[R] N` into a torsion-free module,
 **the cokernel `N ⧸ range f` is torsion-free if and only if, for every maximal ideal `p`, every
