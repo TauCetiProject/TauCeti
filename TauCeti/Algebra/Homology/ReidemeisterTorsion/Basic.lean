@@ -309,14 +309,6 @@ theorem reidemeisterTorsion_eq_zero_iff (hn : {i | n i ≠ 0}.Finite) :
   ⟨fun h₀ h ↦ C.reidemeisterTorsion_ne_zero c hn h h₀, C.reidemeisterTorsion_of_not_acyclic c⟩
 
 include c in
-/-- The boundaries vanish in a degree where the complex vanishes. -/
-private theorem finrank_range_d_eq_zero {j : ℤ} (hj : n j = 0) :
-    finrank F (LinearMap.range (C.d (j + 1) j).hom) = 0 := by
-  have : Module.Finite F (C.X j) := .of_basis (c j)
-  have hle := Submodule.finrank_le (LinearMap.range (C.d (j + 1) j).hom)
-  rwa [finrank_eq_card_basis (c j), Fintype.card_fin, hj, Nat.le_zero] at hle
-
-include c in
 /-- The determinant of one basis of the boundaries with respect to another is `1` in a degree
 where the complex vanishes. -/
 private theorem det_eq_one_of_eq_zero {j : ℤ} (hj : n j = 0)
@@ -683,16 +675,6 @@ private theorem reidemeisterTorsion_eq_mul_of_not_finite {C₁ C₂ C₃ : Chain
     simp [reidemeisterTorsion_of_not_finite C₃ c₃ hn₃]
   · simp [reidemeisterTorsion_of_not_finite C₁ c₁ hn₁]
 
-/-- The Koszul sign of the multiplicativity formula has finite support when `C₁` is bounded,
-since its factor in degree `j` is `1` whenever the boundaries of `C₁` vanish in degree `j`. -/
-private theorem hasFiniteMulSupport_neg_one_pow_finrank {C₁ C₃ : ChainComplex (ModuleCat F) ℤ}
-    {n₁ : ℤ → ℕ} (c₁ : ∀ i, Basis (Fin (n₁ i)) F (C₁.X i)) (hn₁ : {i | n₁ i ≠ 0}.Finite) :
-    Function.HasFiniteMulSupport fun j : ℤ ↦
-      (-1 : F) ^ (finrank F (LinearMap.range (C₃.d (j + 1 + 1) (j + 1)).hom) *
-        finrank F (LinearMap.range (C₁.d (j + 1) j).hom)) :=
-  hn₁.subset <| Function.mulSupport_subset_iff'.2 fun j hj ↦ by
-    simp [finrank_range_d_eq_zero C₁ c₁ (j := j) (by simpa using hj)]
-
 /-- **Multiplicativity of the torsion.** Let `0 → C₁ → C₂ → C₃ → 0` be a short exact sequence of
 chain complexes of vector spaces, with `C₁` and `C₃` acyclic, and with compatible bases: the basis
 `c₂ i` of `C₂ᵢ` is the image of the basis `c₁ i` of `C₁ᵢ` followed by lifts of the basis `c₃ i` of
@@ -739,7 +721,12 @@ theorem reidemeisterTorsion_eq_mul_of_shortExact {S : ShortComplex (ChainComplex
     (chosenLift S.X₁ c₁) (chosenLift_spec S.X₁ c₁)
   have hτ₃ := hasFiniteMulSupport_torsionBracket (c := c₃) hn₃ h₃ (chosenBasis S.X₃ c₃)
     (fun j k ↦ (S.g.f (j + 1)).hom (t j k)) ht
-  have hε := hasFiniteMulSupport_neg_one_pow_finrank (C₃ := S.X₃) c₁ hn₁
+  -- The Koszul sign is `1` in every degree where `C₁` vanishes.
+  have hε : Function.HasFiniteMulSupport fun j : ℤ ↦
+      (-1 : F) ^ (finrank F (LinearMap.range (S.X₃.d (j + 1 + 1) (j + 1)).hom) *
+        finrank F (LinearMap.range (S.X₁.d (j + 1) j).hom)) := by
+    simpa only [Nat.mul_comm] using hasFiniteMulSupport_neg_one_pow_finrank_mul S.X₁ c₁ hn₁
+      fun j ↦ finrank F (LinearMap.range (S.X₃.d (j + 1 + 1) (j + 1)).hom)
   rw [reidemeisterTorsion_eq_finprod hn (hS.acyclic_X₂ h₁ h₃) β s hs,
     reidemeisterTorsion_eq_finprod hn₁ h₁ (chosenBasis S.X₁ c₁) (chosenLift S.X₁ c₁)
       (chosenLift_spec S.X₁ c₁),

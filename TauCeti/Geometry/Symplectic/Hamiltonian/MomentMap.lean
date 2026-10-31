@@ -46,7 +46,9 @@ This file proves the basic laws of moment maps:
 * for a nondegenerate form on a finite-dimensional manifold, `Z_M` is the Hamiltonian vector field
   of `μ_Z`, the Poisson bracket with `μ_Z` is the derivative along `Z_M`, so `{μ_Z, μ_Z'}` is
   `σ(Z_M, Z'_M)`, and **Noether's theorem** holds: the derivative of a function along `Z_M`
-  vanishes exactly when it Poisson-commutes with `μ_Z`.
+  vanishes exactly when it Poisson-commutes with `μ_Z`;
+* for a closed nondegenerate form, `{μ_Z, μ_Z'}` has Hamiltonian vector field `(⁅Z, Z'⁆)_M`
+  (`TauCeti.SmoothTwoForm.IsMomentMap.hamiltonianVectorField_poissonBracket`).
 
 The failure of a moment map to be infinitesimally equivariant is measured by its **cocycle**, the
 Lie algebra `2`-cochain `c(Z, Z') = σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` on `𝔤` at each point, with values
@@ -261,6 +263,15 @@ theorem poissonBracket_eq_zero_iff (h : σ.IsMomentMap a μ) (hσ : σ.IsNondege
     (f : M → ℝ) (Z : 𝔤) :
     σ.poissonBracket (fun y ↦ μ y Z) f = 0 ↔ ∀ x, mvfderiv I f x (a Z x) = 0 := by
   simp only [funext_iff, Pi.zero_apply, h.poissonBracket_eq_neg_mvfderiv hσ, neg_eq_zero]
+
+/-- For a closed nondegenerate form, the Poisson bracket `{μ_Z, μ_Z'}` of two components of a
+moment map has Hamiltonian vector field `(⁅Z, Z'⁆)_M`, the same as the component `μ_{⁅Z, Z'⁆}`. -/
+theorem hamiltonianVectorField_poissonBracket (h : σ.IsMomentMap a μ) (hσ : σ.IsNondegenerate)
+    (hσc : σ.IsClosed) (Z Z' : 𝔤) :
+    σ.hamiltonianVectorField (σ.poissonBracket (fun x ↦ μ x Z) (fun x ↦ μ x Z')) = a ⁅Z, Z'⁆ := by
+  rw [hσ.hamiltonianVectorField_poissonBracket hσc ((h.contMDiff Z).of_le (by simp))
+    ((h.contMDiff Z').of_le (by simp)), h.hamiltonianVectorField_eq hσ,
+    h.hamiltonianVectorField_eq hσ, a.map_lie]
 
 end Nondegenerate
 

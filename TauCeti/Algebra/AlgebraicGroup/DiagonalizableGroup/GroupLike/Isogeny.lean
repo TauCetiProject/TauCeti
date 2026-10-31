@@ -40,7 +40,7 @@ variable [Module.IsTorsionFree k H] [Module.IsTorsionFree k K]
 
 /-- A morphism between torsion-free diagonalizable coordinate algebras over a domain is a
 central isogeny exactly when its intrinsic character map is injective with finite cokernel. -/
-@[simp] theorem isCentralIsogeny_iff_groupLikeMap_injective_and_finite_quotient
+@[simp] theorem isCentralIsogeny_iff_mapGroupLike_injective_and_finite_quotient
     (hH : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := H))) = ⊤)
     (hK : Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := K))) = ⊤)
     (f : H ⟶ K) :

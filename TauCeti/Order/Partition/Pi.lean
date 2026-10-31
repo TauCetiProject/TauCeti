@@ -31,6 +31,8 @@ supplies both facts.
 * `Finpartition.sum_sum_piFinset_parts`: a sum over maps `ι → s` splits along cell assignments.
 * `Finpartition.sum_piFinset_apply_part`: a sum over maps `ι → s` of a function of their cell
   assignments weights each cell assignment by the size of its box.
+* `Finpartition.mem_piFinset_part_iff`: a map lies in the box of parts through `x` exactly when
+  it has the same cell assignment as `x`.
 * `Finpartition.injective_of_mem_piFinset_parts`: a map in the box of an injective cell assignment
   is injective.
 * `Finpartition.card_filter_not_injective_part_le`: at most
@@ -95,6 +97,14 @@ theorem injective_of_mem_piFinset_parts {φ : ι → P.parts} (hφ : Injective �
 theorem part_eq_of_mem_piFinset_parts {φ : ι → P.parts} {g : ι → α}
     (hg : g ∈ Fintype.piFinset fun i ↦ (φ i : Finset α)) (i : ι) : P.part (g i) = φ i :=
   P.part_eq_of_mem (φ i).2 (Fintype.mem_piFinset.1 hg i)
+
+/-- A map `y` lies in the box of parts through a map `x : ι → s` exactly when `y` has the same
+cell assignment as `x`. -/
+theorem mem_piFinset_part_iff {x y : ι → α} (hx : ∀ i, x i ∈ s) :
+    y ∈ Fintype.piFinset (fun i ↦ P.part (x i)) ↔
+      (fun i ↦ P.part (y i)) = fun i ↦ P.part (x i) := by
+  simp only [Fintype.mem_piFinset, funext_iff]
+  exact forall_congr' fun i ↦ (P.part_eq_iff_mem (P.part_mem.2 (hx i))).symm
 
 /-- A sum over the maps `ι → s` of a function of their cell assignments counts each cell
 assignment `φ` with the size `∏ i, #(φ i)` of its box. -/
