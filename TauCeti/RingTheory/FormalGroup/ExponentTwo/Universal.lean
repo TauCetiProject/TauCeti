@@ -10,12 +10,11 @@ public import Mathlib.Data.PNat.Defs
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
-public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
+public import TauCeti.RingTheory.FormalGroup.ExponentTwo.Coordinates
 public import TauCeti.RingTheory.FormalGroup.ExponentTwo.Iso
--- Proof-only: graded normalised logarithms, multiplication series under isomorphisms, and
--- evaluation of weighted homogeneous polynomials in graded rings.
+-- Proof-only: graded normalised logarithms and evaluation of weighted homogeneous polynomials in
+-- graded rings.
 import TauCeti.RingTheory.FormalGroup.ExponentTwo.Graded
-import TauCeti.RingTheory.FormalGroup.ZSMul
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
@@ -23,11 +22,13 @@ import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 A commutative formal group law `F` over a commutative ring `R` with `[2]_F = 0` has a normalised
 logarithm `g_F(X) = X + ∑_{i ≥ 1} aᵢ X^(i + 1)` with `a_(2ᵏ - 1) = 0` for every `k ≥ 1`
-(`FormalGroup.exponentTwoLog`), and `F(X, Y) = g_F⁻¹(g_F(X) + g_F(Y))`. Conversely, if `2 = 0` in
-`R`, every strict coordinate `g = X + ∑ aᵢ X^(i + 1)` with `a_(2ᵏ - 1) = 0` is the normalised
-logarithm of the formal group law `g⁻¹(g(X) + g(Y))`, which has exponent two because `2 X = 0`.
-So formal group laws of exponent two over `R` are classified by the free families
-`(aᵢ)_{i ∉ {2ᵏ - 1}}`, and they are represented by the polynomial ring
+(`FormalGroup.exponentTwoLog`), and `F(X, Y) = g_F⁻¹(g_F(X) + g_F(Y))`
+(`FormalGroup.inv_smul_𝔾ₐ_eq`). Conversely, if `2 = 0` in `R`, every strict coordinate
+`g = X + ∑ aᵢ X^(i + 1)` with `a_(2ᵏ - 1) = 0` is the normalised logarithm of the formal group law
+`g⁻¹(g(X) + g(Y))`, which has exponent two because `2 X = 0`
+(`FormalGroup.exponentTwoLog_inv_smul_𝔾ₐ`). So formal group laws of exponent two over `R` are
+classified by the free families `(aᵢ)_{i ∉ {2ᵏ - 1}}`, and they are represented by the polynomial
+ring
 
   `𝔽₂[aᵢ : i ≥ 1, i ≠ 2ᵏ - 1]`
 
@@ -52,15 +53,14 @@ the canonical real orientation of `MO`.
 
 ## Main results
 
-* `FormalGroup.inv_smul_𝔾ₐ_eq`: a commutative formal group law of exponent two is the transport of
-  the additive formal group law along the inverse of its normalised logarithm.
-* `FormalGroup.nsmulSeries_two_inv_smul_𝔾ₐ`, `FormalGroup.exponentTwoLog_inv_smul_𝔾ₐ`: if `2 = 0`,
-  transporting the additive law along `g⁻¹` gives a law of exponent two, whose normalised logarithm
-  is `g` when `g` is strict without terms of degree `2ᵏ`, `k ≥ 1`.
 * `TauCeti.ExponentTwoLazardRing.map_lift`: the universal formal group law base-changes along
   `lift F` to `F`.
 * `TauCeti.ExponentTwoLazardRing.lift_mem_iff`: `lift F` is graded exactly when the coefficient of
   `Xⁱ Yʲ` in `F` has degree `i + j - 1`.
+* `TauCeti.ExponentTwoLazardRing.coeff_log_mem_grading`,
+  `TauCeti.ExponentTwoLazardRing.coeff_formalGroup_mem_grading`: the coefficient of `Xⁿ` in the
+  universal normalised logarithm has degree `n - 1`, and that of `Xⁱ Yʲ` in the universal formal
+  group law has degree `i + j - 1`.
 
 ## References
 
@@ -74,49 +74,6 @@ public section
 noncomputable section
 
 open TauCeti
-
-namespace FormalGroup
-
-variable {R : Type*} [CommRing R]
-
-/-- **A formal group law of exponent two is determined by its normalised logarithm**: if the
-formal coordinate `φ` has series the normalised logarithm `g` of `F`, then
-`F(X, Y) = g⁻¹(g(X) + g(Y))`, that is, `F` is the transport `φ⁻¹ • 𝔾ₐ` of the additive formal
-group law. -/
-theorem inv_smul_𝔾ₐ_eq (F : FormalGroup R) [F.IsComm] (hF : F.nsmulSeries 2 = 0)
-    {φ : FormalCoordinate R} (hφ : φ.toPowerSeries = F.exponentTwoLog hF) :
-    φ⁻¹ • 𝔾ₐ = F := by
-  rw [← (F.exponentTwoLogHom hF).smul_eq ((F.exponentTwoLogHom_toPowerSeries hF).trans hφ.symm),
-    inv_smul_smul]
-
-variable (φ : FormalCoordinate R)
-
-/-- **Transporting the additive formal group law gives exponent two when `2 = 0`**: if `2 = 0` in
-`R`, then `[2](X) = 0` for the formal group law `φ⁻¹ • 𝔾ₐ = φ⁻¹(φ(X) + φ(Y))`. -/
-theorem nsmulSeries_two_inv_smul_𝔾ₐ (h2 : (2 : R) = 0) :
-    (φ⁻¹ • (𝔾ₐ : FormalGroup R)).nsmulSeries 2 = 0 := by
-  -- Transport `[2]_{𝔾ₐ}(X) = 2 X = 0` along the isomorphism `φ⁻¹ : 𝔾ₐ → φ⁻¹ • 𝔾ₐ`.
-  have h := (smulIso φ⁻¹ (𝔾ₐ (R := R))).zsmulSeries_eq_subst 2
-  rw [show (2 : ℤ) = ((2 : ℕ) : ℤ) from rfl, zsmulSeries_natCast, zsmulSeries_natCast,
-    nsmulSeries_𝔾ₐ, Nat.cast_ofNat, ← map_ofNat PowerSeries.C 2, h2, map_zero, zero_mul,
-    PowerSeries.subst_zero_of_constantCoeff_zero (smulIso φ⁻¹ 𝔾ₐ).toHom.zero_constantCoeff,
-    PowerSeries.subst_zero] at h
-  exact h
-
-/-- **The normalised logarithm of a transported additive formal group law**: if `2 = 0` in `R` and
-`φ = X + ⋯` has no term of degree `2ᵏ` for `k ≥ 1`, then `φ` is the normalised logarithm of
-`φ⁻¹ • 𝔾ₐ = φ⁻¹(φ(X) + φ(Y))`. -/
-theorem exponentTwoLog_inv_smul_𝔾ₐ (h2 : (2 : R) = 0) (h₁ : PowerSeries.coeff 1 φ.toPowerSeries = 1)
-    (hp : ∀ k, 0 < k → PowerSeries.coeff (2 ^ k) φ.toPowerSeries = 0) :
-    (φ⁻¹ • (𝔾ₐ : FormalGroup R)).exponentTwoLog (nsmulSeries_two_inv_smul_𝔾ₐ φ h2) =
-      φ.toPowerSeries := by
-  -- `φ` is the series of the inverse of the isomorphism `φ⁻¹ : 𝔾ₐ → φ⁻¹ • 𝔾ₐ`.
-  have hφ := (smulIso φ⁻¹ (𝔾ₐ (R := R))).invHom.hom
-  rw [smulIso_invHom_toPowerSeries, inv_inv] at hφ
-  exact ((φ⁻¹ • 𝔾ₐ).eq_exponentTwoLog _ φ.constantCoeff_toPowerSeries h₁ hp
-    ((TauCeti.FormalGroupHom.hom_additive_iff φ.constantCoeff_toPowerSeries).mp hφ)).symm
-
-end FormalGroup
 
 namespace TauCeti
 
@@ -148,6 +105,13 @@ private def logCoeffs (i : ℕ+) : ExponentTwoLazardRing :=
 `aᵢ = 0` when `i + 1` is a power of two. -/
 def log : FormalCoordinate ExponentTwoLazardRing :=
   FormalCoordinate.ofStrictCoeffs logCoeffs
+
+/-- Every `n + 2` is either not a power of two or a power `2ᵏ` with `k ≥ 1`. -/
+private theorem forall_ne_two_pow_or_exists (n : ℕ) :
+    (∀ k : ℕ, n + 1 + 1 ≠ 2 ^ k) ∨ ∃ k, 0 < k ∧ n + 1 + 1 = 2 ^ k := by
+  refine or_iff_not_imp_left.2 fun hn ↦ ?_
+  obtain ⟨k, hk⟩ := not_forall_not.mp hn
+  exact ⟨k, Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at hk, hk⟩
 
 /-- The universal normalised logarithm has the generator `aᵢ` as its coefficient of `X^(i + 1)`. -/
 @[simp]
@@ -181,20 +145,17 @@ theorem formalGroup_def : formalGroup = log⁻¹ • FormalGroup.𝔾ₐ :=
 instance : formalGroup.IsComm :=
   FormalGroup.instIsCommSMul _ _
 
-/-- `2 = 0` in the universal ring. -/
-private theorem two_eq_zero : (2 : ExponentTwoLazardRing) = 0 := by
-  rw [← map_ofNat C 2, show (2 : ZMod 2) = 0 from rfl, map_zero]
-
 /-- The universal formal group law has exponent two: `[2](X) = 0`. -/
 theorem nsmulSeries_two_formalGroup : formalGroup.nsmulSeries 2 = 0 :=
-  FormalGroup.nsmulSeries_two_inv_smul_𝔾ₐ log two_eq_zero
+  FormalGroup.nsmulSeries_smul_𝔾ₐ_eq_zero log⁻¹ (CharP.cast_eq_zero _ 2)
 
 /-- The normalised logarithm of the universal formal group law is the universal normalised
 logarithm. -/
 @[simp]
 theorem exponentTwoLog_formalGroup :
     formalGroup.exponentTwoLog nsmulSeries_two_formalGroup = log.toPowerSeries :=
-  FormalGroup.exponentTwoLog_inv_smul_𝔾ₐ log two_eq_zero coeff_one_log fun _ ↦ coeff_two_pow_log
+  FormalGroup.exponentTwoLog_inv_smul_𝔾ₐ log CharTwo.two_eq_zero coeff_one_log
+    fun _ ↦ coeff_two_pow_log
 
 /-- A ring homomorphism out of `ExponentTwoLazardRing` is determined by its base change of the
 universal formal group law. -/
@@ -221,11 +182,9 @@ private theorem toPowerSeries_map_log_eq (f : ExponentTwoLazardRing →+* R) {g 
   · simp [h₀]
   · simp [h₁]
   · rw [FormalCoordinate.toPowerSeries_map, PowerSeries.coeff_map]
-    by_cases hn : ∀ k : ℕ, n + 1 + 1 ≠ 2 ^ k
+    obtain hn | ⟨k, hk0, hk⟩ := forall_ne_two_pow_or_exists n
     · exact (congrArg f (coeff_succ_log ⟨n.succPNat, hn⟩)).trans (hX ⟨n.succPNat, hn⟩)
-    · obtain ⟨k, hk⟩ := not_forall_not.mp hn
-      have hk0 : 0 < k := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at hk
-      rw [hk, coeff_two_pow_log hk0, hp k hk0, map_zero]
+    · rw [hk, coeff_two_pow_log hk0, hp k hk0, map_zero]
 
 /-- The homomorphism classifying `F`, sending `aᵢ` to the coefficient of `X^(i + 1)` in the
 normalised logarithm of `F`. It is defined on `𝔽₂`-coefficients since `2 = 0` in `R`. -/
@@ -307,6 +266,21 @@ instance : GradedAlgebra grading :=
 theorem X_mem_grading (i : Index) : X i ∈ grading i :=
   mem_grading_iff.2 (isWeightedHomogeneous_X _ _ i)
 
+/-- The coefficient of `Xⁿ` in the universal normalised logarithm has degree `n - 1`. -/
+theorem coeff_log_mem_grading (n : ℕ) :
+    PowerSeries.coeff n log.toPowerSeries ∈ grading (n - 1) := by
+  -- The coefficients of `X⁰`, `X¹` and `X^(2ᵏ)` are `0`, `1` and `0`; the others are generators.
+  rcases n with _ | _ | n
+  · simp [zero_mem]
+  · rw [zero_add, coeff_one_log]
+    exact SetLike.GradedOne.one_mem (A := grading)
+  · obtain hn | ⟨k, hk0, hk⟩ := forall_ne_two_pow_or_exists n
+    · have h := X_mem_grading ⟨n.succPNat, hn⟩
+      rw [← coeff_succ_log] at h
+      exact h
+    · rw [hk, coeff_two_pow_log hk0]
+      exact zero_mem _
+
 variable {A σ : Type*} [CommRing A] [SetLike σ A] [AddSubmonoidClass σ A] {𝒜 : ℕ → σ}
   [GradedRing 𝒜]
 
@@ -319,18 +293,12 @@ theorem lift_mem_iff (F : {F : FormalGroup A // F.IsComm ∧ F.nsmulSeries 2 = 0
       ∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d F.1.toPowerSeries ∈ 𝒜 (d.degree - 1) := by
   obtain ⟨F, hc, hF⟩ := F
   rw [← FormalGroup.forall_coeff_exponentTwoLog_mem_iff F hF]
-  refine ⟨fun h ↦ ?_, fun h n x hx ↦ ?_⟩
-  · -- The coefficients of `X⁰`, `X¹` and `X^(2ᵏ)` are `0`, `1` and `0`; the others are values of
-    -- `lift F` at generators.
-    rintro (_ | _ | n)
-    · simp [zero_mem]
-    · simpa using SetLike.GradedOne.one_mem (A := 𝒜)
-    · by_cases hn : ∀ k : ℕ, n + 1 + 1 ≠ 2 ^ k
-      · simpa using h (X_mem_grading ⟨n.succPNat, hn⟩)
-      · obtain ⟨k, hk⟩ := not_forall_not.mp hn
-        have hk0 : 0 < k := Nat.pos_of_ne_zero fun h0 ↦ by simp [h0] at hk
-        rw [hk, F.coeff_two_pow_exponentTwoLog hF hk0]
-        exact zero_mem _
+  refine ⟨fun h n ↦ ?_, fun h n x hx ↦ ?_⟩
+  · -- The normalised logarithm of `F` is the base change of `log` along `lift F`.
+    rw [← toPowerSeries_map_log_eq (lift ⟨F, hc, hF⟩) (by simp) (by simp)
+      (fun k hk ↦ F.coeff_two_pow_exponentTwoLog hF hk) (lift_X ⟨F, hc, hF⟩),
+      FormalCoordinate.toPowerSeries_map, PowerSeries.coeff_map]
+    exact h (coeff_log_mem_grading n)
   · -- `lift F` evaluates polynomials over `𝔽₂`, whose coefficients land in degree zero.
     have he : lift ⟨F, hc, hF⟩ =
         eval₂Hom ((lift ⟨F, hc, hF⟩).comp C) (lift ⟨F, hc, hF⟩ ∘ X) :=
@@ -340,6 +308,15 @@ theorem lift_mem_iff (F : {F : FormalGroup A // F.IsComm ∧ F.nsmulSeries 2 = 0
     · rw [← ZMod.natCast_zmod_val r, RingHom.comp_apply, map_natCast, map_natCast]
       exact SetLike.natCast_mem_graded _ _
     · simpa using h ((i.1 : ℕ) + 1)
+
+/-- The coefficient of `X^(d 0) Y^(d 1)` in the universal formal group law has degree
+`d 0 + d 1 - 1`. -/
+theorem coeff_formalGroup_mem_grading (d : Fin 2 →₀ ℕ) :
+    MvPowerSeries.coeff d formalGroup.toPowerSeries ∈ grading (d.degree - 1) := by
+  -- The universal formal group law is classified by the identity, which is graded.
+  have h : lift ⟨formalGroup, inferInstance, nsmulSeries_two_formalGroup⟩ = RingHom.id _ :=
+    hom_ext (by rw [map_lift, FormalGroup.map_id])
+  exact (lift_mem_iff (𝒜 := grading) _).1 (fun _ _ hx ↦ by rwa [h]) d
 
 /-- **The graded universal property of `ExponentTwoLazardRing`**: for a commutative ring `A` graded
 by `𝒜`, graded ring homomorphisms out of `ExponentTwoLazardRing` correspond to commutative formal
@@ -364,6 +341,13 @@ def gradedLift :
 theorem toRingHom_gradedLift (F : {F : FormalGroup A // F.IsComm ∧ F.nsmulSeries 2 = 0 ∧
       ∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d F.toPowerSeries ∈ 𝒜 (d.degree - 1)}) :
     (gradedLift F).toRingHom = lift ⟨F.1, F.2.1, F.2.2.1⟩ :=
+  (rfl)
+
+/-- The graded homomorphism attached to `F` is, as a function, the homomorphism classifying `F`. -/
+@[simp]
+theorem coe_gradedLift (F : {F : FormalGroup A // F.IsComm ∧ F.nsmulSeries 2 = 0 ∧
+      ∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d F.toPowerSeries ∈ 𝒜 (d.degree - 1)}) :
+    ⇑(gradedLift F) = lift ⟨F.1, F.2.1, F.2.2.1⟩ :=
   (rfl)
 
 /-- The formal group law attached to a graded homomorphism `φ` is the base change of the universal
