@@ -133,6 +133,11 @@ abbrev CountableModelClasses (φ : L.SentenceInf ι) : Type v :=
 noncomputable def countableModelCount (φ : L.SentenceInf ι) : Cardinal.{v} :=
   #(CountableModelClasses φ)
 
+/-- The number of countable models is the cardinality of `CountableModelClasses φ`. -/
+theorem countableModelCount_def (φ : L.SentenceInf ι) :
+    countableModelCount φ = #(CountableModelClasses φ) :=
+  (rfl)
+
 /-- The number of countable models is the number of models on `ℕ` up to isomorphism plus, summed
 over `n`, the number of models on `Fin n` up to isomorphism. -/
 theorem countableModelCount_eq_add_sum (φ : L.SentenceInf ι) :
@@ -333,6 +338,27 @@ is exactly one element has such a set on `Fin 1` and no model on `ℕ`. -/
 def HasPerfectlyManyCountableModels (φ : L.SentenceInf ι) : Prop :=
   (isoSetoid L ℕ).HasPerfectAntichainOn (modelsOf φ) ∨
     ∃ n, (isoSetoid L (Fin n)).HasPerfectAntichainOn (modelsOf φ)
+
+/-- `φ` has perfectly many countable models exactly when its model class on `ℕ`, or on some
+`Fin n`, contains a nonempty perfect set of pairwise non-isomorphic configurations. -/
+theorem hasPerfectlyManyCountableModels_iff {φ : L.SentenceInf ι} :
+    HasPerfectlyManyCountableModels φ ↔
+      (isoSetoid L ℕ).HasPerfectAntichainOn (modelsOf φ) ∨
+        ∃ n, (isoSetoid L (Fin n)).HasPerfectAntichainOn (modelsOf φ) :=
+  Iff.rfl
+
+/-- A perfect set of pairwise non-isomorphic models on `ℕ` gives perfectly many countable
+models. -/
+theorem HasPerfectlyManyCountableModels.of_nat {φ : L.SentenceInf ι}
+    (h : (isoSetoid L ℕ).HasPerfectAntichainOn (modelsOf φ)) : HasPerfectlyManyCountableModels φ :=
+  hasPerfectlyManyCountableModels_iff.2 (.inl h)
+
+/-- A perfect set of pairwise non-isomorphic models on some `Fin n` gives perfectly many countable
+models. -/
+theorem HasPerfectlyManyCountableModels.of_fin {φ : L.SentenceInf ι} {n : ℕ}
+    (h : (isoSetoid L (Fin n)).HasPerfectAntichainOn (modelsOf φ)) :
+    HasPerfectlyManyCountableModels φ :=
+  hasPerfectlyManyCountableModels_iff.2 (.inr ⟨n, h⟩)
 
 /-- In a language with countably many relation symbols of each arity, a sentence with perfectly
 many countable models has exactly continuum many. -/
