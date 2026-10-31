@@ -15,7 +15,8 @@ public import TauCeti.RepresentationTheory.Continuous.Subrepresentation
 This file defines when a continuous representation preserves a real or complex inner product. It
 characterizes unitarity through norm preservation, isometries, and Mathlib's `unitary` submonoid of
 continuous linear operators, and records the basic inner-product identities, the coefficient bound,
-and that unitarity passes to restrictions.
+and that unitarity passes to restrictions. For a group, each action map of a unitary representation
+is bundled as a linear isometric equivalence, `IsUnitary.toLinearIsometryEquiv`.
 
 The operator characterizations reuse Mathlib's adjoint and unitary-operator theory.
 
@@ -183,6 +184,21 @@ element by its inverse. -/
 theorem inner_map_right (hπ : IsUnitary π) (g : G) (v w : V) :
     ⟪v, π g w⟫_𝕜 = ⟪π g⁻¹ v, w⟫_𝕜 := by
   simpa only [ContRepresentation.self_inv_apply] using hπ.inner_map_map g (π g⁻¹ v) w
+
+omit [CompleteSpace V] in
+/-- An action map of a unitary group representation, as a linear isometric equivalence of the
+representation space. Its inverse is the action of the inverse group element. -/
+noncomputable def toLinearIsometryEquiv (hπ : IsUnitary π) (g : G) : V ≃ₗᵢ[𝕜] V :=
+  LinearIsometryEquiv.ofSurjective
+    { toLinearMap := (π g : V →ₗ[𝕜] V), norm_map' := hπ.norm_map g }
+    fun v ↦ ⟨π g⁻¹ v, ContRepresentation.self_inv_apply π g v⟩
+
+omit [CompleteSpace V] in
+/-- The linear isometric equivalence of a unitary action map applies as that action map. -/
+@[simp]
+theorem coe_toLinearIsometryEquiv (hπ : IsUnitary π) (g : G) :
+    ⇑(hπ.toLinearIsometryEquiv g) = π g :=
+  (rfl)
 
 /-- The adjoint of a unitary action operator is the action of the inverse group element. -/
 @[simp]

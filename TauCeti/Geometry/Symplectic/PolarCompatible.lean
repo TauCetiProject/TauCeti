@@ -264,12 +264,10 @@ theorem exists_compatible_forall_isComplexLinearMap {E G : Type*} [NormedAddComm
   -- Each `ρ g` is a linear isometric equivalence preserving `ω'`, so it commutes with `J'`.
   have hρω : ∀ g y z, ω' (ρ g y) (ρ g z) = ω' y z := fun g y z ↦ by
     simp [ω', hρ, hω]
-  have hJ' : ∀ g x, J' (ρ g x) = ρ g (J' x) := fun g x ↦
-    IsSymplectomorphism.polarComplexStructure_apply
-      (e := LinearIsometryEquiv.ofSurjective
-        { toLinearMap := (ρ g : F →ₗ[ℝ] F), norm_map' := he.norm_map g }
-        fun y ↦ ⟨ρ g⁻¹ y, Representation.self_inv_apply ρ.toRepresentation g y⟩)
-      (isSymplectomorphism_iff.mpr (hρω g)) x
+  have hJ' : ∀ g x, J' (ρ g x) = ρ g (J' x) := fun g x ↦ by
+    have h := IsSymplectomorphism.polarComplexStructure_apply (e := he.toLinearIsometryEquiv g)
+      (isSymplectomorphism_iff.mpr (by simpa using hρω g)) x
+    simpa only [ContRepresentation.IsUnitary.coe_toLinearIsometryEquiv] using h
   refine ⟨J'.transport k.symm.toLinearEquiv, ?_, fun g ↦ ?_⟩
   · have h := (ω'.compatible_polarComplexStructure).transport k.symm.toLinearEquiv
     rwa [ContinuousLinearEquiv.toLinearEquiv_symm, transport_symm_transport] at h

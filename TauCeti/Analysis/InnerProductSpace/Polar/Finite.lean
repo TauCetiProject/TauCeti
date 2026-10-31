@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Gram.Factor
 public import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
+public import TauCeti.Analysis.Normed.Operator.LinearIsometry
 
 /-!
 # The canonical finite-dimensional polar factor
@@ -43,13 +44,6 @@ when `A` is normal, its polar factor commutes with both `|A|` and `A`.
 public section
 
 noncomputable section
-
-/-- The linear map underlying the isometric embedding of a linear isometric equivalence is the
-linear map underlying its linear equivalence. -/
-theorem LinearIsometryEquiv.toLinearMap_toLinearIsometry {𝕜 E F : Type*} [RCLike 𝕜]
-    [SeminormedAddCommGroup E] [Module 𝕜 E] [SeminormedAddCommGroup F] [Module 𝕜 F]
-    (e : E ≃ₗᵢ[𝕜] F) : e.toLinearIsometry.toLinearMap = e.toLinearEquiv :=
-  (rfl)
 
 namespace LinearMap
 

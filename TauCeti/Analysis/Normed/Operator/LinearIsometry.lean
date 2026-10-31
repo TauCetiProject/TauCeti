@@ -14,6 +14,9 @@ Postcomposition by a linear isometry acts pointwise on continuous linear maps.
 If its range is closed, the postcomposition operator also has closed range: its
 image consists precisely of operators whose values lie in that range. This lets
 smooth alternating pullback be checked through the underlying multilinear maps.
+
+The file also records that forgetting a linear isometric equivalence to an isometric embedding
+and then to a linear map gives the linear map of its underlying linear equivalence.
 -/
 
 public section
@@ -21,6 +24,13 @@ public section
 noncomputable section
 
 open Set
+
+/-- The linear map underlying the isometric embedding of a linear isometric equivalence is the
+linear map underlying its linear equivalence. -/
+theorem LinearIsometryEquiv.toLinearMap_toLinearIsometry {R E F : Type*} [Semiring R]
+    [SeminormedAddCommGroup E] [Module R E] [SeminormedAddCommGroup F] [Module R F]
+    (e : E ≃ₗᵢ[R] F) : e.toLinearIsometry.toLinearMap = e.toLinearEquiv :=
+  (rfl)
 
 namespace LinearIsometry
 
