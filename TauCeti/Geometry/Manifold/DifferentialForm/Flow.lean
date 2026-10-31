@@ -10,8 +10,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 import TauCeti.Analysis.Calculus.DifferentialForm.Flow
 import TauCeti.Analysis.Calculus.ParametricFDeriv
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -120,33 +120,24 @@ private theorem compContinuousLinearMap_fderiv_eq_mpullback_globalFlow (y : M) {
           (extChartAt I y y)) =
       mpullback I I (globalFlow Z (hZ.of_le one_le_two) hc s) α y := by
   set ψ := globalFlow Z (hZ.of_le one_le_two) hc
-  have hs' : ψ s y ∈ (chartAt H y).source := by rwa [extChartAt_source] at hs
-  -- Reading `ψ s` in the chart at `y` on both sides, its derivative is conjugated by the chart.
-  have hfd : HasFDerivAt (fun z ↦ extChartAt I y (ψ s ((extChartAt I y).symm z)))
-      (mfderiv I 𝓘(ℝ, E) (extChartAt I y) (ψ s y) ∘L mfderiv I I (ψ s) y ∘L
-        mfderivWithin 𝓘(ℝ, E) I (extChartAt I y).symm (range I) (extChartAt I y y) :
-          E →L[ℝ] E)
-      (extChartAt I y y) := by
-    have h := ((contMDiff_globalFlow_apply hc (n := 2) (by norm_num) hZ s).mdifferentiableAt
-      (by norm_num)).hasMFDerivAt.hasFDerivWithinAt_of_mem_source (mem_chart_source H y) hs'
-    exact h.hasFDerivAt (by rw [I.range_eq_univ]; exact univ_mem)
-  have hid := mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt' (I := I) (x := y) hs
-  have hvec (w : E) : mfderivWithin 𝓘(ℝ, E) I (extChartAt I y).symm (range I)
-      (extChartAt I y (ψ s y))
-        (fderiv ℝ (fun z ↦ extChartAt I y (ψ s ((extChartAt I y).symm z))) (extChartAt I y y) w) =
-        mfderiv I I (ψ s) y w := by
-    rw [hfd.fderiv]
-    -- The chart derivatives at the centre and along the orbit cancel.
-    have h1 := congrArg (mfderiv I 𝓘(ℝ, E) (extChartAt I y) (ψ s y))
-      (congrArg (mfderiv I I (ψ s) y)
-        (DFunLike.congr_fun (mfderivWithin_range_extChartAt_symm (I := I) (x := y)) w))
-    exact (congrArg _ h1).trans (DFunLike.congr_fun hid (mfderiv I I (ψ s) y w))
+  have hyt : extChartAt I y y ∈ (extChartAt I y).target := mem_extChartAt_target y
+  have hψ : MDifferentiableAt I I (ψ s) ((extChartAt I y).symm (extChartAt I y y)) :=
+    (contMDiff_globalFlow_apply hc (n := 2) (by norm_num) hZ s).mdifferentiableAt (by norm_num)
+  have hsymm : MDifferentiableWithinAt 𝓘(ℝ, E) I (extChartAt I y).symm univ (extChartAt I y y) := by
+    rw [← I.range_eq_univ]
+    exact mdifferentiableWithinAt_extChartAt_symm hyt
+  -- The flat pullback is the pullback by `ψ s` composed with the inverse chart, read in the chart.
+  have h := RoughForm.mpullbackWithin_eq_compContinuousLinearMap α y
+    (by simpa only [Function.comp_apply, extChartAt_to_inv] using hs)
+    (hψ.comp_mdifferentiableWithinAt _ hsymm) uniqueDiffWithinAt_univ
+  rw [fderivWithin_univ] at h
+  simp only [Function.comp_apply, extChartAt_to_inv] at h
+  rw [← RoughForm.inChartAt_extChartAt_self (mpullback I I (ψ s) α) y,
+    RoughForm.inChartAt_mpullback α (ψ s) y hyt hψ, I.range_eq_univ]
+  refine h.symm.trans ?_
   ext v
-  rw [compContinuousLinearMap_apply, RoughForm.inChartAt_apply]
-  refine Eq.trans ?_ (mpullback_apply (ψ s) α y v).symm
-  simp only [Function.comp_apply]
-  rw [(extChartAt I y).left_inv hs]
-  exact congrArg (α (ψ s y)) (funext fun i ↦ hvec (v i))
+  rw [mpullbackWithin_apply, compContinuousLinearMap_apply]
+  rfl
 
 /-- **The Lie derivative is the velocity of pulled-back forms at time zero.** For a complete `C²`
 vector field `Z` with flow `ψ` and a form `α` differentiable at `y`,

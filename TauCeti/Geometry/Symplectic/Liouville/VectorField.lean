@@ -113,10 +113,10 @@ theorem isLiouvilleVectorField_mextDeriv_of_interior_eq [IsManifold I 2 M]
     IsLiouvilleVectorField (mextDeriv α) Z := by
   rw [isLiouvilleVectorField_mextDeriv_iff hα hZ, h]
 
-/-- **A primitive is invariant under its Liouville field.** If the differentiable vector field `Z`
-satisfies `ι_Z dλ = λ` for a differentiable one-form `λ`, then `L_Z λ = λ`: by Cartan's formula
-`L_Z λ = ι_Z dλ + d (ι_Z λ)`, and `ι_Z λ = dλ (Z, Z) = 0`. -/
-theorem mlieDerivForm_eq_self_of_interior_eq [IsManifold I 2 M] {α : RoughForm I M ℝ 1}
+/-- **A primitive has Lie derivative equal to itself along its Liouville field.** If the
+differentiable vector field `Z` satisfies `ι_Z dλ = λ` for a differentiable one-form `λ`, then
+`L_Z λ = λ`: by Cartan's formula `L_Z λ = ι_Z dλ + d (ι_Z λ)`, and `ι_Z λ = dλ (Z, Z) = 0`. -/
+theorem mlieDerivForm_eq_self_of_interior_eq [IsManifold I 1 M] {α : RoughForm I M ℝ 1}
     {Z : (x : M) → TangentSpace I x}
     (hα : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)))

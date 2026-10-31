@@ -13,11 +13,11 @@ public import TauCeti.Geometry.Symplectic.Liouville.VectorField
 
 Let `Z` be a complete `C²` Liouville vector field of a two-form `σ`, `L_Z σ = σ`, with flow `ψ`.
 Then `ψₜ^* σ = e^t σ` for every time `t`
-(`TauCeti.IsLiouvilleVectorField.mpullback_globalFlow_eq_exp_smul`): the Liouville flow is
-conformally symplectic. If moreover `α` is a primitive of `σ` whose Liouville field is `Z`,
-`dα = σ` and `ι_Z σ = α`, then also `ψₜ^* α = e^t α`
-(`TauCeti.mpullback_globalFlow_eq_exp_smul_of_interior_eq`), so that the flow is an exact
-conformal symplectomorphism.
+(`TauCeti.IsLiouvilleVectorField.mpullback_globalFlow_eq_exp_smul`): the flow rescales `σ`, and
+is conformally symplectic when `σ` is symplectic. If moreover `α` is a primitive of `σ` whose
+Liouville field is `Z`, `dα = σ` and `ι_Z σ = α`, then also `ψₜ^* α = e^t α`
+(`TauCeti.mpullback_globalFlow_eq_exp_smul_of_interior_eq`): the flow rescales the primitive, so
+that it is an exact conformal symplectomorphism when `σ` is symplectic.
 
 Near a hypersurface `Σ` of contact type, such as the boundary of a Liouville domain, the flow
 sweeps out a family of hypersurfaces `ψₜ(Σ)` whose characteristic foliations are conjugate under
@@ -61,8 +61,9 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M]
   (hZ : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, Z y⟩ : TangentBundle I M)))
 include hc hZ
 
-/-- **The Liouville flow is conformally symplectic.** The flow `ψ` of a complete `C²` Liouville
-vector field `Z` of a differentiable two-form `σ`, `L_Z σ = σ`, satisfies `ψₜ^* σ = e^t σ`. -/
+/-- **The Liouville flow rescales the two-form.** The flow `ψ` of a complete `C²` Liouville
+vector field `Z` of a differentiable two-form `σ`, `L_Z σ = σ`, satisfies `ψₜ^* σ = e^t σ`; when `σ`
+is symplectic, the flow is conformally symplectic. -/
 theorem IsLiouvilleVectorField.mpullback_globalFlow_eq_exp_smul {σ : RoughForm I M ℝ 2}
     (hσ : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] ℝ))
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] ℝ) y (σ y)))
@@ -73,17 +74,20 @@ theorem IsLiouvilleVectorField.mpullback_globalFlow_eq_exp_smul {σ : RoughForm 
     exact isLiouvilleVectorField_iff.mp hZσ
   simpa only [one_mul] using TauCeti.mpullback_globalFlow_eq_exp_smul hc hZ hσ hL t
 
-/-- **The Liouville flow is exact conformally symplectic.** If `α` is a smooth primitive of the
-smooth two-form `σ`, and the complete `C²` vector field `Z` is its Liouville field, `ι_Z σ = α`,
-then the flow `ψ` of `Z` satisfies `ψₜ^* α = e^t α`. -/
-theorem mpullback_globalFlow_eq_exp_smul_of_interior_eq {α : SmoothForm I M ℝ 1}
-    {σ : SmoothForm I M ℝ 2} (hdα : mextDeriv α.1 = σ.1)
-    (hZα : RoughForm.interior Z σ.1 = α.1) (t : ℝ) :
-    mpullback I I (globalFlow Z (hZ.of_le one_le_two) hc t) α.1 = Real.exp t • α.1 := by
-  have hL : mlieDerivForm Z α.1 = (1 : ℝ) • α.1 := by
+/-- **The Liouville flow rescales the primitive.** If `α` is a differentiable primitive of the
+two-form `σ`, and the complete `C²` vector field `Z` is its Liouville field, `ι_Z σ = α`, then the
+flow `ψ` of `Z` satisfies `ψₜ^* α = e^t α`; when `σ` is symplectic, the flow is exact conformally
+symplectic. -/
+theorem mpullback_globalFlow_eq_exp_smul_of_interior_eq {α : RoughForm I M ℝ 1}
+    {σ : RoughForm I M ℝ 2}
+    (hα : MDifferentiable I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)))
+    (hdα : mextDeriv α = σ) (hZα : σ.interior Z = α) (t : ℝ) :
+    mpullback I I (globalFlow Z (hZ.of_le one_le_two) hc t) α = Real.exp t • α := by
+  have hL : mlieDerivForm Z α = (1 : ℝ) • α := by
     rw [one_smul]
-    exact mlieDerivForm_eq_self_of_interior_eq α.mdifferentiable
-      (hZ.mdifferentiable (by norm_num)) (by rw [hdα, hZα])
-  simpa only [one_mul] using mpullback_globalFlow_eq_exp_smul hc hZ α.mdifferentiable hL t
+    exact mlieDerivForm_eq_self_of_interior_eq hα (hZ.mdifferentiable (by norm_num))
+      (by rw [hdα, hZα])
+  simpa only [one_mul] using mpullback_globalFlow_eq_exp_smul hc hZ hα hL t
 
 end TauCeti
