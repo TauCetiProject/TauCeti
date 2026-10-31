@@ -11,6 +11,7 @@ public import Mathlib.Data.Finsupp.SMul
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.LocallyConstant.Basic
+public import TauCeti.GroupTheory.QuotientGroup.Map
 import TauCeti.Topology.Algebra.Group.LocallyConstant
 import TauCeti.Topology.Algebra.Group.Profinite.Limit
 
@@ -59,6 +60,8 @@ to some finite level `A n`, and the finite levels are cofinal among all the fini
   group factors through some level.
 * `TauCeti.FiniteQuotientTower.exists_monoidHom_comp_q_eq`: every locally constant homomorphism
   factors through some level by a homomorphism.
+* `TauCeti.FiniteQuotientTower.mapOfLE_toQuotient`: factoring the quotient maps through a level is
+  compatible with the quotient homomorphisms `Γ ⧸ U → Γ ⧸ V`.
 
 ## References
 
@@ -259,6 +262,15 @@ theorem toQuotient_t {m n : ℕ} (hmn : m ≤ n) {U : Subgroup Γ} [U.Normal]
     (h : (T.ker m : Subgroup Γ) ≤ U) (a : A n) :
     T.toQuotient h (T.t hmn a) =
       T.toQuotient (le_trans (α := Subgroup Γ) (T.ker_antitone hmn) h) a := by
+  obtain ⟨x, rfl⟩ := T.surjective_q n a
+  simp
+
+/-- Factoring the quotient map through a level is compatible with the quotient homomorphisms
+`Γ ⧸ U → Γ ⧸ V` for `U ≤ V`. -/
+@[simp]
+theorem mapOfLE_toQuotient {n : ℕ} {U V : Subgroup Γ} [U.Normal] [V.Normal]
+    (h : (T.ker n : Subgroup Γ) ≤ U) (hUV : U ≤ V) (a : A n) :
+    QuotientGroup.mapOfLE hUV (T.toQuotient h a) = T.toQuotient (h.trans hUV) a := by
   obtain ⟨x, rfl⟩ := T.surjective_q n a
   simp
 
