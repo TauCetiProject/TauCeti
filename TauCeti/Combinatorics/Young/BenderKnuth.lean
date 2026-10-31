@@ -126,11 +126,6 @@ theorem rowCountLt_succ_le (T : SemistandardYoungTableau μ) (i x : ℕ) :
   exact ⟨lt_of_lt_of_le hj.1 (μ.rowLen_anti i (i + 1) (Nat.le_succ i)),
     lt_of_lt_of_le (T.col_strict (Nat.lt_succ_self i) hcell) (Nat.lt_succ_iff.mp hj.2)⟩
 
-/-- Column strictness, for a cell given by a bound on its column. -/
-theorem col_strict_of_lt_rowLen (T : SemistandardYoungTableau μ) {r r' c : ℕ}
-    (h : r' < r) (hc : c < μ.rowLen r) : T r' c < T r c :=
-  T.col_strict h (YoungDiagram.mem_iff_lt_rowLen.mpr hc)
-
 /-- A letter at least `i` in a row above row `k` lies in a column at least the number of letters
 at most `i` in row `k`: by column strictness, the letter below it is larger than `i`. -/
 theorem rowCountLt_le_of_lt (T : SemistandardYoungTableau μ) {r k c i : ℕ} (hr : r < k)
