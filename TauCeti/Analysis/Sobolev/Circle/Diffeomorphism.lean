@@ -27,8 +27,9 @@ Let `φ` have the lift `F : ℝ → ℝ`, `F (x + T) = F x + T`, with smooth der
 says that `u ∘ φ` has the weak derivative `F' · (u' ∘ φ)`. By induction `u ∘ φ` and `u' ∘ φ` lie
 in `H^k`, and multiplication by the smooth function `F'` preserves `H^k`
 (`TauCeti.CircleSobolev.mulFourierSeries`), so `u ∘ φ ∈ H^(k+1)`. Precomposition is therefore a
-linear map of `H^k` whose graph is closed, as it is closed in `H⁰ × H⁰`; it is continuous by the
-closed graph theorem. The inverse map of the circle has the smooth lift `F⁻¹`
+linear map of `H^k`. Its graph is closed: it is the inverse image, under the continuous inclusions
+`H^k × H^k → H⁰ × H⁰`, of the closed graph of the bounded precomposition operator on `H⁰`. So it
+is continuous by the closed graph theorem. The inverse map of the circle has the smooth lift `F⁻¹`
 (`Homeomorph.contDiff_symm_deriv`), which gives the inverse operator.
 
 ## Main definitions
