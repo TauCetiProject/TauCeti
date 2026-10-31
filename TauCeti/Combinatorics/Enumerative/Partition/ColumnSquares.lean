@@ -18,9 +18,10 @@ For a finite family of row lengths, the sum of pairwise minima equals the sum of
 squares of the column lengths. No ordering of the rows is required. In particular this
 converts blockwise centralizer dimensions into the usual formula in the conjugate partition.
 
-For a partition `μ` of `n`, the sum of the squares of the parts of its conjugate `μ'` is at
-least `n` (as for any partition of `n`), with equality exactly for the one-row partition `(n)`.
-It never equals `n + 1`, and it equals `n + 2` exactly for the partition `(n - 1, 1)`. Since
+For a partition `μ` of `n`, the sum of the squares of the parts of its conjugate `μ'` exceeds
+`n` by twice the number of pairs of cells in a common column. So it is at least `n` (as for
+any partition of `n`), with equality exactly for the one-row partition `(n)`. It never equals
+`n + 1`, and it equals `n + 2` exactly for the partition `(n - 1, 1)`. Since
 `∑ⱼ (μ'ⱼ)²` is the centralizer dimension of a nilpotent endomorphism of Jordan type `μ`, these
 are the two smallest centralizer dimensions, attained by the regular and subregular Jordan types.
 
@@ -70,8 +71,10 @@ open Finset
 
 variable {n : ℕ} (μ : n.Partition)
 
-/-- The column squares exceed `n` by twice the number of pairs of cells in a common column. -/
-private theorem sum_sq_conjugate_parts_eq :
+/-- **Column squares and pairs of cells.** The sum of the squares of the column lengths of a
+partition of `n` exceeds `n` by twice the number of pairs of cells in a common column, where
+column `k` has one cell for each part larger than `k`. -/
+theorem sum_sq_conjugate_parts_eq_add_two_mul_sum_choose_two :
     (μ.conjugate.parts.map (· ^ 2)).sum =
       n + 2 * ∑ k ∈ range n, (μ.parts.filter (k < ·)).card.choose 2 := by
   -- Twice the number of pairs of cells in a column is the excess of its squared length.
@@ -85,10 +88,6 @@ private theorem sum_sq_conjugate_parts_eq :
         rw [Multiset.map_congr rfl fun x _ => hsq x]
     _ = _ := by rw [Multiset.sum_map_add, Multiset.map_id', parts_sum]
 
-/-- The first column has one cell for each part. -/
-private theorem card_filter_zero_lt : (μ.parts.filter (0 < ·)).card = μ.parts.card := by
-  rw [Multiset.filter_eq_self.mpr fun _ => μ.parts_pos]
-
 /-- The sum of the squares of the parts of a partition of `n` is at least `n`. -/
 theorem le_sum_sq_parts : n ≤ (μ.parts.map (· ^ 2)).sum :=
   calc n = (μ.parts.map id).sum := by rw [Multiset.map_id, μ.parts_sum]
@@ -98,7 +97,8 @@ theorem le_sum_sq_parts : n ≤ (μ.parts.map (· ^ 2)).sum :=
 equals `n` exactly for the one-row partition `(n)`. -/
 theorem sum_sq_conjugate_parts_eq_self_iff :
     (μ.conjugate.parts.map (· ^ 2)).sum = n ↔ μ = indiscrete n := by
-  rw [sum_sq_conjugate_parts_eq, add_eq_left, mul_eq_zero, sum_eq_zero_iff]
+  rw [sum_sq_conjugate_parts_eq_add_two_mul_sum_choose_two, add_eq_left, mul_eq_zero,
+    sum_eq_zero_iff]
   simp only [two_ne_zero, false_or, mem_range, Nat.choose_eq_zero_iff]
   rcases eq_or_ne n 0 with rfl | hn
   · exact iff_of_true (by simp) (Subsingleton.elim _ _)
@@ -107,7 +107,7 @@ theorem sum_sq_conjugate_parts_eq_self_iff :
     -- A first column of length at most one forces a single part.
     have hcard : μ.parts.card ≤ 1 := by
       have := h 0 (Nat.pos_of_ne_zero hn)
-      rw [card_filter_zero_lt] at this
+      rw [filter_pos_parts] at this
       omega
     have hne : μ.parts ≠ 0 := fun h0 => hn (by rw [← μ.parts_sum, h0, Multiset.sum_zero])
     obtain ⟨a, ha⟩ := Multiset.card_eq_one.mp
@@ -125,14 +125,14 @@ squares of the parts of the conjugate partition is at least `n + 2`. -/
 theorem add_two_le_sum_sq_conjugate_parts (h : μ ≠ indiscrete n) :
     n + 2 ≤ (μ.conjugate.parts.map (· ^ 2)).sum := by
   have h' := mt (sum_sq_conjugate_parts_eq_self_iff μ).mp h
-  rw [sum_sq_conjugate_parts_eq] at h' ⊢
+  rw [sum_sq_conjugate_parts_eq_add_two_mul_sum_choose_two] at h' ⊢
   omega
 
 /-- **The subregular Jordan type.** The sum of the squares of the parts of the conjugate
 partition equals `n + 2` exactly for the partition `(n - 1, 1)`. -/
 theorem sum_sq_conjugate_parts_eq_add_two_iff :
     (μ.conjugate.parts.map (· ^ 2)).sum = n + 2 ↔ μ.parts = {n - 1, 1} := by
-  rw [sum_sq_conjugate_parts_eq]
+  rw [sum_sq_conjugate_parts_eq_add_two_mul_sum_choose_two]
   constructor
   · intro h
     replace h : ∑ k ∈ range n, (μ.parts.filter (k < ·)).card.choose 2 = 1 := by omega
@@ -149,7 +149,7 @@ theorem sum_sq_conjugate_parts_eq_add_two_iff :
       · exact heq
       · have hn : 0 < n := Nat.pos_of_ne_zero fun hn => by subst hn; simp at h
         have h0 := hsub {0} (by simpa using hn)
-        rw [sum_singleton, card_filter_zero_lt] at h0
+        rw [sum_singleton, filter_pos_parts] at h0
         have := Nat.choose_le_choose 2 (show 3 ≤ μ.parts.card by omega)
         simp [Nat.choose] at this
         omega
@@ -159,7 +159,7 @@ theorem sum_sq_conjugate_parts_eq_add_two_iff :
     have hsum : x + y = n := by simpa [hxy] using μ.parts_sum
     -- The second column has at most one cell, so one of the two parts is `1`.
     have h01 := hsub {0, 1} (by intro k; simp only [mem_insert, mem_singleton, mem_range]; omega)
-    rw [sum_pair zero_ne_one, card_filter_zero_lt, hcard, Nat.choose_self] at h01
+    rw [sum_pair zero_ne_one, filter_pos_parts, hcard, Nat.choose_self] at h01
     have hxy1 : x = 1 ∨ y = 1 := by
       by_contra! hne
       have hfilter : μ.parts.filter (1 < ·) = μ.parts :=
@@ -179,7 +179,7 @@ theorem sum_sq_conjugate_parts_eq_add_two_iff :
       omega
     suffices ∑ k ∈ range n, (μ.parts.filter (k < ·)).card.choose 2 = 1 by omega
     rw [sum_eq_single 0]
-    · rw [card_filter_zero_lt, h]
+    · rw [filter_pos_parts, h]
       simp
     · intro k _ hk
       apply Nat.choose_eq_zero_of_lt
