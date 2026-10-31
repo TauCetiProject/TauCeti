@@ -60,12 +60,13 @@ variable (K) in
 `y ∈ ker (ad e) ⊓ [e, L]`. Kostant's conjugacy theorem takes place in this subgroup. -/
 def expAdSubgroup (e : L) : Subgroup (L ≃ₗ[K] L) :=
   Subgroup.closure {φ | ∃ y, ∃ hy : IsNilpotent (ad K L y),
-    y ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e) ∧ (expAd y hy).toLinearEquiv = φ}
+    y ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e) ∧
+      (expAd y hy.exists_pow_apply_eq_zero).toLinearEquiv = φ}
 
 /-- Each generator `exp (ad y)`, `y ∈ ker (ad e) ⊓ [e, L]`, lies in `TauCeti.expAdSubgroup`. -/
 theorem expAd_toLinearEquiv_mem_expAdSubgroup {e y : L} (hy : IsNilpotent (ad K L y))
     (hye : y ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e)) :
-    (expAd y hy).toLinearEquiv ∈ expAdSubgroup K e :=
+    (expAd y hy.exists_pow_apply_eq_zero).toLinearEquiv ∈ expAdSubgroup K e :=
   Subgroup.subset_closure ⟨y, hy, hye, rfl⟩
 
 /-- `TauCeti.expAdSubgroup K e` lies in a subgroup `H` if and only if every generator `exp (ad y)`,
@@ -73,7 +74,7 @@ theorem expAd_toLinearEquiv_mem_expAdSubgroup {e y : L} (hy : IsNilpotent (ad K 
 theorem expAdSubgroup_le_iff {e : L} {H : Subgroup (L ≃ₗ[K] L)} :
     expAdSubgroup K e ≤ H ↔ ∀ y (hy : IsNilpotent (ad K L y)),
       y ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e) →
-        (expAd y hy).toLinearEquiv ∈ H := by
+        (expAd y hy.exists_pow_apply_eq_zero).toLinearEquiv ∈ H := by
   refine (Subgroup.closure_le _).trans ⟨fun hH y hy hye => hH ⟨y, hy, hye, rfl⟩, ?_⟩
   rintro hH _ ⟨y, hy, hye, rfl⟩
   exact hH y hy hye
@@ -87,7 +88,7 @@ theorem expAdSubgroup_le_stabilizer (e : L) :
   rw [LinearMap.mem_ker, ad_apply, ← lie_skew, neg_eq_zero] at hye
   rw [MulAction.mem_stabilizer_iff, LinearEquiv.smul_def,
     LieEquiv.coe_toLinearEquiv]
-  exact expAd_apply_of_lie_eq_zero hy hye
+  exact expAd_apply_of_lie_eq_zero hy.exists_pow_apply_eq_zero hye
 
 /-- Every element of `TauCeti.expAdSubgroup K e` fixes `e`. -/
 theorem apply_eq_self_of_mem_expAdSubgroup {e : L} {ψ : L ≃ₗ[K] L}
@@ -116,7 +117,7 @@ too, then `exp (ad y) v = v + ⁅y, v⁆` up to the `2k`-th step. -/
 theorem expAd_apply_sub_sub_mem {e y v : L} {k : ℕ} (hy : IsNilpotent (ad K L y))
     (hyk : y ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ k))
     (hyv : ⁅y, v⁆ ∈ LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ k)) :
-    expAd y hy v - v - ⁅y, v⁆ ∈
+    expAd y hy.exists_pow_apply_eq_zero v - v - ⁅y, v⁆ ∈
       LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ (k + k)) := by
   set F := fun n : ℕ => LinearMap.ker (ad K L e) ⊓ LinearMap.range (ad K L e ^ n)
   have hpow : ∀ m, (ad K L y ^ (m + 1)) v ∈ F k := by
@@ -133,7 +134,8 @@ theorem expAd_apply_sub_sub_mem {e y v : L} {k : ℕ} (hy : IsNilpotent (ad K L 
     rw [pow_succ', Module.End.mul_apply, ad_apply]
     exact lie_mem_ker_inf_range_pow_add hyk (hpow m)
   obtain ⟨N, hN⟩ := id hy
-  rw [expAd_apply_eq_sum hy (k := N + 2) (by rw [pow_add, hN, zero_mul, LinearMap.zero_apply]),
+  rw [expAd_apply_eq_sum hy.exists_pow_apply_eq_zero (k := N + 2)
+      (by rw [pow_add, hN, zero_mul, LinearMap.zero_apply]),
     Finset.sum_range_succ', Finset.sum_range_succ']
   simp only [Nat.factorial_zero, Nat.factorial_one, Nat.cast_one, inv_one, pow_zero, pow_one,
     one_smul, Module.End.one_apply, ad_apply, zero_add]

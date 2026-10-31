@@ -163,15 +163,16 @@ theorem _root_.LieSubalgebra.exists_rootExponentialPolynomialParametrization {ι
     exact ⟨w, by rw [hJ, hw, LinearEquiv.apply_symm_apply]⟩
   · -- The value at `x` is `g h` for a product `g` of root exponentials and `h ∈ H`.
     refine ⟨(l.map fun α ↦ ofLinearEquiv (expAd (x (Sum.inl α) • e α)
-        (hnil' α _)).toLinearEquiv).prod, list_prod_mem fun g hg ↦ ?_,
+        (hnil' α _).exists_pow_apply_eq_zero).toLinearEquiv).prod,
+      list_prod_mem fun g hg ↦ ?_,
       ∑ j, x (Sum.inr j) • (bH j : L), H.sum_mem fun j _ ↦ H.smul_mem _ (bH j).2, ?_⟩
     · obtain ⟨α, -, rfl⟩ := List.mem_map.mp hg
-      exact ofLinearEquiv_expAd_mem_intLieAlgebra _ _
+      exact ofLinearEquiv_expAd_mem_intLieAlgebra _ (hnil' α _)
     · ext i
       rw [eval_expProdPoly, b.equivFun_list_prod_smul]
       congr 2
       · refine List.map_congr_left fun α _ ↦ ?_
-        exact b.toMatrixAlgEquiv_expAd (hd α) _ _
+        exact b.toMatrixAlgEquiv_expAd (hd α) _ (hnil' α _)
       · simp [c, map_sum]
 
 /-- **A polynomial vanishing on the conjugates of a Cartan subalgebra is zero.** In the coordinates

@@ -98,7 +98,7 @@ theorem map_apply_of_mem_intLieAlgebra {g : LinearMap.GeneralLinearGroup K L}
   have hG : intLieAlgebra K L ≤
       fixingSubgroup _ (lieInvariants K L L : Set (_root_.SymmetricAlgebra K L)) :=
     intLieAlgebra_le_iff.mpr fun x hx ↦ (mem_fixingSubgroup_iff _).mpr fun p hp ↦ by
-      rw [hsmul, coe_ofLinearEquiv_expAd]
+      rw [hsmul, coe_ofLinearEquiv_expAd x hx]
       exact map_exp_toEnd_apply_of_mem_lieInvariants hx hp
   rw [← hsmul]
   exact (mem_fixingSubgroup_iff _).mp (hG hg) p hp
@@ -126,7 +126,7 @@ theorem map_dualMap_apply_of_mem_intLieAlgebra {g : LinearMap.GeneralLinearGroup
     have hcoad : (ad K L x).dualMap = LieModule.toEnd K L (Dual K L) (-x) := by
       ext φ y
       simp
-    rw [hsmul, coe_ofLinearEquiv_expAd, LinearMap.dualMap_exp hx, hcoad]
+    rw [hsmul, coe_ofLinearEquiv_expAd x hx, LinearMap.dualMap_exp hx, hcoad]
     exact map_exp_toEnd_apply_of_mem_lieInvariants (hcoad ▸ hx.dualMap) hp
   rw [← hsmul]
   exact (mem_fixingSubgroup_iff _).mp (hG (inv_mem hg)) p hp

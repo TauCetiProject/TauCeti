@@ -94,15 +94,15 @@ theorem map_coreflection_lieCartanRestriction (i : H.root) {p : _root_.Symmetric
   obtain ⟨h, e, f, t, heα, hfα⟩ := exists_isSl2Triple_of_weight_isNonZero hα
   have he := isNilpotent_ad_of_mem_rootSpace H (χ := ⇑(i : Weight K H L)) hα heα
   have hf := isNilpotent_ad_of_mem_rootSpace H (χ := ⇑(-(i : Weight K H L))) hα.neg hfα
-  set σ := weylAut t he hf
+  set σ := weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero
   set s := (rootSystem H).coreflection i
   -- on `H`, the Weyl automorphism is the coreflection
   have hσ (y : H) : σ y = (s y : L) := by
     have hye : ⁅(y : L), e⁆ = (i : Weight K H L) y • e := lie_eq_smul_of_mem_rootSpace heα y
     have hyf : ⁅(y : L), f⁆ = -((i : Weight K H L) y • f) := by
       simpa using lie_eq_smul_of_mem_rootSpace hfα y
-    rw [weylAut_apply_of_lie_eq_smul he hf t hye hyf, t.h_eq_coroot hα heα hfα,
-      RootPairing.coreflection_apply]
+    rw [weylAut_apply_of_lie_eq_smul he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero t
+      hye hyf, t.h_eq_coroot hα heα hfα, RootPairing.coreflection_apply]
     simp
   -- `σ` preserves the Killing form, so it commutes with the Killing-orthogonal projection
   have hπ (x : L) : killingCartanProjection H (σ x) = s (killingCartanProjection H x) := by

@@ -51,6 +51,8 @@ This file supplies general constructions for Lie modules that are missing from M
 * `LieHom.lieIdealComap_injective`: the restriction of an injective Lie homomorphism to the
   preimage of a Lie ideal is injective.
 * `LieSubmodule.lie_iSup`: bracketing with a Lie ideal distributes over suprema of Lie submodules.
+* `TauCeti.lie_rat_smul` and `TauCeti.rat_smul_lie`: rational scalars pass through the Lie
+  action without a `LieModule ℚ L M` structure.
 * `TauCeti.ad_pow_succ_apply`: an additional adjoint action can be applied to the argument.
 * `TauCeti.ad_neg_pow_apply_eq_zero`: negating the acting element preserves adjoint vanishing.
 * `LieSubalgebra.engel_neg`: negating the acting element preserves the Engel subalgebra.
@@ -327,6 +329,23 @@ instance instModuleFinite {R : Type u} {L : Type v} {M : Type w} {N : Type w₁}
     (M := M) (N := N))
 
 end LieModuleHom
+
+section RatSMul
+
+variable {L M : Type*} [LieRing L] [AddCommGroup M] [LieRingModule L M]
+
+/-- Rational scalars on the module pass through the Lie action, since it is additive in the
+module argument. No `LieModule ℚ L M` structure is needed. -/
+theorem lie_rat_smul [Module ℚ M] (x : L) (q : ℚ) (m : M) : ⁅x, q • m⁆ = q • ⁅x, m⁆ :=
+  map_rat_smul (AddMonoidHom.mk' (fun m ↦ ⁅x, m⁆) (lie_add x)) q m
+
+/-- Rational scalars on the Lie ring pass through the Lie action, since it is additive in the
+acting argument. No `LieModule ℚ L M` structure is needed. -/
+theorem rat_smul_lie [Module ℚ L] [Module ℚ M] (q : ℚ) (x : L) (m : M) :
+    ⁅q • x, m⁆ = q • ⁅x, m⁆ :=
+  map_rat_smul (AddMonoidHom.mk' (fun x ↦ ⁅x, m⁆) fun x y ↦ add_lie x y m) q x
+
+end RatSMul
 
 /-- **The adjoint action does not depend on the base ring.** A Lie algebra over two commutative
 rings has one bracket, so iterating `ad` over either ring gives the same element. This reads a

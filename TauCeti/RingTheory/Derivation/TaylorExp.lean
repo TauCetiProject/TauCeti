@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Taylor
 public import TauCeti.Algebra.Polynomial.Derivative
+public import TauCeti.LinearAlgebra.End.Exp
 public import TauCeti.RingTheory.Derivation.Basic
 import Mathlib.Algebra.Module.Rat
 import Mathlib.Tactic.FieldSimp
@@ -43,6 +44,8 @@ polynomial ring, scaled by `r`, the Taylor exponential is the Taylor shift `p �
   homomorphism.
 * `Derivation.taylorExp_apply_eq_sum`: any iterate killing `a` gives a finite expansion of
   `taylorExp D a`.
+* `Derivation.taylorExp_apply_eq_locallyNilpotentExp`: the Taylor exponential is the exponential
+  `Module.End.locallyNilpotentExp` of the underlying linear endomorphism.
 * `Derivation.taylorExp_apply_of_apply_eq_zero`: the Taylor exponential fixes the elements killed
   by the derivation.
 * `Derivation.taylorExp_apply_mem`: the Taylor exponential preserves every ideal mapped into
@@ -183,6 +186,17 @@ exponential of `a` is the sum of its first `n` Taylor terms. -/
 theorem taylorExp_apply_eq_sum {a : A} {n : ℕ} (hn : D^[n] a = 0) :
     taylorExp D hD a = ∑ i ∈ range n, (i ! : ℚ)⁻¹ • D^[i] a := by
   simpa using D.aeval_taylorExpPolynomial_eq_sum hD 1 hn
+
+/-- **The Taylor exponential is the exponential of the underlying endomorphism.** As a linear map,
+the Taylor exponential of `D` is `Module.End.locallyNilpotentExp` of the linear map underlying
+`D`, which is locally nilpotent since its powers are the iterates of `D`. -/
+theorem taylorExp_apply_eq_locallyNilpotentExp (a : A) :
+    taylorExp D hD a = Module.End.locallyNilpotentExp D.toLinearMap
+      (fun b ↦ (hD b).imp fun _ hn ↦ by rwa [Module.End.pow_apply, coeFn_coe]) a := by
+  obtain ⟨n, hn⟩ := hD a
+  rw [taylorExp_apply_eq_sum D hD hn, Module.End.locallyNilpotentExp_apply_eq_sum _ _ (k := n)
+    (by rwa [Module.End.pow_apply, coeFn_coe])]
+  simp only [Module.End.pow_apply, coeFn_coe]
 
 /-- **Constants of the derivation are fixed by its Taylor exponential**: if `D` kills `a`, then
 the Taylor exponential of `D` fixes `a`. -/
