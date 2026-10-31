@@ -42,6 +42,12 @@ noncomputable section
 
 variable {X : Scheme.{u}}
 
+-- Mathlib's pullback of free sheaves is stated for pushforwards known to be right adjoints; the
+-- adjunction is recorded for `Scheme.Modules.pushforward`, which instance search does not unfold.
+local instance (T : Over X) :
+    (SheafOfModules.pushforward.{u} T.hom.toRingCatSheafHom).IsRightAdjoint :=
+  inferInstanceAs (Scheme.Modules.pushforward T.hom).IsRightAdjoint
+
 /-- **Points of the total space of a free bundle are coordinate vectors.** For a finite type `I`
 and a scheme `q : T ⟶ X` over `X`, morphisms `T ⟶ 𝕍(𝒪_X^I)` over `X` correspond to `I`-indexed
 families of global functions on `T`: the coordinates of the section of `q^* 𝒪_X^I ≅ 𝒪_T^I` given
@@ -49,8 +55,6 @@ by `totalSpaceHomEquiv`. -/
 def totalSpaceFreeHomEquiv (I : Type u) [Fintype I] (T : Over X) :
     (T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj (free X I))) ≃
       (I → Γ(T.left, ⊤)) :=
-  letI : (SheafOfModules.pushforward.{u} T.hom.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (Scheme.Modules.pushforward T.hom).IsRightAdjoint
   (totalSpaceHomEquiv (free X I) T).trans <|
     ((Iso.refl _).homCongr (SheafOfModules.pullbackObjFreeIso T.hom.toRingCatSheafHom I :
       (Scheme.Modules.pullback T.hom).obj (free X I).obj ≅ (free T.left I).obj)).trans
@@ -60,8 +64,6 @@ def totalSpaceFreeHomEquiv (I : Type u) [Fintype I] (T : Over X) :
 transported to `𝒪_T^I`. -/
 lemma totalSpaceFreeHomEquiv_apply (I : Type u) [Fintype I] (T : Over X)
     (t : T ⟶ (MorphismProperty.Over.forget _ _ X).obj ((totalSpaceScheme X).obj (free X I))) :
-    letI : (SheafOfModules.pushforward.{u} T.hom.toRingCatSheafHom).IsRightAdjoint :=
-      inferInstanceAs (Scheme.Modules.pushforward T.hom).IsRightAdjoint
     totalSpaceFreeHomEquiv I T t =
       unitHomFreeEquiv T.left I (totalSpaceHomEquiv (free X I) T t ≫
         (SheafOfModules.pullbackObjFreeIso T.hom.toRingCatSheafHom I).hom) :=
@@ -72,13 +74,11 @@ lemma totalSpaceFreeHomEquiv_apply (I : Type u) [Fintype I] (T : Over X)
 global section of `𝒪_T^I` with coordinates `v`, transported to `q^* 𝒪_X^I`. -/
 lemma totalSpaceFreeHomEquiv_symm_apply (I : Type u) [Fintype I] (T : Over X)
     (v : I → Γ(T.left, ⊤)) :
-    letI : (SheafOfModules.pushforward.{u} T.hom.toRingCatSheafHom).IsRightAdjoint :=
-      inferInstanceAs (Scheme.Modules.pushforward T.hom).IsRightAdjoint
     (totalSpaceFreeHomEquiv I T).symm v =
       (totalSpaceHomEquiv (free X I) T).symm ((unitHomFreeEquiv T.left I).symm v ≫
         (SheafOfModules.pullbackObjFreeIso T.hom.toRingCatSheafHom I).inv) :=
-  letI : (SheafOfModules.pushforward.{u} T.hom.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (Scheme.Modules.pushforward T.hom).IsRightAdjoint
+  -- Composites of Mathlib's `pullbackObjFreeIso` are not reducibly composites in `T.left.Modules`,
+  -- so they are reassociated by `Eq.trans` rather than `rw`.
   (Equiv.symm_apply_eq _).2 <| Eq.symm <| (totalSpaceFreeHomEquiv_apply I T _).trans <|
     (congrArg (unitHomFreeEquiv T.left I) ((congrArg (· ≫ _) (Equiv.apply_symm_apply _ _)).trans
       ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (Iso.inv_hom_id _)).trans
@@ -97,7 +97,7 @@ theorem totalSpaceFreeHomEquiv_comp_map {I J : Type u} [Fintype I] [Fintype J]
   rw [totalSpaceFreeHomEquiv_apply, totalSpaceFreeHomEquiv_apply, totalSpaceHomEquiv_comp_map]
   -- Pulling back the matrix morphism along `q` gives the pulled-back matrix.
   exact (congrArg (unitHomFreeEquiv T.left J) ((Category.assoc _ _ _).trans
-    ((congrArg (_ ≫ ·) (pullback_map_freeMatrixHom T.hom A)).trans
+    ((congrArg (_ ≫ ·) (pullback_map_freeMatrixHom_comp_pullbackObjFreeIso_hom T.hom A)).trans
       (Category.assoc _ _ _).symm))).trans (unitHomFreeEquiv_comp_freeMatrixHom _ _)
 
 end

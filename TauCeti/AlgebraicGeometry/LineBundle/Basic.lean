@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTriviality
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Properties
+public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 
 /-!
 # Invertible sheaves on a scheme
@@ -102,6 +103,12 @@ instance isInvertible_unit :
     (M := _root_.SheafOfModules.free (R := X.ringCatSheaf) PUnit.{u + 1})
     (N := _root_.SheafOfModules.unit X.ringCatSheaf)
     (TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf)
+
+open MonoidalCategory in
+/-- The monoidal unit `𝟙_ X.Modules`, the structure sheaf, is an invertible sheaf. Instance search
+does not identify it with `SheafOfModules.unit X.ringCatSheaf` of `isInvertible_unit`. -/
+instance isInvertible_tensorUnit : isInvertible X (𝟙_ X.Modules) :=
+  isInvertible_unit X
 
 end SheafOfModules
 

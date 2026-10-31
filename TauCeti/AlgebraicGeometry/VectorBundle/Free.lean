@@ -27,7 +27,7 @@ coordinate vectors of global sections by `Matrix.mulVec`
 composites (`FiniteLocallyFreeSheaf.freeMatrixHom_mul`), and its pullback along a morphism of
 schemes `f : Y ⟶ X` is, through the identification `f^* 𝒪_X^I ≅ 𝒪_Y^I`, the morphism of the
 matrix obtained by pulling back every entry of `A` along `f`
-(`FiniteLocallyFreeSheaf.pullback_map_freeMatrixHom`).
+(`FiniteLocallyFreeSheaf.pullback_map_freeMatrixHom_comp_pullbackObjFreeIso_hom`).
 
 These are the coordinate descriptions used for the geometric vector bundles of free sheaves,
 which are affine spaces.
@@ -51,12 +51,32 @@ open _root_.AlgebraicGeometry Scheme.Modules
 
 variable {X : Scheme.{u}}
 
+section Extensionality
+
+variable {I : Type u} [Finite I]
+
+/-- Morphisms out of the free sheaf `𝒪_X^I` agree when they agree on every basis section. -/
+@[ext]
+lemma free_obj_hom_ext {M : X.Modules} {f g : (free X I).obj ⟶ M}
+    (h : ∀ i, SheafOfModules.ιFree i ≫ f = SheafOfModules.ιFree i ≫ g) : f = g :=
+  Cofan.IsColimit.hom_ext (SheafOfModules.isColimitFreeCofan I) _ _ h
+
+/-- Morphisms out of the free bundle `𝒪_X^I` agree when they agree on every basis section. -/
+@[ext]
+lemma free_hom_ext {E : FiniteLocallyFreeSheaf X} {f g : free X I ⟶ E}
+    (h : ∀ i, SheafOfModules.ιFree i ≫ f.hom = SheafOfModules.ιFree i ≫ g.hom) : f = g :=
+  ObjectProperty.hom_ext _ (free_obj_hom_ext h)
+
+end Extensionality
+
 section Coordinates
 
 variable (X) (I : Type u) [Fintype I]
 
 -- Reducible, with the cone point and inclusions given explicitly, so that its point is the free
 -- sheaf `𝒪_X^I` itself and its inclusions are the basis inclusions, also for rewriting.
+-- `TauCeti.SheafOfModules.biproductIsoFree` is stated over the site-level `ringCatSheaf X.sheaf`,
+-- which is not reducibly `X.ringCatSheaf`, so its biproduct does not live in `X.Modules`.
 /-- The free sheaf `𝒪_X^I` on a finite type `I`, as a bicone over `I` copies of `𝒪_X`: its
 inclusions are the basis inclusions `SheafOfModules.ιFree` and its projections are the coordinate
 projections. It is a biproduct (`FiniteLocallyFreeSheaf.isBilimitFreeBicone`). -/
@@ -70,25 +90,6 @@ def isBilimitFreeBicone : (freeBicone X I).IsBilimit :=
   biconeIsBilimitOfColimitCoconeOfIsColimit (SheafOfModules.isColimitFreeCofan I)
 
 variable {X} {I}
-
--- `SheafOfModules.isInvertible_unit` is stated for `SheafOfModules.unit`, which instance search
--- does not identify with the monoidal unit `𝟙_ X.Modules`.
-private instance : TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible X (𝟙_ X.Modules) :=
-  TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_unit X
-
-/-- The global function by which an endomorphism of `𝒪_X` multiplies. Every endomorphism of the
-invertible sheaf `𝒪_X` is multiplication by a unique global function. -/
-private def unitEndScalar (e : 𝟙_ X.Modules ⟶ 𝟙_ X.Modules) : Γ(X, ⊤) :=
-  (globalSectionsActionRingEquiv (𝟙_ X.Modules)).symm (End.of e)
-
-private lemma globalSectionsSmul_unitEndScalar (e : 𝟙_ X.Modules ⟶ 𝟙_ X.Modules) :
-    globalSectionsSmul _ (unitEndScalar e) = e :=
-  globalSectionsSmul_globalSectionsActionRingEquiv_symm _ e
-
-private lemma unitEndScalar_globalSectionsSmul (r : Γ(X, ⊤)) :
-    unitEndScalar (globalSectionsSmul (𝟙_ X.Modules) r) = r :=
-  ((globalSectionsActionRingEquiv (𝟙_ X.Modules)).symm_apply_eq).2
-    (globalSectionsActionRingEquiv_apply _ r).symm
 
 /-- The `j`-th component of `∑ i, v i • ιFree i` is multiplication by `v j`. -/
 private lemma sum_comp_freeBicone_π (v : I → Γ(X, ⊤)) (j : I) :
@@ -109,13 +110,14 @@ functions. The `i`-th coordinate of a section `s` is the global function by whic
 `s ≫ π_i` of `𝒪_X` multiplies, and the vector `v` corresponds to the section
 `∑ i, v i • ιFree i`. -/
 def unitHomFreeEquiv : (𝟙_ X.Modules ⟶ (free X I).obj) ≃+ (I → Γ(X, ⊤)) where
-  toFun s i := unitEndScalar (s ≫ (freeBicone X I).π i)
+  toFun s i := (globalSectionsActionRingEquiv (𝟙_ X.Modules)).symm
+    (End.of (s ≫ (freeBicone X I).π i))
   invFun v := ∑ i, globalSectionsSmul (𝟙_ X.Modules) (v i) ≫ (freeBicone X I).ι i
   left_inv s := (isBilimitFreeBicone X I).isLimit.hom_ext fun ⟨j⟩ ↦
-    (sum_comp_freeBicone_π _ j).trans (globalSectionsSmul_unitEndScalar _)
+    (sum_comp_freeBicone_π _ j).trans (globalSectionsSmul_globalSectionsActionRingEquiv_symm _ _)
   right_inv v := funext fun j ↦
-    (congrArg unitEndScalar (sum_comp_freeBicone_π v j)).trans
-      (unitEndScalar_globalSectionsSmul (v j))
+    (congrArg _ (congrArg End.of (sum_comp_freeBicone_π v j))).trans
+      (globalSectionsActionRingEquiv_symm_globalSectionsSmul _ (v j))
   map_add' s t := funext fun i ↦ by
     rw [Pi.add_apply, Preadditive.add_comp]
     exact map_add (globalSectionsActionRingEquiv (𝟙_ X.Modules)).symm _ _
@@ -123,8 +125,9 @@ def unitHomFreeEquiv : (𝟙_ X.Modules ⟶ (free X I).obj) ≃+ (I → Γ(X, �
 /-- The `i`-th coordinate of a global section `s` of `𝒪_X^I` is the global function by which the
 `i`-th component `s ≫ π_i` multiplies. -/
 lemma globalSectionsSmul_unitHomFreeEquiv_apply (s : 𝟙_ X.Modules ⟶ (free X I).obj) (i : I) :
-    globalSectionsSmul _ (unitHomFreeEquiv X I s i) = s ≫ (freeBicone X I).π i :=
-  globalSectionsSmul_unitEndScalar _
+    globalSectionsSmul _ (unitHomFreeEquiv X I s i) =
+      s ≫ (freeBicone X I).π i :=
+  globalSectionsSmul_globalSectionsActionRingEquiv_symm _ _
 
 /-- The global section of `𝒪_X^I` with coordinate vector `v` is `∑ i, v i • ιFree i`. -/
 lemma unitHomFreeEquiv_symm_apply (v : I → Γ(X, ⊤)) :
@@ -132,10 +135,12 @@ lemma unitHomFreeEquiv_symm_apply (v : I → Γ(X, ⊤)) :
       ∑ i, globalSectionsSmul (𝟙_ X.Modules) (v i) ≫ (freeBicone X I).ι i :=
   (rfl)
 
--- Not a simp lemma: `simp` unfolds the reducible `freeBicone` on its left-hand side.
 /-- The basis section `ιFree i` of `𝒪_X^I` has coordinate vector `Pi.single i 1`. -/
-lemma unitHomFreeEquiv_ι [DecidableEq I] (i : I) :
-    unitHomFreeEquiv X I ((freeBicone X I).ι i) = Pi.single i 1 := by
+@[simp]
+lemma unitHomFreeEquiv_ιFree [DecidableEq I] (i : I) :
+    unitHomFreeEquiv X I (SheafOfModules.ιFree i) = Pi.single i 1 := by
+  -- The basis inclusions are those of `freeBicone`, whose composites live in `X.Modules`.
+  change unitHomFreeEquiv X I ((freeBicone X I).ι i) = _
   refine ((unitHomFreeEquiv X I).eq_symm_apply).1 ?_
   rw [unitHomFreeEquiv_symm_apply, Finset.sum_eq_single i
     (fun j _ hj ↦ by rw [Pi.single_eq_of_ne hj, globalSectionsSmul_zero, zero_comp])
@@ -184,78 +189,88 @@ lemma unitHomFreeEquiv_comp_freeMatrixHom (A : Matrix J I Γ(X, ⊤))
   -- The basis vector `i` scaled by `v i` is sent to the `i`-th column of `A` scaled by `v i`.
   have h (i : I) : unitHomFreeEquiv X J
       ((globalSectionsSmul (𝟙_ X.Modules) (v i) ≫ (freeBicone X I).ι i) ≫ (freeMatrixHom A).hom) =
-        v i • fun j ↦ A j i :=
-    (congrArg (unitHomFreeEquiv X J) ((Category.assoc _ _ _).trans
-      (congrArg (globalSectionsSmul _ (v i) ≫ ·) (ιFree_freeMatrixHom A i)))).trans
-      ((unitHomFreeEquiv_globalSectionsSmul_comp _ _).trans
-        (congrArg (v i • ·) ((unitHomFreeEquiv X J).apply_symm_apply _)))
+        v i • fun j ↦ A j i := by
+    rw [Category.assoc, show (freeBicone X I).ι i ≫ (freeMatrixHom A).hom = _ from
+      ιFree_freeMatrixHom A i, unitHomFreeEquiv_globalSectionsSmul_comp, AddEquiv.apply_symm_apply]
   rw [AddEquiv.apply_symm_apply, unitHomFreeEquiv_symm_apply, Preadditive.sum_comp, map_sum]
-  refine (Finset.sum_congr rfl fun i _ ↦ h i).trans (funext fun j ↦ ?_)
+  simp only [h]
+  funext j
   simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Matrix.mulVec, dotProduct, mul_comm]
 
 /-- The morphism of free sheaves with the identity matrix is the identity. -/
 @[simp]
 lemma freeMatrixHom_one [DecidableEq I] :
     freeMatrixHom (1 : Matrix I I Γ(X, ⊤)) = 𝟙 _ :=
-  ObjectProperty.hom_ext _ <| Cofan.IsColimit.hom_ext (SheafOfModules.isColimitFreeCofan I) _ _
-    fun i ↦ (ιFree_freeMatrixHom 1 i).trans <| ((unitHomFreeEquiv X I).symm_apply_eq.2 <|
-      (funext fun j ↦ by simp [Matrix.one_apply, Pi.single_apply, eq_comm]).trans
-        (unitHomFreeEquiv_ι i).symm).trans (Category.comp_id _).symm
+  -- Composites with Mathlib's `ιFree` are not reducibly composites in `X.Modules`, so they are
+  -- rewritten by `Eq.trans` rather than `rw`.
+  free_hom_ext fun i ↦ (ιFree_freeMatrixHom 1 i).trans <| ((unitHomFreeEquiv X I).symm_apply_eq.2 <|
+    (funext fun j ↦ by simp [Matrix.one_apply, Pi.single_apply, eq_comm]).trans
+      (unitHomFreeEquiv_ιFree i).symm).trans (Category.comp_id _).symm
 
 /-- The morphism of free sheaves with matrix `A * B` is the composite of those with matrices `B`
 and `A`. -/
 lemma freeMatrixHom_mul {K : Type u} [Fintype K] (A : Matrix K J Γ(X, ⊤))
     (B : Matrix J I Γ(X, ⊤)) :
     freeMatrixHom (A * B) = freeMatrixHom B ≫ freeMatrixHom A :=
-  ObjectProperty.hom_ext _ <| Cofan.IsColimit.hom_ext (SheafOfModules.isColimitFreeCofan I) _ _
-    fun i ↦ (ιFree_freeMatrixHom (A * B) i).trans <|
-      ((unitHomFreeEquiv X K).symm_apply_eq.2 <|
-        (funext fun k ↦ by simp only [Matrix.mul_apply, Matrix.mulVec, dotProduct]).trans
-          ((unitHomFreeEquiv_comp_freeMatrixHom A _).trans
-            (congrArg (A *ᵥ ·) ((unitHomFreeEquiv X J).apply_symm_apply _))).symm).trans
-        (ιFree_freeMatrixHom_assoc B i (freeMatrixHom A).hom).symm
+  free_hom_ext fun i ↦ (ιFree_freeMatrixHom (A * B) i).trans <|
+    ((unitHomFreeEquiv X K).symm_apply_eq.2 <|
+      (funext fun k ↦ by simp only [Matrix.mul_apply, Matrix.mulVec, dotProduct]).trans
+        ((unitHomFreeEquiv_comp_freeMatrixHom A _).trans
+          (congrArg (A *ᵥ ·) ((unitHomFreeEquiv X J).apply_symm_apply _))).symm).trans
+      (ιFree_freeMatrixHom_assoc B i (freeMatrixHom A).hom).symm
 
 end Matrix
 
 section Pullback
 
-variable {Y : Scheme.{u}} (f : Y ⟶ X) {I J : Type u} [Fintype I] [Fintype J]
+variable {Y : Scheme.{u}} (f : Y ⟶ X) {I J : Type u}
+
+-- Mathlib's pullback of free sheaves is stated for pushforwards known to be right adjoints; the
+-- adjunction is recorded for `Scheme.Modules.pushforward`, which instance search does not unfold.
+local instance : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
+  inferInstanceAs (Scheme.Modules.pushforward f).IsRightAdjoint
+
+/-- Through `f^* 𝒪_X^I ≅ 𝒪_Y^I`, the basis section `ιFree i` of `𝒪_Y^I` is the pullback along `f`
+of the basis section `ιFree i` of `𝒪_X^I`. -/
+@[reassoc]
+lemma ιFree_pullbackObjFreeIso_inv (i : I) :
+    SheafOfModules.ιFree i ≫ (SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I).inv =
+      (pullbackObjUnitIso f).inv ≫ (Scheme.Modules.pullback f).map (SheafOfModules.ιFree i) :=
+  (Iso.comp_inv_eq _).2 ((Category.assoc _ _ _).trans ((congrArg ((pullbackObjUnitIso f).inv ≫ ·)
+    (SheafOfModules.pullback_map_ιFree_comp_pullbackObjFreeIso_hom _ i)).trans
+      (by rw [← pullbackObjUnitIso_hom]; exact Iso.inv_hom_id_assoc _ _))).symm
+
+/-- Through `f^* 𝒪_X^J ≅ 𝒪_Y^J`, pulling back along `f` the basis section `ιFree j` of `𝒪_X^J`
+multiplied by a global function `r` gives the basis section `ιFree j` of `𝒪_Y^J` multiplied by
+the pullback of `r`. -/
+@[reassoc]
+lemma pullback_map_globalSectionsSmul_comp_ιFree_comp_pullbackObjFreeIso_hom (r : Γ(X, ⊤))
+    (j : J) :
+    (Scheme.Modules.pullback f).map (globalSectionsSmul (𝟙_ X.Modules) r ≫
+        SheafOfModules.ιFree j) ≫ (SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom J).hom =
+      (pullbackObjUnitIso f).hom ≫ globalSectionsSmul (𝟙_ Y.Modules) (f.appTop r) ≫
+        SheafOfModules.ιFree j := by
+  refine (congrArg (· ≫ _) (Functor.map_comp _ _ _)).trans ((Category.assoc _ _ _).trans ?_)
+  refine (congrArg (_ ≫ ·)
+    (SheafOfModules.pullback_map_ιFree_comp_pullbackObjFreeIso_hom _ j)).trans ?_
+  rw [pullback_map_globalSectionsSmul, ← pullbackObjUnitIso_hom]
+  exact globalSectionsSmul_naturality_assoc _ _ _
 
 /-- **Pullback of a morphism of free sheaves with a matrix.** Through the identifications
 `f^* 𝒪_X^I ≅ 𝒪_Y^I` and `f^* 𝒪_X^J ≅ 𝒪_Y^J`, the pullback along `f : Y ⟶ X` of the morphism with
 matrix `A` is the morphism whose matrix is obtained by pulling back every entry of `A` along
 `f`. -/
-lemma pullback_map_freeMatrixHom (A : Matrix J I Γ(X, ⊤)) :
-    letI : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
-      inferInstanceAs (Scheme.Modules.pushforward f).IsRightAdjoint
+lemma pullback_map_freeMatrixHom_comp_pullbackObjFreeIso_hom [Fintype I] [Fintype J]
+    (A : Matrix J I Γ(X, ⊤)) :
     (Scheme.Modules.pullback f).map (freeMatrixHom A).hom ≫
         (SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom J).hom =
       (SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I).hom ≫
         (freeMatrixHom (A.map f.appTop)).hom := by
-  let : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
-    inferInstanceAs (Scheme.Modules.pushforward f).IsRightAdjoint
   let u := pullbackObjUnitIso f
-  -- The basis vector `ιFree i` of `𝒪_Y^I` is the pullback of that of `𝒪_X^I`.
-  have hι (i : I) : (freeBicone Y I).ι i ≫
-      (SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I).inv =
-        u.inv ≫ (Scheme.Modules.pullback f).map ((freeBicone X I).ι i) :=
-    (Iso.comp_inv_eq _).2 ((Category.assoc _ _ _).trans ((congrArg (u.inv ≫ ·)
-      (SheafOfModules.pullback_map_ιFree_comp_pullbackObjFreeIso_hom _ i)).trans
-        (by rw [← pullbackObjUnitIso_hom]; exact Iso.inv_hom_id_assoc u _))).symm
-  -- Pulling back the basis vector `j` scaled by `r` gives the basis vector `j` scaled by `f^♯ r`.
-  have hsmul (r : Γ(X, ⊤)) (j : J) :
-      (Scheme.Modules.pullback f).map (globalSectionsSmul (𝟙_ X.Modules) r ≫
-          (freeBicone X J).ι j) ≫ (SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom J).hom =
-        u.hom ≫ globalSectionsSmul (𝟙_ Y.Modules) (f.appTop r) ≫ (freeBicone Y J).ι j := by
-    refine (congrArg (· ≫ _) (Functor.map_comp _ _ _)).trans ((Category.assoc _ _ _).trans ?_)
-    refine (congrArg (_ ≫ ·)
-      (SheafOfModules.pullback_map_ιFree_comp_pullbackObjFreeIso_hom _ j)).trans ?_
-    rw [pullback_map_globalSectionsSmul, ← pullbackObjUnitIso_hom]
-    exact globalSectionsSmul_naturality_assoc u.hom _ _
-  refine (Iso.inv_comp_eq _).1 (Cofan.IsColimit.hom_ext (SheafOfModules.isColimitFreeCofan I) _ _
-    fun i ↦ ?_)
+  refine (Iso.inv_comp_eq _).1 (free_obj_hom_ext fun i ↦ ?_)
   refine Eq.trans ?_ (ιFree_freeMatrixHom (A.map f.appTop) i).symm
-  refine ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) (hι i))).trans ?_
+  refine ((Category.assoc _ _ _).symm.trans
+    (congrArg (· ≫ _) (ιFree_pullbackObjFreeIso_inv f i))).trans ?_
   refine (Category.assoc _ _ _).trans ((congrArg (u.inv ≫ ·)
     ((Functor.map_comp_assoc _ _ _ _).symm.trans (congrArg
       (fun t ↦ (Scheme.Modules.pullback f).map t ≫ _) (ιFree_freeMatrixHom A i)))).trans ?_)
@@ -264,8 +279,9 @@ lemma pullback_map_freeMatrixHom (A : Matrix J I Γ(X, ⊤)) :
   exact (congrArg (u.inv ≫ ·)
     (Preadditive.sum_comp (C := Y.Modules) (R := (free Y J).obj) _ _ _)).trans
     ((Preadditive.comp_sum (C := Y.Modules) (R := (free Y J).obj) _ _ _).trans
-      (Finset.sum_congr rfl fun j _ ↦
-        (congrArg (u.inv ≫ ·) (hsmul (A j i) j)).trans (Iso.inv_hom_id_assoc u _)))
+      (Finset.sum_congr rfl fun j _ ↦ (congrArg (u.inv ≫ ·)
+        (pullback_map_globalSectionsSmul_comp_ιFree_comp_pullbackObjFreeIso_hom f (A j i) j)).trans
+          (Iso.inv_hom_id_assoc u _)))
 
 end Pullback
 
