@@ -74,6 +74,34 @@ theorem diagonalLaw_toFun_tmul (d : ℕ) (S : Type*) [CommSemiring S] [Algebra R
       (s ^ d) ⊗ₜ[R] PiTensorProduct.tprod R (fun _ : Fin d ↦ m) := by
   simp [diagonalLaw_toFun, Algebra.TensorProduct.tmul_pow]
 
+/-- The product of a list of pure tensors in `S ⊗[R] A` is the pure tensor of the products. -/
+private theorem list_prod_ofFn_tmul {A : Type*} [Semiring A] [Algebra R A] {S : Type*}
+    [CommSemiring S] [Algebra R S] {n : ℕ} (s : Fin n → S) (a : Fin n → A) :
+    (List.ofFn fun t ↦ s t ⊗ₜ[R] a t).prod = (∏ t, s t) ⊗ₜ[R] (List.ofFn a).prod := by
+  induction n with
+  | zero => simp [Algebra.TensorProduct.one_def]
+  | succ n ih =>
+    simp only [List.ofFn_succ, List.prod_cons, Fin.prod_univ_succ, ih,
+      Algebra.TensorProduct.tmul_mul_tmul]
+
+/-- The diagonal law on a finite sum of pure tensors: `(∑ⱼ sⱼ ⊗ mⱼ)^{⊗ d}` is the sum over
+all words `w : Fin d → ι` with letters in `F` of `(∏ₜ s_{w t}) ⊗ (m_{w 0} ⊗ ⋯ ⊗ m_{w (d - 1)})`. -/
+theorem diagonalLaw_toFun_sum_tmul (d : ℕ) (S : Type*) [CommSemiring S] [Algebra R S]
+    {ι : Type*} (F : Finset ι) (s : ι → S) (m : ι → M) :
+    (diagonalLaw R M d).toFun S (∑ j ∈ F, s j ⊗ₜ[R] m j) =
+      ∑ w ∈ Fintype.piFinset fun _ : Fin d ↦ F,
+        (∏ t, s (w t)) ⊗ₜ[R] PiTensorProduct.tprod R fun t ↦ m (w t) := by
+  classical
+  -- expand the `d`th power in `S ⊗[R] TensorAlgebra R M` as a multilinear map in `d` slots
+  have hpow : (∑ j ∈ F, s j ⊗ₜ[R] TensorAlgebra.ι R (m j)) ^ d =
+      ∑ w ∈ Fintype.piFinset fun _ : Fin d ↦ F,
+        (∏ t, s (w t)) ⊗ₜ[R] TensorAlgebra.tprod R M d fun t ↦ m (w t) := by
+    rw [← MultilinearMap.mkPiAlgebraFin_apply_const (R := S), MultilinearMap.map_sum_finset]
+    refine Finset.sum_congr rfl fun w _ ↦ ?_
+    rw [MultilinearMap.mkPiAlgebraFin_apply, list_prod_ofFn_tmul, TensorAlgebra.tprod_apply]
+  simp only [diagonalLaw_toFun, map_sum, LinearMap.baseChange_tmul, hpow,
+    TensorAlgebra.tensorPowerProjection_tprod_self]
+
 /-- The diagonal law is natural under linear maps, as a law on all scalar extensions. -/
 theorem diagonalLaw_comp_toPolynomialLaw (d : ℕ) (f : M →ₗ[R] N) :
     (diagonalLaw R N d).comp f.toPolynomialLaw =
