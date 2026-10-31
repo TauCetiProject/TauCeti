@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.TensorProduct.Quotient
-public import TauCeti.RingTheory.Huber.TensorProduct.Restricted
+public import TauCeti.RingTheory.Huber.TensorProduct.Presentation
 public import TauCeti.RingTheory.Huber.TensorProduct.Symmetry
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 public import TauCeti.Topology.Maps.OpenQuotient
@@ -18,10 +17,10 @@ Let `A → B` be an adic homomorphism of Huber rings and `A → C` a homomorphis
 finite type (`TauCeti.Huber.IsTopologicallyFiniteType`), presented by an open quotient map
 `π : A⟨X⟩_T → C` out of the completed weighted restricted power series with finite weights `T`.
 Then the coprojection `B → C ⊗̂_A B` is again topologically of finite type: base change of `π`
-is an open quotient map `A⟨X⟩_T ⊗̂_A B → C ⊗̂_A B`
-(`TauCeti.Huber.CompletedTensor.isOpenQuotientMap_map`), and its source is the completed
-weighted restricted power series `B⟨X⟩_{λ(T)}` over `B` with the image weights
-(`TauCeti.Huber.CompletedTensor.weightedRestrictedEquiv`), whose weights are again finite.
+is an open quotient map `B⟨X⟩_{λ(T)} → C ⊗̂_A B` out of the completed weighted restricted power
+series over `B` with the image weights
+(`TauCeti.Huber.CompletedTensor.isOpenQuotientMap_baseChangePresentation`), and these weights are
+again finite.
 
 This is the stability of topological finite type under completed base change that fibre
 products of adic spaces along morphisms locally of weakly finite type, and the noetherian-type
@@ -62,19 +61,9 @@ finite type hypothesis by `TauCeti.Huber.IsTopologicallyFiniteType.isAdicHom`. -
 theorem isTopologicallyFiniteType_inr (h : IsTopologicallyFiniteType (algebraMap A C)) :
     IsTopologicallyFiniteType (inr A C B) := by
   obtain ⟨k, T, hTfin, hT, π, hπ, hcomm⟩ := isTopologicallyFiniteType_iff.mp h
-  -- the base change of the presentation `π` along `A → B` is an open quotient map
-  have hΦ := isOpenQuotientMap_map hcomm (RingHom.id_comp (algebraMap A B)) hπ
-    IsOpenQuotientMap.id
-  -- and its source is `B⟨X⟩_{λ(T)}`
-  have he : IsHomeomorph (weightedRestrictedEquiv B hT).symm :=
-    (weightedRestrictedEquiv B hT).symm.toEquiv.isHomeomorph_iff.mpr
-      ⟨continuous_weightedRestrictedEquiv_symm B hT, continuous_weightedRestrictedEquiv B hT⟩
-  have hq : IsOpenQuotientMap ((map (RingHom.id A) π (RingHom.id B) hcomm (RingHom.id_comp _)
-      hπ.continuous continuous_id).comp (weightedRestrictedEquiv B hT).symm.toRingHom) := by
-    rw [RingHom.coe_comp, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
-    exact hΦ.comp he.isOpenQuotientMap
   refine isTopologicallyFiniteType_iff.mpr ⟨k, fun i ↦ algebraMap A B '' T i,
-    fun i ↦ (hTfin i).image _, hAB.isWeightFamily_image hT, _, hq, ?_⟩
+    fun i ↦ (hTfin i).image _, hAB.isWeightFamily_image hT, _,
+    isOpenQuotientMap_baseChangePresentation B hcomm hπ, ?_⟩
   ext b
   simp [algebraMap_completion_weightedRestrictedSubring_apply]
 

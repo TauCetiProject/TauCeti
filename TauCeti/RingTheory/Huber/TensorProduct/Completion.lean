@@ -239,6 +239,18 @@ variable {A' B' C' : Type*} [CommRing A'] [CommRing B'] [CommRing C'] [Algebra A
   [IsTopologicalRing A'] [IsTopologicalRing B'] [IsTopologicalRing C']
   [IsAdicHom (algebraMap A' B')] [IsAdicHom (algebraMap A' C')]
 
+/-- A continuous map of completed tensor rings restricting on algebraic tensors to `f` is the
+completion of `f`. -/
+private theorem toAddMonoidHom_eq_completion
+    (F : CompletedTensor A B C →+* CompletedTensor A' B' C') (hF : Continuous F)
+    (f : B ⊗[A] C →+* B' ⊗[A'] C') (hfc : Continuous f)
+    (hFf : F.comp (toCompletion A B C) = (toCompletion A' B' C').comp f) :
+    (F.toAddMonoidHom : Completion (B ⊗[A] C) →+ Completion (B' ⊗[A'] C')) =
+      f.toAddMonoidHom.completion hfc :=
+  AddMonoidHom.ext <| congrFun <|
+    Completion.ext hF (AddMonoidHom.continuous_completion _ hfc) fun x ↦
+      (RingHom.congr_fun hFf x).trans (AddMonoidHom.completion_coe f.toAddMonoidHom hfc x).symm
+
 /-- **Completion preserves open quotient maps of tensor products.** A continuous ring map `F` of
 completed tensor rings which, on algebraic tensors, is an open quotient map `f` for the two
 tensor topologies, is itself an open quotient map. Huber rings have countable bases of open
@@ -255,13 +267,35 @@ theorem isOpenQuotientMap_of_comp_toCompletion
   have hfc : Continuous f := hf.continuous
   have hFeq : (F : Completion (B ⊗[A] C) → Completion (B' ⊗[A'] C')) =
       f.toAddMonoidHom.completion hfc :=
-    Completion.ext hF (AddMonoidHom.continuous_completion _ hfc) fun x ↦
-      (RingHom.congr_fun hFf x).trans (AddMonoidHom.completion_coe f.toAddMonoidHom hfc x).symm
+    congrArg DFunLike.coe (toAddMonoidHom_eq_completion F hF f hfc hFf)
   refine ⟨?_, hF, ?_⟩
   · rw [hFeq]
     exact f.toAddMonoidHom.surjective_completion hfc hf.surjective hf.isOpenMap
   · rw [hFeq]
     exact f.toAddMonoidHom.isOpenMap_completion hfc hf.isOpenMap
+
+/-- **Kernels of completed open maps of tensor products.** If a continuous ring map `F` of
+completed tensor rings is, on algebraic tensors, a continuous open map `f` for the two tensor
+topologies, then the kernel of `F` is the closure of the image of the kernel of `f`
+(`AddMonoidHom.ker_completion`). -/
+theorem coe_ker_of_comp_toCompletion
+    (F : CompletedTensor A B C →+* CompletedTensor A' B' C') (hF : Continuous F)
+    (f : B ⊗[A] C →+* B' ⊗[A'] C')
+    (hfc : letI := tensorTopology A B C
+      letI := tensorTopology A' B' C'
+      Continuous f)
+    (hfo : letI := tensorTopology A B C
+      letI := tensorTopology A' B' C'
+      IsOpenMap f)
+    (hFf : F.comp (toCompletion A B C) = (toCompletion A' B' C').comp f) :
+    (RingHom.ker F : Set (CompletedTensor A B C)) =
+      closure (toCompletion A B C '' RingHom.ker f) := by
+  have h := congrArg ((↑) : AddSubgroup (Completion (B ⊗[A] C)) → Set (Completion (B ⊗[A] C)))
+    (f.toAddMonoidHom.ker_completion hfc hfo)
+  rw [AddSubgroup.topologicalClosure_coe, AddSubgroup.coe_map,
+    ← toAddMonoidHom_eq_completion F hF f hfc hFf] at h
+  -- the kernels of `F` and `f` as additive maps are their kernels as ring maps
+  exact h
 
 end OpenQuotient
 
