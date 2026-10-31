@@ -74,11 +74,9 @@ theorem height_add_ringKrullDim_quotient (h : IsCohenMacaulay R R) (p : Ideal R)
   -- The quotient `N = R ⧸ (r₁, …, rₖ)` is Cohen–Macaulay, of dimension `dim R - k`.
   let N := R ⧸ ofList rs • (⊤ : Submodule R R)
   have hN : IsCohenMacaulay R N := (isCohenMacaulay_quotient_ofList_smul_iff rs regR).2 h
-  have hann : annihilator R N ≤ p := fun r hr ↦ by
-    have hr1 := (Submodule.Quotient.mk_eq_zero _).1 <|
-      mem_annihilator.1 hr (Submodule.Quotient.mk 1)
-    simp only [smul_eq_mul, mul_one, mul_top] at hr1
-    exact span_le.2 (fun r hr ↦ mem r hr) hr1
+  have hann : annihilator R N ≤ p := by
+    simp only [N, smul_eq_mul, mul_top, Ideal.annihilator_quotient]
+    exact span_le.2 mem
   -- By maximality of `r₁, …, rₖ`, no element of `p` is regular on `N`.
   have hnreg : ¬ ∃ a ∈ p, IsSMulRegular N a := fun ⟨a, ha, hreg⟩ ↦ by
     have hmem : ((rs ++ [a]).length : ℕ∞) ∈ lengths := ⟨rs ++ [a],
