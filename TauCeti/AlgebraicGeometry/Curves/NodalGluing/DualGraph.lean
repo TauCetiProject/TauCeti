@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.DualGraph.Iso
 public import TauCeti.AlgebraicGeometry.Curves.NodalGluing.Connected
 public import TauCeti.AlgebraicGeometry.Curves.NodalGluing.Iso
+public import TauCeti.Data.Set.Card
 
 /-!
 # The dual graph of a glued nodal curve
@@ -126,22 +127,6 @@ theorem marking_dualGraph (l : L) : (dualGraph g m).marking l = (m.point l).1 :=
 private theorem fst_flagPoint_finTwoEquiv (f : Flag) (k : Fin 2) :
     (flagPoint d (f, finTwoEquiv k)).1 = (dualGraph g m).endpoint f k := by
   fin_cases k <;> simp [finTwoEquiv, fstPoint_def, sndPoint_def]
-
-/-- The points of the range of an injective map into a sigma type lying over the index `i` are
-counted by the arguments mapped over `i`. -/
-private theorem ncard_preimage_sigmaMk_range {κ α : Type*} {Y : κ → Type*}
-    {φ : α → Σ i, Y i} (hφ : Function.Injective φ) (i : κ) :
-    (Sigma.mk i ⁻¹' range φ).ncard = {a | (φ a).1 = i}.ncard := by
-  have himage : range φ ∩ range (Sigma.mk i) = φ '' {a | (φ a).1 = i} := by
-    rw [range_sigmaMk]
-    ext z
-    constructor
-    · rintro ⟨⟨a, rfl⟩, hi⟩
-      exact ⟨a, hi, rfl⟩
-    · rintro ⟨a, hi, rfl⟩
-      exact ⟨⟨a, rfl⟩, hi⟩
-  rw [← preimage_inter_range, ncard_preimage_of_injective_subset_range sigma_mk_injective
-    inter_subset_right, himage, ncard_image_of_injective _ hφ]
 
 /-- **The valence of a vertex counts the flag points on its component.** -/
 theorem valence_dualGraph (i : ι) :
