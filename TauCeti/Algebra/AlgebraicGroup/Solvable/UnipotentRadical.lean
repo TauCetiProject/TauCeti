@@ -14,7 +14,6 @@ import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Commutative
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Exactness
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Kernel
 import TauCeti.Algebra.AlgebraicGroup.Reductive.Solvable
-import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Character
 import TauCeti.Algebra.AlgebraicGroup.Smooth.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Solvable.FaithfullyFlat
 import TauCeti.Algebra.AlgebraicGroup.Torus.AlgebraicallyClosed
