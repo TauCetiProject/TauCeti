@@ -244,6 +244,11 @@ theorem relationalize_sup (φ ψ : L.BoundedFormulaω α n) :
 theorem relationalize_ex (φ : L.BoundedFormulaω α (n + 1)) :
     φ.ex.relationalize = φ.relationalize.ex := (rfl)
 
+@[simp]
+theorem relationalize_iff (φ ψ : L.BoundedFormulaω α n) :
+    (φ.iff ψ).relationalize = φ.relationalize.iff ψ.relationalize := by
+  simp only [iff_def, relationalize_inf, relationalize_imp]
+
 section Realize
 
 variable {M : Type w} [L.Structure M]
