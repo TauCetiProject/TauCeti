@@ -48,6 +48,9 @@ makes this mass at most `ε / 6 * |V| ^ k`.
 
 * `TauCeti.sum_placementInjectionCount_of_not_transversal_le_of_card_le`: the injection counts of
   the nontransversal placements are small when the cells are small.
+* `TauCeti.Colored3Graph.sum_placedInducedCopyCount_of_not_transversal_le`: the placed counts at
+  the nontransversal placements add up to at most the number of embeddings putting two pattern
+  vertices in a common cell.
 * `TauCeti.Colored3Graph.nontransversal_actual_and_predicted_mass_mul_le`: with an equipartition
   into at least `t₀` cells, `t₀` times the actual and predicted nontransversal mass is at most
   `4 * k.choose 2 * |V| ^ k`.
@@ -110,7 +113,29 @@ theorem sum_placementInjectionCount_of_not_transversal_le_of_card_le
 
 namespace Colored3Graph
 
-variable [DecidableEq κ] (H : Colored3Graph κ V)
+variable (H : Colored3Graph κ V)
+
+/-- The placed counts at the nontransversal placements add up to at most the number of
+embeddings putting two pattern vertices in a common cell. -/
+theorem sum_placedInducedCopyCount_of_not_transversal_le
+    [DecidablePred fun φ : PatternPlacement3 C F ↦ φ.Transversal] :
+    ∑ φ : PatternPlacement3 C F with ¬φ.Transversal, ∑ ψ : PairColorPlacement3 φ,
+        H.placedInducedCopyCount φ ψ ≤
+      #{f : Fin F.k ↪ V | ∃ i j, i ≠ j ∧ ∃ A ∈ C.skeleton.vertexPart.parts, f i ∈ A ∧ f j ∈ A} := by
+  simp only [placedInducedCopyCount_def]
+  rw [sum_sigma', ← card_biUnion
+    ((H.pairwiseDisjoint_placedInducedCopies C F).subset (Set.subset_univ _))]
+  refine card_le_card fun f hf ↦ ?_
+  obtain ⟨⟨φ, ψ⟩, hσ, hf⟩ := mem_biUnion.1 hf
+  obtain ⟨-, hcell, -⟩ := mem_placedInducedCopies.1 hf
+  have hφ : ¬Injective φ.vertexCell :=
+    (φ.transversal_iff.not).1 (mem_filter.1 (mem_sigma.1 hσ).1).2
+  obtain ⟨i, j, hij, hne⟩ : ∃ i j, φ.vertexCell i = φ.vertexCell j ∧ i ≠ j := by
+    simpa [Injective] using hφ
+  exact mem_filter.2 ⟨mem_univ _, i, j, hne, φ.vertexCell i, φ.vertexCell_mem i, hcell i,
+    hij ▸ hcell j⟩
+
+variable [DecidableEq κ]
 
 variable (C F) in
 open Classical in

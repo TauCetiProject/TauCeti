@@ -65,6 +65,8 @@ count which an induced counting lemma compares with `H.inducedCopyCount F`.
   add up to `|V| ^ F.k`.
 * `TauCeti.PairColorPlacement3.card_le_pairColorCount_pow`: a placement has at most
   `m ^ (F.k.choose 2)` routes, where `m` is the number of pair colors.
+* `TauCeti.Colored3Graph.pairwiseDisjoint_placedInducedCopies`: distinct placements and routes
+  are realized by disjoint sets of induced copies.
 * `TauCeti.Colored3Graph.inducedCopyCount_eq_sum_placedInducedCopyCount`: over a polyad
   decomposition, the induced count is the sum of the placed counts.
 * `TauCeti.Colored3Graph.expectedInducedCountAt_nonneg`,
@@ -310,6 +312,20 @@ theorem placedInducedCopyCount_le_placementInjectionCount (φ : PatternPlacement
     Fintype.card_subtype]
   exact card_le_card fun f hf ↦ mem_filter.2 ⟨mem_univ _, (mem_placedInducedCopies.1 hf).2.1⟩
 
+variable (C F) in
+/-- Distinct placements and routes are realized by disjoint sets of induced copies, since an
+embedding determines the cells and the pair colors it realizes. -/
+theorem pairwiseDisjoint_placedInducedCopies :
+    (Set.univ : Set (Σ φ : PatternPlacement3 C F, PairColorPlacement3 φ)).PairwiseDisjoint
+      fun σ ↦ H.placedInducedCopies σ.1 σ.2 := by
+  rintro ⟨φ, ψ⟩ - ⟨φ', ψ'⟩ - hne
+  refine disjoint_left.2 fun f hf hf' ↦ hne ?_
+  obtain ⟨-, hφ, hψ⟩ := mem_placedInducedCopies.1 hf
+  obtain ⟨-, hφ', hψ'⟩ := mem_placedInducedCopies.1 hf'
+  obtain rfl := PatternPlacement3.eq_of_forall_mem hφ hφ'
+  obtain rfl := PairColorPlacement3.eq_of_forall_colorOfPair_eq_some hψ hψ'
+  rfl
+
 /-- The placement whose cells are the vertex cells containing the images of an embedding. -/
 private noncomputable def placementOf (f : Fin F.k ↪ V) : PatternPlacement3 C F where
   vertexCell i := C.skeleton.vertexPart.part (f i)
@@ -351,17 +367,9 @@ theorem inducedCopyCount_eq_sum_placedInducedCopyCount (hC : C.IsPolyadDecomposi
       fun ⟨_, hf, _⟩ ↦ hf⟩
     · exact C.skeleton.vertexPart.mem_part (mem_univ _)
     · exact C.skeleton.pairColors.colorOfPair_of_ne _
-  have hdisj : (Set.univ : Set (Σ φ : PatternPlacement3 C F,
-      PairColorPlacement3 φ)).PairwiseDisjoint fun σ ↦ H.placedInducedCopies σ.1 σ.2 := by
-    rintro ⟨φ, ψ⟩ - ⟨φ', ψ'⟩ - hne
-    refine disjoint_left.2 fun f hf hf' ↦ hne ?_
-    obtain ⟨-, hφ, hψ⟩ := mem_placedInducedCopies.1 hf
-    obtain ⟨-, hφ', hψ'⟩ := mem_placedInducedCopies.1 hf'
-    obtain rfl := PatternPlacement3.eq_of_forall_mem hφ hφ'
-    obtain rfl := PairColorPlacement3.eq_of_forall_colorOfPair_eq_some hψ hψ'
-    rfl
   simp only [inducedCopyCount_def, placedInducedCopyCount_def]
-  rw [hcover, card_biUnion (by simpa using hdisj), Fintype.sum_sigma]
+  rw [hcover, card_biUnion (by simpa using H.pairwiseDisjoint_placedInducedCopies C F),
+    Fintype.sum_sigma]
 
 /-! ### The prediction -/
 
