@@ -61,6 +61,19 @@ noncomputable instance forget₂AlgCat_preservesFilteredColimits :
       reflectsColimitsOfShape_of_reflectsIsomorphisms
     preservesColimitsOfShape_of_reflects_of_preserves _ (forget (AlgCat.{u} Base))
 
+/-- Tensor products of cocone legs are compatible with the maps of the two diagrams. -/
+theorem tensorProduct_map_ι_app_map {J : Type*} [Category* J]
+    {F G : J ⥤ CommAlgCat.{u} Base} (c : Cocone F) (d : Cocone G)
+    {j k : J} (f : j ⟶ k) (y : F.obj j ⊗[Base] G.obj j) :
+    Algebra.TensorProduct.map (c.ι.app k).hom (d.ι.app k).hom
+        (Algebra.TensorProduct.map (F.map f).hom (G.map f).hom y) =
+      Algebra.TensorProduct.map (c.ι.app j).hom (d.ι.app j).hom y := by
+  have h : (Algebra.TensorProduct.map (c.ι.app k).hom (d.ι.app k).hom).comp
+      (Algebra.TensorProduct.map (F.map f).hom (G.map f).hom) =
+      Algebra.TensorProduct.map (c.ι.app j).hom (d.ι.app j).hom := by
+    rw [← Algebra.TensorProduct.map_comp, ← hom_comp, ← hom_comp, c.w f, d.w f]
+  exact DFunLike.congr_fun h y
+
 /-- Every element of the tensor product of two filtered colimits comes from the tensor
 product of stages at a common index. -/
 theorem isColimit_exists_tensor_rep {J : Type u} [SmallCategory J] [IsFiltered J]
@@ -69,15 +82,6 @@ theorem isColimit_exists_tensor_rep {J : Type u} [SmallCategory J] [IsFiltered J
     ∃ j, ∃ y : F.obj j ⊗[Base] G.obj j,
       Algebra.TensorProduct.map (c.ι.app j).hom (d.ι.app j).hom y = x := by
   classical
-  have hw (j k : J) (f : j ⟶ k) (y : F.obj j ⊗[Base] G.obj j) :
-      Algebra.TensorProduct.map (c.ι.app k).hom (d.ι.app k).hom
-          (Algebra.TensorProduct.map (F.map f).hom (G.map f).hom y) =
-        Algebra.TensorProduct.map (c.ι.app j).hom (d.ι.app j).hom y := by
-    have h : (Algebra.TensorProduct.map (c.ι.app k).hom (d.ι.app k).hom).comp
-        (Algebra.TensorProduct.map (F.map f).hom (G.map f).hom) =
-        Algebra.TensorProduct.map (c.ι.app j).hom (d.ι.app j).hom := by
-      rw [← Algebra.TensorProduct.map_comp, ← hom_comp, ← hom_comp, c.w f, d.w f]
-    exact DFunLike.congr_fun h y
   induction x using TensorProduct.inductionOn with
   | tmul a b =>
     obtain ⟨i, a, rfl⟩ := Concrete.isColimit_exists_rep F hc a
@@ -97,6 +101,6 @@ theorem isColimit_exists_tensor_rep {J : Type u} [SmallCategory J] [IsFiltered J
           (G.map (IsFiltered.leftToMax i j)).hom a +
         Algebra.TensorProduct.map (F.map (IsFiltered.rightToMax i j)).hom
           (G.map (IsFiltered.rightToMax i j)).hom b, ?_⟩
-    rw [map_add, hw, hw]
+    rw [map_add, tensorProduct_map_ι_app_map, tensorProduct_map_ι_app_map]
 
 end CommAlgCat

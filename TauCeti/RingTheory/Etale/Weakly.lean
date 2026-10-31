@@ -64,11 +64,8 @@ theorem of_isColimit {R : Type u} [CommRing R] {J : Type u} [SmallCategory J]
     (RingHom.flat_iff_forall_exists_eq_mul_of_surjective _
       (fun x : F.obj j ↦ ⟨x ⊗ₜ[R] 1, by simp⟩)).mp (flat_lmul' R (F.obj j)) z hz
   let m := Algebra.TensorProduct.map (c.ι.app j).hom (c.ι.app j).hom
-  have hm : m z = Algebra.TensorProduct.map (c.ι.app i).hom (c.ι.app i).hom y := by
-    have h : m.comp (Algebra.TensorProduct.map (F.map f).hom (F.map f).hom) =
-        Algebra.TensorProduct.map (c.ι.app i).hom (c.ι.app i).hom := by
-      rw [← Algebra.TensorProduct.map_comp, ← CommAlgCat.hom_comp, c.w f]
-    exact DFunLike.congr_fun h y
+  have hm : m z = Algebra.TensorProduct.map (c.ι.app i).hom (c.ι.app i).hom y :=
+    CommAlgCat.tensorProduct_map_ι_app_map c c f y
   refine ⟨m w, ?_, ?_⟩
   · simpa only [m, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
       Algebra.TensorProduct.lmul'_map_self, map_zero] using congrArg (c.ι.app j).hom hw
