@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.Analysis.Matrix.Spectrum
+public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import TauCeti.Analysis.Matrix.Resolvent
@@ -51,6 +52,8 @@ computations with traces of matrices.
   characteristic roots in it, counted with algebraic multiplicity;
 * `Matrix.map_spectralMeasure_ofReal` — for a complex Hermitian matrix, the eigenvalue measure is
   the pushforward of the spectral measure along `ℝ → ℂ`;
+* `Matrix.PosSemidef.ae_mem_Ici_spectralMeasure` — the spectral measure of a positive-semidefinite
+  matrix is concentrated on the nonnegative reals;
 * `Matrix.eigenvalueMeasure_toMeasure_of_isNilpotent` — a nilpotent matrix has eigenvalue measure
   `δ₀`;
 * `Matrix.integral_pow_spectralMeasure` — the `k`-th moment of the spectral measure is the
@@ -101,6 +104,23 @@ theorem spectralMeasure_apply (A : Matrix n n 𝕜) (hA : A.IsHermitian) {s : Se
     (A.spectralMeasure hA : Measure ℝ) s =
       ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ * ∑ i, s.indicator 1 (hA.eigenvalues i) :=
   empiricalMeasureOfFintype_apply hs
+
+/-- The spectral measure of a positive-semidefinite matrix is concentrated on the nonnegative
+reals. -/
+theorem PosSemidef.ae_mem_Ici_spectralMeasure {A : Matrix n n ℝ} (hA : A.PosSemidef) :
+    ∀ᵐ x ∂(A.spectralMeasure hA.isHermitian : Measure ℝ), x ∈ Set.Ici 0 := by
+  rw [ae_iff]
+  have hset : {x : ℝ | ¬ x ∈ Set.Ici 0} = Set.Iio 0 := by
+    ext x
+    simp
+  rw [hset, spectralMeasure_apply A hA.isHermitian measurableSet_Iio]
+  have hsum :
+      ∑ i, (Set.Iio 0).indicator (1 : ℝ → ℝ≥0∞) (hA.isHermitian.eigenvalues i) = 0 := by
+    apply Finset.sum_eq_zero
+    intro i hi
+    simp [not_lt.mpr (hA.eigenvalues_nonneg i)]
+  rw [hsum]
+  simp
 
 /-- Integrating against the spectral measure is averaging over the eigenvalues. -/
 theorem integral_spectralMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
