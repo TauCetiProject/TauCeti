@@ -7,35 +7,37 @@ module
 
 public import Mathlib.GroupTheory.DoubleCoset
 
-import Mathlib.Tactic.Group
-
 /-!
 # Double cosets: the left-coset decomposition
 
 A double coset `HaK` decomposes as the union of the left cosets `(h * a) • K`, where `h`
 ranges over representatives of the quotient of `H` by the stabiliser `H ∩ aKa⁻¹`. The
-decomposition indexes the left cosets
-inside a double coset and underlies the finiteness of Hecke coset decompositions in
-`TauCeti.NumberTheory.HeckeRing.Basic`.
+decomposition indexes the left cosets inside a double coset and underlies the finiteness of
+Hecke coset decompositions in `TauCeti.NumberTheory.HeckeRing.Basic`.
 
-This file also records how the stabiliser `(gKg⁻¹).subgroupOf H` responds to moving the base
-point `g`: right multiplication by anything normalising `K` leaves it alone, and left
-multiplication by anything normalising `H` conjugates it. `TauCeti.NumberTheory.HeckeRing.
-StabConjugation` turns those into equivalences of decomposition quotients.
+This file also records how membership in a double coset `HaK` interacts with left
+multiplication by `H` and with the quotient `G ⧸ K`.
 
-Vendored from the in-review mathlib4 PR
-[#41253](https://github.com/leanprover-community/mathlib4/pull/41253) (Chris Birkbeck), per the
-ModularForms roadmap's dependency policy; migrate to Mathlib and delete this file when that
-stack merges.
+## Main results
+
+* `DoubleCoset.doubleCoset_eq_iUnion_leftCosets`: `HaK` is the union of the left cosets
+  `(h * a) • K`, `h` running over representatives of `H ⧸ (aKa⁻¹).subgroupOf H`.
+* `DoubleCoset.mul_mem_doubleCoset_iff`: membership in `HaK` is invariant under left
+  multiplication by `H`.
+* `DoubleCoset.mem_doubleCoset_of_quotient_eq`: recognising `HxK` from an equation in `G ⧸ K`.
+
+The left-coset decomposition `DoubleCoset.doubleCoset_eq_iUnion_leftCosets` is vendored from
+mathlib4 PR [#41253](https://github.com/leanprover-community/mathlib4/pull/41253)
+(Chris Birkbeck).
 -/
 
 public section
 
 open scoped Pointwise
 
-namespace DoubleCoset
-
 variable {G : Type*} [Group G]
+
+namespace DoubleCoset
 
 /-- A double coset `HaK` is the union of the left cosets `(h * a) • K` where `h` ranges over
 representatives of the quotient of `H` by the stabiliser `H ∩ aKa⁻¹`, with no repeated cosets;
@@ -44,84 +46,40 @@ lemma doubleCoset_eq_iUnion_leftCosets (H K : Subgroup G) (a : G) :
     doubleCoset a H K =
       ⋃ i : H ⧸ (ConjAct.toConjAct a • K).subgroupOf H, ((i.out : G) * a) • (K : Set G) := by
   rw [← doubleCoset_union_leftCoset]
-  refine le_antisymm (Set.iUnion_subset fun h ↦ ?_) (Set.iUnion_subset fun i ↦
-    Set.subset_iUnion (fun h : H ↦ ((h : G) * a) • (K : Set G)) i.out)
+  refine le_antisymm (Set.iUnion_subset fun h ↦ ?_)
+    (Set.iUnion_subset fun i ↦ Set.subset_iUnion_of_subset i.out le_rfl)
   obtain ⟨n, hn⟩ := QuotientGroup.mk_out_eq_mul ((ConjAct.toConjAct a • K).subgroupOf H) h
-  have hK : a⁻¹ * ((n : H) : G) * a ∈ K := by
-    have hmem := Subgroup.mem_subgroupOf.mp n.2
-    rwa [Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ← ConjAct.toConjAct_inv,
-      ConjAct.smul_def, ConjAct.ofConjAct_toConjAct, inv_inv] at hmem
   refine Set.subset_iUnion_of_subset (QuotientGroup.mk h) (le_of_eq ?_)
   rw [hn, leftCoset_eq_iff]
-  simpa [mul_assoc] using hK
-
-/-- Conjugation only sees `g` modulo the normalizer on the right: `(gh)Γ(gh)⁻¹ = gΓg⁻¹`
-whenever `h` normalizes `Γ`. Membership in `Γ` itself is the special case
-`Subgroup.le_normalizer`. -/
-lemma conjAct_smul_mul_right_of_mem_normalizer (Γ : Subgroup G) (g : G) {h : G}
-    (hh : h ∈ Subgroup.normalizer Γ) :
-    ConjAct.toConjAct (g * h) • Γ = ConjAct.toConjAct g • Γ := by
-  rw [map_mul, ← smul_smul, Subgroup.conjAct_pointwise_smul_eq_self hh]
-
-/-- The stabilizer cut out inside `Γ₁` is unchanged by right multiplication of the base point
-by anything normalizing `Γ₂`. -/
-lemma subgroupOf_conjAct_smul_mul_right_of_mem_normalizer (Γ₁ Γ₂ : Subgroup G) (g : G) {h : G}
-    (hh : h ∈ Subgroup.normalizer Γ₂) :
-    (ConjAct.toConjAct (g * h) • Γ₂).subgroupOf Γ₁ =
-      (ConjAct.toConjAct g • Γ₂).subgroupOf Γ₁ := by
-  rw [conjAct_smul_mul_right_of_mem_normalizer Γ₂ g hh]
-
-/-- Left multiplication of the base point by anything normalizing `Γ₁` conjugates the
-stabilizer by it: `x` stabilizes `hg` exactly when `h⁻¹xh` stabilizes `g`. Membership in `Γ₁`
-itself is the special case `Subgroup.le_normalizer`.
-
-The conjugating automorphism of `↥Γ₁` is `Subgroup.normalizerMonoidHom`, which is defined for
-exactly this: `MulAut.conj h` would need `h` to be an element of `Γ₁`. -/
-lemma subgroupOf_conjAct_smul_mul_left_of_mem_normalizer (Γ₁ Γ₂ : Subgroup G) (g : G)
-    (h : Subgroup.normalizer (Γ₁ : Set G)) :
-    (ConjAct.toConjAct ((h : G) * g) • Γ₂).subgroupOf Γ₁ =
-      ((ConjAct.toConjAct g • Γ₂).subgroupOf Γ₁).map
-        (Γ₁.normalizerMonoidHom h).toMonoidHom := by
-  ext x
-  rw [Subgroup.mem_map_equiv]
-  simp only [Subgroup.mem_subgroupOf, Subgroup.mem_pointwise_smul_iff_inv_smul_mem,
-    ConjAct.smul_def, map_inv, ConjAct.ofConjAct_toConjAct, inv_inv,
-    Subgroup.normalizerMonoidHom_apply_symm_apply_coe]
-  -- Both sides are membership of the *same* element of `Γ₂`, written with different
-  -- bracketing: `(hg)⁻¹x(hg)` versus `g⁻¹(h⁻¹xh)g`. `group` proves that identity; the `iff`
-  -- is then congruence along it, so no rewriting has to find a redex.
-  exact iff_of_eq (congrArg (· ∈ Γ₂) (by group))
+  simpa [mul_assoc, Subgroup.mem_pointwise_smul_iff_inv_smul_mem, ConjAct.smul_def] using
+    Subgroup.mem_subgroupOf.mp n.2
 
 /-- **Membership in a double coset is invariant under left multiplication by the left
 subgroup.** -/
 -- Not `@[simp]`: the `simpNF` linter rejects it, because the left-hand side
 -- `b * z ∈ doubleCoset a H K` is itself simplified by `simp` to a `MulAction.orbit`
 -- membership, so the rewrite could never fire.
-lemma mul_mem_doubleCoset_iff {H K : Subgroup G} {b : G} (hb : b ∈ H) {a z : G} :
+lemma mul_mem_doubleCoset_iff {H : Subgroup G} {K : Set G} {b : G} (hb : b ∈ H) {a z : G} :
     b * z ∈ doubleCoset a (H : Set G) K ↔ z ∈ doubleCoset a (H : Set G) K := by
-  constructor
-  · intro hz
-    obtain ⟨x, hx, y, hy, hxy⟩ := mem_doubleCoset.mp hz
-    refine mem_doubleCoset.mpr ⟨b⁻¹ * x, H.mul_mem (H.inv_mem hb) hx, y, hy, ?_⟩
-    rw [mul_assoc, mul_assoc, ← mul_assoc x, ← hxy, inv_mul_cancel_left]
-  · intro hz
+  have key {c z : G} (hc : c ∈ H) (hz : z ∈ doubleCoset a (H : Set G) K) :
+      c * z ∈ doubleCoset a (H : Set G) K := by
     obtain ⟨x, hx, y, hy, rfl⟩ := mem_doubleCoset.mp hz
-    exact mem_doubleCoset.mpr ⟨b * x, H.mul_mem hb hx, y, hy, by simp only [mul_assoc]⟩
+    exact mem_doubleCoset.mpr ⟨c * x, H.mul_mem hc hx, y, hy, by simp only [mul_assoc]⟩
+  exact ⟨fun h ↦ by simpa using key (H.inv_mem hb) h, key hb⟩
 
 /-- **Translating an inverse along a left coset.** If `w` and `x` lie in the same left coset of
-`H`, then `x⁻¹ d` and `w⁻¹ d` lie in the same double coset `H g K`. -/
-lemma inv_mul_mem_doubleCoset_iff_of_mem {H K : Subgroup G} {w x d g : G} (h : x⁻¹ * w ∈ H) :
+`H`, then `x⁻¹ d` belongs to the double coset `H g K` if and only if `w⁻¹ d` does. -/
+lemma inv_mul_mem_doubleCoset_iff_of_mem {H : Subgroup G} {K : Set G} {w x d g : G}
+    (h : x⁻¹ * w ∈ H) :
     x⁻¹ * d ∈ doubleCoset g (H : Set G) K ↔ w⁻¹ * d ∈ doubleCoset g (H : Set G) K := by
-  have hw : w⁻¹ * d = (x⁻¹ * w)⁻¹ * (x⁻¹ * d) := by
-    simp only [mul_inv_rev, inv_inv, mul_assoc, mul_inv_cancel_left]
-  rw [hw, mul_mem_doubleCoset_iff (H.inv_mem h)]
+  simpa [mul_assoc] using (mul_mem_doubleCoset_iff (K := K) (a := g) (H.inv_mem h)
+    (z := x⁻¹ * d)).symm
 
 /-- **Recognising a double coset from a quotient equation.** If `w` agrees with `l x` modulo `K`
 for some `l ∈ H`, then `w` lies in the double coset `H x K`. -/
-lemma mem_doubleCoset_of_quotient_eq {H K : Subgroup G} {w x l : G} (hl : l ∈ H)
-    (h : (w : G ⧸ K) = ((l * x : G) : G ⧸ K)) : w ∈ doubleCoset x (H : Set G) K :=
-  mem_doubleCoset.mpr ⟨l, hl, (l * x)⁻¹ * w,
-    by simpa [mul_inv_rev, mul_assoc] using K.inv_mem (QuotientGroup.eq.mp h),
+lemma mem_doubleCoset_of_quotient_eq {H : Set G} {K : Subgroup G} {w x l : G} (hl : l ∈ H)
+    (h : (w : G ⧸ K) = ((l * x : G) : G ⧸ K)) : w ∈ doubleCoset x H K :=
+  mem_doubleCoset.mpr ⟨l, hl, (l * x)⁻¹ * w, QuotientGroup.eq.mp h.symm,
     (mul_inv_cancel_left _ _).symm⟩
 
 end DoubleCoset

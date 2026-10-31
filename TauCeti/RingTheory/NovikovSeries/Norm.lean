@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Derivation.Determinant
+public import TauCeti.RingTheory.NovikovSeries.Derivation
+public import TauCeti.RingTheory.NovikovSeries.ExpLog
 public import TauCeti.RingTheory.NovikovSeries.FiniteIndex
 public import TauCeti.RingTheory.NovikovSeries.Matrix
 public import Mathlib.RingTheory.Norm.Defs
@@ -24,13 +27,30 @@ strictly positive nonconstant support.
 These estimates apply to arbitrary finite-index subgroups, not only cyclic
 quotients, and allow dense periods, noninjective period maps and torsion in `H`.
 They give the support control needed to compare norms with convergent logarithms
-and with limits of finite-cover orbit products; no logarithmic norm identity or
-extension to total quotient rings is asserted here.
+and with limits of finite-cover orbit products; no extension to total quotient rings
+is asserted here.
+
+For an abelian covering with deck group `H`, the norm is the one from the intermediate finite
+abelian covering with deck group `H ⧸ K`. Over a `ℚ`-algebra, the logarithm converts the norm
+of a principal unit into the trace of its logarithm
+(`TauCeti.NovikovSeries.log_normNonnegSubring`):
+
+`log (Norm u) = Tr (log u)`.
+
+This is the identity that compares the dynamical zeta functions of the two coverings. The proof
+differentiates both sides along the degree derivations `f ∘ N` of
+`TauCeti/RingTheory/NovikovSeries/Derivation.lean`. The logarithmic derivative of the norm is the
+trace of the logarithmic derivative (`Derivation.leibniz_norm`), and a continuous derivation
+differentiates the logarithm logarithmically (`IsTopologicallyNilpotent.mul_derivation_log`). So
+the difference of the two sides is killed by every degree derivation along the period. It is
+supported in strictly positive periods, so it vanishes.
 
 ## References
 
 * M. Hutchings, *Reidemeister torsion in generalized Morse theory*,
   Forum Math. 14 (2002), Section 2.
+* M. Hutchings and Y.-J. Lee, *Circle-valued Morse theory and Reidemeister torsion*,
+  Geom. Topol. 3 (1999), Section 2.
 -/
 
 public section
@@ -161,5 +181,54 @@ theorem normNonnegSubring_one_add_sub_one_mem_posIdeal {a : nonnegSubring R N}
   apply mem_posIdeal.2
   apply exists_pos_mem_periodFiltration_iff.1
   exact ⟨C, hC, by simpa using algebraNorm_one_add_sub_one_mem_periodFiltration K hC.le haC⟩
+
+/-- **The logarithm of the norm is the trace of the logarithm.** Over a `ℚ`-algebra, for a
+principal unit `u` of the nonnegative subring of `Nov(R, H, N)`, the logarithm of its norm over
+the Novikov series on a finite-index subgroup `K` is the trace of its logarithm:
+`log (Norm u) = Tr (log u)`. -/
+theorem log_normNonnegSubring [Algebra ℚ R] {u : nonnegSubring R N}
+    (hu : u - 1 ∈ posIdeal R N) :
+    ((NormedSpace.log (normNonnegSubring K u) : nonnegSubring R (N.comp K.subtype)) :
+      NovikovSeries R K (N.comp K.subtype)) =
+      Algebra.trace (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N)
+        (NormedSpace.log u : nonnegSubring R N) := by
+  set A := NovikovSeries R H N
+  set B := NovikovSeries R K (N.comp K.subtype)
+  have hφ := exists_period_rescale_subtype (N := N) K
+  have hker : (K.subtype.ker : Set K).Finite := by simp
+  have hnil := isTopologicallyNilpotent_of_mem_posIdeal' hu
+  have hu' : normNonnegSubring K u - 1 ∈ posIdeal R (N.comp K.subtype) := by
+    simpa using normNonnegSubring_one_add_sub_one_mem_posIdeal K hu
+  -- `u` is a unit, being `1 - (1 - u)` with `1 - u` in the positive ideal.
+  have h1u : 1 - u ∈ posIdeal R N := by simpa using neg_mem hu
+  let U : Aˣ := (Units.map (nonnegSubring R N).subtype.toMonoidHom (unitsOneSub h1u))
+  have hU : (U : A) = u := by simp [U]
+  have hunit : IsUnit (normNonnegSubring K u : B) := by
+    rw [coe_normNonnegSubring, ← hU]
+    exact U.isUnit.map _
+  rw [← sub_eq_zero]
+  ext k
+  rw [coeff_zero]
+  by_cases hk : N k ≤ 0
+  · -- Both sides lie in the positive ideal.
+    have hlogB := hnil.log_mem (I := posIdeal R N) hu
+    rw [coeff_sub, trace_eq_index_smul_comap hφ hker, coeff_smul, coeff_comap,
+      mem_posIdeal.1 ((isTopologicallyNilpotent_of_mem_posIdeal' hu').log_mem hu') k hk,
+      mem_posIdeal.1 hlogB (K.subtype k) hk, smul_zero, sub_zero]
+  -- Away from period zero, the coefficient is detected by the degree derivations along `N`.
+  refine coeff_eq_zero_of_forall_degreeDerivation_eq_zero (fun f => ?_) (not_le.1 hk).ne'
+  set ℓ : H →+ R := ((algebraMap ℚ R).toAddMonoidHom.comp f.toAddMonoidHom).comp N
+  have hℓ : ((algebraMap ℚ R).toAddMonoidHom.comp f.toAddMonoidHom).comp (N.comp K.subtype) =
+      ℓ.comp K.subtype :=
+    (AddMonoidHom.comp_assoc _ _ _).symm
+  -- The degree derivations commute with the trace, which is restriction to `K` times the index.
+  have htrace (y : A) : degreeDerivation (ℓ.comp K.subtype) (Algebra.trace B A y) =
+      Algebra.trace B A (degreeDerivation ℓ y) := by
+    rw [trace_eq_index_smul_comap hφ hker, trace_eq_index_smul_comap hφ hker, map_nsmul,
+      comap_degreeDerivation]
+  rw [hℓ, ← hunit.mul_right_eq_zero, map_sub, mul_sub, mul_degreeDerivation_log _ hu',
+    coe_normNonnegSubring, ← hU, Derivation.leibniz_norm (degreeDerivation (ℓ.comp K.subtype))
+      (degreeDerivation ℓ) (degreeDerivation_algebraMap_addSubgroup ℓ), htrace,
+    hU, ← mul_degreeDerivation_log ℓ hu, ← hU, ← mul_assoc, Units.inv_mul, one_mul, sub_self]
 
 end TauCeti.NovikovSeries

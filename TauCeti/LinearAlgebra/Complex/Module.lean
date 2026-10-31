@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
+import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -23,6 +24,10 @@ Multiplication by `I` and by `-I` are mutually inverse on any complex multiplica
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
 linear (`LinearMap.complexOfMapISmul`, `ContinuousLinearMap.complexOfMapISmul`).
+
+Likewise an `ℝ`-algebra map out of the complex plane is determined by its value at `I`, so a
+conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds everywhere once it holds
+at `I` (`Units.conj_complexAlgHom_apply`).
 -/
 
 public section
@@ -132,3 +137,17 @@ theorem restrictScalars_complexOfMapISmul (u : V →L[ℝ] W)
 end ContinuousLinearMap
 
 end ComplexOfMapISmul
+
+namespace Units
+
+/-- **Conjugation of an `ℝ`-algebra map out of `ℂ` is detected on `Complex.I`.** If `g` agrees with
+the `w`-conjugate of `f` at `i` then it agrees with it everywhere: conjugation by `w` is an
+`ℝ`-algebra automorphism, and `ℝ`-algebra maps out of `ℂ` are determined by their value at `i`. -/
+theorem conj_complexAlgHom_apply {A : Type*} [Semiring A] [Algebra ℝ A] (w : Aˣ)
+    (f g : ℂ →ₐ[ℝ] A) (h : g Complex.I = (w : A) * f Complex.I * ((w⁻¹ : Aˣ) : A)) (z : ℂ) :
+    g z = (w : A) * f z * ((w⁻¹ : Aˣ) : A) := by
+  have hfg : g = (MulSemiringAction.toAlgHom ℝ A (ConjAct.toConjAct w)).comp f :=
+    Complex.algHom_ext (by simpa [ConjAct.units_smul_def] using h)
+  simpa [ConjAct.units_smul_def] using DFunLike.congr_fun hfg z
+
+end Units
