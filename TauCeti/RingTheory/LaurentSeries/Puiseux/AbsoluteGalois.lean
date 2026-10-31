@@ -138,16 +138,7 @@ theorem mem_fixingSubgroup_iff_of_finrank_eq (e : puiseuxField K ≃ₐ[K⸨X⸩
     σ ∈ E.fixingSubgroup ↔
       proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ (galEquivTateModuleOfAlgEquiv e σ) = 1 := by
   rw [galEquivTateModuleOfAlgEquiv_apply, ← mem_fixingSubgroup_level_iff,
-    eq_map_level_of_finrank_eq e h, IntermediateField.mem_fixingSubgroup_iff,
-    IntermediateField.mem_fixingSubgroup_iff]
-  refine ⟨fun hσ x hx ↦ ?_, fun hσ y ⟨x, hx, hxy⟩ ↦ ?_⟩
-  · rw [AlgEquiv.autCongr_apply, AlgEquiv.trans_apply, AlgEquiv.trans_apply, AlgEquiv.symm_symm,
-      hσ (e x) ⟨x, hx, rfl⟩, AlgEquiv.symm_apply_apply]
-  · have hx := hσ x hx
-    rw [AlgEquiv.autCongr_apply, AlgEquiv.trans_apply, AlgEquiv.trans_apply, AlgEquiv.symm_symm,
-      AlgEquiv.symm_apply_eq] at hx
-    subst hxy
-    exact hx
+    e.symm.autCongr_mem_fixingSubgroup_iff, AlgEquiv.symm_symm, eq_map_level_of_finrank_eq e h]
 
 end TauCeti.puiseuxField
 
