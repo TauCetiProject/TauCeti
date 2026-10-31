@@ -397,22 +397,15 @@ theorem pullbackSection_algebraMap (e : Iso I ω d d') (U : Opens (GluedCurve d'
     ((quotientSheafSectionsEquiv_algebraMap _ _ U c _).trans
       (quotientSheafSectionsEquiv_algebraMap _ _ _ c x).symm)
 
--- `sheafedSpaceHom_app` and `pullbackSection_algebraMap` already normalize this formula.
-/-- The descended section maps of a nodal isomorphism fix the constants. -/
-theorem sheafedSpaceHom_app_algebraMap (e : Iso I ω d d') (U : Opens (GluedCurve d'))
-    (c : ℂ) : (e.sheafedSpaceHom.hom.c.app (op U)).hom (algebraMap ℂ _ c) =
-      algebraMap ℂ ((sheafedSpace I d).presheaf.obj
-        (op ((Opens.map e.sheafedSpaceHom.hom.base).obj U))) c :=
-  e.pullbackSection_algebraMap U c
-
--- `sheafedSpaceIso_hom` reduces this formula to `sheafedSpaceHom_app_algebraMap`.
+-- `sheafedSpaceIso_hom`, `sheafedSpaceHom_app` and `pullbackSection_algebraMap` already
+-- normalize this formula.
 /-- The descended isomorphism of nodal sheafed spaces fixes the constants. -/
 theorem sheafedSpaceIso_hom_app_algebraMap (e : Iso I ω d d') (U : Opens (GluedCurve d'))
     (c : ℂ) : (e.sheafedSpaceIso.hom.hom.c.app (op U)).hom (algebraMap ℂ _ c) =
       algebraMap ℂ ((sheafedSpace I d).presheaf.obj
         (op ((Opens.map e.sheafedSpaceIso.hom.hom.base).obj U))) c := by
   rw [sheafedSpaceIso_hom]
-  exact e.sheafedSpaceHom_app_algebraMap U c
+  exact e.pullbackSection_algebraMap U c
 
 variable [Finite Flag] [Finite Flag'] [∀ i, T2Space (X i)] [∀ i, T2Space (X' i)]
 
