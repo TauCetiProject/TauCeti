@@ -49,6 +49,8 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
 
 * `TauCeti.constantCompositum_eq_top_iff`: an intermediate field into which `k'` maps is generated
   over `F` by the image of `k'` exactly when it is the compositum `F · k'`.
+* `TauCeti.constantCompositum_eq_top_iff_of_range_eq`: the compositum `F · k'` depends only on
+  the image of `F` in `F'`.
 * `TauCeti.constantCompositum_eq_top_of_eq_top`: if `F' = F · k'`, then `F' = E · k'` for every
   intermediate field `E` of `F' / F`.
 * `TauCeti.finrank_constantCompositum_mul_geometricDegree`: the tower law
@@ -136,6 +138,21 @@ theorem constantCompositum_def :
 theorem constantCompositum_le_iff {K : IntermediateField F F'} :
     constantCompositum F k' F' ≤ K ↔ ∀ c : k', algebraMap k' F' c ∈ K := by
   simp [constantCompositum_def, IntermediateField.adjoin_le_iff, Set.range_subset_iff]
+
+/-- **The compositum depends only on the image of the lower field**: if fields `E` and `F` have
+the same image in `F'`, then `E · k'` and `F · k'` are the same subfield of `F'`. -/
+theorem constantCompositum_toSubfield_eq_of_range_eq {E : Type*} [Field E] [Algebra E F']
+    (h : (algebraMap E F').range = (algebraMap F F').range) :
+    (constantCompositum E k' F').toSubfield = (constantCompositum F k' F').toSubfield := by
+  simp only [constantCompositum_def, adjoin_toSubfield, ← RingHom.coe_range, h]
+
+/-- If fields `E` and `F` have the same image in `F'`, then `F' = E · k'` exactly when
+`F' = F · k'`. -/
+theorem constantCompositum_eq_top_iff_of_range_eq {E : Type*} [Field E] [Algebra E F']
+    (h : (algebraMap E F').range = (algebraMap F F').range) :
+    constantCompositum E k' F' = ⊤ ↔ constantCompositum F k' F' = ⊤ := by
+  rw [← toSubfield_inj, ← toSubfield_inj, top_toSubfield, top_toSubfield,
+    constantCompositum_toSubfield_eq_of_range_eq F k' F' h]
 
 /-- **The compositum commutes with passing to an intermediate field**: if `k'` maps into an
 intermediate field `E` of `F' / F` compatibly with `F'`, the compositum `F · k'` formed inside `E`
