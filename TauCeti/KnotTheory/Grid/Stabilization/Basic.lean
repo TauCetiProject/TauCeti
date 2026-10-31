@@ -237,6 +237,23 @@ theorem transpose_insertPoint (x : GridState n) (newColumn newRow : Fin (n + 1))
     (x.insertPoint newColumn newRow).transpose = x.transpose.insertPoint newRow newColumn :=
   GridState.ext fun r ↦ by simp [insertPoint, transpose, Equiv.optionCongr_symm]
 
+/-- Diagonal reflection splits the transposed point across the exchanged row and column. -/
+theorem transpose_splitPoint (x : GridState n) (newColumn newRow : Fin (n + 1))
+    (splitColumn : Fin n) :
+    (x.splitPoint newColumn newRow splitColumn).transpose =
+      x.transpose.splitPoint newRow newColumn (x splitColumn) := by
+  refine GridState.ext fun r ↦ ?_
+  apply (x.splitPoint newColumn newRow splitColumn).toPerm.injective
+  rw [apply_transpose_apply]
+  induction r using Fin.succAboveCases newRow with
+  | x => simp
+  | p r =>
+    by_cases hr : r = x splitColumn
+    · subst r
+      simp
+    · have hc : x.toPerm.symm r ≠ splitColumn := fun h ↦ hr ((Equiv.symm_apply_eq x.toPerm).mp h)
+      simp [hr, hc]
+
 /-- Reversing both coordinates of a grid state with an inserted point reverses the coordinates of
 the inserted point. -/
 theorem rotate_insertPoint (x : GridState n) (newColumn newRow : Fin (n + 1)) :
