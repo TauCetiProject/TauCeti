@@ -13,14 +13,13 @@ import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 For nonnegative amplitude, increasing the squared modulus increases `legendreF` when the
 larger squared modulus is below `1`, and decreases `legendreE` for all real moduli.
-For the complete integrals the comparison is strict: `legendreK` is strictly
+For positive amplitude these comparisons are strict. In particular, `legendreK` is strictly
 increasing on `[0, 1)`, and `legendreEc` is strictly decreasing on `[0, ∞)`. Consequently
 `legendreEc k ≤ π / 2 ≤ legendreK k` on the nonsingular range, with equality only at zero.
 Squared-modulus comparisons also apply directly to negative moduli.
 
 These order properties follow by comparing the defining integrands, without differentiating
-in the modulus. For strictness the first-kind integrands differ at `π / 2`, and the
-second-kind integrands differ at a sufficiently small positive angle.
+in the modulus. For strictness the integrands differ at a sufficiently small positive angle.
 
 ## References
 
@@ -73,25 +72,30 @@ theorem antitoneOn_legendreE_modulus {φ : ℝ} (hφ : 0 ≤ φ) :
   intro k hk l hl hkl
   exact legendreE_le_of_sq_le hφ ((sq_le_sq₀ hk hl).2 hkl)
 
-/-- The complete first kind strictly increases with the squared modulus below `1`. -/
-theorem legendreK_lt_of_sq_lt {k l : ℝ} (hkl : k ^ 2 < l ^ 2) (hl : l ^ 2 < 1) :
-    legendreK k < legendreK l := by
-  rw [legendreK_def, legendreK_def, legendreF_def, legendreF_def]
-  refine integral_lt_integral_of_continuousOn_of_le_of_exists_lt pi_div_two_pos
+/-- For positive amplitude, the first kind strictly increases with the squared modulus
+when the larger squared modulus is below `1`. -/
+theorem legendreF_lt_of_sq_lt {φ k l : ℝ} (hφ : 0 < φ) (hkl : k ^ 2 < l ^ 2)
+    (hl : l ^ 2 < 1) : legendreF φ k < legendreF φ l := by
+  rw [legendreF_def, legendreF_def]
+  refine integral_lt_integral_of_continuousOn_of_le_of_exists_lt hφ
     (continuous_legendreF_integrand (hkl.trans hl)).continuousOn
     (continuous_legendreF_integrand hl).continuousOn ?_ ?_
   · intro θ _
     exact rpow_le_rpow_of_nonpos (one_sub_mul_sin_sq_pos hl θ)
       (sub_le_sub_left (mul_le_mul_of_nonneg_right hkl.le (sq_nonneg _)) 1) (by norm_num)
-  · refine ⟨π / 2, ⟨pi_div_two_pos.le, le_rfl⟩, ?_⟩
-    simp only [sin_pi_div_two, one_pow, mul_one]
-    exact rpow_lt_rpow_of_neg (by linarith) (by linarith) (by norm_num)
+  · obtain ⟨θ, hθpos, hθlt⟩ := exists_between (lt_min hφ pi_div_two_pos)
+    have hsin : 0 < sin θ := sin_pos_of_pos_of_lt_pi hθpos
+      (by linarith [(lt_min_iff.mp hθlt).2, pi_pos])
+    refine ⟨θ, ⟨hθpos.le, (lt_min_iff.mp hθlt).1.le⟩, ?_⟩
+    exact rpow_lt_rpow_of_neg (one_sub_mul_sin_sq_pos hl θ)
+      (sub_lt_sub_left (mul_lt_mul_of_pos_right hkl (sq_pos_of_pos hsin)) 1) (by norm_num)
 
-/-- The complete second kind strictly decreases with the squared modulus for all real moduli. -/
-theorem legendreEc_lt_of_sq_lt {k l : ℝ} (hkl : k ^ 2 < l ^ 2) :
-    legendreEc l < legendreEc k := by
-  rw [legendreEc_def, legendreEc_def, legendreE_def, legendreE_def]
-  refine integral_lt_integral_of_continuousOn_of_le_of_exists_lt pi_div_two_pos
+/-- For positive amplitude, the second kind strictly decreases with the squared modulus
+for all real moduli. -/
+theorem legendreE_lt_of_sq_lt {φ k l : ℝ} (hφ : 0 < φ) (hkl : k ^ 2 < l ^ 2) :
+    legendreE φ l < legendreE φ k := by
+  rw [legendreE_def, legendreE_def]
+  refine integral_lt_integral_of_continuousOn_of_le_of_exists_lt hφ
     (continuous_legendreE_integrand l).continuousOn
     (continuous_legendreE_integrand k).continuousOn ?_ ?_
   · intro θ _
@@ -101,14 +105,24 @@ theorem legendreEc_lt_of_sq_lt {k l : ℝ} (hkl : k ^ 2 < l ^ 2) :
     obtain ⟨δ, hδ, hδpos⟩ := Metric.eventually_nhds_iff.mp
       (continuousAt_const.eventually_lt hcont
         (by norm_num : (0 : ℝ) < 1 - l ^ 2 * sin 0 ^ 2))
-    obtain ⟨θ, hθpos, hθlt⟩ := exists_between (lt_min hδ pi_div_two_pos)
+    obtain ⟨θ, hθpos, hθlt⟩ := exists_between (lt_min hδ (lt_min hφ pi_div_two_pos))
     have hpos : 0 < 1 - l ^ 2 * sin θ ^ 2 := hδpos
       (by simpa [Real.dist_eq, abs_of_pos hθpos] using (lt_min_iff.mp hθlt).1)
     have hsin : 0 < sin θ := sin_pos_of_pos_of_lt_pi hθpos
-      (by linarith [(lt_min_iff.mp hθlt).2, pi_pos])
-    refine ⟨θ, ⟨hθpos.le, (lt_min_iff.mp hθlt).2.le⟩, ?_⟩
+      (by linarith [(lt_min_iff.mp (lt_min_iff.mp hθlt).2).2, pi_pos])
+    refine ⟨θ, ⟨hθpos.le, (lt_min_iff.mp (lt_min_iff.mp hθlt).2).1.le⟩, ?_⟩
     exact rpow_lt_rpow hpos.le
       (sub_lt_sub_left (mul_lt_mul_of_pos_right hkl (sq_pos_of_pos hsin)) 1) (by norm_num)
+
+/-- The complete first kind strictly increases with the squared modulus below `1`. -/
+theorem legendreK_lt_of_sq_lt {k l : ℝ} (hkl : k ^ 2 < l ^ 2) (hl : l ^ 2 < 1) :
+    legendreK k < legendreK l := by
+  simpa only [legendreK_def] using legendreF_lt_of_sq_lt pi_div_two_pos hkl hl
+
+/-- The complete second kind strictly decreases with the squared modulus for all real moduli. -/
+theorem legendreEc_lt_of_sq_lt {k l : ℝ} (hkl : k ^ 2 < l ^ 2) :
+    legendreEc l < legendreEc k := by
+  simpa only [legendreEc_def] using legendreE_lt_of_sq_lt pi_div_two_pos hkl
 
 /-- `K` is strictly increasing on `[0, 1)`. -/
 theorem strictMonoOn_legendreK : StrictMonoOn legendreK (Ico 0 1) := by
