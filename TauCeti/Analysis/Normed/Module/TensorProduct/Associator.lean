@@ -410,15 +410,12 @@ noncomputable def comm : CompletedProjectiveTensor 𝕜 E F ≃ₗᵢ[𝕜] Comp
 /-- On algebraic tensors, the symmetry is `ProjectiveTensor.comm`. -/
 @[simp]
 theorem comm_coe (u : ProjectiveTensor 𝕜 E F) : comm 𝕜 E F u = ProjectiveTensor.comm 𝕜 E F u :=
-  LinearIsometryEquiv.completion_coe _ u
+  LinearIsometryEquiv.completion_apply_coe _ u
 
 /-- The symmetry is its own inverse. -/
 @[simp]
 theorem comm_symm : (comm 𝕜 E F).symm = comm 𝕜 F E := by
-  ext u : 1
-  induction u using Completion.induction_on with
-  | hp => exact isClosed_eq (comm 𝕜 E F).symm.continuous (comm 𝕜 F E).continuous
-  | ih u => simp [comm]
+  rw [comm, comm, LinearIsometryEquiv.completion_symm, ProjectiveTensor.comm_symm]
 
 variable (𝕜 E) in
 /-- The scalar-unit isometry `a ⊗ₜ x ↦ a • x` from `𝕜 ⊗̂π E` to the completion of `E`. -/
@@ -428,7 +425,7 @@ noncomputable def lid : CompletedProjectiveTensor 𝕜 𝕜 E ≃ₗᵢ[𝕜] Co
 /-- On algebraic tensors, the scalar-unit isometry is `ProjectiveTensor.lid`. -/
 @[simp]
 theorem lid_coe (u : ProjectiveTensor 𝕜 𝕜 E) : lid 𝕜 E u = ProjectiveTensor.lid 𝕜 E u :=
-  LinearIsometryEquiv.completion_coe _ u
+  LinearIsometryEquiv.completion_apply_coe _ u
 
 /-- The inverse of the scalar-unit isometry sends `x` to `1 ⊗ₜ x`. -/
 @[simp]
@@ -443,7 +440,7 @@ noncomputable def rid : CompletedProjectiveTensor 𝕜 E 𝕜 ≃ₗᵢ[𝕜] Co
 /-- On algebraic tensors, the scalar-unit isometry is `ProjectiveTensor.rid`. -/
 @[simp]
 theorem rid_coe (u : ProjectiveTensor 𝕜 E 𝕜) : rid 𝕜 E u = ProjectiveTensor.rid 𝕜 E u :=
-  LinearIsometryEquiv.completion_coe _ u
+  LinearIsometryEquiv.completion_apply_coe _ u
 
 /-- The inverse of the scalar-unit isometry sends `x` to `x ⊗ₜ 1`. -/
 @[simp]
@@ -466,7 +463,7 @@ noncomputable def lid : CompletedInjectiveTensor 𝕜 𝕜 E ≃ₗᵢ[𝕜] Com
 /-- On algebraic tensors, the scalar-unit isometry is `InjectiveTensor.lid`. -/
 @[simp]
 theorem lid_coe (u : InjectiveTensor 𝕜 𝕜 E) : lid 𝕜 E u = InjectiveTensor.lid 𝕜 E u :=
-  LinearIsometryEquiv.completion_coe _ u
+  LinearIsometryEquiv.completion_apply_coe _ u
 
 /-- The inverse of the scalar-unit isometry sends `x` to `1 ⊗ₜ x`. -/
 @[simp]
@@ -489,15 +486,12 @@ noncomputable def comm : CompletedInjectiveTensor 𝕜 E F ≃ₗᵢ[𝕜] Compl
 /-- On algebraic tensors, the symmetry is `InjectiveTensor.comm`. -/
 @[simp]
 theorem comm_coe (u : InjectiveTensor 𝕜 E F) : comm 𝕜 E F u = InjectiveTensor.comm 𝕜 E F u :=
-  LinearIsometryEquiv.completion_coe _ u
+  LinearIsometryEquiv.completion_apply_coe _ u
 
 /-- The symmetry is its own inverse. -/
 @[simp]
 theorem comm_symm : (comm 𝕜 E F).symm = comm 𝕜 F E := by
-  ext u : 1
-  induction u using Completion.induction_on with
-  | hp => exact isClosed_eq (comm 𝕜 E F).symm.continuous (comm 𝕜 F E).continuous
-  | ih u => simp [comm]
+  rw [comm, comm, LinearIsometryEquiv.completion_symm, InjectiveTensor.comm_symm]
 
 variable (𝕜 E) in
 /-- Over `ℝ` and `ℂ`, the scalar-unit isometry `x ⊗ₜ a ↦ a • x` from `E ⊗̂ε 𝕜` to the completion
@@ -508,7 +502,7 @@ noncomputable def rid : CompletedInjectiveTensor 𝕜 E 𝕜 ≃ₗᵢ[𝕜] Com
 /-- On algebraic tensors, the scalar-unit isometry is `InjectiveTensor.rid`. -/
 @[simp]
 theorem rid_coe (u : InjectiveTensor 𝕜 E 𝕜) : rid 𝕜 E u = InjectiveTensor.rid 𝕜 E u :=
-  LinearIsometryEquiv.completion_coe _ u
+  LinearIsometryEquiv.completion_apply_coe _ u
 
 /-- The inverse of the scalar-unit isometry sends `x` to `x ⊗ₜ 1`. -/
 @[simp]
