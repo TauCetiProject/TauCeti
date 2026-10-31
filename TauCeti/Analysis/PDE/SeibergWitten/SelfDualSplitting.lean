@@ -43,8 +43,8 @@ imaginary form `i q(ψ)`, so `q(u₀) = ω / 4` is the identity `q(u₀) = i ω 
 * `isStarProjection_cliffordProjection`: for self-dual `ω` with `‖ω‖² = 2`, `P_α` is an orthogonal
   projection.
 * `cliffordProjection_apply_eq_self_iff`,
-  `bivectorExterior_apply_of_cliffordProjection_apply_eq_self`: the range of `P_α` is the
-  `2`-eigenspace of `C(iω)`, on which `c₂(ω)` acts by `-2i`.
+  `bivectorExterior_apply_of_cliffordProjection_apply_eq_self`: the fixed vectors of `P_α` are
+  the `2`-eigenvectors of `C(iω)`, on which `c₂(ω)` acts by `-2i`.
 * `finrank_range_cliffordProjection`: in complex dimension two, the range of `P_α` is a line.
 * `rankOne_eq_smul_cliffordProjection`: `ψψ* = ‖ψ‖² P_α` for `ψ` in that line.
 * `coe_quadraticTwoForm_of_cliffordProjection_apply_eq_self`,
@@ -129,7 +129,7 @@ theorem cliffordProjection_neg_apply (ψ : positiveHalfSpinors o ρ) :
   rw [cliffordProjection_neg, sub_apply, one_apply_eq_self]
 
 variable {ω} in
-/-- The range of `P_α` is the `2`-eigenspace of `C(iω)`: `P_α ψ = ψ` exactly when
+/-- The fixed vectors of `P_α` are the `2`-eigenvectors of `C(iω)`: `P_α ψ = ψ` exactly when
 `C(iω) ψ = 2 ψ`. -/
 theorem cliffordProjection_apply_eq_self_iff {ψ : positiveHalfSpinors o ρ} :
     cliffordProjection o ρ ω ψ = ψ ↔ cliffordRestriction o ρ ω ψ = (2 : ℂ) • ψ := by
@@ -140,8 +140,8 @@ theorem cliffordProjection_apply_eq_self_iff {ψ : positiveHalfSpinors o ρ} :
   · linear_combination (norm := module) (4⁻¹ : ℂ) • h
 
 variable {ω} in
-/-- On the range of `P_α`, the Clifford action of `ω` is multiplication by `-2i`: this range is
-the `-2i`-eigenspace of `c₂(ω)`. -/
+/-- On the fixed vectors of `P_α`, the Clifford action of `ω` is multiplication by `-2i`: they are
+`-2i`-eigenvectors of `c₂(ω)`. -/
 theorem bivectorExterior_apply_of_cliffordProjection_apply_eq_self {ψ : positiveHalfSpinors o ρ}
     (hψ : cliffordProjection o ρ ω ψ = ψ) :
     ρ (bivectorExterior Q ω) ψ = (-2 * Complex.I) • (ψ : W) := by
@@ -348,12 +348,15 @@ theorem inner_quadraticTwoFormPolar_of_cliffordProjection {φ β : positiveHalfS
   rw [trace_quadraticEndPolar_mul_of_mem_traceFreeSelfAdjoint
     (cliffordRestriction_mem_traceFreeSelfAdjoint o hQ hρ ω)] at h
   simp only [Submodule.coe_inner] at h
-  -- `C(iω) φ = 2 φ` is orthogonal to `β = P_β β`, as `P_α` is self-adjoint.
+  -- `φ` is orthogonal to `β`, as `P_α` is self-adjoint.
+  have hφβ : ⟪φ, β⟫_ℂ = 0 :=
+    calc ⟪φ, β⟫_ℂ = ⟪cliffordProjection o ρ ω φ, β⟫_ℂ := by rw [hφ]
+      _ = ⟪φ, cliffordProjection o ρ ω β⟫_ℂ :=
+        (isSelfAdjoint_cliffordProjection o ω hρ).isSymmetric φ β
+      _ = 0 := by rw [hβ, inner_zero_right]
+  -- Hence so is `C(iω) φ = 2 φ`.
   have horth : ⟪cliffordRestriction o ρ ω φ, β⟫_ℂ = 0 := by
-    rw [(cliffordProjection_apply_eq_self_iff o ρ).1 hφ, inner_smul_left, ← hφ,
-      ← ContinuousLinearMap.coe_coe,
-      (isSelfAdjoint_cliffordProjection o ω hρ).isSymmetric φ β, ContinuousLinearMap.coe_coe,
-      hβ, inner_zero_right, mul_zero]
+    rw [(cliffordProjection_apply_eq_self_iff o ρ).1 hφ, inner_smul_left, hφβ, mul_zero]
   rw [quadraticTwoFormPolar_apply, Submodule.coe_smul, real_inner_smul_left, h,
     ← Submodule.coe_inner, horth]
   simp
