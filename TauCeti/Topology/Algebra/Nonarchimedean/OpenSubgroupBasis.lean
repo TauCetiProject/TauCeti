@@ -32,11 +32,10 @@ namespace NonarchimedeanGroup
 
 variable (G : Type*) [Group G] [TopologicalSpace G] [NonarchimedeanGroup G]
 
-/-- **The open subgroups form a basis of `𝓝 1`.** One direction is the defining property of
-`NonarchimedeanGroup`; the other is that an open subgroup is a neighbourhood of one. -/
-@[to_additive /-- **The open additive subgroups form a basis of `𝓝 0`.** One direction is the
-defining property of `NonarchimedeanAddGroup`; the other is that an open additive subgroup is a
-neighbourhood of zero. -/]
+/-- **The open subgroups form a basis of `𝓝 1`:** a set is a neighbourhood of `1` if and only if
+it contains an open subgroup. -/
+@[to_additive /-- **The open additive subgroups form a basis of `𝓝 0`:** a set is a neighbourhood
+of `0` if and only if it contains an open additive subgroup. -/]
 theorem nhds_one_hasBasis_openSubgroup :
     (𝓝 (1 : G)).HasBasis (fun _ : OpenSubgroup G ↦ True) fun V ↦ (V : Set G) :=
   ⟨fun _ ↦ ⟨fun hS ↦ (is_nonarchimedean _ hS).imp fun _ hV ↦ ⟨trivial, hV⟩,
