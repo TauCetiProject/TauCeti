@@ -97,7 +97,8 @@ Those comparisons are not made here.
   keeps the Alexander polynomial and the Tristram–Levine signatures of the Seifert matrix.
 * `TauCeti.BraidWord.alexander_seifertMatrix_trefoil` and
   `TauCeti.BraidWord.signature_seifertMatrix_trefoil`: the right-handed trefoil.
-* `TauCeti.BraidWord.signature_seifertMatrix_mirrorTrefoil`: the left-handed trefoil.
+* `TauCeti.BraidWord.alexander_seifertMatrix_mirrorTrefoil` and
+  `TauCeti.BraidWord.signature_seifertMatrix_mirrorTrefoil`: the left-handed trefoil.
 * `TauCeti.BraidWord.alexander_seifertMatrix_figureEight` and
   `TauCeti.BraidWord.signature_seifertMatrix_figureEight`: the figure-eight knot.
 
@@ -1187,6 +1188,14 @@ theorem signature_seifertMatrix_mirrorTrefoil :
   obtain ⟨e, he⟩ := seifertMatrix_mirrorTrefoil
   rw [← Matrix.signature_submatrix_equiv_self e.symm, e.symm_symm, Matrix.submatrix_map, he,
     Matrix.map_neg _ Int.cast_neg, Matrix.signature_neg, signature_trefoilSeifertMatrix, neg_neg]
+
+/-- The Seifert matrix of the braid `σ₁⁻³` has the Alexander polynomial `t - 1 + t⁻¹` of the
+left-handed trefoil, the same as for the right-handed one. -/
+theorem alexander_seifertMatrix_mirrorTrefoil :
+    alexander (seifertMatrix (n := 2) [(0, -1), (0, -1), (0, -1)]) = T 1 - 1 + T (-1) := by
+  obtain ⟨e, he⟩ := seifertMatrix_mirrorTrefoil
+  rw [← Matrix.alexander_submatrix_equiv_self _ e, he,
+    alexander_neg (g := 1) _ (Fintype.card_fin 2), alexander_trefoilSeifertMatrix]
 
 /-- The closure of `σ₁ σ₂⁻¹ σ₁ σ₂⁻¹` is the figure-eight knot. Its canonical Seifert surface has
 the loop `(1, 3)` on the upper level and `(0, 2)` on the lower one, and in that basis its Seifert
