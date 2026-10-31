@@ -14,10 +14,10 @@ public import TauCeti.Topology.Homotopy.Extension.Ball
 Projection from height two above the cube's centre gives a deformation `cubeLiftDeform`
 from the bottom-and-sides subspace to each point of the cylinder, reaching that point at
 `cubeLiftTime`. This time vanishes exactly on `cylinderExtensionDomain (Cube.boundary N)`.
-The construction includes the zero-dimensional cube. It generalizes the radial square
-argument of `TauCeti.Topology.Homotopy.OpenBoxLifting` and is now shared by that module
-and relative finite-cube lifting for Serre fibrations. Its denominator and initial projection
-reuse the unit-ball radial projection from `TauCeti.Topology.Homotopy.Extension.Ball` through
+The construction includes the zero-dimensional cube. It is the geometric input for relative
+homotopy lifting along the bottom-and-sides inclusion of `I × Iᴺ`; the square (`N = Unit`)
+is the open-box case. Its denominator and initial projection reuse the unit-ball radial projection
+from `TauCeti.Topology.Homotopy.Extension.Ball` through
 `cubeHomeomorphClosedBall`.
 
 ## References
@@ -158,5 +158,44 @@ theorem cubeLiftTime_eq_zero_iff (x : I × (N → I)) :
   have he := cubeLiftDeform_time x
   rw [ht] at he
   exact he ▸ cubeLiftDeform_zero_mem x
+
+/-- The initial radial projection of the top face lands on the bottom for radius at most
+`1 / 2`, and otherwise rescales by the reciprocal radius. -/
+theorem cubeLiftDeform_zero_one (z : N → I) :
+    cubeLiftDeform 0 (1, z) =
+      if cubeRadius z ≤ 1 / 2 then (0, cubeScale 2 z)
+      else (projIcc 0 1 zero_le_one (2 - 1 / cubeRadius z),
+        cubeScale (1 / cubeRadius z) z) := by
+  have ht := (cubeLiftTime_mem ((1 : I), z)).1
+  by_cases hz : cubeRadius z ≤ 1 / 2
+  · have hd : cubeLiftDen ((1 : I), z) = 1 := by
+      rw [cubeLiftDen_def]
+      norm_num only [Icc.coe_one]
+      exact max_eq_left (by linarith)
+    rw [ite_eq_left hz]
+    norm_num [cubeLiftDeform_def, cubeLiftTime_def, hd]
+  · have hd : cubeLiftDen ((1 : I), z) = 2 * cubeRadius z := by
+      rw [cubeLiftDen_def]
+      norm_num only [Icc.coe_one]
+      exact max_eq_right (by linarith)
+    have he : 2 / (2 * cubeRadius z) = 1 / cubeRadius z := by ring
+    rw [ite_eq_right hz]
+    simp only [cubeLiftDeform_def, Icc.coe_zero, min_eq_right ht, sub_zero]
+    rw [cubeLiftTime_def, hd, he]
+    simp only [Icc.coe_one]
+    have ha : (1 : ℝ) + (1 / cubeRadius z - 1) * (1 - 2) =
+        2 - 1 / cubeRadius z := by ring
+    rw [ha]
+    congr 2
+    ring
+
+/-- Above radius `1 / 2`, the initial projection of the top face lies on a boundary side. -/
+theorem cubeLiftDeform_zero_one_snd_mem_boundary {z : N → I} (hz : 1 / 2 < cubeRadius z) :
+    (cubeLiftDeform 0 (1, z)).2 ∈ Cube.boundary N := by
+  rw [cubeLiftDeform_zero_one, ite_eq_right (not_le_of_gt hz)]
+  have hr : cubeRadius z ≠ 0 := ne_of_gt (lt_trans (by norm_num) hz)
+  have hs : 0 ≤ 1 / cubeRadius z := le_of_lt (one_div_pos.2 (lt_trans (by norm_num) hz))
+  apply (cubeRadius_eq_one_iff _).1
+  rw [cubeRadius_cubeScale hs (by simp [hr]), one_div_mul_cancel hr]
 
 end TauCeti

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.ContinuousMap.GlueHalves
-public import TauCeti.Topology.Homotopy.HurewiczFibration.RelativeLifting
-public import TauCeti.Topology.Homotopy.Cube.OpenBox
+public import TauCeti.Topology.Homotopy.HurewiczFibration.Basic
+public import TauCeti.Topology.Homotopy.Lifting.OpenBox
 
 /-!
 # Relative homotopy lifting for the open box
@@ -68,36 +68,17 @@ theorem IsHurewiczFibration.exists_lift_openBox (hp : IsHurewiczFibration.{w} p)
       x ∈ cylinderExtensionDomain (Cube.boundary Unit) ↔
         (d x).2 = 0 ∨ (d x).1 = 0 ∨ (d x).1 = 1 := by
     simp [mem_cylinderExtensionDomain_iff, Cube.boundary, d, Unique.exists_iff]
-  let deform (s : I) (x : I × I) := d (cubeLiftDeform s (e x))
-  have continuous_deform : Continuous fun y : I × (I × I) ↦ deform y.1 y.2 :=
-    hd.comp (continuous_cubeLiftDeform.comp
-      (continuous_fst.prodMk (he.comp continuous_snd)))
-  have deform_zero_isBox (x : I × I) :
-      (deform 0 x).2 = 0 ∨ (deform 0 x).1 = 0 ∨ (deform 0 x).1 = 1 :=
-    (hbox _).1 (cubeLiftDeform_zero_mem (e x))
-  let τ : C(I × I, I) :=
-    ⟨fun x ↦ ⟨cubeLiftTime (e x), cubeLiftTime_mem (e x)⟩,
-      (continuous_cubeLiftTime.comp he).subtype_mk _⟩
-  let J : Set (A × (I × I)) := {y | y.2.2 = 0 ∨ y.2.1 = 0 ∨ y.2.1 = 1}
-  let r : C(A × (I × I), J) :=
-    ⟨fun y ↦ ⟨(y.1, deform 0 y.2), deform_zero_isBox y.2⟩,
-      (continuous_fst.prodMk (continuous_deform.comp
-        (continuous_const.prodMk continuous_snd))).subtype_mk _⟩
-  -- Apply fixed-data relative lifting to the product of the radial retraction with `A`.
-  obtain ⟨G, hG, hGJ⟩ := (hp.hasHomotopyLiftingProperty _).zeroSetSDR_liftingInclusion
-    (τ.comp ContinuousMap.snd)
-    (fun y ↦ (Subtype.ext_iff.trans (cubeLiftTime_eq_zero_iff (e y.2))).trans (hbox (e y.2)))
-    r ⟨{
-      toFun := fun y ↦ (y.2.1, deform (σ y.1) y.2.2)
-      continuous_toFun := (continuous_fst.comp continuous_snd).prodMk
-        (continuous_deform.comp ((continuous_symm.comp continuous_fst).prodMk
-          (continuous_snd.comp continuous_snd)))
-      map_zero_left := fun y ↦ by simp [deform, e, d]
-      map_one_left := fun _ ↦ by simp [r]
-      prop' := fun s y hy ↦ by
-        simp [deform, cubeLiftDeform_of_mem (σ s) ((hbox (e y.2)).2 hy), e, d] }⟩
-    (g.restrict J) H (fun y ↦ hg y.1.1 y.1.2 y.2)
-  exact ⟨G, hG, fun a x hx ↦ hGJ ⟨(a, x), hx⟩⟩
+  let D : C(A × (I × (Unit → I)), A × (I × I)) :=
+    ⟨fun y ↦ (y.1, d y.2), continuous_fst.prodMk (hd.comp continuous_snd)⟩
+  let f : C({y : A × (I × (Unit → I)) |
+      y.2 ∈ cylinderExtensionDomain (Cube.boundary Unit)}, E) :=
+    (g.comp D).restrict _
+  obtain ⟨G, hG, hGJ⟩ := (hp.hasHomotopyLiftingProperty _).exists_lift_openBox
+    f (H.comp D) (fun y ↦ hg y.1.1 (d y.1.2) ((hbox _).1 y.2))
+  refine ⟨G.comp ⟨fun y ↦ (y.1, e y.2),
+    continuous_fst.prodMk (he.comp continuous_snd)⟩, funext fun y ↦ ?_, fun a x hx ↦ ?_⟩
+  · simpa [D, e, d] using congrFun hG (y.1, e y.2)
+  · simpa [f, D, e, d] using hGJ ⟨(a, e x), (hbox (e x)).2 hx⟩
 
 section Endpoints
 

@@ -246,41 +246,13 @@ transported loop exactly. -/
 private theorem HomotopyAlong.map_cubeLiftDeform {γ : Path x y} {f : Ω^ N X x} {g : Ω^ N X y}
     (h : HomotopyAlong γ f g) (z : I^N) :
     h.toHomotopy (cubeLiftDeform 0 (1, z)) = transport γ f z := by
-  have ht := (cubeLiftTime_mem ((1 : I), z)).1
   rw [transport_apply_eq]
   by_cases hz : cubeRadius z ≤ 1 / 2
-  · have hd : cubeLiftDen ((1 : I), z) = 1 := by
-      rw [cubeLiftDen_def]
-      norm_num only [Set.Icc.coe_one, sub_self, Nat.cast_ofNat, sub_zero]
-      exact max_eq_left (by linarith)
-    rw [ite_eq_left hz]
-    norm_num [cubeLiftDeform_def, cubeLiftTime_def, hd]
-  · have hd : cubeLiftDen ((1 : I), z) = 2 * cubeRadius z := by
-      rw [cubeLiftDen_def]
-      norm_num only [Set.Icc.coe_one]
-      exact max_eq_right (by linarith)
-    have he : 2 / (2 * cubeRadius z) = 1 / cubeRadius z := by ring
-    have hp : cubeLiftDeform 0 ((1 : I), z) =
-        (Set.projIcc (0 : ℝ) 1 zero_le_one (2 - 1 / cubeRadius z),
-          cubeScale (1 / cubeRadius z) z) := by
-      simp only [cubeLiftDeform_def, Set.Icc.coe_zero, min_eq_right ht, sub_zero]
-      rw [cubeLiftTime_def, hd, he]
-      simp only [Set.Icc.coe_one]
-      have ha : (1 : ℝ) + (1 / cubeRadius z - 1) * (1 - 2) =
-          2 - 1 / cubeRadius z := by ring
-      rw [ha]
-      simp
-    have hland := cubeLiftDeform_zero_mem ((1 : I), z)
-    rw [hp, mem_cylinderExtensionDomain_iff] at hland
-    have hb : cubeScale (1 / cubeRadius z) z ∈ Cube.boundary N := by
-      rcases hland with ht | hb
-      · have hpos : 0 < cubeRadius z := by linarith
-        have htime : 0 < 2 - 1 / cubeRadius z := by
-          rw [sub_pos, div_lt_iff₀ hpos]
-          linarith
-        exact (htime.not_ge ((Set.projIcc_eq_left (by norm_num : (0 : ℝ) < 1)).1 ht)).elim
-      · exact hb
-    rw [ite_eq_right hz, max_eq_left (le_of_not_ge hz), hp]
+  · rw [cubeLiftDeform_zero_one, ite_eq_left hz, ite_eq_left hz]
+    exact h.map_zero_left _
+  · have hb := cubeLiftDeform_zero_one_snd_mem_boundary (lt_of_not_ge hz)
+    rw [cubeLiftDeform_zero_one, ite_eq_right hz] at hb ⊢
+    rw [ite_eq_right hz, max_eq_left (le_of_not_ge hz)]
     exact h.map_boundary _ _ hb
 
 /-- **Canonicity of the transported loop.** A homotopy along `γ` starting at `f` ends at a

@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.SerreFibration.Basic
-public import TauCeti.Topology.Homotopy.HurewiczFibration.RelativeLifting
-public import TauCeti.Topology.Homotopy.Cube.OpenBox
+public import TauCeti.Topology.Homotopy.Lifting.OpenBox
 
 /-!
 # Serre lifting with prescribed cube boundaries
@@ -40,33 +39,6 @@ open Set unitInterval
 
 namespace TauCeti
 
-variable {N : Type*} [Finite N]
-variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B] {p : E → B}
-
-/-- A map with the homotopy lifting property for the cube cylinder lifts a homotopy on the
-cube with arbitrary prescribed, compatible lifts on its bottom face and boundary cylinder. -/
-theorem HasHomotopyLiftingProperty.exists_lift_openBox
-    (hp : HasHomotopyLiftingProperty p (I × (N → I)))
-    (f : C(cylinderExtensionDomain (Cube.boundary N), E)) (H : C(I × (N → I), B))
-    (hf : ∀ x, p (f x) = H x) :
-    ∃ G : C(I × (N → I), E), p ∘ G = H ∧
-      ∀ x : cylinderExtensionDomain (Cube.boundary N), G x = f x := by
-  let := Fintype.ofFinite N
-  let r : C(I × (N → I), cylinderExtensionDomain (Cube.boundary N)) :=
-    ⟨fun x ↦ ⟨cubeLiftDeform 0 x, cubeLiftDeform_zero_mem x⟩,
-      (continuous_cubeLiftDeform.comp (continuous_const.prodMk continuous_id)).subtype_mk _⟩
-  let τ : C(I × (N → I), I) :=
-    ⟨fun x ↦ ⟨cubeLiftTime x, cubeLiftTime_mem x⟩, continuous_cubeLiftTime.subtype_mk _⟩
-  apply hp.zeroSetSDR_liftingInclusion τ
-    (fun x ↦ Subtype.ext_iff.trans (cubeLiftTime_eq_zero_iff x)) r ?_ f H hf
-  exact ⟨{
-    toFun := fun y ↦ cubeLiftDeform (σ y.1) y.2
-    continuous_toFun := continuous_cubeLiftDeform.comp
-      ((continuous_symm.comp continuous_fst).prodMk continuous_snd)
-    map_zero_left := fun x ↦ by simp
-    map_one_left := fun _ ↦ by simp [r]
-    prop' := fun s _ hx ↦ cubeLiftDeform_of_mem (σ s) hx }⟩
-
 namespace TopCat
 
 open CategoryTheory
@@ -84,7 +56,14 @@ theorem exists_lift_openBox_of_mem_serreFibrations {E B : TopCat.{u}} {p : E ⟶
       ∀ x : cylinderExtensionDomain (Cube.boundary (Fin n)), G x = f x := by
   have h := (mem_serreFibrations_iff_cube.1 hp (n + 1)).of_homeomorph
     (cubeSplitHomeomorph n).symm
-  exact h.exists_lift_openBox f H hf
+  let f' : C({y : Unit × (I × (Fin n → I)) |
+      y.2 ∈ cylinderExtensionDomain (Cube.boundary (Fin n))}, E) :=
+    f.comp ⟨fun y ↦ ⟨y.1.2, y.2⟩, by fun_prop⟩
+  obtain ⟨G, hG, hGJ⟩ := (h.of_homeomorph (Homeomorph.uniqueProd Unit _)).exists_lift_openBox
+    f' (H.comp ContinuousMap.snd) (fun y ↦ hf ⟨y.1.2, y.2⟩)
+  refine ⟨G.comp ⟨fun x ↦ ((), x), by fun_prop⟩,
+    funext fun x ↦ congrFun hG ((), x), fun x ↦ ?_⟩
+  exact hGJ ⟨((), x.1), x.2⟩
 
 end TopCat
 
