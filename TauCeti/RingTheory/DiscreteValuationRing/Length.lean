@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.Basic
+public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
 
 /-!
 # Length of a quotient of a discrete valuation ring
@@ -30,11 +31,8 @@ theorem length_quotient_eq_multiplicity (I : Ideal R) (hI : I ≠ ⊥) :
     intro hzero
     apply hI
     rw [← span_singleton_generator I, hzero, span_singleton_zero]
-  have h := Order.coheight_orderIso (IsDiscreteValuationRing.idealOrderIsoENat R) I
-  rw [IsDiscreteValuationRing.idealOrderIsoENat_apply, Order.coheight_toDual,
-    Order.height_enat] at h
-  rw [Module.length_quotient, ← h,
-    TauCeti.IsDiscreteValuationRing.addVal_eq_multiplicity_span_singleton hgen,
-    span_singleton_generator]
+  rw [← span_singleton_generator I]
+  exact (Ring.ord_eq_addVal _).trans
+    (TauCeti.IsDiscreteValuationRing.addVal_eq_multiplicity_span_singleton hgen)
 
 end Ideal
