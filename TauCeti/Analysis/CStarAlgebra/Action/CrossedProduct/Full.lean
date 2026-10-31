@@ -24,7 +24,9 @@ type synonym `FullConvolutionAlgebra α μ`. Since the full seminorm is a submul
 star-invariant seminorm satisfying the C⋆-identity, the completion
 `FullCrossedProduct α μ` is a nonunital C⋆-algebra. The canonical ⋆-homomorphism
 `FullCrossedProduct.of` from the twisted convolution algebra has dense range, and
-`‖of f‖ = ‖f‖ᵤ`. It is injective whenever `A` has a faithful representation in its own universe.
+`‖of f‖ = ‖f‖ᵤ`. It is injective whenever `A` has a faithful representation in its own universe
+and `μ` is inner regular for compact sets on sets of finite measure
+(`μ.InnerRegularCompactLTTop`).
 
 Every integrated form `π ⋊ U` of a covariant representation on a Hilbert space in the universe
 `max u v` extends uniquely to a ⋆-homomorphism `CovariantRepresentation.integratedFull` on the
@@ -46,8 +48,8 @@ assumed.
 ## Main statements
 
 * `TauCeti.CStarAction.FullCrossedProduct.norm_of`: `‖of f‖ = ‖f‖ᵤ`.
-* `TauCeti.CStarAction.FullCrossedProduct.of_injective`: given a faithful representation of `A`,
-  the canonical map is injective.
+* `TauCeti.CStarAction.FullCrossedProduct.of_injective`: given a faithful representation of `A`
+  and `μ.InnerRegularCompactLTTop`, the canonical map is injective.
 * `TauCeti.CStarAction.FullCrossedProduct.starAlgHom_ext`: ⋆-homomorphisms out of the full
   crossed product are determined on the twisted convolution algebra.
 * `TauCeti.CStarAction.FullCrossedProduct.norm_le_iff`: the norm of the full crossed product is
@@ -198,7 +200,7 @@ variable [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G] [μ.IsHaa
 variable (α μ) in
 /-- The full crossed product `A ⋊_α G` of the C⋆-dynamical system `(A, G, α)`: the completion of
 the twisted convolution algebra in the full C⋆-seminorm. It is a nonunital C⋆-algebra, and
-`FullCrossedProduct.of` embeds the twisted convolution algebra densely. -/
+the canonical map `FullCrossedProduct.of` from the twisted convolution algebra has dense range. -/
 @[expose] def FullCrossedProduct : Type (max u v) :=
   Completion (FullConvolutionAlgebra α μ)
 
@@ -265,8 +267,9 @@ theorem induction_on {p : FullCrossedProduct α μ → Prop} (x : FullCrossedPro
     (hp : IsClosed {x | p x}) (ih : ∀ f, p (of α μ f)) : p x :=
   Completion.induction_on (p := p) x hp fun f => coe_eq_of f ▸ ih (ofFull f)
 
-/-- If `A` has a faithful representation on a Hilbert space `H : Type v`, the canonical map from
-the twisted convolution algebra into the full crossed product is injective. -/
+/-- If `A` has a faithful representation on a Hilbert space `H : Type v` and `μ` is inner regular
+for compact sets on sets of finite measure, the canonical map from the twisted convolution algebra
+into the full crossed product is injective. -/
 theorem of_injective [μ.InnerRegularCompactLTTop] {H : Type v} [NormedAddCommGroup H]
     [InnerProductSpace ℂ H] [CompleteSpace H] {ρ : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hρ : Function.Injective ρ) : Function.Injective (of α μ) :=
