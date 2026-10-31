@@ -13,7 +13,8 @@ public import Mathlib.CategoryTheory.Limits.Lattice
 In a `SemilatticeInf` with `OrderTop`, Mathlib identifies the finite product of a family with the
 infimum of its members (`CategoryTheory.Limits.CompleteLattice.finite_product_eq_finset_inf`). This
 file records the reindexed form used for Čech complexes: the product of the members `f (a j)` of a
-family `f`, for `a : J → ι` with `J` finite, is the infimum of `f` over the image of `a`.
+family `f`, for `a : J → ι` with `J` finite, is the infimum of `f` over the image of `a`. Hence a
+property of the nonempty finite infima of `f` holds for the products `f (a 0) × ⋯ × f (a n)`.
 -/
 
 public section
@@ -35,5 +36,14 @@ theorem finite_product_eq_finset_image_inf {ι : Type v} [DecidableEq ι] {J : T
   -- reindex the infimum over `Discrete J` along `discreteEquiv`
   rw [← Finset.univ_map_equiv_to_embedding (discreteEquiv (α := J)).symm, Finset.inf_map]
   rfl
+
+/-- A property of the nonempty finite infima of a family `f` holds for the finite products
+`f (a 0) × ⋯ × f (a n)` of its members, as in the terms of Čech complexes: such a product is the
+infimum of `f` over the image of `a`. -/
+theorem finite_product_of_forall_finset_inf {ι : Type v} {p : α → Prop} (f : ι → α)
+    (h : ∀ s : Finset ι, s.Nonempty → p (s.inf f)) {n : ℕ} (a : Fin (n + 1) → ι) :
+    p (∏ᶜ fun j ↦ f (a j)) := by
+  classical
+  exact finite_product_eq_finset_image_inf f a ▸ h _ (Finset.univ_nonempty.image a)
 
 end CategoryTheory.Limits.CompleteLattice
