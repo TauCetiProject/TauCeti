@@ -124,11 +124,11 @@ private theorem exists_monic_aeval_mem_supSeminorm_coeff_le (hA : IsAffinoidAlge
       exact pow_nonneg (supSeminorm_nonneg x) _
   -- Carry `p` to `A` along `π ∘ ι`, which does not increase supremum seminorms.
   refine ⟨p.map (π.comp ι).toRingHom, hp.map _, ?_, fun i ↦ ?_⟩
-  · have hcomp : (algebraMap A C).comp (π.comp ι).toRingHom = algebraMap T C := by
-      ext y
-      rfl
-    rw [← Ideal.Quotient.eq_zero_iff_mem, ← Ideal.Quotient.mkₐ_eq_mk A, ← aeval_algHom_apply,
-      aeval_def, eval₂_map, Ideal.Quotient.mkₐ_eq_mk, hcomp, ← aeval_def, minpoly.aeval]
+  · -- Modulo `𝔮`, evaluating the image of `p` at `f` evaluates `p` at `x` along `T → C`.
+    have hcomp : ((Ideal.Quotient.mk 𝔮).comp (algebraMap A B)).comp (π.comp ι).toRingHom =
+        algebraMap T C := rfl
+    rw [← Ideal.Quotient.eq_zero_iff_mem, aeval_def, hom_eval₂, eval₂_map, hcomp]
+    exact minpoly.aeval T x
   · rw [coeff_map, hp.natDegree_map]
     calc supSeminorm K ((π.comp ι).toRingHom (p.coeff i))
         ≤ supSeminorm K (ι (p.coeff i)) :=

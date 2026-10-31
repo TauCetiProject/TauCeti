@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Reduction
 public import TauCeti.RingTheory.Affinoid.PowerBounded
-import TauCeti.RingTheory.Affinoid.IntegralEquation
+import TauCeti.RingTheory.Affinoid.Integral.Equation
 import TauCeti.RingTheory.Affinoid.ValueGroup
 
 /-!
@@ -185,11 +185,12 @@ theorem isIntegral_powerBoundedMap (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K
         (hc i).trans (pow_le_one₀ (supSeminorm_nonneg _) hb)⟩, rfl⟩
   obtain ⟨q, hqp, -, hq⟩ := Polynomial.lifts_and_natDegree_eq_and_monic hlifts hp
   refine ⟨q, hq, Subtype.val_injective ?_⟩
+  -- In `B`, evaluating `q` along `A° → B°` evaluates its image `p` along `f`.
   have hcomp : (powerBoundedSubring B).subtype.comp (f.powerBoundedMap hA hB) =
-      f.toRingHom.comp (powerBoundedSubring A).subtype := (rfl)
-  rw [← Subring.coe_subtype, Polynomial.hom_eval₂, hcomp, ← Polynomial.eval₂_map, hqp,
-    map_zero]
-  exact hpb
+      f.toRingHom.comp (powerBoundedSubring A).subtype := rfl
+  have h := Polynomial.hom_eval₂ q (f.powerBoundedMap hA hB) (powerBoundedSubring B).subtype b
+  rw [hcomp, ← Polynomial.eval₂_map, hqp] at h
+  exact h.trans hpb
 
 /-- **Integral homomorphisms are integral on canonical reductions.** An integral homomorphism of
 affinoid algebras induces an integral map from the canonical reduction of `A` to that of `B`. -/
