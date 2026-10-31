@@ -21,11 +21,16 @@ so the trace keeps exactly the exponents of `f` divisible by `d`, multiplies the
 reads them as exponents of `t`. On monomials, `Tr (u ^ k)` is `d t ^ (k / d)` when `d ∣ k` and
 `0` otherwise.
 
-This is the trace on the coefficient of `dt`: a differential on `L` is `g dt` with `g ∈ L`, and
-its residue in the variable `u` is that of `g · d(u ^ d) = d g u ^ (d - 1) du`. Comparing
-coefficients gives the residue formula for the trace
+This is the trace on the coefficient of `dt`: the residue of `g dt` in the variable `u`, for
+`g ∈ L`, is that of `g · d(u ^ d) = d g u ^ (d - 1) du`. Comparing coefficients gives, in every
+characteristic, the residue formula for the trace
 
 `Res_t (Tr_{L/F} (g) dt) = Res_u (g dt)`.
+
+When `d` is nonzero in `K`, every differential on `L` has the form `g dt`, so this is the formula
+`Res_F ∘ Tr_{L/F} = Res_L` for all differentials. When the characteristic of `K` divides `d`,
+the form `dt = d u ^ (d - 1) du` vanishes on `L`, so every `g dt` is zero there and the identity
+says nothing about other differentials such as `u⁻¹ du`.
 
 On the actual level `K⸨t ^ (1 / d)⸩` of the Puiseux field, the coefficient of `t ^ j` in the trace
 of `x` is `d` times the rational-exponent coefficient of `t ^ j` in `x`. For `j = -1` this says
