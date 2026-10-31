@@ -47,6 +47,9 @@ along the structure morphism `S ⟶ Spec 𝔽_p` (`AlgebraicGeometry.Scheme.toSp
 * `AlgebraicGeometry.Scheme.Hom.finrank_relativeFrobenius_pullbackMap_of_etale`: over the
   Frobenius twist of a scheme étale over `X` with étale coordinates in `σ`, the relative Frobenius
   of `X` has rank `p ^ Nat.card σ`.
+* `AlgebraicGeometry.Scheme.Hom.finrank_relativeFrobenius_of_openCover`: if an open cover of `X`
+  carries étale coordinates in `σ`, the relative Frobenius of `X` has constant rank
+  `p ^ Nat.card σ`.
 
 ## References
 
@@ -207,5 +210,19 @@ theorem finrank_relativeFrobenius_pullbackMap_of_etale [Flat (π.relativeFrobeni
         (by simp) (by simp) y) = p ^ Nat.card σ := by
   rw [← finrank_of_isPullback _ _ _ _ (isPullback_relativeFrobenius_of_etale hS π f rfl).flip,
     AffineSpace.finrank_relativeFrobenius_of_etale hS g hg]
+
+/-- **The rank of the relative Frobenius from étale coordinates on an open cover.** If every member
+of an open cover `𝒰` of `X` carries étale coordinates `𝒰.X i ⟶ 𝔸(σ; S)` over `S`, all in the same
+finite set of variables `σ`, then the relative Frobenius of `X` has constant rank
+`p ^ Nat.card σ`. -/
+theorem finrank_relativeFrobenius_of_openCover [Flat (π.relativeFrobenius p hS)]
+    [IsFinite (π.relativeFrobenius p hS)] (𝒰 : X.OpenCover) {σ : Type u} [Finite σ]
+    (g : ∀ i, 𝒰.X i ⟶ 𝔸(σ; S)) [∀ i, Etale (g i)]
+    (hg : ∀ i, g i ≫ 𝔸(σ; S) ↘ S = 𝒰.f i ≫ π) :
+    (π.relativeFrobenius p hS).finrank = fun _ ↦ p ^ Nat.card σ := by
+  have key (i : 𝒰.I₀) := finrank_relativeFrobenius_pullbackMap_of_etale π hS (𝒰.f i) (g i) (hg i)
+  ext y
+  obtain ⟨i, y, rfl⟩ := (Scheme.Pullback.openCoverOfLeft 𝒰 π (S.frobenius p hS)).exists_eq y
+  exact key i y
 
 end AlgebraicGeometry.Scheme.Hom

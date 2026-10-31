@@ -52,24 +52,6 @@ namespace AlgebraicGeometry.Scheme.Hom
 
 variable {X S : Scheme.{u}} (π : X ⟶ S) {p : ℕ} [Fact p.Prime] (hS : (p : Γ(S, ⊤)) = 0)
 
-/-- If an open cover `𝒰` of `X` carries étale coordinates `𝒰.X i ⟶ 𝔸(Fin n; S)` over `S`, all in
-the same number `n` of variables, then the relative Frobenius of `X` has constant rank `p ^ n`. -/
-private theorem finrank_relativeFrobenius_of_openCover [Flat (π.relativeFrobenius p hS)]
-    [IsFinite (π.relativeFrobenius p hS)] (𝒰 : X.OpenCover) (n : ℕ)
-    (g : ∀ i, 𝒰.X i ⟶ 𝔸(ULift.{u} (Fin n); S))
-    (hg : ∀ i, Etale (g i) ∧ g i ≫ 𝔸(ULift.{u} (Fin n); S) ↘ S = 𝒰.f i ≫ π) :
-    (π.relativeFrobenius p hS).finrank = fun _ ↦ p ^ n := by
-  have key (i : 𝒰.I₀) (y : (pullback (𝒰.f i ≫ π) (S.frobenius p hS) : Scheme.{u})) :
-      (π.relativeFrobenius p hS).finrank
-        (pullback.map (𝒰.f i ≫ π) (S.frobenius p hS) π (S.frobenius p hS) (𝒰.f i) (𝟙 S) (𝟙 S)
-        (by simp) (by simp) y) = p ^ n := by
-    have := (hg i).1
-    rw [finrank_relativeFrobenius_pullbackMap_of_etale π hS (𝒰.f i) (g i) (hg i).2,
-      Nat.card_ulift, Nat.card_eq_fintype_card, Fintype.card_fin]
-  ext y
-  obtain ⟨i, y, rfl⟩ := (Scheme.Pullback.openCoverOfLeft 𝒰 π (S.frobenius p hS)).exists_eq y
-  exact key i y
-
 variable [Smooth π]
 
 /-- A property of morphisms that is local on the target holds for the relative Frobenius of a
@@ -117,7 +99,10 @@ theorem finrank_relativeFrobenius_of_smoothOfRelativeDimension (n : ℕ)
     (π.relativeFrobenius p hS).finrank = fun _ ↦ p ^ n := by
   have : Smooth π := SmoothOfRelativeDimension.smooth n π
   choose V _ hxV g hg using SmoothOfRelativeDimension.exists_etale_affineSpace π n
-  exact finrank_relativeFrobenius_of_openCover π hS (X.openCoverOfIsOpenCover V
-    (top_le_iff.mp fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨x, hxV x⟩)) n g hg
+  let 𝒰 := X.openCoverOfIsOpenCover V
+    (top_le_iff.mp fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨x, hxV x⟩)
+  let g' (i : 𝒰.I₀) : 𝒰.X i ⟶ 𝔸(ULift.{u} (Fin n); S) := g i
+  have (i : 𝒰.I₀) : Etale (g' i) := (hg i).1
+  simpa using finrank_relativeFrobenius_of_openCover π hS 𝒰 g' fun i ↦ (hg i).2
 
 end AlgebraicGeometry.Scheme.Hom
