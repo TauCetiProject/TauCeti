@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Killing
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.Trace
+public import TauCeti.Algebra.Lie.Basic
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
 import Mathlib.Algebra.Lie.TraceForm
 import TauCeti.Algebra.Lie.HighestWeight.CompleteReducibility
@@ -22,18 +23,19 @@ finite-dimensional vector space `V`. This file records how the `L`-submodules of
 membership in `L`, following the key step of Humphreys' proof that `L` contains the Jordan–Chevalley
 parts of its elements.
 
-Every element of `L` preserves each `L`-submodule `W ⊆ V`, and has trace zero on it because `L` is
-perfect. Conversely, over an algebraically closed field of characteristic zero, an endomorphism
-`y` of `V` lies in `L` as soon as it normalizes `L`, preserves every `L`-submodule of `V` and has
-trace zero on each of them. By Weyl's theorem `L` has an `L`-stable complement `Q` in `𝔤𝔩(V)`;
-write `y = a + q` with `a ∈ L` and `q ∈ Q`. The bracket of `q` with `L` lies in `L ∩ Q = 0`, so `q`
-commutes with `L`. Schur's lemma makes `q` a scalar on each irreducible `L`-submodule, and that
-scalar vanishes by the trace condition. Since `V` is a sum of irreducible submodules, again by
-Weyl's theorem, `q = 0`.
+Every element of `L` preserves each `L`-submodule `W ⊆ V` (`LieSubalgebra.apply_mem_of_mem`), and
+has trace zero on it because `L` is perfect; this trace statement holds for any perfect Lie
+subalgebra of `𝔤𝔩(V)`. Conversely, over an algebraically closed field of characteristic zero, an
+endomorphism `y` of `V` lies in `L` as soon as it normalizes `L`, preserves every `L`-submodule of
+`V` and has trace zero on each of them. By Weyl's theorem `L` has an `L`-stable complement `Q` in
+`𝔤𝔩(V)`; write `y = a + q` with `a ∈ L` and `q ∈ Q`. The bracket of `q` with `L` lies in
+`L ∩ Q = 0`, so `q` commutes with `L`. Schur's lemma makes `q` a scalar on each irreducible
+`L`-submodule, and that scalar vanishes by the trace condition. Since `V` is a sum of irreducible
+submodules, again by Weyl's theorem, `q = 0`.
 
 ## Main results
 
-* `LieSubalgebra.trace_restrict_eq_zero_of_mem`: an element of a Killing Lie subalgebra of `𝔤𝔩(V)`
+* `LieSubalgebra.trace_restrict_eq_zero_of_mem`: an element of a perfect Lie subalgebra of `𝔤𝔩(V)`
   has trace zero on each of its submodules.
 * `LieSubalgebra.eq_zero_of_forall_commute`: an endomorphism commuting with `L` and having trace
   zero on every `L`-submodule vanishes.
@@ -56,14 +58,10 @@ namespace LieSubalgebra
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   (L : LieSubalgebra K (Module.End K V))
 
-/-- Every element of a Lie subalgebra `L` of `𝔤𝔩(V)` preserves each `L`-submodule of `V`. -/
-theorem apply_mem_of_mem {z : Module.End K V} (hz : z ∈ L) (W : LieSubmodule K L V) :
-    ∀ w ∈ W, z w ∈ W :=
-  fun w hw ↦ by simpa using W.lie_mem (x := ⟨z, hz⟩) hw
-
-/-- Every element of a Lie subalgebra `L` of `𝔤𝔩(V)` with nondegenerate Killing form has trace
-zero on each `L`-submodule of `V`, because `L` is perfect. -/
-theorem trace_restrict_eq_zero_of_mem [FiniteDimensional K V] [IsKilling K L]
+/-- Every element of a perfect Lie subalgebra `L` of `𝔤𝔩(V)` has trace zero on each `L`-submodule
+of `V`. This applies in particular when `L` has nondegenerate Killing form, by
+`TauCeti.derivedSeries_one_eq_top_of_isKilling`. -/
+theorem trace_restrict_eq_zero_of_mem (hL : derivedSeries K L 1 = ⊤)
     {z : Module.End K V} (hz : z ∈ L) (W : LieSubmodule K L V) :
     LinearMap.trace K W (z.restrict (L.apply_mem_of_mem hz W)) = 0 := by
   -- The restriction of `z` to `W` is, by definition, the action of `z` on the Lie module `W`.
@@ -71,7 +69,7 @@ theorem trace_restrict_eq_zero_of_mem [FiniteDimensional K V] [IsKilling K L]
   rw [hzW]
   refine trace_toEnd_eq_zero_of_mem_lcs K L W le_rfl
     (derivedSeries_le_lowerCentralSeries K L 1 ?_)
-  rw [TauCeti.derivedSeries_one_eq_top_of_isKilling]
+  rw [hL]
   exact LieSubmodule.mem_top _
 
 variable [FiniteDimensional K V] [CharZero K] [IsAlgClosed K] [IsKilling K L]
@@ -137,6 +135,8 @@ theorem mem_of_forall_lie_mem (y : Module.End K V) (hnorm : ∀ z ∈ L, ⁅y, z
         (a + q).restrict (hinv W) - a.restrict (L.apply_mem_of_mem ha' W) := by
       ext w
       simp [LinearMap.coe_restrict_apply]
-    rw [hsplit, map_sub, htr W, L.trace_restrict_eq_zero_of_mem ha' W, sub_zero]
+    rw [hsplit, map_sub, htr W,
+      L.trace_restrict_eq_zero_of_mem (TauCeti.derivedSeries_one_eq_top_of_isKilling K L) ha' W,
+      sub_zero]
 
 end LieSubalgebra

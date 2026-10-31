@@ -7,11 +7,11 @@ module
 
 public import TauCeti.Algebra.Lie.Killing.JordanDecomposition.Canonical
 -- Non-public: these appear only inside proofs, never in the type of an exported declaration.
-import TauCeti.Algebra.Lie.AdjointAction.JordanChevalley
+import Mathlib.Algebra.Lie.AdjointAction.JordanChevalley
+import TauCeti.Algebra.Lie.AdjointAction.Basic
 import TauCeti.Algebra.Lie.Basic
 import TauCeti.Algebra.Lie.Killing.EndSubalgebra
 import TauCeti.LinearAlgebra.End.Adjoin
-import TauCeti.RepresentationTheory.Lie.AdNilpotent
 
 /-!
 # The internal Jordan decomposition in faithful representations
@@ -23,8 +23,7 @@ representation. The internal Jordan decomposition `x = xₙ + xₛ` of `x : L`
 adjoint endomorphism `ad x`, whereas `ρ x` has its own Jordan–Chevalley decomposition in
 `Module.End K V`. This file proves that the two agree: `ρ xₙ` is the nilpotent part and `ρ xₛ`
 the semisimple part of `ρ x`. In particular the internal decomposition can be computed in any
-faithful representation, and an element is ad-semisimple (resp. ad-nilpotent) exactly when its
-image is semisimple (resp. nilpotent).
+faithful representation, and an element is ad-semisimple exactly when its image is semisimple.
 
 The heart of the matter is a statement about Lie subalgebras of `𝔤𝔩(V)`: **a Lie subalgebra
 `L ⊆ 𝔤𝔩(V)` with nondegenerate Killing form contains the semisimple and nilpotent parts of each of
@@ -44,10 +43,10 @@ For a faithful representation `ρ`, its image is isomorphic to `L`, so it is a K
 subalgebra of `𝔤𝔩(V)`; the parts of `ρ x` lie in it and form the internal Jordan decomposition
 there, which is the image of the internal Jordan decomposition of `x`
 (`LieEquiv.map_jordanDecomposition`). That ad-nilpotent elements act nilpotently holds in an
-arbitrary finite-dimensional representation (`TauCeti.isNilpotent_apply_of_isNilpotent_ad`); this
-file does not treat semisimple parts in representations with a nonzero kernel. Conversely, an
-element with nilpotent image under a faithful representation is ad-nilpotent over any field, so
-the nilpotence criterion does not assume algebraic closedness.
+arbitrary finite-dimensional representation (`TauCeti.isNilpotent_apply_of_isNilpotent_ad`), and
+the converse for faithful representations (`LieHom.isNilpotent_apply_iff_isNilpotent_ad`) lives
+beside it in `TauCeti.RepresentationTheory.Lie.AdNilpotent`; this file does not treat semisimple
+parts in representations with a nonzero kernel.
 
 ## Main results
 
@@ -57,8 +56,8 @@ the nilpotence criterion does not assume algebraic closedness.
   carries the internal Jordan decomposition of `x` to the Jordan–Chevalley decomposition of `ρ x`.
 * `LieHom.isSemisimple_apply_semisimplePart`: under a faithful representation the image of the
   semisimple part is semisimple.
-* `LieHom.isSemisimple_apply_iff_isSemisimple_ad`, `LieHom.isNilpotent_apply_iff_isNilpotent_ad`:
-  under a faithful representation, ad-semisimplicity and ad-nilpotence are detected by the image.
+* `LieHom.isSemisimple_apply_iff_isSemisimple_ad`: under a faithful representation,
+  ad-semisimplicity is detected by the image.
 
 ## References
 
@@ -120,11 +119,7 @@ open TauCeti.LieAlgebra
 
 variable {K L V : Type*} [Field K] [CharZero K]
   [LieRing L] [LieAlgebra K L] [FiniteDimensional K L] [IsKilling K L]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V]
-
-section IsAlgClosed
-
-variable [IsAlgClosed K]
+  [AddCommGroup V] [Module K V] [FiniteDimensional K V] [IsAlgClosed K]
 
 /-- **A faithful representation carries the internal semisimple part to the Jordan–Chevalley
 semisimple part.** If `ρ` is injective and `ρ x = n + s` is a Jordan–Chevalley decomposition, then
@@ -178,17 +173,5 @@ theorem isSemisimple_apply_iff_isSemisimple_ad (ρ : L →ₗ⁅K⁆ Module.End 
   refine ⟨fun h ↦ ?_, fun h ↦ by simpa [h] using ρ.isSemisimple_apply_semisimplePart hρ x⟩
   rw [← nilpotentPart_eq_zero_iff K, ← hρ.eq_iff, map_zero]
   exact ρ.apply_nilpotentPart_eq hρ (Commute.zero_left _) IsNilpotent.zero h (zero_add _).symm
-
-end IsAlgClosed
-
-/-- Under a faithful finite-dimensional representation, an element of a Killing Lie algebra over a
-field of characteristic zero is ad-nilpotent exactly when its image is nilpotent. -/
-theorem isNilpotent_apply_iff_isNilpotent_ad (ρ : L →ₗ⁅K⁆ Module.End K V)
-    (hρ : Function.Injective ρ) (x : L) :
-    IsNilpotent (ρ x) ↔ IsNilpotent (ad K L x) := by
-  refine ⟨fun h ↦ ?_, TauCeti.isNilpotent_apply_of_isNilpotent_ad⟩
-  -- `ad (ρ x)` is nilpotent, and `ρ` carries powers of `ad x` to powers of `ad (ρ x)`.
-  obtain ⟨k, hk⟩ := ad_nilpotent_of_nilpotent (R := K) h
-  exact ⟨k, LinearMap.ext fun y ↦ hρ (by simp [hk])⟩
 
 end LieHom

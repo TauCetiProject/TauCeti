@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Central.End
 import TauCeti.Algebra.Lie.AdjointAction.Basic
 
 /-!
-# Ad-nilpotent endomorphisms and adjoint semisimplicity
+# Ad-nilpotent endomorphisms
 
 The adjoint action of an associative algebra does not see its centre, so the adjoint action of a
 scalar plus a nilpotent element is nilpotent
@@ -29,16 +29,11 @@ The perfectness hypothesis cannot be dropped: if `K` has characteristic `p` and 
 `p`-th power, the companion matrix `f` of `X ^ p - a` satisfies `ad f ^ p = ad (f ^ p) = 0`, but
 `(f - c) ^ p = (a - c ^ p) • 1 ≠ 0` for every `c : K`.
 
-Adjoint semisimplicity, like adjoint nilpotence, passes from a Lie algebra to its Lie subalgebras
-(`LieSubalgebra.isSemisimple_ad_of_isSemisimple_ad`, over any commutative ring).
-
 ## Main statements
 
 * `TauCeti.LieAlgebra.isNilpotent_ad_iff_exists_isNilpotent_sub_algebraMap`: over a perfect field,
   an endomorphism of a finite-dimensional space is ad-nilpotent exactly when it is a scalar plus a
   nilpotent endomorphism.
-* `LieSubalgebra.isSemisimple_ad_of_isSemisimple_ad`: an element of a Lie subalgebra that is
-  ad-semisimple in the ambient Lie algebra is ad-semisimple in the subalgebra.
 
 ## References
 
@@ -77,19 +72,3 @@ theorem isNilpotent_ad_iff_exists_isNilpotent_sub_algebraMap [PerfectField K]
   exact ⟨c, by simpa using hn_nil⟩
 
 end TauCeti.LieAlgebra
-
-namespace LieSubalgebra
-
-open LieAlgebra Module.End
-
-/-- An element of a Lie subalgebra whose adjoint action on the ambient Lie algebra is semisimple
-also has semisimple adjoint action on the subalgebra. This is the semisimple analogue of
-`LieSubalgebra.isNilpotent_ad_of_isNilpotent_ad`. -/
-theorem isSemisimple_ad_of_isSemisimple_ad {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-    (L' : LieSubalgebra R L) {x : L'} (h : (ad R L x).IsSemisimple) : (ad R L' x).IsSemisimple := by
-  have hp : L'.toSubmodule ∈ (ad R L x).invtSubmodule :=
-    (mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun y hy ↦ L'.lie_mem x.2 hy
-  -- The restriction of `ad x` to `L'` is, elementwise by definition, the adjoint action on `L'`.
-  exact (LinearEquiv.isSemisimple_iff _ _ (LinearEquiv.refl R L') (by ext; rfl)).1 (h.restrict hp)
-
-end LieSubalgebra
