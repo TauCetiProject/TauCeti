@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.ConnectedSum.Smooth
 
+import TauCeti.Geometry.Euclidean.Inversion
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
@@ -40,6 +41,11 @@ centred at `-v`, has as complementary ball the antipodal ball `w ↦ -sphereBall
 `v` (`TauCeti.isComplementaryBall_sphereBall`). This gives `M # Sⁿ ≃ M` for every `n`-dimensional
 `C^k` manifold `M` (`TauCeti.connectedSumSphereDiffeomorph`), and in particular `Sⁿ # Sⁿ ≃ Sⁿ`
 (`TauCeti.nonempty_diffeomorph_connectedSum_sphereBall`).
+
+Rotating a ball and its complementary ball by the same linear isometry of `E` gives complementary
+balls again (`TauCeti.IsComplementaryBall.comp_linearIsometryEquiv`), so a sphere also has
+complementary balls of the other orientation behaviour; this is how the oriented connected sum with
+a sphere is computed for either orientation of the sphere.
 
 ## Main definitions
 
@@ -114,6 +120,20 @@ theorem injective : Injective s := by
   · exact absurd hww' (by rw [key w hw]; exact mem_puncture.1 (h.apply_mem_puncture _))
   · rw [key w hw, key w' hw'] at hww'
     exact inversion_injective 0 one_ne_zero (h.isOpenEmbedding.injective hww')
+
+omit [T1Space N] in
+include h in
+/-- Rotating both balls by the same linear isometry of `E` keeps them complementary, since the
+rotation commutes with the inversion in the unit sphere. -/
+theorem comp_linearIsometryEquiv (R : E ≃ₗᵢ[ℝ] E) : IsComplementaryBall (s ∘ R) (s' ∘ R) where
+  isOpenEmbedding := h.isOpenEmbedding.comp R.toHomeomorph.isOpenEmbedding
+  range_eq := by
+    rw [range_comp, R.surjective.range_eq, image_univ, h.range_eq, Function.comp_apply, map_zero]
+  apply_eq_inversion w hw := by
+    have hR := LinearIsometry.map_inversion R.toLinearIsometry 0 1 w
+    simp only [LinearIsometryEquiv.coe_toLinearIsometry, map_zero] at hR
+    rw [Function.comp_apply, Function.comp_apply, hR]
+    exact h.apply_eq_inversion _ (by simpa using hw)
 
 /-- A complementary ball of `s` parametrizes the punctured summand `N ∖ {s 0}` of a connected sum
 along `s`. -/
@@ -419,7 +439,7 @@ theorem isComplementaryBall_sphereBall (v : sphere (0 : F) 1) :
   apply_eq_inversion _ hw := (sphereBall_inversion v hw).symm
 
 /-- The antipodal ball `w ↦ -sphereBall v (-w)` is a `C^m` local diffeomorphism. -/
-private theorem isLocalDiffeomorph_neg_sphereBall_neg (v : sphere (0 : F) 1) (m : ℕ∞ω) :
+theorem isLocalDiffeomorph_neg_sphereBall_neg (v : sphere (0 : F) 1) (m : ℕ∞ω) :
     IsLocalDiffeomorph (𝓡 n) (𝓡 n) m fun w ↦ -sphereBall (n := n) v (-w) := fun w ↦ by
   -- The antipodal maps of the model space and of the sphere, as diffeomorphisms.
   let μ : EuclideanSpace ℝ (Fin n) ≃ₘ^m⟮𝓡 n, 𝓡 n⟯ EuclideanSpace ℝ (Fin n) :=

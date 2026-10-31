@@ -28,6 +28,8 @@ conjugation on the plane `ι ℂ` (`LinearIsometry.reflection_orthogonal_singlet
 In dimension at least two, every vector `v` is sent to `-v` by a linear isometry of determinant
 `1` (`TauCeti.exists_det_eq_one_apply_eq_neg`). For nonzero `v`, this is the composition of the
 reflections in the hyperplanes orthogonal to `v` and to a nonzero vector orthogonal to `v`.
+In every nonzero finite dimension, the reflection in the hyperplane orthogonal to a nonzero vector
+is a linear isometry of determinant `-1` (`TauCeti.exists_det_eq_neg_one`).
 
 `LinearIsometry.exists_contDiff_path_reflection_orthogonal_range` gives a smooth path from the
 identity to a half-turn in any distinguished complex plane, by composing two hyperplane
@@ -221,6 +223,16 @@ theorem exists_det_eq_one_apply_eq_neg (hF : 2 ≤ Module.finrank ℝ F) (v : F)
       map_neg, reflection_orthogonal_singleton_eq_self_of_inner_eq_zero]
     rw [Submodule.mem_orthogonal_singleton_iff_inner_right] at hw
     rwa [real_inner_comm]
+
+/-- A nontrivial finite-dimensional real inner product space has a linear isometry of
+determinant `-1`: the reflection in the hyperplane orthogonal to a nonzero vector. -/
+theorem exists_det_eq_neg_one [Nontrivial F] [FiniteDimensional ℝ F] :
+    ∃ r : F ≃ₗᵢ[ℝ] F, (LinearEquiv.det r.toLinearEquiv : ℝ) = -1 := by
+  obtain ⟨v, hv⟩ := exists_ne (0 : F)
+  refine ⟨(ℝ ∙ v)ᗮ.reflection, ?_⟩
+  rw [Submodule.linearEquiv_det_reflection, Submodule.orthogonal_orthogonal,
+    finrank_span_singleton hv]
+  simp
 
 end TauCeti
 
