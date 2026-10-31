@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.ExactSequences
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 import TauCeti.CategoryTheory.Abelian.DiagramLemmas.CokernelComp
+import TauCeti.CategoryTheory.Yoneda
 
 /-!
 # Relative sheaf cohomology of a morphism of a site
@@ -203,37 +204,11 @@ theorem isIso_relativeFreeYonedaSheafMap_iff :
     IsIso (relativeFreeYonedaSheafMap J i' i a b w) ↔
       ∀ (F : Sheaf J AddCommGrpCat.{v}) (s : F.obj.obj (op V')),
         s ∈ (F.obj.map i'.op).hom.ker →
-          ∃! t : F.obj.obj (op V), t ∈ (F.obj.map i.op).hom.ker ∧ F.obj.map b.op t = s := by
-  set f := relativeFreeYonedaSheafMap J i' i a b w
-  -- both directions compare precomposition with `f` and restriction along `b` through
-  -- `relativeFreeYonedaSheafHomEquiv`
-  have key (F : Sheaf J AddCommGrpCat.{v}) (g : relativeFreeYonedaSheaf J i ⟶ F)
-      (g' : relativeFreeYonedaSheaf J i' ⟶ F) :
-      f ≫ g = g' ↔ F.obj.map b.op (relativeFreeYonedaSheafHomEquiv J i F g) =
-        relativeFreeYonedaSheafHomEquiv J i' F g' := by
-    rw [← coe_relativeFreeYonedaSheafHomEquiv_map_comp, Subtype.coe_inj,
-      (relativeFreeYonedaSheafHomEquiv J i' F).injective.eq_iff]
-  constructor
-  · intro _ F s hs
-    let g' := (relativeFreeYonedaSheafHomEquiv J i' F).symm ⟨s, hs⟩
-    refine ⟨relativeFreeYonedaSheafHomEquiv J i F (inv f ≫ g'),
-      ⟨(relativeFreeYonedaSheafHomEquiv J i F _).2, ?_⟩, ?_⟩
-    · simpa [g'] using (key F (inv f ≫ g') g').1 (IsIso.hom_inv_id_assoc f g')
-    · rintro t ⟨ht, hts⟩
-      have h : f ≫ (relativeFreeYonedaSheafHomEquiv J i F).symm ⟨t, ht⟩ = g' :=
-        (key F _ g').2 (by simpa [g'] using hts)
-      rw [← h, IsIso.inv_hom_id_assoc, AddEquiv.apply_symm_apply]
-  · intro h
-    refine isIso_of_coyoneda_map_bijective f fun F ↦ ⟨fun g₁ g₂ hg ↦ ?_, fun g' ↦ ?_⟩
-    · set s := relativeFreeYonedaSheafHomEquiv J i' F (f ≫ g₂)
-      apply (relativeFreeYonedaSheafHomEquiv J i F).injective
-      exact Subtype.ext <| (h F s s.2).unique
-        ⟨(relativeFreeYonedaSheafHomEquiv J i F g₁).2, (key F g₁ _).1 hg⟩
-        ⟨(relativeFreeYonedaSheafHomEquiv J i F g₂).2, (key F g₂ _).1 rfl⟩
-    · obtain ⟨t, ⟨ht, hts⟩, -⟩ := h F _ (relativeFreeYonedaSheafHomEquiv J i' F g').2
-      refine ⟨(relativeFreeYonedaSheafHomEquiv J i F).symm ⟨t, ht⟩, (key F _ g').2 ?_⟩
-      rw [AddEquiv.apply_symm_apply]
-      exact hts
+          ∃! t : F.obj.obj (op V), t ∈ (F.obj.map i.op).hom.ker ∧ F.obj.map b.op t = s :=
+  isIso_iff_existsUnique_of_homEquiv _ (fun F ↦ F.obj.map b.op)
+    (fun F ↦ (relativeFreeYonedaSheafHomEquiv J i F).toEquiv)
+    (fun F ↦ (relativeFreeYonedaSheafHomEquiv J i' F).toEquiv)
+    (coe_relativeFreeYonedaSheafHomEquiv_map_comp J i' i a b w)
 
 /-- A commutative square `i' ≫ b = a ≫ i` in which `a` and `b` are isomorphisms induces an
 isomorphism of relative free sheaves. -/

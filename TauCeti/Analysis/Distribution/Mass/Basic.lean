@@ -38,7 +38,8 @@ an order-zero bound on the tests supported in each compact subset of `Ω`.
 * `Distribution.lowerSemicontinuous_mass`: mass is lower semicontinuous for pointwise
   (weak) convergence; `Distribution.mass_le_liminf` is the corresponding `liminf` bound.
 * `Distribution.mass_comp_monoCLM`: the mass of the restriction to an open `Ω' ⊆ Ω` is the local
-  mass on `Ω'`.
+  mass on `Ω'`; `Distribution.localMass_comp_monoCLM` gives the local version.
+* `Distribution.HasLocallyFiniteMass.comp_monoCLM`: open restriction preserves local finiteness.
 * `Distribution.HasLocallyFiniteMass` and
   `Distribution.hasLocallyFiniteMass_iff_localMass_ne_top`: local finiteness of mass by order-zero
   bounds and its variational characterization.
@@ -278,6 +279,27 @@ theorem mass_comp_monoCLM {Ω' : Opens E} (h : Ω' ≤ Ω) :
     have hψ : ι ψ = φ := TestFunction.ext fun x => by simp [hι, ψ]
     simpa [hψ] using enorm_le_mass (f := f ∘ ι) (φ := ψ) hφ
 
+/-- The local mass of an open restriction is the local mass on the intersection with its domain.
+The testing set `U` need not be open or measurable. -/
+theorem localMass_comp_monoCLM {Ω' : Opens E} (f : 𝓓^{n}(Ω, F) → V) (h : Ω' ≤ Ω) (U : Set E) :
+    localMass (f ∘ (TestFunction.monoCLM ℝ : 𝓓^{n}(Ω', F) →L[ℝ] 𝓓^{n}(Ω, F))) U =
+      localMass f (U ∩ (Ω' : Set E)) := by
+  have hcoe (ψ : 𝓓^{n}(Ω', F)) :
+      ⇑(TestFunction.monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) = ψ := by
+    simp [TestFunction.monoCLM_apply, h]
+  refine le_antisymm (localMass_le_iff.2 fun ψ hψU hψ => ?_)
+    (localMass_le_iff.2 fun φ hφU hφ => ?_)
+  · exact enorm_le_localMass (f := f)
+      (by rw [hcoe]; exact subset_inter hψU ψ.tsupport_subset)
+      (by simpa [hcoe] using hψ)
+  · let ψ : 𝓓^{n}(Ω', F) := ⟨φ, φ.contDiff, φ.hasCompactSupport,
+      hφU.trans inter_subset_right⟩
+    have hψ : (TestFunction.monoCLM ℝ ψ : 𝓓^{n}(Ω, F)) = φ :=
+      TestFunction.ext fun x => by simp [hcoe, ψ]
+    simpa [Function.comp_apply, hψ] using
+      (enorm_le_localMass (f := f ∘ (TestFunction.monoCLM ℝ : 𝓓^{n}(Ω', F) →L[ℝ] _))
+        (φ := ψ) (hφU.trans inter_subset_left) hφ)
+
 end Restriction
 
 section LocallyFinite
@@ -293,6 +315,20 @@ theorem hasLocallyFiniteMass_def :
     HasLocallyFiniteMass f ↔ ∀ K : Set E, IsCompact K → K ⊆ Ω → ∃ C : ℝ, 0 ≤ C ∧
       ∀ φ : 𝓓^{n}(Ω, F), tsupport φ ⊆ K → ‖f φ‖ ≤ C * ‖(φ : E →ᵇ F)‖ :=
   Iff.rfl
+
+/-- Open restriction preserves locally finite mass, with the same order-zero bound on each
+compact set in the smaller domain. -/
+theorem HasLocallyFiniteMass.comp_monoCLM {Ω' : Opens E} {f : 𝓓^{n}(Ω, F) → V}
+    (hf : HasLocallyFiniteMass f) (h : Ω' ≤ Ω) :
+    HasLocallyFiniteMass
+      (f ∘ (TestFunction.monoCLM ℝ : 𝓓^{n}(Ω', F) →L[ℝ] 𝓓^{n}(Ω, F))) := by
+  rw [hasLocallyFiniteMass_def] at hf ⊢
+  intro K hK hKΩ'
+  obtain ⟨C, hC, hfC⟩ := hf K hK (hKΩ'.trans h)
+  refine ⟨C, hC, fun φ hφ => ?_⟩
+  have hcoe : ⇑(TestFunction.monoCLM ℝ φ : 𝓓^{n}(Ω, F)) = φ := by
+    simp [TestFunction.monoCLM_apply, h]
+  simpa [hcoe] using hfC (TestFunction.monoCLM ℝ φ) (by rwa [hcoe])
 
 theorem hasLocallyFiniteMass_zero : HasLocallyFiniteMass (0 : 𝓓^{n}(Ω, F) → V) :=
   fun _ _ _ => ⟨0, le_rfl, fun φ _ => by simp⟩
