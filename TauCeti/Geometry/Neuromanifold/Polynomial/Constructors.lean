@@ -159,6 +159,12 @@ def polynomialReparametrize (R : W → MvPolynomial W' K) (P : J → MvPolynomia
     J → MvPolynomial (W' ⊕ I) K :=
   fun j => bind₁ (Sum.elim (fun i => rename Sum.inl (R i)) (fun a => X (Sum.inr a))) (P j)
 
+/-- Each output of a reparametrized model is the substitution into the original output. -/
+theorem polynomialReparametrize_apply (R : W → MvPolynomial W' K)
+    (P : J → MvPolynomial (W ⊕ I) K) (j : J) :
+    polynomialReparametrize R P j =
+      bind₁ (Sum.elim (fun i => rename Sum.inl (R i)) (fun a => X (Sum.inr a))) (P j) := (rfl)
+
 /-- A reparametrized polynomial model realizes the original model at the evaluated
 polynomial parameters. -/
 theorem polynomialRealization_polynomialReparametrize (R : W → MvPolynomial W' K)
@@ -176,6 +182,14 @@ def polynomialCompose (P : J → MvPolynomial (W ⊕ I) K) (Q : L → MvPolynomi
     L → MvPolynomial ((W ⊕ V) ⊕ I) K :=
   fun l => bind₁ (Sum.elim (fun v => X (Sum.inl (Sum.inr v)))
     (fun j => rename (Sum.map Sum.inl id) (P j))) (Q l)
+
+/-- Each output of a composite model is the substitution of the outputs of `P` into the
+corresponding output of `Q`. -/
+theorem polynomialCompose_apply (P : J → MvPolynomial (W ⊕ I) K)
+    (Q : L → MvPolynomial (V ⊕ J) K) (l : L) :
+    polynomialCompose P Q l =
+      bind₁ (Sum.elim (fun v => X (Sum.inl (Sum.inr v)))
+        (fun j => rename (Sum.map Sum.inl id) (P j))) (Q l) := (rfl)
 
 /-- Composition by polynomial substitution realizes the composite of the two realization
 maps, after splitting the parameters into those of `P` and those of `Q`. -/
@@ -214,6 +228,11 @@ parameter variable for each matrix entry. -/
 def polynomialLinear : ο → MvPolynomial (ο × ι ⊕ ι) K :=
   fun o => ∑ i, X (Sum.inl (o, i)) * X (Sum.inr i)
 
+/-- Output `o` of the polynomial linear layer. -/
+theorem polynomialLinear_apply (o : ο) :
+    (polynomialLinear o : MvPolynomial (ο × ι ⊕ ι) K) =
+      ∑ i, X (Sum.inl (o, i)) * X (Sum.inr i) := (rfl)
+
 /-- The polynomial linear layer realizes matrix evaluation of its weight matrix. -/
 theorem polynomialRealization_polynomialLinear :
     polynomialRealization (polynomialLinear : ο → MvPolynomial (ο × ι ⊕ ι) K) =
@@ -232,6 +251,11 @@ theorem realizedFunctions_polynomialLinear :
 with one parameter variable for each matrix entry and each bias coordinate. -/
 def polynomialDense : ο → MvPolynomial ((ο × ι ⊕ ο) ⊕ ι) K :=
   fun o => ∑ i, X (Sum.inl (Sum.inl (o, i))) * X (Sum.inr i) + X (Sum.inl (Sum.inr o))
+
+/-- Output `o` of the polynomial dense layer. -/
+theorem polynomialDense_apply (o : ο) :
+    (polynomialDense o : MvPolynomial ((ο × ι ⊕ ο) ⊕ ι) K) =
+      ∑ i, X (Sum.inl (Sum.inl (o, i))) * X (Sum.inr i) + X (Sum.inl (Sum.inr o)) := (rfl)
 
 /-- The polynomial dense layer realizes the dense affine layer. -/
 theorem polynomialRealization_polynomialDense :
@@ -258,6 +282,10 @@ variable {ι : Type*}
 parameters `W` do not occur. -/
 def polynomialActivation (p : Polynomial K) : ι → MvPolynomial (W ⊕ ι) K :=
   fun i => Polynomial.aeval (X (Sum.inr i)) p
+
+/-- Output `i` of a polynomial activation is `p` evaluated at the input variable `i`. -/
+theorem polynomialActivation_apply (p : Polynomial K) (i : ι) :
+    polynomialActivation (W := W) p i = Polynomial.aeval (X (Sum.inr i)) p := (rfl)
 
 /-- A polynomial activation realizes the activation layer of its polynomial function, at
 every parameter. -/
@@ -294,6 +322,11 @@ variable {n k s m : ℕ}
 def polynomialConvolution (h : n = s * (m - 1) + k) : Fin m → MvPolynomial (Fin k ⊕ Fin n) K :=
   fun i => ∑ j, X (Sum.inl j) * X (Sum.inr (convolutionIndex h i j))
 
+/-- Output `i` of the polynomial convolution. -/
+theorem polynomialConvolution_apply (h : n = s * (m - 1) + k) (i : Fin m) :
+    (polynomialConvolution h i : MvPolynomial (Fin k ⊕ Fin n) K) =
+      ∑ j, X (Sum.inl j) * X (Sum.inr (convolutionIndex h i j)) := (rfl)
+
 /-- The polynomial convolution realizes valid convolution. -/
 theorem polynomialRealization_polynomialConvolution (h : n = s * (m - 1) + k) :
     polynomialRealization (polynomialConvolution (K := K) h) = convolution h := by
@@ -306,6 +339,12 @@ def polynomialAffineConvolution (h : n = s * (m - 1) + k) :
     Fin m → MvPolynomial ((Fin k ⊕ Unit) ⊕ Fin n) K :=
   fun i => ∑ j, X (Sum.inl (Sum.inl j)) * X (Sum.inr (convolutionIndex h i j)) +
     X (Sum.inl (Sum.inr ()))
+
+/-- Output `i` of the polynomial affine convolution. -/
+theorem polynomialAffineConvolution_apply (h : n = s * (m - 1) + k) (i : Fin m) :
+    (polynomialAffineConvolution h i : MvPolynomial ((Fin k ⊕ Unit) ⊕ Fin n) K) =
+      ∑ j, X (Sum.inl (Sum.inl j)) * X (Sum.inr (convolutionIndex h i j)) +
+        X (Sum.inl (Sum.inr ())) := (rfl)
 
 /-- The polynomial affine convolution realizes the affine convolution. -/
 theorem polynomialRealization_polynomialAffineConvolution (h : n = s * (m - 1) + k) :
