@@ -10,8 +10,6 @@ public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
-import TauCeti.Geometry.Manifold.Flow.Diffeomorph
-import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 
 /-!
@@ -226,15 +224,6 @@ theorem IsContractibleHZAdmissible.comp_symm (hσ₂ : σ₂.IsNondegenerate)
     σ₂.IsContractibleHZAdmissible (ψ '' W) (F ∘ ψ.symm) := by
   have hσ : σ.IsNondegenerate := hψ ▸ hσ₂.isNondegenerate_mpullback_of_isLocalDiffeomorph
     ψ.isLocalDiffeomorph
-  -- `ψ⁻¹` carries the Hamiltonian vector field of `F ∘ ψ⁻¹` to that of `F`.
-  have hX (y : M₂) : mfderiv I₂ I ψ.symm y (σ₂.hamiltonianVectorField (F ∘ ψ.symm) y) =
-      σ.hamiltonianVectorField F (ψ.symm y) := by
-    refine ψ.mfderiv_symm_apply_eq_of_mfderiv_apply_eq (by simp) (fun x ↦ ?_) y
-    have h := hσ.mfderiv_hamiltonianVectorField_comp hσ₂ ψ.contMDiff hψ
-      (ψ.isInvertible_mfderiv (by simp) (x := x)).surjective (g := F ∘ ψ.symm)
-      (((hF.contMDiff.comp ψ.symm.contMDiff) (ψ x)).mdifferentiableAt (by simp))
-    have hFψ : (F ∘ ψ.symm) ∘ ψ = F := funext fun x ↦ by simp
-    rwa [hFψ] at h
   have hsupp : tsupport (F ∘ ψ.symm) = ψ '' tsupport F := by
     rw [ψ.image_eq_preimage_symm, ← ψ.symm.coe_toHomeomorph,
       ← tsupport_comp_eq_preimage F ψ.symm.toHomeomorph]
@@ -262,10 +251,11 @@ theorem IsContractibleHZAdmissible.comp_symm (hσ₂ : σ₂.IsNondegenerate)
     simpa using isMaxOn_iff.1 (hmax x hx) (ψ.symm y) hy
   · rintro T γ hT hT1 hγ hper ⟨g, hg, hgγ⟩ t
     -- The curve `ψ⁻¹ ∘ γ` is a contractible periodic orbit of `F` in `W`, so it is constant.
-    have hγ' : IsMIntegralCurve (ψ.symm ∘ γ) (σ.hamiltonianVectorField F) := by
-      rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hγ ⊢
-      exact hγ.map_of_mfderiv_eq (fun s _ ↦ ψ.symm.mdifferentiable (by simp) (γ s))
-        fun s _ ↦ hX (γ s)
+    have hγ' : IsMIntegralCurve (ψ.symm ∘ γ) (σ.hamiltonianVectorField F) :=
+      hσ₂.comp_isMIntegralCurve_hamiltonianVectorField hσ ψ.symm.contMDiff
+        (SmoothForm.mpullback_symm_eq_of_mpullback_eq hψ)
+        (fun _ ↦ (ψ.symm.isInvertible_mfderiv (by simp)).surjective)
+        (fun _ ↦ (hF.contMDiff _).mdifferentiableAt (by simp)) hγ
     have hmem (y : ψ '' W) : ψ.symm y ∈ W := by
       obtain ⟨x, hx, hxy⟩ := y.2
       rwa [← hxy, ψ.symm_apply_apply]
