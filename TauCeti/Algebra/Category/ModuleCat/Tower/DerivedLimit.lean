@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Product
-public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCocone
+public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCocone.Basic
 
 /-!
 # Derived limits of towers of complexes of modules
