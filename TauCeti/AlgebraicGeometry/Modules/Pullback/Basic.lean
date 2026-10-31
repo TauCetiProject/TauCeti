@@ -537,6 +537,8 @@ of the basis section `ιFree i` of `𝒪_Y^I`. -/
 lemma ιFree_pullbackObjFreeIso_inv (i : I) :
     SheafOfModules.ιFree i ≫ (SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I).inv =
       (pullbackObjUnitIso f).inv ≫ (pullback f).map (SheafOfModules.ιFree i) :=
+  -- Composites with Mathlib's `ιFree` and `pullbackObjFreeIso` are not reducibly composites in
+  -- `X.Modules`, so `rw [Category.assoc]` finds no match and they are rewritten by `Eq.trans`.
   (Iso.comp_inv_eq _).2 ((Category.assoc _ _ _).trans ((congrArg ((pullbackObjUnitIso f).inv ≫ ·)
     (SheafOfModules.pullback_map_ιFree_comp_pullbackObjFreeIso_hom _ i)).trans
       (by rw [← pullbackObjUnitIso_hom]; exact Iso.inv_hom_id_assoc _ _))).symm
@@ -551,6 +553,8 @@ lemma pullback_map_globalSectionsSmul_comp_ιFree_comp_pullbackObjFreeIso_hom (r
         (SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I).hom =
       (pullbackObjUnitIso f).hom ≫ globalSectionsSmul (𝟙_ X.Modules) (f.appTop r) ≫
         SheafOfModules.ιFree i := by
+  -- Composites with Mathlib's `pullbackObjFreeIso` are not reducibly composites in `X.Modules`,
+  -- so the first two steps are rewritten by `Eq.trans` rather than `rw`.
   refine (congrArg (· ≫ _) (Functor.map_comp _ _ _)).trans ((Category.assoc _ _ _).trans ?_)
   refine (congrArg (_ ≫ ·)
     (SheafOfModules.pullback_map_ιFree_comp_pullbackObjFreeIso_hom _ i)).trans ?_

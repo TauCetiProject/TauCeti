@@ -57,7 +57,9 @@ theorem unitHomFreeEquiv_totalSpaceHomEquiv_comp_map {I J : Type u} [Fintype I] 
       A.map T.hom.appTop *ᵥ unitHomFreeEquiv T.left I (totalSpaceHomEquiv (free X I) T t ≫
         (SheafOfModules.pullbackObjFreeIso T.hom.toRingCatSheafHom I).hom) := by
   rw [totalSpaceHomEquiv_comp_map]
-  -- Pulling back the matrix morphism along `q` gives the pulled-back matrix.
+  -- Pulling back the matrix morphism along `q` gives the pulled-back matrix. The composite with
+  -- Mathlib's `pullbackObjFreeIso` is not reducibly a composite in `T.left.Modules`, so
+  -- `rw [Category.assoc]` finds no match and it is rewritten by `Eq.trans`.
   exact (congrArg (unitHomFreeEquiv T.left J) ((Category.assoc _ _ _).trans
     ((congrArg (_ ≫ ·) (pullback_map_freeMatrixHom_comp_pullbackObjFreeIso_hom T.hom A)).trans
       (Category.assoc _ _ _).symm))).trans (unitHomFreeEquiv_comp_freeMatrixHom _ _)

@@ -214,6 +214,8 @@ and `A`. -/
 lemma freeMatrixHom_mul {K : Type u} [Fintype K] (A : Matrix K J Γ(X, ⊤))
     (B : Matrix J I Γ(X, ⊤)) :
     freeMatrixHom (A * B) = freeMatrixHom B ≫ freeMatrixHom A :=
+  -- Composites with Mathlib's `ιFree` are not reducibly composites in `X.Modules`, so they are
+  -- rewritten by `Eq.trans` rather than `rw`.
   free_hom_ext fun i ↦ (ιFree_freeMatrixHom (A * B) i).trans <|
     ((unitHomFreeEquiv X K).symm_apply_eq.2 <|
       (funext fun k ↦ by simp only [Matrix.mul_apply, Matrix.mulVec, dotProduct]).trans
@@ -238,6 +240,8 @@ lemma pullback_map_freeMatrixHom_comp_pullbackObjFreeIso_hom [Fintype I] [Fintyp
       (SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I).hom ≫
         (freeMatrixHom (A.map f.appTop)).hom := by
   let u := pullbackObjUnitIso f
+  -- Composites with Mathlib's `ιFree` and `pullbackObjFreeIso` are not reducibly composites in
+  -- `Y.Modules`, so `rw [Category.assoc]` finds no match and they are rewritten by `Eq.trans`.
   refine (Iso.inv_comp_eq _).1 (free_obj_hom_ext fun i ↦ ?_)
   refine Eq.trans ?_ (ιFree_freeMatrixHom (A.map f.appTop) i).symm
   refine ((Category.assoc _ _ _).symm.trans
