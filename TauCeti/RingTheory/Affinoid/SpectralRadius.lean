@@ -157,4 +157,13 @@ theorem supRingSeminorm_eq_smoothingSeminorm (hA : IsAffinoidAlgebra K A)
     rw [coe_supRingSeminorm]
     exact hA.supSeminorm_eq_smoothingFun f
 
+/-- A complete multiplicative ultrametric algebra norm on an affinoid algebra is its
+supremum norm. No normalisation of a Tate presentation is needed. -/
+@[simp]
+theorem supSeminorm_eq_norm_of_normMulClass [NormOneClass A] [NormMulClass A]
+    (hA : IsAffinoidAlgebra K A) (f : A) : supSeminorm K f = ‖f‖ := by
+  rw [hA.supSeminorm_eq_smoothingFun]
+  exact smoothingFun_apply_of_map_mul_eq_mul (normRingSeminorm A)
+    (le_of_eq norm_one) (fun g ↦ norm_mul f g)
+
 end TauCeti.IsAffinoidAlgebra
