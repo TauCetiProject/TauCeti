@@ -306,15 +306,6 @@ theorem continuedLFunctionOfWeight_eq_LSeries (χ : UnitaryIdealWeight K) {s : �
   exact Finset.sum_le_sum fun k _ ↦
     UnitaryIdealWeight.norm_normCoeff_le_norm_normCoeff_one K χ k
 
-/-- **The L-series of a unitary weight is holomorphic on `Re s > 1`**, the half-plane on which it
-converges absolutely. -/
-theorem analyticOnNhd_LSeries_of_unitary (χ : UnitaryIdealWeight K) :
-    AnalyticOnNhd ℂ (LSeries (normCoeff K χ.toIdealArithmeticFunction)) {s | 1 < s.re} :=
-  (LSeries_analyticOnNhd _).mono fun s (hs : 1 < s.re) ↦
-    (LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y hy ↦
-      LSeriesSummable_normCoeff K (summable_idealTerm_of_unitary_of_one_lt_re χ
-        (by simpa using hy))).trans_lt (mod_cast hs)
-
 /-- **Cancellation continues the L-series of a weight.** If `χ` has cancellation, its continued
 L-function is holomorphic on the half-plane `Re s > 1 - 1 / [K : ℚ]`, which contains the line
 `Re s = 1`. -/

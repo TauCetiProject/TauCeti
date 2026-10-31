@@ -23,12 +23,14 @@ depends on the presentation and not only on the character: presenting `χ` at a 
 function without zeros on `Re s > 0`.
 
 The comparison of presentations holds on `Re s > 1`, where the series converge absolutely, and as
-an equality of punctured germs at every point of the plane. It is never stated as an equality of
-values at every point, since both sides have a pole at `s = 1` for the trivial character. It holds
-whether or not a continuation to the plane exists, because dividing by the correction factor
-turns a continuation of one series into a continuation of the other. Every presented series is in
-particular the series of the primitive character `PrimitiveRayClassCharacter.of χ` times the
-Euler factors at the primes dividing `𝔪` but not the conductor.
+an equality of punctured germs at every point of the plane. The germ statements make no assertion
+about the values at the point itself: where a zero of the correction factor meets a pole, the
+normal form of the product need not be the product of the values, so no identity of values on the
+whole plane is claimed. The comparison holds whether or not a continuation to the plane exists,
+because dividing by the correction factor turns a continuation of one series into a continuation of
+the other. Every presented series is in particular the series of the primitive character
+`PrimitiveRayClassCharacter.of χ` times the Euler factors at the primes dividing `𝔪` but not the
+conductor.
 
 ## Main definitions
 
@@ -161,6 +163,12 @@ plane exists (`meromorphicContinuation_eqOn`), and is `0` otherwise. -/
 def heckeLFunctionC (χ : RayClassCharacter 𝔪) : ℂ → ℂ :=
   meromorphicContinuation 1 (LSeries (normCoeff K χ.toUnitaryIdealWeight.toIdealArithmeticFunction))
 
+/-- The defining equation of the presented Hecke L-function, through which the general results on
+`meromorphicContinuation` apply to it. -/
+theorem heckeLFunctionC_def (χ : RayClassCharacter 𝔪) :
+    heckeLFunctionC χ = meromorphicContinuation 1
+      (LSeries (normCoeff K χ.toUnitaryIdealWeight.toIdealArithmeticFunction)) := (rfl)
+
 /-- The presented Hecke L-function is in meromorphic normal form on the plane. -/
 theorem meromorphicNFOn_heckeLFunctionC (χ : RayClassCharacter 𝔪) :
     MeromorphicNFOn (heckeLFunctionC χ) univ :=
@@ -188,12 +196,12 @@ theorem heckeLFunctionC_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪
     (fun z _ ↦ (differentiable_eulerCorrection χ 𝔫).analyticAt z)
     (fun z hz ↦ eulerCorrection_ne_zero χ 𝔫 (zero_lt_one.trans hz))
     (analyticOnNhd_LSeries_of_unitary χ.toUnitaryIdealWeight) hs, smul_eq_mul, mul_comm,
-    heckeLFunctionC]
+    heckeLFunctionC_def]
 
 /-- **Inducing deletes Euler factors, as germs.** At every point of the plane, the presented
 Hecke L-function of `χ.induced h` has the punctured germ of that of `χ` times the deleted Euler
-factors. ⚠ For the trivial character both sides have a pole at `s = 1`, so this is not an
-equality of values there. -/
+factors. This says nothing about the values at `s` itself: where a zero of the correction factor
+meets a pole, the normal form of the product need not be the product of the values. -/
 theorem heckeLFunctionC_induced_eventuallyEq (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) (s : ℂ) :
     heckeLFunctionC (χ.induced h) =ᶠ[𝓝[≠] s]
       fun z ↦ heckeLFunctionC χ z * eulerCorrection χ 𝔫 z := by
@@ -203,7 +211,7 @@ theorem heckeLFunctionC_induced_eventuallyEq (h : 𝔪 ∣ 𝔫) (χ : RayClassC
     (fun z _ ↦ (differentiable_eulerCorrection χ 𝔫).analyticAt z)
     (fun z hz ↦ eulerCorrection_ne_zero χ 𝔫 (zero_lt_one.trans hz))
     (analyticOnNhd_LSeries_of_unitary χ.toUnitaryIdealWeight) s] with z hz
-  rw [hz, Pi.smul_apply', smul_eq_mul, mul_comm, heckeLFunctionC]
+  rw [hz, Pi.smul_apply', smul_eq_mul, mul_comm, heckeLFunctionC_def]
 
 /-- **The presented series is the primitive series times the deleted Euler factors**, on
 `Re s > 1`. The conductor is supplied by `PrimitiveRayClassCharacter.of`, not by the

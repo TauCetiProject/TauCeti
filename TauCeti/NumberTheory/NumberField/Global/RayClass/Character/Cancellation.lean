@@ -29,6 +29,13 @@ line `Re s = 1`.
 * `TauCeti.GlobalNumberFields.RayClassCharacter.hasCancellation_toUnitaryIdealWeight`: the weight
   of a nontrivial ray class character has cancellation.
 
+## Implementation notes
+
+The reindexing proof of `idealSummatory_toUnitaryIdealWeight` is adapted from the private lemma
+`idealSummatory_restrictAway_galoisCharacterUnitaryWeight` formerly in
+`TauCeti/NumberTheory/Chebotarev/GaloisCharacter/Cyclotomic/Cancellation.lean`, which now derives
+its cancellation from `hasCancellation_toUnitaryIdealWeight` instead.
+
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Chapter VII, §6 and §8.
