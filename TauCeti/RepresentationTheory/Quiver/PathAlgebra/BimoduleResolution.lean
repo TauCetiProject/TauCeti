@@ -85,7 +85,7 @@ open scoped TensorProduct DirectSum
 
 universe u v w
 
-variable (k : Type w) [CommRing k] (Q : Type u) [Quiver.{v} Q] [Finite Q]
+variable (k : Type w) [CommRing k] (Q : Type u) [Quiver.{v} Q]
 
 /-- The path algebra, in this file. -/
 local notation "𝒜" => pathAlgebra k Q
@@ -95,6 +95,10 @@ local notation "𝒜ᵉ" => pathAlgebra k Q ⊗[k] (pathAlgebra k Q)ᵐᵒᵖ
 
 /-- The vertex idempotent `eᵥ`, in this file. -/
 local notation "ε" => vertexIdempotent k
+
+section
+
+variable [Finite Q]
 
 /-! ### The arrow idempotents -/
 
@@ -235,18 +239,17 @@ private theorem homotopy_tmul {s t : Q} (x : 𝒜) (q : Quiver.Path s t) :
 
 end Homotopy
 
+end
+
 /-! ### The vertex idempotent -/
 
 variable [Fintype Q]
-
-variable (k Q)
 
 /-- **The idempotent `∑ᵥ eᵥ ⊗ eᵥ`** of the enveloping algebra `kQ ⊗[k] kQᵐᵒᵖ`. Its left ideal is
 the bimodule `kQ ⊗_{kQ₀} kQ`. -/
 noncomputable def vertexTensorIdempotent : 𝒜ᵉ :=
   ∑ v : Q, ε v ⊗ₜ[k] op (ε v)
 
-omit [Finite Q] in
 /-- The vertex idempotent of the enveloping algebra is the sum `∑ᵥ eᵥ ⊗ eᵥ`. -/
 theorem vertexTensorIdempotent_def :
     vertexTensorIdempotent k Q = ∑ v : Q, ε v ⊗ₜ[k] op (ε v) := (rfl)
@@ -438,7 +441,7 @@ private theorem coe_arrowTensorDifferential_homotopyPath {s t : Q} (q : Quiver.P
 omit [Fintype Q] in
 /-- On the component of an arrow `b`, the homotopy after right multiplication by the boundary
 of `b` is minus the projection onto that component. -/
-private theorem homotopy_comp_mulRight_arrowTensorBoundary (b : Σ i j : Q, i ⟶ j) :
+private theorem homotopy_comp_mulRight_arrowTensorBoundary [Finite Q] (b : Σ i j : Q, i ⟶ j) :
     homotopy ∘ₗ LinearMap.mulRight k (arrowTensorBoundary k Q b) =
       -(arrowTensorProj (k := k) b).restrictScalars k := by
   -- Both sides are `k`-linear, so they agree as linear maps, compared on the `x ⊗ q`.
