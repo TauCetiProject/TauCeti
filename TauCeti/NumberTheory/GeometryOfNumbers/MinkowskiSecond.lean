@@ -17,7 +17,7 @@ import TauCeti.Analysis.Convex.Topology
 import TauCeti.LinearAlgebra.Pi
 import TauCeti.MeasureTheory.Constructions.Pi
 import TauCeti.MeasureTheory.Measure.IntegerSlabs
-import TauCeti.MeasureTheory.Measure.Lebesgue.WeightedCrosspolytope
+import TauCeti.MeasureTheory.Measure.Lebesgue.Weighted.Crosspolytope
 
 /-!
 # Minkowski's second theorem

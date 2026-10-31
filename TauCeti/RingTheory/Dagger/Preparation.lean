@@ -164,24 +164,14 @@ theorem exists_isUnit_isMonicOfDegree_mul_eq [CompleteSpace K] {g : W} {s : ℕ}
   obtain ⟨ρ, hρpos, r, hρ, hρr, -, hgr, G, hG, hd, hunit⟩ :=
     exists_isDistinguished_isUnit_of_isDistinguished_one hg hu (ρ₀ := 2) one_lt_two
   let : Fact (0 < ρ) := hρpos
-  have hr : 1 < r := hρ.trans_le hρr
-  let c : Option σ → ℝ := splitRadius r ρ
-  let : ∀ i, Fact (0 < c i) := fun i ↦ ⟨splitRadius_pos hρpos.out hρr i⟩
-  -- Shrink the common convergence radius `r` to `c`; flattening later shrinks `c` to `ρ`.
-  let gflat : IsRestricted.subring (R := K) c := ⟨g, MvPowerSeries.isRestricted_of_le hgr
-    (fun i ↦ (Fact.out (p := 0 < c i)).le) (splitRadius_le hρr)⟩
-  have hGflat : ((restrictedOptionEquiv (c := c) gflat).1 :
-      PowerSeries (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ))) = G := by
-    ext m : 1
-    apply Subtype.ext
-    simpa [gflat] using (hG m).symm
-  obtain ⟨e, ω, he, hm, heq⟩ := hd.exists_isUnit_isMonicOfDegree_mul_eq hunit
-    (zero_lt_one.trans hr) (hGflat ▸ (restrictedOptionEquiv (c := c) gflat).2)
-  apply lift_preparation hρ hρr e ω he hm
   have hgG : PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype G =
       optionEquivLeft σ K (g : MvPowerSeries (Option σ) K) := by
     ext m : 1
     simpa using hG m
+  obtain ⟨e, ω, he, hm, heq⟩ := hd.exists_isUnit_isMonicOfDegree_mul_eq hunit
+    (zero_lt_one.trans (hρ.trans_le hρr))
+    (isRestricted_of_map_subtype_eq_optionEquivLeft hρr hgr hgG)
+  apply lift_preparation hρ hρr e ω he hm
   simpa only [map_mul, hgG] using congrArg
     (PowerSeries.map (IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)).subtype) heq
 
