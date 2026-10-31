@@ -30,7 +30,8 @@ c.e. in `Z` reduces to it. These reductions are one-one reductions in the sense 
 ## Main results
 
 * `Set.oneOneReducible_jump_of_recursiveIn`: every set c.e. in `Z`, that is, the domain of a
-  partial function recursive in `Z.oracle`, reduces one-one to the jump.
+  partial function recursive in `Z.oracle`, reduces one-one to the jump;
+  `Set.turingReducible_jump_of_recursiveIn`: so the jump decides it.
 * `Set.oneOneEquiv_jump_pairedJump`: the diagonal and paired halting sets relative to `Z` are
   one-one equivalent.
 * `Set.oneOneReducible_jump`, `Set.turingReducible_jump`: `Z` reduces to its jump.
@@ -106,6 +107,12 @@ theorem oneOneReducible_jump_of_recursiveIn {f : ℕ →. ℕ} (hf : Nat.Recursi
   obtain ⟨c, rfl⟩ := Code.exists_code.1 hf
   exact (OneOneReducible.mk _ ((Computable.const c).pair Computable.id)
     fun _ _ h => (Prod.ext_iff.1 h).2).trans (oneOneReducible_dom_eval_jump Z)
+
+/-- **The jump of `Z` decides every set c.e. in `Z`:** the domain of a partial function recursive
+in the oracle of `Z` has an oracle Turing reducible to that of `Z'`. -/
+theorem turingReducible_jump_of_recursiveIn {f : ℕ →. ℕ} (hf : Nat.RecursiveIn {Z.oracle} f) :
+    TuringReducible {x | (f x).Dom}.oracle Z.jump.oracle :=
+  (oneOneReducible_jump_of_recursiveIn Z hf).to_many_one.turingReducible_oracle
 
 /-- **The diagonal and paired halting sets are one-one equivalent**, relative to every set `Z`. -/
 theorem oneOneEquiv_jump_pairedJump : OneOneEquiv (· ∈ Z.jump) (· ∈ Z.pairedJump) := by
