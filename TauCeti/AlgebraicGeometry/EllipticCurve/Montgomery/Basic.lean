@@ -208,6 +208,12 @@ variable (A) in
 def twoTorsionPoint (hB : B ≠ 0) : (model A B).toAffine.Point :=
   .some 0 0 ((nonsingular_model_zero_zero A B).mpr (pow_ne_zero 2 hB))
 
+variable (A) in
+/-- The distinguished point of order two is the affine point `(0, 0)` of the monic model. -/
+theorem twoTorsionPoint_def (hB : B ≠ 0) :
+    twoTorsionPoint A hB = .some 0 0 ((nonsingular_model_zero_zero A B).mpr (pow_ne_zero 2 hB)) :=
+  (rfl)
+
 /-- An affine point of the monic model is the distinguished point of order two exactly when its
 `x`-coordinate is `0`: the equation forces `y² = 0` there. -/
 theorem some_eq_twoTorsionPoint_iff (hB : B ≠ 0) {x y : R}
@@ -246,12 +252,14 @@ variable [DecidableEq K]
 
 variable (A) in
 /-- The distinguished point of order two is killed by `2`. -/
+@[simp]
 theorem twoTorsionPoint_add_self (hB : B ≠ 0) :
     twoTorsionPoint A hB + twoTorsionPoint A hB = 0 :=
   Affine.Point.add_self_of_Y_eq (by simp [Affine.negY])
 
 variable (A) in
 /-- **The distinguished point `(0, 0)` has order two** in the native group of the monic model. -/
+@[simp]
 theorem addOrderOf_twoTorsionPoint (hB : B ≠ 0) : addOrderOf (twoTorsionPoint A hB) = 2 :=
   addOrderOf_eq_prime (by rw [two_nsmul, twoTorsionPoint_add_self]) (twoTorsionPoint_ne_zero A hB)
 
