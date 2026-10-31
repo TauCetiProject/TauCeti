@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 public import TauCeti.MeasureTheory.Measure.Regular
+public import TauCeti.MeasureTheory.Measure.Typeclasses.SFinite
 public import TauCeti.Topology.Algebra.Group.SigmaCompact
 
 /-!
@@ -21,19 +22,17 @@ everywhere outside a σ-compact set
 function vanishes outside a set `t` on which `μ` is σ-finite, and inner regularity exhausts `t`,
 up to a null set, by countably many compact sets.
 
-On a σ-compact set a measure finite on compact sets is σ-finite
-(`IsSigmaCompact.sigmaFinite_restrict`). In a locally compact group, countably many such
-σ-compact sets lie in one σ-compact open subgroup. Thus countably many integrable functions on a
-locally compact group all vanish almost everywhere outside a single σ-compact open subgroup `H`
+In a locally compact group, countably many such σ-compact sets lie in one σ-compact open
+subgroup. Thus countably many integrable functions on a locally compact group all vanish almost
+everywhere outside a single σ-compact open subgroup `H`
 (`MeasureTheory.exists_isSigmaCompact_openSubgroup_forall_ae_eq_zero`), and their integrals are
-integrals over `H`, for a measure whose restriction to `H` is σ-finite. This lets Fubini-type
-arguments for integrable functions on a group that is not σ-compact be carried out inside `H`.
+integrals over `H`. If `μ` is moreover finite on compact sets, as a Haar measure is, then its
+restriction to the σ-compact set `H` is σ-finite (`IsSigmaCompact.sigmaFinite_restrict`). For
+such a measure this lets Fubini-type arguments for integrable functions on a group that is not
+σ-compact be carried out inside `H`. Inner regularity alone does not give this σ-finiteness.
 
 ## Main results
 
-* `IsSigmaCompact.measurableSet`: σ-compact sets in a Hausdorff space are measurable.
-* `IsSigmaCompact.sigmaFinite_restrict`: the restriction of a measure finite on compact sets to
-  a σ-compact set is σ-finite.
 * `MeasureTheory.AEFinStronglyMeasurable.exists_isSigmaCompact_ae_eq_zero`,
   `MeasureTheory.Integrable.exists_isSigmaCompact_ae_eq_zero`: such a function vanishes almost
   everywhere outside a σ-compact set.
@@ -54,31 +53,6 @@ open Set Filter
 open scoped ENNReal
 
 variable {α : Type*} [MeasurableSpace α] [TopologicalSpace α]
-
-section SigmaCompact
-
-variable [OpensMeasurableSpace α] [T2Space α] {s : Set α}
-
-/-- A σ-compact set in a Hausdorff space is measurable. -/
-theorem IsSigmaCompact.measurableSet (hs : IsSigmaCompact s) : MeasurableSet s := by
-  obtain ⟨K, hK, rfl⟩ := hs
-  exact .iUnion fun n ↦ (hK n).measurableSet
-
-/-- The restriction of a measure that is finite on compact sets to a σ-compact set is
-σ-finite. -/
-theorem IsSigmaCompact.sigmaFinite_restrict (hs : IsSigmaCompact s) (μ : MeasureTheory.Measure α)
-    [MeasureTheory.IsFiniteMeasureOnCompacts μ] : MeasureTheory.SigmaFinite (μ.restrict s) := by
-  have hsm := hs.measurableSet
-  obtain ⟨K, hK, hKs⟩ := hs
-  -- `α` is covered by the compact sets `K n` together with the null set `sᶜ`.
-  refine MeasureTheory.Measure.sigmaFinite_of_countable (S := insert sᶜ (range K))
-    ((countable_range K).insert _) ?_ ?_
-  · rintro _ (rfl | ⟨n, rfl⟩)
-    · simp [MeasureTheory.Measure.restrict_apply' hsm]
-    · exact (MeasureTheory.Measure.restrict_apply_le _ _).trans_lt (hK n).measure_lt_top
-  · rw [sUnion_insert, sUnion_range, hKs, compl_union_self]
-
-end SigmaCompact
 
 namespace MeasureTheory
 
