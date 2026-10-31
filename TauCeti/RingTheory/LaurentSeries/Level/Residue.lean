@@ -94,6 +94,15 @@ theorem residue_algebraMap (f : K⸨X⸩) :
     residue K d (Algebra.algebraMap K⸨X⸩ (Level K d) f) = (d : ℕ) • f.coeff (-1) := by
   rw [residue_eq_nsmul_coeff, algebraMap_apply, ← mul_neg_one, coeff_expand_mul]
 
+/-- The residue on level `d` is `K`-linear: the residue of `(a x) dt`, for a constant `a ∈ K`, is
+`a` times the residue of `x dt`. -/
+@[simp]
+theorem residue_algebraMap_algebraMap_mul (a : K) (x : Level K d) :
+    residue K d (Algebra.algebraMap K⸨X⸩ (Level K d) (Algebra.algebraMap K K⸨X⸩ a) * x) =
+      a * residue K d x := by
+  rw [residue_eq_nsmul_coeff, residue_eq_nsmul_coeff, map_mul, algebraMap_apply, AlgHom.commutes,
+    _root_.LaurentSeries.algebraMap_apply, C_mul_eq_smul, coeff_smul, smul_eq_mul, mul_smul_comm]
+
 /-- Embedded in the Puiseux field, the residue of `x dt` on level `d` is `d` times the
 rational-exponent residue, the coefficient of `t⁻¹`. -/
 theorem residue_eq_nsmul_residue_toPuiseux (x : Level K d) :
@@ -139,6 +148,15 @@ noncomputable def residueOfFinrankEq (h : finrank K⸨X⸩ L = e) : L →+ K :=
 theorem residueOfFinrankEq_apply (h : finrank K⸨X⸩ L = e) (φ : L ≃ₐ[K⸨X⸩] Level K e) (x : L) :
     residueOfFinrankEq h x = residue K e (φ x) :=
   residue_apply_eq_of_algEquiv _ φ x
+
+/-- The residue of a finite extension is `K`-linear: the residue of `(a x) dt`, for a constant
+`a ∈ K`, is `a` times the residue of `x dt`. -/
+@[simp]
+theorem residueOfFinrankEq_algebraMap_algebraMap_mul (h : finrank K⸨X⸩ L = e) (a : K) (x : L) :
+    residueOfFinrankEq h (Algebra.algebraMap K⸨X⸩ L (Algebra.algebraMap K K⸨X⸩ a) * x) =
+      a * residueOfFinrankEq h x := by
+  rw [residueOfFinrankEq_apply h (algEquivOfFinrankEq h), map_mul, AlgEquiv.commutes,
+    residue_algebraMap_algebraMap_mul, residueOfFinrankEq_apply h (algEquivOfFinrankEq h)]
 
 /-- The residue of finite extensions is preserved by isomorphisms of extensions of `K⸨t⸩`. -/
 @[simp]
