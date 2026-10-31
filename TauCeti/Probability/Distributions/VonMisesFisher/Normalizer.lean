@@ -84,18 +84,23 @@ private lemma integral_inner_pow_div_uniformSphereMeasure (hd : 2 ≤ Module.fin
     simp_rw [pow_mul]
     rw [← integral_map (f := fun y : ℝ ↦ y ^ j) (by fun_prop) (by fun_prop),
       map_sq_inner_uniformSphereMeasure hd η, integral_map (by fun_prop) (by fun_prop)]
+    -- the two Beta parameters add up to `d / 2`
+    have hab : (1 / 2 : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) / 2 = b := by rw [hb_def]; ring
     simp_rw [mul_pow]
-    rw [integral_const_mul, integral_pow_betaMeasure (by norm_num) ha,
-      show (1 / 2 : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) / 2 = b by rw [hb_def]; ring]
+    rw [integral_const_mul, integral_pow_betaMeasure (by norm_num) ha, hab]
   have hA : 0 < (‖η‖ / 2) ^ (1 - b) := rpow_pos_of_pos (by positivity) _
   have hexp : (‖η‖ / 2) ^ (2 * (j : ℝ) + (b - 1)) =
       ‖η‖ ^ (2 * j) / 4 ^ j / (‖η‖ / 2) ^ (1 - b) := by
-    rw [eq_div_iff hA.ne', ← rpow_add (by positivity),
-      show 2 * (j : ℝ) + (b - 1) + (1 - b) = ((2 * j : ℕ) : ℝ) by push_cast; ring, rpow_natCast,
-      div_pow, pow_mul 2, show (2 : ℝ) ^ 2 = 4 by norm_num]
+    -- the real exponents add up to the natural number `2 j`
+    have hsum : 2 * (j : ℝ) + (b - 1) + (1 - b) = ((2 * j : ℕ) : ℝ) := by push_cast; ring
+    have hfour : (2 : ℝ) ^ 2 = 4 := by norm_num
+    rw [eq_div_iff hA.ne', ← rpow_add (by positivity), hsum, rpow_natCast, div_pow, pow_mul 2,
+      hfour]
   have hGb : 0 < Gamma (b + j) := Gamma_pos_of_pos (by positivity)
+  -- the Bessel series index `j + (d / 2 - 1) + 1` is the Beta moment index `d / 2 + j`
+  have hidx : (j : ℝ) + (b - 1) + 1 = b + j := by ring
   rw [integral_div, hmoment, add_comm (1 / 2 : ℝ), Gamma_nat_add_half_eq_factorial,
-    Gamma_one_half_eq, hexp, show (j : ℝ) + (b - 1) + 1 = b + j by ring]
+    Gamma_one_half_eq, hexp, hidx]
   field_simp
 
 /-- **The von Mises–Fisher normalizer.** In dimension `d ≥ 2`, the exponential moment of the
