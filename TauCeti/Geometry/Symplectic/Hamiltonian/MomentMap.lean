@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.SkewAdjoint
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Geometry.Manifold.VectorField.InfinitesimalAction
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import Mathlib.Algebra.Lie.Cochain
@@ -50,6 +51,16 @@ This file proves the basic laws of moment maps:
 * for a closed nondegenerate form, `{μ_Z, μ_Z'}` has Hamiltonian vector field `(⁅Z, Z'⁆)_M`
   (`TauCeti.SmoothTwoForm.IsMomentMap.hamiltonianVectorField_poissonBracket`).
 
+The **differential** `dμ_x : T_x M → 𝔤*` of a moment map
+(`TauCeti.SmoothTwoForm.IsMomentMap.differential`) satisfies `⟨dμ_x(v), Z⟩ = σ(Z_M x, v)`. Hence its
+kernel is the `σ`-orthogonal `(𝔤 · x)^σ` of the orbit tangent space
+(`TauCeti.SmoothTwoForm.IsMomentMap.ker_differential`) and, where `σ` is nondegenerate on a
+finite-dimensional manifold, its image is the annihilator `𝔤_x^0` of the isotropy algebra
+(`TauCeti.SmoothTwoForm.IsMomentMap.range_differential`). So `dμ_x` is surjective exactly when
+`𝔤_x = 0`, that is, when the action is locally free at `x`, and the rank of `dμ_x` is the
+dimension of the orbit tangent space. These identities describe the tangent spaces of the
+levels of a moment map, the starting point of symplectic reduction.
+
 The failure of a moment map to be infinitesimally equivariant is measured by its **cocycle**, the
 Lie algebra `2`-cochain `c(Z, Z') = σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` on `𝔤` at each point, with values
 in the trivial module `ℝ` (`TauCeti.SmoothTwoForm.momentCocycle`). For a nondegenerate form it is
@@ -57,7 +68,9 @@ in the trivial module `ℝ` (`TauCeti.SmoothTwoForm.momentCocycle`). For a nonde
 compatible with restriction of the action. For a closed form, `d(σ(Z_M, Z'_M)) = dμ_{⁅Z, Z'⁆}`
 (`TauCeti.SmoothTwoForm.IsMomentMap.mvfderiv_eval₂`), so the cocycle is constant on a preconnected
 manifold (`TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_eq`), and it is a Lie algebra
-`2`-cocycle (`TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_mem_twoCocycle`).
+`2`-cocycle (`TauCeti.SmoothTwoForm.IsMomentMap.momentCocycle_mem_twoCocycle`). Where the cocycle
+vanishes, `dμ_x(Z_M x) = ⁅Z, μ(x)⁆`, so the isotropy algebra `𝔤_x` lies in the coadjoint
+stabilizer of `μ(x)` (`TauCeti.SmoothTwoForm.IsMomentMap.isotropy_le_lieAnnihilator`).
 
 The first example is the linear action of the symplectic Lie algebra `sp(V, ω)`, the skew-adjoint
 endomorphisms of a finite-dimensional symplectic vector space `(V, ω)`, by the vector fields
@@ -76,6 +89,7 @@ has the **Heisenberg cocycle** `c(Z, Z') = ω(τ Z, τ Z')`
 
 * `TauCeti.SmoothTwoForm.IsMomentMap σ a μ`: `μ` is a moment map of the infinitesimal action `a`
   for `σ`.
+* `TauCeti.SmoothTwoForm.IsMomentMap.differential`: the differential `dμ_x : T_x M → 𝔤*`.
 * `TauCeti.SmoothTwoForm.momentCocycle σ a μ x`: the cocycle `σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` at `x`,
   a `2`-cochain of `𝔤` with trivial coefficients.
 * `TauCeti.SymplecticForm.linearMomentMap ω`: the moment map `μ_A(x) = ½ ω(A x, x)` of the linear
@@ -88,7 +102,8 @@ has the **Heisenberg cocycle** `c(Z, Z') = ω(τ Z, τ Z')`
 * V. Guillemin, S. Sternberg, *Symplectic Techniques in Physics*, Cambridge University Press,
   1984, Section 26.
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
-  Springer, 2001, Lecture 22.
+  Springer, 2001, Lecture 22, and Lecture 23 (the kernel and image of the differential of a moment
+  map, in the proof of the Marsden–Weinstein–Meyer theorem).
 * D. McDuff, D. Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford, 2017,
   Section 5.2 (moment maps, and the cocycle measuring their failure to be equivariant).
 -/
@@ -275,6 +290,86 @@ theorem hamiltonianVectorField_poissonBracket (h : σ.IsMomentMap a μ) (hσ : �
 
 end Nondegenerate
 
+/-! ### The differential of a moment map -/
+
+/-- The **differential** `dμ_x : T_x M → 𝔤*` of a moment map at `x`, sending a tangent vector `v`
+to `Z ↦ dμ_Z(v)`. It is linear in `Z` because the moment map identity computes it as
+`dμ_Z(v) = σ(Z_M x, v)` (`TauCeti.SmoothTwoForm.IsMomentMap.differential_eq`). -/
+def differential (h : σ.IsMomentMap a μ) (x : M) : TangentSpace I x →ₗ[ℝ] Module.Dual ℝ 𝔤 :=
+  LinearMap.mk₂ ℝ (fun v Z ↦ mvfderiv I (fun y ↦ μ y Z) x v)
+    (fun _ _ _ ↦ map_add _ _ _) (fun _ _ _ ↦ map_smul _ _ _)
+    (fun v Z Z' ↦ by
+      rw [← h.eval₂_apply, ← h.eval₂_apply, ← h.eval₂_apply, map_add, Pi.add_apply,
+        SmoothBundleForm.eval₂_add_left])
+    (fun c v Z ↦ by
+      rw [← h.eval₂_apply, ← h.eval₂_apply, map_smul, Pi.smul_apply,
+        SmoothBundleForm.eval₂_smul_left])
+
+@[simp]
+theorem differential_apply (h : σ.IsMomentMap a μ) (x : M) (v : TangentSpace I x) (Z : 𝔤) :
+    h.differential x v Z = mvfderiv I (fun y ↦ μ y Z) x v :=
+  (rfl)
+
+/-- The **moment-map differential identity**: `⟨dμ_x(v), Z⟩ = σ(Z_M x, v)`. -/
+theorem differential_apply_eq_eval₂ (h : σ.IsMomentMap a μ) (x : M) (v : TangentSpace I x)
+    (Z : 𝔤) : h.differential x v Z = SmoothBundleForm.eval₂ σ x (a Z x) v :=
+  (h.eval₂_apply Z x v).symm
+
+/-- The differential of a moment map at `x` is the transpose of the orbit map `Z ↦ Z_M(x)`
+composed with the contraction `v ↦ σ(·, v)` of the form. -/
+theorem differential_eq (h : σ.IsMomentMap a μ) (x : M) :
+    h.differential x = (a.eval x).dualMap ∘ₗ (σ.bilinFormAt x).flip := by
+  ext v Z
+  simp [h.differential_apply_eq_eval₂]
+
+/-- The kernel of the differential of a moment map at `x` is the `σ`-orthogonal of the orbit
+tangent space: `ker dμ_x = (𝔤 · x)^σ`. -/
+theorem ker_differential (h : σ.IsMomentMap a μ) (x : M) :
+    LinearMap.ker (h.differential x) = (σ.bilinFormAt x).orthogonal (a.orbitTangent x) := by
+  ext v
+  simp only [LinearMap.mem_ker, LinearMap.BilinForm.mem_orthogonal_iff, LinearMap.ext_iff,
+    InfinitesimalAction.mem_orbitTangent_iff, forall_exists_index, forall_apply_eq_imp_iff,
+    SmoothForm.bilinFormAt_apply, h.differential_apply_eq_eval₂, LinearMap.zero_apply]
+
+/-- The image of the differential of a moment map at a point where the form is nondegenerate is
+the annihilator of the isotropy algebra: `im dμ_x = 𝔤_x^0`. -/
+theorem range_differential [FiniteDimensional ℝ E] (h : σ.IsMomentMap a μ) {x : M}
+    (hσ : (σ.bilinFormAt x).Nondegenerate) :
+    LinearMap.range (h.differential x) = (a.isotropy x).toSubmodule.dualAnnihilator := by
+  have : LinearMap.range (σ.bilinFormAt x).flip = ⊤ :=
+    LinearMap.range_eq_top.2 ((σ.bilinFormAt x).flip.toDual hσ.flip).surjective
+  rw [h.differential_eq, LinearMap.range_comp, this, Submodule.map_top,
+    LinearMap.range_dualMap_eq_dualAnnihilator_ker, InfinitesimalAction.isotropy_toSubmodule]
+
+/-- At a point where the form is nondegenerate, the differential of a moment map is surjective
+exactly when the isotropy algebra is trivial, that is, when the action is locally free there. -/
+theorem differential_surjective_iff [FiniteDimensional ℝ E] (h : σ.IsMomentMap a μ) {x : M}
+    (hσ : (σ.bilinFormAt x).Nondegenerate) :
+    Function.Surjective (h.differential x) ↔ a.isotropy x = ⊥ := by
+  rw [← LinearMap.range_eq_top, h.range_differential hσ, Submodule.dualAnnihilator_eq_top_iff,
+    LieSubalgebra.toSubmodule_eq_bot]
+
+/-- At a point where the form is nondegenerate, the kernel of the differential of a moment map and
+the orbit tangent space have complementary dimensions: `dim (ker dμ_x) + dim (𝔤 · x) = dim M`. -/
+theorem finrank_ker_differential_add_finrank_orbitTangent [FiniteDimensional ℝ E]
+    (h : σ.IsMomentMap a μ) {x : M} (hσ : (σ.bilinFormAt x).Nondegenerate) :
+    Module.finrank ℝ (LinearMap.ker (h.differential x)) + Module.finrank ℝ (a.orbitTangent x) =
+      Module.finrank ℝ (TangentSpace I x) := by
+  rw [h.ker_differential, add_comm, LinearMap.BilinForm.finrank_add_finrank_orthogonal',
+    hσ.ker_eq_bot, inf_bot_eq, finrank_bot, add_zero]
+
+/-- At a point where the form is nondegenerate, the rank of the differential of a moment map is
+the dimension of the orbit tangent space: `dim (im dμ_x) = dim (𝔤 · x)`. -/
+theorem finrank_range_differential [FiniteDimensional ℝ E] [FiniteDimensional ℝ 𝔤]
+    (h : σ.IsMomentMap a μ) {x : M} (hσ : (σ.bilinFormAt x).Nondegenerate) :
+    Module.finrank ℝ (LinearMap.range (h.differential x)) =
+      Module.finrank ℝ (a.orbitTangent x) := by
+  rw [h.range_differential hσ, InfinitesimalAction.isotropy_toSubmodule,
+    InfinitesimalAction.orbitTangent_eq_range]
+  have h₁ := Subspace.finrank_add_finrank_dualAnnihilator_eq (LinearMap.ker (a.eval x))
+  have h₂ := LinearMap.finrank_range_add_finrank_ker (a.eval x)
+  omega
+
 end IsMomentMap
 
 /-! ### The cocycle of a moment map -/
@@ -287,15 +382,13 @@ exactly when `μ` is infinitesimally equivariant. -/
 def momentCocycle (σ : SmoothTwoForm I M) (a : InfinitesimalAction 𝔤 I M)
     (μ : M → Module.Dual ℝ 𝔤) (x : M) :
     LieModule.Cohomology.twoCochain ℝ 𝔤 (TrivialLieModule ℝ 𝔤 ℝ) where
-  val := ((σ.bilinFormAt x).compl₁₂ (LinearMap.proj x ∘ₗ a.toLinearMap)
-      (LinearMap.proj x ∘ₗ a.toLinearMap) -
+  val := ((σ.bilinFormAt x).compl₁₂ (a.eval x) (a.eval x) -
     (LieModule.toEnd ℝ 𝔤 𝔤 : 𝔤 →ₗ[ℝ] Module.End ℝ 𝔤).compr₂ (μ x)).compr₂
       (TrivialLieModule.equiv ℝ 𝔤 ℝ).symm.toLinearMap
   property := LieModule.Cohomology.mem_twoCochain_iff.2 fun Z ↦ by
     simp only [LinearMap.compr₂_apply, LinearMap.sub_apply, LinearMap.compl₁₂_apply,
-      LinearMap.coe_comp, LinearMap.coe_proj, InfinitesimalAction.coe_toLinearMap,
-      Function.comp_apply, Function.eval, SmoothForm.isAlt_bilinFormAt σ x _,
-      LieHom.coe_toLinearMap, LieModule.toEnd_apply_apply, lie_self, map_zero, sub_self]
+      SmoothForm.isAlt_bilinFormAt σ x _, LieHom.coe_toLinearMap, LieModule.toEnd_apply_apply,
+      lie_self, map_zero, sub_self]
 
 @[simp]
 theorem momentCocycle_apply (σ : SmoothTwoForm I M) (a : InfinitesimalAction 𝔤 I M)
@@ -303,8 +396,7 @@ theorem momentCocycle_apply (σ : SmoothTwoForm I M) (a : InfinitesimalAction �
     σ.momentCocycle a μ x Z Z' = (TrivialLieModule.equiv ℝ 𝔤 ℝ).symm
       (SmoothBundleForm.eval₂ σ x (a Z x) (a Z' x) - μ x ⁅Z, Z'⁆) := by
   simp only [momentCocycle, ← LieModule.Cohomology.twoCochain_val_apply, LinearMap.compr₂_apply,
-    LinearMap.sub_apply, LinearMap.compl₁₂_apply, LinearMap.coe_comp, LinearMap.coe_proj,
-    InfinitesimalAction.coe_toLinearMap, Function.comp_apply, Function.eval,
+    LinearMap.sub_apply, LinearMap.compl₁₂_apply, InfinitesimalAction.eval_apply,
     SmoothForm.bilinFormAt_apply, LieHom.coe_toLinearMap, LieModule.toEnd_apply_apply,
     LinearEquiv.coe_coe]
 
@@ -359,6 +451,23 @@ theorem momentCocycle_apply_eq_poissonBracket [FiniteDimensional ℝ E] (h : σ.
     σ.momentCocycle a μ x Z Z' = (TrivialLieModule.equiv ℝ 𝔤 ℝ).symm
       (σ.poissonBracket (fun y ↦ μ y Z) (fun y ↦ μ y Z') x - μ x ⁅Z, Z'⁆) := by
   rw [momentCocycle_apply, h.poissonBracket_eq_eval₂ hσ]
+
+/-- If the cocycle of a moment map vanishes at `x`, its differential carries the generated vector
+`Z_M x` to the coadjoint action of `Z` on `μ(x)`: `dμ_x(Z_M x) = ⁅Z, μ(x)⁆`. -/
+theorem differential_apply_of_momentCocycle_eq_zero (h : σ.IsMomentMap a μ) {x : M}
+    (hc : σ.momentCocycle a μ x = 0) (Z : 𝔤) : h.differential x (a Z x) = ⁅Z, μ x⁆ := by
+  ext Z'
+  have h0 := congr($hc Z' Z)
+  rw [momentCocycle_apply, ← LieModule.Cohomology.twoCochain_val_apply, ZeroMemClass.coe_zero,
+    LinearMap.zero_apply, LinearMap.zero_apply, LinearEquiv.map_eq_zero_iff, sub_eq_zero] at h0
+  rw [differential_apply_eq_eval₂, h0, Module.Dual.lie_apply, ← lie_skew, map_neg]
+
+/-- If the cocycle of a moment map vanishes at `x`, the isotropy algebra `𝔤_x` is contained in the
+coadjoint stabilizer of `μ(x)`. -/
+theorem isotropy_le_lieAnnihilator (h : σ.IsMomentMap a μ) {x : M}
+    (hc : σ.momentCocycle a μ x = 0) : a.isotropy x ≤ lieAnnihilator ℝ 𝔤 (μ x) := fun Z hZ ↦ by
+  rw [mem_lieAnnihilator, ← h.differential_apply_of_momentCocycle_eq_zero hc,
+    (a.mem_isotropy_iff x).1 hZ, map_zero]
 
 section Closed
 
