@@ -124,9 +124,8 @@ theorem norm_kahlerForm_sq : ‖J.kahlerForm‖ ^ 2 = finrank ℝ V / 2 := by
 @[simp]
 theorem lieMap_kahlerForm :
     exteriorPower.lieMap 2 J.toLinearMap J.kahlerForm = 0 := by
-  refine ext_inner_ιMulti fun v ↦ ?_
-  rw [show v = ![v 0, v 1] from (FinVec.etaExpand_eq v).symm,
-    inner_lieMap_two_left (inner_apply_left hJ), lieMap_two_apply_ιMulti]
+  refine ext_inner_ιMulti_two fun u w ↦ ?_
+  rw [inner_lieMap_two_left (inner_apply_left hJ), lieMap_two_apply_ιMulti]
   simp [inner_add_right, inner_kahlerForm_ιMulti hJ, hJ]
 
 end Orthogonal
@@ -167,9 +166,8 @@ include h₀ h₂ in
 /-- In a unitary frame the Kähler two-vector is `ω = e₀ ∧ e₁ + e₂ ∧ e₃`. -/
 theorem kahlerForm_eq_ιMulti_add_ιMulti :
     J.kahlerForm = ιMulti ℝ 2 ![e 0, e 1] + ιMulti ℝ 2 ![e 2, e 3] := by
-  refine ext_inner_ιMulti fun v ↦ ?_
-  rw [show v = ![v 0, v 1] from (FinVec.etaExpand_eq v).symm,
-    inner_kahlerForm_ιMulti (inner_apply_apply_of_orthonormalBasis h₀ h₂), inner_add_left,
+  refine ext_inner_ιMulti_two fun u w ↦ ?_
+  rw [inner_kahlerForm_ιMulti (inner_apply_apply_of_orthonormalBasis h₀ h₂), inner_add_left,
     inner_ιMulti_two, inner_ιMulti_two]
   simp only [← e.repr_apply_apply, e.inner_eq_sum_repr (J _), conj_trivial, Fin.sum_univ_four,
     repr_apply h₀ h₂, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
@@ -183,9 +181,8 @@ include he h₀ h₂ in
 /-- **The Kähler two-vector is self-dual** for the complex orientation, `⋆ω = ω`: in a positively
 oriented unitary frame, `⋆(e₀ ∧ e₁) = e₂ ∧ e₃`. -/
 theorem hodgeStar_kahlerForm : o.hodgeStar hkl J.kahlerForm = J.kahlerForm := by
-  refine ext_inner_ιMulti fun v ↦ ?_
-  rw [show v = ![v 0, v 1] from (FinVec.etaExpand_eq v).symm,
-    kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂, map_add, inner_add_left, inner_add_left,
+  refine ext_inner_ιMulti_two fun u w ↦ ?_
+  rw [kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂, map_add, inner_add_left, inner_add_left,
     o.inner_hodgeStar_ιMulti_two hkl, o.inner_hodgeStar_ιMulti_two hkl, inner_ιMulti_two,
     inner_ιMulti_two]
   simp [o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four, Basis.toMatrix_apply,
@@ -209,9 +206,7 @@ private theorem lieMap_lieMap_add_hodgeStar
   have key : D ∘ₗ D ∘ₗ (LinearMap.id + (o.hodgeStar hkl).toLinearMap) =
       (4 : ℝ) • (innerₗ _ J.kahlerForm).smulRight J.kahlerForm -
         (4 : ℝ) • (LinearMap.id + (o.hodgeStar hkl).toLinearMap) := by
-    refine linearMap_ext_inner_ιMulti fun v v' ↦ ?_
-    rw [show v = ![v 0, v 1] from (FinVec.etaExpand_eq v).symm,
-      show v' = ![v' 0, v' 1] from (FinVec.etaExpand_eq v').symm]
+    refine linearMap_ext_inner_ιMulti_two fun a b u w ↦ ?_
     simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.smul_apply,
       LinearMap.add_apply, LinearMap.id_apply, LinearEquiv.coe_coe, LinearMap.smulRight_apply,
       innerₗ_apply_apply, hD, D, exteriorPower.lieMap_two_apply_ιMulti, map_add,
@@ -248,8 +243,7 @@ theorem ιMulti_sub_ιMulti_add_hodgeStar (ξ a : V) :
         o.hodgeStar hkl (ιMulti ℝ 2 ![ξ, J a] - ιMulti ℝ 2 ![J ξ, a]) =
       (2 * ⟪ξ, a⟫) • J.kahlerForm := by
   have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
-  refine ext_inner_ιMulti fun v ↦ ?_
-  rw [show v = ![v 0, v 1] from (FinVec.etaExpand_eq v).symm]
+  refine ext_inner_ιMulti_two fun u w ↦ ?_
   simp only [map_sub, inner_add_left, inner_sub_left, real_inner_smul_left,
     inner_kahlerForm_ιMulti hJ, o.inner_hodgeStar_ιMulti_two hkl, inner_ιMulti_two,
     o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four]

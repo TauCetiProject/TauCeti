@@ -23,7 +23,9 @@ act skew-adjointly on two-forms.
 * `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`.
 * `exteriorPower.ext_inner_ιMulti`: elements of `⋀ⁿ E` with the same inner products against all
   wedges of vectors are equal, and `exteriorPower.linearMap_ext_inner_ιMulti` is the
-  corresponding extensionality principle for linear maps between exterior powers.
+  corresponding extensionality principle for linear maps between exterior powers;
+  `exteriorPower.ext_inner_ιMulti_two` and `exteriorPower.linearMap_ext_inner_ιMulti_two` test
+  only against wedges `u ∧ w` of two vectors.
 * `exteriorPower.inner_lieMap_two_left`: the derivation action `D_A` of a
   skew-adjoint `A` on two-forms is skew-adjoint, `⟪D_A x, y⟫ = -⟪x, D_A y⟫`.
 -/
@@ -83,6 +85,26 @@ theorem linearMap_ext_inner_ιMulti {m : ℕ} {f g : ⋀[ℝ]^n E →ₗ[ℝ] �
     (h : ∀ v w, ⟪f (ιMulti ℝ n v), ιMulti ℝ m w⟫ = ⟪g (ιMulti ℝ n v), ιMulti ℝ m w⟫) :
     f = g :=
   linearMap_ext (AlternatingMap.ext fun v ↦ ext_inner_ιMulti (h v))
+
+/-- Two-vectors are determined by their inner products with the wedges `u ∧ w` of two vectors:
+the form of `ext_inner_ιMulti` whose hypothesis matches the lemmas stated for `ιMulti ℝ 2 ![u, w]`,
+such as `inner_ιMulti_two`. -/
+theorem ext_inner_ιMulti_two {x y : ⋀[ℝ]^2 E}
+    (h : ∀ u w, ⟪x, ιMulti ℝ 2 ![u, w]⟫ = ⟪y, ιMulti ℝ 2 ![u, w]⟫) : x = y :=
+  ext_inner_ιMulti fun v ↦ by
+    rw [← FinVec.etaExpand_eq v]
+    exact h (v 0) (v 1)
+
+omit [FiniteDimensional ℝ E] in
+/-- Linear maps `⋀² E → ⋀² F` agree when their values on wedges `a ∧ b` have the same inner
+products with all wedges `u ∧ w`: the two-vector form of `linearMap_ext_inner_ιMulti`. -/
+theorem linearMap_ext_inner_ιMulti_two {f g : ⋀[ℝ]^2 E →ₗ[ℝ] ⋀[ℝ]^2 F}
+    (h : ∀ a b u w, ⟪f (ιMulti ℝ 2 ![a, b]), ιMulti ℝ 2 ![u, w]⟫ =
+      ⟪g (ιMulti ℝ 2 ![a, b]), ιMulti ℝ 2 ![u, w]⟫) :
+    f = g :=
+  linearMap_ext (AlternatingMap.ext fun v ↦ ext_inner_ιMulti_two fun u w ↦ by
+    rw [← FinVec.etaExpand_eq v]
+    exact h (v 0) (v 1) u w)
 
 /-- **Skew-adjoint endomorphisms act skew-adjointly on two-forms**: if `⟪A u, w⟫ = -⟪u, A w⟫`
 for all `u, w`, then the derivation action `D_A (u ∧ w) = A u ∧ w + u ∧ A w` satisfies

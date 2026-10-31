@@ -235,11 +235,9 @@ theorem hodgeStar_lieMap_two (hkl : 2 + 2 = finrank ℝ V) {A : V →ₗ[ℝ] V}
     rw [hv, Fin.sum_univ_four]
     fin_cases i <;>
       simp [hd, hm 1 0, hm 2 0, hm 3 0, hm 2 1, hm 3 1, hm 3 2] <;> ring
-  have hv (v : Fin 2 → V) : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
-  refine LinearMap.congr_fun (linearMap_ext_inner_ιMulti (f := (o.hodgeStar hkl).toLinearMap ∘ₗ
+  refine LinearMap.congr_fun (linearMap_ext_inner_ιMulti_two (f := (o.hodgeStar hkl).toLinearMap ∘ₗ
     exteriorPower.lieMap 2 A) (g := exteriorPower.lieMap 2 A ∘ₗ
-    (o.hodgeStar hkl).toLinearMap) fun v v' ↦ ?_) x
-  rw [hv v, hv v']
+    (o.hodgeStar hkl).toLinearMap) fun a b u w ↦ ?_) x
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, inner_lieMap_two_left hA,
     exteriorPower.lieMap_two_apply_ιMulti, map_add, inner_add_left, inner_add_right,
     o.inner_hodgeStar_ιMulti_two hkl, o.volumeForm_robust e he, Basis.det_apply,
