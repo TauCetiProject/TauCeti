@@ -19,6 +19,11 @@ The coefficient semiring need only be commutative; no norm or topology is requir
 
 `MvPowerSeries.coeff_X_add_X_pow` is the binomial formula for the coefficients of `(X + Y) ^ n` in
 `R⟦X, Y⟧`, the power-series counterpart of `MvPolynomial.coeff_add_pow`, over any semiring.
+
+`MvPowerSeries.mem_map_rangeS` says that a power series is the image under `map f` of a power
+series exactly when each of its coefficients is in the range of `f`, as Mathlib's
+`Polynomial.mem_map_rangeS` does for polynomials. For the inclusion of a subring, it lifts a power
+series with coefficients in the subring to a power series over the subring.
 -/
 
 public section
@@ -52,5 +57,25 @@ theorem coeff_X_add_X_pow (d : Fin 2 →₀ ℕ) (n : ℕ) :
     simpa [← MvPolynomial.coeff_coe] using MvPolynomial.coeff_add_pow (R := ℕ) d n
   simpa only [← coeff_map, map_pow, map_add, map_X, Nat.coe_castRingHom, apply_ite,
     Nat.cast_zero] using congrArg (Nat.castRingHom R) hnat
+
+section Map
+
+variable {σ S : Type*} [Semiring S] (f : R →+* S)
+
+/-- A power series over `S` is in the range of `map f` if and only if each of its coefficients is
+in the range of `f`. This is the power-series form of Mathlib's `Polynomial.mem_map_rangeS`. -/
+theorem mem_map_rangeS {p : MvPowerSeries σ S} :
+    p ∈ (map (σ := σ) f).rangeS ↔ ∀ d, coeff d p ∈ f.rangeS := by
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨q, rfl⟩ d
+    rw [coeff_map]
+    exact f.mem_rangeS_self _
+  · simp only [RingHom.mem_rangeS] at h
+    choose c hc using h
+    -- a power series is its coefficient function
+    let q : MvPowerSeries σ R := c
+    exact ⟨q, ext fun d ↦ by rw [coeff_map, coeff_apply]; exact hc d⟩
+
+end Map
 
 end MvPowerSeries

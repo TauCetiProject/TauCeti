@@ -8,7 +8,10 @@ module
 public import Mathlib.RingTheory.MvPowerSeries.Expand
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 import Mathlib.NumberTheory.Basic
+import TauCeti.Algebra.Ring.FrobeniusLift
+import TauCeti.RingTheory.MvPowerSeries.Basic
 import TauCeti.RingTheory.MvPowerSeries.Expand
+import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.Expand
 import TauCeti.RingTheory.PowerSeries.Substitution
@@ -83,6 +86,7 @@ zero it is `0`, which is the value of the infinite sum when `h` has zero constan
 noncomputable def functionalEquationSum : MvPowerSeries τ K →+ MvPowerSeries τ K where
   toFun h d := ∑ i ∈ Finset.Icc 1 d.degree,
     s i * coeff d (expand (p ^ i) (NeZero.ne _) (map (σ ^ i) h))
+  -- `simp` leaves `coeff d` of the coefficient function; `rfl` closes it by `coeff_apply`
   map_zero' := by ext d; simp; rfl
   map_add' h₁ h₂ := by ext d; simp [mul_add, Finset.sum_add_distrib]; rfl
 
@@ -126,11 +130,6 @@ section Integrality
 
 variable {p : ℕ} [hp : Fact p.Prime] {σ : K →+* K} {s : ℕ → K} {A : Subring K}
 
-omit hp in
-private theorem mapsTo_pow (hσ : Set.MapsTo σ A A) (i : ℕ) : Set.MapsTo ⇑(σ ^ i) A A := by
-  rw [RingHom.coe_pow]
-  exact hσ.iterate i
-
 /-- **Denominators of a solution of the functional equation.** If `f` satisfies the functional
 equation, then `p ^ (vₚ(n)) fₙ ∈ A` for the coefficient `fₙ` of `Xⁿ`. -/
 theorem SatisfiesFunctionalEquation.natCast_pow_factorization_mul_coeff_mem
@@ -159,7 +158,7 @@ theorem SatisfiesFunctionalEquation.natCast_pow_factorization_mul_coeff_mem
     have hlt : n / p ^ i < n := Nat.div_lt_self (by omega) (Nat.one_lt_pow (by omega) hp.out.one_lt)
     have hfac : (n / p ^ i).factorization p = r - i := by
       simp [r, Nat.factorization_div hdvd, hp.out.factorization_self]
-    have hmem := mapsTo_pow hσ i (ih _ hlt)
+    have hmem := (RingHom.coe_pow σ i ▸ hσ.iterate i) (ih _ hlt)
     rw [hfac, map_mul, map_pow, map_natCast] at hmem
     obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le hir
     obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hi₁
@@ -171,30 +170,6 @@ theorem SatisfiesFunctionalEquation.natCast_pow_factorization_mul_coeff_mem
     rw [this]
     exact mul_mem (mul_mem (pow_mem (natCast_mem A p) j) (hs _)) hmem
   · simp
-
-omit hp in
-private theorem natCast_dvd_restrict_pow_sub (hσ : Set.MapsTo σ A A)
-    (hσp : ∀ a ∈ A, ∃ b ∈ A, σ a - a ^ p = p * b) (i : ℕ) (a : A) :
-    (p : A) ∣ ((σ.restrict A A fun _ h ↦ hσ h) ^ i) a - a ^ p ^ i := by
-  induction i with
-  | zero => simp
-  | succ i ih =>
-    set y := ((σ.restrict A A fun _ h ↦ hσ h) ^ i) a
-    obtain ⟨b, hb, hb'⟩ := hσp y y.2
-    have h₁ : (p : A) ∣ (σ.restrict A A fun _ h ↦ hσ h) y - y ^ p :=
-      ⟨⟨b, hb⟩, Subtype.ext (by simpa using hb')⟩
-    have h₂ : (p : A) ∣ y ^ p - (a ^ p ^ i) ^ p := ih.trans (sub_dvd_pow_sub_pow _ _ _)
-    rw [pow_succ', RingHom.mul_def, RingHom.comp_apply, pow_succ, pow_mul]
-    have := dvd_add h₁ h₂
-    rwa [sub_add_sub_cancel] at this
-
-private theorem coe_restrict_pow_apply (hσ : Set.MapsTo σ A A) (i : ℕ) (a : A) :
-    (((σ.restrict A A fun _ h ↦ hσ h) ^ i) a : K) = (σ ^ i) a := by
-  induction i with
-  | zero => simp
-  | succ i ih =>
-    rw [pow_succ', RingHom.mul_def, RingHom.comp_apply, RingHom.coe_restrict_apply, ih,
-      pow_succ', RingHom.mul_def, RingHom.comp_apply]
 
 /-- Substituting `ψ` into `∑_{i ≥ 1} sᵢ (σⁱ f)(X ^ (pⁱ))` substitutes `ψ ^ (pⁱ)` into `σⁱ f`. -/
 private theorem coeff_subst_functionalEquationSum {f : PowerSeries K}
@@ -236,26 +211,31 @@ private theorem mul_coeff_pow_sub_expand_pow_mem (hσ : Set.MapsTo σ A A)
     (hψ : ∀ d, coeff d ψ ∈ A) (i m : ℕ) (d : τ →₀ ℕ) :
     s i * ((σ ^ i) (PowerSeries.coeff m f) *
       coeff d ((ψ ^ p ^ i) ^ m - expand (p ^ i) (NeZero.ne _) (map (σ ^ i) ψ) ^ m)) ∈ A := by
-  -- the congruence holds over `A`
-  let ψA : MvPowerSeries τ A := fun e ↦ ⟨coeff e ψ, hψ e⟩
-  have hψA : map A.subtype ψA = ψ := ext fun e ↦ rfl
+  -- the congruence holds over `A`, where `σ` restricts to a lift of the Frobenius
+  obtain ⟨ψA, hψA⟩ := (mem_map_rangeS A.subtype (p := ψ)).mpr fun e ↦
+    RingHom.mem_rangeS.mpr ⟨⟨_, hψ e⟩, rfl⟩
+  set σA := σ.restrict A A fun _ h ↦ hσ h
+  have hσA (a : A) : (p : A) ∣ σA a - a ^ p := by
+    obtain ⟨b, hb, hb'⟩ := hσp a a.2
+    exact ⟨⟨b, hb⟩, Subtype.ext (by simpa [σA] using hb')⟩
   set U := ψA ^ p ^ i
-  set W := expand (p ^ i) (NeZero.ne _) (map ((σ.restrict A A fun _ h ↦ hσ h) ^ i) ψA)
+  set W := expand (p ^ i) (NeZero.ne _) (map (σA ^ i) ψA)
   have hU : map A.subtype U = ψ ^ p ^ i := by rw [map_pow, hψA]
   have hW : map A.subtype W = expand (p ^ i) (NeZero.ne _) (map (σ ^ i) ψ) := by
-    have hcomp :
-        A.subtype.comp ((σ.restrict A A fun _ h ↦ hσ h) ^ i) = (σ ^ i).comp A.subtype :=
-      RingHom.ext (coe_restrict_pow_apply hσ i)
+    have hcomp : A.subtype.comp (σA ^ i) = (σ ^ i).comp A.subtype := RingHom.ext fun a ↦ by
+      simp only [RingHom.comp_apply, RingHom.coe_pow]
+      exact Function.Semiconj.iterate_right (fun b ↦ σ.coe_restrict_apply A A _ b) i a
     rw [map_expand, map_map, hcomp, ← map_map, hψA]
   set r := m.factorization p
   obtain ⟨E, hE⟩ : (p : MvPowerSeries τ A) ^ (r + 1) ∣ U ^ m - W ^ m := by
     refine (dvd_sub_pow_of_dvd_sub (natCast_dvd_pow_sub_expand_map i
-      (natCast_dvd_restrict_pow_sub hσ hσp i) ψA) r).trans ?_
+      (dvd_pow_apply_sub_pow_pow hσA i) ψA) r).trans ?_
     conv_rhs => rw [← Nat.ordProj_mul_ordCompl_eq_self m p, pow_mul, pow_mul]
     exact sub_dvd_pow_sub_pow _ _ _
   rw [← hU, ← hW, ← map_pow, ← map_pow, ← map_sub, hE, coeff_map,
     ← map_natCast (C (σ := τ) (R := A)), ← map_pow, coeff_C_mul, map_mul, map_pow, map_natCast]
-  have hmem := mapsTo_pow hσ i (hf.natCast_pow_factorization_mul_coeff_mem hσ hs m)
+  have hmem :=
+    (RingHom.coe_pow σ i ▸ hσ.iterate i) (hf.natCast_pow_factorization_mul_coeff_mem hσ hs m)
   rw [map_mul, map_pow, map_natCast] at hmem
   have : s i * ((σ ^ i) (PowerSeries.coeff m f) * ((p : K) ^ (r + 1) * A.subtype (coeff d E))) =
       ((p : K) * s i) * (((p : K) ^ r * (σ ^ i) (PowerSeries.coeff m f)) *
@@ -275,14 +255,9 @@ theorem SatisfiesFunctionalEquation.subst (hσ : Set.MapsTo σ A A)
   have hψs : PowerSeries.HasSubst ψ := .of_constantCoeff_zero hψ₀
   -- the defect `g = f - ∑ sᵢ (σⁱ f)(X ^ (pⁱ))` of `f` is integral, hence so is `g (ψ)`
   set g : PowerSeries K := f - functionalEquationSum p σ s f with hg_def
-  have hT₁ : coeff d (g.subst ψ) ∈ A := by
-    let ψA : MvPowerSeries τ A := fun e ↦ ⟨coeff e ψ, hψ e⟩
-    let gA : PowerSeries A := fun e ↦ ⟨coeff e g, hf e⟩
-    have hψA : map A.subtype ψA = ψ := ext fun e ↦ rfl
-    have hgA : PowerSeries.map A.subtype gA = g := ext fun e ↦ rfl
-    have hψA₀ : constantCoeff ψA = 0 := Subtype.ext hψ₀
-    rw [← hgA, ← hψA, ← PowerSeries.map_subst (.of_constantCoeff_zero hψA₀), coeff_map]
-    exact Subtype.mem _
+  have hT₁ : coeff d (g.subst ψ) ∈ A := PowerSeries.coeff_subst_mem hψs hψ (fun n ↦ by
+    rw [PowerSeries.coeff_def Finsupp.single_eq_same]
+    exact hf _) d
   -- the twisted sum of `f (ψ)`
   have hT₃ : coeff d (functionalEquationSum p σ s (f.subst ψ)) =
       ∑ i ∈ Finset.Icc 1 d.degree, s i * coeff d ((PowerSeries.map (σ ^ i) f).subst
@@ -320,20 +295,14 @@ private theorem coeff_sub_functionalEquationSum_subst_sub (f : PowerSeries K)
     coeff d (f.subst ψ - functionalEquationSum p σ s (f.subst ψ)) -
         coeff d (f.subst ψ' - functionalEquationSum p σ s (f.subst ψ')) =
       PowerSeries.coeff 1 f * (coeff d ψ - coeff d ψ') := by
-  -- `ψ ^ n - ψ' ^ n` is a multiple of `ψ - ψ'`, with a factor of zero constant term if `2 ≤ n`
+  -- `ψ ^ n - ψ' ^ n` is a multiple of `ψ - ψ'`, of larger order if `2 ≤ n`
   have hpow (n : ℕ) :
       ((D + if 2 ≤ n then 1 else 0 : ℕ) : ℕ∞) ≤ (ψ ^ n - ψ' ^ n).order := by
-    rw [← geom_sum₂_mul, Nat.cast_add, add_comm]
-    refine (add_le_add ?_ hε).trans le_order_mul
     split_ifs with hn
-    · refine one_le_order_iff_constCoeff_eq_zero.mpr ?_
-      rw [map_sum]
-      refine Finset.sum_eq_zero fun i hi ↦ ?_
-      rw [Finset.mem_range] at hi
-      rcases Nat.eq_zero_or_pos i with rfl | hi₀
-      · rw [map_mul, map_pow, map_pow, hψ'₀, zero_pow (by omega), mul_zero]
-      · rw [map_mul, map_pow, hψ₀, zero_pow hi₀.ne', zero_mul]
-    · exact zero_le
+    · rw [Nat.cast_add, Nat.cast_one]
+      exact (add_le_add hε le_rfl).trans (order_sub_add_one_le_order_pow_sub_pow hψ₀ hψ'₀ hn)
+    · rw [← geom_sum₂_mul, add_zero]
+      exact (hε.trans le_add_self).trans le_order_mul
   have hcoeff (n : ℕ) {e : τ →₀ ℕ} (he : e.degree < D + (if 2 ≤ n then 1 else 0)) :
       coeff e (ψ ^ n) - coeff e (ψ' ^ n) = 0 := by
     rw [← map_sub]
@@ -392,7 +361,8 @@ theorem coeff_mem_of_satisfiesFunctionalEquation_subst (hσ : Set.MapsTo σ A A)
   -- the truncation `ψ'` of `ψ` below degree `D` is integral by induction, so `f (ψ')` satisfies
   -- the functional equation; comparing defects in degree `D` gives `b₁ ψ_d ∈ A`
   set ψ' : MvPowerSeries τ K := fun e ↦ if e.degree < D then coeff e ψ else 0
-  have hψ'c (e : τ →₀ ℕ) : coeff e ψ' = if e.degree < D then coeff e ψ else 0 := (rfl)
+  have hψ'c (e : τ →₀ ℕ) : coeff e ψ' = if e.degree < D then coeff e ψ else 0 := by
+    rw [coeff_apply]
   have hψ'A (e : τ →₀ ℕ) : coeff e ψ' ∈ A := by
     rw [hψ'c]
     split_ifs with he

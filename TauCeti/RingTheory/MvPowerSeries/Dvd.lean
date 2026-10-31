@@ -40,7 +40,8 @@ theorem C_dvd_iff_dvd_coeff (r : R) (f : MvPowerSeries σ R) :
     exact dvd_mul_right r _
   · intro h
     choose c hc using h
+    -- a power series is its coefficient function
     let g : MvPowerSeries σ R := c
-    exact ⟨g, ext fun d ↦ by rw [coeff_C_mul, hc]; rfl⟩
+    exact ⟨g, ext fun d ↦ by rw [coeff_C_mul, hc, coeff_apply]⟩
 
 end MvPowerSeries

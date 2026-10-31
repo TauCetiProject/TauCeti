@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
+-- Proof-only: the multivariate statement, specialised to one variable.
+import TauCeti.RingTheory.MvPowerSeries.Dvd
 
 /-!
 # Divisibility of power series by constants
 
 A constant power series `C r` divides `f` exactly when `r` divides every coefficient of `f`. This
 is the power-series form of Mathlib's `Polynomial.C_dvd_iff_dvd_coeff` and
-`MvPolynomial.C_dvd_iff_dvd_coeff`; unlike the polynomial case, the quotient is assembled from
-infinitely many coefficient quotients at once, which `PowerSeries.mk` allows directly.
+`MvPolynomial.C_dvd_iff_dvd_coeff`, and the one-variable case of
+`MvPowerSeries.C_dvd_iff_dvd_coeff`.
 
 It is the step that removes a common power of a uniformiser from the coefficients of a power
 series over a discrete valuation ring before applying Weierstrass preparation.
@@ -32,12 +34,11 @@ variable {R : Type*} [Semiring R]
 /-- A constant power series `C r` divides `f` if and only if `r` divides every coefficient
 of `f`. -/
 theorem C_dvd_iff_dvd_coeff (r : R) (f : R⟦X⟧) : C r ∣ f ↔ ∀ n, r ∣ coeff n f := by
-  constructor
-  · rintro ⟨g, rfl⟩ n
-    rw [coeff_C_mul]
-    exact dvd_mul_right r _
-  · intro h
-    choose c hc using h
-    exact ⟨mk c, ext fun n ↦ by rw [coeff_C_mul, coeff_mk, hc]⟩
+  rw [C_apply, MvPowerSeries.C_dvd_iff_dvd_coeff]
+  refine ⟨fun h n ↦ ?_, fun h d ↦ ?_⟩
+  · rw [coeff_def Finsupp.single_eq_same]
+    exact h _
+  · rw [← coeff_def rfl]
+    exact h (d ())
 
 end PowerSeries

@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Ring.Subring.Basic
 public import Mathlib.RingTheory.PowerSeries.Basic
 
 /-!
-# Dividing power series with coefficients in a subring
+# Power series with coefficients in a subring
 
 Let `R` be a subring of a ring `S`, and let `D` be a power series over `S` with coefficients in
 `R` whose first nonzero coefficient, in degree `m`, is `1`; that is, `D = Xᵐ u` with `u(0) = 1`.
@@ -19,8 +19,14 @@ the coefficients of `F` are solved for recursively from those of `F * D`.
 This is how integrality of `q`-expansions passes through division by a modular form such as the
 discriminant `Δ = q + ⋯`, whose `q`-expansion has integer coefficients.
 
+A power series is the image under `map f` of a power series exactly when each of its coefficients
+is in the range of `f` (`PowerSeries.mem_map_rangeS`). For the inclusion of a subring, this lifts a
+power series with coefficients in the subring to a power series over the subring.
+
 ## Main results
 
+* `PowerSeries.mem_map_rangeS`: `p` is in the range of `map f` if and only if every coefficient
+  of `p` is in the range of `f`.
 * `PowerSeries.coeff_mem_of_coeff_mul_mem`: if `F * D` and `D = Xᵐ u`, `u(0) = 1`, have
   coefficients in `R`, then so does `F`.
 -/
@@ -28,6 +34,23 @@ discriminant `Δ = q + ⋯`, whose `q`-expansion has integer coefficients.
 public section
 
 namespace PowerSeries
+
+section Map
+
+variable {R S : Type*} [Semiring R] [Semiring S] (f : R →+* S)
+
+/-- A power series over `S` is in the range of `map f` if and only if each of its coefficients is
+in the range of `f`. This is the power-series form of Mathlib's `Polynomial.mem_map_rangeS`. -/
+theorem mem_map_rangeS {p : S⟦X⟧} : p ∈ (map f).rangeS ↔ ∀ n, coeff n p ∈ f.rangeS := by
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨q, rfl⟩ n
+    rw [coeff_map]
+    exact f.mem_rangeS_self _
+  · simp only [RingHom.mem_rangeS] at h
+    choose c hc using h
+    exact ⟨mk c, ext fun n ↦ by rw [coeff_map, coeff_mk, hc]⟩
+
+end Map
 
 variable {S : Type*} [Ring S] {R : Subring S}
 

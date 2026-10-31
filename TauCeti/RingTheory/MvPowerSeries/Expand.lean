@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.CharP.Quotient
 public import Mathlib.RingTheory.MvPowerSeries.Expand
 public import Mathlib.RingTheory.MvPowerSeries.Restricted
 public import TauCeti.Data.Nat.ModEq
+-- Proof-only: the quotient by `p` has characteristic `p`.
+import Mathlib.Algebra.CharP.Quotient
 -- Proof-only: divisibility by a constant is coefficientwise divisibility.
 import TauCeti.RingTheory.MvPowerSeries.Dvd
 

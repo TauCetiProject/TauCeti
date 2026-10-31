@@ -11,10 +11,14 @@ public import Mathlib.RingTheory.PowerSeries.Binomial
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import Mathlib.RingTheory.PowerSeries.Trunc
+-- Proof-only: lifting series with coefficients in a subring to series over the subring.
+import TauCeti.RingTheory.MvPowerSeries.Basic
 -- Proof-only: lowest homogeneous components of powers.
 import TauCeti.RingTheory.MvPowerSeries.Order
 -- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
 import TauCeti.RingTheory.PowerSeries.Evaluation
+-- Proof-only: lifting series with coefficients in a subring to series over the subring.
+import TauCeti.RingTheory.PowerSeries.SubringCoeff
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
@@ -88,6 +92,7 @@ of a completed group algebra attached to two topological generators.
   `f` and `φ₁` the linear part of `φ`.
 * `PowerSeries.coeff_subst_eq_sum_range`: the coefficient of `X^d` in `f (a)`, for `a` of zero
   constant coefficient, is the finite sum `∑_{n ≤ |d|} fₙ [X^d] aⁿ`.
+* `PowerSeries.coeff_subst_mem`: if `f` and `a` have coefficients in a subring, so does `f (a)`.
 * `PowerSeries.coeff_subst_update_add_X_pow_mul`: perturbing one entry `a s` of a substituted
   family by `X ^ m * r` changes coefficients only from degree `m` on, and in degree `m` only
   through the linear term `Xₛ` of the multivariate series.
@@ -330,6 +335,20 @@ theorem coeff_subst_eq_sum_range {τ : Type*} {a : MvPowerSeries τ S}
   dsimp only
   rw [MvPowerSeries.coeff_of_lt_order, smul_zero]
   exact (Nat.cast_lt.mpr h).trans_le (MvPowerSeries.le_order_pow_of_constantCoeff_eq_zero n ha)
+
+/-- If `f` and the substitutable series `a` have coefficients in a subring `A`, then so does
+`f (a)`: it is the image of the substitution computed over `A`. -/
+theorem coeff_subst_mem {τ : Type*} {A : Subring S} {a : MvPowerSeries τ S} (ha : HasSubst a)
+    (ha' : ∀ d, MvPowerSeries.coeff d a ∈ A) {f : S⟦X⟧} (hf : ∀ n, coeff n f ∈ A)
+    (d : τ →₀ ℕ) : MvPowerSeries.coeff d (f.subst a) ∈ A := by
+  obtain ⟨aA, rfl⟩ := (MvPowerSeries.mem_map_rangeS A.subtype (p := a)).mpr fun d ↦
+    RingHom.mem_rangeS.mpr ⟨⟨_, ha' d⟩, rfl⟩
+  obtain ⟨fA, rfl⟩ := (mem_map_rangeS A.subtype (p := f)).mpr fun n ↦
+    RingHom.mem_rangeS.mpr ⟨⟨_, hf n⟩, rfl⟩
+  have haA : HasSubst aA := by
+    rwa [HasSubst, MvPowerSeries.constantCoeff_map, IsNilpotent.map_iff A.subtype_injective] at ha
+  rw [← map_subst haA, MvPowerSeries.coeff_map]
+  exact Subtype.mem _
 
 end Algebra
 
