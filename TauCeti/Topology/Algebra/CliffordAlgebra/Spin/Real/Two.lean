@@ -143,11 +143,8 @@ private theorem planeValue_reverse_of_mem_even {x : CliffordAlgebra (realCliffor
   | algebraMap r => simp [planeValue_apply, AlgHom.commutes]
   | add x y _ _ hx hy => simp [map_add, hx, hy]
   | ι_mul_ι_mul a b x hx h =>
-    rw [reverse.map_mul, reverse.map_mul, reverse_ι, reverse_ι,
-      planeValue_mul_of_mem_even ((reverse_mem_evenOdd_iff _).2 hx), h,
-      planeValue_mul_of_mem_even (ι_mul_ι_mem_evenOdd_zero _ _ _), planeValue_ι_mul_ι,
-      planeValue_ι_mul_ι]
-    simp only [map_mul, conj_conj]
+    simp [reverse_ι, planeValue_mul_of_mem_even ((reverse_mem_evenOdd_iff _).2 hx), h,
+      planeValue_mul_of_mem_even (ι_mul_ι_mem_evenOdd_zero _ _ _), planeValue_ι_mul_ι]
     ring
 
 private theorem planeValue_one : planeValue 1 = 1 := by
@@ -179,12 +176,10 @@ private theorem planeCoord_spinVectorAction (x : realCliffordSpinGroupZero 2)
       planeValue (x : CliffordAlgebra (realCliffordForm 2 0)) ^ 2 * planeCoord m := by
   have hx := coe_mem_evenOdd_zero x
   have h := planeAction_ι_apply (spinVectorAction _ x m) 1
-  rw [ι_spinVectorAction_apply, map_mul, map_mul, Module.End.mul_apply, Module.End.mul_apply,
-    planeAction_apply_of_mem_even hx, planeAction_ι_apply, ← planeValue_apply, star_def,
-    involute_eq_of_mem_even hx, planeValue_reverse_of_mem_even hx, conj_conj, map_one,
-    mul_one] at h
-  rw [← h]
-  ring
+  simp [ι_spinVectorAction_apply, planeAction_apply_of_mem_even hx, planeAction_ι_apply,
+    ← planeValue_apply, star_def, involute_eq_of_mem_even hx,
+    planeValue_reverse_of_mem_even hx] at h
+  linear_combination -h
 
 /-- The value of `ι e₀ * ι w` is the conjugate of the complex coordinate of `w`. -/
 private theorem planeValue_ι_single_mul_ι (w : Fin (2 + 0) → ℝ) :
@@ -385,9 +380,9 @@ theorem coe_realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_apply
         ((g : (Fin (2 + 0) → ℝ) ≃ₗ[ℝ] (Fin (2 + 0) → ℝ)) (Pi.single 0 1) 1 : ℂ) * I := by
   obtain ⟨z, rfl⟩ := circleContinuousMulEquivSpecialOrthogonal.surjective g
   rw [realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle,
-    ContinuousMulEquiv.symm_apply_apply, ← planeCoord_apply,
-    circleContinuousMulEquivSpecialOrthogonal_apply, planeCoord_circleToSpecialOrthogonal_apply,
-    planeCoord_single_zero, mul_one]
+    ContinuousMulEquiv.symm_apply_apply, ← planeCoord_apply]
+  simp [circleContinuousMulEquivSpecialOrthogonal_apply,
+    planeCoord_circleToSpecialOrthogonal_apply, planeCoord_single_zero]
 
 private theorem planeCoord_realCliffordSpecialOrthogonalTwoContinuousMulEquivCircle_symm_apply
     (z : Circle) (m : Fin (2 + 0) → ℝ) :
