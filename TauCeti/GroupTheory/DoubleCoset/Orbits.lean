@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupAction.Burnside
-public import TauCeti.GroupTheory.GroupAction.Stabilizer
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import Mathlib.GroupTheory.Coset.Card
 public import Mathlib.GroupTheory.DoubleCoset
 import TauCeti.GroupTheory.QuotientGroup.Basic

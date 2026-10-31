@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
+public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Torsion
 
 -- Only the characterization lemma below accesses the unexposed defining tensor equality.
 import all Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
@@ -27,11 +28,16 @@ It also restates metric compatibility with a bundled metric `g`, installed as th
 `RiemannianBundle` instance, in terms of the inner products of `g`
 (`Bundle.ContMDiffRiemannianMetric.isMetricCompatible_iff_inner`). This is the form in which
 connections are compared across different metrics on the same bundle.
+
+For a metric-compatible torsion-free connection `∇` on the tangent bundle, it expresses the Lie
+derivative of the metric through `∇`:
+`(𝓛_X g)(Y, Z) = ⟪∇_Y X, Z⟫ + ⟪Y, ∇_Z X⟫`
+(`CovariantDerivative.IsMetricCompatible.mvfderiv_inner_sub_inner_mlieBracket`).
 -/
 
 public section
 
-open Bundle FiberBundle
+open Bundle FiberBundle VectorField
 open scoped ContDiff Manifold
 
 namespace CovariantDerivative
@@ -81,6 +87,32 @@ theorem IsMetricCompatible.mvfderiv_mvfderiv_inner
       (hτ.mdifferentiable (by simp) x),
     hcov.mvfderiv_inner_eq X (hσ.mdifferentiable (by simp) x)
       (hYτ.mdifferentiable hn0 x)]
+
+section Torsion
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+  {cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x)}
+
+/-- For a metric-compatible torsion-free connection, the Lie derivative of the metric along `X`
+is `(𝓛_X g)(Y, Z) = ⟪∇_Y X, Z⟫ + ⟪Y, ∇_Z X⟫`. -/
+theorem IsMetricCompatible.mvfderiv_inner_sub_inner_mlieBracket
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun y : M ↦ TangentSpace I y) cov)
+    (ht : cov.torsion = 0) {X Y Z : Π x : M, TangentSpace I x} {x : M}
+    (hX : MDiffAt (T% X) x) (hY : MDiffAt (T% Y) x) (hZ : MDiffAt (T% Z) x) :
+    mvfderiv I (fun y ↦ inner ℝ (Y y) (Z y)) x (X x) -
+        inner ℝ (mlieBracket I X Y x) (Z x) - inner ℝ (Y x) (mlieBracket I X Z x) =
+      inner ℝ (cov X x (Y x)) (Z x) + inner ℝ (Y x) (cov X x (Z x)) := by
+  have hmetric := hcov.mvfderiv_inner_eq X hY hZ
+  beta_reduce at hmetric
+  rw [hmetric, ← (torsion_eq_zero_iff cov).1 ht hX hY, ← (torsion_eq_zero_iff cov).1 ht hX hZ,
+    inner_sub_left, inner_sub_right]
+  ring
+
+end Torsion
 
 end CovariantDerivative
 

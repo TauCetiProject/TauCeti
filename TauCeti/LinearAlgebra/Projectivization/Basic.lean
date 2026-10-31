@@ -22,6 +22,10 @@ union of its unit translates (`Projectivization.preimage_image_mk'`). These two 
 from Zayn Blore's Mathlib pull request
 [mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117).
 
+The projectivization of a vector space of dimension at most one, such as
+`Projectivization K (Fin 1 → K)`, has at most one point
+(`Projectivization.subsingleton_of_rank_le_one`).
+
 The file also records `Projectivization.submodule_map`: the line of the image of a projective
 point under an injective semilinear map is the image of its line.
 
@@ -62,6 +66,20 @@ theorem preimage_image_mk' (U : Set { v : V // v ≠ 0 }) :
     exact ⟨a⁻¹, _, hw, inv_smul_smul a v⟩
   · rintro ⟨a, w, hw, rfl⟩
     exact ⟨w, hw, a⁻¹, inv_smul_smul a w⟩
+
+variable {K} in
+/-- The projectivization of a vector space of dimension at most one has at most one point: all
+nonzero vectors of a line span the same line. -/
+theorem subsingleton_of_rank_le_one (h : Module.rank K V ≤ 1) :
+    Subsingleton (Projectivization K V) := by
+  obtain ⟨v₀, hv₀⟩ := rank_le_one_iff.1 h
+  refine ⟨fun x y ↦ ?_⟩
+  induction x using ind with | h v hv =>
+  induction y using ind with | h w hw =>
+  obtain ⟨a, rfl⟩ := hv₀ v
+  obtain ⟨b, rfl⟩ := hv₀ w
+  have hb : b ≠ 0 := by rintro rfl; simp at hw
+  exact (mk_eq_mk_iff' K _ _ hv hw).2 ⟨a * b⁻¹, by rw [smul_smul, inv_mul_cancel_right₀ hb]⟩
 
 end DivisionRing
 

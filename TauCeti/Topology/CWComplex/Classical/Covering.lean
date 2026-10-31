@@ -13,6 +13,8 @@ public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 public import TauCeti.Topology.CWComplex.Classical.Map
 public import TauCeti.Topology.Covering.Convex
 public import TauCeti.Topology.SeparatedMap
+import TauCeti.Topology.CWComplex.Comparison
+import TauCeti.Topology.Covering.Pullback
 
 /-!
 # Lifting a CW structure along a covering map
@@ -58,7 +60,11 @@ over their centres
 (`TauCeti.nat_card_cell_preimage`), so `d` times as many cells as `C` when every fibre over `C`
 has `d` points (`TauCeti.nat_card_cell_preimage_of_card_fiber`). This is the input for the
 multiplicativity of the Euler characteristic in finite covers. In particular the total space of
-such a cover of a finite CW complex has finite CW type (`IsCoveringMap.finiteCWType`).
+such a cover of a finite CW complex is a finite CW complex. More generally, the total space of a
+cover with finite fibres of a space of finite CW type has finite CW type
+(`IsCoveringMap.finiteCWType`): pulled back along a homotopy equivalence with a finite CW complex,
+the cover becomes a finite CW complex homotopy equivalent to its total space
+(`IsCoveringMap.pullbackHomotopyEquiv`).
 
 ## References
 
@@ -480,16 +486,20 @@ theorem nat_card_cell_preimage_of_card_fiber [RelCWComplex.FiniteType C]
 
 end Structure
 
-/-- The total space of a covering, with finite fibres, of a finite CW complex has finite CW type: it
-is a finite CW complex itself. -/
-theorem _root_.IsCoveringMap.finiteCWType [TopologicalSpace E] [T2Space B] (hp : IsCoveringMap p)
-    [CWComplex (univ : Set B)] [RelCWComplex.Finite (univ : Set B)]
-    (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) : FiniteCWType E := by
-  let := cwComplexPreimage univ hp
-  have := finite_cwComplexPreimage univ hp hfin
-  have := hp.t2Space
-  exact ((Homeomorph.setCongr (preimage_univ (f := p))).trans
-    (Homeomorph.Set.univ E)).symm.finiteCWType
+/-- The total space of a covering, with finite fibres, of a space of finite CW type has finite CW
+type. -/
+theorem _root_.IsCoveringMap.finiteCWType [TopologicalSpace E] [FiniteCWType B]
+    (hp : IsCoveringMap p) (hfin : ∀ b, Finite ↥(p ⁻¹' {b})) : FiniteCWType E := by
+  obtain ⟨Z, _, _, _, _, ⟨e⟩⟩ := FiniteCWType.exists_homotopyEquiv_univ B
+  have hq := hp.pullback_fst e.symm.toFun.continuous
+  let := cwComplexPreimage univ hq
+  have := finite_cwComplexPreimage univ hq fun z ↦
+    .of_equiv _ (Function.Pullback.fstPreimageEquiv z).symm
+  have := hq.t2Space
+  have : FiniteCWType (Function.Pullback e.symm p) :=
+    ((Homeomorph.setCongr (preimage_univ (f := Function.Pullback.fst))).trans
+      (Homeomorph.Set.univ _)).symm.finiteCWType
+  exact (hp.pullbackHomotopyEquiv e.symm).symm.finiteCWType
 
 section Cellular
 

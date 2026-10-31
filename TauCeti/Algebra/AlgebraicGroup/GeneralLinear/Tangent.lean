@@ -446,6 +446,16 @@ theorem cotangentDualMatrixEquiv_apply
   simp only [cotangentDualMatrixEquiv, LinearEquiv.trans_apply,
     tangentLinearEquivMatrix_apply]
 
+/-- The cotangent-dual matrix equivalence carries the Lie bracket of `GLₙ` to the matrix
+commutator. -/
+theorem cotangentDualMatrixEquiv_lie
+    (x y : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
+    cotangentDualMatrixEquiv ⁅x, y⁆ =
+      cotangentDualMatrixEquiv x * cotangentDualMatrixEquiv y -
+        cotangentDualMatrixEquiv y * cotangentDualMatrixEquiv x := by
+  simp only [cotangentDualMatrixEquiv_apply, ← Derivation.cotangentDualLieEquiv_apply,
+    LieEquiv.map_lie, tangentMatrix_lie, LieRing.of_associative_ring_bracket]
+
 /-- Scalar extension of a cotangent-dual tangent vector applies the scalar map entrywise to its
 matrix.  This is the compatibility that lets computations on coefficient-valued derivations be
 read back in the fixed cotangent-dual Lie algebra. -/
