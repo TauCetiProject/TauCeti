@@ -22,9 +22,9 @@ file locates the drop at finitely many places of `F`.
 For a place `P` of `F / k`, the ring `𝒪_P ⊗_k k'` is the `k'`-span `𝒪_P · k'` of the valuation ring
 inside `F'` (`TauCeti.Place.constantSpanIntegers`). It is contained in the integral closure
 `𝒪'_P` of `𝒪_P` in `F'` (`TauCeti.Place.integralClosureSubmodule`), the functions regular at all
-places of `F'` over `P`. Geometrically, `𝒪_P ⊗_k k'` is the local ring of the base-changed curve
-at the point over `P` and `𝒪'_P` is its normalization. Their quotient has finite `k'`-dimension, the
-**singularity degree**
+places of `F'` over `P`. Geometrically, `𝒪_P ⊗_k k'` is the semilocal ring of the base-changed
+curve along the fiber over `P`, which may consist of several points, and `𝒪'_P` is its
+normalization. Their quotient has finite `k'`-dimension, the **singularity degree**
 
 `δ_P = dim_{k'} (𝒪'_P ⧸ 𝒪_P ⊗_k k')`
 
@@ -93,8 +93,8 @@ namespace Place
 variable (k' F') (P : Place k F)
 
 /-- The `k'`-span `𝒪_P · k'` of the valuation ring of `P` inside `F'`. When `F` and `k'` are
-linearly disjoint over `k`, so that `F' = F ⊗_k k'`, this is `𝒪_P ⊗_k k'`: the local ring at the
-point over `P` of the curve of `F / k` after extending the constants to `k'`. -/
+linearly disjoint over `k`, so that `F' = F ⊗_k k'`, this is `𝒪_P ⊗_k k'`: the semilocal ring along
+the fiber over `P` of the curve of `F / k` after extending the constants to `k'`. -/
 noncomputable def constantSpanIntegers : Submodule k' F' :=
   Submodule.span k' (algebraMap F F' '' P.integers)
 
@@ -138,9 +138,11 @@ abbrev singularityQuotient : Type v' :=
     (constantSpanIntegers k' F' P).submoduleOf (integralClosureSubmodule k' F' P)
 
 /-- The **singularity degree** `δ_P = dim_{k'} (𝒪'_P ⧸ 𝒪_P · k')` of `P` in `F' = F · k'`: the
-δ-invariant of the point over `P` of the curve of `F / k` after extending the constants to `k'`.
-It is finite (`TauCeti.Place.finiteDimensional_singularityQuotient`), and the genus drops by the
-sum of the singularity degrees (`TauCeti.genus_eq_genus_add_finsum_singularityDegree`). -/
+total `k'`-dimensional normalization defect along the fiber over `P` of the curve of `F / k` after
+extending the constants to `k'`. The fiber may consist of several points, and `δ_P` sums their
+contributions. It is finite (`TauCeti.Place.finiteDimensional_singularityQuotient`), and the genus
+drops by the sum of the singularity degrees (`TauCeti.genus_eq_genus_add_finsum_singularityDegree`).
+-/
 noncomputable def singularityDegree : ℕ :=
   finrank k' (singularityQuotient k' F' P)
 
