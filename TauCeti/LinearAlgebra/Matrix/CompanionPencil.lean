@@ -192,7 +192,8 @@ theorem isUnit_companionHomotopy_iff (p : A[X]) (z : A) (t : R) :
 theorem continuous_companionHomotopy [TopologicalSpace A] [IsTopologicalRing A]
     [TopologicalSpace R] [ContinuousSMul R A] (p : A[X]) :
     Continuous fun q : R × A ↦ companionHomotopy d p q.2 q.1 := by
-  unfold companionHomotopy lastRowTransvection
+  unfold companionHomotopy
+  simp only [lastRowTransvection_def]
   refine ((continuous_const.matrix_updateRow (Fin.last d)
     ((continuous_pi fun k : Fin d ↦ continuous_fst.smul
       ((divX^[d - (k : ℕ)] p).continuous.comp continuous_snd)).finSnoc continuous_const)).mul
@@ -211,7 +212,7 @@ theorem companionHomotopy_map [Ring B] [Algebra R B] (f : A →ₐ[R] B) (p : A[
     eval_map_apply (f : A →+* B) z
   simp only [companionHomotopy, Matrix.map_mul, hdivX, heval]
   congr 2
-  · rw [lastRowTransvection, lastRowTransvection, map_updateRow,
+  · rw [lastRowTransvection_def, lastRowTransvection_def, map_updateRow,
       Matrix.map_one _ (map_zero f) (map_one f), Fin.comp_snoc, map_one]
     congr 2
     ext k

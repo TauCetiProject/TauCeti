@@ -35,9 +35,14 @@ variable {A : Type*} [Ring A] {d : ℕ}
 /-- The lower unitriangular matrix of size `d + 1` which agrees with the identity except in its
 last row, where it is `(b 0, …, b (d - 1), 1)`. Multiplying by it on the left adds `b k` times
 row `k` to the last row, for every `k < d`. -/
-@[expose]
 def lastRowTransvection (d : ℕ) (b : Fin d → A) : Matrix (Fin (d + 1)) (Fin (d + 1)) A :=
   (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) A).updateRow (Fin.last d) (Fin.snoc b 1)
+
+/-- `lastRowTransvection d b` is the identity with its last row replaced by `(b, 1)`. -/
+theorem lastRowTransvection_def (b : Fin d → A) :
+    lastRowTransvection d b =
+      (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) A).updateRow (Fin.last d) (Fin.snoc b 1) := by
+  rfl
 
 /-- The entries of `lastRowTransvection d b`. -/
 theorem lastRowTransvection_apply (b : Fin d → A) (i j : Fin (d + 1)) :
