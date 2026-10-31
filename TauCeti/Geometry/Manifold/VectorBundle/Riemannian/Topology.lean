@@ -11,7 +11,7 @@ public import Mathlib.Topology.UniformSpace.CompactConvergence
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Basic
 
 /-!
-# The chart C² topology on smooth Riemannian metrics
+# The chart C² and C∞ topologies on smooth Riemannian metrics
 
 `Bundle.ContMDiffRiemannianMetric.chartC2Topology` equips the native smooth metric carrier
 with the initial topology of its coordinate derivatives of orders zero, one and two. Each
@@ -27,6 +27,13 @@ derivative is jointly continuous in the metric and the chart variable
 fixed point is continuous, and these evaluations separate metrics. The topology is selected
 by `open scoped TauCeti.MetricC2`, rather than a global instance, so it can coexist with
 topologies controlling higher derivatives.
+
+`Bundle.ContMDiffRiemannianMetric.chartCInftyTopology` is the analogous chart C∞ topology,
+the initial topology of the coordinate derivatives of every order, selected by
+`open scoped TauCeti.MetricCInfty`. It is finer than the chart C² topology
+(`chartCInftyTopology_le_chartC2Topology`), so a quantity that is continuous in the chart C²
+topology, such as a second-order curvature expression, is also continuous in the chart C∞
+topology.
 
 This construction uses the compact-open derivative convention of M. Hirsch,
 *Differential Topology*, GTM 33, Chapter 2, §1, also used by
@@ -90,6 +97,10 @@ theorem chartMetricDerivative_apply
     DFunLike.coe (F := C(↥(I.target ∩ I.symm ⁻¹' (chartAt H x).target),
       E [×m]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ))) (g.chartMetricDerivative x m) z =
       iteratedFDeriv ℝ m (g.toNondegenerateMetric.chartMetric x) z := (rfl)
+
+/-! ### The chart C² topology -/
+
+section ChartC2
 
 /-- The topology of uniform convergence on compact chart sets of coordinate derivatives
 through order two on the native smooth Riemannian metric carrier. -/
@@ -201,6 +212,89 @@ theorem t2Space_chartC2 :
     (continuous_pi fun x ↦ continuous_pi fun v ↦ continuous_pi fun w ↦
       continuous_inner_apply x v w)
 
+end ChartC2
+
+/-! ### The chart C∞ topology -/
+
+section ChartCInfty
+
+/-- The topology of uniform convergence on compact chart sets of coordinate derivatives of every
+order on the native smooth Riemannian metric carrier. It is finer than the chart C² topology
+(`chartCInftyTopology_le_chartC2Topology`). -/
+@[instance_reducible]
+def chartCInftyTopology :
+    TopologicalSpace (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :=
+  .induced (fun g ↦ fun (x : M) (m : ℕ) ↦ g.chartMetricDerivative x m) inferInstance
+
+attribute [local instance] chartCInftyTopology
+
+/-- A family is C∞-continuous exactly when all chart derivatives are continuous as maps into
+compact-open continuous-map spaces. -/
+theorem continuous_chartCInfty_iff_continuous_chartMetricDerivative
+    {P : Type*} [TopologicalSpace P]
+    {g : P → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} :
+    Continuous g ↔ ∀ (x : M) (m : ℕ),
+      Continuous (fun p ↦ (g p).chartMetricDerivative x m) := by
+  simp only [continuous_induced_rng, continuous_pi_iff, Function.comp_def]
+
+/-- Each coordinate derivative varies continuously in the chart C∞ topology. -/
+theorem continuous_chartMetricDerivative_chartCInfty (x : M) (m : ℕ) :
+    Continuous (fun g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) ↦
+      g.chartMetricDerivative x m) :=
+  (continuous_chartCInfty_iff_continuous_chartMetricDerivative (I := I) (M := M)).mp
+    continuous_id x m
+
+/-- The chart C∞ topology is finer than the chart C² topology: it controls the coordinate
+derivatives of every order, not only those of order at most two. -/
+theorem chartCInftyTopology_le_chartC2Topology :
+    (chartCInftyTopology : TopologicalSpace
+      (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))) ≤ chartC2Topology := by
+  rw [← continuous_id_iff_le]
+  exact continuous_induced_rng.2 (continuous_pi fun x ↦ continuous_pi fun m ↦
+    continuous_chartMetricDerivative_chartCInfty x m)
+
+/-- A family is continuous in the chart C∞ topology exactly when its coordinate derivatives of
+every order depend jointly continuously on the parameter and chart variable. -/
+theorem continuous_chartCInfty_iff [LocallyCompactSpace E] {P : Type*} [TopologicalSpace P]
+    {g : P → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} :
+    withMetricOperatorNorms E in
+    Continuous g ↔ ∀ (x : M) (m : ℕ),
+      Continuous (fun q : P × (extChartAt I x).target ↦
+        iteratedFDeriv ℝ m ((g q.1).toNondegenerateMetric.chartMetric x) q.2) := by
+  rw [continuous_chartCInfty_iff_continuous_chartMetricDerivative]
+  constructor
+  · intro h x m
+    let _ := (isOpen_extChartAt_target (I := I) x).locallyCompactSpace
+    exact continuous_eval.comp ((h x m).prodMap continuous_id)
+  · intro h x m
+    exact ContinuousMap.continuous_of_continuous_uncurry _ (h x m)
+
+/-- Convergence of metrics in the chart C∞ topology is uniform convergence on every compact
+chart set of each coordinate derivative. -/
+theorem tendsto_chartCInfty_iff {P : Type*} {l : Filter P}
+    {g : P → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
+    {g₀ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)} :
+    withMetricOperatorNorms E in
+    Tendsto g l (𝓝 g₀) ↔ ∀ (x : M) (m : ℕ)
+      (K : Set (extChartAt I x).target), IsCompact K →
+        TendstoUniformlyOn
+          (fun p (z : (extChartAt I x).target) ↦
+            iteratedFDeriv ℝ m ((g p).toNondegenerateMetric.chartMetric x) z)
+          (fun (z : (extChartAt I x).target) ↦
+            iteratedFDeriv ℝ m (g₀.toNondegenerateMetric.chartMetric x) z) l K := by
+  simp only [nhds_induced, tendsto_comap_iff, tendsto_pi_nhds,
+    Function.comp_def, ContinuousMap.tendsto_iff_forall_isCompact_tendstoUniformlyOn,
+    chartMetricDerivative]
+  rfl
+
+/-- The chart C∞ topology on smooth Riemannian metrics is Hausdorff, since it is finer than the
+Hausdorff chart C² topology. -/
+theorem t2Space_chartCInfty :
+    T2Space (ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :=
+  t2Space_antitone chartCInftyTopology_le_chartC2Topology t2Space_chartC2
+
+end ChartCInfty
+
 end Bundle.ContMDiffRiemannianMetric
 
 namespace TauCeti
@@ -208,5 +302,11 @@ namespace TauCeti
 scoped[TauCeti.MetricC2] attribute [instance] Bundle.ContMDiffRiemannianMetric.chartC2Topology
 
 scoped[TauCeti.MetricC2] attribute [instance] Bundle.ContMDiffRiemannianMetric.t2Space_chartC2
+
+scoped[TauCeti.MetricCInfty] attribute [instance]
+  Bundle.ContMDiffRiemannianMetric.chartCInftyTopology
+
+scoped[TauCeti.MetricCInfty] attribute [instance]
+  Bundle.ContMDiffRiemannianMetric.t2Space_chartCInfty
 
 end TauCeti
