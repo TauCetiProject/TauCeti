@@ -73,48 +73,6 @@ namespace FormalGroup
 
 variable {R : Type*} [CommRing R] (F : FormalGroup R)
 
-section HomDefect
-
-private theorem homDefect_𝔾ₐ_sub {g h : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0)
-    (hh : PowerSeries.constantCoeff h = 0) :
-    F.homDefect 𝔾ₐ (g - h) = F.homDefect 𝔾ₐ g - F.homDefect 𝔾ₐ h := by
-  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-  rw [F.homDefect_𝔾ₐ (by rw [map_sub, hg, hh, sub_zero]), F.homDefect_𝔾ₐ hg, F.homDefect_𝔾ₐ hh]
-  simp only [PowerSeries.subst_sub hF, PowerSeries.subst_sub (PowerSeries.HasSubst.X _)]
-  ring
-
-/-- The additivity defect of `g` vanishes to the order of `g`. -/
-private theorem le_order_homDefect_𝔾ₐ {g : PowerSeries R} (hg₀ : PowerSeries.constantCoeff g = 0)
-    {n : ℕ} (hg : n ≤ g.order) : (n : ℕ∞) ≤ (F.homDefect 𝔾ₐ g).order := by
-  have h {x : MvPowerSeries (Fin 2) R} (hx : constantCoeff x = 0) :
-      (n : ℕ∞) ≤ (PowerSeries.subst x g).order :=
-    hg.trans (PowerSeries.le_order_subst_left hx)
-  rw [F.homDefect_𝔾ₐ hg₀]
-  exact le_order_sub (le_order_sub (h F.zero_constantCoeff) (h (constantCoeff_X 0)))
-    (h (constantCoeff_X 1))
-
-/-- The lowest-degree part of the additivity defect of `c Xⁿ`, `n ≠ 0`, is
-`c ((X + Y)ⁿ - Xⁿ - Yⁿ)`. -/
-private theorem homogeneousComponent_homDefect_𝔾ₐ_smul_X_pow (c : R) {n : ℕ} (hn : n ≠ 0) :
-    homogeneousComponent n (F.homDefect 𝔾ₐ (c • PowerSeries.X ^ n)) =
-      ((c • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n - MvPolynomial.X 0 ^ n -
-        MvPolynomial.X 1 ^ n) : MvPolynomial (Fin 2) R) : MvPowerSeries (Fin 2) R) := by
-  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-  have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
-  rw [F.homDefect_𝔾ₐ (by simp [hn])]
-  simp only [PowerSeries.subst_smul hF, PowerSeries.subst_smul (hX _),
-    PowerSeries.subst_pow hF, PowerSeries.subst_pow (hX _), PowerSeries.subst_X hF,
-    PowerSeries.subst_X (hX _), map_sub, _root_.map_smul,
-    homogeneousComponent_pow_of_constantCoeff_eq_zero F.zero_constantCoeff,
-    homogeneousComponent_pow_of_constantCoeff_eq_zero (constantCoeff_X _),
-    homogeneousComponent_one_X,
-    homogeneousComponent_one_eq_X_add_X F.lin_coeff_X F.lin_coeff_Y]
-  rw [MvPolynomial.smul_eq_C_mul, ← MvPolynomial.coeToMvPowerSeries.ringHom_apply]
-  simp only [map_mul, map_sub, map_pow, map_add, MvPolynomial.coeToMvPowerSeries.ringHom_apply,
-    MvPolynomial.coe_X, MvPolynomial.coe_C, MvPowerSeries.smul_eq_C_mul, mul_sub]
-
-end HomDefect
-
 section PSeries
 
 variable {F}
@@ -163,11 +121,11 @@ private theorem exists_le_order_homDefect_𝔾ₐ_sub_smul_X_pow [F.IsComm] {p :
     have hXn₀ : PowerSeries.constantCoeff (c • PowerSeries.X ^ n : PowerSeries R) = 0 := by
       simp [show n ≠ 0 by omega]
     have hn' : (n : ℕ∞) ≤ (F.homDefect 𝔾ₐ (g - c • PowerSeries.X ^ n)).order := by
-      rw [homDefect_𝔾ₐ_sub F hg hXn₀]
-      exact le_order_sub hn (le_order_homDefect_𝔾ₐ F hXn₀ hXn)
+      rw [F.homDefect_𝔾ₐ_sub hg hXn₀]
+      exact le_order_sub hn (F.le_order_homDefect_𝔾ₐ hXn₀ hXn)
     refine succ_le_order_of_homogeneousComponent_eq_zero hn' ?_
-    rw [homDefect_𝔾ₐ_sub F hg hXn₀, map_sub,
-      homogeneousComponent_homDefect_𝔾ₐ_smul_X_pow F c (by omega), hc, sub_self]
+    rw [F.homDefect_𝔾ₐ_sub hg hXn₀, map_sub,
+      F.homogeneousComponent_homDefect_𝔾ₐ_smul_X_pow c (by omega), hc, sub_self]
 
 end PSeries
 

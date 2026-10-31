@@ -55,6 +55,10 @@ The homomorphism defect itself and its basic API are in
   the homomorphism defect is a multiple `c C_n` of the Lazard cocycle.
 * `FormalGroup.homogeneousComponent_homDefect_eq_smul_lazardCocycle`: in degree `pᵏ` and
   characteristic `p`, the multiple is the coefficient of `X^(pᵏ)` in `[p]_G ∘ f - f ∘ [p]_F`.
+* `FormalGroup.homDefect_𝔾ₐ_sub`, `FormalGroup.le_order_homDefect_𝔾ₐ`,
+  `FormalGroup.homogeneousComponent_homDefect_𝔾ₐ_smul_X_pow`: towards the additive formal group
+  law the defect is additive in `f`, vanishes to the order of `f`, and for `f = c Xⁿ` has leading
+  term `c ((X + Y)ⁿ - Xⁿ - Yⁿ)`.
 
 ## References
 
@@ -446,5 +450,51 @@ theorem homogeneousComponent_homDefect_eq_smul_lazardCocycle
   simp
 
 end Obstruction
+
+section AdditiveTarget
+
+variable (F : FormalGroup R)
+
+/-- The homomorphism defect towards the additive formal group law is additive in the series. -/
+theorem homDefect_𝔾ₐ_sub {g h : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0)
+    (hh : PowerSeries.constantCoeff h = 0) :
+    F.homDefect 𝔾ₐ (g - h) = F.homDefect 𝔾ₐ g - F.homDefect 𝔾ₐ h := by
+  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
+  rw [F.homDefect_𝔾ₐ (by rw [map_sub, hg, hh, sub_zero]), F.homDefect_𝔾ₐ hg, F.homDefect_𝔾ₐ hh]
+  simp only [PowerSeries.subst_sub hF, PowerSeries.subst_sub (PowerSeries.HasSubst.X _)]
+  ring
+
+/-- The homomorphism defect of `g` towards the additive formal group law vanishes to the order
+of `g`. -/
+theorem le_order_homDefect_𝔾ₐ {g : PowerSeries R} (hg₀ : PowerSeries.constantCoeff g = 0)
+    {n : ℕ} (hg : n ≤ g.order) : (n : ℕ∞) ≤ (F.homDefect 𝔾ₐ g).order := by
+  have h {x : MvPowerSeries (Fin 2) R} (hx : constantCoeff x = 0) :
+      (n : ℕ∞) ≤ (PowerSeries.subst x g).order :=
+    hg.trans (PowerSeries.le_order_subst_left hx)
+  rw [F.homDefect_𝔾ₐ hg₀]
+  exact le_order_sub (le_order_sub (h F.zero_constantCoeff) (h (constantCoeff_X 0)))
+    (h (constantCoeff_X 1))
+
+/-- The lowest-degree part of the homomorphism defect of `c Xⁿ`, `n ≠ 0`, towards the additive
+formal group law is `c ((X + Y)ⁿ - Xⁿ - Yⁿ)`. -/
+theorem homogeneousComponent_homDefect_𝔾ₐ_smul_X_pow (c : R) {n : ℕ} (hn : n ≠ 0) :
+    homogeneousComponent n (F.homDefect 𝔾ₐ (c • PowerSeries.X ^ n)) =
+      ((c • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n - MvPolynomial.X 0 ^ n -
+        MvPolynomial.X 1 ^ n) : MvPolynomial (Fin 2) R) : MvPowerSeries (Fin 2) R) := by
+  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
+  have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
+  rw [F.homDefect_𝔾ₐ (by simp [hn])]
+  simp only [PowerSeries.subst_smul hF, PowerSeries.subst_smul (hX _),
+    PowerSeries.subst_pow hF, PowerSeries.subst_pow (hX _), PowerSeries.subst_X hF,
+    PowerSeries.subst_X (hX _), map_sub, _root_.map_smul,
+    homogeneousComponent_pow_of_constantCoeff_eq_zero F.zero_constantCoeff,
+    homogeneousComponent_pow_of_constantCoeff_eq_zero (constantCoeff_X _),
+    homogeneousComponent_one_X,
+    homogeneousComponent_one_eq_X_add_X F.lin_coeff_X F.lin_coeff_Y]
+  rw [MvPolynomial.smul_eq_C_mul, ← MvPolynomial.coeToMvPowerSeries.ringHom_apply]
+  simp only [map_mul, map_sub, map_pow, map_add, MvPolynomial.coeToMvPowerSeries.ringHom_apply,
+    MvPolynomial.coe_X, MvPolynomial.coe_C, MvPowerSeries.smul_eq_C_mul, mul_sub]
+
+end AdditiveTarget
 
 end FormalGroup
