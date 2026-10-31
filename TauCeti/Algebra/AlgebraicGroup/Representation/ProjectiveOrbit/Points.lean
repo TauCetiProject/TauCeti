@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.HomogeneousIdeal
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.AlgebraicGeometry.AugmentationPoint.Basic
@@ -63,18 +63,9 @@ theorem mem_projectiveOrbitMap_kernelPoint_iff (m : M) (hm : Module.IsUnimodular
     (hn : 0 < n) (hs : s ∈ TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k M) n) :
     s ∈ (projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint g.ofConv)).asHomogeneousIdeal ↔
       SymmetricAlgebra.lift (Module.Dual.eval k M (basePointsRepresentation M g m)) s = 0 := by
-  have h := congrArg (fun U : (Spec (.of H)).Opens ↦ AlgHom.kernelPoint g.ofConv ∈ U)
-    (projectiveOrbitMap_preimage_basicOpen m hm hn hs)
-  rw [basicOpen_eq_of_affine] at h
-  -- The scheme carriers use their own membership instances. Identify these with the
-  -- spectrum ideals before applying the coordinate computation; the open lemmas cannot
-  -- rewrite through those instances directly.
-  change (s ∉ (projectiveOrbitMap (H := H) m hm
-    (AlgHom.kernelPoint g.ofConv)).asHomogeneousIdeal) =
-      ((orbitCoordinates (H := H) m s) ∉ (AlgHom.kernelPoint g.ofConv).asIdeal) at h
+  rw [mem_projectiveOrbitMap_iff m hm _ hn hs]
   simp only [AlgHom.kernelPoint_asIdeal, RingHom.mem_ker, AlgHom.coe_toRingHom,
-    ← AlgHom.comp_apply, comp_orbitCoordinates] at h
-  exact not_iff_not.mp (Iff.of_eq h)
+    ← AlgHom.comp_apply, comp_orbitCoordinates]
 
 /-- A linear homogeneous coordinate vanishes at a rational orbit image exactly when the
 corresponding functional annihilates the translated vector. -/
