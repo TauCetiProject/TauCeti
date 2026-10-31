@@ -23,12 +23,6 @@ integral over `R`, so lying over applies along the restricted map.
 * `AlgHom.mapIntegralClosure_injective`: it preserves injectivity.
 * `Ideal.exists_isPrime_comap_mapIntegralClosure_eq`: a prime of the integral closure in `A` is
   the contraction of a prime of the integral closure in `B` along an injective `f`.
-* `integralClosure.algebraOfIsScalarTower`: for a tower `R → A → B`, the integral closure of `R`
-  in `B` as an algebra over the integral closure of `R` in `A`, with its compatibility,
-  integrality and faithfulness facts `integralClosure.isScalarTower_bot_of_isScalarTower`,
-  `integralClosure.isScalarTower_top_of_isScalarTower`,
-  `integralClosure.isIntegral_of_isScalarTower` and
-  `integralClosure.faithfulSMul_of_isScalarTower`.
 -/
 
 public section
@@ -67,41 +61,3 @@ theorem Ideal.exists_isPrime_comap_mapIntegralClosure_eq (P : Ideal (integralClo
       (f.mapIntegralClosure : integralClosure R A →+* integralClosure R B)).mp
         (AlgHom.mapIntegralClosure_injective hf)]
     exact bot_le
-
-namespace integralClosure
-
-variable (R A B) [Algebra A B] [IsScalarTower R A B]
-
-/-- For a tower `R → A → B`, the integral closure of `R` in `B` is an algebra over the integral
-closure of `R` in `A`, through the restriction of `A → B` to integral closures. It is meant to be
-used as a local instance. -/
-noncomputable abbrev algebraOfIsScalarTower :
-    Algebra (integralClosure R A) (integralClosure R B) :=
-  (IsScalarTower.toAlgHom R A B).mapIntegralClosure.toAlgebra
-
-attribute [local instance] algebraOfIsScalarTower
-
-variable {R A B}
-
-/-- The algebra structure `integralClosure.algebraOfIsScalarTower` is compatible with `R`. -/
-theorem isScalarTower_bot_of_isScalarTower :
-    IsScalarTower R (integralClosure R A) (integralClosure R B) :=
-  .of_algebraMap_eq' (IsScalarTower.toAlgHom R A B).mapIntegralClosure.comp_algebraMap.symm
-
-/-- The algebra structure `integralClosure.algebraOfIsScalarTower` is compatible with `B`. -/
-theorem isScalarTower_top_of_isScalarTower :
-    IsScalarTower (integralClosure R A) (integralClosure R B) B :=
-  .of_algebraMap_eq fun _ ↦ rfl
-
-/-- The integral closure of `R` in `B` is integral over the integral closure of `R` in `A`. -/
-theorem isIntegral_of_isScalarTower :
-    Algebra.IsIntegral (integralClosure R A) (integralClosure R B) :=
-  ⟨fun x ↦ (IsIntegralClosure.isIntegral R B x).tower_top⟩
-
-/-- If `A → B` is injective, so is its restriction to integral closures. -/
-theorem faithfulSMul_of_isScalarTower [FaithfulSMul A B] :
-    FaithfulSMul (integralClosure R A) (integralClosure R B) :=
-  (faithfulSMul_iff_algebraMap_injective _ _).mpr
-    (AlgHom.mapIntegralClosure_injective (FaithfulSMul.algebraMap_injective A B))
-
-end integralClosure

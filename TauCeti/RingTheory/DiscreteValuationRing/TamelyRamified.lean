@@ -15,7 +15,7 @@ import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Smooth.Fiber
 import TauCeti.RingTheory.Ideal.LiesOver
-import TauCeti.RingTheory.IntegralClosure.Map
+import TauCeti.RingTheory.Localization.Integral
 import TauCeti.RingTheory.RamificationInertia.Bijective
 
 /-!
@@ -35,10 +35,12 @@ extension and let `B` be the integral closure of `A` in `L`. The maximal ideals 
 
 The definitions take `L` to be a field; for a finite separable `K`-algebra `∏ Lⱼ` Stacks asks
 for them of every factor `Lⱼ`. Ramification indices are Mathlib's `Ideal.ramificationIdx`
-and residue degrees are Mathlib's `Ideal.inertiaDeg`. The definitions themselves only need `A`
-to be local; the results below assume `A` is a discrete valuation ring. For extensions of
-nonarchimedean local fields, the valuation-theoretic counterparts are `TauCeti.IsTamelyRamified`
-and `TauCeti.IsTotallyRamified`.
+and residue degrees are Mathlib's `Ideal.inertiaDeg`. The definitions, the comparisons between
+them, their transport along integral-closure models and the tower lemmas `trans` only need `A`
+to be local (`trans` also asks the integral closure of `A` in the intermediate field to be a
+discrete valuation ring); the remaining results assume `A` is a discrete valuation ring. For
+extensions of nonarchimedean local fields, the valuation-theoretic counterparts are
+`TauCeti.IsTamelyRamified` and `TauCeti.IsTotallyRamified`.
 
 ## Main results
 
@@ -354,10 +356,8 @@ section Tower
 variable {A M L : Type*} [CommRing A] [Field M] [Field L] [Algebra A M]
   [Algebra A L] [Algebra M L] [IsScalarTower A M L]
 
-attribute [local instance] integralClosure.algebraOfIsScalarTower
-  integralClosure.isScalarTower_bot_of_isScalarTower
-  integralClosure.isScalarTower_top_of_isScalarTower integralClosure.isIntegral_of_isScalarTower
-  integralClosure.faithfulSMul_of_isScalarTower
+attribute [local instance] integralClosureMapAlgebra isScalarTower_integralClosureMapAlgebra_left
+  isScalarTower_integralClosureMapAlgebra_right
 
 /-- **Tame ramification in towers.** Let `M ⊆ L` be fields over the local ring `A` such that the
 integral closure `A_M` of `A` in `M` is a discrete valuation ring. If `M` is tamely ramified with
@@ -366,6 +366,10 @@ respect to `A`. -/
 theorem IsTamelyRamifiedWRT.trans [IsLocalRing A] [IsDiscreteValuationRing (integralClosure A M)]
     (hM : IsTamelyRamifiedWRT A M) (hL : IsTamelyRamifiedWRT (integralClosure A M) L) :
     IsTamelyRamifiedWRT A L := by
+  have : Algebra.IsIntegral (integralClosure A M) (integralClosure A L) := .tower_top A
+  have : FaithfulSMul (integralClosure A M) (integralClosure A L) := .tower_bot _ _ L
+  have : Module.IsTorsionFree (integralClosure A M) (integralClosure A L) :=
+    FaithfulSMul.to_isTorsionFree ..
   have : IsIntegralClosure (integralClosure A L) (integralClosure A M) L :=
     IsIntegralClosure.tower_top (R := A)
   rw [isTamelyRamifiedWRT_iff_of_isIntegralClosure (integralClosure A L)] at hL
@@ -395,6 +399,10 @@ to `A`. -/
 theorem IsUnramifiedWRT.trans [IsLocalRing A] [IsDiscreteValuationRing (integralClosure A M)]
     (hM : IsUnramifiedWRT A M) (hL : IsUnramifiedWRT (integralClosure A M) L) :
     IsUnramifiedWRT A L := by
+  have : Algebra.IsIntegral (integralClosure A M) (integralClosure A L) := .tower_top A
+  have : FaithfulSMul (integralClosure A M) (integralClosure A L) := .tower_bot _ _ L
+  have : Module.IsTorsionFree (integralClosure A M) (integralClosure A L) :=
+    FaithfulSMul.to_isTorsionFree ..
   have : IsIntegralClosure (integralClosure A L) (integralClosure A M) L :=
     IsIntegralClosure.tower_top (R := A)
   rw [isUnramifiedWRT_iff_of_isIntegralClosure (integralClosure A L)] at hL
@@ -430,6 +438,8 @@ private theorem exists_tower_bot (Q : Ideal (integralClosure A M)) [Q.IsMaximal]
       IsScalarTower (A ⧸ maximalIdeal A) (integralClosure A M ⧸ Q) (integralClosure A L ⧸ P) ∧
         Q.ramificationIdx A ∣ P.ramificationIdx A := by
   have : IsDedekindDomain (integralClosure A M) := integralClosure.isDedekindDomain A K M
+  have : Algebra.IsIntegral (integralClosure A M) (integralClosure A L) := .tower_top A
+  have : FaithfulSMul (integralClosure A M) (integralClosure A L) := .tower_bot _ _ L
   obtain ⟨P, _, _⟩ := Ideal.exists_maximal_ideal_liesOver_of_isIntegral (S := integralClosure A L) Q
   have : P.LiesOver (maximalIdeal A) := .trans P Q (maximalIdeal A)
   exact ⟨P, ‹_›, ‹_›, this, Ideal.Quotient.isScalarTower_quotient_of_liesOver _ Q P,

@@ -392,10 +392,9 @@ theorem isTamelyRamifiedWRT_of_isUnramifiedWRT_of_pow_eq_of_irreducible [FiniteD
     rw [map_pow, AdjoinSimple.algebraMap_gen, hβ, ← IsScalarTower.algebraMap_apply])
   have hgen : K⟮AdjoinSimple.gen K β⟯ = ⊤ := adjoin_adjoinSimple_gen_eq_top β
   have := isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible hπ hn0 hβ' hgen
-  -- `K(β)` is totally ramified of degree `n`, invertible in the residue field: it is tame.
+  -- `K(β)` is a Kummer extension of degree `n`, invertible in the residue field: it is tame.
   have hK₁ : Algebra.IsTamelyRamifiedWRT A K⟮β⟯ :=
-    (isTotallyRamifiedWRT_of_pow_eq_of_irreducible hπ hn0 hβ' hgen).isTamelyRamifiedWRT_iff.mpr
-      fun P _ _ ↦ by rwa [ramificationIdx_eq_of_pow_eq_of_irreducible hπ hn0 hβ' hgen P]
+    (isTamelyRamifiedWRT_iff_of_pow_eq_of_irreducible hπ hn0 hβ' hgen).mpr hn
   exact (hK₁.trans h.isTamelyRamifiedWRT).tower_bot K
 
 end TauCeti.IsDiscreteValuationRing
