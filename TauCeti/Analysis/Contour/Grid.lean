@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Data.Int.Interval
 public import Mathlib.Topology.MetricSpace.Thickening
+public import TauCeti.Topology.Algebra.Order.Floor
 
 /-!
 # Grid squares around a compact set
@@ -84,48 +85,19 @@ theorem dist_le_of_mem_gridSquare (hz : z ∈ gridSquare δ p) (hw : w ∈ gridS
   rw [Complex.dist_eq_re_im, ← Real.sqrt_sq hδ, ← Real.sqrt_mul zero_le_two]
   exact Real.sqrt_le_sqrt (by linarith)
 
-/-- The point `x` lies in the grid interval of side `δ` indexed by `⌊x / δ⌋`. -/
-private theorem mem_Icc_floor (hδ : 0 < δ) (x : ℝ) :
-    x ∈ Icc (δ * ⌊x / δ⌋) (δ * (⌊x / δ⌋ + 1)) := by
-  constructor
-  · rw [mul_comm, ← le_div_iff₀ hδ]
-    exact Int.floor_le _
-  · rw [mul_comm, ← div_le_iff₀ hδ]
-    exact (Int.lt_floor_add_one _).le
-
-/-- Every point near `x` shares a grid interval of side `δ` with `x`. -/
-private theorem eventually_exists_mem_Icc_and_mem_Icc (hδ : 0 < δ) (x : ℝ) :
-    ∀ᶠ y in 𝓝 x, ∃ m : ℤ,
-      x ∈ Icc (δ * m) (δ * (m + 1)) ∧ y ∈ Icc (δ * m) (δ * (m + 1)) := by
-  have hm₁ : δ * ⌊x / δ⌋ ≤ x := (mem_Icc_floor hδ x).1
-  have hm₂ : x < δ * (⌊x / δ⌋ + 1) := by
-    rw [mul_comm, ← div_lt_iff₀ hδ]
-    exact Int.lt_floor_add_one _
-  have hn₁ : δ * ((⌈x / δ⌉ - 1 : ℤ) : ℝ) < x := by
-    rw [mul_comm, ← lt_div_iff₀ hδ]
-    push_cast
-    linarith [Int.ceil_lt_add_one (x / δ)]
-  have hn₂ : x ≤ δ * (((⌈x / δ⌉ - 1 : ℤ) : ℝ) + 1) := by
-    rw [mul_comm, ← div_le_iff₀ hδ]
-    push_cast
-    linarith [Int.le_ceil (x / δ)]
-  filter_upwards [Ioo_mem_nhds hn₁ hm₂] with y hy
-  rcases le_total x y with hxy | hyx
-  · exact ⟨⌊x / δ⌋, ⟨hm₁, hm₂.le⟩, hm₁.trans hxy, hy.2.le⟩
-  · exact ⟨⌈x / δ⌉ - 1, ⟨hn₁.le, hn₂⟩, hy.1.le, hyx.trans hn₂⟩
-
 /-- For `δ > 0`, the grid squares of side `δ` cover the plane. -/
 theorem exists_mem_gridSquare (hδ : 0 < δ) (z : ℂ) : ∃ p, z ∈ gridSquare δ p :=
-  ⟨(⌊z.re / δ⌋, ⌊z.im / δ⌋), mem_gridSquare.2 ⟨mem_Icc_floor hδ z.re, mem_Icc_floor hδ z.im⟩⟩
+  ⟨(⌊z.re / δ⌋, ⌊z.im / δ⌋), mem_gridSquare.2 ⟨mem_Icc_mul_floor_div hδ z.re,
+    mem_Icc_mul_floor_div hδ z.im⟩⟩
 
 /-- For `δ > 0`, every point near `z` lies in a grid square of side `δ` that contains `z`: the
 grid squares through `z` cover a neighbourhood of `z`. -/
 theorem eventually_exists_mem_gridSquare_and_mem (hδ : 0 < δ) (z : ℂ) :
     ∀ᶠ w in 𝓝 z, ∃ p, z ∈ gridSquare δ p ∧ w ∈ gridSquare δ p := by
   filter_upwards [(Complex.continuous_re.tendsto z).eventually
-      (eventually_exists_mem_Icc_and_mem_Icc hδ z.re),
+      (eventually_exists_int_mem_Icc_and_mem hδ z.re),
     (Complex.continuous_im.tendsto z).eventually
-      (eventually_exists_mem_Icc_and_mem_Icc hδ z.im)] with w ⟨m, hzm, hwm⟩ ⟨n, hzn, hwn⟩
+      (eventually_exists_int_mem_Icc_and_mem hδ z.im)] with w ⟨m, hzm, hwm⟩ ⟨n, hzn, hwn⟩
   exact ⟨(m, n), mem_gridSquare.2 ⟨hzm, hzn⟩, mem_gridSquare.2 ⟨hwm, hwn⟩⟩
 
 /-- The indices of the closed grid squares of side `δ` that meet `K`. -/
