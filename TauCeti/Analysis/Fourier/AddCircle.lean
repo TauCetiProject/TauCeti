@@ -246,6 +246,7 @@ theorem fourierLp_smul_fourierLp_smul {p : ℝ≥0∞} (m n : ℤ)
 
 /-- Multiplying an `Lᵖ` function by the bounded Fourier monomial `e_n` shifts its Fourier
 coefficients by `n`. -/
+@[simp]
 theorem fourierCoeff_fourierLp_smul {p : ℝ≥0∞} (n : ℤ) (f : Lp ℂ p (haarAddCircle (T := T)))
     (m : ℤ) :
     fourierCoeff (fourierLp (T := T) ∞ n • f : Lp ℂ p (haarAddCircle (T := T))) m =
@@ -271,6 +272,7 @@ theorem fourierCoeff_smul_fourierBasis (a : Lp ℂ ∞ (haarAddCircle (T := T)))
 
 /-- The Fourier coefficients of the complex conjugate of an `Lᵖ` function are the conjugates of
 its reflected coefficients. -/
+@[simp]
 theorem fourierCoeff_star {p : ℝ≥0∞} (f : Lp ℂ p (haarAddCircle (T := T))) (n : ℤ) :
     fourierCoeff (star f : Lp ℂ p (haarAddCircle (T := T))) n =
       starRingEnd ℂ (fourierCoeff f (-n)) := by

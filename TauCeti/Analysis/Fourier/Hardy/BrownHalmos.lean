@@ -18,9 +18,6 @@ in the Hardy basis is constant along diagonals, that is, exactly when `S† T S 
 is then unique. This is the theorem of Brown and Halmos, and it is the way an abstractly given
 operator is recognized as a Toeplitz operator.
 
-* `TauCeti.toeplitz_fourierLp_natCast_hardyBasis`, `TauCeti.toeplitz_fourierLp_one_hardyBasis`:
-  the Toeplitz operator of `e_m`, `m ≥ 0`, raises the Hardy basis by `m`; in particular the
-  forward shift sends `eₙ` to `eₙ₊₁`.
 * `TauCeti.exists_toeplitz_eq_iff_inner_hardyBasis_succ`: `T` is a Toeplitz operator if and
   only if `⟪e_{i+1}, T e_{j+1}⟫ = ⟪e_i, T e_j⟫` for all `i, j`.
 * `TauCeti.existsUnique_toeplitz_eq_iff_adjoint_comp_comp_eq`: **Brown–Halmos.** `T = T_a` for a
@@ -50,22 +47,6 @@ open scoped ENNReal InnerProductSpace
 
 namespace TauCeti
 
-/-- The Toeplitz operator of the Fourier monomial `e_m`, `m ≥ 0`, raises the Hardy basis by
-`m`. -/
-@[simp]
-theorem toeplitz_fourierLp_natCast_hardyBasis (m n : ℕ) :
-    toeplitz (fourierLp (T := 1) ∞ (m : ℤ)) (hardyBasis n) = hardyBasis (m + n) := by
-  apply Subtype.ext
-  rw [coe_toeplitz_apply, coe_hardyBasis, fourierLp_smul_fourierBasis, coe_hardyBasis,
-    Nat.cast_add]
-  exact starProjection_eq_self_iff.mpr (by exact_mod_cast fourierBasis_mem_hardySubmodule (m + n))
-
-/-- The forward shift `S = T_z` on Hardy space sends `eₙ` to `eₙ₊₁`. -/
-@[simp]
-theorem toeplitz_fourierLp_one_hardyBasis (n : ℕ) :
-    toeplitz (fourierLp (T := 1) ∞ 1) (hardyBasis n) = hardyBasis (n + 1) := by
-  simpa [add_comm] using toeplitz_fourierLp_natCast_hardyBasis 1 n
-
 /-- Along each diagonal, a Hardy matrix invariant under the shift `(i, j) ↦ (i + 1, j + 1)` is
 invariant under every translation `(i, j) ↦ (i + k, j + k)`. -/
 private theorem inner_hardyBasis_add_eq {T : HardySpace →L[ℂ] HardySpace}
@@ -75,6 +56,12 @@ private theorem inner_hardyBasis_add_eq {T : HardySpace →L[ℂ] HardySpace}
   induction k with
   | zero => rfl
   | succ k ih => rw [← add_assoc, ← add_assoc, h, ih]
+
+/-- The Fourier coefficients of the `L²` Fourier mode `e_m` are those of the monomial `e_m`. -/
+private theorem fourierCoeff_fourierBasis (m k : ℤ) :
+    fourierCoeff (fourierBasis (T := 1) m) k = if k = m then 1 else 0 := by
+  rw [coe_fourierBasis, fourierCoeff_congr_ae (coeFn_fourierLp 2 m), fourierCoeff_fourier,
+    Pi.single_apply]
 
 /-- A Hardy matrix that is constant along diagonals is the matrix of Fourier coefficients
 `b̂(i - j)` of a square-integrable circle function `b`, namely
@@ -92,54 +79,60 @@ private theorem exists_fourierCoeff_eq_inner {T : HardySpace →L[ℂ] HardySpac
   -- The Fourier coefficients of the three summands, through the linear Fourier representation.
   have hb (k : ℤ) : fourierCoeff b k =
       fourierCoeff (T (hardyBasis 0) : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) k +
-        starRingEnd ℂ (fourierCoeff (ContinuousLinearMap.adjoint T (hardyBasis 0) :
-          Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) (-k)) - if k = 0 then c else 0 := by
-    rw [← fourierBasis_repr, ← fourierCoeff_star, ← fourierBasis_repr, ← fourierBasis_repr,
-      map_sub, map_add, map_smul, lp.coeFn_sub, lp.coeFn_add, lp.coeFn_smul, Pi.sub_apply,
-      Pi.add_apply, Pi.smul_apply,
-      HilbertBasis.repr_apply_apply (fourierBasis (T := 1)) (fourierBasis 0),
-      orthonormal_iff_ite.mp (fourierBasis (T := 1)).orthonormal, smul_eq_mul, mul_ite, mul_one,
-      mul_zero]
-  -- The adjoint turns the first row of the matrix into the first column of `T†`.
-  have hrow (j : ℕ) : starRingEnd ℂ (fourierCoeff (ContinuousLinearMap.adjoint T (hardyBasis 0) :
-      Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) j) = ⟪hardyBasis 0, T (hardyBasis j)⟫_ℂ := by
+        fourierCoeff (star (ContinuousLinearMap.adjoint T (hardyBasis 0) :
+          Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))
+          k - c * fourierCoeff (fourierBasis (T := 1) 0) k := by
+    simp only [b, ← fourierBasis_repr, map_sub, map_add, map_smul]
+    rfl
+  -- The first column of `T` and the conjugated first column of `T†`, the first row of `T`.
+  have hT (d : ℕ) : fourierCoeff (T (hardyBasis 0) : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))
+      d = ⟪hardyBasis d, T (hardyBasis 0)⟫_ℂ := by
+    rw [← hardyBasis_repr, HilbertBasis.repr_apply_apply]
+  have hA (d : ℕ) : starRingEnd ℂ (fourierCoeff (ContinuousLinearMap.adjoint T (hardyBasis 0) :
+      Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) d) = ⟪hardyBasis 0, T (hardyBasis d)⟫_ℂ := by
     rw [← hardyBasis_repr, HilbertBasis.repr_apply_apply, inner_conj_symm,
       ContinuousLinearMap.adjoint_inner_left]
-  have hcol (i : ℕ) : fourierCoeff (T (hardyBasis 0) : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))
-      i = ⟪hardyBasis i, T (hardyBasis 0)⟫_ℂ := by
-    rw [← hardyBasis_repr, HilbertBasis.repr_apply_apply]
+  -- Off the diagonal one summand vanishes; on it, the correction `c` cancels the double count.
+  have hcol (d : ℕ) : fourierCoeff b d = ⟪hardyBasis d, T (hardyBasis 0)⟫_ℂ := by
+    rw [hb, fourierCoeff_star, fourierCoeff_fourierBasis, hT]
+    rcases Nat.eq_zero_or_pos d with rfl | hd
+    · simpa [c] using hA 0
+    · simp [HardySpace.fourierCoeff_eq_zero _ (by omega : -(d : ℤ) < 0), hd.ne']
+  have hrow (d : ℕ) : fourierCoeff b (-d) = ⟪hardyBasis 0, T (hardyBasis d)⟫_ℂ := by
+    rw [hb, fourierCoeff_star, fourierCoeff_fourierBasis, neg_neg, hA]
+    rcases Nat.eq_zero_or_pos d with rfl | hd
+    · simpa [c] using hT 0
+    · simp [HardySpace.fourierCoeff_eq_zero _ (by omega : -(d : ℤ) < 0), hd.ne']
   refine ⟨b, fun i j ↦ ?_⟩
   rcases le_total j i with hji | hij
-  · -- Below the diagonal the entry is read off the first column.
-    obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hji
-    have hshift :
-        ⟪hardyBasis (j + d), T (hardyBasis j)⟫_ℂ = ⟪hardyBasis d, T (hardyBasis 0)⟫_ℂ := by
-      simpa [add_comm] using inner_hardyBasis_add_eq h d 0 j
-    rw [show ((j + d : ℕ) : ℤ) - j = (d : ℤ) by push_cast; ring, hb, hcol, hshift]
-    rcases Nat.eq_zero_or_pos d with rfl | hd
-    · have h0 := hrow 0
-      rw [Nat.cast_zero] at h0
-      rw [Nat.cast_zero, neg_zero, h0, ite_eq_left rfl, add_sub_cancel_right]
-    · rw [HardySpace.fourierCoeff_eq_zero (ContinuousLinearMap.adjoint T (hardyBasis 0))
-        (by omega : -(d : ℤ) < 0), map_zero (starRingEnd ℂ), add_zero, ite_eq_right (by omega),
-        sub_zero]
-  · -- Above the diagonal the entry is read off the first row.
-    obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hij
-    have hshift :
-        ⟪hardyBasis i, T (hardyBasis (i + d))⟫_ℂ = ⟪hardyBasis 0, T (hardyBasis d)⟫_ℂ := by
-      simpa [add_comm] using inner_hardyBasis_add_eq h 0 d i
-    rw [show (i : ℤ) - ((i + d : ℕ) : ℤ) = -(d : ℤ) by push_cast; ring, hb, neg_neg, hrow, hshift]
-    rcases Nat.eq_zero_or_pos d with rfl | hd
-    · have h0 := hcol 0
-      rw [Nat.cast_zero] at h0
-      rw [Nat.cast_zero, neg_zero, h0, ite_eq_left rfl, add_sub_cancel_right]
-    · rw [HardySpace.fourierCoeff_eq_zero (T (hardyBasis 0)) (by omega : -(d : ℤ) < 0), zero_add,
-        ite_eq_right (by omega), sub_zero]
+  · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hji
+    rw [show ((j + d : ℕ) : ℤ) - j = d by push_cast; ring, hcol, ← inner_hardyBasis_add_eq h d 0 j,
+      add_comm, zero_add]
+  · obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hij
+    rw [show (i : ℤ) - ((i + d : ℕ) : ℤ) = -d by push_cast; ring, hrow,
+      ← inner_hardyBasis_add_eq h 0 d i, zero_add, add_comm]
 
 /-- The operator `T` acting on circle `L²` through the Hardy projection. -/
 private abbrev ambient (T : HardySpace →L[ℂ] HardySpace) :
     Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)) →L[ℂ] Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)) :=
   hardySubmodule.subtypeL ∘L T ∘L hardySubmodule.orthogonalProjectionOnto
+
+/-- On the Hardy basis, `T` acting through the Hardy projection is `T` itself. -/
+private theorem ambient_coe_hardyBasis (T : HardySpace →L[ℂ] HardySpace) (j : ℕ) :
+    ambient T (hardyBasis j) = T (hardyBasis j) := by
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    orthogonalProjectionOnto_mem_subspace_eq_self, subtypeL_apply]
+
+/-- The matrix coefficient `⟪e_m, e_n b⟫` of multiplication by the monomial `e_n` is the Fourier
+coefficient `b̂(m - n)`. -/
+private theorem inner_fourierBasis_multiplicationOperator_fourier
+    (b : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) (m n : ℤ) :
+    ⟪fourierBasis (T := 1) m, Lp.multiplicationOperator
+      (ContinuousMap.toLp (E := ℂ) ∞ AddCircle.haarAddCircle ℂ (fourier n)) b⟫_ℂ =
+      fourierCoeff b (m - n) := by
+  rw [← HilbertBasis.repr_apply_apply, fourierBasis_repr, Lp.multiplicationOperator_apply]
+  -- `ContinuousMap.toLp ∞` of `fourier n` is `fourierLp ∞ n` by definition.
+  exact fourierCoeff_fourierLp_smul n b m
 
 /-- For trigonometric polynomials `f` and `q`, the matrix coefficient of multiplication by a
 symbol `b` of the shift-invariant Hardy matrix of `T` is the matrix coefficient of `T` at the
@@ -169,14 +162,10 @@ private theorem eventually_inner_multiplicationOperator_eq {T : HardySpace →L[
       have hq₂ : ContinuousMap.toLp (E := ℂ) 2 AddCircle.haarAddCircle ℂ (fourier n) =
           fourierBasis (T := 1) n := by
         rw [coe_fourierBasis]
-      rw [hq₂, Lp.multiplicationOperator_apply, Lp.multiplicationOperator_apply,
-        Lp.multiplicationOperator_apply, fourierLp_smul_fourierBasis, fourierLp_smul_fourierBasis,
-        hi, hj, ← coe_hardyBasis, ← coe_hardyBasis, ContinuousLinearMap.comp_apply,
-        ContinuousLinearMap.comp_apply, orthogonalProjectionOnto_mem_subspace_eq_self,
-        subtypeL_apply, ← coe_inner, ← hb, ← HilbertBasis.repr_apply_apply, fourierBasis_repr]
-      -- `ContinuousMap.toLp ∞` of `fourier n` is `fourierLp ∞ n` by definition.
-      rw [show ContinuousMap.toLp (E := ℂ) ∞ AddCircle.haarAddCircle ℂ (fourier n) =
-        fourierLp (T := 1) ∞ n from rfl, fourierCoeff_fourierLp_smul]
+      -- Both sides are the matrix entry `b̂(m - n) = ⟪e_{N+m}, T e_{N+n}⟫`.
+      rw [hq₂, inner_fourierBasis_multiplicationOperator_fourier]
+      simp only [Lp.multiplicationOperator_apply, fourierLp_smul_fourierBasis]
+      rw [hi, hj, ← coe_hardyBasis, ← coe_hardyBasis, ambient_coe_hardyBasis, ← coe_inner, ← hb]
       congr 1
       omega
     | zero => exact Filter.Eventually.of_forall fun N ↦ by simp
