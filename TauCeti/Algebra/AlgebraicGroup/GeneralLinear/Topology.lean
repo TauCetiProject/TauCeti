@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
-public import TauCeti.Topology.Algebra.IsOpenUnits
 public import TauCeti.Topology.Algebra.PointTopology.Group
+public import TauCeti.Topology.Instances.Matrix
 
 /-!
 # The point topology on `GL_n` is the topology of the unit group
@@ -26,27 +26,17 @@ When the units of `R` are open with continuous inversion, for instance when `R` 
 field such as a nonarchimedean local field `E`, the points of `GL_n` are an open subspace of
 `M_n(R)` (`TauCeti.GeneralLinear.isOpenEmbedding_coe_pointsMulEquiv`).
 
-For the valuation ring `O` of `E`, a matrix of `M_n(E)` comes from a point of `GL_n` over `O`
-exactly when it is the image of a matrix over `O` whose determinant is a unit of `O`
-(`TauCeti.GeneralLinear.range_coe_pointsMulEquiv_mapValue`). In particular a diagonal matrix with
-entries in `O` comes from such a point exactly when its entries are units of `O`, so `diag(ϖ, 1)`
-for a uniformizer `ϖ` does not, although its entries are integral and its determinant is nonzero.
-
 ## Main declarations
 
 * `TauCeti.GeneralLinear.pointsContinuousMulEquiv`: `pointsMulEquiv` as an isomorphism of
   topological groups between the points of `GL_n` and `GL (Fin n) R`.
 * `TauCeti.GeneralLinear.isOpenEmbedding_coe_pointsMulEquiv`: over a ring with open units, the
   points of `GL_n` form an open subspace of the matrices.
-* `TauCeti.GeneralLinear.range_coe_pointsMulEquiv_mapValue`: the matrices coming from points with
-  values in `A` are the images of the matrices over `A` with unit determinant.
-* `TauCeti.GeneralLinear.diagonal_mem_range_coe_pointsMulEquiv_mapValue_iff`: along an injective
-  map, a diagonal matrix comes from a point exactly when its entries are units.
 
 ## References
 
 * B. Conrad, *Weil and Grothendieck approaches to adelic points*, Enseign. Math. (2) 58 (2012),
-  Prop. 2.1, p. 2, §3, pp. 3–4, and Ex. 2.3, p. 3.
+  Prop. 2.1, p. 2, and §3, pp. 3–4.
 -/
 
 public section
@@ -64,16 +54,6 @@ variable {k : Type*} [CommRing k] (n : ℕ)
 section PointTopology
 
 variable {R : Type*} [CommRing R] [Algebra k R] [TopologicalSpace R]
-
-omit [TopologicalSpace R] in
-/-- The entries of the invertible matrix of a point inverse are the values of the point on the
-antipodes of the generic entries. -/
-private theorem coe_inv_pointsMulEquiv_apply (x : WithConv (coordinateHopfAlgebra k n →ₐ[k] R))
-    (i j : Fin n) :
-    (↑(pointsMulEquiv n x)⁻¹ : Matrix (Fin n) (Fin n) R) i j =
-      x.ofConv (HopfAlgebra.antipode k (A := coordinateHopfAlgebra k n)
-        (coordinateHopfAlgebraAlgEquiv k n (coordinateRingMap k n (MvPolynomial.X (i, j))))) := by
-  rw [← map_inv, pointsMulEquiv_apply, pointToGeneralLinear_apply, ← algHom_inv_apply]
 
 /-- Reading a point of `GL_n` as an invertible matrix is continuous for the point topology and
 the topology of the unit group. -/
@@ -152,50 +132,6 @@ theorem isOpenEmbedding_coe_pointsMulEquiv [IsOpenUnits R] :
   IsOpenUnits.isOpenEmbedding_unitsVal.comp (pointsContinuousMulEquiv n).isOpenEmbedding
 
 end PointTopology
-
-section Integral
-
-variable {A B : Type*} [CommRing A] [Algebra k A] [CommRing B] [Algebra k B]
-
-/-- The matrices over `B` that come from points of `GL_n` with values in `A`, along a map
-`φ : A → B`, are the images of the matrices over `A` whose determinant is a unit of `A`. For the
-valuation ring `O` of a local field `E` and `φ : O → E`, these are the matrices with integral
-entries whose determinant is a unit of `O`. -/
-theorem range_coe_pointsMulEquiv_mapValue (φ : A →ₐ[k] B) :
-    Set.range (fun x : WithConv (coordinateHopfAlgebra k n →ₐ[k] A) ↦
-        (pointsMulEquiv n (AlgHom.mapValue φ x) : Matrix (Fin n) (Fin n) B)) =
-      {M | ∃ N : Matrix (Fin n) (Fin n) A, IsUnit N.det ∧ N.map φ = M} := by
-  ext M
-  simp only [pointsMulEquiv_mapValue, Set.mem_range, Set.mem_ofPred_eq]
-  constructor
-  · rintro ⟨x, rfl⟩
-    exact ⟨pointsMulEquiv n x, Matrix.isUnits_det_units _, rfl⟩
-  · rintro ⟨N, hN, rfl⟩
-    obtain ⟨u, rfl⟩ := (Matrix.isUnit_iff_isUnit_det N).2 hN
-    exact ⟨(pointsMulEquiv n).symm u, by simp [Matrix.GeneralLinearGroup.map]⟩
-
-/-- Along an injective map `φ : A → B`, the diagonal matrix with entries `φ (d i)` comes from a
-point of `GL_n` with values in `A` exactly when every `d i` is a unit of `A`. For the valuation
-ring `O` of a local field and a uniformizer `ϖ`, the matrix `diag(ϖ, 1)` has integral entries and
-nonzero determinant, but does not come from a point of `GL_2` over `O`. -/
-theorem diagonal_mem_range_coe_pointsMulEquiv_mapValue_iff {φ : A →ₐ[k] B}
-    (hφ : Function.Injective φ) (d : Fin n → A) :
-    Matrix.diagonal (fun i ↦ φ (d i)) ∈ Set.range
-        (fun x : WithConv (coordinateHopfAlgebra k n →ₐ[k] A) ↦
-          (pointsMulEquiv n (AlgHom.mapValue φ x) : Matrix (Fin n) (Fin n) B)) ↔
-      ∀ i, IsUnit (d i) := by
-  rw [range_coe_pointsMulEquiv_mapValue, Set.mem_ofPred_eq]
-  constructor
-  · rintro ⟨N, hN, hNd⟩
-    have : N = Matrix.diagonal d := by
-      ext i j
-      apply hφ
-      simpa [Matrix.diagonal_apply, apply_ite φ] using congrFun (congrFun hNd i) j
-    simpa [this] using hN
-  · intro hd
-    exact ⟨Matrix.diagonal d, by simpa using hd, by simp [Matrix.diagonal_map]⟩
-
-end Integral
 
 end GeneralLinear
 

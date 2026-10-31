@@ -28,6 +28,12 @@ natural isomorphism from `HopfAlgebra.pointsFunctor` for `coordinateHopfAlgebra`
 of invertible matrices. The construction includes rank zero and zero rings, without a
 nontriviality or positive-rank assumption.
 
+Along a map of value algebras `A → B`, a matrix over `B` comes from a point with values in `A`
+exactly when it is the image of a matrix over `A` whose determinant is a unit of `A`. For the
+valuation ring `O` of a nonarchimedean local field `E`, a diagonal matrix with entries in `O`
+comes from such a point exactly when its entries are units of `O`, so `diag(ϖ, 1)` for a
+uniformizer `ϖ` does not, although its entries are integral and its determinant is nonzero.
+
 ## Main declarations
 
 * `TauCeti.GeneralLinear.pointToGeneralLinear`: the invertible matrix read from a point, with
@@ -39,12 +45,20 @@ nontriviality or positive-rank assumption.
 * `TauCeti.GeneralLinear.pointToGeneralLinear_mapValue` and
   `TauCeti.GeneralLinear.pointsMulEquiv_mapValue`: the point identification and the bundled
   equivalence are natural in the value algebra.
+* `TauCeti.GeneralLinear.coe_inv_pointsMulEquiv_apply`: the entries of the inverse matrix of a
+  point are its values on the antipodes of the generic entries.
+* `TauCeti.GeneralLinear.range_coe_pointsMulEquiv_mapValue`: the matrices coming from points with
+  values in `A` are the images of the matrices over `A` with unit determinant.
+* `TauCeti.GeneralLinear.diagonal_mem_range_coe_pointsMulEquiv_mapValue_iff`: along an injective
+  map, a diagonal matrix comes from a point exactly when its entries are units.
 * `TauCeti.GeneralLinear.generalLinearFunctor`: the group-valued functor of invertible matrices.
 * `TauCeti.GeneralLinear.pointsNatIso`: the natural isomorphism between the two functors.
 
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), §2.8 and §§3.2--3.6.
+* B. Conrad, *Weil and Grothendieck approaches to adelic points*, Enseign. Math. (2) 58 (2012),
+  Ex. 2.3, p. 3.
 * The Stacks Project, Tags
   [022W](https://stacks.math.columbia.edu/tag/022W) and
   [00CM](https://stacks.math.columbia.edu/tag/00CM).
@@ -227,6 +241,15 @@ theorem pointsMulEquiv_symm_apply (g : Matrix.GeneralLinearGroup (Fin n) A) :
     (pointsMulEquiv (R := R) n).symm g = generalLinearToPoint (R := R) n g :=
   (rfl)
 
+/-- The entries of the invertible matrix of a point inverse are the values of the point on the
+antipodes of the generic entries. -/
+theorem coe_inv_pointsMulEquiv_apply (f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A))
+    (i j : Fin n) :
+    (↑(pointsMulEquiv n f)⁻¹ : Matrix (Fin n) (Fin n) A) i j =
+      f.ofConv (HopfAlgebra.antipode R (A := coordinateHopfAlgebra R n)
+        (coordinateHopfAlgebraAlgEquiv R n (coordinateRingMap R n (MvPolynomial.X (i, j))))) := by
+  rw [← map_inv, pointsMulEquiv_apply, pointToGeneralLinear_apply, ← algHom_inv_apply]
+
 end Pointwise
 
 section Naturality
@@ -282,6 +305,44 @@ theorem toConv_comp_generalLinearToPoint_ofConv (phi : A →ₐ[R] B)
         (Matrix.GeneralLinearGroup.map (phi : A →+* B) g) := by
   simpa only [AlgHom.mapValue_apply, pointsMulEquiv_symm_apply] using
     mapValue_pointsMulEquiv_symm_apply n phi g
+
+/-- The matrices over `B` that come from points of `GL_n` with values in `A`, along a map
+`phi : A → B`, are the images of the matrices over `A` whose determinant is a unit of `A`. For the
+valuation ring `O` of a local field `E` and `phi : O → E`, these are the matrices with integral
+entries whose determinant is a unit of `O`. -/
+theorem range_coe_pointsMulEquiv_mapValue (phi : A →ₐ[R] B) :
+    Set.range (fun f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A) ↦
+        (pointsMulEquiv n (AlgHom.mapValue phi f) : Matrix (Fin n) (Fin n) B)) =
+      {M | ∃ N : Matrix (Fin n) (Fin n) A, IsUnit N.det ∧ N.map phi = M} := by
+  ext M
+  simp only [pointsMulEquiv_mapValue, Set.mem_range, Set.mem_ofPred_eq]
+  constructor
+  · rintro ⟨f, rfl⟩
+    exact ⟨pointsMulEquiv n f, Matrix.isUnits_det_units _, rfl⟩
+  · rintro ⟨N, hN, rfl⟩
+    obtain ⟨u, rfl⟩ := (Matrix.isUnit_iff_isUnit_det N).2 hN
+    exact ⟨(pointsMulEquiv n).symm u, by simp [Matrix.GeneralLinearGroup.map]⟩
+
+/-- Along an injective map `phi : A → B`, the diagonal matrix with entries `phi (d i)` comes from a
+point of `GL_n` with values in `A` exactly when every `d i` is a unit of `A`. For the valuation
+ring `O` of a local field and a uniformizer `ϖ`, the matrix `diag(ϖ, 1)` has integral entries and
+nonzero determinant, but does not come from a point of `GL_2` over `O`. -/
+theorem diagonal_mem_range_coe_pointsMulEquiv_mapValue_iff {phi : A →ₐ[R] B}
+    (hphi : Function.Injective phi) (d : Fin n → A) :
+    Matrix.diagonal (fun i ↦ phi (d i)) ∈ Set.range
+        (fun f : WithConv (coordinateHopfAlgebra R n →ₐ[R] A) ↦
+          (pointsMulEquiv n (AlgHom.mapValue phi f) : Matrix (Fin n) (Fin n) B)) ↔
+      ∀ i, IsUnit (d i) := by
+  rw [range_coe_pointsMulEquiv_mapValue, Set.mem_ofPred_eq]
+  constructor
+  · rintro ⟨N, hN, hNd⟩
+    have : N = Matrix.diagonal d := by
+      ext i j
+      apply hphi
+      simpa [Matrix.diagonal_apply, apply_ite phi] using congrFun (congrFun hNd i) j
+    simpa [this] using hN
+  · intro hd
+    exact ⟨Matrix.diagonal d, by simpa using hd, by simp [Matrix.diagonal_map]⟩
 
 end Naturality
 
