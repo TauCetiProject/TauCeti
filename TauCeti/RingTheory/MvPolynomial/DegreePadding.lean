@@ -48,26 +48,37 @@ larger bounded-degree space. -/
     LinearEquiv.symm_apply_apply]
   congr 1
 
+/-- Padding is extension by zero along the inclusion of the bounded exponent indices. -/
+theorem boundedCoefficientPadding_eq_extendByZero_linearMap (h : d ≤ e) :
+    boundedCoefficientPadding (σ := σ) (R := R) (J := J) h =
+      Function.ExtendByZero.linearMap R R (Prod.map (id : J → J)
+        (Subtype.impEmbedding (fun s : σ →₀ ℕ => s.degree ≤ d) (fun s => s.degree ≤ e)
+          fun _ hs => hs.trans h)) := by
+  ext a : 1
+  simpa only [LinearEquiv.apply_symm_apply] using
+    (boundedCoefficientPadding_coefficients h ((boundedCoefficientEquiv σ R J d).symm a)).trans
+      (boundedCoefficientEquiv_inclusion_comp h ((boundedCoefficientEquiv σ R J d).symm a))
+
 /-- Padding preserves the coefficient at every exponent in the old degree bound. -/
 theorem boundedCoefficientPadding_apply_le (h : d ≤ e)
     (a : J × {s : σ →₀ ℕ // s.degree ≤ d} → R)
     (j : J) (s : σ →₀ ℕ) (hs : s.degree ≤ d) :
     boundedCoefficientPadding h a (j, ⟨s, hs.trans h⟩) = a (j, ⟨s, hs⟩) := by
-  simp only [boundedCoefficientPadding, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    boundedCoefficientEquiv_apply, LinearMap.coe_piMap, Pi.map_apply, Submodule.coe_inclusion]
-  exact coeff_boundedCoefficientEquiv_symm_apply a j ⟨s, hs⟩
+  rw [boundedCoefficientPadding_eq_extendByZero_linearMap,
+    Function.ExtendByZero.linearMap_apply]
+  exact (Function.injective_id.prodMap (Subtype.impEmbedding _ _ _).injective).extend_apply
+    a 0 (j, ⟨s, hs⟩)
 
 /-- Every coordinate added by increasing the degree bound is zero. -/
 @[simp] theorem boundedCoefficientPadding_apply_of_lt (h : d ≤ e)
     (a : J × {s : σ →₀ ℕ // s.degree ≤ d} → R)
     (j : J) (s : {s : σ →₀ ℕ // s.degree ≤ e}) (hs : d < s.val.degree) :
     boundedCoefficientPadding h a (j, s) = 0 := by
-  simp only [boundedCoefficientPadding, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    boundedCoefficientEquiv_apply, LinearMap.coe_piMap, Pi.map_apply, Submodule.coe_inclusion]
-  apply coeff_eq_zero_of_totalDegree_lt
-  have hd := (mem_restrictTotalDegree σ d _).mp
-    (((boundedCoefficientEquiv σ R J d).symm a j).property)
-  exact hd.trans_lt (by simpa [Finsupp.degree_apply, Finsupp.sum] using hs)
+  rw [boundedCoefficientPadding_eq_extendByZero_linearMap,
+    Function.ExtendByZero.linearMap_apply]
+  apply Function.extend_apply'
+  rintro ⟨⟨j', s', hs'⟩, he⟩
+  exact (not_le_of_gt hs) (by cases he; exact hs')
 
 /-- The coordinate formula for padding: keep old coefficients and fill with zeros. -/
 @[simp] theorem boundedCoefficientPadding_apply (h : d ≤ e)
@@ -82,10 +93,12 @@ theorem boundedCoefficientPadding_apply_le (h : d ≤ e)
 /-- Enlarging the coordinate space loses no coefficients. -/
 theorem boundedCoefficientPadding_injective (h : d ≤ e) :
     Function.Injective (boundedCoefficientPadding (σ := σ) (R := R) (J := J) h) := by
-  intro a b hab
-  funext ⟨j, s⟩
-  have := congrFun hab (j, ⟨s.val, s.property.trans h⟩)
-  simpa [s.property] using this
+  rw [boundedCoefficientPadding_eq_extendByZero_linearMap]
+  exact Function.extend_injective
+    (Function.injective_id.prodMap
+      (Subtype.impEmbedding (fun s : σ →₀ ℕ => s.degree ≤ d) (fun s => s.degree ≤ e)
+        (fun _ hs => hs.trans h)).injective)
+    (0 : J × {s : σ →₀ ℕ // s.degree ≤ e} → R)
 
 /-- Padding without changing the degree bound is the identity. -/
 @[simp] theorem boundedCoefficientPadding_refl :
@@ -97,11 +110,14 @@ theorem boundedCoefficientPadding_injective (h : d ≤ e) :
 @[simp] theorem boundedCoefficientPadding_comp (hde : d ≤ e) (hef : e ≤ f) :
     (boundedCoefficientPadding (σ := σ) (R := R) (J := J) hef).comp
       (boundedCoefficientPadding hde) = boundedCoefficientPadding (hde.trans hef) := by
-  ext a ⟨j, s⟩
-  by_cases he : s.val.degree ≤ e
-  · simp [he]
-  · have hd : ¬s.val.degree ≤ d := fun hd => he (hd.trans hde)
-    simp [he, hd]
+  ext a : 1
+  simp only [LinearMap.comp_apply, boundedCoefficientPadding_eq_extendByZero_linearMap]
+  exact ((Function.injective_id.prodMap
+    (Subtype.impEmbedding (fun s : σ →₀ ℕ => s.degree ≤ d) (fun s => s.degree ≤ e)
+      (fun _ hs => hs.trans hde)).injective).extend_comp
+    (Function.injective_id.prodMap
+      (Subtype.impEmbedding (fun s : σ →₀ ℕ => s.degree ≤ e) (fun s => s.degree ≤ f)
+        (fun _ hs => hs.trans hef)).injective) a 0).symm
 
 /-- A vector in the larger coefficient space comes from the smaller one exactly when all
 coordinates above the smaller degree bound vanish. -/
