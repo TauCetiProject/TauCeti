@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.AddChar
 public import TauCeti.NumberTheory.Padics.UnitsDecomposition.Logarithm
+import Mathlib.Analysis.Normed.Algebra.Ultra
 
 /-!
 # Continuous weights of `ℤ_pˣ` and their parameters
@@ -33,7 +34,9 @@ nilpotent `t ∈ R` comes from a unique weight,
 
 Together these give the parametrisation `TauCeti.weightSpaceEquiv p R` of the weights by
 `(Δ →* Rˣ) × {t : R // tⁿ → 0}`. For a multiplicative norm, as over a normed field, topological
-nilpotence is the condition `‖T_κ‖ < 1` (`TauCeti.WeightSpace.norm_coord_lt_one`).
+nilpotence is the condition `‖T_κ‖ < 1` (`TauCeti.WeightSpace.norm_coord_lt_one`). Over a normed
+division ring over `ℚ_p`, such as the field `ℂ_p`, this holds with no further hypotheses
+(`TauCeti.WeightSpace.norm_coord_lt_one_of_normedAlgebra`).
 
 ## Main definitions
 
@@ -47,6 +50,8 @@ nilpotence is the condition `‖T_κ‖ < 1` (`TauCeti.WeightSpace.norm_coord_lt
 ## Main results
 
 * `TauCeti.WeightSpace.tendsto_coord_pow`: the coordinate of a weight is topologically nilpotent.
+* `TauCeti.WeightSpace.norm_coord_lt_one_of_normedAlgebra`: over a normed division ring over
+  `ℚ_p`, such as `ℂ_p`, the coordinate of a weight has norm less than one.
 * `TauCeti.WeightSpace.principalChar_eq_addChar_of_value_at_one`: over a complete `R`, the principal
   part of a weight is the binomial character `s ↦ (1 + T_κ) ^ s`.
 * `TauCeti.WeightSpace.ofCoord_finiteChar_coord`, `TauCeti.WeightSpace.finiteChar_ofCoord`,
@@ -160,6 +165,16 @@ theorem principalChar_eq_addChar_of_value_at_one [CompleteSpace R] (κ : WeightS
     κ.principalChar_one_eq_one_add_coord
 
 end Normed
+
+/-- Over a normed division ring `K` that is a normed `ℚ_p`-algebra, such as `ℂ_p`, the coordinate
+of a weight has norm less than one. The `ℤ_p`-algebra structure and the ultrametric property of
+`K` needed by `TauCeti.WeightSpace.norm_coord_lt_one` come from the `ℚ_p`-algebra structure. -/
+theorem norm_coord_lt_one_of_normedAlgebra {K : Type*} [NormedDivisionRing K]
+    [NormedAlgebra ℚ_[p] K] (κ : WeightSpace p K) : ‖κ.coord‖ < 1 := by
+  let : Algebra ℤ_[p] K := Algebra.compHom K (algebraMap ℤ_[p] ℚ_[p])
+  have : IsBoundedSMul ℤ_[p] K := .of_norm_smul_le fun r x ↦ norm_smul_le (r : ℚ_[p]) x
+  have := IsUltrametricDist.of_normedAlgebra ℚ_[p] (L := K)
+  exact norm_coord_lt_one κ
 
 section Construction
 
