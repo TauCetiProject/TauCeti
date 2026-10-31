@@ -48,15 +48,14 @@ theorem refines it: for a purely inseparable `k' / k` of degree `p`, the drop is
 
 ## Main definitions
 
-* `TauCeti.Place.constantSpanIntegers`: the `k'`-span `𝒪_P · k'` of `𝒪_P` in `F'`.
-* `TauCeti.Place.integralClosureSubmodule`: the integral closure `𝒪'_P` of `𝒪_P` in `F'`.
+The rings `𝒪_P · k'` and `𝒪'_P` come from
+`TauCeti.FieldTheory.FunctionField.ConstantExtension.IntegralBasis`.
+
 * `TauCeti.Place.singularityQuotient`: the quotient `𝒪'_P ⧸ 𝒪_P · k'`.
 * `TauCeti.Place.singularityDegree`: its `k'`-dimension `δ_P`.
 
 ## Main results
 
-* `TauCeti.Place.constantSpanIntegers_le_iff`: `𝒪_P · k'` is the smallest `k'`-subspace of `F'`
-  containing the image of `𝒪_P`.
 * `TauCeti.Place.finiteDimensional_singularityQuotient`: `𝒪'_P ⧸ 𝒪_P · k'` is finite-dimensional.
 * `TauCeti.Place.singularityDegree_eq_zero_iff`: when `𝒪'_P ⧸ 𝒪_P · k'` is finite-dimensional,
   `δ_P = 0` exactly when `𝒪_P · k'` is integrally closed in `F'`.
@@ -94,61 +93,7 @@ namespace Place
 
 variable (k' F') (P : Place k F)
 
-/-- The `k'`-span `𝒪_P · k'` of the valuation ring of `P` inside `F'`. When `F` and `k'` are
-linearly disjoint over `k`, so that `F' = F ⊗_k k'`, this is `𝒪_P ⊗_k k'`: the semilocal ring along
-the fiber over `P` of the curve of `F / k` after extending the constants to `k'`. -/
-noncomputable def constantSpanIntegers : Submodule k' F' :=
-  Submodule.span k' (algebraMap F F' '' P.integers)
-
-omit [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] in
-theorem constantSpanIntegers_def :
-    constantSpanIntegers k' F' P = Submodule.span k' (algebraMap F F' '' P.integers) :=
-  (rfl)
-
-omit [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] in
-variable {P} in
-theorem algebraMap_mem_constantSpanIntegers {f : F} (hf : f ∈ P.integers) :
-    algebraMap F F' f ∈ constantSpanIntegers k' F' P :=
-  Submodule.subset_span ⟨f, hf, rfl⟩
-
-omit [Algebra k k'] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] in
-/-- `𝒪_P · k'` is the smallest `k'`-subspace of `F'` containing the image of `𝒪_P`. -/
-theorem constantSpanIntegers_le_iff {N : Submodule k' F'} :
-    constantSpanIntegers k' F' P ≤ N ↔ ∀ f ∈ P.integers, algebraMap F F' f ∈ N := by
-  rw [constantSpanIntegers_def, Submodule.span_le, Set.image_subset_iff]
-  rfl
-
 variable [Algebra.IsIntegral k k']
-
-/-- The integral closure `𝒪'_P` of the valuation ring of `P` in `F'`, as a `k'`-subspace of `F'`.
-Its elements are the functions regular at every place of `F' / k'` over `P`
-(`TauCeti.Place.mem_integralClosureSubmodule_iff_forall_restrict_eq`). -/
-noncomputable def integralClosureSubmodule : Submodule k' F' where
-  carrier := {z | IsIntegral P.integers z}
-  add_mem' ha hb := ha.add hb
-  zero_mem' := isIntegral_zero
-  smul_mem' c _ hz := by
-    rw [Set.mem_ofPred_eq, Algebra.smul_def]
-    exact (isIntegral_integers_algebraMap P c).mul hz
-
-@[simp]
-theorem mem_integralClosureSubmodule_iff {z : F'} :
-    z ∈ integralClosureSubmodule k' F' P ↔ IsIntegral P.integers z :=
-  (Iff.rfl)
-
-/-- `𝒪'_P` consists of the functions regular at every place of `F' / k'` over `P`. -/
-theorem mem_integralClosureSubmodule_iff_forall_restrict_eq [Algebra.IsIntegral F F']
-    (hF' : IsFunctionField k' F') {z : F'} :
-    z ∈ integralClosureSubmodule k' F' P ↔
-      ∀ P' : Place k' F', P'.restrict k F = P → z ∈ P'.integers :=
-  isIntegral_iff_forall_restrict_eq_mem_integers hF' P
-
-/-- `𝒪_P · k'` lies in the integral closure of `𝒪_P`: functions of `𝒪_P` and constants of `k'`
-are integral over `𝒪_P`. -/
-theorem constantSpanIntegers_le_integralClosureSubmodule :
-    constantSpanIntegers k' F' P ≤ integralClosureSubmodule k' F' P :=
-  (constantSpanIntegers_le_iff k' F' P).2 fun f hf ↦
-    isIntegral_algebraMap (x := (⟨f, hf⟩ : P.integers))
 
 /-- The quotient `𝒪'_P ⧸ 𝒪_P · k'`, which measures how far `𝒪_P ⊗_k k'` is from being integrally
 closed in `F'`. -/
@@ -190,42 +135,6 @@ section Local
 variable [FiniteDimensional k k']
 
 variable (h : constantCompositum F k' F' = ⊤) (hn : finrank F F' = finrank k k')
-
-/-- **`𝒪_P · k'` in coordinates**: an element of `F'` lies in `𝒪_P · k'` exactly when its
-coordinates in the basis of constants lie in `𝒪_P`. -/
-private theorem mem_constantSpanIntegers_iff (P : Place k F) {z : F'} :
-    z ∈ P.constantSpanIntegers k' F' ↔
-      ∀ j, (constantBasisOfFinrankEq h hn (finBasis k k')).repr z j ∈ P.integers := by
-  constructor
-  · intro hz
-    induction hz using Submodule.span_induction with
-    | mem x hx =>
-      obtain ⟨f, hf, rfl⟩ := hx
-      intro j
-      rw [Algebra.algebraMap_eq_smul_one, ← map_one (algebraMap k' F'), map_smul,
-        Finsupp.smul_apply, smul_eq_mul, constantBasisOfFinrankEq_repr_algebraMap]
-      exact mul_mem hf (P.algebraMap_mem_integers _)
-    | zero => simp
-    | add x y _ _ hx hy => intro j; simpa using add_mem (hx j) (hy j)
-    | smul c x _ hx =>
-      intro j
-      have hcx : c • x = ∑ i, (constantBasisOfFinrankEq h hn (finBasis k k')).repr x i •
-          algebraMap k' F' (c * finBasis k k' i) := by
-        conv_lhs => rw [← (constantBasisOfFinrankEq h hn (finBasis k k')).sum_repr x]
-        rw [Finset.smul_sum]
-        refine Finset.sum_congr rfl fun i _ ↦ ?_
-        rw [constantBasisOfFinrankEq_apply, map_mul, Algebra.smul_def, Algebra.smul_def,
-          Algebra.smul_def]
-        ring
-      rw [hcx, map_sum, Finsupp.finsetSum_apply]
-      refine sum_mem fun i _ ↦ ?_
-      rw [map_smul, Finsupp.smul_apply, smul_eq_mul, constantBasisOfFinrankEq_repr_algebraMap]
-      exact mul_mem (hx i) (P.algebraMap_mem_integers _)
-  · intro hz
-    rw [← (constantBasisOfFinrankEq h hn (finBasis k k')).sum_repr z]
-    refine Submodule.sum_mem _ fun j _ ↦ ?_
-    rw [constantBasisOfFinrankEq_apply, Algebra.smul_def, mul_comm, ← Algebra.smul_def]
-    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨_, hz j, rfl⟩)
 
 variable [FiniteDimensional F F']
 
@@ -304,7 +213,7 @@ private theorem pi_localMap_surjective
   -- at every place, `s P • z` differs from the target by an element of `𝒪_P · k'`
   have hloc (P : Place k F) : s P • z - (if hP : P ∈ S then (y' ⟨P, hP⟩ : F') else 0) ∈
       P.constantSpanIntegers k' F' := by
-    rw [mem_constantSpanIntegers_iff h hn]
+    rw [Place.mem_constantSpanIntegers_iff h hn (finBasis k k')]
     intro j
     have hαP : α j P + g j = a j P := by
       have := congrFun (hsum j) P
@@ -352,8 +261,9 @@ private theorem span_le_ker_pi_localMap (S : Finset (Place k F)) :
       (P.1.constantSpanIntegers k' F').comap (LinearMap.mulLeft k' (algebraMap F F' (s P))) := by
     refine Submodule.span_le.2 ?_
     rintro _ ⟨f, hf, rfl⟩
-    refine Submodule.subset_span ⟨s P * f, ?_, by simp⟩
-    exact (Place.mul_mem_integers_iff (hs0 P) (hs P)).2 (mem_riemannRochSpace_iff.1 hf P)
+    rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.mulLeft_apply, ← map_mul]
+    exact Place.algebraMap_mem_constantSpanIntegers k' F'
+      ((Place.mul_mem_integers_iff (hs0 P) (hs P)).2 (mem_riemannRochSpace_iff.1 hf P))
   simpa [Algebra.smul_def] using hspan hz
 
 include h hn in
@@ -377,7 +287,7 @@ private theorem ker_pi_localMap_le_span (S : Finset (Place k F))
   -- so the coordinates of `z` lie in `L(D)`
   have hcoord (j) : c.repr z j ∈ riemannRochSpace D := by
     refine mem_riemannRochSpace_iff.2 fun P ↦ (Place.mul_mem_integers_iff (hs0 P) (hs P)).1 ?_
-    have := (mem_constantSpanIntegers_iff h hn P).1 (hmem P) j
+    have := (Place.mem_constantSpanIntegers_iff h hn (finBasis k k') P).1 (hmem P) j
     rwa [map_smul, Finsupp.smul_apply, smul_eq_mul] at this
   rw [Submodule.mem_comap, Submodule.subtype_apply, ← c.sum_repr z]
   refine Submodule.sum_mem _ fun j _ ↦ ?_
