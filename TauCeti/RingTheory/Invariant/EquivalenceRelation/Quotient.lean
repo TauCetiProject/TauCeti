@@ -25,7 +25,7 @@ finite free, rather than only finite locally free, over `Spec A`:
   `RingHom.IsSpecEquivRel.projective`, `RingHom.IsSpecEquivRel.faithfullyFlat`), so that
   `Spec A ⟶ Spec C` is finite locally free and surjective;
 * the map `A ⊗[C] A → B`, `x ⊗ y ↦ s x * t y`, is an isomorphism of `A`-algebras
-  (`RingHom.IsSpecEquivRel.exists_tensorProductEquiv`), so that the relation is the kernel pair
+  (`RingHom.IsSpecEquivRel.bijective_tensorProductMap`), so that the relation is the kernel pair
   `Spec A ×_{Spec C} Spec A` of the quotient map.
 
 No hypothesis is made on `C`. The case of a local ring of invariants is
@@ -44,7 +44,8 @@ finiteness and finite presentation descend from `A ⊗[C] A ≅ B` along `C → 
 
 ## Main results
 
-* `RingHom.IsSpecEquivRel.exists_tensorProductEquiv`: `A ⊗[C] A ≃ₐ[A] B`, `x ⊗ y ↦ s x * t y`.
+* `RingHom.IsSpecEquivRel.bijective_tensorProductMap`: the map `A ⊗[C] A → B`,
+  `x ⊗ y ↦ s x * t y`, is bijective, so that `A ⊗[C] A ≃ₐ[A] B`.
 * `RingHom.IsSpecEquivRel.flat` and `RingHom.IsSpecEquivRel.faithfullyFlat`: `A` is faithfully
   flat over `C`.
 * `RingHom.IsSpecEquivRel.finite`, `RingHom.IsSpecEquivRel.finitePresentation` and
@@ -66,21 +67,10 @@ namespace RingHom.IsSpecEquivRel
 
 variable {A B : Type u} [CommRing A] [CommRing B] [Algebra A B] {t : A →+* B}
 
--- the map `A ⊗[C] A → B`, `x ⊗ y ↦ s x * t y`, over the ring of invariants `C`
-private noncomputable def tensorProductMap : A ⊗[(algebraMap A B).eqLocus t] A →ₐ[A] B :=
-  Algebra.TensorProduct.lift (Algebra.ofId A B)
-    (AlgHom.mk t fun c ↦ by
-      simpa [IsScalarTower.algebraMap_apply _ A B, Algebra.algebraMap_ofSubsemiring_apply] using
-        (mem_eqLocus.mp c.2).symm) fun _ _ ↦ .all _ _
-
-private theorem tensorProductMap_tmul (x y : A) :
-    tensorProductMap (t := t) (x ⊗ₜ y) = algebraMap A B x * t y := by
-  simp [tensorProductMap]
-
--- the same map, as a linear map over the ring of invariants
+-- the map `A ⊗[C] A → B`, `x ⊗ y ↦ s x * t y`, as a linear map over the ring of invariants `C`
 private noncomputable def tensorProductLinearMap :
     A ⊗[(algebraMap A B).eqLocus t] A →ₗ[(algebraMap A B).eqLocus t] B :=
-  (tensorProductMap (t := t)).toLinearMap.restrictScalars _
+  (tensorProductMap t).toLinearMap.restrictScalars _
 
 private theorem tensorProductLinearMap_tmul (x y : A) :
     tensorProductLinearMap (t := t) (x ⊗ₜ y) = algebraMap A B x * t y :=
@@ -164,37 +154,34 @@ theorem faithfullyFlat : Module.FaithfullyFlat ((algebraMap A B).eqLocus t) A :=
 
 /-- **The relation is the kernel pair of the quotient map.** If `Spec B ⇉ Spec A` is an
 equivalence relation with `B` finite free over `A` through `s`, and `C = {a : s a = t a}` is the
-ring of invariants, then `x ⊗ y ↦ s x * t y` is an isomorphism of `A`-algebras
-`A ⊗[C] A ≃ₐ[A] B`. -/
-theorem exists_tensorProductEquiv :
-    ∃ e : A ⊗[(algebraMap A B).eqLocus t] A ≃ₐ[A] B,
-      ∀ x y, e (x ⊗ₜ y) = algebraMap A B x * t y := by
+ring of invariants, then the map `A ⊗[C] A → B`, `x ⊗ y ↦ s x * t y`, is bijective, so that it is
+an isomorphism of `A`-algebras `A ⊗[C] A ≃ₐ[A] B` (`AlgEquiv.ofBijective`). -/
+theorem bijective_tensorProductMap : Function.Bijective (tensorProductMap t) := by
   -- bijectivity is local at the maximal ideals `P` of `C`, and the localization of the map at `P`
   -- is its base change along `C → C_P`
-  have hF : Function.Bijective (tensorProductLinearMap (t := t)) := by
-    refine bijective_of_isLocalized_maximal _
-      (fun P _ ↦ TensorProduct.mk _ (Localization.AtPrime P) _ 1) _
-      (fun P _ ↦ TensorProduct.mk _ (Localization.AtPrime P) B 1) tensorProductLinearMap
-      fun P _ ↦ ?_
-    have hmap : IsLocalizedModule.map P.primeCompl
-        (TensorProduct.mk _ (Localization.AtPrime P) (A ⊗[(algebraMap A B).eqLocus t] A) 1)
-        (TensorProduct.mk _ (Localization.AtPrime P) B 1) tensorProductLinearMap =
-          (tensorProductLinearMap.baseChange (Localization.AtPrime P)).restrictScalars _ := by
-      refine IsLocalizedModule.linearMap_ext P.primeCompl
-        (TensorProduct.mk _ (Localization.AtPrime P) _ 1)
-        (TensorProduct.mk _ (Localization.AtPrime P) B 1) (LinearMap.ext fun z ↦ ?_)
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, IsLocalizedModule.map_apply]
-      simp
-    rw [hmap]
-    exact (h.free_and_bijective_baseChange (Localization.AtPrime P)).2
-  exact ⟨.ofBijective tensorProductMap hF, tensorProductMap_tmul⟩
+  change Function.Bijective (tensorProductLinearMap (t := t))
+  refine bijective_of_isLocalized_maximal _
+    (fun P _ ↦ TensorProduct.mk _ (Localization.AtPrime P) _ 1) _
+    (fun P _ ↦ TensorProduct.mk _ (Localization.AtPrime P) B 1) tensorProductLinearMap
+    fun P _ ↦ ?_
+  have hmap : IsLocalizedModule.map P.primeCompl
+      (TensorProduct.mk _ (Localization.AtPrime P) (A ⊗[(algebraMap A B).eqLocus t] A) 1)
+      (TensorProduct.mk _ (Localization.AtPrime P) B 1) tensorProductLinearMap =
+        (tensorProductLinearMap.baseChange (Localization.AtPrime P)).restrictScalars _ := by
+    refine IsLocalizedModule.linearMap_ext P.primeCompl
+      (TensorProduct.mk _ (Localization.AtPrime P) _ 1)
+      (TensorProduct.mk _ (Localization.AtPrime P) B 1) (LinearMap.ext fun z ↦ ?_)
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, IsLocalizedModule.map_apply]
+    simp
+  rw [hmap]
+  exact (h.free_and_bijective_baseChange (Localization.AtPrime P)).2
 
 /-- **The quotient map is finite.** If `Spec B ⇉ Spec A` is an equivalence relation with `B`
 finite free over `A` through `s`, then `A` is a finite module over the ring of invariants
 `C = {a : s a = t a}`. -/
 theorem finite : Module.Finite ((algebraMap A B).eqLocus t) A := by
   have := h.faithfullyFlat
-  obtain ⟨e, -⟩ := h.exists_tensorProductEquiv
+  let e := AlgEquiv.ofBijective _ h.bijective_tensorProductMap
   have : Module.Finite A (A ⊗[(algebraMap A B).eqLocus t] A) := .equiv e.symm.toLinearEquiv
   exact .of_finite_tensorProduct_of_faithfullyFlat A
 
@@ -204,7 +191,7 @@ invariants `C = {a : s a = t a}`. -/
 theorem finitePresentation : Module.FinitePresentation ((algebraMap A B).eqLocus t) A := by
   have := h.faithfullyFlat
   have := h.finite
-  obtain ⟨e, -⟩ := h.exists_tensorProductEquiv
+  let e := AlgEquiv.ofBijective _ h.bijective_tensorProductMap
   have : Module.FinitePresentation A B := Module.finitePresentation_of_projective A B
   have : Algebra.FinitePresentation A (A ⊗[(algebraMap A B).eqLocus t] A) := .equiv e.symm
   have : Algebra.FinitePresentation ((algebraMap A B).eqLocus t) A :=
