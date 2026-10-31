@@ -19,14 +19,8 @@ for a unique center `a = g 0` and some `u` of modulus one.  The proof conjugates
 Moebius factor that sends `a` to the origin, then applies the origin-fixing rotation theorem
 `exists_eqOn_const_mul_of_leftInvOn_ball_of_map_zero`.
 
-This discharges the conformal-mapping roadmap's L2 description of the disc automorphism group
-`Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}`.  It builds on Mathlib's Schwarz lemma and on the standard
-disc-Moebius API developed in Tau Ceti.  As with the other L0--L3 conformal-mapping material,
-this statement is coordinated with the upstream Mathlib Riemann-mapping effort
-leanprover-community/mathlib4#33505, whose preceding human-curated work is
-`Analysis/Complex/RiemannMapping.lean` and `Analysis/Complex/BranchLogRoot.lean`; none of it is
-duplicated here, and this statement should be replaced by human-curated upstream API if a
-disc-automorphism classification lands there.
+So the disc automorphism group is `Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}`.  The file builds on Mathlib's
+Schwarz lemma and on the standard disc-Moebius API developed in Tau Ceti.
 -/
 
 public section

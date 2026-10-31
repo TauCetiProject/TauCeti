@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Path
+public import TauCeti.Combinatorics.Graph.Serre.Path.Basic
 
 /-!
 # Based cores of Serre graphs

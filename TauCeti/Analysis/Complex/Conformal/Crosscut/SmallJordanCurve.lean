@@ -37,17 +37,16 @@ closed image crosscut.
 * `TauCeti.exists_isJordanCurve_superset_closure_image_ball_inter_sphere_diam_le_of_isBounded` --
   the bounded-image form used for a Riemann map.
 
-## Roadmap role
+## Context
 
-This is the last construction before the planar-separation step in layer **L5** of the
-`ConformalMapping` roadmap, the Jordan-domain case of the Caratheodory boundary correspondence.
-The remaining step is to show that the boundary piece of the crosscut neighbourhood lies on the
-small Jordan curve chosen here. The existing crosscut criterion then bounds the cut-off image
-piece and gives the continuous extension of the conformal map.
+The curves constructed here serve the Jordan-domain case of the Caratheodory boundary
+correspondence: when the boundary piece of the crosscut neighbourhood lies on the small Jordan
+curve chosen here, the crosscut criterion bounds the cut-off image piece and gives the continuous
+extension of the conformal map.
 
-Layer L5 is absent from Mathlib's in-progress Riemann-mapping development, and the pinned Mathlib
-has no Jordan-curve vocabulary. The proof follows the crosscut argument in Caratheodory's 1913
-paper and the presentations in Pommerenke, Section 2.2--2.3, and Duren, Chapter 3.
+The pinned Mathlib has no Jordan-curve vocabulary. The proof follows the crosscut argument in
+Caratheodory's 1913 paper and the presentations in Pommerenke, Section 2.2--2.3, and Duren,
+Chapter 3.
 
 ## References
 

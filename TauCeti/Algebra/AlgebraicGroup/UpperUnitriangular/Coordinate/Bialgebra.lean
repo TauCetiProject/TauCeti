@@ -38,7 +38,7 @@ The antipode and finite-type Hopf package are constructed separately over commut
 * T. A. Springer, *Linear Algebraic Groups*, Section 2.4.
 
 The construction follows the coordinate-bialgebra layout of `TauCeti.MatrixMonoid` in
-`GeneralLinear.Coordinate.Bialgebra`.
+`MatrixMonoid.Bialgebra`.
 -/
 
 public section

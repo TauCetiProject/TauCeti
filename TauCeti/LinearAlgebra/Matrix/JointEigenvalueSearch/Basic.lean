@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.EigenvalueSearch
 public import TauCeti.LinearAlgebra.Matrix.Echelon.KernelBasis
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # Computable common eigenspaces
@@ -69,13 +70,13 @@ theorem jointEigenspaceMatrix_mulVec_eq_zero_iff {R : Type u} [NonUnitalNonAssoc
       funext j
       simpa only [Matrix.mulVec, jointEigenspaceMatrix_apply, Pi.zero_apply] using
         congrFun h (finProdFinEquiv (i, j))
-    rw [scalar_sub_mulVec_eq_zero_iff] at hi
+    rw [diagonal_const_sub_mulVec_eq_zero_iff] at hi
     exact hi
   · intro h
     funext k
     rcases hidx : finProdFinEquiv.symm k with ⟨i, j⟩
     have hi : (Matrix.diagonal (n := Fin n) (fun _ => a i) - A i) *ᵥ v = 0 := by
-      rw [scalar_sub_mulVec_eq_zero_iff]
+      rw [diagonal_const_sub_mulVec_eq_zero_iff]
       exact h i
     rw [← finProdFinEquiv.apply_symm_apply k]
     rw [hidx]
