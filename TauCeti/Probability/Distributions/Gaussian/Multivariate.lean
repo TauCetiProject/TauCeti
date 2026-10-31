@@ -26,6 +26,8 @@ linear maps and characterizes independence of complementary coordinate blocks.
 * `TauCeti.Probability.covMatrix_multivariateGaussian` recovers the covariance parameter of a
   multivariate
   Gaussian law.
+* `TauCeti.Probability.integral_eval_mul_eval_multivariateGaussian` gives the mixed second
+  moments of the coordinates.
 * `TauCeti.Probability.integral_of_hasLaw_multivariateGaussian` gives the Bochner mean of a
   random variable with a multivariate Gaussian law.
 * `TauCeti.Probability.multivariateGaussian_zero_eq_map_stdGaussian_sqrt` writes the centred law as
@@ -66,6 +68,28 @@ theorem covMatrix_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : Euclid
   classical
   ext i j
   simpa only [covMatrix_apply] using covariance_eval_multivariateGaussian hS i j
+
+/-- Each coordinate of a multivariate Gaussian has as mean the corresponding coordinate of the
+mean parameter. No hypothesis on the covariance parameter is needed. -/
+@[simp]
+theorem integral_eval_multivariateGaussian [Fintype ι] [DecidableEq ι] (m : EuclideanSpace ℝ ι)
+    (S : Matrix ι ι ℝ) (i : ι) : ∫ x, x i ∂multivariateGaussian m S = m i := by
+  simpa using (EuclideanSpace.proj (𝕜 := ℝ) i).integral_comp_comm
+    (IsGaussian.integrable_id (μ := multivariateGaussian m S))
+
+/-- The mixed second moment of two coordinates of a multivariate Gaussian with
+positive-semidefinite covariance is the covariance entry plus the product of the means. -/
+theorem integral_eval_mul_eval_multivariateGaussian [Fintype ι] [DecidableEq ι]
+    (m : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ} (hS : S.PosSemidef) (i j : ι) :
+    ∫ x, x i * x j ∂multivariateGaussian m S = S i j + m i * m j := by
+  have hcoord (i : ι) :
+      MemLp (fun x : EuclideanSpace ℝ ι ↦ x i) 2 (multivariateGaussian m S) := by
+    simpa only [id_eq, EuclideanSpace.coe_proj] using
+      IsGaussian.memLp_two_id.continuousLinearMap_comp (𝕜 := ℝ) (EuclideanSpace.proj i)
+  have hcov := covariance_eval_multivariateGaussian (μ := m) hS i j
+  rw [covariance_eq_sub (hcoord i) (hcoord j)] at hcov
+  simp only [Pi.mul_apply, integral_eval_multivariateGaussian] at hcov
+  linarith
 
 /-- The Bochner mean of a random variable with a multivariate Gaussian law is its Gaussian mean. -/
 theorem integral_of_hasLaw_multivariateGaussian [Fintype ι] [DecidableEq ι]
