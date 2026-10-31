@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Covering.Besicovitch
 
 /-!
-# Density points of null-measurable sets
+# Besicovitch covering: density points, subspaces and Lebesgue differentiation
 
 For a null-measurable set `s`, the proportion of the complement `sᶜ` in a set of positive finite
 measure is one minus the proportion of `s`. Consequently, if the proportion of `s` along
@@ -29,7 +29,7 @@ an open subset of a finite-dimensional real normed space has it too. This lets d
 theorems apply to measures that are only locally finite on an open set, such as derivative
 measures of functions of locally bounded variation. For such measures, the Besicovitch Vitali
 family gives the Lebesgue differentiation theorem along concentric closed balls,
-`Besicovitch.ae_tendsto_average`.
+`Besicovitch.ae_tendsto_average_closedBall`.
 -/
 
 public section
@@ -134,7 +134,7 @@ open MeasureTheory
 /-- **Lebesgue's differentiation theorem** for a locally finite measure in a space with the
 Besicovitch covering property: for a locally integrable function `f`, at almost every point `x`
 the averages of `f` over the closed balls around `x` tend to `f x`. -/
-theorem ae_tendsto_average (μ : Measure β) [IsLocallyFiniteMeasure μ] {f : β → F}
+theorem ae_tendsto_average_closedBall (μ : Measure β) [IsLocallyFiniteMeasure μ] {f : β → F}
     (hf : LocallyIntegrable f μ) :
     ∀ᵐ x ∂μ, Tendsto (fun r => ⨍ y in closedBall x r, f y ∂μ) (𝓝[>] 0) (𝓝 (f x)) := by
   filter_upwards [(Besicovitch.vitaliFamily μ).ae_tendsto_average hf] with x hx

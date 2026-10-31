@@ -32,9 +32,12 @@ proves their basic properties.
   at `|Dχ_s|`-almost every point (`TauCeti.ae_mem_reducedBoundary`,
   `TauCeti.ae_outerNormal_eq`). This is Lebesgue's differentiation theorem for `σ` against the
   Radon measure `|Dχ_s|` on `Ω`, which is available because `Ω` inherits the Besicovitch
-  covering property (`Besicovitch.ae_tendsto_average`). Consequently
+  covering property (`Besicovitch.ae_tendsto_average_closedBall`). Consequently
   `∫_s div φ = ∫ ⟪φ, ν_s⟫ d|Dχ_s|` for every test vector field `φ` on `Ω`
   (`TauCeti.integral_divergenceCLM_mul_indicator_eq_integral_inner_outerNormal`).
+* A point of the reduced boundary forces `s` to have locally finite perimeter in `Ω`
+  (`TauCeti.locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary`), so otherwise
+  `∂*s` is empty (`TauCeti.reducedBoundary_eq_empty_of_not`).
 * Every point of the reduced boundary lies in the support of `|Dχ_s|`
   (`TauCeti.variationMeasure_preimage_closedBall_ne_zero`), and hence in the topological
   frontier of `s` (`TauCeti.reducedBoundary_subset_frontier`).
@@ -105,10 +108,19 @@ theorem tendsto_setAverage_polarDensity (hx : x ∈ reducedBoundary μ Ω s) :
   rw [outerNormal, neg_neg]
   exact tendsto_nhds_limUnder ⟨ν, hν⟩
 
+/-- If the averages of the polar density of `Dχ_s` over shrinking closed balls around `x` tend to
+`ν`, then the outer normal at `x` is `-ν`. -/
+theorem outerNormal_eq_of_tendsto {ν : E}
+    (h : Tendsto (fun r => ⨍ y in ((↑) : Ω → E) ⁻¹' closedBall x r,
+      polarDensity μ Ω (s.indicator 1) y ∂variationMeasure μ Ω (s.indicator 1)) (𝓝[>] 0) (𝓝 ν)) :
+    outerNormal μ Ω s x = -ν := by
+  rw [outerNormal, h.limUnder_eq]
+
 /-- The outer normal is a unit vector at every point of the reduced boundary. -/
+@[simp]
 theorem norm_outerNormal (hx : x ∈ reducedBoundary μ Ω s) : ‖outerNormal μ Ω s x‖ = 1 := by
   obtain ⟨-, ν, hν1, hν⟩ := hx
-  rw [outerNormal, norm_neg, hν.limUnder_eq, hν1]
+  rw [outerNormal_eq_of_tendsto hν, norm_neg, hν1]
 
 /-- **The reduced boundary lies in the support of the perimeter measure.** Every closed ball of
 positive radius around a point of `∂*s` has positive `|Dχ_s|` measure. -/
@@ -126,8 +138,10 @@ theorem variationMeasure_preimage_closedBall_ne_zero (hx : x ∈ reducedBoundary
   have hν0 := tendsto_nhds_unique hν (tendsto_const_nhds.congr' (h.mono fun _ h => h.symm))
   simp [hν0] at hν1
 
-/-- The reduced boundary is empty unless `s` has locally finite perimeter in `Ω`. -/
-private theorem hasLocallyFinitePerimeter_of_mem_reducedBoundary
+/-- A point of the reduced boundary forces `s` to have locally finite perimeter in `Ω`: its
+indicator is locally integrable on `Ω` and has finite total variation near every compact subset
+of `Ω`. -/
+theorem locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary
     (hx : x ∈ reducedBoundary μ Ω s) :
     LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ ∧ ∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞ := by
@@ -135,12 +149,20 @@ private theorem hasLocallyFinitePerimeter_of_mem_reducedBoundary
   exact variationMeasure_preimage_closedBall_ne_zero hx one_pos
     (by simp [variationMeasure_eq_zero_of_not h])
 
+/-- The reduced boundary is empty unless `s` has locally finite perimeter in `Ω`. -/
+theorem reducedBoundary_eq_empty_of_not (h : ¬(LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ ∧
+    ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞)) :
+    reducedBoundary μ Ω s = ∅ :=
+  eq_empty_of_forall_notMem fun _ hx =>
+    h (locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx)
+
 /-- **The reduced boundary lies in the topological frontier.** Near a point outside the frontier
 of `s`, the indicator of `s` is constant, so the perimeter measure vanishes there. -/
 theorem reducedBoundary_subset_frontier [μ.IsAddHaarMeasure] :
     reducedBoundary μ Ω s ⊆ frontier s := by
   intro x hx
-  obtain ⟨hu, hfin⟩ := hasLocallyFinitePerimeter_of_mem_reducedBoundary hx
+  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
   by_contra hxf
   -- A ball around `x` inside `Ω` lies in `s` or in its complement.
   obtain ⟨V, hV, hVs⟩ : ∃ V ∈ 𝓝 x, V ⊆ s ∨ V ⊆ sᶜ := by
@@ -175,7 +197,8 @@ private theorem ae_tendsto_setAverage_polarDensity :
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞
   · have := Ω.isOpen.locallyCompactSpace
     filter_upwards [ae_norm_polarDensity_eq_one h.1 h.2,
-      Besicovitch.ae_tendsto_average _ (locallyIntegrable_polarDensity h.1 h.2)] with y h1 hy
+      Besicovitch.ae_tendsto_average_closedBall _ (locallyIntegrable_polarDensity h.1 h.2)]
+      with y h1 hy
     simpa only [Subtype.preimage_closedBall] using ⟨h1, hy⟩
   · simp [variationMeasure_eq_zero_of_not h]
 
@@ -191,7 +214,7 @@ theorem ae_outerNormal_eq :
     ∀ᵐ y : Ω ∂variationMeasure μ Ω (s.indicator 1),
       outerNormal μ Ω s y = -polarDensity μ Ω (s.indicator 1) y := by
   filter_upwards [ae_tendsto_setAverage_polarDensity] with y hy
-  rw [outerNormal, hy.2.limUnder_eq]
+  exact outerNormal_eq_of_tendsto hy.2
 
 /-- **`Dχ_s = -ν_s |Dχ_s|`.** For a set of locally finite perimeter in `Ω`, the outer normal
 represents the distributional derivative of the indicator against the perimeter measure:

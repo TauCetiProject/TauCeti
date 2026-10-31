@@ -131,16 +131,6 @@ theorem ofReal_abs_integral_le_totalVariationOn (φ : 𝓓(Ω, E)) (hφ : ∀ x,
 theorem totalVariationOn_zero : totalVariationOn μ Ω 0 = 0 := by
   simp [totalVariationOn_def]
 
-/-- The pairing of `u` with a test vector field on `Ω` only depends on `u` almost everywhere on
-`Ω`. -/
-theorem integral_divergenceCLM_mul_congr_ae (h : u =ᵐ[μ.restrict Ω] v) (φ : 𝓓(Ω, E)) :
-    ∫ x, divergenceCLM φ x * u x ∂μ = ∫ x, divergenceCLM φ x * v x ∂μ := by
-  have hu := setIntegral_smul_eq_integral_smul (μ := μ) (w := u) (divergenceCLM φ)
-  have hv := setIntegral_smul_eq_integral_smul (μ := μ) (w := v) (divergenceCLM φ)
-  simp only [smul_eq_mul] at hu hv
-  rw [← hu, ← hv]
-  exact integral_congr_ae (h.mono fun x hx => by simp only [hx])
-
 /-- **Locality.** The total variation on `Ω` only depends on `u` almost everywhere on `Ω`. -/
 theorem totalVariationOn_congr_ae (h : u =ᵐ[μ.restrict Ω] v) :
     totalVariationOn μ Ω u = totalVariationOn μ Ω v := by
