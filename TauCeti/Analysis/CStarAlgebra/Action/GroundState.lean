@@ -309,7 +309,8 @@ theorem IsGroundState.apply_star_mul_entireExtension_mul_I_le (hω : α.IsGround
   -- Cauchy–Schwarz with `a` and `α_{is}(a)` gives `g s ^ 2 ≤ g 0 * g (s + s)`
   have hcs (s : ℝ) : g s ^ 2 ≤ g 0 * g (s + s) := by
     have hyy := apply_star_entireExtension_mul_I_mul_entireExtension_mul_I_of_apply_action
-      (φ := (ω : A →L[ℂ] ℂ)) hinv ha s s
+      (φ := (ω : A →L[ℂ] ℂ)) (fun t b => by
+        simpa only [PositiveContinuousLinearMap.coe_toContinuousLinearMap] using hinv t b) ha s s
     rw [PositiveContinuousLinearMap.coe_toContinuousLinearMap] at hyy
     have h := PositiveLinearMap.norm_map_star_mul_sq_le ω a (α.entireExtension a (s * I))
     rwa [hyy, ← hG0] at h
@@ -335,9 +336,11 @@ theorem IsGroundState.neg_I_mul_apply_star_mul_generator_nonneg (hω : α.IsGrou
     0 ≤ -I * ω (star a * α.generator ⟨a, ha.mem_generator_domain⟩) := by
   rw [ha.generator_eq_deriv]
   set F : ℂ → ℂ := fun z => ω (star a * α.entireExtension a z) with hF_def
-  have hF : HasDerivAt F (ω (star a * deriv (α.entireExtension a) 0)) 0 :=
-    ((ω : A →L[ℂ] ℂ).comp (ContinuousLinearMap.mul ℂ A (star a))).hasFDerivAt.comp_hasDerivAt 0
-      (ha.differentiable_entireExtension 0).hasDerivAt
+  have hF : HasDerivAt F (ω (star a * deriv (α.entireExtension a) 0)) 0 := by
+    simpa only [hF_def, Function.comp_def, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.mul_apply', PositiveContinuousLinearMap.coe_toContinuousLinearMap] using
+      ((ω : A →L[ℂ] ℂ).comp (ContinuousLinearMap.mul ℂ A (star a))).hasFDerivAt.comp_hasDerivAt 0
+        (ha.differentiable_entireExtension 0).hasDerivAt
   -- along the imaginary axis the derivative at `0` is `ω (a⋆ δ(a)) * i`
   have hFI : HasDerivAt (fun s : ℝ => F (s * I)) (ω (star a * deriv (α.entireExtension a) 0) * I)
       0 := by

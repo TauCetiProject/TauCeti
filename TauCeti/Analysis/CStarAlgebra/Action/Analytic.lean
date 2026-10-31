@@ -416,7 +416,9 @@ theorem apply_star_mul_entireExtension_mul_I_nonneg_of_apply_action
     (hω : ∀ t a, ω (α t a) = ω a) (ha : α.IsEntireAnalytic a) (s : ℝ) :
     0 ≤ ω (star a * α.entireExtension a (s * I)) := by
   have h := apply_star_entireExtension_mul_I_mul_entireExtension_mul_I_of_apply_action
-    (φ := (ω : A →L[ℂ] ℂ)) hω ha (s / 2) (s / 2)
+    (φ := (ω : A →L[ℂ] ℂ))
+    (fun t b => by simpa only [PositiveContinuousLinearMap.coe_toContinuousLinearMap] using hω t b)
+    ha (s / 2) (s / 2)
   rw [add_halves, PositiveContinuousLinearMap.coe_toContinuousLinearMap] at h
   rw [← h]
   exact ω.map_nonneg (star_mul_self_nonneg _)
