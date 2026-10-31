@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
-public import Mathlib.Algebra.BigOperators.Finprod
-public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Topology.Compactness.LocallyFinite
 
 /-!
@@ -24,8 +22,8 @@ The boundary of such a chain is computed one face at a time. The coefficient of 
 transported coefficients of `σ`; local finiteness at a point of the image of `ρ` makes this sum
 finite. Every simplex contributing to the boundary near a point is a face of a simplex of the
 original chain near that point, so the boundary is again locally finite. The boundary is described
-through the coefficients of the ordinary twisted boundary, and it squares to zero because the
-ordinary twisted boundary does.
+through the coefficients `twistedChainComplexCoeff` of the ordinary twisted boundary, and it squares
+to zero because the ordinary twisted boundary does.
 
 Borel–Moore homology with local coefficients is the homology of this complex. Finite chains are
 locally finite, and including them is a chain map from the twisted chain complex; on a compact space
@@ -33,9 +31,6 @@ every locally finite chain is finite, so this inclusion is an isomorphism there.
 
 ## Main declarations
 
-* `TauCeti.LocalCoefficientSystem.twistedChainComplexCoeff`: the coefficient of a twisted chain on a
-  singular simplex; by `twistedChainComplex_ext_coeff` a twisted chain is determined by its
-  coefficients.
 * `TauCeti.LocalCoefficientSystem.IsLocallyFiniteChain`: local finiteness of a family of simplex
   coefficients, and `locallyFiniteChains` the module of locally finite chains.
 * `TauCeti.LocalCoefficientSystem.locallyFiniteBoundary`: the boundary of locally finite chains,
@@ -74,90 +69,6 @@ namespace LocalCoefficientSystem
 variable {R : Type u} [Ring R] {X : TopCat.{v}}
 variable (L : LocalCoefficientSystem.{u, v, max v w} R X)
 
-section Coeff
-
-variable {k : ℕ}
-
-open Classical in
-/-- The coefficient of a twisted chain on a singular `k`-simplex `ρ`: the projection of the
-coproduct of simplex fibres onto the summand of `ρ`. -/
-def twistedChainComplexCoeff (ρ : (TopCat.toSSet.obj X) _⦋k⦌) :
-    (twistedChainComplex L).X k ⟶ L.obj (initialVertex ρ) :=
-  twistedChainComplexDesc L fun σ ↦ if h : σ = ρ then eqToHom (by rw [h]) else 0
-
-/-- The coefficient on `ρ` of a chain supported on `ρ` is its coefficient. -/
-@[reassoc (attr := simp)]
-lemma ιTwistedChainComplex_twistedChainComplexCoeff (ρ : (TopCat.toSSet.obj X) _⦋k⦌) :
-    ιTwistedChainComplex L k ρ ≫ twistedChainComplexCoeff L ρ = 𝟙 _ := by
-  simp [twistedChainComplexCoeff]
-
-/-- The coefficient on `ρ` of a chain supported on a different simplex vanishes. -/
-lemma ιTwistedChainComplex_twistedChainComplexCoeff_of_ne {σ ρ : (TopCat.toSSet.obj X) _⦋k⦌}
-    (h : σ ≠ ρ) : ιTwistedChainComplex L k σ ≫ twistedChainComplexCoeff L ρ = 0 := by
-  simp [twistedChainComplexCoeff, h]
-
-/-- The coefficient on `ρ` of a chain supported on `ρ` is its coefficient. -/
-@[simp]
-lemma twistedChainComplexCoeff_ιTwistedChainComplex_apply (ρ : (TopCat.toSSet.obj X) _⦋k⦌)
-    (x : L.obj (initialVertex ρ)) :
-    (twistedChainComplexCoeff L ρ).hom ((ιTwistedChainComplex L k ρ).hom x) = x :=
-  congrArg (fun f ↦ f.hom x) (ιTwistedChainComplex_twistedChainComplexCoeff L ρ)
-
-/-- The coefficient on `ρ` of a chain supported on a different simplex vanishes. -/
-lemma twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne
-    {σ ρ : (TopCat.toSSet.obj X) _⦋k⦌} (h : σ ≠ ρ) (x : L.obj (initialVertex σ)) :
-    (twistedChainComplexCoeff L ρ).hom ((ιTwistedChainComplex L k σ).hom x) = 0 :=
-  congrArg (fun f ↦ f.hom x) (ιTwistedChainComplex_twistedChainComplexCoeff_of_ne L h)
-
-/-- Summing a family of additive maps out of the simplex fibres against the coefficients of a
-finite sum of chains, each supported on one simplex, applies the maps summand by summand. -/
-lemma finsum_twistedChainComplexCoeff_sum {M : Type*} [AddCommMonoid M]
-    (g : ∀ τ : (TopCat.toSSet.obj X) _⦋k⦌, L.obj (initialVertex τ) →+ M) {ι : Type*}
-    (s : Finset ι) (σ : ι → (TopCat.toSSet.obj X) _⦋k⦌) (x : ∀ i, L.obj (initialVertex (σ i))) :
-    ∑ᶠ τ, g τ ((twistedChainComplexCoeff L τ).hom (∑ i ∈ s, (ιTwistedChainComplex L k (σ i)).hom
-      (x i))) = ∑ i ∈ s, g (σ i) (x i) := by
-  have hsingle : ∀ i, ∑ᶠ τ, g τ ((twistedChainComplexCoeff L τ).hom
-      ((ιTwistedChainComplex L k (σ i)).hom (x i))) = g (σ i) (x i) := fun i ↦ by
-    rw [finsum_eq_single _ (σ i) fun τ hτ ↦ by
-      rw [twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L (Ne.symm hτ), map_zero],
-      twistedChainComplexCoeff_ιTwistedChainComplex_apply]
-  simp_rw [map_sum]
-  rw [← sum_finsum_comm _ _ fun i _ ↦ (Set.finite_singleton (σ i)).subset fun τ hτ ↦
-    Set.mem_singleton_iff.2 <| by_contra fun h ↦ hτ <| by
-      simp only [twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L (Ne.symm h),
-        map_zero]]
-  exact Finset.sum_congr rfl fun i _ ↦ hsingle i
-
-open Classical in
-/-- The coefficient projections factor through the identification of a degree of the twisted
-chain complex with the direct sum of the simplex fibres. -/
-private lemma twistedChainComplexCoeff_eq_component (ρ : (TopCat.toSSet.obj X) _⦋k⦌) :
-    twistedChainComplexCoeff L ρ =
-      (eqToIso (twistedChainComplex_X L k) ≪≫ ModuleCat.coprodIsoDirectSum _).hom ≫
-        ModuleCat.ofHom (DirectSum.component R _
-          (fun σ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ L.obj (initialVertex σ)) ρ) := by
-  refine twistedChainComplex_hom_ext L fun σ ↦ ?_
-  simp only [Iso.trans_hom, eqToIso.hom, Category.assoc, ιTwistedChainComplex_eqToHom_assoc]
-  rw [← Category.assoc, ModuleCat.ι_coprodIsoDirectSum_hom, ← ModuleCat.ofHom_comp]
-  by_cases h : σ = ρ
-  · subst h
-    simp
-  · simp [ιTwistedChainComplex_twistedChainComplexCoeff_of_ne L h, DirectSum.component_comp_lof, h]
-
-/-- A twisted chain is determined by its coefficients. -/
-lemma twistedChainComplex_ext_coeff {y y' : (twistedChainComplex L).X k}
-    (h : ∀ ρ, (twistedChainComplexCoeff L ρ).hom y = (twistedChainComplexCoeff L ρ).hom y') :
-    y = y' := by
-  classical
-  let e := eqToIso (twistedChainComplex_X L k) ≪≫ ModuleCat.coprodIsoDirectSum
-    (fun σ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ L.obj (initialVertex σ))
-  refine (ModuleCat.mono_iff_injective e.hom).1 inferInstance
-    (DirectSum.ext_component R fun ρ ↦ ?_)
-  simpa only [twistedChainComplexCoeff_eq_component, ModuleCat.hom_comp, LinearMap.comp_apply,
-    ModuleCat.hom_ofHom] using h ρ
-
-end Coeff
-
 section Boundary
 
 variable {k : ℕ}
@@ -169,28 +80,14 @@ private abbrev boundaryCoeff (ρ : (TopCat.toSSet.obj X) _⦋k⦌)
   ιTwistedChainComplex L (k + 1) σ ≫ (twistedChainComplex L).d (k + 1) k ≫
     twistedChainComplexCoeff L ρ
 
-/-- The twisted boundary of a chain supported on `σ` is a signed sum of chains supported on the
-faces of `σ`. -/
-private lemma d_ιTwistedChainComplex_apply (σ : (TopCat.toSSet.obj X) _⦋k + 1⦌)
-    (x : L.obj (initialVertex σ)) :
-    ((twistedChainComplex L).d (k + 1) k).hom ((ιTwistedChainComplex L (k + 1) σ).hom x) =
-      ∑ i : Fin (k + 2), (-1 : ℤ) ^ (i : ℕ) •
-        (ιTwistedChainComplex L k ((TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ)).hom
-          ((L.map (vertexTransport (SimplexCategory.δ i).op σ)).hom x) := by
-  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ιTwistedChainComplex_d]
-  simp
-
 /-- A boundary component vanishes unless `ρ` is a face of `σ`. -/
 private lemma exists_map_δ_eq_of_boundaryCoeff_apply_ne_zero {ρ : (TopCat.toSSet.obj X) _⦋k⦌}
     {σ : (TopCat.toSSet.obj X) _⦋k + 1⦌} {x : L.obj (initialVertex σ)}
     (h : (boundaryCoeff L ρ σ).hom x ≠ 0) :
     ∃ i : Fin (k + 2), (TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ = ρ := by
   by_contra! hne
-  refine h ?_
-  simp only [boundaryCoeff, ModuleCat.hom_comp, LinearMap.comp_apply,
-    d_ιTwistedChainComplex_apply, map_sum, map_zsmul]
-  exact Finset.sum_eq_zero fun i _ ↦ by
-    rw [twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L (hne i), smul_zero]
+  exact h (by
+    simp [boundaryCoeff, ιTwistedChainComplex_d_twistedChainComplexCoeff_of_forall_ne L hne])
 
 end Boundary
 
@@ -292,33 +189,15 @@ section LocallyFiniteBoundary
 
 variable {L} {k : ℕ}
 
-/-- The point of the image of a simplex given by its initial vertex. -/
-private abbrev basePoint (ρ : (TopCat.toSSet.obj X) _⦋k⦌) : X :=
-  TopCat.simplexMap ρ (toTopInitialVertex _)
-
-private lemma basePoint_mem_range_of_map_δ_eq {ρ : (TopCat.toSSet.obj X) _⦋k⦌}
-    {σ : (TopCat.toSSet.obj X) _⦋k + 1⦌} {i : Fin (k + 2)}
-    (h : (TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ = ρ) :
-    basePoint ρ ∈ Set.range (TopCat.simplexMap σ) := by
-  subst h
-  exact ⟨_, rfl⟩
-
-private lemma range_subset_of_map_δ_eq {ρ : (TopCat.toSSet.obj X) _⦋k⦌}
-    {σ : (TopCat.toSSet.obj X) _⦋k + 1⦌} {i : Fin (k + 2)}
-    (h : (TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ = ρ) :
-    Set.range (TopCat.simplexMap ρ) ⊆ Set.range (TopCat.simplexMap σ) := by
-  subst h
-  rintro _ ⟨z, rfl⟩
-  exact ⟨_, rfl⟩
-
 /-- The terms of the boundary of a locally finite chain on a fixed simplex have finite support. -/
 private lemma finite_support_boundaryCoeff
     {c : ∀ σ : (TopCat.toSSet.obj X) _⦋k + 1⦌, L.obj (initialVertex σ)}
     (hc : IsLocallyFiniteChain L c) (ρ : (TopCat.toSSet.obj X) _⦋k⦌) :
     (Function.support fun σ ↦ (boundaryCoeff L ρ σ).hom (c σ)).Finite := by
-  refine (hc.finite_setOf_mem_range (basePoint ρ)).subset fun σ hσ ↦ ?_
-  obtain ⟨i, hi⟩ := exists_map_δ_eq_of_boundaryCoeff_apply_ne_zero L hσ
-  refine ⟨fun h ↦ hσ ?_, basePoint_mem_range_of_map_δ_eq hi⟩
+  refine (hc.finite_setOf_mem_range (TopCat.simplexMap ρ (toTopInitialVertex _))).subset
+    fun σ hσ ↦ ?_
+  obtain ⟨i, rfl⟩ := exists_map_δ_eq_of_boundaryCoeff_apply_ne_zero L hσ
+  refine ⟨fun h ↦ hσ ?_, TopCat.range_simplexMap_map_subset _ σ ⟨_, rfl⟩⟩
   simp [h]
 
 variable (L) in
@@ -350,9 +229,9 @@ lemma IsLocallyFiniteChain.locallyFiniteBoundaryFun
   obtain ⟨σ, hσ⟩ : ∃ σ, (boundaryCoeff L ρ σ).hom (c σ) ≠ 0 := by
     by_contra! h
     exact hρ (by rw [locallyFiniteBoundaryFun_eq]; exact finsum_eq_zero_of_forall_eq_zero h)
-  obtain ⟨i, hi⟩ := exists_map_δ_eq_of_boundaryCoeff_apply_ne_zero L hσ
+  obtain ⟨i, rfl⟩ := exists_map_δ_eq_of_boundaryCoeff_apply_ne_zero L hσ
   exact Set.mem_biUnion (x := σ) ⟨fun h ↦ hσ (by simp [h]),
-    y, range_subset_of_map_δ_eq hi hy, hyU⟩ ⟨i, hi⟩
+    y, TopCat.range_simplexMap_map_subset _ σ hy, hyU⟩ ⟨i, rfl⟩
 
 variable (L k) in
 /-- The boundary of locally finite singular `(k + 1)`-chains with coefficients in `L`. -/
@@ -422,7 +301,7 @@ lemma locallyFiniteBoundary_comp_locallyFiniteBoundary :
   refine LinearMap.ext fun ⟨c, hc⟩ ↦ Subtype.ext <| funext fun ρ ↦ ?_
   simp only [LinearMap.comp_apply, LinearMap.zero_apply, ZeroMemClass.coe_zero, Pi.zero_apply,
     coe_locallyFiniteBoundary]
-  set F := (hc.finite_setOf_mem_range (basePoint ρ)).toFinset
+  set F := (hc.finite_setOf_mem_range (TopCat.simplexMap ρ (toTopInitialVertex _))).toFinset
   have hzero : ∀ τ σ, (boundaryCoeff L τ σ).hom (c σ) = 0 →
       (boundaryCoeff L ρ τ).hom ((boundaryCoeff L τ σ).hom (c σ)) = 0 := fun τ σ h ↦ by
     rw [h, map_zero]
@@ -431,9 +310,10 @@ lemma locallyFiniteBoundary_comp_locallyFiniteBoundary :
       σ ∈ F := fun τ σ h ↦ by
     obtain ⟨i, hi⟩ := exists_map_δ_eq_of_boundaryCoeff_apply_ne_zero L h
     have h' : (boundaryCoeff L τ σ).hom (c σ) ≠ 0 := fun h' ↦ h (hzero τ σ h')
-    obtain ⟨j, hj⟩ := exists_map_δ_eq_of_boundaryCoeff_apply_ne_zero L h'
+    obtain ⟨j, rfl⟩ := exists_map_δ_eq_of_boundaryCoeff_apply_ne_zero L h'
     refine (Set.Finite.mem_toFinset _).2 ⟨fun hσ ↦ h' (by simp [hσ]), ?_⟩
-    exact range_subset_of_map_δ_eq hj (basePoint_mem_range_of_map_δ_eq hi)
+    rw [← hi]
+    exact TopCat.range_simplexMap_map_subset _ σ (TopCat.range_simplexMap_map_subset _ _ ⟨_, rfl⟩)
   simp_rw [locallyFiniteBoundaryFun_eq]
   rw [finsum_congr fun τ ↦ map_finsum _ (finite_support_boundaryCoeff hc τ),
     finsum_congr fun τ ↦ finsum_eq_sum_of_support_subset _ fun σ hσ ↦ hsupp τ σ hσ,
@@ -449,9 +329,6 @@ end LocallyFiniteBoundary
 section Complex
 
 /-- The chain complex of locally finite singular chains of `X` with coefficients in `L`. -/
--- The body is exposed so that each degree is, by definition, the module of locally finite chains:
--- the statement of `locallyFiniteChainComplex_d` and maps into the complex depend on this.
-@[expose]
 def locallyFiniteChainComplex : ChainComplex (ModuleCat.{max v w} R) ℕ :=
   ChainComplex.of (fun k ↦ ModuleCat.of R (locallyFiniteChains L k))
     (fun k ↦ ModuleCat.ofHom (locallyFiniteBoundary L k))
@@ -466,9 +343,12 @@ lemma locallyFiniteChainComplex_X (k : ℕ) :
 /-- The differential of the locally finite chain complex is the locally finite boundary. -/
 @[simp]
 lemma locallyFiniteChainComplex_d (k : ℕ) :
-    (locallyFiniteChainComplex L).d (k + 1) k = ModuleCat.ofHom (locallyFiniteBoundary L k) :=
-  ChainComplex.of_d (fun k ↦ ModuleCat.of R (locallyFiniteChains L k))
-    (fun k ↦ ModuleCat.ofHom (locallyFiniteBoundary L k)) k
+    (locallyFiniteChainComplex L).d (k + 1) k =
+      eqToHom (locallyFiniteChainComplex_X L (k + 1)) ≫
+        ModuleCat.ofHom (locallyFiniteBoundary L k) ≫
+          eqToHom (locallyFiniteChainComplex_X L k).symm := by
+  simp only [locallyFiniteChainComplex, ChainComplex.of_d]
+  rfl
 
 /-- Borel–Moore homology of `X` with coefficients in the local coefficient system `L`: the
 homology of the complex of locally finite singular chains. -/
@@ -527,6 +407,7 @@ lemma toLocallyFiniteChains_apply (y : (twistedChainComplex L).X k)
 
 /-- Each twisted chain is sent to a locally finite chain with the same coefficients, and this
 commutes with the boundaries. -/
+@[reassoc]
 lemma toLocallyFiniteChains_comp_locallyFiniteBoundary :
     toLocallyFiniteChains L (k + 1) ≫ ModuleCat.ofHom (locallyFiniteBoundary L k) =
       (twistedChainComplex L).d (k + 1) k ≫ toLocallyFiniteChains L k := by
@@ -542,17 +423,17 @@ lemma toLocallyFiniteChains_comp_locallyFiniteBoundary :
 
 /-- The chain map from twisted chains to locally finite chains. -/
 def toLocallyFiniteChainComplex : twistedChainComplex L ⟶ locallyFiniteChainComplex L where
-  f k := toLocallyFiniteChains L k
+  f k := toLocallyFiniteChains L k ≫ eqToHom (locallyFiniteChainComplex_X L k).symm
   comm' i j hij := by
     obtain rfl : j + 1 = i := hij
-    rw [locallyFiniteChainComplex_d]
-    exact toLocallyFiniteChains_comp_locallyFiniteBoundary L
+    simp [locallyFiniteChainComplex_d, ← toLocallyFiniteChains_comp_locallyFiniteBoundary_assoc]
 
 /-- The components of the chain map to locally finite chains are the inclusions of finite
 chains. -/
 @[simp]
 lemma toLocallyFiniteChainComplex_f (k : ℕ) :
-    (toLocallyFiniteChainComplex L).f k = toLocallyFiniteChains L k :=
+    (toLocallyFiniteChainComplex L).f k =
+      toLocallyFiniteChains L k ≫ eqToHom (locallyFiniteChainComplex_X L k).symm :=
   (rfl)
 
 variable (k) in
@@ -582,8 +463,10 @@ lemma bijective_toLocallyFiniteChains [CompactSpace X] :
 isomorphism of chain complexes. -/
 instance isIso_toLocallyFiniteChainComplex [CompactSpace X] :
     IsIso (toLocallyFiniteChainComplex L) := by
-  have (k : ℕ) : IsIso ((toLocallyFiniteChainComplex L).f k) :=
-    (ConcreteCategory.isIso_iff_bijective _).2 (bijective_toLocallyFiniteChains L)
+  have (k : ℕ) : IsIso ((toLocallyFiniteChainComplex L).f k) := by
+    rw [toLocallyFiniteChainComplex_f]
+    have := (ConcreteCategory.isIso_iff_bijective _).2 (bijective_toLocallyFiniteChains L (k := k))
+    infer_instance
   exact HomologicalComplex.Hom.isIso_of_components _
 
 variable (k) in
