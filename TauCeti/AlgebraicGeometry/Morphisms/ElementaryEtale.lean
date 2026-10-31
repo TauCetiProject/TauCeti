@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 import Mathlib.Tactic.Algebraize
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.AffineChart
 import TauCeti.AlgebraicGeometry.ResidueField
 import TauCeti.RingTheory.Etale.QuasiFinite
 
@@ -33,7 +34,8 @@ point, as in the proof of purity of the branch locus (Stacks, Lemma 58.21.4 (0BM
 The construction is that of Mathlib's `AlgebraicGeometry.exists_etale_isCompl_of_quasiFiniteAt`
 (Andrew Yang), which proves the finiteness statement on its way to Zariski's main theorem. There
 `f` is assumed separated so that the open is also closed; that conclusion is not needed here, and
-neither is separatedness. The affine input is
+neither is separatedness. The chart is
+`AlgebraicGeometry.exists_isOpenImmersion_tensor_isFinite`, and the affine input is
 Mathlib's `Algebra.exists_etale_isIdempotentElem_forall_liesOver_eq` (Stacks 00UJ), whose
 additional conclusions give the residue field isomorphism at `u`, the uniqueness of `v`, and,
 through `Ideal.ResidueField.bijective_map_includeRight`, the residue field isomorphism at `v`.
@@ -54,68 +56,6 @@ open CategoryTheory Limits TensorProduct
 namespace AlgebraicGeometry
 
 universe u
-
-/-- For affine opens `V ⊆ f⁻¹ U` and a `Γ(S, U)`-algebra `R`, the chart
-`Spec (R ⊗[Γ(S, U)] Γ(X, V))` is an open of `X ×[S] Spec R`, with the evident projections, and
-the image of `D(e)` is finite over `Spec R` whenever `R → (R ⊗[Γ(S, U)] Γ(X, V))[1/e]` is finite.
-This is the chart in which Stacks 00UJ is applied below. -/
-private lemma exists_isOpenImmersion_tensor_isFinite {X S : Scheme.{u}} (f : X ⟶ S)
-    {U : S.Opens} (hU : IsAffineOpen U) {V : X.Opens} (hV : IsAffineOpen V) (hUV : V ≤ f ⁻¹ᵁ U)
-    (R : Type u) [CommRing R] [Algebra Γ(S, U) R] :
-    letI := (f.appLE U V hUV).hom.toAlgebra
-    ∃ g : Spec ↧(R ⊗[Γ(S, U)] Γ(X, V)) ⟶
-        pullback f (Spec.map (CommRingCat.ofHom (algebraMap Γ(S, U) R)) ≫ hU.fromSpec),
-      ∃ _ : IsOpenImmersion g, g ≫ pullback.fst _ _ =
-        Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom) ≫ hV.fromSpec ∧
-      g ≫ pullback.snd _ _ = Spec.map (CommRingCat.ofHom (algebraMap R (R ⊗[Γ(S, U)] Γ(X, V)))) ∧
-      ∀ e : R ⊗[Γ(S, U)] Γ(X, V), (algebraMap R (Localization.Away e)).Finite →
-        IsFinite ((g ''ᵁ PrimeSpectrum.basicOpen e).ι ≫ pullback.snd _ _) := by
-  algebraize [(f.appLE U V hUV).hom]
-  let φ : Γ(S, U) ⟶ ↧R := CommRingCat.ofHom <| algebraMap Γ(S, U) R
-  let e₁ : Spec ↧(R ⊗ Γ(X, V)) ≅ pullback (Spec.map (f.appLE U V hUV)) (Spec.map φ) :=
-    (pullbackSpecIso _ _ _).symm ≪≫ pullbackSymmetry _ _
-  have he₁ : e₁.hom ≫ pullback.fst _ _ =
-      Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom) := by
-    dsimp [e₁, RingHom.algebraMap_toAlgebra]
-    rw [Category.assoc, pullbackSymmetry_hom_comp_fst]
-    exact pullbackSpecIso_inv_snd ..
-  have he₂ : e₁.hom ≫ pullback.snd _ _ =
-      Spec.map (CommRingCat.ofHom (algebraMap R (R ⊗[Γ(S, U)] Γ(X, V)))) := by
-    dsimp [e₁, RingHom.algebraMap_toAlgebra]
-    rw [Category.assoc, pullbackSymmetry_hom_comp_snd]
-    exact pullbackSpecIso_inv_fst' ..
-  let g : Spec ↧(R ⊗[Γ(S, U)] Γ(X, V)) ⟶ pullback f (Spec.map φ ≫ hU.fromSpec) :=
-    e₁.hom ≫ pullback.map _ _ _ _ hV.fromSpec (𝟙 _) hU.fromSpec
-      (IsAffineOpen.SpecMap_appLE_fromSpec ..) (by simp)
-  have : IsOpenImmersion g := by
-    have := Scheme.pullback_map_isOpenImmersion (Spec.map (f.appLE U V hUV)) (Spec.map φ) f
-      (Spec.map φ ≫ hU.fromSpec) hV.fromSpec (𝟙 _) hU.fromSpec
-      (IsAffineOpen.SpecMap_appLE_fromSpec ..) (by simp)
-    exact IsOpenImmersion.comp _ _
-  have hgfst : g ≫ pullback.fst _ _ =
-      Spec.map (CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom) ≫ hV.fromSpec := by
-    simp [g, reassoc_of% he₁]
-  have hgsnd : g ≫ pullback.snd _ _ =
-      Spec.map (CommRingCat.ofHom (algebraMap R (R ⊗[Γ(S, U)] Γ(X, V)))) := by
-    simp [g, he₂]
-  refine ⟨g, inferInstance, hgfst, hgsnd, fun e he ↦ ?_⟩
-  -- The open `g(D(e))` is the image of `Spec (R ⊗ Γ(X, V))[1/e]`, which is finite over `Spec R`.
-  let ι : Spec ↧(Localization.Away e) ⟶ pullback f (Spec.map φ ≫ hU.fromSpec) :=
-    Spec.map (CommRingCat.ofHom <| algebraMap _ _) ≫ g
-  have hrange : ι.opensRange = g ''ᵁ PrimeSpectrum.basicOpen e := by
-    simp only [Scheme.Hom.opensRange_comp, ι]
-    congr 1
-    exact TopologicalSpace.Opens.ext <| PrimeSpectrum.localization_away_comap_range _ _
-  have hι : ι ≫ pullback.snd _ _ =
-      Spec.map (CommRingCat.ofHom (algebraMap R (Localization.Away e))) := by
-    rw [Category.assoc, hgsnd, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
-      ← IsScalarTower.algebraMap_eq]
-  have : MorphismProperty.RespectsIso @IsFinite.{u} :=
-    MorphismProperty.IsStableUnderBaseChange.respectsIso
-  rw [← hrange, ← MorphismProperty.cancel_left_of_respectsIso @IsFinite
-    (Scheme.Hom.isoOpensRange _).hom, Scheme.Hom.isoOpensRange_hom_ι_assoc, hι,
-    IsFinite.SpecMap_iff]
-  exact he
 
 /-- **Elementary étale localization of a quasi-finite point** (Stacks, Lemma 37.41.1 (02LK)).
 Let `f : X ⟶ S` be locally of finite type and quasi-finite at `x` (so `x` is isolated in its
