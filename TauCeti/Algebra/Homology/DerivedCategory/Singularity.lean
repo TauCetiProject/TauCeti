@@ -45,6 +45,12 @@ For a left noetherian ring `A`, the finitely generated left `A`-modules form the
 
 * `TauCeti.DerivedCategory.Bounded.perfect_Qh_obj_quotient_obj`: a bounded complex of projective
   objects is perfect.
+* `TauCeti.DerivedCategory.Bounded.perfect_singleFunctor_obj`: a projective object placed in any
+  degree is perfect.
+* `TauCeti.DerivedCategory.Bounded.perfect_le_inverseImage_ι`: a thick subcategory of the derived
+  category containing the projective objects in degree zero contains the perfect objects.
+* `TauCeti.DerivedCategory.Bounded.perfect_trW_of_distinguished`: a morphism whose image in the
+  derived category has a perfect cone is in `(perfect C).trW`.
 * `TauCeti.SingularityCategory.isZero_Q_obj_of_perfect`: perfect objects vanish in the
   singularity category; in particular so do the projective objects of `C`.
 
@@ -97,10 +103,43 @@ instance : (perfect C).IsStableUnderRetracts := by
   dsimp only [perfect]
   infer_instance
 
-/-- A projective object of `C` in degree zero is perfect. -/
-lemma perfect_singleFunctor_obj {P : C} (hP : Projective P) :
-    perfect C ((singleFunctor C 0).obj P) :=
-  (projectiveSingle C).le_triangEnvelope _ ⟨P, hP, ⟨Iso.refl _⟩⟩
+/-- A projective object of `C` placed in any degree is perfect. -/
+lemma perfect_singleFunctor_obj (n : ℤ) {P : C} (hP : Projective P) :
+    perfect C ((singleFunctor C n).obj P) :=
+  -- The degree-zero object is a generator; shifting by `-n` moves it to degree `n`.
+  (perfect C).prop_of_iso (((singleFunctors C).shiftIso (-n) n 0 (by lia)).app P)
+    ((perfect C).le_shift (-n) _ ((projectiveSingle C).le_triangEnvelope _ ⟨P, hP, ⟨Iso.refl _⟩⟩))
+
+variable {C} in
+/-- **Perfect objects lie in every thick subcategory containing the projectives**: a triangulated
+subcategory of the derived category which is stable under retracts and contains the projective
+objects placed in degree zero contains the perfect objects of the bounded derived category. -/
+theorem perfect_le_inverseImage_ι (Q : ObjectProperty (_root_.DerivedCategory C))
+    [Q.IsClosedUnderIsomorphisms] [Q.IsTriangulated] [Q.IsStableUnderRetracts]
+    (hQ : ∀ P : C, Projective P → Q ((_root_.DerivedCategory.singleFunctor C 0).obj P)) :
+    perfect C ≤ Q.inverseImage _root_.DerivedCategory.Bounded.ι := by
+  have : (Q.inverseImage _root_.DerivedCategory.Bounded.ι).IsStableUnderRetracts :=
+    ⟨fun r h ↦ Q.prop_of_retract (r.map _root_.DerivedCategory.Bounded.ι) h⟩
+  rw [perfect_eq, ObjectProperty.triangEnvelope_le_iff]
+  intro Y hY
+  obtain ⟨P, hP, ⟨e⟩⟩ := (projectiveSingle_iff C Y).1 hY
+  exact Q.prop_of_iso (_root_.DerivedCategory.Bounded.ι.mapIso e).symm (hQ P hP)
+
+variable {C} in
+/-- A morphism of the bounded derived category whose image in the derived category is the first
+morphism of a distinguished triangle with perfect third vertex has a perfect cone. -/
+theorem perfect_trW_of_distinguished {A B Z : _root_.DerivedCategory.Bounded C} (f : A ⟶ B)
+    (g : _root_.DerivedCategory.Bounded.ι.obj B ⟶ _root_.DerivedCategory.Bounded.ι.obj Z)
+    (h : _root_.DerivedCategory.Bounded.ι.obj Z ⟶
+      (_root_.DerivedCategory.Bounded.ι.obj A)⟦(1 : ℤ)⟧)
+    (hT : Triangle.mk (_root_.DerivedCategory.Bounded.ι.map f) g h ∈ distTriang _)
+    (hZ : perfect C Z) : (perfect C).trW f := by
+  -- Compare a cone of `f` in the bounded derived category with the given triangle.
+  obtain ⟨Z', g', h', hT'⟩ := distinguished_cocone_triangle f
+  let e := isoTriangleOfIso₁₂ _ _ (_root_.DerivedCategory.Bounded.ι.map_distinguished _ hT') hT
+    (Iso.refl _) (Iso.refl _) (by simp)
+  exact ObjectProperty.trW.mk _ hT' ((perfect C).prop_of_iso
+    ((ObjectProperty.fullyFaithfulι _).preimageIso (Triangle.π₃.mapIso e)).symm hZ)
 
 /-- **A bounded complex of projective objects is perfect.** -/
 theorem perfect_Qh_obj_quotient_obj (K : CochainComplex.Bounded C)
@@ -108,7 +147,7 @@ theorem perfect_Qh_obj_quotient_obj (K : CochainComplex.Bounded C)
     perfect C ((Qh C).obj ((HomotopyCategory.Bounded.quotient C).obj K)) :=
   HomotopyCategory.Bounded.prop_quotient_obj ((perfect C).inverseImage (Qh C)) K fun n ↦
     (perfect C).prop_of_iso ((singleFunctorCompQhIso C 0).app (K.obj.X n)).symm
-      (perfect_singleFunctor_obj C (hK n))
+      (perfect_singleFunctor_obj C 0 (hK n))
 
 end DerivedCategory.Bounded
 
@@ -172,7 +211,7 @@ lemma isZero_Q_obj_of_perfect {X : DerivedCategory.Bounded C}
 /-- A projective object of `C`, in degree zero, vanishes in the singularity category. -/
 lemma isZero_Q_obj_singleFunctor_obj {P : C} (hP : Projective P) :
     IsZero ((Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj P)) :=
-  isZero_Q_obj_of_perfect (DerivedCategory.Bounded.perfect_singleFunctor_obj C hP)
+  isZero_Q_obj_of_perfect (DerivedCategory.Bounded.perfect_singleFunctor_obj C 0 hP)
 
 end SingularityCategory
 

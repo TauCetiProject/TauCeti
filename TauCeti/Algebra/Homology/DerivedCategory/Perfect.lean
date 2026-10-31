@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Homology.CochainComplex.Opcycles
 public import TauCeti.Algebra.Homology.DerivedCategory.ProjectiveResolution
 public import TauCeti.Algebra.Homology.DerivedCategory.Singularity
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
+public import TauCeti.CategoryTheory.Exact.ExtOrthogonal
+public import TauCeti.CategoryTheory.Triangulated.EventuallyOrthogonal
 
 /-!
 # Perfect objects are bounded complexes of projectives
@@ -33,6 +35,9 @@ complex of projective objects.
 
 * `DerivedCategory.exists_homSingle_eq_zero_of_perfect`: a perfect object has no morphisms to
   objects of `C` placed in sufficiently negative degrees.
+* `DerivedCategory.exists_singleHom_eq_zero_of_perfect`: a perfect object has no morphisms from
+  objects of `C` without higher extensions by projectives, placed in sufficiently positive
+  degrees.
 * `DerivedCategory.exists_bounded_projective_of_perfect`: a perfect object is represented by a
   bounded complex of projective objects.
 * `DerivedCategory.Bounded.perfect_iff`: an object of the bounded derived category is
@@ -43,56 +48,23 @@ public section
 
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated ZeroObject
 
-universe w v u
+universe w' w v u
 
 namespace DerivedCategory
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 
 variable (C) in
-/-- The objects `X` of the derived category with no nonzero morphisms to `W[-n]` for `W` in `C`
-and `n` small enough. -/
-private def homSingleVanishing : ObjectProperty (DerivedCategory C) :=
-  fun X ↦ ∃ n₀ : ℤ, ∀ n ≤ n₀, ∀ (W : C) (f : X ⟶ (singleFunctor C n).obj W), f = 0
+/-- The objects of `C` placed in degree `-n`, up to isomorphism. -/
+private def singleNeg (n : ℤ) : ObjectProperty (DerivedCategory C) :=
+  fun Y ↦ ∃ (m : ℤ) (W : C), m + n = 0 ∧ Nonempty (Y ≅ (singleFunctor C m).obj W)
 
-private instance : (homSingleVanishing C).IsClosedUnderIsomorphisms where
-  of_iso e := fun ⟨n₀, h⟩ ↦ ⟨n₀, fun n hn W f ↦ (cancel_epi e.hom).1 (by
-    rw [h n hn W (e.hom ≫ f), comp_zero])⟩
-
-private instance : (homSingleVanishing C).IsStableUnderRetracts where
-  of_retract r := fun ⟨n₀, h⟩ ↦ ⟨n₀, fun n hn W f ↦ by
-    rw [← Category.id_comp f, ← r.retract, Category.assoc, h n hn W (r.r ≫ f), comp_zero]⟩
-
-private instance : (homSingleVanishing C).ContainsZero where
-  exists_zero := ⟨0, isZero_zero _, 0, fun _ _ _ _ ↦ (isZero_zero _).eq_of_src _ _⟩
-
-private instance : (homSingleVanishing C).IsStableUnderShift ℤ where
-  isStableUnderShiftBy a := ⟨fun X ⟨n₀, h⟩ ↦ ⟨n₀ - a, fun n hn W f ↦ by
-    -- Transport `f : X⟦a⟧ ⟶ W[-n]` to `X ⟶ W[-(n + a)]`.
-    apply (shiftFunctor (DerivedCategory C) (-a)).map_injective
-    have := h (n + a) (by lia) W ((shiftFunctorCompIsoId _ a (-a) (by lia)).inv.app X ≫
-      (shiftFunctor _ (-a)).map f ≫ ((singleFunctors C).shiftIso (-a) (n + a) n (by lia)).hom.app W)
-    rw [← cancel_epi ((shiftFunctorCompIsoId _ a (-a) (by lia)).inv.app X),
-      ← cancel_mono (((singleFunctors C).shiftIso (-a) (n + a) n (by lia)).hom.app W),
-      Functor.map_zero, comp_zero, zero_comp]
-    simpa using this⟩⟩
-
-private instance : (homSingleVanishing C).IsTriangulatedClosed₂ :=
-  .mk' fun T hT ⟨n₁, h₁⟩ ⟨n₃, h₃⟩ ↦ ⟨min n₁ n₃, fun n hn W f ↦ by
-    obtain ⟨g, rfl⟩ := Triangle.yoneda_exact₂ T hT f (h₁ n (by lia) W _)
-    rw [h₃ n (by lia) W g, comp_zero]⟩
-
-private instance : (homSingleVanishing C).IsTriangulated where
-
-/-- The projective objects in degree zero have no nonzero morphisms to objects placed in negative
-degrees. -/
-private lemma homSingleVanishing_singleFunctor_obj {P : C} [Projective P] :
-    homSingleVanishing C ((singleFunctor C 0).obj P) := by
-  refine ⟨-1, fun n hn W f ↦ ?_⟩
-  have := from_singleFunctor_obj_eq_zero_of_projective
-    ((singleFunctorIsoCompQ C 0).inv.app P ≫ f ≫ (singleFunctorIsoCompQ C n).hom.app W) n
-    (by lia)
-  simpa using this
+/-- Shifting by `-a` moves objects placed in degree `-n` to degree `-(n - a)`. -/
+private lemma singleNeg_shift (a : ℤ) :
+    ∃ c : ℤ, ∀ n (Y : DerivedCategory C), singleNeg C n Y → singleNeg C (n + c) (Y⟦-a⟧) :=
+  ⟨-a, fun _ _ ⟨m, W, hm, ⟨e⟩⟩ ↦ ⟨m + a, W, by lia,
+    ⟨(shiftFunctor _ (-a)).mapIso e ≪≫
+      ((singleFunctors C).shiftIso (-a) (m + a) m (by lia)).app W⟩⟩⟩
 
 /-- **Perfect objects have bounded morphisms to objects of `C`**: a perfect object of the bounded
 derived category has no nonzero morphisms to `W[-n]` for `W` in `C` and `n` small enough. -/
@@ -100,16 +72,61 @@ theorem exists_homSingle_eq_zero_of_perfect {X : DerivedCategory.Bounded C}
     (hX : TauCeti.DerivedCategory.Bounded.perfect C X) :
     ∃ n₀ : ℤ, ∀ n ≤ n₀, ∀ (W : C) (f : DerivedCategory.Bounded.ι.obj X ⟶ (singleFunctor C n).obj W),
       f = 0 := by
-  have : (homSingleVanishing C).inverseImage DerivedCategory.Bounded.ι |>.IsStableUnderRetracts :=
-    ⟨fun r h ↦ (homSingleVanishing C).prop_of_retract (r.map DerivedCategory.Bounded.ι) h⟩
-  have hle : TauCeti.DerivedCategory.Bounded.perfect C ≤
-      (homSingleVanishing C).inverseImage DerivedCategory.Bounded.ι := by
-    rw [TauCeti.DerivedCategory.Bounded.perfect_eq, ObjectProperty.triangEnvelope_le_iff]
-    intro Y hY
-    obtain ⟨P, hP, ⟨e⟩⟩ := (TauCeti.DerivedCategory.Bounded.projectiveSingle_iff C Y).1 hY
-    exact (homSingleVanishing C).prop_of_iso (DerivedCategory.Bounded.ι.mapIso e).symm
-      homSingleVanishing_singleFunctor_obj
-  exact hle _ hX
+  have := ObjectProperty.isStableUnderShift_eventuallyLeftOrthogonal (singleNeg_shift (C := C))
+  have : (ObjectProperty.eventuallyLeftOrthogonal (singleNeg C)).IsTriangulated := {}
+  -- A projective object in degree zero has no morphisms to objects in negative degrees.
+  obtain ⟨n₀, h⟩ := ObjectProperty.eventuallyLeftOrthogonal_iff.1
+    (TauCeti.DerivedCategory.Bounded.perfect_le_inverseImage_ι
+    (ObjectProperty.eventuallyLeftOrthogonal (singleNeg C))
+    (fun P hP ↦ ObjectProperty.eventuallyLeftOrthogonal_iff.2 ⟨1, fun n hn Y f ⟨m, W, hm, ⟨e⟩⟩ ↦ by
+      have := hP
+      have := from_singleFunctor_obj_eq_zero_of_projective
+        ((singleFunctorIsoCompQ C 0).inv.app P ≫ f ≫ e.hom ≫
+          (singleFunctorIsoCompQ C m).hom.app W) m (by lia)
+      rw [← cancel_mono e.hom, zero_comp]
+      simpa using this⟩) X hX)
+  exact ⟨-n₀, fun n hn W f ↦ h (-n) (by lia) f ⟨n, W, by lia, ⟨Iso.refl _⟩⟩⟩
+
+section ExtOrthogonal
+
+variable [HasExt.{w'} C]
+
+variable (C) in
+/-- The objects of `C` without higher extensions by projectives placed in degree `n`, up to
+isomorphism. -/
+private def singleExtProjOrth (n : ℤ) : ObjectProperty (DerivedCategory C) :=
+  fun Y ↦ ∃ X : C, (∀ i : ℕ, (isProjective C).extLeftOrthogonal (i + 1) X) ∧
+    Nonempty (Y ≅ (singleFunctor C n).obj X)
+
+/-- Shifting by `-a` moves objects placed in degree `n` to degree `n + a`. -/
+private lemma singleExtProjOrth_shift (a : ℤ) :
+    ∃ c : ℤ, ∀ n (Y : DerivedCategory C), singleExtProjOrth C n Y →
+      singleExtProjOrth C (n + c) (Y⟦-a⟧) :=
+  ⟨a, fun n _ ⟨X, hX, ⟨e⟩⟩ ↦ ⟨X, hX,
+    ⟨(shiftFunctor _ (-a)).mapIso e ≪≫
+      ((singleFunctors C).shiftIso (-a) (n + a) n (by lia)).app X⟩⟩⟩
+
+/-- **Perfect objects receive no morphisms from high syzygies**: for a perfect object `K` of the
+bounded derived category there is `n₀` such that every morphism to `K` from an object of `C`
+without higher extensions by projectives, placed in a degree `n ≥ n₀`, vanishes. -/
+theorem exists_singleHom_eq_zero_of_perfect {K : DerivedCategory.Bounded C}
+    (hK : TauCeti.DerivedCategory.Bounded.perfect C K) :
+    ∃ n₀ : ℤ, ∀ n ≥ n₀, ∀ X : C, (∀ i : ℕ, (isProjective C).extLeftOrthogonal (i + 1) X) →
+      ∀ f : (singleFunctor C n).obj X ⟶ DerivedCategory.Bounded.ι.obj K, f = 0 := by
+  have := ObjectProperty.isStableUnderShift_eventuallyRightOrthogonal
+    (singleExtProjOrth_shift (C := C))
+  have : (ObjectProperty.eventuallyRightOrthogonal (singleExtProjOrth C)).IsTriangulated := {}
+  -- A projective object in degree zero receives no morphisms from such objects in positive degrees.
+  obtain ⟨n₀, h⟩ := ObjectProperty.eventuallyRightOrthogonal_iff.1
+    (TauCeti.DerivedCategory.Bounded.perfect_le_inverseImage_ι
+    (ObjectProperty.eventuallyRightOrthogonal (singleExtProjOrth C))
+    (fun Q hQ ↦ ObjectProperty.eventuallyRightOrthogonal_iff.2 ⟨1, fun n hn Y f ⟨X, hX, ⟨e⟩⟩ ↦ by
+      obtain ⟨m, rfl⟩ : ∃ m : ℕ, n = (m + 1 : ℕ) := ⟨(n - 1).toNat, by lia⟩
+      rw [← e.hom_inv_id_assoc f, singleFunctor_hom_eq_zero_of_ext
+        (ObjectProperty.extLeftOrthogonal_iff.1 (hX m) hQ) (e.inv ≫ f), comp_zero]⟩) K hK)
+  exact ⟨n₀, fun n hn X hX f ↦ h n hn f ⟨X, hX, ⟨Iso.refl _⟩⟩⟩
+
+end ExtOrthogonal
 
 /-- **Perfect objects are bounded complexes of projectives**: in an abelian category with enough
 projectives, a perfect object of the bounded derived category is represented by a bounded complex

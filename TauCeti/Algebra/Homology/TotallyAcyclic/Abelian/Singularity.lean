@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.FullyFaithful
 public import Mathlib.Algebra.Homology.DerivedCategory.ShortExact
-public import TauCeti.Algebra.Homology.DerivedCategory.Singularity
+public import TauCeti.Algebra.Homology.DerivedCategory.Perfect
 public import TauCeti.Algebra.Homology.TotallyAcyclic.Abelian.Frobenius
 public import TauCeti.CategoryTheory.Triangulated.VerdierLocalization
 
@@ -38,8 +38,6 @@ vanishing of `δₘ ≫ f` descend to `δ₁ ≫ f = 0`, which says that `f` fac
 
 ## Main results
 
-* `DerivedCategory.singleFunctor_hom_eq_zero_of_ext`: if `Extⁿ(X, Y) = 0`, there are no nonzero
-  morphisms from `X` in degree `n` to `Y` in degree zero.
 * `TauCeti.SingularityCategory.map_surjective_of_isGorensteinProjective`: for `G`
   Gorenstein-projective, every morphism `G ⟶ Y` of the singularity category comes from `C`.
 * `TauCeti.SingularityCategory.map_eq_zero_iff_of_isGorensteinProjective`: a morphism `G ⟶ Y` of
@@ -67,116 +65,6 @@ namespace DerivedCategory
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 
-/-- If `Extⁿ(X, Y) = 0`, there are no nonzero morphisms from `X` placed in degree `n` to `Y` placed
-in degree zero. -/
-lemma singleFunctor_hom_eq_zero_of_ext [HasExt.{w'} C] {X Y : C} {n : ℕ}
-    (h : ∀ e : Ext.{w'} X Y n, e = 0)
-    (f : (singleFunctor C n).obj X ⟶ (singleFunctor C 0).obj Y) : f = 0 := by
-  -- Shifting by `n` turns `f` into a morphism `X ⟶ Y⟦n⟧`, which is the image of an `Ext` class.
-  apply (shiftFunctor (DerivedCategory C) (n : ℤ)).map_injective
-  obtain ⟨e, he⟩ := Ext.homEquiv.surjective
-    (((singleFunctors C).shiftIso (n : ℤ) 0 n (add_zero _)).inv.app X ≫
-      (shiftFunctor (DerivedCategory C) (n : ℤ)).map f)
-  rw [h e, ← Ext.hom, Ext.zero_hom] at he
-  rw [Functor.map_zero, ← cancel_epi (((singleFunctors C).shiftIso (n : ℤ) 0 n
-    (add_zero _)).inv.app X), ← he, comp_zero]
-
-section ExtVanishing
-
-variable [HasExt.{w'} C]
-
-variable (C) in
-/-- The objects `K` of the derived category receiving no nonzero morphisms from `X` placed in
-degree `n`, for `n` large enough, uniformly in the objects `X` without higher extensions by
-projectives. -/
-private def homFromSingleVanishing : ObjectProperty (DerivedCategory C) :=
-  fun K ↦ ∃ n₀ : ℤ, ∀ n ≥ n₀, ∀ X : C, (∀ i : ℕ, (isProjective C).extLeftOrthogonal (i + 1) X) →
-    ∀ f : (singleFunctor C n).obj X ⟶ K, f = 0
-
-private instance : (homFromSingleVanishing C).IsClosedUnderIsomorphisms where
-  of_iso e := fun ⟨n₀, h⟩ ↦ ⟨n₀, fun n hn X hX f ↦ (cancel_mono e.inv).1 (by
-    rw [h n hn X hX (f ≫ e.inv), zero_comp])⟩
-
-private instance : (homFromSingleVanishing C).IsStableUnderRetracts where
-  of_retract r := fun ⟨n₀, h⟩ ↦ ⟨n₀, fun n hn X hX f ↦ by
-    rw [← Category.comp_id f, ← r.retract, ← Category.assoc, h n hn X hX (f ≫ r.i), zero_comp]⟩
-
-private instance : (homFromSingleVanishing C).ContainsZero where
-  exists_zero := ⟨0, isZero_zero _, 0, fun _ _ _ _ _ ↦ (isZero_zero _).eq_of_tgt _ _⟩
-
-private instance : (homFromSingleVanishing C).IsStableUnderShift ℤ where
-  isStableUnderShiftBy a := ⟨fun K ⟨n₀, h⟩ ↦ ⟨n₀ - a, fun n hn X hX f ↦ by
-    -- Transport `f : X[-n] ⟶ K⟦a⟧` to `X[-(n + a)] ⟶ K`.
-    apply (shiftFunctor (DerivedCategory C) (-a)).map_injective
-    have := h (n + a) (by lia) X hX
-      (((singleFunctors C).shiftIso (-a) (n + a) n (by lia)).inv.app X ≫
-        (shiftFunctor _ (-a)).map f ≫ (shiftFunctorCompIsoId _ a (-a) (by lia)).hom.app K)
-    rw [← cancel_epi (((singleFunctors C).shiftIso (-a) (n + a) n (by lia)).inv.app X),
-      ← cancel_mono ((shiftFunctorCompIsoId _ a (-a) (by lia)).hom.app K),
-      Functor.map_zero, comp_zero, zero_comp]
-    simpa using this⟩⟩
-
-private instance : (homFromSingleVanishing C).IsTriangulatedClosed₂ :=
-  .mk' fun T hT ⟨n₁, h₁⟩ ⟨n₃, h₃⟩ ↦ ⟨max n₁ n₃, fun n hn X hX f ↦ by
-    obtain ⟨g, rfl⟩ := Triangle.coyoneda_exact₂ T hT f (h₃ n (by lia) X hX _)
-    rw [h₁ n (by lia) X hX g, zero_comp]⟩
-
-private instance : (homFromSingleVanishing C).IsTriangulated where
-
-/-- A projective object in degree zero receives no nonzero morphisms from objects without higher
-extensions by projectives placed in positive degrees. -/
-private lemma homFromSingleVanishing_singleFunctor_obj {Q : C} [Projective Q] :
-    homFromSingleVanishing C ((singleFunctor C 0).obj Q) := by
-  refine ⟨1, fun n hn X hX f ↦ ?_⟩
-  obtain ⟨m, rfl⟩ : ∃ m : ℕ, n = (m + 1 : ℕ) := ⟨(n - 1).toNat, by lia⟩
-  exact singleFunctor_hom_eq_zero_of_ext (ObjectProperty.extLeftOrthogonal_iff.1 (hX m)
-    (inferInstance : Projective Q)) f
-
-/-- **Perfect objects receive no maps from high syzygies**: for a perfect object `K` of the
-bounded derived category there is `n₀` such that every morphism to `K` from an object without
-higher extensions by projectives, placed in a degree `n ≥ n₀`, vanishes. -/
-private lemma exists_hom_eq_zero_of_perfect {K : DerivedCategory.Bounded C}
-    (hK : TauCeti.DerivedCategory.Bounded.perfect C K) :
-    ∃ n₀ : ℤ, ∀ n ≥ n₀, ∀ X : C, (∀ i : ℕ, (isProjective C).extLeftOrthogonal (i + 1) X) →
-      ∀ f : (singleFunctor C n).obj X ⟶ DerivedCategory.Bounded.ι.obj K, f = 0 := by
-  have : (homFromSingleVanishing C).inverseImage DerivedCategory.Bounded.ι
-      |>.IsStableUnderRetracts :=
-    ⟨fun r h ↦ (homFromSingleVanishing C).prop_of_retract (r.map DerivedCategory.Bounded.ι) h⟩
-  have hle : TauCeti.DerivedCategory.Bounded.perfect C ≤
-      (homFromSingleVanishing C).inverseImage DerivedCategory.Bounded.ι := by
-    rw [TauCeti.DerivedCategory.Bounded.perfect_eq, ObjectProperty.triangEnvelope_le_iff]
-    intro Y hY
-    obtain ⟨Q, hQ, ⟨e⟩⟩ := (TauCeti.DerivedCategory.Bounded.projectiveSingle_iff C Y).1 hY
-    exact (homFromSingleVanishing C).prop_of_iso (DerivedCategory.Bounded.ι.mapIso e).symm
-      homFromSingleVanishing_singleFunctor_obj
-  exact hle _ hK
-
-omit [HasExt C] in
-/-- A projective object placed in a positive degree has no nonzero morphisms to an object placed
-in degree zero. -/
-private lemma singleFunctor_hom_eq_zero_of_projective {Q : C} [Projective Q] {n : ℤ} (hn : 0 < n)
-    {Y : C} (f : (singleFunctor C n).obj Q ⟶ (singleFunctor C 0).obj Y) : f = 0 := by
-  let := HasExt.standard C
-  obtain ⟨m, rfl⟩ : ∃ m : ℕ, n = (m + 1 : ℕ) := ⟨(n - 1).toNat, by lia⟩
-  exact singleFunctor_hom_eq_zero_of_ext (fun e ↦ Ext.eq_zero_of_projective e) f
-
-omit [HasExt C] in
-/-- A morphism of the bounded derived category whose image is the first morphism of a
-distinguished triangle with perfect third vertex has a perfect cone. -/
-private lemma perfect_trW_of_distinguished {A B Z : DerivedCategory.Bounded C} (f : A ⟶ B)
-    (g : DerivedCategory.Bounded.ι.obj B ⟶ DerivedCategory.Bounded.ι.obj Z)
-    (h : DerivedCategory.Bounded.ι.obj Z ⟶ (DerivedCategory.Bounded.ι.obj A)⟦(1 : ℤ)⟧)
-    (hT : Triangle.mk (DerivedCategory.Bounded.ι.map f) g h ∈ distTriang _)
-    (hZ : TauCeti.DerivedCategory.Bounded.perfect C Z) :
-    (TauCeti.DerivedCategory.Bounded.perfect C).trW f := by
-  obtain ⟨Z', g', h', hT'⟩ := distinguished_cocone_triangle f
-  let e := isoTriangleOfIso₁₂ _ _ (DerivedCategory.Bounded.ι.map_distinguished _ hT') hT
-    (Iso.refl _) (Iso.refl _) (by simp)
-  exact ObjectProperty.trW.mk _ hT' ((TauCeti.DerivedCategory.Bounded.perfect C).prop_of_iso
-    ((ObjectProperty.fullyFaithfulι _).preimageIso (Triangle.π₃.mapIso e)).symm hZ)
-
-end ExtVanishing
-
 section Cycles
 
 variable {P : CochainComplex C ℤ} (hP : P.IsTotallyAcyclicProjective)
@@ -199,6 +87,8 @@ private noncomputable abbrev cyclesSESTriangle (m m' : ℤ) (hm : m + 1 = m') :
 /-- The first vertex of `cyclesSESTriangle` is isomorphic to `Zᵐ'` placed in degree `m'`. -/
 private noncomputable def cyclesShiftIso (m m' : ℤ) (hm : m + 1 = m') :
     (cyclesSESTriangle hP m m' hm).obj₁ ≅ (singleFunctor C m').obj (P.cycles m') :=
+  -- The vertex is `(Q.obj ((single m).obj Zᵐ'))⟦-1⟧`, and `singleFunctor C m` is
+  -- `single m ⋙ Q` by definition (`DerivedCategory.singleFunctorIsoCompQ` is the identity).
   ((singleFunctors C).shiftIso (-1) m' m (by lia)).app (P.cycles m')
 
 /-- The distinguished triangle `Zᵐ' ⟶ Zᵐ ⟶ Pᵐ` of the derived category obtained from the short
@@ -226,7 +116,10 @@ private lemma cyclesTriangle_distinguished (m m' : ℤ) (hm : m + 1 = m') :
 
 /-- The second morphism of `cyclesTriangle` is the inclusion of the cycles. -/
 private lemma cyclesTriangle_mor₂ (m m' : ℤ) (hm : m + 1 = m') :
-    (cyclesTriangle hP m m' hm).mor₂ = (singleFunctor C m).map (P.iCycles m) := rfl
+    (cyclesTriangle hP m m' hm).mor₂ = (singleFunctor C m).map (P.iCycles m) :=
+  -- `singleFunctor C m` is `single m ⋙ Q` by definition (`singleFunctorIsoCompQ` is the identity),
+  -- so the image under `Q` of the inclusion of the cycles placed in degree `m` is this morphism.
+  rfl
 
 /-- **Extension along a cycle step**: for `m ≥ 0`, every morphism from `Zᵐ'` in degree `m'` to an
 object in degree zero factors through the first morphism of `cyclesTriangle`, since
@@ -240,8 +133,10 @@ private lemma exists_eq_cyclesTriangle_mor₁_comp (m m' : ℤ) (hm : m + 1 = m'
     ((singleFunctors C).shiftIso (-1) m' m (by lia)).app (P.X m)
   refine Triangle.yoneda_exact₂ _
     (inv_rot_of_distTriang _ (cyclesTriangle_distinguished hP m m' hm)) h ?_
+  -- `singleFunctor C n` is `single n ⋙ Q` by definition, so Mathlib's vanishing lemma applies.
   have h0 : e.inv ≫ (cyclesTriangle hP m m' hm).invRotate.mor₁ ≫ h = 0 :=
-    singleFunctor_hom_eq_zero_of_projective (by lia) _
+    from_singleFunctor_obj_eq_zero_of_projective (L := (CochainComplex.singleFunctor C 0).obj Y)
+      _ 0 (by lia)
   calc _ = e.hom ≫ e.inv ≫ (cyclesTriangle hP m m' hm).invRotate.mor₁ ≫ h :=
         (e.hom_inv_id_assoc _).symm
     _ = 0 := by rw [h0]; exact comp_zero
@@ -254,7 +149,9 @@ private lemma eq_zero_of_cyclesTriangle_mor₁_comp_eq_zero (m m' : ℤ) (hm : m
     (hh : (cyclesTriangle hP m m' hm).mor₁ ≫ h = 0) : h = 0 := by
   have := hP.projective m
   obtain ⟨k, rfl⟩ := Triangle.yoneda_exact₂ _ (cyclesTriangle_distinguished hP m m' hm) h hh
-  rw [singleFunctor_hom_eq_zero_of_projective hm₀ k]
+  -- `singleFunctor C m` is `single m ⋙ Q` by definition, so Mathlib's vanishing lemma applies.
+  rw [from_singleFunctor_obj_eq_zero_of_projective (L := (CochainComplex.singleFunctor C 0).obj Y)
+    k 0 hm₀]
   exact comp_zero
 
 /-- **The first cycle step**: a morphism from `Z⁰` to `Y` in degree zero which vanishes on the
@@ -266,20 +163,12 @@ private lemma exists_eq_iCycles_comp_of_cyclesTriangle_mor₁_comp_eq_zero {Y : 
   obtain ⟨k, rfl⟩ :=
     Triangle.yoneda_exact₂ _ (cyclesTriangle_distinguished hP 0 1 (zero_add 1)) h hh
   obtain ⟨k₀, rfl⟩ := (singleFunctor C 0).map_surjective k
-  exact ⟨k₀, by rw [Functor.map_comp, ← cyclesTriangle_mor₂ hP 0 1 (zero_add 1)]; rfl⟩
+  exact ⟨k₀, (congrArg (· ≫ (singleFunctor C 0).map k₀)
+    (cyclesTriangle_mor₂ hP 0 1 (zero_add 1))).trans ((singleFunctor C 0).map_comp _ _).symm⟩
 
 end Cycles
 
 section Approximation
-
-/-- A projective object placed in any degree is perfect. -/
-private lemma perfect_singleFunctor_obj_of_projective {Q : C} [Projective Q] (n : ℤ) :
-    TauCeti.DerivedCategory.Bounded.perfect C
-      ((TauCeti.DerivedCategory.Bounded.singleFunctor C n).obj Q) :=
-  (TauCeti.DerivedCategory.Bounded.perfect C).prop_of_iso
-    (((TauCeti.DerivedCategory.Bounded.singleFunctors C).shiftIso (-n) n 0 (by lia)).app Q)
-    ((TauCeti.DerivedCategory.Bounded.perfect C).le_shift (-n) _
-      (TauCeti.DerivedCategory.Bounded.perfect_singleFunctor_obj C inferInstance))
 
 variable (P : CochainComplex C ℤ) in
 /-- The cycles `Zᵏ` placed in degree `k`, in the bounded derived category. -/
@@ -302,9 +191,10 @@ include hP
 private lemma trW_cyclesHom (k : ℕ) :
     (TauCeti.DerivedCategory.Bounded.perfect C).trW (cyclesHom hP k) := by
   have := hP.projective k
-  exact perfect_trW_of_distinguished (Z := (TauCeti.DerivedCategory.Bounded.singleFunctor C k).obj
-    (P.X k)) (cyclesHom hP k) _ _ (cyclesTriangle_distinguished hP k _ (Nat.cast_succ k).symm)
-    (perfect_singleFunctor_obj_of_projective k)
+  exact TauCeti.DerivedCategory.Bounded.perfect_trW_of_distinguished
+    (Z := (TauCeti.DerivedCategory.Bounded.singleFunctor C k).obj (P.X k)) (cyclesHom hP k) _ _
+    (cyclesTriangle_distinguished hP k _ (Nat.cast_succ k).symm)
+    (TauCeti.DerivedCategory.Bounded.perfect_singleFunctor_obj C k inferInstance)
 
 private lemma trW_cyclesδ : ∀ k, (TauCeti.DerivedCategory.Bounded.perfect C).trW (cyclesδ hP k)
   | 0 => MorphismProperty.id_mem _ _
@@ -322,7 +212,7 @@ private lemma exists_cyclesδ_comp_eq_zero (K : DerivedCategory.Bounded C)
     (hK : TauCeti.DerivedCategory.Bounded.perfect C K) (a : cyclesObj P 0 ⟶ K) :
     ∃ k, cyclesδ hP k ≫ a = 0 := by
   let := HasExt.standard C
-  obtain ⟨n₀, hn₀⟩ := exists_hom_eq_zero_of_perfect hK
+  obtain ⟨n₀, hn₀⟩ := exists_singleHom_eq_zero_of_perfect hK
   refine ⟨n₀.toNat, DerivedCategory.Bounded.ι.map_injective ?_⟩
   rw [Functor.map_zero]
   exact hn₀ _ (by lia) _ (extLeftOrthogonal_cycles hP _) _
@@ -414,10 +304,7 @@ theorem map_surjective_of_isGorensteinProjective {G : C} (hG : isGorensteinProje
   obtain ⟨f, hf⟩ := map_surjective_cycles hP Y
     ((Q C).map ((DerivedCategory.Bounded.singleFunctor C 0).map e.hom) ≫ g)
   refine ⟨e.inv ≫ f, ?_⟩
-  dsimp only
-  rw [Functor.map_comp, Functor.map_comp, hf, ← Category.assoc, ← Functor.map_comp,
-    ← Functor.map_comp, e.inv_hom_id, CategoryTheory.Functor.map_id,
-    CategoryTheory.Functor.map_id, Category.id_comp]
+  simp [hf, ← Functor.map_comp_assoc]
 
 /-- **The kernel on a Gorenstein-projective object.** For `G` Gorenstein-projective and `Y` any
 object of an abelian category `C`, a morphism `G ⟶ Y` vanishes in the singularity category if and
@@ -443,15 +330,37 @@ variable (C : Type u) [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 
 /-- The functor from Gorenstein-projective objects to the singularity category, placing an
 object in degree zero. -/
-noncomputable abbrev toSingularityCategoryFunctor :
+@[expose] noncomputable def toSingularityCategoryFunctor :
     GorensteinProjective C ⥤ TauCeti.SingularityCategory C :=
   (isGorensteinProjective C).ι ⋙ DerivedCategory.Bounded.singleFunctor C 0 ⋙
     TauCeti.SingularityCategory.Q C
 
+instance : (toSingularityCategoryFunctor C).Additive := by
+  unfold toSingularityCategoryFunctor
+  infer_instance
+
+variable {C} in
+/-- The functor `toSingularityCategoryFunctor` places an object in degree zero. -/
+@[simp]
+theorem toSingularityCategoryFunctor_obj (X : GorensteinProjective C) :
+    (toSingularityCategoryFunctor C).obj X =
+      (TauCeti.SingularityCategory.Q C).obj
+        ((DerivedCategory.Bounded.singleFunctor C 0).obj X.obj) :=
+  (rfl)
+
+variable {C} in
+/-- The functor `toSingularityCategoryFunctor` places a morphism in degree zero. -/
+@[simp]
+theorem toSingularityCategoryFunctor_map {X Y : GorensteinProjective C} (f : X ⟶ Y) :
+    (toSingularityCategoryFunctor C).map f =
+      (TauCeti.SingularityCategory.Q C).map
+        ((DerivedCategory.Bounded.singleFunctor C 0).map f.hom) :=
+  (rfl)
+
 /-- **Chen's functor** from the stable category of Gorenstein-projective objects to the
 singularity category, induced by placing an object in degree zero. It is well defined because
 projective objects vanish in the singularity category. -/
-noncomputable abbrev toSingularityCategory :
+@[expose] noncomputable def toSingularityCategory :
     (exactStructure C).ProjectiveStableCategory ⥤ TauCeti.SingularityCategory C :=
   (exactStructure C).projectiveStableIdeal.lift (toSingularityCategoryFunctor C)
     fun X Y f hf ↦ by
@@ -463,23 +372,38 @@ noncomputable abbrev toSingularityCategory :
 /-- Chen's functor restricts to placing objects in degree zero along the quotient functor. -/
 theorem projectiveStableFunctor_comp_toSingularityCategory :
     (exactStructure C).projectiveStableFunctor ⋙ toSingularityCategory C =
-      toSingularityCategoryFunctor C :=
-  CategoryTheory.Quotient.lift_spec _ _ _
+      toSingularityCategoryFunctor C := by
+  unfold toSingularityCategory
+  exact CategoryTheory.Quotient.lift_spec _ _ _
+
+variable {C} in
+/-- Chen's functor sends the class of an object to that object placed in degree zero. -/
+@[simp]
+theorem toSingularityCategory_obj_projectiveStableFunctor_obj (X : GorensteinProjective C) :
+    (toSingularityCategory C).obj ((exactStructure C).projectiveStableFunctor.obj X) =
+      (TauCeti.SingularityCategory.Q C).obj
+        ((DerivedCategory.Bounded.singleFunctor C 0).obj X.obj) :=
+  (rfl)
 
 variable {C} in
 /-- Chen's functor sends the class of a morphism `f` of Gorenstein-projective objects to `f`
 placed in degree zero. -/
+@[simp]
 theorem toSingularityCategory_map_projectiveStableFunctor_map {X Y : GorensteinProjective C}
     (f : X ⟶ Y) :
     (toSingularityCategory C).map ((exactStructure C).projectiveStableFunctor.map f) =
       (TauCeti.SingularityCategory.Q C).map
-        ((DerivedCategory.Bounded.singleFunctor C 0).map f.hom) :=
-  CategoryTheory.Quotient.lift_map_functor_map _ _ _ _
+        ((DerivedCategory.Bounded.singleFunctor C 0).map f.hom) := by
+  unfold toSingularityCategory
+  exact CategoryTheory.Quotient.lift_map_functor_map _ _ _ _
 
 /-- **Chen's theorem**, fullness: every morphism of the singularity category between
 Gorenstein-projective objects comes from a morphism of `C`. -/
 instance : (toSingularityCategory C).Full where
   map_surjective {X Y} g := by
+    -- Every object of the stable category is the class of its underlying object, so `g` is a
+    -- morphism between objects placed in degree zero
+    -- (`toSingularityCategory_obj_projectiveStableFunctor_obj`).
     obtain ⟨f, hf⟩ := TauCeti.SingularityCategory.map_surjective_of_isGorensteinProjective
       X.as.property Y.as.obj (show (TauCeti.SingularityCategory.Q C).obj
         ((DerivedCategory.Bounded.singleFunctor C 0).obj X.as.obj) ⟶ _ from g)
@@ -497,7 +421,7 @@ instance : (toSingularityCategory C).Faithful where
     rw [← sub_eq_zero, ← Functor.map_sub, ExactStructure.projectiveStableFunctor_map_eq_zero_iff,
       exactStructure_isProjective_factorsThrough_iff,
       ← TauCeti.SingularityCategory.map_eq_zero_iff_of_isGorensteinProjective X.as.property]
-    have : (g₁ - g₂).hom = g₁.hom - g₂.hom := rfl
+    have : (g₁ - g₂).hom = g₁.hom - g₂.hom := (isGorensteinProjective C).ι.map_sub
     rw [this, Functor.map_sub, Functor.map_sub, h, sub_self]
 
 /-- **Chen's theorem**: the functor from the stable category of Gorenstein-projective objects of an

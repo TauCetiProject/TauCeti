@@ -37,6 +37,11 @@ consequences for Verdier quotients:
   triangle functor between the Verdier quotients by `P` and by `Q`
   (`CategoryTheory.LocalizerMorphism.isTriangulated_localizedFunctor`), compatible with the two
   localization functors up to natural isomorphism.
+* **Approximation.** Let `δᵢ : Xᵢ ⟶ X₀` be morphisms such that every morphism from `X₀` to an
+  object of `P` is killed by some `δᵢ`. Then every morphism `L X₀ ⟶ L Y` of the Verdier quotient
+  becomes, after precomposition with some `L δᵢ`, the image of a morphism `Xᵢ ⟶ Y`, and every
+  morphism `X₀ ⟶ Y` vanishing in the Verdier quotient is killed by some `δᵢ`. Both follow from
+  the calculus of fractions: the denominator of a fraction out of `X₀` has its cone in `P`.
 
 ## Main definitions
 
@@ -49,6 +54,9 @@ consequences for Verdier quotients:
   only if it kills `P`.
 * `CategoryTheory.ObjectProperty.TrWLocalization.isZero_obj_iff`: the kernel of the Verdier
   localization at a thick triangulated subcategory `P` is `P`.
+* `CategoryTheory.ObjectProperty.TrWLocalization.exists_map_comp_eq_map` and
+  `CategoryTheory.ObjectProperty.TrWLocalization.exists_comp_eq_zero_of_map_eq_zero`: morphisms
+  out of an object approximated by morphisms `δᵢ` as above, and their kernel.
 
 ## References
 
