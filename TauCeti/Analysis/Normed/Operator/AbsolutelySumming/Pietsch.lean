@@ -57,7 +57,9 @@ open scoped ENNReal CompactlySupported
 
 namespace ContinuousLinearMap
 
-variable {𝕜 E F : Type*} [RCLike 𝕜]
+section NormedField
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -85,8 +87,15 @@ theorem summingENorm_le_ofReal_of_norm_le_integral [MeasurableSpace (WeakDual �
   have hint (x : E) : Integrable (fun f : dualBall 𝕜 E ↦ ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal) ν :=
     by
       have h : Integrable (fun f ↦ WeakDual.evalRpow 1 p x f) ν :=
-        (WeakDual.evalRpow 1 p x).continuous.integrable_of_hasCompactSupport
-          (HasCompactSupport.of_compactSpace _)
+        Integrable.of_bound (WeakDual.evalRpow 1 p x).continuous.aestronglyMeasurable
+          (‖x‖ ^ p.toReal) (ae_of_all _ fun f ↦ by
+            have hf : ‖(f : WeakDual 𝕜 E) x‖ ≤ ‖x‖ := by
+              have := (WeakDual.toStrongDual (f : WeakDual 𝕜 E)).le_opNorm x
+              simpa using this.trans
+                (mul_le_mul_of_nonneg_right (norm_le_one_of_mem_dualBall f) (norm_nonneg x))
+            simpa only [WeakDual.evalRpow_apply, Real.norm_eq_abs,
+              abs_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _)] using
+                (Real.rpow_le_rpow (norm_nonneg _) hf ENNReal.toReal_nonneg))
       simpa only [WeakDual.evalRpow_apply] using h
   rw [summingENorm_le_ofReal_iff hC]
   intro n x
@@ -130,6 +139,15 @@ theorem summingENorm_le_ofReal_of_norm_le_integral [MeasurableSpace (WeakDual �
       Real.rpow_le_rpow (Finset.sum_nonneg fun _ _ ↦ by positivity) (by simpa using hsum)
         (by positivity)
     _ = C * W := by rw [one_div, Real.rpow_rpow_inv (mul_nonneg hC hW) hq.ne']
+
+end NormedField
+
+section RCLike
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- The summing inequality rules out a nonnegative combination of the functions
 `f ↦ ‖T x‖ ^ p - C ^ p * ‖f x‖ ^ p` that is bounded below on the dual ball by some `δ > 0`. -/
@@ -317,5 +335,7 @@ theorem summingENorm_le_ofReal_iff_exists_isProbabilityMeasure
           ‖T x‖ ≤ C * (∫ f, ‖(f : WeakDual 𝕜 E) x‖ ^ p.toReal ∂ν) ^ (1 / p.toReal) :=
   ⟨exists_isProbabilityMeasure_of_summingENorm_le_ofReal hp hC,
     fun ⟨ν, _, _, hν⟩ ↦ summingENorm_le_ofReal_of_norm_le_integral hp hC ν hν⟩
+
+end RCLike
 
 end ContinuousLinearMap

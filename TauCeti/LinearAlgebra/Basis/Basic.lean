@@ -18,7 +18,8 @@ support rather than an explicit `Finsupp.single`.
 
 The coordinate and linear-map lemmas hold over a semiring of scalars. For a finite integer basis of
 an additive group, we also express an additive map in coordinates. A ring homomorphism's values on
-an integer basis cannot all vanish when its target is nontrivial.
+an integer basis cannot all vanish when its target is nontrivial. Over a ring in which `2 ≠ 0`, no
+basis vector is the negative of a basis vector.
 
 ## Main results
 
@@ -37,6 +38,8 @@ an integer basis cannot all vanish when its target is nontrivial.
   values on a finite integer basis, weighted by the coordinates.
 * `Module.Basis.ringHom_comp_ne_zero`: the values of a ring homomorphism to a nontrivial ring on
   an integer basis do not all vanish.
+* `Module.Basis.ne_neg`: over a ring in which `2 ≠ 0`, no basis vector is the negative of a basis
+  vector.
 -/
 
 public section
@@ -133,5 +136,27 @@ theorem ringHom_comp_ne_zero [Nontrivial S] (ψ : R →+* S) : ⇑ψ ∘ ⇑b �
   simpa using LinearMap.congr_fun this 1
 
 end RingHom
+
+section Ring
+
+variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+
+/-- **No basis vector is the negative of a basis vector** over a ring in which `2 ≠ 0`. The
+hypothesis is needed: when `2 = 0`, every vector is its own negative. -/
+theorem ne_neg (b : Basis ι R M) (h2 : (2 : R) ≠ 0) (i j : ι) : b i ≠ -b j := by
+  intro h
+  have h' := congrArg (fun x ↦ b.repr x i) h
+  simp only [repr_self, map_neg, Finsupp.coe_neg, Pi.neg_apply, Finsupp.single_eq_same] at h'
+  by_cases hji : j = i
+  · subst hji
+    rw [Finsupp.single_eq_same] at h'
+    refine h2 ?_
+    rw [← one_add_one_eq_two]
+    nth_rw 1 [h']
+    exact neg_add_cancel 1
+  · rw [Finsupp.single_eq_of_ne (Ne.symm hji), neg_zero] at h'
+    exact h2 (by rw [← one_add_one_eq_two, h', add_zero])
+
+end Ring
 
 end Module.Basis

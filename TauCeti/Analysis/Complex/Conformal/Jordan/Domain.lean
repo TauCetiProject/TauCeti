@@ -81,16 +81,6 @@ every theorem added in layers L0–L6, the results below are stated for maps of 
 with the circle that models it, is in `TauCeti/Topology/JordanCurve/Basic.lean`, where the
 predicate and its transfer lemmas are stated for an arbitrary topological space.
 
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself, and the
-pinned Mathlib has no Jordan-curve vocabulary at all. So this file is new Lean formalization rather
-than a temporary shim. It consumes, through `Conformal/BoundaryCorrespondence.lean`, the L0–L3 shim
-`TauCeti.isOpen_image_of_differentiableOn_of_injOn`, to be refactored onto Mathlib once the
-upstream work lands.
-
 ## References
 
 * C. Carathéodory, *Über die gegenseitige Beziehung der Ränder bei der konformen Abbildung*,

@@ -9,10 +9,13 @@ module
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.Geometry.Manifold.Algebra.Structures
+public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.Geometry.Manifold.MFDeriv.Det
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.LinearAlgebra.Matrix.Trace.NonsingularInverse
 
 /-!
 # Chart Gram matrices of a Riemannian metric
@@ -47,6 +50,10 @@ API replace them.
 * `Riemannian.Tensor.contMDiffOn_chartGramMatrix_entry`: smoothness of Gram-matrix entries.
 * `Riemannian.Tensor.chartInvGramMatrix`: the inverse Gram matrix.
 * `Riemannian.Tensor.contMDiffOn_chartInvGramMatrix_entry`: smoothness of inverse entries.
+* `Riemannian.Tensor.mvfderiv_chartGramMatrix_apply`,
+  `Riemannian.Tensor.mvfderiv_det_chartGramMatrix`: the derivatives of the Gram matrix and of its
+  determinant for a metric-compatible connection, `dG = Pᵀ G + G P` and
+  `d (det G) = 2 det G trace P`, where `P` is the matrix of the connection form in the chart frame.
 
 ## References
 
@@ -313,6 +320,72 @@ theorem contMDiffOn_chartInvGramMatrix_entry
   · exact contMDiffOn_adjugate_chartGramMatrix_entry (I := I) α i j
 
 end Smooth
+
+section Derivative
+
+variable [IsManifold I 2 M] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+
+/-- **The derivative of the chart metric.** For a connection `∇` compatible with the metric, the
+derivative along `v` of the metric coefficient `gᵢⱼ = ⟪eᵢ, eⱼ⟫` in the chart frame at `α` is
+`⟪∇ᵥ eᵢ, eⱼ⟫ + ⟪eᵢ, ∇ᵥ eⱼ⟫`. -/
+theorem mvfderiv_chartGramMatrix_apply
+    {cov : CovariantDerivative I E (TangentSpace I : M → Type _)}
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    (α : M) {y : M} (hy : y ∈ (trivializationAt E (TangentSpace I) α).baseSet)
+    (v : TangentSpace I y) (i j : Fin (Module.finrank ℝ E)) :
+    mvfderiv I (fun z ↦ chartGramMatrix (I := I) α z i j) y v =
+      inner ℝ (cov (chartLocalFrame (I := I) α i) y v) (chartLocalFrame (I := I) α j y) +
+        inner ℝ (chartLocalFrame (I := I) α i y) (cov (chartLocalFrame (I := I) α j) y v) := by
+  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
+  have hframe (k : Fin (Module.finrank ℝ E)) : MDiffAt (T% (chartLocalFrame (I := I) α k)) y :=
+    ((contMDiffOn_chartLocalFrame (n := 1) α k).contMDiffAt
+      ((trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds hy)).mdifferentiableAt
+        one_ne_zero
+  have := hcov.mvfderiv_inner_eq (extend E v) (hframe i) (hframe j)
+  simpa only [extend_apply_self, chartGramMatrix_apply] using this
+
+/-- **The derivative of the Gram determinant.** For a connection `∇` compatible with the metric,
+the derivative along `v` of the determinant of the chart Gram matrix at `α` is `2 det G` times the
+trace `∑ₖ (∇ᵥ eₖ)ᵏ` of the connection form in the chart frame. -/
+theorem mvfderiv_det_chartGramMatrix
+    {cov : CovariantDerivative I E (TangentSpace I : M → Type _)}
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    (α : M) {y : M} (hy : y ∈ (trivializationAt E (TangentSpace I) α).baseSet)
+    (v : TangentSpace I y) :
+    mvfderiv I (fun z ↦ (chartGramMatrix (I := I) α z).det) y v =
+      2 * (chartGramMatrix (I := I) α y).det *
+        ∑ k, (trivializationAt E (TangentSpace I) α).localFrameCoeff I (Module.finBasis ℝ E) k y
+          (cov (chartLocalFrame (I := I) α k) y v) := by
+  let e := trivializationAt E (TangentSpace I) α
+  let b := Module.finBasis ℝ E
+  let G := chartGramMatrix (I := I) α y
+  -- The matrix `P` of the connection form along `v`: `∇ᵥ eᵢ = ∑ₖ Pₖᵢ eₖ`.
+  let P : Matrix (Fin (Module.finrank ℝ E)) (Fin (Module.finrank ℝ E)) ℝ :=
+    Matrix.of fun k i ↦ e.localFrameCoeff I b k y (cov (chartLocalFrame (I := I) α i) y v)
+  have hexp (i : Fin (Module.finrank ℝ E)) :
+      cov (chartLocalFrame (I := I) α i) y v = ∑ k, P k i • chartLocalFrame (I := I) α k y := by
+    simpa [P, chartLocalFrame_def] using
+      e.eq_sum_localFrameCoeff_smul (I := I) (b := b)
+        (s := fun _ ↦ cov (chartLocalFrame (I := I) α i) y v) hy
+  -- Metric compatibility says `dG = Pᵀ G + G P`.
+  have hdG : (Matrix.of fun i j ↦ mvfderiv I (fun z ↦ chartGramMatrix (I := I) α z i j) y v) =
+      Pᵀ * G + G * P := by
+    ext i j
+    rw [Matrix.of_apply, mvfderiv_chartGramMatrix_apply hcov α hy v i j, hexp i, hexp j,
+      sum_inner, inner_sum]
+    simp [Matrix.mul_apply, G, inner_smul_left, inner_smul_right, mul_comm]
+  have hGdet : IsUnit G.det := (chartGramMatrix_det_pos α hy).ne'.isUnit
+  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
+  have hentry (i j : Fin (Module.finrank ℝ E)) :
+      MDifferentiableAt I 𝓘(ℝ) (fun z ↦ chartGramMatrix (I := I) α z i j) y :=
+    ((contMDiffOn_chartGramMatrix_entry (n := 1) α i j).contMDiffAt
+      (e.open_baseSet.mem_nhds hy)).mdifferentiableAt one_ne_zero
+  -- Jacobi's formula: `d (det G) = det G * trace (G⁻¹ (Pᵀ G + G P)) = 2 det G * trace P`.
+  rw [TauCeti.mvfderiv_det_apply hentry hGdet, hdG,
+    Matrix.trace_nonsing_inv_mul_transpose_mul_add_mul hGdet]
+  simp [P, Matrix.trace, e, b, mul_assoc, mul_left_comm]
+
+end Derivative
 
 end Tensor
 end Riemannian

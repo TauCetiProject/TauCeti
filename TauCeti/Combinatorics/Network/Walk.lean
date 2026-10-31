@@ -870,6 +870,34 @@ theorem ReachableAvoiding.trans (h : ReachableAvoiding Q X s t) (h' : ReachableA
   rw [ArrowWalk.vertices, @Quiver.Path.vertices_comp V ⟨Q⟩, List.mem_append] at hv
   exact hv.elim (fun hv ↦ hp v (List.mem_of_mem_dropLast hv)) (hp' v)
 
+/-- A reachable vertex stays reachable along a further arrow to a vertex outside `X`. -/
+theorem ReachableAvoiding.tail (h : ReachableAvoiding Q X s t) (e : Q t x) (hx : x ∉ X) :
+    ReachableAvoiding Q X s x := by
+  obtain ⟨p, hp⟩ := h
+  refine ⟨p.cons e, fun v hv ↦ ?_⟩
+  rw [ArrowWalk.vertices_cons, List.concat_eq_append, List.mem_append, List.mem_singleton] at hv
+  rcases hv with hv | rfl
+  exacts [hp v hv, hx]
+
+/-- A vertex set that no arrow between vertices outside `X` leaves contains every vertex reachable
+avoiding `X` from one of its members. -/
+theorem ReachableAvoiding.mem_of_mem {C : Set V} (h : ReachableAvoiding Q X s t) (hs : s ∈ C)
+    (hC : ∀ ⦃v w : V⦄, Q v w → v ∈ C → v ∉ X → w ∉ X → w ∈ C) : t ∈ C := by
+  obtain ⟨p, hp⟩ := h
+  induction p with
+  | nil => exact hs
+  | @cons y z p e ih =>
+    have hp' : ∀ v ∈ ArrowWalk.vertices (Q := Q) p, v ∉ X := fun v hv ↦
+      hp v (by simp [ArrowWalk.vertices, Quiver.Path.vertices_cons, hv])
+    exact hC e (ih hp') (hp' y (@Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p))
+      (hp z (by simp [ArrowWalk.vertices, Quiver.Path.vertices_cons]))
+
+/-- Deleting arrows with an endpoint in `X` does not change reachability avoiding `X`. -/
+theorem ReachableAvoiding.withoutHom {F : Set (Σ x y, Q x y)} (h : ReachableAvoiding Q X s t)
+    (hF : ∀ a ∈ F, a.1 ∈ X ∨ a.2.1 ∈ X) : ReachableAvoiding (WithoutHom F) X s t :=
+  h.mem_of_mem (C := {v | ReachableAvoiding (WithoutHom F) X s v}) (.refl h.source_notMem)
+    fun _ _ e hv hvX hwX ↦ hv.tail ⟨e, fun he ↦ (hF _ he).elim hvX hwX⟩ hwX
+
 /-- Avoiding fewer vertices preserves reachability. -/
 theorem ReachableAvoiding.mono (hXY : X ⊆ Y) (h : ReachableAvoiding Q Y s t) :
     ReachableAvoiding Q X s t :=
@@ -904,6 +932,16 @@ theorem ArrowWalk.InternallyDisjoint.symm (h : p.InternallyDisjoint q) : q.Inter
 
 theorem ArrowWalk.internallyDisjoint_comm : p.InternallyDisjoint q ↔ q.InternallyDisjoint p :=
   ⟨.symm, .symm⟩
+
+/-- A family of pairwise internally disjoint walks from `s` to `t`, each visiting a vertex other
+than `s` and `t`, has distinct members: such a vertex would be shared by two copies of a walk. -/
+theorem injective_of_pairwise_internallyDisjoint {ι : Type*} {P : ι → ArrowWalk Q s t}
+    (hP : Pairwise fun i j ↦ (P i).InternallyDisjoint (P j))
+    (h : ∀ i, ∃ v ∈ (P i).vertices, v ≠ s ∧ v ≠ t) : Function.Injective P := by
+  intro i j hij
+  by_contra hne
+  obtain ⟨v, hv, hvs, hvt⟩ := h i
+  exact (hP hne v hv (hij ▸ hv)).elim hvs hvt
 
 end InternallyDisjoint
 

@@ -16,7 +16,7 @@ import TauCeti.Algebra.TensorProduct.MapLinear
 Let `G = Spec H` be an affine group scheme over a commutative ring `R` and let `π : H →ₐc[R] R[X]`
 present a homomorphism `D(X) → G` from the diagonalizable group of a commutative group `X`. This
 file proves that the centralizer `Z_G(D(X))` is formally smooth whenever `G` is, and hence smooth
-when `G` is a smooth affine group of finite type over a Noetherian ring, for example a field.
+when `G` is a smooth affine group of finite type, over any base ring.
 
 The proof identifies the centralizer with a fixed-point subscheme. The group `D(X)` acts on `G` by
 conjugation, `(g, t) ↦ π(t) g π(t)⁻¹`, which makes `H` a comodule algebra over `R[X]`
@@ -42,8 +42,7 @@ to the centralizer of the kernel of a root, and recovers smoothness of the dynam
 * `BialgHom.formallySmooth_quotient_centralizerHopfIdeal`: **the centralizer of a diagonalizable
   subgroup of a formally smooth affine group is formally smooth.**
 * `BialgHom.smoothCommHopfAlgProperty_quotient_centralizerHopfIdeal`: **the centralizer of a
-  diagonalizable subgroup of a smooth affine group of finite type over a Noetherian ring is
-  smooth.**
+  diagonalizable subgroup of a smooth affine group of finite type is smooth.**
 
 ## References
 
@@ -284,16 +283,18 @@ instance formallySmooth_quotient_centralizerHopfIdeal [Algebra.FormallySmooth R 
 
 section FiniteType
 
-variable [IsNoetherianRing R] {H : FiniteTypeCommHopfAlgCat.{u, v} R}
+variable {H : FiniteTypeCommHopfAlgCat.{u, v} R}
 
-/-- **The centralizer of a diagonalizable subgroup of a smooth affine group of finite type over a
-Noetherian ring is smooth.** -/
+/-- **The centralizer of a diagonalizable subgroup of a smooth affine group of finite type is
+smooth**, over any base ring. -/
 theorem smoothCommHopfAlgProperty_quotient_centralizerHopfIdeal [Algebra.Smooth R H]
     (π : H →ₐc[R] MonoidAlgebra R X) :
     smoothCommHopfAlgProperty R
       (FiniteTypeCommHopfAlgCat.quotient H (centralizerHopfIdeal π)).obj := by
   rw [smoothCommHopfAlgProperty_iff]
-  exact ⟨inferInstance, Algebra.FinitePresentation.of_finiteType.mp inferInstance⟩
+  -- The centralizer ideal is finitely generated, so its quotient of the finitely presented
+  -- coordinate ring is finitely presented.
+  exact ⟨inferInstance, Algebra.FinitePresentation.quotient (centralizerHopfIdeal_toIdeal_fg π)⟩
 
 end FiniteType
 
