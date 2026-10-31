@@ -20,6 +20,11 @@ analytic there.  For an a.e.-measurable `X`, `complexMGF X μ` on the imaginary 
 characteristic function of the law of `X`, so this is the standard route from a moment-generating
 function to a characteristic function.
 
+For almost surely nonnegative variables under a finite measure,
+`ProbabilityTheory.continuousOn_complexMGF_of_nonneg` gives continuity on the closed left
+half-plane. This also covers the imaginary-axis boundary when positive exponential moments
+do not exist.
+
 `TauCeti.eqOn_complexMGF_of_eqOn_mgf` packages that continuation step, and
 `MeasureTheory.charFun_eq_complexMGF_inner` supplies its vector-valued end point: on a type
 carrying a real-valued pairing `⟪·, ·⟫`, the characteristic function at `t` is the value at
@@ -60,6 +65,28 @@ public section
 
 open Complex Filter MeasureTheory ProbabilityTheory Set
 open scoped Topology
+
+namespace ProbabilityTheory
+
+/-- For an almost surely nonnegative random variable under a finite measure, the complex
+moment-generating function is continuous on the closed left half-plane, including its
+characteristic-function boundary. -/
+theorem continuousOn_complexMGF_of_nonneg {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsFiniteMeasure μ] {X : Ω → ℝ} (hX : AEMeasurable X μ)
+    (hpos : ∀ᵐ ω ∂μ, 0 ≤ X ω) :
+    ContinuousOn (complexMGF X μ) {z : ℂ | z.re ≤ 0} := by
+  apply continuousOn_of_dominated (bound := fun _ ↦ (1 : ℝ))
+  · intro z _
+    exact (by fun_prop : Measurable fun x : ℝ ↦ cexp (z * x)).comp_aemeasurable hX
+      |>.aestronglyMeasurable
+  · intro z hz
+    filter_upwards [hpos] with ω hω
+    rw [Complex.norm_exp]
+    exact Real.exp_le_one_iff.mpr (by simpa using mul_nonpos_of_nonpos_of_nonneg hz hω)
+  · exact integrable_const 1
+  · exact ae_of_all _ fun _ ↦ (by fun_prop : Continuous fun z : ℂ ↦ cexp (z * X _)).continuousOn
+
+end ProbabilityTheory
 
 namespace TauCeti
 
