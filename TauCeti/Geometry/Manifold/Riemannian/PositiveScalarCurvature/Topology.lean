@@ -88,12 +88,12 @@ theorem continuous_scalarCurvature_chartC2 :
   have hz₀ := mem_extChartAt_target (I := I) y₀
   -- Each entry of a chart derivative of order at most two, evaluated on basis vectors, varies
   -- continuously.
-  have hJ (n : ℕ) (hn : n < 3) (v : Fin n → E) (i j : Fin (Module.finrank ℝ E)) :
+  have hJ (n : ℕ) (hn : (n : ℕ∞) ≤ 2) (v : Fin n → E) (i j : Fin (Module.finrank ℝ E)) :
       ContinuousAt (fun q : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) × E ↦
         iteratedFDeriv ℝ n (q.1.toNondegenerateMetric.chartMetric y₀) q.2 v (b i) (b j))
         (g₀, extChartAt I y₀ y₀) :=
     (((continuous_eval_const v).continuousAt.comp
-      (continuousAt_iteratedFDeriv_chartMetric y₀ ⟨n, hn⟩ g₀ hz₀)).clm_apply
+      (continuousAt_iteratedFDeriv_chartMetric 2 y₀ hn g₀ hz₀)).clm_apply
         continuousAt_const).clm_apply continuousAt_const
   -- Near `(g₀, extChartAt I y₀ y₀)` the chart point stays in the open chart target, where each
   -- chart metric is smooth.
@@ -160,7 +160,7 @@ theorem continuous_scalarCurvature_chartCInfty :
     Continuous (fun q : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) × M ↦
       q.1.scalarCurvature q.2) :=
   -- The product topology with the finer chart C∞ factor is finer.
-  continuous_le_dom (inf_le_inf_right _ (induced_mono chartCInftyTopology_le_chartC2Topology))
+  continuous_le_dom (inf_le_inf_right _ (induced_mono (antitone_chartCkTopology le_top)))
     continuous_scalarCurvature_chartC2
 
 /-- **Positive scalar curvature is C∞-open.** On a compact manifold without boundary, the smooth
@@ -168,7 +168,7 @@ Riemannian metrics of positive scalar curvature form an open set in the chart C�
 theorem isOpen_setOf_hasPositiveScalarCurvature_chartCInfty [CompactSpace M] :
     IsOpen {g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) |
       g.HasPositiveScalarCurvature} :=
-  isOpen_setOf_hasPositiveScalarCurvature_chartC2.mono chartCInftyTopology_le_chartC2Topology
+  isOpen_setOf_hasPositiveScalarCurvature_chartC2.mono (antitone_chartCkTopology le_top)
 
 end ChartCInfty
 
@@ -200,6 +200,6 @@ theorem IsCompact.exists_pos_forall_le_scalarCurvature_chartCInfty [CompactSpace
   -- passed explicitly, since instance search would supply the chart C∞ topology to both.
   have hK₂ := @IsCompact.image _ _ ContMDiffRiemannianMetric.chartCInftyTopology
     ContMDiffRiemannianMetric.chartC2Topology K id hK
-    (continuous_id_of_le ContMDiffRiemannianMetric.chartCInftyTopology_le_chartC2Topology)
+    (continuous_id_of_le (ContMDiffRiemannianMetric.antitone_chartCkTopology le_top))
   rw [image_id] at hK₂
   exact hK₂.exists_pos_forall_le_scalarCurvature_chartC2 hpos
