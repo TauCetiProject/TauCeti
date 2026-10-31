@@ -455,8 +455,7 @@ theorem subst_log_exp : PowerSeries.subst F.log F.exp = PowerSeries.X :=
 `Q = exp_F`. -/
 theorem eq_exp_of_subst_log_eq_X {Q : PowerSeries R} (hQ : PowerSeries.HasSubst Q)
     (h : PowerSeries.subst Q F.log = PowerSeries.X) : Q = F.exp := by
-  rw [← PowerSeries.subst_X (R := R) hQ, ← F.subst_log_exp, PowerSeries.subst_comp_subst_apply
-    (.of_constantCoeff_zero' F.constantCoeff_log) hQ, h, PowerSeries.X_subst]
+  simpa only [exp] using F.log.eq_substInvOfIsUnit_of_subst_eq_X F.constantCoeff_log (by simp) hQ h
 
 /-- **The logarithm commutes with base change**: applying a ring homomorphism `f : R →+* S` of
 `ℚ`-algebras to the coefficients of `log_F` gives the logarithm of `F.map f`. -/
