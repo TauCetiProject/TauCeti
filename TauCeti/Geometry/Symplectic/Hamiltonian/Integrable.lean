@@ -284,10 +284,7 @@ theorem comp_isLocalDiffeomorph [Nonempty M] (h : σ₂.IsIntegrableSystem G)
   poissonBracket_eq_zero i j x := by
     have hinv := hφ.isInvertible_mfderiv (by simp)
     -- `σ = φ^* σ₂` is nondegenerate, since `φ` has invertible differentials.
-    have hσ : σ.IsNondegenerate := hφσ ▸
-      (IsNondegenerate.isNondegenerate_mpullback_iff (hσ := hσ₂) hφ.contMDiff).2
-        ⟨IsNondegenerate.hasSymplecticTangentImages_of_surjective fun y ↦ (hinv y).surjective,
-          fun y ↦ (hinv y).injective⟩
+    have hσ : σ.IsNondegenerate := hφσ ▸ hσ₂.isNondegenerate_mpullback_of_isLocalDiffeomorph hφ
     have hG (l : ι) : MDifferentiableAt I₂ 𝓘(ℝ) (G · l) (φ x) :=
       (((ContinuousLinearMap.proj l : (ι → ℝ) →L[ℝ] ℝ).contMDiff.comp h.contMDiff)
         (φ x)).mdifferentiableAt (by simp)
