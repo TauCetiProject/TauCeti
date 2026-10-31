@@ -49,8 +49,10 @@ uses `C := ModuleCat ℤ`, `k := ℤ`, and `R = M = ModuleCat.of ℤ ℤ`.
 * `TauCeti.thomPair`: the Thom pair `(E, E₀)`.
 * `TauCeti.thomPairOver`: the Thom pair `(E|_W, E₀|_W)` of the restriction to a subset `W` of the
   base; over the whole base it is the Thom pair `(E, E₀)` (`TauCeti.thomPairOverUnivIso`).
-* `TauCeti.fiberThomPairMap`: the inclusion of the fibre pair `(E_b, E_b ∖ {0})` into the Thom
-  pair.
+* `TauCeti.thomPairOverMap`: the restriction map `(E|_W, E₀|_W) ⟶ (E|_{W'}, E₀|_{W'})` for
+  `W ⊆ W'`.
+* `TauCeti.fiberThomPairMap`, `TauCeti.fiberThomPairOverMap`: the inclusions of the fibre pair
+  `(E_b, E_b ∖ {0})` into the Thom pair and into the Thom pair over a set containing `b`.
 * `TauCeti.IsThomClass`: a relative class restricting to a generator on every fibre.
 * `TauCeti.eulerClass`: the Euler class `Hⁿ(E, E₀) ⟶ Hⁿ(B)`.
 
@@ -148,6 +150,27 @@ theorem thomPairOverUnivIso_inv_snd_apply (v : zeroSectionCompl F E) :
   Subtype.ext (congrArg Subtype.val ((TopPair.Hom.w_apply (thomPairOverUnivIso F E).inv v).trans
     (thomPairOverUnivIso_inv_fst_apply F E v.1)) :)
 
+/-- For `W ⊆ W'`, the map of Thom pairs `(E|_W, E₀|_W) ⟶ (E|_{W'}, E₀|_{W'})` induced by the
+inclusion. -/
+def thomPairOverMap {W W' : Set B} (h : W ⊆ W') : thomPairOver F E W ⟶ thomPairOver F E W' :=
+  TopPair.ofHom (TopCat.ofHom (ContinuousMap.inclusion (preimage_mono h)))
+    (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_inter_left _ (preimage_mono h))))
+    (by ext; rfl)
+
+@[simp]
+theorem thomPairOverMap_fst_apply {W W' : Set B} (h : W ⊆ W') (v : π F E ⁻¹' W) :
+    TopPair.Hom.fst (thomPairOverMap F E h) v = ⟨v.1, h v.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem thomPairOverMap_self {W : Set B} : thomPairOverMap F E (subset_refl W) = 𝟙 _ :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
+
+@[reassoc (attr := simp)]
+theorem thomPairOverMap_comp_thomPairOverMap {W W' W'' : Set B} (h : W ⊆ W') (h' : W' ⊆ W'') :
+    thomPairOverMap F E h ≫ thomPairOverMap F E h' = thomPairOverMap F E (h.trans h') :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
+
 end Pair
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C}
@@ -170,6 +193,37 @@ theorem fiberThomPairMap_fst_apply (b : B) (x : E b) :
     TopPair.Hom.fst (fiberThomPairMap F E b) x = TotalSpace.mk b x := by
   unfold fiberThomPairMap
   exact TopPair.ofSubsetMap_fst_apply _ _ _
+
+/-- The inclusion `(E_b, E_b ∖ {0}) ⟶ (E|_W, E₀|_W)` of the fibre over a point `b ∈ W` into the
+Thom pair of the restriction to `W`. -/
+def fiberThomPairOverMap {W : Set B} {b : B} (hb : b ∈ W) :
+    TopPair.ofSubset (X := TopCat.of (E b)) ({0}ᶜ : Set (E b)) ⟶ thomPairOver F E W :=
+  TopPair.ofHom
+    (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk b x, hb⟩,
+      (FiberBundle.continuous_totalSpaceMk F E b).subtype_mk _⟩)
+    (TopCat.ofHom ⟨fun x ↦ ⟨TotalSpace.mk b x.1, hb, mem_zeroSectionCompl.2 x.2⟩,
+      ((FiberBundle.continuous_totalSpaceMk F E b).comp continuous_subtype_val).subtype_mk _⟩)
+    (by ext; rfl)
+
+@[simp]
+theorem fiberThomPairOverMap_fst_apply {W : Set B} {b : B} (hb : b ∈ W) (x : E b) :
+    TopPair.Hom.fst (fiberThomPairOverMap F E hb) x = ⟨TotalSpace.mk b x, hb⟩ :=
+  (rfl)
+
+/-- The fibre inclusions commute with the restriction maps of Thom pairs. -/
+@[reassoc (attr := simp)]
+theorem fiberThomPairOverMap_comp_thomPairOverMap {W W' : Set B} (h : W ⊆ W') {b : B}
+    (hb : b ∈ W) :
+    fiberThomPairOverMap F E hb ≫ thomPairOverMap F E h = fiberThomPairOverMap F E (h hb) :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun _ ↦ rfl)
+
+/-- Over the whole base, the fibre inclusion into `(E|_B, E₀|_B)` is the fibre inclusion into the
+Thom pair `(E, E₀)`. -/
+@[reassoc (attr := simp)]
+theorem fiberThomPairOverMap_comp_thomPairOverUnivIso_hom (b : B) :
+    fiberThomPairOverMap F E (mem_univ b) ≫ (thomPairOverUnivIso F E).hom =
+      fiberThomPairMap F E b :=
+  TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦ (fiberThomPairMap_fst_apply F E b x).symm)
 
 variable [NormedAddCommGroup F] [NormedSpace ℝ F]
 
