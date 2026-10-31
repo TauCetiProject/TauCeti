@@ -8,8 +8,7 @@ module
 public import Mathlib.Topology.Connected.Basic
 public import TauCeti.Geometry.RealAlgebraic.Nash.Basic
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
-import Mathlib.Analysis.Analytic.Polynomial
-import Mathlib.Analysis.Analytic.Uniqueness
+import TauCeti.Analysis.Analytic.Polynomial
 import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Connected
 
 /-!
@@ -21,10 +20,9 @@ function which is a Nash germ at every point of a semialgebraic set satisfies on
 relation on the whole set. Such a global relation is where the classical proof that a Nash
 function on an open semialgebraic set has a semialgebraic graph begins.
 
-* `AnalyticOnNhd.eval_map_eval_eq_zero_of_isPreconnected`: by analytic continuation, a relation
-  satisfied near one point of a preconnected set on which `f` is analytic holds on the whole set.
 * `IsPreconnected.exists_ne_zero_polynomial_relation_of_isNashAt`: a function that is a Nash
-  germ at every point of a preconnected set satisfies a single nonzero relation on that set.
+  germ at every point of a preconnected set satisfies a single nonzero relation on that set, by
+  analytic continuation (`AnalyticOnNhd.eval_map_eval_eq_zero_of_isPreconnected`).
 * `Set.Finite.exists_ne_zero_polynomial_relation_of_isNashAt_of_sUnion`: the same on a union of
   finitely many preconnected sets, with the product of the relations of the pieces.
 * `TauCeti.IsSemialgebraic.exists_ne_zero_polynomial_relation_of_isNashAt`: the same on a
@@ -42,31 +40,6 @@ of it.
 public section
 
 open Filter Polynomial Set Topology
-
-section Analytic
-
-variable {𝕜 σ : Type*} [NontriviallyNormedField 𝕜] [Fintype σ] {f : (σ → 𝕜) → 𝕜}
-  {s : Set (σ → 𝕜)}
-
-/-- Substituting an analytic function into a polynomial with polynomial coefficients gives an
-analytic function. -/
-theorem AnalyticOnNhd.eval_map_eval (hf : AnalyticOnNhd 𝕜 f s) (P : (MvPolynomial σ 𝕜)[X]) :
-    AnalyticOnNhd 𝕜 (fun y ↦ (P.map (MvPolynomial.eval y)).eval (f y)) s := by
-  have hcoeff (p : MvPolynomial σ 𝕜) : AnalyticOnNhd 𝕜 (fun y ↦ MvPolynomial.eval y p) s :=
-    (AnalyticOnNhd.eval_continuousLinearMap (.id 𝕜 (σ → 𝕜)) p).mono (subset_univ s)
-  simp_rw [eval_map, eval₂_eq_sum_range]
-  exact Finset.analyticOnNhd_fun_sum _ fun i _ ↦ (hcoeff (P.coeff i)).mul (hf.pow i)
-
-/-- **Analytic continuation of a polynomial relation.** If `f` is analytic on a preconnected set
-`s` and satisfies the relation `P (y, f y) = 0` near one point of `s`, it satisfies this relation
-at every point of `s`. -/
-theorem AnalyticOnNhd.eval_map_eval_eq_zero_of_isPreconnected (hf : AnalyticOnNhd 𝕜 f s)
-    (hs : IsPreconnected s) {P : (MvPolynomial σ 𝕜)[X]} {x : σ → 𝕜} (hx : x ∈ s)
-    (hP : ∀ᶠ y in 𝓝 x, (P.map (MvPolynomial.eval y)).eval (f y) = 0) :
-    ∀ y ∈ s, (P.map (MvPolynomial.eval y)).eval (f y) = 0 :=
-  fun _ hy ↦ (hf.eval_map_eval P).eqOn_zero_of_preconnected_of_eventuallyEq_zero hs hx hP hy
-
-end Analytic
 
 variable {σ : Type*} [Fintype σ] {f : (σ → ℝ) → ℝ} {s : Set (σ → ℝ)}
 
