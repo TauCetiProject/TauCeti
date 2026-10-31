@@ -27,7 +27,7 @@ parametrizes that cell by the unit disc `D^k ⊆ ℝᵏ`:
 
 where `(w, 0) ∈ ℝⁿ` extends `w` by zero onto the first `k` coordinates. Then
 `f (χ w) = c - ε ‖w‖²`, so `χ` maps the disc into the sublevel `M_c = {f ≤ c}` and its boundary
-sphere onto the level `f⁻¹(c - ε)`; a point of the disc is sent into the lower sublevel
+sphere into the level `f⁻¹(c - ε)`; a point of the disc is sent into the lower sublevel
 `M_{c-ε} = {f ≤ c - ε}` exactly when it lies on the boundary sphere. The map `χ` is injective on
 the disc, its image there is the cell, and it is a closed embedding of the disc into a Hausdorff
 `M`.
@@ -186,7 +186,7 @@ theorem apply_morseCellMap_le (hk : k ≤ n) (hε : 0 ≤ ε) (hw : ‖w‖ ≤ 
   rw [apply_morseCellMap_eq_sub_mul_norm_sq hball hf hk hε hw]
   exact sub_le_self _ (by positivity)
 
-/-- The boundary sphere of the unit disc is sent onto the level `f⁻¹(c - ε)`. -/
+/-- The boundary sphere of the unit disc is sent into the level `f⁻¹(c - ε)`. -/
 theorem apply_morseCellMap_of_norm_eq_one (hk : k ≤ n) (hε : 0 ≤ ε) (hw : ‖w‖ = 1) :
     f (morseCellMap ψ hk ε w) = c - ε := by
   rw [apply_morseCellMap_eq_sub_mul_norm_sq hball hf hk hε hw.le, hw, one_pow, mul_one]
@@ -221,7 +221,7 @@ def morseCharacteristicMap (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fi
 
 /-- The attaching map `∂D^k → M_{c-ε}` of the cell of a chart `ψ` in which
 `f = c - Σ_{j < k} yⱼ² + Σ_{j ≥ k} yⱼ²` and whose target contains the closed ball of radius `√ε`:
-the restriction of `w ↦ ψ⁻¹(√ε • (w, 0))` to the unit sphere, which it maps onto the level
+the restriction of `w ↦ ψ⁻¹(√ε • (w, 0))` to the unit sphere, which it maps into the level
 `f⁻¹(c - ε)`. -/
 def morseAttachingMap (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (hk : k ≤ n)
     (hε : 0 ≤ ε) (hball : closedBall 0 √ε ⊆ ψ.target)
