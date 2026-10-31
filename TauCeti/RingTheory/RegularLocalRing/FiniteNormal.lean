@@ -57,17 +57,11 @@ theorem isRegular_pair_of_finite_normal (hinj : Function.Injective (algebraMap A
     rw [TauCeti.ringKrullDim_eq_of_isIntegral_of_faithfulSMul (R := A), hdim]
   have hmB : ¬ (maximalIdeal B).IsPrincipal := fun h ↦
     absurd (hdimB.trans (ringKrullDim_le_one_of_isPrincipal_maximalIdeal h)) (by decide)
-  have hmem : ∀ r ∈ [x, y], r ∈ maximalIdeal A := fun r hr ↦ by
-    rw [← hxy]
-    exact subset_span (by simpa using hr)
-  have hregA : IsRegular A [x, y] := isRegular_of_ofList_eq_maximalIdeal
-    (by rw [ofList_cons, ofList_singleton, ← span_insert]; exact hxy)
-    (by simp [spanFinrank_maximalIdeal_eq_two hdim])
-  have hx : x ≠ 0 := by
-    intro hx
-    have hreg := ((isRegular_cons_iff A x [y]).mp hregA).1
-    have : (1 : A) = 0 := hreg.right_eq_zero_of_smul (by simp [hx])
-    exact one_ne_zero this
+  have hmem : ∀ r ∈ [x, y], r ∈ maximalIdeal A := by
+    simpa using ⟨TauCeti.IsLocalRing.mem_maximalIdeal_of_span_pair_eq_maximalIdeal hxy,
+      TauCeti.IsLocalRing.mem_maximalIdeal_of_span_pair_eq_maximalIdeal
+        (Set.pair_comm x y ▸ hxy)⟩
+  have hx := TauCeti.IsLocalRing.ne_zero_of_span_pair_eq_maximalIdeal hdim hxy
   have hxB : algebraMap A B x ≠ 0 := by simpa using hinj.ne hx
   have hmap : (span {x, y}).map (algebraMap A B) =
       span {algebraMap A B x, algebraMap A B y} := by
