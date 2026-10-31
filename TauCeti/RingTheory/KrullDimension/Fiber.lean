@@ -51,6 +51,8 @@ set-theoretic fibre of `Spec S → Spec R` over `p`. Mathlib's
   dimension.
 * `TauCeti.ringKrullDim_le_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal`: for a local
   homomorphism of Noetherian local rings, `dim S ≤ dim R + dim S ⧸ 𝔪_R S`.
+* `TauCeti.ringKrullDim_eq_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal`: equality
+  holds when the homomorphism is flat, since flat algebras satisfy going down.
 * `TauCeti.ringKrullDim_quotient_map_maximalIdeal_quotient`: dividing the base by an ideal `J`
   with `R ⧸ J` local does not change the closed fibre.
 
@@ -224,6 +226,27 @@ theorem ringKrullDim_le_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal 
   have hle : (maximalIdeal R).map (algebraMap R S) ≤ maximalIdeal S :=
     Ideal.map_le_iff_le_comap.mpr (maximalIdeal_comap (algebraMap R S)).ge
   exact (Ideal.isPrime_map_quotientMk_of_isPrime hle).ne_top
+
+open IsLocalRing in
+/-- **The dimension formula for flat local homomorphisms.** For a flat local homomorphism
+`R → S` of Noetherian local rings, the Krull dimension of `S` is the Krull dimension of `R` plus
+that of the closed fibre `S ⧸ 𝔪_R S`. -/
+@[stacks 00ON]
+theorem ringKrullDim_eq_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal [IsLocalRing R]
+    [IsLocalRing S] [IsNoetherianRing R] [IsNoetherianRing S] [IsLocalHom (algebraMap R S)]
+    [Module.Flat R S] :
+    ringKrullDim S = ringKrullDim R + ringKrullDim (S ⧸ (maximalIdeal R).map (algebraMap R S)) := by
+  set I := (maximalIdeal R).map (algebraMap R S)
+  have hle : I ≤ maximalIdeal S :=
+    Ideal.map_le_iff_le_comap.mpr (maximalIdeal_comap (algebraMap R S)).ge
+  have : Nontrivial (S ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr (ne_top_of_le_ne_top
+    (maximalIdeal.isMaximal S).ne_top hle)
+  have : IsLocalRing (S ⧸ I) := .of_surjective' _ Ideal.Quotient.mk_surjective
+  -- The image of `𝔪_S` in the closed fibre is its maximal ideal, whose height is its dimension.
+  have h := Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown (maximalIdeal R) (maximalIdeal S)
+  rw [map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective] at h
+  rw [← maximalIdeal_height_eq_ringKrullDim, ← maximalIdeal_height_eq_ringKrullDim,
+    ← maximalIdeal_height_eq_ringKrullDim, h, WithBot.coe_add]
 
 open IsLocalRing in
 /-- Dividing the base of a local `R`-algebra `S` by an ideal `J`, with `R ⧸ J` local, does not
