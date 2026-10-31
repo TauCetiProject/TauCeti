@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Topology.Homeomorph.Defs
-import Mathlib.Algebra.Order.Archimedean.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
@@ -61,75 +60,59 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   {γ : ℝ → M} {X Y : (x : M) → TangentSpace I x} {T : ℝ} {h : ℝ → ℝ}
 
-namespace IsMIntegralCurve
-
-/-- The reparametrization for a positive factor `h`: the time change is the inverse of
-`θ t = ∫₀ᵗ 1 / h`. -/
-private theorem exists_homeomorph_isMIntegralCurve_comp_of_pos (hγ : IsMIntegralCurve γ X)
-    (hT : T ≠ 0) (hper : Periodic γ T) (hh : Continuous h) (hpos : ∀ t, 0 < h t)
-    (hhT : Periodic h T) (hY : ∀ t, Y (γ t) = h t • X (γ t)) :
-    ∃ ψ : ℝ ≃ₜ ℝ, ψ 0 = 0 ∧ ∃ T', T' ≠ 0 ∧ Periodic (γ ∘ ψ) T' ∧
-      IsMIntegralCurve (γ ∘ ψ) Y := by
+/-- The time change for a positive factor `h` of positive period `T`: the inverse `ψ` of
+`θ t = ∫₀ᵗ 1 / h` is a homeomorphism of `ℝ` fixing `0`, which shifts by `T` along the period
+`θ T` of the new time and has derivative `h ∘ ψ`. -/
+private theorem exists_homeomorph_hasDerivAt_of_pos (hT : 0 < T) (hh : Continuous h)
+    (hpos : ∀ t, 0 < h t) (hhT : Periodic h T) :
+    ∃ ψ : ℝ ≃ₜ ℝ, ψ 0 = 0 ∧ (∃ T', T' ≠ 0 ∧ ∀ s, ψ (s + T') = ψ s + T) ∧
+      ∀ s, HasDerivAt ψ (h (ψ s)) s := by
   set k : ℝ → ℝ := fun t ↦ (h t)⁻¹
   have hk : Continuous k := hh.inv₀ fun t ↦ (hpos t).ne'
   have hkpos : ∀ t, 0 < k t := fun t ↦ inv_pos.2 (hpos t)
+  have hkT : Periodic k T := fun t ↦ by simp only [k, hhT t]
   set θ : ℝ → ℝ := fun t ↦ ∫ u in (0 : ℝ)..t, k u
   have hθd : ∀ t, HasDerivAt θ (k t) t := fun t ↦ (hk.integral_hasStrictDerivAt 0 t).hasDerivAt
   have hθc : Continuous θ := continuous_iff_continuousAt.2 fun t ↦ (hθd t).continuousAt
   have hθmono : StrictMono θ := strictMono_of_hasDerivAt_pos hθd hkpos
   have hθ0 : θ 0 = 0 := intervalIntegral.integral_same
-  -- `θ` is additive along the period, because `1 / h` is periodic.
+  -- `θ` is additive along the period, because `1 / h` is periodic, and it is onto.
   have hθT : ∀ t, θ (t + T) = θ t + θ T := fun t ↦ by
-    have hkT : Periodic k T := fun t ↦ by simp only [k, hhT t]
-    simp only [θ]
-    rw [← intervalIntegral.integral_add_adjacent_intervals (hk.intervalIntegrable 0 t)
-      (hk.intervalIntegrable t (t + T)), hkT.intervalIntegral_add_eq t 0, zero_add]
-  have hθTne : θ T ≠ 0 := by
-    rcases hT.lt_or_gt with hT | hT
-    · exact ((hθmono hT).trans_eq hθ0).ne
-    · exact (hθ0.symm.trans_lt (hθmono hT)).ne'
-  -- Hence `θ (± n T) = ± n θ T` for every natural number `n`, and `θ` is onto.
-  have hθnat : ∀ n : ℕ, θ (n * T) = n * θ T ∧ θ (-(n * T)) = -(n * θ T) := fun n ↦ by
-    induction n with
-    | zero => simp [hθ0]
-    | succ n ih =>
-      have h₁ := hθT (n * T)
-      have h₂ := hθT (-((n + 1 : ℕ) * T))
-      push_cast at h₁ h₂ ⊢
-      have hn : -(((n : ℝ) + 1) * T) + T = -(n * T) := by ring
-      rw [hn, ih.2] at h₂
-      rw [← add_one_mul, ih.1] at h₁
-      constructor <;> linarith
-  have hθsurj : Surjective θ := fun y ↦ by
-    obtain ⟨n, hn⟩ := Archimedean.arch |y| (abs_pos.2 hθTne)
-    obtain ⟨h₂, h₁⟩ := hθnat n
-    have hy : y ∈ uIcc (θ (-(n * T))) (θ (n * T)) := by
-      rw [h₁, h₂, mem_uIcc]
-      rw [nsmul_eq_mul] at hn
-      rcases le_total 0 (θ T) with h0 | h0
-      · rw [abs_of_nonneg h0] at hn
-        exact Or.inl ⟨by linarith [neg_abs_le y], by linarith [le_abs_self y]⟩
-      · rw [abs_of_nonpos h0, mul_neg] at hn
-        exact Or.inr ⟨by linarith [neg_abs_le y], by linarith [le_abs_self y]⟩
-    obtain ⟨t, -, ht⟩ := intermediate_value_uIcc hθc.continuousOn hy
-    exact ⟨t, ht⟩
+    simpa only [θ, zero_add] using
+      hkT.intervalIntegral_add_eq_add 0 t fun _ _ ↦ hk.intervalIntegrable _ _
+  have hθsurj : Surjective θ := hθc.surjective
+    (hkT.tendsto_atTop_intervalIntegral_of_pos' (hk.intervalIntegrable 0 T) hkpos hT)
+    (hkT.tendsto_atBot_intervalIntegral_of_pos' (hk.intervalIntegrable 0 T) hkpos hT)
   set ψ : ℝ ≃ₜ ℝ := (hθmono.orderIsoOfSurjective θ hθsurj).symm.toHomeomorph
   have hθψ : ∀ s, θ (ψ s) = s := fun s ↦ (hθmono.orderIsoOfSurjective θ hθsurj).apply_symm_apply s
   have hψθ : ∀ t, ψ (θ t) = t := fun t ↦ (hθmono.orderIsoOfSurjective θ hθsurj).symm_apply_apply t
-  -- The inverse time change has derivative `h ∘ ψ`.
-  have hψd : ∀ s, HasDerivAt ψ (h (ψ s)) s := fun s ↦ by
-    simpa [k] using (hθd (ψ s)).of_local_left_inverse ψ.continuous.continuousAt (hkpos _).ne'
-      (Filter.Eventually.of_forall hθψ)
-  refine ⟨ψ, by simpa [hθ0] using hψθ 0, θ T, hθTne, fun s ↦ ?_, fun s ↦ ?_⟩
-  · have : ψ (s + θ T) = ψ s + T := by rw [← hθψ s, hψθ, ← hθT, hψθ]
-    simp only [comp_apply, this, hper (ψ s)]
-  · have hcomp := (hγ (ψ s)).comp s (hψd s).hasFDerivAt.hasMFDerivAt
-    have heq : (1 : ℝ →L[ℝ] ℝ).smulRight (Y ((γ ∘ ψ) s)) =
-        (1 : ℝ →L[ℝ] ℝ).smulRight (X (γ (ψ s))) ∘L .toSpanSingleton ℝ (h (ψ s)) := by
-      ext
-      simp [hY]
-    rw [heq]
-    exact hcomp
+  refine ⟨ψ, by simpa [hθ0] using hψθ 0, ⟨θ T, (hθ0.symm.trans_lt (hθmono hT)).ne',
+    fun s ↦ by rw [← hθψ s, hψθ, ← hθT, hψθ]⟩, fun s ↦ ?_⟩
+  simpa [k] using (hθd (ψ s)).of_local_left_inverse ψ.continuous.continuousAt (hkpos _).ne'
+    (Filter.Eventually.of_forall hθψ)
+
+namespace IsMIntegralCurve
+
+/-- The reparametrization for a positive factor `h`, by the time change
+`exists_homeomorph_hasDerivAt_of_pos`. -/
+private theorem exists_homeomorph_isMIntegralCurve_comp_of_pos (hγ : IsMIntegralCurve γ X)
+    (hT : T ≠ 0) (hper : Periodic γ T) (hh : Continuous h) (hpos : ∀ t, 0 < h t)
+    (hhT : Periodic h T) (hY : ∀ t, Y (γ t) = h t • X (γ t)) :
+    ∃ ψ : ℝ ≃ₜ ℝ, ψ 0 = 0 ∧ ∃ T', T' ≠ 0 ∧ Periodic (γ ∘ ψ) T' ∧
+      IsMIntegralCurve (γ ∘ ψ) Y := by
+  -- Replacing `T` by `-T` if necessary, the common period of `γ` and `h` is positive.
+  obtain ⟨T₀, hT₀, hper₀, hhT₀⟩ : ∃ T₀, 0 < T₀ ∧ Periodic γ T₀ ∧ Periodic h T₀ := by
+    rcases hT.lt_or_gt with hT | hT
+    exacts [⟨-T, neg_pos.2 hT, hper.neg, hhT.neg⟩, ⟨T, hT, hper, hhT⟩]
+  obtain ⟨ψ, hψ0, ⟨T', hT', hψT'⟩, hψd⟩ := exists_homeomorph_hasDerivAt_of_pos hT₀ hh hpos hhT₀
+  refine ⟨ψ, hψ0, T', hT', fun s ↦ by simp only [comp_apply, hψT', hper₀ (ψ s)], fun s ↦ ?_⟩
+  have hcomp := (hγ (ψ s)).comp s (hψd s).hasFDerivAt.hasMFDerivAt
+  have heq : (1 : ℝ →L[ℝ] ℝ).smulRight (Y ((γ ∘ ψ) s)) =
+      (1 : ℝ →L[ℝ] ℝ).smulRight (X (γ (ψ s))) ∘L .toSpanSingleton ℝ (h (ψ s)) := by
+    ext
+    simp [hY]
+  rw [heq]
+  exact hcomp
 
 /-- **Reparametrizing a periodic integral curve.** Let `γ` be an integral curve of `X` of nonzero
 period `T`, and let `Y (γ t) = h t • X (γ t)` for a continuous, `T`-periodic, nowhere vanishing
