@@ -97,12 +97,12 @@ namespace TauCeti
 variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
-  [FiniteDimensional K L]
 
 /-- The norm of a valuation-zero unit has valuation zero in every finite local-field extension. -/
 theorem normalizedValuation_norm_eq_one_of_eq_one (x : Lˣ)
     (hx : normalizedValuation L x = 1) :
     normalizedValuation K (Algebra.normUnits K x) = 1 := by
+  have := finite_of_valuativeExtension K L
   have hint (y : Lˣ) (hy : normalizedValuation L y = 1) : IsIntegral 𝒪[K] (y : L) := by
     apply (Valuation.Integers.isIntegral_iff_valuation_le_one
       (Valuation.integer.integers (valuation K)) (y : L)).2
@@ -178,6 +178,7 @@ theorem toAdd_normalizedValuation_norm (x : Lˣ) :
 theorem normalizedValuationWithZero_norm (x : L) :
     normalizedValuationWithZero K (Algebra.norm K x) =
       normalizedValuationWithZero L x ^ inertiaDegree K L := by
+  have := finite_of_valuativeExtension K L
   by_cases hx : x = 0
   · subst x
     have hzero : (0 : WithZero (Multiplicative ℤ)) ^ inertiaDegree K L = 0 :=
@@ -192,7 +193,6 @@ theorem normalizedValuationWithZero_norm (x : L) :
       exact WithZero.coe_pow _ _
     simpa only [x', Units.val_mk0] using hnorm
 
-omit [FiniteDimensional K L] in
 /-- The norm of `𝒪[L]` over `𝒪[K]`, a free module of finite rank, is the restriction of the field
 norm of `L/K`. -/
 @[simp]
@@ -201,7 +201,6 @@ theorem coe_norm_integerRing (y : 𝒪[L]) :
   have := isLocalization_integerRing K L
   exact (Algebra.norm_localization 𝒪[K] (nonZeroDivisors 𝒪[K]) y).symm
 
-omit [FiniteDimensional K L] in
 /-- The trace of `𝒪[L]` over `𝒪[K]`, a free module of finite rank, is the restriction of the field
 trace of `L/K`. -/
 @[simp]
@@ -210,20 +209,9 @@ theorem coe_trace_integerRing (y : 𝒪[L]) :
   have := isLocalization_integerRing K L
   exact (Algebra.trace_localization 𝒪[K] (nonZeroDivisors 𝒪[K]) y).symm
 
-omit [FiniteDimensional K L] in
 /-- The norm of an element of `𝒪[L]` lies in `𝒪[K]`. -/
 theorem norm_mem_integer {y : L} (hy : y ∈ 𝒪[L]) : Algebra.norm K y ∈ 𝒪[K] := by
   simpa using (Algebra.norm 𝒪[K] (⟨y, hy⟩ : 𝒪[L])).2
-
--- The ideal-norm statement below is in a section of its own, without `FiniteDimensional K L`
--- in scope: `Ideal.relNorm` is elaborated by type class search, and with a
--- `FiniteDimensional K L` hypothesis in scope that search mentions the hypothesis, so an
--- `omit` of it is rejected.
-section IdealNorm
-
-variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
-  [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
 
 variable (K L) in
 /-- **The ideal norm of the maximal ideal of `𝒪[L]` is the residue-degree power of the
@@ -302,8 +290,6 @@ theorem norm_mem_maximalIdeal_pow_of_mem {m : ℕ} {x : 𝒪[L]} (hx : x ∈ �
   rw [pow_mul, ← relNorm_maximalIdeal_eq_maximalIdeal_pow, ← map_pow]
   exact Ideal.norm_mem_relNorm 𝒪[K] _ hx
 
-end IdealNorm
-
 /-- A unit of `L` is a unit of `𝒪[L]` exactly when its norm is a unit of `𝒪[K]`. -/
 -- The left-hand side simplifies via `unitFiltration_zero`, so this is not a simp lemma.
 theorem normUnits_mem_unitFiltration_zero_iff {y : Lˣ} :
@@ -315,13 +301,13 @@ theorem normUnits_mem_unitFiltration_zero_iff {y : Lˣ} :
 /-- An element of `L` has valuation zero exactly when its norm has valuation zero in `K`. -/
 theorem valuation_norm_eq_one_iff {z : L} :
     valuation K (Algebra.norm K z) = 1 ↔ valuation L z = 1 := by
+  have := finite_of_valuativeExtension K L
   rcases eq_or_ne z 0 with rfl | hz
   · simp
   have h := normUnits_mem_unitFiltration_zero_iff (K := K) (y := Units.mk0 z hz)
   rwa [mem_unitFiltration_zero, mem_unitFiltration_zero, Algebra.coe_normUnits,
     Units.val_mk0] at h
 
-omit [FiniteDimensional K L] in
 /-- An element whose field norm has valuation zero lifts to an integer with unit norm. -/
 theorem exists_integerRing_eq_and_isUnit_norm {z : L}
     (hz : valuation K (Algebra.norm K z) = 1) :
@@ -333,7 +319,6 @@ theorem exists_integerRing_eq_and_isUnit_norm {z : L}
     (Valuation.integer.integers (valuation K))).mpr ?_⟩
   simpa only [Algebra.algebraMap_ofSubsemiring_apply, coe_norm_integerRing] using hz
 
-omit [FiniteDimensional K L] in
 variable (L) in
 /-- **The norm carries `U(L, e(L/K) i)` into `U(K, i)`.** A unit of `𝒪[L]` congruent to `1` modulo
 `𝓂[L]^(e i) = 𝓂[K]^i 𝒪[L]` has norm congruent to `1` modulo `𝓂[K]^i`, because the norm commutes
@@ -354,8 +339,10 @@ theorem normUnits_mem_unitFiltration_of_mem {i : ℕ} {y : Lˣ}
   refine mem_unitFiltration_iff_exists.mpr ⟨Algebra.normUnits 𝒪[K] u, hN, ?_⟩
   rw [Algebra.coe_normUnits, Algebra.coe_normUnits, coe_norm_integerRing, huy]
 
-omit [FiniteDimensional K L] in
-variable (K L) in
+section UnitFiltration
+
+variable (K L)
+
 /-- **The norm carries `U(L, e(L/K) i)` into `U(K, i)`**, as an inclusion of subgroups of `Kˣ`. At
 `i = 0` this says that the norm of a unit of `𝒪[L]` is a unit of `𝒪[K]`. -/
 theorem map_normUnits_unitFiltration_le (i : ℕ) :
@@ -363,7 +350,6 @@ theorem map_normUnits_unitFiltration_le (i : ℕ) :
       unitFiltration K i :=
   Subgroup.map_le_iff_le_comap.mpr fun _ hy ↦ normUnits_mem_unitFiltration_of_mem L hy
 
-variable (K L) in
 /-- **The inclusion `N_{L/K}(U(L, e(L/K) i)) ⊆ U(K,i)` is sharp** when the degree `[L : K]` is
 prime to the residue characteristic: for `i ≠ 0` the norm does not carry `U(L, e(L/K) i)` into
 `U(K, i + 1)`. Indeed, for `x ∈ U(K,i) \ U(K,i+1)` the norm of `x ∈ L` is `x ^ [L : K]`, which
@@ -381,7 +367,6 @@ theorem not_map_normUnits_unitFiltration_le_succ (hn : IsUnit (Module.finrank K 
     (unitFiltration_antitone (Nat.one_le_iff_ne_zero.2 hi) hx)] at hxn
   exact hx' hxn
 
-variable (K L) in
 /-- **The norm does not respect the unit filtration without a shift.** If `L/K` is ramified and
 its degree is prime to the residue characteristic, then `N_{L/K}(U(L,i)) ⊄ U(K,i)` for every
 `i ≥ 2`. For instance, in the tame quadratic extension `ℚ₃(√3)/ℚ₃` the norm of `4 ∈ U(L,2)` is
@@ -397,8 +382,6 @@ theorem not_map_normUnits_unitFiltration_le (hn : IsUnit (Module.finrank K L : �
     ((Subgroup.map_mono (unitFiltration_antitone ?_)).trans h)
   nlinarith
 
-omit [FiniteDimensional K L] in
-variable (K L) in
 /-- The norm on unit groups of compatible local-field extensions is continuous. -/
 theorem continuous_normUnits : Continuous (Algebra.normUnits K : Lˣ → Kˣ) := by
   apply continuous_of_continuousAt_one
@@ -409,6 +392,8 @@ theorem continuous_normUnits : Continuous (Algebra.normUnits K : Lˣ → Kˣ) :=
   exact ⟨ramificationIndex K L * i, trivial, fun _ hy ↦
     normUnits_mem_unitFiltration_of_mem L hy⟩
 
+end UnitFiltration
+
 /-- The norm of a uniformizer of `L` is a uniformizer of `K` exactly when the residue degree is
 `1`, that is when `L/K` is totally ramified. -/
 theorem isUniformizer_normUnits_iff {ϖ : Lˣ} (hϖ : IsUniformizer L ϖ) :
@@ -418,7 +403,6 @@ theorem isUniformizer_normUnits_iff {ϖ : Lˣ} (hϖ : IsUniformizer L ϖ) :
     nsmul_one]
   exact Nat.cast_eq_one
 
-omit [FiniteDimensional K L] in
 /-- The norm of an irreducible element of `𝒪[L]` is irreducible in `𝒪[K]` exactly when the
 residue degree of `L/K` is one. -/
 theorem irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible {ξ : 𝒪[L]}
@@ -443,13 +427,11 @@ theorem irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible {ξ : 𝒪[L]}
     simpa using hπeq
   rwa [← hπnorm]
 
-omit [FiniteDimensional K L] in
 /-- In a totally ramified extension, the norm of a uniformizer is a uniformizer. -/
 theorem IsTotallyRamified.irreducible_norm (h : IsTotallyRamified K L) {π : 𝒪[L]}
     (hπ : Irreducible π) : Irreducible (Algebra.norm 𝒪[K] π) :=
   (irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible hπ).2 h.inertiaDegree_eq_one
 
-omit [FiniteDimensional K L] in
 /-- **The valuation of a norm**: `v_K(N_{L/K}(z)) = f(L/K) v_L(z)` for every `z ∈ 𝒪[L]`, read on
 the additive valuations of the discrete valuation rings `𝒪[K]` and `𝒪[L]`. -/
 theorem addVal_norm (z : 𝒪[L]) :
@@ -483,6 +465,12 @@ theorem addVal_norm (z : 𝒪[L]) :
   simp only [map_mul, map_pow, IsDiscreteValuationRing.addVal_mul, hu,
     IsDiscreteValuationRing.addVal_pow, hN, IsDiscreteValuationRing.addVal_def' u hϖ k, zero_add,
     nsmul_eq_mul, mul_comm]
+
+-- `normGroup K L` and the sums over `L ≃ₐ[K] L` below need `FiniteDimensional K L` in their
+-- statements.
+section FiniteDimensional
+
+variable [FiniteDimensional K L]
 
 variable (L) in
 /-- The normalized valuation of an element of the norm group `N_{L/K}(Lˣ)` is divisible by the
@@ -540,5 +528,7 @@ theorem algebraMap_trace_integerRing_eq_sum_automorphisms (z : 𝒪[L]) :
   simp only [AlgEquiv.coe_smul_integerRing]
 
 end Galois
+
+end FiniteDimensional
 
 end TauCeti

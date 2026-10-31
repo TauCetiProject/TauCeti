@@ -697,6 +697,22 @@ theorem laplaceBeltrami_eq_laplacian
   apply laplaceBeltrami_eq_laplacian_of_differentiableAt_gradient
   exact (hf.gradient_right (m := 1) (by norm_num)).differentiable (by norm_num) x
 
+/-- If the installed fibre metric is the standard one, the Laplace–Beltrami operator is Mathlib's
+flat Laplacian. This transports
+`laplaceBeltrami_eq_laplacian_of_differentiableAt_gradient` along an equality of fibre metrics,
+such as `toRiemannianMetric_ofLE`, which cannot be rewritten inside the instance-dependent
+arguments. -/
+theorem laplaceBeltrami_eq_laplacian_of_eq
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    [inst : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)]
+    [IsContMDiffRiemannianBundle 𝓘(ℝ, F) 1 F (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)]
+    (hg : RiemannianBundle.g = (riemannianMetricVectorSpace F).toRiemannianMetric)
+    {f : F → ℝ} {x : F} (hgrad : DifferentiableAt ℝ (∇ f) x) :
+    laplaceBeltrami (modelWithCornersSelf ℝ F) f x = Δ f x := by
+  obtain ⟨_⟩ := inst
+  subst hg
+  exact laplaceBeltrami_eq_laplacian_of_differentiableAt_gradient hgrad
+
 /-- The squared norm has constant flat Laplace--Beltrami operator. -/
 @[simp] theorem laplaceBeltrami_norm_sq
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]

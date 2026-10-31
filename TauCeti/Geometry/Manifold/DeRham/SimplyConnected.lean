@@ -233,7 +233,7 @@ theorem exactForms_one_eq_closedForms_of_simplyConnectedSpace [SimplyConnectedSp
   obtain ⟨ψ, hψ, hdψ⟩ := exists_mextDeriv_eq_of_simplyConnectedSpace (r := ⊤) le_top
     φ.isSmoothForm ((mem_closedForms I φ).mp hφ)
   rw [exactForms_succ]
-  exact ⟨⟨ψ, hψ.mem_smoothForms⟩, Subtype.ext ((mextDerivₗ_apply I 0 _).trans hdψ)⟩
+  exact ⟨⟨ψ, hψ.mem_smoothBundleForms⟩, Subtype.ext ((mextDerivₗ_apply I 0 _).trans hdψ)⟩
 
 variable (I M) in
 /-- **The first de Rham cohomology of a simply connected manifold vanishes.** -/

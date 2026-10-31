@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Rigidity
 import TauCeti.CategoryTheory.Aut.Basic
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Numbered symmetries of the Kostant toral-closure group scheme
@@ -74,9 +75,9 @@ All of these live in the `TauCeti.UniversalEnvelopingAlgebra` namespace.
 ## References
 
 This is the graph-automorphism construction of R. W. Carter, *Finite Groups of Lie Type: Conjugacy
-Classes and Complex Characters*, §1.15, and J. E. Humphreys, *Linear Algebraic Groups*, §27, carried
-out on the carrier assembled from a torus and root subgroups in R. W. Carter, *Simple Groups of Lie
-Type*, §§4.4 and 7.1.
+Classes and Complex Characters*, §1.15, and J. E. Humphreys, *Linear Algebraic Groups*, §27,
+carried out on the carrier assembled from a torus and root subgroups in R. W. Carter, *Simple
+Groups of Lie Type*, §§4.4 and 7.1.
 -/
 
 public section
@@ -89,40 +90,28 @@ universe u v w
 
 attribute [local instance high] Algebra.toModule
 
-variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
-variable {I : Type w} {κ : Type} [Finite κ]
-variable {V : Type} [AddCommGroup V] [Module ℚ V]
-
-variable (e : I → L) (h : κ → L)
+variable {L : Type u} [LieRing L] [LieAlgebra ℚ L] {I : Type w} {κ : Type} [Finite κ]
+variable {V : Type} [AddCommGroup V] [Module ℚ V] (e : I → L) (h : κ → L)
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V)
-variable (M : AddSubgroup V)
-variable (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M)
+variable (M : AddSubgroup V) (hM : ∀ u ∈ kostantForm e h, ∀ m ∈ M, ρ u m ∈ M)
 variable (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M)
-variable (wt : Fin n → κ → ℤ)
+variable {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (wt : Fin n → κ → ℤ)
+
+section NumberedSymmetry
+
 variable (σ : I → I) (θ : V ≃ₗ[ℚ] V) (hθM : ∀ v, θ v ∈ M ↔ v ∈ M)
 variable (hθe : ∀ i, ∀ v : V,
   θ (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) v) =
     ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e (σ i))) (θ v))
 variable (hσ : Function.Surjective σ)
-variable (basisPerm : Equiv.Perm (Fin n))
-variable (basisScale : Fin n → ℤ)
-variable (hbasis : ∀ i, θ ((b i : M) : V) =
-  (((basisScale i) • b (basisPerm i) : M) : V))
-variable (torusPerm : Equiv.Perm κ)
-variable (hwt : ∀ i k, wt (basisPerm i) (torusPerm k) = wt i k)
+variable (basisPerm : Equiv.Perm (Fin n)) (basisScale : Fin n → ℤ)
+variable (hbasis : ∀ i, θ ((b i : M) : V) = (((basisScale i) • b (basisPerm i) : M) : V))
+variable (torusPerm : Equiv.Perm κ) (hwt : ∀ i k, wt (basisPerm i) (torusPerm k) = wt i k)
 
-omit [Finite κ] in
-include hwt in
-/-- The weight family relabelled by the basis permutation is the family with every weight
-composed with the torus permutation. -/
-private theorem weight_comp_basisPerm_symm :
-    (fun i => wt (basisPerm⁻¹ i)) = fun i => wt i ∘ torusPerm := by
-  funext i k
-  have := hwt (basisPerm⁻¹ i) k
-  rwa [Equiv.Perm.inv_def, Equiv.apply_symm_apply, eq_comm] at this
+section DefiningIdeal
 
-include hbasis hwt in
+include hbasis hwt
+
 /-- The ambient coordinate automorphism carries the represented weight torus to itself, acting on
 it by the relabelling attached to the torus permutation. -/
 private theorem kostantNumberedSymmetryCoordinateIso_hom_comp_weightTorus :
@@ -132,26 +121,11 @@ private theorem kostantNumberedSymmetryCoordinateIso_hom_comp_weightTorus :
         SplitTorus.relabelCoordinateMap ℤ torusPerm⁻¹ := by
   rw [kostantNumberedSymmetryCoordinateIso_hom_comp_weightTorusCoordinateMap
     M b θ hθM wt basisPerm basisScale hbasis,
-    weight_comp_basisPerm_symm wt basisPerm torusPerm hwt,
+    basisPerm.apply_inv_eq_comp_of_apply_apply_eq wt torusPerm hwt,
     GeneralLinear.weightTorusCoordinateMap_reindex]
 
-include hθe hσ hbasis hwt in
-/-- The forward ambient symmetry pulls the toral defining ideal into itself. -/
-private theorem kostantToralDefiningIdeal_comapOfSurjective_numberedSymmetryCoordinateIso_hom_le :
-    (kostantToralDefiningIdeal e h ρ M hM hnil b wt).comapOfSurjective
-        (kostantNumberedSymmetryCoordinateIso M b θ hθM).hom.hom
-        (ConcreteCategory.bijective_of_isIso
-          (kostantNumberedSymmetryCoordinateIso M b θ hθM).hom).2 ≤
-      kostantToralDefiningIdeal e h ρ M hM hnil b wt := by
-  refine kostantToralDefiningIdeal_comapOfSurjective_le_of_comp_eq e h ρ M hM hnil b wt _ _
-    (Function.surjInv hσ) (SplitTorus.relabelCoordinateMap ℤ torusPerm⁻¹)
-    (SplitTorus.relabelCoordinateMap_injective ℤ torusPerm⁻¹) (fun i => ?_) ?_
-  · rw [kostantNumberedSymmetryCoordinateIso_hom_comp_rootSubgroupCoordinateMap
-      e h ρ M hM hnil b σ θ hθM hθe (Function.surjInv hσ i), Function.surjInv_eq hσ]
-  · exact kostantNumberedSymmetryCoordinateIso_hom_comp_weightTorus
-      M b wt θ hθM basisPerm basisScale hbasis torusPerm hwt
+include hθe
 
-include hθe hbasis hwt in
 /-- The inverse ambient symmetry pulls the toral defining ideal into itself. -/
 private theorem kostantToralDefiningIdeal_comapOfSurjective_numberedSymmetryCoordinateIso_inv_le :
     (kostantToralDefiningIdeal e h ρ M hM hnil b wt).comapOfSurjective
@@ -172,7 +146,23 @@ private theorem kostantToralDefiningIdeal_comapOfSurjective_numberedSymmetryCoor
       Category.assoc, SplitTorus.relabelCoordinateMap_comp, mul_inv_cancel,
       SplitTorus.relabelCoordinateMap_one, Category.comp_id]
 
-include hθe hσ hbasis hwt in
+include hσ
+
+/-- The forward ambient symmetry pulls the toral defining ideal into itself. -/
+private theorem kostantToralDefiningIdeal_comapOfSurjective_numberedSymmetryCoordinateIso_hom_le :
+    (kostantToralDefiningIdeal e h ρ M hM hnil b wt).comapOfSurjective
+        (kostantNumberedSymmetryCoordinateIso M b θ hθM).hom.hom
+        (ConcreteCategory.bijective_of_isIso
+          (kostantNumberedSymmetryCoordinateIso M b θ hθM).hom).2 ≤
+      kostantToralDefiningIdeal e h ρ M hM hnil b wt := by
+  refine kostantToralDefiningIdeal_comapOfSurjective_le_of_comp_eq e h ρ M hM hnil b wt _ _
+    (Function.surjInv hσ) (SplitTorus.relabelCoordinateMap ℤ torusPerm⁻¹)
+    (SplitTorus.relabelCoordinateMap_injective ℤ torusPerm⁻¹) (fun i => ?_) ?_
+  · rw [kostantNumberedSymmetryCoordinateIso_hom_comp_rootSubgroupCoordinateMap
+      e h ρ M hM hnil b σ θ hθM hθe (Function.surjInv hσ i), Function.surjInv_eq hσ]
+  · exact kostantNumberedSymmetryCoordinateIso_hom_comp_weightTorus
+      M b wt θ hθM basisPerm basisScale hbasis torusPerm hwt
+
 /-- **The numbered-symmetry coordinate automorphism preserves the toral defining ideal.** The root
 subgroups are permuted among themselves and the weight torus is carried to itself, so the largest
 Hopf ideal killed by all of them is invariant. -/
@@ -192,7 +182,8 @@ private theorem kostantToralDefiningIdeal_comapOfSurjective_numberedSymmetryCoor
       e h ρ M hM hnil b wt σ θ hθM hθe basisPerm basisScale hbasis torusPerm hwt
   exact HopfIdeal.comapOfSurjective_eq_of_hom_le_of_inv_le c J hhom hinv
 
-include hθe hσ hbasis hwt in
+section GroupScheme
+
 /-- The coordinate automorphism induced on the toral-closure quotient. -/
 private noncomputable def kostantToralCoordinateNumberedSymmetryIso :
     CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
@@ -205,7 +196,6 @@ private noncomputable def kostantToralCoordinateNumberedSymmetryIso :
     (kostantToralDefiningIdeal_comapOfSurjective_numberedSymmetryCoordinateIso
       e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt)
 
-include hθe hσ hbasis hwt in
 /-- The quotient coordinate automorphism is induced by the ambient coordinate automorphism. -/
 private theorem mkQuotient_comp_kostantToralCoordinateNumberedSymmetryIso_hom :
     CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
@@ -221,7 +211,6 @@ private theorem mkQuotient_comp_kostantToralCoordinateNumberedSymmetryIso_hom :
     (kostantToralDefiningIdeal_comapOfSurjective_numberedSymmetryCoordinateIso
       e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt)
 
-include hθe hσ hbasis hwt in
 /-- The quotient coordinate automorphism permutes the factored root-subgroup maps. -/
 private theorem kostantToralCoordinateNumberedSymmetryIso_hom_comp_rootMap (i : I) :
     (kostantToralCoordinateNumberedSymmetryIso
@@ -229,7 +218,8 @@ private theorem kostantToralCoordinateNumberedSymmetryIso_hom_comp_rootMap (i : 
       kostantRootSubgroupToralCoordinateMap e h ρ M hM hnil b wt i =
       kostantRootSubgroupToralCoordinateMap e h ρ M hM hnil b wt (σ i) := by
   have hr : (kostantToralDefiningIdeal e h ρ M hM hnil b wt).toIdeal ≤ RingHom.ker
-      (kostantRootSubgroupCoordinateMap e h ρ M hM (σ i) (hnil (σ i)) b).hom.toAlgHom.toRingHom :=
+      (kostantRootSubgroupCoordinateMap e h ρ M hM (σ i)
+        (hnil (σ i)) b).hom.toAlgHom.toRingHom :=
     kostantToralDefiningIdeal_toIdeal_le_root_ker e h ρ M hM hnil b wt (σ i)
   have hleft := CommHopfAlgCat.liftQuotient_unique
     (kostantToralDefiningIdeal e h ρ M hM hnil b wt)
@@ -249,7 +239,6 @@ private theorem kostantToralCoordinateNumberedSymmetryIso_hom_comp_rootMap (i : 
     (mkQuotient_comp_kostantRootSubgroupToralCoordinateMap e h ρ M hM hnil b wt (σ i))
   exact hleft.trans hright.symm
 
-include hθe hσ hbasis hwt in
 /-- The quotient coordinate automorphism carries the factored weight-torus map to itself,
 composed with the relabelling attached to the torus permutation. -/
 private theorem kostantToralCoordinateNumberedSymmetryIso_hom_comp_torusMap :
@@ -290,8 +279,6 @@ private theorem kostantToralCoordinateNumberedSymmetryIso_hom_comp_torusMap :
         rw [← Category.assoc, mkQuotient_comp_kostantWeightTorusToralCoordinateMap])
   exact hleft.trans hright.symm
 
-
-include hθe hσ hbasis hwt in
 /-- **The automorphism of the Kostant toral-closure group scheme induced by a numbered symmetry
 which acts monomially on the chosen lattice basis compatibly with the weights.** -/
 noncomputable def kostantToralNumberedSymmetryIso :
@@ -300,27 +287,25 @@ noncomputable def kostantToralNumberedSymmetryIso :
     (kostantToralCoordinateNumberedSymmetryIso
       e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt).op
 
-include hθe hσ hbasis hwt in
 /-- The toral symmetry carries the `i`th root subgroup to the one numbered `σ i`, without changing
 its additive parameter. -/
 @[simp]
 theorem kostantRootSubgroupToToral_comp_numberedSymmetryIso_hom (i : I) :
     kostantRootSubgroupToToral e h ρ M hM hnil b wt i ≫
-        (kostantToralNumberedSymmetryIso
-          e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt).asIso.hom =
+        (kostantToralNumberedSymmetryIso e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm
+          basisScale hbasis torusPerm hwt).asIso.hom =
       kostantRootSubgroupToToral e h ρ M hM hnil b wt (σ i) := by
   rw [kostantRootSubgroupToToral_def, kostantToralNumberedSymmetryIso,
     Functor.mapIso_hom, Iso.op_hom, Category.assoc, ← Functor.map_comp, ← op_comp,
     kostantToralCoordinateNumberedSymmetryIso_hom_comp_rootMap]
   exact (kostantRootSubgroupToToral_def e h ρ M hM hnil b wt (σ i)).symm
 
-include hθe hσ hbasis hwt in
 /-- The inverse toral symmetry carries the `σ i`th root subgroup back to the `i`th one. -/
 @[simp]
 theorem kostantRootSubgroupToToral_comp_numberedSymmetryIso_inv (i : I) :
     kostantRootSubgroupToToral e h ρ M hM hnil b wt (σ i) ≫
-        (kostantToralNumberedSymmetryIso
-          e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt).asIso.inv =
+        (kostantToralNumberedSymmetryIso e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm
+          basisScale hbasis torusPerm hwt).asIso.inv =
       kostantRootSubgroupToToral e h ρ M hM hnil b wt i := by
   rw [← kostantRootSubgroupToToral_comp_numberedSymmetryIso_hom
     e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt i,
@@ -329,14 +314,13 @@ theorem kostantRootSubgroupToToral_comp_numberedSymmetryIso_inv (i : I) :
       hwt).asIso.hom_inv_id,
     Category.comp_id]
 
-include hθe hσ hbasis hwt in
 /-- **The toral symmetry normalizes the represented weight torus**, acting on it by the relabelling
 attached to the torus permutation. -/
 @[simp]
 theorem kostantWeightTorusToToral_comp_numberedSymmetryIso_hom :
     kostantWeightTorusToToral e h ρ M hM hnil b wt ≫
-        (kostantToralNumberedSymmetryIso
-          e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt).asIso.hom =
+        (kostantToralNumberedSymmetryIso e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm
+          basisScale hbasis torusPerm hwt).asIso.hom =
       SplitTorus.relabel ℤ torusPerm⁻¹ ≫
         kostantWeightTorusToToral e h ρ M hM hnil b wt := by
   rw [kostantWeightTorusToToral_def, kostantToralNumberedSymmetryIso,
@@ -345,13 +329,12 @@ theorem kostantWeightTorusToToral_comp_numberedSymmetryIso_hom :
     SplitTorus.relabel_def]
   simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
 
-include hθe hσ hbasis hwt in
 /-- The inverse toral symmetry acts on the represented weight torus by the inverse relabelling. -/
 @[simp]
 theorem kostantWeightTorusToToral_comp_numberedSymmetryIso_inv :
     kostantWeightTorusToToral e h ρ M hM hnil b wt ≫
-        (kostantToralNumberedSymmetryIso
-          e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt).asIso.inv =
+        (kostantToralNumberedSymmetryIso e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm
+          basisScale hbasis torusPerm hwt).asIso.inv =
       SplitTorus.relabel ℤ torusPerm ≫
         kostantWeightTorusToToral e h ρ M hM hnil b wt := by
   let γ := kostantToralNumberedSymmetryIso
@@ -377,14 +360,13 @@ theorem kostantWeightTorusToToral_comp_numberedSymmetryIso_inv :
         kostantWeightTorusToToral e h ρ M hM hnil b wt := by
       rw [Category.assoc, γ.asIso.hom_inv_id, Category.comp_id]
 
-include hθe hσ hbasis hwt in
 /-- The root-generated and toral numbered symmetries agree along the canonical closed immersion
 from the generated carrier into the toral closure. -/
 @[simp]
 theorem kostantGeneratedToToral_comp_numberedSymmetryIso_hom :
     kostantGeneratedToToral e h ρ M hM hnil b wt ≫
-        (kostantToralNumberedSymmetryIso
-          e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt).asIso.hom =
+        (kostantToralNumberedSymmetryIso e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm
+          basisScale hbasis torusPerm hwt).asIso.hom =
       (kostantGeneratedNumberedSymmetryIso
         e h ρ M hM hnil b σ θ hθM hθe hσ).asIso.hom ≫
         kostantGeneratedToToral e h ρ M hM hnil b wt := by
@@ -395,8 +377,6 @@ theorem kostantGeneratedToToral_comp_numberedSymmetryIso_hom :
     kostantRootSubgroupToToral_comp_numberedSymmetryIso_hom,
     kostantRootSubgroupToGenerated_comp_numberedSymmetryIso_hom]
 
-
-include hθe hσ hbasis hwt in
 /-- Iterating the toral symmetry carries the `i`th root subgroup to the root subgroup numbered by
 the corresponding iterate of `σ`. -/
 @[simp]
@@ -413,7 +393,6 @@ theorem kostantRootSubgroupToToral_comp_numberedSymmetryIso_pow_hom (m : ℕ) (i
     (kostantRootSubgroupToToral_comp_numberedSymmetryIso_hom
       e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt) m i
 
-include hθe hσ hbasis hwt in
 /-- Iterating the toral symmetry acts on the weight torus by the corresponding power of the
 relabelling. -/
 @[simp]
@@ -440,15 +419,14 @@ theorem kostantWeightTorusToToral_comp_numberedSymmetryIso_pow_hom (m : ℕ) :
   rw [Nat.succ_iterate, zero_add] at hiter
   simpa [F, γ] using hiter
 
-include hθe hσ hbasis hwt in
 /-- **If the numbering permutation and the torus permutation both have order dividing `m`, so does
 the induced automorphism of the toral closure.** An involution or a triality of the numbered data
 therefore produces a symmetry with `γ ^ 2 = 1` or `γ ^ 3 = 1`. -/
 @[simp]
 theorem kostantToralNumberedSymmetryIso_pow_eq_one (m : ℕ)
     (hσm : σ^[m] = id) (hτm : torusPerm ^ m = 1) :
-    (kostantToralNumberedSymmetryIso
-      e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt) ^ m = 1 := by
+    (kostantToralNumberedSymmetryIso e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm
+      basisScale hbasis torusPerm hwt) ^ m = 1 := by
   apply Aut.ext
   apply Iso.ext
   refine kostantToralGroupScheme_hom_ext e h ρ M hM hnil b wt _ _ (fun i => ?_) ?_
@@ -458,9 +436,12 @@ theorem kostantToralNumberedSymmetryIso_pow_eq_one (m : ℕ)
       inv_one, SplitTorus.relabel_one, Category.id_comp]
     rw [Aut.one_asIso, Iso.refl_hom, Category.comp_id]
 
+end GroupScheme
+
 /-! ## The symmetry on algebra-valued points -/
 
-include hθe hσ hbasis hwt in
+section AlgebraPoints
+
 /-- The coordinate automorphism attached to a numbered symmetry preserves the toral defining Hopf
 ideal in both directions. -/
 private theorem mem_kostantToralDefiningIdeal_numberedSymmetryCoordinateIso_iff
@@ -472,7 +453,6 @@ private theorem mem_kostantToralDefiningIdeal_numberedSymmetryCoordinateIso_iff
     e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt]
   rw [HopfIdeal.mem_comapOfSurjective]
 
-include hθe hσ hbasis hwt in
 /-- **Conjugating by the matrix of a numbered symmetry preserves the algebra-valued points of the
 toral closure**, in both directions. The symmetry permutes the represented root subgroups and
 carries the represented weight torus to itself, so it preserves the Hopf ideal cut out by them and
@@ -511,14 +491,13 @@ theorem conj_kostantNumberedSymmetryMatrix_mem_kostantToralPointsSubgroup_iff
   · intro hall x hx
     obtain ⟨y, rfl⟩ := hsurj x
     exact (hval y).symm.trans (hall y
-      ((mem_kostantToralDefiningIdeal_numberedSymmetryCoordinateIso_iff
-        e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt y).1 hx))
+      ((mem_kostantToralDefiningIdeal_numberedSymmetryCoordinateIso_iff e h ρ M hM hnil b wt
+        σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt y).1 hx))
   · intro hall x hx
     exact (hval x).trans (hall _
-      ((mem_kostantToralDefiningIdeal_numberedSymmetryCoordinateIso_iff
-        e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt x).2 hx))
+      ((mem_kostantToralDefiningIdeal_numberedSymmetryCoordinateIso_iff e h ρ M hM hnil b wt
+        σ θ hθM hθe hσ basisPerm basisScale hbasis torusPerm hwt x).2 hx))
 
-include hθe hσ hbasis hwt in
 /-- **The matrix of a numbered symmetry normalizes the algebra-valued points of the toral
 closure.** This is the form in which conjugation by that matrix restricts to an automorphism of the
 point group. -/
@@ -540,11 +519,16 @@ theorem map_kostantToralPointsSubgroup_conj_numberedSymmetryMatrix (A : Type v) 
         kostantNumberedSymmetryMatrix M b θ hθM A)))
   rw [hg]
 
+end AlgebraPoints
+
+end DefiningIdeal
+
 /-! ## The symmetry on scheme-valued points -/
+
+section SchemePoints
 
 open scoped CategoryTheory.MonObj
 
-include hθe hσ hbasis hwt in
 /-- Composing a scheme-valued point with the toral symmetry precomposes its algebra point with the
 quotient coordinate automorphism. -/
 private theorem kostantToralSchemePointMulEquiv_comp_numberedSymmetryIso (A : Type) [CommRing A]
@@ -555,8 +539,8 @@ private theorem kostantToralSchemePointMulEquiv_comp_numberedSymmetryIso (A : Ty
           basisScale hbasis torusPerm hwt).asIso.hom.hom.hom =
       kostantToralSchemePointMulEquiv e h ρ M hM hnil b wt A
         ((CommHopfAlgCat.Hom.mapPointsFunctor
-          (kostantToralCoordinateNumberedSymmetryIso e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm
-            basisScale hbasis torusPerm hwt).hom).app (CommAlgCat.of ℤ A) q) := by
+          (kostantToralCoordinateNumberedSymmetryIso e h ρ M hM hnil b wt σ θ hθM hθe hσ
+            basisPerm basisScale hbasis torusPerm hwt).hom).app (CommAlgCat.of ℤ A) q) := by
   rw [kostantToralNumberedSymmetryIso, Functor.mapIso_hom, Iso.op_hom]
   exact CommHopfAlgCat.pointMulEquivOfPresentation_mapDomain (R := ℤ) A
     (kostantToralGroupScheme_eq_hopfSpec e h ρ M hM hnil b wt)
@@ -608,7 +592,6 @@ private theorem schemePointsMulEquiv_kostantToralSchemePointMulEquiv_comp_toralG
   -- with the plain convolution point the general-linear comparison is stated for.
   exact GeneralLinear.schemePointsMulEquiv_groupSchemePointMulEquiv (R := ℤ) n A _
 
-include hθe hσ hbasis hwt in
 /-- **On every algebra-valued point of the toral closure, the numbered-symmetry automorphism of the
 group scheme is conjugation by the numbered-symmetry matrix.** This identifies the automorphism
 `kostantToralNumberedSymmetryIso` of the carrier with the matrix conjugation that
@@ -645,8 +628,8 @@ theorem schemePointsMulEquiv_kostantToralNumberedSymmetryIso (A : Type) [CommRin
         (CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ n)
           (kostantToralDefiningIdeal e h ρ M hM hnil b wt))).app (CommAlgCat.of ℤ A)
         ((CommHopfAlgCat.Hom.mapPointsFunctor
-          (kostantToralCoordinateNumberedSymmetryIso e h ρ M hM hnil b wt σ θ hθM hθe hσ basisPerm
-            basisScale hbasis torusPerm hwt).hom).app (CommAlgCat.of ℤ A) q) =
+          (kostantToralCoordinateNumberedSymmetryIso e h ρ M hM hnil b wt σ θ hθM hθe hσ
+            basisPerm basisScale hbasis torusPerm hwt).hom).app (CommAlgCat.of ℤ A) q) =
       (CommHopfAlgCat.Hom.mapPointsFunctor
         (kostantNumberedSymmetryCoordinateIso M b θ hθM).hom).app (CommAlgCat.of ℤ A)
         ((CommHopfAlgCat.Hom.mapPointsFunctor
@@ -664,5 +647,9 @@ theorem schemePointsMulEquiv_kostantToralNumberedSymmetryIso (A : Type) [CommRin
   rw [hpoint]
   exact pointsMulEquiv_mapPointsFunctor_kostantNumberedSymmetryCoordinateIso M b θ hθM
     (CommAlgCat.of ℤ A) _
+
+end SchemePoints
+
+end NumberedSymmetry
 
 end TauCeti.UniversalEnvelopingAlgebra
