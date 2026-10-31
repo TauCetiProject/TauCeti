@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicGeometry.Restrict
 public import TauCeti.RingTheory.Etale.Locus
 public import TauCeti.RingTheory.QuasiFinite.Localization
 public import TauCeti.RingTheory.Unramified.LocalRing
+import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 
 /-!
 # Unramified, étale and quasi-finite at a point, read off from the stalk map
@@ -52,9 +53,11 @@ Viewing the stalk map as an algebra `𝒪_{Y, f x} → 𝒪_{X, x}`, it is local
 (`TauCeti.AlgebraicGeometry.isLocalHom_stalkMap_toAlgebra`), essentially of finite type when `f`
 is locally of finite type (`TauCeti.AlgebraicGeometry.essFiniteType_stalkMap_toAlgebra`), and
 formally unramified when `f` is
-(`TauCeti.AlgebraicGeometry.formallyUnramified_stalkMap_toAlgebra`). For `f` formally unramified
-and locally of finite type, the maximal ideal of `𝒪_{Y, f x}` generates the maximal ideal of
-`𝒪_{X, x}` along the stalk map
+(`TauCeti.AlgebraicGeometry.formallyUnramified_stalkMap_toAlgebra`). When `f` is moreover flat,
+the stalk map is faithfully flat, so `𝒪_{Y, f x}` is Noetherian exactly when `𝒪_{X, x}` is
+(`TauCeti.AlgebraicGeometry.isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType`).
+For `f` formally unramified and locally of finite type, the maximal ideal of `𝒪_{Y, f x}`
+generates the maximal ideal of `𝒪_{X, x}` along the stalk map
 (`TauCeti.AlgebraicGeometry.map_maximalIdeal_stalkMap_of_formallyUnramified`).
 
 The passage from the stalk to a neighbourhood follows Mathlib's
@@ -313,6 +316,26 @@ theorem essFiniteType_stalkMap_toAlgebra [LocallyOfFiniteType f] :
   let := (f.stalkMap x).hom.toAlgebra
   rw [← RingHom.essFiniteType_algebraMap, RingHom.algebraMap_toAlgebra]
   exact LocallyOfFiniteType.stalkMap f x
+
+/-- A flat morphism `f : X ⟶ Y` locally of finite type preserves and reflects Noetherian local
+rings: the local ring of `Y` at `f x` is Noetherian exactly when the local ring of `X` at `x` is. -/
+theorem isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType [Flat f]
+    [LocallyOfFiniteType f] :
+    IsNoetherianRing (Y.presheaf.stalk (f x)) ↔ IsNoetherianRing (X.presheaf.stalk x) := by
+  let := (f.stalkMap x).hom.toAlgebra
+  have := isLocalHom_stalkMap_toAlgebra f x
+  have : Module.Flat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := Flat.stalkMap f x
+  have := essFiniteType_stalkMap_toAlgebra f x
+  refine ⟨fun _ ↦
+    Algebra.EssFiniteType.isNoetherianRing (Y.presheaf.stalk (f x)) (X.presheaf.stalk x),
+    fun _ ↦ ?_⟩
+  -- a flat local homomorphism is faithfully flat, and Noetherianity descends along it
+  have : Module.FaithfullyFlat (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) :=
+    .of_flat_of_isLocalHom
+  exact Submodule.IsNoetherian.of_isNoetherian_tensorProduct_of_faithfullyFlat
+    (A := X.presheaf.stalk x) <| isNoetherian_of_linearEquiv
+      (Algebra.TensorProduct.rid (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)
+        (X.presheaf.stalk x)).toLinearEquiv.symm
 
 /-- The stalk map at `x` of a formally unramified morphism `f : X ⟶ Y`, as an algebra, is formally
 unramified. -/

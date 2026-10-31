@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
 public import Mathlib.Topology.KrullDimension
 import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
 import TauCeti.AlgebraicGeometry.Morphisms.Etale.Stalk
+import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 
 /-!
@@ -91,7 +92,7 @@ theorem IsRegularOfDim.of_etale (f : X ⟶ Y) [Etale f] [Nonempty X] (h : IsRegu
       iSup_ringKrullDim_stalk_eq_of_etale f U ⟨f '' U, f.isOpenMap _ U.isOpen⟩ rfl fun x ↦ ?_]
     · exact h.iSup_ringKrullDim_stalk_eq _ (hU.image _)
     · have := h.isRegularLocalRing_stalk (f x)
-      exact (isNoetherianRing_stalk_iff_of_etale f x).mp inferInstance
+      exact (isNoetherianRing_stalk_iff_of_flat_of_locallyOfFiniteType f x).mp inferInstance
 
 /-- **Regularity of dimension `d` descends along étale surjective morphisms.** If `f : X ⟶ Y` is
 étale and surjective and `X` is regular of dimension `d`, then `Y` is regular of dimension `d`. -/
