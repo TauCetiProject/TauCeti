@@ -143,57 +143,63 @@ private theorem assocAux_symm_tmul (x : E) (y : F) (z : G) :
     (assocAux (𝕜 := 𝕜)).symm ⟨x ⊗ₜ ⟨y ⊗ₜ z⟩⟩ = ⟨⟨x ⊗ₜ y⟩ ⊗ₜ z⟩ := by
   simp [assocAux]
 
-/-- The rearrangement does not increase the projective norm: on `w ⊗ₜ z`, it is bounded by
-`‖w‖ * ‖z‖` because, for fixed `z`, it is bounded on pure tensors `x ⊗ₜ y` by
-`‖x‖ * (‖y‖ * ‖z‖)`. -/
-private theorem norm_assocAux_le (v : ProjectiveTensor 𝕜 (ProjectiveTensor 𝕜 E F) G) :
-    ‖assocAux v‖ ≤ ‖v‖ := by
-  let f := (linearEquiv 𝕜 E (ProjectiveTensor 𝕜 F G)).toLinearMap ∘ₗ
-    (assocAux (𝕜 := 𝕜) (E := E) (F := F) (G := G)).toLinearMap ∘ₗ
-    (linearEquiv 𝕜 (ProjectiveTensor 𝕜 E F) G).symm.toLinearMap
-  have key : ∀ w z, TensorProduct.projectiveSeminorm 𝕜 E (ProjectiveTensor 𝕜 F G)
-      (f (w ⊗ₜ z)) ≤ 1 * (‖w‖ * ‖z‖) := fun w z ↦ by
-    have := TensorProduct.apply_le_mul_projectiveSeminorm
-      (p := TensorProduct.projectiveSeminorm 𝕜 E (ProjectiveTensor 𝕜 F G))
-      (f := f ∘ₗ (TensorProduct.mk 𝕜 _ G).flip z ∘ₗ (linearEquiv 𝕜 E F).symm.toLinearMap)
+/-- A seminorm bounded on the images of iterated pure tensors `(x ⊗ₜ y) ⊗ₜ z` by
+`‖x‖ * (‖y‖ * ‖z‖)` is bounded on the image of every iterated projective tensor by its norm: for
+fixed `z` the bound on pure tensors `x ⊗ₜ y` gives the bound `‖w‖ * ‖z‖` on `w ⊗ₜ z`. -/
+private theorem apply_le_norm_of_tmul_tmul_le {H : Type*} [AddCommGroup H] [Module 𝕜 H]
+    {p : Seminorm 𝕜 H} {f : ProjectiveTensor 𝕜 (ProjectiveTensor 𝕜 E F) G →ₗ[𝕜] H}
+    (h : ∀ x y z, p (f ⟨⟨x ⊗ₜ y⟩ ⊗ₜ z⟩) ≤ ‖x‖ * (‖y‖ * ‖z‖))
+    (v : ProjectiveTensor 𝕜 (ProjectiveTensor 𝕜 E F) G) : p (f v) ≤ ‖v‖ := by
+  let g := f ∘ₗ (linearEquiv 𝕜 (ProjectiveTensor 𝕜 E F) G).symm.toLinearMap
+  have key : ∀ w z, p (g (w ⊗ₜ z)) ≤ 1 * (‖w‖ * ‖z‖) := fun w z ↦ by
+    have := TensorProduct.apply_le_mul_projectiveSeminorm (p := p)
+      (f := g ∘ₗ (TensorProduct.mk 𝕜 _ G).flip z ∘ₗ (linearEquiv 𝕜 E F).symm.toLinearMap)
       (norm_nonneg z) (fun x y ↦ by
-        simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
-          linearEquiv_symm_apply, LinearMap.flip_apply, TensorProduct.mk_apply, f,
-          assocAux_tmul, linearEquiv_apply]
-        calc _ ≤ ‖x‖ * ‖(⟨y ⊗ₜ z⟩ : ProjectiveTensor 𝕜 F G)‖ :=
-              TensorProduct.projectiveSeminorm_tmul_le _ _
-          _ ≤ ‖x‖ * (‖y‖ * ‖z‖) := by
-              gcongr
-              exact (norm_def _).trans_le (TensorProduct.projectiveSeminorm_tmul_le y z)
-          _ = ‖z‖ * (‖x‖ * ‖y‖) := by ring) w.toTensorProduct
+        simpa [g, mul_comm ‖z‖, mul_assoc] using h x y z) w.toTensorProduct
     simpa [norm_def, mul_comm ‖z‖] using this
-  simpa [norm_def, f] using TensorProduct.apply_le_mul_projectiveSeminorm zero_le_one key
+  simpa [norm_def, g] using TensorProduct.apply_le_mul_projectiveSeminorm zero_le_one key
     v.toTensorProduct
+
+/-- A seminorm bounded on the images of iterated pure tensors `x ⊗ₜ (y ⊗ₜ z)` by
+`‖x‖ * (‖y‖ * ‖z‖)` is bounded on the image of every iterated projective tensor by its norm: for
+fixed `x` the bound on pure tensors `y ⊗ₜ z` gives the bound `‖x‖ * ‖w‖` on `x ⊗ₜ w`. -/
+private theorem apply_le_norm_of_tmul_tmul_le' {H : Type*} [AddCommGroup H] [Module 𝕜 H]
+    {p : Seminorm 𝕜 H} {f : ProjectiveTensor 𝕜 E (ProjectiveTensor 𝕜 F G) →ₗ[𝕜] H}
+    (h : ∀ x y z, p (f ⟨x ⊗ₜ ⟨y ⊗ₜ z⟩⟩) ≤ ‖x‖ * (‖y‖ * ‖z‖))
+    (v : ProjectiveTensor 𝕜 E (ProjectiveTensor 𝕜 F G)) : p (f v) ≤ ‖v‖ := by
+  let g := f ∘ₗ (linearEquiv 𝕜 E (ProjectiveTensor 𝕜 F G)).symm.toLinearMap
+  have key : ∀ x w, p (g (x ⊗ₜ w)) ≤ 1 * (‖x‖ * ‖w‖) := fun x w ↦ by
+    have := TensorProduct.apply_le_mul_projectiveSeminorm (p := p)
+      (f := g ∘ₗ TensorProduct.mk 𝕜 E _ x ∘ₗ (linearEquiv 𝕜 F G).symm.toLinearMap)
+      (norm_nonneg x) (fun y z ↦ by simpa [g] using h x y z) w.toTensorProduct
+    simpa [norm_def] using this
+  simpa [norm_def, g] using TensorProduct.apply_le_mul_projectiveSeminorm zero_le_one key
+    v.toTensorProduct
+
+/-- The rearrangement does not increase the projective norm. -/
+private theorem norm_assocAux_le (v : ProjectiveTensor 𝕜 (ProjectiveTensor 𝕜 E F) G) :
+    ‖assocAux v‖ ≤ ‖v‖ :=
+  apply_le_norm_of_tmul_tmul_le (p := normSeminorm 𝕜 _) (f := assocAux.toLinearMap)
+    (fun x y z ↦ by
+      rw [coe_normSeminorm, LinearEquiv.coe_coe, assocAux_tmul, norm_def]
+      calc _ ≤ ‖x‖ * ‖(⟨y ⊗ₜ z⟩ : ProjectiveTensor 𝕜 F G)‖ :=
+            TensorProduct.projectiveSeminorm_tmul_le _ _
+        _ ≤ ‖x‖ * (‖y‖ * ‖z‖) := by
+            gcongr
+            exact (norm_def _).trans_le (TensorProduct.projectiveSeminorm_tmul_le y z)) v
 
 /-- The inverse rearrangement does not increase the projective norm. -/
 private theorem norm_assocAux_symm_le (v : ProjectiveTensor 𝕜 E (ProjectiveTensor 𝕜 F G)) :
-    ‖assocAux.symm v‖ ≤ ‖v‖ := by
-  let f := (linearEquiv 𝕜 (ProjectiveTensor 𝕜 E F) G).toLinearMap ∘ₗ
-    (assocAux (𝕜 := 𝕜) (E := E) (F := F) (G := G)).symm.toLinearMap ∘ₗ
-    (linearEquiv 𝕜 E (ProjectiveTensor 𝕜 F G)).symm.toLinearMap
-  have key : ∀ x w, TensorProduct.projectiveSeminorm 𝕜 (ProjectiveTensor 𝕜 E F) G
-      (f (x ⊗ₜ w)) ≤ 1 * (‖x‖ * ‖w‖) := fun x w ↦ by
-    have := TensorProduct.apply_le_mul_projectiveSeminorm
-      (p := TensorProduct.projectiveSeminorm 𝕜 (ProjectiveTensor 𝕜 E F) G)
-      (f := f ∘ₗ TensorProduct.mk 𝕜 E _ x ∘ₗ (linearEquiv 𝕜 F G).symm.toLinearMap)
-      (norm_nonneg x) (fun y z ↦ by
-        simp only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
-          linearEquiv_symm_apply, TensorProduct.mk_apply, f, assocAux_symm_tmul,
-          linearEquiv_apply]
-        calc _ ≤ ‖(⟨x ⊗ₜ y⟩ : ProjectiveTensor 𝕜 E F)‖ * ‖z‖ :=
-              TensorProduct.projectiveSeminorm_tmul_le _ _
-          _ ≤ (‖x‖ * ‖y‖) * ‖z‖ := by
-              gcongr
-              exact (norm_def _).trans_le (TensorProduct.projectiveSeminorm_tmul_le x y)
-          _ = ‖x‖ * (‖y‖ * ‖z‖) := by ring) w.toTensorProduct
-    simpa [norm_def] using this
-  simpa [norm_def, f] using TensorProduct.apply_le_mul_projectiveSeminorm zero_le_one key
-    v.toTensorProduct
+    ‖assocAux.symm v‖ ≤ ‖v‖ :=
+  apply_le_norm_of_tmul_tmul_le' (p := normSeminorm 𝕜 _) (f := assocAux.symm.toLinearMap)
+    (fun x y z ↦ by
+      rw [coe_normSeminorm, LinearEquiv.coe_coe, assocAux_symm_tmul, norm_def]
+      calc _ ≤ ‖(⟨x ⊗ₜ y⟩ : ProjectiveTensor 𝕜 E F)‖ * ‖z‖ :=
+            TensorProduct.projectiveSeminorm_tmul_le _ _
+        _ ≤ (‖x‖ * ‖y‖) * ‖z‖ := by
+            gcongr
+            exact (norm_def _).trans_le (TensorProduct.projectiveSeminorm_tmul_le x y)
+        _ = ‖x‖ * (‖y‖ * ‖z‖) := mul_assoc _ _ _) v
 
 variable (𝕜 E F G) in
 /-- The associativity isometry `(x ⊗ₜ y) ⊗ₜ z ↦ x ⊗ₜ (y ⊗ₜ z)` of iterated projective tensor
