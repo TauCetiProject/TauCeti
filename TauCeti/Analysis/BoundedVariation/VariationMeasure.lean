@@ -47,6 +47,8 @@ regular measures follows from `MeasureTheory.Measure.OuterRegular.ext_isOpen`.
   forward to its restriction to `U`.
 * `TauCeti.variationMeasure_congr_ae`: the variation measure only depends on `u` almost
   everywhere on `Ω`.
+* `TauCeti.variationMeasure_const_sub`: against an additive Haar measure, `c - u` has the same
+  variation measure as `u`.
 
 ## References
 
@@ -216,11 +218,11 @@ theorem map_inclusion_variationMeasure (hu : LocallyIntegrableOn u Ω μ)
     (Opens.isOpenEmbedding_of_le hU).measurableEmbedding.map_comap, range_inclusion]
   rfl
 
-/-- **Locality.** The variation measure on `Ω` only depends on `u` almost everywhere on `Ω`. -/
-theorem variationMeasure_congr_ae (h : u =ᵐ[μ.restrict Ω] v) :
+/-- The variation measure on `Ω` only depends on local integrability on `Ω` and on the total
+variations on open subsets of `Ω`. -/
+theorem variationMeasure_congr (hloc : LocallyIntegrableOn u Ω μ ↔ LocallyIntegrableOn v Ω μ)
+    (htv : ∀ U : Opens E, U ≤ Ω → totalVariationOn μ U u = totalVariationOn μ U v) :
     variationMeasure μ Ω u = variationMeasure μ Ω v := by
-  have htv {U : Opens E} (hU : U ≤ Ω) : totalVariationOn μ U u = totalVariationOn μ U v :=
-    totalVariationOn_congr_ae (ae_restrict_of_ae_restrict_of_subset hU h)
   -- Local finiteness of the variation only needs neighbourhoods inside `Ω`.
   have hfin {w : E → ℝ} : (∀ K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U w ≠ ∞) ↔
@@ -234,15 +236,32 @@ theorem variationMeasure_congr_ae (h : u =ᵐ[μ.restrict Ω] v) :
       ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞) ↔
       (LocallyIntegrableOn v Ω μ ∧
       ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U v ≠ ∞) := by
-    rw [locallyIntegrableOn_congr h, hfin, hfin]
+    rw [hloc, hfin, hfin]
     refine and_congr_right fun _ => forall₃_congr fun K _ _ => exists_congr fun U => ?_
-    exact and_congr_right fun _ => and_congr_right fun hU => by rw [htv hU]
+    exact and_congr_right fun _ => and_congr_right fun hU => by rw [htv U hU]
   by_cases hu : LocallyIntegrableOn u Ω μ ∧
       ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞
   · have hv := hiff.1 hu
     exact eq_variationMeasure hv.1 hv.2 fun U hU => by
-      rw [variationMeasure_preimage_coe hu.1 hu.2 hU, htv hU]
+      rw [variationMeasure_preimage_coe hu.1 hu.2 hU, htv U hU]
   · rw [variationMeasure_eq_zero_of_not hu, variationMeasure_eq_zero_of_not (hiff.not.1 hu)]
+
+/-- **Locality.** The variation measure on `Ω` only depends on `u` almost everywhere on `Ω`. -/
+theorem variationMeasure_congr_ae (h : u =ᵐ[μ.restrict Ω] v) :
+    variationMeasure μ Ω u = variationMeasure μ Ω v :=
+  variationMeasure_congr (locallyIntegrableOn_congr h) fun _ hU =>
+    totalVariationOn_congr_ae (ae_restrict_of_ae_restrict_of_subset hU h)
+
+/-- Against an additive Haar measure, `c - u` has the same variation measure as `u`. In
+particular the indicators of a set and of its complement have the same variation measure. -/
+@[simp]
+theorem variationMeasure_const_sub [μ.IsAddHaarMeasure] (c : ℝ) :
+    variationMeasure μ Ω (fun x => c - u x) = variationMeasure μ Ω u := by
+  have hc : LocallyIntegrableOn (fun _ : E => c) Ω μ :=
+    (locallyIntegrable_const c).locallyIntegrableOn _
+  refine variationMeasure_congr ⟨fun h => ?_, fun h => hc.sub h⟩ fun U _ =>
+    totalVariationOn_const_sub c
+  exact (locallyIntegrableOn_congr (ae_of_all _ fun x => sub_sub_cancel c (u x))).1 (hc.sub h)
 
 end Measure
 

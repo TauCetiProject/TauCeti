@@ -240,9 +240,6 @@ theorem ideleClassNormMap_ofCompletion (v : InfinitePlace K) (w : InfinitePlace 
 norm quotient `C_K / N_{L/K}(C_L)` is a group. -/
 instance normal_range_ideleClassNormMap :
     (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range.Normal :=
-  -- `IdeleClassGroup` is an abbreviation whose commutativity `IsMulCommutative` search does not
-  -- find through the quotient, so it is supplied here.
-  have : IsMulCommutative (IdeleClassGroup (𝓞 K) K) := ⟨⟨fun a b ↦ mul_comm a b⟩⟩
   Subgroup.normal_of_isMulCommutative _
 
 /-- The relative norm on idele classes is continuous for the quotient topology. -/
