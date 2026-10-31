@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Covering.Besicovitch
 
 /-!
-# Density points of null-measurable sets
+# Besicovitch covering: density points, subspaces and Lebesgue differentiation
 
 For a null-measurable set `s`, the proportion of the complement `sᶜ` in a set of positive finite
 measure is one minus the proportion of `s`. Consequently, if the proportion of `s` along
@@ -23,6 +23,13 @@ Besicovitch covering property, Mathlib's density theorem
 We extend it to null-measurable sets and record its set form: a null-measurable set agrees almost
 everywhere with its set of density-one points. That set is a canonical representative of the
 `μ`-a.e. class of `s`, since it depends only on that class.
+
+The Besicovitch covering property passes to subspaces (`Isometry.hasBesicovitchCovering`), so
+an open subset of a finite-dimensional real normed space has it too. This lets differentiation
+theorems apply to measures that are only locally finite on an open set, such as derivative
+measures of functions of locally bounded variation. For such measures, the Besicovitch Vitali
+family gives the Lebesgue differentiation theorem along concentric closed balls,
+`Besicovitch.ae_tendsto_average_closedBall`.
 -/
 
 public section
@@ -92,3 +99,45 @@ theorem ae_eq_setOf_tendsto_measure_inter_div (hs : NullMeasurableSet s μ) :
 end NullMeasurableSet
 
 end MeasureTheory
+
+/-! ### The Besicovitch covering property for subspaces -/
+
+/-- The Besicovitch covering property passes along isometric embeddings: a satellite
+configuration in the domain maps to one in the codomain. -/
+theorem Isometry.hasBesicovitchCovering {α β : Type*} [MetricSpace α] [MetricSpace β]
+    [HasBesicovitchCovering β] {f : α → β} (hf : Isometry f) : HasBesicovitchCovering α := by
+  obtain ⟨N, τ, hτ, hN⟩ := HasBesicovitchCovering.no_satelliteConfig (α := β)
+  refine ⟨N, τ, hτ, ⟨fun a => hN.false ?_⟩⟩
+  exact
+    { c := f ∘ a.c
+      r := a.r
+      rpos := a.rpos
+      h := fun i j hij => by simpa only [Function.comp_apply, hf.dist_eq] using a.h hij
+      hlast := fun i hi => by simpa only [Function.comp_apply, hf.dist_eq] using a.hlast i hi
+      inter := fun i hi => by simpa only [Function.comp_apply, hf.dist_eq] using a.inter i hi }
+
+/-- A subspace of a metric space with the Besicovitch covering property has it too. -/
+instance Subtype.hasBesicovitchCovering {α : Type*} [MetricSpace α] [HasBesicovitchCovering α]
+    (p : α → Prop) : HasBesicovitchCovering (Subtype p) :=
+  isometry_subtype_coe.hasBesicovitchCovering
+
+/-! ### Differentiation along concentric closed balls -/
+
+namespace Besicovitch
+
+variable {β F : Type*} [MetricSpace β] [MeasurableSpace β] [BorelSpace β]
+  [SecondCountableTopology β] [HasBesicovitchCovering β] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [CompleteSpace F]
+
+open MeasureTheory
+
+/-- **Lebesgue's differentiation theorem** for a locally finite measure in a space with the
+Besicovitch covering property: for a locally integrable function `f`, at almost every point `x`
+the averages of `f` over the closed balls around `x` tend to `f x`. -/
+theorem ae_tendsto_average_closedBall (μ : Measure β) [IsLocallyFiniteMeasure μ] {f : β → F}
+    (hf : LocallyIntegrable f μ) :
+    ∀ᵐ x ∂μ, Tendsto (fun r => ⨍ y in closedBall x r, f y ∂μ) (𝓝[>] 0) (𝓝 (f x)) := by
+  filter_upwards [(Besicovitch.vitaliFamily μ).ae_tendsto_average hf] with x hx
+  exact hx.comp (Besicovitch.tendsto_filterAt μ x)
+
+end Besicovitch

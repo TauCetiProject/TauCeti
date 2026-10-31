@@ -8,9 +8,14 @@ module
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Analysis.Calculus.Bilinear
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.CurveInTotalSpace
+import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.FiberBundle.Trivialization
 import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The Legendre map of a Lagrangian
@@ -41,8 +46,17 @@ Differentiating the Legendre map once more along the fibre gives the **fibre Hes
 (`TauCeti.fiberHessian`): at a tangent vector `v` at `x` it is the bilinear form on `T_x M` given by
 the second derivative at `v` of `L` restricted to `T_x M`, in coordinates the matrix
 `∂²L/∂v∂v`. A Lagrangian is **regular** when all its fibre Hessians are invertible
-(`TauCeti.IsRegularLagrangian`). Regularity is the standard hypothesis for inverting the Legendre
-map locally, which relates the Lagrangian and Hamiltonian descriptions of a mechanical system.
+(`TauCeti.IsRegularLagrangian`). Regularity is exactly the condition for inverting the Legendre
+map locally, which relates the Lagrangian and Hamiltonian descriptions of a mechanical system. In
+bundle charts with coordinates `(q, v)` and `(q, p)`, the differential of `FL` at a tangent vector
+has the block lower triangular form `(δq, δv) ↦ (δq, ∂²L/∂q∂v δq + ∂²L/∂v∂v δv)`, so it is
+invertible exactly when the fibre Hessian there is
+(`TauCeti.isInvertible_mfderiv_legendreMap_iff`). By the inverse function theorem, the Legendre
+map of a `C^(m+1)` Lagrangian, `1 ≤ m`, is a `C^m` local diffeomorphism at an interior tangent
+vector exactly when the fibre Hessian there is invertible
+(`TauCeti.isLocalDiffeomorphAt_legendreMap_iff`); on a boundaryless manifold it is a local
+diffeomorphism exactly when the Lagrangian is regular
+(`TauCeti.isLocalDiffeomorph_legendreMap_iff`).
 
 Subtracting a potential `V : M → 𝕜` changes neither the Legendre map, nor the fibre Hessian, nor the
 Cartan forms, and adds `V` to the energy (`TauCeti.legendreMap_sub_comp_proj`,
@@ -67,6 +81,11 @@ Riemannian metric (`TauCeti.isRegularLagrangian_mechanicalLagrangian`).
   `TauCeti.contMDiff_lagrangianEnergy`.
 * `TauCeti.fiberHessian`, `TauCeti.IsRegularLagrangian`: the fibre Hessian of a Lagrangian, and
   regular Lagrangians.
+* `TauCeti.isInvertible_mfderiv_legendreMap_iff`: the differential of `FL` is invertible exactly
+  where the fibre Hessian is.
+* `TauCeti.isLocalDiffeomorphAt_legendreMap_iff`, `TauCeti.isLocalDiffeomorph_legendreMap_iff`:
+  `FL` is a local diffeomorphism at a tangent vector exactly when the fibre Hessian there is
+  invertible, and everywhere exactly when the Lagrangian is regular.
 * `TauCeti.cartanForm`, `TauCeti.cartanTwoForm`: the Cartan forms `θ_L = FL^*λ` and
   `ω_L = -dθ_L = FL^*ω`.
 * `TauCeti.mechanicalLagrangian`: the Lagrangian `½ g(v, v) - V(x)`, with its Legendre map,
@@ -271,6 +290,172 @@ theorem isRegularLagrangian_sub_comp_proj_iff {L : TangentBundle I M → 𝕜} {
   simp only [isRegularLagrangian_iff, fiberHessian_sub_comp_proj]
 
 end FiberHessian
+
+section Differential
+
+variable {𝕜 E H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I 2 M] {L : TangentBundle I M → 𝕜} {n : WithTop ℕ∞}
+
+/-- In bundle charts, the differential of the Legendre map keeps the base coordinate, because the
+Legendre map covers the identity of `M`. -/
+private theorem fst_comp_mfderiv_legendreMap (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
+    (hn : 2 ≤ n) (v : TangentBundle I M) :
+    ContinuousLinearMap.fst 𝕜 E (E →L[𝕜] 𝕜) ∘L
+        mfderiv I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L) v =
+      ContinuousLinearMap.fst 𝕜 E E := by
+  have hcomp := mfderiv_comp v
+    ((contMDiff_proj (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) _).mdifferentiableAt one_ne_zero)
+    ((contMDiff_legendreMap (m := 1) hL (by simpa [one_add_one_eq_two] using hn) v
+      ).mdifferentiableAt one_ne_zero)
+  have hπ : π (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) ∘ legendreMap L =
+      π E (TangentSpace I) :=
+    funext (proj_legendreMap L)
+  rw [hπ, Bundle.mfderiv_proj, Bundle.mfderiv_proj] at hcomp
+  exact hcomp.symm
+
+/-- **The differential of the Legendre map on vertical vectors.** In bundle charts, the
+differential of the Legendre map at `v` sends the vertical vector with fibre coordinate `w` to the
+vertical covector with fibre coordinate the fibre Hessian `∂²L/∂v∂v` applied to `w`. It is stated
+for the differential `T` read as a map between the model spaces of the charts. -/
+private theorem mfderiv_legendreMap_vertical (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
+    (hn : 2 ≤ n) (v : TangentBundle I M) {T : E × E →L[𝕜] E × (E →L[𝕜] 𝕜)}
+    (hT : mfderiv I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L) v = T)
+    (w : TangentSpace I v.proj) :
+    T (0, (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt 𝕜 v.proj w) =
+      (0, (trivializationAt (E →L[𝕜] 𝕜) (fun x ↦ TangentSpace I x →L[𝕜] 𝕜) v.proj
+        ).continuousLinearMapAt 𝕜 v.proj (fiberHessian L v w)) := by
+  have hn1 : 1 + 1 ≤ n := by simpa [one_add_one_eq_two] using hn
+  set eC := trivializationAt (E →L[𝕜] 𝕜) (fun x ↦ TangentSpace I x →L[𝕜] 𝕜) v.proj
+  have hxC : v.proj ∈ eC.baseSet := FiberBundle.mem_baseSet_trivializationAt _ _ _
+  let B : (E →L[𝕜] 𝕜) →L[𝕜] (E →L[𝕜] 𝕜) := eC.continuousLinearMapAt 𝕜 v.proj
+  -- The line through `v` in its fibre, in the direction `w`.
+  let γ : 𝕜 → TangentBundle I M := fun r ↦ TotalSpace.mk' E v.proj (v.2 + r • w)
+  have hγ : HasMFDerivAt 𝓘(𝕜) I.tangent γ 0 ((1 : 𝕜 →L[𝕜] 𝕜).smulRight
+      ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt 𝕜 v.proj w)) :=
+    TauCeti.Manifold.hasMFDerivAt_totalSpaceMk_add_smul (F := E) (V := TangentSpace I) v.proj v.2 w
+  have hγ0 : γ 0 = v := by simp [γ]
+  -- On the fibre through `v`, the Legendre map is the derivative `D` of the restricted
+  -- Lagrangian, whose own derivative at `v` is the fibre Hessian.
+  let D : E → E →L[𝕜] 𝕜 := fderiv 𝕜 (fun u : E ↦ L (TotalSpace.mk' E v.proj u))
+  let Hs : E →L[𝕜] E →L[𝕜] 𝕜 := fiberHessian L v
+  have hD : HasFDerivAt D Hs (id v.2 : E) :=
+    (((contMDiff_iff_contDiff.1 (hL.comp (contMDiff_tangentBundle_mk_constBase contMDiff_id v.proj))
+      ).fderiv_right (m := 1) hn1).differentiable one_ne_zero _).hasFDerivAt
+  have hline : HasDerivAt (fun r : 𝕜 ↦ D (v.2 + r • w)) (Hs w) 0 := by
+    have h1 : HasDerivAt (fun r : 𝕜 ↦ (id v.2 : E) + r • (id w : E)) (id w : E) 0 := by
+      have h := ((hasDerivAt_id' (0 : 𝕜)).smul_const (id w : E)).const_add (id v.2 : E)
+      rwa [one_smul] at h
+    have h2 : HasFDerivAt D Hs ((id v.2 : E) + (0 : 𝕜) • (id w : E)) := by
+      rwa [zero_smul, add_zero]
+    -- Elaborating the chain rule against the goal would look for a norm on `T_x M`; build it on
+    -- the model space `E` first, then match it with the goal through `T_x M = E`.
+    have h := h2.comp_hasDerivAt (0 : 𝕜) h1
+    exact h
+  -- So the Legendre map sends the line to a line of covectors, with velocity `(0, B (Hs w))`.
+  have hFLγ : HasMFDerivAt 𝓘(𝕜) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L ∘ γ) 0
+      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight ((0 : E), B (Hs w))) := by
+    have hcoord : (fun r : 𝕜 ↦ (eC ((legendreMap L ∘ γ) r)).2) =
+        fun r ↦ B (D (v.2 + r • w)) :=
+      funext fun r ↦ (Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) eC hxC _).symm
+    -- The base point of the line of covectors is `v.proj` by definition.
+    have hproj : ((legendreMap L ∘ γ) 0).proj = v.proj := rfl
+    rw [TauCeti.Manifold.hasMFDerivAt_totalSpace_curve_iff]
+    refine ⟨(FiberBundle.continuousAt_totalSpace _ _).2 ⟨continuousAt_const, ?_⟩,
+      hasDerivAt_const (0 : 𝕜) (extChartAt I v.proj v.proj), ?_⟩
+    · rw [hproj, hcoord]
+      exact B.continuous.continuousAt.comp hline.continuousAt
+    · rw [hproj, hcoord]
+      exact B.hasFDerivAt.comp_hasDerivAt (0 : 𝕜) hline
+  have hTγ : HasMFDerivAt I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L) (γ 0) T := by
+    rw [hγ0, ← hT]
+    exact ((contMDiff_legendreMap (m := 1) hL hn1 v).mdifferentiableAt one_ne_zero).hasMFDerivAt
+  -- Both `T` composed with the velocity of the line and the velocity of the line of covectors
+  -- are the derivative of `legendreMap L ∘ γ` at `0`.
+  have hEq : T.comp ((1 : 𝕜 →L[𝕜] 𝕜).smulRight
+        ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt 𝕜 v.proj w)) =
+      (1 : 𝕜 →L[𝕜] 𝕜).smulRight ((0 : E), eC.continuousLinearMapAt 𝕜 v.proj (fiberHessian L v w)) :=
+    (hTγ.comp 0 hγ).mfderiv.symm.trans hFLγ.mfderiv
+  have h := DFunLike.congr_fun hEq 1
+  simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.smulRight_apply,
+    one_apply_eq_self, one_smul] using h
+
+/-- **The differential of the Legendre map is invertible exactly where the fibre Hessian is.** In
+bundle charts the differential of `FL` is block lower triangular, keeping the base coordinate and
+acting on fibre coordinates by the fibre Hessian, up to the trivializations over `v.proj`. -/
+theorem isInvertible_mfderiv_legendreMap_iff (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
+    (hn : 2 ≤ n) (v : TangentBundle I M) :
+    (mfderiv I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L) v).IsInvertible ↔
+      (fiberHessian L v).IsInvertible := by
+  -- Read the differential as a map between the model spaces of the charts.
+  obtain ⟨T, hT⟩ : ∃ T : E × E →L[𝕜] E × (E →L[𝕜] 𝕜),
+      mfderiv I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) (legendreMap L) v = T := ⟨_, rfl⟩
+  set eT := trivializationAt E (TangentSpace I) v.proj
+  set eC := trivializationAt (E →L[𝕜] 𝕜) (fun x ↦ TangentSpace I x →L[𝕜] 𝕜) v.proj
+  have hxT : v.proj ∈ eT.baseSet := FiberBundle.mem_baseSet_trivializationAt _ _ _
+  have hxC : v.proj ∈ eC.baseSet := FiberBundle.mem_baseSet_trivializationAt _ _ _
+  let A : E ≃L[𝕜] E := eT.continuousLinearEquivAt 𝕜 v.proj hxT
+  let B : (E →L[𝕜] 𝕜) ≃L[𝕜] (E →L[𝕜] 𝕜) := eC.continuousLinearEquivAt 𝕜 v.proj hxC
+  let Hs : E →L[𝕜] E →L[𝕜] 𝕜 := fiberHessian L v
+  have hfst : ContinuousLinearMap.fst 𝕜 E (E →L[𝕜] 𝕜) ∘L T = ContinuousLinearMap.fst 𝕜 E E :=
+    hT ▸ fst_comp_mfderiv_legendreMap hL hn v
+  -- The diagonal block of `T` is the fibre Hessian, read in the trivializations over `v.proj`.
+  have hblock : ContinuousLinearMap.snd 𝕜 E (E →L[𝕜] 𝕜) ∘L T ∘L ContinuousLinearMap.inr 𝕜 E E =
+      (B : (E →L[𝕜] 𝕜) →L[𝕜] (E →L[𝕜] 𝕜)) ∘L Hs ∘L (A.symm : E →L[𝕜] E) := by
+    refine ContinuousLinearMap.ext fun w ↦ ?_
+    have hA : A (A.symm w) = eT.continuousLinearMapAt 𝕜 v.proj (A.symm w) :=
+      congrFun (eT.coe_continuousLinearEquivAt_eq hxT) _
+    have hB : B (Hs (A.symm w)) = eC.continuousLinearMapAt 𝕜 v.proj (Hs (A.symm w)) :=
+      congrFun (eC.coe_continuousLinearEquivAt_eq hxC) _
+    have h := mfderiv_legendreMap_vertical hL hn v hT (A.symm w)
+    rw [← hA, A.apply_symm_apply] at h
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply,
+      ContinuousLinearEquiv.coe_coe, h, hB]
+    -- `Hs` is the fibre Hessian, read as a bilinear form on the model space.
+    rfl
+  rw [hT]
+  refine (ContinuousLinearMap.isInvertible_iff_of_fst_comp_eq hfst).trans ?_
+  rw [hblock, ContinuousLinearMap.isInvertible_equiv_comp,
+    ContinuousLinearMap.isInvertible_comp_equiv]
+  -- `Hs` is the fibre Hessian, read as a bilinear form on the model space.
+  exact Iff.rfl
+
+end Differential
+
+section LocalDiffeomorph
+
+variable {𝕜 E H : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I 2 M] {L : TangentBundle I M → 𝕜} {m n : WithTop ℕ∞}
+  [IsManifold I.tangent m (TangentBundle I M)]
+  [IsManifold (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m (CotangentBundle I M)]
+
+/-- **The Legendre map is a local diffeomorphism where the fibre Hessian is invertible.** For a
+`C^n` Lagrangian with `m + 1 ≤ n` and `1 ≤ m`, the Legendre map is a `C^m` local diffeomorphism at
+an interior tangent vector `v` exactly when the fibre Hessian at `v` is invertible. -/
+theorem isLocalDiffeomorphAt_legendreMap_iff (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L)
+    (hmn : m + 1 ≤ n) (hm : 1 ≤ m) {v : TangentBundle I M} (hv : I.tangent.IsInteriorPoint v) :
+    IsLocalDiffeomorphAt I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m (legendreMap L) v ↔
+      (fiberHessian L v).IsInvertible := by
+  have h2m : (2 : WithTop ℕ∞) ≤ m + 1 := by
+    rw [← one_add_one_eq_two]
+    gcongr
+  have hn : 2 ≤ n := h2m.trans hmn
+  rw [← isInvertible_mfderiv_legendreMap_iff hL hn v]
+  exact isLocalDiffeomorphAt_iff_exists_mfderiv_eq (contMDiff_legendreMap hL hmn).contMDiffOn
+    isOpen_univ (mem_univ v) hv hm
+
+/-- **The Legendre map is a local diffeomorphism exactly for regular Lagrangians.** On a
+boundaryless manifold, the Legendre map of a `C^n` Lagrangian, `m + 1 ≤ n` and `1 ≤ m`, is a
+`C^m` local diffeomorphism exactly when the Lagrangian is regular. -/
+theorem isLocalDiffeomorph_legendreMap_iff [BoundarylessManifold I.tangent (TangentBundle I M)]
+    (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) n L) (hmn : m + 1 ≤ n) (hm : 1 ≤ m) :
+    IsLocalDiffeomorph I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m (legendreMap L) ↔
+      IsRegularLagrangian L :=
+  forall_congr' fun _ ↦
+    isLocalDiffeomorphAt_legendreMap_iff hL hmn hm BoundarylessManifold.isInteriorPoint
+
+end LocalDiffeomorph
 
 section Cartan
 

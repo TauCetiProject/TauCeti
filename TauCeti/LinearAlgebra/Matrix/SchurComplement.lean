@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
 
 /-!
-# Schur complements
+# Schur complements and rank-one inverse updates
 
 Generalized Schur complements of positive-semidefinite block matrices are positive
 semidefinite. The inverse used in the complement need only be Hermitian and satisfy
@@ -22,6 +22,12 @@ is the scalar Schur complement `A i i - aᵢ ⬝ᵥ B⁻¹ *ᵥ aⁱ` of `B` in 
 the `i`-th row and column of `A` with the entry `A i i` removed. This holds also when `A` is
 singular, both sides then being zero, and when `i` is the only index, `B` then being empty.
 
+For an invertible matrix `A`, the Sherman–Morrison formula expresses the inverse of
+`A + vecMulVec u v` in terms of `A⁻¹`. The scalar `1 + v ⬝ᵥ (A⁻¹ *ᵥ u)` is a unit exactly
+when the perturbed matrix is invertible. These results specialize Mathlib's
+`Matrix.det_add_replicateCol_mul_replicateRow` and `Matrix.add_mul_mul_inv_eq_sub` to a single
+column and row, over any commutative ring; the scalar inverse is `Ring.inverse`.
+
 ## Main results
 
 * `Matrix.PosSemidef.schur_complement₂₂` and `Matrix.PosSemidef.schur_complement₁₁`:
@@ -30,6 +36,14 @@ singular, both sides then being zero, and when `i` is the only index, `B` then b
   complement of the complementary principal block, whenever that block is invertible.
 * `Matrix.PosDef.inv_inv_apply_self_eq_sub`: the same identity for positive-definite matrices,
   whose principal blocks are always invertible.
+* `Matrix.isUnit_add_vecMulVec_iff`: a rank-one update is invertible exactly when its
+  Sherman–Morrison denominator is a unit.
+* `Matrix.inv_add_vecMulVec`: the Sherman–Morrison inverse formula over a commutative ring.
+
+## References
+
+* R. A. Horn, C. R. Johnson, *Matrix Analysis*, 2nd ed., Cambridge University Press, 2013,
+  §0.7.4 (the Sherman–Morrison–Woodbury formula).
 -/
 
 public section
@@ -78,6 +92,53 @@ theorem PosSemidef.schur_complement₁₁ [Fintype m] [Finite n]
   simpa only [conjTranspose_conjTranspose] using hswap'.schur_complement₂₂ hP hPAP
 
 end Generalized
+
+section RankOne
+
+variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+
+/-- A rank-one perturbation of an invertible matrix is invertible exactly when its
+Sherman–Morrison denominator is a unit. -/
+theorem isUnit_add_vecMulVec_iff (A : Matrix n n R) (hA : IsUnit A) (u v : n → R) :
+    IsUnit (A + vecMulVec u v) ↔ IsUnit (1 + v ⬝ᵥ (A⁻¹ *ᵥ u)) := by
+  have hd := (isUnit_iff_isUnit_det A).1 hA
+  rw [isUnit_iff_isUnit_det, vecMulVec_eq Unit,
+    det_add_replicateCol_mul_replicateRow hd]
+  simp only [IsUnit.mul_iff, hd, true_and]
+  rw [Matrix.mul_assoc, ← replicateCol_mulVec, replicateRow_mul_replicateCol, det_unique]
+  simp
+
+/-- **Sherman–Morrison formula** over a commutative ring. The rank-one correction is the
+outer product of the updated column and row, divided by the scalar denominator. -/
+theorem inv_add_vecMulVec (A : Matrix n n R) (hA : IsUnit A) (u v : n → R)
+    (hd : IsUnit (1 + v ⬝ᵥ (A⁻¹ *ᵥ u))) :
+    (A + vecMulVec u v)⁻¹ = A⁻¹ -
+      Ring.inverse (1 + v ⬝ᵥ (A⁻¹ *ᵥ u)) • vecMulVec (A⁻¹ *ᵥ u) (v ᵥ* A⁻¹) := by
+  let U := replicateCol Unit u
+  let V := replicateRow Unit v
+  have hUV : U * V = vecMulVec u v := (vecMulVec_eq Unit u v).symm
+  have hinner : 1 + V * A⁻¹ * U =
+      diagonal (fun _ : Unit => 1 + v ⬝ᵥ (A⁻¹ *ᵥ u)) := by
+    dsimp only [U, V]
+    rw [Matrix.mul_assoc, ← replicateCol_mulVec, replicateRow_mul_replicateCol]
+    ext i j
+    simp
+  have hu : IsUnit (1 + V * A⁻¹ * U) := by
+    rw [hinner, isUnit_iff_isUnit_det, det_unique]
+    simpa using hd
+  have h := add_mul_mul_inv_eq_sub A U 1 V hA isUnit_one (by simpa using hu)
+  simp only [Matrix.mul_one, inv_one] at h
+  have hinv : (1 + V * A⁻¹ * U)⁻¹ =
+      Ring.inverse (1 + v ⬝ᵥ (A⁻¹ *ᵥ u)) • (1 : Matrix Unit Unit R) := by
+    rw [hinner, inv_subsingleton, smul_one_eq_diagonal]
+    simp
+  rw [hUV, hinv] at h
+  rw [h]
+  congr 1
+  simp only [Matrix.mul_smul, Matrix.mul_one, Matrix.smul_mul, Matrix.mul_assoc,
+    hUV, mul_vecMulVec, vecMulVec_mul]
+
+end RankOne
 
 variable {n K : Type*} [Fintype n] [DecidableEq n] [Field K]
 
