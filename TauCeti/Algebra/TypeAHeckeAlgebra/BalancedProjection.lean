@@ -284,37 +284,34 @@ open InfiniteTypeAHeckeAlgebra (T)
 
 variable {q : Rˣ}
 
-/-- When `τ * (q + q⁻¹) ^ 2 = 1`, the scalar `q + q⁻¹` is a unit. -/
-private theorem isUnit_add_inv (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) : IsUnit ((q : R) + ↑q⁻¹) :=
-  IsUnit.of_mul_eq_one (τ * ((q : R) + ↑q⁻¹)) (by linear_combination hτ)
-
 /-- The Hecke generator is recovered from the projection `(q + q⁻¹)⁻¹ • (T i + q⁻¹)`. -/
 private theorem T_eq_smul_sub (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) (i : ℕ) :
     T q i = ((q : R) + ↑q⁻¹) • ((τ * ((q : R) + ↑q⁻¹)) • (T q i + algebraMap R _ ↑q⁻¹)) -
       algebraMap R (InfiniteTypeAHeckeAlgebra R q) ↑q⁻¹ := by
-  rw [smul_smul, show (q + ↑q⁻¹) * (τ * (q + ↑q⁻¹)) = τ * ((q : R) + ↑q⁻¹) ^ 2 by ring, hτ,
-    one_smul, add_sub_cancel_right]
+  have h : ((q : R) + ↑q⁻¹) * (τ * ((q : R) + ↑q⁻¹)) = 1 := by linear_combination hτ
+  rw [smul_smul, h, one_smul, add_sub_cancel_right]
+
+/-- The projections `(q + q⁻¹)⁻¹ • (T i + q⁻¹)` of the Hecke algebra are idempotent. -/
+private theorem isIdempotentElem_smul_T_add (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) (i : ℕ) :
+    IsIdempotentElem ((τ * ((q : R) + ↑q⁻¹)) •
+      (T q i + algebraMap R (InfiniteTypeAHeckeAlgebra R q) ↑q⁻¹)) := by
+  refine sub_eq_zero.1 ((IsUnit.of_mul_eq_one_right τ hτ).smul_eq_zero.1 ?_)
+  rw [← mul_self_sub_eq_smul (T_eq_smul_sub hτ i), InfiniteTypeAHeckeAlgebra.T_mul_self, sub_self]
 
 /-- The projections `(q + q⁻¹)⁻¹ • (T i + q⁻¹)` of the Hecke algebra satisfy the balanced
 presentation. -/
 private def toHecke (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) :
     BalancedProjectionAlgebra R τ →ₐ[R] InfiniteTypeAHeckeAlgebra R q :=
   lift (fun i ↦ (τ * ((q : R) + ↑q⁻¹)) • (T q i + algebraMap R _ ↑q⁻¹))
+    (isIdempotentElem_smul_T_add hτ)
     (fun i ↦ by
-      refine sub_eq_zero.1 (((isUnit_add_inv hτ).pow 2).smul_eq_zero.1 ?_)
-      rw [← mul_self_sub_eq_smul (T_eq_smul_sub hτ i), InfiniteTypeAHeckeAlgebra.T_mul_self,
-        sub_self])
-    (fun i ↦ by
-      have he i : IsIdempotentElem ((τ * ((q : R) + ↑q⁻¹)) •
-          (T q i + algebraMap R (InfiniteTypeAHeckeAlgebra R q) ↑q⁻¹)) := by
-        refine sub_eq_zero.1 (((isUnit_add_inv hτ).pow 2).smul_eq_zero.1 ?_)
-        rw [← mul_self_sub_eq_smul (T_eq_smul_sub hτ i), InfiniteTypeAHeckeAlgebra.T_mul_self,
-          sub_self]
-      refine sub_eq_zero.1 (((isUnit_add_inv hτ).pow 3).smul_eq_zero.1 ?_)
-      rw [← mul_mul_sub_mul_mul_eq_smul hτ (he i) (he (i + 1)) (T_eq_smul_sub hτ i)
+      refine sub_eq_zero.1 ((((isUnit_pow_iff two_ne_zero).1
+        (IsUnit.of_mul_eq_one_right τ hτ)).pow 3).smul_eq_zero.1 ?_)
+      rw [← mul_mul_sub_mul_mul_eq_smul hτ (isIdempotentElem_smul_T_add hτ i)
+        (isIdempotentElem_smul_T_add hτ (i + 1)) (T_eq_smul_sub hτ i)
         (T_eq_smul_sub hτ (i + 1)), InfiniteTypeAHeckeAlgebra.T_braid, sub_self])
     (fun h ↦ by
-      refine sub_eq_zero.1 (((isUnit_add_inv hτ).pow 2).smul_eq_zero.1 ?_)
+      refine sub_eq_zero.1 ((IsUnit.of_mul_eq_one_right τ hτ).smul_eq_zero.1 ?_)
       rw [← mul_sub_mul_eq_smul (T_eq_smul_sub hτ _) (T_eq_smul_sub hτ _),
         (InfiniteTypeAHeckeAlgebra.commute_T (Or.inl h)).eq, sub_self])
 
