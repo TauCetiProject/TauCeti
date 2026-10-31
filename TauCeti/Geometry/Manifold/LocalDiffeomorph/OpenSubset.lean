@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # Partial diffeomorphisms and open subsets
@@ -99,8 +100,7 @@ def ofTop (U : TopologicalSpace.Opens M) (hU : U = ⊤) : U ≃ₘ^n⟮I, I⟯ M
   left_inv _ := rfl
   right_inv _ := rfl
   contMDiff_toFun := contMDiff_subtype_val
-  contMDiff_invFun _ :=
-    (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff _ _ _).1 contMDiffWithinAt_id
+  contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff U _).mp contMDiff_id
 
 /-- The diffeomorphism `Diffeomorph.ofTop` is the inclusion. -/
 @[simp]

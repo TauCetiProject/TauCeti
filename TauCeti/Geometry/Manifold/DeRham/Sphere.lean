@@ -62,14 +62,11 @@ section Cover
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
-/-- The complements of two antipodal points cover the sphere. -/
-private theorem compl_sup_compl_neg_eq_top (v : sphere (0 : E) 1) :
-    (⟨{v}ᶜ, isOpen_compl_singleton⟩ ⊔ ⟨{-v}ᶜ, isOpen_compl_singleton⟩ :
-      Opens (sphere (0 : E) 1)) = ⊤ :=
-  eq_top_iff.mpr fun x _ ↦ by
-    by_cases hx : x = v
-    · exact Opens.mem_sup.mpr (Or.inr (show x ≠ -v from hx ▸ ne_neg_of_mem_unit_sphere ℝ v))
-    · exact Opens.mem_sup.mpr (Or.inl hx)
+/-- The unit sphere of a real inner product space of positive dimension is nonempty. -/
+private theorem nonempty_sphere {m : ℕ} (hE : finrank ℝ E = m + 1) :
+    Nonempty (sphere (0 : E) 1) :=
+  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
+  (NormedSpace.sphere_nonempty.mpr zero_le_one).to_subtype
 
 /-- The sphere minus a point has no de Rham cohomology in positive degree: stereographic projection
 identifies it with `ℝⁿ`, where every closed form of positive degree is exact. -/
@@ -84,10 +81,8 @@ theorem subsingleton_deRhamCohomology_sphere_compl_singleton (v : sphere (0 : E)
 `H¹` of the unit sphere `Sⁿ` of an `(n + 1)`-dimensional real inner product space is zero. -/
 theorem subsingleton_deRhamCohomology_sphere_one (hn : 1 < n) :
     Subsingleton (deRhamCohomology (𝓡 n) (sphere (0 : E) 1) 1) := by
-  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ (n := n) Fact.out
-  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = n + 1)
-  obtain ⟨v⟩ : Nonempty (sphere (0 : E) 1) :=
-    (NormedSpace.sphere_nonempty.mpr zero_le_one).to_subtype
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  obtain ⟨v⟩ := nonempty_sphere (E := E) (m := n) Fact.out
   set U : Opens (sphere (0 : E) 1) := ⟨{v}ᶜ, isOpen_compl_singleton⟩
   set V : Opens (sphere (0 : E) 1) := ⟨{-v}ᶜ, isOpen_compl_singleton⟩
   -- `U ⊓ V` is connected, as it is diffeomorphic to `ℝⁿ \ {0}` with `n ≥ 2`.
@@ -95,8 +90,9 @@ theorem subsingleton_deRhamCohomology_sphere_one (hn : 1 < n) :
     (stereographicPuncturedDiffeomorph v).toHomeomorph.connectedSpace_iff.mpr <|
       isConnected_iff_connectedSpace.mp <| isConnected_compl_singleton_of_one_lt_rank
         (by rw [← finrank_eq_rank, finrank_euclideanSpace_fin]; exact_mod_cast hn) 0
-  rw [(deRhamCohomology.equivOfDiffeomorph (Diffeomorph.ofTop _ (compl_sup_compl_neg_eq_top v))
-    1).toEquiv.subsingleton_congr]
+  rw [(deRhamCohomology.equivOfDiffeomorph
+    (Diffeomorph.ofTop _ (compl_singleton_sup_compl_singleton_neg_eq_top v)) 1).toEquiv
+      |>.subsingleton_congr]
   refine subsingleton_of_forall_eq 0 fun c ↦ ?_
   obtain ⟨d, rfl⟩ := deRhamCohomology.mayerVietorisδ_surjective
     (subsingleton_deRhamCohomology_sphere_compl_singleton v 0)
@@ -116,20 +112,16 @@ attribute [local instance] finrank_euclideanSpace_fin_succ_fact
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 
-/-- **The suspension isomorphism for the de Rham cohomology of spheres.** For `k ≥ 1`, the de Rham
-cohomology of `Sⁿ`, the unit sphere of `ℝⁿ⁺¹`, in degree `k` is isomorphic to that of `Sⁿ⁺¹`, the
-unit sphere of an `(n + 2)`-dimensional inner product space, in degree `k + 1`. The statement only
-asserts that an isomorphism exists; the proof constructs one from the Mayer–Vietoris connecting map
-of the cover of `Sⁿ⁺¹` by the complements of two antipodal points, whose intersection stereographic
-projection identifies with `ℝⁿ⁺¹ \ {0}`. -/
+/-- **The suspension isomorphism for the de Rham cohomology of spheres.** For every `k`, the de
+Rham cohomology `H^{k+1}(Sⁿ)` of `Sⁿ`, the unit sphere of `ℝⁿ⁺¹`, is isomorphic to the de Rham
+cohomology `H^{k+2}(Sⁿ⁺¹)` of `Sⁿ⁺¹`, the unit sphere of an `(n + 2)`-dimensional real inner
+product space. The statement only asserts that an isomorphism exists. -/
 theorem nonempty_linearEquiv_deRhamCohomology_sphere_succ [Fact (finrank ℝ E = n + 1 + 1)]
     (k : ℕ) :
     Nonempty (deRhamCohomology (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (k + 1) ≃ₗ[ℝ]
       deRhamCohomology (𝓡 (n + 1)) (sphere (0 : E) 1) (k + 2)) := by
-  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ (n := n + 1) Fact.out
-  have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = n + 1 + 1)
-  obtain ⟨v⟩ : Nonempty (sphere (0 : E) 1) :=
-    (NormedSpace.sphere_nonempty.mpr zero_le_one).to_subtype
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ (n + 1)
+  obtain ⟨v⟩ := nonempty_sphere (E := E) (m := n + 1) Fact.out
   exact ⟨(deRhamCohomology.puncturedSpaceEquivSphere (EuclideanSpace ℝ (Fin (n + 1))) n
       (k + 1)).symm ≪≫ₗ
     deRhamCohomology.equivOfDiffeomorph (stereographicPuncturedDiffeomorph v) (k + 1) ≪≫ₗ
@@ -138,8 +130,17 @@ theorem nonempty_linearEquiv_deRhamCohomology_sphere_succ [Fact (finrank ℝ E =
       (subsingleton_deRhamCohomology_sphere_compl_singleton (-v) k)
       (subsingleton_deRhamCohomology_sphere_compl_singleton v (k + 1))
       (subsingleton_deRhamCohomology_sphere_compl_singleton (-v) (k + 1)) ≪≫ₗ
-    (deRhamCohomology.equivOfDiffeomorph (Diffeomorph.ofTop _ (compl_sup_compl_neg_eq_top v))
+    (deRhamCohomology.equivOfDiffeomorph
+      (Diffeomorph.ofTop _ (compl_singleton_sup_compl_singleton_neg_eq_top v))
       (k + 2)).symm⟩
+
+/-- One suspension step: if `H^{k+1}(Sⁿ)` vanishes for the unit sphere of `ℝⁿ⁺¹`, then
+`H^{k+2}(Sⁿ⁺¹)` vanishes for the unit sphere of an `(n + 2)`-dimensional space. -/
+private theorem subsingleton_deRhamCohomology_sphere_succ_succ [Fact (finrank ℝ E = n + 1 + 1)]
+    {k : ℕ} (h : Subsingleton
+      (deRhamCohomology (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (k + 1))) :
+    Subsingleton (deRhamCohomology (𝓡 (n + 1)) (sphere (0 : E) 1) (k + 2)) :=
+  (nonempty_linearEquiv_deRhamCohomology_sphere_succ (E := E) k).some.toEquiv.symm.subsingleton
 
 -- The induction on the degree passes through the spheres of the spaces `ℝⁿ⁺¹`, which all live in
 -- one universe; `TauCeti.subsingleton_deRhamCohomology_sphere` transfers the result to any `E`.
@@ -153,10 +154,8 @@ private theorem subsingleton_deRhamCohomology_sphere_euclideanSpace {n k : ℕ} 
     rcases k with _ | k
     · exact subsingleton_deRhamCohomology_sphere_one hkn
     · obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-      obtain ⟨e⟩ := nonempty_linearEquiv_deRhamCohomology_sphere_succ
-        (E := EuclideanSpace ℝ (Fin (m + 1 + 1))) (n := m) k
-      have := ih (n := m) k.succ_pos (by omega)
-      exact e.toEquiv.symm.subsingleton
+      exact subsingleton_deRhamCohomology_sphere_succ_succ
+        (E := EuclideanSpace ℝ (Fin (m + 1 + 1))) (ih k.succ_pos (by omega))
 
 /-- **The de Rham cohomology of `Sⁿ` vanishes in degrees `0 < k < n`**, for the unit sphere `Sⁿ`
 of any `(n + 1)`-dimensional real inner product space. -/
@@ -166,9 +165,8 @@ theorem subsingleton_deRhamCohomology_sphere [Fact (finrank ℝ E = n + 1)] {k :
   · exact absurd hk (lt_irrefl 0)
   · exact subsingleton_deRhamCohomology_sphere_one hkn
   · obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-    obtain ⟨e⟩ := nonempty_linearEquiv_deRhamCohomology_sphere_succ (E := E) (n := m) k
-    have := subsingleton_deRhamCohomology_sphere_euclideanSpace (n := m) k.succ_pos (by omega)
-    exact e.toEquiv.symm.subsingleton
+    exact subsingleton_deRhamCohomology_sphere_succ_succ (E := E)
+      (subsingleton_deRhamCohomology_sphere_euclideanSpace k.succ_pos (by omega))
 
 end Suspension
 

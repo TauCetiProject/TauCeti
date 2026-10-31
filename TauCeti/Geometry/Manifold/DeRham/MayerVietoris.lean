@@ -600,16 +600,24 @@ section Acyclic
 
 open CategoryTheory Limits
 
+omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] in
+/-- The middle term of the Mayer–Vietoris short exact sequence has no homology in degree `k`
+when `U` and `V` have no de Rham cohomology in degree `k`. -/
+private theorem isZero_homology_mayerVietoris_middle {U V : Opens M}
+    (hU : Subsingleton (deRhamCohomology I U k)) (hV : Subsingleton (deRhamCohomology I V k)) :
+    IsZero ((mayerVietorisShortComplex (I := I) U V).X₂.homology k) :=
+  ((HomologicalComplex.exactAt_biprod_iff _ _ k).mpr
+    ⟨(HomologicalComplex.exactAt_iff_isZero_homology _ _).mpr
+      (@ModuleCat.isZero_of_subsingleton _ _ _ hU),
+    (HomologicalComplex.exactAt_iff_isZero_homology _ _).mpr
+      (@ModuleCat.isZero_of_subsingleton _ _ _ hV)⟩).isZero_homology
+
 /-- The Mayer–Vietoris connecting map `H^k(U ⊓ V) → H^{k+1}(U ⊔ V)` is injective when `U` and `V`
 have no de Rham cohomology in degree `k`. -/
 theorem mayerVietorisδ_injective {U V : Opens M}
     (hU : Subsingleton (deRhamCohomology I U k)) (hV : Subsingleton (deRhamCohomology I V k)) :
     Function.Injective (mayerVietorisδ I U V k) := by
-  have h := ((HomologicalComplex.exactAt_biprod_iff _ _ k).mpr
-    ⟨(HomologicalComplex.exactAt_iff_isZero_homology _ _).mpr
-      (@ModuleCat.isZero_of_subsingleton _ _ _ hU),
-    (HomologicalComplex.exactAt_iff_isZero_homology _ _).mpr
-      (@ModuleCat.isZero_of_subsingleton _ _ _ hV)⟩).isZero_homology
+  have h := isZero_homology_mayerVietoris_middle hU hV
   refine (ModuleCat.mono_iff_injective (ModuleCat.ofHom (mayerVietorisδ I U V k))).mp ?_
   rw [ofHom_mayerVietorisδ]
   exact ((mayerVietorisShortComplex_shortExact (I := I) U V).homology_exact₃ k (k + 1) rfl).mono_g
@@ -621,11 +629,7 @@ theorem mayerVietorisδ_surjective {U V : Opens M}
     (hU : Subsingleton (deRhamCohomology I U (k + 1)))
     (hV : Subsingleton (deRhamCohomology I V (k + 1))) :
     Function.Surjective (mayerVietorisδ I U V k) := by
-  have h := ((HomologicalComplex.exactAt_biprod_iff _ _ (k + 1)).mpr
-    ⟨(HomologicalComplex.exactAt_iff_isZero_homology _ _).mpr
-      (@ModuleCat.isZero_of_subsingleton _ _ _ hU),
-    (HomologicalComplex.exactAt_iff_isZero_homology _ _).mpr
-      (@ModuleCat.isZero_of_subsingleton _ _ _ hV)⟩).isZero_homology
+  have h := isZero_homology_mayerVietoris_middle hU hV
   refine (ModuleCat.epi_iff_surjective (ModuleCat.ofHom (mayerVietorisδ I U V k))).mp ?_
   rw [ofHom_mayerVietorisδ]
   exact ((mayerVietorisShortComplex_shortExact (I := I) U V).homology_exact₁ k (k + 1) rfl).epi_f
@@ -653,11 +657,12 @@ theorem mayerVietorisδEquiv_apply {U V : Opens M}
 
 end Acyclic
 
-/-- The Mayer–Vietoris connecting map vanishes on constant classes: the constant function `r` on
-`U ⊓ V` is the restriction of the constant function `r` on `U`, whose differential is zero. -/
+/-- The degree-zero Mayer–Vietoris connecting map sends the class of a constant function on
+`U ⊓ V` to zero. -/
 @[simp]
 theorem mayerVietorisδ_const (U V : Opens M) (r : ℝ) :
     mayerVietorisδ I U V 0 (const I (U ⊓ V : Opens M) r) = 0 := by
+  -- The constant function `r` on `U ⊓ V` is the restriction of the closed constant form `r` on `U`.
   let α := (closedFormsZeroEquiv I U).symm (LocallyConstant.const U r)
   rw [const_eq_mk, mayerVietorisδ_mk U V _ α.1 0 ?_ 0 ?_ ?_, map_zero]
   · rw [map_zero, sub_zero]
