@@ -75,7 +75,7 @@ arclength radial coordinate `r = ∫ e^w ds` the metric takes the form `dr² + f
   metric back to `e^(2 t) (g_(Sⁿ) + dt²)`.
 * `TauCeti.torpedoMetric_inner_mfderiv_exp_smul_coe_sphere`: the torpedo metric in polar
   coordinates `y = e^t u` is `e^(2 w(t)) (g_(Sⁿ) + dt²)`, and
-  `TauCeti.torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_le`: on its cylindrical end `t ≥ -1`
+  `TauCeti.torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_ge`: on its cylindrical end `t ≥ -1`
   it is the cylinder metric `g_(Sⁿ) + dt²`.
 
 ## References
@@ -617,7 +617,7 @@ theorem torpedoMetric_inner_mfderiv_exp_smul_coe_sphere (p : sphere (0 : V) 1 ×
 
 /-- On the cylindrical end `t ≥ -1`, the torpedo metric in polar coordinates `y = e^t u` is the
 cylinder metric `g_(Sⁿ) + dt²`. -/
-theorem torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_le {p : sphere (0 : V) 1 × ℝ}
+theorem torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_ge {p : sphere (0 : V) 1 × ℝ}
     (hp : -1 ≤ p.2) (v w : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
     (torpedoMetric V).inner (exp p.2 • (p.1 : V))
         (mfderiv ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) (fun q : sphere (0 : V) 1 × ℝ ↦ exp q.2 • (q.1 : V))

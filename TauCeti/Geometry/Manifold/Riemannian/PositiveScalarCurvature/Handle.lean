@@ -25,17 +25,18 @@ scalar curvature (`TauCeti.hasPositiveScalarCurvature_torpedoMetric_prodTangentS
 the handles of low index `k + 1 ≤ 2`, where the torpedo metric itself is not of positive scalar
 curvature.
 
-To match the handle with the deformed metric, the torpedo metric is read in polar coordinates
-`(u, t) ↦ e^t u` on `Sⁿ × ℝ`, the map underlying `TauCeti.sphereProdRealDiffeomorph`. Where
-`t ≥ -1` it is exactly the cylinder metric `g_(Sⁿ) + dt²`
-(`TauCeti.torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_le`). Hence on its collar the handle
-metric is the product `(g_(Sⁿ) + dt²) × g`.
+To match the handle with the deformed metric, the torpedo metric on `ℝ^(k + 1)` is read in polar
+coordinates `(u, t) ↦ e^t u` on `S^k × ℝ`, the map underlying `TauCeti.sphereProdRealDiffeomorph`.
+Where `t ≥ -1` it is exactly the cylinder metric `g_(S^k) + dt²`
+(`TauCeti.torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_ge`). Hence on its collar the handle
+metric is the product `(g_(S^k) + dt²) × g`, where `g` is the round metric of radius `δ` on
+`S^(q - 1)`.
 
 ## Main results
 
 * `TauCeti.hasPositiveScalarCurvature_torpedoMetric_prodTangentSpace_sphereRoundMetricOfRadius`:
   the handle metric on `D^(k + 1) × S^(q - 1)` has positive scalar curvature when `q ≥ 3`.
-* `TauCeti.torpedoMetric_prodTangentSpace_inner_mfderiv_prodMap_of_le`: the handle metric is a
+* `TauCeti.torpedoMetric_prodTangentSpace_inner_mfderiv_prodMap_of_ge`: the handle metric is a
   product on its collar.
 
 ## References
@@ -90,7 +91,7 @@ of the torpedo metric on `V` with a metric `g` on `N`, read in polar coordinates
 first factor, is the product of the cylinder metric `g_(Sⁿ) + dt²` with `g`. For the handle
 `D^(k + 1) × S^(q - 1)` this is the product collar `(S^k × ℝ) × S^(q - 1)` along which the handle
 is glued. -/
-theorem torpedoMetric_prodTangentSpace_inner_mfderiv_prodMap_of_le
+theorem torpedoMetric_prodTangentSpace_inner_mfderiv_prodMap_of_ge
     {q : (sphere (0 : V) 1 × ℝ) × N} (hq : -1 ≤ q.1.2)
     (v w : TangentSpace (((𝓡 n).prod 𝓘(ℝ)).prod J) q) :
     ((torpedoMetric V).prodTangentSpace g).inner
@@ -102,9 +103,7 @@ theorem torpedoMetric_prodTangentSpace_inner_mfderiv_prodMap_of_le
       (((sphereRoundMetric (E := V)).ofLE le_top).cylinder.prodTangentSpace g).inner q v w := by
   have hP : MDifferentiableAt ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V)
       (fun p : sphere (0 : V) 1 × ℝ ↦ exp p.2 • (p.1 : V)) q.1 :=
-    ((Real.differentiable_exp.mdifferentiable _).comp q.1 mdifferentiableAt_snd).smul
-      (((contMDiff_coe_sphere (E := V) (n := n) (m := 1) q.1.1).mdifferentiableAt
-        one_ne_zero).comp q.1 mdifferentiableAt_fst)
+    (contMDiff_exp_smul_coe_sphere (m := 1) q.1).mdifferentiableAt one_ne_zero
   have hd (u : TangentSpace (((𝓡 n).prod 𝓘(ℝ)).prod J) q) :=
     TauCeti.Manifold.mfderiv_prodMap_apply hP mdifferentiableAt_id (tangentSpaceProdEquiv q u)
   simp only [ContinuousLinearEquiv.symm_apply_apply] at hd
@@ -118,7 +117,7 @@ theorem torpedoMetric_prodTangentSpace_inner_mfderiv_prodMap_of_le
     (TauCeti.Manifold.tangentSpaceProdEquiv_apply _ _).trans
       (TauCeti.Manifold.tangentSpaceProdEquiv_symm_apply (exp q.1.2 • (q.1.1 : V), id q.2) a)
   simp only [hpt, mfderiv_id, ContinuousLinearMap.id_apply]
-  exact congrArg (· + _) (torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_le hq _ _)
+  exact congrArg (· + _) (torpedoMetric_inner_mfderiv_exp_smul_coe_sphere_of_ge hq _ _)
 
 end Handle
 

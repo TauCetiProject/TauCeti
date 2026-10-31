@@ -35,6 +35,7 @@ charts of the sphere directly.
 
 ## Main results
 
+* `TauCeti.contMDiff_exp_smul_coe_sphere`: polar coordinates `(u, t) ↦ exp t • u` are smooth.
 * `TauCeti.mvfderiv_exp_smul_coe_sphere_apply`: the differential of polar coordinates sends
   `(v, a)` at `(u, t)` to `e^t (v + a u)`.
 * `TauCeti.orientable_sphere_prod_real`, `TauCeti.orientable_circle_prod_real`: the cylinders
@@ -69,6 +70,12 @@ end Punctured
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {n : ℕ}
   [Fact (finrank ℝ V = n + 1)]
 
+/-- Polar coordinates `(u, t) ↦ exp t • u`, read in `V`, are smooth. -/
+theorem contMDiff_exp_smul_coe_sphere {m : ℕ∞ω} :
+    ContMDiff ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V) m
+      (fun p : sphere (0 : V) 1 × ℝ ↦ Real.exp p.2 • (p.1 : V)) :=
+  (Real.contDiff_exp.contMDiff.comp contMDiff_snd).smul (contMDiff_coe_sphere.comp contMDiff_fst)
+
 /-- **Polar coordinates** on the punctured space: the diffeomorphism `(u, t) ↦ exp t • u` from the
 cylinder `Sⁿ × ℝ` onto `V ∖ {0}`, with inverse `v ↦ (v / ‖v‖, log ‖v‖)`. -/
 def sphereProdRealDiffeomorph :
@@ -88,10 +95,8 @@ def sphereProdRealDiffeomorph :
     have hv : ‖(v : V)‖ ≠ 0 := norm_ne_zero_iff.2 (mem_puncturedSpace.1 v.2)
     refine Subtype.ext ?_
     simp [Real.exp_log (lt_of_le_of_ne (norm_nonneg _) hv.symm), smul_smul, mul_inv_cancel₀ hv]
-  contMDiff_toFun := by
-    refine (ContMDiff.subtypeVal_comp_iff (puncturedSpace V) _).1 ?_
-    exact (Real.contDiff_exp.contMDiff.comp contMDiff_snd).smul
-      (contMDiff_coe_sphere.comp contMDiff_fst)
+  contMDiff_toFun :=
+    (ContMDiff.subtypeVal_comp_iff (puncturedSpace V) _).1 contMDiff_exp_smul_coe_sphere
   contMDiff_invFun := by
     refine ContMDiff.prodMk ?_ ?_
     · refine ContMDiff.codRestrict_sphere (f := fun v : puncturedSpace V => ‖(v : V)‖⁻¹ • (v : V))
