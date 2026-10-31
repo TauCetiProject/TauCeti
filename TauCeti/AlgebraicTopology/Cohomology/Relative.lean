@@ -186,6 +186,13 @@ lemma singularCohomologyMap_comp {P P' P'' : TopPair.{w}} (f : P ⟶ P') (g : P'
   simp [TopPair.singularCohomologyMap, singularCochainComplexMap_comp,
     HomologicalComplex.homologyMap_comp]
 
+/-- Pulling a class back along a composite is pulling it back along each map in turn. -/
+lemma singularCohomologyMap_comp_apply {P P' P'' : TopPair.{w}} (f : P ⟶ P') (g : P' ⟶ P'')
+    (n : ℕ) (x : P''.singularCohomology R k M n) :
+    TopPair.singularCohomologyMap (f ≫ g) n x =
+      TopPair.singularCohomologyMap f n (TopPair.singularCohomologyMap g n x) := by
+  rw [singularCohomologyMap_comp, ConcreteCategory.comp_apply]
+
 /-- The map induced on relative singular cohomology by a map of topological pairs is the one
 induced on the relative cochains of the associated map of pairs of simplicial sets. -/
 lemma singularCohomologyMap_eq {P P' : TopPair.{w}} (f : P ⟶ P') (n : ℕ) :
