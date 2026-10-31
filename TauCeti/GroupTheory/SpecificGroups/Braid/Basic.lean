@@ -473,7 +473,7 @@ theorem commute_sigma_last_strandIncl_strandIncl {n : ℕ} (d : BraidGroup (n + 
 
 /-- The homomorphism from `BraidGroup (n + 1)` to `BraidGroup (n + m + 1)` that places a braid on
 the bottom `n + 1` strands and adds `m` uncrossed strands above it: each elementary braid keeps its
-index. For `m = 1` this is `TauCeti.BraidGroup.strandIncl`. -/
+index. For `m = 1` this is `TauCeti.BraidGroup.strandIncl` (`TauCeti.BraidGroup.castAdd_one`). -/
 def castAdd {n : ℕ} (m : ℕ) : BraidGroup (n + 1) →* BraidGroup (n + m + 1) :=
   lift (fun i : Fin n ↦ sigma (Fin.castAdd m i)) (fun h ↦ sigma_mul_sigma_comm (by simpa using h))
     (fun h ↦ sigma_braid (by simpa using h))
@@ -482,6 +482,11 @@ def castAdd {n : ℕ} (m : ℕ) : BraidGroup (n + 1) →* BraidGroup (n + m + 1)
 theorem castAdd_sigma {n : ℕ} (m : ℕ) (i : Fin n) :
     castAdd m (sigma i) = sigma (Fin.castAdd m i) := by
   rw [castAdd, lift_sigma]
+
+/-- Adding one uncrossed strand on top is `TauCeti.BraidGroup.strandIncl`. -/
+@[simp]
+theorem castAdd_one {n : ℕ} : castAdd (n := n) 1 = strandIncl :=
+  hom_ext fun i ↦ by rw [castAdd_sigma, strandIncl_sigma]; rfl
 
 /-- The homomorphism from `BraidGroup (m + 1)` to `BraidGroup (n + m + 1)` that places a braid on
 the top `m + 1` strands and adds `n` uncrossed strands below it: each elementary braid is moved up

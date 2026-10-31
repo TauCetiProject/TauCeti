@@ -463,9 +463,12 @@ even size, as for the Seifert matrix of a connected sum. -/
 theorem alexander_fromBlocks_zero {κ : Type*} [Fintype κ] [DecidableEq κ] {g : ℕ}
     (V : Matrix ι ι R) (W : Matrix κ κ R) (hV : Fintype.card ι = 2 * g) :
     alexander (fromBlocks V 0 0 W) = alexander V * alexander W := by
-  rw [alexander_def, alexander_def W, alexander_eq_of_card V hV, Fintype.card_sum, hV,
-    Nat.add_comm, Nat.add_mul_div_left _ _ two_pos, alexanderMatrix_fromBlocks_zero,
-    det_fromBlocks_zero₂₁, Nat.cast_add, neg_add, T_add]
+  have hcard : Fintype.card (ι ⊕ κ) / 2 = g + Fintype.card κ / 2 := by
+    rw [Fintype.card_sum, hV]
+    omega
+  rw [alexander_eq_of_card V hV]
+  simp only [alexander_def, hcard, alexanderMatrix_fromBlocks_zero, det_fromBlocks_zero₂₁,
+    Nat.cast_add, neg_add, T_add]
   ring
 
 /-- **The Alexander polynomial is symmetric**: `Δ(t⁻¹) = Δ(t)`. This is exactly what the

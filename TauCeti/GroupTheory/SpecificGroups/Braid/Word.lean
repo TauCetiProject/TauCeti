@@ -32,6 +32,8 @@ defines the words and the braid each word represents.
 * `TauCeti.BraidWord.toBraid_surjective`: every braid is represented by a word.
 * `TauCeti.BraidWord.exponentSum_toBraid`: the exponent sum of the represented braid is the sum
   of the signs of the letters.
+* `TauCeti.BraidWord.toBraid_map_fst`: relabelling the letters of a word represents the image of
+  its braid under a homomorphism relabelling the elementary braids in the same way.
 * `TauCeti.BraidWord.toBraid_strandIncl` and `TauCeti.BraidWord.toBraid_stabilize`: these word
   operations represent `TauCeti.BraidGroup.strandIncl` and the stabilization of
   `TauCeti.IsMarkovMove`.
@@ -92,6 +94,17 @@ theorem toBraid_reverse_map_neg (w : BraidWord n) :
   simp only [toBraid, List.prod_inv_reverse, List.map_reverse, List.map_map, Function.comp_def,
     Units.val_neg, zpow_neg]
 
+/-- Relabelling the letters of a word by `f` represents the image of its braid under a
+homomorphism sending each elementary braid `σ i` to `σ (f i)`. -/
+theorem toBraid_map_fst {n' : ℕ} (f : Fin n → Fin n')
+    (φ : BraidGroup (n + 1) →* BraidGroup (n' + 1))
+    (hφ : ∀ i, φ (sigma i) = sigma (n := n' + 1) (f i))
+    (w : BraidWord (n + 1)) :
+    toBraid (n := n' + 1) (w.map fun x ↦ ((f x.1 : Fin n'), x.2)) = φ w.toBraid := by
+  induction w with
+  | nil => rw [List.map_nil, toBraid_nil, toBraid_nil, map_one]
+  | cons x w ih => rw [List.map_cons, toBraid_cons, ih, toBraid_cons, map_mul, map_zpow, hφ]
+
 /-- Every braid is represented by a braid word. -/
 theorem toBraid_surjective : Function.Surjective (toBraid (n := n)) := by
   intro b
@@ -140,12 +153,8 @@ theorem length_strandIncl (w : BraidWord (n + 1)) :
 /-- Adding a strand to a word adds an uncrossed strand to the braid it represents. -/
 @[simp]
 theorem toBraid_strandIncl (w : BraidWord (n + 1)) :
-    w.strandIncl.toBraid = BraidGroup.strandIncl w.toBraid := by
-  induction w with
-  | nil => rw [strandIncl_def, List.map_nil, toBraid_nil, toBraid_nil, map_one]
-  | cons x w ih =>
-    rw [strandIncl_def, List.map_cons, toBraid_cons, ← strandIncl_def, ih, toBraid_cons, map_mul,
-      map_zpow, strandIncl_sigma]
+    w.strandIncl.toBraid = BraidGroup.strandIncl w.toBraid :=
+  toBraid_map_fst _ _ strandIncl_sigma w
 
 /-- The **Markov stabilization** of a braid word with sign `ε`: add a strand and cross it once
 with the previous last strand, by the letter `σ (Fin.last n) ^ ε` placed at the top. -/
@@ -361,16 +370,8 @@ and the braid of `w₂` on the top strands, which share the strand `n`. -/
 theorem toBraid_connectedSum :
     (w₁.connectedSum w₂).toBraid =
       BraidGroup.castAdd m w₁.toBraid * BraidGroup.natAdd n w₂.toBraid := by
-  rw [connectedSum_def, toBraid_append]
-  congr 1
-  · induction w₁ with
-    | nil => rw [List.map_nil, toBraid_nil, toBraid_nil, map_one]
-    | cons x w ih =>
-      rw [List.map_cons, toBraid_cons, ih, toBraid_cons, map_mul, map_zpow, castAdd_sigma]
-  · induction w₂ with
-    | nil => rw [List.map_nil, toBraid_nil, toBraid_nil, map_one]
-    | cons x w ih =>
-      rw [List.map_cons, toBraid_cons, ih, toBraid_cons, map_mul, map_zpow, natAdd_sigma]
+  rw [connectedSum_def, toBraid_append, toBraid_map_fst _ _ (castAdd_sigma m),
+    toBraid_map_fst _ _ (natAdd_sigma n)]
 
 /-- The letters of `w₁` keep their level in the connected sum. -/
 @[simp]
