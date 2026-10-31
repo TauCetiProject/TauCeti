@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.RingTheory.Ideal.Operations
 
 import Mathlib.Algebra.Ring.GeomSum
+import Mathlib.LinearAlgebra.Finsupp.Span
 import Mathlib.LinearAlgebra.Pi
 
 /-!
@@ -157,15 +158,9 @@ variable {R M ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [Finty
 /-- The elements of `(f₁, …, f_r) M` are exactly the sums `∑ fᵢ mᵢ` with `mᵢ ∈ M`. -/
 theorem mem_span_range_smul_top_iff_exists_fun {f : ι → R} {x : M} :
     x ∈ Ideal.span (Set.range f) • (⊤ : Submodule R M) ↔ ∃ m : ι → M, ∑ i, f i • m i = x := by
-  refine ⟨fun hx ↦ ?_, ?_⟩
-  · refine smul_induction_on hx (fun r hr y _ ↦ ?_) fun y z hy hz ↦ ?_
-    · obtain ⟨a, rfl⟩ := Ideal.mem_span_range_iff_exists_fun.mp hr
-      exact ⟨fun i ↦ a i • y, by simp [Finset.sum_smul, smul_smul, mul_comm]⟩
-    · obtain ⟨m, rfl⟩ := hy
-      obtain ⟨n, rfl⟩ := hz
-      exact ⟨m + n, by simp [smul_add, Finset.sum_add_distrib]⟩
-  · rintro ⟨m, rfl⟩
-    exact sum_mem fun i _ ↦ smul_mem_smul (Ideal.subset_span ⟨i, rfl⟩) mem_top
+  rw [span_smul_eq, ← LinearMap.range_id, ← range_lsum_smul, LinearMap.mem_range,
+    Finsupp.equivFunOnFinite.exists_congr_left]
+  simp [Finsupp.sum_fintype]
 
 end Submodule
 

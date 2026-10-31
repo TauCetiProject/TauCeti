@@ -8,7 +8,10 @@ module
 public import Mathlib.RingTheory.Extension.Basic
 
 /-!
-# Finiteness of cotangent spaces of kernels
+# Generators and finiteness of cotangent spaces
+
+If elements `f₁, f₂, …` generate an ideal `I`, their classes span the conormal module `I ⧸ I²`
+over `R ⧸ I`.
 
 For a surjective `R`-algebra homomorphism `f : A →ₐ[R] S` onto a module-finite `R`-algebra, if
 the kernel of `f` is finitely generated over `A`, then its cotangent space is finite over `R`.
@@ -16,6 +19,8 @@ The main case is an augmentation `f : A →ₐ[R] R`, whose kernel is the augmen
 
 ## Main declarations
 
+* `Ideal.span_range_toCotangent_eq_top`: the classes of generators of `I` span `I ⧸ I²` over
+  `R ⧸ I`.
 * `AlgHom.finite_cotangent_ker_of_fg`: finite generation of the kernel gives finiteness of its
   cotangent space over the base.
 * `AlgHom.finite_cotangent_ker`: the noetherian specialization.
@@ -27,6 +32,38 @@ The main case is an augmentation `f : A →ₐ[R] R`, whose kernel is the augmen
 -/
 
 public section
+
+namespace Ideal
+
+variable {R : Type*} [CommRing R] {I : Ideal R} {ι : Type*}
+
+/-- If the elements `f i` generate `I`, their classes span the conormal module `I ⧸ I²` over
+`R ⧸ I`. -/
+theorem span_range_toCotangent_eq_top {f : ι → I}
+    (hf : Ideal.span (Set.range fun i ↦ (f i : R)) = I) :
+    Submodule.span (R ⧸ I) (Set.range fun i ↦ I.toCotangent (f i)) = ⊤ := by
+  refine eq_top_iff.mpr fun x _ ↦ ?_
+  obtain ⟨⟨y, hy⟩, rfl⟩ := I.toCotangent_surjective x
+  -- Induct on membership in the span of the generators, transported to `I` along `hf`.
+  suffices key : ∀ y (hy' : y ∈ Ideal.span (Set.range fun i ↦ (f i : R))),
+      I.toCotangent ⟨y, hf.le hy'⟩ ∈ Submodule.span (R ⧸ I) (Set.range fun i ↦ I.toCotangent (f i))
+    from key y (hf.ge hy)
+  intro y hy'
+  induction hy' using Submodule.span_induction with
+  | mem y h =>
+    obtain ⟨i, rfl⟩ := h
+    exact Submodule.subset_span ⟨i, rfl⟩
+  | zero =>
+    rw [show (⟨0, _⟩ : I) = 0 from rfl, map_zero]
+    exact zero_mem _
+  | add a b _ _ iha ihb =>
+    have := add_mem iha ihb
+    rwa [← map_add] at this
+  | smul a y _ ih =>
+    have := Submodule.smul_of_tower_mem _ a ih
+    rwa [← map_smul] at this
+
+end Ideal
 
 namespace AlgHom
 
