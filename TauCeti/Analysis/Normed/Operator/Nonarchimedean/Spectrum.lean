@@ -153,30 +153,30 @@ variable {K L : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Comple
 and let its Fredholm series `H_u` be distinguished of degree `s` at the radius `ε⁻¹`. Then the
 extension of `u` to `C₀(I, L)`, for a complete normed field extension `L` of `K`, has at most `s`
 spectral values of norm at least `ε`. -/
-theorem IsRowCompact.encard_setOf_mem_spectrum_mapCoeffs_le (hu : u.IsRowCompact)
-    (hf : ∃ C : ℝ≥0, ∀ r, ‖algebraMap K L r‖ ≤ C * ‖r‖) {ε : ℝ} (hε : 0 < ε) {s : ℕ}
+theorem IsRowCompact.encard_setOf_mem_spectrum_mapCoeffs_le (hu : u.IsRowCompact) {ε : ℝ}
+    (hε : 0 < ε) {s : ℕ}
     (hs : TauCeti.PowerSeries.IsDistinguished ε⁻¹ s u.matrixCoeff.charPowerSeries) :
-    {μ ∈ spectrum L (u.mapCoeffs (algebraMap K L) hf) | ε ≤ ‖μ‖}.encard ≤ s := by
+    {μ ∈ spectrum L (u.mapCoeffs (algebraMap K L) ⟨1, by simp⟩) | ε ≤ ‖μ‖}.encard ≤ s := by
   refine (Set.encard_le_encard_of_injOn (f := (·⁻¹)) ?_ inv_injective.injOn).trans
     (hs.encard_setOf_evalAt_eq_zero_le (L := L) (inv_pos.2 hε)
       (hu.isEntire_charPowerSeries.isRestricted _))
   rintro μ ⟨hμ, hεμ⟩
   have hμ0 : μ ≠ 0 := norm_pos_iff.1 (hε.trans_le hεμ)
   refine ⟨by simpa only [norm_inv] using inv_anti₀ hε hεμ, ?_⟩
-  rw [(hu.mapCoeffs _ hf).mem_spectrum_iff_evalAt_inv_eq_zero hμ0,
+  rw [(hu.mapCoeffs _ _).mem_spectrum_iff_evalAt_inv_eq_zero hμ0,
     hu.charPowerSeries_map, PowerSeries.evalAt_map_algebraMap] at hμ
   exact hμ
 
 /-- After extension to a complete normed field `L`, a row-compact endomorphism of `C₀(I, K)` has
 only finitely many spectral values of norm at least `ε`, for every `ε > 0`. -/
-theorem IsRowCompact.finite_setOf_mem_spectrum_mapCoeffs (hu : u.IsRowCompact)
-    (hf : ∃ C : ℝ≥0, ∀ r, ‖algebraMap K L r‖ ≤ C * ‖r‖) {ε : ℝ} (hε : 0 < ε) :
-    {μ ∈ spectrum L (u.mapCoeffs (algebraMap K L) hf) | ε ≤ ‖μ‖}.Finite := by
+theorem IsRowCompact.finite_setOf_mem_spectrum_mapCoeffs (hu : u.IsRowCompact) {ε : ℝ}
+    (hε : 0 < ε) :
+    {μ ∈ spectrum L (u.mapCoeffs (algebraMap K L) ⟨1, by simp⟩) | ε ≤ ‖μ‖}.Finite := by
   have hH : u.matrixCoeff.charPowerSeries ≠ 0 := fun h ↦ by
     simpa [h] using Matrix.constantCoeff_charPowerSeries u.matrixCoeff
   obtain ⟨s, hs⟩ := TauCeti.PowerSeries.exists_isDistinguished (inv_pos.2 hε)
     (hu.isEntire_charPowerSeries.isRestricted _) hH
-  exact Set.finite_of_encard_le_coe (hu.encard_setOf_mem_spectrum_mapCoeffs_le hf hε hs)
+  exact Set.finite_of_encard_le_coe (hu.encard_setOf_mem_spectrum_mapCoeffs_le hε hs)
 
 /-- **Strassmann's bound for the spectrum** over the coefficient field: if the Fredholm series of
 a row-compact endomorphism `u` of `C₀(I, K)` is distinguished of degree `s` at the radius `ε⁻¹`,
@@ -184,26 +184,26 @@ then `u` has at most `s` spectral values of norm at least `ε`. -/
 theorem IsRowCompact.encard_setOf_mem_spectrum_le (hu : u.IsRowCompact) {ε : ℝ} (hε : 0 < ε)
     {s : ℕ} (hs : TauCeti.PowerSeries.IsDistinguished ε⁻¹ s u.matrixCoeff.charPowerSeries) :
     {μ ∈ spectrum K u | ε ≤ ‖μ‖}.encard ≤ s := by
-  simpa using hu.encard_setOf_mem_spectrum_mapCoeffs_le (L := K) ⟨1, by simp⟩ hε hs
+  simpa using hu.encard_setOf_mem_spectrum_mapCoeffs_le (L := K) hε hs
 
 /-- A row-compact endomorphism of `C₀(I, K)` has only finitely many spectral values of norm at
 least `ε`, for every `ε > 0`. -/
 theorem IsRowCompact.finite_setOf_mem_spectrum (hu : u.IsRowCompact) {ε : ℝ} (hε : 0 < ε) :
     {μ ∈ spectrum K u | ε ≤ ‖μ‖}.Finite := by
-  simpa using hu.finite_setOf_mem_spectrum_mapCoeffs (L := K) ⟨1, by simp⟩ hε
+  simpa using hu.finite_setOf_mem_spectrum_mapCoeffs (L := K) hε
 
 /-- **Nonzero spectral values are isolated.** For a row-compact endomorphism `u` of `C₀(I, K)`,
 a complete normed field extension `L` of `K` and `μ : L` with `μ ≠ 0`, no point of a punctured
 neighbourhood of `μ` lies in the spectrum of the extension of `u` to `C₀(I, L)`. -/
-theorem IsRowCompact.eventually_notMem_spectrum_mapCoeffs (hu : u.IsRowCompact)
-    (hf : ∃ C : ℝ≥0, ∀ r, ‖algebraMap K L r‖ ≤ C * ‖r‖) {μ : L} (hμ : μ ≠ 0) :
-    ∀ᶠ ν in 𝓝[≠] μ, ν ∉ spectrum L (u.mapCoeffs (algebraMap K L) hf) := by
+theorem IsRowCompact.eventually_notMem_spectrum_mapCoeffs (hu : u.IsRowCompact) {μ : L}
+    (hμ : μ ≠ 0) :
+    ∀ᶠ ν in 𝓝[≠] μ, ν ∉ spectrum L (u.mapCoeffs (algebraMap K L) ⟨1, by simp⟩) := by
   have hμ0 : 0 < ‖μ‖ := norm_pos_iff.2 hμ
   -- Near `μ` every point has norm above `‖μ‖ / 2`, and only finitely many spectral values do;
   -- removing these finitely many points leaves a punctured neighbourhood of `μ`.
   have hnorm : ∀ᶠ ν in 𝓝 μ, ‖μ‖ / 2 < ‖ν‖ :=
     (continuous_norm.tendsto μ).eventually (lt_mem_nhds (half_lt_self hμ0))
-  have hF := (hu.finite_setOf_mem_spectrum_mapCoeffs hf (half_pos hμ0)).to_subtype
+  have hF := (hu.finite_setOf_mem_spectrum_mapCoeffs (L := L) (half_pos hμ0)).to_subtype
   filter_upwards [nhdsNE_of_nhdsNE_sdiff_finite (nhdsWithin_le_nhds hnorm) hF]
     with ν ⟨hν, hνF⟩ hνsp
   exact hνF ⟨hνsp, hν.le⟩
@@ -213,7 +213,7 @@ endomorphism `u` of `C₀(I, K)` and `μ ≠ 0`, no point of a punctured neighbo
 the spectrum of `u`. -/
 theorem IsRowCompact.eventually_notMem_spectrum (hu : u.IsRowCompact) {μ : K} (hμ : μ ≠ 0) :
     ∀ᶠ ν in 𝓝[≠] μ, ν ∉ spectrum K u := by
-  simpa using hu.eventually_notMem_spectrum_mapCoeffs (L := K) ⟨1, by simp⟩ hμ
+  simpa using hu.eventually_notMem_spectrum_mapCoeffs (L := K) hμ
 
 end Extension
 
