@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
 public import TauCeti.RepresentationTheory.LSPath.CentralShift
 
 /-!
@@ -23,9 +22,10 @@ two distinct points of `S` lie in the same ray. If `0 ∉ S`, each segment of a 
 presentation is a positive multiple of a unique point of `S`, so the presentation is reduced and
 both its segments and its durations can be read off the path. If `0 ∈ S`, then `S = {0}` and the
 only distinguished presentation is the constant path `[(1, 0)]` of duration `1`. In both cases a
-path has at most one distinguished presentation (`TauCeti.PLPath.IsDistinguished.unique`). Distinct
-points of a finite Weyl orbit never lie in the same ray, so this applies to `S = W λ` for every
-weight `λ`, including `λ = 0` (`RootPairing.pairwise_not_sameRay_orbit_weylGroup`, in
+path has at most one distinguished presentation (`TauCeti.PLPath.IsDistinguished.unique`). When
+the Weyl group is finite, distinct points of a Weyl orbit never lie in the same ray, so this
+applies to `S = W λ` for every weight `λ`, including `λ = 0`
+(`RootPairing.pairwise_not_sameRay_orbit_weylGroup`, in
 `TauCeti/LinearAlgebra/RootSystem/Weyl/Orbit/Ray.lean`).
 
 Adding the linear path `t ↦ t χ` to a timed presentation (`TauCeti.PLPath.shiftTimed`) is not
@@ -44,7 +44,7 @@ same minimum height.
 * `TauCeti.PLPath.HasDistinguished S π`: the path `π` has a distinguished presentation for `S`.
 * `TauCeti.PLPath.distinguished S π`: the distinguished presentation of `π`, if it has one.
 * `TauCeti.PLPath.shiftDistinguished S χ π`: the path obtained by adding `t ↦ t χ` to the
-  distinguished presentation of `π`.
+  distinguished presentation of `π`, or the constant path if `π` has none.
 
 ## Main results
 
@@ -241,7 +241,8 @@ variable (S) in
 the distinguished presentation of `π` for `S`. When `π` has velocities in a Weyl orbit `W λ` and
 `χ` is fixed by the Weyl group, this is the transport of `π` to a path with velocities in
 `W (λ + χ)`. Adding `t ↦ t χ` to an arbitrary presentation of `π` is not well defined
-(`TauCeti.PLPath.not_exists_shiftTimed_on_paths`). -/
+(`TauCeti.PLPath.not_exists_shiftTimed_on_paths`). If `π` has no distinguished presentation for
+`S`, then `distinguished S π = []` and the value is the constant junk path `ofSegments 𝕜 []`. -/
 noncomputable def shiftDistinguished (χ : V) (π : PLPath 𝕜 V) : PLPath 𝕜 V :=
   ofSegments 𝕜 ((shiftTimed χ (distinguished S π)).map Prod.snd)
 

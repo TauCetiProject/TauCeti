@@ -22,8 +22,8 @@ presentation, and its central shift by `χ` has velocities in `W (λ + χ)`; see
 
 ## Main results
 
-* `RootPairing.pairwise_not_sameRay_orbit_weylGroup`: no two distinct weights of a finite Weyl
-  orbit lie in the same ray.
+* `RootPairing.pairwise_not_sameRay_orbit_weylGroup`: when the Weyl group is finite, no two
+  distinct weights of a Weyl orbit lie in the same ray.
 * `RootPairing.mapsTo_add_orbit_weylGroup`: adding a Weyl-invariant weight `χ` maps `W λ` into
   `W (λ + χ)`.
 -/
@@ -35,8 +35,8 @@ namespace RootPairing
 variable {ι 𝕜 V N : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V]
   [Module 𝕜 V] [AddCommGroup N] [Module 𝕜 N] (P : RootPairing ι 𝕜 V N)
 
-/-- No two distinct weights of a finite Weyl orbit lie in the same ray. So a path with
-velocities in `W λ` has at most one distinguished presentation for `W λ`. -/
+/-- When the Weyl group is finite, no two distinct weights of a Weyl orbit lie in the same ray.
+So a path with velocities in `W λ` has at most one distinguished presentation for `W λ`. -/
 theorem pairwise_not_sameRay_orbit_weylGroup [Finite P.weylGroup] (lam : V) :
     (MulAction.orbit P.weylGroup lam).Pairwise fun u v ↦ ¬ SameRay 𝕜 u v :=
   fun _ hu _ hv huv h ↦ huv (h.eq_of_mem_orbit hu hv (Set.finite_range _))
