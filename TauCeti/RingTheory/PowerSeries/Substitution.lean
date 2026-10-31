@@ -11,8 +11,6 @@ public import Mathlib.RingTheory.PowerSeries.Binomial
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import Mathlib.RingTheory.PowerSeries.Trunc
--- Proof-only: lifting series with coefficients in a subring to series over the subring.
-import TauCeti.RingTheory.MvPowerSeries.Basic
 -- Proof-only: lowest homogeneous components of powers.
 import TauCeti.RingTheory.MvPowerSeries.Order
 -- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
@@ -339,12 +337,9 @@ theorem coeff_subst_eq_sum_range {τ : Type*} {a : MvPowerSeries τ S}
 theorem coeff_subst_mem {τ : Type*} {A : Subring S} {a : MvPowerSeries τ S} (ha : HasSubst a)
     (ha' : ∀ d, MvPowerSeries.coeff d a ∈ A) {f : S⟦X⟧} (hf : ∀ n, coeff n f ∈ A)
     (d : τ →₀ ℕ) : MvPowerSeries.coeff d (f.subst a) ∈ A := by
-  obtain ⟨aA, rfl⟩ := MvPowerSeries.exists_map_subtype_eq_of_coeff_mem ha'
-  -- `PowerSeries.map` is `MvPowerSeries.map` in one variable
-  obtain ⟨fA, hfA⟩ := MvPowerSeries.exists_map_subtype_eq_of_coeff_mem (p := f) fun e ↦ by
-    rw [← coeff_def (s := e) rfl]
-    exact hf _
-  obtain rfl : map A.subtype fA = f := hfA
+  obtain ⟨aA, rfl⟩ : ∃ aA, MvPowerSeries.map A.subtype aA = a :=
+    ⟨_, MvPowerSeries.map_toSubring a A ha'⟩
+  obtain ⟨fA, rfl⟩ : ∃ fA, map A.subtype fA = f := ⟨_, map_toSubring f A hf⟩
   have haA : HasSubst aA := by
     rwa [HasSubst, MvPowerSeries.constantCoeff_map, IsNilpotent.map_iff A.subtype_injective] at ha
   rw [← map_subst haA, MvPowerSeries.coeff_map]

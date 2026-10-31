@@ -9,7 +9,6 @@ public import Mathlib.RingTheory.MvPowerSeries.Expand
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 import Mathlib.NumberTheory.Basic
 import TauCeti.Algebra.Ring.FrobeniusLift
-import TauCeti.RingTheory.MvPowerSeries.Basic
 import TauCeti.RingTheory.MvPowerSeries.Expand
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Substitution
@@ -144,6 +143,24 @@ theorem SatisfiesFunctionalEquation.add {h₁ h₂ : MvPowerSeries τ K}
     SatisfiesFunctionalEquation p σ s A (h₁ + h₂) := fun d ↦ by
   simpa [map_add, add_sub_add_comm] using add_mem (h₁' d) (h₂' d)
 
+/-- `0` satisfies the functional equation. -/
+theorem satisfiesFunctionalEquation_zero :
+    SatisfiesFunctionalEquation p σ s A (0 : MvPowerSeries τ K) := fun d ↦ by
+  simp
+
+/-- Solutions of the functional equation are closed under negation. -/
+theorem SatisfiesFunctionalEquation.neg {h : MvPowerSeries τ K}
+    (h' : SatisfiesFunctionalEquation p σ s A h) :
+    SatisfiesFunctionalEquation p σ s A (-h) := fun d ↦ by
+  rw [map_neg, sub_neg_eq_add, neg_add_eq_sub, ← neg_sub, map_neg]
+  exact neg_mem (h' d)
+
+/-- Solutions of the functional equation are closed under subtraction. -/
+theorem SatisfiesFunctionalEquation.sub {h₁ h₂ : MvPowerSeries τ K}
+    (h₁' : SatisfiesFunctionalEquation p σ s A h₁) (h₂' : SatisfiesFunctionalEquation p σ s A h₂) :
+    SatisfiesFunctionalEquation p σ s A (h₁ - h₂) := by
+  simpa only [sub_eq_add_neg] using h₁'.add h₂'.neg
+
 end Def
 
 section Integrality
@@ -238,7 +255,7 @@ private theorem mul_coeff_pow_sub_expand_pow_mem (hσ : Set.MapsTo σ A A)
     s i * ((σ ^ i) (PowerSeries.coeff m f) *
       coeff d ((ψ ^ p ^ i) ^ m - expand (p ^ i) (NeZero.ne _) (map (σ ^ i) ψ) ^ m)) ∈ A := by
   -- the congruence holds over `A`, where `σ` restricts to a lift of the Frobenius
-  obtain ⟨ψA, hψA⟩ := exists_map_subtype_eq_of_coeff_mem hψ
+  obtain ⟨ψA, hψA⟩ : ∃ ψA, map A.subtype ψA = ψ := ⟨_, map_toSubring ψ A hψ⟩
   set σA := σ.restrict A A fun _ h ↦ hσ h
   have hσA (a : A) : (p : A) ∣ σA a - a ^ p := by
     obtain ⟨b, hb, hb'⟩ := hσp a a.2
