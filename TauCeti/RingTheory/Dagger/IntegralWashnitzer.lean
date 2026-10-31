@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPowerSeries.PiTopology
 public import TauCeti.Analysis.Normed.Ring.Ultra
-public import TauCeti.RingTheory.Dagger.WashnitzerAlgebra
+public import TauCeti.RingTheory.Dagger.GaussNorm
 
 /-!
 # The integral Monsky–Washnitzer algebra
@@ -35,15 +35,15 @@ overconvergent series of Gauss norm at most one.
 
 * `TauCeti.Dagger.mem_intWashnitzerAlgebra_iff`: `f ∈ R°⟨X⟩†` iff `f` is overconvergent and all
   its coefficients have norm at most one; equivalently
-  (`TauCeti.Dagger.mem_intWashnitzerAlgebra_iff_norm_toTate_le_one`), `f` lies in the closed unit
-  ball for the Gauss norm of the Tate algebra.
+  (`TauCeti.Dagger.mem_intWashnitzerAlgebra_iff_norm_le_one`), `f` lies in the closed unit
+  ball for the Gauss norm.
 * `TauCeti.Dagger.mem_intWashnitzerAlgebra_iff_exists_norm_coeff_le_pow`: the
   Monsky–Washnitzer degree growth condition in coefficient form. For finitely many variables and
   any `0 < q < 1`, `f ∈ R°⟨X⟩†` iff `‖aᵥ‖ ≤ q ^ ⌊|ν| / c⌋` for some integer `c > 0`.
 * `TauCeti.Dagger.mem_intWashnitzerAlgebra_iff_exists_hasSum`: the degree growth condition as
-  stated by Monsky and Washnitzer. Over an ultrametric normed field `K` with an element `π` of norm
-  in `(0, 1)`, `f ∈ K°⟨X⟩†` iff `f = ∑ⱼ πʲ Pⱼ` for polynomials `Pⱼ` with integral coefficients
-  and `deg Pⱼ ≤ c (j + 1)` for some `c`.
+  stated by Monsky and Washnitzer. For finitely many variables, over an ultrametric normed field
+  `K` with an element `π` of norm in `(0, 1)`, `f ∈ K°⟨X⟩†` iff `f = ∑ⱼ πʲ Pⱼ` for polynomials
+  `Pⱼ` with integral coefficients and `deg Pⱼ ≤ c (j + 1)` for some `c`.
 * `TauCeti.Dagger.mem_washnitzerAlgebra_iff_exists_C_pow_mul_mem`: `K⟨X⟩† = K°⟨X⟩†[1/π]`, that
   is, every overconvergent series becomes integral after multiplication by a power of `π`.
 * `TauCeti.Dagger.isUnit_intWashnitzerAlgebra_iff`: over a complete ultrametric normed field, `f`
@@ -133,12 +133,11 @@ theorem mem_intWashnitzerAlgebra_iff_of_isEmpty [IsEmpty σ] {f : MvPowerSeries 
   rwa [Subsingleton.elim t 0, coeff_zero_eq_constantCoeff_apply]
 
 /-- **Integrality is the Gauss unit ball.** An overconvergent series lies in `R°⟨X⟩†` iff its
-Gauss norm in the Tate algebra is at most one. -/
-theorem mem_intWashnitzerAlgebra_iff_norm_toTate_le_one {f : washnitzerAlgebra σ R} :
-    (f : MvPowerSeries σ R) ∈ intWashnitzerAlgebra σ R ↔
-      ‖washnitzerAlgebra.toTate σ R f‖ ≤ 1 := by
-  rw [mem_intWashnitzerAlgebra_iff, MvPowerSeries.norm_le_iff zero_le_one]
-  simp [f.2]
+Gauss norm is at most one. -/
+theorem mem_intWashnitzerAlgebra_iff_norm_le_one {f : washnitzerAlgebra σ R} :
+    (f : MvPowerSeries σ R) ∈ intWashnitzerAlgebra σ R ↔ ‖f‖ ≤ 1 := by
+  rw [mem_intWashnitzerAlgebra_iff, washnitzerAlgebra.norm_le_iff zero_le_one]
+  exact and_iff_right f.2
 
 namespace intWashnitzerAlgebra
 
@@ -314,8 +313,7 @@ theorem isUnit_intWashnitzerAlgebra_iff {f : intWashnitzerAlgebra σ K} :
     IsUnit f ↔ ‖constantCoeff (f : MvPowerSeries σ K)‖ = 1 ∧
       ∀ t ≠ 0, ‖coeff t (f : MvPowerSeries σ K)‖ < 1 := by
   set F := intWashnitzerAlgebra.toWashnitzerAlgebra σ K f
-  have hF1 : ‖washnitzerAlgebra.toTate σ K F‖ ≤ 1 :=
-    mem_intWashnitzerAlgebra_iff_norm_toTate_le_one.1 f.2
+  have hF1 : ‖F‖ ≤ 1 := mem_intWashnitzerAlgebra_iff_norm_le_one.1 f.2
   refine ⟨fun hf ↦ ?_, fun ⟨h0, hlt⟩ ↦ ?_⟩
   · -- The constant coefficients of `f` and of its inverse have norm at most one and multiply to
     -- one, so both have norm one; the other coefficients are then controlled by the unit
@@ -339,17 +337,14 @@ theorem isUnit_intWashnitzerAlgebra_iff {f : intWashnitzerAlgebra σ K} :
       ⟨fun h ↦ by simp only [F, intWashnitzerAlgebra.coe_toWashnitzerAlgebra] at h; simp [h] at h0,
         fun t ht ↦ by simpa [F, h0] using hlt t ht⟩
     obtain ⟨u, hu⟩ := hF
-    have hnorm : ‖washnitzerAlgebra.toTate σ K F‖ = 1 := by
+    have hnorm : ‖F‖ = 1 := by
       refine le_antisymm hF1 ?_
-      simpa [F, h0, coeff_zero_eq_constantCoeff_apply] using
-        MvPowerSeries.norm_coeff_mul_prod_le (washnitzerAlgebra.toTate σ K F) 0
-    have hinv : ‖washnitzerAlgebra.toTate σ K ↑u⁻¹‖ ≤ 1 := by
-      have h := congrArg (washnitzerAlgebra.toTate σ K) u.mul_inv
-      rw [map_mul, map_one, hu] at h
-      have := congrArg norm h
-      rw [norm_mul, hnorm, one_mul, norm_one] at this
+      simpa [F, h0, coeff_zero_eq_constantCoeff_apply] using washnitzerAlgebra.norm_coeff_le F 0
+    have hinv : ‖(↑u⁻¹ : washnitzerAlgebra σ K)‖ ≤ 1 := by
+      have := congrArg norm u.mul_inv
+      rw [norm_mul, hu, hnorm, one_mul, norm_one] at this
       exact this.le
-    have hmem := mem_intWashnitzerAlgebra_iff_norm_toTate_le_one.2 hinv
+    have hmem := mem_intWashnitzerAlgebra_iff_norm_le_one.2 hinv
     refine ⟨⟨f, ⟨_, hmem⟩, Subtype.ext ?_, Subtype.ext ?_⟩, rfl⟩
     · simpa [hu, F] using congrArg Subtype.val u.mul_inv
     · simpa [hu, F] using congrArg Subtype.val u.inv_mul
@@ -386,15 +381,14 @@ theorem mem_jacobson_bot_intWashnitzerAlgebra_iff {f : intWashnitzerAlgebra σ K
   · intro h y
     -- The coefficients of `f y` have norm less than one, so `f y + 1` passes the unit test.
     have hfy : ∀ t, ‖coeff t ((f * y : intWashnitzerAlgebra σ K) : MvPowerSeries σ K)‖ < 1 := by
-      have hf : ‖washnitzerAlgebra.toTate σ K (intWashnitzerAlgebra.toWashnitzerAlgebra σ K f)‖
-          < 1 := by
-        simpa [MvPowerSeries.norm_lt_iff] using h
-      have hy : ‖washnitzerAlgebra.toTate σ K (intWashnitzerAlgebra.toWashnitzerAlgebra σ K y)‖
-          ≤ 1 := mem_intWashnitzerAlgebra_iff_norm_toTate_le_one.1 y.2
+      have hf : ‖intWashnitzerAlgebra.toWashnitzerAlgebra σ K f‖ < 1 :=
+        washnitzerAlgebra.norm_lt_iff.2 h
+      have hy : ‖intWashnitzerAlgebra.toWashnitzerAlgebra σ K y‖ ≤ 1 :=
+        mem_intWashnitzerAlgebra_iff_norm_le_one.1 y.2
       have hlt := (norm_mul_le _ _).trans_lt
         ((mul_le_of_le_one_right (norm_nonneg _) hy).trans_lt hf)
-      rw [← map_mul, ← map_mul, MvPowerSeries.norm_lt_iff] at hlt
-      simpa using hlt
+      rw [← map_mul] at hlt
+      exact washnitzerAlgebra.norm_lt_iff.1 hlt
     refine isUnit_intWashnitzerAlgebra_iff.2 ⟨?_, fun t ht ↦ ?_⟩
     · have h0 := hfy 0
       rw [coeff_zero_eq_constantCoeff_apply] at h0
