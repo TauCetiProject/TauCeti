@@ -13,6 +13,7 @@ import TauCeti.Analysis.Real.Sqrt
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Euler's beta integrals, in real-valued form
@@ -247,13 +248,6 @@ section PowerSubstitution
 
 variable {p : ℝ}
 
-/-- A positive real power carries the open unit interval onto itself. -/
-private lemma image_rpow_Ioo_zero_one (hp : 0 < p) :
-    (fun t : ℝ => t ^ p) '' Ioo 0 1 = Ioo 0 1 := by
-  rw [(Real.continuous_rpow_const hp.le).continuousOn.image_Ioo_of_strictMonoOn zero_le_one
-      ((Real.strictMonoOn_rpow_Ici_of_exponent_pos hp).mono Icc_subset_Ici_self),
-    Real.zero_rpow hp.ne', Real.one_rpow]
-
 /-- On the open unit interval, the power map `t ↦ t ^ p` has derivative `p * t ^ (p - 1)`. -/
 private lemma hasDerivWithinAt_rpow_Ioo {t : ℝ} (ht : t ∈ Ioo (0 : ℝ) 1) :
     HasDerivWithinAt (fun t : ℝ => t ^ p) (p * t ^ (p - 1)) (Ioo 0 1) t :=
@@ -283,7 +277,7 @@ theorem intervalIntegrable_one_sub_rpow_rpow (hp : 0 < p) (hb : 0 < b) :
   have h := (integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioo
     (fun _ ht => hasDerivWithinAt_rpow_Ioo ht) (injOn_rpow_Ioo hp)
     (fun u : ℝ => u ^ (p⁻¹ - 1) * (1 - u) ^ (b - 1))).1 (by
-      rw [image_rpow_Ioo_zero_one hp]
+      rw [Real.image_rpow_Ioo_zero_one hp]
       exact integrableOn_rpow_mul_one_sub_rpow_iff.2 ⟨inv_pos.2 hp, hb⟩)
   have h' : IntegrableOn (fun t : ℝ => p⁻¹ * (p * (1 - t ^ p) ^ (b - 1))) (Ioo 0 1) :=
     (h.congr_fun (fun _ ht => abs_deriv_rpow_smul hp b ht) measurableSet_Ioo).const_mul p⁻¹
@@ -298,7 +292,7 @@ theorem integral_one_sub_rpow_rpow (hp : 0 < p) (hb : 0 < b) :
   have h := integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo
     (fun _ ht => hasDerivWithinAt_rpow_Ioo ht) (injOn_rpow_Ioo hp)
     (fun u : ℝ => u ^ (p⁻¹ - 1) * (1 - u) ^ (b - 1))
-  rw [image_rpow_Ioo_zero_one hp,
+  rw [Real.image_rpow_Ioo_zero_one hp,
     setIntegral_congr_fun measurableSet_Ioo (fun _ ht => abs_deriv_rpow_smul hp b ht),
     integral_const_mul, setIntegral_congr_set Ioo_ae_eq_Ioc,
     setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
