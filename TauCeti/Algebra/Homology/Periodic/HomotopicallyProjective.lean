@@ -180,20 +180,6 @@ theorem IsHomotopicallyProjective.of_splitting (S : ShortComplex (CochainComplex
     (by simpa using IsHomotopicallyProjective.leftOrthogonal S.X₁)
     (by simpa using IsHomotopicallyProjective.leftOrthogonal S.X₃)
 
-/-- The difference `Kⁱ ⟶ Qⁱ⁺¹` between the components of a morphism `u : K⟦-1⟧ ⟶ Q` and of its
-null-homotopy `H`, read off on `K` through the identification `(K⟦-1⟧)ⁱ⁺¹ = Kⁱ`: the sign comes
-from the differential of `K⟦-1⟧`. -/
-private lemma shift_neg_one_homotopy_comm {K Q : CochainComplex C (ZMod n)}
-    {u : K⟦(-1 : ℤ)⟧ ⟶ Q} (H : Homotopy u 0) (i : ZMod n) :
-    (K.XIsoOfEq (by push_cast; ring) : K.X i ≅ (K⟦(-1 : ℤ)⟧).X (i + 1)).hom ≫ u.f (i + 1) =
-      -(K.d i (i + 1) ≫
-          (K.XIsoOfEq (by push_cast; ring) : K.X (i + 1) ≅ (K⟦(-1 : ℤ)⟧).X (i + 1 + 1)).hom ≫
-            H.hom (i + 1 + 1) (i + 1)) +
-        (K.XIsoOfEq (by push_cast; ring) : K.X i ≅ (K⟦(-1 : ℤ)⟧).X (i + 1)).hom ≫
-          H.hom (i + 1) i ≫ Q.d i (i + 1) := by
-  rw [H.comm (i + 1), dNext_eq (i' := i + 1 + 1) _ rfl, prevD_eq (j' := i) _ rfl]
-  simp [shiftFunctor_obj_d', XIsoOfEq_hom_comp_d_assoc]
-
 /-- A morphism `f : K ⟶ L` from a periodic complex of projectives is null-homotopic as soon as
 `L` is the target of a degreewise epimorphism `π : Q ⟶ L` from a contractible complex such that
 every morphism `K⟦-1⟧ ⟶ ker π` is null-homotopic. -/
@@ -243,7 +229,7 @@ lemma nonempty_homotopy_zero_of_epi {K L Q : CochainComplex C (ZMod n)}
         rintro i _ rfl
         have H₂ : e i ≫ u.f (i + 1) = -(K.d i (i + 1) ≫ e (i + 1) ≫ H'.hom (i + 1 + 1) (i + 1)) +
             e i ≫ H'.hom (i + 1) i ≫ Q.d i (i + 1) :=
-          shift_neg_one_homotopy_comm H' i
+          H'.comm_periodic_shift_neg_one i
         rw [he] at H₂
         simp only [Preadditive.sub_comp, Preadditive.comp_sub, Category.assoc, e]
         rw [sub_eq_sub_iff_sub_eq_sub, H₂]

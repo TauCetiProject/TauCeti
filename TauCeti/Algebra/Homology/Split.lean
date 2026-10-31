@@ -66,6 +66,10 @@ inverts the differential on the complement of the cycles.  Precomposing it with 
   `HomologicalComplex.isSplitMono_iCycles_of_projective_kernel_homologyπ`: the boundaries are
   projective when the cycles and the homology are, and the cycles `Zᵢ` split off `Kᵢ` when the
   boundaries `Bⱼ` of the next degree are projective.
+* `HomologicalComplex.Acyclic.isSplitMono_iCycles` and
+  `HomologicalComplex.Acyclic.nonempty_homotopy_id_zero_of_projective_cycles`: in an acyclic
+  complex the cycles split off once those of the next degree are projective, and an acyclic
+  complex whose cycles are projective is contractible.
 * `ChainComplex.projective_cycles_of_projective_homology` and
   `ChainComplex.isSplitMono_iCycles_of_projective_homology`: for a chain complex indexed by `ℕ`
   with projective terms and projective homology, the cycles are projective and split off.
@@ -360,6 +364,41 @@ theorem exists_homotopyEquiv_d_eq_zero :
   ⟨K.homologyComplex, K.homologyComplex_d, ⟨homotopyEquiv K⟩⟩
 
 end Abelian
+
+namespace Acyclic
+
+variable [Abelian C] {K : HomologicalComplex C c} (hK : K.Acyclic)
+include hK
+
+/-- In an acyclic complex, the cycles `Zᵢ` split off the term `Kᵢ` once the cycles of the next
+degree are projective. -/
+lemma isSplitMono_iCycles (i : ι) [Projective (K.cycles (c.next i))] :
+    IsSplitMono (K.iCycles i) := by
+  by_cases hi : c.Rel i (c.next i)
+  · have := (hK (c.next i)).isIso_kernel_ι_homologyπ
+    have : Projective (kernel (K.homologyπ (c.next i))) :=
+      Projective.of_iso (asIso (kernel.ι (K.homologyπ (c.next i)))).symm inferInstance
+    exact K.isSplitMono_iCycles_of_projective_kernel_homologyπ hi
+  · have := K.isIso_iCycles i (c.next i) rfl (K.shape _ _ hi)
+    exact .mk' ⟨inv (K.iCycles i), IsIso.hom_inv_id _⟩
+
+/-- An acyclic complex whose cycles are projective is contractible: the cycles split off the
+terms, and the complex is homotopy equivalent to its homology, which vanishes. -/
+theorem nonempty_homotopy_id_zero_of_projective_cycles (hZ : ∀ i, Projective (K.cycles i)) :
+    Nonempty (Homotopy (𝟙 K) 0) := by
+  have (i : ι) : IsSplitMono (K.iCycles i) := hK.isSplitMono_iCycles i
+  have (i : ι) : IsSplitEpi (K.homologyπ i) :=
+    ⟨⟨0, (hK i).isZero_homology.eq_of_src _ _⟩⟩
+  obtain ⟨L, hL, ⟨e⟩⟩ := K.exists_homotopyEquiv_d_eq_zero
+  -- The terms of `L` are its homology objects, which vanish because `K` is acyclic.
+  have hLX (i : ι) : IsZero (L.X i) :=
+    ((hK i).isZero_homology.of_iso (e.toHomologyIso i).symm).of_iso
+      ((L.iCyclesIso i (c.next i) rfl (hL _ _)).symm ≪≫ L.isoHomologyπ (c.prev i) i rfl (hL _ _))
+  refine ⟨e.homotopyHomInvId.symm.trans (Homotopy.ofEq ?_)⟩
+  ext i
+  simp [(hLX i).eq_zero_of_tgt (e.hom.f i)]
+
+end Acyclic
 
 end HomologicalComplex
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.Algebra.Homology.ProjectiveCycles
+public import TauCeti.Algebra.Homology.Split
 public import TauCeti.Algebra.Homology.Periodic.HomotopicallyProjective
 
 /-!
