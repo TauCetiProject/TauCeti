@@ -13,7 +13,9 @@ import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 import TauCeti.AlgebraicGeometry.Cohomology.Cech.Basic
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.BasicOpen
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
+import TauCeti.CategoryTheory.Limits.Lattice
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.MayerVietoris
+import TauCeti.LinearAlgebra.Finsupp.Supported
 import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 
 /-!
@@ -26,7 +28,7 @@ every `m : ℤ`, and none at all in positive degrees when `m > -n - 1`. Together
 computation of `H⁰` (`TauCeti.SymmetricAlgebra.free_cohomology_zero_twistingSheaf`) and the
 vanishing above degree `n` (`Module.Basis.subsingleton_cohomology_proj_of_card_le`), this describes
 `Hᵠ(ℙⁿ_R, 𝒪(m))` in every case of Hartshorne, Theorem III.5.1, except the top cohomology
-`Hⁿ(ℙⁿ_R, 𝒪(m))` for `m ≤ -n - 1`, which does not vanish.
+`Hⁿ(ℙⁿ_R, 𝒪(m))` for `m ≤ -n - 1`, which is nonzero whenever `R` is.
 
 The proof computes Čech cohomology for the standard affine cover by the charts `D₊(xᵢ)`, following
 the Stacks Project. On the chart `D₊(x_S)` of a nonempty set `S` of coordinates, with
@@ -50,9 +52,9 @@ with the cohomology of `𝒪(m)`, the intersections of the charts being affine.
 
 ## Main results
 
-* `TauCeti.SymmetricAlgebra.subsingleton_cohomology_twistingSheaf_of_lt_card`:
+* `Module.Basis.subsingleton_cohomology_twistingSheaf_of_lt_card`:
   `Hᵠ(ℙⁿ_R, 𝒪(m)) = 0` for `0 < q < n` and every `m : ℤ`.
-* `TauCeti.SymmetricAlgebra.subsingleton_cohomology_twistingSheaf_of_neg_card_lt`:
+* `Module.Basis.subsingleton_cohomology_twistingSheaf_of_neg_card_lt`:
   `Hᵠ(ℙⁿ_R, 𝒪(m)) = 0` for every `q > 0` when `m > -n - 1`.
 
 ## References
@@ -501,12 +503,6 @@ private lemma iSup_chartFunctor_obj_singleton : ⨆ i, (chartFunctor b).obj (toD
   simp_rw [chartFunctor_obj_singleton]
   exact iSup_basicOpen_ι_eq_top R M b b.span_eq
 
-omit [Fintype κ] in
-private lemma ofDual_pi_subset_image (n : ℕ) (a : Fin (n + 1) → κ) :
-    ofDual (∏ᶜ fun j ↦ (toDual {a j} : (Finset κ)ᵒᵈ)) ⊆ Finset.univ.image a :=
-  leOfHom (Pi.lift fun j ↦ homOfLE (show toDual (Finset.univ.image a) ≤ toDual {a j} from
-    Finset.singleton_subset_iff.2 (Finset.mem_image_of_mem a (Finset.mem_univ j))))
-
 private lemma isIso_laurentToSections_app {S : (Finset κ)ᵒᵈ} (hS : (ofDual S).Nonempty) :
     IsIso ((laurentToSections b m).app (op S)) :=
   (ConcreteCategory.isIso_iff_bijective _).2
@@ -534,32 +530,24 @@ private lemma isIso_cechComplexFunctor_map_laurentToSections :
 
 /-! ### Splitting Laurent polynomials by negative support -/
 
-omit [DecidableEq κ] in
-/-- Keeping the monomials of a Laurent polynomial whose exponents satisfy `p`. -/
-private def filterHom {s t : Set (κ → ℤ)} (p : (κ → ℤ) → Prop) [DecidablePred p]
-    (h : ∀ e ∈ s, p e → e ∈ t) : Finsupp.supported R R s →+ Finsupp.supported R R t :=
-  ((Finsupp.filterAddHom p).comp (Finsupp.supported R R s).subtype.toAddMonoidHom).codRestrict _
-    fun f ↦ (Finsupp.mem_supported R _).2 fun e he ↦ by
-      -- the composite of the filter with the inclusion of `supported` is the filter itself
-      change e ∈ ((f.1.filter p).support : Set (κ → ℤ)) at he
-      rw [Finsupp.support_filter, Finset.coe_filter] at he
-      exact h e ((Finsupp.mem_supported R _).1 f.2 he.1) he.2
-
 /-- The projection onto the Laurent monomials with negative support exactly `T`. -/
 private def negSupportProj (T : Finset κ) :
     laurentPresheaf (R := R) (κ := κ) m ⟶ laurentPresheaf (R := R) (κ := κ) m where
-  app _ := AddCommGrpCat.ofHom (filterHom (negSupport · = T) fun _ he _ ↦ he)
-  naturality _ _ _ := rfl
+  app _ := AddCommGrpCat.ofHom
+    (LinearMap.toAddMonoidHom (Finsupp.filterSupported (negSupport · = T) fun _ he _ ↦ he))
+  -- restriction is an inclusion, so both composites filter the same Laurent polynomial
+  naturality _ _ f := AddCommGrpCat.hom_ext (congrArg LinearMap.toAddMonoidHom
+    ((Finsupp.filterSupported_comp_inclusion (negSupport · = T)
+      (chartExponents_mono (leOfHom f.unop)) fun _ he _ ↦ he).trans
+      (Finsupp.inclusion_comp_filterSupported (negSupport · = T) (fun _ he _ ↦ he)
+        (chartExponents_mono (leOfHom f.unop))).symm))
 
 omit [DecidableEq κ] in
-private lemma sum_filterHom_negSupport [DecidableEq κ] {s : Set (κ → ℤ)}
+private lemma sum_filterSupported_negSupport [DecidableEq κ] {s : Set (κ → ℤ)}
     (f : Finsupp.supported R R s) :
-    ∑ T : Finset κ, filterHom (negSupport · = T) (fun _ he _ ↦ he) f = f := by
+    ∑ T : Finset κ, Finsupp.filterSupported (negSupport · = T) (fun _ he _ ↦ he) f = f := by
   refine Subtype.ext (Finsupp.ext fun e ↦ ?_)
-  rw [Submodule.coe_sum, Finsupp.finsetSum_apply]
-  -- each `filterHom` is the filter on the underlying Laurent polynomial
-  change ∑ T : Finset κ, (f.1.filter (negSupport · = T)) e = f.1 e
-  simp [Finsupp.filter_apply]
+  simp [Finsupp.finsetSum_apply, Finsupp.filter_apply]
 
 private lemma sum_negSupportProj :
     ∑ T : Finset κ, negSupportProj (R := R) (κ := κ) m T = 𝟙 _ := by
@@ -569,13 +557,7 @@ private lemma sum_negSupportProj :
   -- a morphism of abelian groups acts through `AddCommGrpCat.homAddEquiv`, which is additive
   change AddCommGrpCat.homAddEquiv (∑ T : Finset κ, (negSupportProj (R := R) m T).app S) f = f
   rw [map_sum, AddMonoidHom.finsetSum_apply]
-  exact sum_filterHom_negSupport f
-
-omit [Fintype κ] in
-private lemma ofDual_prod_subset (Y S : (Finset κ)ᵒᵈ) : ofDual (Y ⨯ S) ⊆ ofDual Y ∪ ofDual S :=
-  leOfHom (prod.lift (homOfLE (show toDual (ofDual Y ∪ ofDual S) ≤ Y from
-    Finset.subset_union_left)) (homOfLE (show toDual (ofDual Y ∪ ofDual S) ≤ S from
-    Finset.subset_union_right)))
+  exact sum_filterSupported_negSupport f
 
 /-- Restriction of Laurent polynomials to the intersection with the chart of `c`. -/
 private def restrictToChart (c : κ) :
@@ -584,22 +566,44 @@ private def restrictToChart (c : κ) :
   app S := (laurentPresheaf m).map (prod.snd : toDual {c} ⨯ S.unop ⟶ S.unop).op
   naturality _ _ _ := rfl
 
+/-- A Laurent monomial with negative support `T` which is negative only in coordinates of
+`{c} ∪ S`, for a coordinate `c ∉ T`, is negative only in coordinates of `S`. -/
+private lemma mem_chartExponents_of_subset_union {c : κ} {T : Finset κ} (hc : c ∉ T)
+    {S S' : Finset κ} (h : S' ⊆ {c} ∪ S) :
+    ∀ e ∈ chartExponents m S', negSupport e = T → e ∈ chartExponents m S :=
+  fun e he heT ↦ ⟨he.1, fun i hi ↦ by
+    have hi' := Finset.mem_union.1 (h (he.2 hi))
+    rw [Finset.mem_singleton] at hi'
+    exact hi'.resolve_left fun h ↦ hc (h ▸ heT ▸ hi)⟩
+
 /-- On the monomials with negative support `T`, a Laurent polynomial on the intersection with the
 chart of a coordinate `c ∉ T` is already a Laurent polynomial on the original chart. -/
 private def extendFromChart {c : κ} {T : Finset κ} (hc : c ∉ T) :
     (prod.functor.obj (toDual {c})).op ⋙ laurentPresheaf (R := R) (κ := κ) m ⟶
       laurentPresheaf (R := R) (κ := κ) m where
-  app S := AddCommGrpCat.ofHom (filterHom (negSupport · = T) fun e he heT ↦ ⟨he.1, fun i hi ↦ by
-    have hi' := ofDual_prod_subset _ _ (he.2 hi)
-    rw [Finset.mem_union, ofDual_toDual, Finset.mem_singleton] at hi'
-    exact hi'.resolve_left fun h ↦ hc (h ▸ heT ▸ hi)⟩)
-  naturality _ _ _ := rfl
+  -- a binary product of finite sets of coordinates is their union
+  app S := AddCommGrpCat.ofHom (LinearMap.toAddMonoidHom (Finsupp.filterSupported (negSupport · = T)
+    (mem_chartExponents_of_subset_union m hc (CompleteLattice.prod_eq_inf (toDual {c}) S.unop).ge)))
+  -- restriction is an inclusion, so both composites filter the same Laurent polynomial
+  naturality X Y f := AddCommGrpCat.hom_ext (congrArg LinearMap.toAddMonoidHom
+    ((Finsupp.filterSupported_comp_inclusion (negSupport · = T)
+      (chartExponents_mono (leOfHom ((prod.functor.obj (toDual ({c} : Finset κ))).map f.unop)))
+      (mem_chartExponents_of_subset_union m hc
+        (CompleteLattice.prod_eq_inf (toDual {c}) Y.unop).ge)).trans
+      (Finsupp.inclusion_comp_filterSupported (negSupport · = T)
+        (mem_chartExponents_of_subset_union m hc
+          (CompleteLattice.prod_eq_inf (toDual {c}) X.unop).ge)
+        (chartExponents_mono (leOfHom f.unop))).symm))
 
 private lemma restrictToChart_comp_extendFromChart {c : κ} {T : Finset κ} (hc : c ∉ T) :
     restrictToChart (R := R) (κ := κ) m c ≫ extendFromChart (R := R) m hc =
       negSupportProj (R := R) m T :=
   -- restriction is an inclusion and both sides filter the same Laurent polynomial
-  rfl
+  NatTrans.ext (funext fun S ↦ AddCommGrpCat.hom_ext (congrArg LinearMap.toAddMonoidHom
+    (Finsupp.filterSupported_comp_inclusion (negSupport · = T)
+      (chartExponents_mono (leOfHom (prod.snd : toDual {c} ⨯ S.unop ⟶ S.unop)))
+      (mem_chartExponents_of_subset_union m hc
+        (CompleteLattice.prod_eq_inf (toDual {c}) S.unop).ge))))
 
 /-! ### Vanishing of the Čech cohomology -/
 
@@ -637,9 +641,14 @@ private lemma homologyMap_negSupportProj_univ {q : ℕ}
       negSupport e ≠ Finset.univ := by
     rintro e ⟨hsum, hneg⟩ huniv
     rcases h with h | h
-    · have := (Finset.card_le_card (hneg.trans (ofDual_pi_subset_image q a))).trans
-        Finset.card_image_le
+    · -- a finite product of finite sets of coordinates is their union
+      rw [CompleteLattice.finite_product_eq_finset_image_inf (J := Fin (q + 1))
+        (fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)) a, Finset.ofDual_inf] at hneg
+      have hsub : negSupport e ⊆ Finset.univ.image (a : Fin (q + 1) → κ) :=
+        hneg.trans (Finset.sup_singleton_eq_self _).le
+      have := (Finset.card_le_card hsub).trans Finset.card_image_le
       rw [huniv, Finset.card_univ, Finset.card_univ, Fintype.card_fin] at this
+      change Fintype.card κ ≤ q + 1 at this
       omega
     · have hlt : ∀ i, e i ≤ -1 := fun i ↦ by
         have := mem_negSupport.1 (huniv ▸ Finset.mem_univ i : i ∈ negSupport e)
@@ -652,7 +661,7 @@ private lemma homologyMap_negSupportProj_univ {q : ℕ}
       (op (∏ᶜ fun j ↦ (toDual {a j} : (Finset κ)ᵒᵈ))) = 0 := by
     refine AddCommGrpCat.hom_ext (AddMonoidHom.ext fun f ↦ Subtype.ext ?_)
     -- the projection is the filter on the underlying Laurent polynomial
-    change f.1.filter (negSupport · = Finset.univ) = 0
+    refine (Finsupp.filterSupported_apply _ _ f).trans ?_
     exact (Finsupp.filter_eq_zero_iff _ _).2 fun e he ↦ Finsupp.notMem_support_iff.1 fun hf ↦
       hno e ((Finsupp.mem_supported R f.1).1 f.2 hf) he
   rw [hzero]
@@ -711,7 +720,10 @@ private theorem subsingleton_cohomology_twistingSheaf_aux [Fintype κ] {m : ℤ}
     change _ ≤ Proj.basicOpen 𝒜 (coordProd b _)
     rw [basicOpen_coordProd]
     refine Finset.le_inf fun i hi ↦ ?_
-    obtain ⟨j, -, rfl⟩ := Finset.mem_image.1 (ofDual_pi_subset_image n a hi)
+    -- a finite product of finite sets of coordinates is their union
+    rw [CompleteLattice.finite_product_eq_finset_image_inf
+      (fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)) a, Finset.ofDual_inf] at hi
+    obtain ⟨j, rfl⟩ : ∃ j, i = a j := by simpa using hi
     exact (leOfHom (Pi.π _ j)).trans (chartFunctor_obj_singleton b (a j)).le
   exact (AlgebraicGeometry.Scheme.Modules.homologyCechComplexIsoCohomology
       (fun i : κ ↦ (chartFunctor b).obj (toDual {i}))
@@ -736,6 +748,18 @@ private theorem subsingleton_cohomology_twistingSheaf_of_or {κ : Type*} [Fintyp
   let e : κ ≃ ULift.{u} (Fin (Fintype.card κ)) := (Fintype.equivFin κ).trans Equiv.ulift.symm
   exact subsingleton_cohomology_twistingSheaf_aux (b.reindex e) hq (by simpa using h)
 
+end TauCeti.SymmetricAlgebra
+
+namespace Module.Basis
+
+open TauCeti.SymmetricAlgebra (subsingleton_cohomology_twistingSheaf_of_or)
+
+universe u
+
+variable {R : Type u} {M : Type u} [CommRing R] [AddCommMonoid M] [Module R M]
+
+local notation "𝒜" => TauCeti.SymmetricAlgebra.homogeneousSubmodule R M
+
 /-- **The intermediate cohomology of the twisting sheaves on projective space vanishes.** Let `M`
 be a free `R`-module with a finite basis indexed by `κ`, so that `Proj (Sym M)` is projective space
 of dimension `n = card κ - 1` over `R`. Then `Hᵠ(Proj (Sym M), 𝒪(m)) = 0` for `0 < q < n` and every
@@ -754,4 +778,4 @@ theorem subsingleton_cohomology_twistingSheaf_of_neg_card_lt {κ : Type*} [Finty
     Subsingleton (Cohomology (Proj.twistingSheaf 𝒜 m) q) :=
   subsingleton_cohomology_twistingSheaf_of_or b m hq (.inr hm)
 
-end TauCeti.SymmetricAlgebra
+end Module.Basis
