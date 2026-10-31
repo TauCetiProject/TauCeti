@@ -102,34 +102,6 @@ local notation "N" => nodeLocalRing 𝓘(ℂ) 𝓘(ℂ) p q
 
 variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
-/-- A node germ is a nonzerodivisor exactly when both branch restrictions are nonzero. -/
-@[simp]
-theorem mem_nonZeroDivisors_iff (f : N) :
-    f ∈ N⁰ ↔ fst 𝓘(ℂ) 𝓘(ℂ) p q f ≠ 0 ∧ snd 𝓘(ℂ) 𝓘(ℂ) p q f ≠ 0 := by
-  let he := chart_mem_maximalAtlas p (I := 𝓘(ℂ)) (n := 1)
-  let he' := chart_mem_maximalAtlas q (I := 𝓘(ℂ)) (n := 1)
-  constructor
-  · intro hf
-    constructor
-    · intro h
-      have hmul : f * fstCoordinate (q := q) he (mem_chart_source ℂ p) = 0 := by
-        ext <;> simp [h]
-      exact fstCoordinate_ne_zero he (mem_chart_source ℂ p)
-        (mem_nonZeroDivisors_iff_left.mp hf _ hmul)
-    · intro h
-      have hmul : f * sndCoordinate (p := p) he' (mem_chart_source ℂ q) = 0 := by
-        ext <;> simp [h]
-      exact sndCoordinate_ne_zero he' (mem_chart_source ℂ q)
-        (mem_nonZeroDivisors_iff_left.mp hf _ hmul)
-  · rintro ⟨ha, hb⟩
-    apply mem_nonZeroDivisors_iff_left.mpr
-    intro g hg
-    apply ext
-    · have := congrArg (fst 𝓘(ℂ) 𝓘(ℂ) p q) hg
-      simpa [ha] using this
-    · have := congrArg (snd 𝓘(ℂ) 𝓘(ℂ) p q) hg
-      simpa [hb] using this
-
 variable (K L : Type*) [CommRing K]
   [Algebra ((holomorphicStructureSheaf 𝓘(ℂ) X).presheaf.stalk p) K]
   [CommRing L] [Algebra ((holomorphicStructureSheaf 𝓘(ℂ) Y).presheaf.stalk q) L]
