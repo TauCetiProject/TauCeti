@@ -84,6 +84,14 @@ theorem sampleWithoutReplacement_def {ι κ : Type*} [Finite κ] [MeasurableSpac
       samplePopulation (uniformOn {k : ι → κ | Function.Injective k}) ρ :=
   (rfl)
 
+/-- Sampling without replacement from a finite population law gives a finite law, including
+the zero law when no injective selection exists. -/
+instance isFiniteMeasure_sampleWithoutReplacement {ι κ : Type*} [Finite κ]
+    [MeasurableSpace κ] [MeasurableSingletonClass κ] (ρ : Measure (κ → α))
+    [IsFiniteMeasure ρ] : IsFiniteMeasure (sampleWithoutReplacement (ι := ι) ρ) := by
+  rw [sampleWithoutReplacement_def]
+  infer_instance
+
 /-- Sampling without replacement preserves probability mass whenever an injective selection
 exists. -/
 theorem isProbabilityMeasure_sampleWithoutReplacement {ι κ : Type*} [Finite κ]

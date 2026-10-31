@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Alexander Richard Towell
 -/
 module
 
@@ -122,6 +122,15 @@ theorem samplePopulation_apply_population {σ : Measure (ι → κ)} [SFinite σ
   rw [samplePopulation_def, Measure.map_apply measurable_reindexPopulation hA,
     Measure.prod_apply_symm (measurable_reindexPopulation hA)]
   -- The section of the joint preimage at `x` is, by definition, the reindexed preimage.
+  rfl
+
+/-- Sampling a deterministic population is the pushforward of the selection law by reading
+that population. -/
+@[simp]
+theorem samplePopulation_dirac (σ : Measure (ι → κ)) [SFinite σ] (x : κ → α) :
+    samplePopulation σ (Measure.dirac x) = σ.map (fun k i => x (k i)) := by
+  rw [samplePopulation_def, Measure.prod_dirac,
+    Measure.map_map measurable_reindexPopulation measurable_prodMk_right]
   rfl
 
 /-- Sampling a random population is the mixture, over the selection law, of reading each fixed
