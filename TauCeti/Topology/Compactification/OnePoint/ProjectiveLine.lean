@@ -50,6 +50,8 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
 * `OnePoint.instMulActionPGL`: the action of `PGL(2, K)` on `OnePoint K`, with `pglMk_smul` and its
   faithfulness.
 * `OnePoint.instMulActionPSL`: the action of `PSL(2, K)` on `OnePoint K`, with `pslMk_smul`.
+* `Matrix.ProjectiveSpecialLinearGroup.toPGL_smul`: the inclusion `PSL(2, K) → PGL(2, K)` is
+  compatible with the actions.
 * `OnePoint.instIsMultiplyPretransitiveGL`: `GL(2, K)` acts 2-transitively on `OnePoint K`.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_smul_zero_eq_infty_iff`,
   `mk_smul_infty_eq_infty_iff`, `mk_smul_zero_eq_coe_iff`, `mk_smul_infty_eq_coe_iff`: where the
@@ -234,6 +236,13 @@ namespace Matrix.ProjectiveSpecialLinearGroup
 open OnePoint
 
 variable {K : Type*} [Field K] [DecidableEq K]
+
+/-- The inclusion `PSL(2, K) → PGL(2, K)` is compatible with the actions on the projective line:
+both act through the underlying matrix. -/
+@[simp]
+theorem toPGL_smul (g : PSL(2, K)) (c : OnePoint K) : toPGL g • c = g • c := by
+  induction g using QuotientGroup.induction_on with
+  | H g => simp
 
 /-- The translation `upperRightHom x` fixes `∞`. -/
 @[simp]

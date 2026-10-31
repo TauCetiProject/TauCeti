@@ -35,8 +35,6 @@ distinct points, which is how the automorphisms of a genus-zero domain are norma
   any three pairwise distinct points.
 * `OnePoint.existsUnique_pgl_smul_zero_one_infty_eq`: exactly one element of `PGL(2, K)` does.
 * `OnePoint.instIsMultiplyPretransitivePGL`: `PGL(2, K)` acts 3-transitively on `OnePoint K`.
-* `Matrix.ProjectiveSpecialLinearGroup.toPGL_smul`: the inclusion `PSL(2, K) → PGL(2, K)` is
-  compatible with the actions.
 * `OnePoint.existsUnique_psl_smul_zero_one_infty_eq_of_roots` and
   `OnePoint.existsUnique_psl_smul_zero_one_infty_eq`: exactly one element of `PSL(2, K)` carries
   `0`, `1`, `∞` to three pairwise distinct points, when every unit of `K` is a square and when `K`
@@ -122,27 +120,6 @@ instance instIsMultiplyPretransitivePGL :
     · simp [← ha.1, hb.1]
     · simp [← ha.2.1, hb.2.1]
     · simp [← ha.2.2, hb.2.2]
-
-end OnePoint
-
-namespace Matrix.ProjectiveSpecialLinearGroup
-
-variable {K : Type*} [Field K] [DecidableEq K]
-
-/-- The inclusion `PSL(2, K) → PGL(2, K)` is compatible with the actions on the projective line:
-both act through the underlying matrix. -/
-@[simp]
-theorem toPGL_smul (g : PSL(2, K)) (c : OnePoint K) : toPGL g • c = g • c := by
-  induction g using QuotientGroup.induction_on with
-  | H g => simp
-
-end Matrix.ProjectiveSpecialLinearGroup
-
-namespace OnePoint
-
-open Matrix
-
-variable {K : Type*} [Field K] [DecidableEq K]
 
 /-- If every invertible matrix is a determinant-one matrix times a scalar matrix, `PSL(2, K)`
 acts sharply triply transitively on the projective line. -/
