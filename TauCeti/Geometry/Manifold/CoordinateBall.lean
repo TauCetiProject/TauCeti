@@ -13,9 +13,9 @@ public import Mathlib.Geometry.Manifold.ChartedSpace
 
 Let `X` be a Hausdorff space charted on a real normed space `E`. Finitely many points of `X` have
 pairwise disjoint coordinate balls about them: for a finite `S ⊆ X` and `r > 0`, there is an open
-embedding of `S × ball 0 r` into `X` sending `(s, 0)` to `s`. On each slice it is the inverse of
-the chart at `s` precomposed with an affine rescaling, and distinct slices land in disjoint open
-sets given by `Set.Finite.t2_separation`.
+embedding of `S × ball 0 r` into `X` sending `(s, 0)` to `s`. The proof builds each slice as the
+inverse of the chart at `s` precomposed with an affine rescaling, and sends distinct slices into
+the disjoint open sets given by `Set.Finite.t2_separation`.
 
 ## Main results
 
@@ -32,8 +32,7 @@ variable {E X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace X] [T2Space X] [ChartedSpace E X] {S : Set X}
 
 /-- **Disjoint coordinate balls about finitely many points.** For a finite set `S` and `r > 0`,
-there is an open embedding of `S × ball 0 r` into `X` sending `(s, 0)` to `s`: on each slice it is
-a chart inverse precomposed with a rescaling, and distinct slices land in disjoint open sets. -/
+there is an open embedding of `S × ball 0 r` into `X` sending `(s, 0)` to `s`. -/
 theorem exists_isOpenEmbedding_prod_ball (hS : S.Finite) {r : ℝ} (hr : 0 < r) :
     ∃ F : S × ball (0 : E) r → X, IsOpenEmbedding F ∧
       ∀ s, F (s, ⟨0, mem_ball_self hr⟩) = s := by
@@ -51,9 +50,9 @@ theorem exists_isOpenEmbedding_prod_ball (hS : S.Finite) {r : ℝ} (hr : 0 < r) 
   have hball (s : S) {z : E} (hz : z ∈ ball (0 : E) r) :
       chartAt E (s : X) s + (ε s / r) • z ∈ ball (chartAt E (s : X) s) (ε s) := by
     rw [mem_ball_zero_iff] at hz
-    rw [mem_ball, dist_self_add_left, norm_smul, Real.norm_of_nonneg (div_pos (hε₀ s) hr).le,
-      div_mul_eq_mul_div, div_lt_iff₀ hr]
-    exact mul_lt_mul_of_pos_left hz (hε₀ s)
+    rw [mem_ball, dist_self_add_left, norm_smul]
+    calc ‖ε s / r‖ * ‖z‖ < ‖ε s / r‖ * r := by gcongr; exact norm_pos_iff.2 (hc s)
+      _ = ε s := by rw [Real.norm_of_nonneg (div_pos (hε₀ s) hr).le]; field_simp
   let g (s : S) (z : E) : X := (chartAt E (s : X)).symm (chartAt E (s : X) s + (ε s / r) • z)
   refine ⟨fun p ↦ g p.1 p.2, .of_continuous_injective_isOpenMap
     (continuous_prod_of_discrete_left.2 fun s ↦ ((chartAt E (s : X)).continuousOn_symm.comp
