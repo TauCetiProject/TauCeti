@@ -41,6 +41,8 @@ large `b` (`TauCeti.diagonalExtPoincarePolynomial_eq_of_le` and
 * `TauCeti.bigradedExtPoincareMatrix`: the full bigraded Ext Poincaré matrix of a family.
 * `TauCeti.isDiagonal_bigradedExtPoincareSeries_iff`: diagonal support is equivalent to
   off-diagonal Ext-vanishing when the truncation is a vanishing bound.
+* `TauCeti.invert_gradedExtEuler_eq_euler_bigradedExtPoincareSeries`: the q-Euler characteristic
+  is the Euler characteristic of the bigraded series, up to `q ↦ q⁻¹`.
 * `TauCeti.diagonalExtPoincarePolynomial` and `TauCeti.diagonalExtPoincareMatrix`: the
   one-variable diagonal series and its matrix for a family of modules.
 
@@ -158,6 +160,26 @@ theorem isDiagonal_bigradedExtPoincareSeries_iff (h : IsGradedExtInternallyFinit
       | ofNat n => exact (hm (Int.natCast_nonneg n)).elim
       | negSucc n =>
           rw [coeff_bigradedExtPoincareSeries_negSucc]
+
+variable (k e) in
+/-- **The q-Euler characteristic is the Euler characteristic of the bigraded Ext Poincaré
+series.** Applying `LaurentPolynomial.invert` to `χ_q(X,Y)` gives the Alexander-graded Euler
+characteristic `∑ (-1)ⁿ dim_k Extⁿ(X,Y{j}) T^j` of the bigraded Ext Poincaré series, truncated at
+any cohomological vanishing bound. -/
+theorem invert_gradedExtEuler_eq_euler_bigradedExtPoincareSeries
+    (h : IsGradedEulerAdmissible.{w} k e X Y) {b : ℕ} (hb : IsGradedExtBoundedBy.{w} e X Y b) :
+    LaurentPolynomial.invert (gradedExtEuler k e h) =
+      Bigraded.euler (bigradedExtPoincareSeries.{w} k e h.internallyFinite b) := by
+  classical
+  ext a
+  rw [LaurentPolynomial.invert_apply, gradedExtEuler_eq k e h hb, coeff_truncatedGradedExtEuler,
+    neg_neg, bigradedExtPoincareSeries_def]
+  simp only [map_sum, Bigraded.euler_single, AddMonoidAlgebra.coeff_sum,
+    Finsupp.finsetSum_apply, AddMonoidAlgebra.natCast_def, single_mul_single, zero_add,
+    coeff_single, Finsupp.single_apply, Finset.sum_ite_eq', Set.Finite.mem_toFinset,
+    Function.mem_support, ne_eq, Int.coe_negOnePow_natCast]
+  refine Finset.sum_congr rfl fun n _ ↦ ?_
+  split_ifs with hn <;> simp [hn, mul_comm]
 
 variable (S : I → C) in
 /-- The **full bigraded Ext Poincaré matrix** of a family, truncated below a common
