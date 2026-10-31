@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hypergraph.Triadic.SparseCounting
-import TauCeti.Combinatorics.Hypergraph.PairColor.Counting
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -26,14 +25,14 @@ over the transversal placements and their routes that are not top-regular.
 
 The bound passes through the lower route, which forgets the top colors. Its prediction, the
 cell-size product times the pair-color densities, dominates the induced prediction. At a
-transversal placement in an `ε`-regular lower skeleton, the counting lemma for prescribed pair
-colors (`PairSkeleton3.IsPairColorRegular.abs_card_filter_colorOfPair_sub_prod_le`) shows that
-the lower-route prediction is within `(k choose 2) ε` times the cell-size product of the number
-of injective maps realizing the route. These maps, for the routes that are not top-regular, are
-again embeddings meeting an exceptional polyad, as distinct routes are realized by disjoint sets
-of maps. The counting error is paid once for each of the at most `m ^ (k choose 2)` routes of a
-placement, where `m` is the number of pair colors, and the cell-size products of the placements
-add up to `|V| ^ k`. No density floor on the routes is needed.
+transversal placement in an `ε`-regular lower skeleton, lower-route counting
+(`abs_lowerRouteCountAt_sub_expectedLowerRouteCountAt_le`) shows that the lower-route prediction
+is within `(k choose 2) ε` times the cell-size product of the number of injective maps realizing
+the route. These maps, for the routes that are not top-regular, are again embeddings meeting an
+exceptional polyad, as distinct routes are realized by disjoint sets of maps. The counting error
+is paid once for each of the at most `m ^ (k choose 2)` routes of a placement, where `m` is the
+number of pair colors, and the cell-size products of the placements add up to `|V| ^ k`.
+No density floor on the routes is needed.
 
 ## Main definitions
 
@@ -43,8 +42,6 @@ add up to `|V| ^ k`. No density floor on the routes is needed.
 
 ## Main results
 
-* `TauCeti.abs_lowerRouteCountAt_sub_expectedLowerRouteCountAt_le`: lower-route counting at a
-  transversal placement of a regular lower skeleton.
 * `TauCeti.Colored3Graph.sum_lowerRouteCountAt_not_isTopRegularRoute_le`: the maps realizing
   routes that are not top-regular are controlled by the exceptional polyad mass.
 * `TauCeti.Colored3Graph.exceptional_route_prediction_mass_le`: the bound
@@ -67,38 +64,6 @@ namespace TauCeti
 
 variable {κ V : Type*} [Fintype V] [DecidableEq V] {C : TriadicComplex3 V}
   {F : FiniteColored3Pattern κ}
-
-/-! ### Lower-route counting -/
-
-/-- The maps realizing a lower route are the maps into the box of assigned cells realizing its
-pair colors: realizing a pair color forces distinct values, so these maps are injective. -/
-private theorem lowerRouteMaps_eq_filter_piFinset (φ : PatternPlacement3 C F)
-    (ψ : PairColorPlacement3 φ) :
-    lowerRouteMaps φ ψ = {g ∈ Fintype.piFinset φ.vertexCell |
-      ∀ p : {p : Fin F.k × Fin F.k // p.1 < p.2},
-        C.skeleton.pairColors.colorOfPair (g p.1.1) (g p.1.2) = some (ψ.pairColor p)} := by
-  ext g
-  simp only [mem_lowerRouteMaps, mem_filter, Fintype.mem_piFinset]
-  refine ⟨fun ⟨_, hcell, hcolor⟩ ↦ ⟨hcell, hcolor⟩, fun ⟨hcell, hcolor⟩ ↦ ⟨?_, hcell, hcolor⟩⟩
-  intro i j hij
-  by_contra hne
-  rcases lt_or_gt_of_ne hne with h | h
-  · simpa [hij] using hcolor ⟨(i, j), h⟩
-  · simpa [hij] using hcolor ⟨(j, i), h⟩
-
-/-- **Lower-route counting.** At a transversal placement of a pattern on `k` vertices into an
-`ε`-regular lower skeleton, the number of injective maps realizing a route differs from its
-prediction, the cell-size product times the pair-color densities of the route, by at most
-`(k choose 2) * ε` times the cell-size product. No lower bound on the densities is needed. -/
-theorem abs_lowerRouteCountAt_sub_expectedLowerRouteCountAt_le {φ : PatternPlacement3 C F}
-    (hφ : φ.Transversal) (ψ : PairColorPlacement3 φ) {ε : ℝ}
-    (h : C.skeleton.IsPairColorRegular ε) :
-    |(lowerRouteCountAt φ ψ : ℝ) - expectedLowerRouteCountAt φ ψ| ≤
-      F.k.choose 2 * ε * ∏ i, (#(φ.vertexCell i) : ℝ) := by
-  simpa [lowerRouteCountAt_def, lowerRouteMaps_eq_filter_piFinset,
-    expectedLowerRouteCountAt_def] using
-    h.abs_card_filter_colorOfPair_sub_prod_le φ.vertexCell φ.vertexCell_mem
-      (φ.transversal_iff.1 hφ) ψ.pairColor
 
 /-! ### Top-regular routes -/
 
