@@ -13,12 +13,13 @@ public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Ideal
 
 Let `K` be the `n`-th cyclotomic field over `ℚ`, and let `σ` be complex conjugation, the
 automorphism acting on the `n`-th roots of unity by `ζ ↦ ζ⁻¹`. Since `σ` fixes every rational
-integer `m`, Galois equivariance of the power residue symbol shows that the symbol of `m` at the
-conjugate ideal `σ 𝔞` is the inverse of its symbol at `𝔞`:
+integer `m`, Galois equivariance of the power residue symbol shows that, for `m` prime to an
+ideal `𝔞`, the symbol of `m` at the conjugate ideal `σ 𝔞` is the inverse of its symbol at `𝔞`:
 `(m / σ 𝔞)_n (m / 𝔞)_n = 1`.
 
 This is how conjugate ideals are paired off in the reciprocity laws involving rational integers:
-for instance, the symbol of `m` at a rational prime that splits as `p = π (σ π)` is `1`.
+for instance, the symbol of an integer `m` prime to `p` at a rational prime that splits as
+`p = π (σ π)` is `1`.
 
 ## Main results
 

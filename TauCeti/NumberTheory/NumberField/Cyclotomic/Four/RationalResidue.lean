@@ -24,7 +24,8 @@ By multiplicativity in the denominator it suffices to treat a rational prime `q`
   complex conjugation inverts the symbol of `n` at `β`
   (`Ideal.powerResidueSymbolIdeal_map_intCast_mul_eq_one`), so the symbols at `β` and at `β'`
   cancel. This covers `q = 2 = (1 + i) (1 - i)` as well;
-* if `q ≡ 3 (mod 4)`, then `q 𝓞 K` is prime of norm `q²`, and
+* if `q ≡ 3 (mod 4)`, then `q 𝓞 K` is prime of norm `q²`
+  (`TauCeti.prime_natCast_of_mod_four_eq_three`), and
   `(n / q)₄ ≡ n ^ ((q² - 1) / 4) = (n ^ (q - 1)) ^ ((q + 1) / 4) ≡ 1 (mod q)` by Fermat's little
   theorem (`Ideal.powerResidueSymbol_intCast_eq_one`).
 
@@ -34,8 +35,6 @@ instance `(3 / (-1 + 2i))₄ = i`.
 ## Main results
 
 * `Ideal.powerResidueSymbolIdeal_intCast_four`: `(n / m)₄ = 1` for coprime integers `n` and `m`.
-* `TauCeti.prime_natCast_of_mod_four_eq_three`: a rational prime `q ≡ 3 (mod 4)` stays prime in
-  `𝓞 K`.
 
 ## References
 
@@ -49,11 +48,6 @@ open NumberField IsCyclotomicExtension.Rat
 namespace Ideal
 
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
-
-/-- The absolute norm of `q 𝓞 K` is `q²`, since `𝓞 K` has rank two. -/
-private theorem absNorm_span_natCast_four (q : ℕ) : absNorm (span {(q : 𝓞 K)}) = q ^ 2 := by
-  rw [absNorm_span_natCast, RingOfIntegers.rank, IsCyclotomicExtension.finrank (n := 4) K
-    (Polynomial.cyclotomic.irreducible_rat (by norm_num)), show Nat.totient 4 = 2 by decide]
 
 variable [HasEnoughRootsOfUnity (𝓞 K) 4]
 
@@ -90,57 +84,21 @@ private theorem powerResidueSymbolIdeal_natCast_four_of_mod_four_ne_three {n : �
   have hmapβ : (span {β}).map τ = span {τ β} := by
     rw [map_span, Set.image_singleton]
   rw [hqβ, ← span_singleton_mul_span_singleton,
-    ← map_intCast (Quotient.mk (span {τ β} * span {β})),
-    powerResidueSymbolIdeal_mul_right (by simpa using hβ) (by simpa using hβ),
-    map_intCast (Quotient.mk (span {τ β})), map_intCast (Quotient.mk (span {β})), ← hmapβ]
+    powerResidueSymbolIdeal_mul_right_intCast (by simpa using hβ) (by simpa using hβ), ← hmapβ]
   refine powerResidueSymbolIdeal_map_intCast_mul_eq_one hσ _ ?_
   rw [← map_intCast (Quotient.mk (span {β}))]
   exact Quotient.isUnit_mk_iff.mpr (isCoprime_iff_sup_eq.mp
     ((isCoprime_span_singleton_iff _ _).mpr hcop.of_mul_right_right))
-
-/-- **Rational primes `q ≡ 3 (mod 4)` are inert in `𝓞 K = ℤ[i]`.** This is the analogue for the
-ring of integers of the fourth cyclotomic field of one direction of Mathlib's
-`GaussianInt.prime_iff_mod_four_eq_three_of_nat_prime`. -/
-theorem _root_.TauCeti.prime_natCast_of_mod_four_eq_three {q : ℕ} (hq : q.Prime)
-    (hq3 : q % 4 = 3) : Prime (q : 𝓞 K) := by
-  have hN := absNorm_span_natCast_four (K := K) q
-  have hne : span {(q : 𝓞 K)} ≠ ⊤ := by
-    rintro htop
-    rw [htop, absNorm_top] at hN
-    nlinarith [hq.two_le]
-  obtain ⟨P, hP, hle⟩ := exists_le_maximal _ hne
-  -- `N P ∣ q²`, and `N P ≠ q` since `4 ∣ N P - 1`, so `N P = q²` and `P = q 𝓞 K`.
-  have hPN : absNorm P = q ^ 2 := by
-    obtain ⟨k, hk, hPk⟩ := (Nat.dvd_prime_pow hq).mp (hN ▸ absNorm_dvd_absNorm_of_le hle)
-    interval_cases k
-    · exact absurd (absNorm_eq_one_iff.mp (by rw [hPk, pow_zero])) hP.ne_top
-    · rw [pow_one] at hPk
-      have h4 := dvd_absNorm_sub_one (n := 4) (P := P) (by
-        rw [hPk, Nat.Coprime, Nat.gcd_comm, Nat.gcd_rec, hq3]
-        rfl)
-      omega
-    · exact hPk
-  obtain ⟨C, hC⟩ := dvd_iff_le.mpr hle
-  have hC1 : absNorm C = 1 := by
-    rw [hC, map_mul, hPN] at hN
-    exact (Nat.mul_eq_left (pow_ne_zero 2 hq.ne_zero)).mp hN
-  rw [absNorm_eq_one_iff.mp hC1, mul_top] at hC
-  exact (span_singleton_prime (by exact_mod_cast hq.ne_zero)).mp (hC ▸ hP.isPrime)
 
 /-- The inert case: if `q ≡ 3 (mod 4)`, then `q 𝓞 K` is a prime of norm `q²`, and `n` is a
 fourth power residue modulo it by Fermat's little theorem. -/
 private theorem powerResidueSymbolIdeal_natCast_four_of_mod_four_eq_three {n : ℤ} {q : ℕ}
     (hq : q.Prime) (hq3 : q % 4 = 3) (h : IsCoprime n q) :
     powerResidueSymbolIdeal (span {(q : 𝓞 K)}) 4 n = 1 := by
-  have hN := absNorm_span_natCast_four (K := K) q
+  have hN := TauCeti.absNorm_span_natCast_four (K := K) q
   have : (span {(q : 𝓞 K)}).IsMaximal :=
     ((span_singleton_prime (by exact_mod_cast hq.ne_zero)).mpr
       (TauCeti.prime_natCast_of_mod_four_eq_three hq hq3)).isMaximal (by simpa using hq.ne_zero)
-  have hcop : (absNorm (span {(q : 𝓞 K)})).Coprime 4 := by
-    rw [hN]
-    refine Nat.Coprime.pow_left 2 ?_
-    rw [Nat.Coprime, Nat.gcd_comm, Nat.gcd_rec, hq3]
-    rfl
   -- `4 (q - 1) ∣ q² - 1 = (q - 1) (q + 1)` since `4 ∣ q + 1`.
   have hdvd : 4 * (q - 1) ∣ absNorm (span {(q : 𝓞 K)}) - 1 := by
     obtain ⟨k, rfl⟩ : ∃ k, q = 4 * k + 3 := ⟨q / 4, by omega⟩
@@ -148,7 +106,7 @@ private theorem powerResidueSymbolIdeal_natCast_four_of_mod_four_eq_three {n : �
     rw [hN, show 4 * k + 3 - 1 = 4 * k + 2 by omega,
       show (4 * k + 3) ^ 2 = 4 * (4 * k + 2) * (k + 1) + 1 by ring, Nat.add_sub_cancel]
   rw [powerResidueSymbolIdeal_of_isMaximal]
-  exact powerResidueSymbol_intCast_eq_one hcop hq (mem_span_singleton_self _) hdvd h
+  exact powerResidueSymbol_intCast_eq_one hq (mem_span_singleton_self _) hdvd h
 
 /-- **The quartic residue symbol of coprime rational integers is trivial** in the fourth
 cyclotomic field `ℚ(i)`: `(n / m)₄ = 1` for coprime integers `n` and `m`, the denominator being
@@ -172,10 +130,7 @@ theorem powerResidueSymbolIdeal_intCast_four {m n : ℤ} (h : IsCoprime n m) :
     have hp0 : span {(p : 𝓞 K)} ≠ ⊥ := by simpa using hp.ne_zero
     have hm0 : span {(m : 𝓞 K)} ≠ ⊥ := by simpa using hm
     rw [Int.cast_mul, ← span_singleton_mul_span_singleton,
-      ← map_intCast (Quotient.mk (span {(p : 𝓞 K)} * span {(m : 𝓞 K)})),
-      powerResidueSymbolIdeal_mul_right hp0 hm0,
-      map_intCast (Quotient.mk (span {(p : 𝓞 K)})), map_intCast (Quotient.mk (span {(m : 𝓞 K)})),
-      ih hnm, mul_one]
+      powerResidueSymbolIdeal_mul_right_intCast hp0 hm0, ih hnm, mul_one]
     -- Reduce to the rational prime `q = |p|`.
     have hq := Int.prime_iff_natAbs_prime.mp hp
     have hpq : span {(p : 𝓞 K)} = span {(p.natAbs : 𝓞 K)} := by
