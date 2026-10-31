@@ -34,6 +34,8 @@ a tangent bundle is unpacked into an equation on its base curve and one on its v
   of the total space is its fibre coordinate in the trivialization at the centre of the chart.
 * `Bundle.TotalSpace.hasMFDerivAt_smul_curve`: in a vector bundle, the velocity of a scalar
   curve `r ↦ f r • z` through the fibre of `z`.
+* `TauCeti.Manifold.hasMFDerivAt_totalSpaceMk_add_smul`: in a vector bundle, the velocity of a
+  straight line `r ↦ a + r • b` in the fibre over `x`.
 
 -/
 
@@ -173,5 +175,37 @@ theorem hasMFDerivAt_smul_curve (y : TotalSpace F V) {f : 𝕜 → 𝕜} {f' : �
 end VectorBundle
 
 end Bundle.TotalSpace
+
+namespace TauCeti.Manifold
+
+variable [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
+
+/-- **The velocity of a line in a fibre.** In the fibre of a vector bundle over `x`, the line
+`r ↦ a + r • b` has velocity `(0, ξ)` at `r = 0`, read in the chart at `a`, where `ξ` is the fibre
+coordinate of `b` in the trivialization at `x`. -/
+theorem hasMFDerivAt_totalSpaceMk_add_smul (x : B) (a b : V x) :
+    HasMFDerivAt 𝓘(𝕜) (IB.prod 𝓘(𝕜, F)) (fun r : 𝕜 ↦ TotalSpace.mk' F x (a + r • b)) 0
+      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight
+        ((0 : EB), (trivializationAt F V x).continuousLinearMapAt 𝕜 x b)) := by
+  set e := trivializationAt F V x
+  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt F V x
+  -- In the trivialization at `x` the line is the affine line `r ↦ e a + r • e b`.
+  have hcoord : (fun r : 𝕜 ↦ (e (TotalSpace.mk' F x (a + r • b))).2) =
+      fun r ↦ e.continuousLinearMapAt 𝕜 x a + r • e.continuousLinearMapAt 𝕜 x b := by
+    funext r
+    rw [← Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) e hx, map_add, map_smul]
+  -- The line stays in the fibre over `x`, by definition of its points.
+  have hproj : (TotalSpace.mk' F x (a + (0 : 𝕜) • b)).proj = x := rfl
+  rw [hasMFDerivAt_totalSpace_curve_iff]
+  refine ⟨(FiberBundle.continuousAt_totalSpace F _).2 ⟨continuousAt_const, ?_⟩,
+    hasDerivAt_const (0 : 𝕜) (extChartAt IB x x), ?_⟩
+  · rw [hproj, hcoord]
+    fun_prop
+  · rw [hproj, hcoord]
+    have h := ((hasDerivAt_id' (0 : 𝕜)).smul_const (e.continuousLinearMapAt 𝕜 x b)).const_add
+      (e.continuousLinearMapAt 𝕜 x a)
+    rwa [one_smul] at h
+
+end TauCeti.Manifold
 
 end

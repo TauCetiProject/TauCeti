@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.Finite.G2
 public import TauCeti.LinearAlgebra.RootSystem.Classification
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
 # The Cartan-Killing classification in rank at most two

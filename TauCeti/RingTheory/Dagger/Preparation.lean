@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
 public import TauCeti.RingTheory.Dagger.Distinguished
 public import TauCeti.RingTheory.Dagger.OptionSeries
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
@@ -66,15 +67,10 @@ theorem eq_and_eq_of_isUnit_isMonicOfDegree_mul_eq {g e e' : W} {s : ℕ}
     (h' : (restrictedOptionEquiv (toTate _ K e') : PowerSeries Tate) *
       (ω'.map (toTate σ K).toRingHom : PowerSeries Tate) =
         restrictedOptionEquiv (toTate _ K g)) : e = e' ∧ ω = ω' := by
-  have hm : (ω.map (toTate σ K).toRingHom).IsMonicOfDegree s :=
-    ⟨(Polynomial.natDegree_map_eq_of_injective toTate_injective ω).trans hω.natDegree_eq,
-      hω.monic.map _⟩
-  have hm' : (ω'.map (toTate σ K).toRingHom).IsMonicOfDegree s :=
-    ⟨(Polynomial.natDegree_map_eq_of_injective toTate_injective ω').trans hω'.natDegree_eq,
-      hω'.monic.map _⟩
+  have : Nontrivial Tate := nontrivial_of_ne _ _ hg.coeff_ne_zero
   obtain ⟨heq, hωeq⟩ := hg.eq_and_eq_of_mul_eq_mul one_pos
     ((he.map (toTate _ K)).map restrictedOptionEquiv.toRingHom)
-    ((he'.map (toTate _ K)).map restrictedOptionEquiv.toRingHom) hm hm' h h'
+    ((he'.map (toTate _ K)).map restrictedOptionEquiv.toRingHom) (hω.map _) (hω'.map _) h h'
   exact ⟨toTate_injective (restrictedOptionEquiv.injective heq),
     Polynomial.map_injective _ toTate_injective hωeq⟩
 

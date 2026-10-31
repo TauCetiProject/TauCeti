@@ -48,7 +48,10 @@ with restriction to a smaller cover (`TauCeti.deRhamCohomology.mayerVietorisδ_n
 Exactness of the long exact sequence at its two ends adjacent to the connecting map makes it
 computable from the cohomology of `U` and `V`: it is injective when `U` and `V` have no
 cohomology in degree `k`, surjective when they have none in degree `k + 1`, and it vanishes on
-constant classes in degree zero, which are restrictions of constant classes on `U`.
+constant classes in degree zero, which are restrictions of constant classes on `U`. When `U` and
+`V` are preconnected, these are its only zeros in degree zero: if the class of `φ = α - β` dies,
+the glued form restricting to `dα` and `dβ` is the differential of a function `g`, so `α - g` and
+`β - g` are constant and `φ` is their difference.
 
 ## Main definitions and results
 
@@ -68,7 +71,9 @@ constant classes in degree zero, which are restrictions of constant classes on `
   `TauCeti.deRhamCohomology.mayerVietorisδ_surjective` and
   `TauCeti.deRhamCohomology.mayerVietorisδEquiv`: the connecting map is an isomorphism when `U`
   and `V` have no cohomology in degrees `k` and `k + 1`.
-* `TauCeti.deRhamCohomology.mayerVietorisδ_const`: the connecting map kills constant classes.
+* `TauCeti.deRhamCohomology.mayerVietorisδ_const` and
+  `TauCeti.deRhamCohomology.ker_mayerVietorisδ_zero`: the connecting map kills constant classes,
+  and in degree zero, for preconnected `U` and `V`, nothing else.
 
 ## References
 
@@ -670,6 +675,55 @@ theorem mayerVietorisδ_const (U V : Opens M) (r : ℝ) :
     simp [α, coe_closedFormsZeroEquiv_symm_apply, mpullback_ofFunction]
   · rw [Submodule.coe_zero, map_zero, (mem_closedForms_iff_mextDerivₗ_eq_zero I α.1).mp α.2]
   · rw [Submodule.coe_zero, map_zero, map_zero]
+
+omit [FiniteDimensional ℝ E] [T2Space M] [SigmaCompactSpace M] in
+/-- A smooth function `γ` on an open subset `W ≤ U ⊔ V`, whose differential is the restriction of
+the differential of a smooth function `g` on `U ⊔ V`, differs from the restriction of `g` by a
+constant when `W` is preconnected. -/
+private theorem exists_forall_sub_eq_of_mextDerivₗ_eq {U V W : Opens M} (hW : W ≤ U ⊔ V)
+    [PreconnectedSpace W] (γ : SmoothForm I W ℝ 0) (g : SmoothForm I (U ⊔ V : Opens M) ℝ 0)
+    (hγ : mextDerivₗ I 0 γ = SmoothForm.mpullback (Opens.inclusion hW) (contMDiff_inclusion _)
+      (mextDerivₗ I 0 g)) :
+    ∃ a : ℝ, ∀ x : W, γ.1 x 0 - g.1 (Opens.inclusion hW x) 0 = a := by
+  set ψ := γ - SmoothForm.mpullback (Opens.inclusion hW) (contMDiff_inclusion _) g
+  have hψ : ψ ∈ closedForms I W 0 := by
+    rw [mem_closedForms_iff_mextDerivₗ_eq_zero, map_sub, SmoothForm.mextDerivₗ_mpullback, hγ,
+      sub_self]
+  obtain ⟨a, ha⟩ := ((mem_closedForms_zero_iff I ψ).mp hψ).exists_eq_const
+  refine ⟨a, fun x ↦ ?_⟩
+  have hx := congrFun ha x
+  simp only [Function.const_apply, ψ, Submodule.coe_sub, SmoothForm.coe_mpullback] at hx
+  rw [Pi.sub_apply, mpullback_inclusion_apply] at hx
+  -- `g` is evaluated at the inclusion of `x`, whose tangent space is that of `x`.
+  exact hx
+
+/-- **The kernel of the degree-zero Mayer–Vietoris connecting map.** When `U` and `V` are
+preconnected, the connecting map `H⁰(U ⊓ V) → H¹(U ⊔ V)` kills exactly the classes of constant
+functions. -/
+theorem ker_mayerVietorisδ_zero (U V : Opens M) [PreconnectedSpace U] [PreconnectedSpace V] :
+    LinearMap.ker (mayerVietorisδ I U V 0) = LinearMap.range (const I (U ⊓ V : Opens M)) := by
+  refine le_antisymm (fun c hc ↦ ?_)
+    (LinearMap.range_le_ker_iff.mpr (LinearMap.ext (mayerVietorisδ_const U V)))
+  obtain ⟨φ, rfl⟩ := mk_surjective I 0 c
+  -- Write `φ = α - β` and let `σ` be the closed `1`-form on `U ⊔ V` restricting to `dα` and `dβ`.
+  obtain ⟨⟨α, β⟩, hαβ⟩ := SmoothForm.surjective_mayerVietoris U V φ.1
+  rw [LinearMap.coprod_apply, LinearMap.neg_apply, ← sub_eq_add_neg] at hαβ
+  obtain ⟨σ, hσU, hσV⟩ := exists_closedForms_mpullback_eq_mextDerivₗ α β (hαβ ▸ φ.2)
+  -- Since `[σ] = 0`, `σ = dg` for a function `g` on `U ⊔ V`, so `α - g` and `β - g` are constant.
+  rw [LinearMap.mem_ker, mayerVietorisδ_mk U V φ α β hαβ σ hσU hσV, mk_eq_zero_iff,
+    exactForms_succ] at hc
+  obtain ⟨g, hg⟩ := hc
+  obtain ⟨a, ha⟩ := exists_forall_sub_eq_of_mextDerivₗ_eq le_sup_left α g (hg ▸ hσU.symm)
+  obtain ⟨b, hb⟩ := exists_forall_sub_eq_of_mextDerivₗ_eq le_sup_right β g (hg ▸ hσV.symm)
+  refine ⟨a - b, (deRhamCohomologyZeroEquiv I _).injective ?_⟩
+  ext x
+  rw [deRhamCohomologyZeroEquiv_const, deRhamCohomologyZeroEquiv_mk, LocallyConstant.coe_const,
+    Function.const_apply, ← hαβ, ← ha (Opens.inclusion inf_le_left x),
+    ← hb (Opens.inclusion inf_le_right x)]
+  simp only [Submodule.coe_sub, SmoothForm.coe_mpullback, Pi.sub_apply,
+    mpullback_inclusion_apply]
+  -- Both inclusions of `x` into `U ⊔ V` are the same point, so the values of `g` cancel.
+  exact sub_sub_sub_cancel_right _ _ _
 
 end deRhamCohomology
 

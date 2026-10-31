@@ -83,6 +83,10 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   derivative with the canonical source tangent identification.
 * `TauCeti.mfderivWithin_extChartAt_symm_of_subset`: within a subset of the chart target with
   unique derivatives, the derivative of the inverse chart is its derivative within the model range.
+* `TauCeti.eventually_differentiableAt_chart_comp_of_eventually_mdifferentiableAt` and
+  `TauCeti.eventually_mdifferentiableAt_chart_symm_comp_of_eventually_differentiableAt`:
+  transport differentiability near a point between a product of manifolds and model spaces
+  using maximal-atlas charts.
 * `TauCeti.writtenInExtChartAt_chartAt_comp_eventuallyEq`, `TauCeti.hasMFDerivAt_chartAt_comp` and
   `TauCeti.contMDiffAt_chartAt_comp`: for a space charted over a charted space `X`, with the
   composite charts, the preferred `X`-valued chart at `x` reads as the identity near `x`, so it is
@@ -601,5 +605,78 @@ theorem _root_.MDifferentiableAt.fderiv_chartAt_comp {g : F → N} {x : F}
   simpa [writtenInExtChartAt] using! congrArg (fun L => L v) hg.mfderiv.symm
 
 end ModelSpaceSource
+
+section ProductCharts
+
+open Filter
+
+variable {𝕜 E F K M N P : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup K] [NormedSpace 𝕜 K]
+  [TopologicalSpace M] [ChartedSpace E M] [TopologicalSpace N] [ChartedSpace F N]
+  [TopologicalSpace P] [ChartedSpace K P]
+
+/-- The representative of a map differentiable near a point in maximal-atlas product charts is
+Fréchet differentiable near the corresponding model-space point. -/
+theorem eventually_differentiableAt_chart_comp_of_eventually_mdifferentiableAt
+    {G : M × N → P} {u : M × N}
+    {e : OpenPartialHomeomorph M E} {d : OpenPartialHomeomorph N F}
+    {c : OpenPartialHomeomorph P K}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 M)
+    (hd : d ∈ IsManifold.maximalAtlas 𝓘(𝕜, F) 1 N)
+    (hc : c ∈ IsManifold.maximalAtlas 𝓘(𝕜, K) 1 P)
+    (hu : u.1 ∈ e.source) (hv : u.2 ∈ d.source) (hw : G u ∈ c.source)
+    (hG : ∀ᶠ q in 𝓝 u, MDifferentiableAt (𝓘(𝕜, E).prod 𝓘(𝕜, F)) 𝓘(𝕜, K) G q) :
+    ∀ᶠ q in 𝓝 (e u.1, d u.2),
+      DifferentiableAt 𝕜 (fun q : E × F ↦ c (G (e.symm q.1, d.symm q.2))) q := by
+  have hback : Tendsto (fun q : E × F ↦ (e.symm q.1, d.symm q.2))
+      (𝓝 (e u.1, d u.2)) (𝓝 u) :=
+    (e.tendsto_symm hu).prodMap_nhds (d.tendsto_symm hv)
+  have hgc : ContinuousAt G u := hG.self_of_nhds.continuousAt
+  filter_upwards [(continuous_fst.tendsto (e u.1, d u.2)).eventually
+    (e.open_target.mem_nhds (e.map_source hu)),
+    (continuous_snd.tendsto (e u.1, d u.2)).eventually
+      (d.open_target.mem_nhds (d.map_source hv)),
+    hback.eventually hG,
+    (hgc.tendsto.comp hback).eventually (c.open_source.mem_nhds hw)] with q hqe hqd hqG hqc
+  have hq := (mdifferentiableAt_of_mem_maximalAtlas hc hqc).comp q
+    (hqG.comp q
+      (((mdifferentiableAt_symm_of_mem_maximalAtlas he hqe).comp q mdifferentiableAt_fst).prodMk
+        ((mdifferentiableAt_symm_of_mem_maximalAtlas hd hqd).comp q mdifferentiableAt_snd)))
+  apply mdifferentiableAt_iff_differentiableAt.1
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  exact hq
+
+/-- Pulling a map differentiable near a model-space point back through maximal-atlas product
+charts gives a map differentiable near the original point, provided its value lies in the target
+of the output chart. -/
+theorem eventually_mdifferentiableAt_chart_symm_comp_of_eventually_differentiableAt
+    {φ : E × K → F} {u : M × P}
+    {e : OpenPartialHomeomorph M E} {d : OpenPartialHomeomorph N F}
+    {c : OpenPartialHomeomorph P K}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 M)
+    (hd : d ∈ IsManifold.maximalAtlas 𝓘(𝕜, F) 1 N)
+    (hc : c ∈ IsManifold.maximalAtlas 𝓘(𝕜, K) 1 P)
+    (hu : u.1 ∈ e.source) (hw : u.2 ∈ c.source)
+    (hφ : ∀ᶠ q in 𝓝 (e u.1, c u.2), DifferentiableAt 𝕜 φ q)
+    (ht : φ (e u.1, c u.2) ∈ d.target) :
+    ∀ᶠ p in 𝓝 u, MDifferentiableAt (𝓘(𝕜, E).prod 𝓘(𝕜, K)) 𝓘(𝕜, F)
+      (fun p : M × P ↦ d.symm (φ (e p.1, c p.2))) p := by
+  have hfront : Tendsto (fun p : M × P ↦ (e p.1, c p.2))
+      (𝓝 u) (𝓝 (e u.1, c u.2)) :=
+    (e.continuousAt hu).prodMap_nhds (c.continuousAt hw)
+  have htarget := (hφ.self_of_nhds.continuousAt.tendsto.comp hfront).eventually
+    (d.open_target.mem_nhds ht)
+  filter_upwards [hfront.eventually hφ, htarget,
+    (continuous_fst.tendsto u).eventually (e.open_source.mem_nhds hu),
+    (continuous_snd.tendsto u).eventually (c.open_source.mem_nhds hw)]
+    with p hp hpt hpe hpc
+  exact (mdifferentiableAt_symm_of_mem_maximalAtlas hd hpt).comp p
+    (hp.mdifferentiableAt.comp p
+      ((mdifferentiableAt_prod_module_iff _).2
+        ⟨(mdifferentiableAt_of_mem_maximalAtlas he hpe).comp p mdifferentiableAt_fst,
+          (mdifferentiableAt_of_mem_maximalAtlas hc hpc).comp p mdifferentiableAt_snd⟩))
+
+end ProductCharts
 
 end TauCeti
