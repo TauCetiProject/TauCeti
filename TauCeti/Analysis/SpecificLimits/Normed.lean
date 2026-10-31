@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecificLimits.Normed
-public import Mathlib.Analysis.Normed.Ring.Ultra
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.BigOperators.Fin
@@ -24,8 +23,8 @@ test.
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
 norm. Finite products of geometric series converge unconditionally over all exponent vectors,
-giving the product Cauchy kernel expansion. Over a complete ultrametric normed field, the Lambert
-series `∑_{n ≥ 1} qⁿw / (1 - qⁿw)²` is the power series `∑_{k ≥ 1} k qᵏ wᵏ / (1 - qᵏ)` in `w`.
+giving the product Cauchy kernel expansion. Over a complete normed field, the Lambert series
+`∑_{n ≥ 1} qⁿw / (1 - qⁿw)²` is the power series `∑_{k ≥ 1} k qᵏ wᵏ / (1 - qᵏ)` in `w`.
 -/
 
 public section
@@ -191,7 +190,7 @@ theorem hasSum_prod_geometric_div {𝕜 ι : Type*} [NormedField 𝕜] [Fintype 
 
 /-- The Lambert series `∑_{n ≥ 1} qⁿw / (1 - qⁿw)² = ∑_{k ≥ 1} k qᵏ wᵏ / (1 - qᵏ)`, for
 `‖q w‖ < 1`. -/
-theorem hasSum_lambert [IsUltrametricDist K] [CompleteSpace K] {q w : K} (hq : ‖q‖ < 1)
+theorem hasSum_lambert [CompleteSpace K] {q w : K} (hq : ‖q‖ < 1)
     (hw : ‖q * w‖ < 1) :
     HasSum (fun k : ℕ ↦ ((k + 1 : ℕ) : K) * q ^ (k + 1) / (1 - q ^ (k + 1)) * w ^ (k + 1))
       (∑' n : ℕ, q ^ (n + 1) * w / (1 - q ^ (n + 1) * w) ^ 2) := by
@@ -203,18 +202,17 @@ theorem hasSum_lambert [IsUltrametricDist K] [CompleteSpace K] {q w : K} (hq : �
     rw [hz]
     calc ‖q‖ ^ n * ‖q * w‖ ≤ 1 * ‖q * w‖ := by gcongr; exact hqn n
       _ < 1 := by rwa [one_mul]
-  have hbound (p : ℕ × ℕ) : ‖F p‖ ≤ ‖q‖ ^ p.1 * ‖q * w‖ ^ (p.2 + 1) := by
-    rw [hF, norm_mul, norm_pow, hz, mul_pow]
-    calc ‖((p.2 + 1 : ℕ) : K)‖ * ((‖q‖ ^ p.1) ^ (p.2 + 1) * ‖q * w‖ ^ (p.2 + 1))
-        ≤ 1 * (‖q‖ ^ p.1 * ‖q * w‖ ^ (p.2 + 1)) := by
-          gcongr
-          · exact IsUltrametricDist.norm_natCast_le_one K _
-          · exact pow_le_of_le_one (by positivity) (hqn p.1) (Nat.succ_ne_zero _)
-      _ = ‖q‖ ^ p.1 * ‖q * w‖ ^ (p.2 + 1) := one_mul _
+  have hbound (p : ℕ × ℕ) :
+      ‖F p‖ ≤ ‖q‖ ^ p.1 * (((p.2 + 1 : ℕ) : ℝ) * ‖q * w‖ ^ (p.2 + 1)) := by
+    rw [hF, norm_mul, norm_pow, hz, mul_pow, mul_left_comm]
+    gcongr
+    · exact pow_le_of_le_one (by positivity) (hqn p.1) (Nat.succ_ne_zero _)
+    · simpa using Nat.norm_cast_le (α := K) (p.2 + 1)
   have hs : Summable F := by
     refine Summable.of_norm_bounded ?_ hbound
     exact (summable_geometric_of_lt_one (norm_nonneg _) hq).mul_of_nonneg
-      ((summable_nat_add_iff 1).mpr (summable_geometric_of_lt_one (norm_nonneg _) hw))
+      ((summable_nat_add_iff 1).mpr
+        (hasSum_coe_mul_geometric_of_norm_lt_one (by rwa [norm_norm])).summable)
       (fun _ ↦ by positivity) (fun _ ↦ by positivity)
   have hrow (n : ℕ) :
       HasSum (fun k ↦ F (n, k)) (q ^ (n + 1) * w / (1 - q ^ (n + 1) * w) ^ 2) := by

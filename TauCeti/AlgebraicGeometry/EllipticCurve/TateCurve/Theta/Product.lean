@@ -28,6 +28,8 @@ or not.
 
 ## Main results
 
+* `TauCeti.tateThetaCoeff_add_one`: the recurrence `c(n + 1) = -qⁿ c(n)` of the theta
+  coefficients.
 * `TauCeti.tateThetaProductCoeff_mem`: the coefficients are quasi-periodic of degree two.
 * `TauCeti.hasSum_tateThetaProductCoeff`: the Laurent series converges to
   `θ(a u) θ(a⁻¹ u)` at every unit `u`.
@@ -55,7 +57,8 @@ noncomputable def tateThetaCoeff (q : Kˣ) (n : ℤ) : K :=
 theorem tateThetaCoeff_def (q : Kˣ) (n : ℤ) :
     tateThetaCoeff q n = (-1) ^ n * (q : K) ^ (n * (n - 1) / 2) := (rfl)
 
-private theorem tateThetaCoeff_add_one (q : Kˣ) (n : ℤ) :
+/-- The Laurent coefficients of the theta function satisfy `c(n + 1) = -qⁿ c(n)`. -/
+theorem tateThetaCoeff_add_one (q : Kˣ) (n : ℤ) :
     tateThetaCoeff q (n + 1) = -(q : K) ^ n * tateThetaCoeff q n := by
   rw [tateThetaCoeff_def, tateThetaCoeff_def, Int.add_mul_add_sub_one_ediv_two n 1]
   simp only [mul_one, sub_self, mul_zero, Int.zero_ediv, add_zero]
