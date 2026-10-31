@@ -56,10 +56,6 @@ variable {G : Type u} [Group G] [TopologicalSpace G] {U : OpenSubgroup G}
   (hU : U.toSubgroup.index = 1)
 
 include hU in
-private theorem mem_of_index_eq_one (g : G) : g ∈ U.toSubgroup := by
-  simp [Subgroup.index_eq_one.1 hU]
-
-include hU in
 private theorem card_quotient_eq_one [Fintype (G ⧸ U.toSubgroup)] :
     Fintype.card (G ⧸ U.toSubgroup) = 1 := by
   rw [← Nat.card_eq_fintype_card, ← Subgroup.index_eq_card, hU]
@@ -182,11 +178,15 @@ private theorem indexOneProj_comp_differential :
   let : Module ℤ (trivialF2 U.toSubgroup).gradedResolutionTopRep.V := TopRep.hV2 _
   have := subsingleton_quotient hU
   refine TopRep.hom_ext (ContIntertwiningMap.ext (ContinuousLinearMap.ext fun x ↦ ?_))
-  change (indexOneProj hU).hom
-      ((smoothTensorInducedGradedResolutionDifferential U.toSubgroup U.isOpen' (oneTransversal hU)
-        (coeffs (U := U))).hom.hom x) =
-    (trivialF2 U.toSubgroup).gradedResolutionTopRepDifferential.hom ((indexOneProj hU).hom x)
-  rw [indexOneProj_apply, indexOneProj_apply, smoothTensorInducedGradedResolutionDifferential_apply]
+  rw [TopRep.hom_comp, TopRep.hom_comp, ContIntertwiningMap.toContinuousLinearMap_comp,
+    ContIntertwiningMap.toContinuousLinearMap_comp, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.comp_apply, TopRep.resFunctor_map_hom,
+    ContIntertwiningMap.restrict_toContinuousLinearMap,
+    ContIntertwiningMap.toContinuousLinearMap_apply,
+    ContIntertwiningMap.toContinuousLinearMap_apply,
+    ContIntertwiningMap.toContinuousLinearMap_apply,
+    ContIntertwiningMap.toContinuousLinearMap_apply, indexOneProj_apply,
+    smoothTensorInducedGradedResolutionDifferential_apply]
   exact (PiTensorProduct.subsingletonEquiv_slotSum (QuotientGroup.mk 1)
     (fun _ ↦ (coeffs (U := U)).obj.gradedResolutionDifferential) x).trans
     (TopRep.gradedResolutionTopRepDifferential_apply _ _).symm
@@ -260,21 +260,6 @@ theorem trivialF2ResMap_evensNorm_of_index_eq_one {n : ℕ}
   · exact PiTensorProduct.isHomogeneous_subsingletonEquiv (QuotientGroup.mk 1)
   · exact (indexOneProj_apply hU _).trans (PiTensorProduct.subsingletonEquiv_apply_tprod _ _)
 
-omit [CompactSpace U.toSubgroup] [U.toSubgroup.FiniteIndex] [Fintype (G ⧸ U.toSubgroup)] in
-include hU in
-/-- At index one, restriction is injective: corestricting the identity of `G` to `U` gives it a
-left inverse. -/
-private theorem trivialF2ResMap_injective (n : ℕ) :
-    Function.Injective (trivialF2ResMap G U.toSubgroup n) := by
-  let ι : G →ₜ* U.toSubgroup :=
-    ⟨(MonoidHom.id G).codRestrict U.toSubgroup (mem_of_index_eq_one hU),
-      continuous_id.subtype_mk _⟩
-  have hι : (ContinuousMonoidHom.subgroupSubtype U.toSubgroup).comp ι = ContinuousMonoidHom.id G :=
-    ContinuousMonoidHom.ext fun _ ↦ rfl
-  refine Function.LeftInverse.injective (g := trivialF2Map ι n) fun a ↦ ?_
-  rw [← trivialF2Map_subgroupSubtype, ← ConcreteCategory.comp_apply, ← trivialF2Map_comp, hι,
-    trivialF2Map_id, ConcreteCategory.id_apply]
-
 /-- **The Evens norm at index one**: for a compact open subgroup `U` of index one, the norm of
 the restriction to `U` of a class `y ∈ Hⁿ(G, 𝔽₂)` is `y`, in degree `1 · n = n`. -/
 theorem evensNorm_trivialF2ResMap_of_index_eq_one {n : ℕ}
@@ -282,7 +267,7 @@ theorem evensNorm_trivialF2ResMap_of_index_eq_one {n : ℕ}
     U.evensNorm (trivialF2ResMap G U.toSubgroup n y) =
       (ContinuousCohomology.degreeCast (trivialF2 G)
         (by rw [card_quotient_eq_one hU, one_mul])).hom y := by
-  apply trivialF2ResMap_injective hU
+  apply trivialF2ResMap_injective_of_index_eq_one hU
   rw [trivialF2ResMap_evensNorm_of_index_eq_one hU]
   rw [← ConcreteCategory.comp_apply,
     ContinuousCohomology.degreeCast_naturality (trivialF2ResMap G U.toSubgroup),
