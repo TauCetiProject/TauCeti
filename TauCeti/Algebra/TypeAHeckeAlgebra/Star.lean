@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Algebra.Star.Subalgebra
 public import Mathlib.Algebra.Star.SelfAdjoint
-public import TauCeti.Algebra.TypeAHeckeAlgebra.Infinite
+public import TauCeti.Algebra.TypeAHeckeAlgebra.Embedding
 
 /-!
-# The real-parameter involution on the infinite type-A Hecke algebra
+# The real-parameter involution on type-A Hecke algebras
 
 For a star-fixed unit parameter in a commutative star ring, the type-A Hecke algebra has an
 involution fixing every generator and conjugating scalars. In particular, real nonzero parameters
@@ -18,6 +18,8 @@ give complex star algebras. The construction descends to the relation quotient b
 quadratic relation and the reversed braid and distant-commutation relations in the opposite
 algebra.
 
+The finite presentation inherits its involution through the embedding into the infinite algebra;
+`TypeAHeckeAlgebra.star_Tw` sends `T_w` to `T_(w⁻¹)`, and the tower maps preserve star.
 Finite stages are invariant under the involution, and strand shifts and the index/sign characters
 commute with it. This supplies the algebraic star structure needed to discuss positive traces and
 self-adjoint elements; no positivity or C*-completion is asserted. The unit-circle convention, in
@@ -161,3 +163,74 @@ theorem signCharacter_star (x : InfiniteTypeAHeckeAlgebra R q) :
     simpa only [signCharacter_T, Ring.inverse_unit] using hq.out.ringInverse.neg) x
 
 end TauCeti.InfiniteTypeAHeckeAlgebra
+
+namespace TauCeti.TypeAHeckeAlgebra
+
+variable {R : Type*} [CommRing R] [StarRing R] {q : Rˣ} {n : ℕ}
+variable [Fact (IsSelfAdjoint (q : R))]
+
+/-- The real-parameter involution on the finite presentation, transported through its proved
+embedding in the infinite algebra. -/
+private noncomputable def finiteStar (x : TypeAHeckeAlgebra R q n) :
+    TypeAHeckeAlgebra R q n :=
+  (stageEquiv R q n).symm ⟨star (toInfinite R q n x),
+    InfiniteTypeAHeckeAlgebra.star_mem_stage_iff.mpr
+      (by rw [← range_toInfinite]; exact ⟨x, rfl⟩)⟩
+
+private theorem toInfinite_finiteStar (x : TypeAHeckeAlgebra R q n) :
+    toInfinite R q n (finiteStar x) = star (toInfinite R q n x) := by
+  simp [finiteStar, toInfinite_stageEquiv_symm_apply]
+
+/-- For a star-fixed parameter, the finite Hecke algebra is a star ring with self-adjoint
+simple generators. -/
+@[no_expose]
+noncomputable instance instStarRing : StarRing (TypeAHeckeAlgebra R q n) where
+  star := finiteStar
+  star_involutive x := by
+    apply toInfinite_injective R q n
+    simp [toInfinite_finiteStar]
+  star_mul x y := by
+    apply toInfinite_injective R q n
+    simp [toInfinite_finiteStar]
+  star_add x y := by
+    apply toInfinite_injective R q n
+    simp [toInfinite_finiteStar]
+
+/-- The finite-to-infinite embedding preserves the real-parameter involution. -/
+@[simp]
+theorem toInfinite_star (x : TypeAHeckeAlgebra R q n) :
+    toInfinite R q n (star x) = star (toInfinite R q n x) :=
+  toInfinite_finiteStar x
+
+/-- Simple generators of the finite presentation are self-adjoint. -/
+@[simp]
+theorem star_T (i : Fin (n - 1)) : star (T q i) = T q i := by
+  apply toInfinite_injective R q n
+  simp
+
+/-- The finite involution conjugates coefficients. -/
+noncomputable instance instStarModule : StarModule R (TypeAHeckeAlgebra R q n) where
+  star_smul r x := by
+    apply toInfinite_injective R q n
+    simp
+
+/-- The unit-preserving tower maps preserve the real-parameter involutions. -/
+@[simp]
+theorem strandIncl_star (x : TypeAHeckeAlgebra R q n) :
+    strandIncl R q n (star x) = star (strandIncl R q n x) := by
+  apply toInfinite_injective R q (n + 1)
+  simp [toInfinite_strandIncl]
+
+/-- Reversal of a reduced word sends the PBW vector `T_w` to `T_(w⁻¹)`. -/
+@[simp]
+theorem star_Tw {W : Type*} [Group W]
+    (cs : CoxeterSystem (CoxeterMatrix.A (n - 1)) W) (w : W) :
+    star (Tw q cs w) = Tw q cs w⁻¹ := by
+  obtain ⟨ω, hω, rfl⟩ := cs.exists_isReduced w
+  rw [← cs.wordProd_reverse, Tw_wordProd cs hω.reverse, Tw_wordProd cs hω]
+  clear hω
+  induction ω with
+  | nil => simp
+  | cons i ω ih => simp [List.prod_cons, List.prod_append, star_mul, ih]
+
+end TauCeti.TypeAHeckeAlgebra
