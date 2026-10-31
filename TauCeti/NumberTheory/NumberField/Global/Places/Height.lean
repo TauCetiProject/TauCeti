@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.FiniteSupport.Basic
 public import Mathlib.NumberTheory.Height.NumberField
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
+import TauCeti.NumberTheory.NumberField.FinitePlace
 
 /-!
 # The logarithmic height as a sum over the places
@@ -44,6 +45,8 @@ normalized absolute value, `mulHeight x = ∏ᶠ v, max_i ‖x_i‖_v`.
   `2 * logHeight₁ x = ∑ᶠ v, |log ‖x‖_v|`.
 * `TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁`:
   `|log ‖x‖_v| ≤ logHeight₁ x`.
+* `IsDedekindDomain.HeightOneSpectrum.abs_log_valuation_mul_log_absNorm_le_logHeight₁`: Liouville's
+  inequality at a finite place, `|ord_v(x)| log N(v) ≤ logHeight₁ x`.
 * `TauCeti.GlobalNumberFields.finsum_comp_log_normalizedAbsValue_eq_sum`: for `f` with `f 0 = 0`
   and `x` a unit outside a finite set `S` of finite places, `∑ᶠ v, f (log ‖x‖_v)` is a finite sum
   over `S` and the infinite places.
@@ -133,6 +136,36 @@ theorem abs_log_normalizedAbsValue_le_logHeight₁ (v : Place K) (x : K) :
   have := log_normalizedAbsValue_le_logHeight₁ v x⁻¹
   rwa [map_inv₀, log_inv, logHeight₁_inv, neg_le] at this
 
+/-- If `x` has normalized absolute value `1` outside a nonempty finite set `T` of places, then at
+some place `v ∈ T` the logarithm `log ‖x‖_v` is at most `-logHeight₁ x / #T`. Indeed, by the
+product formula the negative parts of these logarithms sum to `-logHeight₁ x`. -/
+theorem exists_mem_log_normalizedAbsValue_le_neg_logHeight₁_div {T : Finset (Place K)}
+    (hT : T.Nonempty) {x : K} (hx : ∀ v ∉ T, normalizedAbsValue v x = 1) :
+    ∃ v ∈ T, log (normalizedAbsValue v x) ≤ -logHeight₁ x / T.card := by
+  have hsupp {f : ℝ → ℝ} (hf : f 1 = 0) : support (fun v ↦ f (normalizedAbsValue v x)) ⊆ T :=
+    fun v hv ↦ by
+      by_contra h
+      exact hv (by simp [hx v h, hf])
+  -- The negative parts of the logarithms sum to `-logHeight₁ x`.
+  have hsum : ∑ v ∈ T, min (log (normalizedAbsValue v x)) 0 = -logHeight₁ x := by
+    have h0 := finsum_log_normalizedAbsValue x
+    rw [finsum_eq_sum_of_support_subset _ (hsupp (f := log) log_one)] at h0
+    rw [logHeight₁_eq_finsum_posLog_normalizedAbsValue,
+      finsum_eq_sum_of_support_subset _ (hsupp (f := (log⁺ ·)) posLog_one)]
+    have hmin (y : ℝ) : min (log y) 0 = log y - log⁺ y := by
+      rw [posLog_apply]
+      rcases le_total (log y) 0 with h | h <;> simp [h]
+    simp only [hmin, Finset.sum_sub_distrib, h0, zero_sub]
+  obtain ⟨v, hv, hle⟩ := Finset.exists_le_of_sum_le hT
+    (f := fun v ↦ min (log (normalizedAbsValue v x)) 0) (g := fun _ ↦ -logHeight₁ x / T.card)
+    (le_of_eq (by rw [hsum, Finset.sum_const, nsmul_eq_mul]; field_simp [hT.card_pos.ne']))
+  refine ⟨v, hv, ?_⟩
+  rcases le_or_gt (log (normalizedAbsValue v x)) 0 with h | h
+  · rwa [min_eq_left h] at hle
+  · -- A positive logarithm forces a positive height, contradicting `0 ≤ -logHeight₁ x / #T`.
+    rw [min_eq_right h.le, le_div_iff₀ (by exact_mod_cast hT.card_pos)] at hle
+    linarith [log_normalizedAbsValue_le_logHeight₁ v x]
+
 /-- The multiplicative height of a nonzero tuple of elements of a number field is the product,
 over all places, of its largest normalized absolute value. -/
 theorem mulHeight_eq_finprod_iSup_normalizedAbsValue {ι : Type*} [Finite ι] {x : ι → K}
@@ -193,3 +226,20 @@ theorem two_mul_logHeight₁_eq_sum_abs_log_adicAbv_add_sum_mult_mul_abs_log
 end Finset
 
 end TauCeti.GlobalNumberFields
+
+namespace IsDedekindDomain.HeightOneSpectrum
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **Liouville's inequality at a finite place.** The absolute value of the order
+`-WithZero.log (v.valuation K x)` of an element `x` of a number field at a finite place `v`,
+weighted by the logarithm of the norm of `v`, is at most the logarithmic height of `x`. Both sides
+vanish at `x = 0`. -/
+theorem abs_log_valuation_mul_log_absNorm_le_logHeight₁ (v : HeightOneSpectrum (𝓞 K)) (x : K) :
+    |WithZero.log (v.valuation K x)| * log (Ideal.absNorm v.asIdeal) ≤ logHeight₁ x := by
+  rw [Int.cast_abs, ← abs_of_nonneg (log_natCast_nonneg (Ideal.absNorm v.asIdeal)), ← abs_mul,
+    ← NumberField.HeightOneSpectrum.log_adicAbv,
+    ← TauCeti.GlobalNumberFields.normalizedAbsValue_inl]
+  exact TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁ _ x
+
+end IsDedekindDomain.HeightOneSpectrum

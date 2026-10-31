@@ -18,7 +18,9 @@ underlying topological space. Translation by any section of `G` preserves all
 three sets, and moving the base section by the action gives the same orbit.
 The translation homeomorphisms assemble into an action of the sections of `G`
 on the underlying space of `X`, under which the orbit is invariant.
-Equivariant morphisms carry orbit images onto orbit images.
+Equivariant morphisms carry orbit images onto orbit images. Lifts of ambient
+translations through a monomorphism give automorphisms with the same group laws
+and preserve the induced base morphism.
 
 No finite-type, smoothness, reducedness or connectedness assumption is needed.
 These statements supply the invariant sets on which local closedness and
@@ -103,6 +105,13 @@ theorem image_orbit (x : 𝟙_ (Over S) ⟶ X) (f : X ⟶ Y) [IsModHom G f] :
 end Monoid
 
 variable [GrpObj G] [ModObj G X]
+
+/-- The underlying orbit morphism intertwines ambient translation with left translation. -/
+@[reassoc]
+theorem orbitMap_left_translation (g : 𝟙_ (Over S) ⟶ G) (x : 𝟙_ (Over S) ⟶ X) :
+    (orbitMap G x).left ≫ (translation X g).hom.left =
+      (leftTranslation g).hom.left ≫ (orbitMap G x).left :=
+  (congrArg Over.Hom.left (leftTranslation_hom_orbitMap g x)).symm
 
 /-- Translation by a group section preserves the full orbit image. -/
 @[simp]
@@ -193,5 +202,95 @@ theorem preimage_smul_orbit (g : 𝟙_ (Over S) ⟶ G) (x : 𝟙_ (Over S) ⟶ X
   exact image_translation_orbit G g⁻¹ x
 
 end Translation
+
+section LiftTranslation
+
+variable {G} {Y : Scheme.{u}} (i : Y ⟶ X.left) [Mono i]
+  (t : (𝟙_ (Over S) ⟶ G) → (Y ⟶ Y))
+  (ht : ∀ g, t g ≫ i = i ≫ (translation X g).hom.left)
+
+/-- Lifts of all ambient translations through a monomorphism are automorphisms.
+The inverse is the lift of translation by the inverse group section. -/
+def liftTranslation (g : 𝟙_ (Over S) ⟶ G) : Y ≅ Y where
+  hom := t g
+  inv := t g⁻¹
+  hom_inv_id := by
+    apply (cancel_mono i).mp
+    simp only [Category.assoc, ht, reassoc_of% ht, translation_inv, Iso.symm_hom,
+      ← Over.comp_left, Iso.hom_inv_id, Over.id_left, Category.comp_id, Category.id_comp]
+  inv_hom_id := by
+    apply (cancel_mono i).mp
+    simp only [Category.assoc, ht, reassoc_of% ht, translation_inv, Iso.symm_hom,
+      ← Over.comp_left, Iso.inv_hom_id, Over.id_left, Category.comp_id, Category.id_comp]
+
+-- Keep the chosen lift opaque to simp, so the equivariance lemmas below give its normal forms.
+/-- The automorphism uses the prescribed lift as its forward morphism. -/
+theorem liftTranslation_hom (g : 𝟙_ (Over S) ⟶ G) :
+    (liftTranslation i t ht g).hom = t g := (rfl)
+
+/-- The inverse automorphism uses the lift of the inverse group section. -/
+theorem liftTranslation_inv (g : 𝟙_ (Over S) ⟶ G) :
+    (liftTranslation i t ht g).inv = t g⁻¹ := (rfl)
+
+/-- The lifted translation intertwines the monomorphism with ambient translation. -/
+@[reassoc (attr := simp)]
+theorem liftTranslation_hom_ι (g : 𝟙_ (Over S) ⟶ G) :
+    (liftTranslation i t ht g).hom ≫ i = i ≫ (translation X g).hom.left := ht g
+
+/-- Translation by the identity lifts to the identity. -/
+@[simp]
+theorem liftTranslation_one : liftTranslation i t ht 1 = Iso.refl _ := by
+  apply Iso.ext
+  apply (cancel_mono i).mp
+  simp only [liftTranslation_hom_ι, translation_one, Iso.refl_hom, Over.id_left,
+    Category.comp_id, Category.id_comp]
+
+/-- Lifted translations compose in action order. -/
+@[simp]
+theorem liftTranslation_mul (g h : 𝟙_ (Over S) ⟶ G) :
+    liftTranslation i t ht (g * h) =
+      liftTranslation i t ht h ≪≫ liftTranslation i t ht g := by
+  apply Iso.ext
+  apply (cancel_mono i).mp
+  simp only [Iso.trans_hom, Category.assoc, liftTranslation_hom_ι,
+    liftTranslation_hom_ι_assoc, translation_mul, Over.comp_left]
+
+/-- Inverse group sections lift to inverse automorphisms. -/
+@[simp]
+theorem liftTranslation_inv_eq_symm (g : 𝟙_ (Over S) ⟶ G) :
+    liftTranslation i t ht g⁻¹ = (liftTranslation i t ht g).symm := by
+  apply Iso.ext
+  rfl
+
+/-- The inverse lifted translation also intertwines the monomorphism. -/
+@[reassoc (attr := simp)]
+theorem liftTranslation_inv_ι (g : 𝟙_ (Over S) ⟶ G) :
+    (liftTranslation i t ht g).inv ≫ i = i ≫ (translation X g).inv.left := by
+  rw [Iso.inv_comp_eq, liftTranslation_hom_ι_assoc,
+    ← Over.comp_left, Iso.hom_inv_id, Over.id_left, Category.comp_id]
+
+/-- Lifted translations preserve the structure morphism induced by the monomorphism. -/
+@[reassoc]
+theorem liftTranslation_hom_toBase (g : 𝟙_ (Over S) ⟶ G) :
+    (liftTranslation i t ht g).hom ≫ i ≫ X.hom = i ≫ X.hom := by
+  rw [liftTranslation_hom_ι_assoc, Over.w]
+
+/-- Inverse lifted translations preserve the induced structure morphism. -/
+@[reassoc]
+theorem liftTranslation_inv_toBase (g : 𝟙_ (Over S) ⟶ G) :
+    (liftTranslation i t ht g).inv ≫ i ≫ X.hom = i ≫ X.hom := by
+  rw [Iso.inv_comp_eq, liftTranslation_hom_toBase]
+
+/-- Any factorization of the orbit morphism through the monomorphism is equivariant
+for the lifted translations. -/
+@[reassoc]
+theorem comp_liftTranslation_hom (x : 𝟙_ (Over S) ⟶ X) (p : G.left ⟶ Y)
+    (hp : p ≫ i = (orbitMap G x).left) (g : 𝟙_ (Over S) ⟶ G) :
+    p ≫ (liftTranslation i t ht g).hom = (leftTranslation g).hom.left ≫ p := by
+  apply (cancel_mono i).mp
+  rw [Category.assoc, liftTranslation_hom_ι, ← Category.assoc, hp,
+    orbitMap_left_translation, Category.assoc, hp]
+
+end LiftTranslation
 
 end TauCeti.SchemeAction

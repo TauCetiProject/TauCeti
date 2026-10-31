@@ -59,17 +59,11 @@ theorem exists_fieldUnit_not_isSquare_at_places
     (GlobalNumberFields.signHom_apply_eq_one_iff a w).mp (by simpa [s, hw] using congrFun hs w)⟩
   · -- Valuation one makes the local image a uniformizer, hence a nonsquare.
     let _ : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-    have hval : TauCeti.normalizedValuationWithZero (v.adicCompletion K)
-        (v.unitAtFinitePlace a : v.adicCompletion K) = WithZero.exp (1 : ℤ) := by
-      rw [v.normalizedValuationWithZero_adicCompletion]
-      rw [v.unitAtFinitePlace_apply, algebraMap_adicCompletion, Function.comp_apply]
-      rw [v.valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply, ha v hv]
-      simp
-    have hπ : TauCeti.IsUniformizer (v.adicCompletion K) (v.unitAtFinitePlace a) := by
-      rw [TauCeti.isUniformizer_def]
-      have h := TauCeti.normalizedValuationWithZero_coe (v.unitAtFinitePlace a)
-      rw [hval] at h
-      simpa only [WithZero.exp_eq_coe_ofAdd, WithZero.coe_inj] using h.symm
+    have hval : Valued.v (v.unitAtFinitePlace a : v.adicCompletion K) = WithZero.exp (-1) := by
+      rw [v.unitAtFinitePlace_apply, algebraMap_adicCompletion, Function.comp_apply,
+        v.valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply, ha v hv]
+    have hπ : TauCeti.IsUniformizer (v.adicCompletion K) (v.unitAtFinitePlace a) :=
+      v.isUniformizer_iff_valued_eq_exp_neg_one.2 hval
     exact TauCeti.not_isSquare_of_isUniformizer hπ
   have hneg : embedding_of_isReal w.2 (a : K) < 0 :=
     (GlobalNumberFields.signHom_apply_eq_neg_one_iff a w).mp

@@ -23,20 +23,22 @@ and the *representation number* `r_L(t)` is its cardinality. More generally, for
 shell of the translate `γ + L` is `cosetShell L γ t = {v ∈ L | ‖γ + v‖² = t}`, with cardinality
 `r_{γ+L}(t)`. In a real inner product space these are the counts that the theta series
 `Θ_L(τ) = ∑_{v ∈ L} e^{π i ‖v‖² τ}` and the coset theta series `θ_{γ+L}` expand: grouping the terms
-by squared norm, `r_L(t)` is the coefficient of `e^{π i t τ}`. That identification is not made
-here.
+by squared norm, `r_L(t)` is the coefficient of `e^{π i t τ}`. That identification is made in
+`TauCeti.NumberTheory.ModularForms.ThetaSeries.QExpansion`.
 
 The shells are sets with a finiteness theorem rather than `Finset`s, since membership is not
 decidable and the finiteness is the content: for a discrete `L` in a proper space, such as a
 finite-dimensional real normed space, every shell lies in a closed ball, which meets `L` in
 finitely many points.
 
-This file proves that every shell is finite, that `r_L(0) = 1` and that negative numbers are not
-represented; that the representation numbers of a translate depend only on its coset, are
-unchanged by `γ ↦ -γ`, and are invariant under linear isometries; that an even lattice represents
-only even natural numbers and an integral lattice only natural numbers; and that for a full
-lattice `L` in a real normed space of dimension `n` the representation numbers grow at most like
-`t^{n/2}`, from the count of lattice points in a ball, which is `O(R^n)`
+This file proves that every shell is finite and that only finitely many squared norms up to any
+bound are represented, that `r_L(0) = 1` and that negative numbers are not represented; that
+the representation numbers of a translate depend only on its coset, are unchanged by `γ ↦ -γ`,
+and are invariant under linear isometries; that an even lattice represents only even natural
+numbers and an integral lattice only natural numbers, and that for an even lattice `L` and
+`γ ∈ L^∨` the translate `γ + L` represents only numbers congruent to `‖γ‖²` modulo `2`; and that
+for a full lattice `L` in a real normed space of dimension `n` the representation numbers grow at
+most like `t^{n/2}`, from the count of lattice points in a ball, which is `O(R^n)`
 (`ZLattice.ncard_closedBall_inter_isBigO`).
 
 ## Main definitions
@@ -45,18 +47,27 @@ lattice `L` in a real normed space of dimension `n` the representation numbers g
 * `ZLattice.representationNumber L t`: the number `r_L(t)` of lattice vectors of squared norm `t`.
 * `ZLattice.cosetShell L γ t`: the lattice vectors `v` with `‖γ + v‖² = t`.
 * `ZLattice.cosetRepresentationNumber L γ t`: their number `r_{γ+L}(t)`.
+* `ZLattice.representedNormsLE L t`: the squared norms `s ≤ t` represented by `L`.
 
 ## Main statements
 
 * `ZLattice.finite_shell`, `ZLattice.finite_cosetShell`: shells of a discrete subgroup of a
   proper space are finite.
+* `ZLattice.finite_representedNormsLE`: such a subgroup represents only finitely many squared
+  norms up to any bound.
 * `ZLattice.representationNumber_zero`: `r_L(0) = 1`.
+* `ZLattice.representationNumber_span_one`: the integer lattice represents each positive square
+  twice and no nonsquare natural number.
 * `ZLattice.cosetRepresentationNumber_add_mem`, `ZLattice.cosetRepresentationNumber_neg`:
   `r_{γ+L}` depends only on the coset `γ + L`, and `r_{-γ+L} = r_{γ+L}`.
 * `ZLattice.representationNumber_comap`, `ZLattice.cosetRepresentationNumber_comap`: invariance
   under linear isometry equivalences.
 * `ZLattice.IsEven.shell_eq_empty`, `ZLattice.IsIntegral.shell_eq_empty`: an even lattice has no
   vector of squared norm outside `2ℕ`, an integral lattice none outside `ℕ`.
+* `ZLattice.IsEven.cosetShell_eq_empty`: for even `L` and `γ ∈ L^∨`, the translate `γ + L` has
+  no vector of squared norm outside `‖γ‖² + 2ℤ`;
+  `ZLattice.IsEven.cosetRepresentationNumber_div_eq_zero_of_not_modEq`: if moreover
+  `N ‖γ‖² = 2 n`, then `r_{γ+L}(2m / N) = 0` unless `m ≡ n (mod N)`.
 * `ZLattice.representationNumber_isBigO`: `r_L(t) = O(t^{n/2})` as `t → ∞`.
 
 ## References
@@ -207,6 +218,47 @@ theorem cosetRepresentationNumber_neg (γ : E) (t : ℝ) :
   rw [cosetRepresentationNumber_def, cosetShell_neg, ← Set.image_neg_eq_neg,
     Set.ncard_image_of_injective _ neg_injective, cosetRepresentationNumber_def]
 
+/-- The integer lattice represents zero once, each positive square twice, and no other natural
+number. These are the coefficients for the period-two expansion. -/
+theorem representationNumber_span_one (m : ℕ) :
+    representationNumber (Submodule.span ℤ {1} : Submodule ℤ ℝ) m =
+      if m = 0 then 1 else if IsSquare m then 2 else 0 := by
+  classical
+  by_cases hm : m = 0
+  · simp [hm]
+  simp only [ite_eq_right hm]
+  have hmem (z : ℤ) : (z : ℝ) ∈ (Submodule.span ℤ {1} : Submodule ℤ ℝ) :=
+    Submodule.mem_span_singleton.mpr ⟨z, by simp⟩
+  by_cases hs : IsSquare m
+  · obtain ⟨n, rfl⟩ := hs
+    have hn : n ≠ 0 := by aesop
+    have hpair : shell (Submodule.span ℤ {1} : Submodule ℤ ℝ) (n * n) = {(n : ℝ), -(n : ℝ)} := by
+      ext x
+      simp only [mem_shell, Real.norm_eq_abs, sq_abs, Set.mem_insert_iff,
+        Set.mem_singleton_iff]
+      constructor
+      · intro hx
+        exact sq_eq_sq_iff_eq_or_eq_neg.mp (by nlinarith [hx.2])
+      · rintro (rfl | rfl)
+        · exact ⟨hmem n, by ring⟩
+        · exact ⟨by simpa using hmem (-(n : ℤ)), by ring⟩
+    rw [representationNumber_def, Nat.cast_mul, hpair,
+      Set.ncard_pair (by exact_mod_cast (by omega : (n : ℤ) ≠ -n))]
+    simp [show IsSquare (n * n) from ⟨n, rfl⟩]
+  · have hempty : shell (Submodule.span ℤ {1} : Submodule ℤ ℝ) m = ∅ := by
+      apply Set.eq_empty_iff_forall_notMem.mpr
+      intro x hx
+      rw [mem_shell] at hx
+      obtain ⟨z, rfl⟩ := Submodule.mem_span_singleton.mp hx.1
+      have hsq : (z.natAbs : ℝ) ^ 2 = m := by
+        have hz : ((z.natAbs : ℤ) : ℝ) ^ 2 = (z : ℝ) ^ 2 := by
+          exact_mod_cast Int.natAbs_sq z
+        have hx' : (z : ℝ) ^ 2 = m := by
+          simpa only [zsmul_eq_mul, mul_one, Real.norm_eq_abs, sq_abs] using hx.2
+        exact hz.trans hx'
+      exact hs ⟨z.natAbs, by exact_mod_cast (by nlinarith [hsq] : (m : ℝ) = z.natAbs * z.natAbs)⟩
+    simp [representationNumber_def, hempty, hs]
+
 /-! ### Invariance under isometries -/
 
 section Isometry
@@ -273,6 +325,41 @@ theorem representationNumber_eq_zero_iff :
 
 end Finite
 
+/-! ### The represented squared norms up to a bound -/
+
+section RepresentedNorms
+
+/-- The squared norms `s ≤ t` represented by `L`: the real numbers `s ≤ t` whose shell in `L` is
+nonempty. It is finite when `L` is discrete in a proper space
+(`ZLattice.finite_representedNormsLE`). -/
+def representedNormsLE (L : Submodule ℤ E) (t : ℝ) : Set ℝ :=
+  {s | s ≤ t ∧ (shell L s).Nonempty}
+
+variable {L}
+
+/-- `L` represents `s ≤ t` exactly when some vector of `L` has squared norm `s`. -/
+@[simp]
+theorem mem_representedNormsLE {s : ℝ} :
+    s ∈ representedNormsLE L t ↔ s ≤ t ∧ (shell L s).Nonempty :=
+  Iff.rfl
+
+/-- The squared norm of a lattice vector of squared norm at most `t` is represented. -/
+theorem norm_sq_mem_representedNormsLE {v : E} (hv : v ∈ L) (ht : ‖v‖ ^ 2 ≤ t) :
+    ‖v‖ ^ 2 ∈ representedNormsLE L t :=
+  ⟨ht, v, hv, rfl⟩
+
+variable (L) [ProperSpace E] [DiscreteTopology L]
+
+/-- A discrete subgroup of a proper space represents only finitely many squared norms up to any
+bound. -/
+theorem finite_representedNormsLE (t : ℝ) : (representedNormsLE L t).Finite :=
+  ((L.toAddSubgroup.finite_inter (isBounded_closedBall (x := 0) (r := √t))).image
+    fun v ↦ ‖v‖ ^ 2).subset
+    fun _ ⟨hst, v, hv, hvs⟩ ↦
+      ⟨v, ⟨by simpa using Real.abs_le_sqrt (hvs.trans_le hst), hv⟩, hvs⟩
+
+end RepresentedNorms
+
 /-! ### The represented numbers of even and integral lattices -/
 
 variable {L}
@@ -309,6 +396,34 @@ theorem IsIntegral.shell_eq_empty (h : IsIntegral L) (ht : ¬ ∃ m : ℕ, t = m
 theorem IsIntegral.representationNumber_eq_zero (h : IsIntegral L) (ht : ¬ ∃ m : ℕ, t = m) :
     representationNumber L t = 0 := by
   rw [representationNumber_def, h.shell_eq_empty ht, Set.ncard_empty]
+
+/-- For an even lattice `L` and `γ ∈ L^∨`, the translate `γ + L` only represents numbers congruent
+to `‖γ‖²` modulo `2`: the half-norm `‖γ‖² / 2` is well defined modulo `ℤ` on the coset. -/
+theorem IsEven.cosetShell_eq_empty (h : IsEven L) {γ : E} (hγ : γ ∈ dual L)
+    (ht : ¬ ∃ j : ℤ, t = ‖γ‖ ^ 2 + 2 * j) : cosetShell L γ t = ∅ := by
+  refine Set.eq_empty_of_forall_notMem fun v ⟨hv, hvt⟩ ↦ ht ?_
+  obtain ⟨j, hj⟩ := h.exists_norm_add_sq_sub_norm_sq_eq hγ hv
+  exact ⟨j, by rw [← hvt, ← hj]; ring⟩
+
+/-- For an even lattice `L` and `γ ∈ L^∨`, the representation number `r_{γ+L}(t)` vanishes unless
+`t ∈ ‖γ‖² + 2ℤ`. -/
+theorem IsEven.cosetRepresentationNumber_eq_zero (h : IsEven L) {γ : E} (hγ : γ ∈ dual L)
+    (ht : ¬ ∃ j : ℤ, t = ‖γ‖ ^ 2 + 2 * j) : cosetRepresentationNumber L γ t = 0 := by
+  rw [cosetRepresentationNumber_def, h.cosetShell_eq_empty hγ ht, Set.ncard_empty]
+
+/-- For an even lattice `L`, `γ ∈ L^∨` and a positive integer `N` with `N ‖γ‖² = 2 n`, the
+representation number `r_{γ+L}(2m / N)` vanishes unless `m ≡ n (mod N)`. -/
+theorem IsEven.cosetRepresentationNumber_div_eq_zero_of_not_modEq (h : IsEven L) {γ : E}
+    (hγ : γ ∈ dual L) {N : ℕ} (hN : 0 < N) {n : ℤ} (hn : N * ‖γ‖ ^ 2 = 2 * n) {m : ℤ}
+    (hm : ¬ m ≡ n [ZMOD N]) : cosetRepresentationNumber L γ (2 * m / N) = 0 := by
+  refine h.cosetRepresentationNumber_eq_zero hγ ?_
+  rintro ⟨j, hj⟩
+  -- `2m / N = ‖γ‖² + 2j` gives `m = n + N j`.
+  rw [div_eq_iff (Nat.cast_ne_zero.mpr hN.ne')] at hj
+  have h2 : (m : ℝ) = ((n + N * j : ℤ) : ℝ) := by
+    push_cast
+    linear_combination hj / 2 + hn / 2
+  exact hm (Int.modEq_iff_dvd.mpr ⟨j, by linarith [Int.cast_injective h2]⟩).symm
 
 end Inner
 

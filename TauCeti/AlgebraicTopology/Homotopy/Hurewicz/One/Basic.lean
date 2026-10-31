@@ -287,6 +287,13 @@ lemma loopClass_eq_iff {x y : X} (γ : Path x x) (γ' : Path y y) :
       pathChain ℤ γ.toContinuousMap - pathChain ℤ γ'.toContinuousMap ∈ boundaries₁ X := by
   rw [loopClass, loopClass, H₁.mk_eq_mk_iff]
 
+/-- Loops with the same values have the same homology class, even when their base points are not
+syntactically equal. -/
+lemma loopClass_eq_of_apply_eq {x y : X} (γ : Path x x) (γ' : Path y y) (hγ : ∀ t, γ t = γ' t) :
+    loopClass γ = loopClass γ' := by
+  rw [loopClass_eq_iff, sub_eq_zero.2 (congrArg (pathChain ℤ) (ContinuousMap.ext hγ))]
+  exact zero_mem _
+
 @[simp]
 lemma loopClass_refl (x : X) : loopClass (Path.refl x) = 0 := by
   rw [loopClass, H₁.mk_eq_zero_iff]

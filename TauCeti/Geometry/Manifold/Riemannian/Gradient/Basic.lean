@@ -37,6 +37,8 @@ of `df` on a chart-local frame are `C^n`, and so is the Riesz dual of such a fie
 * `TauCeti.Manifold.mgradient_eq_zero_iff`: the gradient vanishes exactly where the
   differential does, and `TauCeti.Manifold.norm_mgradient_eq_norm_mvfderiv`: it has the same
   length as the differential.
+* `TauCeti.Manifold.contMDiffAt_mgradient`: the gradient of a function that is `C^{n+1}` at a
+  point for a `C^n` metric is `C^n` at that point.
 * `TauCeti.Manifold.contMDiff_mgradient`: the gradient of a `C^{n+1}` function for a `C^n`
   metric is a `C^n` vector field.
 * `TauCeti.Manifold.mdifferentiable_mgradient`: a `C²` function has a differentiable Riemannian
@@ -207,19 +209,43 @@ theorem mgradientWithin_of_mem_nhds (hs : s ∈ 𝓝 x) :
     mvfderivWithin, mvfderiv, mfderivWithin_of_mem_nhds hs]
 
 /-- **The gradient is smooth.** For a `C^n` Riemannian metric, the gradient of a `C^{n+1}`
+function is a `C^n` vector field at a point. -/
+theorem contMDiffAt_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
+    (hf : ContMDiffAt I 𝓘(ℝ) (n + 1) f x) :
+    ContMDiffAt I I.tangent n (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x := by
+  rw [contMDiffAt_iff_le_ne_infty]
+  intro m hmn hm
+  have hmn' : m + 1 ≤ n + 1 := by gcongr
+  let _ : IsManifold I (m + 1) M := IsManifold.of_le hmn'
+  let _ : IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x) :=
+    IsContMDiffRiemannianBundle.of_le hmn
+  have hfm : ContMDiffAt I 𝓘(ℝ) (m + 1) f x := hf.of_le hmn'
+  have hm' : m + 1 ≠ ∞ := by simpa using hm
+  rcases (contMDiffWithinAt_univ.2 hfm).contMDiffOn'
+      (m := m + 1) le_rfl (fun h ↦ (hm' h).elim) with ⟨u, hu, hxu, hfu⟩
+  simp only [Set.insert_eq_of_mem, Set.mem_univ, Set.univ_inter] at hfu
+  have hopen : IsOpen (chartAt H x).source := (chartAt H x).open_source
+  refine contMDiffAt_rieszDual x (mem_chart_source H x) fun j ↦ ?_
+  have hframe := contMDiffOn_chartLocalFrame (I := I) (n := m) x j
+  rw [TangentBundle.trivializationAt_baseSet] at hframe
+  let s := u ∩ (chartAt H x).source
+  have hs : IsOpen s := hu.inter hopen
+  have hfs : ContMDiffOn I 𝓘(ℝ) (m + 1) f s := hfu.mono Set.inter_subset_left
+  have hframes : ContMDiffOn I (I.prod 𝓘(ℝ, E)) m
+      (fun y : M ↦ TotalSpace.mk' E y
+        (Riemannian.Tensor.chartLocalFrame (I := I) x j y)) s :=
+    hframe.mono Set.inter_subset_right
+  exact (hfs.contMDiffOn_mvfderiv_apply hs hframes le_rfl).contMDiffAt
+    (hs.mem_nhds ⟨hxu, mem_chart_source H x⟩)
+
+/-- **The gradient is smooth.** For a `C^n` Riemannian metric, the gradient of a `C^{n+1}`
 function is a `C^n` vector field. -/
 theorem contMDiff_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
     [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
     (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) :
     ContMDiff I I.tangent n (fun x ↦ (⟨x, mgradient I f x⟩ : TangentBundle I M)) :=
-  fun x ↦ by
-  -- `df` evaluated on the chart-local frame at `x` is `C^n` on the chart source.
-  have hopen : IsOpen (chartAt H x).source := (chartAt H x).open_source
-  refine contMDiffAt_rieszDual x (mem_chart_source H x) fun j ↦ ?_
-  have hframe := contMDiffOn_chartLocalFrame (I := I) (n := n) x j
-  rw [TangentBundle.trivializationAt_baseSet] at hframe
-  exact (hf.contMDiffOn.contMDiffOn_mvfderiv_apply hopen hframe le_rfl).contMDiffAt
-    (hopen.mem_nhds (mem_chart_source H x))
+  fun x ↦ contMDiffAt_mgradient (I := I) (f := f) (x := x) (hf x)
 
 /-- A `C²` function has a differentiable Riemannian gradient section. -/
 theorem mdifferentiable_mgradient {f : M → ℝ} [IsManifold I 2 M]
@@ -252,18 +278,19 @@ theorem contMDiff_neg_mgradient_one [IsManifold I 2 M]
 /-! ### Comparison with the differential in a chart -/
 
 /-- **The differential in a chart is controlled by the gradient.** Near `p`, the Fréchet
-derivative of the coordinate expression of `f` in the extended chart at `p` is bounded by a fixed
-multiple of the Riemannian length of the gradient of `f`. The constant bounds the operator norm of
-the inverse of the tangent chart, measured with the metric on its target, which is locally bounded
+derivative of the coordinate expression of a function `f` in the extended chart at `p` is bounded
+by a fixed multiple of the Riemannian length of the gradient of `f`. The constant and the
+neighbourhood depend only on the metric, not on `f`: the constant bounds the operator norm of the
+inverse of the tangent chart, measured with the metric on its target, which is locally bounded
 for a continuous metric. -/
 theorem eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (f : M → ℝ) (p : M) :
-    ∃ C > 0, ∀ᶠ y in 𝓝 p,
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (p : M) :
+    ∃ C > 0, ∀ᶠ y in 𝓝 p, ∀ f : M → ℝ,
       ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ ≤ C * ‖mgradient I f y‖ := by
   obtain ⟨C, hC, hsymm⟩ :=
     eventually_norm_symmL_trivializationAt_lt E (fun x : M ↦ TangentSpace I x) p
   refine ⟨C, hC, ?_⟩
-  filter_upwards [hsymm, chart_source_mem_nhds H p] with y hy hys
+  filter_upwards [hsymm, chart_source_mem_nhds H p] with y hy hys f
   by_cases hd : DifferentiableAt ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)
   swap
   · rw [fderiv_zero_of_not_differentiableAt hd, norm_zero]

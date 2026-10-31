@@ -20,6 +20,8 @@ over an algebraic closure, gives irreducibility over every intermediate field.
 
 * `MvPolynomial.isLocalHom_map`: `map f` reflects units for a homomorphism of fields `f`. It is an
   instance, so `Irreducible.of_map` applies to `map f` directly.
+* `MvPolynomial.isUnit_iff_totalDegree_eq_zero`: a nonzero polynomial over a field is a unit
+  exactly when its total degree is zero.
 -/
 
 public section
@@ -27,6 +29,15 @@ public section
 namespace MvPolynomial
 
 variable {σ k L : Type*} [Field k] [Field L]
+
+/-- Over a field, a nonzero polynomial is a unit exactly when its total degree is zero, that is,
+when it is a nonzero constant. -/
+theorem isUnit_iff_totalDegree_eq_zero {p : MvPolynomial σ k} (hp : p ≠ 0) :
+    IsUnit p ↔ p.totalDegree = 0 := by
+  refine ⟨fun h ↦ (isUnit_iff_totalDegree_of_isReduced.mp h).2, fun h ↦ ?_⟩
+  rw [totalDegree_eq_zero_iff_eq_C] at h
+  rw [h] at hp ⊢
+  exact (Ne.isUnit (by simpa using hp)).map C
 
 /-- **Changing the coefficients along a homomorphism of fields reflects units**: units of `k[X_σ]`
 and `L[X_σ]` are the nonzero constants. -/

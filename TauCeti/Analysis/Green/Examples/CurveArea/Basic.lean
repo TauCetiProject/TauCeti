@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Green.AbsolutelyContinuous
 public import TauCeti.Analysis.Green.WindingWeight.Basic
 public import TauCeti.Analysis.Contour.Winding.Number.Circle
-public import TauCeti.Analysis.Contour.Curve.Circle
+public import TauCeti.Analysis.Contour.Curve.Circle.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 
@@ -47,6 +47,10 @@ theorem contDiff_areaP {n : WithTop ℕ∞} : ContDiff ℝ n areaP :=
 /-- The vertical coefficient `areaQ` of the signed-area form is smooth. -/
 theorem contDiff_areaQ {n : WithTop ℕ∞} : ContDiff ℝ n areaQ :=
   Complex.reCLM.contDiff.div_const 2
+
+/-- The signed-area form `(x dy - y dx) / 2` is a continuous field of real 1-forms. -/
+theorem continuous_oneForm_area : Continuous (oneForm areaP areaQ) :=
+  (contDiff_areaP (n := 0)).continuous.oneForm (contDiff_areaQ (n := 0)).continuous
 
 /-- The signed-area form has curl one in the positive basis `(1,I)`. -/
 @[simp]

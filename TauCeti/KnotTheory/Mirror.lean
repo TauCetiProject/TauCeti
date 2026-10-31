@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
-public import TauCeti.KnotTheory.Slice.Genus
+public import TauCeti.KnotTheory.Cobordism
+public import TauCeti.KnotTheory.Slice.TopologicalGenus
 
 /-!
 # The mirror image of a knot
@@ -29,11 +30,11 @@ the elementary properties of mirroring that this rests on:
 
 * mirroring is an involution which commutes with rotation and reversal of the parametrization;
 * the unknot, the great circle of the first coordinate plane of `ℝ⁴`, is its own mirror image;
-* smooth and topological sliceness, and the slice genus, are invariant under mirroring, since a
-  slice disc or slice surface in the four-ball is reflected along with the knot
-  (`TauCeti.isSmoothlySlice_congr_linearIsometryEquiv` and its companions);
-* smooth concordance is preserved and reflected by mirroring, since the reflection is an ambient
-  diffeomorphism.
+* smooth and topological sliceness, and the smooth and topological slice genera, are invariant
+  under mirroring, since a slice disc or slice surface in the four-ball is reflected along with
+  the knot (`TauCeti.isSmoothlySlice_congr_linearIsometryEquiv` and its companions);
+* smooth concordance is preserved and reflected by mirroring, and the cobordism distance is
+  unchanged by mirroring both knots, since the reflection is an ambient diffeomorphism.
 
 Any two orientation-reversing linear isometries of `ℝⁿ⁺¹` differ by a rotation, which is isotopic to
 the identity, so mathematically the choice of hyperplane only matters up to ambient isotopy; that
@@ -48,11 +49,15 @@ independence is not formalized here.
 * `TauCeti.SmoothCircleEmbedding.mirror_mirror`: mirroring is an involution.
 * `TauCeti.SmoothCircleEmbedding.reverse_mirror`, `TauCeti.SmoothCircleEmbedding.rotate_mirror`:
   mirroring commutes with reversal and rotation.
+* `TauCeti.mirror_reflection_complexProdToEuclideanFour`: in the complex coordinates of
+  `ℝ⁴ = ℂ²`, the reflection conjugates the second coordinate.
 * `TauCeti.SmoothCircleEmbedding.mirror_unknot`: the unknot is its own mirror image.
 * `TauCeti.isSmoothlySlice_mirror_iff`, `TauCeti.isTopologicallySlice_mirror_iff`,
-  `TauCeti.sliceGenus_mirror`: sliceness and the slice genus are invariant under mirroring.
+  `TauCeti.sliceGenus_mirror`, `TauCeti.topologicalSliceGenus_mirror`: sliceness and the slice
+  genera are invariant under mirroring.
 * `TauCeti.SmoothEmbedding.concordant_mirror_iff`: mirroring preserves and reflects smooth
   concordance.
+* `TauCeti.cobordismDistance_mirror`: mirroring both knots keeps their cobordism distance.
 
 ## References
 
@@ -140,15 +145,42 @@ theorem range_mirror :
 
 end SmoothCircleEmbedding
 
+open ComplexConjugate in
+/-- In the complex coordinates `(z, w)` of `ℝ⁴ = ℂ²` (`TauCeti.complexProdToEuclideanFour`), the
+reflection defining the mirror image in `S³` conjugates the second coordinate. -/
+theorem mirror_reflection_complexProdToEuclideanFour (z w : ℂ) :
+    (ℝ ∙ EuclideanSpace.single (Fin.last 3) (1 : ℝ))ᗮ.reflection
+        (complexProdToEuclideanFour (WithLp.toLp 2 (z, w))) =
+      complexProdToEuclideanFour (WithLp.toLp 2 (z, conj w)) := by
+  set e : EuclideanSpace ℝ (Fin 4) := EuclideanSpace.single (Fin.last 3) 1
+  -- Split off the last coordinate `Im w`, along `e`, from a vector of the hyperplane `e = 0`.
+  set y := complexProdToEuclideanFour (WithLp.toLp 2 (z, (w.re : ℂ)))
+  have hy : y ∈ (ℝ ∙ e)ᗮ := by
+    rw [Submodule.mem_orthogonal_singleton_iff_inner_right]
+    simp [y, e, EuclideanSpace.inner_single_left]
+  have hw : complexProdToEuclideanFour (WithLp.toLp 2 (z, w)) = y + w.im • e := by
+    ext i
+    fin_cases i <;> simp [y, e]
+  have hw' : complexProdToEuclideanFour (WithLp.toLp 2 (z, conj w)) = y - w.im • e := by
+    ext i
+    fin_cases i <;> simp [y, e]
+  rw [hw, hw', map_add, map_smul, Submodule.reflection_mem_subspace_eq_self hy,
+    Submodule.reflection_orthogonalComplement_singleton_eq_neg, smul_neg, sub_eq_add_neg]
+
+/-- The reflection defining the mirror image in `S³` fixes the plane of the unknot pointwise. -/
+theorem mirror_reflection_complexToEuclideanFour (w : ℂ) :
+    (ℝ ∙ EuclideanSpace.single (Fin.last 3) (1 : ℝ))ᗮ.reflection (complexToEuclideanFour w) =
+      complexToEuclideanFour w := by
+  rw [← complexProdToEuclideanFour_toLp_zero, mirror_reflection_complexProdToEuclideanFour,
+    map_zero]
+
 /-- **The unknot is its own mirror image**: it lies in the hyperplane `x₃ = 0` of `ℝ⁴`, which the
 reflection fixes pointwise. -/
 @[simp]
 theorem SmoothCircleEmbedding.mirror_unknot : unknot.mirror = unknot := by
   refine SmoothEmbedding.ext fun z ↦ Subtype.ext ?_
-  rw [coe_mirror_apply]
-  refine Submodule.reflection_mem_subspace_eq_self ?_
-  rw [Submodule.mem_orthogonal_singleton_iff_inner_right]
-  simp [EuclideanSpace.inner_single_left]
+  rw [coe_mirror_apply, coe_unknot_apply, ← complexToEuclideanFour_apply]
+  exact mirror_reflection_complexToEuclideanFour (z : ℂ)
 
 variable {n : ℕ}
   {K K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)}
@@ -171,6 +203,11 @@ theorem isTopologicallySlice_mirror_iff : IsTopologicallySlice K.mirror ↔ IsTo
 theorem sliceGenus_mirror : sliceGenus K.mirror = sliceGenus K :=
   sliceGenus_congr_linearIsometryEquiv _ K.coe_mirror_apply
 
+/-- A knot and its mirror image have the same topological slice genus. -/
+@[simp]
+theorem topologicalSliceGenus_mirror : topologicalSliceGenus K.mirror = topologicalSliceGenus K :=
+  topologicalSliceGenus_congr_linearIsometryEquiv _ K.coe_mirror_apply
+
 /-! ### Concordance -/
 
 /-- Mirror images of smoothly concordant knots are smoothly concordant: the reflection is an
@@ -184,5 +221,13 @@ theorem SmoothEmbedding.Concordant.mirror (h : SmoothEmbedding.Concordant K K') 
 theorem SmoothEmbedding.concordant_mirror_iff :
     SmoothEmbedding.Concordant K.mirror K'.mirror ↔ SmoothEmbedding.Concordant K K' :=
   ⟨fun h ↦ by simpa using h.mirror, fun h ↦ h.mirror⟩
+
+/-! ### The cobordism distance -/
+
+/-- Mirroring two knots does not change their cobordism distance: the reflection, times the
+identity of the height, carries knot cobordisms to knot cobordisms. -/
+@[simp]
+theorem cobordismDistance_mirror : cobordismDistance K.mirror K'.mirror = cobordismDistance K K' :=
+  cobordismDistance_transDiffeomorph _
 
 end TauCeti

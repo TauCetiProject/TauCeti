@@ -14,7 +14,8 @@ public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 
 This file defines the additive convolution powers of a measure on a measurable additive monoid.
 It records their algebraic, measure-theoretic, measurability, and integration properties, the
-compatibility of mixtures of a convolution-additive family with convolution (`bind_conv_bind`),
+distributivity of convolution over countable sums (`conv_sum`), the compatibility of mixtures of
+a convolution-additive family with convolution (`bind_conv_bind`),
 and the characteristic function of a convolution power (`charFun_convolutionPower`).
 -/
 
@@ -141,6 +142,11 @@ theorem lintegral_convolutionPower_succ (μ : Measure α) [SFinite μ] (n : ℕ)
     ∫⁻ z, f z ∂μ.convolutionPower (n + 1) =
       ∫⁻ x, ∫⁻ y, f (x + y) ∂μ ∂μ.convolutionPower n := by
   rw [convolutionPower_succ, lintegral_conv hf]
+
+/-- Convolution on the left distributes over countable sums of s-finite measures. -/
+theorem conv_sum {ι : Type*} [Countable ι] (μ : Measure α) (ν : ι → Measure α)
+    [∀ i, SFinite (ν i)] : μ ∗ Measure.sum ν = Measure.sum fun i ↦ μ ∗ ν i := by
+  simp only [Measure.conv, prod_sum_right, map_sum measurable_add.aemeasurable]
 
 /-- Mixing a family of measures indexed by `ℕ` that turns addition into convolution commutes
 with convolution: `(ρ.bind K) ∗ (σ.bind K) = (ρ ∗ σ).bind K` when

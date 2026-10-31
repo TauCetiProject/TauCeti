@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.Grp.ForgetCorepresentable
 public import TauCeti.Algebra.AlgebraicGroup.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SchemePoints
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Scheme.Basic
+public import TauCeti.GroupTheory.Finiteness
 
 /-!
 # Scheme-valued points and morphisms of diagonalizable group schemes

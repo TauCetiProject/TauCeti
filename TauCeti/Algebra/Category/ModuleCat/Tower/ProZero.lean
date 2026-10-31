@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Tower.MittagLeffler
 public import TauCeti.CategoryTheory.Functor.ProZero
+import Mathlib.RingTheory.Multiplicity
 
 /-!
 # Pro-zero towers of modules
@@ -28,6 +29,11 @@ tower `ℤ ← ℤ ← ⋯` with transitions multiplication by `p` is not pro-ze
   `lim¹`; `TauCeti.ModuleTower.isMittagLeffler_of_isProZero`: they are Mittag-Leffler.
 * `TauCeti.ModuleTower.multiplicationTower`: the tower `R ← R ← ⋯` with transitions right
   multiplication by `a`.
+* `TauCeti.ModuleTower.multiplicationTowerProductEquiv`: the product of its terms is the module of
+  sequences `ℕ → R`, on which the shift is `δ(x)ₙ = xₙ - xₙ₊₁ * a`
+  (`TauCeti.ModuleTower.multiplicationTowerProductEquiv_shift`).
+* `TauCeti.ModuleTower.lim_multiplicationTower_eq_bot`: for an integer `p` that is not a unit, the
+  multiplication-by-`p` tower of integers has `lim = 0`.
 * `TauCeti.ModuleTower.isProZero_multiplicationTower_iff`: it is pro-zero exactly when `a` is
   nilpotent; `TauCeti.ModuleTower.isProZero_multiplicationTower_iff_eq_zero` is the case of a
   reduced ring.
@@ -124,6 +130,60 @@ theorem multiplicationTower_transitionOfLE (a : R) {n k : ℕ} (h : n ≤ k) :
     rw [← transitionOfLE_comp_transitionOfLE _ h (Nat.le_succ k), ih, transitionOfLE_succ,
       multiplicationTower_transition]
     exact key
+
+/-- The terms of `multiplicationTower a` are `R` itself, so the product of its terms is the module
+of sequences `ℕ → R`. -/
+def multiplicationTowerProductEquiv (a : R) : (multiplicationTower a).Product ≃ₗ[R] (ℕ → R) :=
+  -- `(multiplicationTower a).obj (op n)` is `ModuleCat.of R R` by definition
+  LinearEquiv.refl R (ℕ → R)
+
+/-- The `n`-th term of the sequence attached to a family `x` is its component `xₙ`. Not `@[simp]`:
+it would rewrite the left-hand side of `multiplicationTowerProductEquiv_shift`. -/
+theorem multiplicationTowerProductEquiv_apply (a : R) (x : (multiplicationTower a).Product)
+    (n : ℕ) : multiplicationTowerProductEquiv a x n = x n :=
+  (rfl)
+
+/-- The component `xₙ` of the family attached to a sequence `x` is its `n`-th term. -/
+theorem multiplicationTowerProductEquiv_symm_apply (a : R) (x : ℕ → R) (n : ℕ) :
+    (multiplicationTowerProductEquiv a).symm x n = x n :=
+  (rfl)
+
+/-- The shift map of `multiplicationTower a`, as a map of sequences:
+`δ(x)ₙ = xₙ - xₙ₊₁ * a`. -/
+@[simp]
+theorem multiplicationTowerProductEquiv_shift (a : R) (x : (multiplicationTower a).Product)
+    (n : ℕ) :
+    multiplicationTowerProductEquiv a ((multiplicationTower a).shift x) n =
+      multiplicationTowerProductEquiv a x n - multiplicationTowerProductEquiv a x (n + 1) * a := by
+  rw [← smul_eq_mul, ← LinearMap.toSpanSingleton_apply, ← multiplicationTower_transition]
+  exact shift_apply _ x n
+
+/-- A sequence lies in `lim` of `multiplicationTower a` exactly when `xₙ₊₁ * a = xₙ` for all
+`n`. -/
+theorem mem_lim_multiplicationTower_iff {a : R} {x : (multiplicationTower a).Product} :
+    x ∈ (multiplicationTower a).lim ↔ ∀ n,
+      multiplicationTowerProductEquiv a x (n + 1) * a = multiplicationTowerProductEquiv a x n := by
+  rw [lim_eq_ker, LinearMap.mem_ker, ← (multiplicationTowerProductEquiv a).map_eq_zero_iff,
+    funext_iff]
+  simp only [multiplicationTowerProductEquiv_shift, Pi.zero_apply, sub_eq_zero]
+  exact forall_congr' fun n ↦ eq_comm
+
+/-- **The multiplication-by-`p` tower has vanishing limit** for every integer `p` that is not a
+unit: every term of a compatible family is divisible by every power of `p`. -/
+theorem lim_multiplicationTower_eq_bot {p : ℤ} (hp : ¬IsUnit p) :
+    (multiplicationTower p).lim = ⊥ := by
+  refine eq_bot_iff.2 fun x hx ↦ (Submodule.mem_bot ℤ).2 <|
+    (multiplicationTowerProductEquiv p).map_eq_zero_iff.1 (funext fun n ↦ ?_)
+  set e := multiplicationTowerProductEquiv p
+  have hx' := mem_lim_multiplicationTower_iff.1 hx
+  have key (k : ℕ) : e x n = e x (n + k) * p ^ k := by
+    induction k with
+    | zero => simp
+    | succ k ih => rw [ih, ← hx' (n + k), pow_succ', ← mul_assoc, add_assoc]
+  have hdvd (k : ℕ) : p ^ k ∣ e x n := ⟨e x (n + k), by rw [key k, mul_comm]⟩
+  by_contra h0
+  obtain ⟨k, hk⟩ := Int.finiteMultiplicity_iff.2 ⟨mt Int.isUnit_iff_natAbs_eq.2 hp, h0⟩
+  exact hk (hdvd (k + 1))
 
 /-- **The multiplication tower is pro-zero exactly for nilpotent elements.** -/
 theorem isProZero_multiplicationTower_iff (a : R) :

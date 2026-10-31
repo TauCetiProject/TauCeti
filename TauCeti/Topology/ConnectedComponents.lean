@@ -33,6 +33,11 @@ space by them.
   the connected component of the image point.
 * `TauCeti.frontier_connectedComponentIn_subset_compl`: in a locally connected space, a connected
   component of an open set has its frontier in the complement of that set.
+* `IsPreconnected.subset_connectedComponentIn_of_inter_closure_subset`: a preconnected set through
+  a point of an open set `U` lies in the component of that point in `U`, as soon as it meets the
+  closure of that component only inside `U`.
+* `IsPreconnected.exists_mem_inter_closure_connectedComponentIn_sdiff`: a component of `U \ S`
+  that is not all of a preconnected `U` has closure meeting `S ∩ U`.
 * `IsClosed.connectedComponentIn`: a connected component of a closed set is closed.
 * `IsClosed.exists_isOpen_isCompact_closure_disjoint_frontier`: in a locally compact Hausdorff
   space, a compact connected component of a closed set `F` has an open neighbourhood with compact
@@ -130,6 +135,34 @@ theorem frontier_connectedComponentIn_subset_compl [LocallyConnectedSpace X] {F 
     rw [connectedComponentIn_eq hzx, ← connectedComponentIn_eq hzy]
     exact mem_connectedComponentIn hyF
   exact hy.2 (by rwa [hC.interior_eq])
+
+/-- **Trapping a preconnected set in a component of an open set.** Let `U` be open in a locally
+connected space and let `C` be the connected component of `x ∈ U` in `U`. A preconnected set `A`
+through `x` lies in `C` as soon as it meets the closure of `C` only inside `U`. This weakens the
+hypothesis `A ⊆ U` of `IsPreconnected.subset_connectedComponentIn`. -/
+theorem _root_.IsPreconnected.subset_connectedComponentIn_of_inter_closure_subset
+    [LocallyConnectedSpace X] {A U : Set X} {x : X} (hA : IsPreconnected A)
+    (hU : IsOpen U) (hxA : x ∈ A) (hxU : x ∈ U)
+    (h : A ∩ closure (_root_.connectedComponentIn U x) ⊆ U) :
+    A ⊆ _root_.connectedComponentIn U x := by
+  refine hA.subset_of_closure_inter_subset hU.connectedComponentIn
+    ⟨x, hxA, mem_connectedComponentIn hxU⟩ fun y hy => ?_
+  by_contra hyC
+  have hfr : y ∈ frontier (_root_.connectedComponentIn U x) :=
+    ⟨hy.1, by rwa [hU.connectedComponentIn.interior_eq]⟩
+  exact frontier_connectedComponentIn_subset_compl hU x hfr (h ⟨hy.2, hy.1⟩)
+
+/-- **A proper component of a cut set reaches the cut.** Let `U` be preconnected and let `U \ S`
+be open in a locally connected space. If the connected component of `z` in `U \ S` misses some
+point of `U`, then its closure meets `S ∩ U`. -/
+theorem _root_.IsPreconnected.exists_mem_inter_closure_connectedComponentIn_sdiff
+    [LocallyConnectedSpace X] {U S : Set X} {z u : X} (hU : IsPreconnected U)
+    (hUS : IsOpen (U \ S)) (hz : z ∈ U \ S) (hu : u ∈ U)
+    (huz : u ∉ _root_.connectedComponentIn (U \ S) z) :
+    ∃ p ∈ S ∩ U, p ∈ closure (_root_.connectedComponentIn (U \ S) z) := by
+  by_contra! h
+  exact huz (hU.subset_connectedComponentIn_of_inter_closure_subset hUS hz.1 hz
+    (fun p hp => ⟨hp.1, fun hpS => h p ⟨hpS, hp.1⟩ hp.2⟩) hu)
 
 /-- A connected component of a closed set is closed. -/
 protected theorem _root_.IsClosed.connectedComponentIn {F : Set X} {x : X} (hF : IsClosed F) :

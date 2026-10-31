@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Padics.PadicNumbers
+public import Mathlib.NumberTheory.Padics.PadicIntegers
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Nat.Factorial.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -20,7 +21,14 @@ one-parameter subgroup. Divisibility by each fixed prime power suffices for the 
 ## Main results
 
 * `TauCeti.tendsto_padic_natCast_factorial`: the factorials tend to zero in `ℚ_[p]`.
+* `TauCeti.padicValNat_factorial_eq_add_sum`: Legendre's formula truncated at level `h`,
+  `v_p(n!) = v_p(⌊n / pʰ⌋!) + ∑_{k = 1}^{h} ⌊n / pᵏ⌋`.
+* `TauCeti.sub_one_mul_padicValNat_factorial_pow`: Legendre's formula for `(pᵏ)!`,
+  `(p - 1) v_p((pᵏ)!) = pᵏ - 1`.
+* `TauCeti.factorial_dvd_factorial_div_mul_pow`: its consequence that `n!` divides
+  `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)` in `ℤ_[p]`.
 * `Padic.norm_factorial_mul`: `‖(p k)!‖ = p ^ (-k) ‖k!‖` in `ℚ_[p]`, by Legendre's formula.
+* `Padic.rpow_neg_div_le_norm_factorial`: `p ^ (-n / (p - 1)) ≤ ‖n!‖` in `ℚ_[p]`.
 -/
 
 public section
@@ -44,6 +52,38 @@ theorem tendsto_padic_natCast_factorial (p : ℕ) [hp : Fact p.Prime] :
   simp only [Int.cast_natCast, zpow_neg, zpow_natCast, ← inv_pow] at hnorm
   simpa only [dist_zero_right] using hnorm.trans_lt hk
 
+/-- **Legendre's formula, truncated at level `h`.** The `p`-adic valuation of `n!` exceeds that of
+`⌊n / pʰ⌋!` by `∑_{k = 1}^{h} ⌊n / pᵏ⌋`. -/
+theorem padicValNat_factorial_eq_add_sum (p : ℕ) [Fact p.Prime] (n h : ℕ) :
+    padicValNat p n.factorial =
+      padicValNat p (n / p ^ h).factorial + ∑ k ∈ Finset.range h, n / p ^ (k + 1) := by
+  induction h with
+  | zero => simp
+  | succ h ih =>
+    rw [ih, Finset.sum_range_succ, ← padicValNat_mul_div_factorial (n / p ^ h),
+      padicValNat_factorial_mul, Nat.div_div_eq_div_mul, ← pow_succ]
+    ring
+
+/-- **Legendre's formula for `(pᵏ)!`.** Since `pᵏ` has base-`p` digit sum one,
+`(p - 1) v_p((pᵏ)!) = pᵏ - 1`. -/
+theorem sub_one_mul_padicValNat_factorial_pow (p : ℕ) [hp : Fact p.Prime] (k : ℕ) :
+    (p - 1) * padicValNat p (p ^ k).factorial = p ^ k - 1 := by
+  rw [sub_one_mul_padicValNat_factorial, ← mul_one (p ^ k),
+    Nat.digits_base_pow_mul hp.out.one_lt one_pos, Nat.digits_of_lt p 1 one_ne_zero hp.out.one_lt]
+  simp
+
+open Nat in
+/-- In `ℤ_p`, `n!` divides `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)`: by Legendre's formula both
+have valuation `v_p(n!)`. -/
+theorem factorial_dvd_factorial_div_mul_pow {p : ℕ} [hp : Fact p.Prime] (h n : ℕ) :
+    (n ! : ℤ_[p]) ∣
+      ((n / p ^ h)! : ℤ_[p]) * (p : ℤ_[p]) ^ ∑ k ∈ Finset.range h, n / p ^ (k + 1) := by
+  refine PadicInt.dvd_of_norm_le (le_of_eq ?_)
+  have hv := padicValNat_factorial_eq_add_sum p n h
+  generalize ∑ k ∈ Finset.range h, n / p ^ (k + 1) = s at hv ⊢
+  simp [PadicInt.norm_def, Padic.norm_natCast_eq_zpow, factorial_ne_zero, hv, zpow_add₀,
+    hp.out.ne_zero, mul_comm]
+
 end TauCeti
 
 namespace Padic
@@ -51,6 +91,23 @@ namespace Padic
 open Nat
 
 variable {p : ℕ} [Fact p.Prime]
+
+/-- The norm of `n!` in `ℚ_[p]` is bounded below by `p ^ (-n / (p - 1))`, by Legendre's
+formula. This gives the factorial denominator bound for the p-adic exponential. -/
+theorem rpow_neg_div_le_norm_factorial (n : ℕ) :
+    (p : ℝ) ^ (-((n : ℝ) / ((p : ℝ) - 1))) ≤ ‖(n ! : ℚ_[p])‖ := by
+  have hp := (Fact.out : p.Prime)
+  have hp1 : (1 : ℝ) < p := by exact_mod_cast hp.one_lt
+  rw [norm_natCast_eq_zpow (factorial_ne_zero _), ← Real.rpow_intCast]
+  simp only [Int.cast_neg, Int.cast_natCast]
+  refine Real.rpow_le_rpow_of_exponent_le hp1.le (neg_le_neg ?_)
+  rw [le_div_iff₀ (sub_pos.mpr hp1)]
+  have hleg : (p - 1) * padicValNat p n.factorial ≤ n := by
+    rw [sub_one_mul_padicValNat_factorial]
+    exact Nat.sub_le _ _
+  have hcast : ((p - 1 : ℕ) : ℝ) = (p : ℝ) - 1 := by
+    rw [Nat.cast_sub hp.one_le, Nat.cast_one]
+  simpa only [Nat.cast_mul, hcast, mul_comm] using (Nat.cast_le (α := ℝ)).mpr hleg
 
 /-- The factorial of `p k` has `p`-adic norm `p ^ (-k) ‖k!‖`: by Legendre's formula, passing from
 `k!` to `(p k)!` raises the valuation by `k`. -/

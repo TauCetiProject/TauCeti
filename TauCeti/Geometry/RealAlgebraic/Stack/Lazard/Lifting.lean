@@ -8,23 +8,29 @@ module
 public import TauCeti.Analysis.MvPolynomial.Lazard.RealRoots
 public import TauCeti.Analysis.Analytic.Submanifold.Basic
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Local
+import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Coordinate
+import TauCeti.RingTheory.Polynomial.Resultant.Product
 
 /-!
 # Analytic Lazard lifting for one polynomial
 
-A polynomial in one distinguished variable has a global Lazard delineation over a connected
-real analytic submanifold when its formal leading coefficient, constant coefficient, and
-discriminant are nonzero and have constant Lazard valuation there. Ordinary fibers may vanish:
-the sections enumerate the roots of the nonzero Lazard evaluations instead.
+A nonzero polynomial in one distinguished variable has a global Lazard delineation over a
+connected real analytic submanifold when its discriminant is nonzero and its formal leading
+coefficient, trailing coefficient, and discriminant have constant Lazard valuation there.
+Ordinary fibers may vanish: the sections enumerate the roots of the nonzero Lazard evaluations
+instead.
 
 The construction applies the local Puiseux preparation theorem in analytic chart coordinates.
 That theorem supplies ordered analytic roots, constant multiplicities, and a locally constant
 vector of removed base exponents on one common neighborhood. These local Lazard delineations
 then glue because their increasing root lists describe the same intrinsic fibers.
 
-The nonzero constant-coefficient hypothesis excludes the distinguished-coordinate factor. In
-family lifting that factor is separated and handled by
-`TauCeti.nonempty_lazardDelineation_lastCoordinate`.
+The distinguished-coordinate factor is treated separately. Since the discriminant is nonzero,
+the distinguished variable divides the polynomial at most once. If it does not divide it, the
+trailing coefficient is the constant coefficient and the local construction applies directly.
+Otherwise the polynomial is `X * q` with `q` of nonzero constant coefficient. The invariants of
+`q` are constant because those of `X * q` are (`Polynomial.discr_X_mul`), and the delineation
+of `q` extends to `X * q` by `TauCeti.nonempty_lazardDelineation_X_mul`.
 
 ## References
 
@@ -41,15 +47,9 @@ namespace Polynomial
 
 variable {n d : ℕ} {S : Set (Fin n → ℝ)}
 
-/-- **Analytic Lazard lifting for one polynomial.** Let `p` be a polynomial in a distinguished
-variable with coefficients in `ℝ[X₀, …, Xₙ₋₁]`. If its formal leading coefficient,
-constant coefficient, and discriminant are nonzero and each has constant Lazard valuation on a
-preconnected analytic submanifold `S`, then the corresponding polynomial in `n + 1` variables
-has a Lazard delineation over `S`.
-
-The conclusion concerns Lazard evaluations, so ordinary fibers may be zero and their degrees may
-drop. Constant polynomials and polynomials without real Lazard roots are included. -/
-theorem nonempty_lazardDelineation_of_lazardValuation_eq
+/-- Analytic Lazard lifting for a polynomial with nonzero formal constant coefficient. Here the
+trailing coefficient is the constant coefficient, and no coordinate factor occurs. -/
+private theorem nonempty_lazardDelineation_of_coeff_zero_ne_zero
     (p : Polynomial (MvPolynomial (Fin n) ℝ))
     (hS : TauCeti.IsAnalyticSubmanifold d S) (hconn : IsPreconnected S)
     (hlead : p.leadingCoeff ≠ 0) (hconst : p.coeff 0 ≠ 0) (hdiscr : p.discr ≠ 0)
@@ -137,5 +137,61 @@ theorem nonempty_lazardDelineation_of_lazardValuation_eq
         exact (hroots (ψ y) (ψ y).2 z).1 hz
       exists_multiplicity_pos := fun i ↦ ⟨(), hpos i⟩ }
   exact ⟨U, hU, hxU, by simpa only [F] using Nonempty.intro D⟩
+
+/-- **Analytic Lazard lifting for one polynomial.** Let `p` be a nonzero polynomial in a
+distinguished variable with coefficients in `ℝ[X₀, …, Xₙ₋₁]`. If its formal leading coefficient,
+trailing coefficient, and discriminant each have constant Lazard valuation on a preconnected
+analytic submanifold `S`, and its discriminant is nonzero, then the corresponding polynomial in
+`n + 1` variables has a Lazard delineation over `S`.
+
+The conclusion concerns Lazard evaluations, so ordinary fibers may be zero and their degrees may
+drop. Constant polynomials, polynomials without real Lazard roots, and polynomials divisible by
+the distinguished variable are included. -/
+theorem nonempty_lazardDelineation_of_lazardValuation_eq
+    (p : Polynomial (MvPolynomial (Fin n) ℝ))
+    (hS : TauCeti.IsAnalyticSubmanifold d S) (hconn : IsPreconnected S)
+    (hp : p ≠ 0) (hdiscr : p.discr ≠ 0)
+    (hlead_eq : ∀ x ∈ S, ∀ y ∈ S,
+      p.leadingCoeff.lazardValuation x = p.leadingCoeff.lazardValuation y)
+    (htrail_eq : ∀ x ∈ S, ∀ y ∈ S,
+      p.trailingCoeff.lazardValuation x = p.trailingCoeff.lazardValuation y)
+    (hdiscr_eq : ∀ x ∈ S, ∀ y ∈ S,
+      p.discr.lazardValuation x = p.discr.lazardValuation y) :
+    Nonempty (TauCeti.LazardDelineation (fun _ : Unit ↦
+      rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm p)) S) := by
+  classical
+  by_cases h0 : p.coeff 0 = 0
+  swap
+  · rw [trailingCoeff_eq_coeff_zero h0] at htrail_eq
+    exact nonempty_lazardDelineation_of_coeff_zero_ne_zero p hS hconn
+      (leadingCoeff_ne_zero.2 hp) h0 hdiscr hlead_eq htrail_eq hdiscr_eq
+  -- Otherwise `p = X * q`, where `X ∤ q` because the discriminant of `p` is nonzero.
+  obtain ⟨q, rfl⟩ := X_dvd_iff.2 h0
+  have hq : q ≠ 0 := right_ne_zero_of_mul hp
+  have hq0 : q.coeff 0 ≠ 0 := by
+    intro hq0
+    obtain ⟨r, rfl⟩ := X_dvd_iff.2 hq0
+    apply hdiscr
+    rw [discr_X_mul _ (by rw [natDegree_X_mul (right_ne_zero_of_mul hq)]; omega)]
+    simp
+  rw [leadingCoeff_mul, leadingCoeff_X, one_mul] at hlead_eq
+  have hX : (X : Polynomial (MvPolynomial (Fin n) ℝ)).trailingCoeff = 1 := by
+    rw [trailingCoeff, natTrailingDegree_X, coeff_X_one]
+  rw [trailingCoeff_mul, hX, one_mul, trailingCoeff_eq_coeff_zero hq0] at htrail_eq
+  -- The discriminant of `q` divides that of `X * q`, with a cofactor of constant valuation.
+  have hdq : q.discr ≠ 0 ∧ ∀ x ∈ S, ∀ y ∈ S,
+      q.discr.lazardValuation x = q.discr.lazardValuation y := by
+    rcases Nat.eq_zero_or_pos q.natDegree with hd | hd
+    · rw [eq_C_of_natDegree_eq_zero hd, discr_C]
+      exact ⟨one_ne_zero, fun _ _ _ _ ↦ by rw [lazardValuation_one, lazardValuation_one]⟩
+    rw [discr_X_mul _ hd] at hdiscr hdiscr_eq
+    refine ⟨left_ne_zero_of_mul hdiscr, fun x hx y hy ↦ ?_⟩
+    have h := hdiscr_eq x hx y hy
+    rw [lazardValuation_mul, lazardValuation_mul, lazardValuation_pow, lazardValuation_pow,
+      htrail_eq x hx y hy, lazardValuation_eq_lazardExponent hq0 y, ← WithTop.coe_nsmul] at h
+    exact WithTop.add_right_cancel WithTop.coe_ne_top h
+  obtain ⟨D⟩ := nonempty_lazardDelineation_of_coeff_zero_ne_zero q hS hconn
+    (leadingCoeff_ne_zero.2 hq) hq0 hdq.1 hlead_eq htrail_eq hdq.2
+  exact TauCeti.nonempty_lazardDelineation_X_mul hq D hconn htrail_eq
 
 end Polynomial

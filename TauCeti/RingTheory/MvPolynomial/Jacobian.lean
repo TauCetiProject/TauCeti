@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.LinearAlgebra.Projectivization.Basic
+public import TauCeti.RingTheory.MvPolynomial.DualNumber
 
 /-!
 # Jacobian matrices of polynomial families at a point
@@ -30,11 +31,20 @@ column in terms of the others, so the chart Jacobian at the coordinate ratios ha
 and rank as the cone Jacobian at the homogeneous coordinates. In particular full rank can be
 tested in any standard chart containing the point, and the answer is independent of the chart.
 
+The Jacobian matrix is also the infinitesimal part of evaluation at a dual-number point: evaluating
+`p` at `v + ε w` with `ε² = 0` gives `p(v) + ε J_p(v) w`. This turns the computation of a
+Jacobian into a computation of values, which is convenient when `p` is built from matrix
+products, as the multiplicativity of evaluation then replaces the Leibniz rule.
+
 ## Main results
 
 * `TauCeti.jacobiMatrixAt_mulVec_self`: Euler's identity `J_p(v) v = (d_i p_i(v))_i`.
+* `TauCeti.jacobiMatrixAt_mulVec_apply_eq_snd_aeval`: `p(v + ε w) = p(v) + ε J_p(v) w` over
+  the dual numbers, from `MvPolynomial.aeval_inl_add_inr`.
 * `TauCeti.jacobiMatrixAt_smul`: `J_p(t • v) = diag(t ^ (d_i - 1)) J_p(v)`.
-* `TauCeti.rank_jacobiMatrixAt_eq_of_mk_eq_mk`: the rank depends only on the projective point.
+* `TauCeti.rank_jacobiMatrixAt_eq_of_mk_eq_mk`,
+  `TauCeti.mulVec_surjective_jacobiMatrixAt_iff_of_mk_eq_mk`: the rank, and so whether it is
+  full, depends only on the projective point.
 * `TauCeti.jacobiMatrixAt_dehomogenize`: the chart Jacobian is a submatrix of the cone Jacobian.
 * `TauCeti.range_mulVecLin_jacobiMatrixAt_dehomogenize`,
   `TauCeti.rank_jacobiMatrixAt_dehomogenize_div`: at a zero, the chart Jacobian and the cone
@@ -118,6 +128,16 @@ theorem jacobiMatrixAt_dehomogenize {n : ℕ} (i : Fin (n + 1))
   ext k j
   simp
 
+/-- **The Jacobian matrix as the infinitesimal part of a dual-number evaluation.** The Jacobian
+matrix of `p` at `v`, applied to `w`, is the `ε`-coefficient of `p(v + ε w)`. -/
+theorem jacobiMatrixAt_mulVec_apply_eq_snd_aeval [Fintype σ] (p : ι → MvPolynomial σ R)
+    (v w : σ → R) (i : ι) :
+    (jacobiMatrixAt p v *ᵥ w) i =
+      (aeval (fun j ↦ TrivSqZeroExt.inl (v j) + TrivSqZeroExt.inr (w j) :
+        σ → TrivSqZeroExt R R) (p i)).snd := by
+  rw [aeval_inl_add_inr]
+  simp [mulVec, dotProduct, mul_comm]
+
 end CommSemiring
 
 section CommRing
@@ -192,6 +212,16 @@ theorem rank_jacobiMatrixAt_eq_of_mk_eq_mk [Finite ι] [Fintype σ] {p : ι → 
     (jacobiMatrixAt p v).rank = (jacobiMatrixAt p w).rank := by
   obtain ⟨t, rfl⟩ := (Projectivization.mk_eq_mk_iff' K v w hv hw).mp h
   exact rank_jacobiMatrixAt_smul hp (isUnit_iff_ne_zero.mpr (left_ne_zero_of_smul hv)) w
+
+/-- Whether the Jacobian matrix of a finite family of homogeneous equations at a nonzero point
+has full rank depends only on the projective point it represents. -/
+theorem mulVec_surjective_jacobiMatrixAt_iff_of_mk_eq_mk [Finite ι] [Fintype σ]
+    {p : ι → MvPolynomial σ K} {d : ι → ℕ} (hp : ∀ i, (p i).IsHomogeneous (d i)) {v w : σ → K}
+    (hv : v ≠ 0) (hw : w ≠ 0) (h : Projectivization.mk K v hv = Projectivization.mk K w hw) :
+    (jacobiMatrixAt p v).mulVec.Surjective ↔ (jacobiMatrixAt p w).mulVec.Surjective := by
+  cases nonempty_fintype ι
+  rw [mulVec_surjective_iff_rank_eq_card, mulVec_surjective_iff_rank_eq_card,
+    rank_jacobiMatrixAt_eq_of_mk_eq_mk hp hv hw h]
 
 /-- **The Jacobian criterion in a ratio chart**: at a common zero `b` of a family of homogeneous
 equations with `b i ≠ 0`, the Jacobian matrix of the dehomogenized equations at the coordinate

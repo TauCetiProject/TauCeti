@@ -42,6 +42,8 @@ descent condition. So base change from objects over `S` to descent data relative
 faithful (`DescentDatum.baseChangeHomEquiv`). This is the uniqueness half of effective descent of
 objects: an object `X` over `S` with an isomorphism of descent data `baseChange p X ≅ D` is unique
 up to a unique isomorphism compatible with the descent data (`DescentDatum.Hom.descendIso`).
+In particular, if every base change of `p` is an effective epimorphism, then base change along `p`
+reflects isomorphisms (`TauCeti.reflectsIsomorphisms_pullback`).
 
 For schemes, Mathlib shows that a flat surjective morphism which is quasi-compact, or locally of
 finite presentation, is an effective epimorphism, and these properties are stable under base
@@ -62,6 +64,7 @@ effective fpqc (and fppf) descent of sections and morphisms of schemes.
 * `TauCeti.DescentDatum.Hom.descendIso`: the isomorphism between two objects over `S` whose
   canonical descent data are isomorphic to the same descent datum, unique by
   `DescentDatum.Hom.eq_descendIso`.
+* `TauCeti.reflectsIsomorphisms_pullback`: base change along `p` reflects isomorphisms.
 
 ## References
 
@@ -394,5 +397,26 @@ theorem Hom.eq_descendIso (e : X ≅ Y) (he : g.comp (baseChangeHom p e.hom) = f
 end Iso
 
 end DescentDatum
+
+/-- **Descent of isomorphisms.** If every base change of `p : S' ⟶ S` is an effective
+epimorphism, then base change along `p` reflects isomorphisms: a morphism `u : X ⟶ Y` over `S`
+whose base change `X ×_S S' ⟶ Y ×_S S'` is an isomorphism is itself an isomorphism. -/
+instance reflectsIsomorphisms_pullback [∀ {Z : C} (g : Z ⟶ S), EffectiveEpi (pullback.fst g p)] :
+    (Over.pullback p).ReflectsIsomorphisms where
+  reflects {X Y} u _ := by
+    have : IsIso (DescentDatum.baseChangeHom p u).hom := by
+      rw [DescentDatum.baseChangeHom_hom]
+      infer_instance
+    have : IsIso (DescentDatum.Hom.id (DescentDatum.baseChange p Y)).hom := by
+      rw [DescentDatum.Hom.id_hom]
+      infer_instance
+    have h : ((DescentDatum.baseChangeHom p u).descendIso
+        (DescentDatum.Hom.id (DescentDatum.baseChange p Y))).hom = u := by
+      rw [DescentDatum.Hom.descendIso_hom, ← DescentDatum.Hom.descend_baseChangeHom p u]
+      congr 1
+      ext1
+      simp [DescentDatum.Hom.inv_hom]
+    rw [← h]
+    infer_instance
 
 end TauCeti

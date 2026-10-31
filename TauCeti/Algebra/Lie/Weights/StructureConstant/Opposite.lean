@@ -89,37 +89,23 @@ theorem structureConstant_mul_structureConstant_neg_neg :
           rw [Weight.coe_neg, Weight.coe_neg, Weight.coe_neg, hαβ]
           abel) =
       -(((chainBotCoeff α β + 1 : ℕ) : K) ^ 2) := by
-  -- `β` is the sum of `γ` and `-α`, in both orders.
-  have hβγ : (β : H → K) = ((-α : Weight K H L) : H → K) + γ := by
-    rw [Weight.coe_neg, hαβ]
-    abel
-  have hγα : (β : H → K) = (γ : H → K) + ((-α : Weight K H L) : H → K) := by
-    rw [Weight.coe_neg, hαβ]
-    abel
-  -- The three inputs.
   have hprod := hx.structureConstant_mul_structureConstant α β γ hγ hαβ hα hβ
-  have hskew := hx.structureConstant_skew (-α) γ β hβ hβγ
-  have hcyc := hx.structureConstant_mul_killingForm_eq γ (-α) β hβ hγα hγ
+  have hsymm := hx.structureConstant_neg_neg_mul_killingForm_eq α β γ hγ hαβ hβ
   have hlen := hx.chainTopCoeff_mul_killingForm_root_neg_eq α β γ hα hβ hγ hαβ
   -- The Killing pairing of opposite root vectors at `γ` is non-zero, so it can be cancelled.
   have hkill : killingForm K L (x γ) (x (-γ)) ≠ 0 :=
     killingForm_ne_zero_of_mem_rootSpace hγ (hx.mem_rootSpace γ) (hx.ne_zero γ hγ)
       (hx.mem_rootSpace (-γ)) (hx.ne_zero (-γ) hγ.neg)
   apply mul_right_cancel₀ hkill
+  rw [mul_assoc]
   calc
     hx.structureConstant α β γ hγ hαβ *
-          hx.structureConstant (-α) (-β) (-γ) hγ.neg _ *
-          killingForm K L (x γ) (x (-γ)) =
-        hx.structureConstant α β γ hγ hαβ *
           (hx.structureConstant (-α) (-β) (-γ) hγ.neg _ *
-            killingForm K L (x γ) (x (-γ))) := by ring
-    _ = hx.structureConstant α β γ hγ hαβ *
-          (hx.structureConstant γ (-α) β hβ hγα * killingForm K L (x β) (x (-β))) := by
-        rw [hcyc]
-    _ = hx.structureConstant α β γ hγ hαβ *
-          (-hx.structureConstant (-α) γ β hβ hβγ * killingForm K L (x β) (x (-β))) := by
-        rw [hskew]
-    _ = -(hx.structureConstant α β γ hγ hαβ * hx.structureConstant (-α) γ β hβ hβγ) *
+            killingForm K L (x γ) (x (-γ))) =
+        hx.structureConstant α β γ hγ hαβ *
+          -(hx.structureConstant (-α) γ β hβ _ * killingForm K L (x β) (x (-β))) := by
+        rw [hsymm]
+    _ = -(hx.structureConstant α β γ hγ hαβ * hx.structureConstant (-α) γ β hβ _) *
           killingForm K L (x β) (x (-β)) := by ring
     _ = -((chainTopCoeff α β * (chainBotCoeff α β + 1) : ℕ) : K) *
           killingForm K L (x β) (x (-β)) := by rw [hprod]
@@ -153,10 +139,7 @@ theorem structureConstant_neg_neg_eq_neg_iff :
   constructor
   · intro h
     rw [h] at hmul
-    have : -hx.structureConstant α β γ hγ hαβ ^ 2 =
-        -(((chainBotCoeff α β + 1 : ℕ) : K) ^ 2) := by
-      rw [← hmul]; ring
-    exact neg_injective this
+    linear_combination -hmul
   · intro h
     apply mul_left_cancel₀ hne
     rw [hmul, ← h]

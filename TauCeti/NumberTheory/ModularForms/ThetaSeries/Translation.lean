@@ -39,6 +39,8 @@ identities hold termwise.
 
 * `ZLattice.thetaCoset_vadd_eq_mul`: if `(‖γ + v‖² - ‖γ‖²) t ∈ 2ℤ` for every `v ∈ L`, then
   `θ_{γ+L}(τ + t) = exp (π i ‖γ‖² t) θ_{γ+L}(τ)`.
+* `ZLattice.thetaCoset_vadd_eq_self`: if `h ‖γ + v‖² ∈ 2ℤ` for every `v ∈ L`, then `θ_{γ+L}` has
+  period `h`.
 * `ZLattice.IsEven.cexp_pi_mul_I_mul_norm_add_sq`: for even `L`, the factor `e(q_L(γ))` depends
   only on the coset `γ + L`.
 * `ZLattice.IsEven.thetaCoset_slash_T_zpow`, `ZLattice.IsEven.thetaSeries_slash_T`: the
@@ -77,6 +79,21 @@ theorem thetaCoset_vadd_eq_mul (L : Submodule ℤ E) (γ : E) {t : ℝ}
       (a := ((‖γ + (v : E)‖ ^ 2 : ℝ) : ℂ) * t) (b := ((‖γ‖ ^ 2 : ℝ) : ℂ) * t)
       (by rw [← sub_mul]; exact_mod_cast hm)
   rw [coe_vadd, mul_add, exp_add, ht]
+
+/-- If `h ‖γ + v‖²` is an even integer for every `v ∈ L`, then the theta series of `γ + L` has
+period `h`. -/
+theorem thetaCoset_vadd_eq_self (L : Submodule ℤ E) (γ : E) {h : ℝ}
+    (hnorm : ∀ v ∈ L, ∃ m : ℤ, h * ‖γ + v‖ ^ 2 = 2 * m) (τ : ℍ) :
+    thetaCoset L γ (h +ᵥ τ) = thetaCoset L γ τ := by
+  obtain ⟨n, hn⟩ := hnorm 0 (zero_mem L)
+  rw [add_zero] at hn
+  rw [thetaCoset_vadd_eq_mul L γ (fun v hv ↦ ?_) τ]
+  · have h1 : cexp (π * I * (‖γ‖ ^ 2 : ℝ) * h) = 1 := by
+      simpa only [mul_zero, exp_zero, mul_assoc] using exp_pi_mul_I_mul_eq_of_sub_eq
+        (a := ((‖γ‖ ^ 2 : ℝ) : ℂ) * h) (b := 0) (by rw [sub_zero, mul_comm]; exact_mod_cast hn)
+    rw [h1, one_mul]
+  · obtain ⟨m, hm⟩ := hnorm v hv
+    exact ⟨m - n, by push_cast; linarith⟩
 
 variable {L : Submodule ℤ E}
 

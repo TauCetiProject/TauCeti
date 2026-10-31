@@ -186,8 +186,7 @@ theorem setIntegral_eq_zero_of_forall_prod {ρ : Measure (α × β)} {f : α × 
   have huniv : ∫ p, f p ∂ρ = 0 := by
     have h := hrect Set.univ MeasurableSet.univ Set.univ MeasurableSet.univ
     rwa [Set.univ_prod_univ, setIntegral_univ] at h
-  refine setIntegral_eq_zero_of_isPiSystem generateFrom_prod.symm isPiSystem_prod hf huniv ?_
-  rintro _ ⟨s, hs, t, ht, rfl⟩
-  exact hrect s hs t ht
+  exact setIntegral_eq_zero_of_isPiSystem le_rfl generateFrom_prod.symm isPiSystem_prod hf huniv
+    fun _ ⟨s, hs, t, ht, h⟩ => h ▸ hrect s hs t ht
 
 end TauCeti

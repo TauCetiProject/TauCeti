@@ -21,6 +21,9 @@ This file supplements Mathlib's basic moment-generating-function API.
   moment-generating function of any real-valued statistic equals `1` at zero.
 * `TauCeti.isFiniteMeasure_of_zero_mem_integrableExpSet`: a measure with an exponential moment at
   `0` is finite.
+* `TauCeti.mgf_lt_one_of_nonneg_of_neg`: under a probability measure, the moment-generating
+  function of a nonnegative random variable that is not almost surely zero is strictly less than
+  `1` at every negative argument.
 * `TauCeti.mgf_id_conv`: the moment-generating function of a convolution of two s-finite measures
   on `ℝ` is the product of their moment-generating functions.  This is the transform side of
   `MeasureTheory.Measure.conv`, the companion of `MeasureTheory.charFun_conv`.
@@ -47,6 +50,28 @@ theorem isFiniteMeasure_of_zero_mem_integrableExpSet (h : (0 : ℝ) ∈ integrab
     IsFiniteMeasure μ :=
   (integrable_const_iff_isFiniteMeasure one_ne_zero).mp <| by
     simpa using integrable_of_mem_integrableExpSet h
+
+/-- Under a probability measure, the moment-generating function of an almost surely nonnegative
+random variable that is positive with positive probability is strictly less than `1` at every
+negative argument. -/
+theorem mgf_lt_one_of_nonneg_of_neg [IsProbabilityMeasure μ] (hX : AEMeasurable X μ)
+    (hX0 : 0 ≤ᵐ[μ] X) (hpos : μ {ω | 0 < X ω} ≠ 0) {t : ℝ} (ht : t < 0) : mgf X μ t < 1 := by
+  have hle : ∀ᵐ ω ∂μ, Real.exp (t * X ω) ≤ 1 := by
+    filter_upwards [hX0] with ω hω
+    exact Real.exp_le_one_iff.2 (mul_nonpos_of_nonpos_of_nonneg ht.le hω)
+  have hint : Integrable (fun ω ↦ Real.exp (t * X ω)) μ :=
+    Integrable.of_bound (by fun_prop) 1 <| hle.mono fun ω hω ↦ by
+      rwa [Real.norm_of_nonneg (Real.exp_pos _).le]
+  -- `1 - exp (t * X)` is nonnegative and vanishes exactly where `X` does.
+  have hdiff : 0 < ∫ ω, (1 - Real.exp (t * X ω)) ∂μ := by
+    rw [integral_pos_iff_support_of_nonneg_ae (hle.mono fun ω hω ↦ sub_nonneg.2 hω)
+      ((integrable_const 1).sub hint)]
+    refine pos_iff_ne_zero.2 fun h0 ↦ hpos <| measure_mono_null (fun ω hω ↦ ?_) h0
+    have : t * X ω < 0 := mul_neg_of_neg_of_pos ht hω
+    simp [Function.mem_support, sub_eq_zero, (Real.exp_lt_one_iff.2 this).ne']
+  rw [integral_sub (integrable_const 1) hint, integral_const, probReal_univ, one_smul] at hdiff
+  rw [mgf]
+  linarith
 
 /-- **The moment-generating function of a convolution is the product of the two
 moment-generating functions.** This is the transform companion of `MeasureTheory.charFun_conv`.

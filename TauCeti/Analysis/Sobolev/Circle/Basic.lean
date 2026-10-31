@@ -10,6 +10,8 @@ public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.PSeries
 
+import Mathlib.Analysis.Normed.Group.Tannery
+
 /-!
 # Fourier-coefficient Sobolev spaces on the circle
 
@@ -46,6 +48,8 @@ product when `E` has them.
   `H^s`, so trigonometric polynomials are dense (`CircleSobolev.dense_finite_support_coeff`).
   Continuous linear maps out of `H^s` are therefore determined by their values on Fourier
   monomials (`CircleSobolev.continuousLinearMap_ext_single`).
+* `TauCeti.CircleSobolev.tendsto_of_tendsto_coeff`: dominated convergence in `H^s`, convergence
+  in `H^s` from convergence of the Fourier coefficients under a summable domination.
 * `TauCeti.CircleSobolev.isCompactOperator_inclusion`: for `t < s` and finite-dimensional `E`,
   the inclusion `H^s → H^t` is compact (Rellich's theorem).
 * `TauCeti.CircleSobolev.tsum_norm_coeff_le`: for `s > 1/2`, the Fourier coefficients are
@@ -258,6 +262,12 @@ theorem coeff_zsmul (k : ℤ) (a : CircleSobolev s E) : (k • a).coeff = k • 
 instance : Module ℂ (CircleSobolev s E) :=
   coeff_injective.module ℂ ⟨⟨coeff, rfl⟩, fun _ _ ↦ rfl⟩ fun _ _ ↦ rfl
 
+/-- The real scalar multiplication, restricted from the complex one, acts on the coefficients. -/
+@[simp]
+theorem coeff_real_smul (r : ℝ) (a : CircleSobolev s E) : (r • a).coeff = r • a.coeff := by
+  rw [← Complex.coe_smul, coeff_smul]
+  exact funext fun n ↦ Complex.coe_smul r (a.coeff n)
+
 /-- The Fourier coefficient sequence, as a linear map. -/
 def coeffₗ : CircleSobolev s E →ₗ[ℂ] ℤ → E where
   toFun := coeff
@@ -401,6 +411,31 @@ theorem memℓp_of_forall_le {a : CircleSobolev s E} {c : ℤ → E} {C : ℝ}
   rw [Pi.smul_apply, norm_smul, norm_smul, norm_smul, norm_weight, norm_weight, Real.norm_eq_abs]
   exact (h n).trans
     (mul_le_mul_of_nonneg_right (le_abs_self C) (mul_nonneg (weight_nonneg s n) (norm_nonneg _)))
+
+/-- Dominated convergence in `H^s`: if the Fourier coefficients of `b x` converge to those of `a`
+and the squared weighted norms `((1 + |n|) ^ s ‖(b x).coeff n - a.coeff n‖) ^ 2` are eventually
+dominated by a summable sequence, then `b x` converges to `a` in `H^s`. -/
+theorem tendsto_of_tendsto_coeff {α : Type*} {l : Filter α} {b : α → CircleSobolev s E}
+    {a : CircleSobolev s E} {bound : ℤ → ℝ} (hbound : Summable bound)
+    (hcoeff : ∀ n, Tendsto (fun x ↦ (b x).coeff n) l (𝓝 (a.coeff n)))
+    (hle : ∀ᶠ x in l, ∀ n, (weight s n * ‖(b x).coeff n - a.coeff n‖) ^ 2 ≤ bound n) :
+    Tendsto b l (𝓝 a) := by
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  have hsq : Tendsto (fun x ↦ ‖b x - a‖ ^ 2) l (𝓝 0) := by
+    have hlim (n : ℤ) : Tendsto (fun x ↦ (weight s n * ‖(b x).coeff n - a.coeff n‖) ^ 2) l
+        (𝓝 0) := by
+      have h := ((hcoeff n).sub_const (a.coeff n)).norm
+      rw [sub_self, norm_zero] at h
+      simpa using ((h.const_mul (weight s n)).pow 2)
+    have h := tendsto_tsum_of_dominated_convergence hbound hlim
+      (hle.mono fun x hx n ↦ by rw [Real.norm_of_nonneg (by positivity)]; exact hx n)
+    simp only [tsum_zero] at h
+    refine h.congr fun x ↦ ?_
+    rw [← (hasSum_sq_weight_mul_norm_coeff (b x - a)).tsum_eq]
+    simp
+  have h := (Real.continuous_sqrt.tendsto 0).comp hsq
+  simp only [Function.comp_def, Real.sqrt_zero, Real.sqrt_sq (norm_nonneg _)] at h
+  exact h
 
 /-! ### Hilbert structure -/
 
