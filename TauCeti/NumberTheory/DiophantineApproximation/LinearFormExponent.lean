@@ -542,11 +542,6 @@ theorem coeff_linearFormPoly_succ {n : ℕ} (x : ℤ × (Fin n → ℤ)) (j : Fi
     (linearFormPoly x).coeff (j.val + 1) = x.2 j := by
   rw [← coeffVec_snd n, coeffVec_linearFormPoly]
 
-/-- The coefficients of `linearFormPoly x` vanish above degree `n`. -/
-theorem coeff_linearFormPoly_of_lt {n : ℕ} (x : ℤ × (Fin n → ℤ)) {i : ℕ} (hi : n < i) :
-    (linearFormPoly x).coeff i = 0 :=
-  coeff_eq_zero_of_natDegree_lt ((natDegree_linearFormPoly_le x).trans_lt hi)
-
 /-- The value of `linearFormPoly x` at `z` is the linear form of `x` at the powers of `z`. -/
 theorem aeval_linearFormPoly {A : Type*} [CommRing A] {n : ℕ} (x : ℤ × (Fin n → ℤ)) (z : A) :
     aeval z (linearFormPoly x) = (x.1 : A) + ∑ j, (x.2 j : A) * z ^ (j.val + 1) := by

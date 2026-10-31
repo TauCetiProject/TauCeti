@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Polynomial.Norm
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Data.Nat.Choose.Bounds
+public import TauCeti.Analysis.Normed.Module.Basic
 import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.Tactic.NormNum
@@ -44,12 +45,6 @@ theorem _root_.Polynomial.supNorm_map {R S : Type*} [SeminormedRing R] [Seminorm
     (p : R[X]) (f : R →+* S) [RingHomIsometric f] :
     (p.map f).supNorm = p.supNorm := by
   simp only [supNorm_eq_iSup, coeff_map, RingHomIsometric.norm_map]
-
-/-- The cast from `ℤ` is norm-preserving in a normed ring in which `ℤ` acts isometrically and
-`‖1‖ = 1`, such as `ℝ` or `ℂ`. -/
-instance _root_.RingHomIsometric.intCastRingHom {R : Type*} [SeminormedRing R]
-    [NormSMulClass ℤ R] [NormOneClass R] : RingHomIsometric (Int.castRingHom R) where
-  norm_map {n} := by simp [norm_intCast_eq_abs_mul_norm_one, Int.norm_eq_abs]
 
 /-- Reversing a polynomial preserves its coefficient sup norm. -/
 @[simp]
