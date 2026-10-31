@@ -226,14 +226,15 @@ theorem eq_of_forall_charEval_eq {x y : MonoidAlgebra O G}
   exact hL (funext h)
 
 /-- **The joint evaluation at all characters is injective**: for a finite commutative group `G`
-and a domain `O` with enough roots of unity, `ev_Ĝ : O[G] → ∏_{ψ ∈ Ĝ} O` is injective. -/
+and a domain `O` with enough roots of unity, `ev_Ψ : O[G] → ∏_{ψ ∈ Ψ} O` with `Ψ = univ` is
+injective. -/
 theorem jointEval_injective :
     Function.Injective (jointEval (Set.univ : Set (G →* Oˣ))) := fun _ _ h ↦
   eq_of_forall_charEval_eq fun ψ ↦ by
     simpa using congr_fun h ⟨ψ, Set.mem_univ ψ⟩
 
 /-- For a finite commutative group `G` and a domain `O` with enough roots of unity, the character
-group ring of the set of all characters is `O[G]` itself: `α_Ĝ` is bijective. -/
+group ring of the set of all characters is `O[G]` itself: `α_Ψ` with `Ψ = univ` is bijective. -/
 theorem charGroupRing.proj_univ_bijective :
     Function.Bijective (charGroupRing.proj (Set.univ : Set (G →* Oˣ))) :=
   ⟨fun _ _ h ↦ jointEval_injective (congr_arg Subtype.val h),
