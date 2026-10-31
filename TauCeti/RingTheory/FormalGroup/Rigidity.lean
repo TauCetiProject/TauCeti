@@ -9,16 +9,17 @@ public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.RingTheory.FormalGroup.Height
--- Proof-only: products of series with coefficients in ideals, the residue field, base change of
--- formal group laws and of `[n]`, the Frobenius factorization of `[p]`, substitution modulo an
--- ideal, the first-order Taylor formula and the derivative of a base change.
+-- Proof-only: the residue field, base change of formal group laws and of `[n]`, the Frobenius
+-- factorization of `[p]`, substitution modulo an ideal, square-zero reductions, injectivity of
+-- expansion, the first-order Taylor formula and the derivative of a base change.
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
-import Mathlib.RingTheory.PowerSeries.CoeffMulMem
 import TauCeti.RingTheory.FormalGroup.BaseChange
 import TauCeti.RingTheory.FormalGroup.Frobenius.Factorization
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.Derivative
+import TauCeti.RingTheory.PowerSeries.Expand
+import TauCeti.RingTheory.PowerSeries.Ideal
 import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
@@ -84,25 +85,6 @@ private theorem coeff_map_mul_eq_zero {D : A⟦X⟧} {I J : Ideal A} (hD : ∀ k
   rw [coeff_map, ← map_mul, Ideal.Quotient.eq_zero_iff_mem]
   exact Ideal.mul_mem_mul_rev hy (hD e)
 
-/-- Reduce modulo `I J` a series `D` whose coefficients lie in `J ⊆ I`: the reduction has square
-zero. -/
-private theorem sq_map_eq_zero {D : A⟦X⟧} {I J : Ideal A} (hJI : J ≤ I) (hD : ∀ k, coeff k D ∈ J) :
-    (D.map (Ideal.Quotient.mk (I * J))) ^ 2 = 0 := by
-  ext e
-  rw [sq, ← map_mul, coeff_map, map_zero, Ideal.Quotient.eq_zero_iff_mem]
-  exact Ideal.mul_mono_left hJI (coeff_mul_mem_ideal_mul_ideal_of_coeff_mem_ideal' hD hD e)
-
-/-- A series `d` with `d (u (X ^ q)) = 0` for a formal coordinate `u` vanishes: expansion by
-`X ↦ X ^ q` is injective, and so is substitution of a formal coordinate. -/
-private theorem eq_zero_of_subst_expand_eq_zero {R : Type*} [CommRing R] (u : FormalCoordinate R)
-    {q : ℕ} (hq : q ≠ 0) {d : R⟦X⟧} (h : d.subst (expand q hq u.toPowerSeries) = 0) : d = 0 := by
-  have hdu : d.subst u.toPowerSeries = 0 := by
-    ext m
-    rw [← coeff_expand_mul (p := q) (hp := hq), expand_apply,
-      subst_comp_subst_apply u.hasSubst (HasSubst.X_pow hq), ← expand_apply (hp := hq), h, map_zero,
-      map_zero]
-  rwa [← FormalCoordinate.substAlgEquiv_apply, map_eq_zero_iff _ u.substAlgEquiv.injective] at hdu
-
 /-- One step of the rigidity argument: if `f ≡ g` modulo `J ⊆ I`, then `f ≡ g` modulo `I J`. -/
 private theorem coeff_sub_mem_mul [G.IsComm] (f g : FormalGroupHom F G) {I J : Ideal A}
     (hJI : J ≤ I) {n q : ℕ} (hq : q ≠ 0) (hn : (n : A) ∈ I) (u : FormalCoordinate A)
@@ -140,7 +122,8 @@ private theorem coeff_sub_mem_mul [G.IsComm] (f g : FormalGroupHom F G) {I J : I
     rw [derivative_map, hV]
     simp only [← coe_substAlgHom hg', map_mul, map_natCast]
     linear_combination substAlgHom hg' (V.map π) * hnd
-  rw [hfπ, subst_add_of_sq_eq_zero hg' (sq_map_eq_zero hJI hfg), hTaylor, add_zero,
+  rw [hfπ, subst_add_of_sq_eq_zero hg'
+    (sq_map_mk_eq_zero_of_coeff_mem (Ideal.mul_mono_left hJI) hfg), hTaylor, add_zero,
     sub_self] at hsubπ
   -- The left side only sees `[n]_F` modulo `I`, where it is `u (X ^ q)`.
   have hu0 : constantCoeff (expand q hq u.toPowerSeries) = 0 := by
@@ -155,8 +138,13 @@ private theorem coeff_sub_mem_mul [G.IsComm] (f g : FormalGroupHom F G) {I J : I
         exact Ideal.mem_map_of_mem π (hF _))
       (fun e x hx ↦ by rw [← coeff_def rfl]; exact coeff_map_mul_eq_zero hfg _ hx)
   rw [← hd, hcongr, map_expand, ← FormalCoordinate.toPowerSeries_map] at hsubπ
-  -- Since `u` is a coordinate and `X ↦ X ^ q` is injective, `d = 0`.
-  have hd0 := eq_zero_of_subst_expand_eq_zero _ hq hsubπ
+  -- `X ↦ X ^ q` and substitution of the coordinate `u` are both injective, so `d = 0`.
+  set v := FormalCoordinate.map π u
+  have hd0 : v.substAlgEquiv d = 0 := by
+    refine expand_injective q hq ?_
+    rw [FormalCoordinate.substAlgEquiv_apply, map_zero]
+    exact (expand_subst q hq v.hasSubst d).trans hsubπ
+  rw [map_eq_zero_iff _ v.substAlgEquiv.injective] at hd0
   simpa [hd, ← Ideal.Quotient.eq_zero_iff_mem] using congrArg (coeff k) hd0
 
 /-- **Rigidity of homomorphisms of formal group laws.** Let `A` be `I`-adically Hausdorff, let
