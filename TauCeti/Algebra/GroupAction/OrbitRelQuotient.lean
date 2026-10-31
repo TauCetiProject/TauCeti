@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Action.Sigma
 public import Mathlib.Algebra.Group.Action.Sum
 public import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.GroupTheory.GroupAction.Transitive
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Algebra.Group.NormalizerQuotient.Basic
@@ -60,6 +61,10 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
 * `MulActionHom.orbitRelQuotientMap`: an equivariant map induces a map of orbit spaces,
   functorially, and descent is natural along it
   (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`).
+* `SubMulAction.orbitRelQuotientMap`: for an `H`-invariant subset `S` of `X`, the map
+  `S / H → X / G` sending an `H`-orbit to its `G`-orbit; it is injective when `S` is a slice for
+  `H`, that is when every element of `G` carrying a point of `S` into `S` lies in `H`
+  (`SubMulAction.orbitRelQuotientMap_injective`).
 * `TauCeti.MulAction.stabilizer_sigma_mk`: the stabilizer of a sigma point is its fibre
   stabilizer.
 * `TauCeti.MulAction.orbitRelQuotientSigmaEquiv`: the orbit space of a componentwise sigma
@@ -916,3 +921,48 @@ theorem orbitRelQuotientLift_comp_orbitRelQuotientMap {Z : Type*} (φ : X →ₑ
   | h x => rfl
 
 end MulActionHom
+
+namespace SubMulAction
+
+open MulAction
+
+variable {G X : Type*} [Group G] [MulAction G X] {H : Subgroup G} (S : SubMulAction H X)
+
+/-- **The orbit map of an invariant subset.** For a subgroup `H` of `G` and an `H`-invariant
+subset `S` of `X`, the map sending the `H`-orbit of a point of `S` to its `G`-orbit in `X`. -/
+def orbitRelQuotientMap : orbitRel.Quotient H S → orbitRel.Quotient G X :=
+  MulActionHom.orbitRelQuotientMap (σ := H.subtype) ⟨Subtype.val, fun _ _ ↦ rfl⟩
+
+/-- The orbit map of an invariant subset sends the `H`-orbit of `s` to the `G`-orbit of `s`. -/
+@[simp]
+theorem orbitRelQuotientMap_mk (s : S) :
+    S.orbitRelQuotientMap (Quotient.mk (orbitRel H S) s) =
+      Quotient.mk (orbitRel G X) (s : X) :=
+  (rfl)
+
+/-- The orbit map of an invariant subset composed with the orbit projection of `S` is the orbit
+projection of `X` restricted to `S`. -/
+theorem orbitRelQuotientMap_comp_mk :
+    S.orbitRelQuotientMap ∘ Quotient.mk (orbitRel H S) =
+      Quotient.mk (orbitRel G X) ∘ Subtype.val :=
+  (rfl)
+
+/-- The image of the orbit map of an invariant subset consists of the orbits meeting it. -/
+theorem range_orbitRelQuotientMap :
+    Set.range S.orbitRelQuotientMap = Quotient.mk (orbitRel G X) '' (S : Set X) := by
+  rw [← Quotient.mk_surjective.range_comp, orbitRelQuotientMap_comp_mk, Set.range_comp,
+    Subtype.range_coe]
+
+/-- **Orbit maps of slices are injective.** If every element of `G` carrying a point of `S` into
+`S` lies in `H`, then two points of `S` in the same `G`-orbit lie in the same `H`-orbit. -/
+theorem orbitRelQuotientMap_injective
+    (hS : ∀ (g : G) (y : X), y ∈ S → g • y ∈ S → g ∈ H) :
+    Function.Injective S.orbitRelQuotientMap := by
+  rintro ⟨s⟩ ⟨t⟩ h
+  obtain ⟨g, hg⟩ := orbitRel_apply.mp (Quotient.exact h)
+  replace hg : g • (t : X) = s := hg
+  have hgS : g ∈ H := hS g t t.2 (hg ▸ s.2)
+  exact Quotient.sound (orbitRel_apply.mpr
+    (mem_orbit_subMul_iff.mpr ⟨⟨g, hgS⟩, hg⟩))
+
+end SubMulAction
