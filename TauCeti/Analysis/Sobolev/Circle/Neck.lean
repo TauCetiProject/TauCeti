@@ -48,9 +48,9 @@ node `xy = 0`. This is the linear model of the Hardy decomposition at a node.
 * `TauCeti.CircleSobolev.analyticOnNhd_neckTransfer`: `a ↦ neckTransfer a` is analytic on the open
   unit disc, as a map to the bounded operators on `H^s`.
 * `TauCeti.CircleSobolev.hasDerivAt_neckTransfer_zero`: its derivative at `0` is `u ↦ u₁ e^{-iθ}`.
-* `TauCeti.CircleSobolev.mem_neckGraph_iff`: the neck graph is the graph of `-neckTransfer a` on
-  the nonnegative frequencies, and `TauCeti.CircleSobolev.isCompl_neckGraph`: it is a complement
-  of the pair of negative Laurent subspaces.
+* `TauCeti.CircleSobolev.mem_neckGraph_iff_indicator_Iio_eq`: the neck graph is the graph of
+  `-neckTransfer a` on the nonnegative frequencies, and `TauCeti.CircleSobolev.isCompl_neckGraph`:
+  it is a complement of the pair of negative Laurent subspaces.
 * `TauCeti.CircleSobolev.neckGraph_zero`: at `a = 0` it is the pair of nonnegative Laurent
   subspaces.
 * `TauCeti.CircleSobolev.hasSum_zpow_smul_coeff_of_mem_neckGraph`: for `s > 1/2`, `a ≠ 0` and
@@ -424,7 +424,8 @@ private theorem indicator_Iio_eq_neg_neckTransfer_iff (ha : ‖a‖ ≤ 1) (F G 
 /-- **The neck graph is a graph.** For `‖a‖ ≤ 1`, a pair `(F, G)` lies in the neck graph exactly
 when the negative-frequency parts of `F` and `G` are `-neckTransfer a G` and `-neckTransfer a F`;
 these only depend on the positive frequencies of `G` and `F`. -/
-theorem mem_neckGraph_iff (ha : ‖a‖ ≤ 1) {p : CircleSobolev s E × CircleSobolev s E} :
+theorem mem_neckGraph_iff_indicator_Iio_eq (ha : ‖a‖ ≤ 1)
+    {p : CircleSobolev s E × CircleSobolev s E} :
     p ∈ neckGraph s E a ↔
       indicator (Set.Iio 0) p.1 = -neckTransfer a p.2 ∧
         indicator (Set.Iio 0) p.2 = -neckTransfer a p.1 := by
@@ -436,8 +437,9 @@ values of holomorphic functions on the two branch discs. -/
 theorem neckGraph_zero :
     neckGraph s E 0 = (supported s E (Set.Ici 0)).prod (supported s E (Set.Ici 0)) := by
   ext p
-  simp only [mem_neckGraph_iff (norm_zero.trans_le zero_le_one), neckTransfer_zero, zero_apply,
-    neg_zero, indicator_eq_zero_iff, Set.compl_Iio, Submodule.mem_prod]
+  simp only [mem_neckGraph_iff_indicator_Iio_eq (norm_zero.trans_le zero_le_one),
+    neckTransfer_zero, zero_apply, neg_zero, indicator_eq_zero_iff, Set.compl_Iio,
+    Submodule.mem_prod]
 
 /-- **Existence in the neck graph.** Every pair `(F, G)` of nonnegative-frequency elements is the
 nonnegative part of the element `(F - neckTransfer a G, G - neckTransfer a F)` of the neck
@@ -450,7 +452,7 @@ theorem sub_neckTransfer_mem_neckGraph (ha : ‖a‖ ≤ 1) {F G : CircleSobolev
   have h₂ (u : CircleSobolev s E) : neckTransfer a (neckTransfer a u) = 0 :=
     neckTransfer_eq_zero_of_mem_supported a
       (supported_mono Set.Iio_subset_Iic_self (neckTransfer_mem_supported a u))
-  rw [mem_neckGraph_iff ha]
+  rw [mem_neckGraph_iff_indicator_Iio_eq ha]
   simp only [map_sub, indicator_Iio_eq_zero_of_mem_supported hF,
     indicator_Iio_eq_zero_of_mem_supported hG, h₁, h₂, zero_sub, sub_zero, and_self]
 
@@ -460,7 +462,7 @@ theorem eq_of_mem_neckGraph (ha : ‖a‖ ≤ 1) {p : CircleSobolev s E × Circl
     (hp : p ∈ neckGraph s E a) :
     p = (indicator (Set.Ici 0) p.1 - neckTransfer a p.2,
       indicator (Set.Ici 0) p.2 - neckTransfer a p.1) := by
-  obtain ⟨h₁, h₂⟩ := (mem_neckGraph_iff ha).1 hp
+  obtain ⟨h₁, h₂⟩ := (mem_neckGraph_iff_indicator_Iio_eq ha).1 hp
   refine Prod.ext ?_ ?_ <;> dsimp only
   · rw [sub_eq_add_neg, ← h₁, indicator_Ici_add_indicator_Iio p.1]
   · rw [sub_eq_add_neg, ← h₂, indicator_Ici_add_indicator_Iio p.2]
