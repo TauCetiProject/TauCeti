@@ -21,7 +21,7 @@ that the inverse is strictly monotone, but does not state the monotonicity of `R
 itself, nor its continuity or smoothness. This file supplies these, together with the square of
 `Real.sinh (r / 2)` in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
 `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`, the odd companion of Mathlib's
-`Real.cosh_le_exp_half_sq`.
+`Real.cosh_le_exp_half_sq`, with the bound it gives on `(1 - exp (-l)) / l`.
 
 ## Main declarations
 
@@ -36,6 +36,8 @@ itself, nor its continuity or smoothness. This file supplies these, together wit
   exponential moment `∫₀¹ exp (-λ x) dx = 2 exp (-λ / 2) sinh (λ / 2) / λ` of the uniform
   distribution on `[0, 1]`, which is what makes the volume of a simplex cut from a cube
   exponentially small below its centre.
+* `Real.one_sub_exp_neg_div_le_exp` — `(1 - exp (-l)) / l ≤ exp (-(l / 2) + l ^ 2 / 24)`: the
+  resulting bound on that exponential moment, for every real `l`.
 
 The formula `Real.tanh_add` is the quotient of the other two, both sides carrying the factor
 `cosh a * cosh b`, which is nonzero because `Real.cosh` is positive.
@@ -143,5 +145,30 @@ theorem _root_.Real.sinh_le_mul_exp_sq_div_six {x : ℝ} (hx : 0 ≤ x) :
   rw [h]
   gcongr
   exact Nat.six_pow_mul_factorial_le_factorial_two_mul_add_one k
+
+/-- `(1 - exp (-l)) / l ≤ exp (-(l / 2) + l ^ 2 / 24)` for every real `l`. For `l ≠ 0` the
+left side is `∫₀¹ exp (-l x) dx = exp (-(l / 2)) * (2 * sinh (l / 2) / l)`, and the factor
+`2 * sinh (l / 2) / l` is even in `l`, so `Real.sinh_le_mul_exp_sq_div_six` at `|l| / 2` bounds it
+by `exp (l ^ 2 / 24)`. At `l = 0` the left side is `0`. -/
+theorem _root_.Real.one_sub_exp_neg_div_le_exp (l : ℝ) :
+    (1 - Real.exp (-l)) / l ≤ Real.exp (-(l / 2) + l ^ 2 / 24) := by
+  have h1 : 1 - Real.exp (-l) = Real.exp (-(l / 2)) * (2 * Real.sinh (l / 2)) := by
+    have ha : Real.exp (-(l / 2)) * Real.exp (l / 2) = 1 := by rw [← Real.exp_add]; simp
+    have hb : Real.exp (-l) = Real.exp (-(l / 2)) ^ 2 := by rw [← Real.exp_nat_mul]; ring_nf
+    rw [Real.sinh_eq]
+    linear_combination -ha - hb
+  have hsq : (l / 2) ^ 2 / 6 = l ^ 2 / 24 := by ring
+  rw [h1, Real.exp_add, mul_div_assoc]
+  refine mul_le_mul_of_nonneg_left ?_ (Real.exp_pos _).le
+  rcases lt_trichotomy l 0 with hl | rfl | hl
+  · have h := Real.sinh_le_mul_exp_sq_div_six (by linarith : 0 ≤ -(l / 2))
+    rw [Real.sinh_neg, neg_sq, hsq] at h
+    rw [div_le_iff_of_neg hl]
+    linarith
+  · simp
+  · have h := Real.sinh_le_mul_exp_sq_div_six (half_pos hl).le
+    rw [hsq] at h
+    rw [div_le_iff₀ hl]
+    linarith
 
 end TauCeti

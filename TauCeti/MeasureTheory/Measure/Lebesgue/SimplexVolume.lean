@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
--- Proof-only: the exponential-moment bound, the bound on `sinh`, and `∫ exp` on an interval.
+public import TauCeti.Probability.Distributions.IrwinHall.Cdf
+-- Proof-only: the exponential-moment bound, the bound on `(1 - exp (-l)) / l`, `∫ exp` on an
+-- interval, and the cdf of the order-zero Irwin–Hall law.
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Probability.Distributions.Dirac
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.MeasureTheory.Integral.Pi
 
@@ -21,17 +24,22 @@ vanishes as every `d j` grows. This is the count that enters the dimension estim
 auxiliary polynomials with prescribed index in Roth's theorem and in the Subspace Theorem
 (Bombieri–Gubler, *Heights in Diophantine Geometry*, 6.3.3 and Lemma 6.3.5).
 
+Equivalently, `V_m(t)` is the cdf at `t` of the Irwin–Hall law of order `m`, the law of a sum of
+`m` independent unit-uniform variables (`TauCeti.simplexVolume_eq_cdf_irwinHallMeasure`). The
+normalization facts below are read off from the cdf API of that law.
+
 The main estimate is the **tail bound** `TauCeti.simplexVolume_le_exp_neg`: for `0 ≤ ε`,
 `V_m((1 / 2 - ε) m) ≤ exp (-6 m ε ^ 2)`, so the volume concentrates around the centre `m / 2` of
 the cube (Bombieri–Gubler, Lemma 6.3.5, without the restriction `ε ≤ 1 / 2`). It comes from the
 exponential-moment bound `TauCeti.simplexVolume_le_exp_mul_pow`,
 `V_m(s) ≤ exp (l s) ((1 - exp (-l)) / l) ^ m` for `0 < l`, an instance of
 `TauCeti.setIntegral_prod_le_exp_mul_pow` at the indicator of `[0, 1]`, together with
-`Real.sinh_le_mul_exp_sq_div_six` at `l = 12 ε`.
+`Real.one_sub_exp_neg_div_le_exp` at `l = 12 ε`.
 
 ## Main declarations
 
 * `TauCeti.simplexVolume`: the volume `V_m(t)`.
+* `TauCeti.simplexVolume_eq_cdf_irwinHallMeasure`: `V_m(t)` is the Irwin–Hall cdf of order `m`.
 * `TauCeti.simplexVolume_eq_zero_of_neg`, `TauCeti.simplexVolume_eq_one_of_le`,
   `TauCeti.simplexVolume_pos`, `TauCeti.simplexVolume_one`: `V_m(t) = 0` for `t < 0`,
   `V_m(t) = 1` for `m ≤ t`, `0 < V_m(t)` for `0 < t`, and `V_1(t) = min 1 t` for `0 ≤ t`.
@@ -42,7 +50,7 @@ exponential-moment bound `TauCeti.simplexVolume_le_exp_mul_pow`,
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory ProbabilityTheory Set
 
 namespace TauCeti
 
@@ -55,70 +63,66 @@ noncomputable def simplexVolume (m : ℕ) (t : ℝ) : ℝ :=
 theorem simplexVolume_def (m : ℕ) (t : ℝ) :
     simplexVolume m t = volume.real (Icc (0 : Fin m → ℝ) 1 ∩ {x | ∑ j, x j ≤ t}) := (rfl)
 
-/-- `V_m(t)` is nonnegative. -/
-theorem simplexVolume_nonneg (m : ℕ) (t : ℝ) : 0 ≤ simplexVolume m t :=
-  measureReal_nonneg
+/-- `V_m(t)` is the cdf at `t` of the Irwin–Hall law of order `m`: that law is the image of the
+uniform measure on the unit cube under `x ↦ ∑ j, x j`. -/
+theorem simplexVolume_eq_cdf_irwinHallMeasure (m : ℕ) (t : ℝ) :
+    simplexVolume m t = cdf (Probability.irwinHallMeasure m) t := by
+  have hu : Probability.uniformMeasure 0 1 = volume.restrict (Icc 0 1) := by
+    rw [Probability.uniformMeasure_eq_smul, sub_zero, ENNReal.ofReal_one, inv_one, one_smul]
+    exact Measure.restrict_congr_set Ioc_ae_eq_Icc
+  have h := Probability.map_sum_pi_uniformMeasure_zero_one (ι := Fin m)
+  rw [Fintype.card_fin, hu, ← Measure.restrict_pi_pi, pi_univ_Icc] at h
+  rw [cdf_eq_real, ← h, map_measureReal_apply (by fun_prop) measurableSet_Iic,
+    measureReal_restrict_apply (measurableSet_Iic.preimage (by fun_prop)), inter_comm,
+    simplexVolume_def]
+  rfl
 
-/-- `V_m(t) ≤ 1`: the region lies in the unit cube. -/
+/-- `V_m(t)` is nonnegative. -/
+theorem simplexVolume_nonneg (m : ℕ) (t : ℝ) : 0 ≤ simplexVolume m t := by
+  rw [simplexVolume_eq_cdf_irwinHallMeasure]
+  exact cdf_nonneg _ _
+
+/-- `V_m(t) ≤ 1`: it is a value of a cdf. -/
 theorem simplexVolume_le_one (m : ℕ) (t : ℝ) : simplexVolume m t ≤ 1 := by
-  rw [simplexVolume_def]
-  exact (measureReal_mono inter_subset_left isCompact_Icc.measure_ne_top).trans_eq
-    (by simp [measureReal_def])
+  rw [simplexVolume_eq_cdf_irwinHallMeasure]
+  exact cdf_le_one _ _
 
 /-- `V_m(t)` is monotone in `t`. -/
-theorem simplexVolume_mono (m : ℕ) : Monotone (simplexVolume m) := fun s _ hst ↦
-  measureReal_mono (inter_subset_inter_right _ fun _ (hx : _ ≤ s) ↦ hx.trans hst)
-    (measure_ne_top_of_subset inter_subset_left isCompact_Icc.measure_ne_top)
+theorem simplexVolume_mono (m : ℕ) : Monotone (simplexVolume m) := fun _ _ hst ↦ by
+  simpa only [simplexVolume_eq_cdf_irwinHallMeasure] using (cdf _).mono hst
 
-/-- `V_m(t) = 0` for `t < 0`: the coordinates of a point of the cube have a nonnegative sum. -/
+/-- `V_m(t) = 0` for `t < 0`. At `m = 0` the Irwin–Hall law is the point mass at `0`, so the
+hypothesis cannot be weakened to `t ≤ 0`. -/
 @[simp]
 theorem simplexVolume_eq_zero_of_neg (m : ℕ) {t : ℝ} (ht : t < 0) : simplexVolume m t = 0 := by
-  have h : Icc (0 : Fin m → ℝ) 1 ∩ {x | ∑ j, x j ≤ t} = ∅ :=
-    eq_empty_of_forall_notMem fun x ⟨hx, (hxt : _ ≤ t)⟩ ↦
-      (Finset.sum_nonneg fun j _ ↦ hx.1 j).not_gt (hxt.trans_lt ht)
-  rw [simplexVolume_def, h, measureReal_empty]
+  rw [simplexVolume_eq_cdf_irwinHallMeasure]
+  rcases m.eq_zero_or_pos with rfl | hm
+  · simp [ht.not_ge]
+  · exact Probability.cdf_irwinHallMeasure_of_nonpos hm ht.le
 
 /-- `V_m(t) = 1` for `m ≤ t`: the coordinates of a point of the cube sum to at most `m`. -/
 @[simp]
 theorem simplexVolume_eq_one_of_le {m : ℕ} {t : ℝ} (ht : m ≤ t) : simplexVolume m t = 1 := by
-  rw [simplexVolume_def, inter_eq_left.2 fun x hx ↦ ?_]
-  · simp [measureReal_def]
-  calc ∑ j, x j ≤ ∑ _j : Fin m, (1 : ℝ) := Finset.sum_le_sum fun j _ ↦ hx.2 j
-    _ = m := by simp
-    _ ≤ t := ht
+  rw [simplexVolume_eq_cdf_irwinHallMeasure]
+  exact Probability.cdf_irwinHallMeasure_of_natCast_le m ht
 
-/-- `0 < V_m(t)` for `0 < t`: the region contains the cube `[0, c] ^ m` with
-`c = min 1 (t / (m + 1))`. -/
+/-- `0 < V_m(t)` for `0 < t`. -/
 theorem simplexVolume_pos (m : ℕ) {t : ℝ} (ht : 0 < t) : 0 < simplexVolume m t := by
-  set c := min 1 (t / (m + 1))
-  have hc : 0 < c := lt_min one_pos (by positivity)
-  have hsub : Icc (0 : Fin m → ℝ) (fun _ ↦ c) ⊆ Icc (0 : Fin m → ℝ) 1 ∩ {x | ∑ j, x j ≤ t} :=
-    fun x hx ↦ ⟨⟨hx.1, fun j ↦ (hx.2 j).trans (min_le_left _ _)⟩, by
-      calc ∑ j, x j ≤ ∑ _j : Fin m, t / (m + 1) :=
-            Finset.sum_le_sum fun j _ ↦ (hx.2 j).trans (min_le_right _ _)
-        _ = m * t / (m + 1) := by simp [mul_div_assoc]
-        _ ≤ t := by rw [div_le_iff₀ (by positivity)]; nlinarith⟩
-  calc 0 < c ^ m := pow_pos hc m
-    _ = volume.real (Icc (0 : Fin m → ℝ) (fun _ ↦ c)) := by
-      simp [measureReal_def, Real.volume_Icc_pi, hc.le]
-    _ ≤ simplexVolume m t :=
-      measureReal_mono hsub (measure_ne_top_of_subset inter_subset_left
-        isCompact_Icc.measure_ne_top)
+  rw [simplexVolume_eq_cdf_irwinHallMeasure]
+  rcases m.eq_zero_or_pos with rfl | hm
+  · simp [ht.le]
+  · exact (Probability.cdf_irwinHallMeasure_pos_iff hm).2 ht
 
-/-- `V_1(t) = min 1 t` for `0 ≤ t`, which pins the normalization: in one variable the region
-is the interval `[0, min 1 t]`. -/
+/-- `V_1(t) = min 1 t` for `0 ≤ t`, which pins the normalization: the Irwin–Hall law of order
+`1` is the uniform law on the unit interval. -/
 @[simp]
 theorem simplexVolume_one {t : ℝ} (ht : 0 ≤ t) : simplexVolume 1 t = min 1 t := by
-  have hset : Icc (0 : Fin 1 → ℝ) 1 ∩ {x | ∑ j, x j ≤ t} =
-      MeasurableEquiv.funUnique (Fin 1) ℝ ⁻¹' Icc 0 (min 1 t) := by
-    ext x
-    simp [Pi.le_def, Fin.forall_fin_one, and_assoc]
-  rw [simplexVolume_def, hset]
-  calc volume.real (MeasurableEquiv.funUnique (Fin 1) ℝ ⁻¹' Icc 0 (min 1 t))
-      = volume.real (Icc 0 (min 1 t)) :=
-        (volume_preserving_funUnique (Fin 1) ℝ).measureReal_preimage
-          measurableSet_Icc.nullMeasurableSet
-    _ = min 1 t := by rw [Real.volume_real_Icc_of_le (le_min zero_le_one ht), sub_zero]
+  rw [simplexVolume_eq_cdf_irwinHallMeasure, Probability.irwinHallMeasure_one,
+    Probability.cdf_uniformMeasure zero_lt_one]
+  split_ifs with h0 h1
+  · simp [le_antisymm h0 ht]
+  · exact (min_eq_left h1).symm
+  · rw [sub_zero, sub_zero, div_one, min_eq_right (not_le.1 h1).le]
 
 /-- **The exponential-moment bound.** For `0 < l`,
 `V_m(s) ≤ exp (l s) ((1 - exp (-l)) / l) ^ m`, where `(1 - exp (-l)) / l` is the integral of
@@ -164,16 +168,6 @@ theorem simplexVolume_le_exp_neg (m : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
     simplexVolume m ((1 / 2 - ε) * m) ≤ Real.exp (-(6 * m * ε ^ 2)) := by
   rcases hε.eq_or_lt with rfl | hε
   · simpa using simplexVolume_le_one m _
-  -- `(1 - exp (-l)) / l = exp (-(l / 2)) * (sinh (l / 2) / (l / 2)) ≤ exp (-(l / 2) + l ^ 2 / 24)`.
-  have hsinh {l : ℝ} (hl : 0 < l) : (1 - Real.exp (-l)) / l ≤ Real.exp (-(l / 2) + l ^ 2 / 24) := by
-    have h1 : 1 - Real.exp (-l) = Real.exp (-(l / 2)) * (2 * Real.sinh (l / 2)) := by
-      rw [Real.sinh_eq, mul_div_cancel₀ _ two_ne_zero, mul_sub, ← Real.exp_add, ← Real.exp_add,
-        neg_add_cancel, Real.exp_zero, ← neg_add, add_halves]
-    have h2 := Real.sinh_le_mul_exp_sq_div_six (half_pos hl).le
-    rw [h1, Real.exp_add, div_le_iff₀ hl, mul_assoc]
-    refine mul_le_mul_of_nonneg_left ?_ (Real.exp_pos _).le
-    calc 2 * Real.sinh (l / 2) ≤ 2 * (l / 2 * Real.exp ((l / 2) ^ 2 / 6)) := by gcongr
-      _ = Real.exp (l ^ 2 / 24) * l := by ring_nf
   have hl : 0 < 12 * ε := by positivity
   calc simplexVolume m ((1 / 2 - ε) * m)
       ≤ Real.exp (12 * ε * ((1 / 2 - ε) * m)) * ((1 - Real.exp (-(12 * ε))) / (12 * ε)) ^ m :=
@@ -182,7 +176,7 @@ theorem simplexVolume_le_exp_neg (m : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
           Real.exp (-(12 * ε / 2) + (12 * ε) ^ 2 / 24) ^ m := by
         gcongr
         · exact div_nonneg (sub_nonneg.2 (Real.exp_le_one_iff.2 (by linarith))) hl.le
-        · exact hsinh hl
+        · exact Real.one_sub_exp_neg_div_le_exp _
     _ = Real.exp (-(6 * m * ε ^ 2)) := by
         rw [← Real.exp_nat_mul, ← Real.exp_add]
         ring_nf
