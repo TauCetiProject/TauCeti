@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.RelativeSpec.SymmetricAlgebra.AffineSpace
-public import TauCeti.AlgebraicGeometry.VectorBundle.FreeSections
+public import TauCeti.AlgebraicGeometry.VectorBundle.Free.Sections
 public import TauCeti.AlgebraicGeometry.VectorBundle.TotalSpace
 
 /-!
@@ -27,7 +27,7 @@ point `AffineSpace.homOfVector` of `𝔸(I; X)` with the same coordinates
 These coordinates are those of the section of the point. The section-valued universal property
 `totalSpaceHomEquiv` identifies the points of `𝕍(𝒪_X^I)` over `T` with the global sections
 `𝒪_T ⟶ q^* 𝒪_X^I`, and such a section `s` has coordinates `I → Γ(T, ⊤)`
-(`pullbackFreeSectionsEquiv`, in `TauCeti.AlgebraicGeometry.VectorBundle.FreeSections`): the
+(`pullbackFreeSectionsEquiv`, in `TauCeti.AlgebraicGeometry.VectorBundle.Free.Sections`): the
 values on the basis sections of `𝒪_X^I` of the transpose of the linear functional
 `q^* 𝒪_X^I ≅ q^* 𝓗om(𝒪_X^I, 𝒪_X) ≅ 𝓗om(q^* 𝒪_X^I, 𝒪_T) ⟶ 𝒪_T` given by evaluation at `s`.
 Taking the section of a point and then its coordinates gives the coordinates of

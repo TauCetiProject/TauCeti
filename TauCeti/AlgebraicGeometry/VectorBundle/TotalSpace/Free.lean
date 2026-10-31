@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.VectorBundle.Free
+public import TauCeti.AlgebraicGeometry.VectorBundle.Free.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.TotalSpace
 
 /-!
@@ -41,12 +41,6 @@ universe u
 noncomputable section
 
 variable {X : Scheme.{u}}
-
--- Mathlib's pullback of free sheaves is stated for pushforwards known to be right adjoints; the
--- adjunction is recorded for `Scheme.Modules.pushforward`, which instance search does not unfold.
-local instance (T : Over X) :
-    (SheafOfModules.pushforward.{u} T.hom.toRingCatSheafHom).IsRightAdjoint :=
-  inferInstanceAs (Scheme.Modules.pushforward T.hom).IsRightAdjoint
 
 /-- **Free-bundle maps act on section vectors by matrices.** For a matrix `A` over `Γ(X, 𝒪_X)`
 and a scheme `q : T ⟶ X` over `X`, composing a point of `𝕍(𝒪_X^I)` with the map of total spaces

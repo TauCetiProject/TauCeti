@@ -190,6 +190,8 @@ lemma unitHomFreeEquiv_comp_freeMatrixHom (A : Matrix J I Γ(X, ⊤))
   have h (i : I) : unitHomFreeEquiv X J
       ((globalSectionsSmul (𝟙_ X.Modules) (v i) ≫ (freeBicone X I).ι i) ≫ (freeMatrixHom A).hom) =
         v i • fun j ↦ A j i := by
+    -- The inclusions of the reducible `freeBicone` are by definition the basis inclusions
+    -- `SheafOfModules.ιFree`, so `ιFree_freeMatrixHom` applies to them up to `show`.
     rw [Category.assoc, show (freeBicone X I).ι i ≫ (freeMatrixHom A).hom = _ from
       ιFree_freeMatrixHom A i, unitHomFreeEquiv_globalSectionsSmul_comp, AddEquiv.apply_symm_apply]
   rw [AddEquiv.apply_symm_apply, unitHomFreeEquiv_symm_apply, Preadditive.sum_comp, map_sum]
@@ -224,11 +226,6 @@ end Matrix
 section Pullback
 
 variable {Y : Scheme.{u}} (f : Y ⟶ X) {I J : Type u}
-
--- Mathlib's pullback of free sheaves is stated for pushforwards known to be right adjoints; the
--- adjunction is recorded for `Scheme.Modules.pushforward`, which instance search does not unfold.
-local instance : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
-  inferInstanceAs (Scheme.Modules.pushforward f).IsRightAdjoint
 
 /-- **Pullback of a morphism of free sheaves with a matrix.** Through the identifications
 `f^* 𝒪_X^I ≅ 𝒪_Y^I` and `f^* 𝒪_X^J ≅ 𝒪_Y^J`, the pullback along `f : Y ⟶ X` of the morphism with

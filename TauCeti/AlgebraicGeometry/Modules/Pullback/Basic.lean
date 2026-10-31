@@ -110,6 +110,13 @@ noncomputable section
 
 variable {X Y : Scheme.{u}}
 
+/-- Mathlib's site-level pushforward along a morphism of schemes is a right adjoint. Mathlib's
+statements about pullbacks of sheaves of modules ask for this by instance, while the adjunction is
+recorded for `Scheme.Modules.pushforward`, which instance search does not unfold. -/
+instance isRightAdjoint_sheafOfModulesPushforward (f : X ⟶ Y) :
+    (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
+  inferInstanceAs (pushforward f).IsRightAdjoint
+
 section Coherence
 
 variable {Z W : Scheme.{u}}
@@ -523,11 +530,6 @@ def restrictOpensRangeIsoFree (M : Y.Modules) (f : X ⟶ Y) [IsOpenImmersion f] 
 section PullbackFree
 
 variable (f : X ⟶ Y) {I : Type u}
-
--- Mathlib's pullback of free sheaves is stated for pushforwards known to be right adjoints; the
--- adjunction is recorded for `Scheme.Modules.pushforward`, which instance search does not unfold.
-local instance : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
-  inferInstanceAs (pushforward f).IsRightAdjoint
 
 /-- Through `f^* 𝒪_Y^I ≅ 𝒪_X^I`, the basis section `ιFree i` of `𝒪_X^I` is the pullback along `f`
 of the basis section `ιFree i` of `𝒪_Y^I`. -/
