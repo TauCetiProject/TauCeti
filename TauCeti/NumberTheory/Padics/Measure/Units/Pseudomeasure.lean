@@ -91,8 +91,7 @@ private def toPadicRingHom : D(ℤ_[p]ˣ, ℤ_[p]) →+* ℚ_[p] :=
 
 private theorem toPadicRingHom_apply (μ : D(ℤ_[p]ˣ, ℤ_[p])) :
     toPadicRingHom κ μ = (μ κ : ℚ_[p]) := by
-  rw [toPadicRingHom, RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-    characterIntegralAlgHom_apply, PadicInt.algebraMap_apply]
+  simp [toPadicRingHom]
 
 private theorem toPadicRingHom_dirac_sub_one (g : ℤ_[p]ˣ) :
     toPadicRingHom κ (diracHom g - 1) = (κ g : ℚ_[p]) - 1 := by
@@ -104,8 +103,7 @@ private theorem exists_apply_ne_one {κ : ℤ_[p]ˣ →ₜ* ℤ_[p]} (hκ : κ �
 
 private theorem coe_apply_sub_one_ne_zero {g : ℤ_[p]ˣ} (hg : κ g ≠ 1) :
     (κ g : ℚ_[p]) - 1 ≠ 0 := by
-  rw [← PadicInt.coe_one, ← PadicInt.coe_sub, PadicInt.coe_ne_zero, sub_ne_zero]
-  exact hg
+  exact_mod_cast PadicInt.coe_ne_zero.2 (sub_ne_zero.2 hg)
 
 /-- Evaluation of pseudo-measures on `ℤ_pˣ` at a nontrivial continuous character `κ`: the
 pseudo-measure `z` is sent to `n_g(z)(κ) / (κ g - 1)` in `ℚ_p`, for any `g` with `κ g ≠ 1`, where
@@ -118,29 +116,16 @@ def unitCharacterEval (hκ : κ ≠ 1) : unitsPseudomeasures p →+ ℚ_[p] :=
       rw [RingHom.algebraMap_toAlgebra, toPadicRingHom_dirac_sub_one]
       exact coe_apply_sub_one_ne_zero κ (exists_apply_ne_one hκ).choose_spec))).toAddMonoidHom
 
-/-- The cleared identity at the clearing element used to define `unitCharacterEval`. -/
-private theorem unitCharacterEval_spec_choose (hκ : κ ≠ 1) (z : unitsPseudomeasures p) :
-    ((κ (exists_apply_ne_one hκ).choose : ℚ_[p]) - 1) * κ.unitCharacterEval hκ z =
-      (numerator (diracHom (R := ℤ_[p])) _ (exists_apply_ne_one hκ).choose z κ : ℚ_[p]) := by
-  let := (toPadicRingHom κ).toAlgebra
-  rw [← toPadicRingHom_apply, ← toPadicRingHom_dirac_sub_one]
-  -- With this algebra structure, `algebraMap` is `toPadicRingHom κ` by definition, and
-  -- `unitCharacterEval` unfolds to `evalAt`, so this is `evalAt_spec`.
-  exact evalAt_spec (A := ℚ_[p]) _ _ z
-
 /-- The cleared identity for the evaluation at a nontrivial character: for every unit `g`,
 `(κ g - 1) E_κ(z) = n_g(z)(κ)`, where `n_g(z) = (δ_g - 1) z` is the cleared numerator. -/
 theorem unitCharacterEval_spec (hκ : κ ≠ 1) (g : ℤ_[p]ˣ) (z : unitsPseudomeasures p) :
     ((κ g : ℚ_[p]) - 1) * κ.unitCharacterEval hκ z =
       (numerator (diracHom (R := ℤ_[p])) _ g z κ : ℚ_[p]) := by
-  set g₀ := (exists_apply_ne_one hκ).choose
-  have h₀ := unitCharacterEval_spec_choose κ hκ z
-  have hcross := congrArg (toPadicRingHom κ) (numerator_cross g g₀ z)
-  rw [map_mul, map_mul, toPadicRingHom_dirac_sub_one, toPadicRingHom_dirac_sub_one,
-    toPadicRingHom_apply, toPadicRingHom_apply, ← h₀] at hcross
-  refine mul_left_cancel₀ (coe_apply_sub_one_ne_zero κ (exists_apply_ne_one hκ).choose_spec) ?_
-  rw [hcross]
-  ring
+  let := (toPadicRingHom κ).toAlgebra
+  rw [← toPadicRingHom_apply, ← toPadicRingHom_dirac_sub_one]
+  -- With this algebra structure, `algebraMap` is `toPadicRingHom κ` by definition, and
+  -- `unitCharacterEval` unfolds to `evalAt`, so this is `evalAt_cross`.
+  exact evalAt_cross (A := ℚ_[p]) _ g _ z
 
 /-- The ratio formula: for any unit `g` with `κ g ≠ 1`, the evaluation of a pseudo-measure `z` at
 `κ` is `n_g(z)(κ) / (κ g - 1)`. -/
@@ -178,6 +163,7 @@ theorem unitCharacterEval_unique (hκ : κ ≠ 1) (L : unitsPseudomeasures p →
   let L' : unitsPseudomeasures p →ₗ[D(ℤ_[p]ˣ, ℤ_[p])] ℚ_[p] :=
     { L with
       map_smul' := fun μ z => by
+        -- The coercion of `{ L with .. }` is `L` and `RingHom.id` is the identity, by definition.
         change L (μ • z) = μ • L z
         rw [hsmul, Algebra.smul_def, RingHom.algebraMap_toAlgebra, toPadicRingHom_apply] }
   ext z
@@ -268,9 +254,8 @@ example (k : ℕ) (hk : 0 < k) (a b : ℤ_[3]ˣ) (ha : (a : ℤ_[3]) = 4) (hb : 
         2 ^ k * (4 ^ k - 1) ∧
       (unitsPowCharacter 3 k).unitCharacterEval (unitsPowCharacter_ne_one hk)
         (integral (diracHom (R := ℤ_[3])) _ (dirac ℤ_[3] b)) = ((2 ^ k : ℤ_[3]) : ℚ_[3]) := by
-  constructor
-  · rw [numerator_integral, ← characterIntegralAlgHom_apply, map_mul, map_sub, map_one,
-      diracHom_apply, characterIntegralAlgHom_dirac, characterIntegralAlgHom_dirac,
-      unitsPowCharacter_apply, unitsPowCharacter_apply, ha, hb, mul_comm]
-  · rw [unitCharacterEval_integral, ← characterIntegralAlgHom_apply, characterIntegralAlgHom_dirac,
-      unitsPowCharacter_apply, hb]
+  rw [numerator_integral, unitCharacterEval_integral, ← characterIntegralAlgHom_apply,
+    ← characterIntegralAlgHom_apply]
+  simp only [map_mul, map_sub, map_one, diracHom_apply, characterIntegralAlgHom_dirac,
+    unitsPowCharacter_apply, ha, hb, and_true]
+  exact mul_comm _ _
