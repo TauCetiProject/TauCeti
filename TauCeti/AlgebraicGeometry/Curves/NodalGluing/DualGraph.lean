@@ -75,17 +75,6 @@ universe u v
 variable {ι Flag : Type u} {X : ι → Type*} [∀ i, TopologicalSpace (X i)] [∀ i, ConnectedSpace (X i)]
   {d : FlagPairData ι Flag X} [ConnectedSpace (GluedCurve d)] {L : Type v}
 
-/-- In a connected glued curve with connected components, any two components are joined by a
-chain of nodes, each traversed in either direction. -/
-theorem reflTransGen_of_connectedSpace (i j : ι) :
-    Relation.ReflTransGen
-      (fun i j ↦ ∃ f, (d.fst f = i ∧ d.snd f = j) ∨ (d.fst f = j ∧ d.snd f = i)) i j := by
-  have h := ((connectedSpace_gluedCurve_iff d).mp ‹_›).2 i j
-  rw [← Relation.EqvGen.reflTransGen_symmGen] at h
-  refine Relation.ReflTransGen.mono (fun a b hab ↦ ?_) _ _ h
-  rcases hab with ⟨f, ha, hb⟩ | ⟨f, hb, ha⟩
-  exacts [⟨f, Or.inl ⟨ha, hb⟩⟩, ⟨f, Or.inr ⟨hb, ha⟩⟩]
-
 variable [Fintype ι] [DecidableEq ι] [Fintype Flag] [DecidableEq Flag]
 
 /-- **The dual graph of a marked nodal curve.** Its vertices are the normalization components,
@@ -99,7 +88,7 @@ abbrev dualGraph (g : ι → ℕ) (m : Marking d L) : DualGraph.{u} L where
   endpoint f := ![d.fst f, d.snd f]
   genus := g
   marking l := (m.point l).1
-  connected := reflTransGen_of_connectedSpace
+  connected := reflTransGen_of_connectedSpace d
 
 variable (g : ι → ℕ) (m : Marking d L)
 
