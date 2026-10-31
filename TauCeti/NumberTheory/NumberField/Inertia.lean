@@ -266,15 +266,23 @@ theorem disjoint_inertia_of_ramificationIdx_eq_one (H : Subgroup G) [IsGaloisGro
   rw [AddSubgroup.subgroupOf_inertia, Ideal.card_inertia_eq_ramificationIdx (𝓞 F) H P]
   exact hunr
 
-omit [IsGaloisGroup G ℚ K] [Algebra ℚ F] [IsScalarTower ℚ F K] in
+omit [Finite G] [IsGaloisGroup G ℚ K] [Algebra ℚ F] [IsScalarTower ℚ F K] in
 /-- **The index of `H` kills inertia at a prime unramified over the fixed field.** If `H` is a
 normal subgroup of `G` with fixed field `F` and `P` is unramified over `𝓞 F`, then every element
 of the inertia subgroup at `P` is killed by `H.index`: its `H.index`-th power lies in `H`, and it
-lies in the inertia subgroup, which meets `H` trivially. -/
+lies in the inertia subgroup, which meets `H` trivially. If the index is infinite,
+`H.index = 0` and the equality is immediate; no finiteness assumption on `G` is needed. -/
 theorem pow_index_eq_one_of_ramificationIdx_eq_one {H : Subgroup G} [H.Normal]
     [IsGaloisGroup H F K] {P : Ideal (𝓞 K)} (hP : P.IsPrime)
-    (hunr : P.ramificationIdx (𝓞 F) = 1) {g : G} (hg : g ∈ P.inertia G) : g ^ H.index = 1 :=
-  Subgroup.disjoint_def.mp (disjoint_inertia_of_ramificationIdx_eq_one H P hP hunr)
+    (hunr : P.ramificationIdx (𝓞 F) = 1) {g : G} (hg : g ∈ P.inertia G) : g ^ H.index = 1 := by
+  by_cases hi : H.index = 0
+  · simp [hi]
+  have : Module.Finite F K := Module.Finite.of_restrictScalars_finite ℚ F K
+  have : Finite H := IsGaloisGroup.finite H F K
+  have : H.FiniteIndex := ⟨hi⟩
+  have : Finite G := (Subgroup.finite_iff_finite_and_finiteIndex H).2
+    ⟨inferInstance, inferInstance⟩
+  exact Subgroup.disjoint_def.mp (disjoint_inertia_of_ramificationIdx_eq_one H P hP hunr)
     (pow_mem hg _) (H.pow_index_mem g)
 
 omit [Algebra ℚ F] [IsScalarTower ℚ F K] in

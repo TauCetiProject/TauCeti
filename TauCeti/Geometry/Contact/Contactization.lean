@@ -119,7 +119,7 @@ private theorem mextDeriv_contactization_apply (θ : SmoothForm I W ℝ 1) (p : 
     mextDeriv θ.contactization.1 p ![v, w] =
       (-mextDerivₗ I 1 θ).eval₂ p.1 (Manifold.tangentSpaceProdEquiv p v).1
         (Manifold.tangentSpaceProdEquiv p w).1 := by
-  rw [← eval₂_mextDerivₗ_contactization, eval₂_apply, mextDerivₗ_apply]
+  rw [← eval₂_mextDerivₗ_contactization, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
 
 /-- The tangent vector `(v, θ_w(v))` at `(w, z)` lies in the kernel of the contactization form. -/
 private theorem contactization_apply_graph (θ : SmoothForm I W ℝ 1) (p : W × ℝ)

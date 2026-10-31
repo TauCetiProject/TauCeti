@@ -16,7 +16,7 @@ corresponding statement for higher homotopy groups in dimension one, through Mat
 `HomotopyGroup.pi1MulEquivFundamentalGroup`, rather than reproved: the free-homotopy trace
 argument is dimension independent, and `π_ 1` is the fundamental group.
 
-This strengthens `TauCeti.FundamentalGroup.homeomorphMulEquiv`, which covers the case of a
+This strengthens `FundamentalGroup.homeomorphMulEquiv`, which covers the case of a
 homeomorphism, but the two are independent as API: the homeomorphism version has an explicit
 inverse and needs no finiteness or decidability instances, so it stays the tool of choice when a
 homeomorphism is what is available.

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.GeneralLinear.Borel
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Augmentation.Basic
 -- Private: `fin_cases` is used only inside proofs.
@@ -71,6 +72,13 @@ bracket, so it lands in the **square** `(U⁺)²` and not merely in `U⁺` itsel
   contrast with the defining action on `R³`, which is faithful by instance inference.
 * `TauCeti.ι_heisenbergZ_mem_augmentation_toIdeal_sq`: **the central generator lies in the square of
   the augmentation ideal** of `U(L)`.
+* `Module.Dual.lieAnnihilator_heisenberg_eq_top_iff`,
+  `TauCeti.lieAnnihilator_heisenberg_toSubmodule_eq_span_heisenbergZ` and
+  `TauCeti.finrank_quotient_lieAnnihilator_heisenberg`: **the coadjoint stabilizer of `ν` is
+  everything when `ν z = 0` and, over a ring without zero divisors, the centre `R ∙ z` otherwise**,
+  so over a field the algebraic tangent models `L ⧸ L_ν` of the coadjoint orbits have dimension `0`
+  or `2`, even as their Kirillov–Kostant–Souriau form requires. By contrast the quotient of `L` by
+  the centralizer of `x` has dimension `1` (`TauCeti.finrank_quotient_lieAnnihilator_heisenbergX`).
 
 ## Implementation notes
 
@@ -401,5 +409,67 @@ theorem ι_heisenbergZ_mem_augmentation_toIdeal_sq :
         (_root_.UniversalEnvelopingAlgebra R (heisenberg R))).toIdeal ^ 2 := by
   rw [← lie_heisenbergX_heisenbergY]
   exact UniversalEnvelopingAlgebra.ι_lie_mem_augmentation_toIdeal_sq R (heisenberg R) _ _
+
+/-! ### Coadjoint and adjoint orbits -/
+
+variable {R}
+
+/-- **A functional vanishing on the centre is fixed by the coadjoint action**, and conversely: the
+whole Heisenberg Lie algebra stabilizes `ν` exactly when `ν z = 0`, so the algebraic tangent model
+`L ⧸ L_ν` of the coadjoint orbit through such a `ν` is zero. -/
+theorem _root_.Module.Dual.lieAnnihilator_heisenberg_eq_top_iff (ν : Dual R (heisenberg R)) :
+    lieAnnihilator R (heisenberg R) ν = ⊤ ↔ ν (heisenbergZ R) = 0 := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · have hx : heisenbergX R ∈ lieAnnihilator R (heisenberg R) ν := h ▸ LieSubalgebra.mem_top _
+    have := LinearMap.congr_fun ((mem_lieAnnihilator R (heisenberg R)).mp hx) (heisenbergY R)
+    simpa using this
+  · refine eq_top_iff.mpr fun A _ => (mem_lieAnnihilator R (heisenberg R)).mpr ?_
+    ext B
+    simp [lie_eq_smul_heisenbergZ, h]
+
+/-- **Over a ring without zero divisors, the coadjoint stabilizer of a functional nonzero on the
+centre is the centre** `R ∙ z`:
+pairing `⁅A, ν⁆` with `y` and with `x` reads off the two superdiagonal entries of `A`, multiplied
+by `ν z`. -/
+theorem lieAnnihilator_heisenberg_toSubmodule_eq_span_heisenbergZ [NoZeroDivisors R]
+    {ν : Dual R (heisenberg R)} (hν : ν (heisenbergZ R) ≠ 0) :
+    (lieAnnihilator R (heisenberg R) ν).toSubmodule = R ∙ heisenbergZ R := by
+  refine le_antisymm (fun A hA => ?_) ?_
+  · rw [LieSubalgebra.mem_toSubmodule, mem_lieAnnihilator] at hA
+    have hy := LinearMap.congr_fun hA (heisenbergY R)
+    have hx := LinearMap.congr_fun hA (heisenbergX R)
+    simp only [Dual.lie_apply, lie_eq_smul_heisenbergZ, map_smul, smul_eq_mul, coe_heisenbergX,
+      coe_heisenbergY, LinearMap.zero_apply, neg_eq_zero, mul_eq_zero, hν, or_false] at hx hy
+    rw [eq_smul_heisenbergX_add_smul_heisenbergY_add_smul_heisenbergZ A]
+    refine Submodule.mem_span_singleton.mpr ⟨(A : Matrix (Fin 3) (Fin 3) R) 0 2, ?_⟩
+    simp_all
+  · rw [Submodule.span_singleton_le_iff_mem, LieSubalgebra.mem_toSubmodule, mem_lieAnnihilator]
+    ext B
+    simp
+
+/-- **The algebraic tangent models `L ⧸ L_ν` of the coadjoint orbits of the Heisenberg Lie algebra
+through functionals nonzero on the centre are two-dimensional.** -/
+theorem finrank_quotient_lieAnnihilator_heisenberg {K : Type*} [Field K]
+    {ν : Dual K (heisenberg K)} (hν : ν (heisenbergZ K) ≠ 0) :
+    finrank K (heisenberg K ⧸ (lieAnnihilator K (heisenberg K) ν).toSubmodule) = 2 := by
+  rw [lieAnnihilator_heisenberg_toSubmodule_eq_span_heisenbergZ hν]
+  have h := Submodule.finrank_quotient_add_finrank (K ∙ heisenbergZ K)
+  rw [finrank_span_singleton heisenbergZ_ne_zero, finrank_heisenberg] at h
+  omega
+
+/-- **The quotient of the Heisenberg Lie algebra by the centralizer of `x` is one-dimensional**,
+in contrast with the even-dimensional coadjoint tangent models: the centralizer is cut out by the
+single entry `A 1 2`, since `⁅A, x⁆ = -(A 1 2) • z`. -/
+theorem finrank_quotient_lieAnnihilator_heisenbergX {K : Type*} [Field K] :
+    finrank K (heisenberg K ⧸ (lieAnnihilator K (heisenberg K) (heisenbergX K)).toSubmodule) =
+      1 := by
+  set f := (heisenbergBasis K).coord 1
+  have hf : (lieAnnihilator K (heisenberg K) (heisenbergX K)).toSubmodule = LinearMap.ker f := by
+    ext A
+    simp [f, lie_eq_smul_heisenbergZ, Basis.coord_apply, ← Basis.equivFun_apply,
+      heisenbergZ_ne_zero]
+  have hsurj : Function.Surjective f := fun c =>
+    ⟨c • heisenbergY K, by simp [f, Basis.coord_apply, ← Basis.equivFun_apply]⟩
+  rw [hf, (f.quotKerEquivOfSurjective hsurj).finrank_eq, finrank_self]
 
 end TauCeti

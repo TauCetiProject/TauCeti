@@ -32,8 +32,9 @@ permutations transported along injections with disjoint ranges, a fiber-preservi
 carrying one finite family to another with the same equality pattern
 (`TauCeti.exists_perm_apply_eq_of_eq_iff`), the fact that a permutation
 is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
-types, transport of cycle quotients along conjugating equivalences, and the factorization of an
-invariant function
+types, the relabelling of a two-argument family invariant under a permutation of its first argument
+paired with a map on its second (`Equiv.Perm.apply_inv_eq_comp_of_apply_apply_eq`), transport of
+cycle quotients along conjugating equivalences, and the factorization of an invariant function
 through a map on whose fibres the permutation is a single cycle, and a correction by a power of
 a cycle for a permutation commuting with it. Points over distinct classes of the cycle quotient are
 distinct (`Equiv.Perm.ne_of_sameCycle_out`), and precomposing with `σ` does not change a sum over a
@@ -257,6 +258,14 @@ theorem IsCycleOn.permCongr {σ : Perm α} {β : Type*} (e : α ≃ β) {s : Set
     exact ⟨e y, ⟨y, hy, rfl⟩, by simp⟩
   · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
     exact (sameCycle_permCongr σ e).2 (h.2 hx hy)
+
+/-- If a two-argument family `F` is invariant under applying `σ` to its first argument together
+with `f` to its second, then relabelling the first argument by `σ⁻¹` is the same as precomposing
+every member of the family with `f`. -/
+theorem apply_inv_eq_comp_of_apply_apply_eq {β γ : Sort*} (F : α → β → γ) (f : β → β)
+    (hF : ∀ a b, F (σ a) (f b) = F a b) : (fun a => F (σ⁻¹ a)) = fun a => F a ∘ f := by
+  funext a b
+  simpa using (hF (σ⁻¹ a) b).symm
 
 end Equiv.Perm
 

@@ -9,6 +9,8 @@ public import TauCeti.NumberTheory.LocalField.Different.Basic
 public import TauCeti.NumberTheory.LocalField.Different.AlgEquiv
 public import TauCeti.NumberTheory.LocalField.Norm.Basic
 public import TauCeti.RingTheory.DedekindDomain.Discriminant.Basic
+import TauCeti.NumberTheory.LocalField.Different.Monogenic
+import TauCeti.NumberTheory.LocalField.Monogenic
 
 /-!
 # The local discriminant of an extension of local fields
@@ -51,6 +53,9 @@ unramified criterion and the bound `f(L/K) · (e(L/K) - 1) ≤ δ(L/K)`.
 * `TauCeti.discriminantExponent_eq_inertiaDegree_mul_differentExponent`: the product formula
   `δ(L/K) = f(L/K) · d(L/K)`.
 * `TauCeti.discriminantIdeal_eq_maximalIdeal_pow`: `𝔩(L/K) = 𝓂[K] ^ δ(L/K)`.
+* `TauCeti.IsTotallyRamified.addVal_aeval_derivative_minpoly_eq_discriminantExponent`:
+  the derivative of a uniformizer's minimal polynomial has order `δ(L/K)` in a totally
+  ramified extension.
 * `TauCeti.pow_dvd_discriminantIdeal_iff_le_discriminantExponent`: the characteristic property,
   `𝓂[K] ^ n ∣ 𝔩(L/K) ↔ n ≤ δ(L/K)`.
 * `TauCeti.discriminantIdeal_eq_top_iff` and `TauCeti.discriminantExponent_eq_zero_iff`: the
@@ -159,6 +164,19 @@ theorem discriminantExponent_eq_inertiaDegree_mul_differentExponent :
   rw [discriminantExponent_def, discriminantIdeal_eq_maximalIdeal_pow_mul,
     multiplicity_pow_self_of_prime
       (Ideal.prime_of_isPrime (IsDiscreteValuationRing.not_a_field 𝒪[K]) inferInstance)]
+
+variable {K L} in
+/-- In a totally ramified separable extension, the derivative of the minimal polynomial over
+`𝒪[K]` of a uniformizer has order equal to the discriminant exponent. -/
+theorem IsTotallyRamified.addVal_aeval_derivative_minpoly_eq_discriminantExponent
+    (h : IsTotallyRamified K L) {ξ : 𝒪[L]} (hξ : Irreducible ξ) :
+    IsDiscreteValuationRing.addVal 𝒪[L]
+      (Polynomial.aeval ξ (minpoly 𝒪[K] ξ).derivative) = discriminantExponent K L := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
+  rw [discriminantExponent_eq_inertiaDegree_mul_differentExponent, h.inertiaDegree_eq_one,
+    one_mul]
+  exact (natCast_differentExponent_eq_addVal_aeval_derivative_minpoly K L
+    (h.adjoin_eq_top_of_irreducible hξ)).symm
 
 /-- **The local discriminant ideal is the `δ(L/K)`-th power of the maximal ideal of `𝒪[K]`**:
 `𝔩(L/K) = 𝓂[K] ^ δ(L/K)`, for `L/K` separable. -/
