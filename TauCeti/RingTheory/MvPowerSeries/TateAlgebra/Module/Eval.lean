@@ -8,8 +8,9 @@ module
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Strassmann
+import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Data.Finsupp.Weight
 import Mathlib.Analysis.Normed.Group.Ultra
-import Mathlib.Data.Finsupp.Option
 import Mathlib.Data.Fintype.Option
 
 /-!
@@ -39,8 +40,9 @@ one-variable restricted family.
 
 The functionals are a hypothesis: a general Banach space over `ℚ_p` need not admit such a family
 into fields. The family exists, for instance, when `E` is itself a complete normed field extension
-of `K`. Over `ℚ_p`, a restricted family at the unit polyradius is determined by its values on
-`ℤ_pⁿ` (`TauCeti.MvPowerSeries.IsRestrictedFamily.eq_zero_of_familyEval_padicInt_eq_zero`).
+of `K`. Over `ℚ_p`, given such functionals, a restricted family at the unit polyradius is
+determined by its values on `ℤ_pⁿ`
+(`TauCeti.MvPowerSeries.IsRestrictedFamily.eq_zero_of_familyEval_padicInt_eq_zero`).
 The sets `Sᵢ` must be infinite: over `𝔽_p((t))`, the nonzero polynomial `X ^ p - X` vanishes on
 the finite set `𝔽_p`.
 
@@ -174,13 +176,6 @@ variable [NontriviallyNormedField K] [IsUltrametricDist K] [NormedAddCommGroup E
   [IsUltrametricDist E] [CompleteSpace E] {ι : Type*} {L : ι → Type*}
   [∀ j, NormedField (L j)] [∀ j, NormedAlgebra K (L j)] [∀ j, CompleteSpace (L j)]
 
-omit [IsUltrametricDist K] in
-/-- A radius bounding the norms of an infinite set of scalars is positive. -/
-private theorem pos_of_infinite {S : Set K} (hS : S.Infinite) {r : ℝ} (hSr : ∀ x ∈ S, ‖x‖ ≤ r) :
-    0 < r := by
-  obtain ⟨x, hxS, hx0⟩ := (hS.sdiff (Set.finite_singleton 0)).nonempty
-  exact (norm_pos_iff.mpr hx0).trans_le (hSr x hxS)
-
 omit [IsUltrametricDist E] [CompleteSpace E] in
 /-- The one-variable case: a sequence `β` in `E` with `‖β k‖ rᵏ → 0`, whose power series
 `∑ₖ xᵏ • β k` vanishes at every point of an infinite subset of the disc of radius `r`, is zero.
@@ -190,7 +185,7 @@ private theorem eq_zero_of_hasSum_pow_smul (φ : ∀ j, E →L[K] L j)
     (hφ : ∀ e, (∀ j, φ j e = 0) → e = 0) {r : ℝ} {β : ℕ → E}
     (hβ : Tendsto (fun k ↦ ‖β k‖ * r ^ k) atTop (𝓝 0)) {S : Set K} (hS : S.Infinite)
     (hSr : ∀ x ∈ S, ‖x‖ ≤ r) (h : ∀ x ∈ S, HasSum (fun k ↦ x ^ k • β k) 0) : β = 0 := by
-  have hr := pos_of_infinite hS hSr
+  have hr := hS.nontrivial.pos_of_forall_norm_le hSr
   funext k
   refine hφ _ fun j ↦ ?_
   have : IsUltrametricDist (L j) := .of_normedAlgebra K
@@ -208,8 +203,12 @@ private theorem eq_zero_of_hasSum_pow_smul (φ : ∀ j, E →L[K] L j)
       rw [norm_algebraMap']
       exact hSr x hx
     · rintro _ ⟨x, hx, rfl⟩
-      rw [PowerSeries.evalAt_def]
-      simpa [hf_def, Function.comp_def, Algebra.smul_def, mul_comm] using
+      have hterm (n : ℕ) :
+          PowerSeries.coeff n f • algebraMap K (L j) x ^ n = φ j (x ^ n • β n) := by
+        rw [hf_def, PowerSeries.coeff_mk, map_smul, smul_eq_mul, Algebra.smul_def, map_pow,
+          mul_comm]
+      rw [PowerSeries.evalAt_def, tsum_congr hterm]
+      simpa only [Function.comp_def, map_zero] using
         ((h x hx).map (φ j) (φ j).continuous).tsum_eq
   simpa [hf_def] using congrArg (PowerSeries.coeff k) hzero
 
@@ -247,19 +246,6 @@ private theorem vanishingPrinciple_pempty : VanishingPrinciple (K := K) E PEmpty
   funext t
   rwa [Subsingleton.elim t 0]
 
-private theorem optionEquiv_symm_none_and_some {α : Type*} (k : ℕ) (t : α →₀ ℕ) :
-    Finsupp.optionEquiv.symm (k, t) none = k ∧ (Finsupp.optionEquiv.symm (k, t)).some = t := by
-  have h := Finsupp.optionEquiv.apply_symm_apply (k, t)
-  rwa [Finsupp.optionEquiv_apply, Prod.mk.injEq] at h
-
-/-- The weight of an exponent in `Option α` splits off the exponent of `none`. -/
-private theorem prod_pow_optionEquiv_symm {M : Type*} [CommMonoid M] {α : Type*}
-    (y : Option α → M) (k : ℕ) (t : α →₀ ℕ) :
-    (Finsupp.optionEquiv.symm (k, t)).prod (y · ^ ·) =
-      y none ^ k * t.prod (fun i n ↦ y (some i) ^ n) := by
-  rw [Finsupp.prod_option_index _ _ (fun _ ↦ pow_zero _) fun _ _ _ ↦ pow_add _ _ _,
-    (optionEquiv_symm_none_and_some k t).1, (optionEquiv_symm_none_and_some k t).2]
-
 /-- Splitting off the variable `none`: if every slice of a restricted family `a` in the remaining
 variables vanishes on a product of infinite sets, so does `a`. The one-variable sequences
 `k ↦ a_k(y)` of values of the slices are restricted, and their power series are values of `a`. -/
@@ -267,19 +253,14 @@ private theorem vanishingPrinciple_option (φ : ∀ j, E →L[K] L j)
     (hφ : ∀ e, (∀ j, φ j e = 0) → e = 0) {α : Type*} (h : VanishingPrinciple (K := K) E α) :
     VanishingPrinciple (K := K) E (Option α) := by
   intro c a S ha hS hSc hzero
-  have hc := pos_of_infinite (hS none) (hSc none)
+  have hc := (hS none).nontrivial.pos_of_forall_norm_le (hSc none)
   -- the slice of `a` with exponent `k` in the variable `none`
-  set a' : ℕ → (α →₀ ℕ) → E := fun k t ↦ a (Finsupp.optionEquiv.symm (k, t)) with ha'_def
+  set a' : ℕ → (α →₀ ℕ) → E := fun k t ↦ a (t.optionElim k) with ha'_def
   have hweight (k : ℕ) (t : α →₀ ℕ) : ‖a' k t‖ * t.prod (fun i n ↦ c (some i) ^ n) =
-      (c none ^ k)⁻¹ * (‖a (Finsupp.optionEquiv.symm (k, t))‖ *
-        (Finsupp.optionEquiv.symm (k, t)).prod (c · ^ ·)) := by
-    rw [prod_pow_optionEquiv_symm, ha'_def]
+      (c none ^ k)⁻¹ * (‖a (t.optionElim k)‖ * (t.optionElim k).prod (c · ^ ·)) := by
+    rw [Finsupp.prod_pow_optionElim, ha'_def]
     field_simp
-  have hslice (k : ℕ) : IsRestrictedFamily (c ∘ some) (a' k) := by
-    have := ((isRestrictedFamily_iff.mp ha).comp (Finsupp.optionEquiv.symm.injective.comp
-      (Prod.mk_right_injective k)).tendsto_cofinite).const_mul (c none ^ k)⁻¹
-    rw [mul_zero] at this
-    exact isRestrictedFamily_iff.mpr (this.congr fun t ↦ (hweight k t).symm)
+  have hslice (k : ℕ) : IsRestrictedFamily (c ∘ some) (a' k) := ha.comp_optionElim hc k
   -- for fixed `y`, the values of the slices form a restricted one-variable family
   have hrestr (y : α → K) (hy : ∀ i, ‖y i‖ ≤ c (some i)) :
       Tendsto (fun k ↦ ‖familyEval y (a' k)‖ * c none ^ k) atTop (𝓝 0) := by
@@ -295,8 +276,7 @@ private theorem vanishingPrinciple_option (φ : ∀ j, E →L[K] L j)
     refine norm_familyEval_le hy (by positivity) fun t ↦ ?_
     rw [hweight, inv_mul_le_iff₀ hpow, mul_div_cancel₀ _ hpow.ne']
     by_contra hlt
-    exact hk.not_ge (hN ⟨_, (not_lt.mpr (le_of_not_ge hlt)),
-      (optionEquiv_symm_none_and_some k t).1⟩)
+    exact hk.not_ge (hN ⟨_, (not_lt.mpr (le_of_not_ge hlt)), Finsupp.optionElim_apply_none k t⟩)
   -- the power series of these values are values of `a`
   have hsum (y : α → K) (hy : ∀ i, y i ∈ S (some i)) (x : K) (hx : x ∈ S none) :
       HasSum (fun k ↦ x ^ k • familyEval y (a' k)) 0 := by
@@ -307,8 +287,10 @@ private theorem vanishingPrinciple_option (φ : ∀ j, E →L[K] L j)
     have htot := hzero _ hpt ▸ ha.hasSum_familyEval hxc
     rw [← Finsupp.optionEquiv.symm.hasSum_iff] at htot
     refine htot.prod_fiberwise fun k ↦ ?_
-    simpa only [Function.comp_def, prod_pow_optionEquiv_symm, mul_smul, ha'_def, Option.elim'_none,
-      Option.elim'_some] using
+    -- `Finsupp.optionElim` is defined as the inverse of `Finsupp.optionEquiv`
+    have he (t : α →₀ ℕ) : Finsupp.optionEquiv.symm (k, t) = t.optionElim k := rfl
+    simpa only [Function.comp_def, he, Finsupp.prod_pow_optionElim, mul_smul, ha'_def,
+      Option.elim'_none, Option.elim'_some] using
       ((hslice k).hasSum_familyEval fun i ↦ hxc (some i)).const_smul (x ^ k)
   have hzero' (k : ℕ) : a' k = 0 := by
     refine h (c ∘ some) (a' k) (S ∘ some) (hslice k) (fun i ↦ hS (some i))
@@ -317,7 +299,7 @@ private theorem vanishingPrinciple_option (φ : ∀ j, E →L[K] L j)
     exact congrFun (eq_zero_of_hasSum_pow_smul φ hφ
       (hrestr y fun i ↦ hSc (some i) _ (hy' i)) (hS none) (hSc none) (hsum y hy')) k
   funext t
-  rw [Pi.zero_apply, ← Finsupp.optionEquiv.symm_apply_apply t, Finsupp.optionEquiv_apply]
+  rw [Pi.zero_apply, ← Finsupp.optionElim_some t]
   exact congrFun (hzero' (t none)) t.some
 
 /-- **Coefficient recovery for module-valued restricted series.** Let `E` be a complete
@@ -334,9 +316,9 @@ theorem IsRestrictedFamily.eq_zero_of_familyEval_eq_zero [Finite σ] (φ : ∀ j
     vanishingPrinciple_of_equiv vanishingPrinciple_pempty
     (vanishingPrinciple_option φ hφ) σ c a S ha hS hSc h
 
-/-- **Coefficient recovery on `ℤ_pⁿ`.** Let `E` be a Banach space over `ℚ_p` with a jointly
-injective family of continuous linear maps into complete normed field extensions of `ℚ_p`. A
-unit-radius restricted family in finitely many variables with values in `E`, vanishing at every
+/-- **Coefficient recovery on `ℤ_pⁿ`.** Let `E` be an ultrametric Banach space over `ℚ_p` with a
+jointly injective family of continuous linear maps into complete normed field extensions of `ℚ_p`.
+A unit-radius restricted family in finitely many variables with values in `E`, vanishing at every
 point of `ℤ_pⁿ`, is zero. -/
 theorem IsRestrictedFamily.eq_zero_of_familyEval_padicInt_eq_zero {p : ℕ} [Fact p.Prime]
     [Finite σ] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℚ_[p] E] [IsUltrametricDist E]
@@ -345,9 +327,9 @@ theorem IsRestrictedFamily.eq_zero_of_familyEval_padicInt_eq_zero {p : ℕ} [Fac
     (hφ : ∀ e, (∀ j, φ j e = 0) → e = 0) {a : (σ →₀ ℕ) → E}
     (ha : IsRestrictedFamily (fun _ ↦ 1) a)
     (h : ∀ x : σ → ℤ_[p], familyEval (fun i ↦ (x i : ℚ_[p])) a = 0) : a = 0 := by
-  have : Infinite (PadicInt.subring p) := .of_injective (fun n : ℕ ↦ (n : ℤ_[p])) Nat.cast_injective
+  have : Infinite ℤ_[p] := .of_injective (fun n : ℕ ↦ (n : ℤ_[p])) Nat.cast_injective
   refine ha.eq_zero_of_familyEval_eq_zero φ hφ (S := fun _ ↦ Set.range ((↑) : ℤ_[p] → ℚ_[p]))
-    (fun _ ↦ Set.infinite_range_of_injective fun _ _ ↦ PadicInt.ext) ?_ fun x hx ↦ ?_
+    (fun _ ↦ Set.infinite_range_of_injective (α := ℤ_[p]) fun _ _ ↦ PadicInt.ext) ?_ fun x hx ↦ ?_
   · rintro - - ⟨z, rfl⟩
     exact PadicInt.norm_le_one z
   · choose z hz using fun i ↦ hx i (Set.mem_univ i)
