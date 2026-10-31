@@ -90,14 +90,6 @@ section Tensor
 
 variable {M M' : Type*} [AddCommGroup M] [Module R M] [AddCommGroup M'] [Module R M']
 
-/-- On `N ⊗[R] M`, the `S`-action of `y` is `(y • ·) ⊗ id`. -/
-@[simp]
-theorem _root_.LinearMap.rTensor_distribSMul_toLinearMap_apply (y : S) (z : N ⊗[R] M) :
-    (DistribSMul.toLinearMap R N y).rTensor M z = y • z := by
-  induction z with
-  | add x z hx hz => simp [hx, hz]
-  | tmul n m => simp [smul_tmul']
-
 /-- Injectivity of `(y • ·) ⊗ id_M` is invariant under isomorphisms of `M`. -/
 private theorem injective_rTensor_of_linearEquiv {f : N →ₗ[R] N} (e : M ≃ₗ[R] M')
     (h : Function.Injective (f.rTensor M')) : Function.Injective (f.rTensor M) := by
@@ -196,7 +188,7 @@ theorem isSMulRegular_tensorProduct_of_isSMulRegular_quotient [Module.Finite S N
   have hκ : Function.Injective (f.rTensor (R ⧸ maximalIdeal R)) := by
     let e := AlgebraTensorModule.tensorQuotEquivQuotMapSMul (S := S) (N := N) (maximalIdeal R)
     rw [show ⇑(f.rTensor (R ⧸ maximalIdeal R)) = (y • ·) from
-      funext (LinearMap.rTensor_distribSMul_toLinearMap_apply y)]
+      funext fun z ↦ (AlgebraTensorModule.smul_eq_lsmul_rTensor y z).symm]
     refine Function.Injective.of_comp (f := e) ?_
     have : (e ∘ (y • ·)) = (y • ·) ∘ e := funext fun z ↦ e.map_smul y z
     rw [this]
@@ -206,7 +198,8 @@ theorem isSMulRegular_tensorProduct_of_isSMulRegular_quotient [Module.Finite S N
   have : Module.Finite S (N ⊗[R] M) := .equiv (AlgebraTensorModule.cancelBaseChange R S S N M)
   unfold IsSMulRegular
   rw [← show ⇑(f.rTensor M) = (y • ·) from
-    funext (LinearMap.rTensor_distribSMul_toLinearMap_apply y), injective_iff_map_eq_zero]
+    funext fun z ↦ (AlgebraTensorModule.smul_eq_lsmul_rTensor y z).symm,
+    injective_iff_map_eq_zero]
   intro z hz
   -- `z` dies in each `N ⊗[R] (M ⧸ 𝔪_R ^ (k + 1) M)`, so it lies in `𝔪_S ^ (k + 1) (N ⊗[R] M)`.
   have hmem (k : ℕ) : z ∈ (maximalIdeal S ^ k • ⊤ : Submodule S (N ⊗[R] M)) := by
@@ -260,10 +253,9 @@ theorem quotSMulTop_of_isSMulRegular_quotient [Module.Finite S N] [Flat R N] {y 
   let e := TensorProduct.comm R (R ⧸ I) N
   have hcomm : e ∘ (f.lTensor (R ⧸ I)) = (y • · : N ⊗[R] (R ⧸ I) → _) ∘ e := by
     funext z
-    simp only [Function.comp_apply, ← LinearMap.rTensor_distribSMul_toLinearMap_apply]
     induction z with
-    | add a b ha hb => simp only [map_add, ha, hb]
-    | tmul r n => simp [e, f]
+    | add a b ha hb => simp only [Function.comp_apply, map_add, smul_add] at ha hb ⊢; rw [ha, hb]
+    | tmul r n => simp [e, f, smul_tmul']
   refine Function.Injective.of_comp (f := e) ?_
   rw [hcomm]
   exact hreg.comp e.injective

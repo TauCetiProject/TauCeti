@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 public import TauCeti.RingTheory.Depth.Basic
 public import TauCeti.RingTheory.Depth.WeaklyRegular
 public import TauCeti.RingTheory.Regular.RegularSequence
@@ -91,48 +92,21 @@ private theorem lTensor_mkQ_eq_zero_iff (x : R) (z : N ⊗[R] M) :
 private theorem rTensor_mkQ_eq_zero_iff (y : S) (z : N ⊗[R] M) :
     AlgebraTensorModule.rTensor R M (y • ⊤ : Submodule S N).mkQ z = 0 ↔
       z ∈ (y • ⊤ : Submodule S (N ⊗[R] M)) := by
-  constructor
-  · intro hz
-    have hexact : Function.Exact (DistribSMul.toLinearMap R N y)
-        ((y • ⊤ : Submodule S N).mkQ.restrictScalars R) := fun n ↦ by
-      simp [Submodule.mem_smul_pointwise_iff_exists]
-    have hg : Function.Surjective ((y • ⊤ : Submodule S N).mkQ.restrictScalars R) := by
-      rw [LinearMap.coe_restrictScalars]
-      exact Submodule.mkQ_surjective _
-    obtain ⟨w, rfl⟩ := ((_root_.rTensor_exact M hexact hg) z).mp hz
-    rw [LinearMap.rTensor_distribSMul_toLinearMap_apply]
-    exact Submodule.smul_mem_pointwise_smul _ _ _ trivial
-  · intro hz
-    obtain ⟨z, -, rfl⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mp hz
-    rw [map_smul]
-    induction AlgebraTensorModule.rTensor R M (y • ⊤ : Submodule S N).mkQ z with
-    | add a b ha hb => rw [smul_add, ha, hb, add_zero]
-    | tmul q m =>
-      rw [smul_tmul', Module.mem_annihilator.mp (QuotSMulTop.mem_annihilator N y), zero_tmul]
-
-/-- The map `N ⊗[R] M → (N ⧸ y N) ⊗[R] M` is surjective. -/
-private theorem rTensor_mkQ_surjective (y : S) :
-    Function.Surjective (AlgebraTensorModule.rTensor R M (y • ⊤ : Submodule S N).mkQ) :=
-  LinearMap.rTensor_surjective M (g := (y • ⊤ : Submodule S N).mkQ.restrictScalars R) <| by
-    rw [LinearMap.coe_restrictScalars]
-    exact Submodule.mkQ_surjective _
+  have hN : LinearMap.range (LinearMap.lsmul S N y) = y • ⊤ := by
+    ext n
+    simp [Submodule.mem_smul_pointwise_iff_exists]
+  have hNM : LinearMap.range (AlgebraTensorModule.rTensor R M (LinearMap.lsmul S N y)) =
+      y • ⊤ := by
+    have h : ⇑(AlgebraTensorModule.rTensor R M (LinearMap.lsmul S N y)) = (y • ·) :=
+      funext fun w ↦ (AlgebraTensorModule.smul_eq_lsmul_rTensor y w).symm
+    ext w
+    simp [Submodule.mem_smul_pointwise_iff_exists, LinearMap.mem_range, h]
+  rw [← LinearMap.mem_ker, ← hN, AlgebraTensorModule.ker_rTensor_mkQ, hNM]
 
 /-- The map `N ⊗[R] M → N ⊗[R] (M ⧸ x M)` is surjective. -/
 private theorem lTensor_mkQ_surjective (x : R) :
     Function.Surjective (AlgebraTensorModule.lTensor S N (x • ⊤ : Submodule R M).mkQ) :=
   LinearMap.lTensor_surjective N (Submodule.mkQ_surjective _)
-
-/-- For `x ∈ R` regular on `M` and `N` flat over `R`, the image of `x` in `S` is regular on
-`N ⊗[R] M`. -/
-private theorem isSMulRegular_algebraMap_tensorProduct [Module.Flat R N] {x : R}
-    (reg : IsSMulRegular M x) : IsSMulRegular (N ⊗[R] M) (algebraMap R S x) := by
-  have h : ⇑((LinearMap.lsmul R M x).lTensor N) = (algebraMap R S x • · : N ⊗[R] M → _) := by
-    funext z
-    induction z with
-    | add a b ha hb => rw [map_add, ha, hb, smul_add]
-    | tmul n m => rw [LinearMap.lTensor_tmul, LinearMap.lsmul_apply, tmul_smul, algebraMap_smul]
-  rw [IsSMulRegular, ← h]
-  exact Module.Flat.lTensor_preserves_injective_linearMap _ reg
 
 /-- For an ideal `I` of `S`, the map `N ⧸ I N → (N ⧸ y N) ⧸ I (N ⧸ y N)` has kernel
 `y (N ⧸ I N)`: both are `N ⧸ (I N + y N)`. -/
@@ -251,7 +225,7 @@ private theorem depth_tensorProduct_eq_of_depth_eq_zero [Module.Finite R M]
     rw [hN, Nat.cast_succ] at hfib
     rw [depth_eq_add_one_of_surjective hy
       (Module.Flat.isSMulRegular_tensorProduct_of_isSMulRegular_quotient reg M) _
-      (rTensor_mkQ_surjective y) (rTensor_mkQ_eq_zero_iff y),
+      (AlgebraTensorModule.rTensor_mkQ_surjective _) (rTensor_mkQ_eq_zero_iff y),
       ih (QuotSMulTop y N) (ENat.add_left_injective_of_ne_top ENat.one_ne_top hfib).symm,
       Nat.cast_succ]
 
@@ -276,7 +250,7 @@ private theorem depth_tensorProduct_eq_add_of_eq [Module.Finite S N] [Module.Fla
     rw [hM, Nat.cast_succ] at hM'
     have : Module.Finite S (N ⊗[R] M) := .equiv (AlgebraTensorModule.cancelBaseChange R S S N M)
     rw [depth_eq_add_one_of_surjective (map_maximalIdeal_le _ (Ideal.mem_map_of_mem _ hx))
-      (isSMulRegular_algebraMap_tensorProduct reg) _ (lTensor_mkQ_surjective x)
+      (isSMulRegular_algebraMap_iff S |>.mpr (reg.lTensor N)) _ (lTensor_mkQ_surjective x)
       (lTensor_mkQ_eq_zero_iff x),
       ih (QuotSMulTop x M) (ENat.add_left_injective_of_ne_top ENat.one_ne_top hM'),
       Nat.cast_succ, add_right_comm]
