@@ -16,12 +16,15 @@ import Mathlib.Tactic.Ring
 
 The norms of the powers of an element in the open unit ball form a summable series, even when
 the seminorm is not normalized. The same holds after multiplication by bounded coefficients.
-Completeness then gives summability in the ring itself.
+Completeness then gives summability in the ring itself. In a complete seminormed group, a
+sequence whose consecutive norms shrink by factors `C ρᵏ` with `ρ < 1` is summable, by the ratio
+test.
 
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
 norm. Finite products of geometric series converge unconditionally over all exponent vectors,
-giving the product Cauchy kernel expansion.
+giving the product Cauchy kernel expansion. Over a complete normed field, the Lambert series
+`∑_{n ≥ 1} qⁿw / (1 - qⁿw)²` is the power series `∑_{k ≥ 1} k qᵏ wᵏ / (1 - qᵏ)` in `w`.
 -/
 
 public section
@@ -53,6 +56,16 @@ theorem summable_mul_pow_of_norm_le {K : Type*} [SeminormedRing K] [CompleteSpac
     {b : ℕ → K} {C : ℝ} (hb : ∀ n, ‖b n‖ ≤ C) {q : K} (hq : ‖q‖ < 1) :
     Summable (fun n : ℕ ↦ b n * q ^ n) :=
   (summable_norm_mul_pow_of_norm_le hb hq).of_norm
+
+/-- A sequence whose consecutive norms shrink by a factor `C ρᵏ` with `ρ < 1` is summable. -/
+theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] [CompleteSpace E]
+    {f : ℕ → E} {C ρ : ℝ} (hρ₀ : 0 ≤ ρ) (hρ : ρ < 1) (h : ∀ k, ‖f (k + 1)‖ ≤ C * ρ ^ k * ‖f k‖) :
+    Summable f := by
+  have ht : Filter.Tendsto (fun k : ℕ ↦ C * ρ ^ k) Filter.atTop (nhds 0) := by
+    simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hρ₀ hρ).const_mul C
+  refine summable_of_ratio_norm_eventually_le (r := 1 / 2) (by norm_num) ?_
+  filter_upwards [(tendsto_order.1 ht).2 (1 / 2) (by norm_num)] with k hk
+  exact (h k).trans (mul_le_mul_of_nonneg_right hk.le (norm_nonneg _))
 
 variable {K : Type*} [NormedField K]
 
@@ -174,6 +187,52 @@ theorem hasSum_prod_geometric_div {𝕜 ι : Type*} [NormedField 𝕜] [Fintype 
   · ext α
     simp only [← Finset.prod_mul_distrib, div_eq_mul_inv]
   · simp only [← Finset.prod_mul_distrib, ← div_eq_mul_inv, heq]
+
+/-- The Lambert series `∑_{n ≥ 1} qⁿw / (1 - qⁿw)² = ∑_{k ≥ 1} k qᵏ wᵏ / (1 - qᵏ)`, for
+`‖q w‖ < 1`. -/
+theorem hasSum_lambert [CompleteSpace K] {q w : K} (hq : ‖q‖ < 1)
+    (hw : ‖q * w‖ < 1) :
+    HasSum (fun k : ℕ ↦ ((k + 1 : ℕ) : K) * q ^ (k + 1) / (1 - q ^ (k + 1)) * w ^ (k + 1))
+      (∑' n : ℕ, q ^ (n + 1) * w / (1 - q ^ (n + 1) * w) ^ 2) := by
+  set F : ℕ × ℕ → K := fun p ↦ ((p.2 + 1 : ℕ) : K) * (q ^ (p.1 + 1) * w) ^ (p.2 + 1) with hF
+  have hz (n : ℕ) : ‖q ^ (n + 1) * w‖ = ‖q‖ ^ n * ‖q * w‖ := by
+    rw [pow_succ, mul_assoc, norm_mul, norm_pow]
+  have hqn (n : ℕ) : ‖q‖ ^ n ≤ 1 := pow_le_one₀ (norm_nonneg _) hq.le
+  have hz' (n : ℕ) : ‖q ^ (n + 1) * w‖ < 1 := by
+    rw [hz]
+    calc ‖q‖ ^ n * ‖q * w‖ ≤ 1 * ‖q * w‖ := by gcongr; exact hqn n
+      _ < 1 := by rwa [one_mul]
+  have hbound (p : ℕ × ℕ) :
+      ‖F p‖ ≤ ‖q‖ ^ p.1 * (((p.2 + 1 : ℕ) : ℝ) * ‖q * w‖ ^ (p.2 + 1)) := by
+    rw [hF, norm_mul, norm_pow, hz, mul_pow, mul_left_comm]
+    gcongr
+    · exact pow_le_of_le_one (by positivity) (hqn p.1) (Nat.succ_ne_zero _)
+    · simpa using Nat.norm_cast_le (α := K) (p.2 + 1)
+  have hs : Summable F := by
+    refine Summable.of_norm_bounded ?_ hbound
+    exact (summable_geometric_of_lt_one (norm_nonneg _) hq).mul_of_nonneg
+      ((summable_nat_add_iff 1).mpr
+        (hasSum_coe_mul_geometric_of_norm_lt_one (by rwa [norm_norm])).summable)
+      (fun _ ↦ by positivity) (fun _ ↦ by positivity)
+  have hrow (n : ℕ) :
+      HasSum (fun k ↦ F (n, k)) (q ^ (n + 1) * w / (1 - q ^ (n + 1) * w) ^ 2) := by
+    have h := (hs.prod_factor n).hasSum
+    rwa [show ∑' k, F (n, k) = _ from tsum_natCast_succ_mul_pow_succ _ (hz' n)] at h
+  have hcol (k : ℕ) : HasSum (fun n ↦ F (n, k))
+      (((k + 1 : ℕ) : K) * q ^ (k + 1) / (1 - q ^ (k + 1)) * w ^ (k + 1)) := by
+    have hξ : ‖q ^ (k + 1)‖ < 1 := by
+      rw [norm_pow]
+      exact pow_lt_one₀ (norm_nonneg _) hq (Nat.succ_ne_zero _)
+    convert (hasSum_geometric_of_norm_lt_one hξ).mul_left
+      (((k + 1 : ℕ) : K) * q ^ (k + 1) * w ^ (k + 1)) using 1
+    · funext n
+      simp only [hF]
+      ring
+    · rw [div_eq_mul_inv]
+      ring
+  have h₁ := hs.hasSum.prod_fiberwise hrow
+  have h₂ := ((Equiv.prodComm ℕ ℕ).hasSum_iff.mpr hs.hasSum).prod_fiberwise fun k ↦ hcol k
+  rwa [← h₁.tsum_eq] at h₂
 
 end TauCeti
 

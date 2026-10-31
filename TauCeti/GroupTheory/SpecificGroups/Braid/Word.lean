@@ -33,6 +33,10 @@ defines the words and the braid each word represents.
 * `TauCeti.BraidWord.toBraid_strandIncl` and `TauCeti.BraidWord.toBraid_stabilize`: these word
   operations represent `TauCeti.BraidGroup.strandIncl` and the stabilization of
   `TauCeti.IsMarkovMove`.
+* `TauCeti.BraidWord.levelAt_append_singleton` and `TauCeti.BraidWord.signAt_append_singleton`:
+  appending a letter adds its level and sign at the end of the word.
+* `TauCeti.BraidWord.exists_last_levelAt`: a word with a letter of a given level has a last
+  position at that level.
 * `TauCeti.BraidWord.levelAt_stabilize_of_lt` and `TauCeti.BraidWord.signAt_stabilize_of_lt`:
   stabilization keeps the level and the sign of every letter of the original word, while
   `TauCeti.BraidWord.levelAt_stabilize_length` and `TauCeti.BraidWord.signAt_stabilize_length`
@@ -236,6 +240,60 @@ theorem signAt_eq_one_or_eq_neg_one {k : ℕ} (hk : k < w.length) :
     w.signAt k = 1 ∨ w.signAt k = -1 := by
   rw [signAt_of_lt w hk]
   rcases Int.units_eq_one_or w[k].2 with h | h <;> simp [h]
+
+/-- Appending a letter `y` puts its level at position `w.length` and keeps every other level. -/
+theorem levelAt_append_singleton (y : Fin (n - 1) × ℤˣ) (k : ℕ) :
+    (w ++ [y]).levelAt k = if k = w.length then some (y.1 : ℕ) else w.levelAt k := by
+  rw [levelAt_def, levelAt_def]
+  rcases lt_trichotomy k w.length with h | rfl | h
+  · simp [List.getElem?_append_left h, h.ne]
+  · simp
+  · simp only [h.ne', ↓reduceIte]
+    rw [List.getElem?_eq_none (by simp; omega), List.getElem?_eq_none h.le]
+
+/-- Appending a letter `y` puts its sign at position `w.length` and keeps every other sign. -/
+theorem signAt_append_singleton (y : Fin (n - 1) × ℤˣ) (k : ℕ) :
+    (w ++ [y]).signAt k = if k = w.length then (y.2 : ℤ) else w.signAt k := by
+  rw [signAt_def, signAt_def]
+  rcases lt_trichotomy k w.length with h | rfl | h
+  · simp [List.getElem?_append_left h, h.ne]
+  · simp
+  · simp only [h.ne', ↓reduceIte]
+    rw [List.getElem?_eq_none (by simp; omega), List.getElem?_eq_none h.le]
+
+/-- Appending a letter keeps the level of every letter of the original word. -/
+@[simp]
+theorem levelAt_append_singleton_of_lt (y : Fin (n - 1) × ℤˣ) {k : ℕ} (hk : k < w.length) :
+    (w ++ [y]).levelAt k = w.levelAt k := by
+  simp only [levelAt_append_singleton, hk.ne, ↓reduceIte]
+
+/-- Appending a letter keeps the sign of every letter of the original word. -/
+@[simp]
+theorem signAt_append_singleton_of_lt (y : Fin (n - 1) × ℤˣ) {k : ℕ} (hk : k < w.length) :
+    (w ++ [y]).signAt k = w.signAt k := by
+  simp only [signAt_append_singleton, hk.ne, ↓reduceIte]
+
+/-- The appended letter `y` of `w ++ [y]` has the level of `y`. -/
+theorem levelAt_append_singleton_length (y : Fin (n - 1) × ℤˣ) :
+    (w ++ [y]).levelAt w.length = some (y.1 : ℕ) := by
+  simp
+
+/-- The appended letter `y` of `w ++ [y]` has the sign of `y`. -/
+theorem signAt_append_singleton_length (y : Fin (n - 1) × ℤˣ) :
+    (w ++ [y]).signAt w.length = (y.2 : ℤ) := by
+  simp
+
+/-- A word with a letter of level `i` has a last position at level `i`. -/
+theorem exists_last_levelAt {i : ℕ} (h : ∃ x ∈ w, (x.1 : ℕ) = i) :
+    ∃ t < w.length, w.levelAt t = some i ∧ ∀ k, t < k → w.levelAt k ≠ some i := by
+  obtain ⟨x, hx, rfl⟩ := h
+  obtain ⟨k, hk, rfl⟩ := List.getElem_of_mem hx
+  let t := Nat.findGreatest (fun j ↦ w.levelAt j = some (w[k].1 : ℕ)) w.length
+  have htl : w.levelAt t = some (w[k].1 : ℕ) :=
+    Nat.findGreatest_spec (P := fun j ↦ w.levelAt j = some (w[k].1 : ℕ)) hk.le
+      (levelAt_of_lt w hk)
+  refine ⟨t, (levelAt_ne_none_iff w).1 (by simp [htl]), htl, fun j hj hjl ↦ ?_⟩
+  exact Nat.findGreatest_is_greatest hj ((levelAt_ne_none_iff w).1 (by simp [hjl])).le hjl
 
 /-- Stabilization keeps the level of every letter of the original word. -/
 @[simp]

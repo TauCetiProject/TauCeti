@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
 public import Mathlib.CategoryTheory.Sites.Abelian
 import TauCeti.Algebra.Homology.Ext.Basic
+import TauCeti.CategoryTheory.Yoneda
 
 /-!
 # Free sheaves of modules on objects of a site and relative `Ext`
@@ -46,6 +47,9 @@ supports in `S` for sheaves of `R`-modules; this is developed in
   morphisms `R_{V,U} ⟶ F` and sections of `F` over `V` restricting to zero along `i`;
 * `TauCeti.CategoryTheory.relativeFreeModuleYonedaSequence_shortExact`: the sequence
   `0 ⟶ R_U ⟶ R_V ⟶ R_{V,U} ⟶ 0` is short exact for a monomorphism `i`;
+* `TauCeti.CategoryTheory.relativeFreeModuleYonedaSheafMap`: the map `R_{V',U'} ⟶ R_{V,U}` induced
+  by a commutative square, and `TauCeti.CategoryTheory.isIso_relativeFreeModuleYonedaSheafMap_iff`,
+  its Yoneda criterion for being an isomorphism in terms of sections restricting to zero;
 * `TauCeti.CategoryTheory.relativeFreeModuleYonedaExtZeroEquiv`: the `R`-linear identification of
   `Ext⁰(R_{V,U}, F)` with the sections of `F` over `V` restricting to zero along `i`.
 
@@ -257,6 +261,20 @@ lemma coe_relativeFreeModuleYonedaSheafHomEquiv_map_comp (F : Sheaf J (ModuleCat
     coe_relativeFreeModuleYonedaSheafHomEquiv_apply,
     cokernel_π_relativeFreeModuleYonedaSheafMap_assoc,
     freeModuleYonedaSheafSectionsEquiv_naturality_left]
+
+/-- The map of relative free sheaves induced by a commutative square is an isomorphism if and only
+if, for every sheaf of `R`-modules `F`, restriction along `b` is a bijection from the sections over
+`V` vanishing along `i` to the sections over `V'` vanishing along `i'`. -/
+theorem isIso_relativeFreeModuleYonedaSheafMap_iff :
+    IsIso (relativeFreeModuleYonedaSheafMap J R i' i a b w) ↔
+      ∀ (F : Sheaf J (ModuleCat.{v} R)) (s : F.obj.obj (op V')),
+        s ∈ LinearMap.ker (F.obj.map i'.op).hom →
+          ∃! t : F.obj.obj (op V),
+            t ∈ LinearMap.ker (F.obj.map i.op).hom ∧ F.obj.map b.op t = s :=
+  isIso_iff_existsUnique_of_homEquiv _ (fun F ↦ F.obj.map b.op)
+    (fun F ↦ (relativeFreeModuleYonedaSheafHomEquiv J R i F).toEquiv)
+    (fun F ↦ (relativeFreeModuleYonedaSheafHomEquiv J R i' F).toEquiv)
+    (coe_relativeFreeModuleYonedaSheafHomEquiv_map_comp J R i' i a b w)
 
 end map
 

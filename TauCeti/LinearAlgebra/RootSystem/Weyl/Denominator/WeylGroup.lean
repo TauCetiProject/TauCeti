@@ -37,11 +37,14 @@ its normalized form `∑_{w ∈ W} sgn(w) e^{w(λ + ρ) - ρ} / ∏_{α > 0} (1 
 
 ## Main results
 
+* `RootPairing.mapDomain_smul_weylDenominator_eq_prod`: `w Δ = ∏_{α > 0} (1 - e^{-w α})`.
 * `TauCeti.mapDomain_smul_weylDenominator`: `w Δ = (-1)^{ℓ} e^{∑_{β > 0, w⁻¹ β < 0} β} Δ`.
 * `TauCeti.mapDomain_smul_weylDenominator_eq_zsmul`: `w Δ = sgn(w) e^{ρ - w ρ} Δ`.
 * `TauCeti.coeff_weylDenominator_dotAction`: the coefficient function of `Δ` transforms by the
   sign character under the dot action of the whole Weyl group.
 * `TauCeti.single_smul_mul_weylDenominator`: `e^{w λ} Δ = sgn(w) e^{w ⬝ λ} (w Δ)`.
+* `RootPairing.map_mapDomain_smul_weylDenominator_ne_zero`: `f (w Δ) ≠ 0` when `f Δ ≠ 0`, for
+  any ring homomorphism `f` out of `ℤ[M]`.
 
 ## References
 
@@ -51,11 +54,35 @@ its normalized form `∑_{w ∈ W} sgn(w) e^{w(λ + ρ) - ρ} / ∏_{α > 0} (1 
 
 public section
 
+universe u v w x y
+
+namespace RootPairing
+
+open TauCeti
+
+variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
+  [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  (P : RootPairing ι R M N) [Finite ι] [CharZero R] (b : P.Base) (w : P.weylGroup)
+
+/-- **A Weyl-group element moves the Weyl denominator factor by factor**:
+`w Δ = ∏_{α > 0} (1 - e^{-w α})`. -/
+theorem mapDomain_smul_weylDenominator_eq_prod :
+    AddMonoidAlgebra.mapDomain (w • ·) (weylDenominator P b) =
+      ∏ i ∈ posRootsFinset P b, (1 - AddMonoidAlgebra.single (-(w • P.root i)) 1) := by
+  -- `(w • ·)` is the underlying function of `DistribSMul.toAddMonoidHom M w`, along which
+  -- `mapDomain` is a ring homomorphism.
+  have hring : AddMonoidAlgebra.mapDomain (R := ℤ) (w • ·) (weylDenominator P b) =
+      AddMonoidAlgebra.mapDomainRingHom ℤ (DistribSMul.toAddMonoidHom M w)
+        (weylDenominator P b) := rfl
+  rw [hring, weylDenominator_def, map_prod]
+  simp only [map_sub, map_one, AddMonoidAlgebra.mapDomainRingHom_apply,
+    AddMonoidAlgebra.mapDomain_single, DistribSMul.toAddMonoidHom_apply, smul_neg]
+
+end RootPairing
+
 namespace TauCeti
 
 open RootPairing
-
-universe u v w x
 
 variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -82,16 +109,9 @@ theorem mapDomain_smul_weylDenominator :
       abel
     rw [Finset.prod_congr rfl fun i _ ↦ hfactor (P.root i), Finset.prod_mul_distrib]
     simp_rw [← AddMonoidAlgebra.single_neg, AddMonoidAlgebra.prod_single, Finset.prod_const, F]
-  -- `w` acts on `ℤ[M]` as a ring homomorphism, so it moves each factor of `Δ` separately. The
-  -- function `(w • ·)` is the underlying function of `DistribSMul.toAddMonoidHom M w`.
-  have hring : AddMonoidAlgebra.mapDomain (R := ℤ) (w • ·) (weylDenominator P b) =
-      AddMonoidAlgebra.mapDomainRingHom ℤ (DistribSMul.toAddMonoidHom M w)
-        (weylDenominator P b) := rfl
-  rw [hring, weylDenominator_def, map_prod,
+  rw [mapDomain_smul_weylDenominator_eq_prod, weylDenominator_def,
     ← Finset.prod_sdiff (inversionsFinset_subset_posRootsFinset P b w)]
-  simp only [map_sub, map_one, AddMonoidAlgebra.mapDomainRingHom_apply,
-    AddMonoidAlgebra.mapDomain_single, DistribSMul.toAddMonoidHom_apply, smul_neg,
-    weylGroup_apply_root]
+  simp only [weylGroup_apply_root]
   rw [prod_posRootsFinset_sdiff_inversionsFinset_comp_weylGroupToPerm P b w F]
   -- On an inversion `α` of `w`, the factor `1 - e^{-w α}` is `1 - e^{β}` for `β = -w α`.
   have hflip : ∏ i ∈ inversionsFinset P b w,
@@ -154,3 +174,26 @@ theorem coeff_weylDenominator_dotAction (w : P.weylGroup) (x : M) :
     _ = _ := congrArg ((weylSign P b w : ℤ) * ·) h.symm
 
 end TauCeti
+
+namespace RootPairing
+
+open TauCeti
+
+variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
+  [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  (P : RootPairing ι R M N) [Finite ι] [CharZero R] (b : P.Base)
+
+/-- **The moved Weyl denominator does not vanish where the Weyl denominator does not**: for a ring
+homomorphism `f` into a semiring, if `f Δ ≠ 0` then `f (w Δ) ≠ 0`, since `w Δ` is `Δ` times a
+signed exponential, a unit of `ℤ[M]`. -/
+theorem map_mapDomain_smul_weylDenominator_ne_zero {S : Type y} [Semiring S]
+    (f : AddMonoidAlgebra ℤ M →+* S) (hf : f (weylDenominator P b) ≠ 0) (w : P.weylGroup) :
+    f (AddMonoidAlgebra.mapDomain (w • ·) (weylDenominator P b)) ≠ 0 := by
+  rw [mapDomain_smul_weylDenominator, map_mul]
+  refine fun h ↦ hf ((IsUnit.map f ?_).mul_right_eq_zero.mp h)
+  refine IsUnit.of_mul_eq_one
+    (AddMonoidAlgebra.single (-∑ i ∈ inversionsFinset P b w⁻¹, P.root i)
+      ((-1) ^ (inversionsFinset P b w⁻¹).card)) ?_
+  simp [AddMonoidAlgebra.single_mul_single, ← mul_pow, AddMonoidAlgebra.one_def]
+
+end RootPairing

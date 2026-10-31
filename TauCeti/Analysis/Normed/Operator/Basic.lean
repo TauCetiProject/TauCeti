@@ -28,6 +28,10 @@ cancels against its inverse (`ContinuousLinearMap.ringInverse_apply_apply`,
 (`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`), and conversely a lower bound
 `‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
 (`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`).
+
+The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
+most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s * ‖A‖`
+(`ContinuousLinearMap.norm_sum_apply_apply_le`).
 -/
 
 public section
@@ -124,6 +128,18 @@ theorem norm_ringInverse_le_of_forall_norm_le {A : E →L[𝕜] E} (hA : IsUnit 
   simpa only [apply_ringInverse_apply hA] using h (Ring.inverse A y)
 
 end Inverse
+
+/-- The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm
+at most one is bounded by `#s * ‖A‖`. Along an orthonormal basis this bounds the trace of `A` by
+the dimension times its norm. -/
+theorem norm_sum_apply_apply_le {ι : Type*} (s : Finset ι) (A : X →L[𝕜] X →L[𝕜] Y)
+    {v : ι → X} (hv : ∀ i ∈ s, ‖v i‖ ≤ 1) : ‖∑ i ∈ s, A (v i) (v i)‖ ≤ s.card * ‖A‖ := by
+  refine (norm_sum_le _ _).trans ((Finset.sum_le_sum (g := fun _ ↦ ‖A‖) fun i hi ↦ ?_).trans_eq
+    (by simp))
+  calc ‖A (v i) (v i)‖ ≤ ‖A‖ * ‖v i‖ * ‖v i‖ := ((A (v i)).le_opNorm _).trans <|
+        mul_le_mul_of_nonneg_right (A.le_opNorm _) (norm_nonneg _)
+    _ ≤ ‖A‖ * 1 * 1 := by gcongr <;> exact hv i hi
+    _ = ‖A‖ := by ring
 
 end ContinuousLinearMap
 

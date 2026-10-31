@@ -163,6 +163,16 @@ noncomputable def rowFiniteTwistedDifferential (m : P → P →₀ A) :
     ((LinearMap.toSpanSingleton A (P →₀ A) (m x)).restrictScalars R).comp
       ((InternalGrading.ofDecomposition 𝒜).koszulTwist 1))
 
+/-- The differential on a finite-support vector is the coefficient differential plus the
+finite sum of its Koszul-twisted coefficients acting on the twisting rows. -/
+theorem rowFiniteTwistedDifferential_apply (m : P → P →₀ A) (f : P →₀ A) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f =
+      Finsupp.mapRange.linearMap d f +
+        f.sum (fun x a ↦ (InternalGrading.ofDecomposition 𝒜).koszulTwist 1 a • m x) := by
+  classical
+  simp [rowFiniteTwistedDifferential, Finsupp.lsum_apply, LinearMap.toSpanSingleton_apply,
+    Function.comp_def]
+
 /-- The differential evaluated on a single homogeneous coefficient. -/
 theorem rowFiniteTwistedDifferential_single (m : P → P →₀ A) (x : P)
     {q : ℤ} {a : A} (ha : a ∈ 𝒜 q) :

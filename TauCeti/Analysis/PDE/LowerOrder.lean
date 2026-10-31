@@ -111,42 +111,6 @@ lemma massFormLinear_apply (c : ℝ) :
 lemma continuous_massForm : Continuous (fun c : ℝ => massForm c) :=
   massFormLinear.continuous.congr fun c => massFormLinear_apply c
 
-section Continuity
-
-variable {X : Type*} [TopologicalSpace X]
-
-namespace Continuous
-
-/-- A continuous drift coefficient field gives a continuous field of drift forms. -/
-lemma driftForm {b : X → EuclideanSpace ℝ n} (hb : Continuous b) :
-    Continuous (fun x => PDE.driftForm (b x)) :=
-  continuous_driftForm.comp hb
-
-/-- A continuous mass coefficient field gives a continuous field of mass forms. -/
-lemma massForm {c : X → ℝ} (hc : Continuous c) :
-    Continuous (fun x => PDE.massForm (c x)) :=
-  continuous_massForm.comp hc
-
-end Continuous
-
-namespace ContinuousOn
-
-/-- A continuous drift coefficient field on a set gives a continuous field of drift forms on
-that set. -/
-lemma driftForm {s : Set X} {b : X → EuclideanSpace ℝ n} (hb : ContinuousOn b s) :
-    ContinuousOn (fun x => PDE.driftForm (b x)) s :=
-  continuous_driftForm.comp_continuousOn hb
-
-/-- A continuous mass coefficient field on a set gives a continuous field of mass forms on
-that set. -/
-lemma massForm {s : Set X} {c : X → ℝ} (hc : ContinuousOn c s) :
-    ContinuousOn (fun x => PDE.massForm (c x)) s :=
-  continuous_massForm.comp_continuousOn hc
-
-end ContinuousOn
-
-end Continuity
-
 /-! ## Drift form bounds -/
 
 /-- The drift form is bounded by the norm of the drift coefficient. -/
@@ -238,3 +202,39 @@ grind_pattern norm_massForm_apply_le_of_norm_le_of_le =>
 end PDE
 
 end TauCeti
+
+namespace Continuous
+
+variable {n : Type*} [Fintype n]
+variable {X : Type*} [TopologicalSpace X]
+
+/-- A continuous drift coefficient field gives a continuous field of drift forms. -/
+lemma driftForm {b : X → EuclideanSpace ℝ n} (hb : Continuous b) :
+    Continuous (fun x => TauCeti.PDE.driftForm (b x)) :=
+  TauCeti.PDE.continuous_driftForm.comp hb
+
+/-- A continuous mass coefficient field gives a continuous field of mass forms. -/
+lemma massForm {c : X → ℝ} (hc : Continuous c) :
+    Continuous (fun x => TauCeti.PDE.massForm (c x)) :=
+  TauCeti.PDE.continuous_massForm.comp hc
+
+end Continuous
+
+namespace ContinuousOn
+
+variable {n : Type*} [Fintype n]
+variable {X : Type*} [TopologicalSpace X]
+
+/-- A continuous drift coefficient field on a set gives a continuous field of drift forms on
+that set. -/
+lemma driftForm {s : Set X} {b : X → EuclideanSpace ℝ n} (hb : ContinuousOn b s) :
+    ContinuousOn (fun x => TauCeti.PDE.driftForm (b x)) s :=
+  TauCeti.PDE.continuous_driftForm.comp_continuousOn hb
+
+/-- A continuous mass coefficient field on a set gives a continuous field of mass forms on
+that set. -/
+lemma massForm {s : Set X} {c : X → ℝ} (hc : ContinuousOn c s) :
+    ContinuousOn (fun x => TauCeti.PDE.massForm (c x)) s :=
+  TauCeti.PDE.continuous_massForm.comp_continuousOn hc
+
+end ContinuousOn

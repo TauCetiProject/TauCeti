@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.AtomlessStandardBorel
 public import TauCeti.MeasureTheory.Measure.UnitIntervalMap
+public import Mathlib.MeasureTheory.Constructions.UnitInterval
 
 /-!
 # Transport from atomless standard Borel spaces
@@ -19,7 +20,9 @@ The resulting map may collapse sets of positive measure when the target has atom
 
 Normalization extends this to finite measures of equal mass, including zero mass when the
 target is nonempty. On a countable measurable source partition, one measurable map can
-simultaneously realize a prescribed law of matching mass on each cell.
+simultaneously realize a prescribed law of matching mass on each cell. Transporting a
+measurable set of finite measure onto a rescaled unit interval shows that an atomless measure
+takes every value between `0` and `μ s` on measurable subsets of `s` (Sierpiński's theorem).
 
 This is the nonatomic feasibility result for the Monge transport problem. It also supplies
 the map realization needed when approximating couplings by graph plans.
@@ -31,6 +34,7 @@ Theorems A.7 and A.9, for the two standard Borel transport results being compose
 public section
 
 open Function MeasureTheory
+open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
@@ -105,5 +109,30 @@ theorem exists_measurePreserving_sum_of_nullSingleton
     rw [← Measure.restrict_iUnion hAd hAm, hAu, Measure.restrict_univ]
   rw [hμ, Measure.map_sum hSm.aemeasurable]
   exact congrArg Measure.sum (funext fun i ↦ (hS i).map_eq)
+
+/-- **Sierpiński's theorem.** An atomless measure on a standard Borel space takes every value
+between `0` and `μ s` on measurable subsets of a measurable set `s` of finite measure. -/
+theorem exists_subset_measure_eq_of_nullSingleton {X : Type*} [MeasurableSpace X]
+    [StandardBorelSpace X] (μ : Measure X) [NullSingletonClass μ] {s : Set X}
+    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) {a : ℝ≥0∞} (ha : a ≤ μ s) :
+    ∃ t ⊆ s, MeasurableSet t ∧ μ t = a := by
+  rcases eq_or_ne (μ s) 0 with h0 | h0
+  · exact ⟨∅, Set.empty_subset s, MeasurableSet.empty, by simp [le_zero_iff.1 (h0 ▸ ha)]⟩
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hμs
+  obtain ⟨T, hT⟩ := exists_measurePreserving_of_nullSingleton_of_measure_univ_eq
+    (μ.restrict s) (μ s • (volume : Measure unitInterval)) (by simp)
+  have hr : (a / μ s).toReal ∈ unitInterval :=
+    ⟨ENNReal.toReal_nonneg, ENNReal.toReal_le_of_le_ofReal zero_le_one
+      (by simpa using ENNReal.div_le_of_le_mul (by simpa using ha))⟩
+  refine ⟨s ∩ T ⁻¹' Set.Iic ⟨_, hr⟩, Set.inter_subset_left,
+    hs.inter (hT.measurable measurableSet_Iic), ?_⟩
+  calc μ (s ∩ T ⁻¹' Set.Iic ⟨_, hr⟩) = μ.restrict s (T ⁻¹' Set.Iic ⟨_, hr⟩) := by
+        rw [Measure.restrict_apply' hs, Set.inter_comm]
+    _ = μ s * ENNReal.ofReal (a / μ s).toReal := by
+        rw [hT.measure_preimage measurableSet_Iic.nullMeasurableSet, Measure.smul_apply,
+          unitInterval.volume_Iic, smul_eq_mul]
+    _ = a := by
+        rw [ENNReal.ofReal_toReal (ENNReal.div_ne_top (ne_top_of_le_ne_top hμs ha) h0),
+          ENNReal.mul_div_cancel h0 hμs]
 
 end MeasureTheory.Measure

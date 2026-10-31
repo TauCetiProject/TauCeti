@@ -159,7 +159,7 @@ variable (k : Type u) (K : Type max u v) [CommRing k] [CommRing K] [Algebra k K]
 
 /-- Scalar extension of a generator's coordinate Hopf algebra is the corresponding generator over
 the extended coefficient ring. -/
-private noncomputable def generatorCoordinateAlgebraBaseChangeIso
+noncomputable def generatorCoordinateAlgebraBaseChangeIso
     (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
     CommHopfAlgCat.baseChange (K := K) (generatorCoordinateAlgebra k j) ≅
       generatorCoordinateAlgebra K j :=
@@ -171,7 +171,7 @@ private noncomputable def generatorCoordinateAlgebraBaseChangeIso
 
 /-- Each numbered root or torus generator over `K` is the scalar extension of the corresponding
 generator over `k`, under the canonical coordinate identifications. -/
-private theorem generatorCoordinateMap_baseChange (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
+theorem generatorCoordinateMap_baseChange (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
     ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54).inv ≫
         CommHopfAlgCat.baseChangeMap (generatorCoordinateMap k j)) ≫
         (generatorCoordinateAlgebraBaseChangeIso k K j).hom =

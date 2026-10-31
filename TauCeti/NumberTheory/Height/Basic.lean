@@ -27,7 +27,13 @@ absolute value separately: the local factor `⨆ i, v (z i)` is at most a consta
 `(⨆ j, v (x j)) ^ p` at the archimedean absolute values, and at most `(⨆ j, v (x j)) ^ p` at the
 nonarchimedean ones. `Height.mulHeight_le_of_forall_iSup_le` multiplies these estimates over all
 absolute values. This is how heights of polynomial expressions such as determinants are bounded,
-since no bound for the height of a sum in terms of the heights of its terms holds.
+since no bound for the height of a sum in terms of the heights of its terms holds. Its constant
+case `Height.mulHeight_le_pow_totalWeight` bounds the height of a single tuple whose local factors
+are at most `C` at the archimedean absolute values and at most `1` at the others; for instance a
+tuple of natural numbers at most `N ≥ 1` has height at most `N ^ totalWeight K`
+(`Height.mulHeight_natCast_le`). Conversely, two tuples with the same local factors everywhere
+have the same height (`Height.mulHeight_eq_of_forall_iSup_eq`), which computes the height of the
+tuple of powers `α ^ k`, `0 ≤ k ≤ d`, as `mulHeight₁ α ^ d` (`Height.mulHeight_pow_range`).
 
 ## Implementation notes
 
@@ -43,7 +49,9 @@ The ratio bounds are adapted from Ralf Stephan's `ArithmeticHeights/Northcott.le
 commit `e443c2479e19f7665b31d8e94e2317c8ced1ca06` (Apache 2.0). The local-to-global bound follows
 `DiophantineApproximation/HeightTransport.lean` in the same repository, snapshot
 `c26d909dc48cf7fe` (Apache 2.0); see also E. Bombieri and W. Gubler,
-*Heights in Diophantine Geometry* (2006), §1.6.
+*Heights in Diophantine Geometry* (2006), §1.6. The constant bound, the bound for natural numbers
+and the height of the tuple of powers follow `DiophantineApproximation/MonomialHeight.lean` in
+the same repository, commit `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
 -/
 
 public section
@@ -112,5 +120,56 @@ lemma mulHeight_le_of_forall_iSup_le {ι' : Type*} [Finite ι'] {x : ι → K} (
     exact finprod_le_finprod₀ (hasFiniteMulSupport_iSup_nonarchAbsVal hz)
       (fun v ↦ Real.iSup_nonneg fun _ ↦ AbsoluteValue.nonneg _ _)
       ((hasFiniteMulSupport_iSup_nonarchAbsVal hx).pow p) fun v ↦ hnon v.val v.prop
+
+omit [Finite ι] in
+/-- Two nonzero tuples with the same local factor `⨆ i, v (x i)` at every absolute value have
+the same height. -/
+lemma mulHeight_eq_of_forall_iSup_eq {ι' : Type*} {x : ι → K} {y : ι' → K} (hx : x ≠ 0)
+    (hy : y ≠ 0) (h : ∀ v : AbsoluteValue K ℝ, ⨆ i, v (x i) = ⨆ i, v (y i)) :
+    mulHeight x = mulHeight y := by
+  simp only [mulHeight_eq hx, mulHeight_eq hy, h]
+
+open AdmissibleAbsValues in
+/-- A tuple whose local factor `⨆ i, v (x i)` is at most `C` at every archimedean absolute value
+and at most `1` at every nonarchimedean one has height at most `C ^ totalWeight K`. -/
+lemma mulHeight_le_pow_totalWeight {x : ι → K} {C : ℝ} (hC : 1 ≤ C)
+    (harch : ∀ v ∈ archAbsVal (K := K), ⨆ i, v (x i) ≤ C)
+    (hnon : ∀ v ∈ nonarchAbsVal (K := K), ⨆ i, v (x i) ≤ 1) :
+    mulHeight x ≤ C ^ totalWeight K := by
+  simpa using mulHeight_le_of_forall_iSup_le (x := fun _ : Unit ↦ (1 : K))
+    (Function.ne_iff.mpr ⟨(), one_ne_zero⟩) x hC (p := 0)
+    (by simpa using harch) (by simpa using hnon)
+
+open AdmissibleAbsValues in
+/-- A tuple of natural numbers bounded by `N ≥ 1` has height at most `N ^ totalWeight K`. -/
+lemma mulHeight_natCast_le {n : ι → ℕ} {N : ℕ} (hN : 1 ≤ N) (hn : ∀ i, n i ≤ N) :
+    mulHeight (fun i ↦ (n i : K)) ≤ (N : ℝ) ^ totalWeight K := by
+  refine mulHeight_le_pow_totalWeight (mod_cast hN) (fun v _ ↦ ?_) fun v hv ↦ ?_
+  · exact Real.iSup_le (fun i ↦ (v.apply_nat_le_self (n i)).trans (mod_cast hn i))
+      (Nat.cast_nonneg N)
+  · exact Real.iSup_le (fun i ↦ (isNonarchimedean v hv).apply_natCast_le_one (by simp) (by simp))
+      zero_le_one
+
+/-- The tuple of powers `α ^ k`, `0 ≤ k ≤ d`, has height exactly `mulHeight₁ α ^ d`: at every
+absolute value its local factor is `max (v α) 1 ^ d`. -/
+lemma mulHeight_pow_range (α : K) (d : ℕ) :
+    mulHeight (fun k : Fin (d + 1) ↦ α ^ (k : ℕ)) = mulHeight₁ α ^ d := by
+  have key (v : AbsoluteValue K ℝ) :
+      ⨆ k : Fin (d + 1), v (α ^ (k : ℕ)) = ⨆ i : Fin 2, v (![α ^ d, 1] i) := by
+    have hv (i : Fin 2) : v (![α ^ d, 1] i) = ![v α ^ d, 1] i := by
+      fin_cases i <;> simp [map_pow]
+    have hr : ⨆ i : Fin 2, v (![α ^ d, 1] i) = max (v α ^ d) 1 := by
+      simpa [hv] using (max_eq_iSup (v α ^ d) 1).symm
+    rw [hr]
+    refine le_antisymm (Real.iSup_le (fun k ↦ ?_) (by positivity)) (max_le ?_ ?_)
+    · rw [map_pow]
+      rcases le_total (v α) 1 with h | h
+      · exact (pow_le_one₀ (v.nonneg _) h).trans (le_max_right _ _)
+      · exact (pow_le_pow_right₀ h (Nat.lt_succ_iff.mp k.isLt)).trans (le_max_left _ _)
+    · exact Finite.le_ciSup_of_le (Fin.last d) (by simp [map_pow])
+    · exact Finite.le_ciSup_of_le 0 (by simp)
+  rw [mulHeight_eq_of_forall_iSup_eq (Function.ne_iff.mpr ⟨0, by simp⟩)
+    (Function.ne_iff.mpr ⟨1, by simp⟩) key, ← mulHeight₁_pow, mulHeight₁_eq_mulHeight,
+    mulHeight_swap]
 
 end Height

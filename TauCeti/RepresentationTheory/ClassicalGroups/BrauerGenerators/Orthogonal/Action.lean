@@ -48,6 +48,11 @@ not part of this file.
 
 * `TauCeti.BrauerDiagram.orthogonalActionMatrix_mul`: **the loop rule for the matrices**,
   `M(D₁) * M(D₂) = |ι| ^ c • M(D₁ ∘ D₂)` with `c` the number of closed middle loops.
+* `TauCeti.BrauerDiagram.transpose_orthogonalActionMatrix` and
+  `TauCeti.BrauerDiagram.conjTranspose_orthogonalActionMatrix`: the transpose of the matrix of a
+  diagram, and also its conjugate transpose, is the matrix of the reflected diagram.
+* `TauCeti.toMatrix_brauerActionOrth`: an element of the Brauer algebra acts by the combination of
+  the matrices of the diagrams with its coefficients.
 * `TauCeti.brauerActionOrth_of_tensorPowerBasis`: a diagram sends a monomial basis tensor to the
   sum of the basis tensors whose labels, together with those of the input, are constant on its
   arcs.
@@ -66,7 +71,7 @@ not part of this file.
 
 public section
 
-open scoped TensorProduct
+open scoped Matrix TensorProduct
 
 namespace TauCeti
 
@@ -116,6 +121,24 @@ theorem orthogonalActionMatrix_mul [Fintype ι] (D₁ D₂ : BrauerDiagram k) :
         D₂.IsConstantOnArcs (Sum.elim u m)} := ⟨fun m => hC (m.2.1.composeDiagram m.2.2)⟩
     rw [Nat.card_of_isEmpty, Nat.cast_zero, mul_zero]
 
+/-- **Reflecting a diagram transposes its matrix**: the reflection `D.flip` exchanges the bottom
+and top boundary points, hence the input and output labellings. -/
+@[simp]
+theorem transpose_orthogonalActionMatrix (D : BrauerDiagram k) :
+    (D.orthogonalActionMatrix R ι)ᵀ = D.flip.orthogonalActionMatrix R ι := by
+  ext v u
+  simp
+
+/-- The entries of the matrix of a diagram are `0` and `1`, which every star structure fixes, so
+its conjugate transpose is its transpose, the matrix of the reflected diagram. -/
+@[simp]
+theorem conjTranspose_orthogonalActionMatrix [StarRing R] (D : BrauerDiagram k) :
+    (D.orthogonalActionMatrix R ι)ᴴ = D.flip.orthogonalActionMatrix R ι := by
+  rw [← transpose_orthogonalActionMatrix]
+  ext v u
+  simp only [Matrix.conjTranspose_apply, Matrix.transpose_apply, orthogonalActionMatrix_apply]
+  split_ifs <;> simp
+
 end BrauerDiagram
 
 variable (R : Type u) [CommSemiring R] (n k : ℕ)
@@ -142,6 +165,21 @@ theorem brauerActionOrth_of (D : BrauerDiagram k) :
       Matrix.toLin (tensorPowerBasis R n k) (tensorPowerBasis R n k)
         (D.orthogonalActionMatrix R (Fin n)) :=
   BrauerAlgebra.lift_of ..
+
+/-- **The matrix of the action.** In the monomial basis, an element `x` of the Brauer algebra acts
+by the combination `∑ D, x.coeff D • M(D)` of the matrices of the diagrams. -/
+theorem toMatrix_brauerActionOrth (x : BrauerAlgebra R (n : R) k) :
+    LinearMap.toMatrix (tensorPowerBasis R n k) (tensorPowerBasis R n k)
+        (brauerActionOrth R n k x) =
+      Finsupp.linearCombination R (fun D : BrauerDiagram k => D.orthogonalActionMatrix R (Fin n))
+        x.coeff := by
+  have h : (LinearMap.toMatrix (tensorPowerBasis R n k) (tensorPowerBasis R n k)).toLinearMap ∘ₗ
+        (brauerActionOrth R n k).toLinearMap =
+      Finsupp.linearCombination R (fun D : BrauerDiagram k => D.orthogonalActionMatrix R (Fin n)) ∘ₗ
+        (BrauerAlgebra.coeffLinearEquiv R (n : R) k).toLinearMap :=
+    (BrauerAlgebra.basis R (n : R) k).ext fun D => by
+      simp [BrauerAlgebra.basis_apply, brauerActionOrth_of, BrauerAlgebra.coeffLinearEquiv_apply]
+  simpa using LinearMap.congr_fun h x
 
 /-- **A Brauer diagram on a monomial basis tensor.** The diagram `D` sends the basis tensor `e_u`
 to the sum of the basis tensors `e_v` for which the labelling `Sum.elim u v` is constant on the
