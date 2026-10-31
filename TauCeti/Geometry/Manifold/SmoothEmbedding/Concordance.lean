@@ -44,6 +44,8 @@ source is the circle.
   source, a concordance from an embedding to its reparametrization by the final diffeomorphism.
 * `TauCeti.SmoothEmbedding.Concordance.ofDiffeotopies`: the trace of a diffeotopy of the target
   and one of the source run together, a concordance from `f` to `Φ.final ∘ f ∘ Ψ.final`.
+* `TauCeti.SmoothEmbedding.Concordance.collaredSmoothTransitionUnit`: the time reparametrization
+  of these traces, a smooth transition from `0` to `1` constant near both ends.
 * `TauCeti.SmoothEmbedding.Concordant`: the concordance relation.
 
 ## Main results
@@ -333,14 +335,28 @@ private theorem contMDiff_smoothTransitionUnit (hn : n ≤ ∞) :
   · exact Real.smoothTransition.continuous.subtype_mk _
   · exact (Real.smoothTransition.contDiff.of_le hn).contMDiff
 
-/-- A smooth transition which is constant on neighborhoods of both ends of the unit interval. -/
-private def collaredSmoothTransitionUnit (t : ℝ) : unitInterval :=
+/-- The time reparametrization `t ↦ Real.smoothTransition (2 * t - 1 / 2)` of the traces of
+diffeotopies, as a map into the unit interval: a smooth transition from `0` to `1` which is
+constant on neighborhoods of both ends of the unit interval. -/
+def collaredSmoothTransitionUnit (t : ℝ) : unitInterval :=
   smoothTransitionUnit (2 * t - 1 / 2)
 
-private theorem contMDiff_collaredSmoothTransitionUnit (hn : n ≤ ∞) :
+/-- The collared smooth transition at `t` is `Real.smoothTransition (2 * t - 1 / 2)`. -/
+@[simp]
+theorem coe_collaredSmoothTransitionUnit (t : ℝ) :
+    (collaredSmoothTransitionUnit t : ℝ) = Real.smoothTransition (2 * t - 1 / 2) :=
+  (rfl)
+
+/-- The collared smooth transition is `C^n` for every `n ≤ ∞`. -/
+theorem contMDiff_collaredSmoothTransitionUnit (hn : n ≤ ∞) :
     ContMDiff 𝓘(ℝ) (𝓡∂ 1) n collaredSmoothTransitionUnit :=
   (contMDiff_smoothTransitionUnit hn).comp
     (((contDiff_const.mul contDiff_id).sub contDiff_const).contMDiff)
+
+/-- The collared smooth transition is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_collaredSmoothTransitionUnit : Continuous collaredSmoothTransitionUnit :=
+  (Real.smoothTransition.continuous.comp (by fun_prop)).subtype_mk _
 
 private theorem collaredSmoothTransitionUnit_eq_zero_of_le {t : ℝ} (ht : t ≤ 1 / 4) :
     collaredSmoothTransitionUnit t = 0 :=
@@ -524,16 +540,13 @@ def ofDiffeotopies (hn : n ≤ ∞) (Φ : Diffeotopy J n N) (Ψ : Diffeotopy I n
       snd_apply_mem_Ioo := fun _ _ ht => by simpa using ht }
 
 /-- The joint trace of an ambient and a source diffeotopy at `(x, t)` applies `Ψ`, then `f`, then
-`Φ`, all at the reparametrized time `Real.smoothTransition (2 * t - 1 / 2)`. -/
+`Φ`, all at the reparametrized time `collaredSmoothTransitionUnit t`. -/
 @[simp]
 theorem ofDiffeotopies_apply (hn : n ≤ ∞) (Φ : Diffeotopy J n N) (Ψ : Diffeotopy I n M)
     (f : SmoothEmbedding I J n M N) (p : M × ℝ) :
     ofDiffeotopies hn Φ Ψ f p =
-      (Φ (⟨Real.smoothTransition (2 * p.2 - 1 / 2), Real.smoothTransition.nonneg _,
-        Real.smoothTransition.le_one _⟩, f (Ψ (⟨Real.smoothTransition (2 * p.2 - 1 / 2),
-          Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩, p.1))), p.2) := by
-  simp [← coe_toSmoothEmbedding, ofDiffeotopies, collaredSmoothTransitionUnit,
-    smoothTransitionUnit]
+      (Φ (collaredSmoothTransitionUnit p.2, f (Ψ (collaredSmoothTransitionUnit p.2, p.1))), p.2) :=
+  by simp [← coe_toSmoothEmbedding, ofDiffeotopies]
 
 end Concordance
 

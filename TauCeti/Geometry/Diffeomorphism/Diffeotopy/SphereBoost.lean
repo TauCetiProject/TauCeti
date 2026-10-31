@@ -38,6 +38,9 @@ great circle cut out by a linear isometry `ι : ℂ →ₗᵢ[ℝ] E` to the boo
   rapidity `a`.
 * `TauCeti.coe_circleBoostDiffeotopy_apply`, `TauCeti.coe_circleBoostDiffeotopy_final_apply`: the
   same for the circle boost diffeotopy.
+* `TauCeti.sphereBoost_circleBoostDiffeotopy_neg`,
+  `TauCeti.sphereBoost_circleBoostDiffeotopy_final_neg`: the boost toward `i` undoes the circle
+  boost diffeotopy of the opposite rapidity.
 -/
 
 public section
@@ -154,6 +157,18 @@ theorem coe_circleBoostDiffeotopy_apply (a : ℝ) (p : I × Circle) :
 theorem coe_circleBoostDiffeotopy_final_apply (a : ℝ) (z : Circle) :
     ((circleBoostDiffeotopy (m := m) a).final z : ℂ) = sphereBoost Complex.I a z :=
   coe_sphereBoostDiffeotopy_final_apply (E := ℂ) (v := Complex.I) (by simp) a z
+
+/-- At time `s`, the boost of rapidity `a * s` toward `i` undoes the circle boost diffeotopy of
+rapidity `-a`. -/
+theorem sphereBoost_circleBoostDiffeotopy_neg (a : ℝ) (s : I) (z : Circle) :
+    sphereBoost Complex.I (a * s) (circleBoostDiffeotopy (m := m) (-a) (s, z) : ℂ) = z := by
+  rw [coe_circleBoostDiffeotopy_apply, sphereBoost_sphereBoost (by simp) (Circle.norm_coe z),
+    neg_mul, add_neg_cancel, sphereBoost_zero, id]
+
+/-- The boost of rapidity `a` toward `i` undoes the final circle boost of rapidity `-a`. -/
+theorem sphereBoost_circleBoostDiffeotopy_final_neg (a : ℝ) (z : Circle) :
+    sphereBoost Complex.I a ((circleBoostDiffeotopy (m := m) (-a)).final z : ℂ) = z := by
+  simpa using sphereBoost_circleBoostDiffeotopy_neg (m := m) a 1 z
 
 end Circle
 

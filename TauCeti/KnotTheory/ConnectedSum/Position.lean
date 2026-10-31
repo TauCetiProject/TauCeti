@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.Inner
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.SphereBoost
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Straightening
@@ -31,8 +32,9 @@ parametrization:
 
 `boost ι a K w = sphereBoost (ι i) a (K (sphereBoost i (-a) w))`.
 
-It is concordant to `K`, through the traces of the ambient and the source boost diffeotopies
-(`TauCeti.SmoothCircleEmbedding.concordant_boost`). If `K` agrees with the great circle on a
+It is concordant to `K`, through the joint trace of the ambient and the source boost diffeotopies
+(`TauCeti.SmoothCircleEmbedding.boostConcordance`,
+`TauCeti.SmoothCircleEmbedding.concordant_boost`). If `K` agrees with the great circle on a
 neighbourhood `U` of `-i`, then the complement of `U` is a compact set of parameters whose image
 avoids `-v`, so it has height at least `-1 + ε` for some `ε > 0`; boosting by a rapidity `a` with
 `tanh a > 1 - ε` puts the boosted knot in connected-sum position
@@ -59,11 +61,18 @@ chosen representatives.
 
 * `TauCeti.SmoothCircleEmbedding.boost ι a K`: the knot `K` boosted by rapidity `a` toward `ι i`,
   with the boost undone on the parameter circle.
+* `TauCeti.SmoothCircleEmbedding.boostConcordance ι a K`: the concordance from `K` to its boost,
+  boosting the sphere and the circle simultaneously.
 
 ## Main results
 
 * `TauCeti.SmoothCircleEmbedding.concordant_boost`: a boosted knot is concordant to the knot.
-* `TauCeti.SmoothCircleEmbedding.boost_greatCircle`: boosting preserves the great circle.
+* `TauCeti.SmoothCircleEmbedding.sphereBoostDiffeotopy_greatCircle_circleBoostDiffeotopy`,
+  `TauCeti.SmoothCircleEmbedding.boost_greatCircle`: along the great circle the boosts of the
+  sphere and of the circle cancel, so boosting preserves the great circle.
+* `TauCeti.SmoothCircleEmbedding.eventually_forall_im_pos_of_circleBoostDiffeotopy_final_notMem`:
+  a large boost of the circle toward `i` carries the complement of a neighbourhood of `-i` into the
+  open upper half.
 * `TauCeti.SmoothCircleEmbedding.exists_isConnectedSumPosition_boost`,
   `TauCeti.SmoothCircleEmbedding.exists_concordant_isConnectedSumPosition`: a knot standard near
   the bottom point of the circle is concordant to a knot in connected-sum position.
@@ -96,16 +105,22 @@ attribute [local instance] finrank_real_complex_fact'
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)] {ι : ℂ →ₗᵢ[ℝ] E}
 
-/-- The image `ι i` of the point `i` under a linear isometry is a unit vector. -/
-private theorem norm_map_I (ι : ℂ →ₗᵢ[ℝ] E) : ‖ι Complex.I‖ = 1 := by simp
-
 /-- The **boosted knot**: `K` moved by the boost of rapidity `a` toward `ι i` in the ambient
 sphere, and reparametrized by the boost of rapidity `-a` toward `i` of the circle, which undoes
 the ambient boost along the great circle `ι`. -/
+@[expose]
 def boost (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ) (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
     SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1) :=
-  (K.transDiffeomorph (sphereBoostDiffeotopy (norm_map_I ι) a).final).compDiffeomorph
+  (K.transDiffeomorph (sphereBoostDiffeotopy ι.norm_map_I a).final).compDiffeomorph
     (circleBoostDiffeotopy (-a)).final
+
+/-- The boosted knot is `K` moved by the final boost of the sphere and reparametrized by the final
+boost of the circle. -/
+theorem boost_def (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ) (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+    boost ι a K =
+      (K.transDiffeomorph (sphereBoostDiffeotopy ι.norm_map_I a).final).compDiffeomorph
+        (circleBoostDiffeotopy (-a)).final :=
+  (rfl)
 
 /-- The boosted knot boosts `K` after undoing the boost on the parameter circle. -/
 theorem coe_boost_apply (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ)
@@ -115,15 +130,43 @@ theorem coe_boost_apply (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ)
   rw [boost, SmoothEmbedding.compDiffeomorph_apply, SmoothEmbedding.transDiffeomorph_apply,
     coe_sphereBoostDiffeotopy_final_apply]
 
-/-- **A boosted knot is concordant to the knot**, through the traces of the boost diffeotopies of
-the sphere and of the circle. -/
+/-- The **boost concordance** from `K` to the boosted knot
+`TauCeti.SmoothCircleEmbedding.boost ι a K`: the joint trace of the boost diffeotopies of the
+sphere and of the circle. At time `t` it is `K` boosted toward `ι i` by rapidity `a s` in the
+sphere and reparametrized by the boost toward `i` of rapidity `-a s` of the circle, where
+`s = Real.smoothTransition (2 * t - 1 / 2)` runs from `0` to `1`. -/
+def boostConcordance (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ)
+    (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+    SmoothEmbedding.Concordance K (boost ι a K) :=
+  SmoothEmbedding.Concordance.ofDiffeotopies le_rfl _ _ K
+
+/-- The boost concordance at `(w, t)`: the boosts of the sphere and of the circle at the time
+`SmoothEmbedding.Concordance.collaredSmoothTransitionUnit t`, applied around `K`. -/
+theorem boostConcordance_apply (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ)
+    (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) (p : Circle × ℝ) :
+    boostConcordance ι a K p =
+      (sphereBoostDiffeotopy (n := n) (m := ∞) ι.norm_map_I a
+        (SmoothEmbedding.Concordance.collaredSmoothTransitionUnit p.2,
+          K (circleBoostDiffeotopy (m := ∞) (-a)
+            (SmoothEmbedding.Concordance.collaredSmoothTransitionUnit p.2, p.1))), p.2) :=
+  SmoothEmbedding.Concordance.ofDiffeotopies_apply le_rfl _ _ K p
+
+/-- **A boosted knot is concordant to the knot**, through the boost concordance. -/
 theorem concordant_boost (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ)
     (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
     SmoothEmbedding.Concordant K (boost ι a K) :=
-  (SmoothEmbedding.Concordant.of_concordance
-    (SmoothEmbedding.Concordance.ofDiffeotopy le_rfl _ K)).trans
-      (SmoothEmbedding.Concordant.of_concordance
-        (SmoothEmbedding.Concordance.ofSourceDiffeotopy le_rfl _ _))
+  SmoothEmbedding.Concordant.of_concordance (boostConcordance ι a K)
+
+/-- Along the great circle `ι`, the boost diffeotopy of the sphere toward `ι i` of rapidity `a`
+undoes, at every time `s`, the boost diffeotopy of the circle toward `i` of rapidity `-a`. -/
+theorem sphereBoostDiffeotopy_greatCircle_circleBoostDiffeotopy (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ)
+    (s : unitInterval) (w : Circle) :
+    sphereBoostDiffeotopy (n := n) (m := ∞) ι.norm_map_I a
+        (s, greatCircle (n := n) ι (circleBoostDiffeotopy (m := ∞) (-a) (s, w))) =
+      greatCircle (n := n) ι w := by
+  ext
+  rw [coe_sphereBoostDiffeotopy_apply, coe_greatCircle_apply, LinearIsometry.sphereBoost_map,
+    sphereBoost_circleBoostDiffeotopy_neg, coe_greatCircle_apply]
 
 /-- Where the parameter, boosted back, lands on a stretch of `K` along the great circle, the
 boosted knot is the great circle. -/
@@ -132,16 +175,31 @@ private theorem boost_apply_eq_greatCircle (a : ℝ)
     (hw : K ((circleBoostDiffeotopy (m := ∞) (-a)).final w) =
       greatCircle (n := n) ι ((circleBoostDiffeotopy (m := ∞) (-a)).final w)) :
     boost (n := n) ι a K w = greatCircle (n := n) ι w := by
-  ext
-  rw [coe_boost_apply, hw, coe_greatCircle_apply, LinearIsometry.sphereBoost_map,
-    coe_circleBoostDiffeotopy_final_apply, sphereBoost_sphereBoost (by simp) (Circle.norm_coe w),
-    add_neg_cancel, sphereBoost_zero, id, coe_greatCircle_apply]
+  rw [boost_def, SmoothEmbedding.compDiffeomorph_apply, SmoothEmbedding.transDiffeomorph_apply, hw,
+    Diffeotopy.final_apply, Diffeotopy.final_apply,
+    sphereBoostDiffeotopy_greatCircle_circleBoostDiffeotopy]
 
 /-- **Boosting preserves the great circle.** -/
 @[simp]
 theorem boost_greatCircle (ι : ℂ →ₗᵢ[ℝ] E) (a : ℝ) :
     boost ι a (greatCircle (n := n) ι) = greatCircle ι :=
   SmoothEmbedding.ext fun _ => boost_apply_eq_greatCircle a rfl
+
+/-- **Boosting the circle away from a neighbourhood of `-i`.** For a neighbourhood `U` of the bottom
+point `-i` of the circle, once the rapidity `a` is large enough every parameter `w` whose boost
+back by rapidity `-a` lies outside `U` is in the open upper half of the circle. -/
+theorem eventually_forall_im_pos_of_circleBoostDiffeotopy_final_notMem {m : ℕ∞ω} {z₀ : Circle}
+    {U : Set Circle} (hU : U ∈ 𝓝 z₀) (hz₀ : (z₀ : ℂ) = -Complex.I) :
+    ∀ᶠ a in atTop, ∀ w : Circle, (circleBoostDiffeotopy (m := m) (-a)).final w ∉ U →
+      0 < (w : ℂ).im := by
+  obtain ⟨V, hVU, hVo, hz₀V⟩ := _root_.mem_nhds_iff.1 hU
+  have h := (hVo.isClosed_compl.isCompact.image continuous_subtype_val
+    ).eventually_forall_inner_sphereBoost_pos (v := Complex.I) (by simp)
+      (by rintro _ ⟨z, -, rfl⟩; exact Circle.norm_coe z) fun ⟨z, hz, hz'⟩ =>
+        hz ((Subtype.ext (hz'.trans hz₀.symm) : z = z₀) ▸ hz₀V)
+  filter_upwards [h] with a ha w hw
+  have hpos := ha _ ⟨_, fun h => hw (hVU h), rfl⟩
+  rwa [sphereBoost_circleBoostDiffeotopy_final_neg, Complex.real_inner_I_right] at hpos
 
 /-- **Boosting into connected-sum position.** A knot that agrees with the great circle `ι` near
 the bottom point `-i` of the circle is in connected-sum position for `ι` once boosted far enough
@@ -155,28 +213,16 @@ theorem exists_isConnectedSumPosition_boost
   -- Off `U`, the knot avoids `-ι i = K z₀`, and the parameter avoids `-i = z₀`; so a large boost
   -- carries both into the open upper hemispheres.
   have hKc : Continuous fun z => (K z : E) := continuous_subtype_val.comp K.contMDiff.continuous
-  have h₁ := (hC.image hKc).eventually_forall_inner_sphereBoost_pos (norm_map_I ι)
+  have h₁ := (hC.image hKc).eventually_forall_inner_sphereBoost_pos ι.norm_map_I
     (by rintro _ ⟨z, -, rfl⟩; exact norm_eq_of_mem_sphere (K z)) fun ⟨z, hz, hKz⟩ => hz <| by
       have hKz' : (K z : E) = -ι Complex.I := hKz
       have : K z = K z₀ := Subtype.ext <| by
         rw [hKz', hU z₀ hz₀U, coe_greatCircle_apply, hz₀, map_neg]
       exact K.isEmbedding.injective this ▸ hz₀U
-  have hzc : Continuous ((↑) : Circle → ℂ) := continuous_subtype_val
-  have h₂ := (hC.image hzc).eventually_forall_inner_sphereBoost_pos (v := Complex.I) (by simp)
-    (by rintro _ ⟨z, -, rfl⟩; exact Circle.norm_coe z) fun ⟨z, hz, hz'⟩ => by
-      have hzz₀ : z = z₀ := Subtype.ext (hz'.trans hz₀.symm)
-      exact hz (hzz₀ ▸ hz₀U)
-  obtain ⟨a, ha₁, ha₂⟩ := (h₁.and h₂).exists
-  set m := (circleBoostDiffeotopy (m := ∞) (-a)).final
   -- Boosting back a parameter `w` with `m w ∉ U` lands in the open upper half of the circle.
-  have him (w : Circle) (hw : m w ∉ U) : 0 < (w : ℂ).im := by
-    have hw' : (w : ℂ) = sphereBoost Complex.I a (m w) := by
-      rw [coe_circleBoostDiffeotopy_final_apply,
-        sphereBoost_sphereBoost (by simp) (Circle.norm_coe w), add_neg_cancel, sphereBoost_zero,
-        id]
-    have hpos := ha₂ _ ⟨m w, hw, rfl⟩
-    rw [← hw'] at hpos
-    simpa [Complex.inner] using hpos
+  obtain ⟨a, ha₁, him⟩ := (h₁.and (eventually_forall_im_pos_of_circleBoostDiffeotopy_final_notMem
+    (m := ∞) (hUo.mem_nhds hz₀U) hz₀)).exists
+  set m := (circleBoostDiffeotopy (m := ∞) (-a)).final
   refine ⟨a, ⟨fun {w} hw => ?_, fun {w} hw => ?_⟩⟩
   · -- Near a parameter in the closed lower half, the boosted-back parameters stay in `U`.
     have hmU : m ⁻¹' U ∈ 𝓝 w :=
@@ -184,8 +230,9 @@ theorem exists_isConnectedSumPosition_boost
     filter_upwards [hmU] with w' hw'
     exact boost_apply_eq_greatCircle a (hU _ hw')
   · by_cases hmw : m w ∈ U
-    · rw [boost_apply_eq_greatCircle a (hU _ hmw), coe_greatCircle_apply, ι.inner_map_map]
-      simpa [Complex.inner] using hw
+    · rw [boost_apply_eq_greatCircle a (hU _ hmw), coe_greatCircle_apply, ι.inner_map_map,
+        Complex.real_inner_I_right]
+      exact hw
     · rw [coe_boost_apply]
       exact ha₁ _ ⟨m w, hmw, rfl⟩
 
