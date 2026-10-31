@@ -25,9 +25,12 @@ is finitely generated, and it spans over `ℝ` exactly when `Λ` spans over `K`.
 
 * `Submodule.mixedImage Λ`: the image of `Λ` in `ι → mixedSpace K` under the coordinatewise mixed
   embedding, as a `ℤ`-submodule.
+* `Submodule.mixedImageEquiv Λ`: the `ℤ`-linear equivalence `Λ ≃ₗ[ℤ] Λ.mixedImage`.
 
 ## Main results
 
+* `NumberField.mixedEmbedding.mem_span_pi_latticeBasis`: the `ℤ`-span of
+  `Pi.basis fun _ ↦ latticeBasis K` is the coordinatewise image of `ι → 𝓞 K`.
 * `Submodule.discreteTopology_mixedImage_iff`: the mixed image is discrete exactly when the
   module is finitely generated; the instance form takes `[Module.Finite (𝓞 K) Λ]`.
 * `Submodule.span_real_mixedImage_eq_top_iff`: the mixed image spans `ι → mixedSpace K` over `ℝ`
@@ -59,6 +62,23 @@ open Module NumberField NumberField.mixedEmbedding
 
 variable {K : Type*} [Field K] {ι : Type*}
 
+namespace NumberField.mixedEmbedding
+
+/-- The `ℤ`-span of the basis `Pi.basis fun _ ↦ latticeBasis K` of `ι → mixedSpace K` is the image
+of `ι → 𝓞 K` under the mixed embedding applied in every coordinate; the coordinatewise form of
+`NumberField.mixedEmbedding.mem_span_latticeBasis`. -/
+theorem mem_span_pi_latticeBasis [NumberField K] [Fintype ι] {z : ι → mixedSpace K} :
+    z ∈ Submodule.span ℤ (Set.range (Pi.basis fun _ : ι ↦ latticeBasis K)) ↔
+      ∃ x : ι → 𝓞 K, (fun i ↦ mixedEmbedding K (x i)) = z := by
+  rw [(Pi.basis fun _ : ι ↦ latticeBasis K).mem_span_iff_repr_mem ℤ]
+  simp only [Pi.basis_repr, Sigma.forall, ← (latticeBasis K).mem_span_iff_repr_mem ℤ,
+    mem_span_latticeBasis, LinearMap.mem_range]
+  refine ⟨fun h ↦ ?_, fun ⟨x, hx⟩ i ↦ ⟨x i, by simp [← hx]⟩⟩
+  choose x hx using h
+  exact ⟨x, funext fun i ↦ by simpa using hx i⟩
+
+end NumberField.mixedEmbedding
+
 namespace Submodule
 
 /-- The **mixed image** of an `𝓞 K`-submodule `Λ` of `ι → K`: its image in `ι → mixedSpace K`
@@ -72,23 +92,23 @@ theorem mem_mixedImage {Λ : Submodule (𝓞 K) (ι → K)} {y : ι → mixedSpa
     y ∈ Λ.mixedImage ↔ ∃ x ∈ Λ, (fun i ↦ mixedEmbedding K (x i)) = y :=
   Iff.rfl
 
+@[gcongr]
 theorem mixedImage_mono {Λ Λ' : Submodule (𝓞 K) (ι → K)} (h : Λ ≤ Λ') :
     Λ.mixedImage ≤ Λ'.mixedImage :=
   fun _ ⟨x, hx, hxy⟩ ↦ ⟨x, h hx, hxy⟩
 
 variable [NumberField K]
 
-/-- The image of a vector with integral coordinates lies in the `ℤ`-span of the basis
-`Pi.basis fun _ ↦ latticeBasis K`. -/
-private theorem mixedEmbedding_mem_span_piLatticeBasis [Fintype ι] {x : ι → K}
-    (hx : ∀ i, IsIntegral ℤ (x i)) :
-    (fun i ↦ mixedEmbedding K (x i)) ∈
-      span ℤ (Set.range (Pi.basis fun _ : ι ↦ latticeBasis K)) := by
-  refine ((Pi.basis fun _ : ι ↦ latticeBasis K).mem_span_iff_repr_mem ℤ _).mpr fun ij ↦ ?_
-  rw [Pi.basis_repr]
-  refine ((latticeBasis K).mem_span_iff_repr_mem ℤ _).mp ?_ ij.2
-  rw [mem_span_latticeBasis]
-  exact ⟨⟨x ij.1, hx ij.1⟩, rfl⟩
+/-- The `ℤ`-linear equivalence between an `𝓞 K`-submodule `Λ` of `ι → K` and its mixed image,
+given by the mixed embedding in every coordinate. -/
+noncomputable def mixedImageEquiv (Λ : Submodule (𝓞 K) (ι → K)) :
+    Λ.restrictScalars ℤ ≃ₗ[ℤ] Λ.mixedImage :=
+  equivMapOfInjective _ (Function.Injective.piMap fun _ ↦ mixedEmbedding_injective K) _
+
+@[simp]
+theorem coe_mixedImageEquiv_apply (Λ : Submodule (𝓞 K) (ι → K)) (x : Λ.restrictScalars ℤ) :
+    (Λ.mixedImageEquiv x : ι → mixedSpace K) = fun i ↦ mixedEmbedding K ((x : ι → K) i) :=
+  coe_equivMapOfInjective_apply ..
 
 section Finite
 
@@ -125,7 +145,7 @@ private theorem discreteTopology_mixedImage_of_fg {Λ : Submodule (𝓞 K) (ι �
       ext1 i
       rw [Pi.smul_apply, map_zsmul, Int.cast_smul_eq_zsmul]
     rw [this]
-    exact mixedEmbedding_mem_span_piLatticeBasis (hint x hx)
+    exact mem_span_pi_latticeBasis.mpr ⟨fun i ↦ ⟨y • x i, hint x hx i⟩, rfl⟩
   refine DiscreteTopology.of_continuous_injective
     (f := fun z ↦ (⟨_, hmaps z⟩ : span ℤ (Set.range (Pi.basis fun _ : ι ↦ latticeBasis K))))
     (by fun_prop) fun z z' h ↦ ?_
