@@ -67,6 +67,8 @@ everywhere there with a function that is locally integrable on the whole space a
   extension by zero of a locally integrable function supported in a null-measurable compact subset.
 * `MeasureTheory.LocallyIntegrable.inner_const`: pairing with a fixed vector preserves local
   integrability.
+* `MeasureTheory.LocallyIntegrable.indicator₀`: restriction to a null-measurable set preserves
+  local integrability.
 * `MeasureTheory.Lp.locallyIntegrableOn`: an `Lᵖ` function on a set, with `1 ≤ p`, is locally
   integrable on it.
 * `ContinuousOn.memLp_restrict_of_subset_isCompact`: a function continuous on a compact set is in
@@ -300,6 +302,14 @@ theorem inner_const (hf : LocallyIntegrable f μ) (c : E) :
   simpa only [Function.comp_def, innerSLFlip_apply_apply] using
     locallyIntegrableOn_univ.1
       ((innerSLFlip 𝕜 c).locallyIntegrableOn_comp (hf.locallyIntegrableOn univ))
+
+/-- Restricting a locally integrable function to a null-measurable set preserves local
+integrability, the analogue of Mathlib's `MeasureTheory.Integrable.indicator₀`. -/
+theorem indicator₀ {F : Type*} [TopologicalSpace F] [ESeminormedAddMonoid F] {g : X → F}
+    (hg : LocallyIntegrable g μ) {s : Set X} (hs : NullMeasurableSet s μ) :
+    LocallyIntegrable (s.indicator g) μ :=
+  (hg.indicator (measurableSet_toMeasurable μ s)).congr
+    (indicator_ae_eq_of_ae_eq_set hs.toMeasurable_ae_eq)
 
 end MeasureTheory.LocallyIntegrable
 
