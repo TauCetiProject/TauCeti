@@ -9,8 +9,6 @@ public import Mathlib.RingTheory.Coalgebra.GroupLike
 public import TauCeti.Algebra.Category.FiniteHopfModuleCat.RightRigid
 public import TauCeti.CategoryTheory.Monoidal.Rigid.DualFunctor
 
-import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
-
 /-!
 # Monoidal trivializations of the double dual of finite-dimensional Hopf modules
 
@@ -29,16 +27,13 @@ of the antipode needed for left duals follows from the same hypothesis on `g`, b
 `TauCeti.HopfAlgebra.antipode_bijective_of_antipode_antipode`. For `U_q(sl₂)` the element
 `g = K⁻¹` satisfies both hypotheses.
 
-The proofs test morphisms into a double dual against evaluation (`ExactPairing.rightHom_ext`) and
-compute evaluations on pure tensors. The element forms of evaluation, of right adjoint mates and
-of the evaluation of a tensor product pairing are recorded along the way.
+The comparison is described on elements, `(j_M m)(φ) = φ(g m)`
+(`dualEquiv_unitEvalIso_hom_apply`), so that it can be computed against the element forms of
+evaluation, transposition and the tensor product pairing from
+`TauCeti.Algebra.Category.FiniteHopfModuleCat.RightRigid`.
 
 ## Main declarations
 
-* `TauCeti.FiniteHopfModuleCat.evaluation_tmul`,
-  `TauCeti.FiniteHopfModuleCat.dualEquiv_rightAdjointMate_apply`,
-  `TauCeti.FiniteHopfModuleCat.tensor_evaluation_tmul`: evaluation, transposition and the tensor
-  product pairing on elements.
 * `TauCeti.FiniteHopfModuleCat.unitEvalIso`: the isomorphism `M ≅ Mᘁᘁ`, `m ↦ (φ ↦ φ(g m))`.
 * `TauCeti.FiniteHopfModuleCat.unitEvalNatIso`: these isomorphisms as a natural isomorphism
   `𝟭 _ ≅ doubleRightDualFunctor _`.
@@ -54,6 +49,11 @@ of the evaluation of a tensor product pairing are recorded along the way.
 * P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor Categories*, Mathematical Surveys and
   Monographs 205, Sections 2.10 and 4.7, for the pivotal structure on modules over a Hopf
   algebra given by a group-like element implementing `S²`.
+
+The proofs of `unitEvalIso_unit_hom` and `unitEvalIso_tensor_hom` are modelled on Tau Ceti's
+unit and tensor compatibility proofs for the Drinfeld isomorphism, `TauCeti.drinfeldIso_unit_hom`
+and `TauCeti.braiding_hom_comp_braiding_hom_comp_drinfeldIso_tensor_hom` in
+`TauCeti.CategoryTheory.Monoidal.Rigid.Drinfeld`.
 -/
 
 public noncomputable section
@@ -68,60 +68,12 @@ universe u v
 
 variable {k : Type u} [Field k] {H : Type v} [Ring H] [HopfAlgebra k H]
 
-/-- Evaluation of the right dual applies the functional to the vector. -/
-@[simp]
-theorem evaluation_tmul (M : FiniteHopfModuleCat k H) (φ : (Mᘁ : FiniteHopfModuleCat k H))
-    (m : M) :
-    (ε_ M Mᘁ).hom.hom (tmul k H φ m) = (trivialEquiv k H).symm (dualEquiv k H M φ m) := by
-  -- The evaluation of the right dual is `dualEvaluation M`, by definition of the instance.
-  rw [show ε_ M Mᘁ = dualEvaluation M from rfl, dualEvaluation_hom_hom]
-  exact dualEval_tmul k H M φ m
-
-/-- The right adjoint mate of a morphism is its transpose. -/
-@[simp]
-theorem dualEquiv_rightAdjointMate_apply {M N : FiniteHopfModuleCat k H} (f : M ⟶ N)
-    (φ : (Nᘁ : FiniteHopfModuleCat k H)) (m : M) :
-    dualEquiv k H M ((fᘁ).hom.hom φ) m = dualEquiv k H N φ (f.hom.hom m) := by
-  have h := LinearMap.congr_fun
-    (congrArg (fun u => u.hom.hom) (rightAdjointMate_comp_evaluation f)) (tmul k H φ m)
-  simp only [hom_hom_comp, LinearMap.comp_apply] at h
-  rw [whiskerRight_tmul, whiskerLeft_tmul, evaluation_tmul, evaluation_tmul] at h
-  exact (trivialEquiv k H).symm.injective h
-
-omit [HopfAlgebra k H] in
-/-- The evaluation of a tensor product pairing, written with the module-level maps on the
-native carriers. -/
-private theorem dualEval_tensorMap_assoc_tmul [HopfAlgebra k H] {V W : Type*} [AddCommGroup V]
-    [Module k V] [Module H V] [IsScalarTower k H V] [AddCommGroup W] [Module k W] [Module H W]
-    [IsScalarTower k H W] (β : Dual k H W) (α : Dual k H V) (v : V) (w : W) :
-    dualEval k H W (tensorMap k H LinearMap.id (lid k H W).toLinearMap
-      (tensorMap k H LinearMap.id (tensorMap k H (dualEval k H V) LinearMap.id)
-        (tensorMap k H LinearMap.id (assoc k H (Dual k H V) V W).symm.toLinearMap
-          (assoc k H (Dual k H W) (Dual k H V) (Tensor k H V W)
-            (tmul k H (tmul k H β α) (tmul k H v w)))))) =
-      (trivialEquiv k H).symm (dualEquiv k H V α v * dualEquiv k H W β w) := by
-  simp [← LinearEquiv.map_smul]
-
-/-- The evaluation of the tensor product pairing of `(X₁, X₁ᘁ)` and `(X₂, X₂ᘁ)` sends
-`(β ⊗ α) ⊗ (x₁ ⊗ x₂)` to `α(x₁) β(x₂)`. -/
-@[simp]
-theorem tensor_evaluation_tmul (X₁ X₂ : FiniteHopfModuleCat k H)
-    (β : (X₂ᘁ : FiniteHopfModuleCat k H)) (α : (X₁ᘁ : FiniteHopfModuleCat k H))
-    (x₁ : X₁) (x₂ : X₂) :
-    (ε_ (X₁ ⊗ X₂) (X₂ᘁ ⊗ X₁ᘁ)).hom.hom
-        (tmul k H (tmul k H β α : ↑(X₂ᘁ ⊗ X₁ᘁ)) (tmul k H x₁ x₂ : ↑(X₁ ⊗ X₂))) =
-      (trivialEquiv k H).symm (dualEquiv k H X₁ α x₁ * dualEquiv k H X₂ β x₂) := by
-  have h : ε_ (X₁ ⊗ X₂) (X₂ᘁ ⊗ X₁ᘁ) = (α_ _ _ _).hom ≫
-      (X₂ᘁ : FiniteHopfModuleCat k H) ◁ (α_ _ _ _).inv ≫
-      (X₂ᘁ : FiniteHopfModuleCat k H) ◁ (ε_ X₁ X₁ᘁ ▷ X₂) ≫
-      (X₂ᘁ : FiniteHopfModuleCat k H) ◁ (λ_ X₂).hom ≫ ε_ X₂ X₂ᘁ := by
-    rw [ExactPairing.tensor_evaluation]; monoidal
-  rw [h, show ε_ X₁ X₁ᘁ = dualEvaluation X₁ from rfl, show ε_ X₂ X₂ᘁ = dualEvaluation X₂ from rfl]
-  simp only [hom_hom_comp, whiskerLeft_hom_hom, whiskerRight_hom_hom, associator_hom_hom,
-    associator_inv_hom, leftUnitor_hom_hom, dualEvaluation_hom_hom]
-  -- The carriers of the categorical tensor products and duals agree with the module-level
-  -- carriers only up to unfolding.
-  exact dualEval_tensorMap_assoc_tmul β α x₁ x₂
+/-- An identity `f ▷ Z ≫ e = e'` of morphisms out of a tensor product, evaluated on a pure
+tensor. -/
+private theorem whiskerRight_comp_tmul {A B C Z : FiniteHopfModuleCat k H} {f : A ⟶ B}
+    {e : B ⊗ Z ⟶ C} {e' : A ⊗ Z ⟶ C} (h : f ▷ Z ≫ e = e') (a : A) (z : Z) :
+    e.hom.hom (tmul k H (f.hom.hom a) z) = e'.hom.hom (tmul k H a z) := by
+  rw [← h, hom_hom_comp, LinearMap.comp_apply, whiskerRight_tmul]
 
 variable (g : Hˣ) (hg : ∀ a : H, HopfAlgebra.antipode k (HopfAlgebra.antipode k a) = g * a * ↑g⁻¹)
 
@@ -160,11 +112,7 @@ theorem unitEvalIso_hom_naturality {M N : FiniteHopfModuleCat k H} (f : M ⟶ N)
   rw [comp_whiskerRight, comp_whiskerRight, Category.assoc, Category.assoc,
     rightAdjointMate_comp_evaluation, ← whisker_exchange_assoc]
   ext m φ
-  rw [hom_hom_comp, LinearMap.comp_apply, hom_hom_comp, LinearMap.comp_apply, hom_hom_comp,
-    LinearMap.comp_apply, hom_hom_comp, LinearMap.comp_apply, whiskerRight_tmul, whiskerRight_tmul,
-    whiskerLeft_tmul, whiskerRight_tmul, evaluation_tmul, evaluation_tmul,
-    dualEquiv_unitEvalIso_hom_apply, dualEquiv_unitEvalIso_hom_apply,
-    dualEquiv_rightAdjointMate_apply, f.hom.hom.map_smul]
+  simp [f.hom.hom.map_smul]
 
 /-- The double dual comparisons `m ↦ (φ ↦ φ(g m))` as a natural isomorphism from the identity
 functor to the double right dual functor. -/
@@ -200,18 +148,14 @@ theorem unitEvalIso_unit_hom (hg₁ : IsGroupLikeElem k (g : H)) :
     rightDualIso_inv_whiskerRight_evaluation, ExactPairing.unit_evaluation, ← unitors_equal,
     leftUnitor_naturality]
   ext c ψ
-  rw [hom_hom_comp, LinearMap.comp_apply, whiskerRight_tmul, evaluation_tmul,
-    dualEquiv_unitEvalIso_hom_apply, hom_hom_comp, LinearMap.comp_apply, leftUnitor_hom_tmul]
+  simp only [hom_hom_comp, LinearMap.comp_apply, whiskerRight_tmul, evaluation_tmul,
+    dualEquiv_unitEvalIso_hom_apply, leftUnitor_hom_tmul]
   -- The identification `(𝟙_)ᘁ ≅ 𝟙_` evaluates a functional at the unit of `k`.
-  have hu := LinearMap.congr_fun (congrArg (fun f => f.hom.hom)
-    (rightDualIso_hom_whiskerRight_evaluation
-      (RightRigidCategory.rightDual (𝟙_ (FiniteHopfModuleCat k H))).exact exactPairingUnit))
-    (tmul k H ((trivialEquiv k H) c • ψ) ((trivialEquiv k H).symm 1 :
-      ↑(𝟙_ (FiniteHopfModuleCat k H))))
-  rw [ExactPairing.unit_evaluation] at hu
-  simp only [hom_hom_comp, LinearMap.comp_apply] at hu
-  rw [whiskerRight_tmul, rightUnitor_hom_tmul, evaluation_tmul, LinearEquiv.apply_symm_apply,
-    one_smul] at hu
+  have hu := whiskerRight_comp_tmul (rightDualIso_hom_whiskerRight_evaluation
+      (RightRigidCategory.rightDual (𝟙_ (FiniteHopfModuleCat k H))).exact exactPairingUnit)
+    ((trivialEquiv k H) c • ψ) ((trivialEquiv k H).symm 1)
+  rw [ExactPairing.unit_evaluation, rightUnitor_hom_tmul, evaluation_tmul,
+    LinearEquiv.apply_symm_apply, one_smul] at hu
   rw [hu]
   refine congrArg _ ?_
   -- `g` acts on the unit object by its counit, which is `1`.
@@ -256,23 +200,19 @@ theorem unitEvalIso_tensor_hom (hg₁ : IsGroupLikeElem k (g : H))
         (M := (Yᘁ : FiniteHopfModuleCat k H)) (N := (Xᘁ : FiniteHopfModuleCat k H)) with
       | hadd w w' hw hw' => rw [tmul_add, add_tmul, map_add, map_add, hw, hw']
       | htmul β α =>
-        rw [tensor_evaluation_tmul, tensor_evaluation_tmul, dualEquiv_unitEvalIso_hom_apply,
-          dualEquiv_unitEvalIso_hom_apply, mul_comm]
+        simp only [tensor_evaluation_tmul, dualEquiv_unitEvalIso_hom_apply, mul_comm]
     -- The comparison `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` carries the tensor product pairing to the evaluation
     -- of `(X ⊗ Y, (X ⊗ Y)ᘁ)`.
-    have hψ := LinearMap.congr_fun (congrArg (fun f => f.hom.hom)
-      (rightDualTensorIso_hom_whiskerRight_evaluation X Y))
-      (tmul k H ψ (tmul k H ((g : H) • x) ((g : H) • y) : ↑(X ⊗ Y)))
-    simp only [hom_hom_comp, LinearMap.comp_apply] at hψ
-    rw [whiskerRight_tmul, evaluation_tmul] at hψ
+    have hψ := whiskerRight_comp_tmul (rightDualTensorIso_hom_whiskerRight_evaluation X Y) ψ
+      (tmul k H ((g : H) • x) ((g : H) • y))
+    rw [evaluation_tmul] at hψ
     -- A group-like element acts diagonally on a tensor product.
     have hgxy : (g : H) • (tmul k H x y : ↑(X ⊗ Y)) = tmul k H ((g : H) • x) ((g : H) • y) :=
       (tensorEquiv k H X Y).injective <| by
         rw [tensorEquiv_smul_of_comul_eq_tmul hg₁.comul_eq_tmul_self]
         simp
-    rw [hom_hom_comp, LinearMap.comp_apply, whiskerRight_tmul, evaluation_tmul,
-      dualEquiv_unitEvalIso_hom_apply, hom_hom_comp, hom_hom_comp, LinearMap.comp_apply,
-      LinearMap.comp_apply, whiskerLeft_tmul, whiskerRight_tmul, tensorHom_tmul, key, hψ, hgxy]
+    simp only [hom_hom_comp, LinearMap.comp_apply, whiskerRight_tmul, whiskerLeft_tmul,
+      tensorHom_tmul, evaluation_tmul, dualEquiv_unitEvalIso_hom_apply, key, hψ, hgxy]
 
 /-- For a group-like unit `g` implementing the square of the antipode, the double dual
 comparisons `m ↦ (φ ↦ φ(g m))` form a monoidal natural isomorphism from the identity functor to

@@ -37,10 +37,8 @@ theorem antipode_bijective_of_antipode_antipode {g : Hˣ}
     (hg : ∀ a : H, antipode R (antipode R a) = g * a * ↑g⁻¹) :
     Function.Bijective (antipode R : H →ₗ[R] H) := by
   have h : Function.Bijective ((antipode R : H →ₗ[R] H) ∘ antipode R) := by
-    refine ⟨fun a b hab => ?_, fun a => ⟨↑g⁻¹ * a * g, ?_⟩⟩
-    · simp only [Function.comp_apply, hg] at hab
-      simpa [mul_assoc] using congrArg (fun x : H => ↑g⁻¹ * x * g) hab
-    · simp [hg, mul_assoc]
+    simpa only [Function.comp_def, hg] using
+      (Units.mulRight_bijective g⁻¹).comp (Units.mulLeft_bijective g)
   exact ⟨.of_comp h.1, .of_comp h.2⟩
 
 /-- The inverse linear map of an explicitly bijective antipode. -/
