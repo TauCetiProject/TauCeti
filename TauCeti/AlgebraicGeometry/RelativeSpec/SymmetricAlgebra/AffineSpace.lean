@@ -26,9 +26,6 @@ coordinates (`comp_relativeSpecSymmetricAlgebraFreeIso_hom_left`), and conversel
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.freeHomPushforwardEquiv`: module maps from the free sheaf on `I`
-  to the function algebra `f_* 𝒪_T` of `f : T ⟶ X` are `I`-indexed families of global functions
-  on `T`, naturally in `T` (`AlgebraicGeometry.Scheme.Hom.freeHomPushforwardEquiv_comp`);
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraFreeHomEquiv`: morphisms
   `T ⟶ Spec_X (Sym 𝒪_X^I)` over `X` are `I`-indexed families of global functions on `T`;
 * `TauCeti.AlgebraicGeometry.affineSpaceOver X I`: the affine space `𝔸(I; X)` as an affine scheme
@@ -49,57 +46,6 @@ open CategoryTheory MonoidalCategory Opposite
 universe u
 
 noncomputable section
-
-namespace AlgebraicGeometry.Scheme.Hom
-
-variable {X T T' : Scheme.{u}}
-
-/-- Module maps from the free sheaf on `I` to the function algebra `f_* 𝒪_T` of a morphism
-`f : T ⟶ X` are `I`-indexed families of global functions on `T`: a module map goes to the global
-functions on `T` that are its values on the basis sections. -/
-def freeHomPushforwardEquiv (f : T ⟶ X) (I : Type u) :
-    (SheafOfModules.free (R := X.ringCatSheaf) I ⟶
-        (Scheme.Modules.pushforward f).obj (𝟙_ T.Modules)) ≃ (I → Γ(T, ⊤)) :=
-  (SheafOfModules.freeHomEquiv _).trans <| Equiv.piCongrRight fun _ ↦
-    { toFun s := f.pushforwardStructureAlgebraΓRingEquiv.symm (s.val (op ⊤))
-      invFun b := PresheafOfModules.sectionsMk
-        (fun U ↦ ((Scheme.Modules.pushforward f).obj (𝟙_ T.Modules)).presheaf.map
-          U.unop.leTop.op (f.pushforwardStructureAlgebraΓRingEquiv b))
-        (fun _ _ _ ↦ (ConcreteCategory.congr_hom
-          (((Scheme.Modules.pushforward f).obj (𝟙_ T.Modules)).presheaf.map_comp _ _) _).symm)
-      left_inv s := PresheafOfModules.sections_ext _ _ fun U ↦
-        (congrArg _ (RingEquiv.apply_symm_apply _ _)).trans (s.property U.unop.leTop.op)
-      -- Over `⊤`, the restriction `homOfLE le_top` is the identity morphism of `⊤`.
-      right_inv b := (congrArg f.pushforwardStructureAlgebraΓRingEquiv.symm
-        (ConcreteCategory.congr_hom (((Scheme.Modules.pushforward f).obj
-          (𝟙_ T.Modules)).presheaf.map_id (op ⊤)) _)).trans (RingEquiv.symm_apply_apply _ b) }
-
-/-- The family of global functions of a module map `𝒪_X^I ⟶ f_* 𝒪_T` consists of its values on
-the basis sections, viewed as global functions on `T`. -/
-lemma freeHomPushforwardEquiv_apply (f : T ⟶ X) (I : Type u)
-    (φ : SheafOfModules.free (R := X.ringCatSheaf) I ⟶
-      (Scheme.Modules.pushforward f).obj (𝟙_ T.Modules)) (i : I) :
-    f.freeHomPushforwardEquiv I φ i =
-      f.pushforwardStructureAlgebraΓRingEquiv.symm
-        ((SheafOfModules.freeHomEquiv _ φ i).val (op ⊤)) :=
-  (rfl)
-
-/-- The bijection `freeHomPushforwardEquiv` is natural in the scheme over `X`: composing a module
-map with pullback of regular functions along `g : T' ⟶ T` pulls back its family of global
-functions along `g`. -/
-lemma freeHomPushforwardEquiv_comp {f : T ⟶ X} {f' : T' ⟶ X} (g : T' ⟶ T) (h : g ≫ f = f')
-    (I : Type u) (φ : SheafOfModules.free (R := X.ringCatSheaf) I ⟶
-      (Scheme.Modules.pushforward f).obj (𝟙_ T.Modules)) :
-    f'.freeHomPushforwardEquiv I (φ ≫ (pushforwardStructureAlgebraMap g h).hom.hom) =
-      g.appTop ∘ f.freeHomPushforwardEquiv I φ :=
-  -- By `SheafOfModules.freeHomEquiv_comp_apply`, the global section of `φ ≫ ψ` at a basis
-  -- element is the image under `ψ` of that of `φ`.
-  funext fun i ↦ (congrArg (pushforwardStructureAlgebraΓRingEquiv f').symm
-    (CommMon.sectionsAlgHom_apply (pushforwardStructureAlgebraMap g h) ⊤
-      ((SheafOfModules.freeHomEquiv _ φ i).val (op ⊤))).symm).trans
-    (pushforwardStructureAlgebraΓRingEquiv_symm_sectionsAlgHom g h _)
-
-end AlgebraicGeometry.Scheme.Hom
 
 namespace TauCeti.AlgebraicGeometry
 
