@@ -51,17 +51,6 @@ namespace TauCeti.IsAffinoidAlgebra
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
-section Algebraic
-
-variable {A : Type*} [CommRing A] [Algebra K A]
-
-/-- **The supremum seminorm is a norm exactly on reduced affinoid algebras.** -/
-theorem isReduced_iff_supSeminorm_eq_zero (hA : IsAffinoidAlgebra K A) :
-    IsReduced A ↔ ∀ f : A, supSeminorm K f = 0 → f = 0 := by
-  simp_rw [hA.supSeminorm_eq_zero_iff, isReduced_iff]
-
-end Algebraic
-
 variable {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A]
 
 /-- If the ideal `A°°` of topologically nilpotent elements is prime in `A°`, that is, if the
