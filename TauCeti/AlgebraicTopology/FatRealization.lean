@@ -291,7 +291,7 @@ private theorem exists_eq_of_partialInv_eq_some {n : SemiSimplexCategory} {x : X
 
 /-- If `φ : Y ⟶ X` is levelwise injective and a simplex of `X` lies in the image of `φ` whenever
 one of its faces does, then `‖φ‖ : ‖Y‖ ⟶ ‖X‖` is injective. -/
-theorem injective_map : Function.Injective (map φ) := fun q q' h ↦ Option.some.inj <| by
+theorem map_injective : Function.Injective (map φ) := fun q q' h ↦ Option.some.inj <| by
   rw [← partialInv_map hinj hsat q, ← partialInv_map hinj hsat q', h]
 
 end PartialInv
@@ -306,7 +306,7 @@ theorem isOpenEmbedding_map (hφ : ∀ n, IsOpenEmbedding (φ.app n))
       X.map f x ∈ range (φ.app n) → x ∈ range (φ.app m)) :
     IsOpenEmbedding (map φ) := by
   have hinj : ∀ n, Function.Injective (φ.app n) := fun n ↦ (hφ n).injective
-  refine .of_continuous_injective_isOpenMap (map φ).hom.continuous (injective_map hinj hsat)
+  refine .of_continuous_injective_isOpenMap (map φ).hom.continuous (map_injective hinj hsat)
     fun W hW ↦ ?_
   rw [isOpen_iff] at hW ⊢
   intro n
