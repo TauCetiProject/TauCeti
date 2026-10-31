@@ -83,11 +83,6 @@ theorem globalClassField_normSubgroup (N : GlobalNormSubgroups K) :
   let _ := N.2
   exact (globalAbelianExistence N.1.isOpen).choose_spec.2
 
--- Instance search does not find commutativity through the idele-class quotient abbreviation.
--- Supply it locally so Mathlib's generic subgroup normality instance applies.
-local instance : IsMulCommutative (IdeleClassGroup (𝓞 K) K) :=
-  ⟨⟨fun a b ↦ mul_comm a b⟩⟩
-
 /-- The attached layer is characterized by its norm subgroup among finite abelian layers. -/
 @[simp]
 theorem globalClassField_eq_iff (N : GlobalNormSubgroups K)
@@ -106,6 +101,7 @@ theorem globalClassField_le_iff (N₁ N₂ : GlobalNormSubgroups K) :
     N₁ ≤ N₂ ↔ (globalClassField N₁).1 ≤ (globalClassField N₂).1 := by
   rw [← globalNormSubgroup_le_iff_of_isAbelian (globalClassField N₂).2,
     globalClassField_normSubgroup, globalClassField_normSubgroup]
+  -- Both the subtype order and the open-subgroup order are inherited from subgroup inclusion.
   rfl
 
 /-- On fixed fields inside the separable closure, the global correspondence reverses inclusions.
