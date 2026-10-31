@@ -18,9 +18,10 @@ is the convex height sequence `H (start + k) = y₀ + ∑_{i < k} λᵢ` on a sp
 or half-line, with height `⊤` elsewhere. These are exactly the heights of
 `TauCeti.FiniteSlopeData` and `TauCeti.InfiniteSlopeData`. Since the Newton polygon is the
 greatest convex minorant of the coefficient heights, `H` lies below the Newton polygon of `f`
-exactly when every coefficient satisfies `H n ≤ v (coeff n f)`. Because `H` is `⊤` outside its
-domain, this includes the coefficients there having infinite valuation; the domain is part of the
-data, and agreement of endpoints is a separate statement.
+exactly when every coefficient satisfies `H n ≤ v (coeff n f)` (for admissible coefficient
+heights in the power-series case). Because `H` is `⊤` outside its domain, this includes the
+coefficients there having infinite valuation; the domain is part of the data, and agreement of
+endpoints is a separate statement.
 
 For a square matrix `A` the relevant polynomial is the Fredholm determinant
 `det (1 - X A) = Matrix.charpolyRev A`, the reverse of the characteristic polynomial. With this
@@ -44,9 +45,9 @@ example from row bounds or invariant factors, is a separate matter; here they ar
 ## Main results
 
 * `Polynomial.heights_le_newtonPolygon_iff`, `PowerSeries.heights_le_newtonPolygon_iff`: the
-  polygon of finite or infinite slope data lies below a Newton polygon exactly when the
-  cumulative slope sums bound the coefficient heights on its domain and the coefficients are
-  infinite outside it.
+  polygon of finite or infinite slope data lies below a Newton polygon (for admissible
+  coefficient heights in the power-series case) exactly when the cumulative slope sums bound the
+  coefficient heights on its domain and the coefficients are infinite outside it.
 * `Matrix.newtonPolygon_charpolyRev_zero`, `Matrix.newtonPolygon_charpolyRev_card`: the endpoint
   heights `0` and `v (det A)` of the Newton polygon of `det (1 - X A)`.
 * `Matrix.newtonSlopes_charpolyRev`, `Matrix.newtonSlopes_charpolyRev_eq_map_roots_map`: the
