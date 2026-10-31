@@ -8,7 +8,9 @@ module
 public import TauCeti.Geometry.Lie.Adjoint.Basic
 public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 public import TauCeti.Geometry.Manifold.Algebra.SMul
+public import TauCeti.Geometry.Manifold.VectorField.InfinitesimalAction
 public import TauCeti.Geometry.Manifold.VectorField.Regularity
+import TauCeti.Geometry.Manifold.VectorField.Related
 
 /-!
 # Fundamental vector fields of Lie group actions
@@ -22,6 +24,8 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
 ## Main definitions
 
 * `TauCeti.fundamentalVectorField I' ξ`: the fundamental vector field `ξ_M` on `M`.
+* `TauCeti.InfinitesimalAction.fundamental I G I' M`: for a smooth action of a real Lie group,
+  the infinitesimal action `ξ ↦ ξ_M` of its Lie algebra by fundamental vector fields.
 
 ## Main results
 
@@ -37,12 +41,16 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
 * `TauCeti.mfderiv_smul_fundamentalVectorField`: equivariance, `g_* ξ_M = (Ad_g ξ)_M`.
 * `TauCeti.isMIntegralCurve_mulInvariantExp_smul_smul`: the curve `t ↦ exp(t ξ) • x` is an
   integral curve of `ξ_M`, so `ξ_M` generates the flow `(t, x) ↦ exp(t ξ) • x`.
+* `TauCeti.mlieBracket_fundamentalVectorField`: `[ξ_M, η_M] = -⁅ξ, η⁆_M`, so `ξ ↦ ξ_M` is an
+  antihomomorphism of Lie algebras.
 
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 20, infinitesimal
   generators of Lie group actions.
 * Jerrold Marsden and Tudor Ratiu, *Introduction to Mechanics and Symmetry*, second edition, §9.3.
+  The bracket identity `[ξ_M, η_M] = -⁅ξ, η⁆_M` appears there and in Lee, Chapter 20; the proof
+  here pushes the bracket of right-invariant vector fields forward along an orbit map.
 * The smoothness proof adapts Sébastien Gouëzel's proof of Mathlib's
   `contMDiff_mulInvariantVectorField`, as already adapted in
   `contMDiff_mulInvariantVectorField_modelSpace`.
@@ -183,6 +191,52 @@ theorem mfderiv_smul_mulRightInvariantVectorField [ContMDiffMul I 1 G] [ContMDif
 
 end Field
 
+section Bracket
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I (minSmoothness 𝕜 3) G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [CompleteSpace E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' (minSmoothness 𝕜 2) M]
+  [MulAction G M] [ContMDiffSMul I I' (minSmoothness 𝕜 2) G M]
+
+/-- **Fundamental vector fields form an antihomomorphism.** For a `C²` left action of a Lie group,
+the Lie bracket of fundamental vector fields is `[ξ_M, η_M] = -⁅ξ, η⁆_M`. -/
+theorem mlieBracket_fundamentalVectorField (ξ η : GroupLieAlgebra I G) :
+    VectorField.mlieBracket I' (fundamentalVectorField (M := M) I' ξ)
+        (fundamentalVectorField I' η) = -fundamentalVectorField I' ⁅ξ, η⁆ := by
+  /- The orbit map `g ↦ g • x` relates the right-invariant vector fields `ξ^R, η^R` on `G` to
+  `ξ_M, η_M`, so it carries `[ξ^R, η^R] 1 = -⁅ξ, η⁆` to `[ξ_M, η_M] x`. -/
+  have h1 : (1 : ℕ∞ω) ≤ minSmoothness 𝕜 2 :=
+    (show (1 : ℕ∞ω) ≤ 2 by norm_num).trans le_minSmoothness
+  have h2 : (1 : ℕ∞ω) + 1 ≤ minSmoothness 𝕜 2 :=
+    (show (1 : ℕ∞ω) + 1 ≤ 2 by norm_num).trans le_minSmoothness
+  have : LieGroup I 1 G := LieGroup.of_le (I := I) (G := G) (m := 1) (n := minSmoothness 𝕜 3)
+    ((show (1 : ℕ∞ω) ≤ 3 by norm_num).trans le_minSmoothness)
+  have : IsManifold I' 1 M := .of_le h1
+  have : ContMDiffSMul I I' 1 G M := ContMDiffSMul.of_le (M := M) h1
+  have hfield (u : GroupLieAlgebra I G) (x : M) :
+      MDifferentiableAt I' I'.tangent
+        (fun y : M => (fundamentalVectorField I' u y : TangentBundle I' M)) x :=
+    (contMDiff_fundamentalVectorField h2 u x).mdifferentiableAt one_ne_zero
+  funext x
+  have h := mfderiv_mlieBracket_of_eventually_related
+    (ContMDiffSMul.contMDiff_smul_const (I := I) (I' := I') x 1) le_rfl
+    (GroupLieAlgebra.mdifferentiableAt_mulRightInvariantVectorField ξ)
+    (GroupLieAlgebra.mdifferentiableAt_mulRightInvariantVectorField η) (hfield ξ _) (hfield η _)
+    (Filter.Eventually.of_forall fun g => mfderiv_smul_mulRightInvariantVectorField ξ g x)
+    (Filter.Eventually.of_forall fun g => mfderiv_smul_mulRightInvariantVectorField η g x)
+  rw [GroupLieAlgebra.mlieBracket_mulRightInvariantVectorField, Pi.neg_apply, map_neg,
+    mulRightInvariantVectorField_one, ← fundamentalVectorField_apply] at h
+  -- The tangent spaces of `M` are all the model space `E'`, so the bracket can be transported
+  -- along `1 • x = x` as an `E'`-valued function.
+  exact (congrArg (fun y : M => (VectorField.mlieBracket I' (fundamentalVectorField I' ξ)
+    (fundamentalVectorField I' η) y : E')) (one_smul G x).symm).trans h.symm
+
+end Bracket
+
 section Real
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -254,5 +308,40 @@ theorem isMIntegralCurve_mulInvariantExp_smul_smul [CompleteSpace E]
       (one_smul ℝ _).symm
 
 end Real
+
+section InfinitesimalAction
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I (minSmoothness ℝ 3) G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
+  [ContMDiffSMul I I' ∞ G M]
+
+variable (I G I' M) in
+/-- The infinitesimal action `ξ ↦ ξ_M` of the Lie algebra of `G` on `M` by the fundamental vector
+fields of a smooth left action. -/
+def InfinitesimalAction.fundamental : InfinitesimalAction (GroupLieAlgebra I G) I' M where
+  toLinearMap :=
+    { toFun := fundamentalVectorField I'
+      map_add' := fundamentalVectorField_add
+      map_smul' := fundamentalVectorField_smul }
+  contMDiff_toLinearMap' ξ := contMDiff_fundamentalVectorField (m := ∞) (n := ∞) (by simp) ξ
+  toLinearMap_lie' ξ η := by
+    have h2 : minSmoothness ℝ 2 ≤ ∞ := by
+      rw [minSmoothness_of_isRCLikeNormedField]
+      exact ENat.LEInfty.out
+    have : IsManifold I' (minSmoothness ℝ 2) M := .of_le h2
+    have : ContMDiffSMul I I' (minSmoothness ℝ 2) G M := ContMDiffSMul.of_le (M := M) h2
+    simp only [LinearMap.coe_mk, AddHom.coe_mk, mlieBracket_fundamentalVectorField, neg_neg]
+
+/-- The infinitesimal action of a group action generates the fundamental vector fields. -/
+@[simp]
+theorem InfinitesimalAction.fundamental_apply (ξ : GroupLieAlgebra I G) :
+    InfinitesimalAction.fundamental I G I' M ξ = fundamentalVectorField I' ξ :=
+  (rfl)
+
+end InfinitesimalAction
 
 end TauCeti

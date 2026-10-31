@@ -73,10 +73,8 @@ theorem exists_bijective_aeval_symmetricAlgebraInvariants_of_isRegularLocalRing
     exact algebraMap_homogeneousSubmoduleZeroEquiv_apply k M ⟨x, hx⟩
   -- The irrelevant ideal of `A` is `A₊`.
   have hP : (HomogeneousIdeal.irrelevant (homogeneousSubmodule k M)).toIdeal.under A =
-      (HomogeneousIdeal.irrelevant (A.grading (homogeneousSubmodule k M))).toIdeal := by
-    ext x
-    rw [Ideal.mem_under, Subalgebra.algebraMap_apply, HomogeneousIdeal.mem_iff,
-      HomogeneousIdeal.mem_iff, Subalgebra.mem_irrelevant_grading_iff]
+      (HomogeneousIdeal.irrelevant (A.grading (homogeneousSubmodule k M))).toIdeal :=
+    (A.toIdeal_irrelevant_grading _).symm
   obtain ⟨f, hf, hbij⟩ := TauCeti.GradedAlgebra.exists_bijective_aeval_of_isRegularLocalRing
     (A.grading (homogeneousSubmodule k M)) hA _ hP ρ.ringKrullDim_atPrime_under_irrelevant
   exact ⟨f, fun i ↦ by simpa using hf i, hbij⟩

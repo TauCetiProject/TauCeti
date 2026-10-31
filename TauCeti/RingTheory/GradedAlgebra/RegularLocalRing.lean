@@ -9,10 +9,9 @@ public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 import Mathlib.RingTheory.KrullDimension.Field
-import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 import Mathlib.RingTheory.KrullDimension.Polynomial
 import Mathlib.RingTheory.Localization.AtPrime.Basic
-import TauCeti.RingTheory.GradedAlgebra.Nakayama
+import TauCeti.RingTheory.GradedAlgebra.Cotangent
 
 /-!
 # Connected graded algebras that are regular at the vertex
@@ -26,11 +25,11 @@ The proof lifts `n` generators of the maximal ideal of `A_{A₊}` to `A`. Since 
 outside `A₊` has a nonzero constant term, the lifts span the `k`-vector space `A₊ ⧸ A₊²`. This
 space is spanned by the classes of homogeneous elements, so at most
 `n` homogeneous elements of positive degree span it, and by the graded Nakayama lemma
-(`TauCeti.GradedAlgebra.adjoin_eq_top_of_irrelevant_le`) they generate `A` as a `k`-algebra.
+(`TauCeti.GradedAlgebra.surjective_aeval_of_irrelevant_le`) they generate `A` as a `k`-algebra.
 Thus `A` is a quotient of a polynomial ring in at most `n` variables, while `A` has Krull
-dimension at least `n`, the dimension of its localization. A nonzero kernel would drop the
-dimension of the quotient below the number of variables, so the evaluation map is an
-isomorphism and exactly `n` generators were needed.
+dimension at least `n`, the dimension of its localization. So exactly `n` generators were
+needed, and the evaluation map is an isomorphism
+(`TauCeti.GradedAlgebra.bijective_aeval_of_irrelevant_le`).
 
 No Noetherian hypothesis on `A` is needed: finite generation is a consequence.
 
@@ -216,38 +215,14 @@ theorem exists_bijective_aeval_of_isRegularLocalRing (h𝒜 : ∀ x ∈ 𝒜 0, 
   obtain ⟨a, ha⟩ := exists_irrelevant_le_span_sup 𝒜 h𝒜 P hP hn
   obtain ⟨t, htn, f, hf, hm⟩ := exists_homogeneous_irrelevant_le_span_sup 𝒜 a ha
   -- By the graded Nakayama lemma, the `fᵢ` generate `A`.
-  have hadj : Algebra.adjoin k (Set.range f) = ⊤ := by
-    have h0 := adjoin_eq_top_of_irrelevant_le 𝒜 (by rintro _ ⟨i, rfl⟩; exact hf i) hm
-    refine eq_top_iff.2 fun x hx' ↦ ?_
-    clear hx'
-    have hx : x ∈ Algebra.adjoin (𝒜 0) (Set.range f) := h0 ▸ Algebra.mem_top
-    induction hx using Algebra.adjoin_induction with
-    | mem x hx => exact Algebra.subset_adjoin hx
-    | algebraMap r =>
-      obtain ⟨c, hc⟩ := Algebra.mem_bot.1 (h𝒜 _ r.2)
-      rw [SetLike.GradeZero.algebraMap_apply, ← hc]
-      exact Subalgebra.algebraMap_mem _ c
-    | add x y _ _ hx hy => exact add_mem hx hy
-    | mul x y _ _ hx hy => exact mul_mem hx hy
-  have hsurj : Function.Surjective (MvPolynomial.aeval (R := k) f) := by
-    rw [← AlgHom.range_eq_top, ← Algebra.adjoin_range_eq_range_aeval, hadj]
+  have hsurj := surjective_aeval_of_irrelevant_le 𝒜 h𝒜 hf hm
   -- Compare Krull dimensions: `n ≤ dim A ≤ t ≤ n`.
   have hnA : (n : WithBot ℕ∞) ≤ ringKrullDim A := by
     rw [← hn, IsLocalization.AtPrime.ringKrullDim_eq_height P]
     exact Ideal.height_le_ringKrullDim_of_isPrime
   have hAt : ringKrullDim A ≤ t := by
-    simpa [ringKrullDim_eq_zero_of_field] using ringKrullDim_le_of_surjective _ hsurj
-  have hA : ringKrullDim A = n :=
-    le_antisymm (hAt.trans (by exact_mod_cast htn)) hnA
-  obtain rfl : t = n := le_antisymm htn (by exact_mod_cast hA ▸ hAt)
-  refine ⟨f, hf, ?_, hsurj⟩
-  -- A nonzero kernel would force `dim A + 1 ≤ t`.
-  rw [injective_iff_map_eq_zero]
-  by_contra! ⟨p, hp, hp0⟩
-  have := ringKrullDim_succ_le_of_surjective _ hsurj (mem_nonZeroDivisors_of_ne_zero hp0) hp
-  rw [hA, MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite,
-    ringKrullDim_eq_zero_of_field, zero_add, Nat.card_fin] at this
-  norm_cast at this
-  omega
+    simpa using ringKrullDim_le_of_surjective _ hsurj
+  obtain rfl : t = n := le_antisymm htn (by exact_mod_cast hnA.trans hAt)
+  exact ⟨f, hf, bijective_aeval_of_irrelevant_le 𝒜 h𝒜 hf hm (by simpa using hnA)⟩
 
 end TauCeti.GradedAlgebra
