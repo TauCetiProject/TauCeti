@@ -123,44 +123,43 @@ theorem marking_dualGraph (l : L) : (dualGraph g m).marking l = (m.point l).1 :=
   rfl
 
 /-- The endpoint `k` of an edge is the component of the flag point selected by `k`. -/
-theorem fst_flagPoint_finTwoEquiv (f : Flag) (k : Fin 2) :
+private theorem fst_flagPoint_finTwoEquiv (f : Flag) (k : Fin 2) :
     (flagPoint d (f, finTwoEquiv k)).1 = (dualGraph g m).endpoint f k := by
   fin_cases k <;> simp [finTwoEquiv, fstPoint_def, sndPoint_def]
+
+/-- The points of the range of an injective map into a sigma type lying over the index `i` are
+counted by the arguments mapped over `i`. -/
+private theorem ncard_preimage_sigmaMk_range {κ α : Type*} {Y : κ → Type*}
+    {φ : α → Σ i, Y i} (hφ : Function.Injective φ) (i : κ) :
+    (Sigma.mk i ⁻¹' range φ).ncard = {a | (φ a).1 = i}.ncard := by
+  have himage : range φ ∩ range (Sigma.mk i) = φ '' {a | (φ a).1 = i} := by
+    rw [range_sigmaMk]
+    ext z
+    constructor
+    · rintro ⟨⟨a, rfl⟩, hi⟩
+      exact ⟨a, hi, rfl⟩
+    · rintro ⟨a, hi, rfl⟩
+      exact ⟨⟨a, rfl⟩, hi⟩
+  rw [← preimage_inter_range, ncard_preimage_of_injective_subset_range sigma_mk_injective
+    inter_subset_right, himage, ncard_image_of_injective _ hφ]
 
 /-- **The valence of a vertex counts the flag points on its component.** -/
 theorem valence_dualGraph (i : ι) :
     (dualGraph g m).valence i = (Sigma.mk i ⁻¹' flagPointSet d).ncard := by
-  let φ : Flag × Fin 2 → Σ i, X i := fun h ↦ flagPoint d (h.1, finTwoEquiv h.2)
-  have hφ : Function.Injective φ := (flagPoint_injective d).comp
-    (Equiv.prodCongr (Equiv.refl Flag) finTwoEquiv).injective
-  have himage : flagPointSet d ∩ range (Sigma.mk i) =
-      φ '' {h | (flagPoint d (h.1, finTwoEquiv h.2)).1 = i} := by
-    rw [range_sigmaMk, flagPointSet_eq_range]
-    ext z
-    constructor
-    · rintro ⟨⟨⟨f, b⟩, rfl⟩, hi⟩
-      exact ⟨(f, finTwoEquiv.symm b), by simpa using hi, by simp [φ]⟩
-    · rintro ⟨h, hi, rfl⟩
-      exact ⟨⟨_, rfl⟩, hi⟩
-  rw [← preimage_inter_range, ncard_preimage_of_injective_subset_range sigma_mk_injective
-    inter_subset_right, himage, ncard_image_of_injective _ hφ, DualGraph.valence_def,
-    ← ncard_coe_finset]
-  simp only [Finset.coe_filter, Finset.mem_univ, true_and, fst_flagPoint_finTwoEquiv g m]
+  let e := Equiv.prodCongr (Equiv.refl Flag) finTwoEquiv
+  rw [flagPointSet_eq_range, ← e.surjective.range_comp,
+    ncard_preimage_sigmaMk_range ((flagPoint_injective d).comp e.injective),
+    DualGraph.valence_def, ← ncard_coe_finset]
+  simp only [Finset.coe_filter, Finset.mem_univ, true_and]
+  congr 1
+  ext ⟨f, k⟩
+  exact Iff.of_eq (congrArg (· = i) (fst_flagPoint_finTwoEquiv g m f k)).symm
 
 /-- **The number of markings of a vertex counts the marks on its component.** -/
 theorem numMarkings_dualGraph [Fintype L] (i : ι) :
     (dualGraph g m).numMarkings i = (Sigma.mk i ⁻¹' range m.point).ncard := by
-  have himage : range m.point ∩ range (Sigma.mk i) = m.point '' {l | (m.point l).1 = i} := by
-    rw [range_sigmaMk]
-    ext z
-    constructor
-    · rintro ⟨⟨l, rfl⟩, hi⟩
-      exact ⟨l, hi, rfl⟩
-    · rintro ⟨l, hi, rfl⟩
-      exact ⟨⟨l, rfl⟩, hi⟩
-  rw [← preimage_inter_range, ncard_preimage_of_injective_subset_range sigma_mk_injective
-    inter_subset_right, himage, ncard_image_of_injective _ m.point_injective,
-    DualGraph.numMarkings_def, ← ncard_coe_finset]
+  rw [ncard_preimage_sigmaMk_range m.point_injective, DualGraph.numMarkings_def,
+    ← ncard_coe_finset]
   simp only [Finset.coe_filter, Finset.mem_univ, true_and]
 
 /-- **The edges of the dual graph are counted by the nodes of the glued curve.** -/
