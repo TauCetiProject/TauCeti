@@ -24,9 +24,10 @@ is introduced.
 
 When `B ≠ 0` the affine point `(0, 0)` of the monic model is nonsingular and has order two; this
 is the distinguished point of order two `TauCeti.Montgomery.twoTorsionPoint`, through which every
-Montgomery curve has a rational point of order two. Over a domain with `B ≠ 0` the substitution
-above is a bijection between solutions of the Montgomery equation and solutions of the equation of
-the monic model, preserving and reflecting nonsingularity; no square root of `B` is needed.
+Montgomery curve has a rational point of order two. Over a domain with `B ≠ 0`, `(x, y)` solves
+the Montgomery equation exactly when its image `(B x, B² y)` under the substitution above solves
+the equation of the monic model, and likewise for nonsingular points; no square root of `B` is
+needed. Over a field this substitution is therefore a bijection between the two solution sets.
 
 This is the setting of Montgomery's `x`-only arithmetic, used in Lenstra's elliptic-curve
 factorization method: the projective `x`-coordinate of a native point determines it up to sign,
