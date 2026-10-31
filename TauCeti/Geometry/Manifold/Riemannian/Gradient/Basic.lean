@@ -108,6 +108,14 @@ theorem mvfderiv_apply_mgradient :
 theorem mgradient_eq_zero_iff : mgradient I f x = 0 ↔ mvfderiv I f x = 0 := by
   rw [mgradient, LinearIsometryEquiv.map_eq_zero_iff]
 
+variable (I) in
+/-- The gradient of a compactly supported function is compactly supported, since it vanishes off
+the support of the function. -/
+protected theorem _root_.HasCompactSupport.mgradient (hf : HasCompactSupport f) :
+    HasCompactSupport (β := E) (mgradient I f) :=
+  hf.mono' fun _ hx ↦ by_contra fun h ↦ hx <| mgradient_eq_zero_iff.2 <|
+    (notMem_tsupport_iff_eventuallyEq.1 h).mvfderiv_eq.trans mvfderiv_zero
+
 /-- The gradient has the same length as the differential it represents: the Riesz equivalence is
 an isometry. -/
 theorem norm_mgradient_eq_norm_mvfderiv (f : M → ℝ) (x : M) :

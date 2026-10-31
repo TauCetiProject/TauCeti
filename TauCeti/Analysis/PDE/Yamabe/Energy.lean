@@ -119,7 +119,7 @@ theorem integral_mul_conformalLaplacian {f u : M → ℝ} (hf : ContMDiff I 𝓘
         (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * (f x * u x))
         ∂riemannianVolume I M := by
   have : IsManifold I (0 + 1) M := by rw [zero_add]; infer_instance
-  -- `⟪grad f, grad u⟫ = df(grad u)` is continuous and vanishes off the support of `f`.
+  -- `⟪grad f, grad u⟫` is continuous and vanishes off the support of `grad f`.
   have hgrad : Integrable (fun x ↦ inner ℝ (mgradient I f x) (mgradient I u x))
       (riemannianVolume I M) := by
     -- The bundle argument of `ContMDiff.inner_bundle` is not inferred through `TangentSpace`.
@@ -127,11 +127,10 @@ theorem integral_mul_conformalLaplacian {f u : M → ℝ} (hf : ContMDiff I 𝓘
       ContMDiff.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x) (b := id)
         (contMDiff_mgradient (n := 0) (by rwa [zero_add]))
         (contMDiff_mgradient (n := 0) (by simpa using hu.of_le one_le_two))
-    refine hcont.continuous.integrable_of_hasCompactSupport
-      (hfc.mono' fun x hx ↦ by_contra fun h ↦ hx ?_)
-    dsimp only
-    rw [inner_mgradient, (notMem_tsupport_iff_eventuallyEq.1 h).mvfderiv_eq, mvfderiv_zero,
-      zero_apply]
+    refine hcont.continuous.integrable_of_hasCompactSupport ((hfc.mgradient I).mono' fun x hx ↦
+      subset_tsupport _ fun h ↦ hx ?_)
+    simp only [h]
+    exact inner_zero_left _
   rw [integral_mul_conformalLaplacian_eq_sub hf.continuous hfc hu,
     integral_add (hgrad.const_mul _) (integrable_scalarCurvature_mul hf.continuous hfc
       hu.continuous), integral_const_mul, integral_mul_laplaceBeltrami hf hfc hu]
@@ -143,18 +142,10 @@ theorem integral_mul_conformalLaplacian_right_eq_left {f u : M → ℝ} (hf : Co
     (hfc : HasCompactSupport f) (hu : ContMDiff I 𝓘(ℝ) 2 u) :
     ∫ x, f x * conformalLaplacian I u x ∂riemannianVolume I M =
       ∫ x, conformalLaplacian I f x * u x ∂riemannianVolume I M := by
-  -- `Δf = div (grad f)` vanishes off the support of `f`, since `grad f` does.
-  have hgradc : HasCompactSupport (β := E) (mgradient I f) :=
-    hfc.mono' fun x hx ↦ by_contra fun h ↦ hx <| mgradient_eq_zero_iff.2 <|
-      (notMem_tsupport_iff_eventuallyEq.1 h).mvfderiv_eq.trans mvfderiv_zero
-  have hΔfc : HasCompactSupport (laplaceBeltrami I f) :=
-    hgradc.mono' fun x hx ↦ by_contra fun h ↦ hx <| by
-      rw [laplaceBeltrami_def]
-      exact divergence_eq_zero_of_notMem_tsupport I h
   have hΔf : Integrable (fun x ↦ laplaceBeltrami I f x * u x) (riemannianVolume I M) :=
     ((contMDiff_laplaceBeltrami (n := 0) (m := 2) (k := 1) (by norm_num) (by norm_num)
       (by simpa using hf)).continuous.mul hu.continuous).integrable_of_hasCompactSupport
-      hΔfc.mul_right
+      (hfc.laplaceBeltrami I).mul_right
   have hpt (x : M) : conformalLaplacian I f x * u x =
       (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * (f x * u x) -
         conformalCoefficient (finrank ℝ E) * (laplaceBeltrami I f x * u x) := by
