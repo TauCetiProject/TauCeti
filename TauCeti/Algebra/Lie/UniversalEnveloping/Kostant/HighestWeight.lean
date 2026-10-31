@@ -111,10 +111,7 @@ theorem loweringWord_filter_ne_zero (l : List (ι × ℕ)) :
   induction l with
   | nil => rfl
   | cons p l ih =>
-    by_cases hp : p.2 = 0
-    · rw [List.filter_cons_of_neg (by simpa using hp), ih, loweringWord_cons, hp,
-        TauCeti.Associative.dividedPower_zero, one_mul]
-    · rw [List.filter_cons_of_pos (by simpa using hp), loweringWord_cons, loweringWord_cons, ih]
+    by_cases hp : p.2 = 0 <;> simp_all
 
 /-- Every lowering word lies in the simple-generator Kostant form. -/
 theorem loweringWord_mem_kostantForm (l : List (ι × ℕ)) :
@@ -148,11 +145,10 @@ theorem isCartanWeightVector_loweringWord {μ : ι → ℤ} {v : V}
     have hw : rootGeneratorWeight b (.inr p.1) = -b.A p.1 := by
       ext j
       simp
-    rw [hw, rootGenerator_inr, Module.End.smul_def, ← TauCeti.Associative.map_dividedPower,
-      ← Module.End.mul_apply, ← map_mul, ← loweringWord_cons] at h
     convert h using 1
-    simp only [List.map_cons, List.sum_cons, smul_neg]
-    abel
+    · simp only [hw, List.map_cons, List.sum_cons, smul_neg]
+      abel
+    · simp [Module.End.smul_def, TauCeti.Associative.map_dividedPower]
 
 /-! ### The orbit of a highest weight vector -/
 
@@ -165,30 +161,16 @@ private theorem dividedPower_f_apply_loweringWord (i : ι) (n : ℕ) (l : List (
       ρ (b.loweringWord ((i, n) :: l)) v := by
   rw [loweringWord_cons, map_mul, Module.End.mul_apply]
 
-/-- An endomorphism sending every lowering word applied to `v` into their `ℤ`-span preserves that
-span. -/
-private theorem apply_mem_span_loweringWord {T : Module.End ℚ V}
-    (hT : ∀ l, T (ρ (b.loweringWord l) v) ∈
-      Submodule.span ℤ (range fun l => ρ (b.loweringWord l) v))
-    {x : V} (hx : x ∈ Submodule.span ℤ (range fun l => ρ (b.loweringWord l) v)) :
-    T x ∈ Submodule.span ℤ (range fun l => ρ (b.loweringWord l) v) := by
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨l, rfl⟩ := hx
-    exact hT l
-  | zero => rw [map_zero]; exact zero_mem _
-  | add x y _ _ hx hy => rw [map_add]; exact add_mem hx hy
-  | smul z x _ hx => rw [map_zsmul]; exact Submodule.smul_mem _ z hx
-
 /-- The divided powers of the lowering generators preserve the span of the lowering words applied
 to `v`. -/
 private theorem dividedPower_f_apply_mem_span_loweringWord (i : ι) (n : ℕ) {x : V}
     (hx : x ∈ Submodule.span ℤ (range fun l => ρ (b.loweringWord l) v)) :
     ρ (TauCeti.Associative.dividedPower n (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.f i))) x ∈
       Submodule.span ℤ (range fun l => ρ (b.loweringWord l) v) :=
-  b.apply_mem_span_loweringWord ρ (fun l => by
-    rw [b.dividedPower_f_apply_loweringWord ρ]
-    exact Submodule.subset_span ⟨_, rfl⟩) hx
+  (Submodule.image_span_subset (LinearMap.restrictScalars ℤ _) _ _).2 (by
+    rintro _ ⟨l, rfl⟩
+    rw [LinearMap.restrictScalars_apply, b.dividedPower_f_apply_loweringWord ρ]
+    exact Submodule.subset_span ⟨_, rfl⟩) ⟨x, hx, rfl⟩
 
 /-- The integer translates of the Cartan binomials preserve the span of the lowering words
 applied to a weight vector of integral weight. -/
@@ -200,8 +182,8 @@ private theorem ringChoose_add_intCast_apply_mem_span_loweringWord
   refine TauCeti.ringChoose_end_apply_mem_span_of_apply_eq_intCast_smul
     (weight := fun l => (μ - (l.map fun p => p.2 • b.A p.1).sum) j + c) (fun l => ?_) k hx
   rw [LinearMap.add_apply,
-    (isCartanWeightVector_iff b.h ρ).1 (b.isCartanWeightVector_loweringWord ρ hv l) j,
-    Module.End.intCast_apply, ← Int.cast_smul_eq_zsmul ℚ, ← add_smul, Int.cast_add]
+    (isCartanWeightVector_iff b.h ρ).1 (b.isCartanWeightVector_loweringWord ρ hv l) j]
+  simp [add_smul, Int.cast_smul_eq_zsmul]
 
 /-- The divided powers of the raising generators preserve the span of the lowering words applied
 to a highest weight vector of integral weight: this is the induction on the word, using the
@@ -240,8 +222,8 @@ private theorem dividedPower_e_apply_loweringWord_mem_span
       have hshift : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.h j) - ((m + n : ℕ) : U) +
           ((2 * k : ℕ) : U)) = ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.h j)) +
             (((2 * k : ℕ) : ℤ) - ((m + n : ℕ) : ℤ) : ℤ) := by
-        rw [map_add, map_sub, map_natCast, map_natCast, Int.cast_sub, Int.cast_natCast,
-          Int.cast_natCast]
+        simp only [map_add, map_sub, map_natCast]
+        push_cast
         abel
       rw [Ring.map_choose, hshift]
       exact b.ringChoose_add_intCast_apply_mem_span_loweringWord ρ hv j _ k (ih (m - k))
@@ -276,8 +258,9 @@ theorem orbitOfRep_kostantForm_singleton_eq_span_loweringWord
       (fun j k x hx => ?_) u (by rwa [← kostantForm_def]) (Submodule.subset_span ⟨[], by simp⟩)
     · rcases i with i | i
       · rw [rootGenerator_inl]
-        exact b.apply_mem_span_loweringWord ρ
-          (fun l => b.dividedPower_e_apply_loweringWord_mem_span ρ hv he l i n) hx
+        exact (Submodule.image_span_subset (LinearMap.restrictScalars ℤ _) _ _).2
+          (by rintro _ ⟨l, rfl⟩; exact b.dividedPower_e_apply_loweringWord_mem_span ρ hv he l i n)
+          ⟨x, hx, rfl⟩
       · rw [rootGenerator_inr]
         exact b.dividedPower_f_apply_mem_span_loweringWord ρ i n hx
     · have h := b.ringChoose_add_intCast_apply_mem_span_loweringWord ρ hv j 0 k hx
