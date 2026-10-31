@@ -15,8 +15,8 @@ When every prime ideal of `A` is open, for instance when `A` is discrete, the tr
 every prime is a point of `Spa(A, A⁺)`, whatever the plus ring `A⁺`
 (`trivialSection_mem_spa_iff`). The trivial valuation of a prime `𝔭` takes only the values `0` and
 `1`, so it lies in the rational subset `R(T/s)` exactly when `s ∉ 𝔭`
-(`trivialSection_mem_rationalSubset_iff`). Testing a covering of rational subsets on these points
-turns it into a statement about prime ideals.
+(`trivialSection_mem_rationalSubset_iff`, in the rational-subset API). Testing a covering of
+rational subsets on these points turns it into a statement about prime ideals.
 
 If `R(T/s) ⊆ ⋃ⱼ R(Tⱼ/sⱼ)`, then the images of the `sⱼ` generate the unit ideal of the localization
 `A_s`: a maximal ideal of `A_s` containing all of them would contract to a prime `𝔭 ∌ s` of `A`
@@ -34,8 +34,6 @@ the unit ideal.
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.trivialSection_mem_rationalSubset_iff`: the trivial valuation of a
-  prime `𝔭` lies in `R(T/s)` exactly when `𝔭` is open and `s ∉ 𝔭`.
 * `TauCeti.ValuationSpectrum.span_eq_top_of_rationalSubset_subset_iUnion`: if every prime is open
   and `R(T/s) ⊆ ⋃ⱼ R(Tⱼ/sⱼ)`, the `sⱼ` generate the unit ideal of `A_s`.
 * `TauCeti.ValuationSpectrum.isUnit_algebraMap_of_rationalSubset_subset`: if every prime is open
@@ -52,16 +50,6 @@ public section
 namespace TauCeti.ValuationSpectrum
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] {Aplus : Subring A}
-
-/-- The trivial valuation of a prime `𝔭` lies in the rational subset `R(T/s)` exactly when `𝔭` is
-open and `s ∉ 𝔭`. Its values are `0` and `1`, so the numerator conditions `v(t) ≤ v(s)` hold as
-soon as `v(s) = 1`. -/
-theorem trivialSection_mem_rationalSubset_iff (Aplus : Subring A) (T : Finset A) (s : A)
-    (p : PrimeSpectrum A) :
-    trivialSection p ∈ rationalSubset Aplus T s ↔ IsOpen (p.asIdeal : Set A) ∧ s ∉ p.asIdeal := by
-  simp only [mem_rationalSubset_iff, trivialSection_mem_spa_iff, trivialSection_vle_iff,
-    p.asIdeal.zero_mem, not_true_eq_false, or_false]
-  tauto
 
 /-- **Rational covers when every prime is open.** If every prime ideal of `A` is open (for
 instance, `A` is discrete) and the rational subsets `R(Tⱼ/sⱼ)` cover `R(T/s)`, then the images of
