@@ -19,11 +19,15 @@ The surgery coefficient of a Dehn filling of a knot exterior is read in the fram
 torus neighbourhood `Φ : D² × S¹ → S³` (`TauCeti.FramedBoundaryTorus.value`): the slope `p / q` is
 the class `p · μ + q · λ`, where the meridian `μ` is `t ↦ Φ (exp (2πit), 1)` and the longitude `λ`
 is `t ↦ Φ (1, exp (2πit))`. Precomposing `Φ` with the reflection `(u, w) ↦ (conj u, w)` reverses
-`μ` and keeps `λ`, so it changes every coefficient `r` into `-r`. Surgery coefficients therefore
-only have their usual meaning (Rolfsen, *Knots and Links*, 9F and 9G), and only distinguish a
-surgered manifold from its mirror image, once `Φ` is required to preserve orientation, for the
-orientation `(Re u, Im u, t)` of `D² × S¹ ∋ (u, exp (t i))`. With that orientation the meridian
-`μ` has linking number `+1` with the core `t ↦ Φ (0, exp (t i))`.
+`μ` and keeps `λ`, so it changes every coefficient `r` into `-r`. The same holds in the preferred
+framing (`TauCeti.IsSolidTorusNeighborhood.preferredFramedBoundaryTorus`), in which
+`TauCeti.IsSolidTorusLinkNeighborhood.surgerySlope` reads surgery coefficients: its longitude is
+`λ - n · μ` for the framing number `n` of `Φ`, and the reflection sends `μ` to `-μ` and `n` to
+`-n`, so it fixes the preferred longitude and still turns `r` into `-r`. Surgery coefficients
+therefore only have their usual meaning (Rolfsen, *Knots and Links*, 9F and 9G), and only
+distinguish a surgered manifold from its mirror image, once `Φ` is required to preserve
+orientation, for the orientation `(Re u, Im u, t)` of `D² × S¹ ∋ (u, exp (t i))`. With that
+orientation the meridian `μ` has linking number `+1` with the core `t ↦ Φ (0, exp (t i))`.
 
 This file states that condition for a solid torus in the unit sphere `S³` of a four-dimensional
 real inner product space `E` with an orientation `o`. The sphere carries the boundary orientation
@@ -158,13 +162,21 @@ theorem IsOrientationPreservingAtCore.not_neg (h : IsOrientationPreservingAtCore
 
 attribute [local instance] finrank_euclideanSpace_fin_succ_fact
 
-/-- The standard solid torus neighbourhood `(u, ζ) ↦ (ζ, u) / √(1 + ‖u‖ ^ 2)` of the unknot
-preserves the standard orientation of `ℝ⁴` at its core point `(1, 0, 0, 0)`: the derivative of its
-reading there sends `(1, 0)`, `(i, 0)` and `(0, 1)` to the third, fourth and second standard
-basis vectors, and the determinant of `(e₁, e₃, e₄, e₂)` is `1`. -/
-theorem isOrientationPreservingAtCore_unknotSolidTorus :
-    IsOrientationPreservingAtCore unknotSolidTorus
-      (EuclideanSpace.basisFun (Fin 4) ℝ).toBasis.orientation := by
+/-- The core point `(0, 1)` of the standard neighbourhood of the unknot is the first standard
+basis vector of `ℝ⁴`. -/
+private theorem coe_unknotSolidTorus_zero_one :
+    (unknotSolidTorus (0, 1) : EuclideanSpace ℝ (Fin 4)) = EuclideanSpace.single 0 1 := by
+  ext i
+  fin_cases i <;> simp
+
+/-- The reading of the standard neighbourhood `(u, ζ) ↦ (ζ, u) / √(1 + ‖u‖ ^ 2)` of the unknot
+at its core has a derivative at the origin sending `(1, 0)`, `(i, 0)` and `(0, 1)` to the third,
+fourth and second standard basis vectors of `ℝ⁴`. -/
+private theorem exists_hasFDerivAt_coreReading_unknotSolidTorus :
+    ∃ L : ℂ × ℝ →L[ℝ] EuclideanSpace ℝ (Fin 4),
+      HasFDerivAt (SolidTorus.coreReading unknotSolidTorus) L 0 ∧
+        L (1, 0) = EuclideanSpace.single 2 1 ∧ L (I, 0) = EuclideanSpace.single 3 1 ∧
+          L (0, 1) = EuclideanSpace.single 1 1 := by
   -- The reading is `A ∘ F` near the origin, for the linear isometry `A : ℂ × ℂ → ℝ⁴` and
   -- `F (u, t) = (√(1 + ‖u‖ ^ 2))⁻¹ • (exp (t i), u)`.
   let A : ℂ × ℂ →L[ℝ] EuclideanSpace ℝ (Fin 4) :=
@@ -179,12 +191,33 @@ theorem isOrientationPreservingAtCore_unknotSolidTorus :
   have hG : HasFDerivAt G _ (0 : ℂ × ℝ) :=
     ((((ofRealCLM.hasFDerivAt).comp _ hasFDerivAt_snd).mul_const I).cexp).prodMk hasFDerivAt_fst
   have hF := A.hasFDerivAt.comp (0 : ℂ × ℝ) (hc.smul hG)
-  refine ⟨_, hF.congr_of_eventuallyEq ?_, ?_⟩
+  refine ⟨_, hF.congr_of_eventuallyEq ?_, ?_, ?_, ?_⟩
   · filter_upwards [SolidTorus.eventually_coreReading_eq unknotSolidTorus] with v ⟨hv, heq⟩
     rw [heq, coe_unknotSolidTorus_apply]
     simp [A, c, G, Circle.coe_exp]
-  · rw [Orientation.volumeForm_robust _ (EuclideanSpace.basisFun (Fin 4) ℝ) rfl]
-    simp [A, c, G, Basis.det_apply, Basis.toMatrix_apply, Matrix.det_succ_row_zero,
-      Fin.sum_univ_succ]
+  all_goals
+    ext i
+    fin_cases i <;> simp [A, c, G]
+
+/-- In the standard orientation of `ℝ⁴`, the basis `(e₁, e₃, e₄, e₂)` is positive: its
+determinant is `1`. -/
+private theorem volumeForm_single_zero_two_three_one :
+    (EuclideanSpace.basisFun (Fin 4) ℝ).toBasis.orientation.volumeForm
+      ![EuclideanSpace.single 0 1, EuclideanSpace.single 2 1, EuclideanSpace.single 3 1,
+        EuclideanSpace.single 1 1] = 1 := by
+  rw [Orientation.volumeForm_robust _ (EuclideanSpace.basisFun (Fin 4) ℝ) rfl]
+  simp [Basis.det_apply, Basis.toMatrix_apply, Matrix.det_succ_row_zero, Fin.sum_univ_succ]
+
+/-- The standard solid torus neighbourhood `(u, ζ) ↦ (ζ, u) / √(1 + ‖u‖ ^ 2)` of the unknot
+preserves the standard orientation of `ℝ⁴` at its core point `(1, 0, 0, 0)`: the derivative of its
+reading there sends `(1, 0)`, `(i, 0)` and `(0, 1)` to the third, fourth and second standard
+basis vectors, and the determinant of `(e₁, e₃, e₄, e₂)` is `1`. -/
+theorem isOrientationPreservingAtCore_unknotSolidTorus :
+    IsOrientationPreservingAtCore unknotSolidTorus
+      (EuclideanSpace.basisFun (Fin 4) ℝ).toBasis.orientation := by
+  obtain ⟨L, hL, h₁, hI, ht⟩ := exists_hasFDerivAt_coreReading_unknotSolidTorus
+  refine ⟨L, hL, ?_⟩
+  rw [coe_unknotSolidTorus_zero_one, h₁, hI, ht, volumeForm_single_zero_two_three_one]
+  exact one_pos
 
 end TauCeti
