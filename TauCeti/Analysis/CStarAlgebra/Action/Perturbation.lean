@@ -118,9 +118,7 @@ theorem eq_perturbationCocycle {f : ℝ → 𝓜(ℂ, A)} (hf₀ : f 0 = 1)
 theorem perturbationCocycle_mem_unitary {P : A} (hP : IsSelfAdjoint P) (t : ℝ) :
     α.perturbationCocycle P t ∈ unitary 𝓜(ℂ, A) :=
   dysonSeries_mem_unitary (continuous_perturbationPath α P) (fun s => by
-    have hcoe (a : A) : star (a : 𝓜(ℂ, A)) = ((star a : A) : 𝓜(ℂ, A)) :=
-      (map_star (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := A)) a).symm
-    simp [perturbationPath, star_smul, hcoe, ← map_star, hP.star_eq]) t
+    simp [perturbationPath, star_smul, ← DoubleCentralizer.coe_star, ← map_star, hP.star_eq]) t
 
 /-- The cocycle identity `Γ (s + t) = Γ s * α_s(Γ t)`, for the action induced on multipliers. -/
 theorem perturbationCocycle_add (s t : ℝ) :
@@ -206,19 +204,6 @@ theorem coe_perturbed_apply (t : Multiplicative ℝ) (a : A) :
         star (α.perturbationCocycle P t.toAdd) :=
   DoubleCentralizer.coe_conjStarAlgAut_apply _ _
 
-/-- Conjugating a differentiable path in `A` by a path of multipliers `U` with `U 0 = 1` and
-`U' 0 = i Q` adds the commutator `i[Q, ·]` to its derivative at `0`. -/
-private theorem hasDerivAt_conj_zero {Q : A} (hQ : IsSelfAdjoint Q) {U : ℝ → 𝓜(ℂ, A)}
-    (hU₀ : U 0 = 1) (hU : HasDerivAt U (Complex.I • (Q : 𝓜(ℂ, A))) 0) {f g : ℝ → A}
-    (hfg : ∀ t, (g t : 𝓜(ℂ, A)) = U t * f t * star (U t)) {v : A} (hf : HasDerivAt f v 0) :
-    HasDerivAt g (v + Complex.I • (Q * f 0 - f 0 * Q)) 0 := by
-  rw [← DoubleCentralizer.hasDerivAt_coe_iff, funext hfg]
-  convert (hU.mul (DoubleCentralizer.hasDerivAt_coe_iff.2 hf)).mul hU.star using 1
-  simp only [Pi.mul_apply, hU₀, star_one, mul_one, one_mul, star_smul, Complex.star_def,
-    Complex.conj_I, ← DoubleCentralizer.coeHom_apply (𝕜 := ℂ), ← map_star, hQ.star_eq, map_add,
-    map_smul, map_sub, map_mul, smul_mul_assoc, mul_smul_comm, neg_smul, mul_neg, smul_sub]
-  abel
-
 /-- The perturbation cocycle has derivative `i P` at time zero. -/
 private theorem hasDerivAt_perturbationCocycle_zero :
     HasDerivAt (α.perturbationCocycle P) (Complex.I • (P : 𝓜(ℂ, A))) 0 := by
@@ -229,7 +214,7 @@ private theorem hasDerivAt_perturbationCocycle_zero :
 private theorem hasDerivAt_perturbed_zero (a : α.generator.domain) :
     HasDerivAt (fun t : ℝ => α.perturbed hP (Multiplicative.ofAdd t) a)
       (α.generator a + Complex.I • (P * a - a * P)) 0 := by
-  simpa using hasDerivAt_conj_zero hP (α.perturbationCocycle_zero P)
+  simpa using DoubleCentralizer.hasDerivAt_conj_zero hP (α.perturbationCocycle_zero P)
     (hasDerivAt_perturbationCocycle_zero α)
     (fun t => α.coe_perturbed_apply hP (Multiplicative.ofAdd t) a) (α.hasDerivAt_zero a)
 
@@ -241,29 +226,23 @@ theorem perturbationCocycle_perturbed_neg (t : ℝ) :
     (f := fun s => star (α.perturbationCocycle P s)) (by simp) fun s => ?_).symm t
   have hu := α.perturbationCocycle_mem_unitary hP s
   convert (α.hasDerivAt_perturbationCocycle P s).star using 1
-  have hc : star ((α (Multiplicative.ofAdd s) P : A) : 𝓜(ℂ, A)) =
-      α (Multiplicative.ofAdd s) P := by
-    rw [← DoubleCentralizer.coeHom_apply (𝕜 := ℂ), ← map_star, ← map_star, hP.star_eq]
-  have hn : ((-(α (Multiplicative.ofAdd s) P) : A) : 𝓜(ℂ, A)) =
-      -(α (Multiplicative.ofAdd s) P : 𝓜(ℂ, A)) :=
-    map_neg (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := A)) _
-  rw [coe_perturbed_apply, toAdd_ofAdd, map_neg, hn, star_mul, star_smul, hc, Complex.star_def,
-    Complex.conj_I, mul_smul_comm, ← mul_assoc, ← mul_assoc, Unitary.star_mul_self_of_mem hu,
-    one_mul]
-  simp only [neg_mul, smul_neg, neg_smul, smul_mul_assoc]
+  simp only [coe_perturbed_apply, toAdd_ofAdd, map_neg, DoubleCentralizer.coe_neg, star_mul,
+    star_smul, ← DoubleCentralizer.coe_star, ← map_star, hP.star_eq, Complex.star_def,
+    Complex.conj_I, mul_smul_comm, ← mul_assoc, Unitary.star_mul_self_of_mem hu, one_mul, neg_smul,
+    mul_neg, smul_neg]
 
 /-- Perturbing the perturbed dynamics `α^P` by `-P` recovers `α`. -/
 @[simp]
 theorem perturbed_perturbed_neg : (α.perturbed hP).perturbed hP.neg = α := by
+  have h : ∀ t, perturbationUnitary (α.perturbed hP) hP.neg t = star (perturbationUnitary α hP t) :=
+    fun t => Subtype.ext (α.perturbationCocycle_perturbed_neg hP t)
   ext t a
-  apply DoubleCentralizer.coe_injective (𝕜 := ℂ)
-  have hu := α.perturbationCocycle_mem_unitary hP t.toAdd
-  rw [coe_perturbed_apply, perturbationCocycle_perturbed_neg, coe_perturbed_apply, star_star,
-    ← mul_assoc, ← mul_assoc, Unitary.star_mul_self_of_mem hu, one_mul, mul_assoc,
-    Unitary.star_mul_self_of_mem hu, mul_one]
+  change (DoubleCentralizer.conjStarAlgAut (perturbationUnitary _ hP.neg t.toAdd) *
+    (DoubleCentralizer.conjStarAlgAut (perturbationUnitary α hP t.toAdd) * α t)) a = α t a
+  rw [h, ← mul_assoc, ← map_mul, Unitary.star_mul_self, map_one, one_mul]
 
 /-- A bounded perturbation does not change the domain of the generator. -/
-theorem perturbed_generator_domain :
+theorem generator_perturbed_domain :
     (α.perturbed hP).generator.domain = α.generator.domain := by
   ext a
   refine ⟨fun ha => ?_, fun ha => ?_⟩
@@ -279,7 +258,7 @@ of `α`. -/
 theorem generator_perturbed :
     (α.perturbed hP).generator =
       (Complex.I • (LinearMap.mulLeft ℂ P - LinearMap.mulRight ℂ P)) +ᵥ α.generator := by
-  refine LinearPMap.ext (by rw [LinearPMap.vadd_domain, perturbed_generator_domain])
+  refine LinearPMap.ext (by rw [LinearPMap.vadd_domain, generator_perturbed_domain])
     fun a ha hb => ?_
   rw [LinearPMap.vadd_apply, (α.perturbed hP).generator_eq_of_hasDerivAt ha
     (hasDerivAt_perturbed_zero α hP ⟨a, hb⟩)]
