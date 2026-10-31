@@ -107,6 +107,11 @@ section AffineSpan
 variable {𝕜 V P : Type*} [Ring 𝕜] [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace P]
   [AddTorsor V P] {s t : Set P}
 
+/-- The intrinsic interior of the whole space is the whole space. -/
+@[simp]
+theorem intrinsicInterior_univ : intrinsicInterior 𝕜 (univ : Set P) = univ := by
+  simp [intrinsicInterior]
+
 /-- The intrinsic interior is monotone on sets with a common affine span. -/
 theorem intrinsicInterior_mono_of_affineSpan_eq (hst : s ⊆ t)
     (h : affineSpan 𝕜 s = affineSpan 𝕜 t) : intrinsicInterior 𝕜 s ⊆ intrinsicInterior 𝕜 t := by

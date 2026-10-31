@@ -28,8 +28,9 @@ describes them in the terms that subdivision needs.
   vertices `(x, b x)`, `x ∈ s`. Over a finite set `s` it is therefore a polytope; where `a = b` it
   collapses to the graph (`TauCeti.closedRegionBetween_self`).
 * `ContinuousAffineMap.intrinsicInterior_graphOn`, `ContinuousAffineMap.intrinsicFrontier_graphOn`:
-  the intrinsic interior and frontier of the graph of a continuous affine map lie over the
-  intrinsic interior and frontier of its domain.
+  the intrinsic interior of the graph of a continuous affine map lies over the intrinsic interior
+  of its domain, and, for a closed domain, its intrinsic frontier lies over the intrinsic frontier
+  of the domain.
 * `TauCeti.intrinsicInterior_closedRegionBetween`: if `a ≤ b` on `s`, with `a < b` somewhere on
   `s`, the intrinsic interior of the closed band is the open band over the intrinsic interior of
   `s`. For closed `s`, its intrinsic frontier therefore consists of the lower graph, the upper graph
@@ -126,12 +127,9 @@ private def graphShear : E × F ≃ᴬ[𝕜] E × F :=
     (ContinuousAffineEquiv.constVAdd 𝕜 (E × F) ((0 : E), f 0))
 
 private theorem graphShear_apply (p : E × F) : graphShear f p = (p.1, p.2 + f p.1) := by
-  rw [graphShear, ContinuousAffineEquiv.trans_apply, ← ContinuousAffineEquiv.coe_coe,
-    ContinuousAffineEquiv.constVAdd_coe, AffineEquiv.constVAdd_apply,
-    ContinuousLinearEquiv.coe_toContinuousAffineEquiv, ContinuousLinearEquiv.skewProd_apply]
   have hf : f p.1 = (f : E →ᵃ[𝕜] F).linear p.1 + f 0 := congrFun (f : E →ᵃ[𝕜] F).decomp p.1
-  simp only [vadd_eq_add, Prod.mk_add_mk, zero_add, hf, ContinuousLinearEquiv.refl_apply,
-    ContinuousAffineMap.coe_contLinear, Prod.mk.injEq, true_and]
+  change ((0 : E), f 0) +ᵥ (_ : E × F) = _
+  simp [ContinuousLinearEquiv.skewProd_apply, hf]
   abel
 
 private theorem graphOn_eq_image_graphShear (s : Set E) :
@@ -141,6 +139,7 @@ private theorem graphOn_eq_image_graphShear (s : Set E) :
 
 /-- The intrinsic interior of the graph of a continuous affine map over `s` is its graph over the
 intrinsic interior of `s`. -/
+@[simp]
 theorem intrinsicInterior_graphOn (s : Set E) :
     intrinsicInterior 𝕜 (s.graphOn f) = (intrinsicInterior 𝕜 s).graphOn f := by
   rw [graphOn_eq_image_graphShear, ContinuousAffineEquiv.intrinsicInterior_image,
@@ -168,6 +167,22 @@ section Band
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {a b : E →ᴬ[ℝ] ℝ} {s : Set E}
 
+/-- The points of a band lie in its affine span. -/
+private theorem mk_mem_affineSpan_closedRegionBetween {x : E} {t : ℝ} (hx : x ∈ s)
+    (ht : t ∈ Icc (a x) (b x)) : (x, t) ∈ affineSpan ℝ (closedRegionBetween a b s) :=
+  subset_affineSpan ℝ _ (mem_closedRegionBetween.2 ⟨hx, ht⟩)
+
+/-- A band which is nondegenerate somewhere contains the vertical direction in the direction of
+its affine span. -/
+private theorem vertical_mem_direction_closedRegionBetween (h : ∃ x ∈ s, a x < b x) :
+    ((0 : E), (1 : ℝ)) ∈ (affineSpan ℝ (closedRegionBetween a b s)).direction := by
+  obtain ⟨x₀, hx₀, hlt⟩ := h
+  have := Submodule.smul_mem _ (b x₀ - a x₀)⁻¹ <| AffineSubspace.vsub_mem_direction
+    (mk_mem_affineSpan_closedRegionBetween hx₀ ⟨hlt.le, le_rfl⟩)
+    (mk_mem_affineSpan_closedRegionBetween hx₀ ⟨le_rfl, hlt.le⟩)
+  convert this using 1
+  simp [inv_mul_cancel₀ (sub_pos.2 hlt).ne']
+
 /-- A band which is nondegenerate somewhere has the same affine span as the vertical cylinder over
 its base. -/
 private theorem affineSpan_closedRegionBetween (hab : ∀ x ∈ s, a x ≤ b x)
@@ -175,19 +190,10 @@ private theorem affineSpan_closedRegionBetween (hab : ∀ x ∈ s, a x ≤ b x)
     affineSpan ℝ (closedRegionBetween a b s) = affineSpan ℝ (s ×ˢ (univ : Set ℝ)) := by
   refine le_antisymm (affineSpan_mono ℝ fun p hp ↦ mk_mem_prod (mem_closedRegionBetween.1 hp).1
     (mem_univ _)) (affineSpan_le.2 ?_)
-  obtain ⟨x₀, hx₀, hlt⟩ := h
-  have hmem : ∀ x ∈ s, ∀ t ∈ Icc (a x) (b x),
-      (x, t) ∈ affineSpan ℝ (closedRegionBetween a b s) :=
-    fun x hx t ht ↦ subset_affineSpan ℝ _ (mem_closedRegionBetween.2 ⟨hx, ht⟩)
-  -- the nondegenerate fibre over `x₀` puts the vertical direction in the span
-  have hv : ((0 : E), (1 : ℝ)) ∈ (affineSpan ℝ (closedRegionBetween a b s)).direction := by
-    have := Submodule.smul_mem _ (b x₀ - a x₀)⁻¹ <| AffineSubspace.vsub_mem_direction
-      (hmem x₀ hx₀ (b x₀) ⟨hlt.le, le_rfl⟩) (hmem x₀ hx₀ (a x₀) ⟨le_rfl, hlt.le⟩)
-    convert this using 1
-    simp [inv_mul_cancel₀ (sub_pos.2 hlt).ne']
   rintro ⟨x, t⟩ ⟨hx, -⟩
-  convert AffineSubspace.vadd_mem_of_mem_direction (Submodule.smul_mem _ (t - a x) hv)
-    (hmem x hx (a x) ⟨le_rfl, hab x hx⟩) using 1
+  convert AffineSubspace.vadd_mem_of_mem_direction
+    (Submodule.smul_mem _ (t - a x) (vertical_mem_direction_closedRegionBetween h))
+    (mk_mem_affineSpan_closedRegionBetween hx ⟨le_rfl, hab x hx⟩) using 1
   simp
 
 /-- **Intrinsic interior of a band.** If `a ≤ b` on `s`, with `a < b` somewhere on `s`, the
@@ -199,8 +205,7 @@ theorem intrinsicInterior_closedRegionBetween (hab : ∀ x ∈ s, a x ≤ b x)
       regionBetween a b (intrinsicInterior ℝ s) := by
   have hspan := affineSpan_closedRegionBetween hab h
   have hcyl : intrinsicInterior ℝ (s ×ˢ (univ : Set ℝ)) = intrinsicInterior ℝ s ×ˢ univ := by
-    rw [intrinsicInterior_prod_eq]
-    simp [intrinsicInterior]
+    rw [intrinsicInterior_prod_eq, intrinsicInterior_univ]
   refine Subset.antisymm ?_ ?_
   · rintro ⟨x, t⟩ hp
     have hx : x ∈ intrinsicInterior ℝ s := by
@@ -209,13 +214,9 @@ theorem intrinsicInterior_closedRegionBetween (hab : ∀ x ∈ s, a x ≤ b x)
       rw [hcyl] at this
       exact this.1
     -- moving vertically in either direction stays in the band, so `t` is strictly inside
-    have hxs : x ∈ s := (mem_closedRegionBetween.1 (intrinsicInterior_subset hp)).1
-    have hv : ((0 : E), (1 : ℝ)) ∈ (affineSpan ℝ (closedRegionBetween a b s)).direction := by
-      rw [hspan, direction_affineSpan]
-      simpa using vsub_mem_vectorSpan ℝ (mk_mem_prod hxs (mem_univ (t + 1)))
-        (mk_mem_prod hxs (mem_univ t))
     have hev : ∀ᶠ ε in 𝓝 (0 : ℝ), a x ≤ t + ε ∧ t + ε ≤ b x := by
-      filter_upwards [eventually_add_smul_mem_of_mem_intrinsicInterior hp hv] with ε hε
+      filter_upwards [eventually_add_smul_mem_of_mem_intrinsicInterior hp
+        (vertical_mem_direction_closedRegionBetween h)] with ε hε
       simpa using (mem_closedRegionBetween.1 hε).2
     obtain ⟨ε, ⟨-, hε⟩, hε0⟩ := ((hev.filter_mono nhdsWithin_le_nhds).and
       self_mem_nhdsWithin).exists (f := 𝓝[>] (0 : ℝ))
