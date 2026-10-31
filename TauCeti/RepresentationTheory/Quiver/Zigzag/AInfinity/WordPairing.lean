@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.HochschildClass
+import TauCeti.Data.List.ProdOfFn
 
 /-!
 # Trace pairings detecting Hochschild classes of zigzag algebras in every arity
@@ -161,8 +162,8 @@ private theorem sum_trace_outer_eq_zero {n : ℕ} {a : (Fin (n + 2) → G.Dart) 
   have hinit : subword k (fun t ↦ α ((Fin.snoc u e : Fin (n + 2) → G.Dart) t)) 0 (n + 1) =
       subword k (fun t ↦ α (u t)) 0 (n + 1) :=
     subword_congr k _ _ (by omega) (by omega) fun j hj ↦ by
-      rw [show (⟨0 + j, by omega⟩ : Fin (n + 2)) = Fin.castSucc ⟨0 + j, by omega⟩ from rfl,
-        Fin.snoc_castSucc]
+      rw [show (⟨0 + j, by omega⟩ : Fin (n + 2)) = Fin.castSucc ⟨0 + j, by omega⟩ from
+        (Fin.castSucc_mk _ _ _).symm, Fin.snoc_castSucc]
   have htail : subword k (fun t ↦ α ((Fin.cons e u : Fin (n + 2) → G.Dart) t)) 1 (n + 1) =
       subword k (fun t ↦ α (u t)) 0 (n + 1) := by
     rw [show (fun t ↦ α ((Fin.cons e u : Fin (n + 2) → G.Dart) t)) =
@@ -255,28 +256,6 @@ section Anticyclic
 
 variable {B : Type*} [Semiring B] [Module k B]
 
-/-- Inserting two consecutive letters `d, e` into a word multiplies its product by `β d * β e` in
-a fixed position. -/
-private theorem exists_prod_ofFn_insertNth_insertNth {D M : Type*} [Monoid M] (β : D → M)
-    {n : ℕ} (p : Fin (n + 1)) (u : Fin n → D) :
-    ∃ L R : M, ∀ d e : D,
-      (List.ofFn fun t ↦
-        β ((Fin.insertNth p.castSucc d (Fin.insertNth p e u) : Fin (n + 2) → D) t)).prod =
-        L * β d * β e * R := by
-  induction n with
-  | zero =>
-    obtain rfl : p = 0 := Fin.fin_one_eq_zero p
-    exact ⟨1, 1, fun d e ↦ by simp [List.ofFn_succ, Fin.insertNth_zero']⟩
-  | succ n ih =>
-    rcases Fin.eq_zero_or_eq_succ p with rfl | ⟨q, rfl⟩
-    · exact ⟨1, (List.ofFn fun t ↦ β (u t)).prod, fun d e ↦ by
-        simp [List.ofFn_succ, Fin.insertNth_zero', mul_assoc]⟩
-    · obtain ⟨L, R, h⟩ := ih q (Fin.tail u)
-      refine ⟨β (u 0) * L, R, fun d e ↦ ?_⟩
-      rw [← Fin.cons_self_tail u, Fin.insertNth_succ_cons, ← Fin.succ_castSucc,
-        Fin.insertNth_succ_cons, List.ofFn_succ, List.prod_cons]
-      simp only [Fin.cons_zero, Fin.cons_succ, h, mul_assoc]
-
 variable [Fintype G.Dart] [DecidableEq V]
 
 /-- **Weights from an anticyclic functional.** Let `β` send each dart to an element of a semiring
@@ -308,7 +287,7 @@ theorem zigzagWordPairing_hochschildDifferential_eq_zero_of_anticyclic {n : ℕ}
       rw [show (fun t ↦ β ((Fin.cons e u : Fin (n + 2) → G.Dart) t)) =
           Fin.cons (β e) fun t ↦ β (u t) from Fin.comp_cons β e u, List.ofFn_cons, List.prod_cons]
     rw [hsnoc, hcons, hf]
-  · obtain ⟨L, R, h⟩ := exists_prod_ofFn_insertNth_insertNth β p u
+  · obtain ⟨L, R, h⟩ := List.exists_prod_ofFn_insertNth_insertNth β p u
     simp_rw [h]
     calc ∑ d : G.Dart with d.snd = v, f (L * β d * β d.symm * R)
         = f (L * (∑ d : G.Dart with d.snd = v, β d * β d.symm) * R) := by

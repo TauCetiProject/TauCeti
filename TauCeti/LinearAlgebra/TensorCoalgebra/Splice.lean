@@ -34,6 +34,10 @@ block.
 
 * `TauCeti.ReducedTensorWords.splice_congr`: a spliced word depends only on the letters spliced.
 * `TauCeti.ReducedTensorWords.map_splice`: mapping a spliced word maps each of its letters.
+* `TauCeti.ReducedTensorWords.splice_two_eq_of_tprod_insertNth`,
+  `TauCeti.ReducedTensorWords.splice_init_eq_of_tprod` and
+  `TauCeti.ReducedTensorWords.splice_tail_eq_of_tprod`: collapsing two consecutive letters, or all
+  but the last or the first letter, of a word.
 * `TauCeti.ReducedTensorWords.deconcatenation_splice`: reduced deconcatenation of a spliced word.
 * `TauCeti.ReducedTensorWords.prepend_splice`: prepending the first letter of a tuple commutes with
   splicing a block of the rest.
@@ -172,11 +176,11 @@ theorem splice_two_eq_of_tprod_insertNth {n : ℕ} (x : Fin (n + 2) → M) (p : 
     have h₂ : p.castSucc.succAbove (Fin.castSucc ⟨j, by omega⟩) = ⟨0 + j, by omega⟩ := by
       rw [Fin.succAbove_of_castSucc_lt _ _ (Fin.lt_def.2 (by simpa using h))]
       exact Fin.ext (by simp)
-    rw [show (Fin.cast (by omega) ⟨j, hj⟩ : Fin (n + 1)) = p.succAbove ⟨j, by omega⟩ by
-      rw [h₁]; rfl, Fin.insertNth_apply_succAbove, h₁, h₂]
+    rw [show (Fin.cast (by omega) ⟨j, hj⟩ : Fin (n + 1)) = p.succAbove ⟨j, by omega⟩ from
+      Fin.ext (by simp [h₁]), Fin.insertNth_apply_succAbove, h₁, h₂]
     simp only [h, dite_true]
   · simp only [lt_irrefl, dite_false, dite_true]
-    rw [show (Fin.cast (by omega) ⟨(p : ℕ), hj⟩ : Fin (n + 1)) = p from rfl,
+    rw [show (Fin.cast (by omega) ⟨(p : ℕ), hj⟩ : Fin (n + 1)) = p from Fin.ext (by simp),
       Fin.insertNth_apply_same]
   · -- After the collapsed block, the letters are those of `x`, shifted by one.
     obtain ⟨j, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega⟩
@@ -185,9 +189,26 @@ theorem splice_two_eq_of_tprod_insertNth {n : ℕ} (x : Fin (n + 2) → M) (p : 
     have h₂ : p.castSucc.succAbove (Fin.succ ⟨j, by omega⟩) = ⟨0 + (j + 1 + 2 - 1), by omega⟩ := by
       rw [Fin.succAbove_of_le_castSucc _ _ (Fin.le_def.2 (by simp; omega))]
       exact Fin.ext (by simp)
-    rw [show (Fin.cast (by omega) ⟨j + 1, hj⟩ : Fin (n + 1)) = p.succAbove ⟨j, by omega⟩ by
-      rw [h₁]; rfl, Fin.insertNth_apply_succAbove, h₁, h₂]
+    rw [show (Fin.cast (by omega) ⟨j + 1, hj⟩ : Fin (n + 1)) = p.succAbove ⟨j, by omega⟩ from
+      Fin.ext (by simp [h₁]), Fin.insertNth_apply_succAbove, h₁, h₂]
     simp only [show ¬ j + 1 < (p : ℕ) by omega, show j + 1 ≠ (p : ℕ) by omega, dite_false]
+
+/-- Collapsing all but the last letter of a word of length `n + 2` into `e` gives the word of two
+letters `e, x (n + 1)`. -/
+theorem splice_init_eq_of_tprod {n : ℕ} (x : Fin (n + 2) → M) (e : M) :
+    splice R x 0 (n + 2) 0 (n + 1) e =
+      of R M ⟨2, two_pos⟩ (PiTensorProduct.tprod R ![e, x (Fin.last (n + 1))]) := by
+  rw [splice_eq_of_tprod R x e (a := 0) (b := n + 2) (by omega) (by omega) (by omega)]
+  refine of_tprod_congr R M _ (by omega) fun ⟨j, hj⟩ ↦ ?_
+  rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> simp [Fin.last]
+
+/-- Collapsing all but the first letter of a word of length `n + 2` into `e` gives the word of two
+letters `x 0, e`. -/
+theorem splice_tail_eq_of_tprod {n : ℕ} (x : Fin (n + 2) → M) (e : M) :
+    splice R x 0 (n + 2) 1 (n + 1) e = of R M ⟨2, two_pos⟩ (PiTensorProduct.tprod R ![x 0, e]) := by
+  rw [splice_eq_of_tprod R x e (a := 0) (b := n + 2) (by omega) (by omega) (by omega)]
+  refine of_tprod_congr R M _ (by omega) fun ⟨j, hj⟩ ↦ ?_
+  rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> simp
 
 /-- Splicing in the negative of a letter negates the spliced word. -/
 @[simp]

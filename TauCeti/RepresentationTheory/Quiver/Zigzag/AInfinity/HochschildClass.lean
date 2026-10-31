@@ -235,24 +235,6 @@ private theorem taylor_of_tprod_two (x : Fin 2 → nonisolatedZigzagQuotient k G
   rw [AInfinityAlgebra.taylor_of_tprod, zigzagStrictAInfinityAlgebra_m_two_apply]
   norm_num
 
-/-- Collapsing all but the last letter of a word of length `n + 2`. -/
-private theorem splice_init_eq {n : ℕ} (x : Fin (n + 2) → nonisolatedZigzagQuotient k G)
-    (e : nonisolatedZigzagQuotient k G) :
-    splice k x 0 (n + 2) 0 (n + 1) e =
-      of k _ ⟨2, two_pos⟩ (PiTensorProduct.tprod k ![e, x (Fin.last (n + 1))]) := by
-  rw [splice_eq_of_tprod k x e (a := 0) (b := n + 2) (by omega) (by omega) (by omega)]
-  refine of_tprod_congr k _ _ (by omega) fun ⟨j, hj⟩ ↦ ?_
-  rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> simp [Fin.last]
-
-/-- Collapsing all but the first letter of a word of length `n + 2`. -/
-private theorem splice_tail_eq {n : ℕ} (x : Fin (n + 2) → nonisolatedZigzagQuotient k G)
-    (e : nonisolatedZigzagQuotient k G) :
-    splice k x 0 (n + 2) 1 (n + 1) e =
-      of k _ ⟨2, two_pos⟩ (PiTensorProduct.tprod k ![x 0, e]) := by
-  rw [splice_eq_of_tprod k x e (a := 0) (b := n + 2) (by omega) (by omega) (by omega)]
-  refine of_tprod_congr k _ _ (by omega) fun ⟨j, hj⟩ ↦ ?_
-  rcases (by omega : j = 0 ∨ j = 1) with rfl | rfl <;> simp
-
 /-- **The Hochschild differential on words of arrows of any length.** For a suspended cochain `φ`
 of degree zero and letters `x₀, …, x_{n+1}` of path length one, such as arrows,
 
@@ -298,7 +280,8 @@ theorem zigzagStrictAInfinityAlgebra_hochschildDifferential_apply_of_tprod_of_me
       (fun d _ hd ↦ taylor_splice_of_ne x p d _ (by omega)) (by simp),
     Finset.sum_range_succ', Finset.sum_range_succ',
     Finset.sum_eq_zero fun p _ ↦ by rw [splice_eq_zero_of_block_lt_add k x _ (by omega), map_zero],
-    zero_add, zero_add, splice_init_eq, splice_tail_eq, taylor_of_tprod_two, taylor_of_tprod_two]
+    zero_add, zero_add, splice_init_eq_of_tprod, splice_tail_eq_of_tprod, taylor_of_tprod_two,
+    taylor_of_tprod_two]
   -- In `φ{m}` only the collapses of two letters survive.
   rw [Finset.sum_congr rfl fun p _ ↦ Finset.sum_eq_single 2
       (fun d _ hd ↦ by rw [taylor_subword_of_ne x p d hd, splice_zero, map_zero]) (by simp),
