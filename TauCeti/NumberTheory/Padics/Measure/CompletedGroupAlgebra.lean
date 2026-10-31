@@ -14,7 +14,7 @@ import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Extend
 import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Topology.UniformSpace.UniformApproximation
-import TauCeti.NumberTheory.Padics.Measure.IntegralUnitBall
+import TauCeti.NumberTheory.Padics.Measure.Norm
 import TauCeti.Topology.Algebra.Group.LocallyConstant
 import TauCeti.Topology.ContinuousMap.LocallyConstant
 
