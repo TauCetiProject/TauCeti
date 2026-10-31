@@ -21,8 +21,9 @@ homogeneous elements of positive degree.
 
 Every element of `A` is a scalar modulo `A₊`
 (`TauCeti.GradedAlgebra.exists_sub_algebraMap_mem_irrelevant`), so `A ⧸ A₊` is `k` and `A₊` is
-maximal. Localization then identifies the cotangent space `A₊ ⧸ A₊²` with the cotangent space of
-`A_{A₊}` (`Ideal.cotangentLocalizationEquiv`), compatibly with the identification of `k` with the
+maximal (`TauCeti.GradedAlgebra.isMaximal_toIdeal_irrelevant`). Localization then identifies the
+cotangent space `A₊ ⧸ A₊²` with the cotangent space of `A_{A₊}`
+(`Ideal.cotangentLocalizationEquiv`), compatibly with the identification of `k` with the
 residue field. So whenever the maximal ideal of `A_{A₊}` is finitely generated, the cotangent space
 `A₊ ⧸ A₊²` is finite-dimensional, of dimension the minimal number of generators of that maximal
 ideal (`IsLocalRing.spanFinrank_maximalIdeal_eq_finrank_cotangentSpace_of_fg`). In the regular
@@ -64,26 +65,6 @@ namespace TauCeti.GradedAlgebra
 variable {k A : Type*} [Field k] [CommRing A] [Algebra k A] (𝒜 : ℕ → Submodule k A)
   [GradedAlgebra 𝒜]
 
-/-- In a connected graded algebra the scalars map onto `A ⧸ A₊`: every element is its constant
-term modulo `A₊`. -/
-private theorem surjective_algebraMap_quotient (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra k A))
-    (P : Ideal A) (hP : P = (HomogeneousIdeal.irrelevant 𝒜).toIdeal) :
-    Function.Surjective (algebraMap k (A ⧸ P)) := by
-  subst hP
-  intro y
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective y
-  obtain ⟨c, hc⟩ := exists_sub_algebraMap_mem_irrelevant 𝒜 h𝒜 a
-  exact ⟨c, (Ideal.Quotient.eq.2 hc).symm⟩
-
-/-- The irrelevant ideal of a connected graded algebra over a field is maximal, since the quotient
-`A ⧸ A₊` is the field `k`. -/
-private theorem isMaximal_of_eq_irrelevant (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra k A))
-    (P : Ideal A) [P.IsPrime] (hP : P = (HomogeneousIdeal.irrelevant 𝒜).toIdeal) :
-    P.IsMaximal :=
-  Ideal.Quotient.maximal_of_isField P <| MulEquiv.isField (Field.toIsField k)
-    (RingEquiv.ofBijective (algebraMap k (A ⧸ P))
-      ⟨(algebraMap k _).injective, surjective_algebraMap_quotient 𝒜 h𝒜 P hP⟩).symm.toMulEquiv
-
 /-- The cotangent space `A₊ ⧸ A₊²` over `k` has the same rank as the cotangent space of the
 localization `A_{A₊}` over its residue field: localization identifies the two cotangent spaces
 (`Ideal.cotangentLocalizationEquiv`), semilinearly for the identification of `k` with the residue
@@ -93,13 +74,14 @@ private theorem rank_cotangent_eq (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalg
     Module.rank k (HomogeneousIdeal.irrelevant 𝒜).toIdeal.Cotangent =
       Module.rank (ResidueField (Localization.AtPrime P))
         (CotangentSpace (Localization.AtPrime P)) := by
-  have := isMaximal_of_eq_irrelevant 𝒜 h𝒜 P hP
+  have := (Ideal.Quotient.mk P).domain_nontrivial
+  have : P.IsMaximal := hP ▸ isMaximal_toIdeal_irrelevant 𝒜 h𝒜
   have he := (IsLocalization.AtPrime.equivQuotMaximalIdeal P (Localization.AtPrime P)).bijective
   subst hP
   refine rank_eq_of_equiv_equiv (R' := ResidueField (Localization.AtPrime _))
     (fun c : k ↦ IsLocalization.AtPrime.equivQuotMaximalIdeal _ _ (algebraMap k _ c))
     (Ideal.cotangentLocalizationEquiv _ (Localization.AtPrime _)).toAddEquiv
-    (he.comp ⟨(algebraMap k _).injective, surjective_algebraMap_quotient 𝒜 h𝒜 _ rfl⟩)
+    (he.comp ⟨(algebraMap k _).injective, surjective_algebraMap_quotient_irrelevant 𝒜 h𝒜⟩)
     fun c x ↦ ?_
   -- `c` acts on `A₊ ⧸ A₊²` through its image in `A ⧸ A₊`.
   have hc : c • x = algebraMap k (A ⧸ (HomogeneousIdeal.irrelevant 𝒜).toIdeal) c • x := by
