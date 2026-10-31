@@ -218,6 +218,32 @@ theorem quadraticPoissonBracket_apply (Q R : QuadraticForm ℝ V) (v : V) :
     ω.quadraticPoissonBracket Q R v = ω (ω.hamiltonianEnd Q v) (ω.hamiltonianEnd R v) :=
   (rfl)
 
+/-- The quadratic Poisson bracket is additive in its first argument. -/
+theorem quadraticPoissonBracket_add_left (Q Q' R : QuadraticForm ℝ V) :
+    ω.quadraticPoissonBracket (Q + Q') R =
+      ω.quadraticPoissonBracket Q R + ω.quadraticPoissonBracket Q' R := by
+  ext v
+  simp only [quadraticPoissonBracket_apply, map_add, add_apply, LinearMap.add_apply]
+
+/-- The quadratic Poisson bracket is additive in its second argument. -/
+theorem quadraticPoissonBracket_add_right (Q R R' : QuadraticForm ℝ V) :
+    ω.quadraticPoissonBracket Q (R + R') =
+      ω.quadraticPoissonBracket Q R + ω.quadraticPoissonBracket Q R' := by
+  ext v
+  simp only [quadraticPoissonBracket_apply, map_add, add_apply, LinearMap.add_apply]
+
+/-- The quadratic Poisson bracket is homogeneous in its first argument. -/
+theorem quadraticPoissonBracket_smul_left (c : ℝ) (Q R : QuadraticForm ℝ V) :
+    ω.quadraticPoissonBracket (c • Q) R = c • ω.quadraticPoissonBracket Q R := by
+  ext v
+  simp only [quadraticPoissonBracket_apply, map_smul, smul_apply, LinearMap.smul_apply]
+
+/-- The quadratic Poisson bracket is homogeneous in its second argument. -/
+theorem quadraticPoissonBracket_smul_right (c : ℝ) (Q R : QuadraticForm ℝ V) :
+    ω.quadraticPoissonBracket Q (c • R) = c • ω.quadraticPoissonBracket Q R := by
+  ext v
+  simp only [quadraticPoissonBracket_apply, map_smul, smul_apply, LinearMap.smul_apply]
+
 /-- The quadratic Poisson bracket is antisymmetric. -/
 theorem neg_quadraticPoissonBracket (Q R : QuadraticForm ℝ V) :
     -ω.quadraticPoissonBracket R Q = ω.quadraticPoissonBracket Q R := by

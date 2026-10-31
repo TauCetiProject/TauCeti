@@ -15,7 +15,8 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 A quadratic map `Q` on a finite-dimensional normed space over a complete field is strictly
 differentiable, and its derivative at `x` is the linear map `h ↦ polar Q x h`
 (`QuadraticMap.hasStrictFDerivAt`). This upgrades Mathlib's line derivative of a quadratic map
-(`QuadraticMap.hasLineDerivAt`), which needs no topology, to a Fréchet derivative.
+(`QuadraticMap.hasLineDerivAt`), which requires no topology on the domain, to a Fréchet
+derivative.
 
 The proof writes `Q` as `x ↦ B x x` for a bilinear map `B`, which is possible because the
 space is free (`LinearMap.BilinMap.toQuadraticMap_surjective`); no assumption on the
