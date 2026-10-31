@@ -8,6 +8,8 @@ module
 public import TauCeti.KnotTheory.Grid.CrossingChange.UnknottingNumber
 public import TauCeti.KnotTheory.Grid.TorusLink.Basic
 
+import TauCeti.Data.Fin.Mk
+
 /-!
 # Unknotting numbers of torus link grids
 
@@ -21,14 +23,17 @@ cross-commutations and commutations.
 
 The same upper bound holds for the whole family of `(2 k + 1, 2)` torus knots: the knot presented
 by the standard grid `torusLink (2 * k) 1` has unknotting number at most `k`. This follows by
-induction from the fact that the standard grid of the `(p + 3, 2)` torus link is one crossing
-change away from that of the `(p + 1, 2)` torus link. On the grid of size `p + 5`, whose
-`O`-markings lie on the diagonal and whose `X`-markings lie two rows above it, exchanging the first
-two columns is a cross-commutation. The first two rows can then be exchanged, a commutation, and
-for `j = 1, 2, …` so can the rows `2 j` and `2 j + 1` followed by the same two columns. These keep
-the `O`-markings on the diagonal and conjugate the `X`-permutation by transpositions. For even `p`
-the last of these diagrams is an `O`-stabilization of a grid of size `p + 4`, and after one more
-commutation that grid is an `X`-stabilization of the standard grid of size `p + 3`.
+induction from the inequality that the `(p + 3, 2)` torus link has unknotting number at most one
+more than the `(p + 1, 2)` torus link, for the links presented by their standard grids. For even
+`p` both are knots, and the standard grid of the `(p + 3, 2)` torus knot is one crossing change
+away from that of the `(p + 1, 2)` torus knot. On the grid of size `p + 5`, whose `O`-markings lie
+on the diagonal and whose `X`-markings lie two rows above it, exchanging the first two columns is a
+cross-commutation. The first two rows can then be exchanged, a commutation, and for `j = 1, 2, …`
+so can the rows `2 j` and `2 j + 1` followed by the same two columns. These keep the `O`-markings
+on the diagonal and conjugate the `X`-permutation by transpositions. The last of these diagrams is
+an `O`-stabilization of a grid of size `p + 4`, and after one more commutation that grid is an
+`X`-stabilization of the standard grid of size `p + 3`. For odd `p` the inequality holds because
+the `(p + 1, 2)` torus link has two components, so its unknotting number is `⊤`.
 
 ## Main results
 
@@ -218,66 +223,6 @@ namespace GridDiagram
 
 open Equiv
 
-/-! #### Evaluation at explicit points
-
-The diagrams below are evaluated at points written `⟨k, h⟩`, with `simp` discharging the side
-conditions on `k` by `omega`. -/
-
-/-- `finRotate_of_lt` in a form `simp` can use with a discharger: the hypothesis does not occur in
-the left-hand side. -/
-private theorem finRotate_mk {n k : ℕ} (h : k + 1 < n + 1) :
-    finRotate (n + 1) ⟨k, by omega⟩ = ⟨k + 1, h⟩ :=
-  finRotate_of_lt (by omega)
-
-private theorem finRotate_mk_of_eq {n k : ℕ} (h : k = n) :
-    finRotate (n + 1) ⟨k, by omega⟩ = ⟨0, by omega⟩ := by
-  subst h
-  exact finRotate_last'
-
-private theorem succAbove_mk_of_lt {n p i : ℕ} (hp : p < n + 1) (hi : i < n) (h : i < p) :
-    (⟨p, hp⟩ : Fin (n + 1)).succAbove ⟨i, hi⟩ = ⟨i, by omega⟩ :=
-  Fin.succAbove_of_castSucc_lt _ _ h
-
-private theorem succAbove_mk_of_le {n p i : ℕ} (hp : p < n + 1) (hi : i < n) (h : p ≤ i) :
-    (⟨p, hp⟩ : Fin (n + 1)).succAbove ⟨i, hi⟩ = ⟨i + 1, by omega⟩ :=
-  Fin.succAbove_of_le_castSucc _ _ h
-
-private theorem ofNat_eq_mk {n m : ℕ} [NeZero n] (h : m < n) : Fin.ofNat n m = ⟨m, h⟩ :=
-  Fin.ext (by simp [Nat.mod_eq_of_lt h])
-
-/-! #### Commutations of grids with diagonal `O`-markings -/
-
-/-- Two rows do not interleave when the columns of their markings, `c` and `d` for the first and
-`c'` and `d'` for the second, do not interleave. -/
-private theorem rowsNoninterleaving_of_apply {n : ℕ} {G : GridDiagram n} {a b c d c' d' : Fin n}
-    (hc : G.O c = a) (hd : G.X d = a) (hc' : G.O c' = b) (hd' : G.X d' = b)
-    (h : Grid.Noninterleaving c d c' d') : G.RowsNoninterleaving a b := by
-  have key : ∀ (x : GridState n) {r e : Fin n}, x e = r → x.transpose r = e := fun x r e he => by
-    rw [GridState.transpose_apply, Equiv.symm_apply_eq]
-    exact he.symm
-  rw [RowsNoninterleaving, key _ hc, key _ hd, key _ hc', key _ hd']
-  exact h
-
-/-- Exchanging two rows and the same two columns conjugates the `X`-permutation by the
-transposition. -/
-private theorem swapRows_swapColumns_X_toPerm {n : ℕ} (G : GridDiagram n) (a b : Fin n) :
-    ((G.swapRows a b).swapColumns a b).X.toPerm = swap a b * G.X.toPerm * swap a b := by
-  ext c
-  simp
-
-/-- Exchanging two rows and the same two columns keeps diagonal `O`-markings diagonal. -/
-private theorem swapRows_swapColumns_O_toPerm {n : ℕ} {G : GridDiagram n} (hO : G.O.toPerm = 1)
-    (a b : Fin n) : ((G.swapRows a b).swapColumns a b).O.toPerm = 1 := by
-  ext c
-  simp [hO]
-
-/-- The markings of the standard grid of the `(p + 1, 2)` torus link. -/
-private theorem torusLink_apply (p : ℕ) (c : Fin (p + 3)) :
-    (torusLink p 1).O c = c ∧ (torusLink p 1).X c = (finRotate (p + 3) ^ 2) c := by
-  -- The grid size of `torusLink p 1` is written `p + 1 + (1 + 1)`, definitionally `p + 3`.
-  rw [torusLink_O_apply, torusLink_X_apply]
-  exact ⟨rfl, rfl⟩
-
 /-! #### The chain of conjugations
 
 Start from the standard grid of the `(n + 3, 2)` torus link, of size `n + 5`. Exchange its first
@@ -321,14 +266,14 @@ private theorem chainGrid_X_toPerm (n j : ℕ) (hj : 2 * j + 1 < n + 5) :
     set R := finRotate (n + 5) ^ 2
     -- `R` carries the transposition of the previous step to `A`, which fixes `0` and `1`.
     have hRB : R * swap (Fin.ofNat (n + 5) (2 * j)) (Fin.ofNat (n + 5) (2 * j + 1)) = A * R := by
-      simp (disch := omega) only [R, A, mul_swap_eq_swap_mul, ofNat_eq_mk, pow_two,
-        Perm.mul_apply, finRotate_mk]
+      simp (disch := omega) only [R, A, mul_swap_eq_swap_mul, Fin.ofNat_eq_mk, pow_two,
+        Perm.mul_apply, Fin.finRotate_mk]
       congr 3
     have hconj : A * swap 0 1 * A = swap 0 1 := by
       have hA : A⁻¹ = A := swap_inv _ _
       nth_rw 2 [← hA]
       rw [← swap_apply_apply]
-      simp (disch := omega) only [A, ofNat_eq_mk, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def,
+      simp (disch := omega) only [A, Fin.ofNat_eq_mk, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def,
         Fin.mk.injEq, ite_eq_right]
     calc A * (swap 0 1 * R * swap (Fin.ofNat (n + 5) (2 * j)) (Fin.ofNat (n + 5) (2 * j + 1))) * A
         = A * swap 0 1 * A * R * A := by rw [mul_assoc (swap 0 1), hRB]; simp only [mul_assoc]
@@ -338,23 +283,27 @@ private theorem chainGrid_X_toPerm (n j : ℕ) (hj : 2 * j + 1 < n + 5) :
 change. -/
 private theorem columnsInterleaving_torusLink (n : ℕ) :
     (torusLink (n + 2) 1).ColumnsInterleaving 0 (finRotate (n + 5) 0) := by
+  have hO (c : Fin (n + 5)) : (torusLink (n + 2) 1).O c = c := torusLink_O_apply (n + 2) 1 c
+  have hX (c : Fin (n + 5)) : (torusLink (n + 2) 1).X c = (finRotate (n + 5) ^ 2) c :=
+    torusLink_X_apply (n + 2) 1 c
   rw [finRotate_apply_zero, columnsInterleaving_iff]
-  simp (disch := omega) only [mem_columnArc, (torusLink_apply (n + 2) _).1,
-    (torusLink_apply (n + 2) _).2, pow_two, Perm.mul_apply, ← Fin.mk_zero, ← Fin.mk_one,
-    finRotate_mk, Grid.mem_cIoo, ne_eq, Fin.mk.injEq]
+  simp (disch := omega) only [mem_columnArc, hO, hX, pow_two, Perm.mul_apply, ← Fin.mk_zero,
+    ← Fin.mk_one, Fin.finRotate_mk, Grid.mem_cIoo, ne_eq, Fin.mk.injEq]
   grind
 
 /-- After the crossing change, the first two rows do not interleave. -/
 private theorem rowsNoninterleaving_torusLink_swapColumns (n : ℕ) :
     ((torusLink (n + 2) 1).swapColumns 0 1).RowsNoninterleaving 0 (finRotate (n + 5) 0) := by
+  have hO (c : Fin (n + 5)) : (torusLink (n + 2) 1).O c = c := torusLink_O_apply (n + 2) 1 c
+  have hX (c : Fin (n + 5)) : (torusLink (n + 2) 1).X c = (finRotate (n + 5) ^ 2) c :=
+    torusLink_X_apply (n + 2) 1 c
   rw [finRotate_apply_zero]
   refine rowsNoninterleaving_of_apply (c := 1) (d := ⟨n + 3, by omega⟩) (c' := 0)
     (d' := ⟨n + 4, by omega⟩) ?_ ?_ ?_ ?_ ?_ <;>
-  simp (disch := omega) only [swapColumns_O, swapColumns_X, GridState.swapColumns_apply,
-    (torusLink_apply (n + 2) _).1, (torusLink_apply (n + 2) _).2, pow_two, Perm.mul_apply,
-    ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def, finRotate_mk, finRotate_mk_of_eq,
-    Grid.noninterleaving_iff, Grid.mem_cIoo, ne_eq, Fin.mk.injEq, ite_eq_left, ite_eq_right,
-    ↓reduceIte]
+  simp (disch := omega) only [swapColumns_O, swapColumns_X, GridState.swapColumns_apply, hO, hX,
+    pow_two, Perm.mul_apply, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def, Fin.finRotate_mk,
+    Fin.finRotate_mk_of_eq, Grid.noninterleaving_iff, Grid.mem_cIoo, ne_eq, Fin.mk.injEq,
+    ite_eq_left, ite_eq_right, ↓reduceIte]
   grind
 
 private theorem movesTo_chainGrid_zero (n : ℕ) :
@@ -377,7 +326,7 @@ private theorem movesTo_chainGrid_succ (n j : ℕ) (hj : 2 * (j + 1) + 1 < n + 4
     refine rowsNoninterleaving_of_apply (c := ⟨2 * (j + 1), by omega⟩) (d := ⟨2 * j + 1, by omega⟩)
       (c' := ⟨2 * (j + 1) + 1, by omega⟩) (d' := ⟨2 * j, by omega⟩) ?_ ?_ ?_ ?_ ?_ <;>
     simp (disch := omega) only [hO, hX, chainPerm, Perm.one_apply, Perm.mul_apply, pow_two,
-      ofNat_eq_mk, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def, finRotate_mk,
+      Fin.ofNat_eq_mk, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def, Fin.finRotate_mk,
       Grid.noninterleaving_iff, Grid.mem_cIoo, ne_eq, Fin.mk.injEq, ite_eq_right, ↓reduceIte] <;>
     grind
   have hcol : ((chainGrid n j).swapRows ⟨2 * (j + 1), by omega⟩
@@ -387,15 +336,15 @@ private theorem movesTo_chainGrid_succ (n j : ℕ) (hj : 2 * (j + 1) + 1 < n + 4
     -- The `X`-marking of column `2 j + 3` wraps around the top of the grid in the last step.
     rcases Nat.lt_or_ge (2 * j + 5) (n + 5) with h | h <;>
     simp (disch := omega) only [swapRows_O, swapRows_X, GridState.swapRows_apply, hO, hX,
-      chainPerm, Perm.one_apply, Perm.mul_apply, pow_two, ofNat_eq_mk, ← Fin.mk_zero,
-      ← Fin.mk_one, swap_apply_def, finRotate_mk, finRotate_mk_of_eq,
+      chainPerm, Perm.one_apply, Perm.mul_apply, pow_two, Fin.ofNat_eq_mk, ← Fin.mk_zero,
+      ← Fin.mk_one, swap_apply_def, Fin.finRotate_mk, Fin.finRotate_mk_of_eq,
       Grid.noninterleaving_iff, Grid.mem_cIoo, ne_eq, Fin.mk.injEq, ite_eq_left, ite_eq_right,
       ↓reduceIte] <;>
     grind
   have h := ((chainGrid n j).movesTo_swapRows _ hrow).trans (movesTo_swapColumns _ _ hcol)
   rw [hrot] at h
-  rw [chainGrid, ofNat_eq_mk (show 2 * (j + 1) < n + 5 by omega),
-    ofNat_eq_mk (show 2 * (j + 1) + 1 < n + 5 by omega)]
+  rw [chainGrid, Fin.ofNat_eq_mk (show 2 * (j + 1) < n + 5 by omega),
+    Fin.ofNat_eq_mk (show 2 * (j + 1) + 1 < n + 5 by omega)]
   exact h
 
 private theorem movesTo_chainGrid (k j : ℕ) (hj : j ≤ k + 1) :
@@ -420,7 +369,7 @@ private def destabGrid (n : ℕ) : GridDiagram (n + 4) where
     rintro ⟨c, hc⟩ h
     rcases (show c + 2 < n + 4 ∨ c = n + 2 ∨ c = n + 3 by omega) with h' | h' | h' <;>
     simp (disch := omega) only [Perm.one_apply, Perm.mul_apply, pow_two, ← Fin.mk_zero,
-      ← Fin.mk_one, swap_apply_def, finRotate_mk, finRotate_mk_of_eq, Fin.mk.injEq,
+      ← Fin.mk_one, swap_apply_def, Fin.finRotate_mk, Fin.finRotate_mk_of_eq, Fin.mk.injEq,
       ite_eq_right, ↓reduceIte] at h <;>
     omega
 
@@ -442,29 +391,29 @@ private theorem isStabilization_destabGrid_chainGrid (k : ℕ) :
     rcases Fin.eq_self_or_eq_succAbove (⟨2 * k + 3, by omega⟩ : Fin (2 * k + 5)) c with
       rfl | ⟨⟨i, hi⟩, rfl⟩
     · simp (disch := omega) only [hO, destabGrid_O_toPerm, stabilizeO_O,
-        GridState.splitPoint_apply_newColumn, Perm.one_apply, succAbove_mk_of_lt]
+        GridState.splitPoint_apply_newColumn, Perm.one_apply, Fin.succAbove_mk_of_lt]
     · rw [stabilizeO_O, GridState.splitPoint_apply_succAbove]
       rcases (show i < 2 * k + 3 ∨ i = 2 * k + 3 by omega) with h | h <;>
-      simp (disch := omega) only [hO, destabGrid_O_toPerm, Perm.one_apply, succAbove_mk_of_lt,
-        succAbove_mk_of_le, Fin.mk.injEq, ite_eq_left, ite_eq_right]
+      simp (disch := omega) only [hO, destabGrid_O_toPerm, Perm.one_apply, Fin.succAbove_mk_of_lt,
+        Fin.succAbove_mk_of_le, Fin.mk.injEq, ite_eq_left, ite_eq_right]
       omega
     · simp (disch := omega) only [hX, chainPerm, stabilizeO_X,
-        GridState.insertPoint_apply_newColumn, Perm.mul_apply, pow_two, ofNat_eq_mk,
-        ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def, finRotate_mk, Fin.mk.injEq, ite_eq_left,
+        GridState.insertPoint_apply_newColumn, Perm.mul_apply, pow_two, Fin.ofNat_eq_mk,
+        ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def, Fin.finRotate_mk, Fin.mk.injEq, ite_eq_left,
         ite_eq_right]
       omega
     · rw [stabilizeO_X, GridState.insertPoint_apply_succAbove]
       rcases (show i < 2 * k + 2 ∨ i = 2 * k + 2 ∨ i = 2 * k + 3 by omega) with h | h | h <;>
       simp (disch := omega) only [hX, chainPerm, destabGrid_X_toPerm, Perm.mul_apply, pow_two,
-        ofNat_eq_mk, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def, finRotate_mk,
-        finRotate_mk_of_eq, succAbove_mk_of_lt, succAbove_mk_of_le, Fin.mk.injEq, ite_eq_left,
-        ite_eq_right, ↓reduceIte]
+        Fin.ofNat_eq_mk, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def, Fin.finRotate_mk,
+        Fin.finRotate_mk_of_eq, Fin.succAbove_mk_of_lt, Fin.succAbove_mk_of_le, Fin.mk.injEq,
+        ite_eq_left, ite_eq_right, ↓reduceIte]
   rw [heq]
   refine (isStabilization_iff _ _).mpr (Or.inl ((destabGrid (2 * k)).isOStabilization_stabilizeO
     ⟨2 * k + 3, by omega⟩ ⟨2 * k + 4, by omega⟩ ⟨2 * k + 3, by omega⟩ (Or.inl ?_) (Or.inr ?_)))
-  · simp (disch := omega) only [succAbove_mk_of_le, finRotate_mk]
-  · simp (disch := omega) only [destabGrid_O_toPerm, Perm.one_apply, succAbove_mk_of_lt,
-      finRotate_mk]
+  · simp (disch := omega) only [Fin.succAbove_mk_of_le, Fin.finRotate_mk]
+  · simp (disch := omega) only [destabGrid_O_toPerm, Perm.one_apply, Fin.succAbove_mk_of_lt,
+      Fin.finRotate_mk]
 
 /-- The last two columns of `destabGrid` do not interleave. -/
 private theorem columnsNoninterleaving_destabGrid (n : ℕ) :
@@ -472,8 +421,8 @@ private theorem columnsNoninterleaving_destabGrid (n : ℕ) :
       (finRotate (n + 4) ⟨n + 2, by omega⟩) := by
   rw [ColumnsNoninterleaving]
   simp (disch := omega) only [destabGrid_O_toPerm, destabGrid_X_toPerm, Perm.one_apply,
-    Perm.mul_apply, pow_two, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def, finRotate_mk,
-    finRotate_mk_of_eq, Grid.noninterleaving_iff, Grid.mem_cIoo, ne_eq, Fin.mk.injEq,
+    Perm.mul_apply, pow_two, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def, Fin.finRotate_mk,
+    Fin.finRotate_mk_of_eq, Grid.noninterleaving_iff, Grid.mem_cIoo, ne_eq, Fin.mk.injEq,
     ite_eq_right, ↓reduceIte]
   grind
 
@@ -482,7 +431,9 @@ grid of the `(n + 1, 2)` torus link. -/
 private theorem isStabilization_torusLink_destabGrid_swapColumns (n : ℕ) :
     IsStabilization (torusLink n 1) ((destabGrid n).swapColumns ⟨n + 2, by omega⟩
       (finRotate (n + 4) ⟨n + 2, by omega⟩)) := by
-  have hT := torusLink_apply n
+  have hO (c : Fin (n + 3)) : (torusLink n 1).O c = c := torusLink_O_apply n 1 c
+  have hX (c : Fin (n + 3)) : (torusLink n 1).X c = (finRotate (n + 3) ^ 2) c :=
+    torusLink_X_apply n 1 c
   have hrot : finRotate (n + 4) ⟨n + 2, by omega⟩ = ⟨n + 3, by omega⟩ := finRotate_of_lt (by omega)
   have heq : (destabGrid n).swapColumns ⟨n + 2, by omega⟩ (finRotate (n + 4) ⟨n + 2, by omega⟩) =
       (torusLink n 1).stabilizeX ⟨n + 2, by omega⟩ ⟨n + 3, by omega⟩ ⟨n + 1, by omega⟩ := by
@@ -496,27 +447,27 @@ private theorem isStabilization_torusLink_destabGrid_swapColumns (n : ℕ) :
     · rw [stabilizeX_O, GridState.insertPoint_apply_succAbove]
       rcases (show i < n + 2 ∨ i = n + 2 by omega) with h | h <;>
       simp (disch := omega) only [swapColumns_O, GridState.swapColumns_apply, destabGrid_O_toPerm,
-        (hT _).1, Perm.one_apply, swap_apply_def, succAbove_mk_of_lt, succAbove_mk_of_le,
+        hO, Perm.one_apply, swap_apply_def, Fin.succAbove_mk_of_lt, Fin.succAbove_mk_of_le,
         Fin.mk.injEq, ite_eq_left, ite_eq_right]
       omega
     · rw [stabilizeX_X, GridState.splitPoint_apply_newColumn]
       simp (disch := omega) only [swapColumns_X, GridState.swapColumns_apply, destabGrid_X_toPerm,
-        (hT _).2, Perm.mul_apply, pow_two, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def,
-        finRotate_mk, finRotate_mk_of_eq, succAbove_mk_of_lt, Fin.mk.injEq,
+        hX, Perm.mul_apply, pow_two, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def,
+        Fin.finRotate_mk, Fin.finRotate_mk_of_eq, Fin.succAbove_mk_of_lt, Fin.mk.injEq,
         ite_eq_right, ↓reduceIte]
     · rw [stabilizeX_X, GridState.splitPoint_apply_succAbove]
       rcases (show i < n + 1 ∨ i = n + 1 ∨ i = n + 2 by omega) with h | h | h <;>
       simp (disch := omega) only [swapColumns_X, GridState.swapColumns_apply, destabGrid_X_toPerm,
-        (hT _).2, Perm.mul_apply, pow_two, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def,
-        finRotate_mk, finRotate_mk_of_eq, succAbove_mk_of_lt, succAbove_mk_of_le, Fin.mk.injEq,
-        ite_eq_left, ite_eq_right, ↓reduceIte]
+        hX, Perm.mul_apply, pow_two, ← Fin.mk_zero, ← Fin.mk_one, swap_apply_def,
+        Fin.finRotate_mk, Fin.finRotate_mk_of_eq, Fin.succAbove_mk_of_lt, Fin.succAbove_mk_of_le,
+        Fin.mk.injEq, ite_eq_left, ite_eq_right, ↓reduceIte]
       omega
   rw [heq]
   refine (isStabilization_iff _ _).mpr (Or.inr ((torusLink n 1).isXStabilization_stabilizeX
     ⟨n + 2, by omega⟩ ⟨n + 3, by omega⟩ ⟨n + 1, by omega⟩ (Or.inr ?_) (Or.inl ?_)))
-  · simp (disch := omega) only [succAbove_mk_of_lt, finRotate_mk]
-  · simp (disch := omega) only [(hT _).2, pow_two, Perm.mul_apply, finRotate_mk,
-      finRotate_mk_of_eq, succAbove_mk_of_lt]
+  · simp (disch := omega) only [Fin.succAbove_mk_of_lt, Fin.finRotate_mk]
+  · simp (disch := omega) only [hX, pow_two, Perm.mul_apply, Fin.finRotate_mk,
+      Fin.finRotate_mk_of_eq, Fin.succAbove_mk_of_lt]
 
 /-- The end of the chain presents the same grid link as the standard grid of the `(2 k + 1, 2)`
 torus knot. -/
@@ -568,11 +519,12 @@ namespace GridLink
 
 open GridDiagram
 
-/-- **The `(p + 3, 2)` torus link is one crossing change away from the `(p + 1, 2)` torus link**,
-for the links presented by the standard torus link grids. For even `p` both are knots, and a
-cross-commutation of the first two columns of the larger grid, followed by commutations and two
-destabilizations, reaches the smaller grid. For odd `p` both are two-component links, of
-unknotting number `⊤`. -/
+/-- **The `(p + 3, 2)` torus link has unknotting number at most one more than the `(p + 1, 2)`
+torus link**, for the links presented by the standard torus link grids. For even `p` both are
+knots, and a cross-commutation of the first two columns of the larger grid, followed by
+commutations and two destabilizations, reaches the smaller grid, so the two knots are one crossing
+change apart. For odd `p` the `(p + 1, 2)` torus link has two components, so its unknotting number
+is `⊤` and the inequality is immediate. -/
 theorem unknottingNumber_toGridLink_torusLink_add_two_one_le_add_one (p : ℕ) :
     (torusLink (p + 2) 1).toGridLink.unknottingNumber ≤
       (torusLink p 1).toGridLink.unknottingNumber + 1 := by
