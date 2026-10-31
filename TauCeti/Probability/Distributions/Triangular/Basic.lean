@@ -557,6 +557,7 @@ theorem continuous_cdf_triangularMeasure (hab : a < b) (hac : a ≤ c) (hcb : c 
     continuous_triangularSpline hab hac hcb
 
 /-- The triangular law gives the ray `(-∞, c]` up to its mode the mass `(c - a) / (b - a)`. -/
+@[simp]
 theorem cdf_triangularMeasure_mode (hab : a < b) (hac : a ≤ c) (hcb : c ≤ b) :
     cdf (triangularMeasure a b c) c = (c - a) / (b - a) := by
   rw [cdf_triangularMeasure_of_mem_Icc_left hab hcb ⟨hac, le_rfl⟩]

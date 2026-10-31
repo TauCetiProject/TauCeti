@@ -31,8 +31,8 @@ uniformly when the mode is an endpoint: the contribution of the empty branch van
 
 ## Main results
 
-* `TauCeti.Probability.integral_triangularMeasure_eq_intervalIntegral` — integration of a
-  continuous function against the law as the sum of its two branch integrals;
+* `TauCeti.Probability.integral_triangularMeasure_eq_intervalIntegral` — integration of an
+  integrable function against the law as the sum of its two branch integrals;
 * `TauCeti.Probability.integral_pow_triangularMeasure` — the natural moments;
 * `TauCeti.Probability.integral_id_triangularMeasure` and
   `TauCeti.Probability.variance_id_triangularMeasure` — the mean and the variance;
@@ -67,18 +67,18 @@ theorem integrableExpSet_id_triangularMeasure (a b c : ℝ) :
   · simp [triangularMeasure_eq_zero_of_not h, integrableExpSet]
 
 /-- Every natural power is integrable against a triangular law, for all parameter values. -/
+@[simp]
 theorem integrable_pow_triangularMeasure (a b c : ℝ) (n : ℕ) :
     Integrable (fun x : ℝ ↦ x ^ n) (triangularMeasure a b c) := by
   apply integrable_pow_of_mem_interior_integrableExpSet (X := id) _ n
   simp only [integrableExpSet_id_triangularMeasure, interior_univ, mem_univ]
 
-/-- **Branch decomposition.** When the mode lies between the endpoints, integrating a continuous
+/-- **Branch decomposition.** When the mode lies between the endpoints, integrating an integrable
 function against the triangular law is integrating it against the linear weight of the rising
-branch over `[a, c]` plus against that of the falling branch over `[c, b]`. Only continuity on
-the support `[a, b]` is needed. -/
+branch over `[a, c]` plus against that of the falling branch over `[c, b]`. -/
 theorem integral_triangularMeasure_eq_intervalIntegral {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (hac : a ≤ c) (hcb : c ≤ b) {g : ℝ → E}
-    (hg : ContinuousOn g (Icc a b)) :
+    (hg : Integrable g (triangularMeasure a b c)) :
     ∫ x, g x ∂triangularMeasure a b c =
       (∫ x in a..c, (2 * (x - a) / ((b - a) * (c - a))) • g x) +
         ∫ x in c..b, (2 * (b - x) / ((b - a) * (b - c))) • g x := by
@@ -87,9 +87,7 @@ theorem integral_triangularMeasure_eq_intervalIntegral {E : Type*} [NormedAddCom
     by_contra h
     exact hx (by simp only [hF, triangularPDFReal_of_notMem_Ioo
       (fun h' ↦ h (Ioo_subset_Icc_self h')), zero_smul])
-  have hFint : Integrable F := (integrableOn_iff_integrable_of_support_subset hsupp).1
-    ((integrable_triangularPDFReal a b c).integrableOn.smul_continuousOn hg
-      isCompact_Icc)
+  have hFint : Integrable F := integrable_triangularMeasure_iff.1 hg
   rw [integral_triangularMeasure_eq, ← hF,
     ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦
       Function.notMem_support.1 fun h ↦ hx (hsupp h),
@@ -116,7 +114,8 @@ theorem integral_pow_triangularMeasure (hac : a ≤ c) (hcb : c ≤ b) (n : ℕ)
     ∫ x, x ^ n ∂triangularMeasure a b c =
       2 / (b - a) * ∑ k ∈ range (n + 1), (n.choose k : ℝ) / (k + 2) *
         (a ^ (n - k) * (c - a) ^ (k + 1) - b ^ (n - k) * (c - b) ^ (k + 1)) := by
-  rw [integral_triangularMeasure_eq_intervalIntegral hac hcb (continuous_pow n).continuousOn]
+  rw [integral_triangularMeasure_eq_intervalIntegral hac hcb
+    (integrable_pow_triangularMeasure a b c n)]
   simp only [smul_eq_mul]
   have hrise : ∫ x in a..c, 2 * (x - a) / ((b - a) * (c - a)) * x ^ n =
       2 / (b - a) * (1 / (c - a)) * ∫ x in a..c, x ^ n * (x - a) := by
@@ -165,6 +164,7 @@ theorem integral_id_triangularMeasure (hab : a < b) (hac : a ≤ c) (hcb : c ≤
 
 /-- **Second moment.** The second raw moment of the triangular law with endpoints `a < b` and mode
 `a ≤ c ≤ b` is `(a ^ 2 + b ^ 2 + c ^ 2 + a * b + a * c + b * c) / 6`. -/
+@[simp]
 theorem integral_sq_triangularMeasure (hab : a < b) (hac : a ≤ c) (hcb : c ≤ b) :
     ∫ x, x ^ 2 ∂triangularMeasure a b c =
       (a ^ 2 + b ^ 2 + c ^ 2 + a * b + a * c + b * c) / 6 := by
