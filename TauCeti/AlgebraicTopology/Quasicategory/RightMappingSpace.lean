@@ -147,13 +147,6 @@ theorem coe_σ {n : ℕ} (j : Fin (n + 1)) (s : (X.rightMappingSpace x y : SSet.
 
 variable {n : ℕ} {i : Fin (n + 2)}
 
-/-- Restricting a map out of a horn along the inclusion of its `j`-th face amounts to evaluating
-it at that face. -/
-private theorem yonedaEquiv_horn_ι_comp {Y : SSet.{u}} (g : (Λ[n + 1, i] : SSet.{u}) ⟶ Y)
-    (j : Fin (n + 2)) (hj : j ≠ i) :
-    yonedaEquiv (horn.ι i j hj ≫ g) = g.app _ (horn.face i j hj) := by
-  rw [yonedaEquiv_comp, horn.yonedaEquiv_ι]
-
 /-- The `j`-th face of a horn in `Hom^R_X(x, y)`, as a simplex of `joinVertex.op ⋙ X`. -/
 private def hornFace
     (σ₀ : (Λ[n + 1, i] : SSet.{u}) ⟶ (X.rightMappingSpace x y : SSet.{u}))
@@ -176,7 +169,10 @@ private theorem hornFace_δ {m : ℕ} {i : Fin (m + 3)}
         (hornFace σ₀ k hk) := by
   have h := congrArg yonedaEquiv
     ((horn.IsCompatible.of_hom (σ₀ ≫ Subcomplex.ι _)).δ_pred_comp j k hj hk hjk)
-  simp only [stdSimplex.yonedaEquiv_δ_comp, yonedaEquiv_horn_ι_comp] at h
+  -- Evaluate each side at the faces of `Δ[m + 1]`, then restrict `σ₀` along `horn.ι` by evaluating
+  -- it at the corresponding face of the horn.
+  rw [stdSimplex.yonedaEquiv_δ_comp, stdSimplex.yonedaEquiv_δ_comp, yonedaEquiv_comp,
+    yonedaEquiv_comp, horn.yonedaEquiv_ι, horn.yonedaEquiv_ι] at h
   exact h
 
 /-- The faces of the horn in `X` attached to a horn in `Hom^R_X(x, y)`: the faces of the given
@@ -263,7 +259,7 @@ theorem hornFilling [X.Quasicategory] (hi : i ≠ 0)
   have hR : (Λ[n + 1, i].ι ≫ yonedaEquiv.symm s).app _ (horn.face i j hj) =
       SimplicialObject.δ (X.rightMappingSpace x y : SSet.{u}) j s := by
     -- Evaluating at the `j`-th face is restricting along `horn.ι`, i.e. along `stdSimplex.δ j`.
-    rw [← yonedaEquiv_horn_ι_comp, horn.ι_ι_assoc, stdSimplex.yonedaEquiv_δ_comp,
+    rw [← horn.yonedaEquiv_ι, ← yonedaEquiv_comp, horn.ι_ι_assoc, stdSimplex.yonedaEquiv_δ_comp,
       Equiv.apply_symm_apply]
   rw [hR, coe_δ, hface _ fun h ↦ hj (Fin.castSucc_injective _ h), liftFace_castSucc σ₀ j hj]
   rfl
