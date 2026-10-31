@@ -25,6 +25,8 @@ monic, also over `ℚ` by Gauss's lemma.
 
 ## Main results
 
+* `Polynomial.Monic.monic_of_mem_normalizedFactors`: a normalized irreducible factor of a monic
+  polynomial is monic.
 * `Polynomial.Monic.prod_toFinset_normalizedFactors_of_squarefree`: a squarefree monic
   polynomial is the product of its distinct normalized irreducible factors.
 * `Polynomial.Monic.exists_finset_prod_eq_of_squarefree`: a squarefree monic polynomial is the
@@ -44,7 +46,7 @@ variable {R : Type*} [CommRing R] [IsDomain R] [NormalizationMonoid R]
 
 /-- A normalized irreducible factor of a monic polynomial is monic: its leading coefficient is
 a normalized unit. -/
-private theorem monic_of_mem_normalizedFactors (hf : f.Monic) {g : R[X]}
+theorem monic_of_mem_normalizedFactors (hf : f.Monic) {g : R[X]}
     (hg : g ∈ normalizedFactors f) : g.Monic := by
   have hu : IsUnit g.leadingCoeff := by
     obtain ⟨h, hh⟩ := dvd_of_mem_normalizedFactors hg
