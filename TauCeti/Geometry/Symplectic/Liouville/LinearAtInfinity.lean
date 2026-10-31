@@ -25,15 +25,16 @@ to `e^τ`, where `τ ≥ 0` is the least time for which the backward Liouville f
 
 * `r(ψ_t y) = e^t` for `y ∈ ∂W` and `t ≥ 0`
   (`TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_flowOf`), and more generally
-  `r(ψ_t x) = e^t r(x)` for `x` outside the interior of `W`;
+  `r(ψ_t x) = e^t r(x)` for `x` outside the interior of `W` and `t ≥ 0`;
 * conversely `ψ_{-log r(x)}(x)` is the boundary point on the trajectory through such an `x`
   (`TauCeti.IsLiouvilleCompletion.flowOf_neg_log_liouvilleRadialCoordinate_mem_frontier`).
 
-Its sublevel sets are images of `W` under the flow: `r(x) ≤ e^T` exactly when `ψ_{-T}(x) ∈ W`
-(`TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_le_exp_iff`), and `r(x) < e^T` exactly
-when `ψ_{-T}(x)` lies in the interior of `W`. Hence `r` is continuous and its sublevel sets
-`{r ≤ c}` are compact, so that "outside a compact set" and "where `r` is large" mean the same
-thing. Smoothness of `r` on the cylindrical end is not treated here.
+Its sublevel sets are images of `W` under the flow: for `T ≥ 0`, `r(x) ≤ e^T` exactly when
+`ψ_{-T}(x) ∈ W` (`TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_le_exp_iff`), and for
+`T > 0`, `r(x) < e^T` exactly when `ψ_{-T}(x)` lies in the interior of `W`. Hence `r` is
+continuous and its sublevel sets `{r ≤ c}` are compact, so that "outside a compact set" and
+"where `r` is large" mean the same thing. Smoothness of `r` on the cylindrical end is not
+treated here.
 
 A function `F : M → ℝ` is linear at infinity with slope `a` (`TauCeti.IsLinearAtInfinity`) when
 `F = a r + b` outside a compact set; on a completion this holds exactly when `F = a r + b` on some
@@ -49,10 +50,11 @@ determined by `F` as soon as `W ≠ M` (`TauCeti.IsLinearAtInfinity.unique`).
 ## Main results
 
 * `TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_le_exp_iff`,
-  `TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_lt_exp_iff`: the sublevel sets of `r`
-  are the preimages of `W` and of its interior under the backward Liouville flow.
+  `TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_lt_exp_iff`: for `T ≥ 0`, resp.
+  `T > 0`, the sublevel set `{r ≤ e^T}`, resp. `{r < e^T}`, is the preimage of `W`, resp. of its
+  interior, under the backward Liouville flow `ψ_{-T}`.
 * `TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_flowOf_of_notMem_interior`:
-  `r(ψ_t x) = e^t r(x)` on the cylindrical end.
+  `r(ψ_t x) = e^t r(x)` on the cylindrical end, for `t ≥ 0`.
 * `TauCeti.IsLiouvilleCompletion.continuous_liouvilleRadialCoordinate`,
   `TauCeti.IsLiouvilleCompletion.isCompact_setOf_liouvilleRadialCoordinate_le`: `r` is continuous
   with compact sublevel sets.
@@ -146,51 +148,6 @@ namespace IsLiouvilleCompletion
 variable [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless]
   {ω : SmoothTwoForm I M} {α : SmoothForm I M ℝ 1} {x y : M} {t T : ℝ}
 
-/-- On a completion, the maximal Liouville flow is a global flow. -/
-private theorem exists_flow_eq (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) : ∃ ψ : Flow ℝ M, ∀ t x, flowOf Z t x = ψ t x := by
-  have hZs : ContMDiff I I.tangent 1 (T% Z) := (h.contMDiff_of_interior_eq hZ).of_le (by simp)
-  exact ⟨globalFlow Z hZs (h.isCompleteVectorField hZ), fun t x ↦
-    (flowOf_apply Z t x).trans (globalFlow_apply hZs (h.isCompleteVectorField hZ) t x).symm⟩
-
-/-- The backward Liouville flow carries the Liouville domain into its interior. -/
-private theorem flowOf_neg_mem_interior (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∈ W) (ht : 0 < t) :
-    flowOf Z (-t) x ∈ interior W := by
-  obtain ⟨ψ, hψ⟩ := h.exists_flow_eq hZ
-  by_contra hn
-  refine h.flowOf_notMem hZ hn ht ((h.isCompleteVectorField hZ).mem_flowDomain _ _) ?_
-  rwa [hψ, hψ, ← Flow.map_add, add_neg_cancel, Flow.map_zero_apply]
-
-/-- The backward Liouville flow preserves the Liouville domain. -/
-private theorem flowOf_neg_mem (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∈ W) (ht : 0 ≤ t) : flowOf Z (-t) x ∈ W := by
-  rcases ht.lt_or_eq with ht | rfl
-  · exact interior_subset (h.flowOf_neg_mem_interior hZ hx ht)
-  · obtain ⟨ψ, hψ⟩ := h.exists_flow_eq hZ
-    rwa [neg_zero, hψ, Flow.map_zero_apply]
-
-/-- The trajectory of a boundary point lies in the Liouville domain exactly at nonpositive
-times. -/
-private theorem flowOf_mem_iff_of_mem_frontier (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hy : y ∈ frontier W) : flowOf Z t y ∈ W ↔ t ≤ 0 := by
-  refine ⟨fun ht ↦ not_lt.1 fun ht' ↦ h.flowOf_notMem hZ hy.2 ht'
-    ((h.isCompleteVectorField hZ).mem_flowDomain _ _) ht, fun ht ↦ ?_⟩
-  simpa using h.flowOf_neg_mem hZ (h.isClosed.frontier_subset hy) (neg_nonneg.2 ht)
-
-/-- Every point outside the interior of the Liouville domain is reached from the boundary by the
-forward Liouville flow, at a nonnegative time. -/
-private theorem exists_mem_frontier_flowOf_eq (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ interior W) :
-    ∃ y ∈ frontier W, ∃ s, 0 ≤ s ∧ flowOf Z s y = x := by
-  by_cases hxW : x ∈ W
-  · obtain ⟨ψ, hψ⟩ := h.exists_flow_eq hZ
-    refine ⟨x, ?_, 0, le_rfl, by rw [hψ, Flow.map_zero_apply]⟩
-    rw [h.isClosed.frontier_eq]
-    exact ⟨hxW, hx⟩
-  · obtain ⟨⟨y, s⟩, ⟨hy, hs, hyx⟩, -⟩ := h.existsUnique_flowOf_eq hZ hxW
-    exact ⟨y, hy, s, hs.le, hyx⟩
-
 /-- The times `t ≥ 0` for which the backward Liouville flow carries `x` into the Liouville domain
 form the closed half-line starting at their infimum. -/
 private theorem sInf_le_iff (h : IsLiouvilleCompletion ω α W)
@@ -203,7 +160,7 @@ private theorem sInf_le_iff (h : IsLiouvilleCompletion ω α W)
   have hup : ∀ ⦃s t⦄, s ∈ S → s ≤ t → t ∈ S := fun s t hs hst ↦ by
     refine ⟨hs.1.trans hst, ?_⟩
     have := h.flowOf_neg_mem hZ hs.2 (sub_nonneg.2 hst)
-    rwa [hψ, hψ, ← Flow.map_add, show -(t - s) + -s = -t by ring, ← hψ] at this
+    rwa [h.flowOf_flowOf hZ, show -(t - s) + -s = -t by ring] at this
   -- It is nonempty: if the flow carries `x` into `W` at a positive time, then `x` already lies
   -- in the interior of `W`.
   have hne : S.Nonempty := by
@@ -214,7 +171,7 @@ private theorem sInf_le_iff (h : IsLiouvilleCompletion ω α W)
       by_contra hn
       refine h.flowOf_notMem hZ (fun hx ↦ hn ?_) ht0
         ((h.isCompleteVectorField hZ).mem_flowDomain _ _) ht
-      rw [neg_zero, hψ, Flow.map_zero_apply]
+      rw [neg_zero, h.flowOf_zero hZ]
       exact interior_subset hx
   have hclosed : IsClosed S := by
     refine (isClosed_le continuous_const continuous_id).inter (h.isClosed.preimage ?_)
@@ -232,9 +189,8 @@ theorem liouvilleRadialCoordinate_le_exp_iff (h : IsLiouvilleCompletion ω α W)
 /-- The radial coordinate equals `1` exactly on the Liouville domain. -/
 theorem liouvilleRadialCoordinate_eq_one_iff (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) : liouvilleRadialCoordinate Z W x = 1 ↔ x ∈ W := by
-  obtain ⟨ψ, hψ⟩ := h.exists_flow_eq hZ
   rw [← (one_le_liouvilleRadialCoordinate Z W x).ge_iff_eq', ← Real.exp_zero,
-    h.liouvilleRadialCoordinate_le_exp_iff hZ le_rfl, neg_zero, hψ, Flow.map_zero_apply]
+    h.liouvilleRadialCoordinate_le_exp_iff hZ le_rfl, neg_zero, h.flowOf_zero hZ]
 
 /-- The radial coordinate is greater than `1` exactly outside the Liouville domain. -/
 theorem one_lt_liouvilleRadialCoordinate_iff (h : IsLiouvilleCompletion ω α W)
@@ -258,8 +214,7 @@ theorem liouvilleRadialCoordinate_lt_exp_iff (h : IsLiouvilleCompletion ω α W)
       rwa [← hlog, Real.exp_lt_exp] at hlt
     have hmem := (h.liouvilleRadialCoordinate_le_exp_iff hZ (Real.log_nonneg h1)).1 hlog.ge
     have := h.flowOf_neg_mem_interior hZ hmem (sub_pos.2 hτT)
-    rwa [hψ, hψ, ← Flow.map_add, show ∀ τ, -(T - τ) + -τ = -T from fun τ ↦ by ring, ← hψ]
-      at this
+    rwa [h.flowOf_flowOf hZ, show ∀ τ, -(T - τ) + -τ = -T from fun τ ↦ by ring] at this
   · -- Times slightly smaller than `T` also flow `x` into the interior of `W`.
     intro hint
     by_contra hle
@@ -279,11 +234,10 @@ boundary of the Liouville domain and `t ≥ 0`, then `r(ψ_t y) = e^t`. -/
 theorem liouvilleRadialCoordinate_flowOf (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) (hy : y ∈ frontier W) (ht : 0 ≤ t) :
     liouvilleRadialCoordinate Z W (flowOf Z t y) = Real.exp t := by
-  obtain ⟨ψ, hψ⟩ := h.exists_flow_eq hZ
   -- For `T ≥ 0`, `r(ψ_t y) ≤ e^T` exactly when `ψ_{t - T} y ∈ W`, that is when `t ≤ T`.
   have key : ∀ T, 0 ≤ T → (liouvilleRadialCoordinate Z W (flowOf Z t y) ≤ Real.exp T ↔ t ≤ T) :=
     fun T hT ↦ by
-      rw [h.liouvilleRadialCoordinate_le_exp_iff hZ hT, hψ, hψ, ← Flow.map_add, ← hψ,
+      rw [h.liouvilleRadialCoordinate_le_exp_iff hZ hT, h.flowOf_flowOf hZ,
         h.flowOf_mem_iff_of_mem_frontier hZ hy, neg_add_nonpos_iff]
   have h1 := one_le_liouvilleRadialCoordinate Z W (flowOf Z t y)
   have hlog := Real.exp_log (one_pos.trans_le h1)
@@ -298,9 +252,8 @@ theorem liouvilleRadialCoordinate_flowOf_of_notMem_interior (h : IsLiouvilleComp
     (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ interior W) (ht : 0 ≤ t) :
     liouvilleRadialCoordinate Z W (flowOf Z t x) =
       Real.exp t * liouvilleRadialCoordinate Z W x := by
-  obtain ⟨ψ, hψ⟩ := h.exists_flow_eq hZ
   obtain ⟨y, hy, s, hs, rfl⟩ := h.exists_mem_frontier_flowOf_eq hZ hx
-  rw [h.liouvilleRadialCoordinate_flowOf hZ hy hs, hψ, hψ, ← Flow.map_add, ← hψ,
+  rw [h.liouvilleRadialCoordinate_flowOf hZ hy hs, h.flowOf_flowOf hZ,
     h.liouvilleRadialCoordinate_flowOf hZ hy (add_nonneg ht hs), Real.exp_add]
 
 /-- **The boundary point of a Liouville trajectory.** If `x` lies outside the interior of the
@@ -308,10 +261,9 @@ Liouville domain, then flowing `x` backwards for time `log r(x)` lands on the bo
 theorem flowOf_neg_log_liouvilleRadialCoordinate_mem_frontier (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ interior W) :
     flowOf Z (-Real.log (liouvilleRadialCoordinate Z W x)) x ∈ frontier W := by
-  obtain ⟨ψ, hψ⟩ := h.exists_flow_eq hZ
   obtain ⟨y, hy, s, hs, rfl⟩ := h.exists_mem_frontier_flowOf_eq hZ hx
-  rwa [h.liouvilleRadialCoordinate_flowOf hZ hy hs, Real.log_exp, hψ, hψ, ← Flow.map_add,
-    neg_add_cancel, Flow.map_zero_apply]
+  rwa [h.liouvilleRadialCoordinate_flowOf hZ hy hs, Real.log_exp, h.flowOf_flowOf hZ,
+    neg_add_cancel, h.flowOf_zero hZ]
 
 /-- For `c ≥ 1`, the sublevel set `{r ≤ c}` of the radial coordinate is the preimage of the
 Liouville domain under the backward Liouville flow for time `log c`. -/
