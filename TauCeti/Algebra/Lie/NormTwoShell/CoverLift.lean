@@ -49,6 +49,8 @@ character of the lattice that determines `φ` (`Matrix.ShellLieAlgebra.coverEqui
 
 * `Matrix.ShellLieAlgebra.coverEquiv_cartan`, `Matrix.ShellLieAlgebra.coverEquiv_root`: the values
   on Cartan and root vectors.
+* `Matrix.ShellLieAlgebra.coverEquiv_symm_cartan`, `Matrix.ShellLieAlgebra.coverEquiv_symm_root`:
+  the values of the inverse on Cartan and root vectors.
 * `Matrix.ShellLieAlgebra.coverEquiv_rootBracket`: the image of a root bracket.
 * `Matrix.ShellLieAlgebra.coverEquiv_lie`: a compatible pair preserves the bracket.
 * `Matrix.ShellLieAlgebra.coverEquiv_id`, `Matrix.ShellLieAlgebra.coverEquiv_trans`:
@@ -108,6 +110,23 @@ theorem coverEquiv_root (a : B.normTwoShell) :
     map_zero, LinearEquiv.apply_symm_apply, map_zsmul_unit, Prod.smul_mk, smul_zero]
   rw [← congrFun Finsupp.coe_basisSingleOne a, Basis.equiv_apply, Basis.unitsSMul_apply,
     Equiv.symm_apply_apply, Finsupp.coe_basisSingleOne]
+
+/-- The inverse of the action of a sign-cover lift sends the Cartan vector `H_h` to
+`H_(g⁻¹ h)`. -/
+@[simp]
+theorem coverEquiv_symm_cartan (h : J → ℤ) :
+    (coverEquiv φ g hg).symm (cartan B' h) = cartan B (g.symm h) := by
+  rw [LinearEquiv.symm_apply_eq, coverEquiv_cartan, LinearEquiv.apply_symm_apply]
+
+/-- The inverse of the action of a sign-cover lift sends the root vector `x_b` to
+`s_φ(g⁻¹ b) x_(g⁻¹ b)`. -/
+@[simp]
+theorem coverEquiv_symm_root (b : B'.normTwoShell) :
+    (coverEquiv φ g hg).symm (root B' b) =
+      SignCover.sectionSign φ ((normTwoShellEquivOfIsometry g hg).symm b) •
+        root B ((normTwoShellEquivOfIsometry g hg).symm b) := by
+  rw [LinearEquiv.symm_apply_eq, map_zsmul_unit, coverEquiv_root, Equiv.apply_symm_apply,
+    smul_smul, Int.units_mul_self, one_smul]
 
 variable {φ}
 
