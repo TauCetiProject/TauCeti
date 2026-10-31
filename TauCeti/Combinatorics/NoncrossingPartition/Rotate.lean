@@ -53,16 +53,6 @@ private def PreservesCyclicOrder (g : Fin n ≃ Fin n) : Prop :=
     (g a < g b ∧ g b < g c ∧ g c < g d) ∨ (g d < g a ∧ g a < g b ∧ g b < g c) ∨
       (g b < g c ∧ g c < g d ∧ g d < g a)
 
-/-- The parts of the pullback of a partition `P` of `Fin n` along a permutation `g` are the
-images of the parts of `P` under `g⁻¹`. -/
-private theorem parts_comap_copy (P : Finpartition (univ : Finset (Fin n))) (g : Fin n ≃ Fin n) :
-    ((P.copy (image_univ_equiv g).symm).comap g).parts =
-      P.parts.image fun B => B.map g.symm.toEmbedding := by
-  rw [Finpartition.parts_comap, Finpartition.copy_parts]
-  refine image_congr fun B _ => ?_
-  ext x
-  simp [mem_map_equiv]
-
 /-- Pulling a noncrossing partition back along a permutation that preserves the cyclic order of
 every four positions gives a noncrossing partition. -/
 private theorem isNoncrossing_comap_copy {P : Finpartition (univ : Finset (Fin n))}
@@ -134,10 +124,10 @@ def rotate (n : ℕ) :
   invFun π := ⟨(π.1.copy (image_univ_equiv (finRotate n)).symm).comap (finRotate n),
     isNoncrossing_comap_copy π.2 preservesCyclicOrder_finRotate⟩
   left_inv π := Subtype.ext <| Finpartition.ext <| by
-    simp only [parts_comap_copy, image_image, Function.comp_def, map_map]
+    simp only [Finpartition.parts_comap_copy_equiv, image_image, Function.comp_def, map_map]
     simp
   right_inv π := Subtype.ext <| Finpartition.ext <| by
-    simp only [parts_comap_copy, image_image, Function.comp_def, map_map]
+    simp only [Finpartition.parts_comap_copy_equiv, image_image, Function.comp_def, map_map]
     simp
   map_rel_iff' := Finpartition.comap_le_comap_iff
 
@@ -146,14 +136,14 @@ def rotate (n : ℕ) :
 @[simp]
 theorem parts_rotate (π : NoncrossingPartition (univ : Finset (Fin n))) :
     (rotate n π).1.parts = π.1.parts.image fun B => B.map (finRotate n).toEmbedding :=
-  parts_comap_copy π.1 (finRotate n).symm
+  Finpartition.parts_comap_copy_equiv π.1 (finRotate n).symm
 
 /-- The parts of the inverse rotation `(rotate n).symm π` are the images of the parts of `π` under
 `(finRotate n).symm`. -/
 @[simp]
 theorem parts_rotate_symm (π : NoncrossingPartition (univ : Finset (Fin n))) :
     ((rotate n).symm π).1.parts = π.1.parts.image fun B => B.map (finRotate n).symm.toEmbedding :=
-  parts_comap_copy π.1 (finRotate n)
+  Finpartition.parts_comap_copy_equiv π.1 (finRotate n)
 
 /-- A product over the parts of the rotation `rotate n π` is the product over the parts `B` of `π`
 evaluated at the rotated parts `finRotate n '' B`. -/

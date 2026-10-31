@@ -149,11 +149,13 @@ theorem isRotated_sort_map_finRotate {n : ℕ} (B : Finset (Fin n)) :
           by_cases hx : x = Fin.last n <;> simp [hx, hB]
       have h0 : (finRotate (n + 1)).symm 0 = Fin.last n :=
         (finRotate (n + 1)).symm_apply_eq.2 finRotate_last.symm
-      rw [hBC, List.map_append, List.map_singleton, finRotate_last, ← insert_erase hB, map_insert,
-        Equiv.coe_toEmbedding, finRotate_last,
-        sort_insert _ (fun _ _ => Fin.zero_le _) (by rw [mem_map_equiv, h0]; exact hC), hsort hC,
-        ← List.singleton_append]
-      exact List.isRotated_append
+      -- The last position moves to `0`, which comes first among the moved points.
+      have hBC' : (B.map (finRotate (n + 1)).toEmbedding).sort =
+          0 :: C.sort.map (finRotate (n + 1)) := by
+        rw [← insert_erase hB, map_insert, Equiv.coe_toEmbedding, finRotate_last,
+          sort_insert _ (fun _ _ => Fin.zero_le _) (by rw [mem_map_equiv, h0]; exact hC), hsort hC]
+      rw [hBC, hBC']
+      simpa using List.isRotated_append (l := C.sort.map (finRotate (n + 1))) (l' := [0])
     · rw [hsort hB]
 
 end LinearOrder

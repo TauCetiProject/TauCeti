@@ -39,7 +39,8 @@ partitions other than the finest and the coarsest, the position of the parts of
 of a finite partition of the image `f '' s` to a finite partition of `s`, which is an order
 embedding whose image consists of the partitions coarser than the partition of `s` into the fibres
 of `f`, each of which is the pullback of its pushforward `Finpartition.pushforward`, a left inverse
-of the pullback.
+of the pullback; pulling a partition of `univ` back along an equivalence moves its parts along the
+inverse equivalence.
 -/
 
 public section
@@ -553,6 +554,17 @@ theorem prod_parts_comap {M : Type*} [CommMonoid M] (P : Finpartition (s.image f
     ∏ X ∈ (P.comap f).parts, g X = ∏ C ∈ P.parts, g {x ∈ s | f x ∈ C} :=
   prod_image fun C hC D hD hCD => by
     rw [← image_filter_mem_of_mem_parts hC, hCD, image_filter_mem_of_mem_parts hD]
+
+/-- Pulling back a finite partition `P` of `univ` along an equivalence `g`, after identifying
+`univ` with its image under `g`, moves each part of `P` along `g.symm`. -/
+theorem parts_comap_copy_equiv [Fintype α] [Fintype β] (P : Finpartition (univ : Finset β))
+    (g : α ≃ β) :
+    ((P.copy (image_univ_equiv g).symm).comap g).parts =
+      P.parts.image fun B => B.map g.symm.toEmbedding := by
+  rw [parts_comap, copy_parts]
+  refine image_congr fun B _ => ?_
+  ext x
+  simp [mem_map_equiv]
 
 /-- Pulling back along `f` reflects and preserves refinement. -/
 @[simp]
