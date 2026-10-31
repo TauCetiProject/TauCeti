@@ -47,6 +47,11 @@ commutative ring is the base change of that curve.
   is an elliptic curve.
 * `WeierstrassCurve.specializeElliptic`: for an elliptic Weierstrass curve `W` over a commutative
   ring `R`, the classifying homomorphism `ℤ[A₁,⋯,A₆][Δ⁻¹] →+* R` extending `W.specialize`.
+* `WeierstrassCurve.Universal.VariableChangeRing`, `WeierstrassCurve.Universal.variableChange`:
+  the ring `R₀[u, u⁻¹, r, s, t]` and the universal change of variables `(u, r, s, t)` over it.
+* `WeierstrassCurve.VariableChange.specialize`: for a change of variables `C` over `R` and a ring
+  homomorphism `f : R₀ →+* R`, the classifying homomorphism `R₀[u, u⁻¹, r, s, t] →+* R` extending
+  `f`.
 
 ## Main results
 
@@ -80,6 +85,8 @@ commutative ring is the base change of that curve.
 * `WeierstrassCurve.exists_map_eq_of_isElliptic`: an elliptic Weierstrass curve over a commutative
   ring in `Type u` is the base change of an elliptic Weierstrass curve over a Noetherian integral
   domain in `Type u`.
+* `WeierstrassCurve.VariableChange.map_specialize`: every change of variables is a specialization
+  of the universal one.
 * `WeierstrassCurve.exists_map_eq_and_map_eq_of_isElliptic`: the same holds for an elliptic
   Weierstrass curve together with a change of variables.
 
@@ -630,6 +637,64 @@ lemma specializeElliptic_ellipticCurve :
 
 end SpecializeElliptic
 
+section VariableChangeRing
+
+namespace Universal
+
+variable (R₀ : Type*) [CommRing R₀]
+
+/-- The ring `R₀[u, u⁻¹, r, s, t]` of the universal change of variables over `R₀`
+(`Universal.variableChange`): the localization of `R₀[u, r, s, t]` away from `u`. For
+`R₀ = ℤ[A₁,⋯,A₆]` it is the ring `Γ` of arrows of the Weierstrass Hopf algebroid. -/
+abbrev VariableChangeRing : Type _ :=
+  Localization.Away (MvPolynomial.X 0 : MvPolynomial (Fin 4) R₀)
+
+instance [IsDomain R₀] : IsDomain (VariableChangeRing R₀) :=
+  Localization.Away.isDomain (MvPolynomial.X_ne_zero 0)
+
+/-- The universal change of variables `(u, r, s, t)` over `VariableChangeRing R₀`. Every change of
+variables over a ring `R` is its image along `VariableChange.specialize`
+(`VariableChange.map_specialize`). -/
+def variableChange : VariableChange (VariableChangeRing R₀) :=
+  ⟨(IsLocalization.Away.algebraMap_isUnit (MvPolynomial.X 0 : MvPolynomial (Fin 4) R₀)).unit,
+    algebraMap (MvPolynomial (Fin 4) R₀) _ (.X 1), algebraMap (MvPolynomial (Fin 4) R₀) _ (.X 2),
+    algebraMap (MvPolynomial (Fin 4) R₀) _ (.X 3)⟩
+
+end Universal
+
+namespace VariableChange
+
+variable {R₀ : Type*} [CommRing R₀] (C : VariableChange R) (f : R₀ →+* R)
+
+/-- The **classifying homomorphism** of a change of variables `C = (u, r, s, t)` over `R`, relative
+to a ring homomorphism `f : R₀ →+* R`: the homomorphism `R₀[u, u⁻¹, r, s, t] →+* R` extending `f`
+and substituting `u, r, s, t` for the indeterminates. The universal change of variables maps to `C`
+along it (`map_specialize`). -/
+def specialize : Universal.VariableChangeRing R₀ →+* R :=
+  IsLocalization.Away.lift (MvPolynomial.X 0 : MvPolynomial (Fin 4) R₀)
+    (g := MvPolynomial.eval₂Hom f ![(C.u : R), C.r, C.s, C.t]) (by simp)
+
+/-- Restricted to `R₀`, the classifying homomorphism of `C` relative to `f` is `f`. -/
+@[simp]
+lemma specialize_comp_algebraMap : (C.specialize f).comp (algebraMap R₀ _) = f := by
+  ext a
+  simp [specialize, IsScalarTower.algebraMap_apply R₀ (MvPolynomial (Fin 4) R₀)
+    (Universal.VariableChangeRing R₀)]
+
+/-- The pointwise form of `specialize_comp_algebraMap`. -/
+@[simp]
+lemma specialize_algebraMap (a : R₀) : C.specialize f (algebraMap R₀ _ a) = f a :=
+  DFunLike.congr_fun (C.specialize_comp_algebraMap f) a
+
+/-- Every change of variables is a specialization of the universal change of variables. -/
+@[simp]
+lemma map_specialize : (Universal.variableChange R₀).map (C.specialize f) = C := by
+  ext <;> simp [Universal.variableChange, specialize]
+
+end VariableChange
+
+end VariableChangeRing
+
 section Universe
 
 universe u
@@ -657,31 +722,16 @@ variable (C : VariableChange R)
 /-- Every pair of an elliptic Weierstrass curve `W` and a change of variables `C` over a
 commutative ring `R` in `Type u` is the base change `(W₁.map g, C₁.map g)` of such a pair over a
 Noetherian integral domain `R₁` in the same universe `Type u`, along a ring homomorphism
-`g : R₁ →+* R`. The ring `R₁` is `R₀[u, r, s, t][u⁻¹]`, for the ring `R₀` of
-`exists_map_eq_of_isElliptic`, and `C₁` is the change of variables `(u, r, s, t)`. -/
+`g : R₁ →+* R`. The ring `R₁` is `Universal.VariableChangeRing R₀`, for the ring `R₀` of
+`exists_map_eq_of_isElliptic`, and `C₁` is `Universal.variableChange R₀`. -/
 theorem exists_map_eq_and_map_eq_of_isElliptic :
     ∃ (R₁ : Type u) (_ : CommRing R₁) (_ : IsDomain R₁) (_ : IsNoetherianRing R₁)
       (W₁ : WeierstrassCurve R₁) (_ : W₁.IsElliptic) (C₁ : VariableChange R₁) (g : R₁ →+* R),
       W₁.map g = W ∧ C₁.map g = C := by
   obtain ⟨R₀, _, _, _, W₀, _, f, rfl⟩ := W.exists_map_eq_of_isElliptic
-  -- the ring `R₀[u, r, s, t][u⁻¹]`, a Noetherian integral domain
-  set x : MvPolynomial (Fin 4) R₀ := MvPolynomial.X 0
-  have : IsDomain (Localization.Away x) := Localization.Away.isDomain (MvPolynomial.X_ne_zero 0)
-  -- the specialization `u, r, s, t ↦ C.u, C.r, C.s, C.t`
-  set φ : MvPolynomial (Fin 4) R₀ →+* R :=
-    MvPolynomial.eval₂Hom f ![(C.u : R), C.r, C.s, C.t]
-  have hφ : IsUnit (φ x) := by simp [φ, x]
-  refine ⟨Localization.Away x, inferInstance, inferInstance, inferInstance,
-    W₀.map (algebraMap R₀ (Localization.Away x)), inferInstance,
-    ⟨(IsLocalization.Away.algebraMap_isUnit x).unit,
-      algebraMap (MvPolynomial (Fin 4) R₀) _ (.X 1), algebraMap (MvPolynomial (Fin 4) R₀) _ (.X 2),
-      algebraMap (MvPolynomial (Fin 4) R₀) _ (.X 3)⟩,
-    IsLocalization.Away.lift x hφ, ?_, ?_⟩
-  · rw [map_map]
-    congr 1
-    ext r
-    simp [IsScalarTower.algebraMap_apply R₀ (MvPolynomial (Fin 4) R₀) (Localization.Away x), φ]
-  · ext <;> simp [VariableChange.map, φ, x]
+  exact ⟨Universal.VariableChangeRing R₀, inferInstance, inferInstance, inferInstance,
+    W₀.map (algebraMap R₀ _), inferInstance, Universal.variableChange R₀, C.specialize f,
+    by rw [map_map, VariableChange.specialize_comp_algebraMap], C.map_specialize f⟩
 
 end Universe
 

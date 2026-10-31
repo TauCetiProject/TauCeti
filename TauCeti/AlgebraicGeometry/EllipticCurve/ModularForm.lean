@@ -58,6 +58,8 @@ invariant ring; it is a statement about the primes `2` and `3`.
   has a unique weight (`WeierstrassCurve.IsIntegralModularForm.inj_right`).
 * `WeierstrassCurve.isIntegralModularForm_iff_of_mem_adjoin`: an element of `ℤ[c₄, c₆, Δ]` is an
   integral modular form of weight `k` exactly when it is weighted homogeneous of weight `k`.
+* `WeierstrassCurve.isIntegralModularForm_iff_universal`: the transformation law need only be
+  checked for the universal curve and change of variables over `ℤ[a₁, ⋯, a₆, u, u⁻¹, r, s, t]`.
 * `WeierstrassCurve.isIntegralModularForm_smul_iff`: for a nonzero integer `n`, `n • f` is an
   integral modular form of weight `k` exactly when `f` is.
 * `WeierstrassCurve.IsIntegralModularForm.six_pow_mul_eq_specialize_shortCurve`: an integral
@@ -134,39 +136,39 @@ lemma pow (hf : IsIntegralModularForm k f) (n : ℕ) : IsIntegralModularForm (k 
 
 end IsIntegralModularForm
 
+/-- **The universal transformation law.** It suffices to check the transformation law of an
+integral modular form once, for the universal Weierstrass curve and the universal change of
+variables `Universal.variableChange` over `Γ = ℤ[a₁, ⋯, a₆, u, u⁻¹, r, s, t]`
+(`Universal.VariableChangeRing`): every pair `(W, C)` is a specialization of that one. -/
+theorem isIntegralModularForm_iff_universal : IsIntegralModularForm k f ↔
+    (variableChange (MvPolynomial Coeff ℤ) •
+        Universal.curve.baseChange (VariableChangeRing (MvPolynomial Coeff ℤ))).specialize f =
+      ↑(variableChange (MvPolynomial Coeff ℤ)).u⁻¹ ^ k *
+        (Universal.curve.baseChange (VariableChangeRing (MvPolynomial Coeff ℤ))).specialize f := by
+  refine ⟨fun hf ↦ hf.specialize_smul _ _, fun h R _ W C ↦ ?_⟩
+  -- Specialize `h` along the classifying homomorphism `ψ` of `(W, C)`.
+  set ψ := C.specialize W.specialize with hψ
+  have hW : (Universal.curve.baseChange (VariableChangeRing _)).map ψ = W := by
+    simp only [hψ, baseChange, map_map, VariableChange.specialize_comp_algebraMap, map_specialize]
+  have hC : (variableChange _).map ψ = C := C.map_specialize _
+  clear_value ψ
+  rw [← hW, ← hC, map_variableChange, specialize_map, specialize_map, RingHom.comp_apply, h,
+    map_mul, map_pow]
+  simp
+
 /-- Multiplying by a nonzero integer neither creates nor destroys integral modular forms. -/
 theorem isIntegralModularForm_smul_iff {n : ℤ} (hn : n ≠ 0) :
     IsIntegralModularForm k (n • f) ↔ IsIntegralModularForm k f := by
-  refine ⟨fun h R _ W C ↦ ?_, fun hf ↦ hf.smul n⟩
-  -- Every pair `(W, C)` is a specialization of the universal Weierstrass curve and change of
-  -- variables over `Γ = ℤ[a₁, ⋯, a₆, u, u⁻¹, r, s, t]`, the localization of
-  -- `B = ℤ[a₁, ⋯, a₆, u, r, s, t]` away from `u`. As `Γ` has no additive torsion, the
-  -- transformation law of `n • f` there can be divided by `n`.
-  let x : MvPolynomial (Coeff ⊕ Fin 4) ℤ := X (.inr 0)
-  let Γ := Localization.Away x
-  have hx : Submonoid.powers x ≤ nonZeroDivisors (MvPolynomial (Coeff ⊕ Fin 4) ℤ) :=
-    powers_le_nonZeroDivisors_of_noZeroDivisors (X_ne_zero _)
-  have : IsDomain Γ := IsLocalization.isDomain_localization hx
-  have : CharZero Γ := charZero_of_injective_algebraMap (IsLocalization.injective Γ hx)
-  let ι : MvPolynomial (Coeff ⊕ Fin 4) ℤ →+* Γ := algebraMap _ Γ
-  let W₀ : WeierstrassCurve Γ := Universal.curve.map (ι.comp (rename Sum.inl).toRingHom)
-  let C₀ : VariableChange Γ := ⟨(IsLocalization.Away.algebraMap_isUnit x).unit,
-    ι (X (.inr 1)), ι (X (.inr 2)), ι (X (.inr 3))⟩
-  let g : MvPolynomial (Coeff ⊕ Fin 4) ℤ →ₐ[ℤ] R :=
-    aeval (Sum.elim (fun i ↦ W.specialize (X i)) ![C.u, C.r, C.s, C.t])
-  let ψ : Γ →+* R := IsLocalization.Away.lift x (g := g.toRingHom) (by simp [g, x])
-  have hψ (b) : ψ (algebraMap _ Γ b) = g b := IsLocalization.Away.lift_eq x _ b
-  have hW : W₀.map ψ = W := by
-    ext <;> simp [W₀, ι, hψ, g]
-  have hC : C₀.map ψ = C := by
-    ext <;> simp [C₀, ι, hψ, g, x]
-  have h₀ : (C₀ • W₀).specialize f = ↑C₀.u⁻¹ ^ k * W₀.specialize f := by
-    have := h.specialize_smul W₀ C₀
-    rw [zsmul_eq_mul, map_mul, map_mul, map_intCast, map_intCast, mul_left_comm] at this
-    exact mul_left_cancel₀ (Int.cast_ne_zero.mpr hn) this
-  rw [← hW, ← hC, map_variableChange, specialize_map, specialize_map, RingHom.comp_apply, h₀,
-    map_mul, map_pow]
-  simp
+  refine ⟨fun h ↦ isIntegralModularForm_iff_universal.2 ?_, fun hf ↦ hf.smul n⟩
+  -- The ring `Γ = ℤ[a₁, ⋯, a₆, u, u⁻¹, r, s, t]` has no additive torsion, so the universal
+  -- transformation law of `n • f` can be divided by `n`.
+  have : CharZero (VariableChangeRing (MvPolynomial Coeff ℤ)) :=
+    charZero_of_injective_algebraMap (IsLocalization.injective _
+      (powers_le_nonZeroDivisors_of_noZeroDivisors
+        (X_ne_zero (R := MvPolynomial Coeff ℤ) (σ := Fin 4) 0)))
+  have := isIntegralModularForm_iff_universal.1 h
+  rw [zsmul_eq_mul, map_mul, map_mul, map_intCast, map_intCast, mul_left_comm] at this
+  exact mul_left_cancel₀ (Int.cast_ne_zero.mpr hn) this
 
 variable (k) in
 @[simp]
@@ -291,18 +293,17 @@ weight `k` then `6ᵏ f` lies in the subring `ℤ[c₄, c₆]`. -/
 theorem IsIntegralModularForm.six_pow_mul_mem_adjoin (hf : IsIntegralModularForm k f) :
     6 ^ k * f ∈ Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆} := by
   rw [hf.six_pow_mul_eq_specialize_shortCurve]
-  clear hf
+  -- The specialization is an `aeval`, with values `0`, `-27c₄` and `-54c₆` in `ℤ[c₄, c₆]`.
+  set S := shortCurve (-27 * Universal.curve.c₄) (-54 * Universal.curve.c₆)
+  have h : S.specialize f ∈ (aeval fun i ↦ S.specialize.toIntAlgHom (X i)).range :=
+    ⟨f, (DFunLike.congr_fun (aeval_unique S.specialize.toIntAlgHom) f).symm⟩
+  rw [aeval_range] at h
+  refine Algebra.adjoin_le (Set.range_subset_iff.2 fun i ↦ ?_) h
   have h₄ : Universal.curve.c₄ ∈ Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆} :=
     Algebra.subset_adjoin (by simp)
   have h₆ : Universal.curve.c₆ ∈ Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆} :=
     Algebra.subset_adjoin (by simp)
-  induction f using MvPolynomial.induction_on with
-  | C n => rw [eq_intCast C, map_intCast]; exact Subalgebra.intCast_mem _ n
-  | add p q hp hq => rw [map_add]; exact add_mem hp hq
-  | mul_X p i hp =>
-    rw [map_mul]
-    refine mul_mem hp ?_
-    cases i <;> simp [mul_mem, h₄, h₆]
+  cases i <;> simp [S, mul_mem, h₄, h₆]
 
 /-- **Integral modular forms after inverting `6`.** A polynomial in the Weierstrass coefficients is
 an integral modular form of weight `k` exactly when it is weighted homogeneous of weight `k` and
