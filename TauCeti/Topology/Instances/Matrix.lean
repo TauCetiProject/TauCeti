@@ -19,6 +19,8 @@ pseudo-metrizable whenever `α` is. This makes metrizable-codomain results, such
 of pointwise limits of measurable maps, available for matrix-valued functions without choosing a
 matrix norm.
 
+Matrices with countably many rows and columns are second countable when their entries are.
+
 The same product topology gives entrywise control of a real matrix-valued map near a point of
 continuity, again without a matrix norm
 (`ContinuousAt.exists_ball_subset_forall_abs_sub_le`).
@@ -41,6 +43,12 @@ instance {m n α : Type*} [Finite m] [Finite n] [TopologicalSpace α]
     TopologicalSpace.PseudoMetrizableSpace (Matrix m n α) :=
   -- The topology of `Matrix m n α` is by definition the product topology on `m → n → α`.
   inferInstanceAs (TopologicalSpace.PseudoMetrizableSpace (m → n → α))
+
+/-- Matrices with countably many rows and columns over a second-countable space are
+second countable. -/
+instance {m n α : Type*} [Countable m] [Countable n] [TopologicalSpace α]
+    [SecondCountableTopology α] : SecondCountableTopology (Matrix m n α) :=
+  inferInstanceAs (SecondCountableTopology (m → n → α))
 
 end TauCeti
 

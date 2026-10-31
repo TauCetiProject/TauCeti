@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 -- Access the constructor body to supply its missing public computation rule, and the body of
 -- `IsLocalDiffeomorphAt` to construct and destructure its witness.
@@ -30,7 +31,7 @@ every differential.
 The file also records that maximal-atlas charts and their inverses are local diffeomorphisms, and
 that being a local diffeomorphism at a point is an open condition: the partial diffeomorphism
 witnessing it at one point witnesses it at every nearby point, and that a local diffeomorphism can
-be cancelled on the right of a composite local diffeomorphism.
+be cancelled on either side of a composite local diffeomorphism.
 
 ## Main results
 
@@ -57,6 +58,8 @@ be cancelled on the right of a composite local diffeomorphism.
   condition.
 * `IsLocalDiffeomorphAt.of_comp_right`: a map whose composite with a local diffeomorphism is a local
   diffeomorphism is itself one.
+* `IsLocalDiffeomorphAt.of_comp_left`: a continuous map followed by a local diffeomorphism is a
+  local diffeomorphism if the composite is one.
 * `TauCeti.isLocalDiffeomorph_of_mfderiv_eq`: the global version.
 
 -/
@@ -275,6 +278,25 @@ theorem _root_.IsLocalDiffeomorphAt.of_comp_right {F' : Type*} [NormedAddCommGro
   have hx : he.localInverse (e x) = x := he.localInverse_left_inv he.localInverse_mem_target
   refine ⟨he.localInverse.trans Ψ, by simp [he.localInverse_mem_source, hx, hxΨ], fun y hy ↦ ?_⟩
   simpa [he.localInverse_right_inv hy.1] using hfeΨ hy.2
+
+/-- **Cancelling a local diffeomorphism on the left.** If `f` is a `C^n` local diffeomorphism at
+`e x`, the map `e` is continuous at `x`, and `f ∘ e` is a `C^n` local diffeomorphism at `x`, then
+`e` is a `C^n` local diffeomorphism at `x`: near `x` it is `f ∘ e` followed by a local inverse of
+`f`. Continuity of `e` cannot be dropped, since it is what keeps `e` near `x` inside the domain of
+that local inverse. -/
+theorem _root_.IsLocalDiffeomorphAt.of_comp_left {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace 𝕂 F'] {G' : Type*} [TopologicalSpace G'] {K : ModelWithCorners 𝕂 F' G'}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace G' P] {e : M → N} {f : N → P} {x : M}
+    (hfe : IsLocalDiffeomorphAt I K n (f ∘ e) x) (hf : IsLocalDiffeomorphAt J K n f (e x))
+    (he : ContinuousAt e x) : IsLocalDiffeomorphAt I J n e x := by
+  obtain ⟨Ψ, hxΨ, hfeΨ⟩ := hfe
+  -- shrink the source of `Ψ` to an open set which `e` maps into the domain of the local inverse
+  obtain ⟨t, hte, ht, hxt⟩ := mem_nhds_iff.1 <|
+    he.preimage_mem_nhds (hf.localInverse.open_target.mem_nhds hf.localInverse_mem_target)
+  refine ⟨(Ψ.restrOpen t ht).trans hf.localInverse, ?_, fun y hy ↦ ?_⟩
+  · simp [hxΨ, hxt, ← hfeΨ hxΨ, hf.localInverse_mem_source]
+  · obtain ⟨⟨hyΨ, hyt⟩, -⟩ : (y ∈ Ψ.source ∧ y ∈ t) ∧ _ := by simpa using hy
+    simp [← hfeΨ hyΨ, hf.localInverse_left_inv (hte hyt)]
 
 end EqOn
 
