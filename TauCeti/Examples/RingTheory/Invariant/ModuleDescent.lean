@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.RingTheory.Invariant.ModuleDescent
-import TauCeti.RingTheory.Etale.Torsor
+import TauCeti.RingTheory.Etale.Torsor.Basic
 
 /-!
 # Tests for Galois descent of modules
