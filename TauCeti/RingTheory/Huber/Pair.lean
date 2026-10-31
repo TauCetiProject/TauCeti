@@ -33,6 +33,8 @@ explicit.
 
 * `TauCeti.Huber.IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent`: `A°° ⊆ A⁺` for
   every ring of integral elements.
+* `TauCeti.Huber.IsRingOfIntegralElements.mem_of_pow_mem`: `A⁺` contains every element some
+  positive power of which lies in `A⁺`.
 * `TauCeti.Huber.IsRingOfIntegralElements.map`: an isomorphism of topological rings carries a
   ring of integral elements onto a ring of integral elements.
 * `TauCeti.Huber.Pair.powerBounded`: `A⁺ = A°` is a ring of integral elements, the largest one.
@@ -113,6 +115,24 @@ theorem IsRingOfIntegralElements.mem_of_isTopologicallyNilpotent [Nonarchimedean
     (ha : IsTopologicallyNilpotent a) : a ∈ Aplus :=
   have := h.isIntegrallyClosedIn
   mem_of_isTopologicallyNilpotent_of_isIntegrallyClosedIn h.isOpen ha
+
+omit [TopologicalSpace A] in
+/-- A subring `A⁺` integrally closed in `A` contains every element `a` some positive power of
+which lies in `A⁺`, as `a` is then integral over `A⁺`. -/
+theorem mem_of_pow_mem_of_isIntegrallyClosedIn {Aplus : Subring A} [IsIntegrallyClosedIn Aplus A]
+    {a : A} {n : ℕ} (hn : 0 < n) (ha : a ^ n ∈ Aplus) : a ∈ Aplus := by
+  have hpow : IsIntegral Aplus (a ^ n) :=
+    isIntegral_algebraMap (R := Aplus) (x := (⟨a ^ n, ha⟩ : Aplus))
+  obtain ⟨y, hy⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow hn hpow
+  exact hy ▸ y.2
+
+/-- A ring of integral elements `A⁺` contains every element some positive power of which lies in
+`A⁺`. -/
+theorem IsRingOfIntegralElements.mem_of_pow_mem [NonarchimedeanRing A] {Aplus : Subring A}
+    (h : IsRingOfIntegralElements Aplus) {a : A} {n : ℕ} (hn : 0 < n) (ha : a ^ n ∈ Aplus) :
+    a ∈ Aplus :=
+  have := h.isIntegrallyClosedIn
+  mem_of_pow_mem_of_isIntegrallyClosedIn hn ha
 
 /-- An isomorphism of topological rings carries a ring of integral elements onto a ring of
 integral elements. -/

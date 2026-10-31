@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Perfectoid.Padic
+public import TauCeti.NumberTheory.Padics.Complex.Basic
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.Plus
 public import Mathlib.Algebra.CharP.Quotient
 
@@ -35,30 +36,14 @@ namespace TauCeti.Examples.UniformTiltPlus
 
 variable (p : ℕ) [hp : Fact p.Prime]
 
-/-- The norm of `p` in `ℂ_p` is `p⁻¹`. -/
-private theorem norm_natCast_padicComplex : ‖(p : ℂ_[p])‖ = (p : ℝ)⁻¹ := by
-  rw [← map_natCast (algebraMap ℚ_[p] ℂ_[p]) p, norm_algebraMap', Padic.norm_p]
-
-/-- `‖p‖ < 1` in `ℂ_p`. -/
-private theorem norm_natCast_padicComplex_lt_one : ‖(p : ℂ_[p])‖ < 1 := by
-  rw [norm_natCast_padicComplex]
-  exact inv_lt_one_of_one_lt₀ (mod_cast hp.out.one_lt)
-
 /-- `p` is topologically nilpotent in `ℂ_p`, as `‖p‖ < 1`. -/
 local instance : Fact (IsTopologicallyNilpotent (p : ℂ_[p])) :=
-  ⟨tendsto_pow_atTop_nhds_zero_of_norm_lt_one (norm_natCast_padicComplex_lt_one p)⟩
+  ⟨tendsto_pow_atTop_nhds_zero_of_norm_lt_one (PadicComplex.norm_p_lt_one p)⟩
 
 /-- The power-bounded subring of `ℂ_p` is a ring of integral elements. -/
 theorem isRingOfIntegralElements_padicComplex :
     IsRingOfIntegralElements (powerBoundedSubring ℂ_[p]) := by
   simpa only [Pair.powerBounded_plus] using (Pair.powerBounded ℂ_[p]).isRingOfIntegralElements
-
-/-- `p` is a pseudouniformiser of `ℂ_p`. -/
-private theorem isPseudoUniformizer_natCast_padicComplex :
-    IsPseudoUniformizer (((p : powerBoundedSubring ℂ_[p]) : ℂ_[p])) := by
-  rw [Subring.coe_natCast]
-  exact isPseudoUniformizer_iff_norm_lt_one.mpr
-    ⟨Nat.cast_ne_zero.mpr hp.out.ne_zero, norm_natCast_padicComplex_lt_one p⟩
 
 /-- `ℂ_p° ⧸ p` has characteristic `p`, as `p` is not a unit of `ℂ_p°`. -/
 local instance : CharP (powerBoundedSubring ℂ_[p] ⧸ Ideal.span {(p : powerBoundedSubring ℂ_[p])})
@@ -72,13 +57,15 @@ local instance : CharP (powerBoundedSubring ℂ_[p] ⧸ Ideal.span {(p : powerBo
       isPowerBounded_iff_norm_le_one.mp (mem_powerBoundedSubring.mp (u⁻¹).1.2)
     have h2 := congrArg norm hu'
     rw [norm_mul, norm_one] at h2
-    have := norm_natCast_padicComplex_lt_one p
+    have := PadicComplex.norm_p_lt_one p
     nlinarith [norm_nonneg (p : ℂ_[p])]
 
 /-- `ℂ_p°` is `p`-adically complete. -/
 local instance :
     IsAdicComplete (Ideal.span {(p : powerBoundedSubring ℂ_[p])}) (powerBoundedSubring ℂ_[p]) :=
-  IsUniform.isAdicComplete_span_singleton _ (isPseudoUniformizer_natCast_padicComplex p)
+  IsUniform.isAdicComplete_span_singleton _ <| by
+    rw [Subring.coe_natCast]
+    exact isPseudoUniformizer_natCast_padicComplex p
 
 variable (ϖ : PseudoUniformizerRoots p ℂ_[p])
 
