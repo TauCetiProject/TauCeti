@@ -27,11 +27,11 @@ its leading term.
   `π = TauCeti.killingCartanProjection H` is the projection of `L` onto `H` along the root spaces
   (`TauCeti.cartanProjection_prod_map_ι_sub_mem_pbwFiltrationPrevious`).
 
-Both rest on three rules for multiplying by a generator: a generator from `n⁻` on the left or one
-from `n⁺` on the right is killed by the projection, and a generator `h` of `H` on the left passes
-through it (`TauCeti.cartanProjection_ι_coe_mul`), because `ad h` preserves the
-augmentation ideal of `U(n⁻)`. A generator `e` of `n⁺` on the left is moved to the right at the
-cost of the commutator `⁅ι e, u⁆`, which has smaller PBW degree.
+Both rest on the three rules for multiplying by a generator from
+`TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.HarishChandra`: a generator from `n⁻` on the
+left or one from `n⁺` on the right is killed by the projection, and a generator `h` of `H` on the
+left passes through it (`TauCeti.cartanProjection_ι_coe_mul`). A generator `e` of `n⁺` on the left
+is moved to the right at the cost of the commutator `⁅ι e, u⁆`, which has smaller PBW degree.
 
 Read in `S(H)` through `U(H) ≃ S(H)`, the PBW filtration of `U(H)` is the degree filtration of
 `S(H)`. On the centre this gives the two facts about the Harish-Chandra projection
@@ -43,12 +43,6 @@ homogeneous Lie invariant `p` of degree `n` it agrees with the Chevalley restric
 
 ## Main results
 
-* `TauCeti.killingCartanProjection_eq_zero_of_mem_negativeNilradical` and
-  `TauCeti.killingCartanProjection_eq_zero_of_mem_positiveNilradical`: the projection `π` of `L`
-  onto `H` vanishes on both nilradicals.
-* `TauCeti.cartanProjection_ι_mul_of_mem_negativeNilradical`,
-  `TauCeti.cartanProjection_mul_ι_of_mem_positiveNilradical` and
-  `TauCeti.cartanProjection_ι_coe_mul`: the three multiplication rules.
 * `TauCeti.cartanProjection_mem_pbwFiltration`: the Cartan projection preserves PBW degree.
 * `TauCeti.cartanProjection_prod_map_ι_sub_mem_pbwFiltrationPrevious`: its leading term on words.
 * `TauCeti.cartanProjection_pbwHomogeneousSymmetrization_sub_mem_pbwFiltrationPrevious`: its
@@ -78,124 +72,7 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra K
 
-/-! ### The projection onto `H` on the nilradicals -/
-
-/-- The Killing-orthogonal projection onto `H` vanishes on the span of any set of root spaces. -/
-theorem killingCartanProjection_eq_zero_of_mem_rootSpaceSpan {S : Set H.root} {x : L}
-    (hx : x ∈ rootSpaceSpan H S) : killingCartanProjection H x = 0 := by
-  have hle : (rootSpaceSpan H S : Submodule K L) ≤ LinearMap.ker (killingCartanProjection H) := by
-    rw [rootSpaceSpan_eq_iSup, LieSubmodule.iSup_toSubmodule]
-    exact iSup_le fun α _ hy ↦ killingCartanProjection_eq_zero_of_mem_rootSpace
-      (Finset.mem_filter.mp (α : H.root).2).2 hy
-  exact hle hx
-
 variable (b : (IsKilling.rootSystem H).Base)
-
-/-- The Killing-orthogonal projection onto `H` vanishes on the negative nilradical. -/
-theorem killingCartanProjection_eq_zero_of_mem_negativeNilradical {x : L}
-    (hx : x ∈ negativeNilradical H b) : killingCartanProjection H x = 0 :=
-  killingCartanProjection_eq_zero_of_mem_rootSpaceSpan ((mem_negativeNilradical H b x).mp hx)
-
-/-- The Killing-orthogonal projection onto `H` vanishes on the positive nilradical. -/
-theorem killingCartanProjection_eq_zero_of_mem_positiveNilradical {x : L}
-    (hx : x ∈ positiveNilradical H b) : killingCartanProjection H x = 0 :=
-  killingCartanProjection_eq_zero_of_mem_rootSpaceSpan ((mem_positiveNilradical H b x).mp hx)
-
-/-! ### Multiplying by a generator -/
-
-/-- **A generator from `n⁻` on the left is killed by the Cartan projection**: the augmentation of
-`U(n⁻)` vanishes on its generators. -/
-theorem cartanProjection_ι_mul_of_mem_negativeNilradical {x : L}
-    (hx : x ∈ negativeNilradical H b) (u : U L) :
-    cartanProjection b (_root_.UniversalEnvelopingAlgebra.ι K x * u) = 0 := by
-  have hι : _root_.UniversalEnvelopingAlgebra.ι K x =
-      UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl
-        (_root_.UniversalEnvelopingAlgebra.ι K (⟨x, hx⟩ : negativeNilradical H b)) := by
-    rw [UniversalEnvelopingAlgebra.map_ι, LieSubalgebra.coe_incl]
-  have key : cartanProjection b ∘ₗ LinearMap.mulLeft K (_root_.UniversalEnvelopingAlgebra.ι K x) =
-      0 := by
-    refine UniversalEnvelopingAlgebra.linearMap_ext_triangular b fun f h e ↦ ?_
-    rw [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.zero_apply, ← mul_assoc,
-      ← mul_assoc, hι, ← map_mul, cartanProjection_mul_mul, ← Bialgebra.counitAlgHom_apply,
-      map_mul, Bialgebra.counitAlgHom_apply, UniversalEnvelopingAlgebra.counit_ι, zero_mul,
-      zero_mul, zero_smul]
-  simpa using LinearMap.congr_fun key u
-
-/-- **A generator from `n⁺` on the right is killed by the Cartan projection**: the augmentation of
-`U(n⁺)` vanishes on its generators. -/
-theorem cartanProjection_mul_ι_of_mem_positiveNilradical {x : L}
-    (hx : x ∈ positiveNilradical H b) (u : U L) :
-    cartanProjection b (u * _root_.UniversalEnvelopingAlgebra.ι K x) = 0 := by
-  have hι : _root_.UniversalEnvelopingAlgebra.ι K x =
-      UniversalEnvelopingAlgebra.map K (positiveNilradical H b).incl
-        (_root_.UniversalEnvelopingAlgebra.ι K (⟨x, hx⟩ : positiveNilradical H b)) := by
-    rw [UniversalEnvelopingAlgebra.map_ι, LieSubalgebra.coe_incl]
-  have key : cartanProjection b ∘ₗ LinearMap.mulRight K (_root_.UniversalEnvelopingAlgebra.ι K x) =
-      0 := by
-    refine UniversalEnvelopingAlgebra.linearMap_ext_triangular b fun f h e ↦ ?_
-    have hε : Coalgebra.counit (R := K)
-        (e * _root_.UniversalEnvelopingAlgebra.ι K (⟨x, hx⟩ : positiveNilradical H b)) = 0 := by
-      rw [← Bialgebra.counitAlgHom_apply, map_mul, Bialgebra.counitAlgHom_apply,
-        Bialgebra.counitAlgHom_apply, UniversalEnvelopingAlgebra.counit_ι, mul_zero]
-    rw [LinearMap.comp_apply, LinearMap.mulRight_apply, LinearMap.zero_apply, mul_assoc, hι,
-      ← map_mul, cartanProjection_mul_mul, hε, mul_zero, zero_smul]
-  simpa using LinearMap.congr_fun key u
-
-/-- Bracketing with a generator `h` of `H` preserves the augmentation ideal of `U(n⁻)`: moving `ι h`
-past an element `f` of `U(n⁻)` costs an element of `U(n⁻)` with augmentation zero. -/
-private theorem exists_counit_eq_zero_ι_mul_eq (h : H) (f : U (negativeNilradical H b)) :
-    ∃ g : U (negativeNilradical H b), Coalgebra.counit (R := K) g = 0 ∧
-      _root_.UniversalEnvelopingAlgebra.ι K (h : L) *
-          UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl f =
-        UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl f *
-            _root_.UniversalEnvelopingAlgebra.ι K (h : L) +
-          UniversalEnvelopingAlgebra.map K (negativeNilradical H b).incl g := by
-  induction f using UniversalEnvelopingAlgebra.induction_ι with
-  | ι y =>
-    -- the negative nilradical is a sum of root spaces, so it is stable under `ad h`
-    have hy : ⁅(h : L), (y : L)⁆ ∈ negativeNilradical H b :=
-      (mem_negativeNilradical H b _).mpr <| LieSubmodule.lie_mem _ (x := h)
-        ((mem_negativeNilradical H b _).mp y.2)
-    refine ⟨_root_.UniversalEnvelopingAlgebra.ι K (⟨_, hy⟩ : negativeNilradical H b),
-      UniversalEnvelopingAlgebra.counit_ι K _ _, ?_⟩
-    rw [UniversalEnvelopingAlgebra.map_ι, UniversalEnvelopingAlgebra.map_ι]
-    simp only [LieSubalgebra.coe_incl, LieHom.map_lie, Ring.lie_def]
-    abel
-  | algebraMap r => exact ⟨0, map_zero _, by simp [Algebra.commutes]⟩
-  | add f f' hf hf' =>
-    obtain ⟨g, hg, hfg⟩ := hf
-    obtain ⟨g', hg', hfg'⟩ := hf'
-    refine ⟨g + g', by rw [map_add, hg, hg', add_zero], ?_⟩
-    rw [map_add, mul_add, hfg, hfg', map_add, add_mul]
-    abel
-  | mul f f' hf hf' =>
-    obtain ⟨g, hg, hfg⟩ := hf
-    obtain ⟨g', hg', hfg'⟩ := hf'
-    refine ⟨g * f' + f * g', ?_, ?_⟩
-    · simp only [← Bialgebra.counitAlgHom_apply, map_add, map_mul] at hg hg' ⊢
-      rw [hg, hg', zero_mul, mul_zero, add_zero]
-    · rw [map_mul, ← mul_assoc, hfg, add_mul, mul_assoc, hfg', map_add, map_mul, map_mul]
-      noncomm_ring
-
-/-- **A generator from `H` on the left passes through the Cartan projection**:
-`cartanProjection b (ι h * u) = ι h * cartanProjection b u` for `h` in `H`. -/
-theorem cartanProjection_ι_coe_mul (h : H) (u : U L) :
-    cartanProjection b (_root_.UniversalEnvelopingAlgebra.ι K (h : L) * u) =
-      _root_.UniversalEnvelopingAlgebra.ι K h * cartanProjection b u := by
-  have hι : _root_.UniversalEnvelopingAlgebra.ι K (h : L) =
-      UniversalEnvelopingAlgebra.map K H.incl (_root_.UniversalEnvelopingAlgebra.ι K h) := by
-    rw [UniversalEnvelopingAlgebra.map_ι, LieSubalgebra.coe_incl]
-  have key : cartanProjection b ∘ₗ
-        LinearMap.mulLeft K (_root_.UniversalEnvelopingAlgebra.ι K (h : L)) =
-      LinearMap.mulLeft K (_root_.UniversalEnvelopingAlgebra.ι K h) ∘ₗ cartanProjection b := by
-    refine UniversalEnvelopingAlgebra.linearMap_ext_triangular b fun f k e ↦ ?_
-    obtain ⟨g, hg, hfg⟩ := exists_counit_eq_zero_ι_mul_eq b h f
-    rw [LinearMap.comp_apply, LinearMap.mulLeft_apply, LinearMap.comp_apply,
-      LinearMap.mulLeft_apply, ← mul_assoc, ← mul_assoc, hfg, add_mul, add_mul, map_add,
-      mul_assoc (UniversalEnvelopingAlgebra.map K _ f), hι, ← map_mul, cartanProjection_mul_mul,
-      cartanProjection_mul_mul, cartanProjection_mul_mul, hg, zero_mul, zero_smul, add_zero,
-      mul_smul_comm]
-  simpa using LinearMap.congr_fun key u
 
 /-- The Cartan projection of `ι x * w`: writing `x = f + h + e` along `L = n⁻ ⊕ H ⊕ n⁺`, the
 generator `f` contributes nothing, `h = π x` passes through, and `e` contributes the projection of
@@ -212,13 +89,15 @@ private theorem exists_cartanProjection_ι_mul_eq (x : L) (w : U L) :
   obtain ⟨h, hh, e, he, rfl⟩ := hy
   refine ⟨e, he, ?_⟩
   have hπ : killingCartanProjection H (f + (h + e)) = ⟨h, hh⟩ := by
-    rw [map_add, map_add, killingCartanProjection_eq_zero_of_mem_negativeNilradical b hf,
-      killingCartanProjection_eq_zero_of_mem_positiveNilradical b he, zero_add, add_zero]
-    exact killingCartanProjection_coe H ⟨h, hh⟩
-  rw [hπ, map_add, map_add, add_mul, add_mul, map_add, map_add,
-    cartanProjection_ι_mul_of_mem_negativeNilradical b hf, zero_add,
-    cartanProjection_ι_coe_mul b ⟨h, hh⟩, map_sub,
-    cartanProjection_mul_ι_of_mem_positiveNilradical b he, sub_zero]
+    simpa [killingCartanProjection_eq_zero_of_mem_negativeNilradical b hf,
+      killingCartanProjection_eq_zero_of_mem_positiveNilradical b he] using
+      killingCartanProjection_coe H ⟨h, hh⟩
+  -- the three multiplication rules, one for each summand of `x`
+  have hf0 := cartanProjection_ι_mul_of_mem_negativeNilradical b hf w
+  have hh0 := cartanProjection_ι_coe_mul b ⟨h, hh⟩ w
+  have he0 := cartanProjection_mul_ι_of_mem_positiveNilradical b he w
+  rw [hπ]
+  simp only [map_add, add_mul, map_sub, hf0, hh0, he0, zero_add, sub_zero]
 
 /-! ### The PBW filtration -/
 
@@ -338,8 +217,8 @@ theorem cartanProjection_pbwHomogeneousSymmetrization_sub_mem_pbwFiltrationPrevi
       (UniversalEnvelopingAlgebra.pbwSymmetrization_tprod_sub_mem_pbwFiltrationPrevious K L n hn m)
   have hword := cartanProjection_prod_map_ι_sub_mem_pbwFiltrationPrevious b (List.ofFn m)
   rw [List.map_ofFn, List.map_ofFn, List.length_ofFn] at hword
-  rw [LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    AlgHom.toLinearMap_apply, AlgEquiv.toLinearMap_apply, hres]
+  simp only [LinearMap.sub_apply, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+    AlgEquiv.toLinearMap_apply, hres]
   simpa only [sub_add_sub_cancel, Function.comp_def] using add_mem hsym hword
 
 /-- **The leading term of the Harish-Chandra projection is the Chevalley restriction**: if the
