@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.SelfInjective
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.CyclicQuotient
-import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.D4.SelfInjective
 
 /-!
 # A positive-degree cyclic class in type `D₄` in characteristic two
@@ -46,45 +45,17 @@ local notation "Q" => DoubledQuiver zigzagD4Graph
 local notation "Π" => signlessPreprojectiveAlgebra k Q
 local notation "W" => signlessWord k zigzagD4Graph
 local notation "φ" => signlessPreprojectiveD4FrobeniusFunctional k
-local notation "T" => signlessPreprojectiveD4BasisWalks
-
-private theorem d4Gram_eq_or_neg :
-    ∀ s ∈ T, ∀ t ∈ T, d4Gram s t = d4Gram t s ∨ d4Gram s t = -d4Gram t s := by
-  decide
 
 section CommRing
 
 variable [CommRing k]
-
-/-- When `2 = 0`, the Frobenius functional of `D₄` is symmetric. In particular it can detect
-nonzero classes modulo additive commutators. -/
-theorem isSymmetricFrobeniusFunctional_signlessPreprojectiveD4FrobeniusFunctional
-    (h2 : (2 : k) = 0) : (φ).IsSymmetricFrobeniusFunctional := by
-  refine ⟨isFrobeniusFunctional_signlessPreprojectiveD4FrobeniusFunctional k, ?_⟩
-  have hneg (a : k) : -a = a := by
-    apply neg_eq_iff_add_eq_zero.mpr
-    rw [← two_mul, h2, zero_mul]
-  have hgram (s t : T) : (d4Gram s t : k) = d4Gram t s := by
-    rcases d4Gram_eq_or_neg s s.2 t t.2 with h | h
-    · rw [h]
-    · rw [h, Int.cast_neg, hneg]
-  have hpair : (LinearMap.mul k Π).compr₂ (φ) = ((LinearMap.mul k Π).compr₂ (φ)).flip := by
-    apply (signlessPreprojectiveD4Basis k).ext
-    intro s
-    apply (signlessPreprojectiveD4Basis k).ext
-    intro t
-    simpa only [LinearMap.compr₂_apply, LinearMap.mul_apply', LinearMap.flip_apply,
-      signlessPreprojectiveD4Basis_apply,
-      signlessPreprojectiveD4FrobeniusFunctional_mul k s.2 t.2,
-      signlessPreprojectiveD4FrobeniusFunctional_mul k t.2 s.2] using hgram s t
-  exact LinearMap.congr_fun₂ hpair
 
 /-- The Frobenius functional takes the closed degree-four walk through leaves `0` and `2`
 to one, over every commutative coefficient ring. -/
 private theorem signlessPreprojectiveD4FrobeniusFunctional_cyclicWord :
     φ (W [1, 2, 1, 0, 1]) = 1 := by
   rw [signlessPreprojectiveD4FrobeniusFunctional_signlessWord k _ (by decide) (by decide)]
-  norm_num [List.reverse_cons, signlessPreprojectiveD4SocleSign]
+  norm_num [List.reverse_cons]
 
 /-- The detecting closed walk is homogeneous of path degree four. -/
 theorem signlessWord_D4_cyclicWord_mem_grade_four :
@@ -163,7 +134,8 @@ theorem commutatorSubmodule_signlessPreprojectiveAlgebra_D4_eq_ker_iff :
     apply signlessWord_D4_cyclicWord_not_mem_commutatorSubmodule k h2
     rw [h, LinearMap.mem_ker, AlgHom.toLinearMap_apply]
     simp only [signlessWord_cons_cons, map_mul]
-    rw [signlessArrow_of_adj k (show zigzagD4Graph.Adj 2 1 by decide),
+    have hadj : zigzagD4Graph.Adj 2 1 := by decide
+    rw [signlessArrow_of_adj k hadj,
       signlessPreprojectiveAugmentation_ofArrow, zero_mul]
   · exact commutatorSubmodule_signlessPreprojectiveAlgebra_eq_ker k
       (d4Path_mem_commutatorSubmodule k (isUnit_iff_ne_zero.mpr h2))
