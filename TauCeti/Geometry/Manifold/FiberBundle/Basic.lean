@@ -45,6 +45,8 @@ and the projection is `C^n`.
 * `TauCeti.ManifoldTotalSpace.contMDiffWithinAt_iff` and `contMDiffAt_iff`: maps into the total
   space are `C^n` exactly when their projection and their fibre coordinate are.
 * `TauCeti.ManifoldTotalSpace.contMDiff_proj`: the projection is `C^n`.
+* `TauCeti.ManifoldTotalSpace.contMDiffAt_trivializationAt_snd`: near each point, the fibre
+  coordinate in the trivialization at its base point is `C^n`.
 * `TauCeti.ManifoldTotalSpace.contMDiffOn_trivialization` and `contMDiffOn_trivialization_symm`:
   the trivializations of the atlas are `C^n` with `C^n` inverses.
 * `TauCeti.ManifoldTotalSpace.contMDiff_homeomorph` and `contMDiff_homeomorph_symm`: for a normed
@@ -57,6 +59,9 @@ and the projection is `C^n`.
   1993, §9.1 and §9.2 (fibre bundles, their atlases and smooth transition functions).
 * The characterization of maps into the total space follows the proof of Mathlib's
   `Bundle.contMDiffWithinAt_totalSpace`, with a manifold fibre model in place of the fibre.
+* The groupoid compatibility of the atlas and the resulting `IsManifold` instance follow Mathlib's
+  `ContMDiffFiberwiseLinear.hasGroupoid` and `Bundle.TotalSpace.isManifold`, generalized from
+  fibrewise-linear transitions to `TauCeti.contMDiffGroupoid`.
 -/
 
 public section
@@ -247,6 +252,16 @@ theorem contMDiff_proj :
   fun x ↦ (ManifoldTotalSpace.contMDiffAt_iff.1 (contMDiffAt_id (x := x).congr_of_eventuallyEq
     (.of_forall (homeomorph F E).apply_symm_apply))).1
 
+variable (n IB IF) in
+/-- Near a point `x` of the total space, the fibre coordinate in the trivialization at the base
+point of `x` is `C^n`. -/
+theorem contMDiffAt_trivializationAt_snd (x : ManifoldTotalSpace F E) :
+    ContMDiffAt (IB.prod IF) IF n
+      (fun y ↦ (trivializationAt F E ((homeomorph F E).symm x).proj ((homeomorph F E).symm y)).2)
+      x :=
+  (ManifoldTotalSpace.contMDiffAt_iff.1 (contMDiffAt_id (x := x).congr_of_eventuallyEq
+    (.of_forall (homeomorph F E).apply_symm_apply))).2
+
 variable [ContMDiffFiberBundle n F E IB IF]
 
 /-- A trivialization of the atlas of a `C^n` fibre bundle is `C^n` on its source, as a map from the
@@ -260,9 +275,8 @@ theorem contMDiffOn_trivialization (e : Trivialization F (π F E)) [MemTrivializ
   let e₀ := trivializationAt F E z.proj
   have hz : z.proj ∈ e₀.baseSet := mem_baseSet_trivializationAt F E z.proj
   -- Near `z`, the projection and the fibre coordinate in `e₀` are `C^n`.
-  obtain ⟨hproj, hcoord⟩ := ManifoldTotalSpace.contMDiffAt_iff.1
-    (contMDiffAt_id (I := IB.prod IF) (n := n) (x := homeomorph F E z).congr_of_eventuallyEq
-      (.of_forall (homeomorph F E).apply_symm_apply))
+  have hproj := contMDiff_proj n F E IB IF (homeomorph F E z)
+  have hcoord := contMDiffAt_trivializationAt_snd n IB IF (homeomorph F E z)
   simp only [Homeomorph.symm_apply_apply] at hcoord
   -- The fibre coordinate in `e` is the coordinate change from `e₀` to `e` applied to it.
   have hchange : ContMDiffAt (IB.prod IF) IF n (fun p : B × F ↦ e₀.coordChange e p.1 p.2)
@@ -343,8 +357,7 @@ space with the total space is `C^n` from the charts through the fibre to the cha
 theorem contMDiff_homeomorph_symm :
     ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n (homeomorph F E).symm := fun x ↦
   Bundle.contMDiffAt_totalSpace.2 ⟨contMDiff_proj n F E IB 𝓘(𝕜, F) x,
-    (ManifoldTotalSpace.contMDiffAt_iff.1 (contMDiffAt_id (x := x).congr_of_eventuallyEq
-      (.of_forall (homeomorph F E).apply_symm_apply))).2⟩
+    contMDiffAt_trivializationAt_snd n IB 𝓘(𝕜, F) x⟩
 
 end ManifoldTotalSpace
 
