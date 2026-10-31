@@ -74,8 +74,6 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   `NormedAlgebra` over `K`.
 * `TauCeti.MvPowerSeries.polynomialToRestricted`: the inclusion of polynomials as an algebra
   homomorphism into restricted series.
-* `TauCeti.MvPowerSeries.denseRange_polynomialToRestricted`: at positive polyradii the polynomials
-  are dense in the restricted series.
 * `TauCeti.MvPowerSeries.not_finite_isRestrictedSubring`: over a nontrivial ring, restricted
   series in at least one variable do not form a finitely generated module.
 
@@ -712,15 +710,6 @@ theorem polynomialToRestricted_X (i : σ) :
     polynomialToRestricted c (MvPolynomial.X i) =
       ⟨X i, isRestricted_monomial c (Finsupp.single i 1) (1 : R)⟩ :=
   Subtype.ext (MvPolynomial.coe_X i)
-
-/-- **The polynomials are dense** in the restricted series at positive polyradii. -/
-theorem denseRange_polynomialToRestricted [∀ i, Fact (0 < c i)] :
-    DenseRange (polynomialToRestricted (R := R) c) := by
-  refine (dense_closure_monomial (c := c) dense_univ).mono <|
-    (AddSubgroup.closure_le (polynomialToRestricted (R := R) c).toRingHom.range.toAddSubgroup).mpr
-      ?_
-  rintro _ ⟨⟨n, a⟩, _, rfl⟩
-  exact ⟨MvPolynomial.monomial n a, Subtype.ext (by simp [MvPolynomial.coe_monomial])⟩
 
 variable (c) in
 /-- Over a nontrivial ring, restricted series in at least one variable do not form a finitely

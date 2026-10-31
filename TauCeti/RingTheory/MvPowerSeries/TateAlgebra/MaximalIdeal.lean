@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.ClosedIdeal
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Nullstellensatz
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Polynomial
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
