@@ -146,10 +146,11 @@ theorem norm_eq_one_of_forall_section_eq_mul {x y : ℂ → EuclideanSpace ℝ (
     (Real.eq_one_of_pos_of_log_eq_zero (lt_of_le_of_ne (by positivity) (hh₀' z).symm) hw₀)
 
 /-- **The section of a vortex determines its connection where it does not vanish.** If two fields
-satisfy the holomorphicity equation `∂bar_a α = 0`, have continuous components and the same
-section, and the zero set of that section has empty interior, then the fields are equal. -/
+satisfy the holomorphicity equation `∂bar_a α = 0`, have continuous connection components and the
+same section, and the zero set of that section has empty interior, then the fields are equal. -/
 theorem eq_of_forall_section_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hx : ∀ i, Continuous fun z ↦ x z i) (hy : ∀ i, Continuous fun z ↦ y z i)
+    (hx₀ : Continuous fun z ↦ x z 0) (hx₁ : Continuous fun z ↦ x z 1)
+    (hy₀ : Continuous fun z ↦ y z 0) (hy₁ : Continuous fun z ↦ y z 1)
     (hxsol : ∀ z, equation x z 1 = 0 ∧ equation x z 2 = 0)
     (hysol : ∀ z, equation y z 1 = 0 ∧ equation y z 2 = 0)
     (h₂ : ∀ z, x z 2 = y z 2) (h₃ : ∀ z, x z 3 = y z 3)
@@ -166,8 +167,8 @@ theorem eq_of_forall_section_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
       linear_combination -y z 2 * (hx₁ - hy₁) - y z 3 * (hx₂ - hy₂)
     exact ⟨sub_eq_zero.1 ((mul_eq_zero.1 e₀).resolve_right hz),
       sub_eq_zero.1 ((mul_eq_zero.1 e₁).resolve_right hz)⟩
-  have h₀ := (hx 0).ext_on hdense (hy 0) fun z hz ↦ (hb z hz).1
-  have h₁ := (hx 1).ext_on hdense (hy 1) fun z hz ↦ (hb z hz).2
+  have h₀ := hx₀.ext_on hdense hy₀ fun z hz ↦ (hb z hz).1
+  have h₁ := hx₁.ext_on hdense hy₁ fun z hz ↦ (hb z hz).2
   ext z i
   fin_cases i
   exacts [congrFun h₀ z, congrFun h₁ z, h₂ z, h₃ z]
@@ -201,15 +202,15 @@ theorem exists_eq_phaseGauge_of_forall_section_eq_mul {x y : ℂ → EuclideanSp
     rw [phaseGauge_apply_two, phaseGauge_apply_three]
     constructor <;> linarith
   have hfd : Continuous fun z ↦ fderiv ℝ f z := hf.continuous_fderiv two_ne_zero
-  refine eq_of_forall_section_eq (fun i ↦ ((contDiff_piLp _).1 hx i).continuous)
-    (fun i ↦ ?_) (fun z ↦ ⟨by simp [hxsol z], by simp [hxsol z]⟩) (fun z ↦ ?_)
+  have hxc (j : Fin 4) : Continuous fun z ↦ x z j := ((contDiff_piLp _).1 hx j).continuous
+  have hyc (j : Fin 4) : Continuous fun z ↦ y z j := ((contDiff_piLp _).1 hy j).continuous
+  refine eq_of_forall_section_eq (hxc 0) (hxc 1) ?_ ?_
+    (fun z ↦ ⟨by simp [hxsol z], by simp [hxsol z]⟩) (fun z ↦ ?_)
     (fun z ↦ (hsec z).1) (fun z ↦ (hsec z).2) ?_
-  · have hyc (j : Fin 4) : Continuous fun z ↦ y z j := ((contDiff_piLp _).1 hy j).continuous
-    have hfc : Continuous f := hf.continuous
-    fin_cases i <;>
-      simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, phaseGauge_apply_zero,
-        phaseGauge_apply_one, phaseGauge_apply_two, phaseGauge_apply_three] <;>
-      fun_prop
+  · simp only [phaseGauge_apply_zero]
+    fun_prop
+  · simp only [phaseGauge_apply_one]
+    fun_prop
   · have hsol := (equation_phaseGauge_eq_zero_iff (hyd z) hf.contDiffAt).2 (hysol z)
     exact ⟨by simp [hsol], by simp [hsol]⟩
   · -- `α_x` and `α_y` have the same modulus, so they have the same zeros.
