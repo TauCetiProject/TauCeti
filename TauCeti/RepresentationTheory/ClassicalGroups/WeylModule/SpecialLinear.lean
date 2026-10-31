@@ -94,7 +94,7 @@ the constant weights (`TauCeti.IsRationalSLRep.existsUnique_nonempty_equiv_weylS
 * `TauCeti.IsRationalSLRep.exists_nonempty_equiv_rationalWeylSLRep`: **every irreducible rational
   representation of `SL n ℂ` is the restriction of a rational Weyl module.**
 * `TauCeti.IsRationalSLRep.existsUnique_nonempty_equiv_weylSLRepOfShape` and
-  `TauCeti.existsUnique_nonempty_iso_weylSLFDRepOfShape`: **the highest-weight classification for
+  `FDRep.existsUnique_nonempty_iso_weylSLFDRepOfShape`: **the highest-weight classification for
   `SL n ℂ`**, by the Young diagrams with at most `n - 1` rows.
 
 ## References
@@ -393,18 +393,26 @@ theorem existsUnique_nonempty_equiv_weylSLRepOfShape (hρ : IsRationalSLRep ρ)
 
 end IsRationalSLRep
 
+end RationalClassification
+
+end TauCeti
+
+namespace FDRep
+
+open CategoryTheory TauCeti
+
+variable {n : ℕ}
+
 /-- **The highest-weight classification in `FDRep`**: a simple finite-dimensional representation
 of `SL n ℂ` whose action is rational is isomorphic to the restricted Weyl module of exactly one
 Young diagram with at most `n - 1` rows. -/
 theorem existsUnique_nonempty_iso_weylSLFDRepOfShape
     (V : FDRep ℂ (Matrix.SpecialLinearGroup (Fin n) ℂ)) [Simple V] (hV : IsRationalSLRep V.ρ) :
     ∃! μ : YoungDiagram, μ.colLen 0 ≤ n - 1 ∧ Nonempty (V ≅ weylSLFDRepOfShape ℂ n μ) := by
-  have := (FDRep.simple_iff_isIrreducible V).mp inferInstance
+  have := (simple_iff_isIrreducible V).mp inferInstance
   obtain ⟨μ, ⟨hμ, ⟨e⟩⟩, hu⟩ := hV.existsUnique_nonempty_equiv_weylSLRepOfShape
   refine ⟨μ, ⟨hμ, ⟨e.toLinearEquiv.toFDRepIso fun g x ↦ ?_⟩⟩, fun ν ⟨hν, ⟨i⟩⟩ ↦
-    hu ν ⟨hν, ⟨FDRep.isoToEquiv i⟩⟩⟩
+    hu ν ⟨hν, ⟨isoToEquiv i⟩⟩⟩
   exact LinearMap.congr_fun (e.isIntertwining' g) x
 
-end RationalClassification
-
-end TauCeti
+end FDRep

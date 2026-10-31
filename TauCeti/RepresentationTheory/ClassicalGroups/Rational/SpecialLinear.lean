@@ -9,11 +9,10 @@ module
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.Rational
 public import TauCeti.RepresentationTheory.ClassicalGroups.SpecialLinear
--- `MvPolynomial.IsHomogeneous.eval_smul`, the scaling of a homogeneous component.
+-- `MvPolynomial.IsHomogeneous.eval_smul`, the scaling of a homogeneous component, and
+-- `MvPolynomial.eval_eq_sum_homogeneousComponent_of_eval_smul`, the averaging over roots of unity.
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
 import Mathlib.RingTheory.RootsOfUnity.Complex
--- `IsPrimitiveRoot.sum_zpow_pow_eq`, the orthogonality of the characters of `ℤ ⧸ n`.
-import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
 # Rational representations of the special linear group
@@ -47,6 +46,8 @@ polynomials in the entries of `g`, a rational function.
 
 ## Main results
 
+* `TauCeti.isRationalSLRep_iff_exists_toMatrix_eq_eval`: rationality can be checked against any
+  finite basis.
 * `TauCeti.IsRationalRep.comp_toGL`: a rational representation of `GL n ℂ` restricts to a rational
   representation of `SL n ℂ`.
 * `TauCeti.IsRationalSLRep.isRationalRep_extendToGL`: **the extension of a rational
@@ -68,8 +69,9 @@ variable {n : ℕ} {W : Type*} [AddCommMonoid W] [Module ℂ W]
 /-- **A rational representation** of `SL n ℂ`: in some basis of the carrier, every matrix entry of
 `ρ s` is a polynomial in the entries of `s`. Since `det s = 1`, no determinant denominator is
 needed, and this is the condition `TauCeti.IsRationalRep` read on the special linear group. The
-carrier is forced to be finite-dimensional (`TauCeti.IsRationalSLRep.finite`). The base field is
-`ℂ` for the reason recorded on `TauCeti.IsPolynomialRep`. -/
+carrier is forced to be finite-dimensional (`TauCeti.IsRationalSLRep.finite`), and the condition
+does not depend on the basis: see `TauCeti.isRationalSLRep_iff_exists_toMatrix_eq_eval`. The base
+field is `ℂ` for the reason recorded on `TauCeti.IsPolynomialRep`. -/
 def IsRationalSLRep (ρ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) W) : Prop :=
   ∃ (b : Module.Basis (Fin (Module.finrank ℂ W)) ℂ W)
     (P : Fin (Module.finrank ℂ W) → Fin (Module.finrank ℂ W) → MvPolynomial (Fin n × Fin n) ℂ),
@@ -92,6 +94,50 @@ theorem IsRationalSLRep.finite {ρ : Representation ℂ (SpecialLinearGroup (Fin
   obtain ⟨b, -⟩ := h
   exact Module.Finite.of_basis b
 
+/-- **Rationality on `SL n ℂ` is basis independent.** A representation of `SL n ℂ` is rational
+exactly when, against *any* chosen finite basis, each matrix entry of `ρ s` is a polynomial in the
+entries of `s`. -/
+theorem isRationalSLRep_iff_exists_toMatrix_eq_eval
+    {ρ : Representation ℂ (SpecialLinearGroup (Fin n) ℂ) W} {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι ℂ W) :
+    IsRationalSLRep ρ ↔ ∃ P : ι → ι → MvPolynomial (Fin n × Fin n) ℂ,
+      ∀ (s : SpecialLinearGroup (Fin n) ℂ) (i j : ι),
+        LinearMap.toMatrix b b (ρ s) i j
+          = MvPolynomial.eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) (P i j) := by
+  -- The polynomial functions on `SL n ℂ`, as a subalgebra of all functions.
+  let A : Subalgebra ℂ (SpecialLinearGroup (Fin n) ℂ → ℂ) :=
+    (aeval fun p : Fin n × Fin n => fun s : SpecialLinearGroup (Fin n) ℂ =>
+      (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2).range
+  have hA : ∀ f : SpecialLinearGroup (Fin n) ℂ → ℂ, f ∈ A ↔ ∃ P : MvPolynomial (Fin n × Fin n) ℂ,
+      ∀ s, f s = eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) P := fun f => by
+    have happ : ∀ (P : MvPolynomial (Fin n × Fin n) ℂ) (s : SpecialLinearGroup (Fin n) ℂ),
+        (aeval fun p : Fin n × Fin n => fun s : SpecialLinearGroup (Fin n) ℂ =>
+          (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) P s
+          = eval (fun p => (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2) P := fun P s => by
+      simpa [aeval_eq_eval] using comp_aeval_apply
+        (fun p : Fin n × Fin n => fun s : SpecialLinearGroup (Fin n) ℂ =>
+          (s : Matrix (Fin n) (Fin n) ℂ) p.1 p.2)
+        (Pi.evalAlgHom ℂ (fun _ : SpecialLinearGroup (Fin n) ℂ => ℂ) s) P
+    constructor
+    · rintro ⟨P, rfl⟩
+      exact ⟨P, happ P⟩
+    · rintro ⟨P, hP⟩
+      exact ⟨P, funext fun s => (happ P s).trans (hP s).symm⟩
+  constructor
+  · rintro ⟨b₀, P, hP⟩
+    have h := Representation.toMatrix_mem_of_toMatrix_mem A b₀ b ρ
+      (fun p l => (hA _).mpr ⟨P p l, fun s => hP s p l⟩)
+    choose Q hQ using fun q : ι × ι => (hA _).mp (h q.1 q.2)
+    exact ⟨fun i j => Q (i, j), fun s i j => hQ (i, j) s⟩
+  · rintro ⟨P, hP⟩
+    let e : ι ≃ Fin (Module.finrank ℂ W) :=
+      Fintype.equivFinOfCardEq (Module.finrank_eq_card_basis b).symm
+    have h := Representation.toMatrix_mem_of_toMatrix_mem A b (b.reindex e) ρ
+      (fun p l => (hA _).mpr ⟨P p l, fun s => hP s p l⟩)
+    choose Q hQ using fun q : Fin (Module.finrank ℂ W) × Fin (Module.finrank ℂ W) =>
+      (hA _).mp (h q.1 q.2)
+    exact ⟨b.reindex e, fun i j => Q (i, j), fun s i j => hQ (i, j) s⟩
+
 /-- **A rational representation of `GL n ℂ` restricts to a rational representation of
 `SL n ℂ`**: the determinant denominator is `1` on the special linear group. -/
 theorem IsRationalRep.comp_toGL {ρ : Representation ℂ (GL (Fin n) ℂ) W} (h : IsRationalRep ρ) :
@@ -99,45 +145,6 @@ theorem IsRationalRep.comp_toGL {ρ : Representation ℂ (GL (Fin n) ℂ) W} (h 
   obtain ⟨b, P, m, hP⟩ := (isRationalRep_iff ρ).mp h
   refine ⟨b, P, fun s i j => ?_⟩
   simpa using hP (SpecialLinearGroup.toGL s) i j
-
-/-! ### Discarding the components of the wrong degree -/
-
-/-- **Averaging over the `n`-th roots of unity.** If scaling the point `x` by every `n`-th root of
-unity `ζ ^ j` scales the value of `P` by `(ζ ^ j) ^ a`, then the value of `P` at `x` is the sum of
-the values of its homogeneous components of degree congruent to `a` modulo `n`. -/
-private theorem eval_eq_sum_homogeneousComponent {σ : Type*} {ζ : ℂ} [NeZero n]
-    (hζ : IsPrimitiveRoot ζ n) (a : ℤ) (P : MvPolynomial σ ℂ) (x : σ → ℂ)
-    (hx : ∀ j : ℕ, eval ((ζ ^ j) • x) P = (ζ ^ j) ^ a * eval x P) :
-    eval x P = ∑ d ∈ (Finset.range (P.totalDegree + 1)).filter (fun d : ℕ => (n : ℤ) ∣ d - a),
-      eval x (homogeneousComponent d P) := by
-  have hζ0 : ζ ≠ 0 := hζ.ne_zero (NeZero.ne n)
-  have hn : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
-  set E : ℕ → ℂ := fun d => eval x (homogeneousComponent d P)
-  -- The value at `ζ ^ j • x`, expanded by homogeneous components.
-  have hexp : ∀ j : ℕ, eval ((ζ ^ j) • x) P =
-      ∑ d ∈ Finset.range (P.totalDegree + 1), (ζ ^ j) ^ (d : ℤ) * E d := fun j => by
-    conv_lhs => rw [← sum_homogeneousComponent P]
-    rw [map_sum]
-    refine Finset.sum_congr rfl fun d _ => ?_
-    rw [(homogeneousComponent_isHomogeneous d P).eval_smul, smul_eq_mul, zpow_natCast]
-  -- Weighting by `(ζ ^ j) ^ (-a)` and summing over `j` keeps exactly the degrees `d ≡ a`.
-  have hweight : ∀ (j : ℕ) (d : ℕ), (ζ ^ j) ^ (-a) * (ζ ^ j) ^ (d : ℤ) = (ζ ^ ((d : ℤ) - a)) ^ j :=
-    fun j d => by
-      rw [← zpow_add₀ (pow_ne_zero _ hζ0), neg_add_eq_sub, ← zpow_natCast, ← zpow_mul,
-        ← zpow_natCast, ← zpow_mul, mul_comm]
-  refine mul_left_cancel₀ hn ?_
-  calc (n : ℂ) * eval x P
-      = ∑ j : Fin n, (ζ ^ (j : ℕ)) ^ (-a) * eval ((ζ ^ (j : ℕ)) • x) P := by
-        simp_rw [hx, ← mul_assoc, ← zpow_add₀ (pow_ne_zero _ hζ0), neg_add_cancel, zpow_zero,
-          one_mul, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-    _ = ∑ d ∈ Finset.range (P.totalDegree + 1),
-          (∑ j : Fin n, (ζ ^ ((d : ℤ) - a)) ^ (j : ℕ)) * E d := by
-        simp_rw [hexp, Finset.mul_sum, ← mul_assoc, hweight, Finset.sum_mul]
-        exact Finset.sum_comm
-    _ = (n : ℂ) * ∑ d ∈ (Finset.range (P.totalDegree + 1)).filter
-          (fun d : ℕ => (n : ℤ) ∣ d - a), E d := by
-        simp_rw [hζ.sum_zpow_pow_eq, Finset.sum_filter, Finset.mul_sum, ite_mul, zero_mul,
-          mul_ite, mul_zero]
 
 /-! ### The extension to `GL n ℂ` is rational -/
 
@@ -163,7 +170,7 @@ private theorem toMatrix_apply_eq_sum_homogeneousComponent [NeZero n]
   let u : ℂˣ := (hζ.isUnit (NeZero.ne n)).unit
   have hu : IsPrimitiveRoot u n := IsPrimitiveRoot.coe_units_iff.mp hζ
   rw [hQ]
-  refine eval_eq_sum_homogeneousComponent hζ a _ _ fun k => ?_
+  refine eval_eq_sum_homogeneousComponent_of_eval_smul _ hζ a _ fun k => ?_
   -- The scalar matrix `ζ ^ k` has determinant one.
   let t : SpecialLinearGroup (Fin n) ℂ :=
     ⟨_root_.Matrix.GeneralLinearGroup.scalar (Fin n) (u ^ k), by

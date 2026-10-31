@@ -336,15 +336,25 @@ open Matrix
 variable {ι K V : Type*} [Fintype ι] [DecidableEq ι] [Field K] [IsAlgClosed K]
   [AddCommGroup V] [Module K V]
 
-/-- The extension is irreducible exactly when the original representation of `SL ι K` is. -/
+/-- The extension is irreducible exactly when the original representation of `SL ι K` is: both
+have the same invariant subspaces, since every scalar matrix acts on the extension by a scalar. -/
 @[simp]
-theorem isIrreducible_extendToGL_iff [FiniteDimensional K V]
-    (ρ : Representation K (SpecialLinearGroup ι K) V) (a : ℤ)
+theorem isIrreducible_extendToGL_iff (ρ : Representation K (SpecialLinearGroup ι K) V) (a : ℤ)
     (ha : ∀ (s : SpecialLinearGroup ι K) (z : Kˣ),
       SpecialLinearGroup.toGL s = GeneralLinearGroup.scalar ι z →
         ∀ v, ρ s v = ((z ^ a : Kˣ) : K) • v) :
     (extendToGL ρ a ha).IsIrreducible ↔ ρ.IsIrreducible := by
-  rw [← isIrreducible_comp_toGL_iff, extendToGL_comp_toGL]
+  let e : Subrepresentation (extendToGL ρ a ha) ≃o Subrepresentation ρ :=
+    { toFun S := ⟨S.toSubmodule, fun s v hv => by
+        simpa using S.apply_mem_toSubmodule (SpecialLinearGroup.toGL s) hv⟩
+      invFun S := ⟨S.toSubmodule, fun g v hv => by
+        obtain ⟨s, z, rfl⟩ := g.exists_toGL_mul_scalar_eq
+        rw [extendToGL_toGL_mul_scalar, LinearMap.smul_apply]
+        exact S.toSubmodule.smul_mem _ (S.apply_mem_toSubmodule s hv)⟩
+      left_inv _ := rfl
+      right_inv _ := rfl
+      map_rel_iff' := Iff.rfl }
+  exact e.isSimpleOrder_iff
 
 /-- **The determinant-one scalar matrices act on an irreducible representation of `SL` by a power
 character.** Let `ρ` be a finite-dimensional irreducible representation of `SL ι K` over an
