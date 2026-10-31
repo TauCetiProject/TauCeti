@@ -61,6 +61,8 @@ the scalar matrix of a primitive `|ι|`-th root of unity
   determinant twist of the other.
 * `Representation.extendToGL_comp_toGL` and `Representation.extendToGL_scalar`: the extension
   restricts to the original representation, and scalar matrices act on it by `z ↦ z ^ a`.
+* `Representation.existsUnique_comp_toGL_eq_and_apply_scalar`: the extension with a prescribed
+  scalar character is unique.
 * `Representation.isIrreducible_extendToGL_iff`: the extension is irreducible exactly when the
   original representation is.
 * `Representation.IsIrreducible.exists_forall_apply_eq_zpow_smul`: on an irreducible
@@ -326,6 +328,20 @@ theorem extendToGL_scalar (z : Kˣ) (v : V) :
   have h := extendToGL_toGL_mul_scalar ρ a ha 1 z
   rw [map_one, one_mul] at h
   simp [h]
+
+include ha in
+/-- **Extending a representation of `SL` to `GL` with a prescribed scalar character is unique.**
+Over an algebraically closed field, a representation of `SL` on which the determinant-one scalar
+matrices act by `z ↦ z ^ a` extends uniquely to a representation of `GL` on which every scalar
+matrix acts by `z ↦ z ^ a`. The extension is `Representation.extendToGL`. -/
+theorem existsUnique_comp_toGL_eq_and_apply_scalar :
+    ∃! σ : Representation K (GL ι K) V, σ.comp SpecialLinearGroup.toGL = ρ ∧
+      ∀ (z : Kˣ) (v : V), σ (GeneralLinearGroup.scalar ι z) v = ((z ^ a : Kˣ) : K) • v := by
+  refine ⟨extendToGL ρ a ha, ⟨extendToGL_comp_toGL ρ a ha, extendToGL_scalar ρ a ha⟩,
+    fun σ ⟨hσ, hσz⟩ => MonoidHom.ext fun g => LinearMap.ext fun v => ?_⟩
+  obtain ⟨s, z, rfl⟩ := g.exists_toGL_mul_scalar_eq
+  rw [map_mul, Module.End.mul_apply, hσz, map_smul, ← MonoidHom.comp_apply, hσ,
+    extendToGL_toGL_mul_scalar, LinearMap.smul_apply]
 
 end Extension
 

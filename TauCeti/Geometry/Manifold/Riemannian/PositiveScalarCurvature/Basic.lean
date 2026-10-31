@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sum
+public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Descent
 public import TauCeti.Geometry.Manifold.Riemannian.Scaling
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Prod
 
@@ -19,11 +20,13 @@ scalar curvature `Bundle.ContMDiffRiemannianMetric.scalarCurvature`, that of the
 connection of `g`, is positive at every point. Since scalar curvature is a smooth function of
 the point, on a compact manifold such a metric has scalar curvature bounded below by a positive
 constant. Scalar curvature is invariant under diffeomorphisms, so pulling a metric back along a
-diffeomorphism preserves and reflects positive scalar curvature. Scalar curvature is also local,
-so the restriction of a metric of positive scalar curvature to an open submanifold has positive
-scalar curvature. No assumption on the boundary is made. The disjoint union of two metrics has
-the scalar curvature of each metric on its summand, so it has positive scalar curvature exactly
-when both metrics do.
+diffeomorphism preserves and reflects positive scalar curvature. Likewise a metric descended along
+a surjective local diffeomorphism, such as the metric induced on the orbit space of a free,
+properly discontinuous action by isometries, has positive scalar curvature exactly when the
+original metric does. Scalar curvature is also local, so the restriction of a metric of positive
+scalar curvature to an open submanifold has positive scalar curvature. No assumption on the
+boundary is made. The disjoint union of two metrics has the scalar curvature of each metric on its
+summand, so it has positive scalar curvature exactly when both metrics do.
 
 Since `Scal(c g) = c⁻¹ Scal(g)` for a constant `c > 0`, rescaling by a positive constant preserves
 and reflects positive scalar curvature. The scalar curvature of a product metric `g₁ × g₂` is the
@@ -47,6 +50,10 @@ On a compact manifold the scalar curvature of every smooth metric is bounded bel
 * `Bundle.ContMDiffRiemannianMetric.HasPositiveScalarCurvature.pullback_of_isInvertible`: the
   pullback of a metric of positive scalar curvature along a smooth map with invertible
   differential has positive scalar curvature.
+* `Bundle.ContMDiffRiemannianMetric.hasPositiveScalarCurvature_descend_iff` and
+  `Bundle.ContMDiffRiemannianMetric.hasPositiveScalarCurvature_quotient_iff`: a metric descended
+  along a surjective local diffeomorphism, in particular to the orbit space of a free, properly
+  discontinuous action by isometries, has positive scalar curvature exactly when the metric does.
 * `Bundle.ContMDiffRiemannianMetric.HasPositiveScalarCurvature.restrictOpenTangentSpace`: the
   restriction of a metric of positive scalar curvature to an open submanifold has positive scalar
   curvature.
@@ -149,7 +156,43 @@ theorem HasPositiveScalarCurvature.pullback_of_isInvertible (h : g.HasPositiveSc
   rw [scalarCurvature_pullback_of_isInvertible g hf hinv x]
   exact h (f x)
 
+/-- A metric descended along a surjective local diffeomorphism has positive scalar curvature
+exactly when the original metric does. -/
+@[simp]
+theorem hasPositiveScalarCurvature_descend_iff {f : M → N}
+    (hf : IsLocalDiffeomorph I J (∞ + 1) f) (hsurj : Function.Surjective f)
+    (hg : ∀ (x x' : M) (v w : TangentSpace I x) (v' w' : TangentSpace I x'), f x = f x' →
+      mfderiv I J f x v = mfderiv I J f x' v' → mfderiv I J f x w = mfderiv I J f x' w' →
+      g.inner x v w = g.inner x' v' w') :
+    (g.descend hf hsurj hg).HasPositiveScalarCurvature ↔ g.HasPositiveScalarCurvature := by
+  simp only [hasPositiveScalarCurvature_iff]
+  refine ⟨fun h x ↦ ?_, fun h y ↦ ?_⟩
+  · simpa using h (f x)
+  · obtain ⟨x, rfl⟩ := hsurj y
+    simpa using h x
+
 end Pullback
+
+section Quotient
+
+variable {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
+  [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M] [IsCancelSMul G M]
+  [LocallyCompactSpace M]
+
+/-- The metric on the orbit space of a free, properly discontinuous smooth action by isometries
+has positive scalar curvature exactly when the original metric does. -/
+@[simp]
+theorem hasPositiveScalarCurvature_quotient_iff
+    (hg : ∀ (a : G) (x : M) (v w : TangentSpace I x),
+      g.inner (a • x) (mfderiv I I (a • ·) x v) (mfderiv I I (a • ·) x w) = g.inner x v w) :
+    (g.quotient hg).HasPositiveScalarCurvature ↔ g.HasPositiveScalarCurvature := by
+  simp only [hasPositiveScalarCurvature_iff]
+  refine ⟨fun h x ↦ ?_, fun h y ↦ ?_⟩
+  · simpa using h (Quotient.mk _ x)
+  · obtain ⟨x, rfl⟩ := Quotient.mk_surjective y
+    simpa using h x
+
+end Quotient
 
 variable {g} in
 /-- The restriction of a metric of positive scalar curvature to an open submanifold has positive

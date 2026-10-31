@@ -18,9 +18,14 @@ along `Spec.map (𝟙 R)` is the identity functor on schemes over `Spec R`, and 
 `Spec.map (f ≫ g)` is the composite of pullback along `Spec.map f` with pullback along
 `Spec.map g`.
 
-Nothing here mentions affineness or group objects: these are statements about arbitrary schemes
-over an affine base, and they are the underlying comparisons of the base-change functors on
-affine group schemes in `TauCeti/AlgebraicGeometry/AffineGroupScheme/BaseChange/Basic.lean`.
+These two comparisons mention neither affineness nor group objects: they are statements about
+arbitrary schemes over an affine base, and they are the underlying comparisons of the base-change
+functors on affine group schemes in
+`TauCeti/AlgebraicGeometry/AffineGroupScheme/BaseChange/Basic.lean`.
+
+The same pullback along `Spec.map` of a ring map `k → K` carries affine charts: if `Spec A` is an
+open subscheme of `X` over `Spec k`, then `Spec (A ⊗[k] K)` is an open subscheme of the base
+change `X ×_k Spec K`, over `Spec K`.
 
 ## Main declarations
 
@@ -28,11 +33,14 @@ affine group schemes in `TauCeti/AlgebraicGeometry/AffineGroupScheme/BaseChange/
   identity functor.
 * `TauCeti.AlgebraicGeometry.Over.pullbackSpecMapComp`: pullback along `Spec.map (f ≫ g)` is a
   composite of pullbacks.
+* `TauCeti.AlgebraicGeometry.exists_isOpenImmersion_tensorProduct_of_isPullback`: the base change
+  of an affine chart is an affine chart of the base change.
 -/
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory Limits AlgebraicGeometry
+open scoped TensorProduct
 
 namespace TauCeti
 
@@ -53,6 +61,22 @@ noncomputable def Over.pullbackSpecMapComp (f : R ⟶ S) (g : S ⟶ T) :
     Over.pullback (Spec.map (f ≫ g)) ≅
       Over.pullback (Spec.map f) ⋙ Over.pullback (Spec.map g) :=
   eqToIso (by simp only [Spec.map_comp]) ≪≫ Over.pullbackComp (Spec.map g) (Spec.map f)
+
+/-- **The base change of an affine chart is an affine chart of the base change.** Let
+`φ : Spec A ⟶ X` be an open immersion of schemes over `Spec k`, and let `Y = X ×_k Spec K` be a
+base change of `X`. Then `Spec (A ⊗[k] K)` is an open subscheme of `Y`, over `Spec K`. -/
+theorem exists_isOpenImmersion_tensorProduct_of_isPullback {k A K : Type u} [CommRing k]
+    [CommRing A] [CommRing K] [Algebra k A] [Algebra k K] {X Y : Scheme.{u}}
+    {f : X ⟶ Spec (.of k)} {φ : Spec (.of A) ⟶ X} [IsOpenImmersion φ]
+    (hφ : φ ≫ f = Spec.map (CommRingCat.ofHom (algebraMap k A))) {g : Y ⟶ X}
+    {q : Y ⟶ Spec (.of K)} (H : IsPullback g q f (Spec.map (CommRingCat.ofHom (algebraMap k K)))) :
+    ∃ ι : Spec (.of (A ⊗[k] K)) ⟶ Y, IsOpenImmersion ι ∧
+      ι ≫ q = Spec.map (CommRingCat.ofHom
+        (Algebra.TensorProduct.includeRight : K →ₐ[k] A ⊗[k] K).toRingHom) := by
+  refine ⟨(pullbackSpecIso k A K).inv ≫ (pullback.congrHom hφ.symm rfl).hom ≫
+    (pullbackRightPullbackFstIso _ _ _).inv ≫ pullback.snd _ _ ≫ H.isoPullback.inv,
+    inferInstance, ?_⟩
+  simp
 
 end AlgebraicGeometry
 

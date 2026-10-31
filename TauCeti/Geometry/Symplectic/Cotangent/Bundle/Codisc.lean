@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Level
+public import TauCeti.Geometry.Manifold.RegularValue.Level
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Cotangent
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
@@ -31,7 +31,7 @@ the inverse tangent trivialization is locally bounded.
 
 Since every nonzero value is a regular value of the norm of covectors
 (`TauCeti.CotangentBundle.isRegularValue_norm_snd`), `S*M` is a regular level. For a smooth metric
-on a boundaryless manifold, it carries the atlas `TauCeti.scalarRegularLevelChartedSpace` of
+on a boundaryless manifold, it carries the atlas `TauCeti.regularLevelChartedSpace` of
 regular levels, for which it is a smooth manifold of dimension `dim T*M - 1`
 (`TauCeti.CotangentBundle.instIsManifoldCosphereBundle`) and a smoothly embedded hypersurface of
 `T*M` (`TauCeti.CotangentBundle.isSmoothEmbedding_coe_cosphereBundle`) whose tangent spaces are
@@ -167,23 +167,23 @@ variable [I.Boundaryless]
 the regular level `‖z.2‖ = 1` of the norm of covectors. -/
 instance : ChartedSpace (Fin (Module.finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ)
     (cosphereBundle I M) :=
-  scalarRegularLevelChartedSpace
+  regularLevelChartedSpace
     (fun z hz ↦ (contMDiffAt_norm_snd_of_mem_cosphereBundle z hz).of_le ENat.LEInfty.out)
-    (isRegularValue_norm_snd one_ne_zero)
+    (isRegularValue_norm_snd one_ne_zero) (by rw [Module.finrank_self])
 
 /-- **The unit cosphere bundle is a smooth manifold**, of dimension `dim T*M - 1`. -/
 instance instIsManifoldCosphereBundle :
     IsManifold 𝓘(ℝ, Fin (Module.finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) ∞ (cosphereBundle I M) :=
-  isManifold_scalarRegularLevel ENat.LEInfty.out contMDiffAt_norm_snd_of_mem_cosphereBundle
-    (isRegularValue_norm_snd one_ne_zero)
+  isManifold_regularLevel ENat.LEInfty.out contMDiffAt_norm_snd_of_mem_cosphereBundle
+    (isRegularValue_norm_snd one_ne_zero) (by rw [Module.finrank_self])
 
 /-- **The unit cosphere bundle is a smoothly embedded hypersurface** of the cotangent bundle. -/
 theorem isSmoothEmbedding_coe_cosphereBundle :
     IsSmoothEmbedding 𝓘(ℝ, Fin (Module.finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ)
       (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ∞ (Subtype.val : cosphereBundle I M → CotangentBundle I M) :=
-  isSmoothEmbedding_coe_scalarRegularLevel ENat.LEInfty.out
+  isSmoothEmbedding_coe_regularLevel ENat.LEInfty.out
     contMDiffAt_norm_snd_of_mem_cosphereBundle
-    (isRegularValue_norm_snd one_ne_zero)
+    (isRegularValue_norm_snd one_ne_zero) (by rw [Module.finrank_self])
 
 /-- The tangent space of the unit cosphere bundle at a covector is the kernel of the
 differential of the norm of covectors there. -/
@@ -191,7 +191,7 @@ theorem range_mfderiv_coe_cosphereBundle (z : cosphereBundle I M) :
     (mfderiv 𝓘(ℝ, Fin (Module.finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
         (Subtype.val : cosphereBundle I M → CotangentBundle I M) z).range =
       (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) (fun z : CotangentBundle I M ↦ ‖z.2‖) z).ker :=
-  range_mfderiv_coe_scalarRegularLevel _ _ z
+  range_mfderiv_coe_regularLevel _ _ (by rw [Module.finrank_self]) z
 
 end Manifold
 
