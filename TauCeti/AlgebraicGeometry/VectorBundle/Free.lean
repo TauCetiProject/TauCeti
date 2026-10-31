@@ -230,32 +230,6 @@ variable {Y : Scheme.{u}} (f : Y ⟶ X) {I J : Type u}
 local instance : (SheafOfModules.pushforward.{u} f.toRingCatSheafHom).IsRightAdjoint :=
   inferInstanceAs (Scheme.Modules.pushforward f).IsRightAdjoint
 
-/-- Through `f^* 𝒪_X^I ≅ 𝒪_Y^I`, the basis section `ιFree i` of `𝒪_Y^I` is the pullback along `f`
-of the basis section `ιFree i` of `𝒪_X^I`. -/
-@[reassoc]
-lemma ιFree_pullbackObjFreeIso_inv (i : I) :
-    SheafOfModules.ιFree i ≫ (SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom I).inv =
-      (pullbackObjUnitIso f).inv ≫ (Scheme.Modules.pullback f).map (SheafOfModules.ιFree i) :=
-  (Iso.comp_inv_eq _).2 ((Category.assoc _ _ _).trans ((congrArg ((pullbackObjUnitIso f).inv ≫ ·)
-    (SheafOfModules.pullback_map_ιFree_comp_pullbackObjFreeIso_hom _ i)).trans
-      (by rw [← pullbackObjUnitIso_hom]; exact Iso.inv_hom_id_assoc _ _))).symm
-
-/-- Through `f^* 𝒪_X^J ≅ 𝒪_Y^J`, pulling back along `f` the basis section `ιFree j` of `𝒪_X^J`
-multiplied by a global function `r` gives the basis section `ιFree j` of `𝒪_Y^J` multiplied by
-the pullback of `r`. -/
-@[reassoc]
-lemma pullback_map_globalSectionsSmul_comp_ιFree_comp_pullbackObjFreeIso_hom (r : Γ(X, ⊤))
-    (j : J) :
-    (Scheme.Modules.pullback f).map (globalSectionsSmul (𝟙_ X.Modules) r ≫
-        SheafOfModules.ιFree j) ≫ (SheafOfModules.pullbackObjFreeIso f.toRingCatSheafHom J).hom =
-      (pullbackObjUnitIso f).hom ≫ globalSectionsSmul (𝟙_ Y.Modules) (f.appTop r) ≫
-        SheafOfModules.ιFree j := by
-  refine (congrArg (· ≫ _) (Functor.map_comp _ _ _)).trans ((Category.assoc _ _ _).trans ?_)
-  refine (congrArg (_ ≫ ·)
-    (SheafOfModules.pullback_map_ιFree_comp_pullbackObjFreeIso_hom _ j)).trans ?_
-  rw [pullback_map_globalSectionsSmul, ← pullbackObjUnitIso_hom]
-  exact globalSectionsSmul_naturality_assoc _ _ _
-
 /-- **Pullback of a morphism of free sheaves with a matrix.** Through the identifications
 `f^* 𝒪_X^I ≅ 𝒪_Y^I` and `f^* 𝒪_X^J ≅ 𝒪_Y^J`, the pullback along `f : Y ⟶ X` of the morphism with
 matrix `A` is the morphism whose matrix is obtained by pulling back every entry of `A` along
