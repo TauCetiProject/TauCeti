@@ -55,25 +55,10 @@ theorem productMap_surjective_of_constantCompositum_eq_top [Algebra.IsIntegral k
     (h : constantCompositum F k' F' = ⊤) :
     Function.Surjective (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k F F')
       (IsScalarTower.toAlgHom k k' F')) := by
-  set π := Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k F F')
-    (IsScalarTower.toAlgHom k k' F')
-  intro z
-  have hz : z ∈ Algebra.adjoin F (Set.range (algebraMap k' F')) := by
-    rw [adjoin_range_algebraMap_of_constantCompositum_eq_top (k := k) h]
-    trivial
-  induction hz using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨c, rfl⟩ := hx
-    exact ⟨1 ⊗ₜ c, by simp [π]⟩
-  | algebraMap x => exact ⟨x ⊗ₜ 1, by simp [π]⟩
-  | add x y _ _ hx hy =>
-    obtain ⟨a, rfl⟩ := hx
-    obtain ⟨b, rfl⟩ := hy
-    exact ⟨a + b, map_add π a b⟩
-  | mul x y _ _ hx hy =>
-    obtain ⟨a, rfl⟩ := hx
-    obtain ⟨b, rfl⟩ := hy
-    exact ⟨a * b, map_mul π a b⟩
+  rw [← AlgHom.range_eq_top, Algebra.TensorProduct.productMap_range,
+    ← Algebra.adjoin_eq (IsScalarTower.toAlgHom k k' F').range, AlgHom.coe_range,
+    IsScalarTower.coe_toAlgHom', ← Algebra.Subalgebra.restrictScalars_adjoin,
+    adjoin_range_algebraMap_of_constantCompositum_eq_top (k := k) h, Subalgebra.restrictScalars_top]
 
 /-- **A constant field extension is a tensor product.** If `k' / k` is algebraic and
 `F ⊗[k] k'` is a domain, then multiplication `F ⊗[k] k' → F · k'` is bijective. -/
