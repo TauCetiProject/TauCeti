@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.RingTheory.Invariant.EquivalenceRelation.Basic
 public import TauCeti.RingTheory.TensorProduct.Free
 
