@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.Eta
+import TauCeti.Algebra.Polynomial.Cubic.Basic
+import TauCeti.Analysis.Complex.UpperHalfPlane.CuspCoordinate
 import TauCeti.NumberTheory.ModularForms.LevelOne.Invariant
 
 /-!
@@ -138,16 +140,11 @@ private theorem siegelFunction_half_zero_pow_twelve_mul {τ : ℂ} (hτ : 0 < τ
 
 private theorem tendsto_exp_pi_I_atImInfty :
     Tendsto (fun τ : ℍ ↦ cexp (π * I * τ)) atImInfty (𝓝[≠] 0) := by
-  refine ((Function.Periodic.qParam_tendsto two_pos).comp tendsto_coe_atImInfty).congr
-    fun τ ↦ ?_
-  simp only [Function.comp_apply, Function.Periodic.qParam]
+  refine (TauCeti.UpperHalfPlane.tendsto_qParam_atImInfty two_pos).congr fun τ ↦ ?_
+  simp only [Function.Periodic.qParam]
   congr 1
   push_cast
   ring
-
-private theorem tendsto_qParam_atImInfty :
-    Tendsto (fun τ : ℍ ↦ 𝕢 1 τ) atImInfty (𝓝[≠] 0) :=
-  (Function.Periodic.qParam_tendsto one_pos).comp tendsto_coe_atImInfty
 
 /-- `g₁¹² + g₂¹² → -48` at `i∞`. -/
 private theorem tendsto_siegelFunction_half_zero_pow_twelve_add :
@@ -171,7 +168,7 @@ private theorem tendsto_siegelFunction_half_zero_pow_twelve_mul_add_inv_qParam :
     Tendsto (fun τ : ℍ ↦ siegelFunction ![1 / 2, 0] τ ^ 12 *
       siegelFunction ![1 / 2, 1 / 2] τ ^ 12 + (𝕢 1 τ)⁻¹) atImInfty (𝓝 24) := by
   have h := (hasDerivAt_tprod_one_sub_pow_odd_pow.tendsto_slope_zero.comp
-    tendsto_qParam_atImInfty).neg
+    (TauCeti.UpperHalfPlane.tendsto_qParam_atImInfty one_pos)).neg
   norm_num at h
   refine h.congr fun τ ↦ ?_
   simp only [siegelFunction_half_zero_pow_twelve_mul τ.im_pos]
@@ -180,7 +177,8 @@ private theorem tendsto_siegelFunction_half_zero_pow_twelve_mul_add_inv_qParam :
 /-- `g₀¹² → 0` at `i∞`. -/
 private theorem tendsto_siegelFunction_zero_half_pow_twelve :
     Tendsto (fun τ : ℍ ↦ siegelFunction ![0, 1 / 2] τ ^ 12) atImInfty (𝓝 0) := by
-  have hq := tendsto_qParam_atImInfty.mono_right nhdsWithin_le_nhds
+  have hq := (TauCeti.UpperHalfPlane.tendsto_qParam_atImInfty one_pos).mono_right
+    nhdsWithin_le_nhds
   have hΦ : Tendsto (fun τ : ℍ ↦ (∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ^ 24) atImInfty
       (𝓝 1) := by
     have h0 : (∏' n : ℕ, (1 - (0 : ℂ) ^ (2 * n + 1))) ^ 24 = 1 := by simp
@@ -205,35 +203,16 @@ private theorem tendsto_siegelFunction_zero_half_pow_twelve :
 
 /-! ### The symmetric functions of the twelfth powers -/
 
-/-- Equal monic cubics have the same first and second elementary symmetric functions of their
-roots. -/
-private theorem add_add_eq_and_mul_add_mul_add_mul_eq {a b c a' b' c' : ℂ}
-    (h : (X - C a) * (X - C b) * (X - C c) = (X - C a') * (X - C b') * (X - C c')) :
-    a + b + c = a' + b' + c' ∧ a * b + a * c + b * c = a' * b' + a' * c' + b' * c' := by
-  have h₀ := congrArg (eval 0) h
-  have h₁ := congrArg (eval 1) h
-  have h₂ := congrArg (eval (-1)) h
-  simp only [eval_mul, eval_sub, eval_X, eval_C] at h₀ h₁ h₂
-  constructor
-  · linear_combination (-1 / 2 : ℂ) * h₁ + (-1 / 2 : ℂ) * h₂ + h₀
-  · linear_combination (1 / 2 : ℂ) * h₁ - (1 / 2 : ℂ) * h₂
-
-private theorem mdifferentiable_siegelFunction_pow (r : Fin 2 → ℝ) (n : ℕ) :
-    MDiff fun τ : ℍ ↦ siegelFunction r τ ^ n := by
-  refine MDifferentiable.pow ?_ n
-  rw [UpperHalfPlane.mdifferentiable_iff]
-  exact (differentiableOn_siegelFunction r).congr fun z hz ↦ by
-    simp [Function.comp_apply, ofComplex_apply_of_im_pos hz]
-
 /-- `g₀¹² + g₁¹² + g₂¹² = -48`. -/
 private theorem siegelFunction_pow_twelve_add_add (τ : ℍ) :
     siegelFunction ![0, 1 / 2] τ ^ 12 + siegelFunction ![1 / 2, 0] τ ^ 12 +
       siegelFunction ![1 / 2, 1 / 2] τ ^ 12 = -48 := by
   refine levelOne_eq_of_tendsto_atImInfty (F := fun τ : ℍ ↦ siegelFunction ![0, 1 / 2] τ ^ 12 +
     siegelFunction ![1 / 2, 0] τ ^ 12 + siegelFunction ![1 / 2, 1 / 2] τ ^ 12) ?_ ?_ ?_ τ
-  · exact ((mdifferentiable_siegelFunction_pow _ 12).add
-      (mdifferentiable_siegelFunction_pow _ 12)).add (mdifferentiable_siegelFunction_pow _ 12)
-  · exact fun γ τ ↦ (add_add_eq_and_mul_add_mul_add_mul_eq
+  · exact (((mdifferentiable_siegelFunction _).pow 12).add
+      ((mdifferentiable_siegelFunction _).pow 12)).add
+      ((mdifferentiable_siegelFunction _).pow 12)
+  · exact fun γ τ ↦ (TauCeti.Polynomial.add_add_eq_and_mul_add_mul_add_mul_eq
       (prod_X_sub_C_siegelFunction_pow_twelve_smul γ τ)).1
   · have h := tendsto_siegelFunction_zero_half_pow_twelve.add
       tendsto_siegelFunction_half_zero_pow_twelve_add
@@ -251,12 +230,12 @@ private theorem siegelFunction_pow_twelve_mul_add_mul_add_mul (τ : ℍ) :
       siegelFunction ![1 / 2, 0] τ ^ 12 * siegelFunction ![1 / 2, 1 / 2] τ ^ 12 + j τ) (c := 768)
     ?_ ?_ ?_ τ
   · exact eq_sub_of_add_eq h
-  · have h₀ := mdifferentiable_siegelFunction_pow ![0, 1 / 2] 12
-    have h₁ := mdifferentiable_siegelFunction_pow ![1 / 2, 0] 12
-    have h₂ := mdifferentiable_siegelFunction_pow ![1 / 2, 1 / 2] 12
+  · have h₀ := (mdifferentiable_siegelFunction ![0, 1 / 2]).pow 12
+    have h₁ := (mdifferentiable_siegelFunction ![1 / 2, 0]).pow 12
+    have h₂ := (mdifferentiable_siegelFunction ![1 / 2, 1 / 2]).pow 12
     exact (((h₀.mul h₁).add (h₀.mul h₂)).add (h₁.mul h₂)).add j_mdifferentiable
   · intro γ τ
-    rw [(add_add_eq_and_mul_add_mul_add_mul_eq
+    rw [(TauCeti.Polynomial.add_add_eq_and_mul_add_mul_add_mul_eq
       (prod_X_sub_C_siegelFunction_pow_twelve_smul γ τ)).2, j_smul_SL2Z]
   · -- Split as `g₀¹² (g₁¹² + g₂¹²) + (g₁¹² g₂¹² + q⁻¹) + (j - q⁻¹) → 0 · (-48) + 24 + 744`.
     have h := ((tendsto_siegelFunction_zero_half_pow_twelve.mul

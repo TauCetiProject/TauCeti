@@ -153,13 +153,17 @@ theorem image_qParamPuncturedUnitDisc_setOf_lt_im (w : ℝ) (hw : 0 < w) (A : �
     obtain ⟨z, rfl⟩ := qParamPuncturedUnitDisc_surjective w hw q
     exact ⟨z, (norm_qParamPuncturedUnitDisc_lt_iff w hw A z).mp hq, rfl⟩
 
+/-- The q-parameter of positive width, as a function on `ℍ`, tends to zero through nonzero
+values as the height tends to infinity. -/
+theorem tendsto_qParam_atImInfty {w : ℝ} (hw : 0 < w) :
+    Tendsto (fun z : ℍ ↦ 𝔢 w z) atImInfty (𝓝[≠] 0) :=
+  (Function.Periodic.qParam_tendsto hw).comp tendsto_coe_atImInfty
+
 /-- The q-parameter tends to zero through nonzero values as the height tends to infinity. -/
 theorem tendsto_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) :
     Tendsto (fun z : ℍ ↦ ((qParamPuncturedUnitDisc w hw z : 𝔻) : ℂ))
       atImInfty (𝓝[≠] 0) := by
-  simp only [coe_qParamPuncturedUnitDisc]
-  exact (Function.Periodic.qParam_tendsto hw).comp
-    (tendsto_comap_iff.mpr tendsto_comap)
+  simpa only [coe_qParamPuncturedUnitDisc] using tendsto_qParam_atImInfty hw
 
 /-- Multiplying by the `k`th integer power of the q-parameter cancels the opposing exponential
 comparison and gives a function bounded at `i∞`. For positive width, nonnegative `k` controls
