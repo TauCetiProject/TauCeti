@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.LocallyFinite
+public import TauCeti.Topology.LocallyFinite.Basic
 public import Mathlib.Topology.Compactness.Compact
 
 /-!
@@ -30,18 +30,6 @@ open Set Filter Topology
 namespace LocallyFinite
 
 variable {ι κ X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-
-/-- The pairwise intersections of two locally finite families form a locally finite family.
-The index set includes all pairs, whether or not the two families are the same. -/
-protected theorem inter {s : ι → Set X} {t : κ → Set X}
-    (hs : LocallyFinite s) (ht : LocallyFinite t) :
-    LocallyFinite fun p : ι × κ ↦ s p.1 ∩ t p.2 := by
-  intro x
-  obtain ⟨U, hU, hsU⟩ := hs x
-  obtain ⟨V, hV, htV⟩ := ht x
-  refine ⟨U ∩ V, inter_mem hU hV, (hsU.prod htV).subset ?_⟩
-  rintro ⟨i, j⟩ ⟨y, ⟨hys, hyt⟩, hyU, hyV⟩
-  exact ⟨⟨y, hys, hyU⟩, ⟨y, hyt, hyV⟩⟩
 
 /-- Projection to the first factor preserves local finiteness for a family contained in a
 cylinder with compact second factor. The members themselves need not be closed or compact;
