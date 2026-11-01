@@ -61,7 +61,7 @@ positive diagonal matrix, which is not a product of this form.
   computing it and its inverse.
 * `TauCeti.cartanHomeomorph_mem_iff`: for a subgroup `G` as above, `u * exp x` lies in `G` exactly
   when `u` does and the whole line `exp (t x)` does.
-* `TauCeti.cartanHomeomorphOfSubgroup`: the Cartan decomposition of such a subgroup, the
+* `Subgroup.cartanHomeomorph`: the Cartan decomposition of such a subgroup, the
   homeomorphism `{u ∈ unitary A | u ∈ G} × {x ∈ selfAdjoint A | ∀ t, exp (t x) ∈ G} ≃ₜ G`.
 
 ## References
@@ -269,49 +269,38 @@ unitary elements of `G` and the self-adjoint elements `x` of the Lie algebra of 
 For a subgroup of `GL(n, ℝ)` or `GL(n, ℂ)` satisfying these hypotheses, such as `SL(n, ℝ)` or
 `SL(n, ℂ)`, this is the global Cartan decomposition `G = K exp 𝔭`, with `K = G ∩ U(n)` and `𝔭` the
 Hermitian part of the Lie algebra of `G`. -/
-def cartanHomeomorphOfSubgroup (hstar : ∀ a ∈ G, star a ∈ G)
+def _root_.Subgroup.cartanHomeomorph (hstar : ∀ a ∈ G, star a ∈ G)
     (hexp : ∀ x : A, IsSelfAdjoint x → expUnit x ∈ G → ∀ t : ℝ, expUnit (t • x) ∈ G) :
     {u : unitary A // Unitary.toUnits u ∈ G} ×
-        {x : selfAdjoint A // ∀ t : ℝ, expUnit (t • (x : A)) ∈ G} ≃ₜ G where
-  toFun p := ⟨cartanHomeomorph A (p.1, p.2),
-    (cartanHomeomorph_mem_iff hstar hexp (p.1, p.2)).2 ⟨p.1.2, p.2.2⟩⟩
-  invFun a :=
-    have h := (cartanHomeomorph_mem_iff hstar hexp ((cartanHomeomorph A).symm a)).1
-      (by simp)
-    (⟨((cartanHomeomorph A).symm a).1, h.1⟩, ⟨((cartanHomeomorph A).symm a).2, h.2⟩)
-  left_inv p := by ext <;> simp
-  right_inv a := by ext; simp
-  continuous_toFun := ((cartanHomeomorph A).continuous.comp
-    (continuous_subtype_val.prodMap continuous_subtype_val)).subtype_mk _
-  continuous_invFun :=
-    have hsymm := (cartanHomeomorph A).symm.continuous.comp continuous_subtype_val
-    ((continuous_fst.comp hsymm).subtype_mk _).prodMk ((continuous_snd.comp hsymm).subtype_mk _)
+        {x : selfAdjoint A // ∀ t : ℝ, expUnit (t • (x : A)) ∈ G} ≃ₜ G :=
+  (Homeomorph.Set.prod {u : unitary A | Unitary.toUnits u ∈ G}
+      {x : selfAdjoint A | ∀ t : ℝ, expUnit (t • (x : A)) ∈ G}).symm.trans <|
+    (TauCeti.cartanHomeomorph A).subtype fun p ↦ (cartanHomeomorph_mem_iff hstar hexp p).symm
 
 /-- The Cartan decomposition of a subgroup sends `(u, x)` to `u * exp x`. -/
 @[simp]
-theorem coe_cartanHomeomorphOfSubgroup_apply (hstar : ∀ a ∈ G, star a ∈ G)
+theorem _root_.Subgroup.coe_cartanHomeomorph_apply (hstar : ∀ a ∈ G, star a ∈ G)
     (hexp : ∀ x : A, IsSelfAdjoint x → expUnit x ∈ G → ∀ t : ℝ, expUnit (t • x) ∈ G)
     (p : {u : unitary A // Unitary.toUnits u ∈ G} ×
       {x : selfAdjoint A // ∀ t : ℝ, expUnit (t • (x : A)) ∈ G}) :
-    ((cartanHomeomorphOfSubgroup G hstar hexp p : Aˣ) : A) =
+    ((G.cartanHomeomorph hstar hexp p : Aˣ) : A) =
       (p.1 : A) * exp ((p.2 : selfAdjoint A) : A) :=
-  val_cartanHomeomorph_apply _
+  TauCeti.val_cartanHomeomorph_apply _
 
 /-- The unitary factor of the Cartan decomposition of an element `a` of a subgroup is its polar
 unitary factor. -/
 @[simp]
-theorem coe_cartanHomeomorphOfSubgroup_symm_apply_fst (hstar : ∀ a ∈ G, star a ∈ G)
+theorem _root_.Subgroup.coe_cartanHomeomorph_symm_apply_fst (hstar : ∀ a ∈ G, star a ∈ G)
     (hexp : ∀ x : A, IsSelfAdjoint x → expUnit x ∈ G → ∀ t : ℝ, expUnit (t • x) ∈ G) (a : G) :
-    (((cartanHomeomorphOfSubgroup G hstar hexp).symm a).1 : unitary A) =
-      (a : Aˣ).polarUnitary :=
+    (((G.cartanHomeomorph hstar hexp).symm a).1 : unitary A) = (a : Aˣ).polarUnitary :=
   (rfl)
 
 /-- The self-adjoint factor of the Cartan decomposition of an element `a` of a subgroup is
 `log √(a⋆ a)`. -/
 @[simp]
-theorem coe_cartanHomeomorphOfSubgroup_symm_apply_snd (hstar : ∀ a ∈ G, star a ∈ G)
+theorem _root_.Subgroup.coe_cartanHomeomorph_symm_apply_snd (hstar : ∀ a ∈ G, star a ∈ G)
     (hexp : ∀ x : A, IsSelfAdjoint x → expUnit x ∈ G → ∀ t : ℝ, expUnit (t • x) ∈ G) (a : G) :
-    ((((cartanHomeomorphOfSubgroup G hstar hexp).symm a).2 : selfAdjoint A) : A) =
+    ((((G.cartanHomeomorph hstar hexp).symm a).2 : selfAdjoint A) : A) =
       CFC.log (CFC.sqrt (star ((a : Aˣ) : A) * (a : Aˣ))) :=
   (rfl)
 

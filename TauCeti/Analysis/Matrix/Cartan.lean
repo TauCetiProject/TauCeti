@@ -31,7 +31,7 @@ The decomposition restricts to the special linear group: `SL(n, 𝕜) = SU(n, �
 `𝔭₀` is the space of trace-free Hermitian matrices, the Hermitian part of `𝔰𝔩(n, 𝕜)`. Indeed
 `det (k * exp X) = det k * exp (trace X)` with `|det k| = 1` and `exp (trace X) > 0`, so a product
 of determinant one has both factors of determinant one. This is the instance of
-`TauCeti.cartanHomeomorphOfSubgroup` for the subgroup of determinant-one matrices, which is closed
+`Subgroup.cartanHomeomorph` for the subgroup of determinant-one matrices, which is closed
 under conjugate transpose and contains the whole line `exp (t X)` once it contains `exp X`.
 
 ## Main declarations
@@ -122,7 +122,7 @@ a homeomorphism from the product of the special unitary group (the special ortho
 
 It is the restriction of the Cartan decomposition of `GL(n, 𝕜)` to the determinant-one matrices,
 which form a subgroup closed under conjugate transpose whose Hermitian Lie algebra elements are the
-trace-free Hermitian matrices (`TauCeti.cartanHomeomorphOfSubgroup`). -/
+trace-free Hermitian matrices (`Subgroup.cartanHomeomorph`). -/
 def cartanHomeomorph :
     specialUnitaryGroup n 𝕜 × {X : selfAdjoint (Matrix n n 𝕜) // (X : Matrix n n 𝕜).trace = 0} ≃ₜ
       SpecialLinearGroup n 𝕜 := by
@@ -159,8 +159,7 @@ def cartanHomeomorph :
       continuous_toFun := (Units.continuous_val.comp continuous_subtype_val).subtype_mk _
       continuous_invFun := continuous_toGL.subtype_mk _ }
   exact (eK.prodCongr eP).trans
-    ((TauCeti.cartanHomeomorphOfSubgroup G hstar
-      fun x hx h ↦ (hline x).2 ((hexpG hx).1 h)).trans eSL)
+    ((G.cartanHomeomorph hstar fun x hx h ↦ (hline x).2 ((hexpG hx).1 h)).trans eSL)
 
 /-- The Cartan decomposition map of `SL(n, 𝕜)` sends `(k, X)` to `k * exp X`. -/
 @[simp]
