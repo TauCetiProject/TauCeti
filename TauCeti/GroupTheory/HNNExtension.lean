@@ -110,11 +110,11 @@ theorem not_isCommTransitive_zpowers_of_isProperPower [IsMulTorsionFree G] {u : 
   have hy : y ≠ 1 := by
     rintro rfl
     exact hu1 (one_pow n)
-  obtain ⟨k, hk⟩ := mem_zpowers_iff.1 <| centralizer_le_of_isCommTransitive h (mem_zpowers _) hu1
+  have hs := centralizer_le_of_isCommTransitive h (mem_zpowers _) hu1
     (mem_centralizer_singleton_iff.2 (Commute.self_pow y n).eq)
-  have hk' : y ^ ((n : ℤ) * k) = y ^ (1 : ℤ) := by rwa [zpow_mul, zpow_one, zpow_natCast]
-  rw [IsMulTorsionFree.zpow_right_inj hy] at hk'
-  have := Int.eq_one_of_mul_eq_one_right (by positivity) hk'
+  have : n = 1 := by
+    simpa only [orderOf_eq_zero (not_isOfFinOrder_of_isMulTorsionFree hy), Nat.gcd_zero_right]
+      using mem_zpowers_pow_iff.mp hs
   omega
 
 end HNNExtension
