@@ -37,15 +37,17 @@ smooth.
 
 * `TauCeti.RootsOfUnityGroup.projLineComodule`: the representation `t · (u, v) = (tⁿ u, v)` of
   `𝔾ₘ` on `R²`, diagonal with weights `n` and `0`.
+* `TauCeti.RootsOfUnityGroup.projLineComodule_def`: it is `Comodule.ofWeights` for the standard
+  basis with weights `n` and `0`.
 * `TauCeti.RootsOfUnityGroup.projLineComodule_coact_basisFun_zero` and
   `TauCeti.RootsOfUnityGroup.projLineComodule_coact_basisFun_one`: its coaction on the two
   coordinate vectors.
-* `TauCeti.RootsOfUnityGroup.stabilizerHopfIdeal_ofWeights_toIdeal`: for
+* `TauCeti.RootsOfUnityGroup.stabilizerHopfIdeal_projLineComodule_toIdeal`: for
   `t · [u : v] = [tⁿ u : v]`, the stabilizer of `[1 : 1]` is `μ_n`.
-* `TauCeti.RootsOfUnityGroup.smooth_quotient_stabilizerHopfIdeal_ofWeights_iff`: for `n ≠ 0`,
-  this stabilizer is smooth exactly when `n` is invertible in `k`.
-* `TauCeti.RootsOfUnityGroup.lieSubalgebra_stabilizerHopfIdeal_ofWeights_eq_top`: when `n = 0`
-  in `k`, its Lie algebra is all of `Lie 𝔾ₘ`.
+* `TauCeti.RootsOfUnityGroup.smooth_quotient_stabilizerHopfIdeal_projLineComodule_iff`: for
+  `n ≠ 0`, this stabilizer is smooth exactly when `n` is invertible in `k`.
+* `TauCeti.RootsOfUnityGroup.lieSubalgebra_stabilizerHopfIdeal_projLineComodule_eq_top`: when
+  `n = 0` in `k`, its Lie algebra is all of `Lie 𝔾ₘ`.
 
 ## References
 
@@ -75,6 +77,13 @@ over `R[ℤ]` that is diagonal in the standard basis with weights `n` and `0`. I
 @[instance_reducible] noncomputable def projLineComodule (n : ℕ) :
     Comodule R (MonoidAlgebra R (Multiplicative ℤ)) (Fin 2 → R) :=
   Comodule.ofWeights (Pi.basisFun R (Fin 2)) ![Multiplicative.ofAdd (n : ℤ), 1]
+
+/-- `projLineComodule` is the diagonal comodule `Comodule.ofWeights` with weights `n` and `0`,
+so the general `Comodule.ofWeights` API applies to it. -/
+theorem projLineComodule_def (n : ℕ) :
+    projLineComodule R n =
+      Comodule.ofWeights (Pi.basisFun R (Fin 2)) ![Multiplicative.ofAdd (n : ℤ), 1] :=
+  (rfl)
 
 /-- The first coordinate vector has weight `n`. -/
 theorem projLineComodule_coact_basisFun_zero (n : ℕ) :
@@ -116,7 +125,7 @@ private theorem one_eq_basisFun_add :
 representation of `𝔾ₘ = D(ℤ)` on `k²` with weights `n` and `0`, the scheme-theoretic stabilizer
 of the line through `(1, 1)` is the closed subgroup `μ_n`, the kernel of the coordinate surjection
 `k[ℤ] ↠ k[ℤ/n]`. -/
-theorem stabilizerHopfIdeal_ofWeights_toIdeal (n : ℕ) :
+theorem stabilizerHopfIdeal_projLineComodule_toIdeal (n : ℕ) :
     letI := projLineComodule k n
     ((k ∙ (1 : Fin 2 → k)).stabilizerHopfIdeal (MonoidAlgebra k (Multiplicative ℤ))).toIdeal =
       RingHom.ker (MonoidAlgebra.mapDomainRingHom k (toMultiplicativeZMod n)) := by
@@ -130,7 +139,7 @@ theorem stabilizerHopfIdeal_ofWeights_toIdeal (n : ℕ) :
 the action `t · [u : v] = [tⁿ u : v]` of `𝔾ₘ`, the coordinate algebra of the stabilizer of
 `[1 : 1]` is smooth if and only if `n` is a unit in `k`. In characteristic `p` the stabilizer
 `μ_p` of the action `t · [u : v] = [tᵖ u : v]` is therefore not smooth. -/
-theorem smooth_quotient_stabilizerHopfIdeal_ofWeights_iff (n : ℕ) [NeZero n] :
+theorem smooth_quotient_stabilizerHopfIdeal_projLineComodule_iff (n : ℕ) [NeZero n] :
     letI := projLineComodule k n
     Algebra.Smooth k (MonoidAlgebra k (Multiplicative ℤ) ⧸
         ((k ∙ (1 : Fin 2 → k)).stabilizerHopfIdeal
@@ -138,7 +147,7 @@ theorem smooth_quotient_stabilizerHopfIdeal_ofWeights_iff (n : ℕ) [NeZero n] :
       IsUnit (n : k) := by
   let : Comodule k (MonoidAlgebra k (Multiplicative ℤ)) (Fin 2 → k) := projLineComodule k n
   -- The stabilizer's coordinate algebra is the group algebra `k[ℤ/n]`.
-  let e := (Ideal.quotientEquivAlgOfEq k (stabilizerHopfIdeal_ofWeights_toIdeal n)).trans
+  let e := (Ideal.quotientEquivAlgOfEq k (stabilizerHopfIdeal_projLineComodule_toIdeal n)).trans
     (Ideal.quotientKerAlgEquivOfSurjective (f := MonoidAlgebra.mapDomainAlgHom k k
       (toMultiplicativeZMod n))
       (MonoidAlgebra.mapDomain_surjective (toMultiplicativeZMod_surjective n)))
@@ -153,7 +162,7 @@ theorem smooth_quotient_stabilizerHopfIdeal_ofWeights_iff (n : ℕ) [NeZero n] :
 `k`, for instance `n = p` in characteristic `p`, then every tangent vector of `𝔾ₘ` lies in the Lie
 algebra of the stabilizer of `[1 : 1]` under `t · [u : v] = [tⁿ u : v]`, although for `n ≠ 0`
 this stabilizer is the proper subgroup `μ_n`. -/
-theorem lieSubalgebra_stabilizerHopfIdeal_ofWeights_eq_top {n : ℕ} (hn : (n : k) = 0) :
+theorem lieSubalgebra_stabilizerHopfIdeal_projLineComodule_eq_top {n : ℕ} (hn : (n : k) = 0) :
     letI := projLineComodule k n
     ((k ∙ (1 : Fin 2 → k)).stabilizerHopfIdeal
       (MonoidAlgebra k (Multiplicative ℤ))).lieSubalgebra (B := k) = ⊤ := by
