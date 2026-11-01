@@ -104,24 +104,6 @@ def graphFunctionality : L.graphLanguage.Sentenceω :=
       (BoundedFormulaInf.equal (Term.var (Sum.inr (Fin.last k).castSucc))
         (Term.var (Sum.inr (Fin.last (k + 1))))))).alls
 
-/-- Reading the arguments `xs, y` off a valuation `xs, y, z` of `k + 2` positions. -/
-private theorem snoc_snoc_comp_castSucc {M : Type w} (xs : Fin k → M) (y z : M) :
-    (fun i => Fin.snoc (α := fun _ => M) (Fin.snoc xs y) z
-      (Fin.snoc (α := fun _ => Fin (k + 2)) (fun j : Fin k => j.castSucc.castSucc)
-        (Fin.last k).castSucc i)) =
-      Fin.snoc xs y := by
-  funext i
-  cases i using Fin.lastCases <;> simp
-
-/-- Reading the arguments `xs, z` off a valuation `xs, y, z` of `k + 2` positions. -/
-private theorem snoc_snoc_comp_last {M : Type w} (xs : Fin k → M) (y z : M) :
-    (fun i => Fin.snoc (α := fun _ => M) (Fin.snoc xs y) z
-      (Fin.snoc (α := fun _ => Fin (k + 2)) (fun j : Fin k => j.castSucc.castSucc)
-        (Fin.last (k + 1)) i)) =
-      Fin.snoc xs z := by
-  funext i
-  cases i using Fin.lastCases <;> simp
-
 variable {M : Type w} [L.graphLanguage.Structure M]
 
 /-- Totality holds when the graph relation of `f` relates every argument tuple to some value. -/
@@ -147,11 +129,14 @@ theorem realize_graphFunctionality :
     BoundedFormulaInf.realize_equal, Term.realize_var, Sum.elim_inr]
   constructor
   · intro h xs y z
-    simpa [snoc_snoc_comp_castSucc, snoc_snoc_comp_last] using h (Fin.snoc (Fin.snoc xs y) z)
+    have := h (Fin.snoc (Fin.snoc xs y) z)
+    simp only [← Function.comp_def (Fin.snoc _ _), Fin.comp_snoc] at this
+    simpa [Function.comp_def] using this
   · intro h xs
     obtain ⟨ws, y, z, rfl⟩ : ∃ ws y z, Fin.snoc (Fin.snoc ws y) z = xs :=
       ⟨_, _, _, by rw [Fin.snoc_init_self, Fin.snoc_init_self]⟩
-    simpa [snoc_snoc_comp_castSucc, snoc_snoc_comp_last] using h ws y z
+    simp only [← Function.comp_def (Fin.snoc _ _), Fin.comp_snoc]
+    simpa [Function.comp_def] using h ws y z
 
 /-- Totality mentions only the graph relation of `f`. -/
 @[simp]
