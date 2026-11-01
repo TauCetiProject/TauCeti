@@ -24,7 +24,7 @@ forms in terms of `π`, `a + b` and the geometric mean `√(a b)`:
 These are the quadratures of classical mechanics in one degree of freedom between two simple
 turning points: after factoring the radial kinetic energy of a Kepler orbit or an isotropic
 oscillator as such a quadratic, they compute the radial action, the radial period and the angle
-swept between the turning points. The first two integrands are unbounded at the endpoints but
+swept between the turning points. The first three integrands are unbounded at the endpoints but
 nonnegative, so they are integrable because they are derivatives of continuous functions.
 
 The antiderivatives are `arcsin ((2 x - a - b) / (b - a))` for `1 / √((x - a) (b - x))` and
@@ -36,6 +36,10 @@ The antiderivatives are `arcsin ((2 x - a - b) / (b - a))` for `1 / √((x - a) 
 * `TauCeti.integral_div_sqrt_mul_sub_mul_sub`
 * `TauCeti.integral_one_div_mul_sqrt_mul_sub_mul_sub`
 * `TauCeti.integral_sqrt_mul_sub_mul_sub_div`
+* `TauCeti.intervalIntegrable_one_div_sqrt_mul_sub_mul_sub`,
+  `TauCeti.intervalIntegrable_div_sqrt_mul_sub_mul_sub` and
+  `TauCeti.intervalIntegrable_one_div_mul_sqrt_mul_sub_mul_sub`: the integrability of the
+  integrands that are unbounded at the endpoints.
 * `TauCeti.hasDerivAt_arcsin_two_mul_sub_sub_div_sub`,
   `TauCeti.hasDerivAt_arcsin_add_mul_sub_div_sub_mul` and
   `TauCeti.hasDerivAt_sqrt_mul_sub_mul_sub`: the derivatives of the antiderivatives on `(a, b)`.
@@ -157,6 +161,98 @@ private theorem arcsin_add_mul_sub_div_sub_mul_right (ha : 0 < a) (hab : a < b) 
   have := (ha.trans hab).ne'
   rw [show ((a + b) * b - 2 * a * b) / ((b - a) * b) = 1 by field_simp; ring, arcsin_one]
 
+private theorem continuous_neg_sqrt_add_mul_arcsin :
+    Continuous (fun y => -√((y - a) * (b - y)) +
+      (b - a) / 2 * arcsin ((2 * y - a - b) / (b - a))) := by
+  fun_prop
+
+/-- `-√((x - a) (b - x)) + (b - a) / 2 * arcsin ((2 x - a - b) / (b - a))` is an antiderivative
+of `(x - a) / √((x - a) (b - x))` on `(a, b)`. -/
+private theorem hasDerivAt_neg_sqrt_add_mul_arcsin {x : ℝ} (hx : x ∈ Ioo a b) :
+    HasDerivAt (fun y => -√((y - a) * (b - y)) +
+      (b - a) / 2 * arcsin ((2 * y - a - b) / (b - a))) ((x - a) / √((x - a) * (b - x))) x := by
+  convert (hasDerivAt_sqrt_mul_sub_mul_sub hx).neg.add
+    ((hasDerivAt_arcsin_two_mul_sub_sub_div_sub hx).const_mul ((b - a) / 2)) using 1
+  have := (sqrt_mul_sub_mul_sub_pos hx).ne'
+  field_simp
+  ring
+
+/-- `arcsin (((a + b) x - 2 a b) / ((b - a) x)) / √(a b)` is an antiderivative of
+`1 / (x √((x - a) (b - x)))` on `(a, b)` for `0 < a`. -/
+private theorem hasDerivAt_arcsin_add_mul_sub_div_sub_mul_div (ha : 0 < a) {x : ℝ}
+    (hx : x ∈ Ioo a b) :
+    HasDerivAt (fun y => arcsin (((a + b) * y - 2 * a * b) / ((b - a) * y)) / √(a * b))
+      (1 / (x * √((x - a) * (b - x)))) x := by
+  have hab' : 0 < √(a * b) := sqrt_pos.2 (mul_pos ha (ha.trans (hx.1.trans hx.2)))
+  convert (hasDerivAt_arcsin_add_mul_sub_div_sub_mul ha hx).div_const (√(a * b)) using 1
+  have := (sqrt_mul_sub_mul_sub_pos hx).ne'
+  have := (ha.trans hx.1).ne'
+  field_simp
+
+private theorem intervalIntegrable_one_div_sqrt_mul_sub_mul_sub_of_le (hab : a ≤ b) :
+    IntervalIntegrable (fun x => 1 / √((x - a) * (b - x))) volume a b := by
+  refine intervalIntegrable_deriv_of_nonneg
+    (continuous_arcsin_two_mul_sub_sub_div_sub (a := a) (b := b)).continuousOn ?_ ?_ <;>
+    rw [Ioo_min_max, uIoo_of_le hab]
+  exacts [fun x hx => hasDerivAt_arcsin_two_mul_sub_sub_div_sub hx, fun x _ => by positivity]
+
+private theorem intervalIntegrable_sub_div_sqrt_mul_sub_mul_sub_of_le (hab : a ≤ b) :
+    IntervalIntegrable (fun x => (x - a) / √((x - a) * (b - x))) volume a b := by
+  refine intervalIntegrable_deriv_of_nonneg
+    (continuous_neg_sqrt_add_mul_arcsin (a := a) (b := b)).continuousOn ?_ ?_ <;>
+    rw [Ioo_min_max, uIoo_of_le hab]
+  exacts [fun x hx => hasDerivAt_neg_sqrt_add_mul_arcsin hx,
+    fun x hx => div_nonneg (sub_nonneg.2 hx.1.le) (sqrt_nonneg _)]
+
+private theorem intervalIntegrable_div_sqrt_mul_sub_mul_sub_of_le (hab : a ≤ b) :
+    IntervalIntegrable (fun x => x / √((x - a) * (b - x))) volume a b := by
+  have hsplit : (fun x => x / √((x - a) * (b - x))) =
+      fun x => (x - a) / √((x - a) * (b - x)) + a * (1 / √((x - a) * (b - x))) := by
+    ext x; ring
+  rw [hsplit]
+  exact (intervalIntegrable_sub_div_sqrt_mul_sub_mul_sub_of_le hab).add
+    ((intervalIntegrable_one_div_sqrt_mul_sub_mul_sub_of_le hab).const_mul a)
+
+private theorem intervalIntegrable_one_div_mul_sqrt_mul_sub_mul_sub_of_le (ha : 0 < a)
+    (hab : a ≤ b) :
+    IntervalIntegrable (fun x => 1 / (x * √((x - a) * (b - x)))) volume a b := by
+  rcases hab.eq_or_lt with rfl | hab
+  · exact .refl
+  have hcont := (continuousOn_arcsin_add_mul_sub_div_sub_mul ha hab).div_const (√(a * b))
+  rw [← uIcc_of_le hab.le] at hcont
+  refine intervalIntegrable_deriv_of_nonneg hcont ?_ ?_ <;> rw [Ioo_min_max, uIoo_of_le hab.le]
+  exacts [fun x hx => hasDerivAt_arcsin_add_mul_sub_div_sub_mul_div ha hx,
+    fun x hx => one_div_nonneg.2 (mul_nonneg (ha.trans hx.1).le (sqrt_nonneg _))]
+
+private theorem mul_sub_mul_sub_comm (x : ℝ) : (x - b) * (a - x) = (x - a) * (b - x) := by ring
+
+/-- `x ↦ 1 / √((x - a) (b - x))` is interval integrable between `a` and `b`, although it is
+unbounded at both endpoints. -/
+theorem intervalIntegrable_one_div_sqrt_mul_sub_mul_sub :
+    IntervalIntegrable (fun x => 1 / √((x - a) * (b - x))) volume a b := by
+  rcases le_total a b with hab | hba
+  · exact intervalIntegrable_one_div_sqrt_mul_sub_mul_sub_of_le hab
+  · simpa only [mul_sub_mul_sub_comm] using
+      (intervalIntegrable_one_div_sqrt_mul_sub_mul_sub_of_le hba).symm
+
+/-- `x ↦ x / √((x - a) (b - x))` is interval integrable between `a` and `b`, although it is
+unbounded at both endpoints. -/
+theorem intervalIntegrable_div_sqrt_mul_sub_mul_sub :
+    IntervalIntegrable (fun x => x / √((x - a) * (b - x))) volume a b := by
+  rcases le_total a b with hab | hba
+  · exact intervalIntegrable_div_sqrt_mul_sub_mul_sub_of_le hab
+  · simpa only [mul_sub_mul_sub_comm] using
+      (intervalIntegrable_div_sqrt_mul_sub_mul_sub_of_le hba).symm
+
+/-- `x ↦ 1 / (x √((x - a) (b - x)))` is interval integrable between positive `a` and `b`,
+although it is unbounded at both endpoints. -/
+theorem intervalIntegrable_one_div_mul_sqrt_mul_sub_mul_sub (ha : 0 < a) (hb : 0 < b) :
+    IntervalIntegrable (fun x => 1 / (x * √((x - a) * (b - x)))) volume a b := by
+  rcases le_total a b with hab | hba
+  · exact intervalIntegrable_one_div_mul_sqrt_mul_sub_mul_sub_of_le ha hab
+  · simpa only [mul_sub_mul_sub_comm] using
+      (intervalIntegrable_one_div_mul_sqrt_mul_sub_mul_sub_of_le hb hba).symm
+
 /-- `∫ x in a..b, 1 / √((x - a) (b - x)) = π` for `a < b`. -/
 theorem integral_one_div_sqrt_mul_sub_mul_sub (hab : a < b) :
     ∫ x in a..b, 1 / √((x - a) * (b - x)) = π := by
@@ -171,33 +267,17 @@ theorem integral_div_sqrt_mul_sub_mul_sub (hab : a < b) :
     ∫ x in a..b, x / √((x - a) * (b - x)) = π * (a + b) / 2 := by
   -- Split `x = (x - a) + a`; the first part is the nonnegative derivative of
   -- `-√((x - a) (b - x)) + (b - a) / 2 * arcsin ((2 x - a - b) / (b - a))`.
-  have hcont : ContinuousOn (fun y => -√((y - a) * (b - y)) +
-      (b - a) / 2 * arcsin ((2 * y - a - b) / (b - a))) (Icc a b) := by
-    fun_prop
-  have hd : ∀ x ∈ Ioo a b, HasDerivAt (fun y => -√((y - a) * (b - y)) +
-      (b - a) / 2 * arcsin ((2 * y - a - b) / (b - a))) ((x - a) / √((x - a) * (b - x))) x := by
-    intro x hx
-    convert (hasDerivAt_sqrt_mul_sub_mul_sub hx).neg.add
-      ((hasDerivAt_arcsin_two_mul_sub_sub_div_sub hx).const_mul ((b - a) / 2)) using 1
-    have := (sqrt_mul_sub_mul_sub_pos hx).ne'
-    field_simp
-    ring
-  have h₁ := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le_of_nonneg hab.le hcont hd
+  have h₁ := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le_of_nonneg hab.le
+    continuous_neg_sqrt_add_mul_arcsin.continuousOn
+    (fun x hx => hasDerivAt_neg_sqrt_add_mul_arcsin hx)
     (fun x hx => div_nonneg (sub_nonneg.2 hx.1.le) (sqrt_nonneg _))
   have h₀ := integral_one_div_sqrt_mul_sub_mul_sub hab
-  have hIoo : Ioo (min a b) (max a b) = Ioo a b := by rw [min_eq_left hab.le, max_eq_right hab.le]
-  have hi₁ : IntervalIntegrable (fun x => (x - a) / √((x - a) * (b - x))) volume a b := by
-    refine intervalIntegrable_deriv_of_nonneg (by rwa [uIcc_of_le hab.le]) ?_ ?_ <;> rw [hIoo]
-    exacts [hd, fun x hx => div_nonneg (sub_nonneg.2 hx.1.le) (sqrt_nonneg _)]
-  have hi₀ : IntervalIntegrable (fun x => 1 / √((x - a) * (b - x))) volume a b := by
-    refine intervalIntegrable_deriv_of_nonneg
-      (continuous_arcsin_two_mul_sub_sub_div_sub (a := a) (b := b)).continuousOn ?_ ?_ <;>
-      rw [hIoo]
-    exacts [fun x hx => hasDerivAt_arcsin_two_mul_sub_sub_div_sub hx, fun x _ => by positivity]
   have hsplit : (fun x => x / √((x - a) * (b - x))) =
       fun x => (x - a) / √((x - a) * (b - x)) + a * (1 / √((x - a) * (b - x))) := by
     ext x; ring
-  rw [hsplit, intervalIntegral.integral_add hi₁ (hi₀.const_mul a),
+  rw [hsplit, intervalIntegral.integral_add
+    (intervalIntegrable_sub_div_sqrt_mul_sub_mul_sub_of_le hab.le)
+    (intervalIntegrable_one_div_sqrt_mul_sub_mul_sub.const_mul a),
     intervalIntegral.integral_const_mul, h₁, h₀]
   simp only [sub_self, mul_zero, zero_mul, sqrt_zero, neg_zero, zero_add]
   rw [arcsin_two_mul_sub_sub_div_sub_left hab, arcsin_two_mul_sub_sub_div_sub_right hab]
@@ -206,19 +286,9 @@ theorem integral_div_sqrt_mul_sub_mul_sub (hab : a < b) :
 /-- `∫ x in a..b, 1 / (x √((x - a) (b - x))) = π / √(a b)` for `0 < a < b`. -/
 theorem integral_one_div_mul_sqrt_mul_sub_mul_sub (ha : 0 < a) (hab : a < b) :
     ∫ x in a..b, 1 / (x * √((x - a) * (b - x))) = π / √(a * b) := by
-  have hb : 0 < b := ha.trans hab
-  have hab' : 0 < √(a * b) := sqrt_pos.2 (mul_pos ha hb)
-  have hcont : ContinuousOn (fun y => arcsin (((a + b) * y - 2 * a * b) / ((b - a) * y)) /
-      √(a * b)) (Icc a b) :=
-    (continuousOn_arcsin_add_mul_sub_div_sub_mul ha hab).div_const _
-  have hd : ∀ x ∈ Ioo a b, HasDerivAt (fun y => arcsin (((a + b) * y - 2 * a * b) /
-      ((b - a) * y)) / √(a * b)) (1 / (x * √((x - a) * (b - x)))) x := by
-    intro x hx
-    convert (hasDerivAt_arcsin_add_mul_sub_div_sub_mul ha hx).div_const (√(a * b)) using 1
-    have := (sqrt_mul_sub_mul_sub_pos hx).ne'
-    have := (ha.trans hx.1).ne'
-    field_simp
-  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le_of_nonneg hab.le hcont hd fun x hx =>
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le_of_nonneg hab.le
+    ((continuousOn_arcsin_add_mul_sub_div_sub_mul ha hab).div_const _)
+    (fun x hx => hasDerivAt_arcsin_add_mul_sub_div_sub_mul_div ha hx) fun x hx =>
     one_div_nonneg.2 (mul_nonneg (ha.trans hx.1).le (sqrt_nonneg _))]
   rw [arcsin_add_mul_sub_div_sub_mul_left ha hab, arcsin_add_mul_sub_div_sub_mul_right ha hab]
   ring

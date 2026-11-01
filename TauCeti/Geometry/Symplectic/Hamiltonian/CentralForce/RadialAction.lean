@@ -25,7 +25,7 @@ the effective potential `U_ℓ(r) = ℓ² / (2 m r²) + U(r)`. At energy `E` its
 * the **apsidal angle** `Δθ = ∫_{r₁}^{r₂} ℓ dr / (r² √(2 m (E - U_ℓ(r))))`, the polar angle swept
   from pericentre to apocentre (`TauCeti.apsidalAngle`).
 
-All three are integrals of `TauCeti.radialMomentum`, the function
+All three are integrals of `TauCeti.absRadialMomentum`, the function
 `r ↦ √(2 m (E - U(r)) - ℓ² / r²) = √(2 m (E - U_ℓ(r)))`.
 
 This file evaluates them in closed form for the two potentials singled out by Bertrand's theorem,
@@ -46,9 +46,9 @@ In both cases the turning-point equations force `2 m (E - U_ℓ(r)) = c (r - r�
 
 ## Main declarations
 
-* `TauCeti.radialMomentum`, `TauCeti.radialAction`, `TauCeti.radialPeriod`,
-  `TauCeti.apsidalAngle`, with `TauCeti.radialMomentum_nonneg` and
-  `TauCeti.radialMomentum_eq_zero_iff` (vanishing at the turning points).
+* `TauCeti.absRadialMomentum`, `TauCeti.radialAction`, `TauCeti.radialPeriod`,
+  `TauCeti.apsidalAngle`, with `TauCeti.absRadialMomentum_nonneg` and
+  `TauCeti.absRadialMomentum_eq_zero_iff` (vanishing at the turning points).
 * `TauCeti.kepler_kappa_eq`, `TauCeti.kepler_sq_angularMomentum_eq` (Vieta's formulas for the
   Kepler turning points), `TauCeti.kepler_energy_neg`, `TauCeti.kepler_kappa_pos` and
   `TauCeti.kepler_sqrt_mul_sqrt_eq_abs`.
@@ -74,58 +74,59 @@ open Real Set intervalIntegral
 
 namespace TauCeti
 
-/-- The **radial momentum** `√(2 m (E - U(r)) - ℓ² / r²)` at radius `r` of a particle of mass `m`
-with angular momentum `ℓ` and energy `E` in the central potential `U`. Where the radicand is
-nonnegative this is `|p_r|`; it vanishes at the turning points. -/
-noncomputable def radialMomentum (m : ℝ) (U : ℝ → ℝ) (ℓ E r : ℝ) : ℝ :=
+/-- The **absolute radial momentum** `√(2 m (E - U(r)) - ℓ² / r²)` at radius `r` of a particle of
+mass `m` with angular momentum `ℓ` and energy `E` in the central potential `U`. Where the radicand
+is nonnegative this is `|p_r|`, written as a function of `r` at fixed `ℓ` and `E` rather than as a
+phase-space coordinate; it vanishes at the turning points. -/
+noncomputable def absRadialMomentum (m : ℝ) (U : ℝ → ℝ) (ℓ E r : ℝ) : ℝ :=
   √(2 * m * (E - U r) - ℓ ^ 2 / r ^ 2)
 
 /-- The **radial action** `(1 / π) ∫_{r₁}^{r₂} |p_r| dr` between the turning points `r₁` and `r₂`,
 the area enclosed by the radial phase curve divided by `2π`. -/
 noncomputable def radialAction (m : ℝ) (U : ℝ → ℝ) (ℓ E r₁ r₂ : ℝ) : ℝ :=
-  π⁻¹ * ∫ r in r₁..r₂, radialMomentum m U ℓ E r
+  π⁻¹ * ∫ r in r₁..r₂, absRadialMomentum m U ℓ E r
 
 /-- The **radial period** `2 ∫_{r₁}^{r₂} m dr / |p_r|`: the radial velocity is `p_r / m`, so this is
 the time to travel from `r₁` to `r₂` and back. -/
 noncomputable def radialPeriod (m : ℝ) (U : ℝ → ℝ) (ℓ E r₁ r₂ : ℝ) : ℝ :=
-  2 * ∫ r in r₁..r₂, m / radialMomentum m U ℓ E r
+  2 * ∫ r in r₁..r₂, m / absRadialMomentum m U ℓ E r
 
 /-- The **apsidal angle** `∫_{r₁}^{r₂} ℓ dr / (r² |p_r|)`, the polar angle swept while the radius
 moves from `r₁` to `r₂`: along the orbit `dθ / dr = ℓ / (r² p_r)`. -/
 noncomputable def apsidalAngle (m : ℝ) (U : ℝ → ℝ) (ℓ E r₁ r₂ : ℝ) : ℝ :=
-  ∫ r in r₁..r₂, ℓ / (r ^ 2 * radialMomentum m U ℓ E r)
+  ∫ r in r₁..r₂, ℓ / (r ^ 2 * absRadialMomentum m U ℓ E r)
 
-/-- Unfolds `TauCeti.radialMomentum`. -/
-theorem radialMomentum_def (m : ℝ) (U : ℝ → ℝ) (ℓ E r : ℝ) :
-    radialMomentum m U ℓ E r = √(2 * m * (E - U r) - ℓ ^ 2 / r ^ 2) := (rfl)
+/-- Unfolds `TauCeti.absRadialMomentum`. -/
+theorem absRadialMomentum_def (m : ℝ) (U : ℝ → ℝ) (ℓ E r : ℝ) :
+    absRadialMomentum m U ℓ E r = √(2 * m * (E - U r) - ℓ ^ 2 / r ^ 2) := (rfl)
 
 /-- Unfolds `TauCeti.radialAction`. -/
 theorem radialAction_def (m : ℝ) (U : ℝ → ℝ) (ℓ E r₁ r₂ : ℝ) :
-    radialAction m U ℓ E r₁ r₂ = π⁻¹ * ∫ r in r₁..r₂, radialMomentum m U ℓ E r := (rfl)
+    radialAction m U ℓ E r₁ r₂ = π⁻¹ * ∫ r in r₁..r₂, absRadialMomentum m U ℓ E r := (rfl)
 
 /-- Unfolds `TauCeti.radialPeriod`. -/
 theorem radialPeriod_def (m : ℝ) (U : ℝ → ℝ) (ℓ E r₁ r₂ : ℝ) :
-    radialPeriod m U ℓ E r₁ r₂ = 2 * ∫ r in r₁..r₂, m / radialMomentum m U ℓ E r := (rfl)
+    radialPeriod m U ℓ E r₁ r₂ = 2 * ∫ r in r₁..r₂, m / absRadialMomentum m U ℓ E r := (rfl)
 
 /-- Unfolds `TauCeti.apsidalAngle`. -/
 theorem apsidalAngle_def (m : ℝ) (U : ℝ → ℝ) (ℓ E r₁ r₂ : ℝ) :
-    apsidalAngle m U ℓ E r₁ r₂ = ∫ r in r₁..r₂, ℓ / (r ^ 2 * radialMomentum m U ℓ E r) := (rfl)
+    apsidalAngle m U ℓ E r₁ r₂ = ∫ r in r₁..r₂, ℓ / (r ^ 2 * absRadialMomentum m U ℓ E r) := (rfl)
 
-/-- The radial momentum is nonnegative. -/
-theorem radialMomentum_nonneg (m : ℝ) (U : ℝ → ℝ) (ℓ E r : ℝ) :
-    0 ≤ radialMomentum m U ℓ E r :=
+/-- The absolute radial momentum is nonnegative. -/
+theorem absRadialMomentum_nonneg (m : ℝ) (U : ℝ → ℝ) (ℓ E r : ℝ) :
+    0 ≤ absRadialMomentum m U ℓ E r :=
   sqrt_nonneg _
 
-/-- The radial momentum vanishes exactly where `2 m (E - U(r)) ≤ ℓ² / r²`; in particular it
+/-- The absolute radial momentum vanishes exactly where `2 m (E - U(r)) ≤ ℓ² / r²`; in particular it
 vanishes at a turning point, where `2 m (E - U(r)) = ℓ² / r²`. -/
-theorem radialMomentum_eq_zero_iff {m : ℝ} {U : ℝ → ℝ} {ℓ E r : ℝ} :
-    radialMomentum m U ℓ E r = 0 ↔ 2 * m * (E - U r) ≤ ℓ ^ 2 / r ^ 2 := by
-  rw [radialMomentum_def, sqrt_eq_zero', sub_nonpos]
+theorem absRadialMomentum_eq_zero_iff {m : ℝ} {U : ℝ → ℝ} {ℓ E r : ℝ} :
+    absRadialMomentum m U ℓ E r = 0 ↔ 2 * m * (E - U r) ≤ ℓ ^ 2 / r ^ 2 := by
+  rw [absRadialMomentum_def, sqrt_eq_zero', sub_nonpos]
 
-/-- The radial momentum is positive exactly where `ℓ² / r² < 2 m (E - U(r))`. -/
-theorem radialMomentum_pos_iff {m : ℝ} {U : ℝ → ℝ} {ℓ E r : ℝ} :
-    0 < radialMomentum m U ℓ E r ↔ ℓ ^ 2 / r ^ 2 < 2 * m * (E - U r) := by
-  rw [radialMomentum_def, sqrt_pos, sub_pos]
+/-- The absolute radial momentum is positive exactly where `ℓ² / r² < 2 m (E - U(r))`. -/
+theorem absRadialMomentum_pos_iff {m : ℝ} {U : ℝ → ℝ} {ℓ E r : ℝ} :
+    0 < absRadialMomentum m U ℓ E r ↔ ℓ ^ 2 / r ^ 2 < 2 * m * (E - U r) := by
+  rw [absRadialMomentum_def, sqrt_pos, sub_pos]
 
 variable {m κ ν ℓ E r₁ r₂ : ℝ}
 
@@ -202,14 +203,15 @@ private theorem kepler_vieta (hm : 0 < m) (hℓ : ℓ ≠ 0) (h₁ : 0 < r₁) (
     kepler_sq_angularMomentum_eq hm.ne' h₁.ne' (h₁.trans hlt).ne' hlt.ne hr₁ hr₂,
     kepler_sqrt_mul_sqrt_eq_abs hm.ne' h₁ hlt hr₁ hr₂⟩
 
-/-- Between the turning points, the Kepler radial momentum is
+/-- Between the turning points, the Kepler absolute radial momentum is
 `√(-2 m E) √((r - r₁) (r₂ - r)) / r`. -/
-private theorem kepler_radialMomentum_eq (hm : 0 < m) (hκ : κ = -E * (r₁ + r₂))
+private theorem kepler_absRadialMomentum_eq (hm : 0 < m) (hκ : κ = -E * (r₁ + r₂))
     (hℓ2 : ℓ ^ 2 = -2 * m * E * (r₁ * r₂)) (hE : E < 0) {r : ℝ} (hr : 0 < r) :
-    radialMomentum m (fun r => -κ / r) ℓ E r = √(-2 * m * E) * √((r - r₁) * (r₂ - r)) / r := by
+    absRadialMomentum m (fun r => -κ / r) ℓ E r = √(-2 * m * E) * √((r - r₁) * (r₂ - r)) / r := by
   have : 2 * m * (E - -κ / r) - ℓ ^ 2 / r ^ 2 = -2 * m * E * ((r - r₁) * (r₂ - r)) / r ^ 2 := by
     rw [hκ, hℓ2]; field_simp; ring
-  rw [radialMomentum_def, this, sqrt_div' _ (by positivity), sqrt_mul (by nlinarith), sqrt_sq hr.le]
+  rw [absRadialMomentum_def, this, sqrt_div' _ (by positivity), sqrt_mul (by nlinarith),
+    sqrt_sq hr.le]
 
 /-- `√(-2 m E) = -2 E √(m / (-2 E))` for `E < 0`. -/
 private theorem sqrt_neg_two_mul_mul (hm : 0 < m) (hE : E < 0) :
@@ -227,12 +229,12 @@ theorem kepler_radialAction (hm : 0 < m) (hℓ : ℓ ≠ 0) (h₁ : 0 < r₁) (h
     (hr₁ : 2 * m * (E + κ / r₁) = ℓ ^ 2 / r₁ ^ 2) (hr₂ : 2 * m * (E + κ / r₂) = ℓ ^ 2 / r₂ ^ 2) :
     radialAction m (fun r => -κ / r) ℓ E r₁ r₂ = κ * √(m / (-2 * E)) - |ℓ| := by
   obtain ⟨hE, -, hκ, hℓ2, habs⟩ := kepler_vieta hm hℓ h₁ hlt hr₁ hr₂
-  have hint : ∫ r in r₁..r₂, radialMomentum m (fun r => -κ / r) ℓ E r =
+  have hint : ∫ r in r₁..r₂, absRadialMomentum m (fun r => -κ / r) ℓ E r =
       √(-2 * m * E) * ∫ r in r₁..r₂, √((r - r₁) * (r₂ - r)) / r := by
     rw [← integral_const_mul]
     refine integral_congr fun r hr => ?_
     rw [uIcc_of_le hlt.le] at hr
-    simp only [kepler_radialMomentum_eq hm hκ hℓ2 hE (h₁.trans_le hr.1), mul_div_assoc]
+    simp only [kepler_absRadialMomentum_eq hm hκ hℓ2 hE (h₁.trans_le hr.1), mul_div_assoc]
   have hπ : π⁻¹ * (√(-2 * m * E) * (π * ((r₁ + r₂) / 2 - √(r₁ * r₂)))) =
       √(-2 * m * E) * (r₁ + r₂) / 2 - √(-2 * m * E) * √(r₁ * r₂) := by
     field_simp
@@ -261,12 +263,12 @@ theorem kepler_radialPeriod (hm : 0 < m) (hℓ : ℓ ≠ 0) (h₁ : 0 < r₁) (h
       2 * π * √(m / κ) * ((r₁ + r₂) / 2) ^ (3 / 2 : ℝ) := by
   obtain ⟨hE, hκ0, hκ, hℓ2, -⟩ := kepler_vieta hm hℓ h₁ hlt hr₁ hr₂
   have ha : 0 < (r₁ + r₂) / 2 := by linarith
-  have hint : ∫ r in r₁..r₂, m / radialMomentum m (fun r => -κ / r) ℓ E r =
+  have hint : ∫ r in r₁..r₂, m / absRadialMomentum m (fun r => -κ / r) ℓ E r =
       m / √(-2 * m * E) * ∫ r in r₁..r₂, r / √((r - r₁) * (r₂ - r)) := by
     rw [← integral_const_mul]
     refine integral_congr fun r hr => ?_
     rw [uIcc_of_le hlt.le] at hr
-    rw [kepler_radialMomentum_eq hm hκ hℓ2 hE (h₁.trans_le hr.1), div_div_eq_mul_div,
+    rw [kepler_absRadialMomentum_eq hm hκ hℓ2 hE (h₁.trans_le hr.1), div_div_eq_mul_div,
       div_mul_div_comm]
   have hm' : m / √(-2 * m * E) = √(m / κ) * √((r₁ + r₂) / 2) := by
     have hs : r₁ + r₂ ≠ 0 := by linarith
@@ -287,13 +289,13 @@ theorem kepler_apsidalAngle (hm : 0 < m) (hℓ : ℓ ≠ 0) (h₁ : 0 < r₁) (h
     (hr₁ : 2 * m * (E + κ / r₁) = ℓ ^ 2 / r₁ ^ 2) (hr₂ : 2 * m * (E + κ / r₂) = ℓ ^ 2 / r₂ ^ 2) :
     apsidalAngle m (fun r => -κ / r) ℓ E r₁ r₂ = π * SignType.sign ℓ := by
   obtain ⟨hE, -, hκ, hℓ2, habs⟩ := kepler_vieta hm hℓ h₁ hlt hr₁ hr₂
-  have hint : ∫ r in r₁..r₂, ℓ / (r ^ 2 * radialMomentum m (fun r => -κ / r) ℓ E r) =
+  have hint : ∫ r in r₁..r₂, ℓ / (r ^ 2 * absRadialMomentum m (fun r => -κ / r) ℓ E r) =
       ℓ / √(-2 * m * E) * ∫ r in r₁..r₂, 1 / (r * √((r - r₁) * (r₂ - r))) := by
     rw [← integral_const_mul]
     refine integral_congr fun r hr => ?_
     rw [uIcc_of_le hlt.le] at hr
     have hr0 : 0 < r := h₁.trans_le hr.1
-    rw [kepler_radialMomentum_eq hm hκ hℓ2 hE hr0,
+    rw [kepler_absRadialMomentum_eq hm hκ hℓ2 hE hr0,
       show r ^ 2 * (√(-2 * m * E) * √((r - r₁) * (r₂ - r)) / r) =
         r * (√(-2 * m * E) * √((r - r₁) * (r₂ - r))) by field_simp]
     ring
@@ -360,19 +362,19 @@ private theorem isotropicOscillator_vieta (hm : 0 < m) (hν : 0 < ν) (h₁ : 0 
     isotropicOscillator_sq_angularMomentum_eq hm.ne' h₁.ne' (h₁.trans hlt).ne' hne hr₁ hr₂,
     isotropicOscillator_abs_angularMomentum_eq hm hν.le h₁ hlt hr₁ hr₂⟩
 
-/-- Between the turning points, the radial momentum of the isotropic oscillator is
+/-- Between the turning points, the absolute radial momentum of the isotropic oscillator is
 `m ν √((r² - r₁²) (r₂² - r²)) / r`. -/
-private theorem isotropicOscillator_radialMomentum_eq (hm : 0 < m) (hν : 0 < ν)
+private theorem isotropicOscillator_absRadialMomentum_eq (hm : 0 < m) (hν : 0 < ν)
     (hE : 2 * E = m * ν ^ 2 * (r₁ ^ 2 + r₂ ^ 2)) (hℓ2 : ℓ ^ 2 = (m * ν * (r₁ * r₂)) ^ 2)
     {r : ℝ} (hr : 0 < r) :
-    radialMomentum m (fun r => m * ν ^ 2 * r ^ 2 / 2) ℓ E r =
+    absRadialMomentum m (fun r => m * ν ^ 2 * r ^ 2 / 2) ℓ E r =
       m * ν * √((r ^ 2 - r₁ ^ 2) * (r₂ ^ 2 - r ^ 2)) / r := by
   have : 2 * m * (E - m * ν ^ 2 * r ^ 2 / 2) - ℓ ^ 2 / r ^ 2 =
       (m * ν) ^ 2 * ((r ^ 2 - r₁ ^ 2) * (r₂ ^ 2 - r ^ 2)) / r ^ 2 := by
     rw [hℓ2, show E = m * ν ^ 2 * (r₁ ^ 2 + r₂ ^ 2) / 2 by linarith]
     field_simp
     ring
-  rw [radialMomentum_def, this, sqrt_div' _ (by positivity), sqrt_mul (by positivity),
+  rw [absRadialMomentum_def, this, sqrt_div' _ (by positivity), sqrt_mul (by positivity),
     sqrt_sq (by positivity), sqrt_sq hr.le]
 
 /-- **The radial action of the isotropic oscillator.** Between two distinct turning points
@@ -385,14 +387,14 @@ theorem isotropicOscillator_radialAction (hm : 0 < m) (hν : 0 < ν) (h₁ : 0 <
     radialAction m (fun r => m * ν ^ 2 * r ^ 2 / 2) ℓ E r₁ r₂ = (E / ν - |ℓ|) / 2 := by
   obtain ⟨hE, hℓ2, habs⟩ := isotropicOscillator_vieta hm hν h₁ hlt hr₁ hr₂
   have h₂ : 0 < r₂ := h₁.trans hlt
-  have hint : ∫ r in r₁..r₂, radialMomentum m (fun r => m * ν ^ 2 * r ^ 2 / 2) ℓ E r =
+  have hint : ∫ r in r₁..r₂, absRadialMomentum m (fun r => m * ν ^ 2 * r ^ 2 / 2) ℓ E r =
       m * ν / 2 * ∫ r in r₁..r₂,
         (fun u => √((u - r₁ ^ 2) * (r₂ ^ 2 - u)) / u) (r ^ 2) * (2 * r) := by
     rw [← integral_const_mul]
     refine integral_congr fun r hr => ?_
     rw [uIcc_of_le hlt.le] at hr
     have hr0 : 0 < r := h₁.trans_le hr.1
-    rw [isotropicOscillator_radialMomentum_eq hm hν hE hℓ2 hr0]
+    rw [isotropicOscillator_absRadialMomentum_eq hm hν hE hℓ2 hr0]
     field_simp
   rw [radialAction_def, hint, intervalIntegral.integral_comp_sq_mul h₁.le h₂.le
       (fun u => √((u - r₁ ^ 2) * (r₂ ^ 2 - u)) / u),
@@ -410,14 +412,14 @@ theorem isotropicOscillator_radialPeriod (hm : 0 < m) (hν : 0 < ν) (h₁ : 0 <
     radialPeriod m (fun r => m * ν ^ 2 * r ^ 2 / 2) ℓ E r₁ r₂ = π / ν := by
   obtain ⟨hE, hℓ2, -⟩ := isotropicOscillator_vieta hm hν h₁ hlt hr₁ hr₂
   have h₂ : 0 < r₂ := h₁.trans hlt
-  have hint : ∫ r in r₁..r₂, m / radialMomentum m (fun r => m * ν ^ 2 * r ^ 2 / 2) ℓ E r =
+  have hint : ∫ r in r₁..r₂, m / absRadialMomentum m (fun r => m * ν ^ 2 * r ^ 2 / 2) ℓ E r =
       1 / (2 * ν) * ∫ r in r₁..r₂,
         (fun u => 1 / √((u - r₁ ^ 2) * (r₂ ^ 2 - u))) (r ^ 2) * (2 * r) := by
     rw [← integral_const_mul]
     refine integral_congr fun r hr => ?_
     rw [uIcc_of_le hlt.le] at hr
     have hr0 : 0 < r := h₁.trans_le hr.1
-    rw [isotropicOscillator_radialMomentum_eq hm hν hE hℓ2 hr0]
+    rw [isotropicOscillator_absRadialMomentum_eq hm hν hE hℓ2 hr0]
     field_simp
   rw [radialPeriod_def, hint, intervalIntegral.integral_comp_sq_mul h₁.le h₂.le
       (fun u => 1 / √((u - r₁ ^ 2) * (r₂ ^ 2 - u))),
@@ -434,14 +436,14 @@ theorem isotropicOscillator_apsidalAngle (hm : 0 < m) (hν : 0 < ν) (h₁ : 0 <
   obtain ⟨hE, hℓ2, habs⟩ := isotropicOscillator_vieta hm hν h₁ hlt hr₁ hr₂
   have h₂ : 0 < r₂ := h₁.trans hlt
   have hint : ∫ r in r₁..r₂,
-      ℓ / (r ^ 2 * radialMomentum m (fun r => m * ν ^ 2 * r ^ 2 / 2) ℓ E r) =
+      ℓ / (r ^ 2 * absRadialMomentum m (fun r => m * ν ^ 2 * r ^ 2 / 2) ℓ E r) =
       ℓ / (2 * m * ν) * ∫ r in r₁..r₂,
         (fun u => 1 / (u * √((u - r₁ ^ 2) * (r₂ ^ 2 - u)))) (r ^ 2) * (2 * r) := by
     rw [← integral_const_mul]
     refine integral_congr fun r hr => ?_
     rw [uIcc_of_le hlt.le] at hr
     have hr0 : 0 < r := h₁.trans_le hr.1
-    rw [isotropicOscillator_radialMomentum_eq hm hν hE hℓ2 hr0,
+    rw [isotropicOscillator_absRadialMomentum_eq hm hν hE hℓ2 hr0,
       show r ^ 2 * (m * ν * √((r ^ 2 - r₁ ^ 2) * (r₂ ^ 2 - r ^ 2)) / r) =
         r * (m * ν * √((r ^ 2 - r₁ ^ 2) * (r₂ ^ 2 - r ^ 2))) by field_simp]
     field_simp
