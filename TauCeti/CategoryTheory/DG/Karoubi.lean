@@ -40,7 +40,11 @@ of the envelope splits: `Z⁰` of the envelope is idempotent complete.
 * `TauCeti.DGKaroubi.dgHomVal` and `TauCeti.DGKaroubi.dgHomMk`: the underlying morphism of `C`
   of a morphism of the envelope, and the morphism of the envelope with a given underlying one.
 * `TauCeti.DGKaroubi.toDGKaroubi`: the embedding `X ↦ (X, 1)`.
+* `TauCeti.DGKaroubi.closedHomMk`: the closed degree-zero morphism of the envelope with a given
+  underlying morphism, and `TauCeti.DGKaroubi.closedHom_ext` its extensionality lemma.
 * `TauCeti.DGKaroubi.retract`: an object `(X, p)` as a retract of `(X, 1)` in `Z⁰`.
+* `TauCeti.DGKaroubi.ofIdempotent` and `TauCeti.DGKaroubi.retractOfIdempotent`: the object
+  `(X, e)` cut out by an idempotent `e` of `Z⁰` on `(X, p)`, as a retract of `(X, p)`.
 
 ## Main results
 
@@ -50,7 +54,8 @@ of the envelope splits: `Z⁰` of the envelope is idempotent complete.
 * `TauCeti.DGKaroubi.isIso_map_toDGKaroubi` and
   `TauCeti.DGKaroubi.isQuasiFullyFaithful_toDGKaroubi`: the embedding is an isomorphism on Hom
   complexes, hence quasi-fully faithful.
-* `TauCeti.DGKaroubi.isIdempotentComplete`: idempotents split in `Z⁰` of the envelope.
+* `TauCeti.DGKaroubi.retractOfIdempotent_r_i` and `TauCeti.DGKaroubi.isIdempotentComplete`:
+  idempotents split in `Z⁰` of the envelope.
 
 ## References
 
@@ -99,6 +104,7 @@ def homSubmodule (P Q : DGKaroubi R C) (n : ℤ) : Submodule R (DGHom R n P.X Q.
   zero_mem' := ⟨dgComp_zero R _ _, zero_dgComp R _ _⟩
   smul_mem' r _ hf := ⟨by rw [dgComp_smul, hf.1], by rw [smul_dgComp, hf.2]⟩
 
+@[simp]
 theorem mem_homSubmodule {P Q : DGKaroubi R C} {n : ℤ} {f : DGHom R n P.X Q.X} :
     f ∈ homSubmodule P Q n ↔
       dgComp R P.p f (zero_add n) = f ∧ dgComp R f Q.p (add_zero n) = f :=
@@ -243,7 +249,8 @@ theorem dgHom_ext {P Q : DGKaroubi R C} {n : ℤ} {f g : DGHom R n P Q}
 @[simp↓]
 theorem dgHomVal_dgDifferential {P Q : DGKaroubi R C} {n : ℤ} (f : DGHom R n P Q) :
     dgHomVal (n + 1) (dgDifferential R n f) = dgDifferential R n (dgHomVal n f) :=
-  (rfl)
+  (congrArg Subtype.val ((homComplexData R C).dgDifferential_toDGCategory n f)).trans
+    (dHom_apply P Q n (n + 1) _)
 
 /-- Composition in the Karoubi envelope is composition in `C`. -/
 @[simp↓]
@@ -287,7 +294,7 @@ theorem dgHomMk_smul {P Q : DGKaroubi R C} {n : ℤ} (r : R) (f : DGHom R n P.X 
 theorem dgHomMk_dgDifferential {P Q : DGKaroubi R C} {n : ℤ} (f : DGHom R n P.X Q.X)
     (hf : f ∈ homSubmodule P Q n) :
     dgHomMk (dgDifferential R n f) (d_mem_homSubmodule hf) = dgDifferential R n (dgHomMk f hf) :=
-  (rfl)
+  dgHom_ext (by rw [dgHomVal_dgDifferential, dgHomVal_dgHomMk, dgHomVal_dgHomMk])
 
 /-- The composite of morphisms built from morphisms of `C` is built from their composite. -/
 theorem dgHomMk_dgComp {P Q S : DGKaroubi R C} {p q n : ℤ} (f : DGHom R p P.X Q.X)
@@ -335,8 +342,6 @@ theorem toDGKaroubi_obj_p (X : C) : ((toDGKaroubi R C).obj X).p = dgId R X :=
 theorem dgHomVal_dgMap_toDGKaroubi {X Y : C} {n : ℤ} (f : DGHom R n X Y) :
     dgHomVal n ((toDGKaroubi R C).dgMap n f) = f := by
   rw [EnrichedFunctor.dgMap_apply]
-  -- The chain map of the exposed `toDGKaroubi` evaluates to `dgHomMk f _` by unfolding
-  -- `EnrichedFunctor.ofDGMap`.
   exact dgHomVal_dgHomMk _ _
 
 /-- Every morphism of the Karoubi envelope between objects in the image of the embedding is the
@@ -368,24 +373,43 @@ theorem isQuasiFullyFaithful_toDGKaroubi :
 /-! ### Retracts and splitting of idempotents in `Z⁰` -/
 
 /-- The closed degree-zero morphism of the Karoubi envelope with underlying morphism `f`. -/
-private noncomputable def closedHomMk {P Q : DGKaroubi R C} (f : DGHom R 0 P.X Q.X)
+noncomputable def closedHomMk {P Q : DGKaroubi R C} (f : DGHom R 0 P.X Q.X)
     (hf : f ∈ homSubmodule P Q 0) (hdf : dgDifferential R 0 f = 0) :
     ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) P ⟶
       ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) Q :=
   dgClosedHomOf R (dgHomMk f hf) <| (mem_dgCycles R).2 <|
     dgHom_ext (by rw [dgHomVal_dgDifferential, dgHomVal_dgHomMk, hdf, map_zero])
 
-private theorem dgHomVal_dgClosedHom_closedHomMk {P Q : DGKaroubi R C} (f : DGHom R 0 P.X Q.X)
+@[simp]
+theorem dgHomVal_dgClosedHom_closedHomMk {P Q : DGKaroubi R C} (f : DGHom R 0 P.X Q.X)
     (hf : f ∈ homSubmodule P Q 0) (hdf : dgDifferential R 0 f = 0) :
-    dgHomVal 0 (dgClosedHom R (closedHomMk f hf hdf)) = f := by
+    dgHomVal (P := P) (Q := Q) 0 (dgClosedHom R (closedHomMk f hf hdf)) = f := by
   rw [closedHomMk, dgClosedHom_dgClosedHomOf, dgHomVal_dgHomMk]
+
+/-- The composite of two closed degree-zero morphisms built from morphisms of `C` has the
+composite of those morphisms as its underlying morphism. -/
+private theorem dgHomVal_dgClosedHom_closedHomMk_comp_closedHomMk {P Q S : DGKaroubi R C}
+    (f : DGHom R 0 P.X Q.X) (hf : f ∈ homSubmodule P Q 0) (hdf : dgDifferential R 0 f = 0)
+    (g : DGHom R 0 Q.X S.X) (hg : g ∈ homSubmodule Q S 0) (hdg : dgDifferential R 0 g = 0) :
+    dgHomVal 0 (dgClosedHom R (closedHomMk f hf hdf ≫ closedHomMk g hg hdg)) =
+      dgComp R f g (zero_add 0) := by
+  rw [dgClosedHom_comp, dgCompZero_def, dgHomVal_dgComp, dgHomVal_dgClosedHom_closedHomMk,
+    dgHomVal_dgClosedHom_closedHomMk]
 
 /-- Two closed degree-zero morphisms of the Karoubi envelope with the same underlying morphism
 are equal. -/
-private theorem forgetEnrichment_hom_ext
+theorem closedHom_ext
     {P Q : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) (DGKaroubi R C)} {f g : P ⟶ Q}
     (h : dgHomVal 0 (dgClosedHom R f) = dgHomVal 0 (dgClosedHom R g)) : f = g :=
   dgClosedHom_injective R (dgHom_ext h)
+
+/-- The underlying morphism of a closed degree-zero morphism of the Karoubi envelope is closed. -/
+@[simp]
+theorem dgDifferential_dgHomVal_dgClosedHom
+    {P Q : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) (DGKaroubi R C)} (f : P ⟶ Q) :
+    dgDifferential R 0 (dgHomVal 0 (dgClosedHom R f)) = 0 := by
+  have key := congrArg (dgHomVal (0 + 1)) ((mem_dgCycles R).1 (dgClosedHom_mem_dgCycles R f))
+  rwa [dgHomVal_dgDifferential, map_zero] at key
 
 /-- An object `(X, p)` of the Karoubi envelope is a retract of `(X, 1)` in the category `Z⁰` of
 closed degree-zero morphisms, through the two morphisms with underlying morphism `p`. -/
@@ -396,69 +420,115 @@ noncomputable def retract (P : DGKaroubi R C) :
     P.dgDifferential_p
   r := closedHomMk (P := (toDGKaroubi R C).obj P.X) P.p ⟨dgId_dgComp R P.p, P.idem⟩
     P.dgDifferential_p
-  retract := forgetEnrichment_hom_ext <| by
-    rw [dgClosedHom_comp, dgCompZero_def, dgHomVal_dgComp, dgClosedHom_id, dgHomVal_dgId]
-    -- The underlying morphisms of both maps are `p`, typed through `toDGKaroubi`, so they are
-    -- substituted by congruence rather than by rewriting.
-    exact (congrArg₂ (dgComp R · · (zero_add 0))
-      (dgHomVal_dgClosedHom_closedHomMk (Q := (toDGKaroubi R C).obj P.X) P.p
-        ⟨P.idem, dgComp_dgId R P.p⟩ P.dgDifferential_p)
-      (dgHomVal_dgClosedHom_closedHomMk (P := (toDGKaroubi R C).obj P.X) P.p
-        ⟨dgId_dgComp R P.p, P.idem⟩ P.dgDifferential_p)).trans
-      P.idem
+  retract := closedHom_ext <| by
+    refine (dgHomVal_dgClosedHom_closedHomMk_comp_closedHomMk _ _ _ _ _ _).trans ?_
+    rw [dgClosedHom_id, dgHomVal_dgId]
+    exact P.idem
 
 /-- The split monomorphism of `retract P` has underlying morphism `p`. -/
+@[simp]
 theorem dgHomVal_dgClosedHom_retract_i (P : DGKaroubi R C) :
-    dgHomVal 0 (dgClosedHom R (retract P).i) = P.p :=
+    dgHomVal (P := P) (Q := (toDGKaroubi R C).obj P.X) 0 (dgClosedHom R (retract P).i) = P.p :=
   dgHomVal_dgClosedHom_closedHomMk (Q := (toDGKaroubi R C).obj P.X) P.p
     ⟨P.idem, dgComp_dgId R P.p⟩ P.dgDifferential_p
 
 /-- The split epimorphism of `retract P` has underlying morphism `p`. -/
+@[simp]
 theorem dgHomVal_dgClosedHom_retract_r (P : DGKaroubi R C) :
-    dgHomVal 0 (dgClosedHom R (retract P).r) = P.p :=
+    dgHomVal (P := (toDGKaroubi R C).obj P.X) (Q := P) 0 (dgClosedHom R (retract P).r) = P.p :=
   dgHomVal_dgClosedHom_closedHomMk (P := (toDGKaroubi R C).obj P.X) P.p
     ⟨dgId_dgComp R P.p, P.idem⟩ P.dgDifferential_p
 
-/-- A closed idempotent `e` of degree zero on `(X, p)` splits through `(X, e)`, by the two
-morphisms with underlying morphism `e`. -/
-private theorem idempotents_split (P : DGKaroubi R C)
-    (e : ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) P ⟶
-      ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) P) (he : e ≫ e = e) :
-    ∃ (Y : ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) (DGKaroubi R C))
-      (i : Y ⟶ ForgetEnrichment.of _ P) (r : ForgetEnrichment.of _ P ⟶ Y),
-      i ≫ r = 𝟙 Y ∧ r ≫ i = e := by
-  -- The underlying closed idempotent of `X`, and the object `(X, e)` it cuts out.
-  set q := dgHomVal 0 (dgClosedHom R e)
-  have hq : q ∈ homSubmodule _ _ 0 := dgHomVal_mem _
-  have hdq : dgDifferential R 0 q = 0 := by
-    have key := congrArg (dgHomVal (0 + 1)) ((mem_dgCycles R).1 (dgClosedHom_mem_dgCycles R e))
-    rwa [dgHomVal_dgDifferential, map_zero] at key
-  have hqq : dgComp R q q (zero_add 0) = q := by
-    have key := congrArg (dgHomVal 0) (dgClosedHom_comp R e e)
-    rw [he, dgCompZero_def, dgHomVal_dgComp] at key
-    exact key.symm
-  let Q : DGKaroubi R C := ⟨P.X, q, hdq, hqq⟩
-  have hi : q ∈ homSubmodule Q P 0 := ⟨hqq, hq.2⟩
-  have hr : q ∈ homSubmodule P Q 0 := ⟨hq.1, hqq⟩
-  refine ⟨ForgetEnrichment.of _ Q, closedHomMk q hi hdq, closedHomMk q hr hdq,
-    forgetEnrichment_hom_ext ?_, forgetEnrichment_hom_ext ?_⟩
-  -- The underlying morphisms of both maps are `q`, typed through `Q`, so they are substituted by
-  -- congruence rather than by rewriting.
-  · rw [dgClosedHom_comp, dgCompZero_def, dgHomVal_dgComp, dgClosedHom_id, dgHomVal_dgId]
-    exact (congrArg₂ (dgComp R · · (zero_add 0))
-      (dgHomVal_dgClosedHom_closedHomMk (P := Q) (Q := P) q hi hdq)
-      (dgHomVal_dgClosedHom_closedHomMk (P := P) (Q := Q) q hr hdq)).trans hqq
-  · rw [dgClosedHom_comp, dgCompZero_def, dgHomVal_dgComp]
-    exact (congrArg₂ (dgComp R · · (zero_add 0))
-      (dgHomVal_dgClosedHom_closedHomMk (P := P) (Q := Q) q hr hdq)
-      (dgHomVal_dgClosedHom_closedHomMk (P := Q) (Q := P) q hi hdq)).trans hqq
+section OfIdempotent
+
+variable (P : DGKaroubi R C)
+  (e : ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) P ⟶
+    ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) P) (he : e ≫ e = e)
+
+include he in
+/-- The underlying morphism of an idempotent of `Z⁰` of the Karoubi envelope is idempotent. -/
+theorem dgComp_dgHomVal_dgClosedHom_self :
+    dgComp R (dgHomVal 0 (dgClosedHom R e)) (dgHomVal 0 (dgClosedHom R e)) (zero_add 0) =
+      dgHomVal 0 (dgClosedHom R e) := by
+  have key := congrArg (dgHomVal 0) (dgClosedHom_comp R e e)
+  rw [he, dgCompZero_def, dgHomVal_dgComp] at key
+  exact key.symm
+
+include he in
+/-- The object `(X, e)` of the Karoubi envelope cut out by a closed idempotent `e` of degree zero
+on `(X, p)`. -/
+-- The body is exposed so that `(ofIdempotent P e he).X` is definitionally `P.X`; otherwise the
+-- morphisms out of `P.X` could not be used as morphisms out of the underlying object.
+@[expose]
+noncomputable def ofIdempotent : DGKaroubi R C :=
+  ⟨P.X, dgHomVal 0 (dgClosedHom R e), dgDifferential_dgHomVal_dgClosedHom e,
+    dgComp_dgHomVal_dgClosedHom_self P e he⟩
+
+@[simp]
+theorem ofIdempotent_X : (ofIdempotent P e he).X = P.X :=
+  (rfl)
+
+@[simp]
+theorem ofIdempotent_p : (ofIdempotent P e he).p = dgHomVal 0 (dgClosedHom R e) :=
+  (rfl)
+
+private theorem mem_homSubmodule_ofIdempotent_left :
+    dgHomVal (P := P) (Q := P) 0 (dgClosedHom R e) ∈ homSubmodule (ofIdempotent P e he) P 0 :=
+  ⟨dgComp_dgHomVal_dgClosedHom_self P e he, (dgHomVal_mem _).2⟩
+
+private theorem mem_homSubmodule_ofIdempotent_right :
+    dgHomVal (P := P) (Q := P) 0 (dgClosedHom R e) ∈ homSubmodule P (ofIdempotent P e he) 0 :=
+  ⟨(dgHomVal_mem _).1, dgComp_dgHomVal_dgClosedHom_self P e he⟩
+
+/-- The object `(X, e)` cut out by a closed idempotent `e` on `(X, p)` is a retract of `(X, p)`
+in `Z⁰`, through the two morphisms with underlying morphism `e`. -/
+noncomputable def retractOfIdempotent :
+    Retract (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) (ofIdempotent P e he))
+      (ForgetEnrichment.of (CochainComplex (ModuleCat.{v} R) ℤ) P) where
+  i := closedHomMk _ (mem_homSubmodule_ofIdempotent_left P e he)
+    (dgDifferential_dgHomVal_dgClosedHom e)
+  r := closedHomMk _ (mem_homSubmodule_ofIdempotent_right P e he)
+    (dgDifferential_dgHomVal_dgClosedHom e)
+  retract := closedHom_ext <| by
+    refine (dgHomVal_dgClosedHom_closedHomMk_comp_closedHomMk _ _ _ _ _ _).trans ?_
+    rw [dgClosedHom_id, dgHomVal_dgId]
+    exact dgComp_dgHomVal_dgClosedHom_self P e he
+
+/-- The split monomorphism of `retractOfIdempotent P e he` has underlying morphism `e`. -/
+@[simp]
+theorem dgHomVal_dgClosedHom_retractOfIdempotent_i :
+    dgHomVal (P := ofIdempotent P e he) (Q := P) 0 (dgClosedHom R (retractOfIdempotent P e he).i) =
+      dgHomVal 0 (dgClosedHom R e) :=
+  dgHomVal_dgClosedHom_closedHomMk _ (mem_homSubmodule_ofIdempotent_left P e he)
+    (dgDifferential_dgHomVal_dgClosedHom e)
+
+/-- The split epimorphism of `retractOfIdempotent P e he` has underlying morphism `e`. -/
+@[simp]
+theorem dgHomVal_dgClosedHom_retractOfIdempotent_r :
+    dgHomVal (P := P) (Q := ofIdempotent P e he) 0 (dgClosedHom R (retractOfIdempotent P e he).r) =
+      dgHomVal 0 (dgClosedHom R e) :=
+  dgHomVal_dgClosedHom_closedHomMk _ (mem_homSubmodule_ofIdempotent_right P e he)
+    (dgDifferential_dgHomVal_dgClosedHom e)
+
+/-- The idempotent `e` factors through the retract `(X, e)` of `(X, p)`. -/
+theorem retractOfIdempotent_r_i :
+    (retractOfIdempotent P e he).r ≫ (retractOfIdempotent P e he).i = e :=
+  closedHom_ext <| (dgHomVal_dgClosedHom_closedHomMk_comp_closedHomMk _
+    (mem_homSubmodule_ofIdempotent_right P e he) (dgDifferential_dgHomVal_dgClosedHom e) _
+    (mem_homSubmodule_ofIdempotent_left P e he) (dgDifferential_dgHomVal_dgClosedHom e)).trans <|
+      dgComp_dgHomVal_dgClosedHom_self P e he
+
+end OfIdempotent
 
 /-- **Idempotents split in `Z⁰` of the Karoubi envelope.**  A closed idempotent `e` of degree zero
 on `(X, p)` splits through `(X, e)`, by the two morphisms with underlying morphism `e`. -/
 instance isIdempotentComplete :
     IsIdempotentComplete
       (ForgetEnrichment (CochainComplex (ModuleCat.{v} R) ℤ) (DGKaroubi R C)) where
-  idempotents_split P e he := idempotents_split (ForgetEnrichment.to _ P) e he
+  idempotents_split P e he :=
+    let P' := ForgetEnrichment.to (CochainComplex (ModuleCat.{v} R) ℤ) P
+    ⟨_, (retractOfIdempotent P' e he).i, (retractOfIdempotent P' e he).r,
+      (retractOfIdempotent P' e he).retract, retractOfIdempotent_r_i P' e he⟩
 
 end DGKaroubi
 
