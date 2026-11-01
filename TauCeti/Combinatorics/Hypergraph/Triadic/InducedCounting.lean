@@ -24,7 +24,9 @@ relative top densities of `H'` over `C`.
 The regularity required is quantified by the host-independent parameters of
 `TauCeti.Combinatorics.Hypergraph.Triadic.CountingParameters`:
 
-* `H` and `H'` differ in at most an `inducedCountingParameter3 k ε` proportion of the triples;
+* `H` approximates `H'` within `inducedCountingParameter3 k ε`: their edit discrepancy, six
+  times the number of unordered triples on which they disagree divided by `|V| ^ 3`, is at most
+  `inducedCountingParameter3 k ε`;
 * the lower skeleton of `C` is regular for the schedule `inducedCountingSchedule3 k ε`, evaluated
   at the number of vertex cells plus the number of pair colors;
 * `H'` is top-regular, at the tolerance `inducedCountingSchedule3 k ε C.complexity` and at a
