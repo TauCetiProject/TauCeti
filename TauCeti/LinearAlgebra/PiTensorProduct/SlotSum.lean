@@ -319,6 +319,22 @@ theorem isHomogeneous_reindex [Fintype κ] (σ : ι ≃ κ) :
     ← σ.symm.sum_comp p]
   exact tprod_mem_totalDegreePiece fun k ↦ hm (σ.symm k)
 
+/-- Reindexing a tensor power detects as well as preserves total degree. -/
+@[simp]
+theorem reindex_mem_totalDegreePiece_iff [Fintype κ]
+    {P : Type*} [AddCommMonoid P] [Module R P]
+    (ℳ : ι → A → Submodule R P) (σ : ι ≃ κ) (n : A) (z : ⨂[R] _ : ι, P) :
+    PiTensorProduct.reindex R (fun _ ↦ P) σ z ∈
+        totalDegreePiece κ (fun j ↦ ℳ (σ.symm j)) n ↔
+      z ∈ totalDegreePiece ι ℳ n := by
+  constructor
+  · intro hz
+    have h := (isHomogeneous_reindex (ℳ := fun j ↦ ℳ (σ.symm j)) σ.symm).map_mem hz
+    simpa only [LinearEquiv.coe_coe, ← PiTensorProduct.reindex_symm,
+      LinearEquiv.symm_apply_apply, add_zero, Equiv.symm_symm, Equiv.symm_apply_apply] using h
+  · intro hz
+    simpa only [LinearEquiv.coe_coe, add_zero] using (isHomogeneous_reindex σ).map_mem hz
+
 /-- A factorwise map of degree zero in every factor but one, where it has degree `a`, shifts the
 total degree by `a`. -/
 theorem isHomogeneous_map_update [DecidableEq ι]
