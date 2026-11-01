@@ -12,9 +12,12 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.BaseChange
 # The unitary part of a complex Spin group
 
 For a real quadratic form `Q`, the complexified Clifford algebra `Cℓ(ℂ ⊗ V, Q_ℂ)` carries the
-positive-form adjoint `g† = complexConj (reverse g)`, and the unitary part of the complex Spin
-group is `{g | g† * g = 1}`. In the polar decomposition `g = (g (g† g)^(-1/2)) (g† g)^(1/2)` of a
-complex Spin element this unitary part is the factor onto which the whole group retracts.
+conjugate-linear anti-involution `g† = complexConj (reverse g)`, and the unitary part of the
+complex Spin group is `{g | g† * g = 1}`. When `Q` is positive definite, `†` is the adjoint for a
+positive inner product, and in the polar decomposition `g = (g (g† g)^(-1/2)) (g† g)^(1/2)` of a
+complex Spin element the unitary part is the factor onto which the whole group retracts. For
+indefinite `Q` no such retraction exists in general: for signature `(1, 1)` the real Spin group is
+disconnected, while the complex Spin group of `Q_ℂ` is connected.
 
 This file identifies the unitary part, as a topological space, with the real Spin group of `Q`.
 For a nondegenerate form on a finite-dimensional space, extension of scalars is a closed embedding
