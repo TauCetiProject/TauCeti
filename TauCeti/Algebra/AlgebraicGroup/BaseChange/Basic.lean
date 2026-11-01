@@ -195,7 +195,7 @@ lemma ofConv_pointsLTensor (f : WithConv (A →ₐ[k] T)) :
 
 /-- The base change of the point `toConv f` is the point `toConv (K ⊗[k] f)`. -/
 @[simp]
-lemma pointsLTensor_toConv (f : A →ₐ[k] T) :
+lemma _root_.AlgHom.pointsLTensor_toConv (f : A →ₐ[k] T) :
     pointsLTensor K (toConv f) = toConv (Algebra.TensorProduct.lTensor K f) :=
   WithConv.ofConv_injective <| by rw [ofConv_pointsLTensor, ofConv_toConv, ofConv_toConv]
 

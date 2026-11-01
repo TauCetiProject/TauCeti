@@ -346,8 +346,8 @@ noncomputable def diagonal : WeilRestriction A B (B ⊗[A] H) →ₐc[A] H :=
     ((homEquiv A B (B ⊗[A] H) _).injective <| by
       rw [comulAlgHom_eq, homEquiv_comp_comul, Algebra.TensorProduct.map_comp_includeLeft,
         Algebra.TensorProduct.map_comp_includeRight, homEquiv_comp_symm_id,
-        homEquiv_comp_symm_id, homEquiv_comp_symm_id, ← TauCeti.AlgHom.pointsLTensor_toConv,
-        ← TauCeti.AlgHom.pointsLTensor_toConv, ← map_mul,
+        homEquiv_comp_symm_id, homEquiv_comp_symm_id, ← _root_.AlgHom.pointsLTensor_toConv,
+        ← _root_.AlgHom.pointsLTensor_toConv, ← map_mul,
         ← TauCeti.Bialgebra.comulPoint_eq_include_mul, TauCeti.AlgHom.ofConv_pointsLTensor,
         ofConv_toConv])
 
