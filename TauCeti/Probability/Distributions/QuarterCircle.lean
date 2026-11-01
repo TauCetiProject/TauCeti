@@ -23,7 +23,7 @@ one, which is supported on `[-2, 2]`. It has density `π⁻¹ √(4 - s²)` on `
 * `TauCeti.Probability.isProbabilityMeasure_quarterCircle`: total mass one.
 * `TauCeti.Probability.quarterCircle_eq_withDensity`: the density `π⁻¹ √(4 - s²)` on `(0, ∞)`.
 * `TauCeti.Probability.ae_mem_Icc_quarterCircle`: the law is carried by `[0, 2]`.
-* `TauCeti.Probability.integral_pow_quarterCircle_two_mul`: even moments agree with those of the
+* `TauCeti.Probability.integral_pow_two_mul_quarterCircle`: even moments agree with those of the
   semicircle law.
 * `TauCeti.Probability.integral_sq_quarterCircle`: the second moment is one.
 -/
@@ -70,14 +70,14 @@ theorem ae_mem_Icc_quarterCircle : ∀ᵐ s ∂quarterCircle, s ∈ Icc (0 : ℝ
   exact ⟨abs_nonneg x, abs_le.2 hx⟩
 
 /-- The even moments of the quarter-circle law are those of the variance-one semicircle law. -/
-theorem integral_pow_quarterCircle_two_mul (k : ℕ) :
+theorem integral_pow_two_mul_quarterCircle (k : ℕ) :
     ∫ s, s ^ (2 * k) ∂quarterCircle = ∫ x, x ^ (2 * k) ∂semicircleReal 0 1 := by
   rw [quarterCircle, integral_map continuous_abs.measurable.aemeasurable (by fun_prop)]
   exact integral_congr_ae (Filter.Eventually.of_forall fun x ↦ (even_two_mul k).pow_abs x)
 
 /-- The second moment of the quarter-circle law is one. -/
 theorem integral_sq_quarterCircle : ∫ s, s ^ 2 ∂quarterCircle = 1 := by
-  have h := integral_pow_quarterCircle_two_mul 1
+  have h := integral_pow_two_mul_quarterCircle 1
   rw [mul_one] at h
   rw [h]
   have hv := variance_id_semicircleReal 0 1
