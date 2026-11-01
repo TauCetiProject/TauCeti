@@ -25,8 +25,9 @@ one-parameter subgroup. Divisibility by each fixed prime power suffices for the 
   `v_p(n!) = v_p(⌊n / pʰ⌋!) + ∑_{k = 1}^{h} ⌊n / pᵏ⌋`.
 * `TauCeti.sub_one_mul_padicValNat_factorial_pow`: Legendre's formula for `(pᵏ)!`,
   `(p - 1) v_p((pᵏ)!) = pᵏ - 1`.
-* `TauCeti.factorial_dvd_factorial_div_mul_pow`: its consequence that `n!` divides
-  `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)` in `ℤ_[p]`.
+* `TauCeti.norm_factorial_eq_norm_factorial_div_mul_pow`,
+  `TauCeti.factorial_dvd_factorial_div_mul_pow`: its consequence that `n!` has the norm of, and
+  divides, `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)` in `ℤ_[p]`.
 * `Padic.norm_factorial_mul`: `‖(p k)!‖ = p ^ (-k) ‖k!‖` in `ℚ_[p]`, by Legendre's formula.
 * `Padic.rpow_neg_div_le_norm_factorial`: `p ^ (-n / (p - 1)) ≤ ‖n!‖` in `ℚ_[p]`.
 -/
@@ -73,16 +74,25 @@ theorem sub_one_mul_padicValNat_factorial_pow (p : ℕ) [hp : Fact p.Prime] (k :
   simp
 
 open Nat in
-/-- In `ℤ_p`, `n!` divides `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)`: by Legendre's formula both
-have valuation `v_p(n!)`. -/
-theorem factorial_dvd_factorial_div_mul_pow {p : ℕ} [hp : Fact p.Prime] (h n : ℕ) :
-    (n ! : ℤ_[p]) ∣
-      ((n / p ^ h)! : ℤ_[p]) * (p : ℤ_[p]) ^ ∑ k ∈ Finset.range h, n / p ^ (k + 1) := by
-  refine PadicInt.dvd_of_norm_le (le_of_eq ?_)
+/-- In `ℤ_p`, `n!` has the norm of `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)`: by Legendre's formula
+both have valuation `v_p(n!)`. -/
+theorem norm_factorial_eq_norm_factorial_div_mul_pow {p : ℕ} [hp : Fact p.Prime] (h n : ℕ) :
+    ‖(n ! : ℤ_[p])‖ =
+      ‖((n / p ^ h)! : ℤ_[p])‖ * ‖(p : ℤ_[p])‖ ^ ∑ k ∈ Finset.range h, n / p ^ (k + 1) := by
   have hv := padicValNat_factorial_eq_add_sum p n h
   generalize ∑ k ∈ Finset.range h, n / p ^ (k + 1) = s at hv ⊢
   simp [PadicInt.norm_def, Padic.norm_natCast_eq_zpow, factorial_ne_zero, hv, zpow_add₀,
     hp.out.ne_zero, mul_comm]
+
+open Nat in
+/-- In `ℤ_p`, `n!` divides `⌊n / pʰ⌋! p ^ (∑_{k = 1}^{h} ⌊n / pᵏ⌋)`: by Legendre's formula both
+have valuation `v_p(n!)`. -/
+theorem factorial_dvd_factorial_div_mul_pow {p : ℕ} [hp : Fact p.Prime] (h n : ℕ) :
+    (n ! : ℤ_[p]) ∣
+      ((n / p ^ h)! : ℤ_[p]) * (p : ℤ_[p]) ^ ∑ k ∈ Finset.range h, n / p ^ (k + 1) :=
+  PadicInt.dvd_of_norm_le <| by
+    rw [norm_mul, norm_pow]
+    exact (norm_factorial_eq_norm_factorial_div_mul_pow h n).ge
 
 end TauCeti
 
