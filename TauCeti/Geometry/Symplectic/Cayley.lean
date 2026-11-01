@@ -67,6 +67,9 @@ structures that agree with given ones on the cylindrical ends of a punctured Rie
 * `TauCeti.SymplecticForm.Compatible.cayleyEquiv_symm_apply_toLinearMap`: the inverse transform
   is `C ↦ J₀ (1 + C)(1 - C)⁻¹`.
 * `TauCeti.SymplecticForm.Compatible.cayleyEquiv_self`: the transform sends `J₀` to `0`.
+* `TauCeti.SymplecticForm.Compatible.cayley_inj` and
+  `TauCeti.SymplecticForm.Compatible.toLinearMap_eq_mul_ringInverse`: a tame structure is
+  determined by its Cayley transform `C`, and it is `J₀ (1 + C)(1 - C)⁻¹`.
 * `TauCeti.SymplecticForm.Tames.convex_compatibleCayleyBall`: the compatible Cayley ball is
   convex.
 * `TauCeti.SymplecticForm.Compatible.isSelfAdjoint_cayley_iff`: the Cayley transform of a tame
@@ -392,6 +395,21 @@ lemma Compatible.cayleyEquiv_symm_apply_toLinearMap (h₀ : ω.Compatible J₀)
 lemma Compatible.cayleyEquiv_self (h₀ : ω.Compatible J₀) :
     h₀.cayleyEquiv ⟨J₀, h₀.tames⟩ = ⟨0, h₀.tames.zero_mem_cayleyBall⟩ :=
   Subtype.ext (by simp)
+
+/-- For an `ω`-compatible `J₀`, two `ω`-tame structures with the same Cayley transform are
+equal. -/
+theorem Compatible.cayley_inj (h₀ : ω.Compatible J₀) {J₁ J₂ : AlmostComplexStructure V}
+    (h₁ : ω.Tames J₁) (h₂ : ω.Tames J₂) : J₀.cayley J₁ = J₀.cayley J₂ ↔ J₁ = J₂ := by
+  refine ⟨fun h => ?_, fun h => h ▸ rfl⟩
+  have := h₀.cayleyEquiv.injective (a₁ := ⟨J₁, h₁⟩) (a₂ := ⟨J₂, h₂⟩) (Subtype.ext h)
+  exact congrArg Subtype.val this
+
+/-- For an `ω`-compatible `J₀`, an `ω`-tame structure `J` is the inverse Cayley transform
+`J₀ (1 + C)(1 - C)⁻¹` of its Cayley transform `C`. -/
+theorem Compatible.toLinearMap_eq_mul_ringInverse (h₀ : ω.Compatible J₀) (h : ω.Tames J) :
+    J.toLinearMap =
+      J₀.toLinearMap * (1 + J₀.cayley J) * Ring.inverse (1 - J₀.cayley J) :=
+  (h₀.inverseCayley_cayley h).symm
 
 /-- The defect of self-adjointness of the Cayley transform `C` of `J`, evaluated on `P a` and
 `P b` with `P = 1 - J₀ J`, is twice the defect of symmetry of `ω(·, J ·)` on `a` and `b`. -/
