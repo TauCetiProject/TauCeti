@@ -124,7 +124,7 @@ def totalSpaceFiberIso (E : FiniteLocallyFreeSheaf X) (x : X) :
 
 /-- `totalSpaceFiberIso` is `totalSpaceBaseChangeAffineSpaceIso` for the morphism
 `Spec κ(x) ⟶ X`, whose closed point maps to `x`. -/
-lemma totalSpaceFiberIso_eq (E : FiniteLocallyFreeSheaf X) (x : X) :
+lemma totalSpaceFiberIso_def (E : FiniteLocallyFreeSheaf X) (x : X) :
     totalSpaceFiberIso E x = totalSpaceBaseChangeAffineSpaceIso E (X.fromSpecResidueField x)
       (congrArg E.rank (X.fromSpecResidueField_apply x _)) :=
   (rfl)

@@ -185,6 +185,24 @@ def isoFreeOfBasis (E : FiniteLocallyFreeSheaf (Spec R)) {I : Type u} [Finite I]
     ObjectProperty.isoMk _ ((tilde.functor R).mapIso b.repr.toModuleIso ≪≫ tildeFinsupp I ≪≫
       eqToIso (free_obj (Spec R) I).symm)
 
+/-- `isoFreeOfBasis` is the inverse of the counit `(Γ E)~ ≅ E`, followed by the sheafification
+of `b.repr : Γ E ≃ (I →₀ R)` and `tildeFinsupp`. -/
+lemma isoFreeOfBasis_hom (E : FiniteLocallyFreeSheaf (Spec R)) {I : Type u} [Finite I]
+    (b : Module.Basis I R (moduleSpecΓFunctor.obj E.obj)) :
+    (isoFreeOfBasis E b).hom = (finiteProjectiveEquiv R).counitIso.inv.app E ≫
+      ObjectProperty.homMk ((tilde.functor R).map b.repr.toModuleIso.hom ≫
+        (tildeFinsupp I).hom ≫ eqToHom (free_obj (Spec R) I).symm) :=
+  (rfl)
+
+/-- The dimension of a free module of global sections of a finite locally free sheaf on `Spec R`
+is the rank of the sheaf, at any point. -/
+theorem finrank_moduleSpecΓ (E : FiniteLocallyFreeSheaf (Spec R))
+    [Module.Free R (moduleSpecΓFunctor.obj E.obj)] (p : Spec R) :
+    Module.finrank R (moduleSpecΓFunctor.obj E.obj) = E.rank p :=
+  have := (finite_projective_moduleSpecΓ E).1
+  ((rank_apply_eq_rankAtStalk E p).trans
+    (congrFun Module.rankAtStalk_eq_finrank_of_free p)).symm
+
 variable [IsLocalRing R]
 
 /-- Over a local ring `R`, the global sections of a finite locally free sheaf on `Spec R` form a
@@ -195,14 +213,6 @@ instance free_moduleSpecΓ (E : FiniteLocallyFreeSheaf (Spec R)) :
   have := (finite_projective_moduleSpecΓ E).2
   Module.free_of_flat_of_isLocalRing
 
-/-- Over a local ring `R`, the dimension of the free module of global sections of a finite locally
-free sheaf on `Spec R` is its rank, at any point. -/
-theorem finrank_moduleSpecΓ (E : FiniteLocallyFreeSheaf (Spec R)) (p : Spec R) :
-    Module.finrank R (moduleSpecΓFunctor.obj E.obj) = E.rank p :=
-  have := (finite_projective_moduleSpecΓ E).1
-  ((rank_apply_eq_rankAtStalk E p).trans
-    (congrFun Module.rankAtStalk_eq_finrank_of_free p)).symm
-
 /-- **A finite locally free sheaf on the spectrum of a local ring is free.** If `E` has rank `n`
 at the closed point of `Spec R`, then `E` is isomorphic to the free sheaf on `n` generators. -/
 def isoFreeOfIsLocalRing (E : FiniteLocallyFreeSheaf (Spec R)) {n : ℕ}
@@ -210,6 +220,15 @@ def isoFreeOfIsLocalRing (E : FiniteLocallyFreeSheaf (Spec R)) {n : ℕ}
   have := (finite_projective_moduleSpecΓ E).1
   isoFreeOfBasis E ((Module.finBasisOfFinrankEq R _
     ((finrank_moduleSpecΓ E _).trans hn)).reindex Equiv.ulift.symm)
+
+/-- `isoFreeOfIsLocalRing` is `isoFreeOfBasis` for the basis of the global sections indexed by
+`ULift (Fin n)` given by `Module.finBasisOfFinrankEq`. -/
+lemma isoFreeOfIsLocalRing_def (E : FiniteLocallyFreeSheaf (Spec R)) {n : ℕ}
+    (hn : E.rank (IsLocalRing.closedPoint R) = n) :
+    haveI := (finite_projective_moduleSpecΓ E).1
+    isoFreeOfIsLocalRing E hn = isoFreeOfBasis E ((Module.finBasisOfFinrankEq R _
+      ((finrank_moduleSpecΓ E _).trans hn)).reindex Equiv.ulift.symm) :=
+  (rfl)
 
 end FiniteLocallyFreeSheaf
 
