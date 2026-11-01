@@ -144,6 +144,18 @@ theorem cosetRep_mul_T_succ {n m j : ℕ} (hm : m ≤ j) (hj : j + 2 ≤ n) :
     rw [cosetRep_succ (by omega), mul_assoc, ih, ← mul_assoc, ← mul_assoc,
       (commute_T (Or.inr (by omega))).eq]
 
+/-- The strand shift by `k` of the descending product from `T (n - 1)` down to `T m` is the
+descending product from `T (n + k - 1)` down to `T (m + k)`. -/
+@[simp]
+theorem shift_cosetRep (k n m : ℕ) :
+    shift R q k (cosetRep q n m) = cosetRep q (n + k) (m + k) := by
+  induction n with
+  | zero => rw [cosetRep_of_le (Nat.zero_le m), cosetRep_of_le (by omega), map_one]
+  | succ n ih =>
+    rcases le_or_gt m n with h | h
+    · rw [cosetRep_succ h, map_mul, shift_T, ih, Nat.add_right_comm, cosetRep_succ (by omega)]
+    · rw [cosetRep_of_le h, cosetRep_of_le (by omega), map_one]
+
 end CosetRep
 
 section CosetEquiv
@@ -256,6 +268,14 @@ theorem coe_cosetEquiv_apply {n : ℕ} (a : Fin (n + 1) → stage R q n) :
       ∑ m, (a m : InfiniteTypeAHeckeAlgebra R q) * cosetRep q n m :=
   cosetSum_apply a
 
+/-- The coset isomorphism sends coefficients `a` to `∑ m, a m * cosetRep q n m`, computed in the
+stage of the first `n + 1` strands. -/
+theorem cosetEquiv_apply {n : ℕ} (a : Fin (n + 1) → stage R q n) :
+    cosetEquiv R q n a = ∑ m, Subalgebra.inclusion (stage_mono n.le_succ) (a m) *
+      ⟨cosetRep q n m, cosetRep_mem_stage n m⟩ := by
+  ext
+  simp
+
 /-- The coset isomorphism is linear for left multiplication by the stage of the first `n`
 strands. -/
 theorem cosetEquiv_smul {n : ℕ} (b : stage R q n) (a : Fin (n + 1) → stage R q n) :
@@ -280,6 +300,15 @@ theorem cosetEquiv_symm_inclusion {n : ℕ} (b : stage R q n) :
   rw [LinearEquiv.symm_apply_eq]
   refine Subtype.ext ((cosetSum_single (Fin.last n) b).trans ?_).symm
   simp
+
+/-- The product of an element `b` of the stage `n` with the representative `cosetRep q n m` has
+coefficient `b` at `m`, and no other coefficients. -/
+@[simp]
+theorem cosetEquiv_symm_inclusion_mul_cosetRep {n : ℕ} (m : Fin (n + 1)) (b : stage R q n) :
+    (cosetEquiv R q n).symm (Subalgebra.inclusion (stage_mono n.le_succ) b *
+      ⟨cosetRep q n m, cosetRep_mem_stage n m⟩) = Pi.single m b := by
+  rw [LinearEquiv.symm_apply_eq]
+  exact Subtype.ext (cosetSum_single m b).symm
 
 end CosetEquiv
 

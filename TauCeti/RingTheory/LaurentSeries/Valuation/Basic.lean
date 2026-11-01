@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.HahnSeries.Valuation
 public import Mathlib.RingTheory.LaurentSeries
+public import TauCeti.RingTheory.LaurentSeries.Ramified
 
 /-!
 # The real order valuation on Laurent series
@@ -26,6 +27,8 @@ coefficient heights, so this lets it apply to polynomials over `R⸨X⸩`.
 * `LaurentSeries.realAddVal_eq_top_iff`: only zero has infinite valuation.
 * `LaurentSeries.realAddVal_le_of_coeff_ne_zero`: a nonzero coefficient at `k` bounds the
   valuation by `k`.
+* `LaurentSeries.realAddVal_expand`: the ramification `X ↦ X ^ d` multiplies the valuation by
+  `d`.
 
 The valuation can also be read in the Hahn series with real exponents, through the embedding
 `HahnSeries.embDomainRingHom` along `ℤ → ℝ`: `realAddVal R f` is the order of the image of `f`
@@ -119,5 +122,14 @@ theorem le_realAddVal_iff_forall_mem_support {f : R⸨X⸩} {s : ℝ} :
     (h.trans (realAddVal_le_of_coeff_embDomainRingHom_ne_zero hr)), fun h => ?_⟩
   rw [realAddVal_eq_orderTop_embDomainRingHom, le_orderTop_iff_forall]
   exact fun r hr => by_contra fun hne => (WithTop.coe_lt_coe.mp hr).not_ge (h r hne)
+
+/-- The ramification `X ↦ X ^ d` multiplies the valuation by `d`. -/
+theorem realAddVal_expand {R : Type*} [CommRing R] [IsDomain R] (d : ℕ+) (f : R⸨X⸩) :
+    realAddVal R (expand R d f) = (realAddVal R f).map ((d : ℝ) * ·) := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  rw [realAddVal_of_ne_zero hf, realAddVal_of_ne_zero
+    ((map_ne_zero_iff _ (expand_injective d)).mpr hf), order_expand, WithTop.map_coe]
+  norm_cast
 
 end LaurentSeries
