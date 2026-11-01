@@ -5,13 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.ContDiff.Convolution
-public import Mathlib.Analysis.Complex.RealDeriv
-public import Mathlib.Geometry.Manifold.PartitionOfUnity
-public import TauCeti.Analysis.Complex.LaplaceTransform
-public import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
+public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.Analysis.Complex.ExponentialBounds
+import Mathlib.Analysis.Complex.RealDeriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.Calculus.Deriv.LocallyFinite
+import TauCeti.Analysis.Complex.GaussianTransform
+import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Real
 
 /-!
 # `C¹` approximation by real analytic functions on the line
@@ -39,15 +43,12 @@ The proof has three steps.
   `k`. Then `h = k exp (-ψ)` is within `ε` of `f`, since the weight `exp (-ψ)` and its derivative
   are bounded by a multiple of `Ψ`.
 
+The Gaussian transforms of the first step and their bounds are in
+`TauCeti.Analysis.Complex.GaussianTransform`; the partition of unity of the second step and the
+function `Ψ` of the third are in `TauCeti.Geometry.Manifold.PartitionOfUnity.Real`.
+
 ## Main declarations
 
-* `TauCeti.differentiable_intervalIntegral_mul_cexp_neg_mul_sub_sq`: Gaussian transforms
-  `z ↦ ∫ y in a..b, g y exp (-c (z - y)²)` over a compact interval are entire.
-* `TauCeti.norm_intervalIntegral_mul_cexp_neg_mul_sub_sq_le`: their Gaussian bound in terms of
-  the distance from `re z` to `[a, b]` and of `im z`.
-* `TauCeti.heatKernel_convolution_eq_intervalIntegral`: on `ℝ`, the heat kernel smoothing of a
-  function supported in `[a, b]` is such a Gaussian transform.
-* `LocallyFinite.hasSum_deriv_finsum`: a locally finite sum is differentiated termwise.
 * `ContDiff.exists_analyticOnNhd_abs_sub_lt`: the analytic `C¹` approximation theorem.
 
 ## References
@@ -63,74 +64,9 @@ The proof has three steps.
 public section
 
 open Complex MeasureTheory Set Filter Topology Real
-open scoped Convolution Manifold
+open scoped Convolution
 
 namespace TauCeti
-
-/-! ### Gaussian transforms over a compact interval -/
-
-/-- **Gaussian transforms over a compact interval are entire.** For `g` integrable on `[a, b]`,
-the function `z ↦ ∫ y in a..b, g y * exp (-c (z - y)²)` is complex differentiable everywhere. -/
-theorem differentiable_intervalIntegral_mul_cexp_neg_mul_sub_sq {g : ℝ → ℂ} {a b : ℝ}
-    (hg : IntervalIntegrable g volume a b) (c : ℂ) :
-    Differentiable ℂ fun z : ℂ ↦ ∫ y in a..b, g y * cexp (-c * (z - y) ^ 2) := by
-  -- Expanding the square writes the transform as `exp (-c z²)` times a truncated Laplace
-  -- transform evaluated at `-2 c z`.
-  have hL := differentiable_intervalIntegral_mul_cexp_neg_mul
-    (hg.mul_continuousOn
-      (by fun_prop : Continuous fun y : ℝ ↦ cexp (-c * (y : ℂ) ^ 2)).continuousOn)
-  have key : (fun z : ℂ ↦ ∫ y in a..b, g y * cexp (-c * (z - y) ^ 2)) =
-      fun z ↦ cexp (-c * z ^ 2) *
-        ∫ y in a..b, (g y * cexp (-c * (y : ℂ) ^ 2)) * cexp (-(-2 * c * z) * y) := by
-    funext z
-    rw [← intervalIntegral.integral_const_mul]
-    congr 1
-    funext y
-    rw [mul_comm (cexp _), mul_assoc, mul_assoc, ← Complex.exp_add, ← Complex.exp_add]
-    ring_nf
-  rw [key]
-  exact (by fun_prop : Differentiable ℂ fun z : ℂ ↦ cexp (-c * z ^ 2)).mul
-    (hL.comp (by fun_prop))
-
-/-- **Gaussian bound for Gaussian transforms.** If `‖g‖ ≤ M` on `[a, b]`, `c ≥ 0`, and `re z` has
-distance at least `D ≥ 0` from every point of `[a, b]`, then
-`‖∫ y in a..b, g y * exp (-c (z - y)²)‖ ≤ M exp (-c (D² - (im z)²)) (b - a)`. -/
-theorem norm_intervalIntegral_mul_cexp_neg_mul_sub_sq_le {g : ℝ → ℂ} {a b c M D : ℝ}
-    (hab : a ≤ b) (hc : 0 ≤ c) (hD : 0 ≤ D) (hM : ∀ y ∈ Icc a b, ‖g y‖ ≤ M) {z : ℂ}
-    (hz : ∀ y ∈ Icc a b, D ≤ |z.re - y|) :
-    ‖∫ y in a..b, g y * cexp (-c * (z - y) ^ 2)‖ ≤
-      M * Real.exp (-c * (D ^ 2 - z.im ^ 2)) * (b - a) := by
-  have := intervalIntegral.norm_integral_le_of_norm_le_const (a := a) (b := b)
-    (f := fun y : ℝ ↦ g y * cexp (-c * (z - y) ^ 2))
-    (C := M * Real.exp (-c * (D ^ 2 - z.im ^ 2))) ?_
-  · rwa [abs_of_nonneg (sub_nonneg.2 hab)] at this
-  intro y hy
-  have hy' : y ∈ Icc a b := Ioc_subset_Icc_self (by rwa [uIoc_of_le hab] at hy)
-  have hre : (-(c : ℂ) * (z - y) ^ 2).re = -c * ((z.re - y) ^ 2 - z.im ^ 2) := by
-    simp [sq, Complex.mul_re, Complex.sub_re, Complex.sub_im]
-  rw [norm_mul, Complex.norm_exp, hre]
-  refine mul_le_mul (hM y hy') (Real.exp_le_exp.2 ?_) (Real.exp_pos _).le
-    ((norm_nonneg _).trans (hM y hy'))
-  have : D ^ 2 ≤ (z.re - y) ^ 2 := by
-    rw [← sq_abs (z.re - y)]
-    exact pow_le_pow_left₀ hD (hz y hy') 2
-  nlinarith
-
-/-- On `ℝ`, the heat kernel smoothing of a function supported in `[a, b]` is the Gaussian
-transform `x ↦ ∫ y in a..b, (4πt)^(-1/2) g y exp (-(x - y)² / (4t))`. -/
-theorem heatKernel_convolution_eq_intervalIntegral {t a b : ℝ} {g : ℝ → ℝ}
-    (hgs : Function.support g ⊆ Icc a b) (hab : a ≤ b) (x : ℝ) :
-    (heatKernel t ⋆ g) x =
-      ∫ y in a..b, (4 * π * t) ^ (-(1 : ℝ) / 2) * g y * Real.exp (-(4 * t)⁻¹ * (x - y) ^ 2) := by
-  rw [convolution_lsmul_swap, intervalIntegral.integral_of_le hab,
-    ← integral_Icc_eq_integral_Ioc, setIntegral_eq_integral_of_forall_compl_eq_zero]
-  · congr 1
-    funext y
-    rw [heatKernel_apply, Module.finrank_self, Real.norm_eq_abs, sq_abs, smul_eq_mul,
-      show -(x - y) ^ 2 / (4 * t) = -(4 * t)⁻¹ * (x - y) ^ 2 by ring, Nat.cast_one]
-    ring
-  · intro y hy
-    rw [Function.notMem_support.1 fun h ↦ hy (hgs h), mul_zero, zero_mul]
 
 /-! ### Approximating a compactly supported function by entire functions -/
 
@@ -215,31 +151,6 @@ private theorem exists_differentiable_approx {g : ℝ → ℝ} (hg : ContDiff �
         = A * Real.exp (-c * (3 / 4)) * (M * (b - a)) := by ring_nf
       _ ≤ δ := ht₃.le
 
-/-! ### Locally finite sums -/
-
-/-- **Termwise differentiation of a locally finite sum.** If the supports of the functions `φ k`
-form a locally finite family and every `φ k` is differentiable at `x`, then the derivative of
-`y ↦ ∑ᶠ k, φ k y` at `x` is the sum of the derivatives of the `φ k` at `x`. -/
-theorem _root_.LocallyFinite.hasSum_deriv_finsum {ι 𝕜 F : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {φ : ι → 𝕜 → F}
-    (hlf : LocallyFinite fun k ↦ Function.support (φ k)) {x : 𝕜}
-    (hd : ∀ k, DifferentiableAt 𝕜 (φ k) x) :
-    HasSum (fun k ↦ deriv (φ k) x) (deriv (fun y ↦ ∑ᶠ k, φ k y) x) := by
-  obtain ⟨I, hI⟩ := hlf.exists_finset_support x
-  have hsum : (fun y ↦ ∑ᶠ k, φ k y) =ᶠ[𝓝 x] fun y ↦ ∑ k ∈ I, φ k y :=
-    hI.mono fun y hy ↦ finsum_eq_sum_of_support_subset _ hy
-  rw [hsum.deriv_eq, deriv_fun_sum fun k _ ↦ hd k]
-  refine hasSum_sum_of_ne_finset_zero fun k hk ↦ ?_
-  have : φ k =ᶠ[𝓝 x] fun _ ↦ 0 := hI.mono fun y hy ↦ by_contra fun h ↦ hk (hy h)
-  rw [this.deriv_eq, deriv_const]
-
-/-- A smooth partition of unity of `ℝ` by functions supported in `(k - 1, k + 1)`, `k ∈ ℤ`. -/
-private theorem exists_smoothPartitionOfUnity_int :
-    ∃ ρ : SmoothPartitionOfUnity ℤ 𝓘(ℝ, ℝ) ℝ,
-      ρ.IsSubordinate fun k : ℤ ↦ Ioo ((k : ℝ) - 1) (k + 1) :=
-  SmoothPartitionOfUnity.exists_isSubordinate 𝓘(ℝ, ℝ) isClosed_univ _ (fun _ ↦ isOpen_Ioo) fun x _ ↦
-    mem_iUnion.2 ⟨⌊x⌋, by linarith [Int.floor_le x], by linarith [Int.lt_floor_add_one x]⟩
-
 /-! ### Approximation within a constant tolerance -/
 
 /-- The analytic `C¹` approximation theorem for a constant tolerance. -/
@@ -248,7 +159,7 @@ private theorem exists_analyticOnNhd_abs_sub_lt_of_pos {f : ℝ → ℝ} (hf : C
     ∃ h : ℝ → ℝ, AnalyticOnNhd ℝ h univ ∧
       ∀ x, |h x - f x| < ε ∧ |deriv h x - deriv f x| < ε := by
   -- Split `f` into compactly supported pieces `g k = ρ k * f` with `tsupport (g k) ⊆ [k-1, k+1]`.
-  obtain ⟨ρ, hρ⟩ := exists_smoothPartitionOfUnity_int
+  obtain ⟨ρ, hρ⟩ := exists_smoothPartitionOfUnity_isSubordinate_Ioo_int
   set g : ℤ → ℝ → ℝ := fun k x ↦ ρ k x * f x with hg_def
   have hg (k : ℤ) : ContDiff ℝ 1 (g k) :=
     ((ρ k).contMDiff.contDiff.of_le (by exact_mod_cast le_top)).mul hf
@@ -325,68 +236,6 @@ private theorem exists_analyticOnNhd_abs_sub_lt_of_pos {f : ℝ → ℝ} (hf : C
 
 /-! ### Approximation within a variable tolerance -/
 
-/-- Below a positive continuous function `δ` there is a positive `C¹` function `Ψ` with
-`|Ψ'| ≤ 1`. -/
-private theorem exists_pos_le_abs_deriv_le_one {δ : ℝ → ℝ} (hδ : Continuous δ)
-    (hδ0 : ∀ x, 0 < δ x) :
-    ∃ Ψ : ℝ → ℝ, ContDiff ℝ 1 Ψ ∧ ∀ x, 0 < Ψ x ∧ Ψ x ≤ δ x ∧ |deriv Ψ x| ≤ 1 := by
-  have hval {φ : ℤ → ℝ → ℝ} (hlf : LocallyFinite fun k ↦ Function.support (φ k)) (x : ℝ) :
-      HasSum (fun k ↦ φ k x) (∑ᶠ k, φ k x) := by
-    have hfin : Function.HasFiniteSupport fun k ↦ φ k x := hlf.point_finite x
-    simpa [tsum_eq_finsum hfin] using
-      (summable_of_hasFiniteSupport (L := SummationFilter.unconditional ℤ) hfin).hasSum
-  obtain ⟨ρ, hρ⟩ := exists_smoothPartitionOfUnity_int
-  have hρd (k : ℤ) : ContDiff ℝ 1 (ρ k) := (ρ k).contMDiff.contDiff.of_le (by exact_mod_cast le_top)
-  have hρs (k : ℤ) : HasCompactSupport (ρ k) :=
-    isCompact_Icc.of_isClosed_subset (isClosed_tsupport _) ((hρ k).trans Ioo_subset_Icc_self)
-  -- On `[k - 1, k + 1]`, `δ ≥ m k > 0` and `|ρ' k| ≤ B k`.
-  have hm (k : ℤ) : ∃ m > 0, ∀ y ∈ Icc ((k : ℝ) - 1) (k + 1), m ≤ δ y := by
-    obtain ⟨y₀, -, hy₀⟩ := (isCompact_Icc (a := (k : ℝ) - 1) (b := k + 1)).exists_isMinOn
-      (nonempty_Icc.2 (by linarith)) hδ.continuousOn
-    exact ⟨δ y₀, hδ0 y₀, hy₀⟩
-  choose m hm0 hm using hm
-  have hB (k : ℤ) := ((hρd k).continuous_deriv le_rfl).bounded_above_of_compact_support
-    (hρs k).deriv
-  choose B hB using hB
-  obtain ⟨w, hw0, s, hws, hs1⟩ := NNReal.exists_pos_sum_of_countable one_ne_zero ℤ
-  have hw : HasSum (fun k ↦ (w k : ℝ)) s := NNReal.hasSum_coe.2 hws
-  have hw0' (k : ℤ) : (0 : ℝ) < w k := NNReal.coe_pos.2 (hw0 k)
-  have hs1' : (s : ℝ) ≤ 1 := by exact_mod_cast hs1.le
-  -- The coefficients `c k ≤ m k` are small enough that `|c k * ρ' k| ≤ w k`.
-  set c : ℤ → ℝ := fun k ↦ min (m k) (w k / (|B k| + 1)) with hc
-  have hc0 (k : ℤ) : 0 < c k := lt_min (hm0 k) (div_pos (hw0' k) (by positivity))
-  have hcB (k : ℤ) (y : ℝ) : |c k * deriv (ρ k) y| ≤ w k := by
-    rw [abs_mul, abs_of_pos (hc0 k)]
-    calc c k * |deriv (ρ k) y| ≤ w k / (|B k| + 1) * (|B k| + 1) :=
-          mul_le_mul (min_le_right _ _) (((hB k) y).trans ((le_abs_self _).trans
-            (le_add_of_nonneg_right zero_le_one))) (abs_nonneg _)
-            (div_pos (hw0' k) (by positivity)).le
-      _ = w k := div_mul_cancel₀ _ (by positivity)
-  have hlf : LocallyFinite fun k ↦ Function.support fun y ↦ c k * ρ k y :=
-    ρ.locallyFinite.subset fun k ↦ Function.support_mul_subset_right _ _
-  have hd (k : ℤ) : Differentiable ℝ fun y ↦ c k * ρ k y :=
-    ((hρd k).differentiable one_ne_zero).const_mul _
-  refine ⟨fun y ↦ ∑ᶠ k, c k * ρ k y, ?_, fun x ↦ ⟨?_, ?_, ?_⟩⟩
-  · have := ρ.contMDiff_finsum_smul (n := 1) (g := fun k _ ↦ c k) fun k x _ ↦ contMDiffAt_const
-    simp only [smul_eq_mul] at this
-    simp_rw [mul_comm (c _)]
-    exact this.contDiff
-  · obtain ⟨k, hk⟩ := ρ.exists_pos_of_mem (mem_univ x)
-    exact lt_of_lt_of_le (mul_pos (hc0 k) hk) (le_hasSum (hval hlf x) k
-      fun j _ ↦ mul_nonneg (hc0 j).le (ρ.nonneg j x))
-  · have hρx : HasSum (fun k ↦ δ x * ρ k x) (δ x) := by
-      have := (hval ρ.locallyFinite x).mul_left (δ x)
-      rwa [ρ.sum_eq_one (mem_univ x), mul_one] at this
-    refine hasSum_le (fun k ↦ ?_) (hval hlf x) hρx
-    by_cases hk : ρ k x = 0
-    · simp [hk]
-    · exact mul_le_mul_of_nonneg_right ((min_le_left _ _).trans (hm k x
-        (Ioo_subset_Icc_self ((hρ k) (subset_tsupport _ hk))))) (ρ.nonneg k x)
-  · have := (hlf.hasSum_deriv_finsum fun k ↦ hd k x).norm_le_of_bounded hw fun k ↦ by
-      rw [deriv_const_mul _ ((hρd k).differentiable one_ne_zero).differentiableAt]
-      exact hcB k x
-    exact this.trans hs1'
-
 /-- An analytic weight `exp (-ψ)` whose size and derivative are controlled by a positive
 continuous function: `exp (-ψ x) * (1 + |ψ' x|) ≤ ε x / 2`. -/
 private theorem exists_analyticOnNhd_exp_neg_mul_le {ε : ℝ → ℝ} (hε : Continuous ε)
@@ -395,8 +244,9 @@ private theorem exists_analyticOnNhd_exp_neg_mul_le {ε : ℝ → ℝ} (hε : Co
       ∀ x, Real.exp (-ψ x) * (1 + |deriv ψ x|) ≤ ε x / 2 := by
   -- A positive `Ψ ≤ min (ε / 24) 1` with `|Ψ'| ≤ 1`, and an analytic `ψ` within `1` of
   -- `φ = -2 log Ψ` in `C¹`. Then `exp (-ψ) ≤ exp (1 - φ) ≤ 3 Ψ²` and `|ψ'| ≤ 1 + 2 / Ψ`.
-  obtain ⟨Ψ, hΨ, hΨx⟩ := exists_pos_le_abs_deriv_le_one (hε.const_mul 24⁻¹ |>.min continuous_const)
-    fun x ↦ lt_min (mul_pos (by norm_num) (hε0 x)) one_pos
+  obtain ⟨Ψ, hΨ, hΨx⟩ := (hε.const_mul 24⁻¹ |>.min continuous_const)
+    |>.exists_contDiff_pos_le_abs_deriv_le_one
+      fun x ↦ lt_min (mul_pos (by norm_num) (hε0 x)) one_pos
   have hφ : ContDiff ℝ 1 fun x ↦ -2 * Real.log (Ψ x) :=
     contDiff_const.mul (hΨ.log fun x ↦ (hΨx x).1.ne')
   obtain ⟨ψ, hψa, hψ⟩ := exists_analyticOnNhd_abs_sub_lt_of_pos hφ one_pos
