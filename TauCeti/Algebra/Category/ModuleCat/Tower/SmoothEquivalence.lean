@@ -41,7 +41,6 @@ same carrier; the formulas for the actions (`TauCeti.ModuleTower.smoothModulesTo
 
 ## Main definitions
 
-* `TauCeti.ModuleTower.toLimRingHom`: the canonical ring homomorphism `A → lim A ⧸ Jₙ`.
 * `TauCeti.ModuleTower.smoothModulesToDiscrete`: smooth `A`-modules as discrete `Â`-modules.
 * `TauCeti.ModuleTower.discreteModulesToSmooth`: restriction of discrete `Â`-modules to `A`.
 * `TauCeti.ModuleTower.smoothModulesEquivalence`: the equivalence of categories they form.
@@ -74,25 +73,6 @@ universe u w
 
 variable {A : Type u} [Ring A] {J : ℕ → Submodule A A} {hJ : Antitone J}
   (hJr : ∀ (b : A) (n : ℕ), ∃ m, ∀ c ∈ J m, c * b ∈ J n)
-
-/-- **The canonical ring homomorphism** `A → lim A ⧸ Jₙ`, for the ring structure
-`TauCeti.ModuleTower.limRing` given by the right-shift estimate. -/
-def toLimRingHom :
-    letI := limRing (hJ := hJ) hJr
-    A →+* (quotients J hJ).lim :=
-  letI := limRing (hJ := hJ) hJr
-  { toFun := toLimQuotients J hJ
-    map_one' := rfl
-    map_mul' := toLimQuotients_mul hJr
-    map_zero' := map_zero _
-    map_add' := map_add _ }
-
-/-- The canonical ring homomorphism is the canonical map `A → lim A ⧸ Jₙ`. -/
-@[simp]
-theorem coe_toLimRingHom :
-    letI := limRing (hJ := hJ) hJr
-    ⇑(toLimRingHom hJr) = toLimQuotients J hJ :=
-  (rfl)
 
 /-- **A smooth module is a discrete module over the completion**: for the action
 `TauCeti.ModuleTower.limSmul`, every orbit map `x ↦ x • m` is locally constant. -/
@@ -138,7 +118,8 @@ theorem limSmul_restrictScalars_toLimRingHom :
     (IsLocallyConstant.iff_continuous _).2 (discreteModules_iff.1 hM m)
   exact (congrFun (eq_limSmul_of_isLocallyConstant
     (smoothModules_restrictScalars_toLimRingHom hJr hM) hg
-    fun a ↦ (ModuleCat.restrictScalars.smul_def (toLimRingHom hJr) a m).symm) x).symm
+    fun a ↦ ((ModuleCat.restrictScalars.smul_def (toLimRingHom hJr) a m).trans
+      (by rw [coe_toLimRingHom])).symm) x).symm
 
 /-- **Smooth `A`-modules are discrete modules over the completion** `lim A ⧸ Jₙ`, through the
 action `TauCeti.ModuleTower.limSmul`, with the same underlying linear maps. -/
@@ -194,7 +175,8 @@ theorem discreteModulesToSmooth_obj_smul :
       (m : ((discreteModulesToSmooth hJr).obj M).obj),
       a • m = toLimQuotients J hJ a • show M.obj from m :=
   let := limRing (hJ := hJ) hJr
-  fun _ a m ↦ ModuleCat.restrictScalars.smul_def (toLimRingHom hJr) a m
+  fun _ a m ↦ (ModuleCat.restrictScalars.smul_def (toLimRingHom hJr) a m).trans
+    (by rw [coe_toLimRingHom])
 
 /-- The restriction of a linear map of discrete modules over the completion is the same map. -/
 @[simp]
