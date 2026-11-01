@@ -6,44 +6,35 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Algebra.Character
+public import TauCeti.Analysis.Normed.Algebra.Derivation.Exponential
 import Mathlib.Analysis.Complex.Liouville
-import TauCeti.Analysis.Normed.Algebra.Derivation.Exponential
 import TauCeti.Analysis.Normed.Algebra.SeparatingIdeal.Derivation
 
 /-!
 # The Singer–Wermer theorem for bounded derivations
 
-A bounded derivation of a commutative complex Banach algebra maps it into its Jacobson radical.
-In particular a commutative semisimple complex Banach algebra has no nonzero bounded derivation,
-and, by the Johnson–Sinclair automatic continuity theorem, no nonzero derivation at all.
-
-The proof is the character and Liouville argument. Let `D` be a bounded derivation of a complex
-Banach algebra `A`, which need not be commutative or unital, and let `φ` be a character of `A`.
-For every `z : ℂ` the operator `exp (z • D)` is an algebra endomorphism of `A`, so
-`φ ∘ exp (z • D)` is again a character, and characters are contractive. Thus the entire function
-`z ↦ φ (exp (z • D) x)` is bounded by `‖x‖`, hence constant by Liouville's theorem, and its
-derivative `φ (D x)` at `0` vanishes. When `A` is commutative, an element killed by every
-character lies in the Jacobson radical.
+**The Singer–Wermer theorem**: a bounded derivation `D` of a commutative complex Banach algebra
+`B` maps `B` into its Jacobson radical. The algebra need not be unital. In particular a
+commutative semisimple complex Banach algebra has no nonzero bounded derivations.
 
 ## Main results
 
 * `ContinuousLinearMap.map_apply_eq_zero_of_derivation`: every character of a complex Banach
-  algebra kills the range of a bounded derivation.
-* `ContinuousLinearMap.apply_mem_nonUnitalJacobson_of_derivation`: the Singer–Wermer theorem
-  for bounded derivations of a commutative complex Banach algebra, possibly without unit.
-* `ContinuousLinearMap.apply_mem_jacobson_of_derivation`: the Singer–Wermer theorem for bounded
-  derivations of a commutative unital complex Banach algebra.
-* `LinearMap.eq_zero_of_derivation_of_jacobson_eq_bot`: a commutative semisimple unital complex
-  Banach algebra has no nonzero derivation, bounded or not.
+  algebra, not necessarily commutative or unital, kills the range of a bounded derivation.
+* `ContinuousLinearMap.apply_mem_nonUnitalJacobson_of_derivation`: the Singer–Wermer theorem for
+  a commutative complex Banach algebra, possibly without unit.
+* `ContinuousLinearMap.apply_mem_jacobson_of_derivation`: the unital form.
+* `ContinuousLinearMap.eq_zero_of_derivation_of_nonUnitalJacobson_eq_bot`: a bounded derivation
+  of a commutative semisimple complex Banach algebra, possibly without unit, is zero.
+* `LinearMap.eq_zero_of_derivation_of_jacobson_eq_bot`: combined with the Johnson–Sinclair
+  automatic continuity theorem, every derivation of a commutative semisimple unital complex
+  Banach algebra is zero, with no continuity assumption.
 
 ## References
 
 * I. M. Singer and J. Wermer, *Derivations on commutative normed algebras*, Math. Ann. 129
   (1955), 260–264.
-* B. E. Johnson and A. M. Sinclair, *Continuity of derivations and a problem of Kaplansky*,
-  Amer. J. Math. 90 (1968), 1067–1073, for the automatic continuity used in the last result.
-* H. G. Dales, *Banach Algebras and Automatic Continuity*, §2.7, for the Singer–Wermer theorem
-  and the automorphisms `exp (z • D)`.
+* H. G. Dales, *Banach Algebras and Automatic Continuity*, §2.7, the Singer–Wermer theorem.
 -/
 
 public section
@@ -59,56 +50,68 @@ variable {A F : Type*} [NonUnitalNormedRing A] [NormedSpace ℂ A] [IsScalarTowe
 
 /-- **Characters kill the range of a bounded derivation.** If `D` is a bounded linear map on a
 complex Banach algebra satisfying the Leibniz rule `D (x * y) = x * D y + D x * y`, then
-`φ (D x) = 0` for every character `φ`, unital or not. The algebra need not be commutative. -/
+`φ (D a) = 0` for every character `φ`, unital or not. The algebra need not be commutative. -/
 theorem map_apply_eq_zero_of_derivation (D : A →L[ℂ] A)
-    (hD : ∀ x y, D (x * y) = x * D y + D x * y) (φ : F) (x : A) : φ (D x) = 0 := by
-  -- For each `z`, `φ ∘ exp (z • D)` is a character, because `z • D` is again a derivation.
-  have hzD (z : ℂ) (x y : A) : (z • D) (x * y) = x * (z • D) y + (z • D) x * y := by
-    simp [hD, smul_add, mul_smul_comm, smul_mul_assoc]
-  let ψ (z : ℂ) : A →ₙₐ[ℂ] ℂ :=
-    { toFun y := φ (exp (z • D) y)
-      map_smul' := by simp
-      map_zero' := by simp
-      map_add' := by simp
-      map_mul' := by simp [exp_apply_mul_of_derivation _ (hzD z)] }
-  -- The entire function `f z = φ (exp (z • D) x)` has derivative `φ (exp (z • D) (D x))`.
-  let φL : A →L[ℂ] ℂ :=
-    { toFun := φ, map_add' := map_add φ, map_smul' := map_smul φ, cont := map_continuous φ }
-  let f (z : ℂ) : ℂ := φL (exp (z • D) x)
-  have hf (z : ℂ) : HasDerivAt f (φL (exp (z • D) (D x))) z := by
-    simpa [f, Function.comp_def, mul_apply_eq_comp] using φL.hasFDerivAt.comp_hasDerivAt z
-      ((hasDerivAt_exp_smul_const D z).clm_apply (hasDerivAt_const z x))
-  -- Characters are contractive, so `f` is bounded by `‖x‖`; by Liouville it is constant.
-  have hb : Bornology.IsBounded (Set.range f) := by
-    refine isBounded_iff_forall_norm_le.2 ⟨‖x‖, ?_⟩
+    (hD : ∀ x y, D (x * y) = x * D y + D x * y) (φ : F) (a : A) : φ (D a) = 0 := by
+  -- For each `z`, `φ ∘ exp (z • D)` is again a character, hence contractive, so
+  -- `z ↦ φ (exp (z • D) a)` is a bounded entire function. By Liouville's theorem it is constant,
+  -- and its derivative `φ (D a)` at `z = 0` vanishes.
+  -- Each `exp (z • D)` is an algebra endomorphism, because `z • D` is again a derivation.
+  let Θ (z : ℂ) : A →ₙₐ[ℂ] A :=
+    { ((exp (z • D) : A →L[ℂ] A) : A →ₗ[ℂ] A) with
+      map_zero' := (exp (z • D)).map_zero
+      map_mul' := (z • D).exp_apply_mul_of_derivation fun x y ↦ by
+        simp [hD, smul_add, mul_smul_comm, smul_mul_assoc] }
+  have hΘ (z : ℂ) (x : A) : Θ z x = exp (z • D) x := (rfl)
+  -- The entire function `f z = φ (exp (z • D) a)` is bounded by `‖a‖`, hence constant.
+  let f : ℂ → ℂ := fun z ↦ φ (exp (z • D) a)
+  have hf (z : ℂ) : HasDerivAt f (φ (exp (z • D) (D a))) z := by
+    have h : HasDerivAt (fun s : ℂ ↦ exp (s • D) a) (exp (z • D) (D a)) z := by
+      simpa [mul_apply_eq_comp] using
+        (hasDerivAt_exp_smul_const D z).clm_apply (hasDerivAt_const z a)
+    exact (φ : A →L[ℂ] ℂ).hasFDerivAt.comp_hasDerivAt z h
+  have hbdd : Bornology.IsBounded (Set.range f) := by
+    refine (Metric.isBounded_closedBall (x := 0) (r := ‖a‖)).subset ?_
     rintro _ ⟨z, rfl⟩
-    simpa [ψ, φL, f] using NonUnitalAlgHom.norm_apply_le_self (ψ z) x
-  have hconst : f = fun _ ↦ f 0 :=
-    funext fun z ↦ Differentiable.apply_eq_apply_of_bounded (fun w ↦ (hf w).differentiableAt) hb z 0
-  -- Hence its derivative `φ (D x)` at `0` vanishes.
+    rw [mem_closedBall_zero_iff]
+    simpa [f, hΘ] using NonUnitalAlgHom.norm_apply_le_self ((φ : A →ₙₐ[ℂ] ℂ).comp (Θ z)) a
+  have hconst : f = fun _ ↦ f 0 := funext fun z ↦
+    Differentiable.apply_eq_apply_of_bounded (fun z ↦ (hf z).differentiableAt) hbdd z 0
   have h0 := (hf 0).deriv
   rw [hconst, deriv_const] at h0
-  simpa [φL] using h0.symm
+  simpa using h0.symm
 
 end Character
 
-/-- **Singer–Wermer theorem for bounded derivations.** A bounded derivation of a commutative
-complex Banach algebra, possibly without unit, takes values in its Jacobson radical. -/
-theorem apply_mem_nonUnitalJacobson_of_derivation {A : Type*} [NonUnitalNormedCommRing A]
-    [NormedSpace ℂ A] [IsScalarTower ℂ A A] [SMulCommClass ℂ A A] [CompleteSpace A]
-    (D : A →L[ℂ] A) (hD : ∀ x y, D (x * y) = x * D y + D x * y) (x : A) :
-    D x ∈ TauCeti.nonUnitalJacobson ℂ A :=
+variable {B : Type*} [NonUnitalNormedCommRing B] [NormedSpace ℂ B] [IsScalarTower ℂ B B]
+  [SMulCommClass ℂ B B] [CompleteSpace B]
+
+/-- **The Singer–Wermer theorem.** A bounded derivation `D` of a commutative complex Banach
+algebra, possibly without unit, takes values in the Jacobson radical. -/
+theorem apply_mem_nonUnitalJacobson_of_derivation (D : B →L[ℂ] B)
+    (hD : ∀ x y, D (x * y) = x * D y + D x * y) (a : B) :
+    D a ∈ TauCeti.nonUnitalJacobson ℂ B :=
+  -- In a commutative complex Banach algebra the elements killed by every character, possibly
+  -- zero, form the radical.
   TauCeti.mem_nonUnitalJacobson_iff_forall_nonUnitalAlgHom_apply_eq_zero.2 fun φ ↦
-    D.map_apply_eq_zero_of_derivation hD φ x
+    D.map_apply_eq_zero_of_derivation hD φ a
+
+/-- **Commutative semisimple Banach algebras have no nonzero bounded derivations.** A bounded
+derivation of a commutative complex Banach algebra, possibly without unit, with zero Jacobson
+radical is zero. -/
+theorem eq_zero_of_derivation_of_nonUnitalJacobson_eq_bot (D : B →L[ℂ] B)
+    (hD : ∀ x y, D (x * y) = x * D y + D x * y) (hB : TauCeti.nonUnitalJacobson ℂ B = ⊥) :
+    D = 0 := by
+  ext a
+  simpa [hB] using D.apply_mem_nonUnitalJacobson_of_derivation hD a
 
 variable {A : Type*} [NormedCommRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 
-/-- **Singer–Wermer theorem for bounded derivations, unital form.** A bounded derivation of a
-commutative unital complex Banach algebra takes values in its Jacobson radical. -/
+/-- **The Singer–Wermer theorem**, unital form: a bounded derivation of a commutative unital
+complex Banach algebra takes values in the Jacobson radical. -/
 theorem apply_mem_jacobson_of_derivation (D : A →L[ℂ] A)
-    (hD : ∀ x y, D (x * y) = x * D y + D x * y) (x : A) : D x ∈ Ring.jacobson A :=
-  TauCeti.Ring.mem_jacobson_iff_forall_algHom_apply_eq_zero.2 fun φ ↦
-    D.map_apply_eq_zero_of_derivation hD φ x
+    (hD : ∀ x y, D (x * y) = x * D y + D x * y) (a : A) : D a ∈ Ring.jacobson A := by
+  simpa using D.apply_mem_nonUnitalJacobson_of_derivation hD a
 
 end ContinuousLinearMap
 
@@ -116,15 +119,14 @@ namespace LinearMap
 
 variable {A : Type*} [NormedCommRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 
-/-- **A commutative semisimple Banach algebra has no nonzero derivation.** Every linear map
-`D : A → A` satisfying the Leibniz rule on a commutative unital complex Banach algebra with zero
-Jacobson radical vanishes. No continuity is assumed: `D` is continuous by the Johnson–Sinclair
-theorem, and its values lie in the radical by the Singer–Wermer theorem. -/
+/-- **Commutative semisimple Banach algebras have no nonzero derivations.** A linear map
+`D : A → A` on a commutative unital complex Banach algebra with zero Jacobson radical that
+satisfies the Leibniz rule is zero. No continuity is assumed. -/
 theorem eq_zero_of_derivation_of_jacobson_eq_bot (D : A →ₗ[ℂ] A)
     (hD : ∀ x y, D (x * y) = x * D y + D x * y) (hA : Ring.jacobson A = ⊥) : D = 0 := by
-  ext x
-  have hx := ContinuousLinearMap.apply_mem_jacobson_of_derivation
-    ⟨D, D.continuous_of_derivation_of_jacobson_eq_bot hD hA⟩ hD x
-  rwa [hA, Ideal.mem_bot] at hx
+  -- `D` is continuous by the Johnson–Sinclair theorem, and then zero by Singer–Wermer.
+  ext a
+  simpa [hA] using (ContinuousLinearMap.mk D (D.continuous_of_derivation_of_jacobson_eq_bot hD hA)
+    |>.apply_mem_jacobson_of_derivation hD a)
 
 end LinearMap
