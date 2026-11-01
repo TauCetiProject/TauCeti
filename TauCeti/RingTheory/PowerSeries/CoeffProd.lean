@@ -21,6 +21,9 @@ whenever every `f i` has zero constant coefficient. It is the "leading term" ext
 limit arguments such as the Weyl dimension formula, where a product of `|Φ⁺|` factors each of
 order one is divided by another such product.
 
+The coefficient of degree one of any finite product is the sum, over the factors, of the linear
+coefficient of that factor times the constant coefficients of the others.
+
 Factors congruent to `1` modulo `X ^ (n + 1)` do not change the coefficient of degree `n`.
 This also gives a finite-cutoff formula for products with many such factors.
 
@@ -29,6 +32,8 @@ This also gives a finite-cutoff formula for products with many such factors.
 * `PowerSeries.coeff_card_mul_prod_of_constantCoeff_eq_zero`: the coefficient of
   `g * ∏_{i ∈ s} f i` in degree `|s|` is `constantCoeff g * ∏_{i ∈ s} coeff 1 (f i)` when each
   `f i` has zero constant coefficient.
+* `PowerSeries.coeff_one_prod`: the linear coefficient of a finite product, a sum over the factors
+  of the linear coefficient of one factor times the constant coefficients of the others.
 * `PowerSeries.coeff_prod_eq_coeff_prod_of_X_pow_dvd_sub_one`: factors congruent to `1` modulo
   `X ^ (n + 1)` do not affect the `n`-th coefficient of a finite product.
 -/
@@ -60,6 +65,22 @@ theorem coeff_card_mul_prod_of_constantCoeff_eq_zero (s : Finset ι) {f : ι →
     rw [hX, Finset.card_insert_of_notMem ha, coeff_succ_X_mul,
       ih (fun i hi ↦ hf i (Finset.mem_insert_of_mem hi)) (g * q), Finset.prod_insert ha, h1,
       map_mul]
+    ring
+
+/-- **The linear coefficient of a finite product.** The coefficient of `X` in `∏_{i ∈ s} f i` is
+the sum over `i ∈ s` of the linear coefficient of `f i` times the constant coefficients of the
+other factors. -/
+theorem coeff_one_prod [DecidableEq ι] (s : Finset ι) (f : ι → R⟦X⟧) :
+    coeff 1 (∏ i ∈ s, f i) = ∑ i ∈ s, coeff 1 (f i) * ∏ j ∈ s.erase i, constantCoeff (f j) := by
+  induction s using Finset.induction_on with
+  | empty => simp [coeff_one]
+  | insert a s ha ih =>
+    rw [Finset.prod_insert ha, coeff_one_mul, ih, Finset.sum_insert ha, Finset.erase_insert ha,
+      map_prod, Finset.sum_mul]
+    congr 1
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    rw [Finset.erase_insert_of_ne (ne_of_mem_of_not_mem hi ha).symm,
+      Finset.prod_insert fun h ↦ ha (Finset.mem_of_mem_erase h)]
     ring
 
 section CommRing
