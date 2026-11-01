@@ -217,6 +217,25 @@ lemma jointComp_hom_app {X Y Z : Γ × SingleObj H} (f : X ⟶ Y) (g : Y ⟶ Z) 
           ((N.transportCommIso f.1 g.2).hom.app ((act actions X.1 f.2).obj x)) := by
   simp [jointComp]
 
+@[simp]
+lemma jointId_inv_app (X : Γ × SingleObj H) (x : fiber actions X.1) :
+    (N.jointId X).inv.app x =
+      (N.transportId X.1).inv.app x ≫
+        (N.transport (𝟙 X.1)).map ((actId actions X.1).inv.app x) := by
+  simp [jointId]
+
+@[simp]
+lemma jointComp_inv_app {X Y Z : Γ × SingleObj H} (f : X ⟶ Y) (g : Y ⟶ Z) (fg : X ⟶ Z)
+    (hfg : f ≫ g = fg) (x : fiber actions X.1) :
+    (N.jointComp f g fg hfg).inv.app x =
+      (N.transport g.1).map
+          ((N.transportCommIso f.1 g.2).inv.app ((act actions X.1 f.2).obj x)) ≫
+        (N.transportComp f.1 g.1 fg.1 (congrArg Prod.fst hfg)).hom.app
+          ((act actions X.1 g.2).obj ((act actions X.1 f.2).obj x)) ≫
+        (N.transport fg.1).map
+          ((actComp actions X.1 f.2 g.2 fg.2 (congrArg Prod.snd hfg)).inv.app x) := by
+  simp [jointComp]
+
 attribute [reassoc] transportComp_associativity transportCommIso_comp transportCommIso_actComp
   transportCommIso_id transportCommIso_actId
 
@@ -355,24 +374,36 @@ data. Its value at `(p, ⋆)` is the prescribed fiber `C p`, its value at `(g, a
 
 @[simp]
 lemma joint_obj (X : LocallyDiscrete (Γ × SingleObj H)) : N.joint.obj X = fiber actions X.as.1 :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_obj ..
 
 @[simp]
 lemma joint_map_toFunctor {X Y : LocallyDiscrete (Γ × SingleObj H)} (f : X ⟶ Y) :
     (N.joint.map f).toFunctor = N.jointFunctor f.as :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_map_toFunctor ..
 
 @[simp]
 lemma joint_mapId_hom_app (X : LocallyDiscrete (Γ × SingleObj H)) (x : fiber actions X.as.1) :
     (N.joint.mapId X).hom.toNatTrans.app x = (N.jointId X.as).hom.app x :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_mapId_hom_toNatTrans_app ..
 
 @[simp]
 lemma joint_mapComp_hom_app {X Y Z : LocallyDiscrete (Γ × SingleObj H)} (f : X ⟶ Y) (g : Y ⟶ Z)
     (x : fiber actions X.as.1) :
     (N.joint.mapComp f g).hom.toNatTrans.app x =
       (N.jointComp f.as g.as (f ≫ g).as rfl).hom.app x :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_mapComp_hom_toNatTrans_app ..
+
+@[simp]
+lemma joint_mapId_inv_app (X : LocallyDiscrete (Γ × SingleObj H)) (x : fiber actions X.as.1) :
+    (N.joint.mapId X).inv.toNatTrans.app x = (N.jointId X.as).inv.app x :=
+  LocallyDiscrete.mkCatPseudofunctor_mapId_inv_toNatTrans_app ..
+
+@[simp]
+lemma joint_mapComp_inv_app {X Y Z : LocallyDiscrete (Γ × SingleObj H)} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (x : fiber actions X.as.1) :
+    (N.joint.mapComp f g).inv.toNatTrans.app x =
+      (N.jointComp f.as g.as (f ≫ g).as rfl).inv.app x :=
+  LocallyDiscrete.mkCatPseudofunctor_mapComp_inv_toNatTrans_app ..
 
 /-- A composition comparison of `N.joint` preceded by a `2`-cell of the locally discrete source
 is the composition comparison `jointComp` at the corresponding factorization. -/

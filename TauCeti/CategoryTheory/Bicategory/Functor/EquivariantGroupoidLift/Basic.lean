@@ -974,8 +974,13 @@ at `g ≫ h` is the inverse of `transportComp`, so that `E_(g ≫ h) ≅ E_g ⋙
 @[expose] noncomputable def transportPseudofunctor : LocallyDiscrete Γ ⥤ᵖ Cat.{v, w} :=
   LocallyDiscrete.mkCatPseudofunctor (obj := fun p ↦ fiber actions p) L.transport L.transportId
     (fun g h gh hgh ↦ (L.transportComp g h gh hgh).symm)
-    (fun f g h fg gh fgh hfg hgh hfgh hfgh' X ↦
-      LocallyDiscrete.inv_associativity_of_hom_associativity
+    (fun f g h fg gh fgh hfg hgh hfgh hfgh' X ↦ by
+      -- Proved against the stated goal rather than as a bare term of type `... .inv ...`, so
+      -- that the proof has the type of the constructor's hypothesis on the nose. Unification
+      -- compares proof arguments by proof irrelevance without assigning metavariables, so this
+      -- is what lets the `LocallyDiscrete.mkCatPseudofunctor_*` lemmas below apply.
+      simp only [Iso.symm_hom]
+      exact LocallyDiscrete.inv_associativity_of_hom_associativity
         (fun g h gh hgh ↦ L.transportComp g h gh hgh)
         (fun f g h fg gh fgh hfg hgh hfgh _ X ↦
           L.transportComp_associativity f g h fg gh fgh hfg hgh hfgh X)
@@ -988,38 +993,38 @@ at `g ≫ h` is the inverse of `transportComp`, so that `E_(g ≫ h) ≅ E_g ⋙
 @[simp]
 lemma transportPseudofunctor_obj (b : LocallyDiscrete Γ) :
     L.transportPseudofunctor.obj b = fiber actions b.as :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_obj ..
 
 @[simp]
 lemma transportPseudofunctor_map_toFunctor {b b' : LocallyDiscrete Γ} (g : b ⟶ b') :
     (L.transportPseudofunctor.map g).toFunctor = L.transport g.as :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_map_toFunctor ..
 
 @[simp]
 lemma transportPseudofunctor_mapId_hom_toNatTrans_app (b : LocallyDiscrete Γ)
     (X : fiber actions b.as) :
     (L.transportPseudofunctor.mapId b).hom.toNatTrans.app X = (L.transportId b.as).hom.app X :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_mapId_hom_toNatTrans_app ..
 
 @[simp]
 lemma transportPseudofunctor_mapId_inv_toNatTrans_app (b : LocallyDiscrete Γ)
     (X : fiber actions b.as) :
     (L.transportPseudofunctor.mapId b).inv.toNatTrans.app X = (L.transportId b.as).inv.app X :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_mapId_inv_toNatTrans_app ..
 
 @[simp]
 lemma transportPseudofunctor_mapComp_hom_toNatTrans_app {b₀ b₁ b₂ : LocallyDiscrete Γ}
     (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂) (X : fiber actions b₀.as) :
     (L.transportPseudofunctor.mapComp g h).hom.toNatTrans.app X =
       (L.transportComp g.as h.as (g.as ≫ h.as) rfl).inv.app X :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_mapComp_hom_toNatTrans_app ..
 
 @[simp]
 lemma transportPseudofunctor_mapComp_inv_toNatTrans_app {b₀ b₁ b₂ : LocallyDiscrete Γ}
     (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂) (X : fiber actions b₀.as) :
     (L.transportPseudofunctor.mapComp g h).inv.toNatTrans.app X =
       (L.transportComp g.as h.as (g.as ≫ h.as) rfl).hom.app X :=
-  rfl
+  LocallyDiscrete.mkCatPseudofunctor_mapComp_inv_toNatTrans_app ..
 
 /-- The action of the endomorphism monoid `End p` on the prescribed fiber `C p` by transport,
 as a pseudofunctor `LocallyDiscrete (SingleObj (End p)) ⥤ᵖ Cat` with value `C p`: the

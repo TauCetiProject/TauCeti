@@ -207,4 +207,57 @@ def mkCatPseudofunctor
       exact (congrArg (_ ≫ ·) (Category.comp_id _)).trans
         (mapComp_right_unitality_eqToHom map mapId mapComp right_unitality _ _ _ _ _))
 
+section
+
+variable {mapId mapComp}
+  {associativity : ∀ {b₀ b₁ b₂ b₃ : B₀} (f : b₀ ⟶ b₁) (g : b₁ ⟶ b₂) (h : b₂ ⟶ b₃)
+    (fg : b₀ ⟶ b₂) (gh : b₁ ⟶ b₃) (fgh : b₀ ⟶ b₃) (hfg : f ≫ g = fg) (hgh : g ≫ h = gh)
+    (hfgh : fg ≫ h = fgh) (hfgh' : f ≫ gh = fgh) (x : obj b₀),
+    (mapComp fg h fgh hfgh).hom.app x ≫ (map h).map ((mapComp f g fg hfg).hom.app x) =
+      (mapComp f gh fgh hfgh').hom.app x ≫ (mapComp g h gh hgh).hom.app ((map f).obj x)}
+  {left_unitality : ∀ {b₀ b₁ : B₀} (f : b₀ ⟶ b₁) (hf : 𝟙 b₀ ≫ f = f) (x : obj b₀),
+    (mapComp (𝟙 b₀) f f hf).hom.app x ≫ (map f).map ((mapId b₀).hom.app x) = 𝟙 _}
+  {right_unitality : ∀ {b₀ b₁ : B₀} (f : b₀ ⟶ b₁) (hf : f ≫ 𝟙 b₁ = f) (x : obj b₀),
+    (mapComp f (𝟙 b₁) f hf).hom.app x ≫ (mapId b₁).hom.app ((map f).obj x) = 𝟙 _}
+
+@[simp]
+lemma mkCatPseudofunctor_obj (b : LocallyDiscrete B₀) :
+    (mkCatPseudofunctor map mapId mapComp associativity left_unitality right_unitality).obj b =
+      obj b.as :=
+  rfl
+
+@[simp]
+lemma mkCatPseudofunctor_map_toFunctor {b b' : LocallyDiscrete B₀} (f : b ⟶ b') :
+    ((mkCatPseudofunctor map mapId mapComp associativity left_unitality right_unitality).map
+      f).toFunctor = map f.as :=
+  rfl
+
+@[simp]
+lemma mkCatPseudofunctor_mapId_hom_toNatTrans_app (b : LocallyDiscrete B₀) (x : obj b.as) :
+    ((mkCatPseudofunctor map mapId mapComp associativity left_unitality right_unitality).mapId
+      b).hom.toNatTrans.app x = (mapId b.as).hom.app x :=
+  rfl
+
+@[simp]
+lemma mkCatPseudofunctor_mapId_inv_toNatTrans_app (b : LocallyDiscrete B₀) (x : obj b.as) :
+    ((mkCatPseudofunctor map mapId mapComp associativity left_unitality right_unitality).mapId
+      b).inv.toNatTrans.app x = (mapId b.as).inv.app x :=
+  rfl
+
+@[simp]
+lemma mkCatPseudofunctor_mapComp_hom_toNatTrans_app {b₀ b₁ b₂ : LocallyDiscrete B₀}
+    (f : b₀ ⟶ b₁) (g : b₁ ⟶ b₂) (x : obj b₀.as) :
+    ((mkCatPseudofunctor map mapId mapComp associativity left_unitality right_unitality).mapComp
+      f g).hom.toNatTrans.app x = (mapComp f.as g.as (f.as ≫ g.as) rfl).hom.app x :=
+  rfl
+
+@[simp]
+lemma mkCatPseudofunctor_mapComp_inv_toNatTrans_app {b₀ b₁ b₂ : LocallyDiscrete B₀}
+    (f : b₀ ⟶ b₁) (g : b₁ ⟶ b₂) (x : obj b₀.as) :
+    ((mkCatPseudofunctor map mapId mapComp associativity left_unitality right_unitality).mapComp
+      f g).inv.toNatTrans.app x = (mapComp f.as g.as (f.as ≫ g.as) rfl).inv.app x :=
+  rfl
+
+end
+
 end CategoryTheory.LocallyDiscrete
