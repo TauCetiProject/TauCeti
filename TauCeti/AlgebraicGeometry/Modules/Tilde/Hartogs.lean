@@ -38,8 +38,14 @@ section over `U` is determined by its restriction to `U ∩ D(a)`.
   injective when `D(a) ⊆ U` for an `M`-regular `a`.
 * `TauCeti.AlgebraicGeometry.StructureSheaf.toOpenₗ_bijective_of_isWeaklyRegular`: `M → M~(U)` is
   bijective when `D(a), D(b) ⊆ U` for a weakly `M`-regular sequence `a, b`.
-* `TauCeti.AlgebraicGeometry.tilde_toOpen_bijective_of_two_le_depth`: for a finite module over a
-  Noetherian ring, `M → M~(U)` is bijective when `depth M_p ≥ 2` at every prime `p ∉ U`.
+* `TauCeti.AlgebraicGeometry.StructureSheaf.toOpenₗ_bijective_of_two_le_depth`: for a finite
+  module over a Noetherian ring, `M → M~(U)` is bijective when `depth M_p ≥ 2` at every prime
+  `p ∉ U`.
+* `TauCeti.AlgebraicGeometry.tilde_toOpen_bijective_of_two_le_depth`: the same statement for the
+  sheaf of modules `M~` on the scheme `Spec R`.
+* `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_iff`: restriction of sections of
+  `Spec R` to `U` is bijective exactly when `R → 𝒪(U)` is, so the statements above for `M = R`
+  describe sections of the scheme `Spec R`.
 
 ## References
 
@@ -166,7 +172,40 @@ theorem toOpenₗ_bijective_of_isWeaklyRegular {U : Opens (PrimeSpectrum.Top R)}
     (⟨a ^ n, n, rfl⟩ : Submonoid.powers a) ?_
   simp only [hc, hx, Submonoid.smul_def, map_smul]
 
+/-- **Hartogs principle for the structure sheaf of a module.** Let `M` be a finite module over a
+Noetherian ring `R` and `U` an open subset of `Spec R` such that `depth M_p ≥ 2` for every prime
+`p ∉ U`. Then every section of `M~` over `U` comes from a unique element of `M`. -/
+theorem toOpenₗ_bijective_of_two_le_depth [IsNoetherianRing R] [Module.Finite R M]
+    (U : Opens (PrimeSpectrum.Top R))
+    (h : ∀ p : PrimeSpectrum R, p ∉ U → 2 ≤ depth (ModuleCat.of (Localization.AtPrime p.asIdeal)
+      (LocalizedModule p.asIdeal.primeCompl M))) :
+    Function.Bijective (toOpenₗ R M U) := by
+  -- The vanishing ideal of the closed set `Spec R ∖ U` contains a weakly `M`-regular pair.
+  let I := PrimeSpectrum.vanishingIdeal (U : Set (PrimeSpectrum.Top R))ᶜ
+  obtain ⟨rs, hlen, hmem, hreg⟩ := exists_isWeaklyRegular_of_le_depth_localizedModule I 2
+    fun p _ hle ↦ h ⟨p, ‹_›⟩ <| by
+      have hp : (⟨p, ‹_›⟩ : PrimeSpectrum R) ∈ PrimeSpectrum.zeroLocus (I : Set R) := hle
+      rw [PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure] at hp
+      exact U.isOpen.isClosed_compl.closure_subset hp
+  obtain ⟨a, b, rfl⟩ := List.length_eq_two.1 hlen
+  have hD (r : R) (hr : r ∈ [a, b]) : basicOpen r ≤ U := fun q hq ↦ by
+    by_contra hqU
+    exact hq ((PrimeSpectrum.mem_vanishingIdeal _ _).1 (hmem r hr) q hqU)
+  exact toOpenₗ_bijective_of_isWeaklyRegular hreg (hD a (by simp)) (hD b (by simp))
+
 end StructureSheaf
+
+/-- Restriction of sections of `Spec R` from `Spec R` to an open `U` is bijective exactly when the
+map `R → 𝒪(U)` is. -/
+theorem Spec.presheaf_map_leTop_bijective_iff {R : Type u} [CommRing R]
+    (U : (Spec (.of R)).Opens) :
+    Function.Bijective ((Spec (.of R)).presheaf.map U.leTop.op) ↔
+      Function.Bijective (toOpenₗ R R U) := by
+  -- The restriction maps of `Spec R` are by definition those of `structureSheafInType R R`, which
+  -- send the constant section `toOpenₗ R R ⊤ r` to `toOpenₗ R R U r`.
+  have h : ⇑(toOpenₗ R R U) = (Spec (.of R)).presheaf.map U.leTop.op ∘ toOpenₗ R R ⊤ := rfl
+  rw [h]
+  exact (Function.Bijective.of_comp_iff _ (toOpenₗ_top_bijective (R := R) (M := R))).symm
 
 variable {R : CommRingCat.{u}}
 
@@ -180,21 +219,10 @@ theorem tilde_toOpen_bijective_of_two_le_depth [IsNoetherianRing R] (M : ModuleC
     [Module.Finite R M] (U : (Spec R).Opens)
     (h : ∀ p : PrimeSpectrum R, p ∉ U → 2 ≤ depth (ModuleCat.of (Localization.AtPrime p.asIdeal)
       (LocalizedModule p.asIdeal.primeCompl M))) :
-    Function.Bijective (tilde.toOpen M U).hom := by
-  -- The vanishing ideal of the closed set `Spec R ∖ U` contains a weakly `M`-regular pair.
-  let I := PrimeSpectrum.vanishingIdeal (U : Set (Spec R))ᶜ
-  obtain ⟨rs, hlen, hmem, hreg⟩ := exists_isWeaklyRegular_of_le_depth_localizedModule I 2
-    fun p _ hle ↦ h ⟨p, ‹_›⟩ <| by
-      have hp : (⟨p, ‹_›⟩ : PrimeSpectrum R) ∈ PrimeSpectrum.zeroLocus (I : Set R) := hle
-      rw [PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure] at hp
-      exact U.isOpen.isClosed_compl.closure_subset hp
-  obtain ⟨a, b, rfl⟩ := List.length_eq_two.1 hlen
-  have hD (r : R) (hr : r ∈ [a, b]) : basicOpen r ≤ U := fun q hq ↦ by
-    by_contra hqU
-    exact hq ((PrimeSpectrum.mem_vanishingIdeal _ _).1 (hmem r hr) q hqU)
+    Function.Bijective (tilde.toOpen M U).hom :=
   -- By definition, `tilde.toOpen M U` is `toOpenₗ R M U` followed by an isomorphism of modules of
   -- sections; the composite is unfolded by `exact`, as Mathlib states no lemma for it.
-  exact ((tilde.modulesSpecToSheafIso M).app _).symm.toLinearEquiv.bijective.comp
-    (StructureSheaf.toOpenₗ_bijective_of_isWeaklyRegular hreg (hD a (by simp)) (hD b (by simp)))
+  ((tilde.modulesSpecToSheafIso M).app _).symm.toLinearEquiv.bijective.comp
+    (StructureSheaf.toOpenₗ_bijective_of_two_le_depth U h)
 
 end TauCeti.AlgebraicGeometry
