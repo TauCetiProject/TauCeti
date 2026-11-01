@@ -216,22 +216,22 @@ theorem IsSelfFinancing.condExp_discounted_wealth (h : IsSelfFinancing τ (n + 1
     (hk : k ≤ n) :
     Q[fun ω ↦ (a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω) / β (τ (n + 1)) ω | ℱ (τ k)]
       =ᵐ[Q] fun ω ↦ (a k ω * S (τ k) ω + b k ω * β (τ k) ω) / β (τ k) ω := by
-  have hdisc := (isSelfFinancing_iff_discounted hτ hβ).1 h
-  have hle : τ 0 ≤ τ (k + 1) := hτ (Nat.zero_le _) (by simp; omega) (Nat.zero_le _)
-  have hk' : τ k ≤ τ (k + 1) := hτ (by simp; omega) (by simp; omega) (Nat.le_succ k)
+  have hk' : τ k ≤ τ (k + 1) :=
+    hτ (Set.mem_Iic.2 (by omega)) (Set.mem_Iic.2 (by omega)) (Nat.le_succ k)
   -- Both sides are the discounted initial cost plus the gains from the discounted stock.
   have hT : (fun ω ↦ (a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω) / β (τ (n + 1)) ω) =
       (fun ω ↦ (a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω) / β (τ 0) ω) +
         simpleGains τ (n + 1) a (S / β) (τ (n + 1)) := by
     ext ω
-    exact hdisc n (Nat.lt_succ_self n) ω _
-      ⟨hτ (by simp) (by simp) (Nat.le_succ n), le_rfl⟩
+    rw [Pi.add_apply]
+    exact h.discounted_terminal_wealth_eq hτ hβ ω
   have hK : (fun ω ↦ (a k ω * S (τ k) ω + b k ω * β (τ k) ω) / β (τ k) ω) =
       (fun ω ↦ (a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω) / β (τ 0) ω) +
         simpleGains τ (n + 1) a (S / β) (τ k) := by
     ext ω
-    exact hdisc k (by omega) ω _ ⟨le_rfl, hk'⟩
-  have hvk := hvm.mono (ℱ.mono (hτ (Nat.zero_le _) (by simp; omega) (Nat.zero_le k)))
+    rw [Pi.add_apply]
+    exact (isSelfFinancing_iff_discounted hτ hβ).1 h k (by omega) ω _ ⟨le_rfl, hk'⟩
+  have hvk := hvm.mono (ℱ.mono (hτ (Nat.zero_le _) (Set.mem_Iic.2 (by omega)) (Nat.zero_le k)))
   rw [hT, hK]
   filter_upwards [condExp_add hvi (integrable_simpleGains hτ hint le_rfl) (ℱ (τ k)),
     condExp_simpleGains hτ hXm hXi hX ha hint (by omega : k ≤ n + 1) le_rfl] with ω h₁ h₂
@@ -253,7 +253,8 @@ theorem IsSelfFinancing.not_isArbitrage (hPQ : P ≪ Q) (hQP : Q ≪ P)
     ¬ IsArbitrage P (fun ω ↦ a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω)
       (fun ω ↦ a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω) := by
   intro harb
-  have h₀ : τ 0 ∈ Set.Icc (τ 0) (τ (n + 1)) := ⟨le_rfl, hτ (by simp) (by simp) (Nat.zero_le _)⟩
+  have h₀ : τ 0 ∈ Set.Icc (τ 0) (τ (n + 1)) :=
+    ⟨le_rfl, hτ (Set.mem_Iic.2 (Nat.zero_le _)) Set.self_mem_Iic (Nat.zero_le _)⟩
   have hT : τ (n + 1) ∈ Set.Icc (τ 0) (τ (n + 1)) := ⟨h₀.2, le_rfl⟩
   -- Measured in bond shares, the trade is still an arbitrage, now under `Q`.
   have hdarb := (isArbitrage_mul_iff (c₀ := fun ω ↦ (β (τ 0) ω)⁻¹)
@@ -266,8 +267,7 @@ theorem IsSelfFinancing.not_isArbitrage (hPQ : P ≪ Q) (hQP : Q ≪ P)
       ((fun ω ↦ (β (τ 0) ω)⁻¹) * fun ω ↦ a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω) ω +
         simpleGains τ (n + 1) a (S / β) (τ (n + 1)) ω := fun ω ↦ by
     simpa only [Pi.mul_apply, inv_mul_eq_div] using
-      (isSelfFinancing_iff_discounted hτ fun t ht ω ↦ (hβ t ht ω).ne').1 h n (Nat.lt_succ_self n)
-        ω _ ⟨hτ (by simp) (by simp) (Nat.le_succ n), le_rfl⟩
+      h.discounted_terminal_wealth_eq hτ (fun t ht ω ↦ (hβ t ht ω).ne') ω
   have hgains : ((fun ω ↦ (β (τ (n + 1)) ω)⁻¹) *
       fun ω ↦ a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω) =ᵐ[Q]
       simpleGains τ (n + 1) a (S / β) (τ (n + 1)) := by

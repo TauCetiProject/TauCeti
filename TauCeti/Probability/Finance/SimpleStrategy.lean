@@ -56,7 +56,9 @@ Self-financing does not depend on the unit of account: multiplying both prices b
 does not vanish at the rebalancing dates preserves it (`TauCeti.Finance.isSelfFinancing_mul_iff`).
 In particular, when the bond price does not vanish on `[τ 0, τ n]`, the discounted wealth of a
 self-financing strategy, measured in bond shares, is the initial discounted cost plus the gains
-from the discounted stock `S / β` alone (`TauCeti.Finance.isSelfFinancing_iff_discounted`).
+from the discounted stock `S / β` alone (`TauCeti.Finance.isSelfFinancing_iff_discounted`); in
+particular so is its discounted terminal wealth
+(`TauCeti.Finance.IsSelfFinancing.discounted_terminal_wealth_eq`).
 The bond holding is therefore determined by the stock holding and the initial capital `v`: when
 the bond price does not vanish at the trading dates, `TauCeti.Finance.selfFinancingBond` completes
 any stock holding to a self-financing strategy of initial cost `v`, uniquely
@@ -511,6 +513,19 @@ theorem isSelfFinancing_iff_discounted (hτ : MonotoneOn τ (Set.Iic n))
   rw [hgains, hone t ht₀, hone _ (hdate 0 (Nat.zero_le n))]
   simp only [Pi.div_apply, add_div, mul_div_assoc, div_self (hβ t ht₀ ω),
     div_self (hβ _ (hdate 0 (Nat.zero_le n)) ω), mul_one, add_zero]
+
+/-- **The discounted terminal wealth** of a self-financing strategy, when the bond price does not
+vanish on `[τ 0, τ (n + 1)]`: the final portfolio `(a n, b n)`, valued at the last date
+`τ (n + 1)` in bond shares, is worth the discounted initial cost plus the gains from trading the
+discounted stock `S / β`. -/
+theorem IsSelfFinancing.discounted_terminal_wealth_eq (h : IsSelfFinancing τ (n + 1) a b S β)
+    (hτ : MonotoneOn τ (Set.Iic (n + 1))) (hβ : ∀ t ∈ Set.Icc (τ 0) (τ (n + 1)), ∀ ω, β t ω ≠ 0)
+    (ω : Ω) :
+    (a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω) / β (τ (n + 1)) ω =
+      (a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω) / β (τ 0) ω +
+        simpleGains τ (n + 1) a (S / β) (τ (n + 1)) ω :=
+  (isSelfFinancing_iff_discounted hτ hβ).1 h n (Nat.lt_succ_self n) ω _
+    ⟨hτ (Set.mem_Iic.2 (Nat.le_succ n)) Set.self_mem_Iic (Nat.le_succ n), le_rfl⟩
 
 end Formula
 

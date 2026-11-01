@@ -20,10 +20,13 @@ respect to `P` is `exp (-κ W_T - κ² T / 2)`. It has the same null sets as `P`
 
 Up to the horizon the discounted stock `S_t / β_t` is a `Q`-martingale
 (`condExp_discounted_geometricBrownianMotion_tilted`): by Girsanov's theorem the stock is the
-geometric Brownian motion with drift `r` driven by the `Q`-Brownian motion `W_t + κ t`. The
-general results of `TauCeti.Probability.Finance.Arbitrage` then apply to every self-financing
-simple strategy trading at dates up to `T` whose stock holdings `a j` are chosen at the start of
-their intervals and whose trades in the discounted stock have `Q`-integrable gains:
+geometric Brownian motion with drift `r` driven by the `Q`-Brownian motion `W_t + κ t`. Along
+trading dates up to `T` this gives the martingale hypotheses of the general results of
+`TauCeti.Probability.Finance.Arbitrage`
+(`stronglyMeasurable_integrable_condExp_discounted_geometricBrownianMotion_tilted`), which then
+apply to every self-financing simple strategy trading at dates up to `T` whose stock holdings
+`a j` are chosen at the start of their intervals and whose trades in the discounted stock have
+`Q`-integrable gains:
 
 * no such strategy is an arbitrage under `P` (`not_isArbitrage_geometricBrownianMotion`);
 * if moreover its discounted initial cost is `Q`-integrable and known at the first trading date,
@@ -78,6 +81,33 @@ theorem condExp_discounted_geometricBrownianMotion_tilted (hW : IsFilteredPreBro
   exact ((hW.sub_mul_min_tilted_mul_eval _ T).martingale_discounted_geometricBrownianMotion
     s r σ).condExp_ae_eq hut
 
+/-- **The discounted stock is a risk-neutral martingale along trading dates.** For dates
+`τ 0 ≤ ⋯ ≤ τ n ≤ T`, the discounted stock `S / β`, `β_t = e^{r t}`, is `ℱ (τ j)`-measurable and
+integrable under the risk-neutral measure `Q = P.tilted (-κ W_T ·)`, `κ = (μ - r) / σ`, at each
+date `τ j`, and `E_Q[S_{τ (j + 1)} / β_{τ (j + 1)} | ℱ (τ j)] = S_{τ j} / β_{τ j}`. These are the
+martingale hypotheses of `TauCeti.Finance.IsSelfFinancing.not_isArbitrage`. -/
+theorem stronglyMeasurable_integrable_condExp_discounted_geometricBrownianMotion_tilted
+    (hW : IsFilteredPreBrownianReal ℱ W P) (s μ r : ℝ) (hσ : σ ≠ 0) {τ : ℕ → ℝ≥0} {n : ℕ}
+    (hτ : MonotoneOn τ (Set.Iic n)) (hτT : τ n ≤ T) :
+    (∀ j ≤ n, StronglyMeasurable[ℱ (τ j)]
+      ((geometricBrownianMotion s μ σ W / fun (t : ℝ≥0) (_ : Ω) ↦ exp (r * t)) (τ j))) ∧
+    (∀ j ≤ n, Integrable
+      ((geometricBrownianMotion s μ σ W / fun (t : ℝ≥0) (_ : Ω) ↦ exp (r * t)) (τ j))
+      (P.tilted fun ω ↦ -((μ - r) / σ) * W T ω)) ∧
+    ∀ j < n, (P.tilted fun ω ↦ -((μ - r) / σ) * W T ω)[
+        (geometricBrownianMotion s μ σ W / fun (t : ℝ≥0) (_ : Ω) ↦ exp (r * t)) (τ (j + 1)) |
+          ℱ (τ j)] =ᵐ[P.tilted fun ω ↦ -((μ - r) / σ) * W T ω]
+      (geometricBrownianMotion s μ σ W / fun (t : ℝ≥0) (_ : Ω) ↦ exp (r * t)) (τ j) := by
+  have hτT' : ∀ j ≤ n, τ j ≤ T := fun j hj ↦ (hτ hj Set.self_mem_Iic hj).trans hτT
+  -- At each date the discounted stock is the pointwise quotient `S_t ω / e^{r t}`.
+  simp only [Pi.div_def]
+  refine ⟨fun j _ ↦ ?_, fun j hj ↦ ?_, fun j hj ↦ ?_⟩
+  · exact (hW.adapted.stronglyAdapted_geometricBrownianMotion s μ σ (τ j)).div
+      stronglyMeasurable_const
+  · exact (hW.integrable_geometricBrownianMotion_tilted s μ r hσ (hτT' j hj)).div_const _
+  · exact hW.condExp_discounted_geometricBrownianMotion_tilted s μ r hσ
+      (hτ (Set.mem_Iic.2 hj.le) (Set.mem_Iic.2 hj) (Nat.le_succ j)) (hτT' (j + 1) hj)
+
 /-- **No arbitrage with simple strategies in the Black–Scholes market.** Let the stock have drift
 `μ` and volatility `σ ≠ 0`, let the bond be `e^{r t}`, and let `Q = P.tilted (-κ W_T ·)`,
 `κ = (μ - r) / σ`, be the risk-neutral measure for the horizon `T`. No self-financing simple
@@ -100,15 +130,12 @@ theorem not_isArbitrage_geometricBrownianMotion (hW : IsFilteredPreBrownianReal 
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   have hexp := hW.integrable_exp_mul_eval (-((μ - r) / σ)) T
   have := isProbabilityMeasure_tilted hexp
-  have hτT' : ∀ j ≤ n + 1, τ j ≤ T := fun j hj ↦ (hτ hj Set.self_mem_Iic hj).trans hτT
-  exact h.not_isArbitrage (ℱ := ℱ) (absolutelyContinuous_tilted hexp)
-    (tilted_absolutelyContinuous _ _) hτ (fun _ _ _ ↦ exp_pos _)
-    (fun j _ ↦ (hW.adapted.stronglyAdapted_geometricBrownianMotion s μ σ (τ j)).div
-      stronglyMeasurable_const)
-    (fun j hj ↦ (hW.integrable_geometricBrownianMotion_tilted s μ r hσ (hτT' j hj)).div_const _)
-    (fun j hj ↦ hW.condExp_discounted_geometricBrownianMotion_tilted s μ r hσ
-      (hτ (Set.mem_Iic.2 (by omega)) (Set.mem_Iic.2 hj) (Nat.le_succ j)) (hτT' (j + 1) hj))
-    ha hint
+  obtain ⟨hXm, hXi, hX⟩ :=
+    hW.stronglyMeasurable_integrable_condExp_discounted_geometricBrownianMotion_tilted s μ r hσ hτ
+      hτT
+  exact h.not_isArbitrage (absolutelyContinuous_tilted hexp) (tilted_absolutelyContinuous _ _) hτ
+    (fun _ _ _ ↦ exp_pos _) hXm hXi hX ha
+    (fun j hj ↦ by simpa only [Pi.mul_def, Pi.sub_def, Pi.div_def] using hint j hj)
 
 /-- **The wealth of a simple strategy in the Black–Scholes market.** Under the hypotheses of
 `TauCeti.Probability.IsFilteredPreBrownianReal.not_isArbitrage_geometricBrownianMotion`, if moreover
@@ -136,13 +163,10 @@ theorem condExp_discounted_wealth_geometricBrownianMotion (hW : IsFilteredPreBro
         exp (r * τ k) := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
   have := isProbabilityMeasure_tilted (hW.integrable_exp_mul_eval (-((μ - r) / σ)) T)
-  have hτT' : ∀ j ≤ n + 1, τ j ≤ T := fun j hj ↦ (hτ hj Set.self_mem_Iic hj).trans hτT
-  exact h.condExp_discounted_wealth hτ (fun _ _ _ ↦ (exp_pos _).ne') hvm hvi
-    (fun j _ ↦ (hW.adapted.stronglyAdapted_geometricBrownianMotion s μ σ (τ j)).div
-      stronglyMeasurable_const)
-    (fun j hj ↦ (hW.integrable_geometricBrownianMotion_tilted s μ r hσ (hτT' j hj)).div_const _)
-    (fun j hj ↦ hW.condExp_discounted_geometricBrownianMotion_tilted s μ r hσ
-      (hτ (Set.mem_Iic.2 (by omega)) (Set.mem_Iic.2 hj) (Nat.le_succ j)) (hτT' (j + 1) hj))
-    ha hint hk
+  obtain ⟨hXm, hXi, hX⟩ :=
+    hW.stronglyMeasurable_integrable_condExp_discounted_geometricBrownianMotion_tilted s μ r hσ hτ
+      hτT
+  exact h.condExp_discounted_wealth hτ (fun _ _ _ ↦ (exp_pos _).ne') hvm hvi hXm hXi hX ha
+    (fun j hj ↦ by simpa only [Pi.mul_def, Pi.sub_def, Pi.div_def] using hint j hj) hk
 
 end TauCeti.Probability.IsFilteredPreBrownianReal
