@@ -326,12 +326,18 @@ theorem paste_covers_iff_of_le {i : I} {U : PastedOpens G} {S : Set (PastedOpens
   -- Restrict the cover in `P i` to the overlap with `P j`, then move it to `P j`.
   refine hc.covers i j ((G i).restriction h (toPiece i (U ⊓ hc.piece j))
     (toPiece_mono i inf_le_left)) ?_ ?_
-  · rw [image_coe_toPiece, image_coe_toPiece, coe_inf, coe_piece, ← inter_assoc,
-      inter_eq_right.mpr hU', inter_comm]
+  · rw [image_coe_toPiece, image_coe_toPiece]
+    ext x
+    simp only [coe_inf, coe_piece, mem_inter_iff]
+    have := @hU' x
+    tauto
   · simp only [image_image, ← toPiece_inf, image_coe_toPiece]
     refine image_congr fun W hW ↦ ?_
-    rw [coe_inf, coe_inf, coe_piece, ← inter_assoc (W : Set X), inter_eq_left.mpr (hSU W hW),
-      ← inter_assoc, inter_eq_right.mpr (hSi W hW), inter_comm]
+    ext x
+    simp only [coe_inf, coe_piece, mem_inter_iff]
+    have := @hSU W hW x
+    have := @hSi W hW x
+    tauto
 
 end PasteCompatible
 
