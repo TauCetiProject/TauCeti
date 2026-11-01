@@ -79,6 +79,15 @@ theorem homEquiv_comp_doubleSnd {X : EllObj B}
   rw [R.homEquiv_comp, homEquiv_doubleSnd, ← NatTrans.naturality_apply,
     ← (D.doubleRepresentableBy R).homEquiv_comp, Category.comp_id]
 
+/-- Pulling back the first two structures of the universal triple gives the pair classified by
+the composite with the first projection. This is the companion of `homEquiv_comp_doubleSnd`. -/
+theorem homEquiv_comp_baseChangeFunctorHom {X : EllObj B}
+    (f : X ⟶ V.baseChangeFunctor.obj (D.rep V)) :
+    R.homEquiv (f ≫ V.baseChangeFunctorHom (D.rep V)) =
+      (P ◁ fst Q Q).app _ ((D.doubleRepresentableBy R).homEquiv f) := by
+  rw [whiskerLeft_app_apply, Functor.Monoidal.fst_app_apply, doubleRepresentableBy_homEquiv]
+  exact Prod.mk.eta.symm
+
 /-- The existing base-change projection classifies the first two structures of the universal
 triple. Together with `homEquiv_doubleSnd`, this identifies the two forgetful projections. -/
 theorem homEquiv_baseChangeFunctorHom :
