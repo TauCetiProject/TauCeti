@@ -19,8 +19,7 @@ proper blowup separating any two disjoint closed subsets of an open subscheme, w
 changing that open. This is the separation step used when gluing compactifications.
 
 The separation assertion is topological: no reduced structure is imposed on the blowup
-or on its ambient scheme. The centre in the existence theorem is the intersection of
-the reduced closures of the two given closed subsets.
+or on its ambient scheme.
 
 The affine argument uses charts indexed by generators from either ideal. On a chart
 indexed by an element of the first ideal, its zero locus has no points away from the
@@ -61,15 +60,14 @@ private theorem disjoint_chart_closure_preimage_zeroLocus_sdiff
       Spec.map (CommRingCat.ofHom (algebraMap R (K.affineBlowup a (Localization.Away a)))) x := by
     rw [← Scheme.Hom.comp_apply, toSpecCoeff_reesAlgebra, affineBlowupι_toSpecZero]
   rw [hbase] at hxI hxK
-  -- Read membership in the affine zero loci as containment in the comapped prime ideal.
-  have hI : I ≤ Ideal.comap (algebraMap R (K.affineBlowup a (Localization.Away a)))
-      x.asIdeal := hxI
-  have hK : ¬K ≤ Ideal.comap (algebraMap R (K.affineBlowup a (Localization.Away a)))
-      x.asIdeal := hxK
-  apply hK
-  rw [← Ideal.map_le_iff_le_comap, Ideal.map_algebraMap_affineBlowup (S := Localization.Away a) haK,
+  -- Rewriting through the scheme carrier of Spec requires default transparency.
+  erw [PrimeSpectrum.mem_zeroLocus, Spec.map_apply, PrimeSpectrum.comap_asIdeal,
+    SetLike.coe_subset_coe] at hxI hxK
+  apply hxK
+  erw [← Ideal.map_le_iff_le_comap,
+    Ideal.map_algebraMap_affineBlowup (S := Localization.Away a) haK,
     Ideal.span_singleton_le_iff_mem]
-  exact hI ha
+  exact hxI ha
 
 /-- Blowing up `I + J` separates the closures of the inverse images of `V(I)` and `V(J)`
 after their intersection is removed. No finite-generation hypothesis is needed. -/
@@ -88,7 +86,9 @@ theorem disjoint_closure_preimage_zeroLocus_sdiff_blowup (I J : Ideal R) :
   refine Set.disjoint_left.mpr fun x hxI hxJ ↦ ?_
   obtain ⟨a, hxa⟩ := TopologicalSpace.Opens.mem_iSup.mp (hcover.ge (Set.mem_univ x))
   have hrange : x ∈ Set.range (affineBlowupι (Localization.Away (s a))
-      (hs ▸ (Ideal.subset_span (Set.mem_range_self a) : s a ∈ Ideal.span (Set.range s)))) := hxa
+      (hs ▸ (Ideal.subset_span (Set.mem_range_self a) : s a ∈ Ideal.span (Set.range s)))) := by
+    rw [← Scheme.Hom.coe_opensRange]
+    exact hxa
   rcases a.2 with ha | ha
   · exact Set.disjoint_left.mp
       (disjoint_chart_closure_preimage_zeroLocus_sdiff I (I ⊔ J) ha _) hrange hxI
@@ -128,8 +128,8 @@ theorem disjoint_closure_preimage_support_sdiff_blowup (I J : X.IdealSheafData) 
       ((I ⊔ J).blowupChart_blowupToBase hU)
     simp only [Scheme.Hom.comp_apply] at hbase
     simp only [Set.mem_preimage, Set.mem_sdiff, hbase]
-    exact and_congr (Set.ext_iff.mp (L.preimage_fromSpec_support hU) _)
-      (not_congr (Set.ext_iff.mp ((I ⊔ J).preimage_fromSpec_support hU) _))
+    exact and_congr (Set.ext_iff.mp (L.fromSpec_preimage_support hU) _)
+      (not_congr (Set.ext_iff.mp ((I ⊔ J).fromSpec_preimage_support hU) _))
   have hopen := ((I ⊔ J).blowupChart hU).isOpenEmbedding.isOpenMap
   have hyI := hopen.preimage_closure_subset_closure_preimage hxI
   have hyJ := hopen.preimage_closure_subset_closure_preimage hxJ
