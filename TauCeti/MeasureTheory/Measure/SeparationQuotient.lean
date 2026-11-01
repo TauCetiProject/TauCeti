@@ -6,22 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
-public import Mathlib.Topology.Separation.Basic
 
 /-!
 # Measures on the topological separation quotient
 
-Pushforward to `SeparationQuotient` preserves the information in a finite Borel measure:
-open sets are saturated under topological inseparability and determine finite Borel measures.
+Pushforward to `SeparationQuotient` preserves the information in a Borel measure: the Borel
+structure of a topological space is pulled back from that of its separation quotient.
 
 The quotient carries its Borel measurable structure. `Measure.separationQuotient_def` exposes
 its pushforward formula, and `Measure.separationQuotient_inj` simplifies equality of quotient laws.
 -/
 
 public section
-
-open Set
 
 universe u
 
@@ -44,31 +40,19 @@ theorem separationQuotient_def (μ : Measure X) :
 
 variable [BorelSpace X]
 
-/-- Pushforward to the topological separation quotient is injective on finite Borel measures on a
-topological space. Equivalently, such measures agree exactly when their quotient laws agree.
-
-Every open set in `X` is saturated under the inseparability relation, so it is the preimage of its
-open image in `SeparationQuotient X`. Equality of the pushforwards therefore gives equality on
-open sets, which determine finite Borel measures. -/
+/-- Pushforward to the topological separation quotient is injective on Borel measures:
+two Borel measures on a topological space agree exactly when their quotient laws agree. -/
 @[simp]
-theorem separationQuotient_inj (μ ν : Measure X) [IsFiniteMeasure μ] :
+theorem separationQuotient_inj {μ ν : Measure X} :
     separationQuotient μ = separationQuotient ν ↔ μ = ν := by
-  let _ : MeasurableSpace (SeparationQuotient X) := borel (SeparationQuotient X)
-  let _ : BorelSpace (SeparationQuotient X) := ⟨rfl⟩
-  have hmk : Measurable (SeparationQuotient.mk : X → SeparationQuotient X) :=
-    SeparationQuotient.continuous_mk.measurable
-  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
-  rw [separationQuotient_def, separationQuotient_def] at h
-  apply ext_of_generate_finite {s : Set X | IsOpen s}
-    BorelSpace.measurable_eq isPiSystem_isOpen
-  · intro s hs
-    have hqs : MeasurableSet (SeparationQuotient.mk '' s) :=
-      (SeparationQuotient.isOpenMap_mk s hs).measurableSet
-    have heval := congrArg (fun m : Measure (SeparationQuotient X) ↦
-      m (SeparationQuotient.mk '' s)) h
-    simpa only [Measure.map_apply hmk hqs, SeparationQuotient.preimage_image_mk_open hs] using heval
-  · have heval := congrArg (fun m : Measure (SeparationQuotient X) ↦ m univ) h
-    simpa only [Measure.map_apply_of_aemeasurable hmk.aemeasurable MeasurableSet.univ,
-      preimage_univ] using heval
+  have hcomap : ‹MeasurableSpace X› =
+      (borel (SeparationQuotient X)).comap SeparationQuotient.mk := by
+    rw [← borel_comap, ← SeparationQuotient.isInducing_mk.eq_induced]
+    exact BorelSpace.measurable_eq
+  refine ⟨fun h ↦ ext fun s hs ↦ ?_, congrArg _⟩
+  rw [hcomap] at hs
+  obtain ⟨t, ht, rfl⟩ := hs
+  have hmk := measurable_iff_comap_le.2 hcomap.ge
+  simpa [separationQuotient_def, map_apply hmk ht] using congr($h t)
 
 end MeasureTheory.Measure
