@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import TauCeti.Analysis.Distribution.TestFunction.Translation
+public import TauCeti.MeasureTheory.Function.Lp.Translation
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.MeasureTheory.Function.L2Space
@@ -25,7 +27,9 @@ passing to the `Lᵖ` class commutes with the vector space structure of the test
 `TauCeti.testFunctionLpₗ` bundles it as a linear map. For an inner product space,
 `TauCeti.gradientTestFunctionLp` and `TauCeti.gradientTestFunctionLpₗ` provide the parallel
 construction for the gradient. These facts make the image of `C_c^∞(Ω)` in an `Lᵖ`-based function
-space a subspace.
+space a subspace. On the whole space, passing a test function or its gradient to `Lᵖ`
+commutes with translation, as recorded by `TauCeti.testFunctionLp_translateTestFunction` and
+`TauCeti.gradientTestFunctionLp_translateTestFunction`.
 
 On that subspace of `L²(Ω)`, a distributional derivative bounded by the `L²` norm of test functions
 extends by Hahn–Banach to a bounded functional on `L²(Ω)`, and the negative of its Riesz
@@ -286,5 +290,64 @@ theorem gradientTestFunctionLpₗ_apply (q : ENNReal) (phi : 𝓓(Omega, ℝ)) :
   (rfl)
 
 end Gradient
+
+/-! ### Translation on the whole space -/
+
+section Translation
+
+variable [MeasurableAdd E] [mu.IsAddRightInvariant] {q : ENNReal} [Fact (1 ≤ q)]
+
+local instance : (mu.restrict (⊤ : Opens E)).IsAddRightInvariant := by
+  simpa only [Opens.coe_top, Measure.restrict_univ] using
+    (inferInstance : mu.IsAddRightInvariant)
+
+/-- Passing a translated whole-space test function to `Lᵖ` translates its class. The sign
+is reversed because `translateTestFunction h` evaluates at `x - h`, whereas `translateLp h`
+evaluates at `x + h`. -/
+@[simp]
+theorem testFunctionLp_translateTestFunction (h : E) (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    testFunctionLp (mu := mu) q
+        (translateTestFunction (Omega := ⊤) (h := -h) (by intro x _; exact Opens.mem_top _) phi) =
+      (mu.restrict (⊤ : Opens E)).translateLp q h (testFunctionLp q phi) := by
+  apply Lp.ext
+  filter_upwards [testFunctionLp_apply_ae (mu := mu) q
+      (translateTestFunction (Omega := ⊤) (h := -h) (by intro x _; exact Opens.mem_top _) phi),
+    Measure.coeFn_translateLp h (testFunctionLp (mu := mu) q phi),
+    (measurePreserving_add_right (mu.restrict (⊤ : Opens E)) h).quasiMeasurePreserving.ae_eq_comp
+      (testFunctionLp_apply_ae (mu := mu) q phi)] with x hx hy hz
+  exact hx.trans ((translateTestFunction_apply _ phi x).trans
+    ((congrArg phi (sub_neg_eq_add x h)).trans (hz.symm.trans hy.symm)))
+
+end Translation
+
+section GradientTranslation
+
+variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [CompleteSpace E] [BorelSpace E] {mu : Measure E} [IsFiniteMeasureOnCompacts mu]
+  [mu.IsAddRightInvariant] {q : ENNReal} [Fact (1 ≤ q)]
+
+local instance : (mu.restrict (⊤ : Opens E)).IsAddRightInvariant := by
+  simpa only [Opens.coe_top, Measure.restrict_univ] using
+    (inferInstance : mu.IsAddRightInvariant)
+
+/-- Taking the gradient's `Lᵖ` class commutes with whole-space translation. -/
+@[simp]
+theorem gradientTestFunctionLp_translateTestFunction (h : E) (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    gradientTestFunctionLp (mu := mu) q
+        (translateTestFunction (Omega := ⊤) (h := -h) (by intro x _; exact Opens.mem_top _) phi) =
+      (mu.restrict (⊤ : Opens E)).translateLp q h (gradientTestFunctionLp q phi) := by
+  apply Lp.ext
+  filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) q
+      (translateTestFunction (Omega := ⊤) (h := -h) (by intro x _; exact Opens.mem_top _) phi),
+    Measure.coeFn_translateLp h (gradientTestFunctionLp (mu := mu) q phi),
+    (measurePreserving_add_right (mu.restrict (⊤ : Opens E)) h).quasiMeasurePreserving.ae_eq_comp
+      (gradientTestFunctionLp_apply_ae (mu := mu) q phi)] with x hx hy hz
+  rw [hx, hy, hz]
+  apply (InnerProductSpace.toDual ℝ E).injective
+  simp only [Function.comp_apply, toDual_gradient]
+  exact (fderiv_translateTestFunction _ phi x).trans
+    (congrArg (fderiv ℝ (phi : E → ℝ)) (sub_neg_eq_add x h))
+
+end GradientTranslation
 
 end TauCeti

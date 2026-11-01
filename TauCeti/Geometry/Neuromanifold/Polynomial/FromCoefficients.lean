@@ -70,7 +70,8 @@ theorem totalDegree_inputPolynomial_polynomialFromCoefficients_le
 theorem polynomialInputDegree_polynomialFromCoefficients_le [Fintype J]
     (Q : J × {a : X →₀ ℕ // a.degree ≤ d} → MvPolynomial W K) :
     polynomialInputDegree (polynomialFromCoefficients Q) ≤ d :=
-  polynomialInputDegree_le _ (totalDegree_inputPolynomial_polynomialFromCoefficients_le Q)
+  (polynomialInputDegree_le_iff _).mpr
+    (totalDegree_inputPolynomial_polynomialFromCoefficients_le Q)
 
 /-- Specializing the collected coefficients gives the bounded-degree tuple with coordinates
 obtained by evaluating the supplied coordinate polynomials at the parameters. -/

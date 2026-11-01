@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import TauCeti.AlgebraicGeometry.Frobenius.UniversalHomeomorphism
-import TauCeti.AlgebraicGeometry.Morphisms.Etale
+import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 
 /-!
 # The relative Frobenius of an étale morphism is an isomorphism
