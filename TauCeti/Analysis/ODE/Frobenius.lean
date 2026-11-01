@@ -791,8 +791,7 @@ theorem exists_frobenius_flat_coordinate [FiniteDimensional ℝ E] [FiniteDimens
     hΦsmooth.toOpenPartialHomeomorph Φ hΦ (by simp)
   have he₀fun : (e₀ : E × F → E × F) = Φ := hΦsmooth.toOpenPartialHomeomorph_coe hΦ (by simp)
   let e : OpenPartialHomeomorph (E × F) (E × F) := e₀.restrOpen V hV
-  -- Restricting the domain does not change the map.
-  have hefun : (e : E × F → E × F) = Φ := he₀fun
+  have hefun : (e : E × F → E × F) = Φ := (e₀.coe_restrOpen hV).trans he₀fun
   have hesourceV : e.source ⊆ V := fun p hp ↦ by
     rw [e₀.restrOpen_source] at hp
     exact hp.2

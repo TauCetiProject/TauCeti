@@ -27,7 +27,8 @@ coordinates. `TauCeti.IsDistributionFrameOn.comap_mfderiv` is its global special
 `TauCeti.IsInvolutiveDistribution.diffeomorph` is its global specialization, and
 `Diffeomorph.isInvolutiveDistribution_iff` gives the equivalence for identified distributions.
 `Diffeomorph.isInvolutiveDistribution_comap_mfderiv_iff` gives the pullback characterization.
-`PartialDiffeomorph.isInvolutiveDistributionOn_comap_mfderivWithin` gives its local form.
+`PartialDiffeomorph.isInvolutiveDistributionOn_comap_mfderivWithin` shows that the pullback of a
+distribution involutive on the target is involutive on the source.
 
 The distributions remain families of tangent subspaces, and their pullback is expressed by
 `Submodule.comap` along the differential. Pulling back a `C^m` frame through a `C^n`
@@ -97,8 +98,7 @@ theorem IsDistributionFrameOn.comap_mfderivWithin {m : ℕ∞ω} {ι : Type*}
     simp at hmn
   have hΦinv (x : M) (hx : x ∈ Φ.source) :
       (mfderivWithin I J Φ Φ.source x).IsInvertible := by
-    rw [mfderivWithin_eq_mfderiv (Φ.open_source.uniqueMDiffOn x hx)
-      (Φ.mdifferentiableAt hn0 hx)]
+    rw [Φ.mfderivWithin_source hn0 hx]
     exact (_root_.PartialDiffeomorph.isLocalDiffeomorphAt I J n Φ hx).isInvertible_mfderiv hn0
   exact isDistributionFrameOn_comap_mfderivWithin_of_isInvertible hX Φ Φ.source
     Φ.contMDiffOn hΦinv Φ.open_source.uniqueMDiffOn hmn

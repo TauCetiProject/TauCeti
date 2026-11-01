@@ -170,6 +170,18 @@ theorem IsInvolutiveDistribution.exists_eventually_eq_graph_fderiv {n : ℕ∞}
   rw [hxD.2, graphDistribution_def, hx.fderiv]
   exact ⟨hx.differentiableAt, rfl⟩
 
+/-- The derivative of the inverse of an open partial homeomorphism at a point of its target is a
+left inverse of the derivative at the corresponding point of its source. -/
+private theorem fderiv_symm_comp_fderiv {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (e : OpenPartialHomeomorph G G) {p : G} (hp : p ∈ e.target)
+    (hd : DifferentiableAt ℝ e (e.symm p)) (hds : DifferentiableAt ℝ e.symm p) :
+    (fderiv ℝ e.symm p).comp (fderiv ℝ e (e.symm p)) = ContinuousLinearMap.id ℝ G := by
+  have hds' : HasFDerivAt e.symm (fderiv ℝ e.symm p) (e (e.symm p)) := by
+    rw [e.right_inv hp]
+    exact hds.hasFDerivAt
+  refine (hds'.comp _ hd.hasFDerivAt).unique ((hasFDerivAt_id _).congr_of_eventuallyEq ?_)
+  exact eventually_of_mem (e.open_source.mem_nhds (e.map_target hp)) fun r hr ↦ e.left_inv hr
+
 /-- Coordinates carrying the horizontal subspace onto a transverse involutive distribution: the
 change of coordinates `e` is the graph map of the smooth family of Frobenius solutions, restricted
 to the points that it sends where the distribution is a graph distribution. -/
@@ -197,12 +209,13 @@ private theorem IsDistributionFrameOn.exists_map_fderiv_ker_snd_eq {n : ℕ∞}
     exact Prod.ext rfl hu₀
   obtain ⟨V, hVf, hV, hp₀V⟩ := eventually_nhds_iff.1 hf
   let e := e₀.restrOpen (e₀.source ∩ e₀ ⁻¹' V) (e₀.isOpen_inter_preimage hV)
+  have hecoe : (e : E × F → E × F) = e₀ := e₀.coe_restrOpen _
   have hesource : e.source ⊆ e₀.source ∩ e₀ ⁻¹' V := fun p hp ↦ by
     rw [e₀.restrOpen_source] at hp
     exact hp.2
   have hetarget : e.target ⊆ e₀.target := fun p hp ↦ by
     have h := e₀.map_source (hesource (e.map_target hp)).1
-    rwa [show e₀ (e.symm p) = p from e.right_inv hp] at h
+    rwa [← hecoe, e.right_inv hp] at h
   refine ⟨e, ?_, he₀p₀, he₀.mono fun p hp ↦ (hesource hp).1,
     he₀symm.mono hetarget, fun p hp ↦ ?_⟩
   · rw [e₀.restrOpen_source]
@@ -216,10 +229,7 @@ private theorem IsDistributionFrameOn.exists_map_fderiv_ker_snd_eq {n : ℕ∞}
     have hinl : HasFDerivAt (fun x ↦ ((x, p.2) : E × F)) (ContinuousLinearMap.inl ℝ E F) p.1 :=
       hasFDerivAt_prodMk_left p.1 p.2
     exact ((hd.hasFDerivAt (x := p)).comp p.1 hinl).unique (he₀slice p hp'.1)
-  -- Restricting the domain does not change the map.
-  have hepe : e p = e₀ p := rfl
-  have heeq : fderiv ℝ e p = fderiv ℝ e₀ p := rfl
-  rw [heeq, hepe, (hVf _ hp'.2).2, graphDistribution_def, LinearMap.graph_eq_range_prod,
+  rw [hecoe, (hVf _ hp'.2).2, graphDistribution_def, LinearMap.graph_eq_range_prod,
     ← LinearMap.range_inl, ← LinearMap.range_comp]
   exact congrArg LinearMap.range (LinearMap.ext fun v ↦ DFunLike.congr_fun hslice v)
 
@@ -251,14 +261,7 @@ theorem IsDistributionFrameOn.exists_openPartialHomeomorph_map_fderiv_eq_ker_snd
     (he.contDiffAt (e.open_source.mem_nhds hq)).differentiableAt (by simp)
   have hds : DifferentiableAt ℝ e.symm p :=
     (he'.contDiffAt (e.open_target.mem_nhds hp)).differentiableAt (by simp)
-  -- The derivative of `e.symm` is a left inverse of the derivative of `e`.
-  have hL : (fderiv ℝ e.symm p).comp (fderiv ℝ e (e.symm p)) =
-      ContinuousLinearMap.id ℝ (E × F) := by
-    have hds' : HasFDerivAt e.symm (fderiv ℝ e.symm p) (e (e.symm p)) := by
-      rw [heq]
-      exact hds.hasFDerivAt
-    refine (hds'.comp _ hd.hasFDerivAt).unique ((hasFDerivAt_id _).congr_of_eventuallyEq ?_)
-    exact eventually_of_mem (e.open_source.mem_nhds hq) fun r hr ↦ e.left_inv hr
+  have hL := fderiv_symm_comp_fderiv e hp hd hds
   have hmp := hmap _ hq
   rw [heq] at hmp
   rw [← hmp, ← Submodule.map_comp]
