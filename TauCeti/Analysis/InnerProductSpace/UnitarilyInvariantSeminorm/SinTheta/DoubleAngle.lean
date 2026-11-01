@@ -29,7 +29,7 @@ singular values of `2 P_{Uᗮ} P_V P_U` are the sines `sin 2θᵢ` of the double
 between `U` and `V`, so this is Davis's `sin 2Θ` theorem. Only `A` is assumed to have a gap; no
 spectral hypothesis is placed on `B`, and `V` is an arbitrary `B`-invariant subspace. The bound is
 trivial when `b ≤ a`. For a one-dimensional `V` spanned by a unit eigenvector `x` of `B`, the
-double-angle operator has the single nonzero singular value `2 ‖P_U x‖ ‖P_{Uᗮ} x‖`, and the
+double-angle operator has rank at most one and operator norm `2 ‖P_U x‖ ‖P_{Uᗮ} x‖`, and the
 operator-norm case recovers, in finite dimension, the per-eigenvector bound
 `LinearMap.IsSymmetric.sin_two_theta_le`.
 
@@ -66,26 +66,6 @@ namespace TauCeti.UnitarilyInvariantSeminorm
 variable {𝕜 E : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
 
-omit [FiniteDimensional 𝕜 E] in
-/-- Under the two ordered form bounds of `A` relative to `E = U ⊕ Uᗮ`, the eigenvalues of `A` on
-`Uᗮ` lie in `[-‖A‖, a]` and those on `U` avoid `(-‖A‖ - (b - a), b)`. -/
-private theorem pointIntervalExteriorGap_orthogonal_of_re_inner_apply_self {A : E →L[𝕜] E}
-    {U : Submodule 𝕜 E} {a b : ℝ} (ha : ∀ z ∈ Uᗮ, RCLike.re ⟪A z, z⟫_𝕜 ≤ a * ‖z‖ ^ 2)
-    (hb : ∀ y ∈ U, b * ‖y‖ ^ 2 ≤ RCLike.re ⟪A y, y⟫_𝕜) :
-    End.PointIntervalExteriorGap (A : E →ₗ[𝕜] E) Uᗮ (A : E →ₗ[𝕜] E) U (-‖A‖) a (b - a) := by
-  refine ⟨End.pointSpectrumIn_iff.mpr fun x hx hx0 μ hμ ↦ ⟨?_, ?_⟩, ?_⟩
-  · -- An eigenvalue is bounded in absolute value by the operator norm.
-    have h := A.le_opNorm x
-    rw [← ContinuousLinearMap.coe_coe, hμ, norm_smul, RCLike.norm_ofReal] at h
-    linarith [neg_abs_le μ, le_of_mul_le_mul_right h (norm_pos_iff.mpr hx0)]
-  · exact End.pointSpectrumIn_iff.mp (End.pointSpectrumIn_Iic_of_re_inner_apply_self_le ha)
-      x hx hx0 μ hμ
-  · refine (End.pointSpectrumIn_Ici_of_le_re_inner_apply_self hb).mono le_rfl
-      fun ν hν ↦ ?_
-    simp only [Set.mem_compl_iff, Set.mem_Ioo, not_and, not_lt]
-    intro
-    linarith [Set.mem_Ici.mp hν]
-
 /-- **The Davis–Kahan `sin 2Θ` theorem.** Let `A` and `B` be symmetric operators on a
 finite-dimensional inner product space, let `U` be invariant under `A` and `V` invariant under
 `B`. If `re ⟪A z, z⟫ ≤ a ‖z‖²` on `Uᗮ` and `b ‖y‖² ≤ re ⟪A y, y⟫` on `U`, then the double-angle
@@ -116,7 +96,7 @@ theorem mul_map_sinTwoAngleOperator_le_two_mul_map_sub (N : UnitarilyInvariantSe
   have hX_le : (b - a) * N X ≤ N (B - A) :=
     calc (b - a) * N X ≤ N (A.sylvester A X) :=
           N.mul_map_le_map_sylvester_apply_of_pointIntervalExteriorGap_of_mem hA hA hU' hU
-            (pointIntervalExteriorGap_orthogonal_of_re_inner_apply_self ha hb)
+            (End.PointIntervalExteriorGap.of_re_inner_apply_self ha hb)
             (fun _ ↦ Uᗮ.starProjection_apply_mem _)
             fun x hx ↦ by simp [hX, U.starProjection_apply_eq_zero_iff.mpr hx]
       _ ≤ N ((V.starProjection ∘L (B - A) - (B - A) ∘L V.starProjection) ∘L
