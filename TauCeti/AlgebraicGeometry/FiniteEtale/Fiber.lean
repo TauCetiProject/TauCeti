@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Basic
+public import TauCeti.CategoryTheory.Comma.Over.Pullback
 
 /-!
 # Base change and geometric fibres of finite étale schemes
@@ -123,25 +124,9 @@ identity is the composition isomorphism `pullbackComp x (𝟙 S)`, up to the equ
 theorem pullbackComp_id_inv_app_comp_eqToHom (x : T ⟶ S) (X : FiniteEtaleScheme S) :
     (pullbackComp x (𝟙 S)).inv.app X ≫
         eqToHom (congrArg (fun x ↦ (pullback x).obj X) (Category.comp_id x)) =
-      (pullback x).map (pullbackId.hom.app X) := by
-  have eq_fst {x₁ x₂ : T ⟶ S} (h : x₁ = x₂)
-      (h' : Limits.pullback X.obj.hom x₁ = Limits.pullback X.obj.hom x₂) :
-      eqToHom h' ≫ Limits.pullback.fst X.obj.hom x₂ = Limits.pullback.fst X.obj.hom x₁ := by
-    subst h; simp
-  have eq_snd {x₁ x₂ : T ⟶ S} (h : x₁ = x₂)
-      (h' : Limits.pullback X.obj.hom x₁ = Limits.pullback X.obj.hom x₂) :
-      eqToHom h' ≫ Limits.pullback.snd X.obj.hom x₂ = Limits.pullback.snd X.obj.hom x₁ := by
-    subst h; simp
-  -- Morphisms of finite étale schemes, and `eqToHom` between them, are those of `Over T`, so the
-  -- identity is checked in `Over T`, on the two projections out of `X ×_S T`.
-  have key : (Over.pullbackComp x (𝟙 S)).inv.app X.obj ≫
-      eqToHom (congrArg (fun x ↦ (Over.pullback x).obj X.obj) (Category.comp_id x)) =
-        (Over.pullback x).map (Over.pullbackId.hom.app X.obj) := by
-    ext1
-    apply Limits.pullback.hom_ext
-    · simp [Over.pullbackComp, Over.pullbackId, eq_fst (Category.comp_id x)]
-    · simp [Over.pullbackComp, Over.pullbackId, eq_snd (Category.comp_id x)]
-  exact ObjectProperty.hom_ext _ key
+      (pullback x).map (pullbackId.hom.app X) :=
+  -- Morphisms of finite étale schemes, and `eqToHom` between them, are those of `Over T`.
+  ObjectProperty.hom_ext _ (Over.pullbackComp_id_inv_app_comp_eqToHom x X.obj)
 
 /-- The two ways of identifying base change along `x ≫ f ≫ g` with the composite of the base
 changes along `g`, `f` and `x` agree, up to the equality `x ≫ f ≫ g = (x ≫ f) ≫ g`. -/
@@ -151,44 +136,9 @@ theorem pullbackComp_comp_inv_app_comp_eqToHom (x : V ⟶ T) (f : T ⟶ S) (g : 
     (pullbackComp x (f ≫ g)).inv.app X ≫
         eqToHom (congrArg (fun x ↦ (pullback x).obj X) (Category.assoc x f g).symm) =
       (pullback x).map ((pullbackComp f g).hom.app X) ≫
-        (pullbackComp x f).inv.app ((pullback g).obj X) ≫ (pullbackComp (x ≫ f) g).inv.app X := by
-  have inv_fst {T S U : Scheme.{u}} (f : T ⟶ S) (g : S ⟶ U) (A : Over U) :
-      ((Over.pullbackComp f g).inv.app A).left ≫ Limits.pullback.fst A.hom (f ≫ g) =
-        Limits.pullback.fst _ _ ≫ Limits.pullback.fst _ _ := by
-    simp [Over.pullbackComp]
-  have inv_snd {T S U : Scheme.{u}} (f : T ⟶ S) (g : S ⟶ U) (A : Over U) :
-      ((Over.pullbackComp f g).inv.app A).left ≫ Limits.pullback.snd A.hom (f ≫ g) =
-        Limits.pullback.snd _ _ := by
-    simp [Over.pullbackComp]
-  have hom_fst (A : Over U) :
-      ((Over.pullbackComp f g).hom.app A).left ≫
-        Limits.pullback.fst (Limits.pullback.snd A.hom g) f ≫ Limits.pullback.fst A.hom g =
-          Limits.pullback.fst A.hom (f ≫ g) := by
-    simp [Over.pullbackComp]
-  have eq_fst {x₁ x₂ : V ⟶ U} (h : x₁ = x₂) :
-      (eqToHom (congrArg (fun x ↦ (Over.pullback x).obj X.obj) h)).left ≫
-        Limits.pullback.fst _ _ = Limits.pullback.fst _ _ := by
-    subst h; simp
-  have eq_snd {x₁ x₂ : V ⟶ U} (h : x₁ = x₂) :
-      (eqToHom (congrArg (fun x ↦ (Over.pullback x).obj X.obj) h)).left ≫
-        Limits.pullback.snd _ _ = Limits.pullback.snd _ _ := by
-    subst h; simp
-  -- As above, the identity is checked in `Over V`, on the two projections out of `X ×_U V`.
-  have key : (Over.pullbackComp x (f ≫ g)).inv.app X.obj ≫
-      eqToHom (congrArg (fun x ↦ (Over.pullback x).obj X.obj) (Category.assoc x f g).symm) =
-        (Over.pullback x).map ((Over.pullbackComp f g).hom.app X.obj) ≫
-          (Over.pullbackComp x f).inv.app ((Over.pullback g).obj X.obj) ≫
-            (Over.pullbackComp (x ≫ f) g).inv.app X.obj := by
-    ext1
-    rw [Over.comp_left, Over.comp_left, Over.comp_left]
-    apply Limits.pullback.hom_ext
-    · rw [Category.assoc, eq_fst (Category.assoc x f g).symm, inv_fst, Category.assoc,
-        Category.assoc, inv_fst, reassoc_of% inv_fst]
-      simp [hom_fst]
-    · rw [Category.assoc, eq_snd (Category.assoc x f g).symm, inv_snd, Category.assoc,
-        Category.assoc, inv_snd, inv_snd]
-      simp
-  exact ObjectProperty.hom_ext _ key
+        (pullbackComp x f).inv.app ((pullback g).obj X) ≫ (pullbackComp (x ≫ f) g).inv.app X :=
+  -- As above, the identity is checked in `Over V`.
+  ObjectProperty.hom_ext _ (Over.pullbackComp_comp_inv_app_comp_eqToHom x f g X.obj)
 
 variable {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 
