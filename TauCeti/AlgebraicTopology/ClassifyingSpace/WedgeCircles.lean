@@ -47,8 +47,8 @@ dimension at least `2`, so its homology vanishes in those degrees
 `Hₙ(FreeGroup S, k)` for `n ≥ 2` (`TauCeti.isZero_groupHomology_freeGroup`). In degree one, the
 Hurewicz class of a loop corresponds to the class of the element of the free group it represents,
 both in the abelianization of the free group and in its first group homology
-(`TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles`); in particular the
-loop around the `i`-th circle corresponds to the generator `i`
+(`FundamentalGroup.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles`); in
+particular the loop around the `i`-th circle corresponds to the generator `i`
 (`TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles_expLoop`). The
 statements are for `S : Type`, the universe in which the wedge of circles is a `K(F, 1)`.
 
@@ -77,7 +77,7 @@ statements are for `S : Type`, the universe in which the wedge of circles is a `
 * `TauCeti.isZero_groupHomology_freeGroup`: the group homology of a free group with trivial
   coefficients in a commutative ring vanishes in every degree at least `2`.
 * `TauCeti.classifyingSpaceFirstHomologyAddEquiv_map_wedgeCirclesHomotopyEquivClassifyingSpace`,
-  `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles`: on first
+  `FundamentalGroup.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles`: on first
   homology, the equivalence sends the class of a loop to the class of the element of the free
   group it represents.
 * `TauCeti.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles_expLoop`: the loop
@@ -278,7 +278,7 @@ a loop `a` at the wedge point is the class in `H₁(FreeGroup S, ℤ)` of the `1
 coefficient `1`, at the element of the free group that `a` represents under
 `TauCeti.WedgeSum.circleFundamentalGroupMulEquiv`. -/
 -- Not a simp lemma: singularChainComplexFunctor_obj_map rewrites the chain map first.
-theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles
+theorem _root_.FundamentalGroup.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles
     (a : FundamentalGroup (WedgeSum fun _ : S ↦ (1 : Circle)) (base _)) :
     classifyingSpaceFirstHomologyAddEquivGroupHomology (FreeGroup S)
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
@@ -307,7 +307,7 @@ theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles_expL
       groupHomology.H1π (Rep.trivial ℤ (FreeGroup S) ℤ)
         ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ (FreeGroup S) ℤ)).inv
           (Finsupp.single (FreeGroup.of i) 1)) := by
-  rw [classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles,
+  rw [FundamentalGroup.classifyingSpaceFirstHomologyAddEquivGroupHomology_map_wedgeCircles,
     circleFundamentalGroupMulEquiv_expLoop]
 
 end TauCeti
