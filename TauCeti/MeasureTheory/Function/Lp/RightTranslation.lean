@@ -55,6 +55,9 @@ No σ-finiteness of `μ` and no countability of `G` is assumed.
   pointwise formulas, almost everywhere.
 * `MeasureTheory.Lp.modularInversion_modularInversion`: the modular inversion is an involution.
 * `MeasureTheory.Lp.leftTranslation_rightTranslation`: left and right translations commute.
+* `MeasureTheory.Lp.rightTranslation_le_rightTranslation_iff`: right translation is an order
+  automorphism of real `Lᵖ`.
+* `MeasureTheory.Lp.integral_rightTranslation`: right translation on `L¹` preserves the integral.
 * `MeasureTheory.Lp.continuous_rightTranslation_apply`: right translation is strongly continuous
   for `p < ∞`.
 
@@ -265,6 +268,32 @@ theorem leftTranslation_rightTranslation (g h : G) (f : Lp E p μ) :
       (quasiMeasurePreserving_mul_right_of_regular μ g).ae
         (coeFn_leftTranslation (𝕜 := 𝕜) h f)] with x h₁ h₂ h₃ h₄
     rw [h₁, h₂, h₃, h₄, mul_assoc]
+
+/-- Right translation is monotone on real `Lᵖ`. -/
+theorem rightTranslation_mono (g : G) {f f' : Lp ℝ p μ} (h : f ≤ f') :
+    rightTranslation μ p ℝ g f ≤ rightTranslation μ p ℝ g f' := by
+  rw [← coeFn_le] at h ⊢
+  filter_upwards [coeFn_rightTranslation (𝕜 := ℝ) g f, coeFn_rightTranslation (𝕜 := ℝ) g f',
+    (quasiMeasurePreserving_mul_right_of_regular μ g).ae h] with x hx hx' hle
+  rw [hx, hx']
+  exact smul_le_smul_of_nonneg_left hle (by positivity)
+
+/-- Right translation is an order automorphism of real `Lᵖ`. -/
+@[simp]
+theorem rightTranslation_le_rightTranslation_iff {g : G} {f f' : Lp ℝ p μ} :
+    rightTranslation μ p ℝ g f ≤ rightTranslation μ p ℝ g f' ↔ f ≤ f' := by
+  refine ⟨fun h => ?_, rightTranslation_mono g⟩
+  simpa [← rightTranslation_symm] using rightTranslation_mono (μ := μ) g⁻¹ h
+
+/-- Right translation on `L¹` preserves the integral: the weight `c(g⁻¹)` of
+`(R_g f)(x) = c(g⁻¹) • f (x * g)` compensates the factor `c(g)` by which right translation scales
+the integral. -/
+@[simp]
+theorem integral_rightTranslation (g : G) (f : Lp E 1 μ) :
+    ∫ x, rightTranslation μ 1 𝕜 g f x ∂μ = ∫ x, f x ∂μ := by
+  have hc : (modularCharacter g : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 (modularCharacterFun_pos g).ne'
+  rw [integral_congr_ae (coeFn_rightTranslation g f)]
+  simp [integral_smul, integral_mul_right_eq_modularCharacter_smul_of_regular, smul_smul, hc]
 
 /-- **Right translation is strongly continuous** on `Lᵖ` for `p < ∞`: every orbit map
 `g ↦ R_g f` is continuous. -/
