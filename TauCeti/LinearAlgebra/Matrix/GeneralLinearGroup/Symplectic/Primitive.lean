@@ -100,14 +100,6 @@ theorem exists_smul_eq_self_and_smul_eq_of_dotProduct_JFin_mulVec_eq {u x y : Fi
     simpa [mulVec_add, hyx] using hwy)
   exact ⟨g₂ * g₁, by rw [mul_smul, hg₁u, hg₂u], by rw [mul_smul, hg₁x, hg₂z]⟩
 
-/-- The symplectic group moves the point of a vector `v` to the point of `g • v`. This is
-`Projectivization.smul_mk` for the action of the subgroup, which `rw` does not match through the
-coercion to the general linear group. -/
-private theorem smul_mk (g : GLSymplecticFin m K) {v : Fin (m + m) → K} (hv : v ≠ 0) :
-    g • Projectivization.mk K v hv =
-      Projectivization.mk K (g • v) ((smul_ne_zero_iff_ne g).mpr hv) :=
-  Projectivization.smul_mk g hv
-
 /-- A vector off the line of `u` is nonzero. -/
 private theorem ne_zero_of_notMem_span {u x : Fin (m + m) → K} (hx : x ∉ K ∙ u) : x ≠ 0 :=
   (ne_of_mem_of_not_mem (Submodule.zero_mem _) hx).symm
@@ -136,10 +128,12 @@ private theorem mk_mem_of_isBlock {B : Set (ℙ K (Fin (m + m) → K))}
       rw [mulVec_smul, dotProduct_smul, smul_eq_mul, div_mul_cancel₀ _ hy₀]
   have hay' : a • y ∉ K ∙ u := (Submodule.smul_mem_iff _ ha).not.mpr hy
   obtain ⟨g, hgu, hgx⟩ := exists_smul_eq_self_and_smul_eq_of_dotProduct_JFin_mulVec_eq hx hay' hay
-  have hgB : g • B = B := hB.smul_eq_of_mem huB (by simpa only [smul_mk, hgu] using huB)
+  rw [Subgroup.smul_def] at hgu hgx
+  have hgB : g • B = B := hB.smul_eq_of_mem huB (by
+    simpa only [Subgroup.smul_def, Projectivization.smul_mk, hgu] using huB)
   have hmk : Projectivization.mk K y (ne_zero_of_notMem_span hy) =
       g • Projectivization.mk K x (ne_zero_of_notMem_span hx) := by
-    rw [smul_mk, Projectivization.mk_eq_mk_iff']
+    rw [Subgroup.smul_def, Projectivization.smul_mk, Projectivization.mk_eq_mk_iff']
     exact ⟨a⁻¹, by rw [hgx, smul_smul, inv_mul_cancel₀ ha, one_smul]⟩
   rw [hmk, ← hgB]
   exact Set.smul_mem_smul_set hxB
