@@ -53,10 +53,10 @@ A point `x` is fixed by the `k`-th iterate exactly when `x - A^k x` is the `k`-t
 the `k`-th iterate has a fixed point exactly when that partial norm lies in the image of
 `1 - A^k` (`AddEquiv.exists_affineEquiv_iterate_apply_eq_self_iff`). Consequently the action of
 `ZMod m` is faithful exactly when the affine automorphism has exact order `m`
-(`AddEquiv.faithfulVAdd_affineAddAction_iff`), and it is free, that is every point has trivial
-stabilizer, exactly when for every `0 < k < m` the `k`-th partial norm does not lie in the image of
-`1 - A^k` (`AddEquiv.affineAddAction_free_iff`). For composite `m` every such `k` must be checked;
-for prime `m` the generator suffices (`AddEquiv.affineAddAction_free_iff_of_prime`). Up to
+(`AddEquiv.faithfulVAdd_affineAddAction_iff`), and it is free, that is `IsCancelVAdd`, exactly
+when for every `0 < k < m` the `k`-th partial norm does not lie in the image of `1 - A^k`
+(`AddEquiv.isCancelVAdd_affineAddAction_iff`). For composite `m` every such `k` must be checked;
+for prime `m` the generator suffices (`AddEquiv.isCancelVAdd_affineAddAction_iff_of_prime`). Up to
 conjugation by translations, the translation parts of norm zero are classified by degree-one group
 cohomology, as shown in
 `TauCeti.RepresentationTheory.Homological.GroupCohomology.CyclicAutomorphism`.
@@ -103,9 +103,10 @@ cohomology, as shown in
   exactly when that partial norm lies in the image of `1 - A^k`.
 * `AddEquiv.faithfulVAdd_affineAddAction_iff`: the action of `ZMod m` is faithful exactly when the
   affine equivalence has exact order `m`.
-* `AddEquiv.affineAddAction_free_iff`, `AddEquiv.affineAddAction_free_iff_of_prime`: the action of
-  `ZMod m` is free exactly when no partial norm of order `0 < k < m` lies in the image of
-  `1 - A^k`; for prime `m`, exactly when `t` does not lie in the image of `1 - A`.
+* `AddEquiv.isCancelVAdd_affineAddAction_iff`,
+  `AddEquiv.isCancelVAdd_affineAddAction_iff_of_prime`: the action of `ZMod m` is free exactly when
+  no partial norm of order `0 < k < m` lies in the image of `1 - A^k`; for prime `m`, exactly when
+  `t` does not lie in the image of `1 - A`.
 
 ## References
 
@@ -433,16 +434,19 @@ theorem faithfulVAdd_affineAddAction_iff (A : T ≃+ T) (t : T) (hA : (⇑A)^[m]
     by_contra hval
     exact h _ (ZMod.val_lt _) (Nat.pos_of_ne_zero hval) hpow
 
-/-- **Freeness.** The action of `ZMod m` by the iterates of `x ↦ A x + t` is free, that is every
-point has trivial stabilizer, exactly when for every `0 < k < m` the `k`-th partial norm of `t`
-does not lie in the image of `1 - A^k`. For composite `m`, checking the generator alone does not
-suffice. -/
-theorem affineAddAction_free_iff (A : T ≃+ T) (t : T) (hA : (⇑A)^[m] = id)
+/-- **Freeness.** The action of `ZMod m` by the iterates of `x ↦ A x + t` is free, that is
+`IsCancelVAdd`, or equivalently every point has trivial stabilizer, exactly when for every
+`0 < k < m` the `k`-th partial norm of `t` does not lie in the image of `1 - A^k`.
+
+For composite `m`, checking the generator alone does not suffice: `x ↦ x + 1` on `ZMod 2` has no
+fixed point, but with `m = 4` its square is the identity. For prime `m` the generator suffices
+(`AddEquiv.isCancelVAdd_affineAddAction_iff_of_prime`). -/
+theorem isCancelVAdd_affineAddAction_iff (A : T ≃+ T) (t : T) (hA : (⇑A)^[m] = id)
     (hN : partialNorm A m t = 0) :
     letI := affineAddAction (m := m) A t hA hN
-    (∀ (g : ZMod m) (x : T), g +ᵥ x = x → g = 0) ↔
-      ∀ k, 0 < k → k < m → ∀ b, b - (⇑A)^[k] b ≠ partialNorm A k t := by
+    IsCancelVAdd (ZMod m) T ↔ ∀ k, 0 < k → k < m → ∀ b, b - (⇑A)^[k] b ≠ partialNorm A k t := by
   let := affineAddAction (m := m) A t hA hN
+  rw [isCancelVAdd_iff_eq_zero_of_vadd_eq]
   refine ⟨fun h k hk hkm b hb ↦ ?_, fun h g x hx ↦ ?_⟩
   · have hk0 := h (k : ZMod m) b (by
       rw [affineAddAction_vadd, ZMod.val_natCast, Nat.mod_eq_of_lt hkm,
@@ -457,11 +461,11 @@ theorem affineAddAction_free_iff (A : T ≃+ T) (t : T) (hA : (⇑A)^[m] = id)
 /-- **Freeness in prime order.** For `m` prime, the action of `ZMod m` by the iterates of
 `x ↦ A x + t` is free exactly when the affine equivalence has no fixed point, that is when `t`
 does not lie in the image of `1 - A`: every nonzero residue generates `ZMod m`. -/
-theorem affineAddAction_free_iff_of_prime (A : T ≃+ T) (t : T) (hA : (⇑A)^[m] = id)
+theorem isCancelVAdd_affineAddAction_iff_of_prime (A : T ≃+ T) (t : T) (hA : (⇑A)^[m] = id)
     (hN : partialNorm A m t = 0) (hm : m.Prime) :
     letI := affineAddAction (m := m) A t hA hN
-    (∀ (g : ZMod m) (x : T), g +ᵥ x = x → g = 0) ↔ ∀ b, b - A b ≠ t := by
-  rw [affineAddAction_free_iff]
+    IsCancelVAdd (ZMod m) T ↔ ∀ b, b - A b ≠ t := by
+  rw [isCancelVAdd_affineAddAction_iff]
   refine ⟨fun h b hb ↦ h 1 one_pos hm.one_lt b (by simpa using hb), fun h k hk hkm b hb ↦ h b ?_⟩
   -- A point of period `k` and of period `m` has period `gcd k m = 1`, so it is fixed.
   have hkb : Function.IsPeriodicPt (affineEquiv A t) k b :=

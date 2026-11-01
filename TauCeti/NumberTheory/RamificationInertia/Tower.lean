@@ -13,9 +13,10 @@ public import Mathlib.RingTheory.RamificationInertia.Basic
 
 This file records consequences of the fundamental identity for ramification and inertia in a finite
 flat extension of domains. The number of primes above a prime and each prime's contribution are at
-most the rank of the extension. Ramification also cancels in a tower when the absolute ramification
-index at the top equals the absolute ramification index at the intermediate prime: multiplicativity
-then forces the relative ramification index to be one.
+most the rank of the extension. Ramification also cancels in a tower: by multiplicativity, the
+relative ramification index is one exactly when the absolute ramification index at the top equals
+the absolute ramification index at the intermediate prime. Where the residue field extensions are
+separable, relative ramification index one is relative unramifiedness.
 
 The cancellation result is the local step used in the finite-place half of the genus-field
 construction. At a rational prime dividing a prime discriminant, both the quadratic base and the
@@ -30,11 +31,12 @@ the compositum is unramified over the quadratic base.
   prime to the fundamental identity is at most the rank of the extension.
 * `TauCeti.RamificationInertia.ramificationIdx_le_finrank`: a ramification index is at most the
   rank of a finite flat extension.
-* `TauCeti.RamificationInertia.ramificationIdx_eq_one_of_eq_ramificationIdx`: equal absolute
-  ramification indices at two levels of a tower force relative ramification index one.
+* `TauCeti.RamificationInertia.ramificationIdx_eq_one_iff_ramificationIdx_eq`: the relative
+  ramification index in a tower is one if and only if the absolute ramification indices at the
+  two levels agree.
 * `TauCeti.RamificationInertia.isUnramifiedIn_of_forall_eq_ramificationIdx`: if that equality
-  holds at every prime above an intermediate prime, then the intermediate prime is unramified in
-  the top ring.
+  holds at every prime above an intermediate prime with separable residue field extensions, then
+  the intermediate prime is unramified in the top ring.
 * `TauCeti.RamificationInertia.isUnramifiedIn_of_forall_ramificationIdx_le`: it suffices to bound
   every absolute ramification index upstairs by the intermediate absolute ramification index.
 * `TauCeti.RamificationInertia.isUnramifiedIn_of_finrank_le_of_under_ramificationIdx_eq_one`: a
@@ -62,37 +64,32 @@ least one to the rank. -/
 theorem ncard_primesOver_le_finrank (p : Ideal R) [p.IsPrime] :
     (p.primesOver S).ncard ≤ finrank R S := by
   have : Fintype (p.primesOver S) := (Algebra.QuasiFinite.finite_primesOver p).fintype
-  rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card, ← Finset.card_univ,
-    Finset.card_eq_sum_ones, ← Ideal.sum_ramification_inertia_eq_finrank p S]
+  rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card, Fintype.card_eq_sum_ones,
+    ← Ideal.sum_ramification_inertia_eq_finrank p S]
   refine Finset.sum_le_sum fun q _ ↦ ?_
   have : q.1.IsPrime := q.2.1
-  exact Nat.one_le_iff_ne_zero.mpr
-    (Nat.mul_ne_zero (q.1.ramificationIdx_pos R).ne' (q.1.inertiaDeg_pos R).ne')
+  exact Nat.succ_le_of_lt (Nat.mul_pos (q.1.ramificationIdx_pos R) (q.1.inertiaDeg_pos R))
 
+variable (R) in
 /-- **One prime's contribution to the fundamental identity is at most the extension rank.**
-For a prime `q` of `S` above a prime `p` of `R`, the product of its ramification index and inertia
-degree is at most `Module.finrank R S`. -/
-theorem ramificationIdx_mul_inertiaDeg_le_finrank (p : Ideal R) [p.IsPrime]
-    (q : Ideal S) [q.IsPrime] [q.LiesOver p] :
+For a prime `q` of `S`, the product of its ramification index and inertia degree over `R` is at
+most `Module.finrank R S`. -/
+theorem ramificationIdx_mul_inertiaDeg_le_finrank (q : Ideal S) [q.IsPrime] :
     q.ramificationIdx R * q.inertiaDeg R ≤ finrank R S := by
-  classical
-  have : Fintype (p.primesOver S) := (Algebra.QuasiFinite.finite_primesOver p).fintype
-  let q' : p.primesOver S := ⟨q, inferInstance, inferInstance⟩
-  calc
-    q.ramificationIdx R * q.inertiaDeg R =
-        q'.1.ramificationIdx R * q'.1.inertiaDeg R := rfl
-    _ ≤ ∑ Q : p.primesOver S, Q.1.ramificationIdx R * Q.1.inertiaDeg R :=
-      Finset.single_le_sum
-        (f := fun Q : p.primesOver S => Q.1.ramificationIdx R * Q.1.inertiaDeg R)
-        (fun _ _ => Nat.zero_le _) (Finset.mem_univ q')
-    _ = finrank R S := Ideal.sum_ramification_inertia_eq_finrank p S
+  have : Fintype ((q.under R).primesOver S) :=
+    (Algebra.QuasiFinite.finite_primesOver (q.under R)).fintype
+  rw [← Ideal.sum_ramification_inertia_eq_finrank (q.under R) S]
+  exact Finset.single_le_sum (f := fun Q : (q.under R).primesOver S ↦
+    Q.1.ramificationIdx R * Q.1.inertiaDeg R) (fun _ _ ↦ Nat.zero_le _)
+    (Finset.mem_univ ⟨q, inferInstance, inferInstance⟩)
 
+variable (R) in
 /-- **A ramification index is at most the rank of a finite flat extension.** For a prime `q` of
-`S` above a prime `p` of `R`, `e(q / p) ≤ Module.finrank R S`. -/
-theorem ramificationIdx_le_finrank (p : Ideal R) [p.IsPrime] (q : Ideal S)
-    [q.IsPrime] [q.LiesOver p] : q.ramificationIdx R ≤ finrank R S :=
-  le_trans (Nat.le_mul_of_pos_right _ (Ideal.inertiaDeg_pos q R))
-    (ramificationIdx_mul_inertiaDeg_le_finrank p q)
+`S`, `e(q / R) ≤ Module.finrank R S`. -/
+theorem ramificationIdx_le_finrank (q : Ideal S) [q.IsPrime] :
+    q.ramificationIdx R ≤ finrank R S :=
+  (Nat.le_mul_of_pos_right _ (q.inertiaDeg_pos R)).trans
+    (ramificationIdx_mul_inertiaDeg_le_finrank R q)
 
 end Bounds
 
@@ -102,66 +99,62 @@ variable {R S T : Type*} [CommRing R] [CommRing S] [CommRing T] [Algebra R S] [A
   [Algebra S T] [IsScalarTower R S T] [Module.Finite R S] [Module.Flat S T]
 
 /-- **Ramification-index cancellation in a tower.** Let `r` be a prime of `T` above a prime `q`
-of `S`. If their absolute ramification indices over `R` agree, then the relative ramification
-index `e(r / q)` is one. Indeed, multiplicativity gives
-`e(r / R) = e(q / R) * e(r / S)`, and `e(q / R)` is positive in a finite extension. -/
-theorem ramificationIdx_eq_one_of_eq_ramificationIdx (q : Ideal S) (r : Ideal T)
-    [q.IsPrime] [r.LiesOver q] (h : r.ramificationIdx R = q.ramificationIdx R) :
-    r.ramificationIdx S = 1 := by
-  apply Nat.eq_of_mul_eq_mul_left (q.ramificationIdx_pos R)
-  rw [mul_one, ← Ideal.ramificationIdx_tower (R := R) q r, h]
+of `S`. The relative ramification index `e(r / q)` is one if and only if the absolute
+ramification indices of `r` and `q` over `R` agree, by multiplicativity
+`e(r / R) = e(q / R) * e(r / S)` and positivity of `e(q / R)` in a finite extension. -/
+theorem ramificationIdx_eq_one_iff_ramificationIdx_eq (q : Ideal S) (r : Ideal T)
+    [q.IsPrime] [r.LiesOver q] :
+    r.ramificationIdx S = 1 ↔ r.ramificationIdx R = q.ramificationIdx R := by
+  rw [Ideal.ramificationIdx_tower (R := R) q r, Nat.mul_eq_left (q.ramificationIdx_pos R).ne']
 
 /-- **Absolute ramification-index equality implies relative unramifiedness.** Let `q` be a prime
-of `S`. If every prime `r` of `T` above `q` has the same absolute ramification index over `R` as
-`q`, then `q` is unramified in `T`. This is the all-primes form of
-`ramificationIdx_eq_one_of_eq_ramificationIdx`. -/
-theorem isUnramifiedIn_of_forall_eq_ramificationIdx [IsDomain S] [Module.Finite ℤ S]
-    [CharZero S] [Module.Finite S T] (q : Ideal S) [q.IsPrime]
+of `S` with separable residue field extensions above it. If every prime `r` of `T` above `q` has
+the same absolute ramification index over `R` as `q`, then `q` is unramified in `T`. This is the
+all-primes form of `ramificationIdx_eq_one_iff_ramificationIdx_eq`. -/
+theorem isUnramifiedIn_of_forall_eq_ramificationIdx [Algebra.EssFiniteType S T] (q : Ideal S)
+    [q.IsPrime] [Algebra.HasSeparableResidueFieldsAt S T q]
     (h : ∀ (r : Ideal T) [r.IsPrime], r.LiesOver q →
       r.ramificationIdx R = q.ramificationIdx R) : Algebra.IsUnramifiedIn T q := by
-  rw [Algebra.isUnramifiedIn_iff_forall_ramificationIdx_eq_one]
   intro r _ hr
-  exact ramificationIdx_eq_one_of_eq_ramificationIdx q r (h r hr)
+  have he := (ramificationIdx_eq_one_iff_ramificationIdx_eq q r).mpr (h r hr)
+  obtain ⟨rfl⟩ := hr
+  exact Ideal.ramificationIdx_eq_one_iff.mp he
 
 /-- **No increase in absolute ramification implies relative unramifiedness.** Let `q` be a prime
-of `S`. If every prime `r` of `T` above `q` has absolute ramification index at most that of `q`,
-then `q` is unramified in `T`. The reverse inequality is automatic from multiplicativity in the
-tower, so the absolute indices are equal and
+of `S` with separable residue field extensions above it. If every prime `r` of `T` above `q` has
+absolute ramification index at most that of `q`, then `q` is unramified in `T`. The reverse
+inequality is automatic from multiplicativity in the tower, so the absolute indices are equal and
 `isUnramifiedIn_of_forall_eq_ramificationIdx` applies. -/
-theorem isUnramifiedIn_of_forall_ramificationIdx_le [IsDomain S] [Module.Finite ℤ S]
-    [CharZero S] [Module.Finite S T] (q : Ideal S) [q.IsPrime]
+theorem isUnramifiedIn_of_forall_ramificationIdx_le [Module.Finite S T] (q : Ideal S)
+    [q.IsPrime] [Algebra.HasSeparableResidueFieldsAt S T q]
     (h : ∀ (r : Ideal T) [r.IsPrime], r.LiesOver q →
       r.ramificationIdx R ≤ q.ramificationIdx R) : Algebra.IsUnramifiedIn T q := by
   have := Module.Finite.trans (R := R) S T
-  apply isUnramifiedIn_of_forall_eq_ramificationIdx (R := R) (S := S) (T := T) q
-  intro r _ hr
-  have : r.LiesOver q := hr
-  exact le_antisymm (h r hr) (Ideal.ramificationIdx_below_le (R := R) q r)
+  refine isUnramifiedIn_of_forall_eq_ramificationIdx (R := R) q fun r _ hr ↦ ?_
+  exact (h r hr).antisymm (Ideal.ramificationIdx_below_le (R := R) q r)
 
 /-- **A transverse unramified subextension cancels the base ramification.** Suppose `T` is also an
-extension of a domain `U` over `R`. Let `q` be a prime of `S`, assume
-`Module.finrank U T ≤ e(q / R)`, and assume that for every prime `r` above `q`, its contraction
-to `U` has absolute ramification index one. Then `q` is unramified in `T`.
+extension of a domain `U` over `R`. Let `q` be a prime of `S` with separable residue field
+extensions above it, assume `Module.finrank U T ≤ e(q / R)`, and assume that for every prime `r`
+above `q`, its contraction to `U` has absolute ramification index one. Then `q` is unramified in
+`T`.
 
 Indeed, the tower through `U` identifies `e(r / R)` with `e(r / U)`, which is at most
 `Module.finrank U T`; hence `e(r / R) ≤ e(q / R)`, and
 `isUnramifiedIn_of_forall_ramificationIdx_le` applies. For a biquadratic compositum at a shared
 ramified prime, `S / R` has ramification index two while `T / U` has degree two. -/
-theorem isUnramifiedIn_of_finrank_le_of_under_ramificationIdx_eq_one
-    [IsDomain S] [Module.Finite ℤ S]
-    [CharZero S] [Module.Finite S T] {U : Type*} [CommRing U] [IsDomain U] [Algebra R U]
-    [Algebra U T] [IsScalarTower R U T] [Module.Finite U T] [Module.Flat U T]
-    (q : Ideal S) [q.IsPrime] (hrank : finrank U T ≤ q.ramificationIdx R)
+theorem isUnramifiedIn_of_finrank_le_of_under_ramificationIdx_eq_one [Module.Finite S T]
+    {U : Type*} [CommRing U] [IsDomain U] [Algebra R U] [Algebra U T] [IsScalarTower R U T]
+    [Module.Finite U T] [Module.Flat U T] (q : Ideal S) [q.IsPrime]
+    [Algebra.HasSeparableResidueFieldsAt S T q] (hrank : finrank U T ≤ q.ramificationIdx R)
     (hunr : ∀ (r : Ideal T) [r.IsPrime], r.LiesOver q →
       (r.under U).ramificationIdx R = 1) : Algebra.IsUnramifiedIn T q := by
-  apply isUnramifiedIn_of_forall_ramificationIdx_le (R := R) q
-  intro r _ hr
-  have : r.LiesOver q := hr
+  refine isUnramifiedIn_of_forall_ramificationIdx_le (R := R) q fun r _ hr ↦ ?_
   calc
     r.ramificationIdx R = (r.under U).ramificationIdx R * r.ramificationIdx U :=
       Ideal.ramificationIdx_tower (R := R) (r.under U) r
     _ = r.ramificationIdx U := by rw [hunr r hr, one_mul]
-    _ ≤ finrank U T := ramificationIdx_le_finrank (r.under U) r
+    _ ≤ finrank U T := ramificationIdx_le_finrank U r
     _ ≤ q.ramificationIdx R := hrank
 
 end Tower
@@ -185,12 +178,9 @@ quantifies it over the places outside a finite set. -/
 theorem isUnramifiedAt_of_isUnramifiedIn {I : Ideal A} (hur : Algebra.IsUnramifiedIn S I)
     (𝔮 : Ideal R) [𝔮.IsPrime] [𝔮.LiesOver I] :
     Algebra.IsUnramifiedAt A 𝔮 := by
-  obtain ⟨P⟩ := (inferInstance : Nonempty (𝔮.primesOver S))
-  have : (P : Ideal S).IsPrime := P.2.1
-  have : (P : Ideal S).LiesOver 𝔮 := P.2.2
-  have : (P : Ideal S).LiesOver I := Ideal.LiesOver.trans (P : Ideal S) 𝔮 I
-  have : Algebra.IsUnramifiedAt A (P : Ideal S) := hur (P : Ideal S) ‹_› ‹_›
-  exact Algebra.IsUnramifiedAt.of_liesOver A 𝔮 (P : Ideal S)
+  obtain ⟨P, _, _⟩ := (inferInstance : Nonempty (𝔮.primesOver S))
+  have : Algebra.IsUnramifiedAt A P := hur P ‹_› (.trans P 𝔮 I)
+  exact .of_liesOver A 𝔮 P
 
 end Descent
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.ClosedRootSubgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.Action
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
 # Root subgroups of the Geck carrier at every root

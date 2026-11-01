@@ -283,6 +283,14 @@ abbrev singularHomologyMap {Y Z : Type u} [TopologicalSpace Y] [TopologicalSpace
   (HomologicalComplex.homologyMap ((singularChains k).map (TopCat.ofHom g)) n).hom
 
 variable {k n} in
+/-- The identity map induces the identity on singular homology. -/
+@[simp]
+theorem singularHomologyMap_id {Y : Type u} [TopologicalSpace Y] (x) :
+    singularHomologyMap k n (ContinuousMap.id Y) x = x := by
+  rw [singularHomologyMap, TopCat.ofHom_id, CategoryTheory.Functor.map_id,
+    HomologicalComplex.homologyMap_id, ModuleCat.hom_id, LinearMap.id_apply]
+
+variable {k n} in
 /-- Singular homology respects composition of continuous maps. -/
 theorem singularHomologyMap_comp {Y Z W : Type u} [TopologicalSpace Y] [TopologicalSpace Z]
     [TopologicalSpace W] (g : C(Z, W)) (g' : C(Y, Z)) (x) :
