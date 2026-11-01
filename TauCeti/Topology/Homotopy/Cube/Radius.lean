@@ -94,6 +94,15 @@ theorem cubeScale_one (z : I^N) : cubeScale 1 z = z := by
   rw [Set.coe_projIcc, max_eq_right (by simp; linarith), min_eq_right (by linarith)]
   ring
 
+/-- Rescaling by `0` collapses the cube onto its centre. -/
+@[simp]
+theorem cubeScale_zero (z : I^N) : cubeScale 0 z = cubeCenter := by
+  funext i
+  apply Subtype.ext
+  simp only [cubeScale, cubeCenter, mul_zero, add_zero]
+  rw [Set.coe_projIcc]
+  norm_num
+
 variable [Fintype N]
 
 /-- The `sup` radius of a cube point around the centre of the cube, normalised so that the

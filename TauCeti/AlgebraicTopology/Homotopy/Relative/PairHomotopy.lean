@@ -91,16 +91,6 @@ private theorem apply_eq_of_openBox (p : RelGenLoop N X) {w : I × I^N}
 
 variable [Finite N]
 
-/-- The boundary of the cube `I × (I × I^N)` has the homotopy extension property. -/
-private theorem hasHomotopyExtensionProperty_boundary_prod :
-    HasHomotopyExtensionProperty
-      {x : I × (I × I^N) | (x.1 = 0 ∨ x.1 = 1) ∨ x.2 ∈ Cube.prodBoundary N} := by
-  convert (hasHomotopyExtensionProperty_prodBoundary (N := Option N)).image
-    ((Homeomorph.refl I).prodCongr (piOptionEquivProdHomeomorph fun _ ↦ I)) using 1
-  ext ⟨t, w⟩
-  rw [Homeomorph.image_eq_preimage_symm, mem_preimage]
-  simp [← piOptionEquivProdHomeomorph_mem_prodBoundary_iff]
-
 variable {p q : RelGenLoop N X}
 
 /-- The deformation of a homotopy `H` through maps of pairs, from `p` to `q`, on the face

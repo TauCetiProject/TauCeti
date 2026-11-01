@@ -97,14 +97,11 @@ theorem openBoxContraction_zero (z : I × I^N) : openBoxContraction 0 z = z := b
 
 /-- At time `1` the contraction of the open box is constant at the centre of the top face. -/
 @[simp]
-theorem openBoxContraction_one [Finite N] (z : I × I^N) :
+theorem openBoxContraction_one (z : I × I^N) :
     openBoxContraction 1 z = (1, cubeCenter) := by
-  have := Fintype.ofFinite N
   ext1
   · exact projIcc_eq_one.2 (by simp; linarith [z.1.2.1])
-  · funext i
-    ext1
-    rw [openBoxContraction, cubeCenter_apply, cubeScale_apply_coe] <;> norm_num
+  · norm_num [openBoxContraction]
 
 /-- The contraction keeps the open box `{1} × I^N ∪ I × ∂I^N` inside itself. -/
 theorem openBoxContraction_mem_openBox {z : I × I^N} (hz : z.1 = 1 ∨ z.2 ∈ Cube.boundary N)
