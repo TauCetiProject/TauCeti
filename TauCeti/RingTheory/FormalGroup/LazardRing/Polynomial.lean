@@ -124,11 +124,8 @@ theorem hurewicz_injective : Function.Injective hurewicz := by
   -- Through `L ≃ ℤ[x₁, x₂, …]`, the Hurewicz homomorphism is evaluation at the images of the `xₙ`.
   have h (p : MvPolynomial ℕ+ ℤ) :
       hurewicz (mvPolynomialEquiv p) = MvPolynomial.aeval (hurewicz ∘ generator) p := by
-    induction p using MvPolynomial.induction_on with
-    | C a => simp
-    | add p q hp hq => rw [map_add, map_add, hp, hq, map_add]
-    | mul_X p n hp => rw [map_mul, map_mul, hp, map_mul, mvPolynomialEquiv_X, MvPolynomial.aeval_X,
-        Function.comp_apply]
+    rw [mvPolynomialEquiv_apply]
+    exact MvPolynomial.comp_aeval_apply generator hurewicz.toIntAlgHom p
   intro x y hxy
   apply mvPolynomialEquiv.symm.injective
   apply algebraicIndependent_iff_injective_aeval.1 algebraicIndependent_hurewicz_generator

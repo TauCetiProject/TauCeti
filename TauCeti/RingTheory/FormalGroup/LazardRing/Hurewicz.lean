@@ -8,11 +8,10 @@ module
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Lazard
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Indecomposable
--- Proof-only: homogeneity through rescaling over `ℚ`, and evaluation in the dual numbers.
+-- Proof-only: homogeneity of the transported additive law, and evaluation in the dual numbers.
 import Mathlib.Algebra.MvPolynomial.Monad
 import TauCeti.RingTheory.FormalGroup.Rescale
 import TauCeti.RingTheory.MvPolynomial.DualNumber
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # The Hurewicz homomorphism of the Lazard ring
@@ -29,7 +28,8 @@ number `sₙ`.
 
 Giving `bᵢ` the degree `2i`, the Hurewicz homomorphism is graded
 (`TauCeti.LazardRing.isWeightedHomogeneous_hurewicz`): conjugating `f` by the homothety
-`X ↦ 2 X` multiplies `bᵢ` by `2ⁱ` and rescales the transported law by `2`.
+`X ↦ 2 X` multiplies `bᵢ` by `2ⁱ` and rescales the transported law by `2`
+(`FormalGroup.isWeightedHomogeneous_coeff_ofStrictCoeffs_X_smul_𝔾ₐ`).
 
 The linear coefficients of the Hurewicz homomorphism compute the indecomposables of `L`. The
 coefficient of `bₙ` kills the square of the augmentation ideal `I`; evaluating at `bₙ = ε`,
@@ -61,8 +61,9 @@ degree `2n`.
   coefficient `d_{n+1}` at `bₙ` when `m = n`, and `0` otherwise.
 * `TauCeti.LazardRing.lazardGcd_dvd_coeff_single_hurewicz`: the coefficient of `bₙ` is always
   divisible by `d_{n+1}`.
-* `TauCeti.LazardRing.toCotangent_eq_smul_cotangentBasis_iff`: a homogeneous `y ∈ L₂ₙ` is
-  `c • xₙ` modulo decomposables exactly when the coefficient of `bₙ` in its image is `c d_{n+1}`.
+* `TauCeti.LazardRing.toCotangent_eq_smul_cotangentBasis_iff_coeff_hurewicz`: a homogeneous
+  `y ∈ L₂ₙ` is `c • xₙ` modulo decomposables exactly when the coefficient of `bₙ` in its image is
+  `c d_{n+1}`.
 
 The injectivity of the Hurewicz homomorphism is
 `TauCeti.LazardRing.hurewicz_injective`, in `TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial`.
@@ -126,63 +127,6 @@ theorem constantCoeff_hurewicz (x : LazardRing) :
 
 /-! ### The Hurewicz homomorphism is graded -/
 
-/-- The strict coordinate `X + ∑ bᵢ X^(i + 1)` over `R[b₁, b₂, …]`. -/
-private abbrev coord (R : Type) [CommRing R] : FormalCoordinate (MvPolynomial ℕ+ R) :=
-  FormalCoordinate.ofStrictCoeffs MvPolynomial.X
-
-/-- The additive formal group law transported along `X + ∑ bᵢ X^(i + 1)` over `R[b₁, b₂, …]`. -/
-private abbrev law (R : Type) [CommRing R] : FormalGroup (MvPolynomial ℕ+ R) :=
-  coord R • FormalGroup.𝔾ₐ
-
-/-- Over `ℚ[b₁, b₂, …]`, substituting `2ⁱ bᵢ` for `bᵢ` rescales the transported additive law
-by `2`. -/
-private theorem map_scale_smul_𝔾ₐ :
-    (law ℚ).map
-      (MvPolynomial.aeval (R := ℚ)
-        fun i : ℕ+ ↦ MvPolynomial.C ((2 : ℚ) ^ (i : ℕ)) * MvPolynomial.X i).toRingHom =
-    (law ℚ).rescale (MvPolynomial.C 2) := by
-  let u : (MvPolynomial ℕ+ ℚ)ˣ :=
-    Units.map (MvPolynomial.C : ℚ →+* MvPolynomial ℕ+ ℚ).toMonoidHom (Units.mk0 2 (by norm_num))
-  have hu : (u : MvPolynomial ℕ+ ℚ) = MvPolynomial.C 2 := by simp [u]
-  rw [← hu, FormalGroup.rescale_smul, FormalGroup.rescale_𝔾ₐ,
-    FormalCoordinate.homothety_inv_mul_ofStrictCoeffs_mul_homothety, FormalGroup.map_smul,
-    FormalGroup.map_𝔾ₐ, FormalCoordinate.map_ofStrictCoeffs]
-  congr 2
-  funext i
-  rw [Function.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, MvPolynomial.aeval_X, hu,
-    ← map_pow]
-
-/-- The coefficient of `X^(d 0) Y^(d 1)` in the transported additive law is homogeneous of degree
-`2 (d 0 + d 1 - 1)`, for `bᵢ` of degree `2i`. -/
-private theorem isWeightedHomogeneous_coeff_smul_𝔾ₐ (d : Fin 2 →₀ ℕ) :
-    MvPolynomial.IsWeightedHomogeneous (fun i : ℕ+ ↦ 2 * (i : ℕ))
-      (coeff d (law ℤ).toPowerSeries) (2 * (d.degree - 1)) := by
-  -- Over `ℚ` the coefficient is homogeneous for the weights `i`, by the rescaling above.
-  have hℚ : MvPolynomial.IsWeightedHomogeneous (fun i : ℕ+ ↦ (i : ℕ))
-      (coeff d (law ℚ).toPowerSeries) (d.degree - 1) := by
-    refine MvPolynomial.isWeightedHomogeneous_of_aeval_C_pow_mul_X_eq
-      (pow_right_injective₀ (two_pos : (0 : ℚ) < 2) (by norm_num)) ?_
-    have h := congrArg (fun F : FormalGroup (MvPolynomial ℕ+ ℚ) ↦ coeff d F.toPowerSeries)
-      map_scale_smul_𝔾ₐ
-    simp only [FormalGroup.map_toPowerSeries, coeff_map, FormalGroup.coeff_rescale] at h
-    rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at h
-    rw [h, ← map_pow]
-  -- The base change to `ℚ` is the transported additive law over `ℚ`, and it is injective on
-  -- coefficients.
-  have hmap : (law ℤ).map (MvPolynomial.map (Int.castRingHom ℚ)) = law ℚ := by
-    rw [FormalGroup.map_smul, FormalGroup.map_𝔾ₐ, FormalCoordinate.map_ofStrictCoeffs]
-    congr 2
-    funext i
-    simp
-  intro e he
-  have hne : (coeff d (law ℚ).toPowerSeries).coeff e ≠ 0 := by
-    rw [← hmap, FormalGroup.map_toPowerSeries, coeff_map, MvPolynomial.coeff_map, eq_intCast]
-    exact Int.cast_ne_zero.2 he
-  have hw := hℚ hne
-  simp only [Finsupp.weight_apply, Finsupp.sum, smul_eq_mul] at hw ⊢
-  rw [← hw, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ by ring
-
 /-- **The Hurewicz homomorphism is graded**: it maps the degree-`n` part `Lₙ` of the Lazard ring
 to polynomials that are homogeneous of degree `n`, for `bᵢ` of degree `2i`. -/
 theorem isWeightedHomogeneous_hurewicz {n : ℕ} {x : LazardRing} (hx : x ∈ grading n) :
@@ -194,8 +138,12 @@ theorem isWeightedHomogeneous_hurewicz {n : ℕ} {x : LazardRing} (hx : x ∈ gr
   refine (MvPolynomial.mem_weightedHomogeneousSubmodule _ _ _ _).1 <|
     (lift_mem_iff (𝒜 := MvPolynomial.weightedHomogeneousSubmodule ℤ fun i : ℕ+ ↦ 2 * (i : ℕ))
       (.id ℕ) ⟨_, inferInstance⟩).2 (fun d ↦ ?_) hx
-  exact (MvPolynomial.mem_weightedHomogeneousSubmodule _ _ _ _).2
-    (isWeightedHomogeneous_coeff_smul_𝔾ₐ d)
+  -- The coefficient of `X^(d 0) Y^(d 1)` has degree `d 0 + d 1 - 1` for `bᵢ` of degree `i`.
+  refine (MvPolynomial.mem_weightedHomogeneousSubmodule _ _ _ _).2 fun e he ↦ ?_
+  have hw := FormalGroup.isWeightedHomogeneous_coeff_ofStrictCoeffs_X_smul_𝔾ₐ d he
+  simp only [Finsupp.weight_apply, Finsupp.sum, smul_eq_mul] at hw ⊢
+  rw [← hw, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ by ring
 
 /-- The coefficient of `bₘ` in the image of a homogeneous element of degree `2n` vanishes for
 `m ≠ n`. -/
@@ -207,6 +155,10 @@ private theorem coeff_single_hurewicz_eq_zero_of_mem_grading {m n : ℕ+} (hmn :
   exact hmn (PNat.coe_injective (by omega))
 
 /-! ### The linear coefficients -/
+
+/-- The additive formal group law transported along `X + ∑ bᵢ X^(i + 1)` over `ℤ[b₁, b₂, …]`. -/
+private abbrev law : FormalGroup (MvPolynomial ℕ+ ℤ) :=
+  FormalCoordinate.ofStrictCoeffs (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ ℤ) • FormalGroup.𝔾ₐ
 
 /-- Evaluation at `bₙ = ε`, `bᵢ = 0` for `i ≠ n`, in the dual numbers `ℤ[ε]`. -/
 private abbrev evalEps (n : ℕ+) : MvPolynomial ℕ+ ℤ →ₐ[ℤ] DualNumber ℤ :=
@@ -244,15 +196,13 @@ private theorem snd_evalEps_hurewicz_coeff (n : ℕ+) :
       (n : ℤ) + 1 := by
   set d : Fin 2 →₀ ℕ := single 0 1 + single 1 (n : ℕ)
   -- Evaluating at `bₙ = ε` transports `X + Y` along `X + ε X^(n + 1)`.
-  have hmap : (law ℤ).map (evalEps n).toRingHom =
+  have hmap : law.map (evalEps n).toRingHom =
       FormalCoordinate.ofStrictCoeffs (Pi.single n (DualNumber.eps : DualNumber ℤ)) •
         FormalGroup.𝔾ₐ := by
-    rw [FormalGroup.map_smul, FormalGroup.map_𝔾ₐ, FormalCoordinate.map_ofStrictCoeffs]
-    congr 2
-    funext i
-    simp [Pi.single_apply]
+    rw [FormalGroup.map_ofStrictCoeffs_smul_𝔾ₐ]
+    simp [Function.comp_def]
   have hcoeff : evalEps n (hurewicz (coeff d formalGroup.toPowerSeries)) =
-      coeff d ((law ℤ).map (evalEps n).toRingHom).toPowerSeries := by
+      coeff d (law.map (evalEps n).toRingHom).toPowerSeries := by
     rw [← coeff_map, ← FormalGroup.map_toPowerSeries, map_hurewicz, FormalGroup.map_toPowerSeries,
       coeff_map, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
   have hpow : ((X 0 + X 1) ^ ((n : ℕ) + 1) : MvPowerSeries (Fin 2) (DualNumber ℤ)) =
@@ -309,13 +259,13 @@ in the augmentation ideal `I`, the coefficient of `bₙ` in the image of `y` is 
 theorem coeff_single_hurewicz (n : ℕ+) {y : LazardRing} (hy : y ∈ augmentationIdeal) :
     (hurewicz y).coeff (single n 1) =
       lazardGcd (n + 1) * cotangentBasis.repr (augmentationIdeal.toCotangent ⟨y, hy⟩) n := by
-  set c := cotangentBasis.repr (augmentationIdeal.toCotangent ⟨y, hy⟩)
+  set c := cotangentBasis.repr (augmentationIdeal.toCotangent ⟨y, hy⟩) with hc
   -- Modulo `I²`, `y` is the combination `z = ∑ cₘ xₘ` of the generators.
   set z : augmentationIdeal := c.sum fun m k ↦ k • ⟨generator m, generator_mem_augmentationIdeal m⟩
   have hz : augmentationIdeal.toCotangent z = augmentationIdeal.toCotangent ⟨y, hy⟩ := by
     conv_rhs => rw [← cotangentBasis.linearCombination_repr (augmentationIdeal.toCotangent _)]
     simp only [z, Finsupp.linearCombination_apply, map_finsuppSum, map_zsmul, cotangentBasis_apply]
-    rfl
+    rw [hc]
   have hsq : y - z ∈ augmentationIdeal ^ 2 := augmentationIdeal.toCotangent_eq.1 hz.symm
   have hcoeff := coeff_single_hurewicz_eq_zero_of_mem_sq n hsq
   rw [map_sub, MvPolynomial.coeff_sub, sub_eq_zero] at hcoeff
@@ -342,8 +292,8 @@ theorem lazardGcd_dvd_coeff_single_hurewicz (n : ℕ+) (y : LazardRing) :
 to `c • xₙ` modulo the square of the augmentation ideal exactly when the coefficient of `bₙ` in
 its image under the Hurewicz homomorphism is `c d_{n+1}`. In particular `y` is congruent to `± xₙ`
 modulo decomposables exactly when that coefficient is `± d_{n+1}`. -/
-theorem toCotangent_eq_smul_cotangentBasis_iff {n : ℕ+} {y : LazardRing} (hy : y ∈ grading (2 * n))
-    (hyI : y ∈ augmentationIdeal) (c : ℤ) :
+theorem toCotangent_eq_smul_cotangentBasis_iff_coeff_hurewicz {n : ℕ+} {y : LazardRing}
+    (hy : y ∈ grading (2 * n)) (hyI : y ∈ augmentationIdeal) (c : ℤ) :
     augmentationIdeal.toCotangent ⟨y, hyI⟩ = c • cotangentBasis n ↔
       (hurewicz y).coeff (single n 1) = c * lazardGcd (n + 1) := by
   have hd : (lazardGcd ((n : ℕ) + 1) : ℤ) ≠ 0 :=

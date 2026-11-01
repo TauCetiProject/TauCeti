@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.FormalGroup.LazardRing.Hurewicz
 import Mathlib.Algebra.MvPolynomial.Coeff
 import Mathlib.RingTheory.AlgebraicIndependent.Basic
 import TauCeti.RingTheory.MvPolynomial.MonomialOrder
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # The generators of the Lazard ring are algebraically independent
@@ -114,7 +113,7 @@ private theorem degree_ρ_generator (n : ℕ+) :
     rw [← hp (MvPolynomial.mem_support_iff.1 he), Finsupp.weight_apply, Finsupp.weight_apply,
       Finsupp.sum_mapDomain_index (h := fun i c ↦ c • weight i) (fun _ ↦ zero_smul ℕ _)
         fun _ _ _ ↦ add_smul _ _ _]
-    rfl
+    simp [weight]
   · exact MonomialOrder.lex.le_degree (MvPolynomial.mem_support_iff.2 hc)
 
 /-- The images `hurewicz xₙ ∈ ℤ[b₁, b₂, …]` of the generators of the Lazard ring are algebraically
