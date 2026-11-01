@@ -41,13 +41,15 @@ that length can be taken as close to `R - r` as desired.
 
 The derivative of any cutoff with values in `[0, 1]`, equal to one on `closedBall x₀ r` and
 vanishing off `ball x₀ R`, is supported in the shell `ball x₀ R \ ball x₀ r`
-(`TauCeti.support_fderiv_subset_ball_sdiff_ball`), so its gradient terms only see that shell.
+(`TauCeti.support_fderiv_subset_ball_sdiff_ball`), so its gradient terms only see that shell: if
+the cutoff is `K`-Lipschitz, then `‖Dψ‖ 1_s ≤ K 1_{s ∩ shell}` pointwise
+(`TauCeti.enorm_fderiv_mul_indicator_le_indicator`).
 -/
 
 public section
 
 open Function Metric Set
-open scoped ContDiff NNReal
+open scoped ContDiff NNReal ENNReal
 
 namespace TauCeti
 
@@ -166,5 +168,25 @@ theorem support_fderiv_subset_ball_sdiff_ball {F : Type*} [NormedAddCommGroup F]
   · refine IsLocalMax.fderiv_eq_zero (Filter.Eventually.of_forall fun y => ?_)
     rw [hψ1 (ball_subset_closedBall hxA), Pi.one_apply]
     exact (hψ01 (mem_range_self y)).2
+
+/-- The derivative of a `K`-Lipschitz function with values in `[0, 1]`, equal to one on
+`closedBall x₀ r` and vanishing off `ball x₀ R`, times the indicator of `s`, is at most `K` times
+the indicator of `s` in the shell `ball x₀ R \ ball x₀ r`. -/
+theorem enorm_fderiv_mul_indicator_le_indicator {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {ψ : F → ℝ} {x₀ : F} {r R : ℝ} (hψ01 : range ψ ⊆ Icc 0 1)
+    (hψ1 : EqOn ψ 1 (closedBall x₀ r)) (hψR : support ψ ⊆ ball x₀ R) {K : ℝ≥0}
+    (hψK : LipschitzWith K ψ) (s : Set F) (y : F) :
+    ‖fderiv ℝ ψ y‖ₑ * ‖s.indicator (1 : F → ℝ) y‖ₑ ≤
+      (s ∩ (ball x₀ R \ ball x₀ r)).indicator (fun _ => (K : ℝ≥0∞)) y := by
+  by_cases hys : y ∈ s
+  swap
+  · simp [hys]
+  by_cases hyA : y ∈ ball x₀ R \ ball x₀ r
+  · rw [indicator_of_mem (mem_inter hys hyA), indicator_of_mem hys, Pi.one_apply, enorm_one,
+      mul_one, ← ofReal_norm]
+    exact (ENNReal.ofReal_le_ofReal (norm_fderiv_le_of_lipschitz ℝ hψK)).trans_eq
+      ENNReal.ofReal_coe_nnreal
+  simp [notMem_support.1 fun h => hyA (support_fderiv_subset_ball_sdiff_ball hψ01 hψ1 hψR h),
+    enorm_eq_nnnorm]
 
 end TauCeti

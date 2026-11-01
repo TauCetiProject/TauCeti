@@ -11,8 +11,8 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Analysis.BoundedVariation.Multiplication
 import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Topology.Instances.ENNReal
-import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Calculus.Monotone
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 
@@ -56,9 +56,6 @@ variation passes to the limit `h → 0⁺`.
 
 * `TauCeti.perimeter_inter_ball_le_add_liminf`: the estimate at every radius, with the lower
   difference quotient of `m`.
-* `TauCeti.tendsto_measure_inter_ball_sdiff_ball_div_of_hasDerivWithinAt`: the lower difference
-  quotient of `m` is its right derivative, where that exists, for any measure finite on compact
-  sets.
 * `TauCeti.perimeter_inter_ball_le_add_of_hasDerivWithinAt`: the estimate at a radius where `m`
   has a right derivative.
 * `TauCeti.ae_perimeter_inter_ball_le`: `P(s ∩ ball x₀ r) ≤ P(s; ball x₀ r) + m'(r)` for almost
@@ -80,47 +77,6 @@ namespace TauCeti
 
 open MeasureTheory Metric Filter Function Set TopologicalSpace
 open scoped ENNReal NNReal Topology ContDiff
-
-section Slope
-
-variable {E : Type*} [PseudoMetricSpace E] [ProperSpace E] [MeasurableSpace E]
-
-/-- For a measure finite on compact sets, the measure `m(ρ) = μ(s ∩ ball x₀ ρ)` of `s` in the
-balls about `x₀` is monotone in the radius. -/
-theorem monotone_measureReal_inter_ball (μ : Measure E) [IsFiniteMeasureOnCompacts μ] (s : Set E)
-    (x₀ : E) : Monotone fun ρ => μ.real (s ∩ ball x₀ ρ) := fun _ _ h =>
-  measureReal_mono (inter_subset_inter_right _ (ball_subset_ball h))
-    (measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne)
-
-/-- The difference quotients `μ(s ∩ (ball x₀ (r + h) \ ball x₀ r)) / h` of
-`m(ρ) = μ(s ∩ ball x₀ ρ)` tend, as `h → 0⁺`, to the right derivative of `m` at `r`, when it
-exists. Only finiteness of `μ` on balls is used. -/
-theorem tendsto_measure_inter_ball_sdiff_ball_div_of_hasDerivWithinAt [OpensMeasurableSpace E]
-    {μ : Measure E}
-    [IsFiniteMeasureOnCompacts μ] {s : Set E} {x₀ : E} {r : ℝ} (hs : NullMeasurableSet s μ)
-    {D : ℝ} (hD : HasDerivWithinAt (fun ρ => μ.real (s ∩ ball x₀ ρ)) D (Ioi r) r) :
-    Tendsto (fun h => μ (s ∩ (ball x₀ (r + h) \ ball x₀ r)) / ENNReal.ofReal h) (𝓝[>] 0)
-      (𝓝 (ENNReal.ofReal D)) := by
-  -- The quotient is the slope of `m`, written in `ℝ≥0∞`.
-  have hshift : Tendsto (fun h => r + h) (𝓝[>] 0) (𝓝[>] r) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨?_, eventually_nhdsWithin_of_forall fun h (hh : 0 < h) =>
-      lt_add_of_pos_right r hh⟩
-    exact ((continuous_const.add continuous_id).tendsto' 0 r (add_zero r)).mono_left
-      nhdsWithin_le_nhds
-  have hslope := ((hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl r)).1 hD).comp hshift
-  refine ((ENNReal.continuous_ofReal.tendsto D).comp hslope).congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with h (hh : 0 < h)
-  have hsub : s ∩ ball x₀ r ⊆ s ∩ ball x₀ (r + h) :=
-    inter_subset_inter_right _ (ball_subset_ball (by linarith))
-  have hfin : μ (s ∩ ball x₀ (r + h)) ≠ (∞ : ℝ≥0∞) :=
-    measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne
-  rw [Function.comp_apply, Function.comp_apply, slope_def_field, add_sub_cancel_left,
-    ENNReal.ofReal_div_of_pos hh, ENNReal.ofReal_sub _ measureReal_nonneg, ofReal_measureReal hfin,
-    ofReal_measureReal (measure_ne_top_of_subset hsub hfin), inter_sdiff_distrib_left,
-    measure_sdiff hsub (hs.inter measurableSet_ball.nullMeasurableSet)
-      (measure_ne_top_of_subset hsub hfin)]
-
-end Slope
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {s : Set E} {x₀ : E}
@@ -145,23 +101,10 @@ private theorem totalVariationOn_top_mul_indicator_le (hψ : ContDiff ℝ ∞ ψ
     hsupp ((h1.indicator₀ hs).locallyIntegrableOn _)).trans ?_
   rw [ENNReal.ofReal_one, one_mul, ← perimeter_def]
   gcongr
-  -- The derivative of `ψ` vanishes off the shell, and is at most `K` in the shell.
-  have hpt (x : E) : ‖fderiv ℝ ψ x‖ₑ * ‖s.indicator (1 : E → ℝ) x‖ₑ ≤
-      (s ∩ (ball x₀ R \ ball x₀ r)).indicator (fun _ => (K : ℝ≥0∞)) x := by
-    by_cases hxs : x ∈ s
-    swap
-    · simp [hxs]
-    by_cases hxA : x ∈ ball x₀ R \ ball x₀ r
-    · rw [indicator_of_mem (mem_inter hxs hxA), indicator_of_mem hxs, Pi.one_apply, enorm_one,
-        mul_one, ← ofReal_norm]
-      exact (ENNReal.ofReal_le_ofReal (norm_fderiv_le_of_lipschitz ℝ hψK)).trans_eq
-        ENNReal.ofReal_coe_nnreal
-    simp [notMem_support.1 fun h => hxA (support_fderiv_subset_ball_sdiff_ball hψ01 hψ1 hψR h),
-      enorm_eq_nnnorm]
   calc ∫⁻ x in (⊤ : Opens E), ‖fderiv ℝ ψ x‖ₑ * ‖s.indicator (1 : E → ℝ) x‖ₑ ∂μ
       ≤ ∫⁻ x, (s ∩ (ball x₀ R \ ball x₀ r)).indicator (fun _ => (K : ℝ≥0∞)) x ∂μ := by
         rw [Opens.coe_top, Measure.restrict_univ]
-        exact lintegral_mono hpt
+        exact lintegral_mono (enorm_fderiv_mul_indicator_le_indicator hψ01 hψ1 hψR hψK s)
     _ = K * μ (s ∩ (ball x₀ R \ ball x₀ r)) :=
         lintegral_indicator_const₀
           (hs.inter (measurableSet_ball.diff measurableSet_ball).nullMeasurableSet) _
