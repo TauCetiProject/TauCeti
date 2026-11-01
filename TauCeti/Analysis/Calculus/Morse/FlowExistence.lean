@@ -97,14 +97,6 @@ theorem contDiff_negativeGradientFlow (f : E → ℝ) (hf : LipschitzWith K (∇
   apply contDiff_flowOfLipschitz 0 (fun x ↦ -∇ f x) hf.neg
   exact (hfs.gradient_right (m := 1) (by norm_num)).neg
 
-/-- At every fixed time, the negative-gradient flow of a globally `C²` function is `C¹` in its
-initial condition. -/
-theorem contDiff_negativeGradientFlow_apply (f : E → ℝ) (hf : LipschitzWith K (∇ f))
-    (hfs : ContDiff ℝ 2 f) (t : ℝ) :
-    ContDiff ℝ 1 (negativeGradientFlow f hf t) := by
-  apply contDiff_flowOfLipschitz_apply 0 (fun x ↦ -∇ f x) hf.neg
-  exact (hfs.gradient_right (m := 1) (by norm_num)).neg
-
 /-- **The time-`t` maps of the negative-gradient flow of a globally `C^(n+1)` function are `C^n`**
 (`1 ≤ n`) in the initial condition: the negative-gradient field is globally Lipschitz and `C^n`. -/
 theorem contDiff_negativeGradientFlow_apply_of_contDiff (f : E → ℝ) (hf : LipschitzWith K (∇ f))
@@ -113,6 +105,14 @@ theorem contDiff_negativeGradientFlow_apply_of_contDiff (f : E → ℝ) (hf : Li
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
   apply contDiff_flowOfLipschitz_apply m (fun x ↦ -∇ f x) hf.neg
   exact (hfs.gradient_right (m := m + 1) le_rfl).neg
+
+/-- At every fixed time, the negative-gradient flow of a globally `C²` function is `C¹` in its
+initial condition. -/
+theorem contDiff_negativeGradientFlow_apply (f : E → ℝ) (hf : LipschitzWith K (∇ f))
+    (hfs : ContDiff ℝ 2 f) (t : ℝ) :
+    ContDiff ℝ 1 (negativeGradientFlow f hf t) := by
+  simpa using contDiff_negativeGradientFlow_apply_of_contDiff f hf le_rfl
+    (by simpa [one_add_one_eq_two] using hfs) t
 
 /-- For a globally `C²` function, each time-`t` map of the negative-gradient flow is
 differentiable. -/

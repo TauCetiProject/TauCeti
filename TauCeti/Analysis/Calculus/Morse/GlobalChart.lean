@@ -12,14 +12,15 @@ public import TauCeti.Analysis.Calculus.Morse.Stable
 import TauCeti.Analysis.Calculus.Gradient
 
 /-!
-# Global stable and unstable sets are embedded `C¹` submanifolds
+# Global stable and unstable sets are embedded `C^n` submanifolds
 
-Let `x` be a nondegenerate critical point of a globally `C²` function `f` on a
+Let `x` be a nondegenerate critical point of a globally `C^(n+1)` function `f` (`1 ≤ n`) on a
 finite-dimensional real inner product space whose gradient is globally Lipschitz. This file
 shows that the stable and unstable sets of `x` under the negative-gradient flow are embedded
-`C¹` submanifolds of the ambient space: every point of the stable set has a `C¹` ambient chart,
-with `C¹` inverse, carrying the stable set onto the stable Hessian subspace, and likewise for
-the unstable set. Their dimensions are `finrank E - morseIndex f x` and `morseIndex f x`
+`C^n` submanifolds of the ambient space: every point of the stable set has a `C^n` ambient chart,
+with `C^n` inverse, carrying the stable set onto the stable Hessian subspace, and likewise for
+the unstable set. The case `n = 1`, a globally `C²` function, gives `C¹` charts. Their
+dimensions are `finrank E - morseIndex f x` and `morseIndex f x`
 (`IsNondegenerateCriticalPoint.finrank_stableLinearSubspace_add_morseIndex` and
 `finrank_unstableLinearSubspace`).
 
@@ -33,9 +34,9 @@ The proof has two steps.
   stable set of the Lyapunov--Perron construction.
 * **Transport along the flow.** A point `y` of the stable set reaches, at some time `T`, the
   neighbourhood of `x` where the previous step applies and where the local straightening chart
-  of `IsNondegenerateCriticalPoint.exists_localStableSet_chart` is defined. Composing that chart
-  with the time-`T` flow, a `C¹` diffeomorphism of the ambient space, straightens the stable
-  set around `y`.
+  of `IsNondegenerateCriticalPoint.exists_localStableSet_chart_of_contDiffAt` is defined.
+  Composing that chart with the time-`T` flow, a `C^n` diffeomorphism of the ambient space,
+  straightens the stable set around `y`.
 
 Without the first step the transported chart would only straighten the part of the stable set
 lying in the transported local disk; points of the stable set accumulating from far along the
@@ -46,13 +47,13 @@ flow could otherwise break embeddedness. For a gradient flow they cannot.
 * `IsNondegenerateCriticalPoint.eventually_forall_dist_le_of_mem_stableSet` and
   `IsNondegenerateCriticalPoint.eventually_forall_dist_le_of_mem_unstableSet`: near a
   nondegenerate critical point, stable and unstable trajectories stay in a given ball.
-* `IsNondegenerateCriticalPoint.exists_stableSet_chart`: every point of the global stable set
-  has a `C¹` straightening chart onto the stable Hessian subspace.
-* `IsNondegenerateCriticalPoint.exists_unstableSet_chart`: the same for the unstable set and the
-  unstable Hessian subspace.
-* `IsNondegenerateCriticalPoint.exists_stableSet_chart_of_contDiff` and
-  `IsNondegenerateCriticalPoint.exists_unstableSet_chart_of_contDiff`: for a globally `C^(n+1)`
-  function the charts are `C^n`.
+* `IsNondegenerateCriticalPoint.exists_stableSet_chart_of_contDiff`: for a globally `C^(n+1)`
+  function, every point of the global stable set has a `C^n` straightening chart onto the stable
+  Hessian subspace.
+* `IsNondegenerateCriticalPoint.exists_unstableSet_chart_of_contDiff`: the same for the unstable
+  set and the unstable Hessian subspace.
+* `IsNondegenerateCriticalPoint.exists_stableSet_chart` and
+  `IsNondegenerateCriticalPoint.exists_unstableSet_chart`: the `C²`/`C¹` case `n = 1`.
 
 ## References
 
@@ -230,9 +231,9 @@ theorem exists_stableSet_chart (h : IsNondegenerateCriticalPoint f x) (hfs : Con
     hmem⟩
 
 /-- **The unstable set of a Morse critical point is an embedded `C^n` submanifold.** The
-backward-time counterpart of `IsNondegenerateCriticalPoint.exists_stableSet_chart`: every point
-of the unstable set has a `C^n` ambient chart, with `C^n` inverse, carrying the unstable set onto
-the unstable Hessian subspace, whose dimension is the Morse index. -/
+backward-time counterpart of `IsNondegenerateCriticalPoint.exists_stableSet_chart_of_contDiff`:
+every point of the unstable set has a `C^n` ambient chart, with `C^n` inverse, carrying the
+unstable set onto the unstable Hessian subspace, whose dimension is the Morse index. -/
 theorem exists_unstableSet_chart_of_contDiff (h : IsNondegenerateCriticalPoint f x) {n : ℕ}
     (hn : 1 ≤ n) (hfs : ContDiff ℝ (n + 1) f) (hf : LipschitzWith K (∇ f)) {y : E}
     (hy : y ∈ Flow.unstableSet (negativeGradientFlow f hf) x) :

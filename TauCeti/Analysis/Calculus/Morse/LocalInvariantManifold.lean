@@ -195,13 +195,6 @@ private theorem neg_gradient_centered_time_eq :
       fun (_ : ℝ) z ↦ (-∇ f) (x + z) :=
   congrArg (fun F : E → E ↦ fun (_ : ℝ) ↦ F) neg_gradient_centered_eq
 
-omit [FiniteDimensional ℝ E] in
-/-- A nondegenerate critical point is a point of `C^(1+1)` regularity, in the form the `C^n`
-statements below take for `n = 1`. -/
-theorem contDiffAt_one_add_one (h : IsNondegenerateCriticalPoint f x) :
-    ContDiffAt ℝ ((1 : ℕ) + 1) f x := by
-  simpa [one_add_one_eq_two] using h.contDiffAt
-
 /-- **The Lyapunov--Perron data of a Morse critical point.** For every positive `C` there are
 exponential dichotomy constants `K`, `alpha` for the linearization `-hessianOperator f x` along
 the stable projection, and a radius `r` on which the nonlinear remainder of the centred
