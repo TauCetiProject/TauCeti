@@ -227,7 +227,8 @@ theorem CommGroup.exists_finiteIndex_isMulTorsionFree (G : Type*) [CommGroup G] 
     (isOfFinOrder_pow.1 hgn).resolve_right Nat.card_pos.ne'
   refine hx (Subtype.ext ?_)
   rw [← hg, powMonoidHom_apply, OneMemClass.coe_one]
-  exact congrArg Subtype.val (pow_card_eq_one' (x := (⟨g, hg'⟩ : _root_.CommGroup.torsion G)))
+  have h := pow_card_eq_one' (x := (⟨g, hg'⟩ : _root_.CommGroup.torsion G))
+  rwa [Subtype.ext_iff, SubmonoidClass.coe_pow, OneMemClass.coe_one] at h
 
 end TauCeti
 
