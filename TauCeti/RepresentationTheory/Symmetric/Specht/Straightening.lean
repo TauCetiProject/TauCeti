@@ -270,9 +270,10 @@ while the smaller of the two labels moves to the earlier row and the row moment 
 private theorem straightWeight_lt_of_swap {t : YoungTableau μ} {x y : Fin μ.card}
     (hcol : colIndex t x = colIndex t y) (hrow : rowIndex t x < rowIndex t y) (hyx : y < x) :
     straightWeight t < straightWeight (relabel (Equiv.swap x y) t) := by
-  have hne : x ≠ y := fun h => absurd (congrArg (rowIndex t) h) hrow.ne
-  have hc := sum_mul_swap (colIndex t) Fin.val (Finset.mem_univ x) (Finset.mem_univ y) hne
-  have hr := sum_mul_swap (rowIndex t) Fin.val (Finset.mem_univ x) (Finset.mem_univ y) hne
+  have hc := sum_swap_apply_add (fun k l => colIndex t k * (l : ℕ)) (Finset.mem_univ x)
+    (Finset.mem_univ y)
+  have hr := sum_swap_apply_add (fun k l => rowIndex t k * (l : ℕ)) (Finset.mem_univ x)
+    (Finset.mem_univ y)
   rw [hcol] at hc
   have hcol' : colMoment (relabel (Equiv.swap x y) t) = colMoment t := by
     rw [colMoment_relabel, colMoment]
