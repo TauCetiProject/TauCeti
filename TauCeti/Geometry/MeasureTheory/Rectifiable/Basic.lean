@@ -21,7 +21,7 @@ We prove closure under subsets, countable unions and null modifications, and tra
 by maps Lipschitz on the set. These operations allow rectifiable sets to be localized
 and their parametrizations to be composed without imposing regularity on the exceptional set.
 Patches are maps from subtypes, so even an empty target requires no arbitrary base point.
-In a finite-dimensional real inner product space, the patches extend to Lipschitz maps defined
+In a finite-dimensional real normed space, the patches extend to Lipschitz maps defined
 on all of `EuclideanSpace ℝ (Fin k)` (`TauCeti.CountablyRectifiable.exists_lipschitzWith_cover`).
 
 The image estimates use `LipschitzOnWith.euclideanHausdorffMeasure_image_le`, which
@@ -192,12 +192,12 @@ theorem countablyRectifiable_congr (hst : s =ᵐ[μHE[k]] t) :
     CountablyRectifiable k s ↔ CountablyRectifiable k t :=
   ⟨fun hs ↦ hs.congr hst, fun ht ↦ ht.congr hst.symm⟩
 
-section InnerProductSpace
+section FiniteDimensional
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V]
 
-/-- A countably `k`-rectifiable subset of a finite-dimensional inner product space is covered, up
+/-- A countably `k`-rectifiable subset of a finite-dimensional real normed space is covered, up
 to a `μHE[k]`-null set, by the ranges of countably many Lipschitz maps defined on all of
 `EuclideanSpace ℝ (Fin k)`. -/
 theorem CountablyRectifiable.exists_lipschitzWith_cover {k : ℕ} {s : Set V}
@@ -221,6 +221,6 @@ theorem CountablyRectifiable.exists_lipschitzWith_cover {k : ℕ} {s : Set V}
   rintro _ ⟨x, rfl⟩
   exact ⟨x, hFf n x⟩
 
-end InnerProductSpace
+end FiniteDimensional
 
 end TauCeti
