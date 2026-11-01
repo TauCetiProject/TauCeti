@@ -119,7 +119,6 @@ variable {p : X ⟶ Y}
 
 /-- Given a morphism `p` with the right lifting property with respect to all monomorphisms (a
 trivial fibration), every section `s` of `p` extends to a shrinking of `p`. -/
-@[expose, simps section_]
 noncomputable def ofRLP (hp : (monomorphisms SSet.{u}).rlp p) (s : Y ⟶ X) (hs : s ≫ p = 𝟙 Y) :
     Shrinking p where
   section_ := s
@@ -128,6 +127,13 @@ noncomputable def ofRLP (hp : (monomorphisms SSet.{u}).rlp p) (s : Y ⟶ X) (hs 
   homotopy_h_comp := by
     simpa [hs] using
       (exists_homotopy_of_rlp_monomorphisms hp (p ≫ s) (𝟙 X) (by simp [hs])).choose_spec
+
+/-- The section of `ofRLP hp s hs` is `s`. -/
+@[simp]
+theorem ofRLP_section_ (hp : (monomorphisms SSet.{u}).rlp p) (s : Y ⟶ X) (hs : s ≫ p = 𝟙 Y) :
+    (ofRLP hp s hs).section_ = s := by
+  -- A tactic proof keeps the body of `ofRLP` private: an exported `dsimp` lemma would need it.
+  rfl
 
 /-- A Kan fibration admitting a shrinking has the right lifting property with respect to all
 monomorphisms. -/
