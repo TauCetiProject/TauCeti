@@ -9,32 +9,28 @@ public import TauCeti.ModelTheory.ModelExistence.Enumeration
 public import TauCeti.ModelTheory.ModelExistence.TermModel
 
 /-!
-# The model existence theorem for `L_{ω₁ω}`
+# Model existence for consistency properties
 
-Let `L` have countably many function and relation symbols. The **model existence theorem**
-(`ConsistencyProperty.model_existence`) says that every countable member `s` of a consistency
-property `C` over `L` has a countable model, in any universe, in which every element is the
-interpretation of a Henkin constant. The model is the term model of the limit of a fair
-enumeration of `C` starting from `s`: that limit is Henkin complete
-(`ConsistencyProperty.henkinComplete_limit`) and contains neither `⊥` nor a sentence together with
-its negation, so the truth lemma applies to it.
+A countable member of a consistency property over a countable language has a countable,
+nonempty model in every universe, with every element named by a Henkin constant. The fair
+enumeration supplies a Henkin-complete superset without contradictions; its quotient term model
+satisfies the starting set by the two-polarity truth lemma. Moving this model to another universe
+preserves both satisfaction and the surjectivity of the interpretations of the constants.
+
+The limit need not itself belong to the consistency property. No decision clause or closure
+under unions of increasing chains is used.
 
 The model can moreover be made to omit countably many countable partial types `p i`
-(`ConsistencyProperty.model_existence_omitting`), provided `C` lets each of them be refuted at
-every tuple of Henkin constants: for every member `t` of `C` and every tuple `c`, some `ψ ∈ p i`
-has `t + ¬ψ[c]` in `C`.
-
-These theorems are the engine of the model-producing constructions of infinitary model theory:
-the omitting types theorem for countable fragments, and the interpolation and well-ordering
-theorems, each of which supplies a consistency property tailored to the model it needs.
+(`ConsistencyProperty.model_existence_omitting`), provided the consistency property lets each of
+them be refuted at every tuple of Henkin constants: for every member `t` and every tuple `c`,
+some `ψ ∈ p i` has `t + ¬ψ[c]` in the property.
 
 ## Main results
 
-* `FirstOrder.Language.ConsistencyProperty.henkinComplete_limit`: the limit of a fair enumeration
-  of a consistency property is Henkin complete.
-* `FirstOrder.Language.ConsistencyProperty.model_existence`: a countable member of a consistency
-  property over a countable language has a countable model in which every element is named by a
-  Henkin constant.
+* `FirstOrder.Language.ConsistencyProperty.henkinComplete_limit`: the limit of a surjective
+  request schedule, starting from an enumerated member, is Henkin complete.
+* `FirstOrder.Language.ConsistencyProperty.model_existence`: a countable member has a countable
+  nonempty model, in any universe, whose elements are all named by Henkin constants.
 * `FirstOrder.Language.ConsistencyProperty.model_existence_omitting`: the model can also be made
   to omit countably many countable partial types that the consistency property refutes at every
   tuple.
@@ -52,60 +48,64 @@ every element is named refutes some member of `p i` at every tuple.
 
 * D. Marker, *Lectures on Infinitary Model Theory*, Cambridge University Press, 2016, §4.1.
 * H. J. Keisler, *Model Theory for Infinitary Logic*, North-Holland, 1971.
+
+This assembles the fair enumeration and quotient truth lemma of the imported modules; their
+module docstrings record the relationship to Cameron Freer's `cameronfreer/infinitary-logic`.
 -/
 
 public section
 
 universe u v w
 
-namespace FirstOrder
+namespace FirstOrder.Language.ConsistencyProperty
 
-namespace Language
+variable {L : FirstOrder.Language.{u, v}}
 
-open BoundedFormulaInf
+/-- The limit of a fair enumeration starting from a member of a consistency property is
+Henkin complete. The enumeration of the starting set may include sentences outside it. -/
+theorem henkinComplete_limit (C : ConsistencyProperty L) {s : L[[ℕ]].Theoryω}
+    (hs : s ∈ C.sets) {e : ℕ → L[[ℕ]].Sentenceω} (he : s ⊆ Set.range e)
+    {q : ℕ → Request L} (hq : Function.Surjective q) : HenkinComplete (C.limit s e q) where
+  imp _ _ := C.limit_imp hs he hq
+  not_imp _ _ := C.limit_not_imp hs he hq
+  iInf _ := C.limit_iInf hs he hq
+  not_iInf _ := C.limit_not_iInf hs he hq
+  iSup _ := C.limit_iSup hs he hq
+  not_iSup _ := C.limit_not_iSup hs he hq
+  all _ := C.limit_all hs he hq
+  not_all _ := C.limit_not_all hs he hq
+  eq_refl := C.limit_eq_refl hs hq
+  eq_subst _ _ _ := C.limit_eq_subst hs he hq
+  eq_name := C.limit_eq_name hs hq
 
-namespace ConsistencyProperty
-
-variable {L : Language.{u, v}} {C : ConsistencyProperty L} {s : L[[ℕ]].Theoryω}
-
-/-- **The limit of a fair enumeration is Henkin complete.** If `s` is a member of `C`, the
-sequence `e` enumerates `s` and the schedule `q` is surjective, then the limit of the enumeration
-contains the target of every clause of `C` whose trigger it contains. -/
-theorem henkinComplete_limit {e : ℕ → L[[ℕ]].Sentenceω} {q : ℕ → Request L} (hs : s ∈ C.sets)
-    (he : s ⊆ Set.range e) (hq : Function.Surjective q) : HenkinComplete (C.limit s e q) where
-  imp _ _ := limit_imp hs he hq
-  not_imp _ _ := limit_not_imp hs he hq
-  iInf _ := limit_iInf hs he hq
-  not_iInf _ := limit_not_iInf hs he hq
-  iSup _ := limit_iSup hs he hq
-  not_iSup _ := limit_not_iSup hs he hq
-  all _ := limit_all hs he hq
-  not_all _ := limit_not_all hs he hq
-  eq_refl := limit_eq_refl hs hq
-  eq_subst _ _ _ := limit_eq_subst hs he hq
-  eq_name := limit_eq_name hs hq
-
-/-- **The model existence theorem.** Over a language with countably many function and relation
-symbols, every countable member `s` of a consistency property has a countable model, in any
-universe `w`, in which every element is the interpretation of a Henkin constant. -/
-theorem model_existence [Countable (Σ l, L.Functions l)] [Countable (Σ l, L.Relations l)]
-    (hs : s ∈ C.sets) (hsc : s.Countable) :
-    ∃ (M : Type w) (_ : L[[ℕ]].Structure M), Countable M ∧ s.Model M ∧
-      Function.Surjective fun c : ℕ => (L.con c : M) := by
+/-- **Model existence.** Every countable member of a consistency property over a language with
+countably many function and relation symbols has a countable nonempty model in any universe.
+Every element of the model is the interpretation of a Henkin constant. -/
+theorem model_existence [Countable (Σ n, L.Functions n)] [Countable (Σ n, L.Relations n)]
+    (C : ConsistencyProperty L) {s : L[[ℕ]].Theoryω} (hs : s ∈ C.sets) (hsc : s.Countable) :
+    ∃ (M : Type w) (_ : L[[ℕ]].Structure M), Countable M ∧ Nonempty M ∧ s.Model M ∧
+      Function.Surjective (fun c : ℕ => (L.con c : M)) := by
   obtain ⟨e, he⟩ := Set.countable_iff_exists_subset_range.1 hsc
   obtain ⟨q, hq⟩ := exists_surjective_nat (Request L)
-  have hS := henkinComplete_limit hs he hq
-  -- move the term model of the limit into the universe `w`
-  let f : hS.TermModel ≃ ULift.{w} hS.TermModel := Equiv.ulift.symm
-  let : L[[ℕ]].Structure (ULift.{w} hS.TermModel) := f.inducedStructure
-  have hcon (c : ℕ) : f (L.con c) = L.con c :=
-    HomClass.map_constants f.inducedStructureEquiv _
-  refine ⟨ULift.{w} hS.TermModel, inferInstance, inferInstance, ?_, ?_⟩
-  · rw [← StrongHomClass.theoryω_model_iff f.inducedStructureEquiv]
-    exact (hS.model (bot_notMem_limit hs) fun _ => not_notMem_limit hs).mono subset_limit
-  · simpa only [Function.comp_def, hcon] using f.surjective.comp hS.con_surjective
+  have hH := C.henkinComplete_limit hs he hq
+  have hM : s.Model hH.TermModel :=
+    (hH.model (C.bot_notMem_limit hs) (fun _ => C.not_notMem_limit hs)).mono C.subset_limit
+  -- The term model lives in `Type`; lifting it realizes the arbitrary target universe.
+  let eM : hH.TermModel ≃ ULift.{w} hH.TermModel := Equiv.ulift.symm
+  let : L[[ℕ]].Structure (ULift.{w} hH.TermModel) := eM.inducedStructure
+  let f : hH.TermModel ≃[L[[ℕ]]] ULift.{w} hH.TermModel := eM.inducedStructureEquiv
+  refine ⟨ULift.{w} hH.TermModel, inferInstance, inferInstance, inferInstance,
+    (StrongHomClass.theoryω_model_iff f s).1 hM, ?_⟩
+  intro x
+  obtain ⟨c, hc⟩ := hH.con_surjective (f.symm x)
+  refine ⟨c, ?_⟩
+  exact (f.map_constants (L.con c)).symm.trans ((congrArg f hc).trans (f.apply_symm_apply x))
 
 /-! ### Omitting types -/
+
+section omitting
+
+open BoundedFormulaInf
 
 section adjoin
 
@@ -192,15 +192,16 @@ end adjoin
 function and relation symbols, let `p i` be countably many countable partial types such that
 every member `t` of the consistency property `C` and every tuple `c` of Henkin constants admit
 some `ψ ∈ p i` for which `t` together with the refutation `¬ψ[c]` is again a member. Then every
-countable member `s` of `C` has a countable model, in any universe `w`, in which every element
-is the interpretation of a Henkin constant and which omits every `p i`. -/
-theorem model_existence_omitting [Countable (Σ l, L.Functions l)]
-    [Countable (Σ l, L.Relations l)] {ι : Type*} [Countable ι] {n : ι → ℕ}
+countable member `s` of `C` has a countable nonempty model, in any universe `w`, in which every
+element is the interpretation of a Henkin constant and which omits every `p i`. -/
+theorem model_existence_omitting [Countable (Σ n, L.Functions n)]
+    [Countable (Σ n, L.Relations n)] (C : ConsistencyProperty L) {ι : Type*} [Countable ι]
+    {n : ι → ℕ}
     (p : ∀ i, Set (L[[ℕ]].BoundedFormulaω Empty (n i))) (hp : ∀ i, (p i).Countable)
     (hC : ∀ i, ∀ t ∈ C.sets, ∀ c : Fin (n i) → ℕ, ∃ ψ ∈ p i,
       insert (substBounds (fun j => (L.con (c j)).term) ψ).not t ∈ C.sets)
-    (hs : s ∈ C.sets) (hsc : s.Countable) :
-    ∃ (M : Type w) (_ : L[[ℕ]].Structure M), Countable M ∧ s.Model M ∧
+    {s : L[[ℕ]].Theoryω} (hs : s ∈ C.sets) (hsc : s.Countable) :
+    ∃ (M : Type w) (_ : L[[ℕ]].Structure M), Countable M ∧ Nonempty M ∧ s.Model M ∧
       (Function.Surjective fun c : ℕ => (L.con c : M)) ∧ ∀ i, OmitsType M (p i) := by
   -- enumerate each type, which is nonempty since `s` refutes it at some tuple
   have hne (i : ι) : (p i).Nonempty :=
@@ -218,9 +219,9 @@ theorem model_existence_omitting [Countable (Σ l, L.Functions l)]
     rw [hf i] at hψ
     obtain ⟨k, rfl⟩ := hψ
     exact ⟨k, h⟩
-  obtain ⟨M, _, hMc, hM, hsurj⟩ := (C.adjoin (Set.range δ) hD).model_existence.{u, v, w}
+  obtain ⟨M, _, hMc, hMne, hM, hsurj⟩ := (C.adjoin (Set.range δ) hD).model_existence.{u, v, w}
     (s := s ∪ Set.range δ) ⟨s, hs, rfl⟩ (hsc.union (Set.countable_range δ))
-  refine ⟨M, inferInstance, hMc, hM.mono Set.subset_union_left, hsurj,
+  refine ⟨M, inferInstance, hMc, hMne, hM.mono Set.subset_union_left, hsurj,
     fun i => omitsType_iff.2 fun a => ?_⟩
   -- name the tuple by Henkin constants and read off the refuting disjunction
   choose c hc using fun j => hsurj (a j)
@@ -230,8 +231,6 @@ theorem model_existence_omitting [Countable (Σ l, L.Functions l)]
   obtain ⟨k, hk⟩ := h
   exact ⟨f i k, hf i ▸ ⟨k, rfl⟩, hk⟩
 
-end ConsistencyProperty
+end omitting
 
-end Language
-
-end FirstOrder
+end FirstOrder.Language.ConsistencyProperty
