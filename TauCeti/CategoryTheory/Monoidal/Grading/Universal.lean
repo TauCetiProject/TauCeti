@@ -23,8 +23,9 @@ these tensor constituents. If the category is rigid and finite semisimple with s
 every group element is the degree of a simple object. In particular the group is finite if
 there are only finitely many simple classes.
 
-This file constructs the group and its universal degree assignment. It does not identify
-the objects of neutral degree with the adjoint subcategory.
+This file constructs the group and its universal degree assignment. The simple objects of
+neutral degree are identified with the adjoint subcategory in
+`TauCeti/CategoryTheory/Monoidal/Grading/Adjoint.lean`.
 
 ## References
 

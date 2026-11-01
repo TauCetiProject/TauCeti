@@ -26,8 +26,11 @@ finite-dimensionality of morphism spaces are separate hypotheses when they are n
 * `TauCeti.IsFiniteSemisimpleCategory`: every object is a finite biproduct of simple objects.
 * `TauCeti.IsFiniteSemisimpleCategory.of_equivalence`: transport finite semisimplicity across an
   equivalence.
-* `TauCeti.isSplitMono_of_nonzero_from_simple`: a nonzero morphism out of a simple object is a
-  split monomorphism.
+* `TauCeti.isSplitMono_of_nonzero_from_simple` and `TauCeti.isSplitEpi_of_nonzero_to_simple`: a
+  nonzero morphism out of (resp. into) a simple object is a split monomorphism (resp. split
+  epimorphism).
+* `TauCeti.exists_simple_hom_ne_zero`: a nonzero object receives a nonzero morphism from a simple
+  object.
 * `TauCeti.natTrans_ext_of_simple`: a natural transformation out of an additive functor is
   determined by its components at the simple objects.
 -/
@@ -96,6 +99,34 @@ theorem isSplitMono_of_nonzero_from_simple {C : Type u} [Category.{v} C] [Abelia
   have := isIso_of_hom_simple hi
   exact IsSplitMono.mk' ⟨e.hom ≫ biproduct.π g i ≫ inv (f ≫ e.hom ≫ biproduct.π g i), by
     simpa only [Category.assoc] using IsIso.hom_inv_id (f ≫ e.hom ≫ biproduct.π g i)⟩
+
+/-- In a finite semisimple category, a nonzero morphism into a simple object is a split
+epimorphism. -/
+theorem isSplitEpi_of_nonzero_to_simple {C : Type u} [Category.{v} C] [Abelian C]
+    [IsFiniteSemisimpleCategory C] {S Y : C} [Simple S] {g : Y ⟶ S} (hg : g ≠ 0) :
+    IsSplitEpi g := by
+  obtain ⟨ι, hι, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
+  -- Some summand in a decomposition of `Y` into simple objects maps nontrivially to `S`, hence
+  -- isomorphically by Schur's lemma.
+  obtain ⟨i, hi⟩ : ∃ i, biproduct.ι a i ≫ e.inv ≫ g ≠ 0 := by
+    by_contra! h
+    exact hg <| (cancel_epi e.inv).1 <| biproduct.hom_ext' _ _ fun i ↦ by simpa using h i
+  have := isIso_of_hom_simple hi
+  exact IsSplitEpi.mk' ⟨inv (biproduct.ι a i ≫ e.inv ≫ g) ≫ biproduct.ι a i ≫ e.inv,
+    by simp only [Category.assoc, IsIso.inv_hom_id]⟩
+
+/-- In a finite semisimple category, a nonzero object receives a nonzero morphism from a simple
+object: the inclusion of a summand of a decomposition into simple objects. -/
+theorem exists_simple_hom_ne_zero {C : Type u} [Category.{v} C] [Abelian C]
+    [IsFiniteSemisimpleCategory C] {Y : C} (hY : ¬IsZero Y) :
+    ∃ (S : C) (_ : Simple S) (f : S ⟶ Y), f ≠ 0 := by
+  obtain ⟨ι, hι, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
+  obtain ⟨i⟩ : Nonempty ι := by
+    by_contra h
+    have : IsEmpty ι := not_nonempty_iff.mp h
+    exact hY (((IsZero.iff_id_eq_zero _).2 (by ext i; exact isEmptyElim i)).of_iso e)
+  refine ⟨a i, ha i, biproduct.ι a i ≫ e.inv, fun h ↦ id_nonzero (a i) ?_⟩
+  simpa using h =≫ (e.hom ≫ biproduct.π a i)
 
 /-- In a finite semisimple category, a natural transformation out of an additive functor is
 determined by its components at the simple objects. -/
