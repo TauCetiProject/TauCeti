@@ -435,6 +435,7 @@ theorem comap_single_of_injective (hinj : Injective φ) (h : H) (r : R) :
   · rw [coeff_single_of_ne (hinj.ne hg) r, coeff_single_of_ne hg r]
 
 /-- Restricting a monomial whose exponent is not in the range of `φ` gives zero. -/
+@[simp]
 theorem comap_single_of_notMem_range {g : H'} (hg : g ∉ Set.range φ) (r : R) :
     comap φ hφ hker (single g r) = 0 := by
   ext h

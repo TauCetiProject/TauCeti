@@ -41,7 +41,8 @@ positive exponent equal to one; the source only needs a multiplication and ident
 
 The order of the image of `g` in a quotient group `G ⧸ K` divides `n` exactly when `g ^ n` lies
 in `K`; for a finite quotient, this is how the iterates of `g` that land in `K` are counted.
-In particular `g ^ d ∈ K` for `d` that order, the least positive power of `g` lying in `K`.
+In particular `g ^ d ∈ K` for `d` that order. When the image of `g` has finite order, `g ^ d` is
+the least positive power of `g` lying in `K`; otherwise `d = 0` and `g ^ d = 1`.
 
 ## Main results
 
@@ -52,8 +53,9 @@ In particular `g ^ d ∈ K` for `d` that order, the least positive power of `g` 
   a power as non-divisibility of its exponent by a prime power at each prime of `f`.
 * `QuotientGroup.orderOf_mk_dvd_iff_pow_mem`, and its additive counterpart: the order of the
   image of `g` in a quotient `G ⧸ K` divides `n` exactly when `g ^ n ∈ K`.
-* `Subgroup.liftClass`, `AddSubgroup.liftClass`: the least positive power `g ^ d` of `g` lying in
-  a normal subgroup `K`, where `d` is the order of `g` in `G ⧸ K`.
+* `Subgroup.liftClass`, `AddSubgroup.liftClass`: the power `g ^ d` of `g` lying in a normal
+  subgroup `K`, where `d` is the order of `g` in `G ⧸ K`; it is the least positive such power when
+  `d` is positive, and `1` when the image of `g` has infinite order.
 * `TauCeti.natCast_natCard_sub_one_eq_neg_one`: in a finite additive group with one of
   cardinality `q`, the cast of `q - 1` is `-1`, a companion of Mathlib's `Nat.cast_card_eq_zero`.
 * `TauCeti.pow_pow_totient_eq_self`: `x ^ q ^ φ(n) = x` whenever `x ^ n = 1` and `q` is prime to
@@ -119,13 +121,15 @@ namespace Subgroup
 
 variable {G : Type*} [Group G] (K : Subgroup G) [K.Normal]
 
-/-- The least positive power `g ^ d` of `g` lying in `K`, where `d` is the order of `g` in
-`G ⧸ K`. For an orbit of class `g`, this is the class of each of its primitive lifts to the
-covering with deck group `G ⧸ K`. -/
+/-- The power `g ^ d` of `g` lying in `K`, where `d` is the order of `g` in `G ⧸ K`. When the
+image of `g` in `G ⧸ K` has finite order, this is the least positive power of `g` lying in `K`,
+and for an orbit of class `g` it is the class of each of its primitive lifts to the covering with
+deck group `G ⧸ K`. When the image has infinite order, `d = 0` and this is `1`. -/
 @[to_additive
-/-- The least positive multiple `d • g` of `g` lying in `K`, where `d` is the order of `g` in
-`G ⧸ K`. For an orbit of class `g`, this is the class of each of its primitive lifts to the
-covering with deck group `G ⧸ K`. -/]
+/-- The multiple `d • g` of `g` lying in `K`, where `d` is the additive order of `g` in `G ⧸ K`.
+When the image of `g` in `G ⧸ K` has finite order, this is the least positive multiple of `g`
+lying in `K`, and for an orbit of class `g` it is the class of each of its primitive lifts to the
+covering with deck group `G ⧸ K`. When the image has infinite order, `d = 0` and this is `0`. -/]
 noncomputable def liftClass (g : G) : K :=
   ⟨g ^ orderOf (g : G ⧸ K), (QuotientGroup.orderOf_mk_dvd_iff_pow_mem K _ _).1 dvd_rfl⟩
 
