@@ -277,6 +277,16 @@ theorem circleQuantumGrading_piece_eq_bot {p : ℤ}
   by_contra hl
   exact h l (mem_circleQuantumGrading_piece_iff.1 hx l (by simpa using hl))
 
+/-- Over a nontrivial ring, a quantum piece vanishes exactly when no circle labelling has that
+degree. -/
+theorem circleQuantumGrading_piece_eq_bot_iff [Nontrivial R] (p : ℤ) :
+    (circleQuantumGrading R ι).piece p = ⊥ ↔
+      ∀ l : ι → Bool, labelingQuantumDegree ι l ≠ p := by
+  refine ⟨fun h l hl ↦ ?_, circleQuantumGrading_piece_eq_bot⟩
+  have hm := circleBasis_mem_circleQuantumGrading_piece (R := R) l
+  rw [hl, h, Submodule.mem_bot] at hm
+  exact (circleBasis R ι).ne_zero l hm
+
 /-- **Finite quantum support**: the circle tensor of `k` circles vanishes in the quantum degrees `p`
 with `k < |p|`. -/
 theorem circleQuantumGrading_piece_eq_bot_of_card_lt_abs {p : ℤ} (hp : Fintype.card ι < |p|) :
