@@ -18,8 +18,8 @@ Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form ove
 characteristic zero, let `H` be a split Cartan subalgebra, and let `M` be a
 finite-dimensional `L`-module. This file proves that **every `x : H` acts on `M` by a semisimple
 endomorphism**, so that Mathlib's *generalized* weight spaces `LieModule.genWeightSpace M χ` are
-the *honest* simultaneous eigenspaces `LieModule.weightSpace M χ`. If `M` is triangularizable
-over `H`, these spaces form its internal direct sum.
+the *honest* simultaneous eigenspaces `LieModule.weightSpace M χ`. The split Cartan action
+is triangularizable on `M`, and these spaces form its internal direct sum.
 
 The route is the rank-one reduction, not the abstract Jordan decomposition. A nonzero root `α`
 carries an `sl₂` triple whose Cartan element is the coroot `α^∨`, and the `sl₂` engine already
@@ -35,10 +35,10 @@ In particular the proof uses only complete reducibility **for `sl₂`**, which i
 That is what keeps the highest-weight theory free of circularity: the honest weight-space
 decomposition is available before Weyl's theorem, whose usual proof consumes it.
 
-The spanning, internal-direct-sum and trace formulas assume that `M` is triangularizable over
-`H`, so that its generalized weight spaces exhaust it. Over an algebraically closed field this
-is automatic by Mathlib's `LieModule.instIsTriangularizableOfIsAlgClosed`. The equality of
-generalized and honest weight spaces does not need that additional hypothesis.
+Triangularizability of `M` follows from the split Cartan hypothesis: the coroots act
+diagonalizably and commute, so their simultaneous eigenspaces span `M`. Since the coroots span
+`H`, these are simultaneous eigenspaces for all of `H`. Thus the spanning, internal-direct-sum
+and trace formulas need no additional hypothesis on `M`.
 
 ## Main results
 
@@ -50,6 +50,8 @@ generalized and honest weight spaces does not need that additional hypothesis.
   weight space is zero.
 * `TauCeti.isSemisimple_toEnd_coroot`: a coroot acts semisimply on a finite-dimensional module.
 * `TauCeti.isSemisimple_toEnd_cartan`: **every element of the Cartan subalgebra acts semisimply.**
+* `TauCeti.instIsTriangularizableCartan`: the split Cartan action is triangularizable on every
+  finite-dimensional module.
 * `TauCeti.genWeightSpace_eq_weightSpace`: **the generalized weight spaces are honest weight
   spaces**, with `TauCeti.mem_genWeightSpace_iff_forall_lie_eq_smul` the pointwise form: membership
   is the eigenvector equation `⁅x, m⁆ = χ x • m` for every `x : H`.
@@ -203,6 +205,53 @@ theorem isSemisimple_toEnd_cartan (x : H) : (toEnd K H M x).IsSemisimple := by
     exact hy.of_mem_adjoin_singleton
       (Subalgebra.smul_mem _ (Algebra.self_mem_adjoin_singleton _ _) c)
 
+/-- A split Cartan subalgebra acts triangularizably on every finite-dimensional module. -/
+instance instIsTriangularizableCartan : IsTriangularizable K H M where
+  maxGenEigenspace_eq_top x := by
+    let f : H.root → End K M := fun α ↦ toEnd K H M (IsKilling.coroot α)
+    have hdiag (α : H.root) : ⨆ μ : K, (f α).eigenspace μ = ⊤ := by
+      have hα : (α : Weight K H L).IsNonZero := by
+        simpa only [LieSubalgebra.root, Finset.mem_filter, Finset.mem_univ, true_and] using α.2
+      obtain ⟨h, e, g, ht, he, hg⟩ := IsKilling.exists_isSl2Triple_of_weight_isNonZero hα
+      have hsup := iSup_eigenspace_toEnd_eq_top (K := K) (M := M) ht
+      rw [ht.h_eq_coroot hα he hg] at hsup
+      exact hsup
+    have hss (α : H.root) := (isSemisimple_toEnd_coroot (M := M) α.1).isFinitelySemisimple
+    have hcomm : Pairwise fun α β ↦ Commute (f α) (f β) := fun α β _ ↦
+      LieModule.commute_toEnd_of_mem_center_left M
+        (by rw [(LieAlgebra.isLieAbelian_iff_center_eq_top K H).1 inferInstance]; trivial) _
+    -- First decompose into simultaneous eigenspaces of the coroots.
+    have hsim :=
+      End.iSup_iInf_maxGenEigenspace_eq_top_of_iSup_maxGenEigenspace_eq_top_of_commute
+        f hcomm (fun α ↦ (hss α).iSup_maxGenEigenspace_eq_top_iff.mpr (hdiag α))
+    have hgen (α : H.root) (μ : K) : (f α).maxGenEigenspace μ = (f α).eigenspace μ :=
+      (hss α).maxGenEigenspace_eq_eigenspace μ
+    simp_rw [hgen] at hsim
+    rw [← top_le_iff, ← hsim]
+    refine iSup_le fun χ ↦ ?_
+    -- Every Cartan element acts by a scalar on each simultaneous coroot eigenspace.
+    have hx : x ∈ Submodule.span K (Set.range (IsKilling.rootSystem H).coroot) := by
+      rw [RootPairing.IsRootSystem.span_coroot_eq_top]
+      trivial
+    have hscalar : ∃ μ : K, ∀ m ∈ ⨅ α, (f α).eigenspace (χ α),
+        toEnd K H M x m = μ • m := by
+      induction hx using Submodule.span_induction with
+      | mem y hy =>
+        obtain ⟨α, rfl⟩ := hy
+        exact ⟨χ α, fun m hm ↦
+          End.mem_eigenspace_iff.mp (iInf_le (fun β ↦ (f β).eigenspace (χ β)) α hm)⟩
+      | zero => exact ⟨0, by simp⟩
+      | add y z _ _ hy hz =>
+        obtain ⟨μ, hμ⟩ := hy
+        obtain ⟨ν, hν⟩ := hz
+        exact ⟨μ + ν, fun m hm ↦ by simp [hμ m hm, hν m hm, add_smul]⟩
+      | smul c y _ hy =>
+        obtain ⟨μ, hμ⟩ := hy
+        exact ⟨c * μ, fun m hm ↦ by simp [hμ m hm, mul_smul]⟩
+    obtain ⟨μ, hμ⟩ := hscalar
+    exact le_iSup_of_le μ fun m hm ↦
+      End.eigenspace_le_maxGenEigenspace (End.mem_eigenspace_iff.mpr (hμ m hm))
+
 /-! ### Honest weight spaces -/
 
 /-- The generalized eigenspace of `x : H` at a scalar is an honest eigenspace. -/
@@ -236,19 +285,17 @@ theorem mem_genWeightSpace_iff_forall_lie_eq_smul {χ : H → K} {m : M} :
 
 variable (K H M) in
 /-- **The honest weight spaces span.** A finite-dimensional module over a Killing-semisimple Lie
-algebra, triangularizable over a split Cartan subalgebra, is spanned by its simultaneous
-eigenspaces. -/
-theorem iSup_weightSpace_eq_top [IsTriangularizable K H M] :
+algebra with a split Cartan subalgebra is spanned by its simultaneous eigenspaces. -/
+theorem iSup_weightSpace_eq_top :
     ⨆ χ : Weight K H M, weightSpace M (χ : H → K) = ⊤ := by
   simpa only [genWeightSpace_eq_weightSpace] using iSup_genWeightSpace_eq_top' K H M
 
 variable (K H M) in
 open scoped Classical in
 /-- **The honest weight-space decomposition.** A finite-dimensional module over a
-Killing-semisimple Lie algebra, triangularizable over a split Cartan subalgebra, is the internal
-direct sum of its simultaneous eigenspaces, so `χ ↦ finrank (weightSpace M χ)` counts honest
-multiplicities. -/
-theorem isInternal_weightSpace [IsTriangularizable K H M] :
+Killing-semisimple Lie algebra with a split Cartan subalgebra is the internal direct sum of its
+simultaneous eigenspaces, so `χ ↦ finrank (weightSpace M χ)` counts honest multiplicities. -/
+theorem isInternal_weightSpace :
     DirectSum.IsInternal fun χ : Weight K H M ↦ (weightSpace M (χ : H → K)).toSubmodule := by
   simpa only [genWeightSpace_eq_weightSpace] using isInternal_genWeightSpace K H M
 
@@ -256,7 +303,7 @@ theorem isInternal_weightSpace [IsTriangularizable K H M] :
 
 /-- **The trace of a power of a Cartan element**: `tr (ρ_M(h) ^ m) = ∑_μ dim M_μ · μ(h) ^ m`, the
 sum over the weights `μ` of `M`. -/
-theorem trace_toEnd_pow_eq_sum_finrank_nsmul [IsTriangularizable K H M] (h : H) (m : ℕ) :
+theorem trace_toEnd_pow_eq_sum_finrank_nsmul (h : H) (m : ℕ) :
     LinearMap.trace K M (toEnd K H M h ^ m) =
       ∑ chi : Weight K H M, finrank K (genWeightSpace M chi) • chi h ^ m := by
   classical
