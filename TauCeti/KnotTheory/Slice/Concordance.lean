@@ -539,8 +539,8 @@ smooth embedding `c : ℂ → E`, namely the track of `F` read in exponential po
 * near the origin, on the closed disc of radius `exp (-1)`, `c` is the linear isometry `ι`;
 * for some `r < 1` and all radii `s ≥ r`, `c (s • u) = s • K u`: near the unit circle and beyond,
   `c` is the cone over `K`;
-* `c` carries exactly the closed unit disc into the closed unit ball, and exactly the unit circle
-  onto the unit sphere.
+* `c` meets the closed unit ball exactly over the closed unit disc, and the unit sphere exactly
+  over the unit circle.
 
 Restricted to the closed unit disc, `c` caps the concordance annulus with the flat disc `ι D²`. -/
 theorem SmoothEmbedding.Concordance.exists_isSmoothEmbedding_cap

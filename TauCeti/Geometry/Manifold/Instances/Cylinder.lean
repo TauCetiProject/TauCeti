@@ -143,7 +143,10 @@ theorem isLocalDiffeomorph_polar :
   let L : V ≃L[ℝ] V :=
     (LinearEquiv.smulOfNeZero ℝ V _ (Real.exp_pos (-1)).ne').toContinuousLinearEquiv
   have h : polar (V := V) = L ∘ Subtype.val ∘ sphereProdRealDiffeomorph (n := n) :=
-    funext polar_eq_exp_neg_one_smul_sphereProdRealDiffeomorph
+    funext fun p => by
+      rw [polar_eq_exp_neg_one_smul_sphereProdRealDiffeomorph (n := n), Function.comp_apply,
+        Function.comp_apply, LinearEquiv.coe_toContinuousLinearEquiv',
+        LinearEquiv.smulOfNeZero_apply]
   rw [h]
   -- `IsLocalDiffeomorphAt.comp` takes the target model of the outer map as its first explicit
   -- argument, so the two local diffeomorphisms are passed by name.
