@@ -75,14 +75,6 @@ variable {K : Type} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra 
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra K
 
-/-- A central element of PBW degree below `n` has Harish-Chandra projection of degree below `n`. -/
-private theorem hcProjection_mem_wordFiltrationPrevious {n : ℕ} {z : Subalgebra.center K (U L)}
-    (hz : (z : U L) ∈ UniversalEnvelopingAlgebra.pbwFiltrationPrevious K L n) :
-    hcProjection b z ∈ wordFiltrationPrevious (_root_.SymmetricAlgebra.ι K H) n := by
-  rw [hcProjection_apply,
-    UniversalEnvelopingAlgebra.symmetricAlgebraEquiv_symm_mem_wordFiltrationPrevious_iff]
-  exact cartanProjection_mem_pbwFiltrationPrevious b hz
-
 /-- **The degree of a central element drops with that of its Harish-Chandra projection**: a central
 element of PBW degree at most `m` whose projection has degree below `m` has PBW degree below `m`. -/
 private theorem mem_pbwFiltrationPrevious_of_hcProjection_mem {m : ℕ}
