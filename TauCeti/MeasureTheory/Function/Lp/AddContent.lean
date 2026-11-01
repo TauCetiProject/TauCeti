@@ -39,8 +39,8 @@ content is invariant under translation of measurable sets
 (`PositiveLinearMap.forall_apply_leftTranslation_eq_iff`). Thus left-invariant means on Haar
 `L∞` are the same as left-invariant finitely additive probabilities on the Borel sets vanishing on
 Haar-null sets
-(`MeasureTheory.exists_positiveLinearMap_lpTop_iff_exists_addContent`, with `ℝ≥0∞`-valued
-probabilities as in the discrete `TauCeti.amenable_iff_exists_invariantContent`).
+(`MeasureTheory.exists_invariant_positiveLinearMap_lpTop_iff_exists_invariantContent`, with
+`ℝ≥0∞`-valued probabilities as in the discrete `TauCeti.amenable_iff_exists_invariantContent`).
 
 The construction follows the discrete case in
 `TauCeti/Topology/ContinuousMap/Bounded/AddContent.lean`, and shares its finite sums
@@ -65,9 +65,10 @@ simple functions in `L∞` come from `TauCeti/MeasureTheory/Function/Lp/Indicato
   functional.
 * `PositiveLinearMap.forall_apply_leftTranslation_eq_iff`: invariance of a functional under left
   translation is invariance of its content.
-* `MeasureTheory.exists_positiveLinearMap_lpTop_iff_exists_addContent`: `L∞` of a left-invariant
-  measure carries a left-invariant positive functional taking the value one at one exactly when
-  the measurable sets carry a left-invariant finitely additive probability vanishing on null sets.
+* `MeasureTheory.exists_invariant_positiveLinearMap_lpTop_iff_exists_invariantContent`: `L∞` of
+  a left-invariant measure carries a left-invariant positive functional taking the value one at
+  one exactly when the measurable sets carry a left-invariant finitely additive probability
+  vanishing on null sets.
 
 ## References
 
@@ -327,7 +328,7 @@ left-invariant measure `μ` on a group, `L∞(μ)` carries a positive linear fun
 value one at one and invariant under left translation exactly when the measurable sets carry a
 finitely additive probability which vanishes on `μ`-null sets and is invariant under left
 translation. -/
-theorem exists_positiveLinearMap_lpTop_iff_exists_addContent :
+theorem exists_invariant_positiveLinearMap_lpTop_iff_exists_invariantContent :
     (∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M TauCeti.linftyOne = 1 ∧
       ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ) ↔
     ∃ ν : AddContent ℝ≥0∞ {s : Set G | MeasurableSet s}, ν univ = 1 ∧
