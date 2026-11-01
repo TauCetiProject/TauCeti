@@ -98,10 +98,8 @@ theorem transition_parameter (h : n ∣ m) :
 to level `m` becomes the identity: both send `u_n` to `t ^ (1 / n)`. -/
 theorem toPuiseux_transition (h : n ∣ m) (x : Level K n) :
     toPuiseux K m (transition K h x) = toPuiseux K n x := by
-  apply Subtype.ext
-  have := ramifiedEmbedding_expand (R := K) n (m.divExact n) (ringEquivLaurentSeries K n x)
-  rw [PNat.mul_div_exact h] at this
-  rw [coe_toPuiseux, coe_toPuiseux, ringEquivLaurentSeries_transition, this]
+  rw [toPuiseux_apply, toPuiseux_apply, ringEquivLaurentSeries_transition,
+    puiseuxField.levelEmbedding_expand_divExact h]
 
 /-- On the actual levels of the Puiseux field, the transition map from level `n` to level `m` is
 the inclusion of level `n` into level `m`. -/
@@ -148,17 +146,14 @@ theorem exists_eq_transition_comp_kummer (φ : Level K n →ₐ[K⸨X⸩] Level 
   -- `w / t ^ (m / n)` is an `n`-th root of unity of `K⸨X⸩`, hence a constant
   have hv : (w / single (((m : ℕ) / n : ℕ) : ℤ) 1) ^ (n : ℕ) = 1 := by
     rw [div_pow, hw, single_pow, one_pow, hk, div_self (single_ne_zero one_ne_zero)]
-  obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp
-    (IsIntegral.of_pow (R := K) n.pos (hv ▸ isIntegral_one))
-  have hcn : c ^ (n : ℕ) = 1 :=
-    (Algebra.algebraMap K K⸨X⸩).injective (by rw [map_pow, hc, hv, map_one])
-  refine ⟨h, rootsOfUnity.mkOfPowEq c hcn, ?_⟩
+  obtain ⟨η, hη⟩ := exists_rootsOfUnity_algebraMap_eq hv
+  refine ⟨h, η, ?_⟩
   -- both maps are determined by their value on the generator `u_n`
   apply (powerBasis K n).algHom_ext
   rw [powerBasis_gen, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    kummer_parameter, map_mul, AlgHom.commutes, transition_parameter, rootsOfUnity.coe_mkOfPowEq]
+    kummer_parameter, map_mul, AlgHom.commutes, transition_parameter]
   apply (ringEquivLaurentSeries K m).injective
-  rw [map_mul, algebraMap_apply, AlgHom.commutes, hc, map_pow, ringEquiv_parameter, single_pow,
+  rw [map_mul, algebraMap_apply, AlgHom.commutes, hη, map_pow, ringEquiv_parameter, single_pow,
     one_pow, nsmul_one, ← hw_def, div_mul_cancel₀ _ hsingle]
 
 /-- Level `n` embeds into level `m` over `K⸨t⸩` exactly when `n ∣ m`. -/
