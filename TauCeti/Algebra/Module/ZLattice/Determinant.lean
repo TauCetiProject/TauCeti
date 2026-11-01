@@ -308,9 +308,8 @@ finite with `cⁿ |L^∨ / L|` elements; for `c = 0` and positive rank both side
 theorem IsIntegral.card_quotient_smul_submoduleOf_dual (h : IsIntegral L) (c : ℕ) :
     Nat.card (dual L ⧸ ((c : ℝ) • L).submoduleOf (dual L)) =
       c ^ finrank ℝ E * Nat.card (DiscriminantGroup L) := by
-  have hcL : ((c : ℝ) • L).toAddSubgroup ≤ L.toAddSubgroup := by
-    rintro _ ⟨w, hw, rfl⟩
-    simpa [Nat.cast_smul_eq_nsmul] using L.nsmul_mem hw c
+  have hcL : ((c : ℝ) • L).toAddSubgroup ≤ L.toAddSubgroup :=
+    toAddSubgroup_mono (natCast_smul_le L c)
   rw [← card_quotient_smul_submoduleOf L c, card_discriminantGroup]
   -- The quotients by submodules are by definition the quotients by their additive subgroups,
   -- whose orders are the relative indices.
