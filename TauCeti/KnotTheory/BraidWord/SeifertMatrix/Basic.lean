@@ -147,10 +147,15 @@ theorem IsSeifertLoop.fst_lt_snd {w : BraidWord n} {p : ℕ × ℕ} (h : w.IsSei
     p.1 < p.2 :=
   (w.isSeifertLoop_iff.1 h).1
 
+/-- The second band of a loop is a letter of the word. -/
+theorem IsSeifertLoop.snd_lt_length {w : BraidWord n} {p : ℕ × ℕ} (h : w.IsSeifertLoop p) :
+    p.2 < w.length :=
+  (w.isSeifertLoop_iff.1 h).2.1
+
 /-- The first band of a loop is a letter of the word. -/
 theorem IsSeifertLoop.fst_lt_length {w : BraidWord n} {p : ℕ × ℕ} (h : w.IsSeifertLoop p) :
     p.1 < w.length :=
-  h.fst_lt_snd.trans (w.isSeifertLoop_iff.1 h).2.1
+  h.fst_lt_snd.trans h.snd_lt_length
 
 /-- A loop is determined by its first band. -/
 theorem IsSeifertLoop.eq_of_fst_eq {w : BraidWord n} {p q : ℕ × ℕ} (hp : w.IsSeifertLoop p)
@@ -685,7 +690,7 @@ private theorem lt_length_of_levelAt_cons {m : ℕ}
 /-- A loop of `v ++ [x]` not ending at the moved letter lies in `v`. -/
 private theorem snd_lt_length_of_ne {a : ℕ × ℕ} (ha : (v ++ [x]).IsSeifertLoop a)
     (h : a.2 ≠ v.length) : a.2 < v.length := by
-  have := ha.2.1
+  have := ha.snd_lt_length
   simp only [List.length_append, List.length_singleton] at this
   omega
 

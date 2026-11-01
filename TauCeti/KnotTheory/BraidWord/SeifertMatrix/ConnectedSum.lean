@@ -38,13 +38,19 @@ diagonal, with the Seifert matrices of `w₁` and `w₂` as its blocks
 Consequently the Tristram–Levine signatures are additive and the Alexander polynomial is
 multiplicative under this connected sum
 (`TauCeti.BraidWord.tristramLevineSignature_seifertMatrix_connectedSum`,
-`TauCeti.BraidWord.alexander_seifertMatrix_connectedSum`). Additivity under connected sum is what
-makes the signature, a concordance invariant, a homomorphism on the knot concordance group, whose
-group operation is the connected sum. As an application, the granny knot (the connected sum of two
-right-handed trefoils, the closure of `σ₁³ σ₂³`) has signature `-4` while the square knot (a
-right-handed trefoil plus a left-handed one, the closure of `σ₁³ σ₂⁻³`) has signature `0`,
-although the two have the same Alexander polynomial `(t - 1 + t⁻¹)²`. So the two braids are not
-Markov equivalent (`TauCeti.not_markovEquiv_granny_square`).
+`TauCeti.BraidWord.alexander_seifertMatrix_connectedSum`). For `ω` on the unit circle that is a
+root of no Alexander polynomial of a knot (for instance `ω = -1`, or any root of unity of
+prime-power order), `σ_ω` is a concordance invariant of knots, and additivity under connected sum
+makes it a homomorphism on the knot concordance group, whose group operation is the connected sum.
+At a root of the Alexander polynomial the signature as defined here can fail to be a concordance
+invariant; a homomorphism for every `ω` uses instead the averaged signature, the mean of the two
+one-sided limits of `σ` at `ω` along the circle (Livingston).
+
+As an application, the granny knot (the connected sum of two right-handed trefoils, the closure of
+`σ₁³ σ₂³`) has signature `-4` while the square knot (a right-handed trefoil plus a left-handed
+one, the closure of `σ₁³ σ₂⁻³`) has signature `0`, although the two have the same Alexander
+polynomial `(t - 1 + t⁻¹)²`. So the two braids are not Markov equivalent
+(`TauCeti.not_markovEquiv_granny_square`).
 
 The word `TauCeti.BraidWord.connectedSum` itself, with the levels and signs of its letters and the
 braid `TauCeti.BraidWord.toBraid_connectedSum` it represents, is in
@@ -203,8 +209,7 @@ theorem submatrix_seifertMatrix_connectedSum :
       Option.map (· + 1) (Option.map (n + ·) y) = Option.map (n + ·) (Option.map (· + 1) y) := by
     cases y <;> simp [Nat.add_assoc]
   have hlt₁ (a : w₁.seifertLoops) : a.1.1 < w₁.length ∧ a.1.2 < w₁.length :=
-    ⟨((mem_seifertLoops _).1 a.2).fst_lt_length,
-      (w₁.isSeifertLoop_iff.1 ((mem_seifertLoops _).1 a.2)).2.1⟩
+    ⟨((mem_seifertLoops _).1 a.2).fst_lt_length, ((mem_seifertLoops _).1 a.2).snd_lt_length⟩
   have hlevel₂ (b : w₂.seifertLoops) : ∃ l, w₂.levelAt b.1.1 = some l :=
     ⟨_, w₂.levelAt_of_lt ((mem_seifertLoops _).1 b.2).fst_lt_length⟩
   ext (a | a) (b | b)
