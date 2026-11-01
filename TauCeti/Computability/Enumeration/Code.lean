@@ -43,6 +43,7 @@ same stage.
   recursive in the code, the step bound and the input.
 * `Nat.Partrec.Code.primrecRel_mem_domStage`, `Nat.Partrec.Code.primrec_domStage`: membership in
   the stages and their binary codes are primitive recursive, uniformly in the code and the stage.
+  `Nat.Partrec.Code.primrecRel_mem_domStage_ofNat` indexes the codes by their numbers.
 * `TauCeti.Enumeration.rePred_mem_stageLimit`: the limit of finite stages with computable
   membership is c.e.
 * `TauCeti.Enumeration.rePred_iff_exists_stages`: a predicate on `ℕ` is c.e. if and only if it is
@@ -110,6 +111,13 @@ code, the stage and the number. -/
 theorem primrecRel_mem_domStage : PrimrecRel fun (p : Code × ℕ) x => x ∈ p.1.domStage p.2 :=
   (_root_.Primrec.eq.comp primrec₂_evaln_isSome (_root_.Primrec.const true)).of_eq fun p => by
     simp
+
+/-- Membership in the stages of the domain of the code numbered `i` is primitive recursive,
+uniformly in the number `i`, the stage and the number. -/
+theorem primrecRel_mem_domStage_ofNat :
+    PrimrecRel fun (p : ℕ × ℕ) x => x ∈ (Denumerable.ofNat Code p.1).domStage p.2 :=
+  primrecRel_mem_domStage.comp (((Primrec.ofNat _).comp (Primrec.fst.comp Primrec.fst)).pair
+    (Primrec.snd.comp Primrec.fst)) Primrec.snd
 
 /-- The binary finite-set codes `∑ x ∈ W_{c,s}, 2 ^ x` of the stages of the domain of a code are
 primitive recursive, uniformly in the code and the stage. -/

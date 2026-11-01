@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Bundle
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 
@@ -20,6 +21,9 @@ transitivity of an action.
   stabilizer quotient when the corresponding orbit map is continuous.
 * `TauCeti.continuous_orbitRelQuotientLift_iff`: the descent of a `G`-invariant map to the orbit
   space is continuous exactly when the map is.
+* `TauCeti.continuous_section_orbitRelQuotientRec_iff`: the descent of a `G`-invariant section of
+  the pullback of a family `V` over the orbit space is continuous, as a map into the total space,
+  exactly when the section upstairs is.
 * `SubMulAction.isOpenEmbedding_orbitRelQuotientMap`: for an open slice `S` for a subgroup `H`, an
   `H`-invariant open set moved into itself only by elements of `H`, the map `S / H → X / G` of
   orbit spaces is an open embedding. For `H = ⊥` this recovers
@@ -42,6 +46,19 @@ theorem continuous_orbitRelQuotientLift_iff :
     Continuous (MulAction.orbitRelQuotientLift f hf) ↔ Continuous f := by
   have hq : Topology.IsQuotientMap (Quotient.mk (MulAction.orbitRel G X)) := isQuotientMap_quot_mk
   rw [hq.continuous_iff, MulAction.orbitRelQuotientLift_comp_mk]
+
+open Bundle in
+/-- The descent of an invariant section is continuous, as a map into the total space, exactly when
+the section upstairs is. -/
+theorem continuous_section_orbitRelQuotientRec_iff {F : Type*}
+    {V : MulAction.orbitRel.Quotient G X → Type*} [TopologicalSpace (TotalSpace F V)]
+    {t : ∀ x : X, V (Quotient.mk (MulAction.orbitRel G X) x)}
+    {ht : ∀ (g : G) (x : X), t (g • x) ≍ t x} :
+    Continuous (fun q ↦ TotalSpace.mk' F q (MulAction.orbitRelQuotientRec t ht q)) ↔
+      Continuous fun x ↦ TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G X) x) (t x) := by
+  have hq : Topology.IsQuotientMap (Quotient.mk (MulAction.orbitRel G X)) := isQuotientMap_quot_mk
+  rw [hq.continuous_iff]
+  simp only [Function.comp_def, MulAction.orbitRelQuotientRec_mk]
 
 end Lift
 
