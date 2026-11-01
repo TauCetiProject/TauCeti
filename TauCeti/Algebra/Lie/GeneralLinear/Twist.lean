@@ -83,17 +83,15 @@ twisting data `ι` and `c` are honest parameters of the carrier; the module stru
 transported along the resulting equivalence. This is the pattern of Mathlib's `WithLp`, which
 carries a phantom exponent in the same way.
 
-## Roadmap context
+## Use in the classification
 
-Layer 9 of the
-[highest weight roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md)
-asks for a finite-dimensional irreducible `gl n`-module for each dominant weight, the entries of a
-dominant weight being free scalars and only their differences constrained. The existence input for
-the weights with natural number entries is
+In the highest weight classification of the finite-dimensional irreducible `gl n`-modules, the
+entries of a dominant weight are free scalars and only their differences are constrained. The
+existence input for the weights with natural number entries is
 `TauCeti.exists_isGlHighestWeightVector_natCast`; this file supplies the remaining central
-direction, so that the existence half of that classification reaches every dominant weight.
-Cutting the realizing module down to an irreducible one, and naming the resulting carrier, is not
-done here.
+direction, so that the existence half of the classification reaches every dominant weight.
+Cutting the realizing module down to an irreducible one is not done here; that is
+`TauCeti.glIrreducible` in `TauCeti/Algebra/Lie/GeneralLinear/Carrier.lean`.
 
 ## References
 

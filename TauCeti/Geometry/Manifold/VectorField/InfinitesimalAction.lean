@@ -35,12 +35,24 @@ the linear actions of the classical subalgebras, such as the symplectic Lie alge
 algebra acts by translations, through the constant vector fields `x ↦ τ Z` of a linear map `τ`
 (`TauCeti.InfinitesimalAction.translation`).
 
+At a point `x`, an infinitesimal action has an **orbit tangent space** `𝔤 · x = {Z_M(x)}`
+(`TauCeti.InfinitesimalAction.orbitTangent`) and an **isotropy algebra** `𝔤_x = {Z | Z_M(x) = 0}`
+(`TauCeti.InfinitesimalAction.isotropy`), the range and the kernel of the linear map
+`Z ↦ Z_M(x)` (`TauCeti.InfinitesimalAction.eval`). The isotropy algebra is a Lie subalgebra, since
+the Lie bracket of two vector fields vanishing at `x` vanishes at `x`, and rank–nullity gives
+`dim (𝔤 · x) + dim 𝔤_x = dim 𝔤`. For the fundamental vector fields of a Lie group action, `𝔤 · x`
+and `𝔤_x` are the image and the kernel of the differential at the identity of the orbit map
+`g ↦ g • x`. These are the pointwise data entering the differential of a moment map.
+
 ## Main definitions
 
 * `TauCeti.InfinitesimalAction 𝔤 I M`: infinitesimal actions of `𝔤` on `M`.
 * `TauCeti.InfinitesimalAction.comp`: the restriction of an infinitesimal action along a Lie
   algebra homomorphism.
 * `TauCeti.InfinitesimalAction.prod`: the diagonal action on a product of two manifolds.
+* `TauCeti.InfinitesimalAction.eval a x`: the linear map `Z ↦ Z_M(x)`.
+* `TauCeti.InfinitesimalAction.orbitTangent a x`: the orbit tangent space `𝔤 · x`.
+* `TauCeti.InfinitesimalAction.isotropy a x`: the isotropy Lie subalgebra `𝔤_x`.
 * `TauCeti.InfinitesimalAction.linear V`: the action of `Module.End ℝ V` on `V` by linear vector
   fields.
 * `TauCeti.InfinitesimalAction.translation τ`: the action of an abelian Lie algebra on a vector
@@ -139,6 +151,75 @@ theorem comp_apply (a : InfinitesimalAction 𝔤 I M) (f : 𝔥 →ₗ⁅ℝ⁆ 
 
 end comp
 
+section orbit
+
+variable {𝔥 : Type*} [LieRing 𝔥] [LieAlgebra ℝ 𝔥] (a : InfinitesimalAction 𝔤 I M) (x : M)
+
+/-- The linear map `Z ↦ Z_M(x)` from `𝔤` to the tangent space at `x`. For the fundamental vector
+fields of a Lie group action it is the differential at the identity of the orbit map
+`g ↦ g • x`. -/
+def eval : 𝔤 →ₗ[ℝ] TangentSpace I x :=
+  (LinearMap.proj x).comp a.toLinearMap
+
+@[simp]
+theorem eval_apply (Z : 𝔤) : a.eval x Z = a Z x :=
+  (rfl)
+
+/-- The **orbit tangent space** `𝔤 · x = {Z_M(x) | Z ∈ 𝔤}` of an infinitesimal action at `x`, the
+range of `Z ↦ Z_M(x)`. -/
+def orbitTangent : Submodule ℝ (TangentSpace I x) :=
+  LinearMap.range (a.eval x)
+
+theorem orbitTangent_eq_range : a.orbitTangent x = LinearMap.range (a.eval x) :=
+  (rfl)
+
+@[simp]
+theorem mem_orbitTangent_iff {v : TangentSpace I x} :
+    v ∈ a.orbitTangent x ↔ ∃ Z, a Z x = v :=
+  LinearMap.mem_range
+
+theorem mem_orbitTangent (Z : 𝔤) : a Z x ∈ a.orbitTangent x :=
+  (a.mem_orbitTangent_iff x).2 ⟨Z, rfl⟩
+
+/-- The **isotropy algebra** `𝔤_x = {Z ∈ 𝔤 | Z_M(x) = 0}` of an infinitesimal action at `x`. It is
+a Lie subalgebra because the Lie bracket of two vector fields vanishing at `x` vanishes at `x`. -/
+def isotropy : LieSubalgebra ℝ 𝔤 where
+  toSubmodule := LinearMap.ker (a.eval x)
+  lie_mem' {Z Z'} hZ hZ' := by
+    rw [Submodule.mem_carrier, SetLike.mem_coe, LinearMap.mem_ker, eval_apply] at hZ hZ' ⊢
+    rw [map_lie, Pi.neg_apply, mlieBracket_eq_zero_of_eq_zero hZ hZ', neg_zero]
+
+@[simp]
+theorem mem_isotropy_iff {Z : 𝔤} : Z ∈ a.isotropy x ↔ a Z x = 0 :=
+  LinearMap.mem_ker
+
+theorem isotropy_toSubmodule : (a.isotropy x).toSubmodule = LinearMap.ker (a.eval x) :=
+  (rfl)
+
+/-- The isotropy algebra is trivial exactly when `Z ↦ Z_M(x)` is injective, that is, when the
+action is locally free at `x`. -/
+theorem isotropy_eq_bot_iff : a.isotropy x = ⊥ ↔ Function.Injective (a.eval x) := by
+  rw [← LinearMap.ker_eq_bot, ← isotropy_toSubmodule, LieSubalgebra.toSubmodule_eq_bot]
+
+/-- Rank–nullity for the orbit map: `dim (𝔤 · x) + dim 𝔤_x = dim 𝔤`. -/
+theorem finrank_orbitTangent_add_finrank_isotropy [FiniteDimensional ℝ 𝔤] :
+    Module.finrank ℝ (a.orbitTangent x) + Module.finrank ℝ (a.isotropy x) =
+      Module.finrank ℝ 𝔤 :=
+  LinearMap.finrank_range_add_finrank_ker (a.eval x)
+
+/-- The isotropy algebra of a restricted action is the preimage of the isotropy algebra. -/
+@[simp]
+theorem isotropy_comp (f : 𝔥 →ₗ⁅ℝ⁆ 𝔤) : (a.comp f).isotropy x = (a.isotropy x).comap f :=
+  LieSubalgebra.ext _ _ fun _ ↦ by simp
+
+/-- The orbit tangent space of a restricted action is the image of the restricting Lie algebra. -/
+theorem orbitTangent_comp (f : 𝔥 →ₗ⁅ℝ⁆ 𝔤) :
+    (a.comp f).orbitTangent x = (LinearMap.range (f : 𝔥 →ₗ[ℝ] 𝔤)).map (a.eval x) := by
+  ext v
+  simp
+
+end orbit
+
 section prod
 
 variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -171,6 +252,16 @@ def prod (a : InfinitesimalAction 𝔤 I M) (b : InfinitesimalAction 𝔤 J N) :
 theorem prod_apply (a : InfinitesimalAction 𝔤 I M) (b : InfinitesimalAction 𝔤 J N) (Z : 𝔤) :
     a.prod b Z = Manifold.prodVectorField (a Z) (b Z) :=
   (rfl)
+
+/-- The isotropy algebra of the diagonal action at `(x, y)` is the intersection of the isotropy
+algebras of the two factors. -/
+@[simp]
+theorem isotropy_prod (a : InfinitesimalAction 𝔤 I M) (b : InfinitesimalAction 𝔤 J N)
+    (p : M × N) : (a.prod b).isotropy p = a.isotropy p.1 ⊓ b.isotropy p.2 :=
+  LieSubalgebra.ext _ _ fun Z ↦ by
+    rw [LieSubalgebra.mem_inf, mem_isotropy_iff, mem_isotropy_iff, mem_isotropy_iff, prod_apply,
+      ← (Manifold.tangentSpaceProdEquiv p).map_eq_zero_iff,
+      Manifold.tangentSpaceProdEquiv_prodVectorField, Prod.mk_eq_zero]
 
 end prod
 

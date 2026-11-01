@@ -31,6 +31,8 @@ absolute Galois group, acts on the rational function field.
 * `TauCeti.apply_algebraMap_eq_of_mapRingEquiv` and `TauCeti.finrank_eq_of_mapRingEquiv`: an
   isomorphism `F ≃+* F'` of extensions carrying `K(X)` onto `L(X)` by the coefficient map of `σ`
   carries `K` onto `L` along `σ`, and the two extensions have the same degree.
+* `TauCeti.algebraMap_ratFunc_algebraMap_polynomial`: a `K`-algebra map `K(X) → L(X)` sending `X`
+  to `X` maps a polynomial over `K` to the polynomial with its coefficients mapped to `L`.
 -/
 
 public section
@@ -132,5 +134,23 @@ theorem finrank_eq_of_mapRingEquiv :
     (RingHom.ext fun x ↦ (hτ x).symm)).symm
 
 end Extension
+
+section Polynomial
+
+open scoped Polynomial
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L] [Algebra (RatFunc K) (RatFunc L)]
+  [IsScalarTower K (RatFunc K) (RatFunc L)]
+
+/-- A `K`-algebra map `K(X) → L(X)` sending `X` to `X` maps a polynomial over `K` to the same
+polynomial with its coefficients read in `L`. -/
+theorem algebraMap_ratFunc_algebraMap_polynomial
+    (hX : algebraMap (RatFunc K) (RatFunc L) RatFunc.X = RatFunc.X) (f : K[X]) :
+    algebraMap (RatFunc K) (RatFunc L) (algebraMap K[X] (RatFunc K) f) =
+      algebraMap L[X] (RatFunc L) (f.map (algebraMap K L)) := by
+  rw [← RatFunc.aeval_X_left_eq_algebraMap, ← Polynomial.aeval_algebraMap_apply, hX,
+    ← RatFunc.aeval_X_left_eq_algebraMap, Polynomial.aeval_map_algebraMap]
+
+end Polynomial
 
 end TauCeti
