@@ -8,18 +8,20 @@ module
 public import TauCeti.Data.Setoid.Basic
 public import TauCeti.ModelTheory.Counting.Classes
 public import TauCeti.ModelTheory.RelationalConfiguration.BackAndForth
-public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 
 /-!
 # Back-and-forth levels on model classes
 
 Fix a relational language `L` and a carrier `V`. The back-and-forth levels
 `TauCeti.RelationalConfiguration.bfEquivSetoid L V α` stratify isomorphism of configurations on
-`V` into a decreasing family of equivalence relations, Borel below `ω₁` on a countable carrier.
+`V` into a decreasing family of equivalence relations. Below `ω₁`, on a countable carrier in a
+vocabulary with countably many relation symbols of each arity, each level has Borel graph.
 This file restricts these levels to the model class `modelsOf φ` of an infinitary sentence `φ`.
-Below `ω₁`, the level classes are themselves model classes of the level sentences
+Below `ω₁`, on a countable carrier in a vocabulary with countably many relation symbols, the
+ambient level classes are model classes of the level sentences
 `TauCeti.RelationalConfiguration.scottSentenceAtLevel`
-(`TauCeti.RelationalConfiguration.modelsOf_scottSentenceAtLevel`).
+(`TauCeti.RelationalConfiguration.modelsOf_scottSentenceAtLevel`), so each restricted level class
+is the intersection of `modelsOf φ` with the model class of a level sentence.
 
 The setoid `bfEquivSetoidOn V φ α` is the level `bfEquivSetoid L V α` restricted to the
 configurations in `modelsOf φ`. It decreases with `α`, is refined by isomorphism, and therefore
