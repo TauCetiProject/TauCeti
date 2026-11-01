@@ -519,9 +519,8 @@ theorem length_localizedModule_comap (e : N ≃ₛₗ[σ] M) (𝔮 : Ideal B) [�
   have hmem (t : 𝔮.primeCompl) : σ' t ∈ (𝔮.comap σ).primeCompl := by
     rw [Ideal.mem_primeCompl_iff, Ideal.mem_comap, hσ]
     exact t.2
-  have : RingHomSurjective (Localization.localRingHom (𝔮.comap σ) 𝔮 σ rfl) := ⟨fun x ↦ by
-    induction x using Localization.induction_on with | H p => ?_
-    exact ⟨Localization.mk (σ' p.1) ⟨σ' p.2, hmem p.2⟩, by simp [Localization.localRingHom_mk, hσ]⟩⟩
+  have : RingHomSurjective (Localization.localRingHom (𝔮.comap σ) 𝔮 σ rfl) :=
+    ⟨(Localization.localRingEquiv (𝔮.comap σ) 𝔮 (RingHomInvPair.toRingEquiv σ σ') rfl).surjective⟩
   refine LinearMap.length_eq_of_bijective (localizedModuleComap e 𝔮) ⟨fun x y hxy ↦ ?_, fun y ↦ ?_⟩
   · induction x using LocalizedModule.induction_on with | h n s => ?_
     induction y using LocalizedModule.induction_on with | h n' s' => ?_

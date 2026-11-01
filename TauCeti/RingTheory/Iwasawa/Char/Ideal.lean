@@ -153,10 +153,11 @@ theorem LinearEquiv.charIdeal_eq_comap {A B N M : Type*} [CommRing A] [CommRing 
     [AddCommGroup N] [Module A N] [AddCommGroup M] [Module B M] {σ : A →+* B} {σ' : B →+* A}
     [RingHomInvPair σ σ'] [RingHomInvPair σ' σ] (e : N ≃ₛₗ[σ] M) :
     TauCeti.Iwasawa.charIdeal A N = (TauCeti.Iwasawa.charIdeal B M).comap σ := by
-  let σe : A ≃+* B := .ofRingHom σ σ' RingHomInvPair.comp_eq₂ RingHomInvPair.comp_eq
-  let E := (PrimeSpectrum.comapEquiv σe.symm).toEquiv
-  -- Pulling back along `σe.symm.symm`, which is `σ`.
-  have hE (𝔮 : PrimeSpectrum B) : E 𝔮 = PrimeSpectrum.comap σ 𝔮 := rfl
+  let σe := RingHomInvPair.toRingEquiv σ σ'
+  let E := (PrimeSpectrum.comapEquiv σe).symm.toEquiv
+  have hE (𝔮 : PrimeSpectrum B) : E 𝔮 = PrimeSpectrum.comap σ 𝔮 := by
+    ext x
+    simp [E, σe, PrimeSpectrum.comapEquiv_apply]
   have hdiv : TauCeti.Iwasawa.charDivisor A N =
       (TauCeti.Iwasawa.charDivisor B M).equivMapDomain E := by
     ext 𝔭

@@ -241,19 +241,16 @@ private theorem charDivisor_apply_eq_of_localLength_eq {A' M' : Type*} [CommRing
     [AddCommGroup M'] [Module A' M'] (E : PrimeSpectrum A' ≃ PrimeSpectrum A)
     (h : ∀ 𝔮, localLength A M (E 𝔮) = localLength A' M' 𝔮) (𝔮 : PrimeSpectrum A') :
     charDivisor A M (E 𝔮) = charDivisor A' M' 𝔮 := by
-  have hsupp : Function.support (localLength A M) = E '' Function.support (localLength A' M') := by
-    ext 𝔭
-    obtain ⟨𝔮, rfl⟩ := E.surjective 𝔭
-    simp [h]
   have hfin : (Function.support (localLength A M)).Finite ↔
       (Function.support (localLength A' M')).Finite := by
+    have hsupp : Function.support (localLength A M) =
+        E '' Function.support (localLength A' M') := by
+      ext 𝔭
+      obtain ⟨𝔮, rfl⟩ := E.surjective 𝔭
+      simp [h]
     rw [hsupp, Set.finite_image_iff E.injective.injOn]
   unfold charDivisor
-  by_cases hM : (Function.support (localLength A' M')).Finite
-  · rw [dite_eq_left (hfin.mpr hM), dite_eq_left hM, Finsupp.ofSupportFinite_coe,
-      Finsupp.ofSupportFinite_coe, h]
-  · rw [dite_eq_right (hfin.not.mpr hM), dite_eq_right hM, Finsupp.coe_zero, Finsupp.coe_zero,
-      Pi.zero_apply, Pi.zero_apply]
+  split_ifs <;> simp_all [Finsupp.ofSupportFinite_coe]
 
 end TauCeti.Iwasawa
 
@@ -272,10 +269,11 @@ theorem LinearEquiv.charDivisor_apply_comap {A B N M : Type*} [CommRing A] [Comm
     [RingHomInvPair σ σ'] [RingHomInvPair σ' σ] (e : N ≃ₛₗ[σ] M) (𝔮 : PrimeSpectrum B) :
     TauCeti.Iwasawa.charDivisor A N (PrimeSpectrum.comap σ 𝔮) =
       TauCeti.Iwasawa.charDivisor B M 𝔮 := by
-  let σe : A ≃+* B := .ofRingHom σ σ' RingHomInvPair.comp_eq₂ RingHomInvPair.comp_eq
-  let E := (PrimeSpectrum.comapEquiv σe.symm).toEquiv
-  -- Pulling back along `σe.symm.symm`, which is `σ`.
-  have hE (𝔮 : PrimeSpectrum B) : E 𝔮 = PrimeSpectrum.comap σ 𝔮 := rfl
+  let σe := RingHomInvPair.toRingEquiv σ σ'
+  let E := (PrimeSpectrum.comapEquiv σe).symm.toEquiv
+  have hE (𝔮 : PrimeSpectrum B) : E 𝔮 = PrimeSpectrum.comap σ 𝔮 := by
+    ext x
+    simp [E, σe, PrimeSpectrum.comapEquiv_apply]
   rw [← hE]
   refine TauCeti.Iwasawa.charDivisor_apply_eq_of_localLength_eq E (fun 𝔮 ↦ ?_) 𝔮
   have hht : (𝔮.asIdeal.comap σ).height = 𝔮.asIdeal.height := σe.height_comap _
