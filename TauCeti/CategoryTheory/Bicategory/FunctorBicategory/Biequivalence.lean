@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Bicategory.Adjunction.Basic
+public import TauCeti.CategoryTheory.Bicategory.Basic
 public import TauCeti.CategoryTheory.Bicategory.Biequivalence
 public import TauCeti.CategoryTheory.Bicategory.FunctorBicategory.Precomp
 
@@ -67,68 +68,6 @@ open Bicategory StrongTrans
 
 universe w₃ v₃ u₃ v₂ u₂ v₁ u₁ v₄ u₄
 
-section Aux
-
-variable {B : Type u₃} [Bicategory.{w₃, v₃} B]
-
--- The coherence conditions of the identity-component transformations below are equations
--- between composites of unitors and associators in `B`. In the goals, their sources and targets
--- are objects such as `((𝟭 Γ).toPseudofunctor.comp F).obj x` and `F.obj x`, which are equal
--- only after unfolding `Pseudofunctor.comp` and `Functor.toPseudofunctor`, so `simp` cannot work
--- on the goals directly. The equations are therefore proved here for arbitrary `1`-morphisms
--- of `B` and applied by unification.
-
-/-- Naturality of `ρ_ ≪≫ (λ_).symm`, the naturality isomorphisms of identity components. -/
-private lemma unitors_naturality_whisker {a b : B} {X Y : a ⟶ b} (Θ : X ⟶ Y) :
-    Θ ▷ 𝟙 b ≫ (ρ_ Y ≪≫ (λ_ Y).symm).hom = (ρ_ X ≪≫ (λ_ X).symm).hom ≫ 𝟙 a ◁ Θ := by
-  simp
-
-/-- The unit condition of an identity-component transformation. -/
-private lemma unitors_naturality_id {a : B} (e e' : 𝟙 a ⟶ 𝟙 a) (he : e = 𝟙 _) (he' : e' = 𝟙 _) :
-    (ρ_ (𝟙 a) ≪≫ (λ_ (𝟙 a)).symm).hom ≫ 𝟙 a ◁ e =
-      e' ▷ 𝟙 a ≫ (λ_ (𝟙 a)).hom ≫ (ρ_ (𝟙 a)).inv := by
-  subst he he'
-  simp [unitors_equal]
-
-/-- The composition condition of an identity-component transformation. -/
-private lemma unitors_naturality_comp {a b c : B} (u : a ⟶ b) (v : b ⟶ c)
-    (e e' : u ≫ v ⟶ u ≫ v) (he : e = 𝟙 _) (he' : e' = 𝟙 _) :
-    (ρ_ (u ≫ v) ≪≫ (λ_ (u ≫ v)).symm).hom ≫ 𝟙 a ◁ e =
-      e' ▷ 𝟙 c ≫ (α_ u v (𝟙 c)).hom ≫ u ◁ (ρ_ v ≪≫ (λ_ v).symm).hom ≫ (α_ u (𝟙 b) v).inv ≫
-        (ρ_ u ≪≫ (λ_ u).symm).hom ▷ v ≫ (α_ (𝟙 a) u v).hom := by
-  subst he he'
-  simp
-
-/-- The naturality condition of the modification with components `ρ_ ≪≫ (λ_).symm` comparing
-whiskerings by identity-component transformations. -/
-private lemma unitors_naturality_iso {a b a' b' : B} (X : a ⟶ b) (Y : a' ⟶ b') (u : a ⟶ a')
-    (v : b ⟶ b') (N : X ≫ v ≅ u ≫ Y) :
-    X ◁ (ρ_ v ≪≫ (λ_ v).symm).hom ≫ ((α_ _ _ _).inv ≫ (ρ_ X ≪≫ (λ_ X).symm).hom ▷ v ≫
-        (α_ _ _ _).hom ≫ 𝟙 a ◁ N.hom ≫ (α_ _ _ _).inv) =
-      ((α_ _ _ _).inv ≫ N.hom ▷ 𝟙 b' ≫ (α_ _ _ _).hom ≫ u ◁ (ρ_ Y ≪≫ (λ_ Y).symm).hom ≫
-        (α_ _ _ _).inv) ≫ (ρ_ u ≪≫ (λ_ u).symm).hom ▷ Y := by
-  simp
-
-/-- The naturality condition of the modification `𝟙 ≅ τ ≫ σ` with components `(λ_ (𝟙 _)).symm`,
-for identity-component transformations `τ` and `σ`. -/
-private lemma unitors_naturality_unit {a b : B} (X : a ⟶ b) :
-    X ◁ (λ_ (𝟙 b)).inv ≫ ((α_ _ _ _).inv ≫ (ρ_ X ≪≫ (λ_ X).symm).hom ▷ 𝟙 b ≫
-        (α_ _ _ _).hom ≫ 𝟙 a ◁ (ρ_ X ≪≫ (λ_ X).symm).hom ≫ (α_ _ _ _).inv) =
-      (ρ_ X ≪≫ (λ_ X).symm).hom ≫ (λ_ (𝟙 a)).inv ▷ X := by
-  simp only [Iso.trans_hom, Iso.symm_hom]
-  bicategory
-
-/-- The naturality condition of the modification `σ ≫ τ ≅ 𝟙` with components `λ_ (𝟙 _)`, for
-identity-component transformations `τ` and `σ`. -/
-private lemma unitors_naturality_counit {a b : B} (X : a ⟶ b) :
-    X ◁ (λ_ (𝟙 b)).hom ≫ (ρ_ X ≪≫ (λ_ X).symm).hom =
-      ((α_ _ _ _).inv ≫ (ρ_ X ≪≫ (λ_ X).symm).hom ▷ 𝟙 b ≫
-        (α_ _ _ _).hom ≫ 𝟙 a ◁ (ρ_ X ≪≫ (λ_ X).symm).hom ≫ (α_ _ _ _).inv) ≫
-        (λ_ (𝟙 a)).hom ▷ X := by
-  simp
-
-end Aux
-
 variable {B : Type u₃} [Bicategory.{w₃, v₃} B] {Γ : Type u₁} [Category.{v₁} Γ]
   {Λ : Type u₂} [Category.{v₂} Λ] {Λ' : Type u₄} [Category.{v₄} Λ']
 
@@ -141,16 +80,19 @@ def precompIdHom :
     precomp B (𝟭 Γ).toPseudofunctor ⟶ Pseudofunctor.id (LocallyDiscrete Γ ⥤ᵖ B) where
   app F := pullbackIdHom F
   naturality {F G} η := isoMk (fun x => ρ_ (η.app x) ≪≫ (λ_ (η.app x)).symm)
-    (fun φ => unitors_naturality_iso _ _ _ _ (η.naturality φ))
+    (fun φ => rightUnitor_trans_leftUnitor_symm_naturality_whisker _ _ _ _
+      (η.naturality φ).hom)
   naturality_naturality Θ := by
     ext x
-    exact unitors_naturality_whisker (Θ.as.app x)
+    exact rightUnitor_trans_leftUnitor_symm_naturality (Θ.as.app x)
   naturality_id F := by
     ext x
-    exact unitors_naturality_id _ _ rfl (whiskerLeftId_hom_as_app _ _ _)
+    exact rightUnitor_trans_leftUnitor_symm_naturality_id _ _ rfl
+      (whiskerLeftId_hom_as_app _ _ _)
   naturality_comp η θ := by
     ext x
-    exact unitors_naturality_comp _ _ _ _ rfl (whiskerLeftComp_hom_as_app _ _ _ _)
+    exact rightUnitor_trans_leftUnitor_symm_naturality_comp _ _ _ _ rfl
+      (whiskerLeftComp_hom_as_app _ _ _ _)
 
 @[simp]
 lemma precompIdHom_app (F : LocallyDiscrete Γ ⥤ᵖ B) :
@@ -164,16 +106,19 @@ def precompIdInv :
     Pseudofunctor.id (LocallyDiscrete Γ ⥤ᵖ B) ⟶ precomp B (𝟭 Γ).toPseudofunctor where
   app F := pullbackIdInv F
   naturality {F G} η := isoMk (fun x => ρ_ (η.app x) ≪≫ (λ_ (η.app x)).symm)
-    (fun φ => unitors_naturality_iso _ _ _ _ (η.naturality φ))
+    (fun φ => rightUnitor_trans_leftUnitor_symm_naturality_whisker _ _ _ _
+      (η.naturality φ).hom)
   naturality_naturality Θ := by
     ext x
-    exact unitors_naturality_whisker (Θ.as.app x)
+    exact rightUnitor_trans_leftUnitor_symm_naturality (Θ.as.app x)
   naturality_id F := by
     ext x
-    exact unitors_naturality_id _ _ (whiskerLeftId_hom_as_app _ _ _) rfl
+    exact rightUnitor_trans_leftUnitor_symm_naturality_id _ _
+      (whiskerLeftId_hom_as_app _ _ _) rfl
   naturality_comp η θ := by
     ext x
-    exact unitors_naturality_comp _ _ _ _ (whiskerLeftComp_hom_as_app _ _ _ _) rfl
+    exact rightUnitor_trans_leftUnitor_symm_naturality_comp _ _ _ _
+      (whiskerLeftComp_hom_as_app _ _ _ _) rfl
 
 @[simp]
 lemma precompIdInv_app (F : LocallyDiscrete Γ ⥤ᵖ B) :
@@ -190,16 +135,16 @@ def precompIdEquiv :
   Equivalence.mkOfAdjointifyCounit (f := precompIdHom B Γ) (g := precompIdInv B Γ)
     (StrongTrans.isoMk (fun (F : LocallyDiscrete Γ ⥤ᵖ B) =>
       StrongTrans.isoMk (fun (x : LocallyDiscrete Γ) => (λ_ (𝟙 (F.obj x))).symm)
-      (fun φ => unitors_naturality_unit _))
+      (fun φ => rightUnitor_trans_leftUnitor_symm_naturality_leftUnitor_inv _))
       (fun η => by
         ext x
-        exact unitors_naturality_unit (η.app x)))
+        exact rightUnitor_trans_leftUnitor_symm_naturality_leftUnitor_inv (η.app x)))
     (StrongTrans.isoMk (fun (F : LocallyDiscrete Γ ⥤ᵖ B) =>
       StrongTrans.isoMk (fun (x : LocallyDiscrete Γ) => λ_ (𝟙 (F.obj x)))
-      (fun φ => unitors_naturality_counit _))
+      (fun φ => rightUnitor_trans_leftUnitor_symm_naturality_leftUnitor _))
       (fun η => by
         ext x
-        exact unitors_naturality_counit (η.app x)))
+        exact rightUnitor_trans_leftUnitor_symm_naturality_leftUnitor (η.app x)))
 
 @[simp]
 lemma precompIdEquiv_hom : (precompIdEquiv B Γ).hom = precompIdHom B Γ :=
@@ -241,17 +186,20 @@ def precompCompHom (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') :
       (precomp B g.toPseudofunctor).comp (precomp B f.toPseudofunctor) where
   app F := pullbackCompHom f g F
   naturality {F G} η := isoMk (fun x => ρ_ (η.app ⟨g.obj (f.obj x.as)⟩) ≪≫ (λ_ _).symm)
-    (fun φ => unitors_naturality_iso _ _ _ _ (η.naturality _))
+    (fun φ => rightUnitor_trans_leftUnitor_symm_naturality_whisker _ _ _ _
+      (η.naturality _).hom)
   naturality_naturality Θ := by
     ext x
-    exact unitors_naturality_whisker (Θ.as.app _)
+    exact rightUnitor_trans_leftUnitor_symm_naturality (Θ.as.app _)
   naturality_id F := by
     ext x
-    exact unitors_naturality_id _ _ (precomp_comp_mapId_hom_as_app f g F x)
+    exact rightUnitor_trans_leftUnitor_symm_naturality_id _ _
+      (precomp_comp_mapId_hom_as_app f g F x)
       (whiskerLeftId_hom_as_app _ _ _)
   naturality_comp η θ := by
     ext x
-    exact unitors_naturality_comp _ _ _ _ (precomp_comp_mapComp_hom_as_app f g η θ x)
+    exact rightUnitor_trans_leftUnitor_symm_naturality_comp _ _ _ _
+      (precomp_comp_mapComp_hom_as_app f g η θ x)
       (whiskerLeftComp_hom_as_app _ _ _ _)
 
 @[simp]
@@ -268,17 +216,20 @@ def precompCompInv (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') :
       precomp B (f ⋙ g).toPseudofunctor where
   app F := pullbackCompInv f g F
   naturality {F G} η := isoMk (fun x => ρ_ (η.app ⟨g.obj (f.obj x.as)⟩) ≪≫ (λ_ _).symm)
-    (fun φ => unitors_naturality_iso _ _ _ _ (η.naturality _))
+    (fun φ => rightUnitor_trans_leftUnitor_symm_naturality_whisker _ _ _ _
+      (η.naturality _).hom)
   naturality_naturality Θ := by
     ext x
-    exact unitors_naturality_whisker (Θ.as.app _)
+    exact rightUnitor_trans_leftUnitor_symm_naturality (Θ.as.app _)
   naturality_id F := by
     ext x
-    exact unitors_naturality_id _ _ (whiskerLeftId_hom_as_app _ _ _)
+    exact rightUnitor_trans_leftUnitor_symm_naturality_id _ _
+      (whiskerLeftId_hom_as_app _ _ _)
       (precomp_comp_mapId_hom_as_app f g F x)
   naturality_comp η θ := by
     ext x
-    exact unitors_naturality_comp _ _ _ _ (whiskerLeftComp_hom_as_app _ _ _ _)
+    exact rightUnitor_trans_leftUnitor_symm_naturality_comp _ _ _ _
+      (whiskerLeftComp_hom_as_app _ _ _ _)
       (precomp_comp_mapComp_hom_as_app f g η θ x)
 
 @[simp]
@@ -297,16 +248,16 @@ def precompCompEquiv (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') :
     (StrongTrans.isoMk (fun (F : LocallyDiscrete Λ' ⥤ᵖ B) =>
       StrongTrans.isoMk (fun (x : LocallyDiscrete Γ) =>
         (λ_ (𝟙 (F.obj ⟨g.obj (f.obj x.as)⟩))).symm)
-      (fun φ => unitors_naturality_unit _))
+      (fun φ => rightUnitor_trans_leftUnitor_symm_naturality_leftUnitor_inv _))
       (fun η => by
         ext x
-        exact unitors_naturality_unit (η.app _)))
+        exact rightUnitor_trans_leftUnitor_symm_naturality_leftUnitor_inv (η.app _)))
     (StrongTrans.isoMk (fun (F : LocallyDiscrete Λ' ⥤ᵖ B) =>
       StrongTrans.isoMk (fun (x : LocallyDiscrete Γ) => λ_ (𝟙 (F.obj ⟨g.obj (f.obj x.as)⟩)))
-      (fun φ => unitors_naturality_counit _))
+      (fun φ => rightUnitor_trans_leftUnitor_symm_naturality_leftUnitor _))
       (fun η => by
         ext x
-        exact unitors_naturality_counit (η.app _)))
+        exact rightUnitor_trans_leftUnitor_symm_naturality_leftUnitor (η.app _)))
 
 @[simp]
 lemma precompCompEquiv_hom (f : Γ ⥤ Λ) (g : Λ ⥤ Λ') :
