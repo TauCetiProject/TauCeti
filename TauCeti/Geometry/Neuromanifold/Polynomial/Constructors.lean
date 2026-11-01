@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Monad
 public import TauCeti.Geometry.Neuromanifold.Activation
-public import TauCeti.Geometry.Neuromanifold.Convolution
+public import TauCeti.Geometry.Neuromanifold.Convolution.Basic
 public import TauCeti.Geometry.Neuromanifold.Dense
 public import TauCeti.Geometry.Neuromanifold.Polynomial.Basic
 

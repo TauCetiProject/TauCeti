@@ -53,6 +53,8 @@ and doubling and differential addition can be computed on it alone.
 * `TauCeti.Montgomery.some_eq_twoTorsionPoint_iff`: it is the only affine point with
   `x`-coordinate `0`.
 * `TauCeti.Montgomery.addOrderOf_twoTorsionPoint`: over a field, `(0, 0)` has order two.
+* `TauCeti.Montgomery.add_self_eq_twoTorsionPoint_iff`: over a field, an affine point `(x, y)`
+  satisfies `P + P = (0, 0)` exactly when `x² = B²`.
 * `TauCeti.Montgomery.equation_model_iff` and `TauCeti.Montgomery.nonsingular_model_iff`: for
   `B ≠ 0` over a domain, `(x, y)` satisfies `B y² = x³ + A x² + x` (and is a nonsingular point of
   that cubic) exactly when `(B x, B² y)` satisfies the equation of `model A B` (and is a
@@ -262,6 +264,40 @@ variable (A) in
 @[simp]
 theorem addOrderOf_twoTorsionPoint (hB : B ≠ 0) : addOrderOf (twoTorsionPoint A hB) = 2 :=
   addOrderOf_eq_prime (by rw [two_nsmul, twoTorsionPoint_add_self]) (twoTorsionPoint_ne_zero A hB)
+
+/-- **The halves of the distinguished point of order two.** An affine point `(x, y)` of the monic
+model satisfies `P + P = (0, 0)` exactly when `x² = B²`, that is, when its Montgomery coordinate
+`x / B` is `±1`. -/
+theorem add_self_eq_twoTorsionPoint_iff (hB : B ≠ 0) {x y : K}
+    (h : (model A B).toAffine.Nonsingular x y) :
+    Affine.Point.some x y h + .some x y h = twoTorsionPoint A hB ↔ x ^ 2 = B ^ 2 := by
+  by_cases hx : x = 0
+  · rw [(some_eq_twoTorsionPoint_iff hB h).mpr hx, twoTorsionPoint_add_self, hx]
+    simp [(twoTorsionPoint_ne_zero A hB).symm, eq_comm (a := (0 : K)), hB]
+  set P : (model A B).toAffine.Point := .some x y h
+  -- `P + P = T₀` exactly when `P + T₀ = -P`, which is decided by the `x`-coordinate of `P + T₀`.
+  have hT : P + P = twoTorsionPoint A hB ↔ P + twoTorsionPoint A hB = -P := by
+    rw [eq_neg_iff_add_eq_zero, add_right_comm, ← eq_neg_iff_add_eq_zero, neg_twoTorsionPoint]
+  have hX : P + twoTorsionPoint A hB = -P ↔
+      (model A B).toAffine.addX x 0 ((model A B).toAffine.slope x 0 y 0) = x := by
+    rw [twoTorsionPoint_def, Affine.Point.add_of_X_ne hx]
+    refine ⟨fun h' ↦ ?_, fun h' ↦ ?_⟩
+    · rw [Affine.Point.neg_some] at h'
+      exact (Affine.Point.some.inj h').1
+    · refine (Affine.Point.X_eq_iff.mp h').resolve_left fun h'' ↦ twoTorsionPoint_ne_zero A hB ?_
+      have h₀ := (Affine.Point.add_of_X_ne (h₁ := h)
+        (h₂ := (nonsingular_model_zero_zero A B).mpr (pow_ne_zero 2 hB)) hx).trans h''
+      rwa [← twoTorsionPoint_def, add_eq_left] at h₀
+  have e : y ^ 2 = x ^ 3 + A * B * x ^ 2 + B ^ 2 * x := by
+    simpa [Affine.equation_iff] using h.1
+  rw [hT, hX, Affine.addX_of_X_ne hx, div_eq_iff (pow_ne_zero 2 (sub_ne_zero.mpr hx))]
+  simp only [model_a₁, model_a₂, zero_mul, add_zero, sub_zero]
+  constructor
+  · intro h'
+    have h'' : x * (x ^ 2 - B ^ 2) = 0 := by linear_combination e - h'
+    exact sub_eq_zero.mp ((mul_eq_zero.mp h'').resolve_left hx)
+  · intro h'
+    linear_combination e - x * h'
 
 end Field
 
