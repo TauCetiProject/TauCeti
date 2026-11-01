@@ -21,9 +21,12 @@ size has a root. This file records that fact as a `Nonempty` instance on the roo
 families indexed by the characteristic roots, counted with algebraic multiplicity, have a nonempty
 index type.
 
-It also records the determinant form of the spectral mapping theorem: for a polynomial `p`, the
-determinant of `p(A)` is the product of `p(λ)` over the characteristic roots `λ` of `A`, counted
-with algebraic multiplicity. Mathlib's `Matrix.det_eq_prod_roots_charpoly` is the case `p = X`.
+It also records the spectral mapping theorem with algebraic multiplicities: for a polynomial `p`,
+the characteristic roots of `p(A)` are the values `p(λ)` at the characteristic roots `λ` of `A`,
+counted with algebraic multiplicity. So the determinant of `p(A)` is the product of the `p(λ)` and
+its trace is their sum; Mathlib's `Matrix.det_eq_prod_roots_charpoly` and
+`Matrix.trace_eq_sum_roots_charpoly` are the case `p = X`. In particular `det (1 - X A)` factors as
+`∏ (1 - λ X)`.
 
 ## Main results
 
@@ -35,6 +38,11 @@ with algebraic multiplicity. Mathlib's `Matrix.det_eq_prod_roots_charpoly` is th
   products `A * B` and `B * A` agree, counted with multiplicity.
 * `Matrix.det_aeval_eq_prod_roots_charpoly`: `det (p(A)) = ∏ p(λ)` over the characteristic roots
   `λ` of `A`.
+* `Matrix.charpoly_aeval_eq_prod_roots_charpoly`: the characteristic polynomial of `p(A)` is
+  `∏ (X - p(λ))`.
+* `Matrix.trace_aeval_eq_sum_roots_charpoly`: `tr (p(A)) = ∑ p(λ)`; for `p = X ^ k` the trace of
+  `A ^ k` is the `k`-th power sum of the characteristic roots.
+* `Matrix.charpolyRev_eq_prod_roots_charpoly`: `det (1 - X A) = ∏ (1 - λ X)`.
 -/
 
 public section
@@ -121,5 +129,44 @@ theorem det_aeval_eq_prod_roots_charpoly (A : Matrix n n K) (p : K[X]) :
     Multiset.prod_map_mul, Multiset.map_const', Multiset.prod_replicate, hcard, hφ, aeval_C,
     Algebra.algebraMap_eq_smul_one, det_smul, det_one, mul_one]
   rw [Multiset.prod_map_prod_map]
+
+omit [Nonempty n] [DecidableEq K] in
+/-- **Spectral mapping for characteristic polynomials.** Over an algebraically closed field, the
+characteristic polynomial of `p(A)` is `∏ (X - p(λ))` over the characteristic roots `λ` of `A`,
+counted with algebraic multiplicity. -/
+theorem charpoly_aeval_eq_prod_roots_charpoly (A : Matrix n n K) (p : K[X]) :
+    (aeval A p).charpoly = (A.charpoly.roots.map fun μ ↦ X - C (p.eval μ)).prod := by
+  refine Polynomial.funext fun x ↦ ?_
+  have h : scalar n x - aeval A p = aeval A (C x - p) := by
+    simp [Algebra.algebraMap_eq_smul_one, smul_one_eq_diagonal]
+  rw [eval_charpoly, h, det_aeval_eq_prod_roots_charpoly, eval_multiset_prod, Multiset.map_map]
+  simp
+
+omit [Nonempty n] [DecidableEq K] in
+/-- **Spectral mapping for traces.** Over an algebraically closed field, the trace of `p(A)` is
+the sum of `p(λ)` over the characteristic roots `λ` of `A`, counted with algebraic
+multiplicity. -/
+theorem trace_aeval_eq_sum_roots_charpoly (A : Matrix n n K) (p : K[X]) :
+    (aeval A p).trace = (A.charpoly.roots.map p.eval).sum := by
+  rw [trace_eq_sum_roots_charpoly, charpoly_aeval_eq_prod_roots_charpoly]
+  simpa [Multiset.map_map, Function.comp_def] using
+    congrArg Multiset.sum (roots_multiset_prod_X_sub_C (A.charpoly.roots.map p.eval))
+
+omit [Nonempty n] [DecidableEq K] in
+/-- Over an algebraically closed field, `det (1 - X A)` is the product of the linear factors
+`1 - λ X` over the characteristic roots `λ` of `A`, counted with algebraic multiplicity. -/
+theorem charpolyRev_eq_prod_roots_charpoly (A : Matrix n n K) :
+    A.charpolyRev = (A.charpoly.roots.map fun μ ↦ 1 - C μ * X).prod := by
+  refine Polynomial.funext fun x ↦ ?_
+  -- Evaluating `det (1 - X A)` at `x` gives the determinant of `(1 - x X)(A)`.
+  have h : (evalRingHom x).mapMatrix (1 - (X : K[X]) • A.map C) = aeval A (1 - C x * X) := by
+    ext i j
+    rcases eq_or_ne i j with rfl | hij <;>
+      simp [*, Algebra.algebraMap_eq_smul_one] <;> ring
+  rw [charpolyRev, ← coe_evalRingHom, RingHom.map_det, h,
+    det_aeval_eq_prod_roots_charpoly, map_multiset_prod, Multiset.map_map]
+  refine congrArg _ (Multiset.map_congr rfl fun μ _ ↦ ?_)
+  simp only [Function.comp_apply, coe_evalRingHom, eval_sub, eval_one, eval_mul, eval_C, eval_X]
+  ring
 
 end Matrix
