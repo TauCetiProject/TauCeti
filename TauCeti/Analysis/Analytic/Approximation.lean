@@ -16,7 +16,7 @@ import TauCeti.Analysis.Calculus.Deriv.LocallyFinite
 import TauCeti.Analysis.Complex.GaussianTransform
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Real
-import TauCeti.Topology.LocallyFinite
+import TauCeti.Topology.LocallyFinite.Basic
 
 /-!
 # `C¹` approximation by real analytic functions on the line
