@@ -96,23 +96,8 @@ theorem norm_coeff_colemanDBounded_le {B P : R[X]} {n m : ℕ} {ρ β : ℕ → 
   set c : Fin (n + m) → R := fun x ↦
     if (x : ℕ) < σ x then -B.coeff (σ x - x) else if (x : ℕ) < n then 1 else P.coeff (x - σ x)
   set e : Fin (n + m) → ℕ := fun x ↦ if (x : ℕ) < σ x then 1 else 0
-  have hM (x : Fin (n + m)) : M (σ x) x = C (c x) * X ^ e x := by
-    rcases lt_or_ge (x : ℕ) n with h | h
-    · rw [hM_def, sylvester_apply_of_lt _ _ _ _ h, ite_eq_left ((hband x).1 h)]
-      simp only [coeff_sub, coeff_one, coeff_C_mul, coeff_map, c, e, ite_eq_left h]
-      by_cases hx : (x : ℕ) < σ x
-      · rw [ite_eq_right (by omega), ite_eq_left hx, ite_eq_left hx, zero_sub, pow_one, map_neg,
-          neg_mul, mul_comm]
-      · have : (σ x : ℕ) - x = 0 := by omega
-        simp [hx, this, hB₀]
-    · have hσx : ¬(x : ℕ) < σ x := by have := (hband x).2 h; omega
-      rw [hM_def, sylvester_apply_of_le _ _ _ _ h, ite_eq_left ((hband x).2 h)]
-      simp only [coeff_map, coeff_reflect, c, e, ite_eq_right hσx, ite_eq_right (not_lt.2 h)]
-      rw [revAt_le (by have := (hband x).2 h; omega)]
-      simp only [pow_zero, mul_one]
-      have := (hband x).2 h
-      congr 2
-      omega
+  have hM (x : Fin (n + m)) : M (σ x) x = C (c x) * X ^ e x :=
+    sylvester_map_reflect_one_sub_apply hB₀ (hband x).1 (hband x).2
   simp_rw [hM]
   rw [prod_mul_distrib, ← map_prod, prod_pow_eq_pow_sum, coeff_C_mul_X_pow]
   split_ifs with hk

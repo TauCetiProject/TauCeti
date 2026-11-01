@@ -14,6 +14,7 @@ public import TauCeti.RingTheory.MvPowerSeries.Inverse
 # Truncations and finite expansions of power series
 
 This file collects facts used to compare power series to a finite order `m`:
+* the truncation `trunc (n + 1) φ` is a polynomial of degree at most `n`,
 * the truncation `trunc m φ` vanishes exactly when `φ` has order at least `m`,
 * two power series have equal `m`-truncations if and only if their coefficients agree below `m`,
 * the `m`-truncations of `inv.aux a φ`, `invOfUnit φ u`, `φ⁻¹`, integer powers `u ^ k`,
@@ -25,6 +26,7 @@ This file collects facts used to compare power series to a finite order `m`:
 
 ## Main results
 
+* `PowerSeries.natDegree_trunc_succ_le`: `trunc (n + 1) φ` has degree at most `n`.
 * `PowerSeries.trunc_eq_zero_iff_le_order`: `trunc m φ = 0 ↔ m ≤ order φ`.
 * `PowerSeries.trunc_eq_trunc_iff`: `trunc m φ = trunc m ψ ↔ ∀ n < m, coeff n φ = coeff n ψ`.
 * `PowerSeries.coe_trunc_eq_self_of_coeff_eq_zero`: a series vanishing from degree `m` on is its
@@ -47,6 +49,10 @@ namespace PowerSeries
 section Semiring
 
 variable {R : Type*} [Semiring R]
+
+/-- The truncation below degree `n + 1` of a power series has degree at most `n`. -/
+theorem natDegree_trunc_succ_le (φ : R⟦X⟧) (n : ℕ) : (trunc (n + 1) φ).natDegree ≤ n :=
+  Nat.lt_succ_iff.1 (natDegree_trunc_lt φ n)
 
 /-- The truncation below degree `m` of a power series vanishes exactly when the series has
 order at least `m`. -/
