@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Orientation
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
-public import TauCeti.Topology.VectorBundle.OrthonormalFrame
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Basic
 
 /-!
 # The orientation double cover as a quotient of the orthonormal frame bundle
