@@ -50,8 +50,8 @@ theorem existsUnique_norm_le_forall_apply_eq (hT : T.IsWeaklyCompact)
     (Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) :
     ∃! y : F, ‖y‖ ≤ ‖T‖ * ‖Φ‖ ∧ ∀ f : StrongDual 𝕜 F, f y = Φ (f.comp T) := by
   obtain ⟨y, hy⟩ := isWeaklyCompact_iff_range_subset.1 hT ⟨Φ, rfl⟩
-  have hpair (f : StrongDual 𝕜 F) : f y = Φ (f.comp T) :=
-    congrArg (fun Ψ ↦ Ψ f) hy
+  have hpair (f : StrongDual 𝕜 F) : f y = Φ (f.comp T) := by
+    simpa only [dual_def, precomp_apply, comp_apply] using congrArg (fun Ψ ↦ Ψ f) hy
   refine ⟨y, ⟨norm_le_dual_bound 𝕜 y (by positivity) fun f ↦ ?_, hpair⟩, ?_⟩
   · rw [hpair]
     calc
