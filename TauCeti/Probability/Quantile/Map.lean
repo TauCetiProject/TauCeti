@@ -50,10 +50,11 @@ mass of `μ`. Every quantile at a level strictly between `0` and `1` lies in suc
   `MeasureTheory.Measure.quantile_map_of_antitone` and
   `MeasureTheory.Measure.upperQuantile_map_of_antitone`;
 * `MeasureTheory.Measure.quantile_map_exp`, `MeasureTheory.Measure.quantile_map_log`,
-  `MeasureTheory.Measure.quantile_map_rpow`, `MeasureTheory.Measure.quantile_map_sqrt`,
-  `MeasureTheory.Measure.quantile_map_inv` and their upper-quantile counterparts — the elementary
-  maps, with the logarithm, real powers and the reciprocal taken on the half-line carrying a
-  positive or nonnegative law.
+  `MeasureTheory.Measure.quantile_map_rpow`, `MeasureTheory.Measure.quantile_map_const_mul`,
+  `MeasureTheory.Measure.quantile_map_sqrt`, `MeasureTheory.Measure.quantile_map_inv` and their
+  upper-quantile counterparts — the elementary maps, with the logarithm, real powers and the
+  reciprocal taken on the half-line carrying a positive or nonnegative law, and scaling by a
+  nonnegative factor.
 
 ## References
 
@@ -278,6 +279,20 @@ quantile of the law of `X ^ r` is the `r`-th power of the upper quantile of the 
   upperQuantile_map_of_monotoneOn ordConnected_Ici hμ
     (Real.monotoneOn_rpow_Ici_of_exponent_nonneg hr) (Real.continuous_rpow_const hr).continuousOn
     h0 h1
+
+/-- For a nonnegative factor `c`, the quantile of the law of `c * X` is `c` times the quantile of
+the law of `X`. -/
+@[simp] theorem quantile_map_const_mul [IsProbabilityMeasure μ] {c : ℝ} (hc : 0 ≤ c) (h0 : 0 < t)
+    (h1 : t < 1) : (μ.map (c * ·)).quantile t = c * μ.quantile t :=
+  quantile_map_of_monotone (fun _ _ h ↦ mul_le_mul_of_nonneg_left h hc) (continuous_const_mul c)
+    h0 h1
+
+/-- For a nonnegative factor `c`, the upper quantile of the law of `c * X` is `c` times the upper
+quantile of the law of `X`. -/
+@[simp] theorem upperQuantile_map_const_mul [IsProbabilityMeasure μ] {c : ℝ} (hc : 0 ≤ c)
+    (h0 : 0 < t) (h1 : t < 1) : (μ.map (c * ·)).upperQuantile t = c * μ.upperQuantile t :=
+  upperQuantile_map_of_monotone (fun _ _ h ↦ mul_le_mul_of_nonneg_left h hc)
+    (continuous_const_mul c) h0 h1
 
 /-- The quantile of the law of `√X` is the square root of the quantile of the law of `X`. Since
 `Real.sqrt` is nondecreasing and continuous on the whole line, no support hypothesis is needed. -/

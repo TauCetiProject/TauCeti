@@ -89,12 +89,12 @@ theorem tendsto_quantile_chiSquaredMeasure_nhdsLT_one (hk : 0 ≤ k) :
 
 /-- The quantile of a chi-squared law scaled by a nonnegative factor, including the Dirac
 boundaries at zero factor and at zero degrees of freedom. -/
+@[simp]
 theorem quantile_map_const_mul_chiSquaredMeasure (hc : 0 ≤ c) (hk : 0 ≤ k) (hu : u ∈ Ioo 0 1) :
     ((chiSquaredMeasure k).map (c * ·)).quantile u =
       c * (2 * inverseRegularizedGamma (k / 2) u) := by
   have := isProbabilityMeasure_chiSquaredMeasure hk
-  rw [Measure.quantile_map_of_monotone (fun _ _ h ↦ mul_le_mul_of_nonneg_left h hc)
-    (continuous_const_mul c) hu.1 hu.2, quantile_chiSquaredMeasure hk hu]
+  rw [Measure.quantile_map_const_mul hc hu.1 hu.2, quantile_chiSquaredMeasure hk hu]
 
 /-- Quantiles of a chi-squared law scaled by a nonnegative factor tend to zero as the level
 tends to zero from above. -/

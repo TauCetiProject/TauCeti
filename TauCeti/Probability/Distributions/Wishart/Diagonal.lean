@@ -113,6 +113,7 @@ theorem hasLaw_coe_apply_nonsingularWishartMeasure
 /-- The quantile of a diagonal entry of a Gaussian-Gram Wishart matrix is the diagonal scale
 entry times the chi-squared quantile. This includes the Dirac laws at zero degree or zero
 diagonal scale entry, whose quantile is zero. -/
+@[simp]
 theorem quantile_map_coe_apply_wishartGramMeasure (ν : ℕ) (hS : S.PosSemidef) (i : Fin p)
     {u : ℝ} (hu : u ∈ Ioo 0 1) :
     ((wishartGramMeasure ν S).map
@@ -148,6 +149,7 @@ theorem tendsto_quantile_map_coe_apply_wishartGramMeasure_nhdsLT_one (ν : ℕ)
 
 /-- The quantile of a diagonal entry of a nonsingular Wishart matrix is the diagonal scale entry
 times the chi-squared quantile. -/
+@[simp]
 theorem quantile_map_coe_apply_nonsingularWishartMeasure (hS : S.PosDef) (hn : (p : ℝ) - 1 < n)
     (i : Fin p) {u : ℝ} (hu : u ∈ Ioo 0 1) :
     ((nonsingularWishartMeasure n S).map
