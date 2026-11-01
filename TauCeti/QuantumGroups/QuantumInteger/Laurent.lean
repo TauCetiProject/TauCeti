@@ -43,6 +43,9 @@ classical specialization at `v = 1` at the same time.
 * `TauCeti.laurentEval_one_laurentQuantumInteger`: the value at `v = 1` is `r`.
 * `TauCeti.qInt_add_inv_eq_laurentEval`: the value of `[n]_v` at a unit `u` of a commutative ring
   is the quantum integer `TauCeti.qInt` at the loop parameter `u + u⁻¹`.
+* `TauCeti.sub_inv_mul_qInt_add_inv`: `(u - u⁻¹) [n] = uⁿ - u⁻ⁿ` at `δ = u + u⁻¹`.
+* `TauCeti.qInt_add_inv_eq_quantumInteger`: at `q` in a field with `q - q⁻¹ ≠ 0`, the quantum
+  integer at `δ = q + q⁻¹` is the field quantum integer `TauCeti.quantumInteger q n`.
 
 ## References
 
@@ -122,5 +125,19 @@ theorem qInt_add_inv_eq_laurentEval {R : Type*} [CommRing R] (u : Rˣ) (n : ℕ)
   rw [qInt_def, laurentQuantumInteger, ← AlgHom.coe_toRingHom, Polynomial.hom_eval₂,
     ← Polynomial.eval_map, map_S]
   simp
+
+/-- **The `q`-side characterization of the quantum integers**: at `δ = u + u⁻¹` for a unit `u`,
+`(u - u⁻¹) [n] = uⁿ - u⁻ⁿ`. -/
+theorem sub_inv_mul_qInt_add_inv {R : Type*} [CommRing R] (u : Rˣ) (n : ℕ) :
+    ((u : R) - ↑u⁻¹) * qInt R (u + ↑u⁻¹) n = (u : R) ^ n - (↑u⁻¹ : R) ^ n := by
+  simpa [qInt_add_inv_eq_laurentEval] using sub_inv_mul_laurentEval_laurentQuantumInteger u n
+
+/-- At a parameter `q` of a field with `q - q⁻¹ ≠ 0`, the quantum integer at `δ = q + q⁻¹` is the
+field quantum integer `[n]_q = (qⁿ - q⁻ⁿ) / (q - q⁻¹)`. -/
+theorem qInt_add_inv_eq_quantumInteger {K : Type*} [Field K] {q : K} (hq : q - q⁻¹ ≠ 0)
+    (n : ℕ) : qInt K (q + q⁻¹) n = quantumInteger q n := by
+  have h := qInt_add_inv_eq_laurentEval (Units.mk0 q (ne_zero_of_sub_inv_ne_zero hq)) n
+  rw [laurentEval_laurentQuantumInteger (by simpa using hq)] at h
+  simpa using h
 
 end TauCeti

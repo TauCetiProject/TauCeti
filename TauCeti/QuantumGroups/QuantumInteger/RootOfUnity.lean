@@ -9,6 +9,8 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.QuantumGroups.QuantumInteger.Chebyshev
 public import TauCeti.QuantumGroups.QuantumInteger.Laurent
 
+import TauCeti.Algebra.Ring.Units
+
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 
@@ -16,17 +18,15 @@ import Mathlib.Tactic.LinearCombination
 # Quantum integers at a loop parameter and roots of unity
 
 The quantum integers `TauCeti.qInt R δ n` are defined at an arbitrary loop parameter `δ`, with no
-`q` in sight. This file compares them with the `q`-side quantum integers at `δ = u + u⁻¹` for a
-unit `u`: there `[n]` is the value at `u` of the Laurent quantum integer
-`TauCeti.laurentQuantumInteger n` (`TauCeti.qInt_add_inv_eq_laurentEval`), so that
-`(u - u⁻¹) [n] = uⁿ - u⁻ⁿ`. From this follows the dictionary between the vanishing of quantum
-integers at `δ` and `q` being a root of unity.
+`q` in sight. At `δ = u + u⁻¹` for a unit `u` they satisfy `(u - u⁻¹) [n] = uⁿ - u⁻ⁿ`
+(`TauCeti.sub_inv_mul_qInt_add_inv`, in `TauCeti/QuantumGroups/QuantumInteger/Laurent.lean`).
+This file derives from it the dictionary between the vanishing of quantum integers at `δ` and
+`q` being a root of unity.
 
 ## Main results
 
-* `TauCeti.sub_inv_mul_qInt_add_inv`: `(u - u⁻¹) [n] = uⁿ - u⁻ⁿ` at `δ = u + u⁻¹`.
-* `TauCeti.qInt_add_inv_eq_quantumInteger`: comparison with the field quantum integer
-  `TauCeti.quantumInteger`.
+* `TauCeti.pow_two_mul_eq_one_of_qInt_add_inv_eq_zero`: `[n] = 0` at `δ = u + u⁻¹` forces
+  `u^(2n) = 1`.
 * `TauCeti.qInt_add_inv_eq_zero_iff`: without zero divisors, for a unit `u ≠ ±1`, `[n] = 0` at
   `δ = u + u⁻¹` iff `u^(2n) = 1`.
 * `TauCeti.exists_qInt_eq_zero_iff`: over an algebraically closed field of characteristic zero,
@@ -46,31 +46,14 @@ public section
 
 open Polynomial
 
-namespace Units
-
-variable {R : Type*} [Ring R] [NoZeroDivisors R]
-
-/-- In a ring without zero divisors, a unit `u ≠ ±1` satisfies `u - u⁻¹ ≠ 0`. -/
-theorem val_sub_val_inv_ne_zero {u : Rˣ} (hu₁ : u ≠ 1) (hu₂ : u ≠ -1) :
-    (u : R) - ↑u⁻¹ ≠ 0 := fun h ↦
-  ((inv_eq_self_iff u).1 (Units.ext (sub_eq_zero.1 h).symm)).elim hu₁ hu₂
-
-end Units
-
 namespace TauCeti
 
 section Units
 
 variable {R : Type*} [CommRing R]
 
-/-- **The `q`-side characterization of the quantum integers**: at `δ = u + u⁻¹` for a unit `u`,
-`(u - u⁻¹) [n] = uⁿ - u⁻ⁿ`. -/
-theorem sub_inv_mul_qInt_add_inv (u : Rˣ) (n : ℕ) :
-    ((u : R) - ↑u⁻¹) * qInt R (u + ↑u⁻¹) n = (u : R) ^ n - (↑u⁻¹ : R) ^ n := by
-  simpa [qInt_add_inv_eq_laurentEval] using sub_inv_mul_laurentEval_laurentQuantumInteger u n
-
-/-- If some quantum integer vanishes at `δ = u + u⁻¹`, then `u` is a root of unity:
-`[n] = 0` forces `u ^ (2 * n) = 1`. -/
+/-- If the quantum integer `[n]` vanishes at `δ = u + u⁻¹`, then `u ^ (2 * n) = 1`. For
+`n > 0` this makes `u` a root of unity. -/
 theorem pow_two_mul_eq_one_of_qInt_add_inv_eq_zero {u : Rˣ} {n : ℕ}
     (h : qInt R (u + ↑u⁻¹) n = 0) : u ^ (2 * n) = 1 := by
   have h' : u ^ n = u⁻¹ ^ n := Units.ext <| by
@@ -91,14 +74,6 @@ theorem qInt_add_inv_eq_zero_iff [NoZeroDivisors R] {u : Rˣ} (hu₁ : u ≠ 1) 
   exact_mod_cast congrArg Units.val h
 
 end Units
-
-/-- At a parameter `q` of a field with `q - q⁻¹ ≠ 0`, the quantum integer at `δ = q + q⁻¹` is the
-field quantum integer `[n]_q = (qⁿ - q⁻ⁿ) / (q - q⁻¹)`. -/
-theorem qInt_add_inv_eq_quantumInteger {K : Type*} [Field K] {q : K} (hq : q - q⁻¹ ≠ 0)
-    (n : ℕ) : qInt K (q + q⁻¹) n = quantumInteger q n := by
-  have h := qInt_add_inv_eq_laurentEval (Units.mk0 q (ne_zero_of_sub_inv_ne_zero hq)) n
-  rw [laurentEval_laurentQuantumInteger (by simpa using hq)] at h
-  simpa using h
 
 /-- **The root-of-unity dictionary.** Over an algebraically closed field of characteristic zero,
 some quantum integer `[n]` with `n ≥ 1` vanishes at `δ` iff `δ = ζ + ζ⁻¹` for a root of unity
