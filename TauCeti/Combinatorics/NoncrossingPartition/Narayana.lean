@@ -36,10 +36,10 @@ with `(r + 1) C(n, r + 1) = (n - r) C(n, r)`. The case `k = 1` is the claim.
 
 * `TauCeti.NoncrossingPartition.card_mul_card_parts_eq` — for a finite set `s` of positions in a
   linear order, `|s| * #{π ∈ NC(s) | |π| = j + 1} = C(|s|, j + 1) * C(|s|, j)`.
-* `TauCeti.NoncrossingPartition.card_parts_eq` — the same count as a quotient, for `s` nonempty.
-* `TauCeti.NoncrossingPartition.card_fin_parts_eq` — the count for the positions of `Fin n`.
-* `TauCeti.NoncrossingPartition.card_fin_four_parts_eq_two` — the Narayana count of `NC(4)` with
-  two parts is `6`.
+* `TauCeti.NoncrossingPartition.card_parts_eq_div` — the same count as the quotient
+  `C(|s|, j + 1) * C(|s|, j) / |s|`.
+* `TauCeti.NoncrossingPartition.card_fin_mul_card_parts_eq` — the multiplied form
+  `n * #{π ∈ NC(Fin n) | |π| = j + 1} = C(n, j + 1) * C(n, j)` for `Fin n`.
 
 ## References
 
@@ -120,7 +120,6 @@ private theorem key_identity (n : ℕ) (hn : 1 ≤ n) (K : ℕ) (M : ℤ) :
   rw [sub_add_cancel] at R2
   push_cast at R1 R2
   rw [bin_succ n M, bin_succ n (M - K)]
-  have e : M - K - 1 = M - K - 1 := rfl
   have hD : (n : ℚ) * K * (bin n M + bin n (M - 1)) * (bin n (M - K) + bin n (M - K - 1)) =
       (n + 1) * ((K - 1) * bin n (M - 1) * bin n (M - K) + K * bin n M * bin n (M - K) +
         K * bin n (M - 1) * bin n (M - K - 1) + (K + 1) * bin n M * bin n (M - K - 1)) := by
@@ -350,12 +349,17 @@ theorem card_mul_card_parts_eq (s : Finset α) (j : ℕ) :
       simp
     exact_mod_cast h'
 
-/-- The number of noncrossing partitions of a nonempty finite set `s` of positions with `j + 1`
-parts is the Narayana number `C(|s|, j + 1) C(|s|, j) / |s|`. -/
-theorem card_parts_eq_div (hs : s.Nonempty) (j : ℕ) :
+/-- The number of noncrossing partitions of a finite set `s` of positions with `j + 1` parts is the
+Narayana number `C(|s|, j + 1) C(|s|, j) / |s|`, with natural-number division. -/
+theorem card_parts_eq_div (s : Finset α) (j : ℕ) :
     #{P : NoncrossingPartition s | #P.1.parts = j + 1} =
       (#s).choose (j + 1) * (#s).choose j / #s := by
-  rw [← card_mul_card_parts_eq s j, Nat.mul_div_cancel_left _ hs.card_pos]
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · rw [Finset.card_empty, Nat.div_zero]
+    refine Finset.card_eq_zero.2 (Finset.filter_eq_empty_iff.2 fun P _ h => ?_)
+    rw [Finpartition.parts_eq_empty_iff.2 rfl] at h
+    simp at h
+  · rw [← card_mul_card_parts_eq s j, Nat.mul_div_cancel_left _ hs.card_pos]
 
 /-- The number of noncrossing partitions of `Fin n` with `j + 1` parts, multiplied by `n`, is
 `C(n, j + 1) * C(n, j)`. -/
@@ -363,12 +367,5 @@ theorem card_fin_mul_card_parts_eq (n j : ℕ) :
     n * #{P : NoncrossingPartition (univ : Finset (Fin n)) | #P.1.parts = j + 1} =
       n.choose (j + 1) * n.choose j := by
   simpa using card_mul_card_parts_eq (univ : Finset (Fin n)) j
-
-/-- The Narayana count of `NC(4)` with two parts is `6`. -/
-theorem card_fin_four_parts_eq_two :
-    #{P : NoncrossingPartition (univ : Finset (Fin 4)) | #P.1.parts = 2} = 6 := by
-  have h := card_fin_mul_card_parts_eq 4 1
-  norm_num [Nat.choose] at h
-  omega
 
 end TauCeti.NoncrossingPartition
