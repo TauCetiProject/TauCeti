@@ -1,0 +1,230 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.Complex.Analytic
+public import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
+public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ComplexManifold
+public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
+
+/-!
+# The `∂bar`-closed functions are the holomorphic functions
+
+Let `J` be a smooth almost complex structure on a manifold `M` and let `F` be a complex normed
+space. On a smooth function `f : M → F`, regarded as a `0`-form, the operators `∂` and `∂bar` of
+`J` are the Wirtinger parts of the differential:
+
+`∂f(v) = (df(v) - i df(J v)) / 2`, `∂bar f(v) = (df(v) + i df(J v)) / 2`.
+
+So `∂bar f` vanishes at a point exactly when `df` is complex linear there, `df ∘ J = i df`; that
+is, exactly when `f` is pseudoholomorphic there as a map into the complex vector space `F`.
+
+On a complex manifold, with its almost complex structure
+`TauCeti.SmoothAlmostComplexStructure.ofComplexManifold`, the pseudoholomorphic maps are the
+holomorphic maps. Hence a smooth function satisfies `∂bar f = 0` exactly when it is holomorphic,
+and for a finite-dimensional model the kernel of `∂bar` on smooth `0`-forms is the complex vector
+space of holomorphic functions `M → F` (`TauCeti.kerDelBarZeroEquiv`). This is the Dolbeault
+cohomology `H^(0,0)` of `M` with coefficients in `F`, since there are no forms of degree `-1`.
+
+## Main declarations
+
+* `TauCeti.SmoothAlmostComplexStructure.del_apply_apply`,
+  `TauCeti.SmoothAlmostComplexStructure.delBar_apply_apply`: `∂` and `∂bar` on functions.
+* `TauCeti.SmoothAlmostComplexStructure.delBar_apply_eq_zero_iff_isPseudoholomorphicAt`,
+  `TauCeti.SmoothAlmostComplexStructure.delBar_eq_zero_iff_isPseudoholomorphic`: on any almost
+  complex manifold, `∂bar f = 0` exactly when `f` is pseudoholomorphic.
+* `TauCeti.SmoothAlmostComplexStructure.delBar_ofComplexManifold_apply_eq_zero_iff`,
+  `TauCeti.SmoothAlmostComplexStructure.delBar_ofComplexManifold_eq_zero_iff`: on a complex
+  manifold, `∂bar f = 0` exactly when `f` is holomorphic.
+* `TauCeti.kerDelBarZeroEquiv`: the `∂bar`-closed smooth functions are the holomorphic
+  functions.
+
+## References
+
+* Daniel Huybrechts, *Complex Geometry: An Introduction*, Universitext, Springer, 2005,
+  Sections 1.3 and 2.6.
+-/
+
+public section
+
+noncomputable section
+
+open scoped Manifold ContDiff TauCeti.ComplexManifold
+
+namespace TauCeti
+
+namespace SmoothAlmostComplexStructure
+
+/-! ### `∂` and `∂bar` on functions on an almost complex manifold -/
+
+section AlmostComplex
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [NormedAddCommGroup F] [NormedSpace ℂ F] (J : SmoothAlmostComplexStructure I M)
+
+/-- The exterior derivative of a smooth function, regarded as a `0`-form, evaluated on a tangent
+vector, is the derivative of the function applied to that vector. -/
+private theorem mextDerivₗ_zero_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
+    (mextDerivₗ I 0 f).1 x ![v] = mvfderiv I (fun y ↦ f.1 y 0) x v := by
+  calc (mextDerivₗ I 0 f).1 x ![v]
+      = mextDeriv (RoughForm.ofFunction I fun y ↦ f.1 y 0) x ![v] := by
+        rw [mextDerivₗ_apply, ← RoughForm.eq_ofFunction]
+    _ = mvfderiv I (fun y ↦ f.1 y 0) x v := by
+        rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+          Matrix.cons_val_zero]
+
+/-- **`∂` on functions.** For a smooth function `f`, `∂f(v) = (df(v) - i df(J v)) / 2`. -/
+theorem del_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
+    (J.del f).1 x ![v] = (2 : ℂ)⁻¹ • (mvfderiv I (fun y ↦ f.1 y 0) x v -
+      Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x (J x v)) := by
+  rw [(SmoothForm.isOfType_zero_zero f J).del_eq]
+  simp only [coe_typeProjection, zero_add, ContinuousLinearMap.typeProjection_one_zero,
+    LinearMap.smul_apply, LinearMap.sub_apply, Module.End.one_apply,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.sub_apply]
+  rw [ContinuousLinearMap.alternatingDerivation_apply_vecCons_fin_one, mextDerivₗ_zero_apply,
+    mextDerivₗ_zero_apply]
+
+/-- **`∂bar` on functions.** For a smooth function `f`, `∂bar f(v) = (df(v) + i df(J v)) / 2`. -/
+theorem delBar_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) :
+    (J.delBar f).1 x ![v] = (2 : ℂ)⁻¹ • (mvfderiv I (fun y ↦ f.1 y 0) x v +
+      Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x (J x v)) := by
+  rw [(SmoothForm.isOfType_zero_zero f J).delBar_eq]
+  simp only [coe_typeProjection, zero_add, ContinuousLinearMap.typeProjection_zero_one,
+    LinearMap.smul_apply, LinearMap.add_apply, Module.End.one_apply,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.add_apply]
+  rw [ContinuousLinearMap.alternatingDerivation_apply_vecCons_fin_one, mextDerivₗ_zero_apply,
+    mextDerivₗ_zero_apply]
+
+/-- A one-form at a point vanishes exactly when it vanishes on every tangent vector. -/
+private theorem eq_zero_iff_forall_apply {V : Type*} [AddCommGroup V] [Module ℝ V]
+    [TopologicalSpace V] (α : V [⋀^Fin 1]→L[ℝ] F) : α = 0 ↔ ∀ v, α ![v] = 0 := by
+  refine ⟨fun h v ↦ by simp [h], fun h ↦ ?_⟩
+  ext w
+  obtain ⟨v, rfl⟩ : ∃ v, w = ![v] := ⟨w 0, by ext i; fin_cases i; rfl⟩
+  exact h v
+
+/-- `∂bar f` vanishes at a point exactly when the differential of `f` there is complex linear
+for `J`: `df(J v) = i df(v)`. -/
+theorem delBar_apply_eq_zero_iff (f : SmoothForm I M F 0) (x : M) :
+    (J.delBar f).1 x = 0 ↔ ∀ v, mvfderiv I (fun y ↦ f.1 y 0) x (J x v) =
+      Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x v := by
+  refine (eq_zero_iff_forall_apply _).trans (forall_congr' fun v ↦ ?_)
+  rw [delBar_apply_apply, smul_eq_zero, or_iff_right (by norm_num)]
+  constructor <;> intro h
+  · rw [eq_neg_of_add_eq_zero_left h, smul_neg, smul_smul, Complex.I_mul_I, neg_one_smul,
+      _root_.neg_neg]
+  · rw [h, smul_smul, Complex.I_mul_I, neg_one_smul, add_neg_cancel]
+
+/-- `∂f` vanishes at a point exactly when the differential of `f` there is conjugate linear for
+`J`: `df(J v) = -i df(v)`. -/
+theorem del_apply_eq_zero_iff (f : SmoothForm I M F 0) (x : M) :
+    (J.del f).1 x = 0 ↔ ∀ v, mvfderiv I (fun y ↦ f.1 y 0) x (J x v) =
+      -Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x v := by
+  refine (eq_zero_iff_forall_apply _).trans (forall_congr' fun v ↦ ?_)
+  rw [del_apply_apply, smul_eq_zero, or_iff_right (by norm_num)]
+  constructor <;> intro h
+  · rw [sub_eq_zero.1 h, neg_smul, smul_smul, Complex.I_mul_I, neg_one_smul, _root_.neg_neg]
+  · rw [h, smul_smul, mul_neg, Complex.I_mul_I, _root_.neg_neg, one_smul, sub_self]
+
+/-- **`∂bar f = 0` is the Cauchy–Riemann equation.** On any almost complex manifold, `∂bar f`
+vanishes at a point exactly when `f` is pseudoholomorphic there as a map into the complex vector
+space `F`, whose almost complex structure is multiplication by `i`. -/
+theorem delBar_apply_eq_zero_iff_isPseudoholomorphicAt (f : SmoothForm I M F 0) (x : M) :
+    (J.delBar f).1 x = 0 ↔
+      IsPseudoholomorphicAt J (ofComplexManifold F F) (fun y ↦ f.1 y 0) x := by
+  have hf : ContMDiff I 𝓘(ℝ, F) ∞ fun y ↦ f.1 y 0 := by
+    rw [← isSmoothForm_ofFunction_iff, ← RoughForm.eq_ofFunction]
+    exact f.isSmoothForm
+  rw [delBar_apply_eq_zero_iff]
+  simp only [mvfderiv_apply_eq_mfderiv_apply]
+  exact ⟨fun h ↦ isPseudoholomorphicAt_of_hasMFDerivAt
+      (hf.mdifferentiableAt (by simp)).hasMFDerivAt fun w ↦
+        (h w).trans (ofComplexManifold_apply (E := F) _ _).symm,
+    fun h v ↦ (h.mfderiv_apply_commute v).trans (ofComplexManifold_apply (E := F) _ _)⟩
+
+/-- On any almost complex manifold, `∂bar f = 0` exactly when `f` is pseudoholomorphic as a map
+into the complex vector space `F`. -/
+theorem delBar_eq_zero_iff_isPseudoholomorphic (f : SmoothForm I M F 0) :
+    J.delBar f = 0 ↔ IsPseudoholomorphic J (ofComplexManifold F F) (fun y ↦ f.1 y 0) := by
+  rw [isPseudoholomorphic_iff,
+    ← forall_congr' (J.delBar_apply_eq_zero_iff_isPseudoholomorphicAt f)]
+  exact ⟨fun h x ↦ by simp [h], fun h ↦ Subtype.ext (funext h)⟩
+
+end AlmostComplex
+
+/-! ### Holomorphic functions on a complex manifold -/
+
+section ComplexManifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+/-- **The `∂bar`-closed functions are the holomorphic functions, pointwise.** On a complex
+manifold, `∂bar f` vanishes at a point exactly when the smooth function `f` is holomorphic
+there. -/
+theorem delBar_ofComplexManifold_apply_eq_zero_iff (f : SmoothForm 𝓘(ℝ, E) M F 0) (x : M) :
+    ((ofComplexManifold E M).delBar f).1 x = 0 ↔
+      MDifferentiableAt 𝓘(ℂ, E) 𝓘(ℂ, F) (fun y ↦ f.1 y 0) x := by
+  rw [delBar_apply_eq_zero_iff_isPseudoholomorphicAt, isPseudoholomorphicAt_ofComplexManifold_iff]
+
+/-- **The `∂bar`-closed functions are the holomorphic functions.** On a complex manifold, a smooth
+function `f` satisfies `∂bar f = 0` exactly when it is holomorphic. -/
+theorem delBar_ofComplexManifold_eq_zero_iff (f : SmoothForm 𝓘(ℝ, E) M F 0) :
+    (ofComplexManifold E M).delBar f = 0 ↔ MDifferentiable 𝓘(ℂ, E) 𝓘(ℂ, F) (fun y ↦ f.1 y 0) := by
+  rw [delBar_eq_zero_iff_isPseudoholomorphic, isPseudoholomorphic_ofComplexManifold_iff]
+
+end ComplexManifold
+
+end SmoothAlmostComplexStructure
+
+open SmoothAlmostComplexStructure
+
+variable (E : Type*) [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  (M : Type*) [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M]
+  (F : Type*) [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+
+/-- **Holomorphic functions are the `∂bar`-closed smooth functions.** On a complex manifold with
+finite-dimensional model, the kernel of `∂bar` on smooth `F`-valued functions is the complex vector
+space of holomorphic functions `M → F`, which are the complex `C^∞` maps. This is the Dolbeault
+cohomology `H^(0,0)` of `M` with coefficients in `F`. -/
+def kerDelBarZeroEquiv :
+    LinearMap.ker ((ofComplexManifold E M).delBar (F := F) (k := 0)) ≃ₗ[ℂ]
+      C^∞⟮𝓘(ℂ, E), M; 𝓘(ℂ, F), F⟯ where
+  toFun φ := ⟨fun y ↦ φ.1.1 y 0,
+    ((delBar_ofComplexManifold_eq_zero_iff φ.1).1 (LinearMap.mem_ker.1 φ.2)).contMDiff⟩
+  invFun g := ⟨⟨RoughForm.ofFunction 𝓘(ℝ, E) g,
+      (isSmoothForm_ofFunction_iff.2 (g.contMDiff.restrictScalars ℝ)).mem_smoothBundleForms⟩,
+    LinearMap.mem_ker.2 <| (delBar_ofComplexManifold_eq_zero_iff _).2 <| by
+      simpa only [RoughForm.ofFunction_apply] using g.contMDiff.mdifferentiable (by simp)⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv φ := by
+    refine Subtype.ext <| Subtype.ext <| funext fun x ↦ ?_
+    ext v
+    rw [Subsingleton.elim v 0]
+    exact RoughForm.ofFunction_apply _ x 0
+  right_inv g := ContMDiffMap.ext fun x ↦ RoughForm.ofFunction_apply (I := 𝓘(ℝ, E)) (f := ⇑g) x 0
+
+variable {E M F}
+
+/-- The holomorphic function of a `∂bar`-closed smooth function is its value on the empty tuple of
+tangent vectors. -/
+@[simp]
+theorem kerDelBarZeroEquiv_apply (φ : LinearMap.ker ((ofComplexManifold E M).delBar (F := F)
+    (k := 0))) (x : M) : kerDelBarZeroEquiv E M F φ x = φ.1.1 x 0 := by
+  rw [kerDelBarZeroEquiv]
+  rfl
+
+/-- The `∂bar`-closed smooth function of a holomorphic function is its `0`-form. -/
+@[simp]
+theorem coe_kerDelBarZeroEquiv_symm_apply (g : C^∞⟮𝓘(ℂ, E), M; 𝓘(ℂ, F), F⟯) :
+    ((kerDelBarZeroEquiv E M F).symm g).1.1 = RoughForm.ofFunction 𝓘(ℝ, E) g := by
+  rw [kerDelBarZeroEquiv]
+  rfl
+
+end TauCeti
