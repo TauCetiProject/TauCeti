@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.StdSimplex
+public import Mathlib.Topology.Sion
 public import TauCeti.MeasureTheory.OptimalTransport.MultiMarginal.Finite.Basic
-public import TauCeti.Topology.Sion
 import TauCeti.Algebra.BigOperators.Finset.Fiber
+import TauCeti.Analysis.Convex.AffineOn
 
 /-!
 # Finite multi-marginal duality and complementary slackness
@@ -626,8 +627,8 @@ private theorem multiLagrangian_affine_left (c : (∀ i, X i) → ℝ)
     (μ : ∀ i, PMF (X i)) (f g : (∀ i, X i) → ℝ) (φ : ∀ i, X i → ℝ)
     (a b : ℝ) (hab : a + b = 1) :
     multiLagrangian c μ (a • f + b • g) φ =
-      a * multiLagrangian c μ f φ + b * multiLagrangian c μ g φ := by
-  simp only [multiLagrangian]
+      a • multiLagrangian c μ f φ + b • multiLagrangian c μ g φ := by
+  simp only [multiLagrangian, smul_eq_mul]
   have hterm : ∀ z,
       (c z - ∑ i, φ i (z i)) * ((a • f + b • g) z) =
         a * ((c z - ∑ i, φ i (z i)) * f z) +
@@ -644,7 +645,7 @@ private theorem multiLagrangian_affine_right (c : (∀ i, X i) → ℝ)
     (μ : ∀ i, PMF (X i)) (f : (∀ i, X i) → ℝ) (φ ψ : ∀ i, X i → ℝ)
     (a b : ℝ) (hab : a + b = 1) :
     multiLagrangian c μ f (a • φ + b • ψ) =
-      a * multiLagrangian c μ f φ + b * multiLagrangian c μ f ψ := by
+      a • multiLagrangian c μ f φ + b • multiLagrangian c μ f ψ := by
   rw [multiLagrangian_eq, multiLagrangian_eq, multiLagrangian_eq]
   simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
   have hterm : ∀ i x,
@@ -772,16 +773,16 @@ theorem exists_cost_eq_finiteMultiDualValue (c : (∀ i, X i) → ℝ)
       (hfx := fun f _ ↦ ?_) (hfx' := fun f _ ↦ ?_)
     · exact (continuous_coe_real_ereal.comp
         (continuous_multiLagrangian_left c μ ψ)).lowerSemicontinuous.lowerSemicontinuousOn _
-    · exact ConvexOn.quasiconvexOn_ereal_coe
-        (Convex.convexOn_and_concaveOn_of_affine
-          (g := fun f ↦ multiLagrangian c μ f ψ) convex_multiStdSimplexSet
-          (fun f _ g _ a b _ _ hab ↦ multiLagrangian_affine_left c μ f g ψ a b hab)).1
+    · exact ((Convex.convexOn_and_concaveOn_iff (f := fun f ↦ multiLagrangian c μ f ψ)
+        convex_multiStdSimplexSet).2 fun f _ g _ a b _ _ hab ↦
+          multiLagrangian_affine_left c μ f g ψ a b hab).1.quasiconvexOn.monotone_comp
+        (g := Real.toEReal) EReal.coe_strictMono.monotone
     · exact (continuous_coe_real_ereal.comp
         (continuous_multiLagrangian_right c μ f)).upperSemicontinuous.upperSemicontinuousOn _
-    · exact ConcaveOn.quasiconcaveOn_ereal_coe
-        (Convex.convexOn_and_concaveOn_of_affine
-          (g := fun ψ ↦ multiLagrangian c μ f ψ) convex_univ
-          (fun φ _ ψ _ a b _ _ hab ↦ multiLagrangian_affine_right c μ f φ ψ a b hab)).2
+    · exact ((Convex.convexOn_and_concaveOn_iff (f := fun ψ ↦ multiLagrangian c μ f ψ)
+        convex_univ).2 fun φ _ ψ _ a b _ _ hab ↦
+          multiLagrangian_affine_right c μ f φ ψ a b hab).2.quasiconcaveOn.monotone_comp
+        (g := Real.toEReal) EReal.coe_strictMono.monotone
   simp only [iSup_univ] at key
   have h1 : ((π.cost c : ℝ) : EReal) ≤ ⨅ f ∈ multiStdSimplexSet,
       ⨆ ψ : ∀ i, X i → ℝ, ((multiLagrangian c μ f ψ : ℝ) : EReal) := by
