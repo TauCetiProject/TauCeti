@@ -48,9 +48,10 @@ algebra `A × A/𝔪` is finite, normal and étale away from `𝔪`, but its res
 * `TauCeti.IsLocalRing.etale_pullback_snd_puncturedSpectrum`: the restriction of `Spec B` to the
   punctured spectrum is étale if `B` is finitely presented and étale at every prime not over the
   maximal ideal.
-* `TauCeti.IsLocalRing.isIso_appTop_pullback_fst_puncturedSpectrum`: for `B` finite, normal and
-  torsion free over an integrally closed local domain of dimension at least two, the restriction
-  of `Spec B` to the punctured spectrum has `B` as its ring of global functions.
+* `TauCeti.IsLocalRing.isIso_appTop_pullback_fst_puncturedSpectrum`: for `B` finite, torsion
+  free and normal at its maximal ideals over an integrally closed local domain of dimension at
+  least two, the restriction of `Spec B` to the punctured spectrum has `B` as its ring of global
+  functions.
 * `TauCeti.IsLocalRing.restrictPuncturedSpec.fullyFaithful`: restriction to the punctured spectrum
   is fully faithful on finite normal punctured-étale algebras.
 
@@ -135,7 +136,7 @@ variable [IsNoetherianRing A]
 `A`-algebras étale away from the maximal ideal to finite étale covers of the punctured spectrum.
 It sends `B` to the base change of `Spec B ⟶ Spec A` along the inclusion of the punctured
 spectrum. -/
-def restrictPuncturedSpec :
+@[expose] def restrictPuncturedSpec :
     (FiniteNormalPuncturedEtaleAlg A)ᵒᵖ ⥤ FiniteEtaleScheme (puncturedSpectrum A).toScheme :=
   (finiteEtaleSchemeProperty _).lift
     ((finiteNormalPuncturedEtale A).ι.op ⋙ algSpec (.of A) ⋙
@@ -145,10 +146,11 @@ def restrictPuncturedSpec :
       Algebra.FinitePresentation.of_finiteType.mp inferInstance
     have : IsFinite (Spec.map (CommRingCat.ofHom (algebraMap A B.unop.obj))) :=
       (IsFinite.SpecMap_iff _).mpr (RingHom.finite_algebraMap.mpr hfin)
-    -- The structure morphism of `algSpec` is `Spec.map` of the algebra map by definition.
-    exact (finiteEtaleSchemeProperty_iff _).mpr ⟨(inferInstance : IsFinite (pullback.snd
-        (Spec.map (CommRingCat.ofHom (algebraMap A B.unop.obj))) (puncturedSpectrum A).ι)),
-      etale_pullback_snd_puncturedSpectrum (B := B.unop.obj) het⟩
+    have hfin' : IsFinite (pullback.snd (Spec.map (CommRingCat.ofHom (algebraMap A B.unop.obj)))
+        (puncturedSpectrum A).ι) := inferInstance
+    simp only [finiteEtaleSchemeProperty_iff, Functor.comp_obj, Over.pullback_obj_hom,
+      algSpec_obj_hom, Functor.op_obj, ObjectProperty.ι_obj]
+    exact ⟨hfin', etale_pullback_snd_puncturedSpectrum (B := B.unop.obj) het⟩
 
 /-- Forgetting finiteness and étaleness, `restrictPuncturedSpec` is Mathlib's `algSpec` followed
 by base change to the punctured spectrum. -/
@@ -167,13 +169,23 @@ theorem restrictPuncturedSpec_obj_obj (B : (FiniteNormalPuncturedEtaleAlg A)ᵒ�
       (Over.pullback (puncturedSpectrum A).ι).obj ((algSpec (.of A)).obj (.op B.unop.obj)) :=
   (rfl)
 
+/-- On morphisms, `restrictPuncturedSpec` is `algSpec` followed by base change to the punctured
+spectrum. -/
+@[simp]
+theorem restrictPuncturedSpec_map_hom {B C : (FiniteNormalPuncturedEtaleAlg A)ᵒᵖ} (f : B ⟶ C) :
+    ((restrictPuncturedSpec A).map f).hom =
+      (Over.pullback (puncturedSpectrum A).ι).map
+        ((algSpec (.of A)).map ((finiteNormalPuncturedEtale A).ι.op.map f)) :=
+  (rfl)
+
 /-- Let `A` be a Noetherian integrally closed local domain of dimension at least two, and `B` a
-finite, normal, torsion-free `A`-algebra. Then the projection from the restriction of `Spec B` to
-the punctured spectrum onto `Spec B` is an isomorphism on global functions. -/
+finite torsion-free `A`-algebra whose localizations at maximal ideals are integrally closed
+domains. Then the projection from the restriction of `Spec B` to the punctured spectrum onto
+`Spec B` is an isomorphism on global functions. -/
 theorem isIso_appTop_pullback_fst_puncturedSpectrum [IsDomain A] [IsIntegrallyClosed A]
     (hdim : 2 ≤ ringKrullDim A) {B : Type u} [CommRing B] [Algebra A B] [Module.Finite A B]
     [Module.IsTorsionFree A B]
-    (hnormal : ∀ (𝔮 : Ideal B) [𝔮.IsPrime],
+    (hnormal : ∀ (𝔮 : Ideal B) [𝔮.IsMaximal],
       IsDomain (Localization.AtPrime 𝔮) ∧ IsIntegrallyClosed (Localization.AtPrime 𝔮)) :
     IsIso (pullback.fst (Spec.map (CommRingCat.ofHom (algebraMap A B)))
       (puncturedSpectrum A).ι).appTop := by
@@ -182,7 +194,7 @@ theorem isIso_appTop_pullback_fst_puncturedSpectrum [IsDomain A] [IsIntegrallyCl
   -- Restriction from `Spec B` to the preimage of `U` is bijective by algebraic Hartogs, and the
   -- base change identifies functions on that preimage with its global functions.
   have hΓ := TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_isIntegrallyClosed
-    (A := A) (B := B) hdim (fun 𝔮 _ ↦ hnormal 𝔮) (g ⁻¹ᵁ U) fun p hp ↦
+    (A := A) (B := B) hdim hnormal (g ⁻¹ᵁ U) fun p hp ↦
       (mem_puncturedSpectrum_iff A (g p)).mpr fun he ↦ hp (congrArg PrimeSpectrum.asIdeal he)
   have := (IsPullback.of_hasPullback g U.ι).isIso_appLE
   have : IsIso ((Spec (.of B)).presheaf.map (g ⁻¹ᵁ U).leTop.op) :=
@@ -207,9 +219,17 @@ private theorem restrictPuncturedSpec_map_bijective [IsDomain A] [IsIntegrallyCl
   have h₂ := TauCeti.AlgebraicGeometry.overPullback_map_bijective_of_isIso_appTop
     (puncturedSpectrum A).ι (Y := (algSpec (.of A)).obj (.op B.unop.obj))
     (Y' := (algSpec (.of A)).obj (.op C.unop.obj))
-    (isIso_appTop_pullback_fst_puncturedSpectrum A hdim hnormal)
+    (by
+      rw [algSpec_obj_hom]
+      exact isIso_appTop_pullback_fst_puncturedSpectrum A hdim fun 𝔮 _ ↦ hnormal 𝔮)
+  have hcomp : ((finiteEtaleSchemeProperty _).ι.map ∘ (restrictPuncturedSpec A).map :
+      (B ⟶ C) → _) = (fun g ↦ (Over.pullback (puncturedSpectrum A).ι).map g) ∘
+        ((finiteNormalPuncturedEtale A).ι.op ⋙ algSpec (.of A)).map := by
+    funext f
+    simp only [Function.comp_apply, ObjectProperty.ι_map, Functor.comp_map]
+    exact restrictPuncturedSpec_map_hom A f
   rw [← Function.Bijective.of_comp_iff'
-    ((finiteEtaleSchemeProperty _).fullyFaithfulι.map_bijective _ _)]
+    ((finiteEtaleSchemeProperty _).fullyFaithfulι.map_bijective _ _), hcomp]
   exact h₂.comp h₁
 
 /-- Over a Noetherian integrally closed local domain of dimension at least two, restriction to
