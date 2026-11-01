@@ -162,6 +162,15 @@ theorem completedCoordinateEquiv_symm_of_ofAdd_natCast [IsNoetherianRing O] (k :
         (of O (Multiplicative ℤ_[p]) (Multiplicative.ofAdd (k : ℤ_[p]))) = (1 + X) ^ k := by
   rw [AlgEquiv.symm_apply_eq, coe_completedCoordinateEquiv, completedCoordinate_one_add_X_pow]
 
+/-- The inverse of the completed coordinate sends the topological generator `γ = [1]` to
+`1 + T`. -/
+@[simp]
+theorem completedCoordinateEquiv_symm_of_ofAdd_one [IsNoetherianRing O] :
+    (completedCoordinateEquiv hp).symm (of O (Multiplicative ℤ_[p]) (Multiplicative.ofAdd 1)) =
+      1 + X := by
+  rw [AlgEquiv.symm_apply_eq, coe_completedCoordinateEquiv, map_add,
+    map_one (completedCoordinate hp), completedCoordinate_X, add_sub_cancel]
+
 /-- **Comparison with the power-series coordinate.** Over `O = ℤ_p`, the completed coordinate is
 the power-series coordinate `ℤ_p⟦T⟧ ≃ₐ[ℤ_p] ℤ_p[[ℤ_p]]` attached to the topological generator
 `γ = 1` of `ℤ_p`, defined by evaluating power series at `γ - 1`. -/
