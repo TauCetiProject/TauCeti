@@ -576,6 +576,20 @@ end Set.OrdConnected
 
 namespace MeasureTheory.Measure
 
+/-- For a law with continuous cdf, strictly increasing on an interval of full mass, the
+quantile is the unique point of that interval at the requested interior cdf level. -/
+theorem quantile_eq_iff_of_ae_mem_of_strictMonoOn (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {s : Set ℝ} {u x : ℝ} (hs : s.OrdConnected) (hμs : ∀ᵐ y ∂μ, y ∈ s)
+    (hμ : Continuous (cdf μ)) (hmono : StrictMonoOn (cdf μ) s) (hu : u ∈ Ioo 0 1) :
+    μ.quantile u = x ↔ x ∈ s ∧ cdf μ x = u := by
+  have hq := hs.quantile_mem hμs hu.1 hu.2
+  have hroot := cdf_quantile μ hμ hu.1 hu.2
+  constructor
+  · rintro rfl
+    exact ⟨hq, hroot⟩
+  · rintro ⟨hx, hxu⟩
+    exact hmono.injOn hq hx (hroot.trans hxu.symm)
+
 /-- For a law carried by `[c, ∞)` whose cdf is positive above `c`, quantiles tend to `c` as
 the level decreases to zero. An atom at `c` is allowed. -/
 theorem tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos (μ : Measure ℝ)

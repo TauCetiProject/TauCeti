@@ -13,9 +13,10 @@ public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 Mathlib's analytic sets (`MeasureTheory.AnalyticSet`) are closed under countable unions and
 intersections, continuous images and continuous preimages from Polish spaces. This file adds the
 finite and relational closure properties used to manipulate analytic relations and analytic
-equivalence relations: binary intersections and unions, intersections with Borel sets, products,
-off-diagonals, projections, and images and preimages of an analytic set under an analytic
-relation `R : SetRel α β`. In a Hausdorff space the last of these show that the saturation
+equivalence relations: binary intersections and unions, intersections with Borel sets, products
+and their images under jointly continuous binary maps, continuous preimages taken inside an
+analytic set, off-diagonals, projections, and images and preimages of an analytic set under an
+analytic relation `R : SetRel α β`. In a Hausdorff space the last of these show that the saturation
 `Quotient.mk E ⁻¹' (Quotient.mk E '' A)` of an analytic set `A` under an equivalence relation `E`
 with analytic graph is analytic, and so is the neighbourhood
 `{x | ∃ y ∈ A, (x, y) ∈ G ∨ (y, x) ∈ G}` of `A` under an analytic relation `G`, which is
@@ -37,6 +38,10 @@ Borel, hence analytic.
   set is analytic.
 * `MeasureTheory.AnalyticSet.prod`, `MeasureTheory.AnalyticSet.offDiag`: products of analytic
   sets, and off-diagonals of analytic sets in a Hausdorff space, are analytic.
+* `MeasureTheory.AnalyticSet.image2`: the image of a product of analytic sets under a jointly
+  continuous binary map is analytic.
+* `MeasureTheory.AnalyticSet.inter_preimage`: within an analytic set, the preimage of an analytic
+  subset of a Hausdorff space under a continuous map is analytic.
 * `MeasureTheory.AnalyticSet.relImage`, `MeasureTheory.AnalyticSet.relPreimage`: the image and
   preimage of an analytic set under an analytic relation are analytic.
 * `MeasureTheory.AnalyticSet.relImage_measurableSet`,
@@ -91,6 +96,21 @@ protected theorem AnalyticSet.prod {s : Set α} {t : Set β} (hs : AnalyticSet s
   obtain ⟨δ, _, _, g, hg, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 ht
   rw [← range_prodMap]
   exact analyticSet_range_of_polishSpace (hf.prodMap hg)
+
+/-- The image of a product of analytic sets under a jointly continuous binary map is analytic. -/
+protected theorem AnalyticSet.image2 {γ : Type*} [TopologicalSpace γ] {f : α → β → γ}
+    (hf : Continuous (Function.uncurry f)) {s : Set α} {t : Set β} (hs : AnalyticSet s)
+    (ht : AnalyticSet t) : AnalyticSet (image2 f s t) := by
+  rw [← image_uncurry_prod]
+  exact (hs.prod ht).image_of_continuous hf
+
+/-- The points of an analytic set at which a continuous map into a Hausdorff space takes values
+in an analytic set form an analytic set. -/
+theorem AnalyticSet.inter_preimage [T2Space β] {s : Set α} (hs : AnalyticSet s) {f : α → β}
+    (hf : Continuous f) {t : Set β} (ht : AnalyticSet t) : AnalyticSet (s ∩ f ⁻¹' t) := by
+  obtain ⟨γ, _, _, g, hg, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hs
+  rw [← image_preimage_eq_range_inter, ← preimage_comp]
+  exact (ht.preimage (hf.comp hg)).image_of_continuous hg
 
 /-- The set of pairs of distinct points of an analytic set in a Hausdorff space is analytic. -/
 protected theorem AnalyticSet.offDiag [T2Space α] {s : Set α} (hs : AnalyticSet s) :
