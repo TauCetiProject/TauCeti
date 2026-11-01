@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Algebra.Order.Star.Real
 public import Mathlib.Analysis.Matrix.MeasurableSpace
+public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.Moments.Variance
+public import TauCeti.Probability.Distributions.Wishart.Moments
 
 /-!
 # Ginibre matrices and Gaussian Gram matrices
@@ -17,7 +19,8 @@ public import Mathlib.Probability.Moments.Variance
 The real Ginibre law on `m × n` matrices has independent standard Gaussian entries. The complex
 Ginibre law has independent entries `(a + i b) / √2` with `a` and `b` independent standard
 Gaussians, so that each entry has `E |z| ^ 2 = 1`. The Gaussian Gram laws are the images of these
-laws under `X ↦ X * Xᴴ`, without normalization.
+laws under `X ↦ X * Xᴴ`, without normalization. In the real case this is the Wishart law
+`wishartGramMeasure n 1`, which we reuse instead of redefining.
 
 ## Main definitions
 
@@ -65,9 +68,10 @@ def ginibreComplex (m n : ℕ) : Measure (Matrix (Fin m) (Fin n) ℂ) :=
   (Measure.pi fun (_ : Fin m) ↦ Measure.pi fun (_ : Fin n) ↦
     (gaussianReal 0 1).prod (gaussianReal 0 1)).map complexEntries
 
-/-- The real Gaussian Gram law: the law of `X * Xᵀ` for `X` with the real Ginibre law. -/
+/-- The real Gaussian Gram law: the Wishart law `wishartGramMeasure n 1`, the law of the Gram sum
+of `n` independent standard Gaussian vectors in `ℝ ^ m`, viewed on `Matrix (Fin m) (Fin m) ℝ`. -/
 def gaussianGramReal (m n : ℕ) : Measure (Matrix (Fin m) (Fin m) ℝ) :=
-  (ginibreReal m n).map fun X ↦ X * Xᴴ
+  (wishartGramMeasure n (1 : Matrix (Fin m) (Fin m) ℝ)).map Subtype.val
 
 /-- The complex Gaussian Gram law: the law of `X * Xᴴ` for `X` with the complex Ginibre law. -/
 def gaussianGramComplex (m n : ℕ) : Measure (Matrix (Fin m) (Fin m) ℂ) :=
@@ -96,8 +100,7 @@ private lemma measurable_mul_conjTranspose {𝕜 : Type*} [RCLike 𝕜] {m n : �
   fun_prop
 
 instance (m n : ℕ) : IsProbabilityMeasure (gaussianGramReal m n) :=
-  (Measure.isProbabilityMeasure_map_iff measurable_mul_conjTranspose.aemeasurable).2
-    inferInstance
+  (Measure.isProbabilityMeasure_map_iff measurable_subtype_coe.aemeasurable).2 inferInstance
 
 instance (m n : ℕ) : IsProbabilityMeasure (gaussianGramComplex m n) :=
   (Measure.isProbabilityMeasure_map_iff measurable_mul_conjTranspose.aemeasurable).2
@@ -176,19 +179,14 @@ private lemma integral_sq_of_map_eq_gaussianReal {Ω : Type*} {mΩ : MeasurableS
 /-- The expected trace of the Gaussian Gram matrix of an `m × n` real Ginibre matrix is `m * n`. -/
 theorem integral_trace_gaussianGramReal (m n : ℕ) :
     ∫ A, A.trace ∂(gaussianGramReal m n) = m * n := by
-  have hent : ∀ i j, Integrable (fun X : Matrix (Fin m) (Fin n) ℝ ↦ X i j * X i j)
-      (ginibreReal m n) ∧ ∫ X, X i j * X i j ∂(ginibreReal m n) = 1 := fun i j ↦ by
-    simpa using integral_sq_of_map_eq_gaussianReal (μ := ginibreReal m n) (Y := fun X ↦ X i j)
-      (by fun_prop) (v := 1) (by simpa using map_apply_ginibreReal m n i j)
-  rw [gaussianGramReal, integral_map measurable_mul_conjTranspose.aemeasurable
-    (by exact (Continuous.aestronglyMeasurable (by fun_prop)))]
-  have e : ∀ X : Matrix (Fin m) (Fin n) ℝ, (X * Xᴴ).trace = ∑ i, ∑ j, X i j * X i j := by
-    intro X
-    simp [trace, mul_apply]
-  simp_rw [e]
-  rw [integral_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ (hent i j).1]
-  simp_rw [integral_finsetSum _ fun j _ ↦ (hent _ j).1, (hent _ _).2]
-  simp
+  have hint : ∀ i, Integrable (fun A : selfAdjoint.submodule ℝ (Matrix (Fin m) (Fin m) ℝ) ↦
+      (A : Matrix (Fin m) (Fin m) ℝ) i i) (wishartGramMeasure n 1) := fun i ↦
+    (memLp_coe_apply_wishartGramMeasure 1 n i i 1).integrable le_rfl
+  rw [gaussianGramReal, integral_map measurable_subtype_coe.aemeasurable
+    (Continuous.aestronglyMeasurable (by fun_prop))]
+  simp_rw [trace, diag_apply]
+  rw [integral_finsetSum _ fun i _ ↦ hint i]
+  simp [integral_coe_apply_wishartGramMeasure Matrix.PosSemidef.one n]
 
 /-- The expected trace of the Gaussian Gram matrix of an `m × n` complex Ginibre matrix is
 `m * n`; the trace is real, so we take its real part. -/
@@ -223,44 +221,19 @@ theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
   simp_rw [integral_finsetSum _ fun j _ ↦ (hent _ j).1, (hent _ _).2]
   simp
 
-private lemma isClosed_setOf_posSemidef_real {m : ℕ} :
-    IsClosed {A : Matrix (Fin m) (Fin m) ℝ | A.PosSemidef} := by
-  have h : {A : Matrix (Fin m) (Fin m) ℝ | A.PosSemidef} =
-      {A | Aᴴ = A} ∩ ⋂ x : Fin m → ℝ, {A | 0 ≤ star x ⬝ᵥ A *ᵥ x} := by
-    ext A
-    simp only [Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_iInter,
-      posSemidef_iff_dotProduct_mulVec]
-    rfl
-  rw [h]
-  refine (isClosed_eq (by fun_prop) continuous_id).inter (isClosed_iInter fun x ↦ ?_)
-  exact isClosed_le continuous_const (by fun_prop)
-
 /-- The real Gaussian Gram law is supported on positive semidefinite matrices. -/
 theorem ae_posSemidef_gaussianGramReal (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramReal m n), A.PosSemidef := by
-  rw [gaussianGramReal, ae_map_iff measurable_mul_conjTranspose.aemeasurable
-    isClosed_setOf_posSemidef_real.measurableSet]
-  exact Filter.Eventually.of_forall fun X ↦ posSemidef_self_mul_conjTranspose X
-
-open scoped ComplexOrder in
-private lemma isClosed_setOf_posSemidef_complex {m : ℕ} :
-    IsClosed {A : Matrix (Fin m) (Fin m) ℂ | A.PosSemidef} := by
-  have h : {A : Matrix (Fin m) (Fin m) ℂ | A.PosSemidef} =
-      {A | Aᴴ = A} ∩ ⋂ x : Fin m → ℂ, {A | 0 ≤ star x ⬝ᵥ A *ᵥ x} := by
-    ext A
-    simp only [Set.mem_ofPred_eq, Set.mem_inter_iff, Set.mem_iInter,
-      posSemidef_iff_dotProduct_mulVec]
-    rfl
-  rw [h]
-  refine (isClosed_eq (by fun_prop) continuous_id).inter (isClosed_iInter fun x ↦ ?_)
-  exact isClosed_le continuous_const (by fun_prop)
+  rw [gaussianGramReal, ae_map_iff measurable_subtype_coe.aemeasurable
+    (Matrix.posSemidef_is_closed (n := Fin m) (𝕜 := ℝ)).measurableSet]
+  exact ae_posSemidef_wishartGramMeasure n 1
 
 open scoped ComplexOrder in
 /-- The complex Gaussian Gram law is supported on positive semidefinite matrices. -/
 theorem ae_posSemidef_gaussianGramComplex (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramComplex m n), A.PosSemidef := by
   rw [gaussianGramComplex, ae_map_iff measurable_mul_conjTranspose.aemeasurable
-    isClosed_setOf_posSemidef_complex.measurableSet]
+    (Matrix.posSemidef_is_closed (n := Fin m) (𝕜 := ℂ)).measurableSet]
   exact Filter.Eventually.of_forall fun X ↦ posSemidef_self_mul_conjTranspose X
 
 end Probability
