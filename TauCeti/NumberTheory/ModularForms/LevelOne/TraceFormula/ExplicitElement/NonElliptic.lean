@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.ClassNumber
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.UpperTriangular.Contribution
+import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.UpperTriangular.Total
 
 /-!
 # The non-elliptic trace fibres of Popa–Zagier's explicit element
@@ -53,7 +54,8 @@ For positive trace, translating downwards decreases `n` and ends at a fibre with
 the sums `T₂`, `T₃` and `T₄` of eq. (15) contribute nothing and the only matrices occurring in
 `T₁` are `(1 b; 0 n)` with `0 ≤ b < n`, so the fibre is empty unless `t = n + 1`. The weights of
 these matrices are `6, 12, …, 12, 6` (or `2` when `n = 1`) by
-`TauCeti.PopaZagier.weight_upperTriangular`, with sum `12 (n - 1)` (or `2`). The
+`TauCeti.PopaZagier.weight_upperTriangular`, with sum `12 (n - 1)` (or `2`), twelve times the
+coefficient sum `TauCeti.PopaZagier.sum_upperTriangularCoeff`. The
 fibre `(n + 1, n)` has discriminant `(n - 1)²`, and translating it upwards reaches the fibre of
 trace `a + d` and determinant `a d` with `d - a = n - 1`.
 
@@ -183,19 +185,18 @@ private theorem weight_eq_of_lt {M : Matrix (Fin 2) (Fin 2) ℤ}
 private theorem sum_range_weight_upperTriangular (N : ℕ) (hN : 0 < N) :
     ∑ k ∈ Finset.range N, weight !![1, (k : ℤ); 0, (N : ℤ)] =
       if N = 1 then 2 else 12 * ((N : ℤ) - 1) := by
-  rcases N with _ | _ | m
-  · omega
-  · simp [weight_upperTriangular]
-  -- the two end weights are `6`, the `m` weights in between are `12`
-  have hmid : ∀ k ∈ Finset.range m,
-      weight !![1, ((k + 1 : ℕ) : ℤ); 0, ((m + 1 + 1 : ℕ) : ℤ)] = 12 := by
-    intro k hk
-    have := Finset.mem_range.mp hk
-    rw [weight_upperTriangular _ _ _ one_pos (by omega)]
-    grind
-  rw [Finset.sum_range_succ, Finset.sum_range_succ', Finset.sum_congr rfl hmid]
-  simp (disch := omega) [weight_upperTriangular]
-  grind
+  -- each weight is twelve times the coefficient summed in `sum_upperTriangularCoeff`
+  have hw : ∀ k ∈ Finset.range N, ((weight !![1, (k : ℤ); 0, (N : ℤ)] : ℤ) : ℚ) =
+      12 * upperTriangularCoeff ((1 : ℕ) : ℤ) (k : ℤ) N := by
+    intro k _
+    rw [weight_upperTriangular _ _ _ one_pos (by omega), upperTriangularCoeff_def]
+    push_cast
+    split_ifs <;> norm_num
+  rw [← Int.cast_inj (α := ℚ), Int.cast_sum, Finset.sum_congr rfl hw, ← Finset.mul_sum,
+    sum_upperTriangularCoeff 1 N one_pos]
+  obtain rfl | hN₁ := eq_or_ne N 1
+  · norm_num
+  · simp [hN₁, show 1 < N by omega, Nat.cast_sub (show 1 ≤ N by omega)]
 
 /-- **The fibres with `0 < n < t`.** The weights of the matrices of trace `t` and determinant `n`
 sum to `12 (n - 1)`, or to `2` when `n = 1`, if `t = n + 1`, and to zero otherwise. -/
