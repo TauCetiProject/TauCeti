@@ -16,7 +16,7 @@ quartic residue symbol at `P`. For a primitive additive character `ψ` of the re
 `𝓞 K ⧸ P`, with values in an integral domain `R` into which `𝓞 K` embeds, the Gauss sum of `χ`
 satisfies
 
-`g(χ, ψ) ^ 4 = N P · π ^ 2 = π ^ 3 π̄`.
+`g(χ, ψ) ^ 4 = N P · π ^ 2 = π ^ 3 σ π`, where `σ` is complex conjugation.
 
 This is the quartic analogue of the cube `g(χ, ψ) ^ 3 = N P · π` of the cubic Gauss sum
 (`Ideal.gaussSum_powerResidueSymbol_three_pow_three_eq`), and it is the identity that the proof
@@ -26,14 +26,14 @@ choices of `R` are `ℂ` and the ring of integers of `ℚ(i, ζ_p)`.
 
 It combines `g(χ, ψ) ^ 4 = q J(χ, χ) ^ 2` for any character of order `4`
 (`TauCeti.gaussSum_pow_four_eq_card_mul_jacobiSum_sq`) with `J(χ, χ) = -χ (-1) π`
-(`Ideal.jacobiSum_powerResidueSymbol_four_eq`); and `N P = π π̄`, where the conjugation `π ↦ π̄`
+(`Ideal.jacobiSum_powerResidueSymbol_four_eq`); and `N P = π σ π`, where the conjugation `σ`
 of `ℤ[i]` is any ring endomorphism cubing the fourth roots of unity
 (`TauCeti.exists_ringHom_apply_eq_pow_three_of_four`).
 
 ## Main results
 
 * `Ideal.gaussSum_powerResidueSymbol_four_pow_four_eq`: `g(χ, ψ) ^ 4 = N P · π ^ 2`.
-* `Ideal.gaussSum_powerResidueSymbol_four_pow_four_eq_pow_three_mul`: `g(χ, ψ) ^ 4 = π ^ 3 π̄`.
+* `Ideal.gaussSum_powerResidueSymbol_four_pow_four_eq_pow_three_mul`: `g(χ, ψ) ^ 4 = π ^ 3 σ π`.
 
 ## References
 
@@ -74,7 +74,7 @@ theorem gaussSum_powerResidueSymbol_four_pow_four_eq (hπ : P = span {π})
     jacobiSum_powerResidueSymbol_four_eq hπ hπ', ← Nat.card_eq_fintype_card,
     ← absNorm_eq_natCard, map_mul, map_neg, mul_pow, neg_sq, ← map_pow, hsq, map_one, one_mul]
 
-/-- **The fourth power of the quartic Gauss sum, as `π ^ 3 π̄`.** Let `K = ℚ(i)`, let `P = π 𝓞 K`
+/-- **The fourth power of the quartic Gauss sum, as `π ^ 3 σ π`.** Let `K = ℚ(i)`, let `P = π 𝓞 K`
 be a prime with `π` primary, and let `σ` be a ring endomorphism of `𝓞 K` cubing the fourth roots
 of unity, that is, complex conjugation. For every injective ring homomorphism `f` from `𝓞 K` to a
 domain `R` and every primitive additive character `ψ` of `𝓞 K ⧸ P` with values in `R`, the Gauss
