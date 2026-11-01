@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Homogeneity
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Orientation
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Extend
 public import TauCeti.Geometry.Manifold.Orientation.OpenSubset
-public import TauCeti.Geometry.Manifold.SmoothEmbedding.RadialContraction
 
 /-!
 # The disc theorem for oriented embeddings
@@ -46,8 +45,6 @@ finishes. This is what makes a connected sum independent of its balls.
 * `TauCeti.SmoothEmbedding.exists_diffeotopy_eqOn_of_isOrientationPreservingAt_of_range_subset`:
   the relative form, for two embeddings with images in a preconnected σ-compact open set `U`; the
   diffeotopy fixes every point outside a compact subset of `U`.
-* `TauCeti.SmoothEmbedding.isOrientationPreservingAt_compRadialContraction`: shrinking an
-  embedding by a radial contraction keeps it orientation-preserving at the origin.
 
 ## References
 
@@ -178,36 +175,5 @@ theorem exists_diffeotopy_eqOn_of_isOrientationPreservingAt_of_range_subset [T2S
   calc Φ.final (f x) = Φ.final (f' x : M) := by rw [val_codRestrict_apply]
     _ = Λ.final (f' x) := by rw [Diffeotopy.final_apply, Diffeotopy.final_apply, hΦ]
     _ = g x := by rw [← Function.comp_apply (f := Λ.final), hΛ hx, val_codRestrict_apply]
-
-/-- A radial contraction preserves every orientation of `E` at its centre. -/
-theorem _root_.TauCeti.isOrientationPreservingAt_radialContraction_self
-    (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (c : E) (κ : ℝ) :
-    o.IsOrientationPreservingAt o (radialContraction c κ) c := by
-  -- Its derivative at the centre is the identity.
-  have hd : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (radialContraction c κ) c = ContinuousLinearMap.id ℝ E := by
-    rw [mfderiv_eq_fderiv, (hasFDerivAt_radialContraction_self c κ).fderiv]
-    ext v
-    rfl
-  refine (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).mpr
-    ⟨ContinuousLinearEquiv.refl ℝ E, hd.symm, ?_⟩
-  -- The tangent spaces at `c` and at its image `radialContraction c κ c = c` are both `E`;
-  -- generalize the image point to substitute it.
-  have key : ∀ y : E, y = c → _root_.Orientation.map ι
-      (ContinuousLinearEquiv.refl ℝ (TangentSpace 𝓘(ℝ, E) c)).toLinearEquiv
-        (o.orientationAt c) = o.orientationAt y := by
-    rintro y rfl
-    exact Equiv.ext_iff.mp (_root_.Orientation.map_refl ι) _
-  exact key _ (radialContraction_self c κ)
-
-/-- Precomposing an embedding of `E` with a radial contraction about the origin keeps it
-orientation-preserving at the origin. -/
-theorem isOrientationPreservingAt_compRadialContraction
-    (f : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M) {κ : ℝ} (hκ : 0 ≤ κ)
-    {o : Manifold.Orientation 𝓘(ℝ, E) E ι} {oM : Manifold.Orientation 𝓘(ℝ, E) M ι}
-    (hf : o.IsOrientationPreservingAt oM f 0) :
-    o.IsOrientationPreservingAt oM (f.compRadialContraction le_rfl hκ) 0 := by
-  rw [coe_compRadialContraction]
-  rw [← radialContraction_self (0 : E) κ] at hf
-  exact hf.comp (isOrientationPreservingAt_radialContraction_self o 0 κ)
 
 end TauCeti.SmoothEmbedding

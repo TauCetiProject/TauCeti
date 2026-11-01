@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Configuration
+public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Disjoint
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.RadialContraction
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Orientation
 
 /-!
@@ -28,9 +30,11 @@ every embedding by a radial contraction about the origin, inside its own image, 
 ambient disc theorem
 (`TauCeti.SmoothEmbedding.exists_diffeotopy_eqOn_of_isOrientationPreservingAt_of_range_subset`);
 the images of a family are pairwise disjoint, so the motions of the different labels have
-disjoint supports and combine. After the centres have been matched, a sufficiently small shrink
-of the moved `f i` lies in the image of `g i`, where the relative disc theorem matches it with
-the same shrink of `g i`. Undoing the shrink of the `g i` finishes.
+disjoint supports and combine
+(`TauCeti.exists_diffeotopy_final_comp_eqOn_of_pairwise_disjoint`). After the centres have been
+matched, a sufficiently small shrink of the moved `f i` lies in the image of `g i`, where the
+relative disc theorem matches it with the same shrink of `g i`. Undoing the shrink of the `g i`
+finishes.
 
 ## Main results
 
@@ -56,44 +60,6 @@ namespace TauCeti.SmoothEmbedding
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   {ι ι' : Type*} [Fintype ι']
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
-/-- Motions of finitely many labels with supports in pairwise disjoint sets `W i`, each matching
-`a i` with `b i` on `A`, combine into one motion matching every label, provided `a i` and `b i`
-map `A` into `W i`. -/
-private theorem exists_diffeotopy_eqOn_of_disjoint (s : Finset ι) {W : ι → Set M}
-    (hW : Pairwise (Disjoint on W)) {a b : ι → E → M} {A : Set E}
-    (ha : ∀ i, MapsTo (a i) A (W i)) (hb : ∀ i, MapsTo (b i) A (W i))
-    (h : ∀ i, ∃ Φ : Diffeotopy 𝓘(ℝ, E) ∞ M, ∃ K : Set M, IsCompact K ∧ K ⊆ W i ∧
-      (∀ t, ∀ y ∉ K, Φ (t, y) = y) ∧ EqOn (Φ.final ∘ a i) (b i) A) :
-    ∃ Φ : Diffeotopy 𝓘(ℝ, E) ∞ M, ∃ K : Set M, IsCompact K ∧ K ⊆ ⋃ i ∈ s, W i ∧
-      (∀ t, ∀ y ∉ K, Φ (t, y) = y) ∧ ∀ i ∈ s, EqOn (Φ.final ∘ a i) (b i) A := by
-  classical
-  induction s using Finset.induction_on with
-  | empty =>
-    exact ⟨Diffeotopy.refl _ _ _, ∅, isCompact_empty, empty_subset _,
-      fun t y _ ↦ Diffeotopy.refl_apply _, by simp⟩
-  | @insert j s hjs ih =>
-    obtain ⟨Φ, K, hK, hKW, hΦK, hΦ⟩ := ih
-    obtain ⟨Ψ, L, hL, hLW, hΨL, hΨ⟩ := h j
-    -- Points of `W i` for `i ∈ s` lie outside `L ⊆ W j`, and points of `W j` lie outside `K`.
-    have hL' (i) (hi : i ∈ s) (y) (hy : y ∈ W i) : y ∉ L := fun hyL ↦
-      (hW (ne_of_mem_of_not_mem hi hjs)).ne_of_mem hy (hLW hyL) rfl
-    have hK' (y) (hy : y ∈ W j) : y ∉ K := fun hyK ↦ by
-      obtain ⟨i, hi, hyi⟩ := mem_iUnion₂.mp (hKW hyK)
-      exact (hW (ne_of_mem_of_not_mem hi hjs)).ne_of_mem hyi hy rfl
-    refine ⟨Φ.trans Ψ, K ∪ L, hK.union hL, union_subset ?_ ?_, fun t y hy ↦ ?_,
-      fun i hi x hx ↦ ?_⟩
-    · exact hKW.trans <| iUnion₂_mono' fun i hi ↦ ⟨i, Finset.mem_insert_of_mem hi, subset_rfl⟩
-    · exact hLW.trans <| subset_biUnion_of_mem (u := W) (Finset.mem_insert_self j s)
-    · rw [mem_union, not_or] at hy
-      rw [Diffeotopy.trans_apply, hΦK t y hy.1, hΨL t y hy.2]
-    · rw [comp_apply, Diffeotopy.final_trans, Diffeomorph.coe_trans, comp_apply]
-      rcases Finset.mem_insert.mp hi with rfl | hi
-      · rw [Diffeotopy.final_apply Φ, hΦK 1 _ (hK' _ (ha i hx))]
-        exact hΨ hx
-      · rw [← comp_apply (f := Φ.final), hΦ i hi hx, Diffeotopy.final_apply]
-        exact hΨL 1 _ (hL' i hi _ (hb i hx))
 
 /-- The relative disc theorem inside the image of an embedding `h` of `E`, which is open,
 preconnected and σ-compact. -/
@@ -123,11 +89,12 @@ private theorem exists_diffeotopy_eqOn_compRadialContraction [T2Space M] [Finite
   cases nonempty_fintype ι
   have hshrink (i : ι) : range ((f i).compRadialContraction le_rfl (hκ i)) ⊆ range (f i) := by
     simpa using range_comp_subset_range _ _
-  obtain ⟨Φ, K, hK, hKf, hΦK, hΦ⟩ := exists_diffeotopy_eqOn_of_disjoint Finset.univ hfd
-    (a := fun i ↦ f i) (b := fun i ↦ (f i).compRadialContraction le_rfl (hκ i))
-    (fun i x _ ↦ mem_range_self x) (fun i x _ ↦ hshrink i (mem_range_self x)) fun i ↦
-      exists_diffeotopy_eqOn_of_range_subset_range (f i) (f i) _ subset_rfl (hshrink i) o oM
-        (hfo i) (isOrientationPreservingAt_compRadialContraction _ _ (hfo i)) hA
+  obtain ⟨Φ, K, hK, hKf, hΦK, hΦ⟩ :=
+    exists_diffeotopy_final_comp_eqOn_of_pairwise_disjoint Finset.univ hfd
+      (a := fun i ↦ f i) (b := fun i ↦ (f i).compRadialContraction le_rfl (hκ i))
+      (fun i x _ ↦ mem_range_self x) (fun i x _ ↦ hshrink i (mem_range_self x)) fun i ↦
+        exists_diffeotopy_eqOn_of_range_subset_range (f i) (f i) _ subset_rfl (hshrink i) o oM
+          (hfo i) (isOrientationPreservingAt_compRadialContraction _ _ (hfo i)) hA
   exact ⟨Φ, K, hK, by simpa using hKf, hΦK, fun i ↦ hΦ i (Finset.mem_univ i)⟩
 
 /-- **Moving ordered configurations of discs.** Let `U` be a preconnected open subset of a
@@ -187,12 +154,13 @@ theorem exists_diffeotopy_eqOn_of_pairwise_disjoint [T2Space M] [Finite ι]
     simpa [shrink] using hr i y
   have hgg (i : ι) : range (shrink (g i) i) ⊆ range (g i) := by
     simpa [shrink] using range_comp_subset_range _ _
-  obtain ⟨L, KL, hKL, hKLU, hLK, hL⟩ := exists_diffeotopy_eqOn_of_disjoint Finset.univ hgd
-    (a := fun i ↦ shrink (f' i) i) (b := fun i ↦ shrink (g i) i)
-    (fun i x _ ↦ hf'g i (mem_range_self x)) (fun i x _ ↦ hgg i (mem_range_self x)) fun i ↦
-      exists_diffeotopy_eqOn_of_range_subset_range (g i) _ _ (hf'g i) (hgg i) o oM
-        (isOrientationPreservingAt_compRadialContraction _ _ (hf'o i))
-        (isOrientationPreservingAt_compRadialContraction _ _ (hgo i)) hA
+  obtain ⟨L, KL, hKL, hKLU, hLK, hL⟩ :=
+    exists_diffeotopy_final_comp_eqOn_of_pairwise_disjoint Finset.univ hgd
+      (a := fun i ↦ shrink (f' i) i) (b := fun i ↦ shrink (g i) i)
+      (fun i x _ ↦ hf'g i (mem_range_self x)) (fun i x _ ↦ hgg i (mem_range_self x)) fun i ↦
+        exists_diffeotopy_eqOn_of_range_subset_range (g i) _ _ (hf'g i) (hgg i) o oM
+          (isOrientationPreservingAt_compRadialContraction _ _ (hf'o i))
+          (isOrientationPreservingAt_compRadialContraction _ _ (hgo i)) hA
   -- Compose: shrink the `f i`, move the centres, match the shrinks, and undo the shrink of `g i`.
   have hKLU' : KL ⊆ U := hKLU.trans (iUnion₂_subset fun i _ ↦ hgU i)
   refine ⟨Sf.trans (Φ₀.trans (L.trans Sg.symm)), Kf ∪ K₀ ∪ KL ∪ Kg,

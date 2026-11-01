@@ -157,7 +157,7 @@ theorem val_codRestrict_apply [IsManifold J n N] (f : SmoothEmbedding I J n M N)
   rw [codRestrict, ofIsSmoothEmbedding_apply]
 
 @[simp]
-theorem subtype_val_comp_codRestrict [IsManifold J n N] (f : SmoothEmbedding I J n M N)
+theorem val_comp_codRestrict [IsManifold J n N] (f : SmoothEmbedding I J n M N)
     (U : Opens N) (h : ∀ x, f x ∈ U) : Subtype.val ∘ f.codRestrict U h = f :=
   funext (f.val_codRestrict_apply U h)
 
