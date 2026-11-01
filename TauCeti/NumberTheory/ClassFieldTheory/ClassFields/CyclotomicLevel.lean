@@ -25,12 +25,12 @@ for odd `m` the fields `ℚ(ζ_{2m})` and `ℚ(ζ_m)` coincide, so a level `2m` 
 
 For the cyclotomic field `F = ℚ(ζ_n)` itself, the norm group is the ray subgroup of `(n)·∞`, so the
 conductor of `F/ℚ` is the conductor of the trivial subgroup of the ray class group modulo `(n)·∞`
-(`abelianConductor_eq_rayClassConductor_bot`). So it is the conductor
+(`abelianConductor_cyclotomic_eq_rayClassConductor_bot`). So it is the conductor
 `NumberField.Chebotarev.cyclotomicConductor ℚ F n` of the cyclotomic Artin map
-(`abelianConductor_eq_cyclotomicConductor`), and hence the conductor of `ℚ(ζ_n)/ℚ` is trivial for
-`n ≤ 2` (`abelianConductor_eq_one_of_le_two`), `(n)·∞` for `n > 2` with `n ≢ 2 mod 4`
-(`abelianConductor_eq_ratModulus`), and `(n / 2)·∞` for `n > 2` with `n ≡ 2 mod 4`
-(`abelianConductor_eq_ratModulus_of_mod_four_eq_two`).
+(`abelianConductor_cyclotomic_eq_cyclotomicConductor`), and hence the conductor of `ℚ(ζ_n)/ℚ` is
+trivial for `n ≤ 2` (`abelianConductor_cyclotomic_eq_one_of_le_two`), `(n)·∞` for `n > 2` with
+`n ≢ 2 mod 4` (`abelianConductor_cyclotomic_eq_ratModulus`), and `(n / 2)·∞` for `n > 2` with
+`n ≡ 2 mod 4` (`abelianConductor_cyclotomic_eq_ratModulus_of_mod_four_eq_two`).
 
 ## Main results
 
@@ -38,14 +38,14 @@ conductor of `F/ℚ` is the conductor of the trivial subgroup of the ray class g
   finite part of the conductor is the least cyclotomic level of `E`.
 * `TauCeti.ClassFieldTheory.absNorm_abelianConductor_finitePart_mod_four_ne_two`: the least
   cyclotomic level is not `2` modulo `4`.
-* `TauCeti.ClassFieldTheory.abelianConductor_eq_rayClassConductor_bot`: the conductor of
+* `TauCeti.ClassFieldTheory.abelianConductor_cyclotomic_eq_rayClassConductor_bot`: the conductor of
   `ℚ(ζ_n)/ℚ` is the conductor of the trivial subgroup of the ray class group modulo `(n)·∞`.
-* `TauCeti.ClassFieldTheory.abelianConductor_eq_cyclotomicConductor`: the conductor of
+* `TauCeti.ClassFieldTheory.abelianConductor_cyclotomic_eq_cyclotomicConductor`: the conductor of
   `ℚ(ζ_n)/ℚ` is the conductor of its cyclotomic Artin map.
-* `TauCeti.ClassFieldTheory.abelianConductor_eq_one_of_le_two`,
-  `TauCeti.ClassFieldTheory.abelianConductor_eq_ratModulus` and
-  `TauCeti.ClassFieldTheory.abelianConductor_eq_ratModulus_of_mod_four_eq_two`: the conductor of
-  `ℚ(ζ_n)/ℚ`.
+* `TauCeti.ClassFieldTheory.abelianConductor_cyclotomic_eq_one_of_le_two`,
+  `TauCeti.ClassFieldTheory.abelianConductor_cyclotomic_eq_ratModulus` and
+  `TauCeti.ClassFieldTheory.abelianConductor_cyclotomic_eq_ratModulus_of_mod_four_eq_two`: the
+  conductor of `ℚ(ζ_n)/ℚ`.
 
 ## References
 
@@ -109,7 +109,7 @@ variable (n : ℕ) [NeZero n] (F : Type) [Field F] [NumberField F] [IsCyclotomic
 
 /-- **The conductor of `ℚ(ζ_n)/ℚ` is the conductor of the trivial subgroup of the ray class group
 modulo `(n)·∞`**: the norm group of `ℚ(ζ_n)` is the ray subgroup of `(n)·∞`. -/
-theorem abelianConductor_eq_rayClassConductor_bot :
+theorem abelianConductor_cyclotomic_eq_rayClassConductor_bot :
     abelianConductor ℚ F =
       Subgroup.rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus n (NeZero.ne n)))) :=
   abelianConductor_eq_rayClassConductor_bot_of_range_eq
@@ -117,33 +117,33 @@ theorem abelianConductor_eq_rayClassConductor_bot :
 
 /-- **The conductor of `ℚ(ζ_n)/ℚ` is the conductor of its cyclotomic Artin map**: over `ℚ` both
 are the conductor of the trivial subgroup of the ray class group modulo `(n)·∞`. -/
-theorem abelianConductor_eq_cyclotomicConductor [IsGalois ℚ F] :
+theorem abelianConductor_cyclotomic_eq_cyclotomicConductor [IsGalois ℚ F] :
     abelianConductor ℚ F = NumberField.Chebotarev.cyclotomicConductor ℚ F n :=
-  (abelianConductor_eq_rayClassConductor_bot n F).trans
+  (abelianConductor_cyclotomic_eq_rayClassConductor_bot n F).trans
     (NumberField.Chebotarev.cyclotomicConductor_rat_eq_rayClassConductor_bot F).symm
 
 /-- **The conductor of `ℚ(ζ_n)/ℚ` is trivial** for `n ≤ 2`. -/
-theorem abelianConductor_eq_one_of_le_two (h2 : n ≤ 2) :
+theorem abelianConductor_cyclotomic_eq_one_of_le_two (h2 : n ≤ 2) :
     abelianConductor ℚ F = Modulus.one ℚ := by
   have := IsCyclotomicExtension.isGalois {n} ℚ F
-  rw [abelianConductor_eq_cyclotomicConductor n F,
+  rw [abelianConductor_cyclotomic_eq_cyclotomicConductor n F,
     NumberField.Chebotarev.cyclotomicConductor_rat_of_le_two F h2]
 
 /-- **The conductor of `ℚ(ζ_n)/ℚ` is `(n)·∞`** for `n > 2` not equal to `2` modulo `4`. -/
-theorem abelianConductor_eq_ratModulus (h2 : 2 < n) (h4 : n % 4 ≠ 2) :
+theorem abelianConductor_cyclotomic_eq_ratModulus (h2 : 2 < n) (h4 : n % 4 ≠ 2) :
     abelianConductor ℚ F = ratModulus n (NeZero.ne n) := by
   have := IsCyclotomicExtension.isGalois {n} ℚ F
-  rw [abelianConductor_eq_cyclotomicConductor n F,
+  rw [abelianConductor_cyclotomic_eq_cyclotomicConductor n F,
     NumberField.Chebotarev.cyclotomicConductor_rat F h2 h4]
 
 omit [NeZero n] in
 /-- **The conductor of `ℚ(ζ_n)/ℚ` is `(n / 2)·∞`** for `n > 2` equal to `2` modulo `4`, as
 `ℚ(ζ_n) = ℚ(ζ_{n / 2})`. -/
-theorem abelianConductor_eq_ratModulus_of_mod_four_eq_two (h2 : 2 < n) (h4 : n % 4 = 2) :
+theorem abelianConductor_cyclotomic_eq_ratModulus_of_mod_four_eq_two (h2 : 2 < n) (h4 : n % 4 = 2) :
     abelianConductor ℚ F = ratModulus (n / 2) (by omega) := by
   have : NeZero n := ⟨by omega⟩
   have := IsCyclotomicExtension.isGalois {n} ℚ F
-  rw [abelianConductor_eq_cyclotomicConductor n F,
+  rw [abelianConductor_cyclotomic_eq_cyclotomicConductor n F,
     NumberField.Chebotarev.cyclotomicConductor_rat_of_mod_four_eq_two F h2 h4]
 
 end Cyclotomic
