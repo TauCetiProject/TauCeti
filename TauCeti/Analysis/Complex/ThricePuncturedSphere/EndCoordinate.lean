@@ -147,6 +147,13 @@ theorem re_endCoord (q : Puncture) (w : ℂ) :
 theorem re_endCoord_endCenter (q : Puncture) : (q.endCoord q.endCenter).re = 0 := by
   simp [re_endCoord]
 
+/-- On the end at `∞` the point `1` has longitudinal coordinate `log 2 / (2π) > 0`. -/
+theorem re_endCoord_inf_one_pos : 0 < (inf.endCoord 1).re := by
+  rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero]
+  have : ‖(1 : ℂ) / 2‖ = 2⁻¹ := by norm_num
+  rw [this, Real.log_inv, neg_neg]
+  exact div_pos (Real.log_pos one_lt_two) (by positivity)
+
 /-- A point with nonzero longitudinal coordinate is not the center of the end. -/
 theorem ne_endCenter_of_re_endCoord_ne_zero (q : Puncture) {w : ℂ}
     (h : (q.endCoord w).re ≠ 0) : w ≠ q.endCenter := by

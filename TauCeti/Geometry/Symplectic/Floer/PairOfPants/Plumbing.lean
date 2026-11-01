@@ -63,26 +63,6 @@ namespace TauCeti.Floer
 
 variable {M : Type*} {Ha Hb : Puncture → ℝ → M → ℝ} {q : Puncture} {L : ℝ}
 
-/-- Far out on the end `r`, where `±Re z ≥ 2`, the perturbation is `H_r(t_r) dt_r`. -/
-private theorem pairOfPantsPerturbation_eq_smul_endAngularForm {H : Puncture → ℝ → M → ℝ}
-    {r : Puncture} {w : ℂ} (hw : 2 ≤ r.endSign * (r.endCoord w).re) (x : M) :
-    pairOfPantsPerturbation H w x = H r (r.endCoord w).im x • r.endAngularForm w := by
-  rw [pairOfPantsPerturbation_def, Finset.sum_eq_single r,
-    smoothTransition.one_of_one_le (by linarith), one_mul]
-  · -- The cutoffs of the other ends vanish, since distinct ends are disjoint.
-    intro s _ hs
-    have hc : smoothTransition (s.endSign * (s.endCoord w).re - 1) = 0 := by
-      refine smoothTransition.zero_of_nonpos ?_
-      by_contra! h
-      have hr : w ≠ r.endCenter :=
-        r.ne_endCenter_of_re_endCoord_ne_zero fun h' => by rw [h', mul_zero] at hw; linarith
-      have hs' : w ≠ s.endCenter :=
-        s.ne_endCenter_of_re_endCoord_ne_zero fun h' => by rw [h', mul_zero] at h; linarith
-      exact cylindricalEndLift_ne_cylindricalEndLift hs.symm (by linarith) (by linarith)
-        ((r.cylindricalEndLift_endCoord hr).trans (s.cylindricalEndLift_endCoord hs').symm)
-    simp [hc]
-  · simp
-
 /-- **The perturbations match on the neck.** Suppose the Hamiltonian on the output end of the
 inserted pair of pants is the Hamiltonian on the input end `q` of the receiving one. At a point
 `w` of the end at `∞` with end coordinate `z`, where `Re z ≤ -2` and `±Re (z + L) ≥ 2` so that

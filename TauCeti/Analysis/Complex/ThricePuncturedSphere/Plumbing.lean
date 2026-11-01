@@ -196,13 +196,6 @@ theorem endAngularForm_plumbingMap (q : Puncture) (L : ℝ) (w v : ℂ) :
   · congr 1
     field_simp
 
-/-- On the end at `∞` the point `1` has longitudinal coordinate `log 2 / (2π) > 0`. -/
-private theorem re_endCoord_inf_one_pos : 0 < (inf.endCoord 1).re := by
-  rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero]
-  have : ‖(1 : ℂ) / 2‖ = 2⁻¹ := by norm_num
-  rw [this, Real.log_inv, neg_neg]
-  exact div_pos (Real.log_pos one_lt_two) (by positivity)
-
 /-- **The plumbed four-punctured sphere.** For a positive end `q` and a neck length `L > 0`, the
 image under the plumbing map of the part `Re z > -L` of the inserted thrice-punctured sphere,
 measured in the end coordinate at `∞`, together with the part `Re z < L` of the receiving one,
