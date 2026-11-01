@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.BraidWord.Conway
+public import TauCeti.KnotTheory.BraidWord.SeifertMatrix.ConwayPolynomial
 public import TauCeti.KnotTheory.Markov.Basic
 
 /-!
@@ -18,11 +18,10 @@ and either sign of stabilization preserves the polynomial. Thus Markov-equivalen
 equal Conway polynomials.
 
 This is the Seifert-matrix algorithm on the braid presentation. No geometric correspondence
-between braid closures and smooth links is assumed. Comparing it with other Alexander algorithms
-additionally requires the skein relation for the corrected word polynomial.
+between braid closures and smooth links is assumed.
 
-The descent and conjugation argument follow the existing signature construction in
-`TauCeti.KnotTheory.Markov.TristramLevine`.
+The shared word-invariant descent in `TauCeti.KnotTheory.Markov.Basic` follows the signature
+construction in `TauCeti.KnotTheory.Markov.TristramLevine`.
 
 ## References
 
@@ -43,14 +42,13 @@ namespace MarkovBraid
 /-- The Seifert-matrix Conway polynomial of a closed braid, normalized by `∇(unknot) = 1`
 and with variable `z = s⁻¹ - s`. Any word representing the braid gives the same value. -/
 def conwayPolynomial (β : MarkovBraid) : ℤ[X] :=
-  (toBraid_surjective β.braid).choose.conwayPolynomial
+  liftWord BraidWord.conwayPolynomial β
 
 /-- Any representing word computes the braid's Conway polynomial. -/
 theorem conwayPolynomial_eq_of_toBraid_eq {β : MarkovBraid}
     {w : BraidWord (β.predStrands + 1)} (hw : w.toBraid = β.braid) :
     β.conwayPolynomial = w.conwayPolynomial :=
-  BraidWord.conwayPolynomial_eq_of_toBraid_eq
-    ((toBraid_surjective β.braid).choose_spec.trans hw.symm)
+  liftWord_eq_of_toBraid_eq _ BraidWord.conwayPolynomial_eq_of_toBraid_eq hw
 
 /-- The braid represented by a word has that word's Conway polynomial. -/
 @[simp]
@@ -62,35 +60,15 @@ end MarkovBraid
 
 /-- A single Markov move preserves the Seifert-matrix Conway polynomial. -/
 theorem IsMarkovMove.conwayPolynomial_eq {β γ : MarkovBraid} (h : IsMarkovMove β γ) :
-    β.conwayPolynomial = γ.conwayPolynomial := by
-  cases h with
-  | conj b c =>
-    obtain ⟨w, rfl⟩ := toBraid_surjective b
-    obtain ⟨u, rfl⟩ := toBraid_surjective c
-    let uInv : BraidWord _ := u.reverse.map fun x => (x.1, -x.2)
-    have huInv : uInv.toBraid = u.toBraid⁻¹ := toBraid_reverse_map_neg u
-    -- Rotate the conjugating word past the closure, then freely cancel it with its inverse.
-    have hrot := conwayPolynomial_rotate (u ++ (w ++ uInv)) u.length
-    rw [List.rotate_append_length_eq] at hrot
-    rw [MarkovBraid.conwayPolynomial_mk,
-      MarkovBraid.conwayPolynomial_eq_of_toBraid_eq (w := u ++ (w ++ uInv))
-        (by rw [toBraid_append, toBraid_append, huInv, mul_assoc]), ← hrot]
-    exact conwayPolynomial_eq_of_toBraid_eq
-      (by rw [toBraid_append, toBraid_append, huInv, inv_mul_cancel_right])
-  | stabilize b =>
-    obtain ⟨w, rfl⟩ := toBraid_surjective b
-    rw [MarkovBraid.conwayPolynomial_eq_of_toBraid_eq (w := w.stabilize 1) (by simp),
-      conwayPolynomial_stabilize, MarkovBraid.conwayPolynomial_mk]
-  | stabilizeInv b =>
-    obtain ⟨w, rfl⟩ := toBraid_surjective b
-    rw [MarkovBraid.conwayPolynomial_eq_of_toBraid_eq (w := w.stabilize (-1)) (by simp),
-      conwayPolynomial_stabilize, MarkovBraid.conwayPolynomial_mk]
+    β.conwayPolynomial = γ.conwayPolynomial :=
+  h.liftWord_eq BraidWord.conwayPolynomial BraidWord.conwayPolynomial_eq_of_toBraid_eq
+    conwayPolynomial_rotate conwayPolynomial_stabilize
 
 /-- Markov-equivalent braids have equal Seifert-matrix Conway polynomials. -/
 theorem MarkovEquiv.conwayPolynomial_eq {β γ : MarkovBraid} (h : MarkovEquiv β γ) :
     β.conwayPolynomial = γ.conwayPolynomial :=
-  h.induction IsMarkovMove.conwayPolynomial_eq (fun _ => rfl)
-    (fun _ ih => ih.symm) (fun _ _ ih ih' => ih.trans ih')
+  h.liftWord_eq BraidWord.conwayPolynomial BraidWord.conwayPolynomial_eq_of_toBraid_eq
+    conwayPolynomial_rotate conwayPolynomial_stabilize
 
 namespace MarkovBraid
 

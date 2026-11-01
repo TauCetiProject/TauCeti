@@ -28,8 +28,8 @@ vanishes. This case is essential for word independence.
 
 The construction uses the canonical matrices and their elementary changes from
 `TauCeti.KnotTheory.BraidWord.SeifertMatrix.Equivalence`, and the matrix polynomial from
-`TauCeti.KnotTheory.SeifertMatrix.Polynomial.Conway`. It provides the word-independence input
-for comparing the Seifert and Burau algorithms.
+`TauCeti.KnotTheory.SeifertMatrix.Polynomial.Conway`. Word independence lets the polynomial
+descend to braids (see `TauCeti.KnotTheory.Markov.Conway`).
 
 ## References
 
@@ -56,13 +56,7 @@ theorem conwayPolynomial_seifertMatrix_insert (u v : BraidWord n) (i : Fin (n - 
     (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix.conwayPolynomial =
       (u ++ v).seifertMatrix.conwayPolynomial := by
   apply Matrix.conwayPolynomial_eq_of_alexander_eq
-  · have hc : Fintype.card (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops =
-        Fintype.card (u ++ v).seifertLoops + 2 := by
-      rcases Int.units_eq_one_or ε with rfl | rfl
-      · obtain ⟨e, P, η, hP, hPV⟩ := exists_seifertMatrix_insert_congr_enlargeRow u v i h
-        simpa using (Fintype.card_congr e).symm
-      · obtain ⟨e, P, ξ, hP, hPV⟩ := exists_seifertMatrix_insert_congr_enlargeColumn u v i h
-        simpa using (Fintype.card_congr e).symm
+  · have hc := card_seifertLoops_insert u v i ε h
     omega
   · exact alexander_seifertMatrix_insert u v i ε h
 
@@ -103,20 +97,29 @@ theorem conwayPolynomial_of_not_exists (w : BraidWord (n + 1)) (i : Fin (n + 1 -
   have hn : ¬∀ i, ∃ x ∈ w, x.1 = i := fun hw => h (hw i)
   rw [conwayPolynomial_def, ite_eq_right hn]
 
+/-- Agreement on whether all levels occur, together with matrix-polynomial agreement in that
+case, implies agreement of the corrected word polynomials, even across different strand counts. -/
+theorem conwayPolynomial_eq_of_forall_mem_map_iff {m : ℕ}
+    {w : BraidWord (n + 1)} {w' : BraidWord (m + 1)}
+    (hs : (∀ i, i ∈ w.map Prod.fst) ↔ ∀ i, i ∈ w'.map Prod.fst)
+    (hM : (∀ i, ∃ x ∈ w, x.1 = i) →
+      w.seifertMatrix.conwayPolynomial = w'.seifertMatrix.conwayPolynomial) :
+    w.conwayPolynomial = w'.conwayPolynomial := by
+  simp only [List.mem_map] at hs
+  simp only [conwayPolynomial_def, hs]
+  split_ifs with h
+  · exact hM (hs.mpr h)
+  · rfl
+
 /-- Inserting or deleting an adjacent inverse pair preserves the corrected word polynomial. -/
 theorem conwayPolynomial_insert (u v : BraidWord (n + 1)) (i : Fin (n + 1 - 1)) (ε : ℤˣ) :
     (u ++ (i, ε) :: (i, -ε) :: v).conwayPolynomial = (u ++ v).conwayPolynomial := by
   by_cases h : ∃ x ∈ u ++ v, x.1 = i
-  · have hs : (∀ j, ∃ x ∈ u ++ (i, ε) :: (i, -ε) :: v, x.1 = j) ↔
-        ∀ j, ∃ x ∈ u ++ v, x.1 = j := by
-      apply forall_congr'
-      intro j
-      simp only [List.mem_append, List.mem_cons, or_and_right, exists_or, exists_eq_left]
+  · apply conwayPolynomial_eq_of_forall_mem_map_iff
+    · have hi := List.mem_map.mpr h
+      simp only [List.map_append, List.map_cons, List.mem_append, List.mem_cons]
       grind
-    simp only [conwayPolynomial_def, hs]
-    split_ifs
-    · exact conwayPolynomial_seifertMatrix_insert u v i ε h
-    · rfl
+    · exact fun _ ↦ conwayPolynomial_seifertMatrix_insert u v i ε h
   · rw [conwayPolynomial_of_not_exists (u ++ v) i h, conwayPolynomial_def,
       conwayPolynomial_seifertMatrix_insert_of_not_exists u v i ε h]
     simp
@@ -135,18 +138,13 @@ theorem FreeCancelStep.conwayPolynomial_eq {w w' : BraidWord (n + 1)}
 /-- An Artin relation preserves the corrected Conway polynomial. -/
 theorem conwayPolynomial_eq_of_artinStep {w w' : BraidWord (n + 1)} (h : ArtinStep w w') :
     w.conwayPolynomial = w'.conwayPolynomial := by
-  have hs : (∀ i, ∃ x ∈ w, x.1 = i) ↔ ∀ i, ∃ x ∈ w', x.1 = i := by
-    apply forall_congr'
-    intro i
-    cases h <;>
-      simp only [List.mem_append, List.mem_cons, or_and_right, exists_or,
-        exists_eq_left] <;> grind only
-  simp only [conwayPolynomial_def, hs]
-  split_ifs
-  · obtain ⟨e, P, hP, he⟩ := exists_seifertMatrix_of_artinStep h
+  apply conwayPolynomial_eq_of_forall_mem_map_iff
+  · cases h <;>
+      simp only [List.map_append, List.map_cons, List.mem_append, List.mem_cons] <;> grind only
+  · intro _
+    obtain ⟨e, P, hP, he⟩ := exists_seifertMatrix_of_artinStep h
     rw [he, Matrix.conwayPolynomial_submatrix_equiv_self,
       Matrix.conwayPolynomial_congruence_of_det_sq_eq_one _ (Int.isUnit_sq hP)]
-  · rfl
 
 /-- Equivalent words compute the same Conway polynomial. -/
 theorem WordEquiv.conwayPolynomial_eq {w w' : BraidWord (n + 1)} (h : WordEquiv w w') :
@@ -163,18 +161,12 @@ theorem conwayPolynomial_eq_of_toBraid_eq {w w' : BraidWord (n + 1)}
 theorem conwayPolynomial_append_singleton (x : Fin (n + 1 - 1) × ℤˣ)
     (v : BraidWord (n + 1)) : (v ++ [x]).conwayPolynomial =
       conwayPolynomial (n := n) (x :: v) := by
-  have hs : (∀ i, ∃ a ∈ v ++ [x], a.1 = i) ↔ ∀ i, ∃ a ∈ x :: v, a.1 = i := by
-    apply forall_congr'
-    intro i
-    simp only [List.mem_append, List.mem_cons, List.not_mem_nil,
-      or_false, or_and_right, exists_or, exists_eq_left]
-    exact or_comm
-  simp only [conwayPolynomial_def, hs]
-  split_ifs
-  · obtain ⟨e, P, hP, he⟩ := exists_seifertMatrix_append_singleton x v
+  apply conwayPolynomial_eq_of_forall_mem_map_iff
+  · simp [or_comm]
+  · intro _
+    obtain ⟨e, P, hP, he⟩ := exists_seifertMatrix_append_singleton x v
     rw [he, Matrix.conwayPolynomial_submatrix_equiv_self,
       Matrix.conwayPolynomial_congruence_of_det_sq_eq_one _ (Int.isUnit_sq hP)]
-  · rfl
 
 /-- Cyclic rotation preserves the corrected Conway polynomial. -/
 @[simp]
@@ -186,17 +178,15 @@ theorem conwayPolynomial_rotate (w : BraidWord (n + 1)) (k : ℕ) :
 @[simp]
 theorem conwayPolynomial_stabilize (w : BraidWord (n + 1)) (ε : ℤˣ) :
     (w.stabilize ε).conwayPolynomial = w.conwayPolynomial := by
-  have hs : (∀ i, ∃ x ∈ w.stabilize ε, x.1 = i) ↔ ∀ i, ∃ x ∈ w, x.1 = i := by
-    -- Normalize the strand-index arithmetic before decomposing the finite index type.
-    change (∀ i : Fin (n + 1), ∃ x ∈ w.stabilize ε, x.1 = i) ↔
-      ∀ i : Fin n, ∃ x ∈ w, x.1 = i
+  apply conwayPolynomial_eq_of_forall_mem_map_iff
+  · -- Normalize the strand-index arithmetic before decomposing the finite index type.
+    change (∀ i : Fin (n + 1), i ∈ (w.stabilize ε).map Prod.fst) ↔
+      ∀ i : Fin n, i ∈ w.map Prod.fst
     rw [Fin.forall_iff_castSucc]
-    simp [stabilize_def, strandIncl_def, eq_comm]
-  simp only [conwayPolynomial_def, hs]
-  split_ifs
-  · obtain ⟨e, he⟩ := exists_seifertMatrix_stabilize w ε
+    simp [stabilize_def, strandIncl_def, List.mem_map, eq_comm]
+  · intro _
+    obtain ⟨e, he⟩ := exists_seifertMatrix_stabilize w ε
     rw [he, Matrix.conwayPolynomial_submatrix_equiv_self]
-  · rfl
 
 /-- The empty one-strand word is the unknot, whereas empty words on more strands are unlinks. -/
 @[simp]
