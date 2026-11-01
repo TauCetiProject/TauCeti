@@ -338,8 +338,7 @@ theorem _root_.ContDiffAt.laplacian_comp_norm {F : ℝ → ℝ} {x : E} (hF : Co
   have hnorm : 0 < ‖x‖ := norm_pos_iff.mpr hx
   have hΔ : Δ (fun y : E ↦ ‖y‖) x = (Module.finrank ℝ E - 1) / ‖x‖ := by
     have h := laplacian_norm_rpow_of_ne 1 hx
-    rw [show (1 : ℝ) - 2 = -1 by norm_num, Real.rpow_neg_one] at h
-    simp only [Real.rpow_one] at h
+    norm_num only [Real.rpow_one, Real.rpow_neg_one] at h
     rw [h, div_eq_mul_inv]
     ring
   have hgrad : ‖∇ (fun y : E ↦ ‖y‖) x‖ = 1 := by

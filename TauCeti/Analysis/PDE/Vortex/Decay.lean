@@ -159,15 +159,6 @@ theorem exists_one_sub_normSq_le_mul_exp
   exact Real.exp_le_exp.mpr (neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left _ _)
     (norm_nonneg _)))
 
-/-- At a solution of the vortex equation the curvature coefficient `∂₁ b₂ - ∂₂ b₁` of
-`F_a = i (∂₁ b₂ - ∂₂ b₁) ds ∧ dt` is `-(1 - |α|²) / 8`. -/
-theorem curvature_eq_of_equation_eq_zero {z : ℂ} (hsol : equation x z = 0) :
-    fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I =
-      -((1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) / 8) := by
-  have h := congrArg (· 0) hsol
-  simp only [equation_apply_zero, PiLp.zero_apply] at h
-  linarith
-
 /-- **Exponential decay of the curvature of a plane vortex.** A vortex on the whole plane whose
 section satisfies `|α| → 1` at infinity has curvature coefficient bounded by `K exp (-c |z|)` for
 every rate `c < 1 / 2`. -/
