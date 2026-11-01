@@ -9,7 +9,6 @@ public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
 public import TauCeti.Probability.Distributions.Beta.Quantile
 import TauCeti.Probability.Distributions.Uniform.Sphere.Dirichlet
 import TauCeti.Probability.Distributions.Beta.Square
-import TauCeti.Probability.Distributions.Beta.Reflection
 import TauCeti.Probability.Distributions.Affine
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 
@@ -56,11 +55,12 @@ theorem map_eval_uniformSphereMeasure (i : ι) :
     have hcard : 1 < Fintype.card ι := Fintype.one_lt_card
     dsimp [a]
     exact div_pos (sub_pos.mpr (by exact_mod_cast hcard)) two_pos
-  let _ := isProbabilityMeasureBeta ha ha
   have hneg : (uniformSphereMeasure (EuclideanSpace ℝ ι)).map (fun u ↦ -u) =
       uniformSphereMeasure (EuclideanSpace ℝ ι) :=
     (LinearIsometryEquiv.neg ℝ).map_uniformSphereMeasure
-  apply Measure.eq_of_map_sq_eq_of_map_neg_eq_self
+  apply eq_map_betaMeasure_of_map_sq_of_map_neg ha
+  · rw [Measure.map_map (by fun_prop) (by fun_prop)]
+    exact map_sq_eval_uniformSphereMeasure i
   · rw [Measure.map_map (by fun_prop) (by fun_prop)]
     calc
       _ = ((uniformSphereMeasure (EuclideanSpace ℝ ι)).map (fun u ↦ -u)).map
@@ -68,18 +68,6 @@ theorem map_eval_uniformSphereMeasure (i : ι) :
         rw [Measure.map_map (by fun_prop) (by fun_prop)]
         rfl
       _ = _ := by rw [hneg]
-  · calc
-      _ = ((betaMeasure a a).map (fun x ↦ 1 - x)).map (fun x ↦ -1 + 2 * x) := by
-        rw [Measure.map_map (by fun_prop) (by fun_prop),
-          Measure.map_map (by fun_prop) (by fun_prop)]
-        congr 1
-        ext x
-        dsimp
-        ring
-      _ = _ := by rw [betaMeasure_map_one_sub]
-  · rw [Measure.map_map (by fun_prop) (by fun_prop),
-      Measure.map_map (by fun_prop) (by fun_prop)]
-    exact (map_sq_eval_uniformSphereMeasure i).trans (betaMeasure_map_centered_sq ha).symm
 
 /-- Rescaling a sphere coordinate from `(-1, 1)` to `(0, 1)` gives the symmetric Beta law
 with shape half the dimension minus one half. -/

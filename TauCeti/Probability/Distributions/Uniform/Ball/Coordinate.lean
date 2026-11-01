@@ -56,16 +56,12 @@ theorem map_sq_eval_uniformBallMeasure (i : ι) :
       betaMeasure (1 / 2) (((Fintype.card ι : ℝ) + 1) / 2) := by
   classical
   have : Nonempty ι := ⟨i⟩
-  have hd : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.2 Fintype.card_pos
   have hdim : Module.finrank ℝ (EuclideanSpace ℝ ι) = Fintype.card ι := by simp
-  have := isProbabilityMeasureBeta hd one_pos
-  have hrad : (uniformBallMeasure (0 : EuclideanSpace ℝ ι) 1).map (fun x ↦ ‖x‖ ^ 2) =
-      betaMeasure ((Fintype.card ι : ℝ) / 2) 1 := by
-    have h := congrArg (Measure.map (fun x : ℝ ↦ x ^ 2))
-      (map_norm_sub_div_uniformBallMeasure (0 : EuclideanSpace ℝ ι) (by norm_num : (0 : ℝ) < 1))
-    simp only [sub_zero, div_one, hdim] at h
-    rw [Measure.map_map (by fun_prop) (by fun_prop), betaMeasure_map_sq_one_right hd] at h
-    exact h
+  have := isProbabilityMeasureBeta
+    (Nat.cast_pos.2 (Module.finrank_pos (R := ℝ) (M := EuclideanSpace ℝ ι))) one_pos
+  have hrad := map_sq_norm_sub_div_uniformBallMeasure (0 : EuclideanSpace ℝ ι)
+    (by norm_num : (0 : ℝ) < 1)
+  simp only [sub_zero, div_one, hdim] at hrad
   rcases subsingleton_or_nontrivial ι with hι | hι
   -- In dimension one the coordinate square equals the squared radius.
   · let : Unique ι := { default := i, uniq := fun j ↦ Subsingleton.elim j i }
@@ -78,11 +74,14 @@ theorem map_sq_eval_uniformBallMeasure (i : ι) :
       (Prod.map (fun u : sphere (0 : EuclideanSpace ℝ ι) 1 ↦ u.val i ^ 2)
         (fun r : ℝ ↦ r ^ 2)))
       (map_sphereDirection_prod_uniformBallMeasure e 0 (by norm_num : (0 : ℝ) < 1))
-    simp only [hdim] at hjoint
     rw [← Measure.map_prod_map _ _ (by fun_prop) (by fun_prop),
-      map_sq_eval_uniformSphereMeasure, betaMeasure_map_sq_one_right hd,
+      map_sq_eval_uniformSphereMeasure,
+      ← map_norm_sub_div_uniformBallMeasure (0 : EuclideanSpace ℝ ι)
+        (by norm_num : (0 : ℝ) < 1),
+      Measure.map_map (by fun_prop) (by fun_prop),
       Measure.map_map (by fun_prop) (by fun_prop)] at hjoint
     simp only [Function.comp_def, Prod.map_apply, sub_zero, div_one] at hjoint
+    rw [hrad] at hjoint
     have hb : 0 < ((Fintype.card ι : ℝ) - 1) / 2 := by
       have hcard : 1 < Fintype.card ι := Fintype.one_lt_card
       exact div_pos (sub_pos.mpr (by exact_mod_cast hcard)) two_pos
@@ -116,11 +115,12 @@ theorem map_eval_uniformBallMeasure (i : ι) :
   have ha : 0 < ((Fintype.card ι : ℝ) + 1) / 2 := by positivity
   have := isProbabilityMeasure_uniformBallMeasure (c := (0 : EuclideanSpace ℝ ι))
     (by norm_num : (0 : ℝ) ≤ 1)
-  have := isProbabilityMeasureBeta ha ha
   have hneg : (uniformBallMeasure (0 : EuclideanSpace ℝ ι) 1).map (fun x ↦ -x) =
       uniformBallMeasure 0 1 := by
     simp
-  apply Measure.eq_of_map_sq_eq_of_map_neg_eq_self
+  apply eq_map_betaMeasure_of_map_sq_of_map_neg ha
+  · rw [Measure.map_map (by fun_prop) (by fun_prop)]
+    exact map_sq_eval_uniformBallMeasure i
   · rw [Measure.map_map (by fun_prop) (by fun_prop)]
     calc
       _ = ((uniformBallMeasure (0 : EuclideanSpace ℝ ι) 1).map (fun x ↦ -x)).map
@@ -128,20 +128,6 @@ theorem map_eval_uniformBallMeasure (i : ι) :
         rw [Measure.map_map (by fun_prop) (by fun_prop)]
         simp only [Function.comp_def, PiLp.neg_apply]
       _ = _ := by rw [hneg]
-  · calc
-      _ = ((betaMeasure (((Fintype.card ι : ℝ) + 1) / 2)
-          (((Fintype.card ι : ℝ) + 1) / 2)).map (fun x ↦ 1 - x)).map
-          (fun x ↦ -1 + 2 * x) := by
-        rw [Measure.map_map (by fun_prop) (by fun_prop),
-          Measure.map_map (by fun_prop) (by fun_prop)]
-        congr 1
-        ext x
-        dsimp
-        ring
-      _ = _ := by rw [betaMeasure_map_one_sub]
-  · rw [Measure.map_map (by fun_prop) (by fun_prop),
-      Measure.map_map (by fun_prop) (by fun_prop)]
-    exact (map_sq_eval_uniformBallMeasure i).trans (betaMeasure_map_centered_sq ha).symm
 
 /-- Rescaling a unit-ball coordinate to `(0, 1)` gives the symmetric Beta law with
 shape `(d + 1) / 2`. -/

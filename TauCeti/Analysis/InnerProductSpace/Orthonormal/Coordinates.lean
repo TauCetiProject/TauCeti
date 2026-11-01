@@ -11,13 +11,14 @@ import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 /-!
 # Orthonormal coordinates
 
+This module describes coordinates adapted to a vector in a real inner product space and
+rotated coordinates in a complex inner product space.
+
 In a finite-dimensional real inner product space, an orthonormal coordinate system can be
 chosen so that the inner product with a given vector is its norm times any prescribed coordinate.
-`TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval` constructs it from
-`stdOrthonormalBasis` and Mathlib's `Submodule.reflection_sub`.
 
-Let `b` be an orthonormal basis, indexed by a finite type `ι`, of a complex inner product space
-`E`, so that every `v : E` has the complex coordinates `⟪b j, v⟫`.
+For an orthonormal basis `b` of a complex inner product space `E`, indexed by a finite type `ι`,
+every `v : E` has the complex coordinates `⟪b j, v⟫`:
 
 * Each holomorphic quadratic form `∑ⱼ c j ⟪b j, v⟫²` in these coordinates is `v ↦ Q v v` for a
   continuous complex bilinear form `Q`.
@@ -33,6 +34,9 @@ Let `b` be an orthonormal basis, indexed by a finite type `ι`, of a complex inn
 
 ## Main statements
 
+* `TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval`: for a vector `v` and a prescribed
+  coordinate `i`, there is a linear isometry equivalence `f` with
+  `⟪v, x⟫ = ‖v‖ * f x i` for all `x`.
 * `OrthonormalBasis.exists_apply_self_eq_sum_mul_inner_sq`: `∑ⱼ c j ⟪b j, v⟫²` is `Q v v` for a
   continuous complex bilinear form `Q`.
 -/
