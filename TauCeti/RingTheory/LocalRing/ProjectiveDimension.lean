@@ -184,10 +184,10 @@ theorem finrank_cotangentSpace_le_of_hasProjectiveDimensionLE {R : Type u} [Comm
   let b := Pi.basisFun R (Fin n)
   let φ : Module.Dual R (Fin n → R) := Fintype.linearCombination R fun i ↦ (x i : R)
   have hφb (i : Fin n) : φ (b i) = x i := by simp [φ, b]
-  have hφ (i : Fin n) : φ (b i) ∈ 𝔪 := (hφb i).symm ▸ (x i).2
   have hφm (y : Fin n → R) : φ y ∈ 𝔪 := by
     simp only [φ, Fintype.linearCombination_apply]
     exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (x i).2
+  have hφ (i : Fin n) : φ (b i) ∈ 𝔪 := hφm (b i)
   have hli : LinearIndependent (R ⧸ 𝔪) fun i ↦ 𝔪.toCotangent ⟨φ (b i), hφ i⟩ := by
     have : (fun i ↦ 𝔪.toCotangent ⟨φ (b i), hφ i⟩) = v :=
       funext fun i ↦ (congrArg 𝔪.toCotangent (Subtype.ext (hφb i))).trans (hx i)
@@ -197,8 +197,9 @@ theorem finrank_cotangentSpace_le_of_hasProjectiveDimensionLE {R : Type u} [Comm
   obtain ⟨F, hFfree, hFzero, hFmin⟩ :=
     ModuleCat.exists_projectiveResolution_finite_free_minimal (ModuleCat.of R (R ⧸ 𝔪)) ‹_›
   have (k : ℕ) : Module.Free R (F.complex.X k) := (hFfree k).2
-  have (k : ℕ) : Projective ((koszulComplex φ).X k) :=
-    ModuleCat.projective_of_categoryTheory_projective (ModuleCat.of R (⋀[R]^k (Fin n → R)))
+  have (k : ℕ) : Projective ((koszulComplex φ).X k) := by
+    rw [koszulComplex_X]
+    exact ModuleCat.projective_of_categoryTheory_projective _
   -- The augmentation `K₀ = R → κ` vanishes on the image of `K₁`, as the `xᵢ` lie in `𝔪`.
   let ε : (koszulComplex φ).X 0 ⟶ ModuleCat.of R (R ⧸ 𝔪) :=
     ModuleCat.ofHom (𝔪.mkQ ∘ₗ (exteriorPower.zeroEquiv R (Fin n → R)).toLinearMap)
@@ -211,26 +212,12 @@ theorem finrank_cotangentSpace_le_of_hasProjectiveDimensionLE {R : Type u} [Comm
   -- The comparison map `α : K(x) → F` over `κ`.
   let α := (koszulComplex φ).liftToAugmented (F.π.f 0) F.complex_d_comp_π_f_zero F.exact₀
     F.exact_succ ε hε
-  -- In degree `0`, `α` is injective modulo `𝔪`: if `α z ∈ 𝔪 F₀`, then `ε z = π (α z) ∈ 𝔪 κ = 0`.
-  have hα0 : (𝔪 • ⊤ : Submodule R (F.complex.X 0)).comap (α.f 0).hom ≤ 𝔪 • ⊤ := by
-    intro z hz
-    have hκ (y : ModuleCat.of R (R ⧸ 𝔪))
-        (hy : y ∈ (𝔪 • ⊤ : Submodule R (ModuleCat.of R (R ⧸ 𝔪)))) : y = 0 := by
-      refine (Submodule.mem_bot R).mp ((Submodule.smul_le.mpr fun r hr y _ ↦ ?_) hy)
-      simp [Algebra.smul_def, Ideal.Quotient.eq_zero_iff_mem.mpr hr]
-    have h2 : ε.hom z = 0 := (congr(($(ChainComplex.liftToAugmented_f_zero_comp
-      (koszulComplex φ) (F.π.f 0) F.complex_d_comp_π_f_zero F.exact₀ F.exact_succ ε hε)).hom
-        z)).symm.trans (hκ _ (Submodule.smul_top_le_comap_smul_top 𝔪 (F.π.f 0).hom hz))
-    -- By definition, `ε z` is the class of `z ∈ ⋀⁰ Rⁿ ≅ R` modulo `𝔪`.
-    have h3 : exteriorPower.zeroEquiv R (Fin n → R) z ∈ 𝔪 :=
-      (Submodule.Quotient.mk_eq_zero 𝔪).mp h2
-    have key : (exteriorPower.zeroEquiv R (Fin n → R)).symm
-        (exteriorPower.zeroEquiv R (Fin n → R) z • 1) ∈ (𝔪 • ⊤ : Submodule R (⋀[R]^0 _)) := by
-      rw [map_smul]
-      exact Submodule.smul_mem_smul h3 Submodule.mem_top
-    rw [smul_eq_mul, mul_one] at key
-    -- `K₀` is `⋀⁰ Rⁿ` by definition of `koszulComplex`, so `key` is about `z` itself.
-    exact LinearEquiv.symm_apply_apply (exteriorPower.zeroEquiv R (Fin n → R)) z ▸ key
+  -- In degree `0`, `α` lies over the augmentation `ε`, so it is injective modulo `𝔪`; here `K₀`
+  -- is `⋀⁰ Rⁿ` by definition of `koszulComplex`.
+  have hα0 : (𝔪 • ⊤ : Submodule R (F.complex.X 0)).comap (α.f 0).hom ≤ 𝔪 • ⊤ :=
+    comap_smul_top_le_of_comp_eq_mkQ_zeroEquiv (α.f 0).hom (F.π.f 0).hom
+      congr(($(ChainComplex.liftToAugmented_f_zero_comp (koszulComplex φ) (F.π.f 0)
+        F.complex_d_comp_π_f_zero F.exact₀ F.exact_succ ε hε)).hom)
   -- If `d < n`, then `Fₙ = 0`, but `α` is injective modulo `𝔪` on `⋀ⁿ Rⁿ ≅ R`.
   by_contra! hlt
   have hα := b.comap_smul_top_le_of_hom_koszulComplex φ hφ hli hFmin α hα0 n
