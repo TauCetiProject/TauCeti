@@ -10,6 +10,8 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.CompleteSeparated.Ba
 
 import Mathlib.RingTheory.Adjoin.FG
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
+import TauCeti.RingTheory.Huber.LocalizationTopology.StronglyNoetherian
+import TauCeti.RingTheory.Huber.OpenIdeal
 
 /-!
 # Rational localisations of a Huber ring with a noetherian ring of definition
@@ -30,7 +32,9 @@ theorem `TauCeti.Huber.PairOfDefinition.isStrictMap_of_isNoetherianRing` apply o
 uncompleted rational localisations forming the terms of Huber's Čech complex.
 
 The strongly noetherian Tate analogue is
-`TauCeti.Huber.PairOfDefinition.isStronglyNoetherian_completion`.
+`TauCeti.Huber.PairOfDefinition.isStronglyNoetherian_completion`. The two cases together say that
+rational localisation preserves noetherian type, for a numerator set spanning an open ideal; this
+is what makes the open affinoids of noetherian type a basis of a locally noetherian adic space.
 
 ## Main results
 
@@ -41,12 +45,15 @@ The strongly noetherian Tate analogue is
   noetherian type.
 * `TauCeti.Huber.PairOfDefinition.exists_noetherianPairOfDefinition_completionLocObj`: the complete
   separated topological ring `A⟨T/s⟩` has a pair of definition with noetherian ring of definition.
+* `TauCeti.Huber.PairOfDefinition.isNoetherianType_completion_locTopology_of_isNoetherianType`: if
+  `A` is of noetherian type and `T` spans an open ideal, then `A⟨T/s⟩` is of noetherian type.
 
 ## References
 
 * R. Huber, *A generalization of formal schemes and rigid analytic varieties*, Math. Z. 217
   (1994), §2, proof of Theorem 2.5, Case I, p. 529.
-* [T. Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition and Definition 5.51 and Remark 6.37.
+* [T. Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition and Definition 5.51, Remark 6.37 and
+  Corollary 8.35.
 -/
 
 public section
@@ -118,5 +125,37 @@ theorem exists_noetherianPairOfDefinition_completionLocObj (P : PairOfDefinition
   rw [completionLocObj_obj]
   exact ⟨completionLocalization P T s S hden,
     P.isNoetherianRing_completionLocalization T.finite_toSet s S hden⟩
+
+/-- **Rational localisation preserves noetherian type.** If `A` is a Huber ring of noetherian type
+and `T` spans an open ideal, then `A⟨T/s⟩` is of noetherian type, whatever pair of definition `P`
+its topology is built from. If `A` has a noetherian ring of definition, so does `A⟨T/s⟩`
+(`isNoetherianType_completion_locTopology`), the topology of `Aₛ` not depending on the pair of
+definition (`locUniformSpace_congr_pairOfDefinition`). If `A` is a strongly noetherian Tate ring,
+the open ideal spanned by `T` is the unit ideal, and `A⟨T/s⟩` is a strongly noetherian Tate ring
+(`isStronglyNoetherian_completion`). -/
+theorem isNoetherianType_completion_locTopology_of_isNoetherianType [IsHuberRing A]
+    [IsNoetherianType A] (P : PairOfDefinition A) {T : Finset A}
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := isHuberRing_completion_locTopology P T s S hden
+    IsNoetherianType (UniformSpace.Completion S) := by
+  refine IsNoetherianType.elim ‹_› (fun Q _ ↦ ?_) fun _ _ ↦ ?_
+  · -- `Q` gives the same uniformity on `Aₛ` as `P`, and a noetherian ring of definition
+    have hden' := hasDenominatorPower_of_isOpen_span Q T s S hT
+    have hu := locUniformSpace_congr_pairOfDefinition P Q T s S hden hden'
+    convert isNoetherianType_completion_locTopology Q T.finite_toSet s S hden'
+  · let _ := locUniformSpace P T s S hden
+    have _ := isUniformAddGroup_locUniformSpace P T s S hden
+    have _ := isTopologicalRing_locUniformSpace P T s S hden
+    have _ := isTateRing_completion_locTopology_of_isTateRing P T s S hden
+    -- in a Tate ring the open ideal spanned by `T` is the unit ideal
+    have hspan : Ideal.span (insert s (T : Set A)) = ⊤ :=
+      top_le_iff.mp ((IsTateRing.eq_top_of_isOpen hT).symm.le.trans
+        (Ideal.span_mono (Set.subset_insert _ _)))
+    have := isStronglyNoetherian_completion P T s S hden hspan
+    infer_instance
 
 end TauCeti.Huber.PairOfDefinition
