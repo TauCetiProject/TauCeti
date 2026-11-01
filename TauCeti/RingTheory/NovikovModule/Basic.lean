@@ -163,6 +163,13 @@ theorem trunc_sub (C : ℝ) (a b : NovikovModule R F) :
   ext s
   by_cases hs : C < F s <;> simp [hs]
 
+/-- A submodule of a completed module over a ring is an additive group, by
+`Submodule.addCommGroup`. Instance search does not find this unaided: it cannot match the additive
+monoid structure of `NovikovModule R F`, a submodule of `S → R`, with the one underlying an
+additive group. Without it, quotients by submodules of such submodules do not elaborate. -/
+instance (p : Submodule R (NovikovModule R F)) : AddCommGroup p :=
+  Submodule.addCommGroup p
+
 end Ring
 
 section Coordinates
