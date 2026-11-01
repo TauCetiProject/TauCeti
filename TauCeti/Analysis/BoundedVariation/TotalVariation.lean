@@ -62,7 +62,8 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 * `TauCeti.totalVariationOn_le_of_tendsto_L1`: a total-variation bound holding frequently along
   a filter is preserved under convergence in `L¹(Ω)` along it.
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm`: a weakly differentiable
-  function has total variation at most the integral of the norm of its weak derivative.
+  function has total variation at most the integral of the norm of its weak derivative, hence
+  locally finite variation (`TauCeti.HasWeakFDerivOn.exists_totalVariationOn_ne_top`).
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm`: against an additive Haar
   measure this is an equality, so a `W^{1,1}(Ω)` function has bounded variation on `Ω`, with
   variation the `L¹` norm of its weak derivative
@@ -434,6 +435,18 @@ theorem HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm [OpensMeasurableS
   refine (ENNReal.ofReal_le_ofReal (neg_le_abs _)).trans ?_
   rw [← Real.enorm_eq_ofReal_abs]
   exact φ.enorm_integral_apply_le_setLIntegral_enorm hφ U
+
+/-- **A weakly differentiable function has locally finite variation.** If `u` has a weak
+derivative on `Ω`, every compact `K ⊆ Ω` has an open neighbourhood on which the variation of `u`
+is finite. -/
+theorem HasWeakFDerivOn.exists_totalVariationOn_ne_top [OpensMeasurableSpace E]
+    {U : E → E →L[ℝ] ℝ} (h : HasWeakFDerivOn μ Ω u U) {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ V : Opens E, K ⊆ (V : Set E) ∧ totalVariationOn μ V u ≠ ∞ := by
+  obtain ⟨V, hVo, hKV, hVΩ, hVc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
+  have hV : (⟨V, hVo⟩ : Opens E) ≤ Ω := subset_closure.trans hVΩ
+  refine ⟨⟨V, hVo⟩, hKV, ne_top_of_le_ne_top ?_
+    ((h.mono hV).totalVariationOn_le_setLIntegral_enorm.trans (lintegral_mono_set subset_closure))⟩
+  exact (h.locallyIntegrableOn_deriv.integrableOn_compact_subset hVΩ hVc).2.ne
 
 section Haar
 
