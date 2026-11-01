@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.NovikovSeries.ExpLog
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.LogDet
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
-import TauCeti.RingTheory.NovikovSeries.Functoriality
 
 /-!
 # Traces of powers and `det (1 - a A)` in Novikov series
@@ -30,12 +29,14 @@ point theorem, which makes `L(φᵏ)` a count of fixed points, is not part of th
 
 The identity is proved after extending the coefficients to an algebraic closure `L` of the field
 of fractions of `K`. Over `L` the characteristic polynomial of `A` splits, and the identity is
-`IsTopologicallyNilpotent.hasSum_log_aeval_charpolyRev`. The coefficient extension
+`IsTopologicallyNilpotent.hasSum_log_aeval_charpolyRev_of_splits`. The coefficient extension
 `Nov(K, H, N) → Nov(L, H, N)` is injective and continuous, so it commutes with the logarithm and
 with the summation of the trace series, which brings the identity back to `K`.
 
 ## Main results
 
+* `TauCeti.NovikovSeries.aeval_charpolyRev_sub_one_mem_posIdeal`: for `a` in the positive ideal,
+  `det (1 - a A)` is a principal unit, that is `det (1 - a A) - 1` lies in the positive ideal.
 * `TauCeti.NovikovSeries.hasSum_log_aeval_charpolyRev`: for `a` in the positive ideal,
   `log det (1 - a A) = -∑ₖ tr (Aᵏ⁺¹) aᵏ⁺¹ / (k + 1)`.
 * `TauCeti.NovikovSeries.exp_tsum_trace_mul_aeval_charpolyRev`: the same identity in the
@@ -60,7 +61,7 @@ variable {H K : Type*} [AddCommMonoid H] {N : H →+ ℝ} [CommRing K] [IsDomain
 
 omit [IsDomain K] [Algebra ℚ K] in
 /-- For `a` in the positive ideal, `det (1 - a A) - 1` lies in the positive ideal. -/
-private theorem aeval_charpolyRev_sub_one_mem_posIdeal {a : nonnegSubring K N}
+theorem aeval_charpolyRev_sub_one_mem_posIdeal {a : nonnegSubring K N}
     (ha : a ∈ posIdeal K N) (A : Matrix n n K) :
     aeval a A.charpolyRev - 1 ∈ posIdeal K N := by
   -- `det (1 - X A) = 1 + X q` for a polynomial `q`.
@@ -84,12 +85,15 @@ theorem hasSum_log_aeval_charpolyRev {a : nonnegSubring K N} (ha : a ∈ posIdea
   have hsum : Summable f := by
     have := IsLinearTopology.nonarchimedeanAddGroup (nonnegSubring K N) (M := nonnegSubring K N)
     refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero ?_
-    rw [Nat.cofinite_eq_atTop, IsLinearTopology.hasBasis_ideal.tendsto_right_iff]
-    intro J hJ
-    filter_upwards [((tendsto_add_atTop_iff_nat 1).2 ha').eventually
-      (IsLinearTopology.hasBasis_ideal.mem_of_mem hJ)] with k hk
-    exact J.neg_mem (Submodule.smul_of_tower_mem J _
-      (Submodule.smul_of_tower_mem J _ (hk : a ^ (k + 1) ∈ J)))
+    rw [Nat.cofinite_eq_atTop]
+    -- Each term is a multiple of `a ^ (k + 1)`, and `a ^ (k + 1)` tends to zero.
+    have h := (IsLinearTopology.tendsto_smul_zero (nonnegSubring K N)
+      (fun k : ℕ ↦ algebraMap ℚ (nonnegSubring K N) ((k + 1 : ℕ) : ℚ)⁻¹ *
+        algebraMap K (nonnegSubring K N) (A ^ (k + 1)).trace) _
+      ((tendsto_add_atTop_iff_nat 1).2 ha')).neg
+    rw [neg_zero] at h
+    refine h.congr fun k ↦ ?_
+    simp [f, Algebra.smul_def, mul_assoc]
   -- Extend the coefficients to an algebraic closure `L` of the field of fractions of `K`.
   let L := AlgebraicClosure (FractionRing K)
   let ι : K →+* L := algebraMap K L
@@ -112,8 +116,8 @@ theorem hasSum_log_aeval_charpolyRev {a : nonnegSubring K N} (ha : a ∈ posIdea
   have hmap : ψ (aeval a A.charpolyRev) = aeval (ψ a) (A.map ι).charpolyRev := by
     rw [Matrix.charpolyRev_map, aeval_def, aeval_def, eval₂_map, hom_eval₂, hψalg]
   -- Over `L` the identity holds, and `ψ` maps both sides of the identity over `K` to it.
-  have hL := IsTopologicallyNilpotent.hasSum_log_aeval_charpolyRev
-    (IsTopologicallyNilpotent.map hψc ha') (A.map ι)
+  have hL := IsTopologicallyNilpotent.hasSum_log_aeval_charpolyRev_of_splits (A := A.map ι)
+    (IsTopologicallyNilpotent.map hψc ha') (IsAlgClosed.splits _)
   have key : ψ (∑' k, f k) = ψ (NormedSpace.log (aeval a A.charpolyRev)) := by
     rw [hu.map_log ψ hψc, hmap]
     refine (hsum.hasSum.map ψ hψc).unique (hL.congr_fun fun k ↦ ?_)
