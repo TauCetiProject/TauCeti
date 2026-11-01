@@ -42,8 +42,6 @@ on the neighbourhood after `n` subdivisions, and a compactness argument gives co
 
 ## Main definitions
 
-* `AbstractSimplicialComplex.subdivisionSubcomplex`: the barycentric subdivision of `P`, as a
-  subcomplex of the barycentric subdivision of `K`.
 * `AbstractSimplicialComplex.iteratedOpenSimplicialNeighborhood`: the open simplicial
   neighbourhood of `P` after `n` further barycentric subdivisions.
 
@@ -76,43 +74,6 @@ namespace AbstractSimplicialComplex
 universe u
 
 variable {ι : Type u} (K : AbstractSimplicialComplex ι) (P : PreAbstractSimplicialComplex ι)
-
-/-- The barycentric subdivision of `P`, as a subcomplex of the barycentric subdivision of `K`:
-the chains of faces of `K` all of whose members are faces of `P`. -/
-def subdivisionSubcomplex : PreAbstractSimplicialComplex (Face K) where
-  faces := {ρ | ρ ∈ TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-    K.toPreAbstractSimplicialComplex ∧ ∀ σ ∈ ρ, σ.1 ∈ P}
-  isRelLowerSet_faces := by
-    rintro ρ ⟨hρK, hρP⟩
-    have h := (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-      K.toPreAbstractSimplicialComplex).isRelLowerSet_faces
-    exact ⟨h.prop_of_mem hρK, fun τ hτρ hτ => ⟨h.mem_of_le hρK hτρ hτ, fun σ hσ => hρP σ (hτρ hσ)⟩⟩
-
-@[simp]
-theorem mem_subdivisionSubcomplex_iff {ρ : Finset (Face K)} :
-    ρ ∈ K.subdivisionSubcomplex P ↔
-      ρ ∈ TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-        K.toPreAbstractSimplicialComplex ∧ ∀ σ ∈ ρ, σ.1 ∈ P :=
-  Iff.rfl
-
-/-- The polyhedron of the subdivided subcomplex consists of the points of the subdivision whose
-support consists of faces of `P`. -/
-theorem setOf_support_mem_subdivisionSubcomplex :
-    {x : Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-        K.toPreAbstractSimplicialComplex) | x.1.support ∈ K.subdivisionSubcomplex P} =
-      {x | (x.1.support : Set (Face K)) ⊆ {σ | σ.1 ∈ P}} := by
-  ext x
-  exact ⟨fun h σ hσ => h.2 σ hσ, fun h => ⟨support_mem _ x, fun σ hσ => h hσ⟩⟩
-
-/-- The subdivision homeomorphism carries the polyhedron of the subdivided subcomplex onto the
-polyhedron of `P`. -/
-theorem image_barycentricSubdivisionRealizationHomeomorph_setOf_support_mem :
-    barycentricSubdivisionRealizationHomeomorph K ''
-        {x | x.1.support ∈ K.subdivisionSubcomplex P} =
-      {y : Realization K | y.1.support ∈ P} := by
-  rw [setOf_support_mem_subdivisionSubcomplex,
-    ← preimage_barycentricSubdivisionRealizationHomeomorph_setOf_support_mem,
-    Homeomorph.image_preimage]
 
 /-- The open simplicial neighbourhood of `P` after `n` further barycentric subdivisions of `K`.
 For `n = 0` it is `openSimplicialNeighborhood K P`; for `n + 1` it is the image, under the
@@ -301,7 +262,7 @@ theorem openSimplicialNeighborhoodControl_barycentricSubdivisionRealizationHomeo
   have h := coe_openSimplicialNeighborhoodControl_le_mul_of_forall K P z 1 fun ρ _ => by
     have hne := (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
       K.toPreAbstractSimplicialComplex).isRelLowerSet_faces.prop_of_mem ρ.2
-    split_ifs with hρP
+    split_ifs with hρP <;> rw [mem_subdivisionSubcomplex_iff] at hρP
     · rw [mul_zero]
       exact (one_sub_card_filter_mul_inv_eq_zero K P hne hρP.2).le
     · rw [mul_one, sub_le_self_iff]
@@ -330,11 +291,12 @@ theorem coe_openSimplicialNeighborhoodControl_barycentricSubdivisionRealizationH
     preimage_barycentricSubdivisionRealizationHomeomorph_openSimplicialNeighborhood,
     mem_openStarRealizationSet] at hy
   obtain ⟨ρ₀, hρ₀P, hρ₀⟩ := hy
+  replace hρ₀P := (K.mem_subdivisionSubcomplex_iff P).1 hρ₀P
   have hρ₀T : ρ₀ ∈ z.1.support := Finsupp.mem_support_iff.2 hρ₀.ne'
   refine coe_openSimplicialNeighborhoodControl_le_mul_of_forall K P z _ fun ρ hρ => ?_
   have hne := (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
     K.toPreAbstractSimplicialComplex).isRelLowerSet_faces.prop_of_mem ρ.2
-  split_ifs with hρP
+  split_ifs with hρP <;> rw [mem_subdivisionSubcomplex_iff] at hρP
   · rw [mul_zero]
     exact (one_sub_card_filter_mul_inv_eq_zero K P hne hρP.2).le
   rw [mul_one]

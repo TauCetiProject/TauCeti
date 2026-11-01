@@ -40,6 +40,8 @@ arbitrary simplicial maps.
   posets induced by a simplicial map.
 * `TauCeti.PreAbstractSimplicialComplex.SimplicialMap.barycentricSubdivisionMap`: the induced
   simplicial map between barycentric subdivisions.
+* `AbstractSimplicialComplex.subdivisionSubcomplex`: the barycentric subdivision of a
+  subcomplex `P` of `K`, as a subcomplex of the barycentric subdivision of `K`.
 
 ## Main results
 
@@ -197,3 +199,27 @@ end SimplicialMap
 end PreAbstractSimplicialComplex
 
 end TauCeti
+
+namespace AbstractSimplicialComplex
+
+variable {ι : Type*} (K : AbstractSimplicialComplex ι) (P : PreAbstractSimplicialComplex ι)
+
+/-- The barycentric subdivision of `P`, as a subcomplex of the barycentric subdivision of `K`:
+the chains of faces of `K` all of whose members are faces of `P`. -/
+def subdivisionSubcomplex : PreAbstractSimplicialComplex (TauCeti.SetLike.Face K) where
+  faces := {ρ | ρ ∈ TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
+    K.toPreAbstractSimplicialComplex ∧ ∀ σ ∈ ρ, σ.1 ∈ P}
+  isRelLowerSet_faces := by
+    rintro ρ ⟨hρK, hρP⟩
+    have h := (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
+      K.toPreAbstractSimplicialComplex).isRelLowerSet_faces
+    exact ⟨h.prop_of_mem hρK, fun τ hτρ hτ => ⟨h.mem_of_le hρK hτρ hτ, fun σ hσ => hρP σ (hτρ hσ)⟩⟩
+
+@[simp]
+theorem mem_subdivisionSubcomplex_iff {ρ : Finset (TauCeti.SetLike.Face K)} :
+    ρ ∈ K.subdivisionSubcomplex P ↔
+      ρ ∈ TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
+        K.toPreAbstractSimplicialComplex ∧ ∀ σ ∈ ρ, σ.1 ∈ P :=
+  Iff.rfl
+
+end AbstractSimplicialComplex
