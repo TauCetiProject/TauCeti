@@ -228,22 +228,26 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {C : Set E} {c :
 variable (C c) in
 /-- The displacements from `c` inside `C`, read in the direction of the affine span of `C`, are
 the preimage of the translate `-c +ᵥ C`. -/
-private lemma setOf_add_mem_eq_preimage :
+lemma setOf_add_mem_eq_preimage :
     {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} =
       (affineSpan ℝ C).direction.subtype ⁻¹' ((-c) +ᵥ C) := by
   ext v
   simp [mem_vadd_set_iff_neg_vadd_mem]
 
-private lemma convex_setOf_add_mem (hconv : Convex ℝ C) :
+/-- Translating a convex set to a point of its affine span and restricting to its direction
+preserves convexity. -/
+lemma convex_setOf_add_mem (hconv : Convex ℝ C) :
     Convex ℝ {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} := by
   rw [setOf_add_mem_eq_preimage]
   exact (hconv.vadd (-c)).linear_preimage _
 
-private lemma isClosed_setOf_add_mem (hcl : IsClosed C) :
+/-- Displacements from a point into a closed set form a closed set in its affine direction. -/
+lemma isClosed_setOf_add_mem (hcl : IsClosed C) :
     IsClosed {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} :=
   hcl.preimage (f := fun v : (affineSpan ℝ C).direction ↦ c + (v : E)) (by fun_prop)
 
-private lemma isVonNBounded_setOf_add_mem (hb : IsBounded C) :
+/-- Displacements into a bounded set are von Neumann bounded in its affine direction. -/
+lemma isVonNBounded_setOf_add_mem (hb : IsBounded C) :
     IsVonNBounded ℝ {v : (affineSpan ℝ C).direction | c + (v : E) ∈ C} := by
   refine NormedSpace.isVonNBounded_of_isBounded ℝ ?_
   obtain ⟨r, hr⟩ := hb.subset_closedBall c
@@ -252,6 +256,25 @@ private lemma isVonNBounded_setOf_add_mem (hb : IsBounded C) :
   have hv' := hr hv
   rw [mem_closedBall, dist_self_add_left] at hv'
   rwa [mem_closedBall_zero_iff, ← Submodule.norm_coe]
+
+/-- Translation from the direction of the affine span identifies its frontier with the
+intrinsic frontier of the original set. -/
+lemma add_mem_intrinsicFrontier_iff (hc : c ∈ affineSpan ℝ C)
+    (v : (affineSpan ℝ C).direction) :
+    c + (v : E) ∈ intrinsicFrontier ℝ C ↔
+      v ∈ frontier {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} := by
+  let cA : affineSpan ℝ C := ⟨c, hc⟩
+  let : Nonempty (affineSpan ℝ C) := ⟨cA⟩
+  let e := Homeomorph.vaddConst cA
+  have he (w : (affineSpan ℝ C).direction) : (e w : E) = c + (w : E) := by
+    simp [e, Homeomorph.vaddConst, cA, add_comm]
+  rw [intrinsicFrontier, ← image_frontier_preimage_comp e e.isHomeomorph]
+  simp only [Function.comp_def, he]
+  constructor
+  · rintro ⟨w, hw, hwv⟩
+    have : w = v := Subtype.ext (add_left_cancel hwv)
+    exact this ▸ hw
+  · exact fun hv ↦ ⟨v, hv, rfl⟩
 
 /-- For a point `c` of the intrinsic interior of `C`, the displacements `v` in the direction of
 the affine span of `C` with `c + v ∈ C` form a neighbourhood of `0`. -/
@@ -267,6 +290,14 @@ theorem setOf_add_mem_mem_nhds_of_mem_intrinsicInterior (hc : c ∈ intrinsicInt
   refine Filter.mem_of_superset
     (hφ.continuousAt.preimage_mem_nhds (hφ0 ▸ isOpen_interior.mem_nhds hy)) fun v hv ↦ ?_
   simpa [φ, add_comm] using interior_subset hv
+
+/-- The gauge of the translated set in its affine direction is positive exactly away from
+zero, for a bounded set with an intrinsic interior center. -/
+lemma gauge_setOf_add_mem_pos_iff (hb : IsBounded C) (hc : c ∈ intrinsicInterior ℝ C)
+    (v : (affineSpan ℝ C).direction) :
+    0 < gauge {w : (affineSpan ℝ C).direction | c + (w : E) ∈ C} v ↔ v ≠ 0 :=
+  gauge_pos (absorbent_nhds_zero (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc))
+    (isVonNBounded_setOf_add_mem hb)
 
 /-- From a point `c` of the intrinsic interior of `C`, every sufficiently small move `ε • v` along
 a direction `v` of the affine span of `C` stays in `C`. -/
