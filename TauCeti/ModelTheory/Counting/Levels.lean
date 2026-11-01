@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Setoid.Basic
+public import TauCeti.ModelTheory.Counting.Classes
 public import TauCeti.ModelTheory.RelationalConfiguration.BackAndForth
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 
@@ -36,7 +37,7 @@ applied level by level when counting the countable models of `φ`.
 ## Main results
 
 * `TauCeti.RelationalConfiguration.bfEquivSetoidOn_anti`: the restricted levels decrease.
-* `TauCeti.RelationalConfiguration.comap_isoSetoid_le_bfEquivSetoidOn`: isomorphic models are
+* `TauCeti.RelationalConfiguration.isoSetoidOn_le_bfEquivSetoidOn`: isomorphic models are
   equivalent at every level.
 * `TauCeti.RelationalConfiguration.mk_quotient_bfEquivSetoidOn_le`: isomorphism classes of models
   project onto level classes (`Setoid.map_of_le_surjective`), so there are at least as many of the
@@ -91,16 +92,15 @@ theorem bfEquivSetoidOn_anti (φ : L.SentenceInf ι) :
   fun _ _ hαβ => Setoid.comap_monotone _ (bfEquivSetoid_anti hαβ)
 
 /-- Isomorphic models are equivalent at every restricted level. -/
-theorem comap_isoSetoid_le_bfEquivSetoidOn (φ : L.SentenceInf ι) (α : Ordinal.{o}) :
-    (isoSetoid L V).comap ((↑) : modelsOf (V := V) φ → _) ≤ bfEquivSetoidOn V φ α :=
+theorem isoSetoidOn_le_bfEquivSetoidOn (φ : L.SentenceInf ι) (α : Ordinal.{o}) :
+    isoSetoidOn V φ ≤ bfEquivSetoidOn V φ α :=
   Setoid.comap_monotone _ (isoSetoid_le_bfEquivSetoid α)
 
 /-- A model class meets at most as many classes at a back-and-forth level as isomorphism
 classes. -/
 theorem mk_quotient_bfEquivSetoidOn_le (φ : L.SentenceInf ι) (α : Ordinal.{o}) :
-    #(Quotient (bfEquivSetoidOn V φ α)) ≤
-      #(Quotient ((isoSetoid L V).comap ((↑) : modelsOf (V := V) φ → _))) :=
-  mk_le_of_surjective (Setoid.map_of_le_surjective (comap_isoSetoid_le_bfEquivSetoidOn φ α))
+    #(Quotient (bfEquivSetoidOn V φ α)) ≤ #(Quotient (isoSetoidOn V φ)) :=
+  mk_le_of_surjective (Setoid.map_of_le_surjective (isoSetoidOn_le_bfEquivSetoidOn φ α))
 
 /-- Below `ω₁`, on a countable carrier and in a vocabulary with countably many relation symbols of
 each arity, each restricted level has Borel graph in the model class. -/

@@ -12,7 +12,9 @@ public import Mathlib.RingTheory.Etale.Basic
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Smooth.Flat
 import TauCeti.Algebra.Category.AlgCat.FilteredColimits
+import TauCeti.Algebra.Category.CommAlgCat.BaseChange
 import TauCeti.Algebra.Category.CommAlgCat.FilteredColimits
+import TauCeti.Algebra.Category.CommAlgCat.Localization
 import TauCeti.RingTheory.Flat.Colimit
 
 /-!
@@ -34,6 +36,10 @@ fact that filtered colimits of flat modules are flat.
 * `TauCeti.Algebra.IndEtale.of_etale`: an étale algebra is ind-étale.
 * `TauCeti.Algebra.IndEtale.of_equiv`: being ind-étale is invariant under isomorphism.
 * `TauCeti.Algebra.IndEtale.flat`: an ind-étale algebra is flat (Stacks, Lemma 10.39.3 (05UU)).
+* `TauCeti.Algebra.IndEtale.baseChange`: ind-étale algebras remain ind-étale after arbitrary
+  extension of scalars.
+* `TauCeti.Algebra.IndEtale.of_isLocalization`: every localization is ind-étale, as the filtered
+  colimit of the étale principal localizations at finite products of denominators.
 
 ## Implementation notes
 
@@ -51,6 +57,7 @@ and types preserve small filtered colimits.
 public section
 
 open CategoryTheory Limits
+open scoped TensorProduct
 
 universe u
 
@@ -95,7 +102,47 @@ instance flat [IndEtale R S] : Module.Flat R S := by
     inferInstanceAs (Module.Flat R (pres.diag.obj j))
   exact Module.Flat.of_isColimit (isColimitOfPreserves G pres.isColimit)
 
+/-- Ind-étale algebras are stable under arbitrary base change: tensoring a filtered étale
+presentation with the new base preserves both the colimit and étaleness of its stages. -/
+instance baseChange (T : Type u) [CommRing T] [Algebra R T] [IndEtale R S] :
+    IndEtale T (T ⊗[R] S) := by
+  obtain ⟨J, _, _, pres, hD⟩ := IndEtale.ind_etale (R := R) (S := S)
+  let F := CommAlgCat.extendScalars R T
+  -- By `extendScalars_obj`, `F.obj A` is definitionally `T ⊗[R] A` as a `T`-algebra.
+  -- Mapping the cocone sends its point `S` to `T ⊗[R] S` by `rfl`, so the comparison
+  -- with the target algebra below is `AlgEquiv.refl`.
+  have h (j : J) : Algebra.Etale T (F.obj (pres.diag.obj j)) := by
+    have := hD j
+    exact inferInstanceAs (Algebra.Etale T (T ⊗[R] pres.diag.obj j))
+  exact of_isColimit h (isColimitOfPreserves F pres.isColimit) AlgEquiv.refl
+
+/-- Every localization is ind-étale: invert finite sets of denominators first and take their
+filtered colimit. The submonoid may contain zero, and the base ring need not be Noetherian. -/
+theorem of_isLocalization (M : Submonoid R) [IsLocalization M S] : IndEtale R S := by
+  apply of_isColimit (D := M.localizationAwayDiagram)
+    (c := M.localizationAwayCocone S) (fun s ↦ ?_)
+    (M.localizationAwayCoconeIsColimit S)
+    (CommAlgCat.algEquivOfIso (eqToIso (M.localizationAwayCocone_pt S)))
+  rw [Submonoid.localizationAwayDiagram_obj]
+  exact Algebra.Etale.of_isLocalizationAway (R := R)
+    (A := Localization.Away (∏ x ∈ s, (x : R))) (∏ x ∈ s, (x : R))
+
+/-- The canonical localization algebra is ind-étale over its base ring. -/
+instance localization (M : Submonoid R) : IndEtale R (Localization M) :=
+  of_isLocalization M
+
 end IndEtale
+
+-- Localization at a prime is ind-étale, without any finite-presentation hypothesis.
+example (p : Ideal ℤ) [p.IsPrime] : IndEtale ℤ (Localization.AtPrime p) :=
+  inferInstance
+
+-- The fraction field is an ind-étale algebra as well.
+example : IndEtale ℤ ℚ := IndEtale.of_isLocalization (nonZeroDivisors ℤ)
+
+-- Inverting all elements, including zero, is allowed.
+example (R : Type u) [CommRing R] : IndEtale R (Localization (⊤ : Submonoid R)) :=
+  inferInstance
 
 -- `ℤ ⧸ 2` is not ind-étale over `ℤ`: it is not flat, since multiplication by `2` kills `1`.
 example : ¬ IndEtale ℤ (ZMod 2) := by
