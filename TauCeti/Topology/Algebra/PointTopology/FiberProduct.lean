@@ -14,7 +14,8 @@ public import TauCeti.RingTheory.TensorProduct.Compatible
 The evaluation topology identifies the points of `Spec (A ⊗[C] B)` over `k` with the
 subspace of pairs of points of `Spec A` and `Spec B` having the same image in `Spec C`.
 The comparison `relativeTensorProductHomeomorph` requires no finiteness or separation
-hypotheses. When the coefficient ring is T1, this subspace is closed.
+hypotheses. When the coefficient semiring is Hausdorff (for example, any T1 topological ring),
+this subspace is closed.
 
 The forward map is restriction to each tensor factor, and its inverse multiplies the two
 coordinate values on pure tensors. In particular the common point of `Spec C` is allowed
