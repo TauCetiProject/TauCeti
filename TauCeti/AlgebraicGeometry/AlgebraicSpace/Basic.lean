@@ -74,6 +74,11 @@ change along every morphism `h_T ⟶ F ⨯ F` from a scheme is a morphism of sch
 def RepresentableDiagonal (F : SchemePresheaf.{u}) : Prop :=
   yoneda.relativelyRepresentable (diag F)
 
+/-- Unfolds `RepresentableDiagonal F` to its defining statement about the diagonal `diag F`. -/
+theorem representableDiagonal_iff_diag {F : SchemePresheaf.{u}} :
+    RepresentableDiagonal F ↔ yoneda.relativelyRepresentable (diag F) :=
+  Iff.rfl
+
 /-- The diagonal of `F` is representable exactly when every morphism from a scheme to `F` is
 representable by schemes. -/
 theorem representableDiagonal_iff {F : SchemePresheaf.{u}} :
@@ -158,13 +163,19 @@ theorem EtaleAtlas.yoneda_map_comp {F : SchemePresheaf.{u}} {U V : Scheme.{u}}
     {a : yoneda.obj U ⟶ F} (ha : EtaleAtlas a) (f : V ⟶ U) [Etale f] [Surjective f] :
     EtaleAtlas (yoneda.map f ≫ a) := by
   -- Instance search does not recover the parents `IsStableUnderComposition` of the
-  -- `IsMultiplicative` instances of étale and surjective morphisms, so pass them explicitly.
+  -- `IsMultiplicative` instances of étale and surjective morphisms, nor see through
+  -- `MorphismProperty.presheaf`, so provide the relative instances locally.
+  have : MorphismProperty.IsStableUnderComposition @Etale.{u} :=
+    MorphismProperty.IsMultiplicative.toIsStableUnderComposition
+  have : MorphismProperty.IsStableUnderComposition @Surjective.{u} :=
+    MorphismProperty.IsMultiplicative.toIsStableUnderComposition
+  have : (MorphismProperty.presheaf @Etale.{u}).IsStableUnderComposition :=
+    MorphismProperty.relative_isStableUnderComposition (F := yoneda) (P := @Etale.{u})
+  have : (MorphismProperty.presheaf @Surjective.{u}).IsStableUnderComposition :=
+    MorphismProperty.relative_isStableUnderComposition (F := yoneda) (P := @Surjective.{u})
   have hf := (etaleAtlas_yoneda_map_iff f).2 ⟨‹_›, ‹_›⟩
-  exact ⟨(@MorphismProperty.relative_isStableUnderComposition _ _ _ _ yoneda @Etale.{u} _ _
-      MorphismProperty.IsMultiplicative.toIsStableUnderComposition).comp_mem _ _ hf.etale ha.etale,
-    (@MorphismProperty.relative_isStableUnderComposition _ _ _ _ yoneda @Surjective.{u} _ _
-      MorphismProperty.IsMultiplicative.toIsStableUnderComposition).comp_mem _ _ hf.surjective
-      ha.surjective⟩
+  exact ⟨MorphismProperty.comp_mem _ _ _ hf.etale ha.etale,
+    MorphismProperty.comp_mem _ _ _ hf.surjective ha.surjective⟩
 
 /-- A presheaf on schemes is an *algebraic space* if it is a sheaf for the fppf topology, its
 diagonal is representable by schemes, and it admits an étale atlas (Stacks, Definition 65.6.1
