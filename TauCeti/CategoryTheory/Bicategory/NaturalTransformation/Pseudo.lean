@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Bicategory.FunctorBicategory.Pseudo
+public import Mathlib.CategoryTheory.Bicategory.Strict.Pseudofunctor
 
 /-!
 # Whiskering strong transformations by a pseudofunctor
@@ -22,6 +23,13 @@ Whiskering preserves identities and composites up to the invertible modification
 identities. The file also records `Pseudofunctor.StrongTrans.isoApp`, the component
 `η.app a ≅ θ.app a` of an invertible modification `η ≅ θ`, analogous to `Iso.app` for natural
 isomorphisms.
+
+The last section restates the unit and composition conditions of a strong transformation for the
+comparisons `F.mapId'` and `F.mapComp'` at `1`-morphisms that are only propositionally identities
+or composites (`StrongTrans.naturality_id'_inv`, `StrongTrans.naturality_comp'_hom`,
+`StrongTrans.naturality_comp'_inv`). Over a strict bicategory, it deduces that a strong
+transformation is compatible with the isomorphisms `F t ≫ F r ≅ F l ≫ F b` of a commutative
+square (`StrongTrans.naturality_isoMapOfCommSq`).
 -/
 
 public section
@@ -132,5 +140,73 @@ lemma whiskerLeftComp_hom_as_app {F G H : B' ⥤ᵖ C} (η : F ⟶ G) (θ : G �
 lemma whiskerLeftComp_inv_as_app {F G H : B' ⥤ᵖ C} (η : F ⟶ G) (θ : G ⟶ H) (a : B) :
     (P.whiskerLeftComp η θ).inv.as.app a = 𝟙 _ :=
   (rfl)
+
+/-! ### Naturality at identities and composites up to equality -/
+
+namespace StrongTrans
+
+variable {F G : B ⥤ᵖ C}
+
+/-- The unit condition of a strong transformation, for a `1`-morphism `f` equal to an identity:
+the inverse naturality isomorphism at `f` is determined by the comparisons `F.mapId' f` and
+`G.mapId' f`. This generalizes `StrongTrans.naturality_id_inv`. -/
+lemma naturality_id'_inv (η : F ⟶ G) {a : B} (f : a ⟶ a) (hf : f = 𝟙 a) :
+    (η.naturality f).inv = η.app a ◁ (G.mapId' f hf).hom ≫ (ρ_ (η.app a)).hom ≫
+      (λ_ (η.app a)).inv ≫ (F.mapId' f hf).inv ▷ η.app a := by
+  subst hf
+  simp [mapId'_eq_mapId, naturality_id_inv]
+
+/-- The composition condition of a strong transformation, for a `1`-morphism `fg` equal to a
+composite `f ≫ g`, stated with the comparisons `F.mapComp' f g fg` and `G.mapComp' f g fg`. This
+generalizes `StrongTrans.naturality_comp_hom`. -/
+lemma naturality_comp'_hom (η : F ⟶ G) {a b c : B} (f : a ⟶ b) (g : b ⟶ c) (fg : a ⟶ c)
+    (h : f ≫ g = fg) :
+    (η.naturality fg).hom =
+      (F.mapComp' f g fg h).hom ▷ η.app c ≫ (α_ _ _ _).hom ≫ F.map f ◁ (η.naturality g).hom ≫
+        (α_ _ _ _).inv ≫ (η.naturality f).hom ▷ G.map g ≫ (α_ _ _ _).hom ≫
+          η.app a ◁ (G.mapComp' f g fg h).inv := by
+  subst h
+  simp [mapComp'_eq_mapComp, naturality_comp_hom]
+
+/-- The inverse form of `StrongTrans.naturality_comp'_hom`, generalizing
+`StrongTrans.naturality_comp_inv`. -/
+lemma naturality_comp'_inv (η : F ⟶ G) {a b c : B} (f : a ⟶ b) (g : b ⟶ c) (fg : a ⟶ c)
+    (h : f ≫ g = fg) :
+    (η.naturality fg).inv =
+      η.app a ◁ (G.mapComp' f g fg h).hom ≫ (α_ _ _ _).inv ≫ (η.naturality f).inv ▷ G.map g ≫
+        (α_ _ _ _).hom ≫ F.map f ◁ (η.naturality g).inv ≫ (α_ _ _ _).inv ≫
+          (F.mapComp' f g fg h).inv ▷ η.app c := by
+  subst h
+  simp [mapComp'_eq_mapComp, naturality_comp_inv]
+
+/-- A strong transformation `η` is compatible with the isomorphisms
+`F t ≫ F r ≅ F l ≫ F b` of a commutative square `t ≫ r = l ≫ b` in a strict bicategory: the
+naturality isomorphisms of `η` along the two sides of the square, composed with the square
+isomorphisms of `F` and of `G`, agree. The two sides are arranged as the naturality isomorphisms
+of the composites of `η` with strong transformations whose naturality isomorphisms are the square
+isomorphisms, as in `CategoryTheory.Pseudofunctor.mapNatTrans`. -/
+lemma naturality_isoMapOfCommSq [Strict B] (η : F ⟶ G) {X₁ X₂ Y₁ Y₂ : B} {t : X₁ ⟶ Y₁}
+    {l : X₁ ⟶ X₂} {r : Y₁ ⟶ Y₂} {b : X₂ ⟶ Y₂} (sq : CommSq t l r b) :
+    F.map t ◁ (η.naturality r).hom ≫ (α_ _ _ _).inv ≫ (η.naturality t).hom ▷ G.map r ≫
+      (α_ _ _ _).hom ≫ η.app X₁ ◁ (G.isoMapOfCommSq sq).hom ≫ (α_ _ _ _).inv =
+    ((α_ _ _ _).inv ≫ (F.isoMapOfCommSq sq).hom ▷ η.app Y₂ ≫ (α_ _ _ _).hom ≫
+      F.map l ◁ (η.naturality b).hom ≫ (α_ _ _ _).inv) ≫ (η.naturality l).hom ▷ G.map b := by
+  -- Both sides are the naturality isomorphism of `η` at `t ≫ r = l ≫ b`, factored in two ways.
+  have key {Z : B} (f : X₁ ⟶ Z) (g : Z ⟶ Y₂) (h : f ≫ g = t ≫ r) :
+      (α_ _ _ _).hom ≫ F.map f ◁ (η.naturality g).hom ≫ (α_ _ _ _).inv ≫
+        (η.naturality f).hom ▷ G.map g ≫ (α_ _ _ _).hom =
+      (F.mapComp' f g (t ≫ r) h).inv ▷ η.app Y₂ ≫ (η.naturality (t ≫ r)).hom ≫
+        η.app X₁ ◁ (G.mapComp' f g (t ≫ r) h).hom := by
+    simp [η.naturality_comp'_hom f g (t ≫ r) h]
+  have h₁ := key t r rfl
+  rw [← Iso.eq_inv_comp] at h₁
+  rw [← cancel_mono (α_ _ _ _).hom, isoMapOfCommSq_eq _ sq (t ≫ r) rfl,
+    isoMapOfCommSq_eq _ sq (t ≫ r) rfl]
+  simp only [Iso.trans_hom, Iso.symm_hom, comp_whiskerRight, whiskerLeft_comp, Category.assoc,
+    Iso.inv_hom_id, Category.comp_id]
+  rw [key l b sq.w.symm, reassoc_of% h₁]
+  simp
+
+end StrongTrans
 
 end CategoryTheory.Pseudofunctor
