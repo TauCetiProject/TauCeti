@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.PolarDecomposition
 public import TauCeti.Analysis.BoundedVariation.Space
 public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
+import Mathlib.Analysis.Normed.Module.Normalize
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 
@@ -111,18 +112,14 @@ theorem HasWeakFDerivOn.ae_norm_smul_polarDensity_eq [μ.IsAddHaarMeasure] {g : 
     rw [← map_comap_subtype_coe hΩ] at hg
     exact (MeasurableEmbedding.subtype_coe hΩ).aestronglyMeasurable_map_iff.1 hg
   -- The normalized gradient `τ = g / ‖g‖` represents `Du` against `|Du|`.
-  set τ : Ω → E := fun x => ‖g x‖⁻¹ • g x
-  have hτ (x : Ω) : ‖g x‖ • τ x = g x := by
-    rcases eq_or_ne (g x) 0 with h0 | h0
-    · simp [τ, h0]
-    · simp [τ, smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.2 h0)]
+  set τ : Ω → E := fun x => NormedSpace.normalize (g x)
+  have hτ (x : Ω) : ‖g x‖ • τ x = g x := NormedSpace.norm_smul_normalize (g x)
   have hτloc : LocallyIntegrable τ (variationMeasure μ Ω u) := by
     have hac : variationMeasure μ Ω u ≪ ν := hvar ▸ withDensity_absolutelyContinuous _ _
     refine locallyIntegrable_iff.2 fun K hK => Measure.integrableOn_of_bounded
       hK.measure_lt_top.ne
       ((hgm.norm.aemeasurable.inv.aestronglyMeasurable.smul hgm).mono_ac hac) (M := 1)
-      (ae_of_all _ fun x => by
-        simpa [τ, norm_smul] using inv_mul_le_one_of_le₀ le_rfl (norm_nonneg _))
+      (ae_of_all _ fun x => mem_closedBall_zero_iff.1 (inv_norm_smul_mem_unitClosedBall (g x)))
   have hrep (φ : 𝓓(Ω, E)) : ∫ x, divergenceCLM φ x * u x ∂μ =
       -∫ x, ⟪φ x, τ x⟫ ∂variationMeasure μ Ω u := by
     rw [hvar, integral_withDensity_eq_integral_toReal_smul₀ hgm.enorm
