@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.QuadraticLeviForm
 public import TauCeti.Geometry.Manifold.Complex.LeviForm
 public import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # Squared distance on complex manifolds
@@ -23,6 +24,11 @@ At a critical point the resulting intrinsic real Hessian identity bounds the rea
 Morse index by the complex dimension. These are the differential identities needed
 to apply Morse theory to squared-distance exhaustions of complex submanifolds.
 
+Along the inclusion of an open subset, squared distance is strictly plurisubharmonic at every
+point (`TauCeti.isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_subtypeVal`), and in a real
+inner product space its only critical point is the centre
+(`TauCeti.mvfderiv_norm_sq_sub_subtypeVal_eq_zero_iff`).
+
 ## References
 
 * J. Milnor, *Morse Theory*, Princeton University Press, 1963, Section 7.
@@ -33,7 +39,7 @@ The calculation uses `TauCeti.manifoldLeviForm_comp_apply` and
 
 public section
 
-open Complex Function Module
+open Complex Function Module TopologicalSpace
 open scoped Manifold
 
 namespace TauCeti
@@ -136,5 +142,55 @@ theorem manifoldMorseIndex_norm_sq_sub_comp_le [FiniteDimensional ℂ E]
     manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ ‖i y - a‖ ^ 2) x ≤ finrank ℂ E := by
   have hpos := (isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_comp_iff (a := a) hi).2 hinj
   exact hpos.manifoldMorseIndex_le (contMDiffAt_norm_sq_sub_comp hi) hcrit
+
+
+/-- Along the inclusion of an open subset of a complex inner product space, the squared distance
+from any point is strictly plurisubharmonic at every point. -/
+theorem isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_subtypeVal (U : Opens F) (a : F)
+    (x : U) : IsManifoldStrictlyPlurisubharmonicAt F (fun y : U ↦ ‖(y : F) - a‖ ^ 2) x := by
+  rw [isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_comp_iff
+    (contMDiff_subtype_val (I := 𝓘(ℂ, F)) x)]
+  intro v w h
+  rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply,
+    Manifold.mfderiv_subtype_val] at h
+  exact (Manifold.tangentSpaceOpenEquiv x).injective h
+
+section Real
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
+
+/-- Along the inclusion of an open subset of a real inner product space, the squared distance
+from `a` has a critical point exactly at `a`. -/
+@[simp]
+theorem mvfderiv_norm_sq_sub_subtypeVal_eq_zero_iff (U : Opens G) (a : G) (x : U) :
+    mvfderiv 𝓘(ℝ, G) (fun y : U ↦ ‖(y : G) - a‖ ^ 2) x = 0 ↔ (x : G) = a := by
+  have hd : HasFDerivAt (fun v : G ↦ ‖v - a‖ ^ 2)
+      (2 • (innerSL ℝ ((x : G) - a))) (x : G) :=
+    ((hasFDerivAt_id (x : G)).sub_const a).norm_sq.congr_fderiv (by simp)
+  have happ (v : G) : mvfderiv 𝓘(ℝ, G) (fun y : U ↦ ‖(y : G) - a‖ ^ 2) x v =
+      2 * inner ℝ ((x : G) - a) v := by
+    have hv : mvfderiv 𝓘(ℝ, G) (Subtype.val : U → G) x v = v :=
+      (mvfderiv_apply_eq_mfderiv_apply (Subtype.val : U → G) x v).trans
+        (by rw [Manifold.mfderiv_subtype_val]; exact Manifold.tangentSpaceOpenEquiv_apply x v)
+    calc mvfderiv 𝓘(ℝ, G) (fun y : U ↦ ‖(y : G) - a‖ ^ 2) x v
+        = fderiv ℝ (fun v : G ↦ ‖v - a‖ ^ 2) x (mvfderiv 𝓘(ℝ, G) (Subtype.val : U → G) x v) :=
+          mvfderiv_comp_apply_of_differentiableAt hd.differentiableAt
+            ((contMDiff_subtype_val (U := U) x).mdifferentiableAt one_ne_zero) v
+      _ = 2 * inner ℝ ((x : G) - a) v := by
+          rw [hv, hd.fderiv]
+          simp [inner_sub_left]
+  constructor
+  · intro h
+    have h0 := happ ((x : G) - a)
+    rw [h, real_inner_self_eq_norm_sq] at h0
+    have h1 : 2 * ‖(x : G) - a‖ ^ 2 = 0 := h0.symm
+    simpa [sub_eq_zero] using h1
+  · intro h
+    -- Tangent vectors of the open subset are read as vectors of `G`.
+    refine ContinuousLinearMap.ext fun v : G ↦ ?_
+    rw [happ v, h, sub_self, inner_zero_left, mul_zero]
+    rfl
+
+end Real
 
 end TauCeti

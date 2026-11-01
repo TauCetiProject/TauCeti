@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Basic
+public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 public import Mathlib.Topology.MetricSpace.Thickening
+public import TauCeti.Topology.Order.Sublevel
 
 import Mathlib.Analysis.Normed.Group.Uniform
+import Mathlib.Analysis.Normed.Module.RCLike.Real
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 
 /-!
@@ -29,6 +32,10 @@ These are the squared-distance exhaustions of closed subsets of Euclidean space 
 theory. Conversely, along a continuous map the squared distance is proper only if the map is
 proper, so along the inclusion of a subset only if the subset is closed
 (`TauCeti.isProperMap_norm_sq_sub_comp_iff`, `TauCeti.isProperMap_norm_sq_sub_subtypeVal_iff`).
+For example, in a nonzero real normed space punctured at `y`, the bounded sublevel
+`{v | ‖v - a‖² ≤ r}` accumulates at the puncture and is not compact when `‖y - a‖² < r`
+(`TauCeti.not_isCompact_compl_singleton_inter_preimage_Iic`), so the squared distance is not
+proper (`TauCeti.not_isProperMap_norm_sq_sub_compl_singleton`).
 -/
 
 public section
@@ -79,5 +86,34 @@ theorem isProperMap_norm_sq_sub_subtypeVal_iff {E : Type*} [NormedAddCommGroup E
   rw [isProperMap_norm_sq_sub_comp_iff continuous_subtype_val]
   exact ⟨fun h ↦ Subtype.range_coe (s := S) ▸ h.isClosed_range,
     IsClosed.isProperMap_subtypeVal⟩
+
+
+section Punctured
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [Nontrivial F]
+
+/-- In a nonzero real normed space punctured at `y`, the bounded sublevel `{ρ_a ≤ r}` of the
+squared distance from `a` is not compact when `‖y - a‖² < r`: it accumulates at the puncture. -/
+theorem not_isCompact_compl_singleton_inter_preimage_Iic {y a : F} {r : ℝ}
+    (hr : ‖y - a‖ ^ 2 < r) :
+    ¬IsCompact (({y}ᶜ : Set F) ∩ (fun v ↦ ‖v - a‖ ^ 2) ⁻¹' Iic r) :=
+  not_isCompact_inter_preimage_Iic (by simp) (by simp)
+    (by fun_prop) hr
+
+/-- On a nonzero real normed space punctured at `y`, the squared distance from any point is not a
+proper map. -/
+theorem not_isProperMap_norm_sq_sub_compl_singleton (y a : F) :
+    ¬IsProperMap fun x : ({y}ᶜ : Set F) ↦ ‖(x : F) - a‖ ^ 2 := by
+  intro h
+  refine not_isCompact_compl_singleton_inter_preimage_Iic (lt_add_one (‖y - a‖ ^ 2)) ?_
+  have hK := (h.isCompact_preimage (isCompact_Icc (a := 0) (b := ‖y - a‖ ^ 2 + 1))).image
+    continuous_subtype_val
+  convert hK using 1
+  ext v
+  simp only [mem_inter_iff, mem_compl_iff, mem_preimage, mem_Iic, mem_image, mem_Icc,
+    Subtype.exists, exists_and_right, exists_eq_right]
+  exact ⟨fun ⟨hv, hle⟩ ↦ ⟨⟨hv, by positivity⟩, hle⟩, fun ⟨⟨hv, _⟩, hle⟩ ↦ ⟨hv, hle⟩⟩
+
+end Punctured
 
 end TauCeti
