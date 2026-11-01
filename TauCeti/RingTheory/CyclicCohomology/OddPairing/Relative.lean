@@ -7,7 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.RelativeK1
 public import TauCeti.RingTheory.CyclicCohomology.OddPairing.AlgebraicK1
-public import TauCeti.RingTheory.CyclicCohomology.Relative
+public import TauCeti.RingTheory.CyclicCohomology.Relative.Matrix
 
 /-!
 # The odd pairing of a nonunital algebra
@@ -23,11 +23,12 @@ For an invertible matrix `u` over `A⁺` with a relative class and a relative cy
 the pairing is Connes' formula
 `(1 + i)⁻¹ 2⁻ⁿ Γ(n/2 + 1)⁻¹ (φ#Tr)(u⁻¹ - 1, u - 1, …, u⁻¹ - 1, u - 1)` with `n = 2m + 1`.
 
-Relative cyclic cochains vanish on scalar matrices, so the classes of scalar matrices pair trivially
-with relative cyclic cohomology. Since `K₁(A⁺)` is the product of relative `K₁` and the classes of
-scalar matrices, the pairing of an arbitrary class of `A⁺` with a relative cyclic class is the
-pairing of its relative part: no information is lost by restricting to relative `K₁`. The pairing
-is natural for homomorphisms of nonunital algebras.
+The matrix extension of a relative cyclic cochain vanishes when all its arguments are scalar
+matrices, so the classes of scalar matrices pair trivially with relative cyclic cohomology. Since
+`K₁(A⁺)` is the product of relative `K₁` and the classes of scalar matrices, the pairing of an
+arbitrary class of `A⁺` with a relative cyclic class is the pairing of its relative part: no
+information is lost by restricting to relative `K₁`. The pairing is natural for homomorphisms of
+nonunital algebras.
 
 ## Main definitions
 
@@ -37,8 +38,8 @@ is natural for homomorphisms of nonunital algebras.
 ## Main results
 
 * `TauCeti.relativeAlgebraicK1.oddPairing_mk_mk`: Connes' formula for the pairing.
-* `TauCeti.relativeAlgebraicK1.oddPairing_map_algebraMap_toUnitization`: classes of scalar matrices
-  pair trivially with relative cyclic cohomology.
+* `TauCeti.AlgebraicK1.oddPairing_map_algebraMap_toUnitization_eq_zero`: classes of scalar
+  matrices pair trivially with relative cyclic cohomology.
 * `TauCeti.relativeAlgebraicK1.oddPairing_projection`: the pairing of a class of `A⁺` with a
   relative cyclic class is the pairing of its relative part.
 * `TauCeti.relativeAlgebraicK1.oddPairing_map`: naturality.
@@ -61,14 +62,26 @@ open cyclicCohomology
 variable {A M : Type*} [NonUnitalRing A] [Module ℂ A] [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
   [AddCommGroup M] [Module ℂ M]
 
-/-- A relative cyclic cochain vanishes on scalar matrices under its matrix extension. -/
-private theorem matrixCochainExtension_map_algebraMap_eq_zero {ι : Type*} [Fintype ι] {n : ℕ}
-    (φ : relativeCyclicCochains ℂ A M n) (a : Fin (n + 1) → Matrix ι ι ℂ) :
-    matrixCochainExtension ι n (φ : MultilinearMap ℂ (fun _ : Fin (n + 1) ↦ Unitization ℂ A) M)
-      (fun k ↦ (a k).map (algebraMap ℂ (Unitization ℂ A))) = 0 := by
-  rw [matrixCochainExtension_apply]
-  refine Finset.sum_eq_zero fun p _ ↦ ?_
-  exact (mem_relativeCyclicCochains_iff_forall ℂ A M).1 φ.2 _
+/-- **Scalar classes pair trivially**: the image in `K₁(A⁺)` of a class of `K₁(ℂ)` pairs to zero
+with every relative cyclic cohomology class. -/
+@[simp]
+theorem AlgebraicK1.oddPairing_map_algebraMap_toUnitization_eq_zero (m : ℕ) (y : AlgebraicK1 ℂ)
+    (c : relativeCyclicCohomology ℂ A M (2 * m + 1)) :
+    (AlgebraicK1.oddPairing (Unitization ℂ A) M m
+        (AlgebraicK1.map (algebraMap ℂ (Unitization ℂ A)) y)).toAdd
+      (relativeCyclicCohomology.toUnitization ℂ A M (2 * m + 1) c) = 0 := by
+  obtain ⟨n, u, rfl⟩ := AlgebraicK1.exists_mk y
+  obtain ⟨φ, rfl⟩ := relativeCyclicCohomology.mk_surjective ℂ A M (2 * m + 1) c
+  rw [AlgebraicK1.map_mk, AlgebraicK1.oddPairing_mk, toAdd_ofAdd, LinearMap.comp_apply,
+    relativeCyclicCohomology.toUnitization_mk, oddPairing_matrixExtension_mk,
+    RingHom.coe_units_map_mapMatrix_inv, RingHom.coe_units_map_mapMatrix]
+  -- Both entries `u⁻¹ - 1` and `u - 1` of the pairing are scalar matrices.
+  convert smul_zero _
+  convert matrixCochainExtension_map_algebraMap_eq_zero (φ : relativeCyclicCochains ℂ A M _)
+    fun k : Fin (2 * m + 2) ↦ if Even (k : ℕ) then (↑u⁻¹ - 1 : Matrix (Fin n) (Fin n) ℂ) else ↑u - 1
+    using 2
+  funext k
+  split_ifs <;> simp [Matrix.map_sub, Matrix.map_one]
 
 namespace relativeAlgebraicK1
 
@@ -110,41 +123,17 @@ theorem oddPairing_mk_mk (m n : ℕ) (u : GL (Fin n) (Unitization ℂ A))
   rw [oddPairing_apply, AlgebraicK1.oddPairing_mk, toAdd_ofAdd, LinearMap.comp_apply,
     relativeCyclicCohomology.toUnitization_mk, oddPairing_matrixExtension_mk]
 
-/-- **Scalar classes pair trivially**: the class in `K₁(A⁺)` of an invertible scalar matrix pairs
-to zero with every relative cyclic cohomology class, because relative cyclic cochains vanish when
-all arguments are scalar, and both entries `u⁻¹ - 1`, `u - 1` are scalar matrices. -/
-theorem oddPairing_map_algebraMap_toUnitization (m : ℕ) (y : AlgebraicK1 ℂ)
-    (c : relativeCyclicCohomology ℂ A M (2 * m + 1)) :
-    (AlgebraicK1.oddPairing (Unitization ℂ A) M m
-        (AlgebraicK1.map (algebraMap ℂ (Unitization ℂ A)) y)).toAdd
-      (relativeCyclicCohomology.toUnitization ℂ A M (2 * m + 1) c) = 0 := by
-  obtain ⟨n, u, rfl⟩ := AlgebraicK1.exists_mk y
-  obtain ⟨φ, rfl⟩ := relativeCyclicCohomology.mk_surjective ℂ A M (2 * m + 1) c
-  rw [AlgebraicK1.map_mk, AlgebraicK1.oddPairing_mk, toAdd_ofAdd, LinearMap.comp_apply,
-    relativeCyclicCohomology.toUnitization_mk, oddPairing_matrixExtension_mk]
-  -- Both entries `u⁻¹ - 1` and `u - 1` of the pairing are scalar matrices.
-  have hx : (fun k : Fin (2 * m + 2) ↦ if Even (k : ℕ) then
-        (↑(Units.map ((algebraMap ℂ (Unitization ℂ A)).mapMatrix (m := Fin n)).toMonoidHom u)⁻¹ -
-          1 : Matrix (Fin n) (Fin n) (Unitization ℂ A))
-        else ↑(Units.map ((algebraMap ℂ (Unitization ℂ A)).mapMatrix (m := Fin n)).toMonoidHom u) -
-          1) =
-      fun k : Fin (2 * m + 2) ↦
-        (if Even (k : ℕ) then (↑u⁻¹ - 1 : Matrix (Fin n) (Fin n) ℂ) else ↑u - 1).map
-        (algebraMap ℂ (Unitization ℂ A)) := by
-    funext k
-    split_ifs <;> simp [← map_inv, Matrix.map_sub, Matrix.map_one]
-  rw [hx, matrixCochainExtension_map_algebraMap_eq_zero, smul_zero]
-
-/-- **The pairing of a relative class sees only the relative part**: a class `x` of `A⁺` pairs with
-a relative cyclic class as its relative part `x · s(ε(x))⁻¹` does. -/
+/-- **The pairing of an arbitrary class of `A⁺` sees only its relative part**: a class `x` of `A⁺`
+pairs with a relative cyclic class as its relative part `x · s(ε(x))⁻¹` does. -/
+@[simp]
 theorem oddPairing_projection (m : ℕ) (x : AlgebraicK1 (Unitization ℂ A))
     (c : relativeCyclicCohomology ℂ A M (2 * m + 1)) :
     (oddPairing A M m (projection ℂ A x)).toAdd c =
       (AlgebraicK1.oddPairing (Unitization ℂ A) M m x).toAdd
         (relativeCyclicCohomology.toUnitization ℂ A M (2 * m + 1) c) := by
   conv_rhs => rw [← coe_projection_mul_map_algebraMap x]
-  rw [map_mul, toAdd_mul, LinearMap.add_apply, oddPairing_map_algebraMap_toUnitization, add_zero,
-    oddPairing_apply]
+  rw [map_mul, toAdd_mul, LinearMap.add_apply,
+    AlgebraicK1.oddPairing_map_algebraMap_toUnitization_eq_zero, add_zero, oddPairing_apply]
 
 /-- **Naturality of the relative odd pairing**: for a homomorphism of nonunital algebras
 `f : A →ₙₐ[ℂ] B`, the image of a relative class `x` pairs with a relative cyclic class of `B` as

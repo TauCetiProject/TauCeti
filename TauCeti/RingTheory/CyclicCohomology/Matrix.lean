@@ -522,6 +522,10 @@ theorem matrixExtension_map {B : Type _} [Ring B] [Algebra R B] (f : A →ₐ[R]
   congr 2
   apply Subtype.ext
   simp only [coe_matrixCyclicCochainExtension_apply, coe_cyclicCochainsMap_apply]
+  -- The goal reads `f` and `f.mapMatrix` as linear maps through the coercion to `→ₙₐ[R]`. Both are
+  -- definitionally `f.toLinearMap` and its entrywise extension `LinearMap.mapMatrix f.toLinearMap`,
+  -- the linear maps in `matrixCochainExtension_compLinearMap`. Mathlib has no simp lemma for the
+  -- underlying function of `NonUnitalAlgHomClass.toNonUnitalAlgHom`, so this is closed by `exact`.
   exact matrixCochainExtension_compLinearMap ι n (f : A →ₗ[R] B) φ.1.1
 
 end cyclicCohomology

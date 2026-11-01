@@ -38,8 +38,12 @@ Relative `K₁` is the group paired with the relative cyclic cohomology of `A` b
 
 * `TauCeti.relativeAlgebraicK1.mk_mem`: an invertible matrix over `A⁺` with identity scalar part
   has a relative class.
+* `TauCeti.relativeAlgebraicK1.projection_coe`,
+  `TauCeti.relativeAlgebraicK1.projection_map_algebraMap`: the projection is the identity on
+  relative classes and kills the classes of scalar matrices.
 * `TauCeti.relativeAlgebraicK1.coe_projection_mul_map_algebraMap`: every class of `A⁺` is its
   relative part times the class of a scalar matrix.
+* `TauCeti.relativeAlgebraicK1.map_projection`: the projection is natural.
 * `TauCeti.relativeAlgebraicK1.map_id`, `TauCeti.relativeAlgebraicK1.map_comp`: functoriality.
 
 ## References
@@ -117,7 +121,15 @@ theorem projection_coe (x : relativeAlgebraicK1 R A) : projection R A x = x := b
   ext
   simp [coe_projection_apply, (mem_iff.1 x.2)]
 
+/-- The projection kills the classes of scalar matrices. -/
+@[simp]
+theorem projection_map_algebraMap (y : AlgebraicK1 R) :
+    projection R A (AlgebraicK1.map (algebraMap R (Unitization R A)) y) = 1 := by
+  ext
+  simp [coe_projection_apply]
+
 /-- Every class of `A⁺` is the product of its relative part and the class of a scalar matrix. -/
+@[simp]
 theorem coe_projection_mul_map_algebraMap (x : AlgebraicK1 (Unitization R A)) :
     (projection R A x : AlgebraicK1 (Unitization R A)) *
         AlgebraicK1.map (algebraMap R (Unitization R A))
@@ -144,6 +156,18 @@ theorem coe_map_apply (f : A →ₙₐ[R] B) (x : relativeAlgebraicK1 R A) :
     (map f x : AlgebraicK1 (Unitization R B)) =
       AlgebraicK1.map (Unitization.map f : Unitization R A →+* Unitization R B) x :=
   (rfl)
+
+/-- The projection onto relative `K₁` is natural for homomorphisms of nonunital algebras. -/
+theorem map_projection (f : A →ₙₐ[R] B) (x : AlgebraicK1 (Unitization R A)) :
+    map f (projection R A x) =
+      projection R B
+        (AlgebraicK1.map (Unitization.map f : Unitization R A →+* Unitization R B) x) := by
+  ext
+  simp only [coe_map_apply, coe_projection_apply, map_mul, map_inv]
+  congr 2
+  simp only [← MonoidHom.comp_apply, ← AlgebraicK1.map_comp, ← AlgHom.comp_toRingHom,
+    Unitization.fstHom_comp_map]
+  rw [← RingHom.comp_assoc, AlgHom.comp_algebraMap]
 
 /-- The identity homomorphism induces the identity of relative `K₁`. -/
 @[simp]

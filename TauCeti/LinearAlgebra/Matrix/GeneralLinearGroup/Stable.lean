@@ -405,6 +405,21 @@ section Map
 
 variable {B C : Type*} [Ring B] [Ring C]
 
+/-- Applying a ring homomorphism `f` to the entries of an invertible matrix `u` gives the
+invertible matrix with underlying matrix `u.map f`. -/
+theorem _root_.RingHom.coe_units_map_mapMatrix {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (f : A →+* B) (u : GL ι A) :
+    (Units.map (f.mapMatrix (m := ι)).toMonoidHom u : Matrix ι ι B) = (u : Matrix ι ι A).map f :=
+  (rfl)
+
+/-- The inverse of an invertible matrix with a ring homomorphism `f` applied to its entries is
+`u⁻¹.map f`. -/
+theorem _root_.RingHom.coe_units_map_mapMatrix_inv {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (f : A →+* B) (u : GL ι A) :
+    (↑(Units.map (f.mapMatrix (m := ι)).toMonoidHom u)⁻¹ : Matrix ι ι B) =
+      (↑u⁻¹ : Matrix ι ι A).map f := by
+  rw [← map_inv, RingHom.coe_units_map_mapMatrix]
+
 /-- Stabilization commutes with applying a ring homomorphism to the entries of an invertible
 matrix. -/
 theorem stabilizeGL_map {m n : ℕ} (h : m ≤ n) (f : A →+* B) (u : GL (Fin m) A) :

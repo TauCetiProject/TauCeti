@@ -208,6 +208,16 @@ theorem mem_relativeCyclicCocycles_iff {n : ℕ} {φ : relativeCyclicCochains R 
       relativeCyclicHochschildCoboundary R A M n φ = 0 :=
   LinearMap.mem_ker
 
+variable {R A M} in
+/-- A relative cyclic cochain is a cyclic cocycle of the forced unitization exactly when it is a
+relative cyclic cocycle. -/
+theorem coe_mem_cyclicCocycles_iff_mem_relativeCyclicCocycles {n : ℕ}
+    {φ : relativeCyclicCochains R A M n} :
+    (φ : cyclicCochains R (Unitization R A) M n) ∈ cyclicCocycles R (Unitization R A) M n ↔
+      φ ∈ relativeCyclicCocycles R A M n := by
+  simp [mem_cyclicCocycles_iff, mem_relativeCyclicCocycles_iff, Subtype.ext_iff,
+    coe_relativeCyclicHochschildCoboundary_apply, coe_cyclicHochschildCoboundary_apply]
+
 /-- The relative cyclic coboundaries: zero in degree zero, and in positive degree the image of the
 relative Hochschild coboundary. -/
 def relativeCyclicCoboundaries : (n : ℕ) → Submodule R (relativeCyclicCochains R A M n)
@@ -582,16 +592,6 @@ section ToUnitization
 variable (R : Type*) (A : Type u) (M : Type*) [CommRing R] [NonUnitalRing A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
-variable {R A M} in
-/-- A relative cyclic cochain is a cyclic cocycle of the forced unitization exactly when it is a
-relative cyclic cocycle. -/
-theorem coe_mem_cyclicCocycles_iff_mem_relativeCyclicCocycles {n : ℕ}
-    {φ : relativeCyclicCochains R A M n} :
-    (φ : cyclicCochains R (Unitization R A) M n) ∈ cyclicCocycles R (Unitization R A) M n ↔
-      φ ∈ relativeCyclicCocycles R A M n := by
-  simp [mem_cyclicCocycles_iff, mem_relativeCyclicCocycles_iff, Subtype.ext_iff,
-    coe_relativeCyclicHochschildCoboundary_apply, coe_cyclicHochschildCoboundary_apply]
-
 namespace relativeCyclicCohomology
 
 /-- The map `HCⁿ(A; M) → HCⁿ(A⁺; M)` from relative cyclic cohomology to the cyclic cohomology of
@@ -610,12 +610,10 @@ theorem toUnitization_mk {n : ℕ} (φ : relativeCyclicCocycles R A M n) :
     toUnitization R A M n (mk R A M n φ) =
       cyclicCohomology.mk R (Unitization R A) M n
         ⟨_, coe_mem_cyclicCocycles_iff_mem_relativeCyclicCocycles.2 φ.2⟩ := by
-  rw [toUnitization, mk_apply, ← ConcreteCategory.comp_apply,
-    HomologicalComplex.homologyπ_naturality, ConcreteCategory.comp_apply]
-  refine (cyclicCohomology.mk_eq_homologyπ R (Unitization R A) M _ _ ?_).symm
-  rw [← ConcreteCategory.comp_apply (HomologicalComplex.cyclesMap _ n),
-    HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply, relative_iCycles_toCycles,
-    relativeCyclicCochainComplexι_f_apply]
+  rw [toUnitization, mk_apply]
+  refine (HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk _ _ _ _ _).trans
+    (cyclicCohomology.mk_eq_homologyπ R (Unitization R A) M _ _ ?_).symm
+  rw [HomologicalComplex.iCycles_moduleCatCyclesMk, relativeCyclicCochainComplexι_f_apply]
   -- `relativeCyclicCochainComplexXIso` is the identity.
   rfl
 
