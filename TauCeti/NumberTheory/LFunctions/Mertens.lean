@@ -424,23 +424,19 @@ private theorem exists_abs_primeSummatory_log_absNorm_div_sub_log_le :
           Real.log t| ≤ C := by
   set S := primeSummatory K
     (fun v ↦ Real.log (Ideal.absNorm v.asIdeal) / Ideal.absNorm v.asIdeal)
-  obtain ⟨C₀, hC₀⟩ := (isBigO_primeSummatory_log_absNorm_div_sub_log K).bound
-  obtain ⟨T, hT⟩ := eventually_atTop.mp hC₀
-  set T' := max T 2
   have hmono : Monotone S := summatory_mono _ (log_absNorm_div_absNorm_nonneg K)
   have hS0 (t : ℝ) : 0 ≤ S t := summatory_nonneg _ (log_absNorm_div_absNorm_nonneg K) t
-  refine ⟨max C₀ (S T' + Real.log T'), fun t ht ↦ ?_⟩
-  rcases le_or_gt T t with hTt | htT
-  · have h := hT t hTt
-    rw [norm_one, mul_one, Real.norm_eq_abs] at h
-    exact le_max_of_le_left h
-  · have htT' : t ≤ T' := le_max_of_le_left htT.le
-    have hlog0 : 0 ≤ Real.log t := Real.log_nonneg (by linarith)
-    have hlog : Real.log t ≤ Real.log T' := Real.log_le_log (by linarith) htT'
-    refine le_max_of_le_right (abs_sub_le_iff.mpr ⟨?_, ?_⟩)
-    · linarith [hmono htT', hS0 T', hlog0, Real.log_nonneg (le_max_of_le_right one_le_two :
-        (1 : ℝ) ≤ T')]
-    · linarith [hS0 t, hS0 T']
+  have hO := (isBigO_primeSummatory_log_absNorm_div_sub_log K).isBigO_principal_Ici (a := 2)
+    zero_lt_one (fun _ _ ↦ by simp)
+    fun Y ↦ ⟨S Y + Real.log Y, fun t ht ↦ by
+      have hlog0 : 0 ≤ Real.log t := Real.log_nonneg (by linarith [ht.1])
+      have hlog : Real.log t ≤ Real.log Y := Real.log_le_log (by linarith [ht.1]) ht.2
+      rw [Real.norm_eq_abs, abs_le]
+      constructor <;> linarith [hmono ht.2, hS0 t, hS0 Y]⟩
+  obtain ⟨C, -, hC⟩ := hO.exists_nonneg
+  refine ⟨C, fun t ht ↦ ?_⟩
+  have h := isBigOWith_principal.mp hC t ht
+  rwa [Real.norm_eq_abs, norm_one, mul_one] at h
 
 /-- **Abel summation turns Mertens' first theorem into the second.** For `x ≥ 2`, writing
 `S(t) = ∑_{N𝔭 ≤ t} log N𝔭 / N𝔭`,
