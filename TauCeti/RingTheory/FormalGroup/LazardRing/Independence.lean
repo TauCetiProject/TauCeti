@@ -102,7 +102,7 @@ private theorem degree_ρ_generator (n : ℕ+) :
     rw [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ← Finsupp.mapDomain_single,
       MvPolynomial.coeff_rename_mapDomain _ toDual.injective, coeff_single_hurewicz_generator,
       ite_eq_left rfl]
-    exact Nat.cast_ne_zero.2 (lazardGcd_ne_zero (by have := n.pos; omega))
+    exact Nat.cast_ne_zero.2 (lazardGcd_succ_ne_zero n.ne_zero)
   refine MonomialOrder.lex.toSyn.injective (le_antisymm ?_ ?_)
   · -- Every monomial of `ρ(xₙ)` is the renaming of a monomial of degree `2n`.
     refine MonomialOrder.lex.degree_le_iff.2 fun d hd ↦ ?_

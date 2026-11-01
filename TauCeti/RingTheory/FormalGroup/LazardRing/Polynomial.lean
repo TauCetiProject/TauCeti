@@ -62,16 +62,10 @@ private theorem augmentationIdeal_le_span_generator_sup_sq :
   -- the generators.
   set z : augmentationIdeal := (cotangentBasis.repr (augmentationIdeal.toCotangent ⟨y, hy⟩)).sum
     fun n k ↦ k • ⟨generator n, generator_mem_augmentationIdeal n⟩
-  have hz : augmentationIdeal.toCotangent z = augmentationIdeal.toCotangent ⟨y, hy⟩ := by
-    conv_rhs => rw [← cotangentBasis.linearCombination_repr (augmentationIdeal.toCotangent _)]
-    simp only [z, Finsupp.linearCombination_apply, map_finsuppSum, map_zsmul, cotangentBasis_apply]
   have hzspan : (z : LazardRing) ∈ Ideal.span (Set.range generator) := by
     simp only [z, Finsupp.sum, Submodule.coe_sum, Submodule.coe_smul_of_tower]
     exact sum_mem fun n _ ↦ Submodule.smul_of_tower_mem _ _ (Ideal.subset_span ⟨n, rfl⟩)
-  have hsq : y - z ∈ augmentationIdeal ^ 2 := by
-    rw [← neg_sub]
-    exact (augmentationIdeal ^ 2).neg_mem (augmentationIdeal.toCotangent_eq.1 hz)
-  exact Submodule.mem_sup.2 ⟨z, hzspan, y - z, hsq, add_sub_cancel _ _⟩
+  exact Submodule.mem_sup.2 ⟨z, hzspan, y - z, sub_sum_generator_mem_sq hy, add_sub_cancel _ _⟩
 
 /-- **Lazard's theorem, generation**: the generators `xₙ ∈ L₂ₙ` generate the Lazard ring as a
 ring. -/

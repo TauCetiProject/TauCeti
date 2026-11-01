@@ -215,10 +215,9 @@ private theorem snd_evalEps_hurewicz_coeff (n : ℕ+) :
   have h2 : d ≠ single 0 ((n : ℕ) + 1) := fun h ↦ by simpa [d] using DFunLike.congr_fun h 1
   have h3 : d ≠ single 1 ((n : ℕ) + 1) := fun h ↦ by simpa [d] using DFunLike.congr_fun h 0
   rw [hcoeff, hmap,
-    FormalGroup.ofStrictCoeffs_single_smul_𝔾ₐ_toPowerSeries n DualNumber.eps_mul_eps, hpow,
-    map_add, map_add, coeff_X, coeff_X, coeff_C_mul, map_sub, map_sub, MvPolynomial.coeff_coe,
-    MvPolynomial.coeff_add_pow, coeff_X_pow, coeff_X_pow, ite_eq_right h0, ite_eq_right h1,
-    ite_eq_right h2, ite_eq_right h3]
+    FormalGroup.ofStrictCoeffs_single_smul_𝔾ₐ_toPowerSeries n DualNumber.eps_mul_eps, hpow]
+  simp only [map_add, map_sub, coeff_X, coeff_C_mul, MvPolynomial.coeff_coe,
+    MvPolynomial.coeff_add_pow, coeff_X_pow, h0, h1, h2, h3, ↓reduceIte]
   simp [d, add_comm 1]
 
 /-- The image of the generator `xₙ` has coefficient `d_{n+1}` at `bₙ`. -/
@@ -229,12 +228,10 @@ private theorem coeff_single_hurewicz_generator_self (n : ℕ+) :
   -- Modulo decomposables `a_{1, n}` is `((n + 1) / d_{n+1}) • xₙ`, and the coefficient of `X Yⁿ`
   -- detected at `bₙ = ε` is `n + 1 = ((n + 1) / d_{n+1}) d_{n+1}`.
   have h := congrArg TrivSqZeroExt.snd (evalEps_hurewicz_eq_zero_of_mem_sq n hmem)
-  rw [map_sub, map_nsmul, map_sub, map_nsmul, TrivSqZeroExt.snd_sub, TrivSqZeroExt.snd_smul,
-    snd_evalEps_hurewicz_coeff, snd_evalEps_hurewicz, TrivSqZeroExt.snd_zero, Nat.choose_one_right,
-    sub_eq_zero, nsmul_eq_mul] at h
-  have hdvd : lazardGcd ((n : ℕ) + 1) ∣ (n : ℕ) + 1 := by
-    simpa using lazardGcd_dvd_choose (n := (n : ℕ) + 1) (i := 1) one_pos (by have := n.pos; omega)
-  have hd := Nat.div_mul_cancel hdvd
+  simp only [map_sub, map_nsmul, TrivSqZeroExt.snd_sub, TrivSqZeroExt.snd_smul,
+    TrivSqZeroExt.snd_zero, sub_eq_zero] at h
+  rw [snd_evalEps_hurewicz_coeff, snd_evalEps_hurewicz, Nat.choose_one_right, nsmul_eq_mul] at h
+  have hd := Nat.div_mul_cancel (lazardGcd_dvd_self (n := (n : ℕ) + 1) (by simp))
   have hq : ((((n : ℕ) + 1) / lazardGcd ((n : ℕ) + 1) : ℕ) : ℤ) ≠ 0 := by
     refine Nat.cast_ne_zero.2 fun h0 ↦ ?_
     rw [h0, zero_mul] at hd
@@ -259,18 +256,11 @@ in the augmentation ideal `I`, the coefficient of `bₙ` in the image of `y` is 
 theorem coeff_single_hurewicz (n : ℕ+) {y : LazardRing} (hy : y ∈ augmentationIdeal) :
     (hurewicz y).coeff (single n 1) =
       lazardGcd (n + 1) * cotangentBasis.repr (augmentationIdeal.toCotangent ⟨y, hy⟩) n := by
-  set c := cotangentBasis.repr (augmentationIdeal.toCotangent ⟨y, hy⟩) with hc
-  -- Modulo `I²`, `y` is the combination `z = ∑ cₘ xₘ` of the generators.
-  set z : augmentationIdeal := c.sum fun m k ↦ k • ⟨generator m, generator_mem_augmentationIdeal m⟩
-  have hz : augmentationIdeal.toCotangent z = augmentationIdeal.toCotangent ⟨y, hy⟩ := by
-    conv_rhs => rw [← cotangentBasis.linearCombination_repr (augmentationIdeal.toCotangent _)]
-    simp only [z, Finsupp.linearCombination_apply, map_finsuppSum, map_zsmul, cotangentBasis_apply]
-    rw [hc]
-  have hsq : y - z ∈ augmentationIdeal ^ 2 := augmentationIdeal.toCotangent_eq.1 hz.symm
-  have hcoeff := coeff_single_hurewicz_eq_zero_of_mem_sq n hsq
+  -- Modulo `I²`, `y` is the combination `∑ cₘ xₘ` of the generators.
+  have hcoeff := coeff_single_hurewicz_eq_zero_of_mem_sq n (sub_sum_generator_mem_sq hy)
   rw [map_sub, MvPolynomial.coeff_sub, sub_eq_zero] at hcoeff
   rw [hcoeff]
-  simp only [z, Finsupp.sum, Submodule.coe_sum, Submodule.coe_smul_of_tower, map_sum, map_zsmul,
+  simp only [Finsupp.sum, Submodule.coe_sum, Submodule.coe_smul_of_tower, map_sum, map_zsmul,
     MvPolynomial.coeff_sum, MvPolynomial.coeff_smul, coeff_single_hurewicz_generator, smul_eq_mul,
     mul_ite, mul_zero, Finset.sum_ite_eq, Finsupp.mem_support_iff]
   split_ifs with h
@@ -283,9 +273,8 @@ theorem lazardGcd_dvd_coeff_single_hurewicz (n : ℕ+) (y : LazardRing) :
     (lazardGcd (n + 1) : ℤ) ∣ (hurewicz y).coeff (single n 1) := by
   have hy : y - augmentation y ∈ augmentationIdeal := by simp
   have h := coeff_single_hurewicz n hy
-  rw [map_sub, map_intCast, MvPolynomial.coeff_sub,
-    ← map_intCast (MvPolynomial.C : ℤ →+* MvPolynomial ℕ+ ℤ), MvPolynomial.coeff_C,
-    ite_eq_right (Finsupp.single_ne_zero.2 one_ne_zero).symm, sub_zero] at h
+  simp only [map_sub, MvPolynomial.coeff_sub, map_intCast, ← eq_intCast MvPolynomial.C,
+    MvPolynomial.coeff_C, ite_eq_right (single_ne_zero.2 one_ne_zero).symm, sub_zero] at h
   exact h ▸ dvd_mul_right _ _
 
 /-- **The Hurewicz homomorphism detects generators**: a homogeneous element `y ∈ L₂ₙ` is congruent
@@ -297,7 +286,7 @@ theorem toCotangent_eq_smul_cotangentBasis_iff_coeff_hurewicz {n : ℕ+} {y : La
     augmentationIdeal.toCotangent ⟨y, hyI⟩ = c • cotangentBasis n ↔
       (hurewicz y).coeff (single n 1) = c * lazardGcd (n + 1) := by
   have hd : (lazardGcd ((n : ℕ) + 1) : ℤ) ≠ 0 :=
-    Nat.cast_ne_zero.2 (lazardGcd_ne_zero (by have := n.pos; omega))
+    Nat.cast_ne_zero.2 (lazardGcd_succ_ne_zero n.ne_zero)
   refine ⟨fun h ↦ ?_, fun h ↦ cotangentBasis.ext_elem fun m ↦ ?_⟩
   · rw [coeff_single_hurewicz n hyI, h, map_zsmul, Module.Basis.repr_self, Finsupp.smul_apply,
       Finsupp.single_eq_same, smul_eq_mul, mul_one, mul_comm]
@@ -308,7 +297,6 @@ theorem toCotangent_eq_smul_cotangentBasis_iff_coeff_hurewicz {n : ℕ+} {y : La
       rw [h, mul_comm] at hm
       simpa using (mul_left_cancel₀ hd hm).symm
     · rw [coeff_single_hurewicz_eq_zero_of_mem_grading (Ne.symm hmn) hy] at hm
-      have hd' : lazardGcd ((m : ℕ) + 1) ≠ 0 := lazardGcd_ne_zero (by have := m.pos; omega)
-      simpa [hmn, hd'] using hm.symm
+      simpa [hmn, lazardGcd_succ_ne_zero m.ne_zero] using hm.symm
 
 end TauCeti.LazardRing
