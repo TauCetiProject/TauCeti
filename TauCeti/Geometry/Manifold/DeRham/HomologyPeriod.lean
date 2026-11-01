@@ -74,6 +74,7 @@ def homologyPeriodHom : ((singularChains ℤ).obj (.of M)).homology 1 →+ F :=
 
 /-- The period on the class of a cycle, given in the explicit description `H₁` of the first
 homology group. -/
+@[simp]
 theorem homologyPeriodHom_H₁AddEquivHomology_mk (c : cycles₁ (.of M)) :
     homologyPeriodHom φ (H₁AddEquivHomology (.of M) (H₁.mk c)) =
       chainsDesc (fun s ↦ pathClassIntegral φ (.mk (path₁ s)))
@@ -82,6 +83,7 @@ theorem homologyPeriodHom_H₁AddEquivHomology_mk (c : cycles₁ (.of M)) :
     AddEquiv.symm_apply_apply, H₁.liftPathClass_mk (fun p q ↦ pathClassIntegral_trans p q)]
 
 /-- The period on the homology class of a cycle `Σ nᵢ σᵢ` is `Σ nᵢ ∫_{σᵢ} φ`. -/
+@[simp]
 theorem homologyPeriodHom_homologyπ (z : ((singularChains ℤ).obj (.of M)).cycles 1) :
     homologyPeriodHom φ ((((singularChains ℤ).obj (.of M)).homologyπ 1).hom z) =
       chainsDesc (fun s ↦ pathClassIntegral φ (.mk (path₁ s)))
@@ -155,6 +157,14 @@ theorem homologyPeriodHom_smul (a : ℝ) :
     (fun c ↦ by
       rw [AddMonoidHom.smul_apply, homologyPeriodHom_H₁AddEquivHomology_mk, LinearMap.smul_apply])
     fun s ↦ by rw [LinearMap.smul_apply, chainsDesc_simplexChain_one, pathClassIntegral_smul]
+
+/-- The periods of a `1`-form which is not a closed `C¹` form are `0` by convention. -/
+theorem homologyPeriodHom_undef (h : ¬(IsSmoothForm I 1 φ ∧ mextDeriv φ = 0)) :
+    homologyPeriodHom φ = 0 :=
+  homology_one_addMonoidHom_ext fun c ↦ by
+    rw [homologyPeriodHom_H₁AddEquivHomology_mk, AddMonoidHom.zero_apply]
+    refine LinearMap.congr_fun (singularChains_linearMap_ext (L' := 0) fun s ↦ ?_) _
+    rw [chainsDesc_simplexChain_one, pathClassIntegral_undef h, LinearMap.zero_apply]
 
 /-- The periods of the zero form vanish. -/
 @[simp]
