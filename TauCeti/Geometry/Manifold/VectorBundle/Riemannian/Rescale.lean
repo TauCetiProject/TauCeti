@@ -81,7 +81,7 @@ theorem iteratedFDeriv_chartMetric_rescale_const
 /-- Constant rescaling of a Cᵏ-continuous family by a continuous positive scale remains
 Cᵏ-continuous. The scale may depend on the family parameter, and `k = ⊤` gives C∞ continuity. -/
 @[fun_prop]
-theorem continuous_rescale_const_chartCk [LocallyCompactSpace E] (k : ℕ∞)
+theorem continuous_rescale_const_chartCk (k : ℕ∞)
     {P : Type*} [TopologicalSpace P]
     {g : P → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)}
     {c : P → ℝ} (hc : ∀ p, 0 < c p) :
@@ -90,22 +90,32 @@ theorem continuous_rescale_const_chartCk [LocallyCompactSpace E] (k : ℕ∞)
       Continuous (fun p ↦ (g p).rescale (fun _ ↦ c p) contMDiff_const (fun _ ↦ hc p)) := by
   let _ := chartCkTopology (I := I) (M := M) k
   intro hg hc'
-  rw [continuous_chartCk_iff] at hg ⊢
+  rw [continuous_chartCk_iff_continuous_chartMetricDerivative] at hg ⊢
   intro x m hm
-  have heq : (fun q : P × (extChartAt I x).target ↦ iteratedFDeriv ℝ m
-      (((g q.1).rescale (fun _ ↦ c q.1) contMDiff_const
-        (fun _ ↦ hc q.1)).toNondegenerateMetric.chartMetric x) q.2) =
-      (fun q : P × (extChartAt I x).target ↦
-        c q.1 • iteratedFDeriv ℝ m ((g q.1).toNondegenerateMetric.chartMetric x) q.2) := by
-    funext q
-    exact iteratedFDeriv_chartMetric_rescale_const _ _ _ _ q.2.property
+  -- Cache the derivative-space instances for scalar multiplication of continuous maps.
+  let _ : NormedAddCommGroup (E [×m]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ)) := inferInstance
+  let _ : NormedSpace ℝ (E [×m]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ)) := inferInstance
+  let _ : SMul ℝ (E [×m]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ)) := inferInstance
+  let _ : ContinuousSMul ℝ (E [×m]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ)) := inferInstance
+  let _ : SMul ℝ C((extChartAt I x).target,
+    E [×m]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ)) := inferInstance
+  have heq : (fun p : P ↦ ((g p).rescale (fun _ ↦ c p) contMDiff_const
+      (fun _ ↦ hc p)).chartMetricDerivative x m) =
+      (fun p : P ↦ c p • (g p).chartMetricDerivative x m) := by
+    funext p
+    apply ContinuousMap.ext
+    intro z
+    rw [ContinuousMap.smul_apply]
+    exact (chartMetricDerivative_apply _ x m z).trans
+      ((iteratedFDeriv_chartMetric_rescale_const (g p) (hc p) x m z.property).trans
+        (congrArg (fun d : E [×m]→L[ℝ] (E →L[ℝ] E →L[ℝ] ℝ) ↦ c p • d)
+          (chartMetricDerivative_apply (g p) x m z).symm))
   rw [heq]
-  have hcont := (hc'.comp (continuous_fst (Y := (extChartAt I x).target))).smul (hg x m hm)
-  exact hcont
+  exact Continuous.smul (M := ℝ) hc' (hg x m hm)
 
 /-- Rescaling by a fixed positive constant is a homeomorphism for every chart Cᵏ topology.
 Its inverse rescales by the reciprocal constant. -/
-def rescaleHomeomorph [LocallyCompactSpace E] (k : ℕ∞) {c : ℝ} (hc : 0 < c) :
+def rescaleHomeomorph (k : ℕ∞) {c : ℝ} (hc : 0 < c) :
     letI := chartCkTopology (I := I) (M := M) k
     ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) ≃ₜ
       ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) := by
@@ -122,14 +132,14 @@ def rescaleHomeomorph [LocallyCompactSpace E] (k : ℕ∞) {c : ℝ} (hc : 0 < c
 
 /-- The rescaling homeomorphism acts by the original native rescaling operation. -/
 @[simp]
-theorem rescaleHomeomorph_apply [LocallyCompactSpace E] (k : ℕ∞) {c : ℝ} (hc : 0 < c)
+theorem rescaleHomeomorph_apply (k : ℕ∞) {c : ℝ} (hc : 0 < c)
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :
     letI := chartCkTopology (I := I) (M := M) k
     rescaleHomeomorph k hc g = g.rescale (fun _ ↦ c) contMDiff_const (fun _ ↦ hc) := (rfl)
 
 /-- The inverse rescaling homeomorphism acts by reciprocal scaling. -/
 @[simp]
-theorem rescaleHomeomorph_symm_apply [LocallyCompactSpace E] (k : ℕ∞) {c : ℝ} (hc : 0 < c)
+theorem rescaleHomeomorph_symm_apply (k : ℕ∞) {c : ℝ} (hc : 0 < c)
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) :
     letI := chartCkTopology (I := I) (M := M) k
     (rescaleHomeomorph k hc).symm g =
