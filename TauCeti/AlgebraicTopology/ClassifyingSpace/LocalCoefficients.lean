@@ -250,11 +250,19 @@ abbrev classifyingSpaceLocalSystemMapOver (ξ : A ⟶ Rep.res φ D) :
 
 /-- The geometric change-of-group map `Hₙ(BG; A) ⟶ Hₙ(BH; D)`: change coefficients by `ξ`
 and then push forward along the strictly functorial map of classifying spaces. -/
-abbrev classifyingSpaceTwistedHomologyMap (ξ : A ⟶ Rep.res φ D) (n : ℕ) :
+def classifyingSpaceTwistedHomologyMap (ξ : A ⟶ Rep.res φ D) (n : ℕ) :
     twistedHomology.{u, u, u} (classifyingSpaceLocalSystem k A) n ⟶
       twistedHomology.{u, u, u} (classifyingSpaceLocalSystem k D) n :=
   twistedHomologyCoefficientMap (φ.classifyingSpaceLocalSystemMapOver k ξ) n ≫
     twistedHomologyMap (TopCat.ofHom φ.classifyingSpaceMap) (classifyingSpaceLocalSystem k D) n
+
+/-- The geometric change-of-group map is coefficient change followed by pushforward. -/
+theorem classifyingSpaceTwistedHomologyMap_def (ξ : A ⟶ Rep.res φ D) (n : ℕ) :
+    φ.classifyingSpaceTwistedHomologyMap k ξ n =
+      twistedHomologyCoefficientMap (φ.classifyingSpaceLocalSystemMapOver k ξ) n ≫
+        twistedHomologyMap (TopCat.ofHom φ.classifyingSpaceMap)
+          (classifyingSpaceLocalSystem k D) n :=
+  (rfl)
 
 /-- **The local-coefficient homology comparison is natural in the group.** The geometric map
 induced by `φ` and `ξ` corresponds to Mathlib's change-of-group map `groupHomology.map φ ξ`.
@@ -276,6 +284,9 @@ theorem classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality
       (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) ξ n
   rw [IsQuotientCoveringMap.associatedTwistedChainMap_def,
     HomologicalComplex.homologyMap_comp] at h
+  rw [classifyingSpaceTwistedHomologyMap_def]
+  -- The coefficient-change and pushforward homology maps are abbreviations for `homologyMap`;
+  -- the local system and comparison specialize those of the quotient cover of Milnor's model.
   exact h
 
 /-- The inverse local-coefficient homology comparison is also natural in the group. -/
@@ -285,18 +296,8 @@ theorem classifyingSpaceTwistedHomologyIsoGroupHomology_inv_naturality
     groupHomology.map φ ξ n ≫ (classifyingSpaceTwistedHomologyIsoGroupHomology k D n).inv =
       (classifyingSpaceTwistedHomologyIsoGroupHomology k A n).inv ≫
         φ.classifyingSpaceTwistedHomologyMap k ξ n := by
-  have h := IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_inv_naturality_over
-      (E := TopCat.of (universalGSpace G))
-      (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
-      (F := TopCat.of (universalGSpace H))
-      (q := TopCat.ofHom ⟨classifyingSpaceProj H, continuous_classifyingSpaceProj H⟩)
-      (isQuotientCoveringMap_classifyingSpaceProj G)
-      (isQuotientCoveringMap_classifyingSpaceProj H) k (TopCat.ofHom φ.universalGSpaceMap)
-      (fun g x ↦ φ.universalGSpaceMap_smul g x) (TopCat.ofHom φ.classifyingSpaceMap)
-      (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) ξ n
-  rw [IsQuotientCoveringMap.associatedTwistedChainMap_def,
-    HomologicalComplex.homologyMap_comp] at h
-  exact h
+  rw [Iso.comp_inv_eq, Category.assoc,
+    classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality, Iso.inv_hom_id_assoc]
 
 variable {k}
 

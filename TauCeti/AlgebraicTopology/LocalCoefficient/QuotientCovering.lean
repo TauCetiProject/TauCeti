@@ -157,6 +157,7 @@ def permutationRepMap :
         rw [fiberRepresentation_single]
         congr 1
         apply Subtype.ext
+        -- Expose the fibre actions on the ambient space so the fibre-map coercion lemma matches.
         change ((CommSq.mk hb.symm).fiberMap x.as (g • e) : F) =
           φ g • ((CommSq.mk hb.symm).fiberMap x.as e : F)
         rw [CommSq.fiberMap_apply_coe, CommSq.fiberMap_apply_coe]
@@ -166,6 +167,7 @@ def permutationRepMap :
         hH.isCoveringMap.monodromy (γ.map b.hom) ∘ (CommSq.mk hb.symm).fiberMap x.as := by
       funext e
       apply Subtype.ext
+      -- Expose function composition under the subtype coercion to apply the fibre-map lemma.
       change ((CommSq.mk hb.symm).fiberMap y.as (hG.isCoveringMap.monodromy γ e) : F) = _
       rw [CommSq.fiberMap_apply_coe]
       exact (hG.isCoveringMap.coe_monodromy_map hH.isCoveringMap
