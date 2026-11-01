@@ -38,10 +38,8 @@ theorem tateGauge_eq_discreteLatticeGauge :
   simp only [inv_zpow', zpow_neg, inv_inv]
   congr 2
   ext n
-  simp only [mem_ofPred_eq, mem_smul_set_iff_inv_smul_mem₀ (zpow_ne_zero n π.ne_zero)]
-  simp only [← map_zpow, ← map_inv, Units.coe_map, Units.val_inv_eq_inv_val,
-    Units.val_zpow_eq_zpow_val, Algebra.smul_def, RingHom.toMonoidHom_eq_coe,
-    MonoidHom.coe_ofClass, SetLike.mem_coe]
+  simp [mem_smul_set_iff_inv_smul_mem₀ (zpow_ne_zero n π.ne_zero),
+    Algebra.smul_def, ← map_zpow, ← map_inv]
 
 end NormedField
 
