@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.ResidueField.Basic
+public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 import Mathlib.RingTheory.Valuation.LocalSubring
+import TauCeti.RingTheory.Valuation.FiniteExtension
 import TauCeti.RingTheory.Valuation.ValuationRing
 
 /-!
@@ -28,12 +30,19 @@ to `B`, is the point `w`.
 
 Consequently `Spv B → Spv A` is surjective exactly when `Spec B → Spec A` is.
 
+Over a finite field extension `L / K` the lifts are also few: a point of `Spv L` is determined by
+its valuation subring, so the points over `v ∈ Spv K` are the extensions to `L` of the valuation
+subring of `v`, and there are at most `[L : K]` of them
+(`ValuationSubring.ncard_setOf_comap_eq_le_finrank`).
+
 ## Main results
 
 * `TauCeti.ValuationSpectrum.exists_supp_eq_comap_eq`: a point of `Spv A` lifts to a point of
   `Spv B` with any prescribed support lying over its own.
 * `TauCeti.ValuationSpectrum.comap_surjective_iff`: `Spv B → Spv A` is surjective iff
   `Spec B → Spec A` is.
+* `TauCeti.ValuationSpectrum.ncard_setOf_comap_eq_le_finrank`: for a finite field extension
+  `L / K`, at most `[L : K]` points of `Spv L` lie over a point of `Spv K`.
 
 ## References
 
@@ -106,6 +115,44 @@ theorem comap_surjective_iff (φ : A →+* B) :
     obtain ⟨w, -, hw⟩ := exists_supp_eq_comap_eq φ v q.asIdeal
       (by simpa [← suppFun_asIdeal] using congrArg PrimeSpectrum.asIdeal hq)
     exact ⟨w, hw⟩
+
+section Field
+
+variable {K L : Type*} [Field K] [Field L] [Algebra K L]
+
+/-- On a field, a point of the valuation spectrum is determined by its valuation subring. -/
+private theorem valuationSubring_valuation_injective :
+    Function.Injective fun w : Spv L ↦ w.valuation.valuationSubring := fun w₁ w₂ h ↦ by
+  simpa using congrArg (fun O : ValuationSubring L ↦ ofValuation O.valuation) h
+
+/-- The valuation subring of a point over `v` lies over the valuation subring of `v`. -/
+private theorem mapsTo_valuationSubring (v : Spv K) :
+    Set.MapsTo (fun w : Spv L ↦ w.valuation.valuationSubring)
+      {w | comap (algebraMap K L) w = v}
+      {O' | O'.comap (algebraMap K L) = v.valuation.valuationSubring} := by
+  rintro w rfl
+  exact (valuationSubring_valuation_comap _ w).symm
+
+variable (L) in
+/-- **Finite fibres over a finite field extension.** For a finite extension `L / K`, only finitely
+many points of `Spv L` lie over a given point of `Spv K`. -/
+theorem finite_setOf_comap_eq [FiniteDimensional K L] (v : Spv K) :
+    {w : Spv L | comap (algebraMap K L) w = v}.Finite :=
+  ((ValuationSubring.finite_setOf_comap_eq L _).subset
+    (mapsTo_valuationSubring v).image_subset).of_finite_image
+      valuationSubring_valuation_injective.injOn
+
+variable (L) in
+/-- **At most `[L : K]` points over a point.** For a finite extension `L / K`, at most `[L : K]`
+points of `Spv L` lie over a given point of `Spv K`: they are the extensions to `L` of its
+valuation subring. -/
+theorem ncard_setOf_comap_eq_le_finrank [FiniteDimensional K L] (v : Spv K) :
+    {w : Spv L | comap (algebraMap K L) w = v}.ncard ≤ Module.finrank K L :=
+  (Set.ncard_le_ncard_of_injOn _ (mapsTo_valuationSubring v)
+    valuationSubring_valuation_injective.injOn (ValuationSubring.finite_setOf_comap_eq L _)).trans
+    (ValuationSubring.ncard_setOf_comap_eq_le_finrank L _)
+
+end Field
 
 end ValuationSpectrum
 

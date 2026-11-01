@@ -16,7 +16,8 @@ one. Its `m`-th iterate `divX^[m] p` drops the `m` lowest coefficients and lower
 degrees by `m`, so that `(divX^[m] p).coeff n = p.coeff (n + m)`. This file records how the
 iterate interacts with sums, scalars, multiplication by powers of `X` and reflection, and the
 Horner recursion `divX^[m] p = divX^[m + 1] p * X + C (p.coeff m)`, whose values at a point are
-the partial Horner sums of `p`.
+the partial Horner sums of `p`, and the splitting of `p` as `Xᵐ * divX^[m] p` plus a polynomial
+of degree below `m`.
 
 In terms of Laurent polynomials, `divX^[m] (Xᵐ * p)` is `p`, while the reflection
 `reflect m q = Xᵐ q(X⁻¹)` of a polynomial `q` of degree at most `m` keeps only its constant
@@ -110,5 +111,12 @@ theorem iterate_divX_sub [Ring R] (m : ℕ) (p q : R[X]) :
     divX^[m] (p - q) = divX^[m] p - divX^[m] q := by
   ext n
   simp
+
+/-- Removing `Xᵐ * divX^[m] p` from `p` leaves the part of `p` of degree below `m`. -/
+theorem degree_sub_X_pow_mul_iterate_divX_lt [Ring R] (m : ℕ) (p : R[X]) :
+    (p - X ^ m * divX^[m] p).degree < (m : WithBot ℕ) := by
+  refine degree_lt_iff_coeff_zero _ _ |>.mpr fun n hn ↦ ?_
+  rw [coeff_sub, coeff_X_pow_mul', ite_eq_left (by exact_mod_cast hn), coeff_iterate_divX,
+    Nat.sub_add_cancel (by exact_mod_cast hn), sub_self]
 
 end Polynomial
