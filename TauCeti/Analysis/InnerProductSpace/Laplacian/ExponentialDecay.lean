@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.ZerothOrderMaximumPrinciple
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 
 /-!
 # Exponential decay of subsolutions of `-Δ + c²` outside a ball
@@ -32,8 +33,6 @@ modulus defect `-log |α|²` of a plane vortex is such a subsolution for every r
 
 * `TauCeti.le_mul_exp_of_sq_mul_le_laplacian`: a subsolution of `-Δ + c²` on the exterior of a ball
   which tends to zero at infinity is bounded by `M exp (-c (‖x‖ - R))`.
-* `TauCeti.exp_neg_mul_sub`: the radius shift `exp (-c (t - R)) = exp (c R) exp (-c t)` relating
-  the barrier to its radial profile.
 
 ## References
 
@@ -50,12 +49,6 @@ namespace TauCeti
 open Filter Metric Set Topology InnerProductSpace Laplacian
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-
-/-- Shifting the radius in an exponential: `exp (-c (t - R)) = exp (c R) exp (-c t)`. -/
-theorem exp_neg_mul_sub (c t R : ℝ) :
-    Real.exp (-(c * (t - R))) = Real.exp (c * R) * Real.exp (-(c * t)) := by
-  rw [← Real.exp_add]
-  ring_nf
 
 /-- The barrier `A exp (-c ‖x‖) + ε` is a supersolution of `-Δ + c²` away from the origin when
 `A ≥ 0`, `c ≥ 0` and `ε ≥ 0`. -/

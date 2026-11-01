@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.ScalarEquation
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
+import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.MeasureTheory.Integral.ExpDecay
 
 /-!
