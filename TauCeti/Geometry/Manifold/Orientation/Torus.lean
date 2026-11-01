@@ -18,8 +18,9 @@ coordinate time forms, vanishes nowhere. It therefore determines an orientation 
 (`TauCeti.torusOrientation p`): a tangent basis, a family of vectors in `Fin n → ℝ`, is positive
 exactly when the determinant of its coordinate matrix is positive. In particular the coordinate
 basis is positive at every point (`TauCeti.orientationAt_torusOrientation`). Its `i`-th vector is
-the positive time direction of the `i`-th coordinate circle, positive for `AddCircle.orientation`,
-so this is the product orientation of the oriented circles, taken in the order of `Fin n`.
+the positive time direction of the `i`-th coordinate circle, positive for `AddCircle.orientation`.
+Informally, this is the product orientation of the oriented circles, taken in the order of
+`Fin n`; no comparison with a product of orientations is formalised here.
 
 The orientation depends on that order. Reordering the factors by a permutation `σ`, through
 `x ↦ (j ↦ x (σ j))`, pulls the volume form back to `sign σ` times itself, so it has orientation sign
@@ -61,6 +62,19 @@ variable {n : ℕ} (p : Fin n → ℝ) [∀ i, Fact (0 < p i)]
 
 /-! ### The orientation -/
 
+/-- A pullback equation of smooth forms, read at the point `x`. -/
+private theorem mpullback_apply_eq_smul_of_mpullback_eq_smul {m : ℕ} {q : Fin m → ℝ}
+    [∀ i, Fact (0 < q i)] {f : (∀ i, AddCircle (p i)) → ∀ i, AddCircle (q i)}
+    {hf : ContMDiff (ModelWithCorners.pi fun _ : Fin n ↦ 𝓘(ℝ))
+      (ModelWithCorners.pi fun _ : Fin m ↦ 𝓘(ℝ)) ∞ f}
+    {k : ℕ} {φ' : SmoothForm (ModelWithCorners.pi fun _ : Fin m ↦ 𝓘(ℝ)) (∀ i, AddCircle (q i)) ℝ k}
+    {φ : SmoothForm (ModelWithCorners.pi fun _ : Fin n ↦ 𝓘(ℝ)) (∀ i, AddCircle (p i)) ℝ k}
+    {c : ℝ} (h : SmoothForm.mpullback f hf φ' = c • φ) (x : ∀ i, AddCircle (p i)) :
+    mpullback _ _ f φ'.1 x = c • φ.1 x := by
+  have h := congrFun (congrArg Subtype.val h) x
+  rwa [SmoothForm.coe_mpullback, SetLike.val_smul, Pi.smul_apply] at h
+
+
 /-- The **orientation of the torus** `∀ i : Fin n, AddCircle (p i)`: the orientation on which the
 nowhere-vanishing volume form `dt_0 ∧ ⋯ ∧ dt_(n-1)` is positive. -/
 def torusOrientation :
@@ -97,9 +111,8 @@ theorem orientationSign_torusOrientation_reindex (σ : Equiv.Perm (Fin n))
       (fun (x : ∀ i, AddCircle (p i)) (j : Fin n) ↦ x (σ j)) x = Equiv.Perm.sign σ := by
   have hf : mpullback _ _ (fun (x : ∀ i, AddCircle (p i)) (j : Fin n) ↦ x (σ j))
       (torusVolumeForm fun j ↦ p (σ j)).1 x =
-        (Equiv.Perm.sign σ : ℝ) • (torusVolumeForm p).1 x := by
-    have h := congrFun (congrArg Subtype.val (mpullback_reindex_torusVolumeForm p σ)) x
-    rwa [SmoothForm.coe_mpullback, SetLike.val_smul, Pi.smul_apply] at h
+        (Equiv.Perm.sign σ : ℝ) • (torusVolumeForm p).1 x :=
+    mpullback_apply_eq_smul_of_mpullback_eq_smul p (mpullback_reindex_torusVolumeForm p σ) x
   rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with h | h <;> rw [h] at hf ⊢
   · exact orientationSign_of_isOrientationPreservingAt
       (isOrientationPreservingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _
@@ -118,9 +131,8 @@ theorem isOrientationPreservingAt_piMap_diffeomorphAddCircle (q : Fin n → ℝ)
       (Pi.map fun j ↦ AddCircle.diffeomorphAddCircle (p j) (q j) ∞) x := by
   refine isOrientationPreservingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _
     (c := ∏ i, (p i)⁻¹ * q i) (Finset.prod_pos fun i _ ↦
-      mul_pos (inv_pos.mpr (Fact.out : 0 < p i)) (Fact.out : 0 < q i)) ?_
-  have h := congrFun
-    (congrArg Subtype.val (mpullback_piMap_diffeomorphAddCircle_torusVolumeForm p q)) x
-  rwa [SmoothForm.coe_mpullback, SetLike.val_smul, Pi.smul_apply] at h
+      mul_pos (inv_pos.mpr (Fact.out : 0 < p i)) (Fact.out : 0 < q i))
+    (mpullback_apply_eq_smul_of_mpullback_eq_smul p
+      (mpullback_piMap_diffeomorphAddCircle_torusVolumeForm p q) x)
 
 end TauCeti

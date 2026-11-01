@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Pi
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Family
 
 /-!
-# The coordinate time forms of a torus
+# The coordinate time forms and the volume form of a torus
 
 For a finite family of positive periods `p i`, the torus `∀ i, AddCircle (p i)` is a smooth
 manifold, modelled on `ModelWithCorners.pi fun _ ↦ 𝓘(ℝ)` (`TauCeti.instIsManifoldPi`). Its tangent

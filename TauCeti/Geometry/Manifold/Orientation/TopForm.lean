@@ -256,6 +256,38 @@ private theorem exists_equiv_of_mpullback_eq_smul (hk : Module.finrank ℝ E = k
   rw [Module.Basis.map_apply, ← he]
   rfl
 
+/-- If a map `f` pulls the top form `φ'` back at `x` to a nonzero multiple `c • φ` of the top
+form `φ`, its derivative at `x` is invertible, and it carries the orientation of `φ` at `x` to the
+orientation of `φ'` at `f x` when `0 < c`, and to its negation when `c < 0`. -/
+private theorem exists_map_orientationAt_ofTopForm_of_mpullback_eq_smul [IsManifold I 1 M]
+    [IsManifold I' 1 M'] (hk : Module.finrank ℝ E = k) (hk' : Module.finrank ℝ E' = k)
+    {φ : RoughForm I M ℝ k} (hφ : IsSmoothForm I 0 φ) (h0 : ∀ x, φ x ≠ 0)
+    {φ' : RoughForm I' M' ℝ k} (hφ' : IsSmoothForm I' 0 φ') (h0' : ∀ x, φ' x ≠ 0)
+    {f : M → M'} {x : M} {c : ℝ} (hc : c ≠ 0) (hf : mpullback I I' f φ' x = c • φ x) :
+    ∃ e : TangentSpace I x ≃L[ℝ] TangentSpace I' (f x),
+      (e : TangentSpace I x →L[ℝ] TangentSpace I' (f x)) = mfderiv I I' f x ∧
+        _root_.Orientation.map (Fin k) e.toLinearEquiv (orientationAt (ofTopForm hk φ hφ h0) x) =
+          if 0 < c then orientationAt (ofTopForm hk' φ' hφ' h0') (f x)
+            else -orientationAt (ofTopForm hk' φ' hφ' h0') (f x) := by
+  obtain ⟨e, he, hb⟩ := exists_equiv_of_mpullback_eq_smul hk hk' (h0 x) hc hf
+  refine ⟨e, he, ?_⟩
+  let b := Module.finBasisOfFinrankEq ℝ (TangentSpace I x) hk
+  have h₁ := orientation_eq_ite_orientationAt_ofTopForm hk hφ h0 b
+  have h₂ := orientation_eq_ite_orientationAt_ofTopForm hk' hφ' h0' (b.map e.toLinearEquiv)
+  rw [Module.Basis.orientation_map, hb] at h₂
+  -- Both orientations are read off the signs of the forms on `b` and on its image.
+  have h₁' : orientationAt (ofTopForm hk φ hφ h0) x =
+      if 0 < φ x b then b.orientation else -b.orientation := by
+    split_ifs at h₁ ⊢
+    · exact h₁.symm
+    · rw [h₁]
+      exact (neg_neg (G := _root_.Orientation ℝ (TangentSpace I x) (Fin k)) _).symm
+  rw [h₁', apply_ite (_root_.Orientation.map (Fin k) e.toLinearEquiv), Orientation.map_neg, h₂]
+  rcases lt_or_gt_of_ne hc with hc | hc <;>
+    rcases lt_or_gt_of_ne (((φ x).map_basis_ne_zero_iff b).mpr (h0 x)) with hb | hb <;>
+    simp [mul_pos_iff, hc, hb, hc.not_gt, hb.not_gt,
+      neg_neg (G := _root_.Orientation ℝ (TangentSpace I' (f x)) (Fin k))]
+
 /-- **Orientation of a pullback of top forms.** If a map `f` pulls the top form `φ'` back at `x`
 to a positive multiple of the top form `φ`, it preserves the orientations of `φ` and `φ'` at
 `x`. -/
@@ -265,23 +297,9 @@ theorem isOrientationPreservingAt_ofTopForm_of_mpullback_eq_smul [IsManifold I 1
     {φ' : RoughForm I' M' ℝ k} (hφ' : IsSmoothForm I' 0 φ') (h0' : ∀ x, φ' x ≠ 0)
     {f : M → M'} {x : M} {c : ℝ} (hc : 0 < c) (hf : mpullback I I' f φ' x = c • φ x) :
     IsOrientationPreservingAt (ofTopForm hk φ hφ h0) (ofTopForm hk' φ' hφ' h0') f x := by
-  obtain ⟨e, he, hb⟩ := exists_equiv_of_mpullback_eq_smul hk hk' (h0 x) hc.ne' hf
-  refine (isOrientationPreservingAt_iff_of_coe_eq _ _ f x e he).mpr ?_
-  let b := Module.finBasisOfFinrankEq ℝ (TangentSpace I x) hk
-  have h₁ := orientation_eq_ite_orientationAt_ofTopForm hk hφ h0 b
-  have h₂ := orientation_eq_ite_orientationAt_ofTopForm hk' hφ' h0' (b.map e.toLinearEquiv)
-  rw [Module.Basis.orientation_map, hb] at h₂
-  have hne : φ x b ≠ 0 := ((φ x).map_basis_ne_zero_iff b).mpr (h0 x)
-  -- Both orientations are read off the sign of the forms on `b` and on its image.
-  by_cases hpos : 0 < φ x b
-  · rw [ite_eq_left hpos] at h₁
-    rw [ite_eq_left (mul_pos hc hpos)] at h₂
-    rw [← h₁, h₂]
-  · have hneg : φ x b < 0 := lt_of_le_of_ne (not_lt.mp hpos) hne
-    rw [ite_eq_right hpos] at h₁
-    rw [ite_eq_right (not_lt.mpr (mul_neg_of_pos_of_neg hc hneg).le)] at h₂
-    rw [← neg_neg ((ofTopForm hk φ hφ h0).orientationAt x), ← h₁, Orientation.map_neg, h₂]
-    exact neg_neg (G := _root_.Orientation ℝ (TangentSpace I' (f x)) (Fin k)) _
+  obtain ⟨e, he, h⟩ :=
+    exists_map_orientationAt_ofTopForm_of_mpullback_eq_smul hk hk' hφ h0 hφ' h0' hc.ne' hf
+  exact (isOrientationPreservingAt_iff_of_coe_eq _ _ f x e he).mpr (h.trans (ite_eq_left hc))
 
 /-- **Orientation of a pullback of top forms.** If a map `f` pulls the top form `φ'` back at `x`
 to a negative multiple of the top form `φ`, it reverses the orientations of `φ` and `φ'` at
@@ -292,22 +310,9 @@ theorem isOrientationReversingAt_ofTopForm_of_mpullback_eq_smul [IsManifold I 1 
     {φ' : RoughForm I' M' ℝ k} (hφ' : IsSmoothForm I' 0 φ') (h0' : ∀ x, φ' x ≠ 0)
     {f : M → M'} {x : M} {c : ℝ} (hc : c < 0) (hf : mpullback I I' f φ' x = c • φ x) :
     IsOrientationReversingAt (ofTopForm hk φ hφ h0) (ofTopForm hk' φ' hφ' h0') f x := by
-  obtain ⟨e, he, hb⟩ := exists_equiv_of_mpullback_eq_smul hk hk' (h0 x) hc.ne hf
-  refine (isOrientationReversingAt_iff_of_coe_eq _ _ f x e he).mpr ?_
-  let b := Module.finBasisOfFinrankEq ℝ (TangentSpace I x) hk
-  have h₁ := orientation_eq_ite_orientationAt_ofTopForm hk hφ h0 b
-  have h₂ := orientation_eq_ite_orientationAt_ofTopForm hk' hφ' h0' (b.map e.toLinearEquiv)
-  rw [Module.Basis.orientation_map, hb] at h₂
-  have hne : φ x b ≠ 0 := ((φ x).map_basis_ne_zero_iff b).mpr (h0 x)
-  -- Both orientations are read off the sign of the forms on `b` and on its image.
-  by_cases hpos : 0 < φ x b
-  · rw [ite_eq_left hpos] at h₁
-    rw [ite_eq_right (not_lt.mpr (mul_neg_of_neg_of_pos hc hpos).le)] at h₂
-    rw [← h₁, h₂]
-  · have hneg : φ x b < 0 := lt_of_le_of_ne (not_lt.mp hpos) hne
-    rw [ite_eq_right hpos] at h₁
-    rw [ite_eq_left (mul_pos_of_neg_of_neg hc hneg)] at h₂
-    rw [← neg_neg ((ofTopForm hk φ hφ h0).orientationAt x), ← h₁, Orientation.map_neg, h₂]
+  obtain ⟨e, he, h⟩ :=
+    exists_map_orientationAt_ofTopForm_of_mpullback_eq_smul hk hk' hφ h0 hφ' h0' hc.ne hf
+  exact (isOrientationReversingAt_iff_of_coe_eq _ _ f x e he).mpr (h.trans (ite_eq_right hc.not_gt))
 
 end Manifold.Orientation
 

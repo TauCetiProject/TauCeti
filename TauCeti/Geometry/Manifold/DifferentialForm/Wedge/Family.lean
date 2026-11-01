@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Geometry.Manifold.Algebra.Monoid
@@ -37,7 +38,8 @@ wedge product.
 ## Main results
 
 * `TauCeti.RoughForm.wedgeFamily_apply`: the determinant formula.
-* `TauCeti.RoughForm.wedgeFamily_two`: agreement with the binary wedge product.
+* `TauCeti.RoughForm.wedgeFamily_two`, `TauCeti.SmoothForm.wedgeFamily_two`: agreement with the
+  binary wedge product.
 * `TauCeti.RoughForm.mpullback_wedgeFamily`: naturality under pullback.
 * `TauCeti.RoughForm.wedgeFamily_comp_perm`: reordering the family multiplies by the sign of the
   permutation.
@@ -181,6 +183,11 @@ theorem wedgeFamily_apply (α : Fin k → SmoothForm I M ℝ 1) (x : M)
     (v : Fin k → TangentSpace I x) :
     (wedgeFamily α).1 x v = (Matrix.of fun i j ↦ (α i).1 x ![v j]).det :=
   RoughForm.wedgeFamily_apply _ x v
+
+/-- The wedge product of two smooth one-forms as a family is their binary wedge product. -/
+theorem wedgeFamily_two (α : Fin 2 → SmoothForm I M ℝ 1) :
+    wedgeFamily α = wedge (α 0) (α 1) :=
+  Subtype.ext (by rw [coe_wedgeFamily, coe_wedge, RoughForm.wedgeFamily_two])
 
 /-- Smooth pullback commutes with the wedge product of a family of smooth one-forms. -/
 theorem mpullback_wedgeFamily [IsManifold I' 1 M'] [FiniteDimensional ℝ E'] (f : M → M')
