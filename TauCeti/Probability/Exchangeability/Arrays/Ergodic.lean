@@ -113,8 +113,8 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
     ?_
   intro ε hε
   -- Step 1: the approximating cylinder `t` on a finite square `I × I` inside `[0, N)²`.
-  obtain ⟨F, S, hS, hFS⟩ := TauCeti.MeasureTheory.exists_cylinder_measure_symmDiff_lt (ρ := ρ) hs
-    (ε := ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)
+  obtain ⟨F, S, hS, hFS⟩ := TauCeti.MeasureTheory.exists_cylinder_measure_symmDiff_lt
+    (ρ := ρ) hs.nullMeasurableSet (ε := ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)
   let I : Finset ℕ := F.image Prod.fst ∪ F.image Prod.snd
   have hFI : ∀ p ∈ F, p.1 ∈ I ∧ p.2 ∈ I := by
     intro p hp
