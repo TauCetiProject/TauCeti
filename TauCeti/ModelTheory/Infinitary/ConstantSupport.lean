@@ -84,6 +84,30 @@ theorem finite_constantSupport (t : L[[γ]].Term α) : t.constantSupport.Finite 
 theorem constantSupport_var (a : α) : (var a : L[[γ]].Term α).constantSupport = ∅ := by
   simp [constantSupport]
 
+/-- Applying an original function symbol adds only the constants of its arguments. -/
+-- Simplify before `onFunction` reduces the language inclusion to `Sum.inl`.
+@[simp↓]
+theorem constantSupport_func {k : ℕ} (f : L.Functions k)
+    (ts : Fin k → L[[γ]].Term α) :
+    (func ((L.lhomWithConstants γ).onFunction f) ts).constantSupport =
+      ⋃ i, (ts i).constantSupport := by
+  ext c
+  simp only [Set.mem_iUnion, mem_constantSupport]
+  rw [functionsIn_func]
+  simp only [Set.mem_union, Set.mem_singleton_iff, Set.mem_iUnion, or_iff_right_iff_imp]
+  intro h
+  obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 h
+  exact (Sum.inr_ne_inl (eq_of_heq h)).elim
+
+/-- A term of `L` mentions no constant of `L[[γ]]`. -/
+@[simp]
+theorem constantSupport_onTerm (t : L.Term α) :
+    ((L.lhomWithConstants γ).onTerm t).constantSupport = ∅ := by
+  refine Set.eq_empty_of_forall_notMem fun c hc => ?_
+  obtain ⟨⟨k, f⟩, -, h⟩ := (functionsIn_onTerm t (L.lhomWithConstants γ)).subset hc
+  obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 h
+  exact Sum.inl_ne_inr (eq_of_heq h)
+
 /-- The constant `L.con c` is the only constant occurring in its term. -/
 @[simp]
 theorem constantSupport_con (c : γ) :

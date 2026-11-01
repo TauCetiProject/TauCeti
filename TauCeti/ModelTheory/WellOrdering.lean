@@ -11,6 +11,7 @@ import Mathlib.Algebra.Order.Ring.Rat
 import Mathlib.Data.Rat.Encodable
 import Mathlib.SetTheory.Cardinal.Ordinal
 import Mathlib.SetTheory.Cardinal.Regular
+import TauCeti.Logic.Function.Update
 import TauCeti.ModelTheory.Infinitary.ConstantSupport
 import TauCeti.ModelTheory.Infinitary.Sublanguage
 
@@ -106,11 +107,9 @@ theorem RelChain.not_wellFounded [LT β] [NoMinOrder β] [Nonempty β] {f : β �
 /-- A chain for an irreflexive relation is injective. -/
 theorem RelChain.injective_of_irreflexive [LinearOrder β] {f : β → M} (h : RelChain lt f)
     (hlt : ∀ x : M, ¬RelMap lt ![x, x]) : Function.Injective f := by
-  intro x y hxy
-  by_contra hne
-  obtain hlt' | hlt' := lt_or_gt_of_ne hne
-  · exact hlt (f y) (hxy ▸ h x y hlt')
-  · exact hlt (f x) (hxy ▸ h y x hlt')
+  have : Std.Irrefl (fun x y : M => RelMap lt ![x, y]) := ⟨hlt⟩
+  exact injective_of_increasing (· < ·) (fun x y : M => RelMap lt ![x, y]) f
+    fun hxy => h _ _ hxy
 
 end RelChain
 
@@ -300,11 +299,6 @@ private theorem insert (h : Gapped Q x γ (α + 1 + α)) (s : ℚ) :
 
 end Gapped
 
-/-- A countable ordinal stays countable in passing to the length needed to insert a rational. -/
-private theorem add_one_add_lt_omega_one {α : Ordinal.{w}} (hα : α < ω₁) : α + 1 + α < ω₁ :=
-  have hadd := isPrincipal_add_omega 1
-  hadd (hadd hα ((by simp : (1 : Ordinal.{w}) < ω).trans omega0_lt_omega_one)) hα
-
 /-! ### The consistency property -/
 
 variable (φ : L.Sentenceω) (lt : L.Relations 2)
@@ -411,7 +405,8 @@ private theorem insert_rat (h : Member.{u, v, w} φ lt Q σ) (s : ℚ) :
   · rw [Finset.insert_eq_of_mem hs]
     exact h.exists_witness α hα
   obtain ⟨M, _, e, hφ, hsat, g, x, γ, hg, hx, he⟩ :=
-    h.exists_witness _ (add_one_add_lt_omega_one hα)
+    h.exists_witness _ (isPrincipal_add_omega 1
+      ((Cardinal.isSuccLimit_omega 1).add_one_lt hα) hα)
   refine ⟨M, inferInstance,
     Function.update e (ratCon s) (g ((Q.filter (· < s)).sup x + α + 1)), hφ,
     fun χ hχ => (sat_congr fun d hd => ?_).1 (hsat χ hχ), g, _, γ, hg, hx.insert s,
@@ -511,11 +506,6 @@ private theorem insert_mem (h : Member.{u, v, w} φ lt Q σ) {S : Set ℕ} (hS :
 
 end Member
 
-/-- Reinterpreting a constant outside `s` does not change the interpretation on `s`. -/
-private theorem eqOn_update {M : Type w} {e : ℕ → M} {c : ℕ} {s : Set ℕ} (hc : c ∉ s) (m : M) :
-    Set.EqOn e (Function.update e c m) s :=
-  fun _ hd => (Function.update_of_ne (ne_of_mem_of_not_mem hd hc) _ _).symm
-
 variable (φ lt) in
 /-- **Marker's consistency property**: its members are the sets `base φ lt ∪ σ` for the pairs
 `(Q, σ)` of `Member`. -/
@@ -594,7 +584,7 @@ private noncomputable def chainProperty : ConsistencyProperty L where
     · obtain ⟨m, hm'⟩ := not_forall.1 (mt sat_all.2 (sat_not.1 (hP _ h (by simp))))
       refine ⟨Function.update e c m, hW.update hcσ (fun q _ => hcq q) m, sat_not.2 fun hsat => ?_⟩
       rw [sat_inst, val_con, Function.update_self] at hsat
-      exact hm' ((holds_congr (eqOn_update hcS m)).2 hsat)
+      exact hm' ((holds_congr (Set.eqOn_update_of_notMem hcS m)).2 hsat)
   eq_refl := by
     rintro _ ⟨Q, σ, hm, rfl⟩ t
     exact hm.insert_mem t.finite_constantSupport _ (by simp)
@@ -615,7 +605,7 @@ private noncomputable def chainProperty : ConsistencyProperty L where
     refine ⟨c, hm.insert_mem (hS.insert c) _ (by simp) fun Q' α M _ e hW _ =>
       ⟨Function.update e c (val e t), hW.update hcσ (fun q _ => hcq q) _, sat_equal.2 ?_⟩⟩
     rw [val_con, Function.update_self]
-    exact val_congr (eqOn_update hcS _)
+    exact val_congr (Set.eqOn_update_of_notMem hcS _)
 
 private theorem member_empty (h : HasWellOrderedChains.{u, v, w} φ lt) :
     Member.{u, v, w} φ lt ∅ ∅ := by
@@ -710,11 +700,11 @@ theorem wellOrder_type_boundedness
   have hle := not_lt.1 hlt
   have hne : Nonempty M := type_ne_zero_iff_nonempty.1 (lt_of_lt_of_le (by simp) hle).ne'
   let r : M → M → Prop := fun x y => RelMap lt ![x, y]
-  let f : α.ToType → M := fun a =>
-    enum r ⟨(ToType.toOrd a).1, (ToType.toOrd a).2.trans_le ((Order.le_succ α).trans hle)⟩
-  have hf : ∀ x y, x < y → r (f x) (f y) := fun x y hxy =>
-    (enum r).map_rel_iff.2 (Subtype.mk_lt_mk.2 (ToType.mk.symm.strictMono hxy))
-  exact hbound M _ hne hφ f hf
+  have hαr : Ordinal.type (α := α.ToType) (· < ·) ≤ type r := by
+    rw [Ordinal.type_toType]
+    exact (Order.le_succ α).trans hle
+  obtain ⟨g⟩ := Ordinal.type_le_iff'.1 hαr
+  exact hbound M _ hne hφ g fun _ _ hxy => g.map_rel_iff.2 hxy
 
 end Sentenceω
 
