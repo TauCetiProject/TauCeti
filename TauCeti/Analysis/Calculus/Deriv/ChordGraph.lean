@@ -37,7 +37,10 @@ its chord, with an arbitrarily small constant in place of `2θ / (1 - θ)`
 (`ContDiff.exists_graph_over_chord`). This is the local description of a knot of class `C¹` near
 the edges of a fine inscribed polygon used to straighten the knot onto the polygon, as in Crowell
 and Fox, Appendix I: an ambient isotopy of `ℝ × ker φ` which is supported near the graph of `g` and
-moves it onto the zero section carries the arc onto the chord.
+moves it onto the zero section carries the arc onto the chord. In particular such a curve is
+strictly increasing along a continuous linear functional on every short parameter window, of a
+width that is uniform for starting parameters in a compact interval
+(`ContDiff.exists_strictMonoOn_dual_comp`).
 
 The graph description comes from a general principle
 (`TauCeti.exists_continuousMap_comp_eq_of_norm_deriv_le_mul_deriv`): let a curve `t ↦ (x t, w t)`
@@ -59,6 +62,8 @@ form of the mean value inequality, `‖w t - w s‖ ≤ ε (x t - x s)` for `s �
   regular `C¹` curve is uniformly close to the direction of the chord.
 * `ContDiff.exists_graph_over_chord`: short arcs of a regular `C¹` curve are graphs over their
   chords, with uniformly small slope.
+* `ContDiff.exists_strictMonoOn_dual_comp`: uniform windows on which a regular `C¹` curve is
+  strictly increasing along a continuous linear functional.
 
 ## References
 
@@ -99,15 +104,17 @@ theorem norm_sub_le_mul_sub_of_norm_deriv_le_mul_deriv {x x' : ℝ → ℝ} {w w
       (hnhds r hr)).sub_const (x s)).const_mul ε
 
 /-- A curve `t ↦ (x t, w t)` in `ℝ × W` on `[a, b]` with `x' > 0` and `‖w'‖ ≤ ε x'`, and with `w`
-vanishing at both ends, is the graph of a continuous function `g` of `x`: `w t = g (x t)`, where
-`g` vanishes outside `(x a, x b)` and `‖g ξ‖ ≤ ε · min (ξ - x a) (x b - ξ)` on `[x a, x b]`. -/
+vanishing at both ends, is the graph of a continuous function `g` of `x`: `x` is strictly
+increasing on `[a, b]` and `w t = g (x t)`, where `g` vanishes outside `(x a, x b)` and
+`‖g ξ‖ ≤ ε · min (ξ - x a) (x b - ξ)` on `[x a, x b]`. -/
 theorem exists_continuousMap_comp_eq_of_norm_deriv_le_mul_deriv {x x' : ℝ → ℝ} {w w' : ℝ → W}
     {a b ε : ℝ} (hab : a ≤ b)
     (hx : ∀ t ∈ Icc a b, HasDerivWithinAt x (x' t) (Icc a b) t)
     (hw : ∀ t ∈ Icc a b, HasDerivWithinAt w (w' t) (Icc a b) t)
     (hpos : ∀ t ∈ Ioo a b, 0 < x' t) (hbound : ∀ t ∈ Ico a b, ‖w' t‖ ≤ ε * x' t)
     (ha : w a = 0) (hb : w b = 0) :
-    ∃ g : C(ℝ, W), (∀ t ∈ Icc a b, g (x t) = w t) ∧ (∀ ξ ∉ Ioo (x a) (x b), g ξ = 0) ∧
+    StrictMonoOn x (Icc a b) ∧ ∃ g : C(ℝ, W), (∀ t ∈ Icc a b, g (x t) = w t) ∧
+      (∀ ξ ∉ Ioo (x a) (x b), g ξ = 0) ∧
       ∀ ξ ∈ Icc (x a) (x b), ‖g ξ‖ ≤ ε * min (ξ - x a) (x b - ξ) := by
   have hxc : ContinuousOn x (Icc a b) := fun t ht ↦ (hx t ht).continuousWithinAt
   have hwc : ContinuousOn w (Icc a b) := fun t ht ↦ (hw t ht).continuousWithinAt
@@ -135,7 +142,7 @@ theorem exists_continuousMap_comp_eq_of_norm_deriv_le_mul_deriv {x x' : ℝ → 
   have hg : ∀ t ∈ Icc a b, g (x t) = w t := fun t ht ↦ by
     simp only [g, ContinuousMap.coe_mk, projIcc_of_mem hxab (hmaps ht), ← he t ht,
       e.symm_apply_apply]
-  refine ⟨g, hg, fun ξ hξ ↦ ?_, fun ξ hξ ↦ ?_⟩
+  refine ⟨hmono, g, hg, fun ξ hξ ↦ ?_, fun ξ hξ ↦ ?_⟩
   · simp only [mem_Ioo, not_and_or, not_lt] at hξ
     rcases hξ with hξ | hξ
     · simp only [g, ContinuousMap.coe_mk, projIcc_of_le_left hxab hξ,
@@ -151,6 +158,49 @@ theorem exists_continuousMap_comp_eq_of_norm_deriv_le_mul_deriv {x x' : ℝ → 
         ht ⟨ht.2, le_rfl⟩
     rw [hg t ht]
     rcases min_cases (x t - x a) (x b - x t) with ⟨h, -⟩ | ⟨h, -⟩ <;> rw [h] <;> assumption
+
+/-- If `φ u = 1`, `‖φ‖ = ‖u‖⁻¹` and `‖h • v - u‖ ≤ θ ‖u‖`, then `1 - θ ≤ h φ v`. -/
+private lemma one_sub_le_mul_of_norm_smul_sub_le {φ : StrongDual ℝ E} {u v : E} {h θ : ℝ}
+    (hφu : φ u = 1) (hφ : ‖φ‖ = ‖u‖⁻¹) (hv : ‖h • v - u‖ ≤ θ * ‖u‖) : 1 - θ ≤ h * φ v := by
+  have hu0 : 0 < ‖u‖ := norm_pos_iff.2 fun hu ↦ by simp [hu] at hφu
+  have h₁ : |φ (h • v - u)| ≤ ‖u‖⁻¹ * ‖h • v - u‖ := by
+    simpa [Real.norm_eq_abs, hφ] using φ.le_opNorm (h • v - u)
+  have h₂ : ‖u‖⁻¹ * ‖h • v - u‖ ≤ θ := by
+    rw [inv_mul_le_iff₀ hu0, mul_comm]
+    exact hv
+  rw [map_sub, map_smul, hφu, smul_eq_mul] at h₁
+  linarith [neg_abs_le (h * φ v - 1)]
+
+/-- If `φ u = 1`, `‖φ‖ = ‖u‖⁻¹` and `‖h • v - u‖ ≤ θ ‖u‖` with `h > 0` and `θ < 1`, then the
+component `v - φ v • u` of `v` in the kernel of `φ` is at most `2θ / (1 - θ) · ‖u‖ · φ v`. -/
+private lemma norm_sub_smul_le_of_norm_smul_sub_le {φ : StrongDual ℝ E} {u v : E} {h θ : ℝ}
+    (hφu : φ u = 1) (hφ : ‖φ‖ = ‖u‖⁻¹) (hh : 0 < h) (hθ : θ < 1)
+    (hv : ‖h • v - u‖ ≤ θ * ‖u‖) : ‖v - φ v • u‖ ≤ 2 * θ / (1 - θ) * ‖u‖ * φ v := by
+  have hlow := one_sub_le_mul_of_norm_smul_sub_le hφu hφ hv
+  have h1θ : 0 < 1 - θ := sub_pos.2 hθ
+  have hpos : 0 < φ v := pos_of_mul_pos_right (h1θ.trans_le hlow) hh.le
+  -- `h • (v - φ v • u) = r - φ r • u` with `r = h • v - u`, since `φ u = 1`.
+  have hr : h * ‖v - φ v • u‖ ≤ 2 * θ * ‖u‖ := by
+    have hφr : |φ (h • v - u)| ≤ ‖u‖⁻¹ * ‖h • v - u‖ := by
+      simpa [Real.norm_eq_abs, hφ] using φ.le_opNorm (h • v - u)
+    have hsplit : h • (v - φ v • u) = h • v - u - φ (h • v - u) • u := by
+      rw [map_sub, map_smul, hφu, smul_eq_mul, smul_sub, sub_smul, mul_smul, one_smul]
+      abel
+    rw [← Real.norm_of_nonneg hh.le, ← norm_smul, hsplit]
+    calc ‖h • v - u - φ (h • v - u) • u‖ ≤ ‖h • v - u‖ + |φ (h • v - u)| * ‖u‖ := by
+          refine (norm_sub_le _ _).trans ?_
+          rw [norm_smul, Real.norm_eq_abs]
+      _ ≤ θ * ‖u‖ + ‖u‖⁻¹ * (θ * ‖u‖) * ‖u‖ := by
+          gcongr
+          exact hφr.trans (by gcongr)
+      _ = 2 * θ * ‖u‖ := by
+          have hu0 : ‖u‖ ≠ 0 := norm_ne_zero_iff.2 fun hu ↦ by simp [hu] at hφu
+          field_simp; ring
+  rw [div_mul_eq_mul_div, div_mul_eq_mul_div, le_div_iff₀ h1θ]
+  calc ‖v - φ v • u‖ * (1 - θ) ≤ ‖v - φ v • u‖ * (h * φ v) :=
+        mul_le_mul_of_nonneg_left hlow (norm_nonneg _)
+    _ = h * ‖v - φ v • u‖ * φ v := by ring
+    _ ≤ 2 * θ * ‖u‖ * φ v := mul_le_mul_of_nonneg_right hr hpos.le
 
 /-- An arc of a curve whose velocity stays close to the direction of its chord is a graph over
 the chord. Let `u = γ b - γ a ≠ 0` and suppose `‖(b - a) • γ' t - u‖ ≤ θ ‖u‖` on `[a, b)` with
@@ -170,9 +220,6 @@ theorem exists_graph_over_chord_of_norm_smul_deriv_sub_sub_le {γ γ' : ℝ → 
   have hab' : a < b := hab.lt_of_ne fun h ↦ hu (h ▸ rfl)
   set u := γ b - γ a with hu_def
   have hu0 : 0 < ‖u‖ := norm_pos_iff.2 (sub_ne_zero.2 hu)
-  have hθ0 : 0 ≤ θ := by
-    have := (norm_nonneg _).trans (hclose a (left_mem_Ico.2 hab'))
-    exact nonneg_of_mul_nonneg_left this hu0
   -- The functional `φ`, normalized by `φ u = 1`, and the projection `P` onto its kernel along `u`.
   obtain ⟨φ₀, hφ₀, hφ₀u⟩ := exists_dual_vector ℝ u hu0.ne'
   set φ : StrongDual ℝ E := ‖u‖⁻¹ • φ₀ with hφ_def
@@ -180,8 +227,6 @@ theorem exists_graph_over_chord_of_norm_smul_deriv_sub_sub_le {γ γ' : ℝ → 
     simp [φ, hφ₀u, inv_mul_cancel₀ hu0.ne']
   have hφnorm : ‖φ‖ = ‖u‖⁻¹ := by
     rw [hφ_def, norm_smul, hφ₀, mul_one, norm_inv, norm_norm]
-  have hφle : ∀ z, |φ z| ≤ ‖u‖⁻¹ * ‖z‖ := fun z ↦ by
-    simpa [Real.norm_eq_abs, hφnorm] using φ.le_opNorm z
   have hright : Function.RightInverse (ContinuousLinearMap.toSpanSingleton ℝ u) φ := fun r ↦ by
     simp [hφu]
   set P := φ.projKerOfRightInverse _ hright
@@ -195,50 +240,35 @@ theorem exists_graph_over_chord_of_norm_smul_deriv_sub_sub_le {γ γ' : ℝ → 
     fun t ht ↦ φ.hasFDerivAt.comp_hasDerivWithinAt t ((hγ t ht).sub_const (γ a))
   have hw : ∀ t ∈ Icc a b, HasDerivWithinAt (fun t ↦ P (γ t - γ a)) (P (γ' t)) (Icc a b) t :=
     fun t ht ↦ P.hasFDerivAt.comp_hasDerivWithinAt t ((hγ t ht).sub_const (γ a))
-  have hlow : ∀ t ∈ Ico a b, 1 - θ ≤ (b - a) * φ (γ' t) := fun t ht ↦ by
-    have h := hφle ((b - a) • γ' t - u)
-    rw [map_sub, map_smul, hφu, smul_eq_mul] at h
-    have h' : ‖u‖⁻¹ * ‖(b - a) • γ' t - u‖ ≤ θ := by
-      rw [inv_mul_le_iff₀ hu0, mul_comm]
-      exact hclose t ht
-    linarith [neg_abs_le ((b - a) * φ (γ' t) - 1)]
   have hba : 0 < b - a := sub_pos.2 hab'
   have hpos : ∀ t ∈ Ico a b, 0 < φ (γ' t) := fun t ht ↦
-    pos_of_mul_pos_right ((sub_pos.2 hθ).trans_le (hlow t ht)) hba.le
+    pos_of_mul_pos_right ((sub_pos.2 hθ).trans_le
+      (one_sub_le_mul_of_norm_smul_sub_le hφu hφnorm (hclose t ht))) hba.le
   have hbound : ∀ t ∈ Ico a b, ‖P (γ' t)‖ ≤ 2 * θ / (1 - θ) * ‖u‖ * φ (γ' t) := fun t ht ↦ by
-    -- `(b - a) • P (γ' t) = P r` with `r = (b - a) • γ' t - u`, since `P u = 0`.
-    have hr : ‖(b - a) • (P (γ' t) : E)‖ ≤ 2 * θ * ‖u‖ := by
-      have hPr : (b - a) • (P (γ' t) : E) = P ((b - a) • γ' t - u) := by
-        rw [map_sub, map_smul, hPu, sub_zero, Submodule.coe_smul]
-      rw [hPr, hP]
-      calc ‖(b - a) • γ' t - u - φ ((b - a) • γ' t - u) • u‖
-          ≤ ‖(b - a) • γ' t - u‖ + |φ ((b - a) • γ' t - u)| * ‖u‖ := by
-            refine (norm_sub_le _ _).trans ?_
-            rw [norm_smul, Real.norm_eq_abs]
-        _ ≤ θ * ‖u‖ + ‖u‖⁻¹ * (θ * ‖u‖) * ‖u‖ := by
-            gcongr
-            · exact hclose t ht
-            · exact (hφle _).trans (by gcongr; exact hclose t ht)
-        _ = 2 * θ * ‖u‖ := by field_simp; ring
-    rw [norm_smul, Real.norm_of_nonneg hba.le, Submodule.norm_coe] at hr
-    have h1θ : 0 < 1 - θ := sub_pos.2 hθ
-    rw [div_mul_eq_mul_div, div_mul_eq_mul_div, le_div_iff₀ h1θ]
-    calc ‖P (γ' t)‖ * (1 - θ) ≤ ‖P (γ' t)‖ * ((b - a) * φ (γ' t)) :=
-          mul_le_mul_of_nonneg_left (hlow t ht) (norm_nonneg _)
-      _ = (b - a) * ‖P (γ' t)‖ * φ (γ' t) := by ring
-      _ ≤ 2 * θ * ‖u‖ * φ (γ' t) := mul_le_mul_of_nonneg_right hr (hpos t ht).le
-  obtain ⟨g, hg, hg0, hgb⟩ := exists_continuousMap_comp_eq_of_norm_deriv_le_mul_deriv hab hx hw
-    (fun t ht ↦ hpos t (Ioo_subset_Ico_self ht)) hbound (by simp [P]) (by rw [← hu_def, hPu])
+    rw [← Submodule.norm_coe, hP]
+    exact norm_sub_smul_le_of_norm_smul_sub_le hφu hφnorm hba hθ (hclose t ht)
+  obtain ⟨hmono, g, hg, hg0, hgb⟩ := exists_continuousMap_comp_eq_of_norm_deriv_le_mul_deriv hab
+    hx hw (fun t ht ↦ hpos t (Ioo_subset_Ico_self ht)) hbound (by simp [P])
+    (by rw [← hu_def, hPu])
   simp only [sub_self, map_zero, ← hu_def, hφu, sub_zero] at hg0 hgb
-  refine ⟨φ, hφu, hφnorm, ?_, g, hg0, hgb, fun t ht ↦ ?_⟩
-  · refine strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc a b) (fun t ht ↦
-      (φ.continuous.comp_continuousOn (fun t ht ↦ (hγ t ht).continuousWithinAt)) t ht)
-      (fun t ht ↦ ?_) (fun t ht ↦ hpos t (Ioo_subset_Ico_self (by rwa [interior_Icc] at ht)))
-    rw [interior_Icc] at ht ⊢
-    exact (φ.hasFDerivAt.comp_hasDerivWithinAt t (hγ t (Ioo_subset_Icc_self ht))).mono
-      Ioo_subset_Icc_self
+  refine ⟨φ, hφu, hφnorm, fun s hs t ht hst ↦ ?_, g, hg0, hgb, fun t ht ↦ ?_⟩
+  · simpa only [map_sub, sub_lt_sub_iff_right] using hmono hs ht hst
   · rw [hg t ht, hP]
     abel
+
+/-- The chord of a curve whose velocity stays within `η` of `v` on `[a, b]` is within
+`η (b - a)` of `(b - a) • v`: apply the mean value inequality to `s ↦ γ s - s • v`. -/
+private lemma norm_sub_sub_smul_le_of_norm_deriv_sub_le {γ : ℝ → E} {v : E} {a b η : ℝ}
+    (hab : a ≤ b) (hγ : Differentiable ℝ γ) (hclose : ∀ s ∈ Icc a b, ‖deriv γ s - v‖ ≤ η) :
+    ‖γ b - γ a - (b - a) • v‖ ≤ η * (b - a) := by
+  have := norm_image_sub_le_of_norm_deriv_le_segment' (f := γ - fun s ↦ s • v)
+    (f' := fun s ↦ deriv γ s - v) (fun s _ ↦ by
+      simpa only [one_smul] using
+        ((hγ s).hasDerivAt.sub ((hasDerivAt_id' s).smul_const v)).hasDerivWithinAt)
+    (fun s hs ↦ hclose s (Ico_subset_Icc_self hs)) b (right_mem_Icc.2 hab)
+  convert this using 2
+  simp only [Pi.sub_apply, sub_smul]
+  abel
 
 end TauCeti
 
@@ -258,67 +288,56 @@ theorem exists_norm_smul_deriv_sub_sub_le (hγ : ContDiff ℝ 1 γ) (hderiv : �
   · exact ⟨1, one_pos, fun a ha ↦ absurd (ha.1.trans ha.2) (not_le.2 hdc)⟩
   have hcont : Continuous (deriv γ) := hγ.continuous_deriv_one
   have hdiff : Differentiable ℝ γ := hγ.differentiable (by norm_num)
-  -- A lower bound `m > 0` for `‖γ'‖` and a modulus of uniform continuity of `γ'` on `[c, d + 1]`.
+  -- A lower bound `m > 0` for `‖γ'‖` and a modulus of uniform continuity of `γ'` on `[c, d + 1]`,
+  -- for the tolerance `η = κ m`.
   obtain ⟨t₀, -, ht₀⟩ := isCompact_Icc.exists_isMinOn (nonempty_Icc.2 (by linarith : c ≤ d + 1))
     hcont.norm.continuousOn
   set m := ‖deriv γ t₀‖
   have hm : 0 < m := norm_pos_iff.2 (hderiv t₀)
-  set η := min θ 1 * m / 4 with hη_def
-  have hη : 0 < η := by positivity
+  set κ := min (θ / 4) (1 / 2)
+  have hκ : 0 < κ := by positivity
+  have hκθ : κ ≤ θ / 4 := min_le_left _ _
+  have hκ2 : κ ≤ 1 / 2 := min_le_right _ _
   obtain ⟨δ₀, hδ₀, hunif⟩ := Metric.uniformContinuousOn_iff.1
     ((isCompact_Icc (a := c) (b := d + 1)).uniformContinuousOn_of_continuous hcont.continuousOn)
-    η hη
+    (κ * m) (by positivity)
   refine ⟨min (δ₀ / 2) 1, by positivity, fun a ha b hb t ht ↦ ?_⟩
   have hδ₁ : min (δ₀ / 2) 1 ≤ δ₀ / 2 := min_le_left _ _
   have hδ₂ : min (δ₀ / 2) 1 ≤ 1 := min_le_right _ _
   set h := b - a
   have hh : 0 < h := sub_pos.2 hb.1
-  have hhδ : h ≤ min (δ₀ / 2) 1 := by simp only [h]; linarith [hb.2]
   set v := deriv γ a
-  have hclose : ∀ s ∈ Icc a b, ‖deriv γ s - v‖ ≤ η := fun s hs ↦ by
-    have := hunif s ⟨ha.1.trans hs.1, by linarith [hs.2, ha.2]⟩ a ⟨ha.1, by linarith [ha.2]⟩
-      (by rw [Real.dist_eq, abs_of_nonneg (by linarith [hs.1])]; linarith [hs.2])
+  have hclose : ∀ s ∈ Icc a b, ‖deriv γ s - v‖ ≤ κ * m := fun s hs ↦ by
+    have := hunif s ⟨ha.1.trans hs.1, by linarith [hs.2, hb.2, ha.2]⟩ a ⟨ha.1, by linarith [ha.2]⟩
+      (by rw [Real.dist_eq, abs_of_nonneg (by linarith [hs.1])]; linarith [hs.2, hb.2])
     rw [dist_eq_norm] at this
     exact this.le
-  -- The chord is within `η h` of `h • γ' a`, by the mean value inequality for `γ s - s • γ' a`.
-  have hmvt : ‖γ b - γ a - h • v‖ ≤ η * h := by
-    have := norm_image_sub_le_of_norm_deriv_le_segment' (f := γ - fun s ↦ s • v)
-      (f' := fun s ↦ deriv γ s - v) (fun s _ ↦ by
-        simpa only [one_smul] using
-          ((hdiff s).hasDerivAt.sub ((hasDerivAt_id' s).smul_const v)).hasDerivWithinAt)
-      (fun s hs ↦ hclose s (Ico_subset_Icc_self hs)) b (right_mem_Icc.2 hb.1.le)
-    convert this using 2
-    simp only [Pi.sub_apply, h, sub_smul]
-    abel
-  have hv : m ≤ ‖v‖ := ht₀ ⟨ha.1, by linarith [ha.2]⟩
-  have hu : h * m - η * h ≤ ‖γ b - γ a‖ := by
+  -- The chord `u = γ b - γ a` is within `κ m h` of `h • γ' a`, so `‖u‖ ≥ (1 - κ) h m`, while the
+  -- left-hand side is at most `2 κ m h`. The choice `κ ≤ θ / 4`, `κ ≤ 1 / 2` gives
+  -- `2 κ ≤ θ / 2 ≤ θ (1 - κ)`.
+  have hmvt : ‖γ b - γ a - h • v‖ ≤ κ * m * h :=
+    TauCeti.norm_sub_sub_smul_le_of_norm_deriv_sub_le hb.1.le hdiff hclose
+  have hv : h * m ≤ h * ‖v‖ := mul_le_mul_of_nonneg_left (ht₀ ⟨ha.1, by linarith [ha.2]⟩) hh.le
+  have hu : (1 - κ) * (h * m) ≤ ‖γ b - γ a‖ := by
     have h1 : ‖h • v‖ ≤ ‖γ b - γ a‖ + ‖γ b - γ a - h • v‖ := by
       simpa only [norm_sub_rev (h • v)] using norm_le_norm_add_norm_sub' (h • v) (γ b - γ a)
     rw [norm_smul, Real.norm_of_nonneg hh.le] at h1
-    nlinarith
+    linarith
   have hsplit : (b - a) • deriv γ t - (γ b - γ a) = h • (deriv γ t - v) - (γ b - γ a - h • v) := by
     simp only [h, smul_sub]
     abel
+  have hκ' : 2 * κ ≤ θ * (1 - κ) := by nlinarith
   rw [hsplit]
-  have hθm : min θ 1 ≤ θ := min_le_left _ _
-  have hθ1 : min θ 1 ≤ 1 := min_le_right _ _
   calc ‖h • (deriv γ t - v) - (γ b - γ a - h • v)‖
-      ≤ h * η + η * h := by
+      ≤ h * (κ * m) + κ * m * h := by
         refine (norm_sub_le _ _).trans (add_le_add ?_ hmvt)
         rw [norm_smul, Real.norm_of_nonneg hh.le]
         exact mul_le_mul_of_nonneg_left (hclose t ht) hh.le
-    _ ≤ min θ 1 * (h * m - η * h) := by
-        have hθ0 : 0 ≤ min θ 1 := by positivity
-        have key : 0 ≤ min θ 1 * (h * m) * (1 / 2 - min θ 1 / 4) :=
-          mul_nonneg (mul_nonneg hθ0 (mul_pos hh hm).le) (by linarith)
-        have : min θ 1 * (h * m - η * h) - (h * η + η * h) =
-            min θ 1 * (h * m) * (1 / 2 - min θ 1 / 4) := by
-          rw [hη_def]; ring
-        linarith
+    _ = 2 * κ * (h * m) := by ring
+    _ ≤ θ * (1 - κ) * (h * m) := mul_le_mul_of_nonneg_right hκ' (mul_pos hh hm).le
     _ ≤ θ * ‖γ b - γ a‖ := by
-        refine mul_le_mul hθm hu ?_ hθ.le
-        rw [hη_def]
-        nlinarith [mul_pos hh hm]
+        rw [mul_assoc]
+        exact mul_le_mul_of_nonneg_left hu hθ.le
 
 /-- Short arcs of a `C¹` curve with nowhere vanishing derivative are graphs over their chords,
 with uniformly small slope. For every `ε > 0` there is `δ > 0` such that, whenever `a` lies in a
@@ -359,5 +378,17 @@ theorem exists_graph_over_chord (hγ : ContDiff ℝ 1 γ) (hderiv : ∀ t, deriv
     rw [div_le_iff₀ (by linarith)]
     nlinarith
   exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hslope (norm_nonneg _)) hmin
+
+/-- A `C¹` curve with nowhere vanishing derivative is strictly increasing after a suitable
+continuous linear functional on every window `[s, s + δ]` of a uniform width `δ > 0`, for starting
+parameters `s` in a compact interval `[a, b]`: take the functional normalized on the chord from
+`γ s` to `γ (s + δ)` given by `ContDiff.exists_graph_over_chord`. -/
+theorem exists_strictMonoOn_dual_comp (hγ : ContDiff ℝ 1 γ) (hderiv : ∀ t, deriv γ t ≠ 0)
+    (a b : ℝ) :
+    ∃ δ > 0, ∀ s ∈ Icc a b, ∃ φ : StrongDual ℝ E,
+      StrictMonoOn (fun t ↦ φ (γ t)) (Icc s (s + δ)) := by
+  obtain ⟨δ, hδ, h⟩ := hγ.exists_graph_over_chord hderiv a b one_pos
+  exact ⟨δ, hδ, fun s hs ↦
+    (h s hs (s + δ) ⟨lt_add_of_pos_right s hδ, le_rfl⟩).imp fun _ hφ ↦ hφ.2.2.1⟩
 
 end ContDiff
