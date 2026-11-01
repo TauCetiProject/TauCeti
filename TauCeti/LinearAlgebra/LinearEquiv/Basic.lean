@@ -12,7 +12,8 @@ public import Mathlib.Algebra.Module.Equiv.Basic
 # Elementary linear-equivalence transport
 
 Transport of submodule stability through an intertwining linear equivalence.
-Symmetry of a linear automorphism agrees with inversion in its group structure.
+Symmetry of a linear automorphism agrees with inversion in its group structure, and a linear
+automorphism carries a set onto itself exactly when it and its inverse map the set into itself.
 -/
 
 public section
@@ -22,6 +23,14 @@ namespace LinearEquiv
 /-- Symmetry of a linear automorphism is its group inverse. -/
 theorem symm_eq_inv {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
     (e : V ≃ₗ[R] V) : e.symm = e⁻¹ := rfl
+
+/-- A linear automorphism carries a set onto itself exactly when it and its inverse map the set
+into itself. -/
+theorem forall_apply_mem_iff_iff_mapsTo {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] (g : M ≃ₗ[R] M) (s : Set M) :
+    (∀ x, g x ∈ s ↔ x ∈ s) ↔ Set.MapsTo g s s ∧ Set.MapsTo ⇑(g⁻¹) s s :=
+  ⟨fun h ↦ ⟨fun x hx ↦ (h x).mpr hx, fun x hx ↦ (h _).mp (by simpa using hx)⟩,
+    fun ⟨h, hinv⟩ x ↦ ⟨fun hx ↦ by simpa using hinv hx, fun hx ↦ h hx⟩⟩
 
 /-- Transport stability of a mapped submodule through an intertwining linear equivalence. -/
 theorem mem_of_preserves_map

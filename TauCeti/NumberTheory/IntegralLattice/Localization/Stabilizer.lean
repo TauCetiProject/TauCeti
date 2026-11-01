@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Norm
 public import TauCeti.NumberTheory.IntegralLattice.Localization.Basic
 public import TauCeti.NumberTheory.QuadraticForm.OrthogonalGroup.Integral.CompactOpen
 import TauCeti.LinearAlgebra.Basis.RangeSpan
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 import TauCeti.NumberTheory.Padics.RatCast
 
 /-!
@@ -88,14 +89,6 @@ variable {V : Type*} [AddCommGroup V] [Module ℚ V] (L : IntegralLattice V)
 
 section Stabilizer
 
-/-- A linear automorphism carries a set onto itself exactly when it and its inverse map the set
-into itself. -/
-private theorem forall_apply_mem_iff_iff_mapsTo {R M : Type*} [Semiring R] [AddCommMonoid M]
-    [Module R M] (g : M ≃ₗ[R] M) (s : Set M) :
-    (∀ x, g x ∈ s ↔ x ∈ s) ↔ Set.MapsTo g s s ∧ Set.MapsTo ⇑(g⁻¹) s s :=
-  ⟨fun h ↦ ⟨fun x hx ↦ (h x).mpr hx, fun x hx ↦ (h _).mp (by simpa using hx)⟩,
-    fun ⟨h, hinv⟩ x ↦ ⟨fun hx ↦ by simpa using hinv hx, fun hx ↦ h hx⟩⟩
-
 variable (p : ℕ) [Fact p.Prime]
 
 /-- **The local stabilizer** `K_p(L)` of an integral lattice at a prime `p`: the isometries of the
@@ -136,8 +129,8 @@ theorem localStabilizer_eq_integralOrthogonalSubgroup {ι : Type*} [Fintype ι] 
     exact forall_congr' fun i ↦ ⟨fun ⟨a, ha⟩ ↦ ha ▸ a.2, fun h ↦ ⟨⟨_, h⟩, rfl⟩⟩
   ext g
   rw [mem_localStabilizer_iff, mem_integralOrthogonalSubgroup_iff_mem_span]
-  refine (forall_apply_mem_iff_iff_mapsTo _ (LinearMap.range (L.localizationToCompletion p) :
-    Set (ℚ_[p] ⊗[ℚ] V))).trans ?_
+  refine (LinearEquiv.forall_apply_mem_iff_iff_mapsTo _
+    (LinearMap.range (L.localizationToCompletion p) : Set (ℚ_[p] ⊗[ℚ] V))).trans ?_
   rw [← hspan]
   rfl
 
@@ -200,7 +193,7 @@ theorem forall_orthogonalGroupBaseChange_mem_localStabilizer_iff (g : orthogonal
       Set.MapsTo (g : V ≃ₗ[ℚ] V).toLinearMap L.carrier L.carrier ∧
         Set.MapsTo ((g⁻¹ : orthogonalGroup L.norm) : V ≃ₗ[ℚ] V).toLinearMap L.carrier
           L.carrier :=
-    forall_apply_mem_iff_iff_mapsTo _ _
+    LinearEquiv.forall_apply_mem_iff_iff_mapsTo _ _
   rw [hglob, hint, hint]
   -- A rational number is an integer exactly when it is a `p`-adic integer at every prime.
   simp only [hloc, forall_and, forall_comm (α := Nat.Primes),
