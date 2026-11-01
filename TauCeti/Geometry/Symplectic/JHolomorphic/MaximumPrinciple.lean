@@ -28,31 +28,33 @@ Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu`. For such a curve the function
 `Δ(ρ ∘ u) = dα(∂ₛu, ∂ₜu) = dα(∂ₛu, J ∂ₛu)`,
 
 where `dα(v, w) = Dα(v)(w) - Dα(w)(v)` is the exterior derivative of `α`
-(`TauCeti.laplacian_comp_eq_of_fderiv_comp_eq_neg`). When `dα` tames `J`, that is
+(`TauCeti.laplacian_comp_jHolomorphic_eq_of_fderiv_comp_eq_neg`). When `dα` tames `J`, that is
 `dα(v, J v) ≥ 0`, the function `ρ ∘ u` is subharmonic
-(`TauCeti.laplacian_comp_nonneg_of_fderiv_comp_eq_neg`).
+(`TauCeti.laplacian_comp_jHolomorphic_nonneg_of_fderiv_comp_eq_neg`).
 
 The weak maximum principle then confines `J`-holomorphic curves: if the conditions above hold on
 the region `{ρ > R}`, a curve on a compact domain whose boundary is mapped into `{ρ ≤ R}` lies
-entirely in `{ρ ≤ R}` (`TauCeti.comp_le_of_comp_le_frontier`). Applied to large rectangles, the
-same holds for a strip `ℝ × [0, 1]` which maps its two boundary lines and its two ends
-`|ℜ z| ≥ T` into `{ρ ≤ R}` (`TauCeti.comp_le_of_comp_le_strip_frontier`). This is the no-escape
-argument for Floer strips in an exact symplectic manifold with a cylindrical end: a strip with
-Lagrangian boundary conditions in `{ρ ≤ R}` whose ends converge uniformly to chords in `{ρ < R}`
-satisfies these hypotheses, and so stays in `{ρ ≤ R}`.
+entirely in `{ρ ≤ R}` (`TauCeti.jHolomorphic_comp_le_of_comp_le_frontier`). Applied to large
+rectangles, the same holds for a strip `ℝ × [0, 1]` which maps its two boundary lines and its two
+ends `|ℜ z| ≥ T` into `{ρ ≤ R}`
+(`TauCeti.jHolomorphic_strip_comp_le_of_comp_le_frontier_of_comp_le_ends`).
 
-The statements are in local coordinates, with `ρ`, `α` and `J` on the model space `V`.
+The statements are in local coordinates, with `ρ`, `α` and `J` on the model space `V`, and cover
+only unperturbed `J`-holomorphic curves: `J` depends on the point of `V` but not on the point of
+the domain, and the equation carries no Hamiltonian term. Floer strips with a domain-dependent
+`J` or a Hamiltonian perturbation, and the passage from a manifold to local coordinates, are not
+treated here.
 
 ## Main results
 
-* `TauCeti.laplacian_comp_eq_of_fderiv_comp_eq_neg`: `Δ(ρ ∘ u) = dα(∂ₛu, ∂ₜu)` for a
+* `TauCeti.laplacian_comp_jHolomorphic_eq_of_fderiv_comp_eq_neg`: `Δ(ρ ∘ u) = dα(∂ₛu, ∂ₜu)` for a
   `J`-holomorphic curve when `dρ ∘ J = -α`.
-* `TauCeti.laplacian_comp_nonneg_of_fderiv_comp_eq_neg`: if moreover `dα` tames `J`, then
-  `ρ ∘ u` is subharmonic.
-* `TauCeti.comp_le_of_comp_le_frontier`: a `J`-holomorphic curve on a compact domain with
-  boundary in `{ρ ≤ R}` lies in `{ρ ≤ R}`.
-* `TauCeti.comp_le_of_comp_le_strip_frontier`: the same for a strip whose boundary lines and ends
-  lie in `{ρ ≤ R}`.
+* `TauCeti.laplacian_comp_jHolomorphic_nonneg_of_fderiv_comp_eq_neg`: if moreover `dα` tames `J`,
+  then `ρ ∘ u` is subharmonic.
+* `TauCeti.jHolomorphic_comp_le_of_comp_le_frontier`: a `J`-holomorphic curve on a compact domain
+  with boundary in `{ρ ≤ R}` lies in `{ρ ≤ R}`.
+* `TauCeti.jHolomorphic_strip_comp_le_of_comp_le_frontier_of_comp_le_ends`: the same for a strip
+  whose boundary lines and ends lie in `{ρ ≤ R}`.
 
 ## References
 
@@ -78,7 +80,7 @@ at `u z`. Then
 `Δ(ρ ∘ u)(z) = Dα(∂ₛu)(∂ₜu) - Dα(∂ₜu)(∂ₛu)`,
 
 the exterior derivative `dα` evaluated on `(∂ₛu, ∂ₜu)`. -/
-theorem laplacian_comp_eq_of_fderiv_comp_eq_neg (hu : ContDiffAt ℝ 2 u z)
+theorem laplacian_comp_jHolomorphic_eq_of_fderiv_comp_eq_neg (hu : ContDiffAt ℝ 2 u z)
     (hCR : ∀ᶠ y in 𝓝 z, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1))
     (hρ : ContDiffAt ℝ 2 ρ (u z)) (hα : DifferentiableAt ℝ α (u z))
     (hJsq : ∀ᶠ x in 𝓝 (u z), ∀ v, J x (J x v) = -v)
@@ -132,16 +134,16 @@ theorem laplacian_comp_eq_of_fderiv_comp_eq_neg (hu : ContDiffAt ℝ 2 u z)
   abel
 
 /-- **The radial coordinate is subharmonic along a `J`-holomorphic curve.** Under the hypotheses
-of `TauCeti.laplacian_comp_eq_of_fderiv_comp_eq_neg`, if the exterior derivative `dα` tames `J`
-at `u z`, that is `dα(v, J v) ≥ 0` for every `v`, then `Δ(ρ ∘ u)(z) ≥ 0`. -/
-theorem laplacian_comp_nonneg_of_fderiv_comp_eq_neg (hu : ContDiffAt ℝ 2 u z)
+of `TauCeti.laplacian_comp_jHolomorphic_eq_of_fderiv_comp_eq_neg`, if the exterior derivative
+`dα` tames `J` at `u z`, that is `dα(v, J v) ≥ 0` for every `v`, then `Δ(ρ ∘ u)(z) ≥ 0`. -/
+theorem laplacian_comp_jHolomorphic_nonneg_of_fderiv_comp_eq_neg (hu : ContDiffAt ℝ 2 u z)
     (hCR : ∀ᶠ y in 𝓝 z, fderiv ℝ u y I = J (u y) (fderiv ℝ u y 1))
     (hρ : ContDiffAt ℝ 2 ρ (u z)) (hα : DifferentiableAt ℝ α (u z))
     (hJsq : ∀ᶠ x in 𝓝 (u z), ∀ v, J x (J x v) = -v)
     (hρJ : ∀ᶠ x in 𝓝 (u z), (fderiv ℝ ρ x).comp (J x) = -α x)
     (htame : ∀ v, 0 ≤ fderiv ℝ α (u z) v (J (u z) v) - fderiv ℝ α (u z) (J (u z) v) v) :
     0 ≤ Δ (ρ ∘ u) z := by
-  rw [laplacian_comp_eq_of_fderiv_comp_eq_neg hu hCR hρ hα hJsq hρJ, hCR.self_of_nhds]
+  rw [laplacian_comp_jHolomorphic_eq_of_fderiv_comp_eq_neg hu hCR hρ hα hJsq hρJ, hCR.self_of_nhds]
   exact htame _
 
 /-- **The maximum principle for `J`-holomorphic curves in a cylindrical end.** Suppose that on
@@ -149,7 +151,7 @@ the region `{ρ > R}` the function `ρ` is `C²`, the one-form `α` is different
 square to `-1`, `dρ ∘ J = -α`, and `dα` tames `J`. Let `K ⊆ ℂ` be compact and `u` be `C²` and
 `J`-holomorphic on the interior of `K`, with `ρ ∘ u` continuous on `K`. If `u` maps the frontier
 of `K` into `{ρ ≤ R}`, then it maps all of `K` into `{ρ ≤ R}`. -/
-theorem comp_le_of_comp_le_frontier {R : ℝ} {K : Set ℂ} (hK : IsCompact K)
+theorem jHolomorphic_comp_le_of_comp_le_frontier {R : ℝ} {K : Set ℂ} (hK : IsCompact K)
     (hf : ContinuousOn (ρ ∘ u) K) (hu : ∀ z ∈ interior K, ContDiffAt ℝ 2 u z)
     (hCR : ∀ z ∈ interior K, fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
     (hρ : ∀ x, R < ρ x → ContDiffAt ℝ 2 ρ x)
@@ -158,41 +160,15 @@ theorem comp_le_of_comp_le_frontier {R : ℝ} {K : Set ℂ} (hK : IsCompact K)
     (hρJ : ∀ x, R < ρ x → (fderiv ℝ ρ x).comp (J x) = -α x)
     (htame : ∀ x, R < ρ x → ∀ v, 0 ≤ fderiv ℝ α x v (J x v) - fderiv ℝ α x (J x v) v)
     (hbdry : ∀ z ∈ frontier K, ρ (u z) ≤ R) (hz : z ∈ K) : ρ (u z) ≤ R := by
-  -- Apply the weak maximum principle to the compact superlevel set `K' = {ρ ∘ u ≥ R + ε}`, on
-  -- whose interior `ρ ∘ u` is subharmonic and on whose frontier `ρ ∘ u ≤ R + ε`.
-  refine le_of_forall_pos_le_add fun ε hε ↦ ?_
-  set K' := K ∩ (ρ ∘ u) ⁻¹' Ici (R + ε) with hK'
-  have hK'c : IsClosed K' := hf.preimage_isClosed_of_isClosed hK.isClosed isClosed_Ici
-  by_cases hzK' : z ∈ K'
-  swap
-  · simp only [hK', mem_inter_iff, hz, mem_preimage, Function.comp_apply, mem_Ici,
-      true_and, not_le] at hzK'
-    exact hzK'.le
-  -- Interior points of `K'` are interior points of `K` mapped into `{ρ > R}`.
-  have hint : ∀ w ∈ interior K', w ∈ interior K ∧ R < ρ (u w) := fun w hw ↦ by
-    have h : R + ε ≤ ρ (u w) := (interior_subset hw).2
-    exact ⟨interior_mono inter_subset_left hw, by linarith⟩
-  refine le_of_laplacian_nonneg_le_frontier (hK.of_isClosed_subset hK'c inter_subset_left)
-    (hf.mono inter_subset_left) (fun w hw ↦ ?_) (fun w hw ↦ ?_) (fun w hw ↦ ?_) hzK'
-  · obtain ⟨hwK, hRw⟩ := hint w hw
-    exact (hρ _ hRw).comp w (hu w hwK)
-  · obtain ⟨hwK, hRw⟩ := hint w hw
-    have hnhds : ∀ᶠ x in 𝓝 (u w), R < ρ x := (hρ _ hRw).continuousAt.eventually (lt_mem_nhds hRw)
-    exact laplacian_comp_nonneg_of_fderiv_comp_eq_neg (hu w hwK)
-      (eventually_of_mem (isOpen_interior.mem_nhds hwK) hCR) (hρ _ hRw) (hα _ hRw)
+  -- `ρ ∘ u` is subharmonic wherever it exceeds `R`, so the weak maximum principle above the level
+  -- `R` applies.
+  refine le_of_laplacian_nonneg_of_lt_le_frontier hK hf (fun w hw hRw ↦ ?_) (fun w hw hRw ↦ ?_)
+    (fun w hw ↦ hbdry w hw) hz
+  · exact (hρ _ hRw).comp w (hu w hw)
+  · have hnhds : ∀ᶠ x in 𝓝 (u w), R < ρ x := (hρ _ hRw).continuousAt.eventually (lt_mem_nhds hRw)
+    exact laplacian_comp_jHolomorphic_nonneg_of_fderiv_comp_eq_neg (hu w hw)
+      (eventually_of_mem (isOpen_interior.mem_nhds hw) hCR) (hρ _ hRw) (hα _ hRw)
       (hnhds.mono hJsq) (hnhds.mono hρJ) (htame _ hRw)
-  · have hwK' : w ∈ K' := hK'c.frontier_subset hw
-    by_contra hlt
-    rw [not_le, Function.comp_apply] at hlt
-    by_cases hwK : w ∈ frontier K
-    · linarith [hbdry w hwK]
-    -- Otherwise `w` is an interior point of `K` with `ρ (u w) > R + ε`, hence interior to `K'`.
-    have hwint : w ∈ interior K := by
-      by_contra hw'
-      exact hwK (hK.isClosed.frontier_eq ▸ ⟨hwK'.1, hw'⟩)
-    have hKw : K ∈ 𝓝 w := mem_interior_iff_mem_nhds.mp hwint
-    exact hw.2 (mem_interior_iff_mem_nhds.mpr (inter_mem hKw
-      ((hf.continuousAt hKw).preimage_mem_nhds (Ici_mem_nhds hlt))))
 
 /-- **No escape for strips.** Suppose that on the region `{ρ > R}` the function `ρ` is `C²`, the
 one-form `α` is differentiable, the maps `J` square to `-1`, `dρ ∘ J = -α`, and `dα` tames `J`.
@@ -200,7 +176,7 @@ Let `u` be `C²` and `J`-holomorphic on the open strip `ℝ × (0, 1)`, with `ρ
 the closed strip `ℝ × [0, 1]`. If `u` maps both boundary lines `ℑ z = 0` and `ℑ z = 1` into
 `{ρ ≤ R}`, and also the two ends `|ℜ z| ≥ T` of the strip for some `T`, then `u` maps the whole
 strip into `{ρ ≤ R}`. -/
-theorem comp_le_of_comp_le_strip_frontier {R T : ℝ}
+theorem jHolomorphic_strip_comp_le_of_comp_le_frontier_of_comp_le_ends {R T : ℝ}
     (hf : ContinuousOn (ρ ∘ u) (univ ×ℂ Icc 0 1))
     (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → ContDiffAt ℝ 2 u z)
     (hCR : ∀ z : ℂ, 0 < z.im → z.im < 1 → fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
@@ -216,8 +192,8 @@ theorem comp_le_of_comp_le_strip_frontier {R T : ℝ}
   set S := max T |z.re|
   have hS : 0 ≤ S := (abs_nonneg _).trans (le_max_right _ _)
   have hsub : Icc (-S) S ×ℂ Icc 0 1 ⊆ univ ×ℂ Icc 0 1 := fun w hw ↦ ⟨mem_univ _, hw.2⟩
-  refine comp_le_of_comp_le_frontier (isCompact_Icc.reProdIm isCompact_Icc) (hf.mono hsub)
-    (fun w hw ↦ ?_) (fun w hw ↦ ?_) hρ hα hJsq hρJ htame (fun w hw ↦ ?_)
+  refine jHolomorphic_comp_le_of_comp_le_frontier (isCompact_Icc.reProdIm isCompact_Icc)
+    (hf.mono hsub) (fun w hw ↦ ?_) (fun w hw ↦ ?_) hρ hα hJsq hρJ htame (fun w hw ↦ ?_)
     ⟨abs_le.mp (le_max_right _ _), hz₀, hz₁⟩
   · rw [interior_reProdIm, interior_Icc, interior_Icc] at hw
     exact hu w hw.2.1 hw.2.2
