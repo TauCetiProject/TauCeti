@@ -17,8 +17,10 @@ integral Weyl representative, so the integral conjugation equations give the sim
 reflection on the weight torus and the map from the positive simple-root subgroup to its opposite.
 
 These statements hold over all commutative 𝔽₂-algebras. They supply explicit normalizing
-points for transporting the numbered simple-root subgroups to other roots; no equality
-between the prime-field carrier and the scalar extension of the integral carrier is used.
+points for transporting the numbered simple-root subgroups to other roots. Their products
+`weylWordPoint` along words agree with the integral Weyl words and commute with change of
+coefficient algebra. No equality between the prime-field carrier and the scalar extension
+of the integral carrier is used.
 
 The formal inputs are `TauCeti.F4ShortRoot.simpleWeylPoint_conj_weightTorusPoints`
 and the matrix comparison for the named prime-field root subgroups.
@@ -103,6 +105,43 @@ theorem simpleWeylPoint_mem_normalizer_weightTorusPoints (i : Fin 4) (A : Type v
       (DynkinType.F4.geckSimpleReflectionTorusPoint_geckSimpleReflectionTorusPoint
         DynkinType.valid_F4 i A))
     (simpleWeylPoint_conj_weightTorusPoints i A)
+
+/-- The product of the pinned Weyl representatives along a word. -/
+def weylWordPoint (l : List (Fin 4)) (A : Type v) [CommRing A] [Algebra (ZMod 2) A] :
+    points A :=
+  (l.map fun i ↦ simpleWeylPoint i A).prod
+
+/-- The empty Weyl word represents the identity. -/
+@[simp]
+theorem weylWordPoint_nil (A : Type v) [CommRing A] [Algebra (ZMod 2) A] :
+    weylWordPoint [] A = 1 := by
+  simp [weylWordPoint]
+
+/-- Prepending a node multiplies its representative on the left. -/
+@[simp]
+theorem weylWordPoint_cons (i : Fin 4) (l : List (Fin 4)) (A : Type v) [CommRing A]
+    [Algebra (ZMod 2) A] :
+    weylWordPoint (i :: l) A = simpleWeylPoint i A * weylWordPoint l A := by
+  simp [weylWordPoint]
+
+/-- The prime-field Weyl word has the matrix of the integral Weyl word. -/
+@[simp]
+theorem coe_weylWordPoint (l : List (Fin 4)) (A : Type v) [CommRing A]
+    [Algebra (ZMod 2) A] :
+    (weylWordPoint l A : Matrix.GeneralLinearGroup (Fin 26) A) =
+      (F4ShortRoot.weylWordPoint l A : Matrix.GeneralLinearGroup (Fin 26) A) := by
+  induction l with
+  | nil => simp
+  | cons i l ih => simp [ih]
+
+/-- Weyl words commute with change of coefficient algebra. -/
+@[simp↓]
+theorem pointsMap_weylWordPoint {A : Type v} {B : Type w} [CommRing A] [CommRing B]
+    [Algebra (ZMod 2) A] [Algebra (ZMod 2) B] (f : A →ₐ[ZMod 2] B) (l : List (Fin 4)) :
+    pointsMap f (weylWordPoint l A) = weylWordPoint l B := by
+  induction l with
+  | nil => simp
+  | cons i l ih => simp [ih]
 
 end
 
