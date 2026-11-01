@@ -345,11 +345,13 @@ def heckeEquiv (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1) :
     BalancedProjectionAlgebra R τ ≃ₐ[R] InfiniteTypeAHeckeAlgebra R q :=
   AlgEquiv.ofAlgHom (toHecke hτ) (ofHecke hτ)
     (InfiniteTypeAHeckeAlgebra.hom_ext fun i ↦ by
-      rw [AlgHom.comp_apply, ofHecke_T, map_sub, map_smul, toHecke_e, AlgHom.commutes,
-        AlgHom.id_apply, ← T_eq_smul_sub hτ i])
+      simp only [AlgHom.comp_apply, ofHecke_T, toHecke_e, map_sub, map_smul, AlgHom.commutes,
+        AlgHom.id_apply]
+      exact (T_eq_smul_sub hτ i).symm)
     (hom_ext fun i ↦ by
-      rw [AlgHom.comp_apply, toHecke_e, map_smul, map_add, ofHecke_T, AlgHom.commutes,
-        sub_add_cancel, smul_smul, AlgHom.id_apply, mul_assoc, ← pow_two, hτ, one_smul])
+      have h : τ * ((q : R) + ↑q⁻¹) * ((q : R) + ↑q⁻¹) = 1 := by linear_combination hτ
+      simp only [AlgHom.comp_apply, toHecke_e, ofHecke_T, map_smul, map_add, AlgHom.commutes,
+        sub_add_cancel, smul_smul, h, one_smul, AlgHom.id_apply])
 
 variable (hτ : τ * ((q : R) + ↑q⁻¹) ^ 2 = 1)
 
@@ -409,8 +411,8 @@ theorem map_heckeEquiv_mul_e (hμ : IsMarkovTrace z μ) (hτ : τ * ((q : R) + �
     μ (heckeEquiv q hτ (w * e τ n)) =
       τ * ((q : R) + ↑q⁻¹) * (z + ↑q⁻¹) * μ (heckeEquiv q hτ w) := by
   rw [← heckeEquiv_mem_stage_iff hτ] at hw
-  rw [map_mul, heckeEquiv_e, mul_smul_comm, mul_add (heckeEquiv q hτ w), ← Algebra.commutes,
-    ← Algebra.smul_def, map_smul, map_add, map_smul, hμ.map_mul_T hw, smul_eq_mul, smul_eq_mul]
+  simp only [map_mul, heckeEquiv_e, Algebra.algebraMap_eq_smul_one, mul_smul_comm, mul_add,
+    mul_one, map_smul, map_add, hμ.map_mul_T hw, smul_eq_mul]
   ring
 
 end InfiniteTypeAHeckeAlgebra.IsMarkovTrace
