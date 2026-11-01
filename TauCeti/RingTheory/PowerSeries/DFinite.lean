@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.RingTheory.PowerSeries.Exp
-import Mathlib.LinearAlgebra.InvariantBasisNumber
+import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.RingTheory.Derivation.Basic
 import TauCeti.RingTheory.PowerSeries.Derivative
 
@@ -51,8 +51,9 @@ D-finite exactly when its derivatives are linearly dependent over `k[X]`
   closure under sums, products and differentiation (with `neg`, `sub` and `iterate_derivative`).
 * `PowerSeries.IsDFinite.tower_top`: D-finiteness over `k` implies D-finiteness over every field
   `k'` between `k` and `K`.
-* `PowerSeries.isDFinite_algebraMap`, `PowerSeries.isDFinite_exp`: polynomials over `k` and the
-  exponential series are D-finite.
+* `PowerSeries.isDFinite_polynomial`, `PowerSeries.isDFinite_algebraMap`,
+  `PowerSeries.isDFinite_exp`: polynomials over `K` or over `k`, and the exponential series, are
+  D-finite.
 
 ## References
 
@@ -79,6 +80,13 @@ and nonzero leading coefficient `pₙ`. -/
 def IsDFinite (f : K⟦X⟧) : Prop :=
   ∃ (n : ℕ) (p : Fin (n + 1) → k[X]), p (Fin.last n) ≠ 0 ∧
     ∑ i, p i • (d⁄dX)^[i] f = 0
+
+/-- Unfolding `IsDFinite`: a series is D-finite exactly when it satisfies a linear differential
+equation with coefficients in `k[X]` and nonzero leading coefficient. -/
+theorem isDFinite_def {f : K⟦X⟧} :
+    IsDFinite k f ↔ ∃ (n : ℕ) (p : Fin (n + 1) → k[X]), p (Fin.last n) ≠ 0 ∧
+      ∑ i, p i • (d⁄dX)^[i] f = 0 :=
+  Iff.rfl
 
 /-- Any nontrivial `k[X]`-linear relation among the first derivatives of `f` yields a
 differential equation with nonzero leading coefficient. -/
@@ -119,29 +127,6 @@ theorem isDFinite_iff_not_linearIndependent {f : K⟦X⟧} :
         simp [hj]
 
 /-! ### Finite rank of the module of derivatives -/
-
-/-- If nonzero multiples of `v m` lie in `N` for every `m`, a single nonzero multiple works for
-all `v a` with `a ≤ m`. -/
-private theorem exists_smul_mem_of_forall_le {M : Type*} [AddCommGroup M] [Module k[X] M]
-    {N : Submodule k[X] M} {v : ℕ → M} (h : ∀ m, ∃ r : k[X], r ≠ 0 ∧ r • v m ∈ N) (m : ℕ) :
-    ∃ r : k[X], r ≠ 0 ∧ ∀ a ≤ m, r • v a ∈ N := by
-  choose r hr0 hr using h
-  refine ⟨∏ a ∈ Finset.range (m + 1), r a, Finset.prod_ne_zero_iff.mpr fun a _ ↦ hr0 a,
-    fun a ha ↦ ?_⟩
-  rw [← Finset.prod_erase_mul _ _ (Finset.mem_range.mpr (Nat.lt_succ_of_le ha)), mul_smul]
-  exact N.smul_mem _ (hr a)
-
-/-- One step of the induction: if `p • g' ∈ S` for all `g ∈ S` and `r • x ∈ S`, then
-`(p * r ^ 2) • x' ∈ S`. -/
-private theorem smul_derivative_mem {S : Submodule k[X] K⟦X⟧} {p : k[X]}
-    (hS : ∀ y ∈ S, p • d⁄dX y ∈ S) {r : k[X]} {x : K⟦X⟧} (hx : r • x ∈ S) :
-    (p * r ^ 2) • d⁄dX x ∈ S := by
-  have key : (p * r ^ 2) • d⁄dX x =
-      r • (p • d⁄dX (r • x)) - (p * Polynomial.derivative r) • (r • x) := by
-    rw [derivative_polynomial_smul]
-    module
-  rw [key]
-  exact S.sub_mem (S.smul_mem _ (hS _ hx)) (S.smul_mem _ hx)
 
 /-- **Finite rank characterization of D-finiteness.** A power series `f` is D-finite over `k`
 exactly when there is a finite set `s` of series such that every derivative of `f` has a nonzero
@@ -191,17 +176,16 @@ theorem isDFinite_iff_exists_smul_iterate_mem_span {f : K⟦X⟧} :
       rw [Function.iterate_succ_apply']
       exact smul_derivative_mem hS hr
   · rintro ⟨s, hs⟩
-    obtain ⟨r, hr0, hr⟩ := exists_smul_mem_of_forall_le hs s.card
+    obtain ⟨r, hr0, hr⟩ := Submodule.exists_smul_mem_of_forall_exists_smul_mem _
+      (Finset.range (s.card + 1)) fun m _ ↦ hs m
     refine isDFinite_iff_not_linearIndependent.mpr fun hli ↦ ?_
     -- The `s.card + 1` series `r • f⁽ⁱ⁾` are independent and lie in the span of `s`.
-    have hli' : LinearIndependent k[X] fun i : Fin (s.card + 1) ↦ r • (d⁄dX)^[i] f := by
-      refine Fintype.linearIndependent_iff.mpr fun g hg i ↦ ?_
-      have := Fintype.linearIndependent_iff.mp (hli.comp _ Fin.val_injective) (fun i ↦ g i * r)
-        (by simpa [mul_smul] using hg) i
-      exact (mul_eq_zero.mp this).resolve_right hr0
+    have hli' : LinearIndependent k[X] fun i : Fin (s.card + 1) ↦ r • (d⁄dX)^[i] f :=
+      (hli.comp _ Fin.val_injective).smul_of_isRightRegular
+        (w := fun _ ↦ r) fun _ ↦ (isRegular_iff_ne_zero.mpr hr0).right
     have := linearIndependent_le_span' _ hli' (s : Set K⟦X⟧) (by
       rintro _ ⟨i, rfl⟩
-      exact hr i (Nat.lt_succ_iff.mp i.isLt))
+      exact hr i (Finset.mem_range.mpr i.isLt))
     -- This reads `s.card + 1 ≤ s.card`.
     simp at this
 
@@ -256,8 +240,10 @@ protected theorem mul (hf : IsDFinite k f) (hg : IsDFinite k g) : IsDFinite k (f
   obtain ⟨t, ht⟩ := isDFinite_iff_exists_smul_iterate_mem_span.mp hg
   refine isDFinite_iff_exists_smul_iterate_mem_span.mpr
     ⟨Finset.image₂ (· * ·) s t, fun m ↦ ?_⟩
-  obtain ⟨r, hr0, hr⟩ := exists_smul_mem_of_forall_le hs m
-  obtain ⟨q, hq0, hq⟩ := exists_smul_mem_of_forall_le ht m
+  obtain ⟨r, hr0, hr⟩ := Submodule.exists_smul_mem_of_forall_exists_smul_mem _
+    (Finset.range (m + 1)) fun i _ ↦ hs i
+  obtain ⟨q, hq0, hq⟩ := Submodule.exists_smul_mem_of_forall_exists_smul_mem _
+    (Finset.range (m + 1)) fun i _ ↦ ht i
   refine ⟨r * q, mul_ne_zero hr0 hq0, ?_⟩
   have hspan : Submodule.span k[X] (s : Set K⟦X⟧) * Submodule.span k[X] (t : Set K⟦X⟧) ≤
       Submodule.span k[X] (Finset.image₂ (· * ·) s t : Set K⟦X⟧) := by
@@ -267,8 +253,8 @@ protected theorem mul (hf : IsDFinite k f) (hg : IsDFinite k g) : IsDFinite k (f
   rw [Derivation.iterate_apply_mul, Finset.smul_sum]
   refine Submodule.sum_mem _ fun ij hij ↦ ?_
   have hij' := Finset.mem_antidiagonal.mp hij
-  have hi : ij.1 ≤ m := by omega
-  have hj : ij.2 ≤ m := by omega
+  have hi : ij.1 ∈ Finset.range (m + 1) := Finset.mem_range.mpr (by omega)
+  have hj : ij.2 ∈ Finset.range (m + 1) := Finset.mem_range.mpr (by omega)
   rw [smul_comm, ← smul_mul_smul_comm]
   exact Submodule.smul_of_tower_mem _ _ (hspan (Submodule.mul_mem_mul (hr _ hi) (hq _ hj)))
 
@@ -277,24 +263,30 @@ with compatible algebra maps `k → k' → K`. -/
 theorem tower_top {k' : Type*} [Field k'] [Algebra k k'] [Algebra k' K]
     [IsScalarTower k k' K] (hf : IsDFinite k f) : IsDFinite k' f := by
   obtain ⟨n, p, hp, h⟩ := hf
-  have hsmul : ∀ (q : k[X]) (x : K⟦X⟧), q.map (algebraMap k k') • x = q • x := by
-    intro q x
-    rw [Algebra.smul_def, Algebra.smul_def, algebraMap_apply', algebraMap_apply',
-      ← polynomial_map_coe, ← polynomial_map_coe, Polynomial.map_map,
-      ← IsScalarTower.algebraMap_eq]
-  refine ⟨n, fun i ↦ (p i).map (algebraMap k k'), ?_, by simpa only [hsmul] using h⟩
+  refine ⟨n, fun i ↦ (p i).map (algebraMap k k'), ?_, by
+    simpa only [polynomial_map_algebraMap_smul (S := k')] using h⟩
   exact (Polynomial.map_ne_zero_iff (algebraMap k k').injective).mpr hp
 
 end IsDFinite
 
 /-! ### Examples -/
 
+variable (k) in
+/-- Every polynomial over `K` is D-finite over `k`: its derivative of order one more than its
+degree vanishes. -/
+@[simp]
+theorem isDFinite_polynomial (p : K[X]) : IsDFinite k (p : K⟦X⟧) := by
+  classical
+  refine ⟨p.natDegree + 1, Pi.single (Fin.last _) 1, by simp, ?_⟩
+  rw [Fintype.sum_eq_single (Fin.last _) fun i hi ↦ by simp [hi], Pi.single_eq_same, one_smul,
+    Fin.val_last, iterate_derivative_coe,
+    Polynomial.iterate_derivative_eq_zero (Nat.lt_succ_self _), Polynomial.coe_zero]
+
 /-- The image of a polynomial over `k` is D-finite over `k`. -/
 @[simp]
 theorem isDFinite_algebraMap (p : k[X]) : IsDFinite k (algebraMap k[X] K⟦X⟧ p) := by
-  refine isDFinite_iff_exists_smul_iterate_mem_span.mpr ⟨{1}, fun m ↦ ⟨1, one_ne_zero, ?_⟩⟩
-  rw [one_smul, iterate_derivative_algebraMap_polynomial, Algebra.algebraMap_eq_smul_one]
-  exact Submodule.smul_mem _ _ (Submodule.subset_span (by simp))
+  rw [algebraMap_apply', ← Polynomial.polynomial_map_coe]
+  exact isDFinite_polynomial k _
 
 /-- The zero series is D-finite. -/
 @[simp]
