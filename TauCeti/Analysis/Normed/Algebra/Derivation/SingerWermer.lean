@@ -56,6 +56,8 @@ theorem map_apply_eq_zero_of_derivation (D : A →L[ℂ] A)
   -- For each `z`, `φ ∘ exp (z • D)` is again a character, hence contractive, so
   -- `z ↦ φ (exp (z • D) a)` is a bounded entire function. By Liouville's theorem it is constant,
   -- and its derivative `φ (D a)` at `z = 0` vanishes.
+  suffices ∀ φ : A →ₙₐ[ℂ] ℂ, φ (D a) = 0 from this φ
+  intro φ
   -- Each `exp (z • D)` is an algebra endomorphism, because `z • D` is again a derivation.
   let Θ (z : ℂ) : A →ₙₐ[ℂ] A :=
     { ((exp (z • D) : A →L[ℂ] A) : A →ₗ[ℂ] A) with
@@ -69,12 +71,12 @@ theorem map_apply_eq_zero_of_derivation (D : A →L[ℂ] A)
     have h : HasDerivAt (fun s : ℂ ↦ exp (s • D) a) (exp (z • D) (D a)) z := by
       simpa [mul_apply_eq_comp] using
         (hasDerivAt_exp_smul_const D z).clm_apply (hasDerivAt_const z a)
-    exact (φ : A →L[ℂ] ℂ).hasFDerivAt.comp_hasDerivAt z h
+    exact (⟨(φ : A →ₗ[ℂ] ℂ), map_continuous φ⟩ : A →L[ℂ] ℂ).hasFDerivAt.comp_hasDerivAt z h
   have hbdd : Bornology.IsBounded (Set.range f) := by
     refine (Metric.isBounded_closedBall (x := 0) (r := ‖a‖)).subset ?_
     rintro _ ⟨z, rfl⟩
     rw [mem_closedBall_zero_iff]
-    simpa [f, hΘ] using NonUnitalAlgHom.norm_apply_le_self ((φ : A →ₙₐ[ℂ] ℂ).comp (Θ z)) a
+    simpa [f, hΘ] using NonUnitalAlgHom.norm_apply_le_self (φ.comp (Θ z)) a
   have hconst : f = fun _ ↦ f 0 := funext fun z ↦
     Differentiable.apply_eq_apply_of_bounded (fun z ↦ (hf z).differentiableAt) hbdd z 0
   have h0 := (hf 0).deriv
