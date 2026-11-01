@@ -27,6 +27,8 @@ value of the functional at the indicator function of `s`.
 
 ## Main declarations
 
+* `ContinuousLinearMap.lpPairing_mul_eq_integral`: the Hölder pairing of the multiplication of
+  a normed algebra is the integral of the product.
 * `MeasureTheory.Lp.toDual`: the isometric pairing `L^q(μ) → L^q'(μ)*` of a σ-finite measure.
 * `MeasureTheory.Lp.toDual_indicatorConstLp`: the value of the pairing at an indicator function.
 * `MeasureTheory.Lp.exists_toDual_eq`: for a finite measure, every continuous linear
@@ -57,31 +59,30 @@ public section
 
 open scoped ENNReal ComplexConjugate
 
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+variable {α 𝕜 R : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing R] [NormedSpace 𝕜 R]
+  [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R] [NormedSpace ℝ R] [SMulCommClass ℝ 𝕜 R]
+  [CompleteSpace R] {mα : MeasurableSpace α} {μ : Measure α} {q q' : ℝ≥0∞} [Fact (1 ≤ q)]
+  [Fact (1 ≤ q')] [q.HolderConjugate q']
+
+/-- The Hölder pairing of the multiplication `ContinuousLinearMap.mul 𝕜 R` is the integral of the
+product. -/
+theorem lpPairing_mul_eq_integral (g : Lp R q μ) (f : Lp R q' μ) :
+    (mul 𝕜 R).lpPairing μ q q' g f = ∫ x, g x * f x ∂μ := by
+  simp [lpPairing_eq_integral]
+
+end ContinuousLinearMap
+
 namespace MeasureTheory.Lp
 
 variable {α 𝕜 : Type*} [RCLike 𝕜] {mα : MeasurableSpace α} {μ : Measure α}
 
-/-- If a continuous linear functional `Λ` on `L^q'(μ)` is integration against `h` at the class of
-`σ`, then `‖∫ h σ‖ ≤ ‖Λ‖ ‖σ‖_q'`. This is the bound fed to the norming lemmas. -/
-private theorem enorm_integral_mul_le_of_apply_eq {q' : ℝ≥0∞} [Fact (1 ≤ q')]
-    (Λ : StrongDual 𝕜 (Lp 𝕜 q' μ)) {h σ : α → 𝕜} (hσ : MemLp σ q' μ)
-    (hΛ : Λ (hσ.toLp σ) = ∫ x, h x * hσ.toLp σ x ∂μ) :
-    ‖∫ x, h x * σ x ∂μ‖ₑ ≤ ‖Λ‖ₑ * eLpNorm σ q' μ :=
-  calc ‖∫ x, h x * σ x ∂μ‖ₑ = ‖Λ (hσ.toLp σ)‖ₑ := by
-        rw [hΛ]
-        congr 1
-        exact integral_congr_ae (by filter_upwards [hσ.coeFn_toLp] with x hx; rw [hx])
-    _ ≤ ‖Λ‖ₑ * ‖hσ.toLp σ‖ₑ := Λ.le_opENorm _
-    _ = ‖Λ‖ₑ * eLpNorm σ q' μ := by rw [Lp.enorm_def, eLpNorm_congr_ae hσ.coeFn_toLp]
-
 section toDual
 
 variable {q q' : ℝ≥0∞} [Fact (1 ≤ q)] [Fact (1 ≤ q')] [q.HolderConjugate q']
-
-/-- The Hölder pairing of `ContinuousLinearMap.mul 𝕜 𝕜` is the integral of the product. -/
-private theorem lpPairing_mul_apply (g : Lp 𝕜 q μ) (f : Lp 𝕜 q' μ) :
-    (ContinuousLinearMap.mul 𝕜 𝕜).lpPairing μ q q' g f = ∫ x, g x * f x ∂μ := by
-  simp [ContinuousLinearMap.lpPairing_eq_integral]
 
 variable (𝕜 μ q q') in
 /-- On a σ-finite measure space, for Hölder conjugate exponents `q` and `q'`, the integral pairing
@@ -97,19 +98,23 @@ noncomputable def toDual [SigmaFinite μ] : Lp 𝕜 q μ →ₗᵢ[𝕜] StrongD
     congr 1
     -- Hölder's inequality gives `‖Λ‖ ≤ ‖g‖_q`; testing `Λ` on simple functions gives the converse.
     refine le_antisymm (Λ.opENorm_le_bound fun f => ?_) ?_
-    · rw [lpPairing_mul_apply, Lp.enorm_def, Lp.enorm_def]
+    · rw [ContinuousLinearMap.lpPairing_mul_eq_integral, Lp.enorm_def, Lp.enorm_def]
       exact TauCeti.enorm_integral_mul_le
     · rw [Lp.enorm_def]
       exact (Lp.memLp g).eLpNorm_le_of_forall_enorm_integral_mul_le fun σ hσ =>
-        enorm_integral_mul_le_of_apply_eq Λ hσ (lpPairing_mul_apply g _)
+        enorm_integral_mul_le_of_apply_eq Λ hσ
+          (ContinuousLinearMap.lpPairing_mul_eq_integral g _)
 
 @[simp]
 theorem toDual_apply [SigmaFinite μ] (g : Lp 𝕜 q μ) (f : Lp 𝕜 q' μ) :
     toDual 𝕜 μ q q' g f = ∫ x, g x * f x ∂μ := by
-  rw [toDual, LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, lpPairing_mul_apply]
+  rw [toDual, LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe,
+    ContinuousLinearMap.lpPairing_mul_eq_integral]
 
 /-- Pairing `g ∈ L^q(μ)` with the indicator function of a set `s` of finite measure, scaled by
 `c`, gives `c` times the integral of `g` over `s`. -/
+-- High priority, so that `simp` uses this lemma before unfolding the pairing by `toDual_apply`.
+@[simp high]
 theorem toDual_indicatorConstLp [SigmaFinite μ] (g : Lp 𝕜 q μ) {s : Set α}
     (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (c : 𝕜) :
     toDual 𝕜 μ q q' g (indicatorConstLp q' hs hμs c) = (∫ x in s, g x ∂μ) * c := by
@@ -187,6 +192,7 @@ theorem integral_dualOneEquiv_symm_mul [IsFiniteMeasure μ] (φ : StrongDual �
 
 /-- For a finite measure, the integral over a measurable set `s` of the density of a continuous
 linear functional `φ` on `L¹(μ)` is the value of `φ` at the indicator function of `s`. -/
+@[simp]
 theorem setIntegral_dualOneEquiv_symm [IsFiniteMeasure μ] (φ : StrongDual 𝕜 (Lp 𝕜 1 μ))
     {s : Set α} (hs : MeasurableSet s) :
     ∫ x in s, (dualOneEquiv 𝕜 μ).symm φ x ∂μ =

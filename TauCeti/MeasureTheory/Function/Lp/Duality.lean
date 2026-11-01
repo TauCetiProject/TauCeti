@@ -53,6 +53,8 @@ is `∞` outside the almost everywhere strongly measurable functions.
   `q = ∞` on a σ-finite measure space, the first without assuming `h ∈ L^∞` in advance.
 * `MeasureTheory.MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le`: the duality bound for every
   `1 ≤ q ≤ ∞` on a σ-finite measure space.
+* `MeasureTheory.Lp.enorm_integral_mul_le_of_apply_eq`: a continuous linear functional on
+  `L^q'` that is integration against `h` satisfies the hypothesis of these duality bounds.
 * `TauCeti.enorm_integral_inner_le`: Hölder's inequality `‖∫ ⟪u, v⟫‖ ≤ ‖u‖_p ‖v‖_q`.
 * `MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`: the duality
   bound for `q < ∞` for inner product space valued functions, against bounded test functions of
@@ -284,6 +286,19 @@ theorem MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le [SigmaFinite μ] {q q' 
   · obtain rfl : q' = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ∞ q').1 rfl
     exact hh.eLpNorm_top_le_of_forall_enorm_integral_mul_le hC
   · exact hh.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top hq hC
+
+/-- If a continuous linear functional `Λ` on `L^q'(μ)` is integration against `h` at the class of
+`σ`, then `‖∫ h σ‖ ≤ ‖Λ‖ ‖σ‖_q'`. This is the hypothesis of the norming lemmas above. -/
+theorem Lp.enorm_integral_mul_le_of_apply_eq {q' : ℝ≥0∞} [Fact (1 ≤ q')]
+    (Λ : StrongDual 𝕜 (Lp 𝕜 q' μ)) {h σ : α → 𝕜} (hσ : MemLp σ q' μ)
+    (hΛ : Λ (hσ.toLp σ) = ∫ x, h x * hσ.toLp σ x ∂μ) :
+    ‖∫ x, h x * σ x ∂μ‖ₑ ≤ ‖Λ‖ₑ * eLpNorm σ q' μ :=
+  calc ‖∫ x, h x * σ x ∂μ‖ₑ = ‖Λ (hσ.toLp σ)‖ₑ := by
+        rw [hΛ]
+        congr 1
+        exact integral_congr_ae (by filter_upwards [hσ.coeFn_toLp] with x hx; rw [hx])
+    _ ≤ ‖Λ‖ₑ * ‖hσ.toLp σ‖ₑ := Λ.le_opENorm _
+    _ = ‖Λ‖ₑ * eLpNorm σ q' μ := by rw [Lp.enorm_def, eLpNorm_congr_ae hσ.coeFn_toLp]
 
 /-- **Norming by bounded functions of finite-measure support.** On a σ-finite measure space, let
 `q < ∞` and `q'` be Hölder conjugate. If an almost everywhere strongly measurable `h` with values
