@@ -13,15 +13,15 @@ public import Mathlib.CategoryTheory.Limits.Lattice
 # Pullback maps of fixed-family Čech complexes
 
 For a continuous map `f : X ⟶ Y` and a morphism of presheaves `α : P ⟶ f_* Q`,
-`cechComplexPullback` sends the Čech complex of `P` for a family `U` to the Čech
+`TopCat.Hom.cechComplexPullback` sends the Čech complex of `P` for a family `U` to the Čech
 complex of `Q` for the inverse-image family. It uses the native tuple complex,
 including repeated indices and empty intersections. No covering condition is needed.
 
 The map commutes with actual refinement functions and with coefficient morphisms.
 Consequently, restriction to an open subspace can be performed before or after a
-refinement. `cechComplexRestrict` is this restriction map, with the presheaf on the
-subspace obtained by evaluating on its open subsets regarded as opens of the ambient
-space. These chain maps supply restriction maps before taking cover colimits.
+refinement. `TopologicalSpace.Opens.cechComplexRestrict` is this restriction map, with the
+presheaf on the subspace obtained by evaluating on its open subsets regarded as opens of the
+ambient space. These chain maps supply restriction maps before taking cover colimits.
 
 The construction uses `TauCeti.CategoryTheory.cechComplexCompIso`, and the refinement
 maps are those of the Stacks Project, Cohomology of Sheaves, §20.15 (tag 09UY).
@@ -36,11 +36,11 @@ open TauCeti.CategoryTheory
 
 universe u v w
 
-namespace TauCeti.Topology
-
 variable {A : Type v} [Category.{w} A] [Preadditive A] [HasProducts.{u} A]
   {X Y : TopCat.{u}} (f : X ⟶ Y) {ι : Type u} (U : ι → Opens Y)
   {P : Y.Presheaf A} {Q : X.Presheaf A}
+
+namespace TopCat.Hom
 
 /-- Inverse image preserves the finite intersections occurring in a Čech term. -/
 private theorem preimageProduct (n : ℕ) (a : Fin (n + 1) → ι) :
@@ -68,11 +68,12 @@ private theorem cechComplexPullback_comp_comparison
 
 /-- On each tuple, pullback applies the coefficient map and identifies the inverse image of
 the intersection with the intersection of the inverse images. -/
-@[reassoc]
+@[simp, reassoc]
 theorem cechComplexPullback_f_π
     (α : P ⟶ (TopCat.Presheaf.pushforward A f).obj Q)
     (n : ℕ) (a : Fin (n + 1) → ι) :
-    (cechComplexPullback f U α).f n ≫ Pi.π _ a =
+    (cechComplexPullback f U α).f n ≫
+        Pi.π (fun b : Fin (n + 1) → ι ↦ Q.obj (op (∏ᶜ fun j ↦ (Opens.map f).obj (U (b j))))) a =
       Pi.π _ a ≫ α.app (op (∏ᶜ fun j ↦ U (a j))) ≫
         Q.map (inv (piComparison (Opens.map f) (fun j ↦ U (a j)))).op := by
   let e := cechComplexCompIso (Opens.map f) U Q (preimageProduct f U)
@@ -128,6 +129,12 @@ theorem cechComplexPullback_naturality {P' : Y.Presheaf A} {Q' : X.Presheaf A}
   exact ((cechComplexFunctor U).map_comp β α').symm.trans
     ((congrArg (cechComplexFunctor U).map h).trans ((cechComplexFunctor U).map_comp _ _))
 
+end TopCat.Hom
+
+namespace TopologicalSpace.Opens
+
+open TopCat.Hom
+
 /-- Restrict the Čech complex of a presheaf to an open subspace. The presheaf on the subspace
 is evaluated by regarding each of its opens as an open of the ambient space. -/
 def cechComplexRestrict (W : Opens X) (U : ι → Opens X) (P : X.Presheaf A) :
@@ -139,10 +146,13 @@ def cechComplexRestrict (W : Opens X) (U : ι → Opens X) (P : X.Presheaf A) :
 
 /-- A tuple coordinate of open restriction is the usual restriction along the inclusion of
 the corresponding intersection in the open subspace into the ambient intersection. -/
-@[reassoc]
+@[simp, reassoc]
 theorem cechComplexRestrict_f_π (W : Opens X) (U : ι → Opens X) (P : X.Presheaf A)
     (n : ℕ) (a : Fin (n + 1) → ι) :
-    (cechComplexRestrict W U P).f n ≫ Pi.π _ a =
+    (cechComplexRestrict W U P).f n ≫
+        Pi.π (fun b : Fin (n + 1) → ι ↦ P.obj (op
+          (W.isOpenEmbedding.isOpenMap.functor.obj
+            (∏ᶜ fun j ↦ (Opens.map W.inclusion').obj (U (b j)))))) a =
       Pi.π _ a ≫ P.map
         (W.isOpenEmbedding.isOpenMap.functor.map
             (inv (piComparison (Opens.map W.inclusion') (fun j ↦ U (a j)))) ≫
@@ -166,6 +176,10 @@ theorem cechComplexMap_comp_cechComplexRestrict (W : Opens X) (U : ι → Opens 
               FormalCoproduct.mk _ (fun i ↦ (Opens.map W.inclusion').obj (V i))) :=
   cechComplexMap_comp_cechComplexPullback W.inclusion' U φ _
 
+end TopologicalSpace.Opens
+
+namespace TopCat.Hom
+
 variable [HasZeroObject A]
 
 /-- Pullback is compatible with the Čech augmentation and the map on global sections. -/
@@ -183,4 +197,4 @@ theorem cechAugmentation_comp_cechComplexPullback
     (((CochainComplex.single₀ A).map (α.app (op ⊤)) ≫= h.symm).trans
       (Category.assoc _ _ _).symm)
 
-end TauCeti.Topology
+end TopCat.Hom
