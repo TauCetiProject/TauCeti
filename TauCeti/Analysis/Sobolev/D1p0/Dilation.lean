@@ -61,7 +61,9 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {p : ENNReal} [Fact (1 ≤ p)] {r s : ℝ}
 
-local instance : (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
+/-- The whole-space restriction of an additive Haar measure is an additive Haar measure. -/
+local instance isAddHaarMeasure_restrict_top_d1p0Dilation :
+    (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
   simpa only [Opens.coe_top, Measure.restrict_univ] using (inferInstance : mu.IsAddHaarMeasure)
 
 /-- The normalized `Lᵖ` dilation of a test-function gradient is the gradient of the test function
