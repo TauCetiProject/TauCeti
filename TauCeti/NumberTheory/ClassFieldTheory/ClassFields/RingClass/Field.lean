@@ -67,6 +67,9 @@ generator congruent to a rational integer modulo `f`
   for the ring class field.
 * `TauCeti.ClassFieldTheory.gal_ringClassField_equiv_pic`: `Gal(ringClassField O hK / K) ≃* Pic O`.
 * `TauCeti.ClassFieldTheory.finrank_ringClassField`: `[ringClassField O hK : K] = #Pic O`.
+* `TauCeti.ClassFieldTheory.ringClassArtinEquiv_picClass`,
+  `TauCeti.ClassFieldTheory.ringClassArtinMap_integralIdealsAwayConductorToInvertible`: on ideals
+  coprime to the conductor, ring-class reciprocity is ray-class reciprocity.
 * `TauCeti.ClassFieldTheory.ringClassArtinMap_eq_one_iff`,
   `TauCeti.ClassFieldTheory.ringClassArtinMap_surjective`: ideal-form ring-class reciprocity.
 * `TauCeti.ClassFieldTheory.isArithFrobAt_ringClassArtinEquiv_picClass`: the splitting law.
@@ -197,6 +200,15 @@ theorem ringClassArtinEquiv_rayClassToPic (x : RayClassGroup O.conductorModulus)
       rayClassArtinMap O.conductorModulus (isAdmissibleModulus_ringClassField O hK) x := by
   simp [ringClassArtinEquiv, QuotientGroup.quotientKerEquivOfSurjective_symm_apply]
 
+/-- **Ring-class reciprocity on ideals**: the Artin symbol of the Picard class of an ideal of
+`𝓞 K` prime to the conductor is the ray-class Artin symbol of its ray class. -/
+@[simp]
+theorem ringClassArtinEquiv_picClass (J : integralIdealsPrimeTo O.conductorModulus) :
+    ringClassArtinEquiv O hK (O.picClass J) =
+      rayClassArtinMap O.conductorModulus (isAdmissibleModulus_ringClassField O hK)
+        (idealClass _ J) := by
+  rw [← rayClassToPic_idealClass, ringClassArtinEquiv_rayClassToPic]
+
 /-- **Ring-class reciprocity on idele classes**: the Artin symbol of the image in `Pic O` of an
 idele class `c` is the global Artin symbol of `c` for the ring class field. -/
 @[simp]
@@ -227,6 +239,16 @@ theorem ringClassArtinMap_apply (I : O.invertibleProperFractionalIdeals) :
     ringClassArtinMap O hK I = ringClassArtinEquiv O hK (O.mkPic I) :=
   (rfl)
 
+/-- **The ring-class Artin symbol of an ideal of `O` coprime to the conductor** is the ray-class
+Artin symbol of the ray class of its extension to `𝓞 K`. -/
+theorem ringClassArtinMap_integralIdealsAwayConductorToInvertible
+    (I : O.integralIdealsAwayConductor) :
+    ringClassArtinMap O hK (O.integralIdealsAwayConductorToInvertible I) =
+      rayClassArtinMap O.conductorModulus (isAdmissibleModulus_ringClassField O hK)
+        (idealClass _ (O.integralIdealsAwayConductorEquiv I)) := by
+  rw [ringClassArtinMap_apply, ← picClass_integralIdealsAwayConductorEquiv,
+    ringClassArtinEquiv_picClass]
+
 /-- **Ring-class reciprocity kills exactly the principal ideals**: the ring-class Artin symbol of
 an invertible proper fractional ideal of `O` is trivial exactly when its Picard class is. -/
 theorem ringClassArtinMap_eq_one_iff (I : O.invertibleProperFractionalIdeals) :
@@ -247,7 +269,7 @@ theorem isArithFrobAt_ringClassArtinEquiv_picClass (I : integralIdealsPrimeTo O.
     [(I : Ideal (𝓞 K)).IsMaximal] (Q : Ideal (𝓞 (ringClassField O hK))) [Q.IsPrime]
     [Q.LiesOver (I : Ideal (𝓞 K))] :
     IsArithFrobAt (𝓞 K) (ringClassArtinEquiv O hK (O.picClass I)) Q := by
-  rw [← rayClassToPic_idealClass, ringClassArtinEquiv_rayClassToPic]
+  rw [ringClassArtinEquiv_picClass]
   exact isArithFrobAt_rayClassArtinMap_idealClass _ I Q
 
 /-- **The splitting criterion for the ring class field**: a prime `𝔭` of `𝓞 K` not dividing the
@@ -260,7 +282,6 @@ theorem ncard_primesOver_ringClassField_eq_finrank_iff
       ∃ β ∈ O.toRingOfIntegers, (I : Ideal (𝓞 K)) = Ideal.span {β} := by
   rw [ncard_primesOver_eq_finrank_iff_rayClassArtinMap_idealClass_eq_one
       (isAdmissibleModulus_ringClassField O hK),
-    ← ringClassArtinEquiv_rayClassToPic, rayClassToPic_idealClass, MulEquiv.map_eq_one_iff,
-    picClass_eq_one_iff]
+    ← ringClassArtinEquiv_picClass, MulEquiv.map_eq_one_iff, picClass_eq_one_iff]
 
 end TauCeti.ClassFieldTheory
