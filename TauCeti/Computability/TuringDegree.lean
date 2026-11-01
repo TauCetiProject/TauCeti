@@ -45,6 +45,9 @@ among sets, and its degree is the supremum of their degrees.
   for Turing reducibility.
 * `TuringDegree.toAntisymmetrization_oracle_turingJoin`: the degree of the parity join of two sets
   is the supremum of their degrees.
+* `Set.partrec_oracle_iff`: partial computability of a set oracle is equivalent to computability
+  of membership.
+* `Set.turingReducible_empty_iff`: reducibility to the empty oracle characterizes computable sets.
 
 ## References
 
@@ -59,6 +62,19 @@ public section
 
 open scoped Computability
 
+namespace TauCeti
+
+/-- The order on degrees represented by partial functions is Turing reducibility. -/
+@[simp]
+theorem turingDegree_le_iff {f g : ℕ →. ℕ} :
+    toAntisymmetrization TuringReducible f ≤ toAntisymmetrization TuringReducible g ↔
+      TuringReducible f g := by
+  -- Mathlib's generic quotient-order lemma requires its private partial-function preorder.
+  -- The lifted degree order on representatives is definitionally Iff.rfl.
+  exact Iff.rfl
+
+end TauCeti
+
 namespace Set
 
 /-- The oracle of a set of naturals: its characteristic function `A.indicator 1`, as a total
@@ -70,6 +86,38 @@ noncomputable def oracle (A : Set ℕ) : ℕ →. ℕ :=
 @[simp]
 theorem oracle_apply (A : Set ℕ) (n : ℕ) : A.oracle n = Part.some (A.indicator 1 n) :=
   (rfl)
+
+/-- The empty set answers zero on every input. -/
+@[simp]
+theorem oracle_empty : (∅ : Set ℕ).oracle = fun _ => Part.some 0 := by
+  ext n
+  simp
+
+/-- A set oracle is partial computable exactly when membership in the set is computable. -/
+@[simp]
+theorem partrec_oracle_iff (A : Set ℕ) : Partrec A.oracle ↔ ComputablePred (· ∈ A) := by
+  classical
+  constructor
+  · intro h
+    have hχ : Computable (A.indicator 1 : ℕ → ℕ) :=
+      h.of_eq_tot fun n => by simp
+    refine Computable.computablePred <|
+      (Primrec.beq.to_comp.comp hχ (Computable.const 1)).of_eq fun n => ?_
+    by_cases hn : n ∈ A <;> simp [hn]
+  · intro h
+    exact ((h.ite (Computable.const 1) (Computable.const 0)).partrec).of_eq fun n => by
+      by_cases hn : n ∈ A <;> simp [hn]
+
+/-- The empty set oracle is Turing reducible to every partial function. -/
+theorem empty_turingReducible (g : ℕ →. ℕ) : TuringReducible (∅ : Set ℕ).oracle g := by
+  rw [oracle_empty]
+  exact (Computable.const 0).partrec.turingReducible
+
+/-- A set is Turing reducible to the empty oracle exactly when its membership is computable. -/
+theorem turingReducible_empty_iff (A : Set ℕ) :
+    TuringReducible A.oracle (∅ : Set ℕ).oracle ↔ ComputablePred (· ∈ A) := by
+  rw [oracle_empty, ← partrec_oracle_iff]
+  exact ⟨TuringReducible.partrec_of_const, Partrec.turingReducible⟩
 
 end Set
 
@@ -165,13 +213,6 @@ theorem TuringEquivalent.turingJoin {f f' g g' : ℕ →. ℕ} (hf : f ≡ᵀ f'
 
 namespace TuringDegree
 
-/-- The order on Turing degrees is Turing reducibility of representatives. This holds by the
-definition of the order on `TuringDegree`, which Mathlib induces from `TuringReducible`. -/
-@[simp]
-theorem toAntisymmetrization_le_toAntisymmetrization_iff {f g : ℕ →. ℕ} :
-    toAntisymmetrization TuringReducible f ≤ toAntisymmetrization TuringReducible g ↔ f ≤ᵀ g :=
-  Iff.rfl
-
 /-- Turing degrees form a join-semilattice: the supremum of the degrees of `f` and `g` is the degree
 of their Turing join. -/
 instance instSemilatticeSup : SemilatticeSup TuringDegree where
@@ -179,16 +220,16 @@ instance instSemilatticeSup : SemilatticeSup TuringDegree where
   le_sup_left a b := by
     induction a using Antisymmetrization.ind with | _ f
     induction b using Antisymmetrization.ind with | _ g
-    exact toAntisymmetrization_le_toAntisymmetrization_iff.2 (.turingJoin_left f g)
+    exact TauCeti.turingDegree_le_iff.2 (.turingJoin_left f g)
   le_sup_right a b := by
     induction a using Antisymmetrization.ind with | _ f
     induction b using Antisymmetrization.ind with | _ g
-    exact toAntisymmetrization_le_toAntisymmetrization_iff.2 (.turingJoin_right f g)
+    exact TauCeti.turingDegree_le_iff.2 (.turingJoin_right f g)
   sup_le a b c := by
     induction a using Antisymmetrization.ind with | _ f
     induction b using Antisymmetrization.ind with | _ g
     induction c using Antisymmetrization.ind with | _ h
-    simp only [toAntisymmetrization_le_toAntisymmetrization_iff]
+    simp only [TauCeti.turingDegree_le_iff]
     exact PFun.turingJoin_turingReducible
 
 /-- The supremum of the degrees of `f` and `g` is the degree of their Turing join. -/

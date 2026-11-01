@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
+import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # Continuous annihilators and norm closure
@@ -23,7 +24,8 @@ This file proves that these subspaces are norm closed and that passing to norm c
 not change an annihilator. Over the real or complex field, the preannihilator of the
 annihilator is precisely the norm closure of the original subspace. Consequently continuous
 annihilators distinguish norm closures, and a subspace is dense exactly when its annihilator
-is zero. No completeness or closedness hypothesis is needed.
+is zero. No completeness or closedness hypothesis is needed. Dually, a finite-dimensional
+subspace of the strong dual is the continuous annihilator of its preannihilator.
 
 The analytic input is `exists_dual_vector''`, the norming-functional form of Hahn–Banach,
 applied to the seminormed quotient. In particular, the results also apply to seminormed
@@ -77,6 +79,23 @@ theorem orthogonalBilin_topologicalClosure_topDualPairing_flip (S : Submodule �
     simpa only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] using hf y hy
   simpa only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] using
     S.topologicalClosure_minimal hker f.isClosed_ker hx
+
+/-- A finite-dimensional subspace of the strong dual is the continuous annihilator of its
+preannihilator: the continuous form of `Subspace.dualCoannihilator_dualAnnihilator_eq`. -/
+@[simp]
+theorem orthogonalBilin_orthogonalBilin_topDualPairing_flip_eq_of_finiteDimensional
+    (G : Submodule 𝕜 (StrongDual 𝕜 E)) [FiniteDimensional 𝕜 G] :
+    (G.orthogonalBilin (topDualPairing 𝕜 E)).orthogonalBilin (topDualPairing 𝕜 E).flip = G := by
+  refine le_antisymm (fun ψ hψ ↦ ?_) le_orthogonalBilin_flip_orthogonalBilin
+  let W : Submodule 𝕜 (Module.Dual 𝕜 E) := G.map (ContinuousLinearMap.coeLM 𝕜)
+  have hW : (ψ : Module.Dual 𝕜 E) ∈ W.dualCoannihilator.dualAnnihilator := by
+    simp only [mem_orthogonalBilin, LinearMap.flip_apply, topDualPairing_apply] at hψ
+    simp only [mem_dualAnnihilator, mem_dualCoannihilator]
+    intro e he
+    exact hψ e fun g hg ↦ he g (mem_map_of_mem hg)
+  rw [Subspace.dualCoannihilator_dualAnnihilator_eq] at hW
+  obtain ⟨g, hg, hgψ⟩ := hW
+  rwa [← ContinuousLinearMap.coe_injective hgψ]
 
 section RCLike
 
