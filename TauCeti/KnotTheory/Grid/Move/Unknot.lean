@@ -23,6 +23,8 @@ the grid size used to present it.
 
 ## Main results
 
+* `TauCeti.GridDiagram.unknot_succ_eq_stabilizeX`: the explicit stabilization relating
+  consecutive standard unknot grids.
 * `TauCeti.GridDiagram.isXStabilization_unknot_succ`: consecutive standard unknot grids are related
   by an `X`-stabilization.
 * `TauCeti.GridDiagram.toGridLink_unknot`: every standard unknot grid presents the unknot.
@@ -40,44 +42,49 @@ namespace TauCeti
 namespace GridDiagram
 
 /-- The standard unknot grid of size `n + 3` is the `X`-stabilization of the standard unknot grid
+of size `n + 2` that splits the `X`-marking in its first column, with the new `O`-marking in
+column `1` and row `1`. -/
+theorem unknot_succ_eq_stabilizeX (n : ℕ) : unknot (n + 1) = (unknot n).stabilizeX 1 1 0 := by
+  refine GridDiagram.ext (GridState.ext fun c ↦ ?_) (GridState.ext fun c ↦ ?_)
+  · rw [unknot_O_apply, stabilizeX_O]
+    induction c using Fin.succAboveCases (1 : Fin (n + 3)) with
+    | x => simp
+    | p c => simp
+  · rw [unknot_X_apply_eq_add_one, stabilizeX_X]
+    induction c using Fin.succAboveCases (1 : Fin (n + 3)) with
+    | x =>
+      have h₂ : (1 + 1 : Fin (n + 3)) = 2 := by
+        ext
+        simp [Fin.val_add, Nat.mod_eq_of_lt]
+      simp [h₂]
+    | p c =>
+      rw [GridState.splitPoint_apply_succAbove]
+      split_ifs with hc
+      · subst hc
+        simp
+      · rw [unknot_X_apply_eq_add_one]
+        have hc' : (c : ℕ) ≠ 0 := fun h ↦ hc (Fin.ext h)
+        -- The last column of the small grid wraps around to the bottom row.
+        by_cases hl : c = Fin.last (n + 1)
+        · subst hl
+          rw [Fin.last_add_one, Fin.ext_iff, Fin.val_add_one]
+          simp [Fin.succAbove, Fin.lt_def]
+        · have hv : ((c + 1 : Fin (n + 2)) : ℕ) = c + 1 := by simp [Fin.val_add_one, hl]
+          have hl' : (c : ℕ) ≠ n + 1 := fun h ↦ hl (Fin.ext h)
+          rw [Fin.ext_iff, Fin.val_add_one]
+          simp only [Fin.succAbove, Fin.lt_def, Fin.val_castSucc, Fin.val_one, Fin.ext_iff,
+            Fin.val_last, hv]
+          split_ifs <;> simp_all
+
+/-- The standard unknot grid of size `n + 3` is the `X`-stabilization of the standard unknot grid
 of size `n + 2` that splits the `X`-marking in its first column. -/
 theorem isXStabilization_unknot_succ (n : ℕ) : IsXStabilization (unknot n) (unknot (n + 1)) := by
-  refine (isXStabilization_iff _ _).mpr ⟨1, 1, 0, Or.inr ?_, Or.inl ?_, ?_⟩
+  refine (isXStabilization_iff _ _).mpr ⟨1, 1, 0, Or.inr ?_, Or.inl ?_, unknot_succ_eq_stabilizeX n⟩
   · ext
     simp [Fin.succAbove]
   · ext
     simp only [unknot_X_apply_eq_add_one, Fin.succAbove, Fin.lt_def]
     simp [Fin.val_add_one, Fin.ext_iff, Nat.mod_eq_of_lt]
-  · refine GridDiagram.ext (GridState.ext fun c ↦ ?_) (GridState.ext fun c ↦ ?_)
-    · rw [unknot_O_apply, stabilizeX_O]
-      induction c using Fin.succAboveCases (1 : Fin (n + 3)) with
-      | x => simp
-      | p c => simp
-    · rw [unknot_X_apply_eq_add_one, stabilizeX_X]
-      induction c using Fin.succAboveCases (1 : Fin (n + 3)) with
-      | x =>
-        have h₂ : (1 + 1 : Fin (n + 3)) = 2 := by
-          ext
-          simp [Fin.val_add, Nat.mod_eq_of_lt]
-        simp [h₂]
-      | p c =>
-        rw [GridState.splitPoint_apply_succAbove]
-        split_ifs with hc
-        · subst hc
-          simp
-        · rw [unknot_X_apply_eq_add_one]
-          have hc' : (c : ℕ) ≠ 0 := fun h ↦ hc (Fin.ext h)
-          -- The last column of the small grid wraps around to the bottom row.
-          by_cases hl : c = Fin.last (n + 1)
-          · subst hl
-            rw [Fin.last_add_one, Fin.ext_iff, Fin.val_add_one]
-            simp [Fin.succAbove, Fin.lt_def]
-          · have hv : ((c + 1 : Fin (n + 2)) : ℕ) = c + 1 := by simp [Fin.val_add_one, hl]
-            have hl' : (c : ℕ) ≠ n + 1 := fun h ↦ hl (Fin.ext h)
-            rw [Fin.ext_iff, Fin.val_add_one]
-            simp only [Fin.succAbove, Fin.lt_def, Fin.val_castSucc, Fin.val_one, Fin.ext_iff,
-              Fin.val_last, hv]
-            split_ifs <;> simp_all
 
 end GridDiagram
 
