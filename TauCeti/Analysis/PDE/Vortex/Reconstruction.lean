@@ -25,8 +25,9 @@ The construction uses the real field coordinates of `Vortex.equation`: `α = 2(p
 It gives an exact scalar-to-vortex reduction, not existence of a solution of the scalar equation,
 finite energy, an end framing, or a choice of gauge for an arbitrary vortex.
 `exists_amplitudeField_section_eq_pow_mul` preserves each finite holomorphic zero multiplicity as a
-factorization by the same complex power and a nonvanishing smooth factor. In particular,
-repeated divisor points require no singular connection or division by the section.
+factorization by the same complex power and a factor that is nonvanishing at the point and
+as regular there as the amplitude (`C^n`). In particular, repeated divisor points require no
+singular connection or division by the section.
 
 ## References
 
@@ -156,8 +157,9 @@ theorem equation_amplitudeField_apply_zero {u : ℂ → ℝ} (f : ℂ → ℂ) {
   simp
   ring
 
-/-- The smooth ansatz is a vortex exactly when its amplitude solves the regularized scalar
-PDE. This equivalence holds at zeros of the holomorphic factor as well. -/
+/-- If `u` is `C²` at `z` and `f` is complex differentiable at `z`, the vortex equation for
+the ansatz holds at `z` exactly when `u` satisfies the regularized scalar equation at `z`,
+including at zeros of `f`. -/
 theorem equation_amplitudeField_eq_zero_iff {u : ℂ → ℝ} {f : ℂ → ℂ} {z : ℂ}
     (hu : ContDiffAt ℝ 2 u z) (hf : DifferentiableAt ℂ f z) :
     equation (amplitudeField u f) z = 0 ↔
