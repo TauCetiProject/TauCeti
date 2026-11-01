@@ -26,6 +26,8 @@ how small nonzero values of integer polynomials of degree at most `n` can be at 
 ## Main results
 
 * `linearFormApproximations_antitone`: the solution sets shrink as the exponent grows.
+* `ofReal_le_linearFormExponent_of_forall_lt`: if every exponent below `w` has infinitely many
+  solutions, then `w ≤ w(θ)`.
 * `linearFormExponent_comp_le`: forgetting coordinates along an injective reindexing can only
   decrease the exponent; in particular Mahler's exponent is monotone in the degree
   (`mahlerExponent_mono`).
@@ -174,7 +176,7 @@ private theorem exists_mem_abs_lt_of_infinite {θ : ι → ℝ} {w : ℝ} (hw0 :
 
 /-- If every exponent below `w` has infinitely many solutions, then `w` is at most the linear-form
 exponent. -/
-private theorem ofReal_le_linearFormExponent_of_forall_lt {θ : ι → ℝ} {w : ℝ}
+theorem ofReal_le_linearFormExponent_of_forall_lt {θ : ι → ℝ} {w : ℝ}
     (h : ∀ w' < w, (linearFormApproximations θ w').Infinite) :
     ENNReal.ofReal w ≤ linearFormExponent θ := by
   refine le_of_forall_lt fun c hc ↦ ?_

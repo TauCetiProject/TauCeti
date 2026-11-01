@@ -36,7 +36,8 @@ This factorisation is the starting point of Liouville- and Roth-type lower bound
 at integer points.
 
 The file also records the value of the homogenization of degree `n` at a point `(a, b)`: the sum
-of the terms `p_k a ^ k b ^ (n - k)`, which is `p(a / b) b ^ n` when `b ≠ 0`. Substituting linear
+of the terms `p_k a ^ k b ^ (n - k)`, which is `p(a / b) b ^ n` when `b ≠ 0` and
+`natDegree p ≤ n`. Substituting linear
 polynomials `a X + b` and `c X + d` for the two variables, this is the action
 `p ↦ (c X + d) ^ n p((a X + b) / (c X + d))` of a Möbius transformation on polynomials of degree at
 most `n`.
@@ -72,7 +73,7 @@ roots of `F(X, 1)` multiplied by `a`.
   `a ∣ x'`.
 * `Polynomial.aeval_homogenize_eq_sum`, `Polynomial.aeval_homogenize`: the value of the
   homogenization of degree `n` at `(a, b)`, as a sum of terms and, for `b ≠ 0` in a semifield
-  algebra, as `p(a / b) b ^ n`.
+  algebra and `natDegree p ≤ n`, as `p(a / b) b ^ n`.
 * `MvPolynomial.aeval_X_one_map`: the dehomogenization `F(X, 1)` commutes with mapping the
   coefficients along a ring homomorphism.
 * `MvPolynomial.IsHomogeneous.exists_linear_factors`: a nonzero binary form of degree `d` with no

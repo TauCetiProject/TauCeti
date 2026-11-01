@@ -13,6 +13,7 @@ import Mathlib.NumberTheory.NumberField.House
 import TauCeti.Algebra.Polynomial.Homogenize
 import TauCeti.Analysis.Polynomial.L1Norm
 import TauCeti.Analysis.Polynomial.SupNorm.Basic
+import TauCeti.Data.Rat.NumDenDvd
 import TauCeti.FieldTheory.Minpoly.Primitive
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
@@ -293,12 +294,8 @@ theorem mahlerExponent_mul_add_div_mul_add (n : ℕ) (ξ : ℝ) {a b c d : ℚ}
     rw [hξ, div_zero, hxq, ← Rat.cast_zero, mahlerExponent_ratCast, mahlerExponent_ratCast]
   -- Clear the denominators of the coefficients by multiplying them all by `m`.
   have hint (q : ℚ) {m : ℕ} (hq : q.den ∣ m) : ∃ z : ℤ, (z : ℝ) = m * q := by
-    obtain ⟨j, rfl⟩ := hq
-    refine ⟨q.num * j, ?_⟩
-    have : (q.den : ℝ) ≠ 0 := by exact_mod_cast q.den_nz
-    rw [Rat.cast_def]
-    push_cast
-    field_simp
+    obtain ⟨z, hz⟩ := (Rat.den_dvd_iff_exists_mul_intCast_eq q m).1 (by exact_mod_cast hq)
+    exact ⟨z, by rw [mul_comm]; exact_mod_cast hz.symm⟩
   set m : ℕ := a.den * b.den * c.den * d.den
   have hm : (m : ℝ) ≠ 0 := by positivity
   obtain ⟨a', ha'⟩ := hint a (m := m) ⟨b.den * c.den * d.den, by ring⟩
