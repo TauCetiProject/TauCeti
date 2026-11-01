@@ -100,7 +100,7 @@ private theorem exists_mul_add_eq_series_of_isRestricted {ρ r : ℝ} [Fact (0 <
     (isRestricted_of_map_subtype_eq_optionEquivLeft hρr hgr hGmap) (restrictedOptionEquiv fC).2
   -- Pull `Q` and `R` back to the overconvergent algebras and compare formal series.
   let φ : IsRestricted.subring (R := K) (fun _ : σ ↦ ρ) →+* W :=
-    washnitzerAlgebra.ofRestricted hρ fun _ ↦ le_rfl
+    (washnitzerAlgebra.ofRestricted hρ fun _ ↦ le_rfl).toRingHom
   refine ⟨washnitzerAlgebra.ofRestricted hρ (le_splitRadius hρr)
     ((restrictedOptionEquiv (c := c)).symm ⟨Q, hQ⟩), PowerSeries.map φ R,
     fun m hm ↦ by simp [hR m hm], washnitzerAlgebra.map_val_injective ?_⟩

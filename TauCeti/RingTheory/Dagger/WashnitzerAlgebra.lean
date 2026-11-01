@@ -41,8 +41,7 @@ the Tate algebra `T = R{X/1}` and carries the restricted Gauss norm.
 * `TauCeti.Dagger.washnitzerAlgebra.toTate`: the inclusion of `W` into the unit-radius Tate
   algebra.
 * `TauCeti.Dagger.washnitzerAlgebra.ofRestricted`: the inclusion into `W` of the series
-  restricted at a polyradius bounded below by some `ρ > 1`, with `R`-algebra form
-  `TauCeti.Dagger.washnitzerAlgebra.ofRestrictedₐ`.
+  restricted at a polyradius bounded below by some `ρ > 1`.
 * `TauCeti.Dagger.washnitzerAlgebra.renameEquiv`: renaming the variables along an equivalence.
 * `TauCeti.Dagger.washnitzerAlgebra.isEmptyAlgEquiv`: with no variables, `W` is the coefficient
   ring, via the constant coefficient.
@@ -330,28 +329,16 @@ theorem denseRange_toTate : DenseRange (toTate σ R) := by
 /-- For a polyradius `c` bounded below by some `ρ > 1`, the inclusion of the series restricted at
 `c` into the Monsky–Washnitzer algebra. -/
 noncomputable def ofRestricted {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i) :
-    IsRestricted.subring (R := R) c →+* washnitzerAlgebra σ R :=
-  (IsRestricted.subring (R := R) c).subtype.codRestrict (washnitzerAlgebra σ R).toSubring
-    fun f ↦ mem_washnitzerAlgebra.mpr
+    IsRestricted.subring (R := R) c →ₐ[R] washnitzerAlgebra σ R where
+  toRingHom := (IsRestricted.subring (R := R) c).subtype.codRestrict
+    (washnitzerAlgebra σ R).toSubring fun f ↦ mem_washnitzerAlgebra.mpr
       ⟨ρ, hρ, isRestricted_of_le f.2 (fun _ ↦ (zero_lt_one.trans hρ).le) hc⟩
+  commutes' _ := (rfl)
 
 /-- The inclusion of a restricted subring does not change the underlying series. -/
 @[simp]
 theorem coe_ofRestricted {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i)
     (f : IsRestricted.subring (R := R) c) : (ofRestricted hρ hc f : MvPowerSeries σ R) = f :=
-  (rfl)
-
-/-- For a polyradius `c` bounded below by some `ρ > 1`, the inclusion of the series restricted at
-`c` into the Monsky–Washnitzer algebra, as an `R`-algebra map. -/
-noncomputable def ofRestrictedₐ {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i) :
-    IsRestricted.subring (R := R) c →ₐ[R] washnitzerAlgebra σ R where
-  __ := ofRestricted hρ hc
-  commutes' _ := (rfl)
-
-/-- The `R`-algebra inclusion of a restricted subring does not change the underlying series. -/
-@[simp]
-theorem coe_ofRestrictedₐ {c : σ → ℝ} {ρ : ℝ} (hρ : 1 < ρ) (hc : ∀ i, ρ ≤ c i)
-    (f : IsRestricted.subring (R := R) c) : (ofRestrictedₐ hρ hc f : MvPowerSeries σ R) = f :=
   (rfl)
 
 /-- A renamed series is overconvergent iff the original one is. -/

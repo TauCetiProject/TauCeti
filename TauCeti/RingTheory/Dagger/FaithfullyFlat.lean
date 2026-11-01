@@ -10,11 +10,11 @@ public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 
 import TauCeti.RingTheory.Affinoid.Polyradius
 import TauCeti.RingTheory.Affinoid.PowerBounded
+import TauCeti.RingTheory.Affinoid.Restricted
 import TauCeti.RingTheory.Dagger.Weierstrass
 import TauCeti.RingTheory.Flat.QuotientPow
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.ClosedIdeal
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
-import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniversalProperty
 
 /-!
 # The Tate algebra is faithfully flat over the Monsky–Washnitzer algebra
@@ -77,10 +77,10 @@ local notation "T[" ρ "] " σ:max => IsRestricted.subring (R := K) (fun _ : σ 
 
 /-- For a radius `ρ > 1`, every class of a finite quotient `W ⧸ J` is represented by a series
 restricted at `ρ`, since it is represented by a polynomial. -/
-private theorem surjective_mkₐ_comp_ofRestrictedₐ (J : Ideal (W σ))
+private theorem surjective_mkₐ_comp_ofRestricted (J : Ideal (W σ))
     [Module.Finite K (W σ ⧸ J)] {ρ : ℝ} (hρ : 1 < ρ) :
     Function.Surjective
-      ((Ideal.Quotient.mkₐ K J).comp (ofRestrictedₐ (σ := σ) hρ fun _ ↦ le_rfl)) := by
+      ((Ideal.Quotient.mkₐ K J).comp (ofRestricted (σ := σ) hρ fun _ ↦ le_rfl)) := by
   have : Algebra.IsIntegral K (W σ ⧸ J) := Algebra.IsIntegral.of_finite K _
   intro x
   obtain ⟨p, rfl⟩ := surjective_mkₐ_comp_ofMvPolynomial J x
@@ -108,9 +108,9 @@ private theorem supSeminorm_le_one (J : Ideal (W σ)) {S : Type*}
           Real.rpow_inv_natCast_pow hρ0.le hm⟩
     let x : T[‖c‖ ^ (m : ℝ)⁻¹] σ := ⟨_root_.MvPowerSeries.X i, isRestricted_X _ i⟩
     let φ : T[‖c‖ ^ (m : ℝ)⁻¹] σ →ₐ[K] S :=
-      e.toAlgHom.comp ((Ideal.Quotient.mkₐ K J).comp (ofRestrictedₐ hr fun _ ↦ le_rfl))
-    have hx : ofRestrictedₐ hr (fun _ ↦ le_rfl) x = X σ K i :=
-      Subtype.ext ((coe_ofRestrictedₐ hr _ x).trans (coe_X (R := K) i).symm)
+      e.toAlgHom.comp ((Ideal.Quotient.mkₐ K J).comp (ofRestricted hr fun _ ↦ le_rfl))
+    have hx : ofRestricted hr (fun _ ↦ le_rfl) x = X σ K i :=
+      Subtype.ext ((coe_ofRestricted hr _ x).trans (coe_X (R := K) i).symm)
     have hφ : φ x = e (Ideal.Quotient.mk J (X σ K i)) := by simp [φ, hx]
     have h1 := hT.supSeminorm_map_le hS φ x
     have h2 := hT.supSeminorm_le_norm x
@@ -139,21 +139,17 @@ private theorem exists_algHom_comp_toTate_eq_of_algEquiv (J : Ideal (W σ))
   let b : Fin (Nat.card σ) → S := fun j ↦ e (Ideal.Quotient.mk J (X σ K (eσ.symm j)))
   have hb (j : Fin (Nat.card σ)) : TauCeti.Huber.IsPowerBounded (b j) :=
     (hS.isPowerBounded_iff_supSeminorm_le_one).mpr (supSeminorm_le_one J hS e _)
-  let ψ₀ := TauCeti.MvPowerSeries.restrictedLift (continuous_algebraMap K S) hb
+  let ψ₀ := isAffinoidAlgebra_self.restrictedLift hS (Algebra.ofId K S) hb
   let ren : T σ ≃ₐ[K] T (Fin (Nat.card σ)) := IsRestricted.renameAlgEquiv eσ (fun _ ↦ 1)
-  let ψ₁ : T σ →ₐ[K] S :=
-    { ψ₀.comp ren.toRingHom with
-      commutes' := fun a ↦ by
-        simp [ψ₀, TauCeti.MvPowerSeries.restrictedLift_algebraMap] }
-  refine ⟨e.symm.toAlgHom.comp ψ₁, algHom_ext_of_isIntegral fun i ↦ ?_⟩
+  refine ⟨e.symm.toAlgHom.comp (ψ₀.comp ren.toAlgHom), algHom_ext_of_isIntegral fun i ↦ ?_⟩
   have hren : ren (toTate σ K (X σ K i)) =
       ⟨_root_.MvPowerSeries.X (eσ i), isRestricted_X _ (eσ i)⟩ :=
     Subtype.ext <| (IsRestricted.coe_renameAlgEquiv eσ (fun _ ↦ (1 : ℝ)) _).trans <| by
       simp [rename_X]
-  have hψ₁ : ψ₁ (toTate σ K (X σ K i)) = ψ₀ (ren (toTate σ K (X σ K i))) := rfl
-  simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, hψ₁, hren,
-    TauCeti.MvPowerSeries.restrictedLift_X, ψ₀]
-  simp [b]
+  have hψ₀ : ψ₀ (ren (toTate σ K (X σ K i))) = b (eσ i) := by
+    rw [hren]
+    exact IsAffinoidAlgebra.restrictedLift_X _ hS _ hb _
+  simpa [b] using congrArg e.symm hψ₀
 
 /-- **A retraction of the Tate algebra onto a finite quotient of `W`.** For an ideal `J` of `W` of
 finite codimension, the projection `W → W ⧸ J` extends along `W → T`. -/
@@ -163,12 +159,12 @@ private theorem exists_algHom_comp_toTate_eq (J : Ideal (W σ)) [Module.Finite K
   obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm K
   have hρ0 : 0 < ‖c‖ := zero_lt_one.trans hc
   have : Fact (0 < ‖c‖) := ⟨hρ0⟩
-  let θ := (Ideal.Quotient.mkₐ K J).comp (ofRestrictedₐ (σ := σ) hc fun _ ↦ le_rfl)
+  let θ := (Ideal.Quotient.mkₐ K J).comp (ofRestricted (σ := σ) hc fun _ ↦ le_rfl)
   have hS : IsAffinoidAlgebra K (T[‖c‖] σ ⧸ RingHom.ker θ) :=
     (isAffinoidAlgebra_isRestricted_of_pow_eq_norm (r := fun _ : σ ↦ ‖c‖) fun _ ↦
       ⟨1, one_pos, Units.mk0 c (norm_pos_iff.mp hρ0), pow_one _⟩).quotient _
   exact exists_algHom_comp_toTate_eq_of_algEquiv J hS
-    (Ideal.quotientKerAlgEquivOfSurjective (surjective_mkₐ_comp_ofRestrictedₐ J hc)).symm
+    (Ideal.quotientKerAlgEquivOfSurjective (surjective_mkₐ_comp_ofRestricted J hc)).symm
 
 /-- **Finite quotients of the Monsky–Washnitzer algebra and of the Tate algebra agree.** An ideal
 `J` of `W` whose quotient is finite-dimensional over `K` satisfies `J T ∩ W = J`. -/
