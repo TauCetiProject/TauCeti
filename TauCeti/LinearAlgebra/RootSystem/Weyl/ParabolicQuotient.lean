@@ -52,6 +52,9 @@ saturated chains of orbit weights, in which each step is a reflection `ξ ↦ s_
   Weyl-group element with the same orbit weight.
 * `TauCeti.bruhatStep_ofIdx_mul_of_coroot'_neg`: `s_β w < w` in the Weyl group itself when
   `⟨w λ, β^∨⟩ < 0`.
+* `TauCeti.coroot'_smul_nonneg_of_not_isLeftDescent` and
+  `TauCeti.coroot'_smul_nonpos_of_isLeftDescent`: the sign of `⟨w λ, αᵢ^∨⟩` for a simple root
+  `αᵢ` according to whether `sᵢ` is a left descent of `w`.
 * `TauCeti.bruhatLE_and_ne_of_isMinimalCosetRep_of_coroot'_neg`,
   `TauCeti.bruhatLE_and_ne_of_isMinimalCosetRep_of_coroot'_pos` and
   `TauCeti.eq_of_isMinimalCosetRep_of_coroot'_eq_zero`: **the reflection test** in its three cases.
@@ -170,6 +173,25 @@ theorem bruhatStep_ofIdx_mul_of_coroot'_neg (hlam : lam ∈ dominantChamber P b)
     rw [← h]
     exact coroot'_nonneg_of_mem_posRoots P b hlam ((mem_posRoots P b _).mpr hpos)
   exact (P.bruhatStep_ofIdx_mul_iff_mem_inversions b w hβ).mpr hinv
+
+/-- **A simple reflection that does not shorten `w` pairs nonnegatively.** If `sᵢ` is not a left
+descent of `w`, then `⟨w λ, αᵢ^∨⟩ ≥ 0` for every dominant `λ`. -/
+theorem coroot'_smul_nonneg_of_not_isLeftDescent (hlam : lam ∈ dominantChamber P b)
+    {w : P.weylGroup} {i : b.support} (hi : ¬(weylCoxeterSystem P b).IsLeftDescent w i) :
+    0 ≤ P.coroot' i (w • lam) := by
+  refine not_lt.mp fun hneg ↦ hi ?_
+  rw [CoxeterSystem.IsLeftDescent, weylCoxeterSystem_simple]
+  exact (bruhatStep_ofIdx_mul_of_coroot'_neg hlam (b.isPos_of_mem_support i.2) hneg).length_lt
+
+/-- **A left descent pairs nonpositively.** If `sᵢ` is a left descent of `w`, then
+`⟨w λ, αᵢ^∨⟩ ≤ 0` for every dominant `λ`. -/
+theorem coroot'_smul_nonpos_of_isLeftDescent (hlam : lam ∈ dominantChamber P b)
+    {w : P.weylGroup} {i : b.support} (hi : (weylCoxeterSystem P b).IsLeftDescent w i) :
+    P.coroot' i (w • lam) ≤ 0 := by
+  have h := coroot'_smul_nonneg_of_not_isLeftDescent hlam
+    ((weylCoxeterSystem P b).isLeftDescent_iff_not_isLeftDescent_mul.mp hi)
+  rwa [weylCoxeterSystem_simple, mul_smul, RootPairing.weylGroup.ofIdx_smul,
+    Equiv.reflection_smul, coroot'_reflection_self, neg_nonneg] at h
 
 /-- **Reflection test, negative pairing.** Let `β` be a positive root with `⟨w λ, β^∨⟩ < 0`, and
 let `v` be the minimal coset representative of `s_β w`, so `v λ = s_β (w λ)`. Then `v < w` in the
