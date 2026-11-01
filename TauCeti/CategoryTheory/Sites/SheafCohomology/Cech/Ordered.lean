@@ -99,11 +99,13 @@ private def toStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n : ℕ) :
   Pi.map' Subtype.val fun _ ↦ 𝟙 _
 
 /-- `toStrictMonoCechX` is split surjective, as the reindexing of a product along the injection
-`Subtype.val`: a cochain on the strictly increasing tuples extends by zero. -/
+`Subtype.val` (`isSplitEpi_piMap'`): a cochain on the strictly increasing tuples extends by zero. -/
 private lemma isSplitEpi_toStrictMonoCechX (P : Cᵒᵖ ⥤ A) (n : ℕ) :
     IsSplitEpi (toStrictMonoCechX U P n) :=
+  have : Mono (TypeCat.ofHom (Subtype.val : {a : Fin (n + 1) → ι // StrictMono a} → _)) :=
+    (mono_iff_injective _).2 Subtype.val_injective
   isSplitEpi_piMap' (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j))))
-    Subtype.val_injective
+    (TypeCat.ofHom Subtype.val)
 
 /-- The differential of the Čech complex, with source and target the products which define its
 terms. -/
@@ -329,6 +331,14 @@ the strictly increasing tuples extends by zero to a Čech cochain. -/
 instance (P : Cᵒᵖ ⥤ A) (n : ℕ) : IsSplitEpi (((toStrictMonoCechComplex U).app P).f n) :=
   isSplitEpi_toStrictMonoCechX U P n
 
+/-- An order embedding of `Fin k` into `ι` is the same as a strictly increasing tuple. -/
+private def orderEmbeddingEquivStrictMono (k : ℕ) :
+    (Fin k ↪o ι) ≃ {a : Fin k → ι // StrictMono a} where
+  toFun f := ⟨f, f.strictMono⟩
+  invFun a := OrderEmbedding.ofStrictMono a.1 a.2
+  left_inv _ := DFunLike.coe_injective (OrderEmbedding.coe_ofStrictMono _)
+  right_inv _ := Subtype.ext (OrderEmbedding.coe_ofStrictMono _)
+
 end Preorder
 
 /-! ### Comparison with the ordered Čech complex of a functor on finite sets
@@ -365,8 +375,8 @@ variable (P : Cᵒᵖ ⥤ A)
 /-- The degree `n` term of `Čₒ(U, P)` is the product of the `P(∏_{i ∈ s} U i)` over the sets `s`
 of `n + 1` indices, the factor of `s` being reached through its increasing enumeration. The sets of
 `n + 1` indices are matched with the strictly increasing tuples by
-`Set.powersetCard.ofFinEmbEquiv`, an order embedding of `Fin (n + 1)` being a strictly increasing
-tuple, and `∏_{i ∈ s} U i` is reindexed along the increasing enumeration of `s` by `Pi.reindex`. -/
+`Set.powersetCard.ofFinEmbEquiv` and `orderEmbeddingEquivStrictMono`, and `∏_{i ∈ s} U i` is
+reindexed along the increasing enumeration of `s` by `Pi.reindex`. -/
 private def isLimitFan (n : ℕ) : IsLimit (Fan.mk
     (∏ᶜ fun a : {a : Fin (n + 1) → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.1 j))))
     fun s : {s : Finset ι // #s = n + 1} ↦
@@ -374,14 +384,9 @@ private def isLimitFan (n : ℕ) : IsLimit (Fan.mk
         {a : Fin (n + 1) → ι // StrictMono a}) ≫
       P.map (Pi.lift fun j ↦
         Pi.π (fun i : s.1 ↦ U i) ⟨s.1.orderEmbOfFin s.2 j, orderEmbOfFin_mem _ _ j⟩).op) :=
-  (productIsProduct _).ofIsoLimit <| (Fan.ext (Pi.whiskerEquiv
+  (productIsProduct _).ofIsoLimit <| Iso.symm <| Fan.ext (Pi.whiskerEquiv
     (((Equiv.subtypeEquivRight fun _ ↦ Set.powersetCard.mem_iff.symm).trans
-      Set.powersetCard.ofFinEmbEquiv.symm).trans
-      ({ toFun f := ⟨f, f.strictMono⟩
-         invFun a := OrderEmbedding.ofStrictMono a.1 a.2
-         left_inv f := DFunLike.coe_injective (OrderEmbedding.coe_ofStrictMono _)
-         right_inv a := Subtype.ext (OrderEmbedding.coe_ofStrictMono _) } :
-        (Fin (n + 1) ↪o ι) ≃ {a : Fin (n + 1) → ι // StrictMono a}))
+      Set.powersetCard.ofFinEmbEquiv.symm).trans (orderEmbeddingEquivStrictMono (n + 1)))
     fun s ↦ P.mapIso (Pi.reindex (s.1.orderIsoOfFin s.2).toEquiv fun i : s.1 ↦ U i).symm.op).symm
       fun s ↦ by
         have h : Pi.lift (f := fun j ↦ U (s.1.orderEmbOfFin s.2 j)) (fun j ↦
@@ -393,15 +398,11 @@ private def isLimitFan (n : ℕ) : IsLimit (Fan.mk
             -- `Finset.coe_orderIsoOfFin_apply` holds by definition
             exact (Pi.reindex_inv_π (s.1.orderIsoOfFin s.2).toEquiv (fun i : s.1 ↦ U i) j).symm
         rw [fan_mk_proj, fan_mk_proj, Iso.symm_hom, h]
-        -- `Pi.whiskerEquiv_inv`: the inverse of `Pi.whiskerEquiv e w` is by definition
-        -- `Pi.map' e fun s ↦ (w s).hom`, and `e` sends `s` to `⟨s.orderEmbOfFin h, _⟩` by
-        -- definition (`Set.powersetCard.ofFinEmbEquiv_symm_apply` is `rfl`)
-        exact (Pi.map'_comp_π (f := fun a : {a : Fin (n + 1) → ι // StrictMono a} ↦
-          P.obj (op (∏ᶜ fun j ↦ U (a.1 j)))) (g := fun s : {s : Finset ι // #s = n + 1} ↦
-          P.obj (op (∏ᶜ fun i : s.1 ↦ U i)))
-          (fun s ↦ ⟨s.1.orderEmbOfFin s.2, (s.1.orderEmbOfFin s.2).strictMono⟩)
-          (fun s ↦ P.map (Pi.reindex (s.1.orderIsoOfFin s.2).toEquiv fun i : s.1 ↦ U i).inv.op)
-          s).symm).symm
+        dsimp only [Pi.whiskerEquiv]
+        rw [Pi.map'_comp_π, Functor.mapIso_hom, Iso.op_hom, Iso.symm_hom]
+        -- the index is `⟨s.orderEmbOfFin h, _⟩` by `Set.powersetCard.ofFinEmbEquiv_symm_apply`,
+        -- which is `rfl`; it cannot be rewritten, as the type of the factor depends on it
+        rfl
 
 /-- The degree `n` component of `strictMonoCechComplexIso`. -/
 private def strictMonoCechXIso (n : ℕ) :
@@ -490,10 +491,10 @@ theorem strictMonoCechComplexIso_hom_f_comp_unop_orderedCechComplexι (n : ℕ)
       strictMonoCechComplexπ U P (⟨s.1.orderEmbOfFin s.2, (s.1.orderEmbOfFin s.2).strictMono⟩ :
           {a : Fin (n + 1) → ι // StrictMono a}) ≫
         P.map (Pi.lift fun j ↦
-          Pi.π (fun i : s.1 ↦ U i) ⟨s.1.orderEmbOfFin s.2 j, orderEmbOfFin_mem _ _ j⟩).op :=
-  -- `(strictMonoCechComplexIso U P).hom.f n` is `(strictMonoCechXIso U P n).hom` by
-  -- `HomologicalComplex.Hom.isoOfComponents`, and `strictMonoCechComplexπ U P a` is `Pi.π _ a`
-  Quiver.Hom.op_inj (orderedCechComplexι_strictMonoCechXIso_hom_op U P n s)
+          Pi.π (fun i : s.1 ↦ U i) ⟨s.1.orderEmbOfFin s.2 j, orderEmbOfFin_mem _ _ j⟩).op := by
+  dsimp only [strictMonoCechComplexIso, HomologicalComplex.Hom.isoOfComponents_hom_f]
+  -- `strictMonoCechComplexπ U P a` is `Pi.π _ a` by definition
+  exact Quiver.Hom.op_inj (orderedCechComplexι_strictMonoCechXIso_hom_op U P n s)
 
 end LinearOrder
 

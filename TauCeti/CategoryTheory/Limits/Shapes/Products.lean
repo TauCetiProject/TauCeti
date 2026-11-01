@@ -114,19 +114,20 @@ variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasProducts.{w} C]
 
 open scoped Classical in
 /-- Reindexing a product along an injective map of index types is a split epimorphism. -/
-theorem isSplitEpi_piMap' {I J : Type w} (X : I → C) {f : J → I} (hf : Function.Injective f) :
-    IsSplitEpi (Pi.map' f fun j ↦ 𝟙 (X (f j))) :=
+instance isSplitEpi_piMap' {I J : Type w} (X : I → C) (f : J ⟶ I) [Mono f] :
+    IsSplitEpi (Pi.map' f fun j ↦ 𝟙 ((X ∘ f) j)) :=
   IsSplitEpi.mk'
     { section_ := Pi.lift fun i ↦
-        if h : ∃ j, f j = i then
-          Pi.π (fun j ↦ X (f j)) h.choose ≫ eqToHom (congrArg X h.choose_spec)
+        if h : i ∈ Set.range f then
+          Pi.π (X ∘ f) h.choose ≫ eqToHom (congrArg X h.choose_spec)
         else 0
       id := by
         refine Pi.hom_ext _ _ fun j ↦ ?_
-        have h : ∃ j', f j' = f j := ⟨j, rfl⟩
-        rw [Category.assoc, Pi.map'_comp_π, Category.comp_id, Pi.lift_comp_π, dite_eq_left h,
-          Category.id_comp]
-        exact Pi.π_comp_eqToHom (fun j ↦ X (f j)) (hf h.choose_spec) }
+        have h : f j ∈ Set.range f := ⟨j, rfl⟩
+        have hj : h.choose = j := (mono_iff_injective f).1 ‹_› h.choose_spec
+        simp only [Category.assoc, Pi.map'_comp_π, Function.comp_apply, Category.comp_id,
+          Pi.lift_comp_π, dite_eq_left h, Category.id_comp]
+        exact Pi.π_comp_eqToHom (X ∘ f) hj }
 
 end ReindexPi
 
