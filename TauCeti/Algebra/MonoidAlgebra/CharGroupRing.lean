@@ -24,9 +24,11 @@ kernels of the evaluations at the members of `Ψ`.
 
 Character group rings are the coefficient orders of the integral Brumer–Stark arguments of
 Dasgupta and Kakde: they interpolate between `O` (`Ψ = {1}`) and, for `G` finite and `O` a
-domain with enough roots of unity, `O[G]` itself (`Ψ` all characters). The quotient
-`O[G] / N_I O[G]` by the norm element `N_I` of a subgroup `I` is of this form (Dasgupta–Kakde,
-Lemma 2.2). They are in general proper suborders of the product `∏_{ψ ∈ Ψ} O`.
+domain with enough roots of unity, `O[G]` itself (`Ψ` all characters). Under the same
+hypotheses, the quotient `O[G] / N_I O[G]` by the norm element `N_I` of a subgroup `I` is the
+character group ring of the set of characters that are nontrivial on `I` (Dasgupta–Kakde,
+Lemma 2.2); this identification is not proved in this file. Character group rings are in
+general proper suborders of the product `∏_{ψ ∈ Ψ} O`.
 
 The main theorem is that the joint evaluation at all characters is injective when `G` is finite
 and `O` is a domain with enough roots of unity (`Set.jointEval_injective`), so that the
