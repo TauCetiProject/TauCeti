@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import Mathlib.CategoryTheory.IsomorphismClasses
-public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RingTheory.Ideal.Maps
 
 /-!
@@ -27,7 +26,7 @@ identifications. By the five lemma every such morphism is bijective, so square-z
 `B` by `M` form a groupoid; `Exal` is its set of isomorphism classes. The trivial extension
 `TrivSqZeroExt B M`, with multiplication `(b, m) (b', m') = (b b', b m' + b' m)`, gives the zero
 class, and an extension has the zero class exactly when its projection admits an `A`-algebra
-section. Every extension of `A` itself splits, while `ℤ/4 → ℤ/2` does not.
+section. Every extension of `A` itself splits.
 
 ## Main definitions
 
@@ -45,8 +44,6 @@ section. Every extension of `A` itself splits, while `ℤ/4 → ℤ/2` does not.
 * `TauCeti.SquareZeroExtension.extensionClass_eq_zero_iff`: an extension has the zero class if
   and only if it splits.
 * `TauCeti.Exal.subsingleton_self`: `Exal_A(A, M)` is zero.
-* `TauCeti.SquareZeroExtension.zmodFour_extensionClass_ne_zero`: the extension `ℤ/4 → ℤ/2` has
-  a nonzero class.
 
 ## References
 
@@ -414,35 +411,5 @@ instance Exal.subsingleton_self : Subsingleton (Exal A A N) := by
     F.extensionClass_eq_zero_iff.2 ⟨F.algebraMapSplitting⟩]
 
 end Self
-
-namespace SquareZeroExtension
-
-/-- The square-zero extension `ℤ/4 → ℤ/2` of `ℤ/2` by `ℤ/2` over `ℤ`, whose kernel `2ℤ/4ℤ` is
-identified with `ℤ/2` by `m ↦ 2m`. -/
-@[expose] def zmodFour : SquareZeroExtension.{0} ℤ (ZMod 2) (ZMod 2) where
-  Ring := ZMod 4
-  π := (ZMod.castHom (by norm_num : 2 ∣ 4) (ZMod 2)).toIntAlgHom
-  π_surjective := by decide
-  ι := AddMonoidHom.mk' (fun m ↦ 2 * (m.val : ZMod 4)) (by decide)
-  ι_injective := by decide
-  exact y := by
-    rw [Set.mem_range]
-    revert y
-    decide
-  mul_ι := by decide
-
-/-- The extension `ℤ/4 → ℤ/2` does not split: there is no ring map `ℤ/2 → ℤ/4`. -/
-theorem isEmpty_splitting_zmodFour : IsEmpty zmodFour.Splitting := by
-  refine ⟨fun s ↦ ?_⟩
-  have h := map_add s.toAlgHom 1 1
-  rw [(by decide : (1 + 1 : ZMod 2) = 0), map_zero, map_one] at h
-  exact absurd h (by decide : (0 : ZMod 4) ≠ 1 + 1)
-
-/-- The extension `ℤ/4 → ℤ/2` has a nonzero class in `Exal_ℤ(ℤ/2, ℤ/2)`. -/
-theorem zmodFour_extensionClass_ne_zero : zmodFour.extensionClass ≠ 0 := by
-  rw [Ne, extensionClass_eq_zero_iff, not_nonempty_iff]
-  exact isEmpty_splitting_zmodFour
-
-end SquareZeroExtension
 
 end TauCeti
