@@ -16,7 +16,9 @@ of the replicating strategy, and invest the initial surplus `c * (q - p)` in the
 The combined trade costs zero and pays `c * (q - p) * β_T / β_0` at maturity.
 
 `IsSelfFinancing.exists_staticClaim_offset` constructs the stock and bond holdings, preserves
-their measurability at each trading date, and proves both cash-flow identities. The claim is
+their measurability at each trading date, and proves both cash-flow identities. All three
+theorems expose the holdings by equations `a' = (-c) • a` and
+`b' = (-c) • b + (fun _ _ => c * (q - p) / B₀)`. The claim is
 held separately until maturity: self-financing refers to the stock/bond part after its initial
 purchase, not to an assumed martingale property of the mispriced claim.
 
@@ -35,7 +37,7 @@ last date mean the portfolio from the preceding interval, as in `SimpleStrategy`
 ## References
 
 * H. Föllmer, A. Schied, *Stochastic Finance: An Introduction in Discrete Time*, 4th ed.,
-  de Gruyter, 2016, §5.1.
+  de Gruyter, 2016, §5.3 (pricing attainable contingent claims); §5.1 for the strategy setup.
 -/
 
 public section
@@ -64,6 +66,7 @@ theorem IsSelfFinancing.exists_staticClaim_offset
     (hH : ∀ᵐ ω ∂P, a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω = H ω)
     (c : ℝ) :
     ∃ a' b' : ℕ → Ω → ℝ,
+      a' = (-c) • a ∧ b' = (-c) • b + (fun _ _ => c * (q - p) / B₀) ∧
       IsSelfFinancing τ (n + 1) a' b' S β ∧
       (∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (a' j) ∧
         StronglyMeasurable[ℱ (τ j)] (b' j)) ∧
@@ -71,7 +74,7 @@ theorem IsSelfFinancing.exists_staticClaim_offset
       ∀ᵐ ω ∂P, a' n ω * S (τ (n + 1)) ω + b' n ω * β (τ (n + 1)) ω + c * H ω =
         c * (q - p) * β (τ (n + 1)) ω / B₀ := by
   refine ⟨fun j ω => -c * a j ω, fun j ω => -c * b j ω + c * (q - p) / B₀,
-    ?_, ?_, ?_, ?_⟩
+    rfl, rfl, ?_, ?_, ?_, ?_⟩
   · rw [isSelfFinancing_iff] at hsf ⊢
     intro j hj ω
     linear_combination -c * hsf j hj ω
@@ -101,6 +104,7 @@ theorem IsSelfFinancing.exists_staticClaim_sure_profit
     (hpq : p ≠ q) {A : Set ℝ} {N : ℝ} (hN : 0 < N) (hA : N ∈ A) (hA' : -N ∈ A) :
     0 < N * |q - p| * Bₜ / B₀ ∧
     ∃ c ∈ A, ∃ a' b' : ℕ → Ω → ℝ,
+      a' = (-c) • a ∧ b' = (-c) • b + (fun _ _ => c * (q - p) / B₀) ∧
       IsSelfFinancing τ (n + 1) a' b' S β ∧
       (∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (a' j) ∧
         StronglyMeasurable[ℱ (τ j)] (b' j)) ∧
@@ -116,9 +120,9 @@ theorem IsSelfFinancing.exists_staticClaim_sure_profit
     · refine ⟨-N, hA', ?_⟩
       rw [abs_of_neg (sub_neg.mpr h)]
       ring
-  obtain ⟨a', b', hs, hm, hcost, hpay⟩ :=
+  obtain ⟨a', b', ha', hb', hs, hm, hcost, hpay⟩ :=
     hsf.exists_staticClaim_offset ha hb hB₀.ne' hβ₀ hq hH c
-  refine ⟨c, hc, a', b', hs, hm, hcost, ?_⟩
+  refine ⟨c, hc, a', b', ha', hb', hs, hm, hcost, ?_⟩
   filter_upwards [hpay, hβₜ] with ω hω hβω
   simpa only [hβω, hsign] using hω
 
@@ -138,6 +142,7 @@ theorem IsSelfFinancing.exists_staticClaim_profit_gt
     (hscale : ∀ N : ℕ, 0 < N → (N : ℝ) ∈ A ∧ -(N : ℝ) ∈ A)
     (R : ℝ) :
     ∃ c ∈ A, ∃ a' b' : ℕ → Ω → ℝ,
+      a' = (-c) • a ∧ b' = (-c) • b + (fun _ _ => c * (q - p) / B₀) ∧
       IsSelfFinancing τ (n + 1) a' b' S β ∧
       (∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (a' j) ∧
         StronglyMeasurable[ℱ (τ j)] (b' j)) ∧
@@ -151,10 +156,10 @@ theorem IsSelfFinancing.exists_staticClaim_profit_gt
   have hNnat : 0 < N := by exact_mod_cast hNpos
   have hbound : max R 0 < (N : ℝ) * |q - p| * Bₜ / B₀ := by
     simpa only [mul_div_assoc, mul_assoc] using (div_lt_iff₀ hg).mp hN
-  obtain ⟨_, c, hc, a', b', hs, hm, hcost, hpay⟩ :=
+  obtain ⟨_, c, hc, a', b', ha', hb', hs, hm, hcost, hpay⟩ :=
     hsf.exists_staticClaim_sure_profit ha hb hB₀ hβ₀ hBₜ hβₜ hq hH hpq hNpos
       (hscale N hNnat).1 (hscale N hNnat).2
-  refine ⟨c, hc, a', b', hs, hm, hcost, ?_⟩
+  refine ⟨c, hc, a', b', ha', hb', hs, hm, hcost, ?_⟩
   filter_upwards [hpay] with ω hω
   rw [hω]
   exact hbound
