@@ -21,13 +21,6 @@ subset of an arbitrary complex normed space `V`, with values in a complex Banach
 (`TendstoUniformlyOn.differentiableOn`). It is the input needed to see that bounded holomorphic
 functions form a closed subspace of the bounded continuous functions.
 
-The proof controls Fréchet derivatives by a Cauchy estimate on balls
-(`TauCeti.norm_fderiv_le_of_forall_mem_ball_norm_le`), which follows from Mathlib's Schwarz lemma
-`Complex.norm_fderiv_le_div_of_mapsTo_ball`. Uniform convergence then makes the derivatives
-uniformly Cauchy on a smaller ball, so they converge uniformly there by completeness of
-`V →L[ℂ] E`, and Mathlib's `hasFDerivAt_of_tendstoUniformlyOnFilter` identifies the limit as the
-derivative of the limit function.
-
 ## Main results
 
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le`: a map bounded by `M` on `s` sends `s` into the
@@ -79,6 +72,10 @@ This is the analogue, for domains in an arbitrary complex normed space, of Mathl
 theorem TendstoUniformlyOn.differentiableOn [CompleteSpace E] {l : Filter ι} [l.NeBot]
     {F : ι → V → E} {f : V → E} {U : Set V} (hf : TendstoUniformlyOn F f l U)
     (hF : ∀ᶠ n in l, DifferentiableOn ℂ (F n) U) (hU : IsOpen U) : DifferentiableOn ℂ f U := by
+  -- The Cauchy estimate `TauCeti.norm_fderiv_le_of_forall_mem_ball_norm_le` makes the derivatives
+  -- uniformly Cauchy on a smaller ball, so they converge uniformly there by completeness of
+  -- `V →L[ℂ] E`, and `hasFDerivAt_of_tendstoUniformlyOnFilter` identifies the limit as the
+  -- derivative of the limit function.
   intro x hx
   obtain ⟨R, hR, hRU⟩ := Metric.isOpen_iff.mp hU x hx
   have hr : 0 < R / 2 := half_pos hR

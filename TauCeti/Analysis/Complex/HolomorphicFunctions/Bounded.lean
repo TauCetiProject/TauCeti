@@ -38,10 +38,7 @@ injective:
 
 * **Compactness (Montel).** If `U'` lies in a compact subset of `U` and `E` is proper (for a
   complex normed space, finite-dimensional), restriction is a compact operator
-  (`TauCeti.BoundedHolomorphicFunctions.isCompactOperator_restrict`). The unit ball of `H^∞(U, E)`
-  is equicontinuous by the Cauchy estimate
-  `TauCeti.BoundedHolomorphicFunctions.dist_apply_le_of_ball_subset`, so the Arzelà–Ascoli theorem
-  applies on the compact set.
+  (`TauCeti.BoundedHolomorphicFunctions.isCompactOperator_restrict`).
 * **Injectivity (identity theorem).** If `V` is finite-dimensional, `E` is complete, and every
   connected component of `U` meets `U'`, restriction is injective
   (`TauCeti.BoundedHolomorphicFunctions.restrict_injective`).
@@ -229,6 +226,8 @@ theorem restrict_comp_restrict (h : U' ≤ U) (h' : U'' ≤ U') :
 theorem isCompactOperator_restrict [ProperSpace E] {K : Set V} (hK : IsCompact K)
     (hU'K : (U' : Set V) ⊆ K) (hKU : K ⊆ U) :
     IsCompactOperator (restrict (E := E) (hU'K.trans hKU)) := by
+  -- The unit ball of `H^∞(U, E)` is equicontinuous by the Cauchy estimate
+  -- `dist_apply_le_of_ball_subset`, so the Arzelà–Ascoli theorem applies on the compact set `K`.
   have : CompactSpace K := isCompact_iff_compactSpace.mp hK
   let ρ : C(K, U) := ⟨fun z => ⟨z, hKU z.2⟩, continuous_subtype_val.subtype_mk _⟩
   let σ : C(U', K) := ⟨fun z => ⟨z, hU'K z.2⟩, continuous_subtype_val.subtype_mk _⟩
