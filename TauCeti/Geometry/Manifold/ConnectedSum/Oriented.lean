@@ -265,9 +265,8 @@ theorem nonempty_diffeomorph_orientedConnectedSum {s s' : E → N} (h : IsComple
   obtain ⟨oE, hl, -⟩ := OrientedConnectedSum.exists_isOrientationPreservingAt_ballLeft oM oN
   have he := OrientedConnectedSum.isOpenEmbedding_ballLeft oM oN
   have de := OrientedConnectedSum.isLocalDiffeomorph_ballLeft oM oN
-  obtain hp | hr := oE.isOrientationPreservingAt_or_isOrientationReversingAt oN s 0
-    ((ds 0).mfderivToContinuousLinearEquiv (by simp))
-    ((ds 0).mfderivToContinuousLinearEquiv_coe _)
+  obtain hp | hr :=
+    (ds 0).isOrientationPreservingAt_or_isOrientationReversingAt (by simp) oE oN
   · -- The ball `s` preserves orientations: rotate the sphere's two balls by a reflection.
     obtain ⟨R, hR⟩ := exists_det_eq_neg_one (F := E)
     have hsR := hs.comp_linearIsometryEquiv R

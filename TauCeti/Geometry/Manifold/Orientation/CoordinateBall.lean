@@ -44,9 +44,8 @@ theorem exists_isOpenEmbedding_isLocalDiffeomorph_isOrientationPreservingAt
     ∃ e : E → M, e 0 = x ∧ IsOpenEmbedding e ∧ IsLocalDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ e ∧
       oE.IsOrientationPreservingAt oM e 0 := by
   obtain ⟨e, he0, he, de⟩ := exists_isOpenEmbedding_isLocalDiffeomorph (F := E) (n := ⊤) x
-  obtain hp | hr := oE.isOrientationPreservingAt_or_isOrientationReversingAt oM e 0
-    ((de 0).mfderivToContinuousLinearEquiv (by simp))
-    ((de 0).mfderivToContinuousLinearEquiv_coe _)
+  obtain hp | hr :=
+    (de 0).isOrientationPreservingAt_or_isOrientationReversingAt (by simp) oE oM
   · exact ⟨e, he0, he, de, hp⟩
   -- A reversing ball is corrected by a reflection of `E`.
   obtain ⟨R, hR⟩ := TauCeti.exists_det_eq_neg_one (F := E)

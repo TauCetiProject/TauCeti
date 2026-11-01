@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Geometry.Manifold.IsManifold.Basic
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
@@ -16,7 +17,9 @@ import TauCeti.Geometry.Manifold.MFDeriv.Chart
 This file records the pointwise interface for a map to preserve or reverse manifold orientations.
 The differential is required to be represented by a continuous linear equivalence, and its induced
 orientation must agree with the target orientation (or its opposite). These predicates are the local
-input for pullback orientations and orientation-sensitive integration.
+input for pullback orientations and orientation-sensitive integration. A local diffeomorphism at a
+point either preserves or reverses orientations there
+(`IsLocalDiffeomorphAt.isOrientationPreservingAt_or_isOrientationReversingAt`).
 
 For orientation lifts with a common model orientation, the chart signs of the lifts compensate the
 sign of the coordinate Jacobian of an orientation-preserving map.
@@ -27,11 +30,12 @@ For one-dimensional manifolds modelled on `ℝ` whose orientations are the stand
 real number by which the derivative multiplies.
 
 On the model space `E` itself, every orientation is constant once the tangent spaces are identified
-with `E`, so a continuous linear automorphism of `E` preserves or reverses every orientation of `E`
-according to the sign of its determinant (`isOrientationPreservingAt_of_det_pos`,
-`isOrientationReversingAt_of_det_neg`). In particular a linear isometry of `E` of determinant `-1`
-reverses every orientation of `E` (`isOrientationReversingAt_of_det_eq_neg_one`), and precomposing
-with it exchanges preservation and reversal (`isOrientationPreservingAt_comp_of_det_eq_neg_one`,
+with `E` (`orientationAt_eq_orientationAt`), so a continuous linear automorphism of `E` preserves
+or reverses every orientation of `E` according to the sign of its determinant
+(`isOrientationPreservingAt_of_det_pos`, `isOrientationReversingAt_of_det_neg`). In particular a
+linear isometry of `E` of determinant `-1` reverses every orientation of `E`
+(`isOrientationReversingAt_of_det_eq_neg_one`), and precomposing with it exchanges preservation and
+reversal (`isOrientationPreservingAt_comp_of_det_eq_neg_one`,
 `isOrientationReversingAt_comp_of_det_eq_neg_one`).
 -/
 
@@ -138,6 +142,16 @@ theorem isOrientationPreservingAt_or_isOrientationReversingAt [IsManifold I 1 M]
     (o'.orientationAt (f x)) hcard with h | h
   · exact .inl ((isOrientationPreservingAt_iff_of_coe_eq o o' f x e he).2 h)
   · exact .inr ((isOrientationReversingAt_iff_of_coe_eq o o' f x e he).2 h)
+
+/-- A `C^n` local diffeomorphism at `x`, for `n ≠ 0`, either preserves or reverses orientations at
+`x`. -/
+theorem _root_.IsLocalDiffeomorphAt.isOrientationPreservingAt_or_isOrientationReversingAt
+    [IsManifold I 1 M] [IsManifold I' 1 M'] {n : WithTop ℕ∞} {f : M → M'} {x : M}
+    (hf : IsLocalDiffeomorphAt I I' n f x) (hn : n ≠ 0) (o : Manifold.Orientation I M ι)
+    (o' : Manifold.Orientation I' M' ι) :
+    IsOrientationPreservingAt o o' f x ∨ IsOrientationReversingAt o o' f x :=
+  TauCeti.Manifold.Orientation.isOrientationPreservingAt_or_isOrientationReversingAt o o' f x
+    (hf.mfderivToContinuousLinearEquiv hn) (hf.mfderivToContinuousLinearEquiv_coe hn)
 
 /-- An orientation-preserving map has an invertible manifold derivative. -/
 theorem IsOrientationPreservingAt.isInvertible_mfderiv [IsManifold I 1 M]
@@ -401,6 +415,15 @@ private theorem modelOrientationAt_eq (o : Manifold.Orientation 𝓘(ℝ, E) E �
   · rw [h, modelOrientationAt_model, modelOrientationAt_model]
   · rw [h, modelOrientationAt_neg, modelOrientationAt_neg, modelOrientationAt_model,
       modelOrientationAt_model]
+
+/-- **An orientation of the model space is constant.** An orientation of the connected model space
+`E` has the same tangent orientation at any two points, the tangent spaces of `E` all being `E`. -/
+theorem orientationAt_eq_orientationAt (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (x y : E) :
+    o.orientationAt x = o.orientationAt y :=
+  -- `NormedSpace.fromTangentSpace x` and `NormedSpace.fromTangentSpace y` are both the identity
+  -- of `E`, so the right side of `modelOrientationAt_eq` is also read through the former.
+  (_root_.Orientation.map ι (NormedSpace.fromTangentSpace x).toLinearEquiv).injective
+    (modelOrientationAt_eq o x y)
 
 /-- The derivative of a continuous linear automorphism `L` of `E` at `x`, as an equivalence of
 tangent spaces: `L` itself, read through the identifications of the tangent spaces with `E`. -/
