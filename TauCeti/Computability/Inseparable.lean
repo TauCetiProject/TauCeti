@@ -28,6 +28,8 @@ values to codes for them.
 
 * `Set.ComputablyInseparable`: two disjoint sets with no computable set separating them.
 * `TauCeti.diagonalFiber`: the set of indices `e` with `φ_e(e) = b`.
+* `TauCeti.diagonalFiberCode`: a computable map sending each value `b` to a code whose domain is
+  the diagonal fiber over `b`.
 
 ## Main results
 
@@ -37,8 +39,8 @@ values to codes for them.
 * `Set.ComputablyInseparable.not_computablePred_left`,
   `Set.ComputablyInseparable.not_computablePred_right`: neither set of a computably inseparable pair
   is computable.
-* `TauCeti.exists_computable_dom_eval_iff_mem_diagonalFiber`: the diagonal fibers are c.e.
-  uniformly in the value, with a computable map from values to codes for them.
+* `TauCeti.computable_diagonalFiberCode`, `TauCeti.dom_eval_diagonalFiberCode_iff`: the diagonal
+  fibers are c.e. uniformly in the value, with a computable map from values to codes for them.
 * `TauCeti.computablyInseparable_diagonalFiber`: diagonal fibers over distinct values are
   computably inseparable.
 * `TauCeti.exists_computablyInseparable_rePred`: there is a pair of computably inseparable c.e.
@@ -120,9 +122,9 @@ theorem disjoint_diagonalFiber {b b' : ℕ} (h : b ≠ b') :
     Disjoint (diagonalFiber b) (diagonalFiber b') :=
   Set.disjoint_left.2 fun _ hb hb' => h (Part.mem_unique hb hb')
 
-/-- **The diagonal fibers are uniformly c.e.** A computable map `g` sends each value `b` to a code
-whose domain is the diagonal fiber over `b`. -/
-theorem exists_computable_dom_eval_iff_mem_diagonalFiber :
+/-- A computable map `g` sends each value `b` to a code whose domain is the diagonal fiber over
+`b`. -/
+private theorem exists_computable_dom_eval_iff_mem_diagonalFiber :
     ∃ g : ℕ → Code, Computable g ∧ ∀ b e, ((g b).eval e).Dom ↔ e ∈ diagonalFiber b := by
   -- on the input `⟨b, e⟩`, run `φ_e(e)` and halt with output `0` exactly when it returns `b`
   let F : ℕ →. ℕ := fun n => ((Denumerable.ofNat Code n.unpair.2).eval n.unpair.2).bind
@@ -145,10 +147,25 @@ theorem exists_computable_dom_eval_iff_mem_diagonalFiber :
     cases hyb : y == b <;> simp_all
   · exact fun hb => ⟨0, b, hb, by simp⟩
 
+/-- A **c.e. index of the diagonal fiber** over `b`: a code whose domain is the set of indices `e`
+with `φ_e(e) = b`. It depends computably on `b`. -/
+noncomputable def diagonalFiberCode : ℕ → Code :=
+  exists_computable_dom_eval_iff_mem_diagonalFiber.choose
+
+/-- **The diagonal fibers are uniformly c.e.**: the code of the diagonal fiber over `b` is
+computable in `b`. -/
+theorem computable_diagonalFiberCode : Computable diagonalFiberCode :=
+  exists_computable_dom_eval_iff_mem_diagonalFiber.choose_spec.1
+
+/-- The code `diagonalFiberCode b` halts on the input `e` exactly when `e` lies in the diagonal
+fiber over `b`. -/
+theorem dom_eval_diagonalFiberCode_iff {b e : ℕ} :
+    ((diagonalFiberCode b).eval e).Dom ↔ e ∈ diagonalFiber b :=
+  exists_computable_dom_eval_iff_mem_diagonalFiber.choose_spec.2 b e
+
 /-- Each diagonal fiber is c.e. -/
-theorem rePred_mem_diagonalFiber (b : ℕ) : REPred (· ∈ diagonalFiber b) := by
-  obtain ⟨g, -, hg⟩ := exists_computable_dom_eval_iff_mem_diagonalFiber
-  exact (g b).rePred_dom_eval.of_eq fun e => hg b e
+theorem rePred_mem_diagonalFiber (b : ℕ) : REPred (· ∈ diagonalFiber b) :=
+  (diagonalFiberCode b).rePred_dom_eval.of_eq fun _ => dom_eval_diagonalFiberCode_iff
 
 /-- **Diagonal fibers over distinct values are computably inseparable.** If a computable set `C`
 contained the fiber over `b` and missed the fiber over `b'`, the computable function with value
