@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.ClassNumber
+public import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.UpperTriangular.Contribution
 
 /-!
 # The non-elliptic trace fibres of Popa–Zagier's explicit element
@@ -51,7 +52,8 @@ every weight vanishes because every matrix of nonzero weight has positive determ
 For positive trace, translating downwards decreases `n` and ends at a fibre with `0 < n < t`. There
 the sums `T₂`, `T₃` and `T₄` of eq. (15) contribute nothing and the only matrices occurring in
 `T₁` are `(1 b; 0 n)` with `0 ≤ b < n`, so the fibre is empty unless `t = n + 1`. The weights of
-these matrices are `6, 12, …, 12, 6` (or `2` when `n = 1`), with sum `12 (n - 1)` (or `2`). The
+these matrices are `6, 12, …, 12, 6` (or `2` when `n = 1`) by
+`TauCeti.PopaZagier.weight_upperTriangular`, with sum `12 (n - 1)` (or `2`). The
 fibre `(n + 1, n)` has discriminant `(n - 1)²`, and translating it upwards reaches the fibre of
 trace `a + d` and determinant `a d` with `d - a = n - 1`.
 
@@ -122,11 +124,13 @@ private theorem eq_one_of_le_neg_le {a b c d : ℤ} (htr : a + d = t) (hdet : a 
     have : a = d := by nlinarith [sq_nonneg (a - d)]
     nlinarith
 
-/-- In a fibre with `0 < n < t`, a matrix has nonzero weight only if it is `(1 b; 0 d)`, and its
-weight is then its weight `chainWeight₃ (1 - d) (-b) 0` in `T₁`. -/
+/-- In a fibre with `0 < n < t`, a matrix has nonzero weight only if it is of the form
+`(1 b; 0 d)`. -/
 private theorem weight_eq_of_lt {M : Matrix (Fin 2) (Fin 2) ℤ}
     (hM : M ∈ traceDetFiber (Fin 2) t n) (hn : 0 < n) (ht : n < t) :
-    weight M = if M 0 0 = 1 ∧ M 1 0 = 0 then chainWeight₃ (1 - M 1 1) (-M 0 1) 0 else 0 := by
+    weight M = if M 0 0 = 1 ∧ M 1 0 = 0 then weight !![1, M 0 1; 0, M 1 1] else 0 := by
+  split_ifs with hT
+  · conv_lhs => rw [eta_fin_two M, hT.1, hT.2]
   obtain ⟨htr, hdet⟩ := mem_traceDetFiber_fin_two.mp hM
   rw [weight]
   set a := M 0 0
@@ -137,15 +141,14 @@ private theorem weight_eq_of_lt {M : Matrix (Fin 2) (Fin 2) ℤ}
   have hdisc : 0 ≤ (a - d) ^ 2 + 4 * b * c := by
     have : (a - d) ^ 2 + 4 * b * c = t ^ 2 - 4 * n := by rw [← htr, ← hdet]; ring
     nlinarith [sq_nonneg (n - 1)]
-  have h₁ : weight₁ a b c d = if a = 1 ∧ c = 0 then chainWeight₃ (1 - d) (-b) 0 else 0 := by
+  -- in `T₁` the first line forces `a = 1`, and then `0 ≤ c < a` forces `c = 0`
+  have h₁ : weight₁ a b c d = 0 := by
     unfold weight₁
-    split_ifs with hg hg'
-    · rw [hg'.1, hg'.2]
+    split_ifs with hg
     · by_contra hne
       obtain ⟨hx, hy⟩ := le_of_chainWeight₃_ne_zero hne
-      have := eq_one_of_le_neg_le htr hdet hn ht hg.1 hg.2 hx hy
-      exact hg' ⟨this, by omega⟩
-    · exact absurd ⟨by omega, by omega⟩ hg
+      have ha := eq_one_of_le_neg_le htr hdet hn ht hg.1 hg.2 hx hy
+      exact hT ⟨ha, by omega⟩
     · rfl
   -- in `T₂`, `d ≤ 0` and `n = a d - b c ≥ t + d² - 2 d ≥ t`
   have h₂ : weight₂ a b c d = 0 := by
@@ -173,25 +176,26 @@ private theorem weight_eq_of_lt {M : Matrix (Fin 2) (Fin 2) ℤ}
       nlinarith [mul_le_mul_of_nonneg_left hz hg.2.le, mul_le_mul hy hy h0 hg.2.le]
     · rfl
   rw [h₁, h₂, h₃, h₄]
-  ring
+  norm_num
 
-/-- The weights `chainWeight₃ (1 - N) (-k) 0` of the matrices `(1 k; 0 N)`, `0 ≤ k < N`, sum to
-`12 (N - 1)`, or to `2` when `N = 1`. -/
-private theorem sum_range_chainWeight₃ (N : ℕ) (hN : 0 < N) :
-    ∑ k ∈ Finset.range N, chainWeight₃ (1 - N) (-k) 0 =
+/-- The weights of the matrices `(1 k; 0 N)`, `0 ≤ k < N`, sum to `12 (N - 1)`, or to `2` when
+`N = 1`. -/
+private theorem sum_range_weight_upperTriangular (N : ℕ) (hN : 0 < N) :
+    ∑ k ∈ Finset.range N, weight !![1, (k : ℤ); 0, (N : ℤ)] =
       if N = 1 then 2 else 12 * ((N : ℤ) - 1) := by
   rcases N with _ | _ | m
   · omega
-  · simp [chainWeight₃]
+  · simp [weight_upperTriangular]
   -- the two end weights are `6`, the `m` weights in between are `12`
   have hmid : ∀ k ∈ Finset.range m,
-      chainWeight₃ (1 - ((m + 1 + 1 : ℕ) : ℤ)) (-((k + 1 : ℕ) : ℤ)) 0 = 12 := by
+      weight !![1, ((k + 1 : ℕ) : ℤ); 0, ((m + 1 + 1 : ℕ) : ℤ)] = 12 := by
     intro k hk
     have := Finset.mem_range.mp hk
-    grind [chainWeight₃]
-  rw [Finset.sum_range_succ, Finset.sum_range_succ', ite_eq_right (by omega),
-    Finset.sum_congr rfl hmid, Finset.sum_const, Finset.card_range, nsmul_eq_mul]
-  grind [chainWeight₃]
+    rw [weight_upperTriangular _ _ _ one_pos (by omega)]
+    grind
+  rw [Finset.sum_range_succ, Finset.sum_range_succ', Finset.sum_congr rfl hmid]
+  simp (disch := omega) [weight_upperTriangular]
+  grind
 
 /-- **The fibres with `0 < n < t`.** The weights of the matrices of trace `t` and determinant `n`
 sum to `12 (n - 1)`, or to `2` when `n = 1`, if `t = n + 1`, and to zero otherwise. -/
@@ -218,13 +222,13 @@ private theorem finsum_weight_traceDetFiber_of_lt (hn : 0 < n) (ht : n < t) :
     (Finset.range N).image fun k ↦ ⟨_, hmem k⟩ with hs
   -- the matrices of nonzero weight are the `(1 k; 0 N)` with `0 ≤ k < N`
   have hsub : (Function.support fun M : traceDetFiber (Fin 2) ((N : ℤ) + 1) N ↦
-      if M.1 0 0 = 1 ∧ M.1 1 0 = 0 then chainWeight₃ (1 - M.1 1 1) (-M.1 0 1) 0 else 0) ⊆
-        s := by
+      if M.1 0 0 = 1 ∧ M.1 1 0 = 0 then weight !![1, M.1 0 1; 0, M.1 1 1] else 0) ⊆ s := by
     intro M hM
     simp only [Function.mem_support, ne_eq, ite_eq_right_iff, Classical.not_imp] at hM
     obtain ⟨⟨ha, hc⟩, hne⟩ := hM
     obtain ⟨htr, -⟩ := mem_traceDetFiber_fin_two.mp M.2
-    obtain ⟨hx, hy⟩ := le_of_chainWeight₃_ne_zero hne
+    rw [weight_upperTriangular _ _ _ one_pos (by omega)] at hne
+    have hb : 0 ≤ M.1 0 1 ∧ M.1 0 1 < N := by split_ifs at hne <;> omega
     refine Finset.mem_image.mpr ⟨(M.1 0 1).toNat, Finset.mem_range.mpr (by omega),
       Subtype.ext (Eq.trans ?_ (eta_fin_two M.1).symm)⟩
     simp only [Int.toNat_of_nonneg (show 0 ≤ M.1 0 1 by omega), ha, hc,
@@ -234,7 +238,7 @@ private theorem finsum_weight_traceDetFiber_of_lt (hn : 0 < n) (ht : n < t) :
     simpa using congrArg (fun M : traceDetFiber (Fin 2) ((N : ℤ) + 1) N ↦ M.1 0 1) h]
   simp only [of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one, and_self,
     ite_true]
-  rw [sum_range_chainWeight₃ N (by omega)]
+  rw [sum_range_weight_upperTriangular N (by omega)]
   simp
 
 /-! ### Positive trace -/
