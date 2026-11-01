@@ -175,6 +175,25 @@ of height `#S = r`. -/
 def cubeComplexπ {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) : F.cubeComplex.X r ⟶ F.obj S.1 :=
   biproduct.π (fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1) S
 
+/-- A term of the cube complex is the biproduct of the vertices at that height. -/
+def cubeComplexXIsoBiproduct (r : ℤ) : F.cubeComplex.X r ≅
+    ⨁ fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1 :=
+  Iso.refl _
+
+/-- The height-biproduct comparison preserves the vertex inclusions. -/
+@[reassoc (attr := simp)]
+lemma ι_cubeComplexXIsoBiproduct_hom {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
+    F.cubeComplexι S ≫ (F.cubeComplexXIsoBiproduct r).hom =
+      biproduct.ι (fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1) S := by
+  exact Category.comp_id _
+
+/-- The inverse height-biproduct comparison preserves the vertex inclusions. -/
+@[reassoc (attr := simp)]
+lemma ι_cubeComplexXIsoBiproduct_inv {r : ℤ} (S : {S : Finset ι // (#S : ℤ) = r}) :
+    biproduct.ι (fun S : {S : Finset ι // (#S : ℤ) = r} ↦ F.obj S.1) S ≫
+      (F.cubeComplexXIsoBiproduct r).inv = F.cubeComplexι S := by
+  exact Category.comp_id _
+
 /-- The inclusion of a vertex followed by the projection onto a vertex of the same height is the
 identity when the vertices agree, and zero otherwise. -/
 @[reassoc]
