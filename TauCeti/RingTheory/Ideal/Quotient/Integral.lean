@@ -9,12 +9,14 @@ public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
-# Integral elements modulo powers of two-sided ideals
+# Integral elements modulo products and powers of ideals
 
 A monic relation modulo a two-sided ideal `I` gives a monic relation modulo every power `I^n`:
 raise the original polynomial to the `n`-th power. This works in noncommutative algebras because
 polynomials in a single element with central coefficients can be evaluated multiplicatively.
-It allows finiteness arguments using integral generators to survive passage to smaller ideals.
+Likewise, in a commutative algebra, monic relations modulo two ideals `I` and `J` multiply to a
+monic relation modulo `I * J`. These allow finiteness arguments using integral generators to
+survive passage to smaller ideals.
 -/
 
 public section
@@ -37,5 +39,24 @@ theorem isIntegral_quotient_pow_of_isIntegral_quotient {I : Ideal A} [I.IsTwoSid
   rw [← Polynomial.aeval_def, ← Ideal.Quotient.mkₐ_eq_mk R (I ^ n),
     Polynomial.aeval_algHom_apply, map_pow, map_pow]
   exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.pow_mem_pow hmem n)
+
+/-- Integrality of an element modulo two ideals of a commutative algebra implies integrality
+modulo their product: the product of the two monic relations is a monic relation. -/
+theorem isIntegral_quotient_mul_of_isIntegral_quotient {B : Type*} [CommRing B] [Algebra R B]
+    {I J : Ideal B} (x : B) (hI : IsIntegral R (Ideal.Quotient.mk I x))
+    (hJ : IsIntegral R (Ideal.Quotient.mk J x)) :
+    IsIntegral R (Ideal.Quotient.mk (I * J) x) := by
+  have hmem {L : Ideal B} (hx : IsIntegral R (Ideal.Quotient.mk L x)) :
+      ∃ p : Polynomial R, p.Monic ∧ Polynomial.aeval x p ∈ L := by
+    obtain ⟨p, hp, hpx⟩ := hx
+    refine ⟨p, hp, Ideal.Quotient.eq_zero_iff_mem.mp ?_⟩
+    rw [← Ideal.Quotient.mkₐ_eq_mk R L, ← Polynomial.aeval_algHom_apply]
+    exact hpx
+  obtain ⟨p, hp, hpI⟩ := hmem hI
+  obtain ⟨q, hq, hqJ⟩ := hmem hJ
+  refine ⟨p * q, hp.mul hq, ?_⟩
+  rw [← Polynomial.aeval_def, ← Ideal.Quotient.mkₐ_eq_mk R (I * J),
+    Polynomial.aeval_algHom_apply, map_mul]
+  exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mul_mem_mul hpI hqJ)
 
 end TauCeti
