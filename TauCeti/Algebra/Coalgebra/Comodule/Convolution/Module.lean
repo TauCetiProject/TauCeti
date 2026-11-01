@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Hom
-public import TauCeti.Algebra.Coalgebra.Subcomodule.Lattice
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.SimpleModule.Basic
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
@@ -17,9 +17,10 @@ import TauCeti.LinearAlgebra.TensorProduct.Basis
 # Comodules as modules over the convolution dual
 
 A right comodule over a coalgebra carries a left module structure over its convolution
-dual. For a projective coalgebra over a commutative ring, its subcomodules are exactly
-the submodules for this action, and maps of comodules are exactly the linear maps for
-the convolution dual. In particular this applies to every coalgebra over a field.
+dual. For a projective coalgebra over a commutative semiring, maps of comodules are
+exactly the linear maps for the convolution dual. Over a commutative ring, its
+subcomodules are exactly the submodules for this action. In particular these comparisons
+apply to every coalgebra over a field.
 No finiteness hypothesis on the coalgebra or the comodule is required.
 
 The module structure is named, rather than a global instance: install
@@ -199,6 +200,17 @@ theorem convolutionSubmoduleOrderIso_symm_apply (S : Submodule (WithConv (C →�
 
 end TauCeti.Subcomodule
 
+end Ring
+
+section SemiringMorphisms
+
+variable {R C M N : Type*} [CommSemiring R]
+  [AddCommMonoid C] [Module R C] [Coalgebra R C] [Module.Projective R C]
+  [AddCommMonoid M] [Module R M] [Comodule R C M]
+  [AddCommMonoid N] [Module R N] [Comodule R C N]
+
+attribute [local instance] Comodule.convolutionModule
+
 namespace LinearMap
 
 /-- A linear map intertwining the convolution-dual actions is a comodule morphism.
@@ -253,6 +265,20 @@ theorem Hom.convolutionLinearEquiv_apply (f : Hom R C M N) :
 @[simp]
 theorem Hom.convolutionLinearEquiv_symm_apply (f : M →ₗ[WithConv (C →ₗ[R] R)] N) :
     Hom.convolutionLinearEquiv.symm f = f.toComoduleHom := (rfl)
+
+end TauCeti.Comodule
+
+end SemiringMorphisms
+
+section Ring
+
+variable {R C M : Type*} [CommRing R]
+  [AddCommGroup C] [Module R C] [Coalgebra R C] [Module.Projective R C]
+  [AddCommGroup M] [Module R M] [Comodule R C M]
+
+attribute [local instance] Comodule.convolutionModule
+
+namespace TauCeti.Comodule
 
 /-- A comodule is simple exactly when its convolution-dual module is simple. -/
 theorem isSimpleModule_convolution_iff :
