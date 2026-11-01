@@ -51,7 +51,6 @@ variable {X : Type u} {B : Type v} [SemilatticeInf B] [OrderTop B] {ι : B ↪o 
 
 /-- The point of the G-site of `G` given by a point `x` of the underlying set. Its fibre over an
 admissible open `U` is inhabited exactly when `x ∈ U`. -/
-@[expose]
 def point (x : X) : GrothendieckTopology.Point.{v} G.grothendieckTopology where
   fiber.obj U := ULift.{v} (PLift (x ∈ ι U))
   fiber.map f := ↾fun h ↦ ⟨⟨ι.monotone (leOfHom f) h.down.down⟩⟩
@@ -81,8 +80,9 @@ theorem nonempty_point_fiber_obj_iff (x : X) (U : B) :
     Nonempty ((G.point x).fiber.obj U) ↔ x ∈ ι U :=
   ⟨fun ⟨h⟩ ↦ h.down.down, fun h ↦ ⟨⟨⟨h⟩⟩⟩⟩
 
-instance (x : X) (U : B) : Subsingleton ((G.point x).fiber.obj U) :=
-  inferInstanceAs (Subsingleton (ULift (PLift (x ∈ ι U))))
+instance (U : B) (Φ : GrothendieckTopology.Point.{v} G.grothendieckTopology) :
+    Subsingleton (Φ.fiber.obj U) :=
+  Φ.subsingleton_fiber_obj (homOfLE le_top) isTerminalTop
 
 section Germ
 
@@ -95,13 +95,13 @@ noncomputable def germ (P : Bᵒᵖ ⥤ A) (U : B) (x : X) (hx : x ∈ ι U) :
   (G.point x).toPresheafFiber U ⟨⟨hx⟩⟩ P
 
 /-- The germ of a restricted section is the germ of the original section. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 theorem germ_res (P : Bᵒᵖ ⥤ A) {U V : B} (f : V ⟶ U) (x : X) (hx : x ∈ ι V) :
     P.map f.op ≫ G.germ P V x hx = G.germ P U x (ι.monotone (leOfHom f) hx) :=
   (G.point x).toPresheafFiber_w f _ P
 
 /-- Germs are natural in the presheaf. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 theorem germ_naturality {P Q : Bᵒᵖ ⥤ A} (g : P ⟶ Q) (U : B) (x : X) (hx : x ∈ ι U) :
     G.germ P U x hx ≫ (G.point x).presheafFiber.map g = g.app (op U) ≫ G.germ Q U x hx :=
   (G.point x).toPresheafFiber_naturality g U _
@@ -185,22 +185,19 @@ noncomputable def topologicalStalkIso (P : (Opens Y)ᵒᵖ ⥤ A) (y : Y) :
     { pt := TopCat.Presheaf.stalk (X := TopCat.of Y) P y
       ι.app U := TopCat.Presheaf.germ (X := TopCat.of Y) P U.unop.obj y
         (by simpa using U.unop.property)
-      ι.naturality U V f :=
-        (TopCat.Presheaf.germ_res (X := TopCat.of Y) P f.unop.hom y _).trans
-          (Category.comp_id _).symm }
+      ι.naturality U V f := by
+        simpa using TopCat.Presheaf.germ_res (X := TopCat.of Y) P f.unop.hom y _ }
   inv := colimit.desc ((OpenNhds.inclusion (X := TopCat.of Y) y).op ⋙ P)
     { pt := ((topological Y).point y).presheafFiber.obj P
-      ι.app U := (topological Y).germ P U.unop.1 y (show y ∈ opensEmbedding Y U.unop.1 by
-        simpa using U.unop.2)
-      ι.naturality U V f :=
-        ((topological Y).germ_res P f.unop y _).trans (Category.comp_id _).symm }
+      ι.app U := (topological Y).germ P ((OpenNhds.inclusion (X := TopCat.of Y) y).obj U.unop) y
+        (by simpa [OpenNhds.inclusion] using U.unop.2)
+      ι.naturality U V f := by simp }
   hom_inv_id := (topological Y).stalk_hom_ext fun U hy ↦
-    ((Category.assoc _ _ _).symm.trans
-      (congrArg (· ≫ _) (germ_isColimitGermCocone_desc _ _ U hy))).trans
-      ((colimit.ι_desc _ _).trans (Category.comp_id _).symm)
+    ((isColimitGermCocone _ P y).fac_assoc _ (op ⟨U, hy⟩) _).trans
+      ((colimit.ι_desc _ _).trans (by simp [OpenNhds.inclusion]))
   inv_hom_id := TopCat.Presheaf.stalk_hom_ext (X := TopCat.of Y) P fun U hy ↦
-    ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) (colimit.ι_desc _ _))).trans
-      ((germ_isColimitGermCocone_desc _ _ U _).trans (Category.comp_id _).symm)
+    (colimit.ι_desc_assoc _ _ _).trans
+      ((germ_isColimitGermCocone_desc _ _ U _).trans (by simp))
 
 /-- Under `GTopology.topologicalStalkIso`, germs correspond to Mathlib's germs. -/
 @[reassoc (attr := simp)]
