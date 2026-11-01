@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Distribution
+public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 
 /-!
 # Distributions as vector bundles
@@ -33,6 +34,12 @@ differentiable at a point are differentiable there
 For a continuous distribution `hD : IsContMDiffDistribution I n k D`, install
 `hD.fiberBundle` with `letI`; `hD.vectorBundle` then shows that it is a vector bundle.
 
+On a `C^(n+1)` manifold, the tangent bundle is a `C^n` vector bundle and the `C^n` local frames of
+`D` are `C^n` sections of it, so the coordinate changes between their trivializations are `C^n`
+(`TauCeti.IsSubbundleFrameOn.contMDiffOn_coordChangeL`). Hence a `C^n` distribution of rank `k`
+is a `C^n` vector bundle with model fibre `Fin k → 𝕜` (`hD.contMDiffVectorBundle`), a `C^n`
+subbundle of the tangent bundle.
+
 ## Main definitions
 
 * `TauCeti.instTopologicalSpaceTotalSpaceDistribution`: the subspace topology on the total space
@@ -46,6 +53,8 @@ For a continuous distribution `hD : IsContMDiffDistribution I n k D`, install
   of this fibre bundle are those of the `C^n` local frames of `D`.
 * `TauCeti.IsContMDiffDistribution.vectorBundle`: a continuous distribution of rank `k` is a
   topological vector bundle.
+* `TauCeti.IsContMDiffDistribution.contMDiffVectorBundle`: on a `C^(n+1)` manifold, a `C^n`
+  distribution of rank `k` is a `C^n` vector bundle.
 * `TauCeti.IsDistributionFrameOn.exists_mdifferentiableAt_coeff`: a vector field tangent to `D`
   and differentiable at `x` is, near `x`, a combination of a `C¹` local frame with coefficients
   differentiable at `x`.
@@ -53,8 +62,8 @@ For a continuous distribution `hD : IsContMDiffDistribution I n k D`, install
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013), Chapter 10
-  (the local frame criterion for smooth subbundles, Lemma 10.32, of which this is the continuous
-  counterpart) and Chapter 19 (distributions).
+  (the local frame criterion for smooth subbundles, Lemma 10.32, and its continuous counterpart)
+  and Chapter 19 (distributions).
 -/
 
 public section
@@ -85,20 +94,6 @@ namespace IsDistributionFrameOn
 variable {ι : Type*} [Fintype ι] [IsManifold I 2 M] {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
   {X : ι → Π x : M, TangentSpace I x} {U : Set M}
 
-private theorem mdifferentiableAt_trivOperator (hX : IsDistributionFrameOn I n D X U)
-    (hn : 1 ≤ n) {x : M} (hU : U ∈ 𝓝 x) :
-    MDiffAt (IsSubbundleFrameOn.trivOperator 𝕜 E X x) x := by
-  have hxe := FiberBundle.mem_baseSet_trivializationAt' (F := E) (E := TangentSpace I) x
-  have h (i : ι) := ((trivializationAt E (TangentSpace I) x).mdifferentiableAt_section_iff I
-    (X i) hxe).mp (((hX.contMDiffOn i).contMDiffAt hU).mdifferentiableAt
-      (zero_lt_one.trans_le hn).ne')
-  have hsum := MDifferentiableAt.sum (t := Finset.univ) fun i _ ↦
-    ((ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) E
-      (ContinuousLinearMap.proj i)).differentiableAt).comp_mdifferentiableAt (h i)
-  convert hsum using 1
-  funext y
-  simp [IsSubbundleFrameOn.trivOperator_eq_sum]
-
 /-- **Coefficients in a frame are differentiable.** Let `X` be a `C^n` local frame of `D`, with
 `1 ≤ n`, on a neighbourhood of `x`, and let `V` be a vector field, differentiable at `x`, which is
 tangent to `D` near `x`. Then near `x` the field `V` is a combination `∑ i, c i • X i` of the
@@ -118,8 +113,12 @@ theorem exists_mdifferentiableAt_coeff [IsRCLikeNormedField 𝕜]
   obtain ⟨P, hP⟩ := ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional_domain
     (hX.isSubbundleFrameOn.injective_trivOperator (mem_of_mem_nhds hU))
   let Q : M → (ι → 𝕜) →L[𝕜] ι → 𝕜 := fun y ↦ P ∘L IsSubbundleFrameOn.trivOperator 𝕜 E X x y
-  have hQ : MDiffAt Q x :=
-    mdifferentiableAt_const.clm_comp (mdifferentiableAt_trivOperator hX hn hU)
+  -- The tangent bundle of a `C²` manifold is a `C¹` vector bundle, in which the frame is `C¹`.
+  have : IsManifold I (1 + 1) M := .of_le (n := 2) one_add_one_eq_two.le
+  have := TangentBundle.contMDiffVectorBundle (n := 1) (I := I) (M := M)
+  have hQ : MDiffAt Q x := mdifferentiableAt_const.clm_comp
+    ((IsSubbundleFrameOn.contMDiffAt_trivOperator (n := 1)
+      (fun i ↦ ((hX.contMDiffOn i).contMDiffAt hU).of_le hn) hxe).mdifferentiableAt one_ne_zero)
   have hQx : Q x = ((1 : ((ι → 𝕜) →L[𝕜] ι → 𝕜)ˣ) : (ι → 𝕜) →L[𝕜] ι → 𝕜) :=
     ContinuousLinearMap.ext hP
   let c : M → ι → 𝕜 := fun y ↦ Ring.inverse (Q y) (P (e ⟨y, V y⟩).2)
@@ -189,6 +188,24 @@ theorem vectorBundle (hD : IsContMDiffDistribution I n k D) :
     obtain ⟨V', hV', Y', hY', rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hD e').mp he'.out
     simpa only [IsSubbundleFrameOn.trivialization_baseSet] using
       hY.isSubbundleFrameOn.continuousOn_coordChangeL hV hY'.isSubbundleFrameOn hV'
+
+/-- **A `C^n` distribution of rank `k` is a `C^n` vector bundle.** On a `C^(n+1)` manifold, whose
+tangent bundle is a `C^n` vector bundle, the coordinate changes between the trivializations of the
+`C^n` local frames of `D` are `C^n`. So `D`, with the subspace topology of the tangent bundle and
+the atlas of `hD.fiberBundle`, is a `C^n` subbundle of the tangent bundle. -/
+theorem contMDiffVectorBundle [IsManifold I (n + 1) M] (hD : IsContMDiffDistribution I n k D) :
+    letI := hD.fiberBundle
+    letI := hD.vectorBundle
+    ContMDiffVectorBundle n (Fin k → 𝕜) (fun x ↦ D x) I := by
+  have := TangentBundle.contMDiffVectorBundle (n := n) (I := I) (M := M)
+  let := hD.fiberBundle
+  let := hD.vectorBundle
+  refine ⟨fun e e' he he' ↦ ?_⟩
+  obtain ⟨V, hV, Y, hY, rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hD e).mp he.out
+  obtain ⟨V', hV', Y', hY', rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hD e').mp he'.out
+  simpa only [IsSubbundleFrameOn.trivialization_baseSet] using
+    hY.isSubbundleFrameOn.contMDiffOn_coordChangeL hV hY.contMDiffOn hY'.isSubbundleFrameOn hV'
+      hY'.contMDiffOn
 
 end IsContMDiffDistribution
 
