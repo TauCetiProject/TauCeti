@@ -161,9 +161,8 @@ theorem ofSeries_riemannZetaData :
     have h0 : s ≠ 0 := by rintro rfl; norm_num at hs
     have h1 : s ≠ 1 := by rintro rfl; norm_num at hs
     simp [Ne.symm h0, Ne.symm h1]
-  · have heq := riemannZetaData_hasDirichletAgreement.completed_eq 2 (by norm_num)
-    simp only [riemannZetaData_conductor, PNat.val_ofNat, Nat.cast_one, one_cpow, one_mul,
-      riemannZetaData_gammaFactor] at heq
+  · have heq : riemannZetaData.completed 2 = Gammaℝ 2 * LSeries riemannZetaData.coeff 2 := by
+      simpa using riemannZetaData_hasDirichletAgreement.completed_eq 2 (by norm_num)
     have hL : LSeries riemannZetaData.coeff 2 = riemannZeta 2 :=
       ArithmeticFunction.LSeries_zeta_eq_riemannZeta (by norm_num)
     rw [heq, hL]

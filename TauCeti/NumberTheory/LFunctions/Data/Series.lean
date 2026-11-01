@@ -129,13 +129,11 @@ theorem ofSeries_eq_normalized (hD : d.HasDirichletAgreement)
     exact hD.eqOn_ofSeries
   have h2 : d.polarOrder 2 = 0 := hreg 2 (by norm_num)
   have hm1 : d.polarOrder (-1) = 0 := hF.polarOrder_neg_one.trans h2
-  have hval (s : ℂ) (hs : d.polarOrder s = 0) :
-      toMeromorphicNFOn d.completed univ s = d.completed s := by
-    rw [toMeromorphicNFOn_eq_toMeromorphicNFAt hM.meromorphic.meromorphicOn (mem_univ s),
-      toMeromorphicNFAt_eq_self.mpr (hM.analyticAt s hs).meromorphicNFAt]
   have hroot : (ofSeries d.coeff d.conductor d.gammaR d.gammaC d.polarOrder).rootNumber =
       d.rootNumber := by
-    rw [ofSeries_rootNumber, hcomp, hval 2 h2, hval (-1) hm1]
+    rw [ofSeries_rootNumber, hcomp,
+      toMeromorphicNFOn_apply_of_analyticAt hM.meromorphic (hM.analyticAt 2 h2),
+      toMeromorphicNFOn_apply_of_analyticAt hM.meromorphic (hM.analyticAt (-1) hm1)]
     exact (hF.rootNumber_eq_div_two h2 hne).symm
   exact AnalyticLFunctionData.ext rfl rfl rfl rfl hroot hcomp rfl
 
