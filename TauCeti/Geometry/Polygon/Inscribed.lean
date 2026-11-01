@@ -153,7 +153,7 @@ theorem rotate_inscribed {P : Type*} {γ : ℝ → P} {T : ℝ} (hper : Periodic
 
 /-- Two loops which agree at the vertices of the polygon inscribed with `n` vertices have the same
 inscribed polygon. -/
-private theorem inscribed_congr {P : Type*} {γ γ' : ℝ → P} {T : ℝ} {n : ℕ}
+theorem inscribed_congr {P : Type*} {γ γ' : ℝ → P} {T : ℝ} {n : ℕ}
     (h : ∀ k : Fin n, γ (k * (T / n)) = γ' (k * (T / n))) : inscribed γ T n = inscribed γ' T n :=
   congrArg Polygon.mk (funext h)
 
@@ -862,6 +862,9 @@ end Refinement
 
 section Isotopy
 
+open TauCeti.SimplePolygon (combinatoriallyEquivalent_mk_of_eq
+  combinatoriallyEquivalent_mk_of_rotate_eq)
+
 /-- The time `s ↦ t + (t' - t) (1 - cos (2π s / h)) / 2`, oscillating between `t` and `t'` with
 period `h`: it is `t` at the multiples of `h` and `t'` halfway between them. -/
 private def cosTime (t t' h s : ℝ) : ℝ :=
@@ -924,18 +927,6 @@ private theorem abs_cosTime_sub_le_abs (t t' h x y : ℝ) :
       ≤ |t' - t| / 2 * 2 := by gcongr
     _ = |t' - t| := by ring
 
-private theorem combinatoriallyEquivalent_of_eq {n : ℕ} [NeZero n] {p q : Polygon E n}
-    (h : p = q) (hp : p.IsSimple ℝ) (hq : q.IsSimple ℝ) :
-    TauCeti.SimplePolygon.CombinatoriallyEquivalent ⟨n, p, hp⟩ ⟨n, q, hq⟩ := by
-  subst h
-  exact .refl _
-
-private theorem combinatoriallyEquivalent_of_rotate_eq {n : ℕ} [NeZero n] {p q : Polygon E n}
-    (h : p.rotate = q) (hp : p.IsSimple ℝ) (hq : q.IsSimple ℝ) :
-    TauCeti.SimplePolygon.CombinatoriallyEquivalent ⟨n, p, hp⟩ ⟨n, q, hq⟩ := by
-  subst h
-  exact TauCeti.SimplePolygon.combinatoriallyEquivalent_rotate ⟨n, p, hp⟩
-
 /-- **One step of an isotopy.** For times `t, t' ∈ [0, 1]` close compared with the mesh
 `h = T / n`, the inscribed polygons of `Γ t` and of `Γ t'` with `n` vertices are combinatorially
 equivalent. -/
@@ -991,16 +982,16 @@ private theorem FineFamily.combinatoriallyEquivalent_inscribed {Γ : ℝ → ℝ
       simp only [← hh_def, hτ_def, cosTime_natCast_mul_add_half t t' hh.ne']
   have e₇ : (inscribed (Γ t') T (2 * n)).rotate = inscribed (fun s ↦ Γ t' (s + h / 2)) T (2 * n) :=
     by rw [rotate_inscribed hFβ.periodic, h2n]
-  exact (combinatoriallyEquivalent_of_eq e₁ hp (hFα.isSimple_inscribed hT le_rfl)).trans <|
+  exact (combinatoriallyEquivalent_mk_of_eq e₁ hp (hFα.isSimple_inscribed hT le_rfl)).trans <|
     (hFα.combinatoriallyEquivalent_inscribed hT le_rfl h2nh _
       (hFα.isSimple_inscribed hT h2nh)).trans <|
-    (combinatoriallyEquivalent_of_rotate_eq e₃ _ (hFα₂.isSimple_inscribed hT h2nh)).trans <|
+    (combinatoriallyEquivalent_mk_of_rotate_eq e₃ _ (hFα₂.isSimple_inscribed hT h2nh)).trans <|
     (hFα₂.combinatoriallyEquivalent_inscribed hT h2nh le_rfl _
       (hFα₂.isSimple_inscribed hT le_rfl)).trans <|
-    (combinatoriallyEquivalent_of_eq e₅ _ (hFβ₂.isSimple_inscribed hT le_rfl)).trans <|
+    (combinatoriallyEquivalent_mk_of_eq e₅ _ (hFβ₂.isSimple_inscribed hT le_rfl)).trans <|
     (hFβ₂.combinatoriallyEquivalent_inscribed hT le_rfl h2nh _
       (hFβ₂.isSimple_inscribed hT h2nh)).trans <|
-    (combinatoriallyEquivalent_of_rotate_eq e₇ (hFβ.isSimple_inscribed hT h2nh) _).symm.trans <|
+    (combinatoriallyEquivalent_mk_of_rotate_eq e₇ (hFβ.isSimple_inscribed hT h2nh) _).symm.trans <|
     hFβ.combinatoriallyEquivalent_inscribed hT h2nh le_rfl _ hp'
 
 /-- **Fine inscribed polygons are invariant under isotopy.** Let `Γ : ℝ → ℝ → E` be a family of
@@ -1047,7 +1038,7 @@ theorem exists_combinatoriallyEquivalent_inscribed_of_isotopy {Γ : ℝ → ℝ 
       TauCeti.SimplePolygon.CombinatoriallyEquivalent ⟨n, inscribed (Γ 0) T n, hsn⟩
         ⟨n, inscribed (Γ ((i : ℝ) / (M + 1))) T n, hsimple _ (hmem hi)⟩ := by
     induction i with
-    | zero => exact combinatoriallyEquivalent_of_eq (by rw [Nat.cast_zero, zero_div]) _ _
+    | zero => exact combinatoriallyEquivalent_mk_of_eq (by rw [Nat.cast_zero, zero_div]) _ _
     | succ i ih =>
       refine (ih (by omega)).trans (hF.combinatoriallyEquivalent_inscribed hT hnδ hnη
         (hmem (by omega)) (hmem hi) ?_ ?_ _ _)
@@ -1059,7 +1050,7 @@ theorem exists_combinatoriallyEquivalent_inscribed_of_isotopy {Γ : ℝ → ℝ 
         exact this.le
   have hF₁ := hF.fineMesh_const (t := 1) (c := 0) (fun s ↦ by rw [add_zero]) ⟨zero_le_one, le_rfl⟩
     ⟨le_rfl, hT.le⟩ (hfine le_rfl).1 (hfine le_rfl).2
-  exact (key (M + 1) le_rfl).trans <| (combinatoriallyEquivalent_of_eq
+  exact (key (M + 1) le_rfl).trans <| (combinatoriallyEquivalent_mk_of_eq
     (by rw [Nat.cast_add_one, div_self hM₀.ne']) _ (hsimple 1 ⟨zero_le_one, le_rfl⟩)).trans <|
     hF₁.combinatoriallyEquivalent_inscribed hT (hN n hn) (hN m hm) _ hsm
 
