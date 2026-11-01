@@ -175,10 +175,9 @@ theorem jacobiSum_powerResidueSymbol_four_eq (hπ : P = span {π}) (hπ' : IsPri
     rw [← mem_span_singleton, ← hπ]
     simpa only [pow_one] using
       jacobiSum_powerResidueSymbol_pow_mem hP one_ne_zero one_ne_zero (by norm_num)
-  have hneg : powerResidueSymbol P 4 (-1) * powerResidueSymbol P 4 (-1) = 1 := by
-    rw [← map_mul, neg_one_mul, neg_neg, map_one]
   rw [← neg_apply_neg_one_mul_jacobiSum_eq_of_dvd (orderOf_powerResidueSymbol hP) hπ' hN hdvd]
-  linear_combination -jacobiSum (powerResidueSymbol P 4) (powerResidueSymbol P 4) * hneg
+  linear_combination -jacobiSum (powerResidueSymbol P 4) (powerResidueSymbol P 4) *
+    (powerResidueSymbol P 4).apply_neg_one_mul_self
 
 variable {R : Type*} [CommRing R] [IsDomain R] {f : 𝓞 K →+* R}
   {ψ : AddChar (𝓞 K ⧸ P) R}
@@ -196,7 +195,7 @@ theorem gaussSum_powerResidueSymbol_four_pow_four_eq (hπ : P = span {π})
     rw [← MulChar.ringHomCompHom_apply, orderOf_injective _ (MulChar.injective_ringHomComp hf),
       orderOf_powerResidueSymbol hP]
   have hneg : f (powerResidueSymbol P 4 (-1)) * f (powerResidueSymbol P 4 (-1)) = 1 := by
-    rw [← map_mul, ← map_mul, neg_one_mul, neg_neg, map_one, map_one]
+    rw [← map_mul, MulChar.apply_neg_one_mul_self, map_one]
   rw [gaussSum_pow_four_eq_card_mul_jacobiSum_sq hχ hψ, jacobiSum_ringHomComp,
     jacobiSum_powerResidueSymbol_four_eq hπ hπ', ← Nat.card_eq_fintype_card,
     ← absNorm_eq_natCard, map_mul, map_neg]

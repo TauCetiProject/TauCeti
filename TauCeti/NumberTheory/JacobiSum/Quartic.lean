@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.JacobiSum.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
 public import Mathlib.NumberTheory.MulChar.Lemmas
+public import TauCeti.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 
 /-!
@@ -138,10 +139,9 @@ theorem one_add_pow_three_dvd_apply_neg_one_mul_jacobiSum_add_one {χ : MulChar 
   obtain ⟨c, hc⟩ := one_add_pow_three_dvd_sum_erase_inv_two hχ hι h2
   obtain ⟨d, hd⟩ : (1 + ι) ^ 3 ∣ (4 : R) :=
     Dvd.intro (-(1 + ι)) (by linear_combination -one_add_pow_four_of_sq_eq_neg_one hsq)
-  have hneg : χ (-1) * χ (-1) = 1 := by rw [← map_mul, neg_one_mul, neg_neg, map_one]
   rw [hJ, hc]
   push_cast
-  rcases mul_self_eq_one_iff.mp hneg with h | h <;> rw [h]
+  rcases mul_self_eq_one_iff.mp χ.apply_neg_one_mul_self with h | h <;> rw [h]
   · exact ⟨c + d * (k + 1), by linear_combination ((k : R) + 1) * hd⟩
   · exact ⟨-c - d * k, by linear_combination -(k : R) * hd⟩
 
@@ -159,7 +159,7 @@ theorem gaussSum_pow_four_eq_card_mul_jacobiSum_sq {χ : MulChar F R} (hχ : ord
     rw [MulChar.isQuadratic_iff_sq_eq_one, ← sq, ← pow_mul]
     simpa only [hχ] using pow_orderOf_eq_one χ
   have h₃ : (χ * χ) (-1) = 1 := by
-    rw [MulChar.mul_apply, ← map_mul, neg_one_mul, neg_neg, map_one]
+    rw [MulChar.mul_apply, χ.apply_neg_one_mul_self]
   rw [show gaussSum χ ψ ^ 4 = (gaussSum χ ψ * gaussSum χ ψ) ^ 2 by ring,
     ← jacobiSum_mul_nontrivial h₁, mul_pow, gaussSum_sq h₁ h₂ hψ, h₃, one_mul]
 

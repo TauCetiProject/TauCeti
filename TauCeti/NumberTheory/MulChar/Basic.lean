@@ -20,6 +20,9 @@ coefficients (`MulChar.map_one_apply`). More generally, if a homomorphism `f` of
 carries `χ` to `χ'` along such an isomorphism `e`, that is `f (χ a) = χ' (e a)`, then it also
 carries `χ⁻¹` to `χ'⁻¹` and every power `χ ^ n` to `χ' ^ n`. This is how Galois automorphisms of
 a number field act on characters such as power residue symbols.
+
+Since `(-1) * (-1) = 1`, every multiplicative character satisfies `χ (-1) * χ (-1) = 1`
+(`MulChar.apply_neg_one_mul_self`), so `χ (-1) = ±1` when the coefficients form a domain.
 -/
 
 public section
@@ -47,6 +50,11 @@ theorem map_one_apply {R S R' R'' F G : Type*} [CommMonoid R] [CommMonoid S]
   by_cases ha : IsUnit a
   · rw [one_apply ha, one_apply (ha.map e), map_one]
   · rw [map_nonunit _ ha, map_nonunit _ (by rwa [isUnit_map_iff]), map_zero]
+
+/-- A multiplicative character takes a value at `-1` whose square is `1`. -/
+theorem apply_neg_one_mul_self {R R' : Type*} [CommMonoid R] [HasDistribNeg R]
+    [CommMonoidWithZero R'] (χ : MulChar R R') : χ (-1) * χ (-1) = 1 := by
+  rw [← map_mul, neg_one_mul, neg_neg, map_one]
 
 section Transport
 
