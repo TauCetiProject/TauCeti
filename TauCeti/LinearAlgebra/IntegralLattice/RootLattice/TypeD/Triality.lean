@@ -50,6 +50,8 @@ act on a lattice glued from copies of `D₄`.
 * `TauCeti.DynkinType.discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry`: on the `D₄` glue
   alphabet, read in `F₄`, it is multiplication by `ω²`; its powers give every nonzero scaling
   (`discriminantGroupEquiv_typeD4Triality_pow_glueAlphabetIsometry`).
+* `TauCeti.DynkinType.typeD4ScalarIsometry`: the power of triality realizing a given unit of
+  `F₄` on the glue alphabet.
 
 ## References
 
@@ -318,6 +320,42 @@ theorem discriminantGroupEquiv_typeD4Triality_pow_glueAlphabetIsometry (k : ℕ)
     refine (congrArg _ (discriminantGroupEquiv_typeD4Triality_glueAlphabetIsometry ht hv hF hω
       x)).trans ((ih _).trans ?_)
     rw [QuadraticMap.IsometryEquiv.apply_symm_apply, pow_succ (ω ^ 2) k, mul_assoc]
+
+/-- Labelling `F` as `0, 1, ω, ω²` by `finFourEquiv`, the unit with label `i` is `(ω²)ᵏ` for the
+exponent `k = 0, 2, 1` displayed at positions `1, 2, 3`. -/
+private theorem sq_pow_finFourEquiv_symm (a : Fˣ) :
+    (ω ^ 2) ^ ![0, 0, 2, 1] ((finFourEquiv hF hω).symm a) = a := by
+  have h3 := pow_three_eq_one_of_sq_add_self_add_one_eq_zero hω
+  obtain ⟨i, hi⟩ := (finFourEquiv hF hω).surjective a
+  rw [← hi, Equiv.symm_apply_apply, finFourEquiv_apply]
+  rw [finFourEquiv_apply] at hi
+  fin_cases i
+  · exact absurd hi.symm (by simp)
+  · simp
+  · simp only [Fin.reduceFinMk, Matrix.cons_val]
+    linear_combination ω * h3
+  · simp
+
+/-- **Triality realizes every nonzero scalar of `F₄` on the `D₄` glue alphabet.** For a unit `a`
+of a field `F` of four elements, this is the power of `typeD4Triality` acting on the glue
+alphabet, read in `F` through `typeD4GlueAlphabetQuaternaryIsometry`, as multiplication by `a`
+(`discriminantGroupEquiv_typeD4ScalarIsometry_glueAlphabetIsometry`). For `a = 1, ω, ω²` it is
+the power `0, 2, 1` of triality. -/
+noncomputable def typeD4ScalarIsometry (a : Fˣ) :
+    Isometry ((D 4).rootLattice ht) ((D 4).rootLattice ht) :=
+  typeD4Triality ht ^ ![0, 0, 2, 1] ((finFourEquiv hF hω).symm a)
+
+/-- **`typeD4ScalarIsometry a` acts on the `D₄` glue alphabet as multiplication by `a`**, read
+through `typeD4GlueAlphabetQuaternaryIsometry`. -/
+theorem discriminantGroupEquiv_typeD4ScalarIsometry_glueAlphabetIsometry (a : Fˣ)
+    (x : (D 4).glueAlphabet ht) :
+    (typeD4ScalarIsometry ht hF hω a).discriminantGroupEquiv
+        ((D 4).glueAlphabetIsometry hv ht x) =
+      (D 4).glueAlphabetIsometry hv ht ((typeD4GlueAlphabetQuaternaryIsometry hF hω).symm
+        (a * typeD4GlueAlphabetQuaternaryIsometry hF hω x)) := by
+  rw [typeD4ScalarIsometry,
+    discriminantGroupEquiv_typeD4Triality_pow_glueAlphabetIsometry ht hv hF hω,
+    sq_pow_finFourEquiv_symm]
 
 end DynkinType
 

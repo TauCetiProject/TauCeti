@@ -101,7 +101,8 @@ theorem d4SixQuaternaryIsometry_apply (w : d4SixGlueModule) (j : Fin 6) :
 
 omit [Finite F] in
 include hω in
-private theorem d4SixScaling_ne_zero (j : Fin 6) : ![ω, ω, 1, ω ^ 2, ω ^ 2, 1] j ≠ 0 := by
+/-- The coordinate scalings `[ω, ω, 1, ω², ω², 1]` of `d4SixHexacodeIsometry` are nonzero. -/
+theorem d4SixScaling_ne_zero (j : Fin 6) : ![ω, ω, 1, ω ^ 2, ω ^ 2, 1] j ≠ 0 := by
   have h0 : ω ≠ 0 := by rintro rfl; simp at hω
   fin_cases j <;> simp [h0]
 
