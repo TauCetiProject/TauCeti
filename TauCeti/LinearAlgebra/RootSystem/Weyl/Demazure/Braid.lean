@@ -54,6 +54,8 @@ the two Cartan entries.
   a base.
 * `RootPairing.prod_map_demazureOperator_eq_of_wordProd_eq`: **word independence**, the product
   of the Demazure operators along a reduced word depends only on the Weyl group element it spells.
+* `RootPairing.demazureOperator_mul_prod_map_demazureOperator_of_isLeftDescent`: `Dᵢ D_w = D_w`
+  when `sᵢ` is a left descent of `w`.
 
 ## References
 
@@ -710,6 +712,26 @@ theorem prod_map_demazureOperator_eq_of_wordProd_eq [P.IsReduced] {ω ω' : List
       (ω'.map fun m : b.support ↦ P.demazureOperator m).prod :=
   TauCeti.matsumoto (TauCeti.weylCoxeterSystem P b) _ (P.prod_map_demazureOperator_braidWord b)
     hω hω' h
+
+/-- **A Demazure operator absorbs into a product along a word it can start.** If `ω` is a reduced
+word and `sᵢ` is a left descent of `w = s_{k₁} ⋯ s_{kᵣ}`, then
+`Dᵢ D_{k₁} ⋯ D_{kᵣ} = D_{k₁} ⋯ D_{kᵣ}`: some reduced word for `w` starts with `i`, and
+`Dᵢ² = Dᵢ`. -/
+theorem demazureOperator_mul_prod_map_demazureOperator_of_isLeftDescent [P.IsReduced]
+    {ω : List b.support} (hω : (TauCeti.weylCoxeterSystem P b).IsReduced ω) {i : b.support}
+    (hi : (TauCeti.weylCoxeterSystem P b).IsLeftDescent
+      ((TauCeti.weylCoxeterSystem P b).wordProd ω) i) :
+    P.demazureOperator i * (ω.map fun m : b.support ↦ P.demazureOperator m).prod =
+      (ω.map fun m : b.support ↦ P.demazureOperator m).prod := by
+  set cs := TauCeti.weylCoxeterSystem P b
+  obtain ⟨σ, hσ, hσw⟩ := cs.exists_isReduced (cs.simple i * cs.wordProd ω)
+  have hred := cs.isReduced_cons_of_isLeftDescent hi hσ hσw.symm
+  have hprod : cs.wordProd (i :: σ) = cs.wordProd ω := by
+    rw [cs.wordProd_cons, ← hσw, cs.simple_mul_simple_cancel_left]
+  have hidem : P.demazureOperator i * P.demazureOperator i = P.demazureOperator i :=
+    LinearMap.ext (P.demazureOperator_demazureOperator i)
+  rw [← P.prod_map_demazureOperator_eq_of_wordProd_eq b hred hω hprod, List.map_cons,
+    List.prod_cons, ← mul_assoc, hidem]
 
 end Base
 

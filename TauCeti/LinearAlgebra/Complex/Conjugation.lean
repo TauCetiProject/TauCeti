@@ -44,7 +44,9 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
 * `TauCeti.realPointsLift`: the canonical `ℂ`-linear map `ℂ ⊗[ℝ] realPoints K →ₗ[ℂ] V`.
 * `TauCeti.realPointsEquiv`: that map as a `ℂ`-linear isomorphism, for involutive `K`.
 * `TauCeti.tmulConj`: the conjugation `c ⊗ₜ w ↦ conj c ⊗ₜ w` of a complexification `ℂ ⊗[ℝ] W`.
-* `TauCeti.realPart`: the real-linear retraction from a complexification to its real module.
+* `TauCeti.realPart` and `TauCeti.imaginaryPart`: the two real coordinates of a vector of a
+  complexification; `TauCeti.one_tmul_realPart_add_I_tmul_imaginaryPart` reassembles it, and
+  `TauCeti.complexification_ext` says the two coordinates determine the vector.
 
 ## Main statements
 
@@ -388,6 +390,73 @@ theorem realPart_tmul (c : ℂ) (w : W) : realPart W (c ⊗ₜ[ℝ] w) = c.re �
 /-- The real part of a real vector embedded in its complexification is that vector. -/
 theorem realPart_one_tmul (w : W) : realPart W (1 ⊗ₜ[ℝ] w) = w := by
   simp
+
+/-- The real-linear map `c ⊗ₜ w ↦ (im c) • w`, reading off the coefficient of `I` in the splitting
+`ℂ ⊗[ℝ] W ≅ W ⊕ I · W`. -/
+noncomputable def imaginaryPart (W : Type*) [AddCommGroup W] [Module ℝ W] :
+    ℂ ⊗[ℝ] W →ₗ[ℝ] W :=
+  TensorProduct.lid ℝ W ∘ₗ Complex.imLm.rTensor W
+
+/-- The imaginary part of a pure tensor is its imaginary scalar part acting on the vector. -/
+@[simp]
+theorem imaginaryPart_tmul (c : ℂ) (w : W) : imaginaryPart W (c ⊗ₜ[ℝ] w) = c.im • w := by
+  simp [imaginaryPart]
+
+/-- **Every element of `ℂ ⊗[ℝ] W` is `1 ⊗ₜ realPart W u + I ⊗ₜ imaginaryPart W u`.** -/
+@[simp]
+theorem one_tmul_realPart_add_I_tmul_imaginaryPart (u : ℂ ⊗[ℝ] W) :
+    1 ⊗ₜ[ℝ] realPart W u + Complex.I ⊗ₜ[ℝ] imaginaryPart W u = u := by
+  obtain ⟨w₁, w₂, rfl⟩ := exists_one_tmul_add_I_tmul u
+  simp
+
+variable {W} in
+/-- **Extensionality in a complexification**: a vector of `ℂ ⊗[ℝ] W` is determined by its real
+and imaginary parts. -/
+theorem complexification_ext {u v : ℂ ⊗[ℝ] W} (hre : realPart W u = realPart W v)
+    (him : imaginaryPart W u = imaginaryPart W v) : u = v := by
+  rw [← one_tmul_realPart_add_I_tmul_imaginaryPart W u,
+    ← one_tmul_realPart_add_I_tmul_imaginaryPart W v, hre, him]
+
+variable {W} in
+/-- Two vectors of `ℂ ⊗[ℝ] W` are equal exactly when their real and imaginary parts are. -/
+theorem complexification_ext_iff {u v : ℂ ⊗[ℝ] W} :
+    u = v ↔ realPart W u = realPart W v ∧ imaginaryPart W u = imaginaryPart W v :=
+  ⟨fun h ↦ h ▸ ⟨rfl, rfl⟩, fun h ↦ complexification_ext h.1 h.2⟩
+
+/-- The two real coordinates of `1 ⊗ₜ w₁ + I ⊗ₜ w₂` are `w₁` and `w₂`. -/
+@[simp]
+theorem one_tmul_add_I_tmul_inj {w₁ w₂ w₁' w₂' : W} :
+    1 ⊗ₜ[ℝ] w₁ + Complex.I ⊗ₜ[ℝ] w₂ = 1 ⊗ₜ[ℝ] w₁' + Complex.I ⊗ₜ[ℝ] w₂' ↔
+      w₁ = w₁' ∧ w₂ = w₂' := by
+  simp [complexification_ext_iff]
+
+/-- Multiplication by a complex scalar `c` in the real coordinates of a complexification:
+`c • (1 ⊗ₜ v + I ⊗ₜ w) = 1 ⊗ₜ (re c • v - im c • w) + I ⊗ₜ (re c • w + im c • v)`. -/
+theorem smul_one_tmul_add_I_tmul (c : ℂ) (v w : W) :
+    c • (1 ⊗ₜ[ℝ] v + Complex.I ⊗ₜ[ℝ] w) =
+      1 ⊗ₜ[ℝ] (c.re • v - c.im • w) + Complex.I ⊗ₜ[ℝ] (c.re • w + c.im • v) := by
+  conv_lhs => rw [← one_tmul_realPart_add_I_tmul_imaginaryPart W (c • _)]
+  simp [TensorProduct.smul_tmul', sub_eq_add_neg, add_comm]
+
+/-- `I • (1 ⊗ₜ v + I ⊗ₜ w) = 1 ⊗ₜ (-w) + I ⊗ₜ v` in a complexification. -/
+theorem I_smul_one_tmul_add_I_tmul (v w : W) :
+    Complex.I • (1 ⊗ₜ[ℝ] v + Complex.I ⊗ₜ[ℝ] w) = 1 ⊗ₜ[ℝ] (-w) + Complex.I ⊗ₜ[ℝ] v := by
+  rw [smul_one_tmul_add_I_tmul]
+  simp
+
+/-- The real part of `c • u` is `re c • realPart W u - im c • imaginaryPart W u`. -/
+@[simp]
+theorem realPart_smul (c : ℂ) (u : ℂ ⊗[ℝ] W) :
+    realPart W (c • u) = c.re • realPart W u - c.im • imaginaryPart W u := by
+  obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u
+  simp [TensorProduct.smul_tmul', sub_eq_add_neg]
+
+/-- The imaginary part of `c • u` is `re c • imaginaryPart W u + im c • realPart W u`. -/
+@[simp]
+theorem imaginaryPart_smul (c : ℂ) (u : ℂ ⊗[ℝ] W) :
+    imaginaryPart W (c • u) = c.re • imaginaryPart W u + c.im • realPart W u := by
+  obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u
+  simp [TensorProduct.smul_tmul', add_comm]
 
 end Complexification
 

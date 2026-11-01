@@ -147,6 +147,14 @@ theorem riskNeutralPrice_def (h : ℝ → ℝ) (s r σ τ : ℝ) :
 theorem riskNeutralPrice_zero (h : ℝ → ℝ) (s r σ : ℝ) : riskNeutralPrice h s r σ 0 = h s := by
   simp [riskNeutralPrice_def]
 
+/-- The risk-neutral price of a measurable payoff is a measurable function of the spot. -/
+theorem measurable_riskNeutralPrice {h : ℝ → ℝ} (hh : Measurable h) (r σ τ : ℝ) :
+    Measurable fun s => riskNeutralPrice h s r σ τ := by
+  have hF : StronglyMeasurable fun p : ℝ × ℝ => h (terminalSpot p.1 r σ τ p.2) :=
+    (hh.comp (by unfold terminalSpot; fun_prop)).stronglyMeasurable
+  simp_rw [riskNeutralPrice_def]
+  exact (hF.integral_prod_right' (ν := gaussianReal 0 1)).measurable.const_mul _
+
 /-- A nonnegative payoff has a nonnegative risk-neutral price. -/
 theorem riskNeutralPrice_nonneg {h : ℝ → ℝ} (hh : ∀ x, 0 ≤ h x) (s r σ τ : ℝ) :
     0 ≤ riskNeutralPrice h s r σ τ := by
