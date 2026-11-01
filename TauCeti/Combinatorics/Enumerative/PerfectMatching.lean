@@ -476,6 +476,36 @@ theorem reconnect_reconnect_val : (D.reconnect a b).reconnect a (D.val a) = D :=
   rw [reconnect, reconnect_val_self hba, reconnect, congr_trans, Equiv.swap_comm b,
     Equiv.swap_swap, congr_refl]
 
+omit hba in
+/-- Reconnecting, read as a permutation, is the old involution after two transpositions: first `b`
+with the other end `D.val a` of the arc at `a`, then `a` with the other end `D.val b` of the arc at
+`b`. -/
+theorem reconnect_val_eq_mul_swap_mul_swap :
+    (D.reconnect a b).val = D.val * Equiv.swap a (D.val b) * Equiv.swap b (D.val a) := by
+  obtain rfl | hba := eq_or_ne b a
+  · rw [reconnect_self, mul_assoc, Equiv.swap_mul_self, mul_one]
+  have hab : D.val b ≠ D.val a := fun h => hba (D.val.injective h)
+  refine Equiv.ext fun x => ?_
+  simp only [Equiv.Perm.mul_apply]
+  by_cases hxa : x = a
+  · subst x
+    rw [Equiv.swap_apply_of_ne_of_ne hba.symm (D.apply_ne a).symm, Equiv.swap_apply_left,
+      D.apply_apply, reconnect_val_self hba]
+  by_cases hxb : x = b
+  · subst x
+    rw [Equiv.swap_apply_left, Equiv.swap_apply_of_ne_of_ne (D.apply_ne a) hab.symm,
+      D.apply_apply, reconnect_val_right hba]
+  by_cases hxa' : x = D.val a
+  · subst x
+    rw [Equiv.swap_apply_right, Equiv.swap_apply_of_ne_of_ne hba (D.apply_ne b).symm,
+      reconnect_val_val_self hba]
+  by_cases hxb' : x = D.val b
+  · subst x
+    rw [Equiv.swap_apply_of_ne_of_ne (D.apply_ne b) hab, Equiv.swap_apply_right,
+      reconnect_val_val_right hba]
+  rw [Equiv.swap_apply_of_ne_of_ne hxb hxa', Equiv.swap_apply_of_ne_of_ne hxa hxb',
+    reconnect_val_of_ne hxa hxb hxa' hxb']
+
 end Reconnect
 
 end PerfectMatching
