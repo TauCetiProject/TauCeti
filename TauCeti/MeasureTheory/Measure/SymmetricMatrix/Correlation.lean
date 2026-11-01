@@ -434,6 +434,12 @@ theorem partialCorrelationOfCorrelationCoordinates_of_mem {x : strictLowerTriang
         (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).1 := by
   simp only [partialCorrelationOfCorrelationCoordinates, hx, ↓reduceDIte]
 
+/-- Outside the positive-definite correlation region, the inverse map is `0`. -/
+@[simp]
+theorem partialCorrelationOfCorrelationCoordinates_of_notMem {x : strictLowerTriangle p → ℝ}
+    (hx : x ∉ posDefCorrelationRegion p) : partialCorrelationOfCorrelationCoordinates x = 0 := by
+  simp only [partialCorrelationOfCorrelationCoordinates, hx, ↓reduceDIte]
+
 /-- The inverse map sends the positive-definite correlation region into the open cube. -/
 theorem mapsTo_partialCorrelationOfCorrelationCoordinates :
     MapsTo (partialCorrelationOfCorrelationCoordinates (p := p)) (posDefCorrelationRegion p)
