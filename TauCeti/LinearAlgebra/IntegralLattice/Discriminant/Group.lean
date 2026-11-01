@@ -218,9 +218,7 @@ discriminant-group equivalence induced along the equality. -/
 theorem discriminantGroupEquiv_ofEq_symm {L M : IntegralLattice V} (h : L = M) :
     (ofEq h.symm).discriminantGroupEquiv = (ofEq h).discriminantGroupEquiv.symm := by
   subst h
-  rw [show ofEq (rfl : L = L) = refl L from ext fun x ↦ by rw [ofEq_apply, refl_apply],
-    discriminantGroupEquiv_refl,
-    LinearEquiv.refl_symm]
+  rw [ofEq_rfl, discriminantGroupEquiv_refl, LinearEquiv.refl_symm]
 
 end Isometry
 

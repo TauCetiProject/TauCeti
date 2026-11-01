@@ -169,6 +169,11 @@ theorem ofEq_apply {L M : IntegralLattice V} (h : L = M) (x : V) : ofEq h x = x 
   subst h
   rfl
 
+/-- Identifying a lattice with itself along `rfl` is the identity isometry. -/
+@[simp]
+theorem ofEq_rfl (L : IntegralLattice V) : ofEq (rfl : L = L) = refl L :=
+  ext fun x ↦ by rw [ofEq_apply, refl_apply]
+
 /-- The inverse of an integral-lattice isometry. -/
 @[symm]
 def symm (e : Isometry L M) : Isometry M L where
