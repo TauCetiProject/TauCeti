@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
-public import TauCeti.RingTheory.FormalGroup.BaseChange
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Basic
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.Algebra.Category.Ring.Basic
