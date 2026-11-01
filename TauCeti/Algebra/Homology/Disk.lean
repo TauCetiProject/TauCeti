@@ -27,7 +27,8 @@ projective object.
 ## Main results
 
 * `CochainComplex.projective_disk_X`: the terms of the disk of a projective object are projective.
-* `CochainComplex.acyclic_disk`: the disk is acyclic.
+* `CochainComplex.acyclic_double_id`: the complex `X --𝟙--> X` in any two consecutive degrees is
+  acyclic; in particular the disk is acyclic (`CochainComplex.acyclic_disk`).
 -/
 
 public section
@@ -93,19 +94,29 @@ namespace CochainComplex
 
 variable {C : Type u} [Category.{v} C] [Abelian C] (Q : C)
 
-/-- The disk is acyclic. -/
-lemma acyclic_disk : (disk Q).Acyclic := by
+/-- The complex `X --𝟙--> X` concentrated in two consecutive degrees is acyclic. -/
+lemma acyclic_double_id (X : C) {i₀ i₁ : ℤ} (h : (ComplexShape.up ℤ).Rel i₀ i₁) :
+    (HomologicalComplex.double (𝟙 X) h).Acyclic := by
+  have h₁ : i₁ = i₀ + 1 := h.symm
+  subst h₁
+  have : IsIso ((HomologicalComplex.double (𝟙 X) h).d i₀ (i₀ + 1)) := by
+    rw [HomologicalComplex.double_d _ _ (by omega)]
+    infer_instance
   intro n
-  by_cases h₀ : n = -1
+  by_cases h₀ : n = i₀
   · subst h₀
-    rw [HomologicalComplex.exactAt_iff' _ (-2) (-1) 0 (by simp) (by simp),
-      ShortComplex.exact_iff_mono _ (disk_d_eq_zero Q _ _ (by decide))]
-    exact inferInstanceAs (Mono ((disk Q).d (-1) 0))
-  by_cases h₁ : n = 0
+    rw [HomologicalComplex.exactAt_iff' _ (n - 1) n (n + 1) (by simp) (by simp),
+      ShortComplex.exact_iff_mono _ (HomologicalComplex.double_d_eq_zero₀ _ h _ _ (by omega))]
+    exact inferInstanceAs (Mono ((HomologicalComplex.double (𝟙 X) h).d n (n + 1)))
+  by_cases h₁ : n = i₀ + 1
   · subst h₁
-    rw [HomologicalComplex.exactAt_iff' _ (-1) 0 1 (by simp) (by simp),
-      ShortComplex.exact_iff_epi _ (disk_d_eq_zero Q _ _ (by decide))]
-    exact inferInstanceAs (Epi ((disk Q).d (-1) 0))
-  exact HomologicalComplex.ExactAt.of_isZero (isZero_disk_X Q n h₀ h₁)
+    rw [HomologicalComplex.exactAt_iff' _ i₀ (i₀ + 1) (i₀ + 1 + 1) (by simp) (by simp),
+      ShortComplex.exact_iff_epi _ (HomologicalComplex.double_d_eq_zero₀ _ h _ _ (by omega))]
+    exact inferInstanceAs (Epi ((HomologicalComplex.double (𝟙 X) h).d i₀ (i₀ + 1)))
+  exact HomologicalComplex.ExactAt.of_isZero (HomologicalComplex.isZero_double_X _ _ _ h₀ h₁)
+
+/-- The disk is acyclic. -/
+lemma acyclic_disk : (disk Q).Acyclic :=
+  acyclic_double_id Q up_rel_neg_one_zero
 
 end CochainComplex

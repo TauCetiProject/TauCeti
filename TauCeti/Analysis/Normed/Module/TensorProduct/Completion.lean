@@ -47,6 +47,8 @@ bilinear forms on `E × F`.
 * `TauCeti.CompletedProjectiveTensor.continuousLinearMap_ext` and
   `TauCeti.CompletedInjectiveTensor.continuousLinearMap_ext`: bounded operators out of the
   completed tensor products are determined by their values on pure tensors.
+* `TauCeti.CompletedProjectiveTensor.norm_coe_tmul_le`: the completed norm of a pure tensor is at
+  most the product of the norms of its factors.
 * `TauCeti.CompletedProjectiveTensor.norm_mapL_le` and
   `TauCeti.CompletedInjectiveTensor.norm_mapL_le`: `‖mapL f g‖ ≤ ‖f‖ * ‖g‖`.
 * `TauCeti.CompletedProjectiveTensor.toCompletedInjectiveTensor_comp_mapL`: naturality of the
@@ -96,6 +98,13 @@ theorem continuousLinearMap_ext {M : Type*} [AddCommGroup M] [Module 𝕜 M] [To
     ProjectiveTensor.continuousLinearMap_ext fun x y ↦ by simpa using h x y
   exact DFunLike.coe_injective <|
     Completion.ext l.continuous l'.continuous fun u ↦ by simpa using congr($h' u)
+
+/-- The completed projective norm of a pure tensor is at most the product of the norms of its
+factors. -/
+theorem norm_coe_tmul_le (x : E) (y : F) :
+    ‖((⟨x ⊗ₜ y⟩ : ProjectiveTensor 𝕜 E F) : CompletedProjectiveTensor 𝕜 E F)‖ ≤ ‖x‖ * ‖y‖ := by
+  simpa [Completion.norm_coe, ProjectiveTensor.norm_def] using
+    TensorProduct.projectiveSeminorm_tmul_le (𝕜 := 𝕜) x y
 
 /-- The bounded operator `x ⊗ₜ y ↦ f x ⊗ₜ g y` between completed projective tensor products
 induced by bounded operators `f` and `g`. -/

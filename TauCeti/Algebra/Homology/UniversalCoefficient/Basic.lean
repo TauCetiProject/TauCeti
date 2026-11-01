@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Boundaries
 public import TauCeti.Algebra.Homology.Ext.Presentation
-public import TauCeti.Algebra.Homology.HomologicalComplex.ProjectiveDimension
+public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Dimension
 public import TauCeti.Algebra.Homology.Kronecker
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives

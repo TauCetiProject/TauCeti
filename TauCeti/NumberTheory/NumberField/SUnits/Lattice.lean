@@ -10,7 +10,7 @@ import Mathlib.LinearAlgebra.Dimension.Torsion.Basic
 import Mathlib.NumberTheory.NumberField.ClassNumber
 public import TauCeti.NumberTheory.NumberField.SUnits.Height
 import TauCeti.Algebra.Module.Torsion.Int
-import TauCeti.NumberTheory.NumberField.FinitePlace
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 public import TauCeti.NumberTheory.NumberField.Units.SUnit.FundamentalSystem
 import TauCeti.RingTheory.DedekindDomain.SInteger.Rank
 import TauCeti.RingTheory.DedekindDomain.ValuationOfNeZero

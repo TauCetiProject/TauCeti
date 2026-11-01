@@ -106,6 +106,17 @@ theorem adicOfIrreducible_X_sub_one_mem_zeroOneInfty :
 theorem infty_mem_zeroOneInfty : infty k ∈ zeroOneInfty k :=
   Or.inr (Or.inr rfl)
 
+/-- The place `t = a` of `k(t)` is one of the three marked places exactly when `a` is `0` or
+`1`. -/
+@[simp]
+theorem adicOfIrreducible_X_sub_C_mem_zeroOneInfty_iff {a : k} :
+    adicOfIrreducible (irreducible_X_sub_C a) ∈ zeroOneInfty k ↔ a = 0 ∨ a = 1 := by
+  have h0 : adicOfIrreducible (irreducible_X (R := k)) =
+      adicOfIrreducible (irreducible_X_sub_C (0 : k)) :=
+    (adicOfIrreducible_eq_adicOfIrreducible_iff _ _).mpr (by simp)
+  simp only [mem_zeroOneInfty_iff, h0, adicOfIrreducible_X_sub_C_injective.eq_iff,
+    adicOfIrreducible_ne_infty, or_false]
+
 variable (k) in
 /-- The three marked places `t = 0`, `t = 1` and `t = ∞` of `k(t)`, numbered `0`, `1` and `2`:
 the numbering of the branch points used for permutation triples. -/

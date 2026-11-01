@@ -14,7 +14,8 @@ import Mathlib.LinearAlgebra.Lagrange
 
 A finite sum `∑ i, (μ i ^ t) • c i` with real bases is determined by its values at
 natural exponents: if all these values vanish, it vanishes at every real exponent. Repeated
-bases are allowed. The proof uses `Polynomial.exists_eval_eq_iff` to interpolate the function
+bases are allowed, and the same holds for a sum taking a constant value at all natural exponents.
+The proof uses `Polynomial.exists_eval_eq_iff` to interpolate the function
 `x ↦ x ^ t` on the finitely many bases, so each real-exponent value is a linear combination of
 natural-exponent values.
 
@@ -47,6 +48,19 @@ theorem sum_rpow_smul_eq_zero_of_forall_pow {ι E : Type*}
         Finset.smul_sum]
       exact Finset.sum_comm
     _ = 0 := by simp [h]
+
+/-- A finite sum of real powers with coefficients in a real module takes a value `d` at every
+real exponent if it takes the value `d` at all natural exponents. The bases need not be
+distinct. -/
+theorem sum_rpow_smul_eq_of_forall_pow {ι E : Type*} [AddCommGroup E] [Module ℝ E]
+    (s : Finset ι) (μ : ι → ℝ) (c : ι → E) (d : E) (h : ∀ n : ℕ, ∑ i ∈ s, μ i ^ n • c i = d)
+    (t : ℝ) : ∑ i ∈ s, μ i ^ t • c i = d := by
+  -- Absorb the constant `d` as a term with base `1` indexed by `none`.
+  have key := sum_rpow_smul_eq_zero_of_forall_pow s.insertNone (fun i ↦ i.elim 1 μ)
+    (fun i ↦ i.elim (-d) c) (fun n ↦ by simp [h]) t
+  simp only [Finset.sum_insertNone, Option.elim_none, Real.one_rpow, one_smul,
+    Option.elim_some] at key
+  rwa [neg_add_eq_zero, eq_comm] at key
 
 end Finset
 

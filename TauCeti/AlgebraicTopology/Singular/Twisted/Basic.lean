@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
+public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.AlgebraicTopology.SimplicialObject.ChainHomotopy
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
@@ -40,6 +42,8 @@ twisted by the system pulled back along `f`.
 * `TauCeti.LocalCoefficientSystem.twistedChains`: the simplicial module of twisted chains, and
   `twistedChainComplex`, `twistedHomology` for its alternating face map complex and homology.
   Maps out of twisted chains are built summand by summand with `twistedChainsDesc`.
+  The coefficient of a twisted chain on a singular simplex is `twistedChainComplexCoeff`, and by
+  `twistedChainComplex_ext_coeff` a twisted chain is determined by its coefficients.
 * `TauCeti.LocalCoefficientSystem.twistedChainsFunctor`: twisted chains as a functor of the
   coefficient system, with `twistedChainComplexCoefficientMap` and
   `twistedHomologyCoefficientMap` for the induced maps of complexes and of homology, together
@@ -470,6 +474,112 @@ lemma ιTwistedChainComplex_d (k : ℕ) (σ : (TopCat.toSSet.obj X) _⦋k + 1⦌
   -- Both sides are now the same alternating sum, written once over the degree-`k` term of the
   -- complex and once over the module of twisted `k`-chains it is built from.
   rfl
+
+section Coeff
+
+variable {k : ℕ}
+
+open Classical in
+/-- The coefficient of a twisted chain on a singular `k`-simplex `ρ`: the projection of the
+coproduct of simplex fibres onto the summand of `ρ`. -/
+def twistedChainComplexCoeff (ρ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    (twistedChainComplex L).X k ⟶ L.obj (initialVertex ρ) :=
+  twistedChainComplexDesc L fun σ ↦ if h : σ = ρ then eqToHom (by rw [h]) else 0
+
+/-- The coefficient on `ρ` of a chain supported on `ρ` is its coefficient. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_twistedChainComplexCoeff (ρ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    ιTwistedChainComplex L k ρ ≫ twistedChainComplexCoeff L ρ = 𝟙 _ := by
+  simp [twistedChainComplexCoeff]
+
+/-- The coefficient on `ρ` of a chain supported on a different simplex vanishes. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_twistedChainComplexCoeff_of_ne {σ ρ : (TopCat.toSSet.obj X) _⦋k⦌}
+    (h : σ ≠ ρ) : ιTwistedChainComplex L k σ ≫ twistedChainComplexCoeff L ρ = 0 := by
+  simp [twistedChainComplexCoeff, h]
+
+/-- The coefficient on `ρ` of a chain supported on `ρ` is its coefficient. -/
+@[simp]
+lemma twistedChainComplexCoeff_ιTwistedChainComplex_apply (ρ : (TopCat.toSSet.obj X) _⦋k⦌)
+    (x : L.obj (initialVertex ρ)) :
+    (twistedChainComplexCoeff L ρ).hom ((ιTwistedChainComplex L k ρ).hom x) = x :=
+  congrArg (fun f ↦ f.hom x) (ιTwistedChainComplex_twistedChainComplexCoeff L ρ)
+
+/-- The coefficient on `ρ` of a chain supported on a different simplex vanishes. -/
+@[simp]
+lemma twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne
+    {σ ρ : (TopCat.toSSet.obj X) _⦋k⦌} (h : σ ≠ ρ) (x : L.obj (initialVertex σ)) :
+    (twistedChainComplexCoeff L ρ).hom ((ιTwistedChainComplex L k σ).hom x) = 0 :=
+  congrArg (fun f ↦ f.hom x) (ιTwistedChainComplex_twistedChainComplexCoeff_of_ne L h)
+
+/-- Summing a family of additive maps out of the simplex fibres against the coefficients of a
+finite sum of chains, each supported on one simplex, applies the maps summand by summand. -/
+lemma finsum_twistedChainComplexCoeff_sum {M : Type*} [AddCommMonoid M]
+    (g : ∀ τ : (TopCat.toSSet.obj X) _⦋k⦌, L.obj (initialVertex τ) →+ M) {ι : Type*}
+    (s : Finset ι) (σ : ι → (TopCat.toSSet.obj X) _⦋k⦌) (x : ∀ i, L.obj (initialVertex (σ i))) :
+    ∑ᶠ τ, g τ ((twistedChainComplexCoeff L τ).hom (∑ i ∈ s, (ιTwistedChainComplex L k (σ i)).hom
+      (x i))) = ∑ i ∈ s, g (σ i) (x i) := by
+  have hsingle : ∀ i, ∑ᶠ τ, g τ ((twistedChainComplexCoeff L τ).hom
+      ((ιTwistedChainComplex L k (σ i)).hom (x i))) = g (σ i) (x i) := fun i ↦ by
+    rw [finsum_eq_single _ (σ i) fun τ hτ ↦ by
+      rw [twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L (Ne.symm hτ), map_zero],
+      twistedChainComplexCoeff_ιTwistedChainComplex_apply]
+  simp_rw [map_sum]
+  rw [← sum_finsum_comm _ _ fun i _ ↦ (Set.finite_singleton (σ i)).subset fun τ hτ ↦
+    Set.mem_singleton_iff.2 <| by_contra fun h ↦ hτ <| by
+      simp only [twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L (Ne.symm h),
+        map_zero]]
+  exact Finset.sum_congr rfl fun i _ ↦ hsingle i
+
+open Classical in
+/-- The coefficient projections factor through the identification of a degree of the twisted
+chain complex with the direct sum of the simplex fibres. -/
+private lemma twistedChainComplexCoeff_eq_component (ρ : (TopCat.toSSet.obj X) _⦋k⦌) :
+    twistedChainComplexCoeff L ρ =
+      (eqToIso (twistedChainComplex_X L k) ≪≫ ModuleCat.coprodIsoDirectSum _).hom ≫
+        ModuleCat.ofHom (DirectSum.component R _
+          (fun σ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ L.obj (initialVertex σ)) ρ) := by
+  refine twistedChainComplex_hom_ext L fun σ ↦ ?_
+  simp only [Iso.trans_hom, eqToIso.hom, Category.assoc, ιTwistedChainComplex_eqToHom_assoc]
+  rw [← Category.assoc, ModuleCat.ι_coprodIsoDirectSum_hom, ← ModuleCat.ofHom_comp]
+  by_cases h : σ = ρ
+  · subst h
+    simp
+  · simp [ιTwistedChainComplex_twistedChainComplexCoeff_of_ne L h, DirectSum.component_comp_lof, h]
+
+/-- A twisted chain is determined by its coefficients. -/
+lemma twistedChainComplex_ext_coeff {y y' : (twistedChainComplex L).X k}
+    (h : ∀ ρ, (twistedChainComplexCoeff L ρ).hom y = (twistedChainComplexCoeff L ρ).hom y') :
+    y = y' := by
+  classical
+  let e := eqToIso (twistedChainComplex_X L k) ≪≫ ModuleCat.coprodIsoDirectSum
+    (fun σ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ L.obj (initialVertex σ))
+  refine (ModuleCat.mono_iff_injective e.hom).1 inferInstance
+    (DirectSum.ext_component R fun ρ ↦ ?_)
+  simpa only [twistedChainComplexCoeff_eq_component, ModuleCat.hom_comp, LinearMap.comp_apply,
+    ModuleCat.hom_ofHom] using h ρ
+
+/-- The twisted boundary of a chain supported on `σ` is a signed sum of chains supported on the
+faces of `σ`. -/
+lemma d_ιTwistedChainComplex_apply (σ : (TopCat.toSSet.obj X) _⦋k + 1⦌)
+    (x : L.obj (initialVertex σ)) :
+    ((twistedChainComplex L).d (k + 1) k).hom ((ιTwistedChainComplex L (k + 1) σ).hom x) =
+      ∑ i : Fin (k + 2), (-1 : ℤ) ^ (i : ℕ) •
+        (ιTwistedChainComplex L k ((TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ)).hom
+          ((L.map (vertexTransport (SimplexCategory.δ i).op σ)).hom x) := by
+  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ιTwistedChainComplex_d]
+  simp
+
+/-- The coefficient on a `k`-simplex `ρ` of the boundary of a chain supported on a
+`(k + 1)`-simplex `σ` vanishes unless `ρ` is a face of `σ`. -/
+lemma ιTwistedChainComplex_d_twistedChainComplexCoeff_of_forall_ne
+    {ρ : (TopCat.toSSet.obj X) _⦋k⦌} {σ : (TopCat.toSSet.obj X) _⦋k + 1⦌}
+    (h : ∀ i : Fin (k + 2), (TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ ≠ ρ) :
+    ιTwistedChainComplex L (k + 1) σ ≫ (twistedChainComplex L).d (k + 1) k ≫
+      twistedChainComplexCoeff L ρ = 0 := by
+  simp [Preadditive.sum_comp, ιTwistedChainComplex_twistedChainComplexCoeff_of_ne L (h _)]
+
+end Coeff
 
 /-- Singular homology of `X` with coefficients in the local coefficient system `L`. -/
 abbrev twistedHomology (k : ℕ) : ModuleCat.{max v w} R := (twistedChainComplex L).homology k

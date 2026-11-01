@@ -33,6 +33,10 @@ Together with `IsLocalization.Away.isSMulRegular_algebraMap` they spread a local
 ideal at a prime, given by a nonzerodivisor, to a local equation by a nonzerodivisor on a basic
 open neighbourhood, which is how an ideal sheaf whose stalks are principal is shown to be an
 effective Cartier divisor.
+
+The contraction of an extended ideal from a localization away from `r` is described by
+`IsLocalization.Away.algebraMap_mem_map_algebraMap_iff`: it consists of the elements which some
+power of `r` multiplies into the ideal, that is, the saturation of the ideal by `r`.
 -/
 
 public section
@@ -116,3 +120,17 @@ theorem exists_notMem_smul_le_span_singleton_of_map_eq [IsNoetherianRing A] {P :
     rw [mul_assoc, h₂, mul_zero]
 
 end Ideal
+
+namespace IsLocalization.Away
+
+variable {R S : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S] (r : R)
+  [IsLocalization.Away r S]
+
+/-- An element of `R` lies in the contraction of `I` from the localization away from `r` if and
+only if some power of `r` multiplies it into `I`. -/
+theorem algebraMap_mem_map_algebraMap_iff (I : Ideal R) (x : R) :
+    algebraMap R S x ∈ I.map (algebraMap R S) ↔ ∃ n : ℕ, r ^ n * x ∈ I := by
+  simp [IsLocalization.algebraMap_mem_map_algebraMap_iff (Submonoid.powers r),
+    Submonoid.mem_powers_iff]
+
+end IsLocalization.Away

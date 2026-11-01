@@ -15,7 +15,7 @@ import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.BadPrimeCoset
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.ElementaryDivisors
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.CosetMap
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Diagonal.Coset
-import TauCeti.LinearAlgebra.Matrix.SmithNormalForm
+import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Int
 import TauCeti.Data.ZMod.Units
 import Mathlib.Data.Nat.Prime.Int
 
