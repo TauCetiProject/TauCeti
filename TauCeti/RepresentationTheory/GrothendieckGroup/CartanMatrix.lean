@@ -110,6 +110,17 @@ theorem projectiveSimplePairing_basis [DecidableEq I] (i j : I) :
   simpa only [exactK0OfFamily_apply, eq_comm] using
     jordanHolderCoordinate_exactK0OfFamily S hSnoniso i j
 
+/-- In coordinates, the projective-simple pairing multiplies the projective-basis coordinates of
+its first argument with the Jordan--Hölder coordinates of its second. -/
+theorem projectiveSimplePairing_apply [Fintype I]
+    (x : ExactK0.{u} (finiteProjectiveModulesExactStructure R))
+    (y : ExactK0.{u} (finiteModulesExactStructure R)) :
+    projectiveSimplePairing P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive x y =
+      ∑ i, (indecomposableProjectiveClassBasis P hind hPnoniso hPexhaustive).repr x i *
+        jordanHolderCoordinate R (S i) y := by
+  conv_lhs => rw [← (indecomposableProjectiveClassBasis P hind hPnoniso hPexhaustive).sum_repr x]
+  simp [indecomposableProjectiveClassBasis_apply]
+
 /-- For a finite indexing type, the integral projective-simple multiplicity pairing
 is perfect: it identifies either Grothendieck group with the integral dual of the other. -/
 theorem projectiveSimplePairing_isPerfPair [Finite I] :
