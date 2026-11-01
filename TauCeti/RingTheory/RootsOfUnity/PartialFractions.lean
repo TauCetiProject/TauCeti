@@ -31,20 +31,6 @@ open Finset
 
 variable {K : Type*} {n : ℕ}
 
-namespace TauCeti
-
-/-- Multiplying by an `n`-th root of unity cannot turn an element whose `n`-th power
-is not one into one. This supplies the nonzero denominators in root averaging. -/
-theorem mul_sub_one_ne_zero_of_pow_eq_one [CommRing K] {ζ y : K}
-    (hζ : ζ ^ n = 1) (hy : y ^ n ≠ 1) :
-    ζ * y - 1 ≠ 0 := by
-  intro h
-  apply hy
-  have hpow := congrArg (fun z : K ↦ z ^ n) (sub_eq_zero.mp h)
-  simpa [mul_pow, hζ] using hpow
-
-end TauCeti
-
 namespace IsPrimitiveRoot
 
 variable [Field K] {ζ y : K}
