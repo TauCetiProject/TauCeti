@@ -203,35 +203,25 @@ example (a : A) (x : X) :
 
 /-! ### Words without coefficients -/
 
-/-- The term of the group language without coefficients for a positive or negative variable. -/
-private def varLetter (e : X × Bool) : Language.group.Term X :=
-  if e.2 then Language.Term.var e.1 else (Language.Term.var e.1)⁻¹
-
-/-- A canonical left-associated term of the group language without coefficients spelling the
-reduced word of a free-group element. -/
-noncomputable def wordTerm (w : FreeGroup X) : Language.group.Term X := by
-  classical
-  exact (FreeGroup.toWord w).foldl (fun t e => t * varLetter e) 1
+/-- A canonical term of the group language without coefficients spelling the reduced word of a
+free-group element: the canonical term `Term.ofWord` with no coefficient names, read in the group
+language through Mathlib's `LEquiv.addEmptyConstants`. -/
+noncomputable def wordTerm (w : FreeGroup X) : Language.group.Term X :=
+  (LEquiv.addEmptyConstants Language.group Empty).invLHom.onTerm
+    (Term.ofWord (A := Empty) (FreeGroup.map Sum.inl w))
 
 section WordTerm
 
 attribute [local instance] TauCeti.Group.structureOfGroup
 
-private theorem realize_foldl_varLetter {G : Type*} [Group G] (v : X → G)
-    (l : List (X × Bool)) (t : Language.group.Term X) :
-    (l.foldl (fun u e => u * varLetter e) t).realize v =
-      t.realize v * FreeGroup.lift v (FreeGroup.mk l) := by
-  induction l generalizing t with
-  | nil => simp [← FreeGroup.one_eq_mk]
-  | cons e es ih =>
-    rw [List.foldl_cons, ih, TauCeti.Group.realize_mul, FreeGroup.lift_mk, FreeGroup.lift_mk]
-    rcases e with ⟨x, _ | _⟩ <;> simp [varLetter, mul_assoc]
-
 /-- The canonical term of a word evaluates to the value of the word. -/
 @[simp] theorem realize_wordTerm {G : Type*} [Group G] (v : X → G) (w : FreeGroup X) :
     (wordTerm w).realize v = FreeGroup.lift v w := by
-  classical
-  rw [wordTerm, realize_foldl_varLetter, TauCeti.Group.realize_one, one_mul, FreeGroup.mk_toWord]
+  let : (Language.constantsOn Empty).Structure G := Language.constantsOn.structure isEmptyElim
+  have : (LEquiv.addEmptyConstants Language.group Empty).invLHom.IsExpansionOn G :=
+    LHom.sumElim_isExpansionOn _ _ G
+  rw [wordTerm, LHom.realize_onTerm, Term.realize_eq_lift isEmptyElim, Term.toWord_ofWord]
+  induction w using FreeGroup.induction_on <;> simp_all
 
 end WordTerm
 
