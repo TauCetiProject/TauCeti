@@ -39,37 +39,6 @@ open RootPairing
 variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N]
   {P : RootPairing ι ℤ M N} {b : P.Base} [Finite ι] [P.IsReduced] {lam : M}
 
-/-- An LS encoding is straight exactly when its initial minimal coset representative is the
-identity. This uses the decreasing directions, not dominance of the shape. -/
-theorem eq_straight_iff_dir_zero_eq_one (π : LSPath P b lam) :
-    π = straight lam ↔ (π.dir 0).1 = 1 := by
-  constructor
-  · rintro rfl
-    simp
-  · intro h
-    have hlen : π.length = 0 := by
-      by_contra hlen
-      -- Explicit indices avoid choosing a successor in the dependent direction type.
-      have hlt := π.strictAnti_length_dir
-        (show (0 : Fin (π.length + 1)) < ⟨1, by omega⟩ by
-          simpa only [Fin.lt_def, Fin.val_zero, Fin.val_mk] using Nat.zero_lt_one)
-      dsimp only at hlt
-      rw [h, CoxeterSystem.length_one] at hlt
-      omega
-    obtain ⟨n, dir, time, hzero, hlast, hmono, hne, hchain⟩ := π
-    dsimp only at hlen
-    subst n
-    apply ext
-    · simp only [length_straight, List.ofFn_succ, List.ofFn_zero, List.cons.injEq,
-        and_true]
-      apply Subtype.ext
-      simpa only [dir_straight] using h
-    · simp only [length_straight, List.ofFn_succ, List.ofFn_zero, List.cons.injEq,
-        and_true]
-      constructor
-      · simpa using hzero
-      · simpa using hlast
-
 variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
   [AddCommGroup V] [Module 𝕜 V]
 
@@ -90,13 +59,9 @@ theorem eq_straight_iff_forall_minHeight_nonneg [P.flip.IsReduced]
     have hdom : (π.dir 0).1 • lam ∈ dominantChamber P b := by
       apply (mem_dominantChamber P b _).mpr
       intro i hi
-      have hvertex := PLPath.listMinHeight_le_apply_sum_take (f := F ⟨i, hi⟩)
-        ((π.timed 𝕜 f).map Prod.snd) 1
-      have hmin : 0 ≤ PLPath.listMinHeight (F ⟨i, hi⟩)
-          ((π.timed 𝕜 f).map Prod.snd) := by
-        simpa only [toPLPath_def, PLPath.minHeight_ofSegments] using h ⟨i, hi⟩
       have hprod : 0 ≤ (π.duration 0 : 𝕜) * (P.coroot' i ((π.dir 0).1 • lam) : 𝕜) := by
-        simpa [timed_def, List.ofFn_succ, hF] using hmin.trans hvertex
+        simpa only [hF] using
+          (h ⟨i, hi⟩).trans (π.minHeight_le_duration_mul_dir_zero f (F ⟨i, hi⟩))
       have hd : (0 : 𝕜) < (π.duration 0 : ℚ) := Rat.cast_pos.mpr (π.duration_pos 0)
       exact_mod_cast nonneg_of_mul_nonneg_right hprod hd
     have hfix := smul_eq_self_of_smul_mem_dominantChamber P b (π.dir 0).1 hlam hdom
