@@ -149,47 +149,6 @@ section Smooth
 
 variable [IsProper f] [SmoothOfRelativeDimension 1 f] [GeometricallyConnected f]
 
-private def relativePicardDegreeZeroBaseChangeHom (T : (Over S')ᵒᵖ) :
-    (relativePicardDegreeZeroFunctor (pullback.fst g f)).obj T →*
-      (relativePicardDegreeZeroFunctor f).obj ((Over.map g).op.obj T) :=
-  relativePicardDegreeZeroFunctor.mkHom f
-    (((relativePicardPresheafBaseChangeIso f g).hom.app T).hom.comp
-      ((relativePicardDegreeZeroFunctorι (pullback.fst g f)).app T).hom) fun c ↦
-        (relativePicardPresheafBaseChangeIso_hom_app_mem_iff f g).mpr
-          (relativePicardDegreeZeroFunctorι_app_mem _ c)
-
-private lemma relativePicardDegreeZeroFunctorι_app_baseChangeHom (T : (Over S')ᵒᵖ)
-    (c : (relativePicardDegreeZeroFunctor (pullback.fst g f)).obj T) :
-    (relativePicardDegreeZeroFunctorι f).app ((Over.map g).op.obj T)
-        (relativePicardDegreeZeroBaseChangeHom f g T c) =
-      (relativePicardPresheafBaseChangeIso f g).hom.app T
-        ((relativePicardDegreeZeroFunctorι (pullback.fst g f)).app T c) := by
-  unfold relativePicardDegreeZeroBaseChangeHom
-  exact relativePicardDegreeZeroFunctorι_app_mkHom f _ _ _
-
-private def relativePicardDegreeZeroBaseChangeInvHom (T : (Over S')ᵒᵖ) :
-    (relativePicardDegreeZeroFunctor f).obj ((Over.map g).op.obj T) →*
-      (relativePicardDegreeZeroFunctor (pullback.fst g f)).obj T :=
-  relativePicardDegreeZeroFunctor.mkHom (pullback.fst g f)
-    (((relativePicardPresheafBaseChangeIso f g).inv.app T).hom.comp
-      ((relativePicardDegreeZeroFunctorι f).app ((Over.map g).op.obj T)).hom)
-    fun c ↦ (relativePicardPresheafBaseChangeIso_hom_app_mem_iff f g).mp <| by
-      -- Membership is transported across the inverse of the full base change comparison.
-      change (relativePicardPresheafBaseChangeIso f g).hom.app T
-          ((relativePicardPresheafBaseChangeIso f g).inv.app T
-            ((relativePicardDegreeZeroFunctorι f).app _ c)) ∈ _
-      rw [Iso.inv_hom_id_app_apply]
-      exact relativePicardDegreeZeroFunctorι_app_mem f c
-
-private lemma relativePicardDegreeZeroFunctorι_app_baseChangeInvHom (T : (Over S')ᵒᵖ)
-    (c : (relativePicardDegreeZeroFunctor f).obj ((Over.map g).op.obj T)) :
-    (relativePicardDegreeZeroFunctorι (pullback.fst g f)).app T
-        (relativePicardDegreeZeroBaseChangeInvHom f g T c) =
-      (relativePicardPresheafBaseChangeIso f g).inv.app T
-        ((relativePicardDegreeZeroFunctorι f).app ((Over.map g).op.obj T) c) := by
-  unfold relativePicardDegreeZeroBaseChangeInvHom
-  exact relativePicardDegreeZeroFunctorι_app_mkHom _ _ _ _
-
 /-- **Base change of the degree-zero Picard functor.** For a smooth proper geometrically connected
 family of curves `f : X ⟶ S` and `g : S' ⟶ S`, the degree-zero Picard functor `Pic⁰_{X'/S'}` of
 the base change `X' = S' ×_S X ⟶ S'` is `Pic⁰_{X/S}` restricted to schemes over `S'` along
@@ -199,58 +158,63 @@ pullback along `T ×_S X ≅ T ×_{S'} X'`
 def relativePicardDegreeZeroFunctorBaseChangeIso :
     relativePicardDegreeZeroFunctor (pullback.fst g f) ≅
       (Over.map g).op ⋙ relativePicardDegreeZeroFunctor f where
-  hom :=
-    { app T := CommGrpCat.ofHom (relativePicardDegreeZeroBaseChangeHom f g T)
-      naturality T T' φ := by
-        ext c
-        apply relativePicardDegreeZeroFunctorι_app_injective f _
-        -- Both restricted functors are opaque, so compare their sections through the inclusion.
-        change (relativePicardDegreeZeroFunctorι f).app _
-            (relativePicardDegreeZeroBaseChangeHom f g T'
-              ((relativePicardDegreeZeroFunctor (pullback.fst g f)).map φ c)) =
-          (relativePicardDegreeZeroFunctorι f).app _
-            ((relativePicardDegreeZeroFunctor f).map ((Over.map g).op.map φ)
-              (relativePicardDegreeZeroBaseChangeHom f g T c))
-        simp only [relativePicardDegreeZeroFunctorι_app_baseChangeHom,
-          NatTrans.naturality_apply (relativePicardDegreeZeroFunctorι f),
-          NatTrans.naturality_apply (relativePicardDegreeZeroFunctorι (pullback.fst g f))]
-        exact NatTrans.naturality_apply (relativePicardPresheafBaseChangeIso f g).hom φ _ }
-  inv :=
-    { app T := CommGrpCat.ofHom (relativePicardDegreeZeroBaseChangeInvHom f g T)
-      naturality T T' φ := by
-        ext c
-        apply relativePicardDegreeZeroFunctorι_app_injective (pullback.fst g f) _
-        -- Both restricted functors are opaque, so compare their sections through the inclusion.
-        change (relativePicardDegreeZeroFunctorι (pullback.fst g f)).app _
-            (relativePicardDegreeZeroBaseChangeInvHom f g T'
-              ((relativePicardDegreeZeroFunctor f).map ((Over.map g).op.map φ) c)) =
-          (relativePicardDegreeZeroFunctorι (pullback.fst g f)).app _
-            ((relativePicardDegreeZeroFunctor (pullback.fst g f)).map φ
-              (relativePicardDegreeZeroBaseChangeInvHom f g T c))
-        simp only [relativePicardDegreeZeroFunctorι_app_baseChangeInvHom,
-          NatTrans.naturality_apply (relativePicardDegreeZeroFunctorι f),
-          NatTrans.naturality_apply (relativePicardDegreeZeroFunctorι (pullback.fst g f))]
-        exact NatTrans.naturality_apply (relativePicardPresheafBaseChangeIso f g).inv φ _ }
+  hom := relativePicardDegreeZeroFunctor.lift f (H := (Over.map g).op)
+    (relativePicardDegreeZeroFunctorι (pullback.fst g f) ≫
+      (relativePicardPresheafBaseChangeIso f g).hom) fun _ c ↦
+        (relativePicardPresheafBaseChangeIso_hom_app_mem_iff f g).mpr
+          (relativePicardDegreeZeroFunctorι_app_mem _ c)
+  inv := relativePicardDegreeZeroFunctor.lift (pullback.fst g f) (H := 𝟭 _)
+    (Functor.whiskerLeft (Over.map g).op (relativePicardDegreeZeroFunctorι f) ≫
+      (relativePicardPresheafBaseChangeIso f g).inv) fun T c ↦
+        (relativePicardPresheafBaseChangeIso_hom_app_mem_iff f g).mp <| by
+          -- Membership is transported across the inverse of the full base change comparison.
+          change (relativePicardPresheafBaseChangeIso f g).hom.app T
+              ((relativePicardPresheafBaseChangeIso f g).inv.app T
+                ((relativePicardDegreeZeroFunctorι f).app _ c)) ∈ _
+          rw [Iso.inv_hom_id_app_apply]
+          exact relativePicardDegreeZeroFunctorι_app_mem f c
   hom_inv_id := by
     ext T c
     apply relativePicardDegreeZeroFunctorι_app_injective (pullback.fst g f) T
-    -- Both restricted functors are opaque, so compare their sections through the inclusion.
-    change (relativePicardDegreeZeroFunctorι (pullback.fst g f)).app T
-        (relativePicardDegreeZeroBaseChangeInvHom f g T
-          (relativePicardDegreeZeroBaseChangeHom f g T c)) = _
-    simp only [relativePicardDegreeZeroFunctorι_app_baseChangeInvHom,
-      relativePicardDegreeZeroFunctorι_app_baseChangeHom, Iso.hom_inv_id_app_apply,
-      NatTrans.id_app, CommGrpCat.id_apply]
+    exact
+      (relativePicardDegreeZeroFunctorι_app_lift_app (pullback.fst g f) (H := 𝟭 _) _ _ T _).trans
+      ((congrArg ((relativePicardPresheafBaseChangeIso f g).inv.app T)
+        (relativePicardDegreeZeroFunctorι_app_lift_app f (H := (Over.map g).op) _ _ T c)).trans
+          (Iso.hom_inv_id_app_apply _ T _))
   inv_hom_id := by
     ext T c
     apply relativePicardDegreeZeroFunctorι_app_injective f _
-    -- Both restricted functors are opaque, so compare their sections through the inclusion.
-    change (relativePicardDegreeZeroFunctorι f).app _
-        (relativePicardDegreeZeroBaseChangeHom f g T
-          (relativePicardDegreeZeroBaseChangeInvHom f g T c)) = _
-    simp only [relativePicardDegreeZeroFunctorι_app_baseChangeHom,
-      relativePicardDegreeZeroFunctorι_app_baseChangeInvHom, Iso.inv_hom_id_app_apply,
-      NatTrans.id_app, CommGrpCat.id_apply]
+    exact (relativePicardDegreeZeroFunctorι_app_lift_app f (H := (Over.map g).op) _ _ T _).trans
+      ((congrArg ((relativePicardPresheafBaseChangeIso f g).hom.app T)
+        (relativePicardDegreeZeroFunctorι_app_lift_app (pullback.fst g f) (H := 𝟭 _) _ _ T c)).trans
+          (Iso.inv_hom_id_app_apply _ T _))
+
+/-- The base change isomorphism of `Pic⁰` sends a section `c` of `Pic⁰_{X'/S'}` to the section of
+`Pic⁰_{X/S}` whose underlying relative Picard class is the image of `c` under
+`relativePicardPresheafBaseChangeIso`. -/
+-- Not `@[simp]`: `simp` rewrites the functor composite in the implicit type arguments of the
+-- left-hand side by `Functor.comp_obj`, so it is not in simp-normal form.
+theorem relativePicardDegreeZeroFunctorι_app_relativePicardDegreeZeroFunctorBaseChangeIso_hom_app
+    {T : (Over S')ᵒᵖ} (c : (relativePicardDegreeZeroFunctor (pullback.fst g f)).obj T) :
+    (relativePicardDegreeZeroFunctorι f).app (.op ((Over.map g).obj T.unop))
+        ((relativePicardDegreeZeroFunctorBaseChangeIso f g).hom.app T c) =
+      (relativePicardPresheafBaseChangeIso f g).hom.app T
+        ((relativePicardDegreeZeroFunctorι (pullback.fst g f)).app T c) :=
+  relativePicardDegreeZeroFunctorι_app_lift_app f (H := (Over.map g).op) _ _ T c
+
+/-- The inverse base change isomorphism of `Pic⁰` sends a section `c` of `Pic⁰_{X/S}` over the
+`S`-scheme underlying `T` to the section of `Pic⁰_{X'/S'}` whose underlying relative Picard class
+is the image of `c` under the inverse of `relativePicardPresheafBaseChangeIso`. -/
+-- Not `@[simp]`: `simp` rewrites the functor composite in the implicit type arguments of the
+-- left-hand side by `Functor.comp_obj`, so it is not in simp-normal form.
+theorem relativePicardDegreeZeroFunctorι_app_relativePicardDegreeZeroFunctorBaseChangeIso_inv_app
+    {T : (Over S')ᵒᵖ}
+    (c : ((Over.map g).op ⋙ relativePicardDegreeZeroFunctor f).obj T) :
+    (relativePicardDegreeZeroFunctorι (pullback.fst g f)).app T
+        ((relativePicardDegreeZeroFunctorBaseChangeIso f g).inv.app T c) =
+      (relativePicardPresheafBaseChangeIso f g).inv.app T
+        ((relativePicardDegreeZeroFunctorι f).app (.op ((Over.map g).obj T.unop)) c) :=
+  relativePicardDegreeZeroFunctorι_app_lift_app (pullback.fst g f) (H := 𝟭 _) _ _ T c
 
 /-- The base change isomorphism of `Pic⁰` is the restriction of the base change isomorphism of
 the relative Picard presheaves. -/
@@ -259,9 +223,8 @@ theorem relativePicardDegreeZeroFunctorBaseChangeIso_hom_comp_ι :
     (relativePicardDegreeZeroFunctorBaseChangeIso f g).hom ≫
         Functor.whiskerLeft (Over.map g).op (relativePicardDegreeZeroFunctorι f) =
       relativePicardDegreeZeroFunctorι (pullback.fst g f) ≫
-        (relativePicardPresheafBaseChangeIso f g).hom := by
-  ext T c
-  exact relativePicardDegreeZeroFunctorι_app_baseChangeHom f g T c
+        (relativePicardPresheafBaseChangeIso f g).hom :=
+  relativePicardDegreeZeroFunctor.lift_comp_ι f (H := (Over.map g).op) _ _
 
 /-- The inverse base change isomorphism of `Pic⁰` is the restriction of the inverse base change
 isomorphism of the relative Picard presheaves. -/
@@ -270,9 +233,8 @@ theorem relativePicardDegreeZeroFunctorBaseChangeIso_inv_comp_ι :
     (relativePicardDegreeZeroFunctorBaseChangeIso f g).inv ≫
         relativePicardDegreeZeroFunctorι (pullback.fst g f) =
       Functor.whiskerLeft (Over.map g).op (relativePicardDegreeZeroFunctorι f) ≫
-        (relativePicardPresheafBaseChangeIso f g).inv := by
-  ext T c
-  exact relativePicardDegreeZeroFunctorι_app_baseChangeInvHom f g T c
+        (relativePicardPresheafBaseChangeIso f g).inv :=
+  relativePicardDegreeZeroFunctor.lift_comp_ι (pullback.fst g f) (H := 𝟭 _) _ _
 
 /-- **A representing scheme of `Pic⁰` base changes to a representing scheme.** For a smooth proper
 geometrically connected family of curves `f : X ⟶ S`, if the `S`-scheme `P` represents
