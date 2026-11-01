@@ -106,6 +106,14 @@ theorem a_apply (i : Fin 266) : a i = aImages i := (rfl)
 @[simp]
 theorem b_apply (i : Fin 266) : b i = bImages i := (rfl)
 
+@[simp]
+theorem a_inv : a⁻¹ = a := by
+  ext i
+  rfl
+
+@[simp]
+theorem b_inv_apply (i : Fin 266) : b⁻¹ i = bImages (bImages i) := (rfl)
+
 end J1
 
 /-- The ATLAS degree-266 model of the first Janko group, with the generating pair fixed by
@@ -114,6 +122,16 @@ def J1 : Subgroup (Equiv.Perm (Fin 266)) := Subgroup.closure {J1.a, J1.b}
 
 theorem J1_def : J1 = Subgroup.closure {J1.a, J1.b} := (rfl)
 
+@[simp]
+theorem J1_le_iff (H : Subgroup (Equiv.Perm (Fin 266))) :
+    J1 ≤ H ↔ J1.a ∈ H ∧ J1.b ∈ H := by
+  simp [J1_def, Subgroup.closure_le, Set.insert_subset_iff, Set.singleton_subset_iff]
+
+/-- Membership in the ATLAS model is forced by membership of both generators. -/
+theorem mem_J1_iff (g : Equiv.Perm (Fin 266)) :
+    g ∈ J1 ↔ ∀ H : Subgroup (Equiv.Perm (Fin 266)), J1.a ∈ H → J1.b ∈ H → g ∈ H := by
+  simp [J1_def, Subgroup.mem_closure, Set.insert_subset_iff, Set.singleton_subset_iff]
+
 instance : Nontrivial J1 := by
   have ha : J1.a ≠ 1 := by decide +kernel
   refine nontrivial_of_ne (⟨J1.a, ?_⟩ : J1) 1 (fun h => ha (congrArg Subtype.val h))
@@ -121,6 +139,12 @@ instance : Nontrivial J1 := by
   exact Subgroup.subset_closure (by simp)
 
 namespace J1
+
+@[simp]
+theorem a_mem : a ∈ J1 := Subgroup.subset_closure (by simp)
+
+@[simp]
+theorem b_mem : b ∈ J1 := Subgroup.subset_closure (by simp)
 
 /-- The presentation generators act by the inverses of the ATLAS generators, converting the
 source's left-to-right products to Mathlib's composition convention. -/
@@ -133,6 +157,7 @@ theorem presentationGenerators_zero : presentationGenerators ⟨0, by simp⟩ = 
 @[simp]
 theorem presentationGenerators_one : presentationGenerators ⟨1, by simp⟩ = b⁻¹ := (rfl)
 
+-- Separate kernel checks keep each declaration within the default heartbeat budget.
 private theorem relator_zero :
     Relator.eval presentationGenerators (Sporadic.j1Presentation.transcribed[0]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_zero,
@@ -184,14 +209,7 @@ theorem relators_hold (t : Relator (Fin Sporadic.j1Presentation.generatorCount))
 theorem closure_range_presentationGenerators :
     Subgroup.closure (Set.range presentationGenerators) = J1 := by
   have hrange : Set.range presentationGenerators = {a⁻¹, b⁻¹} := by
-    ext g
-    simp only [Set.mem_range, Set.mem_insert_iff, Set.mem_singleton_iff]
-    constructor
-    · rintro ⟨i, rfl⟩
-      by_cases hi : i.val = 0 <;> simp [presentationGenerators, hi]
-    · rintro (rfl | rfl)
-      · exact ⟨⟨0, by simp⟩, presentationGenerators_zero⟩
-      · exact ⟨⟨1, by simp⟩, presentationGenerators_one⟩
+    exact Set.range_ite_const ⟨⟨0, by simp⟩, rfl⟩ ⟨⟨1, by simp⟩, by decide⟩
   rw [hrange, J1_def]
   simpa only [Set.inv_insert, Set.inv_singleton] using
     Subgroup.closure_inv ({a, b} : Set (Equiv.Perm (Fin 266)))
@@ -211,25 +229,13 @@ theorem exists_surjective_J1 :
   rw [SporadicName.presentation_J1]
   let f := Sporadic.j1Presentation.homEquiv.symm ⟨J1.presentationGenerators, J1.relators_hold⟩
   have hf : f.range = J1 := by
-    calc
-      f.range = (⊤ : Subgroup Sporadic.j1Presentation.Group).map f :=
-        (Subgroup.map_top f).symm
-      _ = (Subgroup.closure (Set.range PresentedGroup.of)).map f := by
-        rw [PresentedGroup.closure_range_of]
-      _ = Subgroup.closure (Set.range J1.presentationGenerators) := by
-        rw [MonoidHom.map_closure, ← Set.range_comp]
-        congr 2
-        funext i
-        exact Sporadic.j1Presentation.homEquiv_symm_apply_of _ i
-      _ = J1 := J1.closure_range_presentationGenerators
-  have hmem (x) : f x ∈ J1 := hf ▸ (⟨x, rfl⟩ : f x ∈ f.range)
-  refine ⟨f.codRestrict J1 hmem, ?_⟩
-  intro g
-  obtain ⟨x, hx⟩ := (hf.symm ▸ g.property : (g : Equiv.Perm (Fin 266)) ∈ f.range)
-  exact ⟨x, Subtype.ext hx⟩
+    exact (Sporadic.j1Presentation.range_homEquiv_symm _).trans
+      J1.closure_range_presentationGenerators
+  rw [← hf]
+  exact ⟨f.rangeRestrict, f.rangeRestrict_surjective⟩
 
 /-- The transcribed presentation of `J₁` does not collapse to the trivial group. -/
-theorem nontrivial_J1_presentation : Nontrivial SporadicName.J1.Group := by
+instance nontrivial_group_J1 : Nontrivial SporadicName.J1.Group := by
   obtain ⟨f, hf⟩ := exists_surjective_J1
   exact hf.nontrivial
 

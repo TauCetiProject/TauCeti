@@ -227,6 +227,24 @@ theorem homEquiv_symm_apply_of (P : GroupPresentation) {G : Type*} [_root_.Group
     P.homEquiv.symm f (PresentedGroup.of i) = f.1 i := by
   simp [homEquiv]
 
+/-- The range of the homomorphism extending a satisfying assignment is the subgroup generated
+by its assigned values. -/
+theorem range_homEquiv_symm (P : GroupPresentation) {G : Type*} [_root_.Group G]
+    (f : {f : Fin P.generatorCount → G //
+      ∀ t ∈ P.transcribed, FreeGroup.lift f t.toFreeGroup = 1}) :
+    (P.homEquiv.symm f).range = Subgroup.closure (Set.range f.1) := by
+  calc
+    (P.homEquiv.symm f).range =
+        (⊤ : Subgroup P.Group).map (P.homEquiv.symm f) :=
+      (Subgroup.map_top _).symm
+    _ = (Subgroup.closure (Set.range PresentedGroup.of)).map (P.homEquiv.symm f) := by
+      rw [PresentedGroup.closure_range_of]
+    _ = Subgroup.closure (Set.range f.1) := by
+      rw [MonoidHom.map_closure, ← Set.range_comp]
+      congr 2
+      funext i
+      exact P.homEquiv_symm_apply_of f i
+
 /-- The recorded relator count agrees with the transcribed data.
 
 This checks transcription metadata only; it makes no claim that the source presents a named group
