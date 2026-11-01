@@ -9,6 +9,7 @@ public import TauCeti.Topology.Grassmannian.Map
 public import TauCeti.Topology.Grassmannian.Orthonormal
 public import TauCeti.Topology.Grassmannian.Plucker
 public import TauCeti.Topology.Algebra.Module.ExtendByZero
+public import TauCeti.LinearAlgebra.ExtendByZero
 
 /-!
 # Ambient and rank inclusions of finite Grassmannians
@@ -44,62 +45,11 @@ carries the quotient topology of the span map.
 
 public section
 
-open Set Module
+open Set Module Function.ExtendByZero
 
 namespace TauCeti
 
 variable {𝕜 : Type*} [Field 𝕜] {r N : ℕ}
-
-/-- Every vector of `𝕜^(N + 1)` is its first coordinate times `e₀` plus the shift of its tail. -/
-private theorem eq_smul_single_zero_add_extend_succ (w : Fin (N + 1) → 𝕜) :
-    w = w 0 • Pi.single 0 1 + Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.succ (Fin.tail w) := by
-  funext i
-  cases i using Fin.cases with
-  | zero =>
-    simp
-  | succ i => simp [(Fin.succ_injective N).extend_apply, Fin.tail]
-
-/-- The first basis vector `e₀` is not in the image of the coordinate shift. -/
-private theorem single_zero_notMem_range_extend_succ :
-    (Pi.single 0 1 : Fin (N + 1) → 𝕜) ∉
-      LinearMap.range (Function.ExtendByZero.linearMap 𝕜 𝕜 (Fin.succ : Fin N → Fin (N + 1))) := by
-  rintro ⟨v, hv⟩
-  have h := congrFun hv 0
-  simp at h
-
-/-- A vector lies in `𝕜 e₀ ⊕ shift X` exactly when its tail lies in `X`. -/
-private theorem mem_span_single_zero_sup_map_iff (X : Submodule 𝕜 (Fin N → 𝕜))
-    (w : Fin (N + 1) → 𝕜) :
-    w ∈ (𝕜 ∙ Pi.single 0 1) ⊔ X.map (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.succ) ↔
-      Fin.tail w ∈ X := by
-  constructor
-  · intro hw
-    obtain ⟨a, ha, b, ⟨v, hv, rfl⟩, rfl⟩ := Submodule.mem_sup.1 hw
-    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 ha
-    have htail : Fin.tail (c • Pi.single 0 1 + Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.succ v) =
-        v := by
-      funext i
-      simp [Fin.tail, Fin.succ_ne_zero, (Fin.succ_injective N).extend_apply]
-    rwa [htail]
-  · intro hw
-    rw [eq_smul_single_zero_add_extend_succ w]
-    exact Submodule.add_mem_sup (Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _))
-      (Submodule.mem_map_of_mem hw)
-
-/-- Restriction to the coordinates `1, …, N` is taking the tail. -/
-private theorem funLeft_succ_apply (w : Fin (N + 1) → 𝕜) :
-    LinearMap.funLeft 𝕜 𝕜 Fin.succ w = Fin.tail w := by
-  ext i
-  simp [Fin.tail, LinearMap.funLeft_apply]
-
-/-- Adjoining `e₀` to the shift of `X` raises the dimension by one. -/
-private theorem finrank_span_single_zero_sup_map (X : Submodule 𝕜 (Fin N → 𝕜)) :
-    finrank 𝕜 ↥((𝕜 ∙ Pi.single 0 1) ⊔ X.map (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.succ)) =
-      finrank 𝕜 X + 1 := by
-  rw [sup_comm, Submodule.finrank_sup_span_singleton fun h ↦
-    single_zero_notMem_range_extend_succ (LinearMap.map_le_range h),
-    ← (Submodule.equivMapOfInjective _ (Function.extend_injective (Fin.succ_injective N) 0)
-      X).finrank_eq]
 
 namespace finiteFullRankFrame
 
@@ -107,26 +57,26 @@ namespace finiteFullRankFrame
 prepend the new first basis vector `e₀`. -/
 noncomputable def rankSucc (f : finiteFullRankFrame 𝕜 r N) :
     finiteFullRankFrame 𝕜 (r + 1) (N + 1) :=
-  ⟨Fin.cons (Pi.single 0 1) (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.succ ∘ f.1), by
-    refine (f.2.map' (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.succ) (LinearMap.ker_eq_bot.2
-      (Function.extend_injective (Fin.succ_injective N) 0))).finCons fun h ↦
-      single_zero_notMem_range_extend_succ (Submodule.span_le.2 ?_ h)
+  ⟨Fin.cons (Pi.single 0 1)
+      (map (linearMap 𝕜 𝕜 Fin.succ) (linearMap_injective (Fin.succ_injective N)) f).1, by
+    refine (map _ _ f).2.finCons fun h ↦
+      single_zero_notMem_range_linearMap_succ (Submodule.span_le.2 ?_ h)
+    rw [coe_map]
     rintro _ ⟨i, rfl⟩
     exact ⟨f.1 i, rfl⟩⟩
 
 @[simp]
 theorem coe_rankSucc (f : finiteFullRankFrame 𝕜 r N) :
-    (rankSucc f).1 =
-      Fin.cons (Pi.single 0 1) (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.succ ∘ f.1) :=
+    (rankSucc f).1 = Fin.cons (Pi.single 0 1)
+      (map (linearMap 𝕜 𝕜 Fin.succ) (linearMap_injective (Fin.succ_injective N)) f).1 :=
   (rfl)
 
 /-- The rank inclusion on frames is continuous. -/
 @[fun_prop]
 theorem continuous_rankSucc [TopologicalSpace 𝕜] :
     Continuous (rankSucc : finiteFullRankFrame 𝕜 r N → _) :=
-  (continuous_const.finCons (continuous_pi fun i ↦
-    (Function.ExtendByZero.continuous_linearMap 𝕜 Fin.succ).comp
-      ((continuous_apply i).comp continuous_subtype_val))).subtype_mk _
+  (continuous_const.finCons (continuous_subtype_val.comp
+    (continuous_map _ _ (continuous_linearMap 𝕜 Fin.succ)))).subtype_mk _
 
 end finiteFullRankFrame
 
@@ -135,11 +85,11 @@ namespace finiteGrassmannian
 /-- The **ambient inclusion** `Gr(r, N) → Gr(r, N + 1)`: a plane in `𝕜^N` viewed as a plane in the
 coordinate hyperplane of `𝕜^(N + 1)` with vanishing last coordinate, along `Fin.castSucc`. -/
 noncomputable def castSucc (V : finiteGrassmannian 𝕜 r N) : finiteGrassmannian 𝕜 r (N + 1) :=
-  map (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.castSucc)
-    (Function.extend_injective (Fin.castSucc_injective N) 0) V
+  map (linearMap 𝕜 𝕜 Fin.castSucc)
+    (linearMap_injective (Fin.castSucc_injective N)) V
 
 theorem coe_castSucc (V : finiteGrassmannian 𝕜 r N) :
-    (castSucc V).1 = V.1.map (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.castSucc) :=
+    (castSucc V).1 = V.1.map (linearMap 𝕜 𝕜 Fin.castSucc) :=
   coe_map _ _ V
 
 /-- A vector lies in the ambient inclusion of `V` exactly when its last coordinate vanishes and
@@ -147,21 +97,14 @@ its first `N` coordinates form a vector of `V`. -/
 @[simp]
 theorem mem_castSucc_iff {V : finiteGrassmannian 𝕜 r N} {w : Fin (N + 1) → 𝕜} :
     w ∈ (castSucc V).1 ↔ w (Fin.last N) = 0 ∧ Fin.init w ∈ V.1 := by
-  have hlast (v : Fin N → 𝕜) :
-      Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.castSucc v (Fin.last N) = 0 := by
-    simp
-  have hinit (v : Fin N → 𝕜) :
-      Fin.init (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.castSucc v) = v := by
-    funext i
-    simp [Fin.init, (Fin.castSucc_injective N).extend_apply]
   rw [coe_castSucc, Submodule.mem_map]
   constructor
   · rintro ⟨v, hv, rfl⟩
-    exact ⟨hlast v, (hinit v).symm ▸ hv⟩
+    exact ⟨linearMap_castSucc_last v, (init_linearMap_castSucc v).symm ▸ hv⟩
   · rintro ⟨hw, hV⟩
     refine ⟨Fin.init w, hV, funext fun i ↦ ?_⟩
     cases i using Fin.lastCases with
-    | last => rw [hlast, hw]
+    | last => rw [linearMap_castSucc_last, hw]
     | cast i => simp [Fin.init, (Fin.castSucc_injective N).extend_apply]
 
 /-- The ambient inclusion is injective. -/
@@ -172,17 +115,17 @@ theorem castSucc_injective : Function.Injective (castSucc : finiteGrassmannian �
 @[fun_prop]
 theorem continuous_castSucc [TopologicalSpace 𝕜] :
     Continuous (castSucc : finiteGrassmannian 𝕜 r N → _) :=
-  continuous_map _ _ (Function.ExtendByZero.continuous_linearMap 𝕜 Fin.castSucc)
+  continuous_map _ _ (continuous_linearMap 𝕜 Fin.castSucc)
 
 /-- The **rank inclusion** `s : Gr(r, N) → Gr(r + 1, N + 1)`, `s(V) = 𝕜 e₀ ⊕ shift V`, where
 `e₀ = Pi.single 0 1` and `shift` sends `e_i` to `e_(i + 1)` along `Fin.succ`. The new line comes
 first. -/
 noncomputable def rankSucc (V : finiteGrassmannian 𝕜 r N) : finiteGrassmannian 𝕜 (r + 1) (N + 1) :=
-  ⟨(𝕜 ∙ Pi.single 0 1) ⊔ V.1.map (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.succ), by
-    rw [finrank_span_single_zero_sup_map, V.2]⟩
+  ⟨(𝕜 ∙ Pi.single 0 1) ⊔ V.1.map (linearMap 𝕜 𝕜 Fin.succ), by
+    rw [finrank_span_single_zero_sup_map_linearMap_succ, V.2]⟩
 
 theorem coe_rankSucc (V : finiteGrassmannian 𝕜 r N) :
-    (rankSucc V).1 = (𝕜 ∙ Pi.single 0 1) ⊔ V.1.map (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.succ) :=
+    (rankSucc V).1 = (𝕜 ∙ Pi.single 0 1) ⊔ V.1.map (linearMap 𝕜 𝕜 Fin.succ) :=
   (rfl)
 
 /-- A vector lies in the rank inclusion of `V` exactly when its tail `(w 1, …, w N)` lies in `V`;
@@ -190,15 +133,18 @@ its first coordinate is unconstrained. -/
 @[simp]
 theorem mem_rankSucc_iff {V : finiteGrassmannian 𝕜 r N} {w : Fin (N + 1) → 𝕜} :
     w ∈ (rankSucc V).1 ↔ Fin.tail w ∈ V.1 :=
-  mem_span_single_zero_sup_map_iff V.1 w
+  mem_span_single_zero_sup_map_linearMap_succ_iff V.1 w
 
 /-- Taking spans commutes with the rank inclusion of frames. -/
 @[simp]
 theorem frameSpan_rankSucc (f : finiteFullRankFrame 𝕜 r N) :
     frameSpan f.rankSucc = rankSucc (frameSpan f) := by
+  have h := congrArg Subtype.val
+    (frameSpan_map (linearMap 𝕜 𝕜 Fin.succ) (linearMap_injective (Fin.succ_injective N)) f)
+  simp only [coe_frameSpan, coe_map] at h
   apply Subtype.ext
-  rw [coe_frameSpan, finiteFullRankFrame.coe_rankSucc, Fin.range_cons, Submodule.span_insert,
-    range_comp, Submodule.span_image, coe_rankSucc, coe_frameSpan]
+  simp only [coe_frameSpan, finiteFullRankFrame.coe_rankSucc, coe_rankSucc, Fin.range_cons,
+    Submodule.span_insert, h]
 
 /-- The rank inclusion is injective. -/
 theorem rankSucc_injective : Function.Injective (rankSucc : finiteGrassmannian 𝕜 r N → _) :=
@@ -236,17 +182,17 @@ theorem range_rankSucc :
     -- The candidate preimage is the image of `W` under taking tails.
     let X := W.1.map (LinearMap.funLeft 𝕜 𝕜 Fin.succ)
     have hmem (w : Fin (N + 1) → 𝕜) :
-        w ∈ (𝕜 ∙ Pi.single 0 1) ⊔ X.map (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.succ) ↔
+        w ∈ (𝕜 ∙ Pi.single 0 1) ⊔ X.map (linearMap 𝕜 𝕜 Fin.succ) ↔
           w ∈ W.1 := by
-      rw [mem_span_single_zero_sup_map_iff]
-      refine ⟨fun ⟨w', hw', h⟩ ↦ ?_, fun hw ↦ ⟨w, hw, funLeft_succ_apply w⟩⟩
+      rw [mem_span_single_zero_sup_map_linearMap_succ_iff]
+      refine ⟨fun ⟨w', hw', h⟩ ↦ ?_, fun hw ↦ ⟨w, hw, rfl⟩⟩
       -- `w` and `w'` have the same tail, so they differ by a multiple of `e₀`.
-      have h' : Fin.tail w' = Fin.tail w := (funLeft_succ_apply w').symm.trans h
-      rw [eq_smul_single_zero_add_extend_succ w, ← h',
-        eq_sub_of_add_eq' (eq_smul_single_zero_add_extend_succ w').symm]
+      have h' : Fin.tail w' = Fin.tail w := h
+      rw [eq_smul_single_zero_add_linearMap_succ_tail w, ← h',
+        eq_sub_of_add_eq' (eq_smul_single_zero_add_linearMap_succ_tail w').symm]
       exact W.1.add_mem (W.1.smul_mem _ hW) (W.1.sub_mem hw' (W.1.smul_mem _ hW))
     have hX : finrank 𝕜 X = r := by
-      have h := finrank_span_single_zero_sup_map X
+      have h := finrank_span_single_zero_sup_map_linearMap_succ X
       rw [SetLike.ext hmem, W.2] at h
       omega
     exact ⟨⟨X, hX⟩, Subtype.ext (SetLike.ext hmem)⟩
