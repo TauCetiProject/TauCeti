@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.WeilRestriction
+public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.WeilRestriction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Connected.AlgebraicallyClosed
 import Mathlib.RingTheory.HopfAlgebra.TensorProduct
 import Mathlib.RingTheory.Localization.Away.Basic
