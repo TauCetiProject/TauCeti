@@ -568,17 +568,34 @@ theorem relativeDegree_def :
     relativeDegree k F P' = Module.finrank (P'.restrict k F).ResidueField P'.ResidueField := by
   rw [relativeDegree]
 
-/-- Through the constants `k'`, the valuation ring of `P'` is a `k`-algebra compatibly with the
-valuation ring of the place below. The `k`-algebra structure is not an instance: for `k = k'` it
-would compete with the constant-field algebra of `P'`. -/
+omit [Algebra k F'] [IsScalarTower k k' F'] in
+/-- Through the constants `k'`, the valuation ring of `P'` is a `k`-algebra. This is not an
+instance: for `k = k'` it would compete with the constant-field algebra of `P'`. Use it as a local
+instance together with `isScalarTower_integersAlgebraBase` and
+`isScalarTower_integers_restrict`. -/
+noncomputable abbrev integersAlgebraBase : Algebra k P'.integers :=
+  ((algebraMap k' P'.integers).comp (algebraMap k k')).toAlgebra
+
+omit [Algebra k F'] [IsScalarTower k k' F'] in
+/-- The `k`-algebra `integersAlgebraBase` on the valuation ring of `P'` factors through the
+constants `k'`. -/
+theorem isScalarTower_integersAlgebraBase :
+    letI := integersAlgebraBase k P'
+    IsScalarTower k k' P'.integers :=
+  letI := integersAlgebraBase k P'
+  .of_algebraMap_eq fun _ ↦ rfl
+
+/-- The `k`-algebra `integersAlgebraBase` on the valuation ring of `P'` is compatible with the
+valuation ring of the place below. -/
 theorem isScalarTower_integers_restrict :
-    letI : Algebra k P'.integers := ((algebraMap k' P'.integers).comp (algebraMap k k')).toAlgebra
+    letI := integersAlgebraBase k P'
     IsScalarTower k (P'.restrict k F).integers P'.integers := by
-  let _ : Algebra k P'.integers := ((algebraMap k' P'.integers).comp (algebraMap k k')).toAlgebra
+  let _ := integersAlgebraBase k P'
+  have := isScalarTower_integersAlgebraBase k P'
   refine .of_algebraMap_eq fun c ↦ Subtype.ext ?_
-  rw [coe_algebraMap_integers, coe_algebraMap_constants, ← IsScalarTower.algebraMap_apply k F F']
-  exact (P'.coe_algebraMap_constants (algebraMap k k' c)).trans
-    (IsScalarTower.algebraMap_apply k k' F' c).symm
+  rw [coe_algebraMap_integers, coe_algebraMap_constants, ← IsScalarTower.algebraMap_apply k F F',
+    IsScalarTower.algebraMap_apply k k' P'.integers, coe_algebraMap_constants,
+    ← IsScalarTower.algebraMap_apply k k' F']
 
 /-- **The degree of a place and the degree of the place below it** (Stichtenoth, Section III.1):
 the residue field `F'_{P'}` sits in the two towers `k ⊆ k' ⊆ F'_{P'}` and `k ⊆ F_P ⊆ F'_{P'}`,
@@ -589,10 +606,9 @@ The factor `[k' : k]` is mandatory and the identity is stated cross-multiplied: 
 field grows, `deg P'` falls short of `f(P' ∣ P) · deg P` by exactly that factor. -/
 theorem finrank_mul_degree_eq_relativeDegree_mul_degree_restrict :
     Module.finrank k k' * P'.degree = relativeDegree k F P' * (P'.restrict k F).degree := by
-  -- The residue field of `P'` is a `k`-algebra through the constants `k'` of `F'`.  This is a
-  -- local instance: for `k = k'` it would compete with the constant-field algebra of `P'`.
-  let _ : Algebra k P'.integers := ((algebraMap k' P'.integers).comp (algebraMap k k')).toAlgebra
-  have : IsScalarTower k k' P'.integers := .of_algebraMap_eq fun _ ↦ rfl
+  -- The residue field of `P'` is a `k`-algebra through the constants `k'` of `F'`.
+  let _ := integersAlgebraBase k P'
+  have := isScalarTower_integersAlgebraBase k P'
   have := isScalarTower_integers_restrict k F P'
   rw [degree_eq_finrank, degree_eq_finrank, relativeDegree_def,
     Module.finrank_mul_finrank k k' P'.ResidueField,

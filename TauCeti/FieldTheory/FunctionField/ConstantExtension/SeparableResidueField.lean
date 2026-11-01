@@ -98,8 +98,8 @@ theorem isSeparable_residueField_of_isSeparable_restrict (P' : Place k' F')
     [Algebra.IsSeparable k (P'.restrict k F).ResidueField]
     [Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField] :
     Algebra.IsSeparable k' P'.ResidueField := by
-  let _ : Algebra k P'.integers := ((algebraMap k' P'.integers).comp (algebraMap k k')).toAlgebra
-  have : IsScalarTower k k' P'.integers := .of_algebraMap_eq fun _ ↦ rfl
+  let _ := integersAlgebraBase k P'
+  have := isScalarTower_integersAlgebraBase k P'
   have := isScalarTower_integers_restrict k F P'
   have := Algebra.IsSeparable.trans k (P'.restrict k F).ResidueField P'.ResidueField
   exact Algebra.isSeparable_tower_top_of_isSeparable k k' P'.ResidueField
@@ -121,8 +121,8 @@ theorem degree_restrict_le_degree_of_isPurelyInseparable [IsPurelyInseparable k 
     exact Nat.zero_le _
   -- The residue field of `P'` is a `k`-algebra through the constants `k'`, compatibly with the
   -- residue field of the place below.
-  let _ : Algebra k P'.integers := ((algebraMap k' P'.integers).comp (algebraMap k k')).toAlgebra
-  have : IsScalarTower k k' P'.integers := .of_algebraMap_eq fun _ ↦ rfl
+  let _ := integersAlgebraBase k P'
+  have := isScalarTower_integersAlgebraBase k P'
   have := isScalarTower_integers_restrict k F P'
   let ι := IsScalarTower.toAlgHom k R P'.ResidueField
   let b := finBasis k R
