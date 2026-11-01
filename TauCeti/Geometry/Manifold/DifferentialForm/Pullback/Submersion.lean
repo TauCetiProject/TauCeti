@@ -6,26 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Descent
 public import TauCeti.Geometry.Manifold.Submersion
 
 /-!
 # Descent of basic forms along submersions
 
-Let `f : M → M'` be a map whose derivatives are all surjective. A form `α` on `M` is the
-pullback `f^* β` of a form `β` on `M'` only if its value at `x` depends on tangent vectors at `x`
-only through their images under `df_x`, and, at two points of one fibre of `f`, gives the same
-value on tangent vectors with the same images. Such a form is **basic** for `f`
-(`TauCeti.RoughForm.IsBasic`): `α_x(v) = α_y(w)` whenever `f x = f y` and `df_x vᵢ = df_y wᵢ`
-for every `i`. Being basic is a pointwise condition, and it is all that descent requires.
-
-* Pullbacks are basic (`TauCeti.RoughForm.isBasic_mpullback`). Conversely, when every derivative of
-  `f` has a continuous right inverse, a basic form `α` is the pullback of
-  `TauCeti.RoughForm.descendedForm I I' f α` (`TauCeti.RoughForm.IsBasic.mpullback_descendedForm`),
-  the form that at `f x` reads `α_x` through a right inverse of `df_x`; on images under `df_x` it
-  takes the values of `α_x` (`TauCeti.RoughForm.IsBasic.descendedForm_apply_mfderiv`). So the basic
-  forms are exactly the pullbacks (`TauCeti.RoughForm.exists_mpullback_eq_iff_isBasic`).
-* When moreover `f` is surjective, pullback along `f` is injective
-  (`TauCeti.mpullback_injective_of_surjective`), so the descended form is unique.
+A form `α` on `M` is basic for `f : M → M'` (`TauCeti.RoughForm.IsBasic`) when
+`α_x(v) = α_y(w)` whenever `f x = f y` and `df_x vᵢ = df_y wᵢ` for every `i`. When every
+derivative of `f` has a continuous right inverse, a basic form is the pullback along `f` of its
+descent `TauCeti.RoughForm.descendedForm`, so the basic forms are exactly the pullbacks (see
+`TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Descent`). This file specializes that descent
+to submersions, whose derivatives have such right inverses when the source is boundaryless, and
+adds regularity.
 
 For a submersion with boundaryless source, local sections give the regularity of descended forms.
 Near `f x`, a form `ω` is the pullback of `f^* ω` along a local section of `f` through `x`, so
@@ -45,16 +38,11 @@ symplectic form to a level set descends along the orbit projection.
 
 ## Main definitions
 
-* `TauCeti.RoughForm.IsBasic I' f α`: the form `α` is basic for `f`.
-* `TauCeti.RoughForm.descendedForm I I' f α`: the descent of `α` along `f`, through chosen preimages
-  and right inverses of the derivative.
 * `TauCeti.SmoothForm.descendedForm hf hsurj α hα`: the descent of a smooth basic form along a
   surjective smooth submersion.
 
 ## Main results
 
-* `TauCeti.RoughForm.exists_mpullback_eq_iff_isBasic`: when the derivatives of `f` have continuous
-  right inverses, a form is a pullback along `f` exactly when it is basic.
 * `Manifold.IsSubmersion.isSmoothForm_mpullback_iff`: along a surjective `C^n` submersion with
   boundaryless source, a form is `C^m`, `m + 1 ≤ n`, exactly when its pullback is.
 * `Manifold.IsSubmersion.exists_smoothForm_mpullback_eq_iff`: along a surjective smooth submersion,
@@ -87,83 +75,6 @@ variable {E H M E' H' M' F : Type*}
   [TopologicalSpace M'] [ChartedSpace H' M'] {I' : ModelWithCorners ℝ E' H'}
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {k : ℕ} {m n : WithTop ℕ∞} {f : M → M'} {x : M}
-
-namespace TauCeti
-
-namespace RoughForm
-
-section Basic
-
-variable {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
-
-variable (I') (f) in
-/-- A form `α` on `M` is **basic** for a map `f : M → M'` when its values only depend on the
-images of tangent vectors under the derivative of `f`, also across a fibre of `f`: `α_x(v) = α_y(w)`
-whenever `f x = f y` and `df_x vᵢ = df_y wᵢ` for every `i`. The tangent spaces at `f x` and `f y`
-are both the model space, identified by `tangentSpaceCast`. Pullbacks along `f` are basic, and
-when the derivatives of `f` have continuous right inverses the basic forms are exactly the
-pullbacks (`TauCeti.RoughForm.exists_mpullback_eq_iff_isBasic`). -/
-@[expose] def IsBasic (α : RoughForm I M V k) : Prop :=
-  ∀ ⦃x y : M⦄, f x = f y → ∀ (v : Fin k → TangentSpace I x) (w : Fin k → TangentSpace I y),
-    (∀ i, mfderiv I I' f x (v i) = tangentSpaceCast I' (f y) (f x) (mfderiv I I' f y (w i))) →
-      α x v = α y w
-
-/-- The pullback of any form along `f` is basic for `f`. -/
-@[simp]
-theorem isBasic_mpullback (ω : RoughForm I' M' V k) : IsBasic I' f (mpullback I I' f ω) := by
-  intro x y hxy v w hvw
-  simp only [mpullback_apply, hvw]
-  exact apply_tangentSpaceCast hxy.symm _
-
-open scoped Classical in
-variable (I I') in
-/-- The descent of a form `α` on `M` along `f : M → M'`. At a point `y` of the image of `f` it is
-`α` at a chosen preimage `x` at which the derivative of `f` has a continuous right inverse `r`,
-read through `r`: `v ↦ α_x(r v)`. Elsewhere it is zero. When `α` is basic for `f` and every
-derivative of `f` has a continuous right inverse, these choices do not matter, and the descent
-pulls back to `α` (`TauCeti.RoughForm.IsBasic.mpullback_descendedForm`). -/
-def descendedForm (f : M → M') (α : RoughForm I M V k) : RoughForm I' M' V k := fun y ↦
-  if h : ∃ x, f x = y ∧ (mfderiv I I' f x).HasRightInverse then
-    (α h.choose).compContinuousLinearMap (h.choose_spec.2.rightInverse ∘L
-      (tangentSpaceCast I' y (f h.choose) : TangentSpace I' y →L[ℝ] TangentSpace I' (f h.choose)))
-  else 0
-
-/-- **Descent of basic forms.** If every derivative of `f` has a continuous right inverse, a form
-that is basic for `f` is the pullback of its descent along `f`. -/
-theorem IsBasic.mpullback_descendedForm {α : RoughForm I M V k} (hα : IsBasic I' f α)
-    (hf : ∀ x, (mfderiv I I' f x).HasRightInverse) :
-    mpullback I I' f (descendedForm I I' f α) = α := by
-  funext x
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  rw [mpullback_apply, descendedForm]
-  split_ifs with h
-  swap
-  · exact absurd ⟨x, rfl, hf x⟩ h
-  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply]
-  -- The chosen preimage `x'` and `x` lie in one fibre, and the right inverse at `x'` sends
-  -- `df_x vᵢ` to a vector with the same image under `df_x'`.
-  exact hα h.choose_spec.1 _ v fun i ↦ h.choose_spec.2.rightInverse_rightInverse _
-
-/-- The descent of a basic form `α` evaluates on images under the derivative of `f` as `α`:
-`(descendedForm α)_(f x)(df_x v₁, …, df_x vₖ) = α_x(v₁, …, vₖ)`. -/
-theorem IsBasic.descendedForm_apply_mfderiv {α : RoughForm I M V k} (hα : IsBasic I' f α)
-    (hf : ∀ x, (mfderiv I I' f x).HasRightInverse) (x : M) (v : Fin k → TangentSpace I x) :
-    descendedForm I I' f α (f x) (fun i ↦ mfderiv I I' f x (v i)) = α x v := by
-  rw [← mpullback_apply, hα.mpullback_descendedForm hf]
-
-/-- **Basic forms are the pullbacks.** If every derivative of `f` has a continuous right inverse,
-for instance for a submersion with boundaryless source, a form on `M` is the pullback of a form on
-`M'` exactly when it is basic for `f`. -/
-theorem exists_mpullback_eq_iff_isBasic (hf : ∀ x, (mfderiv I I' f x).HasRightInverse)
-    {α : RoughForm I M V k} : (∃ ω : RoughForm I' M' V k, mpullback I I' f ω = α) ↔
-      IsBasic I' f α :=
-  ⟨fun ⟨ω, hω⟩ ↦ hω ▸ isBasic_mpullback ω, fun hα ↦ ⟨_, hα.mpullback_descendedForm hf⟩⟩
-
-end Basic
-
-end RoughForm
-
-end TauCeti
 
 open TauCeti
 
@@ -256,6 +167,13 @@ theorem eq_descendedForm_iff {β : SmoothForm I' M' F k} :
   ⟨fun h ↦ h ▸ mpullback_descendedForm, fun h ↦
     mpullback_injective_of_surjective hf.contMDiff hsurj (hf.surjective_mfderiv (by simp))
       (h.trans mpullback_descendedForm.symm)⟩
+
+/-- Descending the pullback of a smooth form `β` along `f` gives back `β`. -/
+@[simp]
+theorem descendedForm_mpullback (β : SmoothForm I' M' F k) :
+    descendedForm hf hsurj (mpullback f hf.contMDiff β)
+      (by rw [coe_mpullback]; exact RoughForm.isBasic_mpullback _) = β :=
+  (eq_descendedForm_iff.mpr rfl).symm
 
 /-- The descent of a smooth basic form evaluates on images under the derivative of `f` as the
 form. -/

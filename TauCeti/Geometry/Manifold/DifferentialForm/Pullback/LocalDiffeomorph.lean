@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Submersion
+public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Descent
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
@@ -91,7 +92,7 @@ theorem IsLocalDiffeomorph.isBasic_of_mpullback_eq {ι : Type*} (hf : IsLocalDif
     (hn : n ≠ 0) {σ : ι → M → M} (hσ : ∀ i, MDifferentiable I I (σ i))
     (hfσ : ∀ i, f ∘ σ i = f) (hσf : ∀ x y, f x = f y → x = y ∨ ∃ i, σ i x = y)
     {α : RoughForm I M V k} (hα : ∀ i, mpullback I I (σ i) α = α) : RoughForm.IsBasic I' f α := by
-  intro x y hxy v w hvw
+  refine RoughForm.isBasic_iff.mpr fun x y hxy v w hvw ↦ ?_
   have hinj (z : M) := (hf.isInvertible_mfderiv hn z).injective
   -- `x` is `y` or `σ i y` for some `i`; `tangentSpaceCast` is the identity of the model space.
   rcases hσf y x hxy.symm with rfl | ⟨i, rfl⟩
