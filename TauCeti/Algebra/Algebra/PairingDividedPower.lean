@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Basic
 public import TauCeti.Algebra.BigOperators.Ring.SquareZero
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
+import TauCeti.Algebra.BigOperators.GroupWithZero.Action
 
 /-!
 # Divided powers of quadratic elements in anticommuting generators
@@ -74,8 +75,11 @@ include hν
 
 /-- A product of two anticommuting elements commutes with a third one. -/
 theorem commute_mul_of_anticommute (i j k : ι) : Commute (ν i * ν j) (ν k) := by
-  rw [commute_iff_eq, mul_assoc, eq_neg_of_add_eq_zero_left (hν j k), mul_neg, ← mul_assoc,
-    eq_neg_of_add_eq_zero_left (hν i k), neg_mul, neg_neg, mul_assoc]
+  have hjk : ν j * ν k = -(ν k * ν j) := eq_neg_of_add_eq_zero_left (hν j k)
+  have hik : ν i * ν k = -(ν k * ν i) := eq_neg_of_add_eq_zero_left (hν i k)
+  rw [commute_iff_eq]
+  calc ν i * ν j * ν k = -(ν i * ν k * ν j) := by simp [mul_assoc, hjk]
+    _ = ν k * (ν i * ν j) := by simp [hik, mul_assoc]
 
 /-- The summands `a p • (ν p.1 * ν p.2)` of a quadratic element commute pairwise. -/
 theorem pairwise_commute_smul_mul (a : ι × ι → R) :
@@ -126,21 +130,10 @@ theorem pairDividedPower_insert_succ [DecidableEq ι] (a : ι × ι → R) {P : 
 /-- Scaling the coefficients by `c` scales the `k`-th divided power by `c ^ k`. -/
 theorem pairDividedPower_smul (c : R) (a : ι × ι → R) (P : Finset (ι × ι)) (k : ℕ) :
     pairDividedPower hν (c • a) P k = c ^ k • pairDividedPower hν a P k := by
-  classical
-  have key (t : Finset (ι × ι)) :
-      t.noncommProd (fun p ↦ (c • a) p • (ν p.1 * ν p.2))
-          ((pairwise_commute_smul_mul hν (c • a)).set_pairwise _) =
-        c ^ t.card • t.noncommProd (fun p ↦ a p • (ν p.1 * ν p.2))
-          ((pairwise_commute_smul_mul hν a).set_pairwise _) := by
-    induction t using Finset.induction_on with
-    | empty => rw [Finset.noncommProd_empty, Finset.noncommProd_empty, Finset.card_empty, pow_zero,
-        one_smul]
-    | insert p t hp ih =>
-      rw [Finset.noncommProd_insert_of_notMem _ _ _ _ hp,
-        Finset.noncommProd_insert_of_notMem _ _ _ _ hp, ih, Finset.card_insert_of_notMem hp,
-        pow_succ', Pi.smul_apply, smul_eq_mul, mul_smul, smul_mul_smul_comm]
   rw [pairDividedPower_def, pairDividedPower_def, Finset.smul_sum]
-  exact Finset.sum_congr rfl fun t ht ↦ by rw [key, (Finset.mem_powersetCard.1 ht).2]
+  refine Finset.sum_congr rfl fun t ht ↦ ?_
+  rw [← (Finset.mem_powersetCard.1 ht).2, Finset.smul_noncommProd]
+  simp only [Pi.smul_apply, smul_eq_mul, mul_smul]
 
 /-- Negating the coefficients multiplies the `k`-th divided power by `(-1) ^ k`. -/
 theorem pairDividedPower_neg {S : Type*} [CommRing S] [Algebra S A] (a : ι × ι → S)

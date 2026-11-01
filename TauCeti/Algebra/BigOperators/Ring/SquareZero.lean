@@ -83,8 +83,8 @@ theorem sum_pow_of_pairwise_commute_of_mul_self_eq_zero (s : Finset ι) (x : ι 
     | zero => simp
     | succ n =>
       rw [sum_insert ha, hcomm.add_pow_succ_of_mul_self_eq_zero (hx a (mem_insert_self a s)),
-        ih hxs, ih hxs, sum_noncommProd_powersetCard_succ_insert ha x hc, mul_smul_comm, smul_smul,
-        ← Nat.factorial_succ, smul_add]
+        sum_noncommProd_powersetCard_succ_insert ha x hc]
+      simp only [ih hxs, mul_smul_comm, smul_smul, Nat.factorial_succ, smul_add]
 
 /-- **Multinomial theorem for square-zero elements.** If the `x i` commute pairwise and square to
 zero on `s`, then `(∑ i ∈ s, x i) ^ n` is `n !` times the sum, over the `n`-element subsets `t` of
@@ -156,9 +156,10 @@ theorem sum_noncommProd_powersetCard_mul_of_mul_self_eq_zero (s : Finset ι) (x 
           rw [mul_assoc, (hcomm m).symm.left_comm, ← mul_assoc, hxa, zero_mul]
         have hcross : e (m + 1) * (x a * e n) + x a * e m * e (n + 1) =
             (m + n + 1 + 1).choose (m + 1) • (x a * e (m + n + 1)) := by
-          rw [(hcomm (m + 1)).symm.left_comm, mul_assoc, ih, ih, Nat.add_right_comm m 1 n,
-            ← add_assoc, ← mul_add, ← add_smul, add_comm ((m + n + 1).choose (m + 1)),
-            ← Nat.choose_succ_succ, mul_smul_comm]
+          rw [(hcomm (m + 1)).symm.left_comm, mul_assoc, ih, ih, Nat.choose_succ_succ']
+          -- Both products land in degree `m + n + 1`.
+          simp only [Nat.add_right_comm m 1 n, ← add_assoc, mul_smul_comm, add_smul]
+          exact add_comm _ _
         rw [add_mul, mul_add, mul_add, hsq, add_zero, add_assoc, hcross, ih,
           show m + 1 + (n + 1) = m + n + 1 + 1 by omega, ← smul_add]
 
