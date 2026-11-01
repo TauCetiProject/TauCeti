@@ -231,6 +231,30 @@ def unitsSMul (u : ℤˣ) (L : IntegralLattice V) : Isometry L L where
 theorem unitsSMul_apply (u : ℤˣ) (L : IntegralLattice V) (x : V) :
     unitsSMul u L x = (u : ℤ) • x := (rfl)
 
+/-- Multiplication by the unit `1` is the identity of `O(L)`. -/
+@[simp]
+theorem unitsSMul_one (L : IntegralLattice V) : unitsSMul 1 L = 1 := by
+  ext x
+  simp
+
+/-- Multiplication by the unit `-1` is negation. -/
+@[simp]
+theorem unitsSMul_neg_one (L : IntegralLattice V) : unitsSMul (-1) L = neg L := by
+  ext x
+  simp
+
+/-- Multiplication by a product of units is the product in `O(L)` of the multiplications. -/
+theorem unitsSMul_mul (u v : ℤˣ) (L : IntegralLattice V) :
+    unitsSMul (u * v) L = unitsSMul u L * unitsSMul v L := by
+  ext x
+  simp [mul_smul]
+
+/-- Multiplication by a unit of `ℤ` is an involution, since `u * u = 1`. -/
+@[simp]
+theorem symm_unitsSMul (u : ℤˣ) (L : IntegralLattice V) :
+    (unitsSMul u L).symm = unitsSMul u L := by
+  rw [← inv_def, inv_eq_iff_mul_eq_one, ← unitsSMul_mul, Int.units_mul_self, unitsSMul_one]
+
 end Isometry
 
 /-- The special isometry group `SO(L)`: the subgroup of the isometry group `O(L) = Isometry L L`
