@@ -23,7 +23,7 @@ namespace TauCeti.Montgomery
 
 open WeierstrassCurve
 
-local instance : Fact (Nat.Prime 7) := ⟨by decide⟩
+local instance stageTwoPrimeSeven : Fact (Nat.Prime 7) := ⟨by decide⟩
 
 private theorem nonsingular_one_four :
     (model (0 : ZMod 7) 1).toAffine.Nonsingular 1 4 := by
