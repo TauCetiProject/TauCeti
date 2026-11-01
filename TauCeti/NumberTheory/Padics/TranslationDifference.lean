@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.MahlerBasis
+public import TauCeti.NumberTheory.Padics.MahlerBasis.Basic
 public import Mathlib.Algebra.Exact.Basic
 
 /-!
