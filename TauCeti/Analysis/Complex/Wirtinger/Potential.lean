@@ -5,20 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Wirtinger.Laplacian
-public import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Potential
+public import TauCeti.Analysis.Complex.Wirtinger.Basic
+public import TauCeti.Analysis.Complex.Pompeiu
+import TauCeti.Analysis.Complex.CauchyKernel
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
-# Smooth local solutions of the inhomogeneous Cauchy–Riemann equation
+# Local solutions of the inhomogeneous Cauchy–Riemann equation
 
-The identity `bar∂ ∂ u = Δu / 4` converts the planar Newtonian potential into a right
-inverse for `bar∂` on smooth compactly supported functions. Cutting off the source gives
-a smooth solution near any specified point. This supplies integrating factors for scalar
-Cauchy–Riemann equations with a smooth zeroth-order coefficient.
+The Cauchy transform gives a right inverse for `bar∂` on compactly supported `Cⁿ`
+functions into a complex Banach space, for `n ≥ 1`. Cutting off the source inside an
+open domain gives a solution near any specified point, with the same regularity.
+This supplies integrating factors for scalar Cauchy–Riemann equations.
 
-The construction uses `TauCeti.laplacian_planarNewtonianKernel_convolution`, whose kernel
-is normalized by `-ΔG = δ`.
+The construction uses the right-inverse identity in `TauCeti.Analysis.Complex.Pompeiu`,
+where the transform normalized by `(2π)⁻¹` inverts `2 bar∂`.
 
 ## References
 
@@ -27,41 +29,58 @@ is normalized by `-ΔG = δ`.
 
 public noncomputable section
 
-open Complex Filter InnerProductSpace Laplacian Topology
-open scoped Convolution ContDiff
+open Complex Filter MeasureTheory Set Topology
+open scoped Real Convolution ContDiff
 
 namespace TauCeti
 
-/-- A smooth compactly supported source has a global smooth `bar∂` primitive. -/
-theorem exists_contDiff_conjWirtingerDeriv_eq_of_hasCompactSupport {f : ℂ → ℂ}
-    (hf : ContDiff ℝ ∞ f) (hfc : HasCompactSupport f) :
-    ∃ g : ℂ → ℂ, ContDiff ℝ ∞ g ∧ ∀ z, conjWirtingerDeriv g z 1 = f z := by
-  let u := planarNewtonianKernel ⋆ f
-  have hu : ContDiff ℝ ∞ u := contDiff_planarNewtonianKernel_convolution hf hfc
-  have hdu : ContDiff ℝ ∞ (fderiv ℝ u) := hu.fderiv_right (by simp)
-  have hp (v : ℂ) : ContDiff ℝ ∞ (fun z ↦ fderiv ℝ u z v) :=
-    hdu.clm_apply contDiff_const
-  have hW : ContDiff ℝ ∞ (fun z ↦ wirtingerDeriv u z 1) := by
-    simp only [wirtingerDeriv_apply, smul_eq_mul, mul_one]
-    exact contDiff_const.mul ((hp 1).sub (contDiff_const.mul (hp I)))
-  refine ⟨fun z ↦ (-4 : ℂ) * wirtingerDeriv u z 1, contDiff_const.mul hW, fun z ↦ ?_⟩
-  have hΔ := congrFun (laplacian_planarNewtonianKernel_convolution (hf.of_le (by simp)) hfc) z
-  have hm := conjWirtingerDeriv_wirtingerDeriv_apply_one_eq_laplacian
-    (z := z) (hu.of_le (by simp)).contDiffAt
-  rw [hΔ] at hm
-  simp only [conjWirtingerDeriv_apply, smul_eq_mul, mul_one, Pi.neg_apply] at hm ⊢
-  rw [fderiv_const_mul (hW.differentiable (by simp) z) (-4 : ℂ)]
-  simp only [smul_apply, smul_eq_mul]
-  linear_combination -4 * hm
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
+  {n : ℕ∞}
 
-/-- Every smooth source admits a smooth `bar∂` primitive near any specified point. -/
-theorem exists_contDiff_conjWirtingerDeriv_eventuallyEq {f : ℂ → ℂ}
-    (hf : ContDiff ℝ ∞ f) (z : ℂ) :
-    ∃ g : ℂ → ℂ, ContDiff ℝ ∞ g ∧ ∀ᶠ w in 𝓝 z, conjWirtingerDeriv g w 1 = f w := by
-  let χ : ContDiffBump z := ⟨1, 2, by norm_num, by norm_num⟩
-  have hχ : ContDiff ℝ ∞ (fun w ↦ (χ w : ℂ)) := Complex.ofRealCLM.contDiff.comp χ.contDiff
-  obtain ⟨g, hg, heq⟩ := exists_contDiff_conjWirtingerDeriv_eq_of_hasCompactSupport
-    (hχ.mul hf) ((χ.hasCompactSupport.comp_left (g := Complex.ofReal) (by simp)).mul_right)
+/-- A compactly supported `Cⁿ` source, for `n ≥ 1`, has a global `Cⁿ` `bar∂` primitive. -/
+theorem exists_contDiff_conjWirtingerDeriv_apply_one_eq_of_hasCompactSupport {f : ℂ → W}
+    (hn : 1 ≤ n) (hf : ContDiff ℝ n f) (hfc : HasCompactSupport f) :
+    ∃ g : ℂ → W, ContDiff ℝ n g ∧ ∀ z, conjWirtingerDeriv g z 1 = f z := by
+  let T := fun w ↦ (2 * π : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z
+  have hT : ContDiff ℝ n T := by
+    have hc : ContDiff ℝ n (fun w ↦ ∫ z, (w - z)⁻¹ • f z) := by
+      convert hfc.contDiff_convolution_right (ContinuousLinearMap.lsmul ℝ ℂ)
+        Complex.locallyIntegrable_inv hf using 1
+      funext w
+      rw [convolution_eq_swap]
+      rfl
+    exact hc.const_smul _
+  refine ⟨fun w ↦ (2 : ℂ) • T w, hT.const_smul _, fun z ↦ ?_⟩
+  have he := hfc.fderiv_apply_one_add_I_smul_apply_I_two_pi_inv_smul_integral_sub_inv_smul
+    (hf.of_le (by exact_mod_cast hn)) z
+  rw [conjWirtingerDeriv_apply, fderiv_fun_const_smul (hT.differentiable (by exact_mod_cast
+    (ne_of_gt (lt_of_lt_of_le zero_lt_one hn))) z) (2 : ℂ)]
+  simp only [smul_apply, smul_eq_mul, mul_one]
+  rw [smul_comm I (2 : ℂ), ← smul_add, smul_smul,
+    inv_mul_cancel₀ (by norm_num : (2 : ℂ) ≠ 0), one_smul]
+  exact he
+
+/-- A `Cⁿ` source on an open domain, for `n ≥ 1`, admits a global `Cⁿ` function whose
+`bar∂` agrees with the source near any specified point of the domain. -/
+theorem exists_contDiff_conjWirtingerDeriv_apply_one_eventually_eq {f : ℂ → W} {U : Set ℂ}
+    (hn : 1 ≤ n) (hU : IsOpen U) (hf : ContDiffOn ℝ n f U) {z : ℂ} (hz : z ∈ U) :
+    ∃ g : ℂ → W, ContDiff ℝ n g ∧ ∀ᶠ w in 𝓝 z, conjWirtingerDeriv g w 1 = f w := by
+  obtain ⟨r, hr, hsub⟩ := Metric.mem_nhds_iff.mp (hU.mem_nhds hz)
+  let χ : ContDiffBump z := ⟨r / 4, r / 2, by positivity, by linarith⟩
+  have hs : tsupport χ ⊆ U := by
+    rw [χ.tsupport_eq]
+    exact (Metric.closedBall_subset_ball (by dsimp [χ]; linarith)).trans hsub
+  have hcut : ContDiff ℝ n (fun w ↦ χ w • f w) := by
+    apply contDiff_iff_contDiffAt.mpr
+    intro w
+    by_cases hw : w ∈ tsupport χ
+    · exact (χ.contDiff (n := n)).contDiffAt.smul
+        ((hf w (hs hw)).contDiffAt (hU.mem_nhds (hs hw)))
+    · apply (contDiffAt_const (c := (0 : W))).congr_of_eventuallyEq
+      filter_upwards [notMem_tsupport_iff_eventuallyEq.mp hw] with y hy
+      simp [hy]
+  obtain ⟨g, hg, heq⟩ := exists_contDiff_conjWirtingerDeriv_apply_one_eq_of_hasCompactSupport
+    hn hcut χ.hasCompactSupport.smul_right
   refine ⟨g, hg, ?_⟩
   filter_upwards [χ.eventuallyEq_one] with w hw
   simpa [hw] using heq w
