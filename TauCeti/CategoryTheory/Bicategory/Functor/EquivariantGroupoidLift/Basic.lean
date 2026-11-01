@@ -581,6 +581,17 @@ lemma actComp_inv_app (p : Γ) (a b ab : SingleObj.star H ⟶ SingleObj.star H)
   rw [actComp]
   rfl
 
+omit [Category.{v₁, u₁} Γ] in
+/-- At the composite `f ≫ g` itself, the composition comparison `actComp` of the action is the
+composition comparison `mapComp` of the pseudofunctor `actions p`. -/
+lemma actComp_hom_app_eq_mapComp (p : Γ)
+    (f g : (⟨SingleObj.star H⟩ : LocallyDiscrete (SingleObj H)) ⟶ ⟨SingleObj.star H⟩)
+    (X : fiber actions p) :
+    (actComp actions p f.as g.as (f ≫ g).as rfl).hom.app X =
+      ((actions p).mapComp f g).hom.toNatTrans.app X := by
+  rw [actComp_hom_app]
+  exact congrArg (fun e ↦ e.hom.toNatTrans.app X) ((actions p).mapComp'_eq_mapComp f g)
+
 /-- The unit comparison `T_1 ≅ 𝟭` of the prescribed action at `p`. -/
 noncomputable def actId (actions : Γ → LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}) (p : Γ) :
     act actions p (𝟙 (SingleObj.star H)) ≅ 𝟭 (fiber actions p) :=

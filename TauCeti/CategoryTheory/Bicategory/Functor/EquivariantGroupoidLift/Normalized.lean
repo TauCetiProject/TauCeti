@@ -220,6 +220,12 @@ lemma jointComp_hom_app {X Y Z : Γ × SingleObj H} (f : X ⟶ Y) (g : Y ⟶ Z) 
 attribute [reassoc] transportComp_associativity transportCommIso_comp transportCommIso_actComp
   transportCommIso_id transportCommIso_actId
 
+/-- Naturality of the unit isomorphism `E_(𝟙 p) ≅ 𝟭`. -/
+@[reassoc]
+lemma transportId_hom_naturality (p : Γ) {x y : fiber actions p} (φ : x ⟶ y) :
+    (N.transport (𝟙 p)).map φ ≫ (N.transportId p).hom.app y = (N.transportId p).hom.app x ≫ φ :=
+  (N.transportId p).hom.naturality φ
+
 /-- Naturality of the inverse composition isomorphism `E_gh ≅ E_g ⋙ E_h`. -/
 @[reassoc]
 lemma transportComp_inv_naturality {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r) (gh : p ⟶ r)
@@ -331,10 +337,9 @@ lemma jointComp_right_unitality {X Y : Γ × SingleObj H} (f : X ⟶ Y) (hf : f 
   simp only [jointComp_hom_app, jointId_hom_app, Category.assoc, prod_id_fst, prod_id_snd]
   dsimp only [jointFunctor, Functor.comp_obj]
   rw [← Functor.map_comp_assoc (N.transport (𝟙 q)), N.transportCommIso_actId]
-  have n1 := (N.transportComp f.1 (𝟙 q) f.1 (congrArg Prod.fst hf)).inv.naturality
-    ((actId actions X.1).hom.app ((act actions X.1 f.2).obj x))
-  dsimp only [Functor.comp_map, Functor.comp_obj] at n1
-  rw [← reassoc_of% n1, ← N.transportComp_right_unitality f.1 (congrArg Prod.fst hf),
+  rw [← N.transportComp_inv_naturality_assoc f.1 (𝟙 q) f.1 (congrArg Prod.fst hf)]
+  dsimp only [Functor.id_obj]
+  rw [← N.transportComp_right_unitality f.1 (congrArg Prod.fst hf),
     Iso.inv_hom_id_app, Category.comp_id ((N.transport f.1).map _), ← Functor.map_comp,
     actComp_right_unitality]
   exact (N.transport f.1).map_id _
@@ -381,6 +386,34 @@ lemma joint_map₂_comp_mapComp_hom_app {X Y Z : LocallyDiscrete (Γ × SingleOb
   -- The composition comparison of `joint` at `u` and `v` is `jointComp` by definition.
   exact Category.id_comp _
 
+/-- The unit comparison of the joint functors at `(p, ⋆)` is the unit isomorphism of transport
+followed by the unit comparison of the action. -/
+lemma transportId_hom_app_comp_actId (p : Γ) (x : fiber actions p) :
+    (N.transportId p).hom.app ((act actions p (𝟙 _)).obj x) ≫ (actId actions p).hom.app x =
+      (N.jointId (p, SingleObj.star H)).hom.app x := by
+  rw [jointId_hom_app]
+  exact (N.transportId_hom_naturality p _).symm
+
+/-- Over a single object `p`, the composition comparison of the joint functors followed by unit
+isomorphisms of transport is the unit isomorphism of transport followed by the composition
+comparison of the action. -/
+lemma jointComp_hom_app_comp_transportId (p : Γ) (a b ab : SingleObj.star H ⟶ SingleObj.star H)
+    (hab : a ≫ b = ab) (x : fiber actions p) :
+    (N.jointComp (𝟙 p ×ₘ a) (𝟙 p ×ₘ b) (𝟙 p ×ₘ ab) (by simp [hab])).hom.app x ≫
+        (N.transportId p).hom.app
+          ((act actions p b).obj ((N.transport (𝟙 p)).obj ((act actions p a).obj x))) ≫
+        (act actions p b).map ((N.transportId p).hom.app ((act actions p a).obj x)) =
+      (N.transportId p).hom.app ((act actions p ab).obj x) ≫
+        (actComp actions p a b ab hab).hom.app x := by
+  rw [jointComp_hom_app]
+  dsimp only
+  simp only [Category.assoc]
+  rw [N.transportId_hom_naturality_assoc p
+      (y := (act actions p b).obj ((N.transport (𝟙 p)).obj ((act actions p a).obj x))),
+    N.transportCommIso_id,
+    ← N.transportComp_right_unitality (𝟙 p) (Category.comp_id _), Iso.inv_hom_id_app_assoc]
+  exact N.transportId_hom_naturality p _
+
 /-- The comparison of the restriction of `N.joint` to the fiber `{p} × SingleObj H` with the
 prescribed action at `p`. Its component is the identity of `C p`, and its naturality
 isomorphism at `a` is `T_a ⋙ E_(𝟙 p) ≅ T_a`, induced by the unit isomorphism of transport. -/
@@ -399,58 +432,43 @@ isomorphism at `a` is `T_a ⋙ E_(𝟙 p) ≅ T_a`, induced by the unit isomorph
     obtain rfl := LocallyDiscrete.eq_of_hom η
     rw [Subsingleton.elim η (𝟙 _)]
     simp only [PrelaxFunctor.map₂_id]
-    have h (x : fiber actions p) :
-        𝟙 _ ≫ (N.transportId p).hom.app ((act actions p f.as).obj x) =
-          (N.transportId p).hom.app ((act actions p f.as).obj x) ≫ 𝟙 _ := by
-      simp
     ext x
-    exact h x
+    exact (Category.id_comp _).trans (Category.comp_id _).symm
   naturality_id a := by
     obtain rfl : a = ⟨SingleObj.star H⟩ := rfl
-    have h (x : fiber actions p) :
-        (N.transportId p).hom.app ((act actions p (𝟙 _)).obj x) ≫
-            ((actions p).mapId ⟨SingleObj.star H⟩).hom.toNatTrans.app x =
-          (𝟙 _ ≫ (N.jointId (p, SingleObj.star H)).hom.app x) ≫ 𝟙 _ ≫ 𝟙 _ := by
-      rw [jointId_hom_app, actId_hom_app]
-      simp only [Quiver.Hom.id_toLoc, Pseudofunctor.mapId'_eq_mapId, Category.id_comp,
-        Category.comp_id]
-      exact ((N.transportId p).hom.naturality _).symm
     ext x
-    exact h x
+    change fiber actions p at x
+    -- Componentwise, the unitors and the identity `2`-cell `N.joint.map₂ (eqToHom _)` of `Cat`
+    -- contribute identities, so the goal is definitionally the following.
+    change (N.transportId p).hom.app ((act actions p (𝟙 _)).obj x) ≫
+        ((actions p).mapId ⟨SingleObj.star H⟩).hom.toNatTrans.app x =
+      (𝟙 _ ≫ (N.jointId (p, SingleObj.star H)).hom.app x) ≫ 𝟙 _ ≫ 𝟙 _
+    rw [← N.transportId_hom_app_comp_actId, actId_hom_app]
+    simp [Pseudofunctor.mapId'_eq_mapId]
   naturality_comp {a b c} f g := by
     obtain rfl : a = ⟨SingleObj.star H⟩ := rfl
     obtain rfl : b = ⟨SingleObj.star H⟩ := rfl
     obtain rfl : c = ⟨SingleObj.star H⟩ := rfl
-    have h (x : fiber actions p) :
-        (N.transportId p).hom.app ((act actions p (f ≫ g).as).obj x) ≫
-            (actComp actions p f.as g.as (f ≫ g).as rfl).hom.app x =
-          (N.jointComp (𝟙 p ×ₘ f.as) (𝟙 p ×ₘ g.as) (𝟙 p ×ₘ (f ≫ g).as) (by simp)).hom.app x ≫
-            𝟙 _ ≫ (N.transportId p).hom.app
-              ((act actions p g.as).obj ((N.transport (𝟙 p)).obj ((act actions p f.as).obj x))) ≫
-            𝟙 _ ≫
-            (act actions p g.as).map ((N.transportId p).hom.app ((act actions p f.as).obj x)) ≫
-            𝟙 _ := by
-      rw [jointComp_hom_app]
-      dsimp only
-      simp only [Category.id_comp, Category.assoc]
-      have n1 := (N.transportId p).hom.naturality
-        ((N.transportCommIso (𝟙 p) g.as).hom.app ((act actions p f.as).obj x))
-      have n2 := (N.transportId p).hom.naturality
-        ((actComp actions p f.as g.as (f ≫ g).as rfl).hom.app x)
-      dsimp only [Functor.comp_obj, Functor.id_obj, Functor.id_map] at n1 n2
-      rw [reassoc_of% n1, N.transportCommIso_id_assoc,
-        ← N.transportComp_right_unitality (𝟙 p) (Category.comp_id _), Iso.inv_hom_id_app_assoc]
-      -- The trailing identity has an object that is only definitionally that of `n2`, so it is
-      -- removed through `congrArg` rather than by `rw`.
-      exact n2.symm.trans (congrArg (_ ≫ ·) (Category.comp_id _).symm)
-    have hα (x : fiber actions p) : ((actions p).mapComp f g).hom.toNatTrans.app x =
-        (actComp actions p f.as g.as (f ≫ g).as rfl).hom.app x := by
-      rw [actComp_hom_app]
-      exact congrArg (fun e ↦ e.hom.toNatTrans.app x) ((actions p).mapComp'_eq_mapComp f g).symm
     ext x
-    exact ((congrArg (_ ≫ ·) (hα x)).trans (h x)).trans (congrArg (· ≫ _)
-      (N.joint_map₂_comp_mapComp_hom_app _ _ _
-        ((Prod.sectR p (SingleObj H)).toPseudofunctor.mapComp f g).hom x).symm)
+    change fiber actions p at x
+    -- Componentwise, the associators of `Cat` contribute identities, so the goal is
+    -- definitionally the following.
+    change (N.transportId p).hom.app ((act actions p (f ≫ g).as).obj x) ≫
+        ((actions p).mapComp f g).hom.toNatTrans.app x =
+      ((N.joint.map₂ ((Prod.sectR p (SingleObj H)).toPseudofunctor.mapComp f g).hom).toNatTrans.app
+            x ≫
+          (N.joint.mapComp ((Prod.sectR p (SingleObj H)).toPseudofunctor.map f)
+            ((Prod.sectR p (SingleObj H)).toPseudofunctor.map g)).hom.toNatTrans.app x) ≫
+        𝟙 _ ≫ (N.transportId p).hom.app _ ≫ 𝟙 _ ≫
+          (act actions p g.as).map ((N.transportId p).hom.app ((act actions p f.as).obj x)) ≫ 𝟙 _
+    rw [← actComp_hom_app_eq_mapComp]
+    -- The objects of the right side are only definitionally those of `fiber actions p`, so the
+    -- remaining rewrites need `erw`. The two sides then differ only in the arguments
+    -- `((Prod.sectR p _).toPseudofunctor.map a).as` and `𝟙 p ×ₘ a` of `jointComp`, which are
+    -- definitionally equal.
+    erw [← N.jointComp_hom_app_comp_transportId p f.as g.as (f ≫ g).as rfl x,
+      N.joint_map₂_comp_mapComp_hom_app, Category.id_comp, Category.id_comp, Category.comp_id]
+    rfl
 
 @[simp]
 lemma comparison_app (p : Γ) (a : LocallyDiscrete (SingleObj H)) :
@@ -502,7 +520,11 @@ lemma toLiftTransportIso_hom_app {p q : Γ} (g : p ⟶ q) (x : fiber actions p) 
         (N.transport g).map ((actId actions p).hom.app x) := by
   -- The unitors contribute identities, which `Category.id_comp` removes.
   change _ ≫ 𝟙 _ ≫ _ ≫ 𝟙 _ = _
-  simp only [Category.id_comp, Category.comp_id]
+  simp only [Category.id_comp, Category.comp_id, Functor.isoWhiskerRight_hom,
+    Functor.whiskerRight_app, Functor.comp_map, Equivalence.counit]
+  -- The two sides now differ only in implicit objects of the composite, such as
+  -- `(N.toLift.transport g).obj x` and `(N.transport g).obj ((act actions p (𝟙 _)).obj x')` for
+  -- `x' = (e⁻¹ ⋙ e).obj x`, which agree by unfolding `N.toLift.transport g`.
   rfl
 
 @[simp]
@@ -513,7 +535,10 @@ lemma toLiftTransportIso_inv_app {p q : Γ} (g : p ⟶ q) (x : fiber actions p) 
           ((act actions p (𝟙 _)).map ((N.toLift.fiberEquivalence p).counitInv.app x)) := by
   -- The unitors contribute identities, which `Category.id_comp` removes.
   change ((𝟙 ((N.transport g).obj x) ≫ _) ≫ 𝟙 _) ≫ _ = _
-  simp only [Category.id_comp, Category.comp_id]
+  simp only [Category.id_comp, Category.comp_id, Functor.isoWhiskerRight_inv,
+    Functor.whiskerRight_app, Functor.comp_map, Equivalence.counitInv]
+  -- As in `toLiftTransportIso_hom_app`, the sides differ only in definitionally equal implicit
+  -- objects.
   rfl
 
 end NormalizedTransport
