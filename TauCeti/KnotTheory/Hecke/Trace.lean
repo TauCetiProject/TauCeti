@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.MarkovTrace
 public import TauCeti.KnotTheory.Markov.Basic
-public import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The braid invariant of a Hecke Markov trace

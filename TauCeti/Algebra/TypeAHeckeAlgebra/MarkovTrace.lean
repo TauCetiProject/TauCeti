@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Infinite
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Markov traces on the infinite type-A Hecke algebra
@@ -109,12 +110,8 @@ theorem map_braidHom_stabilizeInv (hτ : IsMarkovTrace z τ) {n : ℕ} (b : Brai
       (z - ((q : R) - ↑q⁻¹)) * τ (braidHom R q (n + 1) b) := by
   have h := τ.map_braidHom_skein (BraidGroup.strandIncl b) 1 (Fin.last n)
   simp only [mul_one, braidHom_strandIncl] at h
-  rw [hτ.map_braidHom_stabilize, sub_eq_iff_eq_add] at h
-  calc
-    _ = z * τ (braidHom R q (n + 1) b) -
-        ((q : R) - ↑q⁻¹) * τ (braidHom R q (n + 1) b) :=
-      (eq_sub_iff_add_eq).2 (by simpa [add_comm] using h.symm)
-    _ = _ := by ring
+  rw [hτ.map_braidHom_stabilize] at h
+  linear_combination -h
 
 /-- **Uniqueness of the Ocneanu trace.** Two Markov traces with the same parameter are equal. -/
 theorem unique {τ' : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R} (hτ : IsMarkovTrace z τ)
