@@ -30,6 +30,8 @@ needs no star structure or hypothesis on `q`.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.reverseOp`: the reversal as an algebra homomorphism to the
   opposite algebra.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.reverse`: the reversal as a linear map.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.reverseOpEquiv`: the reversal as an algebra isomorphism with
+  the opposite algebra.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.stageReverse`: its restriction to the stage of the first `n`
   strands, as a linear isomorphism.
 
@@ -120,6 +122,31 @@ theorem reverse_reverse (x : InfiniteTypeAHeckeAlgebra R q) : reverse q (reverse
 
 theorem reverse_involutive : Function.Involutive (reverse q) :=
   reverse_reverse
+
+/-- The reversal is an involution, as a linear map. -/
+@[simp]
+theorem reverse_comp_reverse :
+    reverse q ∘ₗ reverse q = (LinearMap.id : InfiniteTypeAHeckeAlgebra R q →ₗ[R] _) :=
+  LinearMap.ext reverse_reverse
+
+variable (q) in
+/-- The reversal, as an algebra isomorphism of the infinite type-A Hecke algebra with its opposite
+algebra. -/
+def reverseOpEquiv : InfiniteTypeAHeckeAlgebra R q ≃ₐ[R] (InfiniteTypeAHeckeAlgebra R q)ᵐᵒᵖ :=
+  AlgEquiv.ofAlgHom (reverseOp q) (AlgHom.opComm (reverseOp q))
+    (AlgHom.ext fun x ↦ unop_injective <| by simp)
+    (AlgHom.ext fun x ↦ by simp)
+
+@[simp]
+theorem reverseOpEquiv_apply (x : InfiniteTypeAHeckeAlgebra R q) :
+    reverseOpEquiv q x = reverseOp q x :=
+  (rfl)
+
+/-- The inverse of `reverseOpEquiv` is the reversal read in the opposite algebra. -/
+@[simp]
+theorem reverseOpEquiv_symm_apply (x : (InfiniteTypeAHeckeAlgebra R q)ᵐᵒᵖ) :
+    (reverseOpEquiv q).symm x = reverse q (unop x) :=
+  (rfl)
 
 /-- The reversal preserves the stage of the first `n` strands. -/
 @[simp]

@@ -135,7 +135,7 @@ theorem thetaSeries_smul_eq_tsum_gaussSumTwisted (hk : finrank ℝ E = 2 * k) (A
     push_cast
     field_simp
     ring
-  rw [← (hasSum_thetaCoset_out L (natCast_smul_le_self L c) (A • τ)).tsum_eq, tsum_fintype]
+  rw [← (hasSum_thetaCoset_out L (natCast_smul_le L c) (A • τ)).tsum_eq, tsum_fintype]
   simp_rw [thetaCoset_smul_smul hL A hc0 hc, thetaCoset_S_smul L hk, hterm,
     Summable.tsum_finsetSum fun y _ => (hsum _).mul_left _, ← hfac, tsum_mul_left, Finset.mul_sum]
   refine Finset.sum_congr rfl fun y _ => ?_

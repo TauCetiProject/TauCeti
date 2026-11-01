@@ -73,6 +73,8 @@ spectrum from that of its orthogonal complement.
   spanned by the vectors of the ordered eigenbasis whose eigenvalues lie in `Ω`.
 * `LinearMap.IsSymmetric.coe_starProjection_pointSpectralSubspace`: its orthogonal projection is
   the functional calculus of the indicator function of `Ω`.
+* `ContinuousLinearMap.abs_le_norm_of_mem_restrictedPointSpectrum`: every real eigenvalue of a
+  bounded operator `T` has absolute value at most `‖T‖`.
 * `LinearMap.IsSymmetric.pointSpectrumIn_Iic_iff`, `LinearMap.IsSymmetric.pointSpectrumIn_Ici_iff`:
   on a finite-dimensional invariant subspace, point-spectral containment in a half-line is a
   quadratic-form bound.
@@ -537,6 +539,21 @@ theorem mul_norm_le_norm_apply_sub_smul_of_pointSpectrumIn (hT : T.IsSymmetric)
   simpa only [sq_abs] using pow_le_pow_left₀ hr.le (hev i) 2
 
 end LinearMap.IsSymmetric
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- Every real eigenvalue of a bounded operator `T`, carried by any subspace, has absolute value
+at most `‖T‖`. -/
+theorem abs_le_norm_of_mem_restrictedPointSpectrum {T : E →L[𝕜] E} {U : Submodule 𝕜 E} {μ : ℝ}
+    (hμ : μ ∈ restrictedPointSpectrum (T : E →ₗ[𝕜] E) U) : |μ| ≤ ‖T‖ := by
+  obtain ⟨x, -, hx0, hx⟩ := mem_restrictedPointSpectrum_iff.mp hμ
+  have h := T.le_opNorm x
+  rw [← coe_coe, hx, norm_smul, RCLike.norm_ofReal] at h
+  exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hx0)
+
+end ContinuousLinearMap
 
 /-! ### Spectral separation -/
 
