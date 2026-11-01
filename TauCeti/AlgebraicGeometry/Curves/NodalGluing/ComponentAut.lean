@@ -8,10 +8,9 @@ module
 public import TauCeti.AlgebraicGeometry.Curves.NodalGluing.AuxiliaryMarks
 public import TauCeti.Geometry.Diffeomorphism.FixingSubgroup.Basic
 public import TauCeti.Geometry.Manifold.Diffeomorph.Sigma
-import Mathlib.GroupTheory.Index
 
 /-!
-# Componentwise automorphisms and finiteness of the automorphism group
+# Componentwise automorphisms of a marked nodal curve
 
 A marked nodal curve is presented by its normalization components `X i`, its flag pairs and its
 marks. A family of diffeomorphisms of the components, each fixing the special points of its
@@ -19,27 +18,16 @@ component (`Marking.specialPoints`: the flag points and marks lying on it), acts
 normalization componentwise, and this is an automorphism of the marked curve fixing every label.
 These automorphisms form an injective group homomorphism `AuxiliaryAut.ofComponents` from the
 product of the groups of diffeomorphisms of the components fixing their special points to the
-ordered automorphisms of the marked curve. Its image consists exactly of the ordered automorphisms
-which carry every component to itself and fix every flag point
-(`AuxiliaryAut.mem_range_ofComponents_iff`). Restricting to families supported on a single
+ordered automorphisms of the marked curve. Restricting to families supported on a single
 component `i` gives the automorphisms extending a diffeomorphism of `X i` fixing its special points
 by the identity on the other components (`AuxiliaryAut.ofComponent`), so a component with
 infinitely many such diffeomorphisms makes the ordered automorphism group infinite
 (`AuxiliaryAut.infinite_ordered_of_infinite_fixingSubgroup`).
 
-When there are finitely many components, each connected, and finitely many flags, an ordered
-automorphism acts on the finite sets of components and branches, and the automorphisms acting
-trivially on both are the componentwise ones. Hence the ordered automorphism group is finite
-exactly when every component has finitely many diffeomorphisms fixing its special points
-(`AuxiliaryAut.finite_ordered_iff`). This reduces the finiteness of the automorphism group of a
-marked nodal curve to the corresponding question for each normalized component with its special
-points. The results here hold for any regularity `n` and need no compactness. In the special case
-of a compact connected Riemann surface with its biholomorphic automorphisms, the classification of
-smooth marked curves (not proved here) says that a component of genus `g_i` with `n_i` special
-points has finitely many biholomorphic automorphisms fixing them exactly when
-`2 g_i - 2 + n_i > 0`; this criterion does not apply to diffeomorphisms of lower regularity, such
-as homeomorphisms (`n = 0`). Some of the unstable cases, giving infinitely many automorphisms, are
-treated in `TauCeti.AlgebraicGeometry.Curves.NodalGluing.UnstableComponent`.
+The results here hold for any regularity `n` and need no compactness. They are used for the
+componentwise finiteness criterion in
+`TauCeti.AlgebraicGeometry.Curves.NodalGluing.FiniteAutomorphisms` and for the unstable rational
+and elliptic components in `TauCeti.AlgebraicGeometry.Curves.NodalGluing.UnstableComponent`.
 
 ## Main definitions
 
@@ -57,20 +45,11 @@ treated in `TauCeti.AlgebraicGeometry.Curves.NodalGluing.UnstableComponent`.
 * `NodalGluing.AuxiliaryAut.infinite_ordered_of_infinite_fixingSubgroup`: a component with
   infinitely many diffeomorphisms fixing its special points gives infinitely many ordered
   automorphisms.
-* `NodalGluing.AuxiliaryAut.mem_range_ofComponents_iff`: an ordered automorphism is componentwise
-  exactly when it carries every component to itself and fixes every flag point.
-* `NodalGluing.AuxiliaryAut.finite_ordered`, `NodalGluing.AuxiliaryAut.finite_ordered_iff`: with
-  finitely many components, each connected, and finitely many flags, the ordered automorphism group
-  is finite exactly when every component has finitely many diffeomorphisms fixing its special
-  points.
 
 ## References
 
 * Joel W. Robbin and Dietmar A. Salamon, *A construction of the Deligne–Mumford orbifold*,
-  J. Eur. Math. Soc. 8 (2006), 611–699, §3, for stable marked nodal curves and the finiteness of
-  their automorphism groups.
-* Enrico Arbarello, Maurizio Cornalba, Phillip A. Griffiths, *Geometry of Algebraic Curves,
-  Volume II*, Chapter X, §3, for stability of pointed nodal curves.
+  J. Eur. Math. Soc. 8 (2006), 611–699, §3, for automorphisms of marked nodal curves.
 -/
 
 public section
@@ -199,70 +178,6 @@ theorem infinite_ordered_of_infinite_fixingSubgroup (i : ι)
     [Infinite (Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i))] :
     Infinite (ordered I n m) :=
   Infinite.of_injective _ (ofComponent_injective i)
-
-/-- **The componentwise automorphisms.** An ordered automorphism acts componentwise, by
-diffeomorphisms of the components fixing their special points, exactly when it carries every
-component to itself and fixes every flag point. -/
-theorem mem_range_ofComponents_iff {g : ordered I n m} :
-    g ∈ (ofComponents I n m).range ↔
-      (∀ x, ((g : AuxiliaryAut I n m) x).1 = x.1) ∧
-        ∀ x ∈ flagPointSet d, (g : AuxiliaryAut I n m) x = x := by
-  constructor
-  · rintro ⟨φ, rfl⟩
-    exact ⟨fun x ↦ by rw [ofComponents_apply],
-      fun x hx ↦ (toOrdered_apply φ x).trans (sigmaCongrRight_apply_of_mem φ (Or.inl hx))⟩
-  · rintro ⟨hfst, hflag⟩
-    obtain ⟨e, he⟩ := Diffeomorph.exists_sigmaCongrRight_eq_iff.mpr hfst
-    -- `g` fixes every special point: the flag points by hypothesis, the marks as it is ordered.
-    have hfix (x : Σ i, X i) (hx : x ∈ flagPointSet d ∪ range m.point) :
-        (g : AuxiliaryAut I n m) x = x := by
-      rcases hx with hx | ⟨l, rfl⟩
-      · exact hflag x hx
-      · exact (mem_ordered_iff_forall _).mp g.2 l
-    have hφ (i : ι) : e i ∈ Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i) :=
-      Diffeomorph.mem_fixingSubgroup_of_forall fun y hy ↦ sigma_mk_injective (i := i) <| by
-        have := DFunLike.congr_fun he ⟨i, y⟩
-        rw [Diffeomorph.sigmaCongrRight_apply] at this
-        rw [this]
-        exact hfix _ (Marking.mem_specialPoints_iff.mp hy)
-    refine ⟨fun i ↦ ⟨e i, hφ i⟩, Subtype.ext <| AuxiliaryIso.ext fun x ↦ ?_⟩
-    rw [ofComponents_apply]
-    have := DFunLike.congr_fun he x
-    rwa [Diffeomorph.sigmaCongrRight_apply] at this
-
-/-- **Finiteness of the ordered automorphism group from its components.** For a marked nodal curve
-with finitely many components, each connected, and finitely many flags, if every component has
-finitely many diffeomorphisms fixing its special points, the marked curve has finitely many
-automorphisms fixing every label. -/
-theorem finite_ordered [Finite ι] [Finite Flag] [∀ i, ConnectedSpace (X i)]
-    [∀ i, Finite (Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i))] :
-    Finite (ordered I n m) := by
-  -- The action of the ordered automorphisms on the components and the branches.
-  let φ : ordered I n m →* Equiv.Perm ι × Equiv.Perm (Flag × Bool) :=
-    (Aut.vertexPerm.prod Aut.branchPerm).comp (toAut.comp (ordered I n m).subtype)
-  rw [φ.finite_iff_finite_ker_range]
-  refine ⟨((Set.finite_range (ofComponents I n m)).subset fun g hg ↦ ?_).to_subtype,
-    inferInstance⟩
-  -- An automorphism acting trivially on components and branches is componentwise.
-  have hg : (g : AuxiliaryAut I n m).toIso.vertexEquiv = 1 ∧
-      (g : AuxiliaryAut I n m).toIso.branchEquiv = 1 := by
-    simpa [φ, Prod.ext_iff] using hg
-  refine mem_range_ofComponents_iff.mpr ⟨fun x ↦ ?_, fun x hx ↦ ?_⟩
-  · rw [← AuxiliaryIso.coe_toIso, Iso.fst_apply, hg.1, Equiv.Perm.one_apply]
-  · rw [flagPointSet_eq_range] at hx
-    obtain ⟨p, rfl⟩ := hx
-    rw [← AuxiliaryIso.coe_toIso, ← Iso.flagPoint_branchEquiv, hg.2, Equiv.Perm.one_apply]
-
-/-- **Finiteness of the ordered automorphism group is decided componentwise.** For a marked nodal
-curve with finitely many components, each connected, and finitely many flags, the automorphisms
-fixing every label form a finite group exactly when every component has finitely many
-diffeomorphisms fixing its special points. -/
-theorem finite_ordered_iff [Finite ι] [Finite Flag] [∀ i, ConnectedSpace (X i)] :
-    Finite (ordered I n m) ↔
-      ∀ i, Finite (Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i)) := by
-  classical
-  refine ⟨fun _ i ↦ Finite.of_injective (fun φ ↦ ofComponents I n m (Pi.mulSingle i φ))
-    (ofComponents_injective.comp (Pi.mulSingle_injective i)), fun _ ↦ finite_ordered⟩
 
 end AuxiliaryAut
 

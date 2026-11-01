@@ -23,8 +23,6 @@ This is the indexed form of Mathlib's lemmas for the binary disjoint union `M �
 * `contMDiff_sigmaMk`: the inclusion of a component is `C^n`.
 * `contMDiffAt_sigma_iff`, `contMDiff_sigma_iff`: a map out of a disjoint union is `C^n` exactly
   when its restriction to each component is.
-* `contMDiffAt_sigmaMk_comp_iff`, `contMDiff_sigmaMk_comp_iff`: a map into a component is `C^n`
-  exactly when its composite with the inclusion of the component is.
 * `ContMDiff.sigmaMap`: a family of `C^n` maps between components induces a `C^n` map of
   disjoint unions.
 -/
@@ -89,22 +87,24 @@ theorem contMDiff_sigmaMk (i : ι) : ContMDiff I I n (Sigma.mk i : M i → Σ i,
     rw [ChartedSpace.sigma_chartAt_mk_apply, (chartAt H x).right_inv hy.1, I.right_inv hy.2]
   · simp
 
-/-- **Maps into a component.** A map into the component `M i` is `C^n` at a point exactly when its
-composite with the inclusion of `M i` into the disjoint union is. -/
+/-- A map into one component is smooth exactly when its composite with the component inclusion
+is smooth. -/
 @[simp]
-theorem contMDiffAt_sigmaMk_comp_iff {i : ι} {g : N → M i} {x : N} :
-    ContMDiffAt J I n (Sigma.mk i ∘ g) x ↔ ContMDiffAt J I n g x := by
-  have h : ⇑(extChartAt I ((Sigma.mk i ∘ g) x)) ∘ (Sigma.mk i ∘ g) ∘ (extChartAt J x).symm =
-      extChartAt I (g x) ∘ g ∘ (extChartAt J x).symm :=
+theorem contMDiffAt_sigmaMk_iff {i : ι} {f : N → M i} {x : N} :
+    ContMDiffAt J I n (Sigma.mk i ∘ f) x ↔ ContMDiffAt J I n f x := by
+  have hchart :
+      extChartAt I (⟨i, f x⟩ : Σ i, M i) ∘ (Sigma.mk i ∘ f) ∘ (extChartAt J x).symm =
+        extChartAt I (f x) ∘ f ∘ (extChartAt J x).symm :=
     funext fun _ ↦ extChartAt_sigmaMk_apply
-  rw [contMDiffAt_iff, contMDiffAt_iff, ← IsOpenEmbedding.sigmaMk.isInducing.continuousAt_iff, h]
+  rw [contMDiffAt_iff, contMDiffAt_iff]
+  dsimp only [Function.comp_apply] at hchart ⊢
+  rw [hchart, IsOpenEmbedding.sigmaMk.isInducing.continuousAt_iff]
 
-/-- A map into the component `M i` is `C^n` exactly when its composite with the inclusion of
-`M i` into the disjoint union is. -/
+/-- Smoothness of a map with values in a fixed component can be tested in the disjoint union. -/
 @[simp]
-theorem contMDiff_sigmaMk_comp_iff {i : ι} {g : N → M i} :
-    ContMDiff J I n (Sigma.mk i ∘ g) ↔ ContMDiff J I n g :=
-  forall_congr' fun _ ↦ contMDiffAt_sigmaMk_comp_iff
+theorem contMDiff_sigmaMk_iff {i : ι} {f : N → M i} :
+    ContMDiff J I n (Sigma.mk i ∘ f) ↔ ContMDiff J I n f :=
+  forall_congr' fun _ ↦ contMDiffAt_sigmaMk_iff
 
 end TauCeti
 

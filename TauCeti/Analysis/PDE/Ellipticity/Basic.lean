@@ -51,6 +51,8 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   conormal component of a smooth gradient.
 * `TauCeti.PDE.locallyLipschitzOn_matrixBilinearForm_of_contDiffOn`: a coefficient field with
   `C¹` entries on an open set has locally Lipschitz bilinear forms there.
+* `TauCeti.PDE.lipschitzOnWith_matrixBilinearForm_apply_apply`: the entries `⟪p, a(x) q⟫` of a
+  coefficient field with Lipschitz bilinear forms are Lipschitz.
 * `TauCeti.PDE.matrixBilinearFormLinear`: the coefficient matrix-to-bilinear-form map as a
   continuous linear map.
 * `TauCeti.PDE.matrixBilinearForm_opNorm_le_of_upper_bound`: a pointwise bilinear upper
@@ -894,7 +896,7 @@ lemma UniformlyEllipticOn.smul_add_one_sub_smul (ha : UniformlyEllipticOn Ω a l
 section Calculus
 
 open Set TopologicalSpace
-open scoped ContDiff Gradient InnerProductSpace
+open scoped ContDiff Gradient InnerProductSpace NNReal
 
 variable {n : Type*} [Fintype n]
 
@@ -936,6 +938,19 @@ theorem locallyLipschitzOn_matrixBilinearForm_of_contDiffOn {a : EuclideanSpace 
   refine Finset.sum_le_sum fun j _ => ?_
   rw [Matrix.sub_apply, ← Real.dist_eq]
   exact (hKt i j).dist_le_mul y (hy i j) z (hz i j)
+
+/-- The coefficients `x ↦ ⟪p, a(x) q⟫` of a coefficient field that is `K`-Lipschitz on `s` as a
+bilinear form are `K ‖p‖ ‖q‖`-Lipschitz on `s`. -/
+theorem lipschitzOnWith_matrixBilinearForm_apply_apply {X : Type*} [PseudoEMetricSpace X]
+    {a : X → Matrix n n ℝ} {s : Set X} {K : ℝ≥0}
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) s)
+    (p q : EuclideanSpace ℝ n) :
+    LipschitzOnWith (K * ‖p‖₊ * ‖q‖₊) (fun x => matrixBilinearForm (a x) p q) s := by
+  -- This is `x ↦ a x` followed by evaluation at `p` and then at `q`.
+  have h := ((ContinuousLinearMap.lipschitzWith_apply q).comp
+    (ContinuousLinearMap.lipschitzWith_apply p)).comp_lipschitzOnWith hK
+  have hc : ‖q‖₊ * ‖p‖₊ * K = K * ‖p‖₊ * ‖q‖₊ := by ring
+  rwa [hc] at h
 
 /-- The conormal component of a gradient, for a possibly variable coefficient field, is
 supported where the function is. -/
