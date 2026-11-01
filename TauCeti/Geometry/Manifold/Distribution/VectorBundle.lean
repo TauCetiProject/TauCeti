@@ -88,16 +88,11 @@ variable {ι : Type*} [Fintype ι] [IsManifold I 2 M] {D : Π x : M, Submodule �
 private theorem mdifferentiableAt_trivOperator (hX : IsDistributionFrameOn I n D X U)
     (hn : 1 ≤ n) {x : M} (hU : U ∈ 𝓝 x) :
     MDiffAt (IsSubbundleFrameOn.trivOperator 𝕜 E X x) x := by
+  have : IsManifold I (1 + 1) M := inferInstanceAs (IsManifold I 2 M)
   have hxe := FiberBundle.mem_baseSet_trivializationAt' (F := E) (E := TangentSpace I) x
-  have h (i : ι) := ((trivializationAt E (TangentSpace I) x).mdifferentiableAt_section_iff I
-    (X i) hxe).mp (((hX.contMDiffOn i).contMDiffAt hU).mdifferentiableAt
-      (zero_lt_one.trans_le hn).ne')
-  have hsum := MDifferentiableAt.sum (t := Finset.univ) fun i _ ↦
-    ((ContinuousLinearMap.smulRightL 𝕜 (ι → 𝕜) E
-      (ContinuousLinearMap.proj i)).differentiableAt).comp_mdifferentiableAt (h i)
-  convert hsum using 1
-  funext y
-  simp [IsSubbundleFrameOn.trivOperator_eq_sum]
+  exact (((hX.of_le hn).contMDiffOn_trivOperator x).contMDiffAt
+    (inter_mem hU ((trivializationAt E (TangentSpace I) x).open_baseSet.mem_nhds hxe))
+    ).mdifferentiableAt one_ne_zero
 
 /-- **Coefficients in a frame are differentiable.** Let `X` be a `C^n` local frame of `D`, with
 `1 ≤ n`, on a neighbourhood of `x`, and let `V` be a vector field, differentiable at `x`, which is

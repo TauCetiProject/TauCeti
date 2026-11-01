@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Distribution
-public import Mathlib.Geometry.Manifold.VectorBundle.Hom
-import Mathlib.LinearAlgebra.Dual.Lemmas
+public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
+import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 
@@ -68,18 +69,7 @@ theorem IsContMDiffDistribution.exists_local_annihilator
   let e := trivializationAt E (TangentSpace I) x
   have hxe : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x
   let A := IsSubbundleFrameOn.trivOperator 𝕜 E X x
-  have hA : ContMDiffOn I 𝓘(𝕜, (Fin k → 𝕜) →L[𝕜] E) n A (V ∩ e.baseSet) := by
-    have hAeq : A = fun y ↦ ∑ i, ContinuousLinearMap.smulRightL 𝕜 (Fin k → 𝕜) E
-        (ContinuousLinearMap.proj i) (e ⟨y, X i y⟩).2 :=
-      funext fun y ↦ IsSubbundleFrameOn.trivOperator_eq_sum (𝕜 := 𝕜) (F := E) (X := X) x y
-    rw [hAeq]
-    apply contMDiffOn_finsetSum
-    intro i _
-    exact (ContinuousLinearMap.smulRightL 𝕜 (Fin k → 𝕜) E
-      (ContinuousLinearMap.proj i)).contMDiff.comp_contMDiffOn
-        (contMDiff_snd.comp_contMDiffOn
-          (e.contMDiffOn.comp ((hX.contMDiffOn i).mono inter_subset_left)
-            (fun y hy ↦ e.mem_source.mpr hy.2)))
+  have hA := hX.contMDiffOn_trivOperator x
   have hAx := hX.isSubbundleFrameOn.injective_trivOperator hxV
   obtain ⟨p, hp⟩ := (A x).toLinearMap.exists_leftInverse_of_injective
     (LinearMap.ker_eq_bot.mpr hAx)
@@ -134,16 +124,9 @@ theorem IsContMDiffDistribution.exists_local_annihilator
   refine ⟨U, α, ((hV.inter e.open_baseSet).inter hW).inter hZ,
     ⟨⟨⟨hxV, hxe⟩, hxW⟩, hxZ⟩, ?_, ?_⟩
   -- The cotangent-bundle coordinates of α are exactly the smooth covectors c.
-  · let e' := trivializationAt 𝕜 (Bundle.Trivial M 𝕜) x
-    let eh := e.continuousLinearMap (RingHom.id 𝕜) e'
-    apply (eh.contMDiffOn_iff (f := fun y ↦ TotalSpace.mk' (E →L[𝕜] 𝕜) y (α y))
-      (fun y hy ↦ eh.mem_source.mpr (by
-        simp [eh, e', Trivial.eq_trivialization M 𝕜, hy.1.1.2]))).mpr
-    refine ⟨contMDiffOn_id, (hc.mono inter_subset_left).congr ?_⟩
-    intro y hy
-    ext v
-    simp [eh, e', α, Bundle.Trivialization.continuousLinearMap_apply,
-      Trivial.eq_trivialization M 𝕜, e.continuousLinearMapAt_symmL hy.1.1.2]
+  · exact CotangentBundle.contMDiffOn_mk_comp_continuousLinearMapAt x
+      (U := U) (c := c) (fun _ hy ↦ hy.1.1.2)
+      (hc.mono inter_subset_left)
   · intro y hy
     have hcy : c y ≠ 0 := hZc y hy.2
     have hαy : α y ≠ 0 := by
@@ -158,16 +141,8 @@ theorem IsContMDiffDistribution.exists_local_annihilator
       rw [← hX.span_eq hy.1.1.1]
       apply Submodule.span_le.mpr
       rintro _ ⟨i, rfl⟩
-      have hQA : (Q y).inverse ∘L Q y = 1 :=
-        ContinuousLinearMap.IsInvertible.inverse_comp_self (hWQ y hy.1.2)
-      have hzero : c y ∘L A y = 0 := by
-        ext v
-        have hi := congrArg (fun f : (Fin k → 𝕜) →L[𝕜] Fin k → 𝕜 ↦ f v) hQA
-        simp only [ContinuousLinearMap.comp_apply, one_apply_eq_self] at hi
-        simp only [c, sub_apply, ContinuousLinearMap.comp_apply]
-        have hPv : P ((A y) v) = Q y v := (rfl)
-        rw [hPv, hi, sub_self]
-        rfl
+      have hzero : c y ∘L A y = 0 :=
+        a'.sub_comp_inverse_comp_comp_eq_zero (A y) P (hWQ y hy.1.2)
       have hAi := IsSubbundleFrameOn.trivOperator_apply (𝕜 := 𝕜) (X := X) hy.1.1.2
         (Pi.single i (1 : 𝕜))
       have heval : α y (X i y) = c y (e ⟨y, X i y⟩).2 :=
@@ -177,13 +152,8 @@ theorem IsContMDiffDistribution.exists_local_annihilator
         simpa [A, hAi, e] using
           congrArg (fun f : (Fin k → 𝕜) →L[𝕜] 𝕜 ↦ f (Pi.single i 1)) hzero
       exact hzeroi
-    apply (Submodule.eq_of_le_of_finrank_eq hle ?_).symm
-    have hd := hD.finrank_eq y
-    have hαlin : (α y).toLinearMap ≠ 0 :=
-      fun hz ↦ hαy (ContinuousLinearMap.coe_injective hz)
-    have hker := Module.Dual.finrank_ker_add_one_of_ne_zero hαlin
-    rw [finrank_tangentSpace] at hker
-    rw [hd]
-    omega
+    exact Module.Dual.ker_eq_of_le_of_finrank_add_one (α y).toLinearMap
+      (fun hz ↦ hαy (ContinuousLinearMap.coe_injective hz)) hle
+      (by rw [hD.finrank_eq y, finrank_tangentSpace, hk])
 
 end TauCeti
