@@ -62,6 +62,9 @@ transform `D(B, F)`, which is therefore entire.
 * `PowerSeries.monotoneOn_colemanMajorant` and `PowerSeries.colemanMajorant_le_div_mul`:
   monotonicity, and the linear bound near `0`.
 * `PowerSeries.tendsto_colemanMajorant`: `β_B(ρᵢ) → 0` whenever `ρᵢ → 0` with `ρᵢ ≥ 0`.
+* `PowerSeries.norm_coeff_trunc_le_prod` and
+  `PowerSeries.norm_coeff_trunc_succ_mul_pow_le_colemanMajorant`: truncations of `F` and `B`
+  obey the same Newton and Coleman majorants.
 * `PowerSeries.tendsto_colemanMajorant_sub_trunc`: the majorants `β_(B - trunc L B)(r)` of the
   tails of a series restricted at `r` tend to zero as `L → ∞`.
 
@@ -160,6 +163,16 @@ theorem isEntire_iff_exists_newtonMajorant (hF0 : ‖coeff 0 F‖ ≤ 1) :
       ∀ j, ‖coeff j F‖ ≤ ∏ i ∈ range j, ρ i :=
   ⟨fun hF ↦ hF.exists_newtonMajorant hF0,
     fun ⟨_, _, _, hρ, hF⟩ ↦ isEntire_of_norm_coeff_le_prod hρ hF⟩
+
+/-- Truncation preserves a Newton majorant: `‖coeff j (trunc b F)‖ ≤ ∏ i < j, ρ i` whenever
+`‖coeff j F‖ ≤ ∏ i < j, ρ i` for all `j` and `ρ` is nonnegative. -/
+theorem norm_coeff_trunc_le_prod {ρ : ℕ → ℝ} (hρ₀ : ∀ i, 0 ≤ ρ i)
+    (hF : ∀ j, ‖coeff j F‖ ≤ ∏ i ∈ range j, ρ i) (b j : ℕ) :
+    ‖(trunc b F).coeff j‖ ≤ ∏ i ∈ range j, ρ i := by
+  rw [coeff_trunc]
+  split_ifs
+  · exact hF j
+  · simpa using prod_nonneg fun i _ ↦ hρ₀ i
 
 end NewtonMajorant
 
@@ -264,6 +277,15 @@ theorem colemanMajorant_trunc_le {r : ℝ} (hB : B.IsRestricted r) (hr : 0 ≤ r
   split_ifs
   · exact norm_coeff_succ_mul_pow_le_colemanMajorant hB m
   · simpa using colemanMajorant_nonneg B hr
+
+/-- The weighted coefficients of positive degree of a truncation of `B` are bounded by the
+Coleman majorant of `B` at any nonnegative radius where `B` is restricted. -/
+theorem norm_coeff_trunc_succ_mul_pow_le_colemanMajorant {r : ℝ} (hB : B.IsRestricted r)
+    (hr : 0 ≤ r) (a j : ℕ) :
+    ‖(trunc a B).coeff (j + 1)‖ * r ^ (j + 1) ≤ colemanMajorant B r := by
+  simpa [Polynomial.coeff_coe] using (norm_coeff_succ_mul_pow_le_colemanMajorant
+    (TauCeti.PowerSeries.isRestricted_polynomial (trunc a B)) j).trans
+    (colemanMajorant_trunc_le hB hr a)
 
 /-- **Decay of the tail majorants.** If `B` is restricted at the radius `r`, the Coleman majorants
 of its tails `B - trunc L B`, the suprema `sup_{m ≥ max L 1} ‖bₘ‖ rᵐ`, tend to zero as

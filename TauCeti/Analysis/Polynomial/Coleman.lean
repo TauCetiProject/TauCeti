@@ -342,25 +342,6 @@ open scoped Topology
 
 variable {R : Type*} [NormedCommRing R]
 
-/-- Truncation preserves a Newton majorant: `‖coeff j (trunc b F)‖ ≤ ∏ i < j, ρ i` whenever
-`‖coeff j F‖ ≤ ∏ i < j, ρ i` for all `j` and `ρ` is nonnegative. -/
-private theorem norm_coeff_trunc_le_prod {F : R⟦X⟧} {ρ : ℕ → ℝ} (hρ₀ : ∀ i, 0 ≤ ρ i)
-    (hF : ∀ j, ‖coeff j F‖ ≤ ∏ i ∈ range j, ρ i) (b j : ℕ) :
-    ‖(trunc b F).coeff j‖ ≤ ∏ i ∈ range j, ρ i := by
-  rw [coeff_trunc]
-  split_ifs
-  · exact hF j
-  · simpa using prod_nonneg fun i _ ↦ hρ₀ i
-
-/-- The weighted coefficients of positive degree of a truncation of `B` are bounded by the
-Coleman majorant of `B` at any nonnegative radius where `B` is restricted. -/
-private theorem norm_coeff_trunc_succ_mul_pow_le_colemanMajorant {B : R⟦X⟧} {r : ℝ}
-    (hB : B.IsRestricted r) (hr : 0 ≤ r) (a j : ℕ) :
-    ‖(trunc a B).coeff (j + 1)‖ * r ^ (j + 1) ≤ colemanMajorant B r := by
-  simpa [Polynomial.coeff_coe] using (norm_coeff_succ_mul_pow_le_colemanMajorant
-    (TauCeti.PowerSeries.isRestricted_polynomial (trunc a B)) j).trans
-    (colemanMajorant_trunc_le hB hr a)
-
 variable [NormOneClass R] [IsUltrametricDist R]
 
 /-- **Coleman's bound for truncations.** Let `ρ` be a nonnegative antitone Newton majorant of a
