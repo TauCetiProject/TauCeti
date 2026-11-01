@@ -32,12 +32,14 @@ one; for `I = (p)` the target is Mathlib's `PreTilt B⁺ p = Perfection (ModP B�
 * `TauCeti.Perfectoid.uniformTilt.plusSubring h`: the integral tilt `B♭⁺ = lim_{x ↦ x ^ p} B⁺` of a
   ring of integral elements `B⁺` (given by `h : IsRingOfIntegralElements B⁺`), as a subring of the
   tilt.
+* `TauCeti.Perfectoid.uniformTilt.plusSharp p h`: the sharp map `B♭⁺ →*₀ B⁺`, `x ↦ x♯ = x⁽⁰⁾`.
 * `TauCeti.Perfectoid.uniformTilt.plusEquiv h I`: the ring isomorphism
   `B♭⁺ ≃+* Perfection (B⁺ ⧸ I) p`, `x ↦ (x⁽ⁿ⁾ mod I)ₙ`.
 
 ## Main results
 
 * `TauCeti.Perfectoid.uniformTilt.mem_plusSubring_iff_coeff_zero`: `x ∈ B♭⁺` iff `x⁽⁰⁾ ∈ B⁺`.
+* `TauCeti.Perfectoid.uniformTilt.plusSharp_add_sub_mem`: `(x + y)♯ - x♯ - y♯ ∈ p B⁺`.
 * `TauCeti.Perfectoid.uniformTilt.coeff_plusEquiv`: `plusEquiv` reduces every coordinate modulo `I`.
 * `TauCeti.Perfectoid.uniformTilt.coeff_zero_plusEquiv_symm`: the zeroth coordinate of the inverse
   is the Teichmüller map `Perfection (B⁺ ⧸ I) p → B⁺`.
@@ -135,6 +137,33 @@ theorem isBounded_plusSubring {Bplus : Subring B} (h : IsRingOfIntegralElements 
     rw [map_mul]
     exact hTV n (Set.mul_mem_mul (Set.mem_iInter₂.mp hx n hn)
       (h.le_powerBoundedSubring (mem_plusSubring_iff.mp hy n)))
+
+variable (p) in
+/-- The *sharp map* `x ↦ x♯ = x⁽⁰⁾` of the integral tilt, as a multiplicative map `B♭⁺ → B⁺`. It
+is not additive, only additive modulo `p` (`plusSharp_add_sub_mem`). -/
+noncomputable def plusSharp (h : IsRingOfIntegralElements Bplus) :
+    plusSubring p h →*₀ Bplus where
+  toFun x := ⟨coeff p B 0 x, mem_plusSubring_iff.mp x.2 0⟩
+  map_zero' := Subtype.ext (coeff_zero 0)
+  map_one' := Subtype.ext <| by simp
+  map_mul' x y := Subtype.ext (map_mul (coeff p B 0) (x : uniformTilt p B) y)
+
+@[simp]
+theorem coe_plusSharp (h : IsRingOfIntegralElements Bplus) (x : plusSubring p h) :
+    (plusSharp p h x : B) = coeff p B 0 x :=
+  (rfl)
+
+/-- **The sharp map is additive modulo `p`**: `(x + y)♯ - x♯ - y♯ ∈ p B⁺` for `x, y ∈ B♭⁺`. -/
+theorem plusSharp_add_sub_mem (h : IsRingOfIntegralElements Bplus) (x y : plusSubring p h) :
+    plusSharp p h (x + y) - plusSharp p h x - plusSharp p h y ∈
+      Ideal.span {(p : Bplus)} := by
+  obtain ⟨z, hz, he⟩ := Set.mem_smul_set.mp <| coeff_add_sub_mem_of_forall_mem
+    (Bplus.toAddSubgroup.isClosed_of_isOpen h.isOpen) h.le_powerBoundedSubring
+    (mem_plusSubring_iff.mp x.2) (mem_plusSubring_iff.mp y.2) 0
+  refine Ideal.mem_span_singleton'.mpr ⟨⟨z, hz⟩, Subtype.ext ?_⟩
+  rw [smul_eq_mul, ← Subring.coe_add] at he
+  simp only [Subring.coe_mul, AddSubgroupClass.coe_sub, Subring.coe_natCast, coe_plusSharp]
+  linear_combination he
 
 /-- The integral tilt is multiplicatively the perfection of the monoid `B⁺`. -/
 private noncomputable def plusMulEquiv (h : IsRingOfIntegralElements Bplus) :

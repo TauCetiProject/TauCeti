@@ -14,8 +14,9 @@ import Mathlib.Algebra.CharP.Basic
 
 Let `B` be a complete Hausdorff uniform Tate ring in which `p` is topologically nilpotent, with
 tilt `B♭` and integral tilt `B♭⁺ = lim_{x ↦ x ^ p} B⁺` for a ring of integral elements `B⁺`. The
-sharp map `x ↦ x♯ = x⁽⁰⁾` sends `B♭⁺` multiplicatively to `B⁺`, and it is additive modulo `p`, so
-for every ideal `I` of `B⁺` containing `p` it induces a ring homomorphism `B♭⁺ → B⁺ ⧸ I`.
+sharp map `x ↦ x♯ = x⁽⁰⁾` sends `B♭⁺` multiplicatively to `B⁺`, and it is additive modulo `p`
+(`TauCeti.Perfectoid.uniformTilt.plusSharp_add_sub_mem`), so for every ideal `I` of `B⁺`
+containing `p` it induces a ring homomorphism `B♭⁺ → B⁺ ⧸ I`.
 
 For an element `π ∈ B♭⁺` such that `π♯` is a unit of `B` dividing `p` in `B⁺`, the kernel of
 `B♭⁺ → B⁺ ⧸ (π♯)` is the principal ideal `(π)`. When `B⁺` is `I`-adically complete, the map
@@ -30,7 +31,6 @@ reduction of `B°` modulo `ϖ`, and the same holds for the powers `ϖ♭ ^ q` wi
 
 ## Main definitions
 
-* `TauCeti.Perfectoid.uniformTilt.plusSharp p h`: the sharp map `B♭⁺ →*₀ B⁺`, `x ↦ x⁽⁰⁾`.
 * `TauCeti.Perfectoid.uniformTilt.sharpQuot h I hI`: the ring homomorphism `B♭⁺ →+* B⁺ ⧸ I`,
   `x ↦ x♯ mod I`, for an ideal `I` containing `p`.
 * `TauCeti.Perfectoid.uniformTilt.sharpQuotEquiv`: for a perfectoid Tate ring `B`, the ring
@@ -38,7 +38,6 @@ reduction of `B°` modulo `ϖ`, and the same holds for the powers `ϖ♭ ^ q` wi
 
 ## Main results
 
-* `TauCeti.Perfectoid.uniformTilt.plusSharp_add_sub_mem`: `(x + y)♯ - x♯ - y♯ ∈ p B⁺`.
 * `TauCeti.Perfectoid.uniformTilt.ker_sharpQuot`: the kernel of `B♭⁺ → B⁺ ⧸ (π♯)` is `(π)`.
 * `TauCeti.Perfectoid.uniformTilt.surjective_sharpQuot_iff`: for `B⁺` complete along `I`,
   `B♭⁺ → B⁺ ⧸ I` is surjective iff every element of `B⁺` is a `p`-th power modulo `I`.
@@ -64,31 +63,6 @@ variable {p : ℕ} {B : Type*} [CommRing B] [hp : Fact p.Prime] [UniformSpace B]
 
 variable {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus)
 
-variable (p) in
-/-- The *sharp map* `x ↦ x♯ = x⁽⁰⁾` of the integral tilt, as a multiplicative map `B♭⁺ → B⁺`. It
-is not additive, only additive modulo `p` (`plusSharp_add_sub_mem`). -/
-noncomputable def plusSharp : plusSubring p h →*₀ Bplus where
-  toFun x := ⟨coeff p B 0 x, mem_plusSubring_iff.mp x.2 0⟩
-  map_zero' := Subtype.ext (coeff_zero 0)
-  map_one' := Subtype.ext <| by simp
-  map_mul' x y := Subtype.ext (map_mul (coeff p B 0) (x : uniformTilt p B) y)
-
-@[simp]
-theorem coe_plusSharp (x : plusSubring p h) : (plusSharp p h x : B) = coeff p B 0 x :=
-  (rfl)
-
-/-- **The sharp map is additive modulo `p`**: `(x + y)♯ - x♯ - y♯ ∈ p B⁺` for `x, y ∈ B♭⁺`. -/
-theorem plusSharp_add_sub_mem (x y : plusSubring p h) :
-    plusSharp p h (x + y) - plusSharp p h x - plusSharp p h y ∈
-      Ideal.span {(p : Bplus)} := by
-  obtain ⟨z, hz, he⟩ := Set.mem_smul_set.mp <| coeff_add_sub_mem_of_forall_mem
-    (Bplus.toAddSubgroup.isClosed_of_isOpen h.isOpen) h.le_powerBoundedSubring
-    (mem_plusSubring_iff.mp x.2) (mem_plusSubring_iff.mp y.2) 0
-  refine Ideal.mem_span_singleton'.mpr ⟨⟨z, hz⟩, Subtype.ext ?_⟩
-  rw [smul_eq_mul, ← Subring.coe_add] at he
-  simp only [Subring.coe_mul, AddSubgroupClass.coe_sub, Subring.coe_natCast, coe_plusSharp]
-  linear_combination he
-
 /-- The reduction `B♭⁺ → B⁺ ⧸ I`, `x ↦ x♯ mod I`, for an ideal `I` of `B⁺` containing `p`: a ring
 homomorphism, as the sharp map is multiplicative and additive modulo `p`. -/
 noncomputable def sharpQuot (I : Ideal Bplus) (hI : (p : Bplus) ∈ I) :
@@ -107,8 +81,7 @@ theorem sharpQuot_apply (I : Ideal Bplus) (hI : (p : Bplus) ∈ I) (x : plusSubr
   (rfl)
 
 /-- **The kernel of `B♭⁺ → B⁺ ⧸ (π♯)` is `(π)`** for `π ∈ B♭⁺` such that `π♯` is a unit of `B`
-dividing `p` in `B⁺`: an element `x ∈ B♭⁺` with `π♯ ∣ x♯` in `B⁺` is `π` times the element
-`π⁻¹ x` of `B♭`, whose zeroth coordinate `x♯ / π♯` lies in `B⁺`. -/
+dividing `p` in `B⁺`. -/
 theorem ker_sharpQuot {π : plusSubring p h} (hπ : IsUnit (coeff p B 0 π))
     (hπp : plusSharp p h π ∣ p) :
     RingHom.ker (sharpQuot h _ (Ideal.mem_span_singleton.mpr hπp)) = Ideal.span {π} := by
@@ -116,7 +89,8 @@ theorem ker_sharpQuot {π : plusSubring p h} (hπ : IsUnit (coeff p B 0 π))
   rw [RingHom.mem_ker, sharpQuot_apply, Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton,
     Ideal.mem_span_singleton]
   refine ⟨fun ⟨c, hc⟩ ↦ ?_, map_dvd (plusSharp p h)⟩
-  -- `π` is a unit of the tilt, and `π⁻¹ x` has zeroth coordinate `c ∈ B⁺`
+  -- if `x♯ = π♯ c`, then `x = π (π⁻¹ x)`, where `π` is a unit of the tilt and `π⁻¹ x` has zeroth
+  -- coordinate `x♯ / π♯ = c ∈ B⁺`, so lies in `B♭⁺`
   obtain ⟨u, hu⟩ := isUnit_iff_coeff_zero.mpr hπ
   have hc' : coeff p B 0 x = coeff p B 0 π * c := by
     simpa using congrArg Subtype.val hc
@@ -128,7 +102,7 @@ theorem ker_sharpQuot {π : plusSubring p h} (hπ : IsUnit (coeff p B 0 π))
 
 /-- **Surjectivity of `B♭⁺ → B⁺ ⧸ I`**: if `B⁺` is `I`-adically complete for an ideal `I ∋ p`, the
 reduction of the sharp map modulo `I` is surjective iff every element of `B⁺` is a `p`-th power
-modulo `I`. A compatible system of `p`-th roots in `B⁺ ⧸ I` lifts to `B♭⁺` by `plusEquiv`. -/
+modulo `I`. -/
 theorem surjective_sharpQuot_iff (I : Ideal Bplus) (hI : (p : Bplus) ∈ I)
     [IsAdicComplete I Bplus] :
     Function.Surjective (sharpQuot h I hI) ↔ ∀ a : Bplus, ∃ b : Bplus, a - b ^ p ∈ I := by
@@ -155,12 +129,13 @@ theorem surjective_sharpQuot_iff (I : Ideal Bplus) (hI : (p : Bplus) ∈ I)
       obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
       obtain ⟨b, hb⟩ := hroot a
       exact ⟨Ideal.Quotient.mk I b, by rw [frobenius_def, ← map_pow, Ideal.Quotient.eq.mpr hb]⟩
+    -- a compatible system of `p`-th roots in `B⁺ ⧸ I` lifts to `B♭⁺` by `plusEquiv`
     intro a
     obtain ⟨y, hy⟩ := Perfection.coeff_surjective hfrob 0 a
     refine ⟨(plusEquiv h I).symm y, ?_⟩
     rw [← hy, ← RingEquiv.apply_symm_apply (plusEquiv h I) y, coeff_plusEquiv,
       RingEquiv.apply_symm_apply, sharpQuot_apply]
-    exact congrArg _ (Subtype.ext (coe_plusSharp h _).symm)
+    exact congrArg _ (Subtype.ext (by rw [coe_plusSharp]))
 
 section Perfectoid
 
