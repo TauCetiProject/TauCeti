@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Hypergraph.Colored.Stability
 public import TauCeti.Combinatorics.Hypergraph.Polyad.EditStability
 public import TauCeti.Combinatorics.Hypergraph.Triadic.Basic
 
