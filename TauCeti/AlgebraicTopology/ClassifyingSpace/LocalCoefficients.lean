@@ -31,6 +31,11 @@ induces a morphism of local systems `TauCeti.classifyingSpaceLocalSystemMap k f`
 map `Hₙ(BG; A) ⟶ Hₙ(BG; A')` corresponds to Mathlib's map `groupHomology.map (MonoidHom.id G) f`
 (`TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality`).
 
+For every short exact sequence of coefficient representations, the identification also carries
+the connecting morphism in twisted homology to Mathlib's `groupHomology.δ`
+(`classifyingSpaceTwistedHomologyIsoGroupHomology_hom_δ`). Together with coefficient naturality,
+this identifies the coefficient long exact sequences.
+
 Dually, for a `k`-module `N`, the cohomology of `classifyingSpace G` with coefficients in the same
 local system and values in `N` is the group cohomology of `G` with coefficients in the internal
 hom `Homₖ(A, N)`, where `N` carries the trivial action
@@ -55,6 +60,8 @@ map `Homₖ(A, N) ⟶ Homₖ(A, N')`
 
 * `TauCeti.classifyingSpaceLocalSystem`: the local coefficient system on `classifyingSpace G`
   associated to a representation of `G`.
+* `TauCeti.classifyingSpaceLocalSystemFunctor`: the exact coefficient functor for Milnor
+  classifying spaces.
 * `TauCeti.classifyingSpaceLocalSystemMap`: the morphism of local systems induced by a morphism
   of representations.
 * `TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology`: the isomorphism
@@ -67,6 +74,8 @@ map `Homₖ(A, N) ⟶ Homₖ(A, N')`
 * `TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality`,
   `TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology_inv_naturality`: the isomorphism is
   natural in the coefficients.
+* `TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_δ`: the identification respects
+  the coefficient connecting maps.
 * `TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_left`,
   `TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_right`: the
   cohomological isomorphism is natural in the representation and in the module of values.
@@ -98,6 +107,28 @@ abbrev classifyingSpaceLocalSystem : LocalCoefficientSystem k (TopCat.of (classi
   IsQuotientCoveringMap.associatedLocalSystem (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k A
+
+/-- The associated local coefficient systems on Milnor's classifying space, as a functor of
+representations. It preserves finite limits and finite colimits. -/
+abbrev classifyingSpaceLocalSystemFunctor :
+    Rep.{u} k G ⥤ LocalCoefficientSystem k (TopCat.of (classifyingSpace G)) :=
+  IsQuotientCoveringMap.associatedLocalSystemFunctor (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k
+
+-- With the concrete Milnor source and target, instance search does not recover the bundled
+-- covering from its underlying map. Delegate to the generic construction with that data fixed.
+instance : Limits.PreservesFiniteLimits (classifyingSpaceLocalSystemFunctor (G := G) k) :=
+  IsQuotientCoveringMap.associatedLocalSystemFunctorPreservesFiniteLimits
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k
+
+instance : Limits.PreservesFiniteColimits (classifyingSpaceLocalSystemFunctor (G := G) k) :=
+  IsQuotientCoveringMap.associatedLocalSystemFunctorPreservesFiniteColimits
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k
 
 /-- **The homology of the classifying space with local coefficients is group homology**: for
 every group `G` and every representation `A` of `G` over a commutative ring `k`, the homology
@@ -164,6 +195,20 @@ theorem classifyingSpaceTwistedHomologyIsoGroupHomology_inv_naturality (f : A �
     (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k f n
+
+/-- The homology identification for Milnor's classifying space respects coefficient connecting
+maps for arbitrary short exact sequences of representations. Together with coefficient naturality,
+it identifies the coefficient long exact sequences of twisted homology and group homology. -/
+@[reassoc]
+theorem classifyingSpaceTwistedHomologyIsoGroupHomology_hom_δ
+    {S : ShortComplex (Rep.{u} k G)} (hS : S.ShortExact) (n m : ℕ) (h : m + 1 = n) :
+    (hS.map_of_exact (classifyingSpaceLocalSystemFunctor k)).twistedHomologyδ n m h ≫
+        (classifyingSpaceTwistedHomologyIsoGroupHomology k S.X₁ m).hom =
+      (classifyingSpaceTwistedHomologyIsoGroupHomology k S.X₃ n).hom ≫ groupHomology.δ hS n m h :=
+  IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_hom_δ
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k hS n m h
 
 /-- **The cohomology of the classifying space with local coefficients is naturally group
 cohomology, in the representation**: for a morphism of representations `f : A ⟶ A'`, the

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Covering
 public import Mathlib.RepresentationTheory.Coinvariants
 public import Mathlib.Topology.Covering.Quotient
+public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 
 /-!
 # Local coefficient systems associated to representations
@@ -25,6 +26,13 @@ For a representation `A` of `G`, composing with `(A ⊗ -)_G` gives the local co
 `(A ⊗ k[p⁻¹ x])_G`; since `G` acts simply transitively on `p⁻¹ x`, a choice of point in the fibre
 identifies it with `A`. This is the system of local coefficients of the bundle `E ×_G A` over `B`.
 
+Choosing a sheet identifies each associated fibre with the coefficient module, naturally in
+the representation (`associatedLocalSystemFiberIso`). The construction uses Mathlib's
+`IsQuotientCoveringMap.fiberEquivGroup` and
+`Representation.coinvariantsTprodLeftRegularLEquiv`. Consequently
+`associatedLocalSystemFunctor` preserves finite limits, finite colimits, and short exact
+sequences, without any flatness hypothesis on the coefficients.
+
 ## Main definitions
 
 * `IsQuotientCoveringMap.fiberRepresentation`: the permutation representation on the free module
@@ -33,6 +41,10 @@ identifies it with `A`. This is the system of local coefficients of the bundle `
   fundamental groupoid of the base.
 * `IsQuotientCoveringMap.associatedLocalSystem`: the local coefficient system associated to a
   representation.
+* `IsQuotientCoveringMap.associatedLocalSystemFunctor`: the exact functor from representations
+  to associated local coefficient systems.
+* `IsQuotientCoveringMap.associatedLocalSystemFiberIso`: a chosen sheet identifies each associated
+  fibre with the original coefficient module, naturally in that module.
 * `IsQuotientCoveringMap.associatedLocalSystemMap`: the morphism of associated local systems
   induced by a morphism of representations.
 
@@ -46,7 +58,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory TauCeti
+open CategoryTheory Limits TauCeti
 
 universe u
 
@@ -181,5 +193,126 @@ theorem associatedLocalSystemMap_comp (f : A ⟶ A') (f' : A' ⟶ A'') :
     hG.associatedLocalSystemMap k (f ≫ f') =
       hG.associatedLocalSystemMap k f ≫ hG.associatedLocalSystemMap k f' :=
   NatTrans.ext <| funext fun _ ↦ NatTrans.congr_app ((Rep.coinvariantsTensor k G).map_comp f f') _
+
+/-- Associated local systems, as a functor of the coefficient representation. -/
+abbrev associatedLocalSystemFunctor : Rep.{u} k G ⥤ LocalCoefficientSystem k B where
+  obj := hG.associatedLocalSystem k
+  map := hG.associatedLocalSystemMap k
+  map_id _ := hG.associatedLocalSystemMap_id k
+  map_comp := hG.associatedLocalSystemMap_comp k
+
+/-- Choosing a sheet identifies the permutation representation on the fibre with the regular
+representation. -/
+def fiberRepresentationIsoLeftRegular (b : B) (e : p ⁻¹' {b}) :
+    Rep.of (hG.fiberRepresentation k b) ≅ Rep.of (Representation.leftRegular k G) := by
+  letI := hG.mulActionFiber b
+  refine Rep.mkIso
+    { __ := (Finsupp.domLCongr (hG.fiberEquivGroup e) :
+          (p ⁻¹' {b} →₀ k) ≃ₗ[k] (G →₀ k)).trans
+        (MonoidAlgebra.coeffLinearEquiv k).symm
+      isIntertwining' := fun g ↦ ?_ }
+  refine Finsupp.lhom_ext fun e' r ↦ ?_
+  have heq : hG.fiberEquivGroup e (g • e') = g * hG.fiberEquivGroup e e' := by
+    apply (hG.fiberEquivGroup_eq_iff _ _ _).2
+    rw [mul_smul, hG.fiberEquivGroup_smul_self]
+    rfl
+  -- Write the intertwined maps on basis vectors across the monoid-algebra carrier.
+  change (MonoidAlgebra.coeffLinearEquiv k).symm
+      (Finsupp.domLCongr (hG.fiberEquivGroup e)
+        (hG.fiberRepresentation k b g (Finsupp.single e' r))) =
+    Representation.leftRegular k G g ((MonoidAlgebra.coeffLinearEquiv k).symm
+      ((Finsupp.domLCongr (hG.fiberEquivGroup e) :
+            (p ⁻¹' {b} →₀ k) ≃ₗ[k] (G →₀ k)) (Finsupp.single e' r)))
+  simp [heq]
+
+/-- The chosen-sheet identification sends the basis vector at `e'` to the group element
+carrying the chosen sheet to `e'`. -/
+-- Kept as a named equation: ordinary importing simp does not match through this carrier.
+lemma fiberRepresentationIsoLeftRegular_hom_single (b : B) (e e' : p ⁻¹' {b}) (r : k) :
+    (hG.fiberRepresentationIsoLeftRegular k b e).hom.hom (Finsupp.single e' r) =
+      MonoidAlgebra.single (hG.fiberEquivGroup e e') r := by
+  -- The regular representation uses the monoid-algebra carrier, rather than `G →₀ k`.
+  change (MonoidAlgebra.coeffLinearEquiv k).symm
+      ((Finsupp.domLCongr (hG.fiberEquivGroup e) :
+        (p ⁻¹' {b} →₀ k) ≃ₗ[k] (G →₀ k)) (Finsupp.single e' r)) = _
+  simp
+
+/-- A chosen sheet identifies an associated fibre with the underlying coefficient module. -/
+def associatedLocalSystemFiberIso (A : Rep.{u} k G) (x : FundamentalGroupoid B)
+    (e : p ⁻¹' {x.as}) :
+    (hG.associatedLocalSystem k A).obj x ≅ (forget₂ (Rep k G) (ModuleCat k)).obj A :=
+  ((Rep.coinvariantsTensor k G).obj A).mapIso (hG.fiberRepresentationIsoLeftRegular k x.as e) ≪≫
+    (Representation.coinvariantsTprodLeftRegularLEquiv A.ρ).toModuleIso
+
+/-- The fibre identification evaluates a coinvariant tensor by transporting the coefficient
+back to the chosen sheet. -/
+-- Kept as a named equation: simp normalizes `coinvariantsTensorMk` before matching it.
+lemma associatedLocalSystemFiberIso_hom_mk_single (A : Rep.{u} k G)
+    (x : FundamentalGroupoid B) (e e' : p ⁻¹' {x.as}) (a : A) (r : k) :
+    (hG.associatedLocalSystemFiberIso k A x e).hom.hom
+        (Rep.coinvariantsTensorMk A (Rep.of (hG.fiberRepresentation k x.as)) a
+          (Finsupp.single e' r)) = r • A.ρ (hG.fiberEquivGroup e e')⁻¹ a := by
+  -- Express the functorial map on coinvariants before using the regular-representation equation.
+  change Representation.ofCoinvariantsTprodLeftRegular A.ρ
+      (Representation.Coinvariants.mk _ (a ⊗ₜ[k]
+        (hG.fiberRepresentationIsoLeftRegular k x.as e).hom.hom (Finsupp.single e' r))) = _
+  rw [hG.fiberRepresentationIsoLeftRegular_hom_single,
+    Representation.ofCoinvariantsTprodLeftRegular_mk_tmul_single]
+
+/-- At the chosen sheet, the fibre identification recovers the original coefficient. -/
+lemma associatedLocalSystemFiberIso_hom_mk_self (A : Rep.{u} k G)
+    (x : FundamentalGroupoid B) (e : p ⁻¹' {x.as}) (a : A) :
+    (hG.associatedLocalSystemFiberIso k A x e).hom.hom
+        (Rep.coinvariantsTensorMk A (Rep.of (hG.fiberRepresentation k x.as)) a
+          (Finsupp.single e 1)) = a := by
+  rw [hG.associatedLocalSystemFiberIso_hom_mk_single]
+  simp
+
+/-- The fibre identification is natural in every coefficient representation. -/
+@[reassoc]
+lemma associatedLocalSystemFiberIso_hom_naturality {A A' : Rep.{u} k G} (f : A ⟶ A')
+    (x : FundamentalGroupoid B) (e : p ⁻¹' {x.as}) :
+    (hG.associatedLocalSystemMap k f).app x ≫ (hG.associatedLocalSystemFiberIso k A' x e).hom =
+      (hG.associatedLocalSystemFiberIso k A x e).hom ≫
+        (forget₂ (Rep k G) (ModuleCat k)).map f := by
+  refine Rep.coinvariantsTensor_hom_ext (LinearMap.ext fun a ↦ Finsupp.lhom_ext fun e' r ↦ ?_)
+  -- Present the source using the explicit fibre representation so the public equations match.
+  change ((hG.associatedLocalSystemFiberIso k A' x e).hom).hom
+      (((hG.associatedLocalSystemMap k f).app x).hom
+        (Rep.coinvariantsTensorMk A (Rep.of (hG.fiberRepresentation k x.as)) a
+          (Finsupp.single e' r))) =
+    f.hom (((hG.associatedLocalSystemFiberIso k A x e).hom).hom
+      (Rep.coinvariantsTensorMk A (Rep.of (hG.fiberRepresentation k x.as)) a
+        (Finsupp.single e' r)))
+  rw [hG.associatedLocalSystemMap_app_coinvariantsTensorMk]
+  rw [hG.associatedLocalSystemFiberIso_hom_mk_single,
+    hG.associatedLocalSystemFiberIso_hom_mk_single, map_smul]
+  exact congrArg (r • ·) (LinearMap.congr_fun (f.hom.isIntertwining' _) a).symm
+
+private def associatedLocalSystemFunctorEvalIso (x : FundamentalGroupoid B)
+    (e : p ⁻¹' {x.as}) :
+    hG.associatedLocalSystemFunctor k ⋙
+        (evaluation (FundamentalGroupoid B) (ModuleCat k)).obj x ≅
+      forget₂ (Rep k G) (ModuleCat k) :=
+  NatIso.ofComponents (fun A ↦ hG.associatedLocalSystemFiberIso k A x e)
+    (fun f ↦ hG.associatedLocalSystemFiberIso_hom_naturality k f x e)
+
+/-- Forming the local system associated to a quotient covering preserves finite limits. -/
+instance associatedLocalSystemFunctorPreservesFiniteLimits :
+    PreservesFiniteLimits (hG.associatedLocalSystemFunctor k) where
+  preservesFiniteLimits J _ _ :=
+    preservesLimitsOfShape_of_evaluation _ J fun x ↦ by
+      obtain ⟨e, he⟩ := hG.surjective x.as
+      exact preservesLimitsOfShape_of_natIso
+        (hG.associatedLocalSystemFunctorEvalIso k x ⟨e, he⟩).symm
+
+/-- Forming the local system associated to a quotient covering preserves finite colimits. -/
+instance associatedLocalSystemFunctorPreservesFiniteColimits :
+    PreservesFiniteColimits (hG.associatedLocalSystemFunctor k) where
+  preservesFiniteColimits J _ _ :=
+    preservesColimitsOfShape_of_evaluation _ J fun x ↦ by
+      obtain ⟨e, he⟩ := hG.surjective x.as
+      exact preservesColimitsOfShape_of_natIso
+        (hG.associatedLocalSystemFunctorEvalIso k x ⟨e, he⟩).symm
 
 end IsQuotientCoveringMap
