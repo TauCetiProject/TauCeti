@@ -447,9 +447,10 @@ private lemma sum_zsmul_coroot_eq_zero [Fintype ι] (n : ℕ) (c : ι → ℤ)
 /-- **A minuscule element of the coroot lattice is zero.** If every root takes a value of absolute
 value less than `2` at a point `v` of the coroot lattice `Q∨`, then `v = 0`. These values are
 integers, so the hypothesis says that `v` is minuscule: every root takes one of the values `-1`,
-`0` and `1` at `v`. Classically, the nonzero minuscule coweights of a reduced irreducible root
-system are the fundamental coweights of its special nodes, and they represent the nontrivial
-classes of `P∨ / Q∨`; this theorem is the statement that none of them lies in `Q∨`. -/
+`0` and `1` at `v`. Classically, the nonzero dominant minuscule coweights of a reduced irreducible
+root system are the fundamental coweights of its special nodes, and they represent the nontrivial
+classes of `P∨ / Q∨`; this theorem says that no nonzero minuscule coweight, dominant or not, lies
+in `Q∨`. -/
 theorem eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two [Finite ι] {v : N}
     (hv : v ∈ P.corootSpan ℤ) (h : ∀ j, |P.root' j v| < 2) : v = 0 := by
   have := Fintype.ofFinite ι
