@@ -64,8 +64,11 @@ theorem exists_split_etaleLocally {X S : Scheme.{u}} (f : X ⟶ S) [IsFinite f] 
     (HasRingHomProperty.Spec_iff (P := @Etale)).mpr (RingHom.etale_algebraMap.mpr inferInstance)
   have : Etale g := inferInstanceAs (Etale (t ≫ j))
   refine ⟨.of T, g, inferInstance, q, ?_, n, ?_⟩
-  · -- On points, the spectrum map is comap and composition is function composition.
-    exact (congrArg j hq).trans hp
+  · calc
+      g q = j (t q) := Scheme.Hom.comp_apply t j q
+      _ = j (PrimeSpectrum.comap (algebraMap R T) q) :=
+        congrArg j (Spec.map_apply (CommRingCat.ofHom (algebraMap R T)) q)
+      _ = s := (congrArg j hq).trans hp
   · obtain ⟨e₁⟩ :=
       TauCeti.AlgebraicGeometry.nonempty_pullbackSpecIso_of_algEquiv R B.obj T (Fin n → T) φ
     exact ⟨((Over.pullbackComp t j).app (Over.mk f)) ≪≫
