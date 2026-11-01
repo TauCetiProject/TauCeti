@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.IsTensorProduct
+public import TauCeti.RingTheory.Invariant.Basic
 public import TauCeti.RingTheory.Invariant.ModuleDescent
 
 /-!
@@ -38,11 +39,6 @@ affine scheme with a free action of a finite group to its invariant quotient.
 The effectivity statement is the module form `TauCeti.MulSemiringAction.baseChangeInvariantsEquiv`
 applied to `C`, whose invariant submodule is the fixed-point subalgebra.
 
-## Main definitions
-
-* `TauCeti.MulSemiringAction.fixedPointsAlgHom`: the restriction `Cᴳ →ₐ[A] C'ᴳ` of a
-  `G`-equivariant `B`-algebra map `C →ₐ[B] C'`.
-
 ## Main results
 
 * `TauCeti.MulSemiringAction.isPushout_fixedPoints`: `C = B ⊗[A] Cᴳ`.
@@ -71,13 +67,6 @@ section Effective
 variable (A B G) (C : Type*) [CommRing C] [Algebra A C] [Algebra B C] [IsScalarTower A B C]
   [MulSemiringAction G C] [SMulDistribClass G B C] [SMulCommClass G A C]
 
-/-- The fixed-point subalgebra of `C` is its submodule of invariants. -/
-private theorem toSubmodule_fixedPoints_subalgebra :
-    Subalgebra.toSubmodule (FixedPoints.subalgebra A C G) =
-      (Representation.ofDistribMulAction A G C).invariants := by
-  ext c
-  simp [FixedPoints.mem_subalgebra, Representation.mem_invariants]
-
 /-- **Galois descent of algebras.** For a free action of a finite group `G` on `B` with ring of
 invariants `A`, every `B`-algebra `C` with a semilinear action of `G` by ring automorphisms is
 the base change of its fixed points: `B ⊗[A] Cᴳ ≃ₐ[B] C`, `b ⊗ c ↦ b • c`. -/
@@ -98,21 +87,6 @@ variable {C C' : Type*} [CommRing C] [Algebra A C] [Algebra B C] [IsScalarTower 
   [MulSemiringAction G C] [SMulDistribClass G B C] [SMulCommClass G A C]
   [CommRing C'] [Algebra A C'] [Algebra B C'] [IsScalarTower A B C']
   [MulSemiringAction G C'] [SMulDistribClass G B C'] [SMulCommClass G A C']
-
-variable (A G) in
-/-- The restriction `Cᴳ →ₐ[A] C'ᴳ` of a `G`-equivariant `B`-algebra map `f : C →ₐ[B] C'` to the
-fixed-point subalgebras. -/
-noncomputable def fixedPointsAlgHom (f : C →ₐ[B] C') (hf : ∀ (g : G) (c : C), f (g • c) = g • f c) :
-    FixedPoints.subalgebra A C G →ₐ[A] FixedPoints.subalgebra A C' G :=
-  ((f.restrictScalars A).comp (FixedPoints.subalgebra A C G).val).codRestrict _ fun x g ↦ by
-    simp [← hf, FixedPoints.mem_subalgebra.mp x.2 g]
-
-omit [MulSemiringAction G B] [SMulCommClass G A B] [SMulDistribClass G B C]
-  [SMulDistribClass G B C'] in
-@[simp]
-theorem coe_fixedPointsAlgHom_apply (f : C →ₐ[B] C') (hf : ∀ (g : G) (c : C), f (g • c) = g • f c)
-    (x : FixedPoints.subalgebra A C G) : (fixedPointsAlgHom A G f hf x : C') = f x :=
-  (rfl)
 
 variable [Finite G] [Algebra.IsInvariant A B G]
 
