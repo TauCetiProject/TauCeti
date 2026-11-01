@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
-import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
 # Decomposable exterior vectors
@@ -23,7 +22,8 @@ it out.
 For `η ∈ ⋀ⁿ V*` and `θ ∈ ⋀ⁿ⁺¹ V` the contraction `ι_η θ ∈ V` (`exteriorPower.contract`) is
 characterized by `ξ (ι_η θ) = ⟨η ∧ ξ, θ⟩` for `ξ ∈ V*`, where `⟨-, -⟩` is the natural pairing
 `exteriorPower.pairingDual` between `⋀ⁿ⁺¹ V*` and `⋀ⁿ⁺¹ V`. It is defined for every reflexive
-module over a commutative ring. On `θ = v₀ ∧ ⋯ ∧ vₙ` it takes values in the span of the `vᵢ`, and
+module over a commutative ring. On `θ = v₀ ∧ ⋯ ∧ vₙ` it is an explicit combination of the `vᵢ`
+(`exteriorPower.contract_ιMulti`), so it takes values in the span of the `vᵢ`, and
 for linearly independent `vᵢ` its values are exactly that span: contracting by the exterior
 product of a dual family with one member removed returns the corresponding `vₚ` up to sign.
 
@@ -48,14 +48,16 @@ element is a multiple of the empty product. When `r + 1 > dim V` the exterior po
 ## Main definitions
 
 * `exteriorPower.contract`: the contraction `ι_η θ` of `θ ∈ ⋀ⁿ⁺¹ M` by `η ∈ ⋀ⁿ M*`.
+* `exteriorPower.rangeContractBasis`: the basis `v₀, …, vᵣ` of the contraction image of
+  `v₀ ∧ ⋯ ∧ vᵣ` for linearly independent `vᵢ`.
 
 ## Main results
 
 * `exteriorPower.mem_range_ιMulti_iff_forall_ι_contract_mul_eq_zero`: **the decomposability
   criterion** `θ ∈ range ιMulti ↔ ∀ η, (ι_η θ) ∧ θ = 0`.
 * `exteriorPower.range_contract_flip_ιMulti`: for linearly independent `v`, the contractions of
-  `v₀ ∧ ⋯ ∧ vᵣ` form the span of the `vᵢ`, with basis `Basis.span`.
-* `exteriorPower.pairingDual_ιMulti_wedge`: Laplace expansion of `⟨g₀ ∧ ⋯ ∧ gₙ, θ ∧ v⟩` along `v`.
+  `v₀ ∧ ⋯ ∧ vᵣ` form the span of the `vᵢ`.
+* `exteriorPower.contract_ιMulti`: the expansion of `ι_η (v₀ ∧ ⋯ ∧ vₙ)` in the `vᵢ`.
 * `exteriorPower.mem_range_ιMulti_of_subsingleton_support_repr`: an element with at most one
   nonzero coordinate in the basis induced by a basis of `M` is decomposable.
 
@@ -128,34 +130,57 @@ theorem contract_ιMulti_comp_succAbove_ιMulti {g : Fin (n + 1) → Dual R M}
       simp [Fin.succAbove_last, hk, hgv, Fin.succAbove_ne], mul_zero]
   · simp
 
+/-- **Expansion of a contraction of a decomposable vector**:
+`ι_η (v₀ ∧ ⋯ ∧ vₙ) = ∑ⱼ (-1) ^ (j + n) ⟨η, v₀ ∧ ⋯ ∧ v̂ⱼ ∧ ⋯ ∧ vₙ⟩ vⱼ`. -/
+theorem contract_ιMulti (η : ⋀[R]^n (Dual R M)) (v : Fin (n + 1) → M) :
+    contract R M n η (ιMulti R (n + 1) v) =
+      ∑ j : Fin (n + 1),
+        ((-1 : R) ^ (j + n : ℕ) * pairingDual R M n η (ιMulti R n (v ∘ j.succAbove))) • v j := by
+  apply (evalEquiv R M).injective
+  ext ξ
+  simp only [evalEquiv_apply, Dual.eval_apply, map_sum, map_smul, LinearMap.sum_apply,
+    LinearMap.smul_apply, smul_eq_mul]
+  -- Both sides are linear in `η`, so it suffices to treat `η = f₀ ∧ ⋯ ∧ fₙ₋₁`.
+  have h : ξ ∘ₗ (contract R M n).flip (ιMulti R (n + 1) v) =
+      ∑ j : Fin (n + 1), ((-1 : R) ^ (j + n : ℕ) * ξ (v j)) •
+        (pairingDual R M n).flip (ιMulti R n (v ∘ j.succAbove)) := by
+    refine linearMap_ext (AlternatingMap.ext fun f ↦ ?_)
+    rw [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply, LinearMap.flip_apply,
+      apply_contract_ιMulti, pairingDual_ιMulti_ιMulti, Matrix.det_succ_column _ (Fin.last n),
+      LinearMap.compAlternatingMap_apply, LinearMap.sum_apply]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [LinearMap.smul_apply, LinearMap.flip_apply, pairingDual_ιMulti_ιMulti, smul_eq_mul]
+    simp [Fin.succAbove_last, Matrix.submatrix]
+  have hη := LinearMap.congr_fun h η
+  rw [LinearMap.sum_apply] at hη
+  simp only [LinearMap.comp_apply, LinearMap.flip_apply, LinearMap.smul_apply, smul_eq_mul] at hη
+  rw [hη]
+  exact Finset.sum_congr rfl fun j _ ↦ by ring
+
+/-- The contractions of `v₀ ∧ ⋯ ∧ vₙ` lie in the span of the `vᵢ`. -/
+theorem contract_ιMulti_mem_span (η : ⋀[R]^n (Dual R M)) (v : Fin (n + 1) → M) :
+    contract R M n η (ιMulti R (n + 1) v) ∈ span R (Set.range v) := by
+  rw [contract_ιMulti]
+  exact sum_mem fun j _ ↦ smul_mem _ _ (subset_span ⟨j, rfl⟩)
+
+/-- A decomposable vector satisfies the contraction equations: `(ι_η θ) ∧ θ = 0` for
+`θ = v₀ ∧ ⋯ ∧ vₙ`. -/
+theorem ι_contract_mul_ιMulti_eq_zero (η : ⋀[R]^n (Dual R M)) (v : Fin (n + 1) → M) :
+    ExteriorAlgebra.ι R (contract R M n η (ιMulti R (n + 1) v)) *
+      ExteriorAlgebra.ιMulti R (n + 1) v = 0 := by
+  rw [contract_ιMulti, map_sum, Finset.sum_mul]
+  refine Finset.sum_eq_zero fun j _ ↦ ?_
+  have h := (ExteriorAlgebra.ιMulti R (n + 2)).map_eq_zero_of_eq (Fin.cons (v j) v)
+    (i := 0) (j := j.succ) (by simp) (Fin.succ_ne_zero j).symm
+  rw [ExteriorAlgebra.ιMulti_succ_apply] at h
+  simp only [Matrix.vecTail, Fin.cons_zero, Fin.cons_comp_succ] at h
+  rw [map_smul, smul_mul_assoc, h, smul_zero]
+
 end Contract
 
 section Coordinates
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {n : ℕ}
-
-/-- **Laplace expansion along the last vector**: the pairing of `g₀ ∧ ⋯ ∧ gₙ` with `θ ∧ v` is
-`∑ⱼ (-1) ^ (n + j) gⱼ(v) ⟨g₀ ∧ ⋯ ∧ ĝⱼ ∧ ⋯ ∧ gₙ, θ⟩`. -/
-theorem pairingDual_ιMulti_wedge (g : Fin (n + 1) → Dual R M) (θ : ⋀[R]^n M) (v : M) :
-    pairingDual R M (n + 1) (ιMulti R (n + 1) g) (wedge R M n 1 θ ((oneEquiv R M).symm v)) =
-      ∑ j : Fin (n + 1), (-1) ^ (n + j : ℕ) * g j v *
-        pairingDual R M n (ιMulti R n (g ∘ j.succAbove)) θ := by
-  have hθ : θ ∈ span R (Set.range (ιMulti R n)) := by
-    rw [ιMulti_span]
-    trivial
-  induction hθ using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨u, rfl⟩ := hx
-    rw [oneEquiv_symm_apply, wedge_ιMulti, Fin.append_right_eq_snoc, pairingDual_ιMulti_ιMulti,
-      Matrix.det_succ_row _ (Fin.last n)]
-    simp [Fin.succAbove_last, Matrix.submatrix, Function.comp_def]
-  | zero => simp
-  | add x y _ _ hx hy =>
-    rw [map_add, LinearMap.add_apply, map_add, hx, hy]
-    simp [mul_add, Finset.sum_add_distrib]
-  | smul a x _ hx =>
-    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, hx, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun j _ ↦ by ring
 
 variable {I : Type*} [LinearOrder I] (b : Basis I R M)
 
@@ -175,11 +200,8 @@ theorem basis_repr_eq_zero_of_mul_ι_eq_zero (θ : ⋀[R]^n M) {i : I}
     simp [f, Basis.coord_apply, hk]
   have h := pairingDual_ιMulti_wedge (Fin.snoc f (b.coord i)) θ (b i)
   rw [hwedge, map_zero, Fin.sum_univ_castSucc] at h
-  simp only [Fin.val_castSucc, Fin.snoc_castSucc, hf, mul_zero, zero_mul, Finset.sum_const_zero,
-    Fin.val_last, Even.add_self, Even.neg_pow, one_pow, Fin.snoc_last, Basis.coord_apply,
-    Basis.repr_self, Finsupp.single_eq_same, mul_one, Fin.succAbove_last, Fin.snoc_comp_castSucc,
-    one_mul, zero_add] at h
-  rw [basis_repr_apply, ιMultiDual, ιMulti_family, ← h]
+  rw [basis_repr_apply, ιMultiDual, ιMulti_family]
+  simpa [hf, Fin.succAbove_last, Fin.snoc_comp_castSucc] using h.symm
 
 /-- If the dual coordinate `bⱼ^*` kills every contraction of `θ`, then every coordinate of `θ` in
 the basis `b.exteriorPower (n + 1)` at an index set containing `j` vanishes. -/
@@ -209,13 +231,9 @@ theorem mem_range_ιMulti_of_subsingleton_support_repr (θ : ⋀[R]^(n + 1) M)
   by_cases h0 : ∃ t, (b.exteriorPower (n + 1)).repr θ t ≠ 0
   · obtain ⟨t₀, ht₀⟩ := h0
     have hθ : θ = (b.exteriorPower (n + 1)).repr θ t₀ • b.exteriorPower (n + 1) t₀ := by
-      refine (b.exteriorPower (n + 1)).ext_elem fun t ↦ ?_
-      by_cases htt : t = t₀
-      · simp [htt]
-      · simp only [map_smul, Basis.repr_self, Finsupp.smul_apply, Finsupp.single_apply,
-          Ne.symm htt, ite_false, smul_zero]
-        by_contra hne
-        exact htt (h (Finsupp.mem_support_iff.mpr hne) (Finsupp.mem_support_iff.mpr ht₀))
+      have hs := Finsupp.support_subset_singleton.1
+        ((Finset.coe_eq_singleton.1 (h.eq_singleton_of_mem (Finsupp.mem_support_iff.2 ht₀))).le)
+      rw [← Basis.repr_symm_single, ← hs, LinearEquiv.symm_apply_apply]
     rw [hθ, basis_apply, ιMulti_family]
     set w := b ∘ Set.powersetCard.ofFinEmbEquiv.symm t₀
     refine ⟨Function.update w 0 ((b.exteriorPower (n + 1)).repr θ t₀ • w 0), ?_⟩
@@ -230,38 +248,9 @@ section Field
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V] {r : ℕ}
 
-/-- The contractions of `v₀ ∧ ⋯ ∧ vᵣ` lie in the span of the `vᵢ`. -/
-theorem contract_ιMulti_mem_span (η : ⋀[K]^r (Dual K V)) (v : Fin (r + 1) → V) :
-    contract K V r η (ιMulti K (r + 1) v) ∈ span K (Set.range v) := by
-  by_contra hx
-  obtain ⟨ξ, hξx, hξ⟩ := exists_dual_map_eq_bot_of_notMem hx inferInstance
-  have hv (i : Fin (r + 1)) : ξ (v i) = 0 := by
-    have : ξ (v i) ∈ (span K (Set.range v)).map ξ := mem_map_of_mem (subset_span ⟨i, rfl⟩)
-    simpa [hξ] using this
-  have h0 : ξ ∘ₗ (contract K V r).flip (ιMulti K (r + 1) v) = 0 := by
-    refine linearMap_ext (AlternatingMap.ext fun f ↦ ?_)
-    simp only [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply, LinearMap.flip_apply,
-      apply_contract_ιMulti, pairingDual_ιMulti_ιMulti, LinearMap.zero_apply]
-    exact Matrix.det_eq_zero_of_column_eq_zero (Fin.last r) fun i ↦ by simp [hv]
-  exact hξx (LinearMap.congr_fun h0 η)
-
-/-- A decomposable vector satisfies the Plücker equations: `(ι_η θ) ∧ θ = 0` for
-`θ = v₀ ∧ ⋯ ∧ vᵣ`. -/
-theorem ι_contract_mul_ιMulti_eq_zero (η : ⋀[K]^r (Dual K V)) (v : Fin (r + 1) → V) :
-    ExteriorAlgebra.ι K (contract K V r η (ιMulti K (r + 1) v)) *
-      ExteriorAlgebra.ιMulti K (r + 1) v = 0 := by
-  have h := Submodule.ιMulti_eq_zero_of_finrank_lt (x := Fin.cons (contract K V r η
-    (ιMulti K (r + 1) v)) v) (span K (Set.range v)) Finset.univ
-    ((finrank_range_le_card v).trans_lt (by simp)) fun i _ ↦ by
-      refine Fin.cases (contract_ιMulti_mem_span η v) (fun i ↦ ?_) i
-      simpa using subset_span (Set.mem_range_self i)
-  have h' := congr_arg Subtype.val h
-  rw [ιMulti_apply_coe, ExteriorAlgebra.ιMulti_succ_apply] at h'
-  simpa only [Matrix.vecTail, Fin.cons_zero, Fin.cons_comp_succ, ZeroMemClass.coe_zero] using h'
-
 /-- **The contraction image of a nonzero decomposable vector.** For linearly independent
-`v₀, …, vᵣ`, the contractions `ι_η (v₀ ∧ ⋯ ∧ vᵣ)`, `η ∈ ⋀ʳ V*`, form the span of the `vᵢ`, which
-therefore has the basis `Basis.span hv`. -/
+`v₀, …, vᵣ`, the contractions `ι_η (v₀ ∧ ⋯ ∧ vᵣ)`, `η ∈ ⋀ʳ V*`, form the span of the `vᵢ`. Its
+basis `vᵢ` is `exteriorPower.rangeContractBasis`. -/
 theorem range_contract_flip_ιMulti {v : Fin (r + 1) → V} (hv : LinearIndependent K v) :
     LinearMap.range ((contract K V r).flip (ιMulti K (r + 1) v)) = span K (Set.range v) := by
   refine le_antisymm ?_ (span_le.mpr ?_)
@@ -280,6 +269,17 @@ theorem range_contract_flip_ιMulti {v : Fin (r + 1) → V} (hv : LinearIndepend
     rw [LinearMap.flip_apply, map_smul, LinearMap.smul_apply,
       contract_ιMulti_comp_succAbove_ιMulti hgv, smul_smul, ← mul_pow]
     simp
+
+/-- The basis `v₀, …, vᵣ` of the contraction image of `v₀ ∧ ⋯ ∧ vᵣ` for linearly independent
+`vᵢ` (`exteriorPower.range_contract_flip_ιMulti`). -/
+noncomputable def rangeContractBasis {v : Fin (r + 1) → V} (hv : LinearIndependent K v) :
+    Basis (Fin (r + 1)) K (LinearMap.range ((contract K V r).flip (ιMulti K (r + 1) v))) :=
+  (Basis.span hv).map (LinearEquiv.ofEq _ _ (range_contract_flip_ιMulti hv).symm)
+
+@[simp]
+theorem rangeContractBasis_apply {v : Fin (r + 1) → V} (hv : LinearIndependent K v)
+    (i : Fin (r + 1)) : (rangeContractBasis hv i : V) = v i := by
+  simp [rangeContractBasis, Basis.span_apply]
 
 /-- **The decomposability criterion.** Over a field, an element `θ` of the `(r + 1)`-st exterior
 power of a finite-dimensional vector space is decomposable, `θ = v₀ ∧ ⋯ ∧ vᵣ`, exactly when
