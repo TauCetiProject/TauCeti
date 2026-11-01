@@ -337,6 +337,31 @@ private lemma IsProperlySupported.isLocallyFiniteChain_extendLocallyFiniteFun
   have hcσ : c σ ≠ 0 := fun h ↦ hσ (by simp only [h, map_zero])
   exact Set.mem_biUnion (x := σ) ⟨_, ⟨w, ⟨hcσ, hw⟩, rfl⟩, hzV⟩ hσ
 
+/-- Extension to a locally finite chain respects addition of properly supported operators.
+The two operators need not move simplices along the same proper map. -/
+lemma extendLocallyFiniteFun_add
+    {B : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b}
+    (hA : IsProperlySupported A) (hB : IsProperlySupported B)
+    (hc : IsLocallyFiniteChain L c) :
+    extendLocallyFiniteFun (A + B) c =
+      extendLocallyFiniteFun A c + extendLocallyFiniteFun B c := by
+  funext ρ
+  simp only [extendLocallyFiniteFun, matrixCoeff_apply, ModuleCat.hom_add,
+    LinearMap.add_apply, map_add, Pi.add_apply]
+  exact finsum_add_distrib (hA.finite_support hc ρ) (hB.finite_support hc ρ)
+
+/-- Extension to a locally finite chain respects subtraction of properly supported operators. -/
+lemma extendLocallyFiniteFun_sub
+    {B : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b}
+    (hA : IsProperlySupported A) (hB : IsProperlySupported B)
+    (hc : IsLocallyFiniteChain L c) :
+    extendLocallyFiniteFun (A - B) c =
+      extendLocallyFiniteFun A c - extendLocallyFiniteFun B c := by
+  funext ρ
+  simp only [extendLocallyFiniteFun, matrixCoeff_apply, ModuleCat.hom_sub,
+    LinearMap.sub_apply, map_sub, Pi.sub_apply]
+  exact finsum_sub_distrib (hA.finite_support hc ρ) (hB.finite_support hc ρ)
+
 /-- The extension of a properly supported map to locally finite chains, applying it simplex by
 simplex. -/
 def extendLocallyFinite (hA : IsProperlySupported A) :
