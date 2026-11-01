@@ -8,10 +8,12 @@ module
 public import Mathlib.Data.Nat.GCD.Basic
 
 /-!
-# Coprimality of `q` and `q ^ N - 1`
+# Coprimality and nonzero least common multiples
 
 For `q > 1` and `N > 0`, the natural numbers `q` and `q ^ N - 1` are coprime, because any common
 divisor of `q` and `q ^ N - 1` also divides `q ^ N - (q ^ N - 1) = 1`.
+
+The least common multiple of two nonzero naturals is nonzero, also as a `NeZero` instance.
 
 ## Main results
 
@@ -24,6 +26,10 @@ divisor of `q` and `q ^ N - 1` also divides `q ^ N - (q ^ N - 1) = 1`.
 public section
 
 namespace Nat
+
+/-- The least common multiple of two nonzero natural numbers is nonzero. -/
+instance neZero_lcm (m n : ℕ) [NeZero m] [NeZero n] : NeZero (lcm m n) :=
+  ⟨lcm_ne_zero (NeZero.ne m) (NeZero.ne n)⟩
 
 /-- If `q > 1` and `N > 0`, then `q` is coprime to `q ^ N - 1`. -/
 theorem coprime_pow_sub_one (q N : ℕ) (hq : 1 < q) (hN : N ≠ 0) :
