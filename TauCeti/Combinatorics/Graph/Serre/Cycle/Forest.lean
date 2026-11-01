@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Basic
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 
 /-!
@@ -57,6 +58,11 @@ theorem supportGraph_edgeSet :
       Sym2.eq_iff]
     aesop
 
+/-- For a loopless dart set, every dart contributes an edge to the simple support. -/
+theorem supportGraph_edgeSet_of_src_ne_tgt (h : ∀ e ∈ O, Γ.src e ≠ Γ.tgt e) :
+    (Γ.supportGraph O).edgeSet = (fun e => s(Γ.src e, Γ.tgt e)) '' O := by
+  rw [supportGraph_edgeSet, Set.sep_eq_self_iff_mem_true.mpr h]
+
 /-- Enlarging the dart set enlarges its simple support. -/
 theorem supportGraph_mono {O O' : Set Γ.E} (h : O ⊆ O') :
     Γ.supportGraph O ≤ Γ.supportGraph O' := by
@@ -74,7 +80,7 @@ structure IsSpanningForest (F : Set Γ.E) : Prop where
   /-- Every forest dart was present in the chosen ambient multigraph. -/
   subset : F ⊆ O
   /-- A forest has no loops. -/
-  ne_endpoints : ∀ e ∈ F, Γ.src e ≠ Γ.tgt e
+  src_ne_tgt : ∀ e ∈ F, Γ.src e ≠ Γ.tgt e
   /-- A forest has no parallel edges, in either direction. -/
   endpoints_injOn : Set.InjOn (fun e => s(Γ.src e, Γ.tgt e)) F
   /-- The simple support has no cycles. -/
@@ -88,11 +94,7 @@ variable {Γ O} {F : Set Γ.E}
 This identification retains the chosen actual edge above each endpoint pair. -/
 theorem IsSpanningForest.bijOn_endpoints (hF : Γ.IsSpanningForest O F) :
     Set.BijOn (fun e => s(Γ.src e, Γ.tgt e)) F (Γ.supportGraph F).edgeSet := by
-  rw [supportGraph_edgeSet]
-  have h : {e | e ∈ F ∧ Γ.src e ≠ Γ.tgt e} = F := by
-    ext e
-    exact ⟨And.left, fun he => ⟨he, hF.ne_endpoints e he⟩⟩
-  rw [h]
+  rw [Γ.supportGraph_edgeSet_of_src_ne_tgt F hF.src_ne_tgt]
   exact ⟨Set.mapsTo_image _ _, hF.endpoints_injOn, Set.surjOn_image _ _⟩
 
 /-- A spanning forest on finitely many vertices has finitely many actual darts, even if
@@ -113,11 +115,7 @@ theorem exists_spanningForest (Γ : SerreGraph.{u, v}) (O : Set Γ.E) :
   obtain ⟨F, hFO, hbij⟩ := hsurj.exists_bijOn_subset
   have hsupport : Γ.supportGraph F = H := by
     apply SimpleGraph.edgeSet_injective
-    rw [supportGraph_edgeSet]
-    have h : {e | e ∈ F ∧ Γ.src e ≠ Γ.tgt e} = F := by
-      ext e
-      exact ⟨And.left, fun he => ⟨he, (hFO he).2⟩⟩
-    rw [h, hbij.image_eq]
+    rw [Γ.supportGraph_edgeSet_of_src_ne_tgt F (fun _ he => (hFO he).2), hbij.image_eq]
   exact ⟨F, ⟨fun _ he => (hFO he).1, fun _ he => (hFO he).2,
     hbij.injOn, hsupport ▸ hH, hsupport ▸ hreach⟩⟩
 
@@ -126,11 +124,8 @@ This includes disconnected graphs and the empty graph. -/
 theorem IsSpanningForest.card [Finite Γ.V] (hF : Γ.IsSpanningForest O F) :
     Nat.card F + Nat.card (Γ.supportGraph O).ConnectedComponent = Nat.card Γ.V := by
   have hcard := hF.bijOn_endpoints.ncard_eq
-  have hcomp : Nat.card (Γ.supportGraph F).ConnectedComponent =
-      Nat.card (Γ.supportGraph O).ConnectedComponent := by
-    apply Nat.card_congr
-    -- Components are quotients by reachability, so the equality of relations gives this map.
-    exact Quot.congrRight fun x y => by rw [hF.reachable_eq]
+  have hcomp := Nat.card_congr
+    ((Γ.supportGraph F).connectedComponentEquivOfReachableEq hF.reachable_eq)
   have h := hF.isAcyclic.ncard_edgeSet_add_card_connectedComponent
   simpa only [Nat.card_coe_set_eq, ← hcard, hcomp] using h
 
