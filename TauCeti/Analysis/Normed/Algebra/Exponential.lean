@@ -104,9 +104,8 @@ variable {𝔸 : Type*} [NormedRing 𝔸]
 theorem norm_exp_le_mul_exp_of_norm_pow_le [NormedAlgebra ℚ 𝔸] {x : 𝔸} {M r : ℝ}
     (h : ∀ n : ℕ, ‖x ^ n‖ ≤ M * r ^ n) : ‖exp x‖ ≤ M * Real.exp r := by
   have hr := (exp_series_hasSum_exp' (𝕂 := ℝ) (𝔸 := ℝ) r).mul_left M
-  rw [exp_eq_tsum ℚ, Real.exp_eq_exp_ℝ, ← hr.tsum_eq]
-  refine (norm_tsum_le_tsum_norm (norm_expSeries_summable' (𝕂 := ℚ) x)).trans <|
-    Summable.tsum_le_tsum (fun n => ?_) (norm_expSeries_summable' (𝕂 := ℚ) x) hr.summable
+  rw [exp_eq_tsum ℚ, Real.exp_eq_exp_ℝ]
+  refine tsum_of_norm_bounded hr fun n => ?_
   have hfact : ‖((n ! : ℚ))⁻¹‖ = ((n ! : ℝ))⁻¹ := by
     rw [← Rat.norm_cast_real]
     simp
