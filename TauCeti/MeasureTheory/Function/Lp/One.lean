@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The constant one in `L∞`
 
 This file defines the constant-one element of `L∞` on an arbitrary measure space. Unlike
 `MeasureTheory.Lp.const`, the construction needs no finite-measure hypothesis because the
-essential supremum of a constant is always finite.
+essential supremum of a constant is always finite. Its integral is the total mass of the
+measure.
 -/
 
 public section
@@ -34,5 +36,10 @@ noncomputable def linftyOne : Lp ℝ ∞ μ :=
 theorem coeFn_linftyOne :
     (linftyOne (Ω := Ω) (μ := μ) : Ω → ℝ) =ᵐ[μ] fun _ => 1 :=
   MemLp.coeFn_toLp (memLp_top_const (1 : ℝ))
+
+/-- The integral of the constant one of `L∞` is the total mass. -/
+@[simp]
+theorem integral_linftyOne : ∫ x, (linftyOne : Lp ℝ ∞ μ) x ∂μ = μ.real Set.univ := by
+  simp [integral_congr_ae coeFn_linftyOne]
 
 end TauCeti

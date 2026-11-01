@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Order.Module.PositiveLinearMap
 public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
-public import TauCeti.MeasureTheory.Function.Lp.One
 
 /-!
 # Restriction and set integration on finite-measure sets
@@ -30,7 +29,6 @@ useful whenever an `Lᵖ` identity is tested against integrals on finite-measure
 * `Set.setIntegralLp`: integration on a finite-measure set as a continuous linear map on
   `Lᵖ`.
 * `Set.setIntegralLp_apply`: the pointwise formula for this map.
-* `TauCeti.integral_linftyOne`: the integral of the constant one of `L∞` is the total mass.
 * `MeasureTheory.Lp.integralPositiveLinearMap`: integration against a finite measure as a
   positive linear functional on real `Lᵖ`.
 -/
@@ -156,19 +154,6 @@ theorem setIntegralLp_apply (s : Set E) (hμs : μ s < ∞)
   exact integral_congr_ae (LpToL1RestrictCLM_coeFn s hμs f)
 
 end Set
-
-namespace TauCeti
-
-open MeasureTheory
-open scoped ENNReal
-
-/-- The integral of the constant one of `L∞` is the total mass. -/
-@[simp]
-theorem integral_linftyOne {E : Type*} [MeasurableSpace E] {μ : Measure E} :
-    ∫ x, (linftyOne : Lp ℝ ∞ μ) x ∂μ = μ.real Set.univ := by
-  simp [integral_congr_ae coeFn_linftyOne]
-
-end TauCeti
 
 namespace MeasureTheory.Lp
 
