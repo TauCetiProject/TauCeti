@@ -74,12 +74,6 @@ variable {K : Type uK} {M : Type uM} [DivisionRing K] [AddCommGroup M] [Module K
 private noncomputable def rangeGrading : InternalGrading K (range d) :=
   G.submodule (range d) hhom.isHomogeneous_range
 
-/-- The corestriction of `d` to its image has degree one. -/
-private theorem isHomogeneous_rangeRestrict :
-    TauCeti.LinearMap.IsHomogeneous d.rangeRestrict G.piece (G.rangeGrading hhom).piece 1 :=
-  TauCeti.LinearMap.isHomogeneous_def.2 fun _ _ hx ↦
-    (G.mem_submodule_piece (range d) hhom.isHomogeneous_range).2 (hhom.map_mem hx)
-
 /-- A homogeneous section of degree `-1` of the corestriction of `d` to its image. -/
 private noncomputable def rangeSection : range d →ₗ[K] M :=
   Classical.choose ((G.isHomogeneous_rangeRestrict hhom).exists_rightInverse
@@ -113,14 +107,6 @@ private theorem rangeRestrict_eq_zero_of_mem_ker {x : M} (hx : x ∈ LinearMap.k
   Subtype.ext hx
 
 /-! ### Homogeneous cycle representatives -/
-
-/-- The quotient map from cycles to homology has degree zero. -/
-private theorem isHomogeneous_homologyπ :
-    TauCeti.LinearMap.IsHomogeneous (d.homologyπ hd) (G.ker hhom).piece
-      (G.homology hhom hd).piece 0 :=
-  TauCeti.LinearMap.isHomogeneous_def.2 fun _ z hz ↦ by
-    rw [add_zero]
-    exact G.homologyπ_mem_homology_piece hhom hd ((G.mem_ker_piece hhom).1 hz)
 
 /-- A homogeneous choice of cycle representatives of homology classes. -/
 private noncomputable def representative : d.homology hd →ₗ[K] LinearMap.ker d :=
