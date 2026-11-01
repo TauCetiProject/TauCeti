@@ -21,12 +21,14 @@ full-dimensional standard simplex `Δᵖ = {x ∈ ℝᵖ | 0 ≤ xᵢ, ∑ xᵢ 
 
 `∫_σ φ = ∫_{Δᵖ} (σ^*φ)(e₁, …, eₚ) dx`,
 
-the Lebesgue integral over `Δᵖ` of the pullback of `φ`, evaluated on the standard basis of `ℝᵖ`.
+the Bochner integral over `Δᵖ` of the pullback of `φ`, evaluated on the standard basis of `ℝᵖ`.
+It is meaningful for a complete coefficient space `F` and an integrable integrand, such as that of a
+continuous form; otherwise Bochner's convention makes it `0`.
 The derivative of `σ` is taken within `Δᵖ`, where it is unique at every point, faces and corners
 included (`TauCeti.uniqueDiffOn_fullSimplex`), and it only depends on the values of `σ` on `Δᵖ`.
 Hence the integral may be computed from any map `g : ℝᵖ → M` that agrees with `σ` on `Δᵖ`
 (`TauCeti.SmoothSimplex.integral_eq_setIntegral_mpullbackWithin`), and with the ordinary pullback
-along such a `g` when it is differentiable on a neighbourhood of `Δᵖ`
+along such a `g` when it is differentiable at each point of `Δᵖ`
 (`TauCeti.SmoothSimplex.integral_eq_setIntegral_mpullback`). No single smooth extension of `σ` to a
 neighbourhood of `Δᵖ` need exist, which is why the derivative within `Δᵖ` defines the integral.
 
@@ -41,12 +43,10 @@ singular chains that underlies the de Rham homomorphism to singular cohomology.
 
 ## Main definitions and results
 
-* `TauCeti.SmoothSimplex`: the smooth singular `p`-simplices, the `p`-simplices of
-  `TauCeti.smoothSingularSubcomplex`.
-* `TauCeti.SmoothSimplex.toContinuousMap`: a smooth simplex as a map on `Δᵖ`.
 * `TauCeti.SmoothSimplex.integral`: the integral of a `p`-form over a smooth `p`-simplex.
-* `TauCeti.SmoothSimplex.integral_eq_setIntegral_mpullbackWithin`,
-  `TauCeti.SmoothSimplex.integral_eq_setIntegral_mpullback`: computation from any extension.
+* `TauCeti.SmoothSimplex.integral_eq_setIntegral_mpullbackWithin`: computation from any extension.
+* `TauCeti.SmoothSimplex.integral_eq_setIntegral_mpullback`: computation by the ordinary pullback
+  along an extension differentiable at the points of `Δᵖ`.
 * `TauCeti.SmoothSimplex.integral_add`, `TauCeti.SmoothSimplex.integral_smul`: linearity.
 * `TauCeti.SmoothSimplex.integral_smoothSingularSubcomplexMap_app`: naturality.
 * `TauCeti.SmoothSimplex.integral_ofFunction`: integration over a `0`-simplex is evaluation.
@@ -72,47 +72,20 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℕ}
 
-variable (I M) in
-/-- The smooth singular `p`-simplices of `M`: the `p`-simplices of the subcomplex
-`TauCeti.smoothSingularSubcomplex I M` of the singular simplicial set. They generate the smooth
-singular chains. -/
-abbrev SmoothSimplex (p : ℕ) : Type u :=
-  (smoothSingularSubcomplex I M : SSet.{u}) _⦋p⦌
-
 namespace SmoothSimplex
-
-/-- A smooth singular simplex as a continuous map on the full-dimensional simplex `Δᵖ`. -/
-def toContinuousMap (σ : SmoothSimplex I M p) : C(fullSimplex p, M) :=
-  ((TopCat.of M).toSSetObjEquiv _ σ.1).comp
-    ⟨fullSimplexEquivStdSimplex p, (fullSimplexEquivStdSimplex p).continuous⟩
-
-/-- A smooth singular simplex read on `Δᵖ` is the underlying singular simplex read through the
-identification of `Δᵖ` with the barycentric standard simplex. -/
-theorem toContinuousMap_apply (σ : SmoothSimplex I M p) (x : fullSimplex p) :
-    σ.toContinuousMap x = (TopCat.of M).toSSetObjEquiv _ σ.1 (fullSimplexEquivStdSimplex p x) :=
-  (rfl)
-
-/-- A smooth singular simplex is smooth on `Δᵖ` in the sense of maps on arbitrary subsets. -/
-theorem contMDiffOnSubset_toContinuousMap (σ : SmoothSimplex I M p) :
-    ContMDiffOnSubset I ∞ σ.toContinuousMap :=
-  (mem_smoothSingularSubcomplex_iff σ.1).mp σ.2
 
 /-- The integral of a `p`-form `φ` over a smooth singular `p`-simplex `σ`: the integral over the
 full-dimensional simplex `Δᵖ ⊆ ℝᵖ` of the pullback `σ^*φ` evaluated on the standard basis, with the
-derivative of `σ` taken within `Δᵖ`. To form that derivative, `σ` is extended to `ℝᵖ` by its value
-at the origin; only its values on `Δᵖ` matter
-(`TauCeti.SmoothSimplex.integral_eq_setIntegral_mpullbackWithin`). -/
-def integral (σ : SmoothSimplex I M p) (φ : RoughForm I M F p) : F :=
-  ∫ x in fullSimplex p, mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I
-    (Function.extend Subtype.val σ.toContinuousMap
-      fun _ ↦ σ.toContinuousMap ⟨0, zero_mem_fullSimplex p⟩)
-    (fullSimplex p) φ x fun i ↦ EuclideanSpace.single i 1
+derivative of `σ` taken within `Δᵖ`. To form that derivative, `σ` is extended to `ℝᵖ`
+(`TauCeti.SmoothSimplex.extension`); only its values on `Δᵖ` matter
+(`TauCeti.SmoothSimplex.integral_eq_setIntegral_mpullbackWithin`).
 
-/-- The extension of a smooth simplex used to define its integrals agrees with it on `Δᵖ`. -/
-private theorem extend_coe (σ : SmoothSimplex I M p) (x : fullSimplex p) :
-    Function.extend Subtype.val σ.toContinuousMap
-      (fun _ ↦ σ.toContinuousMap ⟨0, zero_mem_fullSimplex p⟩) x = σ.toContinuousMap x :=
-  Subtype.val_injective.extend_apply _ _ x
+This is a Bochner integral: it is meaningful when `F` is complete and the integrand is integrable,
+as for continuous forms (`TauCeti.SmoothSimplex.integrableOn_mpullbackWithin`), and it is `0`
+otherwise. -/
+def integral (σ : SmoothSimplex I M p) (φ : RoughForm I M F p) : F :=
+  ∫ x in fullSimplex p, mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I σ.extension
+    (fullSimplex p) φ x fun i ↦ EuclideanSpace.single i 1
 
 /-- The integral over a smooth simplex may be computed from any map `g : ℝᵖ → M` that agrees with
 the simplex on `Δᵖ`, differentiating within `Δᵖ`. -/
@@ -122,9 +95,10 @@ theorem integral_eq_setIntegral_mpullbackWithin (σ : SmoothSimplex I M p)
     σ.integral φ = ∫ x in fullSimplex p,
       mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I g (fullSimplex p) φ x
         fun i ↦ EuclideanSpace.single i 1 := by
+  rw [integral]
   refine setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet fun x hx ↦ ?_
-  rw [mpullbackWithin_congr (fun y hy ↦ ?_) hx]
-  rw [σ.extend_coe ⟨y, hy⟩, hg ⟨y, hy⟩]
+  rw [mpullbackWithin_congr (g := g) (fun y hy ↦ ?_) hx]
+  rw [σ.extension_coe ⟨y, hy⟩, hg ⟨y, hy⟩]
 
 /-- The integral over a smooth simplex may be computed by the ordinary pullback along any map
 `g : ℝᵖ → M` that agrees with the simplex on `Δᵖ` and is differentiable at each point of `Δᵖ`, for
@@ -145,14 +119,20 @@ section Linearity
 /-- The integral of the zero form vanishes. -/
 @[simp]
 theorem integral_zero (σ : SmoothSimplex I M p) : σ.integral (0 : RoughForm I M F p) = 0 := by
-  rw [integral, mpullbackWithin_zero]
+  simp only [integral, mpullbackWithin_zero, Pi.zero_apply]
+  -- `(0 : _ [⋀^Fin p]→L[ℝ] F) v` is `0` by definition of the zero alternating map, which `simp`
+  -- does not normalise when the domain is a tangent space.
   exact MeasureTheory.integral_zero _ _
 
-/-- The integral over a smooth simplex is homogeneous in the form. -/
+/-- The integral over a smooth simplex is homogeneous in the form, for any scalars acting on the
+coefficients compatibly with the real structure, such as complex scalars on complex-valued forms. -/
 @[simp]
-theorem integral_smul (σ : SmoothSimplex I M p) (c : ℝ) (φ : RoughForm I M F p) :
+theorem integral_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F] [NormSMulClass 𝕜 F]
+    [SMulCommClass ℝ 𝕜 F] (σ : SmoothSimplex I M p) (c : 𝕜) (φ : RoughForm I M F p) :
     σ.integral (c • φ) = c • σ.integral φ := by
-  rw [integral, integral, mpullbackWithin_smul]
+  simp only [integral, mpullbackWithin_smul, Pi.smul_apply]
+  -- `(c • ω x) v` is `c • ω x v` by definition of the scalar action on alternating maps; the
+  -- rewrite `ContinuousAlternatingMap.smul_apply` does not fire syntactically on tangent spaces.
   exact MeasureTheory.integral_smul c _
 
 variable [IsManifold I 1 M]
@@ -180,8 +160,10 @@ theorem integral_add (σ : SmoothSimplex I M p) {φ ψ : RoughForm I M F p}
     (hφ : IsSmoothForm I 0 φ) (hψ : IsSmoothForm I 0 ψ) :
     σ.integral (φ + ψ) = σ.integral φ + σ.integral ψ := by
   simp only [integral, mpullbackWithin_add, Pi.add_apply]
-  exact MeasureTheory.integral_add (σ.integrableOn_mpullbackWithin hφ σ.extend_coe)
-    (σ.integrableOn_mpullbackWithin hψ σ.extend_coe)
+  -- `(ω x + η x) v` is `ω x v + η x v` by definition of addition of alternating maps; the rewrite
+  -- `ContinuousAlternatingMap.add_apply` does not fire syntactically on tangent spaces.
+  exact MeasureTheory.integral_add (σ.integrableOn_mpullbackWithin hφ σ.extension_coe)
+    (σ.integrableOn_mpullbackWithin hψ σ.extension_coe)
 
 end Linearity
 
@@ -190,35 +172,19 @@ section Naturality
 variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} {N : Type u} [TopologicalSpace N] [ChartedSpace H' N]
 
-/-- The image of a smooth simplex under a smooth map, read on `Δᵖ`, is the composite. -/
-theorem toContinuousMap_smoothSingularSubcomplexMap_app {f : M → N} (hf : ContMDiff I J ∞ f)
-    (σ : SmoothSimplex I M p) :
-    toContinuousMap ((smoothSingularSubcomplexMap f hf).app (op ⦋p⦌) σ) =
-      (ContinuousMap.mk f hf.continuous).comp σ.toContinuousMap := by
-  have h := ConcreteCategory.congr_hom
-    (NatTrans.congr_app (smoothSingularSubcomplexMap_ι hf) (op ⦋p⦌)) σ
-  simp only [NatTrans.comp_app, ConcreteCategory.comp_apply, Subfunctor.ι_app,
-    TypeCat.ofHom_apply] at h
-  ext x
-  rw [toContinuousMap_apply, h, TopCat.toSSetObjEquiv_toSSet_map_app]
-  simp [toContinuousMap_apply]
-
 /-- **Naturality of integration over smooth simplices.** Integrating over the image of a smooth
 simplex under a smooth map is integrating the pulled-back form over the simplex. -/
 theorem integral_smoothSingularSubcomplexMap_app {f : M → N} (hf : ContMDiff I J ∞ f)
     (σ : SmoothSimplex I M p) (ψ : RoughForm J N F p) :
     integral ((smoothSingularSubcomplexMap f hf).app (op ⦋p⦌) σ) ψ =
       σ.integral (mpullback I J f ψ) := by
-  set g := Function.extend Subtype.val σ.toContinuousMap
-    fun _ ↦ σ.toContinuousMap ⟨0, zero_mem_fullSimplex p⟩
-  have hg : ∀ x : fullSimplex p, g x = σ.toContinuousMap x := σ.extend_coe
-  have hgs := σ.contMDiffOnSubset_toContinuousMap.contMDiffOn hg
-  rw [integral_eq_setIntegral_mpullbackWithin _ ψ (g := f ∘ g) fun x ↦ by
+  rw [integral_eq_setIntegral_mpullbackWithin _ ψ (g := f ∘ σ.extension) fun x ↦ by
     rw [toContinuousMap_smoothSingularSubcomplexMap_app]
-    simp [hg x]]
+    simp, integral]
   refine setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet fun x hx ↦ ?_
-  rw [mpullbackWithin_comp_at (t := univ) ((hgs x hx).mdifferentiableWithinAt (by simp))
-    (hf.mdifferentiable (by simp) (g x)).mdifferentiableWithinAt (mapsTo_univ _ _)
+  rw [mpullbackWithin_comp_at (t := univ)
+    ((σ.contMDiffOn_extension x hx).mdifferentiableWithinAt (by simp))
+    (hf.mdifferentiable (by simp) (σ.extension x)).mdifferentiableWithinAt (mapsTo_univ _ _)
     (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2 (uniqueDiffOn_fullSimplex p x hx)),
     mpullbackWithin_univ]
 
