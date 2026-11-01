@@ -13,7 +13,7 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 import TauCeti.Probability.ConditionalProbability
 import TauCeti.Probability.Distributions.Beta.Cdf
-import TauCeti.Probability.Distributions.Beta.Square
+import TauCeti.Probability.Distributions.Beta.Quantile
 import TauCeti.Probability.Distributions.Uniform.Basic
 import TauCeti.Probability.Moments.Covariance
 
