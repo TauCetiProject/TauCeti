@@ -16,8 +16,9 @@ an exterior `L²` lower bound at every mass strictly below `1/2`. The radius dep
 vortex and the chosen mass, but not on the compactly supported test field. No decay of the
 connection, choice of winding gauge, or derivative decay is assumed.
 
-The proof uses the general-field Weitzenböck formula from `Vortex.GaugeFixed`. The magnetic
-first-order terms complete to covariant-gradient squares, while the two potentials are
+The proof uses the Weitzenböck formula at a vortex
+(`gaugeFixedOperator_gaugeFixedAdjoint_of_equation_eq_zero`). The magnetic first-order terms
+complete to covariant-gradient squares, while the two potentials are
 `P = |α|²/4` and `1/8 + P/2`. Integrating the squared-norm Bochner identity eliminates the
 Laplacian. These are classical test-field estimates; they do not assert a completed Fredholm
 realization or a uniform inverse over the noncompact vortex moduli space.
@@ -36,21 +37,6 @@ open scoped Laplacian Topology RealInnerProductSpace
 
 variable {x η : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-private theorem hasCompactSupport_gaugeFixedAdjoint (hη : HasCompactSupport η) :
-    HasCompactSupport (gaugeFixedAdjoint x η) := by
-  apply hη.mono'
-  intro z hz
-  by_contra hn
-  have he : η =ᶠ[𝓝 z] 0 := notMem_tsupport_iff_eventuallyEq.mp hn
-  have hd (i : Fin 4) : fderiv ℝ (fun w ↦ η w i) z = 0 := by
-    have hei : (fun w ↦ η w i) =ᶠ[𝓝 z] 0 := by
-      filter_upwards [he] with w hw
-      simp [hw]
-    simpa using hei.fderiv_eq
-  apply hz
-  ext i
-  fin_cases i <;> simp [hd, he.eq_of_nhds]
-
 private theorem mass_mul_norm_sq_le_inner_add_laplacian {z : ℂ} {a : ℝ}
     (hx : DifferentiableAt ℝ x z) (hη : ContDiffAt ℝ 2 η z)
     (hsol : equation x z = 0) (ha : a ≤ 1 / 4)
@@ -66,8 +52,13 @@ private theorem mass_mul_norm_sq_le_inner_add_laplacian {z : ℂ} {a : ℝ}
     hη.laplacian_CLM_comp_left (l := EuclideanSpace.proj (𝕜 := ℝ) i)
   rw [gaugeFixedOperator_gaugeFixedAdjoint_of_equation_eq_zero hx hη hsol,
     hη.laplacian_norm_sq orthonormalBasisOneI]
-  simp [PiLp.inner_apply, Fin.sum_univ_four, EuclideanSpace.real_norm_sq_eq,
-    Fin.sum_univ_two, hΔi, hdi]
+  simp only [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four, Fin.isValue, hΔi, one_div, hdi,
+    ContinuousLinearMap.comp_apply, PiLp.proj_apply, PiLp.inner_apply, RCLike.inner_apply,
+    conj_trivial, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val,
+    coe_orthonormalBasisOneI, Nat.succ_eq_add_one, Nat.reduceAdd, Fin.sum_univ_two,
+    Matrix.cons_val_fin_one, ge_iff_le]
+  -- Complete the section derivatives to covariant-gradient squares. The remaining
+  -- zeroth-order terms have coefficients P - a and 1/8 + P/2 - a, both nonnegative.
   have hp : 0 ≤ x z 2 ^ 2 + x z 3 ^ 2 - a := by linarith
   have hq : 0 ≤ 1 / 8 + (x z 2 ^ 2 + x z 3 ^ 2) / 2 - a := by linarith
   nlinarith only [
@@ -83,11 +74,11 @@ private theorem mass_mul_norm_sq_le_inner_add_laplacian {z : ℂ} {a : ℝ}
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure]
 
 /-- The vortex adjoint has squared `L²` lower bound `a ≤ 1/4` on any compactly supported
-`C²` test field supported where `|α|²/4 ≥ a`. This is a support-local estimate, not a global
-spectral gap for all vortices. -/
+`C²` test field supported where the vortex equation holds and `|α|²/4 ≥ a`.
+This is a support-local estimate, not a global spectral gap for all vortices. -/
 theorem mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint
     (hx : ContDiff ℝ 1 x) (hη : ContDiff ℝ 2 η) (hc : HasCompactSupport η)
-    (hsol : ∀ z, equation x z = 0) {a : ℝ} (ha : a ≤ 1 / 4)
+    (hsol : ∀ z, η z ≠ 0 → equation x z = 0) {a : ℝ} (ha : a ≤ 1 / 4)
     (hP : ∀ z, η z ≠ 0 → a ≤ x z 2 ^ 2 + x z 3 ^ 2) :
     a * (∫ z, ‖η z‖ ^ 2 ∂μ) ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ := by
   have hη₁ : ContDiff ℝ 1 η := hη.of_le (by norm_num)
@@ -109,12 +100,12 @@ theorem mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint
       ⟪gaugeFixedOperator x (gaugeFixedAdjoint x η) z, η z⟫ +
         Δ (fun w ↦ ‖η w‖ ^ 2) z / 2 := by
     by_cases hz : η z = 0
-    · rw [hz, norm_zero, zero_pow two_ne_zero, mul_zero, inner_zero_right, zero_add,
-        hη.contDiffAt.laplacian_norm_sq orthonormalBasisOneI]
-      simp only [hz, inner_zero_left, mul_zero, add_zero]
-      positivity
+    · rw [hη.contDiffAt.laplacian_norm_sq orthonormalBasisOneI]
+      have hs : 0 ≤ (2 * ∑ i : Fin 2, ‖fderiv ℝ η z (orthonormalBasisOneI i)‖ ^ 2) / 2 :=
+        by positivity
+      simpa [hz] using hs
     · exact mass_mul_norm_sq_le_inner_add_laplacian
-        (hx.differentiable one_ne_zero z) hη.contDiffAt (hsol z) ha (hP z hz)
+        (hx.differentiable one_ne_zero z) hη.contDiffAt (hsol z hz) ha (hP z hz)
   have hb := integral_mono hn (hi.add hΔ) hbound
   simp only [Pi.add_apply] at hb
   rw [integral_const_mul, integral_add hi hΔ, integral_div,
@@ -122,9 +113,9 @@ theorem mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint
     zero_div, add_zero, integral_inner_gaugeFixedOperator hx.continuous hA hAc hη₁] at hb
   simpa only [real_inner_self_eq_norm_sq] using hb
 
-/-- At every mass strictly below the vacuum mass `1/2`, an actual vortex with unit-modulus
-end has an exterior adjoint `L²` estimate. The same radius works for all compactly supported
-`C²` test fields vanishing on that closed disc. -/
+/-- For an actual vortex with unit-modulus end and `0 < c < 1/2`, there is a radius `R > 0`,
+depending only on the vortex and `c`, such that `c² ∫|η|² ≤ ∫|L_x* η|²` for every compactly
+supported `C²` field `η` vanishing on the closed disc of radius `R` about the origin. -/
 theorem exists_exterior_integral_norm_sq_gaugeFixedAdjoint_ge
     (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
@@ -137,7 +128,7 @@ theorem exists_exterior_integral_norm_sq_gaugeFixedAdjoint_ge
   rw [← Metric.cobounded_eq_cocompact] at he
   obtain ⟨R, _, hR⟩ := Filter.hasBasis_cobounded_norm.mem_iff.mp he
   refine ⟨max R 1, by positivity, fun η hη hηc hzero ↦
-    mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint hx hη hηc hsol
+    mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint hx hη hηc (fun z _ ↦ hsol z)
       (by nlinarith) ?_⟩
   intro z hz
   have hnorm : max R 1 < ‖z‖ := lt_of_not_ge fun h ↦ hz (hzero z h)
