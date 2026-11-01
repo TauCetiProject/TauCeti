@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.HuberPair
+public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.FiniteFibre
 public import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.LyingOver
 public import TauCeti.RingTheory.Huber.ModuleTopology.Pair
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
@@ -33,6 +34,11 @@ finite étale) morphism, surjectivity on adic spectra forces faithful flatness
 (`TauCeti.Huber.Pair.Hom.faithfullyFlat_of_surjective_spaComap`). Hence a finite étale morphism of
 Huber pairs over such a base is surjective on adic spectra exactly when it is faithfully flat.
 
+In the other direction, the fibres of a finite étale morphism are finite, with at most as many
+points over `x` as the rank of `B` at the support of `x`. Over any base, `Spa(B, B⁺)` sits inside
+`Spv B`, so this is the fibre bound for valuation spectra along finite flat ring maps
+(`TauCeti.ValuationSpectrum.ncard_preimage_comap_singleton_le_rankAtStalk`).
+
 The content is the continuity of `w` given that of its pullback. Fix a pseudouniformiser `ϖ` of
 `A`. The integers of the pullback of `w` form an open subring of `A`, so the integral closure `C`
 of their image is open in `B` (`TauCeti.Huber.isOpen_integralClosure_map_algebraMap`) and `w ≤ 1`
@@ -53,6 +59,8 @@ holds because `B` is integral over `A` (`Valuation.exists_pow_lt_of_isIntegral`)
 * `TauCeti.Huber.Pair.Hom.IsFiniteEtale.surjective_spaComap_iff`: over a complete Hausdorff Tate
   ring, a finite étale morphism of Huber pairs is surjective on adic spectra if and only if it is
   faithfully flat.
+* `TauCeti.Huber.Pair.Hom.IsFiniteEtale.finite_fibre`: the fibre of a finite étale morphism of
+  Huber pairs over a point `x` is finite, of cardinality at most the rank of `B` at `supp x`.
 
 ## References
 
@@ -193,6 +201,41 @@ theorem IsFiniteEtale.surjective_spaComap_iff {φ : Hom S T} (hφ : φ.IsFiniteE
     (RingHom.Etale.iff_flat_and_formallyUnramified.mp hφ.etale).1, hφ.surjective_spaComap⟩
 
 end Complete
+
+end Huber.Pair.Hom
+
+namespace Huber.Pair.Hom
+
+open ValuationSpectrum
+
+variable {A B : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+  [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B] {S : Pair A}
+  {T : Pair B}
+
+/-- **The fibres of a finite étale morphism of Huber pairs.** If `φ : (A, A⁺) → (B, B⁺)` is finite
+étale, the points of `Spa(B, B⁺)` over a point `x` of `Spa(A, A⁺)` form a finite set with at most
+`rank_x B` elements, the rank of the finite projective `A`-module `B` at the support of `x`. -/
+theorem IsFiniteEtale.finite_fibre {φ : Hom S T} (hφ : φ.IsFiniteEtale) (x : spa S.plus) :
+    (φ.spaComap ⁻¹' {x}).Finite ∧
+      Nat.card (φ.spaComap ⁻¹' {x}) ≤
+        letI := φ.toRingHom.toAlgebra; Module.rankAtStalk (R := A) B (suppFun x.1) := by
+  let := φ.toRingHom.toAlgebra
+  have : Module.Finite A B := hφ.finite
+  have : Module.Flat A B := (RingHom.Etale.iff_flat_and_formallyUnramified.mp hφ.etale).1
+  -- the fibre of `Spa` embeds in the fibre of `Spv`
+  let ι : φ.spaComap ⁻¹' {x} → ValuationSpectrum.comap (algebraMap A B) ⁻¹' {x.1} :=
+    fun y ↦ ⟨y.1.1, (spaComap_val φ y).symm.trans (congrArg Subtype.val y.2)⟩
+  have hι : Function.Injective ι := fun y y' h ↦ by
+    have h' := congrArg Subtype.val h
+    exact Subtype.ext (Subtype.ext h')
+  have hfin := finite_preimage_comap_singleton (B := B) x.1
+  have := hfin.to_subtype
+  refine ⟨Set.finite_coe_iff.mp (Finite.of_injective ι hι), ?_⟩
+  calc Nat.card (φ.spaComap ⁻¹' {x})
+      ≤ Nat.card (ValuationSpectrum.comap (algebraMap A B) ⁻¹' {x.1}) :=
+        Nat.card_le_card_of_injective ι hι
+    _ ≤ Module.rankAtStalk (R := A) B (suppFun x.1) :=
+      ncard_preimage_comap_singleton_le_rankAtStalk x.1
 
 end Huber.Pair.Hom
 
