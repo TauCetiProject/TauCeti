@@ -12,6 +12,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Cha
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Coordinates
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # Mixed covariant derivatives on a parametrized surface
@@ -63,27 +64,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [ContMDiffCovariantDerivative cov ∞]
   {f : ℝ → ℝ → M} {W : ∀ q r, TangentSpace I (f q r)} {u v : ℝ}
 
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- A `C²` vector field along a parametrized surface reads in the chart at `f u v` as a `C²`
-surface and a `C²` map of the two parameters. -/
-private theorem contDiffAt_chart_surface
-    (hW : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I.tangent 2
-      (fun z : ℝ × ℝ ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (u, v)) :
-    ContDiffAt ℝ 2 (fun z : ℝ × ℝ ↦ extChartAt I (f u v) (f z.1 z.2)) (u, v) ∧
-      ContDiffAt ℝ 2 (fun z : ℝ × ℝ ↦
-        (trivializationAt E (TangentSpace I) (f u v)).continuousLinearMapAt ℝ (f z.1 z.2)
-          (W z.1 z.2)) (u, v) := by
-  have hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ f z.1 z.2) (u, v) :=
-    (contMDiff_proj (TangentSpace I)).contMDiffAt.comp (u, v) hW
-  refine ⟨contMDiffAt_iff_contDiffAt.mp
-    ((contMDiffAt_extChartAt' (mem_chart_source H (f u v))).comp (u, v) hf), ?_⟩
-  refine (contMDiffAt_iff_contDiffAt.mp (contMDiffAt_totalSpace.mp hW).2).congr_of_eventuallyEq ?_
-  filter_upwards [hf.continuousAt.preimage_mem_nhds
-    ((trivializationAt E (TangentSpace I) (f u v)).open_baseSet.mem_nhds
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) _))] with z hz
-  exact (trivializationAt E (TangentSpace I) (f u v)).continuousLinearMapAt_apply_of_mem
-    (R := ℝ) hz _
-
 /-- **The mixed covariant derivative in the chart at the point.** For a `C²` vector field `W`
 along a parametrized surface `f`, the covariant derivative along the first-parameter curve of the
 covariant derivatives along the second-parameter curves, read in the chart at `f u v`. -/
@@ -118,8 +98,10 @@ private theorem alongCurve_alongCurve_eq_symmL
   have hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ f z.1 z.2) (u, v) :=
     (contMDiff_proj (TangentSpace I)).contMDiffAt.comp (u, v) hW
   -- The chart readings of the surface and of the field are `C²`.
-  have hφ : ContDiffAt ℝ 2 φ (u, v) := hφdef ▸ (contDiffAt_chart_surface hW).1
-  have hw : ContDiffAt ℝ 2 w (u, v) := hwdef ▸ (contDiffAt_chart_surface hW).2
+  have hφ : ContDiffAt ℝ 2 φ (u, v) := hφdef ▸ contMDiffAt_iff_contDiffAt.mp
+    ((contMDiffAt_extChartAt' (mem_chart_source H (f u v))).comp (u, v) hf)
+  have hw : ContDiffAt ℝ 2 w (u, v) :=
+    hwdef ▸ hW.contDiffAt_continuousLinearMapAt_trivializationAt
   -- Near `u`, the field is `C²` at the points `(q, v)`, which lie over the chart at `f u v`.
   have hslice : ∀ᶠ q in 𝓝 u, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I.tangent 2
       (fun z : ℝ × ℝ ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (q, v) ∧ f q v ∈ e.baseSet :=
@@ -202,8 +184,9 @@ theorem alongCurve_alongCurve_sub_alongCurve_alongCurve
     rw [h, e.symmL_continuousLinearMapAt (R := ℝ) hγt]
   have hWuv : W u v = e.symmL ℝ (f u v) (w (u, v)) :=
     (e.symmL_continuousLinearMapAt (R := ℝ) hbase _).symm
-  have hφ : ContDiffAt ℝ 2 φ (u, v) := (contDiffAt_chart_surface hW).1
-  have hw : ContDiffAt ℝ 2 w (u, v) := (contDiffAt_chart_surface hW).2
+  have hφ : ContDiffAt ℝ 2 φ (u, v) := contMDiffAt_iff_contDiffAt.mp
+    ((contMDiffAt_extChartAt' (mem_chart_source H (f u v))).comp (u, v) hf)
+  have hw : ContDiffAt ℝ 2 w (u, v) := hW.contDiffAt_continuousLinearMapAt_trivializationAt
   rw [hvel (γ := fun q ↦ f q v) hbase
       ((hf.comp u (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left (n := 2) v)).contMDiffAt)
         |>.mdifferentiableAt (by norm_num)),
