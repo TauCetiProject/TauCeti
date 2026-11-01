@@ -47,35 +47,29 @@ noncomputable def relativeTensorProductHomeomorph :
       {p : (A →ₐ[k] R) × (B →ₐ[k] R) //
         p.1.comp (IsScalarTower.toAlgHom k C A) =
           p.2.comp (IsScalarTower.toAlgHom k C B)} where
-  toFun x := ⟨⟨x.comp Algebra.TensorProduct.includeLeft,
-    x.comp (Algebra.TensorProduct.includeRight.restrictScalars k)⟩,
-    x.comp_includeLeft_eq_comp_includeRight⟩
-  invFun p := p.1.1.tensorProductLift p.1.2 p.2
-  left_inv x := by
-    apply AlgHom.toRingHom_injective
-    apply Algebra.TensorProduct.ringHom_ext <;> ext <;> simp [← Algebra.TensorProduct.one_def]
-  right_inv p := by ext <;> simp
-  continuous_toFun := ((continuous_comap _).prodMk (continuous_comap _)).subtype_mk _
+  toEquiv := relativeTensorProductEquiv k C A B R
+  continuous_toFun := continuous_induced_rng.2 (by
+    simpa only [Equiv.toFun_as_coe, Function.comp_def, relativeTensorProductEquiv_apply_coe]
+      using (continuous_comap (Algebra.TensorProduct.includeLeft (R := C))).prodMk
+        (continuous_comap (Algebra.TensorProduct.includeRight.restrictScalars k)))
   continuous_invFun := by
-    refine continuous_iff.2 fun t ↦ ?_
-    induction t using TensorProduct.inductionOn with
-    | tmul a b =>
-      simpa only [AlgHom.tensorProductLift_tmul, Function.comp_apply] using
-        ((continuous_eval a).comp (continuous_fst.comp continuous_subtype_val)).fun_mul
-          ((continuous_eval b).comp (continuous_snd.comp continuous_subtype_val))
-    | add t u ht hu => simpa only [map_add] using ht.fun_add hu
+    refine continuous_of_continuous_tmul _ fun a b ↦ ?_
+    simpa only [Equiv.invFun_as_coe, relativeTensorProductEquiv_symm_apply,
+      AlgHom.tensorProductLift_tmul, Function.comp_apply] using
+      ((continuous_eval a).comp (continuous_fst.comp continuous_subtype_val)).fun_mul
+        ((continuous_eval b).comp (continuous_snd.comp continuous_subtype_val))
 
 /-- The fibre-product comparison restricts a point to the left tensor factor. -/
 @[simp]
 theorem relativeTensorProductHomeomorph_apply_fst (x : A ⊗[C] B →ₐ[k] R) (a : A) :
-    (relativeTensorProductHomeomorph k C A B R x).1.1 a = x (a ⊗ₜ[C] 1) :=
-  (rfl)
+    (relativeTensorProductHomeomorph k C A B R x).1.1 a = x (a ⊗ₜ[C] 1) := by
+  simp [relativeTensorProductHomeomorph]
 
 /-- The fibre-product comparison restricts a point to the right tensor factor. -/
 @[simp]
 theorem relativeTensorProductHomeomorph_apply_snd (x : A ⊗[C] B →ₐ[k] R) (b : B) :
-    (relativeTensorProductHomeomorph k C A B R x).1.2 b = x (1 ⊗ₜ[C] b) :=
-  (rfl)
+    (relativeTensorProductHomeomorph k C A B R x).1.2 b = x (1 ⊗ₜ[C] b) := by
+  simp [relativeTensorProductHomeomorph]
 
 /-- The inverse fibre-product comparison multiplies coordinate values on pure tensors. -/
 @[simp]
@@ -84,33 +78,28 @@ theorem relativeTensorProductHomeomorph_symm_apply_tmul
       p.1.comp (IsScalarTower.toAlgHom k C A) =
         p.2.comp (IsScalarTower.toAlgHom k C B)}) (a : A) (b : B) :
     (relativeTensorProductHomeomorph k C A B R).symm p (a ⊗ₜ[C] b) =
-      p.1.1 a * p.1.2 b :=
-  AlgHom.tensorProductLift_tmul _ _ _ _ _
+      p.1.1 a * p.1.2 b := by
+  simp [relativeTensorProductHomeomorph]
 
 /-- Restricting to the tensor factors embeds points in the product of the two point spaces. -/
-theorem isEmbedding_relativeTensorProduct :
+theorem isEmbedding_restrict_tensorProduct :
     IsEmbedding fun x : A ⊗[C] B →ₐ[k] R ↦
       (x.comp Algebra.TensorProduct.includeLeft,
-        x.comp (Algebra.TensorProduct.includeRight.restrictScalars k)) :=
-  IsEmbedding.subtypeVal.comp (relativeTensorProductHomeomorph k C A B R).isEmbedding
+        x.comp (Algebra.TensorProduct.includeRight.restrictScalars k)) := by
+  simpa only [Function.comp_def, relativeTensorProductHomeomorph,
+    Homeomorph.homeomorph_mk_coe, relativeTensorProductEquiv_apply_coe] using
+    IsEmbedding.subtypeVal.comp (relativeTensorProductHomeomorph k C A B R).isEmbedding
 
 /-- The compatible-pair comparison has closed image over a Hausdorff coefficient semiring.
 In particular this applies to every T1 topological ring, which is automatically Hausdorff. -/
-theorem isClosedEmbedding_relativeTensorProduct [T2Space R] :
+theorem isClosedEmbedding_restrict_tensorProduct [T2Space R] :
     IsClosedEmbedding fun x : A ⊗[C] B →ₐ[k] R ↦
       (x.comp Algebra.TensorProduct.includeLeft,
         x.comp (Algebra.TensorProduct.includeRight.restrictScalars k)) := by
-  refine ⟨isEmbedding_relativeTensorProduct, ?_⟩
-  rw [AlgHom.range_tensorProduct_restrict]
-  have heq : {p : (A →ₐ[k] R) × (B →ₐ[k] R) |
-      p.1.comp (IsScalarTower.toAlgHom k C A) =
-        p.2.comp (IsScalarTower.toAlgHom k C B)} =
-      ⋂ c : C, {p | p.1 (algebraMap C A c) = p.2 (algebraMap C B c)} := by
-    ext p
-    simp only [Set.mem_ofPred_eq, Set.mem_iInter, AlgHom.ext_iff, AlgHom.comp_apply,
-      IsScalarTower.coe_toAlgHom']
-  rw [heq]
-  exact isClosed_iInter fun c ↦ isClosed_eq
-    ((continuous_eval _).comp continuous_fst) ((continuous_eval _).comp continuous_snd)
+  refine ⟨isEmbedding_restrict_tensorProduct, ?_⟩
+  rw [range_restrict_tensorProduct]
+  have := (isEmbedding_coeFn (k := k) (A := C) (R := R)).t2Space
+  exact isClosed_eq ((continuous_comap _).comp continuous_fst)
+    ((continuous_comap _).comp continuous_snd)
 
 end TauCeti.PointTopology
