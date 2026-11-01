@@ -36,6 +36,9 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
   containing `x` under `Spec κ(x) ⟶ X` is everything.
 * `AlgebraicGeometry.Scheme.fromSpecResidueField_appLE`: on an open containing `x`, the morphism
   `Spec κ(x) ⟶ X` sends a function to its value at `x`.
+* `AlgebraicGeometry.Scheme.residueFieldSectionsIso`: for an open `V` containing `x`, the functions
+  on the inverse image of `V` in `Spec κ(x)` are `κ(x)`, and `Spec κ(x) ⟶ X` acts on sections over
+  `V` by evaluation at `x` (`Scheme.fromSpecResidueField_app_residueFieldSectionsIso_hom`).
 * `RingHom.isIso_SpecMap_residueFieldMap_iff`: for a ring map `φ : R →+* S` and a prime
   `x` of `S`, the residue field map of `Spec S ⟶ Spec R` at `x` is an isomorphism iff the map of
   residue fields `κ(φ⁻¹ x) → κ(x)` is bijective. This translates conditions on residue fields
@@ -118,6 +121,42 @@ lemma Scheme.fromSpecResidueField_appLE {V : X.Opens} (hx : x ∈ V)
     (Spec.map (X.residue x) ≫ X.fromSpecStalk x) V hV).symm
   rw [Scheme.Hom.appLE, Category.assoc, Iso.trans_hom, Functor.mapIso_hom]
   congr 2
+
+/-- For an open `V` containing `x`, the functions on `ι⁻¹ V = Spec κ(x)` are `κ(x)`, where
+`ι : Spec κ(x) ⟶ X`. -/
+noncomputable def Scheme.residueFieldSectionsIso {V : X.Opens} (hx : x ∈ V) :
+    Γ(Spec (X.residueField x), X.fromSpecResidueField x ⁻¹ᵁ V) ≅ X.residueField x :=
+  ((Spec (X.residueField x)).presheaf.mapIso
+    (eqToIso (fromSpecResidueField_preimage_eq_top x hx)).op).symm ≪≫
+    Scheme.ΓSpecIso (X.residueField x)
+
+/-- The inverse of `Scheme.residueFieldSectionsIso` is restriction from `⊤` to `ι⁻¹ V`. -/
+lemma Scheme.residueFieldSectionsIso_inv {V : X.Opens} (hx : x ∈ V) :
+    (X.residueFieldSectionsIso x hx).inv = (Scheme.ΓSpecIso (X.residueField x)).inv ≫
+      (Spec (X.residueField x)).presheaf.map (homOfLE le_top).op := by
+  rw [residueFieldSectionsIso, Iso.trans_inv]
+  rfl
+
+/-- The identifications `Scheme.residueFieldSectionsIso` commute with restriction. -/
+@[reassoc (attr := simp)]
+lemma Scheme.residueFieldSectionsIso_map {U V : X.Opens} (hU : x ∈ U) (hV : x ∈ V)
+    (j : X.fromSpecResidueField x ⁻¹ᵁ U ⟶ X.fromSpecResidueField x ⁻¹ᵁ V) :
+    (Spec (X.residueField x)).presheaf.map j.op ≫ (X.residueFieldSectionsIso x hU).hom =
+      (X.residueFieldSectionsIso x hV).hom := by
+  rw [residueFieldSectionsIso, residueFieldSectionsIso, Iso.trans_hom, Iso.trans_hom,
+    ← Category.assoc]
+  rfl
+
+/-- On an open `V` containing `x`, the morphism `ι : Spec κ(x) ⟶ X` acts on sections by
+evaluation at `x`. -/
+@[reassoc (attr := simp)]
+lemma Scheme.fromSpecResidueField_app_residueFieldSectionsIso_hom {V : X.Opens} (hx : x ∈ V) :
+    (X.fromSpecResidueField x).app V ≫ (X.residueFieldSectionsIso x hx).hom =
+      X.evaluation V x hx := by
+  rw [← Iso.eq_comp_inv, residueFieldSectionsIso_inv, ← Category.assoc,
+    ← fromSpecResidueField_appLE x hx (fromSpecResidueField_preimage_eq_top x hx).ge,
+    Scheme.Hom.appLE_map]
+  rfl
 
 end FromSpecResidueField
 

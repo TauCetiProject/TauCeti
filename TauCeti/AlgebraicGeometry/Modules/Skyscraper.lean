@@ -64,32 +64,11 @@ over the others (`subsingleton_skyscraperResidueField`). -/
 def _root_.AlgebraicGeometry.Scheme.skyscraperResidueField (x : X) : X.Modules :=
   (Scheme.Modules.pushforward (X.fromSpecResidueField x)).obj (SheafOfModules.unit _)
 
-private def residueFieldSectionsIso (x : X) {U : X.Opens} (hx : x ∈ U) :
-    Γ(Spec (X.residueField x), X.fromSpecResidueField x ⁻¹ᵁ U) ≅ X.residueField x :=
-  ((Spec (X.residueField x)).presheaf.mapIso
-    (eqToIso (Scheme.fromSpecResidueField_preimage_eq_top x hx)).op).symm ≪≫
-    Scheme.ΓSpecIso (X.residueField x)
-
-/-- On an open subset containing `x`, the morphism `Spec κ(x) ⟶ X` acts on sections by
-evaluation at `x`. -/
-private lemma app_comp_residueFieldSectionsIso (x : X) {U : X.Opens} (hx : x ∈ U) :
-    (X.fromSpecResidueField x).app U ≫ (residueFieldSectionsIso x hx).hom =
-      X.evaluation U x hx := by
-  -- Restriction along `ι⁻¹ U = ⊤` is restriction along `⊤ ≤ ι⁻¹ U`, which makes the left side
-  -- the map `appLE` computed by `Scheme.fromSpecResidueField_appLE`.
-  have h := (Scheme.fromSpecResidueField_preimage_eq_top x hx).ge
-  have e : ((Spec (X.residueField x)).presheaf.mapIso
-      (eqToIso (Scheme.fromSpecResidueField_preimage_eq_top x hx)).op).symm.hom =
-        (Spec (X.residueField x)).presheaf.map (homOfLE h).op :=
-    congrArg (Spec (X.residueField x)).presheaf.map (Subsingleton.elim _ _)
-  rw [residueFieldSectionsIso, Iso.trans_hom, ← Category.assoc, e, ← Scheme.Hom.appLE,
-    Scheme.fromSpecResidueField_appLE x hx, Category.assoc, Iso.inv_hom_id, Category.comp_id]
-
 /-- The sections of the skyscraper sheaf `κ(x)ₓ` over an open subset containing `x` are the
 residue field `κ(x)`. -/
 def _root_.AlgebraicGeometry.Scheme.skyscraperResidueFieldEquiv (x : X) {U : X.Opens} (hx : x ∈ U) :
     Γ(skyscraperResidueField x, U) ≃+ X.residueField x :=
-  (residueFieldSectionsIso x hx).commRingCatIsoToRingEquiv.toAddEquiv
+  (Scheme.residueFieldSectionsIso x hx).commRingCatIsoToRingEquiv.toAddEquiv
 
 /-- A regular function acts on the sections of `κ(x)ₓ` by multiplication with its value at `x`. -/
 @[simp]
@@ -100,12 +79,13 @@ lemma _root_.AlgebraicGeometry.Scheme.skyscraperResidueFieldEquiv_smul
       X.evaluation U x hx r * skyscraperResidueFieldEquiv x hx s := by
   -- The action of `Γ(X, U)` on the pushforward is multiplication after applying the map on
   -- sections; the module-sheaf section type is definitionally the corresponding ring of sections
-  -- of `Spec κ(x)`, the form used by `app_comp_residueFieldSectionsIso`.
+  -- of `Spec κ(x)`, the form used by
+  -- `Scheme.fromSpecResidueField_app_residueFieldSectionsIso_hom`.
   have h : skyscraperResidueFieldEquiv x hx (r • s) =
-      (residueFieldSectionsIso x hx).hom ((X.fromSpecResidueField x).app U r *
+      (Scheme.residueFieldSectionsIso x hx).hom ((X.fromSpecResidueField x).app U r *
         (id s : Γ(Spec (X.residueField x), X.fromSpecResidueField x ⁻¹ᵁ U))) := rfl
   rw [h, map_mul, ← CategoryTheory.ConcreteCategory.comp_apply,
-    app_comp_residueFieldSectionsIso]
+    Scheme.fromSpecResidueField_app_residueFieldSectionsIso_hom]
   rfl
 
 /-- The identifications of the sections of `κ(x)ₓ` with `κ(x)` commute with restriction. -/
@@ -117,16 +97,18 @@ lemma _root_.AlgebraicGeometry.Scheme.skyscraperResidueFieldEquiv_map
       skyscraperResidueFieldEquiv x (i.le hx) s := by
   dsimp only [skyscraperResidueField, Scheme.Modules.pushforward_obj_presheaf_map]
   -- `pushforward_obj_presheaf_map` identifies the restriction map, but its source remains the
-  -- module-sheaf section carrier, while `residueFieldSectionsIso` uses the definitionally equal
-  -- ring-sheaf section carrier. There is no bundled equivalence between those carriers, so this
-  -- conversion is needed before composing the named restriction map with the section isomorphism.
-  change (residueFieldSectionsIso x hx).hom
+  -- module-sheaf section carrier, while `Scheme.residueFieldSectionsIso` uses the definitionally
+  -- equal ring-sheaf section carrier. There is no bundled equivalence between those carriers, so
+  -- this conversion is needed before composing the named restriction map with the section
+  -- isomorphism.
+  change (Scheme.residueFieldSectionsIso x hx).hom
     ((Spec (X.residueField x)).presheaf.map
       ((Opens.map (X.fromSpecResidueField x).base).map i).op
         (id s : Γ(Spec (X.residueField x), X.fromSpecResidueField x ⁻¹ᵁ V))) =
-          (residueFieldSectionsIso x (i.le hx)).hom s
-  rw [← CategoryTheory.ConcreteCategory.comp_apply]
-  congr 1
+          (Scheme.residueFieldSectionsIso x (i.le hx)).hom s
+  rw [← CategoryTheory.ConcreteCategory.comp_apply,
+    Scheme.residueFieldSectionsIso_map x hx (i.le hx)]
+  rfl
 
 /-- The skyscraper sheaf `κ(x)ₓ` has no nonzero sections over an open subset not containing
 `x`. -/

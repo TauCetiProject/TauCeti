@@ -141,33 +141,26 @@ private instance isIso_homOfLE_preimage :
     IsIso (homOfLE le_top : X.fromSpecResidueField y ⁻¹ᵁ U ⟶ ⊤) :=
   homOfLE_isIso_of_eq _ (fromSpecResidueField_preimage_eq_top (y : X) y.2)
 
-/-- On `U ∋ y`, the morphism `ι : Spec κ(y) ⟶ X` sends a function to its value at `y`, restricted
-from `⊤` to `ι⁻¹ U`. -/
-private lemma app_fromSpecResidueField_apply (r : Γ(X, U)) :
-    (X.fromSpecResidueField y).app U r = (Spec (X.residueField y)).presheaf.map (homOfLE le_top).op
-      ((Scheme.ΓSpecIso (X.residueField y)).inv (X.evaluation U y y.2 r)) := by
-  rw [Scheme.Hom.app_eq_appLE, ← Scheme.Hom.appLE_map _ (top_le_preimage (y : X) y.2),
-    fromSpecResidueField_appLE (y : X) y.2, CommRingCat.comp_apply, CommRingCat.comp_apply]
-
-/-- `κ(y) ≅ Γ(Spec κ(y), ι⁻¹ U)` as `Γ(X, U)`-modules, by restriction from `⊤` to `ι⁻¹ U = ⊤`. -/
+/-- `κ(y) ≅ Γ(Spec κ(y), ι⁻¹ U)` as `Γ(X, U)`-modules: the inverse of
+`Scheme.residueFieldSectionsIso`, which is restriction from `⊤` to `ι⁻¹ U = ⊤`. -/
 private def residueFieldEquivPreimage :
     X.residueField y ≃ₗ[Γ(X, U)] Γ(Spec (X.residueField y), X.fromSpecResidueField y ⁻¹ᵁ U) :=
   LinearEquiv.ofBijective
-    { toFun c := (Spec (X.residueField y)).presheaf.map (homOfLE le_top).op
-        ((Scheme.ΓSpecIso (X.residueField y)).inv c)
+    { toFun := (X.residueFieldSectionsIso (y : X) y.2).inv
       map_add' := by simp
       map_smul' r c := by
-        rw [Algebra.smul_def, Algebra.smul_def, RingHom.id_apply, map_mul, map_mul]
         -- `ι` acts on `r` as the global function given by its value at `y`.
-        exact congrArg (· * _) (app_fromSpecResidueField_apply y r).symm }
-    (ConcreteCategory.bijective_of_isIso
-      ((Scheme.ΓSpecIso (X.residueField y)).inv ≫
-        (Spec (X.residueField y)).presheaf.map (homOfLE le_top).op))
+        have h := (Iso.eq_comp_inv _).2
+          (fromSpecResidueField_app_residueFieldSectionsIso_hom (y : X) y.2)
+        rw [Algebra.smul_def, Algebra.smul_def, RingHom.id_apply, map_mul]
+        exact congrArg (· * _) (ConcreteCategory.congr_hom h r).symm }
+    (ConcreteCategory.bijective_of_isIso (X.residueFieldSectionsIso (y : X) y.2).inv)
 
 private lemma residueFieldEquivPreimage_apply (c : X.residueField y) :
     residueFieldEquivPreimage y c = (Spec (X.residueField y)).presheaf.map (homOfLE le_top).op
-      ((Scheme.ΓSpecIso (X.residueField y)).inv c) :=
-  (rfl)
+      ((Scheme.ΓSpecIso (X.residueField y)).inv c) := by
+  rw [residueFieldEquivPreimage, LinearEquiv.ofBijective_apply, LinearMap.coe_mk, AddHom.coe_mk,
+    residueFieldSectionsIso_inv, CommRingCat.comp_apply]
 
 /-- Sections of `ι^* M` over `ι⁻¹ U` as the base change `Γ(Spec κ(y), ι⁻¹ U) ⊗_{Γ(X, U)} Γ(M, U)`,
 which is Mathlib's `Scheme.Hom.pullbackSectionsEquiv`. -/
@@ -200,9 +193,8 @@ private lemma map_liftBaseChange_eq [M.IsQuasicoherent] (hU : IsAffineOpen U)
       (X.fromSpecResidueField y).pullbackSectionsEquiv_one_tmul M hU (isAffineOpen_preimage y) m
     -- Both sides are `c • ι^* m`, after writing `c ⊗ m = c • (1 ⊗ m)` on the right.
     rw [LinearEquiv.rTensor_tmul,
-      TensorProduct.tmul_eq_smul_one_tmul (residueFieldEquivPreimage y c), LinearEquiv.map_smul,
-      h2, LinearMap.liftBaseChange_tmul, residueField_smul_fibre, Scheme.Modules.map_smul, h1,
-      residueFieldEquivPreimage_apply]
+      TensorProduct.tmul_eq_smul_one_tmul (residueFieldEquivPreimage y c)]
+    simp [h1, h2, residueField_smul_fibre, residueFieldEquivPreimage_apply]
 
 /-- On an affine open `U ∋ y`, the base change `κ(y) ⊗_{Γ(X, U)} Γ(M, U)` maps bijectively onto
 the sections of `ι^* M` by `c ⊗ m ↦ c • ι^* m`; this is `Scheme.Hom.pullbackSectionsEquiv`,
