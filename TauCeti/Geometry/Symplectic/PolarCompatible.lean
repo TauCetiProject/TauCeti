@@ -9,7 +9,6 @@ public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 public import TauCeti.Analysis.InnerProductSpace.Polar.Isometry
 public import TauCeti.Geometry.Symplectic.CompatibleMetric
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
-public import TauCeti.Geometry.Symplectic.Transport
 public import TauCeti.RepresentationTheory.Compact.UnitaryModel
 
 /-!
