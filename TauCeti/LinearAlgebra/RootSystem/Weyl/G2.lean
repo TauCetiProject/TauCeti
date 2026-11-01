@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Basic
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Positive
 
 /-!
 # The Weyl dimension product in type G₂
@@ -13,25 +13,23 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Basic
 For the pinned simply connected root datum of type `G₂`, with `α₁` the short and `α₂` the long
 simple root, the six positive roots are `α₁`, `α₂`, `α₁ + α₂`, `2α₁ + α₂`, `3α₁ + α₂` and
 `3α₁ + 2α₂`. Their coroots are, in the simple-coroot basis, `(1, 0)`, `(0, 1)`, `(1, 3)`, `(2, 3)`,
-`(1, 1)` and `(1, 2)`: each short root has a long coroot, in which the long simple coroot `α₂^∨`
-appears three times as often as `α₂` does in the root. Consequently the Weyl dimension product at
-the dominant weight with fundamental-weight coordinates `(a, b)` is
+`(1, 1)` and `(1, 2)`: each short root has a long coroot, in which the coroot `α₂^∨` of the long
+simple root, a short coroot, appears three times as often as `α₂` does in the root. Consequently
+the Weyl dimension product at the dominant weight with fundamental-weight coordinates `(a, b)` is
 
 `(a + 1)(b + 1)(a + 3b + 4)(2a + 3b + 5)(a + b + 2)(a + 2b + 3) / 120`.
 
 This is the root-datum computation that specializes the abstract Weyl dimension formula to type
-`G₂`, where the root lengths differ by a factor of three, so it checks that the positive-root
-product carries the right multiplicities. At `(1, 0)` and `(0, 1)` it returns `7` and `14`, the
-dimensions of the two fundamental representations of `𝔤₂`; the second is the adjoint
+`G₂`, where the squared root lengths differ by a factor of three, so it checks that the
+positive-root product carries the right multiplicities. At `(1, 0)` and `(0, 1)` it returns `7`
+and `14`, the dimensions of the two fundamental representations of `𝔤₂`; the second is the adjoint
 representation, the highest root `3α₁ + 2α₂` being the fundamental weight of the long simple root.
 
-The heights of the coroots are the coordinate sums in the table `TauCeti.DynkinType.g2Coroot`, and
-a root is positive exactly when its coroot is, that is, when this height is positive.
+The positive roots and the heights of their coroots come from
+`TauCeti.DynkinType.posRootsFinset_g2` and `TauCeti.DynkinType.height_flip_g2SimplyConnectedBase`.
 
 ## Main results
 
-* `TauCeti.DynkinType.height_flip_g2SimplyConnectedBase`: the heights of the coroots.
-* `TauCeti.DynkinType.posRootsFinset_g2`: the positive roots of the pinned `G₂` datum.
 * `TauCeti.DynkinType.prod_shiftedCorootPairing_g2`: the numerator in the Weyl dimension formula.
 * `TauCeti.DynkinType.prod_positiveCorootHeight_g2`: the denominator in the formula.
 * `TauCeti.DynkinType.weylDimensionProduct_g2`: the `G₂` Weyl dimension product.
@@ -52,36 +50,6 @@ namespace TauCeti
 open RootPairing
 
 namespace DynkinType
-
-/-- **The height of a coroot of the pinned `G₂` datum**, against the simple coroots, is the sum
-of its coordinates. -/
-theorem height_flip_g2SimplyConnectedBase (k : Fin 12) :
-    g2SimplyConnectedBase.flip.height k = g2Coroot k 0 + g2Coroot k 1 := by
-  -- The coordinate sum takes the value `1` on both simple coroots, the standard basis vectors.
-  have h := apply_root_eq_height_zsmul g2SimplyConnectedRootDatum.flip g2SimplyConnectedBase.flip
-    (Pi.evalAddMonoidHom (fun _ : Fin 2 ↦ ℤ) 0 + Pi.evalAddMonoidHom (fun _ : Fin 2 ↦ ℤ) 1)
-    (c := 1) ?_ k
-  · simpa using h.symm
-  · intro j hj
-    rw [Base.flip_support, g2SimplyConnectedBase_support, Finset.mem_insert,
-      Finset.mem_singleton] at hj
-    rcases hj with rfl | rfl <;> simp [g2Coroot_apply]
-
-/-- The positive roots of the pinned `G₂` datum are the first six entries of its coordinate
-table. -/
-theorem mem_posRoots_g2_iff (k : Fin 12) :
-    k ∈ posRoots g2SimplyConnectedRootDatum g2SimplyConnectedBase ↔ (k : ℕ) < 6 := by
-  rw [mem_posRoots, ← Base.isPos_flip_iff, Base.isPos_iff, height_flip_g2SimplyConnectedBase,
-    g2Coroot_apply]
-  decide +revert
-
-/-- **The positive roots of the pinned `G₂` datum are `α₁`, `α₂`, `α₁ + α₂`, `2α₁ + α₂`,
-`3α₁ + α₂` and `3α₁ + 2α₂`**, the first six entries of its coordinate table. -/
-theorem posRootsFinset_g2 :
-    posRootsFinset g2SimplyConnectedRootDatum g2SimplyConnectedBase = {0, 1, 2, 3, 4, 5} := by
-  ext k
-  rw [mem_posRootsFinset, mem_posRoots_g2_iff]
-  decide +revert
 
 private theorem prod_posRootsFinset_g2 (f : Fin 12 → ℤ) :
     ∏ i ∈ posRootsFinset g2SimplyConnectedRootDatum g2SimplyConnectedBase, f i =

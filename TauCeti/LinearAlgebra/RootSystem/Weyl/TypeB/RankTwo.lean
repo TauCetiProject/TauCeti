@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Positive
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.RankTwo
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NonSimplyLaced
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.RankTwo.Positive
 
 /-!
 # The Weyl dimension product in type B₂
@@ -15,8 +13,8 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.NonSimpl
 For the pinned simply connected root datum of type `B₂`, with `α₀` the long and `α₁` the short
 simple root, the four positive roots are `α₀`, `α₁`, `α₀ + α₁` and `α₀ + 2 α₁`. Their coroots are
 `α₀^∨`, `α₁^∨`, `2 α₀^∨ + α₁^∨` and `α₀^∨ + α₁^∨`: the short root `α₀ + α₁` has a long coroot, in
-which the long simple coroot appears twice. Consequently the Weyl dimension product at the dominant
-weight with fundamental-weight coordinates `(a, b)` is
+which the coroot `α₀^∨` of the long simple root, a short coroot, appears twice. Consequently the
+Weyl dimension product at the dominant weight with fundamental-weight coordinates `(a, b)` is
 
 `(a + 1)(b + 1)(2a + b + 3)(a + b + 2) / 6`.
 
@@ -26,13 +24,11 @@ the computation checks that the positive-root product carries the right multipli
 `(0, 1)` and `(0, 2)` it returns `5`, `4` and `10`, the dimensions of the vector, spin and adjoint
 representations of `𝔰𝔬₅`.
 
-The heights of the coroots are the coordinate sums in the table `TauCeti.DynkinType.b2Coroot`, and
-a root is positive exactly when its coroot is, that is, when this height is positive.
+The positive roots and the heights of their coroots come from
+`TauCeti.DynkinType.posRootsFinset_typeB_two` and `TauCeti.DynkinType.height_flip_b2Index`.
 
 ## Main results
 
-* `TauCeti.DynkinType.height_flip_b2Index`: the heights of the coroots.
-* `TauCeti.DynkinType.posRootsFinset_typeB_two`: the positive roots of the pinned `B₂` datum.
 * `TauCeti.DynkinType.prod_shiftedCorootPairing_typeB_two`: the numerator in the Weyl dimension
   formula.
 * `TauCeti.DynkinType.prod_positiveCorootHeight_typeB_two`: the denominator in the formula.
@@ -55,49 +51,6 @@ namespace TauCeti
 open RootPairing
 
 namespace DynkinType
-
-private theorem typeBSimplyConnectedBase_two_support :
-    (typeBSimplyConnectedBase 2).support = {b2Index 0, b2Index 1} := by
-  ext k
-  simp only [mem_typeBSimplyConnectedBase_support, Finset.mem_insert, Finset.mem_singleton,
-    b2Index_zero, b2Index_one, Fin.ext_iff, typeBSimpleIndex_val, Fin.val_zero, Fin.val_one]
-  omega
-
-/-- **The height of a coroot of the pinned `B₂` datum**, against the simple coroots, is the sum
-of its coordinates. -/
-theorem height_flip_b2Index (k : Fin 8) :
-    (typeBSimplyConnectedBase 2).flip.height (b2Index k) = b2Coroot k 0 + b2Coroot k 1 := by
-  -- The coordinate sum takes the value `1` on both simple coroots, the standard basis vectors.
-  have h := apply_root_eq_height_zsmul (typeBSimplyConnectedRootDatum 2).flip
-    (typeBSimplyConnectedBase 2).flip
-    (Pi.evalAddMonoidHom (fun _ : Fin 2 ↦ ℤ) 0 + Pi.evalAddMonoidHom (fun _ : Fin 2 ↦ ℤ) 1)
-    (c := 1) ?_ (b2Index k)
-  · rw [flip_root, coroot_b2Index] at h
-    simpa only [AddMonoidHom.add_apply, Pi.evalAddMonoidHom_apply, smul_eq_mul, mul_one] using
-      h.symm
-  · intro j hj
-    rw [Base.flip_support, typeBSimplyConnectedBase_two_support, Finset.mem_insert,
-      Finset.mem_singleton] at hj
-    rcases hj with rfl | rfl <;> rw [flip_root, coroot_b2Index] <;> decide
-
-/-- The positive roots of the pinned `B₂` datum are the first four entries of its coordinate
-table. -/
-theorem b2Index_mem_posRoots_iff (k : Fin 8) :
-    b2Index k ∈ posRoots (typeBSimplyConnectedRootDatum 2) (typeBSimplyConnectedBase 2) ↔
-      (k : ℕ) < 4 := by
-  rw [mem_posRoots, ← Base.isPos_flip_iff, Base.isPos_iff, height_flip_b2Index]
-  decide +revert
-
-/-- **The positive roots of the pinned `B₂` datum are `α₀`, `α₁`, `α₀ + α₁` and
-`α₀ + 2 α₁`.** -/
-theorem posRootsFinset_typeB_two :
-    posRootsFinset (typeBSimplyConnectedRootDatum 2) (typeBSimplyConnectedBase 2) =
-      {b2Index 0, b2Index 1, b2Index 2, b2Index 3} := by
-  ext i
-  obtain ⟨k, rfl⟩ := b2Index_bijective.surjective i
-  rw [mem_posRootsFinset, b2Index_mem_posRoots_iff]
-  simp only [Finset.mem_insert, Finset.mem_singleton, b2Index_injective.eq_iff]
-  decide +revert
 
 private theorem prod_posRootsFinset_typeB_two (f : Fin (2 * 2 ^ 2) → ℤ) :
     ∏ i ∈ posRootsFinset (typeBSimplyConnectedRootDatum 2) (typeBSimplyConnectedBase 2), f i =
