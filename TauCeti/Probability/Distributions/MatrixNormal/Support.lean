@@ -58,9 +58,12 @@ theorem support_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matrix ι ι ℝ
       continuous_invFun := by
         exact (PiLp.continuous_toLp 2 _).comp <|
           continuous_pi fun ij ↦ continuous_id.matrix_elem ij.2 ij.1 }
+  -- Identify the measurable-equivalence coercion with the homeomorphism coercion expected below.
+  have he : ((matrixVecMeasurableEquiv 2).symm : EuclideanSpace ℝ (κ × ι) →
+      Matrix ι κ ℝ) = e :=
+    funext fun x ↦ matrixVecMeasurableEquiv_symm_apply 2 x
   rw [matrixNormalMeasure_of_posSemidef M hU hV]
-  rw [show ((matrixVecMeasurableEquiv 2).symm : EuclideanSpace ℝ (κ × ι) →
-    Matrix ι κ ℝ) = e from funext fun x ↦ matrixVecMeasurableEquiv_symm_apply 2 x]
+  rw [he]
   rw [Measure.support_map_homeomorph,
     support_multivariateGaussian (hV.kronecker hU)]
   rw [e.image_eq_preimage_symm]
@@ -81,10 +84,11 @@ theorem ae_mem_affineRange_matrixNormalMeasure (M : Matrix ι κ ℝ) {U : Matri
   have hA : MeasurableSet A := AffineSubspace.closed_of_finiteDimensional _ |>.measurableSet
   have h : ∀ᵐ X ∂matrixNormalMeasure M U V, (matrixVecMeasurableEquiv 2) X ∈ A := by
     apply (ae_map_iff (MeasurableEquiv.measurable (matrixVecMeasurableEquiv 2)).aemeasurable hA).1
-    rw [show (matrixVecMeasurableEquiv 2 : Matrix ι κ ℝ → EuclideanSpace ℝ (κ × ι)) =
-      (fun X ↦ WithLp.toLp 2 X.vec) from
-        funext fun X ↦ matrixVecMeasurableEquiv_apply 2 X]
-    rw [map_vec_matrixNormalMeasure M hU hV]
+    -- `map_vec_matrixNormalMeasure` is stated for the explicit vectorization function.
+    have he : (matrixVecMeasurableEquiv 2 : Matrix ι κ ℝ → EuclideanSpace ℝ (κ × ι)) =
+        (fun X ↦ WithLp.toLp 2 X.vec) :=
+      funext fun X ↦ matrixVecMeasurableEquiv_apply 2 X
+    rw [he, map_vec_matrixNormalMeasure M hU hV]
     exact ae_mem_affineRange_multivariateGaussian (hV.kronecker hU) (WithLp.toLp 2 M.vec)
   simpa only [A, matrixVecMeasurableEquiv_apply] using h
 
@@ -98,22 +102,41 @@ theorem support_matrixNormalMeasure_of_not_posSemidef (M : Matrix ι κ ℝ)
 /-- A matrix normal law with singular Kronecker covariance is singular with respect to product
 Lebesgue measure on its entries. -/
 theorem mutuallySingular_matrixNormalMeasure_volume (M : Matrix ι κ ℝ)
-    {U : Matrix ι ι ℝ} {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef)
-    (hUV : ¬(V ⊗ₖ U).PosDef) :
+    {U : Matrix ι ι ℝ} {V : Matrix κ κ ℝ} (hUV : ¬(V ⊗ₖ U).PosDef) :
     matrixNormalMeasure M U V ⟂ₘ (volume : Measure (Matrix ι κ ℝ)) := by
-  have hsing := (matrixVecMeasurableEquiv (m := ι) (n := κ) (α := ℝ) 2).symm.measurableEmbedding
-    |>.mutuallySingular_map
-      (mutuallySingular_multivariateGaussian_volume hUV (WithLp.toLp 2 M.vec))
-  rw [(volume_preserving_matrixVecMeasurableEquiv (m := ι) (n := κ)).symm.map_eq] at hsing
-  rwa [← matrixNormalMeasure_of_posSemidef M hU hV] at hsing
+  by_cases h : U.PosSemidef ∧ V.PosSemidef
+  · have hsing := (matrixVecMeasurableEquiv (m := ι) (n := κ) (α := ℝ) 2).symm.measurableEmbedding
+      |>.mutuallySingular_map
+        (mutuallySingular_multivariateGaussian_volume hUV (WithLp.toLp 2 M.vec))
+    rw [(volume_preserving_matrixVecMeasurableEquiv (m := ι) (n := κ)).symm.map_eq] at hsing
+    rwa [← matrixNormalMeasure_of_posSemidef M h.1 h.2] at hsing
+  · rw [matrixNormalMeasure_of_not_posSemidef M h]
+    have hne : Nonempty (κ × ι) := by
+      by_contra hempty
+      let _ : IsEmpty (κ × ι) := not_nonempty_iff.mp hempty
+      apply hUV
+      exact ⟨Subsingleton.elim _ _, fun x hx ↦ absurd (Subsingleton.elim x 0) hx⟩
+    let _ : Nonempty κ := ⟨hne.some.1⟩
+    let _ : Nonempty ι := ⟨hne.some.2⟩
+    have hnull : NullSingletonClass (volume : Measure (Matrix ι κ ℝ)) := ⟨fun X ↦ by
+      have hx : (volume : Measure (EuclideanSpace ℝ (κ × ι)))
+          {(matrixVecMeasurableEquiv 2) X} = 0 := measure_singleton _
+      rw [← (volume_preserving_matrixVecMeasurableEquiv (m := ι) (n := κ)).map_eq,
+        (matrixVecMeasurableEquiv 2).map_apply] at hx
+      have hpre : (matrixVecMeasurableEquiv 2) ⁻¹' {(matrixVecMeasurableEquiv 2) X} = {X} := by
+        ext Y
+        simp only [Set.mem_preimage, Set.mem_singleton_iff]
+        exact (matrixVecMeasurableEquiv 2).injective.eq_iff
+      rwa [hpre] at hx⟩
+    let _ := hnull
+    exact mutuallySingular_dirac M volume
 
 /-- At a singular Kronecker covariance, the ambient Radon--Nikodym derivative of a matrix normal
 law vanishes almost everywhere. -/
 theorem rnDeriv_matrixNormalMeasure_of_not_posDef (M : Matrix ι κ ℝ)
-    {U : Matrix ι ι ℝ} {V : Matrix κ κ ℝ} (hU : U.PosSemidef) (hV : V.PosSemidef)
-    (hUV : ¬(V ⊗ₖ U).PosDef) :
+    {U : Matrix ι ι ℝ} {V : Matrix κ κ ℝ} (hUV : ¬(V ⊗ₖ U).PosDef) :
     (matrixNormalMeasure M U V).rnDeriv volume =ᵐ[volume] 0 :=
-  (mutuallySingular_matrixNormalMeasure_volume M hU hV hUV).rnDeriv_ae_eq_zero
+  (mutuallySingular_matrixNormalMeasure_volume M hUV).rnDeriv_ae_eq_zero
 
 end TauCeti.Probability
 
