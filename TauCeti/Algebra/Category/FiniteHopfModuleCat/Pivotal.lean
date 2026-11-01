@@ -75,13 +75,6 @@ private theorem whiskerRight_comp_tmul {A B C Z : FiniteHopfModuleCat k H} {f : 
     e.hom.hom (tmul k H (f.hom.hom a) z) = e'.hom.hom (tmul k H a z) := by
   rw [← h, hom_hom_comp, LinearMap.comp_apply, whiskerRight_tmul]
 
-/-- Evaluating `a` followed by the mate of `f : X ⟶ Y` against `X` is evaluating `a` against `Y`
-after applying `f` to `X`. Each comparison below is tested against an evaluation in this form. -/
-private theorem whiskerRight_rightMate_evaluation {W X X' Y Y' : FiniteHopfModuleCat k H}
-    (pX : ExactPairing X X') (pY : ExactPairing Y Y') (a : W ⟶ Y') (f : X ⟶ Y) :
-    a ▷ X ≫ rightMate pX pY f ▷ X ≫ ε_ X X' = W ◁ f ≫ a ▷ Y ≫ ε_ Y Y' := by
-  rw [rightMate_comp_evaluation, whisker_exchange_assoc]
-
 variable (g : Hˣ) (hg : ∀ a : H, HopfAlgebra.antipode k (HopfAlgebra.antipode k a) = g * a * ↑g⁻¹)
 
 /-- If the unit `g` implements the square of the antipode, `m ↦ (φ ↦ φ(g m))` is an isomorphism
