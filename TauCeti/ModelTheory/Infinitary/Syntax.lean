@@ -39,8 +39,8 @@ Infinitary formulas are not modelled by extending Mathlib's finitary `BoundedFor
 * `FirstOrder.Language.BoundedFormulaω`: the `ι := ℕ` specialization, an abbreviation, so all
   `BoundedFormulaInf` API applies definitionally; `FormulaInf`, `SentenceInf`, `Formulaω` and
   `Sentenceω`.
-* The derived connectives `not`, `⊤`, `⊥`, `⊓`, `⊔`, `iff` and `ex`, and the quantifier closures
-  `alls` and `exs`.
+* The derived connectives `not`, `⊤`, `⊥`, `⊓`, `⊔`, `iff` and `ex`, the quantifier closures
+  `alls` and `exs`, and the existential quantification `exsLast k` of the last `k` slots.
 * `FirstOrder.Language.BoundedFormulaInf.IsAtomic`: equations and relational atoms.
 * `FirstOrder.Language.BoundedFormula.toInf`: the carrier-generic embedding of finitary formulas,
   with its `ι := ℕ` case `BoundedFormula.toOmega`.
@@ -55,7 +55,8 @@ Infinitary formulas are not modelled by extending Mathlib's finitary `BoundedFor
   `IsAtomic` are added; the
   definition bodies are not exposed, except those of the match patterns `not` and `ex`, and are
   used through the defining equations `bot_def`, `top_def`, `inf_def`, `sup_def`, `iff_def`,
-  `alls_zero`, `alls_succ`, `exs_zero`, `exs_succ` and the `toInf_*` equations.
+  `alls_zero`, `alls_succ`, `exs_zero`, `exs_succ`, `exsLast_zero`, `exsLast_succ` and the
+  `toInf_*` equations.
 -/
 
 public section
@@ -160,6 +161,11 @@ def exs : ∀ {n}, L.BoundedFormulaInf ι α n → L.FormulaInf ι α
   | 0, φ => φ
   | _ + 1, φ => φ.ex.exs
 
+/-- Existential quantification over the last `k` bound-variable slots, keeping the first `n`. -/
+def exsLast : ∀ {k}, L.BoundedFormulaInf ι α (n + k) → L.BoundedFormulaInf ι α n
+  | 0, φ => φ
+  | _ + 1, φ => exsLast φ.ex
+
 /-! ### Defining equations -/
 
 /-- `⊥` is the false formula. -/
@@ -192,6 +198,15 @@ theorem exs_zero (φ : L.BoundedFormulaInf ι α 0) : φ.exs = φ := (rfl)
 /-- `exs` quantifies the last slot existentially, then closes the remaining slots. -/
 @[simp]
 theorem exs_succ (φ : L.BoundedFormulaInf ι α (n + 1)) : φ.exs = φ.ex.exs := (rfl)
+
+/-- Quantifying no slots leaves a formula unchanged. -/
+@[simp]
+theorem exsLast_zero (φ : L.BoundedFormulaInf ι α (n + 0)) : exsLast φ = φ := (rfl)
+
+/-- `exsLast` quantifies the last slot existentially, then the remaining `k` slots. -/
+@[simp]
+theorem exsLast_succ {k : ℕ} (φ : L.BoundedFormulaInf ι α (n + (k + 1))) :
+    exsLast φ = exsLast (k := k) φ.ex := (rfl)
 
 /-- An infinitary formula is **atomic** when it is an equation between terms or a relation symbol
 applied to terms, as for Mathlib's finitary `BoundedFormula.IsAtomic`. -/
