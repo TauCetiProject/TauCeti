@@ -30,7 +30,6 @@ of a disjoint c.e. splitting of `B` have join of the same degree as `B`.
 * `Set.oneOneReducible_join_left`, `Set.oneOneReducible_join_right`: each set one-one reduces to
   the join.
 * `Set.join_turingReducible_iff`: the join reduces to an oracle exactly when both sets do.
-* `Set.union_turingReducible`: if both sets reduce to an oracle, so does their union.
 * `Set.isLUB_degree_join`: in Mathlib's quotient of partial functions, the degree of the join is
   the least upper bound of the degrees of the two sets.
 
@@ -54,8 +53,8 @@ theorem mem_join {n : ℕ} : n ∈ A.join B ↔ n % 2 = 0 ∧ n / 2 ∈ A ∨ n 
   simp only [join, mem_union, mem_image]
   constructor
   · rintro (⟨x, hx, rfl⟩ | ⟨x, hx, rfl⟩)
-    · exact Or.inl ⟨by omega, by rwa [show 2 * x / 2 = x by omega]⟩
-    · exact Or.inr ⟨by omega, by rwa [show (2 * x + 1) / 2 = x by omega]⟩
+    · exact Or.inl ⟨by omega, by simpa using hx⟩
+    · exact Or.inr ⟨by omega, by simpa [Nat.mul_add_div] using hx⟩
   · rintro (⟨hn, h⟩ | ⟨hn, h⟩)
     · exact Or.inl ⟨n / 2, h, by omega⟩
     · exact Or.inr ⟨n / 2, h, by omega⟩
@@ -63,12 +62,12 @@ theorem mem_join {n : ℕ} : n ∈ A.join B ↔ n % 2 = 0 ∧ n / 2 ∈ A ∨ n 
 /-- `2x ∈ A ⊕ B` exactly when `x ∈ A`. -/
 @[simp]
 theorem two_mul_mem_join {x : ℕ} : 2 * x ∈ A.join B ↔ x ∈ A := by
-  simp [mem_join, show 2 * x / 2 = x by omega]
+  simp [mem_join]
 
 /-- `2x + 1 ∈ A ⊕ B` exactly when `x ∈ B`. -/
 @[simp]
 theorem two_mul_add_one_mem_join {x : ℕ} : 2 * x + 1 ∈ A.join B ↔ x ∈ B := by
-  simp [mem_join, show (2 * x + 1) / 2 = x by omega, show (2 * x + 1) % 2 = 1 by omega]
+  simp [mem_join, Nat.mul_add_div]
 
 /-- `A` one-one reduces to `A ⊕ B`, by `x ↦ 2x`. -/
 theorem oneOneReducible_join_left : OneOneReducible (· ∈ A) (· ∈ A.join B) :=
@@ -116,17 +115,6 @@ theorem join_turingReducible_iff {g : ℕ →. ℕ} :
       TuringReducible A.oracle g ∧ TuringReducible B.oracle g :=
   ⟨fun h => ⟨turingReducible_join_left.trans h, turingReducible_join_right.trans h⟩,
     fun h => join_turingReducible h.1 h.2⟩
-
-/-- If `A` and `B` are Turing reducible to an oracle `g`, so is `A ∪ B`: take the maximum of the
-two answers. -/
-theorem union_turingReducible {g : ℕ →. ℕ} (hA : TuringReducible A.oracle g)
-    (hB : TuringReducible B.oracle g) : TuringReducible (A ∪ B).oracle g := by
-  classical
-  have h := ((RecursiveIn.iff_nat.1 hA).pair (RecursiveIn.iff_nat.1 hB)).map_primrec
-    (g := fun p => max p.unpair.1 p.unpair.2) <| Primrec.nat_iff.1 <|
-      Primrec.nat_max.comp (Primrec.fst.comp Primrec.unpair) (Primrec.snd.comp Primrec.unpair)
-  refine RecursiveIn.iff_nat.2 (h.of_eq fun n => ?_)
-  by_cases hnA : n ∈ A <;> by_cases hnB : n ∈ B <;> simp [Seq.seq, hnA, hnB]
 
 /-- `A ∪ B` is Turing reducible to `A ⊕ B`. -/
 theorem union_turingReducible_join : TuringReducible (A ∪ B).oracle (A.join B).oracle :=
