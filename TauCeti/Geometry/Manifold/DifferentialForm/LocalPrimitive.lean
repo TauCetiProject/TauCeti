@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Poincare
 public import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 public import Mathlib.Topology.Covering.Basic
 public import Mathlib.Topology.WithTopology
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # Local primitives of closed `1`-forms and their covering space
@@ -121,11 +122,8 @@ theorem IsPrimitiveOn.mpullback {θ : RoughForm I' M' F 1} {g : M' → F} {U : S
   refine ⟨hg.isOpen.preimage hf.continuous,
     fun x hx ↦ ((hgf x hx).comp x (hf x)).mdifferentiableWithinAt, fun x hx ↦ ?_⟩
   ext v
-  rw [mpullback_apply, ← hg.mextDeriv_eq (f x) hx]
-  simp only [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv]
-  rw [mfderiv_comp x (hgf x hx) (hf x)]
-  -- `NormedSpace.fromTangentSpace` is the identity of `F`
-  rfl
+  rw [← mpullback_mextDeriv_ofFunction_apply (hf x) (hgf x hx), mpullback_apply, mpullback_apply,
+    hg.mextDeriv_eq (f x) hx]
 
 end Pullback
 
