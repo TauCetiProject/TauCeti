@@ -20,8 +20,9 @@ functions,
 (R_g f)(x) = f (x * g),        R_g R_h = R_(g * h),
 ```
 
-multiplies the `Lᵖ` norm by `c(g) ^ (1 / p)`, so for `p < ∞` it is an isometry only when `G` is
-unimodular. It still preserves `Lᵖ` classes, so it gives a monoid homomorphism
+multiplies the `Lᵖ` norm by `c(g) ^ (1 / p)`. So `R_g` is an isometry whenever `c(g) = 1`, and
+every right translation is an isometry when `G` is unimodular. In general `R_g` still preserves
+`Lᵖ` classes, so it gives a monoid homomorphism
 `MeasureTheory.Lp.rightTranslation μ p 𝕜 : G →* (Lp E p μ →L[𝕜] Lp E p μ)`, which commutes with
 left translation `MeasureTheory.Lp.leftTranslation`.
 
