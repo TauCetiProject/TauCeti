@@ -8,8 +8,6 @@ module
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.NumberTheory.IntegralLattice.LocalDensity.Basic
-import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
-import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.NumberTheory.IntegralLattice.LocalDensity.Diagonal
 
 /-!
@@ -170,15 +168,6 @@ noncomputable def conwaySloanePMass {ι : Type*} [Fintype ι] (u : ι → ℤ_[p
         ℝ)) *
     √(p : ℝ) ^ ∑ i, ∑ i', (k i' - k i)
 
-/-- The defining formula of the Conway–Sloane `p`-mass: diagonal factors times cross terms. -/
-theorem conwaySloanePMass_def {ι : Type*} [Fintype ι] (u : ι → ℤ_[p]ˣ) (k : ι → ℕ) :
-    conwaySloanePMass p u k =
-      (∏ j ∈ univ.image k,
-          (conwaySloaneStdMass p #{i | k i = j} (∏ i with k i = j, PadicInt.toZMod (u i : ℤ_[p])) :
-            ℝ)) *
-        √(p : ℝ) ^ ∑ i, ∑ i', (k i' - k i) := by
-  rw [conwaySloanePMass]
-
 /-- The exponent identity behind the Conway–Sloane dictionary: twice the exponent
 `∑_{j < max k} binom(Nⱼ + 1, 2)`, `Nⱼ = #{i | j < kᵢ}`, of the local density of a diagonal Jordan
 form, plus the exponent `∑_{i, i'} (k_{i'} - kᵢ)⁺` of the cross terms, is `(n + 1) ∑ kᵢ`. -/
@@ -252,41 +241,6 @@ open LinearMap (BilinForm)
 open LinearMap.BilinForm Module
 
 variable {M : Type*} [AddCommGroup M] [Module ℤ_[p] M]
-
-/-- The Gram matrix, in any basis `b`, of a bilinear form with an orthogonal basis `b₀` of
-diagonal entries `uᵢ pᵏⁱ` is congruent to `diag(uᵢ pᵏⁱ)`, so the valuation of its determinant is
-`∑ kᵢ`. -/
-private theorem valuation_det_toMatrix_of_iIsOrtho {ι : Type*} [Fintype ι]
-    {B : BilinForm ℤ_[p] M} {b₀ : Basis ι ℤ_[p] M} (hb₀ : B.iIsOrtho b₀)
-    {u : ι → ℤ_[p]ˣ} {k : ι → ℕ} (hu : ∀ i, B (b₀ i) (b₀ i) = u i * (p : ℤ_[p]) ^ k i)
-    {κ : Type*} [Fintype κ] [DecidableEq κ] (b : Basis κ ℤ_[p] M) :
-    (toMatrix b B).det.valuation = ∑ i, k i := by
-  classical
-  have hdiag : toMatrix b₀ B = diagonal fun i => (u i : ℤ_[p]) * (p : ℤ_[p]) ^ k i := by
-    simpa only [hu] using hb₀.toMatrix_eq_diagonal
-  set e := b₀.indexEquiv b
-  have hb : toMatrix (b.reindex e.symm) B = reindex e.symm e.symm (toMatrix b B) := by
-    ext i j
-    simp only [toMatrix_apply, Basis.reindex_apply, Equiv.symm_symm, reindex_apply,
-      submatrix_apply]
-  have := b₀.invertibleToMatrix (b.reindex e.symm)
-  set P := b₀.toMatrix (b.reindex e.symm)
-  have hP : IsUnit P.det := isUnit_det_of_invertible _
-  have hcongr : reindex e.symm e.symm (toMatrix b B) =
-      Pᵀ * (diagonal fun i => (u i : ℤ_[p]) * (p : ℤ_[p]) ^ k i) * P := by
-    rw [← hb, ← toMatrix_mul_basis_toMatrix b₀ _ B, hdiag]
-  have hu' : IsUnit (∏ i, (u i : ℤ_[p])) := by
-    rw [← Units.coe_prod]
-    exact Units.isUnit _
-  have hp0 : (p : ℤ_[p]) ^ ∑ i, k i ≠ 0 := pow_ne_zero _ (NeZero.ne _)
-  have hD : (∏ i, (u i : ℤ_[p])) * (p : ℤ_[p]) ^ ∑ i, k i ≠ 0 := mul_ne_zero hu'.ne_zero hp0
-  rw [← det_reindex_self e.symm, hcongr, det_mul, det_mul, det_transpose, det_diagonal,
-    prod_mul_distrib, prod_pow_eq_pow_sum,
-    PadicInt.valuation_mul (mul_ne_zero hP.ne_zero hD) hP.ne_zero,
-    PadicInt.valuation_mul hP.ne_zero hD, PadicInt.valuation_mul hu'.ne_zero hp0,
-    PadicInt.valuation_eq_zero_of_isUnit hP, PadicInt.valuation_eq_zero_of_isUnit hu',
-    PadicInt.valuation_pow, PadicInt.valuation_p]
-  simp
 
 /-- **The Conway–Sloane dictionary at an odd prime.** Let `B` be a bilinear form over `ℤ_p`, `p`
 odd, with an orthogonal basis `b₀` whose diagonal entries are `B (b₀ i) (b₀ i) = uᵢ pᵏⁱ`. Then the
