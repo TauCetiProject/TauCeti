@@ -9,6 +9,7 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.Basis
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Topology.Instances.Matrix
+public import Mathlib.Algebra.Polynomial.Laurent
 
 /-!
 # Regular Hecke matrices on a fixed carrier
@@ -35,7 +36,9 @@ public section
 
 open Matrix
 
-namespace TauCeti.TypeAHeckeAlgebra
+namespace CoxeterSystem
+
+open TauCeti TypeAHeckeAlgebra
 
 variable {R : Type*} [CommRing R] {n : ℕ} {W : Type*} [Group W]
 variable (cs : CoxeterSystem (CoxeterMatrix.A (n - 1)) W)
@@ -94,6 +97,22 @@ theorem transpose_regularRightMatrix (s : R) (i : Fin (n - 1)) :
   · subst w; rfl
   · simp [hvw, Ne.symm hvw]
 
+/-- Coefficient homomorphisms preserve the left regular matrix. -/
+theorem map_regularLeftMatrix {S : Type*} [CommRing S] (f : R →+* S)
+    (s : R) (i : Fin (n - 1)) :
+    (regularLeftMatrix cs s i).map f = regularLeftMatrix cs (f s) i := by
+  classical
+  ext v w
+  simp [regularLeftMatrix, apply_ite f]
+
+/-- Coefficient homomorphisms preserve the right regular matrix. -/
+theorem map_regularRightMatrix {S : Type*} [CommRing S] (f : R →+* S)
+    (s : R) (i : Fin (n - 1)) :
+    (regularRightMatrix cs s i).map f = regularRightMatrix cs (f s) i := by
+  classical
+  ext v w
+  simp [regularRightMatrix, apply_ite f]
+
 section Multiplication
 
 variable [Fintype W] (q : Rˣ)
@@ -148,34 +167,86 @@ theorem regularRightMatrix_mulVec_repr (i : Fin (n - 1))
   rw [regularRightMatrix_eq_toMatrix, LinearMap.toMatrix_mulVec_repr,
     LinearMap.mulRight_apply]
 
-/-- Left and right regular generator matrices commute. -/
+end Multiplication
+
+section Relations
+
+-- Embed polynomial entries into Laurent polynomials, where the indeterminate is a unit.
+-- Injectivity gives the identities over R[X], and evaluation gives every scalar parameter.
+variable [Fintype W] (s : R)
+
+/-- Left and right regular generator matrices commute, including at nonunit parameters. -/
 theorem commute_regularLeftMatrix_regularRightMatrix (i j : Fin (n - 1)) :
-    Commute (regularLeftMatrix cs (q : R) i) (regularRightMatrix cs (q : R) j) := by
+    Commute (regularLeftMatrix cs s i) (regularRightMatrix cs s j) := by
   classical
-  rw [commute_iff_eq, regularLeftMatrix_eq_leftMulMatrix,
+  let L := regularLeftMatrix cs (Polynomial.X : Polynomial R) i
+  let M := regularRightMatrix cs (Polynomial.X : Polynomial R) j
+  have hx : (Polynomial.evalRingHom s) Polynomial.X = s := Polynomial.eval_X
+  suffices h : L * M = M * L by
+    simpa only [L, M, Matrix.map_mul, map_regularLeftMatrix, map_regularRightMatrix,
+      hx, commute_iff_eq] using
+      congrArg (fun A ↦ A.map (Polynomial.evalRingHom s)) h
+  apply Matrix.map_injective Polynomial.toLaurent_injective
+  obtain ⟨q, hq⟩ := LaurentPolynomial.isUnit_T (R := R) 1
+  simp only [L, M, Matrix.map_mul, map_regularLeftMatrix, map_regularRightMatrix,
+    Polynomial.toLaurent_X, ← hq]
+  rw [regularLeftMatrix_eq_leftMulMatrix,
     Algebra.leftMulMatrix_apply, regularRightMatrix_eq_toMatrix,
     ← LinearMap.toMatrix_comp, ← LinearMap.toMatrix_comp]
   exact congrArg (LinearMap.toMatrix (basisTw q cs) (basisTw q cs))
-    (LinearMap.commute_mulLeft_right (R := R) _ _).eq
+    (LinearMap.commute_mulLeft_right (R := LaurentPolynomial R) _ _).eq
 
 open Classical in
-/-- The rescaled left regular matrix satisfies `(g_i + 1)(g_i - q²) = 0`. -/
+/-- The rescaled left regular matrix satisfies `(g_i + 1)(g_i - s²) = 0`
+even when `s` is not a unit. -/
 theorem regularLeftMatrix_mul_self [DecidableEq W] (i : Fin (n - 1)) :
-    regularLeftMatrix cs (q : R) i * regularLeftMatrix cs (q : R) i =
-      ((q : R) ^ 2 - 1) • regularLeftMatrix cs (q : R) i + (q : R) ^ 2 • 1 := by
+    regularLeftMatrix cs s i * regularLeftMatrix cs s i =
+      (s ^ 2 - 1) • regularLeftMatrix cs s i + s ^ 2 • 1 := by
+  classical
+  let L := regularLeftMatrix cs (Polynomial.X : Polynomial R) i
+  have hx : (Polynomial.evalRingHom s) Polynomial.X = s := Polynomial.eval_X
+  suffices h : L * L = ((Polynomial.X : Polynomial R) ^ 2 - 1) • L +
+      (Polynomial.X : Polynomial R) ^ 2 • 1 by
+    simpa only [L, Matrix.map_mul, Matrix.map_add _ (map_add _),
+      Matrix.map_smul' _ _ _ (map_mul _), map_sub, map_pow, map_one,
+      Matrix.map_one _ (map_zero _) (map_one _), map_regularLeftMatrix, hx] using
+      congrArg (fun A ↦ A.map (Polynomial.evalRingHom s)) h
+  apply Matrix.map_injective Polynomial.toLaurent_injective
+  obtain ⟨q, hq⟩ := LaurentPolynomial.isUnit_T (R := R) 1
+  simp only [L, Matrix.map_mul, Matrix.map_add _ (map_add _),
+    Matrix.map_smul' _ _ _ (map_mul _), map_sub, map_pow, map_one,
+    map_regularLeftMatrix, Polynomial.toLaurent_X, ← hq,
+    Matrix.map_one _ (map_zero _) (map_one _)]
   rw [regularLeftMatrix_eq_leftMulMatrix]
   simpa only [map_mul, map_add, map_smul, map_one] using
     congrArg (Algebra.leftMulMatrix (basisTw q cs)) (rescaled_T_mul_self (q := q) i)
 
 open Classical in
-/-- The rescaled right regular matrix satisfies `(g_i + 1)(g_i - q²) = 0`. -/
+/-- The rescaled right regular matrix satisfies `(g_i + 1)(g_i - s²) = 0`
+even when `s` is not a unit. -/
 theorem regularRightMatrix_mul_self [DecidableEq W] (i : Fin (n - 1)) :
-    regularRightMatrix cs (q : R) i * regularRightMatrix cs (q : R) i =
-      ((q : R) ^ 2 - 1) • regularRightMatrix cs (q : R) i + (q : R) ^ 2 • 1 := by
-  have hm : LinearMap.mulRight R ((q : R) • T q i) *
-      LinearMap.mulRight R ((q : R) • T q i) =
-      ((q : R) ^ 2 - 1) • LinearMap.mulRight R ((q : R) • T q i) +
-        (q : R) ^ 2 • 1 := by
+    regularRightMatrix cs s i * regularRightMatrix cs s i =
+      (s ^ 2 - 1) • regularRightMatrix cs s i + s ^ 2 • 1 := by
+  classical
+  let M := regularRightMatrix cs (Polynomial.X : Polynomial R) i
+  have hx : (Polynomial.evalRingHom s) Polynomial.X = s := Polynomial.eval_X
+  suffices h : M * M = ((Polynomial.X : Polynomial R) ^ 2 - 1) • M +
+      (Polynomial.X : Polynomial R) ^ 2 • 1 by
+    simpa only [M, Matrix.map_mul, Matrix.map_add _ (map_add _),
+      Matrix.map_smul' _ _ _ (map_mul _), map_sub, map_pow, map_one,
+      Matrix.map_one _ (map_zero _) (map_one _), map_regularRightMatrix, hx] using
+      congrArg (fun A ↦ A.map (Polynomial.evalRingHom s)) h
+  apply Matrix.map_injective Polynomial.toLaurent_injective
+  obtain ⟨q, hq⟩ := LaurentPolynomial.isUnit_T (R := R) 1
+  simp only [M, Matrix.map_mul, Matrix.map_add _ (map_add _),
+    Matrix.map_smul' _ _ _ (map_mul _), map_sub, map_pow, map_one,
+    map_regularRightMatrix, Polynomial.toLaurent_X, ← hq,
+    Matrix.map_one _ (map_zero _) (map_one _)]
+  have hm : LinearMap.mulRight (LaurentPolynomial R) ((q : LaurentPolynomial R) • T q i) *
+      LinearMap.mulRight (LaurentPolynomial R) ((q : LaurentPolynomial R) • T q i) =
+      ((q : LaurentPolynomial R) ^ 2 - 1) •
+        LinearMap.mulRight (LaurentPolynomial R) ((q : LaurentPolynomial R) • T q i) +
+        (q : LaurentPolynomial R) ^ 2 • 1 := by
     ext x
     simp only [Module.End.mul_apply, LinearMap.mulRight_apply, LinearMap.add_apply,
       LinearMap.smul_apply, Module.End.one_apply]
@@ -188,50 +259,85 @@ theorem regularRightMatrix_mul_self [DecidableEq W] (i : Fin (n - 1)) :
 /-- The left regular matrices satisfy the adjacent braid relation. -/
 theorem regularLeftMatrix_braid {i j : Fin (n - 1)}
     (h : (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i) :
-    regularLeftMatrix cs (q : R) i * regularLeftMatrix cs (q : R) j *
-        regularLeftMatrix cs (q : R) i =
-      regularLeftMatrix cs (q : R) j * regularLeftMatrix cs (q : R) i *
-        regularLeftMatrix cs (q : R) j := by
+    regularLeftMatrix cs s i * regularLeftMatrix cs s j * regularLeftMatrix cs s i =
+      regularLeftMatrix cs s j * regularLeftMatrix cs s i * regularLeftMatrix cs s j := by
   classical
+  let L := regularLeftMatrix cs (Polynomial.X : Polynomial R) i
+  let M := regularLeftMatrix cs (Polynomial.X : Polynomial R) j
+  have hx : (Polynomial.evalRingHom s) Polynomial.X = s := Polynomial.eval_X
+  suffices h : L * M * L = M * L * M by
+    simpa only [L, M, Matrix.map_mul, map_regularLeftMatrix, hx] using
+      congrArg (fun A ↦ A.map (Polynomial.evalRingHom s)) h
+  apply Matrix.map_injective Polynomial.toLaurent_injective
+  obtain ⟨q, hq⟩ := LaurentPolynomial.isUnit_T (R := R) 1
+  simp only [L, M, Matrix.map_mul, map_regularLeftMatrix, Polynomial.toLaurent_X, ← hq]
   simp only [regularLeftMatrix_eq_leftMulMatrix, ← map_mul, smul_mul_smul, T_braid h]
 
 /-- The right regular matrices satisfy the adjacent braid relation. -/
 theorem regularRightMatrix_braid {i j : Fin (n - 1)}
     (h : (i : ℕ) + 1 = j ∨ (j : ℕ) + 1 = i) :
-    regularRightMatrix cs (q : R) i * regularRightMatrix cs (q : R) j *
-        regularRightMatrix cs (q : R) i =
-      regularRightMatrix cs (q : R) j * regularRightMatrix cs (q : R) i *
-        regularRightMatrix cs (q : R) j := by
+    regularRightMatrix cs s i * regularRightMatrix cs s j * regularRightMatrix cs s i =
+      regularRightMatrix cs s j * regularRightMatrix cs s i * regularRightMatrix cs s j := by
   classical
+  let L := regularRightMatrix cs (Polynomial.X : Polynomial R) i
+  let M := regularRightMatrix cs (Polynomial.X : Polynomial R) j
+  have hx : (Polynomial.evalRingHom s) Polynomial.X = s := Polynomial.eval_X
+  suffices h : L * M * L = M * L * M by
+    simpa only [L, M, Matrix.map_mul, map_regularRightMatrix, hx] using
+      congrArg (fun A ↦ A.map (Polynomial.evalRingHom s)) h
+  apply Matrix.map_injective Polynomial.toLaurent_injective
+  obtain ⟨q, hq⟩ := LaurentPolynomial.isUnit_T (R := R) 1
+  simp only [L, M, Matrix.map_mul, map_regularRightMatrix, Polynomial.toLaurent_X, ← hq]
   simp only [regularRightMatrix_eq_toMatrix, ← LinearMap.toMatrix_mul]
   congr 1
   ext x
   simp only [Module.End.mul_apply, LinearMap.mulRight_apply]
-  have hb : ((q : R) • T q i) * ((q : R) • T q j) * ((q : R) • T q i) =
-      ((q : R) • T q j) * ((q : R) • T q i) * ((q : R) • T q j) := by
+  have hb : ((q : LaurentPolynomial R) • T q i) * ((q : LaurentPolynomial R) • T q j) *
+      ((q : LaurentPolynomial R) • T q i) =
+      ((q : LaurentPolynomial R) • T q j) * ((q : LaurentPolynomial R) • T q i) *
+        ((q : LaurentPolynomial R) • T q j) := by
     simp only [smul_mul_smul, T_braid h]
   simpa only [mul_assoc] using congrArg (fun a ↦ x * a) hb
 
 /-- Distant left regular matrices commute. -/
 theorem commute_regularLeftMatrix {i j : Fin (n - 1)}
     (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
-    Commute (regularLeftMatrix cs (q : R) i) (regularLeftMatrix cs (q : R) j) := by
+    Commute (regularLeftMatrix cs s i) (regularLeftMatrix cs s j) := by
   classical
-  rw [regularLeftMatrix_eq_leftMulMatrix, regularLeftMatrix_eq_leftMulMatrix]
-  exact (((commute_T h).smul_left (q : R)).smul_right (q : R)).map _
+  let L := regularLeftMatrix cs (Polynomial.X : Polynomial R) i
+  let M := regularLeftMatrix cs (Polynomial.X : Polynomial R) j
+  have hx : (Polynomial.evalRingHom s) Polynomial.X = s := Polynomial.eval_X
+  suffices h : L * M = M * L by
+    simpa only [L, M, Matrix.map_mul, map_regularLeftMatrix, hx, commute_iff_eq] using
+      congrArg (fun A ↦ A.map (Polynomial.evalRingHom s)) h
+  apply Matrix.map_injective Polynomial.toLaurent_injective
+  obtain ⟨q, hq⟩ := LaurentPolynomial.isUnit_T (R := R) 1
+  simp only [L, M, Matrix.map_mul, map_regularLeftMatrix, Polynomial.toLaurent_X, ← hq]
+  rw [← commute_iff_eq, regularLeftMatrix_eq_leftMulMatrix, regularLeftMatrix_eq_leftMulMatrix]
+  exact (((commute_T h).smul_left (q : LaurentPolynomial R)).smul_right
+    (q : LaurentPolynomial R)).map _
 
 /-- Distant right regular matrices commute. -/
 theorem commute_regularRightMatrix {i j : Fin (n - 1)}
     (h : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
-    Commute (regularRightMatrix cs (q : R) i) (regularRightMatrix cs (q : R) j) := by
+    Commute (regularRightMatrix cs s i) (regularRightMatrix cs s j) := by
   classical
-  rw [commute_iff_eq, regularRightMatrix_eq_toMatrix, regularRightMatrix_eq_toMatrix,
+  let L := regularRightMatrix cs (Polynomial.X : Polynomial R) i
+  let M := regularRightMatrix cs (Polynomial.X : Polynomial R) j
+  have hx : (Polynomial.evalRingHom s) Polynomial.X = s := Polynomial.eval_X
+  suffices h : L * M = M * L by
+    simpa only [L, M, Matrix.map_mul, map_regularRightMatrix, hx, commute_iff_eq] using
+      congrArg (fun A ↦ A.map (Polynomial.evalRingHom s)) h
+  apply Matrix.map_injective Polynomial.toLaurent_injective
+  obtain ⟨q, hq⟩ := LaurentPolynomial.isUnit_T (R := R) 1
+  simp only [L, M, Matrix.map_mul, map_regularRightMatrix, Polynomial.toLaurent_X, ← hq]
+  rw [regularRightMatrix_eq_toMatrix, regularRightMatrix_eq_toMatrix,
     ← LinearMap.toMatrix_mul, ← LinearMap.toMatrix_mul]
   congr 1
   ext x
-  simp [smul_smul, mul_assoc, (commute_T (R := R) (q := q) h).eq]
+  simp [smul_smul, mul_assoc, (commute_T (q := q) h).eq]
 
-end Multiplication
+end Relations
 
 section Continuity
 
@@ -278,4 +384,4 @@ theorem continuous_regularRightMatrix_sqrt (i : Fin (n - 1)) :
 
 end Continuity
 
-end TauCeti.TypeAHeckeAlgebra
+end CoxeterSystem
