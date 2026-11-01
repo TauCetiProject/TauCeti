@@ -77,24 +77,33 @@ theorem IsNondegenerate.mfderiv_reebVectorField_mpullback (hσ : σ.IsNondegener
     have hX : mvfderiv I K (ι s) X = 0 :=
       (hσ.isHamiltonianVectorField_hamiltonianVectorField K).mvfderiv_apply_self (ι s)
     rw [hK, LinearMap.mem_ker, map_smul, ContinuousLinearMap.coe_coe, hX, smul_zero]
-  have hv' : (fun i ↦ mfderiv J I ι s (![v] i)) = ![c⁻¹ • X] := by
+  rw [ContinuousLinearMap.coe_coe] at hv
+  -- Scalar normalization: `θ(X_K / θ(X_K)) = 1`.
+  have hθv : θ.1 (ι s) ![c⁻¹ • X] = 1 := by
+    rw [← SmoothForm.degreeOneEquiv_coe_apply, map_smul, SmoothForm.degreeOneEquiv_coe_apply,
+      smul_eq_mul, inv_mul_cancel₀ hθK]
+  -- Exterior-derivative identity: `dθ(X_K / c, u) = -σ(X_K / c, u) = -dK(u) / c`.
+  have hdθX (u : TangentSpace I (ι s)) :
+      mextDeriv θ.1 (ι s) ![c⁻¹ • X, u] = -(c⁻¹ * mvfderiv I K (ι s) u) := by
+    rw [hdθ, ContinuousAlternatingMap.neg_apply, ← SmoothBundleForm.eval₂_apply,
+      SmoothBundleForm.eval₂_smul_left, hσ.eval₂_hamiltonianVectorField, smul_eq_mul]
+  -- Evaluating the pullbacks of `θ` and of `dθ` on the lift `v`.
+  have hpull₁ : (SmoothForm.mpullback ι hι θ).1 s ![v] = θ.1 (ι s) ![c⁻¹ • X] := by
+    simp [← hv, Matrix.vec_single_eq_const]
+  have hpull₂ (w : TangentSpace J s) :
+      mextDeriv (SmoothForm.mpullback ι hι θ).1 s ![v, w] =
+        mextDeriv θ.1 (ι s) ![c⁻¹ • X, mfderiv J I ι s w] := by
+    rw [SmoothForm.coe_mpullback, ← mpullback_mextDeriv_at ((hι s).of_le (by simp))
+      ((θ.contMDiff (ι s)).of_le (by simp)), mpullback_apply]
+    congr 1
     ext i
     fin_cases i
-    exact hv
+    exacts [hv, rfl]
   -- The lift `v` of `X_K / θ(X_K)` satisfies the two Reeb equations.
-  have hR : (SmoothForm.mpullback ι hι θ).reebVectorField s = v := by
-    refine ((hα.eq_reebVectorField_iff).2 ⟨?_, fun w ↦ ?_⟩).symm
-    · rw [SmoothForm.mpullback_apply, hv', ← SmoothForm.degreeOneEquiv_coe_apply, map_smul,
-        SmoothForm.degreeOneEquiv_coe_apply, smul_eq_mul, inv_mul_cancel₀ hθK]
-    · have hw : (fun i ↦ mfderiv J I ι s (![v, w] i)) = ![c⁻¹ • X, mfderiv J I ι s w] := by
-        ext i
-        fin_cases i
-        exacts [hv, rfl]
-      rw [SmoothForm.coe_mpullback, ← mpullback_mextDeriv_at ((hι s).of_le (by simp))
-        ((θ.contMDiff (ι s)).of_le (by simp)), mpullback_apply, hdθ, hw,
-        ContinuousAlternatingMap.neg_apply, ← SmoothBundleForm.eval₂_apply,
-        SmoothBundleForm.eval₂_smul_left, hσ.eval₂_hamiltonianVectorField, hdK, smul_zero, neg_zero]
-  rw [hR, ← hv, ContinuousLinearMap.coe_coe]
+  have hR : (SmoothForm.mpullback ι hι θ).reebVectorField s = v :=
+    ((hα.eq_reebVectorField_iff).2 ⟨hpull₁.trans hθv, fun w ↦ by
+      rw [hpull₂, hdθX, hdK, mul_zero, neg_zero]⟩).symm
+  rw [hR, hv]
 
 end SmoothTwoForm
 
