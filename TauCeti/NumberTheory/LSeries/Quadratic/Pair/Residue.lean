@@ -43,6 +43,18 @@ namespace DirichletCharacter
 variable {M N : ℕ} [NeZero M] [NeZero N]
 variable (χ : DirichletCharacter ℂ M) (ψ : DirichletCharacter ℂ N)
 
+private theorem LFunctionTrivChar₁_one_apply_one : LFunctionTrivChar₁ 1 1 = 1 := by
+  simp [LFunctionTrivChar₁]
+
+private theorem tendsto_LFunction_nhdsNE_one (hχ : χ ≠ 1) :
+    Tendsto χ.LFunction (𝓝[≠] 1) (𝓝 (χ.LFunction 1)) :=
+  (differentiable_LFunction hχ).continuous.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
+
+private theorem tendsto_ofReal_nhdsGT_one_nhdsNE :
+    Tendsto (fun x : ℝ ↦ (x : ℂ)) (𝓝[>] 1) (𝓝[≠] 1) :=
+  continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin
+    (fun x hx ↦ by simpa using hx.ne')
+
 private theorem pair_simple_factorization :
     (fun s ↦ riemannZeta s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s)
       =ᶠ[𝓝[≠] 1] fun s ↦ (s - 1) ^ (-1 : ℤ) •
@@ -89,9 +101,9 @@ theorem meromorphicOrderAt_pair_eq_neg_one (hχ : χ ≠ 1) (hψ : ψ ≠ 1)
   have he := pair_simple_factorization χ ψ
   have hm := MeromorphicAt.iff_eventuallyEq_zpow_smul_analyticAt.mpr ⟨-1, _, ha, he⟩
   exact (meromorphicOrderAt_eq_int_iff hm).mpr ⟨_, ha,
-    by simpa [LFunctionTrivChar₁] using
-      mul_ne_zero (mul_ne_zero (LFunction_apply_one_ne_zero hχ)
-        (LFunction_apply_one_ne_zero hψ)) (LFunction_apply_one_ne_zero hχψ), he⟩
+    mul_ne_zero (mul_ne_zero (mul_ne_zero (LFunctionTrivChar₁_apply_one_ne_zero 1)
+      (LFunction_apply_one_ne_zero hχ)) (LFunction_apply_one_ne_zero hψ))
+        (LFunction_apply_one_ne_zero hχψ), he⟩
 
 /-- The four-factor product of nonprincipal characters has an exactly double pole at `1`
 when their product at the common level is principal. -/
@@ -121,7 +133,7 @@ theorem residue_pair_mul_of_mul_ne_one (hχ : χ ≠ 1) (hψ : ψ ≠ 1)
     rw [hs, smul_eq_mul, smul_eq_mul, mul_assoc]
   have hr := TauCeti.Contour.residue_eq_of_eventuallyEq_zpow_smul (by norm_num : (-1 : ℤ) ≤ -1)
     ((analyticAt_pair_simple_regularization χ ψ hχ hψ hχψ).mul hw) he
-  simpa [LFunctionTrivChar₁, iteratedDeriv_zero] using hr
+  simpa [LFunctionTrivChar₁_one_apply_one, iteratedDeriv_zero] using hr
 
 /-- The residue at `1` of the four-factor product, with an analytic weight, in the double-pole
 case. Differentiating the regularization retains both the derivative of the weight and the
@@ -142,6 +154,20 @@ theorem residue_pair_mul_of_mul_eq_one (hχ : χ ≠ 1) (hψ : ψ ≠ 1)
     ((analyticAt_pair_double_regularization χ ψ hχ hψ).mul hw) he
   simpa [iteratedDeriv_one, Pi.mul_def] using hr
 
+/-- The leading coefficient at the simple pole is the product of the three nonprincipal
+L-values at `1`. -/
+theorem tendsto_sub_one_mul_pair_of_mul_ne_one (hχ : χ ≠ 1) (hψ : ψ ≠ 1)
+    (hχψ : χ.mul ψ ≠ 1) :
+    Tendsto (fun s ↦ (s - 1) *
+      (riemannZeta s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s))
+      (𝓝[≠] 1) (𝓝 (χ.LFunction 1 * ψ.LFunction 1 * (χ.mul ψ).LFunction 1)) := by
+  have ht := ((riemannZeta_residue_one.mul (tendsto_LFunction_nhdsNE_one χ hχ)).mul
+    (tendsto_LFunction_nhdsNE_one ψ hψ)).mul (tendsto_LFunction_nhdsNE_one (χ.mul ψ) hχψ)
+  simp only [one_mul] at ht
+  convert ht using 1
+  funext s
+  ring
+
 /-- The leading coefficient at the double pole includes the Euler factors at all primes
 of the common level, even if those primes divide only one of the original levels. -/
 theorem tendsto_sub_one_sq_mul_pair_of_mul_eq_one (hχ : χ ≠ 1) (hψ : ψ ≠ 1)
@@ -150,12 +176,9 @@ theorem tendsto_sub_one_sq_mul_pair_of_mul_eq_one (hχ : χ ≠ 1) (hψ : ψ ≠
       (riemannZeta s * χ.LFunction s * ψ.LFunction s * (χ.mul ψ).LFunction s))
       (𝓝[≠] 1) (𝓝 (χ.LFunction 1 * ψ.LFunction 1 *
         ∏ p ∈ (Nat.lcm M N).primeFactors, (1 - (p : ℂ)⁻¹))) := by
-  have hχt : Tendsto χ.LFunction (𝓝[≠] 1) (𝓝 (χ.LFunction 1)) :=
-    (differentiable_LFunction hχ).continuous.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
-  have hψt : Tendsto ψ.LFunction (𝓝[≠] 1) (𝓝 (ψ.LFunction 1)) :=
-    (differentiable_LFunction hψ).continuous.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
-  have ht := (((riemannZeta_residue_one.mul hχt).mul hψt).mul
-    (LFunctionTrivChar_residue_one (N := Nat.lcm M N)))
+  have ht := ((riemannZeta_residue_one.mul (tendsto_LFunction_nhdsNE_one χ hχ)).mul
+    (tendsto_LFunction_nhdsNE_one ψ hψ)).mul
+      (LFunctionTrivChar_residue_one (N := Nat.lcm M N))
   simp only [one_mul] at ht
   convert ht using 1
   funext s
@@ -168,22 +191,11 @@ theorem tendsto_sub_one_mul_LSeries_zetaMulPairCoeffs (hχ : χ ≠ 1) (hψ : ψ
     (hχψ : χ.mul ψ ≠ 1) :
     Tendsto (fun x : ℝ ↦ ((x : ℂ) - 1) * LSeries (χ.zetaMulPairCoeffs ψ) x)
       (𝓝[>] 1) (𝓝 (χ.LFunction 1 * ψ.LFunction 1 * (χ.mul ψ).LFunction 1)) := by
-  have hcast : Tendsto (fun x : ℝ ↦ (x : ℂ)) (𝓝[>] 1) (𝓝[≠] 1) :=
-    continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin
-      (fun x hx ↦ by simpa using hx.ne')
-  have hχt : Tendsto χ.LFunction (𝓝[≠] 1) (𝓝 (χ.LFunction 1)) :=
-    (differentiable_LFunction hχ).continuous.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
-  have hψt : Tendsto ψ.LFunction (𝓝[≠] 1) (𝓝 (ψ.LFunction 1)) :=
-    (differentiable_LFunction hψ).continuous.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
-  have hχψt : Tendsto (χ.mul ψ).LFunction (𝓝[≠] 1) (𝓝 ((χ.mul ψ).LFunction 1)) :=
-    (differentiable_LFunction hχψ).continuous.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
-  have ht := (((riemannZeta_residue_one.mul hχt).mul hψt).mul hχψt).comp hcast
-  simp only [one_mul] at ht
-  apply ht.congr'
+  apply ((tendsto_sub_one_mul_pair_of_mul_ne_one χ ψ hχ hψ hχψ).comp
+    tendsto_ofReal_nhdsGT_one_nhdsNE).congr'
   filter_upwards [self_mem_nhdsWithin] with x hx
   rw [(LSeriesHasSum_zetaMulPairCoeffs χ ψ (by simpa using hx)).LSeries_eq,
     Function.comp_apply]
-  ring
 
 /-- For a principal product character, the coefficient series has a double pole from the
 right, with the principal character's missing Euler factors in its leading coefficient. -/
@@ -192,10 +204,8 @@ theorem tendsto_sub_one_sq_mul_LSeries_zetaMulPairCoeffs (hχ : χ ≠ 1) (hψ :
     Tendsto (fun x : ℝ ↦ ((x : ℂ) - 1) ^ 2 * LSeries (χ.zetaMulPairCoeffs ψ) x)
       (𝓝[>] 1) (𝓝 (χ.LFunction 1 * ψ.LFunction 1 *
         ∏ p ∈ (Nat.lcm M N).primeFactors, (1 - (p : ℂ)⁻¹))) := by
-  have hcast : Tendsto (fun x : ℝ ↦ (x : ℂ)) (𝓝[>] 1) (𝓝[≠] 1) :=
-    continuous_ofReal.continuousWithinAt.tendsto_nhdsWithin
-      (fun x hx ↦ by simpa using hx.ne')
-  apply ((tendsto_sub_one_sq_mul_pair_of_mul_eq_one χ ψ hχ hψ hχψ).comp hcast).congr'
+  apply ((tendsto_sub_one_sq_mul_pair_of_mul_eq_one χ ψ hχ hψ hχψ).comp
+    tendsto_ofReal_nhdsGT_one_nhdsNE).congr'
   filter_upwards [self_mem_nhdsWithin] with x hx
   rw [(LSeriesHasSum_zetaMulPairCoeffs χ ψ (by simpa using hx)).LSeries_eq,
     Function.comp_apply]
