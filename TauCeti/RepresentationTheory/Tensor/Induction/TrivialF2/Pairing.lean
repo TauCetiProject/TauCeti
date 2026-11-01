@@ -16,8 +16,8 @@ factors. It carries the factorwise multiplication pairing to `TauCeti.trivialF2T
 the ambient group. Thus the pairing used for a product of tensor-induced cohomology classes
 agrees with the canonical mod-two cup pairing after identifying the coefficients.
 
-`TauCeti.smoothTensorInducedTrivialF2Iso_hom_map₂` states this as an equation on arbitrary
-tensors, rather than only on pure tensors. For pure tensors it is the identity
+`TauCeti.smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_map₂` states this as an
+equation on arbitrary tensors, rather than only on pure tensors. For pure tensors it is the identity
 `∏ i, (a i * b i) = (∏ i, a i) * (∏ i, b i)` in `ZMod 2`.
 
 ## References
@@ -44,7 +44,7 @@ attribute [local instance 1200] TopRep.hV2
 /-- The canonical identification of tensor-induced trivial `𝔽₂` coefficients preserves the
 factorwise multiplication pairing. This is the coefficient compatibility needed to transport
 cup products from tensor-induced coefficients to the canonical trivial coefficients. -/
-theorem smoothTensorInducedTrivialF2Iso_hom_map₂
+theorem smoothTensorInducedTrivialF2Iso_hom_apply_piTensorProduct_map₂
     (a b : ⨂[ℤ] _ : G ⧸ U, (DiscreteRep.trivialF2 U).V) :
     (smoothTensorInducedTrivialF2Iso G U hU s).hom.hom.hom
         (PiTensorProduct.map₂ (fun _ : G ⧸ U ↦ (trivialF2TopPairing U).bil) a b) =
@@ -77,22 +77,14 @@ theorem smoothTensorInducedTrivialF2Iso_hom_map₂
       (trivialF2TopPairing G).bil (e (PiTensorProduct.tprod ℤ x))
         (e (PiTensorProduct.tprod ℤ y)) := by
     apply (trivialF2Equiv G).injective
-    rw [hf, he, trivialF2TopPairing_bil_apply, AddEquiv.apply_symm_apply, he, he]
-    simp only [trivialF2TopPairing_bil_apply, AddEquiv.apply_symm_apply,
+    simp only [hf, he, trivialF2TopPairing_bil_apply, AddEquiv.apply_symm_apply,
       Finset.prod_mul_distrib]
-  -- A coset space is nonempty, so absorb each scalar into one tensor factor.
-  obtain ⟨i⟩ := (inferInstance : Nonempty (G ⧸ U))
   induction a using PiTensorProduct.induction_on with
   | smul_tprod r x =>
-    have hx := (PiTensorProduct.tprod ℤ).map_update_smul x i r (x i)
-    rw [Function.update_eq_self] at hx
-    rw [← hx]
+    simp only [LinearMap.map_smul, LinearMap.smul_apply]
+    congr 1
     induction b using PiTensorProduct.induction_on with
-    | smul_tprod t y =>
-      have hy := (PiTensorProduct.tprod ℤ).map_update_smul y i t (y i)
-      rw [Function.update_eq_self] at hy
-      rw [← hy]
-      exact htprod _ _
+    | smul_tprod t y => simp only [LinearMap.map_smul, htprod]
     | add b c hb hc => simp only [map_add, hb, hc]
   | add a c ha hc => simp only [map_add, LinearMap.add_apply, ha, hc]
 
