@@ -86,6 +86,18 @@ def map (F : FormalGroupLift π F₀) (f : A →+* B) (hf : ρ.comp f = π) :
 theorem formalGroup_map (F : FormalGroupLift π F₀) (f : A →+* B) (hf : ρ.comp f = π) :
     (F.map f hf).formalGroup = F.formalGroup.map f := (rfl)
 
+/-- Base change of lifts commutes with coordinate changes reducing to the identity. -/
+@[simp]
+theorem map_smul (φ : (FormalCoordinate.map π).ker) (F : FormalGroupLift π F₀)
+    (f : A →+* B) (hf : ρ.comp f = π) :
+    (φ • F).map f hf =
+      (⟨FormalCoordinate.map f φ.val, by
+        apply MonoidHom.mem_ker.mpr
+        rw [← FormalCoordinate.map_comp, hf, MonoidHom.mem_ker.mp φ.property]⟩ :
+        (FormalCoordinate.map ρ).ker) • F.map f hf := by
+  ext
+  simp only [formalGroup_map, formalGroup_smul, FormalGroup.map_smul]
+
 /-- Base change by the identity fixes a lift. -/
 @[simp]
 theorem map_id (F : FormalGroupLift π F₀) (h : π.comp (RingHom.id A) = π) :
@@ -182,13 +194,9 @@ theorem mk_eq_mk_iff (F G : FormalGroupLift π F₀) :
 def map (f : A →+* B) (hf : ρ.comp f = π) :
     FormalGroupDeformation π F₀ → FormalGroupDeformation ρ F₀ :=
   Quotient.map (fun F => F.map f hf) fun F G h => by
-    obtain ⟨φ, hφ, hFG⟩ := (mk_eq_mk_iff F G).1 (Quotient.sound h)
-    apply Quotient.exact
-    apply (mk_eq_mk_iff _ _).2
-    refine ⟨FormalCoordinate.map f φ, ?_, ?_⟩
-    · rw [← FormalCoordinate.map_comp, hf, hφ]
-    · simpa only [FormalGroup.map_smul, FormalGroupLift.formalGroup_map] using
-        congrArg (FormalGroup.map · f) hFG
+    obtain ⟨φ, rfl⟩ := MulAction.mem_orbit_iff.mp h
+    apply MulAction.mem_orbit_iff.mpr
+    exact ⟨_, (FormalGroupLift.map_smul φ G f hf).symm⟩
 
 /-- Base change on a representative is coefficient extension of that lift. -/
 @[simp]
