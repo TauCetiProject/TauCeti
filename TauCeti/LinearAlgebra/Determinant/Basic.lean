@@ -78,6 +78,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   as many members in the first factor as the rank of the first factor.
 * `Module.Basis.det_smul_smul_vecCons`: rescaling the first two of three vectors by `r` and `r'`
   multiplies their determinant by `r * r'`.
+* `Module.Basis.det_equivFun_symm_trans_equivFun`: the coordinate change from a basis `b` to a
+  basis `b'` has determinant `b'.det b`.
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
 
 ## Implementation notes
@@ -205,6 +207,17 @@ theorem det_smul_smul_vecCons (b : Basis (Fin 3) R M) (r r' : R) (u w d : M) :
     fin_cases k <;> simp
   rw [hv, AlternatingMap.map_smul_univ, Fin.prod_univ_three]
   simp
+
+/-- The coordinate change from the basis `b` to the basis `b'`, which sends the coordinates `x` of
+`∑ i, x i • b i` in `b` to its coordinates in `b'`, has determinant `b'.det b`. -/
+theorem det_equivFun_symm_trans_equivFun (b b' : Basis ι R M) :
+    (LinearEquiv.det (b.equivFun.symm.trans b'.equivFun) : R) = b'.det b := by
+  -- The coordinate change is the change of basis `b' i ↦ b i`, written in the coordinates of `b'`.
+  have h : b.equivFun.symm.trans b'.equivFun =
+      (b'.equivFun.symm.trans (b'.equiv b (Equiv.refl ι))).trans b'.equivFun := by
+    ext x : 1
+    simp [map_sum, map_smul]
+  rw [h, LinearEquiv.det_conj, LinearEquiv.coe_det, det_basis]
 
 end Module.Basis
 
