@@ -84,7 +84,7 @@ public section
 noncomputable section
 
 open Bundle VectorField
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -155,20 +155,23 @@ theorem mlieDerivForm_eq (hX : α.IsContactHamiltonianVectorField f X)
   funext fun x ↦ hX.mlieDerivForm_apply_eq (hXd x)
 
 /-- **A contact Hamiltonian vector field preserves the contact distribution** infinitesimally: its
-bracket with a vector field tangent to `ξ = ker α` is again tangent to `ξ`. -/
+bracket at `x` with a vector field tangent to `ξ = ker α` near `x` is again tangent to `ξ`. -/
 theorem mlieBracket_mem_kerDistribution (hX : α.IsContactHamiltonianVectorField f X) {x : M}
     (hXd : MDifferentiableAt I I.tangent (fun y ↦ (X y : TangentBundle I M)) x)
     {Y : (x : M) → TangentSpace I x}
     (hYd : MDifferentiableAt I I.tangent (fun y ↦ (Y y : TangentBundle I M)) x)
-    (hY : ∀ y, Y y ∈ α.kerDistribution y) : mlieBracket I X Y x ∈ α.kerDistribution x := by
-  -- The bracket formula `(L_X α)(Y) = X(α(Y)) - α([X, Y])`, where `α(Y) = 0` identically and
+    (hY : ∀ᶠ y in 𝓝 x, Y y ∈ α.kerDistribution y) :
+    mlieBracket I X Y x ∈ α.kerDistribution x := by
+  -- The bracket formula `(L_X α)(Y) = X(α(Y)) - α([X, Y])`, where `α(Y) = 0` near `x` and
   -- `(L_X α)(Y) = (R_α f) α(Y) = 0`.
   have h := mlieDerivForm_apply_one (V := X) (α.mdifferentiableAt x) hYd
   have hd : mvfderiv I (fun y ↦ α.1 y ![Y y]) x = 0 := by
-    rw [funext fun y ↦ mem_kerDistribution.1 (hY y)]
+    rw [Filter.EventuallyEq.mvfderiv_eq (f := fun _ ↦ (0 : ℝ))
+      (hY.mono fun y hy ↦ mem_kerDistribution.1 hy)]
     exact mvfderiv_const (0 : ℝ)
   rw [hX.mlieDerivForm_apply_eq hXd, ContinuousAlternatingMap.smul_apply,
-    mem_kerDistribution.1 (hY x), smul_zero, hd, zero_apply, zero_sub, zero_eq_neg] at h
+    mem_kerDistribution.1 hY.self_of_nhds, smul_zero, hd, zero_apply, zero_sub,
+    zero_eq_neg] at h
   exact mem_kerDistribution.2 h
 
 end IsContactHamiltonianVectorField
@@ -220,6 +223,7 @@ theorem contactHamiltonianVectorField_neg (x : M) :
   module
 
 /-- The contact Hamiltonian vector field commutes with multiplication by a real constant. -/
+@[simp]
 theorem contactHamiltonianVectorField_const_smul (c : ℝ) (x : M) :
     α.contactHamiltonianVectorField (c • f) x = c • α.contactHamiltonianVectorField f x := by
   simp only [contactHamiltonianVectorField_def, mvfderiv_const_smul_field, ← map_smul]

@@ -194,6 +194,7 @@ theorem hamiltonianVectorField_neg (x : M) :
   simp [hamiltonianVectorField_def, mvfderiv_neg]
 
 /-- The Hamiltonian vector field commutes with multiplication by a real constant. -/
+@[simp]
 theorem hamiltonianVectorField_const_smul (c : ℝ) (x : M) :
     σ.hamiltonianVectorField (c • f) x = c • σ.hamiltonianVectorField f x := by
   rw [hamiltonianVectorField_def, hamiltonianVectorField_def, mvfderiv_const_smul_field, map_smul]

@@ -99,6 +99,7 @@ theorem mvfderiv_const_smul {R : Type*} [Semiring R] [Module R F] [SMulCommClass
 /-- A version of `TauCeti.mvfderiv_const_smul` without differentiability hypothesis, for a scalar in
 the base field: the derivative of a vector-valued function, read in the target space, commutes
 with multiplication by any constant. -/
+@[simp]
 theorem mvfderiv_const_smul_field (g : M → F) (x : M) (c : 𝕜) :
     mvfderiv I (c • g) x = c • mvfderiv I g x := by
   by_cases hg : MDiffAt g x
