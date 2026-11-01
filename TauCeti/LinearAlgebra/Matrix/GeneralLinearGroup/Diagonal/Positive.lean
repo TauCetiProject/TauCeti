@@ -108,6 +108,16 @@ theorem posDiagonalSubgroup_le_diagonalTorus (n : ℕ) :
   rw [mem_diagonalTorus_iff, hg]
   exact isDiag_diagonal d
 
+/-- **Positive diagonal matrices separate coordinates**: for distinct coordinates `i ≠ j` there is
+a positive diagonal matrix `diagGL t` with `t i ≠ t j`, namely the one with `2` at `i` and `1`
+elsewhere. -/
+private theorem exists_diagGL_mem_posDiagonalSubgroup_ne {i j : ι} (hij : i ≠ j) :
+    ∃ t : ι → 𝕜ˣ, diagGL t ∈ posDiagonalSubgroup ι 𝕜 ∧ t i ≠ t j := by
+  refine ⟨Pi.mulSingle i (Units.mk0 2 two_ne_zero),
+    diagGL_mem_posDiagonalSubgroup_iff.mpr fun m => ?_, ?_⟩
+  · rcases eq_or_ne m i with rfl | hm <;> simp [*]
+  · simp [Pi.mulSingle_eq_of_ne hij.symm, Units.ext_iff]
+
 variable (𝕜) in
 /-- **The centralizer of the positive diagonal subgroup is the diagonal torus.** The positive
 diagonal matrices already separate any two coordinates, so an invertible matrix commuting with all
@@ -118,14 +128,10 @@ theorem centralizer_posDiagonalSubgroup (n : ℕ) :
   refine le_antisymm (fun g hg => mem_diagonalTorus_iff.mpr fun i j hij => ?_)
     ((Subgroup.le_centralizer _).trans
       (Subgroup.centralizer_le (posDiagonalSubgroup_le_diagonalTorus 𝕜 n)))
-  -- The positive diagonal matrix with `2` at `i` and `1` elsewhere separates `i` from `j`.
-  let t : Fin n → 𝕜ˣ := Pi.mulSingle i (Units.mk0 2 two_ne_zero)
-  have ht : diagGL t ∈ posDiagonalSubgroup (Fin n) 𝕜 :=
-    diagGL_mem_posDiagonalSubgroup_iff.mpr fun m => by
-      rcases eq_or_ne m i with rfl | hm <;> simp [t, *]
+  obtain ⟨t, ht, hti⟩ := exists_diagGL_mem_posDiagonalSubgroup_ne (𝕜 := 𝕜) hij
   have hcomm := congrArg Units.val (Subgroup.mem_centralizer_iff.mp hg _ ht)
   rw [Units.val_mul, Units.val_mul, diagGL_coe] at hcomm
-  exact apply_eq_zero_of_commute_diagonal hcomm (by simp [t, Pi.mulSingle_eq_of_ne hij.symm])
+  exact apply_eq_zero_of_commute_diagonal hcomm (Units.val_injective.ne hti)
 
 section Normalizer
 
@@ -152,16 +158,12 @@ theorem normalizer_posDiagonalSubgroup :
       Subgroup.normalizer (diagonalTorus 𝕜 n : Set (GL (Fin n) 𝕜)) := by
   refine le_antisymm (fun g hg => ?_) fun g hg =>
     Subgroup.mem_normalizer_iff.mpr fun a => ⟨mul_mul_inv_mem_posDiagonalSubgroup hg, fun ha => ?_⟩
-  · -- The positive diagonal matrix with `2` at `i` and `1` elsewhere separates `i` from `j`.
+  · -- The positive diagonal matrices separate the coordinates.
     have hsep (i j : Fin n) (hij : i ≠ j) : ∃ t : Fin n → 𝕜ˣ,
         g * diagGL t * g⁻¹ ∈ diagonalTorus 𝕜 n ∧ t i ≠ t j := by
-      let t : Fin n → 𝕜ˣ := Pi.mulSingle i (Units.mk0 2 two_ne_zero)
-      have ht : diagGL t ∈ posDiagonalSubgroup (Fin n) 𝕜 :=
-        diagGL_mem_posDiagonalSubgroup_iff.mpr fun m => by
-          rcases eq_or_ne m i with rfl | hm <;> simp [t, *]
-      refine ⟨t, posDiagonalSubgroup_le_diagonalTorus 𝕜 n
-        ((Subgroup.mem_normalizer_iff.mp hg _).mp ht), ?_⟩
-      simp [t, Pi.mulSingle_eq_of_ne hij.symm, Units.ext_iff]
+      obtain ⟨t, ht, hti⟩ := exists_diagGL_mem_posDiagonalSubgroup_ne (𝕜 := 𝕜) hij
+      exact ⟨t, posDiagonalSubgroup_le_diagonalTorus 𝕜 n
+        ((Subgroup.mem_normalizer_iff.mp hg _).mp ht), hti⟩
     obtain ⟨d, σ, rfl⟩ := exists_eq_diagGL_mul_permutationGL_of_forall_ne hsep
     exact mem_normalizer_diagonalTorus_iff_exists.mpr ⟨d, σ, rfl⟩
   · simpa [mul_assoc] using mul_mul_inv_mem_posDiagonalSubgroup (inv_mem hg) ha

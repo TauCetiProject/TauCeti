@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.PermutationGL
 public import Mathlib.Algebra.CharZero.Infinite
 public import TauCeti.Algebra.GroupWithZero.Units.Basic
 import Mathlib.Data.Finite.Perm
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # The restricted Weyl group of the general linear group
@@ -93,11 +94,25 @@ def unitaryCentralizerPosDiagonal : Subgroup (GL (Fin n) 𝕜) :=
     Subgroup.centralizer (posDiagonalSubgroup (Fin n) 𝕜 : Set (GL (Fin n) 𝕜))
 
 variable (𝕜 n) in
+/-- `N_K(A)` is the intersection of `K` with the normalizer of `A` in `GL n 𝕜`. -/
+theorem unitaryNormalizerPosDiagonal_def :
+    unitaryNormalizerPosDiagonal 𝕜 n = unitarySubgroup (GL (Fin n) 𝕜) ⊓
+      Subgroup.normalizer (posDiagonalSubgroup (Fin n) 𝕜 : Set (GL (Fin n) 𝕜)) := by
+  rw [unitaryNormalizerPosDiagonal]
+
+variable (𝕜 n) in
+/-- `Z_K(A)` is the intersection of `K` with the centralizer of `A` in `GL n 𝕜`. -/
+theorem unitaryCentralizerPosDiagonal_def :
+    unitaryCentralizerPosDiagonal 𝕜 n = unitarySubgroup (GL (Fin n) 𝕜) ⊓
+      Subgroup.centralizer (posDiagonalSubgroup (Fin n) 𝕜 : Set (GL (Fin n) 𝕜)) := by
+  rw [unitaryCentralizerPosDiagonal]
+
+variable (𝕜 n) in
 /-- **`N_K(A)` is the normalizer of the diagonal torus in `K`.** -/
 theorem unitaryNormalizerPosDiagonal_eq :
     unitaryNormalizerPosDiagonal 𝕜 n = unitarySubgroup (GL (Fin n) 𝕜) ⊓
       Subgroup.normalizer (diagonalTorus 𝕜 n : Set (GL (Fin n) 𝕜)) := by
-  rw [unitaryNormalizerPosDiagonal, normalizer_posDiagonalSubgroup]
+  rw [unitaryNormalizerPosDiagonal_def, normalizer_posDiagonalSubgroup]
 
 /-- An invertible matrix lies in `N_K(A)` exactly when it lies in `K` and normalizes the diagonal
 torus. -/
@@ -118,7 +133,7 @@ variable (𝕜 n) in
 matrices with entries `±1`. -/
 theorem unitaryCentralizerPosDiagonal_eq :
     unitaryCentralizerPosDiagonal 𝕜 n = unitarySubgroup (GL (Fin n) 𝕜) ⊓ diagonalTorus 𝕜 n := by
-  rw [unitaryCentralizerPosDiagonal, centralizer_posDiagonalSubgroup]
+  rw [unitaryCentralizerPosDiagonal_def, centralizer_posDiagonalSubgroup]
 
 /-- An invertible matrix lies in `Z_K(A)` exactly when it lies in `K` and is diagonal. -/
 @[simp]
@@ -166,6 +181,7 @@ theorem unitaryNormalizerPosDiagonal_mul_diagGL_mul_inv (g : unitaryNormalizerPo
     Subgroup.coe_mk]
 
 /-- The coordinate permutation of an element of `N_K(A)` is trivial exactly on `Z_K(A)`. -/
+@[simp]
 theorem unitaryNormalizerPosDiagonalPerm_eq_one_iff (g : unitaryNormalizerPosDiagonal 𝕜 n) :
     unitaryNormalizerPosDiagonalPerm g = 1 ↔
       (g : GL (Fin n) 𝕜) ∈ unitaryCentralizerPosDiagonal 𝕜 n := by
@@ -181,6 +197,14 @@ theorem unitaryNormalizerPosDiagonalPerm_permutationGL (σ : Equiv.Perm (Fin n))
       ⟨permutationGL σ, permutationGL_mem_unitaryNormalizerPosDiagonal (𝕜 := 𝕜) σ⟩ = σ := by
   rw [unitaryNormalizerPosDiagonalPerm_apply]
   exact diagonalNormalizerPerm_permutationGL σ
+
+/-- A monomial factorization of an element of `N_K(A)` determines its coordinate permutation. -/
+theorem unitaryNormalizerPosDiagonalPerm_eq_of_eq_diagGL_mul_permutationGL
+    (g : unitaryNormalizerPosDiagonal 𝕜 n) (d : Fin n → 𝕜ˣ) (σ : Equiv.Perm (Fin n))
+    (h : (g : GL (Fin n) 𝕜) = diagGL d * permutationGL σ) :
+    unitaryNormalizerPosDiagonalPerm g = σ := by
+  rw [unitaryNormalizerPosDiagonalPerm_apply]
+  exact diagonalNormalizerPerm_eq_of_eq_diagGL_mul_permutationGL _ d σ h
 
 /-- Every permutation of the coordinates is the coordinate permutation of an element of `N_K(A)`,
 namely of a permutation matrix. -/
@@ -217,8 +241,10 @@ theorem unitaryNormalizerPosDiagonalQuotientMulEquivPerm_mk
     (g : unitaryNormalizerPosDiagonal 𝕜 n) :
     unitaryNormalizerPosDiagonalQuotientMulEquivPerm (g : unitaryNormalizerPosDiagonal 𝕜 n ⧸
         (unitaryCentralizerPosDiagonal 𝕜 n).subgroupOf (unitaryNormalizerPosDiagonal 𝕜 n)) =
-      unitaryNormalizerPosDiagonalPerm g :=
-  (rfl)
+      unitaryNormalizerPosDiagonalPerm g := by
+  rw [unitaryNormalizerPosDiagonalQuotientMulEquivPerm, MulEquiv.trans_apply,
+    QuotientGroup.quotientMulEquivOfEq_mk,
+    TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk]
 
 /-- The inverse of the restricted Weyl group equivalence sends a coordinate permutation to the
 class of its permutation matrix. -/
