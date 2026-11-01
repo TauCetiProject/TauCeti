@@ -192,11 +192,11 @@ theorem pullback_pullback {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G
 /-- Locally inverse analytic maps identify the scalar analytic germ rings at corresponding
 points, contravariantly. Only inverse identities near the two base points are required. -/
 def equivOfInverse (g : E → F) (h : F → E)
-    (hg : AnalyticAt 𝕜 g a) (hh : AnalyticAt 𝕜 h b) (hga : g a = b) (hhb : h b = a)
+    (hg : AnalyticAt 𝕜 g a) (hh : AnalyticAt 𝕜 h b) (hga : g a = b)
     (hleft : h ∘ g =ᶠ[𝓝 a] id) (hright : g ∘ h =ᶠ[𝓝 b] id) :
     analyticGerms 𝕜 b ≃+* analyticGerms 𝕜 a where
   toFun := pullback g hg hga
-  invFun := pullback h hh hhb
+  invFun := pullback h hh (hga ▸ hleft.self_of_nhds)
   map_mul' := map_mul (pullback g hg hga)
   map_add' := map_add (pullback g hg hga)
   left_inv φ := by
@@ -211,18 +211,19 @@ def equivOfInverse (g : E → F) (h : F → E)
 /-- Transport by locally inverse analytic maps is analytic pullback. -/
 @[simp]
 theorem equivOfInverse_apply (g : E → F) (h : F → E)
-    (hg : AnalyticAt 𝕜 g a) (hh : AnalyticAt 𝕜 h b) (hga : g a = b) (hhb : h b = a)
+    (hg : AnalyticAt 𝕜 g a) (hh : AnalyticAt 𝕜 h b) (hga : g a = b)
     (hleft : h ∘ g =ᶠ[𝓝 a] id) (hright : g ∘ h =ᶠ[𝓝 b] id)
     (φ : analyticGerms 𝕜 b) :
-    equivOfInverse g h hg hh hga hhb hleft hright φ = pullback g hg hga φ := (rfl)
+    equivOfInverse g h hg hh hga hleft hright φ = pullback g hg hga φ := (rfl)
 
 /-- Inverse transport is pullback by the local inverse. -/
 @[simp]
 theorem equivOfInverse_symm_apply (g : E → F) (h : F → E)
-    (hg : AnalyticAt 𝕜 g a) (hh : AnalyticAt 𝕜 h b) (hga : g a = b) (hhb : h b = a)
+    (hg : AnalyticAt 𝕜 g a) (hh : AnalyticAt 𝕜 h b) (hga : g a = b)
     (hleft : h ∘ g =ᶠ[𝓝 a] id) (hright : g ∘ h =ᶠ[𝓝 b] id)
     (φ : analyticGerms 𝕜 a) :
-    (equivOfInverse g h hg hh hga hhb hleft hright).symm φ = pullback h hh hhb φ := (rfl)
+    (equivOfInverse g h hg hh hga hleft hright).symm φ =
+      pullback h hh (hga ▸ hleft.self_of_nhds) φ := (rfl)
 
 end analyticGerms
 
