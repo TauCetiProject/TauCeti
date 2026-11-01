@@ -37,8 +37,9 @@ algebraic Belyi pair over `k'`, but its constants over `k` are all of `k'`. Rami
 (`TauCeti.Place.ramificationIdx_ratFunc_eq_of_constantCompositum_eq_top`). Finally the three
 marked places correspond: a place of `F'` lies over one of `t = 0`, `t = 1`, `t = ∞` of `k'(t)`
 exactly when the place of `F` below it lies over one of the marked places of `k(t)`
-(`TauCeti.Place.restrict_restrict_mem_zeroOneInfty_iff_of_constantCompositum_eq_top`), because
-the marked places are the zeros and poles of `t` and `t - 1`, whose orders do not change either.
+(`TauCeti.Place.restrict_restrict_mem_zeroOneInfty_iff`), because the marked places are the zeros
+and poles of `t` and `t - 1`, and ramification indices are positive. This needs only that `t` acts
+on `F'` as it does on `F`.
 In the descending direction every place of `F` has a place of `F'` above it, `F'` being a
 function field algebraic over `F`.
 
@@ -48,8 +49,8 @@ produced by descent, is again unramified outside `0`, `1` and `∞`.
 
 ## Main results
 
-* `TauCeti.Place.restrict_restrict_mem_zeroOneInfty_iff_of_constantCompositum_eq_top`: base change
-  matches the places over the marked places.
+* `TauCeti.Place.restrict_restrict_mem_zeroOneInfty_iff`: base change matches the places over the
+  marked places.
 * `TauCeti.isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top`: the base change of `F` to `k'`
   is an algebraic Belyi pair exactly when `F` is.
 
@@ -74,23 +75,31 @@ variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
 
 namespace Place
 
-variable [PerfectField k] [Algebra.IsSeparable k k'] [Algebra.IsIntegral (RatFunc k) F]
-  [Algebra.IsIntegral (RatFunc k') F']
+variable [Algebra.IsIntegral (RatFunc k) F] [Algebra.IsIntegral (RatFunc k') F']
 
-/-- **Base change matches the marked places**: if `F' = F · k'` and `t` acts on `F'` as it does
-on `F`, then a place `Q'` of `F'` lies over one of the marked places `t = 0`, `t = 1`, `t = ∞` of
-`k'(t)` exactly when the place of `F` below it lies over one of those of `k(t)`. -/
-theorem restrict_restrict_mem_zeroOneInfty_iff_of_constantCompositum_eq_top
-    [Algebra.IsIntegral F F'] (hcomp : constantCompositum F k' F' = ⊤)
+/-- **Base change matches the marked places**: if `t` acts on `F'` as it does on `F`, then a
+place `Q'` of `F'` lies over one of the marked places `t = 0`, `t = 1`, `t = ∞` of `k'(t)` exactly
+when the place of `F` below it lies over one of those of `k(t)`. -/
+theorem restrict_restrict_mem_zeroOneInfty_iff [Algebra.IsIntegral F F']
     (hX : algebraMap F F' (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc k') F' RatFunc.X) (Q' : Place k' F') :
     (Q'.restrict k F).restrict k (RatFunc k) ∈ zeroOneInfty k ↔
       Q'.restrict k' (RatFunc k') ∈ zeroOneInfty k' := by
-  have h₀ := ord_restrict_algebraMap_eq_of_constantCompositum_eq_top hcomp hX Q' X
-  have h₁ := ord_restrict_algebraMap_eq_of_constantCompositum_eq_top hcomp hX Q' (X - 1)
-  simp only [Polynomial.map_X, Polynomial.map_sub, Polynomial.map_one, map_sub, map_one,
-    RatFunc.algebraMap_X] at h₀ h₁
-  rw [← not_iff_not, notMem_zeroOneInfty_iff, notMem_zeroOneInfty_iff, h₀, h₁]
+  -- A function of `k(t)` and one of `k'(t)` with the same image in `F'` vanish together at the
+  -- places below `Q'`, since all the ramification indices are positive.
+  have key {f : RatFunc k} {f' : RatFunc k'}
+      (h : algebraMap F F' (algebraMap (RatFunc k) F f) = algebraMap (RatFunc k') F' f') :
+      ((Q'.restrict k F).restrict k (RatFunc k)).ord f = 0 ↔
+        (Q'.restrict k' (RatFunc k')).ord f' = 0 := by
+    have h := congrArg Q'.ord h
+    rw [ord_algebraMap_restrict k F Q', ord_algebraMap_restrict k (RatFunc k) (Q'.restrict k F),
+      ord_algebraMap_restrict k' (RatFunc k') Q'] at h
+    have he₁ := (ramificationIdx_pos F Q').ne'
+    have he₂ := (ramificationIdx_pos (RatFunc k) (Q'.restrict k F)).ne'
+    have he₃ := (ramificationIdx_pos (RatFunc k') Q').ne'
+    constructor <;> intro h₀ <;> rw [h₀] at h <;> simp_all
+  rw [← not_iff_not, notMem_zeroOneInfty_iff, notMem_zeroOneInfty_iff, key hX,
+    key (f := RatFunc.X - 1) (f' := RatFunc.X - 1) (by simp only [map_sub, map_one, hX])]
 
 end Place
 
@@ -109,7 +118,7 @@ theorem isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top [CharZero k']
     IsAlgebraicBelyiPair k' F' ↔ IsAlgebraicBelyiPair k F := by
   have : Algebra.IsIntegral F F' :=
     (isAlgebraic_of_constantCompositum_eq_top (k := k) hcomp).isIntegral
-  have hmark := restrict_restrict_mem_zeroOneInfty_iff_of_constantCompositum_eq_top hcomp hX
+  have hmark := restrict_restrict_mem_zeroOneInfty_iff hX
   have he := ramificationIdx_ratFunc_eq_of_constantCompositum_eq_top hcomp hX
   refine ⟨fun h' ↦ ⟨hex, fun {Q} hQ ↦ ?_⟩,
     fun h ↦ ⟨.of_constantCompositum_eq_top hex hcomp, fun {Q'} hQ' ↦ ?_⟩⟩
