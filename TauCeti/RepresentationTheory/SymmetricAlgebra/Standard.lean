@@ -12,6 +12,7 @@ public import TauCeti.RepresentationTheory.Augmentation.Projection
 public import TauCeti.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.Symmetric.Standard
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Permutation
+import TauCeti.Data.Fintype.Fin
 import TauCeti.RepresentationTheory.SymmetricAlgebra.Degrees
 
 /-!
@@ -302,8 +303,7 @@ theorem map_univ_eq_of_bijective_aeval_standardRepresentation_dual [Nontrivial K
     rw [(algHom_ext fun i ↦ by simp : aeval (fun i ↦ e (X i)) = e.toAlgHom)]
     exact e.bijective
   rw [Representation.map_univ_eq_of_bijective_aeval_symmetricAlgebraInvariants _ hf hbij
-    (esymmStandardInvariantsEquiv_X_mem_homogeneousSubmodule K h hn) he,
-    Finset.val_univ_fin, Multiset.range, Multiset.map_coe, Multiset.map_coe,
-    ← List.map_coe_finRange_eq_range, List.map_map, Function.comp_def]
+    (esymmStandardInvariantsEquiv_X_mem_homogeneousSubmodule K h hn) he]
+  exact Fin.univ_val_map_eq_map_range (· + 2) n
 
 end TauCeti

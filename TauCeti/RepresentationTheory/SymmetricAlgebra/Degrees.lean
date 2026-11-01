@@ -27,7 +27,7 @@ Such systems are not unique, and this file proves that their numerical invariant
 * Every basic invariant has positive degree, since the invariants of degree zero are the scalars.
 * For a finite group acting on a finite-dimensional vector space `M` over a field, a system of basic
   invariants has exactly `finrank M` members: the invariant ring has the Krull dimension of `Sym M`,
-  over which it is integral.
+  which is integral over it.
 * The Hilbert series of the invariant algebra is
   `∑ₙ dim (A ∩ Symⁿ M) tⁿ = ∏ᵢ (1 - t ^ d i)⁻¹`.
 * Consequently the multiset of degrees `d i` does not depend on the system of basic invariants.

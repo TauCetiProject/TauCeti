@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
+import TauCeti.Data.Fintype.Fin
 import TauCeti.RepresentationTheory.SymmetricAlgebra.Degrees
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 
@@ -251,9 +252,8 @@ theorem map_univ_eq_of_bijective_aeval_ofMulAction_perm_dual [Nontrivial K]
     rw [(algHom_ext fun i ↦ by simp : aeval (fun i ↦ e (X i)) = e.toAlgHom)]
     exact e.bijective
   rw [_root_.Representation.map_univ_eq_of_bijective_aeval_symmetricAlgebraInvariants _ hf hbij
-    (esymmSymmetricAlgebraInvariantsEquiv_X_mem_homogeneousSubmodule K σ hn) he,
-    Finset.val_univ_fin, Multiset.range, Multiset.map_coe, Multiset.map_coe,
-    ← List.map_coe_finRange_eq_range, List.map_map, Function.comp_def]
+    (esymmSymmetricAlgebraInvariantsEquiv_X_mem_homogeneousSubmodule K σ hn) he]
+  exact Fin.univ_val_map_eq_map_range (· + 1) n
 
 end Perm
 

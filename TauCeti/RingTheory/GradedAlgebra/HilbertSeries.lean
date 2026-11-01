@@ -40,8 +40,9 @@ are the degrees of the group.
 
 * `TauCeti.GradedAlgebra.map_aeval_weightedHomogeneousSubmodule`: the weighted homogeneous
   polynomials of weight `n` map onto `𝒜 n` under a surjective evaluation at homogeneous elements.
-* `TauCeti.GradedAlgebra.finrank_eq_natCard_weight`: for a polynomial presentation, the rank of
-  `𝒜 n` is the number of exponent vectors of weight `n`.
+* `TauCeti.GradedAlgebra.finrank_eq_natCard_weight`: for a polynomial presentation,
+  `Module.finrank (𝒜 n)` equals `Nat.card` of the exponent vectors of weight `n`; when there are
+  infinitely many such vectors both sides are `0`.
 * `TauCeti.GradedAlgebra.ne_zero_of_injective_aeval`: in a connected graded algebra, algebraically
   independent homogeneous elements have positive degrees.
 * `TauCeti.GradedAlgebra.mk_finrank_mul_prod_one_sub_X_pow`: the Hilbert series of a graded
@@ -90,8 +91,9 @@ theorem map_aeval_weightedHomogeneousSubmodule (hf : ∀ i, f i ∈ 𝒜 (d i))
     _ = aeval f φ := DirectSum.decompose_of_mem_same 𝒜 hx
 
 /-- **Dimensions of a graded polynomial algebra.** If evaluation at homogeneous elements
-`f i ∈ 𝒜 (d i)` is bijective, then `𝒜 n` has rank the number of exponent vectors `e` of weight
-`∑ᵢ e i * d i = n`. -/
+`f i ∈ 𝒜 (d i)` is bijective, then `Module.finrank (𝒜 n)` equals `Nat.card` of the exponent
+vectors `e` of weight `∑ᵢ e i * d i = n`. When there are infinitely many such vectors, `𝒜 n` has
+an infinite basis and both sides are `0`. -/
 theorem finrank_eq_natCard_weight [Nontrivial R] (hf : ∀ i, f i ∈ 𝒜 (d i))
     (hbij : Function.Bijective (aeval (R := R) f)) (n : ℕ) :
     Module.finrank R (𝒜 n) = Nat.card {e : ι →₀ ℕ // Finsupp.weight d e = n} := by
