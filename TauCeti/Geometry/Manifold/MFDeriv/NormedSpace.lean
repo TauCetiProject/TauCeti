@@ -20,6 +20,8 @@ with `F`, so one vanishes exactly when the other does.
 
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
   between normed spaces.
+* `MDifferentiableAt.mvfderiv_prod_eq_add_apply`: the vector-valued derivative on a product
+  is the sum of its partial derivatives.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
   manifold-valued map on a normed space.
 * `TauCeti.mvfderiv_apply`: the derivative of a component of a function into a finite product is
@@ -83,6 +85,22 @@ theorem mvfderiv_comp_apply_of_differentiableAt {g : M → F} {φ : F → F'} {x
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     NormedSpace.fromTangentSpace_apply, mvfderiv_apply_eq_mfderiv_apply]
 
+/-- The vector-valued derivative on a product is the sum of its partial derivatives. -/
+theorem _root_.MDifferentiableAt.mvfderiv_prod_eq_add_apply
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] {f : M × M' → F'} {p : M × M'}
+    (hf : MDifferentiableAt (I.prod I') 𝓘(𝕜, F') f p)
+    (v : TangentSpace (I.prod I') p) :
+    mvfderiv (I.prod I') f p v =
+      mvfderiv I (fun y ↦ f (y, p.2)) p.1 v.1 +
+        mvfderiv I' (fun y ↦ f (p.1, y)) p.2 v.2 := by
+  rcases p with ⟨x, y⟩
+  have h := congrArg (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (f (x, y)))
+    (mfderiv_prod_eq_add_apply hf (v := v))
+  simpa only [mvfderiv, ContinuousLinearMap.coe_comp, Function.comp_def,
+    ContinuousLinearEquiv.coe_coe, map_add] using h
+
 /-- The chain rule along the graph of a manifold-valued map on a normed space, splitting the
 result into the derivative in the domain variable and the derivative in the manifold variable. -/
 theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M → F'} {x : F}
@@ -95,33 +113,16 @@ theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M 
     ((NormedSpace.fromTangentSpace x).symm v)
   rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at hc
-  -- The `erw` steps unfold `TangentSpace` to match the product-model instances:
-  -- `TangentSpace (𝓘(𝕜, F).prod I) (x, u x)` and
-  -- `TangentSpace 𝓘(𝕜, F) x × TangentSpace I (u x)` both reduce to `F × E`.
+  -- Product tangent spaces use the product model; `erw` exposes this identification.
   erw [mfderiv_prodMk mdifferentiableAt_id hu, mfderiv_id,
     ContinuousLinearMap.prod_apply (ContinuousLinearMap.id 𝕜 (TangentSpace 𝓘(𝕜, F) x))
-      (mfderiv 𝓘(𝕜, F) I u x) ((NormedSpace.fromTangentSpace x).symm v)] at hc
-  erw [ContinuousLinearMap.id_apply (R₁ := 𝕜) (M₁ := TangentSpace 𝓘(𝕜, F) x)
-    ((NormedSpace.fromTangentSpace x).symm v)] at hc
-  simp only [NormedSpace.fromTangentSpace_symm_apply] at hc
-  erw [mvfderiv_apply_eq_mfderiv_apply, mfderiv_prod_eq_add_apply hf,
-    ← mvfderiv_apply_eq_mfderiv_apply (fun y ↦ f y (u x)) x] at hc
-  erw [mvfderiv_eq_fderiv,
-    ContinuousLinearMap.comp_apply (fderiv 𝕜 (fun y ↦ f y (u x)) x)
-      (NormedSpace.fromTangentSpace x).toContinuousLinearMap v,
-    ContinuousLinearEquiv.coe_coe, NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) x v] at hc
-  -- Transport the tangent-fibre addition explicitly to the vector-space addition.
-  -- Fully specified evaluations keep `erw` from matching a different tangent identification.
-  have hc' := congrArg (NormedSpace.fromTangentSpace (𝕜 := 𝕜) (f x (u x))) hc
-  erw [(NormedSpace.fromTangentSpace (𝕜 := 𝕜) (f x (u x))).map_add
-    (fderiv 𝕜 (fun y ↦ f y (u x)) x v)
-    (mfderiv I 𝓘(𝕜, F') (f x) (u x) (mfderiv 𝓘(𝕜, F) I u x v))] at hc'
-  erw [NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) (f x (u x))
-      (fderiv 𝕜 (fun y ↦ f y (u y)) x v),
-    NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) (f x (u x))
-      (fderiv 𝕜 (fun y ↦ f y (u x)) x v)] at hc'
-  simpa only [NormedSpace.fromTangentSpace_apply, Function.comp_def,
-    Function.uncurry_apply_pair, id_eq, mvfderiv_apply_eq_mfderiv_apply] using hc'
+      (mfderiv 𝓘(𝕜, F) I u x),
+    ContinuousLinearMap.id_apply (R₁ := 𝕜) (M₁ := TangentSpace 𝓘(𝕜, F) x)] at hc
+  erw [hf.mvfderiv_prod_eq_add_apply, mvfderiv_eq_fderiv] at hc
+  simp only [ContinuousLinearMap.coe_comp, Function.comp_def,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at hc
+  simpa only [NormedSpace.fromTangentSpace_symm_apply,
+    Function.uncurry_apply_pair, id_eq] using hc
 
 /-- The derivative of a vector-valued function, read in the target space, commutes with
 multiplication by a constant scalar acting continuously on the target, such as a complex scalar on

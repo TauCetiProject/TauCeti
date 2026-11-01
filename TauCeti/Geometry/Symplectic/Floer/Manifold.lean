@@ -210,10 +210,10 @@ theorem fromTangentSpace_perturbedMFDeriv_constSmooth_apply (ω : SymplecticForm
     simp only [mfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
       ContinuousLinearEquiv.apply_symm_apply]
   have hd' := congrArg (NormedSpace.fromTangentSpace (u z)) hd
-  rw [ContinuousLinearEquiv.apply_symm_apply] at hd'
+  rw [ContinuousLinearEquiv.apply_symm_apply,
+    NormedSpace.fromTangentSpace_symm_apply] at hd'
   rw [SmoothTwoForm.perturbedMFDeriv_apply, map_sub, map_sub, map_smul, map_smul,
-    perturbedFDeriv_apply]
-  erw [hd']
+    perturbedFDeriv_apply, hd']
   rw [NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_apply,
     hamiltonianVectorField_constSmooth, hamiltonianVectorField_constSmooth]
 
