@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Infinitary.Semantics
+public import TauCeti.ModelTheory.LanguageMap
+public import TauCeti.ModelTheory.Syntax
 
 /-!
 # Abstracting constants in infinitary formulas
@@ -31,13 +33,6 @@ universe u v uι uα uγ w
 namespace FirstOrder.Language.BoundedFormulaInf
 
 variable {L : FirstOrder.Language.{u, v}} {ι : Type uι} {α : Type uα} {γ : Type uγ}
-
-private theorem onRelation_sumEmpty {l : ℕ} (R : L[[γ]].Relations l) :
-    (L.lhomWithConstants γ).onRelation ((Equiv.sumEmpty _ _) R) = R := by
-  -- lhomWithConstants is sumInl, so its relation map restores the left summand.
-  cases R with
-  | inl R => rfl
-  | inr R => exact R.elim
 
 private def abstractConstants : ∀ {n : ℕ}, L[[γ]].BoundedFormulaInf ι α n →
     L.BoundedFormulaInf ι (γ ⊕ α) n
@@ -74,7 +69,7 @@ def constantsVarsEquiv {n : ℕ} :
     | rel R ts =>
       simp only [abstractConstants, restoreConstants, _root_.Equiv.symm_apply_apply]
       -- The inverse of sumEmpty is the relation map of lhomWithConstants (both are sumInl).
-      exact congrArg (fun R => rel R ts) (onRelation_sumEmpty R)
+      exact congrArg (fun R => rel R ts) (lhomWithConstants_onRelation_sumEmpty R)
     | imp φ ψ ihφ ihψ => simp [abstractConstants, restoreConstants, ihφ, ihψ]
     | all φ ih => simp [abstractConstants, restoreConstants, ih]
     | iSup φs ih => simp [abstractConstants, restoreConstants, ih]
@@ -255,48 +250,23 @@ theorem constantsVarsEquiv_symm_exs :
   | _ + 1, φ => by
     rw [exs_succ, exs_succ, constantsVarsEquiv_symm_exs φ.ex, constantsVarsEquiv_symm_ex]
 
--- Isolate Mathlib's mapTermRel presentation behind constructor equations.
-private theorem finitaryConstantsVarsEquiv_falsum :
-    BoundedFormula.constantsVarsEquiv (.falsum : L[[γ]].BoundedFormula α n) = .falsum := by
-  rfl
-
-private theorem finitaryConstantsVarsEquiv_equal (t₁ t₂ : L[[γ]].Term (α ⊕ Fin n)) :
-    BoundedFormula.constantsVarsEquiv (.equal t₁ t₂ : L[[γ]].BoundedFormula α n) =
-      .equal (Term.constantsVarsEquivLeft t₁) (Term.constantsVarsEquivLeft t₂) := by
-  rfl
-
-private theorem finitaryConstantsVarsEquiv_rel {l : ℕ} (R : L[[γ]].Relations l)
-    (ts : Fin l → L[[γ]].Term (α ⊕ Fin n)) :
-    BoundedFormula.constantsVarsEquiv (.rel R ts : L[[γ]].BoundedFormula α n) =
-      .rel ((Equiv.sumEmpty _ _) R) (fun i => Term.constantsVarsEquivLeft (ts i)) := by
-  rfl
-
-private theorem finitaryConstantsVarsEquiv_imp (φ ψ : L[[γ]].BoundedFormula α n) :
-    BoundedFormula.constantsVarsEquiv (φ.imp ψ) =
-      (BoundedFormula.constantsVarsEquiv φ).imp (BoundedFormula.constantsVarsEquiv ψ) := by
-  rfl
-
-private theorem finitaryConstantsVarsEquiv_all (φ : L[[γ]].BoundedFormula α (n + 1)) :
-    BoundedFormula.constantsVarsEquiv φ.all = (BoundedFormula.constantsVarsEquiv φ).all := by
-  rfl
-
 /-- Abstraction agrees with Mathlib's constant abstraction on finitary formulas. -/
 @[simp]
 theorem constantsVarsEquiv_toInf (φ : L[[γ]].BoundedFormula α n) :
     constantsVarsEquiv (φ.toInf : L[[γ]].BoundedFormulaInf ι α n) =
       (BoundedFormula.constantsVarsEquiv φ).toInf := by
   induction φ with
-  | falsum => simp only [finitaryConstantsVarsEquiv_falsum, BoundedFormula.toInf_falsum,
+  | falsum => simp only [BoundedFormula.constantsVarsEquiv_falsum, BoundedFormula.toInf_falsum,
       constantsVarsEquiv_falsum]
-  | equal => simp only [finitaryConstantsVarsEquiv_equal, BoundedFormula.toInf_equal,
+  | equal => simp only [BoundedFormula.constantsVarsEquiv_equal, BoundedFormula.toInf_equal,
       constantsVarsEquiv_equal]
-  | rel => simp only [finitaryConstantsVarsEquiv_rel, BoundedFormula.toInf_rel,
+  | rel => simp only [BoundedFormula.constantsVarsEquiv_rel, BoundedFormula.toInf_rel,
       constantsVarsEquiv_rel]
   | imp φ ψ ihφ ihψ =>
-    simp only [finitaryConstantsVarsEquiv_imp, BoundedFormula.toInf_imp,
+    simp only [BoundedFormula.constantsVarsEquiv_imp, BoundedFormula.toInf_imp,
       constantsVarsEquiv_imp, ihφ, ihψ]
   | all φ ih =>
-    simp only [finitaryConstantsVarsEquiv_all, BoundedFormula.toInf_all,
+    simp only [BoundedFormula.constantsVarsEquiv_all, BoundedFormula.toInf_all,
       constantsVarsEquiv_all, ih]
 
 /-- Restoring constants agrees with Mathlib's inverse abstraction on finitary formulas. -/
@@ -320,7 +290,7 @@ theorem realize_constantsVarsEquiv {M : Type w} [L.Structure M] [L[[γ]].Structu
       Term.realize_constantsVarsEquivLeft]
   | rel R ts =>
     simp only [constantsVarsEquiv_rel, realize_rel, Term.realize_constantsVarsEquivLeft]
-    rw [← LHom.map_onRelation (L.lhomWithConstants γ), onRelation_sumEmpty]
+    rw [← LHom.map_onRelation (L.lhomWithConstants γ), lhomWithConstants_onRelation_sumEmpty]
   | imp φ ψ ihφ ihψ => simp [realize_imp, ihφ, ihψ]
   | all φ ih => simp [realize_all, ih]
   | iSup φs ih => simp [realize_iSup, ih]
