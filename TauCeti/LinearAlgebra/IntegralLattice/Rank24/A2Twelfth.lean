@@ -446,22 +446,10 @@ private theorem discriminantGroupEquiv_ofEq_trans_a2TwelfthSignIsometry (j : Fin
       typeADiscriminantGroupEquiv 2 ((a2TwelfthSign j : ℤ) • x) := by
   -- The composite changes the ambient index type from `Fin (A 2).rank` to `Fin 2`, so it is
   -- only type-correct up to reducing `(A 2).rank`, which `erw` does when matching.
-  -- Identifying a lattice with the simple-root model `A₂` and back fixes every class.
-  have hcancel {M : IntegralLattice (Fin 2 → ℚ)} (h : M = typeARootLattice 2)
-      (y : (typeARootLattice 2).DiscriminantGroup) :
-      (IntegralLattice.Isometry.ofEq h).discriminantGroupEquiv
-        ((IntegralLattice.Isometry.ofEq h.symm).discriminantGroupEquiv y) = y := by
-    subst h
-    induction y using Submodule.Quotient.induction_on with
-    | _ y =>
-      rw [IntegralLattice.Isometry.discriminantGroupEquiv_mk,
-        IntegralLattice.Isometry.discriminantGroupEquiv_mk]
-      exact congrArg Submodule.Quotient.mk (Subtype.ext (by
-        rw [IntegralLattice.Isometry.coe_dualCarrierEquiv_apply,
-          IntegralLattice.Isometry.coe_dualCarrierEquiv_apply,
-          IntegralLattice.Isometry.ofEq_apply, IntegralLattice.Isometry.ofEq_apply]))
   erw [IntegralLattice.Isometry.discriminantGroupEquiv_trans, LinearEquiv.trans_apply,
-    glueAlphabetIsometry_A_apply, hcancel (rootLattice_A 2 (isSimplyLaced_A 2))]
+    glueAlphabetIsometry_A_apply,
+    IntegralLattice.Isometry.discriminantGroupEquiv_ofEq_symm (rootLattice_A 2 (isSimplyLaced_A 2)),
+    LinearEquiv.apply_symm_apply]
   exact (discriminantGroupEquiv_a2TwelfthSignIsometry j _).trans (map_zsmul _ _ _).symm
 
 /-- **The root-lattice comparison acts on glue words by the Golay comparison.**  It carries the
@@ -489,16 +477,9 @@ theorem discriminantGroupEquiv_a2TwelfthRootIsometry_glueWordIsometry
   -- the ambient index type, so the composite is matched by `erw`.
   erw [LinearEquiv.trans_apply, discriminantGroupPiEquiv_discriminantGroupEquiv_pi, hperm,
     discriminantGroupEquiv_ofEq_trans_a2TwelfthSignIsometry]
-  -- Evaluate the right-hand side coordinate by coordinate.
-  refine (congrArg (typeADiscriminantGroupEquiv 2) hw.symm).trans <|
-    (typeADiscriminantQuadraticIsometry_apply 2 _).symm.trans <|
-      (FiniteQuadraticModule.Isometry.coordinatePower_apply _ (Fin 12) _ j).symm.trans <|
-        (congrFun (((typeARootLattice 2).discriminantQuadraticIsometryCoordinatePower (Fin 12)
-          (isEven_typeARootLattice 2)).apply_symm_apply _).symm j).trans ?_
-  exact (congrFun ((typeARootLattice 2).discriminantQuadraticIsometryCoordinatePower_apply
-    (Fin 12) (isEven_typeARootLattice 2) _) j).trans
-      (congrArg (fun z ↦ discriminantGroupPiEquiv (fun _ : Fin 12 ↦ typeARootLattice 2) z j)
-        (FiniteQuadraticModule.Isometry.coordinatePowerDiscriminant_apply _ _).symm)
+  rw [FiniteQuadraticModule.Isometry.discriminantGroupPiEquiv_coordinatePowerDiscriminant_apply]
+  exact (congrArg (typeADiscriminantGroupEquiv 2) hw.symm).trans
+    (typeADiscriminantQuadraticIsometry_apply 2 _).symm
 
 /-- The root-lattice comparison carries the table glue subgroup, read in the discriminant group of
 `A₂¹²`, onto the extended ternary Golay code in the discriminant group of `(A₂)¹²`. -/
