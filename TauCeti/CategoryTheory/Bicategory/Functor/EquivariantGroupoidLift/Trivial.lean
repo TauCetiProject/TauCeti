@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Bicategory.Functor.EquivariantGroupoidLift.Basic
-public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
 public import Mathlib.CategoryTheory.Bicategory.Modification.Pseudo
 
 /-!
@@ -95,51 +95,6 @@ open Bicategory TauCeti TauCeti.EquivariantGroupoidLift
 variable {Γ : Type u₁} [Category.{v₁} Γ] (F : LocallyDiscrete Γ ⥤ᵖ Cat.{v, w})
   (H : Type u₂) [Monoid H]
 
-/-! ### Strong transformations into `Cat` with identity components
-
-The conditions below are stated for arbitrary `1`-morphisms of `Cat`, so that they apply by
-unification to goals whose `1`-morphisms are values of composite pseudofunctors, which `simp`
-does not see through. -/
-
-/-- The naturality condition of a strong transformation, at an identity `2`-cell. -/
-private lemma whiskerRight_id_comp_hom {X Y Y' Z : Cat.{v, w}} (u : X ⟶ Y) (v : Y ⟶ Z)
-    (u' : X ⟶ Y') (v' : Y' ⟶ Z) (θ : u ≫ v ≅ u' ≫ v') :
-    𝟙 u ▷ v ≫ θ.hom = θ.hom ≫ u' ◁ 𝟙 v' := by
-  simp
-
-/-- The unit condition for a strong transformation with identity component and naturality
-isomorphism `ρ_ T ≪≫ e ≪≫ (λ_ U).symm`, reduced to a componentwise identity. -/
-private lemma naturality_id_of_app {D : Cat.{v, w}} {T U : D ⟶ D} (e : T ≅ U) (mT : T ≅ 𝟙 D)
-    (mU : U ≅ 𝟙 D)
-    (h : ∀ X, e.hom.toNatTrans.app X ≫ mU.hom.toNatTrans.app X = mT.hom.toNatTrans.app X) :
-    (ρ_ T ≪≫ e ≪≫ (λ_ U).symm).hom ≫ 𝟙 D ◁ mU.hom =
-      mT.hom ▷ 𝟙 D ≫ (λ_ (𝟙 D)).hom ≫ (ρ_ (𝟙 D)).inv := by
-  ext X
-  simpa using h X
-
-/-- The composition condition for a strong transformation with identity components and
-naturality isomorphisms `ρ_ T ≪≫ e ≪≫ (λ_ U).symm`, reduced to a componentwise identity. -/
-private lemma naturality_comp_of_app {D₀ D₁ D₂ : Cat.{v, w}} {T₀₁ U₀₁ : D₀ ⟶ D₁}
-    {T₁₂ U₁₂ : D₁ ⟶ D₂} {T₀₂ U₀₂ : D₀ ⟶ D₂} (e₀₁ : T₀₁ ≅ U₀₁) (e₁₂ : T₁₂ ≅ U₁₂)
-    (e₀₂ : T₀₂ ≅ U₀₂) (mT : T₀₂ ≅ T₀₁ ≫ T₁₂) (mU : U₀₂ ≅ U₀₁ ≫ U₁₂)
-    (h : ∀ X, e₀₂.hom.toNatTrans.app X ≫ mU.hom.toNatTrans.app X =
-      mT.hom.toNatTrans.app X ≫ e₁₂.hom.toNatTrans.app (T₀₁.toFunctor.obj X) ≫
-        U₁₂.toFunctor.map (e₀₁.hom.toNatTrans.app X)) :
-    (ρ_ T₀₂ ≪≫ e₀₂ ≪≫ (λ_ U₀₂).symm).hom ≫ 𝟙 D₀ ◁ mU.hom =
-      mT.hom ▷ 𝟙 D₂ ≫ (α_ _ _ _).hom ≫ T₀₁ ◁ (ρ_ T₁₂ ≪≫ e₁₂ ≪≫ (λ_ U₁₂).symm).hom ≫
-        (α_ _ _ _).inv ≫ (ρ_ T₀₁ ≪≫ e₀₁ ≪≫ (λ_ U₀₁).symm).hom ▷ U₁₂ ≫ (α_ _ _ _).hom := by
-  ext X
-  simpa using h X
-
-/-- The components of a naturality isomorphism `ρ_ T ≪≫ e ≪≫ (λ_ U).symm` are those of `e`. -/
-private lemma rightUnitor_trans_hom_app {D D' : Cat.{v, w}} {T U : D ⟶ D'} (e : T ≅ U) (X : D) :
-    (ρ_ T ≪≫ e ≪≫ (λ_ U).symm).hom.toNatTrans.app X = e.hom.toNatTrans.app X := by
-  simp
-
-private lemma rightUnitor_trans_inv_app {D D' : Cat.{v, w}} {T U : D ⟶ D'} (e : T ≅ U) (X : D) :
-    (ρ_ T ≪≫ e ≪≫ (λ_ U).symm).inv.toNatTrans.app X = e.inv.toNatTrans.app X := by
-  simp
-
 /-! ### The lift of the trivial actions -/
 
 /-- The comparison of the restriction to the fiber `{p} × SingleObj H` of the composite of `F`
@@ -156,7 +111,7 @@ naturality isomorphism at `a` is the unit comparison `F (𝟙 p) ≅ 𝟙` of `F
   naturality_naturality η := by
     obtain rfl := LocallyDiscrete.eq_of_hom η
     rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
-    exact whiskerRight_id_comp_hom _ _ _ _ _
+    exact Bicategory.id_whiskerRight_comp_eq_comp_whiskerLeft_id _ _ _ _ _
   -- The unit and composition conditions are proved for arbitrary `2`-cells of
   -- `LocallyDiscrete Γ`, which are then found by unification with the unfolded goal.
   naturality_id _ := by
@@ -200,14 +155,14 @@ lemma restrictFiberFst_naturality_hom_app (p : Γ) {a b : LocallyDiscrete (Singl
     (f : a ⟶ b) (X : F.obj ⟨p⟩) :
     ((F.restrictFiberFst H p).naturality f).hom.toNatTrans.app X =
       (F.mapId ⟨p⟩).hom.toNatTrans.app X :=
-  rightUnitor_trans_hom_app _ _
+  Cat.rightUnitor_trans_leftUnitor_symm_hom_app _ _
 
 @[simp]
 lemma restrictFiberFst_naturality_inv_app (p : Γ) {a b : LocallyDiscrete (SingleObj H)}
     (f : a ⟶ b) (X : F.obj ⟨p⟩) :
     ((F.restrictFiberFst H p).naturality f).inv.toNatTrans.app X =
       (F.mapId ⟨p⟩).inv.toNatTrans.app X :=
-  rightUnitor_trans_inv_app _ _
+  Cat.rightUnitor_trans_leftUnitor_symm_inv_app _ _
 
 /-- The lift of the trivial actions of `H` on the categories `F p` attached to a pseudofunctor
 `F : LocallyDiscrete Γ ⥤ᵖ Cat`. Its joint pseudofunctor is the composite of `F` with the
@@ -278,6 +233,7 @@ noncomputable def toEquivariantGroupoidLiftTransportIso {p q : Γ} (g : p ⟶ q)
   Functor.isoWhiskerRight ((Functor.rightUnitor _).symm ≪≫
     ((F.toEquivariantGroupoidLift H).fiberEquivalence p).counitIso) _
 
+@[simp]
 lemma toEquivariantGroupoidLiftTransportIso_hom_app {p q : Γ} (g : p ⟶ q)
     (X : fiber (fun p : Γ ↦ trivialAction H (F.obj ⟨p⟩)) p) :
     (F.toEquivariantGroupoidLiftTransportIso H g).hom.app X =
@@ -286,6 +242,7 @@ lemma toEquivariantGroupoidLiftTransportIso_hom_app {p q : Γ} (g : p ⟶ q)
   -- The component is `F g` applied to `𝟙 _ ≫ ε_X`, coming from the right unitor.
   congrArg (F.map ⟨g⟩).toFunctor.map (Category.id_comp _)
 
+@[simp]
 lemma toEquivariantGroupoidLiftTransportIso_inv_app {p q : Γ} (g : p ⟶ q)
     (X : fiber (fun p : Γ ↦ trivialAction H (F.obj ⟨p⟩)) p) :
     (F.toEquivariantGroupoidLiftTransportIso H g).inv.app X =
@@ -371,12 +328,12 @@ transformation whose components are identities and whose naturality isomorphism 
   naturality_naturality η := by
     obtain rfl := LocallyDiscrete.eq_of_hom η
     rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
-    exact whiskerRight_id_comp_hom _ _ _ _ _
+    exact Bicategory.id_whiskerRight_comp_eq_comp_whiskerLeft_id _ _ _ _ _
   naturality_id b := by
-    exact naturality_id_of_app _ _ _ fun X ↦
+    exact Cat.rightUnitor_trans_leftUnitor_symm_naturality_id _ _ _ fun X ↦
       (F.toEquivariantGroupoidLift_transportId_hom_app H b.as X).symm
   naturality_comp g h := by
-    exact naturality_comp_of_app _ _ _ _ _
+    exact Cat.rightUnitor_trans_leftUnitor_symm_naturality_comp _ _ _ _ _
       (F.toEquivariantGroupoidLiftTransportIso_hom_app_comp_mapComp H g.as h.as)
 
 @[simp]
@@ -389,14 +346,14 @@ lemma toEquivariantGroupoidLiftTransportHom_naturality_hom_app {b b' : LocallyDi
     (g : b ⟶ b') (X : F.obj b) :
     ((F.toEquivariantGroupoidLiftTransportHom H).naturality g).hom.toNatTrans.app X =
       (F.toEquivariantGroupoidLiftTransportIso H g.as).hom.app X :=
-  rightUnitor_trans_hom_app _ _
+  Cat.rightUnitor_trans_leftUnitor_symm_hom_app _ _
 
 @[simp]
 lemma toEquivariantGroupoidLiftTransportHom_naturality_inv_app {b b' : LocallyDiscrete Γ}
     (g : b ⟶ b') (X : F.obj b) :
     ((F.toEquivariantGroupoidLiftTransportHom H).naturality g).inv.toNatTrans.app X =
       (F.toEquivariantGroupoidLiftTransportIso H g.as).inv.app X :=
-  rightUnitor_trans_inv_app _ _
+  Cat.rightUnitor_trans_leftUnitor_symm_inv_app _ _
 
 /-- `F` maps to the transport pseudofunctor of `F.toEquivariantGroupoidLift H` by a strong
 transformation whose components are identities and whose naturality isomorphism at `g` is the
@@ -411,13 +368,13 @@ inverse of `toEquivariantGroupoidLiftTransportIso`. -/
   naturality_naturality η := by
     obtain rfl := LocallyDiscrete.eq_of_hom η
     rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
-    exact whiskerRight_id_comp_hom _ _ _ _ _
+    exact Bicategory.id_whiskerRight_comp_eq_comp_whiskerLeft_id _ _ _ _ _
   naturality_id b := by
-    exact naturality_id_of_app _ _ _ fun X ↦
+    exact Cat.rightUnitor_trans_leftUnitor_symm_naturality_id _ _ _ fun X ↦
       (Iso.inv_comp_eq ((F.toEquivariantGroupoidLiftTransportIso H (𝟙 b.as)).app X)).2
         (F.toEquivariantGroupoidLift_transportId_hom_app H b.as X)
   naturality_comp g h := by
-    exact naturality_comp_of_app _ _ _ _ _
+    exact Cat.rightUnitor_trans_leftUnitor_symm_naturality_comp _ _ _ _ _
       (F.toEquivariantGroupoidLiftTransportIso_inv_app_comp_transportComp_inv_app H g.as h.as)
 
 @[simp]
@@ -430,29 +387,18 @@ lemma toEquivariantGroupoidLiftTransportInv_naturality_hom_app {b b' : LocallyDi
     (g : b ⟶ b') (X : F.obj b) :
     ((F.toEquivariantGroupoidLiftTransportInv H).naturality g).hom.toNatTrans.app X =
       (F.toEquivariantGroupoidLiftTransportIso H g.as).inv.app X :=
-  rightUnitor_trans_hom_app _ _
+  Cat.rightUnitor_trans_leftUnitor_symm_hom_app _ _
 
 @[simp]
 lemma toEquivariantGroupoidLiftTransportInv_naturality_inv_app {b b' : LocallyDiscrete Γ}
     (g : b ⟶ b') (X : F.obj b) :
     ((F.toEquivariantGroupoidLiftTransportInv H).naturality g).inv.toNatTrans.app X =
       (F.toEquivariantGroupoidLiftTransportIso H g.as).hom.app X :=
-  rightUnitor_trans_inv_app _ _
+  Cat.rightUnitor_trans_leftUnitor_symm_inv_app _ _
 
 section Inverse
 
 open StrongTrans
-
-/-- The modification condition for an invertible modification `η ≫ θ ≅ 𝟙` between strong
-transformations into `Cat` with identity components, whose naturality isomorphisms are given by
-mutually inverse isomorphisms `e` and `e'`. -/
-private lemma comp_naturality_eq_id {D D' : Cat.{v, w}} {T U : D ⟶ D'} (e : T ≅ U) (e' : U ≅ T)
-    (h : ∀ X, e.hom.toNatTrans.app X ≫ e'.hom.toNatTrans.app X = 𝟙 _) :
-    T ◁ (λ_ (𝟙 D')).hom ≫ (ρ_ T ≪≫ (λ_ T).symm).hom =
-      ((α_ _ _ _).inv ≫ (ρ_ T ≪≫ e ≪≫ (λ_ U).symm).hom ▷ 𝟙 D' ≫ (α_ _ _ _).hom ≫
-        𝟙 D ◁ (ρ_ U ≪≫ e' ≪≫ (λ_ T).symm).hom ≫ (α_ _ _ _).inv) ≫ (λ_ (𝟙 D)).hom ▷ T := by
-  ext X
-  simpa using (h X).symm
 
 /-- The composite of `toEquivariantGroupoidLiftTransportHom` with
 `toEquivariantGroupoidLiftTransportInv` is the identity of the transport pseudofunctor, by the
@@ -462,7 +408,8 @@ noncomputable def toEquivariantGroupoidLiftTransportHomInvIso :
       𝟙 (F.toEquivariantGroupoidLift H).transportPseudofunctor :=
   isoMk (fun _ ↦ λ_ _) fun f ↦ by
     simp only [categoryStruct_comp_naturality_hom, categoryStruct_id_naturality_hom]
-    exact comp_naturality_eq_id _ _ fun X ↦ Iso.hom_inv_id_app _ X
+    exact Cat.rightUnitor_trans_leftUnitor_symm_comp_modification _ _ fun X ↦
+      Iso.hom_inv_id_app _ X
 
 @[simp]
 lemma toEquivariantGroupoidLiftTransportHomInvIso_hom_as_app (b : LocallyDiscrete Γ) :
@@ -483,7 +430,8 @@ noncomputable def toEquivariantGroupoidLiftTransportInvHomIso :
     F.toEquivariantGroupoidLiftTransportInv H ≫ F.toEquivariantGroupoidLiftTransportHom H ≅ 𝟙 F :=
   isoMk (fun _ ↦ λ_ _) fun f ↦ by
     simp only [categoryStruct_comp_naturality_hom, categoryStruct_id_naturality_hom]
-    exact comp_naturality_eq_id _ _ fun X ↦ Iso.inv_hom_id_app _ X
+    exact Cat.rightUnitor_trans_leftUnitor_symm_comp_modification _ _ fun X ↦
+      Iso.inv_hom_id_app _ X
 
 @[simp]
 lemma toEquivariantGroupoidLiftTransportInvHomIso_hom_as_app (b : LocallyDiscrete Γ) :
