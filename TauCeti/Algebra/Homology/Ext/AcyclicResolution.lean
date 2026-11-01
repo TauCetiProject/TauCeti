@@ -39,9 +39,11 @@ gives zero exactly when it is a coboundary (`CochainComplex.extMk_succ_eq_zero_i
 
 * `CochainComplex.resolutionExtClass_postcomp_bijective`: dimension shifting along the truncated
   resolution, from `CategoryTheory.ShortComplex.ShortExact.extClass_postcomp_bijective`.
-* `CochainComplex.extMk_add`, `CochainComplex.extMk_surjective`,
-  `CochainComplex.extMk_zero_eq_zero_iff` and `CochainComplex.extMk_succ_eq_zero_iff`: `extMk`
-  is additive and identifies `Extⁿ(P, F)` with the cohomology of `Hom(P, K)`.
+* `CochainComplex.extMk_add`, `CochainComplex.extMk_zero`, `CochainComplex.extMk_neg` and
+  `CochainComplex.extMk_sub`: `extMk` is additive in the cocycle.
+* `CochainComplex.extMk_surjective`, `CochainComplex.extMk_zero_eq_zero_iff` and
+  `CochainComplex.extMk_succ_eq_zero_iff`: `extMk` identifies `Extⁿ(P, F)` with the cohomology
+  of `Hom(P, K)`.
 
 ## References
 
@@ -176,11 +178,11 @@ noncomputable def extMk : {n : ℕ} → (f : P ⟶ K.X n) → f ≫ K.d n (n + 1
   | n + 1, f, hf => (Ext.mk₀ (K.liftCycles f (n + 2) (by simp) hf)).comp
       (K.resolutionExtClass ι hι hι' hK n) (zero_add _)
 
-lemma extMk_zero (f : P ⟶ K.X 0) (hf : f ≫ K.d 0 (0 + 1) = 0) :
+lemma extMk_of_deg_zero (f : P ⟶ K.X 0) (hf : f ≫ K.d 0 (0 + 1) = 0) :
     K.extMk ι hι hι' hK f hf = Ext.mk₀ (hι'.lift f hf) :=
   (rfl)
 
-lemma extMk_succ {n : ℕ} (f : P ⟶ K.X (n + 1)) (hf : f ≫ K.d (n + 1) (n + 1 + 1) = 0) :
+lemma extMk_of_deg_succ {n : ℕ} (f : P ⟶ K.X (n + 1)) (hf : f ≫ K.d (n + 1) (n + 1 + 1) = 0) :
     K.extMk ι hι hι' hK f hf = (Ext.mk₀ (K.liftCycles f (n + 2) (by simp) hf)).comp
       (K.resolutionExtClass ι hι hι' hK n) (zero_add _) :=
   (rfl)
@@ -192,13 +194,35 @@ lemma extMk_add {n : ℕ} (f g : P ⟶ K.X n) (hf : f ≫ K.d n (n + 1) = 0)
       K.extMk ι hι hι' hK f hf + K.extMk ι hι hι' hK g hg := by
   cases n with
   | zero =>
-    simp only [extMk_zero, ← Ext.mk₀_add]
+    simp only [extMk_of_deg_zero, ← Ext.mk₀_add]
     congr 1
     simp [← cancel_mono ι, hι'.lift_f]
   | succ n =>
-    simp only [extMk_succ, ← Ext.add_comp, ← Ext.mk₀_add]
+    simp only [extMk_of_deg_succ, ← Ext.add_comp, ← Ext.mk₀_add]
     congr 2
     simp [← cancel_mono (K.iCycles (n + 1))]
+
+/-- The zero cocycle has class zero. -/
+@[simp]
+lemma extMk_zero {n : ℕ} :
+    K.extMk ι hι hι' hK (0 : P ⟶ K.X n) zero_comp = 0 := by
+  have h := K.extMk_add ι hι hι' hK (0 : P ⟶ K.X n) 0 zero_comp zero_comp
+  simp only [add_zero] at h
+  exact left_eq_add.1 h
+
+/-- The class of the negative of a cocycle is the negative of its class. -/
+lemma extMk_neg {n : ℕ} (f : P ⟶ K.X n) (hf : f ≫ K.d n (n + 1) = 0) :
+    K.extMk ι hι hι' hK (-f) (by simp [hf]) = -K.extMk ι hι hι' hK f hf := by
+  refine eq_neg_of_add_eq_zero_left ?_
+  rw [← K.extMk_add]
+  simp only [neg_add_cancel, extMk_zero]
+
+/-- The class of a difference of cocycles is the difference of their classes. -/
+lemma extMk_sub {n : ℕ} (f g : P ⟶ K.X n) (hf : f ≫ K.d n (n + 1) = 0)
+    (hg : g ≫ K.d n (n + 1) = 0) :
+    K.extMk ι hι hι' hK (f - g) (by simp [hf, hg]) =
+      K.extMk ι hι hι' hK f hf - K.extMk ι hι hι' hK g hg := by
+  simp only [sub_eq_add_neg, ← K.extMk_neg ι hι hι' hK g hg, ← K.extMk_add]
 
 include hP in
 /-- **Every class in `Extⁿ(P, F)` is the class of a cocycle** of `Hom(P, K)`, for a resolution
@@ -208,13 +232,13 @@ theorem extMk_surjective {n : ℕ} (α : Ext.{w} P F n) :
   cases n with
   | zero =>
     refine ⟨Ext.homEquiv₀ α ≫ ι, by simp [hι], ?_⟩
-    rw [extMk_zero, ← Ext.mk₀_homEquiv₀_apply α]
+    rw [extMk_of_deg_zero, ← Ext.mk₀_homEquiv₀_apply α]
     congr 1
     simp [← cancel_mono ι, hι'.lift_f]
   | succ n =>
     obtain ⟨x, rfl⟩ := K.resolutionExtClass_postcomp_surjective ι hι hι' hK P hP n α
     refine ⟨Ext.homEquiv₀ x ≫ K.iCycles (n + 1), by simp, ?_⟩
-    rw [extMk_succ]
+    rw [extMk_of_deg_succ]
     simp only [AddMonoidHom.flip_apply, Ext.bilinearComp_apply_apply]
     congr 1
     rw [← Ext.mk₀_homEquiv₀_apply x]
@@ -224,7 +248,7 @@ theorem extMk_surjective {n : ℕ} (α : Ext.{w} P F n) :
 /-- In degree `0` the class of a cocycle vanishes only for the zero cocycle. -/
 theorem extMk_zero_eq_zero_iff (f : P ⟶ K.X 0) (hf : f ≫ K.d 0 (0 + 1) = 0) :
     K.extMk ι hι hι' hK f hf = 0 ↔ f = 0 := by
-  rw [extMk_zero, Ext.mk₀_eq_zero_iff]
+  rw [extMk_of_deg_zero, Ext.mk₀_eq_zero_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · rw [← hι'.lift_f f hf, h, zero_comp]
   · subst h
@@ -236,7 +260,7 @@ terms are acyclic for `P`. -/
 theorem extMk_succ_eq_zero_iff {n : ℕ} (f : P ⟶ K.X (n + 1))
     (hf : f ≫ K.d (n + 1) (n + 1 + 1) = 0) :
     K.extMk ι hι hι' hK f hf = 0 ↔ ∃ g : P ⟶ K.X n, g ≫ K.d n (n + 1) = f := by
-  rw [extMk_succ, K.resolutionExtClass_postcomp_eq_zero_iff ι hι hι' hK P hP]
+  rw [extMk_of_deg_succ, K.resolutionExtClass_postcomp_eq_zero_iff ι hι hι' hK P hP]
   refine ⟨fun ⟨y, hy⟩ ↦ ⟨Ext.homEquiv₀ y, ?_⟩, fun ⟨g, hg⟩ ↦ ⟨Ext.mk₀ g, ?_⟩⟩
   · rw [← Ext.mk₀_homEquiv₀_apply y, Ext.mk₀_comp_mk₀] at hy
     have := congrArg (· ≫ K.iCycles (n + 1)) (Ext.homEquiv₀.symm.injective hy)

@@ -16,7 +16,9 @@ Let `0 ⟶ F ⟶ K⁰ ⟶ K¹ ⟶ ⋯` be a resolution of a sheaf of abelian gro
 for instance because each `Kʲ` is injective, or flasque on a topological space. Then the complex
 of sections `K⁰(V) ⟶ K¹(V) ⟶ ⋯` computes the cohomology `Hⁿ(V, F)`: every section `s` of `Kⁿ`
 over `V` killed by the differential has a class `[s]` in `Hⁿ(V, F)`, additive in `s`
-(`CategoryTheory.Sheaf.H'.resolutionClass_add`), every class is of this form
+(`CategoryTheory.Sheaf.H'.resolutionClass_add`, `CategoryTheory.Sheaf.H'.resolutionClass_zero`,
+`CategoryTheory.Sheaf.H'.resolutionClass_neg` and `CategoryTheory.Sheaf.H'.resolutionClass_sub`),
+every class is of this form
 (`CategoryTheory.Sheaf.H'.resolutionClass_surjective`), and `[s] = 0` exactly when `s` is the
 image of a section of `Kⁿ⁻¹` over `V`, respectively when `s = 0` in degree `0`
 (`CategoryTheory.Sheaf.H'.resolutionClass_succ_eq_zero_iff` and
@@ -81,20 +83,20 @@ private lemma symm_comp_d_eq_zero_iff {n m : ℕ} (s : (K.X n).obj.obj (op V)) :
 
 /-- The class `[s]` in `Hⁿ(V, F)` of a section `s` of `Kⁿ` over `V` killed by the differential,
 for a resolution `0 ⟶ F ⟶ K⁰ ⟶ K¹ ⟶ ⋯`. It is `CochainComplex.extMk` applied to the morphism
-from the free abelian sheaf on `V` corresponding to `s`. -/
+from the free abelian sheaf on `V` corresponding to `s`, transported to `Hⁿ(V, F)` along
+`CategoryTheory.Sheaf.H'AddEquivExt`. -/
 noncomputable def resolutionClass {n : ℕ} (s : (K.X n).obj.obj (op V))
-    (hs : (K.d n (n + 1)).hom.app (op V) s = 0) :
-    Ext.{w} ((freeYonedaSheafFunctor J).obj V) F n :=
-  K.extMk ι hι hι' hK ((freeYonedaSheafSectionsEquiv J V (K.X n)).symm s)
-    ((symm_comp_d_eq_zero_iff V s).2 hs)
+    (hs : (K.d n (n + 1)).hom.app (op V) s = 0) : F.H' n V :=
+  (F.H'AddEquivExt n V).symm <| K.extMk ι hι hι' hK
+    ((freeYonedaSheafSectionsEquiv J V (K.X n)).symm s) ((symm_comp_d_eq_zero_iff V s).2 hs)
 
 /-- `resolutionClass` is `CochainComplex.extMk` applied to the morphism from the free abelian sheaf
-on `V` corresponding to the section. -/
+on `V` corresponding to the section, transported along `CategoryTheory.Sheaf.H'AddEquivExt`. -/
 lemma resolutionClass_def {n : ℕ} (s : (K.X n).obj.obj (op V))
     (hs : (K.d n (n + 1)).hom.app (op V) s = 0) :
     resolutionClass ι hι hι' hK V s hs =
-      K.extMk ι hι hι' hK ((freeYonedaSheafSectionsEquiv J V (K.X n)).symm s)
-        (by rwa [symm_comp_d_eq_zero_iff]) :=
+      (F.H'AddEquivExt n V).symm (K.extMk ι hι hι' hK
+        ((freeYonedaSheafSectionsEquiv J V (K.X n)).symm s) (by rwa [symm_comp_d_eq_zero_iff])) :=
   (rfl)
 
 /-- The class of a sum of sections is the sum of their classes. -/
@@ -102,23 +104,46 @@ theorem resolutionClass_add {n : ℕ} (s t : (K.X n).obj.obj (op V))
     (hs : (K.d n (n + 1)).hom.app (op V) s = 0) (ht : (K.d n (n + 1)).hom.app (op V) t = 0) :
     resolutionClass ι hι hι' hK V (s + t) (by rw [map_add, hs, ht, add_zero]) =
       resolutionClass ι hι hι' hK V s hs + resolutionClass ι hι hι' hK V t ht := by
-  rw [resolutionClass_def, resolutionClass_def, resolutionClass_def, ← K.extMk_add]
-  congr 1
+  rw [resolutionClass_def, resolutionClass_def, resolutionClass_def, ← map_add, ← K.extMk_add]
+  congr 2
   exact map_add _ s t
+
+/-- The zero section has class zero. -/
+@[simp]
+theorem resolutionClass_zero {n : ℕ} :
+    resolutionClass ι hι hι' hK V (0 : (K.X n).obj.obj (op V)) (map_zero _) = 0 := by
+  simp [resolutionClass_def]
+
+/-- The class of the negative of a section is the negative of its class. -/
+theorem resolutionClass_neg {n : ℕ} (s : (K.X n).obj.obj (op V))
+    (hs : (K.d n (n + 1)).hom.app (op V) s = 0) :
+    resolutionClass ι hι hι' hK V (-s) (by rw [map_neg, hs, neg_zero]) =
+      -resolutionClass ι hι hι' hK V s hs := by
+  rw [resolutionClass_def, resolutionClass_def, ← map_neg, ← K.extMk_neg]
+  congr 2
+  exact map_neg _ s
+
+/-- The class of a difference of sections is the difference of their classes. -/
+theorem resolutionClass_sub {n : ℕ} (s t : (K.X n).obj.obj (op V))
+    (hs : (K.d n (n + 1)).hom.app (op V) s = 0) (ht : (K.d n (n + 1)).hom.app (op V) t = 0) :
+    resolutionClass ι hι hι' hK V (s - t) (by rw [map_sub, hs, ht, sub_zero]) =
+      resolutionClass ι hι hι' hK V s hs - resolutionClass ι hι hι' hK V t ht := by
+  rw [resolutionClass_def, resolutionClass_def, resolutionClass_def, ← map_sub, ← K.extMk_sub]
+  congr 2
+  exact map_sub _ s t
 
 include hKV in
 /-- **Every class in `Hⁿ(V, F)` is the class of a section** of `Kⁿ` over `V` killed by the
 differential, when the terms of the resolution `K` of `F` have no cohomology over `V` in positive
 degrees. -/
-theorem resolutionClass_surjective {n : ℕ}
-    (x : Ext.{w} ((freeYonedaSheafFunctor J).obj V) F n) :
+theorem resolutionClass_surjective {n : ℕ} (x : F.H' n V) :
     ∃ (s : (K.X n).obj.obj (op V)) (hs : (K.d n (n + 1)).hom.app (op V) s = 0),
       resolutionClass ι hι hι' hK V s hs = x := by
-  obtain ⟨f, hf, rfl⟩ := K.extMk_surjective ι hι hι' hK
-    (by simpa only [sheafH'_eq] using hKV) x
+  obtain ⟨f, hf, hx⟩ := K.extMk_surjective ι hι hι' hK
+    (by simpa only [sheafH'_eq] using hKV) (F.H'AddEquivExt n V x)
   refine ⟨freeYonedaSheafSectionsEquiv J V (K.X n) f,
     (symm_comp_d_eq_zero_iff V _).1 (by rwa [AddEquiv.symm_apply_apply]), ?_⟩
-  rw [resolutionClass_def]
+  rw [resolutionClass_def, AddEquiv.symm_apply_eq, ← hx]
   congr 1
   exact AddEquiv.symm_apply_apply _ f
 
@@ -127,7 +152,8 @@ is zero. -/
 theorem resolutionClass_zero_eq_zero_iff (s : (K.X 0).obj.obj (op V))
     (hs : (K.d 0 (0 + 1)).hom.app (op V) s = 0) :
     resolutionClass ι hι hι' hK V s hs = 0 ↔ s = 0 := by
-  rw [resolutionClass_def, CochainComplex.extMk_zero_eq_zero_iff, ← map_eq_zero_iff _
+  rw [resolutionClass_def, map_eq_zero_iff _ (F.H'AddEquivExt 0 V).symm.injective,
+    CochainComplex.extMk_zero_eq_zero_iff, ← map_eq_zero_iff _
     (freeYonedaSheafSectionsEquiv J V (K.X 0)).injective, AddEquiv.apply_symm_apply]
 
 include hKV in
@@ -139,7 +165,8 @@ theorem resolutionClass_succ_eq_zero_iff {n : ℕ} (s : (K.X (n + 1)).obj.obj (o
     (hs : (K.d (n + 1) (n + 1 + 1)).hom.app (op V) s = 0) :
     resolutionClass ι hι hι' hK V s hs = 0 ↔
       ∃ t : (K.X n).obj.obj (op V), (K.d n (n + 1)).hom.app (op V) t = s := by
-  rw [resolutionClass_def, K.extMk_succ_eq_zero_iff ι hι hι' hK
+  rw [resolutionClass_def, map_eq_zero_iff _ (F.H'AddEquivExt (n + 1) V).symm.injective,
+    K.extMk_succ_eq_zero_iff ι hι hι' hK
     (by simpa only [sheafH'_eq] using hKV)]
   refine ⟨fun ⟨g, hg⟩ ↦ ⟨freeYonedaSheafSectionsEquiv J V (K.X n) g, ?_⟩,
     fun ⟨t, ht⟩ ↦ ⟨(freeYonedaSheafSectionsEquiv J V (K.X n)).symm t, ?_⟩⟩
@@ -157,8 +184,6 @@ of a section of `Kⁿ` over `V`: the complex of sections `K(V)` is exact in degr
 theorem exists_d_hom_app_eq_of_resolution (n : ℕ) (hF : Subsingleton (F.H' (n + 1) V))
     (s : (K.X (n + 1)).obj.obj (op V)) (hs : (K.d (n + 1) (n + 2)).hom.app (op V) s = 0) :
     ∃ t : (K.X n).obj.obj (op V), (K.d n (n + 1)).hom.app (op V) t = s :=
-  have : Subsingleton (Ext.{w} ((freeYonedaSheafFunctor J).obj V) F (n + 1)) := by
-    simpa only [sheafH'_eq] using hF
   (resolutionClass_succ_eq_zero_iff ι hι hι' hK V hKV s hs).1 (Subsingleton.elim _ _)
 
 end H'
