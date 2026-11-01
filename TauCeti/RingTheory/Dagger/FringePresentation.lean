@@ -236,6 +236,11 @@ theorem ofStage_comp_stageMap {ρ ρ' : Set.Ioc (1 : ℝ) P.radius} (h : ρ ≤ 
 noncomputable instance (ρ : Set.Ioc (1 : ℝ) P.radius) : Algebra (P.stage ρ) A :=
   (P.ofStage ρ).toRingHom.toAlgebra
 
+/-- The `K`-algebra structure of `A` factors through each stage `A_ρ`, since `A_ρ → A` is
+`K`-linear. -/
+instance (ρ : Set.Ioc (1 : ℝ) P.radius) : IsScalarTower K (P.stage ρ) A :=
+  IsScalarTower.of_algebraMap_eq fun r ↦ ((P.ofStage ρ).commutes r).symm
+
 /-- The structure map of `A` as an `A_ρ`-algebra is the stage map `A_ρ → A`. -/
 @[simp]
 theorem algebraMap_stage_apply (ρ : Set.Ioc (1 : ℝ) P.radius) (x : P.stage ρ) :
