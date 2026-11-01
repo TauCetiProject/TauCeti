@@ -177,7 +177,8 @@ theorem properClassToNarrowPic_principalForm :
 /-- **The trivial narrow class is the class of the principal form.** A proper class of primitive
 forms of positive nonsquare discriminant `D` has trivial narrow class exactly when it is the class
 of the principal form. -/
-theorem properClassToNarrowPic_eq_one_iff (q : orbitRel.Quotient SL(2, ℤ) (primitiveForms D)) :
+@[simp] theorem properClassToNarrowPic_eq_one_iff
+    (q : orbitRel.Quotient SL(2, ℤ) (primitiveForms D)) :
     properClassToNarrowPic D hD hpos q = 1 ↔
       q = Quotient.mk'' ⟨principalForm D, principalForm_mem_primitiveForms hD⟩ := by
   rw [← properClassToNarrowPic_principalForm D hD hpos,
