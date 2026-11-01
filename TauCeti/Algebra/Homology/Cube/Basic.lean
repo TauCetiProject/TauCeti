@@ -240,6 +240,18 @@ lemma cubeComplex_hom_ext' {r : ℤ} {A : C} {f g : A ⟶ F.cubeComplex.X r}
     (h : ∀ S, f ≫ F.cubeComplexπ S = g ≫ F.cubeComplexπ S) : f = g :=
   biproduct.hom_ext _ _ h
 
+/-- A term of the signed totalization vanishes exactly when all vertices of that height vanish. -/
+lemma isZero_cubeComplex_X_iff (r : ℤ) :
+    IsZero (F.cubeComplex.X r) ↔
+      ∀ S : {S : Finset ι // (#S : ℤ) = r}, IsZero (F.obj S.1) := by
+  constructor
+  · intro h S
+    rw [IsZero.iff_id_eq_zero, ← F.cubeComplexι_π_self S,
+      h.eq_zero_of_tgt (F.cubeComplexι S), zero_comp]
+  · intro h
+    rw [IsZero.iff_id_eq_zero]
+    exact F.cubeComplex_hom_ext fun S ↦ (h S).eq_of_src _ _
+
 /-- The cube differential on the vertex `F(S)` of height `r` is the sum, over the indices `a ∉ S`,
 of the edge map `F(S) ⟶ F(S ∪ {a})` with sign `(-1)` to the number of elements of `S` below
 `a`. -/
