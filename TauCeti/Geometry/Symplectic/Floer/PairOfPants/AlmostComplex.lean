@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
-public import TauCeti.Geometry.Symplectic.Cayley.Basic
+public import TauCeti.Geometry.Symplectic.Cayley.Smooth
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Geometry.Manifold.Algebra.SMul
 
 /-!
@@ -39,10 +38,11 @@ from `0` to the Cayley transform of a tame (or compatible) structure. The result
 * `TauCeti.Floer.tames_pairOfPantsAlmostComplex` and
   `TauCeti.Floer.compatible_pairOfPantsAlmostComplex`: the structure is `ω`-tame, and it is
   `ω`-compatible when the end structures are.
-* `TauCeti.Floer.cayley_pairOfPantsAlmostComplex_cylindricalEndLift_of_pos`: on the part `±s > 0`
-  of the end `q`, its Cayley transform is `β(±s - 1) • cayley (J_q(t, x))`.
-* `TauCeti.Floer.pairOfPantsAlmostComplex_cylindricalEndLift`: on the part `±s ≥ 2` of the end
-  `q`, it is `J_q(t, x)`.
+* `TauCeti.Floer.cayley_pairOfPantsAlmostComplex_cylindricalEndLift_of_pos`: if `J_q` has period
+  one in `t`, then on the part `±s > 0` of the end `q` its Cayley transform is
+  `β(±s - 1) • cayley (J_q(t, x))`.
+* `TauCeti.Floer.pairOfPantsAlmostComplex_cylindricalEndLift`: if `J_q` has period one in `t`,
+  then on the part `±s ≥ 2` of the end `q` it is `J_q(t, x)`.
 * `TauCeti.Floer.exists_cylindricalEndLift_of_pairOfPantsAlmostComplex_ne`: it is `J₀` off the
   parts `±s > 1` of the three ends.
 * `TauCeti.Floer.contMDiffAt_pairOfPantsAlmostComplex`: for `C^n` families of period one, it is
@@ -65,8 +65,12 @@ open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 
 namespace TauCeti.Floer
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V} {M : Type*}
+variable {M : Type*}
+
+section Algebraic
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
 
 omit [FiniteDimensional ℝ V] in
 /-- If the Cayley transforms of all the end structures lie in a convex set containing `0`, so does
@@ -95,8 +99,8 @@ private theorem sum_smul_cayley_mem {s : Set (Module.End ℝ V)} (hs : Convex �
 `J q t x` of `ω`-tame structures on its three ends, relative to an `ω`-compatible base structure
 `J₀`. At `w ∈ ℂ` and `x ∈ M` it is the inverse Cayley transform, relative to `J₀`, of
 `∑ q, β(±s_q(w) - 1) • cayley (J q (t_q(w)) x)`, where `(s_q, t_q)` are the coordinates of the end
-`q` and `β` is the smooth transition function. It is `J q t x` far out on the end `q` and `J₀` off
-the ends. -/
+`q` and `β` is the smooth transition function. It is `J₀` off the ends, and, when `J q` has period
+one in `t`, it is `J q t x` far out on the end `q`. -/
 def pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀)
     (J : Puncture → ℝ → M → AlmostComplexStructure V) (hJ : ∀ q t x, ω.Tames (J q t x))
     (w : ℂ) (x : M) : AlmostComplexStructure V :=
@@ -134,8 +138,9 @@ theorem compatible_pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀)
 
 variable {q : Puncture}
 
-/-- **The structure on an end.** On the part `±s > 0` of the end `q`, the Cayley transform of the
-pair-of-pants structure at the point with end coordinates `z = s + i t` is
+/-- **The structure on an end.** If `J q` has period one in `t`, then on the part `±s > 0` of the
+end `q`, the Cayley transform of the pair-of-pants structure at the point with end coordinates
+`z = s + i t` is
 `β(±s - 1) • cayley (J q t x)`: the structure moves along the segment of the Cayley ball from
 `J₀` to `J q t x`. -/
 theorem cayley_pairOfPantsAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω.Compatible J₀)
@@ -152,8 +157,9 @@ theorem cayley_pairOfPantsAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω.Com
     simp [smoothTransition_endCoord_cylindricalEndLift_eq_zero hr hz]
   · simp
 
-/-- **The structure is `J q t` far out on each end.** On the part `±s ≥ 2` of the end `q`, the
-pair-of-pants structure at the point with end coordinates `z = s + i t` is `J q t x`. -/
+/-- **The structure is `J q t` far out on each end.** If `J q` has period one in `t`, then on the
+part `±s ≥ 2` of the end `q`, the pair-of-pants structure at the point with end coordinates
+`z = s + i t` is `J q t x`. -/
 theorem pairOfPantsAlmostComplex_cylindricalEndLift (h₀ : ω.Compatible J₀)
     (hJp : Function.Periodic (J q) 1) {z : ℂ} (hz : 2 ≤ q.endSign * z.re) (x : M) :
     pairOfPantsAlmostComplex h₀ J hJ (q.cylindricalEndLift z) x = J q z.im x := by
@@ -174,37 +180,17 @@ theorem exists_cylindricalEndLift_of_pairOfPantsAlmostComplex_ne (h₀ : ω.Comp
   · obtain ⟨h₁, hw⟩ := one_lt_endSign_mul_re_endCoord hc
     exact absurd (q.cylindricalEndLift_endCoord hw) (hne q _ h₁)
 
+end Algebraic
+
 section Smooth
 
 /-! ### Smoothness -/
 
-variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
+  {J : Puncture → ℝ → M → AlmostComplexStructure V} {hJ : ∀ q t x, ω.Tames (J q t x)}
+  {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
-
-/-- The Cayley transforms `-(1 + J₀ J)(1 - J₀ J)⁻¹` of a `C^n` family of `ω`-tame structures on
-an end form a `C^n` family of continuous linear maps, since `1 - J₀ J` is invertible. -/
-private theorem contMDiff_cayley (h₀ : ω.Compatible J₀) (q : Puncture) {n : ℕ∞}
-    (hJq : ∀ t x, ω.Tames (J q t x))
-    (hJs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, V →L[ℝ] V) n
-      (fun p : ℝ × M => Module.End.toContinuousLinearMap V (J q p.1 p.2).toLinearMap)) :
-    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, V →L[ℝ] V) n
-      (fun p : ℝ × M => Module.End.toContinuousLinearMap V (J₀.cayley (J q p.1 p.2))) := by
-  set e := Module.End.toContinuousLinearMap (𝕜 := ℝ) V
-  set j : ℝ × M → V →L[ℝ] V := fun p => e (J q p.1 p.2).toLinearMap
-  have hC : (fun p : ℝ × M => e (J₀.cayley (J q p.1 p.2))) =
-      fun p => -(1 + e J₀.toLinearMap * j p) * Ring.inverse (1 - e J₀.toLinearMap * j p) := by
-    funext p
-    rw [AlmostComplexStructure.cayley_def, map_neg, map_mul, map_ringInverse, map_add, map_sub,
-      map_one, map_mul, neg_mul]
-  intro p
-  have hu : IsUnit (1 - e J₀.toLinearMap * j p) := by
-    have := (h₀.tames.isUnit_one_sub_mul (hJq p.1 p.2)).map e
-    rwa [map_sub, map_one, map_mul] at this
-  rw [hC]
-  exact ((contDiffAt_const.add (contDiffAt_const.mul contDiffAt_id)).neg.mul
-    ((contDiffAt_ringInverse ℝ hu.unit).comp (j p)
-      (contDiffAt_const.sub (contDiffAt_const.mul contDiffAt_id)))).comp_contMDiffAt
-    (f := j) (hJs p)
 
 /-- **The structure is smooth.** For families `J q t x` of `ω`-tame structures which have period
 one in `t` and are `C^n` on `ℝ × M`, the pair-of-pants structure is `C^n` on `S × M`, where
@@ -249,7 +235,9 @@ theorem contMDiffAt_pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀) {n : �
           contDiffAt_const)).contMDiffAt.comp ((w : ℂ), x) contMDiffAt_fst
     have hFp : Function.Periodic (fun t y => e (J₀.cayley (J q t y))) 1 := fun t => by
       simp only [hJp q t]
-    exact hc.smul (q.contMDiffAt_comp_im_endCoord hFp (contMDiff_cayley h₀ q (hJ q) (hJs q)) hw x)
+    exact hc.smul (q.contMDiffAt_comp_im_endCoord hFp
+      (h₀.tames.contMDiff_cayley (J := fun p : ℝ × M => J q p.1 p.2) (fun p => hJ q p.1 p.2)
+        (hJs q)) hw x)
   -- The inverse Cayley transform is smooth at `C (w, x)`, which lies in the Cayley ball.
   have hu : IsUnit (1 - C ((w : ℂ), x)) := by
     have := (SymplecticForm.isUnit_one_sub_of_mem_cayleyBall

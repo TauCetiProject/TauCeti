@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Cayley.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Analysis.Normed.Operator.Banach
 
 /-!
@@ -24,9 +25,11 @@ smooth as well as pointwise compatible.
 `SymplecticForm.Compatible.cayleyPath` joins a compatible structure to any other compatible
 structure, is constant for parameters at most zero and at least one, and is smooth on the
 whole real line. Thus its endpoint jets of every positive order vanish. Smoothness is also
-proved jointly with external parameters for families expressed in Cayley coordinates. These
-are linear, fixed-form statements; no extension theorem for sections of a tangent bundle is
-asserted here.
+proved jointly with external parameters for families expressed in Cayley coordinates.
+Conversely, `SymplecticForm.Tames.contMDiffAt_cayley` shows that the forward chart sends a
+smooth family of tame structures, parameterized by a manifold, to a smooth family of Cayley
+coordinates. These are linear, fixed-form statements; no extension theorem for sections of a
+tangent bundle is asserted here.
 
 ## References
 
@@ -36,7 +39,7 @@ asserted here.
 
 public noncomputable section
 
-open Set Real
+open Set Real Manifold
 
 namespace TauCeti.SymplecticForm
 
@@ -122,6 +125,51 @@ theorem Compatible.contDiff_compatibleCayleyEquiv_symm (h₀ : ω.Compatible J�
     ContDiff ℝ n (fun p => LinearMap.toContinuousLinearMap
       (h₀.compatibleCayleyEquiv.symm ⟨(C p).toLinearMap, hC p⟩).val.toLinearMap) :=
   contDiff_iff_contDiffAt.2 fun _ => h₀.contDiffAt_compatibleCayleyEquiv_symm hC hCs.contDiffAt
+
+section Forward
+
+variable {E G N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace N] [ChartedSpace G N]
+
+/-- The forward Cayley chart `J ↦ -(1 + J₀ J)(1 - J₀ J)⁻¹` relative to an `ω`-tame `J₀` sends a
+family of structures on a manifold which is `C^n` at a point `p`, where it is `ω`-tame, to a
+family of Cayley coordinates which is `C^n` at `p`: the denominator `1 - J₀ J p` is invertible. -/
+theorem Tames.contMDiffAt_cayley (h₀ : ω.Tames J₀) {J : N → AlmostComplexStructure V}
+    {n : WithTop ℕ∞} {p : N} (hJp : ω.Tames (J p))
+    (hJs : ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap) p) :
+    ContMDiffAt I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J₀.cayley (J y))) p := by
+  -- Pass to the algebra equivalence `Module.End.toContinuousLinearMap`, which is
+  -- `LinearMap.toContinuousLinearMap` as a function, to move products and inverses across.
+  set e := Module.End.toContinuousLinearMap (𝕜 := ℝ) V
+  set j : N → V →L[ℝ] V := fun y => e (J y).toLinearMap
+  have hC : (fun y => LinearMap.toContinuousLinearMap (J₀.cayley (J y))) =
+      fun y => -(1 + e J₀.toLinearMap * j y) * Ring.inverse (1 - e J₀.toLinearMap * j y) := by
+    funext y
+    change e (J₀.cayley (J y)) = _
+    rw [AlmostComplexStructure.cayley_def, map_neg, map_mul, map_ringInverse, map_add, map_sub,
+      map_one, map_mul, neg_mul]
+  have hu : IsUnit (1 - e J₀.toLinearMap * j p) := by
+    have := (h₀.isUnit_one_sub_mul hJp).map e
+    rwa [map_sub, map_one, map_mul] at this
+  rw [hC]
+  exact ((contDiffAt_const.add (contDiffAt_const.mul contDiffAt_id)).neg.mul
+    ((contDiffAt_ringInverse ℝ hu.unit).comp (j p)
+      (contDiffAt_const.sub (contDiffAt_const.mul contDiffAt_id)))).comp_contMDiffAt
+    (f := j) hJs
+
+/-- The forward Cayley chart relative to an `ω`-tame `J₀` sends a `C^n` family of `ω`-tame
+structures on a manifold to a `C^n` family of Cayley coordinates. -/
+theorem Tames.contMDiff_cayley (h₀ : ω.Tames J₀) {J : N → AlmostComplexStructure V}
+    {n : WithTop ℕ∞} (hJ : ∀ y, ω.Tames (J y))
+    (hJs : ContMDiff I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J y).toLinearMap)) :
+    ContMDiff I 𝓘(ℝ, V →L[ℝ] V) n
+      (fun y => LinearMap.toContinuousLinearMap (J₀.cayley (J y))) :=
+  fun p => h₀.contMDiffAt_cayley (hJ p) (hJs p)
+
+end Forward
 
 /-- A smooth, collar-constant path from `J₀` to `J₁` through compatible structures, obtained by
 multiplying the Cayley coordinate of `J₁` by `smoothTransition t`. -/
