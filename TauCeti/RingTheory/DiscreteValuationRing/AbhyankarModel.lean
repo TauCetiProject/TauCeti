@@ -15,6 +15,7 @@ import Mathlib.RingTheory.Finiteness.Quotient
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.Unramified.Field
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.MinimalPrime
 import TauCeti.RingTheory.RegularLocalRing.Basic
@@ -261,8 +262,9 @@ noncomputable def abhyankarModelAwayAlgEquiv : Cϖ ≃ₐ[B] Dϖ :=
             algebraMap B Dϖ ϖ *
               algebraMap (abhyankarModel ϖ u e d) Dϖ
                 (AdjoinRoot.of _ (AdjoinRoot.root (X ^ e - C u))) := by
-          rw [← map_pow, abhyankarModelRoot_pow, map_mul, ← IsScalarTower.algebraMap_apply]
-          rfl
+          rw [← map_pow, abhyankarModelRoot_pow, map_mul, ← IsScalarTower.algebraMap_apply,
+            AdjoinRoot.algebraMap_eq (f := X ^ d -
+              C (algebraMap B (standardTameCover B u e) ϖ * AdjoinRoot.root (X ^ e - C u)))]
         rw [map_mul, map_pow, hx, hy]
         linear_combination algebraMap (abhyankarModel ϖ u e d) Dϖ
           (AdjoinRoot.of _ (AdjoinRoot.root (X ^ e - C u))) * hw
@@ -313,6 +315,13 @@ private theorem finite_abhyankarModel (he : e ≠ 0) (hd : d ≠ 0) :
   have := (monic_X_pow_sub_C
     (algebraMap B (standardTameCover B u e) ϖ * AdjoinRoot.root (X ^ e - C u)) hd).finite_adjoinRoot
   .trans (standardTameCover B u e) _
+
+/-- A prime of the Abhyankar model containing `ϖ` contains `x`, since `x ^ d = ϖ y`. -/
+private theorem abhyankarModelRoot_mem_of_algebraMap_mem (P : Ideal (abhyankarModel ϖ u e d))
+    [P.IsPrime] (h : algebraMap B _ ϖ ∈ P) : abhyankarModelRoot ϖ u e d ∈ P := by
+  refine ‹P.IsPrime›.mem_of_pow_mem d ?_
+  rw [abhyankarModelRoot_pow]
+  exact P.mul_mem_right _ h
 
 /-- The quotient of the Abhyankar model by `x` is `B[y]/(y ^ e − u)` modulo `ϖ`. -/
 private noncomputable def quotientSpanRootAlgEquiv (hu : IsUnit u) (he : e ≠ 0) (hd : d ≠ 0) :
@@ -370,9 +379,7 @@ private theorem isMaximal_of_root_mem (hϖ : Irreducible ϖ) (hu : IsUnit u) (he
     have hϖP : algebraMap B _ ϖ ∈ P := by
       rw [← Ideal.mem_comap, ← Ideal.under_def, IsLocalRing.eq_maximalIdeal this, hm]
       exact Ideal.mem_span_singleton_self ϖ
-    refine ‹P.IsPrime›.mem_of_pow_mem d ?_
-    rw [abhyankarModelRoot_pow]
-    exact P.mul_mem_right _ hϖP
+    exact abhyankarModelRoot_mem_of_algebraMap_mem P hϖP
   · intro hx
     have hϖP : ϖ ∈ P.under B := by
       have := P.pow_mem_of_mem hx d (Nat.pos_of_ne_zero hd)
@@ -389,7 +396,7 @@ is reduced: it is étale over the residue field. -/
 private theorem isReduced_quotient_span_root (hϖ : Irreducible ϖ) (hu : IsUnit u)
     (he : IsUnit (e : B)) (hd : d ≠ 0) :
     IsReduced (abhyankarModel ϖ u e d ⧸ Ideal.span {abhyankarModelRoot ϖ u e d}) := by
-  have he₀ : e ≠ 0 := by rintro rfl; simp at he
+  have he₀ : e ≠ 0 := he.neZero_natCast.out
   have := standardTameCover_etale hu he
   have := (monic_X_pow_sub_C u he₀).finite_adjoinRoot
   have hspan : Ideal.span {algebraMap B (standardTameCover B u e) ϖ} =
@@ -425,7 +432,7 @@ of `(B[y]/(y ^ e − u))[x]/(x ^ d − ϖ y)`, the maximal ideal of the local ri
 theorem maximalIdeal_eq_span_abhyankarModelRoot (hϖ : Irreducible ϖ) (hu : IsUnit u)
     (he : IsUnit (e : B)) (hd : d ≠ 0) :
     maximalIdeal Dₘ = Ideal.span {algebraMap _ Dₘ (abhyankarModelRoot ϖ u e d)} :=
-  have he₀ : e ≠ 0 := by rintro rfl; simp at he
+  have he₀ : e ≠ 0 := he.neZero_natCast.out
   have := isReduced_quotient_span_root hϖ hu he hd
   maximalIdeal_eq_span_algebraMap_of_mem_minimalPrimes Dₘ
     (mem_minimalPrimes_span_root hϖ hu he₀ hd M)
@@ -437,7 +444,7 @@ with uniformizer `ϖ`, let `u` be a unit and `e` invertible in `B`, and `d ≠ 0
 particular a domain. -/
 theorem isRegularLocalRing_abhyankarModel (hϖ : Irreducible ϖ) (hu : IsUnit u)
     (he : IsUnit (e : B)) (hd : d ≠ 0) : IsRegularLocalRing Dₘ :=
-  have he₀ : e ≠ 0 := by rintro rfl; simp at he
+  have he₀ : e ≠ 0 := he.neZero_natCast.out
   have := isReduced_quotient_span_root hϖ hu he hd
   have := finite_abhyankarModel (ϖ := ϖ) (u := u) he₀ hd
   isRegularLocalRing_of_mem_minimalPrimes Dₘ
@@ -453,7 +460,7 @@ valuation ring, with uniformizer `x` by `TauCeti.maximalIdeal_eq_span_abhyankarM
 domain by `TauCeti.isRegularLocalRing_abhyankarModel`. -/
 theorem isDiscreteValuationRing_abhyankarModel [IsDomain Dₘ] (hϖ : Irreducible ϖ) (hu : IsUnit u)
     (he : IsUnit (e : B)) (hd : d ≠ 0) : IsDiscreteValuationRing Dₘ :=
-  have he₀ : e ≠ 0 := by rintro rfl; simp at he
+  have he₀ : e ≠ 0 := he.neZero_natCast.out
   have := isReduced_quotient_span_root hϖ hu he hd
   have := finite_abhyankarModel (ϖ := ϖ) (u := u) he₀ hd
   isDiscreteValuationRing_of_mem_minimalPrimes Dₘ
@@ -474,14 +481,12 @@ separable over the residue field of `B`. -/
 theorem isSeparable_abhyankarModel_quotient (hϖ : ϖ ∈ maximalIdeal B) (hu : IsUnit u)
     (he : IsUnit (e : B)) (hd : d ≠ 0) [M.LiesOver (maximalIdeal B)] :
     Algebra.IsSeparable (B ⧸ maximalIdeal B) (abhyankarModel ϖ u e d ⧸ M) := by
-  have he₀ : e ≠ 0 := by rintro rfl; simp at he
+  have he₀ : e ≠ 0 := he.neZero_natCast.out
   let := Ideal.Quotient.field (maximalIdeal B)
   let := Ideal.Quotient.field M
   -- `x ^ d = ϖ y` lies in `M` because `ϖ` does.
   have hx : abhyankarModelRoot ϖ u e d ∈ M := by
-    refine ‹M.IsMaximal›.isPrime.mem_of_pow_mem d ?_
-    rw [abhyankarModelRoot_pow]
-    refine M.mul_mem_right _ ?_
+    refine abhyankarModelRoot_mem_of_algebraMap_mem M ?_
     rw [← Ideal.mem_comap, ← Ideal.under_def, ← Ideal.over_def M (maximalIdeal B)]
     exact hϖ
   have hle := (Ideal.span_singleton_le_iff_mem M).mpr hx
