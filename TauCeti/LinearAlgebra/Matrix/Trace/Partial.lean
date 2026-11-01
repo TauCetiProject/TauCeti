@@ -195,7 +195,7 @@ section Semiring
 
 /-- The partial trace over the first factor of a Kronecker product `A ⊗ₖ B` is `Tr A • B`. -/
 @[simp]
-theorem partialTraceLeft_kronecker [CommSemiring R] (A : Matrix m m R) (B : Matrix n n R) :
+theorem partialTraceLeft_kronecker [Semiring R] (A : Matrix m m R) (B : Matrix n n R) :
     partialTraceLeft (A ⊗ₖ B) = trace A • B := by
   ext
   simp [trace, Finset.sum_mul]

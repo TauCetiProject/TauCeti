@@ -47,7 +47,7 @@ variable (R : Type*) {m : Type*} (n : Type*) [CommSemiring R] [StarRing R] [Fint
   [DecidableEq m] [Fintype n] [DecidableEq n]
 
 /-- Tensoring by the identity on the right, `A ↦ A ⊗ₖ 1`, as a unital ⋆-algebra homomorphism. -/
-@[expose] def kroneckerOneStarAlgHom : Matrix m m R →⋆ₐ[R] Matrix (m × n) (m × n) R where
+def kroneckerOneStarAlgHom : Matrix m m R →⋆ₐ[R] Matrix (m × n) (m × n) R where
   toFun X := X ⊗ₖ (1 : Matrix n n R)
   map_one' := one_kronecker_one
   map_mul' X Y := by rw [← mul_kronecker_mul, mul_one]
@@ -57,7 +57,7 @@ variable (R : Type*) {m : Type*} (n : Type*) [CommSemiring R] [StarRing R] [Fint
   map_star' X := by simp [star_eq_conjTranspose, conjTranspose_kronecker]
 
 /-- Tensoring by the identity on the left, `B ↦ 1 ⊗ₖ B`, as a unital ⋆-algebra homomorphism. -/
-@[expose] def oneKroneckerStarAlgHom : Matrix n n R →⋆ₐ[R] Matrix (m × n) (m × n) R where
+def oneKroneckerStarAlgHom : Matrix n n R →⋆ₐ[R] Matrix (m × n) (m × n) R where
   toFun X := (1 : Matrix m m R) ⊗ₖ X
   map_one' := one_kronecker_one
   map_mul' X Y := by rw [← mul_kronecker_mul, mul_one]
@@ -71,12 +71,12 @@ variable {R n}
 @[simp]
 theorem kroneckerOneStarAlgHom_apply (A : Matrix m m R) :
     kroneckerOneStarAlgHom R n A = A ⊗ₖ (1 : Matrix n n R) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem oneKroneckerStarAlgHom_apply (B : Matrix n n R) :
     oneKroneckerStarAlgHom R (m := m) n B = (1 : Matrix m m R) ⊗ₖ B :=
-  rfl
+  (rfl)
 
 variable [TopologicalSpace R] [ContinuousMul R]
 
