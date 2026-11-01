@@ -34,70 +34,68 @@ namespace TauCeti.HolomorphicFunctions
 
 variable {s : Set ℂ} {U V : Opens ℂ}
 
+-- Establish representative independence before bundling the map, for use in its algebra laws.
+private theorem germ_extend_eq (hs : s ⊆ U) (f : holomorphicFunctions U) (φ : ℂ → ℂ)
+    (h : ∀ z : U, f.val z = φ z) : (extend f : Germ (𝓝ˢ s) ℂ) = φ := by
+  apply Germ.coe_eq.mpr
+  filter_upwards [U.isOpen.mem_nhdsSet.mpr hs] with z hz
+  exact (extend_apply f ⟨z, hz⟩).trans (h ⟨z, hz⟩)
+
 /-- Send a holomorphic function on an open neighbourhood of `s` to its germ near `s`. -/
 def toGerm (hs : s ⊆ U) : holomorphicFunctions U →ₐ[ℂ] holomorphicGerms s where
-  toFun f := holomorphicGerms.ofFun (extend f)
-    (((differentiableOn_extend f).analyticOnNhd U.isOpen).mono hs)
+  toFun f := holomorphicGerms.ofFun (extend f) (analyticOnNhd_extend hs f)
   map_zero' := by
     apply Subtype.ext
     rw [holomorphicGerms.coe_ofFun, Subalgebra.coe_zero, ← Germ.coe_zero]
-    apply Germ.coe_eq.mpr
-    filter_upwards [U.isOpen.mem_nhdsSet.mpr hs] with z hz
-    simpa using extend_apply (0 : holomorphicFunctions U) ⟨z, hz⟩
+    exact germ_extend_eq hs 0 0 (fun z => by simp)
   map_one' := by
     apply Subtype.ext
     rw [holomorphicGerms.coe_ofFun, Subalgebra.coe_one, ← Germ.coe_one]
-    apply Germ.coe_eq.mpr
-    filter_upwards [U.isOpen.mem_nhdsSet.mpr hs] with z hz
-    simpa using extend_apply (1 : holomorphicFunctions U) ⟨z, hz⟩
+    exact germ_extend_eq hs 1 1 (fun z => by simp)
   map_add' f g := by
     apply Subtype.ext
     simp only [Subalgebra.coe_add, holomorphicGerms.coe_ofFun, ← Germ.coe_add]
-    apply Germ.coe_eq.mpr
-    filter_upwards [U.isOpen.mem_nhdsSet.mpr hs] with z hz
-    simpa only [Pi.add_apply, extend_apply _ ⟨z, hz⟩, ContinuousMap.add_apply] using
-      congrArg (fun h : C(U, ℂ) => h ⟨z, hz⟩) ((holomorphicFunctions U).coe_add f g)
+    apply germ_extend_eq hs
+    intro z
+    simp [Subalgebra.coe_add]
   map_mul' f g := by
     apply Subtype.ext
     simp only [Subalgebra.coe_mul, holomorphicGerms.coe_ofFun, ← Germ.coe_mul]
-    apply Germ.coe_eq.mpr
-    filter_upwards [U.isOpen.mem_nhdsSet.mpr hs] with z hz
-    simpa only [Pi.mul_apply, extend_apply _ ⟨z, hz⟩, ContinuousMap.mul_apply] using
-      congrArg (fun h : C(U, ℂ) => h ⟨z, hz⟩) ((holomorphicFunctions U).coe_mul f g)
+    apply germ_extend_eq hs
+    intro z
+    simp [Subalgebra.coe_mul]
   commutes' c := by
     apply Subtype.ext
     rw [holomorphicGerms.coe_ofFun, Subalgebra.coe_algebraMap, Germ.algebraMap_eq]
-    apply Germ.coe_eq.mpr
-    filter_upwards [U.isOpen.mem_nhdsSet.mpr hs] with z hz
-    simpa using extend_apply (algebraMap ℂ (holomorphicFunctions U) c) ⟨z, hz⟩
+    exact germ_extend_eq hs _ _ (fun z => by simp)
+
+/-- Any ambient function agreeing on the open domain represents the same holomorphic germ. -/
+theorem toGerm_eq_ofFun (hs : s ⊆ U) (f : holomorphicFunctions U) (φ : ℂ → ℂ)
+    (hφ : AnalyticOnNhd ℂ φ s) (h : ∀ z : U, f.val z = φ z) :
+    toGerm hs f = holomorphicGerms.ofFun φ hφ :=
+  (holomorphicGerms.ofFun_eq_iff (analyticOnNhd_extend hs f) hφ).mpr
+    (Germ.coe_eq.mp (germ_extend_eq hs f φ h))
 
 /-- An ambient holomorphic representative gives its original function germ. -/
 @[simp]
 theorem toGerm_of (hs : s ⊆ U) (f : ℂ → ℂ) (hf : DifferentiableOn ℂ f U) :
     toGerm hs (of U f hf) = holomorphicGerms.ofFun f ((hf.analyticOnNhd U.isOpen).mono hs) := by
-  refine (holomorphicGerms.ofFun_eq_iff
-    (((differentiableOn_extend _).analyticOnNhd U.isOpen).mono hs)
-    ((hf.analyticOnNhd U.isOpen).mono hs)).mpr ?_
-  filter_upwards [U.isOpen.mem_nhdsSet.mpr hs] with z hz
-  simpa only [of_apply] using extend_apply (of U f hf) ⟨z, hz⟩
+  exact toGerm_eq_ofFun hs _ _ _ (fun z => of_apply f hf z)
 
 /-- Evaluating a function germ at a point of the base set recovers the function value. -/
 @[simp]
 theorem eval_toGerm (hs : s ⊆ U) (x : ℂ) (hx : x ∈ s) (f : holomorphicFunctions U) :
     holomorphicGerms.eval x hx (toGerm hs f) = f.val ⟨x, hs hx⟩ := by
   exact (holomorphicGerms.eval_ofFun x hx (extend f)
-    (((differentiableOn_extend f).analyticOnNhd U.isOpen).mono hs)).trans
+    (analyticOnNhd_extend hs f)).trans
       (extend_apply f ⟨x, hs hx⟩)
 
 /-- Shrinking the open domain does not change the germ. -/
 @[simp]
 theorem toGerm_restrict (hs : s ⊆ V) (hVU : V ≤ U) (f : holomorphicFunctions U) :
     toGerm hs (restrict hVU f) = toGerm (hs.trans hVU) f := by
-  refine (holomorphicGerms.ofFun_eq_iff
-    (((differentiableOn_extend _).analyticOnNhd V.isOpen).mono hs)
-    (((differentiableOn_extend _).analyticOnNhd U.isOpen).mono (hs.trans hVU))).mpr ?_
-  filter_upwards [V.isOpen.mem_nhdsSet.mpr hs] with z hz
-  rw [extend_apply _ ⟨z, hz⟩, restrict_apply, extend_apply _ ⟨z, hVU hz⟩]
+  exact toGerm_eq_ofFun hs _ _ (analyticOnNhd_extend (hs.trans hVU) f)
+    (fun z => (restrict_apply hVU f z).trans (extend_apply f (Set.inclusion hVU z)).symm)
 
 /-- Restricting the base set commutes with taking a function germ. -/
 @[simp]
@@ -105,7 +103,7 @@ theorem restrict_toGerm {t : Set ℂ} (ht : t ⊆ s) (hs : s ⊆ U)
     (f : holomorphicFunctions U) :
     holomorphicGerms.restrict ht (toGerm hs f) = toGerm (ht.trans hs) f := by
   exact holomorphicGerms.restrict_ofFun ht (extend f)
-    (((differentiableOn_extend f).analyticOnNhd U.isOpen).mono hs)
+    (analyticOnNhd_extend hs f)
 
 /-- Equality of function germs means equality on some smaller common open neighbourhood. -/
 theorem toGerm_eq_iff (hsU : s ⊆ U) (hsV : s ⊆ V)
@@ -117,8 +115,8 @@ theorem toGerm_eq_iff (hsU : s ⊆ U) (hsV : s ⊆ V)
   · intro h
     obtain ⟨N, hN, hsN, heq⟩ := eventually_nhdsSet_iff_exists.mp
       ((holomorphicGerms.ofFun_eq_iff
-        (((differentiableOn_extend f).analyticOnNhd U.isOpen).mono hsU)
-        (((differentiableOn_extend g).analyticOnNhd V.isOpen).mono hsV)).mp h)
+        (analyticOnNhd_extend hsU f)
+        (analyticOnNhd_extend hsV g)).mp h)
     refine ⟨⟨N, hN⟩ ⊓ U ⊓ V, fun z hz => ⟨⟨hsN hz, hsU hz⟩, hsV hz⟩,
       fun z hz => hz.1.2, fun z hz => hz.2, ?_⟩
     apply Subtype.ext
