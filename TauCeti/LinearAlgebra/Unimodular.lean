@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Unimodular
 public import Mathlib.RingTheory.LocalRing.Basic
@@ -30,6 +31,9 @@ and, since the rows of an invertible matrix are unimodular, it gives every such 
   vector agree precisely up to unit rescaling, even over rings with zero divisors.
 * `IsUnit.isUnimodular_pi`: a coordinate vector with a unit coordinate is unimodular.
 * `Module.isUnimodular_mk_one`: a vector `(v, 1)` of `M × R` is unimodular.
+* `Module.Basis.isUnimodular`: every vector of a basis is unimodular.
+* `MonoidAlgebra.isUnimodular_single`: the basis vectors `single i 1` of a monoid algebra are
+  unimodular.
 * `Matrix.isUnimodular_apply_of_isUnit_det`: every row of a square matrix of unit determinant is
   unimodular.
 * `TauCeti.Module.isUnimodular_iff_exists_isUnit`: over a directly finite local semiring, a vector
@@ -82,6 +86,16 @@ theorem IsUnit.isUnimodular_pi {ι : Type*} {v : ι → R} {i : ι} (hi : IsUnit
 These are the vectors spanning the lines of the affine chart `M ⊆ P(M × R)`. -/
 theorem Module.isUnimodular_mk_one (v : M) : Module.IsUnimodular R ((v, 1) : M × R) :=
   Module.isUnimodular_of_apply_eq_one (f := LinearMap.snd R M R) rfl
+
+/-- Every vector of a basis is unimodular: its coordinate functional takes the value `1` at it. -/
+theorem Module.Basis.isUnimodular {ι : Type*} (b : Module.Basis ι R M) (i : ι) :
+    Module.IsUnimodular R (b i) :=
+  Module.isUnimodular_of_apply_eq_one (f := b.coord i) (by simp)
+
+/-- The basis vectors `single i 1` of a monoid algebra are unimodular. -/
+theorem MonoidAlgebra.isUnimodular_single {ι : Type*} (i : ι) :
+    Module.IsUnimodular R (MonoidAlgebra.single i (1 : R)) :=
+  (MonoidAlgebra.basis ι R).isUnimodular i
 
 end Semiring
 
