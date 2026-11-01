@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.SimplyBlocked
 public import TauCeti.KnotTheory.Grid.Commutation.Components
-public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked
+public import TauCeti.KnotTheory.Grid.Homology.SimplyBlocked.Basic
 
 /-!
 # The commutation map on simply blocked grid homology
