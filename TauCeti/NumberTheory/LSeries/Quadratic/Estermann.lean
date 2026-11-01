@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 public import TauCeti.NumberTheory.LSeries.Quadratic.Character
-public import TauCeti.NumberTheory.LSeries.Quadratic.Pair
+public import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Basic
 import Mathlib.NumberTheory.LegendreSymbol.ZModChar
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 import TauCeti.NumberTheory.LSeries.Estermann
