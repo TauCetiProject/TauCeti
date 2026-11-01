@@ -20,13 +20,16 @@ constants.
 
 Indicator classes of pairwise disjoint sets of finite measure span a weighted finite `ℓ¹` space
 inside `L¹`: the norm of `∑ i, indicatorConstLp 1 (hs i) (hμs i) (c i)` is
-`∑ i, μ(s i) * ‖c i‖`.
+`∑ i, μ(s i) * ‖c i‖`. An `Lᵖ` class represented by `φ ∘ G` for a simple function `G` is the
+sum of the indicator classes of the fibres of `G` with constants `φ w`.
 
 ## Main declarations
 
 * `TauCeti.indicatorConstLp_smul`: the indicator class of `a • c` is `a` times that of `c`.
 * `TauCeti.norm_sum_indicatorConstLp_one`: the `L¹` norm of a sum of indicator classes of pairwise
   disjoint sets.
+* `TauCeti.eq_sum_indicatorConstLp_fiber`: an `Lᵖ` class represented by `φ ∘ G`, for a simple
+  function `G`, as a sum of indicator classes of the fibres of `G`.
 -/
 
 public section
@@ -79,6 +82,30 @@ theorem norm_sum_indicatorConstLp_one (hs : ∀ i, MeasurableSet (s i)) (hμs : 
   rw [integral_congr_ae hae, integral_finsetSum _ fun i _ ↦
     (integrableOn_const (hμs i)).integrable_indicator (hs i)]
   exact Finset.sum_congr rfl fun i _ ↦ by rw [integral_indicator_const _ (hs i), smul_eq_mul]
+
+/-- An `Lᵖ` class that is almost everywhere `φ ∘ G`, for a simple function `G`, is the sum over a
+finite set `S` of values of `G` of the indicator classes of the fibres `G ⁻¹' {w}` with constants
+`φ w`, provided that `φ ∘ G` vanishes wherever `G` takes a value outside `S`. -/
+theorem eq_sum_indicatorConstLp_fiber {F : Type*} {G : SimpleFunc α F} {φ : F → E}
+    {S : Finset F} (hS : ∀ a, G a ∉ S → φ (G a) = 0) (hμS : ∀ w : S, μ (G ⁻¹' {w.1}) ≠ ∞)
+    {x : Lp E p μ} (hx : x =ᵐ[μ] fun a ↦ φ (G a)) :
+    x = ∑ w : S, indicatorConstLp p (G.measurableSet_fiber w.1) (hμS w) (φ w.1) := by
+  refine Lp.ext ?_
+  filter_upwards [hx, Lp.coeFn_fun_finsetSum Finset.univ
+      fun w : S ↦ indicatorConstLp p (G.measurableSet_fiber w.1) (hμS w) (φ w.1),
+    ae_all_iff.2 fun w : S ↦ indicatorConstLp_coeFn (p := p) (hs := G.measurableSet_fiber w.1)
+      (hμs := hμS w) (c := φ w.1)] with a h₀ h₁ h₂
+  simp only [h₀, h₁, h₂]
+  by_cases h : G a ∈ S
+  · rw [Finset.sum_eq_single (⟨G a, h⟩ : S)]
+    · simp
+    · intro w _ hw
+      have hw' : a ∉ G ⁻¹' {w.1} := fun ha ↦ hw (Subtype.ext (Set.mem_singleton_iff.1 ha).symm)
+      simp [hw']
+    · simp
+  · refine (hS a h).trans (Finset.sum_eq_zero fun w _ ↦ ?_).symm
+    have hw : a ∉ G ⁻¹' {w.1} := fun ha ↦ h ((Set.mem_singleton_iff.1 ha) ▸ w.2)
+    simp [hw]
 
 end Disjoint
 

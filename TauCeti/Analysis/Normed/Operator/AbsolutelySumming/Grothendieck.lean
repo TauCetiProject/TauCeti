@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import TauCeti.Analysis.Matrix.Grothendieck
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import TauCeti.MeasureTheory.Function.Lp.Indicator
+import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
 import Mathlib.MeasureTheory.SpecificCodomains.Pi
 
 /-!
@@ -57,6 +58,15 @@ namespace ContinuousLinearMap
 variable {α 𝕜 H : Type*} [RCLike 𝕜] {m : MeasurableSpace α} {μ : Measure α}
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
 
+variable (𝕜 H) in
+/-- Grothendieck's inequality for `ι × κ` matrices over `𝕜` with constant `K` and vectors in `H`:
+a matrix with scalar bound `C` has bilinear bound `K * C` on unit vectors of `H`. -/
+private def MatrixInequality (ι κ : Type*) [Fintype ι] [Fintype κ] (K : ℝ) : Prop :=
+  ∀ (a : Matrix ι κ 𝕜) {C : ℝ} (u : ι → H) (v : κ → H),
+    (∀ (s : ι → 𝕜) (t : κ → 𝕜), (∀ i, ‖s i‖ ≤ 1) → (∀ j, ‖t j‖ ≤ 1) →
+      ‖∑ i, ∑ j, a i j * s i * t j‖ ≤ C) → (∀ i, ‖u i‖ ≤ 1) → (∀ j, ‖v j‖ ≤ 1) →
+    ‖∑ i, ∑ j, a i j * ⟪u i, v j⟫_𝕜‖ ≤ K * C
+
 section Atoms
 
 variable {κ : Type*} [Fintype κ] {A : κ → Set α} (hA : ∀ j, MeasurableSet (A j))
@@ -92,10 +102,7 @@ inequality: families in the span of the indicator functions of finitely many dis
 finite measure satisfy the defining inequality of `1`-summing operators with constant
 `K * ‖T‖`. -/
 private theorem sum_norm_apply_sum_smul_indicatorConstLp_le {ι : Type*} [Fintype ι] {K : ℝ}
-    (hK : ∀ (a : Matrix ι κ 𝕜) {C : ℝ} (u : ι → H) (v : κ → H),
-      (∀ (s : ι → 𝕜) (t : κ → 𝕜), (∀ i, ‖s i‖ ≤ 1) → (∀ j, ‖t j‖ ≤ 1) →
-        ‖∑ i, ∑ j, a i j * s i * t j‖ ≤ C) → (∀ i, ‖u i‖ ≤ 1) → (∀ j, ‖v j‖ ≤ 1) →
-      ‖∑ i, ∑ j, a i j * ⟪u i, v j⟫_𝕜‖ ≤ K * C)
+    (hK : MatrixInequality 𝕜 H ι κ K)
     (hd : Pairwise (Function.onFun Disjoint A)) (T : Lp 𝕜 1 μ →L[𝕜] H) (c : ι → κ → 𝕜) :
     ∑ i, ‖T (∑ j, c i j • indicatorConstLp 1 (hA j) (hAμ j) (1 : 𝕜))‖ ≤
       K * ‖T‖ * TauCeti.weakLpNorm (𝕜 := 𝕜) 1
@@ -152,10 +159,7 @@ end Atoms
 each `x i` is the `i`-th coordinate of an integrable simple function `G`, then the families lie in
 the span of the indicator functions of the nonzero fibres of `G`. -/
 private theorem sum_norm_apply_le_of_simpleFunc {ι : Type*} [Fintype ι] {K : ℝ}
-    (hK : ∀ (S : Finset (ι → 𝕜)) (a : Matrix ι S 𝕜) {C : ℝ} (u : ι → H) (v : S → H),
-      (∀ (s : ι → 𝕜) (t : S → 𝕜), (∀ i, ‖s i‖ ≤ 1) → (∀ j, ‖t j‖ ≤ 1) →
-        ‖∑ i, ∑ j, a i j * s i * t j‖ ≤ C) → (∀ i, ‖u i‖ ≤ 1) → (∀ j, ‖v j‖ ≤ 1) →
-      ‖∑ i, ∑ j, a i j * ⟪u i, v j⟫_𝕜‖ ≤ K * C)
+    (hK : ∀ S : Finset (ι → 𝕜), MatrixInequality 𝕜 H ι S K)
     (T : Lp 𝕜 1 μ →L[𝕜] H) (G : SimpleFunc α (ι → 𝕜)) (hG : Integrable G μ)
     (x : ι → Lp 𝕜 1 μ) (hx : ∀ i, x i =ᵐ[μ] fun a ↦ G a i) :
     ∑ i, ‖T (x i)‖ ≤ K * ‖T‖ * TauCeti.weakLpNorm (𝕜 := 𝕜) 1 x := by
@@ -168,38 +172,16 @@ private theorem sum_norm_apply_le_of_simpleFunc {ι : Type*} [Fintype ι] {K : �
   -- Each `x i` is the combination of the indicator functions of the fibres with coefficients
   -- the `i`-th coordinates of the values.
   have hrepr (i : ι) : x i = ∑ w : S, w.1 i • indicatorConstLp 1 (hA w) (hAμ w) (1 : 𝕜) := by
-    refine Lp.ext ?_
-    filter_upwards [hx i, Lp.coeFn_fun_finsetSum Finset.univ
-        fun w : S ↦ w.1 i • indicatorConstLp 1 (hA w) (hAμ w) (1 : 𝕜),
-      ae_all_iff.2 fun w : S ↦
-        Lp.coeFn_smul (w.1 i) (indicatorConstLp 1 (hA w) (hAμ w) (1 : 𝕜)),
-      ae_all_iff.2 fun w : S ↦ indicatorConstLp_coeFn (p := 1) (hs := hA w) (hμs := hAμ w)
-        (c := (1 : 𝕜))] with a h₀ h₁ h₂ h₃
-    simp only [h₀, h₁, h₂, h₃, Pi.smul_apply, smul_eq_mul]
-    by_cases h : G a = 0
-    · refine (congrFun h i).trans (Finset.sum_eq_zero fun w _ ↦ ?_).symm
-      have hw : a ∉ G ⁻¹' {w.1} := fun ha ↦
-        (Finset.mem_filter.1 w.2).2 ((Set.mem_singleton_iff.1 ha).symm.trans h)
-      simp [hw]
-    · have hw : G a ∈ S := Finset.mem_filter.2 ⟨G.mem_range_self a, h⟩
-      rw [Finset.sum_eq_single (⟨G a, hw⟩ : S)]
-      · simp
-      · intro w _ hw'
-        have hw'' : a ∉ G ⁻¹' {w.1} := fun ha ↦
-          hw' (Subtype.ext (Set.mem_singleton_iff.1 ha).symm)
-        simp [hw'']
-      · simp
-  rw [show x = fun i ↦ ∑ w : S, w.1 i • indicatorConstLp 1 (hA w) (hAμ w) (1 : 𝕜) from
-    funext hrepr]
+    rw [TauCeti.eq_sum_indicatorConstLp_fiber (φ := fun w ↦ w i)
+      (fun a ha ↦ by simp [S, G.mem_range_self a] at ha; simp [ha]) hAμ (hx i)]
+    simp only [← TauCeti.indicatorConstLp_smul, smul_eq_mul, mul_one]
+  obtain rfl : x = _ := funext hrepr
   exact sum_norm_apply_sum_smul_indicatorConstLp_le hA hAμ (hK S) hd T fun i w ↦ w.1 i
 
 /-- Grothendieck's theorem for `L¹` follows from any matrix inequality with a constant `K`, by
 density of simple functions. -/
 private theorem summingENorm_one_le_ofReal_mul_norm {K : ℝ} (hK0 : 0 ≤ K)
-    (hK : ∀ (n : ℕ) (S : Finset (Fin n → 𝕜)) (a : Matrix (Fin n) S 𝕜) {C : ℝ} (u : Fin n → H)
-      (v : S → H), (∀ (s : Fin n → 𝕜) (t : S → 𝕜), (∀ i, ‖s i‖ ≤ 1) → (∀ j, ‖t j‖ ≤ 1) →
-        ‖∑ i, ∑ j, a i j * s i * t j‖ ≤ C) → (∀ i, ‖u i‖ ≤ 1) → (∀ j, ‖v j‖ ≤ 1) →
-      ‖∑ i, ∑ j, a i j * ⟪u i, v j⟫_𝕜‖ ≤ K * C)
+    (hK : ∀ (n : ℕ) (S : Finset (Fin n → 𝕜)), MatrixInequality 𝕜 H (Fin n) S K)
     (T : Lp 𝕜 1 μ →L[𝕜] H) :
     T.summingENorm 1 ≤ ENNReal.ofReal (K * ‖T‖) := by
   rw [summingENorm_le_ofReal_iff (mul_nonneg hK0 (norm_nonneg T))]
@@ -212,21 +194,10 @@ private theorem summingENorm_one_le_ofReal_mul_norm {K : ℝ} (hK0 : 0 ≤ K)
   · exact continuous_norm.comp
       ((PiLp.continuousLinearEquiv 1 𝕜 fun _ : Fin n ↦ H).symm.continuous.comp
         (continuous_pi fun i ↦ T.continuous.comp (continuous_apply i)))
-  -- The joint simple function of the family `x`.
+  -- The family `x` is given by the simple functions `g i`, jointly by `SimpleFunc.pi g`.
   set g : Fin n → SimpleFunc α 𝕜 := fun i ↦ Lp.simpleFunc.toSimpleFunc ⟨x i, hx i trivial⟩
-  let G : SimpleFunc α (Fin n → 𝕜) :=
-    { toFun := fun a i ↦ g i a
-      measurableSet_fiber' := fun w ↦ by
-        have hG : (fun a i ↦ g i a) ⁻¹' {w} = ⋂ i, g i ⁻¹' {w i} := by
-          ext a
-          simp [funext_iff]
-        rw [hG]
-        exact MeasurableSet.iInter fun i ↦ (g i).measurableSet_fiber _
-      finite_range' := (Set.Finite.pi fun i ↦ (g i).finite_range).subset <| by
-        rintro _ ⟨a, rfl⟩
-        simp }
   rw [PiLp.norm_eq_of_L1]
-  exact sum_norm_apply_le_of_simpleFunc (hK n) T G
+  exact sum_norm_apply_le_of_simpleFunc (hK n) T (SimpleFunc.pi g)
     (integrable_pi_iff.2 fun i ↦ memLp_one_iff_integrable.1 (Lp.simpleFunc.memLp _)) x
     fun i ↦ (Lp.simpleFunc.toSimpleFunc_eq_toFun ⟨x i, hx i trivial⟩).symm
 

@@ -260,8 +260,8 @@ theorem norm_sum_smul_le_weakLpNorm_one (x : ι → E) {c : ι → 𝕜} (hc : �
     _ = ‖WithLp.toLp 1 (fun i ↦ f (x i))‖ := by simp [PiLp.norm_eq_of_L1]
     _ ≤ weakLpNorm (𝕜 := 𝕜) 1 x * ‖f‖ := norm_eval_le_weakLpNorm 1 x f
 
-/-- **The weak `L¹` norm by signs.** The weak `L¹` norm of a finite family is the least upper
-bound for the norms of its combinations with scalar coefficients of norm at most one. -/
+/-- **The weak `L¹` norm by bounded coefficients.** The weak `L¹` norm of a finite family is the
+least upper bound for the norms of its combinations with scalar coefficients of norm at most one. -/
 theorem weakLpNorm_one_le_iff (x : ι → E) {C : ℝ} :
     weakLpNorm (𝕜 := 𝕜) 1 x ≤ C ↔ ∀ c : ι → 𝕜, (∀ i, ‖c i‖ ≤ 1) → ‖∑ i, c i • x i‖ ≤ C := by
   refine ⟨fun h c hc ↦ (norm_sum_smul_le_weakLpNorm_one x hc).trans h, fun h ↦ ?_⟩
