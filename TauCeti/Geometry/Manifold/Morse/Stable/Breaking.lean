@@ -47,6 +47,10 @@ ambient space.
 
 ## Main results
 
+* `IsAdaptedPseudoGradient.exists_tendsto_mem_unstableSet_of_tendsto_mem_stableSet` and its time
+  reversal: a sequence converging into a stable (respectively unstable) manifold from outside it
+  has orbit points, at times tending to `+∞` (respectively `-∞`), converging to the unstable
+  (respectively stable) manifold.
 * `IsAdaptedPseudoGradient.exists_mem_closure_inter_unstableSet_of_mem_closure_inter_stableSet`
   and its time reversal: limits of trajectories break at a critical point.
 * `IsMorseSmale.manifoldMorseIndex_lt_of_mem_closure_stableSet_inter_stableSet` and its time
@@ -83,6 +87,56 @@ namespace IsAdaptedPseudoGradient
 variable (hX : IsAdaptedPseudoGradient f X)
 include hX
 
+/-- **Sequences converging into a stable manifold break at its critical point.** Let `x` be a
+point and `u` a sequence converging to a point `y` of the stable manifold `W^s(x)`, with infinitely
+many terms off `W^s(x)`. Then along a subsequence, the points of the orbits of `u` at times tending
+to `+∞` converge to a point of the unstable manifold `W^u(x)` other than `x`. -/
+theorem exists_tendsto_mem_unstableSet_of_tendsto_mem_stableSet (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
+    (hy : y ∈ hX.flow.stableSet x) {u : ℕ → M} (hu : Tendsto u atTop (𝓝 y))
+    (hux : ∃ᶠ n in atTop, u n ∉ hX.flow.stableSet x) :
+    ∃ z ∈ hX.flow.unstableSet x, z ≠ x ∧ ∃ (n : ℕ → ℕ) (t : ℕ → ℝ),
+      Tendsto n atTop atTop ∧ Tendsto t atTop atTop ∧
+        Tendsto (fun k ↦ hX.flow (t k) (u (n k))) atTop (𝓝 z) := by
+  have := Manifold.metrizableSpace 𝓘(ℝ, E) M
+  let _ : MetricSpace M := TopologicalSpace.metrizableSpaceMetric M
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (hf.eventually_eq_of_mem_criticalPoints x)
+  have hK : ∀ z ∈ closedBall x (ε / 2), mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → z = x := fun z hz hz0 ↦
+    hball (closedBall_subset_ball (half_lt_self hε) hz)
+      (mem_criticalPoints_iff_mfderiv_eq_zero.2 hz0)
+  obtain ⟨z, hz, hzx, n, t, hn, ht, hlim⟩ :=
+    Flow.exists_tendsto_mem_unstableSet_of_tendsto_mem_stableSet (half_pos hε)
+      (isClosed_sphere.isCompact)
+      (fun w ↦ hX.mem_stableSet_of_forall_mem hf isClosed_closedBall hK)
+      (fun w ↦ hX.mem_unstableSet_of_forall_mem hf isClosed_closedBall hK) hy hu hux
+  refine ⟨z, hz, fun h ↦ ?_, n, t, hn, ht, hlim⟩
+  rw [h, dist_self] at hzx
+  exact (half_pos hε).ne hzx
+
+/-- **Sequences converging into an unstable manifold break at its critical point.** Let `x` be a
+point and `u` a sequence converging to a point `y` of the unstable manifold `W^u(x)`, with
+infinitely many terms off `W^u(x)`. Then along a subsequence, the points of the orbits of `u` at
+times tending to `-∞` converge to a point of the stable manifold `W^s(x)` other than `x`. -/
+theorem exists_tendsto_mem_stableSet_of_tendsto_mem_unstableSet (hf : IsMorse 𝓘(ℝ, E) f) {y : M}
+    (hy : y ∈ hX.flow.unstableSet x) {u : ℕ → M} (hu : Tendsto u atTop (𝓝 y))
+    (hux : ∃ᶠ n in atTop, u n ∉ hX.flow.unstableSet x) :
+    ∃ z ∈ hX.flow.stableSet x, z ≠ x ∧ ∃ (n : ℕ → ℕ) (t : ℕ → ℝ),
+      Tendsto n atTop atTop ∧ Tendsto t atTop atBot ∧
+        Tendsto (fun k ↦ hX.flow (t k) (u (n k))) atTop (𝓝 z) := by
+  have := Manifold.metrizableSpace 𝓘(ℝ, E) M
+  let _ : MetricSpace M := TopologicalSpace.metrizableSpaceMetric M
+  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (hf.eventually_eq_of_mem_criticalPoints x)
+  have hK : ∀ z ∈ closedBall x (ε / 2), mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → z = x := fun z hz hz0 ↦
+    hball (closedBall_subset_ball (half_lt_self hε) hz)
+      (mem_criticalPoints_iff_mfderiv_eq_zero.2 hz0)
+  obtain ⟨z, hz, hzx, n, t, hn, ht, hlim⟩ :=
+    Flow.exists_tendsto_mem_stableSet_of_tendsto_mem_unstableSet (half_pos hε)
+      (isClosed_sphere.isCompact)
+      (fun w ↦ hX.mem_stableSet_of_forall_mem hf isClosed_closedBall hK)
+      (fun w ↦ hX.mem_unstableSet_of_forall_mem hf isClosed_closedBall hK) hy hu hux
+  refine ⟨z, hz, fun h ↦ ?_, n, t, hn, ht, hlim⟩
+  rw [h, dist_self] at hzx
+  exact (half_pos hε).ne hzx
+
 /-- **Limits of trajectories break at a critical point.** Let `x` be a critical point of the Morse
 function `f`, and `S` a set invariant under the flow and disjoint from the stable manifold `W^s(x)`.
 If the closure of `S` meets `W^s(x)`, then it also meets the unstable manifold `W^u(x)` at a point
@@ -92,18 +146,11 @@ theorem exists_mem_closure_inter_unstableSet_of_mem_closure_inter_stableSet
     (hSx : Disjoint S (hX.flow.stableSet x)) {y : M} (hy : y ∈ closure S ∩ hX.flow.stableSet x) :
     ∃ z ∈ closure S ∩ hX.flow.unstableSet x, z ≠ x := by
   have := Manifold.metrizableSpace 𝓘(ℝ, E) M
-  let _ : MetricSpace M := TopologicalSpace.metrizableSpaceMetric M
-  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (hf.eventually_eq_of_mem_criticalPoints x)
-  have hK : ∀ z ∈ closedBall x (ε / 2), mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → z = x := fun z hz hz0 ↦
-    hball (closedBall_subset_ball (half_lt_self hε) hz)
-      (mem_criticalPoints_iff_mfderiv_eq_zero.2 hz0)
-  obtain ⟨z, hz, hzx⟩ := Flow.exists_mem_closure_inter_unstableSet_of_mem_closure_inter_stableSet
-    (half_pos hε) (isClosed_sphere.isCompact)
-    (fun w ↦ hX.mem_stableSet_of_forall_mem hf isClosed_closedBall hK)
-    (fun w ↦ hX.mem_unstableSet_of_forall_mem hf isClosed_closedBall hK) hS hSx hy
-  refine ⟨z, hz, fun h ↦ ?_⟩
-  rw [h, dist_self] at hzx
-  exact (half_pos hε).ne hzx
+  obtain ⟨u, huS, hu⟩ := mem_closure_iff_seq_limit.1 hy.1
+  obtain ⟨z, hz, hzx, n, t, -, -, hlim⟩ :=
+    hX.exists_tendsto_mem_unstableSet_of_tendsto_mem_stableSet hf hy.2 hu
+      (Frequently.of_forall fun n ↦ hSx.notMem_of_mem_left (huS n))
+  exact ⟨z, ⟨mem_closure_of_tendsto hlim (Eventually.of_forall fun k ↦ hS _ (huS _)), hz⟩, hzx⟩
 
 /-- **Limits of trajectories break at a critical point, in backward time.** Let `x` be a critical
 point of the Morse function `f`, and `S` a set invariant under the flow and disjoint from the
@@ -115,18 +162,11 @@ theorem exists_mem_closure_inter_stableSet_of_mem_closure_inter_unstableSet
     (hy : y ∈ closure S ∩ hX.flow.unstableSet x) :
     ∃ z ∈ closure S ∩ hX.flow.stableSet x, z ≠ x := by
   have := Manifold.metrizableSpace 𝓘(ℝ, E) M
-  let _ : MetricSpace M := TopologicalSpace.metrizableSpaceMetric M
-  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (hf.eventually_eq_of_mem_criticalPoints x)
-  have hK : ∀ z ∈ closedBall x (ε / 2), mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → z = x := fun z hz hz0 ↦
-    hball (closedBall_subset_ball (half_lt_self hε) hz)
-      (mem_criticalPoints_iff_mfderiv_eq_zero.2 hz0)
-  obtain ⟨z, hz, hzx⟩ := Flow.exists_mem_closure_inter_stableSet_of_mem_closure_inter_unstableSet
-    (half_pos hε) (isClosed_sphere.isCompact)
-    (fun w ↦ hX.mem_stableSet_of_forall_mem hf isClosed_closedBall hK)
-    (fun w ↦ hX.mem_unstableSet_of_forall_mem hf isClosed_closedBall hK) hS hSx hy
-  refine ⟨z, hz, fun h ↦ ?_⟩
-  rw [h, dist_self] at hzx
-  exact (half_pos hε).ne hzx
+  obtain ⟨u, huS, hu⟩ := mem_closure_iff_seq_limit.1 hy.1
+  obtain ⟨z, hz, hzx, n, t, -, -, hlim⟩ :=
+    hX.exists_tendsto_mem_stableSet_of_tendsto_mem_unstableSet hf hy.2 hu
+      (Frequently.of_forall fun n ↦ hSx.notMem_of_mem_left (huS n))
+  exact ⟨z, ⟨mem_closure_of_tendsto hlim (Eventually.of_forall fun k ↦ hS _ (huS _)), hz⟩, hzx⟩
 
 omit hX in
 /-- **The Morse index increases along a broken forward limit.** Under the Morse–Smale condition, if

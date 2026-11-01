@@ -34,7 +34,8 @@ of `T ^ n` is the component of weight `n`. This detects homogeneity of an ideal 
 under such substitutions, as for the ideal of relations of the Lazard ring. Specialising `T` to an
 element `t` with pairwise distinct powers multiplies the coefficient of each monomial by `t` to the
 power of its weight, so a polynomial that this substitution multiplies by `t ^ n` is weighted
-homogeneous of weight `n`.
+homogeneous of weight `n`. Conversely, scaling the coordinates `x i` of a point by `c ^ w i`
+scales the value of a polynomial of weight `n` by `c ^ n`.
 
 Evaluating at a point is the substitution of constants. A weighted homogeneous polynomial of
 nonzero weight vanishes wherever its variables of nonzero weight vanish, and the value of one of
@@ -46,8 +47,9 @@ arbitrary vectors without changing the value.
 
 ## Main results
 
-* `MvPolynomial.IsWeightedHomogeneous.aeval_mem`: evaluation at elements of graded pieces of the
-  weights of the variables preserves weighted homogeneity.
+* `MvPolynomial.IsWeightedHomogeneous.eval₂_mem`, `MvPolynomial.IsWeightedHomogeneous.aeval_mem`:
+  evaluation at elements of graded pieces of the weights of the variables preserves weighted
+  homogeneity.
 * `MvPolynomial.IsWeightedHomogeneous.aeval`: substituting polynomials that are weighted
   homogeneous of the weights of the variables preserves weighted homogeneity.
 * `MvPolynomial.isWeightedHomogeneous_of_isHomogeneous_aeval`: the converse of the homogeneous
@@ -55,6 +57,8 @@ arbitrary vectors without changing the value.
 * `MvPolynomial.isWeightedHomogeneous_of_aeval_C_pow_mul_X_eq`: a polynomial that the
   substitution `X i ↦ t ^ w i • X i` multiplies by `t ^ n` is weighted homogeneous of weight `n`,
   when the powers of `t` are pairwise distinct.
+* `MvPolynomial.IsWeightedHomogeneous.aeval_pow_mul`: multiplying each coordinate `x i` by
+  `c ^ w i` multiplies the value of a polynomial of weight `m` by `c ^ m`.
 * `MvPolynomial.coeff_aeval_C_X_mul_X_pow`: the coefficient of `T ^ n` in the substitution
   `X i ↦ X i * T ^ w i` is the weighted homogeneous component of weight `n`.
 * `MvPolynomial.IsWeightedHomogeneous.eval₂_eq_zero`: a polynomial of nonzero weight vanishes at
@@ -82,6 +86,23 @@ section CommSemiring
 
 variable [CommSemiring R]
 
+/-- Evaluating a polynomial that is weighted homogeneous of weight `m`, along a ring homomorphism
+`f` with values in the graded piece `𝒜 0` of a graded ring, at elements `g i` of the graded pieces
+`𝒜 (w i)` gives an element of `𝒜 m`. -/
+theorem IsWeightedHomogeneous.eval₂_mem {M A S : Type*} [AddCommMonoid M] [CommSemiring A]
+    [SetLike S A] [AddSubmonoidClass S A] {𝒜 : M → S} [SetLike.GradedMonoid 𝒜] {w : σ → M}
+    {φ : MvPolynomial σ R} {m : M} (hφ : φ.IsWeightedHomogeneous w m) {f : R →+* A}
+    (hf : ∀ r, f r ∈ 𝒜 0) {g : σ → A} (hg : ∀ i, g i ∈ 𝒜 (w i)) :
+    eval₂ f g φ ∈ 𝒜 m := by
+  induction hφ using IsWeightedHomogeneous.induction_on with
+  | zero => simp
+  | add p q _ _ ihp ihq => simpa using add_mem ihp ihq
+  | monomial d r hr =>
+    -- Write the weight of `d` as `0 + ∑ i, d i • w i`, matching the product of `f r ∈ 𝒜 0` with
+    -- `∏ i, g i ^ d i ∈ 𝒜 (∑ i, d i • w i)`.
+    rw [eval₂_monomial, ← hr, Finsupp.weight_apply, Finsupp.sum, ← zero_add (∑ _ ∈ _, _)]
+    exact SetLike.mul_mem_graded (hf r) (SetLike.prod_pow_mem_graded 𝒜 w g d fun i _ ↦ hg i)
+
 /-- Evaluating a polynomial that is weighted homogeneous of weight `m` at elements `g i` of the
 graded pieces `𝒜 (w i)` of a graded algebra gives an element of `𝒜 m`. -/
 theorem IsWeightedHomogeneous.aeval_mem {M A S : Type*} [AddCommMonoid M] [CommSemiring A]
@@ -89,16 +110,10 @@ theorem IsWeightedHomogeneous.aeval_mem {M A S : Type*} [AddCommMonoid M] [CommS
     [SetLike.GradedMonoid 𝒜] {w : σ → M} {φ : MvPolynomial σ R} {m : M}
     (hφ : φ.IsWeightedHomogeneous w m) {g : σ → A} (hg : ∀ i, g i ∈ 𝒜 (w i)) :
     MvPolynomial.aeval g φ ∈ 𝒜 m := by
-  induction hφ using IsWeightedHomogeneous.induction_on with
-  | zero => simp
-  | add p q _ _ ihp ihq => simpa using add_mem ihp ihq
-  | monomial d r hr =>
-    -- Write the weight of `d` as `0 + ∑ i, d i • w i` and `algebraMap R A r` as `r • 1`, matching
-    -- the product of `r • 1 ∈ 𝒜 0` with `∏ i, g i ^ d i ∈ 𝒜 (∑ i, d i • w i)`.
-    rw [aeval_monomial, ← hr, Finsupp.weight_apply, Finsupp.sum, ← zero_add (∑ _ ∈ _, _),
-      Algebra.algebraMap_eq_smul_one]
-    exact SetLike.mul_mem_graded (SMulMemClass.smul_mem r SetLike.GradedOne.one_mem)
-      (SetLike.prod_pow_mem_graded 𝒜 w g d fun i _ ↦ hg i)
+  rw [aeval_def]
+  refine hφ.eval₂_mem (fun r ↦ ?_) hg
+  rw [Algebra.algebraMap_eq_smul_one]
+  exact SMulMemClass.smul_mem r SetLike.GradedOne.one_mem
 
 /-- Substituting, for each variable `i`, a polynomial that is weighted homogeneous of weight
 `w i` for the weights `v` into a polynomial that is weighted homogeneous of weight `m` for the
@@ -195,6 +210,22 @@ theorem isWeightedHomogeneous_of_isHomogeneous_aeval {w : σ → ℕ} {g : σ �
       _ = aeval g (weightedHomogeneousComponent w m φ) := homogeneousComponent_eq_self (hcomp m)
   rw [hinj key]
   exact weightedHomogeneousComponent_isWeightedHomogeneous m φ
+
+/-- **Weighted homogeneity under scaling.** Multiplying each coordinate `x i` by `c ^ w i`
+multiplies the value of a polynomial that is weighted homogeneous of weight `m` by `c ^ m`. -/
+theorem IsWeightedHomogeneous.aeval_pow_mul {A : Type*} [CommSemiring A] [Algebra R A]
+    {w : σ → ℕ} {φ : MvPolynomial σ R} {m : ℕ} (hφ : φ.IsWeightedHomogeneous w m) (c : A)
+    (x : σ → A) :
+    MvPolynomial.aeval (fun i ↦ c ^ w i * x i) φ = c ^ m * MvPolynomial.aeval x φ := by
+  induction hφ using IsWeightedHomogeneous.induction_on with
+  | zero => simp
+  | add p q _ _ ihp ihq => rw [map_add, map_add, ihp, ihq, mul_add]
+  | monomial d r hr =>
+    -- Each factor `(c ^ w i * x i) ^ d i` contributes `c ^ (d i * w i)`.
+    rw [aeval_monomial, aeval_monomial, ← hr]
+    simp only [Finsupp.prod, Finsupp.weight_apply, Finsupp.sum, mul_pow, Finset.prod_mul_distrib,
+      ← pow_mul', Finset.prod_pow_eq_pow_sum, smul_eq_mul]
+    ring
 
 section Eval
 

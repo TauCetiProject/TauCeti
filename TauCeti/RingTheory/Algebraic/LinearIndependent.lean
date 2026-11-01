@@ -16,15 +16,21 @@ import Mathlib.RingTheory.AlgebraTower
 import Mathlib.RingTheory.PowerBasis
 -- Proof-only: a nontrivial commutative ring satisfies the strong rank condition.
 import Mathlib.RingTheory.FiniteType
+-- Proof-only: integral multiples of algebraic elements and finiteness of `R[x]` for integral `x`.
+import Mathlib.RingTheory.Algebraic.Integral
 
 /-!
-# Linear independence from transcendence
+# Linear independence of powers and transcendence
 
 The powers of a transcendental element of an algebra are linearly independent over the base ring.
 Consequently, the first `n` powers span a submodule of rank `n` over a nontrivial commutative ring,
 and in a tower `R → K → A` with `K` a field, the products `x ^ i y ^ j` of the powers of `x ∈ K`
 transcendental over `R` with the powers `y ^ j`, `j < (minpoly K y).natDegree`, of `y ∈ A` are
 linearly independent over `R`.
+
+Conversely, the powers of an element algebraic over a domain admit only boundedly many linearly
+independent members, so every sufficiently large finite family of its powers satisfies a
+nontrivial linear relation over the base ring.
 
 ## Main results
 
@@ -35,6 +41,8 @@ linearly independent over `R`.
 * `Transcendental.linearIndepOn_pow_mul_pow`: in a tower `R → K → A`, the products `x ^ i y ^ j`
   with `x ∈ K` transcendental over `R` and `j < (minpoly K y).natDegree` are linearly independent
   over `R`.
+* `IsAlgebraic.exists_card_le_of_linearIndependent_pow`: a linearly independent family of powers
+  of an element algebraic over a domain has boundedly many members.
 -/
 
 public section
@@ -77,5 +85,27 @@ theorem _root_.Transcendental.linearIndepOn_pow_mul_pow {K : Type*} [Field K] [A
   convert h.comp _ hinj using 1
   ext p
   simp [Algebra.smul_def]
+
+/-- **Linearly independent powers of an algebraic element are boundedly many**: if `x` is algebraic
+over a domain `R`, there is a bound `d` such that every finite family of powers `x ^ e i` that is
+linearly independent over `R` has at most `d` members. -/
+theorem _root_.IsAlgebraic.exists_card_le_of_linearIndependent_pow [IsDomain R] {x : A}
+    (hx : IsAlgebraic R x) :
+    ∃ d : ℕ, ∀ {ι : Type*} [Fintype ι] (e : ι → ℕ),
+      LinearIndependent R (fun i ↦ x ^ e i) → Fintype.card ι ≤ d := by
+  -- Some nonzero multiple `c • x` is integral, so `R[c • x]` is a finite `R`-module containing
+  -- `c ^ N • x ^ n` for every `n ≤ N`; its rank bounds the families.
+  obtain ⟨c, hc, hint⟩ := hx.exists_integral_multiple
+  set M := Subalgebra.toSubmodule (Algebra.adjoin R {c • x})
+  have : Module.Finite R M := Module.Finite.iff_fg.mpr hint.fg_adjoin_singleton
+  refine ⟨Module.finrank R M, fun {ι} _ e he ↦ ?_⟩
+  set N := Finset.univ.sup e
+  have hmem (i : ι) : c ^ N • x ^ e i ∈ M := by
+    have hle : e i ≤ N := Finset.le_sup (Finset.mem_univ i)
+    rw [Subalgebra.mem_toSubmodule, ← Nat.sub_add_cancel hle, pow_add, mul_smul, ← smul_pow]
+    exact Subalgebra.smul_mem _ (Subalgebra.pow_mem _ (Algebra.self_mem_adjoin_singleton R _) _) _
+  have hreg : IsRightRegular (c ^ N) := (isRegular_iff_ne_zero.mpr (pow_ne_zero _ hc)).right
+  exact ((he.smul_of_isRightRegular (w := fun _ ↦ c ^ N) fun _ ↦ hreg).codRestrict M
+    hmem).fintype_card_le_finrank
 
 end TauCeti

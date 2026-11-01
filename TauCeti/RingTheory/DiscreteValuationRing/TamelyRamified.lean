@@ -10,8 +10,13 @@ public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.RamificationInertia.Basic
 public import TauCeti.RingTheory.RamificationInertia.Unramified
 
+import Mathlib.FieldTheory.SeparableDegree
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
+import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.Smooth.Fiber
+import TauCeti.RingTheory.Ideal.LiesOver
+import TauCeti.RingTheory.Localization.Integral
+import TauCeti.RingTheory.RamificationInertia.Bijective
 
 /-!
 # Unramified, tamely and totally ramified extensions of a discrete valuation ring
@@ -30,15 +35,29 @@ extension and let `B` be the integral closure of `A` in `L`. The maximal ideals 
 
 The definitions take `L` to be a field; for a finite separable `K`-algebra `∏ Lⱼ` Stacks asks
 for them of every factor `Lⱼ`. Ramification indices are Mathlib's `Ideal.ramificationIdx`
-and residue degrees are Mathlib's `Ideal.inertiaDeg`. The definitions themselves only need `A`
-to be local; the results below assume `A` is a discrete valuation ring. For extensions of
-nonarchimedean local fields, the valuation-theoretic counterparts are `TauCeti.IsTamelyRamified`
-and `TauCeti.IsTotallyRamified`.
+and residue degrees are Mathlib's `Ideal.inertiaDeg`. The definitions, the comparisons between
+them, their transport along integral-closure models and the tower lemmas `trans` only need `A`
+to be local (`trans` also asks the integral closure of `A` in the intermediate field to be a
+discrete valuation ring); the remaining results assume `A` is a discrete valuation ring. For
+extensions of nonarchimedean local fields, the valuation-theoretic counterparts are
+`TauCeti.IsTamelyRamified` and `TauCeti.IsTotallyRamified`.
 
 ## Main results
 
 * `TauCeti.Algebra.IsUnramifiedWRT.isTamelyRamifiedWRT`: unramified extensions are tamely
   ramified.
+* `TauCeti.Algebra.IsTotallyRamifiedWRT.isTamelyRamifiedWRT_iff`: a totally ramified extension
+  is tamely ramified iff its ramification index is invertible in the residue field of `A`.
+* `TauCeti.Algebra.isTamelyRamifiedWRT_iff_of_isIntegralClosure` and
+  `TauCeti.Algebra.isUnramifiedWRT_iff_of_isIntegralClosure`: the conditions may be checked on
+  any integral closure of `A` in `L`.
+* `TauCeti.Algebra.IsTamelyRamifiedWRT.trans` and `TauCeti.Algebra.IsUnramifiedWRT.trans`: for a
+  tower `K ⊆ M ⊆ L` such that the integral closure `A_M` of `A` in `M` is a discrete valuation
+  ring, if `M` is tamely ramified (resp. unramified) with respect to `A` and `L` with respect to
+  `A_M`, then `L` is tamely ramified (resp. unramified) with respect to `A`.
+* `TauCeti.Algebra.IsTamelyRamifiedWRT.tower_bot` and
+  `TauCeti.Algebra.IsUnramifiedWRT.tower_bot`: both properties pass from an extension `L` of `M`
+  to `M`, for `M` finite and separable over `K`.
 * `TauCeti.Algebra.isTamelyRamifiedWRT_of_charZero`: if the residue field of `A` has
   characteristic zero, every finite extension of `K` is tamely ramified with respect to `A`.
 * `TauCeti.Algebra.isUnramifiedWRT_iff_forall_isUnramifiedAt`: `L` is unramified with respect
@@ -125,7 +144,83 @@ theorem isTotallyRamifiedWRT_def :
 theorem IsUnramifiedWRT.isTamelyRamifiedWRT (h : IsUnramifiedWRT A L) :
     IsTamelyRamifiedWRT A L := fun P _ _ ↦ ⟨(h P).2, by simp [(h P).1]⟩
 
+/-- A totally ramified extension has trivial residue field extensions, so it is tamely ramified
+exactly when its ramification index is invertible in the residue field of `A`. -/
+theorem IsTotallyRamifiedWRT.isTamelyRamifiedWRT_iff (h : IsTotallyRamifiedWRT A L) :
+    IsTamelyRamifiedWRT A L ↔
+      ∀ (P : Ideal (integralClosure A L)) [P.IsMaximal] [P.LiesOver (maximalIdeal A)],
+        IsUnit ((P.ramificationIdx A : ℕ) : A ⧸ maximalIdeal A) := by
+  refine ⟨fun h' P _ _ ↦ (h' P).2, fun he P _ _ ↦ ⟨⟨fun x ↦ ?_⟩, he P⟩⟩
+  let := Ideal.Quotient.field (maximalIdeal A)
+  let := Ideal.Quotient.field P
+  have : Module.Free (A ⧸ maximalIdeal A) (integralClosure A L ⧸ P) := .of_divisionRing _ _
+  have htop : (⊥ : Subalgebra (A ⧸ maximalIdeal A) (integralClosure A L ⧸ P)) = ⊤ :=
+    Subalgebra.bot_eq_top_iff_finrank_eq_one.mpr
+      ((Ideal.inertiaDeg_eq_of_isMaximal (maximalIdeal A) P).symm.trans (h.2 P))
+  obtain ⟨a, rfl⟩ := Algebra.mem_bot.mp (htop ▸ Algebra.mem_top : x ∈ (⊥ : Subalgebra _ _))
+  exact isSeparable_algebraMap a
+
 end Definitions
+
+section IntegralClosure
+
+variable {A L : Type*} [CommRing A] [IsLocalRing A] [Field L] [Algebra A L]
+
+/-- Tameness at the maximal ideals over the closed point transfers along an isomorphism of
+`A`-algebras. -/
+private theorem forall_tame_of_algEquiv {B C : Type*} [CommRing B] [CommRing C] [Algebra A B]
+    [Algebra A C] (e : B ≃ₐ[A] C)
+    (h : ∀ (Q : Ideal C) [Q.IsMaximal] [Q.LiesOver (maximalIdeal A)],
+      Algebra.IsSeparable (A ⧸ maximalIdeal A) (C ⧸ Q) ∧
+        IsUnit ((Q.ramificationIdx A : ℕ) : A ⧸ maximalIdeal A))
+    (P : Ideal B) [P.IsMaximal] [P.LiesOver (maximalIdeal A)] :
+    Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ P) ∧
+      IsUnit ((P.ramificationIdx A : ℕ) : A ⧸ maximalIdeal A) := by
+  let σ := Ideal.Quotient.algEquivOfEqMap (maximalIdeal A) e (Q := P.map e) rfl
+  let := Ideal.Quotient.field (maximalIdeal A)
+  let := Ideal.Quotient.field P
+  let := Ideal.Quotient.field (P.map e)
+  have := (h (P.map e)).1
+  exact ⟨.of_algHom _ _ σ.toAlgHom, Ideal.ramificationIdx_map_algEquiv e P ▸ (h (P.map e)).2⟩
+
+/-- Unramifiedness at the maximal ideals over the closed point transfers along an isomorphism of
+`A`-algebras. -/
+private theorem forall_unramified_of_algEquiv {B C : Type*} [CommRing B] [CommRing C]
+    [Algebra A B] [Algebra A C] (e : B ≃ₐ[A] C)
+    (h : ∀ (Q : Ideal C) [Q.IsMaximal] [Q.LiesOver (maximalIdeal A)],
+      Q.ramificationIdx A = 1 ∧ Algebra.IsSeparable (A ⧸ maximalIdeal A) (C ⧸ Q))
+    (P : Ideal B) [P.IsMaximal] [P.LiesOver (maximalIdeal A)] :
+    P.ramificationIdx A = 1 ∧ Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ P) := by
+  let σ := Ideal.Quotient.algEquivOfEqMap (maximalIdeal A) e (Q := P.map e) rfl
+  let := Ideal.Quotient.field (maximalIdeal A)
+  let := Ideal.Quotient.field P
+  let := Ideal.Quotient.field (P.map e)
+  have := (h (P.map e)).2
+  exact ⟨Ideal.ramificationIdx_map_algEquiv e P ▸ (h (P.map e)).1, .of_algHom _ _ σ.toAlgHom⟩
+
+variable (B : Type*) [CommRing B] [Algebra A B] [Algebra B L] [IsScalarTower A B L]
+  [IsIntegralClosure B A L]
+
+/-- `IsTamelyRamifiedWRT A L` can be checked on any integral closure `B` of `A` in `L`, not only
+on the subalgebra `integralClosure A L`. -/
+theorem isTamelyRamifiedWRT_iff_of_isIntegralClosure :
+    IsTamelyRamifiedWRT A L ↔
+      ∀ (P : Ideal B) [P.IsMaximal] [P.LiesOver (maximalIdeal A)],
+        Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ P) ∧
+          IsUnit ((P.ramificationIdx A : ℕ) : A ⧸ maximalIdeal A) :=
+  ⟨fun h ↦ forall_tame_of_algEquiv (IsIntegralClosure.equiv A B L (integralClosure A L)) h,
+    fun h ↦ forall_tame_of_algEquiv (IsIntegralClosure.equiv A (integralClosure A L) L B) h⟩
+
+/-- `IsUnramifiedWRT A L` can be checked on any integral closure `B` of `A` in `L`, not only on
+the subalgebra `integralClosure A L`. -/
+theorem isUnramifiedWRT_iff_of_isIntegralClosure :
+    IsUnramifiedWRT A L ↔
+      ∀ (P : Ideal B) [P.IsMaximal] [P.LiesOver (maximalIdeal A)],
+        P.ramificationIdx A = 1 ∧ Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ P) :=
+  ⟨fun h ↦ forall_unramified_of_algEquiv (IsIntegralClosure.equiv A B L (integralClosure A L)) h,
+    fun h ↦ forall_unramified_of_algEquiv (IsIntegralClosure.equiv A (integralClosure A L) L B) h⟩
+
+end IntegralClosure
 
 section DiscreteValuationRing
 
@@ -257,6 +352,128 @@ theorem isTotallyRamifiedWRT_iff_exists_ramificationIdx_eq_finrank :
     exact ⟨⟨P, hP, fun Q _ ↦ huniq Q⟩, fun Q _ ↦ huniq Q ▸ hPf⟩
 
 end DiscreteValuationRing
+
+section Tower
+
+variable {A M L : Type*} [CommRing A] [Field M] [Field L] [Algebra A M]
+  [Algebra A L] [Algebra M L] [IsScalarTower A M L]
+
+attribute [local instance] integralClosureMapAlgebra isScalarTower_integralClosureMapAlgebra_left
+  isScalarTower_integralClosureMapAlgebra_right
+
+/-- **Tame ramification in towers.** Let `M ⊆ L` be fields over the local ring `A` such that the
+integral closure `A_M` of `A` in `M` is a discrete valuation ring. If `M` is tamely ramified with
+respect to `A` and `L` is tamely ramified with respect to `A_M`, then `L` is tamely ramified with
+respect to `A`. -/
+theorem IsTamelyRamifiedWRT.trans [IsLocalRing A] [IsDiscreteValuationRing (integralClosure A M)]
+    (hM : IsTamelyRamifiedWRT A M) (hL : IsTamelyRamifiedWRT (integralClosure A M) L) :
+    IsTamelyRamifiedWRT A L := by
+  have : Algebra.IsIntegral (integralClosure A M) (integralClosure A L) := .tower_top A
+  have : FaithfulSMul (integralClosure A M) (integralClosure A L) := .tower_bot _ _ L
+  have : Module.IsTorsionFree (integralClosure A M) (integralClosure A L) :=
+    FaithfulSMul.to_isTorsionFree ..
+  have : IsIntegralClosure (integralClosure A L) (integralClosure A M) L :=
+    IsIntegralClosure.tower_top (R := A)
+  rw [isTamelyRamifiedWRT_iff_of_isIntegralClosure (integralClosure A L)] at hL
+  intro P _ _
+  have hQ : P.under (integralClosure A M) = maximalIdeal (integralClosure A M) :=
+    eq_maximalIdeal (Ideal.IsMaximal.under _ P)
+  have : P.LiesOver (maximalIdeal (integralClosure A M)) := ⟨hQ.symm⟩
+  have : (maximalIdeal (integralClosure A M)).LiesOver (maximalIdeal A) :=
+    ⟨(eq_maximalIdeal (Ideal.IsMaximal.under A _)).symm⟩
+  obtain ⟨hsepM, heM⟩ := hM (maximalIdeal (integralClosure A M))
+  obtain ⟨hsepL, heL⟩ := hL P
+  let := Ideal.Quotient.field (maximalIdeal A)
+  let := Ideal.Quotient.field (maximalIdeal (integralClosure A M))
+  let := Ideal.Quotient.field P
+  have := Ideal.Quotient.isScalarTower_quotient_of_liesOver (maximalIdeal A)
+    (maximalIdeal (integralClosure A M)) P
+  refine ⟨.trans _ (integralClosure A M ⧸ maximalIdeal (integralClosure A M)) _, ?_⟩
+  rw [Ideal.ramificationIdx_tower (q := maximalIdeal (integralClosure A M)), Nat.cast_mul]
+  refine heM.mul (isUnit_iff_ne_zero.mpr fun h ↦ isUnit_iff_ne_zero.mp heL ?_)
+  rw [← map_natCast (algebraMap (A ⧸ maximalIdeal A)
+    (integralClosure A M ⧸ maximalIdeal (integralClosure A M))), h, map_zero]
+
+/-- **Unramified extensions in towers.** Let `M ⊆ L` be fields over the local ring `A` such that
+the integral closure `A_M` of `A` in `M` is a discrete valuation ring. If `M` is unramified with
+respect to `A` and `L` is unramified with respect to `A_M`, then `L` is unramified with respect
+to `A`. -/
+theorem IsUnramifiedWRT.trans [IsLocalRing A] [IsDiscreteValuationRing (integralClosure A M)]
+    (hM : IsUnramifiedWRT A M) (hL : IsUnramifiedWRT (integralClosure A M) L) :
+    IsUnramifiedWRT A L := by
+  have : Algebra.IsIntegral (integralClosure A M) (integralClosure A L) := .tower_top A
+  have : FaithfulSMul (integralClosure A M) (integralClosure A L) := .tower_bot _ _ L
+  have : Module.IsTorsionFree (integralClosure A M) (integralClosure A L) :=
+    FaithfulSMul.to_isTorsionFree ..
+  have : IsIntegralClosure (integralClosure A L) (integralClosure A M) L :=
+    IsIntegralClosure.tower_top (R := A)
+  rw [isUnramifiedWRT_iff_of_isIntegralClosure (integralClosure A L)] at hL
+  intro P _ _
+  have : P.LiesOver (maximalIdeal (integralClosure A M)) :=
+    ⟨(eq_maximalIdeal (Ideal.IsMaximal.under _ P)).symm⟩
+  have : (maximalIdeal (integralClosure A M)).LiesOver (maximalIdeal A) :=
+    ⟨(eq_maximalIdeal (Ideal.IsMaximal.under A _)).symm⟩
+  obtain ⟨heM, hsepM⟩ := hM (maximalIdeal (integralClosure A M))
+  obtain ⟨heL, hsepL⟩ := hL P
+  let := Ideal.Quotient.field (maximalIdeal A)
+  let := Ideal.Quotient.field (maximalIdeal (integralClosure A M))
+  let := Ideal.Quotient.field P
+  have := Ideal.Quotient.isScalarTower_quotient_of_liesOver (maximalIdeal A)
+    (maximalIdeal (integralClosure A M)) P
+  rw [Ideal.ramificationIdx_tower (q := maximalIdeal (integralClosure A M)), heM, heL]
+  exact ⟨rfl, .trans _ (integralClosure A M ⧸ maximalIdeal (integralClosure A M)) _⟩
+
+section TowerBot
+
+variable (K : Type*) [Field K] [IsDomain A] [IsDiscreteValuationRing A] [Algebra A K]
+  [IsFractionRing A K] [Algebra K M] [IsScalarTower A K M] [FiniteDimensional K M]
+  [Algebra.IsSeparable K M]
+
+include K in
+/-- Let `M` be a finite separable extension of the fraction field `K` of a discrete valuation ring
+`A`, and `L` any extension of `M`. If `L` is tamely ramified with respect to `A`, then so is `M`. -/
+theorem IsTamelyRamifiedWRT.tower_bot (h : IsTamelyRamifiedWRT A L) : IsTamelyRamifiedWRT A M := by
+  intro Q _ _
+  have : IsDedekindDomain (integralClosure A M) := integralClosure.isDedekindDomain A K M
+  have : Algebra.IsIntegral (integralClosure A M) (integralClosure A L) := .tower_top A
+  have : FaithfulSMul (integralClosure A M) (integralClosure A L) := .tower_bot _ _ L
+  have : Module.IsTorsionFree (integralClosure A M) (integralClosure A L) :=
+    FaithfulSMul.to_isTorsionFree ..
+  obtain ⟨P, _, _, hdvd⟩ :=
+    Ideal.exists_isMaximal_liesOver_ramificationIdx_dvd A (T := integralClosure A L) Q
+  have : P.LiesOver (maximalIdeal A) := .trans P Q (maximalIdeal A)
+  obtain ⟨hsep, he⟩ := h P
+  let := Ideal.Quotient.field (maximalIdeal A)
+  let := Ideal.Quotient.field Q
+  let := Ideal.Quotient.field P
+  have := Ideal.Quotient.isScalarTower_quotient_of_liesOver (maximalIdeal A) Q P
+  exact ⟨Algebra.isSeparable_tower_bot_of_isSeparable _ _ (integralClosure A L ⧸ P),
+    isUnit_of_dvd_unit (Nat.cast_dvd_cast hdvd) he⟩
+
+include K in
+/-- Let `M` be a finite separable extension of the fraction field `K` of a discrete valuation ring
+`A`, and `L` any extension of `M`. If `L` is unramified with respect to `A`, then so is `M`. -/
+theorem IsUnramifiedWRT.tower_bot (h : IsUnramifiedWRT A L) : IsUnramifiedWRT A M := by
+  intro Q _ _
+  have : IsDedekindDomain (integralClosure A M) := integralClosure.isDedekindDomain A K M
+  have : Algebra.IsIntegral (integralClosure A M) (integralClosure A L) := .tower_top A
+  have : FaithfulSMul (integralClosure A M) (integralClosure A L) := .tower_bot _ _ L
+  have : Module.IsTorsionFree (integralClosure A M) (integralClosure A L) :=
+    FaithfulSMul.to_isTorsionFree ..
+  obtain ⟨P, _, _, hdvd⟩ :=
+    Ideal.exists_isMaximal_liesOver_ramificationIdx_dvd A (T := integralClosure A L) Q
+  have : P.LiesOver (maximalIdeal A) := .trans P Q (maximalIdeal A)
+  obtain ⟨he, hsep⟩ := h P
+  let := Ideal.Quotient.field (maximalIdeal A)
+  let := Ideal.Quotient.field Q
+  let := Ideal.Quotient.field P
+  have := Ideal.Quotient.isScalarTower_quotient_of_liesOver (maximalIdeal A) Q P
+  exact ⟨Nat.dvd_one.mp (he ▸ hdvd),
+    Algebra.isSeparable_tower_bot_of_isSeparable _ _ (integralClosure A L ⧸ P)⟩
+
+end TowerBot
+
+end Tower
 
 /-- The fraction field of a discrete valuation ring `A` is unramified with respect to `A`: the
 integral closure of `A` in it is `A` itself. -/

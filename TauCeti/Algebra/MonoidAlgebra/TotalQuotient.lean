@@ -11,9 +11,15 @@ public import Mathlib.RingTheory.Artinian.Module
 public import Mathlib.RingTheory.Finiteness.Finsupp
 public import Mathlib.RepresentationTheory.Maschke
 public import Mathlib.RingTheory.Jacobson.Semiprimary
+public import Mathlib.RingTheory.FiniteType
+public import TauCeti.Algebra.MonoidAlgebra.Basic
+public import TauCeti.Algebra.MonoidAlgebra.Reduced
+public import TauCeti.Algebra.Regular.NatCast
+public import TauCeti.RingTheory.Localization.Reduced
+public import TauCeti.RingTheory.Localization.FractionRing
 
 /-!
-# Total quotient rings of finite monoid algebras
+# Total quotient rings of monoid algebras
 
 For a finite commutative monoid `M` and a coefficient ring `R` with Artinian total quotient
 ring `K`, `K[M]` is the total quotient ring of `R[M]`. In particular, rationalizing the coefficients
@@ -27,6 +33,13 @@ The decomposition respects coefficient scalars. In characteristic zero, all comp
 have characteristic zero; the general `charZero_of_injective_algebraMap` theorem can be
 used to equip them with this instance.
 
+For a finitely generated, possibly infinite, commutative group `G` and a formally real Noetherian
+coefficient ring `R`, such as `ℤ` or `ℚ`, the group ring `R[G]` is reduced and Noetherian, so its
+total quotient ring is Artinian. It is therefore again a finite product of fields, namely its
+residue fields at its maximal ideals, and these have characteristic zero
+(`MonoidAlgebra.exists_ringEquiv_pi_field_of_isFractionRing`). Torsion in `G` is allowed, and no
+splitting of `G` into free and torsion parts is chosen.
+
 The algebra structure on coefficient extension is Mathlib's scoped `AlgebraMonoidAlgebra`
 structure. No field structure on the group ring is assumed.
 
@@ -34,6 +47,8 @@ structure. No field structure on the group ring is assumed.
 
 * V. Turaev, *Introduction to Combinatorial Torsions*, Chapter I, for total quotient
   coefficients of abelian group rings.
+* D. S. Passman, *The Algebraic Structure of Group Rings*, Wiley, 1977, for reducedness of
+  commutative group rings in characteristic zero.
 -/
 
 public section
@@ -113,3 +128,82 @@ theorem AddMonoidAlgebra.algEquivPiField_apply
     (x : AddMonoidAlgebra K H) (I : MaximalSpectrum (AddMonoidAlgebra K H)) :
     AddMonoidAlgebra.algEquivPiField K H x I = Ideal.Quotient.mk I.asIdeal x :=
   IsArtinianRing.equivPi_apply _ x I
+
+section CharZero
+
+variable (R M K : Type*) [CommRing R] [IsAddTorsionFree R] [CommMonoid M]
+  [CommRing K] [Algebra (MonoidAlgebra R M) K] [IsFractionRing (MonoidAlgebra R M) K]
+
+include R M in
+/-- Every quotient of the total quotient ring of a monoid ring over a ring without additive torsion
+by a proper ideal has characteristic zero. -/
+@[to_additive (dont_translate := R K)
+/-- Every quotient of the total quotient ring of an additive monoid ring over a ring without
+additive torsion by a proper ideal has characteristic zero. -/]
+theorem MonoidAlgebra.charZero_quotient_of_isFractionRing {I : Ideal K} (hI : I ≠ ⊤) :
+    CharZero (K ⧸ I) :=
+  IsFractionRing.charZero_quotient (MonoidAlgebra R M) K
+    (fun _ ↦ TauCeti.natCast_mem_nonZeroDivisors) hI
+
+end CharZero
+
+section FG
+
+open scoped nonZeroDivisors
+
+universe u v w
+
+variable (R : Type u) (G : Type v) (K : Type w) [CommRing R] [IsFormallyReal R] [CommGroup G]
+  [CommRing K] [Algebra (MonoidAlgebra R G) K] [IsFractionRing (MonoidAlgebra R G) K]
+
+/-- The total quotient ring of the group ring of a finitely generated commutative group over a
+formally real Noetherian ring is Artinian. -/
+@[to_additive (dont_translate := R K)
+/-- The total quotient ring of the group ring of a finitely generated commutative additive group
+over a formally real Noetherian ring is Artinian. -/]
+theorem MonoidAlgebra.isArtinianRing_of_isFractionRing [IsNoetherianRing R] [Group.FG G] :
+    IsArtinianRing K :=
+  have : Monoid.FG G := Group.fg_iff_monoid_fg.mp ‹_›
+  have : IsNoetherianRing (MonoidAlgebra R G) :=
+    Algebra.FiniteType.isNoetherianRing R (MonoidAlgebra R G)
+  IsFractionRing.isArtinianRing_of_isReduced (MonoidAlgebra R G) K
+
+/-- The total quotient ring of the group ring of a finitely generated commutative group over a
+formally real Noetherian ring is a finite product of fields of characteristic zero. -/
+theorem MonoidAlgebra.exists_ringEquiv_pi_field_of_isFractionRing [IsNoetherianRing R]
+    [Group.FG G] :
+    ∃ (ι : Type w) (_ : Finite ι) (F : ι → Type w) (_ : ∀ i, Field (F i)),
+      (∀ i, CharZero (F i)) ∧ Nonempty (K ≃+* ∀ i, F i) := by
+  have := MonoidAlgebra.isArtinianRing_of_isFractionRing R G K
+  have := IsLocalization.isReduced (MonoidAlgebra R G)⁰ K
+  exact ⟨MaximalSpectrum K, inferInstance, fun I ↦ K ⧸ I.asIdeal,
+    fun I ↦ have := I.isMaximal; Ideal.Quotient.field I.asIdeal,
+    fun I ↦ MonoidAlgebra.charZero_quotient_of_isFractionRing R G K I.isMaximal.ne_top,
+    ⟨(IsArtinianRing.equivPi K).toRingEquiv⟩⟩
+
+end FG
+
+section AddFG
+
+open scoped nonZeroDivisors
+
+universe u v w
+
+variable (R : Type u) (H : Type v) (K : Type w) [CommRing R] [IsFormallyReal R] [AddCommGroup H]
+  [CommRing K] [Algebra (AddMonoidAlgebra R H) K] [IsFractionRing (AddMonoidAlgebra R H) K]
+
+/-- The total quotient ring of the group ring of a finitely generated commutative additive group
+over a formally real Noetherian ring, such as `ℤ[H]` for a finitely generated abelian group `H`,
+is a finite product of fields of characteristic zero. -/
+theorem AddMonoidAlgebra.exists_ringEquiv_pi_field_of_isFractionRing [IsNoetherianRing R]
+    [AddGroup.FG H] :
+    ∃ (ι : Type w) (_ : Finite ι) (F : ι → Type w) (_ : ∀ i, Field (F i)),
+      (∀ i, CharZero (F i)) ∧ Nonempty (K ≃+* ∀ i, F i) := by
+  have := AddMonoidAlgebra.isArtinianRing_of_isFractionRing R H K
+  have := IsLocalization.isReduced (AddMonoidAlgebra R H)⁰ K
+  exact ⟨MaximalSpectrum K, inferInstance, fun I ↦ K ⧸ I.asIdeal,
+    fun I ↦ have := I.isMaximal; Ideal.Quotient.field I.asIdeal,
+    fun I ↦ AddMonoidAlgebra.charZero_quotient_of_isFractionRing R H K I.isMaximal.ne_top,
+    ⟨(IsArtinianRing.equivPi K).toRingEquiv⟩⟩
+
+end AddFG

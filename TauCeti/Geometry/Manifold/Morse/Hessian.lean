@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.SecondDerivative
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.Morse.Index
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -44,6 +45,8 @@ Morse index is the negative index of inertia of the critical Hessian.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas` and
   `TauCeti.manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas`: nondegeneracy and the Morse index
   in an arbitrary chart.
+* `TauCeti.isMorseOn_iff_of_mem_maximalAtlas`: being Morse on a subset of a chart source, read in
+  that chart.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_zero_iff` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_finrank_iff`: definiteness
   tests for the extreme indices.
@@ -581,6 +584,29 @@ theorem manifoldMorseIndex_symm_eq_morseIndex_of_mem_maximalAtlas
   have hnd := isManifoldNondegenerateCriticalPoint_symm_of_mem_maximalAtlas he hv h
   rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he hs hnd.contMDiffAt
     hnd.mvfderiv_eq_zero, (e.extend I).right_inv hv]
+
+omit hx in
+/-- **Morse in a chart.** On a boundaryless manifold, a function `f` smooth at every point of a
+subset `s` of the source of a chart `e` of the `C²` maximal atlas is Morse on `s` exactly when its
+coordinate expression `f ∘ (e.extend I).symm` has only nondegenerate critical points on
+`e.extend I '' s`. -/
+theorem isMorseOn_iff_of_mem_maximalAtlas {s : Set M} (hf : ∀ x ∈ s, ContMDiffAt I 𝓘(ℝ) ∞ f x)
+    (hs : s ⊆ e.source) :
+    IsMorseOn I f s ↔
+      HasNondegenerateCriticalPointsOn (f ∘ (e.extend I).symm) (e.extend I '' s) := by
+  have he₁ : e ∈ IsManifold.maximalAtlas I 1 M := IsManifold.maximalAtlas_subset_of_le (by simp) he
+  -- Criticality and nondegeneracy at a point of `s` may be read in the chart `e`.
+  have hcrit {x : M} (hx : x ∈ s) :
+      x ∈ criticalPoints I f ↔ fderiv ℝ (f ∘ (e.extend I).symm) (e.extend I x) = 0 :=
+    mem_criticalPoints.trans (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he₁ (hs hx)
+      ((hf x hx).mdifferentiableAt (by simp)))
+  rw [isMorseOn_iff_criticalPoints, hasNondegenerateCriticalPointsOn_iff]
+  refine ⟨fun h ↦ ?_, fun h ↦ ⟨fun x hx ↦ (hf x hx).contMDiffWithinAt, fun x hx hx₀ ↦ ?_⟩⟩
+  · rintro _ ⟨x, hx, rfl⟩ hx₀
+    exact (isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas he (hs hx)).1
+      (h.2 x hx ((hcrit hx).2 hx₀))
+  · exact (isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas he (hs hx)).2
+      (h (mem_image_of_mem _ hx) ((hcrit hx).1 hx₀))
 
 end Chart
 

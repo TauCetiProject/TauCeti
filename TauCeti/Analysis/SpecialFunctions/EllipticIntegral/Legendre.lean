@@ -11,6 +11,7 @@ public import Mathlib.Order.Hom.Set
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
@@ -46,7 +47,8 @@ We prove the basic theory in the amplitude:
 * `legendreFOrderIso`: for `k ^ 2 < 1`, the map `φ ↦ legendreF φ k` is an order isomorphism of `ℝ`,
   whose inverse is the Jacobi amplitude;
 * the degenerate modulus `k = 0`: `legendreF φ 0 = legendreE φ 0 = φ`, and
-  `legendreK 0 = legendreEc 0 = π / 2`.
+  `legendreK 0 = legendreEc 0 = π / 2`;
+* the characteristic `α2 = 0`: `legendrePi φ k 0 = legendreF φ k`.
 
 The conventions (modulus rather than parameter, argument order `(φ, k)` and `(φ, k, α2)`) are
 those of DLMF Chapter 19 and of B. Braams' `lean-codes` formalization of B. C. Carlson's
@@ -131,6 +133,12 @@ theorem one_le_legendreF_integrand {k : ℝ} (hk : k ^ 2 < 1) (θ : ℝ) :
 theorem legendreF_integrand_le {k : ℝ} (hk : k ^ 2 < 1) (θ : ℝ) :
     (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) ≤ (1 - k ^ 2) ^ (-1 / 2 : ℝ) :=
   rpow_le_rpow_of_nonpos (by linarith) (one_sub_sq_le_one_sub_sq_mul_sin_sq k θ) (by norm_num)
+
+/-- The integrand of the first kind is the inverse square root of `1 - k² sin² θ`. -/
+theorem legendreF_integrand_eq_inv_sqrt (k θ : ℝ) :
+    (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) = (√(1 - k ^ 2 * sin θ ^ 2))⁻¹ := by
+  rw [inv_sqrt_eq_rpow]
+  norm_num
 
 theorem intervalIntegrable_legendreF_integrand {k : ℝ} (hk : k ^ 2 < 1) (a b : ℝ) :
     IntervalIntegrable (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) volume a b :=
@@ -398,6 +406,12 @@ theorem legendreEc_zero : legendreEc 0 = π / 2 := legendreE_zero_modulus _
 @[simp]
 theorem legendrePi_zero (k α2 : ℝ) : legendrePi 0 k α2 = 0 := integral_same
 
+/-- At characteristic `0` the integral of the third kind is that of the first kind:
+`Π(φ, k, 0) = F(φ, k)`. -/
+@[simp]
+theorem legendrePi_zero_characteristic (φ k : ℝ) : legendrePi φ k 0 = legendreF φ k := by
+  simp [legendrePi_def, legendreF_def]
+
 /-- The integral of the third kind is a primitive of its integrand. -/
 theorem hasDerivAt_legendrePi {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) (φ : ℝ) :
     HasDerivAt (legendrePi · k α2)
@@ -454,5 +468,10 @@ theorem legendrePic_pos {k α2 : ℝ} (hk : k ^ 2 < 1) (hα : α2 < 1) : 0 < leg
 @[simp]
 theorem legendrePic_neg_modulus (k α2 : ℝ) : legendrePic (-k) α2 = legendrePic k α2 :=
   legendrePi_neg_modulus _ k α2
+
+/-- `Π(k, 0) = K(k)`. -/
+@[simp]
+theorem legendrePic_zero_characteristic (k : ℝ) : legendrePic k 0 = legendreK k := by
+  rw [legendrePic_def, legendreK_def, legendrePi_zero_characteristic]
 
 end TauCeti.Real

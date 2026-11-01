@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.Probability.Independence.InfinitePi
-public import TauCeti.MeasureTheory.Group.ConvolutionPower
+public import TauCeti.MeasureTheory.Group.Convolution.Power
 
 /-!
 # Laws of finite sums of independent random variables

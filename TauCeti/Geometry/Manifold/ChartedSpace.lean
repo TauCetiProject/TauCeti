@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ChartedSpace
+public import Mathlib.Topology.Perfect
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -30,6 +31,8 @@ charted space in its preferred charts and to check that it is well behaved.
   at `x` is its representative in the preferred chart composed with the transition map.
 * `TauCeti.comp_comp_chartAt_symm_eventuallyEq`: the representative of `k ∘ φ` is the
   representative of `k` composed with the representative of `φ`.
+* `ChartedSpace.perfectSpace`: a charted space over a space without isolated points has no
+  isolated points.
 -/
 
 public section
@@ -86,3 +89,10 @@ theorem comp_comp_chartAt_symm_eventuallyEq {α : Type*} (k : Y → α) {φ : X 
   simp [(chartAt H' (φ x)).left_inv hz]
 
 end TauCeti
+
+/-- A charted space over a space without isolated points has no isolated points: the inverse
+chart at `x` carries the punctured neighbourhoods of `chartAt H x x` into those of `x`. -/
+theorem ChartedSpace.perfectSpace {H X : Type*} [TopologicalSpace H] [PerfectSpace H]
+    [TopologicalSpace X] [ChartedSpace H X] : PerfectSpace X :=
+  perfectSpace_iff_forall_not_isolated.2 fun x ↦
+    (TauCeti.tendsto_chartAt_symm_nhdsNE (H := H) x).neBot
