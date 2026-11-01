@@ -110,6 +110,48 @@ theorem InternallyDisjoint.symm (h : p.InternallyDisjoint q) : q.InternallyDisjo
 theorem internallyDisjoint_comm : p.InternallyDisjoint q ↔ q.InternallyDisjoint p :=
   ⟨.symm, .symm⟩
 
+/-- Two distinct internally disjoint paths form a cycle when one is traversed in reverse. -/
+theorem InternallyDisjoint.isCycle_append_reverse (h : p.InternallyDisjoint q) (hp : p.IsPath)
+    (hq : q.IsPath) (hpq : p ≠ q) : (p.append q.reverse).IsCycle := by
+  refine hp.isCycle_append (Walk.isPath_reverse_iff q |>.2 hq) ?_ ?_
+  · rw [List.disjoint_left]
+    intro x hxp hxq
+    have hxq' : x ∈ q.support := List.mem_of_mem_dropLast (by simpa using hxq)
+    obtain hxs | hxt := h x (List.mem_of_mem_tail hxp) hxq'
+    · subst x
+      have hnodup := hp.support_nodup
+      rw [← p.cons_tail_support, List.nodup_cons] at hnodup
+      exact hnodup.1 hxp
+    · subst x
+      have hnodup := (Walk.isPath_reverse_iff q |>.2 hq).support_nodup
+      rw [← q.reverse.cons_tail_support, List.nodup_cons] at hnodup
+      exact hnodup.1 hxq
+  · by_contra hlength
+    push Not at hlength
+    exact hpq (Walk.eq_of_length_le_one hlength.1 (by simpa using hlength.2))
+
+/-- The two arcs obtained by splitting a cycle at a vertex are internally disjoint paths with the
+same endpoints. -/
+theorem IsCycle.takeUntil_internallyDisjoint_dropUntil_reverse [DecidableEq V]
+    {c : G.Walk s s} (hc : c.IsCycle)
+    (ht : t ∈ c.support) :
+    (c.takeUntil t ht).InternallyDisjoint (c.dropUntil t ht).reverse := by
+  have hdisj : (c.takeUntil t ht).support.tail.Disjoint
+      (c.dropUntil t ht).support.tail := by
+    have hnodup := hc.2
+    rw [← c.take_spec ht, Walk.tail_support_append, List.nodup_append'] at hnodup
+    exact hnodup.2.2
+  intro x hxp hxq
+  have hxq' : x ∈ (c.dropUntil t ht).support := by simpa using hxq
+  by_cases hxs : x = s
+  · exact .inl hxs
+  by_cases hxt : x = t
+  · exact .inr hxt
+  exfalso
+  apply hdisj
+  · exact ((c.takeUntil t ht).mem_support_iff.mp hxp).resolve_left hxs
+  · exact ((c.dropUntil t ht).mem_support_iff.mp hxq').resolve_left hxt
+
 @[simp]
 theorem internallyDisjoint_toArrowWalk_iff :
     p.toArrowWalk.InternallyDisjoint q.toArrowWalk ↔ p.InternallyDisjoint q := by
