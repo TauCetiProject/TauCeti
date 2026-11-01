@@ -29,7 +29,7 @@ This file studies Legendre's elliptic integrals as functions of the modulus `k`.
 * **Legendre's differential equations.** Differentiating the formulas for `dK/dk` and `dE/dk` once
   more shows that `K` and `E` are twice differentiable at every `k ≠ 0` with `k ^ 2 < 1`, and that
   on all of `k ^ 2 < 1`
-  `k k′² K″ + (1 - 3k²) K′ - k K = 0` and `k k′² E″ + k′² E′ + k E = 0`.
+  `k k′² K′′ + (1 - 3k²) K′ - k K = 0` and `k k′² E′′ + k′² E′ + k E = 0`.
 
 The integrals are differentiated under the integral sign
 (`TauCeti.hasDerivAt_intervalIntegral_of_contDiffOn`), using the smoothness
@@ -260,7 +260,7 @@ private theorem eventually_ne_zero_and_sq_lt_one {k : ℝ} (hk₀ : k ≠ 0) (hk
   (eventually_ne_nhds hk₀).and ((isOpen_lt (continuous_pow 2) continuous_const).eventually_mem hk)
 
 /-- **The second derivative of `K`**: for `k ≠ 0` and `k ^ 2 < 1`,
-`K″(k) = ((1 - k²) (1 - 2k²) K(k) - (1 - 3k²) E(k)) / (k² (1 - k²)²)`. In particular `K` is twice
+`K′′(k) = ((1 - k²) (1 - 2k²) K(k) - (1 - 3k²) E(k)) / (k² (1 - k²)²)`. In particular `K` is twice
 differentiable at `k`. -/
 theorem hasDerivAt_deriv_legendreK {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1) :
     HasDerivAt (deriv legendreK)
@@ -277,7 +277,7 @@ theorem hasDerivAt_deriv_legendreK {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1) 
   ring
 
 /-- **The second derivative of `E`** (DLMF §19.4): for `k ≠ 0` and `k ^ 2 < 1`,
-`E″(k) = -(E(k) - (1 - k²) K(k)) / (k² (1 - k²))`, that is `E″(k) = -K′(k) / k`. In particular `E`
+`E′′(k) = -(E(k) - (1 - k²) K(k)) / (k² (1 - k²))`, that is `E′′(k) = -K′(k) / k`. In particular `E`
 is twice differentiable at `k`. -/
 theorem hasDerivAt_deriv_legendreEc {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1) :
     HasDerivAt (deriv legendreEc)
@@ -292,7 +292,7 @@ theorem hasDerivAt_deriv_legendreEc {k : ℝ} (hk₀ : k ≠ 0) (hk : k ^ 2 < 1)
   ring
 
 /-- **Legendre's differential equation for `K`** (DLMF §19.4): for `k ^ 2 < 1`,
-`k (1 - k²) K″(k) + (1 - 3k²) K′(k) - k K(k) = 0`. At `k = 0` it reduces to `K′(0) = 0`. -/
+`k (1 - k²) K′′(k) + (1 - 3k²) K′(k) - k K(k) = 0`. At `k = 0` it reduces to `K′(0) = 0`. -/
 theorem legendreK_differential_equation {k : ℝ} (hk : k ^ 2 < 1) :
     k * (1 - k ^ 2) * deriv^[2] legendreK k + (1 - 3 * k ^ 2) * deriv legendreK k -
       k * legendreK k = 0 := by
@@ -305,7 +305,7 @@ theorem legendreK_differential_equation {k : ℝ} (hk : k ^ 2 < 1) :
   ring
 
 /-- **Legendre's differential equation for `E`** (DLMF §19.4): for `k ^ 2 < 1`,
-`k (1 - k²) E″(k) + (1 - k²) E′(k) + k E(k) = 0`. At `k = 0` it reduces to `E′(0) = 0`. -/
+`k (1 - k²) E′′(k) + (1 - k²) E′(k) + k E(k) = 0`. At `k = 0` it reduces to `E′(0) = 0`. -/
 theorem legendreEc_differential_equation {k : ℝ} (hk : k ^ 2 < 1) :
     k * (1 - k ^ 2) * deriv^[2] legendreEc k + (1 - k ^ 2) * deriv legendreEc k +
       k * legendreEc k = 0 := by
