@@ -27,6 +27,7 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
 ## Main definitions
 
 * `TauCeti.cornerSubmodule`: the corner `eAf`, as a `k`-submodule of `A`.
+* `IsIdempotentElem.compress`: the compression `x ↦ e * x * e` of `A` onto the corner ring `eAe`.
 * `IsIdempotentElem.Corner.instAlgebra`: the corner `eAe` of an idempotent of a nonunital
   `R`-algebra is a unital `R`-algebra.
 * `IsIdempotentElem.cornerLinearEquivCornerSubmodule`: the corner ring `eAe`, as an `R`-module,
@@ -144,6 +145,19 @@ theorem mul_corner_val (b : he.Corner) : e * b.1 = b.1 :=
 @[simp]
 theorem corner_val_mul (b : he.Corner) : b.1 * e = b.1 :=
   ((Subsemigroup.mem_corner_iff he).1 b.2).2
+
+/-- The *compression* `x ↦ e * x * e` of `A` onto the corner `eAe`. -/
+def compress (x : A) : he.Corner :=
+  ⟨e * x * e, (Subsemigroup.mem_corner_iff he).2
+    ⟨by rw [← mul_assoc, ← mul_assoc, he.eq], by rw [mul_assoc, he.eq]⟩⟩
+
+@[simp]
+theorem val_compress (x : A) : (he.compress x).1 = e * x * e := (rfl)
+
+/-- The compression fixes the elements of the corner. -/
+@[simp]
+theorem compress_val (b : he.Corner) : he.compress b.1 = b :=
+  Subtype.ext <| by rw [val_compress, he.mul_corner_val, he.corner_val_mul]
 
 namespace Corner
 
