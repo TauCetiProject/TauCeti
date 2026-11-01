@@ -183,8 +183,8 @@ private theorem ae_norm_eq_one_of_le_one {τ : Ω → StrongDual ℝ F}
     · rw [indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
       exact ENNReal.ofReal_le_ofReal (((τ x).le_opNorm _).trans
         (mul_le_of_le_one_right (norm_nonneg _) (hφ x)))
-    · have : φ x = 0 := image_eq_zero_of_notMem_tsupport fun h => hx <| by
-        simpa [hUV] using (show (x : E) ∈ ((↑) : Ω → E) '' V from hφU h)
+    · have : φ x = 0 := image_eq_zero_of_notMem_tsupport fun h =>
+        hx (Subtype.val_injective.mem_set_image.1 (hφU h))
       simp [this]
   filter_upwards [ae_eq_one_of_forall_isOpen_le_setLIntegral
     (hτ1.mono fun x hx => by rwa [← ofReal_norm, ENNReal.ofReal_le_one]) hopen] with x hx

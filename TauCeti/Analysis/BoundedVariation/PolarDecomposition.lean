@@ -114,6 +114,8 @@ private theorem exists_le_one :
     have hφ : φ = ∑ i, postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (b i)) (ψ i) := by
       ext x
       simp [ψ, b.sum_repr']
+    have hint (i) : Integrable (fun x : Ω => ψ i x * f i x) ρ :=
+      (ψ i).integrable_bilin_subtype (ContinuousLinearMap.mul ℝ ℝ) (hloc i)
     calc ∫ x, divergenceCLM φ x * u x ∂μ
         = Distribution.ofFun Ω u μ ⊤ (divergenceCLM φ) := by
           simp [Distribution.ofFun_apply hu]
@@ -124,8 +126,7 @@ private theorem exists_le_one :
           simp only [hν, (ψ _).integral_sub_integral_eq_integral_mul_sub_rnDeriv
             (hac (Or.inl rfl)) (hac (Or.inr rfl)), f]
       _ = -∫ x, ⟪φ x, g x⟫ ∂ρ := by
-          rw [← integral_finsetSum _ fun i _ => (show Integrable (fun x : Ω => ψ i x * f i x) ρ from
-            (ψ i).integrable_bilin_subtype (ContinuousLinearMap.mul ℝ ℝ) (hloc i))]
+          rw [← integral_finsetSum _ fun i _ => hint i]
           congr 2 with x
           simp [hg, ψ, inner_sum, inner_smul_right, real_inner_comm, mul_comm]
   -- `‖g‖` is bounded by the density `k` of `|Du|` with respect to `ρ`.
