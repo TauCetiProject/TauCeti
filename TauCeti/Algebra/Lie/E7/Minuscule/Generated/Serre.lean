@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.E7.Minuscule.Generated.RootWeight
 public import TauCeti.Algebra.Lie.Matrix.IntegralCast
-public import TauCeti.Algebra.Lie.Presentation.Serre
 
 /-!
 # Serre generators in the Lie algebra of the generated E₇ group
@@ -103,12 +102,10 @@ relations over any commutative ring, including rings of characteristic two or th
 theorem isSerreSystem_generatedRootVector :
     IsSerreSystem R (CartanMatrix.E 7) (generatedCartanVector R)
       (fun i ↦ generatedRootVector R (.inl i)) (fun i ↦ generatedRootVector R (.inr i)) := by
-  apply IsSerreSystem.of_injective (generatedTangentMatrixLieHom R)
+  exact isSerreSystem.of_injective_intCast (generatedTangentMatrixLieHom R)
     (generatedTangentMatrixLieHom_injective R)
-  simpa only [Function.comp_def, generatedTangentMatrixLieHom_generatedCartanVector,
-    generatedTangentMatrixLieHom_generatedRootVector, Sum.elim_inl, Sum.elim_inr,
-    matrixIntCastLieHom_eq_map] using
-    (isSerreSystem.map (matrixIntCastLieHom R)).changeScalars (S := R)
+    (fun i ↦ generatedTangentMatrixLieHom_generatedRootVector R (.inl i))
+    (fun i ↦ generatedTangentMatrixLieHom_generatedRootVector R (.inr i))
 
 /-- The comparison from the E₇ Serre presentation to the Lie algebra of the generated group. -/
 def generatedSerreLift :

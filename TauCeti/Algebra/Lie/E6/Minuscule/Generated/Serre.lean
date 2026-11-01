@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.E6.Minuscule.Generated.RootWeight
 public import TauCeti.Algebra.Lie.Matrix.IntegralCast
-public import TauCeti.Algebra.Lie.Presentation.Serre
 
 /-!
 # Serre generators in the Lie algebra of the generated E₆ group
@@ -100,12 +99,10 @@ theorem generatedTangentMatrixLieHom_generatedCartanVector (i : Fin 6) :
 theorem isSerreSystem_generatedRootVector :
     IsSerreSystem R (CartanMatrix.E 6)ᵀ (generatedCartanVector R)
       (fun i ↦ generatedRootVector R (.inl i)) (fun i ↦ generatedRootVector R (.inr i)) := by
-  apply IsSerreSystem.of_injective (generatedTangentMatrixLieHom R)
+  exact isSerreSystem.of_injective_intCast (generatedTangentMatrixLieHom R)
     (generatedTangentMatrixLieHom_injective R)
-  simpa only [Function.comp_def, generatedTangentMatrixLieHom_generatedCartanVector,
-    generatedTangentMatrixLieHom_generatedRootVector, Sum.elim_inl, Sum.elim_inr,
-    matrixIntCastLieHom_eq_map] using
-    (isSerreSystem.map (matrixIntCastLieHom R)).changeScalars (S := R)
+    (fun i ↦ generatedTangentMatrixLieHom_generatedRootVector R (.inl i))
+    (fun i ↦ generatedTangentMatrixLieHom_generatedRootVector R (.inr i))
 
 /-- The comparison from the E₆ Serre presentation to the generated group's tangent Lie algebra. -/
 def generatedSerreLift :
@@ -132,17 +129,6 @@ theorem generatedSerreLift_serreF (i : Fin 6) :
     generatedSerreLift R (serreF R (CartanMatrix.E 6)ᵀ i) = generatedRootVector R (.inr i) :=
   serreLift_serreF _ i
 
-/-- The normalized generator values characterize the comparison uniquely. -/
-theorem eq_generatedSerreLift
-    {g : Matrix.ToLieAlgebra R (CartanMatrix.E 6)ᵀ →ₗ⁅R⁆
-      Derivation R (generatedCoordinateHopfAlgebra R)
-        (Bialgebra.CounitAlgebra R (generatedCoordinateHopfAlgebra R) R)}
-    (hH : ∀ i, g (serreH R (CartanMatrix.E 6)ᵀ i) = generatedCartanVector R i)
-    (hE : ∀ i, g (serreE R (CartanMatrix.E 6)ᵀ i) = generatedRootVector R (.inl i))
-    (hF : ∀ i, g (serreF R (CartanMatrix.E 6)ᵀ i) = generatedRootVector R (.inr i)) :
-    g = generatedSerreLift R :=
-  eq_serreLift hH hE hF
-
 /-- The tangent composite is the cast integral minuscule matrix representation. -/
 theorem generatedTangentMatrixLieHom_comp_generatedSerreLift :
     (generatedTangentMatrixLieHom R).comp (generatedSerreLift R) =
@@ -157,22 +143,20 @@ theorem generatedTangentMatrixLieHom_comp_generatedSerreLift :
 /-- Over the integers, the tangent composite recovers the existing minuscule representation. -/
 theorem generatedTangentMatrixLieHom_comp_generatedSerreLift_int :
     (generatedTangentMatrixLieHom ℤ).comp (generatedSerreLift ℤ) = serreRepresentation := by
+  rw [generatedTangentMatrixLieHom_comp_generatedSerreLift]
   apply serre_hom_ext
   · intro i
-    rw [LieHom.comp_apply, generatedSerreLift_serreH,
-      generatedTangentMatrixLieHom_generatedCartanVector]
+    rw [serreLift_serreH, Function.comp_apply, matrixIntCastLieHom_eq_map]
     calc
       _ = cartanGeneratorMatrix i := Matrix.ext fun _ _ ↦ Int.cast_id
       _ = _ := (serreRepresentation_serreH i).symm
   · intro i
-    rw [LieHom.comp_apply, generatedSerreLift_serreE,
-      generatedTangentMatrixLieHom_generatedRootVector, Sum.elim_inl]
+    rw [serreLift_serreE, Function.comp_apply, matrixIntCastLieHom_eq_map]
     calc
       _ = raisingMatrix i := Matrix.ext fun _ _ ↦ Int.cast_id
       _ = _ := (serreRepresentation_serreE i).symm
   · intro i
-    rw [LieHom.comp_apply, generatedSerreLift_serreF,
-      generatedTangentMatrixLieHom_generatedRootVector, Sum.elim_inr]
+    rw [serreLift_serreF, Function.comp_apply, matrixIntCastLieHom_eq_map]
     calc
       _ = loweringMatrix i := Matrix.ext fun _ _ ↦ Int.cast_id
       _ = _ := (serreRepresentation_serreF i).symm

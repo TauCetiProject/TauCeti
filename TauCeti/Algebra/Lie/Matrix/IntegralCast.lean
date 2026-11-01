@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.Data.Matrix.Mul
+public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.LinearAlgebra.CoordinateLattice
 
 /-!
@@ -32,6 +33,8 @@ keeps the lattice stable under the resulting action.
 
 * `TauCeti.matrixIntCastLieHom_apply` and `TauCeti.matrixIntCastLieHom_mul`: the coercion acts
   entrywise and is multiplicative.
+* `TauCeti.IsSerreSystem.of_injective_intCast`: integral matrix relations transfer to root
+  vectors in any Lie algebra with an injective matrix realization.
 * `Matrix.intCastLieHom_mulVec_mem_coordinateLattice`: a coerced integer matrix preserves the
   integral coordinate lattice.
 
@@ -79,6 +82,25 @@ theorem matrixIntCastLieHom_mul (R : Type*) [Ring R] (M N : Matrix n n ℤ) :
     matrixIntCastLieHom R (M * N) = matrixIntCastLieHom R M * matrixIntCastLieHom R N := by
   ext a b
   simp only [matrixIntCastLieHom_apply, Matrix.mul_apply, Int.cast_sum, Int.cast_mul]
+
+/-- An integral matrix Serre system gives Serre relations for opposite-root brackets in
+any Lie algebra with an injective matrix realization sending its root vectors to the cast
+integral generators. -/
+theorem IsSerreSystem.of_injective_intCast
+    {R L I : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    {CM : Matrix I I ℤ} {H E F : I → Matrix n n ℤ} {e f : I → L}
+    (hZ : IsSerreSystem ℤ CM H E F) (φ : L →ₗ⁅R⁆ Matrix n n R)
+    (hφ : Function.Injective φ)
+    (he : ∀ i, φ (e i) = (E i).map (Int.cast : ℤ → R))
+    (hf : ∀ i, φ (f i) = (F i).map (Int.cast : ℤ → R)) :
+    IsSerreSystem R CM (fun i ↦ ⁅e i, f i⁆) e f := by
+  apply IsSerreSystem.of_injective φ hφ
+  have hH (i : I) : φ ⁅e i, f i⁆ = (H i).map (Int.cast : ℤ → R) := by
+    rw [LieHom.map_lie, he, hf]
+    simpa only [Function.comp_apply, matrixIntCastLieHom_eq_map] using
+      (hZ.map (matrixIntCastLieHom R)).lie_E_F_self i
+  simpa only [Function.comp_def, hH, he, hf, matrixIntCastLieHom_eq_map] using
+    (hZ.map (matrixIntCastLieHom R)).changeScalars (S := R)
 
 end TauCeti
 

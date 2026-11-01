@@ -9,8 +9,8 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Differential
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Tangent
 public import TauCeti.Algebra.Lie.E6.Minuscule.Generated.Serre
+public import TauCeti.Algebra.Lie.E6.Minuscule.Root.Coordinates
 public import TauCeti.Algebra.Lie.E6.Minuscule.WeightTorus
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 
 /-!
 # Simple-coroot differentials in the generated E₆ group
@@ -74,7 +74,7 @@ theorem generatedCorootCocharacter_eq_cocharacter_coroot_simpleIndex (i : Fin 6)
       (Pi.single i 1 : Fin 6 → ℤ) := by
     ext j
     simp [SplitTorus.cocharEquiv_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
-  exact heval.trans (DynkinType.E6.coroot_simpleIndex DynkinType.valid_E6 i).symm
+  exact heval.trans (coroot_simpleIndex DynkinType.valid_E6 i).symm
 
 /-- The coroot differential has diagonal entries given by pairing each minuscule weight
 with the corresponding simple coroot. The tangent vector of `𝔾ₘ` is normalized to one. -/
@@ -95,15 +95,7 @@ theorem generatedTangentMatrixLieHom_derivationComp_generatedCorootCocharacter (
     GeneralLinear.tangentMatrix_derivationComp_cocharacter_of_weightTorus _ _ _ hπ]
   congr 1
   ext a
-  -- Specialize the dependent rank-indexed formula to `Fin 6` before rewriting.
-  have hpair :
-      (DynkinType.E6.simplyConnectedRootDatum DynkinType.valid_E6).coroot'
-          (DynkinType.E6.simpleIndex DynkinType.valid_E6 i)
-          (DynkinType.e6MinusculeWeight a) = DynkinType.e6MinusculeWeight a i := by
-    simpa only [DynkinType.rank_E6] using
-      DynkinType.E6.coroot'_simpleIndex_apply DynkinType.valid_E6 i
-        (DynkinType.e6MinusculeWeight a)
-  rw [hpair]
+  rw [coroot'_simpleIndex_apply]
   simp
 
 /-- The opposite-root bracket is the differential of the actual simple-coroot cocharacter. -/
@@ -118,10 +110,7 @@ theorem generatedCartanVector_eq_derivationComp_generatedCorootCocharacter (i : 
   simp only [Matrix.map_apply, cartanGeneratorMatrix_apply, Matrix.diagonal_apply]
   split_ifs with hab
   · subst b
-    exact congrArg (Int.cast : ℤ → R)
-      (by simpa only [DynkinType.rank_E6] using
-        (DynkinType.E6.coroot'_simpleIndex_apply DynkinType.valid_E6 i
-          (DynkinType.e6MinusculeWeight a)).symm)
+    rw [coroot'_simpleIndex_apply]
   · simp
 
 /-- The Serre comparison sends its Cartan generators to the simple-coroot differentials. -/
@@ -179,16 +168,13 @@ theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_injective
 /-- The six Cartan vectors are independent over every commutative ring. -/
 theorem linearIndependent_generatedCartanVector :
     LinearIndependent R (generatedCartanVector R) := by
-  have h := (SplitTorus.tangentBasis (R := R) (B := R) (I := Fin 6)).linearIndependent.map_injOn
-    (derivationCompLieHom (B := R) (generatedWeightTorusCoordinateMap R).hom).toLinearMap
-    (derivationCompLieHom_generatedWeightTorusCoordinateMap_injective R R).injOn
-  have heq :
-      ⇑(derivationCompLieHom (B := R) (generatedWeightTorusCoordinateMap R).hom).toLinearMap ∘
-          SplitTorus.tangentBasis (R := R) (B := R) (I := Fin 6) =
-        generatedCartanVector R := by
-    funext i
-    exact derivationCompLieHom_generatedWeightTorusCoordinateMap_tangentBasis R i
-  rwa [heq] at h
+  have h := SplitTorus.linearIndependent_derivationComp_cocharacter
+    (generatedWeightTorusCoordinateMap R).hom
+    (derivationCompLieHom_generatedWeightTorusCoordinateMap_injective R R)
+  convert h using 1
+  funext i
+  rw [generatedCartanVector_eq_derivationComp_generatedCorootCocharacter,
+    generatedCorootCocharacter_def, derivationCompLieHom_apply]
 
 /-- The simple-coroot differentials give a basis of their span, the toral tangent image. -/
 def generatedCartanBasis :
