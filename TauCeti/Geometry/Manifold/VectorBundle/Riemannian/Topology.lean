@@ -201,10 +201,13 @@ theorem tendsto_chartMetricDerivative_iff {P : Type*} {l : Filter P}
       exact hK
     refine Metric.tendstoUniformlyOn_iff.mpr fun ε hε ↦ ?_
     filter_upwards [Metric.tendstoUniformlyOn_iff.mp (h _ hK') ε hε] with p hp z hz
-    exact hp ⟨z, hKx hz⟩ hz
+    exact (congrArg₂ dist (chartMetricDerivative_apply g₀ x m ⟨z, hKx hz⟩)
+      (chartMetricDerivative_apply (g p) x m ⟨z, hKx hz⟩)).symm.trans_lt (hp ⟨z, hKx hz⟩ hz)
   · intro h K hK
-    exact ((h _ (image_subset_iff.mpr fun z _ ↦ z.2) (hK.image continuous_subtype_val)).comp
-      Subtype.val).mono (subset_preimage_image _ _)
+    exact ((((h _ (image_subset_iff.mpr fun z _ ↦ z.2) (hK.image continuous_subtype_val)).comp
+      Subtype.val).mono (subset_preimage_image _ _)).congr (Eventually.of_forall fun p z _ ↦
+        (chartMetricDerivative_apply (g p) x m z).symm)).congr_right fun z _ ↦
+          (chartMetricDerivative_apply g₀ x m z).symm
 
 /-- Convergence of metrics in the chart Cᵏ topology is uniform convergence on every compact
 subset of every chart target of each coordinate derivative of order at most `k`. -/

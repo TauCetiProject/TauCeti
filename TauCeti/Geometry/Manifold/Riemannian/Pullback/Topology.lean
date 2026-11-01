@@ -24,8 +24,8 @@ The right-hand side is linear in `g` and involves only `τ` and its first deriva
 coordinate derivatives of `f^* g` of order at most `m` near a point are controlled by those of `g`
 near its image under `τ`, with constants independent of `g`
 (`exists_mem_nhds_tendstoUniformlyOn_iteratedFDeriv_chartMetric_pullback`). Therefore pulling back
-along a fixed smooth immersion is continuous for the chart C² topologies
-(`continuous_pullback_chartC2`), and pulling back along a diffeomorphism is a homeomorphism of the
+along a fixed smooth immersion is continuous for the chart Cᵏ topologies
+(`continuous_pullback_chartCk`), and pulling back along a diffeomorphism is a homeomorphism of the
 spaces of smooth metrics (`Diffeomorph.pullbackMetricHomeomorph`). This is the metric-family law of
 pullback: a continuous family of metrics on `N` pulls back to a continuous family on `M`.
 
@@ -42,10 +42,10 @@ coordinate derivatives.
 ## Main results
 
 * `Bundle.ContMDiffRiemannianMetric.chartMetric_pullback`: the pullback metric in arbitrary charts.
-* `Bundle.ContMDiffRiemannianMetric.continuous_pullback_chartC2`: pulling back along a smooth
-  immersion is continuous in the chart C² topology.
+* `Bundle.ContMDiffRiemannianMetric.continuous_pullback_chartCk`: pulling back along a smooth
+  immersion is continuous in the chart Cᵏ topologies.
 * `Diffeomorph.pullbackMetricHomeomorph`: a diffeomorphism `M ≃ N` induces a homeomorphism from
-  the smooth metrics on `N` to those on `M` by pulling back.
+  the smooth metrics on `N` to those on `M` by pulling back, for each chart Cᵏ topology.
 * `Bundle.ContMDiffRiemannianMetric.chartCkTopology_eq_induced`: the chart Cᵏ topology is induced
   by the charts at the points of any set whose chart domains cover `M`.
 * `Bundle.ContMDiffRiemannianMetric.exists_finset_tendsto_chartCk_iff`: on a compact manifold the
@@ -125,8 +125,6 @@ theorem chartMetric_pullback
 section Topology
 
 variable [I.Boundaryless] [J.Boundaryless]
-
-attribute [local instance] chartC2Topology
 
 -- Public signatures cannot use private cached instances. Insert the canonical instances
 -- directly into each signature involving nested operator spaces, avoiding instance-search
@@ -263,15 +261,19 @@ theorem exists_mem_nhds_tendstoUniformlyOn_iteratedFDeriv_chartMetric_pullback
   rw [dist_comm, dist_eq_norm, hdiff (g i) (hBW hz), ← dist_zero_left]
   exact hi z hz
 
-/-- Pulling back along a fixed smooth immersion is continuous for the chart C² topologies: if
-metrics `g` on `N` converge to `g₀` with their coordinate derivatives through order two, uniformly
-on compact chart sets, then so do their pullbacks to `M`. -/
-theorem continuous_pullback_chartC2 {f : M → N} (hf : ContMDiff I J (∞ + 1) f)
+/-- Pulling back along a fixed smooth immersion is continuous for the chart Cᵏ topologies: if
+metrics `g` on `N` converge to `g₀` with their coordinate derivatives of order at most `k`,
+uniformly on compact chart sets, then so do their pullbacks to `M`. -/
+theorem continuous_pullback_chartCk (k : ℕ∞) {f : M → N} (hf : ContMDiff I J (∞ + 1) f)
     (hinj : ∀ x, Function.Injective (mfderiv I J f x)) :
+    letI := chartCkTopology (I := J) (M := N) k
+    letI := chartCkTopology (I := I) (M := M) k
     Continuous (fun g : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y) ↦
       g.pullback f hf hinj) := by
+  let _ := chartCkTopology (I := J) (M := N) k
+  let _ := chartCkTopology (I := I) (M := M) k
   refine continuous_iff_continuousAt.mpr fun g₀ ↦
-    (tendsto_chartCk_iff 2).mpr fun x' m hm K hKt hK ↦ ?_
+    (tendsto_chartCk_iff k).mpr fun x' m hm K hKt hK ↦ ?_
   -- Uniform convergence holds near every point of the open chart target, hence on its compact
   -- subsets.
   have hloc : TendstoLocallyUniformlyOn
@@ -285,7 +287,7 @@ theorem continuous_pullback_chartC2 {f : M → N} (hf : ContMDiff I J (∞ + 1) 
         hf hinj (g := fun g ↦ g) hz (mem_extChartAt_source (I := J) x)
         ((isOpen_extChartAt_target x).mem_nhds (mem_extChartAt_target x)) fun j hj ↦
           (tendsto_chartMetricDerivative_iff x j).mp
-            ((continuous_chartMetricDerivative 2 x ((Nat.cast_le.2 hj).trans hm)).tendsto g₀)
+            ((continuous_chartMetricDerivative k x ((Nat.cast_le.2 hj).trans hm)).tendsto g₀)
       exact ⟨B, mem_nhdsWithin_of_mem_nhds hB, h⟩
   exact (tendstoLocallyUniformlyOn_iff_forall_isCompact (isOpen_extChartAt_target x')).mp hloc
     K hKt hK
@@ -413,59 +415,65 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [J.Boundaryless]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
 
-attribute [local instance] Bundle.ContMDiffRiemannianMetric.chartC2Topology
-
 /-- Pulling smooth metrics back along a diffeomorphism `Φ : M ≃ N` is a homeomorphism from the
-metrics on `N` to the metrics on `M`, for the chart C² topologies. Its inverse pulls back along
+metrics on `N` to the metrics on `M`, for the chart Cᵏ topologies. Its inverse pulls back along
 `Φ.symm`. -/
-def pullbackMetricHomeomorph (Φ : M ≃ₘ^∞⟮I, J⟯ N) :
+def pullbackMetricHomeomorph (k : ℕ∞) (Φ : M ≃ₘ^∞⟮I, J⟯ N) :
+    letI := chartCkTopology (I := J) (M := N) k
+    letI := chartCkTopology (I := I) (M := M) k
     Bundle.ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y) ≃ₜ
-      Bundle.ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) where
-  toFun g := g.pullback Φ (Φ.contMDiff.of_le (by simp))
-    fun x ↦ Function.LeftInverse.injective (Φ.mfderiv_symm_apply_mfderiv_apply (by simp) x)
-  invFun g := g.pullback Φ.symm (Φ.symm.contMDiff.of_le (by simp))
-    fun y ↦ Function.LeftInverse.injective (Φ.symm.mfderiv_symm_apply_mfderiv_apply (by simp) y)
-  left_inv g := (pullback_comp g Φ Φ.symm _ _ _ _).symm.trans
-    ((pullback_congr g Φ.self_comp_symm _ _ contMDiff_id fun _ ↦ by
-      simpa [mfderiv_id] using Function.injective_id).trans (pullback_id g _ _))
-  right_inv g := (pullback_comp g Φ.symm Φ _ _ _ _).symm.trans
-    ((pullback_congr g Φ.symm_comp_self _ _ contMDiff_id fun _ ↦ by
-      simpa [mfderiv_id] using Function.injective_id).trans (pullback_id g _ _))
-  continuous_toFun := continuous_pullback_chartC2 _ _
-  continuous_invFun := continuous_pullback_chartC2 _ _
+      Bundle.ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x) :=
+  letI := chartCkTopology (I := J) (M := N) k
+  letI := chartCkTopology (I := I) (M := M) k
+  { toFun g := g.pullback Φ (Φ.contMDiff.of_le (by simp))
+      fun x ↦ Function.LeftInverse.injective (Φ.mfderiv_symm_apply_mfderiv_apply (by simp) x)
+    invFun g := g.pullback Φ.symm (Φ.symm.contMDiff.of_le (by simp))
+      fun y ↦ Function.LeftInverse.injective (Φ.symm.mfderiv_symm_apply_mfderiv_apply (by simp) y)
+    left_inv g := (pullback_comp g Φ Φ.symm _ _ _ _).symm.trans
+      ((pullback_congr g Φ.self_comp_symm _ _ contMDiff_id fun _ ↦ by
+        simpa [mfderiv_id] using Function.injective_id).trans (pullback_id g _ _))
+    right_inv g := (pullback_comp g Φ.symm Φ _ _ _ _).symm.trans
+      ((pullback_congr g Φ.symm_comp_self _ _ contMDiff_id fun _ ↦ by
+        simpa [mfderiv_id] using Function.injective_id).trans (pullback_id g _ _))
+    continuous_toFun := continuous_pullback_chartCk k _ _
+    continuous_invFun := continuous_pullback_chartCk k _ _ }
 
 /-- The homeomorphism induced by a diffeomorphism `Φ` pulls metrics back along `Φ`. -/
-theorem pullbackMetricHomeomorph_apply (Φ : M ≃ₘ^∞⟮I, J⟯ N)
+theorem pullbackMetricHomeomorph_apply (k : ℕ∞) (Φ : M ≃ₘ^∞⟮I, J⟯ N)
     (g : Bundle.ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y))
     (hf : ContMDiff I J (∞ + 1) Φ) (hinj : ∀ x, Function.Injective (mfderiv I J Φ x)) :
-    Φ.pullbackMetricHomeomorph g = g.pullback Φ hf hinj :=
+    Φ.pullbackMetricHomeomorph k g = g.pullback Φ hf hinj :=
   (rfl)
 
 /-- The inverse of the homeomorphism induced by a diffeomorphism `Φ` pulls metrics back along
 `Φ.symm`. -/
-theorem pullbackMetricHomeomorph_symm_apply (Φ : M ≃ₘ^∞⟮I, J⟯ N)
+theorem pullbackMetricHomeomorph_symm_apply (k : ℕ∞) (Φ : M ≃ₘ^∞⟮I, J⟯ N)
     (g : Bundle.ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
     (hf : ContMDiff J I (∞ + 1) Φ.symm) (hinj : ∀ y, Function.Injective (mfderiv J I Φ.symm y)) :
-    Φ.pullbackMetricHomeomorph.symm g = g.pullback Φ.symm hf hinj :=
+    letI := chartCkTopology (I := J) (M := N) k
+    letI := chartCkTopology (I := I) (M := M) k
+    (Φ.pullbackMetricHomeomorph k).symm g = g.pullback Φ.symm hf hinj :=
   (rfl)
 
 /-- The metric induced by `Φ` pairs two tangent vectors as `g` pairs their images under the
 differential of `Φ`. -/
 @[simp]
-theorem pullbackMetricHomeomorph_apply_inner (Φ : M ≃ₘ^∞⟮I, J⟯ N)
+theorem pullbackMetricHomeomorph_apply_inner (k : ℕ∞) (Φ : M ≃ₘ^∞⟮I, J⟯ N)
     (g : Bundle.ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)) (x : M)
     (v w : TangentSpace I x) :
-    (Φ.pullbackMetricHomeomorph g).inner x v w =
+    (Φ.pullbackMetricHomeomorph k g).inner x v w =
       g.inner (Φ x) (mfderiv I J Φ x v) (mfderiv I J Φ x w) :=
   pullback_inner ..
 
 /-- The metric induced by the inverse of `Φ` pairs two tangent vectors as `g` pairs their images
 under the differential of `Φ.symm`. -/
 @[simp]
-theorem pullbackMetricHomeomorph_symm_apply_inner (Φ : M ≃ₘ^∞⟮I, J⟯ N)
+theorem pullbackMetricHomeomorph_symm_apply_inner (k : ℕ∞) (Φ : M ≃ₘ^∞⟮I, J⟯ N)
     (g : Bundle.ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x)) (y : N)
     (v w : TangentSpace J y) :
-    (Φ.pullbackMetricHomeomorph.symm g).inner y v w =
+    letI := chartCkTopology (I := J) (M := N) k
+    letI := chartCkTopology (I := I) (M := M) k
+    ((Φ.pullbackMetricHomeomorph k).symm g).inner y v w =
       g.inner (Φ.symm y) (mfderiv J I Φ.symm y v) (mfderiv J I Φ.symm y w) :=
   pullback_inner ..
 
