@@ -48,6 +48,8 @@ dimension of a union of two semialgebraic sets is the larger of their dimensions
   largest dimension of these cells.
 * `TauCeti.IsSemialgebraic.semialgebraicDim_union`: the dimension of a union of two semialgebraic
   sets.
+* `TauCeti.IsSemialgebraic.exists_isOpenEmbedding_semialgebraicDim_eq`: a nonempty semialgebraic
+  set contains a locally closed Euclidean cell of the same dimension.
 
 ## References
 
@@ -224,5 +226,33 @@ theorem IsSemialgebraic.semialgebraicDim_union (hs : IsSemialgebraic s)
       fun u hu ↦ hu.elim (fun hu ↦ (hl u hu).1) fun hu ↦ (hl' u hu).1,
     semialgebraicDim_sUnion_of_isLocallyClosed h𝒮 fun u hu ↦ (hl u hu).1,
     semialgebraicDim_sUnion_of_isLocallyClosed h𝒯 fun u hu ↦ (hl' u hu).1, iSup_union]
+
+/-- A nonempty semialgebraic set contains a locally closed subset of the same dimension
+which is homeomorphic to an open subset of a Euclidean space. -/
+theorem IsSemialgebraic.exists_isOpenEmbedding_semialgebraicDim_eq
+    (hs : IsSemialgebraic s) (hne : s.Nonempty) :
+    ∃ u ⊆ s, IsLocallyClosed u ∧ u.Nonempty ∧ ∃ d : ℕ,
+      semialgebraicDim s = d ∧ ∃ f : u → Fin d → ℝ, IsOpenEmbedding f := by
+  obtain ⟨𝒮, h𝒮, hcover, hl⟩ := hs.exists_finite_sUnion_eq
+  have h𝒮ne : 𝒮.Nonempty := by
+    obtain ⟨x, hx⟩ := hne
+    rw [← hcover, mem_sUnion] at hx
+    obtain ⟨u, hu, _⟩ := hx
+    exact ⟨u, hu⟩
+  have := h𝒮.to_subtype
+  have := h𝒮ne.to_subtype
+  obtain ⟨u, hu⟩ := Finite.ciSup_mem (fun u : 𝒮 ↦ semialgebraicDim u.val)
+  have hdim : semialgebraicDim s = semialgebraicDim u.val := by
+    rw [← hcover, semialgebraicDim_sUnion_of_isLocallyClosed h𝒮 (fun u hu ↦ (hl u hu).1)]
+    simpa only [iSup_subtype'] using hu.symm
+  have hune : u.val.Nonempty := by
+    apply nonempty_iff_ne_empty.mpr
+    intro he
+    have : s = ∅ := semialgebraicDim_eq_bot_iff.mp (by simpa [he] using hdim)
+    exact hne.ne_empty this
+  obtain ⟨d, f, hf⟩ := (hl u.val u.property).2
+  exact ⟨u.val, by rw [← hcover]; exact subset_sUnion_of_mem u.property,
+    (hl u.val u.property).1, hune, d,
+    hdim.trans (semialgebraicDim_eq_of_isOpenEmbedding hune hf), f, hf⟩
 
 end TauCeti
