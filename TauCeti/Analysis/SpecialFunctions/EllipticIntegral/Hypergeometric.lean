@@ -115,6 +115,18 @@ theorem analyticOnNhd_integral_one_sub_mul_sin_sq_rpow_neg (a : ℝ) :
   filter_upwards [isOpen_Ioo.mem_nhds hm] with x hx
   exact (integral_one_sub_mul_sin_sq_rpow_neg_eq_ordinaryHypergeometric (abs_lt.mpr hx)).symm
 
+/-- For every real `a`, the integral `∫₀^{π/2} (1 - k² sin² θ)^(-a) dθ` is real analytic
+in the modulus `k` on `(-1, 1)`. -/
+theorem analyticOnNhd_integral_one_sub_sq_mul_sin_sq_rpow_neg (a : ℝ) :
+    AnalyticOnNhd ℝ (fun k : ℝ => ∫ θ in (0 : ℝ)..π / 2,
+      (1 - k ^ 2 * Real.sin θ ^ 2) ^ (-a)) (Ioo (-1) 1) := by
+  intro k hk
+  have hsq : k ^ 2 < 1 := (sq_lt_one_iff_abs_lt_one k).mpr (abs_lt.mpr hk)
+  have h := analyticOnNhd_integral_one_sub_mul_sin_sq_rpow_neg a
+    (k ^ 2) ⟨by linarith [sq_nonneg k], hsq⟩
+  simpa only [Function.comp_def] using
+    h.comp (f := fun x : ℝ => x ^ 2) (by fun_prop : AnalyticAt ℝ (fun x : ℝ => x ^ 2) k)
+
 namespace Real
 
 /-- The complete elliptic integral of the first kind is a hypergeometric function of the
@@ -136,24 +148,18 @@ theorem legendreEc_eq_ordinaryHypergeometric {k : ℝ} (hk : k ^ 2 < 1) :
 /-- The complete elliptic integral of the first kind is real analytic in the modulus on
 `(-1, 1)`. -/
 theorem analyticOnNhd_legendreK : AnalyticOnNhd ℝ legendreK (Ioo (-1) 1) := by
-  intro k hk
-  have hsq : k ^ 2 < 1 := (sq_lt_one_iff_abs_lt_one k).mpr (abs_lt.mpr hk)
-  have h := analyticOnNhd_integral_one_sub_mul_sin_sq_rpow_neg (1 / 2 : ℝ)
-    (k ^ 2) ⟨by linarith [sq_nonneg k], hsq⟩
-  convert h.comp (f := fun x : ℝ => x ^ 2) (analyticAt_id.pow 2) using 1
-  ext x
-  simp only [legendreK_def, legendreF_def, neg_div, Function.comp_def]
+  refine AnalyticOnNhd.congr isOpen_Ioo
+    (analyticOnNhd_integral_one_sub_sq_mul_sin_sq_rpow_neg (1 / 2 : ℝ)) ?_
+  intro k _
+  simp only [legendreK_def, legendreF_def, neg_div]
 
 /-- The complete elliptic integral of the second kind is real analytic in the modulus on
 `(-1, 1)`. -/
 theorem analyticOnNhd_legendreEc : AnalyticOnNhd ℝ legendreEc (Ioo (-1) 1) := by
-  intro k hk
-  have hsq : k ^ 2 < 1 := (sq_lt_one_iff_abs_lt_one k).mpr (abs_lt.mpr hk)
-  have h := analyticOnNhd_integral_one_sub_mul_sin_sq_rpow_neg (-1 / 2 : ℝ)
-    (k ^ 2) ⟨by linarith [sq_nonneg k], hsq⟩
-  convert h.comp (f := fun x : ℝ => x ^ 2) (analyticAt_id.pow 2) using 1
-  ext x
-  simp only [legendreEc_def, legendreE_def, neg_div, neg_neg, Function.comp_def]
+  refine AnalyticOnNhd.congr isOpen_Ioo
+    (analyticOnNhd_integral_one_sub_sq_mul_sin_sq_rpow_neg (-1 / 2 : ℝ)) ?_
+  intro k _
+  simp only [legendreEc_def, legendreE_def, neg_div, neg_neg]
 
 end Real
 
