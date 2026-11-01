@@ -11,10 +11,11 @@ public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 /-!
 # Strongly continuous representations of the real line as C₀-groups
 
-A continuous representation `π` of `Multiplicative ℝ` on a complex normed space whose orbits
-`g ↦ π g v` are continuous is a strongly continuous one-parameter group `t ↦ π (ofAdd t)` in the
-sense of the semigroup development, `ContRepresentation.toStronglyContinuousGroup`. When `π` is
-unitary, so is this group, `ContRepresentation.IsUnitary.isUnitary_toStronglyContinuousGroup`.
+A continuous representation `π` of `Multiplicative ℝ` on a real or complex normed space whose
+orbits `g ↦ π g v` are continuous is a strongly continuous one-parameter group `t ↦ π (ofAdd t)`
+of real operators in the sense of the semigroup development,
+`ContRepresentation.toStronglyContinuousGroup`. When `π` is a complex unitary representation,
+this group is unitary, `ContRepresentation.IsUnitary.isUnitary_toStronglyContinuousGroup`.
 This makes the generator theory of unitary groups, in particular the self-adjoint Stone
 generator `StronglyContinuousGroup.stoneGenerator` with `π (ofAdd t) = exp (i t H)`, available
 for unitary representations of `ℝ`.
@@ -31,8 +32,9 @@ namespace ContRepresentation
 
 /-- A continuous representation of `ℝ` with continuous orbits, regarded as a strongly continuous
 one-parameter group of real operators. -/
-def toStronglyContinuousGroup {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-    (π : ContRepresentation ℂ (Multiplicative ℝ) V) (hπ : ∀ v, Continuous fun g => π g v) :
+def toStronglyContinuousGroup {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+    [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V] (π : ContRepresentation 𝕜 (Multiplicative ℝ) V)
+    (hπ : ∀ v, Continuous fun g => π g v) :
     StronglyContinuousGroup V where
   toFun t := (π (Multiplicative.ofAdd t)).restrictScalars ℝ
   map_zero' := by
@@ -44,8 +46,9 @@ def toStronglyContinuousGroup {V : Type*} [NormedAddCommGroup V] [NormedSpace �
   continuousAt_zero' v := ((hπ v).comp continuous_ofAdd).continuousAt
 
 @[simp]
-theorem toStronglyContinuousGroup_apply {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-    (π : ContRepresentation ℂ (Multiplicative ℝ) V) (hπ : ∀ v, Continuous fun g => π g v)
+theorem toStronglyContinuousGroup_apply {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V]
+    [NormedSpace 𝕜 V] [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V]
+    (π : ContRepresentation 𝕜 (Multiplicative ℝ) V) (hπ : ∀ v, Continuous fun g => π g v)
     (t : ℝ) (v : V) : π.toStronglyContinuousGroup hπ t v = π (Multiplicative.ofAdd t) v :=
   (rfl)
 
