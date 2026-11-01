@@ -60,8 +60,10 @@ private theorem continuous_pointIndexedCore_conjugate_iff (f : B → F →L[𝕜
     funext p
     dsimp only [h, h', g, Function.comp_def]
     rw [pointIndexedCoreHomeomorph_symm_apply, pointIndexedCoreHomeomorph_apply]
-    -- Both sides evaluate the target frame after the operator and inverse source frame.
-    rfl
+    exact congrArg (fun g ↦ TotalSpace.mk' G p.proj (g p.2))
+      (ContinuousLinearEquiv.arrowCongrEquiv_apply
+        (pointIndexedCoreFiberEquiv 𝕜 F E p.proj)
+        (pointIndexedCoreFiberEquiv 𝕜 G E' p.proj) (f p.proj))
   rw [hmap, h'.comp_continuous_iff, h.symm.comp_continuous_iff']
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
@@ -87,11 +89,11 @@ noncomputable def pointIndexedCoreHomEquiv :
     (pointIndexedCoreHomEquiv a).1 x v =
       pointIndexedCoreFiberEquiv 𝕜 G E' x
         (a.fiberMap x ((pointIndexedCoreFiberEquiv 𝕜 F E x).symm v)) := by
-  dsimp only [pointIndexedCoreHomEquiv, Equiv.trans_apply, Equiv.subtypeEquiv,
-    Equiv.piCongrRight, Equiv.coe_fn_mk, Pi.map_apply]
-  rw [VectorBundleCore.CoordinateHom.coe_fiberMapEquiv_apply]
-  -- The arrow equivalence evaluates by the target frame, operator and inverse source frame.
-  rfl
+  simp only [pointIndexedCoreHomEquiv, Equiv.trans_apply, Equiv.subtypeEquiv_apply,
+    VectorBundleCore.CoordinateHom.coe_fiberMapEquiv_apply]
+  -- The dependent-function equivalence evaluates pointwise; its core fibres have models F and G.
+  exact congrArg (fun g ↦ g v) (ContinuousLinearEquiv.arrowCongrEquiv_apply
+    (pointIndexedCoreFiberEquiv 𝕜 F E x) (pointIndexedCoreFiberEquiv 𝕜 G E' x) (a.fiberMap x))
 
 @[simp] theorem pointIndexedCoreHomEquiv_symm_fiberMap
     (f : {f : ∀ x, E x →L[𝕜] E' x //
@@ -103,8 +105,7 @@ noncomputable def pointIndexedCoreHomEquiv :
   simp only [pointIndexedCoreHomEquiv, Equiv.symm_trans_apply, Equiv.subtypeEquiv_symm,
     Equiv.subtypeEquiv_apply, VectorBundleCore.CoordinateHom.fiberMapEquiv_symm_apply,
     VectorBundleCore.CoordinateHom.fiberMap_ofContinuous]
-  -- Evaluate the inverse dependent-function equivalence at the chosen base point.
-  dsimp only [Equiv.piCongrRight, Equiv.symm_mk, Equiv.coe_fn_mk, Pi.map_apply]
+  -- The inverse dependent-function equivalence evaluates pointwise in the model fibres.
   exact congrArg (fun g ↦ g v) (ContinuousLinearEquiv.arrowCongrEquiv_symm_apply
     (pointIndexedCoreFiberEquiv 𝕜 F E x) (pointIndexedCoreFiberEquiv 𝕜 G E' x) (f.1 x))
 
@@ -138,10 +139,10 @@ reconstructed maps, for finite-dimensional source models. -/
   ext v
   simp only [pointIndexedCoreHomEquiv_apply, VectorBundleCore.CoordinateHom.fiberMap_comp,
     ContinuousLinearMap.comp_apply]
-  -- Align the core fibre with the operator's model before cancelling the middle frame.
-  erw [(pointIndexedCoreFiberEquiv 𝕜 G E' x).symm_apply_apply]
-  -- Evaluation of the composite continuous linear map is definitionally function composition.
-  rfl
+  -- Cancellation takes place in the reconstructed middle fibre, whose model is G.
+  exact congrArg (fun w ↦ pointIndexedCoreFiberEquiv 𝕜 H E'' x (b.fiberMap x w))
+    ((pointIndexedCoreFiberEquiv 𝕜 G E' x).symm_apply_apply
+      (a.fiberMap x ((pointIndexedCoreFiberEquiv 𝕜 F E x).symm v))).symm
 
 end Comp
 
