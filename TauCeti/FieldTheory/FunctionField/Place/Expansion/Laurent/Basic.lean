@@ -36,7 +36,9 @@ expansion of `t ^ (n + 1) * z` whenever this product is integral.
   finite Laurent expansions.
 * `TauCeti.Place.mem_filtration_iff_forall_laurentCoeff_eq_zero`: a function vanishes to order at
   least `m` exactly when its Laurent coefficients below `m` vanish; in particular the coefficient
-  in the degree of the order is nonzero (`TauCeti.Place.laurentCoeff_ord_ne_zero`).
+  in the degree of the order is nonzero (`TauCeti.Place.laurentCoeff_ord_ne_zero`), the
+  coefficients below the order vanish (`TauCeti.Place.laurentCoeff_eq_zero_of_lt_ord`), and a
+  nonzero coefficient bounds the order (`TauCeti.Place.ord_le_of_laurentCoeff_ne_zero`).
 * `TauCeti.Place.residue_eq_coeff_powerSeriesExpansion`: the residue as a power-series
   coefficient.
 
@@ -195,6 +197,16 @@ theorem mem_filtration_iff_forall_laurentCoeff_eq_zero {m : ℤ} {z : F} :
     LaurentSeries.valuation_le_iff_coeff_lt_eq_zero]
   simp only [laurentCoeff_apply]
 
+/-- The Laurent coefficients of a function in degrees below its order vanish. -/
+theorem laurentCoeff_eq_zero_of_lt_ord {n : ℤ} {z : F} (h : n < P.ord z) :
+    P.laurentCoeff hP ht n z = 0 :=
+  (P.mem_filtration_iff_forall_laurentCoeff_eq_zero hP ht).mp (P.mem_filtration_ord z) n h
+
+/-- A nonzero Laurent coefficient bounds the order of a function from above. -/
+theorem ord_le_of_laurentCoeff_ne_zero {n : ℤ} {z : F} (h : P.laurentCoeff hP ht n z ≠ 0) :
+    P.ord z ≤ n :=
+  not_lt.mp fun hn ↦ h (P.laurentCoeff_eq_zero_of_lt_ord hP ht hn)
+
 /-- The leading Laurent coefficient of a nonzero function, the one in the degree of its order,
 is nonzero. -/
 theorem laurentCoeff_ord_ne_zero {z : F} (hz : z ≠ 0) :
@@ -203,8 +215,7 @@ theorem laurentCoeff_ord_ne_zero {z : F} (hz : z ≠ 0) :
   have hmem : z ∈ P.filtration (P.ord z + 1) :=
     (P.mem_filtration_iff_forall_laurentCoeff_eq_zero hP ht).mpr fun n hn ↦ by
       rcases (Int.lt_add_one_iff.mp hn).lt_or_eq with hn | rfl
-      · exact (P.mem_filtration_iff_forall_laurentCoeff_eq_zero hP ht).mp
-          (P.mem_filtration_ord z) n hn
+      · exact P.laurentCoeff_eq_zero_of_lt_ord hP ht hn
       · exact h
   have := (P.mem_filtration_iff_le_ord hz).mp hmem
   omega

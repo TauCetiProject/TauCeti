@@ -146,13 +146,8 @@ theorem existsUnique_laurentCoeff_eq_one_and_adjoin_simple_eq_top (h : IsAlgebra
     simp at h1
   obtain ⟨hzP, hreg⟩ := (mem_riemannRochSpace_zsmul_ofPoint_iff hz0).mp hzL
   -- The coefficient of `(t - a) ^ (-m)` is nonzero, so `z` has a pole of order exactly `m`.
-  have hord : P.ord z < 0 := by
-    by_contra hge
-    have hmem : z ∈ P.filtration (-m + 1) :=
-      (P.mem_filtration_iff_le_ord hz0).mpr (by omega)
-    have := (P.mem_filtration_iff_forall_laurentCoeff_eq_zero hP ht).mp hmem (-m) (by omega)
-    rw [h1] at this
-    exact one_ne_zero this
+  have hord : P.ord z < 0 :=
+    (P.ord_le_of_laurentCoeff_ne_zero hP ht (h1 ▸ one_ne_zero)).trans_lt (by omega)
   have hunmarked : P.restrict k (RatFunc k) ∉ Place.zeroOneInfty k := by simp [hPa, ha₀, ha₁]
   -- A rational place over the rational place `t = a` has relative degree one.
   have hf : Place.relativeDegree k (RatFunc k) P = 1 := by
