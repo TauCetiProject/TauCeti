@@ -70,6 +70,16 @@ theorem degree_mul (S T U : SimpleClasses C) (f : U.repr ⟶ S.repr ⊗ T.repr) 
   simp only [degree, PresentedGroup.of, ← map_mul]
   exact PresentedGroup.mk_eq_mk_of_mul_inv_mem ⟨S, T, U, f, hf, rfl⟩
 
+/-- A simple constituent of a tensor product of simple objects has the product of their degrees.
+This is `degree_mul` for arbitrary simple objects rather than chosen representatives. -/
+theorem degree_classOf_eq_mul {X Y U : C} [Simple X] [Simple Y] [Simple U] (f : U ⟶ X ⊗ Y)
+    (hf : f ≠ 0) : degree (SimpleClasses.classOf U) =
+      degree (SimpleClasses.classOf X) * degree (SimpleClasses.classOf Y) := by
+  let e := SimpleClasses.classOfReprIso U
+  let t := SimpleClasses.classOfReprIso X ⊗ᵢ SimpleClasses.classOfReprIso Y
+  refine degree_mul _ _ _ (e.hom ≫ f ≫ t.inv) fun h ↦ hf ?_
+  simpa using e.inv ≫= h =≫ t.hom
+
 variable {G : Type w} [Group G]
 
 /-- Extend an assignment of degrees satisfying the tensor-constituent relations to a group

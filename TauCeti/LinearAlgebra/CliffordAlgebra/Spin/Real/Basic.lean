@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.DoubleCover
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.One
 import Mathlib.Analysis.Real.Sqrt
 
 /-!
@@ -31,6 +32,8 @@ separate.
 * `CliffordAlgebra.realCliffordSpinDoubleCoverZero` packages its double cover in positive dimension.
 * `CliffordAlgebra.card_fiber_realCliffordSpinDoubleCoverZero_rightHom` proves that every fiber
   of the double cover contains exactly two points.
+* `CliffordAlgebra.finite_realCliffordSpinGroupZero_one` shows that `Spin(1) = {1, -1}` is
+  finite.
 
 ## References
 
@@ -103,5 +106,10 @@ theorem card_fiber_realCliffordSpinDoubleCoverZero_rightHom
     (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) :
     Nat.card ((realCliffordSpinDoubleCoverZero n).rightHom ⁻¹' {g}) = 2 := by
   simpa using (realCliffordSpinDoubleCoverZero n).card_fiber_rightHom g
+
+/-- The compact Spin group `Spin(1) = {1, -1}` is finite. -/
+instance finite_realCliffordSpinGroupZero_one : Finite (realCliffordSpinGroupZero 1) :=
+  Finite.of_equiv _ (zmodTwoMulEquivSpinGroupOfFinrankEqOne (realCliffordForm 1 0)
+    (nondegenerate_realCliffordForm 1 0) (Module.finrank_fin_fun ℝ)).toEquiv
 
 end CliffordAlgebra
