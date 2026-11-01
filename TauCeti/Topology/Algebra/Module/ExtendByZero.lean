@@ -47,6 +47,11 @@ noncomputable def continuousLinearMap : (ι → R) →L[R] (κ → R) :=
 theorem continuousLinearMap_apply (x : ι → R) :
     continuousLinearMap R e x = Function.extend e x 0 := (rfl)
 
+/-- Mathlib's `Function.ExtendByZero.linearMap` is continuous for the product topologies. -/
+@[fun_prop]
+theorem continuous_linearMap : Continuous (linearMap R R e) :=
+  (continuousLinearMap R e).continuous
+
 /-- Restrict coordinate functions along an index map, as a continuous linear map. -/
 def restriction : (κ → R) →L[R] (ι → R) :=
   ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj (e i)
