@@ -99,10 +99,13 @@ theorem representation_mem_scLattice
 lattice. -/
 private theorem apply_mem_fundamentalLattice_of_mem_scLattice {x : t.scModule ht}
     (hx : x ∈ t.scLattice ht) (i : Fin t.rank) : x i ∈ t.fundamentalLattice ht i := by
-  rw [scLattice_def, Subring.orbitOfRep_def] at hx
-  induction hx using Submodule.span_induction with
-  | mem y hy =>
-    obtain ⟨u, hu, _, ⟨j, rfl⟩, rfl⟩ := hy
+  have hle : t.scLattice ht ≤ (t.fundamentalLattice ht i).comap
+      ((component ℚ _ (t.fundamentalModule ht) i).restrictScalars ℤ) := by
+    rw [scLattice_def, Subring.orbitOfRep_le_iff]
+    rintro u hu _ ⟨j, rfl⟩
+    change (representation ℚ (t.lieAlgebra ht) (t.scModule ht) u
+      (lof ℚ _ (t.fundamentalModule ht) j (t.fundamentalModuleGenerator ht j))) i ∈
+        t.fundamentalLattice ht i
     rw [representation_lof]
     by_cases hji : j = i
     · subst hji
@@ -110,34 +113,21 @@ private theorem apply_mem_fundamentalLattice_of_mem_scLattice {x : t.scModule ht
       exact t.representation_mem_fundamentalLattice ht hu
         (t.fundamentalModuleGenerator_mem_fundamentalLattice ht j)
     · simp [lof_eq_of ℚ, of_apply, hji]
-  | zero => exact zero_mem _
-  | add y z _ _ hy hz =>
-    rw [DirectSum.add_apply]
-    exact add_mem hy hz
-  | smul n y _ hy =>
-    rw [DirectSum.smul_apply]
-    exact Submodule.smul_mem _ n hy
+  exact hle hx
 
 /-- A vector of the `i`-th fundamental lattice, placed in the `i`-th summand, lies in the
 full-weight lattice. -/
 private theorem lof_mem_scLattice {i : Fin t.rank} {x : t.fundamentalModule ht i}
     (hx : x ∈ t.fundamentalLattice ht i) :
     lof ℚ _ (t.fundamentalModule ht) i x ∈ t.scLattice ht := by
-  rw [fundamentalLattice_def, Subring.orbitOfRep_def] at hx
-  induction hx using Submodule.span_induction with
-  | mem y hy =>
-    obtain ⟨u, hu, _, rfl, rfl⟩ := hy
-    rw [← representation_lof]
-    exact t.representation_mem_scLattice ht hu (t.lof_fundamentalModuleGenerator_mem_scLattice ht i)
-  | zero =>
-    rw [map_zero]
-    exact zero_mem _
-  | add y z _ _ hy hz =>
-    rw [map_add]
-    exact add_mem hy hz
-  | smul n y _ hy =>
-    rw [map_zsmul]
-    exact Submodule.smul_mem _ n hy
+  have hle : t.fundamentalLattice ht i ≤ (t.scLattice ht).comap
+      ((lof ℚ _ (t.fundamentalModule ht) i).restrictScalars ℤ) := by
+    rw [fundamentalLattice_def, Subring.orbitOfRep_le_iff]
+    rintro u hu _ rfl
+    have h := t.representation_mem_scLattice ht hu
+      (t.lof_fundamentalModuleGenerator_mem_scLattice ht i)
+    rwa [representation_lof] at h
+  exact hle hx
 
 /-- **The full-weight lattice is the direct sum of the fundamental lattices**: a vector of
 `V_sc(t)` lies in it exactly when each of its components lies in the corresponding fundamental
