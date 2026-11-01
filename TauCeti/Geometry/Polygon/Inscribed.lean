@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import TauCeti.Analysis.Calculus.Deriv.DualStrictMono
+public import TauCeti.Analysis.Convex.CurveChord
 public import TauCeti.Geometry.Polygon.DeltaMove
 public import TauCeti.Geometry.Polygon.Subdivision
 public import TauCeti.Topology.Instances.Real.InjectiveModPeriod
@@ -122,58 +123,6 @@ theorem edgeSet_inscribed {R V : Type*} [Ring R] [PartialOrder R] [IsOrderedRing
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {γ : ℝ → E} {T : ℝ}
 
-/-- Let `φ ∘ γ` be strictly increasing on `I`, and `a ≤ b < b'` in `I`. A point `x` of the chord
-from `γ b` to `γ b'` with `φ x ≤ φ (γ a)` is the start `γ b` of the chord, and `a = b`. -/
-private theorem eq_of_mem_segment_of_le {φ : StrongDual ℝ E} {I : Set ℝ}
-    (hmono : StrictMonoOn (fun t ↦ φ (γ t)) I) {a b b' : ℝ} (ha : a ∈ I) (hb : b ∈ I)
-    (hb' : b' ∈ I) (hab : a ≤ b) (hbb' : b < b') {x : E} (hx : φ x ≤ φ (γ a))
-    (hx' : x ∈ segment ℝ (γ b) (γ b')) : a = b ∧ x = γ b := by
-  rw [segment_eq_image'] at hx'
-  obtain ⟨θ, ⟨hθ, -⟩, rfl⟩ := hx'
-  have h₁ : φ (γ b) < φ (γ b') := hmono hb hb' hbb'
-  have h₂ : φ (γ a) ≤ φ (γ b) := hmono.monotoneOn ha hb hab
-  simp only [map_add, map_smul, map_sub, smul_eq_mul] at hx
-  obtain rfl : θ = 0 := by nlinarith
-  simp only [zero_smul, add_zero, zero_mul] at hx ⊢
-  exact ⟨hmono.injOn ha hb (le_antisymm h₂ hx), trivial⟩
-
-/-- Let `φ ∘ γ` be strictly increasing on `I`, and `b < b' ≤ a` in `I`. A point `x` of the chord
-from `γ b` to `γ b'` with `φ (γ a) ≤ φ x` is the end `γ b'` of the chord, and `b' = a`. -/
-private theorem eq_of_mem_segment_of_ge {φ : StrongDual ℝ E} {I : Set ℝ}
-    (hmono : StrictMonoOn (fun t ↦ φ (γ t)) I) {a b b' : ℝ} (ha : a ∈ I) (hb : b ∈ I)
-    (hb' : b' ∈ I) (hbb' : b < b') (hb'a : b' ≤ a) {x : E} (hx : φ (γ a) ≤ φ x)
-    (hx' : x ∈ segment ℝ (γ b) (γ b')) : b' = a ∧ x = γ b' := by
-  rw [segment_symm, segment_eq_image'] at hx'
-  obtain ⟨θ, ⟨hθ, -⟩, rfl⟩ := hx'
-  have h₁ : φ (γ b) < φ (γ b') := hmono hb hb' hbb'
-  have h₂ : φ (γ b') ≤ φ (γ a) := hmono.monotoneOn hb' ha hb'a
-  simp only [map_add, map_smul, map_sub, smul_eq_mul] at hx
-  obtain rfl : θ = 0 := by nlinarith
-  simp only [zero_smul, add_zero, zero_mul] at hx ⊢
-  exact ⟨hmono.injOn hb' ha (le_antisymm h₂ hx), trivial⟩
-
-/-- If `φ ∘ γ` is monotone on `[c, c']` and `c ≤ u ≤ c'`, then `φ` is at most `φ (γ c')` on the
-triangle with vertices `γ c`, `γ u`, `γ c'`. -/
-private theorem le_of_mem_convexHull {φ : StrongDual ℝ E} {c c' u : ℝ} {y : E}
-    (hφ : MonotoneOn (fun t ↦ φ (γ t)) (Icc c c')) (hcu : c ≤ u) (huc : u ≤ c')
-    (hy : y ∈ convexHull ℝ {γ c, γ u, γ c'}) : φ y ≤ φ (γ c') := by
-  refine convexHull_min ?_ (convex_halfSpace_le φ.toLinearMap.isLinear _) hy
-  rintro _ (rfl | rfl | rfl)
-  · exact hφ ⟨le_rfl, hcu.trans huc⟩ ⟨hcu.trans huc, le_rfl⟩ (hcu.trans huc)
-  · exact hφ ⟨hcu, huc⟩ ⟨hcu.trans huc, le_rfl⟩ huc
-  · exact le_rfl
-
-/-- If `φ ∘ γ` is monotone on `[c, c']` and `c ≤ u ≤ c'`, then `φ` is at least `φ (γ c)` on the
-triangle with vertices `γ c`, `γ u`, `γ c'`. -/
-private theorem ge_of_mem_convexHull {φ : StrongDual ℝ E} {c c' u : ℝ} {y : E}
-    (hφ : MonotoneOn (fun t ↦ φ (γ t)) (Icc c c')) (hcu : c ≤ u) (huc : u ≤ c')
-    (hy : y ∈ convexHull ℝ {γ c, γ u, γ c'}) : φ (γ c) ≤ φ y := by
-  refine convexHull_min ?_ (convex_halfSpace_ge φ.toLinearMap.isLinear _) hy
-  rintro _ (rfl | rfl | rfl)
-  · exact le_rfl
-  · exact hφ ⟨le_rfl, hcu.trans huc⟩ ⟨hcu, huc⟩ hcu
-  · exact hφ ⟨le_rfl, hcu.trans huc⟩ ⟨hcu.trans huc, le_rfl⟩ (hcu.trans huc)
-
 /-- Two edges of an inscribed polygon whose parameters lie in a window on which `φ ∘ γ` is strictly
 increasing meet only if they are consecutive, and then only at their common vertex. -/
 private theorem eq_of_mem_segment_of_mem_segment {φ : StrongDual ℝ E} {a δ h : ℝ} {r : ℕ}
@@ -189,7 +138,7 @@ private theorem eq_of_mem_segment_of_mem_segment {φ : StrongDual ℝ E} {a δ h
   -- The first edge lies below `φ (γ (a + h))`, where the second one starts.
   have hle : φ x ≤ φ (γ (a + h)) := (convex_halfSpace_le φ.toLinearMap.isLinear _).segment_subset
     (hmono.monotoneOn ha hah (by linarith)) le_rfl hx
-  obtain ⟨e, rfl⟩ := eq_of_mem_segment_of_le hmono hah (mem (r * h) (by positivity) (by linarith))
+  obtain ⟨e, rfl⟩ := hmono.eq_of_mem_segment_of_le hah (mem (r * h) (by positivity) (by linarith))
     (by simpa [add_assoc] using mem (r * h + h) (by positivity) le_rfl) (by nlinarith)
     (by linarith) hle hx'
   refine ⟨?_, by rw [e]⟩
@@ -356,18 +305,18 @@ private theorem FineMesh.eq_of_mem_convexHull_of_mem_segment (hF : FineMesh γ T
     by_cases h₁ : b' ≤ a + 3 * δ
     · -- Both lie in the window `[a, a + 3δ]`.
       obtain ⟨φ, hφ⟩ := hF.mono a ⟨ha, by linarith⟩
-      have hle := le_of_mem_convexHull
+      have hle := MonotoneOn.le_of_mem_convexHull
         (hφ.monotoneOn.mono (Icc_subset_Icc le_rfl (by linarith))) has hsa' hx
-      obtain ⟨e, rfl⟩ := eq_of_mem_segment_of_le hφ ⟨by linarith, by linarith⟩
+      obtain ⟨e, rfl⟩ := hφ.eq_of_mem_segment_of_le ⟨by linarith, by linarith⟩
         ⟨by linarith, by linarith⟩ ⟨by linarith, h₁⟩ hab hbb' hle hx'
       exact .inr (by rw [e])
     by_cases h₂ : a + T - b ≤ 2 * δ
     · -- The triangle, one period later, comes just after the chord: both lie in `[b, b + 3δ]`.
       obtain ⟨φ, hφ⟩ := hF.mono b ⟨hb, by linarith⟩
       rw [← hT a, ← hT s, ← hT a'] at hx
-      have hge := ge_of_mem_convexHull (hφ.monotoneOn.mono (Icc_subset_Icc (by linarith)
+      have hge := MonotoneOn.ge_of_mem_convexHull (hφ.monotoneOn.mono (Icc_subset_Icc (by linarith)
         (by linarith))) (by linarith : a + T ≤ s + T) (by linarith : s + T ≤ a' + T) hx
-      obtain ⟨e, rfl⟩ := eq_of_mem_segment_of_ge hφ ⟨by linarith, by linarith⟩
+      obtain ⟨e, rfl⟩ := hφ.eq_of_mem_segment_of_ge ⟨by linarith, by linarith⟩
         ⟨le_rfl, by linarith⟩ ⟨by linarith, by linarith⟩ hbb' (by linarith) hge hx'
       exact .inl (by rw [e, hT])
     · -- Distant: `γ a` and `γ b` are far apart.
@@ -377,18 +326,18 @@ private theorem FineMesh.eq_of_mem_convexHull_of_mem_segment (hF : FineMesh γ T
     by_cases h₁ : a' ≤ b + 3 * δ
     · -- Both lie in the window `[b, b + 3δ]`.
       obtain ⟨φ, hφ⟩ := hF.mono b ⟨hb, by linarith⟩
-      have hge := ge_of_mem_convexHull
+      have hge := MonotoneOn.ge_of_mem_convexHull
         (hφ.monotoneOn.mono (Icc_subset_Icc (by linarith) h₁)) has hsa' hx
-      obtain ⟨e, rfl⟩ := eq_of_mem_segment_of_ge hφ ⟨by linarith, by linarith⟩
+      obtain ⟨e, rfl⟩ := hφ.eq_of_mem_segment_of_ge ⟨by linarith, by linarith⟩
         ⟨le_rfl, by linarith⟩ ⟨by linarith, by linarith⟩ hbb' hba hge hx'
       exact .inl (by rw [e])
     by_cases h₂ : b + T - a ≤ 2 * δ
     · -- The chord, one period later, comes just after the triangle: both lie in `[a, a + 3δ]`.
       obtain ⟨φ, hφ⟩ := hF.mono a ⟨ha, by linarith⟩
       rw [← hT b, ← hT b'] at hx'
-      have hle := le_of_mem_convexHull
+      have hle := MonotoneOn.le_of_mem_convexHull
         (hφ.monotoneOn.mono (Icc_subset_Icc le_rfl (by linarith))) has hsa' hx
-      obtain ⟨e, rfl⟩ := eq_of_mem_segment_of_le hφ ⟨by linarith, by linarith⟩
+      obtain ⟨e, rfl⟩ := hφ.eq_of_mem_segment_of_le ⟨by linarith, by linarith⟩
         ⟨by linarith, by linarith⟩ ⟨by linarith, by linarith⟩ (by linarith) (by linarith) hle hx'
       exact .inr (by rw [← e])
     · -- Distant: `γ b` and `γ a` are far apart.
