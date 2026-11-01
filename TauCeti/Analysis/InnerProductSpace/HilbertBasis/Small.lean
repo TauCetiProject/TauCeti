@@ -23,6 +23,8 @@ public section
 
 universe w
 
+namespace TauCeti
+
 /-- A Hilbert space whose underlying type is `w`-small has a Hilbert basis indexed by a type in the
 universe `w`. -/
 theorem exists_hilbertBasis_of_small (𝕜 E : Type*) [RCLike 𝕜] [NormedAddCommGroup E]
@@ -33,3 +35,5 @@ theorem exists_hilbertBasis_of_small (𝕜 E : Type*) [RCLike 𝕜] [NormedAddCo
   refine ⟨Shrink.{w} s, ⟨.mk (b.orthonormal.comp _ e.symm.injective) ?_⟩⟩
   rw [Set.range_comp, e.symm.surjective.range_eq, Set.image_univ]
   exact b.dense_span.ge
+
+end TauCeti

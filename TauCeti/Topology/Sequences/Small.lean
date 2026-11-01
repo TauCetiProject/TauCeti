@@ -27,6 +27,8 @@ universe w
 
 open Filter Topology
 
+namespace TauCeti
+
 /-- In a Hausdorff Fréchet–Urysohn space, the closure of a `w`-small set is `w`-small. -/
 theorem small_closure {X : Type*} [TopologicalSpace X] [FrechetUrysohnSpace X] [T2Space X]
     (s : Set X) [Small.{w} s] : Small.{w} (closure s) := by
@@ -35,3 +37,5 @@ theorem small_closure {X : Type*} [TopologicalSpace X] [FrechetUrysohnSpace X] [
   refine small_subset (s := Set.range lim) fun x hx => ?_
   obtain ⟨u, hu, hux⟩ := mem_closure_iff_seq_limit.1 hx
   exact ⟨⟨fun n => ⟨u n, hu n⟩, x, hux⟩, hux.limUnder_eq⟩
+
+end TauCeti
