@@ -32,6 +32,8 @@ modulus defect `-log |α|²` of a plane vortex is such a subsolution for every r
 
 * `TauCeti.le_mul_exp_of_sq_mul_le_laplacian`: a subsolution of `-Δ + c²` on the exterior of a ball
   which tends to zero at infinity is bounded by `M exp (-c (‖x‖ - R))`.
+* `TauCeti.exp_neg_mul_sub`: the radius shift `exp (-c (t - R)) = exp (c R) exp (-c t)` relating
+  the barrier to its radial profile.
 
 ## References
 
@@ -49,7 +51,13 @@ open Filter Metric Set Topology InnerProductSpace Laplacian
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- The exponential barrier `A exp (-c t) + ε` of the comparison argument, as a radial profile. -/
+/-- Shifting the radius in an exponential: `exp (-c (t - R)) = exp (c R) exp (-c t)`. -/
+theorem exp_neg_mul_sub (c t R : ℝ) :
+    Real.exp (-(c * (t - R))) = Real.exp (c * R) * Real.exp (-(c * t)) := by
+  rw [← Real.exp_add]
+  ring_nf
+
+/-- The derivative of the radial barrier profile `A exp (-c t) + ε` is `-c A exp (-c t)`. -/
 private theorem deriv_exp_barrier (A c ε : ℝ) :
     deriv (fun t : ℝ ↦ A * Real.exp (-(c * t)) + ε) = fun t ↦ -(c * (A * Real.exp (-(c * t)))) :=
   funext fun t ↦ by
@@ -124,8 +132,7 @@ theorem le_mul_exp_of_sq_mul_le_laplacian {u : E → ℝ} {R c M : ℝ} (hR : 0 
   have hAnn : 0 ≤ A := by positivity
   have hbar : ∀ y : E, M * Real.exp (-(c * (‖y‖ - R))) = A * Real.exp (-(c * ‖y‖)) := by
     intro y
-    rw [hA, mul_assoc, ← Real.exp_add]
-    ring_nf
+    rw [hA, exp_neg_mul_sub, mul_assoc]
   rw [hbar]
   refine le_of_forall_pos_le_add fun ε hε ↦ ?_
   -- Beyond some radius `R₁`, `u ≤ ε`; compare on the annulus `R ≤ ‖y‖ ≤ max R₁ ‖x‖`.

@@ -70,8 +70,7 @@ private theorem sq_mul_neg_log_normSq_le_laplacian
   set t := 4 * (x z 2 ^ 2 + x z 3 ^ 2)
   have hα : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0 := fun h ↦ by simp [t, h] at hpos
   have hΔ : Δ (fun w ↦ -Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z = (1 - t) / 4 := by
-    rw [show (fun w ↦ -Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) =
-        -fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) from rfl, congrFun laplacian_neg z,
+    rw [← Pi.neg_def, congrFun laplacian_neg z,
       Pi.neg_apply, laplacian_log_normSq_of_equation_eq_zero hb₁.differentiableAt
         hb₂.differentiableAt hp.contDiffAt hq.contDiffAt hα (Eventually.of_forall hsol)]
     ring
@@ -129,8 +128,7 @@ private theorem exists_one_sub_normSq_le_mul_exp_of_nonneg
     (Real.exp_pos _).le.trans (le_max_right _ _), fun z ↦ ?_⟩
   have hsplit : ∀ A : ℝ, A * Real.exp (c * R) * Real.exp (-(c * ‖z‖)) =
       A * Real.exp (-(c * (‖z‖ - R))) := fun A ↦ by
-    rw [mul_assoc, ← Real.exp_add]
-    ring_nf
+    rw [exp_neg_mul_sub, mul_assoc]
   rcases le_or_gt R ‖z‖ with hz | hz
   · calc 1 - s z ≤ u z := by linarith [Real.log_le_sub_one_of_pos (hpos z hz)]
       _ ≤ max M 0 * Real.exp (-(c * (‖z‖ - R))) := hdecay z hz

@@ -7,18 +7,18 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
-public import Mathlib.MeasureTheory.Constructions.HaarToSphere
+import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
-# Exponential integrals on the real line
+# Exponential integrals on the real line and radial exponentials
 
-This file records integrability and evaluation of exponential integrands on a half-line or the
-whole real line: natural powers multiplied by an exponentially decaying factor, the exact rate at
+This file records integrability and evaluation of exponential integrands: on a half-line or the
+whole real line, natural powers multiplied by an exponentially decaying factor, the exact rate at
 which a bare exponential is integrable on a right half-line, and integrability of the two-sided
-exponential. Integrating in polar coordinates, the radial exponential `exp (-a ‖x‖)` is also
-integrable for every additive Haar measure on a finite-dimensional real normed space.
+exponential; and, on a finite-dimensional real normed space, integrability of the radial
+exponential `exp (-a ‖x‖)` for every additive Haar measure, by integrating in polar coordinates.
 
 Mathlib supplies the *sufficient* direction of the right-half-line integrability criterion,
 `integrableOn_exp_mul_Ioi`, for a negative rate.  `integrableOn_exp_mul_Ioi_iff` adds the converse,

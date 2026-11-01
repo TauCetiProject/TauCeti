@@ -345,7 +345,7 @@ theorem _root_.ContDiffAt.laplacian_comp_norm {F : ℝ → ℝ} {x : E} (hF : Co
   have hgrad : ‖∇ (fun y : E ↦ ‖y‖) x‖ = 1 := by
     rw [norm_gradient_eq_norm_fderiv, (hasFDerivAt_norm_of_ne hx).fderiv, norm_smul,
       innerSL_apply_norm, norm_inv, norm_norm, inv_mul_cancel₀ hnorm.ne']
-  rw [show (fun y : E ↦ F ‖y‖) = F ∘ fun y : E ↦ ‖y‖ from rfl,
+  rw [← Function.comp_def F fun y : E ↦ ‖y‖,
     hF.laplacian_comp (contDiffAt_norm ℝ hx), hgrad, hΔ]
   ring
 
