@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.MeasureTheory.Function.Holder
 
 /-!
 # Norming `Lᵖ` functions by test functions
@@ -30,7 +31,9 @@ where `‖h‖` is close to its essential supremum.
 
 Testing against simple functions only, rather than against all of `L^{q'}`, is what makes the
 statement usable when the pairings can only be computed on simple functions, as in the
-Riesz–Thorin theorem.
+Riesz–Thorin theorem. Together with Hölder's inequality, the duality bound shows that the
+integral pairing `g ↦ (f ↦ ∫ g f dμ)` is a linear isometry from `L^q(μ)` to the continuous dual
+of `L^q'(μ)` on a σ-finite measure space.
 
 For functions with values in an inner product space, paired by `∫ ⟪h, g⟫`, the file also proves
 a version for `q < ∞` that does not assume `h ∈ L^q` in advance: the test functions are bounded
@@ -55,6 +58,9 @@ is `∞` outside the almost everywhere strongly measurable functions.
   `1 ≤ q ≤ ∞` on a σ-finite measure space.
 * `MeasureTheory.Lp.enorm_integral_mul_le_of_apply_eq`: a continuous linear functional on
   `L^q'` that is integration against `h` satisfies the hypothesis of these duality bounds.
+* `MeasureTheory.Lp.toDual`: on a σ-finite measure space, the integral pairing is a linear
+  isometry `L^q(μ) → L^q'(μ)*`.
+* `MeasureTheory.Lp.toDual_indicatorConstLp`: the value of the pairing at an indicator function.
 * `TauCeti.enorm_integral_inner_le`: Hölder's inequality `‖∫ ⟪u, v⟫‖ ≤ ‖u‖_p ‖v‖_q`.
 * `MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`: the duality
   bound for `q < ∞` for inner product space valued functions, against bounded test functions of
@@ -409,3 +415,54 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le {H : T
     _ ≤ C * X ^ (r - 1) := by gcongr
 
 end MeasureTheory
+
+namespace MeasureTheory.Lp
+
+variable {α 𝕜 : Type*} [RCLike 𝕜] {mα : MeasurableSpace α} {μ : Measure α}
+
+section toDual
+
+variable {q q' : ℝ≥0∞} [Fact (1 ≤ q)] [Fact (1 ≤ q')] [q.HolderConjugate q']
+
+variable (𝕜 μ q q') in
+/-- On a σ-finite measure space, for Hölder conjugate exponents `q` and `q'`, the integral pairing
+`g ↦ (f ↦ ∫ g f dμ)` is a linear isometry from `L^q(μ)` to the continuous dual of `L^q'(μ)`:
+integration against `g` is a continuous linear functional on `L^q'(μ)` of norm `‖g‖_q`. -/
+noncomputable def toDual [SigmaFinite μ] : Lp 𝕜 q μ →ₗᵢ[𝕜] StrongDual 𝕜 (Lp 𝕜 q' μ) where
+  toLinearMap := ((ContinuousLinearMap.mul 𝕜 𝕜).lpPairing μ q q' :
+    Lp 𝕜 q μ →ₗ[𝕜] StrongDual 𝕜 (Lp 𝕜 q' μ))
+  norm_map' g := by
+    set Λ := (ContinuousLinearMap.mul 𝕜 𝕜).lpPairing μ q q' g
+    -- Both norms are the real parts of the extended norms, so it suffices to compare those.
+    rw [ContinuousLinearMap.coe_coe, ← toReal_enorm, ← toReal_enorm]
+    congr 1
+    -- Hölder's inequality gives `‖Λ‖ ≤ ‖g‖_q`; testing `Λ` on simple functions gives the converse.
+    refine le_antisymm (Λ.opENorm_le_bound fun f => ?_) ?_
+    · rw [ContinuousLinearMap.lpPairing_mul_eq_integral, Lp.enorm_def, Lp.enorm_def]
+      exact TauCeti.enorm_integral_mul_le
+    · rw [Lp.enorm_def]
+      exact (Lp.memLp g).eLpNorm_le_of_forall_enorm_integral_mul_le fun σ hσ =>
+        enorm_integral_mul_le_of_apply_eq Λ hσ
+          (ContinuousLinearMap.lpPairing_mul_eq_integral g _)
+
+@[simp]
+theorem toDual_apply [SigmaFinite μ] (g : Lp 𝕜 q μ) (f : Lp 𝕜 q' μ) :
+    toDual 𝕜 μ q q' g f = ∫ x, g x * f x ∂μ := by
+  rw [toDual, LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe,
+    ContinuousLinearMap.lpPairing_mul_eq_integral]
+
+/-- Pairing `g ∈ L^q(μ)` with the indicator function of a set `s` of finite measure, scaled by
+`c`, gives `c` times the integral of `g` over `s`. -/
+-- High priority, so that `simp` uses this lemma before unfolding the pairing by `toDual_apply`.
+@[simp high]
+theorem toDual_indicatorConstLp [SigmaFinite μ] (g : Lp 𝕜 q μ) {s : Set α}
+    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (c : 𝕜) :
+    toDual 𝕜 μ q q' g (indicatorConstLp q' hs hμs c) = (∫ x in s, g x ∂μ) * c := by
+  rw [toDual_apply, ← integral_mul_const, ← integral_indicator hs]
+  refine integral_congr_ae ?_
+  filter_upwards [indicatorConstLp_coeFn (p := q') (hs := hs) (hμs := hμs) (c := c)] with x hx
+  by_cases hxs : x ∈ s <;> simp [hx, hxs]
+
+end toDual
+
+end MeasureTheory.Lp

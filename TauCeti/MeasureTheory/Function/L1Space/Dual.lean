@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
+public import TauCeti.MeasureTheory.Function.Lp.Duality
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.MeasureTheory.Function.L2Space
-import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
@@ -19,7 +18,8 @@ Let `𝕜` be `ℝ` or `ℂ` (or any `RCLike` field), and let `q` and `q'` be H�
 Integration against `g ∈ L^q(μ)` is a continuous linear functional `f ↦ ∫ g f dμ` on `L^q'(μ)`.
 This is Mathlib's Hölder pairing `ContinuousLinearMap.lpPairing` for the multiplication of `𝕜`.
 On a σ-finite measure space the functional has norm exactly `‖g‖_q`, so the pairing is a linear
-isometry `L^q(μ) → L^q'(μ)*` (`MeasureTheory.Lp.toDual`). For `q = ∞`, `q' = 1` and a finite
+isometry `L^q(μ) → L^q'(μ)*` (`MeasureTheory.Lp.toDual`, in
+`TauCeti.MeasureTheory.Function.Lp.Duality`). For `q = ∞`, `q' = 1` and a finite
 measure it is onto: every continuous linear functional on `L¹(μ)` is integration against an
 essentially bounded density. This gives the isometric equivalence `L^∞(μ) ≃ L¹(μ)*`
 (`MeasureTheory.Lp.dualOneEquiv`). The integral of the density over a measurable set `s` is the
@@ -27,10 +27,6 @@ value of the functional at the indicator function of `s`.
 
 ## Main declarations
 
-* `ContinuousLinearMap.lpPairing_mul_eq_integral`: the Hölder pairing of the multiplication of
-  a normed algebra is the integral of the product.
-* `MeasureTheory.Lp.toDual`: the isometric pairing `L^q(μ) → L^q'(μ)*` of a σ-finite measure.
-* `MeasureTheory.Lp.toDual_indicatorConstLp`: the value of the pairing at an indicator function.
 * `MeasureTheory.Lp.exists_toDual_eq`: for a finite measure, every continuous linear
   functional on `L¹(μ)` is integration against some `g ∈ L^∞(μ)`.
 * `MeasureTheory.Lp.dualOneEquiv`: the isometric equivalence `L^∞(μ) ≃ L¹(μ)*` of a finite
@@ -59,71 +55,9 @@ public section
 
 open scoped ENNReal ComplexConjugate
 
-namespace ContinuousLinearMap
-
-open MeasureTheory
-
-variable {α 𝕜 R : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing R] [NormedSpace 𝕜 R]
-  [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R] [NormedSpace ℝ R] [SMulCommClass ℝ 𝕜 R]
-  [CompleteSpace R] {mα : MeasurableSpace α} {μ : Measure α} {q q' : ℝ≥0∞} [Fact (1 ≤ q)]
-  [Fact (1 ≤ q')] [q.HolderConjugate q']
-
-/-- The Hölder pairing of the multiplication `ContinuousLinearMap.mul 𝕜 R` is the integral of the
-product. -/
-theorem lpPairing_mul_eq_integral (g : Lp R q μ) (f : Lp R q' μ) :
-    (mul 𝕜 R).lpPairing μ q q' g f = ∫ x, g x * f x ∂μ := by
-  simp [lpPairing_eq_integral]
-
-end ContinuousLinearMap
-
 namespace MeasureTheory.Lp
 
 variable {α 𝕜 : Type*} [RCLike 𝕜] {mα : MeasurableSpace α} {μ : Measure α}
-
-section toDual
-
-variable {q q' : ℝ≥0∞} [Fact (1 ≤ q)] [Fact (1 ≤ q')] [q.HolderConjugate q']
-
-variable (𝕜 μ q q') in
-/-- On a σ-finite measure space, for Hölder conjugate exponents `q` and `q'`, the integral pairing
-`g ↦ (f ↦ ∫ g f dμ)` is a linear isometry from `L^q(μ)` to the continuous dual of `L^q'(μ)`:
-integration against `g` is a continuous linear functional on `L^q'(μ)` of norm `‖g‖_q`. -/
-noncomputable def toDual [SigmaFinite μ] : Lp 𝕜 q μ →ₗᵢ[𝕜] StrongDual 𝕜 (Lp 𝕜 q' μ) where
-  toLinearMap := ((ContinuousLinearMap.mul 𝕜 𝕜).lpPairing μ q q' :
-    Lp 𝕜 q μ →ₗ[𝕜] StrongDual 𝕜 (Lp 𝕜 q' μ))
-  norm_map' g := by
-    set Λ := (ContinuousLinearMap.mul 𝕜 𝕜).lpPairing μ q q' g
-    -- Both norms are the real parts of the extended norms, so it suffices to compare those.
-    rw [ContinuousLinearMap.coe_coe, ← toReal_enorm, ← toReal_enorm]
-    congr 1
-    -- Hölder's inequality gives `‖Λ‖ ≤ ‖g‖_q`; testing `Λ` on simple functions gives the converse.
-    refine le_antisymm (Λ.opENorm_le_bound fun f => ?_) ?_
-    · rw [ContinuousLinearMap.lpPairing_mul_eq_integral, Lp.enorm_def, Lp.enorm_def]
-      exact TauCeti.enorm_integral_mul_le
-    · rw [Lp.enorm_def]
-      exact (Lp.memLp g).eLpNorm_le_of_forall_enorm_integral_mul_le fun σ hσ =>
-        enorm_integral_mul_le_of_apply_eq Λ hσ
-          (ContinuousLinearMap.lpPairing_mul_eq_integral g _)
-
-@[simp]
-theorem toDual_apply [SigmaFinite μ] (g : Lp 𝕜 q μ) (f : Lp 𝕜 q' μ) :
-    toDual 𝕜 μ q q' g f = ∫ x, g x * f x ∂μ := by
-  rw [toDual, LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe,
-    ContinuousLinearMap.lpPairing_mul_eq_integral]
-
-/-- Pairing `g ∈ L^q(μ)` with the indicator function of a set `s` of finite measure, scaled by
-`c`, gives `c` times the integral of `g` over `s`. -/
--- High priority, so that `simp` uses this lemma before unfolding the pairing by `toDual_apply`.
-@[simp high]
-theorem toDual_indicatorConstLp [SigmaFinite μ] (g : Lp 𝕜 q μ) {s : Set α}
-    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (c : 𝕜) :
-    toDual 𝕜 μ q q' g (indicatorConstLp q' hs hμs c) = (∫ x in s, g x ∂μ) * c := by
-  rw [toDual_apply, ← integral_mul_const, ← integral_indicator hs]
-  refine integral_congr_ae ?_
-  filter_upwards [indicatorConstLp_coeFn (p := q') (hs := hs) (hμs := hμs) (c := c)] with x hx
-  by_cases hxs : x ∈ s <;> simp [hx, hxs]
-
-end toDual
 
 /-- For a finite measure, every continuous linear functional on `L¹(μ)` is integration against
 an essentially bounded function. -/
