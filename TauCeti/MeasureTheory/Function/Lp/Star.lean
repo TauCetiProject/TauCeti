@@ -13,9 +13,9 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 
 Mathlib equips `Lp R p μ` with the pointwise involution `star` when `R` is a normed star group.
 This file records that this involution is additive, isometric and, over a star module,
-conjugate-linear. Thus `Lp R p μ` is a normed star group and a star module, for every exponent
-`p`. Over `ℂ` the involution is pointwise complex conjugation of classes of functions; these laws
-are part of the C⋆-algebra structure of `L∞`.
+conjugate-linear. Thus `Lp R p μ` is a star additive monoid and a star module for every exponent
+`p`, and a normed star group for `1 ≤ p`. Over `ℂ` the involution is pointwise complex
+conjugation of classes of functions; these laws are part of the C⋆-algebra structure of `L∞`.
 -/
 
 public section
