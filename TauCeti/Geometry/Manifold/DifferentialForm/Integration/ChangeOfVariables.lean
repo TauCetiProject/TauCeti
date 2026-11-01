@@ -41,10 +41,6 @@ over `N` and `M`.
 
 ## Main results
 
-* `OpenPartialHomeomorph.mapsTo_tsupport_of_eq_mpullback`,
-  `OpenPartialHomeomorph.isCompact_tsupport_of_eq_mpullback`: a form supported in the source of
-  `e` and agreeing there with `f^*φ` has support carried by `e` into that of `φ`, and compact when
-  the support of `φ` is compact and lies in the target.
 * `OpenPartialHomeomorph.integrableTopForm_of_eq_mpullback`: such a form is integrable when `φ`
   is.
 * `OpenPartialHomeomorph.integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt`,
@@ -199,36 +195,6 @@ namespace OpenPartialHomeomorph
 open TauCeti
 
 variable (e : OpenPartialHomeomorph M N) {f : M → N}
-
-omit [FiniteDimensional ℝ E] [IsManifold I 1 M] [IsManifold J 1 N] in
-/-- Let `e` be an open partial homeomorphism agreeing with a map `f` on its source. A form `ψ`
-supported in the source of `e` that agrees there with `f^*φ` has its support carried by `e` into
-the support of `φ`. -/
-theorem mapsTo_tsupport_of_eq_mpullback (hfe : EqOn f e e.source) {φ : RoughForm J N ℝ k}
-    {ψ : RoughForm I M ℝ k} (hψ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ ⊆ e.source)
-    (hψφ : ∀ x ∈ e.source, ψ x = mpullback I J f φ x) :
-    MapsTo e (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ)
-      (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ) := fun x hx ↦ by
-  refine closure_mono ?_ ((e.continuousAt (hψ hx)).continuousWithinAt.mem_closure_image hx)
-  rintro _ ⟨z, hz, rfl⟩ hφz
-  have hzs := hψ (subset_tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ hz)
-  have hφz' : φ (f z) = 0 := by rw [hfe hzs]; exact hφz
-  exact hz ((hψφ z hzs).trans (mpullback_apply_eq_zero hφz'))
-
-omit [FiniteDimensional ℝ E] [IsManifold I 1 M] [IsManifold J 1 N] in
-/-- Let `e` be an open partial homeomorphism agreeing with a map `f` on its source, and let `φ` be
-a form with compact support in the target of `e`. A form `ψ` supported in the source of `e` that
-agrees there with `f^*φ` has compact support: a closed subset of the image of the support of `φ`
-under the inverse of `e`. -/
-theorem isCompact_tsupport_of_eq_mpullback (hfe : EqOn f e e.source) {φ : RoughForm J N ℝ k}
-    {ψ : RoughForm I M ℝ k} (hφ : IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ))
-    (hφt : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ e.target)
-    (hψ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ ⊆ e.source)
-    (hψφ : ∀ x ∈ e.source, ψ x = mpullback I J f φ x) :
-    IsCompact (_root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ) :=
-  (hφ.image_of_continuousOn (e.continuousOn_symm.mono hφt)).of_isClosed_subset
-    (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) _)
-    fun x hx ↦ ⟨e x, e.mapsTo_tsupport_of_eq_mpullback hfe hψ hψφ hx, e.left_inv (hψ hx)⟩
 
 /-- Let `e` be an open partial homeomorphism agreeing with a map `f` on its source, where `f` is
 differentiable, and let `φ` be an integrable top form supported in the target of `e`. A form `ψ`
