@@ -86,11 +86,12 @@ private theorem simplyBlockedSpecialization_mem_range_of_commutationMap
     (hΦ : simplyBlockedSpecialization R (σ i) (G.commutationMap R C Z) ∈
       LinearMap.range ((G').simplyBlockedDifferential R (σ i))) :
     simplyBlockedSpecialization R i Z ∈ LinearMap.range (G.simplyBlockedDifferential R i) := by
-  obtain ⟨P, hP⟩ := (simplyBlockedSpecialization_eq_zero_iff R i).mp hZ
+  obtain ⟨P, hP⟩ := (exact_X_smul_simplyBlockedSpecialization R i _).mp hZ
   obtain ⟨w, hw⟩ := hΦ
   obtain ⟨W, rfl⟩ := simplyBlockedSpecialization_surjective R (σ i) w
   rw [← simplyBlockedSpecialization_unblockedDifferential, eq_comm, ← sub_eq_zero, ← map_sub] at hw
-  obtain ⟨Q, hQ⟩ := (simplyBlockedSpecialization_eq_zero_iff R (σ i)).mp hw
+  obtain ⟨Q, hQ⟩ : ∃ Q, (MvPolynomial.X (σ i) : MvPolynomial (Fin n) R) • Q = _ :=
+    (exact_X_smul_simplyBlockedSpecialization R (σ i) _).mp hw
   -- In `GC⁻(G)`, `∂ (H Z - Ψ W) = Z + V_i • (Ψ Q - H P)`, by the homotopy equation of `C`.
   have hΦZ : G.commutationMap R C Z = (G').unblockedDifferential R W +
       (MvPolynomial.X (σ i) : MvPolynomial (Fin n) R) • Q := by
@@ -117,7 +118,7 @@ private theorem simplyBlockedSpecialization_unblockedDifferential_commutationMap
     (hY : simplyBlockedSpecialization R (σ i) ((G').unblockedDifferential R Y) = 0) :
     simplyBlockedSpecialization R i
       (G.unblockedDifferential R ((G').commutationMap R C.reverse Y)) = 0 := by
-  obtain ⟨P, hP⟩ := (simplyBlockedSpecialization_eq_zero_iff R (σ i)).mp hY
+  obtain ⟨P, hP⟩ := (exact_X_smul_simplyBlockedSpecialization R (σ i) _).mp hY
   have hΨ := LinearMap.congr_fun (G.commutationMap_reverse_comp_unblockedDifferential R C) Y
   simp only [LinearMap.comp_apply] at hΨ
   rw [← hΨ, ← hP, commutationMap_reverse_X_smul]
@@ -132,7 +133,7 @@ private theorem simplyBlockedSpecialization_commutationMap_commutationMap_revers
         (G.commutationMap R C ((G').commutationMap R C.reverse Y)) -
       simplyBlockedSpecialization R (σ i) Y ∈
         LinearMap.range ((G').simplyBlockedDifferential R (σ i)) := by
-  obtain ⟨P, hP⟩ := (simplyBlockedSpecialization_eq_zero_iff R (σ i)).mp hY
+  obtain ⟨P, hP⟩ := (exact_X_smul_simplyBlockedSpecialization R (σ i) _).mp hY
   -- In `GC⁻(G')`, `Φ Ψ Y - Y = ∂' (H' Y) + V_{σ i} • H' P`, by the homotopy equation of the
   -- reverse commutation in characteristic two.
   have hH := G.unblockedDifferential_commutationHomotopy_reverse_add_eq C R Y
