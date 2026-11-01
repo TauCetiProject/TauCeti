@@ -49,14 +49,14 @@ In both cases the turning-point equations force `2 m (E - U_ℓ(r)) = c (r - r�
 * `TauCeti.absRadialMomentum`, `TauCeti.radialAction`, `TauCeti.radialPeriod`,
   `TauCeti.apsidalAngle`, with `TauCeti.absRadialMomentum_nonneg` and
   `TauCeti.absRadialMomentum_eq_zero_iff` (vanishing at the turning points).
-* `TauCeti.kepler_kappa_eq`, `TauCeti.kepler_sq_angularMomentum_eq` (Vieta's formulas for the
+* `TauCeti.kepler_kappa_eq`, `TauCeti.kepler_sq_eq_neg_two_mul_mul_mul` (Vieta's formulas for the
   Kepler turning points), `TauCeti.kepler_energy_neg`, `TauCeti.kepler_kappa_pos` and
   `TauCeti.kepler_sqrt_mul_sqrt_eq_abs`.
 * `TauCeti.kepler_radialAction`, `TauCeti.kepler_energy_eq_neg_div_sq_radialAction_add_abs`,
   `TauCeti.kepler_radialPeriod`, `TauCeti.kepler_apsidalAngle`.
-* `TauCeti.isotropicOscillator_energy_eq`, `TauCeti.isotropicOscillator_sq_angularMomentum_eq`
+* `TauCeti.isotropicOscillator_energy_eq`, `TauCeti.isotropicOscillator_sq_eq_sq_mul`
   (Vieta's formulas for the oscillator turning points) and
-  `TauCeti.isotropicOscillator_abs_angularMomentum_eq`.
+  `TauCeti.isotropicOscillator_abs_eq_mul`.
 * `TauCeti.isotropicOscillator_radialAction`, `TauCeti.isotropicOscillator_radialPeriod`,
   `TauCeti.isotropicOscillator_apsidalAngle`.
 
@@ -154,7 +154,7 @@ theorem kepler_kappa_eq (hm : m ≠ 0) (h₁ : r₁ ≠ 0) (h₂ : r₂ ≠ 0) (
 
 /-- **Vieta's formula for the Kepler product of turning points.** If `r₁ ≠ r₂` are nonzero
 turning points of a Kepler orbit with `m ≠ 0`, then `ℓ² = -2 m E r₁ r₂`. -/
-theorem kepler_sq_angularMomentum_eq (hm : m ≠ 0) (h₁ : r₁ ≠ 0) (h₂ : r₂ ≠ 0) (hne : r₁ ≠ r₂)
+theorem kepler_sq_eq_neg_two_mul_mul_mul (hm : m ≠ 0) (h₁ : r₁ ≠ 0) (h₂ : r₂ ≠ 0) (hne : r₁ ≠ r₂)
     (hr₁ : 2 * m * (E + κ / r₁) = ℓ ^ 2 / r₁ ^ 2)
     (hr₂ : 2 * m * (E + κ / r₂) = ℓ ^ 2 / r₂ ^ 2) :
     ℓ ^ 2 = -2 * m * E * (r₁ * r₂) := by
@@ -168,7 +168,7 @@ theorem kepler_energy_neg (hm : 0 < m) (hℓ : ℓ ≠ 0) (h₁ : 0 < r₁) (hlt
     (hr₂ : 2 * m * (E + κ / r₂) = ℓ ^ 2 / r₂ ^ 2) :
     E < 0 := by
   have h₂ : 0 < r₂ := h₁.trans hlt
-  have hℓ2 := kepler_sq_angularMomentum_eq hm.ne' h₁.ne' h₂.ne' hlt.ne hr₁ hr₂
+  have hℓ2 := kepler_sq_eq_neg_two_mul_mul_mul hm.ne' h₁.ne' h₂.ne' hlt.ne hr₁ hr₂
   by_contra hE
   have : 0 < ℓ ^ 2 := by positivity
   nlinarith [mul_nonneg (not_lt.1 hE) (mul_pos hm (mul_pos h₁ h₂)).le]
@@ -190,7 +190,7 @@ theorem kepler_sqrt_mul_sqrt_eq_abs (hm : m ≠ 0) (h₁ : 0 < r₁) (hlt : r₁
     (hr₂ : 2 * m * (E + κ / r₂) = ℓ ^ 2 / r₂ ^ 2) :
     √(-2 * m * E) * √(r₁ * r₂) = |ℓ| := by
   rw [← sqrt_mul' _ (mul_pos h₁ (h₁.trans hlt)).le, ← sqrt_sq_eq_abs,
-    kepler_sq_angularMomentum_eq hm h₁.ne' (h₁.trans hlt).ne' hlt.ne hr₁ hr₂]
+    kepler_sq_eq_neg_two_mul_mul_mul hm h₁.ne' (h₁.trans hlt).ne' hlt.ne hr₁ hr₂]
 
 /-- The Kepler turning-point facts used by the quadratures below, bundled together. -/
 private theorem kepler_vieta (hm : 0 < m) (hℓ : ℓ ≠ 0) (h₁ : 0 < r₁) (hlt : r₁ < r₂)
@@ -200,7 +200,7 @@ private theorem kepler_vieta (hm : 0 < m) (hℓ : ℓ ≠ 0) (h₁ : 0 < r₁) (
       √(-2 * m * E) * √(r₁ * r₂) = |ℓ| :=
   ⟨kepler_energy_neg hm hℓ h₁ hlt hr₁ hr₂, kepler_kappa_pos hm hℓ h₁ hlt hr₁ hr₂,
     kepler_kappa_eq hm.ne' h₁.ne' (h₁.trans hlt).ne' hlt.ne hr₁ hr₂,
-    kepler_sq_angularMomentum_eq hm.ne' h₁.ne' (h₁.trans hlt).ne' hlt.ne hr₁ hr₂,
+    kepler_sq_eq_neg_two_mul_mul_mul hm.ne' h₁.ne' (h₁.trans hlt).ne' hlt.ne hr₁ hr₂,
     kepler_sqrt_mul_sqrt_eq_abs hm.ne' h₁ hlt hr₁ hr₂⟩
 
 /-- Between the turning points, the Kepler absolute radial momentum is
@@ -333,7 +333,7 @@ theorem isotropicOscillator_energy_eq (hm : m ≠ 0) (h₁ : r₁ ≠ 0) (h₂ :
 /-- **Vieta's formula for the isotropic oscillator, product of squared turning points.** If
 `r₁, r₂` are nonzero turning points of an isotropic oscillator with `m ≠ 0` and `r₁² ≠ r₂²`,
 then `ℓ² = (m ν r₁ r₂)²`. -/
-theorem isotropicOscillator_sq_angularMomentum_eq (hm : m ≠ 0) (h₁ : r₁ ≠ 0) (h₂ : r₂ ≠ 0)
+theorem isotropicOscillator_sq_eq_sq_mul (hm : m ≠ 0) (h₁ : r₁ ≠ 0) (h₂ : r₂ ≠ 0)
     (hne : r₁ ^ 2 ≠ r₂ ^ 2) (hr₁ : 2 * m * (E - m * ν ^ 2 * r₁ ^ 2 / 2) = ℓ ^ 2 / r₁ ^ 2)
     (hr₂ : 2 * m * (E - m * ν ^ 2 * r₂ ^ 2 / 2) = ℓ ^ 2 / r₂ ^ 2) :
     ℓ ^ 2 = (m * ν * (r₁ * r₂)) ^ 2 := by
@@ -342,12 +342,12 @@ theorem isotropicOscillator_sq_angularMomentum_eq (hm : m ≠ 0) (h₁ : r₁ �
 
 /-- If `0 < r₁ < r₂` are turning points of an isotropic oscillator with `m > 0` and `ν ≥ 0`,
 then `|ℓ| = m ν r₁ r₂`. -/
-theorem isotropicOscillator_abs_angularMomentum_eq (hm : 0 < m) (hν : 0 ≤ ν) (h₁ : 0 < r₁)
+theorem isotropicOscillator_abs_eq_mul (hm : 0 < m) (hν : 0 ≤ ν) (h₁ : 0 < r₁)
     (hlt : r₁ < r₂) (hr₁ : 2 * m * (E - m * ν ^ 2 * r₁ ^ 2 / 2) = ℓ ^ 2 / r₁ ^ 2)
     (hr₂ : 2 * m * (E - m * ν ^ 2 * r₂ ^ 2 / 2) = ℓ ^ 2 / r₂ ^ 2) :
     |ℓ| = m * ν * (r₁ * r₂) := by
   have h₂ : 0 < r₂ := h₁.trans hlt
-  rw [← sqrt_sq_eq_abs, isotropicOscillator_sq_angularMomentum_eq hm.ne' h₁.ne' h₂.ne'
+  rw [← sqrt_sq_eq_abs, isotropicOscillator_sq_eq_sq_mul hm.ne' h₁.ne' h₂.ne'
     (pow_lt_pow_left₀ hlt h₁.le two_ne_zero).ne hr₁ hr₂, sqrt_sq (by positivity)]
 
 /-- The isotropic-oscillator turning-point facts used by the quadratures below, bundled
@@ -359,8 +359,8 @@ private theorem isotropicOscillator_vieta (hm : 0 < m) (hν : 0 < ν) (h₁ : 0 
       |ℓ| = m * ν * (r₁ * r₂) :=
   have hne : r₁ ^ 2 ≠ r₂ ^ 2 := (pow_lt_pow_left₀ hlt h₁.le two_ne_zero).ne
   ⟨isotropicOscillator_energy_eq hm.ne' h₁.ne' (h₁.trans hlt).ne' hne hr₁ hr₂,
-    isotropicOscillator_sq_angularMomentum_eq hm.ne' h₁.ne' (h₁.trans hlt).ne' hne hr₁ hr₂,
-    isotropicOscillator_abs_angularMomentum_eq hm hν.le h₁ hlt hr₁ hr₂⟩
+    isotropicOscillator_sq_eq_sq_mul hm.ne' h₁.ne' (h₁.trans hlt).ne' hne hr₁ hr₂,
+    isotropicOscillator_abs_eq_mul hm hν.le h₁ hlt hr₁ hr₂⟩
 
 /-- Between the turning points, the absolute radial momentum of the isotropic oscillator is
 `m ν √((r² - r₁²) (r₂² - r²)) / r`. -/

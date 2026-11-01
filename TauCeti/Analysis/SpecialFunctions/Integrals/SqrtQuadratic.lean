@@ -24,8 +24,10 @@ forms in terms of `π`, `a + b` and the geometric mean `√(a b)`:
 These are the quadratures of classical mechanics in one degree of freedom between two simple
 turning points: after factoring the radial kinetic energy of a Kepler orbit or an isotropic
 oscillator as such a quadratic, they compute the radial action, the radial period and the angle
-swept between the turning points. The first three integrands are unbounded at the endpoints but
-nonnegative, so they are integrable because they are derivatives of continuous functions.
+swept between the turning points. The integrands `1 / √((x - a) (b - x))`,
+`(x - a) / √((x - a) (b - x))` and, for `0 < a`, `1 / (x √((x - a) (b - x)))` are in general
+unbounded at the endpoints, but they are nonnegative derivatives of continuous functions, hence
+integrable; `x / √((x - a) (b - x))` is handled through the split `x = (x - a) + a`.
 
 The antiderivatives are `arcsin ((2 x - a - b) / (b - a))` for `1 / √((x - a) (b - x))` and
 `arcsin (((a + b) x - 2 a b) / ((b - a) x)) / √(a b)` for `1 / (x √((x - a) (b - x)))`.
@@ -39,7 +41,7 @@ The antiderivatives are `arcsin ((2 x - a - b) / (b - a))` for `1 / √((x - a) 
 * `TauCeti.intervalIntegrable_one_div_sqrt_mul_sub_mul_sub`,
   `TauCeti.intervalIntegrable_div_sqrt_mul_sub_mul_sub` and
   `TauCeti.intervalIntegrable_one_div_mul_sqrt_mul_sub_mul_sub`: the integrability of the
-  integrands that are unbounded at the endpoints.
+  integrands that are in general unbounded at the endpoints.
 * `TauCeti.hasDerivAt_arcsin_two_mul_sub_sub_div_sub`,
   `TauCeti.hasDerivAt_arcsin_add_mul_sub_div_sub_mul` and
   `TauCeti.hasDerivAt_sqrt_mul_sub_mul_sub`: the derivatives of the antiderivatives on `(a, b)`.
@@ -227,7 +229,7 @@ private theorem intervalIntegrable_one_div_mul_sqrt_mul_sub_mul_sub_of_le (ha : 
 private theorem mul_sub_mul_sub_comm (x : ℝ) : (x - b) * (a - x) = (x - a) * (b - x) := by ring
 
 /-- `x ↦ 1 / √((x - a) (b - x))` is interval integrable between `a` and `b`, although it is
-unbounded at both endpoints. -/
+in general unbounded at the endpoints. -/
 theorem intervalIntegrable_one_div_sqrt_mul_sub_mul_sub :
     IntervalIntegrable (fun x => 1 / √((x - a) * (b - x))) volume a b := by
   rcases le_total a b with hab | hba
@@ -236,7 +238,7 @@ theorem intervalIntegrable_one_div_sqrt_mul_sub_mul_sub :
       (intervalIntegrable_one_div_sqrt_mul_sub_mul_sub_of_le hba).symm
 
 /-- `x ↦ x / √((x - a) (b - x))` is interval integrable between `a` and `b`, although it is
-unbounded at both endpoints. -/
+in general unbounded at the endpoints. -/
 theorem intervalIntegrable_div_sqrt_mul_sub_mul_sub :
     IntervalIntegrable (fun x => x / √((x - a) * (b - x))) volume a b := by
   rcases le_total a b with hab | hba
@@ -245,7 +247,7 @@ theorem intervalIntegrable_div_sqrt_mul_sub_mul_sub :
       (intervalIntegrable_div_sqrt_mul_sub_mul_sub_of_le hba).symm
 
 /-- `x ↦ 1 / (x √((x - a) (b - x)))` is interval integrable between positive `a` and `b`,
-although it is unbounded at both endpoints. -/
+although it is in general unbounded at the endpoints. -/
 theorem intervalIntegrable_one_div_mul_sqrt_mul_sub_mul_sub (ha : 0 < a) (hb : 0 < b) :
     IntervalIntegrable (fun x => 1 / (x * √((x - a) * (b - x)))) volume a b := by
   rcases le_total a b with hab | hba
