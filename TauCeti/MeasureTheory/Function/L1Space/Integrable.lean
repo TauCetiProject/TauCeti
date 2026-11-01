@@ -10,12 +10,13 @@ import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import Mathlib.Tactic.NormNum
 
 /-!
-# Integrability under signed real coefficients
+# Integrability lemmas
 
 Taking the absolute value of an almost everywhere measurable real coefficient does not change
 integrability of its scalar product with a real normed-space-valued function, even when that
 function is not measurable by itself. The equivalence permits signed Jacobians in oriented
-change of variables for arbitrary rough-form coefficients.
+change of variables for arbitrary rough-form coefficients. Finite nonempty pointwise suprema
+of integrable functions are also integrable.
 -/
 
 public section
@@ -71,3 +72,13 @@ theorem isFiniteMeasure_of_integrable_of_one_le {X F : Type*} [MeasurableSpace X
   exact (integrable_const_iff_isFiniteMeasure one_ne_zero).mp hconst
 
 end MeasureTheory
+
+/-- A finite nonempty pointwise supremum of integrable functions is integrable. -/
+theorem Finset.integrable_sup' {ι X E : Type*} [MeasurableSpace X]
+    [NormedAddCommGroup E] [Lattice E] [HasSolidNorm E] [IsOrderedAddMonoid E]
+    {μ : MeasureTheory.Measure X} {s : Finset ι} (hs : s.Nonempty) {f : ι → X → E}
+    (hf : ∀ i ∈ s, MeasureTheory.Integrable (f i) μ) :
+    MeasureTheory.Integrable (fun x ↦ s.sup' hs (fun i ↦ f i x)) μ := by
+  have h := Finset.sup'_induction (p := fun g : X → E ↦ MeasureTheory.Integrable g μ)
+    hs f (fun _ hg _ hh ↦ hg.sup hh) hf
+  exact h.congr (Filter.Eventually.of_forall fun x ↦ Finset.sup'_apply hs f x)
