@@ -139,9 +139,10 @@ theorem jointEval_apply (Ψ : Set (G →* Oˣ)) (x : MonoidAlgebra O G) (ψ : Ψ
   (rfl)
 
 /-- The *character group ring* `R_Ψ` of a set `Ψ` of characters of `G`: the image of the joint
-evaluation `O[G] → ∏_{ψ ∈ Ψ} O`, an `O`-subalgebra of the product. Equivalently it is the
-quotient of `O[G]` by the intersection of the kernels of the evaluations at the members of `Ψ`
-(`Set.charGroupRing.ker_proj`). It is in general a proper suborder of the product. -/
+evaluation `O[G] → ∏_{ψ ∈ Ψ} O`, an `O`-subalgebra of the product. When `O` is a commutative
+ring, it is equivalently the quotient of `O[G]` by the intersection of the kernels of the
+evaluations at the members of `Ψ` (`Set.charGroupRing.ker_proj`). It is in general a proper
+suborder of the product. -/
 noncomputable def charGroupRing (Ψ : Set (G →* Oˣ)) : Subalgebra O (Ψ → O) :=
   (jointEval Ψ).range
 
@@ -193,7 +194,7 @@ theorem proj_eq_zero_iff {x : MonoidAlgebra O G} :
 
 variable (Ψ) in
 /-- The kernel of `α_Ψ : O[G] → R_Ψ` is the intersection of the kernels of the evaluations at the
-members of `Ψ`, so `R_Ψ ≅ O[G] / ⋂_{ψ ∈ Ψ} ker ψ`. -/
+members of `Ψ`. When `O` is a commutative ring, this gives `R_Ψ ≅ O[G] / ⋂_{ψ ∈ Ψ} ker ψ`. -/
 theorem ker_proj : RingHom.ker (proj Ψ) = ⨅ ψ ∈ Ψ, RingHom.ker ψ.charEval := by
   ext x
   simp [RingHom.mem_ker, proj_eq_zero_iff]
