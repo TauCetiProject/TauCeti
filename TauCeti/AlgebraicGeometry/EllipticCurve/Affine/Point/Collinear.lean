@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Point
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.AddPolynomial
 
 /-!
 # Three points on a line
@@ -44,24 +45,6 @@ namespace WeierstrassCurve.Affine
 open Polynomial
 
 variable {F : Type*} [Field F] {W : Affine F} {x₁ x₂ x₃ y₁ y₂ y₃ ℓ ν : F}
-
-/-- Substituting the line `y = ℓ x + ν` through `(x₁, y₁)` into the Weierstrass polynomial gives
-the addition polynomial of `(x₁, y₁)` with slope `ℓ`. -/
-private theorem addPolynomial_eq_eval (hy₁ : y₁ = ℓ * x₁ + ν) :
-    W.addPolynomial x₁ y₁ ℓ = W.polynomial.eval (C ℓ * X + C ν) := by
-  rw [addPolynomial, linePolynomial, hy₁, C_add, C_mul]
-  congr 1
-  ring
-
-/-- Comparing the coefficients of `X²` and `X` in a factorisation of the addition polynomial. -/
-private theorem coeffs_of_addPolynomial_eq
-    (h : W.addPolynomial x₁ y₁ ℓ = -((X - C x₁) * (X - C x₂) * (X - C x₃))) :
-    ℓ ^ 2 + W.a₁ * ℓ - W.a₂ = x₁ + x₂ + x₃ ∧
-      2 * x₁ * ℓ ^ 2 + (W.a₁ * x₁ - 2 * y₁ - W.a₃) * ℓ + (-W.a₁ * y₁ + W.a₄) =
-        x₁ * x₂ + x₁ * x₃ + x₂ * x₃ := by
-  rw [addPolynomial_eq, Cubic.prod_X_sub_C_eq, neg_inj] at h
-  have h' := (Cubic.toPoly_injective _ _).1 h
-  exact ⟨by linear_combination -congrArg Cubic.b h', congrArg Cubic.c h'⟩
 
 namespace Point
 
@@ -142,19 +125,16 @@ theorem some_add_some_add_some_eq_zero_of_X_ne (h₁ : W.Nonsingular x₁ y₁)
   have hℓ : W.slope x₁ x₂ y₁ y₂ = ℓ := by
     rw [slope_of_X_ne hx₁₂, div_eq_iff (sub_ne_zero.2 hx₁₂), hy₁, hy₂]
     ring
-  -- The cubic `W(X, ℓ X + ν)` vanishes at the three distinct `xᵢ`, so their sum is its
-  -- `X²`-coefficient.
+  -- The cubic `W(X, ℓ X + ν)` vanishes at `x₃`, so `x₃` is its third root `addX x₁ x₂ ℓ`.
   have hsum : x₃ = W.addX x₁ x₂ ℓ := by
-    have e₁ := (equation_iff x₁ y₁).1 h₁.1
-    have e₂ := (equation_iff x₂ y₂).1 h₂.1
+    have h := congrArg (eval x₃) (W.addPolynomial_slope h₁.1 h₂.1 hxy)
+    rw [hℓ, addPolynomial_eq_eval hy₁, polynomial] at h
+    simp only [eval_neg, eval_mul, eval_sub, eval_add, eval_pow, eval_C, eval_X] at h
     have e₃ := (equation_iff x₃ y₃).1 h₃.1
-    rw [hy₁] at e₁
-    rw [hy₂] at e₂
     rw [hy₃] at e₃
-    have h : (x₁ - x₂) * (x₁ - x₃) * (x₂ - x₃) * (x₃ - W.addX x₁ x₂ ℓ) = 0 := by
-      rw [addX]
-      linear_combination (x₁ - x₃) * e₂ - (x₂ - x₃) * e₁ - (x₁ - x₂) * e₃
-    simpa [sub_eq_zero, hx₁₂, hx₁₃, hx₂₃] using h
+    have h' : (x₃ - x₁) * (x₃ - x₂) * (x₃ - W.addX x₁ x₂ ℓ) = 0 := by
+      linear_combination h - e₃
+    simpa [sub_eq_zero, hx₁₃.symm, hx₂₃.symm] using h'
   rw [← addPolynomial_eq_eval hy₁, ← hℓ, addPolynomial_slope h₁.1 h₂.1 hxy, hℓ, ← hsum]
 
 end Point
