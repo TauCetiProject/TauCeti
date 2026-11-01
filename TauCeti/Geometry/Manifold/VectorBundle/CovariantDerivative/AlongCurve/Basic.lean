@@ -294,6 +294,9 @@ theorem alongCurve_const_of_hasDerivAt (x : M) {W : 𝕜 → TangentSpace I x} {
     alongCurve cov (fun _ ↦ x) W t = W' := by
   rw [← alongCurveWithin_univ]
   refine alongCurveWithin_const_of_hasDerivWithinAt cov x ?_ uniqueDiffWithinAt_univ
+  -- `HasDerivAt.hasDerivWithinAt` needs a normed target, which the fibre lacks. Both predicates
+  -- are `HasDerivAtFilter` at a filter, so rewriting `𝓝[univ] t` to `𝓝 t` turns the goal into
+  -- `HasDerivAtFilter W W' t (𝓝 t)`, the definition of `HasDerivAt W W' t`.
   rwa [HasDerivWithinAt, nhdsWithin_univ]
 
 /-! ### Locality and reparametrization -/
