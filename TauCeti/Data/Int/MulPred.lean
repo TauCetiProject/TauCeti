@@ -33,6 +33,7 @@ the binomial coefficient `n.choose 2`.
 * `Int.zero_le_mul_sub_one` : `0 ≤ t * (t - 1)`.
 * `Int.zero_le_mul_sub_units` : `0 ≤ s * (s - δ)` for a unit `δ`.
 * `Int.two_dvd_sq_sub_self` : `2 ∣ c ^ 2 - c`.
+* `Int.two_mul_mul_sub_one_ediv_two` : `n * (n - 1) / 2` is an exact quotient.
 * `Int.add_mul_add_sub_one_ediv_two` : the addition law for `n * (n - 1) / 2`.
 * `Int.one_sub_mul_one_sub_sub_one_ediv_two` : the reflection `n ↦ 1 - n` fixes `n * (n - 1) / 2`.
 * `Int.natCast_choose_two` : `n.choose 2 = n * (n - 1) / 2` for a natural number `n`.
@@ -65,12 +66,15 @@ theorem two_dvd_sq_sub_self (c : ℤ) : (2 : ℤ) ∣ c ^ 2 - c := by
   rw [sq, ← mul_sub_one]
   exact (even_mul_pred_self c).two_dvd
 
+/-- The halved product `m (m - 1) / 2` of consecutive integers is an exact quotient. -/
+theorem two_mul_mul_sub_one_ediv_two (m : ℤ) : 2 * (m * (m - 1) / 2) = m * (m - 1) :=
+  two_mul_ediv_two_of_even (even_mul_pred_self m)
+
 /-- The addition law for the halved product of consecutive integers:
 `T(n + k) = T(n) + T(k) + n k` for `T(m) = m (m - 1) / 2`. -/
 theorem add_mul_add_sub_one_ediv_two (n k : ℤ) :
     (n + k) * (n + k - 1) / 2 = n * (n - 1) / 2 + k * (k - 1) / 2 + n * k := by
-  have h (m : ℤ) : 2 * (m * (m - 1) / 2) = m * (m - 1) :=
-    two_mul_ediv_two_of_even (even_mul_pred_self m)
+  have h := two_mul_mul_sub_one_ediv_two
   refine mul_left_cancel₀ (two_ne_zero (α := ℤ)) ?_
   rw [mul_add, mul_add, h, h, h]
   ring
@@ -85,7 +89,7 @@ theorem one_sub_mul_one_sub_sub_one_ediv_two (n : ℤ) :
 /-- On natural numbers the halved product `n (n - 1) / 2` is the binomial coefficient
 `n.choose 2`. -/
 theorem natCast_choose_two (n : ℕ) : ((n.choose 2 : ℕ) : ℤ) = n * ((n : ℤ) - 1) / 2 := by
-  have h := two_mul_ediv_two_of_even (even_mul_pred_self (n : ℤ))
+  have h := two_mul_mul_sub_one_ediv_two n
   have h' : 2 * n.choose 2 = n * (n - 1) := by
     rw [Nat.choose_two_right]
     exact Nat.mul_div_cancel' (Nat.even_mul_pred_self n).two_dvd

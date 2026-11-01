@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecificLimits.Normed
-public import Mathlib.Analysis.Normed.Ring.Ultra
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.BigOperators.Fin
@@ -25,10 +24,9 @@ Over a normed field, the evaluations below specialize Mathlib's binomial geometr
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
 norm. Finite products of geometric series converge unconditionally over all exponent vectors,
 giving the product Cauchy kernel expansion. Over a complete normed field, the Lambert series
-`∑_{n ≥ 1} qⁿw / (1 - qⁿw)²` is the power series `∑_{k ≥ 1} k qᵏ wᵏ / (1 - qᵏ)` in `w`; more
-generally `∑_{n ≥ 1} f(qⁿw) = ∑_{k ≥ 1} c(k - 1) qᵏ wᵏ / (1 - qᵏ)` for every power series
-`f(z) = ∑_{k ≥ 0} c(k) z^(k + 1)` whose coefficients have norm at most one. Over an ultrametric
-field this applies to `z² / (1 - z)³` and `z / (1 - z)³`, whose coefficients are binomial.
+`∑_{n ≥ 1} f(qⁿw)` is the power series `∑_{k ≥ 1} c(k - 1) qᵏ wᵏ / (1 - qᵏ)` in `w` for every
+power series `f(z) = ∑_{k ≥ 0} c(k) z^(k + 1)` whose coefficients grow slowly enough. This applies
+to `z / (1 - z)²`, `z² / (1 - z)³` and `z / (1 - z)³`, whose coefficients are binomial.
 -/
 
 public section
@@ -192,76 +190,28 @@ theorem hasSum_prod_geometric_div {𝕜 ι : Type*} [NormedField 𝕜] [Fintype 
     simp only [← Finset.prod_mul_distrib, div_eq_mul_inv]
   · simp only [← Finset.prod_mul_distrib, ← div_eq_mul_inv, heq]
 
-/-- The Lambert series `∑_{n ≥ 1} qⁿw / (1 - qⁿw)² = ∑_{k ≥ 1} k qᵏ wᵏ / (1 - qᵏ)`, for
-`‖q w‖ < 1`. -/
-theorem hasSum_lambert [CompleteSpace K] {q w : K} (hq : ‖q‖ < 1)
-    (hw : ‖q * w‖ < 1) :
-    HasSum (fun k : ℕ ↦ ((k + 1 : ℕ) : K) * q ^ (k + 1) / (1 - q ^ (k + 1)) * w ^ (k + 1))
-      (∑' n : ℕ, q ^ (n + 1) * w / (1 - q ^ (n + 1) * w) ^ 2) := by
-  set F : ℕ × ℕ → K := fun p ↦ ((p.2 + 1 : ℕ) : K) * (q ^ (p.1 + 1) * w) ^ (p.2 + 1) with hF
-  have hz (n : ℕ) : ‖q ^ (n + 1) * w‖ = ‖q‖ ^ n * ‖q * w‖ := by
-    rw [pow_succ, mul_assoc, norm_mul, norm_pow]
-  have hqn (n : ℕ) : ‖q‖ ^ n ≤ 1 := pow_le_one₀ (norm_nonneg _) hq.le
-  have hz' (n : ℕ) : ‖q ^ (n + 1) * w‖ < 1 := by
-    rw [hz]
-    calc ‖q‖ ^ n * ‖q * w‖ ≤ 1 * ‖q * w‖ := by gcongr; exact hqn n
-      _ < 1 := by rwa [one_mul]
-  have hbound (p : ℕ × ℕ) :
-      ‖F p‖ ≤ ‖q‖ ^ p.1 * (((p.2 + 1 : ℕ) : ℝ) * ‖q * w‖ ^ (p.2 + 1)) := by
-    rw [hF, norm_mul, norm_pow, hz, mul_pow, mul_left_comm]
-    gcongr
-    · exact pow_le_of_le_one (by positivity) (hqn p.1) (Nat.succ_ne_zero _)
-    · simpa using Nat.norm_cast_le (α := K) (p.2 + 1)
-  have hs : Summable F := by
-    refine Summable.of_norm_bounded ?_ hbound
-    exact (summable_geometric_of_lt_one (norm_nonneg _) hq).mul_of_nonneg
-      ((summable_nat_add_iff 1).mpr
-        (hasSum_coe_mul_geometric_of_norm_lt_one (by rwa [norm_norm])).summable)
-      (fun _ ↦ by positivity) (fun _ ↦ by positivity)
-  have hrow (n : ℕ) :
-      HasSum (fun k ↦ F (n, k)) (q ^ (n + 1) * w / (1 - q ^ (n + 1) * w) ^ 2) := by
-    have h := (hs.prod_factor n).hasSum
-    rwa [show ∑' k, F (n, k) = _ from tsum_natCast_succ_mul_pow_succ _ (hz' n)] at h
-  have hcol (k : ℕ) : HasSum (fun n ↦ F (n, k))
-      (((k + 1 : ℕ) : K) * q ^ (k + 1) / (1 - q ^ (k + 1)) * w ^ (k + 1)) := by
-    have hξ : ‖q ^ (k + 1)‖ < 1 := by
-      rw [norm_pow]
-      exact pow_lt_one₀ (norm_nonneg _) hq (Nat.succ_ne_zero _)
-    convert (hasSum_geometric_of_norm_lt_one hξ).mul_left
-      (((k + 1 : ℕ) : K) * q ^ (k + 1) * w ^ (k + 1)) using 1
-    · funext n
-      simp only [hF]
-      ring
-    · rw [div_eq_mul_inv]
-      ring
-  have h₁ := hs.hasSum.prod_fiberwise hrow
-  have h₂ := ((Equiv.prodComm ℕ ℕ).hasSum_iff.mpr hs.hasSum).prod_fiberwise fun k ↦ hcol k
-  rwa [← h₁.tsum_eq] at h₂
-
-/-- **Lambert series with bounded coefficients.** If `f(z) = ∑_{k ≥ 0} c(k) z^(k + 1)` on the
-open unit disc with `‖c(k)‖ ≤ 1`, then `∑_{n ≥ 1} f(qⁿw) = ∑_{k ≥ 1} c(k - 1) qᵏ wᵏ / (1 - qᵏ)`
+/-- **Lambert series.** If `f(z) = ∑_{k ≥ 0} c(k) z^(k + 1)` on the open unit disc and
+`∑ₖ ‖c(k)‖ ‖q w‖ᵏ` converges, then `∑_{n ≥ 1} f(qⁿw) = ∑_{k ≥ 1} c(k - 1) qᵏ wᵏ / (1 - qᵏ)`
 for `‖q‖ < 1` and `‖q w‖ < 1`. -/
-theorem hasSum_lambert_of_norm_le_one [CompleteSpace K] {c : ℕ → K} {f : K → K}
-    (hc : ∀ k, ‖c k‖ ≤ 1) (hf : ∀ z : K, ‖z‖ < 1 → HasSum (fun k ↦ c k * z ^ (k + 1)) (f z))
-    {q w : K} (hq : ‖q‖ < 1) (hw : ‖q * w‖ < 1) :
+theorem hasSum_lambert_of_summable [CompleteSpace K] {c : ℕ → K} {f : K → K} {q w : K}
+    (hc : Summable fun k ↦ ‖c k‖ * ‖q * w‖ ^ k)
+    (hf : ∀ z : K, ‖z‖ < 1 → HasSum (fun k ↦ c k * z ^ (k + 1)) (f z))
+    (hq : ‖q‖ < 1) (hw : ‖q * w‖ < 1) :
     HasSum (fun k : ℕ ↦ c k * q ^ (k + 1) / (1 - q ^ (k + 1)) * w ^ (k + 1))
       (∑' n : ℕ, f (q ^ (n + 1) * w)) := by
   set F : ℕ × ℕ → K := fun p ↦ c p.2 * (q ^ (p.1 + 1) * w) ^ (p.2 + 1) with hF
   have hz (n : ℕ) : ‖q ^ (n + 1) * w‖ = ‖q‖ ^ n * ‖q * w‖ := by
     rw [pow_succ, mul_assoc, norm_mul, norm_pow]
   have hqn (n : ℕ) : ‖q‖ ^ n ≤ 1 := pow_le_one₀ (norm_nonneg _) hq.le
-  have hbound (p : ℕ × ℕ) : ‖F p‖ ≤ ‖q‖ ^ p.1 * ‖q * w‖ ^ p.2 := by
-    rw [hF, norm_mul, norm_pow, hz, mul_pow, pow_succ ‖q * w‖]
-    calc ‖c p.2‖ * ((‖q‖ ^ p.1) ^ (p.2 + 1) * (‖q * w‖ ^ p.2 * ‖q * w‖))
-        ≤ 1 * (‖q‖ ^ p.1 * (‖q * w‖ ^ p.2 * 1)) := by
-          gcongr
-          · exact hc _
-          · exact pow_le_of_le_one (by positivity) (hqn p.1) (Nat.succ_ne_zero _)
-      _ = ‖q‖ ^ p.1 * ‖q * w‖ ^ p.2 := by ring
+  have hbound (p : ℕ × ℕ) : ‖F p‖ ≤ ‖q‖ ^ p.1 * (‖c p.2‖ * ‖q * w‖ ^ (p.2 + 1)) := by
+    rw [hF, norm_mul, norm_pow, hz, mul_pow, mul_left_comm]
+    gcongr
+    exact pow_le_of_le_one (by positivity) (hqn p.1) (Nat.succ_ne_zero _)
+  have hc' : Summable fun k ↦ ‖c k‖ * ‖q * w‖ ^ (k + 1) := by
+    simpa only [pow_succ, mul_assoc] using hc.mul_right ‖q * w‖
   have hs : Summable F :=
-    Summable.of_norm_bounded ((summable_geometric_of_lt_one (norm_nonneg _) hq).mul_of_nonneg
-      (summable_geometric_of_lt_one (norm_nonneg _) hw) (fun _ ↦ by positivity)
-      (fun _ ↦ by positivity)) hbound
+    Summable.of_norm_bounded ((summable_geometric_of_lt_one (norm_nonneg _) hq).mul_of_nonneg hc'
+      (fun _ ↦ by positivity) (fun _ ↦ by positivity)) hbound
   have hrow (n : ℕ) : HasSum (fun k ↦ F (n, k)) (f (q ^ (n + 1) * w)) := by
     have hlt : ‖q ^ (n + 1) * w‖ < 1 := by
       rw [hz]
@@ -284,17 +234,39 @@ theorem hasSum_lambert_of_norm_le_one [CompleteSpace K] {c : ℕ → K} {f : K �
   have h₂ := ((Equiv.prodComm ℕ ℕ).hasSum_iff.mpr hs.hasSum).prod_fiberwise fun k ↦ hcol k
   rwa [← h₁.tsum_eq] at h₂
 
-section Ultrametric
+/-- Natural-number coefficients bounded by `(k + m).choose m` have summable norms against the
+powers of `0 ≤ r < 1`. -/
+private theorem summable_norm_natCast_mul_pow {a : ℕ → ℕ} (m : ℕ)
+    (ha : ∀ k, a k ≤ (k + m).choose m) {r : ℝ} (hr₀ : 0 ≤ r) (hr : r < 1) :
+    Summable fun k ↦ ‖(a k : K)‖ * r ^ k := by
+  refine (summable_choose_mul_geometric_of_norm_lt_one m (r := r)
+    (by rwa [Real.norm_of_nonneg hr₀])).of_nonneg_of_le (fun _ ↦ by positivity) fun k ↦ ?_
+  have h : ‖(a k : K)‖ ≤ a k := by simpa using Nat.norm_cast_le (α := K) (a k)
+  gcongr
+  exact h.trans (by exact_mod_cast ha k)
 
-variable [CompleteSpace K] [IsUltrametricDist K]
+variable [CompleteSpace K]
 
-/-- The Lambert series `∑_{n ≥ 1} (qⁿw)² / (1 - qⁿw)³ = ∑_{k ≥ 1} (k choose 2) qᵏ wᵏ / (1 - qᵏ)`
-over a complete ultrametric normed field, for `‖q‖ < 1` and `‖q w‖ < 1`. -/
+/-- The Lambert series `∑_{n ≥ 1} qⁿw / (1 - qⁿw)² = ∑_{k ≥ 1} k qᵏ wᵏ / (1 - qᵏ)`, for
+`‖q w‖ < 1`. -/
+theorem hasSum_lambert {q w : K} (hq : ‖q‖ < 1) (hw : ‖q * w‖ < 1) :
+    HasSum (fun k : ℕ ↦ ((k + 1 : ℕ) : K) * q ^ (k + 1) / (1 - q ^ (k + 1)) * w ^ (k + 1))
+      (∑' n : ℕ, q ^ (n + 1) * w / (1 - q ^ (n + 1) * w) ^ 2) := by
+  refine hasSum_lambert_of_summable (c := fun k ↦ ((k + 1 : ℕ) : K))
+    (f := fun z ↦ z / (1 - z) ^ 2) (summable_norm_natCast_mul_pow (a := fun k ↦ k + 1) 1
+      (fun k ↦ by simp) (norm_nonneg _) hw) (fun z hz ↦ ?_) hq hw
+  simpa using (hasSum_nat_add_iff' (f := fun n : ℕ ↦ (n : K) * z ^ n) 1).mpr
+    (hasSum_coe_mul_geometric_of_norm_lt_one hz)
+
+/-- The Lambert series `∑_{n ≥ 1} (qⁿw)² / (1 - qⁿw)³ = ∑_{k ≥ 1} (k choose 2) qᵏ wᵏ / (1 - qᵏ)`,
+for `‖q‖ < 1` and `‖q w‖ < 1`. -/
 theorem hasSum_lambert_sq_div_pow_three {q w : K} (hq : ‖q‖ < 1) (hw : ‖q * w‖ < 1) :
     HasSum (fun k : ℕ ↦ ((k + 1).choose 2 : K) * q ^ (k + 1) / (1 - q ^ (k + 1)) * w ^ (k + 1))
       (∑' n : ℕ, (q ^ (n + 1) * w) ^ 2 / (1 - q ^ (n + 1) * w) ^ 3) := by
-  refine hasSum_lambert_of_norm_le_one (f := fun z ↦ z ^ 2 / (1 - z) ^ 3)
-    (fun k ↦ IsUltrametricDist.norm_natCast_le_one K _) (fun z hz ↦ ?_) hq hw
+  refine hasSum_lambert_of_summable (c := fun k ↦ ((k + 1).choose 2 : K))
+    (f := fun z ↦ z ^ 2 / (1 - z) ^ 3) (summable_norm_natCast_mul_pow
+      (a := fun k ↦ (k + 1).choose 2) 2 (fun k ↦ Nat.choose_le_choose 2 (by omega))
+      (norm_nonneg _) hw) (fun z hz ↦ ?_) hq hw
   rw [← hasSum_nat_add_iff' 1]
   convert (hasSum_choose_mul_geometric_of_norm_lt_one 2 hz).mul_left (z ^ 2) using 1
   · funext k
@@ -302,19 +274,18 @@ theorem hasSum_lambert_sq_div_pow_three {q w : K} (hq : ‖q‖ < 1) (hw : ‖q 
     ring
   · simp [div_eq_mul_inv]
 
-/-- The Lambert series `∑_{n ≥ 1} qⁿw / (1 - qⁿw)³ = ∑_{k ≥ 1} (k + 1 choose 2) qᵏ wᵏ / (1 - qᵏ)`
-over a complete ultrametric normed field, for `‖q‖ < 1` and `‖q w‖ < 1`. -/
+/-- The Lambert series `∑_{n ≥ 1} qⁿw / (1 - qⁿw)³ = ∑_{k ≥ 1} (k + 1 choose 2) qᵏ wᵏ / (1 - qᵏ)`,
+for `‖q‖ < 1` and `‖q w‖ < 1`. -/
 theorem hasSum_lambert_div_pow_three {q w : K} (hq : ‖q‖ < 1) (hw : ‖q * w‖ < 1) :
     HasSum (fun k : ℕ ↦ ((k + 2).choose 2 : K) * q ^ (k + 1) / (1 - q ^ (k + 1)) * w ^ (k + 1))
       (∑' n : ℕ, q ^ (n + 1) * w / (1 - q ^ (n + 1) * w) ^ 3) := by
-  refine hasSum_lambert_of_norm_le_one (f := fun z ↦ z / (1 - z) ^ 3)
-    (fun k ↦ IsUltrametricDist.norm_natCast_le_one K _) (fun z hz ↦ ?_) hq hw
+  refine hasSum_lambert_of_summable (c := fun k ↦ ((k + 2).choose 2 : K))
+    (f := fun z ↦ z / (1 - z) ^ 3) (summable_norm_natCast_mul_pow
+      (a := fun k ↦ (k + 2).choose 2) 2 (fun _ ↦ le_rfl) (norm_nonneg _) hw) (fun z hz ↦ ?_) hq hw
   convert (hasSum_choose_mul_geometric_of_norm_lt_one 2 hz).mul_left z using 1
   · funext k
     ring
   · simp [div_eq_mul_inv]
-
-end Ultrametric
 
 end TauCeti
 

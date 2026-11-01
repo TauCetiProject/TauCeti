@@ -72,10 +72,6 @@ variable {K : Type*} [NormedField K]
 
 section Theta
 
-private theorem hasSum_tateThetaCoeff_one [CompleteSpace K] (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
-    HasSum (tateThetaCoeff q) 0 := by
-  simpa [← tateThetaCoeff_def] using hasSum_tateTheta q 1 hq
-
 private theorem tateThetaCoeff_one_sub (q : Kˣ) (n : ℤ) :
     tateThetaCoeff q (1 - n) = -tateThetaCoeff q n := by
   rw [tateThetaCoeff_def, tateThetaCoeff_def, Int.one_sub_mul_one_sub_sub_one_ediv_two,

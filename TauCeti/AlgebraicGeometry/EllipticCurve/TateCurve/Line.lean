@@ -72,10 +72,6 @@ variable {K : Type*} [NormedField K]
 
 section Cube
 
-private theorem tateThetaCoeff_mem (q : Kˣ) :
-    tateThetaCoeff q ∈ tateThetaCoefficients q (-1) 1 := by
-  simpa using tateThetaCoeff_mul_zpow_mem q 1
-
 /-- The Laurent coefficients of `θ(a u) θ(b u) θ(c u)`. -/
 private noncomputable def tripleCoeff (q a b c : Kˣ) (n : ℤ) : K :=
   ∑' m, tateThetaCoeff q m * (a : K) ^ m * ∑' k, tateThetaCoeff q k * (b : K) ^ k *
@@ -102,13 +98,7 @@ private theorem tripleCoeff_one_eq (q : Kˣ) : tripleCoeff q 1 1 1 = fun n ↦
   funext n
   simp [tripleCoeff]
 
-variable [CompleteSpace K]
-
-private theorem hasSum_tateThetaCoeff (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
-    HasSum (fun n ↦ tateThetaCoeff q n * (u : K) ^ n) (tateTheta q u) := by
-  simpa using hasSum_tateThetaCoeff_mul_zpow q 1 u hq
-
-variable [IsUltrametricDist K]
+variable [CompleteSpace K] [IsUltrametricDist K]
 
 private theorem hasSum_tripleCoeff (q a b c u : Kˣ) (hq : ‖(q : K)‖ < 1) :
     HasSum (fun n ↦ tripleCoeff q a b c n * (u : K) ^ n)
@@ -131,8 +121,7 @@ private theorem tripleCoeff_one_moments (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     HasSum (tripleCoeff q 1 1 1) 0 ∧
       HasSum (fun n : ℤ ↦ (n : K) * tripleCoeff q 1 1 1 n) 0 ∧
       HasSum (fun n : ℤ ↦ ((n * (n - 1) / 2 : ℤ) : K) * tripleCoeff q 1 1 1 n) 0 := by
-  have h₀ : HasSum (tateThetaCoeff q) 0 := by
-    simpa [tateTheta_one] using hasSum_tateThetaCoeff q 1 hq
+  have h₀ := hasSum_tateThetaCoeff_one q hq
   have h₁ := (summable_mul_of_norm_le_one h₀.summable
     fun n : ℤ ↦ IsUltrametricDist.norm_intCast_le_one K n).hasSum
   have h₂ := (summable_mul_of_norm_le_one h₀.summable
@@ -176,8 +165,7 @@ of `u²`. -/
 private theorem nodeCoeff_third_difference (k : ℤ) :
     nodeCoeff k - 3 * nodeCoeff (k - 1) + 3 * nodeCoeff (k - 2) - nodeCoeff (k - 3) =
       if k = 2 then 1 else 0 := by
-  have h (m : ℤ) : 2 * (m * (m - 1) / 2) = m * (m - 1) :=
-    Int.two_mul_ediv_two_of_even (Int.even_mul_pred_self m)
+  have h := Int.two_mul_mul_sub_one_ediv_two
   rcases (by omega : k ≤ 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ 4 ≤ k) with hk | rfl | rfl | rfl | hk
   · simp only [nodeCoeff, show ¬ 0 < k by omega, show ¬ 0 < k - 1 by omega,
       show ¬ 0 < k - 2 by omega, show ¬ 0 < k - 3 by omega, show k ≠ 2 by omega, ↓reduceIte]
@@ -214,8 +202,11 @@ private theorem hasSum_yTildeCoeff (q u : Kˣ) (hq : ‖(q : K)‖ < 1) (hu₁ :
     (hu₂ : ‖(q : K) * (u : K)⁻¹‖ < 1) :
     HasSum (fun k ↦ yTildeCoeff q k * (u : K) ^ k)
       (tateUniformizationY q u - divisorSumAt 1 (q : K) - (u : K) ^ 2 / (1 - u) ^ 3) := by
+  -- The indices `k ≥ 1` give a Lambert series in `q u` and the indices `k ≤ 0` one in `q u⁻¹`;
+  -- `Y(u) - s₁ - u² / (1 - u)³` is the sum of the two by `tateUniformizationY_eq_tsum_nat`.
   have hne (k : ℕ) : 1 - (q : K) ^ (k + 1) ≠ 0 := by
     simpa only [zpow_natCast] using one_sub_zpow_ne_zero hq (k := ((k + 1 : ℕ) : ℤ)) (by omega)
+  -- For `k ≥ 1`, `yCoeff q k = (k choose 2) / (1 - qᵏ)` and `nodeCoeff k = k choose 2`.
   have hnat : HasSum (fun n : ℕ ↦ yTildeCoeff q n * (u : K) ^ (n : ℤ))
       (∑' n : ℕ, ((q : K) ^ (n + 1) * u) ^ 2 / (1 - (q : K) ^ (n + 1) * u) ^ 3) := by
     rw [← hasSum_nat_add_iff' 1]
@@ -231,6 +222,8 @@ private theorem hasSum_yTildeCoeff (q u : Kˣ) (hq : ‖(q : K)‖ < 1) (hu₁ :
       field_simp [hne k]
       ring
     · simp [yTildeCoeff, yCoeff, nodeCoeff]
+  -- For `k = -(n + 1)`, `nodeCoeff k = 0` and `yCoeff q k = -(n + 2 choose 2) qᵐ / (1 - qᵐ)`
+  -- with `m = n + 1`.
   have hneg' : HasSum (fun n : ℕ ↦ yTildeCoeff q (-(n + 1)) * (u : K) ^ (-((n : ℤ) + 1)))
       (∑' n : ℕ, -((q : K) ^ (n + 1) * (u : K)⁻¹) /
         (1 - (q : K) ^ (n + 1) * (u : K)⁻¹) ^ 3) := by
@@ -253,6 +246,7 @@ private theorem hasSum_yTildeCoeff (q u : Kˣ) (hq : ‖(q : K)‖ < 1) (hu₁ :
     have h₂ : 1 - x⁻¹ = -(1 - x) / x := by field_simp; ring
     rw [h₂]
     field_simp
+  -- Glue the two halves of the Laurent series.
   have h := HasSum.of_nat_of_neg_add_one (f := fun k : ℤ ↦ yTildeCoeff q k * (u : K) ^ k)
     hnat hneg'
   rw [tateUniformizationY_eq_tsum_nat q hq u]
@@ -306,8 +300,7 @@ private theorem hasSum_ediv_two_mul_zpow_neg_mul (q : Kˣ) (hq : ‖(q : K)‖ <
   -- `T(n + 3 - j) = T(n + 3) + T(j) + j - (n + 3) j` for `T(m) = m (m - 1) / 2`.
   have hT : (n + 3 - j) * (n + 3 - j - 1) / 2 =
       (n + 3) * (n + 3 - 1) / 2 + j * (j - 1) / 2 + j - (n + 3) * j := by
-    have h (m : ℤ) : 2 * (m * (m - 1) / 2) = m * (m - 1) :=
-      Int.two_mul_ediv_two_of_even (Int.even_mul_pred_self m)
+    have h := Int.two_mul_mul_sub_one_ediv_two
     linarith [h (n + 3 - j), h (n + 3), h j]
   have hs := tripleCoeff_one_add_three q (j - 3)
   rw [sub_add_cancel] at hs
@@ -466,17 +459,31 @@ private theorem exists_norm_tateUniformization_mul_eq_one (q : Kˣ) (hq : ‖(q 
     rw [← IsUltrametricDist.norm_eq_of_norm_sub_lt_left (by rwa [norm_sub_rev]), hmain,
       inv_mul_cancel₀ (pow_pos hzr 3).ne']
 
+/-- The pole-order argument: a coefficient `δ` with `‖δ‖ ≤ a rᵏ + b r` at every point `u ∉ q^ℤ`
+and radius `0 < r < 1` as in `exists_norm_tateUniformization_mul_eq_one` vanishes, since `r` can
+be taken arbitrarily small. -/
+private theorem eq_zero_of_norm_le_pow_add_mul (q : Kˣ) (hq : ‖(q : K)‖ < 1) {δ : K} {a b : ℝ}
+    {k : ℕ} (hk : k ≠ 0) (ha : 0 ≤ a) (hb : 0 ≤ b)
+    (h : ∀ u : Kˣ, u ∉ Subgroup.zpowers q → ∀ r : ℝ, 0 < r → r < 1 →
+      ‖tateUniformizationX q u + 2 * divisorSumAt 1 (q : K)‖ * r ^ 2 = 1 →
+      ‖tateUniformizationY q u - divisorSumAt 1 (q : K)‖ * r ^ 3 = 1 → ‖δ‖ ≤ a * r ^ k + b * r) :
+    δ = 0 := by
+  by_contra hδ
+  obtain ⟨u, hu, r, hr₀, hrε, hr₁, hX, hY⟩ := exists_norm_tateUniformization_mul_eq_one q hq
+    (div_pos (norm_pos_iff.mpr hδ) (by positivity : 0 < a + b + 1))
+  rw [lt_div_iff₀ (by positivity)] at hrε
+  have hrk : a * r ^ k ≤ a * r := mul_le_mul_of_nonneg_left (pow_le_of_le_one hr₀.le hr₁.le hk) ha
+  linarith [h u hu r hr₀ hr₁ hX hY]
+
 /-- The functions `1`, `X + 2 s₁` and `Y - s₁` are linearly independent on `Kˣ ∖ q^ℤ`. -/
 private theorem eq_zero_of_forall_add_mul_add_mul_eq_zero (q : Kˣ) (hq : ‖(q : K)‖ < 1)
     {α β γ : K} (h : ∀ u : Kˣ, u ∉ Subgroup.zpowers q →
       α + β * (tateUniformizationX q u + 2 * divisorSumAt 1 (q : K)) +
         γ * (tateUniformizationY q u - divisorSumAt 1 (q : K)) = 0) :
     α = 0 ∧ β = 0 ∧ γ = 0 := by
-  have hγ : γ = 0 := by
-    by_contra hγ
-    have hγ₀ : 0 < ‖γ‖ := norm_pos_iff.mpr hγ
-    obtain ⟨u, hu, r, hr₀, hrε, hr₁, hX, hY⟩ := exists_norm_tateUniformization_mul_eq_one q hq
-      (div_pos hγ₀ (by positivity : 0 < ‖α‖ + ‖β‖ + 1))
+  -- `Y - s₁` has a pole of order three, `X + 2 s₁` one of order two.
+  have hγ : γ = 0 := eq_zero_of_norm_le_pow_add_mul q hq three_ne_zero (norm_nonneg α)
+      (norm_nonneg β) fun u hu r hr₀ _ hX hY ↦ by
     have key : ‖γ * (tateUniformizationY q u - divisorSumAt 1 (q : K))‖ ≤
         ‖α‖ + ‖β‖ * ‖tateUniformizationX q u + 2 * divisorSumAt 1 (q : K)‖ := by
       rw [show γ * (tateUniformizationY q u - divisorSumAt 1 (q : K)) =
@@ -484,27 +491,17 @@ private theorem eq_zero_of_forall_add_mul_add_mul_eq_zero (q : Kˣ) (hq : ‖(q 
         linear_combination h u hu, norm_neg, ← norm_mul]
       exact norm_add_le _ _
     rw [norm_mul] at key
-    rw [lt_div_iff₀ (by positivity)] at hrε
-    have hr3 : ‖α‖ * r ^ 3 ≤ ‖α‖ * r :=
-      mul_le_mul_of_nonneg_left (pow_le_of_le_one hr₀.le hr₁.le three_ne_zero) (norm_nonneg α)
     have := mul_le_mul_of_nonneg_right key (pow_pos hr₀ 3).le
-    rw [mul_assoc, hY, mul_one, add_mul, mul_assoc, show ‖tateUniformizationX q u +
+    rwa [mul_assoc, hY, mul_one, add_mul, mul_assoc, show ‖tateUniformizationX q u +
       2 * divisorSumAt 1 (q : K)‖ * r ^ 3 = ‖tateUniformizationX q u +
       2 * divisorSumAt 1 (q : K)‖ * r ^ 2 * r by ring, hX, one_mul] at this
-    linarith
   subst hγ
-  have hβ : β = 0 := by
-    by_contra hβ
-    have hβ₀ : 0 < ‖β‖ := norm_pos_iff.mpr hβ
-    obtain ⟨u, hu, r, hr₀, hrε, hr₁, hX, -⟩ := exists_norm_tateUniformization_mul_eq_one q hq
-      (div_pos hβ₀ (by positivity : 0 < ‖α‖ + 1))
+  have hβ : β = 0 := eq_zero_of_norm_le_pow_add_mul q hq two_ne_zero (norm_nonneg α) le_rfl
+      fun u hu r _ _ hX _ ↦ by
     have key : ‖β * (tateUniformizationX q u + 2 * divisorSumAt 1 (q : K))‖ = ‖α‖ := by
       rw [show β * (tateUniformizationX q u + 2 * divisorSumAt 1 (q : K)) = -α by
         linear_combination h u hu, norm_neg]
     rw [norm_mul] at key
-    rw [lt_div_iff₀ (by positivity)] at hrε
-    have hr2 : ‖α‖ * r ^ 2 ≤ ‖α‖ * r :=
-      mul_le_mul_of_nonneg_left (pow_le_of_le_one hr₀.le hr₁.le two_ne_zero) (norm_nonneg α)
     have := congrArg (· * r ^ 2) key
     rw [mul_assoc, hX, mul_one] at this
     linarith
@@ -561,8 +558,7 @@ private theorem exists_hasSum_tateTheta_pow_three_mul (q : Kˣ) (hq : ‖(q : K)
   have hTA₁ : HasSum (fun n ↦ ∑' m, tateThetaCoeff q m * A (n - m)) 0 := by
     have hA₁ := summable_tateThetaCoefficients q 1 hq two_pos ⟨A, hA⟩ 1
     simp only [one_zpow, Units.val_one, mul_one] at hA₁
-    simpa [tateTheta_one] using
-      hasSum_tsum_mul_sub (hasSum_tateThetaCoeff q 1 hq) hA₁.hasSum
+    simpa using hasSum_tsum_mul_sub (hasSum_tateThetaCoeff_one q hq) hA₁.hasSum
   let S : tateThetaCoefficients q (-1) 3 := ⟨_, tripleCoeff_one_mem q⟩
   let T : tateThetaCoefficients q (-1) 3 := ⟨_, hTA⟩
   let U : tateThetaCoefficients q (-1) 3 := ⟨_, tateYCoeff_mem q hq⟩

@@ -30,6 +30,9 @@ or not.
 
 * `TauCeti.tateThetaCoeff_add_one`: the recurrence `c(n + 1) = -qⁿ c(n)` of the theta
   coefficients.
+* `TauCeti.tateThetaCoeff_mem`, `TauCeti.hasSum_tateThetaCoeff`: the Laurent coefficients of `θ`
+  are quasi-periodic of degree one, and their Laurent series converges to `θ(u)`.
+* `TauCeti.hasSum_tateThetaCoeff_one`: the coefficients of `θ` sum to `θ(1) = 0`.
 * `TauCeti.tateThetaCoeff_mul_zpow_mem`, `TauCeti.hasSum_tateThetaCoeff_mul_zpow`: the Laurent
   coefficients of a translate `θ(b u)` are quasi-periodic of degree one.
 * `TauCeti.tateThetaProductCoeff_mem`: the coefficients are quasi-periodic of degree two.
@@ -84,6 +87,10 @@ theorem tateThetaCoeff_mul_zpow_mem (q b : Kˣ) :
   simp only [Units.val_mul, Units.val_neg, Units.val_zpow_eq_zpow_val]
   ring
 
+/-- The Laurent coefficients of `θ` are quasi-periodic of degree one with multiplier `-1`. -/
+theorem tateThetaCoeff_mem (q : Kˣ) : tateThetaCoeff q ∈ tateThetaCoefficients q (-1) 1 := by
+  simpa using tateThetaCoeff_mul_zpow_mem q 1
+
 /-- The Laurent coefficients of `θ(a u) θ(a⁻¹ u)`: the Cauchy product of the coefficients
 `tateThetaCoeff q n * aⁿ` of `θ(a u)` and `tateThetaCoeff q n * a⁻ⁿ` of `θ(a⁻¹ u)`. -/
 noncomputable def tateThetaProductCoeff (q a : Kˣ) (n : ℤ) : K :=
@@ -119,6 +126,16 @@ variable [CompleteSpace K]
 theorem hasSum_tateThetaCoeff_mul_zpow (q b u : Kˣ) (hq : ‖(q : K)‖ < 1) :
     HasSum (fun n ↦ tateThetaCoeff q n * (b : K) ^ n * (u : K) ^ n) (tateTheta q (b * u)) := by
   simpa only [tateThetaCoeff_mul_zpow_mul_zpow] using hasSum_tateTheta q (b * u) hq
+
+/-- The Laurent expansion `θ(u) = ∑ₙ tateThetaCoeff q n * uⁿ`. -/
+theorem hasSum_tateThetaCoeff (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    HasSum (fun n ↦ tateThetaCoeff q n * (u : K) ^ n) (tateTheta q u) := by
+  simpa using hasSum_tateThetaCoeff_mul_zpow q 1 u hq
+
+/-- The Laurent coefficients of `θ` sum to `θ(1) = 0`. -/
+theorem hasSum_tateThetaCoeff_one (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
+    HasSum (tateThetaCoeff q) 0 := by
+  simpa [tateTheta_one] using hasSum_tateThetaCoeff q 1 hq
 
 /-- **The Laurent expansion of `θ(a u) θ(a⁻¹ u)`** converges at every unit `u`, over every
 complete normed field. -/
