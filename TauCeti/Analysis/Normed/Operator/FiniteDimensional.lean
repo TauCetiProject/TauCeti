@@ -31,6 +31,8 @@ to strict operator-norm bounds.
   postcomposition with an operator of dense range has dense range.
 * `ContinuousLinearMap.opNorm_lt_iff`: a strict norm bound can be checked on
   every nonzero vector of a finite-dimensional real domain.
+* `IsCompact.isCompact_setOf_mapsTo`: between finite-dimensional spaces over a proper field, the
+  operators sending a neighbourhood of `0` into a compact set form a compact set.
 -/
 
 public section
@@ -96,3 +98,38 @@ theorem opNorm_lt_iff (A : E →L[ℝ] F) {c : ℝ} (hc : 0 < c) :
 end StrictNorm
 
 end ContinuousLinearMap
+
+section MapsTo
+
+open Metric Set Topology
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+
+/-- Between finite-dimensional normed spaces over a proper field, the operators sending a
+neighbourhood `s` of `0` into a compact set `K` form a compact set: they are bounded in operator
+norm because `s` contains a ball. -/
+theorem IsCompact.isCompact_setOf_mapsTo {K : Set F} (hK : IsCompact K) {s : Set E}
+    (hs : s ∈ 𝓝 (0 : E)) : IsCompact {T : E →L[𝕜] F | MapsTo T s K} := by
+  have : ProperSpace (E →L[𝕜] F) := FiniteDimensional.proper 𝕜 _
+  obtain ⟨ε, hε, hεs⟩ := Metric.mem_nhds_iff.1 hs
+  obtain ⟨R, hR, hKR⟩ := hK.isBounded.subset_closedBall_lt 0 0
+  obtain ⟨c, hc⟩ := NormedField.exists_one_lt_norm 𝕜
+  refine Metric.isCompact_of_isClosed_isBounded ?_ ?_
+  · have h : {T : E →L[𝕜] F | MapsTo T s K} = ⋂ x ∈ s, (fun T : E →L[𝕜] F ↦ T x) ⁻¹' K := by
+      ext T
+      simp [MapsTo]
+    rw [h]
+    exact isClosed_biInter fun x _ ↦ hK.isClosed.preimage (continuous_eval_const x)
+  · -- On the shell `ε / ‖c‖ ≤ ‖x‖ < ε`, which lies in `s`, the bound `‖T x‖ ≤ R` gives
+    -- `‖T‖ ≤ R ‖c‖ / ε`.
+    refine (isBounded_closedBall (x := (0 : E →L[𝕜] F)) (r := R * ‖c‖ / ε)).subset fun T hT ↦ ?_
+    rw [mem_closedBall_zero_iff]
+    refine ContinuousLinearMap.opNorm_le_of_shell hε (by positivity) hc fun x hx₁ hx₂ ↦ ?_
+    have hTx : ‖T x‖ ≤ R := mem_closedBall_zero_iff.1 <| hKR <| hT <| hεs <| by simpa using hx₂
+    calc ‖T x‖ ≤ R := hTx
+      _ = R * ‖c‖ / ε * (ε / ‖c‖) := by field_simp
+      _ ≤ R * ‖c‖ / ε * ‖x‖ := by gcongr
+
+end MapsTo

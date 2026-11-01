@@ -45,6 +45,8 @@ Gram/covolume calculation of J.-M. Couveignes, *Enumerating number fields*, Ann.
   for Gram determinants, in `ComplexOrder` and for the real part.
 * `Matrix.re_det_gram_le_pow`: the uniform form, `re (det (gram 𝕜 v)) ≤ D ^ card ι` when every
   `‖v i‖ ^ 2 ≤ D`.
+* `LinearMap.norm_det_le_pow_of_norm_apply_le`: an endomorphism of a finite-dimensional space with
+  `‖A x‖ ≤ c * ‖x‖` for every `x` has `‖det A‖ ≤ c ^ finrank 𝕜 E`.
 -/
 
 public section
@@ -150,3 +152,22 @@ theorem re_det_gram_le_pow {v : ι → E} {D : ℝ} (hD : ∀ i, ‖v i‖ ^ 2 �
     _ = D ^ Fintype.card ι := by simp
 
 end Matrix
+
+namespace LinearMap
+
+/-- **Hadamard's inequality for an endomorphism.** A linear endomorphism of a finite-dimensional
+inner product space that stretches no vector by more than a factor `c` has determinant of norm at
+most `c ^ finrank 𝕜 E`. Over `ℝ` the bound also holds without an inner product
+(`ContinuousLinearMap.abs_det_le_opNorm_pow`); here the scalars may be complex. -/
+theorem norm_det_le_pow_of_norm_apply_le [FiniteDimensional 𝕜 E] {A : E →ₗ[𝕜] E} {c : ℝ}
+    (h : ∀ x, ‖A x‖ ≤ c * ‖x‖) : ‖A.det‖ ≤ c ^ finrank 𝕜 E := by
+  let b := stdOrthonormalBasis 𝕜 E
+  have hdet : A.det = b.toBasis.det (A ∘ b) := by
+    rw [← b.coe_toBasis, Module.Basis.det_comp, Module.Basis.det_self, mul_one]
+  calc ‖A.det‖ ≤ ∏ i, ‖A (b i)‖ := hdet ▸ b.norm_det_le_prod_norm (A ∘ b)
+    _ ≤ ∏ _i : Fin (finrank 𝕜 E), c := by
+      gcongr with i
+      simpa [b.norm_eq_one i] using h (b i)
+    _ = c ^ finrank 𝕜 E := by simp
+
+end LinearMap
