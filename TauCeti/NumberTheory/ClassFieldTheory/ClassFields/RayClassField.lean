@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.AdmissibleModulus.Reciprocity
 public import TauCeti.NumberTheory.ClassFieldTheory.GlobalExistence.Correspondence
+public import TauCeti.NumberTheory.NumberField.Global.RayClass.Narrow.Basic
 
 import TauCeti.NumberTheory.ClassFieldTheory.GlobalExistence.NormLimitation
 
@@ -39,7 +40,9 @@ The **Hilbert class field** `hilbertClassField K` is the ray class field of the 
 and the **narrow Hilbert class field** `narrowHilbertClassField K` that of the modulus carrying
 every real place and no finite place. The Artin map identifies the class group of `K` with the
 Galois group of the Hilbert class field (`hilbertClassArtinEquiv`), whose degree is therefore the
-class number (`finrank_hilbertClassField`).
+class number (`finrank_hilbertClassField`). Likewise it identifies the narrow class group with the
+Galois group of the narrow Hilbert class field (`narrowHilbertClassArtinEquiv`), whose degree is
+the order of the narrow class group (`finrank_narrowHilbertClassField`).
 
 ## Main definitions
 
@@ -49,6 +52,8 @@ class number (`finrank_hilbertClassField`).
 * `TauCeti.ClassFieldTheory.hilbertClassField`, `TauCeti.ClassFieldTheory.narrowHilbertClassField`:
   the (narrow) Hilbert class field.
 * `TauCeti.ClassFieldTheory.hilbertClassArtinEquiv`: `Cl_K ≃* Gal(hilbertClassField K / K)`.
+* `TauCeti.ClassFieldTheory.narrowHilbertClassArtinEquiv`:
+  `Cl⁺_K ≃* Gal(narrowHilbertClassField K / K)`.
 
 ## Main results
 
@@ -58,9 +63,10 @@ class number (`finrank_hilbertClassField`).
   finite abelian extension with norm group the ray subgroup.
 * `TauCeti.ClassFieldTheory.isAdmissibleModulus_iff_le_rayClassField`: `𝔪` is admissible for a
   finite abelian `L/K` exactly when `L` embeds in the ray class field of `𝔪`.
-* `TauCeti.ClassFieldTheory.finrank_rayClassField` and
-  `TauCeti.ClassFieldTheory.finrank_hilbertClassField`: the degrees are the order of the ray class
-  group and the class number.
+* `TauCeti.ClassFieldTheory.finrank_rayClassField`,
+  `TauCeti.ClassFieldTheory.finrank_hilbertClassField` and
+  `TauCeti.ClassFieldTheory.finrank_narrowHilbertClassField`: the degrees are the order of the ray
+  class group, the class number and the order of the narrow class group.
 
 ## References
 
@@ -239,5 +245,26 @@ theorem hilbertClassArtinEquiv_oneEquivClassGroup (x : RayClassGroup (Modulus.on
 theorem finrank_hilbertClassField : Module.finrank K (hilbertClassField K) = classNumber K := by
   rw [← IsGalois.card_aut_eq_finrank, ← Nat.card_congr (hilbertClassArtinEquiv K).toEquiv,
     classNumber, Nat.card_eq_fintype_card]
+
+/-- **Reciprocity for the narrow Hilbert class field**: the Artin map identifies the narrow class
+group of `K` with the Galois group of the narrow Hilbert class field. It is `rayClassArtinEquiv` at
+the narrow modulus, read on the narrow class group through `narrowEquivNarrowClassGroup`. -/
+def narrowHilbertClassArtinEquiv : NarrowClassGroup K ≃* Gal(narrowHilbertClassField K/K) :=
+  narrowEquivNarrowClassGroup.symm.trans (rayClassArtinEquiv (narrowModulus K))
+
+variable {K} in
+/-- On the narrow class group, `narrowHilbertClassArtinEquiv` is the ray-class Artin map of the
+narrow modulus. -/
+@[simp]
+theorem narrowHilbertClassArtinEquiv_narrowEquivNarrowClassGroup
+    (x : RayClassGroup (narrowModulus K)) :
+    narrowHilbertClassArtinEquiv K (narrowEquivNarrowClassGroup x) =
+      rayClassArtinEquiv (narrowModulus K) x := by
+  rw [narrowHilbertClassArtinEquiv, MulEquiv.trans_apply, MulEquiv.symm_apply_apply]
+
+/-- **The degree of the narrow Hilbert class field is the order of the narrow class group.** -/
+theorem finrank_narrowHilbertClassField :
+    Module.finrank K (narrowHilbertClassField K) = Nat.card (NarrowClassGroup K) := by
+  rw [← IsGalois.card_aut_eq_finrank, Nat.card_congr (narrowHilbertClassArtinEquiv K).toEquiv]
 
 end TauCeti.ClassFieldTheory
