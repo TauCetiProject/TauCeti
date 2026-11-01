@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Topology.Homotopy.Lifting
+public import TauCeti.Topology.Circle.Degree
 public import TauCeti.Topology.Circle.MatrixAction
+public import TauCeti.Topology.Covering.Quotient
 
 /-!
 # Homotopy classes of self-maps of the torus
@@ -86,9 +88,11 @@ private def cover (v : ℝ × ℝ) : Circle × Circle :=
 private theorem cover_apply (v : ℝ × ℝ) : cover v = (Circle.exp v.1, Circle.exp v.2) :=
   (rfl)
 
+private theorem cover_add (v w : ℝ × ℝ) : cover (v + w) = cover v * cover w := by
+  simp [Circle.exp_add]
+
 private theorem isOpenQuotientMap_cover : IsOpenQuotientMap cover := by
-  have h : IsOpenQuotientMap Circle.exp :=
-    ⟨Circle.exp_surjective, Circle.exp.continuous, Circle.isCoveringMap_exp.isOpenMap⟩
+  have h := Circle.isCoveringMap_exp.isOpenQuotientMap Circle.exp_surjective
   exact h.prodMap h
 
 /-- Two points of `ℝ × ℝ` lie over the same point of the torus exactly when they differ by integer
@@ -102,32 +106,6 @@ private theorem cover_eq_cover_iff {v w : ℝ × ℝ} :
     exact ⟨a, b, ha, hb⟩
   · rintro ⟨a, b, ha, hb⟩
     exact ⟨⟨a, ha⟩, ⟨b, hb⟩⟩
-
-/-- On a preconnected space, two continuous real functions with the same exponential differ by a
-constant. -/
-private theorem exists_eq_add_of_exp_eq {A : Type*} [TopologicalSpace A] [PreconnectedSpace A]
-    [Nonempty A] {G G' : A → ℝ} (hG : Continuous G) (hG' : Continuous G')
-    (h : ∀ a, Circle.exp (G a) = Circle.exp (G' a)) : ∃ c : ℝ, ∀ a, G a = G' a + c := by
-  obtain ⟨a₀⟩ := ‹Nonempty A›
-  refine ⟨G a₀ - G' a₀, fun a ↦ ?_⟩
-  have := Circle.isCoveringMap_exp.const_of_comp (g := fun a ↦ G a - G' a) (hG.sub hG')
-    (fun a a' ↦ by simp [Circle.exp_sub, h]) a a₀
-  linarith
-
-/-- On a preconnected space, a continuous real function whose exponential is invariant under a
-continuous self-map `τ` changes under `τ` by a constant integer multiple of `2π`. -/
-private theorem exists_int_forall_eq_add {A : Type*} [TopologicalSpace A] [PreconnectedSpace A]
-    [Nonempty A] {G : A → ℝ} (hG : Continuous G) {τ : A → A} (hτ : Continuous τ)
-    (h : ∀ a, Circle.exp (G (τ a)) = Circle.exp (G a)) :
-    ∃ m : ℤ, ∀ a, G (τ a) = G a + m * (2 * π) := by
-  obtain ⟨c, hc⟩ := exists_eq_add_of_exp_eq (hG.comp hτ) hG h
-  replace hc : ∀ a, G (τ a) = G a + c := hc
-  obtain ⟨a₀⟩ := ‹Nonempty A›
-  have hexp : Circle.exp c = 1 := by
-    have := h a₀
-    rwa [hc a₀, Circle.exp_add, mul_eq_left] at this
-  obtain ⟨m, hm⟩ := Circle.exp_eq_one.1 hexp
-  exact ⟨m, fun a ↦ by rw [hc a, hm]⟩
 
 /-- The monomial `(a, b) ↦ a ^ m * b ^ n` from the torus to the circle. -/
 private def monomial (m n : ℤ) : C(Circle × Circle, Circle) :=
@@ -149,8 +127,8 @@ private theorem monomial_cover (m n : ℤ) (v : ℝ × ℝ) :
 private theorem lift_add_of_monomial {m n : ℤ} {G : ℝ × ℝ → ℝ} (hG : Continuous G)
     (h : ∀ v, Circle.exp (G v) = monomial m n (cover v)) (v : ℝ × ℝ) :
     G (v + (2 * π, 0)) = G v + m * (2 * π) ∧ G (v + (0, 2 * π)) = G v + n * (2 * π) := by
-  obtain ⟨c, hc⟩ := exists_eq_add_of_exp_eq (G' := fun v : ℝ × ℝ ↦ m * v.1 + n * v.2) hG
-    (by fun_prop) fun v ↦ by rw [h, monomial_cover]
+  obtain ⟨c, hc⟩ := Circle.exists_forall_eq_add_of_exp_eq
+    (G' := fun v : ℝ × ℝ ↦ m * v.1 + n * v.2) hG (by fun_prop) fun v ↦ by rw [h, monomial_cover]
   constructor <;>
   · simp only [hc, Prod.fst_add, Prod.snd_add]
     ring
@@ -227,12 +205,12 @@ private theorem exists_homotopic_monomial (g : C(Circle × Circle, Circle)) :
   have hG' (v : ℝ × ℝ) : Circle.exp (G v) = g (cover v) := congrFun hG v
   have hper (c : ℝ × ℝ) (hc : cover c = 1) (v : ℝ × ℝ) :
       Circle.exp (G (v + c)) = Circle.exp (G v) := by
-    rw [hG', hG', show cover (v + c) = cover v * cover c by simp [Circle.exp_add], hc, mul_one]
+    rw [hG', hG', cover_add, hc, mul_one]
   -- Translating by a period changes the lift by an integer multiple of `2π`.
-  obtain ⟨m, hm⟩ := exists_int_forall_eq_add G.continuous (τ := fun v ↦ v + (2 * π, 0))
-    (by fun_prop) (hper _ (by simp))
-  obtain ⟨n, hn⟩ := exists_int_forall_eq_add G.continuous (τ := fun v ↦ v + (0, 2 * π))
-    (by fun_prop) (hper _ (by simp))
+  obtain ⟨m, hm⟩ := Circle.exists_int_forall_eq_add_of_exp_eq G.continuous
+    (τ := fun v ↦ v + (2 * π, 0)) (by fun_prop) (hper _ (by simp))
+  obtain ⟨n, hn⟩ := Circle.exists_int_forall_eq_add_of_exp_eq G.continuous
+    (τ := fun v ↦ v + (0, 2 * π)) (by fun_prop) (hper _ (by simp))
   exact ⟨m, n, homotopic_monomial_of_lift G.continuous hG' hm hn⟩
 
 /-- **Homotopic monomials have the same exponents.** -/
@@ -259,12 +237,10 @@ private theorem eq_of_homotopic_monomial {m n m' n' : ℤ}
       Circle.exp (L (p.1, p.2 + c)) = Circle.exp (L p) := by
     rw [hL, hL]
     simp only [Kc, ContinuousMap.comp_apply, intervalCover_apply]
-    congr 2
-    have : cover (p.2 + c) = cover p.2 * cover c := by simp [Circle.exp_add]
-    rw [this, hc, mul_one]
+    rw [cover_add, hc, mul_one]
   -- The change of the lift under translation by a period is constant on `[0, 1] × ℝ × ℝ`.
   have key (c : ℝ × ℝ) (hc : cover c = 1) : L (1, c) - L (1, 0) = ℓ c - ℓ 0 := by
-    obtain ⟨k, hk⟩ := exists_int_forall_eq_add L.continuous
+    obtain ⟨k, hk⟩ := Circle.exists_int_forall_eq_add_of_exp_eq L.continuous
       (τ := fun p : unitInterval × (ℝ × ℝ) ↦ (p.1, p.2 + c)) (by fun_prop) (hKc c hc)
     have h₁ := hk (1, 0)
     have h₀ := hk (0, 0)
@@ -291,6 +267,18 @@ private theorem prodMk_monomial (M : Matrix (Fin 2) (Fin 2) ℤ) :
     (monomial (M 0 0) (M 0 1)).prodMk (monomial (M 1 0) (M 1 1)) = M.torusContinuousMap :=
   ContinuousMap.ext fun q ↦ by simp
 
+private theorem fst_comp_torusContinuousMap (M : Matrix (Fin 2) (Fin 2) ℤ) :
+    (ContinuousMap.fst : C(Circle × Circle, Circle)).comp M.torusContinuousMap =
+      monomial (M 0 0) (M 0 1) := by
+  rw [← prodMk_monomial]
+  rfl
+
+private theorem snd_comp_torusContinuousMap (M : Matrix (Fin 2) (Fin 2) ℤ) :
+    (ContinuousMap.snd : C(Circle × Circle, Circle)).comp M.torusContinuousMap =
+      monomial (M 1 0) (M 1 1) := by
+  rw [← prodMk_monomial]
+  rfl
+
 end TauCeti.TorusHomotopy
 
 open TauCeti.TorusHomotopy
@@ -308,16 +296,8 @@ theorem torusContinuousMap_homotopic_iff {M N : Matrix (Fin 2) (Fin 2) ℤ} :
     (ContinuousMap.Homotopic.refl (ContinuousMap.fst : C(Circle × Circle, Circle))).comp h
   have hsnd :=
     (ContinuousMap.Homotopic.refl (ContinuousMap.snd : C(Circle × Circle, Circle))).comp h
-  have e₁ (M : Matrix (Fin 2) (Fin 2) ℤ) :
-      (ContinuousMap.fst : C(Circle × Circle, Circle)).comp M.torusContinuousMap =
-        monomial (M 0 0) (M 0 1) :=
-    ContinuousMap.ext fun q ↦ by simp
-  have e₂ (M : Matrix (Fin 2) (Fin 2) ℤ) :
-      (ContinuousMap.snd : C(Circle × Circle, Circle)).comp M.torusContinuousMap =
-        monomial (M 1 0) (M 1 1) :=
-    ContinuousMap.ext fun q ↦ by simp
-  rw [e₁, e₁] at hfst
-  rw [e₂, e₂] at hsnd
+  rw [fst_comp_torusContinuousMap, fst_comp_torusContinuousMap] at hfst
+  rw [snd_comp_torusContinuousMap, snd_comp_torusContinuousMap] at hsnd
   obtain ⟨h00, h01⟩ := eq_of_homotopic_monomial hfst
   obtain ⟨h10, h11⟩ := eq_of_homotopic_monomial hsnd
   ext i j
