@@ -100,6 +100,13 @@ theorem discriminantGroupEquiv_neg (L : IntegralLattice V) :
     ext
     simp
 
+/-- Multiplying a lattice by a sign `u : ℤˣ` acts on its discriminant group by the same sign. -/
+theorem discriminantGroupEquiv_ite_neg (L : IntegralLattice V) (u : ℤˣ) (x : L.DiscriminantGroup) :
+    (if u = 1 then refl L else neg L).discriminantGroupEquiv x = u • x := by
+  rcases Int.units_eq_one_or u with rfl | rfl
+  · simp
+  · simp [show (-1 : ℤˣ) ≠ 1 by decide]
+
 /-! ### The discriminant kernel -/
 
 /-- The discriminant kernel `Õ(L)`: the self-isometries of `L` acting trivially on the

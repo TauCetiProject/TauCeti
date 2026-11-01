@@ -422,14 +422,6 @@ variable {T : DynkinType} {hT : T.IsSimplyLaced} (hvT : T.Valid)
   {K : AddSubgroup (FiniteQuadraticModule.pi fun _ : ι ↦ T.glueAlphabet hT)}
   (hK : (FiniteQuadraticModule.pi fun _ : ι ↦ T.glueAlphabet hT).IsIsotropic K)
 
-/-- Multiplying a lattice by a sign acts on its discriminant group by the same sign. -/
-private theorem discriminantGroupEquiv_ite_neg {V : Type*} [AddCommGroup V] [Module ℚ V]
-    (L : IntegralLattice V) (u : ℤˣ) (x : L.DiscriminantGroup) :
-    (if u = 1 then Isometry.refl L else Isometry.neg L).discriminantGroupEquiv x = u • x := by
-  rcases Int.units_eq_one_or u with rfl | rfl
-  · simp
-  · simp [show (-1 : ℤˣ) ≠ 1 by decide]
-
 /-- **Signed permutations of identical components induce isometries of glued lattices.**  Let all
 components have the same type `T`.  For signs `u : ι → ℤˣ` and a permutation `σ` of the
 components, the signed coordinate change moving `u i • x i` to position `σ i` is an isometry of the
@@ -452,7 +444,7 @@ noncomputable def gluedLatticeSignedPermIsometry (u : ι → ℤˣ) (σ : Equiv.
           (fun i ↦ if u i = 1 then Isometry.refl (T.rootLattice hT) else Isometry.neg _)
           (fun i x ↦ u i • x) (fun i x ↦ by
             refine Eq.trans ?_ ((Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
-              (discriminantGroupEquiv_ite_neg _ (u i) _)).symm
+              (Isometry.discriminantGroupEquiv_ite_neg _ (u i) _)).symm
             exact map_zsmul (T.glueAlphabetIsometry hvT hT) (u i : ℤ) x) w)
       have h2 := (Isometry.discriminantQuadraticIsometry_apply _ (isEven_pi_rootLattice _ _)
         _).symm.trans (discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry (fun _ ↦ T)
