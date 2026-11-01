@@ -11,6 +11,7 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Fintype.Vector
 import Mathlib.Data.List.GetD
 import Mathlib.Topology.Metrizable.CompletelyMetrizable
+import TauCeti.Data.Vector.Basic
 import TauCeti.MeasureTheory.Constructions.Polish.Analytic
 
 /-!
@@ -117,11 +118,6 @@ private theorem cons_mem_levelEdges {p : List.Vector Bool n × List.Vector Bool 
   obtain ⟨s, hs, r, h₁, h₂⟩ := hp
   exact ⟨s, hs, b :: r, by simp [h₁], by simp [h₂]⟩
 
-private theorem head_tail_of_toList_eq_cons {v : List.Vector Bool (n + 1)} {b : Bool}
-    {l : List Bool} (h : v.toList = b :: l) : v.head = b ∧ v.tail.toList = l := by
-  rw [← List.Vector.cons_head_tail v, List.Vector.toList_cons] at h
-  exact List.cons.inj h
-
 /-- A level edge of level `n + 1` is either fresh, coming from a word of `S` of length `n`, or
 obtained from a level edge of level `n` by prepending a common letter. -/
 private theorem mem_levelEdges_succ {p : List.Vector Bool (n + 1) × List.Vector Bool (n + 1)}
@@ -135,8 +131,8 @@ private theorem mem_levelEdges_succ {p : List.Vector Bool (n + 1) × List.Vector
     refine .inl ⟨s, hs, ?_, h₁, h₂⟩
     simpa using (congrArg List.length h₁).symm
   | cons b r =>
-    obtain ⟨hb₁, ht₁⟩ := head_tail_of_toList_eq_cons h₁
-    obtain ⟨hb₂, ht₂⟩ := head_tail_of_toList_eq_cons h₂
+    obtain ⟨hb₁, ht₁⟩ := List.Vector.toList_eq_cons_iff.1 h₁
+    obtain ⟨hb₂, ht₂⟩ := List.Vector.toList_eq_cons_iff.1 h₂
     exact .inr ⟨hb₁.trans hb₂.symm, s, hs, r, ht₁, ht₂⟩
 
 /-- The first `n` coordinates of a point of Cantor space, newest first, as a vertex of level
@@ -229,6 +225,13 @@ private theorem exists_stage_succ (hS : SparseWords S) (hG : AnalyticSet G) (hg 
         (∀ ψ ∈ T'.fam, ∀ b u, ∃ φ ∈ T.fam, ψ (b ::ᵥ u) = φ u) ∧
         ∀ p ∈ levelEdges S n, ∀ b, T.word p <+: T'.word (b ::ᵥ p.1, b ::ᵥ p.2) ∧
           (T.word p).length < (T'.word (b ::ᵥ p.1, b ::ᵥ p.2)).length by
+    -- Combining along a level edge that extends one of level `n` keeps its witness.
+    have hold {φ₀ φ₁ : List.Vector Bool n → X} (h₀ : φ₀ ∈ T.fam) (h₁ : φ₁ ∈ T.fam)
+        {u v : List.Vector Bool (n + 1)} (hhead : u.head = v.head)
+        (htail : (u.tail, v.tail) ∈ levelEdges S n) :
+        (comb φ₀ φ₁ u, comb φ₀ φ₁ v) ∈ g '' wordCylinder (w₀ (u, v)) := by
+      rw [show w₀ (u, v) = T.word (u.tail, v.tail) from ite_eq_left hhead]
+      exact comb_mem_image T h₀ h₁ hhead htail
     by_cases hfresh : ∃ s ∈ S, s.length = n
     · -- A fresh edge is born at `s.reverse`: combine members forming a pair of `G` there.
       obtain ⟨s₀, hs₀, hlen₀⟩ := hfresh
@@ -241,15 +244,14 @@ private theorem exists_stage_succ (hS : SparseWords S) (hG : AnalyticSet G) (hg 
       · rintro ⟨u, v⟩ hp _ ⟨φ₀, h₀, φ₁, h₁, hσ, rfl⟩
         rcases mem_levelEdges_succ hp with ⟨s, hs, hlen, hu, hv⟩ | ⟨hhead, htail⟩
         · obtain rfl : s = s₀ := sparseWords_iff.1 hS s hs s₀ hs₀ (hlen.trans hlen₀.symm)
-          obtain ⟨hu₁, hu₂⟩ := head_tail_of_toList_eq_cons hu
-          obtain ⟨hv₁, hv₂⟩ := head_tail_of_toList_eq_cons hv
+          obtain ⟨hu₁, hu₂⟩ := List.Vector.toList_eq_cons_iff.1 hu
+          obtain ⟨hv₁, hv₂⟩ := List.Vector.toList_eq_cons_iff.1 hv
           have hw : w₀ (u, v) = [] := ite_eq_right (by simp [hu₁, hv₁])
           have hut : u.tail = σ := List.Vector.toList_injective hu₂
           have hvt : v.tail = σ := List.Vector.toList_injective hv₂
           rw [hw, wordCylinder_nil, image_univ, hgG]
           simpa [comb, hu₁, hv₁, hut, hvt] using hσ
-        · rw [show w₀ (u, v) = T.word (u.tail, v.tail) from ite_eq_left hhead]
-          exact comb_mem_image T h₀ h₁ hhead htail
+        · exact hold h₀ h₁ hhead htail
     · -- No fresh edge: combine arbitrary pairs of members.
       refine H _ Subset.rfl (AnalyticSet.image2 continuous_comb T.analyticSet_fam T.analyticSet_fam)
         (SetRel.not_isSmallFamily_image2 T.not_isSmallFamily_fam
@@ -257,8 +259,7 @@ private theorem exists_stage_succ (hS : SparseWords S) (hG : AnalyticSet G) (hg 
       rintro ⟨u, v⟩ hp _ ⟨φ₀, h₀, φ₁, h₁, rfl⟩
       rcases mem_levelEdges_succ hp with ⟨s, hs, hlen, -, -⟩ | ⟨hhead, htail⟩
       · exact absurd ⟨s, hs, hlen⟩ hfresh
-      · rw [show w₀ (u, v) = T.word (u.tail, v.tail) from ite_eq_left hhead]
-        exact comb_mem_image T h₀ h₁ hhead htail
+      · exact hold h₀ h₁ hhead htail
   intro Ψ hΨsub hΨa hΨ hΨw
   obtain ⟨w, hpre, hlen, Ψ₁, hΨ₁, hΨ₁a, hΨ₁s, hΨ₁w⟩ :=
     SetRel.exists_subset_not_isSmallFamily_witness_extension (κ := levelEdges S (n + 1))
@@ -282,6 +283,57 @@ private theorem exists_stage_succ (hS : SparseWords S) (hG : AnalyticSet G) (hg 
     exact ⟨hpre', by omega⟩
 
 omit [SecondCountableTopology X] [BorelSpace X] in
+/-- **Edges in the fusion limit.** Let a tower of stages have words cohering as in
+`exists_stage_succ`, and pick a member `ψ n` of each stage. If the values of `ψ n` along every
+branch of Cantor space converge to `φ`, then `φ` sends every oriented edge of `orientedGS S` into
+the range of `g`. -/
+private theorem mem_range_of_stages (hg : Continuous g) (T : ∀ n, Stage X G g S n)
+    (hword : ∀ n, ∀ p ∈ levelEdges S n, ∀ b,
+      (T n).word p <+: (T (n + 1)).word (b ::ᵥ p.1, b ::ᵥ p.2) ∧
+        ((T n).word p).length < ((T (n + 1)).word (b ::ᵥ p.1, b ::ᵥ p.2)).length)
+    {ψ : ∀ n, List.Vector Bool n → X} (hψ : ∀ n, ψ n ∈ (T n).fam) {φ : (ℕ → Bool) → X}
+    (hφ : ∀ y, Tendsto (fun n ↦ ψ n (resVec n y)) atTop (𝓝 (φ y))) ⦃y z : ℕ → Bool⦄
+    (hyz : (y, z) ∈ orientedGS S) : (φ y, φ z) ∈ range g := by
+  obtain ⟨s, hs, x, rfl, rfl⟩ := mem_orientedGS_iff.1 hyz
+  set L := s.length + 1
+  have hres (b : Bool) (m : ℕ) :
+      res (prependWord (s ++ [b]) x) (L + m) = res x m ++ b :: s.reverse := by
+    simpa using res_prependWord_length_add (s ++ [b]) x m
+  have hcoord (b : Bool) (m : ℕ) : prependWord (s ++ [b]) x (L + m) = x m := by
+    simpa using prependWord_apply_length_add (s ++ [b]) x m
+  -- The level edges along the oriented edge and their witness words.
+  let k (m : ℕ) : List.Vector Bool (L + m) × List.Vector Bool (L + m) :=
+    (resVec (L + m) (prependWord (s ++ [false]) x), resVec (L + m) (prependWord (s ++ [true]) x))
+  have hk (m : ℕ) : k m ∈ levelEdges S (L + m) :=
+    ⟨s, hs, res x m, hres false m, hres true m⟩
+  let c (m : ℕ) : List ℕ := (T (L + m)).word (k m)
+  -- The levels `L + (m + 1)` and `L + m + 1` agree by definition of addition, so the stage of
+  -- level `L + (m + 1)` is the one-step extension of the stage of level `L + m`.
+  have hc (m : ℕ) : c m <+: c (m + 1) ∧ (c m).length < (c (m + 1)).length := by
+    have e (b : Bool) : resVec (L + (m + 1)) (prependWord (s ++ [b]) x) =
+        x m ::ᵥ resVec (L + m) (prependWord (s ++ [b]) x) := by
+      rw [← hcoord b m]
+      exact resVec_succ _ _
+    have hk' : k (m + 1) = (x m ::ᵥ (k m).1, x m ::ᵥ (k m).2) := Prod.ext (e false) (e true)
+    simp only [c, hk']
+    exact hword _ _ (hk m) (x m)
+  have hlen (m : ℕ) : m ≤ (c m).length := by
+    induction m with
+    | zero => exact Nat.zero_le _
+    | succ m ih => exact ih.trans_lt (hc m).2
+  -- Points of Baire space witnessing the approximating pairs converge, since their words grow
+  -- and nest.
+  choose γ hγ hgγ using fun m ↦ (T (L + m)).mem_image (k m) (hk m) _ (hψ (L + m))
+  obtain ⟨β, hγβ⟩ := exists_tendsto_of_mem_wordCylinder (fun m ↦ (hc m).1)
+    (tendsto_atTop_mono hlen tendsto_id) hγ
+  have hpair : Tendsto (fun m ↦ g (γ m)) atTop
+      (𝓝 (φ (prependWord (s ++ [false]) x), φ (prependWord (s ++ [true]) x))) := by
+    simp only [hgγ]
+    exact ((hφ _).prodMk_nhds (hφ _)).comp
+      (tendsto_atTop_mono (fun m ↦ Nat.le_add_left m L) tendsto_id)
+  exact ⟨β, tendsto_nhds_unique ((hg.tendsto β).comp hγβ) hpair⟩
+
+omit [SecondCountableTopology X] [BorelSpace X] in
 /-- **The fusion limit.** A tower of stages whose members and words cohere as in
 `exists_stage_succ` yields a continuous map of Cantor space sending every oriented edge of
 `orientedGS S` into the range of `g`. -/
@@ -302,62 +354,15 @@ private theorem exists_continuous_of_stages [CompleteSpace X] (hg : Continuous g
     exact ((T n).dist_lt _ (hψ n) _ hφ _).le
   choose φ hφ using fun y ↦
     cauchySeq_tendsto_of_complete (cauchySeq_of_le_geometric _ _ (by norm_num) (hstep y))
-  have hdist (y : ℕ → Bool) (n : ℕ) : dist (a y n) (φ y) ≤ 2 * (1 / 2) ^ n := by
+  have hdist (n : ℕ) (y : ℕ → Bool) : dist (a y n) (φ y) ≤ 2 * (1 / 2) ^ n := by
     have := dist_le_of_le_geometric_of_tendsto _ _ (by norm_num) (hstep y) (hφ y) n
     convert this using 1
     ring
-  refine ⟨φ, continuous_iff_continuousAt.2 fun y ↦ Metric.tendsto_nhds.2 fun ε hε ↦ ?_, ?_⟩
-  · -- Points agreeing with `y` on the first `N` coordinates share the `N`-th approximation.
-    obtain ⟨N, hN⟩ := exists_pow_lt_of_lt_one (by positivity : 0 < ε / 4)
-      (by norm_num : (1 / 2 : ℝ) < 1)
-    filter_upwards [(isOpen_cylinder _ y N).mem_nhds (self_mem_cylinder y N)] with z hz
-    have heq : a z N = a y N := by
-      have : resVec N z = resVec N y :=
-        List.Vector.toList_injective (res_eq_res.2 fun m hm ↦ mem_cylinder_iff.1 hz m hm)
-      simp only [a, this]
-    have h₁ := hdist z N
-    have h₂ := hdist y N
-    rw [heq] at h₁
-    linarith [dist_triangle_left (φ z) (φ y) (a y N)]
-  · rintro y z hyz
-    obtain ⟨s, hs, x, rfl, rfl⟩ := mem_orientedGS_iff.1 hyz
-    set L := s.length + 1
-    have hres (b : Bool) (m : ℕ) :
-        res (prependWord (s ++ [b]) x) (L + m) = res x m ++ b :: s.reverse := by
-      simpa using res_prependWord_length_add (s ++ [b]) x m
-    have hcoord (b : Bool) (m : ℕ) : prependWord (s ++ [b]) x (L + m) = x m := by
-      simpa using prependWord_apply_length_add (s ++ [b]) x m
-    -- The level edges along the oriented edge and their witness words.
-    let k (m : ℕ) : List.Vector Bool (L + m) × List.Vector Bool (L + m) :=
-      (resVec (L + m) (prependWord (s ++ [false]) x), resVec (L + m) (prependWord (s ++ [true]) x))
-    have hk (m : ℕ) : k m ∈ levelEdges S (L + m) :=
-      ⟨s, hs, res x m, hres false m, hres true m⟩
-    let c (m : ℕ) : List ℕ := (T (L + m)).word (k m)
-    -- The levels `L + (m + 1)` and `L + m + 1` agree by definition of addition, so the stage of
-    -- level `L + (m + 1)` is the one-step extension of the stage of level `L + m`.
-    have hc (m : ℕ) : c m <+: c (m + 1) ∧ (c m).length < (c (m + 1)).length := by
-      have e (b : Bool) : resVec (L + (m + 1)) (prependWord (s ++ [b]) x) =
-          x m ::ᵥ resVec (L + m) (prependWord (s ++ [b]) x) := by
-        rw [← hcoord b m]
-        exact resVec_succ _ _
-      have hk' : k (m + 1) = (x m ::ᵥ (k m).1, x m ::ᵥ (k m).2) := Prod.ext (e false) (e true)
-      simp only [c, hk']
-      exact hword _ _ (hk m) (x m)
-    have hlen (m : ℕ) : m ≤ (c m).length := by
-      induction m with
-      | zero => exact Nat.zero_le _
-      | succ m ih => exact ih.trans_lt (hc m).2
-    -- Points of Baire space witnessing the approximating pairs converge, since their words grow
-    -- and nest.
-    choose γ hγ hgγ using fun m ↦ (T (L + m)).mem_image (k m) (hk m) _ (hψ (L + m))
-    obtain ⟨β, hγβ⟩ := exists_tendsto_of_mem_wordCylinder (fun m ↦ (hc m).1)
-      (tendsto_atTop_mono hlen tendsto_id) hγ
-    have hpair : Tendsto (fun m ↦ g (γ m)) atTop
-        (𝓝 (φ (prependWord (s ++ [false]) x), φ (prependWord (s ++ [true]) x))) := by
-      simp only [hgγ]
-      exact ((hφ _).prodMk_nhds (hφ _)).comp
-        (tendsto_atTop_mono (fun m ↦ Nat.le_add_left m L) tendsto_id)
-    exact ⟨β, tendsto_nhds_unique ((hg.tendsto β).comp hγβ) hpair⟩
+  refine ⟨φ, continuous_of_res_eq_of_dist_le (F := fun n y ↦ a y n)
+    (fun n y z h ↦ by simp only [a, show resVec n y = resVec n z from
+      List.Vector.toList_injective h]) hdist ?_, mem_range_of_stages hg T hword hψ hφ⟩
+  simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (by norm_num)
+    (by norm_num : (1 / 2 : ℝ) < 1)).const_mul 2
 
 end Stage
 
