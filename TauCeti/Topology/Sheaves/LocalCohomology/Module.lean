@@ -56,6 +56,15 @@ lemma supportedModuleHSheafFunctor_obj (n : ℕ) :
     (supportedModuleHSheafFunctor S n).obj F = F.supportedModuleHSheaf S n :=
   (rfl)
 
+/-- Local cohomology is additive in the coefficient sheaf. -/
+instance additive_supportedModuleHSheafFunctor (n : ℕ) :
+    (supportedModuleHSheafFunctor (R := R) S n).Additive := by
+  have : (supportedModuleHPresheafFunctor (R := R) S n).Additive := inferInstance
+  have : (presheafToSheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive :=
+    inferInstance
+  exact inferInstanceAs ((supportedModuleHPresheafFunctor (R := R) S n ⋙
+    presheafToSheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive)
+
 /-- The local cohomology map is induced by the supported cohomology presheaf map through
 sheafification, in every degree. -/
 @[simp, reassoc]
