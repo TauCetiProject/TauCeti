@@ -53,6 +53,8 @@ saturated chain of `W / W_λ` are the integers that the description of Lakshmiba
 * `TauCeti.reflectionBond_simple_mul_smul_smul` and
   `TauCeti.reflectionBond_simple_mul_smul_simple_mul_smul`: the bond of `sᵢ u` and `u` is
   `⟨u λ, αᵢ^∨⟩`, and `sᵢ` preserves the bond of a cover `y ⋖ x` unless `y λ = (sᵢ x) λ`.
+* `TauCeti.reflectionBond_smul_add`: translating `λ` by a weight killed by the simple coroots
+  does not change the bonds between its orbit weights.
 
 ## References
 
@@ -78,6 +80,19 @@ section
 
 variable [CommRing R] [CharZero R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : _root_.RootPairing ι R M N} {b : P.Base}
+
+/-! ### Translating by a weight on every wall -/
+
+/-- **Bonds between orbit weights do not change under translation by a weight on every wall.** If
+every simple coroot kills `χ`, as for a central weight, then `χ` is fixed by the Weyl group, so
+`x (λ + χ) = x λ + χ`, and the bond of `x λ + χ` and `y λ + χ` is that of `x λ` and `y λ`. -/
+theorem reflectionBond_smul_add [IsDomain R] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
+    {χ : M} (hχ : ∀ i ∈ b.support, P.coroot' i χ = 0) (lam : M) (x y : P.weylGroup) :
+    P.reflectionBond b (x • (lam + χ)) (y • (lam + χ)) =
+      P.reflectionBond b (x • lam) (y • lam) := by
+  rw [smul_add, smul_add, smul_eq_self_of_forall_coroot'_eq_zero b hχ,
+    smul_eq_self_of_forall_coroot'_eq_zero b hχ,
+    reflectionBond_add_add (coroot'_eq_zero_of_forall_mem_support P b hχ)]
 
 /-! ### Bonds of covers -/
 

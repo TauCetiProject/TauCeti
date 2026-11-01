@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import TauCeti.Analysis.Normed.Operator.WeaklyCompact
 import Mathlib.Analysis.Normed.Module.Completion
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Analysis.Normed.Lp.Schur
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
@@ -55,6 +57,8 @@ Dunford–Pettis property.
 * `TauCeti.hasDunfordPettisProperty_iff`: the sequence criterion for the Dunford–Pettis property.
 * `TauCeti.HasDunfordPettisProperty.isDunfordPettis`: under the Dunford–Pettis property, weakly
   compact operators into normed spaces in any universe are Dunford–Pettis.
+* `TauCeti.hasDunfordPettisProperty_of_finiteDimensional`: a finite-dimensional space has the
+  Dunford–Pettis property.
 * `lp.hasDunfordPettisProperty_one`: `ℓ¹` has the Dunford–Pettis property.
 
 ## References
@@ -246,6 +250,13 @@ def HasDunfordPettisProperty : Prop :=
 
 variable {𝕜 E}
 
+/-- Unfolding lemma for `TauCeti.HasDunfordPettisProperty`. -/
+theorem hasDunfordPettisProperty_def :
+    HasDunfordPettisProperty 𝕜 E ↔
+      ∀ (F : Type u) [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+        (T : E →L[𝕜] F), T.IsWeaklyCompact → T.IsDunfordPettis :=
+  Iff.rfl
+
 open ZeroAtInftyContinuousMap UniformSpace in
 /-- **The Dunford–Pettis property, sequence criterion**, forward direction: if `E` has the
 Dunford–Pettis property, `x` is weakly null in `E` and `f` is weakly null in the dual, then
@@ -289,6 +300,14 @@ theorem hasDunfordPettisProperty_iff :
           Tendsto (fun n ↦ toWeakSpace 𝕜 (StrongDual 𝕜 E) (f n)) atTop (𝓝 0) →
             Tendsto (fun n ↦ f n (x n)) atTop (𝓝 0) :=
   ⟨fun h _ _ ↦ h.tendsto_apply, fun h _ _ _ _ _ hT ↦ hT.isDunfordPettis_of_tendsto_apply h⟩
+
+/-- A finite-dimensional normed space has the Dunford–Pettis property: every operator out of it is
+compact. -/
+theorem hasDunfordPettisProperty_of_finiteDimensional [FiniteDimensional 𝕜 E] :
+    HasDunfordPettisProperty 𝕜 E := by
+  have := FiniteDimensional.proper_rclike 𝕜 E
+  exact hasDunfordPettisProperty_def.2 fun _ _ _ _ T _ ↦
+    (isCompactOperator_of_locallyCompactSpace_rng T).isDunfordPettis
 
 end DunfordPettisProperty
 
