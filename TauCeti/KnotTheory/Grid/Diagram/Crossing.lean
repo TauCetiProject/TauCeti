@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Interval.Set.UnorderedInterval
-public import TauCeti.KnotTheory.Grid.TorusLink.Basic
+public import TauCeti.KnotTheory.Grid.Diagram.Basic
 
 /-!
 # The crossings of a grid diagram
@@ -33,10 +33,6 @@ vertical, running upwards when `X c < O c`, and the under-strand is horizontal, 
 right when `O.transpose r < X.transpose r`; the crossing is positive when the vertical strand
 runs upwards and the horizontal one to the left, or downwards and to the right
 (`TauCeti.GridDiagram.crossingSign_eq_one_iff`).
-
-The standard `5 × 5` grid `TauCeti.GridDiagram.torusLink 1 2` has three crossings, all negative
-(`TauCeti.GridDiagram.card_crossings_torusLink_one_two`,
-`TauCeti.GridDiagram.crossingSign_torusLink_one_two`).
 
 ## Main definitions
 
@@ -112,53 +108,6 @@ theorem crossingSign_eq_neg_one_iff (c r : Fin n) :
   split_ifs with h
   · exact iff_of_false (by decide) (not_not_intro h)
   · exact iff_of_true rfl h
-
-/-! ### The standard `5 × 5` grid -/
-
-/-- The row of the `X` marking in column `c` of the standard `5 × 5` grid. -/
-private theorem torusLink_one_two_X_val (c : Fin 5) : ((torusLink 1 2).X c : ℕ) = (c + 3) % 5 :=
-  torusLink_X_val 1 2 c
-
-/-- The column of the `X` marking in row `r` of the standard `5 × 5` grid. -/
-private theorem torusLink_one_two_X_transpose_val (r : Fin 5) :
-    ((torusLink 1 2).X.transpose r : ℕ) = (r + 2) % 5 := by
-  have h := torusLink_one_two_X_val ((torusLink 1 2).X.transpose r)
-  rw [GridState.apply_transpose_apply] at h
-  omega
-
-/-- The standard `5 × 5` grid `torusLink 1 2` has exactly three crossings, in the squares
-`(1, 3)`, `(2, 1)` and `(3, 2)`. -/
-theorem crossings_torusLink_one_two :
-    (torusLink 1 2).crossings = {(1, 3), (2, 1), (3, 2)} := by
-  ext ⟨c, r⟩
-  have hO (c : Fin 5) : ((torusLink 1 2).O c : ℕ) = c := congrArg Fin.val (torusLink_O_apply 1 2 c)
-  have hOt (r : Fin 5) : ((torusLink 1 2).O.transpose r : ℕ) = r := by
-    have h := hO ((torusLink 1 2).O.transpose r)
-    rw [GridState.apply_transpose_apply] at h
-    exact h.symm
-  simp only [mem_crossings, IsCrossing, ← Set.Ioo_min_max, Set.mem_Ioo, Fin.lt_def, Fin.val_min,
-    Fin.val_max, hO, hOt, torusLink_one_two_X_val, torusLink_one_two_X_transpose_val,
-    Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq, Fin.ext_iff]
-  fin_cases c <;> fin_cases r <;> decide
-
-/-- The standard `5 × 5` grid `torusLink 1 2` has three crossings. -/
-theorem card_crossings_torusLink_one_two : (torusLink 1 2).crossings.card = 3 := by
-  rw [crossings_torusLink_one_two]
-  decide
-
-/-- All three crossings of the standard `5 × 5` grid `torusLink 1 2` are negative. -/
-theorem crossingSign_torusLink_one_two {p : Fin 5 × Fin 5} (hp : p ∈ (torusLink 1 2).crossings) :
-    (torusLink 1 2).crossingSign p.1 p.2 = -1 := by
-  have hO (c : Fin 5) : ((torusLink 1 2).O c : ℕ) = c := congrArg Fin.val (torusLink_O_apply 1 2 c)
-  have hOt (r : Fin 5) : ((torusLink 1 2).O.transpose r : ℕ) = r := by
-    have h := hO ((torusLink 1 2).O.transpose r)
-    rw [GridState.apply_transpose_apply] at h
-    exact h.symm
-  rw [crossings_torusLink_one_two] at hp
-  rw [crossingSign_eq_neg_one_iff]
-  simp only [Fin.lt_def, hO, hOt, torusLink_one_two_X_val, torusLink_one_two_X_transpose_val]
-  simp only [Finset.mem_insert, Finset.mem_singleton] at hp
-  rcases hp with rfl | rfl | rfl <;> decide
 
 end GridDiagram
 

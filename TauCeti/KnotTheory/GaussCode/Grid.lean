@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Dist
 public import TauCeti.KnotTheory.GaussCode.Basic
+public import TauCeti.KnotTheory.Grid.Diagram.Components
 public import TauCeti.KnotTheory.Grid.Diagram.Crossing
 
 /-!
@@ -221,8 +222,7 @@ segment. -/
 @[simp]
 theorem gaussCode_over (i : Fin (2 * G.crossings.card)) :
     (gaussCode hG c₀).over i = (visitOrderIso hG c₀ i).isOver := by
-  rw [gaussCode, BasedOrientedGaussCode.ofPerfectMatching_over]
-  rfl
+  rw [gaussCode, visitOrderIso, BasedOrientedGaussCode.ofPerfectMatching_over]
 
 /-- The partner of a visit is the other visit of the same crossing. -/
 @[simp]
@@ -250,32 +250,24 @@ theorem gaussCode_visit_lt_visit_iff (i j : Fin (2 * G.crossings.card)) :
     (gaussCode hG c₀).visit i < (gaussCode hG c₀).visit j ↔
       min (visitOrderIso hG c₀ i) (visitOrderIso hG c₀ ((gaussCode hG c₀).partner.val i)) <
         min (visitOrderIso hG c₀ j) (visitOrderIso hG c₀ ((gaussCode hG c₀).partner.val j)) := by
-  rw [visitOrderIso_partner, visitOrderIso_partner, gaussCode,
+  rw [visitOrderIso_partner, visitOrderIso_partner, gaussCode, visitOrderIso,
     BasedOrientedGaussCode.ofPerfectMatching_visit_lt_visit_iff, visitMatching_apply,
     visitMatching_apply]
-  rfl
 
 /-- **The sign of a crossing.** The sign of the crossing label met at visit `i` is the crossing
 sign of the grid at the crossing visited. -/
 theorem gaussCode_sign_visit (i : Fin (2 * G.crossings.card)) :
     (gaussCode hG c₀).sign ((gaussCode hG c₀).visit i) =
       G.crossingSign (visitOrderIso hG c₀ i).crossing.1.1
-        (visitOrderIso hG c₀ i).crossing.1.2 :=
-  BasedOrientedGaussCode.ofPerfectMatching_sign_visit _ _ _ _ _
-    (fun v ↦ by rw [visitMatching_apply]) i
+        (visitOrderIso hG c₀ i).crossing.1.2 := by
+  rw [gaussCode, visitOrderIso, BasedOrientedGaussCode.ofPerfectMatching_sign_visit _ _ _ _ _
+    (fun v ↦ by rw [visitMatching_apply]) i]
 
 /-- The writhe of the Gauss code of a knot grid is the sum of the crossing signs of the grid. -/
 theorem gaussCode_writhe :
     (gaussCode hG c₀).writhe = ∑ p ∈ G.crossings, (G.crossingSign p.1 p.2 : ℤ) := by
-  -- Sum the signs over all visits in two ways: every crossing label, and every crossing of the
-  -- grid, is visited exactly twice.
-  have hvisits : ∑ i, ((gaussCode hG c₀).sign ((gaussCode hG c₀).visit i) : ℤ) =
-      2 * (gaussCode hG c₀).writhe := by
-    have h := (gaussCode hG c₀).visitDataEquiv.sum_comp
-      (fun q : Fin G.crossings.card × Bool ↦ ((gaussCode hG c₀).sign q.1 : ℤ))
-    simp only [BasedOrientedGaussCode.visitDataEquiv_apply] at h
-    rw [h, Fintype.sum_prod_type, BasedOrientedGaussCode.writhe_def, Finset.mul_sum]
-    simp [two_mul]
+  -- Sum the signs over all visits in two ways: every crossing label (`sum_sign_visit`), and every
+  -- crossing of the grid, is visited exactly twice.
   have hgrid : ∑ i, ((gaussCode hG c₀).sign ((gaussCode hG c₀).visit i) : ℤ) =
       2 * ∑ p ∈ G.crossings, (G.crossingSign p.1 p.2 : ℤ) := by
     simp only [gaussCode_sign_visit]
@@ -289,7 +281,7 @@ theorem gaussCode_writhe :
         (fun q : G.crossings × Bool ↦ (G.crossingSign q.1.1.1 q.1.1.2 : ℤ)) fun _ ↦ rfl,
       Fintype.sum_prod_type, ← Finset.sum_coe_sort G.crossings, Finset.mul_sum]
     simp [two_mul]
-  exact mul_left_cancel₀ two_ne_zero (hvisits.symm.trans hgrid)
+  exact mul_left_cancel₀ two_ne_zero ((gaussCode hG c₀).sum_sign_visit.symm.trans hgrid)
 
 end GridDiagram
 
