@@ -83,6 +83,11 @@ theorem ae_mem_Icc_semicircleReal (a : ℝ) (v : ℝ≥0) :
   filter_upwards [ae_mem_Ioo_semicircleMeasure] with x hx
   constructor <;> nlinarith [Real.sqrt_nonneg (v : ℝ), hx.1, hx.2]
 
+/-- The semicircle law gives measure zero outside the closed interval between its edges. -/
+theorem semicircleReal_compl_Icc (a : ℝ) (v : ℝ≥0) :
+    semicircleReal a v (Icc (a - 2 * Real.sqrt v) (a + 2 * Real.sqrt v))ᶜ = 0 :=
+  ae_iff.1 (ae_mem_Icc_semicircleReal a v)
+
 /-- The exact support is the closed interval between the semicircle edges, also at variance zero.
 -/
 @[simp]

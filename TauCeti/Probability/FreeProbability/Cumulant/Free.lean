@@ -221,8 +221,7 @@ theorem isFreelyIndependent_of_freeCumulant_eq_zero
   set e := X.orderEmbOfFin rfl
   obtain ⟨k, hk⟩ : u ∈ Set.range e := by rwa [range_orderEmbOfFin]
   obtain ⟨k', hk'⟩ : v ∈ Set.range e := by rwa [range_orderEmbOfFin]
-  rw [← image_orderEmbOfFin_univ X rfl, ← freeCumulant_comp_of_strictMonoOn φ
-    (e.strictMono.strictMonoOn _) a]
+  rw [freeCumulant_eq_freeCumulant_comp_orderEmbOfFin φ a X]
   refine h _ (a ∘ e) (ℓ ∘ e) (fun k => hw _ (List.getElem_mem _)) k k' ?_
   simp only [comp_apply, hk, hk']
   exact isChain_map_sort_iff.1 halt' u (mem_univ u) v (mem_univ v) huv hadj

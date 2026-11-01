@@ -27,7 +27,7 @@ integration against the semicircle law, the coordinate function is semicircular 
 
 * `PositiveLinearMap.law_eq_semicircleReal_iff` — for selfadjoint `a`, `μ_a = semicircleReal 0 v`
   if and only if `a` is semicircular of variance `v`.
-* `PositiveLinearMap.isSemicircular_integralPositiveLinearMap_semicircleReal` — a commutative
+* `TauCeti.isSemicircular_integralPositiveLinearMap_semicircleReal` — a commutative
   realization of a semicircular element of any variance `v ≥ 0`.
 
 ## References
@@ -45,22 +45,20 @@ namespace PositiveLinearMap
 variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] (φ : A →ₚ[ℂ] ℂ)
   {a : A}
 
-/-- The semicircle law of variance `v` is concentrated on `[-2√v, 2√v]`. -/
-private theorem semicircleReal_compl_Icc (v : ℝ≥0) :
-    semicircleReal 0 v (Set.Icc (-(2 * √(v : ℝ))) (2 * √(v : ℝ)))ᶜ = 0 := by
-  have h := ae_iff.1 (ae_mem_Icc_semicircleReal 0 v)
-  rw [zero_sub, zero_add] at h
-  exact h
-
 /-- *The law of a semicircular element*: a selfadjoint element `a` of a C⋆-algebra has the centred
 semicircle law of variance `v` with respect to `φ` if and only if it is semicircular of variance
 `v` for `φ`. -/
 theorem law_eq_semicircleReal_iff (ha : IsSelfAdjoint a) (v : ℝ≥0) :
     law φ a = semicircleReal 0 v ↔ IsSemicircular φ.toLinearMap a ((v : ℝ) : ℂ) := by
-  rw [eq_comm, eq_law_iff_forall_integral_pow ha isCompact_Icc (semicircleReal_compl_Icc v),
+  rw [eq_comm, eq_law_iff_forall_integral_pow ha isCompact_Icc
+      (by simpa using semicircleReal_compl_Icc 0 v),
     isSemicircular_iff_apply_pow]
   refine forall_congr' fun n => ?_
   obtain ⟨k, rfl | rfl⟩ := Nat.even_or_odd' n <;> simp [eq_comm]
+
+end PositiveLinearMap
+
+namespace TauCeti
 
 /-- *Semicircular elements of every variance exist*: in the commutative C⋆-algebra of complex
 continuous functions on `K = [-2√v, 2√v]`, with the state given by integration against the
@@ -70,7 +68,8 @@ theorem isSemicircular_integralPositiveLinearMap_semicircleReal (v : ℝ≥0) :
         ((↑) : Set.Icc (-(2 * √(v : ℝ))) (2 * √(v : ℝ)) → ℝ))).toLinearMap
       ((ContinuousMap.restrict (Set.Icc (-(2 * √(v : ℝ))) (2 * √(v : ℝ)))
         (ContinuousMap.id ℝ)).realToRCLike ℂ) ((v : ℝ) : ℂ) :=
-  (law_eq_semicircleReal_iff _ (ContinuousMap.isSelfAdjoint_realToRCLike ℂ) v).1
-    (law_integralPositiveLinearMap_comap_restrict_id (semicircleReal_compl_Icc v))
+  (PositiveLinearMap.law_eq_semicircleReal_iff _ (ContinuousMap.isSelfAdjoint_realToRCLike ℂ) v).1
+    (PositiveLinearMap.law_integralPositiveLinearMap_comap_restrict_id
+      (by simpa using semicircleReal_compl_Icc 0 v))
 
-end PositiveLinearMap
+end TauCeti
