@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.SecondCovariantDerivative
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # The Ricci identity for the Hessian
@@ -32,9 +33,21 @@ the Cotton tensor and in Bochner-type formulas.
 The identity is stated on smooth vector fields, since the covariant derivative of the Hessian is
 evaluated through them.
 
+The module also records two Hessian identities used in the Bochner formula. Metric compatibility
+gives `Hess |X|²(u, v) = 2 ⟪∇²X(u, v), X⟫ + 2 ⟪∇_u X, ∇_v X⟫` for every smooth vector field `X`,
+where `∇²X(u, v) = ∇_u ∇_V X - ∇_{∇_u V} X` is the second covariant derivative. Pairing
+`∇²(grad φ)(u, v)` with `w` gives `(∇_u Hess φ)(v, w)`, so since `Hess φ` is symmetric, the
+third covariant derivative of `φ` is symmetric in its last two slots.
+
 ## Main results
 
 * `TauCeti.Manifold.mvfderiv_hessian_sub_swap`: the Ricci identity for the Hessian.
+* `TauCeti.Manifold.hessian_norm_sq`: the Hessian of the squared length of a smooth vector field.
+* `TauCeti.Manifold.inner_secondCovariantDerivative_mgradient_eq_mvfderiv_hessian`: pairing the
+  second covariant derivative of `grad φ` with a vector field is the covariant derivative of the
+  Hessian.
+* `TauCeti.Manifold.inner_secondCovariantDerivative_mgradient_comm`: the third covariant
+  derivative of a smooth function is symmetric in its last two slots.
 
 ## References
 
@@ -45,7 +58,7 @@ evaluated through them.
 public section
 
 open Bundle
-open scoped ContDiff Manifold
+open scoped ContDiff InnerProductSpace Manifold
 
 noncomputable section
 
@@ -99,6 +112,85 @@ theorem mvfderiv_hessian_sub_swap {φ : M → ℝ} (hφ : ContMDiff I 𝓘(ℝ) 
   rw [← hR, hfun, hfun, hZY, hYZ]
   simp only [hsym, inner_sub_left]
   simp only [cov]
+  ring
+
+/-- **The Hessian of the squared length of a vector field.** For a smooth vector field `X`,
+`Hess |X|²(u, v) = 2 ⟪∇²X(u, v), X⟫ + 2 ⟪∇_u X, ∇_v X⟫`, where `∇` is the Levi-Civita connection
+and `∇²X(u, v) = ∇_u ∇_V X - ∇_{∇_u V} X`, for any smooth vector field `V` with `V x = v`, is its
+second covariant derivative. -/
+theorem hessian_norm_sq {X : Π x : M, TangentSpace I x} (hX : CMDiff ∞ (T% X)) (x : M)
+    (u v : TangentSpace I x) :
+    letI cov := CovariantDerivative.leviCivitaConnection I M
+    hessian I (fun y ↦ ‖X y‖ ^ 2) x u v =
+      2 * ⟪cov.secondCovariantDerivative cov X x u v, X x⟫_ℝ + 2 * ⟪cov X x u, cov X x v⟫_ℝ := by
+  set cov := CovariantDerivative.leviCivitaConnection I M
+  have hcov := CovariantDerivative.isMetricCompatible_leviCivitaConnection I (M := M)
+  have hX1 : CMDiff (∞ + 1) (T% X) := by simpa using hX
+  have hfun : (fun y ↦ ‖X y‖ ^ 2) = fun y ↦ ⟪X y, X y⟫_ℝ :=
+    funext fun y ↦ (real_inner_self_eq_norm_sq (X y)).symm
+  -- The directional derivative of `|X|²` is `⟨∇_w X, X⟩ + ⟨X, ∇_w X⟩`.
+  have hd (w : TangentSpace I x) :
+      mvfderiv I (fun y ↦ ⟪X y, X y⟫_ℝ) x w = ⟪cov X x w, X x⟫_ℝ + ⟪X x, cov X x w⟫_ℝ := by
+    have hXd : MDiffAt (T% X) x := hX.mdifferentiable (by simp) x
+    simpa using hcov.mvfderiv_inner_eq (FiberBundle.extend E w) hXd hXd
+  obtain ⟨U, hU, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
+  obtain ⟨V, hV, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
+  -- The bundle argument of `ContMDiff.inner_bundle` is not inferred through `TangentSpace`.
+  have hXX : CMDiff ∞ fun y ↦ ⟪X y, X y⟫_ℝ :=
+    ContMDiff.inner_bundle (IB := I) (F := E) (E := fun x : M ↦ TangentSpace I x) (b := id) hX hX
+  have hsq : ContMDiffAt I 𝓘(ℝ) 2 (fun y ↦ ‖X y‖ ^ 2) x := by
+    rw [hfun]
+    exact (hXX.of_le (by simp)).contMDiffAt
+  rw [hessian_apply_eq_mvfderiv_sub x hsq U V (hV.mdifferentiableAt (by simp)), hfun,
+    hcov.mvfderiv_mvfderiv_inner (n := ∞) (by simp) hV hX1 hX1 x, hd,
+    cov.secondCovariantDerivative_apply cov hX x hV]
+  simp only [cov, inner_sub_right, real_inner_comm (X x),
+    real_inner_comm (CovariantDerivative.leviCivitaConnection I M X x (U x))]
+  ring
+
+/-- Pairing the second covariant derivative of `grad φ` with a vector field is the covariant
+derivative of the Hessian: for smooth vector fields `V` and `W`,
+`⟪∇²(grad φ)(u, V), W⟫ = u (Hess φ(V, W)) - Hess φ(∇_u V, W) - Hess φ(V, ∇_u W)`, where `∇` is the
+Levi-Civita connection. -/
+theorem inner_secondCovariantDerivative_mgradient_eq_mvfderiv_hessian {φ : M → ℝ}
+    (hφ : ContMDiff I 𝓘(ℝ) ∞ φ) {V W : Π x : M, TangentSpace I x} (hV : CMDiff ∞ (T% V))
+    {x : M} (hW : MDiffAt (T% W) x) (u : TangentSpace I x) :
+    letI cov := CovariantDerivative.leviCivitaConnection I M
+    ⟪cov.secondCovariantDerivative cov (mgradient I φ) x u (V x), W x⟫_ℝ =
+      mvfderiv I (fun y ↦ hessian I φ y (V y) (W y)) x u - hessian I φ x (cov V x u) (W x) -
+        hessian I φ x (V x) (cov W x u) := by
+  let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  set cov := CovariantDerivative.leviCivitaConnection I M
+  have hG : CMDiff ∞ (T% (mgradient I φ)) := contMDiff_mgradient hφ
+  have hGV : MDiffAt (T% (fun y ↦ cov (mgradient I φ) y (V y))) x :=
+    (cov.contMDiff_apply hV hG).mdifferentiable (by simp) x
+  have hd := (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
+    (FiberBundle.extend E u) hGV hW
+  simp only [FiberBundle.extend_apply_self] at hd
+  simp only [hessian_def]
+  rw [hd, cov.secondCovariantDerivative_apply cov hG x hV]
+  simp only [cov, inner_sub_left]
+  ring
+
+/-- The third covariant derivative of a smooth function is symmetric in its last two slots:
+`⟪∇²(grad φ)(u, v), w⟫ = ⟪∇²(grad φ)(u, w), v⟫`, since it is the covariant derivative of the
+symmetric Hessian. -/
+theorem inner_secondCovariantDerivative_mgradient_comm {φ : M → ℝ} (hφ : ContMDiff I 𝓘(ℝ) ∞ φ)
+    (x : M) (u v w : TangentSpace I x) :
+    letI cov := CovariantDerivative.leviCivitaConnection I M
+    ⟪cov.secondCovariantDerivative cov (mgradient I φ) x u v, w⟫_ℝ =
+      ⟪cov.secondCovariantDerivative cov (mgradient I φ) x u w, v⟫_ℝ := by
+  have hφ2 : ContMDiffAt I 𝓘(ℝ) 2 φ x := (hφ.of_le (by simp)).contMDiffAt
+  obtain ⟨V, hV, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
+  obtain ⟨W, hW, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
+  have hpair : (fun y ↦ hessian I φ y (V y) (W y)) = fun y ↦ hessian I φ y (W y) (V y) :=
+    funext fun y ↦ hessian_symm y (hφ.of_le (by simp)).contMDiffAt _ _
+  rw [inner_secondCovariantDerivative_mgradient_eq_mvfderiv_hessian hφ hV
+      (hW.mdifferentiableAt (by simp)),
+    inner_secondCovariantDerivative_mgradient_eq_mvfderiv_hessian hφ hW
+      (hV.mdifferentiableAt (by simp)), hpair,
+    hessian_symm x hφ2 (CovariantDerivative.leviCivitaConnection I M V x u),
+    hessian_symm x hφ2 (V x)]
   ring
 
 end TauCeti.Manifold

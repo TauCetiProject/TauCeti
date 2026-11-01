@@ -38,8 +38,19 @@ a global trivialization has a Thom class (`Bundle.Trivialization.exists_isThomCl
 trivialization pulls back to a global trivialization of the restriction of `E` to its base set, so
 these restrictions have Thom classes (`Bundle.Trivialization.exists_isThomClass_pullback_baseSet`):
 these are the local Thom classes over trivializing open sets that the Mayer–Vietoris argument of
-Milnor and Stasheff (§10) glues to a Thom class of a general oriented bundle. That gluing is not
-formalized here.
+Milnor and Stasheff (§10) glues to a Thom class of a general oriented bundle. The gluing over
+finite trivializing covers is in `TauCeti.Topology.VectorBundle.MayerVietoris`.
+
+The gluing works with the Thom pair `(E|_W, E₀|_W)` of the restriction of `E` to a subset `W` of
+the base (`TauCeti.thomPairOver`). When `W` lies in the base set of a linear trivialization `e`,
+the trivialization identifies this pair with the Thom pair `(W × F, W × (F ∖ {0}))` of the product
+bundle (`Bundle.Trivialization.thomPairOverIso`), which on the fibre over `b ∈ W` is the
+isomorphism of fibre pairs given by `e` at `b`
+(`Bundle.Trivialization.fiberThomPairOverMap_comp_thomPairOverIso_hom`). Pulling back a class of
+`(F, F ∖ {0})` along it gives classes over `W` with prescribed restrictions to the fibres
+(`Bundle.Trivialization.exists_singularCohomology_thomPairOver_fiber`), and a class over `W` in the
+top degree is determined by those restrictions
+(`Bundle.Trivialization.singularCohomology_thomPairOver_ext`).
 
 The Thom pair of the trivial bundle is that of the product bundle `B × F`
 (`TauCeti.trivialThomPairIso`), whose cohomology is computed up to the rank in
@@ -73,6 +84,12 @@ instance a Thom class, is determined by its restrictions to the fibres
   pair of a trivializable bundle vanishes below the rank.
 * `Bundle.Trivialization.singularCohomology_thomPair_ext`: a class of a trivializable bundle in
   degree the rank is determined by its restrictions to the fibres.
+* `Bundle.Trivialization.thomPairOverIso`: over a subset of the base set of a linear
+  trivialization, the Thom pair of the restriction is the Thom pair of a product bundle.
+* `Bundle.Trivialization.exists_singularCohomology_thomPairOver_fiber`: local classes over a
+  trivializing set with prescribed restrictions to the fibres.
+* `Bundle.Trivialization.singularCohomology_thomPairOver_ext`: over a trivializing set, a class in
+  the top degree is determined on the fibres.
 
 ## References
 
@@ -252,6 +269,144 @@ theorem fiberThomPairMap_comp_thomPairIso_hom (he : e.baseSet = Set.univ) (b : B
   rfl
 
 end Geometry
+
+section ThomPairOver
+
+variable (R : Type*) [Semiring R] {B : Type w} [TopologicalSpace B] {F : Type w}
+  [TopologicalSpace F] [AddCommMonoid F] [Module R F] {E : B → Type w}
+  [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)] [∀ b, Module R (E b)]
+  (e : Trivialization F (π F E)) [e.IsLinear R] {W : Set B} (hW : W ⊆ e.baseSet)
+
+/-- The map of pairs `(E|_W, E₀|_W) ⟶ (W × F, W × (F ∖ {0}))` given by a linear trivialization
+whose base set contains `W`. -/
+private def thomPairOverHom : thomPairOver F E W ⟶ prodThomPair W F :=
+  TopPair.ofHom (TopCat.isoOfHomeo (e.preimageHomeomorph hW)).hom
+    (TopCat.ofHom ⟨fun v ↦ ⟨e.preimageHomeomorph hW ⟨v.1, v.2.1⟩, by
+      simpa [preimageHomeomorph_apply] using
+        (e.snd_apply_ne_zero_iff R (hW v.2.1)).2 (mem_zeroSectionCompl.1 v.2.2)⟩,
+      by fun_prop⟩) (by ext; rfl)
+
+/-- Over a subset `W` of the base set of a linear trivialization `e`, the trivialization identifies
+the Thom pair `(E|_W, E₀|_W)` of the restriction with the Thom pair `(W × F, W × (F ∖ {0}))` of the
+product bundle. -/
+def thomPairOverIso : thomPairOver F E W ≅ prodThomPair W F :=
+  have : IsIso (TopPair.Hom.fst (e.thomPairOverHom R hW)) := (TopCat.isoOfHomeo _).isIso_hom
+  have := TopPair.isIso_of_isIso_fst_of_surjective_snd (e.thomPairOverHom R hW) fun p ↦ by
+    let v := (e.preimageHomeomorph hW).symm p.1
+    have hv : e.preimageHomeomorph hW v = p.1 := Homeomorph.apply_symm_apply _ _
+    refine ⟨⟨v.1, v.2, mem_zeroSectionCompl.2 ((e.snd_apply_ne_zero_iff R (hW v.2)).1 ?_)⟩,
+      Subtype.ext hv⟩
+    simpa [preimageHomeomorph_apply, ← hv] using p.2
+  asIso (e.thomPairOverHom R hW)
+
+@[simp]
+theorem thomPairOverIso_hom_fst_apply (v : π F E ⁻¹' W) :
+    TopPair.Hom.fst (e.thomPairOverIso R hW).hom v = (⟨v.1.proj, v.2⟩, (e v).2) :=
+  e.preimageHomeomorph_apply hW v
+
+@[simp]
+theorem thomPairOverIso_hom_snd_apply (v : (thomPairOver F E W).snd) :
+    (TopPair.Hom.snd (e.thomPairOverIso R hW).hom v).1 = (⟨v.1.proj, v.2.1⟩, (e v.1).2) :=
+  e.preimageHomeomorph_apply hW ⟨v.1, v.2.1⟩
+
+@[simp]
+theorem thomPairOverIso_inv_fst_apply (p : W × F) :
+    TopPair.Hom.fst (e.thomPairOverIso R hW).inv p = (e.preimageHomeomorph hW).symm p :=
+  (e.preimageHomeomorph hW).eq_symm_apply.2
+    ((TopPair.proj₁.mapIso (e.thomPairOverIso R hW)).inv_hom_id_apply p)
+
+@[simp]
+theorem thomPairOverIso_inv_snd_apply (p : (prodThomPair W F).snd) :
+    (TopPair.Hom.snd (e.thomPairOverIso R hW).inv p).1 = (e.preimageHomeomorph hW).symm p.1 :=
+  (congrArg Subtype.val ((TopPair.Hom.w_apply (e.thomPairOverIso R hW).inv p).trans
+    (e.thomPairOverIso_inv_fst_apply R hW p.1)) :)
+
+end ThomPairOver
+
+section ThomPairOverFiber
+
+variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {B : Type w} [TopologicalSpace B] {F : Type w}
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  (e : Trivialization F (π F E)) [e.IsLinear 𝕜] {W : Set B} (hW : W ⊆ e.baseSet)
+
+/-- On the fibre over a point `b ∈ W`, the identification of `(E|_W, E₀|_W)` with the Thom pair of
+the product bundle `W × F` is the isomorphism of fibre pairs `(E_b, E_b ∖ {0}) ≅ (F, F ∖ {0})`
+given by the trivialization at `b`. -/
+@[reassoc]
+theorem fiberThomPairOverMap_comp_thomPairOverIso_hom {b : B} (hb : b ∈ W) :
+    fiberThomPairOverMap F E hb ≫ (e.thomPairOverIso 𝕜 hW).hom =
+      (e.fiberPairIso 𝕜 (hW hb)).hom ≫ prodThomPairFiberMap F (⟨b, hb⟩ : W) := by
+  refine TopPair.hom_ext_of_fst _ (TopCat.ext fun (x : E b) ↦ ?_)
+  -- Both sides send `x : E_b` to `(b, e x)`. The carriers of the pairs agree with `E_b`, `F` and
+  -- the subspaces of the total space only up to unfolding, so first split each composite into
+  -- its evaluations.
+  change TopPair.Hom.fst (e.thomPairOverIso 𝕜 hW).hom
+      (TopPair.Hom.fst (fiberThomPairOverMap F E hb) x) =
+    TopPair.Hom.fst (prodThomPairFiberMap F (⟨b, hb⟩ : W))
+      (TopPair.Hom.fst (e.fiberPairIso 𝕜 (hW hb)).hom x)
+  rw [fiberThomPairOverMap_fst_apply, thomPairOverIso_hom_fst_apply, fiberPairIso_hom_fst_apply,
+    prodThomPairFiberMap_fst_apply, continuousLinearEquivAt_apply]
+
+include hW in
+/-- **Local classes over a trivializing set.** For `W` contained in the base set of a linear
+trivialization, every class `g ∈ Hⁿ(F, F ∖ {0})` pulls back, along the trivialization followed by
+the projection to the fibre, to a class of `Hⁿ(E|_W, E₀|_W)` whose restriction to the fibre pair
+over each `b ∈ W` is the image of `g` under the isomorphism of fibre pairs
+`(E_b, E_b ∖ {0}) ≅ (F, F ∖ {0})` given by the trivialization. For `g` a generator in degree
+`dim F` these are local Thom classes. -/
+theorem exists_singularCohomology_thomPairOver_fiber {C : Type u} [Category.{v} C]
+    [HasCoproducts.{w} C] [Abelian C] {R : C} {k : Type*} [Ring k] [Linear k C] {M : C}
+    {n : ℕ} (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R k M n) :
+    ∃ u : (thomPairOver F E W).singularCohomology R k M n, ∀ b (hb : b ∈ W),
+      TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) n u =
+        TopPair.singularCohomologyMap (e.fiberPairIso 𝕜 (hW hb)).hom n g := by
+  -- The projection `(W × F, W × (F ∖ {0})) ⟶ (F, F ∖ {0})` onto the fibre pair.
+  let proj : prodThomPair W F ⟶ TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) :=
+    TopPair.ofSubsetMap (TopCat.ofHom ⟨Prod.snd, continuous_snd⟩) fun _ hp ↦ hp
+  have hproj (w : W) : prodThomPairFiberMap F w ≫ proj = 𝟙 _ :=
+    TopPair.hom_ext_of_fst _ (TopCat.ext fun x ↦ by
+      -- `TopPair.Hom.fst` of a composite is the composite of the `fst` maps only up to unfolding.
+      erw [CategoryTheory.comp_apply, prodThomPairFiberMap_fst_apply, TopPair.ofSubsetMap_fst_apply]
+      rfl)
+  refine ⟨TopPair.singularCohomologyMap ((e.thomPairOverIso 𝕜 hW).hom ≫ proj) n g, fun b hb ↦ ?_⟩
+  rw [← TopPair.singularCohomologyMap_comp_apply,
+    e.fiberThomPairOverMap_comp_thomPairOverIso_hom_assoc 𝕜 hW hb, hproj, Category.comp_id]
+
+end ThomPairOverFiber
+
+section ThomPairOverExt
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  (e : Trivialization F (π F E)) [e.IsLinear ℝ] {W : Set B} (hW : W ⊆ e.baseSet)
+  {K : Type*} [CommRing K] {R' M' : ModuleCat.{w} K} [Module.Projective K R']
+
+include hW in
+/-- **Classes over a trivializing set in the top degree are determined on the fibres**: for `W`
+contained in the base set of a linear trivialization, two classes of
+`Hʳ(E|_W, E₀|_W; R, M)`, `r = dim F` and `R` projective, whose restrictions to the fibre pair
+`(E_b, E_b ∖ {0})` over every point `b ∈ W` agree, are equal. -/
+theorem singularCohomology_thomPairOver_ext
+    {u v : (thomPairOver F E W).singularCohomology R' K M' (finrank ℝ F)}
+    (h : ∀ b (hb : b ∈ W), TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) _ u =
+      TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) _ v) : u = v := by
+  let φ := e.thomPairOverIso ℝ hW
+  have hφ (b : W) : prodThomPairFiberMap F b ≫ φ.inv =
+      (e.fiberPairIso ℝ (hW b.2)).inv ≫ fiberThomPairOverMap F E b.2 := by
+    rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
+      e.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ hW b.2]
+  -- Transport `u` and `v` to the product bundle and compare them there, fibre by fibre.
+  have hφu (w : (thomPairOver F E W).singularCohomology R' K M' (finrank ℝ F)) :
+      TopPair.singularCohomologyMap φ.hom _ (TopPair.singularCohomologyMap φ.inv _ w) = w := by
+    simp [← TopPair.singularCohomologyMap_comp_apply]
+  refine (hφu u).symm.trans ((congrArg _ (singularCohomology_prodThomPair_ext fun b ↦ ?_)).trans
+    (hφu v))
+  simp only [← TopPair.singularCohomologyMap_comp_apply, hφ]
+  simp only [TopPair.singularCohomologyMap_comp_apply, h b b.2]
+
+end ThomPairOverExt
 
 variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C} {k : Type*} [Ring k]
