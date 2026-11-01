@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.Normed.Module.HahnBanach
 public import TauCeti.Analysis.Normed.Module.TensorProduct.Completion
 
@@ -19,8 +18,8 @@ on the factors. These embeddings allow injective tensors of subspaces to be view
 tensor product of the ambient spaces.
 
 The underlying bounded map is the existing `InjectiveTensor.mapL`; its norm preservation follows
-from Hahn–Banach extension of functionals on the left factor. On completions we use Mathlib's
-`LinearIsometry.completion`.
+from Hahn–Banach extension of functionals on the left factor. On completions we use the bounded
+completed tensor map and norm preservation on the dense algebraic tensor product.
 
 ## References
 
@@ -35,7 +34,7 @@ namespace TensorProduct
 
 variable {𝕜 E E' F F' : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [SeminormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
   [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
 
@@ -80,7 +79,7 @@ section Algebraic
 
 variable {𝕜 E E' F F' : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [SeminormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
   [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
 
@@ -114,17 +113,27 @@ end Algebraic
 
 namespace CompletedInjectiveTensor
 
-variable {𝕜 E E' F F' : Type*} [RCLike 𝕜]
+variable {𝕜 E E' F F' : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  [SeminormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup F'] [NormedSpace 𝕜 F']
 
 /-- Isometric embeddings in both factors induce an isometric embedding of completed injective
 tensor products. The factors need not be complete. -/
 noncomputable def mapIsometry (f : E →ₗᵢ[𝕜] E') (g : F →ₗᵢ[𝕜] F') :
-    CompletedInjectiveTensor 𝕜 E F →ₗᵢ[𝕜] CompletedInjectiveTensor 𝕜 E' F' :=
-  (InjectiveTensor.mapIsometry f g).completion
+    CompletedInjectiveTensor 𝕜 E F →ₗᵢ[𝕜] CompletedInjectiveTensor 𝕜 E' F' where
+  __ := (mapL f.toContinuousLinearMap g.toContinuousLinearMap).toLinearMap
+  norm_map' u := by
+    -- Expose the underlying bounded operator so the completion evaluation lemmas apply.
+    change ‖mapL f.toContinuousLinearMap g.toContinuousLinearMap u‖ = ‖u‖
+    refine UniformSpace.Completion.induction_on u
+      (isClosed_eq (mapL f.toContinuousLinearMap g.toContinuousLinearMap).continuous.norm
+        continuous_norm) fun v ↦ ?_
+    simpa only [mapL_coe, UniformSpace.Completion.norm_coe,
+      ← InjectiveTensor.mapIsometry_toContinuousLinearMap,
+      LinearIsometry.coe_toContinuousLinearMap] using
+      (InjectiveTensor.mapIsometry f g).norm_map v
 
 /-- Forgetting the completed isometry recovers the bounded completed tensor map. -/
 @[simp]
@@ -138,8 +147,11 @@ theorem mapIsometry_toContinuousLinearMap (f : E →ₗᵢ[𝕜] E') (g : F →�
 /-- On the dense algebraic tensor product the completed embedding is the algebraic embedding. -/
 @[simp]
 theorem mapIsometry_coe (f : E →ₗᵢ[𝕜] E') (g : F →ₗᵢ[𝕜] F') (u : InjectiveTensor 𝕜 E F) :
-    mapIsometry f g u = InjectiveTensor.mapIsometry f g u :=
-  LinearIsometry.completion_apply_coe _ u
+    mapIsometry f g u = InjectiveTensor.mapIsometry f g u := by
+  -- Expose the defining bounded map; its evaluation law avoids unfolding either tensor norm.
+  change mapL f.toContinuousLinearMap g.toContinuousLinearMap u = _
+  rw [mapL_coe]
+  rfl
 
 end CompletedInjectiveTensor
 

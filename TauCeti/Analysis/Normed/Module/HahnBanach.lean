@@ -23,18 +23,40 @@ namespace LinearIsometry
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- A continuous linear functional extends along a linear isometric embedding with the same
 operator norm. No completeness or closed-range hypothesis is required. -/
 theorem exists_extension_norm_eq (i : E →ₗᵢ[𝕜] F) (f : StrongDual 𝕜 E) :
     ∃ g : StrongDual 𝕜 F, g.comp i.toContinuousLinearMap = f ∧ ‖g‖ = ‖f‖ := by
-  let : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
   let e := i.equivRange
-  obtain ⟨g, hg, hnorm⟩ := _root_.exists_extension_norm_eq i.toLinearMap.range
-    (f.comp e.symm.toLinearIsometry.toContinuousLinearMap)
-  refine ⟨g, ?_, hnorm.trans (ContinuousLinearMap.opNorm_comp_linearIsometryEquiv f e.symm)⟩
+  let f' : StrongDual 𝕜 i.toLinearMap.range :=
+    f.comp e.symm.toLinearIsometry.toContinuousLinearMap
+  -- The range is only seminormed, so Mathlib's normed-domain composition lemma does not apply.
+  have hnorm' : ‖f'‖ = ‖f‖ := by
+    apply le_antisymm
+    · apply f'.opNorm_le_bound (norm_nonneg f)
+      intro x
+      calc
+        ‖f' x‖ = ‖f (e.symm x)‖ := rfl
+        _ ≤ ‖f‖ * ‖e.symm x‖ := f.le_opNorm _
+        _ = ‖f‖ * ‖x‖ := by rw [e.symm.norm_map]
+    · apply f.opNorm_le_bound (norm_nonneg f')
+      intro x
+      calc
+        ‖f x‖ = ‖f' (e x)‖ := by
+          -- Expose the composed functional to cancel the range equivalence without unfolding it.
+          change ‖f x‖ = ‖f (e.symm (e x))‖
+          rw [e.symm_apply_apply]
+        _ ≤ ‖f'‖ * ‖e x‖ := f'.le_opNorm _
+        _ = ‖f'‖ * ‖x‖ := by rw [e.norm_map]
+  obtain ⟨g, hg, hnorm⟩ := _root_.exists_extension_norm_eq i.toLinearMap.range f'
+  refine ⟨g, ?_, hnorm.trans hnorm'⟩
   ext x
-  simpa [e] using hg (e x)
+  -- Expose composition and the range subtype at this point, without unfolding the equivalence.
+  change g (i x) = f x
+  have hx := hg (e x)
+  change g (i x) = f (e.symm (e x)) at hx
+  simpa only [e.symm_apply_apply] using hx
 
 end LinearIsometry
