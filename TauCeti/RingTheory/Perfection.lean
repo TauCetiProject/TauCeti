@@ -21,6 +21,8 @@ instance to the multiplicative monoid of an algebraically closed field of any ch
 
 * `Perfection.coeffMonoidHom_surjective`: if `x ↦ x ^ p` is surjective on `M`, so is every
   coordinate map `Perfection.coeffMonoidHom M p n`.
+* `Perfection.coeff_eq_zero_iff`: in the perfection of a reduced ring of characteristic `p`, an
+  element vanishes as soon as one of its coordinates does.
 * `TauCeti.dvd_of_compatible_roots`: in a compatible root sequence, later roots divide earlier ones.
 -/
 
@@ -44,6 +46,26 @@ theorem coeffMonoidHom_surjective (h : Function.Surjective fun x : M ↦ x ^ p) 
   have hf := coeffMonoidHom_pow_p_pow f 0 n
   rw [zero_add] at hf
   exact hf.trans (coeffMonoidHom_mk _ _ 0)
+
+section Reduced
+
+variable {R : Type*} [CommSemiring R] [Fact p.Prime] [CharP R p] [IsReduced R]
+
+/-- **In the perfection of a reduced ring, each coordinate detects zero.** If one coordinate of a
+compatible system of `p`-th roots vanishes, all later ones are nilpotent and all earlier ones are
+powers of it. -/
+theorem coeff_eq_zero_iff (n : ℕ) {f : Perfection R p} : coeff R p n f = 0 ↔ f = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_zero _⟩
+  have hlater (m : ℕ) : coeff R p (n + m) f = 0 := by
+    induction m with
+    | zero => exact h
+    | succ m ih => exact IsNilpotent.eq_zero ⟨p, by rw [← add_assoc, coeff_pow_p', ih]⟩
+  ext k
+  rw [map_zero, ← coeffMonoidHom_eq_coeff, ← coeffMonoidHom_pow_p_pow' f k n,
+    coeffMonoidHom_eq_coeff, add_comm, hlater,
+    zero_pow (pow_ne_zero _ (Fact.out : p.Prime).ne_zero)]
+
+end Reduced
 
 end Perfection
 
