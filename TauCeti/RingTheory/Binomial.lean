@@ -30,6 +30,10 @@ The proof combines Mathlib's Chu--Vandermonde identity `Ring.add_choose_eq` with
 factorization `Ring.choose_smul_choose`. No polynomial expansion or division by factorials is
 needed.
 
+For a commuting family, `Subring.choose_mem_of_mem_span` shows that containing its binomial
+coefficients implies containing the binomial coefficients of its entire integer span. This gives
+independence of integral toral constructions from a choice of lattice generators.
+
 Integer translation is controlled by the same basis. Chu--Vandermonde expresses
 `(r + z choose n)`, for `z : ℤ`, as an integral combination of the coefficients `(r choose k)`.
 Applying the formula again with `-z` proves equality of the two integral spans. This is the
@@ -498,3 +502,56 @@ theorem exists_forall_sum_mul_choose_eq (N : ℕ) (g : ℕ → ℤ) :
       exact hc j (Nat.lt_succ_iff.1 hjN)
 
 end TauCeti
+
+namespace Subring
+
+variable {R : Type*} [Ring R] [BinomialRing R]
+
+/-- A subring containing the binomial coefficients of two commuting elements through degree `n`
+contains the degree-`n` binomial coefficient of their sum. -/
+theorem choose_add_mem (S : Subring R) {x y : R} {n : ℕ} (hxy : Commute x y)
+    (hx : ∀ k ≤ n, Ring.choose x k ∈ S) (hy : ∀ k ≤ n, Ring.choose y k ∈ S) :
+    Ring.choose (x + y) n ∈ S := by
+  rw [Ring.add_choose_eq n hxy]
+  exact S.sum_mem fun ij hij ↦ S.mul_mem
+    (hx ij.1 (Finset.HasAntidiagonal.antidiagonal.fst_le hij))
+    (hy ij.2 (Finset.HasAntidiagonal.antidiagonal.snd_le hij))
+
+/-- A subring containing the binomial coefficients of `x` through degree `n` contains the
+same coefficients of every integer multiple of `x`. -/
+theorem choose_zsmul_mem (S : Subring R) {x : R} {n : ℕ}
+    (hx : ∀ k ≤ n, Ring.choose x k ∈ S) (z : ℤ) :
+    Ring.choose (z • x) n ∈ S := by
+  have hnat : ∀ m : ℕ, ∀ k ≤ n, Ring.choose (m • x) k ∈ S := by
+    intro m
+    induction m with
+    | zero => intro k hk; cases k <;> simp [Ring.choose_zero_succ]
+    | succ m ih =>
+      intro k hk
+      rw [succ_nsmul]
+      exact S.choose_add_mem ((Commute.refl x).smul_left m)
+        (fun l hl ↦ ih l (hl.trans hk)) (fun l hl ↦ hx l (hl.trans hk))
+  cases z with
+  | ofNat m => simpa only [Int.ofNat_eq_natCast, natCast_zsmul] using hnat m n le_rfl
+  | negSucc m =>
+    simpa only [negSucc_zsmul] using
+      TauCeti.Ring.choose_neg_mem (fun k hk ↦ hnat (m + 1) k hk)
+
+/-- If a subring contains every binomial coefficient in a commuting set of elements, it contains
+all binomial coefficients in their integer span. No commutativity of the ambient ring is needed. -/
+theorem choose_mem_of_mem_span (S : Subring R) {s : Set R}
+    (hcomm : ∀ x ∈ s, ∀ y ∈ s, Commute x y)
+    (hs : ∀ x ∈ s, ∀ n, Ring.choose x n ∈ S) {x : R}
+    (hx : x ∈ Submodule.span ℤ s) (n : ℕ) : Ring.choose x n ∈ S := by
+  have hspan : ∀ a ∈ Submodule.span ℤ s, ∀ b ∈ Submodule.span ℤ s, Commute a b := by
+    intro a ha b hb
+    exact Commute.span_left (R := ℤ)
+      (fun c hc ↦ Commute.span_right (R := ℤ) (hcomm c hc) b hb) a ha
+  induction hx using Submodule.span_induction generalizing n with
+  | mem x hx => exact hs x hx n
+  | zero => cases n <;> simp [Ring.choose_zero_succ]
+  | add x y hx hy ihx ihy =>
+    exact S.choose_add_mem (hspan x hx y hy) (fun k _ ↦ ihx k) (fun k _ ↦ ihy k)
+  | smul z x hx ih => exact S.choose_zsmul_mem (fun k _ ↦ ih k) z
+
+end Subring
