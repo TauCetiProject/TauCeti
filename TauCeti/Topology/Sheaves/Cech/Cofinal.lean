@@ -80,7 +80,7 @@ theorem toCechCohomology_opens (V : PointOpenCover X) :
 /-- **`toCechCohomology` is natural with respect to refinements.** If the open cover `V` refines
 the open cover `U` through `φ`, the map from the Čech cohomology of `U` to the Čech cohomology on
 `X` factors through the map induced by `φ`. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem cechComplexHomologyMap_comp_toCechCohomology {ι κ : Type u} {U : ι → Opens X}
     {V : κ → Opens X} (φ : FormalCoproduct.mk κ V ⟶ FormalCoproduct.mk ι U) (hU : IsOpenCover U)
     (hV : IsOpenCover V) :
@@ -106,8 +106,9 @@ def finiteCechCohomologyIso :
 theorem cechCohomologyι_comp_finiteCechCohomologyIso_hom (W : FiniteOpenCover X) :
     TauCeti.CategoryTheory.cechCohomologyι FiniteOpenCover.toFormalCoproduct (fun _ _ h ↦ h) n W ≫
         (finiteCechCohomologyIso X A n).hom =
-      toCechCohomology A n W.opens W.isOpenCover :=
-  TauCeti.CategoryTheory.cechCohomologyι_comp_cechCohomologyComparison A _ _ _ _ n _ W
+      toCechCohomology A n W.opens W.isOpenCover := by
+  rw [finiteCechCohomologyIso, TauCeti.CategoryTheory.cechCohomologyIso_hom]
+  exact TauCeti.CategoryTheory.cechCohomologyι_comp_cechCohomologyComparison A _ _ _ _ n _ W
 
 /-- The inverse of `finiteCechCohomologyIso` sends the image of the Čech cohomology of any
 `u`-small open cover to the map induced by a refinement by a finite indexed cover, followed by the
@@ -119,8 +120,9 @@ theorem toCechCohomology_comp_finiteCechCohomologyIso_inv {ι : Type u} (U : ι 
     toCechCohomology A n U hU ≫ (finiteCechCohomologyIso X A n).inv =
       TauCeti.CategoryTheory.cechComplexHomologyMap A n φ ≫
         TauCeti.CategoryTheory.cechCohomologyι FiniteOpenCover.toFormalCoproduct
-          (fun _ _ h ↦ h) n W :=
-  (TauCeti.CategoryTheory.toCechCohomology_comp_cechCohomologyComparison A _ _ _ _ n _ _ _).trans
-    (TauCeti.CategoryTheory.toCechCohomology_eq A _ _ n _ W φ)
+          (fun _ _ h ↦ h) n W := by
+  rw [finiteCechCohomologyIso, TauCeti.CategoryTheory.cechCohomologyIso_inv]
+  exact (TauCeti.CategoryTheory.toCechCohomology_comp_cechCohomologyComparison A _ _ _ _ n _ _
+    _).trans (TauCeti.CategoryTheory.toCechCohomology_eq A _ _ n _ W φ)
 
 end TauCeti.Topology
