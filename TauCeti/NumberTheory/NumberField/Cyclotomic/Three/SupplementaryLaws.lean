@@ -62,8 +62,8 @@ private theorem rational_supplement_exponent_modEq {t : ℤ} (ht : t ≡ 2 [ZMOD
     have ht' : t = 3 * (m + 1) - 1 := by omega
     rw [ht']
     have he : (3 * (m + 1) - 1) ^ 2 - 1 = 3 * (3 * (m + 1) ^ 2 - 2 * (m + 1)) := by ring
-    rw [he]
-    simp [Int.ModEq]
+    rw [he, Int.mul_ediv_cancel_left _ (by norm_num : (3 : ℤ) ≠ 0)]
+    unfold Int.ModEq
     omega
   have hresult : ((2 * ((absNorm I - 1) / 3) : ℕ) : ℤ) ≡
       2 * ((t + 1) / 3) [ZMOD 3] := by
@@ -133,10 +133,7 @@ example : ((powerResidueSymbolIdeal (span {((2 : ℤ) : 𝓞 K)}) 3
 example : ((powerResidueSymbolIdeal (span {((-10 : ℤ) : 𝓞 K)}) 3
     (Ideal.Quotient.mk _ (1 - hζ.toInteger)) : 𝓞 K) : K) = 1 := by
   rw [hζ.powerResidueSymbolIdeal_span_intCast_mk_one_sub_toInteger (by decide)]
-  norm_num
-  calc
-    ζ ^ 6 = (ζ ^ 3) ^ 2 := pow_mul ζ 3 2
-    _ = 1 := by rw [hζ.pow_eq_one, one_pow]
+  exact (hζ.zpow_eq_one_iff_dvd _).2 (by decide)
 
 example : ((powerResidueSymbolIdeal (span {((-1 : ℤ) : 𝓞 K)}) 3
     (Ideal.Quotient.mk _ (1 - hζ.toInteger)) : 𝓞 K) : K) = 1 := by
