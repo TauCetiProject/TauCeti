@@ -120,15 +120,8 @@ theorem evaln_indicator_eq_some_of_forall_notMem_fresh (hA : Monotone A)
     (h : evaln (fun z => some ((A s : Set ℕ).indicator 1 z)) k c n = some d) {t : ℕ}
     (hst : s ≤ t) (hfresh : ∀ t', s ≤ t' → t' < t → ∀ z, z < d.use → z ∉ fresh A t') :
     evaln (fun z => some ((A t : Set ℕ).indicator 1 z)) k c n = some d :=
-  evaln_eq_some_of_eqOn h fun z hz => by
-    refine congrArg some <| Set.indicator_eq_indicator ⟨fun hzs => hA hst hzs, fun hzt => ?_⟩ rfl
-    -- below the use, nothing enters between stages `s` and `t`
-    induction t, hst using Nat.le_induction with
-    | base => exact hzt
-    | succ t hst ih =>
-      by_contra hzs
-      exact hfresh t hst t.lt_succ_self z hz <| mem_fresh.2 ⟨hzt, fun hzt' =>
-        hzs <| ih (fun t' h₁ h₂ => hfresh t' h₁ (h₂.trans t.lt_succ_self)) hzt'⟩
+  evaln_eq_some_of_eqOn h fun z hz => congrArg some <|
+    Set.indicator_eq_indicator (agrees_of_no_fresh_below hA hst hfresh z hz) rfl
 
 /-- **Preservation in the limit.** Under monotone stages, if a run against the set oracle of `A s`
 succeeds and no number below its use enters after stage `s`, then it succeeds with the same output
