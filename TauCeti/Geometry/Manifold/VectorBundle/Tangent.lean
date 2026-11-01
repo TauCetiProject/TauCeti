@@ -1068,29 +1068,8 @@ end Prod
 
 section Sum
 
-variable {M' : Type*} [TopologicalSpace M'] [ChartedSpace H M']
-
-/-- An extended chart centred in the left summand has the target of that summand's chart. -/
-theorem extChartAt_target_sumInl (x : M) :
-    (extChartAt I (Sum.inl x : M ⊕ M')).target = (extChartAt I x).target := by
-  simp [extChartAt, ChartedSpace.sum_chartAt_inl]
-
-/-- An extended chart centred in the right summand has the target of that summand's chart. -/
-theorem extChartAt_target_sumInr (x : M') :
-    (extChartAt I (Sum.inr x : M ⊕ M')).target = (extChartAt I x).target := by
-  simp [extChartAt, ChartedSpace.sum_chartAt_inr]
-
-/-- The inverse extended chart centred in the left summand lands in that summand. -/
-theorem extChartAt_symm_sumInl (x : M) (z : E) :
-    (extChartAt I (Sum.inl x : M ⊕ M')).symm z = Sum.inl ((extChartAt I x).symm z) := by
-  simp [extChartAt, ChartedSpace.sum_chartAt_inl]
-
-/-- The inverse extended chart centred in the right summand lands in that summand. -/
-theorem extChartAt_symm_sumInr (x : M') (z : E) :
-    (extChartAt I (Sum.inr x : M ⊕ M')).symm z = Sum.inr ((extChartAt I x).symm z) := by
-  simp [extChartAt, ChartedSpace.sum_chartAt_inr]
-
-variable [IsManifold I 1 M] [IsManifold I 1 M']
+variable {M' : Type*} [TopologicalSpace M'] [ChartedSpace H M'] [IsManifold I 1 M]
+  [IsManifold I 1 M']
 
 /-- The tangent coordinate changes of a disjoint union `M ⊕ M'` between charts at points of `M`
 are those of `M`. -/

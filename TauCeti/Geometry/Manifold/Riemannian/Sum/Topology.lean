@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Sum
+public import TauCeti.Geometry.Manifold.Riemannian.Sum.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!

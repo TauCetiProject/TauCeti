@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Sum
+public import TauCeti.Geometry.Manifold.Riemannian.Sum.Topology
 public import Mathlib.Topology.Connected.PathConnected
 
 /-!
