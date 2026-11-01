@@ -17,6 +17,10 @@ family `v` of elements of a `K`-module satisfies the linear relations `∑ⱼ A 
 `det A` kills every `v k` (`Matrix.det_smul_eq_zero_of_sum_smul_eq_zero`). This is the
 determinant trick behind the Cayley–Hamilton and Nakayama arguments for finitely generated modules.
 
+It also identifies the adjugate of a matrix `A` with a right inverse `B` as `det A • B`
+(`Matrix.adjugate_eq_det_smul_of_mul_eq_one`); for a unitary matrix, `B` is the conjugate
+transpose.
+
 The same identity cancels a square matrix `A` with `A * B = c • 1` for a non-zero-divisor `c`, so
 that `B * A = c • 1` as well (`Matrix.mul_eq_smul_one_comm`). For `c = 1` this is
 `mul_eq_one_comm`; for general `c` it compares a form with its `c`-scaled dual, whose Gram matrix
@@ -51,6 +55,12 @@ theorem adjugate_mul_self_eq_one_iff_det_eq_one {n : Type*} [Fintype n] [Decidab
         simpa using hii
       · intro h
         rw [Matrix.adjugate_mul, h, one_smul]
+
+/-- The adjugate of a square matrix with a right inverse `B` is its determinant times `B`. -/
+theorem adjugate_eq_det_smul_of_mul_eq_one {n : Type*} [Fintype n] [DecidableEq n]
+    {A B : Matrix n n K} (h : A * B = 1) : A.adjugate = A.det • B := by
+  rw [← Matrix.mul_one A.adjugate, ← h, ← Matrix.mul_assoc, adjugate_mul, Matrix.smul_mul,
+    Matrix.one_mul]
 
 /-- **The determinant trick.** If a family `v` of elements of a module satisfies the linear
 relations `∑ⱼ A i j • v j = 0` for every `i`, then `det A` kills every member of the family. -/
