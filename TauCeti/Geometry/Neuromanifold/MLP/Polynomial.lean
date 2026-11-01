@@ -28,10 +28,10 @@ polynomial of each layer is `MLPSpec.layerPolynomial q`: `q` on hidden layers an
 affine output layer. Its last layer `MLPSpec.polynomialRealize A q` is a jointly polynomial
 tuple realizing `A.realize` after `A.parameterEquiv`, and substituting zero for every bias
 variable gives `MLPSpec.polynomialRealizeWeights A q`, realizing `A.realizeWeights` after
-`A.weightEquiv`. Thus the coefficient extraction, uniform input-degree bound, and faithful
-coefficient presentation of `TauCeti.Geometry.Neuromanifold.Polynomial.Presentation` apply to
-these networks. The identity-activation and monomial specifications are the cases
-`q = X` and `q j = X ^ r j`.
+`A.weightEquiv`. Thus the coefficient extraction and uniform input-degree bound of
+`TauCeti.Geometry.Neuromanifold.Polynomial.Basic`, and the faithful coefficient presentation of
+`TauCeti.Geometry.Neuromanifold.Polynomial.Presentation`, apply to these networks. The
+identity-activation and monomial specifications are the cases `q = X` and `q j = X ^ r j`.
 
 The jointly polynomial setting follows Marchetti–Shahverdi–Mereta–Trager–Kohn,
 *Algebra Unveils Deep Learning — An Invitation to Neuroalgebraic Geometry*,
