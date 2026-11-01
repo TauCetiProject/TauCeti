@@ -127,8 +127,7 @@ theorem bondPrice_div_bondPrice (h₀ : IntervalIntegrable r volume 0 a)
 `β'(t) = r(t) β(t)`. -/
 theorem hasDerivAt_bondPrice (hr : Continuous r) (β₀ t : ℝ) :
     HasDerivAt (bondPrice r β₀) (r t * bondPrice r β₀ t) t := by
-  have hi := intervalIntegral.integral_hasDerivAt_right (hr.intervalIntegrable 0 t)
-    hr.aestronglyMeasurable.stronglyMeasurableAtFilter hr.continuousAt
+  have hi := (hr.integral_hasStrictDerivAt 0 t).hasDerivAt
   convert hi.exp.const_mul β₀ using 1
   · exact funext (bondPrice_def r β₀)
   · rw [bondPrice_def]

@@ -31,5 +31,5 @@ variable {α β : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology �
 function, namely its extension `Set.IccExtend` by the endpoint values. -/
 theorem ContinuousOn.exists_continuous_eqOn_Icc (hf : ContinuousOn f (Icc a b)) (hab : a ≤ b) :
     ∃ g : α → β, Continuous g ∧ EqOn g f (Icc a b) :=
-  ⟨IccExtend hab ((Icc a b).domRestrict f), (continuous_IccExtend_iff (h := hab)).2 hf.domRestrict,
-    fun _ hx ↦ by rw [IccExtend_of_mem _ _ hx, domRestrict_apply]⟩
+  ⟨IccExtend hab ((Icc a b).domRestrict f), hf.domRestrict.Icc_extend',
+    fun _ hx ↦ IccExtend_of_mem _ _ hx⟩
