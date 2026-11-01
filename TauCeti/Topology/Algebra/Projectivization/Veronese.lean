@@ -57,9 +57,8 @@ theorem continuous_veroneseMonomials {K : Type*} [CommSemiring K] [TopologicalSp
 /-- The Veronese map is continuous: its homogeneous coordinates are monomials. -/
 theorem continuous_veronese {K : Type*} [Field K] [TopologicalSpace K] [ContinuousMul K]
     (d : ℕ) : Continuous (veronese (N := N) K d) :=
-  continuous_iff.2 <| (continuous_mk ((continuous_veroneseMonomials d).comp continuous_subtype_val)
-    fun v : {v : Fin N → K // v ≠ 0} ↦ veroneseMonomials_ne_zero d v.2).congr
-      fun v ↦ (veronese_mk K d v.1 v.2).symm
+  continuous_of_continuousOn (continuous_veroneseMonomials d).continuousOn
+    (fun _ ↦ veroneseMonomials_ne_zero d) (veronese_mk K d)
 
 /-- Over `ℝ` or `ℂ`, the Veronese map of positive degree is a closed embedding: it is a continuous
 injection from a compact space to a Hausdorff space. -/

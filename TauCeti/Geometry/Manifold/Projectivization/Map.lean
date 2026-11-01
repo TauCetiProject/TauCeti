@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Projectivization.Action
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
 
 /-!
-# Maps of projective spaces given in homogeneous coordinates are analytic
+# Maps of projective spaces given by `C^r` homogeneous coordinates are `C^r`
 
 A map `g : ℙ 𝕜 (Fin (m + 1) → 𝕜) → ℙ 𝕜 (Fin (n + 1) → 𝕜)` given in homogeneous coordinates by a
 map `F : 𝕜ᵐ⁺¹ → 𝕜ⁿ⁺¹`, `C^r` and nonvanishing away from `0`, so that `g [v] = [F v]`, is `C^r`
@@ -79,9 +79,7 @@ theorem contMDiff_of_contDiffOn {F : (Fin (m + 1) → 𝕜) → Fin (n + 1) → 
   have hratio : ContDiffOn 𝕜 r (fun z k ↦ w z (j.succAbove k) / w z j) {z | w z j ≠ 0} :=
     contDiffOn_pi.2 fun k ↦ (contDiff_pi.1 hw _).contDiffOn.div (contDiff_pi.1 hw j).contDiffOn
       fun _ hz ↦ hz
-  have hcont : Continuous g := continuous_iff.2 <|
-    (continuous_mk (hF.continuousOn.comp_continuous continuous_subtype_val fun v ↦ v.2)
-      fun v : {v : Fin (m + 1) → 𝕜 // v ≠ 0} ↦ hF₀ v.1 v.2).congr fun v ↦ (hg v.1 v.2).symm
+  have hcont : Continuous g := continuous_of_continuousOn hF.continuousOn hF₀ hg
   have hs : IsOpen (affineOpen i ∩ g ⁻¹' affineOpen j) :=
     (isOpen_affineOpen i).inter ((isOpen_affineOpen j).preimage hcont)
   refine ContMDiffOn.contMDiffAt ?_ (hs.mem_nhds ⟨hi, hj⟩)

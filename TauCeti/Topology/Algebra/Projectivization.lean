@@ -49,6 +49,8 @@ of projective space.
   `mk' K` is.
 * `Projectivization.continuous_mk`, `Projectivization.continuous_map`: `Projectivization.mk`
   and `Projectivization.map` are continuous.
+* `Projectivization.continuous_of_continuousOn`: a map of projective spaces given by continuous
+  homogeneous coordinates is continuous.
 * `Projectivization.mk'_eq_mk'_iff_forall_strongDual`: when continuous linear forms separate
   points, two nonzero vectors span the same line iff all the `2 × 2` minors
   `f v * g w - f w * g v` vanish.
@@ -117,6 +119,14 @@ variable {L W : Type*} [DivisionRing L] [AddCommGroup W] [Module L W] [Topologic
 theorem continuous_map {σ : K →+* L} {f : V →ₛₗ[σ] W} (hf : Function.Injective f)
     (hfc : Continuous f) : Continuous (map f hf) :=
   continuous_iff.2 <| continuous_mk (hfc.comp continuous_subtype_val) _
+
+/-- A map of projective spaces given in homogeneous coordinates by a map `F`, continuous and
+nonvanishing away from `0`, so that `g [v] = [F v]`, is continuous. -/
+theorem continuous_of_continuousOn {F : V → W} {g : ℙ K V → ℙ L W}
+    (hF : ContinuousOn F {v | v ≠ 0}) (hF₀ : ∀ v, v ≠ 0 → F v ≠ 0)
+    (hg : ∀ v (hv : v ≠ 0), g (mk K v hv) = mk L (F v) (hF₀ v hv)) : Continuous g :=
+  continuous_iff.2 <| (continuous_mk (hF.comp_continuous continuous_subtype_val fun v ↦ v.2)
+    fun v : {v : V // v ≠ 0} ↦ hF₀ v.1 v.2).congr fun v ↦ (hg v.1 v.2).symm
 
 end Map
 
