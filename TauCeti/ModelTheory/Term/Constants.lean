@@ -38,6 +38,7 @@ variable {L : Language.{u, v}} {α : Type uα} {γ : Type w}
 
 /-- In the expansion of an `L`-structure interpreting each constant `c` of `constantsOn γ` as
 `e c`, the constant `L.con c` of `L[[γ]]` is interpreted as `e c`. -/
+@[simp]
 theorem coe_con_constantsOn_structure {M : Type*} [L.Structure M] (e : γ → M) (c : γ) :
     letI := constantsOn.structure e; (L.con c : M) = e c :=
   -- `L.con c` is the constant symbol `c` of `constantsOn γ`, and `constantsOn.structure e`
