@@ -51,7 +51,8 @@ the derivations. The factor `(2πi)⁻¹` makes `φ` the noncommutative analogue
 * `TauCeti.SmoothNoncommutativeTorus.trace_gaugeDerivation`: `τ ∘ δ_ℓ = 0`.
 * `TauCeti.SmoothNoncommutativeTorus.gaugeDerivation_star`: `δ_ℓ` commutes with the involution when
   `ℓ` is purely imaginary.
-* `TauCeti.SmoothNoncommutativeTorus.commute_gaugeDerivation`: the derivations `δ_ℓ` commute.
+* `TauCeti.SmoothNoncommutativeTorus.commute_gaugeDerivation`,
+  `TauCeti.SmoothNoncommutativeTorus.lie_gaugeDerivation`: the derivations `δ_ℓ` commute.
 * `TauCeti.SmoothNoncommutativeTorus.derivation₁_U₁_zpow_mul_U₂_zpow` and
   `TauCeti.SmoothNoncommutativeTorus.derivation₂_U₁_zpow_mul_U₂_zpow`: the values of `δ₁` and `δ₂`
   on the ordered monomials.
@@ -160,6 +161,32 @@ theorem commute_gaugeDerivation (ℓ ℓ' : ℤ × ℤ →+ ℂ) :
   simp only [Module.End.mul_apply, coeff_gaugeDerivation]
   ring
 
+/-- The Lie bracket of any two derivations `δ_ℓ` and `δ_ℓ'` vanishes: `⁅δ_ℓ, δ_ℓ'⁆ = 0`. -/
+@[simp]
+theorem lie_gaugeDerivation (ℓ ℓ' : ℤ × ℤ →+ ℂ) :
+    ⁅gaugeDerivation θ ℓ, gaugeDerivation θ ℓ'⁆ = 0 :=
+  Subtype.ext <| by
+    simp only [LieSubalgebra.coe_bracket, Ring.lie_def, (commute_gaugeDerivation ℓ ℓ').eq,
+      sub_self, ZeroMemClass.coe_zero]
+
+/-- `δ_0 = 0`. -/
+@[simp]
+theorem gaugeDerivation_zero : gaugeDerivation θ 0 = 0 := by
+  ext a x
+  simp
+
+/-- `δ_ℓ` is additive in `ℓ`: `δ_(ℓ + ℓ') = δ_ℓ + δ_ℓ'`. -/
+theorem gaugeDerivation_add (ℓ ℓ' : ℤ × ℤ →+ ℂ) :
+    gaugeDerivation θ (ℓ + ℓ') = gaugeDerivation θ ℓ + gaugeDerivation θ ℓ' := by
+  ext a x
+  simp [add_mul]
+
+/-- `δ_ℓ` is homogeneous in `ℓ`: `δ_(c • ℓ) = c • δ_ℓ`. -/
+theorem gaugeDerivation_smul (c : ℂ) (ℓ : ℤ × ℤ →+ ℂ) :
+    gaugeDerivation θ (c • ℓ) = c • gaugeDerivation θ ℓ := by
+  ext a x
+  simp [mul_assoc]
+
 /-! ### The two basic derivations -/
 
 variable (θ) in
@@ -267,6 +294,11 @@ theorem commute_derivation₁_derivation₂ :
     Commute (derivation₁ θ : Module.End ℂ (SmoothNoncommutativeTorus θ))
       (derivation₂ θ : Module.End ℂ (SmoothNoncommutativeTorus θ)) :=
   commute_gaugeDerivation _ _
+
+/-- The Lie bracket of the two basic derivations vanishes: `⁅δ₁, δ₂⁆ = 0`. -/
+@[simp]
+theorem lie_derivation₁_derivation₂ : ⁅derivation₁ θ, derivation₂ θ⁆ = 0 :=
+  lie_gaugeDerivation _ _
 
 /-! ### The odd cocycles `τ (a₀ δ_j(a₁))` -/
 
