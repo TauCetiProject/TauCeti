@@ -77,7 +77,7 @@ continuous and open, so the additive transport lemma applies directly; the nonar
 then inherited, as for `NonarchimedeanRing (R × S)` in Mathlib. -/
 instance instNonarchimedeanRing : NonarchimedeanRing (R ⧸ I) :=
   haveI : NonarchimedeanAddGroup (R ⧸ I) :=
-    .nonarchimedean_of_isOpenMap (Ideal.Quotient.mk I).toAddMonoidHom
+    .nonarchimedean_of_isOpenMap (Ideal.Quotient.mk I)
       continuous_quot_mk.continuousAt (QuotientRing.isOpenMap_coe I)
   { is_nonarchimedean := NonarchimedeanAddGroup.is_nonarchimedean }
 
@@ -91,6 +91,6 @@ variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] [TopologicalSpace 
 /-- A quotient of a nonarchimedean topological module by a submodule is nonarchimedean. The
 quotient map is continuous and open, so the additive transport lemma applies directly. -/
 instance instNonarchimedeanAddGroup : NonarchimedeanAddGroup (M ⧸ N) :=
-  .nonarchimedean_of_isOpenMap N.mkQ.toAddMonoidHom N.continuous_mkQ.continuousAt N.isOpenMap_mkQ
+  .nonarchimedean_of_isOpenMap N.mkQ N.continuous_mkQ.continuousAt N.isOpenMap_mkQ
 
 end Submodule.Quotient
