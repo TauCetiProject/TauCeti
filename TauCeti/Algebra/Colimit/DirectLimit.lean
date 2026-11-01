@@ -72,8 +72,10 @@ variable (G f) in
 /-- The universal property of the direct limit of monoids: monoid homomorphisms from the components
 which are compatible with the transition maps induce a monoid homomorphism out of the direct
 limit. -/
+-- `MonoidHom` is spelled out because the source dot-notation lint reads a `→*` result as a
+-- function arrow taking an explicit `DirectLimit` argument, which `lift` does not have.
 def lift (g : ∀ i, G i →* P) (Hg : ∀ i j hij x, g j (f i j hij x) = g i x) :
-    DirectLimit G f →* P where
+    MonoidHom (DirectLimit G f) P where
   toFun := _root_.DirectLimit.lift _ (g · ·) fun i j h x ↦ (Hg i j h x).symm
   map_one' := lift_one _ _
   map_mul' := lift_mul _ _
