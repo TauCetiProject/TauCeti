@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.Invariant.Basic
 public import Mathlib.RingTheory.Unramified.Locus
 import Mathlib.Algebra.Module.Submodule.Union
-import Mathlib.RingTheory.Etale.Kaehler
 
 /-!
 # Trivial inertia implies unramifiedness for finite invariant extensions
