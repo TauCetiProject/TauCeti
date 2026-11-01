@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Analysis.Matrix.Normed
 import Mathlib.Algebra.Order.Star.Real
 import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.Algebra.Order.BigOperators.Sum.IioIci
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Order.Interval.Finset.Fin
@@ -278,45 +279,6 @@ theorem injOn_partialCorrelationGram :
     (isLowerTriangular_partialCorrelationCholesky w)
     (partialCorrelationCholesky_diag_pos hz) (partialCorrelationCholesky_diag_pos hw) heq
 
-section RowResidual
-
-variable {ι : Type*} [Fintype ι] [LinearOrder ι] [LocallyFiniteOrderBot ι]
-  [LocallyFiniteOrderTop ι] {r : ι → ℝ}
-
-/-- For a unit vector `r`, the residual `1 - ∑ k < j, r k ^ 2` is the squared length of the
-part of `r` from index `j` on. -/
-theorem one_sub_sum_Iio_sq (hr : ∑ k, r k ^ 2 = 1) (j : ι) :
-    1 - ∑ k ∈ Finset.Iio j, r k ^ 2 = ∑ k ∈ Finset.Ici j, r k ^ 2 := by
-  have hsplit := Finset.sum_filter_add_sum_filter_not Finset.univ (· < j) fun k ↦ r k ^ 2
-  have hlt : Finset.univ.filter (· < j) = Finset.Iio j := by ext; simp
-  have hge : Finset.univ.filter (fun k ↦ ¬k < j) = Finset.Ici j := by ext; simp
-  rw [hlt, hge, hr] at hsplit
-  linarith
-
-/-- For a unit vector `r`, each `r i ^ 2` with `j ≤ i` is bounded by the residual
-`1 - ∑ k < j, r k ^ 2`. -/
-theorem sq_le_one_sub_sum_Iio_sq (hr : ∑ k, r k ^ 2 = 1) {i j : ι} (hji : j ≤ i) :
-    r i ^ 2 ≤ 1 - ∑ k ∈ Finset.Iio j, r k ^ 2 := by
-  rw [one_sub_sum_Iio_sq hr]
-  exact Finset.single_le_sum (fun k _ ↦ sq_nonneg (r k)) (Finset.mem_Ici.2 hji)
-
-/-- For a unit vector `r` and `j < i`, `r j ^ 2 + r i ^ 2` is bounded by the residual
-`1 - ∑ k < j, r k ^ 2`. -/
-theorem sq_add_sq_le_one_sub_sum_Iio_sq (hr : ∑ k, r k ^ 2 = 1) {i j : ι} (hji : j < i) :
-    r j ^ 2 + r i ^ 2 ≤ 1 - ∑ k ∈ Finset.Iio j, r k ^ 2 := by
-  rw [one_sub_sum_Iio_sq hr, ← Finset.sum_pair (f := fun k ↦ r k ^ 2) hji.ne]
-  refine Finset.sum_le_sum_of_subset_of_nonneg ?_ fun k _ _ ↦ sq_nonneg (r k)
-  exact Finset.insert_subset_iff.2
-    ⟨Finset.mem_Ici.2 le_rfl, Finset.singleton_subset_iff.2 (Finset.mem_Ici.2 hji.le)⟩
-
-/-- For a unit vector `r` with `r i ≠ 0`, the residual `1 - ∑ k < j, r k ^ 2` is positive for
-every `j ≤ i`. -/
-theorem one_sub_sum_Iio_sq_pos (hr : ∑ k, r k ^ 2 = 1) {i j : ι} (hi : r i ≠ 0)
-    (hji : j ≤ i) : 0 < 1 - ∑ k ∈ Finset.Iio j, r k ^ 2 :=
-  (sq_pos_of_ne_zero hi).trans_le (sq_le_one_sub_sum_Iio_sq hr hji)
-
-end RowResidual
-
 /-- Partial correlations read off a triangular factor: the coordinate at `(i, j)`, `j < i`, is
 `L i j / √(1 - ∑ k < j, L i k ^ 2)`. For a lower-triangular `L` with positive diagonal and
 unit-length rows these lie in the open cube and their triangular factor is `L`
@@ -341,7 +303,7 @@ private theorem partialCorrelationOfCholesky_sq (hdiag : ∀ i, 0 < L i i)
     L.partialCorrelationOfCholesky ⟨(i, j), hji⟩ ^ 2 =
       L i j ^ 2 / (1 - ∑ k ∈ Finset.Iio j, L i k ^ 2) := by
   rw [Matrix.partialCorrelationOfCholesky_apply, div_pow,
-    Real.sq_sqrt (one_sub_sum_Iio_sq_pos (hrow i) (hdiag i).ne' hji.le).le]
+    Real.sq_sqrt (Finset.one_sub_sum_Iio_sq_pos (hrow i) (hdiag i).ne' hji.le).le]
 
 /-- The partial correlations of a factor with positive diagonal and unit-length rows lie in
 the open cube. -/
@@ -350,8 +312,8 @@ theorem abs_partialCorrelationOfCholesky_lt_one (hdiag : ∀ i, 0 < L i i)
     |L.partialCorrelationOfCholesky ij| < 1 := by
   obtain ⟨⟨i, j⟩, hji⟩ := ij
   rw [← sq_lt_one_iff_abs_lt_one, partialCorrelationOfCholesky_sq hdiag hrow hji,
-    div_lt_one (one_sub_sum_Iio_sq_pos (hrow i) (hdiag i).ne' hji.le)]
-  have := sq_add_sq_le_one_sub_sum_Iio_sq (hrow i) hji
+    div_lt_one (Finset.one_sub_sum_Iio_sq_pos (hrow i) (hdiag i).ne' hji.le)]
+  have := Finset.sq_add_sq_le_one_sub_sum_Iio_sq (hrow i) hji
   have := pow_pos (hdiag i) 2
   linarith
 
@@ -373,7 +335,7 @@ private theorem prod_one_sub_sq_partialCorrelationOfCholesky (hdiag : ∀ i, 0 <
     rw [hfilter, ih k hkj hki.le]
     simp only [partialCorrelationRow, hki, ↓reduceDIte]
     rw [partialCorrelationOfCholesky_sq hdiag hrow hki,
-      div_mul_cancel₀ _ (one_sub_sum_Iio_sq_pos (hrow i) (hdiag i).ne' hki.le).ne']
+      div_mul_cancel₀ _ (Finset.one_sub_sum_Iio_sq_pos (hrow i) (hdiag i).ne' hki.le).ne']
 
 /-- A lower-triangular matrix with positive diagonal and unit-length rows is the triangular
 factor of its recovered partial correlations. -/
@@ -394,9 +356,9 @@ theorem partialCorrelationCholesky_partialCorrelationOfCholesky (hL : L.IsLowerT
     rw [hsqrt i j hji.le]
     simp only [partialCorrelationRow, hji, ↓reduceDIte]
     rw [Matrix.partialCorrelationOfCholesky_apply, div_mul_cancel₀ _
-      (Real.sqrt_pos.2 (one_sub_sum_Iio_sq_pos (hrow i) (hdiag i).ne' hji.le)).ne']
+      (Real.sqrt_pos.2 (Finset.one_sub_sum_Iio_sq_pos (hrow i) (hdiag i).ne' hji.le)).ne']
   · simp only [partialCorrelationCholesky, lt_self_iff_false, ↓reduceIte, one_mul]
-    rw [hsqrt j j le_rfl, one_sub_sum_Iio_sq (hrow j),
+    rw [hsqrt j j le_rfl, Finset.one_sub_sum_Iio_sq (hrow j),
       Finset.sum_eq_single_of_mem j (Finset.mem_Ici.2 le_rfl) fun k hk hkj ↦ by
         have hjk : j < k := lt_of_le_of_ne (Finset.mem_Ici.1 hk) (Ne.symm hkj)
         simp [hL hjk]]

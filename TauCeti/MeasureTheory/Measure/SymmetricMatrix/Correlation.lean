@@ -44,7 +44,7 @@ Partial correlations parametrize this region: the forward map
 `TauCeti.correlationCoordinatesOfPartialCorrelation` is a bijection from the open cube
 `(-1, 1) ^ J` onto `TauCeti.posDefCorrelationRegion p`, and its inverse takes the Cholesky factor
 of a positive-definite correlation matrix and reads off its partial correlations with
-`Matrix.partialCorrelationOfCholesky`.
+`Matrix.partialCorrelationOfCholesky` (`TauCeti.partialCorrelationOfCorrelationCoordinates`).
 
 ## Main declarations
 
@@ -67,9 +67,10 @@ of a positive-definite correlation matrix and reads off its partial correlations
   partial-correlation Gram matrices from their correlation coordinates on the closed cube.
 * `TauCeti.bijOn_correlationCoordinatesOfPartialCorrelation`,
   `TauCeti.image_correlationCoordinatesOfPartialCorrelation` — the forward map is a bijection from
-  the open cube onto the positive-definite region. Its inverse reads the partial correlations off
-  the Cholesky factor
-  (`TauCeti.correlationCoordinatesOfPartialCorrelation_partialCorrelationOfCholesky_cholesky`).
+  the open cube onto the positive-definite region.
+* `TauCeti.partialCorrelationOfCorrelationCoordinates`,
+  `TauCeti.invOn_partialCorrelationOfCorrelationCoordinates` — its inverse, which reads the partial
+  correlations off the Cholesky factor and maps the region into the open cube.
 * `TauCeti.volume_posDefCorrelationRegion_pos`, `TauCeti.volume_posDefCorrelationRegion_lt_top`.
 * `TauCeti.closure_posDefCorrelationRegion` — the closure is the positive-semidefinite region.
 * `TauCeti.frontier_posDefCorrelationRegion`, `TauCeti.volume_frontier_posDefCorrelationRegion` —
@@ -412,6 +413,64 @@ theorem correlationCoordinatesOfPartialCorrelation_partialCorrelationOfCholesky_
     partialCorrelationCholesky_partialCorrelationOfCholesky (cholesky _).2.1 (cholesky _).2.2
       (sum_sq_cholesky_correlationMatrix hx), cholesky_mul_transpose]
   exact coe_correlationMatrix_apply_of_gt x hji
+
+open scoped Classical in
+/-- The inverse of the partial-correlation forward map: the partial correlations read off the
+Cholesky factor of the correlation matrix with coordinates `x`. Outside the positive-definite
+correlation region, where there is no Cholesky factor, it is `0`. -/
+def partialCorrelationOfCorrelationCoordinates (x : strictLowerTriangle p → ℝ) :
+    strictLowerTriangle p → ℝ :=
+  if hx : x ∈ posDefCorrelationRegion p then
+    Matrix.partialCorrelationOfCholesky
+      (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).1
+  else 0
+
+/-- On the positive-definite correlation region, the inverse map reads the partial correlations
+off the Cholesky factor. -/
+theorem partialCorrelationOfCorrelationCoordinates_of_mem {x : strictLowerTriangle p → ℝ}
+    (hx : x ∈ posDefCorrelationRegion p) :
+    partialCorrelationOfCorrelationCoordinates x =
+      Matrix.partialCorrelationOfCholesky
+        (cholesky ⟨correlationMatrix p x, mem_posDefCorrelationRegion.1 hx⟩).1 := by
+  simp only [partialCorrelationOfCorrelationCoordinates, hx, ↓reduceDIte]
+
+/-- The inverse map sends the positive-definite correlation region into the open cube. -/
+theorem mapsTo_partialCorrelationOfCorrelationCoordinates :
+    MapsTo (partialCorrelationOfCorrelationCoordinates (p := p)) (posDefCorrelationRegion p)
+      {z | ∀ ij, |z ij| < 1} := fun _ hx ij ↦ by
+  rw [partialCorrelationOfCorrelationCoordinates_of_mem hx]
+  exact abs_partialCorrelationOfCholesky_cholesky_lt_one hx ij
+
+/-- On the positive-definite correlation region, the forward map undoes the inverse map. -/
+@[simp]
+theorem correlationCoordinatesOfPartialCorrelation_partialCorrelationOfCorrelationCoordinates
+    {x : strictLowerTriangle p → ℝ} (hx : x ∈ posDefCorrelationRegion p) :
+    correlationCoordinatesOfPartialCorrelation (partialCorrelationOfCorrelationCoordinates x) =
+      x := by
+  rw [partialCorrelationOfCorrelationCoordinates_of_mem hx]
+  exact correlationCoordinatesOfPartialCorrelation_partialCorrelationOfCholesky_cholesky hx
+
+/-- On the open cube, the inverse map undoes the forward map. -/
+@[simp]
+theorem partialCorrelationOfCorrelationCoordinates_correlationCoordinatesOfPartialCorrelation
+    {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
+    partialCorrelationOfCorrelationCoordinates (correlationCoordinatesOfPartialCorrelation z) =
+      z := by
+  have hx := mapsTo_correlationCoordinatesOfPartialCorrelation hz
+  exact injOn_correlationCoordinatesOfPartialCorrelation
+    (mapsTo_partialCorrelationOfCorrelationCoordinates hx) hz
+    (correlationCoordinatesOfPartialCorrelation_partialCorrelationOfCorrelationCoordinates hx)
+
+/-- The Cholesky partial-correlation map inverts the partial-correlation forward map between
+the open cube and the positive-definite correlation region. -/
+theorem invOn_partialCorrelationOfCorrelationCoordinates :
+    InvOn (partialCorrelationOfCorrelationCoordinates (p := p))
+      correlationCoordinatesOfPartialCorrelation {z | ∀ ij, |z ij| < 1}
+      (posDefCorrelationRegion p) :=
+  ⟨fun _ hz ↦
+      partialCorrelationOfCorrelationCoordinates_correlationCoordinatesOfPartialCorrelation hz,
+    fun _ hx ↦
+      correlationCoordinatesOfPartialCorrelation_partialCorrelationOfCorrelationCoordinates hx⟩
 
 /-- The partial-correlation forward map is a bijection from the open cube onto the
 positive-definite correlation region. -/
