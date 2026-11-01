@@ -52,10 +52,20 @@ namespace SimpleGraph
 
 variable {V : Type u} {G : SimpleGraph V}
 
+/-- If `F` has `min k #U` of the elements of a nonempty set `U`, and `T ⊆ U` has fewer than `k`
+elements, then fewer elements of `T` lie outside `F` than in `F`. -/
+private theorem card_sdiff_lt_of_card_eq_min [DecidableEq V] {F T U : Finset V} {k : ℕ}
+    (hFU : F ⊆ U) (hTU : T ⊆ U) (hU : U.Nonempty) (hF : #F = min k #U) (hT : #T < k) :
+    #(T \ F) < #F := by
+  by_cases hkU : k ≤ #U
+  · exact (card_le_card sdiff_subset).trans_lt (by omega)
+  · rw [eq_of_subset_of_card_le hFU (by omega), sdiff_eq_empty_iff_subset.2 hTU, card_empty]
+    exact hU.card_pos
+
 namespace Walk
 
 /-- A path does not return to its start. -/
-theorem IsPath.start_notMem_support_tail {u v : V} {p : G.Walk u v} (hp : p.IsPath) :
+theorem IsPath.start_notMem_tail_support {u v : V} {p : G.Walk u v} (hp : p.IsPath) :
     u ∉ p.support.tail := by
   have h := hp.support_nodup
   rw [← cons_tail_support] at h
@@ -131,6 +141,19 @@ theorem IsCycle.isPath_append_of_append_append {u a b : V} {W₁ : G.Walk u a} {
   simp only [List.nodup_append, List.nodup_cons, List.cons_append, List.mem_append] at hnd ⊢
   grind
 
+/-- If `W₁`, `A`, `W₂` traverse a closed walk in turn, then every vertex of it that is not an
+interior vertex of `A` lies on `W₂` followed by `W₁`. -/
+theorem mem_support_append_of_mem_support_append_append {u a b v : V} {W₁ : G.Walk u a}
+    {A : G.Walk a b} {W₂ : G.Walk b u} (hv : v ∈ (W₁.append (A.append W₂)).support)
+    (hA : v ∈ A.support → v = a ∨ v = b) : v ∈ (W₂.append W₁).support := by
+  rw [mem_support_append_iff, mem_support_append_iff] at hv
+  rw [mem_support_append_iff]
+  obtain hv | hv | hv := hv
+  · exact .inr hv
+  · obtain rfl | rfl := hA hv
+    exacts [.inr W₁.end_mem_support, .inl W₂.start_mem_support]
+  · exact .inl hv
+
 /-- Two paths `P` and `Q` from `x` to distinct vertices `a` and `b`, sharing only `x`, close up
 with a path `R` from `b` to `a` meeting them only at `a` and `b` into a cycle. -/
 theorem IsPath.isCycle_append_append_reverse {x a b : V} {P : G.Walk x a} {Q : G.Walk x b}
@@ -141,11 +164,11 @@ theorem IsPath.isCycle_append_append_reverse {x a b : V} {P : G.Walk x a} {Q : G
     ((Q.append R).append P.reverse).IsCycle := by
   have hp : (Q.append R).IsPath := by
     refine (isPath_append _ _).2 ⟨hQ, hR.tail, fun v hvQ hvR ↦ ?_⟩
-    exact hR.start_notMem_support_tail (hQR v hvQ (List.mem_of_mem_tail hvR) ▸ hvR)
+    exact hR.start_notMem_tail_support (hQR v hvQ (List.mem_of_mem_tail hvR) ▸ hvR)
   have hq : P.reverse.IsPath := hP.reverse
   refine hp.isCycle_append hq (fun v hvp hvq ↦ ?_) (.inl ?_)
-  · have hvx : v ≠ x := fun hvx ↦ hp.start_notMem_support_tail (hvx ▸ hvp)
-    have hva : v ≠ a := fun hva ↦ hq.start_notMem_support_tail (hva ▸ hvq)
+  · have hvx : v ≠ x := fun hvx ↦ hp.start_notMem_tail_support (hvx ▸ hvp)
+    have hva : v ≠ a := fun hva ↦ hq.start_notMem_tail_support (hva ▸ hvq)
     have hvP : v ∈ P.support := by simpa using List.mem_of_mem_tail hvq
     rcases (mem_support_append_iff _ _).1 (List.mem_of_mem_tail hvp) with hv | hv
     exacts [hvx (hPQ v hvP hv), hva (hPR v hvP hv)]
@@ -223,16 +246,9 @@ theorem IsCycle.exists_isCycle_forall_mem_support_insert [Finite V] [DecidableEq
     obtain ⟨i, -, rfl⟩ := mem_image.1 hv
     exact huU i
   -- The ends outnumber the vertices of `T` that are not ends.
-  have hTF : #(T \ F) < #F := by
-    by_cases hkU : k ≤ #U
-    · exact (card_le_card sdiff_subset).trans_lt (by omega)
-    · have hFU' : F = U := eq_of_subset_of_card_le hFU (by omega)
-      have : T \ F = ∅ := by
-        rw [sdiff_eq_empty_iff_subset, hFU']
-        intro v hv
-        simpa [U] using hT v hv
-      rw [this, card_empty]
-      omega
+  have hTF : #(T \ F) < #F :=
+    card_sdiff_lt_of_card_eq_min hFU (fun v hv ↦ by simpa [U] using hT v hv)
+      (card_pos.1 (by omega)) hFm hTk
   -- Rotate `c` to start at an end, and cut it at an arc between two ends avoiding `T`.
   obtain ⟨r', hr'F, hr'⟩ : ∃ r' ∈ F, r' ∈ c.support :=
     ⟨u ⟨0, by omega⟩, mem_image_of_mem _ (mem_univ _), by simpa [U] using huU ⟨0, by omega⟩⟩
@@ -248,19 +264,10 @@ theorem IsCycle.exists_isCycle_forall_mem_support_insert [Finite V] [DecidableEq
     rw [mem_support_append_iff] at hv
     rw [hU, List.mem_toFinset, ← hmem, mem_support_append_iff, mem_support_append_iff]
     tauto
-  have hTR : ∀ v ∈ T, v ∈ (W₂.append W₁).support := by
-    intro v hv
-    have hvc := (hmem v).2 (hT v hv)
-    rw [mem_support_append_iff]
-    rw [mem_support_append_iff, mem_support_append_iff] at hvc
-    obtain hvc | hvc | hvc := hvc
-    · exact .inr hvc
-    · by_cases hvi : v = u i
-      · exact .inr (hvi ▸ W₁.end_mem_support)
-      by_cases hvj : v = u j
-      · exact .inl (hvj ▸ W₂.start_mem_support)
-      exact absurd hv (hAi v hvc hvi hvj)
-    · exact .inl hvc
+  have hTR : ∀ v ∈ T, v ∈ (W₂.append W₁).support := fun v hv ↦
+    mem_support_append_of_mem_support_append_append ((hmem v).2 (hT v hv)) fun hvA ↦ by
+      by_contra! hvij
+      exact hAi v hvA hvij.1 hvij.2 hv
   -- Close up the fan paths to `u j` and `u i` with `R`.
   have hcyc := (hP i).isCycle_append_append_reverse (hP j) (hc'.isPath_append_of_append_append hA)
     hab (fun hxR ↦ hxU (hRc x hxR)) (hdisj fun hij ↦ hab (hij ▸ rfl))
