@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FixedSubmodule
-public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import Mathlib.LinearAlgebra.TensorPower.Basic
+public import TauCeti.LinearAlgebra.PiTensorProduct.Basis
 
 /-!
 # Symmetric tensors
@@ -27,15 +27,14 @@ For the binary tensor product `M ⊗[R] M`, the tensors fixed by the flip are
 
 For a basis `b` of `M`, the coordinates of a tensor in the product basis `b ⊗ ⋯ ⊗ b` are indexed
 by words `w : Fin n → κ`, and a tensor is symmetric exactly when its coordinates are invariant under
-reindexing the words (`TensorPower.mem_symmetricTensors_iff_repr`).
+reindexing the words (`TensorPower.mem_symmetricTensors_iff_repr`). This rests on
+`Basis.piTensorProduct_repr_reindex`: reindexing the factors of a tensor reindexes its coordinates.
 
 ## Main declarations
 
 * `TensorPower.symmetricTensors R M n`: the submodule of symmetric tensors, with membership
   criterion `TensorPower.mem_symmetricTensors`.
 * `TensorPower.tprod_const_mem_symmetricTensors`: the tensor `m ⊗ ⋯ ⊗ m` is symmetric.
-* `Basis.piTensorProduct_repr_reindex`: reindexing the factors of a tensor reindexes its
-  coordinates in a product basis.
 * `TensorPower.mem_symmetricTensors_iff_repr`: symmetric tensors are those whose coordinates in a
   product basis are invariant under permutations of the words.
 -/
@@ -46,27 +45,6 @@ open PiTensorProduct Module
 open scoped TensorProduct
 
 variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-
-/-- Reindexing the factors of a tensor along `e : ι ≃ ι₂` reindexes its coordinates in a product
-basis: the coordinate of `reindex e t` at the word `w` is the coordinate of `t` at `w ∘ e`. -/
-@[simp]
-theorem Basis.piTensorProduct_repr_reindex {ι ι₂ κ : Type*} [Finite ι] [Finite ι₂]
-    (b : Basis κ R M) (e : ι ≃ ι₂) (t : ⨂[R] _ : ι, M) (w : ι₂ → κ) :
-    (Basis.piTensorProduct fun _ : ι₂ ↦ b).repr (reindex R (fun _ ↦ M) e t) w =
-      (Basis.piTensorProduct fun _ : ι ↦ b).repr t (w ∘ e) := by
-  classical
-  have := Fintype.ofFinite ι
-  have := Fintype.ofFinite ι₂
-  -- both sides are linear in `t`, so it suffices to compare them on the product basis
-  have h : (Finsupp.lapply w ∘ₗ (Basis.piTensorProduct fun _ : ι₂ ↦ b).repr.toLinearMap) ∘ₗ
-      (reindex R (fun _ ↦ M) e).toLinearMap =
-      Finsupp.lapply (w ∘ e) ∘ₗ (Basis.piTensorProduct fun _ : ι ↦ b).repr.toLinearMap := by
-    refine (Basis.piTensorProduct fun _ : ι ↦ b).ext fun v ↦ ?_
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Basis.piTensorProduct_apply,
-      reindex_tprod, Finsupp.lapply_apply, Basis.piTensorProduct_repr_tprod_apply,
-      Basis.repr_self, Finsupp.single_apply]
-    exact Fintype.prod_equiv e.symm _ _ fun i ↦ by simp
-  exact LinearMap.congr_fun h t
 
 namespace TensorPower
 

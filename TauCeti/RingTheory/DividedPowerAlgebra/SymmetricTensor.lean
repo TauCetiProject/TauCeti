@@ -17,7 +17,8 @@ For a module `M` over a commutative semiring `R` and `d : ℕ`, Roby's natural `
 `DividedPowerAlgebra.toTensorPower d : Γ^d_R(M) → ⨂[R]^d M` sends `dp R d m` to `m ⊗ ⋯ ⊗ m`.
 On a product of divided powers `∏ⱼ dp R lⱼ mⱼ` it takes the value
 `∑_w m_{w 0} ⊗ ⋯ ⊗ m_{w (d - 1)}`, the sum over all words `w` of length `d` in which each letter
-`j` occurs exactly `lⱼ` times. Its values are symmetric tensors.
+`j` occurs exactly `lⱼ` times (`DividedPowerAlgebra.toTensorPower_prod_dp_eq_sum_tprod`). Its
+values are symmetric tensors.
 
 For a free module `M` the map is an isomorphism onto the symmetric tensors (Roby, Theorem IV.2 and
 Proposition IV.5). No factorial is inverted: over `𝔽_p` the divided power `dp R p e` of a basis
@@ -27,8 +28,6 @@ goes to `e ⊗ f + f ⊗ e`, with no factor `1/2`.
 
 ## Main declarations
 
-* `DividedPowerAlgebra.toTensorPower_prod_dp_eq_sum_tprod`: the value of `toTensorPower` on a
-  product of divided powers, as a sum over words.
 * `DividedPowerAlgebra.toTensorPower_mem_symmetricTensors`: its values are symmetric tensors.
 * `DividedPowerAlgebra.symmetricTensorMap R M d`: the corestriction
   `Γ^d_R(M) → TensorPower.symmetricTensors R M d`.
@@ -68,62 +67,6 @@ open scoped Finset
 namespace DividedPowerAlgebra
 
 variable {R : Type u} [CommSemiring R] {M : Type*} [AddCommMonoid M] [Module R M]
-
-open MvPolynomial in
-/-- The product formula for `toTensorPower`: for exponents `l` supported in a finite set `F` of
-total degree `d`, the image of `∏_{j ∈ F} dp R lⱼ mⱼ` is the sum of `m_{w 0} ⊗ ⋯ ⊗ m_{w (d - 1)}`
-over all words `w : Fin d → ι` in which each letter `j` occurs exactly `lⱼ` times. -/
-theorem toTensorPower_prod_dp_eq_sum_tprod (d : ℕ) {ι : Type*} [DecidableEq ι] (F : Finset ι)
-    (m : ι → M) (l : ι →₀ ℕ) (hF : l.support ⊆ F) (hl : ∑ j ∈ F, l j = d) :
-    toTensorPower d
-        ⟨∏ j ∈ F, dp R (l j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_finset_eq F m l hl⟩ =
-      ∑ w ∈ Fintype.piFinset (fun _ : Fin d ↦ F) with ∑ t, Finsupp.single (w t) 1 = l,
-        tprod R fun t ↦ m (w t) := by
-  classical
-  -- pass to the finite index type `F`, where representability computes the value as the
-  -- coefficient of `∏ⱼ Xⱼ ^ lⱼ` in `(∑_{j ∈ F} Xⱼ ⊗ mⱼ) ^ ⊗d`
-  set k : F →₀ ℕ := l.subtypeDomain (· ∈ F)
-  have hk : ∑ j, k j = d := by
-    simpa only [k, Finsupp.subtypeDomain_apply] using (Finset.sum_coe_sort F l).trans hl
-  have hprod : (⟨∏ j ∈ F, dp R (l j) (m j),
-      prod_dp_mem_homogeneousSubmodule_of_sum_finset_eq F m l hl⟩ :
-        homogeneousSubmodule (R := R) (M := M) d) =
-      ⟨∏ j, dp R (k j) (m j), prod_dp_mem_homogeneousSubmodule_of_sum_eq _ k hk⟩ :=
-    Subtype.ext (Finset.prod_coe_sort F fun j ↦ dp R (l j) (m j)).symm
-  have hX (w : Fin d → F) : ∏ t, (X (w t) : MvPolynomial F R) =
-      monomial (∑ t, Finsupp.single (w t) 1) 1 := by
-    -- `X n` is by definition the monomial `monomial (single n 1) 1`
-    rw [monomial_sum_one]
-    simp only [X]
-  have hlaw := TensorPower.diagonalLaw_toFun_sum_tmul (R := R) d (MvPolynomial F R) Finset.univ X
-    fun j : F ↦ m j
-  simp only [TensorPower.diagonalLaw_toFun, map_sum, LinearMap.baseChange_tmul] at hlaw
-  rw [hprod, toTensorPower_prod_dp d _ k hk, hlaw]
-  simp only [map_sum, LinearMap.rTensor_tmul, TensorProduct.lid_tmul, hX, lcoeff_apply,
-    coeff_monomial, ite_smul, one_smul, zero_smul, Finset.sum_ite, Finset.sum_const_zero,
-    add_zero]
-  -- a word in `F` is a word in `ι` with letters in `F`, with the same letter counts
-  have hcount (w : Fin d → F) :
-      ∑ t, Finsupp.single (w t) 1 = k ↔ ∑ t, Finsupp.single (w t : ι) 1 = l := by
-    refine ⟨fun h ↦ Finsupp.ext fun j ↦ ?_, fun h ↦ Finsupp.ext fun j ↦ ?_⟩
-    · by_cases hj : j ∈ F
-      · have h' := DFunLike.congr_fun h ⟨j, hj⟩
-        simp only [sum_single_apply, k, Finsupp.subtypeDomain_apply, Subtype.ext_iff] at h'
-        rw [sum_single_apply, h']
-      · -- letters outside `F` occur neither in the word nor in `l`
-        rw [Finsupp.notMem_support_iff.mp fun h' ↦ hj (hF h')]
-        by_contra h'
-        obtain ⟨t, rfl⟩ := sum_single_apply_ne_zero_iff.mp h'
-        exact hj (w t).2
-    · simp only [k, Finsupp.subtypeDomain_apply, ← h, sum_single_apply, Subtype.ext_iff]
-  refine Finset.sum_bij (fun w _ t ↦ w t) (fun w hw ↦ ?_) (fun v _ w _ h ↦ ?_) (fun w hw ↦ ?_)
-    fun _ _ ↦ rfl
-  · rw [Finset.mem_filter] at hw ⊢
-    exact ⟨Fintype.mem_piFinset.mpr fun t ↦ (w t).2, (hcount w).mp hw.2⟩
-  · exact funext fun t ↦ Subtype.ext (congrFun h t)
-  · rw [Finset.mem_filter, Fintype.mem_piFinset] at hw
-    exact ⟨fun t ↦ ⟨w t, hw.1 t⟩, Finset.mem_filter.mpr ⟨Fintype.mem_piFinset.mpr fun _ ↦
-      Finset.mem_univ _, (hcount _).mpr hw.2⟩, rfl⟩
 
 /-- The values of `toTensorPower` are symmetric tensors. -/
 theorem toTensorPower_mem_symmetricTensors (d : ℕ)
