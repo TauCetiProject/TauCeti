@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.StrongDual
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Dual
@@ -53,9 +54,10 @@ exactly when its Legendre lift `t ↦ FL(q t, v t)` is an integral curve of `X_H
 **second-order property**: along an integral curve of `X_H` the position moves with the velocity
 `w(q, p)` (`TauCeti.hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField`). Hence every integral
 curve of `X_H` is the Legendre lift of its own position curve, which solves the Euler–Lagrange
-equations (`TauCeti.eulerLagrange_of_hasDerivAt_hamiltonianVectorField`). Since `H` is constant
-along the integral curves of `X_H`, the energy `E_L` is conserved along solutions of the
-Euler–Lagrange equations (`TauCeti.energy_eq_of_eulerLagrange`).
+equations (`TauCeti.eulerLagrange_of_hasDerivAt_hamiltonianVectorField`). The energy `E_L`, which
+is `H` along the Legendre lift, is conserved along every solution of the Euler–Lagrange equations
+with differentiable velocity (`TauCeti.energy_eq_of_eulerLagrange`); this needs neither an
+inverse `w` nor finite dimensionality.
 
 No convexity or global invertibility of the Legendre map is assumed: all statements are pointwise
 along the curve, so they apply equally to a local inverse of the Legendre map of a regular
@@ -148,6 +150,33 @@ theorem hasFDerivAt_legendreHamiltonian {L : E × E → ℝ} {w : E × StrongDua
     flip_apply, coe_snd', apply_apply, coprod_apply, neg_apply, hsplit, ← hr, hl]
   ring
 
+/-! ### Conservation of energy -/
+
+/-- **Conservation of energy.** Let `q` solve the Euler–Lagrange equations with a differentiable
+velocity `v` at every time, with `L` differentiable along the curve. Then the energy
+`E_L(q, v) = ∂_v L(q, v)(v) - L(q, v)` is constant along the curve. -/
+theorem energy_eq_of_eulerLagrange {L : E × E → ℝ} {q v : ℝ → E}
+    (hq : ∀ t, HasDerivAt q (v t) t)
+    (hEL : ∀ t, HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ L (q s, u)) (v s))
+      (fderiv ℝ (fun y ↦ L (y, v t)) (q t)) t)
+    (hL : ∀ t, DifferentiableAt ℝ L (q t, v t)) (hv : ∀ t, DifferentiableAt ℝ v t) (s t : ℝ) :
+    fderiv ℝ (fun u ↦ L (q s, u)) (v s) (v s) - L (q s, v s) =
+      fderiv ℝ (fun u ↦ L (q t, u)) (v t) (v t) - L (q t, v t) := by
+  -- `d/dt E_L = (d/dt ∂_v L)(v) + ∂_v L(v') - ∂_q L(v) - ∂_v L(v')`, which vanishes by the
+  -- Euler–Lagrange equation.
+  have hderiv (r : ℝ) : HasDerivAt
+      (fun s ↦ fderiv ℝ (fun u ↦ L (q s, u)) (v s) (v s) - L (q s, v s)) 0 r := by
+    have hp := (hEL r).clm_apply (hv r).hasDerivAt
+    have hLc := (hL r).hasFDerivAt.comp_hasDerivAt r ((hq r).prodMk (hv r).hasDerivAt)
+    refine (hp.sub hLc).congr_deriv ?_
+    have hsplit : fderiv ℝ L (q r, v r) (v r, deriv v r) =
+        fderiv ℝ L (q r, v r) (v r, 0) + fderiv ℝ L (q r, v r) (0, deriv v r) := by
+      rw [← map_add, Prod.mk_add_mk, add_zero, zero_add]
+    rw [hsplit, fderiv_slice_left (hL r), fderiv_slice_right (hL r)]
+    simp
+  exact is_const_of_deriv_eq_zero (fun r ↦ (hderiv r).differentiableAt)
+    (fun r ↦ (hderiv r).deriv) s t
+
 /-! ### Hamilton's equations -/
 
 variable [FiniteDimensional ℝ E]
@@ -227,34 +256,6 @@ theorem eulerLagrange_of_hasDerivAt_hamiltonianVectorField {L : E × E → ℝ}
     exact hγ.congr_of_eventuallyEq hlift
   exact ((hasDerivAt_linearLegendreMap_iff (q := fun s ↦ (γ s).1) (v := fun s ↦ w (γ s))
     (by rw [hlift_t]; exact hw) hL (by rw [hlift_t])).1 hγ').2
-
-/-- **Conservation of energy.** Let `q` solve the Euler–Lagrange equations with velocity `v` at
-every time, and let `w` recover the velocity from the Legendre lift along the curve, with `w`
-and `L` differentiable there. Then the energy `E_L(q, v) = ∂_v L(q, v)(v) - L(q, v)` is constant
-along the curve. -/
-theorem energy_eq_of_eulerLagrange {L : E × E → ℝ} {w : E × StrongDual ℝ E → E}
-    {q v : ℝ → E} (hq : ∀ t, HasDerivAt q (v t) t)
-    (hEL : ∀ t, HasDerivAt (fun s ↦ fderiv ℝ (fun u ↦ L (q s, u)) (v s))
-      (fderiv ℝ (fun y ↦ L (y, v t)) (q t)) t)
-    (hw : ∀ t, DifferentiableAt ℝ w (linearLegendreMap L (q t, v t)))
-    (hL : ∀ t, DifferentiableAt ℝ L (q t, v t))
-    (hwv : ∀ t, w (linearLegendreMap L (q t, v t)) = v t) (s t : ℝ) :
-    fderiv ℝ (fun u ↦ L (q s, u)) (v s) (v s) - L (q s, v s) =
-      fderiv ℝ (fun u ↦ L (q t, u)) (v t) (v t) - L (q t, v t) := by
-  -- The energy is the Hamiltonian along the Legendre lift, whose derivative is `dH(X_H) = 0`.
-  have hE (r : ℝ) : fderiv ℝ (fun u ↦ L (q r, u)) (v r) (v r) - L (q r, v r) =
-      legendreHamiltonian L w (linearLegendreMap L (q r, v r)) :=
-    (legendreHamiltonian_linearLegendreMap (hwv r)).symm
-  have hderiv (r : ℝ) :
-      HasDerivAt (fun s ↦ legendreHamiltonian L w (linearLegendreMap L (q s, v s))) 0 r := by
-    have hlift := (hasDerivAt_linearLegendreMap_iff (hw r) (hL r) (hwv r)).2 ⟨hq r, hEL r⟩
-    have hH := (hasFDerivAt_legendreHamiltonian (hw r) (by simpa [hwv r] using hL r)
-      (by simp [hwv r])).differentiableAt.hasFDerivAt
-    simpa only [Function.comp_def, SymplecticForm.fderiv_apply_hamiltonianVectorField] using
-      hH.comp_hasDerivAt r hlift
-  rw [hE s, hE t]
-  exact is_const_of_deriv_eq_zero (fun r ↦ (hderiv r).differentiableAt)
-    (fun r ↦ (hderiv r).deriv) s t
 
 /-! ### Kinetic minus potential energy -/
 
