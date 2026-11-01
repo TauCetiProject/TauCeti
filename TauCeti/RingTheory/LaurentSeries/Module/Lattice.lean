@@ -42,6 +42,8 @@ theorem powerSeries_smul (p : R⟦X⟧) (f : HahnModule ℤ R V) :
 @[simp]
 theorem C_smul (r : R) (f : HahnModule ℤ R V) : PowerSeries.C r • f = r • f := by
   rw [powerSeries_smul, PowerSeries.coe_C, HahnSeries.C_apply, single_zero_smul_eq_smul]
+  -- `instBaseModule` uses the coefficient action transported from `V⟦ℤ⟧`;
+  -- the action in `single_zero_smul_eq_smul` uses its underlying `SMulWithZero` instance.
   rfl
 
 instance powerSeriesScalarTower : IsScalarTower R R⟦X⟧ (HahnModule ℤ R V) where
@@ -93,34 +95,26 @@ theorem restrictScalars_powerSeriesLattice (a : ℤ) :
 theorem powerSeriesLattice_antitone : Antitone (powerSeriesLattice R V) :=
   fun _ _ h _ hf ↦ lattice_antitone R V h hf
 
-end Semiring
-
-end TauCeti.HahnModule
-
-namespace HahnModule
-
-open TauCeti.HahnModule HahnSeries
-
-variable {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
+variable {R V}
 
 /-- Multiplying by a Laurent monomial translates the coefficient indices. -/
-theorem mem_powerSeriesLattice_single_smul_iff (k a : ℤ) (f : HahnModule ℤ R V) :
+theorem single_smul_mem_powerSeriesLattice_iff (k a : ℤ) (f : HahnModule ℤ R V) :
     single k (1 : R) • f ∈ powerSeriesLattice R V (a + k) ↔
       f ∈ powerSeriesLattice R V a := by
   simp only [mem_powerSeriesLattice, mem_lattice_iff]
   constructor
   · intro h n hn
     have hc := coeff_single_smul_vadd (r := (1 : R)) (x := f) (b := k) (a := n)
-    exact (one_smul R _).symm.trans (hc.symm.trans (h (k + n) (by omega)))
+    rw [vadd_eq_add, one_smul] at hc
+    rw [← hc]
+    exact h (k + n) (by omega)
   · intro h n hn
     have hc := coeff_single_smul_vadd (r := (1 : R)) (x := f) (b := k) (a := n - k)
-    simpa using hc.trans (by simp [h (n - k) (by omega)])
+    rw [vadd_eq_add, add_sub_cancel, one_smul] at hc
+    rw [hc]
+    exact h (n - k) (by omega)
 
-end HahnModule
-
-namespace TauCeti.HahnModule
-
-open _root_.HahnModule HahnSeries
+end Semiring
 
 section CommSemiring
 
@@ -129,9 +123,9 @@ variable {R V : Type*} [CommSemiring R] [AddCommMonoid V] [Module R V]
 /-- Laurent-monomial multiplication identifies any two shifted power-series lattices. -/
 noncomputable def powerSeriesLatticeShift (a k : ℤ) :
     powerSeriesLattice R V a ≃ₗ[R⟦X⟧] powerSeriesLattice R V (a + k) where
-  toFun f := ⟨single k 1 • f.1, (mem_powerSeriesLattice_single_smul_iff k a f.1).2 f.2⟩
+  toFun f := ⟨single k 1 • f.1, (single_smul_mem_powerSeriesLattice_iff k a f.1).2 f.2⟩
   invFun f := ⟨single (-k) 1 • f.1, by
-    have h := (mem_powerSeriesLattice_single_smul_iff (-k) (a + k) f.1).2 f.2
+    have h := (single_smul_mem_powerSeriesLattice_iff (-k) (a + k) f.1).2 f.2
     simpa using h⟩
   left_inv f := Subtype.ext (single_neg_smul_single_smul k f.1)
   right_inv f := Subtype.ext (by
@@ -165,7 +159,7 @@ theorem X_pow_smul_powerSeriesLattice (a : ℤ) (n : ℕ) :
   constructor
   · rintro ⟨g, hg, rfl⟩
     rw [_root_.HahnModule.powerSeries_smul, HahnSeries.ofPowerSeries_X_pow]
-    exact (mem_powerSeriesLattice_single_smul_iff (n : ℤ) a g).2 hg
+    exact (single_smul_mem_powerSeriesLattice_iff (n : ℤ) a g).2 hg
   · intro hf
     let g := (powerSeriesLatticeShift a (n : ℤ)).symm ⟨f, hf⟩
     refine ⟨g.1, g.2, ?_⟩
@@ -175,9 +169,9 @@ theorem X_pow_smul_powerSeriesLattice (a : ℤ) (n : ℕ) :
 
 end CommSemiring
 
-section CommRing
+section Ring
 
-variable (R V : Type*) [CommRing R] [AddCommGroup V] [Module R V]
+variable (R V : Type*) [Ring R] [AddCommGroup V] [Module R V]
 
 /-- Finite jets retain the power-series action on the lattices. The underlying quotient
 and its coefficient-ring module structure are the existing `latticeQuotient`. -/
@@ -185,6 +179,12 @@ noncomputable instance latticeQuotientPowerSeriesModule (a b : ℤ) :
     Module R⟦X⟧ (latticeQuotient R V a b) :=
   -- Restriction of scalars does not change the underlying additive quotient.
   inferInstanceAs (Module R⟦X⟧ (powerSeriesLattice R V a ⧸
+    (powerSeriesLattice R V b).comap (powerSeriesLattice R V a).subtype))
+
+/-- The power-series action on jets extends their coefficient-ring action. -/
+instance latticeQuotientPowerSeriesScalarTower (a b : ℤ) :
+    IsScalarTower R R⟦X⟧ (latticeQuotient R V a b) :=
+  inferInstanceAs (IsScalarTower R R⟦X⟧ (powerSeriesLattice R V a ⧸
     (powerSeriesLattice R V b).comap (powerSeriesLattice R V a).subtype))
 
 /-- The power-series action on a finite jet can be computed on any representative. -/
@@ -195,6 +195,16 @@ theorem smul_latticeQuotient_mk (a b : ℤ) (p : R⟦X⟧) (f : lattice R V a) :
         (mem_powerSeriesLattice R V).mp ((powerSeriesLattice R V a).smul_mem p
           ((mem_powerSeriesLattice R V).mpr f.2))⟩ := (rfl)
 
+/-- Constant power series act on finite jets by the original coefficient action. -/
+@[simp]
+theorem C_smul_latticeQuotient (a b : ℤ) (r : R) (q : latticeQuotient R V a b) :
+    PowerSeries.C r • q = r • q := by
+  induction q using Submodule.Quotient.induction_on with
+  | _ f =>
+    rw [smul_latticeQuotient_mk, ← Submodule.Quotient.mk_smul]
+    congr 1
+    exact Subtype.ext (_root_.HahnModule.C_smul r f.1)
+
 /-- A jet on `[a,b)` is killed by `X^n` whenever `b ≤ a + n`. -/
 theorem X_pow_smul_latticeQuotient_eq_zero (a b : ℤ) (n : ℕ) (h : b ≤ a + n)
     (f : latticeQuotient R V a b) : (PowerSeries.X ^ n : R⟦X⟧) • f = 0 := by
@@ -202,9 +212,10 @@ theorem X_pow_smul_latticeQuotient_eq_zero (a b : ℤ) (n : ℕ) (h : b ≤ a + 
   | _ f =>
     rw [smul_latticeQuotient_mk, Submodule.Quotient.mk_eq_zero]
     apply powerSeriesLattice_antitone R V h
-    rw [← X_pow_smul_powerSeriesLattice]
-    exact Submodule.smul_mem_pointwise_smul (f : HahnModule ℤ R V) (PowerSeries.X ^ n) _ f.2
+    simp only [Submodule.subtype_apply]
+    rw [_root_.HahnModule.powerSeries_smul, HahnSeries.ofPowerSeries_X_pow]
+    exact (single_smul_mem_powerSeriesLattice_iff (n : ℤ) a f.1).2 f.2
 
-end CommRing
+end Ring
 
 end TauCeti.HahnModule
