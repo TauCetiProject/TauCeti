@@ -67,39 +67,6 @@ namespace TauCeti
 
 variable {K : Type*} [Field K]
 
-/-- If every diagonal reflection negating one coordinate acts by the same sign on two pairs of
-indices, the four indices pair off: the two pairs are both constant, or equal, or swapped. -/
-private theorem pattern_of_forall_update_mul_eq {ι : Type*} [DecidableEq ι] (h2 : (2 : K) ≠ 0)
-    {v u : Fin 2 → ι}
-    (h : ∀ a, Function.update (1 : ι → K) a (-1) (v 0) *
-        Function.update (1 : ι → K) a (-1) (v 1) =
-      Function.update (1 : ι → K) a (-1) (u 0) * Function.update (1 : ι → K) a (-1) (u 1)) :
-    (v 0 = v 1 ∧ u 0 = u 1) ∨ v = u ∨ (u 0 = v 1 ∧ u 1 = v 0) := by
-  have hne : (-1 : K) ≠ 1 := fun h ↦ h2 (by linear_combination -h)
-  -- A product of two signs is `-1` exactly when one of the two labels is `a`.
-  have key : ∀ a x y : ι, Function.update (1 : ι → K) a (-1) x *
-      Function.update (1 : ι → K) a (-1) y = -1 ↔ (x = a ↔ y ≠ a) := fun a x y ↦ by
-    simp only [Function.update_apply, Pi.one_apply]
-    split_ifs <;> simp_all [hne.symm]
-  rw [funext_iff, Fin.forall_fin_two]
-  by_cases hv : v 0 = v 1
-  · -- both signs of `v` agree, so those of `u` agree too: `u` is constant.
-    refine .inl ⟨hv, by_contra fun hu ↦ ?_⟩
-    have h' := h (u 0)
-    rw [hv, ((key _ _ _).mpr ⟨fun _ ↦ Ne.symm hu, fun _ ↦ rfl⟩)] at h'
-    have := (key (u 0) (v 1) (v 1)).mp h'
-    tauto
-  · -- each of `v 0` and `v 1` occurs exactly once in `u`.
-    have h₀ := (key _ _ _).mp ((h (v 0)).symm.trans ((key _ _ _).mpr ⟨fun _ ↦ Ne.symm hv,
-      fun _ ↦ rfl⟩))
-    have h₁ := (key _ _ _).mp ((h (v 1)).symm.trans ((key _ _ _).mpr ⟨fun h ↦ absurd h hv,
-      fun h ↦ absurd rfl h⟩))
-    by_cases hu : u 0 = v 0
-    · have hu1 : u 1 = v 1 := by_contra fun h ↦ hv (hu.symm.trans (h₁.mpr h))
-      exact .inr (.inl ⟨hu.symm, hu1.symm⟩)
-    · have hu1 : u 1 = v 0 := by_contra fun h ↦ hu (h₀.mpr h)
-      exact .inr (.inr ⟨h₁.mpr fun h ↦ hv (hu1.symm.trans h), hu1⟩)
-
 variable {n : ℕ} {M : Matrix (Fin 2 → Fin n) (Fin 2 → Fin n) K}
 
 /-- **Sign constraints.** A matrix commuting with the Kronecker squares of the diagonal reflections
