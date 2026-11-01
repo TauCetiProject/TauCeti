@@ -336,7 +336,8 @@ given by the trivialization at `b`. -/
 @[reassoc]
 theorem fiberThomPairOverMap_comp_thomPairOverIso_hom {b : B} (hb : b ∈ W) :
     fiberThomPairOverMap F E hb ≫ (e.thomPairOverIso 𝕜 hW).hom =
-      (e.fiberPairIso 𝕜 (hW hb)).hom ≫ prodThomPairFiberMap F (⟨b, hb⟩ : W) := by
+      (e.continuousLinearEquivAt 𝕜 b (hW hb)).complZeroPairIso.hom ≫
+        prodThomPairFiberMap F (⟨b, hb⟩ : W) := by
   refine TopPair.hom_ext_of_fst _ (TopCat.ext fun (x : E b) ↦ ?_)
   -- Both sides send `x : E_b` to `(b, e x)`. The carriers of the pairs agree with `E_b`, `F` and
   -- the subspaces of the total space only up to unfolding, so first split each composite into
@@ -344,8 +345,9 @@ theorem fiberThomPairOverMap_comp_thomPairOverIso_hom {b : B} (hb : b ∈ W) :
   change TopPair.Hom.fst (e.thomPairOverIso 𝕜 hW).hom
       (TopPair.Hom.fst (fiberThomPairOverMap F E hb) x) =
     TopPair.Hom.fst (prodThomPairFiberMap F (⟨b, hb⟩ : W))
-      (TopPair.Hom.fst (e.fiberPairIso 𝕜 (hW hb)).hom x)
-  rw [fiberThomPairOverMap_fst_apply, thomPairOverIso_hom_fst_apply, fiberPairIso_hom_fst_apply,
+      (TopPair.Hom.fst (e.continuousLinearEquivAt 𝕜 b (hW hb)).complZeroPairIso.hom x)
+  rw [fiberThomPairOverMap_fst_apply, thomPairOverIso_hom_fst_apply,
+    ContinuousLinearEquiv.complZeroPairIso_hom_fst_apply,
     prodThomPairFiberMap_fst_apply, continuousLinearEquivAt_apply]
 
 include hW in
@@ -360,7 +362,8 @@ theorem exists_singularCohomology_thomPairOver_fiber {C : Type u} [Category.{v} 
     {n : ℕ} (g : (TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularCohomology R k M n) :
     ∃ u : (thomPairOver F E W).singularCohomology R k M n, ∀ b (hb : b ∈ W),
       TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) n u =
-        TopPair.singularCohomologyMap (e.fiberPairIso 𝕜 (hW hb)).hom n g := by
+        TopPair.singularCohomologyMap
+          (e.continuousLinearEquivAt 𝕜 b (hW hb)).complZeroPairIso.hom n g := by
   -- The projection `(W × F, W × (F ∖ {0})) ⟶ (F, F ∖ {0})` onto the fibre pair.
   let proj : prodThomPair W F ⟶ TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F) :=
     TopPair.ofSubsetMap (TopCat.ofHom ⟨Prod.snd, continuous_snd⟩) fun _ hp ↦ hp
@@ -394,7 +397,8 @@ theorem singularCohomology_thomPairOver_ext
       TopPair.singularCohomologyMap (fiberThomPairOverMap F E hb) _ v) : u = v := by
   let φ := e.thomPairOverIso ℝ hW
   have hφ (b : W) : prodThomPairFiberMap F b ≫ φ.inv =
-      (e.fiberPairIso ℝ (hW b.2)).inv ≫ fiberThomPairOverMap F E b.2 := by
+      (e.continuousLinearEquivAt ℝ b (hW b.2)).complZeroPairIso.inv ≫
+        fiberThomPairOverMap F E b.2 := by
     rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp,
       e.fiberThomPairOverMap_comp_thomPairOverIso_hom ℝ hW b.2]
   -- Transport `u` and `v` to the product bundle and compare them there, fibre by fibre.
