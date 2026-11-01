@@ -107,24 +107,6 @@ private def homologyDerivedHomIso (L M : DerivedCategory C) (n : ℤ) :
           ((kInjectiveReplacement C).obj L).as ((kInjectiveReplacement C).obj M).as))) :=
   Iso.refl _
 
-/-- The cohomology of the image of a complex in the derived category is its cohomology. -/
-private def homologyQhQuotientIso (X : CochainComplex (ModuleCat.{v} R) ℤ) (n : ℤ) :
-    (homologyFunctor (ModuleCat.{v} R) n).obj (Qh.obj ((HomotopyCategory.quotient _ _).obj X)) ≅
-      (HomologicalComplex.homologyFunctor _ _ n).obj X :=
-  (homologyFunctor _ n).mapIso ((quotientCompQhIso _).app X) ≪≫
-    (homologyFunctorFactors _ n).app X
-
-private lemma homologyQhQuotientIso_naturality {X Y : CochainComplex (ModuleCat.{v} R) ℤ}
-    (Φ : X ⟶ Y) (n : ℤ) :
-    (homologyFunctor _ n).map (Qh.map ((HomotopyCategory.quotient _ _).map Φ)) ≫
-        (homologyQhQuotientIso R Y n).hom =
-      (homologyQhQuotientIso R X n).hom ≫ (HomologicalComplex.homologyFunctor _ _ n).map Φ := by
-  rw [homologyQhQuotientIso, homologyQhQuotientIso]
-  simp only [Iso.trans_hom, Functor.mapIso_hom, Iso.app_hom, ← Functor.map_comp_assoc,
-    quotientCompQhIso_hom_naturality]
-  rw [Functor.map_comp, Category.assoc, Category.assoc]
-  exact congrArg _ ((homologyFunctorFactors _ n).hom.naturality Φ)
-
 /-- The shift of the K-injective replacement of `M` represents `M⟦n⟧`. -/
 private def shiftKInjectiveReplacementIso (M : DerivedCategory C) (n : ℤ) :
     Qh.obj ((HomotopyCategory.quotient C _).obj (((kInjectiveReplacement C).obj M).as⟦n⟧)) ≅
@@ -166,7 +148,8 @@ private lemma counit_inv_naturality {L L' : DerivedCategory C} (f : L' ⟶ L)
 def derivedHomHomologyLinearEquiv (L M : DerivedCategory C) (n : ℤ) :
     (homologyFunctor (ModuleCat.{v} R) n).obj (((derivedHom R C).obj (op L)).obj M) ≃ₗ[R]
       (L ⟶ M⟦n⟧) :=
-  (homologyDerivedHomIso R L M n ≪≫ homologyQhQuotientIso R _ n).toLinearEquiv ≪≫ₗ
+  (homologyDerivedHomIso R L M n ≪≫ (Functor.isoWhiskerLeft _ (homologyFunctorFactorsh _ n) ≪≫
+    HomotopyCategory.homologyFunctorFactors _ _ n).app _).toLinearEquiv ≪≫ₗ
     linearHomComplexHomologyLinearEquiv R ((kInjectiveReplacement C).obj L).as
       ((kInjectiveReplacement C).obj M).as n ≪≫ₗ
     LinearEquiv.ofBijective (Qh.mapLinearMap R)
@@ -194,11 +177,13 @@ theorem derivedHomHomologyLinearEquiv_naturality_right (L : DerivedCategory C)
   let J := ((kInjectiveReplacement C).obj M).as
   let J' := ((kInjectiveReplacement C).obj M').as
   let Φ := linearHomComplexPostcomp R I g'
-  let w := (homologyQhQuotientIso R (CochainComplex.linearHomComplex R I J) n).hom.hom z
-  have hz : (homologyQhQuotientIso R (CochainComplex.linearHomComplex R I J') n).hom.hom
+  let e := Functor.isoWhiskerLeft (HomotopyCategory.quotient _ _)
+    (homologyFunctorFactorsh (ModuleCat.{v} R) n) ≪≫ HomotopyCategory.homologyFunctorFactors _ _ n
+  let w := (e.hom.app (CochainComplex.linearHomComplex R I J)).hom z
+  have hz : (e.hom.app (CochainComplex.linearHomComplex R I J')).hom
       (((homologyFunctor _ n).map (Qh.map ((HomotopyCategory.quotient _ _).map Φ))).hom z) =
         (HomologicalComplex.homologyMap Φ n).hom w :=
-    LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (homologyQhQuotientIso_naturality R Φ n)) z
+    LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (e.hom.naturality Φ)) z
   have hcomp (a : (HomotopyCategory.quotient C _).obj I ⟶
       (HomotopyCategory.quotient C _).obj (J⟦n⟧)) :
       (((asIso (kInjectiveReplacementAdjunction C).counit).app L).inv ≫
@@ -245,11 +230,13 @@ theorem derivedHomHomologyLinearEquiv_naturality_left {L L' : DerivedCategory C}
   let I' := ((kInjectiveReplacement C).obj L').as
   let J := ((kInjectiveReplacement C).obj M).as
   let Φ := linearHomComplexPrecomp R f' J
-  let w := (homologyQhQuotientIso R (CochainComplex.linearHomComplex R I J) n).hom.hom z
-  have hz : (homologyQhQuotientIso R (CochainComplex.linearHomComplex R I' J) n).hom.hom
+  let e := Functor.isoWhiskerLeft (HomotopyCategory.quotient _ _)
+    (homologyFunctorFactorsh (ModuleCat.{v} R) n) ≪≫ HomotopyCategory.homologyFunctorFactors _ _ n
+  let w := (e.hom.app (CochainComplex.linearHomComplex R I J)).hom z
+  have hz : (e.hom.app (CochainComplex.linearHomComplex R I' J)).hom
       (((homologyFunctor _ n).map (Qh.map ((HomotopyCategory.quotient _ _).map Φ))).hom z) =
         (HomologicalComplex.homologyMap Φ n).hom w :=
-    LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (homologyQhQuotientIso_naturality R Φ n)) z
+    LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (e.hom.naturality Φ)) z
   have hcomp (a : (HomotopyCategory.quotient C _).obj I ⟶
       (HomotopyCategory.quotient C _).obj (J⟦n⟧)) :
       (((asIso (kInjectiveReplacementAdjunction C).counit).app L').inv ≫

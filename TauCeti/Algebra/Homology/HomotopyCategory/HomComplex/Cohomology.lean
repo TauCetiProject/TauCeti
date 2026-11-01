@@ -57,11 +57,8 @@ noncomputable def homLinearEquiv :
     map_smul' r x := by
       induction x using CohomologyClass.rec with | mk x => ?_
       simp only [AddEquiv.toEquiv_eq_coe, Equiv.toFun_as_coe, AddEquiv.coe_toEquiv,
-        homAddEquiv_apply, ← mk_smul, toHom_mk, RingHom.id_apply, ← Functor.map_smul]
-      congr 1
-      apply Cocycle.equivHomShift.injective
-      ext p q hpq
-      simp [Cocycle.equivHomShift_apply] }
+        homAddEquiv_apply, ← mk_smul, toHom_mk, RingHom.id_apply,
+        Cocycle.equivHomShift_symm_smul, Functor.map_smul] }
 
 @[simp]
 lemma homLinearEquiv_mk (x : Cocycle K L n) :
