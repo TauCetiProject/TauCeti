@@ -29,6 +29,8 @@ of `I^(Option N)` under `TauCeti.piOptionEquivProdHomeomorph`.
   extension property.
 * `TauCeti.hasHomotopyExtensionProperty_prodBoundary`: the boundary of `I × I^N` has the homotopy
   extension property.
+* `TauCeti.hasHomotopyExtensionProperty_zero_one`: the end points `{0, 1}` of the unit interval,
+  the boundary of the one-dimensional cube, have the homotopy extension property.
 -/
 
 public section
@@ -56,5 +58,14 @@ theorem hasHomotopyExtensionProperty_prodBoundary :
   ext y
   rw [Homeomorph.image_eq_preimage_symm, mem_preimage,
     ← piOptionEquivProdHomeomorph_mem_prodBoundary_iff, Homeomorph.apply_symm_apply]
+
+/-- The end points `{0, 1}` of the unit interval have the homotopy extension property in `I`: they
+form the boundary of the one-dimensional cube `I^Unit`. -/
+theorem hasHomotopyExtensionProperty_zero_one : HasHomotopyExtensionProperty ({0, 1} : Set I) := by
+  convert (hasHomotopyExtensionProperty_cubeBoundary (N := Unit)).image
+    (Homeomorph.funUnique Unit I) using 1
+  ext t
+  rw [Homeomorph.image_eq_preimage_symm]
+  simp [Cube.boundary]
 
 end TauCeti
