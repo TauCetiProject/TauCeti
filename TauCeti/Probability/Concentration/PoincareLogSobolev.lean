@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Probability.Distributions.Bernoulli
 public import Mathlib.Probability.Moments.Variance
+public import TauCeti.Probability.Distributions.Bernoulli.Basic
 
 /-!
 # Poincaré and logarithmic Sobolev inequalities
@@ -86,31 +87,22 @@ section Scaling
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-omit [MeasurableSpace E] [BorelSpace E] in
-private lemma fderiv_comp_smul {f : E → ℝ} (hf : ContDiff ℝ ∞ f) (a : ℝ) (x : E) :
-    fderiv ℝ (fun y ↦ f (a • y)) x = a • fderiv ℝ f (a • x) := by
-  have hd : HasFDerivAt (fun y : E ↦ f (a • y))
-      ((fderiv ℝ f (a • x)).comp (a • ContinuousLinearMap.id ℝ E)) x :=
-    ((hf.differentiable (by simp)).differentiableAt.hasFDerivAt).comp x
-      ((hasFDerivAt_id x).const_smul a)
-  rw [hd.fderiv, ContinuousLinearMap.comp_smul, ContinuousLinearMap.comp_id]
-
 private lemma measurableEmbedding_smul {a : ℝ} (ha : a ≠ 0) :
     MeasurableEmbedding (fun x : E ↦ a • x) :=
   (Homeomorph.smulOfNeZero a ha).measurableEmbedding
 
 omit [MeasurableSpace E] [BorelSpace E] in
-private lemma norm_fderiv_comp_smul {f : E → ℝ} (hf : ContDiff ℝ ∞ f) (a : ℝ) (x : E) :
+private lemma norm_fderiv_comp_smul {f : E → ℝ} (a : ℝ) (x : E) :
     ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ = |a| * ‖fderiv ℝ f (a • x)‖ := by
-  rw [fderiv_comp_smul hf, norm_smul, Real.norm_eq_abs]
+  rw [_root_.fderiv_comp_smul a, norm_smul, Real.norm_eq_abs]
 
 private lemma integral_sq_norm_fderiv_comp_smul {μ : Measure E} {f : E → ℝ}
-    (hf : ContDiff ℝ ∞ f) {a : ℝ} (ha : a ≠ 0) :
+    {a : ℝ} (ha : a ≠ 0) :
     ∫ x, ‖fderiv ℝ f x‖ ^ 2 ∂μ.map (fun x ↦ a • x) =
       (a ^ 2)⁻¹ * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := by
   rw [(measurableEmbedding_smul ha).integral_map, ← integral_const_mul]
   refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
-  simp only [norm_fderiv_comp_smul hf, mul_pow, sq_abs]
+  simp only [norm_fderiv_comp_smul a, mul_pow, sq_abs]
   field_simp
 
 /-- Dilating a measure satisfying the Poincaré inequality with constant `C` by `a ≠ 0` gives a
@@ -122,10 +114,10 @@ theorem PoincareInequality.map_smul {μ : Measure E} {C : ℝ} (h : PoincareIneq
   have hg : ContDiff ℝ ∞ (fun y ↦ f (a • y)) := hf.comp (contDiff_const_smul a)
   have hgL : MemLp (fun y ↦ f (a • y)) 2 μ := (he.memLp_map_measure_iff).1 hfL
   have hdg : MemLp (fun x ↦ ‖fderiv ℝ (fun y ↦ f (a • y)) x‖) 2 μ := by
-    simp only [norm_fderiv_comp_smul hf]
+    simp only [norm_fderiv_comp_smul a]
     exact ((he.memLp_map_measure_iff).1 hdf).const_mul |a|
   rw [variance_map hfL.aemeasurable he.measurable.aemeasurable,
-    integral_sq_norm_fderiv_comp_smul hf ha]
+    integral_sq_norm_fderiv_comp_smul ha]
   have := h _ hg hgL hdg
   have hpos : 0 < a ^ 2 := by positivity
   calc _ ≤ C * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := this
@@ -145,9 +137,9 @@ theorem LogSobolevInequality.map_smul {μ : Measure E} {C : ℝ} (h : LogSobolev
   intro f hf hdf hf2 hf2log
   have hg : ContDiff ℝ ∞ (fun y ↦ f (a • y)) := hf.comp (contDiff_const_smul a)
   have hdg : MemLp (fun x ↦ ‖fderiv ℝ (fun y ↦ f (a • y)) x‖) 2 μ := by
-    simp only [norm_fderiv_comp_smul hf]
+    simp only [norm_fderiv_comp_smul a]
     exact ((he.memLp_map_measure_iff).1 hdf).const_mul |a|
-  rw [entropy_map he, integral_sq_norm_fderiv_comp_smul hf ha]
+  rw [entropy_map he, integral_sq_norm_fderiv_comp_smul ha]
   have := h _ hg hdg ((he.integrable_map_iff).1 hf2) ((he.integrable_map_iff).1 hf2log)
   have hpos : 0 < a ^ 2 := by positivity
   calc _ ≤ 2 * C * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := this
@@ -194,6 +186,13 @@ theorem not_poincareInequality_bernoulliMeasure {p : I} (hp₀ : 0 < (p : ℝ)) 
       exact Filter.eventually_pure.2 (by simp [fderiv_step_zero])
   have hstep : step 0 = 0 := Real.smoothTransition.zero_of_nonpos (by norm_num)
   have hstep1 : step 1 = 1 := Real.smoothTransition.one_of_one_le (by norm_num)
+  have hstep_ae : step =ᵐ[Ber((1 : ℝ), 0, p)] id := by
+    rw [bernoulliMeasure_def]
+    refine ae_add_measure_iff.2 ⟨Measure.ae_smul_measure ?_ _, Measure.ae_smul_measure ?_ _⟩
+    · rw [ae_dirac_eq]
+      exact Filter.eventually_pure.2 (by simp [hstep1])
+    · rw [ae_dirac_eq]
+      exact Filter.eventually_pure.2 (by simp [hstep])
   have hmem : MemLp step 2 Ber((1 : ℝ), 0, p) :=
     MemLp.of_bound contDiff_step.continuous.aestronglyMeasurable 1
       (Filter.Eventually.of_forall fun x ↦ by
@@ -204,10 +203,8 @@ theorem not_poincareInequality_bernoulliMeasure {p : I} (hp₀ : 0 < (p : ℝ)) 
     (MemLp.zero.ae_eq (hae.mono fun x hx ↦ hx.symm) : _)
   have h0 := h step contDiff_step hmem hdmem
   rw [integral_eq_zero_of_ae (hae.mono fun x hx ↦ by simp [hx]), mul_zero] at h0
-  rw [variance_eq_integral hmem.aemeasurable] at h0
-  simp only [integral_bernoulliMeasure, hstep, hstep1, smul_eq_mul] at h0
-  nlinarith [mul_pos hp₀ (sub_pos.2 hp₁), mul_pos (mul_pos hp₀ hp₀) (sub_pos.2 hp₁),
-    mul_pos (mul_pos hp₀ (sub_pos.2 hp₁)) (sub_pos.2 hp₁)]
+  rw [variance_congr hstep_ae, variance_id_bernoulliMeasure] at h0
+  nlinarith [mul_pos hp₀ (sub_pos.2 hp₁)]
 
 end Bernoulli
 
