@@ -63,11 +63,8 @@ theorem charpoly_eq_X_pow_finrank_of_isNilpotent {f : Module.End R M} (hf : IsNi
   -- step by the coefficientwise criterion `Polynomial.isNilpotent_iff`.
   nontriviality R
   let b := Free.chooseBasis R M
-  have hmat : toMatrixAlgEquiv b f = toMatrix b b f := by
-    ext i j
-    rw [toMatrixAlgEquiv_apply, toMatrix_apply]
   have hP :=
-    Matrix.isNilpotent_charpoly_sub_pow_of_isNilpotent (hmat ▸ hf.map (toMatrixAlgEquiv b))
+    Matrix.isNilpotent_charpoly_sub_pow_of_isNilpotent ((isNilpotent_toMatrix_iff b f).2 hf)
   rw [charpoly_toMatrix, ← finrank_eq_card_chooseBasisIndex] at hP
   rw [← sub_eq_zero]
   ext i
@@ -111,25 +108,10 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Finite
 /-- On a finite projective module, `det (1 - X f)` is a unit polynomial when `f` is nilpotent. -/
 theorem isUnit_projectiveCharpolyRev_of_isNilpotent {f : Module.End R M} (hf : IsNilpotent f) :
     IsUnit (projectiveCharpolyRev f) := by
-  obtain ⟨n, π, σ, -, -, h⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
-  have hx (x : M) : π (σ x) = x := congr($h x)
-  rw [projectiveCharpolyRev_eq_charpolyRev_toMatrix (Pi.basisFun R (Fin n)) π σ h]
-  apply Matrix.isUnit_charpolyRev_of_isNilpotent
-  -- the compression `σ ∘ f ∘ π` is nilpotent because `π ∘ σ = id`
-  have hpow (m : ℕ) : (σ ∘ₗ f ∘ₗ π) ^ (m + 1) = σ ∘ₗ (f ^ (m + 1)) ∘ₗ π := by
-    induction m with
-    | zero => simp
-    | succ m ih =>
-      rw [pow_succ', ih]
-      refine LinearMap.ext fun x ↦ ?_
-      simp [Module.End.mul_apply, hx, pow_succ' f (m + 1)]
   obtain ⟨k, hk⟩ := hf
-  have hg : IsNilpotent (σ ∘ₗ f ∘ₗ π) := ⟨k + 1, by rw [hpow, pow_succ, hk, zero_mul]; simp⟩
-  have hmat : toMatrixAlgEquiv (Pi.basisFun R (Fin n)) (σ ∘ₗ f ∘ₗ π) =
-      toMatrix (Pi.basisFun R (Fin n)) (Pi.basisFun R (Fin n)) (σ ∘ₗ f ∘ₗ π) := by
-    ext i j
-    rw [toMatrixAlgEquiv_apply, toMatrix_apply]
-  exact hmat ▸ hg.map (toMatrixAlgEquiv (Pi.basisFun R (Fin n)))
+  have hg : IsNilpotent (f.baseChange R[X]) := ⟨k, by rw [← baseChange_pow, hk, baseChange_zero]⟩
+  rw [projectiveCharpolyRev_def]
+  exact ((hg.smul (X : R[X])).isUnit_one_sub).map projectiveDet
 
 /-- Over a reduced ring, a nilpotent endomorphism of a finite projective module has
 `det (1 - X f) = 1`. Reducedness is needed: over `K[ε]/(ε²)` the nilpotent scalar `ε` on a line

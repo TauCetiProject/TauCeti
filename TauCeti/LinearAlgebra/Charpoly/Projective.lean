@@ -202,7 +202,7 @@ theorem natDegree_projectiveCharpolyRev_eq_finrank_iff [Nontrivial R] [Module.Fr
 
 /-- On a free module over a nontrivial ring, the degree of `det (1 - X f)` is the rank when `f`
 is invertible. -/
-theorem natDegree_projectiveCharpolyRev_of_isUnit [Nontrivial R] [Module.Free R M]
+theorem natDegree_projectiveCharpolyRev_eq_finrank_of_isUnit [Nontrivial R] [Module.Free R M]
     {f : Module.End R M} (hf : IsUnit f) :
     (projectiveCharpolyRev f).natDegree = finrank R M :=
   (natDegree_projectiveCharpolyRev_eq_finrank_iff f).2 ((isUnit_iff_isUnit_det f).1 hf).ne_zero
