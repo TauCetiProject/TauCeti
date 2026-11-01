@@ -305,23 +305,6 @@ theorem realizeWeights_splitWeights_symm (C : MLPSpec K (L + 1 + (M + 1)))
   -- The two sides agree after unfolding `Function.comp` and `Pi.map`.
   rfl
 
-/-- A model that, after an identification of its parameters with pairs, realizes the composites
-`g p₂ ∘ a ∘ f p₁` realizes the composites of functions realized by `f` and `g` joined by `a`. This
-is `realizedFunctions_compose` for the composite of `f` with `g` precomposed with `a`. -/
-private theorem realizedFunctions_eq_image2_of_equiv {P P₁ P₂ X Y Y' Z : Type*}
-    {F : P → X → Z} (e : P ≃ P₁ × P₂) {f : P₁ → X → Y} {g : P₂ → Y' → Z} (a : Y → Y')
-    (h : ∀ p₁ p₂, F (e.symm (p₁, p₂)) = g p₂ ∘ a ∘ f p₁) :
-    realizedFunctions F =
-      Set.image2 (fun f' g' => g' ∘ a ∘ f') (realizedFunctions f) (realizedFunctions g) := by
-  have hc : F ∘ e.symm = compose f fun p₂ => g p₂ ∘ a := funext fun p =>
-    (h p.1 p.2).trans (compose_apply f (fun p₂ => g p₂ ∘ a) p).symm
-  have hg : realizedFunctions (fun p₂ => g p₂ ∘ a) = (· ∘ a) '' realizedFunctions g :=
-    (realizedFunctions_def _).trans ((Set.range_comp (· ∘ a) g).trans
-      (congrArg _ (realizedFunctions_def g).symm))
-  rw [realizedFunctions_def, ← e.symm.surjective.range_comp, hc, ← realizedFunctions_def,
-    realizedFunctions_compose, hg, Set.image2_image_right]
-  simp only [Function.comp_assoc]
-
 /-- The functions realized by a specification of depth `(L + 1) + (M + 1)` are the composites of
 functions realized by its parts, joined by the junction activation. -/
 theorem realizedFunctions_realize (C : MLPSpec K (L + 1 + (M + 1))) :
