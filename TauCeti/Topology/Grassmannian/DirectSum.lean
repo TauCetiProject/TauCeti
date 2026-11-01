@@ -209,12 +209,10 @@ theorem mem_blockSum (V : finiteGrassmannian 𝕜 a N) (W : finiteGrassmannian �
 theorem continuous_blockSum [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜] :
     Continuous fun p : finiteGrassmannian 𝕜 a N × finiteGrassmannian 𝕜 b M ↦
       blockSum p.1 p.2 := by
-  refine continuous_directSum _ _ (continuous_pi fun k ↦ ?_)
-  refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k
-  · exact ((continuous_apply i).comp continuous_fst).congr fun ⟨x, y⟩ ↦ by
-      simp [LinearEquiv.funCongrLeft_symm, LinearEquiv.funCongrLeft_apply]
-  · exact ((continuous_apply j).comp continuous_snd).congr fun ⟨x, y⟩ ↦ by
-      simp [LinearEquiv.funCongrLeft_symm, LinearEquiv.funCongrLeft_apply]
+  refine continuous_directSum _ _ ((Fin.continuous_append N M).congr fun ⟨x, y⟩ ↦ ?_)
+  ext k
+  refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k <;>
+    simp [LinearEquiv.funCongrLeft_symm, LinearEquiv.funCongrLeft_apply]
 
 /-- Appending a zero last coordinate to the second summand of a block sum is the same as
 appending it to the block sum. -/
