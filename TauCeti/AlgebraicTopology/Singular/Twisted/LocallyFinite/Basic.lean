@@ -197,17 +197,36 @@ lemma matrixCoeff_apply (A : (twistedChainComplex L).X a ⟶ (twistedChainComple
 
 /-- A map of twisted chains moves simplices along `g` when the image of a chain supported on a
 simplex `σ` only involves simplices whose image lies in the image of `σ` under `g`. -/
-@[expose]
 def MovesAlong (g : X ⟶ Y)
     (A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b) : Prop :=
   ∀ ρ σ (x : L.obj (initialVertex σ)), matrixCoeff A ρ σ x ≠ 0 →
     Set.range (TopCat.simplexMap ρ) ⊆ g.hom '' Set.range (TopCat.simplexMap σ)
 
 /-- A map of twisted chains is properly supported when it moves simplices along a proper map. -/
-@[expose]
 def IsProperlySupported
     (A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b) : Prop :=
   ∃ g : X ⟶ Y, IsProperMap g.hom ∧ MovesAlong g A
+
+/-- A map of twisted chains moves simplices along `g` exactly when the image of a chain supported
+on a simplex `σ` only involves simplices whose image lies in the image of `σ` under `g`. -/
+lemma movesAlong_iff {g : X ⟶ Y}
+    {A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b} :
+    MovesAlong g A ↔ ∀ ρ σ (x : L.obj (initialVertex σ)), matrixCoeff A ρ σ x ≠ 0 →
+      Set.range (TopCat.simplexMap ρ) ⊆ g.hom '' Set.range (TopCat.simplexMap σ) :=
+  Iff.rfl
+
+/-- A map of twisted chains is properly supported exactly when it moves simplices along some
+proper map. -/
+lemma isProperlySupported_iff
+    {A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b} :
+    IsProperlySupported A ↔ ∃ g : X ⟶ Y, IsProperMap g.hom ∧ MovesAlong g A :=
+  Iff.rfl
+
+/-- A map of twisted chains moving simplices along a proper map is properly supported. -/
+lemma IsProperlySupported.of_movesAlong {g : X ⟶ Y}
+    {A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b} (hg : IsProperMap g.hom)
+    (h : MovesAlong g A) : IsProperlySupported A :=
+  ⟨g, hg, h⟩
 
 /-- The coefficients of the chain obtained by applying `A` simplex by simplex. -/
 def extendLocallyFiniteFun (A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b)
@@ -257,7 +276,7 @@ private lemma finite_setOf_matrixCoeff_ne_zero
     fun _ hρ ↦ hρ
 
 /-- Composites of maps moving simplices along `g` and `g'` move simplices along `g ≫ g'`. -/
-private lemma MovesAlong.comp {g : X ⟶ Y} {g' : Y ⟶ Z}
+lemma MovesAlong.comp {g : X ⟶ Y} {g' : Y ⟶ Z}
     {A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b}
     {B : (twistedChainComplex K).X b ⟶ (twistedChainComplex J).X e}
     (hA : MovesAlong g A) (hB : MovesAlong g' B) : MovesAlong (g ≫ g') (A ≫ B) := by
@@ -275,7 +294,16 @@ lemma IsProperlySupported.comp
     (hA : IsProperlySupported A) (hB : IsProperlySupported B) : IsProperlySupported (A ≫ B) :=
   let ⟨g, hg, hgA⟩ := hA
   let ⟨g', hg', hgB⟩ := hB
-  ⟨g ≫ g', by simpa using hg'.comp hg, hgA.comp hgB⟩
+  .of_movesAlong (by simpa using hg'.comp hg) (hgA.comp hgB)
+
+/-- The identity moves simplices along the identity. -/
+lemma isProperlySupported_id : IsProperlySupported (𝟙 ((twistedChainComplex L).X a)) := by
+  refine .of_movesAlong (g := 𝟙 X) isProperMap_id fun ρ σ x hx ↦ ?_
+  obtain rfl : σ = ρ := by
+    by_contra hne
+    exact hx (by
+      simp [matrixCoeff_apply, twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L hne])
+  simp
 
 variable {A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b}
   {c : ∀ σ : (TopCat.toSSet.obj X) _⦋a⦌, L.obj (initialVertex σ)}
@@ -361,10 +389,32 @@ lemma extendLocallyFiniteFun_extendLocallyFiniteFun
     obtain ⟨τ, hτ⟩ := not_forall.1 (mt finsum_eq_zero_of_forall_eq_zero hσ)
     exact hsupp τ σ hτ
 
+/-- Extending a composite of properly supported maps gives the composite of the extensions. -/
+lemma extendLocallyFinite_comp {B : (twistedChainComplex K).X b ⟶ (twistedChainComplex J).X e}
+    (hA : IsProperlySupported A) (hB : IsProperlySupported B) :
+    extendLocallyFinite hB ∘ₗ extendLocallyFinite hA = extendLocallyFinite (hA.comp hB) :=
+  LinearMap.ext fun c ↦ Subtype.ext <|
+    extendLocallyFiniteFun_extendLocallyFiniteFun hA hB (mem_locallyFiniteChains.1 c.2)
+
+/-- Extending the identity gives the identity. -/
+@[simp]
+lemma extendLocallyFiniteFun_id :
+    extendLocallyFiniteFun (𝟙 ((twistedChainComplex L).X a)) c = c :=
+  funext fun ρ ↦ by
+    rw [extendLocallyFiniteFun_apply, finsum_eq_single _ ρ fun σ hσ ↦ by
+      simp [matrixCoeff_apply, twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L hσ]]
+    simp [matrixCoeff_apply]
+
+/-- The extension of the identity is the identity. -/
+@[simp]
+lemma extendLocallyFinite_id (h : IsProperlySupported (𝟙 ((twistedChainComplex L).X a))) :
+    extendLocallyFinite h = LinearMap.id :=
+  LinearMap.ext fun c ↦ Subtype.ext <| (coe_extendLocallyFinite h c).trans extendLocallyFiniteFun_id
+
 /-- The twisted boundary moves simplices along the identity: it only involves faces. -/
 lemma isProperlySupported_d (k : ℕ) :
     IsProperlySupported ((twistedChainComplex L).d (k + 1) k) := by
-  refine ⟨𝟙 X, isProperMap_id, fun ρ σ x hx ↦ ?_⟩
+  refine .of_movesAlong (g := 𝟙 X) isProperMap_id fun ρ σ x hx ↦ ?_
   obtain ⟨i, rfl⟩ :
       ∃ i : Fin (k + 2), (TopCat.toSSet.obj X).map (SimplexCategory.δ i).op σ = ρ := by
     by_contra! hne
@@ -515,6 +565,18 @@ lemma toLocallyFiniteChains_apply (y : (twistedChainComplex L).X k)
   · subst h
     simp
   · rw [Pi.single_eq_of_ne' h, twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L h]
+
+variable {L} in
+/-- On a finite chain, the extension of a map of twisted chains is that map. -/
+lemma extendLocallyFiniteFun_toLocallyFiniteChains {Y : TopCat.{v}}
+    {K : LocalCoefficientSystem.{u, v, max v w} R Y} {b : ℕ}
+    (A : (twistedChainComplex L).X k ⟶ (twistedChainComplex K).X b)
+    (y : (twistedChainComplex L).X k) :
+    extendLocallyFiniteFun A ((toLocallyFiniteChains L k).hom y : ∀ σ, L.obj (initialVertex σ)) =
+      ((toLocallyFiniteChains K b).hom (A.hom y) : ∀ ρ, K.obj (initialVertex ρ)) :=
+  funext fun ρ ↦ by
+    rw [extendLocallyFiniteFun_apply, toLocallyFiniteChains_apply, ← finsum_matrixCoeff A y ρ]
+    exact finsum_congr fun σ ↦ by rw [toLocallyFiniteChains_apply]
 
 /-- Each twisted chain is sent to a locally finite chain with the same coefficients, and this
 commutes with the boundaries. -/

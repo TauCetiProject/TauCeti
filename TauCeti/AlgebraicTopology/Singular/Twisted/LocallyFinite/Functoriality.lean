@@ -33,6 +33,8 @@ is natural in the coefficient system. On homology they give `borelMooreHomologyM
 
 ## Main declarations
 
+* `TauCeti.LocalCoefficientSystem.extendLocallyFiniteChainMap`: the chain map of locally finite
+  chains extending a chain map of twisted chains with properly supported components.
 * `TauCeti.LocalCoefficientSystem.locallyFiniteChainsMap`: the proper pushforward of locally
   finite chains, `locallyFiniteChainComplexMap` the chain map it forms and
   `borelMooreHomologyMap` the induced map on Borel–Moore homology.
@@ -48,7 +50,7 @@ is natural in the coefficient system. On homology they give `borelMooreHomologyM
 All these maps are built uniformly with `extendLocallyFinite`, which applies a properly supported
 map of twisted chains to locally finite chains simplex by simplex. The locally finite boundary is
 the extension of the twisted boundary, and extension takes composites to composites, so the
-extension of a chain map is a chain map.
+extension of a chain map is a chain map (`extendLocallyFiniteChainMap`).
 
 ## References
 
@@ -77,38 +79,11 @@ section Extension
 
 variable {L : LocalCoefficientSystem.{u, v, max v w} R X}
   {K : LocalCoefficientSystem.{u, v, max v w} R Y}
-  {J : LocalCoefficientSystem.{u, v, max v w} R Z} {a b : ℕ}
-  {A : (twistedChainComplex L).X a ⟶ (twistedChainComplex K).X b}
-  {c : ∀ σ : (TopCat.toSSet.obj X) _⦋a⦌, L.obj (initialVertex σ)}
-
-/-- On a finite chain, the extension of `A` is `A`. -/
-private lemma extendLocallyFiniteFun_toLocallyFiniteChains (y : (twistedChainComplex L).X a) :
-    extendLocallyFiniteFun A ((toLocallyFiniteChains L a).hom y : ∀ σ, L.obj (initialVertex σ)) =
-      ((toLocallyFiniteChains K b).hom (A.hom y) : ∀ ρ, K.obj (initialVertex ρ)) :=
-  funext fun ρ ↦ by
-    rw [extendLocallyFiniteFun_apply, toLocallyFiniteChains_apply, ← finsum_matrixCoeff A y ρ]
-    exact finsum_congr fun σ ↦ by rw [toLocallyFiniteChains_apply]
-
-/-- Extending the identity gives the identity. -/
-private lemma extendLocallyFiniteFun_id :
-    extendLocallyFiniteFun (𝟙 ((twistedChainComplex L).X a)) c = c :=
-  funext fun ρ ↦ by
-    rw [extendLocallyFiniteFun_apply, finsum_eq_single _ ρ fun σ hσ ↦ by
-      simp [matrixCoeff_apply, twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L hσ]]
-    simp [matrixCoeff_apply]
-
-/-- The identity moves simplices along the identity. -/
-private lemma isProperlySupported_id : IsProperlySupported (𝟙 ((twistedChainComplex L).X a)) := by
-  refine ⟨𝟙 X, isProperMap_id, fun ρ σ x hx ↦ ?_⟩
-  obtain rfl : σ = ρ := by
-    by_contra hne
-    exact hx (by
-      simp [matrixCoeff_apply, twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L hne])
-  simp
+  {J : LocalCoefficientSystem.{u, v, max v w} R Z}
 
 /-- The extensions of the components of a properly supported chain map commute with the locally
 finite boundaries. -/
-private lemma locallyFiniteBoundary_comp_extendLocallyFinite
+lemma locallyFiniteBoundary_comp_extendLocallyFinite
     (φ : twistedChainComplex L ⟶ twistedChainComplex K)
     (hφ : ∀ k, IsProperlySupported (φ.f k)) (k : ℕ) :
     locallyFiniteBoundary K k ∘ₗ extendLocallyFinite (hφ (k + 1)) =
@@ -120,8 +95,9 @@ private lemma locallyFiniteBoundary_comp_extendLocallyFinite
     extendLocallyFiniteFun_extendLocallyFiniteFun (hφ (k + 1)) (isProperlySupported_d k) hc,
     extendLocallyFiniteFun_extendLocallyFiniteFun (isProperlySupported_d k) (hφ k) hc, φ.comm]
 
-/-- The chain map of locally finite chains extending a properly supported chain map. -/
-private def extendChainMap (φ : twistedChainComplex L ⟶ twistedChainComplex K)
+/-- The chain map of locally finite chains extending a chain map of twisted chains whose components
+are properly supported. -/
+def extendLocallyFiniteChainMap (φ : twistedChainComplex L ⟶ twistedChainComplex K)
     (hφ : ∀ k, IsProperlySupported (φ.f k)) :
     locallyFiniteChainComplex L ⟶ locallyFiniteChainComplex K :=
   ChainComplex.ofHom (fun k ↦ eqToHom (locallyFiniteChainComplex_X L k) ≫
@@ -137,66 +113,72 @@ private def extendChainMap (φ : twistedChainComplex L ⟶ twistedChainComplex K
       simp only [locallyFiniteChainComplex_d, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
         Category.id_comp, reassoc_of% key]
 
-private lemma extendChainMap_f (φ : twistedChainComplex L ⟶ twistedChainComplex K)
+/-- In each degree, the extension of a properly supported chain map is `extendLocallyFinite`. -/
+lemma extendLocallyFiniteChainMap_f (φ : twistedChainComplex L ⟶ twistedChainComplex K)
     (hφ : ∀ k, IsProperlySupported (φ.f k)) (k : ℕ) :
-    (extendChainMap φ hφ).f k = eqToHom (locallyFiniteChainComplex_X L k) ≫
+    (extendLocallyFiniteChainMap φ hφ).f k = eqToHom (locallyFiniteChainComplex_X L k) ≫
       ModuleCat.ofHom (extendLocallyFinite (hφ k)) ≫
         eqToHom (locallyFiniteChainComplex_X K k).symm :=
   (rfl)
 
-private lemma extendChainMap_congr {φ φ' : twistedChainComplex L ⟶ twistedChainComplex K}
+/-- The extension of a properly supported chain map depends only on the chain map. -/
+lemma extendLocallyFiniteChainMap_congr {φ φ' : twistedChainComplex L ⟶ twistedChainComplex K}
     (hφ : ∀ k, IsProperlySupported (φ.f k)) (hφ' : ∀ k, IsProperlySupported (φ'.f k))
-    (h : φ = φ') : extendChainMap φ hφ = extendChainMap φ' hφ' := by
+    (h : φ = φ') : extendLocallyFiniteChainMap φ hφ = extendLocallyFiniteChainMap φ' hφ' := by
   subst h
   rfl
 
-private lemma extendChainMap_id
+/-- The extension of the identity chain map is the identity. -/
+@[simp]
+lemma extendLocallyFiniteChainMap_id
     (h : ∀ k, IsProperlySupported (HomologicalComplex.Hom.f (𝟙 (twistedChainComplex L)) k)) :
-    extendChainMap (𝟙 _) h = 𝟙 _ := by
+    extendLocallyFiniteChainMap (𝟙 _) h = 𝟙 _ := by
   ext k : 1
-  have : extendLocallyFinite (h k) = LinearMap.id :=
-    LinearMap.ext fun c ↦ Subtype.ext <| (coe_extendLocallyFinite _ c).trans <| by
-      rw [HomologicalComplex.id_f]
-      exact extendLocallyFiniteFun_id
-  rw [extendChainMap_f, this, HomologicalComplex.id_f]
+  have : extendLocallyFinite (h k) = LinearMap.id := extendLocallyFinite_id (h k)
+  rw [extendLocallyFiniteChainMap_f, this, HomologicalComplex.id_f]
   simp
 
-private lemma isProperlySupported_comp_f {φ : twistedChainComplex L ⟶ twistedChainComplex K}
+/-- The components of a composite of properly supported chain maps are properly supported. -/
+lemma isProperlySupported_comp_f {φ : twistedChainComplex L ⟶ twistedChainComplex K}
     {ψ : twistedChainComplex K ⟶ twistedChainComplex J}
     (hφ : ∀ k, IsProperlySupported (φ.f k)) (hψ : ∀ k, IsProperlySupported (ψ.f k)) (k : ℕ) :
     IsProperlySupported ((φ ≫ ψ).f k) := by
   rw [HomologicalComplex.comp_f]
   exact (hφ k).comp (hψ k)
 
-private lemma extendChainMap_comp {φ : twistedChainComplex L ⟶ twistedChainComplex K}
+/-- The extension of a composite of properly supported chain maps is the composite of the
+extensions. -/
+@[reassoc]
+lemma extendLocallyFiniteChainMap_comp {φ : twistedChainComplex L ⟶ twistedChainComplex K}
     {ψ : twistedChainComplex K ⟶ twistedChainComplex J}
     (hφ : ∀ k, IsProperlySupported (φ.f k)) (hψ : ∀ k, IsProperlySupported (ψ.f k)) :
-    extendChainMap φ hφ ≫ extendChainMap ψ hψ =
-      extendChainMap (φ ≫ ψ) (isProperlySupported_comp_f hφ hψ) := by
+    extendLocallyFiniteChainMap φ hφ ≫ extendLocallyFiniteChainMap ψ hψ =
+      extendLocallyFiniteChainMap (φ ≫ ψ) (isProperlySupported_comp_f hφ hψ) := by
   ext k : 1
   have : extendLocallyFinite (hψ k) ∘ₗ extendLocallyFinite (hφ k) =
       extendLocallyFinite (isProperlySupported_comp_f hφ hψ k) :=
-    LinearMap.ext fun ⟨c, hc⟩ ↦ Subtype.ext <| by
-      rw [LinearMap.comp_apply, coe_extendLocallyFinite, coe_extendLocallyFinite,
-        coe_extendLocallyFinite,
-        extendLocallyFiniteFun_extendLocallyFiniteFun (hφ k) (hψ k) (mem_locallyFiniteChains.1 hc),
-        HomologicalComplex.comp_f]
-  rw [HomologicalComplex.comp_f, extendChainMap_f, extendChainMap_f, extendChainMap_f, ← this,
-    ModuleCat.ofHom_comp]
+    extendLocallyFinite_comp (hφ k) (hψ k)
+  rw [HomologicalComplex.comp_f, extendLocallyFiniteChainMap_f, extendLocallyFiniteChainMap_f,
+    extendLocallyFiniteChainMap_f, ← this, ModuleCat.ofHom_comp]
   simp
 
-private lemma toLocallyFiniteChainComplex_comp_extendChainMap
+/-- Regarding finite chains as locally finite chains commutes with extending a properly supported
+chain map. -/
+@[reassoc]
+lemma toLocallyFiniteChainComplex_comp_extendLocallyFiniteChainMap
     (φ : twistedChainComplex L ⟶ twistedChainComplex K) (hφ : ∀ k, IsProperlySupported (φ.f k)) :
-    toLocallyFiniteChainComplex L ≫ extendChainMap φ hφ = φ ≫ toLocallyFiniteChainComplex K := by
+    toLocallyFiniteChainComplex L ≫ extendLocallyFiniteChainMap φ hφ =
+      φ ≫ toLocallyFiniteChainComplex K := by
   ext k : 1
   have key : toLocallyFiniteChains L k ≫ ModuleCat.ofHom (extendLocallyFinite (hφ k)) =
       φ.f k ≫ toLocallyFiniteChains K k :=
     ModuleCat.hom_ext <| LinearMap.ext fun y ↦ Subtype.ext <| by
       simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
         coe_extendLocallyFinite]
-      exact extendLocallyFiniteFun_toLocallyFiniteChains y
-  simp only [HomologicalComplex.comp_f, toLocallyFiniteChainComplex_f, extendChainMap_f,
-    Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, reassoc_of% key]
+      exact extendLocallyFiniteFun_toLocallyFiniteChains (φ.f k) y
+  simp only [HomologicalComplex.comp_f, toLocallyFiniteChainComplex_f,
+    extendLocallyFiniteChainMap_f, Category.assoc, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp, reassoc_of% key]
 
 end Extension
 
@@ -206,7 +188,7 @@ variable {L K J : LocalCoefficientSystem.{u, v, max v w} R X}
 
 private lemma isProperlySupported_twistedChainComplexCoefficientMap_f (η : L ⟶ K) (k : ℕ) :
     IsProperlySupported ((twistedChainComplexCoefficientMap η).f k) := by
-  refine ⟨𝟙 X, isProperMap_id, fun ρ σ x hx ↦ ?_⟩
+  refine .of_movesAlong (g := 𝟙 X) isProperMap_id (movesAlong_iff.2 fun ρ σ x hx ↦ ?_)
   obtain rfl : σ = ρ := by
     by_contra hne
     exact hx (by
@@ -236,7 +218,7 @@ lemma coe_locallyFiniteChainsCoefficientMap_apply (η : L ⟶ K) {k : ℕ} (c : 
 /-- The chain map of locally finite chains induced by a morphism of local coefficient systems. -/
 def locallyFiniteChainComplexCoefficientMap (η : L ⟶ K) :
     locallyFiniteChainComplex L ⟶ locallyFiniteChainComplex K :=
-  extendChainMap (twistedChainComplexCoefficientMap η)
+  extendLocallyFiniteChainMap (twistedChainComplexCoefficientMap η)
     (isProperlySupported_twistedChainComplexCoefficientMap_f η)
 
 /-- In each degree, the coefficient chain map is `locallyFiniteChainsCoefficientMap`. -/
@@ -253,8 +235,9 @@ lemma locallyFiniteChainComplexCoefficientMap_f (η : L ⟶ K) (k : ℕ) :
 lemma locallyFiniteChainComplexCoefficientMap_id :
     locallyFiniteChainComplexCoefficientMap (𝟙 L) = 𝟙 _ := by
   rw [locallyFiniteChainComplexCoefficientMap,
-    extendChainMap_congr _ (fun k ↦ by rw [HomologicalComplex.id_f]; exact isProperlySupported_id)
-      (twistedChainComplexCoefficientMap_id L), extendChainMap_id]
+    extendLocallyFiniteChainMap_congr _
+      (fun k ↦ by rw [HomologicalComplex.id_f]; exact isProperlySupported_id)
+      (twistedChainComplexCoefficientMap_id L), extendLocallyFiniteChainMap_id]
 
 /-- A composite of morphisms of coefficient systems induces the composite of the maps of locally
 finite chains. -/
@@ -263,15 +246,15 @@ lemma locallyFiniteChainComplexCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ J)
     locallyFiniteChainComplexCoefficientMap (η ≫ θ) =
       locallyFiniteChainComplexCoefficientMap η ≫ locallyFiniteChainComplexCoefficientMap θ := by
   rw [locallyFiniteChainComplexCoefficientMap, locallyFiniteChainComplexCoefficientMap,
-    locallyFiniteChainComplexCoefficientMap, extendChainMap_comp]
-  exact extendChainMap_congr _ _ (twistedChainComplexCoefficientMap_comp η θ)
+    locallyFiniteChainComplexCoefficientMap, extendLocallyFiniteChainMap_comp]
+  exact extendLocallyFiniteChainMap_congr _ _ (twistedChainComplexCoefficientMap_comp η θ)
 
 /-- Regarding finite chains as locally finite chains commutes with changing the coefficients. -/
 @[reassoc]
 lemma toLocallyFiniteChainComplex_comp_locallyFiniteChainComplexCoefficientMap (η : L ⟶ K) :
     toLocallyFiniteChainComplex L ≫ locallyFiniteChainComplexCoefficientMap η =
       twistedChainComplexCoefficientMap η ≫ toLocallyFiniteChainComplex K :=
-  toLocallyFiniteChainComplex_comp_extendChainMap _ _
+  toLocallyFiniteChainComplex_comp_extendLocallyFiniteChainMap _ _
 
 /-- The map on Borel–Moore homology induced by a morphism of local coefficient systems. -/
 abbrev borelMooreHomologyCoefficientMap (η : L ⟶ K) (k : ℕ) :
@@ -300,7 +283,7 @@ variable (f : X ⟶ Y) (hf : IsProperMap f.hom) (L : LocalCoefficientSystem.{u, 
 include hf in
 private lemma isProperlySupported_twistedChainComplexMap_f (k : ℕ) :
     IsProperlySupported ((twistedChainComplexMap f L).f k) := by
-  refine ⟨f, hf, fun ρ σ x hx ↦ ?_⟩
+  refine .of_movesAlong hf (movesAlong_iff.2 fun ρ σ x hx ↦ ?_)
   obtain rfl : (TopCat.toSSet.map f).app _ σ = ρ := by
     by_contra hne
     exact hx (by
@@ -332,7 +315,8 @@ include hf in
 /-- The chain map of locally finite chains induced by a proper map. -/
 def locallyFiniteChainComplexMap :
     locallyFiniteChainComplex ((pullback f.hom).obj L) ⟶ locallyFiniteChainComplex L :=
-  extendChainMap (twistedChainComplexMap f L) (isProperlySupported_twistedChainComplexMap_f f hf L)
+  extendLocallyFiniteChainMap (twistedChainComplexMap f L)
+    (isProperlySupported_twistedChainComplexMap_f f hf L)
 
 /-- In each degree, the chain map induced by a proper map is `locallyFiniteChainsMap`. -/
 @[simp]
@@ -349,7 +333,7 @@ map. -/
 lemma toLocallyFiniteChainComplex_comp_locallyFiniteChainComplexMap :
     toLocallyFiniteChainComplex _ ≫ locallyFiniteChainComplexMap f hf L =
       twistedChainComplexMap f L ≫ toLocallyFiniteChainComplex L :=
-  toLocallyFiniteChainComplex_comp_extendChainMap _ _
+  toLocallyFiniteChainComplex_comp_extendLocallyFiniteChainMap _ _
 
 /-- The map on Borel–Moore homology induced by a proper map. -/
 abbrev borelMooreHomologyMap :
@@ -365,8 +349,8 @@ lemma locallyFiniteChainComplexMap_naturality {L K : LocalCoefficientSystem.{u, 
         locallyFiniteChainComplexMap f hf K := by
   rw [locallyFiniteChainComplexMap, locallyFiniteChainComplexMap,
     locallyFiniteChainComplexCoefficientMap, locallyFiniteChainComplexCoefficientMap,
-    extendChainMap_comp, extendChainMap_comp]
-  exact extendChainMap_congr _ _ (twistedChainComplexMap_naturality f η)
+    extendLocallyFiniteChainMap_comp, extendLocallyFiniteChainMap_comp]
+  exact extendLocallyFiniteChainMap_congr _ _ (twistedChainComplexMap_naturality f η)
 
 /-- The homology form of `locallyFiniteChainComplexMap_naturality`. -/
 @[reassoc]
@@ -387,7 +371,7 @@ coefficient system with its pullback along the identity. -/
 lemma locallyFiniteChainComplexMap_id (L : LocalCoefficientSystem.{u, v, max v w} R X) :
     locallyFiniteChainComplexMap (𝟙 X) isProperMap_id L =
       locallyFiniteChainComplexCoefficientMap ((pullbackIdIso X).hom.app L) :=
-  extendChainMap_congr _ _ (twistedChainComplexMap_id L)
+  extendLocallyFiniteChainMap_congr _ _ (twistedChainComplexMap_id L)
 
 /-- A composite of proper maps induces on locally finite chains the composite of the two induced
 maps, after the identification of the pullback along the composite with the iterated pullback. -/
@@ -400,8 +384,9 @@ lemma locallyFiniteChainComplexMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) (hf : IsProp
         locallyFiniteChainComplexMap f hf ((pullback g.hom).obj L) ≫
           locallyFiniteChainComplexMap g hg L := by
   rw [locallyFiniteChainComplexMap, locallyFiniteChainComplexMap, locallyFiniteChainComplexMap,
-    locallyFiniteChainComplexCoefficientMap, extendChainMap_comp, extendChainMap_comp]
-  exact extendChainMap_congr _ _ (twistedChainComplexMap_comp f g L)
+    locallyFiniteChainComplexCoefficientMap, extendLocallyFiniteChainMap_comp,
+    extendLocallyFiniteChainMap_comp]
+  exact extendLocallyFiniteChainMap_congr _ _ (twistedChainComplexMap_comp f g L)
 
 /-- The homology form of `locallyFiniteChainComplexMap_id`. -/
 @[simp]
