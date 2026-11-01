@@ -71,24 +71,16 @@ private theorem exists_mem_span_smul_sub_forall_smul_notMem [Finite G] (q : Idea
   set J : Ideal B := ⨅ g : {g : G // g ≠ 1}, Ideal.span (Set.range fun x : B ↦ g.1 • x - x)
   -- `J` is not contained in any of the primes `h⁻¹ • q`.
   have hJ (h : G) : ¬ (J : Set B) ⊆ q.comap (MulSemiringAction.toRingHom G B h) := by
+    intro hsub
+    -- A finite intersection of ideals lies in a prime only if one of the ideals does.
+    obtain ⟨g, -, hg⟩ := ((Ideal.comap_isPrime (MulSemiringAction.toRingHom G B h) q).inf_le'
+      (s := (Finset.univ : Finset {g : G // g ≠ 1}))).mp (by rwa [Finset.inf_univ_eq_iInf])
     -- The displacement by `g` of `h⁻¹ • b_{h g h⁻¹}` is carried by `h` to a displacement by
     -- the conjugate `h g h⁻¹ ≠ 1`, which lies outside `q`.
-    have hconj (g : {g : G // g ≠ 1}) : h * g.1 * h⁻¹ ≠ 1 := fun h1 ↦
-      g.2 (by rwa [mul_inv_eq_one, mul_eq_left] at h1)
-    let x : B := ∏ g : {g : G // g ≠ 1},
-      (g.1 • (h⁻¹ • b _ (hconj g)) - h⁻¹ • b _ (hconj g))
-    intro hsub
-    have hxJ : x ∈ J := Ideal.mem_iInf.mpr fun g ↦ by
-      obtain ⟨c, hc⟩ := Finset.dvd_prod_of_mem (fun g : {g : G // g ≠ 1} ↦
-        g.1 • (h⁻¹ • b _ (hconj g)) - h⁻¹ • b _ (hconj g)) (Finset.mem_univ g)
-      simp only [x]
-      rw [hc]
-      exact Ideal.mul_mem_right _ _ (Ideal.subset_span ⟨_, rfl⟩)
-    have hx := Ideal.mem_comap.mp (hsub hxJ)
-    simp only [x, map_prod] at hx
-    obtain ⟨g, -, hg⟩ := (Ideal.IsPrime.prod_mem_iff (p := q)).mp hx
-    refine hb _ (hconj g) ?_
-    simpa [smul_sub, mul_smul] using hg
+    have hconj : h * g.1 * h⁻¹ ≠ 1 := fun h1 ↦ g.2 (by rwa [mul_inv_eq_one, mul_eq_left] at h1)
+    have hx := Ideal.mem_comap.mp (hg (Ideal.subset_span ⟨h⁻¹ • b _ hconj, rfl⟩))
+    refine hb _ hconj ?_
+    simpa [smul_sub, mul_smul] using hx
   -- Prime avoidance for the finitely many primes `h⁻¹ • q`.
   obtain ⟨t, htJ, ht⟩ : ∃ t ∈ J, ∀ h : G, h • t ∉ q := by
     by_contra! h
@@ -145,7 +137,9 @@ private theorem isEtaleAt_fixedPoints_of_inertia_eq_bot [Finite G] (q : Ideal B)
   -- `B[1/r]` is étale over its invariants `Bᴳ[1/r]`, which are étale over `Bᴳ`.
   have : Algebra.Etale R' S := TauCeti.MulSemiringAction.etale hfree
   have : Algebra.FormallyEtale (FixedPoints.subring B G) R' := .of_isLocalization M
-  have : IsScalarTower (FixedPoints.subring B G) R' S := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower (FixedPoints.subring B G) R' S := .of_algebraMap_eq fun a ↦ by
+    rw [IsScalarTower.algebraMap_apply (FixedPoints.subring B G) B S]
+    exact (TauCeti.FixedPoints.coe_algebraMap_localization M a).symm
   have : Algebra.FormallyEtale (FixedPoints.subring B G) S := .comp _ R' _
   -- `B[1/r]` is the localization of `B` away from `r`.
   have : IsLocalization.Away (r : B) S := by
