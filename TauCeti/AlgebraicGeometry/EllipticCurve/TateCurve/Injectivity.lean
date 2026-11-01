@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.XCoordinate
 import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
-import Mathlib.FieldTheory.SplittingField.Construction
 
 /-!
 # Injectivity of the Tate uniformisation
