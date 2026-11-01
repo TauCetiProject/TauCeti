@@ -39,7 +39,7 @@ namespace DynkinType
 
 /-- **The height of a coroot of the pinned `G₂` datum**, against the simple coroots, is the sum
 of its coordinates. -/
-theorem height_flip_g2SimplyConnectedBase (k : Fin 12) :
+@[simp] theorem height_flip_g2SimplyConnectedBase (k : Fin 12) :
     g2SimplyConnectedBase.flip.height k = g2Coroot k 0 + g2Coroot k 1 := by
   -- The coordinate sum takes the value `1` on both simple coroots, the standard basis vectors.
   have h := apply_root_eq_height_zsmul g2SimplyConnectedRootDatum.flip g2SimplyConnectedBase.flip
