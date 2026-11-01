@@ -29,8 +29,9 @@ The proof writes an element of the amalgam `G ∗_{C} (C × ℤ)`, `C = C_G(u)`,
 image under `ξₖ` is an alternating product `g₀ u ^ (k e₁) g₁ ⋯ u ^ (k eₘ) gₘ` with every `eᵢ ≠ 0`
 and every interior `gᵢ ∉ C`. Collecting the prefixes, this is `H₁ ^ k ⋯ Hₘ ^ k * z` for conjugates
 `Hᵢ` of nonzero powers of `u` with consecutive `Hᵢ` not commuting, by malnormality of `C`, and a
-fixed `z`. If `H₁ ^ k ⋯ Hₘ ^ k = z⁻¹`, its commutator with a big power of a suitable conjugate of
-`u` is trivial, contradicting the big powers property.
+fixed `z`. If `P = H₁ ^ k ⋯ Hₘ ^ k` equals `z⁻¹`, then `P * Y ^ k * P⁻¹ * Z ^ k = 1` for a suitable
+conjugate `Y` of `u` and `Z = z⁻¹ * Y⁻¹ * z`, contradicting the big powers property; for `m = 1`,
+torsion-freeness suffices (`Group.IsBP.exists_prod_map_pow_mul_ne_one`).
 
 ## Main results
 
