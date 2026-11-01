@@ -13,6 +13,7 @@ import Mathlib.Algebra.EuclideanDomain.Int
 -- below.
 import TauCeti.LinearAlgebra.Matrix.Divisibility
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
+import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic
 -- `prod_eq_det_of_mul_mul_eq_diagonal`, `exists_SL_mul_mul_eq_of_mul_mul_eq` and
 -- `Int.eq_of_dvd_of_dvd_of_mul_eq_mul`, used only inside the `2 × 2` classification below.
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Equivalence
@@ -20,10 +21,7 @@ import TauCeti.Data.Int.Fin2Tuple
 import Mathlib.Data.Int.GCD
 import Mathlib.Basic.Sign.Basic
 import Mathlib.LinearAlgebra.Determinant
-import Mathlib.LinearAlgebra.FreeModule.PID
-import Mathlib.LinearAlgebra.Matrix.Basis
 import Mathlib.LinearAlgebra.Matrix.Block
-import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 import Mathlib.LinearAlgebra.Matrix.Notation
 
 /-!
@@ -52,11 +50,12 @@ operations of determinant one:
   integer matrix is determined up to `SL₂(ℤ)`-equivalence by its determinant and the common
   divisors of its entries.
 
-Mathlib's `Submodule.smithNormalForm` provides basis-level diagonalization over a PID; this
-file supplies the matrix-level statement over `ℤ`, refined in three ways that the basis-level
-result does not give: the transforming matrices have determinant `1` (not merely unit
+`Matrix.exists_mul_mul_eq_diagonal_of_det_ne_zero` in
+`TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic` diagonalises over a PID with transformations
+of unit determinant; this file refines it over `ℤ` in three ways that the general result does not
+give: the transforming matrices have determinant `1` (not merely unit
 determinant), the diagonal entries are positive, and successive entries divide each other
-(the invariant-factor chain).  The proof first diagonalises using the basis-level theorem,
+(the invariant-factor chain).  The proof first diagonalises using the general theorem,
 corrects signs, and then establishes the divisibility chain by repeated Bézout pivot steps
 on `2 × 2` blocks.
 
@@ -82,14 +81,6 @@ namespace Matrix
 variable {n : ℕ}
 
 /-! ## Diagonalisation with special linear transformations -/
-
-private lemma mulVecLin_injective_of_det_ne_zero (A : Matrix (Fin n) (Fin n) ℤ)
-    (hdet : A.det ≠ 0) : Function.Injective A.mulVecLin := fun x y h ↦
-  mulVec_injective_of_det_ne_zero hdet (by simpa using h)
-
-private lemma finrank_range_mulVecLin (A : Matrix (Fin n) (Fin n) ℤ) (hdet : A.det ≠ 0) :
-    Module.finrank ℤ (LinearMap.range A.mulVecLin) = Module.finrank ℤ (Fin n → ℤ) :=
-  LinearMap.finrank_range_of_inj (mulVecLin_injective_of_det_ne_zero A hdet)
 
 /-- The diagonal matrix flipping the sign of the zeroth coordinate. It is an involution of
 determinant `-1`, so multiplying by it reverses the sign of a determinant without disturbing the
@@ -173,27 +164,27 @@ private lemma exists_involution_isUnit_det_mul_diagonal_pos {ι R : Type*} [Fint
     ext i
     exact (sign_mul_abs (a i)).symm
 
-/-- Refine a unit-determinant diagonalization `P⁻¹ * A * Q = diag a` (with `a i ≠ 0`) of a
+/-- Refine a unit-determinant diagonalization `P * A * Q = diag a` (with `a i ≠ 0`) of a
 positive-determinant matrix to an `SL_n(ℤ)`-diagonalization with the positive diagonal `|a|`:
 absorb the signs of `a` into a diagonal `±1` matrix, then sign-correct the unit factors. -/
 private lemma exists_SL_diagonal_of_unit_diagonalization (A P Q : Matrix (Fin n) (Fin n) ℤ)
     (a : Fin n → ℤ) (hdet : 0 < A.det) (ha_ne : ∀ i, a i ≠ 0) (hP_unit : IsUnit P.det)
-    (hQ_unit : IsUnit Q.det) (hdiag : P⁻¹ * A * Q = Matrix.diagonal a) :
+    (hQ_unit : IsUnit Q.det) (hdiag : P * A * Q = Matrix.diagonal a) :
     ∃ (d : Fin n → ℤ) (_ : ∀ i, 0 < d i), ∃ (L R : SpecialLinearGroup (Fin n) ℤ),
       (L : Matrix (Fin n) (Fin n) ℤ) * A * (R : Matrix (Fin n) (Fin n) ℤ) =
       Matrix.diagonal d := by
   obtain ⟨s, d, hd_pos, hss, hs_det_unit, h_sd⟩ :=
     exists_involution_isUnit_det_mul_diagonal_pos ha_ne
-  set L_mat := s * P⁻¹ with hL_def
+  set L_mat := s * P with hL_def
   have hL_eq : L_mat * A * Q = Matrix.diagonal d := by
     calc L_mat * A * Q
-        = s * (P⁻¹ * A * Q) := by rw [hL_def]; simp only [Matrix.mul_assoc]
+        = s * (P * A * Q) := by rw [hL_def]; simp only [Matrix.mul_assoc]
       _ = s * Matrix.diagonal a := by rw [hdiag]
       _ = s * (s * Matrix.diagonal d) := by rw [h_sd]
       _ = (s * s) * Matrix.diagonal d := by rw [Matrix.mul_assoc]
       _ = Matrix.diagonal d := by rw [hss, Matrix.one_mul]
   have hL_unit : IsUnit L_mat.det := by
-    rw [hL_def, det_mul]; exact IsUnit.mul hs_det_unit (isUnit_nonsing_inv_det _ hP_unit)
+    rw [hL_def, det_mul]; exact IsUnit.mul hs_det_unit hP_unit
   have hLQ_one : L_mat.det * Q.det = 1 := by
     have h_prod : L_mat.det * A.det * Q.det = ∏ i, d i := by
       rw [← det_mul, ← det_mul, hL_eq, Matrix.det_diagonal]
@@ -207,77 +198,21 @@ private lemma exists_SL_diagonal_of_unit_diagonalization (A P Q : Matrix (Fin n)
       nlinarith
   exact ⟨d, hd_pos, sign_correct_unit_transform A d L_mat Q hL_eq hLQ_one⟩
 
-/-- **Preimages of a basis of the range under an injective `A` have unit determinant as columns.**
-`A.mulVecLin` restricts to a linear equivalence onto its range, and transporting the basis `ab'`
-back along it is the family `r`. -/
-private theorem isUnit_det_cols_of_mulVecLin_eq_basis (A : Matrix (Fin n) (Fin n) ℤ)
-    (hinj : Function.Injective A.mulVecLin)
-    {ab' : Module.Basis (Fin n) ℤ ↥(LinearMap.range A.mulVecLin)} {r : Fin n → Fin n → ℤ}
-    (hr : ∀ i, A.mulVecLin (r i) = ↑(ab' i)) :
-    IsUnit (Matrix.of (fun k j ↦ r j k) : Matrix (Fin n) (Fin n) ℤ).det := by
-  set r_basis : Module.Basis (Fin n) ℤ (Fin n → ℤ) :=
-    ab'.map (LinearEquiv.ofInjective A.mulVecLin hinj).symm with hr_basis
-  have hrb : ⇑r_basis = r := funext fun i ↦ hinj (by
-    rw [hr i, hr_basis, Module.Basis.map_apply]
-    simp)
-  rw [← hrb]
-  set e := Pi.basisFun ℤ (Fin n) with he
-  have hb : (Matrix.of (fun k j ↦ r_basis j k) : Matrix (Fin n) (Fin n) ℤ)
-      = e.toMatrix r_basis := by
-    rw [he]
-    exact (congrFun Module.Basis.coePiBasisFun.toMatrix_eq_transpose _).symm
-  rw [hb]
-  simpa [Module.Basis.det_apply] using e.isUnit_det r_basis
-
-/-- **The column matrices of `r` and `b'` intertwine `A` with the diagonal of `a`**, given that `A`
-carries each `r j` to `a j • b' j`. -/
-private theorem mul_cols_eq_cols_mul_diagonal_of_mulVec_eq_smul
-    (A : Matrix (Fin n) (Fin n) ℤ) {a : Fin n → ℤ} {b' r : Fin n → Fin n → ℤ}
-    (hkey : ∀ j, A *ᵥ r j = a j • b' j) :
-    A * Matrix.of (fun k j ↦ r j k) =
-      (Matrix.of fun k j ↦ b' j k) * Matrix.diagonal a := by
-  ext k j
-  rw [Matrix.mul_diagonal, Matrix.mul_apply]
-  simp only [Matrix.of_apply]
-  rw [← A.mulVec_apply_eq_sum (r j) k, hkey j]
-  simp [mul_comm]
-
 /-- Every integer matrix with positive determinant is `SL_n(ℤ)`-equivalent to a positive
 diagonal. -/
 private theorem exists_diagonal_of_det_pos (A : Matrix (Fin n) (Fin n) ℤ) (hdet : 0 < A.det) :
     ∃ (d : Fin n → ℤ) (_ : ∀ i, 0 < d i), ∃ (L R : SpecialLinearGroup (Fin n) ℤ),
       (L : Matrix (Fin n) (Fin n) ℤ) * A * (R : Matrix (Fin n) (Fin n) ℤ) =
       Matrix.diagonal d := by
-  have hdet_ne : A.det ≠ 0 := ne_of_gt hdet
-  obtain ⟨b', a, ab', hsnf⟩ :=
-    Submodule.exists_smith_normal_form_of_rank_eq (Pi.basisFun ℤ (Fin n))
-      (finrank_range_mulVecLin A hdet_ne)
+  obtain ⟨P, Q, a, hP_unit, hQ_unit, hdiag⟩ :=
+    exists_mul_mul_eq_diagonal_of_det_ne_zero A hdet.ne'
   have ha_ne : ∀ i, a i ≠ 0 := by
-    intro i hi
-    have : (ab' i : Fin n → ℤ) = 0 := by rw [hsnf i, hi, zero_smul]
-    exact ab'.ne_zero i (Subtype.ext this)
-  choose r hr using fun i ↦ LinearMap.mem_range.mp (ab' i).2
-  have hkey : ∀ j, A *ᵥ r j = a j • b' j := fun j ↦ by
-    rw [← Matrix.mulVecLin_apply, hr j, hsnf j]
-  set P_mat : Matrix (Fin n) (Fin n) ℤ := Matrix.of (fun k j ↦ b' j k)
-  set Q_mat : Matrix (Fin n) (Fin n) ℤ := Matrix.of (fun k j ↦ r j k)
-  have hmat_eq : A * Q_mat = P_mat * Matrix.diagonal a :=
-    mul_cols_eq_cols_mul_diagonal_of_mulVec_eq_smul A hkey
-  have hP_unit : IsUnit P_mat.det := by
-    set e := Pi.basisFun ℤ (Fin n) with he
-    have hb : P_mat = e.toMatrix b' := by
-      rw [he]
-      exact (congrFun Module.Basis.coePiBasisFun.toMatrix_eq_transpose _).symm
-    rw [hb]
-    simpa [Module.Basis.det_apply] using e.isUnit_det b'
-  have hQ_unit : IsUnit Q_mat.det :=
-    isUnit_det_cols_of_mulVecLin_eq_basis A
-      (mulVecLin_injective_of_det_ne_zero A hdet_ne) hr
-  have h_diag_eq : P_mat⁻¹ * A * Q_mat = Matrix.diagonal a := by
-    rw [Matrix.mul_assoc, hmat_eq, ← Matrix.mul_assoc, Matrix.nonsing_inv_mul _ hP_unit,
-      Matrix.one_mul]
-  exact exists_SL_diagonal_of_unit_diagonalization A P_mat Q_mat a hdet ha_ne hP_unit
-    hQ_unit h_diag_eq
+    have hprod : P.det * A.det * Q.det = ∏ i, a i := by
+      rw [← det_mul, ← det_mul, hdiag, det_diagonal]
+    have hne : ∏ i, a i ≠ 0 :=
+      hprod ▸ mul_ne_zero (mul_ne_zero hP_unit.ne_zero hdet.ne') hQ_unit.ne_zero
+    exact fun i ↦ Finset.prod_ne_zero_iff.mp hne i (Finset.mem_univ i)
+  exact exists_SL_diagonal_of_unit_diagonalization A P Q a hdet ha_ne hP_unit hQ_unit hdiag
 
 /-! ## The divisibility chain
 
