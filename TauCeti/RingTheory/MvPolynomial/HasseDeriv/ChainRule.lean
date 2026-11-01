@@ -27,6 +27,18 @@ of the substituted polynomial `(∂^i F)(AY)` at a point `y` forces a nonzero je
 polynomial restricted to a family of subspaces produces a nonzero jet of the polynomial itself,
 in Schmidt's subspace theorem.
 
+Block-linear substitutions compose by multiplying their matrices block by block. When the
+matrices `A_h` are invertible, the new variables `Y_{h,a}` are coordinates given by a system of
+linear forms on each block, and the chain rule reads Hasse derivatives in these coordinates:
+`(∂_X^I P)(AY)` is a combination of the derivatives `∂_Y^e (P(AY))` of the block degrees of `I`.
+So a derivative of order `I` shifts the exponents of the coordinates by at most the block degrees
+of `I`. If the coefficients of `P(AY)` vanish at every monomial whose exponents `N_{h,i}` of one
+coordinate `i` have weighted sum `∑_h N_{h,i} / d_h` below a threshold, then those of `(∂^I P)(AY)`
+vanish below the threshold lowered by the weighted order `∑_h (∑_l I_{h,l}) / d_h` of `I`. This is
+how the vanishing conditions imposed on Schmidt's multihomogeneous auxiliary polynomial in the
+coordinates of the linear forms pass to its derivatives. The coefficients may lie in any
+commutative semiring: no assumption on the characteristic is needed.
+
 ## Main definitions
 
 * `MvPolynomial.blockLinearForm A`: the block-linear forms `X_{h,l} ↦ ∑ₐ A_{h,l,a} Y_{h,a}`.
@@ -48,11 +60,20 @@ in Schmidt's subspace theorem.
   running over the `e` with the block degrees of `k`.
 * `MvPolynomial.exists_eval_hasseDeriv_ne_zero_of_blockLinearForm`: a nonzero jet of `(∂^i F)(AY)`
   at `y` gives a nonzero jet `∂^(i + e) F` at `Ay` with `e` of the block degrees of `k`.
+* `MvPolynomial.aeval_blockLinearForm_mul`: substituting along the blockwise products `A_h B_h` is
+  substituting along `A` and then along `B`.
+* `MvPolynomial.aeval_blockLinearForm_hasseDeriv`: for mutually inverse `A` and `B`,
+  `(∂_X^I P)(AY) = ∑_{e ∈ E(I)} c_{e,I} ∂_Y^e (P(AY))`, with `c_{e,I} = [X^I] (BX)^e`.
+* `MvPolynomial.coeff_aeval_blockLinearForm_hasseDeriv_eq_zero`: vanishing of the coefficients of
+  `P(AY)` below a weighted threshold in one coordinate passes to `(∂^I P)(AY)`, below the threshold
+  lowered by the weighted order of `I`.
 
 ## References
 
 * J.-H. Evertse, *An improvement of the quantitative subspace theorem*, Compositio Math. 101
   (1996), §7, Lemma 26.
+* E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press (2006),
+  §7.5.14.
 -/
 
 public section
@@ -139,36 +160,36 @@ section BlockLinear
 
 variable {ι κ : Type*} [Fintype τ]
 
-/-- The block-linear forms `X_{h,l} ↦ ∑ₐ A_{h,l,a} Y_{h,a}`: the variable `l` of block `h` becomes
-a linear form in the parameters `Y_{h,a}` of the same block. -/
-noncomputable def blockLinearForm (A : ι → κ → τ → R) (p : ι × κ) : MvPolynomial (ι × τ) R :=
+/-- The block-linear forms `X_{h,l} ↦ ∑ₐ A_{h,l,a} Y_{h,a}` of a family of matrices `A_h`: the
+variable `l` of block `h` becomes a linear form in the parameters `Y_{h,a}` of the same block. -/
+noncomputable def blockLinearForm (A : ι → Matrix κ τ R) (p : ι × κ) : MvPolynomial (ι × τ) R :=
   ∑ a, C (A p.1 p.2 a) * X (p.1, a)
 
-theorem blockLinearForm_apply (A : ι → κ → τ → R) (p : ι × κ) :
+theorem blockLinearForm_apply (A : ι → Matrix κ τ R) (p : ι × κ) :
     blockLinearForm A p = ∑ a, C (A p.1 p.2 a) * X (p.1, a) :=
   (rfl)
 
 /-- The value of a block-linear form at `y` is `∑ₐ A_{h,l,a} y_{h,a}`. -/
 @[simp]
-theorem eval_blockLinearForm (A : ι → κ → τ → R) (y : ι × τ → R) (p : ι × κ) :
+theorem eval_blockLinearForm (A : ι → Matrix κ τ R) (y : ι × τ → R) (p : ι × κ) :
     eval y (blockLinearForm A p) = ∑ a, A p.1 p.2 a * y (p.1, a) := by
   simp [blockLinearForm_apply]
 
 /-- Evaluating after the block-linear substitution is evaluating at the point `Ay`. -/
-theorem eval_aeval_blockLinearForm (A : ι → κ → τ → R) (y : ι × τ → R)
+theorem eval_aeval_blockLinearForm (A : ι → Matrix κ τ R) (y : ι × τ → R)
     (F : MvPolynomial (ι × κ) R) :
     eval y (aeval (blockLinearForm A) F) = eval (fun p ↦ ∑ a, A p.1 p.2 a * y (p.1, a)) F := by
   simpa only [aeval_eq_eval, eval_blockLinearForm] using
     comp_aeval_apply (blockLinearForm A) (aeval y) F
 
 /-- Block-linear forms are linear forms: homogeneous of degree one. -/
-theorem isHomogeneous_blockLinearForm (A : ι → κ → τ → R) (p : ι × κ) :
+theorem isHomogeneous_blockLinearForm (A : ι → Matrix κ τ R) (p : ι × κ) :
     (blockLinearForm A p).IsHomogeneous 1 :=
   IsHomogeneous.sum _ _ _ fun _ _ ↦ isHomogeneous_C_mul_X _ _
 
 /-- With the indicator weight of block `b`, the block-linear form of a variable of block `h` is
 weighted homogeneous of weight `1` if `h = b` and `0` otherwise. -/
-theorem isWeightedHomogeneous_blockLinearForm [DecidableEq ι] (A : ι → κ → τ → R)
+theorem isWeightedHomogeneous_blockLinearForm [DecidableEq ι] (A : ι → Matrix κ τ R)
     (b : ι) (p : ι × κ) :
     (blockLinearForm A p).IsWeightedHomogeneous (fun q : ι × τ ↦ if q.1 = b then 1 else 0)
       (if p.1 = b then 1 else 0) :=
@@ -178,7 +199,7 @@ theorem isWeightedHomogeneous_blockLinearForm [DecidableEq ι] (A : ι → κ �
 `c_{e,k} = [Y^k] ∏_{h,l} (∑ₐ A_{h,l,a} Y_{h,a})^(e_{h,l})` is nonzero, then `e` and `k` have the
 same degree in every block: `∑ₗ e_{b,l} = ∑ₐ k_{b,a}`. -/
 theorem sum_eq_sum_of_coeff_aeval_blockLinearForm_ne_zero [Fintype κ]
-    {A : ι → κ → τ → R} {e : ι × κ →₀ ℕ} {k : ι × τ →₀ ℕ}
+    {A : ι → Matrix κ τ R} {e : ι × κ →₀ ℕ} {k : ι × τ →₀ ℕ}
     (h : (aeval (blockLinearForm A) (monomial e (1 : R))).coeff k ≠ 0) (b : ι) :
     ∑ l, e (b, l) = ∑ a, k (b, a) := by
   classical
@@ -190,7 +211,7 @@ theorem sum_eq_sum_of_coeff_aeval_blockLinearForm_ne_zero [Fintype κ]
 /-- **Degrees after a block-linear substitution.** If every monomial of `F` has degree at most
 `d h` in each block `h`, then the substituted polynomial `F(AY)` has degree at most `d h` in each
 parameter `Y_{h,a}` of block `h`. -/
-theorem degreeOf_aeval_blockLinearForm_le [Fintype κ] (A : ι → κ → τ → R)
+theorem degreeOf_aeval_blockLinearForm_le [Fintype κ] (A : ι → Matrix κ τ R)
     {F : MvPolynomial (ι × κ) R} {d : ι → ℕ} (hF : ∀ μ ∈ F.support, ∀ h, ∑ l, μ (h, l) ≤ d h)
     (q : ι × τ) : (aeval (blockLinearForm A) F).degreeOf q ≤ d q.1 := by
   classical
@@ -214,7 +235,7 @@ theorem degreeOf_aeval_blockLinearForm_le [Fintype κ] (A : ι → κ → τ →
 `c_{e,k} = [Y^k] ∏_{h,l} (∑ₐ A_{h,l,a} Y_{h,a})^(e_{h,l})` and `E(k)` consists of the `e` with
 the block degrees `∑ₗ e_{h,l} = ∑ₐ k_{h,a}` of `k`. -/
 theorem hasseDeriv_aeval_blockLinearForm_hasseDeriv [Fintype ι] [Fintype κ] [DecidableEq ι]
-    [DecidableEq κ] (A : ι → κ → τ → R) (F : MvPolynomial (ι × κ) R) (i : ι × κ →₀ ℕ)
+    [DecidableEq κ] (A : ι → Matrix κ τ R) (F : MvPolynomial (ι × κ) R) (i : ι × κ →₀ ℕ)
     (k : ι × τ →₀ ℕ) :
     hasseDeriv k (aeval (blockLinearForm A) (hasseDeriv i F)) =
       ∑ e ∈ univ.finsuppAntidiag k.degree with ∀ b, ∑ l, e (b, l) = ∑ a, k (b, a),
@@ -230,7 +251,7 @@ theorem hasseDeriv_aeval_blockLinearForm_hasseDeriv [Fintype ι] [Fintype κ] [D
 derivative `(∂_X^i F)(AY)` is nonzero at `y`, then some jet `∂^(i + e) F` of `F` is nonzero at the
 point `Ay`, where `e` has the block degrees `∑ₗ e_{h,l} = ∑ₐ k_{h,a}` of `k`. -/
 theorem exists_eval_hasseDeriv_ne_zero_of_blockLinearForm [Finite ι] [Fintype κ]
-    (A : ι → κ → τ → R) (F : MvPolynomial (ι × κ) R) (i : ι × κ →₀ ℕ) (k : ι × τ →₀ ℕ)
+    (A : ι → Matrix κ τ R) (F : MvPolynomial (ι × κ) R) (i : ι × κ →₀ ℕ) (k : ι × τ →₀ ℕ)
     (y : ι × τ → R) (h : eval y (hasseDeriv k (aeval (blockLinearForm A) (hasseDeriv i F))) ≠ 0) :
     ∃ e : ι × κ →₀ ℕ, (∀ b, ∑ l, e (b, l) = ∑ a, k (b, a)) ∧
       eval (fun p ↦ ∑ a, A p.1 p.2 a * y (p.1, a)) (hasseDeriv (i + e) F) ≠ 0 := by
@@ -244,17 +265,123 @@ theorem exists_eval_hasseDeriv_ne_zero_of_blockLinearForm [Finite ι] [Fintype �
 /-- For `F = X²` and the substitution `X ↦ 2Y`, `∂¹((∂¹F)(2Y)) = 4`; omitting the binomial
 coefficient `binom(i + e, i)` of the chain rule would give `2`. -/
 example : hasseDeriv (Finsupp.single ((), ()) 1)
-    (aeval (blockLinearForm fun (_ : Unit) (_ : Unit) (_ : Unit) ↦ (2 : ℚ))
+    (aeval (blockLinearForm fun (_ : Unit) ↦ Matrix.of fun (_ : Unit) (_ : Unit) ↦ (2 : ℚ))
       (hasseDeriv (Finsupp.single ((), ()) 1) (X ((), ()) ^ 2 : MvPolynomial (Unit × Unit) ℚ))) =
         4 := by
   simp only [X_pow_eq_monomial, hasseDeriv_monomial, ← Finsupp.single_tsub, Nat.add_one_sub_one,
     Finsupp.single_eq_same, Nat.choose_zero_right, Finsupp.prod_single_index,
     Nat.choose_succ_self_right, Nat.reduceAdd, Nat.cast_ofNat, mul_one, aeval_monomial,
-    algebraMap_eq, blockLinearForm_apply, univ_unique, PUnit.default_eq_unit, sum_singleton,
-    pow_zero, pow_one]
+    algebraMap_eq, blockLinearForm_apply, Matrix.of_apply, univ_unique, PUnit.default_eq_unit,
+    sum_singleton, pow_zero, pow_one]
   rw [← mul_assoc, ← C_mul, ← smul_eq_C_mul, map_smul, hasseDeriv_X]
   norm_num [smul_eq_C_mul, map_ofNat]
 
 end BlockLinear
+
+section Coordinates
+
+variable {ι κ υ : Type*} [Fintype τ] [Fintype υ]
+
+/-- Composing block-linear substitutions multiplies their matrices block by block: substituting
+`X_{h,l} ↦ ∑ₐ A_{h,l,a} Y_{h,a}` and then `Y_{h,a} ↦ ∑_b B_{h,a,b} Z_{h,b}` turns `X_{h,l}` into
+the block-linear form of the product `A_h B_h`. -/
+theorem aeval_blockLinearForm_blockLinearForm (A : ι → Matrix κ τ R) (B : ι → Matrix τ υ R)
+    (p : ι × κ) :
+    aeval (blockLinearForm B) (blockLinearForm A p) = blockLinearForm (fun h ↦ A h * B h) p := by
+  simp only [blockLinearForm_apply, map_sum, map_mul, algHom_C, aeval_X, algebraMap_eq,
+    Matrix.mul_apply, sum_mul, mul_sum, mul_assoc]
+  exact sum_comm
+
+/-- Block-linear substitutions compose contravariantly: substituting along the blockwise products
+`A_h B_h` is substituting along `A` and then along `B`. -/
+theorem aeval_blockLinearForm_mul (A : ι → Matrix κ τ R) (B : ι → Matrix τ υ R) :
+    aeval (blockLinearForm fun h ↦ A h * B h) =
+      (aeval (blockLinearForm B)).comp (aeval (blockLinearForm A)) := by
+  rw [comp_aeval]
+  exact congrArg aeval (funext fun p ↦ (aeval_blockLinearForm_blockLinearForm A B p).symm)
+
+/-- The block-linear forms of the identity matrices are the variables. -/
+@[simp]
+theorem blockLinearForm_one [DecidableEq κ] [Fintype κ] :
+    blockLinearForm (fun _ : ι ↦ (1 : Matrix κ κ R)) = X := by
+  funext p
+  simp [blockLinearForm_apply, Matrix.one_apply]
+
+/-- Substituting along mutually inverse block-linear forms recovers the polynomial. -/
+theorem aeval_blockLinearForm_aeval_blockLinearForm_of_mul_eq_one [DecidableEq κ] [Fintype κ]
+    {A : ι → Matrix κ τ R} {B : ι → Matrix τ κ R} (hAB : ∀ h, A h * B h = 1)
+    (F : MvPolynomial (ι × κ) R) :
+    aeval (blockLinearForm B) (aeval (blockLinearForm A) F) = F := by
+  rw [← AlgHom.comp_apply, ← aeval_blockLinearForm_mul, funext hAB, blockLinearForm_one,
+    aeval_X_left_apply]
+
+/-- **Hasse derivatives in the coordinates of a block-linear change of variables.** Let `A_h` and
+`B_h` be mutually inverse matrices and `Q = P(AY)`, so that `P = Q(BX)`. Read in the coordinates
+`Y`, the derivative `∂_X^I P` is a combination of the derivatives of `Q` of the same block degrees
+as `I`: `(∂_X^I P)(AY) = ∑_{e ∈ E(I)} c_{e,I} ∂_Y^e Q`, where
+`c_{e,I} = [X^I] ∏_{h,l} (∑ₐ B_{h,l,a} X_{h,a})^(e_{h,l})` and `E(I)` consists of the `e` with
+`∑ₗ e_{h,l} = ∑ₗ I_{h,l}` for every block `h`. -/
+theorem aeval_blockLinearForm_hasseDeriv [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
+    {A B : ι → Matrix κ κ R} (hAB : ∀ h, A h * B h = 1) (hBA : ∀ h, B h * A h = 1)
+    (P : MvPolynomial (ι × κ) R) (I : ι × κ →₀ ℕ) :
+    aeval (blockLinearForm A) (hasseDeriv I P) =
+      ∑ e ∈ univ.finsuppAntidiag I.degree with ∀ h, ∑ l, e (h, l) = ∑ l, I (h, l),
+        (aeval (blockLinearForm B) (monomial e (1 : R))).coeff I •
+          hasseDeriv e (aeval (blockLinearForm A) P) := by
+  conv_lhs => rw [← aeval_blockLinearForm_aeval_blockLinearForm_of_mul_eq_one hAB P]
+  rw [hasseDeriv_aeval (isHomogeneous_blockLinearForm B), sum_filter_of_ne fun e _ he ↦
+    sum_eq_sum_of_coeff_aeval_blockLinearForm_ne_zero (left_ne_zero_of_smul he), map_sum]
+  refine sum_congr rfl fun e _ ↦ ?_
+  rw [map_smul, aeval_blockLinearForm_aeval_blockLinearForm_of_mul_eq_one hBA]
+
+/-- **Vanishing coefficients in the coordinates of a system of linear forms.** Let `A_h` be
+invertible matrices, so that the coordinates `Y_{h,a}` of `X_{h,l} = ∑ₐ A_{h,l,a} Y_{h,a}` are
+linear forms in the variables of block `h`, and let `Q = P(AY)` be `P` written in these
+coordinates. Fix a coordinate `i`, degrees `d h`, and a threshold `θ`. If the coefficient of `Q` at
+every monomial `N` with `∑_h N_{h,i} / d_h < θ` vanishes, then the coefficient of `(∂^I P)(AY)` at
+every monomial `J` with `∑_h J_{h,i} / d_h < θ - ∑_h (∑_l I_{h,l}) / d_h` vanishes: a derivative
+lowers the threshold by its weighted order. -/
+theorem coeff_aeval_blockLinearForm_hasseDeriv_eq_zero {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
+    [IsStrictOrderedRing 𝕜] [Fintype ι] [Fintype κ] [DecidableEq κ]
+    {A : ι → Matrix κ κ R} (hA : ∀ h, IsUnit (A h)) {P : MvPolynomial (ι × κ) R} (d : ι → ℕ)
+    (i : κ) {θ : 𝕜}
+    (hP : ∀ N : ι × κ →₀ ℕ, ∑ h, (N (h, i) : 𝕜) / d h < θ →
+      (aeval (blockLinearForm A) P).coeff N = 0)
+    (I : ι × κ →₀ ℕ) {J : ι × κ →₀ ℕ}
+    (hJ : ∑ h, (J (h, i) : 𝕜) / d h + ∑ h, (∑ l, (I (h, l) : 𝕜)) / d h < θ) :
+    (aeval (blockLinearForm A) (hasseDeriv I P)).coeff J = 0 := by
+  classical
+  rw [aeval_blockLinearForm_hasseDeriv (B := fun h ↦ ↑(hA h).unit⁻¹)
+    (fun h ↦ (hA h).mul_val_inv) (fun h ↦ (hA h).val_inv_mul), coeff_sum]
+  refine sum_eq_zero fun e he ↦ ?_
+  rw [coeff_smul, hasseDeriv_coeff, hP (J + e) ?_, mul_zero, smul_zero]
+  -- `e` has the block degrees of `I`, so its weight in coordinate `i` is at most that of `I`.
+  have hblock := (mem_filter.1 he).2
+  calc ∑ h, ((J + e) (h, i) : 𝕜) / d h
+      = ∑ h, (J (h, i) : 𝕜) / d h + ∑ h, (e (h, i) : 𝕜) / d h := by
+        simp only [Finsupp.add_apply, Nat.cast_add, add_div, sum_add_distrib]
+    _ ≤ ∑ h, (J (h, i) : 𝕜) / d h + ∑ h, (∑ l, (I (h, l) : 𝕜)) / d h := by
+        gcongr with h
+        rw [← Nat.cast_sum, ← hblock h, Nat.cast_sum]
+        exact single_le_sum (f := fun l ↦ (e (h, l) : 𝕜)) (fun _ _ ↦ Nat.cast_nonneg _)
+          (mem_univ i)
+    _ < θ := hJ
+
+/-- With `X_0 = Y_0 + Y_1` and `X_1 = Y_1`, the polynomial `P = X_0 - X_1` is `Y_0` in the
+coordinates `Y`, so its coefficients vanish at every monomial of degree `0` in `Y_0`. -/
+example : aeval (blockLinearForm fun _ : Unit ↦ !![(1 : ℚ), 1; 0, 1])
+    (X ((), 0) - X ((), 1) : MvPolynomial (Unit × Fin 2) ℚ) = X ((), 0) := by
+  simp [blockLinearForm_apply, Fin.sum_univ_two]
+
+/-- The derivative `∂P/∂X_1 = -1` of the same `P` has the nonzero constant coefficient `-1`: its
+order in a direction other than `0` still lowers the threshold in coordinate `0`, so
+`coeff_aeval_blockLinearForm_hasseDeriv_eq_zero` needs the full block degrees of `I`, not just
+`I_{h,0}`. -/
+example : (aeval (blockLinearForm fun _ : Unit ↦ !![(1 : ℚ), 1; 0, 1])
+    (hasseDeriv (Finsupp.single ((), 1) 1)
+      (X ((), 0) - X ((), 1) : MvPolynomial (Unit × Fin 2) ℚ))).coeff 0 = -1 := by
+  simp [hasseDeriv_X, Finsupp.single_left_inj one_ne_zero]
+
+end Coordinates
 
 end MvPolynomial
