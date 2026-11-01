@@ -120,6 +120,19 @@ theorem integrable_simpleGains (hτ : MonotoneOn τ (Set.Iic n))
   simp_rw [funext (simpleGains_apply_eq_sum hτ hm X)]
   exact integrable_finsetSum _ fun i hi ↦ hint i ((mem_range.1 hi).trans_le hm)
 
+/-- The gains of a simple strategy up to a trading date `τ m` are known at `τ m` when the traded
+price is known at each trading date and the holdings `a j` are chosen at `τ j`. -/
+theorem stronglyMeasurable_simpleGains (hτ : MonotoneOn τ (Set.Iic n))
+    (hXm : ∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (X (τ j)))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j)) (hm : m ≤ n) :
+    StronglyMeasurable[ℱ (τ m)] (simpleGains τ n a X (τ m)) := by
+  have hle : ∀ i ≤ m, ℱ (τ i) ≤ ℱ (τ m) := fun i hi ↦ ℱ.mono (hτ (hi.trans hm) hm hi)
+  simp_rw [funext (simpleGains_apply_eq_sum hτ hm X)]
+  refine Finset.stronglyMeasurable_fun_sum _ fun i hi ↦ ?_
+  have him : i + 1 ≤ m := mem_range.1 hi
+  exact ((ha i (him.trans hm)).mono (hle i (by omega))).mul
+    (((hXm _ (him.trans hm)).mono (hle _ him)).sub ((hXm i (by omega)).mono (hle i (by omega))))
+
 variable [IsFiniteMeasure Q]
 
 /-- **Gains from trading a martingale form a martingale.** If `X` is a `Q`-martingale along the
@@ -156,14 +169,7 @@ theorem condExp_simpleGains (hτ : MonotoneOn τ (Set.Iic n))
     ext ω
     simp only [simpleGains_apply_eq_sum hτ hm, simpleGains_apply_eq_sum hτ (hkm.trans hm),
       Pi.add_apply, Finset.sum_apply, Pi.mul_apply, Pi.sub_apply, sum_range_add_sum_Ico _ hkm]
-  have hGk : StronglyMeasurable[ℱ (τ k)] (simpleGains τ n a X (τ k)) := by
-    simp_rw [funext (simpleGains_apply_eq_sum hτ (hkm.trans hm) X)]
-    refine Finset.stronglyMeasurable_fun_sum _ fun i hi ↦ ?_
-    have hik : i + 1 ≤ k := mem_range.1 hi
-    have hin : i + 1 ≤ n := hik.trans (hkm.trans hm)
-    exact ((ha i hin).mono (hle i k (by omega) (hkm.trans hm))).mul
-      (((hXm _ hin).mono (hle _ k hik (hkm.trans hm))).sub
-        ((hXm i (by omega)).mono (hle i k (by omega) (hkm.trans hm))))
+  have hGk := stronglyMeasurable_simpleGains hτ hXm ha (hkm.trans hm)
   have hGki := integrable_simpleGains hτ hint (hkm.trans hm)
   have htradei : ∀ i ∈ Ico k m, Integrable (a i * (X (τ (i + 1)) - X (τ i))) Q :=
     fun i hi ↦ hint i ((mem_Ico.1 hi).2.trans_le hm)
