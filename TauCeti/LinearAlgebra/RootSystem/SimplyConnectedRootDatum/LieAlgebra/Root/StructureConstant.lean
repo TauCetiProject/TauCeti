@@ -68,8 +68,8 @@ variable (t : DynkinType) (ht : t.Valid)
 /-- **The structure constants of the pinned Chevalley system.** For root numbers `α` and `β`, the
 integer `N_{α,β}` with `⁅e_α, e_β⁆ = N_{α,β} e_γ` when root `γ` of the pinned datum is the sum of
 roots `α` and `β`, and `0` when `α + β` is not a root. Here `e` is
-`TauCeti.DynkinType.chevalleySystem`. The value is `±(r + 1)` for `r = chainBotCoeff α β`, by
-`TauCeti.DynkinType.structureConstant_eq_natCast_or_eq_neg_natCast`. -/
+`TauCeti.DynkinType.chevalleySystem`. When `α + β` is a root, the value is `±(r + 1)` for
+`r = chainBotCoeff α β`, by `TauCeti.DynkinType.structureConstant_eq_natCast_or_eq_neg_natCast`. -/
 def structureConstant (α β : Fin t.numRoots) : ℤ :=
   if h : ∃ γ, (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β then
@@ -196,11 +196,9 @@ its reflection `reflectionPerm α α` in itself. It holds because the Chevalley 
       rw [hneg, hneg, hneg, hγ, neg_add]
     refine ((eq_structureConstant_iff hγ' _).2 ?_).symm
     -- Apply the Chevalley involution to the bracket equation at `α`, `β` and `γ`.
-    have hω := congrArg (t.chevalleyInvolution ht)
-      (lie_chevalleySystem_eq_structureConstant_zsmul hγ)
-    rwa [LieEquiv.map_lie, map_zsmul, chevalleyInvolution_chevalleySystem,
-      chevalleyInvolution_chevalleySystem, chevalleyInvolution_chevalleySystem, neg_lie, lie_neg,
-      neg_neg, smul_neg, ← neg_smul] at hω
+    simpa only [LieEquiv.map_lie, map_zsmul, chevalleyInvolution_chevalleySystem, neg_lie, lie_neg,
+      neg_neg, smul_neg, neg_smul] using
+      congrArg (t.chevalleyInvolution ht) (lie_chevalleySystem_eq_structureConstant_zsmul hγ)
   · rw [structureConstant_eq_zero h, structureConstant_eq_zero, neg_zero]
     rintro ⟨δ, hδ⟩
     refine h ⟨(t.simplyConnectedRootDatum ht).reflectionPerm δ δ, ?_⟩
@@ -220,12 +218,7 @@ theorem lie_chevalleySystem_eq_zero {α β : Fin t.numRoots}
     by_contra hne
     -- Otherwise the sum is a weight, nonzero because it is nonzero on some Cartan generator.
     let χ : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht) := ⟨_, hne⟩
-    have hχ : χ.IsNonZero := fun hχ => h₀ (funext fun i => by
-      have hi := congrFun hχ (t.cartanBasis ht i)
-      simp only [χ, Weight.coe_weight_mk, Pi.add_apply, Pi.zero_apply,
-        rootEquiv_apply_cartanBasis] at hi
-      simp only [Pi.add_apply, Pi.zero_apply]
-      exact_mod_cast hi)
+    have hχ : χ.IsNonZero := fun hχ => h₀ (coe_rootEquiv_add_eq_zero_iff.1 hχ)
     obtain ⟨γ, hγ⟩ := t.exists_coe_rootEquiv_eq ht hχ
     exact h ⟨γ, coe_rootEquiv_eq_add_iff.1 (congrArg DFunLike.coe hγ)⟩
   simpa only [extendRootFamily_rootEquiv] using

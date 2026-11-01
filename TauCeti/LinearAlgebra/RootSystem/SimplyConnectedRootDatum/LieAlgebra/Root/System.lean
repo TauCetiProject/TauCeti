@@ -42,6 +42,8 @@ weight included, so the file also translates a family indexed by the root number
   rational root system to sums of weights.
 * `TauCeti.DynkinType.coe_rootEquiv_eq_add_iff`: a weight sum of enumerated roots is an enumerated
   root exactly when the corresponding sum holds in the pinned integral datum.
+* `TauCeti.DynkinType.coe_rootEquiv_add_eq_zero_iff`: two enumerated roots are opposite exactly when
+  they are opposite in the pinned integral datum.
 * `TauCeti.DynkinType.chainBotCoeff_rootEquiv`: at a root sum, the descending root-string
   coefficient of the Lie weights is that of the pinned integral datum.
 * `TauCeti.DynkinType.extendRootFamily`: a family of vectors indexed by the root numbers, extended
@@ -265,6 +267,28 @@ which is the index of `-α` in the pinned datum, is the negative of the root ind
   rw [← reflectionPerm_rationalRootSystem]
   exact ((t.rationalRootSystemEquiv ht).toHom.indexEquiv_reflectionPerm α α).trans
     (rootSystem_reflectionPerm_self_eq_neg _)
+
+variable {t ht} in
+/-- **Opposite roots in the root numbering.** The weights numbered `α` and `β` of the rational Lie
+algebra sum to zero exactly when roots `α` and `β` of the pinned integral datum do. -/
+theorem coe_rootEquiv_add_eq_zero_iff {α β : Fin t.numRoots} :
+    ((t.rootEquiv ht α : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) :
+        t.cartanSubalgebra ht → ℚ) +
+        (t.rootEquiv ht β : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) = 0 ↔
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β = 0 := by
+  refine ⟨fun h => funext fun i => ?_, fun h => ?_⟩
+  · have hi := congrFun h (t.cartanBasis ht i)
+    simp only [Pi.add_apply, Pi.zero_apply, rootEquiv_apply_cartanBasis] at hi
+    simp only [Pi.add_apply, Pi.zero_apply]
+    exact_mod_cast hi
+  · -- The root `β` is `-α`, numbered by the reflection of `α` in itself.
+    obtain rfl : β = (t.simplyConnectedRootDatum ht).reflectionPerm α α :=
+      (t.simplyConnectedRootDatum ht).root.injective <| by
+        rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self]
+        exact eq_neg_of_add_eq_zero_right h
+    rw [rootEquiv_reflectionPerm_self, IsKilling.val_neg_root]
+    funext x
+    simp
 
 /-- The numbered raising generator `eᵢ` is a root vector for the enumerated simple root
 `αᵢ`. -/
