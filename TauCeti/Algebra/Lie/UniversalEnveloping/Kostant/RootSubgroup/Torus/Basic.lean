@@ -9,7 +9,9 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Eleme
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+public import Mathlib.Algebra.Lie.DirectSum
 import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
+import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 
 /-!
 # The split maximal torus of a Kostant elementary group
@@ -65,6 +67,8 @@ subgroup is the root rather than a difference `εᵢ - εⱼ` of coordinates.
 
 * `TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector.integralDividedPower`: a divided power
   of a root vector of weight `α` raises the weight of a weight vector by a multiple of `α`.
+* `TauCeti.UniversalEnvelopingAlgebra.isCartanWeightVector_lof_iff`: a vector of one summand of a
+  direct sum of Lie modules is a weight vector exactly when it is one in that summand.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints_tmul_of_isCartanWeightVector`: a torus
   point acts on a weight vector by the value of its character.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantCoordinateCocharacter_tmul_basis`: the coordinate
@@ -215,6 +219,24 @@ theorem integralDividedPower {i : ι} {α μ : κ → ℤ} {m : V}
   exact (pow_rootVector e hα hm n).smul _
 
 end IsCartanWeightVector
+
+section DirectSum
+
+open DirectSum
+
+variable {h} {γ : Type*} [DecidableEq γ] {P : γ → Type*} [∀ i, AddCommGroup (P i)]
+  [∀ i, Module ℚ (P i)] [∀ i, LieRingModule L (P i)] [∀ i, LieModule ℚ L (P i)]
+
+/-- **Weight vectors of a direct sum of Lie modules**: a vector of the `i`-th summand is a weight
+vector of the direct sum exactly when it is a weight vector of the summand, of the same weight. -/
+theorem isCartanWeightVector_lof_iff {i : γ} {μ : κ → ℤ} {x : P i} :
+    IsCartanWeightVector h (representation ℚ L (⨁ i, P i)) μ (lof ℚ γ P i x) ↔
+      IsCartanWeightVector h (representation ℚ L (P i)) μ x := by
+  refine forall_congr' fun j => ?_
+  rw [representation_lof, ← map_smul, lof_eq_of, lof_eq_of]
+  exact (of_injective i).eq_iff
+
+end DirectSum
 
 /-! ## Cartan operators on a stable subgroup -/
 

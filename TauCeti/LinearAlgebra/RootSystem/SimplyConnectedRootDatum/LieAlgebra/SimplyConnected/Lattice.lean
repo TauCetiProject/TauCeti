@@ -103,6 +103,10 @@ private theorem apply_mem_fundamentalLattice_of_mem_scLattice {x : t.scModule ht
       ((component ℚ _ (t.fundamentalModule ht) i).restrictScalars ℤ) := by
     rw [scLattice_def, Subring.orbitOfRep_le_iff]
     rintro u hu _ ⟨j, rfl⟩
+    -- `change` unfolds `Submodule.mem_comap`, `LinearMap.restrictScalars_apply` and
+    -- `DirectSum.apply_eq_component` (all `rfl`) and beta-reduces the generator in one step. Doing
+    -- this with those rewrites instead leaves `component` instance terms whose unification with
+    -- `lof_apply` and `component.lof_self` exceeds the heartbeat limit.
     change (representation ℚ (t.lieAlgebra ht) (t.scModule ht) u
       (lof ℚ _ (t.fundamentalModule ht) j (t.fundamentalModuleGenerator ht j))) i ∈
         t.fundamentalLattice ht i
@@ -147,20 +151,6 @@ theorem lof_mem_scLattice_iff {i : Fin t.rank} {x : t.fundamentalModule ht i} :
     lof ℚ _ (t.fundamentalModule ht) i x ∈ t.scLattice ht ↔ x ∈ t.fundamentalLattice ht i := by
   refine ⟨fun hx => ?_, t.lof_mem_scLattice ht⟩
   simpa using t.apply_mem_fundamentalLattice_of_mem_scLattice ht hx i
-
-/-- A weight vector of the `i`-th summand, placed in the `i`-th summand, is a weight vector of
-`V_sc(t)` of the same weight. -/
-private theorem isCartanWeightVector_lof {i : Fin t.rank} {μ : Fin t.rank → ℤ}
-    {x : t.fundamentalModule ht i}
-    (hx : IsCartanWeightVector (t.lieBasis ht).h
-      (representation ℚ (t.lieAlgebra ht) (t.fundamentalModule ht i)) μ x) :
-    IsCartanWeightVector (t.lieBasis ht).h (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) μ
-      (lof ℚ _ (t.fundamentalModule ht) i x) :=
-  (isCartanWeightVector_iff _ _).2 fun j => by
-    have hj := (isCartanWeightVector_iff _ _).1 hx j
-    simp only [representation_ι_apply] at hj
-    rw [representation_lof]
-    simp only [representation_ι_apply, hj, map_smul]
 
 /-- The full-weight lattice is the supremum of the images of the fundamental lattices under the
 inclusions of the summands. -/
@@ -211,7 +201,7 @@ theorem mem_iSup_jointWeightSpace_of_mem_scLattice {x : t.scModule ht}
   rw [Submodule.map_iSup] at hmap
   refine iSup_mono (fun μ => Submodule.map_le_iff_le_comap.2 fun w hw => ?_) hmap
   exact (mem_jointWeightSpace_iff _ _).2
-    (t.isCartanWeightVector_lof ht ((mem_jointWeightSpace_iff _ _).1 hw))
+    (isCartanWeightVector_lof_iff.2 ((mem_jointWeightSpace_iff _ _).1 hw))
 
 /-! ### The weight basis -/
 
@@ -294,7 +284,7 @@ theorem single_mem_range_scWeight (i : Fin t.rank) :
   rw [scWeight_def, mem_range_kostantWeightFin_iff]
   refine (Submodule.ne_bot_iff _).2 ⟨⟨_, t.lof_fundamentalModuleGenerator_mem_scLattice ht i⟩,
     (mem_weightSublattice_iff _ _ _).2
-      (t.isCartanWeightVector_lof ht (t.isCartanWeightVector_fundamentalModuleGenerator ht i)),
+      (isCartanWeightVector_lof_iff.2 (t.isCartanWeightVector_fundamentalModuleGenerator ht i)),
     fun h => ?_⟩
   exact (t.isHighestWeightVector_lof_fundamentalModuleGenerator ht i).ne_zero
     (congrArg Subtype.val h)
