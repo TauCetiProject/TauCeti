@@ -33,10 +33,10 @@ kept, so the identification retains ineffective isotropy.
 
 * `CategoryTheory.ActionCategory.map`: the functor induced by an equivariant map.
 * `CategoryTheory.ActionCategory.faithful_map`: it is faithful along an injective homomorphism.
-* `CategoryTheory.ActionCategory.singleObjFunctor`: the functor `SingleObj K ⥤ M ⋉ X` at a point
-  fixed by the image of a monoid homomorphism `K →* M`.
 * `CategoryTheory.ActionCategory.full_map_iff`: it is full exactly when arrows between image
   points lift.
+* `CategoryTheory.ActionCategory.singleObjFunctor`: the functor `SingleObj K ⥤ M ⋉ X` at a point
+  fixed by the image of a monoid homomorphism `K →* M`.
 * `CategoryTheory.ActionCategory.inclusion`: the inclusion of the action category of a subgroup
   on an invariant subset.
 * `CategoryTheory.ActionCategory.full_inclusion_iff`: the inclusion is full exactly for a slice.
