@@ -72,6 +72,11 @@ theorem coe_mk (V : Set X) (hV : ∀ i, ((↑) : P i → X) ⁻¹' V ∈ range (
     ((⟨V, hV⟩ : PastedOpens G) : Set X) = V :=
   (rfl)
 
+@[simp]
+theorem mem_mk {V : Set X} {hV : ∀ i, ((↑) : P i → X) ⁻¹' V ∈ range (ι i)} {x : X} :
+    x ∈ (⟨V, hV⟩ : PastedOpens G) ↔ x ∈ V :=
+  Iff.rfl
+
 @[ext]
 theorem ext {V W : PastedOpens G} (h : ∀ x, x ∈ V ↔ x ∈ W) : V = W :=
   SetLike.ext h
@@ -195,7 +200,7 @@ def paste (hP : ⋃ i, P i = univ) (hG : ∀ i, (G i).Saturated) :
     have h := (G i).transitive (T := fun W ↦ toPiece i '' T (c W)) (hS i) fun W hW ↦ by
       have h' := hT (c W) (hcS W hW) i
       rwa [hc W hW] at h'
-    refine (hG i).covers_of_subset h ?_ ?_
+    refine (hG i).covers_of_superset h ?_ ?_
     · simp only [iUnion_subset_iff]
       intro W hW
       exact image_mono (subset_biUnion_of_mem (u := T) (hcS W hW))
@@ -284,10 +289,11 @@ theorem coe_piece (i : I) : (hc.piece i : Set X) = P i :=
 theorem toPiece_piece_self (i : I) : toPiece i (hc.piece i) = ⊤ := by
   rw [toPiece_eq_iff, (G i).map_top, coe_piece, Subtype.coe_preimage_self]
 
+variable (hP hG) in
 /-- The pieces form an admissible cover of `X` in the pasted G-topology. -/
 theorem paste_covers_top_range_piece : (paste G hP hG).Covers ⊤ (range hc.piece) := fun i ↦ by
   rw [toPiece_top]
-  refine (hG i).covers_of_subset ((G i).identity ⊤) ?_ fun _ _ ↦ le_top
+  refine (hG i).covers_of_superset ((G i).identity ⊤) ?_ fun _ _ ↦ le_top
   rw [singleton_subset_iff]
   exact ⟨hc.piece i, mem_range_self i, hc.toPiece_piece_self i⟩
 
@@ -303,7 +309,7 @@ theorem mem_range_pastedOpensEmbedding_iff_of_subset {i : I} {V : Set X} (hV : V
     obtain ⟨W', hW'⟩ := hc.preimage_mem_range i j
     exact ⟨W ⊓ W', by rw [(G i).map_inf, hW, hW', preimage_inter]⟩
   have h' := hc.preimage_mem_range_of_subset i j (inter_subset_left.trans hV) inter_subset_right hVj
-  rwa [preimage_inter, Subtype.coe_preimage_self, inter_univ] at h'
+  rwa [Subtype.preimage_coe_inter_self] at h'
 
 /-- The pasted G-topology induces `G i` on the piece `P i`: a family of pasted admissible opens
 contained in `P i` covers `U ⊆ P i` exactly when its traces cover in `G i`. -/
@@ -311,30 +317,25 @@ theorem paste_covers_iff_of_le {i : I} {U : PastedOpens G} {S : Set (PastedOpens
     (hU : U ≤ hc.piece i) (hS : ∀ W ∈ S, W ≤ hc.piece i) :
     (paste G hP hG).Covers U S ↔ (G i).Covers (toPiece i U) (toPiece i '' S) := by
   refine ⟨fun h ↦ h i, fun h j ↦ ?_⟩
-  have hU' : (U : Set X) ⊆ P i := hU
+  have hU' : (U : Set X) ⊆ P i := (SetLike.coe_subset_coe.mpr hU).trans (hc.coe_piece i).subset
+  have hSi (W : PastedOpens G) (hW : W ∈ S) : (W : Set X) ⊆ P i :=
+    (SetLike.coe_subset_coe.mpr (hS W hW)).trans (hc.coe_piece i).subset
   -- Members of `S` lie in `U`, since their traces on `P i` do.
   have hSU (W : PastedOpens G) (hW : W ∈ S) : (W : Set X) ⊆ U := fun x hx ↦
-    (toPiece_le_toPiece_iff.mp ((G i).subset h _ ⟨W, hW, rfl⟩) ⟨hS W hW hx, hx⟩).2
+    (toPiece_le_toPiece_iff.mp ((G i).subset h _ ⟨W, hW, rfl⟩) ⟨hSi W hW hx, hx⟩).2
   -- Restrict the cover in `P i` to the overlap with `P j`, then move it to `P j`.
   refine hc.covers i j ((G i).restriction h (toPiece i (U ⊓ hc.piece j))
     (toPiece_mono i inf_le_left)) ?_ ?_
-  · rw [image_coe_toPiece, image_coe_toPiece, coe_inf, coe_piece]
-    ext x
-    have := @hU' x
-    simp only [mem_inter_iff, SetLike.mem_coe]
-    tauto
+  · rw [image_coe_toPiece, image_coe_toPiece, coe_inf, coe_piece, ← inter_assoc,
+      inter_eq_right.mpr hU', inter_comm]
   · simp only [image_image, ← toPiece_inf, image_coe_toPiece]
     refine image_congr fun W hW ↦ ?_
-    have hWi : (W : Set X) ⊆ P i := hS W hW
-    have hWU := hSU W hW
-    ext x
-    have := @hWi x
-    have := @hWU x
-    simp only [coe_inf, coe_piece, mem_inter_iff, SetLike.mem_coe]
-    tauto
+    rw [coe_inf, coe_inf, coe_piece, ← inter_assoc (W : Set X), inter_eq_left.mpr (hSU W hW),
+      ← inter_assoc, inter_eq_right.mpr (hSi W hW), inter_comm]
 
 end PasteCompatible
 
+variable (hP hG) in
 /-- **Uniqueness of the pasted G-topology** [BGR, §9.1.3]. Let `G'` be a G-topology on `X`
 satisfying (G0)–(G2), in which every piece `P i` is an admissible open `U i`, the pieces form an
 admissible cover of `X`, and `G'` induces `G i` on `P i`. Then the admissible opens of `G'` are
@@ -352,7 +353,7 @@ theorem exists_orderIso_paste {B' : Type*} [SemilatticeInf B'] [OrderTop B'] {ι
   have hmem (V : B') (i : I) : ((↑) : P i → X) ⁻¹' ι' V ∈ range (ι i) := by
     have h := (hopen i (V := ι' (V ⊓ U i)) (by rw [G'.map_inf, hU]; exact inter_subset_right)).mp
       ⟨_, rfl⟩
-    rwa [G'.map_inf, hU, preimage_inter, Subtype.coe_preimage_self, inter_univ] at h
+    rwa [G'.map_inf, hU, Subtype.preimage_coe_inter_self] at h
   let f : B' ↪o PastedOpens G := .ofMapLEIff (fun V ↦ ⟨ι' V, hmem V⟩) fun _ _ ↦ ι'.le_iff_le
   have hf_coe (V : B') : (f V : Set X) = ι' V := (rfl)
   -- Every pasted admissible open is admissible for `G'`, by (G1) on the cover by the pieces.
@@ -361,7 +362,7 @@ theorem exists_orderIso_paste {B' : Type*} [SemilatticeInf B'] [OrderTop B'] {ι
     obtain ⟨V, hV⟩ := hG'.mem_range_of_covers hUcov (W : Set X)
       (by rw [G'.map_top]; exact subset_univ _) (by
         rintro _ ⟨i, rfl⟩
-        rw [hU, hopen i inter_subset_right, preimage_inter, Subtype.coe_preimage_self, inter_univ]
+        rw [hU, hopen i inter_subset_right, Subtype.preimage_coe_inter_self]
         exact W.preimage_mem_range i)
     exact ⟨V, SetLike.coe_injective hV⟩
   -- The order isomorphism `OrderIso.ofSurjective f hf` has underlying function `f`.

@@ -30,8 +30,8 @@ members of an admissible cover, and a covering by admissible opens is admissible
 refined by an admissible cover. The G-topology of ordinary open covers is saturated
 (`GTopology.saturated_topological`). Admissibility of a covering family is local on an admissible
 cover (`GTopology.Saturated.covers_iff_restriction`), and a family containing an admissible cover
-is admissible (`GTopology.Saturated.covers_of_subset`). The admissible opens of any G-topology form
-a basis of the topology they generate (`GTopology.isTopologicalBasis_range`).
+is admissible (`GTopology.Saturated.covers_of_superset`). The admissible opens of any G-topology
+form a basis of the topology they generate (`GTopology.isTopologicalBasis_range`).
 
 ## References
 
@@ -106,7 +106,7 @@ structure Saturated : Prop where
 variable {G} in
 /-- In a saturated G-topology, a family of admissible opens contained in `U` is an admissible
 cover of `U` as soon as it contains one. -/
-theorem Saturated.covers_of_subset (hG : G.Saturated) {U : B} {R S : Set B} (hR : G.Covers U R)
+theorem Saturated.covers_of_superset (hG : G.Saturated) {U : B} {R S : Set B} (hR : G.Covers U R)
     (hRS : R ⊆ S) (hS : ∀ W ∈ S, W ≤ U) : G.Covers U S := by
   refine hG.covers_of_refinement (Set.Subset.antisymm ?_ ?_) hR fun W hW ↦ ⟨W, hRS hW, le_rfl⟩
   · rintro x ⟨_, ⟨W, hW, rfl⟩, hx⟩
