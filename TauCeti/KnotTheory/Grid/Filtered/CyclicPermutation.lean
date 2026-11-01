@@ -15,12 +15,16 @@ public import TauCeti.KnotTheory.Grid.Grading.CyclicPermutation
 The filtered grid complex of a grid diagram `G` is the free module `GC⁻` on grid states over
 `R[V₀, …, V_{n-1}]` with the filtered differential, which counts every empty rectangle with the
 weight `V^{O(r)}` of the `O`-markings it covers, together with the Alexander filtration
-`F_a = G.alexanderFiltration R a` (`TauCeti.KnotTheory.Grid.Filtered.Alexander`). Its filtered
-chain homotopy type is the knot invariant of Ozsváth, Stipsicz and Szabó. This file treats the
-simplest grid moves, the cyclic permutations of the rows and of the columns
-(`GridDiagram.IsMove.cyclicRows`, `GridDiagram.IsMove.cyclicColumns`): for both, relabeling every
-grid state by the same cyclic permutation is an isomorphism of filtered chain complexes from the
-filtered complex of `G` to that of the permuted diagram.
+`F_a = G.alexanderFiltration R a` (`TauCeti.KnotTheory.Grid.Filtered.Alexander`). The
+differential squares to zero when `R` has characteristic two
+(`TauCeti.GridDiagram.filteredDifferential_comp_self_eq_zero`), and the filtered chain homotopy
+type of the resulting complex is the knot invariant of Ozsváth, Stipsicz and Szabó. This file
+treats the simplest grid moves, the cyclic permutations of the rows and of the columns
+(`GridDiagram.IsMove.cyclicRows`, `GridDiagram.IsMove.cyclicColumns`). For both, relabeling every
+grid state by the same cyclic permutation intertwines the filtered differentials and preserves
+the Alexander filtration over any commutative semiring `R`; in characteristic two it is therefore
+an isomorphism of filtered chain complexes from the filtered complex of `G` to that of the
+permuted diagram.
 
 A cyclic permutation carries the empty rectangles from `x` to `y` bijectively to the empty
 rectangles between the relabeled states (`GridRectangleBetween.isEmpty_relabelRowsEquiv_finRotate`,
