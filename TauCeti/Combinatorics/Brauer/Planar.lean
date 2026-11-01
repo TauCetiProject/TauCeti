@@ -36,8 +36,7 @@ Two classes of Brauer diagrams are sorted by planarity. A permutation diagram is
 the identity permutation (`TauCeti.BrauerDiagram.isPlanar_permToBrauer_iff`): two through
 strands that swap their order cross. A cap-cup diagram `TauCeti.capCup a b` with `a ≠ b` is
 planar exactly when `a` and `b` are adjacent (`TauCeti.BrauerDiagram.isPlanar_capCup_iff`),
-since a strand starting strictly between them crosses the cap. So the Temperley–Lieb generators
-are exactly the planar Brauer generators.
+since a strand starting strictly between them crosses the cap.
 
 ## Main definitions
 
@@ -50,7 +49,8 @@ are exactly the planar Brauer generators.
 ## Main results
 
 * `TauCeti.BrauerDiagram.isPlanar_iff`: planarity in terms of the arcs of the diagram.
-* `TauCeti.TLDiagram.toBrauerDiagram_inj`, `TauCeti.TLDiagram.exists_toBrauerDiagram_eq_iff`:
+* `TauCeti.TLDiagram.toBrauerDiagram_eq_toBrauerDiagram_iff`,
+  `TauCeti.TLDiagram.exists_toBrauerDiagram_eq_iff`:
   the comparison is injective on matchings, with image the planar Brauer diagrams.
 * `TauCeti.BrauerDiagram.card_isPlanar`: there are `catalan k` planar Brauer diagrams on `k`
   strands.
@@ -186,12 +186,14 @@ theorem finSumFinRevEquiv_toBrauerDiagram_val (x : TLDiagram n n) (y : Fin n ⊕
     PerfectMatching.congr_val_apply, Equiv.symm_symm, Equiv.apply_symm_apply]
 
 /-- The Brauer diagram of a Temperley–Lieb diagram is planar. -/
+@[simp]
 theorem isPlanar_toBrauerDiagram (x : TLDiagram n n) : x.toBrauerDiagram.IsPlanar :=
   (PlanarMatching.brauerDiagramEquiv n x.matching).2
 
 /-- **The comparison is injective on matchings**: two Temperley–Lieb diagrams `n → n` have the
 same Brauer diagram exactly when they have the same matching. -/
-theorem toBrauerDiagram_inj {x y : TLDiagram n n} :
+@[simp]
+theorem toBrauerDiagram_eq_toBrauerDiagram_iff {x y : TLDiagram n n} :
     x.toBrauerDiagram = y.toBrauerDiagram ↔ x.matching = y.matching := by
   rw [toBrauerDiagram, toBrauerDiagram, ← Subtype.ext_iff, Equiv.apply_eq_iff_eq]
 
@@ -241,6 +243,7 @@ namespace BrauerDiagram
 
 /-- **The only planar permutation diagram is the identity**: if `σ` moves some point then it
 reverses the order of two points `i < i'`, and the through strands from `i` and `i'` cross. -/
+@[simp]
 theorem isPlanar_permToBrauer_iff {σ : Perm (Fin k)} : (permToBrauer σ).IsPlanar ↔ σ = 1 := by
   refine ⟨fun h => ?_, ?_⟩
   · by_contra hσ
@@ -306,9 +309,10 @@ private theorem isPlanar_capCup_iff_of_lt {a b : Fin k} (hab : a < b) :
         finSumFinRevEquiv_inr_val, Sum.elim_inl, Sum.elim_inr]
       split_ifs <;> omega
 
-/-- **The planar cap-cup diagrams are the Temperley–Lieb generators**: for `a ≠ b`, the cap-cup
-diagram on `{a, b}` is planar exactly when `a` and `b` are adjacent. Otherwise a strand starting
-strictly between `a` and `b` crosses the cap. -/
+/-- **A cap-cup diagram is planar exactly on adjacent pairs**: for `a ≠ b`, the cap-cup diagram
+on `{a, b}` is planar exactly when `a` and `b` are adjacent. Otherwise a strand starting strictly
+between `a` and `b` crosses the cap. -/
+@[simp]
 theorem isPlanar_capCup_iff {a b : Fin k} (hab : a ≠ b) :
     (capCup a b).IsPlanar ↔ (a : ℕ) + 1 = b ∨ (b : ℕ) + 1 = a := by
   rcases hab.lt_or_gt with h | h
