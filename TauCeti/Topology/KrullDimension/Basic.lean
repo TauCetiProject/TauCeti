@@ -40,6 +40,8 @@ have codimension at least two.
   most the Krull dimension of the space.
 * `TauCeti.topologicalKrullDim_eq_iSup_coheight`: on a quasi-sober T₀ space, the Krull dimension
   is the supremum of the codimensions of the points.
+* `GeneralizingMap.coheight_apply_le_coheight`: a continuous generalizing map cannot increase
+  the codimension of a point.
 -/
 
 public section
@@ -106,6 +108,25 @@ theorem topologicalKrullDim_eq_iSup_coheight (α : Type*) [TopologicalSpace α] 
     krullDim_eq_iSup_coheight]
 
 end TauCeti
+
+attribute [local instance] specializationPreorder in
+/-- A continuous generalizing map cannot increase the coheight of a point for the specialization
+preorders: chains of proper generalizations lift along the map. -/
+theorem GeneralizingMap.coheight_apply_le_coheight {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y}
+    (hf : GeneralizingMap f) (hcont : Continuous f) (x : X) :
+    coheight (f x) ≤ coheight x := by
+  refine coheight_le_iff'.mpr fun p hp ↦ ?_
+  induction p using RelSeries.inductionOn generalizing x with
+  | singleton y => simp
+  | cons p y hy ih =>
+    simp only [RelSeries.head_cons] at hp
+    have hlt : f x < p.head := hp ▸ hy
+    obtain ⟨x', hx', hfx'⟩ := hf hlt.le
+    have hx : x < x' := lt_of_le_not_ge hx' fun h ↦
+      hlt.not_ge (by simpa [hfx'] using hcont.specialization_monotone h)
+    grw [RelSeries.cons_length, Nat.cast_add, Nat.cast_one, ih x' hfx'.symm]
+    exact coheight_add_one_le hx
 
 namespace Topology.IsEmbedding
 
