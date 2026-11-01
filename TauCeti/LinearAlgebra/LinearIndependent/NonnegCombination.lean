@@ -26,6 +26,8 @@ copies of `v i`, and no positive multiple of a member is a sum of negated member
   which `v` sums to `m • v i` is `m` copies of `i`.
 * `LinearIndependent.nsmul_notMem_closure_range_neg`: for a family independent over `ℤ`, a
   positive multiple `m • v i` is not a sum of negated members of `v`.
+* `LinearIndependent.zero_notMem_closure_range`: for a family independent over `ℤ`, zero is not a
+  nonempty sum of members of `v`.
 -/
 
 public section
@@ -62,5 +64,31 @@ theorem nsmul_notMem_closure_range_neg [AddCommGroup M] {v : ι → M}
   simp only [Finsupp.add_apply, Finsupp.single_eq_same, Finsupp.coe_zero, Pi.zero_apply] at h0
   have := hn i
   omega
+
+/-- For a family linearly independent over `ℤ`, zero is not a nonempty sum of members. -/
+theorem zero_notMem_closure_range [AddCommGroup M] {v : ι → M} (hv : LinearIndependent ℤ v) :
+    (0 : M) ∉ AddSubsemigroup.closure (Set.range v) := by
+  have key {x : M} (hx : x ∈ AddSubsemigroup.closure (Set.range v)) :
+      ∃ n : ι →₀ ℤ, (∀ i, 0 ≤ n i) ∧ n ≠ 0 ∧ Finsupp.linearCombination ℤ v n = x := by
+    induction hx using AddSubsemigroup.closure_induction with
+    | mem _ hx =>
+      obtain ⟨i, rfl⟩ := hx
+      classical
+      refine ⟨Finsupp.single i 1, fun j ↦ ?_, by simp, by simp⟩
+      rw [Finsupp.single_apply]
+      split_ifs <;> simp
+    | add _ _ _ _ ha hb =>
+      obtain ⟨n₁, hn₁, hne, rfl⟩ := ha
+      obtain ⟨n₂, hn₂, -, rfl⟩ := hb
+      refine ⟨n₁ + n₂, fun i ↦ add_nonneg (hn₁ i) (hn₂ i), fun h0 ↦ hne ?_, map_add _ _ _⟩
+      ext i
+      have := congr($h0 i)
+      have h₁ := hn₁ i
+      have h₂ := hn₂ i
+      simp only [Finsupp.add_apply, Finsupp.coe_zero, Pi.zero_apply] at this ⊢
+      omega
+  intro h0
+  obtain ⟨n, -, hne, hn⟩ := key h0
+  exact hne (hv.finsuppLinearCombination_injective (hn.trans (map_zero _).symm))
 
 end LinearIndependent
