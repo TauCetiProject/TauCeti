@@ -73,7 +73,8 @@ theorem IsVertexReachable.induce_compl (hs : s.Finite) {u v : V} (hu : u ∉ s) 
     exact (ENat.add_lt_add_iff_left hs.encard_lt_top.ne).2 ht
   have hreach := h hst (by simp [hu, htu]) (by simp [hv, htv])
   let φ : G.induce (s ∪ Subtype.val '' t)ᶜ →g (G.induce sᶜ).induce tᶜ :=
-    { toFun y := ⟨⟨y, fun hy ↦ y.2 (.inl hy)⟩, fun hy ↦ y.2 (.inr ⟨_, hy, rfl⟩)⟩
+    { toFun y := ⟨⟨y, by simpa using fun hy ↦ y.2 (.inl hy)⟩,
+        by simpa using fun hy ↦ y.2 (.inr ⟨_, hy, rfl⟩)⟩
       map_rel' h := by simpa using h }
   exact hreach.map φ
 
@@ -95,13 +96,6 @@ theorem IsVertexConnected.induce_compl_of_encard_le (h : G.IsVertexConnected k) 
   IsVertexConnected.induce_compl hs <| by
     rwa [add_tsub_cancel_of_le hsk]
 
-/-- Deleting a vertex from a `(k + 1)`-vertex-connected graph leaves a `k`-vertex-connected
-graph. -/
-theorem IsVertexConnected.induce_compl_singleton (h : G.IsVertexConnected (k + 1)) (x : V) :
-    (G.induce {x}ᶜ).IsVertexConnected k :=
-  IsVertexConnected.induce_compl (Set.finite_singleton x) <| by
-    rwa [Set.encard_singleton, add_comm]
-
 /-! ### Adjoining a vertex -/
 
 /-- **Expansion lemma.** If deleting a vertex `x` leaves a `k`-vertex-connected graph and `x` has
@@ -112,15 +106,15 @@ theorem isVertexConnected_of_induce_compl_singleton (h : (G.induce {x}ᶜ).IsVer
     (hx : k ≤ (G.neighborSet x).encard) : G.IsVertexConnected k := by
   refine isVertexConnected_iff.2 ⟨?_, fun s hs ↦ ?_⟩
   · grw [h.add_one_le_card, ENat.card_coe_set_eq]
-    exact Set.encard_le_encard (Set.subset_univ _) |>.trans_eq (Set.encard_univ V)
+    exact Set.encard_le_card
   -- After deleting `s`, any two remaining vertices other than `x` are reachable, through the
   -- graph with `x` deleted.
   have key (a b : ↥sᶜ) (ha : a.1 ≠ x) (hb : b.1 ≠ x) : (G.induce sᶜ).Reachable a b := by
     have hs' : ({x}ᶜ ↓∩ s).encard < k := (Set.encard_preimage_val_le_encard_right _ _).trans_lt hs
-    have hreach := isVertexReachable_def.1 (h.isVertexReachable ⟨a, ha⟩ ⟨b, hb⟩) hs' a.2 b.2
+    have hreach := isVertexReachable_def.1 (h.isVertexReachable ⟨a, ha⟩ ⟨b, hb⟩) hs'
+      (by exact a.2) (by exact b.2)
     let φ : (G.induce {x}ᶜ).induce ({x}ᶜ ↓∩ s)ᶜ →g G.induce sᶜ :=
-      { toFun y := ⟨y.1.1, y.2⟩
-        map_rel' h := by simpa using h }
+      induceHom (Embedding.induce {x}ᶜ).toHom fun _ hy ↦ by simpa using hy
     exact hreach.map φ
   -- If `x` remains, it has a remaining neighbour, since fewer than `k` vertices were deleted.
   have hx' (a : ↥sᶜ) : ∃ c : ↥sᶜ, c.1 ≠ x ∧ (G.induce sᶜ).Reachable a c := by
