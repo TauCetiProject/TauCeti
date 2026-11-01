@@ -42,7 +42,8 @@ algebra by the separable algebraic extension `F / k(x)` preserves reducedness
 For the domain property, first let `K / k` be algebraic and let `L` be the separable closure of `k`
 in `K`. Exact constants make `L ⊗[k] F` a domain, and `K ⊗[k] F` is reduced by geometric
 reducedness. Since `K / L` is purely inseparable, every element of `K ⊗[k] F` has a positive power
-in `L ⊗[k] F`, so `K ⊗[k] F` is a domain (`TauCeti.IsPurelyInseparable.isDomain_tensorProduct`).
+in `L ⊗[k] F`, so `K ⊗[k] F` is a domain
+(`TauCeti.IsPurelyInseparable.isDomain_tensorProduct_of_isDomain_tensorProduct`).
 For an arbitrary `K`, embed an algebraic closure `C` of `k` in an algebraic closure `Ω` of `K`.
 Then `F ⊗[k] K` embeds in `Ω ⊗[k] F = Ω ⊗[C] (C ⊗[k] F)`, the tensor product of two domains over
 an algebraically closed field, which is a domain (`TauCeti.isDomain_tensorProduct_of_isAlgClosed`).
@@ -99,7 +100,7 @@ private theorem isDomain_tensorProduct_of_isGeometricallyReduced_of_isAlgebraic
   -- Over the separable closure `L` of `k` in `K`, exact constants make `L ⊗[k] F` a domain, and
   -- `K` is purely inseparable over `L`
   have := isDomain_tensorProduct_of_isIntegrallyClosedIn hex (separableClosure k K)
-  IsPurelyInseparable.isDomain_tensorProduct (separableClosure k K) K F
+  IsPurelyInseparable.isDomain_tensorProduct_of_isDomain_tensorProduct (separableClosure k K) K F
     (hK := (Algebra.TensorProduct.comm k _ F).toMulEquiv.isDomain)
 
 /-- **Geometrically reduced fields with exact constants are regular.** If `F` is geometrically
@@ -124,8 +125,13 @@ theorem isDomain_tensorProduct_of_isGeometricallyReduced (hex : IsIntegrallyClos
     exact (algebraMap (FractionRing A) Ω).injective.comp (IsFractionRing.injective A _)
   let φ : A ⊗[k] F →ₐ[k] Ω ⊗[k] F :=
     Algebra.TensorProduct.map (IsScalarTower.toAlgHom k A Ω) (AlgHom.id k F)
-  have hφ : Function.Injective φ :=
-    Module.Flat.rTensor_preserves_injective_linearMap (IsScalarTower.toAlgHom k A Ω).toLinearMap hA
+  have hφ : Function.Injective φ := by
+    -- Expose the underlying linear map, whose coercion is definitionally that of `φ`, as an
+    -- `rTensor`, and apply flatness of `F` over `k`.
+    change Function.Injective φ.toLinearMap
+    rw [Algebra.TensorProduct.toLinearMap_map, TensorProduct.AlgebraTensorModule.map_eq]
+    exact Module.Flat.rTensor_preserves_injective_linearMap
+      (IsScalarTower.toAlgHom k A Ω).toLinearMap hA
   exact (hφ.comp (Algebra.TensorProduct.comm k F A).injective).isDomain
     (φ.comp (Algebra.TensorProduct.comm k F A).toAlgHom)
 

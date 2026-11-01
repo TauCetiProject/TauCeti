@@ -345,4 +345,9 @@ theorem tensorProductEquivBaseChange_tmul (l : L) (a : A) :
     tensorProductEquivBaseChange k K L A (l ⊗ₜ a) = (1 ⊗ₜ a) ⊗ₜ l := by
   simp [tensorProductEquivBaseChange]
 
+@[simp]
+theorem tensorProductEquivBaseChange_symm_tmul (c : K) (a : A) (l : L) :
+    (tensorProductEquivBaseChange k K L A).symm ((c ⊗ₜ a) ⊗ₜ l) = (algebraMap K L c * l) ⊗ₜ a := by
+  simp [tensorProductEquivBaseChange, Algebra.smul_def]
+
 end TauCeti
