@@ -45,8 +45,6 @@ hypotheses here: they are the geometric input from the compactified moduli space
 
 ## Main results
 
-* `NovikovModule.kernelProduct_eq_kernelMap_tensor_swap`: a product with its inputs exchanged is
-  a kernel map out of the tensor product of the inputs in their original order.
 * `NovikovModule.kernelProduct_sub_negOnePow_smul_kernelProduct`: a kernel homotopy between a
   product kernel and the Koszul-signed exchanged kernel gives a chain homotopy between the
   product and the signed exchanged product.
@@ -72,29 +70,6 @@ namespace TauCeti
 namespace NovikovModule
 
 variable {R S₁ S₂ S₀ : Type*} {F₁ : S₁ → ℝ} {F₂ : S₂ → ℝ} {F₀ : S₀ → ℝ}
-
-section CommSemiring
-
-variable [CommSemiring R] {C C' : ℝ}
-
-/-- **A product with its inputs exchanged.** For a product kernel `n'` from `S₂ × S₁` to `S₀`, the
-product `b ⋆' a` is the kernel map, out of the completed tensor product `a ⊗ b`, of the kernel
-`n'(p₂, p₁, ·)` at `(p₁, p₂)`. The potential bound of this kernel may have any constant. -/
-theorem kernelProduct_eq_kernelMap_tensor_swap {n' : S₂ → S₁ → S₀ → R}
-    (hn' : ∀ p₂ p₁ p₀, n' p₂ p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₂ p₂ + F₁ p₁ + C)
-    (hfin' : ∀ p₂ p₁, n' p₂ p₁ ∈ NovikovModule R F₀)
-    (hm : ∀ (q : S₁ × S₂) p₀, n' q.2 q.1 p₀ ≠ 0 → F₀ p₀ ≤ F₁ q.1 + F₂ q.2 + C')
-    (hmfin : ∀ q : S₁ × S₂, n' q.2 q.1 ∈ NovikovModule R F₀)
-    (a : NovikovModule R F₁) (b : NovikovModule R F₂) :
-    kernelProduct hn' hfin' b a = kernelMap hm hmfin (tensor a b) := by
-  ext p₀
-  -- Reindex the sum over `S₂ × S₁` by the exchange of factors.
-  rw [kernelProduct_apply_val, kernelMap_apply_val, ← finsum_comp_equiv (Equiv.prodComm S₁ S₂)]
-  refine finsum_congr fun q => ?_
-  simp only [Equiv.prodComm_apply, Prod.fst_swap, Prod.snd_swap, tensor_apply_val]
-  ring
-
-end CommSemiring
 
 section CommRing
 
