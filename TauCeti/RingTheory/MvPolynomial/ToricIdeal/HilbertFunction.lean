@@ -60,6 +60,11 @@ attribute [local instance] MvPolynomial.weightedGradedAlgebra
 
 variable {ι M D : Type*} [AddCommMonoid M] [AddCommMonoid D]
 
+/-- The weight of `u` for the weights `deg (a i)` is the degree of `∑ i, u i • a i`. -/
+private theorem weight_comp_eq_apply_linearCombination (deg : M →+ D) (a : ι → M) (u : ι →₀ ℕ) :
+    Finsupp.weight (deg ∘ a) u = deg (Finsupp.linearCombination ℕ a u) := by
+  simp [Finsupp.weight_apply, Finsupp.linearCombination_apply, map_finsuppSum]
+
 section CommSemiring
 
 variable (R : Type*) [CommSemiring R]
@@ -84,7 +89,7 @@ theorem map_aeval_single_weightedHomogeneousSubmodule {a : ι → M}
   obtain ⟨u, rfl⟩ := AddSubmonoid.mem_closure_range_iff.1 (ha ▸ AddSubmonoid.mem_top s)
   refine ⟨monomial u 1, ?_, ?_⟩
   · exact isWeightedHomogeneous_monomial _ _ _
-      ((Finsupp.apply_linearCombination ℕ deg.toNatLinearMap a u).symm.trans hs)
+      ((weight_comp_eq_apply_linearCombination deg a u).trans hs)
   · simp [Finsupp.linearCombination_apply]
 
 end CommSemiring
@@ -102,9 +107,8 @@ theorem isHomogeneous_toricIdeal [DecidableEq D] (a : ι → M) (deg : M →+ D)
   rintro _ ⟨u, v, h, rfl⟩
   refine ⟨deg (Finsupp.linearCombination ℕ a u), sub_mem ?_ ?_⟩ <;>
     rw [mem_weightedHomogeneousSubmodule] <;> refine isWeightedHomogeneous_monomial _ _ _ ?_
-  · exact (Finsupp.apply_linearCombination ℕ deg.toNatLinearMap a u).symm
-  · exact (Finsupp.apply_linearCombination ℕ deg.toNatLinearMap a v).symm.trans
-      (congrArg deg h.symm)
+  · exact weight_comp_eq_apply_linearCombination deg a u
+  · exact (weight_comp_eq_apply_linearCombination deg a v).trans (congrArg deg h.symm)
 
 /-- The image of `quotientToricIdealAlgEquivClosure` of the polynomials of weight `n`, for the
 weights `deg (a i)`, is the homogeneous component of degree `n` of the semigroup algebra of the
@@ -143,8 +147,7 @@ theorem mapWeightedHomogeneousSubmoduleToricIdealEquivGradeBy_apply_coe (a : ι 
     (mapWeightedHomogeneousSubmoduleToricIdealEquivGradeBy R a deg n x :
         AddMonoidAlgebra R (AddSubmonoid.closure (Set.range a))) =
       quotientToricIdealAlgEquivClosure R a x := by
-  rw [mapWeightedHomogeneousSubmoduleToricIdealEquivGradeBy, LinearEquiv.trans_apply,
-    LinearEquiv.coe_ofEq_apply, LinearEquiv.submoduleMap_apply, AlgEquiv.toLinearEquiv_apply]
+  simp [mapWeightedHomogeneousSubmoduleToricIdealEquivGradeBy]
 
 /-- **The Hilbert function of a binomial presentation.** The rank of the image in
 `MvPolynomial ι R ⧸ toricIdeal R a` of the polynomials of weight `n`, for the weights `deg (a i)`,
@@ -202,7 +205,7 @@ theorem finite_closure_range_deg_eq [Finite ι] (a : ι → M) (deg : M →+ ℕ
     rintro ⟨s, hs⟩ (rfl : deg s = n)
     obtain ⟨u, rfl⟩ := AddSubmonoid.mem_closure_range_iff.1 hs
     refine ⟨u, ?_, ?_⟩
-    · exact (Finsupp.apply_linearCombination ℕ deg.toNatLinearMap a u).symm
+    · exact weight_comp_eq_apply_linearCombination deg a u
     · simp [Finsupp.linearCombination_apply]
   exact hfin.to_subtype
 

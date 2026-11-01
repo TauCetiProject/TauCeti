@@ -56,14 +56,7 @@ noncomputable def basisGradeBy (f : M → ι) (i : ι) :
 @[simp]
 theorem coe_basisGradeBy (f : M → ι) (i : ι) (m : f ⁻¹' {i}) :
     (basisGradeBy R f i m : R[M]) = single (m : M) 1 := by
-  have hm : single (m : M) (1 : R) ∈ supported R R (f ⁻¹' {i}) := by
-    rw [mem_supported, coeff_single]
-    exact (Finset.coe_subset.2 Finsupp.support_single_subset).trans (by simp)
-  have h : (supportedEquivFinsupp (f ⁻¹' {i})).symm (Finsupp.single m 1) = ⟨_, hm⟩ := by
-    rw [LinearEquiv.symm_apply_eq]
-    ext x
-    simpa using (Finsupp.single_apply_left Subtype.val_injective _ _ _).symm
-  simp [basisGradeBy, h]
+  simp [basisGradeBy, supportedEquivFinsupp]
 
 instance (f : M → ι) (i : ι) : Module.Free R (gradeBy R f i) :=
   .of_basis (basisGradeBy R f i)
