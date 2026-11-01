@@ -56,8 +56,6 @@ public section
 
 namespace TauCeti
 
-open _root_.MvPowerSeries TauCeti.MvPowerSeries
-
 variable {K : Type*} [NontriviallyNormedField K]
 
 section LaurentDomain
@@ -120,31 +118,20 @@ theorem existsUnique_algHom_iff_range_subset (φ : A →ₐ[K] B) :
   rw [existsUnique_algHom hA hB, hB.range_maximalSpectrumComap_subset_laurentDomain_iff]
 
 include hA in
-/-- Each variable of `A⟨X, Y⟩` has absolute value at most one at every classical point of
-`A⟨f, g⁻¹⟩`. -/
-private theorem pointNorm_mk_X_le_one (x : MaximalSpectrum (LaurentFraction f g))
-    (k : Fin (r + s)) :
-    pointNorm K x (Ideal.Quotient.mk (laurentFractionIdeal f g) ⟨X k, isRestricted_X _ k⟩) ≤ 1 := by
-  -- The variable is power-bounded in `A⟨X, Y⟩`, whose points include the points of the quotient.
-  have hT := hA.isRestricted_subring (τ := Fin (r + s))
-  rw [← Ideal.Quotient.mkₐ_eq_mk K, ← (isAffinoidAlgebra hA f g).pointNorm_maximalSpectrumComap]
-  exact (hT.pointNorm_le_supSeminorm _ _).trans
-    (hT.isPowerBounded_iff_supSeminorm_le_one.mp (isPowerBounded_X _))
-
-include hA in
 /-- Each `fᵢ` has absolute value at most one at every classical point of `A⟨f, g⁻¹⟩`. -/
 theorem pointNorm_algebraMap_le_one (x : MaximalSpectrum (LaurentFraction f g)) (i : Fin r) :
     pointNorm K x (algebraMap A (LaurentFraction f g) (f i)) ≤ 1 :=
-  mk_X_castAdd (g := g) i ▸ pointNorm_mk_X_le_one hA x _
+  mk_X_castAdd (g := g) i ▸ hA.pointNorm_quotientMk_X_le_one x _
 
 include hA in
 /-- Each `gⱼ` has absolute value at least one at every classical point of `A⟨f, g⁻¹⟩`. -/
 theorem one_le_pointNorm_algebraMap (x : MaximalSpectrum (LaurentFraction f g)) (j : Fin s) :
     1 ≤ pointNorm K x (algebraMap A (LaurentFraction f g) (g j)) := by
-  -- `|gⱼ(x)| · |Yⱼ(x)| = 1` with `|Yⱼ(x)| ≤ 1`.
-  have h := congrArg (pointNorm K x) (algebraMap_mul_mk_X_natAdd (f := f) (g := g) j)
+  -- `|gⱼ(x)| · |gⱼ⁻¹(x)| = 1` with `|gⱼ⁻¹(x)| ≤ 1`.
+  have h := congrArg (pointNorm K x) (algebraMap_mul_inverse_algebraMap (f := f) (g := g) j)
   rw [(isAffinoidAlgebra hA f g).pointNorm_mul, pointNorm_one] at h
-  exact h.ge.trans (mul_le_of_le_one_right (pointNorm_nonneg _) (pointNorm_mk_X_le_one hA x _))
+  exact h.ge.trans (mul_le_of_le_one_right (pointNorm_nonneg _)
+    (mk_X_natAdd (f := f) j ▸ hA.pointNorm_quotientMk_X_le_one x _))
 
 include hA in
 /-- Every classical point of `A⟨f, g⁻¹⟩` lies over a point of the Laurent domain `L(f, g⁻¹)`. -/

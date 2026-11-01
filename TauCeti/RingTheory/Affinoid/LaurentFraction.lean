@@ -126,6 +126,18 @@ theorem mk_X_natAdd (j : Fin s) :
     (algebraMap_mul_mk_X_natAdd (f := f) j).symm
   rwa [mul_one, eq_comm] at h
 
+/-- **`gⱼ · gⱼ⁻¹ = 1`** in the Laurent fraction algebra. -/
+@[simp]
+theorem algebraMap_mul_inverse_algebraMap (j : Fin s) :
+    algebraMap A (LaurentFraction f g) (g j) * Ring.inverse (algebraMap A _ (g j)) = 1 :=
+  Ring.mul_inverse_cancel _ (isUnit_algebraMap j)
+
+/-- **`gⱼ⁻¹ · gⱼ = 1`** in the Laurent fraction algebra. -/
+@[simp]
+theorem inverse_algebraMap_mul_algebraMap (j : Fin s) :
+    Ring.inverse (algebraMap A (LaurentFraction f g) (g j)) * algebraMap A _ (g j) = 1 :=
+  Ring.inverse_mul_cancel _ (isUnit_algebraMap j)
+
 /-- Each `fᵢ` is power-bounded for the quotient topology of `A⟨f, g⁻¹⟩`. -/
 theorem isPowerBounded_algebraMap (i : Fin r) :
     IsPowerBounded (algebraMap A (LaurentFraction f g) (f i)) :=
