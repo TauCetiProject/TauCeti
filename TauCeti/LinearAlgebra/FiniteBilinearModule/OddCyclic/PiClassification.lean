@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.Filter
+import TauCeti.GroupTheory.FiniteAbelian.CyclicFactors
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Classification
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.GaussSum
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Relations
@@ -21,17 +22,24 @@ import TauCeti.LinearAlgebra.QuadraticForm.Prod
 For an odd prime `p`, Nikulin's decomposition writes every nondegenerate finite quadratic module of
 `p`-power order as an orthogonal sum of odd cyclic generators `q_θ^{(p)}(p^k)`
 (`TauCeti.FiniteQuadraticModule.exists_isometry_pi_oddCyclic`). Such a decomposition is not
-unique, and this file decides when two orthogonal sums of these generators with the same exponents
-are isometric. For exponents `k_i` and coefficients `θ_i`, `η_i` prime to `p`,
+unique, and this file decides when two orthogonal sums of these generators are isometric. For
+exponents `k_i`, `l_j` and coefficients `θ_i`, `η_j` prime to `p`,
 
 ```text
-⊕ᵢ q_{θ_i}^{(p)}(p^{k_i}) ≅ ⊕ᵢ q_{η_i}^{(p)}(p^{k_i})
-  ↔  ∏_{k_i = m} (θ_i/p) = ∏_{k_i = m} (η_i/p)  for every m ≥ 1.
+⊕ᵢ q_{θ_i}^{(p)}(p^{k_i}) ≅ ⊕ⱼ q_{η_j}^{(p)}(p^{l_j})
+  ↔  #{i | k_i = m} = #{j | l_j = m}  and  ∏_{k_i = m} (θ_i/p) = ∏_{l_j = m} (η_j/p)
+     for every m ≥ 1.
 ```
 
-So, once the exponents are fixed, the isometry class of the sum only depends on the product of
-the Legendre symbols of the coefficients of each order `p^m`; summands of order `p^0 = 1` are
-trivial and impose nothing.
+So the isometry class of the sum only depends on the number of summands of each order `p^m` and
+on the product of the Legendre symbols of their coefficients; summands of order `p^0 = 1` are
+trivial and impose nothing. Together with Nikulin's decomposition, this classifies the
+nondegenerate finite quadratic modules of odd prime-power order up to isometry.
+
+The numbers of summands of each order are invariants of the underlying group
+(`TauCeti.AddCommGroup.card_filter_eq_of_addEquiv_pi_zmod_pow`). Once they agree, deleting the
+trivial summands and matching the others by their orders reduces the classification to two sums
+with the same exponents.
 
 The invariance of the level products is a Gauss-sum computation. For `j ≥ 0` the scaled Gauss sum
 `∑_x e^{2πi p^j q(x)}` (`TauCeti.FiniteQuadraticModule.scaledGaussSum`) is an isometry invariant
@@ -51,8 +59,8 @@ a mismatched Legendre symbol onto another summand of the same order.
 ## Main declarations
 
 * `TauCeti.FiniteQuadraticModule.nonempty_isometry_pi_oddCyclic_iff`: two orthogonal sums of odd
-  cyclic generators at `p` with the same exponents are isometric exactly when their level
-  products of Legendre symbols agree.
+  cyclic generators at `p` are isometric exactly when they have the same number of summands of
+  each order `p^m`, `m ≥ 1`, and the same level products of Legendre symbols.
 
 ## References
 
@@ -259,17 +267,125 @@ private theorem nonempty_isometry_pi_oddCyclic_of_prod_legendreSym_eq (hp : Odd 
       rwa [← e.prod_comp, ← e.prod_comp] at hm'
   exact ⟨u.symm.trans (g.trans v)⟩
 
+/-! ### Sums with different exponents -/
+
+open Finset
+
+variable {κ : Type*} [Fintype κ]
+
+omit [Fact p.Prime] in
+/-- The summands of order `p^0 = 1` of an orthogonal sum of odd cyclic generators are trivial, so
+deleting them is isometric. -/
+private noncomputable def isometryPiOddCyclicNeZero (hp : Odd p) (k : ι → ℕ) (θ : ι → ℤ) :
+    Isometry (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ i))
+      (pi fun i : {i // k i ≠ 0} ↦ oddCyclic (p ^ k i) hp.pow (θ i)) :=
+  QuadraticMap.IsometryEquiv.piSubtype _ _ fun i hi ↦ by
+    have h : Nat.card (oddCyclic (p ^ k i) hp.pow (θ i)) = 1 := by
+      rw [natCard_oddCyclic, not_not.mp hi, pow_zero]
+    exact (Nat.card_eq_one_iff_unique.mp h).1
+
+omit [Fact p.Prime] in
+/-- If the exponent families `k` and `l` have the same number of entries equal to `m` for every
+`m ≥ 1`, their nonzero entries are matched by an equivalence of index types. -/
+private theorem exists_equiv_of_card_filter_eq (k : ι → ℕ) (l : κ → ℕ)
+    (h : ∀ m, 0 < m → #{i | k i = m} = #{j | l j = m}) :
+    ∃ σ : {i // k i ≠ 0} ≃ {j // l j ≠ 0}, ∀ i, l (σ i) = k i := by
+  classical
+  -- Match the summands of each order `p^m` by any bijection.
+  suffices e : ∀ m, {i : {i // k i ≠ 0} // k i = m} ≃ {j : {j // l j ≠ 0} // l j = m} from
+    ⟨Equiv.ofFiberEquiv e, Equiv.ofFiberEquiv_map e⟩
+  intro m
+  refine Fintype.equivOfCardEq ?_
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · rw [Fintype.card_eq_zero_iff.mpr ⟨fun i ↦ i.1.2 i.2⟩,
+      Fintype.card_eq_zero_iff.mpr ⟨fun j ↦ j.1.2 j.2⟩]
+  · calc Fintype.card {i : {i // k i ≠ 0} // k i = m}
+        = Fintype.card {i // k i = m} := Fintype.card_congr <|
+          Equiv.subtypeSubtypeEquivSubtype (p := fun i ↦ k i ≠ 0) (q := fun i ↦ k i = m) (by omega)
+      _ = #{i | k i = m} := Fintype.card_subtype _
+      _ = #{j | l j = m} := h m hm
+      _ = Fintype.card {j // l j = m} := (Fintype.card_subtype _).symm
+      _ = Fintype.card {j : {j // l j ≠ 0} // l j = m} := Fintype.card_congr <|
+          (Equiv.subtypeSubtypeEquivSubtype (p := fun j ↦ l j ≠ 0) (q := fun j ↦ l j = m)
+            (by omega)).symm
+
+omit [Fact p.Prime] in
+/-- Matching the nontrivial summands of `⊕ⱼ q_{η_j}^{(p)}(p^{l_j})` with those of an exponent
+family `k` along `σ` rewrites the sum with the exponents `k`. -/
+private noncomputable def isometryPiOddCyclicOfEquiv (hp : Odd p) (k : ι → ℕ) (l : κ → ℕ)
+    (η : κ → ℤ) (σ : {i // k i ≠ 0} ≃ {j // l j ≠ 0}) (hσ : ∀ i, l (σ i) = k i) :
+    Isometry (pi fun j ↦ oddCyclic (p ^ l j) hp.pow (η j))
+      (pi fun i : {i // k i ≠ 0} ↦ oddCyclic (p ^ k i) hp.pow (η (σ i))) :=
+  (isometryPiOddCyclicNeZero hp l η).trans <|
+    (QuadraticMap.IsometryEquiv.piCongrLeft
+      (fun j : {j // l j ≠ 0} ↦ (oddCyclic (p ^ l j) hp.pow (η j)).quadratic) σ).symm.trans <|
+    QuadraticMap.IsometryEquiv.pi fun i ↦ Isometry.ofEq (by rw [hσ i])
+
+/-- Restricting a level product to the nontrivial summands does not change it. -/
+private theorem prod_filter_subtype_ne_zero (k : ι → ℕ) (f : ι → ℤ) {m : ℕ} (hm : 0 < m) :
+    ∏ i ∈ ({i | k i = m} : Finset {i // k i ≠ 0}), f i = ∏ i with k i = m, f i := by
+  rw [prod_filter, prod_filter, ← Fintype.prod_subtype_mul_prod_subtype (fun i ↦ k i ≠ 0)]
+  have hone : ∏ i : {i // ¬k i ≠ 0}, (if k i = m then f i else 1) = 1 :=
+    prod_eq_one fun i _ ↦ by
+      have := i.2
+      rw [ite_eq_right_iff]
+      omega
+  rw [hone, mul_one]
+
+/-- Matching the nontrivial summands along `σ` does not change the level products. -/
+private theorem prod_filter_equiv (k : ι → ℕ) (l : κ → ℕ) (f : κ → ℤ)
+    (σ : {i // k i ≠ 0} ≃ {j // l j ≠ 0}) (hσ : ∀ i, l (σ i) = k i) {m : ℕ} (hm : 0 < m) :
+    ∏ i ∈ ({i | k i = m} : Finset {i // k i ≠ 0}), f (σ i) = ∏ j with l j = m, f j := by
+  rw [← prod_filter_subtype_ne_zero l f hm, prod_filter, prod_filter]
+  exact Fintype.prod_equiv σ _ _ fun i ↦ by simp only [hσ i]
+
 /-- **Classification of orthogonal sums of odd cyclic generators at an odd prime.** For an odd
-prime `p`, exponents `k_i` and coefficients `θ_i`, `η_i` prime to `p`, the orthogonal sums
-`⊕ q_{θ_i}^{(p)}(p^{k_i})` and `⊕ q_{η_i}^{(p)}(p^{k_i})` are isometric exactly when, for every
-`m ≥ 1`, the Legendre symbols of the coefficients of the summands of order `p^m` have the same
-product. -/
-theorem nonempty_isometry_pi_oddCyclic_iff (hp : Odd p) (k : ι → ℕ) {θ η : ι → ℤ}
-    (hθ : ∀ i, IsCoprime (p : ℤ) (θ i)) (hη : ∀ i, IsCoprime (p : ℤ) (η i)) :
+prime `p`, exponents `k_i`, `l_j` and coefficients `θ_i`, `η_j` prime to `p`, the orthogonal sums
+`⊕ᵢ q_{θ_i}^{(p)}(p^{k_i})` and `⊕ⱼ q_{η_j}^{(p)}(p^{l_j})` are isometric exactly when, for every
+`m ≥ 1`, they have the same number of summands of order `p^m`, and the Legendre symbols of the
+coefficients of these summands have the same product. Summands of order `p^0 = 1` are trivial and
+impose nothing. -/
+theorem nonempty_isometry_pi_oddCyclic_iff (hp : Odd p) (k : ι → ℕ) (l : κ → ℕ) {θ : ι → ℤ}
+    {η : κ → ℤ} (hθ : ∀ i, IsCoprime (p : ℤ) (θ i)) (hη : ∀ j, IsCoprime (p : ℤ) (η j)) :
     Nonempty (Isometry (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ i))
-      (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (η i))) ↔
-      ∀ m, 0 < m → ∏ i with k i = m, legendreSym p (θ i) = ∏ i with k i = m, legendreSym p (η i) :=
-  ⟨fun ⟨f⟩ _ hm ↦ prod_legendreSym_eq_of_isometry_pi_oddCyclic hp k hθ hη f hm,
-    nonempty_isometry_pi_oddCyclic_of_prod_legendreSym_eq hp k hθ hη⟩
+      (pi fun j ↦ oddCyclic (p ^ l j) hp.pow (η j))) ↔
+      ∀ m, 0 < m → #{i | k i = m} = #{j | l j = m} ∧
+        ∏ i with k i = m, legendreSym p (θ i) = ∏ j with l j = m, legendreSym p (η j) := by
+  -- Once the numbers of summands of each order agree, both sides are sums over `{i // k i ≠ 0}`
+  -- with the exponents `k`, and the classification with equal exponents applies.
+  have key (hcard : ∀ m, 0 < m → #{i | k i = m} = #{j | l j = m}) :
+      Nonempty (Isometry (pi fun i ↦ oddCyclic (p ^ k i) hp.pow (θ i))
+        (pi fun j ↦ oddCyclic (p ^ l j) hp.pow (η j))) ↔
+        ∀ m, 0 < m →
+          ∏ i with k i = m, legendreSym p (θ i) = ∏ j with l j = m, legendreSym p (η j) := by
+    obtain ⟨σ, hσ⟩ := exists_equiv_of_card_filter_eq k l hcard
+    let D := isometryPiOddCyclicNeZero hp k θ
+    let G := isometryPiOddCyclicOfEquiv hp k l η σ hσ
+    have hprod (m : ℕ) (hm : 0 < m) :
+        (∏ i ∈ ({i | k i = m} : Finset {i // k i ≠ 0}), legendreSym p (θ i) =
+          ∏ i ∈ ({i | k i = m} : Finset {i // k i ≠ 0}), legendreSym p (η (σ i))) ↔
+          ∏ i with k i = m, legendreSym p (θ i) = ∏ j with l j = m, legendreSym p (η j) := by
+      rw [prod_filter_subtype_ne_zero k (fun i ↦ legendreSym p (θ i)) hm,
+        prod_filter_equiv k l (fun j ↦ legendreSym p (η j)) σ hσ hm]
+    constructor
+    · rintro ⟨f⟩ m hm
+      exact (hprod m hm).mp (prod_legendreSym_eq_of_isometry_pi_oddCyclic hp
+        (fun i : {i // k i ≠ 0} ↦ k i) (fun i ↦ hθ i) (fun i ↦ hη (σ i))
+        (D.symm.trans (f.trans G)) hm)
+    · intro h
+      obtain ⟨g⟩ := nonempty_isometry_pi_oddCyclic_of_prod_legendreSym_eq hp
+        (fun i : {i // k i ≠ 0} ↦ k i) (fun i ↦ hθ i) (fun i ↦ hη (σ i))
+        fun m hm ↦ (hprod m hm).mpr (h m hm)
+      exact ⟨D.trans (g.trans G.symm)⟩
+  constructor
+  · intro hf
+    -- The carrier of `oddCyclic (p ^ k) _ θ` is `ZMod (p ^ k)` by definition, so an isometry is in
+    -- particular an additive equivalence of products of cyclic groups.
+    have hcard (m : ℕ) (hm : 0 < m) : #{i | k i = m} = #{j | l j = m} :=
+      AddCommGroup.card_filter_eq_of_addEquiv_pi_zmod_pow (Fact.out : p.Prime).one_lt
+        hf.some.toLinearEquiv.toAddEquiv hm.ne'
+    exact fun m hm ↦ ⟨hcard m hm, (key hcard).mp hf m hm⟩
+  · intro h
+    exact (key fun m hm ↦ (h m hm).1).mpr fun m hm ↦ (h m hm).2
 
 end TauCeti.FiniteQuadraticModule
