@@ -153,24 +153,10 @@ private theorem map_orientationAt_inl_eq_inr
     (isOrientationPreservingAt_restrict o₁ _ (ρ₁ w₀)).of_comp hval₁ hρ₁d
   have hρ₂ : IsOrientationPreservingAt oP (o₂.restrict (puncture e₂)) ρ₂ w₀ :=
     (isOrientationPreservingAt_restrict o₂ _ (ρ₂ w₀)).of_comp hval₂ hρ₂d
-  obtain ⟨A, hA, hAo⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 hρ₁
-  obtain ⟨B, hB, hBo⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 hρ₂
-  -- The two transports of `oP` agree, being derivatives of the same map `P → M # N`.
-  have hd₁ : MDifferentiableAt I I (inl e₁ e₂) (ρ₁ w₀) :=
-    (isLocalDiffeomorph_inl h₁ h₂ d₁ d₂ (ρ₁ w₀)).mdifferentiableAt one_ne_zero
-  have hd₂ : MDifferentiableAt I I (inr e₁ e₂) (ρ₂ w₀) :=
-    (isLocalDiffeomorph_inr h₁ h₂ d₁ d₂ (ρ₂ w₀)).mdifferentiableAt one_ne_zero
-  have hL : A.toLinearEquiv.trans ((isLocalDiffeomorph_inl h₁ h₂ d₁ d₂
-        (ρ₁ w₀)).mfderivToContinuousLinearEquiv one_ne_zero).toLinearEquiv =
-      B.toLinearEquiv.trans ((isLocalDiffeomorph_inr h₁ h₂ d₁ d₂
-        (ρ₂ w₀)).mfderivToContinuousLinearEquiv one_ne_zero).toLinearEquiv := by
-    have h₁' := mfderiv_comp w₀ hd₁ hρ₁d
-    have h₂' := mfderiv_comp w₀ hd₂ hρ₂d
-    rw [← hA, hρ, h₂', ← hB] at h₁'
-    ext u
-    exact (congrArg (fun L ↦ L u) h₁').symm
-  rw [← hAo, ← hBo, ← _root_.Orientation.map_trans, ← _root_.Orientation.map_trans]
-  exact congrArg (fun L ↦ _root_.Orientation.map ι L (oP.orientationAt w₀)) hL
+  -- The two transports of `oP` agree, being derivatives of the same map `P → M # N`. The lemma is
+  -- elaborated before its type is matched with the goal, which names `ρ₁ w₀` and `ρ₂ w₀` unfolded.
+  exact (map_orientationAt_eq_of_comp_eventuallyEq (isLocalDiffeomorph_inl h₁ h₂ d₁ d₂)
+    (isLocalDiffeomorph_inr h₁ h₂ d₁ d₂) hρ₁ hρ₂ hρ₁d hρ₂d (.of_eq hρ) :)
 
 /-- **The orientation of the connected sum.** Let `o₁` and `o₂` be orientations of `M` and `N`,
 and let the balls `e₁` and `e₂` induce opposite orientations of `E`: `e₁` preserves and `e₂`

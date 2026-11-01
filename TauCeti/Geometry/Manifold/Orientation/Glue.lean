@@ -34,6 +34,9 @@ cobordisms, are oriented.
 * `TauCeti.Manifold.Orientation.isOrientationPreservingAt_glue_left`,
   `TauCeti.Manifold.Orientation.isOrientationPreservingAt_glue_right`: the two local
   diffeomorphisms preserve orientation from the glued orientation.
+* `TauCeti.Manifold.Orientation.map_orientationAt_eq_of_comp_eventuallyEq`: the hypothesis of
+  `glue` at a point of the overlap, when both pieces are read off a common oriented source by
+  orientation-preserving maps.
 
 ## References
 
@@ -149,5 +152,39 @@ theorem isOrientationPreservingAt_glue_right (y : N) :
     ((hg y).mfderivToContinuousLinearEquiv (NeZero.ne n)) rfl).2 ?_
   rw [glue, orientationAt_ofVectorBundleOrientation]
   exact (glueAt_right hf hg hg' h y).symm
+
+omit [IsManifold I 1 X] in
+/-- **Agreement through a common source.** Let `ρ₁ : P → M` and `ρ₂ : P → N` be differentiable at
+`w` and preserve orientation there from an orientation `oP` of `P` to `o₁` and `o₂`. If
+`f ∘ ρ₁ = g ∘ ρ₂` near `w`, then the derivatives of `f` and `g` carry `o₁` and `o₂` to the same
+tangent orientation at `f (ρ₁ w) = g (ρ₂ w)`. This is how the hypothesis of
+`TauCeti.Manifold.Orientation.glue` is checked on an overlap read off a common source. -/
+theorem map_orientationAt_eq_of_comp_eventuallyEq {E' H' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H']
+    {I' : ModelWithCorners ℝ E' H'} {P : Type*} [TopologicalSpace P] [ChartedSpace H' P]
+    [IsManifold I' 1 P] {oP : Orientation I' P ι}
+    {ρ₁ : P → M} {ρ₂ : P → N} {w : P} (hρ₁ : IsOrientationPreservingAt oP o₁ ρ₁ w)
+    (hρ₂ : IsOrientationPreservingAt oP o₂ ρ₂ w) (hρ₁' : MDifferentiableAt I' I ρ₁ w)
+    (hρ₂' : MDifferentiableAt I' I ρ₂ w) (hρ : f ∘ ρ₁ =ᶠ[𝓝 w] g ∘ ρ₂) :
+    _root_.Orientation.map ι
+        ((hf (ρ₁ w)).mfderivToContinuousLinearEquiv (NeZero.ne n)).toLinearEquiv
+        (o₁.orientationAt (ρ₁ w)) =
+      _root_.Orientation.map ι
+        ((hg (ρ₂ w)).mfderivToContinuousLinearEquiv (NeZero.ne n)).toLinearEquiv
+        (o₂.orientationAt (ρ₂ w)) := by
+  obtain ⟨A, hA, hAo⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 hρ₁
+  obtain ⟨B, hB, hBo⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 hρ₂
+  -- The two composites of derivatives are derivatives of the same map out of `P`.
+  have hL : A.toLinearEquiv.trans
+        ((hf (ρ₁ w)).mfderivToContinuousLinearEquiv (NeZero.ne n)).toLinearEquiv =
+      B.toLinearEquiv.trans
+        ((hg (ρ₂ w)).mfderivToContinuousLinearEquiv (NeZero.ne n)).toLinearEquiv := by
+    have h₁ := mfderiv_comp w ((hf (ρ₁ w)).mdifferentiableAt (NeZero.ne n)) hρ₁'
+    have h₂ := mfderiv_comp w ((hg (ρ₂ w)).mdifferentiableAt (NeZero.ne n)) hρ₂'
+    rw [hρ.mfderiv_eq, h₂, ← hA, ← hB] at h₁
+    ext v
+    exact (congrArg (fun L ↦ L v) h₁).symm
+  rw [← hAo, ← hBo, ← _root_.Orientation.map_trans, ← _root_.Orientation.map_trans]
+  exact congrArg (fun L ↦ _root_.Orientation.map ι L (oP.orientationAt w)) hL
 
 end TauCeti.Manifold.Orientation

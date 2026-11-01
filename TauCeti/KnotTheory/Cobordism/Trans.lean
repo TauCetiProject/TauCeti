@@ -8,6 +8,7 @@ module
 public import TauCeti.KnotTheory.Cobordism.Basic
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 
+import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
@@ -209,19 +210,23 @@ private def upperPiece : TopologicalSpace.Opens S₂.carrier :=
   ⟨{y | -topWidth S₁ < (S₂.toFun y).2},
     isOpen_lt continuous_const (continuous_snd.comp S₂.isSmoothEmbedding.isEmbedding.continuous)⟩
 
+private theorem mem_lowerPiece {x : S₁.carrier} :
+    x ∈ lowerPiece S₁ S₂ ↔ (S₁.toFun x).2 < 1 + botWidth S₂ :=
+  Iff.rfl
+
+private theorem mem_upperPiece {y : S₂.carrier} :
+    y ∈ upperPiece S₁ S₂ ↔ -topWidth S₁ < (S₂.toFun y).2 :=
+  Iff.rfl
+
 private theorem mem_lowerPiece_iff {x : S₁.carrier} :
     x ∈ lowerPiece S₁ S₂ ↔ (lower S₁ x).2 < (1 + botWidth S₂) / 2 := by
-  rw [lower_snd]
-  refine ⟨fun h ↦ ?_, fun h ↦ (by linarith : (S₁.toFun x).2 < 1 + botWidth S₂)⟩
-  have h' : (S₁.toFun x).2 < 1 + botWidth S₂ := h
-  linarith
+  rw [mem_lowerPiece, lower_snd]
+  constructor <;> intro h <;> linarith
 
 private theorem mem_upperPiece_iff {y : S₂.carrier} :
     y ∈ upperPiece S₁ S₂ ↔ (1 - topWidth S₁) / 2 < (upper S₂ y).2 := by
-  rw [upper_snd]
-  refine ⟨fun h ↦ ?_, fun h ↦ (by linarith : -topWidth S₁ < (S₂.toFun y).2)⟩
-  have h' : -topWidth S₁ < (S₂.toFun y).2 := h
-  linarith
+  rw [mem_upperPiece, upper_snd]
+  constructor <;> intro h <;> linarith
 
 /-- The disjoint union of the two parts of `S₁` and `S₂` used for the composite. -/
 private abbrev Pieces : Type :=
@@ -341,83 +346,50 @@ private theorem isOpenEmbedding_proj_inr : IsOpenEmbedding (proj S₁ S₂ ∘ S
 
 /-- The quotient map is a local homeomorphism: it is an open embedding on each part. -/
 private theorem isLocalHomeomorph_proj : IsLocalHomeomorph (proj S₁ S₂) := by
-  refine isLocalHomeomorph_iff_isOpenEmbedding_restrict.2 fun z ↦ ?_
+  refine isLocalHomeomorph_iff_isLocalHomeomorphOn_univ.2 fun z _ ↦ ?_
   rcases z with x | y
-  · refine ⟨range Sum.inl, IsOpenEmbedding.inl.isOpen_range.mem_nhds (mem_range_self x), ?_⟩
-    let e := (IsEmbedding.inl (X := lowerPiece S₁ S₂) (Y := upperPiece S₁ S₂)).toHomeomorph
-    convert (isOpenEmbedding_proj_inl S₁ S₂).comp e.symm.isOpenEmbedding using 1
-    funext u
-    simp only [domRestrict_apply, comp_apply]
-    congr 1
-    exact (congrArg Subtype.val (e.apply_symm_apply u)).symm
-  · refine ⟨range Sum.inr, IsOpenEmbedding.inr.isOpen_range.mem_nhds (mem_range_self y), ?_⟩
-    let e := (IsEmbedding.inr (X := lowerPiece S₁ S₂) (Y := upperPiece S₁ S₂)).toHomeomorph
-    convert (isOpenEmbedding_proj_inr S₁ S₂).comp e.symm.isOpenEmbedding using 1
-    funext u
-    simp only [domRestrict_apply, comp_apply]
-    congr 1
-    exact (congrArg Subtype.val (e.apply_symm_apply u)).symm
+  · exact (isOpenEmbedding_proj_inl S₁ S₂).isLocalHomeomorph.isLocalHomeomorphOn.of_comp_right
+      IsOpenEmbedding.inl.isLocalHomeomorph.isLocalHomeomorphOn _ ⟨x, mem_univ x, rfl⟩
+  · exact (isOpenEmbedding_proj_inr S₁ S₂).isLocalHomeomorph.isLocalHomeomorphOn.of_comp_right
+      IsOpenEmbedding.inr.isLocalHomeomorph.isLocalHomeomorphOn _ ⟨y, mem_univ y, rfl⟩
 
-/-- A point `x` of the lower part and a point `y` of the upper part with the same image are related
-by a map from the lower part to the upper part, smooth at `x`, under which the two halves agree
-near `x`. -/
-private theorem exists_deck_lower_upper {x : lowerPiece S₁ S₂} {y : upperPiece S₁ S₂}
-    (h : lower S₁ x = upper S₂ y) :
-    ∃ τ : lowerPiece S₁ S₂ → upperPiece S₁ S₂,
-      ContMDiffAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ τ x ∧ τ x = y ∧
-        (fun q ↦ upper S₂ (τ q)) =ᶠ[𝓝 x] fun q ↦ lower S₁ q := by
-  have hf : IsImmersionAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞
-      (upper S₂ ∘ ((↑) : upperPiece S₁ S₂ → S₂.carrier)) y :=
-    isImmersionAt_comp_isLocalDiffeomorphAt (isLocalDiffeomorph_subtype_val y)
-      ((isSmoothEmbedding_upper S₂).isImmersion.isImmersionAt _)
-  have hg : ContMDiffAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞
+private theorem isImmersionAt_lower_val (x : lowerPiece S₁ S₂) :
+    IsImmersionAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞
       (lower S₁ ∘ ((↑) : lowerPiece S₁ S₂ → S₁.carrier)) x :=
-    ((isSmoothEmbedding_lower S₁).isImmersion.contMDiff.comp contMDiff_subtype_val).contMDiffAt
-  -- Near `x` the lower part stays above height `(1 - topWidth S₁) / 2`, where it is the
-  -- cylinder over `K₁`, which the upper part also covers.
-  have hopen : IsOpen {q : lowerPiece S₁ S₂ | (1 - topWidth S₁) / 2 < (lower S₁ q).2} :=
-    isOpen_lt continuous_const (continuous_snd.comp
-      ((isSmoothEmbedding_lower S₁).isEmbedding.continuous.comp continuous_subtype_val))
-  have hx : (1 - topWidth S₁) / 2 < (lower S₁ x).2 := h ▸ (mem_upperPiece_iff S₁ S₂).1 y.2
-  have hrange : ∀ᶠ q in 𝓝 x, (lower S₁ ∘ ((↑) : lowerPiece S₁ S₂ → S₁.carrier)) q ∈
-      range (upper S₂ ∘ ((↑) : upperPiece S₁ S₂ → S₂.carrier)) := by
-    filter_upwards [hopen.mem_nhds hx] with q hq
-    obtain ⟨y', hy'⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ hq.le
-      ((mem_lowerPiece_iff S₁ S₂).1 q.2).le).1 (mem_range_self (q : S₁.carrier))
-    exact ⟨⟨y', (mem_upperPiece_iff S₁ S₂).2 (hy' ▸ hq)⟩, hy'⟩
-  exact hf.exists_contMDiffAt_comp_eventuallyEq
-    ((isSmoothEmbedding_upper S₂).isEmbedding.comp IsEmbedding.subtypeVal) hg h hrange
+  isImmersionAt_comp_isLocalDiffeomorphAt (isLocalDiffeomorph_subtype_val x)
+    ((isSmoothEmbedding_lower S₁).isImmersion.isImmersionAt _)
 
-/-- A point `y` of the upper part and a point `x` of the lower part with the same image are related
-by a map from the upper part to the lower part, smooth at `y`, under which the two halves agree
-near `y`. -/
-private theorem exists_deck_upper_lower {x : lowerPiece S₁ S₂} {y : upperPiece S₁ S₂}
-    (h : lower S₁ x = upper S₂ y) :
-    ∃ τ : upperPiece S₁ S₂ → lowerPiece S₁ S₂,
-      ContMDiffAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ τ y ∧ τ y = x ∧
-        (fun q ↦ lower S₁ (τ q)) =ᶠ[𝓝 y] fun q ↦ upper S₂ q := by
-  have hf : IsImmersionAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞
-      (lower S₁ ∘ ((↑) : lowerPiece S₁ S₂ → S₁.carrier)) x :=
-    isImmersionAt_comp_isLocalDiffeomorphAt (isLocalDiffeomorph_subtype_val x)
-      ((isSmoothEmbedding_lower S₁).isImmersion.isImmersionAt _)
-  have hg : ContMDiffAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞
+private theorem isImmersionAt_upper_val (y : upperPiece S₁ S₂) :
+    IsImmersionAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞
       (upper S₂ ∘ ((↑) : upperPiece S₁ S₂ → S₂.carrier)) y :=
-    ((isSmoothEmbedding_upper S₂).isImmersion.contMDiff.comp contMDiff_subtype_val).contMDiffAt
-  -- Near `y` the upper part stays below height `(1 + botWidth S₂) / 2`, where it is the
-  -- cylinder over `K₁`, which the lower part also covers.
-  have hopen : IsOpen {q : upperPiece S₁ S₂ | (upper S₂ q).2 < (1 + botWidth S₂) / 2} :=
-    isOpen_lt (continuous_snd.comp
-      ((isSmoothEmbedding_upper S₂).isEmbedding.continuous.comp continuous_subtype_val))
-      continuous_const
-  have hy : (upper S₂ y).2 < (1 + botWidth S₂) / 2 := h ▸ (mem_lowerPiece_iff S₁ S₂).1 x.2
-  have hrange : ∀ᶠ q in 𝓝 y, (upper S₂ ∘ ((↑) : upperPiece S₁ S₂ → S₂.carrier)) q ∈
-      range (lower S₁ ∘ ((↑) : lowerPiece S₁ S₂ → S₁.carrier)) := by
-    filter_upwards [hopen.mem_nhds hy] with q hq
-    obtain ⟨x', hx'⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂
-      ((mem_upperPiece_iff S₁ S₂).1 q.2).le hq.le).2 (mem_range_self (q : S₂.carrier))
-    exact ⟨⟨x', (mem_lowerPiece_iff S₁ S₂).2 (hx' ▸ hq)⟩, hx'⟩
-  exact hf.exists_contMDiffAt_comp_eventuallyEq
-    ((isSmoothEmbedding_lower S₁).isEmbedding.comp IsEmbedding.subtypeVal) hg h.symm hrange
+  isImmersionAt_comp_isLocalDiffeomorphAt (isLocalDiffeomorph_subtype_val y)
+    ((isSmoothEmbedding_upper S₂).isImmersion.isImmersionAt _)
+
+private theorem contMDiff_piecesMap :
+    ContMDiff ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞ (piecesMap S₁ S₂) :=
+  ((isSmoothEmbedding_lower S₁).isImmersion.contMDiff.comp contMDiff_subtype_val).sumElim
+    ((isSmoothEmbedding_upper S₂).isImmersion.contMDiff.comp contMDiff_subtype_val)
+
+/-- Let `ι : W → Pieces S₁ S₂` include a part `W`, so that `ι` followed by the quotient map is an
+open embedding, and let `ι` followed by the embedding into `Sⁿ × ℝ` be an immersion at `w`. Then a
+point `z` of the parts with the same image in the composite as `ι w` is sent to `w` by a map to
+`W`, smooth at `z`, under which the composite agrees with the quotient map near `z`. -/
+private theorem exists_deck {W : Type}
+    [TopologicalSpace W] [ChartedSpace (ModelProd (EuclideanSpace ℝ (Fin 1)) ℝ) W]
+    {ι : W → Pieces S₁ S₂} (hι : IsOpenEmbedding (proj S₁ S₂ ∘ ι)) {w : W}
+    (hw : IsImmersionAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞ (piecesMap S₁ S₂ ∘ ι) w)
+    {z : Pieces S₁ S₂} (h : proj S₁ S₂ z = proj S₁ S₂ (ι w)) :
+    ∃ τ : Pieces S₁ S₂ → W, ContMDiffAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ τ z ∧ τ z = w ∧
+      proj S₁ S₂ ∘ ι ∘ τ =ᶠ[𝓝 z] proj S₁ S₂ := by
+  -- Near `z` the quotient map stays in the open range of the part `W`.
+  have hrange : ∀ᶠ z' in 𝓝 z, piecesMap S₁ S₂ z' ∈ range (piecesMap S₁ S₂ ∘ ι) := by
+    filter_upwards [(continuous_proj S₁ S₂).continuousAt.preimage_mem_nhds
+      (hι.isOpen_range.mem_nhds ⟨w, h.symm⟩)] with z' ⟨w', hw'⟩
+    exact ⟨w', congrArg (stackMap S₁ S₂) hw'⟩
+  obtain ⟨τ, hτ, hτw, hτeq⟩ := hw.exists_contMDiffAt_comp_eventuallyEq
+    ((isEmbedding_stackMap S₁ S₂).comp hι.isEmbedding) ((contMDiff_piecesMap S₁ S₂) z)
+    ((proj_eq_proj_iff S₁ S₂).1 h) hrange
+  exact ⟨τ, hτ, hτw, hτeq.mono fun _ hq ↦ (proj_eq_proj_iff S₁ S₂).2 hq⟩
 
 /-- The quotient map has smooth local deck transformations: two points of the parts with the same
 image in the composite are related by a map smooth at the first, commuting with the quotient
@@ -426,24 +398,13 @@ private theorem proj_deck (z w : Pieces S₁ S₂) (h : proj S₁ S₂ z = proj 
     ∃ φ : Pieces S₁ S₂ → Pieces S₁ S₂,
       ContMDiffAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ φ z ∧ φ z = w ∧
         proj S₁ S₂ ∘ φ =ᶠ[𝓝 z] proj S₁ S₂ := by
-  have hw := (proj_eq_proj_iff S₁ S₂).1 h
-  rcases z with x | y <;> rcases w with x' | y'
-  · obtain rfl : x = x' := Subtype.ext ((isSmoothEmbedding_lower S₁).isEmbedding.injective hw)
-    exact ⟨id, contMDiffAt_id, rfl, .rfl⟩
-  · obtain ⟨τ, hτ, rfl, hτeq⟩ := exists_deck_lower_upper S₁ S₂ hw
-    refine ⟨Sum.elim (Sum.inr ∘ τ) Sum.inr,
-      ((isLocalDiffeomorph_sumInl x).contMDiffAt_comp_iff le_rfl).1
-        (ContMDiff.inr.contMDiffAt.comp x hτ), rfl, ?_⟩
-    rw [← IsOpenEmbedding.inl.map_nhds_eq]
-    exact Filter.eventually_map.2 (hτeq.mono fun q hq ↦ (proj_eq_proj_iff S₁ S₂).2 hq)
-  · obtain ⟨τ, hτ, rfl, hτeq⟩ := exists_deck_upper_lower S₁ S₂ hw.symm
-    refine ⟨Sum.elim Sum.inl (Sum.inl ∘ τ),
-      ((isLocalDiffeomorph_sumInr y).contMDiffAt_comp_iff le_rfl).1
-        (ContMDiff.inl.contMDiffAt.comp y hτ), rfl, ?_⟩
-    rw [← IsOpenEmbedding.inr.map_nhds_eq]
-    exact Filter.eventually_map.2 (hτeq.mono fun q hq ↦ (proj_eq_proj_iff S₁ S₂).2 hq)
-  · obtain rfl : y = y' := Subtype.ext ((isSmoothEmbedding_upper S₂).isEmbedding.injective hw)
-    exact ⟨id, contMDiffAt_id, rfl, .rfl⟩
+  rcases w with x | y
+  · obtain ⟨τ, hτ, rfl, hτeq⟩ :=
+      exists_deck S₁ S₂ (isOpenEmbedding_proj_inl S₁ S₂) (isImmersionAt_lower_val S₁ S₂ x) h
+    exact ⟨Sum.inl ∘ τ, ContMDiff.inl.contMDiffAt.comp z hτ, rfl, hτeq⟩
+  · obtain ⟨τ, hτ, rfl, hτeq⟩ :=
+      exists_deck S₁ S₂ (isOpenEmbedding_proj_inr S₁ S₂) (isImmersionAt_upper_val S₁ S₂ y) h
+    exact ⟨Sum.inr ∘ τ, ContMDiff.inr.contMDiffAt.comp z hτ, rfl, hτeq⟩
 
 /-- The charts of the surface of the composite, pushed forward from the two parts. -/
 private instance : ChartedSpace (ModelProd (EuclideanSpace ℝ (Fin 1)) ℝ) (Stack S₁ S₂) :=
@@ -472,18 +433,12 @@ private theorem isSmoothEmbedding_stackMap :
   refine ⟨isImmersion_iff_forall_isImmersionAt.2 fun t ↦ ?_, isEmbedding_stackMap S₁ S₂⟩
   obtain ⟨z, rfl⟩ := proj_surjective S₁ S₂ t
   rcases z with x | y
-  · have h : IsImmersionAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞
-        (lower S₁ ∘ ((↑) : lowerPiece S₁ S₂ → S₁.carrier)) x :=
-      isImmersionAt_comp_isLocalDiffeomorphAt (isLocalDiffeomorph_subtype_val x)
-        ((isSmoothEmbedding_lower S₁).isImmersion.isImmersionAt _)
-    exact isImmersionAt_of_comp_isLocalDiffeomorphAt (f := stackMap S₁ S₂)
-      (g := proj S₁ S₂ ∘ Sum.inl) (isLocalDiffeomorph_proj_inl S₁ S₂ x) h
-  · have h : IsImmersionAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) ∞
-        (upper S₂ ∘ ((↑) : upperPiece S₁ S₂ → S₂.carrier)) y :=
-      isImmersionAt_comp_isLocalDiffeomorphAt (isLocalDiffeomorph_subtype_val y)
-        ((isSmoothEmbedding_upper S₂).isImmersion.isImmersionAt _)
-    exact isImmersionAt_of_comp_isLocalDiffeomorphAt (f := stackMap S₁ S₂)
-      (g := proj S₁ S₂ ∘ Sum.inr) (isLocalDiffeomorph_proj_inr S₁ S₂ y) h
+  · exact isImmersionAt_of_comp_isLocalDiffeomorphAt (f := stackMap S₁ S₂)
+      (g := proj S₁ S₂ ∘ Sum.inl) (isLocalDiffeomorph_proj_inl S₁ S₂ x)
+      (isImmersionAt_lower_val S₁ S₂ x)
+  · exact isImmersionAt_of_comp_isLocalDiffeomorphAt (f := stackMap S₁ S₂)
+      (g := proj S₁ S₂ ∘ Sum.inr) (isLocalDiffeomorph_proj_inr S₁ S₂ y)
+      (isImmersionAt_upper_val S₁ S₂ y)
 
 /-- The image of the composite: the lower half below height `(1 + botWidth S₂) / 2` and the upper
 half above height `(1 - topWidth S₁) / 2`. -/
@@ -712,12 +667,15 @@ private theorem proj_inr_comp_transition :
 private theorem contMDiff_transition :
     ContMDiff ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞ (transition S₁ S₂) := by
   intro w
-  obtain ⟨τ, hτ, hτw, hτeq⟩ := exists_deck_lower_upper S₁ S₂ (upper_transition S₁ S₂ w).symm
-  refine (hτ.comp w contMDiff_subtype_val.contMDiffAt).congr_of_eventuallyEq ?_
-  filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds hτeq] with w' hw'
-  exact upper_injective S₁ S₂ ((upper_transition S₁ S₂ w').trans hw'.symm)
-
-private theorem infty_ne_zero : (∞ : ℕ∞ω) ≠ 0 := by simp
+  have hT := congrFun (proj_inr_comp_transition S₁ S₂)
+  obtain ⟨τ, hτ, -, hτeq⟩ := exists_deck S₁ S₂ (isOpenEmbedding_proj_inr S₁ S₂)
+    (isImmersionAt_upper_val S₁ S₂ (transition S₁ S₂ w)) (hT w).symm
+  have hinl : ContMDiff ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) ∞
+      (Sum.inl ∘ Subtype.val : overlap S₁ S₂ → Pieces S₁ S₂) :=
+    ContMDiff.inl.comp contMDiff_subtype_val
+  refine (hτ.comp w (hinl w)).congr_of_eventuallyEq ?_
+  filter_upwards [hinl.continuous.continuousAt.preimage_mem_nhds hτeq] with w' hw'
+  exact (isOpenEmbedding_proj_inr S₁ S₂).injective ((hT w').trans hw'.symm)
 
 private theorem isInvertible_mfderiv_transition (w : overlap S₁ S₂) :
     (mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 1).prod 𝓘(ℝ)) (transition S₁ S₂) w).IsInvertible := by
@@ -728,14 +686,14 @@ private theorem isInvertible_mfderiv_transition (w : overlap S₁ S₂) :
   -- derivatives of local diffeomorphisms.
   have heq := (Filter.EventuallyEq.of_eq (proj_inr_comp_transition S₁ S₂)
     (l := 𝓝 w)).mfderiv_eq (I := (𝓡 1).prod 𝓘(ℝ)) (I' := (𝓡 1).prod 𝓘(ℝ))
-  rw [mfderiv_comp w (h₂.mdifferentiableAt infty_ne_zero)
-      ((contMDiff_transition S₁ S₂ w).mdifferentiableAt infty_ne_zero),
-    mfderiv_comp w (h₁.mdifferentiableAt infty_ne_zero) (hv.mdifferentiableAt infty_ne_zero),
-    ← h₂.mfderivToContinuousLinearEquiv_coe infty_ne_zero] at heq
+  rw [mfderiv_comp w (h₂.mdifferentiableAt (NeZero.ne ∞))
+      ((contMDiff_transition S₁ S₂ w).mdifferentiableAt (NeZero.ne ∞)),
+    mfderiv_comp w (h₁.mdifferentiableAt (NeZero.ne ∞)) (hv.mdifferentiableAt (NeZero.ne ∞)),
+    ← h₂.mfderivToContinuousLinearEquiv_coe (NeZero.ne ∞)] at heq
   rw [← ContinuousLinearMap.isInvertible_equiv_comp
-      (e := h₂.mfderivToContinuousLinearEquiv infty_ne_zero),
+      (e := h₂.mfderivToContinuousLinearEquiv (NeZero.ne ∞)),
     heq, ContinuousLinearMap.isInvertible_equiv_comp]
-  exact (h₁.isInvertible_mfderiv infty_ne_zero).comp (hv.isInvertible_mfderiv infty_ne_zero)
+  exact (h₁.isInvertible_mfderiv (NeZero.ne ∞)).comp (hv.isInvertible_mfderiv (NeZero.ne ∞))
 
 /-- The index type of orientations of surfaces modelled on `ℝ¹ × ℝ`. -/
 private abbrev OrientationIndex : Type :=
@@ -783,7 +741,7 @@ private theorem exists_transitionPreserves : ∃ o₁ o₂, TransitionPreserves 
   obtain ⟨o₁⟩ := S₁.orientable.nonempty_orientation
   obtain ⟨o₂⟩ := S₂.orientable.nonempty_orientation
   have hT := (contMDiff_transition S₁ S₂).of_le (m := 1)
-    (ENat.one_le_iff_ne_zero_withTop.mpr infty_ne_zero)
+    (ENat.one_le_iff_ne_zero_withTop.mpr (NeZero.ne ∞))
   rcases ((o₁.restrict (lowerPiece S₁ S₂)).restrict (overlap S₁ S₂)).eq_or_eq_neg
     ((o₂.restrict (upperPiece S₁ S₂)).pullback hT (isInvertible_mfderiv_transition S₁ S₂)
       o₂.card_eq) with h | h
@@ -794,47 +752,10 @@ private theorem exists_transitionPreserves : ∃ o₁ o₂, TransitionPreserves 
     rw [h, ← pullback_neg]
     exact isOrientationPreservingAt_pullback _ _ _ _ w
 
-variable {S₁ S₂}
-
-/-- If the transition preserves orientation, the inclusions of the two parts into the composite
-carry `o₁` and `o₂` to the same tangent orientation at a point of the overlap. -/
-private theorem map_orientationAt_inl_eq_inr
-    {o₁ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (lowerPiece S₁ S₂) OrientationIndex}
-    {o₂ : Manifold.Orientation ((𝓡 1).prod 𝓘(ℝ)) (upperPiece S₁ S₂) OrientationIndex}
-    (ho : TransitionPreserves S₁ S₂ o₁ o₂) (w : overlap S₁ S₂) :
-    _root_.Orientation.map OrientationIndex ((isLocalDiffeomorph_proj_inl S₁ S₂
-        w).mfderivToContinuousLinearEquiv infty_ne_zero).toLinearEquiv (o₁.orientationAt w) =
-      _root_.Orientation.map OrientationIndex ((isLocalDiffeomorph_proj_inr S₁ S₂
-        (transition S₁ S₂ w)).mfderivToContinuousLinearEquiv infty_ne_zero).toLinearEquiv
-        (o₂.orientationAt (transition S₁ S₂ w)) := by
-  obtain ⟨A, hA, hAo⟩ := (isOrientationPreservingAt_iff _ _ _ _).1
-    (isOrientationPreservingAt_restrict o₁ (overlap S₁ S₂) w)
-  obtain ⟨B, hB, hBo⟩ := (isOrientationPreservingAt_iff _ _ _ _).1 (ho w)
-  -- The two composites of derivatives are the derivatives of the same map out of the overlap.
-  have hL : A.toLinearEquiv.trans ((isLocalDiffeomorph_proj_inl S₁ S₂
-        w).mfderivToContinuousLinearEquiv infty_ne_zero).toLinearEquiv =
-      B.toLinearEquiv.trans ((isLocalDiffeomorph_proj_inr S₁ S₂
-        (transition S₁ S₂ w)).mfderivToContinuousLinearEquiv infty_ne_zero).toLinearEquiv := by
-    have h₁ := mfderiv_comp w
-      ((isLocalDiffeomorph_proj_inl S₁ S₂ w).mdifferentiableAt infty_ne_zero)
-      ((isLocalDiffeomorph_subtype_val (n := ∞) w).mdifferentiableAt infty_ne_zero)
-    have h₂ := mfderiv_comp w
-      ((isLocalDiffeomorph_proj_inr S₁ S₂ (transition S₁ S₂ w)).mdifferentiableAt infty_ne_zero)
-      ((contMDiff_transition S₁ S₂ w).mdifferentiableAt infty_ne_zero)
-    rw [← proj_inr_comp_transition, h₂, ← hA, ← hB] at h₁
-    ext v
-    exact (congrArg (fun L ↦ L v) h₁).symm
-  rw [← hAo, ← hBo, ← _root_.Orientation.map_trans, ← _root_.Orientation.map_trans]
-  exact congrArg (fun L ↦ _root_.Orientation.map OrientationIndex L
-    ((o₁.restrict (overlap S₁ S₂)).orientationAt w)) hL
-
-variable (S₁ S₂)
-
 /-- The surface of the composite is orientable: the orientations of the two parts, chosen to agree
 on the overlap, glue to an orientation of the composite. -/
 private instance : Orientable ((𝓡 1).prod 𝓘(ℝ)) (Stack S₁ S₂) := by
   obtain ⟨o₁, o₂, ho⟩ := exists_transitionPreserves S₁ S₂
-  have : NeZero (∞ : ℕ∞ω) := ⟨infty_ne_zero⟩
   have hcover : range (proj S₁ S₂ ∘ Sum.inl) ∪ range (proj S₁ S₂ ∘ Sum.inr) = univ := by
     refine eq_univ_of_forall fun t ↦ ?_
     obtain ⟨x | y, rfl⟩ := proj_surjective S₁ S₂ t
@@ -850,7 +771,12 @@ private instance : Orientable ((𝓡 1).prod 𝓘(ℝ)) (Stack S₁ S₂) := by
     exact (mem_upperPiece_iff S₁ S₂).1 y.2
   obtain rfl : transition S₁ S₂ ⟨x, hx⟩ = y :=
     upper_injective S₁ S₂ ((upper_transition S₁ S₂ ⟨x, hx⟩).trans hw)
-  exact map_orientationAt_inl_eq_inr ho ⟨x, hx⟩
+  -- Both are read off the overlap, by the inclusion into the lower part and by the transition.
+  exact (map_orientationAt_eq_of_comp_eventuallyEq (isLocalDiffeomorph_proj_inl S₁ S₂)
+    (isLocalDiffeomorph_proj_inr S₁ S₂) (isOrientationPreservingAt_restrict o₁ _ ⟨x, hx⟩)
+    (ho ⟨x, hx⟩) ((isLocalDiffeomorph_subtype_val _).mdifferentiableAt (NeZero.ne ∞))
+    ((contMDiff_transition S₁ S₂ _).mdifferentiableAt (NeZero.ne ∞))
+    (.of_eq (proj_inr_comp_transition S₁ S₂).symm) :)
 
 /-! ### The composite -/
 
