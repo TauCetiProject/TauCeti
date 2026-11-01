@@ -69,8 +69,8 @@ theorem coordinateCutoff_apply (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (x : H)
     HilbertBasis.repr_apply_apply] using
     (b.orthonormal.comp Fin.val Fin.val_injective).adjoint_synthesisMapIsometry_apply x i
 
-/-- The adjoint of finite-coordinate inclusion is coordinate restriction.
-Not a simp rule: unfolding `coordinateCutoff` uses the opposite direction. -/
+/-- The adjoint of finite-coordinate inclusion is coordinate restriction. -/
+@[simp]
 theorem adjoint_finiteInclusion (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (b.finiteInclusion n).toContinuousLinearMap.adjoint = b.coordinateCutoff n :=
   (rfl)
@@ -79,7 +79,7 @@ theorem adjoint_finiteInclusion (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
 @[simp]
 theorem adjoint_coordinateCutoff (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (b.coordinateCutoff n).adjoint = (b.finiteInclusion n).toContinuousLinearMap := by
-  simp [coordinateCutoff]
+  simp only [coordinateCutoff, ContinuousLinearMap.adjoint_adjoint]
 
 /-- Restricting an included vector recovers all its finite coordinates. -/
 @[simp]
@@ -91,29 +91,32 @@ theorem coordinateCutoff_finiteInclusion (b : HilbertBasis ℕ 𝕜 H) (n : ℕ)
 /-- Coordinate restriction is contractive. -/
 theorem norm_coordinateCutoff_le (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     ‖b.coordinateCutoff n‖ ≤ 1 := by
-  simp [coordinateCutoff, LinearIsometry.norm_toContinuousLinearMap]
+  rw [coordinateCutoff, ContinuousLinearMap.adjoint.norm_map]
+  exact (b.finiteInclusion n).norm_toContinuousLinearMap_le
 
 /-- The orthogonal projection retaining the first `n + 1` basis coordinates. -/
 noncomputable def finiteProjection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) : H →L[𝕜] H :=
   (b.finiteInclusion n).toContinuousLinearMap ∘L b.coordinateCutoff n
 
-/-- Inclusion composed with its adjoint is the finite-coordinate projection. -/
+/-- Inclusion composed with coordinate restriction is the finite-coordinate projection. -/
 @[simp]
-theorem finiteInclusion_comp_adjoint_finiteInclusion (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
-    (b.finiteInclusion n).toContinuousLinearMap ∘L
-      (b.finiteInclusion n).toContinuousLinearMap.adjoint = b.finiteProjection n :=
+theorem finiteInclusion_comp_coordinateCutoff (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    (b.finiteInclusion n).toContinuousLinearMap ∘L b.coordinateCutoff n =
+      b.finiteProjection n :=
   (rfl)
 
 /-- The projection is the partial Hilbert expansion. -/
 theorem finiteProjection_apply (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (x : H) :
     b.finiteProjection n x = ∑ i : Fin (n + 1), b.repr x i • b i := by
-  simp [finiteProjection, finiteInclusion_apply]
+  simp only [finiteProjection, ContinuousLinearMap.comp_apply,
+    LinearIsometry.coe_toContinuousLinearMap, finiteInclusion_apply, coordinateCutoff_apply]
 
 /-- Including the restricted coordinates of a vector gives its finite-coordinate projection. -/
 @[simp]
 theorem finiteInclusion_coordinateCutoff (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (x : H) :
     b.finiteInclusion n (b.coordinateCutoff n x) = b.finiteProjection n x := by
-  simp [finiteProjection]
+  simp only [finiteProjection, ContinuousLinearMap.comp_apply,
+    LinearIsometry.coe_toContinuousLinearMap]
 
 /-- Projection retains precisely the chosen coordinates. -/
 @[simp]
@@ -226,7 +229,8 @@ theorem finiteSection_id (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
 @[simp]
 theorem adjoint_finiteSection (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (T.finiteSection b n).adjoint = T.adjoint.finiteSection b n := by
-  simp [finiteSection, HilbertBasis.coordinateCutoff, adjoint_comp, comp_assoc]
+  simp only [finiteSection, adjoint_comp, HilbertBasis.adjoint_coordinateCutoff,
+    HilbertBasis.adjoint_finiteInclusion, comp_assoc]
 
 /-- Finite-section operator norms are bounded by the original operator norm. -/
 theorem norm_finiteSection_le (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
@@ -303,7 +307,7 @@ theorem norm_zeroExtendedFiniteSection_le (T : H →L[𝕜] H)
 theorem zeroExtendedFiniteSection_eq (T : H →L[𝕜] H)
     (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     T.zeroExtendedFiniteSection b n = b.finiteProjection n ∘L T ∘L b.finiteProjection n := by
-  simp [zeroExtendedFiniteSection, finiteSection, HilbertBasis.finiteProjection, comp_assoc]
+  simp only [zeroExtendedFiniteSection, finiteSection, HilbertBasis.finiteProjection, comp_assoc]
 
 /-- Restricting a zero extension to finite coordinates recovers its finite section. -/
 @[simp]
@@ -318,7 +322,8 @@ theorem coordinateCutoff_zeroExtendedFiniteSection (T : H →L[𝕜] H)
 theorem adjoint_zeroExtendedFiniteSection (T : H →L[𝕜] H)
     (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (T.zeroExtendedFiniteSection b n).adjoint = T.adjoint.zeroExtendedFiniteSection b n := by
-  simp [zeroExtendedFiniteSection, HilbertBasis.coordinateCutoff, adjoint_comp, comp_assoc]
+  simp only [zeroExtendedFiniteSection, adjoint_comp, adjoint_finiteSection,
+    HilbertBasis.adjoint_coordinateCutoff, HilbertBasis.adjoint_finiteInclusion, comp_assoc]
 
 /-- Zero extensions of finite sections converge strongly to the original bounded operator. -/
 theorem tendsto_zeroExtendedFiniteSection (T : H →L[𝕜] H)

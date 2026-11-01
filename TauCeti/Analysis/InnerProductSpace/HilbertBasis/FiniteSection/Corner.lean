@@ -53,7 +53,8 @@ theorem finiteSection_cornerEmbedding (b : HilbertBasis ℕ 𝕜 H) (n : ℕ)
 theorem cornerEmbedding_finiteInclusion_id (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (b.finiteInclusion n).cornerEmbedding
       (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))) = b.finiteProjection n := by
-  simp only [LinearIsometry.cornerEmbedding_id, finiteInclusion_comp_adjoint_finiteInclusion]
+  simp only [LinearIsometry.cornerEmbedding_id, adjoint_finiteInclusion,
+    finiteInclusion_comp_coordinateCutoff]
 
 /-- Extending the compression of an ambient operator is its existing zero-extended section. -/
 theorem cornerEmbedding_finiteSection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (T : H →L[𝕜] H) :
@@ -70,7 +71,7 @@ theorem existsUnique_cornerEmbedding_eq_iff (b : HilbertBasis ℕ 𝕜 H) (n : �
     (∃! A, (b.finiteInclusion n).cornerEmbedding A = T) ↔
       b.finiteProjection n ∘L T ∘L b.finiteProjection n = T := by
   rw [(b.finiteInclusion n).cornerEmbedding.injective.existsUnique_iff_exists]
-  simpa only [Set.mem_range, finiteInclusion_comp_adjoint_finiteInclusion] using
+  simpa only [Set.mem_range, adjoint_finiteInclusion, finiteInclusion_comp_coordinateCutoff] using
     (b.finiteInclusion n).mem_range_cornerEmbedding_iff T
 
 end HilbertBasis
