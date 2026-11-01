@@ -69,6 +69,14 @@ theorem unfoldFunctor_obj_d (K : HomologicalComplex C (ComplexShape.up (ZMod n))
   CochainComplex.of_d (fun i : ℤ ↦ K.X (i : ZMod n))
     (fun i ↦ K.d (i : ZMod n) ((i + 1 : ℤ) : ZMod n)) i
 
+/-- A consecutive differential of the unfolding is the cyclic differential, with the target
+degree given by any integer equal to the successor of the source degree. -/
+theorem unfoldFunctor_obj_d_of_add_one_eq (K : HomologicalComplex C (ComplexShape.up (ZMod n)))
+    {i i' : ℤ} (h : i + 1 = i') :
+    ((unfoldFunctor C n).obj K).d i i' = K.d (i : ZMod n) (i' : ZMod n) := by
+  subst h
+  exact unfoldFunctor_obj_d C n K i
+
 /-- Unfolding reads a morphism at the residue of the integer degree. -/
 @[simp]
 theorem unfoldFunctor_map_f {K L : HomologicalComplex C (ComplexShape.up (ZMod n))}
@@ -198,11 +206,6 @@ noncomputable def unfoldPeriodic (h : Homotopy f g) :
     have hi_prev : (ComplexShape.up ℤ).Rel (i - 1) i := by simp
     have hn : (ComplexShape.up (ZMod n)).Rel (i : ZMod n) ((i + 1 : ℤ) : ZMod n) := by simp
     have hp : (ComplexShape.up (ZMod n)).Rel ((i - 1 : ℤ) : ZMod n) (i : ZMod n) := by simp
-    have d_consecutive (j k : ℤ) (hjk : j + 1 = k) :
-        ((TauCeti.PeriodicComplex.unfoldFunctor C n).obj L).d j k =
-          L.d (j : ZMod n) (k : ZMod n) := by
-      subst k
-      exact TauCeti.PeriodicComplex.unfoldFunctor_obj_d C n L j
     have hom_next : (if i + 1 = i + 1 then
         h.hom ((i + 1 : ℤ) : ZMod n) (i : ZMod n) else 0) =
         h.hom ((i + 1 : ℤ) : ZMod n) (i : ZMod n) := ite_eq_left rfl
@@ -212,7 +215,7 @@ noncomputable def unfoldPeriodic (h : Homotopy f g) :
     rw [dNext_eq _ hi_next, prevD_eq _ hi_prev, hom_next, hom_prev]
     simp only [TauCeti.PeriodicComplex.unfoldFunctor_map_f,
       TauCeti.PeriodicComplex.unfoldFunctor_obj_d,
-      d_consecutive (i - 1) i (Int.sub_add_cancel i 1)]
+      TauCeti.PeriodicComplex.unfoldFunctor_obj_d_of_add_one_eq C n L (Int.sub_add_cancel i 1)]
     simpa only [dNext_eq _ hn, prevD_eq _ hp] using h.comm (i : ZMod n)
 
 /-- The consecutive component of an unfolded homotopy is the original cyclic component. -/
