@@ -48,6 +48,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   occurring in `f` is at most `i`, then `weight w f ≤ degree f • w i`.
 * `Finsupp.weight_filter_lt_add_smul_add_weight_filter_gt`: split a weight at a coordinate.
 * `Finsupp.weight_smul_left`: scaling the weight vector scales the weight.
+* `Finsupp.weight_eq_linearCombination`: the weight is the linear combination of the weights
+  with the given coefficients.
 * `Finsupp.weight_ite_fst_eq_sum`: the indicator weight of a block sums its coefficients; for
   natural-valued exponents, this is the degree in that block.
 * `Finsupp.weight_ite_eq_mapDomain_apply`: the indicator weight of a fibre of `b : σ → τ` is the
@@ -158,6 +160,11 @@ theorem weight_smul_left {R S : Type*} [Semiring R] [AddCommMonoid M] [Module R 
     weight (s • c) w = s • weight c w := by
   simp only [weight_apply, smul_sum, Pi.smul_apply]
   exact sum_congr fun _ _ ↦ smul_comm _ s _
+
+/-- The weight of `w` is the linear combination of the weights `c` with coefficients `w`. -/
+theorem weight_eq_linearCombination {R : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    (c : σ → M) (w : σ →₀ R) : weight c w = linearCombination R c w :=
+  rfl
 
 end Finsupp
 

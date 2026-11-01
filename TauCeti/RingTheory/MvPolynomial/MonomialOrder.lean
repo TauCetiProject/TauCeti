@@ -17,8 +17,8 @@ multiple, the cancellation of leading terms by an S-polynomial, the behaviour of
 under a change of coefficients, leading data of the weighted homogeneous component containing
 the leading monomial, leading data of renamed polynomials, elimination orders and the
 lexicographic ones among them, agreement of leading exponents under two monomial orders, leading
-data of polynomials obtained by substituting monic polynomials, and algebraic independence from
-leading monomials.
+data of polynomials obtained by substituting monic polynomials, descent on the largest weight of
+an exponent, and algebraic independence from leading monomials.
 
 The product `X^a * b`, normalized to leading coefficient one when `b` has a unit leading
 coefficient, differs from another such product of the same degree by a monomial multiple of
@@ -76,6 +76,11 @@ the images of the generators of the Lazard ring in a polynomial ring.
   if these combinations of leading exponents are at most `d` on the support of `P`, then the
   coefficient of `aeval c P` at `d` only involves the exponents of `P` whose combination is `d`,
   and `aeval c P` has leading exponent at most `d`.
+* `MonomialOrder.induction_on_weight_support`: well-founded descent on the largest weight
+  `∑ i, w i • a i` of an exponent `w` of a polynomial, compared by a monomial order.
+* `MonomialOrder.weight_lt_of_mem_support_sub_weightedHomogeneousComponent`: removing the
+  weighted homogeneous component of the largest weight `d` leaves only exponents of weight
+  strictly below `d`.
 * `MonomialOrder.algebraicIndependent_of_degree_eq_single`: polynomials `yᵢ` whose leading
   monomial is `Xᵢ` are algebraically independent.
 -/
@@ -452,6 +457,55 @@ theorem degree_aeval_le_of_forall_le (hc : ∀ i, m.Monic (c i)) {P : MvPolynomi
   exact hP w hw
 
 end Substitution
+
+section WeightDescent
+
+variable {ι : Type*} {m}
+
+/-- **Descent on the largest weight of an exponent.** Write `A w = ∑ i, w i • a i` and compare
+these weights by the monomial order `m`. To prove `p P` for every polynomial `P`, it suffices to
+prove `p 0`, and `p P` for every `P` whose exponents all have `A`-degree at most `d`, assuming
+`p P'` for every `P'` whose exponents all have `A`-degree strictly below `d`. -/
+theorem induction_on_weight_support [CommSemiring R] (a : ι → σ →₀ ℕ)
+    {p : MvPolynomial ι R → Prop} (h0 : p 0) (h : ∀ (d : σ →₀ ℕ) (P : MvPolynomial ι R),
+      (∀ w ∈ P.support, Finsupp.linearCombination ℕ a w ≼[m] d) →
+      (∀ P' : MvPolynomial ι R,
+        (∀ w ∈ P'.support, Finsupp.linearCombination ℕ a w ≺[m] d) → p P') → p P)
+    (P : MvPolynomial ι R) : p P := by
+  suffices H : ∀ e : m.syn, ∀ P : MvPolynomial ι R,
+      (∀ w ∈ P.support, m.toSyn (Finsupp.linearCombination ℕ a w) ≤ e) → p P by
+    rcases P.support.eq_empty_or_nonempty with hP | hP
+    · rwa [support_eq_empty.1 hP]
+    · obtain ⟨w₀, -, hw₀⟩ := P.support.exists_max_image
+        (fun w ↦ m.toSyn (Finsupp.linearCombination ℕ a w)) hP
+      exact H _ P hw₀
+  intro e
+  induction e using WellFoundedLT.induction with
+  | ind e ih =>
+    intro P hP
+    refine h (m.toSyn.symm e) P (by simpa using hP) fun P' hP' ↦ ?_
+    rcases P'.support.eq_empty_or_nonempty with hP'0 | hP'0
+    · rwa [support_eq_empty.1 hP'0]
+    · obtain ⟨w₀, hw₀, hmax⟩ := P'.support.exists_max_image
+        (fun w ↦ m.toSyn (Finsupp.linearCombination ℕ a w)) hP'0
+      exact ih _ (by simpa using hP' w₀ hw₀) P' hmax
+
+/-- If every exponent of `P` has weight at most `d` for the monomial order `m`, then every
+exponent of `P` minus its weighted homogeneous component of weight `d` has weight strictly
+below `d`. -/
+theorem weight_lt_of_mem_support_sub_weightedHomogeneousComponent [CommRing R]
+    {a : ι → σ →₀ ℕ} {P : MvPolynomial ι R} {d : σ →₀ ℕ}
+    (hP : ∀ w ∈ P.support, Finsupp.weight a w ≼[m] d) {w : ι →₀ ℕ}
+    (hw : w ∈ (P - weightedHomogeneousComponent a d P).support) :
+    Finsupp.weight a w ≺[m] d := by
+  classical
+  rw [mem_support_iff, coeff_sub, coeff_weightedHomogeneousComponent] at hw
+  by_cases hwd : Finsupp.weight a w = d
+  · simp [hwd] at hw
+  · simp only [hwd, ↓reduceIte, sub_zero] at hw
+    exact lt_of_le_of_ne (hP w (mem_support_iff.2 hw)) (m.toSyn.injective.ne hwd)
+
+end WeightDescent
 
 variable [CommRing R] [NoZeroDivisors R]
 

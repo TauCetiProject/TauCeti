@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Group.Submonoid.Closure
 public import TauCeti.Algebra.MonoidAlgebra.Exactness
+public import TauCeti.Data.Finsupp.Weight
 public import Mathlib.RingTheory.FiniteType
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 
@@ -120,7 +121,8 @@ theorem weightedHomogeneousComponent_mem_toricIdeal_iff [DecidableEq M] {a : ι 
       ∑ u ∈ p.support with Finsupp.linearCombination ℕ a u = d, p.coeff u = 0 := by
   have h : aeval (fun i ↦ single (a i) (1 : R)) (weightedHomogeneousComponent a d p) =
       single d (∑ u ∈ p.support with Finsupp.linearCombination ℕ a u = d, p.coeff u) := by
-    rw [weightedHomogeneousComponent_apply, map_sum, ← singleAddHom_apply, map_sum]
+    simp_rw [weightedHomogeneousComponent_apply, Finsupp.weight_eq_linearCombination]
+    rw [map_sum, ← singleAddHom_apply, map_sum]
     refine Finset.sum_congr rfl fun u hu ↦ ?_
     rw [aeval_single_monomial, (Finset.mem_filter.1 hu).2, singleAddHom_apply]
   rw [mem_toricIdeal_iff, h, single_eq_zero]
