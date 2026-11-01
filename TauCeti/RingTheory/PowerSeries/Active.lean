@@ -172,8 +172,7 @@ theorem IsLowestDominant.le_of_le (hi : IsLowestDominant r i f) (hj : IsLowestDo
 /-- **A lowest dominant degree is the unique dominant degree just inside its radius.** If `i` is
 the lowest dominant degree of `f` at a radius `s > 0`, then for all radii `r < s` close enough to
 `s`, the weighted coefficient in degree `i` is the only one attaining the Gauss norm at `r`, so `i`
-is both the distinguished and the lowest dominant degree of `f` at `r`. The finitely many earlier
-coefficients stay below it by continuity, and the later ones lose a larger power of `r / s`. -/
+is both the distinguished and the lowest dominant degree of `f` at `r`. -/
 theorem IsLowestDominant.eventually_isDistinguished_and_isLowestDominant
     (hf : IsLowestDominant s i f) (hs : 0 < s) :
     ∀ᶠ r in 𝓝[<] s, IsDistinguished r i f ∧ IsLowestDominant r i f := by
