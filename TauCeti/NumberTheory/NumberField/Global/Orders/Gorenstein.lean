@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.Basic
 public import Mathlib.RingTheory.DedekindDomain.Different
 import TauCeti.NumberTheory.NumberField.Global.Orders.Lattice
-import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
 # Gorenstein orders and the trace dual
@@ -447,7 +446,7 @@ theorem isGorenstein_of_toSubalgebra_eq_adjoin {x : K}
     (hx : O.toSubalgebra = Algebra.adjoin ℤ {x}) : O.IsGorenstein := by
   refine ⟨?_⟩
   rw [traceDual_eq_spanSingleton_of_toSubalgebra_eq_adjoin hx]
-  exact FractionalIdeal.isUnit_spanSingleton (isUnit_iff_ne_zero.mpr (inv_ne_zero
+  exact IsUnit.map (FractionalIdeal.spanSingleton _) (isUnit_iff_ne_zero.mpr (inv_ne_zero
     ((Algebra.IsSeparable.isSeparable ℚ x).aeval_derivative_ne_zero (minpoly.aeval ℚ x))))
 
 /-- Every order in a quadratic number field is Gorenstein. -/
