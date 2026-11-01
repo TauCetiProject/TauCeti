@@ -85,9 +85,8 @@ theorem thetaSeries_slash_frickeGL (hk : finrank ℝ E = 2 * k) :
   have hτ : ((N : ℂ) * τ) ^ k ≠ 0 :=
     pow_ne_zero k (mul_ne_zero (Nat.cast_ne_zero.mpr (NeZero.ne N)) τ.ne_zero)
   rw [ModularForm.slash_apply_of_det_pos _ hdet, frickeGL_smul_eq_S_smul,
-    thetaSeries_S_smul L hk, Pi.smul_apply, smul_eq_mul,
-    thetaSeries_smul _ (Real.sqrt_pos.mpr hN).ne', hr, val_det_frickeGL, coe_pos_real_smul,
-    hden, abs_of_pos hN, zpow_neg, zpow_natCast, Complex.real_smul, Complex.ofReal_natCast]
+    thetaSeries_S_smul L hk, Pi.smul_apply, thetaSeries_smul _ (Real.sqrt_pos.mpr hN).ne', hr]
+  simp [hden, coe_pos_real_smul, abs_of_pos hN]
   field_simp
 
 /-- **The normalized Fricke transformation law of theta series**: if `dim E = 2k` and `N` is a
@@ -99,10 +98,8 @@ theorem atkinLehnerNormalizer_smul_thetaSeries_slash_frickeGL (hk : finrank ℝ 
         thetaSeries (√(N : ℝ) • dual L) := by
   have hs : ((√(N : ℝ) : ℝ) : ℂ) ≠ 0 :=
     Complex.ofReal_ne_zero.mpr (Real.sqrt_pos.mpr (Nat.cast_pos.mpr (NeZero.pos N))).ne'
-  have hNs : (N : ℂ) = ((√(N : ℝ) : ℝ) : ℂ) ^ (2 : ℤ) := by
-    rw [zpow_two, ← Complex.ofReal_mul, Real.mul_self_sqrt (Nat.cast_nonneg N),
-      Complex.ofReal_natCast]
-  rw [thetaSeries_slash_frickeGL L N hk, smul_smul, atkinLehnerNormalizer_def, hNs, ← zpow_mul]
+  rw [thetaSeries_slash_frickeGL L N hk, smul_smul, atkinLehnerNormalizer_def,
+    natCast_eq_ofReal_sqrt_zpow_two, ← zpow_mul]
   congr 1
   have hpow : ((√(N : ℝ) : ℝ) : ℂ) ^ k =
       ((√(N : ℝ) : ℝ) : ℂ) ^ ((2 : ℤ) - k) * ((√(N : ℝ) : ℝ) : ℂ) ^ (2 * ((k : ℤ) - 1)) := by
