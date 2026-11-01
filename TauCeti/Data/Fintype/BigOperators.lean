@@ -22,7 +22,8 @@ this to reduce a sum over labelled copies of a pattern to a sum over one pair of
 More generally, any sum over such a box splits at two distinct coordinates `i` and `j`: sum over
 the maps with prescribed values at `i` and `j`, and then over all values of the two coordinates,
 substituted with `Function.update`. Telescoping arguments use this to test one pair of
-coordinates while the others stay fixed.
+coordinates while the others stay fixed. The same splitting at three distinct coordinates tests
+one triple of coordinates.
 -/
 
 public section
@@ -105,5 +106,35 @@ theorem sum_piFinset_eq_sum_filter_sum_sum_update {ι κ M : Type*} [Fintype ι]
     ext l
     simp only [Function.update_apply]
     split_ifs <;> simp_all
+
+/-- A sum over a finite box splits at three distinct coordinates `i`, `j` and `l`: for values
+`a ∈ s i`, `b ∈ s j` and `c ∈ s l`, each map in the box arises exactly once by overwriting the
+`i`th, `j`th and `l`th values of a map in the box taking the values `a`, `b` and `c` there. -/
+theorem sum_piFinset_eq_sum_filter_sum_sum_sum_update {ι κ M : Type*} [Fintype ι]
+    [DecidableEq ι] [DecidableEq κ] [AddCommMonoid M] {i j l : ι} (hij : i ≠ j) (hil : i ≠ l)
+    (hjl : j ≠ l) (s : ι → Finset κ) {a b c : κ} (ha : a ∈ s i) (hb : b ∈ s j) (hc : c ∈ s l)
+    (F : (ι → κ) → M) :
+    ∑ g ∈ piFinset s, F g =
+      ∑ h ∈ piFinset s with h i = a ∧ h j = b ∧ h l = c, ∑ x ∈ s i, ∑ y ∈ s j, ∑ z ∈ s l,
+        F (Function.update (Function.update (Function.update h i x) j y) l z) := by
+  -- Split at `i` and `j`, then split the fibre, a box with singleton cells at `i` and `j`, at
+  -- `i` and `l`.
+  have hfib : {h ∈ piFinset s | h i = a ∧ h j = b} =
+      piFinset (Function.update (Function.update s i {a}) j {b}) := by
+    rw [piFinset_update_singleton_eq_filter_piFinset_eq _ _ (by simpa [hij.symm] using hb),
+      piFinset_update_singleton_eq_filter_piFinset_eq _ _ ha, filter_filter]
+  rw [sum_piFinset_eq_sum_filter_sum_sum_update hij s ha hb, hfib,
+    sum_piFinset_eq_sum_filter_sum_sum_update hil _ (a := a) (b := c) (by simp [hij])
+      (by simpa [hil.symm, hjl.symm]),
+    ← hfib, filter_filter]
+  refine Finset.sum_congr (filter_congr fun h _ ↦ by tauto) fun h hh ↦ ?_
+  obtain ⟨-, ⟨rfl, -⟩, -⟩ := mem_filter.1 hh
+  simp only [Function.update_self, Function.update_of_ne hij, Function.update_of_ne hil.symm,
+    Function.update_of_ne hjl.symm, sum_singleton, Function.update_eq_self]
+  rw [sum_comm]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  rw [sum_comm]
+  refine Finset.sum_congr rfl fun y _ ↦ Finset.sum_congr rfl fun z _ ↦ ?_
+  rw [Function.update_comm hil.symm, Function.update_comm hjl.symm]
 
 end Fintype
