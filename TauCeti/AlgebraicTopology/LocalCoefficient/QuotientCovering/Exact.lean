@@ -19,8 +19,8 @@ in `A`. It uses Mathlib's `Representation.coinvariantsTprodLeftRegularLEquiv` af
 identifying the fibre torsor with `G`. The tensor-coinvariant equivalence is Mathlib's
 construction by Amelia Livingston.
 
-Consequently `IsQuotientCoveringMap.associatedLocalSystemFunctor` preserves finite limits
-and finite colimits. In particular, a short exact sequence of representations gives a
+Consequently `IsQuotientCoveringMap.associatedLocalSystemFunctor` preserves small limits
+and small colimits. In particular, a short exact sequence of representations gives a
 short exact sequence of local systems, without any flatness assumption. This supplies
 the coefficient sequences for comparing twisted singular homology with group homology.
 
@@ -166,17 +166,17 @@ instance : (hG.associatedLocalSystemFunctor k).Additive where
     exact (hG.associatedLocalSystemFunctor k ⋙
       (evaluation (FundamentalGroupoid B) (ModuleCat k)).obj x).map_add
 
-/-- Associated local coefficient systems preserve finite limits. -/
-instance : PreservesFiniteLimits (hG.associatedLocalSystemFunctor k) where
-  preservesFiniteLimits J _ _ :=
+/-- Associated local coefficient systems preserve small limits. -/
+instance : PreservesLimitsOfSize.{u, u} (hG.associatedLocalSystemFunctor k) where
+  preservesLimitsOfShape {J} _ :=
     preservesLimitsOfShape_of_evaluation _ J fun x ↦ by
       obtain ⟨e, he⟩ := hG.surjective x.as
       exact preservesLimitsOfShape_of_natIso
         (hG.associatedLocalSystemEvaluationIso k ⟨e, he⟩).symm
 
-/-- Associated local coefficient systems preserve finite colimits. -/
-instance : PreservesFiniteColimits (hG.associatedLocalSystemFunctor k) where
-  preservesFiniteColimits J _ _ :=
+/-- Associated local coefficient systems preserve small colimits. -/
+instance : PreservesColimitsOfSize.{u, u} (hG.associatedLocalSystemFunctor k) where
+  preservesColimitsOfShape {J} _ :=
     preservesColimitsOfShape_of_evaluation _ J fun x ↦ by
       obtain ⟨e, he⟩ := hG.surjective x.as
       exact preservesColimitsOfShape_of_natIso
