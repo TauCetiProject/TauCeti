@@ -66,8 +66,8 @@ theorem charFun_compoundPoissonMeasure_cond (ν : Measure E) [IsFiniteMeasure ν
     congr 1
     have hmass : (ν univ).toReal ≠ 0 := ENNReal.toReal_ne_zero.mpr
       ⟨hν, measure_ne_top _ _⟩
-    rw [mul_sub, ← mul_assoc, mul_inv_cancel₀ (Complex.ofReal_ne_zero.mpr hmass),
-      one_mul, mul_one]
+    field_simp [Complex.ofReal_ne_zero.mpr hmass]
+    simp only [mul_comm]
 
 /-- Superposition of finite jump intensities is convolution of the corresponding compound
 Poisson laws. Either intensity may be zero. -/
