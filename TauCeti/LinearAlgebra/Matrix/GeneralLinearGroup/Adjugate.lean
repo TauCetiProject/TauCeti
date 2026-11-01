@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `Matrix.adjugate` and its multiplicativity `Matrix.adjugate_mul_distrib` are the content.
-public import Mathlib.LinearAlgebra.Matrix.Adjugate
 -- `GL` occurs in the statements below.
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- `Matrix.adjugate_eq_det_smul_of_mul_eq_one` and `Matrix.adjugate_mul_self_eq_one_iff_det_eq_one`.
@@ -36,8 +34,8 @@ which is proved where those objects live, not here.
 * `TauCeti.adjugateGL_eq_inv_iff`: `adj(g) = g⁻¹` exactly when `g` has determinant one.
 * `TauCeti.adjugateGL_mapGL`: on a special-linear image, `adj(mapGL σ) = mapGL σ⁻¹`.
 * `TauCeti.adjugateGL_adjugateGL`: in size two, `adj` is an involution.
-* `Matrix.GeneralLinearGroup.det_smul_coe_inv_eq_adjugate_map`: for `g` the image of an integer
-  matrix `G`, `det g • g⁻¹` is the image of `adj G`.
+* `Matrix.GeneralLinearGroup.det_smul_coe_inv_eq_adjugate_map`: for `g` the image of a matrix
+  `G` under a ring map `f`, `det g • g⁻¹` is the image of `adj G` under `f`.
 * `Matrix.GeneralLinearGroup.adjugateGL_eq_scalar_mul_inv`: `adj(g) = (det g · I) * g⁻¹`.
 
 ## References
@@ -84,7 +82,8 @@ def adjugateGL (g : GL n R) : GL n R where
 
 /-- **The adjugate is the inverse exactly on determinant one.** This is what makes it restrict
 to a group of determinant-one matrices, where it is then an anti-automorphism. -/
-lemma adjugateGL_eq_inv_iff {g : GL n R} : adjugateGL g = g⁻¹ ↔ (g : Matrix n n R).det = 1 := by
+@[simp] lemma adjugateGL_eq_inv_iff {g : GL n R} :
+    adjugateGL g = g⁻¹ ↔ (g : Matrix n n R).det = 1 := by
   rw [eq_inv_iff_mul_eq_one, Units.ext_iff, Units.val_mul, adjugateGL_val, Units.val_one,
     adjugate_mul_self_eq_one_iff_det_eq_one]
 
@@ -110,16 +109,16 @@ namespace Matrix.GeneralLinearGroup
 
 open TauCeti
 
-/-- **Clearing the denominators of an inverse.** If `g` is the image of an integer matrix `G`,
-then `det g • g⁻¹` is the image of the integer matrix `adj G`. This is
-`Matrix.adjugate_eq_det_smul_of_mul_eq_one` transported along `Int.cast`. -/
-theorem det_smul_coe_inv_eq_adjugate_map {n R : Type*} [DecidableEq n] [Fintype n] [CommRing R]
-    {g : GL n R} {G : Matrix n n ℤ} (hG : (g : Matrix n n R) = G.map (Int.cast : ℤ → R)) :
-    (g : Matrix n n R).det • ((g⁻¹ : GL n R) : Matrix n n R) =
-      G.adjugate.map (Int.cast : ℤ → R) := by
+/-- **Clearing the denominators of an inverse.** If `g` is the image of a matrix `G` under a
+ring map `f`, then `det g • g⁻¹` is the image of `adj G` under `f`; for `f = Int.castRingHom R`
+this exhibits `det g • g⁻¹` as an integer matrix. This is
+`Matrix.adjugate_eq_det_smul_of_mul_eq_one` transported along `f`. -/
+theorem det_smul_coe_inv_eq_adjugate_map {n R S : Type*} [DecidableEq n] [Fintype n]
+    [CommRing R] [CommRing S] (f : S →+* R) {g : GL n R} {G : Matrix n n S}
+    (hG : (g : Matrix n n R) = G.map f) :
+    (g : Matrix n n R).det • ((g⁻¹ : GL n R) : Matrix n n R) = G.adjugate.map f := by
   rw [← adjugate_eq_det_smul_of_mul_eq_one (Units.mul_inv g), hG]
-  simpa only [RingHom.mapMatrix_apply, Int.coe_castRingHom] using
-    (RingHom.map_adjugate (Int.castRingHom R) G).symm
+  exact (RingHom.map_adjugate f G).symm
 
 /-- **The adjugate of an invertible matrix is its inverse rescaled by the determinant**:
 `adj g = (det g · I) * g⁻¹`, in `GL n R`. Writing it as a product with a scalar matrix is what
