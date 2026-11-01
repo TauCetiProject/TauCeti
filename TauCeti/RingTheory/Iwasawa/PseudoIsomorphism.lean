@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Iwasawa.PseudoNull
 public import Mathlib.RingTheory.Localization.Module
+public import TauCeti.Algebra.Module.Torsion.Basic
 
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.PowerSeries.Ideal
@@ -195,21 +196,21 @@ theorem IsPseudoIsomorphism.prodMap {M' N' : Type*} [AddCommGroup M'] [Module A 
 /-- Over a noetherian domain, a pseudo-isomorphism restricts to a pseudo-isomorphism between the
 torsion submodules. -/
 theorem IsPseudoIsomorphism.restrict_torsion [IsDomain A] [IsNoetherianRing A] {f : M →ₗ[A] N}
-    (hf : IsPseudoIsomorphism f)
-    (h : ∀ m ∈ Submodule.torsion A M, f m ∈ Submodule.torsion A N) :
-    IsPseudoIsomorphism (f.restrict h) where
+    (hf : IsPseudoIsomorphism f) :
+    IsPseudoIsomorphism
+      (f.restrict (q := Submodule.torsion A N) (Submodule.le_comap_torsion f)) where
   isPseudoNull_ker := by
     -- The kernel of the restriction is a submodule of the kernel of `f`.
     refine hf.isPseudoNull_ker.of_injective (LinearMap.codRestrict _
-      ((Submodule.torsion A M).subtype ∘ₗ (LinearMap.ker (f.restrict h)).subtype) fun x ↦ ?_)
+      ((Submodule.torsion A M).subtype ∘ₗ Submodule.subtype _) fun x ↦ ?_)
       fun x y hxy ↦ Subtype.ext (Subtype.ext congr(($hxy : M)))
-    exact congr(($(LinearMap.map_coe_ker (f.restrict h) x) : N))
+    exact congr(($(LinearMap.map_coe_ker _ x) : N))
   isPseudoNull_coker := by
     -- The cokernel of the restriction embeds into the cokernel of `f`: if `t` is killed by `a`
     -- and `t = f m`, then `a • m` lies in the kernel of `f`, which is torsion, so `m` is torsion.
-    refine hf.isPseudoNull_coker.of_injective ((LinearMap.range (f.restrict h)).mapQ
-      (LinearMap.range f) (Submodule.torsion A N).subtype ?_) ((injective_iff_map_eq_zero _).mpr
-        fun x hx ↦ ?_)
+    refine hf.isPseudoNull_coker.of_injective
+      (Submodule.mapQ _ (LinearMap.range f) (Submodule.torsion A N).subtype ?_)
+      ((injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_)
     · rintro _ ⟨m, rfl⟩
       exact ⟨m, rfl⟩
     obtain ⟨t, rfl⟩ := Submodule.mkQ_surjective _ x

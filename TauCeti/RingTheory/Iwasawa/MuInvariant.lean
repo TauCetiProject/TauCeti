@@ -165,9 +165,7 @@ variable {N P : Type*} [AddCommGroup N] [Module O⟦X⟧ N] [AddCommGroup P] [Mo
 /-- The `μ`-invariant is invariant under pseudo-isomorphism. -/
 theorem IsPseudoIsomorphism.muInvariant_eq {f : M →ₗ[O⟦X⟧] N} (hf : IsPseudoIsomorphism f) :
     muInvariant O M = muInvariant O N := by
-  rw [muInvariant_def, muInvariant_def, (hf.restrict_torsion fun m hm ↦ ?_).charDivisor_eq]
-  obtain ⟨a, ha⟩ := (mem_torsion_iff m).mp hm
-  exact (mem_torsion_iff _).mpr ⟨a, by rw [← LinearMap.map_smul_of_tower, ha, map_zero]⟩
+  rw [muInvariant_def, muInvariant_def, hf.restrict_torsion.charDivisor_eq]
 
 /-- The `μ`-invariant is invariant under linear equivalence. -/
 theorem _root_.LinearEquiv.muInvariant_eq (e : M ≃ₗ[O⟦X⟧] N) :
@@ -179,14 +177,8 @@ generated torsion `O⟦X⟧`-modules, `μ(N) = μ(M) + μ(P)`. -/
 theorem muInvariant_eq_add_of_exact [Module.Finite O⟦X⟧ N] (hN : Module.IsTorsion O⟦X⟧ N)
     {f : M →ₗ[O⟦X⟧] N} {g : N →ₗ[O⟦X⟧] P} (hfg : Function.Exact f g) (hf : Function.Injective f)
     (hg : Function.Surjective g) : muInvariant O N = muInvariant O M + muInvariant O P := by
-  have hM : Module.IsTorsion O⟦X⟧ M := fun m ↦ by
-    obtain ⟨a, ha⟩ := @hN (f m)
-    exact ⟨a, hf (by rw [LinearMap.map_smul_of_tower, ha, map_zero])⟩
-  have hP : Module.IsTorsion O⟦X⟧ P := fun x ↦ by
-    obtain ⟨n, rfl⟩ := hg x
-    obtain ⟨a, ha⟩ := @hN n
-    exact ⟨a, by rw [← LinearMap.map_smul_of_tower, ha, map_zero]⟩
-  rw [muInvariant_eq_charDivisor hN, muInvariant_eq_charDivisor hM, muInvariant_eq_charDivisor hP,
+  rw [muInvariant_eq_charDivisor hN, muInvariant_eq_charDivisor (hN.of_injective hf),
+    muInvariant_eq_charDivisor (hN.of_surjective hg),
     charDivisor_eq_add_of_exact hN hfg hf hg, Finsupp.add_apply]
 
 /-- The `μ`-invariant of a product of two finitely generated modules is the sum of their
@@ -194,23 +186,7 @@ theorem muInvariant_eq_add_of_exact [Module.Finite O⟦X⟧ N] (hN : Module.IsTo
 @[simp]
 theorem muInvariant_prod [Module.Finite O⟦X⟧ M] [Module.Finite O⟦X⟧ N] :
     muInvariant O (M × N) = muInvariant O M + muInvariant O N := by
-  -- The torsion submodule of `M × N` is the product of the torsion submodules.
-  let e : (torsion O⟦X⟧ M × torsion O⟦X⟧ N) →ₗ[O⟦X⟧] torsion O⟦X⟧ (M × N) :=
-    LinearMap.codRestrict _ ((torsion O⟦X⟧ M).subtype.prodMap (torsion O⟦X⟧ N).subtype)
-      fun x ↦ by
-        obtain ⟨a, ha⟩ := (mem_torsion_iff _).mp x.1.2
-        obtain ⟨b, hb⟩ := (mem_torsion_iff _).mp x.2.2
-        refine (mem_torsion_iff _).mpr ⟨a * b, Prod.ext ?_ ?_⟩
-        · simp [mul_comm a, mul_smul, ha]
-        · simp [mul_smul, hb]
-  have he : Function.Bijective e := by
-    refine ⟨fun x y hxy ↦ ?_, fun ⟨x, hx⟩ ↦ ?_⟩
-    · have := congr(($hxy : M × N))
-      exact Prod.ext (Subtype.ext congr($this.1)) (Subtype.ext congr($this.2))
-    · obtain ⟨a, ha⟩ := (mem_torsion_iff x).mp hx
-      refine ⟨(⟨x.1, (mem_torsion_iff _).mpr ⟨a, congr($ha.1)⟩⟩,
-        ⟨x.2, (mem_torsion_iff _).mpr ⟨a, congr($ha.2)⟩⟩), rfl⟩
-  rw [muInvariant_def, ← (LinearEquiv.ofBijective e he).charDivisor_eq,
+  rw [muInvariant_def, (Submodule.torsionProdEquiv O⟦X⟧ M N).charDivisor_eq,
     charDivisor_prod torsion_isTorsion torsion_isTorsion, Finsupp.add_apply, muInvariant_def,
     muInvariant_def]
 

@@ -265,14 +265,9 @@ variable {A : Type*} [CommRing A] {M N : Type*} [AddCommGroup M] [Module A M] [A
 noetherian ring is the sum of their characteristic divisors. -/
 theorem charDivisor_prod [IsNoetherianRing A] [Module.Finite A M] [Module.Finite A N]
     (hM : Module.IsTorsion A M) (hN : Module.IsTorsion A N) :
-    charDivisor A (M × N) = charDivisor A M + charDivisor A N := by
-  refine charDivisor_eq_add_of_exact (fun x ↦ ?_) .inl_snd LinearMap.inl_injective
+    charDivisor A (M × N) = charDivisor A M + charDivisor A N :=
+  charDivisor_eq_add_of_exact (hM.prod hN) .inl_snd LinearMap.inl_injective
     LinearMap.snd_surjective
-  obtain ⟨a, ha⟩ := @hM x.1
-  obtain ⟨b, hb⟩ := @hN x.2
-  refine ⟨a * b, Prod.ext ?_ ?_⟩
-  · rw [Prod.smul_fst, mul_comm, mul_smul, ha, smul_zero, Prod.fst_zero]
-  · rw [Prod.smul_snd, mul_smul, hb, smul_zero, Prod.snd_zero]
 
 open scoped Pointwise in
 /-- For non-zero-divisors `a` and `b` of a noetherian ring, the characteristic divisor of
