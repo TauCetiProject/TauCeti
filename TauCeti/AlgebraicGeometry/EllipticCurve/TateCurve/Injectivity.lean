@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.XCoordinate
-import Mathlib.Algebra.CubicDiscriminant
 import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 import Mathlib.FieldTheory.SplittingField.Construction
-import TauCeti.Analysis.Normed.Field.ZPowers
 
 /-!
 # Injectivity of the Tate uniformisation
@@ -21,13 +19,15 @@ Two parameters with the same image are equal or mutually inverse, and in the sec
 common image `P` satisfies `-P = P`
 (`TauCeti.tateUniformization_eq_tateUniformization_iff`). It remains to see that a nonidentity
 parameter `x` whose image has order two satisfies `x² = 1`. Suppose first that `q = r²` in `K`.
-The classes of `-1`, `r` and `-r` are their own inverses, so their images have order two, and their
-first Tate coordinates are roots of the `2`-torsion polynomial `4x³ + b₂x² + 2b₄x + b₆`. Two
-nonidentity parameters with the same first coordinate are equal or mutually inverse
-(`TauCeti.tateUniformizationX_eq_tateUniformizationX_iff`), so when `2 ≠ 0` these three roots are
-distinct, and if `x² ≠ 1` the first coordinate of `x` would be a fourth root of a cubic. When
-`2 = 0` the `2`-torsion polynomial of the Tate curve is `x²`, so the first coordinate of `x` is
-`0`, as is that of `r`, and `x` is the class of `r`.
+The first Tate coordinate of a nonidentity parameter whose image has order two is a root of the
+`2`-torsion polynomial `4x³ + b₂x² + 2b₄x + b₆`, and two nonidentity parameters with the same first
+coordinate are equal or mutually inverse
+(`TauCeti.tateUniformizationX_eq_tateUniformizationX_iff`). When `2 ≠ 0`, the classes of `-1`, `r`
+and `-r` are distinct nonidentity classes that are their own inverses, so their images have order
+two and their first coordinates are three distinct roots; if `x² ≠ 1` the first coordinate of `x`
+would be a fourth root of a cubic. When `2 = 0` we have `-1 = 1` and `-r = r`, and only the class
+of `r` is used: the `2`-torsion polynomial of the Tate curve is `x²`, so the first coordinate of
+`x` is `0`, as is that of `r`, and `x` is the class of `r`.
 
 In general `q` has a square root in a finite extension `L` of `K`, which is complete for the
 spectral norm, and the uniformisation over `L` restricts to the one over `K`
@@ -253,6 +253,7 @@ theorem tateUniformization_inj (q : Kˣ) (hq : ‖(q : K)‖ < 1) {x y : Kˣ ⧸
 
 /-- **The `2`-torsion of the Tate uniformisation.** The image of a parameter `x` is killed by two
 exactly when `x² = 1`. -/
+@[simp]
 theorem two_nsmul_tateUniformization_eq_zero_iff [DecidableEq K] (q : Kˣ) (hq : ‖(q : K)‖ < 1)
     (x : Kˣ ⧸ Subgroup.zpowers q) :
     2 • tateUniformization q hq x = 0 ↔ x ^ 2 = 1 := by
