@@ -40,6 +40,36 @@ namespace LSPath
 
 variable {lam : M}
 
+private theorem isAChain_map_nsmul {a : ℚ} (n : ℕ)
+    (C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam))
+    (f : SetRel.Hom {p : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w} ×
+        {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w} |
+        (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b lam) p.2 p.1}
+      {p : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b (n • lam)) w} ×
+        {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b (n • lam)) w} |
+        (weylCoxeterSystem P b).MinimalCosetRepCovBy (P.wallIndices b (n • lam)) p.2 p.1})
+    (hf : ∀ w, (f w).1 = w.1) (hC : IsAChain a lam C) :
+    IsAChain a (n • lam) (C.map f) := by
+  have hscaled (k : Fin C.length) : ∃ z : ℤ,
+      a * P.reflectionBond b ((C k.castSucc).1 • n • lam) ((C k.succ).1 • n • lam) = z := by
+    obtain ⟨z, hz⟩ := isAChain_iff_forall_reflectionBond.mp hC k
+    have hb := P.reflectionBond_smul (b := b) (n : ℤ)
+      ((C k.castSucc).1 • lam) ((C k.succ).1 • lam)
+    simp only [Nat.cast_smul_eq_nsmul] at hb
+    refine ⟨(n : ℤ) * z, ?_⟩
+    rw [smul_comm (C k.castSucc).1 n lam, smul_comm (C k.succ).1 n lam, hb]
+    push_cast
+    rw [mul_left_comm a, hz]
+  have hentry (j : Fin (C.length + 1)) : ((C.map f) j).1 = (C j).1 :=
+    (congrArg Subtype.val (RelSeries.map_apply C f j)).trans (hf _)
+  apply isAChain_iff_forall_reflectionBond.mpr
+  -- `RelSeries.map` preserves length definitionally, so both chains use `Fin C.length`.
+  intro k
+  obtain ⟨z, hz⟩ := hscaled k
+  refine ⟨z, ?_⟩
+  exact (congrArg₂ (fun x y ↦ a * (P.reflectionBond b (x • n • lam) (y • n • lam) : ℚ))
+    (hentry k.castSucc) (hentry k.succ)).trans hz
+
 /-- Stretch an LS path by a positive integer, leaving its directions and break times unchanged.
 All its break-chain bonds are multiplied by `n`. -/
 noncomputable def stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n) :
@@ -70,19 +100,9 @@ noncomputable def stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n) :
   let D : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b (n • lam)) :=
     C.map ⟨liftDir, fun {x y} h ↦ by
       simpa only [Set.mem_ofPred_eq, liftDir, hw] using h⟩
-  refine ⟨D, congrArg liftDir hhead, congrArg liftDir hlast, ?_⟩
-  rw [isAChain_iff_forall_reflectionBond] at hC ⊢
-  dsimp only [D, RelSeries.map, Function.comp_apply]
-  intro k
-  obtain ⟨z, hz⟩ := hC k
-  have hb := P.reflectionBond_smul (b := b) (n : ℤ)
-    ((C k.castSucc).1 • lam) ((C k.succ).1 • lam)
-  simp only [Nat.cast_smul_eq_nsmul] at hb
-  refine ⟨(n : ℤ) * z, ?_⟩
-  dsimp only [liftDir]
-  rw [smul_comm (C k.castSucc).1 n lam, smul_comm (C k.succ).1 n lam, hb,
-    Int.cast_mul, Int.cast_natCast, Int.cast_mul, Int.cast_natCast, ← hz]
-  ring
+  refine ⟨D, ?_, ?_, isAChain_map_nsmul n C _ (fun _ ↦ rfl) hC⟩
+  · simpa only [D, RelSeries.head_map, RelHom.coeFn_mk] using congrArg liftDir hhead
+  · simpa only [D, RelSeries.last_map, RelHom.coeFn_mk] using congrArg liftDir hlast
 
 @[simp]
 theorem length_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n) :
@@ -106,6 +126,8 @@ theorem duration_stretch (π : LSPath P b lam) (n : ℕ) (hn : 0 < n)
     (π.stretch n hn).duration j =
       π.duration (j.cast (congrArg (· + 1) (π.length_stretch n hn))) := by
   simp only [duration_def, time_stretch]
+  -- Casting a finite index preserves its value, so it commutes definitionally with
+  -- `Fin.succ` and `Fin.castSucc` in the two endpoints of the duration.
   rfl
 
 /-- Stretching keeps the list of Weyl-group directions unchanged. -/
