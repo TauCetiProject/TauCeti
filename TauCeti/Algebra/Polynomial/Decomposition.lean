@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.EraseLead
-public import Mathlib.Algebra.Polynomial.Monic
-import Mathlib.Algebra.Polynomial.BigOperators
+public import TauCeti.Algebra.Polynomial.BigOperators
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.Ring
 import Mathlib.Tactic.NormNum
@@ -46,72 +45,74 @@ open Finset
 
 variable {R : Type*} [CommRing R] [IsDomain R] [CharZero R]
 
-/-- The geometric sum of mixed powers of two monic polynomials of equal degree has the
-expected degree in characteristic zero. -/
-theorem natDegree_geom_sum₂ {p q : R[X]} (hp : p.Monic) (hq : q.Monic)
-    (hdeg : p.natDegree = q.natDegree) {n : ℕ} (hn : 0 < n) :
-    (∑ i ∈ range n, p ^ i * q ^ (n - 1 - i)).natDegree = (n - 1) * p.natDegree := by
-  have hd (i : ℕ) (hi : i ∈ range n) :
-      (p ^ i * q ^ (n - 1 - i)).natDegree = (n - 1) * p.natDegree := by
-    rw [natDegree_mul (hp.pow i).ne_zero (hq.pow _).ne_zero, natDegree_pow,
-      natDegree_pow, ← hdeg, ← add_mul]
-    congr 1
-    have := mem_range.mp hi
-    omega
-  apply natDegree_eq_of_le_of_coeff_ne_zero
-  · exact natDegree_sum_le_of_forall_le _ _ fun i hi ↦ (hd i hi).le
-  · have hc : (∑ i ∈ range n, p ^ i * q ^ (n - 1 - i)).coeff
-        ((n - 1) * p.natDegree) = (n : R) := by
-      rw [finsetSum_coeff]
-      trans ∑ i ∈ range n, (1 : R)
-      · apply sum_congr rfl
-        intro i hi
-        rw [← hd i hi]
-        exact ((hp.pow i).mul (hq.pow _)).coeff_natDegree
-      · simp
-    rw [hc]
-    exact_mod_cast hn.ne'
-
-/-- A nonconstant difference of equal-degree monic polynomials remains visible in the
-highest terms of a difference of powers. -/
+/-- The difference of distinct equal-degree monic polynomials remains visible in the
+highest terms of a difference of powers, even when the difference is constant. -/
 theorem natDegree_pow_sub_pow_of_monic {p q : R[X]} (hp : p.Monic) (hq : q.Monic)
-    (hdeg : p.natDegree = q.natDegree) (hdiff : 0 < (p - q).natDegree)
+    (hdeg : p.natDegree = q.natDegree) (hpq : p ≠ q)
     {n : ℕ} (hn : 0 < n) :
     (p ^ n - q ^ n).natDegree = (n - 1) * p.natDegree + (p - q).natDegree := by
   have hs := natDegree_geom_sum₂ hp hq hdeg hn
   obtain rfl | hn' := eq_or_lt_of_le (Nat.succ_le_of_lt hn)
   · simp
   have hpos : 0 < p.natDegree := by
-    have := natDegree_sub_le p q
-    rw [← hdeg, max_self] at this
-    omega
+    by_contra! h
+    have hd : p.natDegree = 0 := Nat.eq_zero_of_le_zero h
+    exact hpq ((hp.natDegree_eq_zero.mp hd).trans
+      (hq.natDegree_eq_zero.mp (hdeg ▸ hd)).symm)
   have hne := ne_zero_of_natDegree_gt (hs ▸ Nat.mul_pos (by omega) hpos)
-  rw [← geom_sum₂_mul p q n, natDegree_mul hne (ne_zero_of_natDegree_gt hdiff), hs]
+  rw [← geom_sum₂_mul p q n, natDegree_mul hne (sub_ne_zero.mpr hpq), hs]
 
-/-- For monic equal-degree inputs with nonconstant difference, the degree of the difference
-of composites is controlled by the leading term of the outer polynomial. -/
+/-- For distinct monic equal-degree inputs, the degree of the difference of composites is
+controlled by the leading term of the outer polynomial, even for a constant input difference. -/
 theorem natDegree_comp_sub_comp_of_monic {f p q : R[X]} (hf : 0 < f.natDegree)
     (hp : p.Monic) (hq : q.Monic) (hdeg : p.natDegree = q.natDegree)
-    (hdiff : 0 < (p - q).natDegree) :
+    (hpq : p ≠ q) :
     (f.comp p - f.comp q).natDegree =
       (f.natDegree - 1) * p.natDegree + (p - q).natDegree := by
-  have hmain := natDegree_pow_sub_pow_of_monic hp hq hdeg hdiff hf
+  have hmain := natDegree_pow_sub_pow_of_monic hp hq hdeg hpq hf
   have hlc : f.leadingCoeff ≠ 0 := leadingCoeff_ne_zero.mpr (ne_zero_of_natDegree_gt hf)
-  have hlow : (f.eraseLead.comp p - f.eraseLead.comp q).natDegree ≤
-      (f.natDegree - 1) * p.natDegree := by
-    apply (natDegree_sub_le _ _).trans
-    apply max_le
-    · exact natDegree_comp_le.trans (Nat.mul_le_mul_right _ f.eraseLead_natDegree_le)
-    · rw [hdeg]
-      exact natDegree_comp_le.trans (Nat.mul_le_mul_right _ f.eraseLead_natDegree_le)
   have hexp : f.comp p - f.comp q =
       C f.leadingCoeff * (p ^ f.natDegree - q ^ f.natDegree) +
         (f.eraseLead.comp p - f.eraseLead.comp q) := by
     conv_lhs => rw [← f.eraseLead_add_C_mul_X_pow]
     simp only [add_comp, mul_comp, C_comp, pow_comp, X_comp]
     ring
+  -- A linear outer polynomial has no lower nonconstant terms.
+  obtain hf1 | hf1 := eq_or_lt_of_le (Nat.succ_le_of_lt hf)
+  · have hz : f.eraseLead.natDegree = 0 := by
+      have := f.eraseLead_natDegree_le
+      omega
+    rw [hexp, eq_C_of_natDegree_eq_zero hz, C_comp, C_comp, sub_self, add_zero,
+      natDegree_C_mul hlc, hmain]
+  have hpos : 0 < p.natDegree := by
+    by_contra! h
+    have hd : p.natDegree = 0 := Nat.eq_zero_of_le_zero h
+    exact hpq ((hp.natDegree_eq_zero.mp hd).trans
+      (hq.natDegree_eq_zero.mp (hdeg ▸ hd)).symm)
+  -- Bound differences term by term, so constant input differences are covered as well.
+  have hlow : (f.eraseLead.comp p - f.eraseLead.comp q).natDegree ≤
+      (f.natDegree - 2) * p.natDegree + (p - q).natDegree := by
+    have hexplow : f.eraseLead.comp p - f.eraseLead.comp q =
+        ∑ i ∈ range (f.eraseLead.natDegree + 1),
+          C (f.eraseLead.coeff i) * (p ^ i - q ^ i) := by
+      conv_lhs => rw [f.eraseLead.as_sum_range_C_mul_X_pow]
+      simp only [sum_comp, mul_comp, C_comp, pow_comp, X_comp, ← sum_sub_distrib, ← mul_sub]
+    rw [hexplow]
+    apply natDegree_sum_le_of_forall_le
+    intro i hi
+    obtain rfl | hi0 := i.eq_zero_or_pos
+    · simp
+    apply (natDegree_C_mul_le _ _).trans
+    rw [natDegree_pow_sub_pow_of_monic hp hq hdeg hpq hi0]
+    apply Nat.add_le_add_right
+    apply Nat.mul_le_mul_right
+    have := mem_range.mp hi
+    have := f.eraseLead_natDegree_le
+    omega
   rw [hexp, natDegree_add_eq_left_of_natDegree_lt, natDegree_C_mul hlc, hmain]
   rw [natDegree_C_mul hlc, hmain]
+  have := Nat.mul_lt_mul_of_pos_right
+    (by omega : f.natDegree - 2 < f.natDegree - 1) hpos
   omega
 
 /-- Monic right components of equal positive degree and equal constant coefficient are
@@ -141,7 +142,7 @@ theorem eq_of_comp_eq_comp_of_monic {f g p q : R[X]} (hf : 0 < f.natDegree)
     have hcoeff : (p - q).coeff 0 = 0 := by simp [hzero]
     rw [hcoeff, C_0] at hc
     exact hpq (sub_eq_zero.mp hc)
-  have h := natDegree_comp_sub_comp_of_monic hf hp hq hdeg hdiff
+  have h := natDegree_comp_sub_comp_of_monic hf hp hq hdeg hpq
   have hexp : f.comp p - f.comp q = (g - f).comp q := by
     rw [sub_comp, heq]
   rw [hexp] at h
