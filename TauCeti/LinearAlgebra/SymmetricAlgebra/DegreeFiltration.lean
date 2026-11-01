@@ -14,14 +14,14 @@ The degree filtration of `SymmetricAlgebra R M` is the word filtration
 `TauCeti.Algebra.wordFiltration` of the generator map: its `k`-th step is spanned by the products of
 at most `k` generators. Since every such product is homogeneous of degree at most `k`, an element of
 the `k`-th step has no homogeneous component of degree above `k`
-(`TauCeti.SymmetricAlgebra.decompose_coe_eq_zero_of_mem_wordFiltration`). In particular a nonzero
+(`TauCeti.SymmetricAlgebra.coe_decompose_eq_zero_of_mem_wordFiltration`). In particular a nonzero
 homogeneous element of degree `n` does not have degree below `n`
 (`TauCeti.SymmetricAlgebra.disjoint_homogeneousSubmodule_wordFiltrationPrevious`), which is how
 leading terms are read off in degree inductions on the symmetric algebra.
 
 ## Main results
 
-* `TauCeti.SymmetricAlgebra.decompose_coe_eq_zero_of_mem_wordFiltration`: an element of degree at
+* `TauCeti.SymmetricAlgebra.coe_decompose_eq_zero_of_mem_wordFiltration`: an element of degree at
   most `k` has zero homogeneous component in every degree above `k`.
 * `TauCeti.SymmetricAlgebra.disjoint_homogeneousSubmodule_wordFiltrationPrevious`: the homogeneous
   elements of degree `n` meet the elements of degree below `n` only in zero.
@@ -40,7 +40,7 @@ variable {R : Type u} {M : Type v} [CommSemiring R] [AddCommMonoid M] [Module R 
 /-- **An element of degree at most `k` has no homogeneous component above `k`**: if `x` lies in the
 `k`-th step of the degree filtration of the symmetric algebra and `k < n`, then the degree-`n`
 homogeneous component of `x` is zero. -/
-theorem decompose_coe_eq_zero_of_mem_wordFiltration {k n : ℕ} (hkn : k < n)
+theorem coe_decompose_eq_zero_of_mem_wordFiltration {k n : ℕ} (hkn : k < n)
     {x : _root_.SymmetricAlgebra R M} (hx : x ∈ wordFiltration (_root_.SymmetricAlgebra.ι R M) k) :
     (DirectSum.decompose (homogeneousSubmodule R M) x n : _root_.SymmetricAlgebra R M) = 0 := by
   rw [wordFiltration_eq_iSup_pow] at hx
@@ -62,6 +62,6 @@ theorem disjoint_homogeneousSubmodule_wordFiltrationPrevious (n : ℕ) :
   | succ k =>
       rw [wordFiltrationPrevious_succ] at hx
       rw [← DirectSum.decompose_of_mem_same _ hxn]
-      exact decompose_coe_eq_zero_of_mem_wordFiltration (Nat.lt_succ_self k) hx
+      exact coe_decompose_eq_zero_of_mem_wordFiltration (Nat.lt_succ_self k) hx
 
 end TauCeti.SymmetricAlgebra
