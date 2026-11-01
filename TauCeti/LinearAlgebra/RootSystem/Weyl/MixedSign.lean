@@ -73,28 +73,6 @@ section RootForm
 
 variable [Fintype ι]
 
-omit [P.IsRootSystem] in
-/-- The invariant form underlying `RootPairing.posRootForm` is the canonical form; this holds by
-definition of `RootPairing.posRootForm`, and lets the general invariant-form API be read off for
-`RootPairing.RootForm`. -/
-private lemma form_toInvariantForm_posRootForm :
-    (P.posRootForm R).toInvariantForm.form = P.RootForm :=
-  rfl
-
-omit [P.IsRootSystem] in
-/-- The canonical form is invariant under the whole Weyl group. -/
-private lemma rootForm_weylGroup_smul (w : P.weylGroup) (x y : M) :
-    P.RootForm (w • x) (w • y) = P.RootForm x y := by
-  simpa only [form_toInvariantForm_posRootForm] using
-    InvariantForm.apply_weylGroup_smul P (B := (P.posRootForm R).toInvariantForm) w x y
-
-omit [P.IsRootSystem] in
-/-- The canonical form against a root: `2 B(x, α) = ⟨x, α^∨⟩ B(α, α)`. -/
-private lemma two_mul_rootForm_root (x : M) (i : ι) :
-    2 * P.RootForm x (P.root i) = P.coroot' i x * P.RootForm (P.root i) (P.root i) := by
-  simpa only [form_toInvariantForm_posRootForm] using
-    (P.posRootForm R).toInvariantForm.two_mul_apply_root x i
-
 /-- **A vector that is not a multiple of any root is orthogonal to a regular weight**: for the
 canonical form `B` of a finite root system over a linearly ordered field, there is a regular
 weight `v` with `B(x, v) = 0`. -/
@@ -115,9 +93,8 @@ theorem exists_isRegularWeight_rootForm_eq_zero {x : M}
       refine ⟨u, hxu, fun hαu ↦ ?_⟩
       -- Otherwise `u` would be isotropic, hence zero, and `x` a multiple of `α`.
       have huu : P.RootForm u u = 0 := by
-        conv_lhs => rw [hu]
-        rw [LinearMap.map_sub₂, LinearMap.map_smul₂, LinearMap.map_smul₂, smul_eq_mul,
-          smul_eq_mul, hαu, hxu, mul_zero, mul_zero, sub_zero]
+        nth_rw 1 [hu]
+        simp [hαu, hxu]
       have hu0 : P.RootForm x x • P.root i = P.RootForm (P.root i) x • x :=
         sub_eq_zero.mp (haniso u huu)
       by_cases hαx : P.RootForm (P.root i) x = 0
@@ -167,19 +144,18 @@ theorem exists_weylGroup_repr_smul_pos_and_neg {x : M} (hx₀ : x ≠ 0)
     simpa [c] using hxv
   have hne : c ≠ 0 := by
     simpa [c] using (smul_ne_zero_iff_ne w).mpr hx₀
-  refine ⟨w, ?_, ?_⟩
-  · by_contra! h
-    refine hne (Finsupp.ext fun i ↦ ?_)
-    have hle (j : b.support) : c j * P.RootForm (P.root j) (w • v) ≤ 0 :=
-      mul_nonpos_of_nonpos_of_nonneg (h j) (hpos j).le
-    have := (Finset.sum_eq_zero_iff_of_nonpos fun j _ ↦ hle j).mp hsum i (Finset.mem_univ i)
+  -- A vanishing positive-weighted sum of nonzero coefficients has a positive coefficient.
+  have hexists (d : b.support →₀ R) (hd : ∑ i, d i * P.RootForm (P.root i) (w • v) = 0)
+      (hd₀ : d ≠ 0) : ∃ i, 0 < d i := by
+    by_contra! h
+    refine hd₀ (Finsupp.ext fun i ↦ ?_)
+    have := (Finset.sum_eq_zero_iff_of_nonpos fun j _ ↦
+      mul_nonpos_of_nonpos_of_nonneg (h j) (hpos j).le).mp hd i (Finset.mem_univ i)
     simpa [(hpos i).ne'] using this
-  · by_contra! h
-    refine hne (Finsupp.ext fun i ↦ ?_)
-    have hle (j : b.support) : 0 ≤ c j * P.RootForm (P.root j) (w • v) :=
-      mul_nonneg (h j) (hpos j).le
-    have := (Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ hle j).mp hsum i (Finset.mem_univ i)
-    simpa [(hpos i).ne'] using this
+  obtain ⟨j, hj⟩ := hexists (-c)
+    (by simp only [Finsupp.neg_apply, neg_mul, Finset.sum_neg_distrib, hsum, neg_zero])
+    (neg_ne_zero.mpr hne)
+  exact ⟨w, hexists c hsum hne, j, by simpa using hj⟩
 
 /-- **A vector that is not a multiple of a root has a Weyl translate outside `Q⁺ ∪ -Q⁺`.** For a
 nonzero vector `x` of a finite crystallographic reduced root system over a linearly ordered field
@@ -188,20 +164,11 @@ cone of the base `b` nor in its negative. -/
 theorem exists_weylGroup_smul_notMem_posRootCone_and_neg_notMem {x : M} (hx₀ : x ≠ 0)
     (hx : ∀ (i : ι) (c : R), x ≠ c • P.root i) :
     ∃ w : P.weylGroup, w • x ∉ posRootCone P b ∧ -(w • x) ∉ posRootCone P b := by
-  -- A member of the positive root cone has nonnegative coefficients.
-  have hcoeff {y : M} (hy : y ∈ posRootCone P b) (i : b.support) :
-      0 ≤ b.toWeightBasis.repr y i := by
-    obtain ⟨f, rfl⟩ := (mem_posRootCone P b).mp hy
-    rw [← Finset.sum_coe_sort b.support]
-    simp only [← Base.toWeightBasis_apply, map_sum, map_nsmul, Module.Basis.repr_self,
-      Finsupp.finsetSum_apply, Finsupp.smul_apply]
-    exact Finset.sum_nonneg fun j _ ↦ nsmul_nonneg (Finsupp.single_nonneg.mpr zero_le_one i) _
   obtain ⟨w, ⟨i, hi⟩, j, hj⟩ := P.exists_weylGroup_repr_smul_pos_and_neg b hx₀ hx
-  refine ⟨w, fun h ↦ (hcoeff h j).not_gt hj, fun h ↦ ?_⟩
-  have := hcoeff h i
+  refine ⟨w, fun h ↦ (toWeightBasis_repr_nonneg_of_mem_posRootCone h j).not_gt hj, fun h ↦ ?_⟩
+  have := toWeightBasis_repr_nonneg_of_mem_posRootCone h i
   rw [map_neg, Finsupp.neg_apply, neg_nonneg] at this
   exact this.not_gt hi
-
 
 /-- **The Weyl orbit of a nonzero vector meets a simple-root line or leaves `Q⁺ ∪ -Q⁺`.** For a
 nonzero vector `x` of a finite crystallographic reduced root system over a linearly ordered field,
