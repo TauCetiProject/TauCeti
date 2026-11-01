@@ -91,7 +91,7 @@ def contactFlat (α : SmoothForm I M ℝ 1) (x : M) :
 @[simp]
 theorem contactFlat_apply (α : SmoothForm I M ℝ 1) (x : M) (v w : TangentSpace I x) :
     α.contactFlat x v w = mextDeriv α.1 x ![v, w] + α.1 x ![v] * α.1 x ![w] := by
-  simp [contactFlat, SmoothBundleForm.eval₂_apply, ← degreeOneEquiv_coe_apply]
+  simp [contactFlat, SmoothBundleForm.eval₂_apply]
 
 /-- **The contact flat maps form a smooth section** of the bundle `Hom(TM, Hom(TM, ℝ))`. -/
 theorem contMDiff_contactFlat (α : SmoothForm I M ℝ 1) :
@@ -133,7 +133,7 @@ theorem contactFlat_apply_eq_iff {x : M} {v : TangentSpace I x} :
     LinearMap.smul_apply, bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply,
     degreeOneEquiv_coe_apply, LinearMap.zero_apply, smul_eq_mul] at h
   rw [ContinuousLinearMap.ext_iff]
-  simpa [-degreeOneEquiv_apply_apply, degreeOneEquiv_apply_apply_vec] using h
+  simpa using h
 
 /-- **The contact flat map of a contact form is invertible** at every point of a
 finite-dimensional manifold. -/
