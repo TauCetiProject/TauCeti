@@ -52,7 +52,8 @@ is isotopic to one induced by a matrix.
 
 ## Main results
 
-* `TauCeti.unknotLensSpaceDehnFilling_gluing_apply`: the gluing of the boundary tori.
+* `TauCeti.unknotLensSpaceDehnFilling_gluing`,
+  `TauCeti.unknotLensSpaceDehnFilling_gluing_apply`: the gluing of the boundary tori.
 * `TauCeti.unknotLensSpaceDehnFilling_solidTorusEmbedding_apply`,
   `TauCeti.unknotLensSpaceDehnFilling_exteriorEmbedding_apply`: values of the embeddings on the
   power-map cover of the solid torus.
@@ -193,6 +194,13 @@ def unknotLensSpaceDehnFilling (hst : s * p + t * q = 1) (hℓ : (ℓ 1 : ZMod p
 
 variable {p ℓ}
 
+/-- The `p / q`-surgery on the unknot glues the boundary tori by the determinant-one torus map
+`torusGluing p q s t hst`. -/
+theorem unknotLensSpaceDehnFilling_gluing (hst : s * p + t * q = 1)
+    (hℓ : (ℓ 1 : ZMod p) = -q * ℓ 0) :
+    (unknotLensSpaceDehnFilling p ℓ hst hℓ).gluing = torusGluing p q s t hst :=
+  (rfl)
+
 /-- The `p / q`-surgery on the unknot glues the boundary tori by
 `(a, b) ↦ (a ^ p b ^ (-t), a ^ q b ^ s)`. -/
 @[simp]
@@ -272,7 +280,7 @@ theorem nonempty_homeomorph_lensSpace_of_unknot_slopeValue (hℓ : (ℓ 1 : ZMod
   obtain ⟨B, -, hB⟩ := exists_torusHomeomorph_eq_torusGluing p q s t hst
   have hB' : Isotopic ((unknotLensSpaceDehnFilling p ℓ hst hℓ).gluing :
       C(Circle × Circle, Circle × Circle)) B.torusHomeomorph := by
-    rw [hB]
+    rw [unknotLensSpaceDehnFilling_gluing, hB]
     exact Isotopic.refl _ (torusGluing p q s t hst).isEmbedding
   obtain ⟨e, -⟩ := F.exists_homeomorph_of_isotopic_torusHomeomorph
     (unknotLensSpaceDehnFilling p ℓ hst hℓ) hA hB'
