@@ -41,7 +41,8 @@ submodule of those `z ∈ Z` with `g_k z` a boundary of `K`, which is finitely g
 `R` is Noetherian, together with elements of `K_{k+1}` whose boundaries are their images, and
 finitely many cycles of `K_{k+1}` representing generators of `H_{k+1}(K)`. The free module
 `L_{k+1}` on these generators, with the evident maps to `L_k` and `K_{k+1}`, makes `H_k(g)`
-injective, and `H_{k+1}(g)` surjective onto classes of cycles of `L_{k+1}`. The cochain complex
+injective, and every cycle of `K_{k+1}` the sum of a boundary and the image of a cycle of
+`L_{k+1}`, so that `H_{k+1}(g)` will be surjective onto `H_{k+1}(K)`. The cochain complex
 version follows by applying the chain complex version to the canonical truncation of `K` in
 degrees `≤ n`, reindexed by `ℕ`.
 
