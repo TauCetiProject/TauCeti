@@ -38,7 +38,7 @@ of the action of the absolute Galois group of `ℚ` on Belyi maps, and hence on 
 
 * `TauCeti.exists_criticalValues_comp_lenstraPolynomial_subset`: for `α` integral over `ℚ`,
   some `q ∘ p_α` with `q ∈ ℚ[X]` nonconstant has all its critical values in `{0, 1}`.
-* `TauCeti.map_comp_lenstraPolynomial`: `(q ∘ p_α)^σ = q ∘ p_{σ(α)}` for `q ∈ ℚ[X]`.
+* `Polynomial.map_comp_lenstraPolynomial`: `(q ∘ p_α)^σ = q ∘ p_{σ(α)}` for `q ∈ ℚ[X]`.
 * `TauCeti.eq_of_comp_lenstraPolynomial_comp_eq`: `f ∘ p_α ∘ (a X + b) = g ∘ p_β` forces `a = 1`,
   `b = 0` and `α = β`.
 * `TauCeti.comp_lenstraPolynomial_comp_ne_map`: if `σ(α) ≠ α`, then no affine change of variable
@@ -108,7 +108,7 @@ variable {K' : Type*} [Field K'] [CharZero K']
 
 /-- Applying a field homomorphism `σ` to the coefficients of `q ∘ p_α`, for `q` with rational
 coefficients, gives `q ∘ p_{σ(α)}`. -/
-theorem map_comp_lenstraPolynomial (q : ℚ[X]) (σ : K →+* K') (α : K) :
+theorem _root_.Polynomial.map_comp_lenstraPolynomial (q : ℚ[X]) (σ : K →+* K') (α : K) :
     ((q.map (algebraMap ℚ K)).comp (lenstraPolynomial α)).map σ =
       (q.map (algebraMap ℚ K')).comp (lenstraPolynomial (σ α)) := by
   rw [map_comp, Polynomial.map_map, Subsingleton.elim (σ.comp (algebraMap ℚ K)),
@@ -132,8 +132,9 @@ theorem eq_of_comp_lenstraPolynomial_comp_eq {f g : K[X]} {α β a b : K} (hf : 
     rintro rfl
     simpa using congrArg natDegree hpq
   have hpβ : p = C c⁻¹ * lenstraPolynomial β + C (-(c⁻¹ * d)) := by
-    rw [hpq, mul_add, ← mul_assoc, ← C_mul, inv_mul_cancel₀ hc, map_neg, C_mul, C_1]
-    ring
+    have hcc : C c⁻¹ * C c = (1 : K[X]) := by rw [← C_mul, inv_mul_cancel₀ hc, C_1]
+    simp only [hpq, map_neg, map_mul]
+    linear_combination (-p) * hcc
   obtain ⟨ha1, hb, hαβ, -⟩ :=
     (lenstraPolynomial_comp_affine_eq_iff hα0 hα1 hβ0 hβ1 ha (inv_ne_zero hc)).mp hpβ
   exact ⟨ha1, hb, hαβ⟩
