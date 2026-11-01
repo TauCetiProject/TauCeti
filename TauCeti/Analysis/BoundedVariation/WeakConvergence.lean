@@ -45,15 +45,14 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-- Distributional convergence of locally BV functions with locally uniformly bounded variation
 measures implies convergence of their derivative measures against continuous compactly supported
-fields. The measures may have infinite mass on the whole domain. -/
+fields. Local finiteness of the limit's variation follows from these hypotheses. The measures
+may have infinite mass on the whole domain. -/
 theorem tendsto_integral_inner_polarDensity_of_tendsto_integral
     {ι : Type*} {l : Filter ι} {v : ι → E → ℝ} {u : E → ℝ}
     (hv : ∀ i, LocallyIntegrableOn (v i) Ω μ)
     (hvfin : ∀ i K, IsCompact K → K ⊆ Ω →
       ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (v i) ≠ ∞)
     (hu : LocallyIntegrableOn u Ω μ)
-    (hufin : ∀ K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
     (hbound : ∀ K, IsCompact K → K ⊆ Ω → ∃ C : ℝ,
       ∀ᶠ i in l, (variationMeasure μ Ω (v i)).real (((↑) : Ω → E) ⁻¹' K) ≤ C)
     (hconv : ∀ ψ : 𝓓(Ω, ℝ),
@@ -61,6 +60,32 @@ theorem tendsto_integral_inner_polarDensity_of_tendsto_integral
     {f : E → E} (hf : Continuous f) (hc : HasCompactSupport f) (hs : tsupport f ⊆ Ω) :
     Tendsto (fun i => ∫ x : Ω, ⟪f x, polarDensity μ Ω (v i) x⟫ ∂variationMeasure μ Ω (v i)) l
       (𝓝 (∫ x : Ω, ⟪f x, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u)) := by
+  obtain rfl | hl := l.eq_or_neBot
+  · exact tendsto_bot
+  -- Lower semicontinuity transfers the compact mass bounds to the limit on smaller open sets.
+  have hufin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞ := by
+    intro K hK hKΩ
+    obtain ⟨L, hL, hKL, hLΩ⟩ := exists_compact_between hK Ω.isOpen hKΩ
+    let U : Opens E := ⟨interior L, isOpen_interior⟩
+    have hUΩ : U ≤ Ω := interior_subset.trans hLΩ
+    obtain ⟨C, hC⟩ := hbound L hL hLΩ
+    have hL' : IsCompact (((↑) : Ω → E) ⁻¹' L) :=
+      Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hL (by simpa using hLΩ)
+    have htv : ∀ᶠ i in l, totalVariationOn μ U (v i) ≤ ENNReal.ofReal C := by
+      filter_upwards [hC] with i hi
+      have hmass : variationMeasure μ Ω (v i) (((↑) : Ω → E) ⁻¹' L) ≤
+          ENNReal.ofReal C := by
+        rw [← ENNReal.ofReal_toReal hL'.measure_lt_top.ne]
+        exact ENNReal.ofReal_le_ofReal hi
+      rw [← variationMeasure_preimage_coe (hv i) (hvfin i) hUΩ]
+      exact (measure_mono (preimage_mono interior_subset)).trans hmass
+    refine ⟨U, hKL, ne_top_of_le_ne_top (b := ENNReal.ofReal C) ENNReal.ofReal_ne_top ?_⟩
+    refine (totalVariationOn_le_liminf_of_tendsto_integral (Ω := U) fun ψ => ?_).trans
+      (liminf_le_of_frequently_le' htv.frequently)
+    simpa only [monoCLM_apply, le_refl, hUΩ, and_self, ite_true] using
+      hconv (monoCLM ℝ ψ : 𝓓(Ω, ℝ))
+  -- Approximate the continuous field on a fixed compact neighbourhood of its support.
   obtain ⟨δ, hδ, hδΩ⟩ := hc.exists_cthickening_subset_open Ω.isOpen hs
   let K := cthickening δ (tsupport f)
   have hK : IsCompact K := hc.cthickening
@@ -115,16 +140,6 @@ theorem tendsto_integral_inner_polarDensity_of_tendsto_L1_loc
     {f : E → E} (hf : Continuous f) (hc : HasCompactSupport f) (hs : tsupport f ⊆ Ω) :
     Tendsto (fun i => ∫ x : Ω, ⟪f x, polarDensity μ Ω (v i) x⟫ ∂variationMeasure μ Ω (v i)) l
       (𝓝 (∫ x : Ω, ⟪f x, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u)) := by
-  obtain rfl | hl := l.eq_or_neBot
-  · exact tendsto_bot
-  have hufin : ∀ K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞ := by
-    intro K hK hKΩ
-    obtain ⟨U, hKU, hUΩ, C, hC⟩ := hbound K hK hKΩ
-    refine ⟨U, hKU, ne_top_of_le_ne_top (b := (C : ℝ≥0∞)) ENNReal.coe_ne_top ?_⟩
-    exact (totalVariationOn_le_liminf (.of_forall fun i => (hv i).mono_set hUΩ)
-      (hu.mono_set hUΩ) (fun L hL hLU => hconv L hL (hLU.trans hUΩ))).trans
-        (liminf_le_of_frequently_le' hC.frequently)
   have hmass : ∀ K, IsCompact K → K ⊆ Ω → ∃ C : ℝ,
       ∀ᶠ i in l, (variationMeasure μ Ω (v i)).real (((↑) : Ω → E) ⁻¹' K) ≤ C := by
     intro K hK hKΩ
@@ -135,7 +150,7 @@ theorem tendsto_integral_inner_polarDensity_of_tendsto_L1_loc
         ((variationMeasure_preimage_coe (hv i) (hvfin i) hUΩ).le.trans hi)
     exact (ENNReal.toReal_le_toReal (ne_top_of_le_ne_top ENNReal.coe_ne_top hle)
       ENNReal.coe_ne_top).2 hle
-  refine tendsto_integral_inner_polarDensity_of_tendsto_integral hv hvfin hu hufin hmass
+  refine tendsto_integral_inner_polarDensity_of_tendsto_integral hv hvfin hu hmass
     (fun ψ => ?_) hf hc hs
   exact MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub
     (.of_forall fun x => (ψ : E →ᵇ ℝ).norm_coe_le_norm x)
