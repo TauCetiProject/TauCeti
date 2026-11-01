@@ -63,6 +63,8 @@ Two consequences describe the qualitative radial motion:
 ## Main results
 
 * `TauCeti.centralForceHamiltonian_radialProjection`: `H(q, p) = H_ℓ(r, p_r)`.
+* `TauCeti.centralForceHamiltonian_eq_radialMomentum_sq_div_add_effectivePotential`:
+  `H(q, p) = p_r² / (2m) + U_ℓ(‖q‖)`.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential`: the
   reduced Hamilton equations `r' = p_r / m`, `p_r' = ℓ² / (m r³) - U'(r)`.
 * `TauCeti.fderiv_radialProjection_hamiltonianVectorField_centralForceHamiltonian`: the radial
@@ -198,16 +200,26 @@ theorem centralForceHamiltonian_radialProjection {m ℓ : ℝ} {U : ℝ → ℝ}
   · simp [hm]
   · field_simp
 
+/-- **The energy splits into radial kinetic energy and effective potential.** Away from the
+collision set, `H(q, p) = p_r² / (2m) + U_ℓ(‖q‖)` for the squared angular momentum
+`ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²`. -/
+theorem centralForceHamiltonian_eq_radialMomentum_sq_div_add_effectivePotential {m ℓ : ℝ}
+    {U : ℝ → ℝ} {x : V × V} (hq : x.1 ≠ 0)
+    (hℓ : ℓ ^ 2 = ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) :
+    centralForceHamiltonian m U x =
+      radialMomentum x ^ 2 / (2 * m) + effectivePotential m ℓ U ‖x.1‖ := by
+  rw [← centralForceHamiltonian_radialProjection hq hℓ, radialProjection,
+    centralForceHamiltonian_effectivePotential_apply (norm_nonneg _), effectivePotential_apply,
+    add_assoc]
+
 /-- **The effective potential bounds the energy.** For a nonnegative mass, away from the collision
 set, `U_ℓ(‖q‖) ≤ H(q, p)` for the squared angular momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²`. So a motion
 of energy `E` and angular momentum `ℓ` stays in the region `U_ℓ(r) ≤ E`. -/
 theorem effectivePotential_le_centralForceHamiltonian {m ℓ : ℝ} (hm : 0 ≤ m) {U : ℝ → ℝ}
     {x : V × V} (hq : x.1 ≠ 0) (hℓ : ℓ ^ 2 = ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) :
     effectivePotential m ℓ U ‖x.1‖ ≤ centralForceHamiltonian m U x := by
-  rw [← centralForceHamiltonian_radialProjection hq hℓ, radialProjection,
-    centralForceHamiltonian_effectivePotential_apply (norm_nonneg _), effectivePotential, add_assoc]
-  have : 0 ≤ radialMomentum x ^ 2 / (2 * m) := div_nonneg (sq_nonneg _) (by linarith)
-  linarith
+  rw [centralForceHamiltonian_eq_radialMomentum_sq_div_add_effectivePotential hq hℓ]
+  exact le_add_of_nonneg_left (div_nonneg (sq_nonneg _) (by linarith))
 
 /-- **Turning points.** For a nonzero mass, away from the collision set, the energy equals the
 effective potential `U_ℓ(‖q‖)`, for the squared angular momentum `ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²`,
@@ -215,8 +227,7 @@ exactly when the radial momentum vanishes. -/
 theorem centralForceHamiltonian_eq_effectivePotential_iff {m ℓ : ℝ} (hm : m ≠ 0) {U : ℝ → ℝ}
     {x : V × V} (hq : x.1 ≠ 0) (hℓ : ℓ ^ 2 = ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) :
     centralForceHamiltonian m U x = effectivePotential m ℓ U ‖x.1‖ ↔ radialMomentum x = 0 := by
-  rw [← centralForceHamiltonian_radialProjection hq hℓ, radialProjection,
-    centralForceHamiltonian_effectivePotential_apply (norm_nonneg _), effectivePotential, add_assoc]
+  rw [centralForceHamiltonian_eq_radialMomentum_sq_div_add_effectivePotential hq hℓ]
   simp [hm]
 
 /-! ### The derivative of the radial projection -/
