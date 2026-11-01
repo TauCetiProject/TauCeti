@@ -42,14 +42,33 @@ namespace TauCeti.Probability
 variable {ι : Type*} [Fintype ι] [MeasurableSpace ι]
   [MeasurableSingletonClass ι]
 
+omit [MeasurableSpace ι] [MeasurableSingletonClass ι] in
+private theorem setOf_le_eq_coe_filter (label : ι → ℝ) (x : ℝ) :
+    {i | label i ≤ x} = (↑(Finset.univ.filter fun i => label i ≤ x) : Set ι) := by
+  classical
+  ext i
+  simp
+
+private theorem ae_categoricalMeasure_of_pos (p : StdSimplex ℝ≥0 ι) {P : ι → Prop}
+    (hP : ∀ i, 0 < p.weights i → P i) : ∀ᵐ i ∂categoricalMeasure p, P i := by
+  apply ae_iff_of_countable.mpr
+  intro i hi
+  apply hP i
+  exact pos_iff_ne_zero.mpr (ENNReal.coe_ne_zero.mp (by simpa using hi))
+
+private theorem measureReal_label_eq_pos_of_singleton_pos {α β : Type*} [MeasurableSpace α]
+    (μ : Measure α) [IsFiniteMeasure μ] (label : α → β) {i : α} {x : β} (hi : label i = x)
+    (hsingle : 0 < μ.real {i}) : 0 < μ.real {j | label j = x} :=
+  hsingle.trans_le (measureReal_mono (singleton_subset_iff.mpr hi))
+
 /-- The cumulative mass of a labelled categorical law is the sum of the weights of all
 categories whose labels are at most the threshold.  Equal labels are therefore aggregated. -/
-theorem categoricalMeasure_real_le_label (p : StdSimplex ℝ≥0 ι) (label : ι → ℝ) (x : ℝ) :
+theorem categoricalMeasure_real_setOf_label_le (p : StdSimplex ℝ≥0 ι)
+    (label : ι → ℝ) (x : ℝ) :
     (categoricalMeasure p).real {i | label i ≤ x} =
       ∑ i with label i ≤ x, (p.weights i : ℝ) := by
   classical
-  rw [show {i | label i ≤ x} =
-    (↑(Finset.univ.filter fun i => label i ≤ x) : Set ι) by ext; simp]
+  rw [setOf_le_eq_coe_filter]
   rw [← sum_measureReal_singleton]
   simp only [categoricalMeasure_real_singleton]
 
@@ -60,27 +79,16 @@ theorem quantile_map_categoricalMeasure_isLeast (p : StdSimplex ℝ≥0 ι)
     IsLeast {x : ℝ | x ∈ Set.range label ∧
       u ≤ ∑ i with label i ≤ x, (p.weights i : ℝ)}
       (((categoricalMeasure p).map label).quantile u) := by
-  let _ := p.nonempty
-  simpa only [categoricalMeasure_real_le_label] using
+  simpa only [categoricalMeasure_real_setOf_label_le] using
     Measure.isLeast_quantile_map_finite (categoricalMeasure p) label hu
-
-/-- The real mass of a singleton under the uniform law on a nonempty finite type is the
-reciprocal of the cardinality. -/
-@[simp]
-theorem uniformOn_univ_real_singleton (i : ι) :
-    (uniformOn (Set.univ : Set ι)).real {i} = (Fintype.card ι : ℝ)⁻¹ := by
-  rw [measureReal_def, uniformOn_univ_apply_singleton]
-  rw [ENNReal.toReal_inv]
-  norm_cast
 
 /-- The cumulative mass of a labelled uniform law is the fraction of categories whose labels
 are at most the threshold.  Repeated labels are counted with their full multiplicity. -/
-theorem uniformOn_univ_real_le_label (label : ι → ℝ) (x : ℝ) :
+theorem uniformOn_univ_real_setOf_label_le (label : ι → ℝ) (x : ℝ) :
     (uniformOn (Set.univ : Set ι)).real {i | label i ≤ x} =
       ((Finset.univ.filter fun i => label i ≤ x).card : ℝ) / Fintype.card ι := by
   classical
-  rw [show {i | label i ≤ x} =
-    (↑(Finset.univ.filter fun i => label i ≤ x) : Set ι) by ext; simp]
+  rw [setOf_le_eq_coe_filter]
   rw [← sum_measureReal_singleton]
   simp [div_eq_mul_inv]
 
@@ -91,7 +99,7 @@ theorem quantile_map_uniformOn_univ_isLeast [Nonempty ι]
     IsLeast {x : ℝ | x ∈ Set.range label ∧
       u ≤ ((Finset.univ.filter fun i => label i ≤ x).card : ℝ) / Fintype.card ι}
       (((uniformOn (Set.univ : Set ι)).map label).quantile u) := by
-  simpa only [uniformOn_univ_real_le_label] using
+  simpa only [uniformOn_univ_real_setOf_label_le] using
     Measure.isLeast_quantile_map_finite (uniformOn (Set.univ : Set ι)) label hu
 
 /-- At levels tending to zero, categorical quantiles tend to a lowest label carrying positive
@@ -101,16 +109,12 @@ theorem tendsto_quantile_map_categoricalMeasure_nhdsGT_zero (p : StdSimplex ℝ�
     (hmin : ∀ i, 0 < p.weights i → a ≤ label i) :
     Tendsto (fun u ↦ (((categoricalMeasure p).map label).quantile u : EReal))
       (𝓝[>] 0) (𝓝 (a : EReal)) := by
-  apply Measure.tendsto_quantile_map_finite_nhdsGT_zero
-  · apply ae_iff_of_countable.mpr
-    intro i hi
-    apply hmin i
-    exact pos_iff_ne_zero.mpr (ENNReal.coe_ne_zero.mp (by simpa using hi))
+  apply Measure.tendsto_quantile_map_nhdsGT_zero _ (measurable_of_finite label)
+  · exact ae_categoricalMeasure_of_pos p hmin
   · obtain ⟨i, hi, hpi⟩ := ha
-    have hsingle : 0 < (categoricalMeasure p).real {i} := by
-      rw [categoricalMeasure_real_singleton]
-      exact_mod_cast hpi
-    exact hsingle.trans_le (measureReal_mono (singleton_subset_iff.mpr hi))
+    apply measureReal_label_eq_pos_of_singleton_pos (categoricalMeasure p) label hi
+    rw [categoricalMeasure_real_singleton]
+    exact_mod_cast hpi
 
 /-- At levels tending to one, categorical quantiles tend to a highest label carrying positive
 weight. -/
@@ -119,16 +123,12 @@ theorem tendsto_quantile_map_categoricalMeasure_nhdsLT_one (p : StdSimplex ℝ�
     (hmax : ∀ i, 0 < p.weights i → label i ≤ b) :
     Tendsto (fun u ↦ (((categoricalMeasure p).map label).quantile u : EReal))
       (𝓝[<] 1) (𝓝 (b : EReal)) := by
-  apply Measure.tendsto_quantile_map_finite_nhdsLT_one
-  · apply ae_iff_of_countable.mpr
-    intro i hi
-    apply hmax i
-    exact pos_iff_ne_zero.mpr (ENNReal.coe_ne_zero.mp (by simpa using hi))
+  apply Measure.tendsto_quantile_map_nhdsLT_one _ (measurable_of_finite label)
+  · exact ae_categoricalMeasure_of_pos p hmax
   · obtain ⟨i, hi, hpi⟩ := hb
-    have hsingle : 0 < (categoricalMeasure p).real {i} := by
-      rw [categoricalMeasure_real_singleton]
-      exact_mod_cast hpi
-    exact hsingle.trans_le (measureReal_mono (singleton_subset_iff.mpr hi))
+    apply measureReal_label_eq_pos_of_singleton_pos (categoricalMeasure p) label hi
+    rw [categoricalMeasure_real_singleton]
+    exact_mod_cast hpi
 
 /-- At levels tending to zero, finite-uniform quantiles tend to a lowest supplied label. -/
 theorem tendsto_quantile_map_uniformOn_univ_nhdsGT_zero
@@ -138,13 +138,12 @@ theorem tendsto_quantile_map_uniformOn_univ_nhdsGT_zero
     Tendsto (fun u ↦ (((uniformOn (Set.univ : Set κ)).map label).quantile u : EReal))
       (𝓝[>] 0) (𝓝 (a : EReal)) := by
   let _ := Fintype.ofFinite κ
-  apply Measure.tendsto_quantile_map_finite_nhdsGT_zero
+  apply Measure.tendsto_quantile_map_nhdsGT_zero _ (measurable_of_finite label)
   · exact ae_of_all _ hmin
   · obtain ⟨i, hi⟩ := ha
-    have hsingle : 0 < (uniformOn (Set.univ : Set κ)).real {i} := by
-      rw [uniformOn_univ_real_singleton]
-      exact inv_pos.mpr (Nat.cast_pos.mpr Fintype.card_pos)
-    exact hsingle.trans_le (measureReal_mono (singleton_subset_iff.mpr hi))
+    apply measureReal_label_eq_pos_of_singleton_pos (uniformOn (Set.univ : Set κ)) label hi
+    rw [uniformOn_univ_real_singleton]
+    exact inv_pos.mpr (Nat.cast_pos.mpr Fintype.card_pos)
 
 /-- At levels tending to one, finite-uniform quantiles tend to a highest supplied label. -/
 theorem tendsto_quantile_map_uniformOn_univ_nhdsLT_one
@@ -154,12 +153,11 @@ theorem tendsto_quantile_map_uniformOn_univ_nhdsLT_one
     Tendsto (fun u ↦ (((uniformOn (Set.univ : Set κ)).map label).quantile u : EReal))
       (𝓝[<] 1) (𝓝 (b : EReal)) := by
   let _ := Fintype.ofFinite κ
-  apply Measure.tendsto_quantile_map_finite_nhdsLT_one
+  apply Measure.tendsto_quantile_map_nhdsLT_one _ (measurable_of_finite label)
   · exact ae_of_all _ hmax
   · obtain ⟨i, hi⟩ := hb
-    have hsingle : 0 < (uniformOn (Set.univ : Set κ)).real {i} := by
-      rw [uniformOn_univ_real_singleton]
-      exact inv_pos.mpr (Nat.cast_pos.mpr Fintype.card_pos)
-    exact hsingle.trans_le (measureReal_mono (singleton_subset_iff.mpr hi))
+    apply measureReal_label_eq_pos_of_singleton_pos (uniformOn (Set.univ : Set κ)) label hi
+    rw [uniformOn_univ_real_singleton]
+    exact inv_pos.mpr (Nat.cast_pos.mpr Fintype.card_pos)
 
 end TauCeti.Probability

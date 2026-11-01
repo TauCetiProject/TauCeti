@@ -98,6 +98,15 @@ theorem uniformOn_univ_apply_singleton [Fintype α] (a : α) :
     uniformOn (Set.univ : Set α) {a} = (Fintype.card α : ℝ≥0∞)⁻¹ := by
   simpa using Finset.uniformOn_coe_finset_apply_singleton (Finset.univ : Finset α) a
 
+/-- The real mass of a point under the uniform law on a nonempty finite type is the reciprocal
+of the cardinality. -/
+@[simp]
+theorem uniformOn_univ_real_singleton [Fintype α] (a : α) :
+    (uniformOn (Set.univ : Set α)).real {a} = (Fintype.card α : ℝ)⁻¹ := by
+  rw [measureReal_def, uniformOn_univ_apply_singleton]
+  rw [ENNReal.toReal_inv]
+  norm_cast
+
 end TauCeti.Probability
 
 namespace Finset
