@@ -1,0 +1,165 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.RingTheory.Localization.Away.Basic
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.WedgeCircles
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.DirectedUnion
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.LowDegree
+
+/-!
+# The homology of the classifying space of `ℤ[1/m]`
+
+For a nonzero integer `m`, the additive group of `ℤ[1/m] = Localization.Away m` is the directed
+union of its infinite cyclic subgroups `m⁻ʳ ℤ`. Each of these is a free group, whose group homology
+with trivial coefficients vanishes in degrees `n ≥ 2` (`TauCeti.isZero_groupHomology_freeGroup`),
+and group homology commutes with directed unions of subgroups
+(`TauCeti.groupHomology.isZero_groupHomology_of_directed`). Hence
+
+* `Hₙ(ℤ[1/m], k) = 0` for `n ≥ 2` and every commutative ring `k`
+  (`TauCeti.isZero_groupHomology_localizationAway`);
+* `H₁(ℤ[1/m], k) = ℤ[1/m] ⊗ k` vanishes when `m = 0` in `k`, since `ℤ[1/m]` is `m`-divisible
+  (`TauCeti.isZero_groupHomology_one_localizationAway`, an instance of
+  `TauCeti.groupHomology.isZero_H1_of_forall_exists_zpow_eq`).
+
+More generally, a group which is the directed union of infinite cyclic subgroups has vanishing
+homology in degrees `n ≥ 2` (`TauCeti.isZero_groupHomology_of_directed_zpowers`).
+
+Through the identification of the singular homology of Milnor's classifying space `BG` with the
+group homology of `G`, the classifying space `K(ℤ[1/m], 1)` has the homology of a point with
+coefficients in any ring `k` in which `m = 0`
+(`TauCeti.isZero_classifyingSpace_singularHomology_localizationAway`). For `m = 2` and
+`k = 𝔽₂` this is the mod-two acyclicity of `K(ℤ[1/2], 1)`, the basic case of the vanishing of
+the reduced mod-two homology of `K(A, 1)` for every uniquely two-divisible abelian group `A`.
+
+## Main results
+
+* `TauCeti.isZero_groupHomology_of_directed_zpowers`: a directed union of infinite cyclic
+  subgroups has no group homology in degrees `n ≥ 2`.
+* `TauCeti.isZero_groupHomology_localizationAway`: `Hₙ(ℤ[1/m], k) = 0` for `n ≥ 2`.
+* `TauCeti.isZero_groupHomology_one_localizationAway`: `H₁(ℤ[1/m], k) = 0` when `m = 0` in `k`.
+* `TauCeti.isZero_classifyingSpace_singularHomology_localizationAway`: the classifying space
+  of `ℤ[1/m]` has no homology in positive degrees with coefficients in which `m = 0`.
+
+## References
+
+* K. S. Brown, *Cohomology of Groups*, Graduate Texts in Mathematics 87, Springer, 1982,
+  Chapter V, Proposition 5.3.
+* J.-P. Serre, *Groupes d'homotopie et classes de groupes abéliens*, Ann. of Math. 58 (1953).
+-/
+
+public section
+
+open CategoryTheory Limits groupHomology
+
+namespace TauCeti
+
+variable (k : Type) [CommRing k]
+
+/-- An infinite cyclic subgroup has no group homology with trivial coefficients in degrees
+`n ≥ 2`, since it is free on one generator. -/
+theorem isZero_groupHomology_res_zpowers {G : Type} [Group G] {g : G} (hg : ¬IsOfFinOrder g)
+    {n : ℕ} (hn : 2 ≤ n) :
+    IsZero (groupHomology (Rep.res (Subgroup.zpowers g).subtype (Rep.trivial k G k)) n) := by
+  have hinj : Function.Injective (zpowersHom G g) :=
+    injective_zpow_iff_not_isOfFinOrder.2 hg
+  let e : FreeGroup Unit ≃* Subgroup.zpowers g :=
+    FreeGroup.mulEquivIntOfUnique.trans (MonoidHom.ofInjective hinj)
+  refine (isZero_groupHomology_freeGroup Unit k hn).of_iso
+    (groupHomology.mapIso e (LinearEquiv.refl k k) (fun _ ↦ ?_) n).symm
+  ext
+  simp
+
+/-- **Homology of a directed union of infinite cyclic subgroups.** If `G` is the union of a
+directed family of infinite cyclic subgroups, then its group homology with trivial coefficients
+vanishes in degrees `n ≥ 2`. -/
+theorem isZero_groupHomology_of_directed_zpowers {G : Type} [Group G] {ι : Type*} [Nonempty ι]
+    {g : ι → G} (hg : ∀ i, ¬IsOfFinOrder (g i))
+    (hS : Directed (· ≤ ·) fun i ↦ Subgroup.zpowers (g i))
+    (hG : ⨆ i, Subgroup.zpowers (g i) = ⊤) {n : ℕ} (hn : 2 ≤ n) :
+    IsZero (groupHomology (Rep.trivial k G k) n) :=
+  groupHomology.isZero_groupHomology_of_directed hS hG fun i ↦
+    isZero_groupHomology_res_zpowers k (hg i) hn
+
+section LocalizationAway
+
+open IsLocalization.Away
+
+variable {m : ℤ}
+
+/-- The generator `m⁻ʳ` of the subgroup `m⁻ʳ ℤ` of `ℤ[1/m]`, in multiplicative notation. -/
+private noncomputable abbrev invPowGen (m : ℤ) (r : ℕ) : Multiplicative (Localization.Away m) :=
+  Multiplicative.ofAdd (invSelf m ^ r)
+
+/-- `m⁻¹` is the inverse of `m` in `ℤ[1/m]`, with `m` written as an integer cast. -/
+private theorem intCast_mul_invSelf : (m : Localization.Away m) * invSelf m = 1 := by
+  simpa using mul_invSelf (S := Localization.Away m) m
+
+private theorem invPowGen_mem_zpowers_succ (r : ℕ) :
+    invPowGen m r ∈ Subgroup.zpowers (invPowGen m (r + 1)) := by
+  refine Subgroup.mem_zpowers_iff.2 ⟨m, ?_⟩
+  rw [invPowGen, invPowGen, ← ofAdd_zsmul, zsmul_eq_mul, pow_succ, mul_comm (invSelf m ^ r),
+    ← mul_assoc, intCast_mul_invSelf, one_mul]
+
+private theorem directed_zpowers_invPowGen :
+    Directed (· ≤ ·) fun r ↦ Subgroup.zpowers (invPowGen m r) :=
+  Monotone.directed_le <| monotone_nat_of_le_succ fun r ↦
+    Subgroup.zpowers_le.2 (invPowGen_mem_zpowers_succ r)
+
+private theorem iSup_zpowers_invPowGen : ⨆ r, Subgroup.zpowers (invPowGen m r) = ⊤ := by
+  refine eq_top_iff.2 fun y _ ↦ (Subgroup.mem_iSup_of_directed directed_zpowers_invPowGen).2 ?_
+  -- every element of `ℤ[1/m]` is `a / mʳ` for some integer `a` and some `r`
+  obtain ⟨r, a, h⟩ := surj m y.toAdd
+  rw [eq_intCast, eq_intCast] at h
+  refine ⟨r, Subgroup.mem_zpowers_iff.2 ⟨a, ?_⟩⟩
+  rw [invPowGen, ← ofAdd_zsmul, zsmul_eq_mul, ← h, mul_assoc, ← mul_pow, intCast_mul_invSelf,
+    one_pow, mul_one, ofAdd_toAdd]
+
+private theorem not_isOfFinOrder_invPowGen (hm : m ≠ 0) (r : ℕ) :
+    ¬IsOfFinOrder (invPowGen m r) := by
+  intro h
+  obtain ⟨n, hn, hn1⟩ := isOfFinOrder_iff_zpow_eq_one.1 h
+  rw [invPowGen, ← ofAdd_zsmul, ofAdd_eq_one, zsmul_eq_mul] at hn1
+  -- clearing the denominator `mʳ`, the integer `n` vanishes in `ℤ[1/m]`
+  have hn0 : algebraMap ℤ (Localization.Away m) n = 0 := by
+    have := congr_arg (· * (m : Localization.Away m) ^ r) hn1
+    simpa [mul_assoc, ← mul_pow, mul_comm (invSelf m), intCast_mul_invSelf] using this
+  obtain ⟨⟨c, j, rfl⟩, hc⟩ := (IsLocalization.map_eq_zero_iff (Submonoid.powers m) _ n).1 hn0
+  exact hn ((mul_eq_zero.1 hc).resolve_left (pow_ne_zero _ hm))
+
+/-- **The homology of `ℤ[1/m]` in degrees at least two.** For a nonzero integer `m`, the group
+homology of the additive group of `ℤ[1/m]` with trivial coefficients vanishes in degrees `n ≥ 2`. -/
+theorem isZero_groupHomology_localizationAway (hm : m ≠ 0) {n : ℕ} (hn : 2 ≤ n) :
+    IsZero (groupHomology (Rep.trivial k (Multiplicative (Localization.Away m)) k) n) :=
+  isZero_groupHomology_of_directed_zpowers k (not_isOfFinOrder_invPowGen hm)
+    directed_zpowers_invPowGen iSup_zpowers_invPowGen hn
+
+/-- **The first homology of `ℤ[1/m]`.** If `m = 0` in `k`, the first group homology of the
+additive group of `ℤ[1/m]` with trivial coefficients `k` vanishes: it is `ℤ[1/m] ⊗ k`, and
+`ℤ[1/m]` is divisible by `m`. -/
+theorem isZero_groupHomology_one_localizationAway (hmk : (m : k) = 0) :
+    IsZero (groupHomology (Rep.trivial k (Multiplicative (Localization.Away m)) k) 1) :=
+  TauCeti.groupHomology.isZero_H1_of_forall_exists_zpow_eq _ m
+    (fun g ↦ ⟨Multiplicative.ofAdd (invSelf m * g.toAdd), by
+      rw [← ofAdd_zsmul, zsmul_eq_mul, ← mul_assoc, intCast_mul_invSelf, one_mul, ofAdd_toAdd]⟩)
+    fun c ↦ by rw [zsmul_eq_mul, hmk, zero_mul]
+
+/-- **The classifying space of `ℤ[1/m]` is acyclic modulo `m`.** For a nonzero integer `m` and a
+commutative ring `k` in which `m = 0`, the singular homology of the classifying space of the
+additive group of `ℤ[1/m]` with coefficients in `k` vanishes in every positive degree. For
+`m = 2` and `k = ZMod 2`, the space `K(ℤ[1/2], 1)` has the mod-two homology of a point. -/
+theorem isZero_classifyingSpace_singularHomology_localizationAway (hm : m ≠ 0)
+    (hmk : (m : k) = 0) {n : ℕ} (hn : 1 ≤ n) :
+    IsZero (((singularChains k).obj
+      (TopCat.of (classifyingSpace (Multiplicative (Localization.Away m))))).homology n) := by
+  refine IsZero.of_iso ?_ (classifyingSpaceSingularHomologyIsoGroupHomology k _ n)
+  obtain rfl | hn := hn.eq_or_lt
+  · exact isZero_groupHomology_one_localizationAway k hmk
+  · exact isZero_groupHomology_localizationAway k hm hn
+
+end LocalizationAway
+
+end TauCeti
