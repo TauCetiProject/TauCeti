@@ -81,13 +81,46 @@ theorem coe_restrInvariant [Finite G] [ContinuousConstSMul G X] (e : OpenPartial
 theorem coe_restrInvariant_symm [Finite G] [ContinuousConstSMul G X]
     (e : OpenPartialHomeomorph X Y) : ⇑(e.restrInvariant G).symm = e.symm := (rfl)
 
+/-- The source of the invariant restriction is the source intersected with all its translates. -/
+-- Membership simplifies via mem_restrInvariant_source_iff, without the redundant source conjunct.
+theorem restrInvariant_source [Finite G] [ContinuousConstSMul G X]
+    (e : OpenPartialHomeomorph X Y) :
+    (e.restrInvariant G).source = e.source ∩ ⋂ g : G, (g • ·) ⁻¹' e.source := (rfl)
+
+/-- The invariant restriction has source contained in the original source. -/
+theorem restrInvariant_source_subset [Finite G] [ContinuousConstSMul G X]
+    (e : OpenPartialHomeomorph X Y) : (e.restrInvariant G).source ⊆ e.source := by
+  rw [restrInvariant_source]
+  exact inter_subset_left
+
+/-- The target of the invariant restriction consists of points whose inverse image has its
+whole orbit in the original source. -/
+@[simp]
+theorem restrInvariant_target [Finite G] [ContinuousConstSMul G X]
+    (e : OpenPartialHomeomorph X Y) :
+    (e.restrInvariant G).target = e.target ∩ e.symm ⁻¹' ⋂ g : G, (g • ·) ⁻¹' e.source := (rfl)
+
+/-- The invariant restriction has target contained in the original target. -/
+theorem restrInvariant_target_subset [Finite G] [ContinuousConstSMul G X]
+    (e : OpenPartialHomeomorph X Y) : (e.restrInvariant G).target ⊆ e.target := by
+  rw [restrInvariant_target]
+  exact inter_subset_left
+
 /-- A point belongs to the invariant restriction exactly when its whole orbit is in the source. -/
 @[simp]
 theorem mem_restrInvariant_source_iff [Finite G] [ContinuousConstSMul G X]
     (e : OpenPartialHomeomorph X Y) {x : X} :
     x ∈ (e.restrInvariant G).source ↔ ∀ g : G, g • x ∈ e.source := by
-  simp only [restrInvariant, restrOpen_source, mem_inter_iff, mem_iInter, mem_preimage]
+  simp only [restrInvariant_source, mem_inter_iff, mem_iInter, mem_preimage]
   exact ⟨And.right, fun h => ⟨by simpa using h 1, h⟩⟩
+
+/-- A common fixed point in the original source belongs to the invariant restriction. -/
+theorem mem_restrInvariant_source_of_forall_smul_eq [Finite G] [ContinuousConstSMul G X]
+    (e : OpenPartialHomeomorph X Y) {x : X} (hx : ∀ g : G, g • x = x) (hxe : x ∈ e.source) :
+    x ∈ (e.restrInvariant G).source := by
+  rw [mem_restrInvariant_source_iff]
+  intro g
+  simpa only [hx g] using hxe
 
 /-- The source of an invariant restriction is invariant. -/
 theorem smul_mem_restrInvariant_source [Finite G] [ContinuousConstSMul G X]

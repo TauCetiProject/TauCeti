@@ -74,8 +74,7 @@ theorem exists_equivariant_contMDiff_chart
       fun g => by
         simpa only [ContinuousLinearMap.comp_id, Function.comp_def] using (hσ g).sub_const (χ x)
   let U := (χ.restrInvariant G).source
-  have hxU : x ∈ U := χ.mem_restrInvariant_source_iff.mpr fun g => by
-    simpa only [hx g] using hxχ
+  have hxU : x ∈ U := χ.mem_restrInvariant_source_of_forall_smul_eq hx hxχ
   let V := χ.target ∩ χ.symm ⁻¹' U
   have hV : IsOpen V := χ.isOpen_inter_preimage_symm (χ.restrInvariant G).open_source
   have hxV : χ x ∈ V := ⟨χ.map_source hxχ, by simpa [χ.left_inv hxχ] using hxU⟩
@@ -101,21 +100,18 @@ theorem exists_equivariant_contMDiff_chart
   -- Use the common Bochner restriction to retain equivariance without losing smoothness.
   let e := e₀.restrInvariant G
   have hΘeq : EqOn Θ (A ∘ χ.symm) Θ.source := fun z _ => congrFun hΘ z
-  have hxe : x ∈ e.source := e₀.mem_restrInvariant_source_iff.mpr fun g => by
-    simpa only [hx g, e₀, OpenPartialHomeomorph.trans_source, mem_inter_iff, mem_preimage] using
-      And.intro hxχ hxΘ
+  have hxe : x ∈ e.source :=
+    e₀.mem_restrInvariant_source_of_forall_smul_eq hx ⟨hxχ, hxΘ⟩
   refine ⟨σ, e, hxe, ?_, ?_, ?_, fun g z hz =>
       ⟨e₀.smul_mem_restrInvariant_source hz g,
         OpenPartialHomeomorph.bochnerChart_smul hΘeq hz g⟩,
     χ.map_eq_one_iff_mem_germKernel hxχ hx σ hσ⟩
   · rw [OpenPartialHomeomorph.bochnerChart_apply hΘeq hxe,
       ContRepresentation.bochnerAverage_apply_of_forall_smul_eq _ _ hx, sub_self, map_zero]
-  · dsimp only [e]
-    rw [OpenPartialHomeomorph.restrInvariant_def]
-    exact he₀smooth.mono inter_subset_left
-  · dsimp only [e]
-    rw [OpenPartialHomeomorph.restrInvariant_def]
-    exact he₀symm.mono inter_subset_left
+  · simpa only [e, OpenPartialHomeomorph.coe_restrInvariant] using
+      he₀smooth.mono e₀.restrInvariant_source_subset
+  · simpa only [e, OpenPartialHomeomorph.coe_restrInvariant_symm] using
+      he₀symm.mono e₀.restrInvariant_target_subset
 
 end TauCeti
 

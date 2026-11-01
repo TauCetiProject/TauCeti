@@ -264,15 +264,12 @@ omit [NormedSpace 𝕜 E]
 /-- On its domain, the Bochner chart is the Bochner average. -/
 theorem bochnerChart_apply {y : X} (hy : y ∈ ((χ.trans Θ).restrInvariant G).source) :
     (χ.trans Θ).restrInvariant G y = ρ.bochnerAverage c y := by
-  have hyχ : y ∈ χ.source := by
-    simpa only [one_smul, symm_target] using
-      ((χ.trans Θ).mem_restrInvariant_source_iff.mp hy 1).1
-  rw [restrInvariant_def] at hy ⊢
-  simp only [coe_restrOpen, coe_trans, Function.comp_apply]
+  have hy₀ := (χ.trans Θ).restrInvariant_source_subset hy
+  simp only [coe_restrInvariant, coe_trans, Function.comp_apply]
   calc
-    Θ (χ y) = (ρ.bochnerAverage c ∘ χ.symm) (χ y) := hΘ hy.1.2
+    Θ (χ y) = (ρ.bochnerAverage c ∘ χ.symm) (χ y) := hΘ hy₀.2
     _ = ρ.bochnerAverage c y := by
-      rw [Function.comp_apply, χ.left_inv hyχ]
+      rw [Function.comp_apply, χ.left_inv hy₀.1]
 
 /-- The Bochner chart intertwines the action of `G` with `ρ`. -/
 theorem bochnerChart_smul {y : X} (hy : y ∈ ((χ.trans Θ).restrInvariant G).source) (g : G) :
@@ -306,7 +303,7 @@ theorem hasStrictFDerivAt_bochnerChart_comp_symm [CompleteSpace E]
       (D : E →L[𝕜] F) z := by
   refine hA.congr_of_eventuallyEq ?_
   filter_upwards [χ.eventually_right_inverse hz] with w hw
-  simp [restrInvariant_def, hw]
+  simp [hw]
 
 include hΘ
 
@@ -331,9 +328,7 @@ theorem contDiffAt_comp_bochnerChart_symm [CompleteSpace E] {n : WithTop ℕ∞}
     ContDiffAt 𝕜 n (χ ∘ ((χ.trans Θ).restrInvariant G).symm) w := by
   set e := (χ.trans Θ).restrInvariant G
   have hy := e.map_target hw
-  have hyχ : e.symm w ∈ χ.source := by
-    simpa only [one_smul, symm_target] using
-      ((χ.trans Θ).mem_restrInvariant_source_iff.mp hy 1).1
+  have hyχ : e.symm w ∈ χ.source := ((χ.trans Θ).restrInvariant_source_subset hy).1
   have heq : e ∘ χ.symm =ᶠ[𝓝 (χ (e.symm w))] ρ.bochnerAverage c ∘ χ.symm := by
     have hmem : ∀ᶠ v in 𝓝 (χ (e.symm w)), χ.symm v ∈ e.source := by
       refine (χ.continuousAt_symm (χ.map_source hyχ)).preimage_mem_nhds ?_
@@ -430,17 +425,14 @@ theorem exists_equivariant_chart (χ : OpenPartialHomeomorph X E) {x : X} (hxχ 
       (σ.bochnerAverage (fun y => χ y - χ x) ∘ χ.symm)
       (hA.toOpenPartialHomeomorph _).source := fun _ _ => rfl
   let e₀ := χ.trans (hA.toOpenPartialHomeomorph _)
-  have hxs : x ∈ (e₀.restrInvariant G).source := by
-    rw [e₀.mem_restrInvariant_source_iff]
-    intro g
-    simpa only [hx g, e₀, trans_source, mem_inter_iff, mem_preimage] using
-      And.intro hxχ hA.mem_toOpenPartialHomeomorph_source
+  have hxs : x ∈ (e₀.restrInvariant G).source :=
+    e₀.mem_restrInvariant_source_of_forall_smul_eq hx
+      ⟨hxχ, hA.mem_toOpenPartialHomeomorph_source⟩
   refine ⟨e₀.restrInvariant G, hxs, ?_, ?_,
     fun g y hy => ⟨e₀.smul_mem_restrInvariant_source hy g, bochnerChart_smul hΘ hy g⟩, ?_⟩
   · rw [bochnerChart_apply hΘ hxs, ContRepresentation.bochnerAverage_apply_of_forall_smul_eq _ _ hx,
       sub_self, map_zero]
-  · intro y hy
-    simpa only [one_smul, symm_target] using (e₀.mem_restrInvariant_source_iff.mp hy 1).1
+  · exact fun y hy => (e₀.restrInvariant_source_subset hy).1
   · exact hasStrictFDerivAt_bochnerChart_comp_symm hA (χ.map_source hxχ)
 
 /-- **The derivative representation detects the ineffective kernel.** In the setting of
