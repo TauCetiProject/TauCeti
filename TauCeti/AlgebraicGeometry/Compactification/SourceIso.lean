@@ -120,19 +120,12 @@ def sourceIsoEquivalence (e : Y ≅ X) (w : e.hom ≫ f = f') :
     intros
     apply ObjectProperty.hom_ext
     apply Factorisation.Hom.ext
-    simp only [Functor.id_obj, Functor.comp_obj, Functor.id_map, Functor.comp_map,
-      ObjectProperty.FullSubcategory.comp_hom, Factorisation.comp_h, Iso.symm_hom,
-      precompHomInvIso_inv_hom_h, precompFunctor_map_hom_h]
-    -- The identities live on definitionally equal but syntactically different carriers.
-    exact (Category.comp_id _).trans (Category.id_comp _).symm)
+    -- Unfolding `precomp` aligns the relabelled ambient carriers with the original ones.
+    simp [precomp])
   functor_unitIso_comp _ := by
     apply ObjectProperty.hom_ext
     apply Factorisation.Hom.ext
-    simp only [Functor.id_obj, Functor.comp_obj, NatIso.ofComponents_hom_app,
-      ObjectProperty.FullSubcategory.comp_hom, Factorisation.comp_h, Iso.symm_hom,
-      precompHomInvIso_hom_hom_h, precompHomInvIso_inv_hom_h, precompFunctor_map_hom_h,
-      ObjectProperty.FullSubcategory.id_hom, Factorisation.id_h]
-    exact Category.id_comp _
+    simp [precomp]
 
 -- These whole-functor equations are named rewrites, as for base relabelling.
 theorem sourceIsoEquivalence_functor (e : Y ≅ X) (w : e.hom ≫ f = f') :
@@ -276,6 +269,30 @@ theorem sourceIsoEquivalence_inverse_obj_p (e : Y ≅ X) (w : e.hom ≫ f = f')
 theorem sourceIsoEquivalence_inverse_map_hom_hom_h (e : Y ≅ X) (w : e.hom ≫ f = f')
     {C D : DenseCompactification f'} (h : C ⟶ D) :
     ((sourceIsoEquivalence f f' e w).inverse.map h).hom.hom.h = h.hom.hom.h := (rfl)
+
+@[simp]
+theorem sourceIsoEquivalence_unitIso_hom_app_hom_hom_h (e : Y ≅ X) (w : e.hom ≫ f = f')
+    (C : DenseCompactification f) :
+    ((sourceIsoEquivalence f f' e w).unitIso.hom.app C).hom.hom.h = 𝟙 C.obj.Xbar := by
+  simp [sourceIsoEquivalence]
+
+@[simp]
+theorem sourceIsoEquivalence_unitIso_inv_app_hom_hom_h (e : Y ≅ X) (w : e.hom ≫ f = f')
+    (C : DenseCompactification f) :
+    ((sourceIsoEquivalence f f' e w).unitIso.inv.app C).hom.hom.h = 𝟙 C.obj.Xbar := by
+  simp [sourceIsoEquivalence]
+
+@[simp]
+theorem sourceIsoEquivalence_counitIso_hom_app_hom_hom_h (e : Y ≅ X) (w : e.hom ≫ f = f')
+    (C : DenseCompactification f') :
+    ((sourceIsoEquivalence f f' e w).counitIso.hom.app C).hom.hom.h = 𝟙 C.obj.Xbar := by
+  simp [sourceIsoEquivalence]
+
+@[simp]
+theorem sourceIsoEquivalence_counitIso_inv_app_hom_hom_h (e : Y ≅ X) (w : e.hom ≫ f = f')
+    (C : DenseCompactification f') :
+    ((sourceIsoEquivalence f f' e w).counitIso.inv.app C).hom.hom.h = 𝟙 C.obj.Xbar := by
+  simp [sourceIsoEquivalence]
 
 end DenseCompactification
 

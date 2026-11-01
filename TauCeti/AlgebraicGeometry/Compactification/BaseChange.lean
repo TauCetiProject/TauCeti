@@ -17,11 +17,12 @@ schemes; in particular closed immersions of compactifications pull back to close
 Scheme-theoretic density of the interior is preserved when the base change is flat, using
 Mathlib's `AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_isPullback`.
 
-Base change is pseudofunctorial in the map of bases. Along the identity it returns the original
-compactification, and along a composite `g' ≫ g` it is the iterated base change. Both sources
-are only canonically isomorphic to the expected ones, so these identifications
-(`baseChangeFunctorIdIso`, `baseChangeFunctorCompIso`) relabel the source along that
-isomorphism with `Compactification.precompFunctor`.
+Base change comes with identity and composition isomorphisms in the map of bases: along the
+identity it returns the original compactification, and along a composite `g' ≫ g` it is the
+iterated base change. Both sources are only canonically isomorphic to the expected ones, so
+these identifications (`baseChangeFunctorIdIso`, `baseChangeFunctorCompIso`) relabel the source
+along that isomorphism with `Compactification.precompFunctor`. Their coherence laws are not
+proved here.
 
 ## References
 
@@ -199,6 +200,11 @@ theorem baseChangeIdIso_hom_hom_h (C : Compactification f) :
     C.baseChangeIdIso.hom.hom.h = pullback.fst C.p (𝟙 S) :=
   isoMk_hom_hom_h _ _ _
 
+@[simp]
+theorem baseChangeIdIso_inv_hom_h (C : Compactification f) :
+    C.baseChangeIdIso.inv.hom.h = inv (pullback.fst C.p (𝟙 S)) :=
+  isoMk_inv_hom_h _ _ _
+
 variable (f) in
 /-- Base change along the identity is naturally isomorphic to relabelling the source along
 the isomorphism `pullback.fst f (𝟙 S)`. -/
@@ -213,6 +219,11 @@ def baseChangeFunctorIdIso :
 @[simp]
 theorem baseChangeFunctorIdIso_hom_app (C : Compactification f) :
     (baseChangeFunctorIdIso f).hom.app C = C.baseChangeIdIso.hom :=
+  (rfl)
+
+@[simp]
+theorem baseChangeFunctorIdIso_inv_app (C : Compactification f) :
+    (baseChangeFunctorIdIso f).inv.app C = C.baseChangeIdIso.inv :=
   (rfl)
 
 /-- Base change along a composite `g' ≫ g` is the iterated base change, with source relabelled
@@ -232,6 +243,12 @@ theorem baseChangeCompIso_hom_hom_h (C : Compactification f) {T' : Scheme.{u}} (
     (C.baseChangeCompIso g g').hom.hom.h = (pullbackLeftPullbackSndIso C.p g g').inv :=
   isoMk_hom_hom_h _ _ _
 
+@[simp]
+theorem baseChangeCompIso_inv_hom_h (C : Compactification f) {T' : Scheme.{u}} (g : T ⟶ S)
+    (g' : T' ⟶ T) :
+    (C.baseChangeCompIso g g').inv.hom.h = (pullbackLeftPullbackSndIso C.p g g').hom :=
+  isoMk_inv_hom_h _ _ _
+
 /-- Base change along a composite `g' ≫ g` is naturally isomorphic to the iterated base
 change, followed by relabelling the source along the canonical isomorphism of iterated fibre
 products. -/
@@ -248,6 +265,12 @@ def baseChangeFunctorCompIso {T' : Scheme.{u}} (g : T ⟶ S) (g' : T' ⟶ T) :
 theorem baseChangeFunctorCompIso_hom_app {T' : Scheme.{u}} (g : T ⟶ S) (g' : T' ⟶ T)
     (C : Compactification f) :
     (baseChangeFunctorCompIso g g').hom.app C = (C.baseChangeCompIso g g').hom :=
+  (rfl)
+
+@[simp]
+theorem baseChangeFunctorCompIso_inv_app {T' : Scheme.{u}} (g : T ⟶ S) (g' : T' ⟶ T)
+    (C : Compactification f) :
+    (baseChangeFunctorCompIso g g').inv.app C = (C.baseChangeCompIso g g').inv :=
   (rfl)
 
 end
