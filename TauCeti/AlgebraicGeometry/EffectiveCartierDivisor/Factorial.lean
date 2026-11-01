@@ -12,17 +12,13 @@ public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 import Mathlib.AlgebraicGeometry.Properties
-import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Ideal.UFD
-import Mathlib.RingTheory.SimpleModule.Basic
 import TauCeti.AlgebraicGeometry.AffineScheme
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
 import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
-import TauCeti.RingTheory.OrderOfVanishing
 import TauCeti.RingTheory.Localization.Away.Basic
 import TauCeti.RingTheory.Localization.Ideal
-import TauCeti.RingTheory.RegularLocalRing.UniqueFactorization
 
 /-!
 # Prime divisors on locally factorial schemes are effective Cartier
@@ -215,8 +211,11 @@ theorem isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of
 section Principal
 
 open IsLocalRing
-open TauCeti.AlgebraicGeometry.Scheme (ord_algebraMap_stalk_of_specializes
-  ord_algebraMap_stalk_nonneg)
+open TauCeti.AlgebraicGeometry.Scheme (ord_algebraMap_stalk_nonneg
+  ord_algebraMap_stalk_eq_zero_iff ord_algebraMap_stalk_eq_one
+  comap_germ_comap_stalkSpecializes_maximalIdeal
+  exists_comap_stalkSpecializes_maximalIdeal_eq_span_singleton
+  specializes_of_comap_stalkSpecializes_maximalIdeal_le)
 
 open scoped Classical in
 /-- The prime of `𝒪_{X,x}` lying under the maximal ideal of `𝒪_{X,η}` when `η` is a generization
@@ -240,57 +239,8 @@ private lemma stalkIdeal_ne_top {x η : X} (h : η ⤳ x) : stalkIdeal x η ≠ 
   rw [stalkIdeal_of_specializes h]
   exact (Ideal.comap_isPrime _ _).ne_top
 
-variable [IsIntegral X] [IsLocallyNoetherian X]
-
-/-- A nonzero germ at `x` has order zero at a codimension-one generization `η` of `x` exactly when
-it lies outside the prime of `𝒪_{X,x}` corresponding to `η`. -/
-private lemma ord_algebraMap_stalk_eq_zero_iff {x η : X} (hη : coheight η = 1) (h : η ⤳ x)
-    {b : X.presheaf.stalk x} (hb : b ≠ 0) :
-    X.ord (algebraMap (X.presheaf.stalk x) X.functionField b) η = 0 ↔ b ∉ stalkIdeal x η := by
-  have hc := (map_ne_zero_iff _
-    (TauCeti.AlgebraicGeometry.Scheme.stalkSpecializes_injective h)).mpr hb
-  have : Ring.KrullDimLE 1 (X.presheaf.stalk η) := krullDimLE_of_coheight_le hη.le
-  have hnt := Ring.ord_ne_top (mem_nonZeroDivisors_of_ne_zero hc)
-  rw [ord_algebraMap_stalk_of_specializes hη h hb, stalkIdeal_of_specializes h, Ideal.mem_comap,
-    mem_maximalIdeal, mem_nonunits_iff, not_not, ← TauCeti.Ring.ord_eq_zero_iff,
-    Int.natCast_eq_zero, ENat.toNat_eq_zero]
-  exact or_iff_left hnt
-
-/-- An element generating the prime of `𝒪_{X,x}` of a codimension-one generization `η` of `x`
-has order one at `η`: its image generates the maximal ideal of `𝒪_{X,η}`. -/
-private lemma ord_algebraMap_stalk_eq_one {x η : X} (hη : coheight η = 1) (h : η ⤳ x)
-    {p : X.presheaf.stalk x} (hp : stalkIdeal x η = Ideal.span {p}) (hp0 : p ≠ 0) :
-    X.ord (algebraMap (X.presheaf.stalk x) X.functionField p) η = 1 := by
-  rw [ord_algebraMap_stalk_of_specializes hη h hp0]
-  suffices Ring.ord (X.presheaf.stalk η) ((X.presheaf.stalkSpecializes h).hom p) = 1 by
-    rw [this, ENat.toNat_one, Nat.cast_one]
-  let := (X.presheaf.stalkSpecializes h).hom.toAlgebra
-  have := TauCeti.AlgebraicGeometry.Scheme.isLocalization_stalkSpecializes h
-  have hmax : maximalIdeal (X.presheaf.stalk η) =
-      Ideal.span {(X.presheaf.stalkSpecializes h).hom p} := by
-    rw [← IsLocalization.AtPrime.map_eq_maximalIdeal
-      ((maximalIdeal (X.presheaf.stalk η)).comap (X.presheaf.stalkSpecializes h).hom),
-      ← stalkIdeal_of_specializes h, hp, Ideal.map_span, Set.image_singleton,
-      RingHom.algebraMap_toAlgebra]
-  rw [Ring.ord, ← hmax, Module.length_eq_one_iff, isSimpleModule_iff_isCoatom]
-  exact (maximalIdeal.isMaximal _).out
-
 variable {x : X} {U : X.affineOpens}
 
-omit [IsIntegral X] [IsLocallyNoetherian X] in
-/-- Under the germ map of an affine open containing `x`, the prime of `𝒪_{X,x}` of a generization
-`η` of `x` pulls back to the prime ideal of `η`. -/
-private lemma comap_stalkIdeal (hxU : x ∈ U.1) {η : X} (h : η ⤳ x) :
-    (stalkIdeal x η).comap (X.presheaf.germ U.1 x hxU).hom =
-      (U.2.primeIdealOf ⟨η, h.mem_open U.1.isOpen hxU⟩).asIdeal := by
-  have hηU := h.mem_open U.1.isOpen hxU
-  let := X.presheaf.algebra_section_stalk ⟨η, hηU⟩
-  have := U.2.isLocalization_stalk ⟨η, hηU⟩
-  rw [stalkIdeal_of_specializes h, Ideal.comap_comap, ← CommRingCat.hom_comp,
-    TopCat.Presheaf.germ_stalkSpecializes]
-  exact IsLocalization.AtPrime.under_maximalIdeal (X.presheaf.stalk η) _
-
-omit [IsIntegral X] [IsLocallyNoetherian X] in
 /-- On an affine open containing `x`, the ideal of the closure of a point `η` generates the prime
 of `𝒪_{X,x}` of `η` when `η` is a generization of `x`, and the unit ideal otherwise. -/
 private lemma map_ideal_vanishingIdeal_closure_singleton (hxU : x ∈ U.1) (η : X) :
@@ -300,7 +250,7 @@ private lemma map_ideal_vanishingIdeal_closure_singleton (hxU : x ∈ U.1) (η :
   have := U.2.isLocalization_stalk ⟨x, hxU⟩
   by_cases h : η ⤳ x
   · rw [vanishingIdeal_closure_singleton_ideal η U (h.mem_open U.1.isOpen hxU),
-      ← comap_stalkIdeal hxU h]
+      ← comap_germ_comap_stalkSpecializes_maximalIdeal U.2 hxU h, ← stalkIdeal_of_specializes h]
     exact IsLocalization.map_under (U.2.primeIdealOf ⟨x, hxU⟩).asIdeal.primeCompl _ _
   · rw [stalkIdeal_of_not_specializes h]
     refine IsLocalization.AtPrime.map_eq_top_of_not_le (X.presheaf.stalk x)
@@ -315,60 +265,7 @@ private lemma map_ideal_vanishingIdeal_closure_singleton (hxU : x ∈ U.1) (η :
     rw [hU.fromSpec_primeIdealOf] at h2
     exact specializes_iff_mem_closure.mpr h2
 
-/-- Every prime element of the local ring `𝒪_{X,x}` generates the prime of a codimension-one
-generization of `x`, by Krull's principal ideal theorem. -/
-private lemma exists_stalkIdeal_eq_span_singleton {p : X.presheaf.stalk x} (hp : Prime p) :
-    ∃ η : TauCeti.AlgebraicGeometry.CodimensionOnePoint X,
-      (η : X) ⤳ x ∧ stalkIdeal x η = Ideal.span {p} := by
-  obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
-  have hU' : IsAffineOpen U := hU
-  let := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
-  have := hU'.isLocalization_stalk ⟨x, hxU⟩
-  set P := hU'.primeIdealOf ⟨x, hxU⟩
-  have hspan : (Ideal.span {p}).IsPrime := (Ideal.span_singleton_prime hp.ne_zero).mpr hp
-  -- The prime `q` of `Γ(X, U)` under `(p)`, contained in the prime `P` of `x`.
-  let q : Spec Γ(X, U) := ⟨(Ideal.span {p}).comap (algebraMap Γ(X, U) _), inferInstance⟩
-  have hqP : q.asIdeal ≤ P.asIdeal := by
-    rw [← IsLocalization.AtPrime.under_maximalIdeal (X.presheaf.stalk x) P.asIdeal]
-    refine Ideal.comap_mono ?_
-    rw [Ideal.span_singleton_le_iff_mem, mem_maximalIdeal]
-    exact hp.not_isUnit
-  have hηx : hU'.fromSpec q ⤳ x :=
-    (((PrimeSpectrum.le_iff_specializes q P).mp hqP).map hU'.fromSpec.continuous).trans
-      (specializes_of_eq (hU'.fromSpec_primeIdealOf ⟨x, hxU⟩))
-  have hηU : hU'.fromSpec q ∈ U := hηx.mem_open U.isOpen hxU
-  have hprime : hU'.primeIdealOf ⟨_, hηU⟩ = q :=
-    hU'.fromSpec.isOpenEmbedding.injective (hU'.fromSpec_primeIdealOf ⟨_, hηU⟩)
-  have hdisj : Disjoint (P.asIdeal.primeCompl : Set Γ(X, U)) q.asIdeal :=
-    Set.disjoint_left.mpr fun a ha haq ↦ ha (hqP haq)
-  have hmap : q.asIdeal.map (algebraMap Γ(X, U) (X.presheaf.stalk x)) = Ideal.span {p} :=
-    IsLocalization.map_under P.asIdeal.primeCompl _ _
-  -- `fromSpec q` has codimension one, as `(p)` has height one by Krull's principal ideal theorem.
-  have hcoh : coheight (hU'.fromSpec q) = 1 := by
-    rw [coheight_eq_of_isOpenImmersion hU'.fromSpec, ← idealHeight_eq_coheight,
-      ← IsLocalization.height_map_of_disjoint (S := X.presheaf.stalk x) P.asIdeal.primeCompl
-        q.asIdeal hdisj, hmap]
-    exact Ideal.height_span_singleton_eq_one_of_mem_nonZeroDivisors
-      (mem_nonZeroDivisors_of_ne_zero hp.ne_zero) hp.not_isUnit
-  refine ⟨⟨_, hcoh⟩, hηx, ?_⟩
-  rw [← map_ideal_vanishingIdeal_closure_singleton (U := ⟨U, hU⟩) hxU,
-    vanishingIdeal_closure_singleton_ideal _ ⟨U, hU⟩ hηU, hprime, ← hmap,
-    RingHom.algebraMap_toAlgebra]
-
-omit [IsIntegral X] [IsLocallyNoetherian X] in
-/-- Distinct codimension-one generizations of `x` have incomparable primes in `𝒪_{X,x}`. -/
-private lemma eq_of_stalkIdeal_le {η η' : TauCeti.AlgebraicGeometry.CodimensionOnePoint X}
-    (h : (η : X) ⤳ x) (h' : (η' : X) ⤳ x) (hle : stalkIdeal x η ≤ stalkIdeal x η') :
-    η = η' := by
-  obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
-    X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
-  let V : X.affineOpens := ⟨U, hU⟩
-  have hle' := Ideal.comap_mono (f := (X.presheaf.germ V.1 x hxU).hom) hle
-  rw [comap_stalkIdeal (U := V) hxU h, comap_stalkIdeal (U := V) hxU h'] at hle'
-  have hsp := ((PrimeSpectrum.le_iff_specializes _ _).mp hle').map V.2.fromSpec.continuous
-  rw [V.2.fromSpec_primeIdealOf, V.2.fromSpec_primeIdealOf] at hsp
-  exact TauCeti.AlgebraicGeometry.CodimensionOnePoint.eq_of_specializes hsp
+variable [IsIntegral X] [IsLocallyNoetherian X]
 
 /-- **The divisor of a germ in a factorial local ring.** In the factorial local ring `𝒪_{X,x}`,
 the principal ideal of a nonzero germ `b` is the product of the primes of the codimension-one
@@ -393,11 +290,14 @@ private lemma span_singleton_eq_prod_stalkIdeal [UniqueFactorizationMonoid (X.pr
     refine Finset.prod_eq_one fun η _ ↦ ?_
     by_cases h : (η : X) ⤳ x
     · rw [(ord_algebraMap_stalk_eq_zero_iff η.2 h hu.ne_zero).mpr fun hmem ↦
-        stalkIdeal_ne_top h (Ideal.eq_top_of_isUnit_mem _ hmem hu), Int.toNat_zero, pow_zero]
+        stalkIdeal_ne_top h (Ideal.eq_top_of_isUnit_mem _ (stalkIdeal_of_specializes h ▸ hmem) hu),
+        Int.toNat_zero, pow_zero]
     · rw [stalkIdeal_of_not_specializes h, Ideal.top_pow, Ideal.one_eq_top]
   | h₃ a p ha hp ih =>
     -- The prime `p` contributes exactly one factor, the prime of its codimension-one point.
-    obtain ⟨η₀, hη₀x, hη₀⟩ := exists_stalkIdeal_eq_span_singleton hp
+    obtain ⟨η₀, hη₀1, hη₀x, hη₀⟩ := exists_comap_stalkSpecializes_maximalIdeal_eq_span_singleton hp
+    rw [← stalkIdeal_of_specializes hη₀x] at hη₀
+    lift η₀ to TauCeti.AlgebraicGeometry.CodimensionOnePoint X using hη₀1
     have hη₀s : η₀ ∈ s :=
       hs η₀ hη₀x (hη₀ ▸ Ideal.mem_span_singleton.mpr (dvd_mul_right p a))
     have hp0 : algebraMap (X.presheaf.stalk x) X.functionField p ≠ 0 :=
@@ -415,10 +315,13 @@ private lemma span_singleton_eq_prod_stalkIdeal [UniqueFactorizationMonoid (X.pr
             (ord_algebraMap_stalk_nonneg η.2 h ha), pow_add]
         by_cases he : η₀ = η
         · subst he
-          rw [ord_algebraMap_stalk_eq_one η₀.2 h hη₀ hp.ne_zero, ite_eq_left rfl, hη₀,
+          rw [ord_algebraMap_stalk_eq_one η₀.2 h (stalkIdeal_of_specializes h ▸ hη₀) hp.ne_zero,
+            ite_eq_left rfl, hη₀,
             Int.toNat_one, pow_one]
         · rw [(ord_algebraMap_stalk_eq_zero_iff η.2 h hp.ne_zero).mpr fun hmem ↦ he
-            (eq_of_stalkIdeal_le hη₀x h (hη₀ ▸ (Ideal.span_singleton_le_iff_mem _).mpr hmem)),
+            (TauCeti.AlgebraicGeometry.CodimensionOnePoint.eq_of_specializes
+              (specializes_of_comap_stalkSpecializes_maximalIdeal_le hη₀x h
+                (by rwa [← stalkIdeal_of_specializes hη₀x, hη₀, Ideal.span_singleton_le_iff_mem]))),
             ite_eq_right he, Int.toNat_zero, pow_zero, one_mul]
       · have he : η₀ ≠ η := fun he ↦ h (he ▸ hη₀x)
         rw [stalkIdeal_of_not_specializes h, Ideal.top_pow, Ideal.top_pow, ite_eq_right he,
@@ -465,7 +368,8 @@ theorem ofIdealTop_span_singleton_eq_prod_vanishingIdeal
   rw [hord]
   refine span_singleton_eq_prod_stalkIdeal hgerm s fun η hηx hmem ↦ hs η ?_
   have h0 := ord_algebraMap_stalk_nonneg η.2 hηx hgerm
-  have hne := (ord_algebraMap_stalk_eq_zero_iff η.2 hηx hgerm).not_left.mpr hmem
+  have hne := (ord_algebraMap_stalk_eq_zero_iff η.2 hηx hgerm).not_left.mpr
+    (stalkIdeal_of_specializes hηx ▸ hmem)
   rw [hord]
   omega
 
