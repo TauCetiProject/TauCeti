@@ -82,27 +82,46 @@ variable {A : Type*} [Ring A] {P₀ P₁ M : Type*} [AddCommGroup P₀] [Module 
 
 variable [Module.Finite A P₀] [Module.Projective A P₀]
 
-variable (p π) in
-/-- The additive map `Hom(K, A) ⟶ M`, where `K` is the image of the dual `p* : P₀* ⟶ P₁*`, sending
-`g` to the image in `M` of the element of `P₀ ≅ P₀**` representing `ψ ↦ g (ψ ∘ p)`. -/
-private noncomputable def rangeDualToModule :
-    (LinearMap.range (p.lcomp Aᵐᵒᵖ A) →ₗ[Aᵐᵒᵖ] A) →+ M where
-  toFun g := π ((opDualEvalEquiv A P₀).symm (g ∘ₗ (p.lcomp Aᵐᵒᵖ A).rangeRestrict))
-  map_zero' := by simp
-  map_add' g g' := by simp [LinearMap.add_comp]
-
-/-- The defining formula of `rangeDualToModule`, as an equation for rewriting. -/
-private lemma rangeDualToModule_apply (g : LinearMap.range (p.lcomp Aᵐᵒᵖ A) →ₗ[Aᵐᵒᵖ] A) :
-    rangeDualToModule p π g =
-      π ((opDualEvalEquiv A P₀).symm (g ∘ₗ (p.lcomp Aᵐᵒᵖ A).rangeRestrict)) :=
-  rfl
-
 omit [Module.Finite A P₀] [Module.Projective A P₀] in
 /-- The image of a functional under `p* : P₀* ⟶ P₁*`, viewed in the image `K` of `p*`. -/
 private lemma coe_rangeRestrict_lcomp (ψ : Module.Dual A P₀) :
     ((p.lcomp Aᵐᵒᵖ A).rangeRestrict ψ : Module.Dual A P₁) = ψ ∘ₗ p := by
   rw [← Submodule.subtype_apply, ← LinearMap.comp_apply, LinearMap.subtype_comp_rangeRestrict,
     LinearMap.lcomp_apply']
+
+variable (p) in
+/-- The element of `P₀ ≅ P₀**` representing the functional `ψ ↦ g (ψ ∘ p)` on `P₀*`, for a
+functional `g` on the image `K` of `p* : P₀* ⟶ P₁*`. -/
+private noncomputable def rangeDualPreimage (g : LinearMap.range (p.lcomp Aᵐᵒᵖ A) →ₗ[Aᵐᵒᵖ] A) :
+    P₀ :=
+  (opDualEvalEquiv A P₀).symm (g ∘ₗ (p.lcomp Aᵐᵒᵖ A).rangeRestrict)
+
+/-- Evaluating a functional at `rangeDualPreimage p g` computes `g (ψ ∘ p)`. -/
+private lemma apply_rangeDualPreimage (g : LinearMap.range (p.lcomp Aᵐᵒᵖ A) →ₗ[Aᵐᵒᵖ] A)
+    (ψ : Module.Dual A P₀) :
+    ψ (rangeDualPreimage p g) = g ((p.lcomp Aᵐᵒᵖ A).rangeRestrict ψ) := by
+  rw [rangeDualPreimage, apply_opDualEvalEquiv_symm, LinearMap.comp_apply]
+
+/-- `rangeDualPreimage p g` is the only element on which every `ψ` evaluates to `g (ψ ∘ p)`. -/
+private lemma eq_rangeDualPreimage {g : LinearMap.range (p.lcomp Aᵐᵒᵖ A) →ₗ[Aᵐᵒᵖ] A} {x : P₀}
+    (hx : ∀ ψ : Module.Dual A P₀, ψ x = g ((p.lcomp Aᵐᵒᵖ A).rangeRestrict ψ)) :
+    x = rangeDualPreimage p g :=
+  (opDualEval_bijective A P₀).1 (LinearMap.ext fun ψ ↦ by
+    simp [hx, apply_rangeDualPreimage])
+
+variable (p π) in
+/-- The additive map `Hom(K, A) ⟶ M`, where `K` is the image of the dual `p* : P₀* ⟶ P₁*`, sending
+`g` to the image in `M` of the element of `P₀ ≅ P₀**` representing `ψ ↦ g (ψ ∘ p)`. -/
+private noncomputable def rangeDualToModule :
+    (LinearMap.range (p.lcomp Aᵐᵒᵖ A) →ₗ[Aᵐᵒᵖ] A) →+ M where
+  toFun g := π (rangeDualPreimage p g)
+  map_zero' := by simp [rangeDualPreimage]
+  map_add' g g' := by simp [rangeDualPreimage, LinearMap.add_comp]
+
+/-- The defining formula of `rangeDualToModule`, as an equation for rewriting. -/
+private lemma rangeDualToModule_apply (g : LinearMap.range (p.lcomp Aᵐᵒᵖ A) →ₗ[Aᵐᵒᵖ] A) :
+    rangeDualToModule p π g = π (rangeDualPreimage p g) :=
+  rfl
 
 variable [Module.Finite A P₁] [Module.Projective A P₁]
 
@@ -113,18 +132,17 @@ private lemma rangeDualToModule_eq_zero_iff (hexact : Function.Exact p π)
       ∃ h : Module.Dual A P₁ →ₗ[Aᵐᵒᵖ] A, h ∘ₗ (LinearMap.range (p.lcomp Aᵐᵒᵖ A)).subtype = g := by
   rw [rangeDualToModule_apply]
   refine ⟨fun h0 ↦ ?_, fun ⟨h, hh⟩ ↦ ?_⟩
-  · obtain ⟨y, hy⟩ := (hexact _).1 h0
+  · -- `rangeDualPreimage p g = p y`, and `g` extends to the evaluation at `y`.
+    obtain ⟨y, hy⟩ := (hexact _).1 h0
     refine ⟨opDualEval A P₁ y, LinearMap.ext fun k ↦ ?_⟩
     obtain ⟨ψ, rfl⟩ := (p.lcomp Aᵐᵒᵖ A).surjective_rangeRestrict k
-    rw [LinearMap.comp_apply, Submodule.subtype_apply, coe_rangeRestrict_lcomp, opDualEval_apply,
-      LinearMap.comp_apply, hy, apply_opDualEvalEquiv_symm, LinearMap.comp_apply]
-  · have hy : (opDualEvalEquiv A P₀).symm (g ∘ₗ (p.lcomp Aᵐᵒᵖ A).rangeRestrict) =
-        p ((opDualEvalEquiv A P₁).symm h) :=
-      (opDualEval_bijective A P₀).1 (LinearMap.ext fun ψ ↦ by
-        rw [opDualEval_apply, opDualEval_apply, apply_opDualEvalEquiv_symm, ← hh,
-          LinearMap.comp_apply, LinearMap.comp_apply, Submodule.subtype_apply,
-          coe_rangeRestrict_lcomp, ← LinearMap.comp_apply ψ p, apply_opDualEvalEquiv_symm])
-    rw [hy, hexact.apply_apply_eq_zero]
+    simp [hy, apply_rangeDualPreimage]
+  · -- An extension `h` of `g` is the evaluation at some `y : P₁`, so that `rangeDualPreimage p g`
+    -- is `p y`, which `π` kills.
+    rw [← eq_rangeDualPreimage (x := p ((opDualEvalEquiv A P₁).symm h)) fun ψ ↦ ?_,
+      hexact.apply_apply_eq_zero]
+    rw [← hh, LinearMap.comp_apply, Submodule.subtype_apply, coe_rangeRestrict_lcomp,
+      ← LinearMap.comp_apply ψ p, apply_opDualEvalEquiv_symm]
 
 omit [Module.Finite A P₁] [Module.Projective A P₁] in
 /-- The image of `rangeDualToModule` is the kernel of evaluation `M ⟶ M**`. -/
@@ -136,31 +154,25 @@ private lemma opDualEval_eq_zero_iff (hexact : Function.Exact p π) (hπ : Funct
     have hker : LinearMap.ker (p.lcomp Aᵐᵒᵖ A) ≤ LinearMap.ker (opDualEval A P₀ x) := by
       intro ψ hψ
       obtain ⟨φ, rfl⟩ := ((hexact.lcomp_of_surjective (T := Aᵐᵒᵖ) A hπ) ψ).1 hψ
-      have := LinearMap.congr_fun hm φ
-      rw [opDualEval_apply, LinearMap.zero_apply] at this
-      rw [LinearMap.mem_ker, opDualEval_apply, LinearMap.lcomp_apply', LinearMap.comp_apply, this]
+      simpa [LinearMap.lcomp_apply'] using LinearMap.congr_fun hm φ
     let e := (p.lcomp Aᵐᵒᵖ A).quotKerEquivRange
     have he (ψ : Module.Dual A P₀) :
         e.symm ((p.lcomp Aᵐᵒᵖ A).rangeRestrict ψ) = Submodule.Quotient.mk ψ := by
       rw [LinearEquiv.symm_apply_eq]
       ext1
-      simp [e, LinearMap.quotKerEquivRange_apply_mk,
-        LinearMap.lcomp_apply']
-    refine ⟨(LinearMap.ker _).liftQ _ hker ∘ₗ e.symm.toLinearMap, ?_⟩
-    rw [rangeDualToModule_apply]
-    refine congrArg π ((opDualEval_bijective A P₀).1 (LinearMap.ext fun ψ ↦ ?_))
-    rw [opDualEval_apply, opDualEval_apply, apply_opDualEvalEquiv_symm, LinearMap.comp_apply,
-      LinearMap.comp_apply, LinearEquiv.coe_coe, he, Submodule.liftQ_apply, opDualEval_apply]
+      simp [e, LinearMap.quotKerEquivRange_apply_mk, LinearMap.lcomp_apply']
+    let g := (LinearMap.ker _).liftQ _ hker ∘ₗ e.symm.toLinearMap
+    refine ⟨g, ?_⟩
+    rw [rangeDualToModule_apply, ← eq_rangeDualPreimage (g := g) (x := x) fun ψ ↦ ?_]
+    simp [g, he]
   · rintro ⟨g, rfl⟩
     refine LinearMap.ext fun φ ↦ ?_
-    rw [opDualEval_apply, LinearMap.zero_apply, rangeDualToModule_apply,
-      ← LinearMap.comp_apply φ π, apply_opDualEvalEquiv_symm, LinearMap.comp_apply]
     -- `φ ∘ π` vanishes on the image of `p`, so its image in `K` is zero.
     have hφ : (p.lcomp Aᵐᵒᵖ A).rangeRestrict (φ ∘ₗ π) = 0 := by
       rw [← LinearMap.mem_ker, LinearMap.ker_rangeRestrict, LinearMap.mem_ker,
         LinearMap.lcomp_apply', LinearMap.comp_assoc, hexact.linearMap_comp_eq_zero,
         LinearMap.comp_zero]
-    rw [hφ, map_zero]
+    simpa [rangeDualToModule_apply, hφ] using apply_rangeDualPreimage g (φ ∘ₗ π)
 
 end Linear
 
@@ -275,9 +287,7 @@ theorem AuslanderReitenTranspose.extOneToModule_homBoundary (hexact : Function.E
     (g : ModuleCat.of Aᵐᵒᵖ (LinearMap.range (p.lcomp Aᵐᵒᵖ A)) ⟶ ModuleCat.of Aᵐᵒᵖ A) (x : P₀)
     (hx : ∀ ψ : Module.Dual A P₀, ψ x = g.hom ((p.lcomp Aᵐᵒᵖ A).rangeRestrict ψ)) :
     extOneToModule.{w} p π hexact (homBoundary ℤ (shortComplex_shortExact p) _ g) = π x := by
-  rw [extOneToModule_homBoundary', rangeDualToModule_apply]
-  refine congrArg π ((opDualEval_bijective A P₀).1 (LinearMap.ext fun ψ ↦ ?_))
-  rw [opDualEval_apply, opDualEval_apply, apply_opDualEvalEquiv_symm, LinearMap.comp_apply, hx]
+  rw [extOneToModule_homBoundary', rangeDualToModule_apply, ← eq_rangeDualPreimage hx]
 
 /-- The first map of the Auslander–Bridger sequence is injective. -/
 theorem AuslanderReitenTranspose.injective_extOneToModule (hexact : Function.Exact p π) :
