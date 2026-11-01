@@ -210,8 +210,7 @@ theorem card_le_sigPos_of_isOrthoᵢ {ι : Type*} [Fintype ι] {Q : _root_.Quadr
     induction ij using Sym2.ind with
     | h i j =>
       have hij' : i ≠ j := by simpa using (Finset.mem_filter.1 hij).2
-      rw [Sym2.map_mk, polarSym2_sym2Mk, polar_smul_left, polar_smul_right,
-        ← polarBilin_apply_apply, hv hij', smul_zero, smul_zero]
+      simp [← polarBilin_apply_apply, hv hij']
   obtain ⟨i, hi⟩ : ∃ i, c i ≠ 0 := by
     by_contra! h
     exact hx0 (by simp [h])

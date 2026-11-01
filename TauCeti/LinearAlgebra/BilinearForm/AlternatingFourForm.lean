@@ -30,12 +30,12 @@ with the fundamental class.
 
 ## Main results
 
-* `LinearMap.BilinForm.three_le_sigPos_toQuadraticMap`,
-  `LinearMap.BilinForm.three_le_sigNeg_toQuadraticMap`: a nonzero alternating four-form of
-  pairings forces both indices of inertia of `B` to be at least three.
-* `LinearMap.BilinForm.apply_eq_zero_of_sigPos_lt_three`,
-  `LinearMap.BilinForm.apply_eq_zero_of_sigNeg_lt_three`: if either index of inertia of `B` is at
-  most two, all such pairings vanish.
+* `LinearMap.BilinForm.three_le_sigPos_toQuadraticMap_of_alternatingMap`,
+  `LinearMap.BilinForm.three_le_sigNeg_toQuadraticMap_of_alternatingMap`: a nonzero alternating
+  four-form of pairings forces both indices of inertia of `B` to be at least three.
+* `LinearMap.BilinForm.apply_eq_zero_of_alternatingMap_of_sigPos_lt_three`,
+  `LinearMap.BilinForm.apply_eq_zero_of_alternatingMap_of_sigNeg_lt_three`: if either index of
+  inertia of `B` is at most two, all such pairings vanish.
 
 ## References
 
@@ -58,26 +58,25 @@ section FourForm
 
 variable (F : V [⋀^Fin 4]→ₗ[K] K)
 
+/-- An alternating four-form changes sign when two of its arguments are exchanged. -/
+private theorem apply_eq_neg_of_comp_swap {v w : Fin 4 → V} {i j : Fin 4} (hij : i ≠ j)
+    (hw : v ∘ Equiv.swap i j = w) : F v = -F w := by
+  rw [← hw, F.map_swap v hij, neg_neg]
+
 /-- An alternating four-form changes sign when its first two arguments are exchanged. -/
-private theorem apply_swap_zero_one (x y z w : V) : F ![x, y, z, w] = -F ![y, x, z, w] := by
-  rw [← F.map_swap ![y, x, z, w] (show (0 : Fin 4) ≠ 1 by decide)]
-  congr 1
-  ext i
-  fin_cases i <;> rfl
+private theorem apply_swap_zero_one (x y z w : V) : F ![x, y, z, w] = -F ![y, x, z, w] :=
+  apply_eq_neg_of_comp_swap F (i := 0) (j := 1) (by decide) (by
+    ext k; fin_cases k <;> simp [Equiv.swap_apply_of_ne_of_ne])
 
 /-- An alternating four-form changes sign when its middle two arguments are exchanged. -/
-private theorem apply_swap_one_two (x y z w : V) : F ![x, y, z, w] = -F ![x, z, y, w] := by
-  rw [← F.map_swap ![x, z, y, w] (show (1 : Fin 4) ≠ 2 by decide)]
-  congr 1
-  ext i
-  fin_cases i <;> rfl
+private theorem apply_swap_one_two (x y z w : V) : F ![x, y, z, w] = -F ![x, z, y, w] :=
+  apply_eq_neg_of_comp_swap F (i := 1) (j := 2) (by decide) (by
+    ext k; fin_cases k <;> simp [Equiv.swap_apply_of_ne_of_ne])
 
 /-- An alternating four-form changes sign when its last two arguments are exchanged. -/
-private theorem apply_swap_two_three (x y z w : V) : F ![x, y, z, w] = -F ![x, y, w, z] := by
-  rw [← F.map_swap ![x, y, w, z] (show (2 : Fin 4) ≠ 3 by decide)]
-  congr 1
-  ext i
-  fin_cases i <;> rfl
+private theorem apply_swap_two_three (x y z w : V) : F ![x, y, z, w] = -F ![x, y, w, z] :=
+  apply_eq_neg_of_comp_swap F (i := 2) (j := 3) (by decide) (by
+    ext k; fin_cases k <;> simp [Equiv.swap_apply_of_ne_of_ne])
 
 /-- An alternating four-form is unchanged when its two pairs of arguments are exchanged. -/
 private theorem apply_swap_pairs (x y z w : V) : F ![x, y, z, w] = F ![z, w, x, y] := by
@@ -137,7 +136,8 @@ variable [LinearOrder K] [IsStrictOrderedRing K] [FiniteDimensional K N]
 three.** If the pairings `B (m a b) (m c d)` of a product `m : V → V → N` form a nonzero alternating
 four-form on `V`, then the quadratic form of `B` is positive definite on a three-dimensional
 subspace of `N`. -/
-theorem three_le_sigPos_toQuadraticMap (hF : ∀ a b c d, B (m a b) (m c d) = F ![a, b, c, d])
+theorem three_le_sigPos_toQuadraticMap_of_alternatingMap
+    (hF : ∀ a b c d, B (m a b) (m c d) = F ![a, b, c, d])
     (hF₀ : F ≠ 0) : 3 ≤ sigPos B.toQuadraticMap := by
   obtain ⟨v, hv⟩ := DFunLike.ne_iff.1 hF₀
   have hv' : ![v 0, v 1, v 2, v 3] = v := by
@@ -153,29 +153,30 @@ theorem three_le_sigPos_toQuadraticMap (hF : ∀ a b c d, B (m a b) (m c d) = F 
 three.** If the pairings `B (m a b) (m c d)` of a product `m : V → V → N` form a nonzero alternating
 four-form on `V`, then the quadratic form of `B` is negative definite on a three-dimensional
 subspace of `N`. -/
-theorem three_le_sigNeg_toQuadraticMap (hF : ∀ a b c d, B (m a b) (m c d) = F ![a, b, c, d])
+theorem three_le_sigNeg_toQuadraticMap_of_alternatingMap
+    (hF : ∀ a b c d, B (m a b) (m c d) = F ![a, b, c, d])
     (hF₀ : F ≠ 0) : 3 ≤ sigNeg B.toQuadraticMap := by
   simpa [BilinMap.toQuadraticMap_neg] using
-    three_le_sigPos_toQuadraticMap (neg_apply_apply_eq hF) (neg_ne_zero.2 hF₀)
+    three_le_sigPos_toQuadraticMap_of_alternatingMap (neg_apply_apply_eq hF) (neg_ne_zero.2 hF₀)
 
 /-- **Vanishing of fourfold pairings when the positive index of inertia is small.** If the
 pairings `B (m a b) (m c d)` of a product `m : V → V → N` form an alternating four-form and the
 positive index of inertia of `B` is at most two, then all of these pairings vanish. -/
-theorem apply_eq_zero_of_sigPos_lt_three
+theorem apply_eq_zero_of_alternatingMap_of_sigPos_lt_three
     (hF : ∀ a b c d, B (m a b) (m c d) = F ![a, b, c, d])
     (hsig : sigPos B.toQuadraticMap < 3) (a b c d : V) : B (m a b) (m c d) = 0 := by
   have hF₀ : F = 0 := by
     by_contra hF₀
-    exact (three_le_sigPos_toQuadraticMap hF hF₀).not_gt hsig
+    exact (three_le_sigPos_toQuadraticMap_of_alternatingMap hF hF₀).not_gt hsig
   rw [hF, hF₀, _root_.zero_apply]
 
 /-- **Vanishing of fourfold pairings when the negative index of inertia is small.** If the
 pairings `B (m a b) (m c d)` of a product `m : V → V → N` form an alternating four-form and the
 negative index of inertia of `B` is at most two, then all of these pairings vanish. -/
-theorem apply_eq_zero_of_sigNeg_lt_three
+theorem apply_eq_zero_of_alternatingMap_of_sigNeg_lt_three
     (hF : ∀ a b c d, B (m a b) (m c d) = F ![a, b, c, d])
     (hsig : sigNeg B.toQuadraticMap < 3) (a b c d : V) : B (m a b) (m c d) = 0 := by
-  simpa using apply_eq_zero_of_sigPos_lt_three (neg_apply_apply_eq hF)
+  simpa using apply_eq_zero_of_alternatingMap_of_sigPos_lt_three (neg_apply_apply_eq hF)
     (by simpa [BilinMap.toQuadraticMap_neg] using hsig) a b c d
 
 end LinearMap.BilinForm
