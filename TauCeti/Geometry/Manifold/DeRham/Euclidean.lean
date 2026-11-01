@@ -91,7 +91,7 @@ private theorem compactlySupportedDeRhamCohomology.exists_integral_ne_zero_norme
     ∃ v, compactlySupportedDeRhamCohomology.integral o v ≠ 0 := by
   have hn : Fintype.card (Fin n) = finrank ℝ E := o.card_eq
   let b := Module.finBasisOfFinrankEq ℝ E (by simpa using hn.symm)
-  obtain ⟨φ₀, hφ₀⟩ := exists_compactlySupportedClosedForms_integralTopForm_model_eq_one b hn
+  obtain ⟨φ₀, hφ₀⟩ := b.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one hn
   refine ⟨compactlySupportedDeRhamCohomology.mk 𝓘(ℝ, E) n φ₀, ?_⟩
   -- `o` is the constant orientation of `b` or its opposite, so the integral is `±1`.
   rw [compactlySupportedDeRhamCohomology.integral_mk]
@@ -216,6 +216,17 @@ private theorem subsingleton_compactlySupportedDeRhamCohomology_innerProductSpac
   exact (compactlySupportedDeRhamCohomology.equivOfDiffeomorph
     (Diffeomorph.ofTop (⊤ : Opens E) rfl) k).toEquiv.subsingleton
 
+/-- Any two vectors of a one-dimensional real vector space satisfy a nontrivial linear relation. -/
+private theorem exists_smul_add_smul_eq_zero_of_finrank_eq_one {V : Type*} [AddCommGroup V]
+    [Module ℝ V] (hV : finrank ℝ V = 1) (x y : V) :
+    ∃ a b : ℝ, (a ≠ 0 ∨ b ≠ 0) ∧ a • x + b • y = 0 := by
+  have : FiniteDimensional ℝ V := Module.finite_of_finrank_eq_succ hV
+  have hxy : ¬LinearIndependent ℝ ![x, y] := fun h ↦ by
+    simpa [hV] using h.fintype_card_le_finrank
+  simp only [LinearIndependent.pair_iff, not_forall, not_and_or] at hxy
+  obtain ⟨a, b, h, hab⟩ := hxy
+  exact ⟨a, b, hab, h⟩
+
 /-- On a real inner product space `E` of dimension `n + 2`, read as the open subset `⊤` of itself,
 any two compactly supported closed top forms have a nontrivial linear combination that is the
 exterior derivative of a compactly supported form. -/
@@ -252,27 +263,15 @@ private theorem exists_smul_add_smul_mem_exactCompactlySupportedForms_top {n : �
   have hU : finrank ℝ (deRhamCohomology 𝓘(ℝ, E) U (n + 1)) = 1 :=
     (deRhamCohomology.closedBallComplEquivSphere E (n + 1) hR (n + 1)).finrank_eq.trans
       (finrank_deRhamCohomology_sphere_self n.succ_pos)
-  obtain ⟨cη, hcη⟩ : ∃ c : closedForms 𝓘(ℝ, E) U (n + 1),
-      c.1 = SmoothForm.mpullback (Opens.inclusion hUW) (contMDiff_inclusion hUW) η :=
-    ⟨⟨_, hηU⟩, rfl⟩
-  obtain ⟨cθ, hcθ⟩ : ∃ c : closedForms 𝓘(ℝ, E) U (n + 1),
-      c.1 = SmoothForm.mpullback (Opens.inclusion hUW) (contMDiff_inclusion hUW) θ :=
-    ⟨⟨_, hθU⟩, rfl⟩
-  obtain ⟨a, b, hab, h0⟩ : ∃ a b : ℝ, (a ≠ 0 ∨ b ≠ 0) ∧
-      a • deRhamCohomology.mk 𝓘(ℝ, E) (n + 1) cη +
-        b • deRhamCohomology.mk 𝓘(ℝ, E) (n + 1) cθ = 0 := by
-    by_cases hc : deRhamCohomology.mk 𝓘(ℝ, E) (n + 1) cη = 0
-    · exact ⟨1, 0, Or.inl one_ne_zero, by rw [hc, smul_zero, zero_smul, add_zero]⟩
-    obtain ⟨t, ht⟩ := (finrank_eq_one_iff_of_nonzero' _ hc).mp hU
-      (deRhamCohomology.mk 𝓘(ℝ, E) (n + 1) cθ)
-    exact ⟨t, -1, Or.inr (by norm_num), by rw [← ht, neg_one_smul, add_neg_cancel]⟩
+  obtain ⟨a, b, hab, h0⟩ := exists_smul_add_smul_eq_zero_of_finrank_eq_one hU
+    (deRhamCohomology.mk 𝓘(ℝ, E) (n + 1) ⟨_, hηU⟩) (deRhamCohomology.mk 𝓘(ℝ, E) (n + 1) ⟨_, hθU⟩)
   refine ⟨a, b, hab, ?_⟩
   -- So `a η + b θ` is exact on `U`, and a cut-off at infinity gives a compactly supported
   -- primitive of `a φ + b ψ`.
   have h0 : SmoothForm.mpullback (Opens.inclusion hUW) (contMDiff_inclusion hUW) (a • η + b • θ) ∈
       exactForms 𝓘(ℝ, E) U (n + 1) := by
-    simpa only [Submodule.coe_add, Submodule.coe_smul, hcη, hcθ, map_add, map_smul] using
-      (deRhamCohomology.mk_eq_zero_iff _ _ (a • cη + b • cθ)).mp
+    simpa only [Submodule.coe_add, Submodule.coe_smul, map_add, map_smul] using
+      (deRhamCohomology.mk_eq_zero_iff _ _ (a • ⟨_, hηU⟩ + b • ⟨_, hθU⟩)).mp
         (by rwa [map_add, map_smul, map_smul])
   obtain ⟨ρ, hρ, hρU, hρc⟩ := exists_cutoff_compl_closedBall (E := E) R
   simpa only [map_add, map_smul] using

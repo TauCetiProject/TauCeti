@@ -24,8 +24,8 @@ vanishing of `H⁰_c` on preconnected noncompact manifolds
 `H^•_c(ℝ)` in every degree. Compact supports are not homotopy invariant, so this is
 not a consequence of the vanishing of `H^•_dR(ℝ)` in positive degrees. This is the
 one-dimensional case of the top compactly supported cohomology of every finite-dimensional real
-normed space, `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_normedSpace`, which
-is deduced from it.
+normed space, `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_normedSpace`, whose
+proof uses it for `n = 1`.
 
 Injectivity is the heart of the matter: a compactly supported `1`-form `φ` on `ℝ` with integral
 zero is the differential of a compactly supported function
@@ -34,7 +34,7 @@ smooth `F`; by the fundamental theorem of calculus `F` is constant on each of th
 of the complement of a large interval containing the support of `φ`, and the two constants differ
 by the integral of `φ`. When that integral vanishes, `F` minus the common constant is compactly
 supported. Surjectivity comes from a normalized bump function times `dx`
-(`TauCeti.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one`).
+(`Module.Basis.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one`).
 
 ## Main declarations
 
@@ -127,8 +127,10 @@ private theorem integralTopForm_standard {φ : RoughForm 𝓘(ℝ, ℝ) ℝ ℝ 
 private theorem bijective_integral_standard :
     Function.Bijective (compactlySupportedDeRhamCohomology.integral standardOrientation) := by
   obtain ⟨φ₁, hφ₁⟩ : ∃ φ : compactlySupportedClosedForms 𝓘(ℝ, ℝ) ℝ 1,
-      integralTopForm standardOrientation φ.1.1 = 1 :=
-    exists_compactlySupportedClosedForms_integralTopForm_model_eq_one _ _
+      integralTopForm standardOrientation φ.1.1 = 1 := by
+    rw [standardOrientation]
+    exact Module.Basis.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one
+      (Module.Basis.singleton (Fin 1) ℝ) _
   refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun y ↦
     ⟨y • compactlySupportedDeRhamCohomology.mk _ 1 φ₁, by simp [hφ₁]⟩⟩
   obtain ⟨φ, rfl⟩ := compactlySupportedDeRhamCohomology.mk_surjective _ 1 x

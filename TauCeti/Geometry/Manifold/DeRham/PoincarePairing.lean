@@ -37,7 +37,7 @@ representative formula pairs it with the class of the constant function `1` to g
   manifold, the exterior derivative of a compactly supported form integrates to zero.
 * `TauCeti.compactlySupportedDeRhamCohomology.integral`: integration `H^n_c(M) → ℝ`, computed on
   classes by `TauCeti.compactlySupportedDeRhamCohomology.integral_mk`.
-* `TauCeti.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one`: on a
+* `Module.Basis.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one`: on a
   finite-dimensional real normed space, a compactly supported closed top form with integral one,
   so integration `H^n_c(E) → ℝ` is nonzero.
 * `TauCeti.poincarePairing`: the pairing `H^k_dR(M) → H^l_c(M) → ℝ`, the wedge product followed
@@ -153,15 +153,21 @@ theorem poincarePairing_mk (o : Manifold.Orientation I M (Fin (k + l)))
   rw [poincarePairing_apply, compactlySupportedDeRhamCohomology.wedge_mk,
     compactlySupportedDeRhamCohomology.integral_mk, SmoothForm.coe_wedge]
 
-section ModelSpace
+end TauCeti
 
-/-- On a finite-dimensional real normed space `E`, a normalized bump function times the determinant
-of a basis `b` is a compactly supported closed top form whose integral against the constant
-orientation of `b` is one. -/
+namespace Module.Basis
+
+open TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- On a finite-dimensional real normed space `E`, there is a compactly supported closed top form
+whose integral against the constant orientation of the basis `b` is one. -/
 theorem exists_compactlySupportedClosedForms_integralTopForm_model_eq_one {n : ℕ}
-    (b : Module.Basis (Fin n) ℝ E) (hn : Fintype.card (Fin n) = Module.finrank ℝ E) :
+    (b : Basis (Fin n) ℝ E) (hn : Fintype.card (Fin n) = Module.finrank ℝ E) :
     ∃ φ : compactlySupportedClosedForms 𝓘(ℝ, E) E n,
       integralTopForm (Manifold.Orientation.model (I := 𝓘(ℝ, E)) b.orientation hn) φ.1.1 = 1 := by
+  -- The form is a normalized bump function times the determinant of `b`.
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
   let f : E → ℝ := (⟨1, 2, one_pos, one_lt_two⟩ : ContDiffBump (0 : E)).normed b.addHaar
@@ -178,12 +184,10 @@ theorem exists_compactlySupportedClosedForms_integralTopForm_model_eq_one {n : �
   rw [integralTopForm_model_eq_integral _ hn (hs.of_le (by simp)) hc b rfl]
   have hφf (x : E) : φ x b = f x := by
     have h : (f x • b.continuousDet) b = f x := by
-      simp [Module.Basis.continuousDet_apply, Module.Basis.det_self]
+      simp [continuousDet_apply, det_self]
     -- `φ x` is `f x • b.continuousDet` read in the tangent fibre, which is `E` by definition.
     exact h
   simp_rw [hφf]
   exact ContDiffBump.integral_normed _
 
-end ModelSpace
-
-end TauCeti
+end Module.Basis
