@@ -329,9 +329,9 @@ theorem legendreK_pos {k : ℝ} (hk : k ^ 2 < 1) : 0 < legendreK k :=
 
 /-- An elementary upper bound for the complete elliptic integral of the first kind,
 valid for either sign of the modulus. -/
-theorem legendreK_le_pi_div_two_mul_sqrt {k : ℝ} (hk : k ^ 2 < 1) :
-    legendreK k ≤ π / (2 * √(1 - k ^ 2)) := by
-  simpa [legendreK_def, div_div] using
+theorem legendreK_le_pi_div_two_div_sqrt {k : ℝ} (hk : k ^ 2 < 1) :
+    legendreK k ≤ π / 2 / √(1 - k ^ 2) := by
+  simpa [legendreK_def] using
     legendreF_le_div_sqrt hk (by positivity : (0 : ℝ) ≤ π / 2)
 
 @[simp]

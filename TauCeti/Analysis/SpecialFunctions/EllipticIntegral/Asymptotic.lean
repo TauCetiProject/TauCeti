@@ -45,8 +45,8 @@ theorem tendsto_one_sub_sq_mul_legendreK_nhdsLT_one :
     have hk' : k ^ 2 < 1 := by nlinarith [hk.1, hk.2]
     have hs : 0 < √(1 - k ^ 2) := sqrt_pos.2 (by linarith)
     calc
-      (1 - k ^ 2) * legendreK k ≤ (1 - k ^ 2) * (π / (2 * √(1 - k ^ 2))) :=
-        mul_le_mul_of_nonneg_left (legendreK_le_pi_div_two_mul_sqrt hk') (by linarith)
+      (1 - k ^ 2) * legendreK k ≤ (1 - k ^ 2) * (π / 2 / √(1 - k ^ 2)) :=
+        mul_le_mul_of_nonneg_left (legendreK_le_pi_div_two_div_sqrt hk') (by linarith)
       _ = π / 2 * √(1 - k ^ 2) := by
         field_simp [hs.ne']
         nlinarith [sq_sqrt (by linarith : 0 ≤ 1 - k ^ 2)]
