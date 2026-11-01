@@ -15,7 +15,7 @@ public import TauCeti.RingTheory.Semisimple.Multiplicity
 Let `N` be a normal subgroup of `G` and let `ρ` be an irreducible representation of `G` on `V`.
 Restricting `ρ` to `N` breaks it into irreducible constituents, and
 `TauCeti/RepresentationTheory/Induction/Clifford/Orbit/Basic.lean` identifies *which* constituents
-occur: they are the translates `TauCeti.Representation.conjSubrep ρ g σ` of any one of them, so they
+occur: they are the translates `Representation.conjSubrep ρ g σ` of any one of them, so they
 form a single `G`-orbit.  This file supplies the other half of Clifford's theorem: they all have hom
 spaces of **one common dimension**, which over a splitting field is their common multiplicity.
 
@@ -29,7 +29,7 @@ compares two such dimensions for two constituents of the *same* restriction, and
 a transport statement rather than a counting one: it needs no decomposition of the restriction, no
 algebraically closed field and no finiteness, so no such hypothesis is imposed, and the statements
 say only that the dimensions agree.  Whenever `ρ` is irreducible and `V` is finite-dimensional the
-restriction is semisimple (`TauCeti.Representation.isSemisimpleRepresentation_comp_subtype`), so
+restriction is semisimple (`Representation.isSemisimpleRepresentation_comp_subtype`), so
 there is a decomposition to count there; if in addition `k` splits the constituents, the common
 dimension produced below is literally the classical multiplicity `e`.
 
@@ -49,7 +49,7 @@ Combining the transport with the single-orbit theorem gives the common dimension
 `N`-stable subspaces are translates of one another up to isomorphism, so their hom spaces have equal
 dimension.  The same argument on the subspaces themselves, where the twist is invisible because only
 the `k`-action is retained, shows that all the constituents have the same **dimension** as well;
-there it is `TauCeti.Representation.conjSubrepEquiv` from `Clifford/Basic.lean` that does the work.
+there it is `Representation.conjSubrepEquiv` from `Clifford/Basic.lean` that does the work.
 
 ## Main definitions
 
@@ -97,11 +97,10 @@ an additive commutative monoid; a field enters only where the single-orbit theor
 
 ## References
 
-This proves the multiplicity half of the **Clifford's theorem** milestone of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`: "its irreducible
-`N`-constituents form a single `G`-orbit, all with the same multiplicity `e`".  The remaining part
-of that milestone, the packaged decomposition `Res_N W ≅ e · ⨁ᵢ {}^{gᵢ} V` indexed by a transversal
-of the inertia group, is not proved here.
+This file proves that the irreducible `N`-constituents of the restriction of an irreducible
+representation of `G` to a normal subgroup `N` all have hom spaces of one common dimension — the
+multiplicity half of Clifford's theorem.  The single-orbit half, that the constituents form a
+single `G`-orbit, is proved in `TauCeti/RepresentationTheory/Induction/Clifford/Orbit/Basic.lean`.
 
 The mathematics is the classical argument of C. W. Curtis and I. Reiner, *Representation Theory of
 Finite Groups and Associative Algebras*, §49.
@@ -338,7 +337,7 @@ theorem finrank_linearMap_conjSubrep (g : G) (σ : Subrepresentation (ρ.comp N.
     (fun _ hv => mem_conjSubrep_iff.mp hv)).finrank_eq
 
 /-- **A translate has the same dimension.**  This is the `k`-linear content of
-`TauCeti.Representation.conjSubrepEquiv`, whose underlying map is again translation by `ρ g`. -/
+`Representation.conjSubrepEquiv`, whose underlying map is again translation by `ρ g`. -/
 @[simp]
 theorem finrank_asSubmodule_conjSubrep (g : G) (σ : Subrepresentation (ρ.comp N.subtype)) :
     Module.finrank k ↥(conjSubrep ρ g σ).asSubmodule = Module.finrank k ↥σ.asSubmodule :=
@@ -414,7 +413,7 @@ theorem finrank_linearMap_pos [FiniteDimensional k V] {σ : Subrepresentation (�
 /-- **Clifford's theorem, the common multiplicity.**  For a finite-dimensional irreducible `ρ`
 there is a positive natural number `e` such that the hom space of every irreducible
 `N`-constituent of the restriction has dimension `e`.  The restriction is semisimple
-(`TauCeti.Representation.isSemisimpleRepresentation_comp_subtype`), so over a splitting field this
+(`Representation.isSemisimpleRepresentation_comp_subtype`), so over a splitting field this
 `e` is the `e` of the classical decomposition `Res_N W ≅ e · ⨁ᵢ {}^{gᵢ} V`. -/
 theorem exists_forall_finrank_linearMap_eq [ρ.IsIrreducible] [FiniteDimensional k V] :
     ∃ e : ℕ, 0 < e ∧ ∀ σ : Subrepresentation (ρ.comp N.subtype), IsAtom σ →

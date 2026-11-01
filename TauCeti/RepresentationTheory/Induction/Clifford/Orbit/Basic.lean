@@ -14,21 +14,21 @@ public import TauCeti.RepresentationTheory.Induction.Clifford.Basic
 Let `N` be a normal subgroup of `G` and let `ρ` be an irreducible representation of `G` on `V`.
 Given one minimal `N`-stable subspace to start from, restricting `ρ` to `N` breaks it into
 irreducible constituents
-(`TauCeti.Representation.isSemisimpleRepresentation_comp_subtype_of_isAtom`; for a
+(`Representation.isSemisimpleRepresentation_comp_subtype_of_isAtom`; for a
 finite-dimensional `V` such a subspace always exists, and then no hypothesis is needed, which is
-`TauCeti.Representation.isSemisimpleRepresentation_comp_subtype`).  This file identifies which
+`Representation.isSemisimpleRepresentation_comp_subtype`).  This file identifies which
 constituents occur: **they are the translates of any one of them**, up to isomorphism of
 `N`-representations.  Equivalently, `G` permutes the isotypic components of the restriction
 transitively.
 
 The argument is short because the two halves it needs are already in place.  The translates
-`TauCeti.Representation.conjSubrep ρ g σ` of a minimal `N`-stable subspace `σ` are again minimal
-(`TauCeti.Representation.isAtom_conjSubrep_iff`) and they span
-(`TauCeti.Representation.iSup_conjSubrep_eq_top`); and a simple submodule of a module spanned by
+`Representation.conjSubrep ρ g σ` of a minimal `N`-stable subspace `σ` are again minimal
+(`Representation.isAtom_conjSubrep_iff`) and they span
+(`Representation.iSup_conjSubrep_eq_top`); and a simple submodule of a module spanned by
 simple submodules is isomorphic to one of them (Mathlib's `Submodule.linearEquiv_of_sSup_eq_top`).
 The spanning statement is needed in the lattice of `k[N]`-submodules of the restriction viewed as a
 `k[N]`-module, where the isotypic machinery lives, rather than in the lattice of `k`-subspaces where
-it is proved; that reading is `TauCeti.Representation.iSup_asSubmodule_conjSubrep_eq_top`, which
+it is proved; that reading is `Representation.iSup_asSubmodule_conjSubrep_eq_top`, which
 lives in `TauCeti/RepresentationTheory/Induction/Clifford/Basic.lean` because the semisimplicity
 proof there needs it too.
 
@@ -52,7 +52,7 @@ the packaged form of the theorem, which assumes finite-dimensionality and produc
   translate is produced rather than assumed.
 * `TauCeti.Representation.isotypicComponents_eq_range`: the isotypic components of the restriction
   are exactly the components of the translates of a given minimal `N`-stable subspace, so `G` acts
-  transitively on them; `Representation.conjSubrepIsotypicComponent` packages each such
+  transitively on them; `TauCeti.Representation.conjSubrepIsotypicComponent` packages each such
   component, and `TauCeti.Representation.finite_isotypicComponents` reads off from the same
   hypothesis that there are finitely many of them when `G` is finite.
 * `TauCeti.Representation.isIsotypicOfType_asSubmodule_iff`: the restriction is isotypic exactly
@@ -69,18 +69,16 @@ as an isomorphism of the subrepresentations, transported along
 `Subrepresentation.subrepresentationSubmoduleOrderIso`.  That an atom of the one lattice is a simple
 module in the other is `Subrepresentation.isSimpleModule_asSubmodule_iff`, in
 `TauCeti/RepresentationTheory/Subrepresentation.lean`; it uses neither normality nor irreducibility.
-Reading the translate through `TauCeti.Representation.conjSubrepEquiv` turns each statement below
+Reading the translate through `Representation.conjSubrepEquiv` turns each statement below
 into the classical one about the conjugate representation `{}^g V`.
 
 ## References
 
-This file proves the **single-orbit** half of the **Clifford's theorem** milestone of Layer 5 of
-`TauCetiRoadmap/RepresentationTheory/InductionRestriction/README.md`: "its irreducible
-`N`-constituents form a single `G`-orbit".  That the constituents share one multiplicity is the
-other half, proved in `TauCeti/RepresentationTheory/Induction/Clifford/Multiplicity.lean` from the
-single-orbit statements below.  What remains of the milestone is the packaged decomposition
-`Res_N W ≅ e · ⨁ᵢ {}^{gᵢ} V` indexed by a transversal of the inertia group, which is not proved
-here.
+This file proves that the irreducible `N`-constituents of the restriction of an irreducible
+representation of `G` to a normal subgroup `N` form a single `G`-orbit — the single-orbit half of
+Clifford's theorem.  That the constituents share one multiplicity is the other half, proved in
+`TauCeti/RepresentationTheory/Induction/Clifford/Multiplicity.lean` from the single-orbit
+statements below.
 
 The mathematics is the classical argument of C. W. Curtis and I. Reiner, *Representation Theory of
 Finite Groups and Associative Algebras*, §49.
@@ -93,6 +91,8 @@ open scoped MonoidAlgebra
 namespace TauCeti
 
 namespace Representation
+
+open _root_.Representation
 
 section Orbit
 
