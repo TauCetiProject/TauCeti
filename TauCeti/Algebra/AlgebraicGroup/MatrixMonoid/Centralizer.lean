@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.MatrixMonoid.Bialgebra
+public import Mathlib.LinearAlgebra.Matrix.MvPolynomial
+public import Mathlib.RingTheory.Ideal.Maps
 
 /-!
 # The affine scheme of matrices commuting with a fixed matrix
