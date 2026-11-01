@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.GradientFlow.DeGiorgiInterpolation
 public import TauCeti.Analysis.GradientFlow.MinimizingMovement
 public import TauCeti.Analysis.GradientFlow.MaximalSlope.Basic
-import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Topology.Instances.EReal.Lemmas
 
 /-!
@@ -39,66 +38,6 @@ open Filter MeasureTheory Set Topology
 open scoped ENNReal NNReal Interval
 
 namespace TauCeti
-
-section PseudoMetricSpace
-
-variable {X : Type*} [PseudoMetricSpace X] {φ : X → EReal} {τ : ℕ → ℝ≥0}
-  {U : ℕ → ℕ → X} {V : ℕ → ℕ → ℝ → X} {u : ℝ → X} {L S : ℝ}
-
-/-- **The variational interpolation has the same limit as the discrete interpolation.**
-For a bounded-below energy and uniformly bounded initial energies, any intermediate
-resolvent selections agreeing with the discrete steps at the nodes converge at every
-positive time where the piecewise constant interpolants converge. No measurability of
-the selections is needed for this pointwise assertion. -/
-theorem tendsto_deGiorgiInterpolant_of_forall_mem_moreauYosidaResolvent
-    (hL : ∀ x, (L : EReal) ≤ φ x) (hS : ∀ k, φ (U k 0) ≤ S)
-    (hτ : ∀ k, 0 < τ k) (hτ0 : Tendsto τ atTop (𝓝 0))
-    (hU : ∀ k n, U k (n + 1) ∈ moreauYosidaResolvent φ (τ k) (U k n))
-    (hV : ∀ k n, ∀ r ∈ Ioc 0 (τ k : ℝ),
-      V k n r ∈ moreauYosidaResolvent φ r.toNNReal (U k n))
-    (hVU : ∀ k n, V k n (τ k) = U k (n + 1)) {t : ℝ} (ht : 0 < t)
-    (hu : Tendsto (fun k ↦ U k ⌈t / τ k⌉₊) atTop (𝓝 (u t))) :
-    Tendsto (fun k ↦ deGiorgiInterpolant (τ k) (V k) t) atTop (𝓝 (u t)) := by
-  have htop k n : φ (U k n) ≠ ⊤ := ne_top_of_le_ne_top (EReal.coe_ne_top S)
-    ((antitone_comp_of_forall_mem_moreauYosidaResolvent (hU k) (Nat.zero_le n)).trans (hS k))
-  have hbot x : φ x ≠ ⊥ := ne_bot_of_le_ne_bot (EReal.coe_ne_bot L) (hL x)
-  have hstep k n : dist (U k n) (U k (n + 1)) ≤ Real.sqrt (2 * τ k * (S - L)) := by
-    have he := (add_le_add (hL (U k (n + 1)))
-      (le_rfl (a := ((edist (U k n) (U k (n + 1)) ^ 2 / (2 * τ k) : ℝ≥0∞) : EReal)))).trans
-      ((apply_add_le_of_mem_moreauYosidaResolvent (hU k n)).trans
-        ((antitone_comp_of_forall_mem_moreauYosidaResolvent (hU k) (Nat.zero_le n)).trans (hS k)))
-    rw [coe_edist_sq_div_eq_coe_dist_sq_div (hτ k), ← EReal.coe_add,
-      EReal.coe_le_coe_iff] at he
-    apply Real.le_sqrt_of_sq_le
-    have hτ' : (0 : ℝ) < τ k := hτ k
-    have hp : (0 : ℝ) < 2 * τ k := by positivity
-    have hdiv : dist (U k n) (U k (n + 1)) ^ 2 / (2 * τ k) ≤ S - L := by linarith
-    have := (div_le_iff₀ hp).1 hdiv
-    nlinarith
-  have hdist k : dist (deGiorgiInterpolant (τ k) (V k) t) (U k ⌈t / τ k⌉₊) ≤
-      2 * Real.sqrt (2 * τ k * (S - L)) := by
-    let n := ⌈t / τ k⌉₊ - 1
-    have hceil : ⌈t / τ k⌉₊ = n + 1 := by
-      have : 1 ≤ ⌈t / τ k⌉₊ := Nat.one_le_ceil_iff.2 (div_pos ht (hτ k))
-      omega
-    have hmem : t ∈ Ioc (n * τ k : ℝ) ((n + 1) * τ k) := by
-      have hc := (Nat.ceil_eq_iff (by omega : n + 1 ≠ 0)).1 hceil
-      constructor
-      · exact (lt_div_iff₀ (by exact hτ k)).1 (by simpa using hc.1)
-      · exact (div_le_iff₀ (by exact hτ k)).1 (by simpa using hc.2)
-    have hd := edist_deGiorgiInterpolant_le (hτ k) (hV k n) (hVU k n)
-      (htop k n) (hbot _) hmem
-    have hd' : dist (U k n) (deGiorgiInterpolant (τ k) (V k) t) ≤
-        dist (U k n) (U k (n + 1)) := by
-      simpa only [edist_dist, ENNReal.ofReal_le_ofReal_iff dist_nonneg] using hd
-    rw [hceil]
-    exact (dist_triangle_left _ _ _).trans (by linarith [hstep k n])
-  have hlim : Tendsto (fun k ↦ 2 * Real.sqrt (2 * τ k * (S - L))) atTop (𝓝 0) := by
-    have hr := (NNReal.continuous_coe.tendsto 0).comp hτ0
-    simpa using ((((hr.const_mul 2).mul_const (S - L)).sqrt).const_mul 2)
-  exact (tendsto_iff_of_dist (squeeze_zero (fun _ ↦ dist_nonneg) hdist hlim)).2 hu
-
-end PseudoMetricSpace
 
 variable {X : Type*} [MetricSpace X] {φ : X → EReal} {τ : ℕ → ℝ≥0}
   {U : ℕ → ℕ → X} {V : ℕ → ℕ → ℝ → X} {u : ℝ → X} {L S T : ℝ}
@@ -172,16 +111,9 @@ theorem apply_add_dissipation_le_of_forall_mem_moreauYosidaResolvent
   -- Pass the terminal energy, discrete action and slope integral to the limit separately.
   have hE : φ (u T) ≤ liminf (fun k ↦ φ (U k (N k))) atTop :=
     (hφ.le_liminf _).trans (hu T ⟨hT, le_rfl⟩).liminf_le_liminf_comp
-  have hA : curveAction 2 u 0 T / 2 ≤ liminf P atTop := by
-    have h := curveAction_le_liminf_sum_edist_rpow (l := atTop) one_lt_two
-      (.of_forall hτ) hτ0 hT (fun s hs t ht ↦ ((hu s hs).edist (hu t ht)).liminf_eq.ge)
-    have heq (d : ℝ≥0∞) (r : ℝ≥0) :
-        d ^ (2 : ℝ) / (r : ℝ≥0∞) ^ ((2 : ℝ) - 1) = 2 * (d ^ 2 / (2 * r)) := by
-      rw [ENNReal.rpow_two, (by norm_num : (2 : ℝ) - 1 = 1), ENNReal.rpow_one,
-        ← mul_div_assoc, ENNReal.mul_div_mul_left _ _ two_ne_zero ENNReal.ofNat_ne_top]
-    simp only [heq, ← Finset.mul_sum] at h
-    rw [ENNReal.liminf_const_mul_of_ne_top ENNReal.ofNat_ne_top] at h
-    exact ENNReal.div_le_of_le_mul' h
+  have hA : curveAction 2 u 0 T / 2 ≤ liminf P atTop :=
+    curveAction_div_two_le_liminf_sum_edist_sq_div (.of_forall hτ) hτ0 hT
+      (fun s hs t ht ↦ ((hu s hs).edist (hu t ht)).liminf_eq.ge)
   have hG : (∫⁻ t in Ioc 0 T, descendingSlope φ (u t) ^ 2 / 2) ≤ liminf G atTop :=
     lintegral_descendingSlope_le_liminf_deGiorgiInterpolant hφ hL hg hS hτ hτ0 hU hV hVU hmeas
       (fun t ht ↦ hu t ⟨ht.1.le, ht.2⟩)
