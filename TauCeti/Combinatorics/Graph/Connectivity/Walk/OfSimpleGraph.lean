@@ -22,7 +22,9 @@ providing the basic bridge through which simple-graph connectivity results can b
 multigraph walks.
 
 In the other direction, reachability by edge-labelled walks in a multigraph `G` agrees with
-reachability in its underlying simple graph `G.toSimpleGraph`.
+reachability in its underlying simple graph `G.toSimpleGraph`. A walk in the underlying simple
+graph can be lifted to the multigraph by choosing one actual edge for each adjacency; this lift
+preserves the vertex sequence and hence the path predicate.
 -/
 
 public section
@@ -251,6 +253,56 @@ theorem isCycle_toSimpleGraph_iff (p : (Graph.ofSimpleGraph H).Walk x x) :
   rw [← SimpleGraph.Walk.isCycle_toGraph_iff, toGraph_toSimpleGraph]
 
 end Graph.Walk
+
+namespace SimpleGraph.Walk
+
+variable {α : Type u} {β : Type*} {G : Graph α β} {x y z : G.vertexSet}
+
+/-- Lift a walk in the underlying simple graph of a multigraph by choosing one actual edge for
+each adjacency. The lift preserves the visited vertices but makes no canonical choice among
+parallel edges. -/
+noncomputable def liftToGraph {G : Graph α β} :
+    {x y : G.vertexSet} → G.toSimpleGraph.Walk x y → G.Walk x y
+  | _, _, .nil => .nil
+  | _, _, .cons h p =>
+      .cons (Classical.choose h.2) (Classical.choose_spec h.2) (liftToGraph p)
+
+@[simp]
+theorem liftToGraph_nil {G : Graph α β} (x : G.vertexSet) :
+    (SimpleGraph.Walk.nil : G.toSimpleGraph.Walk x x).liftToGraph = .nil :=
+  (rfl)
+
+@[simp]
+theorem liftToGraph_cons (h : G.toSimpleGraph.Adj x y) (p : G.toSimpleGraph.Walk y z) :
+    (SimpleGraph.Walk.cons h p).liftToGraph =
+      .cons (Classical.choose h.2) (Classical.choose_spec h.2) p.liftToGraph :=
+  (rfl)
+
+/-- Lifting a simplified walk preserves its vertex sequence, after forgetting the actual-vertex
+membership proofs. -/
+@[simp]
+theorem support_liftToGraph (p : G.toSimpleGraph.Walk x y) :
+    p.liftToGraph.support = p.support.map Subtype.val := by
+  induction p with
+  | nil => simp only [liftToGraph_nil, Graph.Walk.support_nil, support_nil, List.map_cons,
+      List.map_nil]
+  | cons h p ih =>
+      rw [liftToGraph_cons, Graph.Walk.support_cons, ih, support_cons, List.map_cons]
+
+/-- Lifting a simplified walk preserves its length. -/
+@[simp]
+theorem length_liftToGraph (p : G.toSimpleGraph.Walk x y) :
+    p.liftToGraph.length = p.length := by
+  induction p <;> simp_all
+
+/-- A lifted walk is a path exactly when the simplified walk is a path. -/
+@[simp]
+theorem isPath_liftToGraph_iff (p : G.toSimpleGraph.Walk x y) :
+    p.liftToGraph.IsPath ↔ p.IsPath := by
+  rw [Graph.Walk.isPath_def, SimpleGraph.Walk.isPath_def, support_liftToGraph,
+    List.nodup_map_iff Subtype.val_injective]
+
+end SimpleGraph.Walk
 
 namespace Graph
 
