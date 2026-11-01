@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
 public import Mathlib.LinearAlgebra.Trace
+import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 
 /-!
@@ -158,19 +159,6 @@ theorem lieMap_two_apply_ιMulti (f : Module.End K V) (u w : V) :
 theorem lieMap_wedge (f : Module.End K V) {k l : ℕ} (x : ⋀[K]^k V) (y : ⋀[K]^l V) :
     lieMap (k + l) f (wedge K V k l x y) =
       wedge K V k l (lieMap k f x) y + wedge K V k l x (lieMap l f y) := by
-  -- Applying `f` to one factor of `u ∧ v` is applying it to one factor of `u` or of `v`.
-  have hleft (u : Fin k → V) (v : Fin l → V) (i : Fin k) (a : V) :
-      Function.update (Fin.append u v) (Fin.castAdd l i) a = Fin.append (Function.update u i a) v :=
-    funext fun j ↦ Fin.addCases (fun j ↦ by simp [Function.update_apply])
-      (fun j ↦ by
-        rw [Function.update_of_ne fun h ↦ by simp [Fin.ext_iff] at h; omega]
-        simp) j
-  have hright (u : Fin k → V) (v : Fin l → V) (i : Fin l) (a : V) :
-      Function.update (Fin.append u v) (Fin.natAdd k i) a = Fin.append u (Function.update v i a) :=
-    funext fun j ↦ Fin.addCases (fun j ↦ by
-        rw [Function.update_of_ne fun h ↦ by simp [Fin.ext_iff] at h; omega]
-        simp)
-      (fun j ↦ by simp [Function.update_apply]) j
   have key : (wedge K V k l).compr₂ (lieMap (k + l) f) =
       (wedge K V k l).compl₁₂ (lieMap k f) LinearMap.id +
         (wedge K V k l).compl₂ (lieMap l f) := by
@@ -178,7 +166,7 @@ theorem lieMap_wedge (f : Module.End K V) {k l : ℕ} (x : ⋀[K]^k V) (y : ⋀[
     simp only [LinearMap.compAlternatingMap_apply, LinearMap.compr₂_apply, LinearMap.add_apply,
       LinearMap.compl₁₂_apply, LinearMap.compl₂_apply, LinearMap.id_apply, wedge_ιMulti,
       lieMap_apply_ιMulti, map_sum, LinearMap.sum_apply, Fin.sum_univ_add, Fin.append_left,
-      Fin.append_right, hleft, hright]
+      Fin.append_right, Fin.update_append_castAdd, Fin.update_append_natAdd]
   exact LinearMap.congr_fun₂ key x y
 
 /-- An endomorphism of a free module of finite rank acts on the top exterior power by
