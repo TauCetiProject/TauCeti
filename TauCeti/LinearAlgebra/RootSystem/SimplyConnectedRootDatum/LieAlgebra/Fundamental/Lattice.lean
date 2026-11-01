@@ -89,7 +89,7 @@ theorem representation_mem_fundamentalLattice {i : Fin t.rank}
   Subring.apply_mem_orbitOfRep_of_mem _ _ _ hu hx
 
 /-- `v⁺ᵢ` is a weight vector of weight `(δᵢⱼ)ⱼ` for the Cartan generators `hⱼ`. -/
-private theorem isCartanWeightVector_fundamentalModuleGenerator (i : Fin t.rank) :
+theorem isCartanWeightVector_fundamentalModuleGenerator (i : Fin t.rank) :
     IsCartanWeightVector (t.lieBasis ht).h
       (representation ℚ (t.lieAlgebra ht) (t.fundamentalModule ht i))
       (fun j => if j = i then 1 else 0) (t.fundamentalModuleGenerator ht i) := by
