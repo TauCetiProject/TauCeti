@@ -37,6 +37,12 @@ letters act in the same order as group multiplication. -/
 def cosetStep (q : G ⧸ K) (g : G) : G ⧸ K :=
   g⁻¹ • q
 
+/-- Following an element from a represented left coset multiplies its representative on the
+left by the inverse element. -/
+@[simp] theorem cosetStep_mk (x g : G) :
+    cosetStep K (QuotientGroup.mk x) g = QuotientGroup.mk (g⁻¹ * x) := by
+  simp only [cosetStep, MulAction.Quotient.smul_mk, smul_eq_mul]
+
 @[simp]
 theorem cosetStep_one (q : G ⧸ K) : cosetStep K q 1 = q := by
   simp [cosetStep]
