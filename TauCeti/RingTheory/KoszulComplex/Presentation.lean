@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RingTheory.KoszulComplex.Basic
 public import Mathlib.Algebra.Module.FinitePresentation
-public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 
 /-!
 # The Koszul presentation of an ideal
@@ -36,14 +35,6 @@ open CliffordAlgebra
 namespace TauCeti
 
 variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-
-/-- In degree two, the Koszul differential sends `u ∧ v` to `φ(u) v - φ(v) u`. -/
-@[simp]
-theorem oneEquiv_koszulDifferential_one (φ : Module.Dual R M) (v : Fin 2 → M) :
-    exteriorPower.oneEquiv R M (koszulDifferential φ 1 (exteriorPower.ιMulti R 2 v)) =
-      φ (v 0) • v 1 - φ (v 1) • v 0 := by
-  simp [koszulDifferential_ιMulti, Fin.sum_univ_two, sub_eq_add_neg,
-    Fin.tail, Fin.removeNth, Fin.succAbove]
 
 /-- The submodule of Koszul relations, the image of `⋀² M → M`. -/
 def koszulRelations (φ : Module.Dual R M) : Submodule R M :=
