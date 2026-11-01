@@ -408,7 +408,7 @@ theorem isRegularLocalRing_stalk_blowup_of_ne (hπ : Irreducible π) {n : ℕ}
     have := y.isPrime
     have := isRegularLocalRing_localization_of_ne hπ n y.asIdeal hy
     exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion _ y).mpr
-      (.of_ringEquiv (Spec.stalkIso _ y).commRingCatIsoToRingEquiv.symm)
+      ((isRegularLocalRing_stalk_Spec_iff _ y).mpr this)
   · obtain ⟨i, y, rfl⟩ := TopologicalSpace.Opens.mem_iSup.mp hx'
     exact isRegularLocalRing_stalk_blowupCoordChartι _ hπ hπ0 i y
 
@@ -421,10 +421,9 @@ theorem isRegularLocalRing_stalk_blowupBaseChartOrigin_iff (hπ : Irreducible π
     IsRegularLocalRing ((Proj (grade (originIdeal π (π ^ 2 * π ^ n)))).presheaf.stalk
       (blowupBaseChartOrigin hπ0 ha)) ↔ n = 1 := by
   have := (isMaximal_map_quotient_X_mul_X_sub_C ha).isPrime
-  let e := (Spec.stalkIso (.of (NodeAlgebra R (π ^ n))) ⟨_, this⟩).commRingCatIsoToRingEquiv
   rw [← isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff_of_irreducible hπ n]
   exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion (blowupBaseChartι (π ^ n) hπ0) _).trans
-    ⟨fun _ ↦ .of_ringEquiv e, fun _ ↦ .of_ringEquiv e.symm⟩
+    (isRegularLocalRing_stalk_Spec_iff (.of (NodeAlgebra R (π ^ n))) ⟨_, this⟩)
 
 /-- **The singular locus of the blowup of `xy = πⁿ⁺²` for `n ≥ 2` is one closed point.** For a
 uniformizer `π` of a discrete valuation ring `R` and `n ≥ 2`, the local ring of the blowup of
@@ -432,7 +431,7 @@ uniformizer `π` of a discrete valuation ring `R` and `n ≥ 2`, the local ring 
 origin of the `π`-chart, a closed point (`isClosed_singleton_blowupBaseChartOrigin`) at which
 the blowup is the node `uv = πⁿ`. -/
 theorem isRegularLocalRing_stalk_blowup_iff_ne (hπ : Irreducible π) {n : ℕ} (hn : 2 ≤ n)
-    {hπ0 : π ∈ nonZeroDivisors R} {ha : π ^ n ∈ IsLocalRing.maximalIdeal R}
+    (hπ0 : π ∈ nonZeroDivisors R) (ha : π ^ n ∈ IsLocalRing.maximalIdeal R)
     (x : Proj (grade (originIdeal π (π ^ 2 * π ^ n)))) :
     IsRegularLocalRing ((Proj (grade (originIdeal π (π ^ 2 * π ^ n)))).presheaf.stalk x) ↔
       x ≠ blowupBaseChartOrigin hπ0 ha := by
