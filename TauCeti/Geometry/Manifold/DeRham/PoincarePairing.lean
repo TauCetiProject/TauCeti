@@ -37,6 +37,8 @@ representative formula pairs it with the class of the constant function `1` to g
 * `TauCeti.poincarePairing`: the pairing `H^k_dR(M) → H^l_c(M) → ℝ`, the wedge product followed
   by integration (`TauCeti.poincarePairing_apply`), computed on classes by
   `TauCeti.poincarePairing_mk`.
+* `TauCeti.integralTopForm_wedge_eq_zero_of_mem_exactForms`: since an exact form represents the
+  zero class, `∫_M dα ∧ ψ = 0` for every compactly supported closed form `ψ`.
 
 ## References
 
@@ -146,5 +148,16 @@ theorem poincarePairing_mk (o : Manifold.Orientation I M (Fin (k + l)))
       integralTopForm o (RoughForm.wedge (φ.1 : RoughForm I M ℝ k) ψ.1.1) := by
   rw [poincarePairing_apply, compactlySupportedDeRhamCohomology.wedge_mk,
     compactlySupportedDeRhamCohomology.integral_mk, SmoothForm.coe_wedge]
+
+/-- On an oriented boundaryless manifold of dimension `k + l`, the wedge product of an exact
+`k`-form with a compactly supported closed `l`-form integrates to zero: `∫_M dα ∧ ψ = 0`. -/
+theorem integralTopForm_wedge_eq_zero_of_mem_exactForms
+    (o : Manifold.Orientation I M (Fin (k + l))) {φ : SmoothForm I M ℝ k}
+    (hφ : φ ∈ exactForms I M k) {ψ : SmoothForm I M ℝ l}
+    (hψ : ψ ∈ compactlySupportedClosedForms I M l) :
+    integralTopForm o (RoughForm.wedge φ.1 ψ.1) = 0 := by
+  have h := poincarePairing_mk o ⟨φ, exactForms_le_closedForms I k hφ⟩ ⟨ψ, hψ⟩
+  rwa [(deRhamCohomology.mk_eq_zero_iff I k _).2 hφ, map_zero, LinearMap.zero_apply,
+    eq_comm] at h
 
 end TauCeti
