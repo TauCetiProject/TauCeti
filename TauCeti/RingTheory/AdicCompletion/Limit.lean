@@ -43,6 +43,9 @@ spectrum, and the form used to identify its global sections with `R`.
 * `IsAdicComplete.isLimitQuotientPowSuccCone`: if `R` is `I`-adically complete, the cone of
   quotient maps is a limit cone.
 * `AdicCompletion.isLimitQuotientPowSuccCone`: the cone of evaluation maps is a limit cone.
+* `Ideal.factor_comp_quotEquivOfEq_map_pow`: along a ring homomorphism `f : R →+* S`, the
+  quotient maps of `S` by the extended ideals `I ^ (n + 1) S` are, through `Ideal.map_pow`, the
+  transition maps of `Ideal.quotientPowSuccDiagram (I.map f)`.
 -/
 
 universe u
@@ -77,6 +80,22 @@ noncomputable def quotientPowSuccCone : Cone (quotientPowSuccDiagram I) where
   π.naturality _ _ _ := by
     ext x
     rfl
+
+/-- Read through `Ideal.map_pow`, the quotient map `S ⧸ I ^ (m + 1) S → S ⧸ I ^ (n + 1) S` along
+a ring homomorphism `f : R →+* S` is the transition map of the diagram of the quotients of `S` by
+the powers of `I S`. -/
+theorem factor_comp_quotEquivOfEq_map_pow {S : Type u} [CommRing S] (f : R →+* S) {m n : ℕ}
+    (h : n ≤ m) :
+    CommRingCat.ofHom (Quotient.factor (map_mono (pow_le_pow_right (I := I)
+        (Nat.succ_le_succ h)))) ≫
+      CommRingCat.ofHom (quotEquivOfEq (I.map_pow f (n + 1))).toRingHom =
+    CommRingCat.ofHom (quotEquivOfEq (I.map_pow f (m + 1))).toRingHom ≫
+      (quotientPowSuccDiagram (I.map f)).map (homOfLE h).op := by
+  -- both sides send the class of `x ∈ S` to its class. `simp` rewrites the transition map by
+  -- `Ideal.quotientPowSuccDiagram_map` but cannot evaluate the resulting composite, whose objects
+  -- are the diagram's objects rather than `CommRingCat.of`, so the step is closed by `rfl`
+  ext x
+  rfl
 
 end Ideal
 

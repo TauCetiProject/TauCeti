@@ -429,23 +429,6 @@ section BasicOpenSections
 
 variable [IsTopologicalRing A] {I : Ideal A}
 
-omit [TopologicalSpace A] [IsTopologicalRing A] in
-/-- Read through `Ideal.map_pow`, the quotient map `A_f ⧸ I ^ (m + 1) A_f → A_f ⧸ I ^ (n + 1) A_f`
-is the transition map of the diagram of the quotients of `A_f` by the powers of `I A_f`. -/
-private theorem factor_comp_quotEquivOfEq (f : A) {m n : ℕ} (h : n ≤ m) :
-    CommRingCat.ofHom (Ideal.Quotient.factor (Ideal.map_mono (Ideal.pow_le_pow_right
-        (Nat.succ_le_succ h)))) ≫
-      CommRingCat.ofHom (Ideal.quotEquivOfEq (Ideal.map_pow (algebraMap A (Localization.Away f))
-        I (n + 1))).toRingHom =
-    CommRingCat.ofHom (Ideal.quotEquivOfEq (Ideal.map_pow _ I (m + 1))).toRingHom ≫
-      (Ideal.quotientPowSuccDiagram (I.map (algebraMap A (Localization.Away f)))).map
-        (homOfLE h).op := by
-  -- both sides send the class of `x ∈ A_f` to its class. `simp` rewrites the transition map by
-  -- `Ideal.quotientPowSuccDiagram_map` but cannot evaluate the resulting composite, whose objects
-  -- are the diagram's objects rather than `CommRingCat.of`, so the step is closed by `rfl`
-  ext x
-  rfl
-
 /-- On `D(f)`, the diagram of the thickenings is the diagram of the quotients
 `A_f ⧸ I ^ (n + 1) A_f`. -/
 private noncomputable def quotientDiagramBasicOpenIso (hI : IsAdic I) (f : A) :
@@ -456,7 +439,8 @@ private noncomputable def quotientDiagramBasicOpenIso (hI : IsAdic I) (f : A) :
     (fun n ↦ quotientSheafBasicOpenIso (is_ideal_adic_pow hI n.unop.succ_pos) f ≪≫
       (Ideal.quotEquivOfEq (Ideal.map_pow _ I (n.unop + 1))).toCommRingCatIso)
     fun g ↦ (quotientTransition_app_basicOpen_comp_quotientSheafBasicOpenIso_hom_assoc _ _ _ f
-      _).trans (congrArg (_ ≫ ·) (factor_comp_quotEquivOfEq f (leOfHom g.unop)))
+      _).trans (congrArg (_ ≫ ·)
+        (Ideal.factor_comp_quotEquivOfEq_map_pow I _ (leOfHom g.unop)))
 
 /-- The sections over `D(f)` of the structure sheaf of `Spf A` are the completion
 `AdicCompletion (I A_f) A_f` of the localisation `A_f` of `A` away from `f` (EGA I, Ch. I,
@@ -532,6 +516,18 @@ noncomputable def basicOpenSectionsIso (hI : IsAdic I) (hIfg : I.FG) (f : A) :
     (structureSheaf hI).obj.obj (op (basicOpen f)) ≅ CommRingCat.of (AdicRing.CompletedAway A f) :=
   basicOpenSectionsAdicCompletionIso hI f ≪≫
     (AdicRing.CompletedAway.idealEquiv f I hI hIfg).symm.toRingEquiv.toCommRingCatIso
+
+/-- Followed by the comparison `TauCeti.AdicRing.CompletedAway.idealEquiv`, the identification
+`basicOpenSectionsIso` of the sections over `D(f)` with `A_{f}` is
+`basicOpenSectionsAdicCompletionIso`. -/
+@[reassoc]
+theorem basicOpenSectionsIso_hom_comp_idealEquiv (hI : IsAdic I) (hIfg : I.FG) (f : A) :
+    (basicOpenSectionsIso hI hIfg f).hom ≫
+        CommRingCat.ofHom (AdicRing.CompletedAway.idealEquiv f I hI hIfg : _ →+* _) =
+      (basicOpenSectionsAdicCompletionIso hI f).hom := by
+  rw [basicOpenSectionsIso, Iso.trans_hom, Category.assoc]
+  refine CommRingCat.hom_ext (RingHom.ext fun x ↦ ?_)
+  exact (AdicRing.CompletedAway.idealEquiv f I hI hIfg).apply_symm_apply _
 
 /-- For an adic ring `A`, the global section of the structure sheaf of `Spf A` corresponding to
 `a ∈ A` restricts on `D(f)` to the image of `a` in the completed localisation `A_{f}`. -/
