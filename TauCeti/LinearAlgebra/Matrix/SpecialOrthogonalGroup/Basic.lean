@@ -12,7 +12,8 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 
 A ring homomorphism maps a special orthogonal matrix entrywise to a special orthogonal matrix.
 This expresses the functoriality of special orthogonal groups under coefficient-ring maps and
-supports their base-change constructions.
+supports their base-change constructions. The construction is modelled on Mathlib's
+`Matrix.SpecialLinearGroup.map`.
 
 ## Main declarations
 
@@ -21,71 +22,48 @@ supports their base-change constructions.
 
 public section
 
-open Matrix
-
 namespace Matrix.SpecialOrthogonalGroup
 
-universe u v
-
 variable {n : Type*} [Fintype n] [DecidableEq n]
-variable {R : Type u} [CommRing R]
+variable {R S : Type*} [CommRing R] [CommRing S]
 
 attribute [local instance] starRingOfComm
 
 /-- A ring homomorphism maps special orthogonal matrices to special orthogonal matrices. -/
-theorem map_mem {S : Type v} [CommRing S] (f : R →+* S)
-    {M : Matrix n n R} (hM : M ∈ Matrix.specialOrthogonalGroup n R) :
-    M.map f ∈ Matrix.specialOrthogonalGroup n S := by
-  rw [Matrix.mem_specialOrthogonalGroup_iff] at hM ⊢
-  refine ⟨?_, ?_⟩
-  · rw [Matrix.mem_orthogonalGroup_iff n S]
-    calc
-      M.map f * (M.map f)ᵀ = (M * Mᵀ).map f := by
-        rw [← Matrix.transpose_map]
-        exact Matrix.map_mul.symm
-      _ = 1 := by
-        rw [(Matrix.mem_orthogonalGroup_iff n R).mp hM.1]
-        exact Matrix.map_one f f.map_zero f.map_one
-  · calc
-      (M.map f).det = f M.det := (RingHom.map_det f M).symm
-      _ = 1 := by rw [hM.2, map_one]
+theorem map_mem (f : R →+* S) {M : Matrix n n R} (hM : M ∈ specialOrthogonalGroup n R) :
+    M.map f ∈ specialOrthogonalGroup n S := by
+  rw [mem_specialOrthogonalGroup_iff, mem_orthogonalGroup_iff] at hM ⊢
+  refine ⟨?_, (f.map_det M).symm.trans <| by rw [hM.2, _root_.map_one]⟩
+  rw [← transpose_map, ← Matrix.map_mul, hM.1, Matrix.map_one f f.map_zero f.map_one]
 
 /-- A ring homomorphism maps special orthogonal matrices entrywise. -/
-def map {S : Type v} [CommRing S] (f : R →+* S) :
-    Matrix.specialOrthogonalGroup n R →* Matrix.specialOrthogonalGroup n S where
+def map (f : R →+* S) : specialOrthogonalGroup n R →* specialOrthogonalGroup n S where
   toFun M := ⟨M.1.map f, map_mem f M.2⟩
   map_one' := Subtype.ext (Matrix.map_one f f.map_zero f.map_one)
   map_mul' _ _ := Subtype.ext Matrix.map_mul
 
 /-- Entrywise mapping of a special orthogonal matrix has the expected underlying matrix. -/
 @[simp]
-theorem coe_map {S : Type v} [CommRing S] (f : R →+* S)
-    (M : Matrix.specialOrthogonalGroup n R) :
+theorem coe_map (f : R →+* S) (M : specialOrthogonalGroup n R) :
     (map f M : Matrix n n S) = M.1.map f :=
-  by simp [map]
+  (rfl)
 
 /-- A coefficient-ring map acts entrywise on special orthogonal matrices. -/
-theorem map_apply {S : Type v} [CommRing S] (f : R →+* S)
-    (M : Matrix.specialOrthogonalGroup n R) (i j : n) :
-    (map f M : Matrix n n S) i j = f ((M : Matrix n n R) i j) := by
-  rw [coe_map, Matrix.map_apply]
+theorem map_apply (f : R →+* S) (M : specialOrthogonalGroup n R) (i j : n) :
+    (map f M : Matrix n n S) i j = f ((M : Matrix n n R) i j) :=
+  (rfl)
 
 /-- Mapping coefficients along the identity ring homomorphism is the identity. -/
 @[simp]
-theorem map_id :
-    map (n := n) (RingHom.id R) = MonoidHom.id (Matrix.specialOrthogonalGroup n R) := by
-  ext M i j
-  simp only [map_apply, RingHom.id_apply, MonoidHom.id_apply]
+theorem map_id : map (n := n) (RingHom.id R) = MonoidHom.id (specialOrthogonalGroup n R) := by
+  ext
+  simp
 
 /-- Successive coefficient-ring maps agree with mapping along their composite. -/
 @[simp]
-theorem map_comp {S T : Type*} [CommRing S] [CommRing T]
-    (f : R →+* S) (g : S →+* T) :
+theorem map_comp {T : Type*} [CommRing T] (f : R →+* S) (g : S →+* T) :
     map (n := n) (g.comp f) = (map (n := n) g).comp (map (n := n) f) := by
-  apply MonoidHom.ext
-  intro M
-  apply Subtype.ext
-  ext i j
-  simp only [map_apply, RingHom.coe_comp, Function.comp_apply, MonoidHom.coe_comp]
+  ext
+  simp
 
 end Matrix.SpecialOrthogonalGroup

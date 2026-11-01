@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.MappingTorus.Basic
 public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
 public import TauCeti.Algebra.Homology.HomotopyCofiber
+public import TauCeti.AlgebraicTopology.Singular.Reduced
 
 /-!
 # Singular chains of a mapping torus
@@ -29,6 +30,8 @@ property of the mapping cone then gives the chain map which underlies the Wang s
 * `TauCeti.MappingTorus.homologyMap_monodromy_comp_incl`: the corresponding equality on singular
   homology.
 * `TauCeti.MappingTorus.wangEndomorphism`: the chain endomorphism `id - φ_*` of the fibre.
+* `TauCeti.MappingTorus.homologyMap_monodromyChainMap_zero`: on a path-connected fibre the
+  monodromy induces the identity of `H₀(F)`.
 * `TauCeti.MappingTorus.wangMappingConeMap`: the canonical map from the mapping cone of
   `id - φ_*` to the singular chains of the mapping torus.
 * `TauCeti.MappingTorus.wangMappingConeMapOfSemiconj`: the functorial map between these cones
@@ -135,6 +138,14 @@ lemma homologyMap_wangEndomorphism [CategoryWithHomology C] (n : ℕ) :
       𝟙 _ - HomologicalComplex.homologyMap (monodromyChainMap φ R) n := by
   rw [wangEndomorphism_def, HomologicalComplex.homologyMap_sub,
     HomologicalComplex.homologyMap_id]
+
+/-- On a path-connected fibre the monodromy induces the identity of `H₀(F)`. -/
+@[simp]
+theorem homologyMap_monodromyChainMap_zero [CategoryWithHomology C] [PathConnectedSpace F] :
+    HomologicalComplex.homologyMap (monodromyChainMap φ R) 0 = 𝟙 _ := by
+  rw [monodromyChainMap_def]
+  -- `singularHomologyFunctor` is by definition the homology of `singularChainComplexFunctor`.
+  exact singularHomology₀_map_eq_id_of_pathConnectedSpace R _
 
 /-- The fibre inclusion after `id - φ_*` is null-homotopic.  The sign is chosen so that the
 endomorphism on the fibre is literally `id - φ_*`, rather than its negative. -/
