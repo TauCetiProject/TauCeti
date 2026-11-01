@@ -13,7 +13,7 @@ public import TauCeti.Analysis.CStarAlgebra.QuantumSpin.LocalAlgebra
 
 Over a topological coefficient ring the inclusion `QuantumSpin.inclusion : A_Λ → A_Λ'` of local
 algebras, `x ↦ x ⊗ 1`, is continuous, `QuantumSpin.continuous_inclusion`. Over `ℝ` or `ℂ` it
-therefore commutes with the exponential, `exp (x ⊗ 1) = exp x ⊗ 1`, `QuantumSpin.inclusion_exp`.
+therefore commutes with the exponential, `exp (x ⊗ 1) = exp x ⊗ 1`, `QuantumSpin.exp_inclusion`.
 
 For a Hermitian matrix `K` of `A_Λ`, the Gibbs state `Tr (exp (-βK) ·) / Tr (exp (-βK))`
 evaluated on the normalized partial trace `QuantumSpin.expectation : A_Λ' → A_Λ` is the Gibbs
@@ -43,7 +43,7 @@ theorem continuous_inclusion {R : Type*} [CommSemiring R] [StarRing R] [Topologi
     · exact continuous_const
 
 /-- The inclusion of local algebras commutes with the exponential: `exp (x ⊗ 1) = exp x ⊗ 1`. -/
-theorem inclusion_exp {𝕜 : Type*} [RCLike 𝕜] (h : Λ ⊆ Λ') (x : Matrix (Λ → S) (Λ → S) 𝕜) :
+theorem exp_inclusion {𝕜 : Type*} [RCLike 𝕜] (h : Λ ⊆ Λ') (x : Matrix (Λ → S) (Λ → S) 𝕜) :
     exp (inclusion h x) = inclusion h (exp x) :=
   (map_exp_of_mem_ball (𝕂 := 𝕜) _ (continuous_inclusion h) x
     (by simp [expSeries_radius_eq_top])).symm
@@ -66,7 +66,7 @@ theorem gibbsState_expectation [Nonempty S] (h : Λ ⊆ Λ') {K : Matrix (Λ →
   have hc : c⁻¹ ≠ 0 := inv_ne_zero (Nat.cast_ne_zero.2 Fintype.card_ne_zero)
   -- the Gibbs weight of `K ⊗ 1` is the included Gibbs weight of `K`
   have hρ : exp (-(β • inclusion h K)) = inclusion h (exp (-(β • K))) := by
-    rw [← inclusion_exp, map_neg, map_real_smul _ (continuous_inclusion h)]
+    rw [← exp_inclusion, map_neg, map_real_smul _ (continuous_inclusion h)]
   rw [IsHermitian.gibbsState_apply, IsHermitian.gibbsState_apply, hρ, htr, htr₁ (exp _),
     mul_div_mul_left _ _ hc]
 

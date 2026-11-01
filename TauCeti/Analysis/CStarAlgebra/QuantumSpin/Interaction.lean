@@ -44,7 +44,7 @@ of states of the local algebras needs to define a state of their inductive limit
 dynamics this Hamiltonian generates on `A_Λ'`,
 `QuantumSpin.Interaction.isKMSState_iff_eq_gibbsExtension`. This rests on a fact about any
 Hermitian matrix `K` of `A_Λ`: the inclusion commutes with the exponential,
-`QuantumSpin.inclusion_exp`, so the Gibbs state of `K` evaluated on the normalized partial trace
+`QuantumSpin.exp_inclusion`, so the Gibbs state of `K` evaluated on the normalized partial trace
 is the Gibbs state of `K ⊗ 1`, `QuantumSpin.gibbsState_expectation`.
 
 ## References
