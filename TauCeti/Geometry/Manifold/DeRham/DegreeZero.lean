@@ -33,7 +33,11 @@ separation or completeness hypotheses on the model.
 * `TauCeti.deRhamCohomology.const`: the degree-zero class of a constant real function.
 * `TauCeti.deRhamCohomology.exists_eq_const`: on a preconnected manifold, every degree-zero
   class is constant.
+* `TauCeti.deRhamCohomology.const_injective`: on a nonempty manifold, distinct constants have
+  distinct degree-zero classes.
 * `TauCeti.finrank_deRhamCohomology_zero`: `H⁰_dR(M)` has dimension one when `M` is connected.
+* `TauCeti.finrank_deRhamCohomology_zero_of_discreteTopology`: on a finite discrete manifold,
+  `H⁰_dR(M)` has dimension the number of points.
 * `TauCeti.subsingleton_compactlySupportedDeRhamCohomology_zero`: `H⁰_c(M) = 0` when `M` is
   preconnected and noncompact.
 
@@ -152,6 +156,11 @@ theorem deRhamCohomologyZeroEquiv_const (r : ℝ) :
   ext x
   exact LocallyConstant.constₗ_apply_apply ℝ r x
 
+/-- On a nonempty manifold, distinct real constants have distinct degree-zero classes. -/
+theorem const_injective [Nonempty M] : Function.Injective (const I M) := fun a b hab ↦ by
+  simpa using DFunLike.congr_fun (congrArg (deRhamCohomologyZeroEquiv I M) hab)
+    (Classical.arbitrary M)
+
 /-- On a preconnected manifold, every degree-zero de Rham class is the class of a constant
 function. -/
 theorem exists_eq_const [PreconnectedSpace M] (c : deRhamCohomology I M 0) :
@@ -166,14 +175,21 @@ variable (M) in
 /-- On a connected manifold, degree-zero de Rham cohomology is one-dimensional. -/
 theorem finrank_deRhamCohomology_zero [ConnectedSpace M] :
     Module.finrank ℝ (deRhamCohomology I M 0) = 1 := by
-  have hconst : Function.Bijective (LocallyConstant.constₗ (X := M) ℝ (Y := ℝ)) := by
-    refine ⟨fun a b hab ↦ ?_, fun f ↦ ?_⟩
-    · obtain ⟨x⟩ := ‹ConnectedSpace M›.toNonempty
-      simpa using DFunLike.congr_fun hab x
-    · obtain ⟨a, ha⟩ := f.exists_eq_const
-      exact ⟨a, ha.symm⟩
-  rw [(deRhamCohomologyZeroEquiv I M ≪≫ₗ (LinearEquiv.ofBijective _ hconst).symm).finrank_eq,
-    Module.finrank_self]
+  have hconst : Function.Bijective (deRhamCohomology.const I M) :=
+    ⟨deRhamCohomology.const_injective, fun c ↦ (deRhamCohomology.exists_eq_const c).imp
+      fun _ h ↦ h.symm⟩
+  rw [← (LinearEquiv.ofBijective _ hconst).finrank_eq, Module.finrank_self]
+
+variable (M) in
+/-- On a finite discrete manifold, degree-zero de Rham cohomology has dimension the number of
+points, since every real function is locally constant. -/
+theorem finrank_deRhamCohomology_zero_of_discreteTopology [DiscreteTopology M] [Finite M] :
+    Module.finrank ℝ (deRhamCohomology I M 0) = Nat.card M := by
+  have : Fintype M := Fintype.ofFinite M
+  have hcoe : Function.Bijective (LocallyConstant.coeFnₗ ℝ : LocallyConstant M ℝ →ₗ[ℝ] M → ℝ) :=
+    ⟨DFunLike.coe_injective, fun f ↦ ⟨⟨f, .of_discrete f⟩, rfl⟩⟩
+  rw [(deRhamCohomologyZeroEquiv I M ≪≫ₗ LinearEquiv.ofBijective _ hcoe).finrank_eq,
+    Module.finrank_fintype_fun_eq_card, Nat.card_eq_fintype_card]
 
 /-- On a preconnected noncompact manifold, the only compactly supported closed `0`-form is zero:
 its function is locally constant, hence constant, and a nonzero constant function on a noncompact
