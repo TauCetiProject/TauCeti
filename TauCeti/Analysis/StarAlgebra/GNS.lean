@@ -90,14 +90,11 @@ theorem star_apply_star_mul (a b : A) : star (φ (star a * b)) = φ (star b * a)
   have him (x : A) : (φ (star x * x)).im = 0 := (φ.square_nonneg x).2.symm
   have hsum := him (a + b)
   have hI := him (a + Complex.I • b)
-  simp only [star_add, add_mul, mul_add, map_add, Complex.add_im, him] at hsum
-  simp only [star_add, star_smul, add_mul, mul_add, smul_mul_assoc, mul_smul_comm,
-    map_add, map_smul, smul_eq_mul, Complex.add_im, Complex.mul_im,
-    Complex.star_def, Complex.conj_I, Complex.I_re, Complex.I_im,
-    Complex.neg_re, Complex.neg_im, Complex.mul_re, him] at hI
-  apply Complex.ext <;> simp only [Complex.star_def, Complex.conj_re, Complex.conj_im]
-  · linarith
-  · linarith
+  simp [add_mul, mul_add, him] at hsum
+  simp [add_mul, mul_add, smul_mul_assoc, mul_smul_comm, him] at hI
+  rw [Complex.ext_iff]
+  simp only [Complex.star_def, Complex.conj_re, Complex.conj_im]
+  constructor <;> linarith
 
 /-- A copy of the algebra carrying the seminorm induced by the positive functional. -/
 def PreGNS (_φ : StarPositiveFunctional A) := A
@@ -148,11 +145,17 @@ theorem apply_star_mul_self_eq_zero_iff (a : A) :
 def nullSubmodule : Submodule ℂ A :=
   (_root_.nullSubmodule ℂ φ.PreGNS).comap φ.toPreGNS.toLinearMap
 
+/-- An algebra element is null exactly when its GNS seminorm vanishes. -/
+theorem mem_nullSubmodule_iff_norm_eq_zero (a : A) :
+    a ∈ φ.nullSubmodule ↔ ‖φ.toPreGNS a‖ = 0 := by
+  rw [nullSubmodule, Submodule.mem_comap, _root_.mem_nullSubmodule_iff,
+    LinearEquiv.coe_coe]
+
 /-- The null space is precisely the zero set of the quadratic form. -/
+@[simp]
 theorem mem_nullSubmodule_iff_apply_star_mul_self_eq_zero (a : A) :
     a ∈ φ.nullSubmodule ↔ φ (star a * a) = 0 := by
-  -- The comap transports Mathlib's seminorm-null submodule along the linear equivalence.
-  change ‖φ.toPreGNS a‖ = 0 ↔ φ (star a * a) = 0
+  rw [φ.mem_nullSubmodule_iff_norm_eq_zero]
   constructor
   · intro h
     rw [← φ.inner_toPreGNS]
@@ -162,7 +165,6 @@ theorem mem_nullSubmodule_iff_apply_star_mul_self_eq_zero (a : A) :
     simp
 
 /-- Membership in the null space is vanishing of all pairings. -/
-@[simp]
 theorem mem_nullSubmodule (a : A) : a ∈ φ.nullSubmodule ↔ ∀ b, φ (star b * a) = 0 := by
   rw [φ.mem_nullSubmodule_iff_apply_star_mul_self_eq_zero,
     φ.apply_star_mul_self_eq_zero_iff]
@@ -193,9 +195,7 @@ theorem classMap_surjective : Function.Surjective φ.classMap :=
 theorem classMap_eq_classMap_iff (a b : A) :
     φ.classMap a = φ.classMap b ↔ a - b ∈ φ.nullSubmodule := by
   rw [← sub_eq_zero, ← map_sub]
-  rw [φ.classMap_apply]
-  -- Membership in the transported null submodule is the seminorm-zero condition.
-  change SeparationQuotient.mk (φ.toPreGNS (a - b)) = 0 ↔ _
+  rw [φ.classMap_apply, φ.mem_nullSubmodule_iff_norm_eq_zero]
   exact SeparationQuotient.mk_eq_zero_iff
 
 /-- Linear maps out of the GNS space are determined by their values on algebra classes. -/
@@ -227,8 +227,7 @@ def leftMul (a : A) : Module.End ℂ φ.GNS where
       intro b c h
       rw [φ.classMap_eq_classMap_iff, ← mul_sub]
       apply φ.mul_mem_nullSubmodule
-      -- Unfold the comap membership to use the pseudometric's inseparability criterion.
-      change ‖φ.toPreGNS (φ.toPreGNS.symm b - φ.toPreGNS.symm c)‖ = 0
+      rw [φ.mem_nullSubmodule_iff_norm_eq_zero]
       simpa [dist_eq_norm] using h.dist_eq_zero)
   map_add' := by
     intro x y
@@ -248,6 +247,31 @@ def leftMul (a : A) : Module.End ℂ φ.GNS where
 @[simp]
 theorem leftMul_classMap (a b : A) :
     φ.leftMul a (φ.classMap b) = φ.classMap (a * b) := (rfl)
+
+/-- The non-unital algebra acts on its GNS space by algebraic linear endomorphisms. -/
+def nonUnitalRepresentation : A →ₙₐ[ℂ] Module.End ℂ φ.GNS where
+  toFun := φ.leftMul
+  map_mul' a b := by
+    apply φ.classMap_ext
+    intro c
+    simp [Module.End.mul_apply, mul_assoc]
+  map_zero' := by
+    apply φ.classMap_ext
+    intro b
+    simp
+  map_add' a b := by
+    apply φ.classMap_ext
+    intro c
+    simp [add_mul]
+  map_smul' r a := by
+    apply φ.classMap_ext
+    intro b
+    simp [smul_mul_assoc]
+
+/-- The non-unital representation acts on classes by left multiplication. -/
+@[simp]
+theorem nonUnitalRepresentation_classMap (a b : A) :
+    φ.nonUnitalRepresentation a (φ.classMap b) = φ.classMap (a * b) := (rfl)
 
 /-- Left multiplication respects adjoints on the algebraic GNS domain. -/
 theorem inner_leftMul (a : A) (x y : φ.GNS) :
@@ -273,23 +297,11 @@ theorem map_star (a : A) : φ (star a) = star (φ a) := by
 /-- The algebra acts on its algebraic GNS space by left multiplication.
 The endomorphisms are algebraic linear maps and are not asserted to be continuous. -/
 def representation : A →ₐ[ℂ] Module.End ℂ φ.GNS where
-  toFun := φ.leftMul
+  __ := φ.nonUnitalRepresentation
   map_one' := by
     apply φ.classMap_ext
     intro b
     simp
-  map_mul' a b := by
-    apply φ.classMap_ext
-    intro c
-    simp [Module.End.mul_apply, mul_assoc]
-  map_zero' := by
-    apply φ.classMap_ext
-    intro b
-    simp
-  map_add' a b := by
-    apply φ.classMap_ext
-    intro c
-    simp [add_mul]
   commutes' r := by
     apply φ.classMap_ext
     intro b
