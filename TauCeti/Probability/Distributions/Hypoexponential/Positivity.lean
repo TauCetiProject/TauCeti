@@ -99,14 +99,8 @@ theorem mul_gammaPDFReal_le_hypoexponentialPDFReal [Nonempty ι]
   -- Both formulas are continuous on the open half-line; use the existing a.e.-equality API
   -- on their maximum to upgrade the a.e. inequality.
   have hleft : ContinuousOn (fun y ↦ (∏ i, r i / R) *
-      gammaPDFReal (Fintype.card ι) R y) (Ioi 0) := by
-    apply ContinuousOn.congr (f := fun y ↦ (∏ i, r i / R) *
-      (R ^ Fintype.card ι / (Fintype.card ι - 1)! *
-        y ^ (Fintype.card ι - 1) * exp (-(R * y))))
-    · fun_prop
-    · intro y hy
-      exact congrArg ((∏ i, r i / R) * ·)
-        (gammaPDFReal_nat_eq (k := Fintype.card ι) Fintype.card_pos (le_of_lt hy))
+      gammaPDFReal (Fintype.card ι) R y) (Ioi 0) :=
+    (continuousOn_gammaPDFReal (Fintype.card ι) R).const_mul _
   have hright := continuousOn_hypoexponentialPDFReal r
   have heq := Measure.eqOn_open_of_ae_eq
     (ae_restrict_of_ae (haeReal.mono fun y hy ↦ max_eq_right hy))
