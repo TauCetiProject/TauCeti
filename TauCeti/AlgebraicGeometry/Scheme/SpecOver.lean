@@ -25,6 +25,10 @@ homomorphism `A →+* K` and need not be `K`-linear.
 A morphism `Spec B ⟶ X` over `Spec R` whose image lies in an affine open `Spec A ⟶ X` over
 `Spec R` factors through it by an `R`-algebra homomorphism `A →ₐ[R] B`.
 
+The same correspondence is stated for Mathlib's bundled spectrum functor
+`AlgebraicGeometry.algSpec`, whose morphisms are morphisms in the category of schemes over
+`Spec R`: maps `algSpec B ⟶ algSpec A` are the `R`-algebra homomorphisms `A →ₐ[R] B`.
+
 For an arbitrary scheme `q : T ⟶ Spec R`, a morphism `f : T ⟶ Spec A` lies over `Spec R`
 exactly when the ring map `A ⟶ Γ(T, ⊤)` of `f` restricts along `R ⟶ A` to the ring map
 `R ⟶ Γ(T, ⊤)` of `q` (`TauCeti.AlgebraicGeometry.comp_spec_map_eq_iff`). Hence for an
@@ -41,11 +45,13 @@ on global functions through `q` (`TauCeti.AlgebraicGeometry.overHomSpecEquivAlgH
   if and only if its ring map `A ⟶ Γ(T, ⊤)` is compatible with `R`.
 * `TauCeti.AlgebraicGeometry.overHomSpecEquivAlgHom`: for an `R`-algebra `A`, morphisms
   `T ⟶ Spec A` over `Spec R` are the `R`-algebra homomorphisms `A →ₐ[R] Γ(T, ⊤)`.
+* `TauCeti.AlgebraicGeometry.algSpecHomEquivAlgHom`: morphisms `algSpec B ⟶ algSpec A` of schemes
+  over `Spec R` are the `R`-algebra homomorphisms `A →ₐ[R] B`.
 -/
 
 public section
 
-open _root_.AlgebraicGeometry CategoryTheory
+open _root_.AlgebraicGeometry CategoryTheory Opposite
 
 namespace TauCeti.AlgebraicGeometry
 
@@ -148,5 +154,44 @@ lemma overHomSpecEquivAlgHom_comp {R : CommRingCat.{u}} (A : Type u) [CommRing A
   rw [overHomSpecEquivAlgHom_apply, overHomSpecEquivAlgHom_apply, Over.comp_left,
     Scheme.Hom.comp_appTop, CommRingCat.comp_apply, CommRingCat.comp_apply,
     CommRingCat.comp_apply]
+
+section algSpec
+
+variable {R : CommRingCat.{u}} {A B : CommAlgCat.{u} R}
+
+variable (A B) in
+/-- Morphisms `algSpec B ⟶ algSpec A` of schemes over `Spec R` are the `R`-algebra homomorphisms
+`A →ₐ[R] B`, since Mathlib's `algSpec` is fully faithful. -/
+noncomputable def algSpecHomEquivAlgHom :
+    ((algSpec R).obj (op B) ⟶ (algSpec R).obj (op A)) ≃ (A →ₐ[R] B) :=
+  (algSpec.fullyFaithful.homEquiv (X := op B) (Y := op A)).symm.trans <|
+    Quiver.Hom.opEquiv.symm.trans
+      { toFun := CommAlgCat.Hom.hom, invFun := CommAlgCat.ofHom
+        left_inv _ := rfl, right_inv _ := rfl }
+
+/-- The inverse of `algSpecHomEquivAlgHom` applies `algSpec` to an algebra homomorphism. -/
+@[simp]
+theorem algSpecHomEquivAlgHom_symm_apply (φ : A →ₐ[R] B) :
+    (algSpecHomEquivAlgHom A B).symm φ = (algSpec R).map (CommAlgCat.ofHom φ).op :=
+  (rfl)
+
+/-- Applying `algSpec` to the algebra homomorphism of a morphism over `Spec R` recovers the
+morphism. -/
+@[simp]
+theorem algSpec_map_algSpecHomEquivAlgHom (g : (algSpec R).obj (op B) ⟶ (algSpec R).obj (op A)) :
+    (algSpec R).map (CommAlgCat.ofHom (algSpecHomEquivAlgHom A B g)).op = g := by
+  rw [← algSpecHomEquivAlgHom_symm_apply, Equiv.symm_apply_apply]
+
+/-- Composing with `algSpec` of an algebra homomorphism `h` precomposes the algebra homomorphism
+with `h`. -/
+@[simp]
+theorem algSpecHomEquivAlgHom_comp {A' : CommAlgCat.{u} R} (h : A' ⟶ A)
+    (g : (algSpec R).obj (op B) ⟶ (algSpec R).obj (op A)) :
+    algSpecHomEquivAlgHom A' B (g ≫ (algSpec R).map h.op) =
+      (algSpecHomEquivAlgHom A B g).comp h.hom := by
+  rw [← Equiv.eq_symm_apply, algSpecHomEquivAlgHom_symm_apply, CommAlgCat.ofHom_comp,
+    CommAlgCat.ofHom_hom, op_comp, Functor.map_comp, algSpec_map_algSpecHomEquivAlgHom]
+
+end algSpec
 
 end TauCeti.AlgebraicGeometry

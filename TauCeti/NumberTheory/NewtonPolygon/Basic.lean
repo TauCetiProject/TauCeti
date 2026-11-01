@@ -58,7 +58,9 @@ not have admissible heights; its `newtonPolygon` is then the all-infinite fallba
 * `Polynomial.Monic.newtonPolygon_ne_top`: a monic polynomial has a nonempty Newton polygon,
   whatever the valuation.
 * `Polynomial.newtonPolygon_natTrailingDegree` and `Polynomial.newtonPolygon_natDegree`:
-  the polygon begins at the trailing coefficient and ends at the leading coefficient.
+  the polygon begins at the trailing coefficient and ends at the leading coefficient;
+  `Polynomial.newtonPolygon_apply_zero` and `Polynomial.newtonPolygon_eq_of_natDegree_le` read
+  its heights at index zero and at any index from the degree on.
 * `Polynomial.ncard_finiteEdges_newtonPolygon`: if only zero has infinite valuation, a
   polynomial of degree `d` and order `a` of vanishing at zero has `d - a` finite unit edges,
   and by `Polynomial.finiteEdges_newtonPolygon_monomial` a monomial has none.
@@ -350,11 +352,24 @@ theorem newtonPolygon_natTrailingDegree :
   lowerConvexEnvelope_eq_of_forall_lt (isAdmissible_addValuation_coeff f v) fun i hi => by
     rw [coeff_eq_zero_of_lt_natTrailingDegree hi, AddValuation.map_zero]
 
+/-- At any index `n` at least the degree, the Newton polygon is the height of the coefficient
+of `X ^ n`: the leading coefficient when `n` is the degree, and `⊤` beyond it. -/
+theorem newtonPolygon_eq_of_natDegree_le {n : ℕ} (hn : f.natDegree ≤ n) :
+    f.newtonPolygon v n = v (f.coeff n) :=
+  lowerConvexEnvelope_eq_of_forall_gt fun k hk => by
+    rw [coeff_eq_zero_of_natDegree_lt (hn.trans_lt hk), AddValuation.map_zero]
+
 /-- The Newton polygon ends at the leading coefficient. -/
 @[simp]
 theorem newtonPolygon_natDegree : f.newtonPolygon v f.natDegree = v f.leadingCoeff :=
-  lowerConvexEnvelope_eq_of_forall_gt fun k hk => by
-    rw [coeff_eq_zero_of_natDegree_lt hk, AddValuation.map_zero]
+  newtonPolygon_eq_of_natDegree_le f v le_rfl
+
+/-- At index zero the Newton polygon is the height of the constant coefficient, which may be
+infinite. -/
+@[simp]
+theorem newtonPolygon_apply_zero : f.newtonPolygon v 0 = v (f.coeff 0) :=
+  lowerConvexEnvelope_eq_of_forall_lt (isAdmissible_addValuation_coeff f v) fun _ h =>
+    absurd h (Nat.not_lt_zero _)
 
 /-- If the trailing and leading coefficients of `f` have finite valuation, the finite domain of
 the Newton polygon of `f` runs from its order of vanishing at zero to its degree. -/

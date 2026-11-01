@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Basic
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Basic
+public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 import Mathlib.AlgebraicGeometry.Properties
 import Mathlib.RingTheory.Ideal.UFD
@@ -39,6 +40,14 @@ closed subscheme of codimension one is an effective Cartier divisor. In particul
 irreducible components of the special fibre of such a model, with their reduced structure, are
 effective Cartier divisors, the input of the intersection numbers `(Cᵢ · Cⱼ)` of components.
 
+Two distinct prime divisors meet properly: if `η ≠ η'` are codimension-one points and the closure
+`Z'` of `η'` is an effective Cartier divisor, then `η ∉ Z'`, since a codimension-one point has no
+proper codimension-one generization, so the inverse image of `Z'` on `Z` is an effective Cartier
+divisor of the integral scheme `Z`. On a regular scheme of dimension at most two this holds for
+every pair of distinct prime divisors, in both directions, which is the hypothesis under which
+the intersection numbers `(Cᵢ · Cⱼ)` of distinct components are symmetric and computed by
+`dim Γ(Cᵢ ∩ Cⱼ, 𝒪)`.
+
 ## Main results
 
 In the namespace `AlgebraicGeometry.Scheme.IdealSheafData`:
@@ -46,7 +55,11 @@ In the namespace `AlgebraicGeometry.Scheme.IdealSheafData`:
 * `isEffectiveCartier_vanishingIdeal_closure_singleton`: on a locally Noetherian scheme with
   factorial local rings, the closure of a codimension-one point is an effective Cartier divisor;
 * `isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular`: the same on a regular scheme
-  all of whose points have codimension at most two.
+  all of whose points have codimension at most two;
+* `IsEffectiveCartier.comap_subschemeι_vanishingIdeal_closure_singleton_of_ne`: a prime divisor
+  which is an effective Cartier divisor meets every other prime divisor properly;
+* `isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular`: distinct
+  prime divisors on a regular scheme of dimension at most two meet properly.
 
 ## References
 
@@ -55,6 +68,8 @@ In the namespace `AlgebraicGeometry.Scheme.IdealSheafData`:
   divisors agree.
 * The Stacks Project, *Divisors*, Section *Weil divisors*, the same statement for locally
   Noetherian schemes.
+* Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1: distinct prime divisors on a
+  regular surface meet properly, and their intersection number is a length.
 -/
 
 public section
@@ -158,5 +173,31 @@ theorem isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
       rw [ringKrullDim_stalk_eq_coheight]
       exact WithBot.coe_le_coe.mpr (hX x)
   exact isEffectiveCartier_vanishingIdeal_closure_singleton hη
+
+/-- **Distinct prime divisors meet properly.** Let `η ≠ η'` be codimension-one points of a scheme
+`X` such that the closure of `η'`, with its reduced induced structure, is an effective Cartier
+divisor. Then its inverse image on the closure of `η` is an effective Cartier divisor. -/
+theorem IsEffectiveCartier.comap_subschemeι_vanishingIdeal_closure_singleton_of_ne
+    {η η' : TauCeti.AlgebraicGeometry.CodimensionOnePoint X}
+    (hη' : (vanishingIdeal ⟨closure {(η' : X)}, isClosed_closure⟩).IsEffectiveCartier)
+    (hne : η ≠ η') :
+    ((vanishingIdeal ⟨closure {(η' : X)}, isClosed_closure⟩).comap
+      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subschemeι).IsEffectiveCartier := by
+  refine hη'.comap_subschemeι_vanishingIdeal_closure_singleton fun h ↦ hne ?_
+  rw [← SetLike.mem_coe, coe_support_vanishingIdeal, Closeds.coe_mk,
+    ← specializes_iff_mem_closure] at h
+  exact (TauCeti.AlgebraicGeometry.CodimensionOnePoint.eq_of_specializes h).symm
+
+/-- **Distinct prime divisors on a regular surface meet properly.** On a regular scheme all of whose
+points have codimension at most two, such as a regular model of a curve over a discrete valuation
+ring, let `η ≠ η'` be codimension-one points. Then the inverse image of the closure of `η'` on the
+closure of `η`, both with their reduced induced structures, is an effective Cartier divisor. -/
+theorem isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular
+    [TauCeti.AlgebraicGeometry.IsRegular X] (hX : ∀ x : X, coheight x ≤ 2)
+    {η η' : TauCeti.AlgebraicGeometry.CodimensionOnePoint X} (hne : η ≠ η') :
+    ((vanishingIdeal ⟨closure {(η' : X)}, isClosed_closure⟩).comap
+      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subschemeι).IsEffectiveCartier :=
+  (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular hX η'.2)
+    |>.comap_subschemeι_vanishingIdeal_closure_singleton_of_ne hne
 
 end AlgebraicGeometry.Scheme.IdealSheafData
