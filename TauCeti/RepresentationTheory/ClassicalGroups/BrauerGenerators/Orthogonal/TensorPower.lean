@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 -- `TauCeti.sum_sum_smul_tprod_update_pair_mulVec`, congruence at two slots of the cup.
-public import TauCeti.LinearAlgebra.PiTensorProduct.BasisExpansion
+public import TauCeti.LinearAlgebra.PiTensorProduct.Basis.Expansion
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Basic
 
 /-!
@@ -69,7 +69,7 @@ The pure-tensor calculations use the tuple obtained from `v` by setting the
 two slots `i` and `j` to the `c`-th standard basis vector of `kⁿ`, spelled as a pair of nested
 `Function.update`s. Mathlib's update lemmas evaluate and compose these replacements. The
 invariance of the cup uses the congruence formula at two slots from
-`TauCeti/LinearAlgebra/PiTensorProduct/BasisExpansion.lean`, specialized to the identity weight
+`TauCeti/LinearAlgebra/PiTensorProduct/Basis/Expansion.lean`, specialized to the identity weight
 matrix.
 
 Each summand of the generator is a `PiTensorProduct.map`, so the relations that do not read the arc

@@ -26,6 +26,11 @@ also sends free module sheaves to free module sheaves on the same generators.
 
 A module sheaf is zero exactly when its restrictions to the members of an open cover are zero
 (`AlgebraicGeometry.Scheme.Modules.isZero_iff_of_iSup_eq_top`), by the sheaf condition.
+Restriction to an open `U` only sees sections over opens contained in `U`: a morphism that is an
+isomorphism on those sections restricts to an isomorphism
+(`AlgebraicGeometry.Scheme.Modules.isIso_restrictFunctor_map_of_isIso_app`), and over them the
+unit of the restriction--pushforward adjunction is an isomorphism on sections
+(`AlgebraicGeometry.Scheme.Modules.isIso_restrictAdjunction_unit_app_app`).
 
 The adjunction is Mathlib's `SheafOfModules.PullbackConstruction.adjunction`; the underlying
 presheaf right adjoint is `PresheafOfModules.instIsRightAdjointPushforward`.
@@ -148,5 +153,23 @@ theorem isZero_iff_of_iSup_eq_top {X : Scheme.{u}} {ι : Type*} (U : ι → X.Op
       ← iSup_inf_eq, hU, top_inf_eq, le_rfl]
   · rw [map_zero]
     exact eq_zero_of_isZero_restrict (h i) _ _
+
+/-- A morphism of `𝒪_X`-modules restricts to an isomorphism over an open `U` if it is an
+isomorphism on sections over every open contained in `U`. -/
+theorem isIso_restrictFunctor_map_of_isIso_app {X : Scheme.{u}} {M N : X.Modules} (φ : M ⟶ N)
+    (U : X.Opens) (h : ∀ V ≤ U, IsIso (φ.app V)) : IsIso ((restrictFunctor U.ι).map φ) :=
+  Hom.isIso_iff_isIso_app.2 fun W ↦ h _ (U.ι_image_le W)
+
+/-- Over an open `V` contained in `U`, the unit `M ⟶ U.ι_* (M|_U)` of the restriction-pushforward
+adjunction is an isomorphism on sections. -/
+theorem isIso_restrictAdjunction_unit_app_app {X : Scheme.{u}} (U : X.Opens) (M : X.Modules)
+    {V : X.Opens} (hV : V ≤ U) : IsIso (((restrictAdjunction U.ι).unit.app M).app V) := by
+  have h : U.ι ''ᵁ (U.ι ⁻¹ᵁ V) = V := by
+    rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
+    exact inf_eq_right.2 hV
+  -- The component is the restriction of sections along `ι(ι⁻¹ V) ≤ V`, an equality here.
+  have : homOfLE (U.ι.image_preimage_le V) = eqToHom h := Subsingleton.elim _ _
+  rw [restrictAdjunction_unit_app_app, this]
+  exact Functor.map_isIso M.presheaf (eqToHom h).op
 
 end AlgebraicGeometry.Scheme.Modules

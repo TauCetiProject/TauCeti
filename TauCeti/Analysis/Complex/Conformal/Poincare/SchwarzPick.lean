@@ -11,15 +11,13 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzPick.Rigidity
 /-!
 # Schwarz–Pick for the metric space `PoincareDisc`
 
-Layer **L2** of the conformal-mapping roadmap (`TauCetiRoadmap/ConformalMapping/README.md`) asks
-for two things at once: the Schwarz–Pick theorem, and the hyperbolic (Poincaré) metric on the
-disc. Both are on `main`, but they meet only at the level of the scalar function
-`TauCeti.hyperbolicDist`: `TauCeti.hyperbolicDist_map_le` says a holomorphic self-map of
-`Metric.ball (0 : ℂ) 1` does not increase `hyperbolicDist`, while the metric space carrying that
-distance is the type synonym `TauCeti.PoincareDisc` of `Conformal/Poincare/MetricSpace.lean`. This
-file states Schwarz–Pick *for that metric space*, so that the theorem becomes a statement in the
-vocabulary of `Metric` — `LipschitzWith 1` and `Isometry` — that a metric-geometry consumer can use
-without unfolding the distance.
+The Schwarz–Pick theorem and the hyperbolic (Poincaré) metric on the disc meet outside this file
+only at the level of the scalar function `TauCeti.hyperbolicDist`: `TauCeti.hyperbolicDist_map_le`
+says a holomorphic self-map of `Metric.ball (0 : ℂ) 1` does not increase `hyperbolicDist`, while the
+metric space carrying that distance is the type synonym `TauCeti.PoincareDisc` of
+`Conformal/Poincare/MetricSpace.lean`. This file states Schwarz–Pick *for that metric space*, so
+that the theorem becomes a statement in the vocabulary of `Metric` — `LipschitzWith 1` and
+`Isometry` — that a metric-geometry consumer can use without unfolding the distance.
 
 The shape is the one `Conformal/Poincare/Isometry/Classification.lean` already uses for the
 isometries: a self-map `F : PoincareDisc → PoincareDisc` is related to a scalar map `f : ℂ → ℂ` by
@@ -68,11 +66,9 @@ read in the metric.
 
 ## Generality
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes the scalar
-target `ℂ` for every theorem added in layers L0–L6, the scalar map `f` is a map of `ℂ`. The domain
-is the unit disc rather than a general disc because `PoincareDisc` is the unit disc; the
-hyperbolic metric of a domain biholomorphic to it is a separate transport question and is not
-touched here.
+The scalar map `f` is a map of `ℂ`. The domain is the unit disc rather than a general disc because
+`PoincareDisc` is the unit disc; the hyperbolic metric of a domain biholomorphic to it is a separate
+transport question and is not touched here.
 
 ## References
 
