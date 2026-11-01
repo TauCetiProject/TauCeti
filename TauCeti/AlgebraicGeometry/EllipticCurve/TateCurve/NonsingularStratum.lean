@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Uniformization
+import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.NodalReduction
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Strata
 import TauCeti.Analysis.Normed.Group.Ultra
 import TauCeti.Analysis.Normed.Ring.Ultra
@@ -33,8 +34,8 @@ on the closed set `{u : ‖u‖ = ‖1 - u‖ = 1}`. This map is a contraction w
 the differences between the Tate coordinates and the nodal parametrisation are `‖q‖`-Lipschitz on
 the unit circle (`norm_tateUniformizationX_sub_sub_le`, `norm_tateUniformizationY_sub_sub_le`).
 At the fixed point `x Y(u) = y X(u)`, so `(x, y)` and `(X(u), Y(u))` lie on a common line through
-the origin. Such a line meets `E_q(K)` in at most one point with first coordinate of norm one, so
-the two points agree.
+the origin. Such a line meets `E_q(K)` in at most one point with first coordinate of norm one
+(`eq_and_eq_of_mul_eq_mul_of_equation` from `TateCurve.NodalReduction`), so the two points agree.
 
 ## Main results
 
@@ -63,30 +64,6 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K]
 
 /-! ### Lipschitz estimates for the Tate coordinates on the unit circle -/
 
-/-- The two one-sided series of a Tate coordinate, one at `u` and one at `u⁻¹`, together depend
-on `u` in a `‖q‖`-Lipschitz way on the unit circle when their terms are `1`-Lipschitz on the open
-unit ball. -/
-private theorem norm_tsum_sub_tsum_add_tsum_sub_tsum_le (q u u' : Kˣ) (hq : ‖(q : K)‖ < 1)
-    (hu : ‖(u : K)‖ = 1) (hu' : ‖(u' : K)‖ = 1) (f g : K → K)
-    (hf : ∀ t t' : K, ‖t‖ < 1 → ‖t'‖ < 1 → ‖f t - f t'‖ ≤ ‖t - t'‖)
-    (hg : ∀ t t' : K, ‖t‖ < 1 → ‖t'‖ < 1 → ‖g t - g t'‖ ≤ ‖t - t'‖)
-    (hfs : ∀ w : K, Summable fun n : ℕ ↦ f ((q : K) ^ (n + 1) * w))
-    (hgs : ∀ w : K, Summable fun n : ℕ ↦ g ((q : K) ^ (n + 1) * w)) :
-    ‖(∑' n : ℕ, f ((q : K) ^ (n + 1) * u) - ∑' n : ℕ, f ((q : K) ^ (n + 1) * u')) +
-        (∑' n : ℕ, g ((q : K) ^ (n + 1) * (u : K)⁻¹) -
-          ∑' n : ℕ, g ((q : K) ^ (n + 1) * (u' : K)⁻¹))‖ ≤
-      ‖(q : K)‖ * ‖(u : K) - u'‖ := by
-  have hqw (w : K) (hw : ‖w‖ = 1) : ‖(q : K) * w‖ < 1 := by rwa [norm_mul, hw, mul_one]
-  have hinv : ‖(q : K) * ((u : K)⁻¹ - (u' : K)⁻¹)‖ = ‖(q : K)‖ * ‖(u : K) - u'‖ := by
-    rw [norm_mul]
-    simpa [dist_eq_norm, hu, hu'] using dist_inv_inv₀ u.ne_zero u'.ne_zero
-  refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
-  · rw [← norm_mul]
-    exact norm_tsum_sub_tsum_le_norm_mul f hf hq.le (hqw _ hu) (hqw _ hu') (hfs _) (hfs _)
-  · rw [← hinv]
-    exact norm_tsum_sub_tsum_le_norm_mul g hg hq.le (hqw _ (by rw [norm_inv, hu, inv_one]))
-      (hqw _ (by rw [norm_inv, hu', inv_one])) (hgs _) (hgs _)
-
 variable [CompleteSpace K]
 
 /-- **The first Tate coordinate is the nodal parametrisation up to a `‖q‖`-Lipschitz error.** On
@@ -98,7 +75,7 @@ theorem norm_tateUniformizationX_sub_sub_le (q u u' : Kˣ) (hq : ‖(q : K)‖ <
   have e (a A B s a' A' B' : K) :
       a + A + B - 2 * s - a - (a' + A' + B' - 2 * s - a') = (A - A') + (B - B') := by ring
   rw [tateUniformizationX_eq_tsum_nat q hq u, tateUniformizationX_eq_tsum_nat q hq u', e]
-  exact norm_tsum_sub_tsum_add_tsum_sub_tsum_le q u u' hq hu hu' (fun w ↦ w / (1 - w) ^ 2)
+  exact norm_tsum_sub_tsum_add_tsum_sub_tsum_le hq hu hu' (fun w ↦ w / (1 - w) ^ 2)
     (fun w ↦ w / (1 - w) ^ 2) (fun _ _ ↦ norm_div_one_sub_sq_sub_div_one_sub_sq_le)
     (fun _ _ ↦ norm_div_one_sub_sq_sub_div_one_sub_sq_le) (summable_tateUniformizationX_nat _ hq)
     (summable_tateUniformizationX_nat _ hq)
@@ -113,7 +90,7 @@ theorem norm_tateUniformizationY_sub_sub_le (q u u' : Kˣ) (hq : ‖(q : K)‖ <
   have e (a A B s a' A' B' : K) :
       a + A + B + s - a - (a' + A' + B' + s - a') = (A - A') + (B - B') := by ring
   rw [tateUniformizationY_eq_tsum_nat q hq u, tateUniformizationY_eq_tsum_nat q hq u', e]
-  exact norm_tsum_sub_tsum_add_tsum_sub_tsum_le q u u' hq hu hu' (fun w ↦ w ^ 2 / (1 - w) ^ 3)
+  exact norm_tsum_sub_tsum_add_tsum_sub_tsum_le hq hu hu' (fun w ↦ w ^ 2 / (1 - w) ^ 3)
     (fun w ↦ -w / (1 - w) ^ 3) (fun _ _ ↦ norm_sq_div_one_sub_cube_sub_sq_div_one_sub_cube_le)
     (fun _ _ ↦ norm_neg_div_one_sub_cube_sub_neg_div_one_sub_cube_le)
     (summable_tateUniformizationY_nat _ hq) (summable_tateUniformizationY_nat_neg _ hq)
@@ -151,37 +128,16 @@ private theorem norm_tateErr_sub_le (q u u' : Kˣ) (hq : ‖(q : K)‖ < 1) {c :
   · exact mul_le_of_le_one_left (norm_nonneg _) hc
       |>.trans (norm_tateUniformizationX_sub_sub_le q u u' hq hu hu')
 
-omit [CompleteSpace K] in
-/-- The factor `(1 - u)³ / u` of the contraction is `1`-Lipschitz on the unit circle. -/
-private theorem norm_one_sub_pow_three_div_sub_le {v w : K} (hv : ‖v‖ = 1) (hw : ‖w‖ = 1) :
-    ‖(1 - v) ^ 3 / v - (1 - w) ^ 3 / w‖ ≤ ‖v - w‖ := by
-  have h₀ : v ≠ 0 := norm_ne_zero_iff.mp (by rw [hv]; exact one_ne_zero)
-  have h₀' : w ≠ 0 := norm_ne_zero_iff.mp (by rw [hw]; exact one_ne_zero)
-  have e : (1 - v) ^ 3 / v - (1 - w) ^ 3 / w =
-      (w - v) * (1 - v * w - v * w - v * w + v * w * (v + w)) / (v * w) := by
-    field_simp
-    ring
-  have h₃ : v ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr hv.le
-  have h₄ : w ∈ Subring.unitClosedBall K := Subring.mem_unitClosedBall.mpr hw.le
-  have hP : 1 - v * w - v * w - v * w + v * w * (v + w) ∈ Subring.unitClosedBall K := by
-    apply_rules [add_mem, sub_mem, mul_mem, one_mem]
-  rw [e, norm_div, norm_mul, norm_mul, hv, hw, mul_one, div_one, norm_sub_rev]
-  exact mul_le_of_le_one_right (norm_nonneg _) (Subring.mem_unitClosedBall.mp hP)
-
 /-- One step of the contraction, `u ↦ c - (1 - u)³ / u · tateErr q u c`. -/
 private noncomputable def tateStep (q u : Kˣ) (c : K) : K :=
   c - (1 - (u : K)) ^ 3 / u * tateErr q u c
-
-omit [IsUltrametricDist K] [CompleteSpace K] in
-private theorem norm_one_sub_pow_three_div {u : K} (hu : ‖u‖ = 1) (h : ‖1 - u‖ = 1) :
-    ‖(1 - u) ^ 3 / u‖ = 1 := by
-  rw [norm_div, norm_pow, hu, h, one_pow, div_one]
 
 /-- The contraction moves every parameter of the stratum to within `‖q‖` of `c`. -/
 private theorem norm_tateStep_sub_le (q u : Kˣ) (hq : ‖(q : K)‖ < 1) {c : K} (hc : ‖c‖ ≤ 1)
     (hc' : ‖1 - c‖ ≤ 1) (hu : ‖(u : K)‖ = 1) (h : ‖1 - (u : K)‖ = 1) :
     ‖tateStep q u c - c‖ ≤ ‖(q : K)‖ := by
-  rw [tateStep, sub_sub_cancel_left, norm_neg, norm_mul, norm_one_sub_pow_three_div hu h, one_mul]
+  rw [tateStep, sub_sub_cancel_left, norm_neg, norm_mul, norm_div, norm_pow, hu, h, one_pow,
+    div_one, one_mul]
   exact norm_tateErr_le q u hq hc hc' hu
 
 /-- The contraction is `‖q‖`-Lipschitz on the stratum. -/
@@ -197,11 +153,11 @@ private theorem norm_tateStep_sub_tateStep_le (q u u' : Kˣ) (hq : ‖(q : K)‖
   rw [e]
   refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_) <;>
     rw [norm_mul, norm_sub_rev (u : K)]
-  · rw [norm_one_sub_pow_three_div hu' h', one_mul]
+  · rw [norm_div, norm_pow, hu', h', one_pow, div_one, one_mul]
     exact norm_tateErr_sub_le q u' u hq hc hc' hu' hu
   · rw [mul_comm]
     exact mul_le_mul (norm_tateErr_le q u hq hc hc' hu)
-      (norm_one_sub_pow_three_div_sub_le hu' hu) (norm_nonneg _) (norm_nonneg _)
+      (norm_one_sub_cube_div_sub_one_sub_cube_div_le hu' hu) (norm_nonneg _) (norm_nonneg _)
 
 omit [IsUltrametricDist K] [CompleteSpace K] in
 /-- At a fixed point of the contraction, `(1 - c) Y(u) = c X(u)`. -/
@@ -253,58 +209,6 @@ private theorem exists_one_sub_mul_tateUniformizationY_eq (q : Kˣ) (hq : ‖(q 
   exact ⟨U v, (hU v).1, (hU v).2, one_sub_mul_tateUniformizationY_eq_of_tateStep_eq q (U v)
     (norm_ne_zero_iff.mp (by rw [(hU v).2]; exact one_ne_zero)) hv⟩
 
-/-! ### Points on a line through the origin -/
-
-omit [CompleteSpace K] in
-/-- On a curve `y² + xy = x³ + A₄x + A₆` with `‖A₄‖, ‖A₆‖ < 1`, a solution with `‖x‖ = 1` has
-`‖y‖ = ‖x + y‖ = 1`. -/
-private theorem norm_eq_one_of_equation {A₄ A₆ x y : K} (hA₄ : ‖A₄‖ < 1) (hA₆ : ‖A₆‖ < 1)
-    (hx : ‖x‖ = 1) (h : y ^ 2 + x * y = x ^ 3 + A₄ * x + A₆) : ‖y‖ = 1 ∧ ‖x + y‖ = 1 := by
-  have hr : ‖x ^ 3 + A₄ * x + A₆‖ = 1 := by
-    have hx3 : ‖x ^ 3‖ = 1 := by rw [norm_pow, hx, one_pow]
-    rw [← hx3, add_assoc]
-    refine (IsUltrametricDist.norm_eq_of_norm_sub_lt_left ?_).symm
-    rw [sub_add_cancel_left, norm_neg, hx3]
-    refine (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt ?_ hA₆)
-    rwa [norm_mul, hx, mul_one]
-  have hp : ‖y‖ * ‖x + y‖ = 1 := by
-    rw [← norm_mul, ← hr, ← h]
-    ring_nf
-  have hs : ‖x + y‖ ≤ max 1 ‖y‖ := hx ▸ IsUltrametricDist.norm_add_le_max x y
-  rcases le_or_gt ‖y‖ 1 with hy | hy
-  · have hs' : ‖x + y‖ ≤ 1 := hs.trans (max_le le_rfl hy)
-    constructor <;> nlinarith [norm_nonneg y, norm_nonneg (x + y)]
-  · have he : ‖x + y‖ = ‖y‖ := by
-      rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by rw [hx]; exact hy.ne), hx,
-        max_eq_right hy.le]
-    rw [he] at hp
-    nlinarith
-
-omit [CompleteSpace K] in
-/-- **A line through the origin meets the curve in at most one point with `‖x‖ = 1`.** If
-`(x, y)` and `(X, Y)` solve `y² + xy = x³ + A₄x + A₆` with `‖A₄‖, ‖A₆‖ < 1`, both first coordinates
-have norm one and `x Y = y X`, then the two points are equal. -/
-private theorem eq_of_mul_eq_mul {A₄ A₆ x y X Y : K} (hA₄ : ‖A₄‖ < 1) (hA₆ : ‖A₆‖ < 1)
-    (hx : ‖x‖ = 1) (hX : ‖X‖ = 1) (h₁ : y ^ 2 + x * y = x ^ 3 + A₄ * x + A₆)
-    (h₂ : Y ^ 2 + X * Y = X ^ 3 + A₄ * X + A₆) (h : x * Y = y * X) : X = x ∧ Y = y := by
-  have key : (x - X) * (x ^ 2 * X ^ 2 - (A₄ * x * X + A₆ * (x + X))) = 0 := by
-    linear_combination x ^ 2 * h₂ - X ^ 2 * h₁ - (x * Y + y * X + x * X) * h
-  have h₀ : ‖x ^ 2 * X ^ 2‖ = 1 := by rw [norm_mul, norm_pow, norm_pow, hx, hX]; simp
-  have hne : x ^ 2 * X ^ 2 - (A₄ * x * X + A₆ * (x + X)) ≠ 0 := by
-    rw [← norm_ne_zero_iff, ← (IsUltrametricDist.norm_eq_of_norm_sub_lt_left _), h₀]
-    · exact one_ne_zero
-    rw [sub_sub_cancel, h₀]
-    refine (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt ?_ ?_)
-    · rwa [norm_mul, norm_mul, hx, hX, mul_one, mul_one]
-    · rw [norm_mul]
-      exact (mul_le_of_le_one_right (norm_nonneg _)
-        ((IsUltrametricDist.norm_add_le_max _ _).trans (by rw [hx, hX, max_self]))).trans_lt hA₆
-  have hxX : X = x := (sub_eq_zero.mp ((mul_eq_zero.mp key).resolve_right hne)).symm
-  refine ⟨hxX, ?_⟩
-  have hx0 : x ≠ 0 := norm_ne_zero_iff.mp (by rw [hx]; exact one_ne_zero)
-  rw [hxX, mul_comm y] at h
-  exact mul_left_cancel₀ hx0 h
-
 /-! ### Surjectivity onto the nonsingular stratum -/
 
 /-- **Every solution of the Tate equation with `‖x‖ = 1` comes from the unit circle.** If `(x, y)`
@@ -323,7 +227,7 @@ theorem exists_tateUniformizationX_eq_and_tateUniformizationY_eq (q : Kˣ)
     simp only [tateCurveAt_a₁, tateCurveAt_a₂, tateCurveAt_a₃, tateCurveAt_a₄,
       tateCurveAt_a₆] at h
     linear_combination h
-  obtain ⟨-, hxy⟩ := norm_eq_one_of_equation hA₄ hA₆ hx (heq h)
+  obtain ⟨-, hxy⟩ := norm_eq_one_and_norm_add_eq_one_of_equation hA₄ hA₆ hx (heq h)
   have hxy0 : x + y ≠ 0 := norm_ne_zero_iff.mp (by rw [hxy]; exact one_ne_zero)
   -- `c = y / (x + y)` is the parameter of `(x, y)` on the nodal cubic `y² + xy = x³`
   have hc₁ : y / (x + y) * (x + y) = y := div_mul_cancel₀ y hxy0
@@ -332,7 +236,7 @@ theorem exists_tateUniformizationX_eq_and_tateUniformizationY_eq (q : Kˣ)
     ring
   have hc : ‖y / (x + y)‖ = 1 := by
     rw [norm_div, hxy, div_one]
-    exact (norm_eq_one_of_equation hA₄ hA₆ hx (heq h)).1
+    exact (norm_eq_one_and_norm_add_eq_one_of_equation hA₄ hA₆ hx (heq h)).1
   have hc' : ‖1 - y / (x + y)‖ = 1 := by
     have h := congrArg norm hc₂
     rwa [norm_mul, hxy, mul_one, hx] at h
@@ -340,8 +244,9 @@ theorem exists_tateUniformizationX_eq_and_tateUniformizationY_eq (q : Kˣ)
   have hcross : x * tateUniformizationY q u = y * tateUniformizationX q u := by
     linear_combination (x + y) * hcu - tateUniformizationY q u * hc₂ +
       tateUniformizationX q u * hc₁
-  obtain ⟨hX, hY⟩ := eq_of_mul_eq_mul hA₄ hA₆ hx (norm_tateUniformizationX_eq_one q u hq hu hu₁)
-    (heq h) (heq (equation_tateUniformizationX_tateUniformizationY_of_notMem_zpowers q u hq
+  obtain ⟨hX, hY⟩ := eq_and_eq_of_mul_eq_mul_of_equation hA₄ hA₆ hx
+    (norm_tateUniformizationX_eq_one q u hq hu hu₁) (heq h)
+    (heq (equation_tateUniformizationX_tateUniformizationY_of_notMem_zpowers q u hq
       (notMem_zpowers_of_norm_eq_one hq hu (by rintro rfl; simp at hu₁)))) hcross
   exact ⟨u, hu, hu₁, hX, hY⟩
 
