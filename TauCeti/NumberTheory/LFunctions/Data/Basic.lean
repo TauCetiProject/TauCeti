@@ -250,6 +250,19 @@ theorem HasFunctionalEquation.rootNumber_eq_div (h : d.HasFunctionalEquation) {s
     exact hne heq
   exact (eq_div_iff hden).mpr heq.symm
 
+/-- The polar orders at the two points used to extract the root number agree. -/
+theorem HasFunctionalEquation.polarOrder_neg_one (h : d.HasFunctionalEquation) :
+    d.polarOrder (-1) = d.polarOrder 2 := by
+  simpa only [map_ofNat, (by norm_num : (1 : ℂ) - 2 = -1)] using
+    h.polarOrder_one_sub_conj 2
+
+/-- Extract the root number at the regular nonzero value at `2`. -/
+theorem HasFunctionalEquation.rootNumber_eq_div_two (h : d.HasFunctionalEquation)
+    (h2 : d.polarOrder 2 = 0) (hne : d.completed 2 ≠ 0) :
+    d.rootNumber = d.completed 2 / conj (d.completed (-1)) := by
+  simpa only [map_ofNat, (by norm_num : (1 : ℂ) - 2 = -1)] using
+    h.rootNumber_eq_div h2 hne
+
 /-- **The functional equation as germs.** If a card satisfies its functional equation off the
 polar loci, then `Λ(z) = ε Λ^∨(1 - z)` on a punctured neighbourhood of every point, poles
 included: the polar divisor is finitely supported, so both polar loci are finite. -/

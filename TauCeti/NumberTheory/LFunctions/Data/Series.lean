@@ -104,6 +104,15 @@ theorem hasDirichletAgreement_ofSeries (ha : a 1 = 1) (hdeg : 0 < μ.card + 2 * 
 
 variable {d : AnalyticLFunctionData}
 
+/-- Dirichlet agreement identifies the completion with the series defining its series card
+on `Re s > 1`. -/
+theorem HasDirichletAgreement.eqOn_ofSeries (h : d.HasDirichletAgreement) :
+    EqOn d.completed (fun s ↦ ((d.conductor : ℕ) : ℂ) ^ (s / 2) *
+      (ofSeries d.coeff d.conductor d.gammaR d.gammaC d.polarOrder).gammaFactor s *
+        LSeries d.coeff s) {s | 1 < s.re} := by
+  intro s hs
+  simpa only [gammaFactor_def, ofSeries_gammaR, ofSeries_gammaC] using h.completed_eq s hs
+
 /-- A card with Dirichlet agreement, continuation and functional equation is recovered by
 `ofSeries`, with its completed function replaced by the canonical normal form. The original
 completion must be regular on the defining half-plane and nonzero at `2`. -/
@@ -117,12 +126,9 @@ theorem ofSeries_eq_normalized (hD : d.HasDirichletAgreement)
     rw [ofSeries_completed]
     apply meromorphicContinuation_eq_toMeromorphicNFOn hM.meromorphic
       (fun s hs ↦ hM.analyticAt s (hreg s hs))
-    intro s hs
-    simpa only [gammaFactor_def, ofSeries_gammaR, ofSeries_gammaC] using hD.completed_eq s hs
+    exact hD.eqOn_ofSeries
   have h2 : d.polarOrder 2 = 0 := hreg 2 (by norm_num)
-  have hm1 : d.polarOrder (-1) = 0 := by
-    simpa only [map_ofNat, (by norm_num : (1 : ℂ) - 2 = -1)] using
-      (hF.polarOrder_one_sub_conj 2).trans h2
+  have hm1 : d.polarOrder (-1) = 0 := hF.polarOrder_neg_one.trans h2
   have hval (s : ℂ) (hs : d.polarOrder s = 0) :
       toMeromorphicNFOn d.completed univ s = d.completed s := by
     rw [toMeromorphicNFOn_eq_toMeromorphicNFAt hM.meromorphic.meromorphicOn (mem_univ s),
@@ -130,8 +136,7 @@ theorem ofSeries_eq_normalized (hD : d.HasDirichletAgreement)
   have hroot : (ofSeries d.coeff d.conductor d.gammaR d.gammaC d.polarOrder).rootNumber =
       d.rootNumber := by
     rw [ofSeries_rootNumber, hcomp, hval 2 h2, hval (-1) hm1]
-    simpa only [map_ofNat, (by norm_num : (1 : ℂ) - 2 = -1)] using
-      (hF.rootNumber_eq_div h2 hne).symm
+    exact (hF.rootNumber_eq_div_two h2 hne).symm
   exact AnalyticLFunctionData.ext rfl rfl rfl rfl hroot hcomp rfl
 
 /-- Exact recovery of a card already in meromorphic normal form. Unlike equality of arbitrary
@@ -143,14 +148,11 @@ theorem ofSeries_eq (hD : d.HasDirichletAgreement) (hF : d.HasFunctionalEquation
   have hcomp : (ofSeries d.coeff d.conductor d.gammaR d.gammaC d.polarOrder).completed =
       d.completed := by
     rw [ofSeries_completed]
-    apply meromorphicContinuation_eq hNF
-    intro s hs
-    simpa only [gammaFactor_def, ofSeries_gammaR, ofSeries_gammaC] using hD.completed_eq s hs
+    exact meromorphicContinuation_eq hNF hD.eqOn_ofSeries
   have hroot : (ofSeries d.coeff d.conductor d.gammaR d.gammaC d.polarOrder).rootNumber =
       d.rootNumber := by
     rw [ofSeries_rootNumber, hcomp]
-    simpa only [map_ofNat, (by norm_num : (1 : ℂ) - 2 = -1)] using
-      (hF.rootNumber_eq_div h2 hne).symm
+    exact (hF.rootNumber_eq_div_two h2 hne).symm
   exact AnalyticLFunctionData.ext rfl rfl rfl rfl hroot hcomp rfl
 
 end TauCeti.LFunctions.AnalyticLFunctionData
