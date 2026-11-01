@@ -14,6 +14,7 @@ import Mathlib.Algebra.Field.Shrink
 import Mathlib.FieldTheory.Normal.Closure
 import Mathlib.RingTheory.FractionalIdeal.Operations
 import Mathlib.RingTheory.Finiteness.Small
+import TauCeti.Algebra.Module.LocalizedModule.Submodule
 import TauCeti.FieldTheory.Normal.FixedField
 import TauCeti.RingTheory.IntegralClosure.Transfer
 import TauCeti.RingTheory.Localization.Away.FractionRing
@@ -516,30 +517,17 @@ private theorem exists_not_integralPowColon_le [IsDomain R] [IsNoetherianRing R]
     simp only [AlgHom.toLinearMap_apply, Subalgebra.coe_val, SetLike.mem_coe]
     rw [heq]
     exact Submodule.smul_mem _ _ hmem
-  -- Some `integralPow f n` contains `T`, hence, up to a factor outside `p`, every element
-  -- integral over `R`.
+  -- Some `integralPow f n` contains `T`, hence spans every element integral over `R` over `Rₚ`.
   obtain ⟨n, hn⟩ : ∃ n, (T : Set K) ⊆ (integralPow f n : Submodule R K) := by
     choose! N hN using fun t (ht : t ∈ T) ↦ hfK t <| by
       obtain ⟨y, -, rfl⟩ := Finset.mem_image.mp ht
       simpa only [Submonoid.smul_def] using hs y
     exact ⟨T.sup N, fun t ht ↦ integralPow_mono f (Finset.le_sup ht) (hN t ht)⟩
-  have hpt (z : K) (hz : IsIntegral R z) : ∃ u ∈ p.primeCompl, u • z ∈ integralPow f n := by
-    obtain ⟨y, hy, u, rfl⟩ := (IsLocalization.mem_span_iff p.primeCompl).mp (hspan z hz)
-    refine ⟨u, u.2, ?_⟩
-    rw [← algebraMap_smul Rₚ (u : R), smul_smul, IsLocalization.mk'_spec', map_one, one_smul]
-    exact Submodule.span_le.mpr hn hy
-  -- The finitely many generators of `integralPow f (n + 1)` give one factor outside `p`.
-  obtain ⟨Z, hZ⟩ := fg_integralPow (K := K) hf (n + 1)
-  choose! u hu hzu using fun z (hz : z ∈ Z) ↦
-    hpt z (mem_integralPow.mp (hZ ▸ Submodule.subset_span hz)).1
-  refine ⟨n, fun hle ↦ Ideal.mem_primeCompl_iff.mp (p.primeCompl.prod_mem hu) (hle ?_)⟩
-  have : Submodule.span R (Z : Set K) ≤
-      (integralPow f n).comap ((∏ z ∈ Z, u z) • LinearMap.id) := Submodule.span_le.mpr
-    fun z hz ↦ by
-      rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.smul_apply, LinearMap.id_apply,
-        ← Finset.mul_prod_erase Z u hz, mul_comm, mul_smul]
-      exact Submodule.smul_mem _ _ (hzu z hz)
-  exact Submodule.mem_colon.mpr fun x hx ↦ this (hZ ▸ hx)
+  -- Clearing denominators uniformly, one factor outside `p` carries the finitely generated
+  -- `integralPow f (n + 1)` into `integralPow f n`.
+  obtain ⟨u, hu, hzu⟩ := (fg_integralPow (K := K) hf (n + 1)).exists_smul_mem_of_le_span
+    p.primeCompl fun z hz ↦ Submodule.span_mono hn (hspan z (mem_integralPow.mp hz).1)
+  exact ⟨n, fun hle ↦ Ideal.mem_primeCompl_iff.mp hu (hle (Submodule.mem_colon.mpr hzu))⟩
 
 /-- **The N-1 local criterion.** A Noetherian domain `R` is N-1 as soon as `R_f` is integrally
 closed for some nonzero `f : R` and the localization `R_𝔪` is N-1 at every maximal ideal `𝔪`.
