@@ -11,9 +11,15 @@ public import TauCeti.NumberTheory.LSeries.DirichletEulerLog
 import Mathlib.NumberTheory.MulChar.Lemmas
 
 /-!
-# The ordered Euler product of a Dirichlet `L`-function at `s = 1`
+# Ordered limits of a Dirichlet `L`-function at `s = 1`
 
-For a nontrivial Dirichlet character `χ` of positive level, the finite Euler products
+For a nontrivial Dirichlet character `χ` of positive level, the ordered partial sums
+`∑ n ∈ Icc 1 K, χ n / n` of its Dirichlet series converge to `L(χ, 1)`
+(`DirichletCharacter.tendsto_sum_Icc_div_LFunction_one`). This is the bounded Tauberian theorem
+`TauCeti.LSeries.boundedDirichlet_tendsto_ordered_at_one` applied to the coefficients `χ n`,
+which have norm at most `1`, and to `L(χ, s)`, which is entire because `χ ≠ 1`.
+
+Similarly, the finite Euler products
 `∏ p ≤ B, (1 - χ p / p)⁻¹` over the primes up to `B` converge to `L(χ, 1)` as `B → ∞`
 (`DirichletCharacter.tendsto_prod_primesLE_inv_LFunction_one`). Deleting the factors at a finite
 set `S` of primes multiplies the limit by `∏ p ∈ S, (1 - χ p / p)`. Mathlib's
@@ -26,7 +32,7 @@ of `χ` converges absolutely, so nothing here asserts an unconditional `HasProd`
 value of the totalized `LSeries` at `1`. Limits along real cutoffs `⌊x⌋₊` follow from
 `TauCeti.tendsto_comp_natFloor_iff`.
 
-The proof combines three results:
+The proof of the Euler product limit combines three results:
 * `DirichletCharacter.exists_differentiableOn_exp_eq_LFunction` continues the logarithm of
   `L(χ, s)`, the `L`-series of the coefficients `DirichletCharacter.eulerLogCoeff χ`, to an open
   neighbourhood of the closed half-plane `1 ≤ re s`;
@@ -42,6 +48,8 @@ conjugated limit (`DirichletCharacter.tendsto_prod_primesLE_filter_notMem_inv_in
 
 ## Main results
 
+* `DirichletCharacter.tendsto_sum_Icc_div_LFunction_one`: the ordered partial sums of the
+  Dirichlet series of `χ` converge to `L(χ, 1)`.
 * `DirichletCharacter.exists_tendsto_sum_Icc_eulerLogCoeff_div`: the ordered sums of
   `χ.eulerLogCoeff n / n` converge to a logarithm of `L(χ, 1)`.
 * `DirichletCharacter.tendsto_prod_primesLE_inv_LFunction_one`: the ordered Euler product
@@ -67,6 +75,17 @@ open scoped Topology ComplexConjugate
 namespace DirichletCharacter
 
 variable {N : ℕ} (χ : DirichletCharacter ℂ N)
+
+/-- **The ordered Dirichlet series of a character at `s = 1`.** For a nontrivial Dirichlet
+character `χ` of positive level, the ordered partial sums `∑ n ∈ Icc 1 K, χ n / n` converge to
+`L(χ, 1)`. This is a limit of ordered cutoffs: the series `∑ χ n / n` does not converge
+absolutely (Mathlib's `DirichletCharacter.not_LSeriesSummable_at_one`), and no unconditional
+`HasSum` is asserted. -/
+theorem tendsto_sum_Icc_div_LFunction_one [NeZero N] (hχ : χ ≠ 1) :
+    Tendsto (fun K : ℕ ↦ ∑ n ∈ Icc 1 K, χ n / (n : ℂ)) atTop (𝓝 (LFunction χ 1)) :=
+  TauCeti.LSeries.boundedDirichlet_tendsto_ordered_at_one (fun n _ ↦ χ.norm_le_one n)
+    isOpen_univ (Set.subset_univ _) (differentiable_LFunction hχ).differentiableOn
+    fun _ hs ↦ χ.LFunction_eq_LSeries hs ▸ (χ.LSeriesSummable_of_one_lt_re hs).LSeriesHasSum
 
 /-- **The ordered logarithmic sums at `s = 1`.** For a nontrivial Dirichlet character `χ` of
 positive level, the ordered partial sums `∑ n ∈ Icc 1 K, χ n Λ n / (n log n)` converge to a

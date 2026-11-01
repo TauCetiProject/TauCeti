@@ -33,11 +33,6 @@ right duals into left duals using the braiding of the centre. This is the rigid 
 speak of pivotal structures on the centre, and of the centre of a fusion category as a fusion
 category.
 
-At a right dual `Wᘁ`, the half-braiding induced on `Xᘁ` is the mate of `β W` read through the
-comparisons `(W ⊗ X)ᘁ ≅ Xᘁ ⊗ Wᘁ` and `(X ⊗ W)ᘁ ≅ Wᘁ ⊗ Xᘁ`; applied twice, this describes the
-half-braiding induced on `Xᘁᘁ` at `Uᘁᘁ` through the double mate of `β U`. These comparisons, like
-the duals themselves, are computed in `C`.
-
 ## Main declarations
 
 * `CategoryTheory.HalfBraiding.rightDualβHom`: the components of the half-braiding induced on a
@@ -46,21 +41,22 @@ the duals themselves, are computed in `C`.
   natural and monoidal in `U`;
 * `CategoryTheory.HalfBraiding.rightDualβHom_eq_rightMate`: the same components as mates of the
   half-braiding at a left dual;
+* `CategoryTheory.HalfBraiding.rightDualβHom_rightDual`: at the right dual `Uᘁ` of an object `U`,
+  the same components as the right adjoint mate of the half-braiding at `U`;
 * `CategoryTheory.HalfBraiding.rightDual`: the half-braiding induced on a right dual, in a left
   rigid category;
-* `CategoryTheory.HalfBraiding.rightDualβHom_rightDual` and
-  `CategoryTheory.HalfBraiding.rightDualβHom_rightDual_rightDual`: the induced half-braidings on
-  `Xᘁ` at `Wᘁ` and on `Xᘁᘁ` at `Uᘁᘁ`, as mates and double mates of the half-braiding of `X`;
 * `CategoryTheory.Center.rightDualObj` and `CategoryTheory.Center.exactPairingRightDualObj`: a
   right dual of the underlying object of `X : Center C` lifts to a right dual of `X`;
 * `CategoryTheory.Center.rigidCategory`: the centre of a rigid category is rigid, with right
   duals and their evaluation, coevaluation and mates computed in `C`
   (`CategoryTheory.Center.rightDual_fst`, `CategoryTheory.Center.coevaluation_f`,
-  `CategoryTheory.Center.evaluation_f`, `CategoryTheory.Center.rightAdjointMate_f`), as are the
-  comparisons `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` (`CategoryTheory.Center.rightDualTensorIso_hom_f`), the
-  tensor comparisons of the double right dual functor
-  (`CategoryTheory.Center.doubleRightDualFunctor_μ_f`) and the comparison of the forgetful
-  functor with right duals (`CategoryTheory.Center.forget_mapRightDualIso`).
+  `CategoryTheory.Center.evaluation_f`, `CategoryTheory.Center.rightAdjointMate_f`);
+* `CategoryTheory.Center.doubleRightDualFunctor_μ_f` and
+  `CategoryTheory.Center.doubleRightDualFunctor_ε_f`: the tensor and unit comparisons of the double
+  right dual functor of the centre are those of `C`, as are the comparisons
+  `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` and `(𝟙_ (Center C))ᘁ ≅ 𝟙_ (Center C)` they are built from;
+* `CategoryTheory.Center.forget_mapRightDualIso`: the comparison of the forgetful functor with
+  right duals is the identity.
 
 ## References
 
@@ -181,6 +177,18 @@ theorem rightDualβHom_eq_rightMate {U V : C} [ExactPairing V U] :
       rw [← whisker_exchange]; monoidal
     _ = _ := by rw [inv_whiskerRight_comp_whiskerLeft]; monoidal
 
+/-- The half-braiding induced on the right dual `Xᘁ`, at the right dual `Uᘁ` of `U`, is the right
+adjoint mate of the half-braiding at `U`, up to the comparisons `(U ⊗ X)ᘁ ≅ Xᘁ ⊗ Uᘁ` and
+`(X ⊗ U)ᘁ ≅ Uᘁ ⊗ Xᘁ`. -/
+theorem rightDualβHom_rightDual [HasRightDual X] (U : C) [HasRightDual U]
+    [HasRightDual (U ⊗ X)] [HasRightDual (X ⊗ U)] :
+    b.rightDualβHom Xᘁ Uᘁ =
+      (rightDualTensorIso U X).inv ≫ ((b.β U).hom)ᘁ ≫ (rightDualTensorIso X U).hom := by
+  rw [b.rightDualβHom_eq_rightMate Xᘁ (U := Uᘁ) (V := U), Iso.eq_inv_comp]
+  simp only [rightDualTensorIso, ExactPairing.rightDualIso_hom,
+    TauCeti.rightAdjointMate_eq_rightMate, ← ExactPairing.comp_rightMate, Category.id_comp,
+    Category.comp_id]
+
 /-- The coevaluation of `X` and `X'` commutes with the half-braidings of the unit and of
 `X ⊗ X'`, the latter built from `b` and `rightDualβHom`. -/
 private theorem coevaluation_comm (U : C) :
@@ -249,39 +257,6 @@ def rightDual : HalfBraiding X' where
 @[simp]
 theorem rightDual_β (U : C) : (b.rightDual X').β U = b.rightDualβ X' U :=
   (rfl)
-
-end HalfBraiding
-
-namespace HalfBraiding
-
-variable {X : C} (b : HalfBraiding X)
-
-/-- At a right dual `Wᘁ`, the half-braiding induced on the right dual `Xᘁ` is the mate of the
-half-braiding at `W`, read through the comparisons `(W ⊗ X)ᘁ ≅ Xᘁ ⊗ Wᘁ` and
-`(X ⊗ W)ᘁ ≅ Wᘁ ⊗ Xᘁ`. -/
-theorem rightDualβHom_rightDual [HasRightDual X] (W : C) [HasRightDual W]
-    [HasRightDual (X ⊗ W)] [HasRightDual (W ⊗ X)] :
-    b.rightDualβHom Xᘁ Wᘁ =
-      (rightDualTensorIso W X).inv ≫ ((b.β W).hom)ᘁ ≫ (rightDualTensorIso X W).hom := by
-  rw [b.rightDualβHom_eq_rightMate Xᘁ (U := Wᘁ) (V := W)]
-  simp only [rightDualTensorIso, ExactPairing.rightDualIso_inv, ExactPairing.rightDualIso_hom,
-    TauCeti.rightAdjointMate_eq_rightMate, ← ExactPairing.comp_rightMate, Category.id_comp,
-    Category.comp_id]
-
-variable [RigidCategory C]
-
-/-- At a double right dual `Uᘁᘁ`, the half-braiding induced on the double right dual `Xᘁᘁ` is the
-double mate of the half-braiding at `U`, read through the comparisons
-`Xᘁᘁ ⊗ Uᘁᘁ ≅ (X ⊗ U)ᘁᘁ` and `(U ⊗ X)ᘁᘁ ≅ Uᘁᘁ ⊗ Xᘁᘁ`. These are the tensor comparisons of the double
-right dual functor, by `TauCeti.doubleRightDualFunctor_μ` and `TauCeti.doubleRightDualFunctor_δ`.
--/
-theorem rightDualβHom_rightDual_rightDual (U : C) :
-    (b.rightDual Xᘁ).rightDualβHom Xᘁᘁ Uᘁᘁ =
-      (rightDualTensorIso Uᘁ Xᘁ).inv ≫ ((rightDualTensorIso X U).hom)ᘁ ≫ ((b.β U).hom)ᘁᘁ ≫
-        ((rightDualTensorIso U X).inv)ᘁ ≫ (rightDualTensorIso Xᘁ Uᘁ).hom := by
-  rw [rightDualβHom_rightDual, rightDual_β, rightDualβ_hom, rightDualβHom_rightDual,
-    comp_rightAdjointMate, comp_rightAdjointMate]
-  simp only [Category.assoc]
 
 end HalfBraiding
 
@@ -411,45 +386,80 @@ namespace Center
 
 variable [RigidCategory C]
 
-/-- The evaluation of the tensor product of the pairings of `X` and `Y : Center C` with their
-right duals is computed in `C`. -/
-theorem tensor_evaluation_f (X Y : Center C) :
-    (ε_ (X ⊗ Y) (Yᘁ ⊗ Xᘁ)).f = ε_ (X.1 ⊗ Y.1) (Y.1ᘁ ⊗ X.1ᘁ) := by
-  rw [ExactPairing.tensor_evaluation, ExactPairing.tensor_evaluation]
-  simp only [tensor_fst, rightDual_fst, monoidalComp, MonoidalCoherence.assoc_iso,
-    MonoidalCoherence.whiskerLeft_iso, MonoidalCoherence.assoc'_iso,
-    MonoidalCoherence.whiskerRight_iso, MonoidalCoherence.refl_iso, whiskerRightIso_refl,
-    Iso.refl_trans, Iso.trans_hom, whiskerLeftIso_hom, Iso.symm_hom, MonoidalCoherence.left_iso,
-    Iso.trans_refl, Category.assoc, Category.id_comp, comp_f, associator_hom_f, whiskerLeft_f,
-    associator_inv_f, whiskerRight_f, evaluation_f, leftUnitor_hom_f]
-  -- The remaining difference is only in how the objects `(Xᘁ).1` and `X.1ᘁ` are written.
-  rfl
-
 /-- The comparison `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` of the centre is computed in `C`. -/
 @[simp]
 theorem rightDualTensorIso_hom_f (X Y : Center C) :
     (rightDualTensorIso X Y).hom.f = (rightDualTensorIso X.1 Y.1).hom := by
+  -- Both sides are characterized by their composites with the evaluation of the tensor product
+  -- pairing, and the evaluations of the centre are computed in `C`.
+  refine ExactPairing.rightHom_ext (X := X.1 ⊗ Y.1) (Y := Y.1ᘁ ⊗ X.1ᘁ) ?_
+  -- Writing the evaluation of the tensor product pairing of the centre with explicit structure
+  -- morphisms lets the `Center.*_f` lemmas compute it in `C`.
+  have e : ε_ (X ⊗ Y) (Yᘁ ⊗ Xᘁ) = (α_ _ _ _).hom ≫ (Yᘁ : Center C) ◁ (α_ _ _ _).inv ≫
+      (Yᘁ : Center C) ◁ ε_ X Xᘁ ▷ Y ≫ (Yᘁ : Center C) ◁ (λ_ Y).hom ≫ ε_ Y Yᘁ := by
+    simp [ExactPairing.tensor_evaluation, monoidalComp]
   have h := congrArg Hom.f (TauCeti.rightDualTensorIso_hom_whiskerRight_evaluation X Y)
-  simp only [comp_f, whiskerRight_f, evaluation_f, tensor_fst, tensor_evaluation_f] at h
-  exact ExactPairing.rightHom_ext (Y := Y.1ᘁ ⊗ X.1ᘁ)
-    (h.trans (TauCeti.rightDualTensorIso_hom_whiskerRight_evaluation X.1 Y.1).symm)
+  refine Eq.trans ?_ (TauCeti.rightDualTensorIso_hom_whiskerRight_evaluation X.1 Y.1).symm
+  simp only [e, comp_f, whiskerRight_f, whiskerLeft_f, associator_hom_f, associator_inv_f,
+    leftUnitor_hom_f, evaluation_f] at h
+  rw [ExactPairing.tensor_evaluation]
+  refine Eq.trans ?_ h
+  monoidal
 
 /-- The inverse of the comparison `(X ⊗ Y)ᘁ ≅ Yᘁ ⊗ Xᘁ` of the centre is computed in `C`. -/
 @[simp]
 theorem rightDualTensorIso_inv_f (X Y : Center C) :
     (rightDualTensorIso X Y).inv.f = (rightDualTensorIso X.1 Y.1).inv := by
-  have h := congrArg Hom.f (rightDualTensorIso X Y).hom_inv_id
-  rw [comp_f, rightDualTensorIso_hom_f, id_f] at h
-  exact (Iso.hom_comp_eq_id _).1 h
+  have h := congrArg Hom.f (rightDualTensorIso X Y).inv_hom_id
+  simp only [comp_f, id_f, rightDualTensorIso_hom_f] at h
+  exact (Iso.comp_hom_eq_id _).1 h
 
-open Functor.LaxMonoidal TauCeti in
-/-- The tensor comparison of the double right dual functor of the centre is computed in `C`. -/
+/-- The identification of the chosen right dual of the unit of the centre with the unit is
+computed in `C`. -/
+@[simp]
+theorem rightDualIso_exactPairingUnit_hom_f :
+    (rightDualIso (RightRigidCategory.rightDual (𝟙_ (Center C))).exact exactPairingUnit).hom.f =
+      (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom := by
+  refine ExactPairing.rightHom_ext (X := 𝟙_ C) (Y := 𝟙_ C) ?_
+  have h := congrArg Hom.f (ExactPairing.rightDualIso_hom_whiskerRight_evaluation
+    (RightRigidCategory.rightDual (𝟙_ (Center C))).exact exactPairingUnit)
+  refine Eq.trans ?_ (ExactPairing.rightDualIso_hom_whiskerRight_evaluation _ _).symm
+  simp only [comp_f, whiskerRight_f, TauCeti.ExactPairing.unit_evaluation, rightUnitor_hom_f,
+    evaluation_f] at h ⊢
+  exact h
+
+/-- The inverse identification of the chosen right dual of the unit of the centre with the unit
+is computed in `C`. -/
+@[simp]
+theorem rightDualIso_exactPairingUnit_inv_f :
+    (rightDualIso (RightRigidCategory.rightDual (𝟙_ (Center C))).exact exactPairingUnit).inv.f =
+      (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).inv := by
+  have h := congrArg Hom.f
+    (rightDualIso (RightRigidCategory.rightDual (𝟙_ (Center C))).exact exactPairingUnit).inv_hom_id
+  simp only [comp_f, id_f, rightDualIso_exactPairingUnit_hom_f] at h
+  exact (Iso.comp_hom_eq_id _).1 h
+
+open Functor.LaxMonoidal TauCeti
+
+/-- The tensor comparison of the double right dual functor of the centre is that of `C`. -/
 @[simp]
 theorem doubleRightDualFunctor_μ_f (X Y : Center C) :
     (μ (doubleRightDualFunctor (Center C)) X Y).f = μ (doubleRightDualFunctor C) X.1 Y.1 := by
   rw [doubleRightDualFunctor_μ, doubleRightDualFunctor_μ, comp_f, rightAdjointMate_f,
     rightDualTensorIso_inv_f, rightDualTensorIso_hom_f]
-  -- The remaining difference is only in how the objects `(Xᘁ).1` and `X.1ᘁ` are written.
+  -- The two sides differ only in how `(Xᘁ).1` and `X.1ᘁ` are written.
+  rfl
+
+/-- The unit comparison of the double right dual functor of the centre is that of `C`. -/
+@[simp]
+theorem doubleRightDualFunctor_ε_f :
+    (ε (doubleRightDualFunctor (Center C))).f = ε (doubleRightDualFunctor C) := by
+  -- In both categories, the unit comparison is the inverse identification of the right dual of
+  -- the unit with the unit, followed by the mate of that identification.
+  rw [doubleRightDualFunctor_ε_eq_rightAdjointMate, doubleRightDualFunctor_ε_eq_rightAdjointMate,
+    comp_f, rightAdjointMate_f, rightDualIso_exactPairingUnit_inv_f,
+    rightDualIso_exactPairingUnit_hom_f]
+  -- The two sides differ only in how the right duals of the units are written.
   rfl
 
 /-- The comparison between the image of a right dual under the forgetful functor of the centre

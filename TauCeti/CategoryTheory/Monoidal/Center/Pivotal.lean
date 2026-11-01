@@ -6,38 +6,38 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Center.Rigid
-public import TauCeti.CategoryTheory.Monoidal.NaturalTransformation
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Functor
 
 /-!
-# The pivotal structure on the Drinfeld centre
+# The Drinfeld centre of a pivotal category is pivotal
 
-Let `C` be a rigid monoidal category. Its Drinfeld centre `Center C` is rigid, with the right dual
-of `(X, β)` the right dual `Xᘁ` of `C`, carrying the half-braiding obtained from `β` by taking
-mates. A pivotal structure `φ : 𝟭 C ≅ doubleRightDualFunctor C` on `C` induces one on
-`Center C`, whose component at `(X, β)` is `φ_X : X ≅ Xᘁᘁ`.
+Let `C` be a rigid monoidal category with a pivotal structure `φ_X : X ≅ Xᘁᘁ`. The Drinfeld
+centre `Center C` is rigid, with the right dual of `(X, β)` the right dual `Xᘁ` of `X` carrying the
+induced half-braiding, so the double right dual of `(X, β)` is `Xᘁᘁ` with the half-braiding induced
+twice. The components of `φ` lift to the centre: `φ_X` intertwines the half-braiding `β` of `X`
+with the twice-induced half-braiding of `Xᘁᘁ`. Since the forgetful functor `Center C ⥤ C` is
+faithful and carries the unit and tensor comparisons of the double right dual functor of the
+centre to those of `C`, the lifted components form a monoidal natural isomorphism from the
+identity functor of `Center C` to its double right dual functor, that is, a pivotal structure on
+the centre. Together with the braiding of the centre, this makes `Center C` a braided pivotal
+category. The forgetful functor `Center C ⥤ C` is then a pivotal functor, so traces and dimensions
+in the centre are computed in `C`, and the centre of a spherical category is spherical.
 
-The content is that `φ_X` is a morphism of the centre, that is, that it intertwines `β` with the
-half-braiding induced on the double dual `Xᘁᘁ`. Taking mates twice, the induced half-braiding at
-an object `Uᘁᘁ` is the double mate `(β_U)ᘁᘁ`, read through the tensor comparisons
-`μ : Xᘁᘁ ⊗ Uᘁᘁ ≅ (X ⊗ U)ᘁᘁ` and `δ : (U ⊗ X)ᘁᘁ ≅ Uᘁᘁ ⊗ Xᘁᘁ` of the double right dual functor
-(`CategoryTheory.HalfBraiding.rightDualβHom_rightDual_rightDual`). Naturality of `φ` at `β_U`
-and its monoidality then show that `φ_X` intertwines the half-braidings at `U`, after composing
-with `φ_U`. Naturality and monoidality of the lifted components hold because they hold in `C` and
-the forgetful functor `Center.forget C` is faithful; the tensor comparison of the double right
-dual functor of the centre is computed in `C`.
-
-The forgetful functor is then a pivotal functor, so traces and dimensions in the centre are
-computed in `C`, and the centre of a spherical category is spherical. Together with the braiding
-of the centre, this is the pivotal and spherical structure on `Center C` used to study the centre
-of a spherical fusion category.
+The intertwining property comes from naturality and monoidality of `φ`. Naturality at the
+half-braiding `β U : X ⊗ U ⟶ U ⊗ X` says that `β U` is conjugate under `φ` to its double mate,
+and monoidality writes `φ` at `X ⊗ U` and at `U ⊗ X` through `φ_X` and `φ_U`. On the other side,
+the half-braiding induced on `Xᘁ` is, at `Uᘁ`, the mate of `β U`
+(`CategoryTheory.HalfBraiding.rightDualβHom_rightDual`), so the twice-induced half-braiding of
+`Xᘁᘁ` is, at `Uᘁᘁ`, the double mate of `β U`; naturality in `U` moves it back along `φ_U`.
 
 ## Main declarations
 
-* `CategoryTheory.HalfBraiding.pivotalIsoApp_hom_whiskerRight_comp_rightDual_rightDual_β_hom`: in
-  a pivotal category, `φ_X` intertwines a half-braiding on `X` with the one induced on `Xᘁᘁ`;
+* `CategoryTheory.HalfBraiding.pivotalIsoApp_hom_whiskerRight_comp_rightDual_rightDual_β_hom`:
+  the component `φ_X` intertwines a half-braiding of `X` with the half-braiding it induces on
+  `Xᘁᘁ`;
 * `CategoryTheory.Center.pivotalCategory`: the pivotal structure on the centre of a pivotal
-  category, with components computed by `CategoryTheory.Center.pivotalIsoApp_hom_f`;
+  category, whose components are those of `C` (`CategoryTheory.Center.pivotalIsoApp_hom_f` and
+  `CategoryTheory.Center.pivotalIsoApp_inv_f`);
 * `CategoryTheory.Center.isPivotal_forget`: the forgetful functor from the centre is pivotal, so
   that `CategoryTheory.Center.leftTrace_f` and `CategoryTheory.Center.rightTrace_f` compute the
   traces of the centre in `C`;
@@ -48,118 +48,106 @@ of a spherical fusion category.
 * A. Henriques, D. Penneys, J. Tener, *Categorified trace for module tensor categories over
   braided tensor categories*, [arXiv:1509.02937](https://arxiv.org/abs/1509.02937),
   Proposition 2.3
-* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §7.13
+* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §§7.13 and 8.10
 -/
 
 public section
 
-open CategoryTheory MonoidalCategory Functor.LaxMonoidal Functor.OplaxMonoidal TauCeti
+open CategoryTheory MonoidalCategory TauCeti
 
 universe v u
 
 namespace CategoryTheory
 
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RigidCategory C] [PivotalCategory C]
 
 namespace HalfBraiding
 
-variable {X : C} (b : HalfBraiding X) [RigidCategory C] [PivotalCategory C]
+variable {X : C} (b : HalfBraiding X)
 
-/-- In a pivotal category, the pivotal isomorphism `φ_X : X ≅ Xᘁᘁ` intertwines a half-braiding on
-`X` with the half-braiding induced on the double right dual `Xᘁᘁ`. -/
+/-- In a pivotal category, the component `φ_X : X ⟶ Xᘁᘁ` of the pivotal structure intertwines a
+half-braiding `b` of `X` with the half-braiding induced from it on the double right dual `Xᘁᘁ`. -/
 theorem pivotalIsoApp_hom_whiskerRight_comp_rightDual_rightDual_β_hom (U : C) :
-    (pivotalIsoApp X).hom ▷ U ≫ (((b.rightDual Xᘁ).rightDual Xᘁᘁ).β U).hom =
+    (pivotalIsoApp X).hom ▷ U ≫ (((b.rightDual Xᘁ).rightDual ((Xᘁ : C)ᘁ : C)).β U).hom =
       (b.β U).hom ≫ U ◁ (pivotalIsoApp X).hom := by
   rw [rightDual_β, rightDualβ_hom]
-  -- Monoidality of `φ`, with the tensor comparison of the double right dual functor unfolded.
-  have hφ (Y Z : C) : (pivotalIsoApp (Y ⊗ Z)).hom = ((pivotalIsoApp Y).hom ⊗ₘ
-      (pivotalIsoApp Z).hom) ≫ (rightDualTensorIso Zᘁ Yᘁ).inv ≫ ((rightDualTensorIso Y Z).hom)ᘁ :=
-    (pivotalIsoApp_tensor_hom Y Z).trans (congrArg _ (doubleRightDualFunctor_μ C Y Z))
-  have hc : ((rightDualTensorIso U X).hom)ᘁ ≫ ((rightDualTensorIso U X).inv)ᘁ = 𝟙 _ := by
-    rw [← comp_rightAdjointMate, Iso.inv_hom_id, rightAdjointMate_id]
-  -- Compose both sides with the isomorphism `φ_U ▷ Xᘁᘁ`. Naturality of the induced
-  -- half-braiding moves `φ_U` to the left, where `φ_X ⊗ φ_U` combines with the tensor
-  -- comparison into `φ_{X ⊗ U}`; naturality of `φ` at `β_U` then moves `φ` back to the right,
-  -- where the comparisons cancel.
-  rw [← cancel_mono ((pivotalIsoApp U).hom ▷ ((Xᘁ : C)ᘁ : C)), Category.assoc,
-    ← rightDualβHom_naturality, ← tensorHom_def_assoc, rightDualβHom_rightDual_rightDual,
-    ← reassoc_of% hφ, ← pivotalIsoApp_hom_naturality_assoc, hφ]
-  simp [reassoc_of% hc, tensorHom_def']
+  -- The monoidality of the pivotal structure, with the tensor comparison of the double right dual
+  -- functor written out, so that every object below is an iterated right dual.
+  have hT (A B : C) : (pivotalIsoApp (A ⊗ B)).hom =
+      ((pivotalIsoApp A).hom ⊗ₘ (pivotalIsoApp B).hom) ≫ (rightDualTensorIso Bᘁ Aᘁ).inv ≫
+        ((rightDualTensorIso A B).hom)ᘁ :=
+    (pivotalIsoApp_tensor_hom A B).trans (congrArg _ (doubleRightDualFunctor_μ C A B))
+  -- Move the induced half-braiding of `Xᘁᘁ` from `U` to `Uᘁᘁ` by naturality.
+  have hN : (b.rightDual Xᘁ).rightDualβHom ((Xᘁ : C)ᘁ : C) U =
+      ((Xᘁ : C)ᘁ : C) ◁ (pivotalIsoApp U).hom ≫
+        (b.rightDual Xᘁ).rightDualβHom ((Xᘁ : C)ᘁ : C) ((Uᘁ : C)ᘁ : C) ≫
+          (pivotalIsoApp U).inv ▷ ((Xᘁ : C)ᘁ : C) := by
+    rw [rightDualβHom_naturality_assoc, ← comp_whiskerRight, Iso.hom_inv_id, id_whiskerRight,
+      Category.comp_id]
+  -- At `Uᘁᘁ` it is the double mate of `b.β U`, which is conjugate to `b.β U` under `φ`.
+  rw [hN, (b.rightDual Xᘁ).rightDualβHom_rightDual, rightDual_β, rightDualβ_hom,
+    b.rightDualβHom_rightDual]
+  simp only [comp_rightAdjointMate, rightAdjointMate_rightAdjointMate, Category.assoc]
+  calc
+    _ = (pivotalIsoApp (X ⊗ U)).hom ≫ (pivotalIsoApp (X ⊗ U)).inv ≫ (b.β U).hom ≫
+          (pivotalIsoApp (U ⊗ X)).hom ≫ ((rightDualTensorIso U X).inv)ᘁ ≫
+            (rightDualTensorIso Xᘁ Uᘁ).hom ≫ (pivotalIsoApp U).inv ▷ ((Xᘁ : C)ᘁ : C) := by
+      rw [hT X U, tensorHom_def]
+      simp only [Category.assoc]
+    _ = _ := by
+      rw [Iso.hom_inv_id_assoc, hT U X, tensorHom_def']
+      simp only [Category.assoc]
+      rw [← comp_rightAdjointMate_assoc, Iso.inv_hom_id, rightAdjointMate_id, Category.id_comp,
+        Iso.inv_hom_id_assoc, ← comp_whiskerRight, Iso.hom_inv_id, id_whiskerRight,
+        Category.comp_id]
 
 end HalfBraiding
 
 namespace Center
 
-/-- An endomorphism `a` of the unit of the centre has underlying endomorphism `b` as soon as `b` is
-the image of `a` under the forgetful functor, read through its unit comparisons. -/
-private theorem f_eq_of_eq_forget_map {a : 𝟙_ (Center C) ⟶ 𝟙_ (Center C)} {b : 𝟙_ C ⟶ 𝟙_ C}
-    (h : b = ε (forget C) ≫ (forget C).map a ≫ η (forget C)) : a.f = b := by
-  simp only [forget_ε, forget_η, forget_map] at h
-  exact (h.trans ((Category.id_comp _).trans (Category.comp_id _))).symm
+open Functor.LaxMonoidal
 
-variable [RigidCategory C] [PivotalCategory C]
-
-/-- Auxiliary definition for the `PivotalCategory` instance on `Center C`: the component
-`φ_{X.1} : X.1 ⟶ X.1ᘁᘁ` of the pivotal structure of `C`, as a morphism of the centre. -/
-noncomputable def pivotalIsoAppHom (X : Center C) : X ⟶ ((Xᘁ : Center C)ᘁ : Center C) where
-  f := (pivotalIsoApp X.1).hom
-  comm U := by
-    simp only [rightDual_snd]
-    exact X.2.pivotalIsoApp_hom_whiskerRight_comp_rightDual_rightDual_β_hom U
-
-/-- The underlying morphism of `pivotalIsoAppHom X` is the pivotal isomorphism `φ_{X.1}` of `C`. -/
-@[simp]
-theorem pivotalIsoAppHom_f (X : Center C) :
-    (pivotalIsoAppHom X).f = (pivotalIsoApp X.1).hom :=
-  (rfl)
-
-private theorem pivotalIsoAppHom_naturality {X Y : Center C} (f : X ⟶ Y) :
-    f ≫ pivotalIsoAppHom Y = pivotalIsoAppHom X ≫ fᘁᘁ := by
-  ext
-  simp only [comp_f, pivotalIsoAppHom_f, rightAdjointMate_f]
-  exact pivotalIsoApp_hom_naturality f.f
-
-private instance (X : Center C) : IsIso (pivotalIsoAppHom X).f := by
-  rw [pivotalIsoAppHom_f]
-  exact Iso.isIso_hom _
-
-/-- Auxiliary definition for the `PivotalCategory` instance on `Center C`: the natural isomorphism
-`𝟭 (Center C) ≅ doubleRightDualFunctor (Center C)` with components `pivotalIsoAppHom`. -/
-noncomputable def pivotalNatIso : 𝟭 (Center C) ≅ doubleRightDualFunctor (Center C) :=
-  NatIso.ofComponents (fun X => (isoMk (pivotalIsoAppHom X) : X ≅ ((Xᘁ : Center C)ᘁ : Center C)))
-    pivotalIsoAppHom_naturality
-
-/-- The underlying morphisms of the components of `pivotalNatIso` are the pivotal isomorphisms of
-`C`. -/
-@[simp]
-theorem pivotalNatIso_hom_app_f (X : Center C) :
-    (pivotalNatIso.hom.app X).f = (pivotalIsoApp X.1).hom := by
-  unfold pivotalNatIso
-  exact pivotalIsoAppHom_f X
-
-/-- The pivotal structure of a pivotal category `C` induces a pivotal structure on its Drinfeld
-centre, with components the pivotal isomorphisms `X.1 ≅ X.1ᘁᘁ` of `C`. -/
+/-- **The Drinfeld centre of a pivotal category is pivotal.** The component at `X : Center C` is
+the component `φ_{X.1} : X.1 ≅ X.1ᘁᘁ` of the pivotal structure of `C`, which is a morphism of the
+centre from `X` to its double right dual. -/
 noncomputable instance pivotalCategory : PivotalCategory (Center C) where
-  pivotalIso := pivotalNatIso
-  pivotalIso_isMonoidal := .of_tensor _ fun X Y => by
-    ext
-    simp only [comp_f, pivotalNatIso_hom_app_f, tensor_f, doubleRightDualFunctor_μ_f]
-    exact (Category.id_comp _).trans (pivotalIsoApp_tensor_hom X.1 Y.1)
+  pivotalIso := NatIso.ofComponents
+    (fun X => @isoMk _ _ _ _ _
+      ⟨(pivotalIsoApp X.1).hom, X.2.pivotalIsoApp_hom_whiskerRight_comp_rightDual_rightDual_β_hom⟩
+      (inferInstanceAs (IsIso (pivotalIsoApp X.1).hom)))
+    (fun f => by
+      ext
+      have h : (fᘁᘁ).f = (f.f)ᘁᘁ := by
+        rw [rightAdjointMate_f, rightAdjointMate_f]
+        -- The two sides differ only in how `(Xᘁ).1` and `X.1ᘁ` are written.
+        exact rfl
+      exact (pivotalIsoApp_hom_naturality f.f).trans (congrArg _ h.symm))
+  pivotalIso_isMonoidal :=
+    { unit := by
+        ext
+        simp only [Functor.LaxMonoidal.id_ε, NatIso.ofComponents_hom_app, isoMk_hom,
+          Category.id_comp, doubleRightDualFunctor_ε_f]
+        exact pivotalIsoApp_unit_hom
+      tensor := fun (X Y : Center C) => by
+        ext
+        simp only [Functor.LaxMonoidal.id_μ, NatIso.ofComponents_hom_app, isoMk_hom, comp_f,
+          Category.id_comp, tensor_f, doubleRightDualFunctor_μ_f]
+        exact pivotalIsoApp_tensor_hom X.1 Y.1 }
 
-/-- The components of the pivotal isomorphism of the centre are those of `C`. -/
+/-- The component of the pivotal structure of the centre at `X` is that of `C` at `X.1`. -/
 @[simp]
-theorem pivotalIsoApp_hom_f (X : Center C) :
-    (pivotalIsoApp X).hom.f = (pivotalIsoApp X.1).hom := by
-  rw [← pivotalIso_hom_app (X := X)]
-  exact pivotalNatIso_hom_app_f X
+theorem pivotalIsoApp_hom_f (X : Center C) : (pivotalIsoApp X).hom.f = (pivotalIsoApp X.1).hom := by
+  rw [← pivotalIso_hom_app]
+  -- The component of `pivotalCategory` at `X` is defined to be `pivotalIsoApp X.1`.
+  exact rfl
 
-/-- The inverses of the components of the pivotal isomorphism of the centre are those of `C`. -/
+/-- The inverse of the component of the pivotal structure of the centre at `X` is that of `C` at
+`X.1`. -/
 @[simp]
-theorem pivotalIsoApp_inv_f (X : Center C) :
-    (pivotalIsoApp X).inv.f = (pivotalIsoApp X.1).inv := by
-  have h := congrArg Hom.f (pivotalIsoApp X).hom_inv_id
-  rw [comp_f, pivotalIsoApp_hom_f, id_f] at h
-  exact (Iso.hom_comp_eq_id _).1 h
+theorem pivotalIsoApp_inv_f (X : Center C) : (pivotalIsoApp X).inv.f = (pivotalIsoApp X.1).inv := by
+  have h := congrArg Hom.f (pivotalIsoApp X).inv_hom_id
+  simp only [comp_f, id_f, pivotalIsoApp_hom_f] at h
+  exact (Iso.comp_hom_eq_id _).1 h
 
 /-- The forgetful functor from the centre of a pivotal category is a pivotal functor. -/
 instance isPivotal_forget : (forget C).IsPivotal :=
@@ -170,6 +158,14 @@ instance isPivotal_forget : (forget C).IsPivotal :=
     -- only up to unfolding, so `rightAdjointMate_id` is applied by unification.
     congr 1
     exact rightAdjointMate_id.symm
+
+omit [RigidCategory C] [PivotalCategory C] in
+/-- An endomorphism `a` of the unit of the centre has underlying endomorphism `b` as soon as `b` is
+the image of `a` under the forgetful functor, read through its unit comparisons. -/
+private theorem f_eq_of_eq_forget_map {a : 𝟙_ (Center C) ⟶ 𝟙_ (Center C)} {b : 𝟙_ C ⟶ 𝟙_ C}
+    (h : b = ε (forget C) ≫ (forget C).map a ≫ Functor.OplaxMonoidal.η (forget C)) : a.f = b := by
+  simp only [forget_ε, forget_η, forget_map] at h
+  exact (h.trans ((Category.id_comp _).trans (Category.comp_id _))).symm
 
 /-- The left trace of an endomorphism of the centre is its left trace in `C`. -/
 @[simp]
