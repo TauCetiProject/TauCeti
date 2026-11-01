@@ -154,6 +154,14 @@ theorem isometryEquivRealCliffordFormZero_apply_self (i : Fin n) :
   ext j
   simp [Pi.single_apply, eq_comm]
 
+/-- The inverse of `OrthonormalBasis.isometryEquivRealCliffordFormZero` sends the `i`-th coordinate
+vector to `b i`. -/
+@[simp]
+theorem isometryEquivRealCliffordFormZero_symm_single (i : Fin n) :
+    (b.isometryEquivRealCliffordFormZero hQ).symm (Pi.single i 1) = b i := by
+  rw [← isometryEquivRealCliffordFormZero_apply_self b hQ i,
+    QuadraticMap.IsometryEquiv.symm_apply_apply]
+
 end Positive
 
 end OrthonormalBasis

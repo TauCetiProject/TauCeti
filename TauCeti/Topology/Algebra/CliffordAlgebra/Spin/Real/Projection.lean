@@ -9,7 +9,7 @@ public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Closed
 public import Mathlib.Topology.Covering.Basic
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
-import Mathlib.Topology.Covering.Quotient
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
 
 /-!
 # The real Spin projection on closed unit-group carriers
@@ -29,9 +29,10 @@ closed carriers are given their Lie-group structures, automatic smoothness makes
 to the Lie functor without changing either carrier.
 
 In positive dimension the carrier homomorphism is again the Spin double cover: its kernel consists
-of the units `1` and `-1`, and it is a covering map. The source carrier is compact and the target
-is Hausdorff, so the surjection is a quotient map with finite kernel. This transports the compact
-real Spin covering to the unit-group carriers that serve as frame structure groups.
+of the units `1` and `-1`, and it is a covering map. The covering is the compact real Spin covering
+`CliffordAlgebra.isCoveringMap_realCliffordSpinProjectionZero`, transported along the
+homeomorphisms of `Spin(n)` and `SO(n)` with the unit-group carriers that serve as frame structure
+groups.
 
 ## Main results
 
@@ -200,6 +201,7 @@ theorem realCliffordSpinToSpecialOrthogonalRange_eq_one_iff (n : ℕ) [NeZero n]
       (x : (CliffordAlgebra (realCliffordForm n 0))ˣ) = 1 ∨
         (x : (CliffordAlgebra (realCliffordForm n 0))ˣ) = -1 := by
   obtain ⟨_, y, rfl⟩ := x
+  -- `realCliffordForm n 0` lives on `Fin (n + 0) → ℝ`, which is `Fin n → ℝ` by definition.
   have : Nontrivial (Fin (n + 0) → ℝ) := inferInstanceAs (Nontrivial (Fin n → ℝ))
   rw [realCliffordSpinToSpecialOrthogonalRange_apply_toUnits, Subtype.ext_iff,
     OneMemClass.coe_one,
@@ -215,17 +217,28 @@ theorem realCliffordSpinToSpecialOrthogonalRange_eq_one_iff (n : ℕ) [NeZero n]
 carriers is a covering map. -/
 theorem isCoveringMap_realCliffordSpinToSpecialOrthogonalRange (n : ℕ) [NeZero n] :
     IsCoveringMap (realCliffordSpinToSpecialOrthogonalRange n) := by
-  let f := realCliffordSpinToSpecialOrthogonalRange n
-  have : CompactSpace (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) :=
-    (realCliffordSpinContinuousMulEquivUnitsRange n).toHomeomorph.compactSpace
-  have hquot : Topology.IsQuotientMap f :=
-    .of_surjective_continuous (realCliffordSpinToSpecialOrthogonalRange_surjective n) f.continuous
-  have hfin : (SetLike.coe f.toMonoidHom.ker).Finite := by
-    refine (Set.Finite.preimage Subtype.val_injective.injOn (Set.toFinite {1, -1})).subset ?_
-    intro x hx
-    simpa using (realCliffordSpinToSpecialOrthogonalRange_eq_one_iff n x).mp hx
-  exact (hquot.isQuotientCoveringMap_of_isDiscrete_ker_monoidHom
-    (f := f.toMonoidHom) hfin.isDiscrete).isCoveringMap
+  -- The coordinate topology on `SO(n)` is induced along the inclusion built with
+  -- `Classical.decEq`, whereas the target carrier uses the canonical decidable equality on `Fin n`;
+  -- `convert` identifies the two instances because decidable equality is subsingleton.
+  have hemb : Topology.IsEmbedding (QuadraticMap.specialOrthogonalToGeneralLinear
+      (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) := by
+    convert QuadraticMap.isEmbedding_specialOrthogonalToGeneralLinear (realCliffordForm n 0)
+  let e : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ≃ₜ
+      MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
+        (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)) :=
+    hemb.toHomeomorph.trans (.setCongr (MonoidHom.coe_range _).symm)
+  have h : ⇑(realCliffordSpinToSpecialOrthogonalRange n) =
+      e ∘ realCliffordSpinProjectionZero n ∘
+        (realCliffordSpinContinuousMulEquivUnitsRange n).symm := by
+    funext x
+    apply Subtype.ext
+    simp only [Function.comp_apply, realCliffordSpinToSpecialOrthogonalRange_apply,
+      realCliffordSpinProjectionZero_apply, realCliffordSpinDoubleCoverZero_rightHom]
+    -- Both sides apply the same inclusion, indexed by `Fin n` and by `Fin (n + 0)`.
+    rfl
+  rw [h]
+  exact ((isCoveringMap_realCliffordSpinProjectionZero n).homeomorph_comp e).comp_homeomorph
+    (realCliffordSpinContinuousMulEquivUnitsRange n).symm.toHomeomorph
 
 end
 

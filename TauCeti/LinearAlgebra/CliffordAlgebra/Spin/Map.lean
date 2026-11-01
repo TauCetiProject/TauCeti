@@ -31,6 +31,9 @@ action.
   isometry.
 * `QuadraticMap.IsometryEquiv.spinGroupEquiv` is the group equivalence induced by a quadratic
   isometry equivalence.
+* `QuadraticMap.IsometryEquiv.coe_spinGroupEquiv_eq_one_iff` and
+  `QuadraticMap.IsometryEquiv.coe_spinGroupEquiv_eq_neg_one_iff` show that this equivalence
+  preserves the elements lying over `1` and `-1`.
 * `spinGroup.map_vectorAction` identifies the Clifford map induced by a Spin element's
   vector action with conjugation.
 * `spinGroup.spinGroupEquiv_vectorAction` identifies its induced Spin automorphism with
@@ -184,6 +187,20 @@ theorem spinGroupEquiv_trans {M₃ : Type*} [AddCommGroup M₃] [Module R M₃]
     (e₁₂.trans e₂₃).spinGroupEquiv = e₁₂.spinGroupEquiv.trans e₂₃.spinGroupEquiv :=
   MulEquiv.ext fun x ↦
     (DFunLike.congr_fun (e₂₃.toIsometry.spinGroupMap_comp e₁₂.toIsometry) x).symm
+
+/-- The Spin equivalence induced by an isometry equivalence sends `x` to an element lying over `1`
+exactly when `x` lies over `1`. -/
+theorem coe_spinGroupEquiv_eq_one_iff (e : Q₁.IsometryEquiv Q₂) (x : spinGroup Q₁) :
+    (e.spinGroupEquiv x : CliffordAlgebra Q₂) = 1 ↔ (x : CliffordAlgebra Q₁) = 1 := by
+  rw [OneMemClass.coe_eq_one, OneMemClass.coe_eq_one, EmbeddingLike.map_eq_one_iff]
+
+/-- The Spin equivalence induced by an isometry equivalence sends `x` to an element lying over
+`-1` exactly when `x` lies over `-1`. -/
+theorem coe_spinGroupEquiv_eq_neg_one_iff (e : Q₁.IsometryEquiv Q₂) (x : spinGroup Q₁) :
+    (e.spinGroupEquiv x : CliffordAlgebra Q₂) = -1 ↔ (x : CliffordAlgebra Q₁) = -1 := by
+  rw [spinGroupEquiv_apply, Isometry.coe_spinGroupMap_apply,
+    ← CliffordAlgebra.equivOfIsometry_apply, ← map_one (CliffordAlgebra.equivOfIsometry e),
+    ← map_neg, EquivLike.apply_eq_iff_eq]
 
 end QuadraticMap.IsometryEquiv
 

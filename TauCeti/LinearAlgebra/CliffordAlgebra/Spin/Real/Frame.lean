@@ -20,15 +20,18 @@ group of `Q` with the compact Spin group `Spin(n)` through
 `QuadraticMap.IsometryEquiv.spinGroupEquiv`. This file computes how that frame identification
 depends on the basis.
 
-Two frames `b` and `b'` differ by the coordinate rotation `x ↦ b'.repr (∑ i, x i • b i)`. A Spin
-element `s` of `Spin(n)` acts on coordinates by this transition exactly when the two frame
-identifications differ by conjugation by `s`. Such an `s` exists if and only if `b` and `b'` have
-the same orientation: the transition has determinant `b'.toBasis.det b = ±1`, and the Spin action
-is onto the determinant-one isometries of a positive-definite form. Oppositely oriented frames
-differ by a reflection, which is not the vector action of a Spin element.
+Two frames `b` and `b'` differ by the orthogonal coordinate transition
+`x ↦ b'.repr (∑ i, x i • b i)`. If a Spin element `s` of `Spin(n)` acts on coordinates by this
+transition, the two frame identifications differ by conjugation by `s`. Such an `s` exists if and
+only if `b` and `b'` have the same orientation: the transition has determinant
+`b'.toBasis.det b = ±1`, and the Spin action is onto the determinant-one isometries of a
+positive-definite form. Oppositely oriented frames differ by an isometry of determinant `-1`, which
+is not the vector action of a Spin element.
 
 ## Main results
 
+* `OrthonormalBasis.det_isometryEquivRealCliffordFormZero_symm_trans`: the transition from `b` to
+  `b'` has determinant `b'.toBasis.det b`.
 * `OrthonormalBasis.spinGroupEquiv_isometryEquivRealCliffordFormZero_eq_conj`: if `s` acts by
   the transition from `b` to `b'`, the frame identification along `b'` is the one along `b`
   followed by conjugation by `s`.
@@ -56,7 +59,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Q : Quadr
 /-- The coordinate transition from the frame `b` to the frame `b'` has determinant
 `b'.toBasis.det b`: it is the change of basis from `b'` to `b`, written in the coordinates of
 `b'`. -/
-private theorem det_transition :
+theorem det_isometryEquivRealCliffordFormZero_symm_trans :
     (LinearEquiv.det ((b.isometryEquivRealCliffordFormZero hQ).symm.trans
       (b'.isometryEquivRealCliffordFormZero hQ)).toLinearEquiv : ℝ) = b'.toBasis.det b := by
   have hσ (i : Fin n) : b'.toBasis.equiv b.toBasis (Equiv.refl _) (b' i) = b i := by
@@ -108,7 +111,7 @@ theorem exists_spinVectorAction_eq_iff_orientation_eq :
       simpa [t, coe_spinToSpecialOrthogonal_apply] using
         (hs ((b.isometryEquivRealCliffordFormZero hQ).symm y)).symm
     have hdet : b'.toBasis.det b = 1 := by
-      rw [← det_transition b b' hQ]
+      rw [← det_isometryEquivRealCliffordFormZero_symm_trans b b' hQ]
       refine (congrArg (fun f ↦ (LinearEquiv.det f : ℝ)) hts).trans ?_
       rw [(QuadraticMap.mem_specialOrthogonalGroup_iff.mp
         (spinToSpecialOrthogonal (realCliffordForm n 0) s).2).2, Units.val_one]
@@ -119,7 +122,7 @@ theorem exists_spinVectorAction_eq_iff_orientation_eq :
     exact ((b'.toBasis.orientation_eq_iff_det_pos b.toBasis).mpr hpos).symm
   · intro h
     have hdet : LinearEquiv.det t.toLinearEquiv = 1 := by
-      rw [← Units.val_inj, det_transition b b' hQ,
+      rw [← Units.val_inj, det_isometryEquivRealCliffordFormZero_symm_trans b b' hQ,
         b'.det_to_matrix_orthonormalBasis_of_same_orientation b h.symm, Units.val_one]
     obtain ⟨s, hs⟩ := spinToSpecialOrthogonal_surjective_of_posDef _
       (posDef_realCliffordForm_zero n)
