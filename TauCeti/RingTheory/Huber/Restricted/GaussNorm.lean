@@ -267,6 +267,26 @@ theorem continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm :
   uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm.continuous.comp
     continuous_restrictedMvPowerSeriesGaussEquiv_symm
 
+/-- Under the completed Gauss comparison, the polynomials in the completed Huber algebra are the
+Gauss-normed polynomial inclusion. -/
+theorem restrictedMvPowerSeriesCompletionGaussEquiv_comp_weightedPolynomialHom :
+    (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := R)).toRingHom.comp
+        (UniformSpace.Completion.coeRingHom.comp
+          (weightedPolynomialHom _ isWeightFamily_one_weight)) =
+      (TauCeti.MvPowerSeries.polynomialToRestricted (R := R) fun _ : Fin n ↦ (1 : ℝ)).toRingHom :=
+  RingHom.ext fun p ↦ by simp [UniformSpace.Completion.coeRingHom]
+
+/-- The inverse completed Gauss comparison sends the Gauss-normed polynomial inclusion to the
+polynomials in the completed Huber algebra. -/
+theorem restrictedMvPowerSeriesCompletionGaussEquiv_symm_comp_polynomialToRestricted :
+    (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := R)).symm.toRingHom.comp
+        (TauCeti.MvPowerSeries.polynomialToRestricted (R := R)
+          fun _ : Fin n ↦ (1 : ℝ)).toRingHom =
+      UniformSpace.Completion.coeRingHom.comp
+        (weightedPolynomialHom (k := n) (A := R) _ isWeightFamily_one_weight) := by
+  rw [← restrictedMvPowerSeriesCompletionGaussEquiv_comp_weightedPolynomialHom,
+    ← RingHom.comp_assoc, RingEquiv.symm_toRingHom_comp_toRingHom, RingHom.id_comp]
+
 end Complete
 
 section UnitWeight
