@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Computability.SingleOracle.Evaln
+public import TauCeti.Computability.SingleOracle.Primrec
 
 /-!
 # Length of agreement and its restraint
@@ -37,7 +37,16 @@ step, the computations, the length of agreement and the restraint therefore all 
 
 Absence of injury alone is not enough to iterate: a change of the target at a small argument can
 shorten the length of agreement, so that the next restraint no longer covers the use of a
-computation at a larger argument.
+computation at a larger argument. What does iterate is a fixed prefix: if the target does not
+change below `n` and `n` is at most the length of agreement, then it stays so, and the computations
+up to and including `n` persist.
+
+## Effectivity
+
+The length of agreement and the agreement restraint are primitive recursive in the fuel and the
+program, uniformly in a parameter on which the answers and the target depend primitive
+recursively. In particular they are primitive recursive in the binary codes of a finite stage
+`A s` and a finite target stage `C s`, which makes them usable in computable stage constructions.
 
 ## Main definitions
 
@@ -65,6 +74,15 @@ computation at a larger argument.
   `TauCeti.Oracle.Single.Code.agreementLength_le_of_forall_Ico`,
   `TauCeti.Oracle.Single.Code.agreementRestraint_le_of_forall_Ico`: the same along an interval of
   stages.
+* `TauCeti.Oracle.Single.Code.le_agreementLength_of_forall_Ico`,
+  `TauCeti.Oracle.Single.Code.evaln_eq_some_of_forall_Ico_of_le`: persistence of a prefix of
+  agreement, and of the computations up to and including it, along an interval of stages where the
+  target does not change below the prefix.
+* `TauCeti.Oracle.Single.Code.primrec_agreementLength`,
+  `TauCeti.Oracle.Single.Code.primrec_agreementRestraint`, and their specializations
+  `TauCeti.Oracle.Single.Code.primrec_agreementLength_equivBitIndices`,
+  `TauCeti.Oracle.Single.Code.primrec_agreementRestraint_equivBitIndices` to binary-coded finite
+  sets: the length of agreement and the restraint are primitive recursive.
 
 ## References
 
@@ -147,7 +165,7 @@ def agreementRestraint (σ : ℕ → Option ℕ) (k : ℕ) (c : Code) (g : ℕ �
 length of agreement is. -/
 theorem agreementRestraint_le_iff {b : ℕ} :
     agreementRestraint σ k c g ≤ b ↔ ∀ x ≤ agreementLength σ k c g, stageUse σ k c x ≤ b := by
-  simp [agreementRestraint, Nat.lt_succ_iff]
+  simp [agreementRestraint]
 
 /-- Every stage use up to and including the length of agreement is at most the agreement
 restraint. -/
@@ -260,6 +278,108 @@ theorem evaln_eq_some_of_forall_Ico (hst : s ≤ t)
     exact evaln_eq_some_of_eqOn_agreementRestraint t.le_succ (h t ⟨hst, t.lt_succ_self⟩).1
       (hx.trans (agreementLength_le_of_forall_Ico hst h')) (ih h')
 
+/-- **Persistence of a prefix of agreement.** Along stages `σ u`, `g u` run with fuel `u`, if the
+run agrees with the target below `n` at stage `s`, it still does at stage `t`, provided that at
+every step in between the answers do not change at or below the agreement restraint and the target
+does not change below `n`. The target may change at and above `n`. -/
+theorem le_agreementLength_of_forall_Ico {n : ℕ} (hst : s ≤ t)
+    (h : ∀ u ∈ Ico s t, EqOn (σ u) (σ (u + 1)) (Iic (agreementRestraint (σ u) u c (g u))) ∧
+      ∀ x < n, g (u + 1) x = g u x)
+    (hn : n ≤ agreementLength (σ s) s c (g s)) : n ≤ agreementLength (σ t) t c (g t) := by
+  induction t, hst using Nat.le_induction with
+  | base => exact hn
+  | succ t hst ih =>
+    have ⟨hστ, hg⟩ := h t ⟨hst, t.lt_succ_self⟩
+    have ih := ih fun u hu => h u ⟨hu.1, hu.2.trans t.lt_succ_self⟩
+    exact le_agreementLength_iff.2 fun x hx =>
+      agreesAt_of_eqOn_agreementRestraint t.le_succ hστ (hx.trans_le ih) (hg x hx)
+
+/-- **Preservation on an interval of stages, below a fixed prefix.** Under the hypotheses of
+`le_agreementLength_of_forall_Ico`, a successful run at stage `s` at an argument up to and
+including `n` is a successful run at stage `t`, with the same output and use. -/
+theorem evaln_eq_some_of_forall_Ico_of_le {n : ℕ} (hst : s ≤ t)
+    (h : ∀ u ∈ Ico s t, EqOn (σ u) (σ (u + 1)) (Iic (agreementRestraint (σ u) u c (g u))) ∧
+      ∀ x < n, g (u + 1) x = g u x)
+    (hn : n ≤ agreementLength (σ s) s c (g s)) (hx : x ≤ n) (hd : evaln (σ s) s c x = some d) :
+    evaln (σ t) t c x = some d := by
+  induction t, hst using Nat.le_induction with
+  | base => exact hd
+  | succ t hst ih =>
+    have h' : ∀ u ∈ Ico s t, _ := fun u hu => h u ⟨hu.1, hu.2.trans t.lt_succ_self⟩
+    exact evaln_eq_some_of_eqOn_agreementRestraint t.le_succ (h t ⟨hst, t.lt_succ_self⟩).1
+      (hx.trans (le_agreementLength_of_forall_Ico hst h' hn)) (ih h')
+
 end Interval
+
+/-! ### Primitive recursiveness -/
+
+section Primrec
+
+open Primrec
+
+variable {α : Type*} [Primcodable α] {σ : α → ℕ → Option ℕ} {g : α → ℕ → ℕ}
+
+/-- Agreement is primitive recursive, uniformly in a parameter `a` on which the answers `σ a` and
+the target `g a` depend primitive recursively, and in the fuel, the program and the argument. -/
+theorem primrecPred_agreesAt (hσ : Primrec₂ σ) (hg : Primrec₂ g) :
+    PrimrecPred fun p : (α × ℕ × Code) × ℕ => AgreesAt (σ p.1.1) p.1.2.1 p.1.2.2 (g p.1.1) p.2 :=
+  Primrec.eq.comp (option_map ((primrec_evaln hσ).comp
+      ((fst.comp fst).pair ((fst.comp (snd.comp fst)).pair ((snd.comp (snd.comp fst)).pair snd))))
+      (Halt.primrec_output.comp snd).to₂)
+    (option_some.comp (hg.comp (fst.comp fst) snd))
+
+/-- The length of agreement is primitive recursive, uniformly in a parameter `a` on which the
+answers `σ a` and the target `g a` depend primitive recursively, and in the fuel and the
+program. -/
+theorem primrec_agreementLength (hσ : Primrec₂ σ) (hg : Primrec₂ g) :
+    Primrec fun p : α × ℕ × Code => agreementLength (σ p.1) p.2.1 p.2.2 (g p.1) := by
+  have hagree := primrecPred_agreesAt hσ hg
+  -- the graph: no agreement at `n`, and agreement at every argument below it
+  have hagree' : PrimrecRel fun (x : ℕ) (p : α × ℕ × Code) =>
+      AgreesAt (σ p.1) p.2.1 p.2.2 (g p.1) x :=
+    hagree.comp (snd.pair fst)
+  have hgraph : PrimrecRel fun (p : α × ℕ × Code) (n : ℕ) =>
+      ¬AgreesAt (σ p.1) p.2.1 p.2.2 (g p.1) n ∧
+        ∀ x ∈ List.range n, AgreesAt (σ p.1) p.2.1 p.2.2 (g p.1) x :=
+    hagree.not.and (hagree'.forall_mem_list.comp (list_range.comp snd) fst)
+  refine of_graph ⟨fun p => p.2.1, fst.comp snd, fun p => ?_⟩
+    (hgraph.of_eq fun p n => by simp [agreementLength_eq_iff])
+  simpa using agreementLength_le
+
+/-- The agreement restraint is primitive recursive, uniformly in a parameter `a` on which the
+answers `σ a` and the target `g a` depend primitive recursively, and in the fuel and the
+program. -/
+theorem primrec_agreementRestraint (hσ : Primrec₂ σ) (hg : Primrec₂ g) :
+    Primrec fun p : α × ℕ × Code => agreementRestraint (σ p.1) p.2.1 p.2.2 (g p.1) := by
+  -- the largest stage use over `0, …, agreementLength`, as a fold of `max`
+  have huse : Primrec₂ fun (p : α × ℕ × Code) (x : ℕ) => stageUse (σ p.1) p.2.1 p.2.2 x :=
+    (primrec_stageUse hσ).comp ((fst.comp fst).pair ((fst.comp (snd.comp fst)).pair
+      ((snd.comp (snd.comp fst)).pair snd)))
+  refine (list_foldr (list_range.comp (Primrec.succ.comp (primrec_agreementLength hσ hg))) (const 0)
+    (nat_max.comp (huse.comp fst (fst.comp snd)) (snd.comp snd)).to₂).of_eq fun p => ?_
+  rw [agreementRestraint, Finset.sup_def, Finset.range_val, ← Multiset.coe_range,
+    Multiset.map_coe, Multiset.sup_coe, List.foldr_map]
+  -- on `ℕ`, `⊔` is `max` and `⊥` is `0` by definition
+  rfl
+
+/-- The length of agreement of a run against a finite set, with a finite set as target, is
+primitive recursive in their binary codes, the fuel and the program. -/
+theorem primrec_agreementLength_equivBitIndices :
+    Primrec fun p : (ℕ × ℕ) × ℕ × Code =>
+      agreementLength (setAnswers (Finset.equivBitIndices p.1.1 : Set ℕ)) p.2.1 p.2.2
+        ((Finset.equivBitIndices p.1.2 : Set ℕ).indicator 1) :=
+  primrec_agreementLength (primrec₂_setAnswers_equivBitIndices.comp (fst.comp fst) snd).to₂
+    (indicator_equivBitIndices.comp (snd.comp fst) snd).to₂
+
+/-- The agreement restraint of a run against a finite set, with a finite set as target, is
+primitive recursive in their binary codes, the fuel and the program. -/
+theorem primrec_agreementRestraint_equivBitIndices :
+    Primrec fun p : (ℕ × ℕ) × ℕ × Code =>
+      agreementRestraint (setAnswers (Finset.equivBitIndices p.1.1 : Set ℕ)) p.2.1 p.2.2
+        ((Finset.equivBitIndices p.1.2 : Set ℕ).indicator 1) :=
+  primrec_agreementRestraint (primrec₂_setAnswers_equivBitIndices.comp (fst.comp fst) snd).to₂
+    (indicator_equivBitIndices.comp (snd.comp fst) snd).to₂
+
+end Primrec
 
 end TauCeti.Oracle.Single.Code
