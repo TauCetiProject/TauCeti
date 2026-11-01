@@ -30,7 +30,7 @@ and glue partial compactifications.
 
 The construction uses schematic closure of the centre, as formalized by
 `Scheme.IdealSheafData.comap_map_of_isOpenImmersion`, and the flat base-change property
-`Scheme.IdealSheafData.isPullback_blowupMap`.
+`Scheme.IdealSheafData.isPullback_blowupMap_of_flat`.
 -/
 
 public section
@@ -56,12 +56,16 @@ theorem exists_blowup_extension [IsLocallyNoetherian Y] (U : Y.Opens)
     ∃ (J : Y.IdealSheafData) (b : I.blowup ⟶ J.blowup),
       J.comap j = I ∧ Disjoint (U : Set Y) (J.support : Set Y) ∧ IsProper J.blowupToBase ∧
         IsPullback I.blowupToBase b j J.blowupToBase ∧ IsIso (J.blowupToBase ∣_ U) := by
+  let J := I.map j
+  have hJI : J.comap j = I := I.comap_map_of_isOpenImmersion j
   have hJ := (I.disjoint_support_map_iff j U).mpr hU
-  refine ⟨I.map j, (I.map j).blowupMap I j (I.comap_map_of_isOpenImmersion j),
-    I.comap_map_of_isOpenImmersion j, hJ, ?_,
-    (I.map j).isPullback_blowupMap I j (I.comap_map_of_isOpenImmersion j),
-    (I.map j).isIso_blowupToBase_restrict_of_disjoint_support hJ⟩
-  apply (I.map j).isProper_blowupToBase
+  obtain ⟨b, hb⟩ : ∃ b : I.blowup ⟶ J.blowup,
+      IsPullback I.blowupToBase b j J.blowupToBase := by
+    rw [← hJI]
+    exact ⟨J.blowupMap j, J.isPullback_blowupMap_of_flat j⟩
+  refine ⟨J, b, hJI, hJ, ?_, hb,
+    J.isIso_blowupToBase_restrict_of_disjoint_support hJ⟩
+  apply J.isProper_blowupToBase
   intro V
   have := IsLocallyNoetherian.component_noetherian V
   exact IsNoetherian.noetherian _
