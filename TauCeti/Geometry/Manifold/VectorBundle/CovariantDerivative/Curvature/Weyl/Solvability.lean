@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Weyl.Integrability
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.FDeriv.QuadraticMap
 import TauCeti.Analysis.ODE.Frobenius
 import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -67,116 +68,6 @@ open scoped ContDiff Manifold InnerProductSpace Topology
 noncomputable section
 
 namespace TauCeti.Manifold
-
-/-! ### Second-order systems in Frobenius form -/
-
-section SecondOrder
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A quadratic function with prescribed value, differential and symmetric second derivative at a
-point, the latter constant. -/
-private theorem exists_quadratic (y : E) (c : ℝ) (α : E →L[ℝ] ℝ) (B : E →L[ℝ] E →L[ℝ] ℝ)
-    (hB : ∀ u v, B u v = B v u) :
-    ∃ φ : E → ℝ, ContDiff ℝ ∞ φ ∧ φ y = c ∧ fderiv ℝ φ y = α ∧
-      ∀ z, fderiv ℝ (fderiv ℝ φ) z = B := by
-  have hsub (z : E) : HasFDerivAt (fun z : E ↦ z - y) (ContinuousLinearMap.id ℝ E) z :=
-    (hasFDerivAt_id z).sub_const y
-  have hφ (z : E) : HasFDerivAt (fun z ↦ c + α (z - y) + B (z - y) (z - y) * (1 / 2))
-      (α + B (z - y)) z := by
-    have h := ((hasFDerivAt_const c z).add (α.hasFDerivAt.comp z (hsub z))).add
-      (HasFDerivAt.mul_const (B.hasFDerivAt_of_bilinear (hsub z) (hsub z)) (1 / 2 : ℝ))
-    refine h.congr_fderiv (ContinuousLinearMap.ext fun h ↦ ?_)
-    simp only [_root_.add_apply, _root_.smul_apply, ContinuousLinearMap.coe_comp,
-      Function.comp_apply, ContinuousLinearMap.id_apply, ContinuousLinearMap.precompR_apply,
-      ContinuousLinearMap.precompL_apply, ContinuousLinearMap.compL_apply, smul_eq_mul, zero_add]
-    rw [hB h (z - y)]
-    ring
-  have hD : fderiv ℝ (fun z ↦ c + α (z - y) + B (z - y) (z - y) * (1 / 2)) =
-      fun z ↦ α + B (z - y) :=
-    funext fun z ↦ (hφ z).fderiv
-  refine ⟨fun z ↦ c + α (z - y) + B (z - y) (z - y) * (1 / 2), ?_, by simp,
-    by rw [hD]; simp, fun z ↦ ?_⟩
-  · exact (contDiff_const.add (α.contDiff.comp (contDiff_id.sub contDiff_const))).add
-      (((B.contDiff.comp (contDiff_id.sub contDiff_const)).clm_apply
-        (contDiff_id.sub contDiff_const)).mul contDiff_const)
-  · rw [hD]
-    exact ((B.hasFDerivAt.comp z (hsub z)).const_add α).fderiv
-
-/-- For a smooth field `g` of invertible maps into the dual, `(y, c, α) ↦ g(y)⁻¹ α` is smooth. -/
-private theorem contDiff_inverse_apply [FiniteDimensional ℝ E] {g : E → E →L[ℝ] E →L[ℝ] ℝ}
-    (hg : ContDiff ℝ ∞ g) (hinv : ∀ y, (g y).IsInvertible) :
-    ContDiff ℝ ∞ fun p : E × ℝ × (E →L[ℝ] ℝ) ↦ (g p.1).inverse p.2.2 :=
-  (contDiff_iff_contDiffAt.2 fun p ↦
-      (hinv p.1).contDiffAt_map_inverse.comp p (hg.comp contDiff_fst).contDiffAt).clm_apply
-    contDiff_snd.snd
-
-/-- **The Frobenius condition for a second-order system.** Let `f` describe a second-order
-equation `D²φ(y) = B(y, φ y, Dφ y)` as the first-order system `D(φ, α) = f(y, φ, α)` for the value
-and the differential, so that `(f p u).1 = α u` and `(f p u).2 v = B(p)(u, v)` is symmetric. Let
-`φ` be `C²` at `y` with value `c`, differential `α` and second derivative `B(y, c, α)` at `y`.
-If, along `φ`, the derivatives at `y` of `z ↦ B(z, φ z, Dφ z)(u, v)` are symmetric in the direction
-of differentiation and the second slot, then `f` satisfies the Frobenius integrability condition
-at `(y, c, α)`. -/
-private theorem isFrobeniusIntegrableAt_of_fderiv_apply_snd_comm
-    {f : E × ℝ × (E →L[ℝ] ℝ) → E →L[ℝ] ℝ × (E →L[ℝ] ℝ)} (hf : Differentiable ℝ f)
-    (hfst : ∀ p u, (f p u).1 = p.2.2 u) (hsnd : ∀ p u v, (f p u).2 v = (f p v).2 u)
-    {y : E} {q : ℝ × (E →L[ℝ] ℝ)} {φ : E → ℝ} (hφ : ContDiffAt ℝ 2 φ y) (hφy : φ y = q.1)
-    (hDφ : fderiv ℝ φ y = q.2) (hD2φ : ∀ u v, fderiv ℝ (fderiv ℝ φ) y u v = (f (y, q) u).2 v)
-    (h : ∀ u v w, fderiv ℝ (fun z ↦ (f (z, φ z, fderiv ℝ φ z) u).2 v) y w =
-      fderiv ℝ (fun z ↦ (f (z, φ z, fderiv ℝ φ z) u).2 w) y v) :
-    IsFrobeniusIntegrableAt f (y, q) := by
-  set p : E × ℝ × (E →L[ℝ] ℝ) := (y, q)
-  -- The components of the derivative of `f` are the derivatives of the components of `f`.
-  have hevfst (d : E × ℝ × (E →L[ℝ] ℝ)) (a : E) :
-      fderiv ℝ (fun p' ↦ (f p' a).1) p d = (fderiv ℝ f p d a).1 := by
-    rw [(((hf p).hasFDerivAt.clm_apply (hasFDerivAt_const a p)).fst).fderiv]
-    simp
-  have hevsnd (d : E × ℝ × (E →L[ℝ] ℝ)) (a b : E) :
-      fderiv ℝ (fun p' ↦ (f p' a).2 b) p d = (fderiv ℝ f p d a).2 b := by
-    rw [((((hf p).hasFDerivAt.clm_apply (hasFDerivAt_const a p)).snd).clm_apply
-      (hasFDerivAt_const b p)).fderiv]
-    simp
-  -- The first component of `f` is linear in `p`, so its derivative is read off directly.
-  have hfst' (d : E × ℝ × (E →L[ℝ] ℝ)) (a : E) : (fderiv ℝ f p d a).1 = d.2.2 a := by
-    rw [← hevfst, funext fun p' ↦ hfst p' a,
-      ((hasFDerivAt_snd.snd).clm_apply (hasFDerivAt_const a p)).fderiv]
-    simp
-  -- The derivative of the symmetric second component is symmetric.
-  have hsnd' (d : E × ℝ × (E →L[ℝ] ℝ)) (a b : E) :
-      (fderiv ℝ f p d a).2 b = (fderiv ℝ f p d b).2 a := by
-    rw [← hevsnd, ← hevsnd]
-    simp only [hsnd _ a b]
-  -- Along `φ`, the jet `z ↦ (z, φ z, Dφ z)` has derivative `w ↦ (w, f p w)` at `y`.
-  have hjet : HasFDerivAt (fun z ↦ (z, φ z, fderiv ℝ φ z))
-      ((ContinuousLinearMap.id ℝ E).prod (f p)) y := by
-    have h₁ := (hasFDerivAt_id y).prodMk ((hφ.differentiableAt (by simp)).hasFDerivAt.prodMk
-      ((hφ.fderiv_right (m := 1) (by norm_num)).differentiableAt (by simp)).hasFDerivAt)
-    have hfp : (fderiv ℝ φ y).prod (fderiv ℝ (fderiv ℝ φ) y) = f p := by
-      refine ContinuousLinearMap.ext fun w ↦ Prod.ext ?_ (ContinuousLinearMap.ext fun v ↦ ?_)
-      · rw [ContinuousLinearMap.prod_apply, hfst, hDφ]
-      · simp [hD2φ]
-    rwa [hfp] at h₁
-  have hjy : (y, φ y, fderiv ℝ φ y) = p := by rw [hφy, hDφ]
-  have hchain (u v w : E) : fderiv ℝ (fun z ↦ (f (z, φ z, fderiv ℝ φ z) u).2 v) y w =
-      (fderiv ℝ f p (w, f p w) u).2 v := by
-    have hfp : HasFDerivAt f (fderiv ℝ f p) (y, φ y, fderiv ℝ φ y) := by
-      rw [hjy]
-      exact (hf p).hasFDerivAt
-    have hcomp : HasFDerivAt (fun z ↦ f (z, φ z, fderiv ℝ φ z))
-        (fderiv ℝ f p ∘L (ContinuousLinearMap.id ℝ E).prod (f p)) y :=
-      hfp.comp y hjet
-    rw [(((hcomp.clm_apply (hasFDerivAt_const u y)).snd).clm_apply
-      (hasFDerivAt_const v y)).fderiv]
-    simp
-  rw [isFrobeniusIntegrableAt_iff]
-  intro v w
-  refine Prod.ext ?_ (ContinuousLinearMap.ext fun u ↦ ?_)
-  · rw [hfst', hfst']
-    exact hsnd p v w
-  · rw [hsnd', ← hchain, ← h, hchain, hsnd']
-
-end SecondOrder
 
 open Bundle
 
@@ -325,7 +216,8 @@ private theorem contDiff_flatteningField : ContDiff ℝ ∞ (flatteningField E) 
   have hg : ContDiff ℝ ∞ fun p : E × ℝ × (E →L[ℝ] ℝ) ↦ metricCoeff E p.1 :=
     contDiff_metricCoeff.comp contDiff_fst
   have hgα : ContDiff ℝ ∞ fun p : E × ℝ × (E →L[ℝ] ℝ) ↦ (metricCoeff E p.1).inverse p.2.2 :=
-    contDiff_inverse_apply contDiff_metricCoeff isInvertible_metricCoeff
+    ContDiff.clm_apply (f := fun p ↦ (metricCoeff E p.1).inverse) (contDiff_iff_contDiffAt.2 fun p ↦
+      (isInvertible_metricCoeff p.1).contDiffAt_map_inverse.comp p hg.contDiffAt) hα
   have hsnd (u v : E) : ContDiff ℝ ∞ fun p ↦ (flatteningField E p u).2 v := by
     simp only [flatteningField_apply_snd]
     exact (((hα.clm_apply (((contDiff_christoffel.comp contDiff_fst).clm_apply
@@ -363,7 +255,8 @@ private theorem isFrobeniusIntegrableAt_flatteningField {y : E} (hW : (lc).weylT
   -- Test the condition along a quadratic function solving the equation at `y`.
   let B : E →L[ℝ] E →L[ℝ] ℝ := ContinuousLinearMap.snd ℝ ℝ (E →L[ℝ] ℝ) ∘L flatteningField E p
   obtain ⟨φ, hφ, hφy, hDφ, hD2φ⟩ :=
-    exists_quadratic y q.1 q.2 B (flatteningField_apply_snd_comm p)
+    exists_contDiff_apply_eq_fderiv_eq_fderiv_fderiv_eq y q.1 q.2 B
+      (flatteningField_apply_snd_comm p)
   have hφ2 (z : E) : ContDiffAt ℝ 2 φ z := hφ.contDiffAt.of_le (by simp)
   refine isFrobeniusIntegrableAt_of_fderiv_apply_snd_comm
     (contDiff_flatteningField.differentiable (by simp)) flatteningField_apply_fst
