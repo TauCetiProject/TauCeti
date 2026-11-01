@@ -28,6 +28,8 @@ Over `𝕜 = ℝ` this is the factor `A` of the Iwasawa decomposition `GL n ℝ 
   of positive scalars.
 * `TauCeti.coe_inv_of_mem_posDiagonalSubgroup`: the inverse of a positive diagonal matrix is the
   diagonal matrix of the inverse entries.
+* `TauCeti.det_pos_of_mem_posDiagonalSubgroup`: a positive diagonal matrix has positive
+  determinant.
 -/
 
 public section
@@ -78,6 +80,13 @@ inverses of its diagonal entries. -/
 theorem coe_inv_of_mem_posDiagonalSubgroup {g : GL ι 𝕜} (hg : g ∈ posDiagonalSubgroup ι 𝕜) :
     ((g⁻¹ : GL ι 𝕜) : Matrix ι ι 𝕜) = diagonal fun i => ((g : Matrix ι ι 𝕜) i i)⁻¹ :=
   coe_inv_of_coe_eq_diagonal (coe_eq_diagonal_of_mem_posDiagonalSubgroup hg)
+
+/-- An element of the positive diagonal subgroup has positive determinant. -/
+theorem det_pos_of_mem_posDiagonalSubgroup {g : GL ι 𝕜} (hg : g ∈ posDiagonalSubgroup ι 𝕜) :
+    0 < (g : Matrix ι ι 𝕜).det := by
+  obtain ⟨d, hd, hgd⟩ := hg
+  rw [hgd, det_diagonal]
+  exact Finset.prod_pos fun i _ => hd i
 
 variable (𝕜) in
 /-- The positive diagonal subgroup lies in the diagonal torus. -/
