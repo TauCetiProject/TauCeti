@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Universal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Representable
-public import TauCeti.RingTheory.MvPolynomial.ToricIdeal
+public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
