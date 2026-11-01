@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
 public import TauCeti.AlgebraicGeometry.PuncturedSpectrum
 public import Mathlib.AlgebraicGeometry.Restrict
+import TauCeti.Algebra.Algebra.Pi
 import TauCeti.AlgebraicGeometry.FiniteEtale.MorphismProperty
 
 /-!
@@ -108,12 +109,10 @@ theorem restrictPunctured_faithful_iff :
   let A := CommAlgCat.FiniteEtale.of (CommRingCat.of R) (Fin 2 → R)
   let B := CommAlgCat.FiniteEtale.of (CommRingCat.of R) R
   let f (i : Fin 2) : A ⟶ B := CommAlgCat.FiniteEtale.ofHom (Pi.evalAlgHom R (fun _ ↦ R) i)
-  -- Mathlib states no evaluation lemma for `Pi.evalAlgHom`; it evaluates by definition.
-  have hev (i : Fin 2) (x : Fin 2 → R) : Pi.evalAlgHom R (fun _ ↦ R) i x = x i := rfl
-  have h01 := congrArg (fun g : A ⟶ B ↦ g.hom.hom (Pi.single 0 1)) (Quiver.Hom.op_inj
+  have h01 := congrArg (fun g : A ⟶ B ↦ g.hom.hom) (Quiver.Hom.op_inj
     (e.functor.map_injective ((restrictPunctured R).map_injective (hsub _ _)) :
       (f 0).op = (f 1).op))
-  simp [f, hev] at h01
+  exact zero_ne_one (Pi.evalAlgHom_injective R (Fin 2) h01)
 
 /-- Restriction of finite étale schemes to the punctured spectrum is faithful for a Noetherian
 local ring of positive depth, including nonreduced rings. -/
