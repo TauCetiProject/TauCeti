@@ -134,21 +134,20 @@ end Exponents
 
 /-! ### Monomials in the coordinates -/
 
-/-- The monomial `xᵈ` in the coordinates of the basis `b`. -/
-private def monomial (d : κ →₀ ℕ) : _root_.SymmetricAlgebra R M :=
-  (equivMvPolynomial b).symm (MvPolynomial.monomial d 1)
+/-- The monomial `xᵈ` in the coordinates of `b` is the basis vector `b.symmetricAlgebra d`. -/
+private lemma equivMvPolynomial_symmetricAlgebra (d : κ →₀ ℕ) :
+    equivMvPolynomial b (b.symmetricAlgebra d) = MvPolynomial.monomial d 1 := by
+  simp [Module.Basis.symmetricAlgebra]
 
-private lemma monomial_mem (d : κ →₀ ℕ) : monomial b d ∈ 𝒜 d.degree :=
+private lemma symmetricAlgebra_mem (d : κ →₀ ℕ) : b.symmetricAlgebra d ∈ 𝒜 d.degree :=
   (_root_.SymmetricAlgebra.equivMvPolynomial_isHomogeneous_iff R M b _ _).1 (by
-    simpa [monomial] using MvPolynomial.isHomogeneous_monomial (1 : R) rfl)
+    simpa [equivMvPolynomial_symmetricAlgebra] using
+      MvPolynomial.isHomogeneous_monomial (1 : R) rfl)
 
-private lemma monomial_add (d d' : κ →₀ ℕ) :
-    monomial b (d + d') = monomial b d * monomial b d' := by
-  simp [monomial, ← map_mul, MvPolynomial.monomial_mul_monomial]
-
-private lemma monomial_single (i : κ) : monomial b (Finsupp.single i 1) = ι R M (b i) := by
-  refine (equivMvPolynomial b).injective ?_
-  simp [monomial, _root_.SymmetricAlgebra.equivMvPolynomial_ι, MvPolynomial.X]
+private lemma symmetricAlgebra_add (d d' : κ →₀ ℕ) :
+    b.symmetricAlgebra (d + d') = b.symmetricAlgebra d * b.symmetricAlgebra d' :=
+  (equivMvPolynomial b).injective <| by
+    simp [equivMvPolynomial_symmetricAlgebra, MvPolynomial.monomial_mul_monomial]
 
 /-- The product of the coordinates indexed by `S`. -/
 private def coordProd (S : Finset κ) : _root_.SymmetricAlgebra R M := ∏ i ∈ S, ι R M (b i)
@@ -165,14 +164,19 @@ private lemma indicatorExponent_apply (S : Finset κ) (i : κ) :
     indicatorExponent S i = if i ∈ S then 1 else 0 := by
   simp [indicatorExponent, Finsupp.single_apply]
 
-private lemma coordProd_eq_monomial (S : Finset κ) :
-    coordProd b S = monomial b (indicatorExponent S) := by
+private lemma coordProd_eq_symmetricAlgebra (S : Finset κ) :
+    coordProd b S = b.symmetricAlgebra (indicatorExponent S) := by
   classical
   induction S using Finset.induction_on with
-  | empty => simp [coordProd, indicatorExponent, monomial]
+  | empty =>
+    exact (equivMvPolynomial b).injective (by simp [coordProd, indicatorExponent,
+      equivMvPolynomial_symmetricAlgebra])
   | insert a S ha ih =>
     rw [coordProd, Finset.prod_insert ha, ← coordProd, ih]
-    simp only [indicatorExponent, Finset.sum_insert ha, monomial_add, monomial_single]
+    simp only [indicatorExponent, Finset.sum_insert ha, symmetricAlgebra_add]
+    congr 1
+    rw [Module.Basis.symmetricAlgebra, Module.Basis.map_apply, MvPolynomial.coe_basisMonomials]
+    exact (_root_.SymmetricAlgebra.equivMvPolynomial_symm_X b a).symm
 
 private lemma basicOpen_coordProd (S : Finset κ) :
     Proj.basicOpen 𝒜 (coordProd b S) = S.inf fun i ↦ Proj.basicOpen 𝒜 (ι R M (b i)) := by
@@ -186,8 +190,10 @@ private lemma basicOpen_coordProd (S : Finset κ) :
   | insert a S ha ih =>
     rw [coordProd, Finset.prod_insert ha, ← coordProd, Proj.basicOpen_mul, ih, Finset.inf_insert]
 
-private lemma monomial_pow (d : κ →₀ ℕ) (k : ℕ) : monomial b d ^ k = monomial b (k • d) := by
-  simp [monomial, ← map_pow, MvPolynomial.monomial_pow]
+private lemma symmetricAlgebra_pow (d : κ →₀ ℕ) (k : ℕ) :
+    b.symmetricAlgebra d ^ k = b.symmetricAlgebra (k • d) :=
+  (equivMvPolynomial b).injective <| by
+    simp [equivMvPolynomial_symmetricAlgebra, MvPolynomial.monomial_pow]
 
 /-! ### Laurent monomials as sections over the standard charts -/
 
@@ -218,20 +224,21 @@ private def chartSection (S : Finset κ) {e : κ → ℤ} (he : e ∈ chartExpon
     Γ(Proj.twistingSheaf 𝒜 m, Proj.basicOpen 𝒜 (coordProd b S)) :=
   Proj.twistingSheaf.const (i := j * S.card) (j := ((j : ℤ) * S.card + m).toNat)
     (by have := degree_numeratorExponent he hj; push_cast; omega)
-    (c • monomial b (numeratorExponent e S j)) (coordProd b S ^ j)
-    (Submodule.smul_mem _ c (degree_numeratorExponent_eq_toNat he hj ▸ monomial_mem b _))
+    (c • b.symmetricAlgebra (numeratorExponent e S j)) (coordProd b S ^ j)
+    (Submodule.smul_mem _ c (degree_numeratorExponent_eq_toNat he hj ▸ symmetricAlgebra_mem b _))
     (by simpa [mul_comm] using SetLike.pow_mem_graded j (coordProd_mem b S))
     _ (basicOpen_le_basicOpen_pow b S j)
 
 /-- The two ways of writing the Laurent monomial `xᵉ` as a fraction with denominators the powers of
 coordinate products agree after cross-multiplication. -/
-private lemma coordProd_pow_mul_monomial {S S' : Finset κ} {e : κ → ℤ}
+private lemma coordProd_pow_mul_symmetricAlgebra {S S' : Finset κ} {e : κ → ℤ}
     (he : e ∈ chartExponents m S) (he' : e ∈ chartExponents m S') {j j' : ℕ}
     (hj : ∀ i ∈ S, 0 ≤ e i + j) (hj' : ∀ i ∈ S', 0 ≤ e i + j') (c : R) :
-    coordProd b S' ^ j' * (c • monomial b (numeratorExponent e S j)) =
-      coordProd b S ^ j * (c • monomial b (numeratorExponent e S' j')) := by
-  rw [coordProd_eq_monomial, coordProd_eq_monomial, monomial_pow, monomial_pow, mul_smul_comm,
-    mul_smul_comm, ← monomial_add, ← monomial_add]
+    coordProd b S' ^ j' * (c • b.symmetricAlgebra (numeratorExponent e S j)) =
+      coordProd b S ^ j * (c • b.symmetricAlgebra (numeratorExponent e S' j')) := by
+  rw [coordProd_eq_symmetricAlgebra, coordProd_eq_symmetricAlgebra, symmetricAlgebra_pow,
+    symmetricAlgebra_pow, mul_smul_comm, mul_smul_comm, ← symmetricAlgebra_add,
+    ← symmetricAlgebra_add]
   congr 2
   ext i
   refine Nat.cast_injective (R := ℤ) ?_
@@ -249,14 +256,14 @@ private lemma res_chartSection {S S' : Finset κ}
     (Proj.twistingSheaf 𝒜 m).presheaf.map (homOfLE h).op (chartSection b m S he j hj c) =
       chartSection b m S' he' j' hj' c := by
   rw [chartSection, Proj.twistingSheaf.res_const]
-  exact Proj.twistingSheaf.const_ext (coordProd_pow_mul_monomial b he he' hj hj' c)
+  exact Proj.twistingSheaf.const_ext (coordProd_pow_mul_symmetricAlgebra b he he' hj hj' c)
 
 /-- The Laurent monomial `c xᵉ` does not depend on the power of the coordinate product used as
 its denominator. -/
 private lemma chartSection_congr {S : Finset κ} {e : κ → ℤ} (he : e ∈ chartExponents m S) {j j' : ℕ}
     (hj : ∀ i ∈ S, 0 ≤ e i + j) (hj' : ∀ i ∈ S, 0 ≤ e i + j') (c : R) :
     chartSection b m S he j hj c = chartSection b m S he j' hj' c :=
-  Proj.twistingSheaf.const_ext (coordProd_pow_mul_monomial b he he hj hj' c)
+  Proj.twistingSheaf.const_ext (coordProd_pow_mul_symmetricAlgebra b he he hj hj' c)
 
 omit [DecidableEq κ] in
 /-- A denominator exponent making every entry of `e + j 1_S` nonnegative. -/
@@ -306,11 +313,12 @@ private lemma chartSectionsHom_eq_const {S : Finset κ}
     {j : ℕ} (hj : ∀ e ∈ f.1.support, ∀ i ∈ S, 0 ≤ e i + j) (hjm : 0 ≤ (j : ℤ) * S.card + m) :
     chartSectionsHom b m S f =
       Proj.twistingSheaf.const (i := j * S.card) (j := ((j : ℤ) * S.card + m).toNat)
-        (by push_cast; omega) (∑ e ∈ f.1.support, f.1 e • monomial b (numeratorExponent e S j))
+        (by push_cast; omega)
+        (∑ e ∈ f.1.support, f.1 e • b.symmetricAlgebra (numeratorExponent e S j))
         (coordProd b S ^ j)
         (Submodule.sum_mem _ fun e he ↦ Submodule.smul_mem _ _
           (degree_numeratorExponent_eq_toNat ((Finsupp.mem_supported R f.1).1 f.2 he)
-            (hj e he) ▸ monomial_mem b _))
+            (hj e he) ▸ symmetricAlgebra_mem b _))
         (by simpa [mul_comm] using SetLike.pow_mem_graded j (coordProd_mem b S)) _
         (basicOpen_le_basicOpen_pow b S j) := by
   refine Proj.twistingSheaf.ext fun x ↦ ?_
@@ -340,9 +348,9 @@ private lemma chartSectionsHom_injective {S : Finset κ} (hS : S.Nonempty) :
   obtain ⟨N, hN⟩ := hf
   -- clear the denominators: the numerators form a polynomial killed by a power of `∏_{i ∈ S} xᵢ`
   have hP := congrArg (equivMvPolynomial b) hN
-  simp only [map_mul, map_pow, map_sum, map_smul, map_zero, coordProd_eq_monomial, monomial,
-    AlgEquiv.apply_symm_apply, MvPolynomial.monomial_pow, one_pow, Finset.mul_sum, mul_smul_comm,
-    MvPolynomial.monomial_mul_monomial, mul_one] at hP
+  simp only [map_mul, map_pow, map_sum, map_smul, map_zero, coordProd_eq_symmetricAlgebra,
+    equivMvPolynomial_symmetricAlgebra, MvPolynomial.monomial_pow, one_pow, Finset.mul_sum,
+    mul_smul_comm, MvPolynomial.monomial_mul_monomial, mul_one] at hP
   have hmem : ∀ e ∈ f.1.support, e ∈ chartExponents m S :=
     fun e he ↦ (Finsupp.mem_supported R f.1).1 f.2 he
   refine Subtype.ext (Finsupp.ext fun e₀ ↦ ?_)
@@ -416,10 +424,10 @@ private lemma chartSectionsHom_surjective {S : Finset κ} (hS : S.Nonempty) :
   have h : chartSectionsHom b m S ⟨f, hf⟩ =
       ∑ d ∈ p.support, chartSectionHom b m S (shiftExponent S k d) (p.coeff d) := by
     simp [chartSectionsHom, f, map_sum]
-  have hr' : r = ∑ d ∈ p.support, p.coeff d • monomial b d := by
+  have hr' : r = ∑ d ∈ p.support, p.coeff d • b.symmetricAlgebra d := by
     refine (equivMvPolynomial b).injective ?_
     rw [← hpdef]
-    simp only [map_sum, map_smul, monomial, AlgEquiv.apply_symm_apply, MvPolynomial.smul_monomial,
+    simp only [map_sum, map_smul, equivMvPolynomial_symmetricAlgebra, MvPolynomial.smul_monomial,
       smul_eq_mul, mul_one]
     exact MvPolynomial.as_sum p
   refine Proj.twistingSheaf.ext fun x ↦ ?_
