@@ -67,6 +67,9 @@ of `E` (`TauCeti.OrthonormalFrameBundle.associatedHomeomorph`).
 
 * `TauCeti.OrthonormalFrameBundle.continuous_totalSpaceMk_frame_apply`: applying frames to vectors
   is jointly continuous.
+* `Bundle.Trivialization.continuous_orthonormalFrame`,
+  `Bundle.Trivialization.continuous_orthonormalFrame_symm_apply`: the local orthonormal frame is a
+  continuous local section, and reading vectors in it is continuous.
 * `TauCeti.OrthonormalFrameBundle.smul_eq_self_iff`,
   `TauCeti.OrthonormalFrameBundle.exists_smul_eq_iff`: the action is free and transitive on fibres.
 * `TauCeti.OrthonormalFrameBundle.exists_trivialization`: the frame bundle is locally trivial,
@@ -356,6 +359,22 @@ theorem continuous_orthonormalFrame :
       map_sum, map_smul]
   simp [hsum, e.symm_apply_apply_mk y.2]
 
+/-- Reading a vector of the total space over the base set of `e` in the local orthonormal frame is
+continuous. -/
+theorem continuous_orthonormalFrame_symm_apply :
+    Continuous fun x : (TotalSpace.proj ⁻¹' e.baseSet : Set (TotalSpace F E)) ↦
+      (e.orthonormalFrame c b ⟨x.1.proj, x.2⟩).symm x.1.2 := by
+  have hσ (i : ι) : Continuous fun x : (TotalSpace.proj ⁻¹' e.baseSet : Set (TotalSpace F E)) ↦
+      (⟨x.1.proj, e.orthonormalBasis c ⟨x.1.proj, x.2⟩ i⟩ : TotalSpace F E) :=
+    (e.continuous_orthonormalBasis c i).comp
+      (((FiberBundle.continuous_proj F E).comp continuous_subtype_val).subtype_mk _)
+  -- The coordinates of `x` in the orthonormal basis `b` are its inner products with the
+  -- Gram–Schmidt basis vectors.
+  refine (continuous_finsetSum Finset.univ fun i _ ↦
+    ((hσ i).inner_bundle continuous_subtype_val).smul
+      (continuous_const (y := b i))).congr fun x ↦ ?_
+  simp [orthonormalFrame_symm_apply]
+
 open scoped Classical in
 /-- The chosen frame over each point: the local frame over the base set of `e`, and the local
 frame of the preferred trivialization elsewhere. Only its values over `e.baseSet` matter. -/
@@ -374,16 +393,8 @@ private theorem continuousOn_frameAt_symm :
     ContinuousOn (fun x : TotalSpace F E ↦ (frameAt e c b x.proj).symm x.2)
       (TotalSpace.proj ⁻¹' e.baseSet) := by
   rw [continuousOn_iff_continuous_domRestrict]
-  have hσ (i : ι) : Continuous fun x : (TotalSpace.proj ⁻¹' e.baseSet : Set (TotalSpace F E)) ↦
-      (⟨x.1.proj, e.orthonormalBasis c ⟨x.1.proj, x.2⟩ i⟩ : TotalSpace F E) :=
-    (e.continuous_orthonormalBasis c i).comp
-      (((FiberBundle.continuous_proj F E).comp continuous_subtype_val).subtype_mk _)
-  -- Over the base set, the chosen frame is the Gram–Schmidt frame, so the coordinates of `x`
-  -- in the orthonormal basis `b` are its inner products with the Gram–Schmidt basis vectors.
-  refine (continuous_finsetSum Finset.univ fun i _ ↦
-    ((hσ i).inner_bundle continuous_subtype_val).smul
-      (continuous_const (y := b i))).congr fun x ↦ ?_
-  simp [frameAt_of_mem e c b x.2, orthonormalFrame_symm_apply]
+  exact (e.continuous_orthonormalFrame_symm_apply c b).congr fun x ↦ by
+    simp [frameAt_of_mem e c b x.2]
 
 variable [FiniteDimensional ℝ V]
 
