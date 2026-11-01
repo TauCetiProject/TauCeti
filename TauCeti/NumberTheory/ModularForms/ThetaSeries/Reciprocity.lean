@@ -204,7 +204,9 @@ theorem gaussSum_eq_mul_dualGaussSum (hk : finrank ℝ E = 2 * k) (a c : ℕ) [N
 end Covolume
 
 /-- **Milgram's formula.** If `L` is an even lattice and `dim E = 2k`, then
-`∑_{γ ∈ L^∨/L} e(‖γ‖² / 2) = √|L^∨/L| · i^k`, where `i^k = e(n/8)` for `n = 2k`. -/
+`∑_{γ ∈ L^∨/L} e(‖γ‖² / 2) = √|L^∨/L| · i^k`, where `i^k = e(n/8)` for `n = 2k`. The left side
+is written as a sum over `L^∨ / 1L`; `ZLattice.dualGaussSum_one` rewrites it as a sum over the
+discriminant group `L^∨/L`. -/
 theorem dualGaussSum_one_one (hk : finrank ℝ E = 2 * k)
     [Fintype (dual L ⧸ (((1 : ℕ) : ℝ) • L).submoduleOf (dual L))] :
     dualGaussSum L hL 1 1 = √(Nat.card (DiscriminantGroup L) : ℝ) * I ^ k := by
