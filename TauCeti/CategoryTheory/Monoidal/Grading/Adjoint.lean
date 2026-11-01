@@ -30,6 +30,7 @@ universal grading are the right cosets of the adjoint subcategory.
 
 * `TauCeti.SimpleClasses.IsAdjoint`: the simple classes of the adjoint subcategory;
 * `TauCeti.SimpleClasses.IsAdjoint.dual`: the adjoint classes are closed under duality;
+* `TauCeti.SimpleClasses.isAdjoint_dual_iff`: a simple class is adjoint exactly when its dual is;
 * `TauCeti.universalGradingGroup.degree_eq_degree_iff`: two simple classes have the same
   universal degree exactly when they lie in the same right coset of the adjoint subcategory;
 * `TauCeti.universalGradingGroup.degree_eq_one_iff`: the simple classes of neutral universal
@@ -205,6 +206,7 @@ namespace SimpleClasses
 
 omit [IsFiniteSemisimpleCategory C] in
 /-- The tensor unit is adjoint, as a constituent of `X ⊗ Xᘁ` for `X = 𝟙_ C`. -/
+@[simp]
 theorem isAdjoint_classOf_unit : (classOf (𝟙_ C)).IsAdjoint := by
   obtain ⟨f, hf⟩ := occurs_classOf_unit_tensor_rightDual (Simple.not_isZero (classOf (𝟙_ C)).repr)
   exact .of_tensor_rightDual _ _ f hf
@@ -235,6 +237,11 @@ theorem IsAdjoint.dual {U : SimpleClasses C} (hU : U.IsAdjoint) : U.dual.IsAdjoi
       h.rightDual.of_iso_left (dualReprIso U) |>.of_iso_right
         (rightDualTensorIso _ _ ≪≫ tensorIso (dualReprIso B).symm (dualReprIso A).symm)
     exact .of_tensor _ _ _ g hB hA hg
+
+/-- A simple class is adjoint exactly when its dual is. -/
+@[simp]
+theorem isAdjoint_dual_iff {U : SimpleClasses C} : U.dual.IsAdjoint ↔ U.IsAdjoint :=
+  ⟨fun h ↦ by simpa only [dual_dual] using h.dual, IsAdjoint.dual⟩
 
 end SimpleClasses
 
