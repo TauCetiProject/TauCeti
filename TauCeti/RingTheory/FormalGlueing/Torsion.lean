@@ -5,20 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Torsion.PrimaryComponent
-public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.IsTensorProduct
-import Mathlib.LinearAlgebra.TensorProduct.Pi
+public import TauCeti.LinearAlgebra.TensorProduct.Torsion
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 import TauCeti.Algebra.Module.Torsion.PrimaryComponent
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Ideal-power torsion modules under formal glueing base change
 
 Let `R → S` be a flat ring map and `I` an ideal of `R` such that `R ⧸ I → S ⧸ IS` is bijective.
-The typical example is the `I`-adic completion of a Noetherian ring. Modules supported on `V(I)`
-do not change under base change to `S`: an `I`-power torsion module `M` is identified with
-`S ⊗[R] M` by `m ↦ 1 ⊗ m`. This is the first input of formal glueing (Stacks, Section 15.91):
+The typical example is the `I`-adic completion of a Noetherian ring. `I`-power torsion modules
+do not change under base change to `S`: such a module `M` is identified with `S ⊗[R] M` by
+`m ↦ 1 ⊗ m`. This is the first input of formal glueing (Stacks, Section 15.91):
 modules over `R` are determined by their base change to `S` together with their restrictions to
 the open complement of `V(I)`, and the comparison of the two descriptions only involves
 `I`-power torsion modules.
@@ -62,78 +61,9 @@ namespace TauCeti
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S] {I : Ideal R}
   {M : Type*} [AddCommGroup M] [Module R M]
 
-section Torsion
-
-/-- If an ideal `J` kills `m`, then the extended ideal `JS` kills `1 ⊗ m`. -/
-private theorem map_le_torsionOf_one_tmul {J : Ideal R} {m : M}
-    (hm : m ∈ torsionBySet R M J) :
-    J.map (algebraMap R S) ≤ Ideal.torsionOf S (S ⊗[R] M) (1 ⊗ₜ m) := by
-  rw [Ideal.map_le_iff_le_comap]
-  intro a ha
-  rw [Ideal.mem_comap, Ideal.mem_torsionOf_iff, algebraMap_smul, ← tmul_smul,
-    (mem_torsionBySet_iff _ _).mp hm ⟨a, ha⟩, tmul_zero]
-
-/-- Base change sends `I`-power torsion elements to `IS`-power torsion elements. -/
-theorem one_tmul_mem_primaryComponent_map {m : M} (hm : m ∈ I.primaryComponent M) :
-    (1 : S) ⊗ₜ[R] m ∈ (I.map (algebraMap R S)).primaryComponent (S ⊗[R] M) := by
-  obtain ⟨n, hn⟩ := (Ideal.primaryComponent_mem _ _ _).mp hm
-  refine (Ideal.primaryComponent_mem _ _ _).mpr ⟨n, (mem_torsionBySet_iff _ _).mpr fun a ↦ ?_⟩
-  rw [← Ideal.mem_torsionOf_iff]
-  exact map_le_torsionOf_one_tmul hn (by rw [Ideal.map_pow]; exact a.2)
-
-/-- The base change of an `I`-power torsion module is `IS`-power torsion. -/
-theorem primaryComponent_map_tensorProduct_eq_top (hM : I.primaryComponent M = ⊤) :
-    (I.map (algebraMap R S)).primaryComponent (S ⊗[R] M) = ⊤ := by
-  refine eq_top_iff.mpr fun x _ ↦ x.inductionOn (fun s m ↦ ?_) fun _ _ ↦ add_mem
-  rw [← mul_one s, ← smul_eq_mul, ← smul_tmul']
-  exact smul_mem _ s (one_tmul_mem_primaryComponent_map (hM ▸ mem_top))
-
-/-- Flat base change of a module without `I`-power torsion has no `IS`-power torsion, for
-finitely generated `I`. -/
-theorem primaryComponent_map_tensorProduct_eq_bot [Module.Flat R S] (hI : I.FG)
-    (hM : I.primaryComponent M = ⊥) :
-    (I.map (algebraMap R S)).primaryComponent (S ⊗[R] M) = ⊥ := by
-  classical
-  obtain ⟨G, rfl⟩ := hI
-  refine eq_bot_iff.mpr fun y hy ↦ ?_
-  rw [Ideal.map_span, ← Finset.coe_image, Ideal.mem_primaryComponent_span_iff] at hy
-  choose! n hn using fun g (hg : g ∈ G) ↦ hy _ (Finset.mem_image_of_mem _ hg)
-  -- A single power `N` of every generator kills `y`.
-  set N := G.sup n
-  have hN (g : G) : (g.1 ^ N) • y = 0 := by
-    rw [← algebraMap_smul S, map_pow, ← pow_mul_pow_sub _ (Finset.le_sup g.2), mul_comm,
-      mul_smul, hn _ g.2, smul_zero]
-  -- Multiplication by the powers `g ^ N` is jointly injective on `M`, hence on `S ⊗[R] M`.
-  let φ : M →ₗ[R] G → M := LinearMap.pi fun g ↦ g.1 ^ N • LinearMap.id
-  have hφ : Injective φ := by
-    refine (injective_iff_map_eq_zero _).mpr fun m hm ↦ ?_
-    have : m ∈ (Ideal.span (G : Set R)).primaryComponent M :=
-      (Ideal.mem_primaryComponent_span_iff G).mpr fun g hg ↦ ⟨N, congr_fun hm ⟨g, hg⟩⟩
-    rwa [hM, mem_bot] at this
-  have key (x : S ⊗[R] M) :
-      piRight R R S (fun _ : G ↦ M) (φ.lTensor S x) = fun g ↦ g.1 ^ N • x := by
-    induction x using TensorProduct.inductionOn with
-    | tmul s m => ext g; simp [φ, piRightHom_tmul, tmul_smul]
-    | add x y hx hy => ext g; simp_all [smul_add]
-  refine (mem_bot S).mpr (Module.Flat.lTensor_preserves_injective_linearMap φ hφ ?_)
-  apply (piRight R R S fun _ : G ↦ M).injective
-  rw [key, map_zero, map_zero]
-  exact funext hN
-
-end Torsion
-
 variable [Module.Flat R S]
   (hI : Bijective (Ideal.quotientMap (I.map (algebraMap R S)) (algebraMap R S) Ideal.le_comap_map))
 include hI
-
-omit [Module.Flat R S] in
-/-- Every element of `S` is congruent modulo `IS` to the image of an element of `R`. -/
-private theorem exists_sub_algebraMap_mem (s : S) :
-    ∃ r : R, s - algebraMap R S r ∈ I.map (algebraMap R S) := by
-  obtain ⟨x, hx⟩ := hI.2 (Ideal.Quotient.mk _ s)
-  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective x
-  rw [Ideal.quotientMap_mk] at hx
-  exact ⟨r, Ideal.Quotient.eq.mp hx.symm⟩
 
 omit [Module.Flat R S] in
 /-- An `R`-module killed by `I` is identified with its base change to `S`: the inverse sends
@@ -155,7 +85,7 @@ private theorem tensorProduct_mk_bijective_of_isTorsionBySet
   refine ⟨LeftInverse.injective (g := TensorProduct.lift β) fun m ↦ by simp [β], fun x ↦ ?_⟩
   induction x using TensorProduct.inductionOn with
   | tmul s m =>
-    obtain ⟨r, hr⟩ := exists_sub_algebraMap_mem hI s
+    obtain ⟨r, hr⟩ := Ideal.exists_sub_mem_of_surjective_quotientMap hI.2 s
     have hm : m ∈ torsionBySet R M I := (mem_torsionBySet_iff _ _).mpr fun a ↦ @hM m a
     have h := (Ideal.mem_torsionOf_iff _ _).mp (map_le_torsionOf_one_tmul (S := S) hm hr)
     rw [smul_tmul', smul_eq_mul, mul_one, sub_tmul, sub_eq_zero] at h
@@ -231,12 +161,6 @@ theorem tensorProduct_mk_bijective_of_primaryComponent_eq_top
       obtain ⟨b, rfl⟩ := hy
       exact ⟨a + b, map_add _ _ _⟩
 
-omit [Module.Flat R S] hI in
-/-- The `I`-primary component of an `R`-module is `I`-power torsion. -/
-private theorem primaryComponent_primaryComponent_eq_top :
-    I.primaryComponent (I.primaryComponent M) = ⊤ := by
-  rw [← Ideal.primaryComponent_comap_subtype, comap_subtype_self]
-
 omit hI in
 /-- The restriction of `m ↦ 1 ⊗ m` to `I`-power torsion elements, as a map into the
 `IS`-power torsion of `S ⊗[R] M`. -/
@@ -255,7 +179,7 @@ private theorem primaryComponentMap_bijective (hIfg : I.FG) :
     Bijective (primaryComponentMap (S := S) (I := I) (M := M)) := by
   let P := I.primaryComponent M
   have hP := tensorProduct_mk_bijective_of_primaryComponent_eq_top (M := P) hI
-    primaryComponent_primaryComponent_eq_top
+    (Ideal.primaryComponent_primaryComponent_eq_top I)
   refine ⟨(injective_iff_map_eq_zero _).mpr fun m hm ↦ ?_, fun ⟨y, hy⟩ ↦ ?_⟩
   · refine (injective_iff_map_eq_zero _).mp hP.1 _
       (Module.Flat.lTensor_preserves_injective_linearMap P.subtype P.injective_subtype ?_)
