@@ -20,7 +20,8 @@ Descent and this equivalence require target manifolds in the same universe as th
 since they use the colimit in `TopCat.{u}`. Extensionality has no target-universe restriction.
 `TopCat.GlueData.IsCompatible.mapContMDiffMap` constructs maps between compatible gluings
 piecewise, with identity and composition laws. Map regularity `m` may be any `m ≤ n`, where
-`n` is the regularity of the compatible gluing and its piece manifolds.
+`n` is the regularity of the compatible gluing and its piece manifolds. For maps between
+gluings, each gluing may have its own regularity, with `m` bounded by each one.
 
 No separation, countability, or nonemptiness hypothesis is needed. Taking the scalar field
 to be `ℂ` gives the holomorphic universal property on exactly the same carrier and atlas.
@@ -172,9 +173,9 @@ theorem comp_descContMDiffMap (g : C^m⟮I', N; I'', P⟯)
 
 section Maps
 
-variable {D' : TopCat.GlueData.{u}} [∀ i, ChartedSpace H' (D'.U i)]
-  [∀ ij, ChartedSpace H' (D'.V ij)] [∀ i, IsManifold I' n (D'.U i)]
-  (h' : D'.IsCompatible I' n)
+variable {n' n'' : ℕ∞ω} {D' : TopCat.GlueData.{u}} [∀ i, ChartedSpace H' (D'.U i)]
+  [∀ ij, ChartedSpace H' (D'.V ij)] [∀ i, IsManifold I' n' (D'.U i)]
+  (h' : D'.IsCompatible I' n') (hm' : m ≤ n')
 
 /-- A family of smooth maps into pieces of another compatible gluing induces a smooth map
 of glued manifolds, provided the images of identified points are identified. The index map
@@ -190,7 +191,7 @@ noncomputable def mapContMDiffMap (a : D.J → D'.J)
   letI := D'.chartedSpace H'
   exact h.descContMDiffMap hm
     (fun i ↦ ⟨D'.toGlueData.ι (a i) ∘ f i,
-      ((h'.contMDiff_ι (a i)).of_le hm).comp (f i).contMDiff⟩) hf
+      ((h'.contMDiff_ι (a i)).of_le hm').comp (f i).contMDiff⟩) hf
 
 /-- The map induced between gluings has the prescribed value on each piece. -/
 @[simp]
@@ -200,7 +201,7 @@ theorem mapContMDiffMap_ι (a : D.J → D'.J)
       D'.toGlueData.ι (a i) (f i (D.f i j x)) =
         D'.toGlueData.ι (a j) (f j (D.f j i (D.t i j x))))
     (i : D.J) (x : D.U i) :
-    h.mapContMDiffMap hm h' a f hf (D.toGlueData.ι i x) = D'.toGlueData.ι (a i) (f i x) := by
+    h.mapContMDiffMap hm h' hm' a f hf (D.toGlueData.ι i x) = D'.toGlueData.ι (a i) (f i x) := by
   let := D'.chartedSpace H'
   -- By definition, mapContMDiffMap descends the maps ι (a i) ∘ f i;
   -- the bundled constructors coerce to these functions, evaluated as ι (a i) (f i x).
@@ -209,21 +210,21 @@ theorem mapContMDiffMap_ι (a : D.J → D'.J)
 /-- Identity piece maps induce the identity map of the glued manifold. -/
 @[simp]
 theorem mapContMDiffMap_id :
-    h.mapContMDiffMap hm h id (fun i ↦ ContMDiffMap.id (I := I) (M := D.U i))
+    h.mapContMDiffMap hm h hm id (fun i ↦ ContMDiffMap.id (I := I) (M := D.U i))
       (fun i j x ↦ (D.glue_condition_apply i j x).symm) =
         (letI := D.chartedSpace H; ContMDiffMap.id (I := I) (M := D.toGlueData.glued)) := by
   let := D.chartedSpace H
   apply D.contMDiffMap_ext
   intro i x
   -- Both bundled identity maps and the identity index map evaluate to their arguments.
-  exact h.mapContMDiffMap_ι hm h _ _ _ i x
+  exact h.mapContMDiffMap_ι hm h hm _ _ _ i x
 
 variable {D'' : TopCat.GlueData.{u}} [∀ i, ChartedSpace H'' (D''.U i)]
-  [∀ ij, ChartedSpace H'' (D''.V ij)] [∀ i, IsManifold I'' n (D''.U i)]
+  [∀ ij, ChartedSpace H'' (D''.V ij)] [∀ i, IsManifold I'' n'' (D''.U i)]
 
 omit [∀ ij, ChartedSpace H (D.V ij)] [∀ i, IsManifold I n (D.U i)]
-  [∀ ij, ChartedSpace H' (D'.V ij)] [∀ i, IsManifold I' n (D'.U i)]
-  [∀ ij, ChartedSpace H'' (D''.V ij)] [∀ i, IsManifold I'' n (D''.U i)] in
+  [∀ ij, ChartedSpace H' (D'.V ij)] [∀ i, IsManifold I' n' (D'.U i)]
+  [∀ ij, ChartedSpace H'' (D''.V ij)] [∀ i, IsManifold I'' n'' (D''.U i)] in
 /-- Composing two families of piece maps preserves agreement of their images on overlaps. -/
 theorem mapContMDiffMap_comp_compatible
     (a : D.J → D'.J) (b : D'.J → D''.J)
@@ -246,7 +247,7 @@ theorem mapContMDiffMap_comp_compatible
 /-- Composition of piece maps induces composition on the glued manifolds. The overlap
 condition on the composite follows from those of the two families. -/
 @[simp]
-theorem mapContMDiffMap_comp (h'' : D''.IsCompatible I'' n)
+theorem mapContMDiffMap_comp (h'' : D''.IsCompatible I'' n'') (hm'' : m ≤ n'')
     (a : D.J → D'.J) (b : D'.J → D''.J)
     (f : ∀ i, C^m⟮I, D.U i; I', D'.U (a i)⟯)
     (g : ∀ j, C^m⟮I', D'.U j; I'', D''.U (b j)⟯)
@@ -259,15 +260,15 @@ theorem mapContMDiffMap_comp (h'' : D''.IsCompatible I'' n)
     letI := D.chartedSpace H
     letI := D'.chartedSpace H'
     letI := D''.chartedSpace H''
-    (h'.mapContMDiffMap hm h'' b g hg).comp (h.mapContMDiffMap hm h' a f hf) =
-      h.mapContMDiffMap hm h'' (b ∘ a) (fun i ↦ (g (a i)).comp (f i))
+    (h'.mapContMDiffMap hm' h'' hm'' b g hg).comp (h.mapContMDiffMap hm h' hm' a f hf) =
+      h.mapContMDiffMap hm h'' hm'' (b ∘ a) (fun i ↦ (g (a i)).comp (f i))
         (mapContMDiffMap_comp_compatible a b f g hf hg) := by
   let := D.chartedSpace H
   let := D'.chartedSpace H'
   let := D''.chartedSpace H''
   apply D.contMDiffMap_ext
   intro i x
-  rw [h.mapContMDiffMap_ι hm h'' (b ∘ a) (fun i ↦ (g (a i)).comp (f i))
+  rw [h.mapContMDiffMap_ι hm h'' hm'' (b ∘ a) (fun i ↦ (g (a i)).comp (f i))
     (mapContMDiffMap_comp_compatible a b f g hf hg) i x]
   simp only [ContMDiffMap.comp_apply, mapContMDiffMap_ι, Function.comp_apply]
 
