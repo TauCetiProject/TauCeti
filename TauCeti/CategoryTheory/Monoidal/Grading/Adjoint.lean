@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Grading.Universal
+public import TauCeti.CategoryTheory.Semisimple.Monoidal
 public import TauCeti.CategoryTheory.Semisimple.Rigid
 
 /-!
@@ -83,7 +84,11 @@ end SimpleClasses
 
 namespace AdjointGrading
 
-/-! ### Simple constituents in a finite semisimple category -/
+/-! ### Simple constituents in a finite semisimple category
+
+The lemmas below restate the general facts of `TauCeti/CategoryTheory/Semisimple/Monoidal.lean`
+and `TauCeti/CategoryTheory/Semisimple/Rigid.lean` for the predicate `Occurs` and for simple
+classes. -/
 
 section Semisimple
 
@@ -105,17 +110,6 @@ private theorem occurs_self (U : C) [Simple U] : Occurs U U := ⟨𝟙 U, id_non
 
 variable [IsFiniteSemisimpleCategory C]
 
-/-- In a finite semisimple category, a simple object maps nontrivially to an object exactly when
-the object maps nontrivially to it. -/
-private theorem occurs_iff {U Y : C} [Simple U] : Occurs U Y ↔ ∃ g : Y ⟶ U, g ≠ 0 := by
-  constructor
-  · rintro ⟨f, hf⟩
-    have := isSplitMono_of_nonzero_from_simple hf
-    exact ⟨retraction f, fun h ↦ id_nonzero U (by rw [← IsSplitMono.id f, h, comp_zero])⟩
-  · rintro ⟨g, hg⟩
-    have := isSplitEpi_of_nonzero_to_simple hg
-    exact ⟨section_ g, fun h ↦ id_nonzero U (by rw [← IsSplitEpi.id g, h, zero_comp])⟩
-
 /-- A nonzero object has a simple constituent. -/
 private theorem exists_occurs {Y : C} (hY : ¬IsZero Y) :
     ∃ W : SimpleClasses C, Occurs W.repr Y := by
@@ -129,18 +123,14 @@ private theorem Occurs.whiskerRight {U X X' : C} [Simple X] {Y : C} (h : Occurs 
     (h' : Occurs X X') : Occurs U (X' ⊗ Y) := by
   obtain ⟨f, hf⟩ := h
   obtain ⟨g, hg⟩ := h'
-  have := isSplitMono_of_nonzero_from_simple hg
-  refine ⟨f ≫ g ▷ Y, fun h ↦ hf ?_⟩
-  simpa [← comp_whiskerRight] using h =≫ retraction g ▷ Y
+  exact ⟨_, comp_whiskerRight_ne_zero hf hg⟩
 
 /-- Replacing a simple factor of a tensor product by an object containing it. -/
 private theorem Occurs.whiskerLeft {U X : C} {Y Y' : C} [Simple Y] (h : Occurs U (X ⊗ Y))
     (h' : Occurs Y Y') : Occurs U (X ⊗ Y') := by
   obtain ⟨f, hf⟩ := h
   obtain ⟨g, hg⟩ := h'
-  have := isSplitMono_of_nonzero_from_simple hg
-  refine ⟨f ≫ X ◁ g, fun h ↦ hf ?_⟩
-  simpa [← whiskerLeft_comp] using h =≫ X ◁ retraction g
+  exact ⟨_, comp_whiskerLeft_ne_zero hf hg⟩
 
 variable [MonoidalPreadditive C]
 
@@ -149,38 +139,20 @@ of `X`. -/
 private theorem Occurs.exists_left {U X Y : C} (h : Occurs U (X ⊗ Y)) :
     ∃ W : SimpleClasses C, Occurs U (W.repr ⊗ Y) ∧ Occurs W.repr X := by
   obtain ⟨f, hf⟩ := h
-  obtain ⟨ι, hι, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
-  have : HasFiniteBiproducts C := Abelian.hasFiniteBiproducts
-  obtain ⟨i, hi⟩ : ∃ i, f ≫ (e.hom ≫ biproduct.π a i) ▷ Y ≠ 0 := by
-    by_contra! h
-    -- The components of `f` along `(⨁ a) ⊗ Y ≅ ⨁ i, a i ⊗ Y` all vanish.
-    refine hf <| (cancel_mono (e.hom ▷ Y ≫ (rightDistributor a Y).hom)).1 ?_
-    ext i
-    simpa using h i
-  refine ⟨SimpleClasses.classOf (a i), ?_, ?_⟩
-  · exact Occurs.of_iso_right (whiskerRightIso (SimpleClasses.classOfReprIso _).symm Y) ⟨_, hi⟩
-  · refine Occurs.of_iso_left (SimpleClasses.classOfReprIso _)
-      ⟨biproduct.ι a i ≫ e.inv, fun h ↦ id_nonzero (a i) ?_⟩
-    simpa using h =≫ (e.hom ≫ biproduct.π a i)
+  obtain ⟨W, _, g, j, hg, hj⟩ := exists_simple_of_nonzero_to_tensor_left hf
+  exact ⟨SimpleClasses.classOf W,
+    Occurs.of_iso_right (whiskerRightIso (SimpleClasses.classOfReprIso W).symm Y) ⟨g, hg⟩,
+    Occurs.of_iso_left (SimpleClasses.classOfReprIso W) ⟨j, hj⟩⟩
 
 /-- A simple constituent of `X ⊗ Y` is a constituent of `X ⊗ W` for some simple constituent `W`
 of `Y`. -/
 private theorem Occurs.exists_right {U X Y : C} (h : Occurs U (X ⊗ Y)) :
     ∃ W : SimpleClasses C, Occurs U (X ⊗ W.repr) ∧ Occurs W.repr Y := by
   obtain ⟨f, hf⟩ := h
-  obtain ⟨ι, hι, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples Y
-  have : HasFiniteBiproducts C := Abelian.hasFiniteBiproducts
-  obtain ⟨i, hi⟩ : ∃ i, f ≫ X ◁ (e.hom ≫ biproduct.π a i) ≠ 0 := by
-    by_contra! h
-    -- The components of `f` along `X ⊗ ⨁ a ≅ ⨁ i, X ⊗ a i` all vanish.
-    refine hf <| (cancel_mono (X ◁ e.hom ≫ (leftDistributor X a).hom)).1 ?_
-    ext i
-    simpa using h i
-  refine ⟨SimpleClasses.classOf (a i), ?_, ?_⟩
-  · exact Occurs.of_iso_right (whiskerLeftIso X (SimpleClasses.classOfReprIso _).symm) ⟨_, hi⟩
-  · refine Occurs.of_iso_left (SimpleClasses.classOfReprIso _)
-      ⟨biproduct.ι a i ≫ e.inv, fun h ↦ id_nonzero (a i) ?_⟩
-    simpa using h =≫ (e.hom ≫ biproduct.π a i)
+  obtain ⟨W, _, g, j, hg, hj⟩ := exists_simple_of_nonzero_to_tensor_right hf
+  exact ⟨SimpleClasses.classOf W,
+    Occurs.of_iso_right (whiskerLeftIso X (SimpleClasses.classOfReprIso W).symm) ⟨g, hg⟩,
+    Occurs.of_iso_left (SimpleClasses.classOfReprIso W) ⟨j, hj⟩⟩
 
 variable [RigidCategory C]
 
@@ -188,17 +160,13 @@ variable [RigidCategory C]
 then `X` maps nontrivially to `U ⊗ Yᘁ`. -/
 private theorem Occurs.tensorRightHom {U X Y : C} [Simple U] (h : Occurs U (X ⊗ Y)) :
     Occurs X (U ⊗ Yᘁ) := by
-  obtain ⟨g, hg⟩ := occurs_iff.1 h
-  refine ⟨tensorRightHomEquiv X Y Yᘁ U g, fun h ↦ hg ?_⟩
-  rw [← (tensorRightHomEquiv X Y Yᘁ U).symm_apply_apply g, h]
-  simp [tensorRightHomEquiv]
+  obtain ⟨f, hf⟩ := h
+  exact exists_nonzero_to_tensor_rightDual_of_nonzero_from_simple hf
 
 /-- Right duality preserves constituents. -/
 private theorem Occurs.rightDual {U Y : C} [Simple U] (h : Occurs U Y) : Occurs Uᘁ Yᘁ := by
   obtain ⟨f, hf⟩ := h
-  have := isSplitMono_of_nonzero_from_simple hf
-  refine ⟨(retraction f)ᘁ, fun h ↦ id_nonzero Uᘁ ?_⟩
-  rw [← rightAdjointMate_id, ← IsSplitMono.id f, comp_rightAdjointMate, h, zero_comp]
+  exact exists_nonzero_rightDual_of_nonzero_from_simple hf
 
 end Semisimple
 
@@ -209,14 +177,36 @@ open AdjointGrading
 variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C]
   [RigidCategory C] [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)]
 
+namespace AdjointGrading
+
+omit [MonoidalPreadditive C] [RigidCategory C] [IsFiniteSemisimpleCategory C] in
+/-- A simple class is a constituent of its tensor product with the unit class on the right. -/
+private theorem occurs_tensor_classOf_unit (U : SimpleClasses C) :
+    Occurs U.repr (U.repr ⊗ (SimpleClasses.classOf (𝟙_ C)).repr) :=
+  (occurs_self _).of_iso_right
+    ((ρ_ _).symm ≪≫ whiskerLeftIso _ (SimpleClasses.classOfReprIso _).symm)
+
+omit [MonoidalPreadditive C] [RigidCategory C] [IsFiniteSemisimpleCategory C] in
+/-- A simple class is a constituent of its tensor product with the unit class on the left. -/
+private theorem occurs_classOf_unit_tensor (U : SimpleClasses C) :
+    Occurs U.repr ((SimpleClasses.classOf (𝟙_ C)).repr ⊗ U.repr) :=
+  (occurs_self _).of_iso_right
+    ((λ_ _).symm ≪≫ whiskerRightIso (SimpleClasses.classOfReprIso _).symm _)
+
+omit [IsFiniteSemisimpleCategory C] in
+/-- The unit class is a constituent of `X ⊗ Xᘁ` for a nonzero `X`, through the coevaluation. -/
+private theorem occurs_classOf_unit_tensor_rightDual {X : C} (hX : ¬IsZero X) :
+    Occurs (SimpleClasses.classOf (𝟙_ C)).repr (X ⊗ Xᘁ) :=
+  Occurs.of_iso_left (SimpleClasses.classOfReprIso _) ⟨_, coevaluation_ne_zero (Y := Xᘁ) hX⟩
+
+end AdjointGrading
+
 namespace SimpleClasses
 
 omit [IsFiniteSemisimpleCategory C] in
 /-- The tensor unit is adjoint, as a constituent of `X ⊗ Xᘁ` for `X = 𝟙_ C`. -/
 theorem isAdjoint_classOf_unit : (classOf (𝟙_ C)).IsAdjoint := by
-  obtain ⟨f, hf⟩ : Occurs (classOf (𝟙_ C)).repr
-      ((classOf (𝟙_ C)).repr ⊗ (classOf (𝟙_ C)).reprᘁ) :=
-    Occurs.of_iso_left (classOfReprIso _) ⟨_, coevaluation_ne_zero (Simple.not_isZero _)⟩
+  obtain ⟨f, hf⟩ := occurs_classOf_unit_tensor_rightDual (Simple.not_isZero (classOf (𝟙_ C)).repr)
   exact .of_tensor_rightDual _ _ f hf
 
 /-- Every simple constituent of `Xᘁ ⊗ X`, for `X` simple, is adjoint. Indeed `X ≅ Xᘁᘁ`, so
@@ -260,8 +250,7 @@ private def CosetRel (S T : SimpleClasses C) : Prop :=
 
 omit [IsFiniteSemisimpleCategory C] in
 private theorem cosetRel_refl (S : SimpleClasses C) : CosetRel S S :=
-  ⟨_, isAdjoint_classOf_unit,
-    (occurs_self _).of_iso_right ((ρ_ _).symm ≪≫ whiskerLeftIso _ (classOfReprIso _).symm)⟩
+  ⟨_, isAdjoint_classOf_unit, occurs_tensor_classOf_unit S⟩
 
 private theorem CosetRel.symm {S T : SimpleClasses C} (h : CosetRel S T) : CosetRel T S := by
   obtain ⟨A, hA, h⟩ := h
@@ -338,8 +327,7 @@ private theorem act_act {S T U : SimpleClasses C} (h : Occurs U.repr (S.repr ⊗
 
 private theorem act_classOf_unit (x : Coset C) : act (classOf (𝟙_ C)) x = x := by
   induction x using Quotient.inductionOn with | h T =>
-  exact act_mk <| (occurs_self _).of_iso_right <|
-    (λ_ _).symm ≪≫ whiskerRightIso (classOfReprIso _).symm _
+  exact act_mk (occurs_classOf_unit_tensor T)
 
 /-- The action of a simple class on the cosets is invertible, with inverse the action of the
 dual class. -/
@@ -349,15 +337,11 @@ private def actPerm (S : SimpleClasses C) : Equiv.Perm (Coset C) where
   left_inv x := by
     obtain ⟨e⟩ := nonempty_iso_rightDual_rightDual S.repr
     rw [act_act (U := classOf (𝟙_ C)), act_classOf_unit]
-    exact Occurs.of_iso_left (classOfReprIso _)
-      ⟨_, coevaluation_ne_zero (Y := HasRightDual.rightDual (HasRightDual.rightDual S.repr))
-        (Simple.not_isZero (HasRightDual.rightDual S.repr))⟩ |>.of_iso_right
+    exact (occurs_classOf_unit_tensor_rightDual (Simple.not_isZero S.reprᘁ)).of_iso_right
       (tensorIso (dualReprIso S).symm e.symm)
   right_inv x := by
     rw [act_act (U := classOf (𝟙_ C)), act_classOf_unit]
-    exact Occurs.of_iso_left (classOfReprIso _)
-      ⟨_, coevaluation_ne_zero (Y := HasRightDual.rightDual S.repr)
-        (Simple.not_isZero S.repr)⟩ |>.of_iso_right
+    exact (occurs_classOf_unit_tensor_rightDual (Simple.not_isZero S.repr)).of_iso_right
       (whiskerLeftIso _ (dualReprIso S).symm)
 
 /-- The action of the universal grading group on the right cosets of the adjoint subcategory. -/
@@ -368,8 +352,7 @@ private def actHom : universalGradingGroup C →* Equiv.Perm (Coset C) :=
 private theorem actHom_degree_mk_unit (S : SimpleClasses C) :
     actHom (universalGradingGroup.degree S) ⟦classOf (𝟙_ C)⟧ = ⟦S⟧ := by
   rw [actHom, universalGradingGroup.lift_degree]
-  exact act_mk <| (occurs_self _).of_iso_right <|
-    (ρ_ _).symm ≪≫ whiskerLeftIso _ (classOfReprIso _).symm
+  exact act_mk (occurs_tensor_classOf_unit S)
 
 end AdjointGrading
 
