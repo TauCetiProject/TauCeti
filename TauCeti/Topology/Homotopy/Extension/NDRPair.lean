@@ -505,11 +505,7 @@ noncomputable def prod : NDRPair (A ×ˢ (univ : Set Y) ∪ (univ : Set X) ×ˢ 
   control_eq_zero_iff p := by
     simp only [ContinuousMap.coe_mk, mem_union, mem_prod, mem_univ, and_true, true_and,
       ← N.control_eq_zero_iff, ← M.control_eq_zero_iff]
-    rcases le_total (N.control p.1) (M.control p.2) with h | h
-    · rw [min_eq_left h]
-      exact ⟨Or.inl, fun h' ↦ h'.elim id fun hv ↦ le_antisymm (h.trans hv.le) nonneg'⟩
-    · rw [min_eq_right h]
-      exact ⟨Or.inr, fun h' ↦ h'.elim (fun hu ↦ le_antisymm (h.trans hu.le) nonneg') id⟩
+    exact min_eq_bot
   deformation :=
     ⟨fun w ↦ (N.deformation (prodTime w.1 (N.control w.2.1) (M.control w.2.2), w.2.1),
       M.deformation (prodTime w.1 (M.control w.2.2) (N.control w.2.1), w.2.2)),
