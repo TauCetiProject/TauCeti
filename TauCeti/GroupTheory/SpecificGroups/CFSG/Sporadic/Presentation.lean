@@ -91,6 +91,11 @@ def SporadicName.presentation : SporadicName → GroupPresentation
   | .B => Sporadic.BabyMonster.presentation
   | .M => Sporadic.Monster.presentation
 
+/-- The selected Higman--Sims presentation is the transcribed ATLAS presentation `HSG1-P1`. -/
+@[simp]
+theorem SporadicName.presentation_HS : SporadicName.HS.presentation = Sporadic.hsPresentation := by
+  rfl
+
 /-- Every sporadic presentation has the relator count stated in its metadata.
 
 This is deliberately not `@[simp]`: `GroupPresentation.matchesMetadata_iff` is itself a `simp`
