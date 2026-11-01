@@ -214,12 +214,6 @@ theorem IsVertexReachable.map {W : Type*} {H : SimpleGraph W}
   rintro _ ⟨x, hx, rfl⟩
   simpa using hp x hx
 
-/-- Vertex reachability is invariant under graph isomorphism. -/
-theorem Iso.isVertexReachable_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H) :
-    H.IsVertexReachable k (e u) (e v) ↔ G.IsVertexReachable k u v :=
-  ⟨fun h ↦ by simpa using h.map e.symm.toHom e.symm.injective,
-    fun h ↦ h.map e.toHom e.injective⟩
-
 /-! ### Vertex connectivity -/
 
 variable (G k) in
@@ -302,14 +296,6 @@ theorem isVertexConnected_top_iff : (⊤ : SimpleGraph V).IsVertexConnected k �
   obtain rfl | huv := eq_or_ne u v
   · exact .rfl
   · exact ((top_adj u v).2 huv).isVertexReachable
-
-/-- Vertex connectivity predicates are invariant under graph isomorphism. -/
-theorem Iso.isVertexConnected_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H) :
-    H.IsVertexConnected k ↔ G.IsVertexConnected k := by
-  simp only [isVertexConnected_def, ← ENat.card_congr e.toEquiv]
-  exact and_congr_right fun _ ↦
-    ⟨fun h u v ↦ e.isVertexReachable_iff.mp (h (e u) (e v)),
-      fun h x y ↦ by simpa using (h (e.symm x) (e.symm y)).map e.toHom e.injective⟩
 
 /-! ### The numerical invariant -/
 
