@@ -145,21 +145,15 @@ lemma hasDerivAt_sq_div_const (ν z : ℝ) :
 `(c, c + q)`. -/
 lemma image_add_mul_div_sq_add_Ioi {c p q : ℝ} (hp : 0 < p) (hq : 0 < q) :
     (fun t : ℝ ↦ c + p * q / (t ^ 2 + p)) '' Ioi 0 = Ioo c (c + q) := by
-  ext x
-  refine ⟨fun ⟨t, ht, hx⟩ ↦ ?_, fun ⟨hxc, hxq⟩ ↦ ?_⟩
-  · have ht2 : 0 < t ^ 2 := pow_pos ht 2
-    have hlt : p * q / (t ^ 2 + p) < q := by
-      rw [div_lt_iff₀ (by positivity)]
-      nlinarith
-    rw [← hx]
-    exact ⟨by linarith [show 0 < p * q / (t ^ 2 + p) by positivity], by linarith⟩
-  · have hx : 0 < x - c := sub_pos.2 hxc
-    have hlt : p < p * q / (x - c) := by
-      rw [lt_div_iff₀ hx]
-      nlinarith
-    refine ⟨√(p * q / (x - c) - p), Real.sqrt_pos.2 (by linarith), ?_⟩
-    simp only [Real.sq_sqrt (by linarith : 0 ≤ p * q / (x - c) - p), sub_add_cancel]
-    field_simp
-    ring
+  have hsq := image_sq_div_const_Ioi one_pos (y := 0) le_rfl
+  have hcomp : (fun t : ℝ ↦ c + p * q / (t ^ 2 + p)) =
+      (c + ·) ∘ (p * q * ·) ∘ (·⁻¹) ∘ (· + p) ∘ (fun t : ℝ ↦ t ^ 2 / 1) := by
+    ext t
+    simp [div_eq_mul_inv]
+  rw [hcomp, image_comp, image_comp, image_comp, image_comp, hsq, image_add_const_Ioi,
+    image_inv_eq_inv, inv_Ioi₀ (by simpa using hp), image_mul_left_Ioo (by positivity),
+    image_const_add_Ioo]
+  simp only [zero_pow two_ne_zero, zero_div, zero_add, mul_zero, add_zero]
+  rw [mul_comm p q, mul_inv_cancel_right₀ hp.ne']
 
 end TauCeti

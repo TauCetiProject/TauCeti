@@ -58,23 +58,6 @@ namespace TauCeti.Real
 
 open _root_.Real
 
-/-- If a substitution `x = f(t)` on `t > 0` satisfies `D(f t) = f′(t)² (t² + a²)(t² + b²)` with
-`f′(t) ≠ 0`, then the integral of `D(x)^(-1/2)` over the image of `f` is the AGM integral
-of the axes `a` and `b`. -/
-private theorem lintegral_image_inv_sqrt_eq_agmIntegral {f f' D : ℝ → ℝ} {a b : ℝ}
-    (ha : 0 < a) (hb : 0 < b) (hf : ∀ t ∈ Ioi (0 : ℝ), HasDerivWithinAt f (f' t) (Ioi 0) t)
-    (hinj : InjOn f (Ioi 0)) (hf' : ∀ t ∈ Ioi (0 : ℝ), f' t ≠ 0)
-    (hD : ∀ t ∈ Ioi (0 : ℝ), D (f t) = f' t ^ 2 * ((t ^ 2 + a ^ 2) * (t ^ 2 + b ^ 2))) :
-    ∫⁻ x in f '' Ioi 0, ENNReal.ofReal (√(D x))⁻¹ = ENNReal.ofReal (agmIntegral a b) := by
-  rw [lintegral_image_eq_lintegral_abs_deriv_mul measurableSet_Ioi hf hinj, agmIntegral_def,
-    ofReal_integral_eq_lintegral_ofReal (integrableOn_agmIntegrand_Ioi_of_pos ha hb)
-      (Filter.Eventually.of_forall fun _ ↦ by positivity)]
-  refine setLIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
-  have habs : 0 < |f' t| := abs_pos.2 (hf' t ht)
-  rw [← ENNReal.ofReal_mul habs.le, hD t ht, sqrt_mul (sq_nonneg _), sqrt_sq_eq_abs]
-  congr 1
-  field_simp
-
 variable {e₁ e₂ e₃ : ℝ}
 
 /-- For `e₃ < e₂ < e₁`, the cubic `4 (x - e₁)(x - e₂)(x - e₃)` is positive exactly on
