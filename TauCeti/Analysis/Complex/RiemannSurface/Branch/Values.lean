@@ -182,12 +182,12 @@ theorem ncard_fiber_restrictPreimage_compl (f : FiniteHolomorphicMap X Y) {S : S
 
 /-- **Branch values of a composite**: for finite holomorphic maps `f : X → Y` and `g : Y → Z`,
 with `X` compact and connected and `Y` connected, the branch values of `g ∘ f` are the images
-under `g` of the branch values of `f` together with the branch values of `g`. Local
-multiplicities multiply along the composite (`TauCeti.RiemannSurface.localMultiplicity_comp`),
-and every point of `Y` lies in the image of `f`. -/
+under `g` of the branch values of `f` together with the branch values of `g`. -/
 theorem branchValues_comp {Z : Type*} [TopologicalSpace Z] [ChartedSpace ℂ Z]
     [IsManifold 𝓘(ℂ) 1 Z] (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorphicMap X Y) :
     (g.comp f).branchValues = g '' f.branchValues ∪ g.branchValues := by
+  -- Local multiplicities multiply along the composite, and every point of `Y` lies in the image
+  -- of `f`.
   ext z
   rw [mem_union, mem_branchValues_iff, mem_branchValues_iff]
   refine ⟨fun ⟨x, hxz, hx⟩ ↦ ?_, ?_⟩

@@ -266,17 +266,16 @@ theorem IsAlgebraicBelyiPair.of_isScalarTower (hE : IsAlgebraicBelyiPair k E)
 
 /-- **Belyi maps through an intermediate cover**: for a tower `k(t) ⊆ E ⊆ F`, the field `F` is an
 algebraic Belyi pair exactly when its constant field is `k`, the branch places of `E / k(t)` are
-among `0`, `1` and `∞`, and so are the places of `k(t)` below the branch places of `F / E`. This is
-the branch-value formula `Branch(g ∘ f) = g(Branch f) ∪ Branch g` for a composite of finite maps of
-curves `f : X → Y` and `g : Y → ℙ¹`.
-
-The integrality of `F` over `E`, which follows from finiteness over `k(t)`, is needed to restrict
-places of `F` to `E`. -/
-theorem isAlgebraicBelyiPair_iff_of_isScalarTower [Algebra.IsIntegral E F] :
+among `0`, `1` and `∞`, and so are the places of `k(t)` below the branch places of `F / E`. This
+follows from the branch-value formula `Place.branchPlaces_eq_image_union` for a composite of finite
+maps of curves `f : X → Y` and `g : Y → ℙ¹`. -/
+theorem isAlgebraicBelyiPair_iff_of_isScalarTower :
+    letI : Algebra.IsIntegral E F := .tower_top (RatFunc k)
     IsAlgebraicBelyiPair k F ↔ IsIntegrallyClosedIn k F ∧
       Place.branchPlaces (k := k) (F := RatFunc k) k E ⊆ Place.zeroOneInfty k ∧
       (fun P : Place k E ↦ P.restrict k (RatFunc k)) '' Place.branchPlaces k F ⊆
         Place.zeroOneInfty k := by
+  let _ : Algebra.IsIntegral E F := .tower_top (RatFunc k)
   rw [isAlgebraicBelyiPair_iff_branchPlaces_subset, Place.branchPlaces_eq_image_union
     (k₁ := k) (F₁ := E) (isFunctionField_iff_functionField.mpr inferInstance), Set.union_subset_iff,
     and_comm (a := _ '' _ ⊆ _)]
