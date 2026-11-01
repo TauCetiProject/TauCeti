@@ -20,10 +20,6 @@ statement. This file bundles it as a content on all subsets of `X`
 such as the content of a mean on a discrete group. The content has total mass one and is
 invariant under `G` when `μ` is.
 
-Applying the construction to `Ultrafilter.of l` gives the bundled form of `IsFoelner.amenable`:
-a Følner family along any nontrivial filter yields a `G`-invariant finitely additive probability
-on all subsets of `X` (`IsFoelner.exists_invariantContent`).
-
 ## Main definitions
 
 * `IsFoelner.addContent`: the density-limit content `s ↦ lim_u μ (s ∩ F i) / μ (F i)` of a Følner
@@ -34,8 +30,6 @@ on all subsets of `X` (`IsFoelner.exists_invariantContent`).
 * `IsFoelner.tendsto_addContent`: the densities of `s` tend to the content of `s` along `u`.
 * `IsFoelner.addContent_univ`: the content has total mass one.
 * `IsFoelner.addContent_smul`: the content is invariant under the action of `G`.
-* `IsFoelner.exists_invariantContent`: a Følner family along a nontrivial filter yields a
-  `G`-invariant finitely additive probability on all subsets.
 
 ## References
 
@@ -82,15 +76,5 @@ theorem addContent_univ (hF : IsFoelner G μ u F) : hF.addContent univ = 1 :=
 theorem addContent_smul [MeasureTheory.SMulInvariantMeasure G X μ] (hF : IsFoelner G μ u F)
     (g : G) (s : Set X) : hF.addContent (g • s) = hF.addContent s :=
   hF.mean_smul_eq_mean g s
-
-/-- A Følner family for a `G`-invariant measure along a nontrivial filter yields a `G`-invariant
-finitely additive probability on all subsets, for instance the density-limit content along an
-ultrafilter finer than the filter. -/
-theorem exists_invariantContent [MeasureTheory.SMulInvariantMeasure G X μ] {l : Filter ι}
-    [l.NeBot] (hF : IsFoelner G μ l F) :
-    ∃ ν : MeasureTheory.AddContent ℝ≥0∞ (univ : Set (Set X)),
-      ν univ = 1 ∧ ∀ (g : G) (s : Set X), ν (g • s) = ν s :=
-  have hu := hF.mono (Ultrafilter.of_le l)
-  ⟨hu.addContent, hu.addContent_univ, hu.addContent_smul⟩
 
 end IsFoelner
