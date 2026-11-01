@@ -39,8 +39,6 @@ are weak-star null, and they pair to `1`.
 * `TauCeti.HasDunfordPettisProperty.of_dual`: the Dunford–Pettis property passes from the dual to
   the space.
 * `ZeroAtInftyContinuousMap.hasDunfordPettisProperty`: `c₀` has the Dunford–Pettis property.
-* `ZeroAtInftyContinuousMap.tendsto_toWeakDual_evalCLM_cofinite`: the coordinate functionals of
-  `c₀` are weak-star null.
 * `ZeroAtInftyContinuousMap.not_forall_tendsto_apply_of_tendsto_toWeakDual`: the sequence
   criterion fails for weak-star null sequences of functionals on `c₀`.
 
@@ -108,17 +106,6 @@ theorem hasDunfordPettisProperty : TauCeti.HasDunfordPettisProperty 𝕜 C₀(ι
   rw [map_zero] at hf'
   simpa [Function.comp_def] using
     (e.continuous.tendsto 0).comp (lp.tendsto_of_tendsto_toWeakSpace_one hf')
-
-variable (𝕜) in
-/-- The coordinate functionals of `C₀(ι, 𝕜)` tend to zero in the weak-star topology along the
-cofinite filter. -/
-theorem tendsto_toWeakDual_evalCLM_cofinite :
-    Tendsto (fun i : ι ↦ StrongDual.toWeakDual (evalCLM 𝕜 i : StrongDual 𝕜 C₀(ι, 𝕜))) cofinite
-      (𝓝 0) :=
-  tendsto_iff_forall_eval_tendsto_topDualPairing.2 fun f ↦ by
-    have : Tendsto (fun i ↦ evalCLM 𝕜 i f) cofinite (𝓝 0) := by simpa using f.tendsto_cofinite
-    -- `topDualPairing 𝕜 _ (StrongDual.toWeakDual g) f` is `g f` by definition of the pairing.
-    exact this
 
 variable (𝕜 ι) in
 /-- Weak-star null sequences of functionals cannot replace weakly null ones in the sequence
