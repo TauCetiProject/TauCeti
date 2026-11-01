@@ -19,8 +19,8 @@ the Weyl dimension product at the dominant weight with fundamental-weight coordi
 
 `(a + 1)(b + 1)(a + 3b + 4)(2a + 3b + 5)(a + b + 2)(a + 2b + 3) / 120`.
 
-This is the root-datum computation that specializes the abstract Weyl dimension formula to type
-`G₂`, where the squared root lengths differ by a factor of three, so it checks that the
+This is the root-datum computation needed to specialize the abstract Weyl dimension formula to
+type `G₂`, where the squared root lengths differ by a factor of three, so it checks that the
 positive-root product carries the right multiplicities. At `(1, 0)` and `(0, 1)` it returns `7`
 and `14`, the dimensions of the two fundamental representations of `𝔤₂`; the second is the adjoint
 representation, the highest root `3α₁ + 2α₂` being the fundamental weight of the long simple root.

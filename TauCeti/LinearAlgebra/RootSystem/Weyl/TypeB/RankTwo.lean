@@ -18,11 +18,11 @@ Weyl dimension product at the dominant weight with fundamental-weight coordinate
 
 `(a + 1)(b + 1)(2a + b + 3)(a + b + 2) / 6`.
 
-This is the root-datum computation that specializes the abstract Weyl dimension formula to type
-`B₂`. In type `A₂` a root and its coroot have the same coordinates; in type `B₂` they do not, so
-the computation checks that the positive-root product carries the right multiplicities. At `(1, 0)`,
-`(0, 1)` and `(0, 2)` it returns `5`, `4` and `10`, the dimensions of the vector, spin and adjoint
-representations of `𝔰𝔬₅`.
+This is the root-datum computation needed to specialize the abstract Weyl dimension formula to
+type `B₂`. In type `A₂` a root and its coroot have the same coordinates; in type `B₂` they do not,
+so the computation checks that the positive-root product carries the right multiplicities. At
+`(1, 0)`, `(0, 1)` and `(0, 2)` it returns `5`, `4` and `10`, the dimensions of the vector, spin
+and adjoint representations of `𝔰𝔬₅`.
 
 The positive roots and the heights of their coroots come from
 `TauCeti.DynkinType.posRootsFinset_typeB_two` and `TauCeti.DynkinType.height_flip_b2Index`.
