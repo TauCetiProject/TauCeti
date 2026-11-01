@@ -559,7 +559,7 @@ theorem moduleCat_exists_d_eq_of_δ_eq (i j : ι) (hij : c.Rel i j) (x₃ : S.X�
   have hdy₂ : (S.g.f j).hom ((S.X₂.d i j).hom y₂) = 0 := by
     rw [← HomologicalComplex.Hom.comm_apply, hy₂, ← ModuleCat.comp_apply,
       HomologicalComplex.iCycles_d]
-    rfl
+    simp
   obtain ⟨y₁, hy₁⟩ : ∃ y₁ : S.X₁.X j, (S.f.f j).hom y₁ = (S.X₂.d i j).hom y₂ :=
     (ShortComplex.moduleCat_exact_iff _).1 hSj.exact _ hdy₂
   have hdy₁ : (S.X₁.d j (c.next j)).hom y₁ = 0 :=
@@ -583,8 +583,8 @@ theorem moduleCat_exists_d_eq_of_δ_eq (i j : ι) (hij : c.Rel i j) (x₃ : S.X�
 include hS in
 /-- **Lifts along a prescribed boundary are unique up to boundaries and cycles of `S.X₁`.** Let
 `x₂, x₂'` be elements of `S.X₂` in degree `i` with the same differential, whose images in `S.X₃`
-are homologous cycles. Then `x₂ - x₂'` is the sum of a boundary and the image of a cycle of
-`S.X₁`. -/
+are homologous cycles. Then `x₂ - x₂'` is the sum of a boundary and the image of an element `a`
+of `S.X₁` killed by the differential to degree `j` (so a cycle when `c.Rel i j`). -/
 theorem moduleCat_exists_sub_eq_d_add (i j p : ι) (hp : c.prev i = p)
     (x₂ x₂' : S.X₂.X i) (hd : (S.X₂.d i j).hom x₂ = (S.X₂.d i j).hom x₂')
     (z₃ z₃' : S.X₃.cycles i) (hx₂ : (S.g.f i).hom x₂ = (S.X₃.iCycles i).hom z₃)

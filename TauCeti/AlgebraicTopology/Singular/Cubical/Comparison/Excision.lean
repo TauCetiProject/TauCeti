@@ -157,9 +157,11 @@ theorem exists_boundary_eq_of_cubicalHomologyδ_eq (m : ℕ)
   obtain ⟨s, r, hs, hr, rfl⟩ :=
     (shortExact_cubicalChainComplexShortComplex k P).moduleCat_exists_d_eq_of_δ_eq (m + 1) m
       rfl c z hz
-  refine ⟨normalizedCubicalChainComplexXEquiv P.fst (m + 1) s, r, ?_, hr, rfl⟩
-  rw [← normalizedCubicalChainComplexXEquiv_d_apply]
-  exact hs
+  refine ⟨normalizedCubicalChainComplexXEquiv P.fst (m + 1) s, r, ?_, ?_, rfl⟩
+  · rw [← normalizedCubicalChainComplexXEquiv_d_apply, normalizedCubicalChainComplexXEquiv_apply]
+    exact hs.trans (normalizedCubicalChainComplex_map_f_apply P.map m _)
+  · rw [normalizedCubicalChainComplexXEquiv_apply]
+    exact hr
 
 /-- **Chains with a prescribed boundary are unique up to boundaries and cycles of the subspace.**
 Let `s, s'` be normalized cubical `(m + 1)`-chains of `X` with the same boundary which are relative
@@ -184,13 +186,20 @@ theorem exists_sub_eq_boundary_add_map (m : ℕ) (s s' : NormalizedCubicalChain 
       (m + 2) (ChainComplex.prev ℕ (m + 1))
       ((normalizedCubicalChainComplexXEquiv P.fst (m + 1)).symm s)
       ((normalizedCubicalChainComplexXEquiv P.fst (m + 1)).symm s')
-      ((normalizedCubicalChainComplex_obj_d_apply P.fst m s).trans
-        (hd.trans (normalizedCubicalChainComplex_obj_d_apply P.fst m s').symm)) r r' hs hs' hr
+      (by
+        rw [normalizedCubicalChainComplexXEquiv_symm_apply,
+          normalizedCubicalChainComplexXEquiv_symm_apply, normalizedCubicalChainComplex_obj_d_apply,
+          normalizedCubicalChainComplex_obj_d_apply, hd])
+      r r' (by rw [normalizedCubicalChainComplexXEquiv_symm_apply]; exact hs)
+      (by rw [normalizedCubicalChainComplexXEquiv_symm_apply]; exact hs') hr
+  rw [normalizedCubicalChainComplexXEquiv_symm_apply,
+    normalizedCubicalChainComplexXEquiv_symm_apply] at hab
   refine ⟨normalizedCubicalChainComplexXEquiv P.fst (m + 2) b,
-    normalizedCubicalChainComplexXEquiv P.snd (m + 1) a,
-    (normalizedCubicalChainComplexXEquiv_d_apply P.snd m a).symm.trans ha,
-    hab.trans (congrArg₂ (· + ·) (normalizedCubicalChainComplexXEquiv_d_apply P.fst (m + 1) b)
-      (normalizedCubicalChainComplex_map_f_apply P.map (m + 1) a))⟩
+    normalizedCubicalChainComplexXEquiv P.snd (m + 1) a, ?_, ?_⟩
+  · rw [← normalizedCubicalChainComplexXEquiv_d_apply, ha, map_zero]
+  · rw [← normalizedCubicalChainComplexXEquiv_d_apply, normalizedCubicalChainComplexXEquiv_apply,
+      normalizedCubicalChainComplexXEquiv_apply]
+    exact hab.trans (congrArg _ (normalizedCubicalChainComplex_map_f_apply P.map (m + 1) a))
 
 /-- **Singular relative classes lift to cubical chains with a prescribed boundary.** Let `μ` be a
 class of the relative singular homology `Hₘ₊₁(X, A)` and `z` a normalized cubical `m`-cycle of
