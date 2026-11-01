@@ -51,6 +51,8 @@ arbitrary vectors without changing the value.
   weights of the variables preserves weighted homogeneity.
 * `MvPolynomial.IsWeightedHomogeneous.aeval`: substituting polynomials that are weighted
   homogeneous of the weights of the variables preserves weighted homogeneity.
+* `MvPolynomial.weightedHomogeneousComponent_aeval`: such a substitution commutes with taking
+  weighted homogeneous components.
 * `MvPolynomial.isWeightedHomogeneous_of_isHomogeneous_aeval`: the converse of the homogeneous
   case, for an injective substitution.
 * `MvPolynomial.isWeightedHomogeneous_of_aeval_C_pow_mul_X_eq`: a polynomial that the
@@ -112,6 +114,22 @@ theorem IsWeightedHomogeneous.aeval {M : Type*} [AddCommMonoid M] {w : σ → M}
     (MvPolynomial.aeval g φ).IsWeightedHomogeneous v m :=
   have := WeightedHomogeneousSubmodule.gradedMonoid (R := R) (w := v)
   hφ.aeval_mem (𝒜 := weightedHomogeneousSubmodule R v) hg
+
+/-- Substituting, for each variable `i`, a polynomial that is weighted homogeneous of weight
+`w i` for the weights `v` commutes with taking weighted homogeneous components: the component of
+weight `m` of the substitution is the substitution of the component of weight `m`. -/
+theorem weightedHomogeneousComponent_aeval {M : Type*} [AddCommMonoid M] {w : σ → M}
+    {v : τ → M} {g : σ → MvPolynomial τ R} (hg : ∀ i, (g i).IsWeightedHomogeneous v (w i))
+    (φ : MvPolynomial σ R) (m : M) :
+    weightedHomogeneousComponent v m (MvPolynomial.aeval g φ) =
+      MvPolynomial.aeval g (weightedHomogeneousComponent w m φ) := by
+  classical
+  induction φ using MvPolynomial.induction_on' with
+  | monomial d r =>
+    have hd := isWeightedHomogeneous_monomial w d r rfl
+    rw [weightedHomogeneousComponent_of_mem (hd.aeval hg), weightedHomogeneousComponent_of_mem hd]
+    split_ifs <;> simp
+  | add p q hp hq => simp only [map_add, hp, hq]
 
 /-- **Weighted homogeneous components as coefficients.** Substituting `X i * T ^ w i` for each
 variable `X i` turns a polynomial into a polynomial in `T` whose coefficient of `Tⁿ` is its
