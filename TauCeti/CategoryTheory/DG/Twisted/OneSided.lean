@@ -306,11 +306,6 @@ theorem prop_ofObj_of_subsingleton (M : DGAdditiveClosure (DGShiftClosure C)) [S
     dsimp only at h
     rwa [zero_add] at h
   -- The inclusion of and the projection to the only summand are mutually inverse.
-  have hsingle : dgComp R (DGAdditiveClosure.proj R M i) (DGAdditiveClosure.single R M i)
-      (add_zero 0) = dgId R M :=
-    (Fintype.sum_subsingleton (fun j ↦ dgComp R (DGAdditiveClosure.proj R M j)
-      (DGAdditiveClosure.single R M j) (add_zero 0)) i).symm.trans
-      (DGAdditiveClosure.sum_dgComp_proj_single R M)
   let e : of R (⟨PUnit, fun _ ↦ M.X i⟩ : DGAdditiveClosure (DGShiftClosure C)) ≅ of R M :=
     { hom := homOf R (DGAdditiveClosure.single R M i)
         ((mem_dgCycles R).mpr (DGAdditiveClosure.dgDifferential_single R M i))
@@ -318,7 +313,8 @@ theorem prop_ofObj_of_subsingleton (M : DGAdditiveClosure (DGShiftClosure C)) [S
         ((mem_dgCycles R).mpr (DGAdditiveClosure.dgDifferential_proj R M i))
       hom_inv_id := homOf_comp_eq_id_of_dgComp_eq_dgId R _ _
         (DGAdditiveClosure.dgComp_single_proj_self R M i)
-      inv_hom_id := homOf_comp_eq_id_of_dgComp_eq_dgId R _ _ hsingle }
+      inv_hom_id := homOf_comp_eq_id_of_dgComp_eq_dgId R _ _
+        (DGAdditiveClosure.dgComp_proj_single_of_subsingleton R M i) }
   exact S.prop_of_iso ((DGTwistedObject.embedding R).mapDGHomotopyCategory.mapIso e) hX
 
 /-- **Every one-sided twisted complex lies in any triangulated subcategory containing the objects
@@ -349,7 +345,7 @@ theorem IsOneSided.prop {T : DGTwistedObject R (DGAdditiveClosure (DGShiftClosur
     · rw [dgHomEquiv_twist_restrict]
       exact hlevel i j hij
   · -- The summand `i₀` has zero twist.
-    have htwist : (T.restrict _ (dgComp_twist_eq_zero_of_quot hp)).twist = 0 :=
+    have htwist : (T.restrict _ (dgComp_twist_eq_zero_right hp)).twist = 0 :=
       DGAdditiveClosure.dgHom_ext R fun i j ↦ by
         rw [dgHomEquiv_twist_restrict, map_zero, Pi.zero_apply, Pi.zero_apply]
         exact hlevel i j ((congrArg level ((not_not.mp i.2).trans (not_not.mp j.2).symm)).le)

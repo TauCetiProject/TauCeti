@@ -125,16 +125,6 @@ noncomputable abbrev restrict
   twist := T.restrictTwist q
   dgDifferential_twist := T.dgDifferential_restrictTwist q hq
 
-/-- The identity of the summands of a restriction is the restricted identity of `T`. -/
-@[simp↓]
-theorem dgHomEquiv_dgId_restrict (i j : {i // q i}) :
-    matrixEquiv R _ _ 0 (dgId R (⟨{i // q i}, fun i ↦ T.obj.X i⟩ : DGAdditiveClosure E)) i j =
-      matrixEquiv R _ _ 0 (dgId R T.obj) i j := by
-  rcases eq_or_ne i j with rfl | h
-  · rw [DGAdditiveClosure.dgHomEquiv_dgId_self, DGAdditiveClosure.dgHomEquiv_dgId_self]
-  · rw [DGAdditiveClosure.dgHomEquiv_dgId_of_ne R _ h,
-      DGAdditiveClosure.dgHomEquiv_dgId_of_ne R _ (Subtype.val_injective.ne h)]
-
 variable {q} (hq : ∀ i j k, q i → q j → ¬ q k →
   dgComp R (matrixEquiv R _ _ 1 T.twist i k) (matrixEquiv R _ _ 1 T.twist k j) rfl = 0)
 
@@ -156,13 +146,13 @@ include hp
 
 /-- If `δ` has no entry from a summand satisfying `p` to one which does not, then the summands
 satisfying `p` satisfy the condition of `TauCeti.DGTwistedObject.restrict`. -/
-theorem dgComp_twist_eq_zero_of_sub (i j k : T.obj.ι) (hi : p i) (_ : p j) (hk : ¬ p k) :
+theorem dgComp_twist_eq_zero_left (i j k : T.obj.ι) (hi : p i) (_ : p j) (hk : ¬ p k) :
     dgComp R (matrixEquiv R _ _ 1 T.twist i k) (matrixEquiv R _ _ 1 T.twist k j) rfl = 0 := by
   rw [hp i k hi hk, zero_dgComp]
 
 /-- If `δ` has no entry from a summand satisfying `p` to one which does not, then the summands
 not satisfying `p` satisfy the condition of `TauCeti.DGTwistedObject.restrict`. -/
-theorem dgComp_twist_eq_zero_of_quot (i j k : T.obj.ι) (_ : ¬ p i) (hj : ¬ p j)
+theorem dgComp_twist_eq_zero_right (i j k : T.obj.ι) (_ : ¬ p i) (hj : ¬ p j)
     (hk : ¬ ¬ p k) :
     dgComp R (matrixEquiv R _ _ 1 T.twist i k) (matrixEquiv R _ _ 1 T.twist k j) rfl = 0 := by
   rw [hp k j (not_not.mp hk) hj, dgComp_zero]
@@ -173,8 +163,8 @@ variable [DecidablePred p]
 restriction of `T` to the summands not satisfying `p` to its restriction to the summands
 satisfying `p`, whose entries are the corresponding entries of the twist of `T`. -/
 noncomputable def restrictHom :
-    DGHom R 1 (T.restrict (¬ p ·) (dgComp_twist_eq_zero_of_quot hp))
-      (T.restrict p (dgComp_twist_eq_zero_of_sub hp)) :=
+    DGHom R 1 (T.restrict (¬ p ·) (dgComp_twist_eq_zero_right hp))
+      (T.restrict p (dgComp_twist_eq_zero_left hp)) :=
   (dgHomEquiv R _ _ 1).symm ((matrixEquiv R _ _ 1).symm fun i j ↦ matrixEquiv R _ _ 1 T.twist i j)
 
 /-- The entries of the connecting morphism are entries of the twist of `T`. -/
@@ -189,12 +179,9 @@ Maurer–Cartan defect `d δᵢⱼ - ∑ₖ δᵢₖ δₖⱼ` of `T`, the sum r
 `p` and those not satisfying it. -/
 theorem dgDifferential_restrictHom : dgDifferential R 1 (restrictHom hp) = 0 :=
   (dgHomEquiv R _ _ _).injective <| DGAdditiveClosure.dgHom_ext R fun i j ↦ by
-    rw [dgHomEquiv_dgDifferential, map_zero, map_sub, map_add, map_zsmul_unit, Pi.sub_apply,
-      Pi.sub_apply, Pi.add_apply, Pi.add_apply, Pi.smul_apply, Pi.smul_apply,
-      DGAdditiveClosure.dgHomEquiv_dgDifferential, DGAdditiveClosure.dgHomEquiv_dgComp,
-      DGAdditiveClosure.dgHomEquiv_dgComp]
-    simp only [↓dgHomEquiv_restrictHom, ↓dgHomEquiv_twist_restrict, map_zero, Pi.zero_apply,
-      Int.negOnePow_one, Units.neg_smul, one_smul]
+    rw [dgDifferential_apply, map_zero, map_zero, Pi.zero_apply, Pi.zero_apply]
+    simp only [↓dgHomEquiv_restrictHom, ↓dgHomEquiv_twist_restrict, Int.negOnePow_one,
+      Units.neg_smul, one_smul]
     rw [← DGAdditiveClosure.dgHomEquiv_dgDifferential, dgDifferential_twist,
       DGAdditiveClosure.dgHomEquiv_dgComp, ← Fintype.sum_subtype_add_sum_subtype p]
     abel
@@ -204,8 +191,8 @@ theorem dgDifferential_restrictHom : dgDifferential R 1 (restrictHom hp) = 0 :=
 /-- The extension of the restriction of `T` to the summands not satisfying `p` by its restriction
 to the summands satisfying `p`, along the connecting morphism. -/
 local notation "extensionRestrict" hp =>
-  extension (restrict _ _ (dgComp_twist_eq_zero_of_sub hp))
-    (restrict _ _ (dgComp_twist_eq_zero_of_quot hp)) (restrictHom hp)
+  extension (restrict _ _ (dgComp_twist_eq_zero_left hp))
+    (restrict _ _ (dgComp_twist_eq_zero_right hp)) (restrictHom hp)
     (dgDifferential_restrictHom hp)
 
 /-- The matrix of the regrouping morphism `T ⟶ P ⊕ Q`: the identity from each summand of `T` to its
@@ -277,25 +264,21 @@ are the corresponding entry of the twist of `T`, using that `δ` has no entry fr
 satisfying `p` to one which does not. -/
 theorem dgDifferential_toExtensionRestrict : dgDifferential R 0 (toExtensionRestrict hp) = 0 :=
   (dgHomEquiv R _ _ _).injective <| DGAdditiveClosure.dgHom_ext R fun i k ↦ by
-    rw [dgHomEquiv_dgDifferential, map_zero, map_sub, map_add, map_zsmul_unit, Pi.sub_apply,
-      Pi.sub_apply, Pi.add_apply, Pi.add_apply, Pi.smul_apply, Pi.smul_apply,
-      DGAdditiveClosure.dgHomEquiv_dgDifferential, DGAdditiveClosure.dgHomEquiv_dgComp,
-      DGAdditiveClosure.dgHomEquiv_dgComp, Fintype.sum_sum_type, map_zero, Pi.zero_apply]
+    rw [dgDifferential_apply, Fintype.sum_sum_type, map_zero, map_zero, Pi.zero_apply,
+      Pi.zero_apply]
     rcases k with j | j
     · simp only [↓dgHomEquiv_toExtensionRestrict_inl, ↓dgHomEquiv_toExtensionRestrict_inr,
         ↓dgHomEquiv_twist_extension_inl_inl, ↓dgHomEquiv_twist_extension_inr_inl,
         ↓dgHomEquiv_twist_restrict, ↓dgHomEquiv_restrictHom,
         ↓DGAdditiveClosure.dgDifferential_dgHomEquiv_dgId,
-        ↓DGAdditiveClosure.sum_dgComp_dgHomEquiv_dgId, Int.negOnePow_zero, one_smul, zero_add,
-        Pi.zero_apply]
+        ↓DGAdditiveClosure.sum_dgComp_dgHomEquiv_dgId, Int.negOnePow_zero, one_smul, zero_add]
       rw [Fintype.sum_subtype_add_sum_subtype p fun m ↦ dgComp R
           (matrixEquiv R _ _ 0 (dgId R T.obj) i m) (matrixEquiv R _ _ 1 T.twist m j) (zero_add 1),
         DGAdditiveClosure.sum_dgHomEquiv_dgId_dgComp, sub_self]
     · simp only [↓dgHomEquiv_toExtensionRestrict_inl, ↓dgHomEquiv_toExtensionRestrict_inr,
         ↓dgHomEquiv_twist_extension_inl_inr, ↓dgHomEquiv_twist_extension_inr_inr,
         ↓dgHomEquiv_twist_restrict, ↓DGAdditiveClosure.dgDifferential_dgHomEquiv_dgId,
-        ↓DGAdditiveClosure.sum_dgComp_dgHomEquiv_dgId, Int.negOnePow_zero, one_smul, zero_add,
-        Pi.zero_apply]
+        ↓DGAdditiveClosure.sum_dgComp_dgHomEquiv_dgId, Int.negOnePow_zero, one_smul, zero_add]
       -- The vanishing block from `P` to `Q` consists of entries of `δ`, by `hp`.
       rw [Finset.sum_congr rfl fun x _ ↦ by rw [← hp x j x.2 j.2],
         Fintype.sum_subtype_add_sum_subtype p fun m ↦ dgComp R
@@ -327,12 +310,12 @@ theorem dgComp_ofExtensionRestrict_toExtensionRestrict :
       simp only [↓dgHomEquiv_toExtensionRestrict_inl, ↓dgHomEquiv_toExtensionRestrict_inr,
         ↓dgHomEquiv_ofExtensionRestrict_inl, ↓dgHomEquiv_ofExtensionRestrict_inr,
         ↓DGAdditiveClosure.sum_dgHomEquiv_dgId_dgComp]
-    · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inl_inl, dgHomEquiv_dgId_restrict]
+    · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inl_inl, DGAdditiveClosure.dgHomEquiv_dgId_subtype]
     · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inl_inr]
       exact DGAdditiveClosure.dgHomEquiv_dgId_of_ne R _ fun h ↦ j'.2 (h ▸ j.2)
     · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inr_inl]
       exact DGAdditiveClosure.dgHomEquiv_dgId_of_ne R _ fun h ↦ j.2 (h ▸ j'.2)
-    · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inr_inr, dgHomEquiv_dgId_restrict]
+    · rw [DGAdditiveClosure.dgHomEquiv_dgId_sum_inr_inr, DGAdditiveClosure.dgHomEquiv_dgId_subtype]
 
 /-- The regrouping morphism `P ⊕ Q ⟶ T` is closed, as the inverse of a closed morphism. -/
 theorem dgDifferential_ofExtensionRestrict : dgDifferential R 0 (ofExtensionRestrict hp) = 0 :=
