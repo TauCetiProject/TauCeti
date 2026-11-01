@@ -10,6 +10,8 @@ public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import TauCeti.AlgebraicGeometry.AffineScheme
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Colimits
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Conservative
+public import TauCeti.AlgebraicGeometry.FiniteEtale.Quotient
+public import TauCeti.CategoryTheory.Galois.FiberFunctorIso
 public import TauCeti.CategoryTheory.Limits.Shapes.SingleObj
 public import TauCeti.RingTheory.Invariant.Basic
 
@@ -22,14 +24,14 @@ groups: if a finite group `G` acts on a finite étale `Spec R`-scheme `Y`, the g
 the quotient `Y / G` is the set of `G`-orbits on the geometric fibre of `Y`. This is the quotient
 part of Lenstra's axiom (G5) for a fibre functor.
 
-Together with the axioms already established for finite étale schemes, it follows that
-`FiniteEtaleScheme (Spec R)` is a `CategoryTheory.PreGaloisCategory`, that every geometric fibre
-functor is a `CategoryTheory.PreGaloisCategory.FiberFunctor` when `Spec R` is connected, and
-hence that finite étale schemes over a connected affine scheme form a
-`CategoryTheory.GaloisCategory`. Mathlib's theory of Galois categories then applies to them: for
-instance, `CategoryTheory.PreGaloisCategory.functorToContAction` is an equivalence from finite étale
-schemes over `Spec R` to finite continuous sets under the automorphism group of a geometric fibre
-functor.
+Finite étale schemes over every scheme form a `CategoryTheory.PreGaloisCategory`
+(`TauCeti.AlgebraicGeometry.FiniteEtale.Quotient`). Together with the axioms already established
+for geometric fibre functors, it follows that every geometric fibre functor is a
+`CategoryTheory.PreGaloisCategory.FiberFunctor` when `Spec R` is connected, and hence that finite
+étale schemes over a connected affine scheme form a `CategoryTheory.GaloisCategory`. Mathlib's
+theory of Galois categories then applies to them: for instance,
+`CategoryTheory.PreGaloisCategory.functorToContAction` is an equivalence from finite étale schemes
+over `Spec R` to finite continuous sets under the automorphism group of a geometric fibre functor.
 
 The proof of preservation works with lifts of `x`, which are the points of the fibre
 (`FiniteEtaleScheme.fiberCompInclIso`). Surjectivity on fibres holds because the quotient map is
@@ -44,9 +46,10 @@ invariants, and these are conjugate under `G`
 
 * `PreservesColimitsOfShape (SingleObj G) (FiniteEtaleScheme.fiber x)` for a finite group `G`:
   geometric fibre functors over an affine base preserve quotients by finite groups.
-* `PreGaloisCategory (FiniteEtaleScheme (Spec R))`.
 * `PreGaloisCategory.FiberFunctor (FiniteEtaleScheme.fiber x)` when `Spec R` is connected.
 * `GaloisCategory (FiniteEtaleScheme (Spec R))` when `Spec R` is connected.
+* `TauCeti.FiniteEtaleScheme.nonempty_fiber_iso`: when `Spec R` is connected, any two geometric
+  fibre functors are isomorphic, so any two geometric points are joined by an étale path.
 
 ## References
 
@@ -154,11 +157,6 @@ instance [Finite G] (x : Spec (.of Ω) ⟶ Spec R) :
   preservesColimit := ⟨fun hc ↦ ⟨isColimitOfReflects FintypeCat.incl
     (isColimitInclMapCoconeFiber x hc)⟩⟩
 
-/-- **Finite étale schemes over an affine scheme form a pre-Galois category.** -/
-instance : PreGaloisCategory (FiniteEtaleScheme (Spec R)) where
-  hasQuotientsByFiniteGroups _ := inferInstance
-  monoInducesIsoOnDirectSummand i _ := exists_isColimit_binaryCofanMk_of_mono i
-
 /-- **Over a connected affine scheme, every geometric fibre functor is a fibre functor** of the
 Galois category of finite étale schemes. -/
 instance [PreconnectedSpace (Spec R)] (x : Spec (.of Ω) ⟶ Spec R) : FiberFunctor (fiber x) where
@@ -173,5 +171,12 @@ instance [ConnectedSpace (Spec R)] : GaloisCategory (FiniteEtaleScheme (Spec R))
     let x := Spec.map (CommRingCat.ofHom (algebraMap K (AlgebraicClosure K))) ≫
       (Spec R).fromSpecResidueField p
     exact ⟨fiber x, inferInstance⟩
+
+/-- **Any two geometric points of a connected affine scheme are joined by an étale path**: their
+geometric fibre functors on finite étale schemes are isomorphic. The geometric points may have
+different separably closed fields. -/
+theorem nonempty_fiber_iso [ConnectedSpace (Spec R)] {Ω' : Type u} [Field Ω'] [IsSepClosed Ω']
+    (x : Spec (.of Ω) ⟶ Spec R) (y : Spec (.of Ω') ⟶ Spec R) : Nonempty (fiber x ≅ fiber y) :=
+  FiberFunctor.nonempty_iso _ _
 
 end TauCeti.FiniteEtaleScheme

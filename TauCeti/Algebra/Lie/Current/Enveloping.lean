@@ -44,11 +44,15 @@ than to `K`.
 
 * `TauCeti.CurrentAlgebra.envelopingι`: the current generators of `U(ĝ) / (ι K - a)`.
 * `TauCeti.CurrentAlgebra.liftOfCurrents`: the universal property in terms of currents.
+* `TauCeti.CurrentAlgebra.envelopingAction`: the action of the currents on a module over
+  `U(ĝ) / (ι K - a)`.
 * `TauCeti.CurrentAlgebra.levelEnvelopingEquiv`: the level comparison isomorphism.
 
 ## Main results
 
 * `TauCeti.CurrentAlgebra.envelopingι_mul_sub_mul`: the commutator relations.
+* `TauCeti.CurrentAlgebra.envelopingAction_mul_sub_mul`: the commutator relations for the action
+  of the currents on a module.
 * `TauCeti.CurrentAlgebra.adjoin_range_envelopingι`: the currents generate the algebra.
 * `TauCeti.CurrentAlgebra.algHom_ext_envelopingι`: algebra morphisms are determined on currents.
 * `TauCeti.CurrentAlgebra.envelopingι_injective`: over a field, the currents embed.
@@ -192,6 +196,38 @@ theorem algHom_ext_envelopingι {g₁ g₂ : UK →ₐ[R] A}
   rw [ι_ofProd, map_add, map_add, h, AlgHom.commutes, AlgHom.commutes]
 
 end Generators
+
+section Action
+
+variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
+  {M : Type*} [AddCommGroup M] [Module R M]
+  [Module (CentralQuotient R (centralElement Φ hΦ hΦs) a) M]
+  [IsScalarTower R (CentralQuotient R (centralElement Φ hΦ hΦs) a) M]
+
+/-- The action of the currents on a module over `U(ĝ) / (ι K - a)`: `u` acts by its current
+generator. -/
+def envelopingAction : C →ₗ[R] Module.End R M :=
+  (Algebra.lsmul R R M).toLinearMap ∘ₗ envelopingι Φ hΦ hΦs a
+
+/-- A current acts by its current generator. -/
+@[simp]
+theorem envelopingAction_apply (u : C) (m : M) :
+    envelopingAction (M := M) Φ hΦ hΦs a u m = envelopingι Φ hΦ hΦs a u • m :=
+  (rfl)
+
+/-- The action of the currents on a module over `U(ĝ) / (ι K - a)` satisfies the commutator
+relations `[u, v] = ⁅u, v⁆ + a Res(u dv)`. -/
+theorem envelopingAction_mul_sub_mul (u v : C) :
+    envelopingAction (M := M) Φ hΦ hΦs a u * envelopingAction Φ hΦ hΦs a v -
+        envelopingAction Φ hΦ hΦs a v * envelopingAction Φ hΦ hΦs a u =
+      envelopingAction Φ hΦ hΦs a ⁅u, v⁆ +
+        algebraMap R (Module.End R M) (a * residuePairing R L Φ u v) := by
+  have h := congrArg (Algebra.lsmul R R M) (envelopingι_mul_sub_mul Φ hΦ hΦs a u v)
+  simp only [map_sub, map_mul, map_add, AlgHom.commutes] at h
+  simpa only [envelopingAction, LinearMap.coe_comp, Function.comp_apply,
+    AlgHom.toLinearMap_apply, map_mul] using h
+
+end Action
 
 section Field
 
