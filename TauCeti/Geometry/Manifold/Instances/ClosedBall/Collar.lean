@@ -48,12 +48,16 @@ such as a concordance from a great circle capped off by the flat disc.
 ## Main results
 
 * `TauCeti.contMDiff_ballCollar`: the radial collar is analytic.
+* `TauCeti.contMDiff_ballCollarInv`: its inverse is analytic on the punctured closed ball
+  `TauCeti.puncturedClosedBall`.
 * `TauCeti.ballCollarChart_mem_maximalAtlas`: collar charts induced by charts of the maximal atlas
   of the product lie in the maximal atlas of the closed ball.
-* `TauCeti.isImmersionAt_of_comp_ballCollar_eventuallyEq`: a map of closed balls which reads in the
-  radial collars as an immersion is an immersion.
-* `TauCeti.isImmersionAt_of_comp_ballCollar_eventuallyEq_prodMap`: the cone over an immersion of
-  unit spheres is an immersion, up to the boundary sphere.
+* `TauCeti.isImmersionAt_of_comp_ballCollar_eventuallyEq`: if a map `Φ` of closed balls reads near
+  `q` in the radial collars as a map `G` that is an immersion at `q`, then `Φ` is an immersion at
+  `ballCollar q`.
+* `TauCeti.isImmersionAt_of_comp_ballCollar_eventuallyEq_prodMap`: a map that near a collar point
+  is the cone over a map of unit spheres which is an immersion at the matching point is an
+  immersion at that collar point, including on the boundary sphere.
 
 ## References
 
@@ -88,34 +92,21 @@ theorem contMDiff_ballCollar {k : ℕ∞ω} :
   refine (hs.smul (contMDiff_coe_sphere.comp contMDiff_fst)).congr fun q ↦ ?_
   simp [coe_ballCollar]
 
-/-- The identification `ℝ ≃ ℝ¹` of the reals with the model vector space of the half-line. -/
-private def realEquivEuclideanOne : ℝ ≃L[ℝ] EuclideanSpace ℝ (Fin 1) :=
-  ((EuclideanSpace.equiv (Fin 1) ℝ).trans (ContinuousLinearEquiv.piUnique ℝ fun _ ↦ ℝ)).symm
-
-private theorem realEquivEuclideanOne_apply_zero (r : ℝ) : realEquivEuclideanOne r 0 = r := by
-  simp [realEquivEuclideanOne]
-
-/-- The normal ray is the model inverse of the half-line, read on the reals. -/
-private theorem normalRay_eq_symm (r : ℝ) :
-    EuclideanHalfSpace.normalRay r = (𝓡∂ 1).symm (realEquivEuclideanOne r) := by
-  apply Subtype.ext
-  ext i
-  fin_cases i
-  simp [modelWithCornersEuclideanHalfSpace_symm_apply, EuclideanHalfSpace.normalRay_coe_apply,
-    realEquivEuclideanOne_apply_zero]
-
 variable (E) in
-/-- The punctured closed unit ball, as an open subset of the closed unit ball. -/
-private def puncturedClosedBall : Opens (closedBall (0 : E) 1) :=
+/-- The punctured closed unit ball, as an open subset of the closed unit ball. It is the range of
+the radial collar (`TauCeti.range_ballCollar`). -/
+def puncturedClosedBall : Opens (closedBall (0 : E) 1) :=
   ⟨{y | (y : E) ≠ 0}, isOpen_ne_fun continuous_subtype_val continuous_const⟩
 
 omit [InnerProductSpace ℝ E] in
-private theorem mem_puncturedClosedBall {y : closedBall (0 : E) 1} :
+/-- A point of the closed unit ball lies in the punctured closed ball exactly when it is nonzero. -/
+theorem mem_puncturedClosedBall {y : closedBall (0 : E) 1} :
     y ∈ puncturedClosedBall E ↔ (y : E) ≠ 0 :=
   Iff.rfl
 
-/-- The inverse of the radial collar is analytic on the punctured ball. -/
-private theorem contMDiff_ballCollarInv {k : ℕ∞ω} :
+/-- The inverse of the radial collar is analytic on the punctured ball, as a map to the unit sphere
+times the half-line with its structure of manifold with boundary. -/
+theorem contMDiff_ballCollarInv {k : ℕ∞ω} :
     ContMDiff (𝓡∂ (n + 1)) ((𝓡 n).prod (𝓡∂ 1)) k
       (fun y : puncturedClosedBall E ↦
         ballCollarInv (y : closedBall (0 : E) 1) (mem_puncturedClosedBall.1 y.2)) := by
@@ -132,19 +123,20 @@ private theorem contMDiff_ballCollarInv {k : ℕ∞ω} :
     exact ((hnorm y).inv₀ (norm_ne_zero_iff.2 y.2)).smul hy.contMDiffAt
   · have hcoord : ContMDiff (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) k
         (fun y : puncturedClosedBall E ↦
-          realEquivEuclideanOne (-Real.log ‖((y : closedBall (0 : E) 1) : E)‖)) := fun y ↦ by
+          (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm
+            (-Real.log ‖((y : closedBall (0 : E) 1) : E)‖)) := fun y ↦ by
       have hlog : ContDiffAt ℝ k Real.log ‖((y : closedBall (0 : E) 1) : E)‖ :=
         Real.contDiffAt_log.2 (norm_ne_zero_iff.2 y.2)
-      exact realEquivEuclideanOne.contDiff.contMDiff.contMDiffAt.comp y
+      exact (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm.contDiff.contMDiff.contMDiffAt.comp y
         (hlog.comp_contMDiffAt
           (f := fun y : puncturedClosedBall E ↦ ‖((y : closedBall (0 : E) 1) : E)‖) (hnorm y)).neg
     have hrange (y : puncturedClosedBall E) :
-        realEquivEuclideanOne (-Real.log ‖((y : closedBall (0 : E) 1) : E)‖) ∈ range (𝓡∂ 1) := by
-      rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq,
-        realEquivEuclideanOne_apply_zero, neg_nonneg]
-      exact Real.log_nonpos (norm_nonneg _) (mem_closedBall_zero_iff.1 y.1.2)
+        (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm
+          (-Real.log ‖((y : closedBall (0 : E) 1) : E)‖) ∈ range (𝓡∂ 1) := by
+      rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq]
+      simpa using Real.log_nonpos (norm_nonneg _) (mem_closedBall_zero_iff.1 y.1.2)
     exact ((𝓡∂ 1).contMDiffOn_symm.comp_contMDiff hcoord hrange).congr fun y ↦ by
-      rw [ballCollarInv_snd, Function.comp_apply, normalRay_eq_symm]
+      rw [ballCollarInv_snd, Function.comp_apply, EuclideanHalfSpace.normalRay_eq_symm]
 
 variable (E) in
 /-- The radial collar as an open partial homeomorphism onto the punctured closed ball. -/
@@ -242,56 +234,8 @@ theorem mem_ballCollarChart_target {y : EuclideanHalfSpace (n + 1)} :
       (EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm y ∈ ψ.target := by
   simp only [ballCollarChart, OpenPartialHomeomorph.transHomeomorph_target,
     OpenPartialHomeomorph.trans_target, OpenPartialHomeomorph.symm_target,
-    ballCollarPartialHomeomorph_source, preimage_univ, inter_univ, mem_preimage]
-  rfl
-
-/-- The model of the half-space and the model of the product of `ℝⁿ` with the half-line are
-intertwined by the collar identifications. -/
-private theorem model_collarDiffeomorph
-    (p : ModelProd (EuclideanSpace ℝ (Fin n)) (EuclideanHalfSpace 1)) :
-    (𝓡∂ (n + 1)) (EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n p) =
-      EuclideanHalfSpace.collarAmbientEquiv n (((𝓡 n).prod (𝓡∂ 1)) p) := by
-  rw [modelWithCornersEuclideanHalfSpace_apply, EuclideanHalfSpace.coe_collarDiffeomorph_apply,
-    modelWithCorners_prod_coe]
-  rfl
-
-private theorem model_collarDiffeomorph_symm (y : EuclideanHalfSpace (n + 1)) :
-    ((𝓡 n).prod (𝓡∂ 1)) ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm y) =
-      (EuclideanHalfSpace.collarAmbientEquiv n).symm y.1 :=
-  EuclideanHalfSpace.collarDiffeomorph_symm_apply_coe n y
-
-/-- The collar identification is smooth as a map from the model of `ℝⁿ × [0, ∞)` with its own
-charts: it is the linear equivalence `collarAmbientEquiv` read in the models. -/
-private theorem contMDiff_collarDiffeomorph {k : ℕ∞ω} :
-    ContMDiff ((𝓡 n).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) k
-      (fun p : ModelProd (EuclideanSpace ℝ (Fin n)) (EuclideanHalfSpace 1) ↦
-        EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n p) := by
-  have hrange (p : ModelProd (EuclideanSpace ℝ (Fin n)) (EuclideanHalfSpace 1)) :
-      EuclideanHalfSpace.collarAmbientEquiv n (((𝓡 n).prod (𝓡∂ 1)) p) ∈ range (𝓡∂ (n + 1)) := by
-    rw [← model_collarDiffeomorph]
-    exact mem_range_self _
-  refine ((𝓡∂ (n + 1)).contMDiffOn_symm.comp_contMDiff
-    ((EuclideanHalfSpace.collarAmbientEquiv n).contDiff.contMDiff.comp
-      ((𝓡 n).prod (𝓡∂ 1)).contMDiff) hrange).congr fun p ↦ ?_
-  rw [Function.comp_apply, Function.comp_apply, ← model_collarDiffeomorph,
-    ModelWithCorners.left_inv]
-
-/-- The inverse collar identification is smooth as a map to the model of `ℝⁿ × [0, ∞)` with its
-own charts. -/
-private theorem contMDiff_collarDiffeomorph_symm {k : ℕ∞ω} :
-    ContMDiff (𝓡∂ (n + 1)) ((𝓡 n).prod (𝓡∂ 1)) k
-      (fun y ↦ id (α := ModelProd (EuclideanSpace ℝ (Fin n)) (EuclideanHalfSpace 1))
-        ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm y)) := by
-  have hrange (y : EuclideanHalfSpace (n + 1)) :
-      (EuclideanHalfSpace.collarAmbientEquiv n).symm ((𝓡∂ (n + 1)) y) ∈
-        range ((𝓡 n).prod (𝓡∂ 1)) := by
-    rw [modelWithCornersEuclideanHalfSpace_apply, ← model_collarDiffeomorph_symm]
-    exact mem_range_self _
-  refine ((((𝓡 n).prod (𝓡∂ 1))).contMDiffOn_symm.comp_contMDiff
-    ((EuclideanHalfSpace.collarAmbientEquiv n).symm.contDiff.contMDiff.comp
-      (𝓡∂ (n + 1)).contMDiff) hrange).congr fun y ↦ ?_
-  rw [Function.comp_apply, Function.comp_apply, modelWithCornersEuclideanHalfSpace_apply,
-    ← model_collarDiffeomorph_symm, ModelWithCorners.left_inv, id]
+    ballCollarPartialHomeomorph_source, preimage_univ, inter_univ, mem_preimage,
+    Diffeomorph.coe_toHomeomorph_symm]
 
 /-- Collar charts induced by charts of the maximal atlas of the unit sphere times the half-line lie
 in the maximal atlas of the closed unit ball. -/
@@ -302,15 +246,6 @@ theorem ballCollarChart_mem_maximalAtlas {k : ℕ∞ω}
   have : IsManifold (𝓡∂ (n + 1)) k (closedBall (0 : E) 1) := .of_le le_top
   have : IsManifold ((𝓡 n).prod (𝓡∂ 1)) k (sphere (0 : E) 1 × EuclideanHalfSpace 1) :=
     .of_le le_top
-  -- The collar identification, as a map of the model of the product with its own charts.
-  have hC : ContMDiff ((𝓡 n).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) k
-      (fun p : ModelProd (EuclideanSpace ℝ (Fin n)) (EuclideanHalfSpace 1) ↦
-        EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n p) :=
-    contMDiff_collarDiffeomorph
-  have hC' : ContMDiff (𝓡∂ (n + 1)) ((𝓡 n).prod (𝓡∂ 1)) k
-      (fun y ↦ id (α := ModelProd (EuclideanSpace ℝ (Fin n)) (EuclideanHalfSpace 1))
-        ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm y)) :=
-    contMDiff_collarDiffeomorph_symm
   refine OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn _ ?_ ?_
   · have h₁ : ContMDiffOn (𝓡∂ (n + 1)) ((𝓡 n).prod (𝓡∂ 1)) k
         (ψ ∘ (ballCollarPartialHomeomorph E (n := n)).symm)
@@ -318,11 +253,28 @@ theorem ballCollarChart_mem_maximalAtlas {k : ℕ∞ω}
       rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.symm_source]
       exact (contMDiffOn_of_mem_maximalAtlas hψ).comp
         (contMDiffOn_ballCollarPartialHomeomorph_symm.mono inter_subset_left) fun y hy ↦ hy.2
-    exact (hC.comp_contMDiffOn h₁).congr fun y _ ↦ rfl
+    exact (EuclideanHalfSpace.contMDiff_collarDiffeomorph_modelProd n).comp_contMDiffOn h₁
   · have h := (contMDiff_ballCollar (E := E) (k := k)).comp_contMDiffOn
-      ((contMDiffOn_symm_of_mem_maximalAtlas hψ).comp hC'.contMDiffOn
+      ((contMDiffOn_symm_of_mem_maximalAtlas hψ).comp
+        (EuclideanHalfSpace.contMDiff_collarDiffeomorph_symm_modelProd n).contMDiffOn
         fun y hy ↦ mem_ballCollarChart_target.1 hy)
     exact h.congr fun y _ ↦ ballCollarChart_symm_apply y
+
+/-- The collar chart of `ψ`, extended to the model vector space, reads the radial collar of `q` as
+the model point of `ψ q` carried to `ℝⁿ⁺¹` by `collarAmbientEquiv`. -/
+theorem ballCollarChart_extend_apply_ballCollar (q : sphere (0 : E) 1 × EuclideanHalfSpace 1) :
+    (ballCollarChart ψ).extend (𝓡∂ (n + 1)) (ballCollar q) =
+      EuclideanHalfSpace.collarAmbientEquiv n (((𝓡 n).prod (𝓡∂ 1)) (ψ q)) := by
+  rw [OpenPartialHomeomorph.extend_coe, Function.comp_apply, ballCollarChart_apply_ballCollar,
+    EuclideanHalfSpace.model_collarDiffeomorph]
+
+/-- The inverse of the extended collar chart of `ψ` sends the model point of `u` to the radial
+collar of the inverse of `ψ` at the point of `ℝⁿ × [0, ∞)` corresponding to `u`. -/
+theorem ballCollarChart_extend_symm_apply (u : EuclideanHalfSpace (n + 1)) :
+    ((ballCollarChart ψ).extend (𝓡∂ (n + 1))).symm ((𝓡∂ (n + 1)) u) =
+      ballCollar (ψ.symm ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) n).symm u)) := by
+  rw [OpenPartialHomeomorph.extend_coe_symm, Function.comp_apply, ModelWithCorners.left_inv,
+    ballCollarChart_symm_apply]
 
 /-! ### Immersions read in the radial collars -/
 
@@ -379,14 +331,12 @@ theorem isImmersionAt_of_comp_ballCollar_eventuallyEq {k : ℕ∞ω}
     exact hsource hp hpd
   · intro u hu
     have hu' := hu
-    rw [OpenPartialHomeomorph.extend_target, mem_inter_iff, mem_preimage] at hu'
-    obtain ⟨hut, ⟨u', rfl⟩⟩ := hu'
-    rw [ModelWithCorners.left_inv] at hut
+    rw [OpenPartialHomeomorph.extend_target'] at hu'
+    obtain ⟨u', hut, rfl⟩ := hu'
     -- The point of the product whose collar is the chart preimage of `u`.
     set p := hG.domChart.symm ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) m).symm u')
     have hsymm : (dom.extend (𝓡∂ (m + 1))).symm ((𝓡∂ (m + 1)) u') = ballCollar p := by
-      rw [OpenPartialHomeomorph.extend_coe_symm, Function.comp_apply, ModelWithCorners.left_inv]
-      simp [dom, p]
+      simpa [dom] using ballCollarChart_extend_symm_apply (ψ := hG.domChart) u'
     have hmem : ballCollar p ∈ dom.source := by
       rw [← hsymm, ← dom.extend_source (I := 𝓡∂ (m + 1))]
       exact (dom.extend (𝓡∂ (m + 1))).map_target hu
@@ -397,24 +347,25 @@ theorem isImmersionAt_of_comp_ballCollar_eventuallyEq {k : ℕ∞ω}
     have hv : ((𝓡 m).prod (𝓡∂ 1))
         ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) m).symm u') ∈
           (hG.domChart.extend ((𝓡 m).prod (𝓡∂ 1))).target := by
-      rw [OpenPartialHomeomorph.extend_target, mem_inter_iff, mem_preimage,
-        ModelWithCorners.left_inv]
-      have hut' : u' ∈ (ballCollarChart hG.domChart).target := by
-        simp only [dom, OpenPartialHomeomorph.restr_target] at hut
-        exact hut.1
-      exact ⟨mem_ballCollarChart_target.1 hut', mem_range_self _⟩
+      rw [OpenPartialHomeomorph.extend_target']
+      rw [OpenPartialHomeomorph.restr_target] at hut
+      exact mem_image_of_mem _ (mem_ballCollarChart_target.1 hut.1)
     have hnf := hG.writtenInCharts hv
     simp only [Function.comp_apply, OpenPartialHomeomorph.extend_coe_symm,
       OpenPartialHomeomorph.extend_coe, ModelWithCorners.left_inv] at hnf
-    rw [Function.comp_apply, Function.comp_apply, hsymm, hΦp, OpenPartialHomeomorph.extend_coe,
-      Function.comp_apply, ballCollarChart_apply_ballCollar, model_collarDiffeomorph, hnf,
-      model_collarDiffeomorph_symm]
-    simp [equiv]
+    rw [Function.comp_apply, Function.comp_apply, hsymm, hΦp,
+      ballCollarChart_extend_apply_ballCollar, hnf]
+    simp only [equiv, Function.comp_apply, ContinuousLinearEquiv.trans_apply,
+      ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.refl_apply]
+    rw [modelWithCorners_prod_coe, modelWithCornersSelf_coe, Prod.map_apply', id_eq,
+      modelWithCornersEuclideanHalfSpace_apply, modelWithCornersEuclideanHalfSpace_apply,
+      EuclideanHalfSpace.collarDiffeomorph_symm_apply_coe]
 
-/-- **Cones over immersions of spheres are immersions.** Let `g` be an immersion of the unit sphere
-of `F` into the unit sphere of `E` at a point `q.1`. If near `q` the map `Φ` of closed unit balls is
-the cone `exp (-s) • u ↦ exp (-s) • g u` over `g`, then `Φ` is an immersion at `ballCollar q`, also
-when `q` has normal coordinate `0`, so that `ballCollar q` lies on the boundary sphere. -/
+/-- **A map that is a cone near a collar point is an immersion there.** Let `g` be a map of the
+unit sphere of `F` into the unit sphere of `E` which is an immersion at `q.1`. If near `q` the map
+`Φ` of closed unit balls is the cone `exp (-s) • u ↦ exp (-s) • g u` over `g`, then `Φ` is an
+immersion at `ballCollar q`, also when `q` has normal coordinate `0`, so that `ballCollar q` lies
+on the boundary sphere. The cone point `0` is not in the range of the collar and is not covered. -/
 theorem isImmersionAt_of_comp_ballCollar_eventuallyEq_prodMap {k : ℕ∞ω}
     {Φ : closedBall (0 : F) 1 → closedBall (0 : E) 1} {g : sphere (0 : F) 1 → sphere (0 : E) 1}
     {q : sphere (0 : F) 1 × EuclideanHalfSpace 1} (hg : IsImmersionAt (𝓡 m) (𝓡 n) k g q.1)

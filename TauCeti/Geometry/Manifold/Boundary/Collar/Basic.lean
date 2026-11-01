@@ -42,6 +42,11 @@ coordinates on an arbitrary manifold and is not proved here.
 * `EuclideanHalfSpace.collarDiffeomorph_symm_apply_fst`: the inverse recovers the boundary
   projection.
 * `EuclideanHalfSpace.collarDiffeomorph_apply_zero`: the inward normal is coordinate zero.
+* `EuclideanHalfSpace.model_collarDiffeomorph`: read in the models with corners, the collar
+  diffeomorphism is `collarAmbientEquiv`.
+* `EuclideanHalfSpace.contMDiff_collarDiffeomorph_modelProd` and
+  `EuclideanHalfSpace.contMDiff_collarDiffeomorph_symm_modelProd`: its smoothness for the product
+  model charted over itself, the chart structure used by charts of product manifolds.
 * `EuclideanHalfSpace.collarModelChartedSpace_chartAt` and
   `EuclideanHalfSpace.collarModelChartedSpace_atlas`: its preferred chart and its atlas.
 
@@ -197,6 +202,42 @@ theorem collarDiffeomorph_symm_apply_coe (n : ℕ) {k : WithTop ℕ∞}
     (((collarDiffeomorph (k := k) n).symm y).1, ((collarDiffeomorph (k := k) n).symm y).2.1) =
       (collarAmbientEquiv n).symm y.1 :=
   (rfl)
+
+/-- The collar diffeomorphism is smooth from the product model `ModelProd` charted over itself,
+the chart structure of charts of manifolds modelled on `(𝓡 n).prod (𝓡∂ 1)`. -/
+theorem contMDiff_collarDiffeomorph_modelProd (n : ℕ) {k : WithTop ℕ∞} :
+    ContMDiff ((𝓡 n).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) k
+      (fun p : ModelProd (EuclideanSpace ℝ (Fin n)) (EuclideanHalfSpace 1) ↦
+        collarDiffeomorph (k := ⊤) n p) := by
+  have h := (collarDiffeomorph (k := k) n).contMDiff
+  -- Restate `h` for `collarEquiv`, whose type, unlike that of the diffeomorphism, does not mention
+  -- the product charted space, so that the charted space can be rewritten.
+  change ContMDiff _ _ _ (collarEquiv n) at h
+  rw [chartedSpaceSelf_prod] at h
+  exact h
+
+/-- The inverse collar diffeomorphism is smooth to the product model `ModelProd` charted over
+itself, the chart structure of charts of manifolds modelled on `(𝓡 n).prod (𝓡∂ 1)`. -/
+theorem contMDiff_collarDiffeomorph_symm_modelProd (n : ℕ) {k : WithTop ℕ∞} :
+    ContMDiff (𝓡∂ (n + 1)) ((𝓡 n).prod (𝓡∂ 1))
+      (M' := ModelProd (EuclideanSpace ℝ (Fin n)) (EuclideanHalfSpace 1)) k
+      (fun y ↦ (collarDiffeomorph (k := ⊤) n).symm y) := by
+  have h := (collarDiffeomorph (k := k) n).symm.contMDiff
+  -- As above, restate `h` for `collarEquiv` so that the charted space can be rewritten.
+  change ContMDiff _ _ _ (collarEquiv n).symm at h
+  rw [chartedSpaceSelf_prod] at h
+  exact h
+
+/-- The collar diffeomorphism intertwines the models with corners: read through the model of the
+half-space and the product model of `ℝⁿ × [0, ∞)`, it is the linear equivalence
+`collarAmbientEquiv`. -/
+theorem model_collarDiffeomorph (n : ℕ) {k : WithTop ℕ∞}
+    (p : EuclideanSpace ℝ (Fin n) × EuclideanHalfSpace 1) :
+    (𝓡∂ (n + 1)) (collarDiffeomorph (k := k) n p) =
+      collarAmbientEquiv n (((𝓡 n).prod (𝓡∂ 1)) p) := by
+  rw [modelWithCornersEuclideanHalfSpace_apply, coe_collarDiffeomorph_apply,
+    modelWithCorners_prod_coe, modelWithCornersSelf_coe, Prod.map_apply', id_eq,
+    modelWithCornersEuclideanHalfSpace_apply]
 
 /-- The collar diffeomorphism sends the inward normal coordinate to coordinate zero. -/
 @[simp]
