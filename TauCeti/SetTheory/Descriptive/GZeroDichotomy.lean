@@ -9,7 +9,6 @@ public import TauCeti.SetTheory.Descriptive.GSGraph
 public import TauCeti.SetTheory.Descriptive.SmallFamily.WitnessExtension
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Fintype.Vector
-import Mathlib.Data.List.GetD
 import Mathlib.Topology.Metrizable.CompletelyMetrizable
 import TauCeti.Data.Vector.Basic
 import TauCeti.MeasureTheory.Constructions.Polish.Analytic
@@ -29,11 +28,12 @@ The homomorphism half, `exists_continuous_orientedGS_hom`, says that the second 
 holds when the first fails, and it does so for every sparse word set `S` (at most one word
 of each length) in place of `canonicalWords`; neither symmetry nor irreflexivity of `G` is
 assumed. The two alternatives exclude each other
-whenever `S` is dense (`not_hasCountableBorelColoring_of_orientedGS_hom`): a coloring of `G`
+whenever `S` is dense (`not_hasCountableBorelColoring_of_orientedGS_hom`, in
+`TauCeti.SetTheory.Descriptive.GSGraph`): a coloring of `G`
 would pull back to a countable Borel coloring of `orientedGS S`, which Miller's independence
 lemma forbids. For a simple graph `G` on `X` with analytic edge relation, the dichotomy reads:
 either `G` has a measurable coloring by `ℕ`, or there is a continuous homomorphism
-`gZero →g G` (`g0_dichotomy`).
+`gZero →g G` (`SimpleGraph.g0_dichotomy`).
 
 Applied to the inequivalence relation of a Borel equivalence relation `E` with uncountably many
 classes, the homomorphism half gives a continuous map sending `gZero`-adjacent points to
@@ -67,9 +67,8 @@ whose image under `g` is the pair of limit values.
 ## Main results
 
 * `TauCeti.exists_continuous_orientedGS_hom`: the homomorphism half, for every sparse `S`.
-* `TauCeti.not_hasCountableBorelColoring_of_orientedGS_hom`: exclusivity, for dense `S`.
 * `TauCeti.g0_dichotomy_oriented`: the G₀ dichotomy for analytic relations.
-* `TauCeti.g0_dichotomy`: the G₀ dichotomy for simple graphs.
+* `SimpleGraph.g0_dichotomy`: the G₀ dichotomy for simple graphs.
 * `Setoid.exists_continuous_forall_gSGraph_adj_not`: a Borel equivalence relation with
   uncountably many classes receives, for every sparse `S`, a continuous map sending adjacent
   points of `gSGraph S` to inequivalent points.
@@ -139,6 +138,10 @@ private theorem mem_levelEdges_succ {p : List.Vector Bool (n + 1) × List.Vector
 `n`. -/
 private def resVec (n : ℕ) (y : ℕ → Bool) : List.Vector Bool n :=
   ⟨res y n, res_length y n⟩
+
+private theorem resVec_eq_resVec_of_res_eq {n : ℕ} {y z : ℕ → Bool} (h : res y n = res z n) :
+    resVec n y = resVec n z :=
+  List.Vector.toList_injective h
 
 private theorem resVec_succ (y : ℕ → Bool) (n : ℕ) : resVec (n + 1) y = y n ::ᵥ resVec n y :=
   List.Vector.toList_injective <| by rw [List.Vector.toList_cons]; simp [resVec, res_succ]
@@ -230,7 +233,7 @@ private theorem exists_stage_succ (hS : SparseWords S) (hG : AnalyticSet G) (hg 
         {u v : List.Vector Bool (n + 1)} (hhead : u.head = v.head)
         (htail : (u.tail, v.tail) ∈ levelEdges S n) :
         (comb φ₀ φ₁ u, comb φ₀ φ₁ v) ∈ g '' wordCylinder (w₀ (u, v)) := by
-      rw [show w₀ (u, v) = T.word (u.tail, v.tail) from ite_eq_left hhead]
+      simp only [w₀, ite_eq_left hhead]
       exact comb_mem_image T h₀ h₁ hhead htail
     by_cases hfresh : ∃ s ∈ S, s.length = n
     · -- A fresh edge is born at `s.reverse`: combine members forming a pair of `G` there.
@@ -359,8 +362,8 @@ private theorem exists_continuous_of_stages [CompleteSpace X] (hg : Continuous g
     convert this using 1
     ring
   refine ⟨φ, continuous_of_res_eq_of_dist_le (F := fun n y ↦ a y n)
-    (fun n y z h ↦ by simp only [a, show resVec n y = resVec n z from
-      List.Vector.toList_injective h]) hdist ?_, mem_range_of_stages hg T hword hψ hφ⟩
+    (fun n y z h ↦ by simp only [a, resVec_eq_resVec_of_res_eq h]) hdist ?_,
+    mem_range_of_stages hg T hword hψ hφ⟩
   simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one (by norm_num)
     (by norm_num : (1 / 2 : ℝ) < 1)).const_mul 2
 
@@ -399,16 +402,6 @@ theorem exists_continuous_orientedGS_hom {G : SetRel X X} (hG : AnalyticSet G)
   exact exists_continuous_of_stages hg tower (fun n ↦ (hnext n (tower n)).1)
     (fun n ↦ (hnext n (tower n)).2)
 
-omit [TopologicalSpace X] [PolishSpace X] [BorelSpace X] in
-/-- **Exclusivity in the G₀ dichotomy.** If every word extends to a word of `S` and a measurable
-map of Cantor space sends every oriented edge of `orientedGS S` to a pair of `G`, then `G` has no
-countable Borel coloring. -/
-theorem not_hasCountableBorelColoring_of_orientedGS_hom {G : SetRel X X} {S : Set (List Bool)}
-    (hS : DenseWords S) {φ : (ℕ → Bool) → X} (hφ : Measurable φ)
-    (hφG : ∀ ⦃y z⦄, (y, z) ∈ orientedGS S → (φ y, φ z) ∈ G) :
-    ¬ G.HasCountableBorelColoring := fun h ↦
-  not_hasCountableBorelColoring_orientedGS hS ((h.preimage hφ).mono fun _ hp ↦ hφG hp)
-
 /-- **The G₀ dichotomy**, oriented form. An analytic relation `G` on a Polish space has a
 countable Borel coloring, or there is a continuous map of Cantor space sending every oriented
 edge of `orientedGS canonicalWords` to a pair of `G`, and not both. -/
@@ -421,10 +414,17 @@ theorem g0_dichotomy_oriented {G : SetRel X X} (hG : AnalyticSet G) :
       denseWords_canonicalWords hφ.measurable hφG h⟩
   · exact .inr ⟨exists_continuous_orientedGS_hom hG sparseWords_canonicalWords h, h⟩
 
+end Dichotomy
+
+end TauCeti
+
+open TauCeti in
 /-- **The Kechris–Solecki–Todorcevic G₀ dichotomy.** A simple graph on a Polish space whose edge
 relation is analytic has a measurable coloring by `ℕ`, or receives a continuous homomorphism from
 `gZero`, and not both. -/
-theorem g0_dichotomy (G : SimpleGraph X) (hG : AnalyticSet {p : X × X | G.Adj p.1 p.2}) :
+theorem SimpleGraph.g0_dichotomy {X : Type*} [TopologicalSpace X] [PolishSpace X]
+    [MeasurableSpace X] [BorelSpace X] (G : SimpleGraph X)
+    (hG : AnalyticSet {p : X × X | G.Adj p.1 p.2}) :
     Xor (∃ c : G.Coloring ℕ, Measurable c) (∃ φ : gZero →g G, Continuous φ) := by
   have : (∃ φ : gZero →g G, Continuous φ) ↔ ∃ φ : (ℕ → Bool) → X, Continuous φ ∧
       ∀ ⦃y z⦄, (y, z) ∈ orientedGS canonicalWords → (φ y, φ z) ∈ {p : X × X | G.Adj p.1 p.2} :=
@@ -433,10 +433,6 @@ theorem g0_dichotomy (G : SimpleGraph X) (hG : AnalyticSet {p : X × X | G.Adj p
         fun h ↦ G.adj_symm (hφG h)⟩, hφ⟩⟩
   rw [← G.hasCountableBorelColoring_adj_iff, this]
   exact g0_dichotomy_oriented hG
-
-end Dichotomy
-
-end TauCeti
 
 /-- Let `E` be a Borel equivalence relation on a Polish space with uncountably many classes. For
 every set `S` of words with at most one word of each length, some continuous map of Cantor space
