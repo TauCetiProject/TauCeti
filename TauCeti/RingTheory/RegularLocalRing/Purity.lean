@@ -92,9 +92,7 @@ theorem etale_of_isUnramifiedAt_height_eq_one_of_ringKrullDim_le_two
     (hunram : ∀ (q : Ideal B) [q.IsPrime], q.height = 1 → Algebra.IsUnramifiedAt A q) :
     Algebra.Etale A B := by
   have := IsRegularLocalRing.uniqueFactorizationMonoid hdim₂
-  have hA : ¬IsField A := fun h ↦ by
-    rw [ringKrullDim_eq_zero_of_isField h] at hdim₁
-    exact absurd hdim₁ (by decide)
+  have hA : ¬IsField A := fun h ↦ absurd (ringKrullDim_eq_zero_of_isField h ▸ hdim₁) (by decide)
   -- `B` is unramified at every prime lying over a prime of `A` of height at most one.
   have key (q : Ideal B) [q.IsPrime] (hq : (q.under A).height ≤ 1) : Algebra.IsUnramifiedAt A q :=
     .of_forall_height_eq_one hA hunram q
@@ -102,12 +100,7 @@ theorem etale_of_isUnramifiedAt_height_eq_one_of_ringKrullDim_le_two
   rcases hdim₂.lt_or_eq with hlt | h2
   · -- Dimension one: `A` is a discrete valuation ring, so `B` is flat over `A`, and every prime
     -- of `B` lies over a prime of height at most one.
-    have h1 : ringKrullDim A = 1 := by
-      rw [← maximalIdeal_height_eq_ringKrullDim] at hdim₁ hlt ⊢
-      norm_cast at hdim₁ ⊢
-      refine le_antisymm (Order.le_of_lt_add_one ?_) hdim₁
-      rw [one_add_one_eq_two]
-      exact WithBot.coe_lt_coe.mp hlt
+    have h1 : ringKrullDim A = 1 := le_antisymm (Order.le_of_lt_succ hlt) hdim₁
     have := IsRegularLocalRing.isDiscreteValuationRing_iff_ringKrullDim_eq_one.mpr h1
     have : Algebra.FormallyUnramified A B := Algebra.formallyUnramified_iff_forall.mpr fun q ↦
       key q.1 (by exact_mod_cast h1 ▸ Ideal.height_le_ringKrullDim_of_isPrime)
@@ -116,7 +109,6 @@ theorem etale_of_isUnramifiedAt_height_eq_one_of_ringKrullDim_le_two
   · -- Dimension two: a prime not lying over the closed point lies over a prime of height at
     -- most one, and purity for `A` applies.
     refine etale_of_finiteNormal_of_ringKrullDim_eq_two h2 hnormal fun q _ hq ↦ key q ?_
-    have h2' : ringKrullDim A = (1 : ℕ) + 1 := by rw [h2]; norm_num
-    exact not_lt.mp ((Ideal.lt_height_iff_eq_maximalIdeal h2').not.mpr hq)
+    exact not_lt.mp ((Ideal.lt_height_iff_eq_maximalIdeal (n := 1) h2).not.mpr hq)
 
 end TauCeti.Algebra

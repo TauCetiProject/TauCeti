@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Unramified.LocalStructure
 import TauCeti.RingTheory.Etale.Normal
+import TauCeti.RingTheory.Ideal.Height
 import TauCeti.RingTheory.IntegralClosure.GoingDown
 import TauCeti.RingTheory.KrullDimension.Basic
 import TauCeti.RingTheory.KrullDimension.Integral
@@ -30,8 +31,9 @@ the height condition says that the two heights agree.
 
 Over a Noetherian integrally closed domain `R` which is not a field, an integral torsion-free
 algebra of essentially finite type that is unramified at its primes of height one is also
-unramified at its primes of height zero. These are the generic points of the codimension-one
-points, as in the hypotheses of purity of the branch locus (Stacks, Lemma 58.21.4 (0BMB)).
+unramified at its primes of height zero. Height-zero primes are the generic points of `Spec S`;
+each is a generization of a height-one prime, so the hypothesis of purity of the branch locus
+(Stacks, Lemma 58.21.4 (0BMB)), which only constrains codimension-one points, extends to them.
 
 ## Proof
 
@@ -134,16 +136,7 @@ theorem IsUnramifiedAt.of_forall_height_eq_one [IsDomain R] [IsIntegrallyClosed 
   have hq0 : q.under R = ⊥ := by
     rw [← Ideal.height_eq_zero_iff_eq_bot, ← q.height_eq_height_under_of_isIntegral_of_hasGoingDown]
     exact Order.lt_one_iff.mp hq
-  -- A prime `p` of `R` minimal over a nonzero element has height one (Krull).
-  obtain ⟨P, hP0, _⟩ := Ring.not_isField_iff_exists_prime.mp hR
-  obtain ⟨x, hxP, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hP0
-  obtain ⟨p, hp, -⟩ := Ideal.exists_minimalPrimes_le ((Ideal.span_singleton_le_iff_mem P).mpr hxP)
-  have : p.IsPrime := hp.1.1
-  have hp1 : p.height = 1 := by
-    refine le_antisymm (Ideal.height_le_one_of_isPrincipal_of_mem_minimalPrimes _ p hp) ?_
-    rw [Order.one_le_iff_ne_zero, Ne, Ideal.height_eq_zero_iff_eq_bot]
-    rintro rfl
-    exact hx0 ((Ideal.span_singleton_le_iff_mem _).mp hp.1.2)
+  obtain ⟨p, _, hp1⟩ := Ideal.exists_isPrime_height_eq_one_of_not_isField hR
   -- By going up, `q` lies below a prime `Q` over `p`, which has height one by going down. The
   -- unramified locus is open, hence stable under generization, so it contains `q`.
   obtain ⟨Q, hqQ, hQ, hQp⟩ :=
