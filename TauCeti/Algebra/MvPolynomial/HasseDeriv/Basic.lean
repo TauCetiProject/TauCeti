@@ -41,8 +41,9 @@ Roth's theorem.
 * `MvPolynomial.eval_const_hasseDeriv_monomial`: the jet `∂^d (a X^m)` at a diagonal point
   `(x, …, x)`.
 * `MvPolynomial.abv_coeff_hasseDeriv_le`: for an absolute value `v`,
-  `v([X^m] ∂^d P) ≤ 2 ^ |m + d| v([X^(m + d)] P)`; with partial degrees `≤ rᵢ` and coefficients
-  bounded by `B` this is `MvPolynomial.abv_coeff_hasseDeriv_le_two_pow_mul`, and at a
+  `v([X^m] ∂^d P) ≤ 2 ^ |m + d| v([X^(m + d)] P)`; with partial degrees `≤ rᵢ` the factor is
+  at most `2 ^ ∑ᵢ rᵢ` (`MvPolynomial.abv_coeff_hasseDeriv_le_of_degreeOf_le`), with coefficients
+  also bounded by `B` this is `MvPolynomial.abv_coeff_hasseDeriv_le_two_pow_mul`, and at a
   nonarchimedean `v` the factor `2 ^ |m + d|` disappears
   (`MvPolynomial.abv_coeff_hasseDeriv_le_of_isNonarchimedean`).
 * `MvPolynomial.hasseDeriv_zero`, `MvPolynomial.hasseDeriv_C`, `MvPolynomial.hasseDeriv_one`:
@@ -140,20 +141,28 @@ theorem abv_coeff_hasseDeriv_le {S : Type*} [Semiring S] [PartialOrder S] [IsOrd
   rw [h, ← Nat.cast_ofNat, ← Nat.cast_pow]
   exact Nat.mono_cast (Finsupp.prod_choose_le_two_pow_degree d (m + d))
 
+/-- If `P` has partial degrees `degreeOf i P ≤ r i`, then
+`v([X^m] ∂^d P) ≤ 2 ^ ∑ᵢ rᵢ * v([X^(m + d)] P)`. -/
+theorem abv_coeff_hasseDeriv_le_of_degreeOf_le {S : Type*} [Semiring S] [PartialOrder S]
+    [IsOrderedRing S] [IsDomain S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
+    {r : σ → ℕ} (hdeg : ∀ i, P.degreeOf i ≤ r i) (d m : σ →₀ ℕ) :
+    abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (∑ i, r i) * abv (P.coeff (m + d)) := by
+  by_cases hm : P.coeff (m + d) = 0
+  · simp [hasseDeriv_coeff, hm]
+  refine (abv_coeff_hasseDeriv_le abv d m P).trans
+    (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two ?_) (abv.nonneg _))
+  rw [Finsupp.degree_eq_sum]
+  exact Finset.sum_le_sum fun j _ ↦ (monomial_le_degreeOf j (mem_support_iff.2 hm)).trans (hdeg j)
+
 /-- If `P` has partial degrees `degreeOf i P ≤ r i` and coefficients of absolute value at most
 `B`, then every coefficient of every Hasse derivative of `P` has absolute value at most
 `2 ^ ∑ᵢ rᵢ * B`. -/
 theorem abv_coeff_hasseDeriv_le_two_pow_mul {S : Type*} [Semiring S] [PartialOrder S]
     [IsOrderedRing S] [IsDomain S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
     {r : σ → ℕ} (hdeg : ∀ i, P.degreeOf i ≤ r i) {B : S} (hB : ∀ μ, abv (P.coeff μ) ≤ B)
-    (d m : σ →₀ ℕ) : abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (∑ i, r i) * B := by
-  refine (abv_coeff_hasseDeriv_le abv d m P).trans ?_
-  by_cases hm : P.coeff (m + d) = 0
-  · simpa [hm] using mul_nonneg (pow_nonneg zero_le_two (∑ i, r i)) ((abv.nonneg _).trans (hB 0))
-  refine mul_le_mul (pow_le_pow_right₀ one_le_two ?_) (hB _) (abv.nonneg _)
-    (pow_nonneg zero_le_two _)
-  rw [Finsupp.degree_eq_sum]
-  exact Finset.sum_le_sum fun j _ ↦ (monomial_le_degreeOf j (mem_support_iff.2 hm)).trans (hdeg j)
+    (d m : σ →₀ ℕ) : abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (∑ i, r i) * B :=
+  (abv_coeff_hasseDeriv_le_of_degreeOf_le abv hdeg d m).trans
+    (mul_le_mul_of_nonneg_left (hB _) (pow_nonneg zero_le_two _))
 
 /-- At a nonarchimedean absolute value the binomial coefficients of a Hasse derivative are at
 most `1`, so `v([X^m] ∂^d P) ≤ v([X^(m + d)] P)`. -/
