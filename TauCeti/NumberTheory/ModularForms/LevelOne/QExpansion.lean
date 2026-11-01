@@ -18,7 +18,8 @@ import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 Mathlib records the constant and linear `q`-coefficients of `E₄`, `E₆` and `Δ`.  This file
 continues them to the `q²` and `q³` terms,
 `E₄ = 1 + 240 q + 2160 q² + 6720 q³ + ⋯`, `E₆ = 1 - 504 q - 16632 q² - 122976 q³ + ⋯` and
-`Δ = q - 24 q² + 252 q³ + ⋯`, proves that every coefficient of `Δ` is an integer, reads off its
+`Δ = q - 24 q² + 252 q³ + ⋯`, proves that every coefficient of a normalised Eisenstein series is
+rational and every coefficient of `Δ` is an integer, reads off its
 expansion at every period `N`, and records that `Δ` is asymptotic to `q` at `i∞`.  These are
 the coefficients the `q`-expansion of the modular invariant `j = E₄³ / Δ` is computed from.
 
@@ -28,6 +29,8 @@ The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
 
 ## Main results
 
+* `TauCeti.ModularForm.qExpansion_E_mem_range_map`: the `q`-expansion of a normalised Eisenstein
+  series has rational coefficients.
 * `TauCeti.ModularForm.qExpansion_discriminant_eq_E₄_cube_sub_E₆_sq`: the `q`-expansion of `Δ`
   is `(E₄³ - E₆²) / 1728`, computed on power series.
 * `TauCeti.ModularForm.discriminant_qExpansion_coeff_two`,
@@ -105,6 +108,17 @@ theorem qExpansion_E₄_cube_add_smul_discriminant (c : ℂ) :
   rw [FunLike.coe_add, ModularForm.qExpansion_add one_pos one_mem_strictPeriods_SL,
     FunLike.coe_smul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL]
   simp only [coe_mcast, ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL, hΔ]
+
+/-- The `q`-expansion of a normalised Eisenstein series of even weight `k ≥ 3` has rational
+coefficients, so it is the image of a power series over `K` under every ring homomorphism
+`φ : K →+* ℂ`. -/
+theorem qExpansion_E_mem_range_map {K : Type*} [Field K] (φ : K →+* ℂ) {k : ℕ} (hk : 3 ≤ k)
+    (hk2 : Even k) : qExpansion 1 (E hk) ∈ (PowerSeries.map φ).range := by
+  refine RingHom.mem_range.2 ⟨PowerSeries.mk fun m ↦
+    ((if m = 0 then 1 else -(2 * k / bernoulli k) * σ (k - 1) m : ℚ) : K), ?_⟩
+  ext m
+  rw [PowerSeries.coeff_map, PowerSeries.coeff_mk, map_ratCast, E_qExpansion_coeff hk hk2]
+  split_ifs <;> simp
 
 /-- The `q`-expansion of the discriminant is `(E₄³ - E₆²) / 1728`, the image of Mathlib's
 `ModularForm.discriminant_eq_E₄_cube_sub_E₆_sq_graded` under the `q`-expansion algebra
