@@ -34,6 +34,7 @@ Mathlib's `Real.cosh_le_exp_half_sq`, with the bound it gives on `(1 - exp (-l))
 * `Real.hasDerivAt_tanh`, `Real.deriv_tanh` and `Real.one_sub_tanh_sq` — the derivative of
   `Real.tanh` is `1 / cosh x ^ 2 = 1 - tanh x ^ 2`.
 * `Real.tendsto_tanh_atTop` and `Real.tendsto_tanh_atBot` — `Real.tanh` tends to `±1` at `±∞`.
+* `Real.hasDerivAt_inv_cosh` — the derivative of `(cosh x)⁻¹` is `-tanh x * (cosh x)⁻¹`.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
 * `Real.sinh_le_mul_exp_sq_div_six` — `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`. It bounds the
   exponential moment `∫₀¹ exp (-λ x) dx = 2 exp (-λ / 2) sinh (λ / 2) / λ` of the uniform
@@ -143,6 +144,15 @@ theorem _root_.Real.hasDerivAt_tanh (x : ℝ) : HasDerivAt Real.tanh (1 / Real.c
 @[simp]
 theorem _root_.Real.deriv_tanh (x : ℝ) : deriv Real.tanh x = 1 / Real.cosh x ^ 2 :=
   (Real.hasDerivAt_tanh x).deriv
+
+/-- The derivative of `(cosh x)⁻¹` is `-tanh x * (cosh x)⁻¹`, so `(cosh x)⁻¹` solves
+`v' = -tanh(x) v`. -/
+theorem _root_.Real.hasDerivAt_inv_cosh (x : ℝ) :
+    HasDerivAt (fun y ↦ (Real.cosh y)⁻¹) (-Real.tanh x * (Real.cosh x)⁻¹) x := by
+  have hc := (Real.cosh_pos x).ne'
+  convert (Real.hasDerivAt_cosh x).inv hc using 1
+  rw [Real.tanh_eq_sinh_div_cosh]
+  field_simp
 
 /-- The hyperbolic tangent tends to `1` at `+∞`. -/
 theorem _root_.Real.tendsto_tanh_atTop : Filter.Tendsto Real.tanh Filter.atTop (nhds 1) := by

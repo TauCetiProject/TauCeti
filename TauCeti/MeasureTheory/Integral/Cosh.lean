@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.MeasureTheory.Integral.ExpDecay
@@ -20,7 +21,8 @@ Picard iteration in a weighted space of bounded continuous functions on the whol
 
 In the other direction, `1 / cosh x ^ 2`, the derivative of `Real.tanh`, is integrable on the line
 with integral `2`: `TauCeti.integrable_one_div_cosh_sq` and `TauCeti.integral_one_div_cosh_sq`.
-So `1 / cosh` is square integrable, which makes it the decaying solution of `v' = -tanh(s) v`.
+So `(cosh x)⁻¹` is square integrable (`TauCeti.memLp_inv_cosh`), which makes it the decaying
+solution of `v' = -tanh(s) v`.
 -/
 
 public section
@@ -83,5 +85,10 @@ theorem integral_one_div_cosh_sq : ∫ x : ℝ, 1 / Real.cosh x ^ 2 = 2 := by
   rw [integral_of_hasDerivAt_of_tendsto Real.hasDerivAt_tanh integrable_one_div_cosh_sq
     Real.tendsto_tanh_atBot Real.tendsto_tanh_atTop]
   norm_num
+
+/-- `(cosh x)⁻¹` is square integrable on the line: its square `1 / cosh x ^ 2` is integrable. -/
+theorem memLp_inv_cosh : MemLp (fun x : ℝ ↦ (Real.cosh x)⁻¹) 2 :=
+  (memLp_two_iff_integrable_sq (by fun_prop)).2 <| by
+    simpa [inv_pow, one_div] using integrable_one_div_cosh_sq
 
 end TauCeti

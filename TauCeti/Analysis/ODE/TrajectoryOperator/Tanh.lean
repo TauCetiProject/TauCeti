@@ -91,11 +91,7 @@ private theorem eq_cosh_smul_of_hasDerivAt {v : ℝ → F}
 /-- The path `(cosh s)⁻¹ • x` solves `v' = -tanh(s) v`. -/
 private theorem hasDerivAt_inv_cosh_smul (x : F) (s : ℝ) :
     HasDerivAt (fun s ↦ (Real.cosh s)⁻¹ • x) (-Real.tanh s • ((Real.cosh s)⁻¹ • x)) s := by
-  have hc := (Real.cosh_pos s).ne'
-  convert ((Real.hasDerivAt_cosh s).inv hc).smul_const x using 1
-  rw [smul_smul, Real.tanh_eq_sinh_div_cosh]
-  congr 1
-  field_simp
+  simpa [smul_smul] using (Real.hasDerivAt_inv_cosh s).smul_const x
 
 /-- Every solution of `v' = -tanh(s) v` is `(cosh s)⁻¹ • v(0)`, by uniqueness for linear
 equations. -/
@@ -104,13 +100,6 @@ private theorem eq_inv_cosh_smul_of_hasDerivAt {v : ℝ → F}
   continuous_neg_tanh_smul_id.eq_of_hasDerivAt_clm_apply (fun s ↦ by simpa using hv s)
     (fun s ↦ by simpa [smul_comm (Real.tanh s)] using hasDerivAt_inv_cosh_smul (v 0) s) (t₀ := 0)
     (by simp)
-
-/-- The path `(cosh s)⁻¹ • x` is square integrable: the square of its norm is `‖x‖² / cosh² s`. -/
-private theorem memLp_inv_cosh_smul (x : F) : MemLp (fun s ↦ (Real.cosh s)⁻¹ • x) 2 := by
-  have h : MemLp (fun s ↦ (Real.cosh s)⁻¹) 2 := by
-    refine (memLp_two_iff_integrable_sq (by fun_prop)).2 ?_
-    simpa [inv_pow, one_div] using integrable_one_div_cosh_sq
-  exact h.smul (memLp_top_const x)
 
 /-- **The equation `v' = tanh(s) v` has no nonzero square-integrable solution.** Every solution is
 `cosh(s) v(0)`, whose norm is at least `‖v(0)‖` everywhere. -/
@@ -133,7 +122,7 @@ theorem squareIntegrableSolutions_neg_tanh_smul_id :
 theorem squareIntegrableSolutions_tanh_smul_id :
     squareIntegrableSolutions (fun s ↦ Real.tanh s • ContinuousLinearMap.id ℝ F) = ⊤ := by
   refine eq_top_iff.2 fun x _ ↦ mem_squareIntegrableSolutions.2
-    ⟨fun s ↦ (Real.cosh s)⁻¹ • x, by simp, fun s ↦ ?_, memLp_inv_cosh_smul x⟩
+    ⟨fun s ↦ (Real.cosh s)⁻¹ • x, by simp, fun s ↦ ?_, memLp_inv_cosh.smul (memLp_top_const x)⟩
   exact (hasDerivAt_inv_cosh_smul x s).congr_deriv (by simp [smul_comm (Real.tanh s)])
 
 end Solutions
@@ -206,7 +195,7 @@ theorem mem_orthogonal_range_trajectoryOperator_neg_tanh_smul_id_iff [FiniteDime
     rintro ⟨x, hx⟩
     obtain ⟨u, hu, hux⟩ := exists_trajectoryOperator_eq_zero_of_hasDerivAt (p := 2) hneg
       (fun s ↦ (hasDerivAt_inv_cosh_smul x s).congr_deriv (by simp [smul_comm (Real.tanh s)]))
-      (memLp_inv_cosh_smul x)
+      (memLp_inv_cosh.smul (memLp_top_const x))
     exact ⟨u, hu, by simpa [prevL_apply] using Lp.ext (hux.trans hx.symm)⟩
 
 /-- The coefficient `s ↦ -tanh(s) • id` satisfies the hypotheses of
