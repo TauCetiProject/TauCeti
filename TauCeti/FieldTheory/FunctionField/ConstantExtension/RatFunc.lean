@@ -197,6 +197,7 @@ theorem ramificationIdx_adicOfIrreducible_eq_multiplicity
 /-! ### Rational finite places -/
 
 /-- The place of `X - c` in `k'(X)`, for `c ∈ k`, lies over the place of `X - c` in `k(X)`. -/
+@[simp]
 theorem restrict_adicOfIrreducible_X_sub_C_algebraMap
     (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) (c : k) :
     (adicOfIrreducible (irreducible_X_sub_C (algebraMap k k' c))).restrict k (RatFunc k) =
@@ -205,6 +206,7 @@ theorem restrict_adicOfIrreducible_X_sub_C_algebraMap
 
 /-- **Over a rational finite place there is only one place**: for `c ∈ k`, the place of `X - c`
 in `k'(X)` is the only place over the place of `X - c` in `k(X)`. -/
+@[simp]
 theorem restrict_eq_adicOfIrreducible_X_sub_C_iff
     (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) (c : k)
     (Q : Place k' (RatFunc k')) :
@@ -221,6 +223,7 @@ theorem restrict_eq_adicOfIrreducible_X_sub_C_iff
 
 /-- **A rational finite place has ramification index one in `k'(X) / k(X)`**: for `c ∈ k`,
 `e = 1` at the place of `X - c` in `k'(X)`. -/
+@[simp]
 theorem ramificationIdx_adicOfIrreducible_X_sub_C_algebraMap
     (hX : algebraMap (RatFunc k) (RatFunc k') RatFunc.X = RatFunc.X) (c : k) :
     ramificationIdx (RatFunc k) (adicOfIrreducible (irreducible_X_sub_C (algebraMap k k' c))) =
@@ -231,6 +234,7 @@ theorem ramificationIdx_adicOfIrreducible_X_sub_C_algebraMap
 
 /-- **The conorm of a rational finite place is a single place**: for `c ∈ k`, the conorm of the
 place of `X - c` in `k(X)` is the place of `X - c` in `k'(X)`. -/
+@[simp]
 theorem conorm_ofPoint_adicOfIrreducible_X_sub_C
     [∀ P : Place k (RatFunc k),
       Finite {Q : Place k' (RatFunc k') // Q.restrict k (RatFunc k) = P}]
