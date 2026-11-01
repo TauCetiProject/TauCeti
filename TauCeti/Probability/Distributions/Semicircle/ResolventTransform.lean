@@ -118,8 +118,8 @@ private lemma quadratic_eq_zero_of_lt_norm (hz : 2 * √(v : ℝ) < ‖z - a‖)
       have := pow_lt_pow_left₀ hz (by positivity) two_ne_zero
       rw [mul_pow, Real.sq_sqrt v.coe_nonneg] at this
       linarith
-    rw [norm_mul, norm_pow, norm_inv, Complex.norm_real, Real.norm_eq_abs,
-      abs_of_nonneg v.coe_nonneg, inv_pow, ← div_eq_mul_inv, div_lt_iff₀ (by positivity)]
+    have hqn : ‖q‖ = v / ‖w‖ ^ 2 := by simp [q, div_eq_mul_inv]
+    rw [hqn, div_lt_iff₀ (by positivity)]
     linarith
   set c := ∑' n, (catalan n : ℂ) * q ^ n
   have hm : resolventTransform (semicircleReal a v) z = -w⁻¹ * c := by
@@ -154,6 +154,11 @@ private lemma quadratic_eq_zero_of_convex {H : Set ℂ} (hHo : IsOpen H) (hHc : 
     |>.eqOn_zero_of_preconnected_of_eventuallyEq_zero hHc.isPreconnected hz₀
       (Filter.eventually_of_mem hext fun _ ↦ quadratic_eq_zero_of_lt_norm) hz
 
+/-- The point `a + t i` lies outside the disc `|z - a| ≤ 2√v` when `2√v < |t|`. -/
+private lemma lt_norm_mk_sub {t : ℝ} (ht : 2 * √(v : ℝ) < |t|) :
+    2 * √(v : ℝ) < ‖(⟨a, t⟩ : ℂ) - a‖ := by
+  simpa [mk_eq_add_mul_I] using ht
+
 /-- The resolvent transform `m` of `semicircleReal a v` satisfies
 `v * (m * m) + (z - a) * m + 1 = 0` off the support `[a - 2√v, a + 2√v]`; for the standard law
 this is `m² + z m + 1 = 0`. -/
@@ -169,21 +174,15 @@ theorem resolventTransform_semicircleReal_quadratic_eq_zero
   have hR0 : 0 ≤ R := by positivity
   rcases lt_trichotomy z.im 0 with him | him | him
   · refine quadratic_eq_zero_of_convex (isOpen_lt continuous_im continuous_const)
-      (convex_halfSpace_im_lt 0) (fun _ h ↦ h.ne) (z₀ := a - ((R + 1 : ℝ) : ℂ) * I)
-      (by simp; linarith) ?_ him
-    rw [sub_sub_cancel_left, norm_neg, norm_mul, Complex.norm_I, mul_one, Complex.norm_real,
-      Real.norm_of_nonneg (by linarith)]
-    exact lt_add_one _
+      (convex_halfSpace_im_lt 0) (fun _ h ↦ h.ne) (z₀ := ⟨a, -(R + 1)⟩)
+      (show -(R + 1) < (0 : ℝ) by linarith) (lt_norm_mk_sub (lt_abs.2 (.inr (by linarith)))) him
   · refine absurd ⟨z.re, ?_, Complex.ext rfl (by simp [him])⟩ hz
     have h := abs_le.1 ((abs_re_le_norm (z - a)).trans (not_lt.1 hzR))
     simp only [sub_re, ofReal_re] at h
     constructor <;> linarith [h.1, h.2]
   · refine quadratic_eq_zero_of_convex (isOpen_lt continuous_const continuous_im)
-      (convex_halfSpace_im_gt 0) (fun _ h ↦ h.ne') (z₀ := a + ((R + 1 : ℝ) : ℂ) * I)
-      (by simp; linarith) ?_ him
-    rw [add_sub_cancel_left, norm_mul, Complex.norm_I, mul_one, Complex.norm_real,
-      Real.norm_of_nonneg (by linarith)]
-    exact lt_add_one _
+      (convex_halfSpace_im_gt 0) (fun _ h ↦ h.ne') (z₀ := ⟨a, R + 1⟩)
+      (show (0 : ℝ) < R + 1 by linarith) (lt_norm_mk_sub (lt_abs.2 (.inl (by linarith)))) him
 
 /-- In the upper half-plane, the resolvent transform of `semicircleReal a v` is the unique root of
 `v * (w * w) + (z - a) * w + 1 = 0` with positive imaginary part. -/
@@ -206,8 +205,9 @@ theorem eq_resolventTransform_semicircleReal_iff (hz : 0 < z.im) {w : ℂ} :
     linear_combination m * h' - hm
   have hinv : w = ((v : ℂ) * m)⁻¹ := eq_inv_of_mul_eq_one_left hprod
   have : w.im ≤ 0 := by
-    rw [hinv, inv_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero, neg_div]
-    exact neg_nonpos.2 (div_nonneg (mul_nonneg v.coe_nonneg hmim.le) (normSq_nonneg _))
+    rw [hinv, inv_im, im_ofReal_mul]
+    exact div_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 (mul_nonneg v.coe_nonneg hmim.le))
+      (normSq_nonneg _)
   linarith
 
 /-- The transform of the standard semicircle law at `i` is `i (√5 - 1) / 2`, the root of
@@ -215,8 +215,12 @@ theorem eq_resolventTransform_semicircleReal_iff (hz : 0 < z.im) {w : ℂ} :
 theorem resolventTransform_semicircleReal_zero_one_I :
     resolventTransform (semicircleReal 0 1) I = ((√5 - 1) / 2 : ℝ) * I := by
   have h5 : (1 : ℝ) < √5 := (Real.lt_sqrt zero_le_one).2 (by norm_num)
-  refine ((eq_resolventTransform_semicircleReal_iff (by simp)).2 ⟨by simp; linarith, ?_⟩).symm
-  apply Complex.ext <;> simp
-  nlinarith [Real.sq_sqrt (show (0 : ℝ) ≤ 5 by norm_num)]
+  have h5c : ((√5 : ℝ) : ℂ) ^ 2 = 5 := by
+    exact_mod_cast Real.sq_sqrt (show (0 : ℝ) ≤ 5 by norm_num)
+  refine ((eq_resolventTransform_semicircleReal_iff (by simp)).2
+    ⟨by rw [mul_I_im, ofReal_re]; linarith, ?_⟩).symm
+  push_cast
+  linear_combination (-1 / 4 : ℂ) * h5c + (((√5 : ℂ) - 1) / 2 * (((√5 : ℂ) - 1) / 2) +
+    ((√5 : ℂ) - 1) / 2) * I_sq
 
 end TauCeti.Probability

@@ -15,7 +15,7 @@ import Mathlib.Analysis.SpecificLimits.Basic
 
 Mathlib proves the formal identity `catalanSeries ^ 2 * X + 1 = catalanSeries` for the generating
 function of the Catalan numbers. Since `catalan n ≤ 4 ^ n`, the series `∑ catalan n * q ^ n`
-converges absolutely for `‖q‖ < 1 / 4` in any complete normed commutative ring, and its sum `c`
+converges absolutely for `‖q‖ < 1 / 4` in any complete normed ring, and its sum `c`
 satisfies the same quadratic equation `c ^ 2 * q + 1 = c`.
 
 This is the form in which the Catalan numbers enter the resolvent transform of the semicircle law:
@@ -33,7 +33,7 @@ open Finset
 
 namespace TauCeti
 
-variable {R : Type*} [NormedCommRing R] [NormOneClass R] {q : R}
+variable {R : Type*} [NormedRing R] [NormOneClass R] {q : R}
 
 /-- The Catalan generating series converges absolutely inside the disc of radius `1 / 4`. -/
 theorem summable_norm_catalan_mul_pow (hq : ‖q‖ < 4⁻¹) :
@@ -64,7 +64,7 @@ theorem tsum_catalan_mul_pow_sq_mul_add_one (hq : ‖q‖ < 4⁻¹) :
     refine sum_congr rfl fun kl hkl ↦ ?_
     rw [← mem_antidiagonal.1 hkl]
     push_cast
-    ring
+    rw [pow_add, (Nat.cast_commute (catalan kl.2) (q ^ kl.1)).symm.mul_mul_mul_comm]
   have hs' : Summable fun n ↦ (catalan (n + 1) : R) * q ^ n := by
     simpa only [hconv] using
       Summable.of_norm (summable_norm_sum_mul_antidiagonal_of_summable_norm hs hs)
