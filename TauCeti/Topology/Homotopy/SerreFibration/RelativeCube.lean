@@ -46,18 +46,21 @@ open CategoryTheory
 universe u
 
 /-- **Relative cube lifting for a Serre fibration.** A continuous lift on the bottom face and
-all boundary sides of `I × Iⁿ` extends to a lift of the entire homotopy. There is no
-nonemptiness assumption, and `n = 0` recovers lifting with a prescribed starting point. -/
+all boundary sides of `I × Iᴺ`, for any finite index type `N`, extends to a lift of the
+entire homotopy. There is no nonemptiness assumption, and an empty index type recovers
+lifting with a prescribed starting point. -/
 theorem exists_lift_openBox_of_mem_serreFibrations {E B : TopCat.{u}} {p : E ⟶ B}
-    (hp : serreFibrations p) (n : ℕ)
-    (f : C(cylinderExtensionDomain (Cube.boundary (Fin n)), E))
-    (H : C(I × (Fin n → I), B)) (hf : ∀ x, p (f x) = H x) :
-    ∃ G : C(I × (Fin n → I), E), p ∘ G = H ∧
-      ∀ x : cylinderExtensionDomain (Cube.boundary (Fin n)), G x = f x := by
-  have h := (mem_serreFibrations_iff_cube.1 hp (n + 1)).of_homeomorph
-    (cubeSplitHomeomorph n).symm
-  let f' : C({y : Unit × (I × (Fin n → I)) |
-      y.2 ∈ cylinderExtensionDomain (Cube.boundary (Fin n))}, E) :=
+    (hp : serreFibrations p) (N : Type*) [Finite N]
+    (f : C(cylinderExtensionDomain (Cube.boundary N), E))
+    (H : C(I × (N → I), B)) (hf : ∀ x, p (f x) = H x) :
+    ∃ G : C(I × (N → I), E), p ∘ G = H ∧
+      ∀ x : cylinderExtensionDomain (Cube.boundary N), G x = f x := by
+  have h := (mem_serreFibrations_iff_cube.1 hp (Nat.card N + 1)).of_homeomorph
+    (cubeSplitHomeomorph (Nat.card N)).symm
+  have h := h.of_homeomorph ((Homeomorph.refl I).prodCongr
+    (Homeomorph.piCongrLeft (Y := fun _ ↦ I) (Finite.equivFin N)))
+  let f' : C({y : Unit × (I × (N → I)) |
+      y.2 ∈ cylinderExtensionDomain (Cube.boundary N)}, E) :=
     f.comp ⟨fun y ↦ ⟨y.1.2, y.2⟩, by fun_prop⟩
   obtain ⟨G, hG, hGJ⟩ := (h.of_homeomorph (Homeomorph.uniqueProd Unit _)).exists_lift_openBox
     f' (H.comp ContinuousMap.snd) (fun y ↦ hf ⟨y.1.2, y.2⟩)
