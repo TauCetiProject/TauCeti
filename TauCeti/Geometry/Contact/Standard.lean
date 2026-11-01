@@ -414,6 +414,20 @@ theorem mpullback_innerProductContactForm_real :
       obtain ⟨a, b, c⟩ := w
       simp [L, mul_comm]
 
+/-- For every real `c`, the linear map `(q, p, z) ↦ (q, c p, c z)` pulls the standard contact
+form `α` back to `c α`. -/
+theorem mpullback_innerProductContactForm_smul (c : ℝ) :
+    mpullback 𝓘(ℝ, V × V × ℝ) 𝓘(ℝ, V × V × ℝ) (fun x : V × V × ℝ ↦ (x.1, c • x.2))
+      (innerProductContactForm V).1 = (c • innerProductContactForm V).1 := by
+  let L : (V × V × ℝ) →L[ℝ] V × V × ℝ :=
+    (ContinuousLinearMap.fst ℝ V (V × ℝ)).prod (c • ContinuousLinearMap.snd ℝ V (V × ℝ))
+  exact mpullback_innerProductContactForm_linear_eq V L (by funext x; simp [L]) _
+    fun x w ↦ by
+      rw [SmoothForm.smul_toRoughForm, Pi.smul_apply, ContinuousAlternatingMap.smul_apply,
+        innerProductContactForm_apply]
+      obtain ⟨a, b, d⟩ := w
+      simp [L, inner_smul_left, mul_sub]
+
 /-- The linear map `(q, p, z) ↦ (q, -p, -z)` reverses the coorientation of the standard contact
 structure: it pulls the standard contact form `α` back to `-α`. -/
 theorem mpullback_innerProductContactForm_neg :
