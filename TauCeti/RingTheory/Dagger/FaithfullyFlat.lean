@@ -186,9 +186,10 @@ theorem comap_map_toTate_of_finite (J : Ideal (W σ)) [Module.Finite K (W σ ⧸
 /-- **Finite quotients of the Monsky–Washnitzer algebra are quotients of the Tate algebra.** For an
 ideal `J` of `W` of finite codimension, the map `W ⧸ J → T ⧸ J T` is bijective. -/
 theorem quotientMap_map_toTate_bijective (J : Ideal (W σ)) [Module.Finite K (W σ ⧸ J)] :
-    Function.Bijective (Ideal.quotientMap (J.map (toTate σ K)) (toTate σ K).toRingHom
+    Function.Bijective (Ideal.quotientMapₐ (J.map (toTate σ K)) (toTate σ K)
       Ideal.le_comap_map) := by
-  refine ⟨Ideal.quotientMap_injective' (comap_map_toTate_of_finite J).le, fun y ↦ ?_⟩
+  refine ⟨Ideal.quotientMap_injective' (H := Ideal.le_comap_map) (comap_map_toTate_of_finite J).le,
+    fun y ↦ ?_⟩
   have : Module.Finite K (W σ ⧸ (J.map (toTate σ K)).comap (toTate σ K)) := by
     rw [comap_map_toTate_of_finite]
     infer_instance
@@ -202,7 +203,7 @@ private theorem quotientMap_map_pow_comap_toTate_bijective (𝔫 : Ideal (T σ))
       (toTate σ K).toRingHom Ideal.le_comap_map) := by
   have : (𝔫.comap (toTate σ K)).IsMaximal := isAffinoidAlgebra_tate.comap_isMaximal _ 𝔫
   have := finite_quotient_pow (𝔫.comap (toTate σ K)) k
-  exact quotientMap_map_toTate_bijective _
+  exact quotientMap_map_toTate_bijective (𝔫.comap (toTate σ K) ^ k)
 
 /-- **The Tate algebra is faithfully flat over the Monsky–Washnitzer algebra.** -/
 theorem faithfullyFlat_toTate : (toTate σ K).toRingHom.FaithfullyFlat := by
