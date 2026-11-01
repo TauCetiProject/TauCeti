@@ -20,11 +20,14 @@ embedded submanifold of the expected dimension. The carrier is the actual subtyp
 `{x // f x = c}`, with its subspace topology; neither manifold needs to be Hausdorff, and the
 fibre may be empty.
 
-`TauCeti.exists_regularFiber_smoothEmbedding` constructs an atlas, proves that the inclusion is
-a smooth embedding, and identifies its tangent image with the kernel of the differential.
-The smooth universal property then follows from Mathlib's `ContMDiff.iff_comp_isImmersion`
-and continuity into a subtype. The theorem is existential, so it installs no global charted-space
-instance on a fibre or on its ambient manifold.
+`TauCeti.regularFiberChartedSpace` constructs an atlas using the preferred extended target chart.
+`TauCeti.isManifold_regularFiber`, `TauCeti.isSmoothEmbedding_coe_regularFiber`, and
+`TauCeti.range_mfderiv_coe_regularFiber` give its manifold, embedding, and tangent-kernel
+properties.
+`TauCeti.exists_regularFiber_smoothEmbedding` packages these properties existentially.
+The smooth universal property follows from Mathlib's `ContMDiff.iff_comp_isImmersion`
+and continuity into a subtype. No global charted-space instance is installed on a fibre or on its
+ambient manifold.
 
 The construction uses one extended target chart at `c`. Its open preimage contains the entire
 fibre, and the regular level of the coordinate map there is homeomorphic to the original fibre.
@@ -96,33 +99,36 @@ private theorem regularValue_coordinate (hf : ContMDiff I J ∞ f)
   rw [isRegularValue_iff]
   intro x hx
   have hfx := (hf x.1).mdifferentiableAt (by simp)
-  have hi := (isLocalDiffeomorph_subtype_val (I := I) (n := ∞)
-    (U := domain hf φ) x).isInvertible_mfderiv (by simp)
-  have hφ := (φ.isLocalDiffeomorphAt J 𝓘(ℝ, F) ∞ x.2).isInvertible_mfderiv (by simp)
-  have hd := (contMDiff_subtype_val (I := I) (n := ∞) (U := domain hf φ) x).mdifferentiableAt
-    (by simp)
-  have hcomp : mfderiv I 𝓘(ℝ, F) (fun x : domain hf φ ↦ φ (f x)) x =
-      (mfderiv J 𝓘(ℝ, F) φ (f x)).comp
-        ((mfderiv I J f x.1).comp (mfderiv I I Subtype.val x)) := by
-    exact (mfderiv_comp x ((φ.isLocalDiffeomorphAt J 𝓘(ℝ, F) ∞ x.2).mdifferentiableAt (by simp))
-      (hfx.comp x hd)).trans (congrArg ((mfderiv J 𝓘(ℝ, F) φ (f x)).comp)
-        (mfderiv_comp x hfx hd))
-  rw [isRegularPoint_iff, hcomp]
-  exact hφ.surjective.comp ((isRegularPoint_iff.1
-    (hreg.isRegularPoint ((coordinate_eq_iff hf φ hc x).1 hx))).comp hi.surjective)
+  have hi := isLocalDiffeomorph_subtype_val (I := I) (n := ∞) (U := domain hf φ) x
+  have hφ := φ.isLocalDiffeomorphAt J 𝓘(ℝ, F) ∞ x.2
+  have hd := hi.mdifferentiableAt (by simp)
+  exact IsRegularPoint.comp (isRegularPoint_iff.2 (hφ.isInvertible_mfderiv (by simp)).surjective)
+    ((hreg.isRegularPoint ((coordinate_eq_iff hf φ hc x).1 hx)).comp
+      (isRegularPoint_iff.2 (hi.isInvertible_mfderiv (by simp)).surjective) hfx hd)
+    (hφ.mdifferentiableAt (by simp)) (hfx.comp x hd)
 
 variable [I.Boundaryless] [IsManifold I ∞ M]
   [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
 
 /-- Transport the coordinate-level atlas to the actual fibre. -/
-private theorem exists_atlas_of_chart (hf : ContMDiff I J ∞ f)
+@[instance_reducible]
+private noncomputable def chartedSpace_of_chart (hf : ContMDiff I J ∞ f)
     (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F ∞) (hc : c ∈ φ.source)
     (hreg : IsRegularValue I J f c) :
-    ∃ a : ChartedSpace (Fin (finrank ℝ E - finrank ℝ F) → ℝ) {x : M // f x = c},
-      letI := a
-      IsManifold 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) ∞ {x : M // f x = c} ∧
-      Manifold.IsSmoothEmbedding 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) I ∞
-        (Subtype.val : {x : M // f x = c} → M) := by
+    ChartedSpace (Fin (finrank ℝ E - finrank ℝ F) → ℝ) {x : M // f x = c} :=
+  let q : domain hf φ → F := fun x ↦ φ (f x)
+  let hq : ContMDiff I 𝓘(ℝ, F) ∞ q := contMDiff_coordinate hf φ
+  let hqr : IsRegularValue I 𝓘(ℝ, F) q (φ c) := regularValue_coordinate hf φ hc hreg
+  letI := regularLevelChartedSpace (fun x _ ↦ (hq x).of_le (by simp)) hqr rfl
+  (levelHomeomorph hf φ hc).pullbackChartedSpace
+
+private theorem isManifold_and_isSmoothEmbedding_of_chart (hf : ContMDiff I J ∞ f)
+    (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F ∞) (hc : c ∈ φ.source)
+    (hreg : IsRegularValue I J f c) :
+    letI := chartedSpace_of_chart hf φ hc hreg
+    IsManifold 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) ∞ {x : M // f x = c} ∧
+    Manifold.IsSmoothEmbedding 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) I ∞
+      (Subtype.val : {x : M // f x = c} → M) := by
   -- Construct the regular level on the open preimage of the single target chart.
   let K := 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ)
   let q : domain hf φ → F := fun x ↦ φ (f x)
@@ -132,7 +138,6 @@ private theorem exists_atlas_of_chart (hf : ContMDiff I J ∞ f)
   have := isManifold_regularLevel (by simp) (fun x _ ↦ hq x) hqr rfl
   -- Transfer its atlas, then compose its inclusion with the open inclusion into `M`.
   let e := levelHomeomorph hf φ hc
-  refine ⟨e.pullbackChartedSpace (H := Fin (finrank ℝ E - finrank ℝ F) → ℝ), ?_⟩
   let := e.pullbackChartedSpace (H := Fin (finrank ℝ E - finrank ℝ F) → ℝ)
   have := e.pullback_isManifold K ∞
   refine ⟨inferInstance, ?_⟩
@@ -160,6 +165,50 @@ variable {E H M F G N : Type*}
   [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
   {f : M → N} {c : N}
 
+/-- The smooth atlas on a regular fibre, transported from the regular level in the preferred
+extended target chart at `c`. It uses the subspace topology and is not a global instance. -/
+@[instance_reducible]
+noncomputable def regularFiberChartedSpace (hf : ContMDiff I J ∞ f)
+    (hreg : IsRegularValue I J f c) :
+    ChartedSpace (Fin (finrank ℝ E - finrank ℝ F) → ℝ) {x : M // f x = c} :=
+  RegularFiber.chartedSpace_of_chart hf (extChartPartialDiffeomorph J ∞ c)
+    ((mem_extChartPartialDiffeomorph_source J ∞ c).2 BoundarylessManifold.isInteriorPoint) hreg
+
+/-- The regular fibre with its preferred atlas is a smooth manifold. -/
+theorem isManifold_regularFiber (hf : ContMDiff I J ∞ f) (hreg : IsRegularValue I J f c) :
+    letI := regularFiberChartedSpace hf hreg
+    IsManifold 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) ∞ {x : M // f x = c} :=
+  (RegularFiber.isManifold_and_isSmoothEmbedding_of_chart hf
+    (extChartPartialDiffeomorph J ∞ c)
+    ((mem_extChartPartialDiffeomorph_source J ∞ c).2 BoundarylessManifold.isInteriorPoint) hreg).1
+
+/-- The inclusion of the regular fibre with its preferred atlas is a smooth embedding. -/
+theorem isSmoothEmbedding_coe_regularFiber (hf : ContMDiff I J ∞ f)
+    (hreg : IsRegularValue I J f c) :
+    letI := regularFiberChartedSpace hf hreg
+    Manifold.IsSmoothEmbedding 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) I ∞
+      (Subtype.val : {x : M // f x = c} → M) :=
+  (RegularFiber.isManifold_and_isSmoothEmbedding_of_chart hf
+    (extChartPartialDiffeomorph J ∞ c)
+    ((mem_extChartPartialDiffeomorph_source J ∞ c).2 BoundarylessManifold.isInteriorPoint) hreg).2
+
+/-- The tangent image of the regular-fibre inclusion is the kernel of the ambient differential. -/
+theorem range_mfderiv_coe_regularFiber (hf : ContMDiff I J ∞ f)
+    (hreg : IsRegularValue I J f c) :
+    letI := regularFiberChartedSpace hf hreg
+    ∀ z : {x : M // f x = c},
+      (mfderiv 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) I Subtype.val z).range =
+        (mfderiv I J f z.1).ker := by
+  let := regularFiberChartedSpace hf hreg
+  have := isManifold_regularFiber hf hreg
+  intro z
+  have hdim := (hreg.isRegularPoint z.2).finrank_ker_mfderiv_add_finrank
+  refine (hreg.isRegularPoint z.2).range_mfderiv_eq_ker_mfderiv
+    (.of_forall fun w : {x : M // f x = c} ↦ w.2)
+    ((isSmoothEmbedding_coe_regularFiber hf hreg).isImmersion.mfderiv_injective (by simp) z) ?_
+  rw [finrank_fin_fun]
+  omega
+
 /-- **The regular-fibre theorem.** A regular fibre of a smooth map between finite-dimensional
 boundaryless real manifolds admits a smooth manifold structure of dimension `dim M - dim N`,
 with its subspace topology, for which the inclusion is a smooth embedding and has tangent image
@@ -174,17 +223,7 @@ theorem exists_regularFiber_smoothEmbedding (hf : ContMDiff I J ∞ f)
       ∀ z : {x : M // f x = c},
         (mfderiv 𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ) I Subtype.val z).range =
           (mfderiv I J f z.1).ker := by
-  obtain ⟨a, ha, he⟩ := RegularFiber.exists_atlas_of_chart hf
-    (extChartPartialDiffeomorph J ∞ c)
-    ((mem_extChartPartialDiffeomorph_source J ∞ c).2 BoundarylessManifold.isInteriorPoint) hreg
-  let := a
-  have := ha
-  refine ⟨a, ha, he, fun z ↦ ?_⟩
-  have hdim := (hreg.isRegularPoint z.2).finrank_ker_mfderiv_add_finrank
-  refine (hreg.isRegularPoint z.2).range_mfderiv_eq_ker_mfderiv
-    (.of_forall fun w : {x : M // f x = c} ↦ w.2)
-    (he.isImmersion.mfderiv_injective (by simp) z) ?_
-  rw [finrank_fin_fun]
-  omega
+  exact ⟨regularFiberChartedSpace hf hreg, isManifold_regularFiber hf hreg,
+    isSmoothEmbedding_coe_regularFiber hf hreg, range_mfderiv_coe_regularFiber hf hreg⟩
 
 end TauCeti
