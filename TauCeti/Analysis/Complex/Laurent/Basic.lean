@@ -12,15 +12,22 @@ import TauCeti.Analysis.Contour.Winding.Number.Circle
 # Circle Laurent coefficients and the two-circle Cauchy formula
 
 The circle integral defining a Laurent coefficient is independent of its positive radius
-as long as the intervening closed annulus lies in the domain of holomorphy. The two-circle
-Cauchy formula represents a holomorphic function between two concentric circles by the
-difference of its outer and inner Cauchy integrals. Neither result assumes that the function
-extends across the center: isolated essential singularities are allowed.
+provided the function is continuous on the intervening closed annulus and complex
+differentiable outside a countable exceptional set in its open interior. Under the same
+hypotheses, the two-circle Cauchy formula represents the function between the circles by
+the difference of its outer and inner Cauchy integrals, even at exceptional points.
+Neither result assumes that the function extends across the center: isolated essential
+singularities are allowed.
 
 The construction uses Mathlib's Cauchy-Goursat theorem for annuli,
 `Complex.circleIntegral_eq_of_differentiable_on_annulus_off_countable`, and its removable
 divided difference `dslope`. These are the integral ingredients for splitting a Laurent
-expansion into its positive and negative parts.
+expansion into its positive and negative parts. The divided-difference proof of the
+two-circle formula is adapted from Mathlib's
+`Complex.circleIntegral_sub_inv_smul_of_differentiable_on_off_countable_aux`,
+by Yury Kudryashov, from a disc to an annulus. To include exceptional evaluation points,
+we reuse Mathlib's local power-series theorem, whose Cauchy formula extends to those points
+by continuity and closure.
 
 For the classical Cauchy and Laurent formulas, see John B. Conway,
 *Functions of One Complex Variable I*, Chapters IV (Complex Integration) and V (Singularities).
@@ -36,8 +43,9 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- The coefficient of degree `n` extracted by a circle of radius `R` centered at `c`.
-For holomorphic functions on an annulus, `circleLaurentCoeff_eq` makes this independent
-of the choice of circle within that annulus. -/
+For functions continuous on a closed annulus and complex differentiable outside a countable
+set in its interior, `circleLaurentCoeff_eq_of_differentiable_on_annulus_off_countable`
+makes this independent of the choice of circle within that annulus. -/
 noncomputable def circleLaurentCoeff (f : ℂ → E) (c : ℂ) (R : ℝ) (n : ℤ) : E :=
   (2 * π * I : ℂ)⁻¹ • ∮ z in C(c, R), (z - c) ^ (-n - 1) • f z
 
@@ -105,29 +113,26 @@ theorem norm_circleLaurentCoeff_le {f : ℂ → E} {c : ℂ} {R M : ℝ} (hR : 0
     _ = M * R ^ (-n) := by rw [← mul_assoc, hp, mul_comm]
 
 /-- The Laurent coefficient does not change when a circle moves through a closed annulus
-on which the function is continuous, with holomorphic interior. -/
-theorem circleLaurentCoeff_eq {f : ℂ → E} {c : ℂ} {r R : ℝ}
-    (hr : 0 < r) (hrR : r ≤ R)
+on which the function is continuous and complex differentiable away from a countable
+exceptional set in the open annulus. -/
+theorem circleLaurentCoeff_eq_of_differentiable_on_annulus_off_countable
+    {f : ℂ → E} {c : ℂ} {r R : ℝ} (hr : 0 < r) (hrR : r ≤ R)
+    {s : Set ℂ} (hs : s.Countable)
     (hc : ContinuousOn f (closedBall c R \ ball c r))
-    (hd : DifferentiableOn ℂ f (ball c R \ closedBall c r)) (n : ℤ) :
+    (hd : ∀ z ∈ (ball c R \ closedBall c r) \ s, DifferentiableAt ℂ f z) (n : ℤ) :
     circleLaurentCoeff f c R n = circleLaurentCoeff f c r n := by
   have hn : ∀ z ∈ closedBall c R \ ball c r, z - c ≠ 0 := by
-    intro z hz heq
-    have : z = c := sub_eq_zero.mp heq
-    subst z
-    exact hz.2 (by simpa using hr)
+    intro z hz
+    exact sub_ne_zero.mpr fun h => hz.2 (h.symm ▸ mem_ball_self hr)
   unfold circleLaurentCoeff
   congr 1
-  apply Complex.circleIntegral_eq_of_differentiable_on_annulus_off_countable hr hrR
-    countable_empty
+  apply Complex.circleIntegral_eq_of_differentiable_on_annulus_off_countable hr hrR hs
   · exact ((continuousOn_id.sub continuousOn_const).zpow₀ (-n - 1)
       fun z hz => Or.inl (hn z hz)).smul hc
   · intro z hz
-    have hz' : z ∈ ball c R \ closedBall c r := hz.1
     have hzA : z ∈ closedBall c R \ ball c r :=
-      ⟨ball_subset_closedBall hz'.1, fun h => hz'.2 (ball_subset_closedBall h)⟩
-    exact ((differentiableAt_id.sub_const c).zpow (Or.inl (hn z hzA))).smul
-      (hd.differentiableAt ((isOpen_ball.sdiff isClosed_closedBall).mem_nhds hz'))
+      ⟨ball_subset_closedBall hz.1.1, fun h => hz.1.2 (ball_subset_closedBall h)⟩
+    exact ((differentiableAt_id.sub_const c).zpow (Or.inl (hn z hzA))).smul (hd z hz)
 
 variable [CompleteSpace E]
 
@@ -140,12 +145,7 @@ variable [CompleteSpace E]
     rw [← circleIntegral.integral_smul_const]
     apply circleIntegral.integral_congr hR.le
     intro z hz
-    have hzc : z - c ≠ 0 := by
-      intro h
-      have : z = c := sub_eq_zero.mp h
-      subst z
-      have hz0 : (0 : ℝ) = R := by simpa using hz
-      exact hR.ne' hz0.symm
+    have hzc : z - c ≠ 0 := sub_ne_zero.mpr (ne_of_mem_sphere hz hR.ne')
     dsimp only
     rw [smul_smul, ← zpow_add₀ hzc]
   rw [circleLaurentCoeff_def, heq]
@@ -156,62 +156,69 @@ variable [CompleteSpace E]
       inv_smul_smul₀ (by simp [Real.pi_ne_zero])]
   · rw [circleIntegral.integral_sub_zpow_of_ne (by omega), zero_smul, smul_zero]
 
-/-- The two-circle Cauchy formula on an annulus. The function need only be continuous on
-the boundary circles and holomorphic in the intervening open annulus. -/
-theorem two_pi_I_inv_smul_circleIntegral_sub_inv_smul_sub_of_differentiable_on_annulus
+/-- The two-circle Cauchy formula on an annulus. The function is continuous on the closed
+annulus and complex differentiable outside a countable exceptional set in the open annulus.
+The evaluation point may belong to the exceptional set. -/
+theorem
+    two_pi_I_inv_smul_circleIntegral_sub_inv_smul_sub_of_differentiable_on_annulus_off_countable
     {f : ℂ → E} {c w : ℂ} {r R : ℝ} (hr : 0 < r)
-    (hw : w ∈ ball c R \ closedBall c r)
+    {s : Set ℂ} (hs : s.Countable) (hw : w ∈ ball c R \ closedBall c r)
     (hc : ContinuousOn f (closedBall c R \ ball c r))
-    (hd : DifferentiableOn ℂ f (ball c R \ closedBall c r)) :
+    (hd : ∀ z ∈ (ball c R \ closedBall c r) \ s, DifferentiableAt ℂ f z) :
     (2 * π * I : ℂ)⁻¹ •
         ((∮ z in C(c, R), (z - w)⁻¹ • f z) -
           ∮ z in C(c, r), (z - w)⁻¹ • f z) = f w := by
   have hrw : r < dist w c := lt_of_not_ge hw.2
   have hrR : r ≤ R := (hrw.trans hw.1).le
   have hR : 0 < R := hr.trans_le hrR
-  have hA : closedBall c R \ ball c r ∈ 𝓝 w := by
-    apply mem_of_superset
-      (inter_mem (closedBall_mem_nhds_of_mem hw.1)
-        (isClosed_closedBall.isOpen_compl.mem_nhds hw.2))
-    rintro z ⟨hzR, hzr⟩
-    exact ⟨hzR, fun hz => hzr (ball_subset_closedBall hz)⟩
-  -- Fill the divided difference at w; Cauchy-Goursat permits this one exceptional point.
-  have hdf : DifferentiableAt ℂ f w :=
-    hd.differentiableAt ((isOpen_ball.sdiff isClosed_closedBall).mem_nhds hw)
+  have hU : IsOpen (ball c R \ closedBall c r) := isOpen_ball.sdiff isClosed_closedBall
+  have hUA : ball c R \ closedBall c r ⊆ closedBall c R \ ball c r :=
+    fun _ hz => ⟨ball_subset_closedBall hz.1, fun h => hz.2 (ball_subset_closedBall h)⟩
+  have hA : closedBall c R \ ball c r ∈ 𝓝 w := mem_of_superset (hU.mem_nhds hw) hUA
+  -- Mathlib's local Cauchy formula removes countable exceptions by continuity and closure.
+  have hdf : DifferentiableAt ℂ f w := by
+    obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.mp (hU.mem_nhds hw)
+    have hf := Complex.hasFPowerSeriesOnBall_of_differentiable_off_countable
+      (R := ⟨ε, hε.le⟩) hs (hc.mono (hεU.trans hUA))
+      (fun z hz => hd z ⟨hεU (ball_subset_closedBall hz.1), hz.2⟩) hε
+    exact hf.analyticAt.differentiableAt
+  -- Fill the divided difference at w; Cauchy-Goursat permits the enlarged exceptional set.
   have hcd : ContinuousOn (dslope f w) (closedBall c R \ ball c r) :=
     (continuousOn_dslope hA).2 ⟨hc, hdf⟩
   have hid := Complex.circleIntegral_eq_of_differentiable_on_annulus_off_countable
-    hr hrR (countable_singleton w) hcd (fun z hz =>
-      (differentiableAt_dslope_of_ne (by simpa using hz.2)).2
-        (hd.differentiableAt ((isOpen_ball.sdiff isClosed_closedBall).mem_nhds hz.1)))
-  -- On either boundary, the divided difference splits into the two Cauchy kernels.
-  have heq (s : ℝ) (hs : 0 ≤ s) (hsA : sphere c s ⊆ closedBall c R \ ball c r)
-      (hsw : w ∉ sphere c s) :
-      (∮ z in C(c, s), dslope f w z) =
-        (∮ z in C(c, s), (z - w)⁻¹ • f z) -
-          (∮ z in C(c, s), (z - w)⁻¹) • f w := by
-    have hne : ∀ z ∈ sphere c s, z ≠ w :=
-      fun z hz h => hsw (h ▸ hz)
-    have hki : ContinuousOn (fun z : ℂ => (z - w)⁻¹) (sphere c s) :=
-      (continuousOn_id.sub continuousOn_const).inv₀ (fun z hz => sub_ne_zero.mpr (hne z hz))
-    have hi₁ : CircleIntegrable (fun z => (z - w)⁻¹ • f z) c s :=
-      (hki.smul (hc.mono hsA)).circleIntegrable hs
-    have hi₂ : CircleIntegrable (fun z => (z - w)⁻¹ • f w) c s :=
-      (hki.smul continuousOn_const).circleIntegrable hs
+    hr hrR (hs.insert w) hcd (fun z hz =>
+      (differentiableAt_dslope_of_ne
+        (ne_of_mem_of_not_mem (mem_insert w s) hz.2).symm).2
+          (hd z (sdiff_subset_sdiff_right (subset_insert w s) hz)))
+  have hRA : sphere c R ⊆ closedBall c R \ ball c r := by
+    intro z hz
+    exact ⟨sphere_subset_closedBall hz, fun hzr =>
+      (not_lt_of_ge hrR) ((mem_sphere.mp hz) ▸ hzr)⟩
+  have hrA : sphere c r ⊆ closedBall c R \ ball c r := by
+    intro z hz
+    exact ⟨closedBall_subset_closedBall hrR (sphere_subset_closedBall hz),
+      fun h => (ne_of_lt h) (mem_sphere.mp hz)⟩
+  have hwR : w ∉ sphere c R := fun h => (ne_of_lt hw.1) (mem_sphere.mp h)
+  have hwr : w ∉ sphere c r := fun h => hw.2 (sphere_subset_closedBall h)
+  have hdslope (ρ : ℝ) (hρ : 0 ≤ ρ)
+      (hρA : sphere c ρ ⊆ closedBall c R \ ball c r) (hwρ : w ∉ sphere c ρ) :
+      (∮ z in C(c, ρ), dslope f w z) =
+        (∮ z in C(c, ρ), (z - w)⁻¹ • f z) -
+          (∮ z in C(c, ρ), (z - w)⁻¹) • f w := by
+    have hne : ∀ z ∈ sphere c ρ, z ≠ w :=
+      fun _ hz => ne_of_mem_of_not_mem hz hwρ
+    have hwρ' : w ∉ sphere c |ρ| := by rwa [abs_of_nonneg hρ]
+    have hi₁ : CircleIntegrable (fun z => (z - w)⁻¹ • f z) c ρ := by
+      simpa only [zpow_neg_one] using
+        ((hc.mono hρA).circleIntegrable hρ).sub_zpow_smul (-1) hwρ'
+    have hi₂ : CircleIntegrable (fun z => (z - w)⁻¹ • f w) c ρ := by
+      simpa only [zpow_neg_one] using
+        (circleIntegrable_const (f w) c ρ).sub_zpow_smul (-1) hwρ'
     rw [← circleIntegral.integral_smul_const, ← circleIntegral.integral_sub hi₁ hi₂]
-    apply circleIntegral.integral_congr hs
+    apply circleIntegral.integral_congr hρ
     intro z hz
     simp only [dslope_of_ne _ (hne z hz), slope, vsub_eq_sub, smul_sub]
-  rw [heq R hR.le (fun z hz => ⟨sphere_subset_closedBall hz, by
-      intro hzr
-      have : dist z c = R := hz
-      have : R < r := this ▸ hzr
-      exact (not_lt_of_ge hrR) this⟩) (by
-        exact fun h => (ne_of_lt hw.1) h),
-    heq r hr.le (fun z hz => ⟨closedBall_subset_closedBall hrR
-      (sphere_subset_closedBall hz), by
-        exact fun h => (ne_of_lt h) hz⟩) (by
-        exact fun h => hw.2 (sphere_subset_closedBall h)),
+  rw [hdslope R hR.le hRA hwR, hdslope r hr.le hrA hwr,
     circleIntegral.integral_sub_inv_of_mem_ball hw.1,
     Contour.circleIntegral_sub_inv_eq_zero_of_lt_dist hr.le hrw, zero_smul, sub_zero] at hid
   have hdiff : (∮ z in C(c, R), (z - w)⁻¹ • f z) -
