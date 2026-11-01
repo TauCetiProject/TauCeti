@@ -9,12 +9,13 @@ public import TauCeti.NumberTheory.LocalField.MassFormula.RootCount
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Add
 import TauCeti.NumberTheory.LocalField.InertiaDegree
 import TauCeti.NumberTheory.LocalField.MassFormula.Eisenstein.Fibre
+import TauCeti.NumberTheory.LocalField.MassFormula.Fibre
 import TauCeti.NumberTheory.LocalField.RootCount.Ball
 import TauCeti.RingTheory.DiscreteValuationRing.RootPartition
 import TauCeti.RingTheory.DiscreteValuationRing.Sphere
 
 /-!
-# Decomposing root-count integrals into coefficient fibres
+# The integral of the root count
 
 Fix a totally ramified degree-`n` subextension `L` of a separable closure of `K`. A finite
 disjoint cover of the uniformizers of `L` by balls of order larger than its discriminant
@@ -41,6 +42,11 @@ such ball centred at a uniformizer has measure `q ^ (-(r + d))`, the root-count 
 into such balls has `q ^ (r - 1) - q ^ (r - 2)` members, and `L / K` has residue degree one, so
 `q` is the residue cardinality of both `K` and `L`.
 
+For a left-invariant measure normalized on the integer box, the local fibre criterion computes
+each such fibre volume as `q ^ (-(r + d))`, so the root count of every `L ∈ σ_K(n)` integrates
+over the Eisenstein region to `q ^ (-(d + 1)) (1 - q⁻¹)`. Summed over `σ_K(n)`, this gives
+Serre's mass formula.
+
 ## Main results
 
 * `IntermediateField.lintegral_rootCount_eq_sum_measure`: the root-count integral is the sum of
@@ -50,6 +56,8 @@ into such balls has `q ^ (r - 1) - q ^ (r - 2)` members, and `L / K` has residue
   measures of the integral coefficient fibres.
 * `IntermediateField.lintegral_rootCount_eq_of_measure_eq`: if every such fibre over a ball of
   order `r` has measure `q ^ (-(r + d))`, the root-count integral is `q ^ (-(d + 1)) (1 - q⁻¹)`.
+* `IntermediateField.lintegral_rootCount`: for a left-invariant measure normalized on the integer
+  box, the root-count integral is `q ^ (-(d + 1)) (1 - q⁻¹)`.
 
 ## References
 
@@ -215,5 +223,35 @@ theorem _root_.IntermediateField.lintegral_rootCount_eq_of_measure_eq
     ← mul_assoc, hmass, pow_succ, ENNReal.mul_inv (.inl (pow_ne_zero _ hq0))
       (.inl (ENNReal.pow_ne_top hqt))]
   ring
+
+/-- **The integral of the root count** (Serre's Lemmas 2 and 3). Let `L ∈ σ_K(n)` have
+discriminant exponent `d`, and let `μ` be a left-invariant measure on the coefficient space
+`Fin n → K`, normalized so that the integer box has volume `1`. Then the root count of `L`
+integrates over the Eisenstein region to `q ^ (-(d + 1)) (1 - q⁻¹)`, where `q` is the residue
+cardinality of `K`. -/
+theorem _root_.IntermediateField.lintegral_rootCount
+    {n : ℕ} {L : IntermediateField K (SeparableClosure K)}
+    (hL : L ∈ totallyRamifiedOfDegree K n)
+    [MeasurableSpace (Fin n → K)] [BorelSpace (Fin n → K)]
+    (μ : Measure (Fin n → K)) [μ.IsAddLeftInvariant] (hμ : μ (integerBox K (Fin n)) = 1) :
+    ∫⁻ a in eisensteinSet K n, (L.rootCount a : ℝ≥0∞) ∂μ =
+      1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (L.discriminantExponent + 1) *
+        (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) := by
+  have hL' := mem_totallyRamifiedOfDegree_iff.1 hL
+  let _ := hL'.2.finite
+  let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+  let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+  have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+  have hn : ramificationIndex K L = n :=
+    ((isTotallyRamified_iff_ramificationIndex_eq_finrank K L).1
+      ((IntermediateField.isTotallyRamified_iff L).1 hL'.2)).trans hL'.1
+  -- Balls of order `d + 2` are deep enough for both the fibre criterion and integrality.
+  refine L.lintegral_rootCount_eq_of_measure_eq hL μ (r := L.discriminantExponent + 2)
+    (by omega) (by omega) fun c hc ↦ ?_
+  rw [eisensteinSet_inter_setOf_exists_aeval_monicOfCoeff_eq_zero_le_addVal_eq_image hn
+    (by omega) hc]
+  exact L.measure_image_setOf_exists_aeval_monicOfCoeff_eq_zero_le_addVal hL μ hμ
+    (IsDiscreteValuationRing.addVal_eq_one_iff_irreducible.1 hc) (by omega)
 
 end TauCeti
