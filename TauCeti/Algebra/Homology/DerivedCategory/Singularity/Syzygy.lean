@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Abelian.Injective.Dimension
 public import TauCeti.Algebra.Homology.DerivedCategory.Perfect
-public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Cycles
 public import TauCeti.CategoryTheory.Triangulated.FullSubcategory
 
 /-!
@@ -27,13 +26,12 @@ perfect. Hence `K ≅ (K.opcycles m)[-m]` in the singularity category. Since `K`
 `0 ⟶ Zʲ ⟶ Kʲ ⟶ Zʲ⁺¹ ⟶ 0` with projective middle terms shift `Ext^{i+1}(Zᵐ⁺¹, Y)` into
 `Ext^{i+1+d}(Zᵐ⁺¹⁺ᵈ, Y)`, which vanishes when `Y` has injective dimension at most `d`.
 
+The identification of the opcycles with the cycles is
+`HomologicalComplex.isIso_opcyclesToCycles`, and the dimension shifting is
+`CochainComplex.ext_cycles_eq_zero_of_hasInjectiveDimensionLE`.
+
 ## Main results
 
-* `HomologicalComplex.isIso_opcyclesToCycles`: the opcycles in degree `i` are the cycles in degree
-  `j` when the complex is exact in both degrees.
-* `CochainComplex.ext_cycles_eq_zero_of_hasInjectiveDimensionLE`: for a complex of projectives
-  exact in degrees `j + 1, …, j + d`, the cycles in degree `j` have no higher extensions into
-  objects of injective dimension at most `d`.
 * `TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_obj`: every object of the
   singularity category is isomorphic to a `d`-th syzygy placed in some degree.
 
@@ -49,74 +47,6 @@ open CategoryTheory CategoryTheory.Limits CategoryTheory.Abelian CategoryTheory.
   ZeroObject
 
 universe w' w v u
-
-namespace HomologicalComplex
-
-variable {C : Type u} [Category.{v} C] [Abelian C] {ι : Type*} {c : ComplexShape ι}
-  (K : HomologicalComplex C c)
-
-/-- If a complex is exact in degrees `i` and `j`, with `c.Rel i j`, the map from the opcycles in
-degree `i` to the cycles in degree `j` is an isomorphism, by the exact sequence
-`Hⁱ ⟶ opcyclesⁱ ⟶ Zʲ ⟶ Hʲ`. -/
-lemma isIso_opcyclesToCycles {i j : ι} (hij : c.Rel i j) (hi : K.ExactAt i) (hj : K.ExactAt j) :
-    IsIso (K.opcyclesToCycles i j) := by
-  have h := HomologySequence.composableArrows₃_exact K i j hij
-  have : Mono (K.opcyclesToCycles i j) :=
-    (h.exact 0).mono_g (hi.isZero_homology.eq_of_src _ _)
-  have : Epi (K.opcyclesToCycles i j) :=
-    (h.exact 1).epi_f (hj.isZero_homology.eq_of_tgt _ _)
-  exact isIso_of_mono_of_epi _
-
-end HomologicalComplex
-
-namespace CochainComplex
-
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C] {K : CochainComplex C ℤ}
-  (hK : ∀ n, Projective (K.X n)) {Y : C}
-include hK
-
-/-- **One dimension shift along the cycles**: if `K` is exact in degree `j + 1` and its terms are
-projective, then `Ext^{i+1}(Zʲ, Y)` embeds into `Ext^{i+2}(Zʲ⁺¹, Y)`. -/
-private lemma ext_cycles_eq_zero_of_succ (j : ℤ) (hj : K.ExactAt (j + 1)) (i : ℕ)
-    (h : ∀ e : Ext.{w} (K.cycles (j + 1)) Y (i + 2), e = 0) (e : Ext.{w} (K.cycles j) Y (i + 1)) :
-    e = 0 := by
-  have hS : (ShortComplex.mk (K.iCycles j) (K.toCycles j (j + 1))
-      (K.iCycles_toCycles j (j + 1))).ShortExact :=
-    K.cyclesShortComplex_def j (j + 1) ▸ K.cyclesShortComplex_shortExact j (j + 1) rfl hj
-  obtain ⟨x, rfl⟩ := Ext.contravariant_sequence_exact₁ hS Y e (n₁ := i + 2) (by lia) (h _)
-  have := hK j
-  rw [Ext.eq_zero_of_projective x, Ext.comp_zero]
-
-/-- **Dimension shifting along the cycles**: if `K` is exact in degrees `j + 1, …, j + k` and its
-terms are projective, then `Ext^{i+1}(Zʲ, Y)` vanishes whenever `Ext^{i+k+1}(Zʲ⁺ᵏ, Y)` does. -/
-private lemma ext_cycles_eq_zero_of_add (k : ℕ) :
-    ∀ (j j' : ℤ), j' = j + k → (∀ l : ℕ, l < k → K.ExactAt (j + l + 1)) → ∀ i : ℕ,
-      (∀ n, n = i + k + 1 → ∀ e : Ext.{w} (K.cycles j') Y n, e = 0) →
-        ∀ e : Ext.{w} (K.cycles j) Y (i + 1), e = 0 := by
-  induction k with
-  | zero =>
-    intro j j' hj' _ i h
-    obtain rfl : j' = j := by simpa using hj'
-    exact h _ rfl
-  | succ k ih =>
-    intro j j' hj' hK' i h
-    refine ext_cycles_eq_zero_of_succ hK j (by simpa using hK' 0 (by lia)) i
-      (ih (j + 1) j' (by rw [hj']; push_cast; ring) (fun l hl ↦ ?_) (i + 1)
-        (fun n hn ↦ h n (by lia)))
-    have := hK' (l + 1) (by lia)
-    push_cast at this
-    rwa [show j + (l + 1 : ℤ) + 1 = j + 1 + l + 1 by ring] at this
-
-/-- **Cycles of an exact range have no higher extensions into objects of small injective
-dimension**: if `K` has projective terms and is exact in degrees `j + 1, …, j + d`, then
-`Ext^{i+1}(Zʲ, Y) = 0` for every object `Y` of injective dimension at most `d`. -/
-theorem ext_cycles_eq_zero_of_hasInjectiveDimensionLE (d : ℕ) [HasInjectiveDimensionLE Y d]
-    (j : ℤ) (hj : ∀ l : ℕ, l < d → K.ExactAt (j + l + 1)) (i : ℕ)
-    (e : Ext.{w} (K.cycles j) Y (i + 1)) : e = 0 :=
-  ext_cycles_eq_zero_of_add hK d j (j + d) rfl hj i
-    (fun n hn e ↦ e.eq_zero_of_hasInjectiveDimensionLT (d + 1) (by lia)) e
-
-end CochainComplex
 
 namespace TauCeti.SingularityCategory
 
@@ -146,10 +76,12 @@ theorem exists_iso_Q_obj_singleFunctor_obj [EnoughProjectives C] [HasExt.{w'} C]
   let π : T ⟶ (HomologicalComplex.single C (.up ℤ) m).obj (T.X m) :=
     HomologicalComplex.mkHomToSingle (𝟙 _) fun i hi ↦
       (T.isZero_of_isStrictlyGE m i (by simp at hi; lia)).eq_of_src _ _
+  -- In degree `m`, `π` is the identification of `T.X m` with the term of the single complex.
+  have hπm : π.f m = 𝟙 _ ≫ (HomologicalComplex.singleObjXSelf (.up ℤ) m (T.X m)).inv :=
+    HomologicalComplex.mkHomToSingle_f _ _
   have : Epi π := HomologicalComplex.epi_of_epi_f _ fun i ↦ by
     by_cases hi : i = m
-    · rw [hi, show π.f m = 𝟙 _ ≫ (HomologicalComplex.singleObjXSelf (.up ℤ) m (T.X m)).inv from
-        HomologicalComplex.mkHomToSingle_f _ _]
+    · rw [hi, hπm]
       infer_instance
     · exact ⟨fun g h _ ↦ (HomologicalComplex.isZero_single_obj_X _ _ _ _ hi).eq_of_src g h⟩
   let S := ShortComplex.mk (kernel.ι π) π (kernel.condition π)
@@ -163,8 +95,7 @@ theorem exists_iso_Q_obj_singleFunctor_obj [EnoughProjectives C] [HasExt.{w'} C]
       kernelZeroIsoSource
   have hkerm : IsZero ((kernel π).X m) := by
     have : Mono (π.f m) := by
-      rw [show π.f m = 𝟙 _ ≫ (HomologicalComplex.singleObjXSelf (.up ℤ) m (T.X m)).inv from
-        HomologicalComplex.mkHomToSingle_f _ _]
+      rw [hπm]
       infer_instance
     exact (isZero_kernel_of_mono (π.f m)).of_iso (hker m)
   have hlow (i : ℤ) (hi : i ≤ m) : IsZero ((kernel π).X i) := by
@@ -207,7 +138,7 @@ theorem exists_iso_Q_obj_singleFunctor_obj [EnoughProjectives C] [HasExt.{w'} C]
       (TauCeti.DerivedCategory.Bounded.perfect_Qh_obj_quotient_obj C K' hproj)
   have := Localization.inverts (Q C) _ _ (ObjectProperty.trW.mk' _ hT' h₁)
   let eM : T.X m ≅ K.cycles (m + 1) := K.truncGEXIsoOpcycles m ≪≫
-    (have := K.isIso_opcyclesToCycles (show (ComplexShape.up ℤ).Rel m (m + 1) from rfl)
+    (have := K.isIso_opcyclesToCycles (i := m) (j := m + 1) rfl
       (K.exactAt_of_isGE a m (by lia)) (K.exactAt_of_isGE a (m + 1) (by lia))
     asIso (K.opcyclesToCycles m (m + 1)))
   let eX : T'.obj₂ ≅ X := (ObjectProperty.fullyFaithfulι _).preimageIso (Triangle.π₂.mapIso φ ≪≫ eT)
@@ -217,7 +148,7 @@ theorem exists_iso_Q_obj_singleFunctor_obj [EnoughProjectives C] [HasExt.{w'} C]
       ((singleFunctorIsoCompQ C m).app (K.cycles (m + 1))).symm)
   refine ⟨K.cycles (m + 1), m, fun Y _ i e' ↦ ?_,
     ⟨(Q C).mapIso eX.symm ≪≫ asIso ((Q C).map T'.mor₂) ≪≫ (Q C).mapIso eS⟩⟩
-  exact CochainComplex.ext_cycles_eq_zero_of_hasInjectiveDimensionLE hK d (m + 1)
-    (fun l hl ↦ K.exactAt_of_isGE a _ (by lia)) i e'
+  exact CochainComplex.ext_cycles_eq_zero_of_hasInjectiveDimensionLE d (m + 1)
+    (fun _ _ ↦ hK _) (fun l hl ↦ K.exactAt_of_isGE a _ (by lia)) i e'
 
 end TauCeti.SingularityCategory
