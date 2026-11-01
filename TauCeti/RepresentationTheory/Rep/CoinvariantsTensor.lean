@@ -9,6 +9,7 @@ public import Mathlib.RepresentationTheory.Coinvariants
 public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.RepresentationTheory.Rep.Ihom
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.CategoryTheory.Exact.KernelCokernelPair
 
 /-!
 # Change of groups, maps out of tensor coinvariants, and coefficient exactness
@@ -343,37 +344,11 @@ theorem map_coinvariantsTensor_projective {S : ShortComplex (Rep.{u} k G)}
         ShortComplex.mapNatTrans_τ₁, ShortComplex.mapNatTrans_τ₂, ShortComplex.mapNatTrans_τ₃]
       rw [← NatTrans.comp_app, ← CategoryTheory.Functor.map_comp, r.retract,
         CategoryTheory.Functor.map_id]
-      rfl
+      exact NatTrans.id_app _ _
   -- The coefficient sequence is a retract of the short exact free coefficient sequence.
   have hfree := hS.map_coinvariantsTensor_free P
-  have hi₁ : Function.Injective i.τ₁ := by
-    apply Function.LeftInverse.injective (g := p.τ₁)
-    intro x
-    exact congrArg (fun f ↦ f.τ₁ x) hip
-  have hp₃ : Function.Surjective p.τ₃ := by
-    apply Function.RightInverse.surjective (g := i.τ₃)
-    intro x
-    exact congrArg (fun f ↦ f.τ₃ x) hip
-  refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
-  · rw [ShortComplex.moduleCat_exact_iff]
-    intro x hx
-    have hix : (S.map ((coinvariantsTensor k G).flip.obj (free k G P))).g (i.τ₂ x) = 0 := by
-      rw [← ConcreteCategory.comp_apply, i.comm₂₃, ConcreteCategory.comp_apply, hx, map_zero]
-    obtain ⟨y, hy⟩ := (ShortComplex.moduleCat_exact_iff _).mp hfree.exact _ hix
-    refine ⟨p.τ₁ y, ?_⟩
-    rw [← ConcreteCategory.comp_apply, p.comm₁₂, ConcreteCategory.comp_apply, hy]
-    exact congrArg (fun f ↦ f.τ₂ x) hip
-  · apply (ModuleCat.mono_iff_injective _).mpr
-    intro x y hxy
-    apply hi₁
-    apply (ModuleCat.mono_iff_injective _).mp hfree.mono_f
-    exact (congrArg (fun f ↦ f x) i.comm₁₂).trans
-      ((congrArg i.τ₂ hxy).trans (congrArg (fun f ↦ f y) i.comm₁₂).symm)
-  · apply (ModuleCat.epi_iff_surjective _).mpr
-    intro x
-    obtain ⟨y, rfl⟩ := hp₃ x
-    obtain ⟨z, rfl⟩ := (ModuleCat.epi_iff_surjective _).mp hfree.epi_g y
-    exact ⟨p.τ₂ z, congrArg (fun f ↦ f z) p.comm₂₃⟩
+  exact (TauCeti.IsKernelCokernelPair.of_retract
+    ((TauCeti.isKernelCokernelPair_iff_shortExact _).mpr hfree) ⟨i, p, hip⟩).shortExact
 
 end CategoryTheory.ShortComplex.ShortExact
 

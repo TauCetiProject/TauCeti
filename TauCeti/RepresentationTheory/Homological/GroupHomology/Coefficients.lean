@@ -107,11 +107,12 @@ theorem groupHomology_δ_comp_groupHomologyIso_hom (i j : ℕ) (hij : j + 1 = i)
       groupHomology.chainsMap (MonoidHom.id G) f ≫ ψ B =
         ψ A ≫ (P.complex.coinvariantsTensorFunctor).map f := by
     dsimp only [ψ]
+    -- Present the bar resolution's complex explicitly for rewriting the naturality square.
+    change Rep.barComplex k G ⟶ P.complex at β
     rw [← Category.assoc, TauCeti.groupHomology.inhomogeneousChainsIso_hom_naturality,
       Category.assoc]
-    exact (congrArg ((groupHomology.inhomogeneousChainsIso A).hom ≫ ·)
-      ((NatTrans.mapHomologicalComplex ((coinvariantsTensor k G).map f) _).naturality β).symm).trans
-        (Category.assoc _ _ _).symm
+    rw [← (NatTrans.mapHomologicalComplex ((coinvariantsTensor k G).map f) _).naturality β,
+      ← Category.assoc]
   let Φ : S.map (groupHomology.chainsFunctor k G) ⟶
       S.map P.complex.coinvariantsTensorFunctor :=
     { τ₁ := ψ S.X₁
