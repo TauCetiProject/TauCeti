@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FixedSubgroup.Lang
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import TauCeti.FieldTheory.IsAlgClosed.Units
 import TauCeti.Algebra.Group.Hom.Iterate
 
 /-!
@@ -41,16 +41,7 @@ theorem surjective_commutatorMap_of_torus_iterate_eq_pow
     (hf : ∀ t, (⇑f)^[m] t = t ^ Q) :
     Function.Surjective (commutatorMap f) := by
   apply f.surjective_commutatorMap_of_iterate_eq_pow (by omega) hf
-  intro a
-  have hroot (i : ι) : ∃ u : Kˣ, u ^ (Q - 1) = a i := by
-    obtain ⟨x, hx⟩ := IsAlgClosed.exists_pow_nat_eq (a i : K) (by omega : 0 < Q - 1)
-    have hx0 : x ≠ 0 := by
-      intro h
-      rw [h, zero_pow (by omega : Q - 1 ≠ 0)] at hx
-      exact (a i).ne_zero hx.symm
-    exact ⟨Units.mk0 x hx0, Units.ext hx⟩
-  choose t ht using hroot
-  exact ⟨t, funext ht⟩
+  exact RootableBy.surjective_pow (ι → Kˣ) ℕ (by omega)
 
 /-- The Lang map is surjective for a power map of exponent greater than one twisted
 by a finite-order endomorphism of a split torus. -/
