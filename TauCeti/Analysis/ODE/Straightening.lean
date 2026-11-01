@@ -124,17 +124,74 @@ private theorem hasFDerivAt_flowBoxMap_zero (hga : g a = u)
     exact h₁.unique h₂
   have hd' : HasFDerivAt (fun p : E × ℝ ↦ Φ p.1 p.2) D (a + (0 - ℓ 0 • u), ℓ 0) := by
     simpa using hd.hasFDerivAt
-  convert hd'.comp (0 : E) (hasFDerivAt_flowBoxArg a u ℓ 0) using 1
-  · rfl
-  · ext h
-    have hsplit : ((h - ℓ h • u, ℓ h) : E × ℝ) = (h - ℓ h • u, 0) + ℓ h • ((0 : E), (1 : ℝ)) := by
-      simp
-    simp only [ContinuousLinearMap.id_apply, ContinuousLinearMap.coe_comp, Function.comp_apply,
-      ContinuousLinearMap.prod_apply, sub_apply, ContinuousLinearMap.smulRight_apply]
-    rw [hsplit, map_add, map_smul, hDx, hDt]
+  unfold flowBoxMap
+  refine (hd'.comp (0 : E) (hasFDerivAt_flowBoxArg a u ℓ 0)).congr_fderiv ?_
+  ext h
+  have hsplit : ((h - ℓ h • u, ℓ h) : E × ℝ) = (h - ℓ h • u, 0) + ℓ h • ((0 : E), (1 : ℝ)) := by
     simp
+  simp only [ContinuousLinearMap.id_apply, ContinuousLinearMap.coe_comp, Function.comp_apply,
+    ContinuousLinearMap.prod_apply, sub_apply, ContinuousLinearMap.smulRight_apply]
+  rw [hsplit, map_add, map_smul, hDx, hDt]
+  simp
 
 end Flow
+
+/-- **The inverse function theorem step of the flow-box construction.** Let `ψ` be a `C^n` map,
+`1 ≤ n`, with the identity as derivative at `0`, whose derivative at every point `z` sends `u` to
+`g (ψ z)`. Then, for an open set `S ∋ ψ 0`, the local inverse of `ψ`, restricted to where `dψ` is
+invertible and `ψ` lands in `S`, is an open partial homeomorphism `φ` with `ψ 0 ∈ φ.source ⊆ S`,
+`C^n` with `C^n` inverse, whose derivative sends `g y` to `u` at every point `y` of its source. -/
+private theorem exists_openPartialHomeomorph_of_fderiv_apply_eq [CompleteSpace E] {n : ℕ∞}
+    (hn : 1 ≤ n) {ψ g : E → E} {u : E} {S : Set E} (hψs : ContDiff ℝ n ψ)
+    (hψ0 : HasFDerivAt ψ (ContinuousLinearMap.id ℝ E) 0) (hψu : ∀ z, fderiv ℝ ψ z u = g (ψ z))
+    (hSo : IsOpen S) (hS0 : ψ 0 ∈ S) :
+    ∃ φ : OpenPartialHomeomorph E E, ψ 0 ∈ φ.source ∧ φ.source ⊆ S ∧
+      (∀ y ∈ φ.source, ContDiffAt ℝ n φ y) ∧ (∀ z ∈ φ.target, ContDiffAt ℝ n φ.symm z) ∧
+      ∀ y ∈ φ.source, fderiv ℝ φ y (g y) = u := by
+  have hn0 : (n : WithTop ℕ∞) ≠ 0 := by
+    have : (1 : WithTop ℕ∞) ≤ n := by exact_mod_cast hn
+    exact (lt_of_lt_of_le zero_lt_one this).ne'
+  have hψd : Differentiable ℝ ψ := hψs.differentiable hn0
+  have hψ0' : HasFDerivAt ψ ((ContinuousLinearEquiv.refl ℝ E : E ≃L[ℝ] E) : E →L[ℝ] E) 0 := by
+    rwa [ContinuousLinearEquiv.coe_refl]
+  -- The inverse function theorem, restricted to where `dψ` is invertible and `ψ` lands in `S`.
+  let P := hψs.contDiffAt.toOpenPartialHomeomorph ψ hψ0' hn0
+  set O := (fderiv ℝ ψ ⁻¹' range ((↑) : (E ≃L[ℝ] E) → E →L[ℝ] E)) ∩ ψ ⁻¹' S
+  have hOo : IsOpen O :=
+    (ContinuousLinearEquiv.isOpen.preimage (hψs.continuous_fderiv hn0)).inter
+      (hSo.preimage hψs.continuous)
+  let Q := P.restrOpen O hOo
+  have hQ : (Q : E → E) = ψ := by
+    rw [OpenPartialHomeomorph.coe_restrOpen, ContDiffAt.toOpenPartialHomeomorph_coe]
+  have hQs (y : E) (hy : y ∈ Q.target) :
+      ∃ L : E ≃L[ℝ] E, HasFDerivAt Q (L : E →L[ℝ] E) (Q.symm y) ∧ ψ (Q.symm y) = y ∧ y ∈ S := by
+    have hmem : Q.symm y ∈ Q.source := Q.map_target hy
+    rw [OpenPartialHomeomorph.restrOpen_source] at hmem
+    have hyO : Q.symm y ∈ O := hmem.2
+    obtain ⟨L, hL⟩ := hyO.1
+    have hy' : ψ (Q.symm y) = y := by
+      rw [← hQ]
+      exact Q.right_inv hy
+    refine ⟨L, ?_, hy', hy' ▸ hyO.2⟩
+    rw [hL, hQ]
+    exact (hψd _).hasFDerivAt
+  refine ⟨Q.symm, ?_, fun y hy ↦ ?_, fun y hy ↦ ?_, fun z _ ↦ ?_, fun y hy ↦ ?_⟩
+  · -- `ψ 0` lies in the target, with `0 ∈ O`.
+    have h0 : (0 : E) ∈ Q.source := by
+      rw [OpenPartialHomeomorph.restrOpen_source]
+      exact ⟨hψs.contDiffAt.mem_toOpenPartialHomeomorph_source hψ0' hn0,
+        ⟨ContinuousLinearEquiv.refl ℝ E, hψ0'.fderiv.symm⟩, hS0⟩
+    rw [OpenPartialHomeomorph.symm_source, ← hQ]
+    exact Q.map_source h0
+  · obtain ⟨-, -, -, hyS⟩ := hQs y hy
+    exact hyS
+  · obtain ⟨L, hL, -, -⟩ := hQs y hy
+    exact Q.contDiffAt_symm hy hL (by rw [hQ]; exact hψs.contDiffAt)
+  · rw [OpenPartialHomeomorph.symm_symm, hQ]
+    exact hψs.contDiffAt
+  · obtain ⟨L, hL, hψy, -⟩ := hQs y hy
+    rw [(Q.hasFDerivAt_symm hy hL).fderiv, ← hψy, ← hψu (Q.symm y), ← hQ, hL.fderiv]
+    simp
 
 variable [FiniteDimensional ℝ E]
 
@@ -158,14 +215,14 @@ theorem exists_openPartialHomeomorph_fderiv_eq_const {n : ℕ∞} (hn : 1 ≤ n)
     exact_mod_cast hw
   obtain ⟨g, K, hg, hgK, hgw⟩ :=
     hw'.exists_lipschitzWith_contDiff_eventuallyEq_of_finiteDimensional hs
-  rw [← WithTop.coe_one, ← WithTop.coe_add, ← hk] at hg
   obtain ⟨S, hSo, haS, hSg⟩ : ∃ S : Set E, IsOpen S ∧ a ∈ S ∧ ∀ y ∈ S, g y = w y := by
     obtain ⟨S, hS, hSo, haS⟩ := mem_nhds_iff.1 hgw
     exact ⟨S, hSo, haS, hS⟩
   -- The flow `Φ` of `g` and the flow-box coordinates `ψ`.
   set Φ := ODE.globalSolution g hgK with hΦ
-  have hΦs : ContDiff ℝ n fun p : E × ℝ ↦ Φ p.1 p.2 :=
-    ODE.contDiff_globalSolution_of_one_le hn g hgK hg
+  have hΦs : ContDiff ℝ n fun p : E × ℝ ↦ Φ p.1 p.2 := by
+    rw [hk]
+    exact_mod_cast ODE.contDiff_globalSolution g hgK hg
   obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_eq_one (R := ℝ) ha
   set ψ := flowBoxMap Φ a u ℓ with hψ
   have hψs : ContDiff ℝ n ψ :=
@@ -173,40 +230,15 @@ theorem exists_openPartialHomeomorph_fderiv_eq_const {n : ℕ∞} (hn : 1 ≤ n)
       ℓ.contDiff)
   have hψ0 : ψ 0 = a := by
     simp [hψ, flowBoxMap, hΦ, ODE.globalSolution_zero]
-  have hψd : Differentiable ℝ ψ := hψs.differentiable (by exact_mod_cast hn0)
-  have hψu (z : E) : fderiv ℝ ψ z u = g (ψ z) := fderiv_flowBoxMap_apply hgK hℓ (hψd z)
-  have hψ0' : HasFDerivAt ψ ((ContinuousLinearEquiv.refl ℝ E : E ≃L[ℝ] E) : E →L[ℝ] E) 0 := by
-    rw [ContinuousLinearEquiv.coe_refl]
-    exact hasFDerivAt_flowBoxMap_zero hgK (hSg a haS) ((hΦs.differentiable
-      (by exact_mod_cast hn0)) _)
-  -- The inverse function theorem, restricted to where `dψ` is invertible and `g = w` holds.
-  let P := hψs.contDiffAt.toOpenPartialHomeomorph ψ hψ0' hn0
-  set O := (fderiv ℝ ψ ⁻¹' range ((↑) : (E ≃L[ℝ] E) → E →L[ℝ] E)) ∩ ψ ⁻¹' S
-  have hOo : IsOpen O :=
-    (ContinuousLinearEquiv.isOpen.preimage (hψs.continuous_fderiv (by exact_mod_cast hn0))).inter
-      (hSo.preimage hψs.continuous)
-  let Q := P.restrOpen O hOo
-  have hQ : (Q : E → E) = ψ := rfl
-  have hQs (y : E) (hy : y ∈ Q.target) :
-      ∃ L : E ≃L[ℝ] E, HasFDerivAt ψ (L : E →L[ℝ] E) (Q.symm y) ∧ ψ (Q.symm y) = y ∧ y ∈ S := by
-    have hmem : Q.symm y ∈ Q.source := Q.map_target hy
-    have hyO : Q.symm y ∈ O := hmem.2
-    obtain ⟨L, hL⟩ := hyO.1
-    have hy' : ψ (Q.symm y) = y := Q.right_inv hy
-    refine ⟨L, ?_, hy', hy' ▸ hyO.2⟩
-    rw [hL]
-    exact (hψd _).hasFDerivAt
-  refine ⟨Q.symm, ?_, fun y hy ↦ ?_, fun z _ ↦ hψs.contDiffAt, fun y hy ↦ ?_⟩
-  · -- `a = ψ 0` lies in the target, with `0 ∈ O`.
-    have h0 : (0 : E) ∈ Q.source := by
-      refine ⟨hψs.contDiffAt.mem_toOpenPartialHomeomorph_source hψ0' hn0, ⟨?_, ?_⟩⟩
-      · exact ⟨ContinuousLinearEquiv.refl ℝ E, hψ0'.fderiv.symm⟩
-      · simpa [hψ0] using haS
-    simpa [hQ, hψ0] using Q.map_source h0
-  · obtain ⟨L, hL, -, -⟩ := hQs y hy
-    exact Q.contDiffAt_symm hy hL hψs.contDiffAt
-  · obtain ⟨L, hL, hψy, hyS⟩ := hQs y hy
-    rw [(Q.hasFDerivAt_symm hy hL).fderiv, ← hSg y hyS, ← hψy, ← hψu (Q.symm y), hL.fderiv]
-    simp
+  have hψu (z : E) : fderiv ℝ ψ z u = g (ψ z) :=
+    fderiv_flowBoxMap_apply hgK hℓ (hψs.differentiable hn0 z)
+  have hψ0' : HasFDerivAt ψ (ContinuousLinearMap.id ℝ E) 0 :=
+    hasFDerivAt_flowBoxMap_zero hgK (hSg a haS) (hΦs.differentiable hn0 _)
+  -- Invert `ψ` near `0`, where `g = w`.
+  obtain ⟨φ, h0φ, hφS, hφ, hφs, hφg⟩ :=
+    exists_openPartialHomeomorph_of_fderiv_apply_eq hn hψs hψ0' hψu hSo (hψ0 ▸ haS)
+  refine ⟨φ, hψ0 ▸ h0φ, hφ, hφs, fun y hy ↦ ?_⟩
+  rw [← hSg y (hφS hy)]
+  exact hφg y hy
 
 end TauCeti

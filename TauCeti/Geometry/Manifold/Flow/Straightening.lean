@@ -9,6 +9,7 @@ public import TauCeti.Analysis.ODE.Straightening
 public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # The straightening theorem for vector fields on a manifold
@@ -78,26 +79,11 @@ theorem exists_chart_mfderiv_eq_const {m : ℕ∞} {n : ℕ∞ω} (hm : 1 ≤ m)
     refine ⟨mem_extChartAt_target x, ?_⟩
     rw [mem_preimage, he₀, extChartAt_to_inv]
     exact mem_interior_iff_mem_nhds.2 hU
-  have hwS : ContDiffOn ℝ m w S := fun z hz ↦ by
-    have hV : ContMDiffAt I I.tangent m (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)) (e₀.symm z) :=
-      hv.contMDiffAt (mem_interior_iff_mem_nhds.1 hz.2)
-    have hf : ContMDiffAt 𝓘(ℝ, E) I n e₀.symm z :=
-      (contMDiffOn_extChartAt_symm x).contMDiffAt ((isOpen_extChartAt_target x).mem_nhds hz.1)
-    have hf' := isInvertible_mfderivWithin_extChartAt_symm hz.1
-    rw [I.range_eq_univ, mfderivWithin_univ] at hf'
-    exact (contMDiffAt_vectorSpace_iff_contDiffAt.1
-      (hV.mpullback_vectorField_preimage hf hf' hmn)).contDiffWithinAt
+  have hwS : ContDiffOn ℝ m w S :=
+    (hv.mono interior_subset).contDiffOn_mpullback_extChartAt_symm isOpen_interior hmn
   -- At `e₀ y`, the coordinate field is the image of `v y` under the differential of `e₀`.
-  have hwe (y : M) (hy : y ∈ e₀.source) : w (e₀ y) = mfderiv I 𝓘(ℝ, E) e₀ y (v y) := by
-    have hinv := isInvertible_mfderivWithin_extChartAt_symm (e₀.map_source hy)
-    rw [I.range_eq_univ, mfderivWithin_univ] at hinv
-    have hcomp := mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt' (I := I) hy
-    rw [I.range_eq_univ, mfderivWithin_univ] at hcomp
-    -- `w` is `mpullback` read in `E`, the tangent spaces of `E` being `E` by definition.
-    have key : (mpullback 𝓘(ℝ, E) I e₀.symm v (e₀ y) : E) = mfderiv I 𝓘(ℝ, E) e₀ y (v y) := by
-      rw [mpullback_apply, hinv.inverse_apply_eq, e₀.left_inv hy]
-      exact (DFunLike.congr_fun hcomp (v y)).symm
-    exact key
+  have hwe (y : M) (hy : y ∈ e₀.source) : w (e₀ y) = mfderiv I 𝓘(ℝ, E) e₀ y (v y) :=
+    mpullback_extChartAt_symm_apply_eq_mfderiv v hy
   have hwx : w (e₀ x) ≠ 0 := by
     rw [hwe x (mem_extChartAt_source x)]
     exact fun h ↦ hx ((isInvertible_mfderiv_extChartAt (mem_extChartAt_source x)).injective
