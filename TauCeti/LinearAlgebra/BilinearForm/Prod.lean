@@ -16,12 +16,14 @@ carries its own form and the two factors are orthogonal to each other. It is the
 counterpart of `QuadraticMap.prod`, and it is the form an orthogonal direct sum of bilinear
 modules carries.
 
-Nondegeneracy is componentwise: a vector is in the radical of the product exactly when both of
-its components are in the radicals of the factors.
+Symmetry and nondegeneracy are componentwise. In particular, a vector is in the radical of the
+product exactly when both of its components are in the radicals of the factors.
 
 ## Main declarations
 
 * `LinearMap.BilinForm.prod`: the block-diagonal form on a product module.
+* `LinearMap.BilinForm.isSymm_prod_iff`: the product form is symmetric exactly when both factors
+  are.
 * `LinearMap.BilinForm.nondegenerate_prod_iff`: the product form is nondegenerate exactly when
   both factors are.
 -/
@@ -44,6 +46,15 @@ def prod (B : LinearMap.BilinForm R M) (C : LinearMap.BilinForm R N) :
 theorem prod_apply (B : LinearMap.BilinForm R M) (C : LinearMap.BilinForm R N) (x y : M × N) :
     B.prod C x y = B x.1 y.1 + C x.2 y.2 :=
   (rfl)
+
+/-- A product of bilinear forms is symmetric exactly when both factors are. -/
+@[simp]
+theorem isSymm_prod_iff {B : LinearMap.BilinForm R M} {C : LinearMap.BilinForm R N} :
+    (B.prod C).IsSymm ↔ B.IsSymm ∧ C.IsSymm := by
+  refine ⟨fun h ↦ ⟨⟨fun x y ↦ ?_⟩, ⟨fun x y ↦ ?_⟩⟩, fun ⟨hB, hC⟩ ↦ ⟨fun x y ↦ ?_⟩⟩
+  · simpa using h.eq (x, 0) (y, 0)
+  · simpa using h.eq (0, x) (0, y)
+  · simp [hB.eq x.1, hC.eq x.2]
 
 /-- A product of bilinear forms is nondegenerate exactly when both factors are. -/
 @[simp]
