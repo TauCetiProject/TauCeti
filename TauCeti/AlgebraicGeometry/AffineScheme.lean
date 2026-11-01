@@ -7,8 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Properties
-public import Mathlib.AlgebraicGeometry.Pullbacks
-public import Mathlib.CategoryTheory.Comma.Over.Pullback
 import TauCeti.RingTheory.Localization.Tower
 
 /-!
@@ -26,17 +24,13 @@ form in which a free action of a finite group on an affine scheme enters the the
 quotients (`TauCeti.AffineInvariantQuotient.etale_projection`), once the group acts on `Γ(X, ⊤)` by
 pullback along inverses (`AlgebraicGeometry.Scheme.globalSectionsMulSemiringAction`).
 
+Morphisms into an affine scheme are determined by their effect on global sections. Hence, over an
+affine base `S`, base change along `j : T ⟶ S` is bijective on morphisms `Y ⟶ Y'` into an affine
+`Y'` whenever it does not change the global sections of `Y`.
+
 It also shows that for a compatible tower `R → B ↪ R_a`, localizing `B` at `a` gives `R_a`,
 so `Spec B ⟶ Spec R` is an isomorphism over the basic open `D(a)`. The map from `R` need not
 be injective. This is the local reason why an affine blowup changes nothing away from its center.
-
-Morphisms into an affine scheme are determined by their maps on global sections. Hence if
-`ι : X' ⟶ X` is an isomorphism on global sections and `X` is affine, every morphism from `X'` to
-an affine scheme extends uniquely along `ι`. Over an affine base `S`, this shows that base change
-along any `j : T ⟶ S` is bijective on morphisms between affine `S`-schemes `X` and `Y`, provided
-the projection `X ×_S T ⟶ X` is an isomorphism on global sections. This is the algebraic Hartogs
-argument for full faithfulness of restriction to an open subscheme whose preimage in `X` carries
-the same functions as `X`.
 
 ## Main definitions
 
@@ -58,17 +52,14 @@ the same functions as `X`.
   isomorphism over `D(a)`.
 * `AlgebraicGeometry.IsAffineOpen.mem_basicOpen_iff_notMem_primeIdealOf`: on an affine open, a
   point lies in the basic open of a section iff the section is not in the point's prime ideal.
-* `AlgebraicGeometry.Scheme.Hom.bijective_comp_of_isIso_appTop`: if `ι : X' ⟶ X` is an
-  isomorphism on global sections and `X` is affine, then composition with `ι` is a bijection
-  from morphisms `X ⟶ Y` to morphisms `X' ⟶ Y`, for every affine `Y`.
-* `AlgebraicGeometry.overPullback_map_bijective_of_isIso_appTop`: over an affine base, base change
-  is bijective on morphisms between affine schemes when the projection from the base change of
-  the source is an isomorphism on global sections.
+* `TauCeti.AlgebraicGeometry.overPullback_map_bijective_of_isIso_appTop`: over an affine base,
+  base change along `j : T ⟶ S` is a bijection on morphisms `Y ⟶ Y'` into an affine `Y'` when
+  `Γ(Y, 𝒪) → Γ(Y ×_S T, 𝒪)` is an isomorphism.
 -/
 
 public section
 
-open CategoryTheory Limits
+open CategoryTheory
 
 universe u
 
@@ -181,42 +172,55 @@ theorem IsAffineOpen.mem_basicOpen_iff_notMem_primeIdealOf {X : Scheme.{u}} {x :
   exact (X.mem_basicOpen r x hx).trans
     (IsLocalization.AtPrime.isUnit_to_map_iff (X.presheaf.stalk x) _ r)
 
-/-- Let `ι : X' ⟶ X` be an isomorphism on global sections, with `X` affine. Then every morphism
-from `X'` to an affine scheme `Y` extends uniquely along `ι` to a morphism `X ⟶ Y`. -/
-theorem Scheme.Hom.bijective_comp_of_isIso_appTop {X' X Y : Scheme.{u}} (ι : X' ⟶ X)
-    [IsAffine X] [IsAffine Y] [IsIso ι.appTop] : Function.Bijective fun h : X ⟶ Y ↦ ι ≫ h := by
-  refine ⟨fun h h' e ↦ ext_of_isAffine ?_, fun ψ ↦
-    ⟨X.isoSpec.hom ≫ Spec.map (ψ.appTop ≫ inv ι.appTop) ≫ Y.isoSpec.inv, ?_⟩⟩
-  · have := congrArg Scheme.Hom.appTop e
-    simp only [Scheme.Hom.comp_appTop] at this
-    exact (cancel_mono ι.appTop).mp this
-  · simp only [Scheme.isoSpec_hom, Scheme.toSpecΓ_naturality_assoc, ← Spec.map_comp_assoc,
-      Category.assoc, IsIso.inv_hom_id, Category.comp_id]
-    rw [← Scheme.toSpecΓ_naturality_assoc, Scheme.toSpecΓ_isoSpec_inv, Category.comp_id]
-
-/-- Let `X` and `Y` be affine schemes over an affine scheme `S`, and `j : T ⟶ S` a morphism such
-that the projection `X ×_S T ⟶ X` is an isomorphism on global sections. Then base change along
-`j` is a bijection from morphisms `X ⟶ Y` over `S` to morphisms `X ×_S T ⟶ Y ×_S T` over `T`.
-For `j` the inclusion of an open subscheme, this is full faithfulness of restriction on such
-`X`. -/
-theorem overPullback_map_bijective_of_isIso_appTop {S T : Scheme.{u}} [IsAffine S] (j : T ⟶ S)
-    {X Y : Over S} [IsAffine X.left] [IsAffine Y.left] [IsIso (pullback.fst X.hom j).appTop] :
-    Function.Bijective ((Over.pullback j).map : (X ⟶ Y) → _) := by
-  have hY := (pullback.fst X.hom j).bijective_comp_of_isIso_appTop (Y := Y.left)
-  have hS := (pullback.fst X.hom j).bijective_comp_of_isIso_appTop (Y := S)
-  refine ⟨fun h h' e ↦ Over.OverMorphism.ext (hY.1 ?_), fun φ ↦ ?_⟩
-  · simpa using congrArg (fun k ↦ k.left ≫ pullback.fst Y.hom j) e
-  · -- Extend the first component of `φ` to `X`; it lies over `S` because maps to `S` extend
-    -- uniquely as well.
-    obtain ⟨h, hh⟩ := hY.2 (φ.left ≫ pullback.fst Y.hom j)
-    have hw : h ≫ Y.hom = X.hom := hS.1 <| by
-      simp only at hh ⊢
-      rw [reassoc_of% hh, pullback.condition, pullback.condition]
-      simpa using congrArg (· ≫ j) (Over.w φ)
-    refine ⟨Over.homMk h hw, ?_⟩
-    ext1
-    apply pullback.hom_ext
-    · simpa using hh
-    · simpa using (Over.w φ).symm
-
 end AlgebraicGeometry
+
+namespace TauCeti.AlgebraicGeometry
+
+open _root_.AlgebraicGeometry
+
+/-- Let `j : T ⟶ S` be a morphism to an affine scheme, `Y` a scheme over `S` and `Y'` an affine
+scheme over `S`. If restriction of global sections `Γ(Y, 𝒪) → Γ(Y ×_S T, 𝒪)` is an isomorphism,
+then base change along `j` is a bijection from morphisms `Y ⟶ Y'` over `S` to morphisms
+`Y ×_S T ⟶ Y' ×_S T` over `T`. -/
+theorem overPullback_map_bijective_of_isIso_appTop {S T : Scheme.{u}} [IsAffine S] (j : T ⟶ S)
+    {Y Y' : Over S} [IsAffine Y'.left] (h : IsIso (Limits.pullback.fst Y.hom j).appTop) :
+    Function.Bijective (fun g : Y ⟶ Y' ↦ (Over.pullback j).map g) := by
+  set e := Limits.pullback.fst Y.hom j
+  have := h
+  -- Morphisms from `Y` to an affine scheme are determined by their composites with `e`.
+  have hcancel {Z : Scheme.{u}} [IsAffine Z] {g g' : Y.left ⟶ Z} (hg : e ≫ g = e ≫ g') :
+      g = g' := by
+    refine ext_of_isAffine ((cancel_mono e.appTop).mp ?_)
+    rw [← Scheme.Hom.comp_appTop, ← Scheme.Hom.comp_appTop, hg]
+  -- The base change of `g` is determined by its composite with the first projection.
+  have hmap (g : Y ⟶ Y') : ((Over.pullback j).map g).left ≫ Limits.pullback.fst Y'.hom j =
+      e ≫ g.left :=
+    Limits.pullback.lift_fst _ _ _
+  refine ⟨fun g g' hgg' ↦ ?_, fun φ ↦ ?_⟩
+  · refine Over.OverMorphism.ext (hcancel ?_)
+    rw [← hmap, ← hmap]
+    exact congrArg (fun k ↦ k.left ≫ Limits.pullback.fst Y'.hom j) hgg'
+  -- The composite `χ : Y ×_S T ⟶ Y'` corresponds to a ring map `Γ(Y', 𝒪) ⟶ Γ(Y ×_S T, 𝒪)`,
+  -- which factors through the isomorphism `Γ(Y, 𝒪) ≅ Γ(Y ×_S T, 𝒪)`.
+  set φ' : Limits.pullback Y.hom j ⟶ Limits.pullback Y'.hom j := φ.left
+  have hw : φ' ≫ Limits.pullback.snd Y'.hom j = Limits.pullback.snd Y.hom j :=
+    Over.w φ
+  set χ := φ' ≫ Limits.pullback.fst Y'.hom j with hχ
+  let ψ : Y.left ⟶ Y'.left :=
+    Y.left.toSpecΓ ≫ Spec.map (χ.appTop ≫ inv e.appTop) ≫ Y'.left.isoSpec.inv
+  have hψ : e ≫ ψ = χ := by
+    rw [Scheme.toSpecΓ_naturality_assoc, ← Spec.map_comp_assoc, Category.assoc,
+      IsIso.inv_hom_id, Category.comp_id, ← Scheme.toSpecΓ_naturality_assoc,
+      Scheme.toSpecΓ_isoSpec_inv, Category.comp_id]
+  have hψS : ψ ≫ Y'.hom = Y.hom := hcancel <| by
+    calc e ≫ ψ ≫ Y'.hom = φ' ≫ Limits.pullback.snd Y'.hom j ≫ j := by
+          rw [reassoc_of% hψ, hχ, Category.assoc, Limits.pullback.condition]
+      _ = Limits.pullback.snd Y.hom j ≫ j := by rw [reassoc_of% hw]
+      _ = e ≫ Y.hom := Limits.pullback.condition.symm
+  refine ⟨Over.homMk ψ hψS, Over.OverMorphism.ext ?_⟩
+  dsimp only
+  apply Limits.pullback.hom_ext
+  · exact (hmap _).trans hψ
+  · exact (Limits.pullback.lift_snd _ _ _).trans hw.symm
+
+end TauCeti.AlgebraicGeometry

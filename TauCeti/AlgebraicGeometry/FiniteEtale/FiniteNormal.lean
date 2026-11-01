@@ -26,7 +26,7 @@ fully faithful. The reason is the algebraic Hartogs property: `B` is recovered a
 functions on the preimage of `U` in `Spec B`
 (`TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_isIntegrallyClosed`), so every
 morphism over `U` between restrictions extends uniquely across the closed fibre
-(`AlgebraicGeometry.overPullback_map_bijective_of_isIso_appTop`).
+(`TauCeti.AlgebraicGeometry.overPullback_map_bijective_of_isIso_appTop`).
 
 This is the full faithfulness half of the anti-equivalence between finite étale covers of `U` and
 finite normal punctured-étale `A`-algebras (Stacks, Lemma 58.20.3 (0BM9)). Torsion freeness is
@@ -200,16 +200,14 @@ private theorem restrictPuncturedSpec_map_bijective [IsDomain A] [IsIntegrallyCl
     (hdim : 2 ≤ ringKrullDim A) (B C : (FiniteNormalPuncturedEtaleAlg A)ᵒᵖ) :
     Function.Bijective ((restrictPuncturedSpec A).map : (B ⟶ C) → _) := by
   obtain ⟨_, _, hnormal, -⟩ := (finiteNormalPuncturedEtale_iff A _).mp B.unop.property
-  have : IsIso (pullback.fst ((algSpec (.of A)).obj (.op B.unop.obj)).hom
-      (puncturedSpectrum A).ι).appTop :=
-    isIso_appTop_pullback_fst_puncturedSpectrum A hdim hnormal
-  have : IsAffine ((algSpec (.of A)).obj (.op B.unop.obj)).left := isAffine_Spec _
   have : IsAffine ((algSpec (.of A)).obj (.op C.unop.obj)).left := isAffine_Spec _
   -- `restrictPuncturedSpec` is `algSpec` followed by base change, up to full subcategories.
   have h₁ := (((finiteNormalPuncturedEtale A).fullyFaithfulι.op).comp
     (algSpec.fullyFaithful (R := .of A))).map_bijective B C
-  have h₂ := overPullback_map_bijective_of_isIso_appTop (puncturedSpectrum A).ι
-    (X := (algSpec (.of A)).obj (.op B.unop.obj)) (Y := (algSpec (.of A)).obj (.op C.unop.obj))
+  have h₂ := TauCeti.AlgebraicGeometry.overPullback_map_bijective_of_isIso_appTop
+    (puncturedSpectrum A).ι (Y := (algSpec (.of A)).obj (.op B.unop.obj))
+    (Y' := (algSpec (.of A)).obj (.op C.unop.obj))
+    (isIso_appTop_pullback_fst_puncturedSpectrum A hdim hnormal)
   rw [← Function.Bijective.of_comp_iff'
     ((finiteEtaleSchemeProperty _).fullyFaithfulι.map_bijective _ _)]
   exact h₂.comp h₁
