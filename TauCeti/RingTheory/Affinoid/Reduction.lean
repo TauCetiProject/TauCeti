@@ -266,8 +266,9 @@ theorem ker_le_nilradical_of_injective_reductionMap (f : A →ₐ[K] B)
     supSeminorm_zero]
 
 /-- **The kernel on canonical reductions of a strict homomorphism** [BGR, 6.3.1/4]. If `f` is
-strict, a power-bounded element of `A` has reduction in the kernel of `f̃` exactly when one of its
-powers is a topologically nilpotent element plus an element of the kernel of `f`. -/
+strict, a power-bounded element of `A` has reduction in the kernel of the reduction map of `f`
+exactly when one of its powers is a topologically nilpotent element plus an element of the kernel
+of `f`. -/
 theorem comap_ker_reductionMap_eq_radical (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K A)
     (hB : IsAffinoidAlgebra K B) (hf : IsStrictMap f) :
     (RingHom.ker (f.reductionMap hA hB)).comap (Ideal.Quotient.mk _) =
@@ -308,8 +309,8 @@ theorem comap_ker_reductionMap_eq_radical (f : A →ₐ[K] B) (hA : IsAffinoidAl
     · rw [Ideal.mem_comap, RingHom.mem_ker, reductionMap_mk, RingHom.mem_ker.mp ha, map_zero]
 
 /-- **The kernel of the reduction map of a strict homomorphism** [BGR, 6.3.1/4]: if `f` is
-strict, the kernel of `f̃` is the radical of the reduction of the power-bounded part of the kernel
-of `f`. -/
+strict, the kernel of the reduction map of `f` is the radical of the reduction of the
+power-bounded part of the kernel of `f`. -/
 theorem ker_reductionMap_eq_radical_map (f : A →ₐ[K] B) (hA : IsAffinoidAlgebra K A)
     (hB : IsAffinoidAlgebra K B) (hf : IsStrictMap f) :
     RingHom.ker (f.reductionMap hA hB) =
