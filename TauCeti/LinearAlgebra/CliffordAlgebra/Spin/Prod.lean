@@ -101,20 +101,6 @@ theorem coe_spinGroupProd_apply (x : spinGroup Q₁ × spinGroup Q₂) :
 
 variable [Invertible (2 : R)]
 
-/-- **The Spin group of a summand fixes the other summand.** The image of `Spin(Q₁)` fixes the
-second summand of the orthogonal sum. -/
-theorem spinVectorAction_spinGroupMap_inl_inr (x : spinGroup Q₁) (m : M₂) :
-    spinVectorAction (Q₁.prod Q₂) ((Isometry.inl Q₁ Q₂).spinGroupMap x) (0, m) = (0, m) :=
-  -- Composing the inclusions with the identity isometry is definitionally the inclusions.
-  (IsometryEquiv.refl (Q₁.prod Q₂)).spinGroupMap_fixed_of_prod x m
-
-/-- **The Spin group of a summand fixes the other summand.** The image of `Spin(Q₂)` fixes the
-first summand of the orthogonal sum. -/
-theorem spinVectorAction_spinGroupMap_inr_inl (y : spinGroup Q₂) (m : M₁) :
-    spinVectorAction (Q₁.prod Q₂) ((Isometry.inr Q₁ Q₂).spinGroupMap y) (m, 0) = (m, 0) :=
-  -- Composing the swapped inclusions with the swap isometry is definitionally the inclusions.
-  (IsometryEquiv.prodComm Q₁ Q₂).spinGroupMap_fixed_of_prod y m
-
 /-- **`spinGroupProd` acts componentwise**: `(x, y)` acts on the orthogonal sum by `x` on the first
 summand and by `y` on the second. -/
 @[simp]
