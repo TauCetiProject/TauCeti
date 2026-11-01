@@ -37,6 +37,11 @@ consequences for Verdier quotients:
   triangle functor between the Verdier quotients by `P` and by `Q`
   (`CategoryTheory.LocalizerMorphism.isTriangulated_localizedFunctor`), compatible with the two
   localization functors up to natural isomorphism.
+* **Approximation.** Let `δᵢ : Xᵢ ⟶ X₀` be morphisms such that every morphism from `X₀` to an
+  object of `P` is killed by some `δᵢ`. Then every morphism `L X₀ ⟶ L Y` of the Verdier quotient
+  becomes, after precomposition with some `L δᵢ`, the image of a morphism `Xᵢ ⟶ Y`, and every
+  morphism `X₀ ⟶ Y` vanishing in the Verdier quotient is killed by some `δᵢ`. Both follow from
+  the calculus of fractions: the denominator of a fraction out of `X₀` has its cone in `P`.
 
 ## Main definitions
 
@@ -49,6 +54,9 @@ consequences for Verdier quotients:
   only if it kills `P`.
 * `CategoryTheory.ObjectProperty.TrWLocalization.isZero_obj_iff`: the kernel of the Verdier
   localization at a thick triangulated subcategory `P` is `P`.
+* `CategoryTheory.ObjectProperty.TrWLocalization.exists_map_comp_eq_map` and
+  `CategoryTheory.ObjectProperty.TrWLocalization.exists_comp_eq_zero_of_map_eq_zero`: morphisms
+  out of an object approximated by morphisms `δᵢ` as above, and their kernel.
 
 ## References
 
@@ -120,6 +128,43 @@ theorem isZero_obj_iff [IsTriangulated C] [P.IsTriangulated] [P.IsStableUnderRet
       r := e.hom ≫ biprod.snd
       retract := by simp } hW
   exact (P.prop_shift_iff_of_isStableUnderShift X (1 : ℤ)).1 hX₁
+
+section Approximation
+
+variable [IsTriangulated C] [P.IsTriangulated] {ι : Type*} {X : ι → C} {X₀ : C}
+  (δ : ∀ i, X i ⟶ X₀) (H : ∀ K, P K → ∀ a : X₀ ⟶ K, ∃ i, δ i ≫ a = 0)
+include P H
+
+omit [HasZeroMorphisms D] [L.PreservesZeroMorphisms] in
+/-- **Morphisms out of an approximated object.** Let `δᵢ : Xᵢ ⟶ X₀` be morphisms such that every
+morphism from `X₀` to an object of `P` is killed by some `δᵢ`. Then every morphism
+`L X₀ ⟶ L Y` in the Verdier localization becomes, after precomposition with some `L δᵢ`, the
+image of a morphism `Xᵢ ⟶ Y`. -/
+theorem exists_map_comp_eq_map {Y : C} (g : L.obj X₀ ⟶ L.obj Y) :
+    ∃ (i : ι) (h : X i ⟶ Y), L.map (δ i) ≫ g = L.map h := by
+  -- Write `g` as a right fraction `X₀ ← X' → Y`; the cone `K` of its denominator lies in `P`.
+  obtain ⟨φ, rfl⟩ := Localization.exists_rightFraction L P.trW g
+  obtain ⟨K, a, b, hT, hK⟩ := φ.hs
+  obtain ⟨i, hi⟩ := H K hK a
+  obtain ⟨u, hu⟩ := Triangle.coyoneda_exact₂ _ hT (δ i) hi
+  exact ⟨i, u ≫ φ.f, by
+    rw [hu, L.map_comp, Category.assoc, Triangle.mk_mor₁,
+      MorphismProperty.RightFraction.map_s_comp_map, L.map_comp]⟩
+
+/-- **The kernel on an approximated object.** Let `δᵢ : Xᵢ ⟶ X₀` be morphisms such that every
+morphism from `X₀` to an object of `P` is killed by some `δᵢ`. A morphism `f : X₀ ⟶ Y` that
+vanishes in the Verdier localization is killed by some `δᵢ`. -/
+theorem exists_comp_eq_zero_of_map_eq_zero {Y : C} (f : X₀ ⟶ Y) (hf : L.map f = 0) :
+    ∃ i, δ i ≫ f = 0 := by
+  -- Some `s` in `P.trW` kills `f`, so `f` factors through the cone of `s`, an object of `P`.
+  obtain ⟨Z, s, ⟨K, a, b, hT, hK⟩, hs⟩ :=
+    (MorphismProperty.map_eq_iff_precomp L P.trW f 0).1 (by rw [hf, L.map_zero])
+  rw [comp_zero] at hs
+  obtain ⟨g, rfl⟩ := Triangle.yoneda_exact₂ _ hT f hs
+  obtain ⟨i, hi⟩ := H K hK a
+  exact ⟨i, by rw [Triangle.mk_mor₂, reassoc_of% hi, zero_comp]⟩
+
+end Approximation
 
 end TrWLocalization
 
