@@ -10,8 +10,7 @@ public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Distribution.Regularization
 
 /-!
@@ -27,8 +26,10 @@ vanishing derivative `∂_v u = 0` makes `u` almost everywhere invariant under t
 No differentiability of `u` is assumed. The regularizations `x ↦ ∫ ρ (y - x) u y dμ` of `u` by
 nonnegative bumps `ρ` are smooth, with derivative in the direction `v` given by pairing `∂_v u`
 with a translate of `ρ` (`Distribution.fderiv_translatePairing_apply`). They are therefore
-nonincreasing along every line parallel to `v`, and they converge to `u` almost everywhere as the
-bumps shrink (`ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable`).
+nonincreasing along every line parallel to `v`
+(`Distribution.antitoneOn_translatePairing_add_smul`). For normalized bumps they are convolutions
+(`Distribution.translatePairing_ofFun_normedTestFunction`), and they converge to `u` almost
+everywhere as the bumps shrink (`ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable`).
 
 For an indicator function this says that a set whose outer normal has a nonnegative component
 along `v` contains, up to a null set, its translate by `-v`; this is how sets whose perimeter
@@ -60,54 +61,24 @@ theorem ae_apply_add_le_of_forall_integral_lineDeriv_mul_nonneg (hu : LocallyInt
     (h : ∀ ψ : 𝓓((⊤ : Opens E), ℝ), (∀ x, 0 ≤ ψ x) → 0 ≤ ∫ x, ∂_{v} ψ x * u x ∂μ) :
     ∀ᵐ x ∂μ, u (x + v) ≤ u x := by
   set T : 𝓓'((⊤ : Opens E), ℝ) := Distribution.ofFun (⊤ : Opens E) u μ ⊤
-  have hT (φ : 𝓓((⊤ : Opens E), ℝ)) : T φ = ∫ x, φ x * u x ∂μ :=
-    Distribution.ofFun_apply (hu.locallyIntegrableOn _)
-  have hmaps (ρ : 𝓓((⊤ : Opens E), ℝ)) (x : E) :
-      MapsTo (· + x) (tsupport ρ) ((⊤ : Opens E) : Set E) := fun _ _ => trivial
-  -- Every translate `ρ (· - x)` of a test function is a test function.
-  have htr (ρ : 𝓓((⊤ : Opens E), ℝ)) (x : E) : ∃ φ : 𝓓((⊤ : Opens E), ℝ), ∀ z, φ z = ρ (z - x) :=
-    ⟨translateTestFunction (h := x) (V := ⊤) (fun _ _ => trivial) ρ,
-      translateTestFunction_apply _ _⟩
   -- The regularization of `u` by a nonnegative test function decreases along `v`.
   have hanti (ρ : 𝓓((⊤ : Opens E), ℝ)) (hρ : ∀ x, 0 ≤ ρ x) (x : E) :
       T.translatePairing ρ (x + v) ≤ T.translatePairing ρ x := by
-    have hd (y : E) : (∂_{v} T).translatePairing ρ y ≤ 0 := by
-      obtain ⟨φ, hφ⟩ := htr ρ y
-      rw [Distribution.translatePairing_eq _ hφ, Distribution.lineDerivOp_apply_apply, map_neg,
-        hT, neg_nonpos]
-      exact h φ fun z => (hφ z).symm ▸ hρ _
-    have hg (t : ℝ) : HasDerivAt (fun t : ℝ => T.translatePairing ρ (x + t • v))
-        ((∂_{v} T).translatePairing ρ (x + t • v)) t := by
-      have hline : HasDerivAt (fun t : ℝ => x + t • v) v t := by
-        simpa using ((hasDerivAt_id t).smul_const v).const_add x
-      have := (T.differentiableAt_translatePairing ρ (hmaps ρ _)).hasFDerivAt.comp_hasDerivAt t
-        hline
-      rwa [T.fderiv_translatePairing_apply ρ (hmaps ρ _)] at this
-    have hmono := antitone_of_deriv_nonpos (fun t => (hg t).differentiableAt)
-      (fun t => (hg t).deriv ▸ hd _) zero_le_one
-    simpa using hmono
-  -- Normalized bumps shrinking to the origin, as test functions.
-  let ρ : ℕ → ContDiffBump (0 : E) := fun n =>
-    ⟨1 / ((n : ℝ) + 1) / 2, 1 / ((n : ℝ) + 1), by positivity, half_lt_self (by positivity)⟩
-  have hb (n : ℕ) : ∃ φ : 𝓓((⊤ : Opens E), ℝ), ∀ z, φ z = (ρ n).normed μ z :=
-    ⟨⟨(ρ n).normed μ, (ρ n).contDiff_normed, (ρ n).hasCompactSupport_normed, by simp⟩,
-      fun _ => rfl⟩
-  choose bump hbump using hb
-  -- The regularization by a normalized bump is the convolution with it.
-  have hconv (n : ℕ) (x : E) :
-      T.translatePairing (bump n) x = ((ρ n).normed μ ⋆[lsmul ℝ ℝ, μ] u) x := by
-    obtain ⟨φ, hφ⟩ := htr (bump n) x
-    rw [T.translatePairing_eq hφ, hT, convolution_lsmul_swap]
-    refine integral_congr_ae (ae_of_all _ fun y => ?_)
-    dsimp only
-    rw [hφ, hbump, smul_eq_mul, ← neg_sub, (ρ n).normed_neg]
-  have hlim : Tendsto (fun n => (ρ n).rOut) atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
+    have hT (φ : 𝓓((⊤ : Opens E), ℝ)) (hφ : ∀ y, 0 ≤ φ y) : 0 ≤ T (∂_{v} φ) := by
+      rw [Distribution.ofFun_apply (hu.locallyIntegrableOn _)]
+      exact h φ hφ
+    simpa using T.antitoneOn_translatePairing_add_smul hT hρ convex_univ
+      (fun _ _ _ _ => trivial) (mem_univ 0) (mem_univ 1) zero_le_one
+  -- Regularize by normalized bumps shrinking to the origin.
+  let ρ : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking one_pos
   have hae := ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable (μ := μ) (K := 2)
-    hlim (Eventually.of_forall fun n => le_of_eq (by ring)) hu
+    (ContDiffBump.tendsto_rOut_shrinking one_pos)
+    (Eventually.of_forall fun n => (ContDiffBump.rOut_shrinking_eq_two_mul_rIn one_pos n).le) hu
   filter_upwards [hae, (measurePreserving_add_right μ v).quasiMeasurePreserving.ae hae]
     with x hx hxv
   refine le_of_tendsto_of_tendsto' hxv hx fun n => ?_
-  rw [← hconv, ← hconv]
-  exact hanti _ (fun z => (hbump n z).symm ▸ (ρ n).nonneg_normed _) x
+  rw [← Distribution.translatePairing_ofFun_normedTestFunction hu,
+    ← Distribution.translatePairing_ofFun_normedTestFunction hu]
+  exact hanti _ (fun z => by simpa using (ρ n).nonneg_normed (μ := μ) z) x
 
 end TauCeti
