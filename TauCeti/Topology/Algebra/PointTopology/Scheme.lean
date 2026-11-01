@@ -131,6 +131,21 @@ noncomputable def topology : TopologicalSpace (Points (R := R) f) :=
 
 attribute [scoped instance] topology
 
+/-- The chart topology is the supremum of the topologies coinduced by affine open charts. -/
+theorem topology_def : topology (R := R) f =
+    ⨆ (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
+      (hi : i ≫ f = Spec.algebraMap k A) (_ : IsOpenImmersion i),
+      TopologicalSpace.coinduced (chartPoint f A i hi) PointTopology.topology :=
+  (rfl)
+
+/-- A set of scheme-valued points is open exactly when its preimage in every affine open
+chart is open in the coordinate-evaluation topology. -/
+theorem isOpen_iff (s : Set (Points (R := R) f)) :
+    IsOpen s ↔ ∀ (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
+      (hi : i ≫ f = Spec.algebraMap k A), IsOpenImmersion i →
+        IsOpen (chartPoint f A i hi ⁻¹' s) := by
+  simp only [isOpen_iSup_iff, isOpen_coinduced]
+
 /-- Each affine open chart is continuous for the chart topology. -/
 theorem continuous_chartPoint (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
     (hi : i ≫ f = Spec.algebraMap k A) [IsOpenImmersion i] :
@@ -156,21 +171,21 @@ noncomputable def affineHomeomorph (A : Type u) [CommRing A] [Algebra k A] :
     convert h using 1
     funext x
     apply Subtype.ext
-    simp only [chartPoint_val, Category.comp_id]
-    rfl
+    simp only [chartPoint_val, Category.comp_id, Equiv.toFun_as_coe,
+      Spec.homEquivAlgHom_symm_apply_val]
   continuous_invFun := by
     refine (continuous_iff _ _).2 fun B i hi _ ↦ ?_
     let φ : A →ₐ[k] B := Spec.homEquivAlgHom ⟨i, hi⟩
-    have hφ : Spec.map (CommRingCat.ofHom φ.toRingHom) = i :=
-      congrArg Subtype.val (Spec.homEquivAlgHom.symm_apply_apply ⟨i, hi⟩)
+    have hφ : Spec.map (CommRingCat.ofHom φ.toRingHom) = i := by
+      rw [← Spec.homEquivAlgHom_symm_apply_val, Equiv.symm_apply_apply]
     convert PointTopology.continuous_comap (R := R) φ using 1
     funext x
     apply Spec.homEquivAlgHom.symm.injective
     apply Subtype.ext
     dsimp only [Function.comp_apply, Equiv.invFun_as_coe, Equiv.symm_symm]
-    simp only [Equiv.symm_apply_apply, chartPoint_val]
+    simp only [Equiv.symm_apply_apply, chartPoint_val, Spec.homEquivAlgHom_symm_apply_val]
     rw [← hφ, ← Spec.map_comp]
-    rfl
+    simp only [AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom, CommRingCat.ofHom_comp]
 
 /-- The affine homeomorphism sends an algebra map to its `Spec` morphism over the base. -/
 @[simp]
