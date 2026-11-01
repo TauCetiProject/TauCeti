@@ -74,17 +74,6 @@ theorem chartPoint_injective (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
   have hxy := (cancel_mono i).mp (congrArg Subtype.val h)
   exact AlgHom.toRingHom_injective (CommRingCat.hom_ext_iff.mp (Spec.map_injective hxy))
 
-/-- The affine point attached to an algebra homomorphism, using the native `Spec` equivalence. -/
-noncomputable abbrev affinePoint {A : Type u} [CommRing A] [Algebra k A]
-    (x : A →ₐ[k] R) : Points (R := R) (Spec.algebraMap k A) :=
-  Spec.homEquivAlgHom.symm x
-
-/-- An affine point has underlying morphism `Spec.map` of the algebra homomorphism. -/
-@[simp]
-theorem affinePoint_val {A : Type u} [CommRing A] [Algebra k A] (x : A →ₐ[k] R) :
-    (affinePoint x).val = Spec.map (CommRingCat.ofHom x.toRingHom) :=
-  rfl
-
 /-- A scheme-valued point comes from an affine open chart exactly when its underlying
 morphism has image in that chart. This criterion does not require a local coefficient ring. -/
 theorem mem_range_chartPoint_iff (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ X)
@@ -167,7 +156,8 @@ noncomputable def affineHomeomorph (A : Type u) [CommRing A] [Algebra k A] :
     convert h using 1
     funext x
     apply Subtype.ext
-    simp [chartPoint]
+    simp only [chartPoint_val, Category.comp_id]
+    rfl
   continuous_invFun := by
     refine (continuous_iff _ _).2 fun B i hi _ ↦ ?_
     let φ : A →ₐ[k] B := Spec.homEquivAlgHom ⟨i, hi⟩
@@ -185,7 +175,7 @@ noncomputable def affineHomeomorph (A : Type u) [CommRing A] [Algebra k A] :
 /-- The affine homeomorphism sends an algebra map to its `Spec` morphism over the base. -/
 @[simp]
 theorem affineHomeomorph_apply (A : Type u) [CommRing A] [Algebra k A] (x : A →ₐ[k] R) :
-    affineHomeomorph (k := k) (R := R) A x = affinePoint x :=
+    affineHomeomorph (k := k) (R := R) A x = Spec.homEquivAlgHom.symm x :=
   (rfl)
 
 /-- The inverse affine comparison is the native `Spec.homEquivAlgHom`. -/
