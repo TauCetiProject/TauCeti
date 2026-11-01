@@ -64,17 +64,6 @@ end CategoryTheory.IsPushout
 
 namespace HomologicalComplex
 
-/-- A morphism is a quasi-isomorphism in degree `n` exactly when the homology
-functor in that degree sends it to an isomorphism. -/
-lemma quasiIsoAt_iff_inverseImage_homologyFunctor {C : Type*} [Category* C]
-    [HasZeroMorphisms C] [CategoryWithHomology C] {I : Type*} {c : ComplexShape I}
-    {K L : HomologicalComplex C c} (f : K ⟶ L) (n : I) :
-    QuasiIsoAt f n ↔
-      (MorphismProperty.isomorphisms C).inverseImage (homologyFunctor C c n) f := by
-  simp only [MorphismProperty.inverseImage_iff]
-  simpa only [MorphismProperty.isomorphisms.iff, homologyFunctor_map]
-    using! (quasiIsoAt_iff_isIso_homologyMap f n)
-
 variable {C : Type u} [Category.{v} C] [Abelian C] {I : Type*} (c : ComplexShape I)
 
 /-- Monomorphic quasi-isomorphisms are stable under pushout, without any exactness
@@ -95,12 +84,14 @@ instance {J : Type w} [Category.{w'} J] [HasColimitsOfShape J C]
   condition F G s t hs ht f hf φ hφ := by
     rw [mem_quasiIso_iff, _root_.quasiIso_iff]
     intro n
-    rw [quasiIsoAt_iff_inverseImage_homologyFunctor]
-    exact MorphismProperty.IsStableUnderColimitsOfShape.condition
+    rw [quasiIsoAt_iff_isIso_homologyMap]
+    have h := MorphismProperty.IsStableUnderColimitsOfShape.condition
       (W := (MorphismProperty.isomorphisms C).inverseImage (homologyFunctor C c n))
-      F G s t hs ht f (fun j ↦ by
-        have : QuasiIso (f.app j) := hf j
-        exact (quasiIsoAt_iff_inverseImage_homologyFunctor _ n).mp inferInstance) φ hφ
+      F G s t hs ht f
+    simp only [MorphismProperty.inverseImage_iff, homologyFunctor_map] at h
+    exact h (fun j ↦ by
+      have : QuasiIso (f.app j) := hf j
+      exact (quasiIsoAt_iff_isIso_homologyMap _ n).mp inferInstance) φ hφ
 
 /-- Under AB5, quasi-isomorphisms are stable under filtered colimits. -/
 instance [HasFilteredColimitsOfSize.{w', w} C] [AB5OfSize.{w', w} C] :
