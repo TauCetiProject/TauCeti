@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Data.Matrix.Basic
+import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.Order.Partition.Finpartition
 
 /-!
@@ -99,6 +100,14 @@ theorem mem_support (P : Polyad3 S) (x : {x : Fin 3 → V // Function.Injective 
         S.pairColors.colorOfPair (x.1 0) (x.1 2) = some P.color₀₂ ∧
         S.pairColors.colorOfPair (x.1 1) (x.1 2) = some P.color₁₂ :=
   mem_polyadSupport
+
+/-- The support of a polyad has at most as many triples as the product of its three cells. -/
+theorem card_support_le (P : Polyad3 S) : #P.support ≤ #P.c₀ * #P.c₁ * #P.c₂ := by
+  rw [mul_assoc, ← card_product, ← card_product]
+  refine card_le_card_of_injOn (fun x ↦ (x.1 0, x.1 1, x.1 2)) (fun x hx ↦ ?_)
+    (Fin.injective_apply_zero_one_two.comp Subtype.val_injective).injOn
+  obtain ⟨h₀, h₁, h₂, -⟩ := (P.mem_support x).1 hx
+  simp [h₀, h₁, h₂]
 
 /-- Two polyads are equal when their three cells and three pair colors agree. -/
 @[ext]

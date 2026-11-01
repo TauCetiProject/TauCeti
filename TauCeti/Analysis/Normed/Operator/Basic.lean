@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
 
 /-!
@@ -32,6 +33,10 @@ cancels against its inverse (`ContinuousLinearMap.ringInverse_apply_apply`,
 The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
 most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s * ‖A‖`
 (`ContinuousLinearMap.norm_sum_apply_apply_le`).
+
+Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere
+extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
+(`ContinuousLinearMap.norm_apply_bounds_of_net`).
 -/
 
 public section
@@ -140,6 +145,50 @@ theorem norm_sum_apply_apply_le {ι : Type*} (s : Finset ι) (A : X →L[𝕜] X
         mul_le_mul_of_nonneg_right (A.le_opNorm _) (norm_nonneg _)
     _ ≤ ‖A‖ * 1 * 1 := by gcongr <;> exact hv i hi
     _ = ‖A‖ := by ring
+
+section Net
+
+variable {𝕜 V F : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Two-sided bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere, for `δ ≤ 1 / 6`,
+give `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` everywhere. -/
+theorem norm_apply_bounds_of_net (T : V →L[𝕜] F) {t : Set V} {δ : ℝ}
+    (hnear : ∀ w : V, ‖w‖ = 1 → ∃ v ∈ t, ‖w - v‖ < δ)
+    (hlow : ∀ v ∈ t, 1 - δ < ‖T v‖) (hup : ∀ v ∈ t, ‖T v‖ < 1 + δ) (hδ : 0 ≤ δ)
+    (hδ1 : δ ≤ 1 / 6) :
+    (∀ v, (1 - 3 * δ) * ‖v‖ ≤ ‖T v‖) ∧ ∀ v, ‖T v‖ ≤ (1 + 3 * δ) * ‖v‖ := by
+  -- Propagate the upper bound to the unit sphere, and then bound `‖T‖`.
+  have hTnorm : ‖T‖ ≤ 1 + 3 * δ := by
+    have hbound : ‖T‖ ≤ 1 + δ + ‖T‖ * δ := by
+      refine T.opNorm_le_of_unit_norm (by positivity) fun w hw ↦ ?_
+      obtain ⟨v, hv, hwv⟩ := hnear w hw
+      calc ‖T w‖ = ‖T v + T (w - v)‖ := by rw [map_sub, add_sub_cancel]
+        _ ≤ ‖T v‖ + ‖T (w - v)‖ := norm_add_le _ _
+        _ ≤ (1 + δ) + ‖T‖ * δ := by
+          gcongr
+          · exact (hup v hv).le
+          · exact (T.le_opNorm _).trans (by gcongr)
+    nlinarith [norm_nonneg T]
+  -- The lower bound on the unit sphere.
+  have hsphere : ∀ w : V, ‖w‖ = 1 → 1 - 3 * δ ≤ ‖T w‖ := by
+    intro w hw
+    obtain ⟨v, hv, hwv⟩ := hnear w hw
+    have hTwv : ‖T (w - v)‖ ≤ (1 + 3 * δ) * δ :=
+      (T.le_opNorm _).trans (mul_le_mul hTnorm hwv.le (norm_nonneg _) (by positivity))
+    have : ‖T v‖ ≤ ‖T w‖ + ‖T (w - v)‖ := by
+      calc ‖T v‖ = ‖T w - T (w - v)‖ := by rw [map_sub, sub_sub_cancel]
+        _ ≤ ‖T w‖ + ‖T (w - v)‖ := norm_sub_le _ _
+    nlinarith [hlow v hv]
+  refine ⟨fun v ↦ ?_, fun v ↦ (T.le_opNorm v).trans (by gcongr)⟩
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp
+  have hTv : ‖T v‖ = ‖v‖ * ‖T ((‖v‖⁻¹ : 𝕜) • v)‖ := by
+    simp [norm_smul, hv]
+  rw [hTv, mul_comm]
+  exact mul_le_mul_of_nonneg_left (hsphere _ (norm_smul_inv_norm hv)) (norm_nonneg v)
+
+end Net
 
 end ContinuousLinearMap
 

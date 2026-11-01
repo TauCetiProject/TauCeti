@@ -485,18 +485,7 @@ theorem exists_isStrict_formalGroupIso_𝔾ₐ [F.IsComm] {p : ℕ} (hp : p.Prim
   let φ : TauCeti.FormalCoordinate R := ⟨g, h₀, h₁ ▸ isUnit_one⟩
   let f : TauCeti.FormalGroupHom F 𝔾ₐ :=
     ⟨g, h₀, (TauCeti.FormalGroupHom.hom_additive_iff h₀).mpr hg⟩
-  have hφ : φ • F = 𝔾ₐ := by
-    have hX (i : Fin 2) := φ⁻¹.hasSubst_subst (PowerSeries.HasSubst.X (S := R) i)
-    refine FormalGroup.ext ?_
-    rw [smul_toPowerSeries]
-    refine (f.hom_subst (hasSubst_finTwo (hX 0) (hX 1))).trans ?_
-    have h (i : Fin 2) : PowerSeries.subst
-        (![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) φ⁻¹.toPowerSeries,
-          PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) φ⁻¹.toPowerSeries] i)
-        f.toPowerSeries = X i := by
-      fin_cases i <;> exact φ.subst_subst_inv (PowerSeries.HasSubst.X _)
-    simp only [h, subst_self, id]
-  rw [← hφ]
+  rw [← f.smul_eq (φ := φ) rfl]
   exact ⟨smulIso φ F, (isStrict_smulIso_iff φ F).mpr
     (Units.ext (by rw [TauCeti.FormalCoordinate.val_linearCoeff]; exact h₁))⟩
 
