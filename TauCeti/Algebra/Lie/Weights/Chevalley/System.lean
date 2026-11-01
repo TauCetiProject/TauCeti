@@ -57,6 +57,8 @@ the integral root--coroot span.
   automorphism agree up to sign at every weight.
 * `TauCeti.IsChevalleySystem.structureConstant_eq_natCast_or_eq_neg_natCast`: every genuine
   root-sum structure constant is `p + 1` or its negative.
+* `TauCeti.IsChevalleySystem.inv_smul_lie_eq_or_eq_neg`: dividing a root-sum bracket by `p + 1`
+  gives the root vector of the sum up to sign.
 * `TauCeti.IsChevalleySystem.exists_int_lie_eq_smul`: every root-sum bracket has an integral
   coefficient.
 * `TauCeti.IsChevalleySystem.intStructureConstant`: that coefficient, named as an integer, with
@@ -228,6 +230,20 @@ theorem structureConstant_eq_natCast_or_eq_neg_natCast
   hx.toIsSl2System.structureConstant_eq_natCast_or_eq_neg_natCast_of_killingForm_ratio
     α β γ hα hβ hγ hαβ ω.toLieHom (hx.map_root α) (hx.map_root β) (hx.map_root γ)
     (hx.toIsSl2System.chainTopCoeff_mul_killingForm_root_neg_eq α β γ hα hβ hγ hαβ)
+
+/-- **Root vectors from brackets.** If `γ = α + β` is a genuine root sum, then dividing the bracket
+`⁅x α, x β⁆` by `p + 1`, where `p = chainBotCoeff α β`, gives `x γ` up to sign. This is the step
+that builds the root vectors of a Chevalley system out of those of the simple roots. -/
+theorem inv_smul_lie_eq_or_eq_neg
+    (α β γ : Weight K H L) (hα : α.IsNonZero) (hβ : β.IsNonZero) (hγ : γ.IsNonZero)
+    (hαβ : (γ : H → K) = (α : H → K) + β) :
+    ((chainBotCoeff α β + 1 : ℕ) : K)⁻¹ • ⁅x α, x β⁆ = x γ ∨
+      ((chainBotCoeff α β + 1 : ℕ) : K)⁻¹ • ⁅x α, x β⁆ = -x γ := by
+  have hp : ((chainBotCoeff α β + 1 : ℕ) : K) ≠ 0 := Nat.cast_ne_zero.2 (Nat.succ_ne_zero _)
+  rw [hx.toIsSl2System.lie_eq_structureConstant_smul α β γ hγ hαβ, smul_smul]
+  rcases hx.structureConstant_eq_natCast_or_eq_neg_natCast α β γ hα hβ hγ hαβ with hN | hN
+  · exact .inl (by rw [hN, inv_mul_cancel₀ hp, one_smul])
+  · exact .inr (by rw [hN, mul_neg, inv_mul_cancel₀ hp, neg_one_smul])
 
 /-- The structure constant of a genuine root-sum bracket in a Chevalley system is the cast of an
 integer. The preceding theorem identifies that integer more precisely as `±(p + 1)`. -/

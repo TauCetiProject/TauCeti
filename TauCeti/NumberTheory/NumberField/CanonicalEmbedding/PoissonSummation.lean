@@ -60,6 +60,8 @@ at a complex place (`Tr (i * i) = -2` over `ℚ(i)`), so it carries no Gaussian.
 * `TauCeti.NumberField.mixedEmbedding.mixedInner_def`: the coordinate formula for `mixedInner`.
 * `TauCeti.NumberField.mixedEmbedding.mixedInner_toMixed`: `euclidean.toMixed` carries the inner
   product to `mixedInner`.
+* `TauCeti.NumberField.mixedEmbedding.eq_of_forall_mixedInner_eq`: a point of the mixed space is
+  determined by its pairings against a basis.
 * `TauCeti.NumberField.mixedEmbedding.mixedFourier_toMixed`: `mixedFourier` is Mathlib's `𝓕` in
   the Euclidean model.
 * `TauCeti.NumberField.mixedEmbedding.mixedDual_mixedDual`,
@@ -136,6 +138,19 @@ theorem mixedInnerBilin_apply (x y : mixedSpace K) :
   obtain ⟨x, rfl⟩ := (euclidean.toMixed K).surjective x
   obtain ⟨y, rfl⟩ := (euclidean.toMixed K).surjective y
   simp [mixedInnerBilin]
+
+/-- Two points of the mixed space with the same Euclidean pairing against every vector of a basis
+are equal. -/
+theorem eq_of_forall_mixedInner_eq {ι : Type*} (b : Module.Basis ι ℝ (mixedSpace K))
+    {u v : mixedSpace K} (h : ∀ i, mixedInner K (b i) u = mixedInner K (b i) v) : u = v := by
+  classical
+  have hf : (mixedInnerBilin K).flip (u - v) = 0 :=
+    b.ext fun i ↦ by simp [map_sub, h]
+  have h0 : mixedInner K (u - v) (u - v) = 0 := by
+    rw [← mixedInnerBilin_apply, ← LinearMap.flip_apply, hf, LinearMap.zero_apply]
+  obtain ⟨z, hz⟩ := (euclidean.toMixed K).surjective (u - v)
+  rw [← hz, mixedInner_toMixed, inner_self_eq_zero] at h0
+  rw [← sub_eq_zero, ← hz, h0, map_zero]
 
 /-! ### The Fourier transform -/
 

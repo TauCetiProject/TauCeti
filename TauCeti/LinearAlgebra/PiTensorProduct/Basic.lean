@@ -8,17 +8,20 @@ module
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 
 /-!
-# Two-torsion in tensor powers
+# Basic facts about tensor powers
 
 If every element of a module `M` is its own additive inverse, then so is every element of an
 indexed tensor power of `M` with at least one factor. This holds over a ring of characteristic two
 and also, for instance, for a module of `𝔽₂`-valued cochains regarded over `ℤ`; it is how terms
-appearing twice cancel in sign-free constructions on tensor powers.
+appearing twice cancel in sign-free constructions on tensor powers. Over a single index, every
+element of a tensor power is a pure tensor.
 
 ## Main results
 
 * `PiTensorProduct.add_self_eq_zero`: if every element of `M` is its own additive inverse,
   so is every element of a tensor power of `M` with at least one factor.
+* `TauCeti.PiTensorProduct.exists_eq_tprod_of_subsingleton`: over a single index, every element
+  of a tensor power is a pure tensor.
 -/
 
 public section
@@ -47,3 +50,16 @@ theorem add_self_eq_zero [Nonempty ι] (x : ⨂[R] _ : ι, M) (hM : ∀ m : M, m
   | add x y hx hy => rw [add_add_add_comm, hx, hy, add_zero]
 
 end PiTensorProduct
+
+namespace TauCeti.PiTensorProduct
+
+variable {ι : Type uι} {R : Type uR} {M : Type uM} [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+/-- Over a single index `i₀`, every element of a tensor power of `M` is a pure tensor
+`tprod R fun _ ↦ y`. -/
+theorem exists_eq_tprod_of_subsingleton [Subsingleton ι] (i₀ : ι) (x : ⨂[R] _ : ι, M) :
+    ∃ y, x = PiTensorProduct.tprod R fun _ ↦ y :=
+  ⟨_, ((PiTensorProduct.subsingletonEquiv i₀).symm_apply_apply x).symm.trans
+    (PiTensorProduct.subsingletonEquiv_symm_apply' _ _)⟩
+
+end TauCeti.PiTensorProduct
