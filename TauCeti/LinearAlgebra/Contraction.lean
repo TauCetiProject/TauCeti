@@ -12,8 +12,8 @@ public import Mathlib.LinearAlgebra.Contraction
 
 For a finite projective module `M`, the map `dualTensorHom : Dual R M ⊗[R] N → (M →ₗ[R] N)` is
 an isomorphism (`dualTensorHomEquiv`), so every linear map out of `M` is a finite sum of rank-one
-maps `φ.smulRight n`. This gives an induction principle, `LinearMap.induction_smulRight`, for
-properties of such maps that are closed under addition.
+maps `φ.smulRight n`. This gives an induction principle, `LinearMap.induction_on_smulRight`,
+for properties of such maps that are closed under addition.
 -/
 
 public section
@@ -28,7 +28,7 @@ variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 /-- Every linear map out of a finite projective module is a finite sum of rank-one maps
 `φ.smulRight n`, so a property of linear maps out of `M` that is closed under `+` holds as soon
 as it holds for these. -/
-theorem induction_smulRight {P : (M →ₗ[R] N) → Prop} (f : M →ₗ[R] N)
+theorem induction_on_smulRight {P : (M →ₗ[R] N) → Prop} (f : M →ₗ[R] N)
     (smulRight : ∀ (φ : Dual R M) (n : N), P (φ.smulRight n))
     (add : ∀ f g, P f → P g → P (f + g)) : P f := by
   obtain ⟨x, rfl⟩ := (dualTensorHomEquiv R M N).surjective f

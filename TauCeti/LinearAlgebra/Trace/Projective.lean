@@ -20,9 +20,8 @@ is its image under the contraction `Dual R M ⊗[R] M → R`, `φ ⊗ m ↦ φ m
 finite locally free module (Stacks, Tag 02DU and Tag 0BVH; Kedlaya–Liu, *Relative p-adic Hodge
 theory: foundations*, §1.1).
 
-The contraction definition also appears in Mathlib PR
-https://github.com/leanprover-community/mathlib4/pull/44636, which proposes it as the definition
-of `LinearMap.trace` itself; this file was written independently and adapts no code from it.
+For a related formalization of the same contraction definition, see Mathlib PR
+https://github.com/leanprover-community/mathlib4/pull/44636.
 
 Mathlib's `LinearMap.trace R M` is defined through a finite basis and is `0` when `M` has none,
 so it is the trace of a finite projective module only when the module is free:
@@ -51,7 +50,7 @@ the identity of `M` has projective trace `e` and Mathlib trace `0`
 
 All statements except the last two hold over commutative semirings: the proofs reduce to pure
 tensors `φ ⊗ m`, whose endomorphism `φ.smulRight m` has trace `φ m`
-(`LinearMap.induction_smulRight`).
+(`LinearMap.induction_on_smulRight`).
 -/
 
 public section
@@ -100,7 +99,7 @@ theorem projectiveTrace_smulRight (φ : Dual R M) (m : M) :
 theorem projectiveTrace_cyclic {N : Type*} [AddCommMonoid N] [Module R N] [Module.Finite R N]
     [Module.Projective R N] (f : M →ₗ[R] N) (g : N →ₗ[R] M) :
     projectiveTrace R M (g ∘ₗ f) = projectiveTrace R N (f ∘ₗ g) := by
-  induction g using induction_smulRight with
+  induction g using induction_on_smulRight with
   | smulRight ψ m =>
     have h₁ : ψ.smulRight m ∘ₗ f = (ψ ∘ₗ f).smulRight m := by ext; simp
     have h₂ : f ∘ₗ ψ.smulRight m = ψ.smulRight (f m) := by ext; simp
@@ -124,7 +123,7 @@ theorem projectiveTrace_eq_trace [Module.Free R M] :
   classical
   let b := Module.Free.chooseBasis R M
   ext f
-  induction f using induction_smulRight with
+  induction f using induction_on_smulRight with
   | smulRight φ m =>
     simp only [projectiveTrace_smulRight, trace_eq_matrix_trace R b, Matrix.trace,
       Matrix.diag_apply, LinearMap.toMatrix_apply, smulRight_apply, map_smul, Finsupp.smul_apply,
@@ -161,7 +160,7 @@ trace of `A ⊗ f`. -/
 theorem projectiveTrace_baseChange (A : Type*) [CommSemiring A] [Algebra R A]
     (f : M →ₗ[R] M) :
     projectiveTrace A (A ⊗[R] M) (f.baseChange A) = algebraMap R A (projectiveTrace R M f) := by
-  induction f using induction_smulRight with
+  induction f using induction_on_smulRight with
   | smulRight φ m =>
     have : (φ.smulRight m).baseChange A = (φ.baseChange A).smulRight (1 ⊗ₜ m) := by
       ext x
