@@ -22,7 +22,8 @@ Since the infinite algebra is the union of its stages, such a functional is the 
 of compatible normalized traces on the stages. Ocneanu's theorem (Jones, Theorem 5.1) asserts
 that there is exactly one Markov trace for every `z`, the Ocneanu trace. This file proves the
 uniqueness half, and the multiplicativity of every Markov trace on disjoint blocks of strands;
-existence needs the basis theorem for the stages and is not proved here. Both results follow
+existence is proved in `TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace` from the coset basis of
+the stages. Both results follow
 from the decomposition `Hₙ₊₂ = Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁` of the stages
 (`TauCeti.InfiniteTypeAHeckeAlgebra.toSubmodule_stage_add_two`), along which the Markov rule
 computes `τ (a * T n * b) = z * τ (b * a)`.
