@@ -45,17 +45,6 @@ universe u v
 variable {A : Type u} {B : Type v} [CommRing A] [CommRing B] [Algebra A B]
   {ι : Type*} [Fintype ι] {s : ι → B →ₐ[A] A}
 
-/-- An evaluation isomorphism makes its coordinate sections a full set. This direction
-requires no finiteness or étaleness hypothesis on the algebra. -/
-theorem isFullSetOfSections_of_bijective_pi (h : Function.Bijective (AlgHom.pi s)) :
-    IsFullSetOfSections s := by
-  let e := AlgEquiv.ofBijective (AlgHom.pi s) h
-  have he (i : ι) : (Pi.evalAlgHom A (fun _ : ι ↦ A) i).comp e.toAlgHom = s i := by
-    ext b
-    rfl
-  simpa only [he] using (isFullSetOfSections_comp_algEquiv_iff e).mpr
-    (isFullSetOfSections_evalAlgHom (A := A) (ι := ι))
-
 /-- In a basis indexed by a full set of sections, the algebra's discriminant is the
 square of the determinant of the evaluation matrix. -/
 theorem IsFullSetOfSections.discr_eq_det_pi_sq (h : IsFullSetOfSections s)

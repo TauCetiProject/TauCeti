@@ -423,6 +423,17 @@ theorem isFullSetOfSections_evalAlgHom :
   | tmul t y => simp [Algebra.smul_def, mul_comm]
   | add x y hx hy => simp only [map_add, Pi.add_apply, hx, hy]
 
+/-- An evaluation isomorphism makes its coordinate sections a full set. This direction
+requires no finiteness or étaleness hypothesis on the algebra. -/
+theorem isFullSetOfSections_of_bijective_pi (h : Function.Bijective (AlgHom.pi s)) :
+    IsFullSetOfSections s := by
+  let e := AlgEquiv.ofBijective (AlgHom.pi s) h
+  have he (i : ι) : (Pi.evalAlgHom A (fun _ : ι ↦ A) i).comp e.toAlgHom = s i := by
+    ext b
+    rfl
+  simpa only [he] using (isFullSetOfSections_comp_algEquiv_iff e).mpr
+    (isFullSetOfSections_evalAlgHom (A := A) (ι := ι))
+
 /-- **Disjoint unions** (Katz–Mazur 1.8.4). If `s₁` and `s₂` are full sets of sections of `B₁`
 and `B₂`, then their composites with the two projections together form a full set of sections of
 `B₁ × B₂`. -/
