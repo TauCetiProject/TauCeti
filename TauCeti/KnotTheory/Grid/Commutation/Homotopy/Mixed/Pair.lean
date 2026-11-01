@@ -465,7 +465,8 @@ section TerminalInitial
 variable {x y z : GridState n} (P : GridPentagonBetween C.column C.turnRow x y)
   (Q : GridInitialPentagonBetween C.reverse.column C.reverse.turnRow y z)
 
-/-- Transport the common bottom-row identity along the reverse commutation's column equality. -/
+/-- A terminal-side pentagon and a following initial-side reverse pentagon share their
+bottom row. -/
 private theorem terminalInitial_bottom_eq : Q.bottom = P.bottom :=
   GridInitialPentagonBetween.bottom_eq_of_pentagon
     ⟨Q.toGridRectangleBetween, Q.left_eq.trans (congrArg (finRotate n) C.reverse_column),

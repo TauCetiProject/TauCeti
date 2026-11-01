@@ -179,10 +179,10 @@ private theorem terminalInitial_disjoint_and_weight (R : Type*) [CommSemiring R]
     exact (h _).2
   rw [← Finset.prod_union_inter, hu', hi', Finset.prod_union_inter]
 
-/-- A counted terminal-side pentagon followed by a counted initial-side reverse pentagon
-has a counted crossing-change hexagon composite with the same underlying rectangles and
-polynomial weight. The two turn rows may be in either cyclic order, and no interleaving or
-marking-position assumption is needed. -/
+/-- For distinct turn rows, a counted terminal-side pentagon followed by a counted initial-side
+reverse pentagon has a counted crossing-change hexagon composite with the same underlying
+rectangles and polynomial weight. The two turn rows may be in either cyclic order, and no
+interleaving or marking-position assumption is needed. -/
 theorem exists_crossingChangeHexagonComposite_of_terminalInitialPentagonPair
     (R : Type*) [CommSemiring R] {x y z : GridState n}
     (P : GridPentagonBetween a C.turnRow x y) (Q : GridInitialPentagonBetween a t y z)
