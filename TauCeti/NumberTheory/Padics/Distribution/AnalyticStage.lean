@@ -335,21 +335,6 @@ private theorem add_mul_pow_eq_sum_transitionScalar (b v : ℤ_[p]) (k : ℕ) :
   rw [add_comm, add_pow]
   exact Finset.sum_congr rfl fun j _ ↦ by rw [transitionScalar]; ring
 
-private theorem tendsto_norm_p_pow_cofinite :
-    Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n) cofinite (𝓝 0) := by
-  rw [Nat.cofinite_eq_atTop]
-  exact tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) PadicInt.norm_p_lt_one
-
-/-- On `ι × ℕ` with `ι` finite, the weights `‖p‖ ^ j * C` of the coefficients of `vʲ` tend to zero
-along the cofinite filter. They bound the coefficients after raising the level. -/
-theorem tendsto_norm_pow_mul_cofinite {ι : Type*} [Finite ι] (C : ℝ) :
-    Tendsto (fun i : ι × ℕ ↦ ‖(p : ℤ_[p])‖ ^ i.2 * C) cofinite (𝓝 0) := by
-  have hpow : Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n * C) cofinite (𝓝 0) := by
-    simpa using (tendsto_norm_p_pow_cofinite (p := p)).mul_const C
-  refine hpow.comp <| Tendsto.cofinite_of_finite_preimage_singleton fun n ↦ ?_
-  rw [Set.preimage_snd_singleton_eq_range]
-  exact Set.finite_range _
-
 /-- The coefficients of the re-expansion of `c` on the discs of level `h + 1`: on the disc of
 `a' = a + pʰ b`, `0 ≤ b < p`, the coefficient of `vʲ` is
 `∑ₖ (k choose j) b^(k - j) pʲ • c(a, k)`. -/
@@ -377,7 +362,7 @@ private theorem norm_transitionCoeff_le_norm (c : AnalyticStage p h E)
 omit [CompleteSpace E] in
 private theorem tendsto_transitionCoeff (c : AnalyticStage p h E) :
     Tendsto (transitionCoeff c) cofinite (𝓝 0) :=
-  squeeze_zero_norm (norm_transitionCoeff_le c) (tendsto_norm_pow_mul_cofinite _)
+  squeeze_zero_norm (norm_transitionCoeff_le c) (PadicInt.tendsto_norm_p_pow_mul_cofinite _)
 
 /-- The transition `LA_h(E) → LA_{h+1}(E)`. The disc of `a ∈ ZMod (pʰ)` is the union of the discs
 of the classes `a' = a + pʰ b`, `0 ≤ b < p`, in `ZMod (p ^ (h + 1))`, where `b = ⌊a'.val / pʰ⌋`.
@@ -485,7 +470,7 @@ theorem eval_transition (c : AnalyticStage p h E) : eval S (transition S c) = ev
         (pow_le_one₀ (norm_nonneg _) (PadicInt.norm_le_one _))).trans
           (norm_transitionScalar_le b _ _)
     · refine Filter.Tendsto.smul_cofinite_nhds_zero (f := fun j ↦ ‖(p : ℤ_[p])‖ ^ j)
-        (g := fun k ↦ ‖c (a, k)‖) tendsto_norm_p_pow_cofinite ?_
+        (g := fun k ↦ ‖c (a, k)‖) PadicInt.tendsto_norm_p_pow_cofinite ?_
       rw [Nat.cofinite_eq_atTop]
       simpa using (tendsto_apply_mk_atTop c a).norm
   calc ∑' j, v ^ j • transition S c (a', j)

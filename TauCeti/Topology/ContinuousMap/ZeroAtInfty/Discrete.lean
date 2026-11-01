@@ -28,13 +28,13 @@ This file develops the coordinate structure of `C₀(I, E)`:
 * `ZeroAtInftyContinuousMap.mkOfDiscrete`: a family tending to zero along the cofinite filter as
   an element of `C₀(I, E)`;
 * `ZeroAtInftyContinuousMap.single i x`: the coordinate vector supported at `i` with value `x`,
-  and `ZeroAtInftyContinuousMap.singleCLM R i`: the isometry `x ↦ single i x` as a continuous
-  linear map;
   of norm `‖x‖` (`ZeroAtInftyContinuousMap.norm_single`), so that on an infinite index the
   coordinate vectors with a fixed nonzero value are not norm null
   (`ZeroAtInftyContinuousMap.not_tendsto_single_cofinite`); a finite sum of coordinate vectors at
   distinct coordinates has the maximum of their norms
   (`ZeroAtInftyContinuousMap.nnnorm_sum_single`);
+* `ZeroAtInftyContinuousMap.singleCLM R i`: the isometry `x ↦ single i x` as a continuous linear
+  map;
 * `ZeroAtInftyContinuousMap.cons`: prepend one entry to a null sequence, with norm
   `max ‖b‖ ‖f‖` (`ZeroAtInftyContinuousMap.norm_cons`);
 * `ZeroAtInftyContinuousMap.exists_norm_coe_eq_norm`: the sup norm is attained at some
@@ -248,6 +248,38 @@ theorem sum_single_apply [AddCommMonoid β] [ContinuousAdd β] (b : I → β) (s
 
 end Algebra
 
+section Single
+
+variable [SeminormedAddCommGroup β]
+
+/-- A coordinate vector has the norm of its nonzero entry. -/
+@[simp]
+theorem norm_single [DecidableEq I] (i : I) (b : β) : ‖single i b‖ = ‖b‖ := by
+  refine le_antisymm ((norm_le (norm_nonneg b)).2 fun j ↦ ?_) ?_
+  · by_cases h : j = i <;> simp [h]
+  · simpa using norm_coe_le_norm (single i b) i
+
+variable (R : Type*) [Semiring R] [Module R β] [ContinuousConstSMul R β] [DecidableEq I]
+
+/-- The **coordinate vector** map `b ↦ single i b`, as a continuous linear map
+`β →L[R] C₀(I, β)`. It is an isometry by `norm_single`. -/
+noncomputable def singleCLM (i : I) : β →L[R] C₀(I, β) :=
+  -- LinearMap.mkContinuous requires ring scalars, so attach continuity directly for semirings.
+  let L : β →ₗ[R] C₀(I, β) :=
+    { toFun := single i
+      map_add' := single_add i
+      map_smul' := single_smul i }
+  { L with
+    cont := AddMonoidHomClass.continuous_of_bound L 1 fun b ↦ by simp [L] }
+
+variable {R}
+
+@[simp]
+theorem singleCLM_apply (i : I) (b : β) : singleCLM R i b = single i b :=
+  (rfl)
+
+end Single
+
 section Indicator
 
 /-! ### Coordinate projections -/
@@ -340,51 +372,16 @@ theorem isFiniteRank_indicatorCLM [Module.Finite R β] (s : Finset I) :
       Submodule.fg_span ((s ×ˢ t).finite_toSet.image _), fun f ↦ ?_⟩
   rw [ContinuousLinearMap.coe_coe, indicatorCLM_finset_apply]
   refine Submodule.sum_mem _ fun i hi ↦ ?_
-  suffices ∀ b ∈ Submodule.span R (t : Set β), single i b ∈ Submodule.span R
-      ((fun x : I × β ↦ single x.1 x.2) '' (s ×ˢ t : Finset (I × β))) from
-    this _ (ht ▸ Submodule.mem_top)
-  intro b hb
-  induction hb using Submodule.span_induction with
-  | mem b hb => exact Submodule.subset_span ⟨(i, b), Finset.mem_product.2 ⟨hi, hb⟩, rfl⟩
-  | zero => exact (single_zero (β := β) i).symm ▸ zero_mem _
-  | add b c _ _ hb hc => exact (single_add i b c).symm ▸ add_mem hb hc
-  | smul r b _ hb => exact (single_smul i r b).symm ▸ Submodule.smul_mem _ r hb
+  rw [← singleCLM_apply (R := R), ← ContinuousLinearMap.coe_coe]
+  refine (Submodule.map_span_le _ (t : Set β) _).2 (fun b hb ↦ ?_)
+    (Submodule.mem_map_of_mem (ht ▸ Submodule.mem_top))
+  exact Submodule.subset_span ⟨(i, b), Finset.mem_product.2 ⟨hi, hb⟩, rfl⟩
 
 end Indicator
 
 section Normed
 
 variable [SeminormedAddCommGroup β]
-
-/-- A coordinate vector has the norm of its nonzero entry. -/
-@[simp]
-theorem norm_single [DecidableEq I] (i : I) (b : β) : ‖single i b‖ = ‖b‖ := by
-  refine le_antisymm ((norm_le (norm_nonneg b)).2 fun j ↦ ?_) ?_
-  · by_cases h : j = i <;> simp [h]
-  · simpa using norm_coe_le_norm (single i b) i
-
-section
-
-variable (R : Type*) [Semiring R] [Module R β] [ContinuousConstSMul R β] [DecidableEq I]
-
-/-- The **coordinate vector** map `b ↦ single i b`, as a continuous linear map
-`β →L[R] C₀(I, β)`. It is an isometry by `norm_single`. -/
-noncomputable def singleCLM (i : I) : β →L[R] C₀(I, β) :=
-  -- LinearMap.mkContinuous requires ring scalars, so attach continuity directly for semirings.
-  let L : β →ₗ[R] C₀(I, β) :=
-    { toFun := single i
-      map_add' := single_add i
-      map_smul' := single_smul i }
-  { L with
-    cont := AddMonoidHomClass.continuous_of_bound L 1 fun b ↦ by simp [L] }
-
-variable {R}
-
-@[simp]
-theorem singleCLM_apply (i : I) (b : β) : singleCLM R i b = single i b :=
-  (rfl)
-
-end
 
 /-- A finite sum of coordinate vectors at distinct coordinates has the maximum of their norms as
 its norm; the empty sum has norm zero. -/
