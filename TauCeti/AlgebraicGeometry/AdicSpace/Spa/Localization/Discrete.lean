@@ -51,6 +51,7 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [DiscreteTopology A]
 `A⟨T/s⟩ → A⟨T'/s'⟩` of Wedhorn's Proposition 8.2(1) sends the image of `x ∈ A_s` to the image of
 `IsLocalization.Away.lift s _ x ∈ A_{s'}`. Since `A_s → A⟨T/s⟩` is bijective
 (`completionLocEquivOfDiscreteTopology`), this determines the comparison map. -/
+@[simp]
 theorem ringHomOfRationalSubsetSubset_coe_of_discreteTopology (P : PairOfDefinition A)
     (Aplus : Subring A) (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset A) (s : A)
     (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
