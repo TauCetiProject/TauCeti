@@ -482,12 +482,8 @@ constant along the arcs of the reconnection: each new arc runs along old arcs an
 with `b`. -/
 theorem apply_reconnect_val {β : Type*} {f : α → β} (hf : ∀ x, f (D.val x) = f x)
     (hab : f a = f b) (x : α) : f ((D.reconnect a b).val x) = f x := by
-  have hσ (y : α) : f (Equiv.swap (D.val a) b y) = f y := by
-    rw [Equiv.swap_apply_def]
-    split_ifs with h₁ h₂
-    · rw [h₁, hf, hab]
-    · rw [h₂, hf, hab]
-    · rfl
+  have hσ (y : α) : f (Equiv.swap (D.val a) b y) = f y :=
+    Equiv.apply_swap_eq_self ((hf a).trans hab) y
   rw [reconnect_val, Equiv.permCongr_apply, Equiv.symm_swap, hσ, hf, hσ]
 
 end Reconnect
