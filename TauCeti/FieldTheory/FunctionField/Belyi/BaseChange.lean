@@ -18,8 +18,9 @@ import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 Let `F / k(t)` be a function field over the rational function field over a field `k` of
 characteristic zero, and let `k' / k` be an algebraic extension, finite or not, such as an
 algebraic closure of `k`. The **base change** of `F` to `k'` is the compositum `F' = F · k'`,
-regarded as a field over `k'(t)` through the same function `t`. It is the function field of the
-base change of the curve of `F` to `k'`, with the base change of the map to the projective line.
+regarded as a field over `k'(t)` through the same function `t`. When `k` is the exact constant
+field of `F`, it is the function field of the base change of the curve of `F` to `k'`, with the
+base change of the map to the projective line.
 
 This file shows that `F'` is an algebraic Belyi pair over `k'` exactly when `F` is one over `k`,
 provided `k` is the exact constant field of `F`
@@ -65,13 +66,16 @@ open Polynomial
 
 namespace TauCeti
 
-variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F'] [CharZero k]
-  [Algebra k k'] [Algebra.IsAlgebraic k k'] [Algebra k F] [Algebra k F'] [Algebra k' F']
+variable {k k' F F' : Type*} [Field k] [Field k'] [Field F] [Field F']
+  [Algebra k k'] [Algebra k F] [Algebra k F'] [Algebra k' F']
   [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
-  [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F] [FiniteDimensional (RatFunc k) F]
-  [Algebra (RatFunc k') F'] [IsScalarTower k' (RatFunc k') F'] [FiniteDimensional (RatFunc k') F']
+  [Algebra (RatFunc k) F] [IsScalarTower k (RatFunc k) F]
+  [Algebra (RatFunc k') F'] [IsScalarTower k' (RatFunc k') F']
 
 namespace Place
+
+variable [PerfectField k] [Algebra.IsSeparable k k'] [Algebra.IsIntegral (RatFunc k) F]
+  [Algebra.IsIntegral (RatFunc k') F']
 
 /-- **Base change matches the marked places**: if `F' = F · k'` and `t` acts on `F'` as it does
 on `F`, then a place `Q'` of `F'` lies over one of the marked places `t = 0`, `t = 1`, `t = ∞` of
@@ -89,6 +93,9 @@ theorem restrict_restrict_mem_zeroOneInfty_iff_of_constantCompositum_eq_top
   rw [← not_iff_not, notMem_zeroOneInfty_iff, notMem_zeroOneInfty_iff, h₀, h₁]
 
 end Place
+
+variable [CharZero k] [Algebra.IsAlgebraic k k'] [FiniteDimensional (RatFunc k) F]
+  [FiniteDimensional (RatFunc k') F']
 
 open Place in
 /-- **Base change of algebraic Belyi pairs**: let `F / k(t)` have exact constant field `k`, of
