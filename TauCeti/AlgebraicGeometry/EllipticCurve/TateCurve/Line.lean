@@ -127,15 +127,15 @@ private theorem tripleCoeff_one_moments (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
   have h₂ := (summable_mul_of_norm_le_one h₀.summable
     fun n : ℤ ↦ IsUltrametricDist.norm_intCast_le_one K (n * (n - 1) / 2)).hasSum
   -- The coefficients of `θ²` have vanishing zeroth and first moments.
-  have s₀ := hasSum_tsum_mul_sub h₀ h₀
-  have s₁ := hasSum_intCast_mul_tsum_mul_sub h₀ h₁ h₀ h₁
-  have s₂ := hasSum_intCast_ediv_two_mul_tsum_mul_sub h₀ h₁ h₂ h₀ h₁ h₂
+  have s₀ := h₀.tsum_mul_sub h₀
+  have s₁ := h₀.intCast_mul_tsum_mul_sub h₁ h₀ h₁
+  have s₂ := h₀.intCast_mul_sub_one_ediv_two_mul_tsum_mul_sub h₁ h₂ h₀ h₁ h₂
   simp only [mul_zero, zero_mul, add_zero, zero_add] at s₀ s₁ s₂
   rw [tripleCoeff_one_eq]
   refine ⟨?_, ?_, ?_⟩
-  · simpa using hasSum_tsum_mul_sub h₀ s₀
-  · simpa using hasSum_intCast_mul_tsum_mul_sub h₀ h₁ s₀ s₁
-  · simpa using hasSum_intCast_ediv_two_mul_tsum_mul_sub h₀ h₁ h₂ s₀ s₁ s₂
+  · simpa using h₀.tsum_mul_sub s₀
+  · simpa using h₀.intCast_mul_tsum_mul_sub h₁ s₀ s₁
+  · simpa using h₀.intCast_mul_sub_one_ediv_two_mul_tsum_mul_sub h₁ h₂ s₀ s₁ s₂
 
 end Cube
 
@@ -558,7 +558,7 @@ private theorem exists_hasSum_tateTheta_pow_three_mul (q : Kˣ) (hq : ‖(q : K)
   have hTA₁ : HasSum (fun n ↦ ∑' m, tateThetaCoeff q m * A (n - m)) 0 := by
     have hA₁ := summable_tateThetaCoefficients q 1 hq two_pos ⟨A, hA⟩ 1
     simp only [one_zpow, Units.val_one, mul_one] at hA₁
-    simpa using hasSum_tsum_mul_sub (hasSum_tateThetaCoeff_one q hq) hA₁.hasSum
+    simpa using (hasSum_tateThetaCoeff_one q hq).tsum_mul_sub hA₁.hasSum
   let S : tateThetaCoefficients q (-1) 3 := ⟨_, tripleCoeff_one_mem q⟩
   let T : tateThetaCoefficients q (-1) 3 := ⟨_, hTA⟩
   let U : tateThetaCoefficients q (-1) 3 := ⟨_, tateYCoeff_mem q hq⟩

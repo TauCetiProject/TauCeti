@@ -399,7 +399,7 @@ theorem hasSum_laurent_mul {f g : ℤ → K} {u : K} (hu : u ≠ 0) {a b : K}
 
 /-- Each coefficient `∑' m, f m * g (n - m)` of the Cauchy product of two summable families is
 an unconditionally convergent sum. -/
-theorem summable_mul_sub {f g : ℤ → K} (hf : Summable f) (hg : Summable g) (n : ℤ) :
+theorem _root_.Summable.mul_sub {f g : ℤ → K} (hf : Summable f) (hg : Summable g) (n : ℤ) :
     Summable (fun m ↦ f m * g (n - m)) := by
   refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero ?_
   simpa using hf.tendsto_cofinite_zero.mul
@@ -407,20 +407,20 @@ theorem summable_mul_sub {f g : ℤ → K} (hf : Summable f) (hg : Summable g) (
 
 /-- The Cauchy product of two convergent bilateral series over a complete ultrametric normed
 field: `∑ₙ ∑ₘ f(m) g(n - m) = (∑ f) (∑ g)`. -/
-theorem hasSum_tsum_mul_sub {f g : ℤ → K} {a b : K} (hf : HasSum f a) (hg : HasSum g b) :
+theorem _root_.HasSum.tsum_mul_sub {f g : ℤ → K} {a b : K} (hf : HasSum f a) (hg : HasSum g b) :
     HasSum (fun n ↦ ∑' m, f m * g (n - m)) (a * b) := by
   simpa using hasSum_laurent_mul (u := (1 : K)) one_ne_zero (by simpa using hf)
     (by simpa using hg)
 
 /-- **The Leibniz rule for first moments.** The first moment `∑ n h(n)` of the Cauchy product
 `h = f * g` is `f₁ g₀ + f₀ g₁`, where `f₀ = ∑ f(n)` and `f₁ = ∑ n f(n)`. -/
-theorem hasSum_intCast_mul_tsum_mul_sub {f g : ℤ → K} {a a₁ b b₁ : K} (hf : HasSum f a)
+theorem _root_.HasSum.intCast_mul_tsum_mul_sub {f g : ℤ → K} {a a₁ b b₁ : K} (hf : HasSum f a)
     (hf₁ : HasSum (fun n : ℤ ↦ (n : K) * f n) a₁) (hg : HasSum g b)
     (hg₁ : HasSum (fun n : ℤ ↦ (n : K) * g n) b₁) :
     HasSum (fun n : ℤ ↦ (n : K) * ∑' m, f m * g (n - m)) (a₁ * b + a * b₁) := by
-  refine ((hasSum_tsum_mul_sub hf₁ hg).add (hasSum_tsum_mul_sub hf hg₁)).congr_fun fun n ↦ ?_
-  rw [← (summable_mul_sub hf₁.summable hg.summable n).tsum_add
-    (summable_mul_sub hf.summable hg₁.summable n), ← tsum_mul_left]
+  refine ((hf₁.tsum_mul_sub hg).add (hf.tsum_mul_sub hg₁)).congr_fun fun n ↦ ?_
+  rw [← (hf₁.summable.mul_sub hg.summable n).tsum_add
+    (hf.summable.mul_sub hg₁.summable n), ← tsum_mul_left]
   congr 1 with m
   push_cast
   ring
@@ -429,20 +429,20 @@ theorem hasSum_intCast_mul_tsum_mul_sub {f g : ℤ → K} {a a₁ b b₁ : K} (h
 moment of the Cauchy product `h = f * g` is `f₂ g₀ + f₁ g₁ + f₀ g₂`, where `f₀ = ∑ f(n)`,
 `f₁ = ∑ n f(n)` and `f₂ = ∑ (n (n - 1) / 2) f(n)`. The halved weights are integers, so this
 holds in every characteristic. -/
-theorem hasSum_intCast_ediv_two_mul_tsum_mul_sub {f g : ℤ → K} {a a₁ a₂ b b₁ b₂ : K}
-    (hf : HasSum f a) (hf₁ : HasSum (fun n : ℤ ↦ (n : K) * f n) a₁)
+theorem _root_.HasSum.intCast_mul_sub_one_ediv_two_mul_tsum_mul_sub {f g : ℤ → K}
+    {a a₁ a₂ b b₁ b₂ : K} (hf : HasSum f a) (hf₁ : HasSum (fun n : ℤ ↦ (n : K) * f n) a₁)
     (hf₂ : HasSum (fun n : ℤ ↦ ((n * (n - 1) / 2 : ℤ) : K) * f n) a₂) (hg : HasSum g b)
     (hg₁ : HasSum (fun n : ℤ ↦ (n : K) * g n) b₁)
     (hg₂ : HasSum (fun n : ℤ ↦ ((n * (n - 1) / 2 : ℤ) : K) * g n) b₂) :
     HasSum (fun n : ℤ ↦ ((n * (n - 1) / 2 : ℤ) : K) * ∑' m, f m * g (n - m))
       (a₂ * b + a₁ * b₁ + a * b₂) := by
-  refine (((hasSum_tsum_mul_sub hf₂ hg).add (hasSum_tsum_mul_sub hf₁ hg₁)).add
-    (hasSum_tsum_mul_sub hf hg₂)).congr_fun fun n ↦ ?_
-  rw [← (summable_mul_sub hf₂.summable hg.summable n).tsum_add
-    (summable_mul_sub hf₁.summable hg₁.summable n),
-    ← (Summable.add (summable_mul_sub hf₂.summable hg.summable n)
-      (summable_mul_sub hf₁.summable hg₁.summable n)).tsum_add
-      (summable_mul_sub hf.summable hg₂.summable n), ← tsum_mul_left]
+  refine (((hf₂.tsum_mul_sub hg).add (hf₁.tsum_mul_sub hg₁)).add
+    (hf.tsum_mul_sub hg₂)).congr_fun fun n ↦ ?_
+  rw [← (hf₂.summable.mul_sub hg.summable n).tsum_add
+    (hf₁.summable.mul_sub hg₁.summable n),
+    ← (Summable.add (hf₂.summable.mul_sub hg.summable n)
+      (hf₁.summable.mul_sub hg₁.summable n)).tsum_add
+      (hf.summable.mul_sub hg₂.summable n), ← tsum_mul_left]
   congr 1 with m
   have h := Int.add_mul_add_sub_one_ediv_two m (n - m)
   rw [add_sub_cancel] at h

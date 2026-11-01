@@ -120,7 +120,7 @@ private theorem hasSum_intCast_mul_tateThetaProductCoeff_one (q : Kˣ) (hq : ‖
   have hθ := hasSum_tateThetaCoeff_one q hq
   have hθ₁ := (summable_mul_of_norm_le_one hθ.summable
     fun n : ℤ ↦ IsUltrametricDist.norm_intCast_le_one K n).hasSum
-  simpa [tateThetaProductCoeff_one_eq] using hasSum_intCast_mul_tsum_mul_sub hθ hθ₁ hθ hθ₁
+  simpa [tateThetaProductCoeff_one_eq] using hθ.intCast_mul_tsum_mul_sub hθ₁ hθ hθ₁
 
 end Theta
 

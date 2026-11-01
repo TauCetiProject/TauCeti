@@ -193,7 +193,7 @@ theorem hasSum_prod_geometric_div {𝕜 ι : Type*} [NormedField 𝕜] [Fintype 
 /-- **Lambert series.** If `f(z) = ∑_{k ≥ 0} c(k) z^(k + 1)` on the open unit disc and
 `∑ₖ ‖c(k)‖ ‖q w‖ᵏ` converges, then `∑_{n ≥ 1} f(qⁿw) = ∑_{k ≥ 1} c(k - 1) qᵏ wᵏ / (1 - qᵏ)`
 for `‖q‖ < 1` and `‖q w‖ < 1`. -/
-theorem hasSum_lambert_of_summable [CompleteSpace K] {c : ℕ → K} {f : K → K} {q w : K}
+theorem _root_.Summable.hasSum_lambert [CompleteSpace K] {c : ℕ → K} {f : K → K} {q w : K}
     (hc : Summable fun k ↦ ‖c k‖ * ‖q * w‖ ^ k)
     (hf : ∀ z : K, ‖z‖ < 1 → HasSum (fun k ↦ c k * z ^ (k + 1)) (f z))
     (hq : ‖q‖ < 1) (hw : ‖q * w‖ < 1) :
@@ -236,7 +236,7 @@ theorem hasSum_lambert_of_summable [CompleteSpace K] {c : ℕ → K} {f : K → 
 
 /-- Natural-number coefficients bounded by `(k + m).choose m` have summable norms against the
 powers of `0 ≤ r < 1`. -/
-private theorem summable_norm_natCast_mul_pow {a : ℕ → ℕ} (m : ℕ)
+theorem summable_norm_natCast_mul_pow {a : ℕ → ℕ} (m : ℕ)
     (ha : ∀ k, a k ≤ (k + m).choose m) {r : ℝ} (hr₀ : 0 ≤ r) (hr : r < 1) :
     Summable fun k ↦ ‖(a k : K)‖ * r ^ k := by
   refine (summable_choose_mul_geometric_of_norm_lt_one m (r := r)
@@ -252,7 +252,7 @@ variable [CompleteSpace K]
 theorem hasSum_lambert {q w : K} (hq : ‖q‖ < 1) (hw : ‖q * w‖ < 1) :
     HasSum (fun k : ℕ ↦ ((k + 1 : ℕ) : K) * q ^ (k + 1) / (1 - q ^ (k + 1)) * w ^ (k + 1))
       (∑' n : ℕ, q ^ (n + 1) * w / (1 - q ^ (n + 1) * w) ^ 2) := by
-  refine hasSum_lambert_of_summable (c := fun k ↦ ((k + 1 : ℕ) : K))
+  refine Summable.hasSum_lambert (c := fun k ↦ ((k + 1 : ℕ) : K))
     (f := fun z ↦ z / (1 - z) ^ 2) (summable_norm_natCast_mul_pow (a := fun k ↦ k + 1) 1
       (fun k ↦ by simp) (norm_nonneg _) hw) (fun z hz ↦ ?_) hq hw
   simpa using (hasSum_nat_add_iff' (f := fun n : ℕ ↦ (n : K) * z ^ n) 1).mpr
@@ -263,7 +263,7 @@ for `‖q‖ < 1` and `‖q w‖ < 1`. -/
 theorem hasSum_lambert_sq_div_pow_three {q w : K} (hq : ‖q‖ < 1) (hw : ‖q * w‖ < 1) :
     HasSum (fun k : ℕ ↦ ((k + 1).choose 2 : K) * q ^ (k + 1) / (1 - q ^ (k + 1)) * w ^ (k + 1))
       (∑' n : ℕ, (q ^ (n + 1) * w) ^ 2 / (1 - q ^ (n + 1) * w) ^ 3) := by
-  refine hasSum_lambert_of_summable (c := fun k ↦ ((k + 1).choose 2 : K))
+  refine Summable.hasSum_lambert (c := fun k ↦ ((k + 1).choose 2 : K))
     (f := fun z ↦ z ^ 2 / (1 - z) ^ 3) (summable_norm_natCast_mul_pow
       (a := fun k ↦ (k + 1).choose 2) 2 (fun k ↦ Nat.choose_le_choose 2 (by omega))
       (norm_nonneg _) hw) (fun z hz ↦ ?_) hq hw
@@ -279,7 +279,7 @@ for `‖q‖ < 1` and `‖q w‖ < 1`. -/
 theorem hasSum_lambert_div_pow_three {q w : K} (hq : ‖q‖ < 1) (hw : ‖q * w‖ < 1) :
     HasSum (fun k : ℕ ↦ ((k + 2).choose 2 : K) * q ^ (k + 1) / (1 - q ^ (k + 1)) * w ^ (k + 1))
       (∑' n : ℕ, q ^ (n + 1) * w / (1 - q ^ (n + 1) * w) ^ 3) := by
-  refine hasSum_lambert_of_summable (c := fun k ↦ ((k + 2).choose 2 : K))
+  refine Summable.hasSum_lambert (c := fun k ↦ ((k + 2).choose 2 : K))
     (f := fun z ↦ z / (1 - z) ^ 3) (summable_norm_natCast_mul_pow
       (a := fun k ↦ (k + 2).choose 2) 2 (fun _ ↦ le_rfl) (norm_nonneg _) hw) (fun z hz ↦ ?_) hq hw
   convert (hasSum_choose_mul_geometric_of_norm_lt_one 2 hz).mul_left z using 1
