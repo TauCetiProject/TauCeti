@@ -36,7 +36,9 @@ scalar. The flip law assumes this property for the second input coefficient spac
 It also proves the norm-free interior-product antiderivation law
 `ι_v (φ ∧ ψ) = ι_v φ ∧ ψ + (-1) ^ (deg φ) • φ ∧ ι_v ψ`, using
 `ContinuousAlternatingMap.curryLeftTopological` from the accompanying Curry module.
-The normed counterpart is `ContinuousAlternatingMap.curryLeft_pairedWedge`.
+The normed counterpart is `ContinuousAlternatingMap.curryLeft_pairedWedge`. Consequently a wedge
+`α ∧ ψ` with a one-form `α`, evaluated on `(u, w)` where `α` kills every vector of `w`, is the
+pairing of `α u` with `ψ w` (`ContinuousAlternatingMap.pairedWedge_apply_vecCons_of_forall`).
 
 The alternating-map API follows Mathlib's `AlternatingMap.curryLeft` and `map_insertNth`, and the
 paired-wedge design follows Yury Kudryashov's `DeRhamCohomology` project.
@@ -503,6 +505,29 @@ theorem pairedWedge_comm [IsTopologicalAddGroup F₁] [ContinuousConstSMul ℝ F
   rw [pairedWedge_flip]
   simp only [hflip]
 
+/-- Wedge with a degree-zero form on the left pairs its value on the empty tuple with the other
+form. -/
+@[simp]
+theorem pairedWedge_apply_zero_left [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F₂] {l : ℕ}
+    (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
+    (φ : E [⋀^Fin 0]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) (v : Fin (0 + l) → E) :
+    pairedWedge μ hμ φ ψ v = μ (φ 0) (ψ (v ∘ Fin.cast (Nat.zero_add l).symm)) := by
+  rw [pairedWedge_flip, pairedWedge_apply_zero_right, zero_mul, pow_zero, one_smul,
+    ContinuousLinearMap.pairingFlip_apply]
+
+/-- A wedge `α ∧ ψ` with a one-form `α` vanishes on every tuple of vectors that `α` kills. -/
+theorem pairedWedge_apply_eq_zero_of_forall {l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (α : E [⋀^Fin 1]→L[ℝ] F₁)
+    (ψ : E [⋀^Fin l]→L[ℝ] F₂) (w : Fin (1 + l) → E) (hw : ∀ i, α ![w i] = 0) :
+    pairedWedge μ hμ α ψ w = 0 := by
+  rw [pairedWedge_apply]
+  refine smul_eq_zero_of_right _ (Finset.sum_eq_zero fun σ _ ↦ ?_)
+  have h : (fun i : Fin 1 ↦ w (σ (Fin.castAdd l i))) = ![w (σ (Fin.castAdd l 0))] := by
+    ext i
+    fin_cases i
+    rfl
+  simp [h, hw]
+
 section InteriorProduct
 
 open Equiv
@@ -608,6 +633,38 @@ theorem curryLeftTopological_pairedWedge
     Finset.card_univ, Fintype.card_fin]
   rw [Nat.factorial_succ k, Nat.factorial_succ l]
   match_scalars <;> field_simp
+
+/-- Expanding a wedge `α ∧ ψ` with a one-form `α` along its first argument `u`: when `α` kills the
+remaining arguments `w`, the wedge is `μ (α u) (ψ w)`. -/
+theorem pairedWedge_apply_vecCons_of_forall [ContinuousAdd F₁] [ContinuousConstSMul ℝ F₁]
+    [IsTopologicalAddGroup F₂] [ContinuousConstSMul ℝ F₂] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (α : E [⋀^Fin 1]→L[ℝ] F₁)
+    (ψ : E [⋀^Fin l]→L[ℝ] F₂) (u : E) (w : Fin l → E) (hw : ∀ i, α ![w i] = 0) :
+    pairedWedge μ hμ α ψ (Matrix.vecCons u w ∘ Fin.cast (Nat.add_comm 1 l)) = μ (α ![u]) (ψ w) := by
+  cases l with
+  | zero =>
+    have hv : Matrix.vecCons u w ∘ Fin.cast (Nat.add_comm 1 0) = ![u] := by
+      ext i
+      fin_cases i
+      rfl
+    rw [pairedWedge_apply_zero_right, hv, Subsingleton.elim (0 : Fin 0 → E) w]
+  | succ l =>
+    have hcons : Matrix.vecCons u w ∘ Fin.cast (Nat.add_comm 1 (l + 1)) =
+        Matrix.vecCons u (w ∘ Fin.cast (Nat.add_comm (0 + 1) l)) := by
+      ext i
+      refine Fin.cases rfl (fun j ↦ ?_) i
+      simp only [Function.comp_apply, Matrix.cons_val_succ]
+      rw [show Fin.cast (Nat.add_comm 1 (l + 1)) j.succ =
+        (Fin.cast (Nat.add_comm (0 + 1) l) j).succ from Fin.ext (by simp),
+        Matrix.cons_val_succ]
+    have hzero : pairedWedge (k := 0 + 1) μ hμ α (curryLeftTopological ψ u)
+        (w ∘ Fin.cast (Nat.add_comm (0 + 1) l)) = 0 :=
+      pairedWedge_apply_eq_zero_of_forall _ _ _ _ _ fun i ↦ hw _
+    rw [hcons, ← curryLeftTopological_apply_apply, curryLeftTopological_pairedWedge, hzero,
+      smul_zero, add_zero, pairedWedge_apply_zero_left, curryLeftTopological_apply_apply,
+      Subsingleton.elim (0 : Fin 0 → E) ![]]
+    rfl
+
 end InteriorProduct
 
 end ContinuousAlternatingMap
