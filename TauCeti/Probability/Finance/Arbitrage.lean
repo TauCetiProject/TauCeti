@@ -27,16 +27,18 @@ Then for a stock holding `a j` chosen at `τ j` with integrable trading gains:
 * the gains `∫ a dX` are a `Q`-martingale along the trading dates
   (`TauCeti.Finance.condExp_simpleGains`) with mean zero
   (`TauCeti.Finance.integral_simpleGains`);
-* the discounted wealth of a self-financing strategy at each trading date is the conditional
-  expectation of its discounted terminal wealth
-  (`TauCeti.Finance.IsSelfFinancing.condExp_discounted_wealth`), so the terminal wealth determines
-  the wealth at every trading date;
+* if moreover the discounted initial cost is `Q`-integrable and known at `τ 0`, the discounted
+  wealth of a self-financing strategy at each trading date is the conditional expectation of its
+  discounted terminal wealth (`TauCeti.Finance.IsSelfFinancing.condExp_discounted_wealth`), so the
+  terminal wealth determines the wealth at every trading date;
 * if moreover `Q` and `P` have the same null sets and the bond price is positive, no
   self-financing strategy is an arbitrage under `P`
   (`TauCeti.Finance.IsSelfFinancing.not_isArbitrage`).
 
 No integrability of the holdings themselves is assumed beyond that of each trading gain
-`a j (X (τ (j + 1)) - X (τ j))`, and the bond holdings need no integrability at all.
+`a j (X (τ (j + 1)) - X (τ j))`, and apart from the integrability and measurability of the
+discounted initial cost in the wealth representation, the bond holdings need no integrability or
+measurability at all.
 
 ## References
 
@@ -80,15 +82,22 @@ theorem isArbitrage_iff_of_absolutelyContinuous (hPQ : P ≪ Q) (hQP : Q ≪ P) 
   simp only [pos_iff_ne_zero]
   exact ⟨mt fun h ↦ hPQ h, mt fun h ↦ hQP h⟩
 
-/-- Arbitrage does not depend on the unit of account: rescaling the initial cost by a nonvanishing
-factor and the terminal wealth by a positive factor preserves it. -/
-theorem isArbitrage_mul_iff (hc₀ : ∀ ω, c₀ ω ≠ 0) (hc : ∀ ω, 0 < c ω) :
+/-- Arbitrage does not depend on the unit of account: rescaling the initial cost by an almost surely
+nonvanishing factor and the terminal wealth by an almost surely positive factor preserves it. -/
+theorem isArbitrage_mul_iff (hc₀ : ∀ᵐ ω ∂P, c₀ ω ≠ 0) (hc : ∀ᵐ ω ∂P, 0 < c ω) :
     IsArbitrage P (c₀ * v) (c * V) ↔ IsArbitrage P v V := by
-  have hv : ∀ ω, (c₀ * v) ω = 0 ↔ v ω = 0 := fun ω ↦ by simp [hc₀ ω]
-  have hV : ∀ ω, 0 ≤ (c * V) ω ↔ 0 ≤ V ω := fun ω ↦ by simp [mul_nonneg_iff_of_pos_left (hc ω)]
-  have hV' : ∀ ω, 0 < (c * V) ω ↔ 0 < V ω := fun ω ↦ by simp [mul_pos_iff_of_pos_left (hc ω)]
-  simp only [isArbitrage_iff, Filter.EventuallyEq, Filter.EventuallyLE, Pi.zero_apply, hv, hV,
-    hV']
+  have hv : ∀ᵐ ω ∂P, (c₀ * v) ω = 0 ↔ v ω = 0 := by
+    filter_upwards [hc₀] with ω hω
+    simp [hω]
+  have hV : ∀ᵐ ω ∂P, 0 ≤ (c * V) ω ↔ 0 ≤ V ω := by
+    filter_upwards [hc] with ω hω
+    simp [mul_nonneg_iff_of_pos_left hω]
+  have hV' : {ω | 0 < (c * V) ω} =ᵐ[P] {ω | 0 < V ω} := by
+    filter_upwards [hc] with ω hω
+    simp [mul_pos_iff_of_pos_left hω]
+  simp only [isArbitrage_iff, Filter.EventuallyEq, Filter.EventuallyLE, Pi.zero_apply,
+    measure_congr hV']
+  exact and_congr (Filter.eventually_congr hv) (and_congr_left' (Filter.eventually_congr hV))
 
 /-- An arbitrage with integrable terminal wealth has positive expected terminal wealth. -/
 theorem IsArbitrage.integral_pos (h : IsArbitrage P v V) (hV : Integrable V P) :
@@ -248,8 +257,9 @@ theorem IsSelfFinancing.not_isArbitrage (hPQ : P ≪ Q) (hQP : Q ≪ P)
   have hT : τ (n + 1) ∈ Set.Icc (τ 0) (τ (n + 1)) := ⟨h₀.2, le_rfl⟩
   -- Measured in bond shares, the trade is still an arbitrage, now under `Q`.
   have hdarb := (isArbitrage_mul_iff (c₀ := fun ω ↦ (β (τ 0) ω)⁻¹)
-    (c := fun ω ↦ (β (τ (n + 1)) ω)⁻¹) (fun ω ↦ inv_ne_zero (hβ _ h₀ ω).ne')
-    (fun ω ↦ inv_pos.2 (hβ _ hT ω))).2 ((isArbitrage_iff_of_absolutelyContinuous hPQ hQP).1 harb)
+    (c := fun ω ↦ (β (τ (n + 1)) ω)⁻¹) (.of_forall fun ω ↦ inv_ne_zero (hβ _ h₀ ω).ne')
+    (.of_forall fun ω ↦ inv_pos.2 (hβ _ hT ω))).2
+    ((isArbitrage_iff_of_absolutelyContinuous hPQ hQP).1 harb)
   -- Its discounted terminal wealth is the discounted initial cost, zero, plus the gains.
   have hwealth : ∀ ω, ((fun ω ↦ (β (τ (n + 1)) ω)⁻¹) *
       fun ω ↦ a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω) ω =

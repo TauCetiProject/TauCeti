@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Finance.Arbitrage
-public import TauCeti.Probability.Finance.BlackScholes.ConditionalPrice
+public import TauCeti.Probability.BrownianMotion.Geometric
+public import TauCeti.Probability.BrownianMotion.Girsanov
 
 /-!
 # No arbitrage with simple strategies in the Black–Scholes market
@@ -25,7 +26,8 @@ simple strategy trading at dates up to `T` whose stock holdings `a j` are chosen
 their intervals and whose trades in the discounted stock have `Q`-integrable gains:
 
 * no such strategy is an arbitrage under `P` (`not_isArbitrage_geometricBrownianMotion`);
-* its discounted wealth `V_{τ k} / β_{τ k}` at each trading date `τ k` is
+* if moreover its discounted initial cost is `Q`-integrable and known at the first trading date,
+  its discounted wealth `V_{τ k} / β_{τ k}` at each trading date `τ k` is
   `E_Q[V / β_{τ_last} | ℱ (τ k)]`, where `V` is its terminal wealth at the last trading date
   `τ_last` (`condExp_discounted_wealth_geometricBrownianMotion`), so the terminal wealth
   determines the wealth at every trading date.
