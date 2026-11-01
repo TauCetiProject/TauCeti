@@ -83,6 +83,10 @@ private noncomputable def a1SimpleZeroIsometry :
       push_cast
       ring
 
+-- Evaluation of the private structure uses the doubling map stored in `toIsometryEquiv`.
+private theorem a1SimpleZeroIsometry_apply (x : ι → Fin 1 → ℚ) (i : ι) :
+    a1SimpleZeroIsometry ι x i = 2 * x i 0 := rfl
+
 /-- Doubling simple-root coordinates identifies an orthogonal sum of `A₁` root lattices
 with the zero-code binary Construction A lattice. -/
 noncomputable def a1ZeroLatticeIsometry :
@@ -92,16 +96,15 @@ noncomputable def a1ZeroLatticeIsometry :
     (a1SimpleZeroIsometry ι)
 
 /-- The base-lattice comparison doubles the unique coordinate of each `A₁` component. -/
--- Not a simp lemma: `rank_A` first normalizes the ambient index type.
-theorem a1ZeroLatticeIsometry_apply (x : ι → Fin 1 → ℚ) (i : ι) :
-    a1ZeroLatticeIsometry ι x i = 2 * x i 0 := by
-  erw [a1ZeroLatticeIsometry, Isometry.trans_apply]
-  -- The local doubling map evaluates at the componentwise identity comparison.
-  calc
-    _ = 2 * ((Isometry.pi fun _ : ι ↦
-        Isometry.ofEq (rootLattice_A 1 (isSimplyLaced_A 1))) x i) ⟨0, by decide⟩ := rfl
-    _ = 2 * x i 0 := congrArg (fun z : Fin 1 → ℚ ↦ 2 * z 0)
-      ((Isometry.pi_apply _ x i).trans (Isometry.ofEq_apply _ (x i)))
+-- Use the root-lattice index type here so rewriting needs no transport along `rank_A`.
+-- Not a simp lemma: `rank_A` normalizes its index type before matching.
+theorem a1ZeroLatticeIsometry_apply (x : ι → Fin (A 1).rank → ℚ) (i : ι) :
+    a1ZeroLatticeIsometry ι x i = 2 * x i ⟨0, by decide⟩ := by
+  -- `rootLattice_A` compares lattices over `Fin (A 1).rank` and `Fin 1`; `erw`
+  -- reduces `(A 1).rank` when matching the ambient types in the composite.
+  erw [a1ZeroLatticeIsometry, Isometry.trans_apply, a1SimpleZeroIsometry_apply]
+  exact congrArg (fun z : Fin 1 → ℚ ↦ 2 * z 0)
+    ((Isometry.pi_apply _ x i).trans (Isometry.ofEq_apply _ (x i)))
 
 private noncomputable def a1WordRepresentative
     (w : ι → (A 1).glueAlphabet (isSimplyLaced_A 1)) :
@@ -117,10 +120,14 @@ private theorem mk_a1WordRepresentative
         (fun _ ↦ by decide) w := by
   apply (discriminantGroupPiEquiv _).injective
   ext i
+  -- `erw` identifies the carrier of the discriminant quadratic module with its
+  -- underlying discriminant group, and normalizes `Fin (A 1).rank` to `Fin 1`.
   erw [discriminantGroupPiEquiv_mk,
     discriminantGroupPiEquiv_glueWordIsometry, glueAlphabetIsometry_A_apply,
     typeADiscriminantGroupEquiv_apply]
   unfold a1WordRepresentative
+  -- The representative's component types have been normalized to `Fin 1` during
+  -- elaboration; the product equivalence still uses `Fin (A 1).rank`.
   erw [LinearEquiv.apply_symm_apply]
   exact (Isometry.discriminantGroupEquiv_mk _ _).symm.trans
     (congrArg _ ((Submodule.Quotient.mk_smul _ _ _).trans
@@ -130,8 +137,10 @@ private theorem a1ZeroLatticeIsometry_a1WordRepresentative
     (w : ι → (A 1).glueAlphabet (isSimplyLaced_A 1)) :
     a1ZeroLatticeIsometry ι (a1WordRepresentative ι w) = fun i ↦ (ZMod.val (n := 2) (w i) : ℚ) := by
   ext i
-  erw [a1ZeroLatticeIsometry_apply]
+  rw [a1ZeroLatticeIsometry_apply]
   unfold a1WordRepresentative
+  -- The dual-carrier equivalence has ambient index `Fin (A 1).rank`, while the
+  -- fundamental weight uses `Fin 1`; `erw` crosses this `rank_A` definitional equality.
   erw [coe_piDualCarrierEquiv_symm_apply]
   dsimp only
   have hc := Isometry.coe_dualCarrierEquiv_apply
