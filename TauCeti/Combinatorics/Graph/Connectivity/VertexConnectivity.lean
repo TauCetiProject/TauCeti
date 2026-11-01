@@ -124,8 +124,12 @@ theorem IsVertexReachable.mono (hGH : G ≤ H) {s t : V(G)}
     (h : G.IsVertexReachable k s t) :
     H.IsVertexReachable k ⟨s, hGH.vertexSet_mono s.property⟩
       ⟨t, hGH.vertexSet_mono t.property⟩ := by
-  rw [isVertexReachable_iff] at h ⊢
-  exact fun X hX hs ht ↦ (h hX hs ht).mono (deleteVerts_mono_left hGH X)
+  have hf (v : V(G)) : toSimpleGraphHomOfLE hGH v =
+      ⟨v, hGH.vertexSet_mono v.property⟩ :=
+    Subtype.ext (coe_toSimpleGraphHomOfLE_apply hGH v)
+  simpa only [hf] using h.map (toSimpleGraphHomOfLE hGH) (fun _ _ he ↦
+    Subtype.ext (by
+      simpa only [coe_toSimpleGraphHomOfLE_apply] using congrArg Subtype.val he))
 
 /-- Global vertex connectivity is monotone under graph inclusion with the same actual vertices.
 Allowing additional isolated vertices would make this statement false. -/

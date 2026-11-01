@@ -48,32 +48,26 @@ theorem banana_deleteEdges (u w : α) (F D : Set β) :
     (banana u w F).deleteEdges D = banana u w (F \ D) :=
   Graph.ext (by simp) fun e x y ↦ by simp [and_assoc, and_comm (a := e ∉ D)]
 
-/-- Vertex deletion is monotone in the original graph. -/
-@[gcongr]
-theorem deleteVerts_mono_left {G H : Graph α β} (hGH : G ≤ H) (X : Set α) :
-    G.deleteVerts X ≤ H.deleteVerts X where
-  vertexSet_mono := by
-    simpa only [vertexSet_deleteVerts] using sdiff_subset_sdiff_left hGH.vertexSet_mono
-  isLink_mono e x y h := by
-    rw [deleteVerts_isLink] at h ⊢
-    exact ⟨h.1.mono hGH, h.2⟩
-
 /-- Simplifying after vertex deletion is the same as inducing the simplification on the
 remaining actual vertices. -/
 def toSimpleGraphDeleteVertsIso (G : Graph α β) (X : Set α) :
-    (G.deleteVerts X).toSimpleGraph ≃g G.toSimpleGraph.induce {v : V(G) | (v : α) ∉ X} where
-  toEquiv := (Equiv.subtypeEquivRight fun _ ↦ by
-    simp only [vertexSet_deleteVerts, mem_sdiff, mem_ofPred_eq]).trans
-      (Equiv.Set.sep V(G) (· ∉ X))
-  map_rel_iff' := by
-    intro u v
-    simp only [SimpleGraph.induce_adj, toSimpleGraph_adj, Graph.Adj, deleteVerts_isLink]
-    have hu := u.property
-    have hv := v.property
-    simp only [vertexSet_deleteVerts, mem_sdiff] at hu hv
-    simp [Equiv.Set.sep, Equiv.subtypeSubtypeEquivSubtypeInter, hu.2, hv.2,
-      Subtype.ext_iff]
+    (G.deleteVerts X).toSimpleGraph ≃g G.toSimpleGraph.induce {v : V(G) | (v : α) ∉ X} := by
+  let e : V(G.deleteVerts X) ≃ {v : V(G) // (v : α) ∉ X} :=
+    (Equiv.subtypeEquivRight fun _ ↦ by
+      simp only [vertexSet_deleteVerts, mem_sdiff, mem_ofPred_eq]).trans
+        (Equiv.Set.sep V(G) (· ∉ X))
+  -- Both factors retain the underlying point: subtypeEquivRight changes only its proof,
+  -- and Set.sep rearranges the two membership proofs into nested subtypes.
+  have he (v : V(G.deleteVerts X)) : ((e v).val : α) = v := rfl
+  refine { toEquiv := e, map_rel_iff' := ?_ }
+  intro u v
+  have hu := u.property
+  have hv := v.property
+  simp only [vertexSet_deleteVerts, mem_sdiff] at hu hv
+  simp [toSimpleGraph_adj, Graph.Adj, deleteVerts_isLink, Subtype.ext_iff, he, hu.2, hv.2]
 
+-- The forward and inverse coercions retain the original point through Equiv.trans,
+-- subtypeEquivRight, and Set.sep; only the arrangement of membership proofs changes.
 @[simp]
 theorem coe_toSimpleGraphDeleteVertsIso_apply (G : Graph α β) (X : Set α)
     (v : V(G.deleteVerts X)) :

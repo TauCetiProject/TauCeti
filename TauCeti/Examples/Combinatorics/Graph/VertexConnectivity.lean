@@ -43,7 +43,9 @@ example (F : Set ℕ) (hF : F.Nonempty) :
   have h1 : G.IsVertexConnected 1 := isVertexConnected_one.mpr
     ⟨componentCount_eq_one_iff.mp (componentCount_banana hF), hnt⟩
   have hcard : ENat.card V(G) = 2 := by simp [G]
-  have hu : G.vertexConnectivity + 1 ≤ (1 : ℕ∞) + 1 := by
-    simpa only [hcard, one_add_one_eq_two] using G.toSimpleGraph.vertexConnectivity_add_one_le_card
-  exact le_antisymm ((ENat.add_le_add_iff_right ENat.one_ne_top).mp hu)
+  have hu : G.vertexConnectivity ≤ 1 := by
+    have hu := G.toSimpleGraph.vertexConnectivity_le_card_sub_one
+    norm_num [hcard] at hu
+    exact hu
+  exact le_antisymm hu
     ((isVertexConnected_iff_le_vertexConnectivity 1).mp h1)

@@ -166,25 +166,6 @@ theorem IsVertexReachable.reachable (hk : k ≠ 0) (h : G.IsVertexReachable k u 
 theorem Adj.isVertexReachable (h : G.Adj u v) : G.IsVertexReachable k u v :=
   isVertexReachable_iff_exists_walk.2 fun _ _ hu hv ↦ ⟨h.toWalk, by simp [hu, hv]⟩
 
-namespace Iso
-
-/-- Vertex reachability is invariant under graph isomorphism. -/
-theorem isVertexReachable_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H) (u v : V) :
-    H.IsVertexReachable k (e u) (e v) ↔ G.IsVertexReachable k u v := by
-  rw [isVertexReachable_iff_exists_walk, isVertexReachable_iff_exists_walk]
-  constructor
-  · intro h s hs hu hv
-    obtain ⟨p, hp⟩ := h (s := e.symm ⁻¹' s) (by
-      rwa [Set.encard_preimage_of_bijective e.symm.bijective]) (by simpa) (by simpa)
-    let q : G.Walk u v := (p.map e.symm.toHom).copy (by simp) (by simp)
-    exact ⟨q, by simpa [q] using hp⟩
-  · intro h s hs hu hv
-    obtain ⟨p, hp⟩ := h (s := e ⁻¹' s) (by
-      rwa [Set.encard_preimage_of_bijective e.bijective]) (by simpa) (by simpa)
-    exact ⟨p.map e.toHom, by simpa using hp⟩
-
-end Iso
-
 /-- **Weak duality for vertex reachability.** If there are `n` walks from `u` to `v` pairwise
 sharing no vertex other than `u` and `v`, then `u` and `v` are `n`-vertex-reachable. No finiteness
 assumption on `V` is needed. -/
@@ -213,6 +194,16 @@ theorem IsVertexReachable.map {W : Type*} {H : SimpleGraph W}
   simp only [Walk.support_map, List.mem_map]
   rintro _ ⟨x, hx, rfl⟩
   simpa using hp x hx
+
+namespace Iso
+
+/-- Vertex reachability is invariant under graph isomorphism. -/
+theorem isVertexReachable_iff {W : Type*} {H : SimpleGraph W} (e : G ≃g H) (u v : V) :
+    H.IsVertexReachable k (e u) (e v) ↔ G.IsVertexReachable k u v :=
+  ⟨fun h ↦ by simpa using h.map e.symm.toHom e.symm.injective,
+    fun h ↦ h.map e.toHom e.injective⟩
+
+end Iso
 
 /-! ### Vertex connectivity -/
 
@@ -350,15 +341,20 @@ theorem vertexConnectivity_add_one_le_card [Nonempty V] :
   · rw [ENat.card_eq_top_of_infinite]
     exact le_top
 
+/-- On a nonempty vertex type, vertex connectivity is at most the number of vertices minus
+one. -/
+theorem vertexConnectivity_le_card_sub_one [Nonempty V] :
+    G.vertexConnectivity ≤ ENat.card V - 1 :=
+  ((ENat.addLECancellable_of_ne_top ENat.one_ne_top).le_tsub_iff_right
+    ((ENat.one_le_card_iff_nonempty V).2 ‹_›)).mpr vertexConnectivity_add_one_le_card
+
 /-- A graph on at most one vertex has vertex connectivity zero. -/
 @[simp]
 theorem vertexConnectivity_of_subsingleton [Subsingleton V] : G.vertexConnectivity = 0 := by
   cases isEmpty_or_nonempty V
   · exact vertexConnectivity_of_isEmpty
-  · have h : G.vertexConnectivity + 1 ≤ (0 : ℕ∞) + 1 := by
-      rw [zero_add]
-      exact vertexConnectivity_add_one_le_card.trans ENat.card_le_one
-    exact le_antisymm ((ENat.add_le_add_iff_right ENat.one_ne_top).mp h) bot_le
+  · exact le_antisymm (vertexConnectivity_le_card_sub_one.trans
+      (tsub_eq_zero_of_le ENat.card_le_one).le) bot_le
 
 /-- The complete graph on `V` has vertex connectivity `ENat.card V - 1`. -/
 @[simp]
