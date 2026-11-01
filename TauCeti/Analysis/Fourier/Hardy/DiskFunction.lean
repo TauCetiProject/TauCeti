@@ -94,6 +94,12 @@ theorem diskFunction_hardyBasis (n : ℕ) (w : ℂ) : (hardyBasis n).diskFunctio
       zero_mul]]
   rw [← hardyBasis_repr, HilbertBasis.repr_self, lp.single_apply, Pi.single_eq_same, one_mul]
 
+/-- The disk function of the zero Hardy function vanishes identically. -/
+@[simp]
+theorem diskFunction_zero (w : ℂ) : (0 : HardySpace).diskFunction w = 0 := by
+  simp only [diskFunction, ← hardyBasis_repr, map_zero, lp.coeFn_zero, Pi.zero_apply, zero_mul,
+    tsum_zero]
+
 /-- On the open unit disk the disk function depends additively on the Hardy function. -/
 theorem diskFunction_add (y : HardySpace) (hw : ‖w‖ < 1) :
     (x + y).diskFunction w = x.diskFunction w + y.diskFunction w := by
@@ -353,8 +359,8 @@ theorem eqOn_diskFunction_zero_iff : Set.EqOn x.diskFunction 0 (Metric.ball 0 1)
     have hsq : ‖x‖ ^ 2 = 0 :=
       tendsto_nhds_unique hlim (tendsto_const_nhds.congr' (hmean.mono fun _ h ↦ h.symm))
     simpa using hsq
-  · rintro rfl w hw
-    simpa using (0 : HardySpace).diskFunction_smul 0 (mem_ball_zero_iff.mp hw)
+  · rintro rfl w -
+    simp
 
 end Radial
 
