@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Topology.Compactness.Normed
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 
 /-!
 # Compact-parameter integration
@@ -41,6 +43,11 @@ When `E` and `P` are normed spaces and `F` is `C^n` on an open set `W ⊆ E × P
 derivatives of `F` in `x` (`TauCeti.hasFDerivAt_integral_smul_of_contDiffOn`).  The weight need
 not be continuous; this is the regularity of kernel integrals such as the Poisson integral of
 integrable boundary data on a sphere.
+
+A first application is the first variation of an `L^q` integral at a positive continuous function
+on a compact space: `t ↦ ∫ |u + t v| ^ q dμ` has derivative `q ∫ u ^ (q - 1) v dμ` at `0`
+(`TauCeti.hasDerivAt_integral_abs_add_mul_rpow`), the derivative of the denominator of a Sobolev
+quotient.
 
 The parameter may also range over a convex set `s` with unique derivatives that need not be open:
 if `F` is `C^n` on a set `W ⊇ s × ι(α)` with unique derivatives, the integral is `C^n` on `s`
@@ -505,6 +512,45 @@ theorem _root_.Convex.contDiffOn_integral_smul_of_contDiffOn {G : Type v} [Norme
     ContinuousLinearEquiv.apply_symm_apply]
 
 end Convex
+
+section Rpow
+
+/-- **First variation of an `L^q` integral at a positive function.** On a compact space with a
+finite measure, let `u` be a positive continuous function and `v` a continuous function. Then
+`t ↦ ∫ |u + t v| ^ q dμ` is differentiable at `0`, with derivative `q ∫ u ^ (q - 1) v dμ`, for
+every real exponent `q`. -/
+theorem hasDerivAt_integral_abs_add_mul_rpow [IsFiniteMeasure μ] {u v : α → ℝ}
+    (hu : Continuous u) (hv : Continuous v) (hu_pos : ∀ y, 0 < u y) (q : ℝ) :
+    HasDerivAt (fun t ↦ ∫ y, |u y + t * v y| ^ q ∂μ) (q * ∫ y, u y ^ (q - 1) * v y ∂μ) 0 := by
+  -- Near `t = 0` the base is positive, where `|·| ^ q` is smooth.
+  set W : Set (ℝ × (ℝ × ℝ)) := {p | 0 < p.2.1 + p.1 * p.2.2}
+  have hW : IsOpen W := isOpen_lt continuous_const (by fun_prop)
+  have hF : ContDiffOn ℝ 1 (fun p : ℝ × (ℝ × ℝ) ↦ |p.2.1 + p.1 * p.2.2| ^ q) W :=
+    (ContDiffOn.rpow_const_of_ne (by fun_prop) fun p hp ↦ ne_of_gt hp).congr
+      fun p hp ↦ by rw [abs_of_pos hp]
+  have hd (y : α) : HasDerivAt (fun t ↦ |u y + t * v y| ^ q) (q * u y ^ (q - 1) * v y) 0 := by
+    have h := (((hasDerivAt_id (0 : ℝ)).mul_const (v y)).const_add (u y)).rpow_const
+      (p := q) (Or.inl (by simpa using (hu_pos y).ne'))
+    have h' : HasDerivAt (fun t ↦ (u y + t * v y) ^ q) (q * u y ^ (q - 1) * v y) 0 := by
+      simpa [mul_comm, mul_left_comm, mul_assoc] using h
+    refine h'.congr_of_eventuallyEq ?_
+    filter_upwards [(Continuous.tendsto (f := fun t : ℝ ↦ u y + t * v y) (by fun_prop) 0).eventually
+      (lt_mem_nhds (by simpa using hu_pos y))] with t ht
+    rw [abs_of_pos ht]
+  have h := (hasFDerivAt_integral_smul_of_contDiffOn (μ := μ) (g := fun _ ↦ 1)
+    (ι := fun y ↦ (u y, v y)) (integrable_const 1) (hu.prodMk hv) hW hF (x₀ := (0 : ℝ))
+    fun y ↦ by simpa [W] using hu_pos y).hasDerivAt
+  have hfd (y : α) : fderiv ℝ (fun t ↦ |u y + t * v y| ^ q) 0 =
+      (q * u y ^ (q - 1) * v y) • (1 : ℝ →L[ℝ] ℝ) := by
+    rw [(hd y).hasFDerivAt.fderiv]
+    ext
+    simp
+  simp only [one_smul, hfd] at h
+  rw [integral_smul_const] at h
+  convert h using 1
+  simp [← integral_const_mul, mul_assoc]
+
+end Rpow
 
 end CompactParameter
 
