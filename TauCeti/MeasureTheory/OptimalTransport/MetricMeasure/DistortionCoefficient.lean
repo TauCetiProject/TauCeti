@@ -272,7 +272,6 @@ theorem distortionSigma_eq_top_iff (hN : 0 < N) :
 distance `π √(N / K)`. -/
 theorem distortionSigma_eq_top_of_lt (hK : 0 < K) (hN : 0 < N) (h : π * √(N / K) < θ) :
     distortionSigma K N t θ = ⊤ := by
-  have hθ : 0 < θ := (by positivity : 0 ≤ π * √(N / K)).trans_lt h
   refine distortionSigma_eq_top_of_le hN ?_
   have hsq := pow_lt_pow_left₀ h (by positivity) two_ne_zero
   rw [mul_pow, Real.sq_sqrt (div_nonneg hN.le hK.le), mul_div_assoc', div_lt_iff₀ hK] at hsq

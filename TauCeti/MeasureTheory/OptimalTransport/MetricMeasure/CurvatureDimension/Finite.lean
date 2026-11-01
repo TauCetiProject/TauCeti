@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.Basic
-public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.Basic
+public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.CurvatureDimension.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.DistortionCoefficient
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.RenyiEntropy
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Space
@@ -27,21 +26,22 @@ curvature bound `K : ℝ` and a dimension bound `N`, Sturm's *curvature-dimensio
 `T_β^{(t)}(q | m) = -∫ [β^{(1-t)}(d(x₀, x₁)) ρ₀(x₀)^{-1/N} + β^{(t)}(d(x₀, x₁)) ρ₁(x₁)^{-1/N}] dq`
 
 (`TauCeti.distortedRenyiEntropy`). Then `M` satisfies `CD(K, N)` when `m` has full support and
-any two laws `μ₀`, `μ₁` of finite second moment, absolutely continuous with respect to `m`, admit
-an optimal coupling `q` for the quadratic cost and a `W₂`-geodesic `(μ_t)` of laws absolutely
-continuous with respect to `m` such that
+any two laws `μ₀`, `μ₁` of bounded support, absolutely continuous with respect to `m` (Sturm's space
+`P_∞(X, d, m)`), admit an optimal coupling `q` for the quadratic cost and a `W₂`-geodesic `(μ_t)`
+in `P_∞(X, d, m)` such that
 
 `S_{N'}(μ_t | m) ≤ T_{τ_{K,N'}}^{(t)}(q | m)` for all `t ∈ [0, 1]` and all `N' ≥ N`,
 
 where `τ_{K,N'}` is the distortion coefficient `TauCeti.distortionTau`. The *reduced*
 curvature-dimension condition `CD*(K, N)` of Bacher and Sturm is the same inequality with the
-coefficient `σ_{K,N'}` (`TauCeti.distortionSigma`) in place of `τ_{K,N'}`. By theorems of Sturm and
-of Bacher–Sturm, not formalized here, on an `n`-dimensional weighted Riemannian manifold both
-conditions are equivalent to the lower bound `Ric + Hess V - dV ⊗ dV / (N - n) ≥ K` on the
-Bakry–Émery Ricci tensor; on general metric-measure spaces they are two distinct predicates. Full
-support follows the convention of `TauCeti.MetricMeasureSpace.CurvatureDimensionInfinity`; a
-reference measure without full support is handled by passing to
-`TauCeti.MetricMeasureSpace.supportSpace`.
+coefficient `σ_{K,N'}` (`TauCeti.distortionSigma`) in place of `τ_{K,N'}`. Both are instances of
+one condition for a general family of coefficients, stated once with its monotonicity and diameter
+bound. By theorems of Sturm and of Bacher–Sturm, not formalized here, on an `n`-dimensional
+weighted Riemannian manifold both conditions are equivalent to the lower bound
+`Ric + Hess V - dV ⊗ dV / (N - n) ≥ K` on the Bakry–Émery Ricci tensor; on general
+metric-measure spaces they are two distinct predicates. Full support follows the convention of
+`TauCeti.MetricMeasureSpace.CurvatureDimensionInfinity`; a reference measure without full support
+is handled by passing to `TauCeti.MetricMeasureSpace.supportSpace`.
 
 The coefficients `τ_{K,N}^{(s)}(θ)` and `σ_{K,N}^{(s)}(θ)` are infinite at every time `s` once
 `θ` exceeds `π √((N - 1) / K)`, respectively `π √(N / K)`, for `K > 0`. With this convention the
@@ -52,6 +52,8 @@ farther apart, the uniform laws on two small balls about them would have
 ## Main definitions
 
 * `TauCeti.distortedRenyiEntropy β N m q t`: the distorted Rényi entropy `T_β^{(t)}(q | m)`.
+* `TauCeti.MetricMeasureSpace.DistortedCurvatureDimension M β N`: the curvature-dimension
+  condition for a family `β` of distortion coefficients.
 * `TauCeti.MetricMeasureSpace.CurvatureDimension M K N`: the condition `CD(K, N)`.
 * `TauCeti.MetricMeasureSpace.ReducedCurvatureDimension M K N`: the condition `CD*(K, N)`.
 
@@ -60,6 +62,10 @@ farther apart, the uniform laws on two small balls about them would have
 * `TauCeti.distortedRenyiEntropy_zero`: at time `0`, below the critical distance, the distorted
   Rényi entropy of `q` is the Rényi entropy of its first marginal, so both conditions hold with
   equality at the initial endpoint.
+* `TauCeti.MetricMeasureSpace.DistortedCurvatureDimension.mono`,
+  `TauCeti.MetricMeasureSpace.DistortedCurvatureDimension.dist_le`: the general condition weakens
+  for smaller coefficients and larger `N`, and bounds distances by any `D` beyond which the
+  coefficients at time `1` are infinite.
 * `TauCeti.MetricMeasureSpace.CurvatureDimension.mono`,
   `TauCeti.MetricMeasureSpace.ReducedCurvatureDimension.mono`: the conditions weaken as `K`
   decreases and `N` increases.
@@ -147,140 +153,128 @@ end DistortedRenyiEntropy
 namespace MetricMeasureSpace
 
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [CompleteSpace X]
-  [SecondCountableTopology X] [BorelSpace X] {M : MetricMeasureSpace X} {K K' N N' : ℝ}
+  [SecondCountableTopology X] [BorelSpace X] {M : MetricMeasureSpace X}
+  {β β' : ℝ → ℝ → ℝ → ℝ≥0∞} {K K' N N' D : ℝ}
 
-/-- The **curvature-dimension condition** `CD(K, N)` of Sturm for the metric-measure space `M`:
-the reference measure `m` has full support, and any two laws `μ₀`, `μ₁` of finite second moment,
-absolutely continuous with respect to `m`, admit an optimal coupling `q` for the quadratic cost and
-a `W₂`-geodesic `(μ_t)` of laws absolutely continuous with respect to `m` along which
-`S_{N'}(μ_t | m) ≤ T_{τ_{K,N'}}^{(t)}(q | m)` for every `t ∈ [0, 1]` and every `N' ≥ N`. Here
-`S_{N'}` is the Rényi entropy and `T` the distorted Rényi entropy
-(`TauCeti.distortedRenyiEntropy`) for the coefficient `τ_{K,N'}` (`TauCeti.distortionTau`).
+/-- The **curvature-dimension condition for a family of distortion coefficients** `β`, where
+`β N' s θ = β_{N'}^{(s)}(θ)`: the reference measure `m` has full support, and any two laws `μ₀`,
+`μ₁` of bounded support, absolutely continuous with respect to `m`, admit an optimal coupling `q`
+for the quadratic cost and a `W₂`-geodesic `(μ_t)` of laws of bounded support, absolutely
+continuous with respect to `m`, along which `S_{N'}(μ_t | m) ≤ T_{β_{N'}}^{(t)}(q | m)` for every
+`t ∈ [0, 1]` and every `N' ≥ N`. Here `S_{N'}` is the Rényi entropy and `T` the distorted Rényi
+entropy (`TauCeti.distortedRenyiEntropy`). The laws range over Sturm's space `P_∞(X, d, m)`.
 
-The condition is meant for `N ≥ 1`, where the coefficients carry their geometric meaning. -/
-structure CurvatureDimension (M : MetricMeasureSpace X) (K N : ℝ) : Prop where
+With `β = τ_K` this is `CD(K, N)` (`TauCeti.MetricMeasureSpace.CurvatureDimension`), with
+`β = σ_K` it is `CD*(K, N)` (`TauCeti.MetricMeasureSpace.ReducedCurvatureDimension`). -/
+structure DistortedCurvatureDimension (M : MetricMeasureSpace X) (β : ℝ → ℝ → ℝ → ℝ≥0∞)
+    (N : ℝ) : Prop where
   /-- The reference measure has full support. -/
   support_eq_univ : M.support = univ
-  /-- Any two absolutely continuous laws of finite second moment are joined by an optimal
-  coupling and a `W₂`-geodesic of absolutely continuous laws satisfying the distorted Rényi
+  /-- Any two absolutely continuous laws of bounded support are joined by an optimal coupling and
+  a `W₂`-geodesic of absolutely continuous laws of bounded support satisfying the distorted Rényi
   inequalities for all dimensions `N' ≥ N`. -/
   exists_isOptimalCoupling_isGeodesicSegment : ∀ ⦃μ₀ μ₁ : WassersteinSpace 2 X⦄,
+    Bornology.IsBounded ((μ₀ : ProbabilityMeasure X) : Measure X).support →
     ((μ₀ : ProbabilityMeasure X) : Measure X) ≪ M.reference →
+    Bornology.IsBounded ((μ₁ : ProbabilityMeasure X) : Measure X).support →
     ((μ₁ : ProbabilityMeasure X) : Measure X) ≪ M.reference →
     ∃ q : Measure (X × X), IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ ENNReal.toReal 2) q
         ((μ₀ : ProbabilityMeasure X) : Measure X) ((μ₁ : ProbabilityMeasure X) : Measure X) ∧
       ∃ γ : ℝ → WassersteinSpace 2 X, IsGeodesicSegment γ μ₀ μ₁ ∧
-        ∀ t ∈ Icc (0 : ℝ) 1, ((γ t : ProbabilityMeasure X) : Measure X) ≪ M.reference ∧
+        ∀ t ∈ Icc (0 : ℝ) 1,
+          Bornology.IsBounded ((γ t : ProbabilityMeasure X) : Measure X).support ∧
+          ((γ t : ProbabilityMeasure X) : Measure X) ≪ M.reference ∧
           ∀ N' ≥ N, renyiEntropy N' M.reference ((γ t : ProbabilityMeasure X) : Measure X) ≤
-            distortedRenyiEntropy (distortionTau K N') N' M.reference q t
+            distortedRenyiEntropy (β N') N' M.reference q t
+
+/-- The **curvature-dimension condition** `CD(K, N)` of Sturm for the metric-measure space `M`:
+the reference measure `m` has full support, and any two laws `μ₀`, `μ₁` of bounded support,
+absolutely continuous with respect to `m`, admit an optimal coupling `q` for the quadratic cost and
+a `W₂`-geodesic `(μ_t)` of such laws along which `S_{N'}(μ_t | m) ≤ T_{τ_{K,N'}}^{(t)}(q | m)` for
+every `t ∈ [0, 1]` and every `N' ≥ N`. It is
+`TauCeti.MetricMeasureSpace.DistortedCurvatureDimension` for the coefficient `τ_{K,N'}`
+(`TauCeti.distortionTau`).
+
+The condition is meant for `N ≥ 1`, where the coefficients carry their geometric meaning. -/
+def CurvatureDimension (M : MetricMeasureSpace X) (K N : ℝ) : Prop :=
+  M.DistortedCurvatureDimension (distortionTau K) N
 
 /-- The **reduced curvature-dimension condition** `CD*(K, N)` of Bacher and Sturm: the condition
 `CD(K, N)` (`TauCeti.MetricMeasureSpace.CurvatureDimension`) with the distortion coefficient
 `σ_{K,N'}` (`TauCeti.distortionSigma`) in place of `τ_{K,N'}`. That is, `m` has full support, and
-any two laws `μ₀`, `μ₁` of finite second moment, absolutely continuous with respect to `m`, admit
-an optimal coupling `q` for the quadratic cost and a `W₂`-geodesic `(μ_t)` of laws absolutely
-continuous with respect to `m` along which `S_{N'}(μ_t | m) ≤ T_{σ_{K,N'}}^{(t)}(q | m)` for every
-`t ∈ [0, 1]` and every `N' ≥ N`.
+any two laws `μ₀`, `μ₁` of bounded support, absolutely continuous with respect to `m`, admit an
+optimal coupling `q` for the quadratic cost and a `W₂`-geodesic `(μ_t)` of such laws along which
+`S_{N'}(μ_t | m) ≤ T_{σ_{K,N'}}^{(t)}(q | m)` for every `t ∈ [0, 1]` and every `N' ≥ N`.
 
 The condition is meant for `N ≥ 1`, where the coefficients carry their geometric meaning. -/
-structure ReducedCurvatureDimension (M : MetricMeasureSpace X) (K N : ℝ) : Prop where
-  /-- The reference measure has full support. -/
-  support_eq_univ : M.support = univ
-  /-- Any two absolutely continuous laws of finite second moment are joined by an optimal
-  coupling and a `W₂`-geodesic of absolutely continuous laws satisfying the reduced distorted
-  Rényi inequalities for all dimensions `N' ≥ N`. -/
-  exists_isOptimalCoupling_isGeodesicSegment : ∀ ⦃μ₀ μ₁ : WassersteinSpace 2 X⦄,
-    ((μ₀ : ProbabilityMeasure X) : Measure X) ≪ M.reference →
-    ((μ₁ : ProbabilityMeasure X) : Measure X) ≪ M.reference →
-    ∃ q : Measure (X × X), IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ ENNReal.toReal 2) q
-        ((μ₀ : ProbabilityMeasure X) : Measure X) ((μ₁ : ProbabilityMeasure X) : Measure X) ∧
-      ∃ γ : ℝ → WassersteinSpace 2 X, IsGeodesicSegment γ μ₀ μ₁ ∧
-        ∀ t ∈ Icc (0 : ℝ) 1, ((γ t : ProbabilityMeasure X) : Measure X) ≪ M.reference ∧
-          ∀ N' ≥ N, renyiEntropy N' M.reference ((γ t : ProbabilityMeasure X) : Measure X) ≤
-            distortedRenyiEntropy (distortionSigma K N') N' M.reference q t
+def ReducedCurvatureDimension (M : MetricMeasureSpace X) (K N : ℝ) : Prop :=
+  M.DistortedCurvatureDimension (distortionSigma K) N
+
+/-- The condition for the coefficients `β` implies the condition for `N ≤ N'` and any smaller
+coefficients `β' ≤ β` on the times `[0, 1]`. -/
+theorem DistortedCurvatureDimension.mono (h : M.DistortedCurvatureDimension β N) (hN : N ≤ N')
+    (hβ : ∀ N'' ≥ N', ∀ s ∈ Icc (0 : ℝ) 1, ∀ θ, β' N'' s θ ≤ β N'' s θ) :
+    M.DistortedCurvatureDimension β' N' := by
+  refine ⟨h.support_eq_univ, fun μ₀ μ₁ hb₀ h₀ hb₁ h₁ ↦ ?_⟩
+  obtain ⟨q, hq, γ, hγ, hle⟩ := h.exists_isOptimalCoupling_isGeodesicSegment hb₀ h₀ hb₁ h₁
+  refine ⟨q, hq, γ, hγ, fun t ht ↦ ⟨(hle t ht).1, (hle t ht).2.1, fun N'' hN'' ↦ ?_⟩⟩
+  exact ((hle t ht).2.2 N'' (hN.trans hN'')).trans (distortedRenyiEntropy_anti
+    (hβ N'' hN'' _ ⟨sub_nonneg.2 ht.2, sub_le_self _ ht.1⟩) (hβ N'' hN'' t ht))
 
 /-- `CD(K, N)` implies `CD(K', N')` for `K' ≤ K` and `N ≤ N'`. -/
 theorem CurvatureDimension.mono (h : M.CurvatureDimension K N) (hK : K' ≤ K) (hN : N ≤ N') :
-    M.CurvatureDimension K' N' := by
-  refine ⟨h.support_eq_univ, fun μ₀ μ₁ h₀ h₁ ↦ ?_⟩
-  obtain ⟨q, hq, γ, hγ, hle⟩ := h.exists_isOptimalCoupling_isGeodesicSegment h₀ h₁
-  refine ⟨q, hq, γ, hγ, fun t ht ↦ ⟨(hle t ht).1, fun N'' hN'' ↦ ?_⟩⟩
-  refine ((hle t ht).2 N'' (hN.trans hN'')).trans (distortedRenyiEntropy_anti
-    (fun θ ↦ distortionTau_left_monotone (sub_nonneg.2 ht.2) (sub_le_self _ ht.1) hK)
-    (fun θ ↦ distortionTau_left_monotone ht.1 ht.2 hK))
+    M.CurvatureDimension K' N' :=
+  DistortedCurvatureDimension.mono h hN fun _ _ _ hs _ ↦ distortionTau_left_monotone hs.1 hs.2 hK
 
 /-- `CD*(K, N)` implies `CD*(K', N')` for `K' ≤ K` and `0 ≤ N ≤ N'`. -/
 theorem ReducedCurvatureDimension.mono (h : M.ReducedCurvatureDimension K N) (hK : K' ≤ K)
-    (hN : N ≤ N') (hN₀ : 0 ≤ N) : M.ReducedCurvatureDimension K' N' := by
-  refine ⟨h.support_eq_univ, fun μ₀ μ₁ h₀ h₁ ↦ ?_⟩
-  obtain ⟨q, hq, γ, hγ, hle⟩ := h.exists_isOptimalCoupling_isGeodesicSegment h₀ h₁
-  refine ⟨q, hq, γ, hγ, fun t ht ↦ ⟨(hle t ht).1, fun N'' hN'' ↦ ?_⟩⟩
-  have hN''₀ : 0 ≤ N'' := hN₀.trans (hN.trans hN'')
-  refine ((hle t ht).2 N'' (hN.trans hN'')).trans (distortedRenyiEntropy_anti
-    (fun θ ↦ distortionSigma_left_monotone (sub_nonneg.2 ht.2) (sub_le_self _ ht.1) hN''₀ hK)
-    (fun θ ↦ distortionSigma_left_monotone ht.1 ht.2 hN''₀ hK))
+    (hN : N ≤ N') (hN₀ : 0 ≤ N) : M.ReducedCurvatureDimension K' N' :=
+  DistortedCurvatureDimension.mono h hN fun _ hN'' _ hs _ ↦
+    distortionSigma_left_monotone hs.1 hs.2 (hN₀.trans (hN.trans hN'')) hK
 
-/-- The uniform law `m[|B(x, r)]` on a ball of positive radius about a point of the support of a
-metric-measure space, as an element of `P₂(X)`. -/
-private theorem exists_coe_eq_cond_ball {x : X} (hx : x ∈ M.support) {r : ℝ} (hr : 0 < r) :
-    ∃ μ : WassersteinSpace 2 X,
-      ((μ : ProbabilityMeasure X) : Measure X) = M.reference[|ball x r] := by
-  have hpos : M.reference (ball x r) ≠ 0 :=
-    ((M.mem_support_iff x).1 hx _ (ball_mem_nhds x hr)).ne'
-  have hfin : M.reference (ball x r) ≠ ∞ := (M.finite_bounded _ isBounded_ball).ne
-  have hprob : IsProbabilityMeasure M.reference[|ball x r] :=
-    cond_isProbabilityMeasure_of_finite hpos hfin
-  -- The law is carried by the ball, so its distance from `x` is bounded by `r`.
-  have hmom : HasFiniteMoment 2 M.reference[|ball x r] :=
-    hasFiniteMoment_def.2 ⟨x, MemLp.of_enorm_bound (C := ENNReal.ofReal r)
-      measurable_edist_right.aestronglyMeasurable ENNReal.ofReal_ne_top
-      ((ae_cond_mem measurableSet_ball).mono fun y hy ↦ by
-        rw [enorm_eq_self, edist_comm, edist_dist]
-        exact ENNReal.ofReal_le_ofReal (mem_ball.1 hy).le)⟩
-  exact ⟨.mk ⟨_, hprob⟩ hmom,
-    (congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)).trans
-      (ProbabilityMeasure.coe_mk _ _)⟩
-
-/-- **The Bonnet–Myers mechanism.** Let `β^{(1)}(θ) = ∞` for every distance `θ > D`. If the
-inequality `S_N(μ₀ | m) ≤ T_β^{(0)}(q | m)` holds for some coupling `q` of any two absolutely
-continuous laws of finite second moment, then any two points of the support of `m` are at distance
-at most `D`: otherwise the uniform laws on two small balls about them would violate it, since
-`T_β^{(0)}(q | m) = -∞` while their Rényi entropy is finite. -/
-private theorem dist_le_of_renyiEntropy_le_distortedRenyiEntropy {β : ℝ → ℝ → ℝ≥0∞} {D : ℝ}
-    (hN : 0 < N) (hβ : ∀ θ, D < θ → β 1 θ = ⊤)
-    (h : ∀ ⦃μ₀ μ₁ : WassersteinSpace 2 X⦄,
-      ((μ₀ : ProbabilityMeasure X) : Measure X) ≪ M.reference →
-      ((μ₁ : ProbabilityMeasure X) : Measure X) ≪ M.reference →
-      ∃ q : Measure (X × X), IsCoupling q
-          ((μ₀ : ProbabilityMeasure X) : Measure X) ((μ₁ : ProbabilityMeasure X) : Measure X) ∧
-        renyiEntropy N M.reference ((μ₀ : ProbabilityMeasure X) : Measure X) ≤
-          distortedRenyiEntropy β N M.reference q 0)
-    {x y : X} (hx : x ∈ M.support) (hy : y ∈ M.support) : dist x y ≤ D := by
+/-- **The Bonnet–Myers mechanism.** Let `β_N^{(1)}(θ) = ∞` for every distance `θ > D`. Under the
+curvature-dimension condition for the coefficients `β`, any two points are at distance at most `D`:
+otherwise the uniform laws on two small balls about them would violate the inequality at time `0`,
+since `T_{β_N}^{(0)}(q | m) = -∞` for every coupling `q` while their Rényi entropy is finite. -/
+theorem DistortedCurvatureDimension.dist_le (h : M.DistortedCurvatureDimension β N) (hN : 0 < N)
+    (hβ : ∀ θ, D < θ → β N 1 θ = ⊤) (x y : X) : dist x y ≤ D := by
   by_contra! hlt
   set r := (dist x y - D) / 2 with hr_def
   have hr : 0 < r := by rw [hr_def]; linarith
   set m := M.reference
-  obtain ⟨μ₀, hμ₀⟩ := exists_coe_eq_cond_ball hx hr
-  obtain ⟨μ₁, hμ₁⟩ := exists_coe_eq_cond_ball hy hr
+  -- Balls of positive radius have positive, finite measure, and their uniform laws are absolutely
+  -- continuous with bounded support.
+  have hball : ∀ z, m (ball z r) ≠ 0 ∧ m (ball z r) ≠ ∞ := fun z ↦
+    ⟨((M.mem_support_iff z).1 (h.support_eq_univ ▸ mem_univ z) _ (ball_mem_nhds z hr)).ne',
+      (M.finite_bounded _ isBounded_ball).ne⟩
+  have hb : ∀ z, Bornology.IsBounded (m[|ball z r]).support := fun z ↦
+    isBounded_closedBall.subset (Measure.support_subset_of_isClosed isClosed_closedBall
+      (Filter.mem_of_superset (ae_cond_mem measurableSet_ball) ball_subset_closedBall))
+  obtain ⟨hpos, hm⟩ := hball x
+  obtain ⟨μ₀, hμ₀⟩ := exists_coe_eq_cond_ball (p := 2) hpos hm
+  obtain ⟨μ₁, hμ₁⟩ := exists_coe_eq_cond_ball (p := 2) (hball y).1 (hball y).2
   have hac₀ : ((μ₀ : ProbabilityMeasure X) : Measure X) ≪ m := by
     rw [hμ₀]
     exact cond_absolutelyContinuous
   have hac₁ : ((μ₁ : ProbabilityMeasure X) : Measure X) ≪ m := by
     rw [hμ₁]
     exact cond_absolutelyContinuous
-  obtain ⟨q, hq, hle⟩ := h hac₀ hac₁
+  obtain ⟨q, hq, γ, hγ, hle⟩ :=
+    h.exists_isOptimalCoupling_isGeodesicSegment (hμ₀ ▸ hb x) hac₀ (hμ₁ ▸ hb y) hac₁
+  replace hq := hq.toIsCoupling
+  replace hle : renyiEntropy N m ((μ₀ : ProbabilityMeasure X) : Measure X) ≤
+      distortedRenyiEntropy (β N) N m q 0 := by
+    simpa only [hγ.source] using (hle 0 (left_mem_Icc.2 zero_le_one)).2.2 N le_rfl
   have : IsProbabilityMeasure q := hq.isProbabilityMeasure
   -- The entropy of the uniform law on `B(x, r)` is finite.
   have hfin : renyiEntropy N m ((μ₀ : ProbabilityMeasure X) : Measure X) ≠ ⊥ := by
-    have hpos : m (ball x r) ≠ 0 := ((M.mem_support_iff x).1 hx _ (ball_mem_nhds x hr)).ne'
-    have hm : m (ball x r) ≠ ∞ := (M.finite_bounded _ isBounded_ball).ne
     rw [hμ₀, ProbabilityTheory.cond, renyiEntropy_smul_restrict hN measurableSet_ball hpos hm, Ne,
       EReal.neg_eq_bot_iff, EReal.coe_ennreal_eq_top_iff]
     exact ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 hN.le) hm
   -- Almost every pair of `q` lies in `B(x, r) × B(y, r)`, hence beyond the distance `D`, and has
   -- a finite first density; there the integrand is infinite.
-  have hae : ∀ᵐ z ∂q, β (1 - 0) (dist z.1 z.2) * q.fst.rnDeriv m z.1 ^ (-N⁻¹) +
-      β 0 (dist z.1 z.2) * q.snd.rnDeriv m z.2 ^ (-N⁻¹) = ⊤ := by
+  have hae : ∀ᵐ z ∂q, β N (1 - 0) (dist z.1 z.2) * q.fst.rnDeriv m z.1 ^ (-N⁻¹) +
+      β N 0 (dist z.1 z.2) * q.snd.rnDeriv m z.2 ^ (-N⁻¹) = ⊤ := by
     have hρ : ∀ᵐ x' ∂((μ₀ : ProbabilityMeasure X) : Measure X),
         ((μ₀ : ProbabilityMeasure X) : Measure X).rnDeriv m x' < ∞ :=
       hac₀.ae_le (Measure.rnDeriv_lt_top _ _)
@@ -303,64 +297,42 @@ private theorem dist_le_of_renyiEntropy_le_distortedRenyiEntropy {β : ℝ → �
       · linarith [inv_pos.2 hN]
       · exact hzρ.ne h
     rw [sub_zero, hβ _ hD, ENNReal.top_mul hne, top_add]
-  have hbot : distortedRenyiEntropy β N m q 0 = ⊥ := by
+  have hbot : distortedRenyiEntropy (β N) N m q 0 = ⊥ := by
     rw [distortedRenyiEntropy_def, lintegral_congr_ae hae, lintegral_const,
       ENNReal.top_mul (by simp), EReal.coe_ennreal_top, EReal.neg_top]
   exact hfin (le_bot_iff.1 (hbot ▸ hle))
 
-/-- The hypothesis of `dist_le_of_renyiEntropy_le_distortedRenyiEntropy`, extracted at time `0` and
-dimension `N` from the defining inequalities of either curvature-dimension condition. -/
-private theorem exists_isCoupling_renyiEntropy_le {β : ℝ → ℝ → ℝ → ℝ≥0∞}
-    (h : ∀ ⦃μ₀ μ₁ : WassersteinSpace 2 X⦄,
-      ((μ₀ : ProbabilityMeasure X) : Measure X) ≪ M.reference →
-      ((μ₁ : ProbabilityMeasure X) : Measure X) ≪ M.reference →
-      ∃ q : Measure (X × X), IsOptimalCoupling (fun z : X × X ↦ edist z.1 z.2 ^ ENNReal.toReal 2) q
-          ((μ₀ : ProbabilityMeasure X) : Measure X) ((μ₁ : ProbabilityMeasure X) : Measure X) ∧
-        ∃ γ : ℝ → WassersteinSpace 2 X, IsGeodesicSegment γ μ₀ μ₁ ∧
-          ∀ t ∈ Icc (0 : ℝ) 1, ((γ t : ProbabilityMeasure X) : Measure X) ≪ M.reference ∧
-            ∀ N' ≥ N, renyiEntropy N' M.reference ((γ t : ProbabilityMeasure X) : Measure X) ≤
-              distortedRenyiEntropy (β N') N' M.reference q t)
-    ⦃μ₀ μ₁ : WassersteinSpace 2 X⦄ (h₀ : ((μ₀ : ProbabilityMeasure X) : Measure X) ≪ M.reference)
-    (h₁ : ((μ₁ : ProbabilityMeasure X) : Measure X) ≪ M.reference) :
-    ∃ q : Measure (X × X), IsCoupling q
-        ((μ₀ : ProbabilityMeasure X) : Measure X) ((μ₁ : ProbabilityMeasure X) : Measure X) ∧
-      renyiEntropy N M.reference ((μ₀ : ProbabilityMeasure X) : Measure X) ≤
-        distortedRenyiEntropy (β N) N M.reference q 0 := by
-  obtain ⟨q, hq, γ, hγ, hle⟩ := h h₀ h₁
-  refine ⟨q, hq.toIsCoupling, ?_⟩
-  simpa only [hγ.source] using (hle 0 (left_mem_Icc.2 zero_le_one)).2 N le_rfl
+/-- **The Bonnet–Myers diameter bound** for the coefficients `β`: if `β_N^{(1)}(θ) = ∞` for every
+distance `θ > D ≥ 0`, the space has diameter at most `D`. -/
+theorem DistortedCurvatureDimension.diam_univ_le (h : M.DistortedCurvatureDimension β N)
+    (hN : 0 < N) (hD : 0 ≤ D) (hβ : ∀ θ, D < θ → β N 1 θ = ⊤) : diam (univ : Set X) ≤ D :=
+  diam_le_of_forall_dist_le hD fun x _ y _ ↦ h.dist_le hN hβ x y
 
 /-- **The Bonnet–Myers diameter bound under `CD(K, N)`.** If `M` satisfies `CD(K, N)` with `K > 0`
 and `N > 0`, any two points are at distance at most `π √((N - 1) / K)`. -/
 theorem CurvatureDimension.dist_le (h : M.CurvatureDimension K N) (hK : 0 < K) (hN : 0 < N)
     (x y : X) : dist x y ≤ π * √((N - 1) / K) :=
-  dist_le_of_renyiEntropy_le_distortedRenyiEntropy hN
-    (fun _ hθ ↦ distortionTau_eq_top_of_lt hK hθ)
-    (exists_isCoupling_renyiEntropy_le (β := fun N' ↦ distortionTau K N')
-      h.exists_isOptimalCoupling_isGeodesicSegment)
-    (h.support_eq_univ ▸ mem_univ x) (h.support_eq_univ ▸ mem_univ y)
+  DistortedCurvatureDimension.dist_le h hN (fun _ hθ ↦ distortionTau_eq_top_of_lt hK hθ) x y
 
 /-- **The Bonnet–Myers diameter bound under `CD(K, N)`**, for `K > 0` and `N > 0`: the space has
 diameter at most `π √((N - 1) / K)`. -/
 theorem CurvatureDimension.diam_univ_le (h : M.CurvatureDimension K N) (hK : 0 < K)
     (hN : 0 < N) : diam (univ : Set X) ≤ π * √((N - 1) / K) :=
-  diam_le_of_forall_dist_le (by positivity) fun x _ y _ ↦ h.dist_le hK hN x y
+  DistortedCurvatureDimension.diam_univ_le h hN (by positivity)
+    fun _ hθ ↦ distortionTau_eq_top_of_lt hK hθ
 
 /-- **The diameter bound under `CD*(K, N)`.** If `M` satisfies `CD*(K, N)` with `K > 0` and
 `N > 0`, any two points are at distance at most `π √(N / K)`. -/
 theorem ReducedCurvatureDimension.dist_le (h : M.ReducedCurvatureDimension K N) (hK : 0 < K)
     (hN : 0 < N) (x y : X) : dist x y ≤ π * √(N / K) :=
-  dist_le_of_renyiEntropy_le_distortedRenyiEntropy hN
-    (fun _ hθ ↦ distortionSigma_eq_top_of_lt hK hN hθ)
-    (exists_isCoupling_renyiEntropy_le (β := fun N' ↦ distortionSigma K N')
-      h.exists_isOptimalCoupling_isGeodesicSegment)
-    (h.support_eq_univ ▸ mem_univ x) (h.support_eq_univ ▸ mem_univ y)
+  DistortedCurvatureDimension.dist_le h hN (fun _ hθ ↦ distortionSigma_eq_top_of_lt hK hN hθ) x y
 
 /-- **The diameter bound under `CD*(K, N)`**, for `K > 0` and `N > 0`: the space has diameter at
 most `π √(N / K)`. -/
 theorem ReducedCurvatureDimension.diam_univ_le (h : M.ReducedCurvatureDimension K N)
     (hK : 0 < K) (hN : 0 < N) : diam (univ : Set X) ≤ π * √(N / K) :=
-  diam_le_of_forall_dist_le (by positivity) fun x _ y _ ↦ h.dist_le hK hN x y
+  DistortedCurvatureDimension.diam_univ_le h hN (by positivity)
+    fun _ hθ ↦ distortionSigma_eq_top_of_lt hK hN hθ
 
 end MetricMeasureSpace
 

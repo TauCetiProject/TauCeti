@@ -59,6 +59,8 @@ The condition constrains the geometry of `X`:
 
 ## Main statements
 
+* `TauCeti.exists_coe_eq_cond_ball`: the normalised restriction `m[|B(x, r)]` of `m` to a ball of
+  positive, finite measure is an element of `TauCeti.WassersteinSpace p X`.
 * `TauCeti.MetricMeasureSpace.CurvatureDimensionInfinity.mono`: `CD(K, ∞)` implies `CD(K', ∞)`
   for `K' ≤ K`.
 * `TauCeti.MetricMeasureSpace.curvatureDimensionInfinity_iff_geodesicallyConvex`: for a reference
@@ -91,6 +93,25 @@ variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
   [SecondCountableTopology X] {m : Measure X}
 
 section FiniteEntropy
+
+omit [SecondCountableTopology X] in
+/-- The normalised restriction `m[|B(x, r)]` of `m` to a ball of positive, finite measure, as an
+element of `P_p(X)`: it is a probability measure carried by the ball, so it has finite `p`-moment.
+-/
+theorem exists_coe_eq_cond_ball {p : ℝ≥0∞} {x : X} {r : ℝ} (h₀ : m (ball x r) ≠ 0)
+    (hfin : m (ball x r) ≠ ∞) :
+    ∃ μ : WassersteinSpace p X, ((μ : ProbabilityMeasure X) : Measure X) = m[|ball x r] := by
+  have hprob : IsProbabilityMeasure m[|ball x r] := cond_isProbabilityMeasure_of_finite h₀ hfin
+  -- The law is carried by the ball, so its distance from `x` is bounded by `r`.
+  have hmom : HasFiniteMoment p m[|ball x r] :=
+    hasFiniteMoment_def.2 ⟨x, MemLp.of_enorm_bound (C := ENNReal.ofReal r)
+      measurable_edist_right.aestronglyMeasurable ENNReal.ofReal_ne_top
+      ((ae_cond_mem measurableSet_ball).mono fun y hy ↦ by
+        rw [enorm_eq_self, edist_comm, edist_dist]
+        exact ENNReal.ofReal_le_ofReal (mem_ball.1 hy).le)⟩
+  exact ⟨.mk ⟨_, hprob⟩ hmom,
+    (congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)).trans
+      (ProbabilityMeasure.coe_mk _ _)⟩
 
 /-- **Dirac masses on the support are limits of laws of finite entropy.** If `m` is locally
 finite and `x` lies in the support of `m`, then for every `r > 0` some law `μ` of finite
@@ -128,13 +149,7 @@ theorem exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le
           rw [wassersteinEDist_dirac_left measurable_edist]
           exact eLpNorm_le_of_ae_enorm_bound (by fun_prop) hbound
       _ = ENNReal.ofReal r := by simp
-  have hmom : HasFiniteMoment p m[|s] :=
-    (hasFiniteMoment_iff_exists_wassersteinEDist_dirac_ne_top measurable_edist _).2
-      ⟨x, ne_top_of_le_ne_top ENNReal.ofReal_ne_top hW⟩
-  have hcoe : ((WassersteinSpace.mk (p := p) ⟨m[|s], hprob⟩ hmom : ProbabilityMeasure X) :
-      Measure X) = m[|s] :=
-    (congrArg ProbabilityMeasure.toMeasure (WassersteinSpace.coe_mk _ _)).trans
-      (ProbabilityMeasure.coe_mk _ _)
+  obtain ⟨μ, hμ⟩ := exists_coe_eq_cond_ball (p := p) hs0 hstop
   -- The entropy is `c log c * m s`, the integral of a constant over `s`.
   have hV : (fun y ↦ ((s.indicator (fun _ ↦ c) y : ℝ≥0) : ℝ) *
       Real.log (s.indicator (fun _ ↦ c) y : ℝ≥0)) =
@@ -145,7 +160,7 @@ theorem exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le
     rw [hdens, boltzmannEntropy_withDensity (measurable_const.indicator hs).aemeasurable, hV,
       potentialEnergy_of_integrable ((integrableOn_const hstop).integrable_indicator hs)]
     exact ⟨_, rfl⟩
-  refine ⟨.mk ⟨m[|s], hprob⟩ hmom, ?_, ?_, by rwa [hcoe]⟩ <;> rw [hcoe, hE]
+  refine ⟨μ, ?_, ?_, by rwa [hμ]⟩ <;> rw [hμ, hE]
   exacts [EReal.coe_ne_top E, EReal.coe_ne_bot E]
 
 end FiniteEntropy
