@@ -6,19 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Belyi.GaloisAction
-public import TauCeti.FieldTheory.FunctionField.Belyi.Polynomial.Basic
-public import TauCeti.FieldTheory.RatFunc.Substitution
+public import TauCeti.FieldTheory.FunctionField.Belyi.Polynomial.Bundled
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 
 /-!
 # The Galois action on polynomial Belyi pairs
 
 A polynomial `q ∈ k[X]` of positive degree whose critical values lie in `{0, 1}` defines an
-algebraic Belyi pair: the rational function field `k(x)` over `k(t)`, with `t = q(x)`
-(`TauCeti.IsAlgebraicBelyiPair.of_criticalValues_subset`). As a map of the projective line its
-only pole is at `∞`. This file bundles that pair as
-`TauCeti.AlgebraicBelyiPair.ofPolynomial q`, and computes the action of field automorphisms on
-the isomorphism classes of such pairs.
+algebraic Belyi pair, the rational function field `k(x)` over `k(t)` with `t = q(x)`, bundled as
+`TauCeti.AlgebraicBelyiPair.ofPolynomial q`. This file computes the action of field automorphisms
+on the isomorphism classes of such pairs.
 
 For a field isomorphism `σ : k ≃+* k'`, conjugating a pair along `σ` keeps the function field
 and the function `t`, and lets `k'` act through `σ⁻¹`. So if `t = q(x)` on a pair `B`, then on
@@ -39,11 +36,6 @@ automorphism moves the class of a polynomial Belyi pair into a question about po
 the form in which Lenstra's proof that the absolute Galois group of `ℚ` acts faithfully on dessins
 compares a polynomial Belyi map with its conjugates.
 
-## Main definitions
-
-* `TauCeti.AlgebraicBelyiPair.ofPolynomial`: the polynomial Belyi pair `x ↦ q(x)`.
-* `TauCeti.AlgebraicBelyiPair.ofPolynomialGen`: its coordinate `x`.
-
 ## Main results
 
 * `TauCeti.AlgebraicBelyiPair.algebraMap_conj_X_eq_aeval_map`: if `t = q(x)` on a pair, then
@@ -51,8 +43,6 @@ compares a polynomial Belyi map with its conjugates.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.conj_mk_eq_mk_iff_of_aeval`: the conjugate of the class of
   a pair presented by `q` is the class of a pair presented by `q'` exactly when `q'` is an affine
   reparametrization of `q^σ`.
-* `TauCeti.AlgebraicBelyiPair.IsoClass.mk_ofPolynomial_eq_mk_ofPolynomial_iff`: two polynomial
-  pairs are isomorphic exactly when their polynomials differ by an affine change of variable.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.conj_mk_ofPolynomial` and
   `TauCeti.AlgebraicBelyiPair.IsoClass.smul_mk_ofPolynomial`: `σ · [ofPolynomial q]` is
   `[ofPolynomial q^σ]`.
@@ -136,61 +126,14 @@ end IsoClass
 
 end Conj
 
-/-! ### The bundled polynomial Belyi pair -/
+/-! ### The Galois action on polynomial pairs -/
 
 section OfPolynomial
 
-variable (q : k[X]) (hq : 0 < q.natDegree)
+variable {q : k[X]} (hq : 0 < q.natDegree)
   (hcrit : ∀ (L : Type u) [Field L] [Algebra k L], q.criticalValues L ⊆ {0, 1})
 
-/-- **The polynomial Belyi pair** of a polynomial `q ∈ k[X]` of positive degree whose critical
-values, in every field extension of `k`, lie in `{0, 1}`: the rational function field `k(x)` over
-`k(t)`, with `t = q(x)`. Its Belyi map is `x ↦ q(x)`, whose only pole is at `∞`. -/
-noncomputable def ofPolynomial : AlgebraicBelyiPair k :=
-  -- `q(x)` is transcendental over `k`, so `t ↦ q(x)` embeds `k(t)` into `k(x)`.
-  have ht : Transcendental k (aeval (RatFunc.X : RatFunc k) q) :=
-    RatFunc.transcendental_X.aeval q hq.ne' <| mem_nonZeroDivisors_of_ne_zero <|
-      leadingCoeff_ne_zero.mpr (ne_zero_of_natDegree_gt hq)
-  letI := ratFuncAlgebraOfTranscendental ht
-  haveI := isScalarTower_ratFuncAlgebraOfTranscendental ht
-  have hX : algebraMap (RatFunc k) (RatFunc k) RatFunc.X = aeval RatFunc.X q :=
-    algebraMap_ratFuncAlgebraOfTranscendental_X _
-  haveI := finiteDimensional_of_aeval_eq RatFunc.adjoin_X hX
-  { carrier := RatFunc k
-    isAlgebraicBelyiPair := .of_criticalValues_subset RatFunc.adjoin_X hX hcrit }
-
-/-- The coordinate `x` of the polynomial Belyi pair `ofPolynomial q`, on which the Belyi map is
-`t = q(x)`. -/
-noncomputable def ofPolynomialGen : ofPolynomial q hq hcrit :=
-  (RatFunc.X : RatFunc k)
-
-/-- The coordinate `x` generates the function field of `ofPolynomial q` over `k`. -/
-theorem adjoin_ofPolynomialGen : k⟮ofPolynomialGen q hq hcrit⟯ = ⊤ :=
-  -- The function field of `ofPolynomial q` is `k(X)`, with its usual `k`-algebra structure.
-  RatFunc.adjoin_X
-
-/-- On the polynomial Belyi pair `ofPolynomial q`, the function `t` is `q(x)`. -/
-@[simp]
-theorem algebraMap_ofPolynomial_X :
-    algebraMap (RatFunc k) (ofPolynomial q hq hcrit) RatFunc.X =
-      aeval (ofPolynomialGen q hq hcrit) q :=
-  -- The `k(t)`-algebra structure of `ofPolynomial q` is the one sending `t` to `q(X)`.
-  algebraMap_ratFuncAlgebraOfTranscendental_X _
-
 namespace IsoClass
-
-variable {q}
-
-/-- **Isomorphic polynomial pairs**: two polynomial Belyi pairs are isomorphic exactly when their
-polynomials differ by an affine change of variable, `q' = q(a X + b)` with `a ≠ 0`. -/
-theorem mk_ofPolynomial_eq_mk_ofPolynomial_iff {q' : k[X]} (hq' : 0 < q'.natDegree)
-    (hcrit' : ∀ (L : Type u) [Field L] [Algebra k L], q'.criticalValues L ⊆ {0, 1}) :
-    mk (ofPolynomial q hq hcrit) = mk (ofPolynomial q' hq' hcrit') ↔
-      ∃ a b : k, a ≠ 0 ∧ q.comp (C a * X + C b) = q' := by
-  rw [mk_eq_mk_iff]
-  exact nonempty_algEquiv_iff_exists_comp_eq (adjoin_ofPolynomialGen q hq hcrit)
-    (adjoin_ofPolynomialGen q' hq' hcrit') (algebraMap_ofPolynomial_X q hq hcrit)
-    (algebraMap_ofPolynomial_X q' hq' hcrit')
 
 /-- **Conjugating a polynomial pair conjugates its polynomial**: the conjugate along `σ` of the
 class of `ofPolynomial q` is the class of `ofPolynomial q^σ`, where `q^σ = q.map σ`. -/
