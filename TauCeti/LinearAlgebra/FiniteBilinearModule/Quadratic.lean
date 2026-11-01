@@ -37,6 +37,8 @@ the polar pairing is therefore `B(x, y)` modulo `ℤ`.
   finite quadratic modules.
 * `TauCeti.FiniteQuadraticModule.Hom.toIsometryOfNondegenerate`: a morphism from a
   nondegenerate source of the same finite cardinality, packaged as an isometry.
+* `TauCeti.FiniteQuadraticModule.two_nsmul_eq_zero_of_quadratic_add_self_eq_zero`: a
+  nondegenerate module whose quadratic form takes values in `½ℤ/ℤ` is killed by `2`.
 * `TauCeti.FiniteQuadraticModule.IsIsotropic`: quadratic isotropy of an additive subgroup.
 * `TauCeti.FiniteQuadraticModule.isIsotropic_prod_iff`: quadratic isotropy of a product subgroup
   in an orthogonal direct sum is quadratic isotropy of each factor subgroup.
@@ -523,6 +525,42 @@ theorem Isometry.prod_apply {A₁ A₂ A₃ A₄ : FiniteQuadraticModule}
     (e₁ : Isometry A₁ A₃) (e₂ : Isometry A₂ A₄) (x : A₁) (y : A₂) :
     (QuadraticMap.IsometryEquiv.prod e₁ e₂ (x, y) : A₃.carrier × A₄.carrier) = (e₁ x, e₂ y) :=
   (rfl)
+
+/-! ## Quadratic forms with values in `½ℤ/ℤ` -/
+
+variable {A} in
+/-- A nondegenerate module whose quadratic form takes values in `½ℤ/ℤ` is killed by `2`: the
+pairing `q(x + y) - q(x) - q(y)` is then killed by `2`. -/
+theorem two_nsmul_eq_zero_of_quadratic_add_self_eq_zero (hA : A.IsNondegenerate)
+    (hq : ∀ x : A, A.quadratic x + A.quadratic x = 0) (x : A) : 2 • x = 0 := by
+  refine FiniteBilinearModule.IsNondegenerate.eq_zero_of_forall_pairing_eq_zero _ hA fun y ↦ ?_
+  rw [FiniteBilinearModule.pairing_nsmul_left, ← polar_eq_pairing, QuadraticMap.polar, two_nsmul]
+  calc _ = (A.quadratic (x + y) + A.quadratic (x + y)) - (A.quadratic x + A.quadratic x) -
+        (A.quadratic y + A.quadratic y) := by abel
+    _ = 0 := by rw [hq, hq, hq, sub_zero, sub_zero]
+
+variable {A} in
+/-- Isometric modules have quadratic forms with values in `½ℤ/ℤ` together. -/
+theorem Isometry.forall_quadratic_add_self_eq_zero_iff {B : FiniteQuadraticModule}
+    (f : Isometry A B) :
+    (∀ x : A, A.quadratic x + A.quadratic x = 0) ↔
+      ∀ y : B, B.quadratic y + B.quadratic y = 0 := by
+  refine ⟨fun h y ↦ ?_, fun h x ↦ ?_⟩
+  · rw [← f.apply_symm_apply y, f.map_app]
+    exact h _
+  · rw [← f.map_app]
+    exact h _
+
+/-- An orthogonal product has quadratic form with values in `½ℤ/ℤ` exactly when both factors
+do. -/
+theorem forall_quadratic_add_self_eq_zero_prod_iff (B : FiniteQuadraticModule) :
+    (∀ z : A.prod B, (A.prod B).quadratic z + (A.prod B).quadratic z = 0) ↔
+      (∀ x : A, A.quadratic x + A.quadratic x = 0) ∧
+        ∀ y : B, B.quadratic y + B.quadratic y = 0 := by
+  refine ⟨fun h ↦ ⟨fun x ↦ ?_, fun y ↦ ?_⟩, fun h z ↦ ?_⟩
+  · simpa [prod_quadratic] using h (x, 0)
+  · simpa [prod_quadratic] using h (0, y)
+  · rw [prod_quadratic, add_add_add_comm, h.1, h.2, add_zero]
 
 /-! ## Quadratic isotropy -/
 

@@ -113,7 +113,8 @@ theorem finrank_homology_forget (n : ℤ) :
       ((((forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).mapHomologicalComplex _).obj
         K).homology n) =
       Module.finrank R (K.homology n) :=
-  (K.homologyForgetIso n).toLinearEquiv.finrank_eq.trans
+  ((K.sc n).mapHomologyIso
+    (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R))).toLinearEquiv.finrank_eq.trans
     (FGModuleCat.finrank_forget₂_obj (K.homology n))
 
 /-- Mathlib's `finsum` homology Euler characteristic of a bounded complex of finitely generated
