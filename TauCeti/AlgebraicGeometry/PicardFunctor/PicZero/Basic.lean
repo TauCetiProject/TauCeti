@@ -69,7 +69,8 @@ families and representability are not treated here.
   as a presheaf of commutative groups, with inclusion
   `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctorι` into the relative Picard presheaf,
   sections built by `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctor.mk`, and morphisms
-  into it lifted by `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctor.lift`.
+  into it lifted by `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctor.lift` and compared
+  by `TauCeti.AlgebraicGeometry.relativePicardDegreeZeroFunctor.hom_ext`.
 
 ## References
 
@@ -500,6 +501,17 @@ lemma relativePicardDegreeZeroFunctor.lift_comp_ι {C : Type*} [Category C]
         Functor.whiskerLeft H (relativePicardDegreeZeroFunctorι f) = α := by
   ext T c
   exact relativePicardDegreeZeroFunctorι_app_lift_app f α hα T c
+
+/-- Two morphisms into `Pic⁰_{X/S}` (restricted along `H`) are equal once they agree after the
+inclusion into the relative Picard presheaf. -/
+@[ext]
+lemma relativePicardDegreeZeroFunctor.hom_ext {C : Type*} [Category C] {H : C ⥤ (Over S)ᵒᵖ}
+    {F : C ⥤ CommGrpCat.{u + 1}} {α β : F ⟶ H ⋙ relativePicardDegreeZeroFunctor f}
+    (h : α ≫ Functor.whiskerLeft H (relativePicardDegreeZeroFunctorι f) =
+      β ≫ Functor.whiskerLeft H (relativePicardDegreeZeroFunctorι f)) : α = β :=
+  NatTrans.ext <| funext fun T ↦ CommGrpCat.hom_ext <| MonoidHom.ext fun c ↦
+    relativePicardDegreeZeroFunctorι_app_injective f (H.obj T)
+      (ConcreteCategory.congr_hom (NatTrans.congr_app h T) c)
 
 /-- The set-valued degree-zero subfunctor and the underlying set-valued functor of its
 commutative-group structure have the same sections and pullback maps. -/

@@ -173,21 +173,17 @@ def relativePicardDegreeZeroFunctorBaseChangeIso :
                 ((relativePicardDegreeZeroFunctorι f).app _ c)) ∈ _
           rw [Iso.inv_hom_id_app_apply]
           exact relativePicardDegreeZeroFunctorι_app_mem f c
-  hom_inv_id := by
-    ext T c
-    apply relativePicardDegreeZeroFunctorι_app_injective (pullback.fst g f) T
-    exact
-      (relativePicardDegreeZeroFunctorι_app_lift_app (pullback.fst g f) (H := 𝟭 _) _ _ T _).trans
-      ((congrArg ((relativePicardPresheafBaseChangeIso f g).inv.app T)
-        (relativePicardDegreeZeroFunctorι_app_lift_app f (H := (Over.map g).op) _ _ T c)).trans
-          (Iso.hom_inv_id_app_apply _ T _))
-  inv_hom_id := by
-    ext T c
-    apply relativePicardDegreeZeroFunctorι_app_injective f _
-    exact (relativePicardDegreeZeroFunctorι_app_lift_app f (H := (Over.map g).op) _ _ T _).trans
-      ((congrArg ((relativePicardPresheafBaseChangeIso f g).hom.app T)
-        (relativePicardDegreeZeroFunctorι_app_lift_app (pullback.fst g f) (H := 𝟭 _) _ _ T c)).trans
-          (Iso.inv_hom_id_app_apply _ T _))
+  hom_inv_id := relativePicardDegreeZeroFunctor.hom_ext (pullback.fst g f) (H := 𝟭 _) <| by
+    simp only [Category.assoc, relativePicardDegreeZeroFunctor.lift_comp_ι,
+      relativePicardDegreeZeroFunctor.lift_comp_ι_assoc, Iso.hom_inv_id, Category.comp_id,
+      Category.id_comp]
+    -- Whiskering by the identity functor is the identity, by definition.
+    rfl
+  inv_hom_id := relativePicardDegreeZeroFunctor.hom_ext f (H := (Over.map g).op) <| by
+    rw [Category.assoc, relativePicardDegreeZeroFunctor.lift_comp_ι, Category.id_comp]
+    -- `lift_comp_ι` for `H := 𝟭 _` whiskers by the identity functor, which `rw` cannot see.
+    exact (relativePicardDegreeZeroFunctor.lift_comp_ι_assoc (pullback.fst g f) (H := 𝟭 _) _ _
+      _).trans (by rw [Category.assoc, Iso.inv_hom_id, Category.comp_id])
 
 /-- The base change isomorphism of `Pic⁰` sends a section `c` of `Pic⁰_{X'/S'}` to the section of
 `Pic⁰_{X/S}` whose underlying relative Picard class is the image of `c` under
