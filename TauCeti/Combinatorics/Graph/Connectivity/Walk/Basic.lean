@@ -13,7 +13,8 @@ public import Mathlib.Combinatorics.Graph.Subgraph
 This file defines edge-labelled walks in Mathlib's `Graph`.  Unlike walks in a simple graph, a
 walk records the identity of each edge it traverses.  Thus parallel edges give distinct walks,
 while a loop has one length-one traversal.  The basic API includes vertex and edge lists,
-concatenation, reversal, paths, cycles, and the induced reachability relation.
+concatenation, reversal, paths, cycles, internally disjoint walks, and the induced reachability
+relation.
 
 The interface follows Mathlib's `SimpleGraph.Walk`, adapted so that walks retain actual multigraph
 edge identities.
@@ -460,6 +461,23 @@ theorem isCycle_reverse (p : G.Walk x x) : p.reverse.IsCycle ↔ p.IsCycle := by
         (q.tail_support_perm_dropLast_support.nodup_iff).mp hq.2.2
       simpa only [support_reverse, List.tail_reverse, List.nodup_reverse] using hd
   exact ⟨fun hp => by simpa using reverse_imp p.reverse hp, reverse_imp p⟩
+
+/-- Two walks from `x` to `y` are *internally disjoint* when they share no vertex other than `x`
+and `y`. -/
+def InternallyDisjoint (p q : G.Walk x y) : Prop :=
+  ∀ v ∈ p.support, v ∈ q.support → v = x ∨ v = y
+
+theorem internallyDisjoint_def {p q : G.Walk x y} :
+    p.InternallyDisjoint q ↔ ∀ v ∈ p.support, v ∈ q.support → v = x ∨ v = y :=
+  Iff.rfl
+
+theorem InternallyDisjoint.symm {p q : G.Walk x y} (h : p.InternallyDisjoint q) :
+    q.InternallyDisjoint p :=
+  fun v hq hp ↦ h v hp hq
+
+theorem internallyDisjoint_comm {p q : G.Walk x y} :
+    p.InternallyDisjoint q ↔ q.InternallyDisjoint p :=
+  ⟨.symm, .symm⟩
 
 end Walk
 
