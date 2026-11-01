@@ -38,9 +38,10 @@ finishes.
 
 ## Main results
 
-* `TauCeti.SmoothEmbedding.exists_diffeotopy_eqOn_of_pairwise_disjoint`: two finite ordered
-  configurations of orientation-preserving discs with collars in a preconnected open set are
-  related by a diffeotopy supported in a compact subset of that open set.
+* `TauCeti.SmoothEmbedding.exists_diffeotopy_eqOn_of_pairwise_disjoint`: in dimension greater
+  than one, two finite ordered configurations of orientation-preserving discs with collars in a
+  preconnected open set agree on any compact subset of `E` after a diffeotopy supported in a
+  compact subset of that open set.
 
 ## References
 
@@ -61,8 +62,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   {ι ι' : Type*} [Fintype ι']
 
-/-- The relative disc theorem inside the image of an embedding `h` of `E`, which is open,
-preconnected and σ-compact. -/
+/-- The relative disc theorem inside the image of an embedding `h` of `E`, which is open and
+preconnected. -/
 private theorem exists_diffeotopy_eqOn_of_range_subset_range [T2Space M]
     (h a b : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M) (ha : range a ⊆ range h)
     (hb : range b ⊆ range h) (o : Manifold.Orientation 𝓘(ℝ, E) E ι')
@@ -71,9 +72,8 @@ private theorem exists_diffeotopy_eqOn_of_range_subset_range [T2Space M]
     ∃ Φ : Diffeotopy 𝓘(ℝ, E) ∞ M, ∃ K : Set M, IsCompact K ∧ K ⊆ range h ∧
       (∀ t, ∀ y ∉ K, Φ (t, y) = y) ∧ EqOn (Φ.final ∘ a) b A :=
   exists_diffeotopy_eqOn_of_isOrientationPreservingAt_of_range_subset
-    (h.isOpen_range (by simp)) (isPreconnected_range h.contMDiff.continuous)
-    (image_univ (f := h) ▸ isSigmaCompact_univ.image h.contMDiff.continuous) a b ha hb o oM hao
-    hbo hA
+    (h.isLocalDiffeomorph rfl (by simp)).isOpen_range
+    (isPreconnected_range h.contMDiff.continuous) a b ha hb o oM hao hbo hA
 
 /-- Finitely many orientation-preserving embeddings with pairwise disjoint images are shrunk
 simultaneously by radial contractions about the origin, by one diffeotopy supported in a compact
@@ -90,9 +90,9 @@ private theorem exists_diffeotopy_eqOn_compRadialContraction [T2Space M] [Finite
   have hshrink (i : ι) : range ((f i).compRadialContraction le_rfl (hκ i)) ⊆ range (f i) := by
     simpa using range_comp_subset_range _ _
   obtain ⟨Φ, K, hK, hKf, hΦK, hΦ⟩ :=
-    exists_diffeotopy_final_comp_eqOn_of_pairwise_disjoint Finset.univ hfd
+    exists_diffeotopy_final_comp_eqOn_of_pairwise_disjoint Finset.univ (hfd.set_pairwise _)
       (a := fun i ↦ f i) (b := fun i ↦ (f i).compRadialContraction le_rfl (hκ i))
-      (fun i x _ ↦ mem_range_self x) (fun i x _ ↦ hshrink i (mem_range_self x)) fun i ↦
+      (fun i _ x _ ↦ mem_range_self x) (fun i _ x _ ↦ hshrink i (mem_range_self x)) fun i _ ↦
         exists_diffeotopy_eqOn_of_range_subset_range (f i) (f i) _ subset_rfl (hshrink i) o oM
           (hfo i) (isOrientationPreservingAt_compRadialContraction _ _ (hfo i)) hA
   exact ⟨Φ, K, hK, by simpa using hKf, hΦK, fun i ↦ hΦ i (Finset.mem_univ i)⟩
@@ -136,7 +136,8 @@ theorem exists_diffeotopy_eqOn_of_pairwise_disjoint [T2Space M] [Finite ι]
   have hr (i : ι) : ∃ r > 0, ∀ y, f' i (radialContraction 0 (r⁻¹ ^ 2) y) ∈ range (g i) := by
     have hmem : f' i ⁻¹' range (g i) ∈ 𝓝 0 :=
       (f' i).contMDiff.continuous.continuousAt.preimage_mem_nhds
-        ((g i).isOpen_range (by simp) |>.mem_nhds (hf'0 i ▸ mem_range_self 0))
+        (((g i).isLocalDiffeomorph rfl (by simp)).isOpen_range.mem_nhds
+        (hf'0 i ▸ mem_range_self 0))
     obtain ⟨r, hr, hrsub⟩ := Euclidean.nhds_basis_ball.mem_iff.mp hmem
     exact ⟨r, hr, fun y ↦ hrsub (radialContraction_mem_ball 0 y hr)⟩
   choose r hr0 hr using hr
@@ -155,9 +156,9 @@ theorem exists_diffeotopy_eqOn_of_pairwise_disjoint [T2Space M] [Finite ι]
   have hgg (i : ι) : range (shrink (g i) i) ⊆ range (g i) := by
     simpa [shrink] using range_comp_subset_range _ _
   obtain ⟨L, KL, hKL, hKLU, hLK, hL⟩ :=
-    exists_diffeotopy_final_comp_eqOn_of_pairwise_disjoint Finset.univ hgd
+    exists_diffeotopy_final_comp_eqOn_of_pairwise_disjoint Finset.univ (hgd.set_pairwise _)
       (a := fun i ↦ shrink (f' i) i) (b := fun i ↦ shrink (g i) i)
-      (fun i x _ ↦ hf'g i (mem_range_self x)) (fun i x _ ↦ hgg i (mem_range_self x)) fun i ↦
+      (fun i _ x _ ↦ hf'g i (mem_range_self x)) (fun i _ x _ ↦ hgg i (mem_range_self x)) fun i _ ↦
         exists_diffeotopy_eqOn_of_range_subset_range (g i) _ _ (hf'g i) (hgg i) o oM
           (isOrientationPreservingAt_compRadialContraction _ _ (hf'o i))
           (isOrientationPreservingAt_compRadialContraction _ _ (hgo i)) hA

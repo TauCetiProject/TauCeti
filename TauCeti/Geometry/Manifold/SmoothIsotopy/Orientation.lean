@@ -43,7 +43,7 @@ finishes. This is what makes a connected sum independent of its balls.
 * `TauCeti.SmoothEmbedding.exists_diffeomorph_comp_eventuallyEq`: on a connected manifold, two
   orientation-preserving embeddings agree near the origin after a diffeomorphism.
 * `TauCeti.SmoothEmbedding.exists_diffeotopy_eqOn_of_isOrientationPreservingAt_of_range_subset`:
-  the relative form, for two embeddings with images in a preconnected σ-compact open set `U`; the
+  the relative form, for two embeddings with images in a preconnected open set `U`; the
   diffeotopy fixes every point outside a compact subset of `U`.
 
 ## References
@@ -141,13 +141,9 @@ theorem exists_diffeomorph_comp_eventuallyEq [T2Space M] [SigmaCompactSpace M]
     (isCompact_closedBall (0 : E) 1)
   exact ⟨Φ.final, hΦ.eventuallyEq_of_mem (closedBall_mem_nhds 0 one_pos)⟩
 
-/-- **The relative ambient disc theorem.** Let `f` and `g` be smooth embeddings of `E` into a
-Hausdorff boundaryless manifold `M` modelled on `E`, preserving the orientations `o` of `E` and
-`oM` of `M` at the origin, with images in a preconnected σ-compact open set `U`. On every compact
-subset `A` of `E`, `g` is `f` followed by the final diffeomorphism of a smooth diffeotopy of `M`
-fixing every point outside a compact subset of `U`. Points outside `U`, for instance protected
-discs and collars, are not moved. -/
-theorem exists_diffeotopy_eqOn_of_isOrientationPreservingAt_of_range_subset [T2Space M]
+/-- The relative ambient disc theorem for a σ-compact open set `U`: the ambient disc theorem in
+the open submanifold `U`, extended by the identity. -/
+private theorem exists_diffeotopy_eqOn_of_range_subset_of_isSigmaCompact [T2Space M]
     {U : Set M} (hU : IsOpen U) (hUc : IsPreconnected U) (hUσ : IsSigmaCompact U)
     (f g : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M) (hfU : range f ⊆ U) (hgU : range g ⊆ U)
     (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (oM : Manifold.Orientation 𝓘(ℝ, E) M ι)
@@ -175,5 +171,53 @@ theorem exists_diffeotopy_eqOn_of_isOrientationPreservingAt_of_range_subset [T2S
   calc Φ.final (f x) = Φ.final (f' x : M) := by rw [val_codRestrict_apply]
     _ = Λ.final (f' x) := by rw [Diffeotopy.final_apply, Diffeotopy.final_apply, hΦ]
     _ = g x := by rw [← Function.comp_apply (f := Λ.final), hΛ hx, val_codRestrict_apply]
+
+/-- **The relative ambient disc theorem.** Let `f` and `g` be smooth embeddings of `E` into a
+Hausdorff boundaryless manifold `M` modelled on `E`, preserving the orientations `o` of `E` and
+`oM` of `M` at the origin, with images in a preconnected open set `U`. On every compact subset `A`
+of `E`, `g` is `f` followed by the final diffeomorphism of a smooth diffeotopy of `M` fixing every
+point outside a compact subset of `U`. Points outside `U`, for instance protected discs and
+collars, are not moved. -/
+theorem exists_diffeotopy_eqOn_of_isOrientationPreservingAt_of_range_subset [T2Space M]
+    {U : Set M} (hU : IsOpen U) (hUc : IsPreconnected U)
+    (f g : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M) (hfU : range f ⊆ U) (hgU : range g ⊆ U)
+    (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (oM : Manifold.Orientation 𝓘(ℝ, E) M ι)
+    (hf : o.IsOrientationPreservingAt oM f 0) (hg : o.IsOrientationPreservingAt oM g 0)
+    {A : Set E} (hA : IsCompact A) :
+    ∃ Φ : Diffeotopy 𝓘(ℝ, E) ∞ M, ∃ K : Set M, IsCompact K ∧ K ⊆ U ∧
+      (∀ t, ∀ y ∉ K, Φ (t, y) = y) ∧ EqOn (Φ.final ∘ f) g A := by
+  -- Move the centre of `f` to the centre of `g` inside `U`, by the homogeneity lemma.
+  obtain ⟨Ψ, L, hL, hLU, hΨL, hΨ⟩ := exists_diffeotopy_final_apply_eq_of_isPreconnected
+    (I := 𝓘(ℝ, E)) (n := ∞) (m := ⊤) le_top le_rfl hU hUc (hfU (mem_range_self 0))
+    (hgU (mem_range_self 0))
+  set f' := f.transDiffeomorph Ψ.final
+  have hf' : o.IsOrientationPreservingAt oM f' 0 := by
+    rw [coe_transDiffeomorph]
+    exact (Ψ.isOrientationPreservingAt_final (by simp) oM (f 0)).comp hf
+  have hf'U : range f' ⊆ U := by
+    rintro _ ⟨x, rfl⟩
+    rw [transDiffeomorph_apply]
+    exact Ψ.mapsTo_final_of_eqOn_compl hLU hΨL (hfU (mem_range_self x))
+  -- Both images lie in `V = range f' ∪ range g`, which is open, σ-compact, and preconnected
+  -- since both images contain `g 0`.
+  have hV : IsOpen (range f' ∪ range g) :=
+    (f'.isLocalDiffeomorph rfl (by simp)).isOpen_range.union
+      (g.isLocalDiffeomorph rfl (by simp)).isOpen_range
+  have hVc : IsPreconnected (range f' ∪ range g) :=
+    .union (g 0) ⟨0, by rw [transDiffeomorph_apply, hΨ]⟩ (mem_range_self 0)
+      (isPreconnected_range f'.contMDiff.continuous) (isPreconnected_range g.contMDiff.continuous)
+  have hVσ : IsSigmaCompact (range f' ∪ range g) := by
+    rw [union_eq_iUnion]
+    exact isSigmaCompact_iUnion _ fun b ↦ by
+      cases b
+      exacts [isSigmaCompact_range g.contMDiff.continuous,
+        isSigmaCompact_range f'.contMDiff.continuous]
+  obtain ⟨Θ, K, hK, hKV, hΘK, hΘ⟩ := exists_diffeotopy_eqOn_of_range_subset_of_isSigmaCompact hV
+    hVc hVσ f' g subset_union_left subset_union_right o oM hf' hg hA
+  refine ⟨Ψ.trans Θ, L ∪ K, hL.union hK, union_subset hLU (hKV.trans (union_subset hf'U hgU)),
+    fun t y hy ↦ ?_, fun x hx ↦ ?_⟩
+  · rw [mem_union, not_or] at hy
+    simp [hΨL t hy.1, hΘK t y hy.2]
+  · simpa [f'] using hΘ hx
 
 end TauCeti.SmoothEmbedding

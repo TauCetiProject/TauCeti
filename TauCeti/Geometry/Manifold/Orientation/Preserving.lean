@@ -218,6 +218,27 @@ theorem not_isOrientationPreservingAt_and_isOrientationReversingAt
     rw [h_refl, _root_.Orientation.map_refl]
     simp only [Equiv.refl_apply, id_eq]
 
+/-- A self-map fixing `x` whose derivative at `x` is the identity preserves every manifold
+orientation at `x`. -/
+theorem isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id [IsManifold I 1 M]
+    (o : Manifold.Orientation I M ι) {f : M → M} {x : M} (hx : f x = x)
+    (hd : mfderiv I I f x = ContinuousLinearMap.id ℝ (TangentSpace I x)) :
+    IsOrientationPreservingAt o o f x := by
+  refine ⟨ContinuousLinearEquiv.refl ℝ _, hd.symm, ?_⟩
+  -- The same definitional equality of the linear equivalence wrappers as in
+  -- `isOrientationPreservingAt_id`.
+  have h_refl :
+      (ContinuousLinearEquiv.refl ℝ (TangentSpace I x)).toLinearEquiv =
+        LinearEquiv.refl ℝ (TangentSpace I x) := rfl
+  /- The orientation at `f x` lives on the tangent space at `f x`; generalize the point to
+    substitute `x` for it along `hx`. -/
+  have key (y : M) (hy : y = x) : _root_.Orientation.map ι
+      (ContinuousLinearEquiv.refl ℝ (TangentSpace I x)).toLinearEquiv (o.orientationAt x) =
+        o.orientationAt y := by
+    subst hy
+    rw [h_refl, _root_.Orientation.map_refl, Equiv.refl_apply]
+  exact key _ hx
+
 /-- The identity map reverses an orientation when its target is given the opposite orientation. -/
 theorem isOrientationReversingAt_id_neg [IsManifold I 1 M]
     (o : Manifold.Orientation I M ι) (x : M) :

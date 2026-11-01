@@ -96,21 +96,14 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(�
 theorem _root_.TauCeti.isOrientationPreservingAt_radialContraction_self
     (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (c : E) (κ : ℝ) :
     o.IsOrientationPreservingAt o (radialContraction c κ) c := by
-  -- Its derivative at the centre is the identity.
-  have hd : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (radialContraction c κ) c = ContinuousLinearMap.id ℝ E := by
-    rw [mfderiv_eq_fderiv, (hasFDerivAt_radialContraction_self c κ).fderiv]
-    ext v
-    rfl
-  refine (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).mpr
-    ⟨ContinuousLinearEquiv.refl ℝ E, hd.symm, ?_⟩
-  -- The tangent spaces at `c` and at its image `radialContraction c κ c = c` are both `E`;
-  -- generalize the image point to substitute it.
-  have key : ∀ y : E, y = c → _root_.Orientation.map ι
-      (ContinuousLinearEquiv.refl ℝ (TangentSpace 𝓘(ℝ, E) c)).toLinearEquiv
-        (o.orientationAt c) = o.orientationAt y := by
-    rintro y rfl
-    exact Equiv.ext_iff.mp (_root_.Orientation.map_refl ι) _
-  exact key _ (radialContraction_self c κ)
+  -- It fixes its centre, and its derivative there is the identity.
+  refine Manifold.Orientation.isOrientationPreservingAt_of_apply_eq_of_mfderiv_eq_id o
+    (radialContraction_self c κ) ?_
+  rw [mfderiv_eq_fderiv, (hasFDerivAt_radialContraction_self c κ).fderiv]
+  -- `mfderiv_eq_fderiv` conjugates by `NormedSpace.fromTangentSpace`, which is the identity of
+  -- `E` by definition.
+  ext v
+  rfl
 
 /-- Precomposing an embedding of `E` with a radial contraction about the origin keeps it
 orientation-preserving at the origin. -/

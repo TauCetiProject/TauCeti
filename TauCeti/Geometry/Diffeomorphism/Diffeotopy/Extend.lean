@@ -41,19 +41,21 @@ namespace TauCeti.Diffeotopy
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {J : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {J' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H N] {n : ℕ∞ω}
 
 /-- A diffeotopy of `N` fixing every point outside a compact set `K` at all times extends along a
 smooth open embedding `χ : N → M` into a Hausdorff manifold. The extension moves `χ z` as the
 original motion moves `z`, and fixes every point outside `χ '' K` at all times. -/
-theorem exists_extend_of_isCompact [T2Space M] {χ : N → M} (hχ : IsLocalDiffeomorph J J n χ)
+theorem exists_extend_of_isCompact [T2Space M] {χ : N → M} (hχ : IsLocalDiffeomorph J J' n χ)
     (hχo : IsOpenEmbedding χ) (Λ : Diffeotopy J n N) {K : Set N} (hK : IsCompact K)
     (hΛ : ∀ t, ∀ z ∉ K, Λ (t, z) = z) :
-    ∃ Φ : Diffeotopy J n M, (∀ t z, Φ (t, χ z) = χ (Λ (t, z))) ∧
+    ∃ Φ : Diffeotopy J' n M, (∀ t z, Φ (t, χ z) = χ (Λ (t, z))) ∧
       ∀ t, ∀ y ∉ χ '' K, Φ (t, y) = y := by
   let χ' : I × N → I × M := Prod.map id χ
-  have hχ' : IsLocalDiffeomorph ((𝓡∂ 1).prod J) ((𝓡∂ 1).prod J) n χ' :=
+  have hχ' : IsLocalDiffeomorph ((𝓡∂ 1).prod J) ((𝓡∂ 1).prod J') n χ' :=
     (Diffeomorph.refl (𝓡∂ 1) I n).isLocalDiffeomorph.prodMap hχ
   have hχ'o : IsOpenEmbedding χ' := IsOpenEmbedding.id.prodMap hχo
   obtain ⟨Ψ, hΨχ, hΨK⟩ := hχ'.exists_diffeomorph_extend_of_isCompact hχ'o Λ.toDiffeomorph

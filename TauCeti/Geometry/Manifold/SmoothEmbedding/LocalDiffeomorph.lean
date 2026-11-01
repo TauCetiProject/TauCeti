@@ -39,9 +39,8 @@ space.
 
 ## Main results
 
-* `TauCeti.SmoothEmbedding.isLocalDiffeomorph`: a smooth embedding between boundaryless
-  manifolds modelled on the same finite-dimensional space is a local diffeomorphism, so its image
-  is open (`TauCeti.SmoothEmbedding.isOpen_range`).
+* `TauCeti.SmoothEmbedding.isLocalDiffeomorph`: a smooth embedding of a boundaryless manifold
+  into a manifold modelled on a space of the same finite dimension is a local diffeomorphism.
 -/
 
 public section
@@ -139,10 +138,8 @@ theorem _root_.Manifold.IsSmoothEmbedding.codRestrict [IsManifold J n N] {f : M 
     univ).partialDiffeomorphOfInjOn isOpen_univ Subtype.val_injective.injOn
   have hk (x : M) : IsLocalDiffeomorphAt J J n Φ.symm (f x) :=
     Φ.symm.isLocalDiffeomorphAt J J n (by simpa [Φ] using h x)
-  have hcomp : Φ.symm ∘ f = fun x ↦ (⟨f x, h x⟩ : U) := by
-    funext x
-    have hx : ∃ y ∈ (univ : Set U), (y : N) = f x := ⟨⟨f x, h x⟩, mem_univ _, rfl⟩
-    exact Subtype.ext (by simpa [Φ] using Function.invFunOn_eq hx)
+  have hcomp : Φ.symm ∘ f = fun x ↦ (⟨f x, h x⟩ : U) := funext fun x ↦
+    (congrArg Φ.symm (by simp [Φ] : f x = Φ ⟨f x, h x⟩)).trans (Φ.left_inv (by simp [Φ]))
   exact hcomp ▸ isImmersion_isLocalDiffeomorphAt_comp hk hf.isImmersion
 
 /-- A smooth embedding whose image lies in the open subset `U`, as a smooth embedding into the
@@ -165,29 +162,24 @@ section InverseFunctionTheorem
 
 variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
   [FiniteDimensional 𝕂 F] {K : ModelWithCorners 𝕂 F H}
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕂 F'] [FiniteDimensional 𝕂 F']
+  {K' : ModelWithCorners 𝕂 F' G}
   {X : Type*} [TopologicalSpace X] [ChartedSpace H X]
-  {Y : Type*} [TopologicalSpace Y] [ChartedSpace H Y]
-  [IsManifold K n X] [IsManifold K n Y] [BoundarylessManifold K X]
+  {Y : Type*} [TopologicalSpace Y] [ChartedSpace G Y]
+  [IsManifold K n X] [IsManifold K' n Y] [BoundarylessManifold K X]
 
-/-- A smooth embedding between boundaryless manifolds modelled on the same finite-dimensional
-space is a local diffeomorphism. -/
-theorem isLocalDiffeomorph (f : SmoothEmbedding K K n X Y) (hn : 1 ≤ n) :
-    IsLocalDiffeomorph K K n f := by
+/-- A smooth embedding of a boundaryless manifold into a manifold modelled on a space of the same
+finite dimension is a local diffeomorphism. -/
+theorem isLocalDiffeomorph (f : SmoothEmbedding K K' n X Y)
+    (hd : Module.finrank 𝕂 F = Module.finrank 𝕂 F') (hn : 1 ≤ n) :
+    IsLocalDiffeomorph K K' n f := by
   have := FiniteDimensional.complete 𝕂 F
   refine isLocalDiffeomorph_of_mfderiv_eq f.contMDiff hn fun y ↦ ?_
-  let L := (mfderiv K K f y : TangentSpace K y →ₗ[𝕂] TangentSpace K (f y))
+  let L := (mfderiv K K' f y : TangentSpace K y →ₗ[𝕂] TangentSpace K' (f y))
   have hinj : Function.Injective L :=
     (f.isImmersion.isDiffImmersionAt (by rintro rfl; simp at hn) y).mfderiv_injective
-  -- Both tangent spaces are the model space `F`, so an injective linear map is bijective.
-  have hsurj : Function.Surjective L :=
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f := L) rfl).mp hinj
-  exact ⟨(LinearEquiv.ofBijective L ⟨hinj, hsurj⟩).toContinuousLinearEquiv,
+  exact ⟨(LinearEquiv.ofInjectiveOfFinrankEq L hinj hd).toContinuousLinearEquiv,
     ContinuousLinearMap.ext fun _ ↦ rfl⟩
-
-/-- A smooth embedding between boundaryless manifolds modelled on the same finite-dimensional
-space has open image. -/
-theorem isOpen_range (f : SmoothEmbedding K K n X Y) (hn : 1 ≤ n) : IsOpen (range f) :=
-  (f.isLocalDiffeomorph hn).isOpen_range
 
 end InverseFunctionTheorem
 
