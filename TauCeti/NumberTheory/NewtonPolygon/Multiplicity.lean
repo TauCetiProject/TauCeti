@@ -20,17 +20,12 @@ multiplicity of `σ` in the finite slope multiset `Polynomial.newtonSlopes`
 (`Polynomial.newtonSlopeMultiplicity_coe`). The substitution `X ↦ c X` shifts every slope by
 the valuation of `c`, with the same multiplicities (`PowerSeries.newtonSlopeMultiplicity_rescale`).
 
-For entire series the slopes are locally finite. Fix a real additive valuation `v` on a normed
-division ring and a base `b > 1` with `‖x‖ = b ^ (-(v x).untop₀)` for nonzero `x`. A nonzero
-entire series is restricted at every radius `b ^ σ`, so its Newton polygon touches a supporting
-line of every slope `σ`, and it lies above a line of the larger slope `σ + 1`. Hence it has a
-finite face of every slope (`PowerSeries.IsEntire.exists_isFiniteFace_newtonPolygon`). Consequently
-only finitely many finite unit edges have slope below any real cutoff
-(`PowerSeries.IsEntire.finite_setOf_unitSlope_newtonPolygon_le`), and if there are infinitely
-many finite edges their slopes tend to infinity
-(`PowerSeries.IsEntire.tendsto_unitSlope_newtonPolygon`). Since the Newton polygon of a product of
-entire series is the Minkowski sum of those of the factors, multiplicities of slopes add under
-multiplication of nonzero entire series (`PowerSeries.IsEntire.newtonSlopeMultiplicity_mul`).
+Fix a real additive valuation `v` on a normed division ring and a base `b > 1` with
+`‖x‖ = b ^ (-(v x).untop₀)` for nonzero `x`. A nonzero entire series has a finite face of every
+slope (`PowerSeries.IsEntire.exists_isFiniteFace_newtonPolygon`), and the Newton polygon of a
+product of entire series is the Minkowski sum of those of the factors. Hence multiplicities of
+slopes add under multiplication of nonzero entire series
+(`PowerSeries.IsEntire.newtonSlopeMultiplicity_mul`).
 
 Fredholm determinants `det (1 - T u)` of compact operators are nonzero entire series, and these
 multiplicities are the slope multiplicities of their Newton polygons.
@@ -47,11 +42,6 @@ multiplicities are the slope multiplicities of their Newton polygons.
 * `Polynomial.newtonSlopeMultiplicity_coe`: comparison with the finite slope multiset of a
   polynomial.
 * `PowerSeries.newtonSlopeMultiplicity_rescale`: rescaling the variable shifts the slopes.
-* `PowerSeries.IsEntire.exists_isFiniteFace_newtonPolygon`: a nonzero entire series has a finite
-  face of every slope.
-* `PowerSeries.IsEntire.finite_setOf_unitSlope_newtonPolygon_le`,
-  `PowerSeries.IsEntire.tendsto_unitSlope_newtonPolygon`: the slopes of an entire series are
-  locally finite, and tend to infinity if there are infinitely many.
 * `PowerSeries.IsEntire.newtonSlopeMultiplicity_mul`: multiplicities add under multiplication.
 
 ## References
@@ -64,7 +54,7 @@ multiplicities are the slope multiplicities of their Newton polygons.
 
 public section
 
-open Filter TauCeti
+open TauCeti
 
 namespace PowerSeries
 
@@ -128,50 +118,6 @@ variable {K : Type*} [NormedDivisionRing K] (v : AddValuation K (WithTop ℝ)) {
   (hb : 1 < b) (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) {f g : K⟦X⟧}
 
 include hb hv
-
-/-- The Newton polygon of a nonzero entire series has a finite face of every real slope. -/
-theorem IsEntire.exists_isFiniteFace_newtonPolygon (hf : f.IsEntire) (hf0 : f ≠ 0) (σ : ℝ) :
-    ∃ l u : ℕ, IsFiniteFace (f.newtonPolygon v) σ l u := by
-  -- The coefficient heights touch a supporting line of slope `σ` and lie above one of slope
-  -- `σ + 1`; both lines lie below the Newton polygon, and the contact persists.
-  obtain ⟨c, i, hc, hi⟩ := exists_isSupportingLine_mem_supportingFace_of_isRestricted f v hb hv
-    (hf.isRestricted (b ^ σ)) hf0
-  obtain ⟨c', -, hc', -⟩ := exists_isSupportingLine_mem_supportingFace_of_isRestricted f v hb hv
-    (hf.isRestricted (b ^ (σ + 1))) hf0
-  have henv := isLowerConvexEnvelope_newtonPolygon hc.isAdmissible
-  have hσ : IsSupportingLine (f.newtonPolygon v) σ c := isSupportingLine_iff_forall.mpr <|
-    henv.greatest (isConvexSeq_affine c σ) (isSupportingLine_iff_forall.mp hc)
-  have hσ' : IsSupportingLine (f.newtonPolygon v) (σ + 1) c' := isSupportingLine_iff_forall.mpr <|
-    henv.greatest (isConvexSeq_affine c' (σ + 1)) (isSupportingLine_iff_forall.mp hc')
-  exact (f.isConvexSeq_newtonPolygon v).exists_isFiniteFace_of_finite_supportingFace hσ
-    (hσ'.finite_supportingFace (lt_add_one σ) c) ⟨i, henv.supportingFace_subset hc hi⟩
-
-/-- **Local finiteness of slopes.** Only finitely many finite unit edges of the Newton polygon
-of an entire series have slope at most a given real number. -/
-theorem IsEntire.finite_setOf_unitSlope_newtonPolygon_le (hf : f.IsEntire) (c : ℝ) :
-    {n | n ∈ finiteEdges (f.newtonPolygon v) ∧ unitSlope (f.newtonPolygon v) n ≤ c}.Finite := by
-  rcases eq_or_ne f 0 with rfl | hf0
-  · simp
-  obtain ⟨l, u, hface⟩ := hf.exists_isFiniteFace_newtonPolygon v hb hv hf0 c
-  exact hface.finite_setOf_unitSlope_le (f.isConvexSeq_newtonPolygon v)
-
-/-- If the Newton polygon of an entire series has infinitely many finite unit edges, their
-slopes tend to infinity. -/
-theorem IsEntire.tendsto_unitSlope_newtonPolygon (hf : f.IsEntire)
-    (hinf : (finiteEdges (f.newtonPolygon v)).Infinite) :
-    Tendsto (unitSlope (f.newtonPolygon v)) atTop atTop := by
-  -- The finite edges are order connected and unbounded, so they contain a final segment.
-  obtain ⟨a, ha⟩ := hinf.nonempty
-  have hedges : ∀ᶠ n in atTop, n ∈ finiteEdges (f.newtonPolygon v) := by
-    refine eventually_atTop.mpr ⟨a, fun n han => ?_⟩
-    obtain ⟨m, hm, hnm⟩ := hinf.exists_gt n
-    exact (ordConnected_finiteEdges (f.isConvexSeq_newtonPolygon v).ordConnected).out ha hm
-      ⟨han, hnm.le⟩
-  refine tendsto_atTop.mpr fun c => ?_
-  have hfin := (hf.finite_setOf_unitSlope_newtonPolygon_le v hb hv c).eventually_cofinite_notMem
-  rw [Nat.cofinite_eq_atTop] at hfin
-  filter_upwards [hedges, hfin] with n hn hnc
-  exact le_of_not_ge fun hle => hnc ⟨hn, hle⟩
 
 /-- **Multiplicities add under products.** For nonzero entire series, the multiplicity of every
 slope in the Newton polygon of `f * g` is the sum of its multiplicities for `f` and `g`. -/
