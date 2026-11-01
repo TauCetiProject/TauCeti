@@ -93,7 +93,15 @@ theorem restrictScalars_powerSeriesLattice (a : ℤ) :
 theorem powerSeriesLattice_antitone : Antitone (powerSeriesLattice R V) :=
   fun _ _ h _ hf ↦ lattice_antitone R V h hf
 
-variable {R V}
+end Semiring
+
+end TauCeti.HahnModule
+
+namespace HahnModule
+
+open TauCeti.HahnModule HahnSeries
+
+variable {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
 
 /-- Multiplying by a Laurent monomial translates the coefficient indices. -/
 theorem mem_powerSeriesLattice_single_smul_iff (k a : ℤ) (f : HahnModule ℤ R V) :
@@ -108,7 +116,11 @@ theorem mem_powerSeriesLattice_single_smul_iff (k a : ℤ) (f : HahnModule ℤ R
     have hc := coeff_single_smul_vadd (r := (1 : R)) (x := f) (b := k) (a := n - k)
     simpa using hc.trans (by simp [h (n - k) (by omega)])
 
-end Semiring
+end HahnModule
+
+namespace TauCeti.HahnModule
+
+open _root_.HahnModule HahnSeries
 
 section CommSemiring
 
