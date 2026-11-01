@@ -125,6 +125,11 @@ def restrict (U : SubMulAction M X) : ActionCategory M U ⥤ ActionCategory M X 
 
 variable (U : SubMulAction M X)
 
+/-- The restriction inclusion is the functor induced by the inclusion of `U`, keeping labels. -/
+theorem restrict_eq_map :
+    restrict U = map (MonoidHom.id M) { toFun := Subtype.val, map_smul' := fun _ _ => rfl } :=
+  (rfl)
+
 /-- The point underlying the image of an object under the restriction inclusion is its point. -/
 @[simp]
 theorem back_restrict_obj (a : ActionCategory M U) : ((restrict U).obj a).back = (a.back : X) :=
@@ -185,6 +190,11 @@ def inclusion (S : SubMulAction H X) : ActionCategory H S ⥤ ActionCategory G X
   map H.subtype { toFun := Subtype.val, map_smul' := fun _ _ => rfl }
 
 variable (S : SubMulAction H X)
+
+/-- The inclusion is the functor induced by the inclusion of `S` along the inclusion of `H`. -/
+theorem inclusion_eq_map :
+    inclusion S = map H.subtype { toFun := Subtype.val, map_smul' := fun _ _ => rfl } :=
+  (rfl)
 
 /-- The inclusion sends a point of the invariant subset to itself. -/
 @[simp]

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
-public import Mathlib.Combinatorics.Quiver.Subquiver
 public import TauCeti.AlgebraicTopology.FatRealization
 public import TauCeti.Combinatorics.Quiver.Prefunctor
 
@@ -34,9 +33,10 @@ The *fat classifying space* `TauCeti.fatClassifyingSpace C` is the fat realizati
 degeneracies along `SemiSimplexCategory.toSimplexCategory`.
 
 A functor `φ : C ⥤ D` whose action on total arrows (`Prefunctor.mapTotal`) is continuous induces
-a map of topological nerves `TauCeti.topologicalNerveMap` and of fat classifying spaces
-`TauCeti.fatClassifyingSpaceMap`. If it is an embedding on total arrows, it induces levelwise
-embeddings (`CategoryTheory.ComposableArrows.isEmbedding_mapComposableArrows_obj`).
+a map of topological nerves `CategoryTheory.Functor.topologicalNerveMap` and of fat classifying
+spaces `CategoryTheory.Functor.fatClassifyingSpaceMap`. If it is an embedding on total arrows, it
+induces levelwise embeddings
+(`CategoryTheory.ComposableArrows.isEmbedding_mapComposableArrows_obj`).
 
 ## References
 
@@ -181,7 +181,14 @@ realization of its topological nerve, with degeneracies forgotten. -/
 @[expose] def fatClassifyingSpace : TopCat.{max u v} :=
   fatRealization (SemiSimplexCategory.toSimplexCategory.op ⋙ topologicalNerve C)
 
-variable {C} {D : Type u} [Category.{v} D] [TopologicalSpace (Quiver.Total D)]
+end TauCeti
+
+namespace CategoryTheory.Functor
+
+open TauCeti
+
+variable {C : Type u} [Category.{v} C] [TopologicalSpace (Quiver.Total C)]
+  {D : Type u} [Category.{v} D] [TopologicalSpace (Quiver.Total D)]
 
 /-- The map of topological nerves induced by a functor that is continuous on total arrows. -/
 def topologicalNerveMap (φ : C ⥤ D) (hφ : Continuous φ.toPrefunctor.mapTotal) :
@@ -221,7 +228,8 @@ theorem topologicalNerveMap_comp {E : Type u} [Category.{v} E] [TopologicalSpace
   rfl
 
 /-- The map of fat classifying spaces induced by a functor that is continuous on total arrows: the
-fat realization of the induced map of topological nerves (`TauCeti.fatClassifyingSpaceMap_eq`). -/
+fat realization of the induced map of topological nerves
+(`CategoryTheory.Functor.fatClassifyingSpaceMap_eq`). -/
 def fatClassifyingSpaceMap (φ : C ⥤ D) (hφ : Continuous φ.toPrefunctor.mapTotal) :
     fatClassifyingSpace C ⟶ fatClassifyingSpace D :=
   fatRealization.map
@@ -264,4 +272,4 @@ theorem fatClassifyingSpaceMap_comp {E : Type u} [Category.{v} E]
     topologicalNerveMap_comp φ ψ hφ hψ, Functor.whiskerLeft_comp, fatRealization.map_comp]
   rfl
 
-end TauCeti
+end CategoryTheory.Functor
