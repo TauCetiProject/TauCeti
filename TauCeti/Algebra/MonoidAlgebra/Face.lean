@@ -52,9 +52,7 @@ noncomputable def faceRestriction (F : AddSubmonoid M) (hF : F.AddSaturated)
   exact AddMonoidAlgebra.lift R _ M
     { toFun := fun a ↦ if h : a.toAdd ∈ F then single ⟨a.toAdd, h⟩ 1 else 0
       map_one' := by
-        simp [one_def]
-        -- The subtype representative of zero is definitionally the zero of `F`.
-        rfl
+        simp [one_def, (F.mk_eq_zero (ha := F.zero_mem)).mpr rfl]
       map_mul' := by
         intro a b
         by_cases ha : a.toAdd ∈ F <;> by_cases hb : b.toAdd ∈ F <;>
