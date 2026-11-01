@@ -20,11 +20,11 @@ induced by the inclusion `C → A`. This file states SGA 3, Exposé V, Théorèm
 case, in terms of schemes:
 
 * `π` is finite, flat, surjective and locally of finite presentation, so it is finite locally free
-  and an fppf covering (`RingHom.IsSpecEquivRel.isFinite_specMap`,
-  `RingHom.IsSpecEquivRel.flat_specMap`, `RingHom.IsSpecEquivRel.surjective_specMap`,
-  `RingHom.IsSpecEquivRel.locallyOfFinitePresentation_specMap`);
+  and an fppf covering (`RingHom.IsSpecEquivRel.isFinite_SpecMap`,
+  `RingHom.IsSpecEquivRel.flat_SpecMap`, `RingHom.IsSpecEquivRel.surjective_SpecMap`,
+  `RingHom.IsSpecEquivRel.locallyOfFinitePresentation_SpecMap`);
 * the relation is the kernel pair of `π`: `Spec B ≅ Spec A ×_{Spec C} Spec A`, with the two
-  projections induced by `s` and `t` (`RingHom.IsSpecEquivRel.isPullback_specMap`);
+  projections induced by `s` and `t` (`RingHom.IsSpecEquivRel.isPullback_SpecMap`);
 * `π` is the coequalizer of `Spec B ⇉ Spec A` in schemes
   (`RingHom.IsSpecEquivRel.isColimitCofork`), and, under the Yoneda embedding, in fppf sheaves
   (`RingHom.IsSpecEquivRel.isColimitFppfYonedaCofork`). Thus `Spec C` represents the fppf quotient
@@ -40,7 +40,7 @@ follow from the kernel pair.
 
 ## Main results
 
-* `RingHom.IsSpecEquivRel.isPullback_specMap`: `Spec B ⇉ Spec A` is the kernel pair of `π`.
+* `RingHom.IsSpecEquivRel.isPullback_SpecMap`: `Spec B ⇉ Spec A` is the kernel pair of `π`.
 * `RingHom.IsSpecEquivRel.isColimitCofork`: `π` is the coequalizer of `Spec B ⇉ Spec A`.
 * `RingHom.IsSpecEquivRel.isColimitFppfYonedaCofork`: `Spec C` represents the fppf quotient sheaf.
 
@@ -66,7 +66,7 @@ include h
 equivalence relation with `B` finite projective over `A` through `s`, and `C = {a : s a = t a}`
 is the ring of invariants, then `Spec B` is the fibre product `Spec A ×_{Spec C} Spec A`, with
 projections the morphisms induced by `s` and `t`. -/
-theorem isPullback_specMap :
+theorem isPullback_SpecMap :
     IsPullback (Spec.map (CommRingCat.ofHom (algebraMap A B))) (Spec.map (CommRingCat.ofHom t))
       (Spec.map (CommRingCat.ofHom (algebraMap ((algebraMap A B).eqLocus t) A)))
       (Spec.map (CommRingCat.ofHom (algebraMap ((algebraMap A B).eqLocus t) A))) :=
@@ -75,7 +75,7 @@ theorem isPullback_specMap :
 /-- **The quotient map is flat.** If `Spec B ⇉ Spec A` is an equivalence relation with `B` finite
 projective over `A` through `s`, then `Spec A ⟶ Spec C` is flat, where `C = {a : s a = t a}` is
 the ring of invariants. -/
-theorem flat_specMap :
+theorem flat_SpecMap :
     AlgebraicGeometry.Flat
       (Spec.map (CommRingCat.ofHom (algebraMap ((algebraMap A B).eqLocus t) A))) := by
   have := h.flat
@@ -85,7 +85,7 @@ theorem flat_specMap :
 /-- **The quotient map is surjective.** If `Spec B ⇉ Spec A` is an equivalence relation with `B`
 finite projective over `A` through `s`, then `Spec A ⟶ Spec C` is surjective, where
 `C = {a : s a = t a}` is the ring of invariants. -/
-theorem surjective_specMap :
+theorem surjective_SpecMap :
     Surjective (Spec.map (CommRingCat.ofHom (algebraMap ((algebraMap A B).eqLocus t) A))) := by
   have := h.faithfullyFlat
   exact ((flat_and_surjective_SpecMap_iff _).mpr
@@ -94,7 +94,7 @@ theorem surjective_specMap :
 /-- **The quotient map is locally of finite presentation.** If `Spec B ⇉ Spec A` is an
 equivalence relation with `B` finite projective over `A` through `s`, then `Spec A ⟶ Spec C` is
 locally of finite presentation, where `C = {a : s a = t a}` is the ring of invariants. -/
-theorem locallyOfFinitePresentation_specMap :
+theorem locallyOfFinitePresentation_SpecMap :
     LocallyOfFinitePresentation
       (Spec.map (CommRingCat.ofHom (algebraMap ((algebraMap A B).eqLocus t) A))) := by
   have := h.finitePresentation
@@ -104,7 +104,7 @@ theorem locallyOfFinitePresentation_specMap :
 /-- **The quotient map is finite.** If `Spec B ⇉ Spec A` is an equivalence relation with `B`
 finite projective over `A` through `s`, then `Spec A ⟶ Spec C` is finite, where
 `C = {a : s a = t a}` is the ring of invariants. -/
-theorem isFinite_specMap :
+theorem isFinite_SpecMap :
     IsFinite (Spec.map (CommRingCat.ofHom (algebraMap ((algebraMap A B).eqLocus t) A))) := by
   have := h.finite
   rw [IsFinite.SpecMap_iff]
@@ -115,12 +115,12 @@ projective over `A` through `s`, and `C = {a : s a = t a}` is the ring of invari
 `Spec A ⟶ Spec C` is the coequalizer in schemes of the two morphisms `Spec B ⇉ Spec A` induced by
 `s` and `t`. -/
 noncomputable def isColimitCofork :
-    IsColimit (Cofork.ofπ _ h.isPullback_specMap.w :
+    IsColimit (Cofork.ofπ _ h.isPullback_SpecMap.w :
       Cofork (Spec.map (CommRingCat.ofHom (algebraMap A B))) (Spec.map (CommRingCat.ofHom t))) :=
-  have := h.flat_specMap
-  have := h.surjective_specMap
-  have := h.locallyOfFinitePresentation_specMap
-  (EffectiveEpi.getStruct _).isColimitCoforkOfIsPullback h.isPullback_specMap
+  have := h.flat_SpecMap
+  have := h.surjective_SpecMap
+  have := h.locallyOfFinitePresentation_SpecMap
+  (EffectiveEpi.getStruct _).isColimitCoforkOfIsPullback h.isPullback_SpecMap
 
 /-- **The fppf quotient sheaf.** If `Spec B ⇉ Spec A` is an equivalence relation with `B` finite
 projective over `A` through `s`, and `C = {a : s a = t a}` is the ring of invariants, then under
@@ -130,13 +130,13 @@ the Yoneda embedding into fppf sheaves, `Spec A ⟶ Spec C` is the coequalizer o
 noncomputable def isColimitFppfYonedaCofork :
     IsColimit (Cofork.ofπ (Scheme.fppfTopology.yoneda.map
         (Spec.map (CommRingCat.ofHom (algebraMap ((algebraMap A B).eqLocus t) A))))
-        (by simp only [← Functor.map_comp, h.isPullback_specMap.w]) :
+        (by simp only [← Functor.map_comp, h.isPullback_SpecMap.w]) :
       Cofork (Scheme.fppfTopology.yoneda.map (Spec.map (CommRingCat.ofHom (algebraMap A B))))
         (Scheme.fppfTopology.yoneda.map (Spec.map (CommRingCat.ofHom t)))) :=
-  have := h.flat_specMap
-  have := h.surjective_specMap
-  have := h.locallyOfFinitePresentation_specMap
-  IsKernelPair.isColimitYonedaCofork Scheme.fppfTopology h.isPullback_specMap
+  have := h.flat_SpecMap
+  have := h.surjective_SpecMap
+  have := h.locallyOfFinitePresentation_SpecMap
+  IsKernelPair.isColimitYonedaCofork Scheme.fppfTopology h.isPullback_SpecMap
     (Precoverage.generate_mem_toGrothendieck (Scheme.Hom.singleton_mem_fppfPrecoverage _))
 
 end RingHom.IsSpecEquivRel
