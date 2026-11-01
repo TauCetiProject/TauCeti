@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Probability.Moments.Basic
+public import TauCeti.Probability.Moments.Basic
 
 /-!
 # Sub-exponential random variables
@@ -49,19 +50,13 @@ variable {μ : Measure Ω} [IsProbabilityMeasure μ] {X : Ω → ℝ} {K t : ℝ
 /-- Centering a sub-exponential random variable preserves its parameter. -/
 theorem center (h : HasSubexponentialMGF X K μ) :
     HasSubexponentialMGF (fun ω => X ω - μ[X]) K μ := by
-  have hmean' : μ[fun ω => X ω - μ[X]] = μ[X] - μ[X] := by
-    change (∫ ω, X ω - μ[X] ∂μ) = _
+  have hmean : μ[fun ω => X ω - μ[X]] = 0 := by
     rw [integral_sub h.integrable (integrable_const _)]
     simp [integral_const]
-  have hmean : μ[fun ω => X ω - μ[X]] = 0 := by
-    rw [hmean']
-    ring
   have hcenter : (fun ω => (X ω - μ[X]) - μ[fun ω => X ω - μ[X]]) =
       fun ω => X ω - μ[X] := by
     funext ω
-    change X ω - μ[X] - μ[fun ω => X ω - μ[X]] = X ω - μ[X]
-    rw [hmean]
-    ring
+    rw [hmean, sub_zero]
   refine ⟨h.parameter_pos, h.integrable.sub (integrable_const _), ?_, ?_⟩
   · intro t ht
     have hexp :
@@ -119,29 +114,6 @@ open TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω]
 variable {μ : Measure Ω} [IsProbabilityMeasure μ] {ι : Type*} {X : ι → Ω → ℝ} {t : ℝ}
-
-private theorem integrable_exp_mul_sum_of_aemeasurable (h_indep : iIndepFun X μ)
-    (h_meas : ∀ i, AEMeasurable (X i) μ) {s : Finset ι}
-    (h_int : ∀ i ∈ s, Integrable (fun ω => exp (t * X i ω)) μ) :
-    Integrable (fun ω => exp (t * (∑ i ∈ s, X i ω))) μ := by
-  let Y : ι → Ω → ℝ := fun i => (h_meas i).mk (X i)
-  have hYmeas : ∀ i, Measurable (Y i) := fun i => (h_meas i).measurable_mk
-  have hYindep : iIndepFun Y μ :=
-    h_indep.congr fun i => (h_meas i).ae_eq_mk
-  have hYint : ∀ i ∈ s, Integrable (fun ω => exp (t * Y i ω)) μ := by
-    intro i hi
-    apply (h_int i hi).congr
-    filter_upwards [(h_meas i).ae_eq_mk] with ω hω
-    rw [hω]
-  have hsum : (fun ω => ∑ i ∈ s, X i ω) =ᵐ[μ] fun ω => ∑ i ∈ s, Y i ω := by
-    filter_upwards [ae_all_iff.2 (fun i : s => (h_meas i.1).ae_eq_mk)] with ω hω
-    apply Finset.sum_congr rfl
-    intro i hi
-    exact hω ⟨i, hi⟩
-  have h := hYindep.integrable_exp_mul_sum hYmeas hYint
-  apply h.congr
-  filter_upwards [hsum.symm] with ω hω
-  simpa only [Finset.sum_apply] using congrArg (fun x : ℝ => exp (t * x)) hω
 
 /-- The MGF of a finite sum of independent, centered sub-exponential variables is bounded by
 the product of their individual quadratic MGF bounds. -/

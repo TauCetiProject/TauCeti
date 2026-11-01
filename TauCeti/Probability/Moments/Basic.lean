@@ -29,6 +29,8 @@ This file supplements Mathlib's basic moment-generating-function API.
   `MeasureTheory.Measure.conv`, the companion of `MeasureTheory.charFun_conv`.
 * `TauCeti.ae_sum_eq_zero_of_sum_integral_sq_eq_zero`: a finite sum of square-integrable random
   variables whose second moments sum to zero vanishes almost surely.
+* `ProbabilityTheory.iIndepFun.integrable_exp_mul_sum_of_aemeasurable`: the exponential of a finite
+  sum of independent a.e. measurable variables is integrable when each factor is.
 -/
 
 public section
@@ -102,3 +104,36 @@ theorem ae_sum_eq_zero_of_sum_integral_sq_eq_zero {ι : Type*} {X : ι → Ω �
   exact Finset.sum_eq_zero hω
 
 end TauCeti
+
+namespace ProbabilityTheory.iIndepFun
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [IsProbabilityMeasure μ]
+  {ι : Type*} {X : ι → Ω → ℝ} {t : ℝ}
+
+/-- A finite sum of independent, almost-everywhere measurable variables with integrable
+exponentials has an integrable exponential. This weakens the measurability hypothesis of
+`ProbabilityTheory.iIndepFun.integrable_exp_mul_sum`. -/
+theorem integrable_exp_mul_sum_of_aemeasurable (h_indep : iIndepFun X μ)
+    (h_meas : ∀ i, AEMeasurable (X i) μ) {s : Finset ι}
+    (h_int : ∀ i ∈ s, Integrable (fun ω => Real.exp (t * X i ω)) μ) :
+    Integrable (fun ω => Real.exp (t * (∑ i ∈ s, X i ω))) μ := by
+  let Y : ι → Ω → ℝ := fun i => (h_meas i).mk (X i)
+  have hYmeas : ∀ i, Measurable (Y i) := fun i => (h_meas i).measurable_mk
+  have hYindep : iIndepFun Y μ :=
+    h_indep.congr fun i => (h_meas i).ae_eq_mk
+  have hYint : ∀ i ∈ s, Integrable (fun ω => Real.exp (t * Y i ω)) μ := by
+    intro i hi
+    apply (h_int i hi).congr
+    filter_upwards [(h_meas i).ae_eq_mk] with ω hω
+    rw [hω]
+  have hsum : (fun ω => ∑ i ∈ s, X i ω) =ᵐ[μ] fun ω => ∑ i ∈ s, Y i ω := by
+    filter_upwards [ae_all_iff.2 (fun i : s => (h_meas i.1).ae_eq_mk)] with ω hω
+    apply Finset.sum_congr rfl
+    intro i hi
+    exact hω ⟨i, hi⟩
+  have h := hYindep.integrable_exp_mul_sum hYmeas hYint
+  apply h.congr
+  filter_upwards [hsum.symm] with ω hω
+  simpa only [Finset.sum_apply] using congrArg (fun x : ℝ => Real.exp (t * x)) hω
+
+end ProbabilityTheory.iIndepFun
