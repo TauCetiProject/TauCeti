@@ -24,15 +24,27 @@ values of the constants.
 * `FirstOrder.Language.Term.exists_onTerm_subst_eq`: every term of `L[[γ]]` without bound
   positions is obtained from a term of `L` by substituting constants for its bound positions.
 * `FirstOrder.Language.Term.realize_onTerm_subst_con`: the value of such a term in an expansion.
+* `FirstOrder.Language.coe_con_constantsOn_structure`: in the expansion interpreting each
+  constant `c` as `e c`, the constant `L.con c` is interpreted as `e c`.
 -/
 
 public section
 
 universe u v w uα
 
-namespace FirstOrder.Language.Term
+namespace FirstOrder.Language
 
 variable {L : Language.{u, v}} {α : Type uα} {γ : Type w}
+
+/-- In the expansion of an `L`-structure interpreting each constant `c` of `constantsOn γ` as
+`e c`, the constant `L.con c` of `L[[γ]]` is interpreted as `e c`. -/
+theorem coe_con_constantsOn_structure {M : Type*} [L.Structure M] (e : γ → M) (c : γ) :
+    letI := constantsOn.structure e; (L.con c : M) = e c :=
+  -- `L.con c` is the constant symbol `c` of `constantsOn γ`, and `constantsOn.structure e`
+  -- interprets it as `e c`.
+  rfl
+
+namespace Term
 
 /-- Every term of `L[[γ]]` whose variables are free variables abstracts to a term of `L`: there is
 a finite set of constants such that, at every tuple listing them, the term is obtained from a
@@ -93,4 +105,6 @@ theorem realize_onTerm_subst_con {M : Type*} [L.Structure M]
   · rfl
   · exact Term.realize_constants
 
-end FirstOrder.Language.Term
+end Term
+
+end FirstOrder.Language

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.Infinitary.FormationClosed
 public import TauCeti.ModelTheory.Infinitary.SubstBounds
+public import TauCeti.ModelTheory.Infinitary.Theory
 public import TauCeti.ModelTheory.Term.Constants
 import Mathlib.Data.Set.Finite.Lemmas
 
@@ -41,6 +42,12 @@ truth value.
 
 * `FirstOrder.Language.BoundedFormulaInf.realize_instConstants`: an instance holds exactly when
   the formula holds at the values of the constants.
+* `FirstOrder.Language.BoundedFormulaInf.realize_instConstants_constantsOn` and
+  `FirstOrder.Language.BoundedFormulaInf.realize_instConstants_congr`: in the expansion
+  interpreting each constant `c` as `e c`, an instance at `d` holds exactly when the formula holds
+  at `e ∘ d`, so it does not depend on the interpretation of the other constants.
+* `FirstOrder.Language.Theoryω.Model.of_eqOn_constantsOn`: a model of a theory of instances at
+  constants from a set `F` stays a model when the constants outside `F` are reinterpreted.
 * `FirstOrder.Language.BoundedFormulaInf.instConstants_eq_imp_iff` and its companions: the
   instances of the components of a formula are the components of its instance.
 * `FirstOrder.Language.BoundedFormulaInf.IsAtomic.exists_instConstants_eq`: every atomic formula
@@ -148,6 +155,37 @@ theorem instConstants_all (φ : L.BoundedFormulaInf ι α (n + 1)) :
       ((L.lhomWithConstants γ).onBoundedFormulaInf φ)).all := by
   rw [instConstants_def, LHom.onBoundedFormulaInf_all, substBounds_all]
 
+/-- The instance of an existential formula is the existential formula of the body with the
+constants substituted for the outer bound positions. -/
+@[simp]
+theorem instConstants_ex (φ : L.BoundedFormulaInf ι α (n + 1)) :
+    φ.ex.instConstants c = (substBounds (liftSubst fun i => (L.con (c i)).term)
+      ((L.lhomWithConstants γ).onBoundedFormulaInf φ)).ex := by
+  rw [instConstants_def, LHom.onBoundedFormulaInf_ex, substBounds_ex]
+
+/-- The instance of `⊤` is `⊤`. -/
+@[simp]
+theorem instConstants_top : (⊤ : L.BoundedFormulaInf ι α n).instConstants c = ⊤ := by
+  simp [instConstants_def]
+
+/-- Instances commute with conjunction. -/
+@[simp]
+theorem instConstants_inf (φ ψ : L.BoundedFormulaInf ι α n) :
+    (φ ⊓ ψ).instConstants c = φ.instConstants c ⊓ ψ.instConstants c := by
+  simp [inf_def]
+
+/-- Instances commute with disjunction. -/
+@[simp]
+theorem instConstants_sup (φ ψ : L.BoundedFormulaInf ι α n) :
+    (φ ⊔ ψ).instConstants c = φ.instConstants c ⊔ ψ.instConstants c := by
+  simp [sup_def]
+
+/-- Instances commute with the biconditional. -/
+@[simp]
+theorem instConstants_iff (φ ψ : L.BoundedFormulaInf ι α n) :
+    (φ.iff ψ).instConstants c = (φ.instConstants c).iff (ψ.instConstants c) := by
+  simp [iff_def]
+
 end ConstructorEqs
 
 /-- An instance at the empty tuple is the image of the formula in `L[[γ]]`. -/
@@ -169,6 +207,26 @@ theorem realize_instConstants {M : Type*} [L.Structure M] [L[[γ]].Structure M]
     (φ.instConstants c).Realize v ↔ φ.Realize v fun i => (L.con (c i) : M) := by
   simp only [instConstants_def, FormulaInf.realize_def, realize_substBounds, Term.realize_constants,
     LHom.realize_onBoundedFormulaInf]
+
+/-- In the expansion of an `L`-structure interpreting each constant `c` as `e c`, the instance of
+`φ` at `d` is realized exactly when `φ` is realized at `e ∘ d`. -/
+theorem realize_instConstants_constantsOn {M : Type*} [L.Structure M] (e : γ → M) {n : ℕ}
+    (φ : L.BoundedFormulaInf ι α n) (d : Fin n → γ) (v : α → M) :
+    letI := constantsOn.structure e
+    (φ.instConstants d).Realize v ↔ φ.Realize v (e ∘ d) := by
+  let := constantsOn.structure e
+  rw [realize_instConstants]
+  simp only [coe_con_constantsOn_structure, Function.comp_def]
+
+/-- **An instance depends only on its constants**: reinterpreting the constants outside the tuple
+`d` does not change whether the instance at `d` is realized. -/
+theorem realize_instConstants_congr {M : Type*} [L.Structure M] {e e' : γ → M} {n : ℕ}
+    (φ : L.BoundedFormulaInf ι α n) {d : Fin n → γ} (h : Set.EqOn e e' (Set.range d))
+    (v : α → M) :
+    (letI := constantsOn.structure e; (φ.instConstants d).Realize v) ↔
+      (letI := constantsOn.structure e'; (φ.instConstants d).Realize v) := by
+  have hd : e ∘ d = e' ∘ d := funext fun i => h ⟨i, rfl⟩
+  rw [realize_instConstants_constantsOn, realize_instConstants_constantsOn, hd]
 
 /-! ### Inversion -/
 
@@ -272,6 +330,48 @@ theorem IsAtomic.exists_instConstants_eq {φ : L[[γ]].FormulaInf ι α} (h : φ
     · exact isEmptyElim R
 
 end BoundedFormulaInf
+
+namespace Theoryω
+
+open BoundedFormulaInf
+
+variable {L : Language.{u, v}} {γ : Type w} {M : Type*} [L.Structure M] {s : L[[γ]].Theoryω}
+
+/-- The expansion of an `L`-structure interpreting each constant `c` as `e c` models a theory
+whose sentences are instances of formulas holding at the values of their constants. -/
+theorem model_of_forall_realize_instConstants (e : γ → M)
+    (h : ∀ φ ∈ s, ∃ (n : ℕ) (χ : L.BoundedFormulaω Empty n) (d : Fin n → γ),
+      χ.instConstants d = φ ∧ χ.Realize Empty.elim (e ∘ d)) :
+    letI := constantsOn.structure e; s.Model M := by
+  let := constantsOn.structure e
+  refine model_iff.2 fun φ hφ => ?_
+  obtain ⟨n, χ, d, rfl, h⟩ := h φ hφ
+  rw [SentenceInf.realize_def, realize_instConstants_constantsOn]
+  exact h
+
+/-- In a model of `s` that is the expansion of an `L`-structure interpreting each constant `c` as
+`e c`, an instance in `s` holds at the values of its constants. -/
+theorem Model.realize_of_instConstants_mem {e : γ → M}
+    (hM : letI := constantsOn.structure e; s.Model M) {n : ℕ}
+    {χ : L.BoundedFormulaω Empty n} {d : Fin n → γ} (h : χ.instConstants d ∈ s) :
+    χ.Realize Empty.elim (e ∘ d) := by
+  let := constantsOn.structure e
+  have hr := hM.realize_of_mem h
+  rwa [SentenceInf.realize_def, realize_instConstants_constantsOn] at hr
+
+/-- Reinterpreting the constants outside a set `F` preserves a model of a theory whose sentences
+are instances at tuples of constants from `F`. -/
+theorem Model.of_eqOn_constantsOn {e e' : γ → M} {F : Set γ}
+    (hF : ∀ φ ∈ s, ∃ (n : ℕ) (χ : L.BoundedFormulaω Empty n) (d : Fin n → γ),
+      χ.instConstants d = φ ∧ ∀ i, d i ∈ F)
+    (he : Set.EqOn e e' F) (hM : letI := constantsOn.structure e; s.Model M) :
+    letI := constantsOn.structure e'; s.Model M := by
+  refine model_of_forall_realize_instConstants e' fun φ hφ => ?_
+  obtain ⟨n, χ, d, rfl, hd⟩ := hF φ hφ
+  have hed : e' ∘ d = e ∘ d := funext fun i => (he (hd i)).symm
+  exact ⟨n, χ, d, rfl, hed ▸ hM.realize_of_instConstants_mem hφ⟩
+
+end Theoryω
 
 namespace Fragment
 
