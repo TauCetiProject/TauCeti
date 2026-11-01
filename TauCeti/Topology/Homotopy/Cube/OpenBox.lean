@@ -74,6 +74,7 @@ theorem continuous_cubeLiftTime : Continuous (cubeLiftTime (N := N)) := by
   exact (continuous_const.div hd fun x ↦
     (lt_of_lt_of_le one_pos (one_le_cubeLiftDen x)).ne').sub continuous_const
 
+@[simp]
 theorem cubeLiftTime_eq_zero {x : I × (N → I)}
     (hx : x ∈ cylinderExtensionDomain (Cube.boundary N)) : cubeLiftTime x = 0 := by
   have hd : cubeLiftDen x = 2 := by

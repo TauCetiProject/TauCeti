@@ -136,6 +136,7 @@ theorem ballRadialProjection_spec (p : I × closedBall (0 : E) 1) :
 
 /-- The radial projection fixes the bottom face of the cylinder and the part of the cylinder
 lying over the sphere. -/
+@[simp]
 theorem ballRadialProjection_eq_self (p : I × closedBall (0 : E) 1)
     (hp : p ∈ cylinderExtensionDomain (Subtype.val ⁻¹' sphere (0 : E) 1)) :
     ballRadialProjection p = ((p.1 : ℝ), (p.2 : E)) := by
