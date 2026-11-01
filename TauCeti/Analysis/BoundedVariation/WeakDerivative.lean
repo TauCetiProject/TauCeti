@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.BoundedVariation.PolarDecomposition
 public import TauCeti.Analysis.BoundedVariation.Space
-import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
+public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 
@@ -22,13 +22,17 @@ variation measure `TauCeti.variationMeasure` on `Ω` and `σ_u` is the polar den
 
 * Against an additive Haar measure, the variation measure of a weakly differentiable function
   has the norm of the weak derivative as density,
-  `|Du| = ‖Du‖ μ_Ω` (`TauCeti.HasWeakFDerivOn.variationMeasure_eq_withDensity`), and the polar
+  `|Du| = ‖U‖ μ_Ω` for the weak derivative `U`
+  (`TauCeti.HasWeakFDerivOn.variationMeasure_eq_withDensity`), and the polar
   density is the direction of the weak gradient `∇u`: `‖∇u‖ σ_u = ∇u` at `μ`-almost every point
   of `Ω` (`TauCeti.HasWeakFDerivOn.ae_norm_smul_polarDensity_eq`). Together these say that the
   derivative measure is `Du = ∇u μ_Ω`.
-* Conversely, if `u` has locally finite variation and `|Du|` is absolutely continuous with
-  respect to `μ_Ω`, then `u` is weakly differentiable, with weak gradient
-  `(d|Du| / dμ_Ω) σ_u` (`TauCeti.exists_hasWeakFDerivOn_of_absolutelyContinuous`). Thus a function
+* Conversely, if `u` is locally integrable with locally finite variation and `|Du|` is absolutely
+  continuous with respect to `μ_Ω`, then `u` is weakly differentiable, with weak gradient
+  `(d|Du| / dμ_Ω) σ_u` extended by zero outside `Ω`
+  (`TauCeti.hasWeakFDerivOn_of_absolutelyContinuous`). This density satisfies
+  `∫_A ‖(d|Du| / dμ_Ω) σ_u‖ dμ_Ω ≤ |Du|(A)`
+  (`TauCeti.setLIntegral_enorm_rnDeriv_smul_polarDensity_le`). Thus a function
   has a weak derivative on `Ω` exactly when it is locally integrable with locally finite variation
   and an absolutely continuous derivative measure (`TauCeti.exists_hasWeakFDerivOn_iff`). For an
   integrable function of bounded variation the weak gradient is integrable, so such a function
@@ -59,6 +63,11 @@ open scoped ENNReal Distributions RealInnerProductSpace
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} {Ω : Opens E} {u : E → ℝ}
 
+/-- The measure `μ_Ω` induced by `μ` on an open set `Ω` is finite on compact sets. -/
+local instance [IsFiniteMeasureOnCompacts μ] :
+    IsFiniteMeasureOnCompacts (μ.comap ((↑) : Ω → E)) :=
+  .comap' μ continuous_subtype_val (.subtype_coe Ω.isOpen.measurableSet)
+
 /-- **The variation measure of a weakly differentiable function.** If `u` has weak derivative `U`
 on `Ω`, then against an additive Haar measure `|Du| = ‖U‖ μ_Ω`: the variation measure has the
 norm of the weak derivative as density with respect to `μ` on `Ω`. -/
@@ -67,8 +76,6 @@ theorem HasWeakFDerivOn.variationMeasure_eq_withDensity [μ.IsAddHaarMeasure]
     variationMeasure μ Ω u = (μ.comap ((↑) : Ω → E)).withDensity fun x => ‖U x‖ₑ := by
   have := Ω.isOpen.locallyCompactSpace
   have hΩ := Ω.isOpen.measurableSet
-  have : IsFiniteMeasureOnCompacts (μ.comap ((↑) : Ω → E)) :=
-    .comap' μ continuous_subtype_val (.subtype_coe hΩ)
   -- The candidate measure is finite on compact sets, hence regular.
   have : IsFiniteMeasureOnCompacts ((μ.comap ((↑) : Ω → E)).withDensity fun x => ‖U x‖ₑ) :=
     ⟨fun K hK => by
@@ -114,10 +121,8 @@ theorem HasWeakFDerivOn.ae_norm_smul_polarDensity_eq [μ.IsAddHaarMeasure] {g : 
     refine locallyIntegrable_iff.2 fun K hK => Measure.integrableOn_of_bounded
       hK.measure_lt_top.ne
       ((hgm.norm.aemeasurable.inv.aestronglyMeasurable.smul hgm).mono_ac hac) (M := 1)
-      (ae_of_all _ fun x => ?_)
-    rcases eq_or_ne (g x) 0 with h0 | h0
-    · simp [τ, h0]
-    · simp [τ, norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 h0)]
+      (ae_of_all _ fun x => by
+        simpa [τ, norm_smul] using inv_mul_le_one_of_le₀ le_rfl (norm_nonneg _))
   have hrep (φ : 𝓓(Ω, E)) : ∫ x, divergenceCLM φ x * u x ∂μ =
       -∫ x, ⟪φ x, τ x⟫ ∂variationMeasure μ Ω u := by
     rw [hvar, integral_withDensity_eq_integral_toReal_smul₀ hgm.enorm
@@ -137,28 +142,53 @@ theorem HasWeakFDerivOn.ae_norm_smul_polarDensity_eq [μ.IsAddHaarMeasure] {g : 
   · simp [h0]
   · rw [← hx (by simpa using h0), hτ]
 
+/-- **The density of an absolutely continuous variation measure is controlled by it.** If `u` is
+locally integrable on `Ω` with locally finite variation there and `|Du| ≪ μ_Ω`, then for every
+measurable `A ⊆ Ω` the density `(d|Du| / dμ_Ω) σ_u` satisfies
+`∫_A ‖(d|Du| / dμ_Ω) σ_u‖ dμ_Ω ≤ |Du|(A)`. -/
+theorem setLIntegral_enorm_rnDeriv_smul_polarDensity_le [IsFiniteMeasureOnCompacts μ]
+    (hu : LocallyIntegrableOn u Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
+    (hac : variationMeasure μ Ω u ≪ μ.comap ((↑) : Ω → E)) {A : Set Ω} (hA : MeasurableSet A) :
+    ∫⁻ x in A, ‖((variationMeasure μ Ω u).rnDeriv (μ.comap (↑)) x).toReal •
+        polarDensity μ Ω u x‖ₑ ∂μ.comap (↑) ≤ variationMeasure μ Ω u A := by
+  have := Ω.isOpen.locallyCompactSpace
+  calc ∫⁻ x in A, ‖((variationMeasure μ Ω u).rnDeriv (μ.comap (↑)) x).toReal •
+        polarDensity μ Ω u x‖ₑ ∂μ.comap (↑)
+      ≤ ∫⁻ x in A, (variationMeasure μ Ω u).rnDeriv (μ.comap (↑)) x *
+          ‖polarDensity μ Ω u x‖ₑ ∂μ.comap (↑) := by
+        refine lintegral_mono fun x => ?_
+        rw [enorm_smul, Real.enorm_of_nonneg ENNReal.toReal_nonneg]
+        gcongr
+        exact ENNReal.ofReal_toReal_le
+    _ = ∫⁻ x in A, ‖polarDensity μ Ω u x‖ₑ ∂variationMeasure μ Ω u :=
+        setLIntegral_rnDeriv_mul hac measurable_polarDensity.enorm.aemeasurable hA
+    _ ≤ ∫⁻ _ in A, 1 ∂variationMeasure μ Ω u := lintegral_mono_ae <| ae_restrict_of_ae <|
+        (ae_norm_polarDensity_eq_one hu hfin).mono fun x hx => by simp [← ofReal_norm, hx]
+    _ = variationMeasure μ Ω u A := by simp
+
 /-- **A function with an absolutely continuous derivative measure is weakly differentiable.** If
 `u` is locally integrable on `Ω` with locally finite variation there, and its variation measure
-`|Du|` is absolutely continuous with respect to `μ` on `Ω`, then `u` has a weak gradient on `Ω`,
-namely `(d|Du| / dμ_Ω) σ_u` on `Ω`. -/
-theorem exists_hasWeakFDerivOn_of_absolutelyContinuous [IsFiniteMeasureOnCompacts μ]
+`|Du|` is absolutely continuous with respect to `μ` on `Ω`, then `u` has the weak gradient
+`(d|Du| / dμ_Ω) σ_u` on `Ω`, extended by zero outside `Ω`. -/
+theorem hasWeakFDerivOn_of_absolutelyContinuous [IsFiniteMeasureOnCompacts μ]
     (hu : LocallyIntegrableOn u Ω μ)
     (hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
     (hac : variationMeasure μ Ω u ≪ μ.comap ((↑) : Ω → E)) :
-    ∃ g : E → E, HasWeakFDerivOn μ Ω u fun x => innerSL ℝ (g x) := by
+    HasWeakFDerivOn μ Ω u fun x => innerSL ℝ (Function.extend ((↑) : Ω → E)
+      (fun x => ((variationMeasure μ Ω u).rnDeriv (μ.comap (↑)) x).toReal •
+        polarDensity μ Ω u x) 0 x) := by
   have := Ω.isOpen.locallyCompactSpace
   have hΩ := Ω.isOpen.measurableSet
   set ν := μ.comap ((↑) : Ω → E)
-  have : IsFiniteMeasureOnCompacts ν := .comap' μ continuous_subtype_val (.subtype_coe hΩ)
   set lam := variationMeasure μ Ω u
   -- The density `G = (d|Du| / dν) σ_u` on `Ω`, extended by zero.
   set G : Ω → E := fun x => (lam.rnDeriv ν x).toReal • polarDensity μ Ω u x with hG
-  have hGm : Measurable G := (Measure.measurable_rnDeriv _ _).ennreal_toReal.smul
-    measurable_polarDensity
-  classical
-  set g : E → E := fun x => if hx : x ∈ Ω then G ⟨x, hx⟩ else 0
-  have hg (x : Ω) : g x = G x := dite_eq_left x.2
-  have hgm : Measurable g := hGm.dite measurable_const hΩ
+  set g : E → E := Function.extend (↑) G 0
+  have hg (x : Ω) : g x = G x := Subtype.val_injective.extend_apply G 0 x
+  have hgm : Measurable g := (MeasurableEmbedding.subtype_coe hΩ).measurable_extend
+    ((Measure.measurable_rnDeriv _ _).ennreal_toReal.smul measurable_polarDensity)
+    measurable_const
   -- `∫_K ‖g‖ dμ ≤ |Du|(K) < ∞` for compact `K ⊆ Ω`.
   have hgloc : LocallyIntegrableOn g Ω μ := by
     refine (locallyIntegrableOn_iff Ω.isOpen.isLocallyClosed).2 fun K hKΩ hK =>
@@ -169,21 +199,11 @@ theorem exists_hasWeakFDerivOn_of_absolutelyContinuous [IsFiniteMeasureOnCompact
     have hK' : IsCompact K' := Subtype.isCompact_iff.2 (hKK' ▸ hK)
     rw [HasFiniteIntegral, ← hKK']
     refine (setLIntegral_subtype hΩ K' fun y => ‖g y‖ₑ).symm.trans_lt ?_
-    calc ∫⁻ x in K', ‖g x‖ₑ ∂ν
-        ≤ ∫⁻ x in K', lam.rnDeriv ν x * ‖polarDensity μ Ω u x‖ₑ ∂ν := by
-          refine lintegral_mono fun x => ?_
-          rw [hg, hG, enorm_smul]
-          gcongr
-          rw [Real.enorm_of_nonneg ENNReal.toReal_nonneg]
-          exact ENNReal.ofReal_toReal_le
-      _ = ∫⁻ x in K', ‖polarDensity μ Ω u x‖ₑ ∂lam :=
-          setLIntegral_rnDeriv_mul hac measurable_polarDensity.enorm.aemeasurable
-            hK'.measurableSet
-      _ ≤ ∫⁻ _ in K', 1 ∂lam := lintegral_mono_ae <| ae_restrict_of_ae <|
-          (ae_norm_polarDensity_eq_one hu hfin).mono fun x hx => by simp [← ofReal_norm, hx]
-      _ < ∞ := by simpa using hK'.measure_lt_top
-  refine ⟨g, hasWeakFDerivOn_iff.2 fun v => hasWeakLineDerivOn_iff_testFunction.2
-    ⟨inferInstance, hu, ?_, fun φ => ?_⟩⟩
+    simp only [hg]
+    exact (setLIntegral_enorm_rnDeriv_smul_polarDensity_le hu hfin hac hK'.measurableSet).trans_lt
+      hK'.measure_lt_top
+  refine hasWeakFDerivOn_iff.2 fun v => hasWeakLineDerivOn_iff_testFunction.2
+    ⟨inferInstance, hu, ?_, fun φ => ?_⟩
   · simpa [Function.comp_def, real_inner_comm] using (innerSL ℝ v).locallyIntegrableOn_comp hgloc
   -- Test the polar decomposition against the vector field `φ v`, whose divergence is `∂_v φ`.
   set ψ := postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) φ
@@ -212,24 +232,30 @@ theorem exists_hasWeakFDerivOn_iff [μ.IsAddHaarMeasure] :
         variationMeasure μ Ω u ≪ μ.comap ((↑) : Ω → E) := by
   refine ⟨fun ⟨U, h⟩ => ⟨h.locallyIntegrableOn,
     fun K hK hKΩ => h.exists_totalVariationOn_ne_top hK hKΩ, ?_⟩,
-    fun ⟨hu, hfin, hac⟩ => ?_⟩
-  · rw [h.variationMeasure_eq_withDensity]
-    exact withDensity_absolutelyContinuous _ _
-  · obtain ⟨g, hg⟩ := exists_hasWeakFDerivOn_of_absolutelyContinuous hu hfin hac
-    exact ⟨_, hg⟩
+    fun ⟨hu, hfin, hac⟩ => ⟨_, hasWeakFDerivOn_of_absolutelyContinuous hu hfin hac⟩⟩
+  rw [h.variationMeasure_eq_withDensity]
+  exact withDensity_absolutelyContinuous _ _
 
 /-- **An integrable function of bounded variation with an absolutely continuous derivative
 measure lies in `W^{1,1}(Ω)`.** If `u` is integrable on `Ω` with finite total variation there,
-and its variation measure is absolutely continuous with respect to an additive Haar measure `μ`
-on `Ω`, then `u` has a weak gradient on `Ω` which is integrable on `Ω`. -/
-theorem MemBV.exists_hasWeakFDerivOn_integrableOn [μ.IsAddHaarMeasure] (hu : MemBV μ Ω u)
-    (hac : variationMeasure μ Ω u ≪ μ.comap ((↑) : Ω → E)) :
+and its variation measure is absolutely continuous with respect to `μ` on `Ω`, then `u` has a weak
+gradient on `Ω` which is integrable on `Ω`. -/
+theorem MemBV.exists_hasWeakFDerivOn_integrableOn [IsFiniteMeasureOnCompacts μ]
+    (hu : MemBV μ Ω u) (hac : variationMeasure μ Ω u ≪ μ.comap ((↑) : Ω → E)) :
     ∃ g : E → E, HasWeakFDerivOn μ Ω u (fun x => innerSL ℝ (g x)) ∧ IntegrableOn g Ω μ := by
-  obtain ⟨g, hg⟩ := exists_hasWeakFDerivOn_of_absolutelyContinuous
-    (memBV_iff.1 hu).1.locallyIntegrableOn (fun _ _ hKΩ => ⟨Ω, hKΩ, (memBV_iff.1 hu).2.ne⟩) hac
-  refine ⟨g, hg, ?_⟩
-  exact (hg.totalVariationOn_lt_top_iff_integrableOn.1 (memBV_iff.1 hu).2).norm.mono'
-    hg.locallyIntegrableOn_gradient.aestronglyMeasurable
-    (ae_of_all _ fun x => by simp [innerSL_apply_norm])
+  have hΩ := Ω.isOpen.measurableSet
+  have hloc := (memBV_iff.1 hu).1.locallyIntegrableOn
+  have hfin : ∀ K, IsCompact K → K ⊆ Ω → ∃ U : Opens E, K ⊆ (U : Set E) ∧
+      totalVariationOn μ U u ≠ ∞ := fun _ _ hKΩ => ⟨Ω, hKΩ, (memBV_iff.1 hu).2.ne⟩
+  have hg := hasWeakFDerivOn_of_absolutelyContinuous hloc hfin hac
+  refine ⟨_, hg, hg.locallyIntegrableOn_gradient.aestronglyMeasurable, ?_⟩
+  -- `∫_Ω ‖g‖ dμ ≤ |Du|(Ω) = TV(u, Ω) < ∞`.
+  rw [HasFiniteIntegral, ← Subtype.range_coe (s := (Ω : Set E)), ← image_univ,
+    ← setLIntegral_subtype hΩ]
+  simp only [Subtype.val_injective.extend_apply]
+  refine (setLIntegral_enorm_rnDeriv_smul_polarDensity_le hloc hfin hac
+    MeasurableSet.univ).trans_lt ?_
+  rw [variationMeasure_univ hloc hfin]
+  exact (memBV_iff.1 hu).2
 
 end TauCeti
