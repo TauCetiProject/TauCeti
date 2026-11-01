@@ -49,9 +49,7 @@ variable {C I : Type*} [Category* C] [Abelian C] {c : ComplexShape I}
   {A B D E : HomologicalComplex C c} {f : A ⟶ B} {g : A ⟶ D}
   {i : B ⟶ E} {j : D ⟶ E}
 
-/-- Pushing out a monomorphic quasi-isomorphism gives a quasi-isomorphism.
-The resulting map is also monomorphic, by stability of monomorphisms under pushout
-in an abelian category. -/
+/-- Pushing out a monomorphic quasi-isomorphism gives a quasi-isomorphism. -/
 lemma quasiIso_inr_of_mono_of_quasiIso (sq : IsPushout f g i j) [Mono f] [QuasiIso f] :
     QuasiIso j := by
   have : Mono j := Abelian.mono_inr_of_isColimit _ _ sq.isColimit
@@ -87,24 +85,23 @@ instance {J : Type w} [Category.{w'} J] [HasColimitsOfShape J C]
     rw [mem_quasiIso_iff, _root_.quasiIso_iff]
     intro n
     rw [quasiIsoAt_iff_isIso_homologyMap]
-    let H := homologyFunctor C c n
-    exact MorphismProperty.IsStableUnderColimitsOfShape.condition
-      (W := (MorphismProperty.isomorphisms C).inverseImage H)
+    have h := MorphismProperty.IsStableUnderColimitsOfShape.condition
+      (W := (MorphismProperty.isomorphisms C).inverseImage (homologyFunctor C c n))
       F G s t hs ht f
       (fun j ↦ by
         have : QuasiIso (f.app j) := hf j
-        exact (inferInstance : IsIso (homologyMap (f.app j) n)))
+        have h : IsIso (homologyMap (f.app j) n) := inferInstance
+        rw [MorphismProperty.inverseImage_iff, MorphismProperty.isomorphisms.iff,
+          homologyFunctor_map]
+        exact h)
       φ hφ
+    rw [MorphismProperty.inverseImage_iff, MorphismProperty.isomorphisms.iff,
+      homologyFunctor_map] at h
+    exact h
 
 /-- Under AB5, quasi-isomorphisms are stable under filtered colimits. -/
 instance [HasFilteredColimitsOfSize.{w', w} C] [AB5OfSize.{w', w} C] :
     MorphismProperty.IsStableUnderFilteredColimits.{w', w} (quasiIso C c) where
-  isStableUnderColimitsOfShape J _ _ := by infer_instance
-
-/-- Under AB5, monomorphic quasi-isomorphisms are stable under filtered colimits. -/
-instance [HasFilteredColimitsOfSize.{w', w} C] [AB5OfSize.{w', w} C] :
-    MorphismProperty.IsStableUnderFilteredColimits.{w', w}
-      (MorphismProperty.monomorphisms (HomologicalComplex C c) ⊓ quasiIso C c) where
   isStableUnderColimitsOfShape J _ _ := by infer_instance
 
 end HomologicalComplex
