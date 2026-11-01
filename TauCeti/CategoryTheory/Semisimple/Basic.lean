@@ -28,8 +28,9 @@ finite-dimensionality of morphism spaces are separate hypotheses when they are n
   equivalence.
 * `TauCeti.isSplitMono_of_nonzero_from_simple`: a nonzero morphism out of a simple object is a
   split monomorphism.
-* `TauCeti.hom_ext_of_simple`: a morphism out of the image of an object under an additive
-  functor is determined by its composites with the images of morphisms from simple objects.
+* `CategoryTheory.Functor.hom_ext_of_simple`: a morphism out of the image of an object under an
+  additive functor is determined by its composites with the images of morphisms from simple
+  objects.
 * `TauCeti.natTrans_ext_of_simple`: a natural transformation out of an additive functor is
   determined by its components at the simple objects.
 -/
@@ -102,7 +103,7 @@ theorem isSplitMono_of_nonzero_from_simple {C : Type u} [Category.{v} C] [Abelia
 /-- In a finite semisimple category, the images under an additive functor of the morphisms from
 simple objects into `X` are jointly epimorphic: two morphisms out of `F.obj X` agreeing after
 precomposition with every `F.map s`, for `s : S ⟶ X` with `S` simple, are equal. -/
-theorem hom_ext_of_simple {C : Type u} [Category.{v} C] [Abelian C]
+theorem _root_.CategoryTheory.Functor.hom_ext_of_simple {C : Type u} [Category.{v} C] [Abelian C]
     [IsFiniteSemisimpleCategory C] {D : Type u'} [Category.{v'} D] [Preadditive D]
     (F : C ⥤ D) [F.Additive] {X : C} {Z : D} {f g : F.obj X ⟶ Z}
     (h : ∀ (S : C) [Simple S] (s : S ⟶ X), F.map s ≫ f = F.map s ≫ g) : f = g := by
@@ -124,7 +125,7 @@ theorem natTrans_ext_of_simple {C : Type u} [Category.{v} C] [Abelian C]
     {F G : C ⥤ D} [F.Additive] {α β : F ⟶ G} (h : ∀ (X : C) [Simple X], α.app X = β.app X) :
     α = β := by
   ext X
-  refine hom_ext_of_simple F fun S _ s ↦ ?_
+  refine F.hom_ext_of_simple fun S _ s ↦ ?_
   rw [α.naturality, β.naturality, h]
 
 end TauCeti

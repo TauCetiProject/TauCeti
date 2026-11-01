@@ -90,7 +90,7 @@ private theorem app_tensorObj_of_simple (χ : universalGradingGroup C →* Rˣ) 
     (simpleScalarsToCatCenter R C (degreeScalars χ)).app (X ⊗ Y) =
       (degreeScalars χ (SimpleClasses.classOf X) * degreeScalars χ (SimpleClasses.classOf Y)) •
         𝟙 (X ⊗ Y) := by
-  refine hom_ext_of_simple (𝟭 C) fun S _ s ↦ ?_
+  refine (𝟭 C).hom_ext_of_simple fun S _ s ↦ ?_
   dsimp only [Functor.id_map, Functor.id_obj]
   rw [comp_simpleScalarsToCatCenter_app, Linear.comp_smul, Category.comp_id]
   by_cases hs : s = 0
@@ -121,8 +121,8 @@ private theorem app_tensorObj (χ : universalGradingGroup C →* Rˣ) (X Y : C) 
       (simpleScalarsToCatCenter R C (degreeScalars χ)).app X ⊗ₘ
         (simpleScalarsToCatCenter R C (degreeScalars χ)).app Y := by
   -- Reduce to tensor products of simple objects, one factor at a time.
-  refine hom_ext_of_simple (tensorRight Y) fun A _ u ↦ ?_
-  refine hom_ext_of_simple (tensorLeft A) fun B _ v ↦ ?_
+  refine (tensorRight Y).hom_ext_of_simple fun A _ u ↦ ?_
+  refine (tensorLeft A).hom_ext_of_simple fun B _ v ↦ ?_
   dsimp only [curriedTensor_obj_obj, curriedTensor_obj_map, Functor.flip_obj_obj,
     Functor.flip_obj_map, curriedTensor_map_app]
   rw [← tensorHom_def'_assoc, ← tensorHom_def'_assoc, CatCenter.naturality,

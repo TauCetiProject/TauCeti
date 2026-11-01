@@ -30,8 +30,8 @@ automorphisms of the identity.
 * `TauCeti.comp_simpleScalarsToCatCenter_app`: precomposed with a morphism `s` out of a simple
   object `S`, the central endomorphism given by `c` is `c [S] • s`;
 * `TauCeti.simpleScalarsToCatCenter_app_of_simple`: on a simple object `X` it is `c [X] • 𝟙 X`;
-* `TauCeti.eq_simpleScalarsToCatCenter_iff`: a central endomorphism is the one given by `c` exactly
-  when it acts on every simple object `X` by `c [X]`.
+* `CategoryTheory.CatCenter.eq_simpleScalarsToCatCenter_iff`: a central endomorphism is the one
+  given by `c` exactly when it acts on every simple object `X` by `c [X]`.
 -/
 
 public section
@@ -80,7 +80,7 @@ variable {R C} in
 homomorphism. -/
 private def toCatCenter (c : SimpleClasses C → R) : CatCenter C := End.of
   { app := app c
-    naturality X Y f := hom_ext_of_simple (𝟭 C) fun S _ s ↦ by
+    naturality X Y f := (𝟭 C).hom_ext_of_simple fun S _ s ↦ by
       dsimp only [Functor.id_map, Functor.id_obj]
       rw [← Category.assoc, comp_app, ← Category.assoc, comp_app, Linear.smul_comp] }
 
@@ -94,15 +94,15 @@ private theorem comp_toCatCenter_app (c : SimpleClasses C → R) {S X : C} [Simp
 object `S` by the scalar of its class. -/
 def simpleScalarsToCatCenter : (SimpleClasses C → R) →+* CatCenter C where
   toFun := toCatCenter
-  map_one' := CatCenter.ext _ _ fun X ↦ hom_ext_of_simple (𝟭 C) fun S _ s ↦ by
+  map_one' := CatCenter.ext _ _ fun X ↦ (𝟭 C).hom_ext_of_simple fun S _ s ↦ by
     simp [comp_toCatCenter_app]
-  map_mul' c d := CatCenter.ext _ _ fun X ↦ hom_ext_of_simple (𝟭 C) fun S _ s ↦ by
+  map_mul' c d := CatCenter.ext _ _ fun X ↦ (𝟭 C).hom_ext_of_simple fun S _ s ↦ by
     dsimp only [Functor.id_map, Functor.id_obj]
     rw [CatCenter.mul_app, ← Category.assoc, comp_toCatCenter_app c s, Linear.smul_comp,
       comp_toCatCenter_app d s, comp_toCatCenter_app, Pi.mul_apply, mul_smul]
-  map_zero' := CatCenter.ext _ _ fun X ↦ hom_ext_of_simple (𝟭 C) fun S _ s ↦ by
+  map_zero' := CatCenter.ext _ _ fun X ↦ (𝟭 C).hom_ext_of_simple fun S _ s ↦ by
     simp [comp_toCatCenter_app]
-  map_add' c d := CatCenter.ext _ _ fun X ↦ hom_ext_of_simple (𝟭 C) fun S _ s ↦ by
+  map_add' c d := CatCenter.ext _ _ fun X ↦ (𝟭 C).hom_ext_of_simple fun S _ s ↦ by
     simp [comp_toCatCenter_app, add_smul]
 
 variable {R C}
@@ -124,11 +124,12 @@ theorem simpleScalarsToCatCenter_app_of_simple (c : SimpleClasses C → R) (X : 
 
 /-- A natural endomorphism of the identity functor is the one given by scalars `c` on simple
 classes exactly when it acts on every simple object `X` as multiplication by `c [X]`. -/
-theorem eq_simpleScalarsToCatCenter_iff (z : CatCenter C) (c : SimpleClasses C → R) :
+theorem _root_.CategoryTheory.CatCenter.eq_simpleScalarsToCatCenter_iff (z : CatCenter C)
+    (c : SimpleClasses C → R) :
     z = simpleScalarsToCatCenter R C c ↔
       ∀ (X : C) [Simple X], z.app X = c (SimpleClasses.classOf X) • 𝟙 X := by
   refine ⟨fun h X _ ↦ by simp [h], fun h ↦ ?_⟩
-  exact CatCenter.ext _ _ fun X ↦ hom_ext_of_simple (𝟭 C) fun S _ s ↦ by
+  exact CatCenter.ext _ _ fun X ↦ (𝟭 C).hom_ext_of_simple fun S _ s ↦ by
     dsimp only [Functor.id_map, Functor.id_obj]
     rw [comp_simpleScalarsToCatCenter_app, CatCenter.naturality, h,
       Linear.smul_comp, Category.id_comp]
