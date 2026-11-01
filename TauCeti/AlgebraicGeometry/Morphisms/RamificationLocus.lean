@@ -62,11 +62,11 @@ local ring of the same dimension is étale
   `AlgebraicGeometry.Scheme.Hom.nonEtaleLocus_specMap`,
   `AlgebraicGeometry.Scheme.Hom.branchLocus_specMap`: the affine comparisons with
   `Algebra.unramifiedLocus` and `Algebra.etaleLocus`.
-* `AlgebraicGeometry.Scheme.Hom.support_subset_ramificationLocus_specMap`,
-  `AlgebraicGeometry.Scheme.Hom.ramificationLocus_specMap_subset_zeroLocus`: the ramification
-  locus of `Spec S ⟶ Spec R` contains the support of any module spanned by the image of a
-  derivation vanishing on `R`, and lies in the zero locus of any element of `S` annihilating every
-  such derivation.
+* `RingHom.support_subset_ramificationLocus_specMap`,
+  `AlgHom.ramificationLocus_specMap_subset_zeroLocus`: the ramification locus of
+  `Spec S ⟶ Spec R` contains the support of any module spanned by the image of a derivation
+  vanishing on `R`, and lies in the zero locus of any element of `S` annihilating every such
+  derivation.
 
 ## References
 
@@ -244,7 +244,16 @@ theorem nonEtaleLocus_specMap [Algebra.FinitePresentation R S] :
   ext q
   exact not_congr (etaleAt_spec_iff q)
 
-omit [Algebra R S] in
+end Scheme.Hom
+
+end AlgebraicGeometry
+
+namespace RingHom
+
+open AlgebraicGeometry
+
+variable {R S : Type u} [CommRing R] [CommRing S]
+
 /-- If a derivation `S → M`, over any base, vanishes on the image of `φ : R →+* S` and its image
 spans `M`, then the support of `M` lies in the ramification locus of `Spec S ⟶ Spec R`. -/
 theorem support_subset_ramificationLocus_specMap (φ : R →+* S) {A : Type*} [CommRing A]
@@ -264,9 +273,17 @@ theorem support_subset_ramificationLocus_specMap (φ : R →+* S) {A : Type*} [C
     rintro _ ⟨s, rfl⟩
     exact ⟨KaehlerDifferential.D R S s, D'.liftKaehlerDifferential_comp_D s⟩
   refine (Module.support_subset_of_surjective _ hsurj).trans ?_
-  rw [ramificationLocus_specMap, Algebra.unramifiedLocus_eq_compl_support, compl_compl]
+  rw [Scheme.Hom.ramificationLocus_specMap, Algebra.unramifiedLocus_eq_compl_support,
+    compl_compl]
 
-omit [Algebra R S] in
+end RingHom
+
+namespace AlgHom
+
+open AlgebraicGeometry
+
+variable {R S : Type u} [CommRing R] [CommRing S]
+
 /-- If `s : S` annihilates every `A`-derivation `S → M` vanishing on the image of the `A`-algebra
 map `φ : R →ₐ[A] S`, then the ramification locus of `Spec S ⟶ Spec R` lies in the zero locus of
 `s`. Taking `A = ℤ` covers an arbitrary ring homomorphism. -/
@@ -278,7 +295,8 @@ theorem ramificationLocus_specMap_subset_zeroLocus {A : Type*} [CommRing A] [Alg
       PrimeSpectrum.zeroLocus {s} := by
   algebraize [φ.toRingHom]
   have : IsScalarTower A R S := .of_algebraMap_eq fun a ↦ (φ.commutes a).symm
-  rw [ramificationLocus_specMap, Algebra.unramifiedLocus_eq_compl_support, compl_compl]
+  rw [Scheme.Hom.ramificationLocus_specMap, Algebra.unramifiedLocus_eq_compl_support,
+    compl_compl]
   intro p hp
   -- Apply the hypothesis to the universal derivation: `s` annihilates `Ω[S⁄R]`.
   have hann : s ∈ Module.annihilator S Ω[S⁄R] := by
@@ -289,6 +307,4 @@ theorem ramificationLocus_specMap_subset_zeroLocus {A : Type*} [CommRing A] [Alg
       (KaehlerDifferential.D R S).map_algebraMap t
   exact Set.singleton_subset_iff.mpr (Module.annihilator_le_of_mem_support hp hann)
 
-end Scheme.Hom
-
-end AlgebraicGeometry
+end AlgHom

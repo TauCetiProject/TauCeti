@@ -31,8 +31,8 @@ For a field `k`, these examples compute the loci of three morphisms of affine sp
   `TauCeti.AlgebraicGeometry.branchLocus_square`).
 
 The ramification loci are computed as supports of the module of Kähler differentials, through
-`AlgebraicGeometry.Scheme.Hom.support_subset_ramificationLocus_specMap` and
-`AlgebraicGeometry.Scheme.Hom.ramificationLocus_specMap_subset_zeroLocus`.
+`RingHom.support_subset_ramificationLocus_specMap` and
+`AlgHom.ramificationLocus_specMap_subset_zeroLocus`.
 
 ## References
 
@@ -118,7 +118,7 @@ example : IsDominant (Spec.map (CommRingCat.ofHom (expand k p).toRingHom)) :=
 /-- *test_ramificationLocus_frobenius*: the relative Frobenius `𝔸¹_k ⟶ 𝔸¹_k`, `t ↦ tᵖ`, is
 ramified at every point, since `d/dt` vanishes on `k[tᵖ]`. -/
 example : (Spec.map (CommRingCat.ofHom (expand k p).toRingHom)).ramificationLocus = Set.univ := by
-  have h := Scheme.Hom.support_subset_ramificationLocus_specMap (expand k p).toRingHom
+  have h := RingHom.support_subset_ramificationLocus_specMap (expand k p).toRingHom
     (derivative' (R := k)) (fun r ↦ by simp [derivative_expand]) ?_
   · exact Set.eq_univ_of_univ_subset (Module.support_of_isTorsionFree.symm.subset.trans h)
   · rw [eq_top_iff, ← Ideal.span_singleton_one, Ideal.span_le, Set.singleton_subset_iff]
@@ -144,7 +144,7 @@ private theorem squareMap_X_one : squareMap k (X 1) = X 1 := by simp [squareMap]
 private theorem ramificationLocus_squareMap_subset (h2 : (2 : k) ≠ 0) :
     (Spec.map (CommRingCat.ofHom (squareMap k).toRingHom)).ramificationLocus ⊆
       PrimeSpectrum.zeroLocus {X 0} := by
-  refine Scheme.Hom.ramificationLocus_specMap_subset_zeroLocus _ _ fun M _ _ _ _ D hD t ↦ ?_
+  refine AlgHom.ramificationLocus_specMap_subset_zeroLocus _ _ fun M _ _ _ _ D hD t ↦ ?_
   -- A derivation vanishing on `x²` and `y` is killed by `x`, since `2` is a unit.
   have hu : IsUnit (2 : MvPolynomial (Fin 2) k) := by
     have := (IsUnit.mk0 _ h2).map (C : k →+* MvPolynomial (Fin 2) k)
@@ -167,7 +167,7 @@ private theorem zeroLocus_subset_ramificationLocus_squareMap :
   let D : Derivation k (MvPolynomial (Fin 2) k) (MvPolynomial (Fin 2) k ⧸ I) :=
     I.mkQ.compDer (pderiv 0)
   have hD : ∀ t, D t = Ideal.Quotient.mk I (pderiv 0 t) := fun _ ↦ by simp [D]
-  refine subset_trans (le_of_eq ?_) (Scheme.Hom.support_subset_ramificationLocus_specMap
+  refine subset_trans (le_of_eq ?_) (RingHom.support_subset_ramificationLocus_specMap
     (squareMap k).toRingHom D (fun r ↦ ?_) ?_)
   · rw [Module.support_eq_zeroLocus, Ideal.annihilator_quotient, PrimeSpectrum.zeroLocus_span]
   · -- `D` vanishes on the generators `x²` and `y` of the image of the squaring map.
