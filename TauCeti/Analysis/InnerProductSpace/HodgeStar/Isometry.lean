@@ -9,7 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.ExteriorPower
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Analysis.InnerProductSpace.Trace
+import TauCeti.Analysis.InnerProductSpace.Trace.Free
 
 /-!
 # Metric and functorial properties of the Hodge star
@@ -194,16 +194,10 @@ theorem hodgeStar_lieMap {k l : ℕ} (hkl : k + l = finrank ℝ V) {A : V →ₗ
     (hA : ∀ u w, ⟪A u, w⟫ = -⟪u, A w⟫) (x : ⋀[ℝ]^k V) :
     o.hodgeStar hkl (lieMap k A x) = lieMap l A (o.hodgeStar hkl x) := by
   -- `D_A` is skew-adjoint, and it acts on the top exterior power by `tr A = 0`.
-  have htr : LinearMap.trace ℝ V A = 0 := by
-    let b := stdOrthonormalBasis ℝ V
-    rw [LinearMap.trace_eq_sum_inner A b]
-    refine Finset.sum_eq_zero fun i _ ↦ ?_
-    have h := hA (b i) (b i)
-    rw [real_inner_comm] at h
-    linarith
   refine ext_inner_right ℝ fun y ↦ ?_
   rw [inner_hodgeStar_apply, inner_lieMap_left hA, inner_hodgeStar_apply, eq_neg_iff_add_eq_zero,
-    wedgePairing_lieMap_add_wedgePairing_lieMap, htr, zero_mul]
+    wedgePairing_lieMap_add_wedgePairing_lieMap, LinearMap.trace_eq_zero_of_inner_left_eq_neg hA,
+    zero_mul]
 
 end Orientation
 

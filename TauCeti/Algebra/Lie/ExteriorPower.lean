@@ -167,7 +167,8 @@ theorem lieMap_wedge (f : Module.End K V) {k l : ℕ} (x : ⋀[K]^k V) (y : ⋀[
       LinearMap.compl₁₂_apply, LinearMap.compl₂_apply, LinearMap.id_apply, wedge_ιMulti,
       lieMap_apply_ιMulti, map_sum, LinearMap.sum_apply, Fin.sum_univ_add, Fin.append_left,
       Fin.append_right, Fin.update_append_castAdd, Fin.update_append_natAdd]
-  exact LinearMap.congr_fun₂ key x y
+  simpa only [LinearMap.compr₂_apply, LinearMap.add_apply, LinearMap.compl₁₂_apply,
+    LinearMap.compl₂_apply, LinearMap.id_apply] using LinearMap.congr_fun₂ key x y
 
 /-- An endomorphism of a free module of finite rank acts on the top exterior power by
 multiplication by its trace: the infinitesimal form of
@@ -205,20 +206,11 @@ theorem wedgePairing_lieMap_add_wedgePairing_lieMap [Nontrivial K] [Module.Free 
     wedgePairing vol hkl (lieMap k f x) y + wedgePairing vol hkl x (lieMap l f y) =
       LinearMap.trace K V f * wedgePairing vol hkl x y := by
   -- Read the wedge pairing in the top degree, where `f` acts by its trace.
-  let e : ⋀[K]^(k + l) V ≃ₗ[K] ⋀[K]^(Module.finrank K V) V :=
-    LinearEquiv.ofEq _ _ (congrArg (fun d ↦ ⋀[K]^d V) hkl)
-  have hpair (x : ⋀[K]^k V) (y : ⋀[K]^l V) :
-      wedgePairing vol hkl x y = vol (e (wedge K V k l x y)) :=
-    wedgePairing_apply_eq_of_coe_mul_eq vol hkl x y _ (by simp [e])
-  have he (z : ⋀[K]^(k + l) V) : e (lieMap (k + l) f z) = lieMap _ f (e z) := by
-    -- The degree transport is the identity on the exterior algebra.
-    have key : ∀ {d d' : ℕ} (h : d = d') (z : ⋀[K]^d V),
-        LinearEquiv.ofEq _ _ (congrArg (fun d ↦ ⋀[K]^d V) h) (lieMap d f z) =
-          lieMap d' f (LinearEquiv.ofEq _ _ (congrArg (fun d ↦ ⋀[K]^d V) h) z) := by
-      rintro d _ rfl z
-      simp
-    exact key hkl z
-  rw [hpair, hpair, hpair, ← map_add, ← map_add, ← lieMap_wedge, he, lieMap_finrank_apply,
-    map_smul, smul_eq_mul]
+  have htop : lieMap (Module.finrank K V) f = LinearMap.trace K V f • LinearMap.id :=
+    LinearMap.ext (lieMap_finrank_apply f)
+  rw [← hkl] at htop
+  simp only [LinearMap.compr₂_apply]
+  rw [← map_add, ← lieMap_wedge, htop, LinearMap.smul_apply, LinearMap.id_apply, map_smul,
+    smul_eq_mul]
 
 end exteriorPower

@@ -19,9 +19,14 @@ power `ℂ ⊗[ℝ] ⋀ᵏ V`. A complexified `k`-vector has type `(p,q)`, `p + 
 multiplication by `(p - q) * I` (`exteriorPower.typeSubmodule`). These are the usual
 `(p,q)`-vectors: read in the exterior algebra of the complexification of `V`, a wedge of `p`
 vectors of type `(1,0)`, the `I`-eigenvectors of `J`, and `q` vectors of type `(0,1)`, the
-`-I`-eigenvectors, is an eigenvector of the derivation with eigenvalue `p * I - q * I`. This is the
-convention of `ContinuousAlternatingMap.IsOfType` for complex-valued forms, where `J` is likewise
-applied to one argument at a time.
+`-I`-eigenvectors, is an eigenvector of the derivation with eigenvalue `p * I - q * I`.
+
+The eigenvalue formula is the one of `ContinuousAlternatingMap.IsOfType` for complex-valued forms,
+where `J` is likewise applied to one argument at a time, so the types agree under the evaluation
+pairing of vectors with forms. They do not agree under the metric identification
+`TauCeti.alternatingFormEquiv`, `x ↦ ⟪x, ·⟫`: for skew-adjoint `J` the derivation is
+skew-adjoint, so its complex-linear extension sends vectors of type `(p,q)` to forms of type
+`(q,p)`. The type laws for the complex Hodge star and `barStar` are unchanged by this exchange.
 
 Since `J` is real, conjugation of the coefficients exchanges the types `(p,q)` and `(q,p)`
 (`exteriorPower.tmulConj_mem_typeSubmodule_iff`). The complex Hodge star of an oriented inner
