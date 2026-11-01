@@ -19,12 +19,16 @@ isometry of the native null-sequence space. Its inverse is translation by `-z`, 
 translations adds their parameters. Scalars may be any semiring acting continuously on the
 coefficient module, as in `PadicInt.mahlerLinearIsometryEquiv`.
 
-The convergence proof evaluates Mathlib's `PadicInt.hasSum_mahler` on an iterated forward
-difference and uses `fwdDiff_iter_comp_add` to identify the translated coefficient.
+Use `ContinuousMap.hasSum_mahlerEquiv_comp_add` to obtain both convergence and the value of
+each translated coefficient. For operations on null sequences, use `PadicInt.mahlerTranslate`
+and `PadicInt.hasSum_mahlerTranslate`. Natural translations admit the finite binomial formula
+`PadicInt.mahlerTranslate_natCast_apply`.
 
 ## References
 
 * P. Colmez, *Fonctions d'une variable p-adique*, Mahler expansions.
+* Formal sources: Mathlib's `PadicInt.hasSum_mahler` and `fwdDiff_iter_comp_add`, and
+  `PadicInt.mahlerLinearIsometryEquiv` from `TauCeti.NumberTheory.Padics.MahlerBasis.Basic`.
 -/
 
 public section
