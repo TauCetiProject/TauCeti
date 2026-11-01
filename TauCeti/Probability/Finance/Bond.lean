@@ -181,9 +181,11 @@ theorem integral_mul_bondPrice (hr : ContinuousOn r (Icc 0 T)) (β₀ : ℝ) (ha
     ∫ u in a..b, r u * bondPrice r β₀ u = bondPrice r β₀ b - bondPrice r β₀ a := by
   obtain ⟨ρ, hρc, hρ⟩ := hr.exists_continuous_eqOn_Icc (ha.1.trans ha.2)
   have hab := uIcc_subset_Icc ha hb
+  have hint : EqOn (fun u ↦ r u * bondPrice r β₀ u) (fun u ↦ ρ u * bondPrice ρ β₀ u)
+      (uIcc a b) := fun u hu ↦ by
+    simp only [hρ (hab hu), bondPrice_eq_of_eqOn hρ (hab hu)]
   rw [← bondPrice_eq_of_eqOn hρ ha, ← bondPrice_eq_of_eqOn hρ hb,
-    intervalIntegral.integral_congr fun u hu ↦ show r u * bondPrice r β₀ u =
-      ρ u * bondPrice ρ β₀ u by rw [hρ (hab hu), bondPrice_eq_of_eqOn hρ (hab hu)]]
+    intervalIntegral.integral_congr hint]
   exact intervalIntegral.integral_eq_sub_of_hasDerivAt (fun u _ ↦ hasDerivAt_bondPrice hρc β₀ u)
     ((hρc.mul (continuous_bondPrice hρc β₀)).intervalIntegrable a b)
 
