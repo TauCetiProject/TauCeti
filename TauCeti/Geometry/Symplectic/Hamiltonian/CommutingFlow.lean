@@ -46,6 +46,8 @@ identifies a compact connected regular fibre with a torus.
 
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback_globalFlow`: for closed `σ`, the
   flow of a complete Hamiltonian vector field satisfies `ψₜ^* σ = σ`.
+* `TauCeti.SmoothTwoForm.IsFirstIntegral.apply_globalFlow`: complete Hamiltonian flows preserve
+  first integrals.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.apply_globalFlow_hamiltonianVectorField`: symplectic maps
   preserving `g` commute with the flow of `g`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.commute_globalFlowDiffeomorph`: if `{g, f} = 0`, the flows
@@ -82,6 +84,19 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [IsManifold I ∞ M] [T2Space M] [BoundarylessManifold I M]
   {σ : SmoothTwoForm I M} {f g : M → ℝ} {X : (x : M) → TangentSpace I x}
 
+/-! ### Hamiltonian flows preserve first integrals -/
+
+/-- **Complete Hamiltonian flows preserve first integrals.** A differentiable first integral `g`
+of a `C²` Hamiltonian `f` is constant along the flow of a complete Hamiltonian vector field of
+`f`. -/
+theorem IsFirstIntegral.apply_globalFlow (hg : σ.IsFirstIntegral f g) (hσ : σ.IsNondegenerate)
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) (hg' : MDifferentiable I 𝓘(ℝ) g)
+    (hv : ContMDiff I I.tangent 1
+      (fun y ↦ (⟨y, σ.hamiltonianVectorField f y⟩ : TangentBundle I M)))
+    (hc : IsCompleteVectorField (σ.hamiltonianVectorField f)) (t : ℝ) (x : M) :
+    g (globalFlow _ hv hc t x) = g x := by
+  rw [globalFlow_apply]
+  exact hg.apply_maximalIntegralCurve hσ hf hg' (hc.mem_maximalIntegralCurveInterval x t)
 
 /-! ### Symplectic maps commute with Hamiltonian flows -/
 
@@ -167,9 +182,9 @@ theorem commute_globalFlowDiffeomorph (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hg : C
   set ψ := globalFlowDiffeomorph hcf le_top hvf s
   -- The flow of `f` preserves `g`, which is a first integral of `f`.
   have hgψ : g ∘ ψ = g := funext fun x ↦ by
-    rw [comp_apply, globalFlowDiffeomorph_apply, globalFlow_apply]
-    exact hfg.apply_maximalIntegralCurve hσ.isNondegenerate (hf.of_le (by simp))
-      (hg.mdifferentiable (by simp)) (hcf.mem_maximalIntegralCurveInterval x s)
+    rw [comp_apply, globalFlowDiffeomorph_apply]
+    exact hfg.apply_globalFlow hσ.isNondegenerate (hf.of_le (by simp))
+      (hg.mdifferentiable (by simp)) _ hcf s x
   refine Diffeomorph.ext fun x ↦ ?_
   rw [Diffeomorph.mul_apply, Diffeomorph.mul_apply, globalFlowDiffeomorph_apply hcg le_top hvg t,
     globalFlowDiffeomorph_apply hcg le_top hvg t]
@@ -280,11 +295,10 @@ theorem apply_hamiltonianFlowAction (v : ι → ℝ) (x : M) :
   refine congrFun (hσ.hamiltonianFlowAction_mem hF hcomm hc (fun a ↦ F ∘ a = F) rfl
     (fun a b ha hb ↦ ?_) (fun i t ↦ funext fun y ↦ funext fun j ↦ ?_) v) x
   · rw [Diffeomorph.coe_mul, ← comp_assoc, ha, hb]
-  · rw [comp_apply, globalFlowDiffeomorph_apply, globalFlow_apply]
-    exact (isFirstIntegral_iff.2 fun x ↦ hcomm j i x).apply_maximalIntegralCurve
-      hσ.isNondegenerate ((contMDiff_pi_module_iff.1 hF i).of_le (by simp))
-      ((contMDiff_pi_module_iff.1 hF j).mdifferentiable (by simp))
-      ((hc i).mem_maximalIntegralCurveInterval y t)
+  · rw [comp_apply, globalFlowDiffeomorph_apply]
+    exact (isFirstIntegral_iff.2 fun x ↦ hcomm j i x).apply_globalFlow hσ.isNondegenerate
+      ((contMDiff_pi_module_iff.1 hF i).of_le (by simp))
+      ((contMDiff_pi_module_iff.1 hF j).mdifferentiable (by simp)) _ (hc i) t y
 
 end IsSymplectic
 
