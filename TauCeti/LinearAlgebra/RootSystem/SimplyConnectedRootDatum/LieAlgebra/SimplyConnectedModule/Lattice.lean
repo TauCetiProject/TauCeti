@@ -221,8 +221,8 @@ theorem span_range_scWeight_eq_top :
   refine ⟨⟨_, hl⟩, ?_, ?_⟩
   · rw [mem_weightSublattice_iff]
     exact isCartanWeightVector_lof (t.isCartanWeightVector_fundamentalModuleGenerator ht i)
-  · rw [ne_eq, AddSubgroup.mk_eq_zero, lof_eq_of]
-    exact (map_ne_zero_iff _ (of_injective i)).mpr (t.fundamentalModuleGenerator_ne_zero ht i)
+  · rw [ne_eq, AddSubgroup.mk_eq_zero]
+    exact (t.isHighestWeightVector_lof_fundamentalModuleGenerator ht i).ne_zero
 
 end
 
