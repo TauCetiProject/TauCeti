@@ -13,6 +13,7 @@ import Mathlib.Algebra.Module.LocalizedModule.Exact
 import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.RingTheory.PowerSeries.Ideal
 import Mathlib.RingTheory.PowerSeries.NoZeroDivisors
+import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.NumberTheory.Padics.PowerSeriesIdeal
 import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.Support
@@ -256,12 +257,8 @@ example (p : ℕ) [Fact p.Prime] :
   have hp : C (p : ℤ_[p]) ∈ nonZeroDivisors ℤ_[p]⟦X⟧ :=
     mem_nonZeroDivisors_of_ne_zero
       ((map_ne_zero_iff _ C_injective).mpr (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero))
-  have hM : Module.IsTorsion ℤ_[p]⟦X⟧ (ℤ_[p]⟦X⟧ ⧸ Ideal.span {C (p : ℤ_[p])}) := fun x ↦ by
-    obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ x
-    refine ⟨⟨_, hp⟩, ?_⟩
-    rw [Submonoid.smul_def, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
-      smul_eq_mul]
-    exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self _)
+  have hM : Module.IsTorsion ℤ_[p]⟦X⟧ (ℤ_[p]⟦X⟧ ⧸ Ideal.span {C (p : ℤ_[p])}) :=
+    Ideal.isTorsion_quotient_of_mem (Ideal.mem_span_singleton_self _) hp
   refine Finsupp.mem_support_iff.mp
     ((mem_support_charDivisor hM).mpr ⟨?_, PadicInt.height_span_C_p⟩)
   rw [Module.mem_support_iff_of_finite, Ideal.annihilator_quotient]

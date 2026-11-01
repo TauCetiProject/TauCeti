@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Iwasawa.Char.Divisor
 import Mathlib.RingTheory.Ideal.IsPrincipal
 import Mathlib.RingTheory.Ideal.UFD
 import Mathlib.RingTheory.OrderOfVanishing.Basic
+import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.NumberTheory.Padics.PowerSeriesIdeal
 import TauCeti.RingTheory.FittingIdeal.Basic
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
@@ -181,10 +182,10 @@ theorem charIdeal_quotient_span_singleton [IsDomain A] [IsNoetherianRing A]
       rw [← Submodule.ideal_span_singleton_smul, smul_eq_mul,
         Ideal.span_singleton_mul_span_singleton]
     have hp₀ : p ∈ nonZeroDivisors A := mem_nonZeroDivisors_of_ne_zero hp.ne_zero
-    have hN : Module.IsTorsion A (A ⧸ p • Ideal.span {a}) := fun x ↦
-      ⟨⟨p * a, mem_nonZeroDivisors_of_ne_zero hf⟩,
-        (Module.isTorsionBy_quotient_iff _ _).mpr
-          (fun y ↦ hpa ▸ Ideal.mul_mem_right y _ (Ideal.mem_span_singleton_self _)) (x := x)⟩
+    have hN : Module.IsTorsion A (A ⧸ p • Ideal.span {a}) :=
+      Ideal.isTorsion_quotient_of_mem
+        (Submodule.smul_mem_pointwise_smul _ _ _ (Ideal.mem_span_singleton_self a))
+        (mem_nonZeroDivisors_of_ne_zero hf)
     have := (Ideal.span_singleton_prime hp.ne_zero).mpr hp
     rw [← (Submodule.quotEquivOfEq _ _ hpa).charIdeal_eq,
       charIdeal_eq_mul_of_exact hN (Ideal.exact_mulQuot_quotOfMul _)
