@@ -206,10 +206,9 @@ theorem SatisfiesFunctionalEquation.natCast_pow_factorization_mul_coeff_mem
     have hfac : (n / p ^ i).factorization p = r - i := by
       simp [r, Nat.factorization_div hdvd, hp.out.factorization_self]
     have hmem : (p : K) ^ (n / p ^ i).factorization p * (σ ^ i) (PowerSeries.coeff (n / p ^ i) f)
-        ∈ A := by
-      have hσi : Set.MapsTo (σ ^ i) A A := RingHom.coe_pow σ i ▸ hσ.iterate i
-      exact_mod_cast hσi.natCast_mul_apply_mem (n := p ^ (n / p ^ i).factorization p)
-        (by exact_mod_cast ih _ hlt)
+        ∈ A :=
+      (RingHom.coe_pow σ i ▸ hσ.iterate i : Set.MapsTo (σ ^ i) A A).natCast_pow_mul_apply_mem
+        (ih _ hlt)
     rw [hfac] at hmem
     obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le hir
     obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hi₁
@@ -282,12 +281,16 @@ private theorem mul_coeff_pow_sub_expand_pow_mem (hσ : Set.MapsTo σ A A)
       (dvd_pow_apply_sub_pow_pow hσA i) ψA) r).trans ?_
     conv_rhs => rw [← Nat.ordProj_mul_ordCompl_eq_self m p, pow_mul, pow_mul]
     exact sub_dvd_pow_sub_pow _ _ _
-  rw [← hU, ← hW, ← map_pow, ← map_pow, ← map_sub, hE, coeff_map,
-    ← map_natCast (C (σ := τ) (R := A)), ← map_pow, coeff_C_mul, map_mul, map_pow, map_natCast]
-  have hmem : (p : K) ^ r * (σ ^ i) (PowerSeries.coeff m f) ∈ A := by
-    have hσi : Set.MapsTo (σ ^ i) A A := RingHom.coe_pow σ i ▸ hσ.iterate i
-    exact_mod_cast hσi.natCast_mul_apply_mem (n := p ^ r)
-      (by exact_mod_cast hf.natCast_pow_factorization_mul_coeff_mem hσ hs m)
+  have hcoeff : coeff d ((ψ ^ p ^ i) ^ m - expand (p ^ i) (NeZero.ne _) (map (σ ^ i) ψ) ^ m) =
+      (p : K) ^ (r + 1) * A.subtype (coeff d E) := by
+    -- `E` is the quotient over `A`; write the factor `p ^ (r + 1)` as a constant series
+    rw [← hU, ← hW, ← map_pow, ← map_pow, ← map_sub, hE, ← Nat.cast_pow,
+      ← map_natCast (C (σ := τ) (R := A)), coeff_map, coeff_C_mul]
+    simp
+  rw [hcoeff]
+  have hmem : (p : K) ^ r * (σ ^ i) (PowerSeries.coeff m f) ∈ A :=
+    (RingHom.coe_pow σ i ▸ hσ.iterate i : Set.MapsTo (σ ^ i) A A).natCast_pow_mul_apply_mem
+      (hf.natCast_pow_factorization_mul_coeff_mem hσ hs m)
   have : s i * ((σ ^ i) (PowerSeries.coeff m f) * ((p : K) ^ (r + 1) * A.subtype (coeff d E))) =
       ((p : K) * s i) * (((p : K) ^ r * (σ ^ i) (PowerSeries.coeff m f)) *
         A.subtype (coeff d E)) := by ring

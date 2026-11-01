@@ -26,6 +26,7 @@ Hazewinkel's functional equation.
 * `MonoidHom.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
 * `Set.MapsTo.natCast_mul_apply_mem`: if a ring homomorphism `f` maps `A` into `B`, then
   `n * x ∈ A` implies `n * f x ∈ B`.
+* `Set.MapsTo.natCast_pow_mul_apply_mem`: the same for the factor `n ^ k`.
 -/
 
 public section
@@ -50,5 +51,12 @@ theorem natCast_mul_apply_mem {R S F : Type*} [NonAssocSemiring R] [NonAssocSemi
     [FunLike F R S] [RingHomClass F R S] {f : F} {A : Set R} {B : Set S} (hf : MapsTo f A B)
     {n : ℕ} {x : R} (hx : (n : R) * x ∈ A) : (n : S) * f x ∈ B := by
   simpa only [map_mul, map_natCast] using hf hx
+
+/-- If a ring homomorphism `f` maps `A` into `B`, then `n ^ k * x ∈ A` implies `n ^ k * f x ∈ B`
+for all natural numbers `n` and `k`, since `f` fixes `n ^ k`. -/
+theorem natCast_pow_mul_apply_mem {R S F : Type*} [Semiring R] [Semiring S]
+    [FunLike F R S] [RingHomClass F R S] {f : F} {A : Set R} {B : Set S} (hf : MapsTo f A B)
+    {n k : ℕ} {x : R} (hx : (n : R) ^ k * x ∈ A) : (n : S) ^ k * f x ∈ B := by
+  simpa only [map_mul, map_pow, map_natCast] using hf hx
 
 end Set.MapsTo
