@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Order.Star.Basic
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 
 /-!
-# Balancing a sesquilinear form against a conjugate-semilinear map, and separation
+# Balancing a sesquilinear form against a conjugate-semilinear map
 
 A sesquilinear form `H` on a module and a `star`-semilinear map `K` of that module are unrelated
 data.  This file makes them compatible: the **balanced** form
@@ -31,11 +31,6 @@ commutative star semiring.  Nonnegativity and definiteness off the origin need a
 scalars compatible with the star, and are stated over a commutative star-ordered semiring, such as
 `ℂ` with its partial order `ComplexOrder`.
 
-Definiteness off the origin is also what makes a form **separate** vectors: two vectors pairing
-identically against every vector are equal, because their difference pairs to zero with itself.
-That principle is recorded here beside the construction, for any semilinear map of two arguments
-on an additive group with values in an additive group.
-
 ## Main definitions
 
 * `LinearMap.balance`: the balanced form `x, y ↦ H x y + star (H (K x) (K y))`.
@@ -48,7 +43,6 @@ on an additive group with values in an additive group.
 * `LinearMap.isSymm_balance`, `LinearMap.isNonneg_balance` and
   `LinearMap.balance_apply_self_ne_zero`: balancing preserves Hermitian symmetry, nonnegativity,
   and definiteness off the origin.
-* `LinearMap.eq_of_forall_sesq_eq`: a form definite off the origin separates vectors.
 -/
 
 public section
@@ -90,8 +84,7 @@ theorem balance_map_map {H : V →ₗ⋆[R] V →ₗ[R] R} {K : V →ₛₗ[star
     balance H K (K x) (K y) = starRingEnd R (balance H K x y) := by
   -- The first argument of `H` contributes a factor `star ε` and the second a factor `ε`.
   have hH : H (ε • x) (ε • y) = H x y := by
-    rw [map_smulₛₗ₂, map_smul, smul_eq_mul, smul_eq_mul, ← mul_assoc, starRingEnd_apply, hε,
-      one_mul]
+    simp [starRingEnd_apply, ← mul_assoc, mul_comm ε (star ε), hε]
   rw [balance_apply, balance_apply, hK x, hK y, hH, map_add, starRingEnd_self_apply, add_comm]
 
 /-- The balanced form is Hermitian if `H` is. -/
@@ -124,20 +117,5 @@ theorem balance_apply_self_ne_zero {H : V →ₗ⋆[R] V →ₗ[R] R} (hH : H.Is
 end StarOrderedRing
 
 end CommSemiring
-
-section AddCommGroup
-
-variable {R S M P : Type*} [Semiring R] [CommSemiring S] [AddCommGroup M] [Module R M]
-  [AddCommGroup P] [Module S P] {I₁ I₂ : R →+* S}
-
-/-- **A form definite off the origin separates vectors**: two vectors pairing identically against
-every vector are equal, because their difference pairs to zero with itself.  Mathlib's
-`LinearMap.SeparatingLeft` is the same separation stated as a property of the form; definiteness
-off the origin is what supplies it here, and is the shape the callers carry it in. -/
-theorem eq_of_forall_sesq_eq {B : M →ₛₗ[I₁] M →ₛₗ[I₂] P} (hdef : ∀ x : M, x ≠ 0 → B x x ≠ 0)
-    {u v : M} (h : ∀ y : M, B u y = B v y) : u = v :=
-  sub_eq_zero.1 <| not_not.1 fun hne ↦ hdef _ hne <| by simp [h]
-
-end AddCommGroup
 
 end LinearMap
