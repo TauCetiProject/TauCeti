@@ -30,7 +30,7 @@ Galois group is topologically finitely generated.
 * `TauCeti.Isogeny.finiteIndex_range_pointMapHom_of_isTopologicallyFinitelyGenerated`: the
   cokernel of a separable isogeny is finite when the absolute Galois group is topologically
   finitely generated.
-* `TauCeti.Isogeny.Hom.finiteIndex_range_pointMapHom_of_isNonarchimedeanLocalField`: the local
+* `TauCeti.Isogeny.Hom.finiteIndex_range_pointMapHom_of_module_finite_padic`: the local
   cokernel of any nonzero morphism over a finite extension of `ℚ_p` is finite.
 
 ## References
@@ -61,7 +61,8 @@ theorem Hom.finite_kerCoeff (f : Hom W₁.toAffine W₂.toAffine) (hf : f ≠ 0)
     (fun h ↦ hf ((Hom.map_eq_zero_iff f (algebraMap K (SeparableClosure K))).1 h))
   let ι : f.KerCoeff → f.mapSeparableClosure.pointMapHom.ker := fun P ↦
     ⟨W₁.pointCoeffEquiv.symm P, by
-      have hP : f.pointCoeffMap (P : W₁.PointCoeff) = 0 := P.2
+      have hP := P.2
+      rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass] at hP
       rw [AddMonoidHom.mem_ker, Hom.pointMapHom_apply,
         ← Hom.pointCoeffEquiv_symm_pointCoeffMap, hP, map_zero]⟩
   exact Finite.of_injective ι fun P Q h ↦
@@ -89,6 +90,15 @@ theorem finiteIndex_range_pointMapHom_of_isTopologicallyFinitelyGenerated
   have := Finite.of_injective φ.kummerClassMap φ.kummerClassMap_injective
   exact AddSubgroup.finiteIndex_of_finite_quotient
 
+/-- A nonzero morphism in characteristic zero has finite cokernel when the absolute Galois
+group is topologically finitely generated. -/
+theorem Hom.finiteIndex_range_pointMapHom_of_isTopologicallyFinitelyGenerated [CharZero K]
+    (f : Hom W₁.toAffine W₂.toAffine) (hf : f ≠ 0)
+    (hK : IsTopologicallyFinitelyGenerated (AbsoluteGaloisGroup K)) :
+    f.pointMapHom.range.FiniteIndex := by
+  have h := (Hom.toIsogeny hf).finiteIndex_range_pointMapHom_of_isTopologicallyFinitelyGenerated hK
+  simpa only [Hom.ofIsogeny_toIsogeny] using h
+
 end TauCeti.Isogeny
 
 namespace TauCeti.Isogeny.Hom
@@ -101,24 +111,14 @@ variable (p : ℕ) [Fact p.Prime] {K : Type} [Field K] [ValuativeRel K] [Topolog
 
 include p
 
-/-- The cohomology group `H¹(G_K, E₁[f])` is finite over a finite compatible extension of `ℚ_p`,
-with no restriction on the degree of the nonzero morphism `f`. -/
-theorem finite_H1_kerCoeff_of_isNonarchimedeanLocalField (hf : f ≠ 0) :
-    Finite (H1 (AbsoluteGaloisGroup K) f.KerCoeff) := by
-  exact f.finite_H1_kerCoeff_of_isTopologicallyFinitelyGenerated hf
-    ((isTopologicallyFinitelyGenerated_congr (absoluteGaloisGroupRestrictEquiv K)).mp
-      (isTopologicallyFinitelyGenerated_absoluteGaloisGroup p K))
-
 variable [DecidableEq K]
 
 /-- The local Kummer cokernel `E₂(K) / f E₁(K)` is finite for every nonzero morphism over a
 finite compatible extension of `ℚ_p`, even when `p` divides its degree. -/
-theorem finiteIndex_range_pointMapHom_of_isNonarchimedeanLocalField (hf : f ≠ 0) :
+theorem finiteIndex_range_pointMapHom_of_module_finite_padic (hf : f ≠ 0) :
     f.pointMapHom.range.FiniteIndex := by
   have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
-  have h := (toIsogeny hf).finiteIndex_range_pointMapHom_of_isTopologicallyFinitelyGenerated
-    ((isTopologicallyFinitelyGenerated_congr (absoluteGaloisGroupRestrictEquiv K)).mp
-      (isTopologicallyFinitelyGenerated_absoluteGaloisGroup p K))
-  simpa only [ofIsogeny_toIsogeny] using h
+  exact f.finiteIndex_range_pointMapHom_of_isTopologicallyFinitelyGenerated hf
+    (isTopologicallyFinitelyGenerated_absoluteGaloisGroup_separableClosure p K)
 
 end TauCeti.Isogeny.Hom

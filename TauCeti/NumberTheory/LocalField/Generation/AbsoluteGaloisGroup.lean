@@ -41,6 +41,8 @@ finitely generated. So `p` is included explicitly, together with the instances d
   topologically generates `G_K` together with `⁅P_K, P_K⁆`.
 * `TauCeti.isTopologicallyFinitelyGenerated_absoluteGaloisGroup`: `G_K` is topologically finitely
   generated.
+* `TauCeti.isTopologicallyFinitelyGenerated_absoluteGaloisGroup_separableClosure`: the same
+  finite-generation statement for automorphisms of the separable closure.
 * `TauCeti.topologicalGeneratorRankNat_absoluteGaloisGroup_le`: `d(G_K) ≤ [K : ℚ_p] + 2`.
 * `TauCeti.topologicalGeneratorRankNat_absoluteGaloisGroup`: `d(G_K) = [K : ℚ_p] + 2`.
 * `TauCeti.exists_finset_card_eq_finrank_add_two_absoluteGaloisGroup`: some finite subset of
@@ -83,6 +85,14 @@ theorem isTopologicallyFinitelyGenerated_absoluteGaloisGroup :
   obtain ⟨x, hx⟩ := exists_tuple_generating_mod_wildInertiaCommutator p K
   exact (Set.finite_range x).isTopologicallyFinitelyGenerated
     (topologicalClosure_eq_top_of_sup_wildInertiaCommutator hx)
+
+include p in
+/-- The automorphism group of the separable closure of a finite compatible extension of `ℚ_p`
+is topologically finitely generated. -/
+theorem isTopologicallyFinitelyGenerated_absoluteGaloisGroup_separableClosure :
+    IsTopologicallyFinitelyGenerated (AbsoluteGaloisGroup K) :=
+  (isTopologicallyFinitelyGenerated_congr (absoluteGaloisGroupRestrictEquiv K)).mp
+    (isTopologicallyFinitelyGenerated_absoluteGaloisGroup p K)
 
 /-- **The upper bound for the generator rank of a local absolute Galois group** (NSW (7.4.1)).
 For a finite extension `K` of `ℚ_p`, the absolute Galois group `G_K` is topologically generated
